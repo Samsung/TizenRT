@@ -647,10 +647,10 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   * @}
   */
 
-/** @defgroup UART_CR2_ADDRESS_LSB_POS    UART Address-matching LSB Position In CR2 Register
+/** @defgroup UART_CR2_ADDRESS_LSB_POS    UART Address-matching LSB Position In CTR2 Register
   * @{
   */
-#define UART_CR2_ADDRESS_LSB_POS             24U             /*!< UART address-matching LSB position in CR2 register */
+#define UART_CR2_ADDRESS_LSB_POS             24U             /*!< UART address-matching LSB position in CTR2 register */
 /**
   * @}
   */
@@ -675,20 +675,20 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   * @}
   */
 
-/** @defgroup UART_CR1_DEAT_ADDRESS_LSB_POS    UART Driver Enable Assertion Time LSB Position In CR1 Register
+/** @defgroup UART_CR1_DEAT_ADDRESS_LSB_POS    UART Driver Enable Assertion Time LSB Position In CTR1 Register
   * @{
   */
 #define UART_CR1_DEAT_ADDRESS_LSB_POS       21U      /*!< UART Driver Enable assertion time LSB
-                                                          position in CR1 register */
+                                                          position in CTR1 register */
 /**
   * @}
   */
 
-/** @defgroup UART_CR1_DEDT_ADDRESS_LSB_POS    UART Driver Enable DeAssertion Time LSB Position In CR1 Register
+/** @defgroup UART_CR1_DEDT_ADDRESS_LSB_POS    UART Driver Enable DeAssertion Time LSB Position In CTR1 Register
   * @{
   */
 #define UART_CR1_DEDT_ADDRESS_LSB_POS       16U      /*!< UART Driver Enable de-assertion time LSB
-                                                          position in CR1 register */
+                                                          position in CTR1 register */
 /**
   * @}
   */
@@ -749,16 +749,16 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   *        Elements values convention: 000ZZZZZ0XXYYYYYb
   *           - YYYYY  : Interrupt source position in the XX register (5bits)
   *           - XX  : Interrupt source register (2bits)
-  *                 - 01: CR1 register
-  *                 - 10: CR2 register
-  *                 - 11: CR3 register
+  *                 - 01: CTR1 register
+  *                 - 10: CTR2 register
+  *                 - 11: CTR3 register
   *           - ZZZZZ  : Flag position in the ISR register(5bits)
   *        Elements values convention: 000000000XXYYYYYb
   *           - YYYYY  : Interrupt source position in the XX register (5bits)
   *           - XX  : Interrupt source register (2bits)
-  *                 - 01: CR1 register
-  *                 - 10: CR2 register
-  *                 - 11: CR3 register
+  *                 - 01: CTR1 register
+  *                 - 10: CTR2 register
+  *                 - 11: CTR3 register
   *        Elements values convention: 0000ZZZZ00000000b
   *           - ZZZZ  : Flag position in the ISR register(4bits)
   * @{
@@ -971,12 +971,12 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_ENABLE_IT(__HANDLE__, __INTERRUPT__)   (\
                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 1U)?\
-                                                           ((__HANDLE__)->Instance->CR1 |= (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR1 |= (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))): \
                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2U)?\
-                                                           ((__HANDLE__)->Instance->CR2 |= (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR2 |= (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))): \
-                                                           ((__HANDLE__)->Instance->CR3 |= (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR3 |= (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))))
 
 /** @brief  Disable the specified UART interrupt.
@@ -1004,12 +1004,12 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_DISABLE_IT(__HANDLE__, __INTERRUPT__)  (\
                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 1U)?\
-                                                           ((__HANDLE__)->Instance->CR1 &= ~ (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR1 &= ~ (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))): \
                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2U)?\
-                                                           ((__HANDLE__)->Instance->CR2 &= ~ (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR2 &= ~ (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))): \
-                                                           ((__HANDLE__)->Instance->CR3 &= ~ (1U <<\
+                                                           ((__HANDLE__)->Instance->CTR3 &= ~ (1U <<\
                                                                ((__INTERRUPT__) & UART_IT_MASK))))
 
 /** @brief  Check whether the specified UART interrupt has occurred or not.
@@ -1062,10 +1062,10 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   * @retval The new state of __INTERRUPT__ (SET or RESET).
   */
 #define __HAL_UART_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((((((uint8_t)(__INTERRUPT__)) >> 5U) == 1U) ?\
-                                                                (__HANDLE__)->Instance->CR1 : \
+                                                                (__HANDLE__)->Instance->CTR1 : \
                                                                 (((((uint8_t)(__INTERRUPT__)) >> 5U) == 2U) ?\
-                                                                 (__HANDLE__)->Instance->CR2 : \
-                                                                 (__HANDLE__)->Instance->CR3)) & (1U <<\
+                                                                 (__HANDLE__)->Instance->CTR2 : \
+                                                                 (__HANDLE__)->Instance->CTR3)) & (1U <<\
                                                                      (((uint16_t)(__INTERRUPT__)) &\
                                                                       UART_IT_MASK)))  != RESET) ? SET : RESET)
 
@@ -1107,25 +1107,25 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   * @param  __HANDLE__ specifies the UART Handle.
   * @retval None
   */
-#define __HAL_UART_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
+#define __HAL_UART_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CTR3|= USART_CR3_ONEBIT)
 
 /** @brief  Disable the UART one bit sample method.
   * @param  __HANDLE__ specifies the UART Handle.
   * @retval None
   */
-#define __HAL_UART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= ~USART_CR3_ONEBIT)
+#define __HAL_UART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CTR3 &= ~USART_CR3_ONEBIT)
 
 /** @brief  Enable UART.
   * @param  __HANDLE__ specifies the UART Handle.
   * @retval None
   */
-#define __HAL_UART_ENABLE(__HANDLE__)                   ((__HANDLE__)->Instance->CR1 |= USART_CR1_UE)
+#define __HAL_UART_ENABLE(__HANDLE__)                   ((__HANDLE__)->Instance->CTR1 |= USART_CR1_UE)
 
 /** @brief  Disable UART.
   * @param  __HANDLE__ specifies the UART Handle.
   * @retval None
   */
-#define __HAL_UART_DISABLE(__HANDLE__)                  ((__HANDLE__)->Instance->CR1 &= ~USART_CR1_UE)
+#define __HAL_UART_DISABLE(__HANDLE__)                  ((__HANDLE__)->Instance->CTR1 &= ~USART_CR1_UE)
 
 /** @brief  Enable CTS flow control.
   * @note   This macro allows to enable CTS hardware flow control for a given UART instance,
@@ -1142,7 +1142,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_HWCONTROL_CTS_ENABLE(__HANDLE__)               \
   do{                                                             \
-    ATOMIC_SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE);  \
+    ATOMIC_SET_BIT((__HANDLE__)->Instance->CTR3, USART_CR3_CTSE);  \
     (__HANDLE__)->Init.HwFlowCtl |= USART_CR3_CTSE;               \
   } while(0U)
 
@@ -1161,7 +1161,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_HWCONTROL_CTS_DISABLE(__HANDLE__)               \
   do{                                                              \
-    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE); \
+    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CTR3, USART_CR3_CTSE); \
     (__HANDLE__)->Init.HwFlowCtl &= ~(USART_CR3_CTSE);             \
   } while(0U)
 
@@ -1180,7 +1180,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_HWCONTROL_RTS_ENABLE(__HANDLE__)              \
   do{                                                            \
-    ATOMIC_SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE); \
+    ATOMIC_SET_BIT((__HANDLE__)->Instance->CTR3, USART_CR3_RTSE); \
     (__HANDLE__)->Init.HwFlowCtl |= USART_CR3_RTSE;              \
   } while(0U)
 
@@ -1199,7 +1199,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)
   */
 #define __HAL_UART_HWCONTROL_RTS_DISABLE(__HANDLE__)              \
   do{                                                             \
-    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE);\
+    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CTR3, USART_CR3_RTSE);\
     (__HANDLE__)->Init.HwFlowCtl &= ~(USART_CR3_RTSE);            \
   } while(0U)
 /**

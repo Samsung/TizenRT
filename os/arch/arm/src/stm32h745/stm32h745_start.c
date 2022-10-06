@@ -90,6 +90,11 @@
  * address.
  */
 
+uint8_t _header[] __attribute__((section(".header"))) = {
+        [0 ... 15] = 0xFF /* 12 bytes for header and 4 bytes for checksum */
+};
+
+
 const uintptr_t g_idle_topstack = HEAP_BASE;
 
 /****************************************************************************
@@ -269,9 +274,11 @@ void __start(void)
 	const uint32_t *src;
 	uint32_t *dest;
 	volatile uint32_t delay=0xFFFFFF;
+	int option_value;
 
 	/* Add delay to wait for M4 System clock completed 10msec */
-	while(delay--)
+	stm32h745_get_boot_control(1, &option_value);
+	while((delay--) && (option_value == 1))
 	{
 		__NOP();
 	}
@@ -302,7 +309,7 @@ void __start(void)
 #endif
 
 	/* clear axi sram */
-	for(dest = 0x24000000; dest < (0x24000000 + (512 * 1024)); )
+	for(dest = (uint32_t *)0x24000000; dest < (uint32_t *)(0x24000000 + (512 * 1024)); )
 	{
 		*dest++ = 0;
 	}

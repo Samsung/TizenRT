@@ -37,12 +37,21 @@
 #define __ARCH_ARM_SRC_STM32H745_H
 
 extern int  stm32h745_shared_memory_init(uint32_t hsem_id);
+extern int  stm32h745_shared_memory_write(uint32_t index, uint8_t *src_addr, uint32_t size, bool notification, uint32_t hsem_id);
+extern int  stm32h745_shared_memory_read(uint32_t index, uint8_t *dest_addr, uint32_t size, bool notification, uint32_t hsem_id);
 extern int  stm32h745_haltick_init(void);
 extern void __ramfunc__ stm32h745_wwdginitialize(FAR const char *devpath);
 extern void stm32h745_tim4_init(void);
 extern int  stm32h745_switch_boot_address(uint32_t address);
+extern int  stm32h745_switch_boot_address_m4(uint32_t address);
+extern int  stm32h745_switch_boot_address_m7_m4(uint32_t address_m7, uint32_t address_m4);
+extern int  stm32h745_get_boot_address_m7_m4(uint32_t *address_m7, uint32_t *address_m4);
+extern int  stm32h745_get_boot_control(int core, int *value);
+extern int  stm32h745_switch_boot_control(int core, int value);
 extern void stm32h745_irq_clear_pending_all(void);
-
+extern void stm32h745_system_reset(void);
+extern int  stm32h745_tim_init(const char *devpath, int timer);
+extern void stm32h745_flash_ecc_handler(void);
 /* Definition of HSEM ID */
 #define HSEM_ID_0  (0U)
 #define HSEM_ID_1  (1U)

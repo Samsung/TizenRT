@@ -538,9 +538,9 @@ typedef struct
   * @retval none
   */
 
-#define __HAL_FLASH_ENABLE_IT_BANK1(__INTERRUPT__)      (FLASH->CR1 |= (__INTERRUPT__))
+#define __HAL_FLASH_ENABLE_IT_BANK1(__INTERRUPT__)      (FLASH->CTR1 |= (__INTERRUPT__))
 
-#define __HAL_FLASH_ENABLE_IT_BANK2(__INTERRUPT__)      (FLASH->CR2 |= ((__INTERRUPT__) & 0x7FFFFFFFU))
+#define __HAL_FLASH_ENABLE_IT_BANK2(__INTERRUPT__)      (FLASH->CTR2 |= ((__INTERRUPT__) & 0x7FFFFFFFU))
 
 #if defined (DUAL_BANK)
 #define __HAL_FLASH_ENABLE_IT(__INTERRUPT__)    (IS_FLASH_IT_BANK1(__INTERRUPT__) ? \
@@ -586,9 +586,9 @@ typedef struct
   * @retval none
   */
 
-#define __HAL_FLASH_DISABLE_IT_BANK1(__INTERRUPT__)  (FLASH->CR1 &= ~(uint32_t)(__INTERRUPT__))
+#define __HAL_FLASH_DISABLE_IT_BANK1(__INTERRUPT__)  (FLASH->CTR1 &= ~(uint32_t)(__INTERRUPT__))
 
-#define __HAL_FLASH_DISABLE_IT_BANK2(__INTERRUPT__)  (FLASH->CR2 &= ~(uint32_t)((__INTERRUPT__) & 0x7FFFFFFFU))
+#define __HAL_FLASH_DISABLE_IT_BANK2(__INTERRUPT__)  (FLASH->CTR2 &= ~(uint32_t)((__INTERRUPT__) & 0x7FFFFFFFU))
 
 #if defined (DUAL_BANK)
 #define __HAL_FLASH_DISABLE_IT(__INTERRUPT__)  (IS_FLASH_IT_BANK1(__INTERRUPT__) ? \

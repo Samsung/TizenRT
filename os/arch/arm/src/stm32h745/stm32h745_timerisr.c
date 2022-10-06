@@ -103,8 +103,8 @@
  *   It looks like SYSTICK for H7 is always clocked from CPUCLK and doesn't
  *   depend on the SYSTICK_CTRL_CLKSOURCE bit settings.
  */
-
-#define STM32_SYSTICK_CLOCK  (400000000)
+extern uint32_t SystemCoreClock;
+#define STM32_SYSTICK_CLOCK  (SystemCoreClock)
 
 /* The desired timer interrupt frequency is provided by the definition
  * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
@@ -162,8 +162,10 @@ int up_timerisr(int irq, uint32_t *regs)
 
 void up_timer_initialize(void)
 {
-#if 1
   uint32_t regval;
+
+  lldbg("SystemCoreClock:%d\n", SystemCoreClock);
+  lldbg("NVIC_SYSTICK_RELOAD:0x%08x\n", SYSTICK_RELOAD);
 
   /* Configure SysTick to interrupt at the requested rate */
 
@@ -191,14 +193,6 @@ void up_timer_initialize(void)
 
   /* And enable the timer interrupt */
   up_enable_irq(STM32H745_IRQ_SYSTICK);
-#else
-  /* Don't use this code for the interrupt priority */
-
-  irq_attach(STM32H745_IRQ_SYSTICK, (xcpt_t)up_timerisr, NULL);
-
-  /* Configure the SysTick to have interrupt in 1ms time basis*/
-  HAL_SYSTICK_Config(STM32_SYSTICK_CLOCK / (1000UL / (uint32_t)HAL_TICK_FREQ_DEFAULT));
-#endif
 }
 
 

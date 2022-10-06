@@ -706,12 +706,12 @@ __weak HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruc
     assert_param(IS_RCC_LSE(RCC_OscInitStruct->LSEState));
 
     /* Enable write access to Backup domain */
-    PWR->CR1 |= PWR_CR1_DBP;
+    PWR->CTR1 |= PWR_CR1_DBP;
 
     /* Wait for Backup domain Write protection disable */
     tickstart = HAL_GetTick();
 
-    while((PWR->CR1 & PWR_CR1_DBP) == 0U)
+    while((PWR->CTR1 & PWR_CR1_DBP) == 0U)
     {
       if((HAL_GetTick() - tickstart ) > RCC_DBP_TIMEOUT_VALUE)
       {

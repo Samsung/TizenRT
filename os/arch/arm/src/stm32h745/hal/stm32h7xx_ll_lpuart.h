@@ -488,13 +488,13 @@ typedef struct
 
 /**
   * @brief  LPUART Enable
-  * @rmtoll CR1          UE            LL_LPUART_Enable
+  * @rmtoll CTR1          UE            LL_LPUART_Enable
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_Enable(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR1, USART_CR1_UE);
+  SET_BIT(LPUARTx->CTR1, USART_CR1_UE);
 }
 
 /**
@@ -507,62 +507,62 @@ __STATIC_INLINE void LL_LPUART_Enable(USART_TypeDef *LPUARTx)
   *         for the TC bit in the LPUART_ISR to be set before resetting the UE bit.
   *         The DMA requests are also reset when UE = 0 so the DMA channel must
   *         be disabled before resetting the UE bit.
-  * @rmtoll CR1          UE            LL_LPUART_Disable
+  * @rmtoll CTR1          UE            LL_LPUART_Disable
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_Disable(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR1, USART_CR1_UE);
+  CLEAR_BIT(LPUARTx->CTR1, USART_CR1_UE);
 }
 
 /**
   * @brief  Indicate if LPUART is enabled
-  * @rmtoll CR1          UE            LL_LPUART_IsEnabled
+  * @rmtoll CTR1          UE            LL_LPUART_IsEnabled
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabled(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_UE) == (USART_CR1_UE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_UE) == (USART_CR1_UE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  FIFO Mode Enable
-  * @rmtoll CR1          FIFOEN        LL_LPUART_EnableFIFO
+  * @rmtoll CTR1          FIFOEN        LL_LPUART_EnableFIFO
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableFIFO(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR1, USART_CR1_FIFOEN);
+  SET_BIT(LPUARTx->CTR1, USART_CR1_FIFOEN);
 }
 
 /**
   * @brief  FIFO Mode Disable
-  * @rmtoll CR1          FIFOEN        LL_LPUART_DisableFIFO
+  * @rmtoll CTR1          FIFOEN        LL_LPUART_DisableFIFO
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableFIFO(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR1, USART_CR1_FIFOEN);
+  CLEAR_BIT(LPUARTx->CTR1, USART_CR1_FIFOEN);
 }
 
 /**
   * @brief  Indicate if FIFO Mode is enabled
-  * @rmtoll CR1          FIFOEN        LL_LPUART_IsEnabledFIFO
+  * @rmtoll CTR1          FIFOEN        LL_LPUART_IsEnabledFIFO
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledFIFO(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_FIFOEN) == (USART_CR1_FIFOEN)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_FIFOEN) == (USART_CR1_FIFOEN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Configure TX FIFO Threshold
-  * @rmtoll CR3          TXFTCFG       LL_LPUART_SetTXFIFOThreshold
+  * @rmtoll CTR3          TXFTCFG       LL_LPUART_SetTXFIFOThreshold
   * @param  LPUARTx LPUART Instance
   * @param  Threshold This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_FIFOTHRESHOLD_1_8
@@ -575,12 +575,12 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledFIFO(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetTXFIFOThreshold(USART_TypeDef *LPUARTx, uint32_t Threshold)
 {
-  ATOMIC_MODIFY_REG(LPUARTx->CR3, USART_CR3_TXFTCFG, Threshold << USART_CR3_TXFTCFG_Pos);
+  ATOMIC_MODIFY_REG(LPUARTx->CTR3, USART_CR3_TXFTCFG, Threshold << USART_CR3_TXFTCFG_Pos);
 }
 
 /**
   * @brief  Return TX FIFO Threshold Configuration
-  * @rmtoll CR3          TXFTCFG       LL_LPUART_GetTXFIFOThreshold
+  * @rmtoll CTR3          TXFTCFG       LL_LPUART_GetTXFIFOThreshold
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_FIFOTHRESHOLD_1_8
@@ -592,12 +592,12 @@ __STATIC_INLINE void LL_LPUART_SetTXFIFOThreshold(USART_TypeDef *LPUARTx, uint32
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetTXFIFOThreshold(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
+  return (uint32_t)(READ_BIT(LPUARTx->CTR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
 }
 
 /**
   * @brief  Configure RX FIFO Threshold
-  * @rmtoll CR3          RXFTCFG       LL_LPUART_SetRXFIFOThreshold
+  * @rmtoll CTR3          RXFTCFG       LL_LPUART_SetRXFIFOThreshold
   * @param  LPUARTx LPUART Instance
   * @param  Threshold This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_FIFOTHRESHOLD_1_8
@@ -610,12 +610,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTXFIFOThreshold(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetRXFIFOThreshold(USART_TypeDef *LPUARTx, uint32_t Threshold)
 {
-  ATOMIC_MODIFY_REG(LPUARTx->CR3, USART_CR3_RXFTCFG, Threshold << USART_CR3_RXFTCFG_Pos);
+  ATOMIC_MODIFY_REG(LPUARTx->CTR3, USART_CR3_RXFTCFG, Threshold << USART_CR3_RXFTCFG_Pos);
 }
 
 /**
   * @brief  Return RX FIFO Threshold Configuration
-  * @rmtoll CR3          RXFTCFG       LL_LPUART_GetRXFIFOThreshold
+  * @rmtoll CTR3          RXFTCFG       LL_LPUART_GetRXFIFOThreshold
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_FIFOTHRESHOLD_1_8
@@ -627,13 +627,13 @@ __STATIC_INLINE void LL_LPUART_SetRXFIFOThreshold(USART_TypeDef *LPUARTx, uint32
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetRXFIFOThreshold(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
+  return (uint32_t)(READ_BIT(LPUARTx->CTR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
 }
 
 /**
   * @brief  Configure TX and RX FIFOs Threshold
-  * @rmtoll CR3          TXFTCFG       LL_LPUART_ConfigFIFOsThreshold\n
-  *         CR3          RXFTCFG       LL_LPUART_ConfigFIFOsThreshold
+  * @rmtoll CTR3          TXFTCFG       LL_LPUART_ConfigFIFOsThreshold\n
+  *         CTR3          RXFTCFG       LL_LPUART_ConfigFIFOsThreshold
   * @param  LPUARTx LPUART Instance
   * @param  TXThreshold This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_FIFOTHRESHOLD_1_8
@@ -653,7 +653,7 @@ __STATIC_INLINE uint32_t LL_LPUART_GetRXFIFOThreshold(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_ConfigFIFOsThreshold(USART_TypeDef *LPUARTx, uint32_t TXThreshold, uint32_t RXThreshold)
 {
-  ATOMIC_MODIFY_REG(LPUARTx->CR3, USART_CR3_TXFTCFG | USART_CR3_RXFTCFG, (TXThreshold << USART_CR3_TXFTCFG_Pos) | \
+  ATOMIC_MODIFY_REG(LPUARTx->CTR3, USART_CR3_TXFTCFG | USART_CR3_RXFTCFG, (TXThreshold << USART_CR3_TXFTCFG_Pos) | \
                     (RXThreshold << USART_CR3_RXFTCFG_Pos));
 }
 
@@ -661,88 +661,88 @@ __STATIC_INLINE void LL_LPUART_ConfigFIFOsThreshold(USART_TypeDef *LPUARTx, uint
   * @brief  LPUART enabled in STOP Mode
   * @note   When this function is enabled, LPUART is able to wake up the MCU from Stop mode, provided that
   *         LPUART clock selection is HSI or LSE in RCC.
-  * @rmtoll CR1          UESM          LL_LPUART_EnableInStopMode
+  * @rmtoll CTR1          UESM          LL_LPUART_EnableInStopMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableInStopMode(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_UESM);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_UESM);
 }
 
 /**
   * @brief  LPUART disabled in STOP Mode
   * @note   When this function is disabled, LPUART is not able to wake up the MCU from Stop mode
-  * @rmtoll CR1          UESM          LL_LPUART_DisableInStopMode
+  * @rmtoll CTR1          UESM          LL_LPUART_DisableInStopMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableInStopMode(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_UESM);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_UESM);
 }
 
 /**
   * @brief  Indicate if LPUART is enabled in STOP Mode
   *         (able to wake up MCU from Stop mode or not)
-  * @rmtoll CR1          UESM          LL_LPUART_IsEnabledInStopMode
+  * @rmtoll CTR1          UESM          LL_LPUART_IsEnabledInStopMode
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledInStopMode(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_UESM) == (USART_CR1_UESM)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_UESM) == (USART_CR1_UESM)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Receiver Enable (Receiver is enabled and begins searching for a start bit)
-  * @rmtoll CR1          RE            LL_LPUART_EnableDirectionRx
+  * @rmtoll CTR1          RE            LL_LPUART_EnableDirectionRx
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDirectionRx(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_RE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_RE);
 }
 
 /**
   * @brief  Receiver Disable
-  * @rmtoll CR1          RE            LL_LPUART_DisableDirectionRx
+  * @rmtoll CTR1          RE            LL_LPUART_DisableDirectionRx
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDirectionRx(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_RE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_RE);
 }
 
 /**
   * @brief  Transmitter Enable
-  * @rmtoll CR1          TE            LL_LPUART_EnableDirectionTx
+  * @rmtoll CTR1          TE            LL_LPUART_EnableDirectionTx
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDirectionTx(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_TE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_TE);
 }
 
 /**
   * @brief  Transmitter Disable
-  * @rmtoll CR1          TE            LL_LPUART_DisableDirectionTx
+  * @rmtoll CTR1          TE            LL_LPUART_DisableDirectionTx
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDirectionTx(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_TE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_TE);
 }
 
 /**
   * @brief  Configure simultaneously enabled/disabled states
   *         of Transmitter and Receiver
-  * @rmtoll CR1          RE            LL_LPUART_SetTransferDirection\n
-  *         CR1          TE            LL_LPUART_SetTransferDirection
+  * @rmtoll CTR1          RE            LL_LPUART_SetTransferDirection\n
+  *         CTR1          TE            LL_LPUART_SetTransferDirection
   * @param  LPUARTx LPUART Instance
   * @param  TransferDirection This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_DIRECTION_NONE
@@ -753,13 +753,13 @@ __STATIC_INLINE void LL_LPUART_DisableDirectionTx(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetTransferDirection(USART_TypeDef *LPUARTx, uint32_t TransferDirection)
 {
-  ATOMIC_MODIFY_REG(LPUARTx->CR1, USART_CR1_RE | USART_CR1_TE, TransferDirection);
+  ATOMIC_MODIFY_REG(LPUARTx->CTR1, USART_CR1_RE | USART_CR1_TE, TransferDirection);
 }
 
 /**
   * @brief  Return enabled/disabled states of Transmitter and Receiver
-  * @rmtoll CR1          RE            LL_LPUART_GetTransferDirection\n
-  *         CR1          TE            LL_LPUART_GetTransferDirection
+  * @rmtoll CTR1          RE            LL_LPUART_GetTransferDirection\n
+  *         CTR1          TE            LL_LPUART_GetTransferDirection
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_DIRECTION_NONE
@@ -769,7 +769,7 @@ __STATIC_INLINE void LL_LPUART_SetTransferDirection(USART_TypeDef *LPUARTx, uint
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetTransferDirection(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_RE | USART_CR1_TE));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_RE | USART_CR1_TE));
 }
 
 /**
@@ -777,8 +777,8 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTransferDirection(USART_TypeDef *LPUARTx)
   * @note   This function selects if hardware parity control (generation and detection) is enabled or disabled.
   *         When the parity control is enabled (Odd or Even), computed parity bit is inserted at the MSB position
   *         (depending on data width) and parity is checked on the received data.
-  * @rmtoll CR1          PS            LL_LPUART_SetParity\n
-  *         CR1          PCE           LL_LPUART_SetParity
+  * @rmtoll CTR1          PS            LL_LPUART_SetParity\n
+  *         CTR1          PCE           LL_LPUART_SetParity
   * @param  LPUARTx LPUART Instance
   * @param  Parity This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_PARITY_NONE
@@ -788,13 +788,13 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTransferDirection(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetParity(USART_TypeDef *LPUARTx, uint32_t Parity)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_PS | USART_CR1_PCE, Parity);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_PS | USART_CR1_PCE, Parity);
 }
 
 /**
   * @brief  Return Parity configuration (enabled/disabled and parity mode if enabled)
-  * @rmtoll CR1          PS            LL_LPUART_GetParity\n
-  *         CR1          PCE           LL_LPUART_GetParity
+  * @rmtoll CTR1          PS            LL_LPUART_GetParity\n
+  *         CTR1          PCE           LL_LPUART_GetParity
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_PARITY_NONE
@@ -803,12 +803,12 @@ __STATIC_INLINE void LL_LPUART_SetParity(USART_TypeDef *LPUARTx, uint32_t Parity
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetParity(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_PS | USART_CR1_PCE));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_PS | USART_CR1_PCE));
 }
 
 /**
   * @brief  Set Receiver Wake Up method from Mute mode.
-  * @rmtoll CR1          WAKE          LL_LPUART_SetWakeUpMethod
+  * @rmtoll CTR1          WAKE          LL_LPUART_SetWakeUpMethod
   * @param  LPUARTx LPUART Instance
   * @param  Method This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_WAKEUP_IDLELINE
@@ -817,12 +817,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetParity(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetWakeUpMethod(USART_TypeDef *LPUARTx, uint32_t Method)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_WAKE, Method);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_WAKE, Method);
 }
 
 /**
   * @brief  Return Receiver Wake Up method from Mute mode
-  * @rmtoll CR1          WAKE          LL_LPUART_GetWakeUpMethod
+  * @rmtoll CTR1          WAKE          LL_LPUART_GetWakeUpMethod
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_WAKEUP_IDLELINE
@@ -830,12 +830,12 @@ __STATIC_INLINE void LL_LPUART_SetWakeUpMethod(USART_TypeDef *LPUARTx, uint32_t 
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetWakeUpMethod(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_WAKE));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_WAKE));
 }
 
 /**
   * @brief  Set Word length (nb of data bits, excluding start and stop bits)
-  * @rmtoll CR1          M             LL_LPUART_SetDataWidth
+  * @rmtoll CTR1          M             LL_LPUART_SetDataWidth
   * @param  LPUARTx LPUART Instance
   * @param  DataWidth This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_DATAWIDTH_7B
@@ -845,12 +845,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetWakeUpMethod(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetDataWidth(USART_TypeDef *LPUARTx, uint32_t DataWidth)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_M, DataWidth);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_M, DataWidth);
 }
 
 /**
   * @brief  Return Word length (i.e. nb of data bits, excluding start and stop bits)
-  * @rmtoll CR1          M             LL_LPUART_GetDataWidth
+  * @rmtoll CTR1          M             LL_LPUART_GetDataWidth
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_DATAWIDTH_7B
@@ -859,40 +859,40 @@ __STATIC_INLINE void LL_LPUART_SetDataWidth(USART_TypeDef *LPUARTx, uint32_t Dat
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDataWidth(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_M));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_M));
 }
 
 /**
   * @brief  Allow switch between Mute Mode and Active mode
-  * @rmtoll CR1          MME           LL_LPUART_EnableMuteMode
+  * @rmtoll CTR1          MME           LL_LPUART_EnableMuteMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableMuteMode(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_MME);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_MME);
 }
 
 /**
   * @brief  Prevent Mute Mode use. Set Receiver in active mode permanently.
-  * @rmtoll CR1          MME           LL_LPUART_DisableMuteMode
+  * @rmtoll CTR1          MME           LL_LPUART_DisableMuteMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableMuteMode(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_MME);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_MME);
 }
 
 /**
   * @brief  Indicate if switch between Mute Mode and Active mode is allowed
-  * @rmtoll CR1          MME           LL_LPUART_IsEnabledMuteMode
+  * @rmtoll CTR1          MME           LL_LPUART_IsEnabledMuteMode
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledMuteMode(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_MME) == (USART_CR1_MME)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_MME) == (USART_CR1_MME)) ? 1UL : 0UL);
 }
 
 /**
@@ -944,7 +944,7 @@ __STATIC_INLINE uint32_t LL_LPUART_GetPrescaler(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Set the length of the stop bits
-  * @rmtoll CR2          STOP          LL_LPUART_SetStopBitsLength
+  * @rmtoll CTR2          STOP          LL_LPUART_SetStopBitsLength
   * @param  LPUARTx LPUART Instance
   * @param  StopBits This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_STOPBITS_1
@@ -953,12 +953,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetPrescaler(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetStopBitsLength(USART_TypeDef *LPUARTx, uint32_t StopBits)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_STOP, StopBits);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_STOP, StopBits);
 }
 
 /**
   * @brief  Retrieve the length of the stop bits
-  * @rmtoll CR2          STOP          LL_LPUART_GetStopBitsLength
+  * @rmtoll CTR2          STOP          LL_LPUART_GetStopBitsLength
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_STOPBITS_1
@@ -966,7 +966,7 @@ __STATIC_INLINE void LL_LPUART_SetStopBitsLength(USART_TypeDef *LPUARTx, uint32_
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetStopBitsLength(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_STOP));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_STOP));
 }
 
 /**
@@ -975,10 +975,10 @@ __STATIC_INLINE uint32_t LL_LPUART_GetStopBitsLength(USART_TypeDef *LPUARTx)
   *         - Data Width configuration using @ref LL_LPUART_SetDataWidth() function
   *         - Parity Control and mode configuration using @ref LL_LPUART_SetParity() function
   *         - Stop bits configuration using @ref LL_LPUART_SetStopBitsLength() function
-  * @rmtoll CR1          PS            LL_LPUART_ConfigCharacter\n
-  *         CR1          PCE           LL_LPUART_ConfigCharacter\n
-  *         CR1          M             LL_LPUART_ConfigCharacter\n
-  *         CR2          STOP          LL_LPUART_ConfigCharacter
+  * @rmtoll CTR1          PS            LL_LPUART_ConfigCharacter\n
+  *         CTR1          PCE           LL_LPUART_ConfigCharacter\n
+  *         CTR1          M             LL_LPUART_ConfigCharacter\n
+  *         CTR2          STOP          LL_LPUART_ConfigCharacter
   * @param  LPUARTx LPUART Instance
   * @param  DataWidth This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_DATAWIDTH_7B
@@ -996,13 +996,13 @@ __STATIC_INLINE uint32_t LL_LPUART_GetStopBitsLength(USART_TypeDef *LPUARTx)
 __STATIC_INLINE void LL_LPUART_ConfigCharacter(USART_TypeDef *LPUARTx, uint32_t DataWidth, uint32_t Parity,
                                                uint32_t StopBits)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_PS | USART_CR1_PCE | USART_CR1_M, Parity | DataWidth);
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_STOP, StopBits);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_PS | USART_CR1_PCE | USART_CR1_M, Parity | DataWidth);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_STOP, StopBits);
 }
 
 /**
   * @brief  Configure TX/RX pins swapping setting.
-  * @rmtoll CR2          SWAP          LL_LPUART_SetTXRXSwap
+  * @rmtoll CTR2          SWAP          LL_LPUART_SetTXRXSwap
   * @param  LPUARTx LPUART Instance
   * @param  SwapConfig This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_TXRX_STANDARD
@@ -1011,12 +1011,12 @@ __STATIC_INLINE void LL_LPUART_ConfigCharacter(USART_TypeDef *LPUARTx, uint32_t 
   */
 __STATIC_INLINE void LL_LPUART_SetTXRXSwap(USART_TypeDef *LPUARTx, uint32_t SwapConfig)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_SWAP, SwapConfig);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_SWAP, SwapConfig);
 }
 
 /**
   * @brief  Retrieve TX/RX pins swapping configuration.
-  * @rmtoll CR2          SWAP          LL_LPUART_GetTXRXSwap
+  * @rmtoll CTR2          SWAP          LL_LPUART_GetTXRXSwap
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_TXRX_STANDARD
@@ -1024,12 +1024,12 @@ __STATIC_INLINE void LL_LPUART_SetTXRXSwap(USART_TypeDef *LPUARTx, uint32_t Swap
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetTXRXSwap(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_SWAP));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_SWAP));
 }
 
 /**
   * @brief  Configure RX pin active level logic
-  * @rmtoll CR2          RXINV         LL_LPUART_SetRXPinLevel
+  * @rmtoll CTR2          RXINV         LL_LPUART_SetRXPinLevel
   * @param  LPUARTx LPUART Instance
   * @param  PinInvMethod This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_RXPIN_LEVEL_STANDARD
@@ -1038,12 +1038,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTXRXSwap(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetRXPinLevel(USART_TypeDef *LPUARTx, uint32_t PinInvMethod)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_RXINV, PinInvMethod);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_RXINV, PinInvMethod);
 }
 
 /**
   * @brief  Retrieve RX pin active level logic configuration
-  * @rmtoll CR2          RXINV         LL_LPUART_GetRXPinLevel
+  * @rmtoll CTR2          RXINV         LL_LPUART_GetRXPinLevel
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_RXPIN_LEVEL_STANDARD
@@ -1051,12 +1051,12 @@ __STATIC_INLINE void LL_LPUART_SetRXPinLevel(USART_TypeDef *LPUARTx, uint32_t Pi
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetRXPinLevel(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_RXINV));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_RXINV));
 }
 
 /**
   * @brief  Configure TX pin active level logic
-  * @rmtoll CR2          TXINV         LL_LPUART_SetTXPinLevel
+  * @rmtoll CTR2          TXINV         LL_LPUART_SetTXPinLevel
   * @param  LPUARTx LPUART Instance
   * @param  PinInvMethod This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_TXPIN_LEVEL_STANDARD
@@ -1065,12 +1065,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetRXPinLevel(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetTXPinLevel(USART_TypeDef *LPUARTx, uint32_t PinInvMethod)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_TXINV, PinInvMethod);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_TXINV, PinInvMethod);
 }
 
 /**
   * @brief  Retrieve TX pin active level logic configuration
-  * @rmtoll CR2          TXINV         LL_LPUART_GetTXPinLevel
+  * @rmtoll CTR2          TXINV         LL_LPUART_GetTXPinLevel
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_TXPIN_LEVEL_STANDARD
@@ -1078,7 +1078,7 @@ __STATIC_INLINE void LL_LPUART_SetTXPinLevel(USART_TypeDef *LPUARTx, uint32_t Pi
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetTXPinLevel(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_TXINV));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_TXINV));
 }
 
 /**
@@ -1086,7 +1086,7 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTXPinLevel(USART_TypeDef *LPUARTx)
   *
   * @note   Allow to define how Logical data from the data register are send/received :
   *         either in positive/direct logic (1=H, 0=L) or in negative/inverse logic (1=L, 0=H)
-  * @rmtoll CR2          DATAINV       LL_LPUART_SetBinaryDataLogic
+  * @rmtoll CTR2          DATAINV       LL_LPUART_SetBinaryDataLogic
   * @param  LPUARTx LPUART Instance
   * @param  DataLogic This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_BINARY_LOGIC_POSITIVE
@@ -1095,12 +1095,12 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTXPinLevel(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetBinaryDataLogic(USART_TypeDef *LPUARTx, uint32_t DataLogic)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_DATAINV, DataLogic);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_DATAINV, DataLogic);
 }
 
 /**
   * @brief  Retrieve Binary data configuration
-  * @rmtoll CR2          DATAINV       LL_LPUART_GetBinaryDataLogic
+  * @rmtoll CTR2          DATAINV       LL_LPUART_GetBinaryDataLogic
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_BINARY_LOGIC_POSITIVE
@@ -1108,14 +1108,14 @@ __STATIC_INLINE void LL_LPUART_SetBinaryDataLogic(USART_TypeDef *LPUARTx, uint32
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetBinaryDataLogic(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_DATAINV));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_DATAINV));
 }
 
 /**
   * @brief  Configure transfer bit order (either Less or Most Significant Bit First)
   * @note   MSB First means data is transmitted/received with the MSB first, following the start bit.
   *         LSB First means data is transmitted/received with data bit 0 first, following the start bit.
-  * @rmtoll CR2          MSBFIRST      LL_LPUART_SetTransferBitOrder
+  * @rmtoll CTR2          MSBFIRST      LL_LPUART_SetTransferBitOrder
   * @param  LPUARTx LPUART Instance
   * @param  BitOrder This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_BITORDER_LSBFIRST
@@ -1124,14 +1124,14 @@ __STATIC_INLINE uint32_t LL_LPUART_GetBinaryDataLogic(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetTransferBitOrder(USART_TypeDef *LPUARTx, uint32_t BitOrder)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_MSBFIRST, BitOrder);
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_MSBFIRST, BitOrder);
 }
 
 /**
   * @brief  Return transfer bit order (either Less or Most Significant Bit First)
   * @note   MSB First means data is transmitted/received with the MSB first, following the start bit.
   *         LSB First means data is transmitted/received with data bit 0 first, following the start bit.
-  * @rmtoll CR2          MSBFIRST      LL_LPUART_GetTransferBitOrder
+  * @rmtoll CTR2          MSBFIRST      LL_LPUART_GetTransferBitOrder
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_BITORDER_LSBFIRST
@@ -1139,7 +1139,7 @@ __STATIC_INLINE void LL_LPUART_SetTransferBitOrder(USART_TypeDef *LPUARTx, uint3
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetTransferBitOrder(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_MSBFIRST));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_MSBFIRST));
 }
 
 /**
@@ -1156,8 +1156,8 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTransferBitOrder(USART_TypeDef *LPUARTx)
   *         Mute mode inactive (for example, end of block detection in ModBus protocol).
   *         In this case, the whole received character (8-bit) is compared to the ADD[7:0]
   *         value and CMF flag is set on match)
-  * @rmtoll CR2          ADD           LL_LPUART_ConfigNodeAddress\n
-  *         CR2          ADDM7         LL_LPUART_ConfigNodeAddress
+  * @rmtoll CTR2          ADD           LL_LPUART_ConfigNodeAddress\n
+  *         CTR2          ADDM7         LL_LPUART_ConfigNodeAddress
   * @param  LPUARTx LPUART Instance
   * @param  AddressLen This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_ADDRESS_DETECT_4B
@@ -1167,28 +1167,28 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTransferBitOrder(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_ConfigNodeAddress(USART_TypeDef *LPUARTx, uint32_t AddressLen, uint32_t NodeAddress)
 {
-  MODIFY_REG(LPUARTx->CR2, USART_CR2_ADD | USART_CR2_ADDM7,
+  MODIFY_REG(LPUARTx->CTR2, USART_CR2_ADD | USART_CR2_ADDM7,
              (uint32_t)(AddressLen | (NodeAddress << USART_CR2_ADD_Pos)));
 }
 
 /**
-  * @brief  Return 8 bit Address of the LPUART node as set in ADD field of CR2.
+  * @brief  Return 8 bit Address of the LPUART node as set in ADD field of CTR2.
   * @note   If 4-bit Address Detection is selected in ADDM7,
   *         only 4bits (b3-b0) of returned value are relevant (b31-b4 are not relevant)
   *         If 7-bit Address Detection is selected in ADDM7,
   *         only 8bits (b7-b0) of returned value are relevant (b31-b8 are not relevant)
-  * @rmtoll CR2          ADD           LL_LPUART_GetNodeAddress
+  * @rmtoll CTR2          ADD           LL_LPUART_GetNodeAddress
   * @param  LPUARTx LPUART Instance
   * @retval Address of the LPUART node (Value between Min_Data=0 and Max_Data=255)
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetNodeAddress(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_ADD) >> USART_CR2_ADD_Pos);
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_ADD) >> USART_CR2_ADD_Pos);
 }
 
 /**
   * @brief  Return Length of Node Address used in Address Detection mode (7-bit or 4-bit)
-  * @rmtoll CR2          ADDM7         LL_LPUART_GetNodeAddressLen
+  * @rmtoll CTR2          ADDM7         LL_LPUART_GetNodeAddressLen
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_ADDRESS_DETECT_4B
@@ -1196,57 +1196,57 @@ __STATIC_INLINE uint32_t LL_LPUART_GetNodeAddress(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetNodeAddressLen(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_ADDM7));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR2, USART_CR2_ADDM7));
 }
 
 /**
   * @brief  Enable RTS HW Flow Control
-  * @rmtoll CR3          RTSE          LL_LPUART_EnableRTSHWFlowCtrl
+  * @rmtoll CTR3          RTSE          LL_LPUART_EnableRTSHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableRTSHWFlowCtrl(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_RTSE);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_RTSE);
 }
 
 /**
   * @brief  Disable RTS HW Flow Control
-  * @rmtoll CR3          RTSE          LL_LPUART_DisableRTSHWFlowCtrl
+  * @rmtoll CTR3          RTSE          LL_LPUART_DisableRTSHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableRTSHWFlowCtrl(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_RTSE);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_RTSE);
 }
 
 /**
   * @brief  Enable CTS HW Flow Control
-  * @rmtoll CR3          CTSE          LL_LPUART_EnableCTSHWFlowCtrl
+  * @rmtoll CTR3          CTSE          LL_LPUART_EnableCTSHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableCTSHWFlowCtrl(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_CTSE);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_CTSE);
 }
 
 /**
   * @brief  Disable CTS HW Flow Control
-  * @rmtoll CR3          CTSE          LL_LPUART_DisableCTSHWFlowCtrl
+  * @rmtoll CTR3          CTSE          LL_LPUART_DisableCTSHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableCTSHWFlowCtrl(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_CTSE);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_CTSE);
 }
 
 /**
   * @brief  Configure HW Flow Control mode (both CTS and RTS)
-  * @rmtoll CR3          RTSE          LL_LPUART_SetHWFlowCtrl\n
-  *         CR3          CTSE          LL_LPUART_SetHWFlowCtrl
+  * @rmtoll CTR3          RTSE          LL_LPUART_SetHWFlowCtrl\n
+  *         CTR3          CTSE          LL_LPUART_SetHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @param  HardwareFlowControl This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_HWCONTROL_NONE
@@ -1257,13 +1257,13 @@ __STATIC_INLINE void LL_LPUART_DisableCTSHWFlowCtrl(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetHWFlowCtrl(USART_TypeDef *LPUARTx, uint32_t HardwareFlowControl)
 {
-  MODIFY_REG(LPUARTx->CR3, USART_CR3_RTSE | USART_CR3_CTSE, HardwareFlowControl);
+  MODIFY_REG(LPUARTx->CTR3, USART_CR3_RTSE | USART_CR3_CTSE, HardwareFlowControl);
 }
 
 /**
   * @brief  Return HW Flow Control configuration (both CTS and RTS)
-  * @rmtoll CR3          RTSE          LL_LPUART_GetHWFlowCtrl\n
-  *         CR3          CTSE          LL_LPUART_GetHWFlowCtrl
+  * @rmtoll CTR3          RTSE          LL_LPUART_GetHWFlowCtrl\n
+  *         CTR3          CTSE          LL_LPUART_GetHWFlowCtrl
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_HWCONTROL_NONE
@@ -1273,45 +1273,45 @@ __STATIC_INLINE void LL_LPUART_SetHWFlowCtrl(USART_TypeDef *LPUARTx, uint32_t Ha
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetHWFlowCtrl(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR3, USART_CR3_RTSE | USART_CR3_CTSE));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR3, USART_CR3_RTSE | USART_CR3_CTSE));
 }
 
 /**
   * @brief  Enable Overrun detection
-  * @rmtoll CR3          OVRDIS        LL_LPUART_EnableOverrunDetect
+  * @rmtoll CTR3          OVRDIS        LL_LPUART_EnableOverrunDetect
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableOverrunDetect(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_OVRDIS);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_OVRDIS);
 }
 
 /**
   * @brief  Disable Overrun detection
-  * @rmtoll CR3          OVRDIS        LL_LPUART_DisableOverrunDetect
+  * @rmtoll CTR3          OVRDIS        LL_LPUART_DisableOverrunDetect
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableOverrunDetect(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_OVRDIS);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_OVRDIS);
 }
 
 /**
   * @brief  Indicate if Overrun detection is enabled
-  * @rmtoll CR3          OVRDIS        LL_LPUART_IsEnabledOverrunDetect
+  * @rmtoll CTR3          OVRDIS        LL_LPUART_IsEnabledOverrunDetect
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledOverrunDetect(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_OVRDIS) != USART_CR3_OVRDIS) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_OVRDIS) != USART_CR3_OVRDIS) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Select event type for Wake UP Interrupt Flag (WUS[1:0] bits)
-  * @rmtoll CR3          WUS           LL_LPUART_SetWKUPType
+  * @rmtoll CTR3          WUS           LL_LPUART_SetWKUPType
   * @param  LPUARTx LPUART Instance
   * @param  Type This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_WAKEUP_ON_ADDRESS
@@ -1321,12 +1321,12 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledOverrunDetect(USART_TypeDef *LPUARTx
   */
 __STATIC_INLINE void LL_LPUART_SetWKUPType(USART_TypeDef *LPUARTx, uint32_t Type)
 {
-  MODIFY_REG(LPUARTx->CR3, USART_CR3_WUS, Type);
+  MODIFY_REG(LPUARTx->CTR3, USART_CR3_WUS, Type);
 }
 
 /**
   * @brief  Return event type for Wake UP Interrupt Flag (WUS[1:0] bits)
-  * @rmtoll CR3          WUS           LL_LPUART_GetWKUPType
+  * @rmtoll CTR3          WUS           LL_LPUART_GetWKUPType
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_WAKEUP_ON_ADDRESS
@@ -1335,7 +1335,7 @@ __STATIC_INLINE void LL_LPUART_SetWKUPType(USART_TypeDef *LPUARTx, uint32_t Type
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetWKUPType(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR3, USART_CR3_WUS));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR3, USART_CR3_WUS));
 }
 
 /**
@@ -1428,35 +1428,35 @@ __STATIC_INLINE uint32_t LL_LPUART_GetBaudRate(USART_TypeDef *LPUARTx, uint32_t 
 
 /**
   * @brief  Enable Single Wire Half-Duplex mode
-  * @rmtoll CR3          HDSEL         LL_LPUART_EnableHalfDuplex
+  * @rmtoll CTR3          HDSEL         LL_LPUART_EnableHalfDuplex
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableHalfDuplex(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_HDSEL);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_HDSEL);
 }
 
 /**
   * @brief  Disable Single Wire Half-Duplex mode
-  * @rmtoll CR3          HDSEL         LL_LPUART_DisableHalfDuplex
+  * @rmtoll CTR3          HDSEL         LL_LPUART_DisableHalfDuplex
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableHalfDuplex(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_HDSEL);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_HDSEL);
 }
 
 /**
   * @brief  Indicate if Single Wire Half-Duplex mode is enabled
-  * @rmtoll CR3          HDSEL         LL_LPUART_IsEnabledHalfDuplex
+  * @rmtoll CTR3          HDSEL         LL_LPUART_IsEnabledHalfDuplex
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledHalfDuplex(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_HDSEL) == (USART_CR3_HDSEL)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_HDSEL) == (USART_CR3_HDSEL)) ? 1UL : 0UL);
 }
 
 /**
@@ -1469,86 +1469,86 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledHalfDuplex(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Set DEDT (Driver Enable De-Assertion Time), Time value expressed on 5 bits ([4:0] bits).
-  * @rmtoll CR1          DEDT          LL_LPUART_SetDEDeassertionTime
+  * @rmtoll CTR1          DEDT          LL_LPUART_SetDEDeassertionTime
   * @param  LPUARTx LPUART Instance
   * @param  Time Value between Min_Data=0 and Max_Data=31
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_SetDEDeassertionTime(USART_TypeDef *LPUARTx, uint32_t Time)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEDT, Time << USART_CR1_DEDT_Pos);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_DEDT, Time << USART_CR1_DEDT_Pos);
 }
 
 /**
   * @brief  Return DEDT (Driver Enable De-Assertion Time)
-  * @rmtoll CR1          DEDT          LL_LPUART_GetDEDeassertionTime
+  * @rmtoll CTR1          DEDT          LL_LPUART_GetDEDeassertionTime
   * @param  LPUARTx LPUART Instance
   * @retval Time value expressed on 5 bits ([4:0] bits) : c
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDEDeassertionTime(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEDT) >> USART_CR1_DEDT_Pos);
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_DEDT) >> USART_CR1_DEDT_Pos);
 }
 
 /**
   * @brief  Set DEAT (Driver Enable Assertion Time), Time value expressed on 5 bits ([4:0] bits).
-  * @rmtoll CR1          DEAT          LL_LPUART_SetDEAssertionTime
+  * @rmtoll CTR1          DEAT          LL_LPUART_SetDEAssertionTime
   * @param  LPUARTx LPUART Instance
   * @param  Time Value between Min_Data=0 and Max_Data=31
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_SetDEAssertionTime(USART_TypeDef *LPUARTx, uint32_t Time)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEAT, Time << USART_CR1_DEAT_Pos);
+  MODIFY_REG(LPUARTx->CTR1, USART_CR1_DEAT, Time << USART_CR1_DEAT_Pos);
 }
 
 /**
   * @brief  Return DEAT (Driver Enable Assertion Time)
-  * @rmtoll CR1          DEAT          LL_LPUART_GetDEAssertionTime
+  * @rmtoll CTR1          DEAT          LL_LPUART_GetDEAssertionTime
   * @param  LPUARTx LPUART Instance
   * @retval Time value expressed on 5 bits ([4:0] bits) : Time Value between Min_Data=0 and Max_Data=31
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDEAssertionTime(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEAT) >> USART_CR1_DEAT_Pos);
+  return (uint32_t)(READ_BIT(LPUARTx->CTR1, USART_CR1_DEAT) >> USART_CR1_DEAT_Pos);
 }
 
 /**
   * @brief  Enable Driver Enable (DE) Mode
-  * @rmtoll CR3          DEM           LL_LPUART_EnableDEMode
+  * @rmtoll CTR3          DEM           LL_LPUART_EnableDEMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDEMode(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_DEM);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_DEM);
 }
 
 /**
   * @brief  Disable Driver Enable (DE) Mode
-  * @rmtoll CR3          DEM           LL_LPUART_DisableDEMode
+  * @rmtoll CTR3          DEM           LL_LPUART_DisableDEMode
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDEMode(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_DEM);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_DEM);
 }
 
 /**
   * @brief  Indicate if Driver Enable (DE) Mode is enabled
-  * @rmtoll CR3          DEM           LL_LPUART_IsEnabledDEMode
+  * @rmtoll CTR3          DEM           LL_LPUART_IsEnabledDEMode
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledDEMode(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_DEM) == (USART_CR3_DEM)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_DEM) == (USART_CR3_DEM)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Select Driver Enable Polarity
-  * @rmtoll CR3          DEP           LL_LPUART_SetDESignalPolarity
+  * @rmtoll CTR3          DEP           LL_LPUART_SetDESignalPolarity
   * @param  LPUARTx LPUART Instance
   * @param  Polarity This parameter can be one of the following values:
   *         @arg @ref LL_LPUART_DE_POLARITY_HIGH
@@ -1557,12 +1557,12 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledDEMode(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetDESignalPolarity(USART_TypeDef *LPUARTx, uint32_t Polarity)
 {
-  MODIFY_REG(LPUARTx->CR3, USART_CR3_DEP, Polarity);
+  MODIFY_REG(LPUARTx->CTR3, USART_CR3_DEP, Polarity);
 }
 
 /**
   * @brief  Return Driver Enable Polarity
-  * @rmtoll CR3          DEP           LL_LPUART_GetDESignalPolarity
+  * @rmtoll CTR3          DEP           LL_LPUART_GetDESignalPolarity
   * @param  LPUARTx LPUART Instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_LPUART_DE_POLARITY_HIGH
@@ -1570,7 +1570,7 @@ __STATIC_INLINE void LL_LPUART_SetDESignalPolarity(USART_TypeDef *LPUARTx, uint3
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDESignalPolarity(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR3, USART_CR3_DEP));
+  return (uint32_t)(READ_BIT(LPUARTx->CTR3, USART_CR3_DEP));
 }
 
 /**
@@ -1927,13 +1927,13 @@ __STATIC_INLINE void LL_LPUART_ClearFlag_WKUP(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Enable IDLE Interrupt
-  * @rmtoll CR1          IDLEIE        LL_LPUART_EnableIT_IDLE
+  * @rmtoll CTR1          IDLEIE        LL_LPUART_EnableIT_IDLE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_IDLE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_IDLEIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_IDLEIE);
 }
 
 /* Legacy define */
@@ -1941,24 +1941,24 @@ __STATIC_INLINE void LL_LPUART_EnableIT_IDLE(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Enable RX Not Empty and RX FIFO Not Empty Interrupt
-  * @rmtoll CR1        RXNEIE_RXFNEIE  LL_LPUART_EnableIT_RXNE_RXFNE
+  * @rmtoll CTR1        RXNEIE_RXFNEIE  LL_LPUART_EnableIT_RXNE_RXFNE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_RXNE_RXFNE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_RXNEIE_RXFNEIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_RXNEIE_RXFNEIE);
 }
 
 /**
   * @brief  Enable Transmission Complete Interrupt
-  * @rmtoll CR1          TCIE          LL_LPUART_EnableIT_TC
+  * @rmtoll CTR1          TCIE          LL_LPUART_EnableIT_TC
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_TC(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_TCIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_TCIE);
 }
 
 /* Legacy define */
@@ -1966,57 +1966,57 @@ __STATIC_INLINE void LL_LPUART_EnableIT_TC(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Enable TX Empty and TX FIFO Not Full Interrupt
-  * @rmtoll CR1         TXEIE_TXFNFIE  LL_LPUART_EnableIT_TXE_TXFNF
+  * @rmtoll CTR1         TXEIE_TXFNFIE  LL_LPUART_EnableIT_TXE_TXFNF
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_TXE_TXFNF(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_TXEIE_TXFNFIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_TXEIE_TXFNFIE);
 }
 
 /**
   * @brief  Enable Parity Error Interrupt
-  * @rmtoll CR1          PEIE          LL_LPUART_EnableIT_PE
+  * @rmtoll CTR1          PEIE          LL_LPUART_EnableIT_PE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_PE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_PEIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_PEIE);
 }
 
 /**
   * @brief  Enable Character Match Interrupt
-  * @rmtoll CR1          CMIE          LL_LPUART_EnableIT_CM
+  * @rmtoll CTR1          CMIE          LL_LPUART_EnableIT_CM
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_CM(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_CMIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_CMIE);
 }
 
 /**
   * @brief  Enable TX FIFO Empty Interrupt
-  * @rmtoll CR1          TXFEIE        LL_LPUART_EnableIT_TXFE
+  * @rmtoll CTR1          TXFEIE        LL_LPUART_EnableIT_TXFE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_TXFE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_TXFEIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_TXFEIE);
 }
 
 /**
   * @brief  Enable RX FIFO Full Interrupt
-  * @rmtoll CR1          RXFFIE        LL_LPUART_EnableIT_RXFF
+  * @rmtoll CTR1          RXFFIE        LL_LPUART_EnableIT_RXFF
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_RXFF(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR1, USART_CR1_RXFFIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR1, USART_CR1_RXFFIE);
 }
 
 /**
@@ -2025,68 +2025,68 @@ __STATIC_INLINE void LL_LPUART_EnableIT_RXFF(USART_TypeDef *LPUARTx)
   *         error, overrun error or noise flag (FE=1 or ORE=1 or NF=1 in the LPUARTx_ISR register).
   *         - 0: Interrupt is inhibited
   *         - 1: An interrupt is generated when FE=1 or ORE=1 or NF=1 in the LPUARTx_ISR register.
-  * @rmtoll CR3          EIE           LL_LPUART_EnableIT_ERROR
+  * @rmtoll CTR3          EIE           LL_LPUART_EnableIT_ERROR
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_ERROR(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_EIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_EIE);
 }
 
 /**
   * @brief  Enable CTS Interrupt
-  * @rmtoll CR3          CTSIE         LL_LPUART_EnableIT_CTS
+  * @rmtoll CTR3          CTSIE         LL_LPUART_EnableIT_CTS
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_CTS(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_CTSIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_CTSIE);
 }
 
 /**
   * @brief  Enable Wake Up from Stop Mode Interrupt
-  * @rmtoll CR3          WUFIE         LL_LPUART_EnableIT_WKUP
+  * @rmtoll CTR3          WUFIE         LL_LPUART_EnableIT_WKUP
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_WKUP(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_WUFIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_WUFIE);
 }
 
 /**
   * @brief  Enable TX FIFO Threshold Interrupt
-  * @rmtoll CR3          TXFTIE        LL_LPUART_EnableIT_TXFT
+  * @rmtoll CTR3          TXFTIE        LL_LPUART_EnableIT_TXFT
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_TXFT(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_TXFTIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_TXFTIE);
 }
 
 /**
   * @brief  Enable RX FIFO Threshold Interrupt
-  * @rmtoll CR3          RXFTIE        LL_LPUART_EnableIT_RXFT
+  * @rmtoll CTR3          RXFTIE        LL_LPUART_EnableIT_RXFT
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableIT_RXFT(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_RXFTIE);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_RXFTIE);
 }
 
 /**
   * @brief  Disable IDLE Interrupt
-  * @rmtoll CR1          IDLEIE        LL_LPUART_DisableIT_IDLE
+  * @rmtoll CTR1          IDLEIE        LL_LPUART_DisableIT_IDLE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_IDLE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_IDLEIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_IDLEIE);
 }
 
 /* Legacy define */
@@ -2094,24 +2094,24 @@ __STATIC_INLINE void LL_LPUART_DisableIT_IDLE(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Disable RX Not Empty and RX FIFO Not Empty Interrupt
-  * @rmtoll CR1        RXNEIE_RXFNEIE  LL_LPUART_DisableIT_RXNE_RXFNE
+  * @rmtoll CTR1        RXNEIE_RXFNEIE  LL_LPUART_DisableIT_RXNE_RXFNE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_RXNE_RXFNE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_RXNEIE_RXFNEIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_RXNEIE_RXFNEIE);
 }
 
 /**
   * @brief  Disable Transmission Complete Interrupt
-  * @rmtoll CR1          TCIE          LL_LPUART_DisableIT_TC
+  * @rmtoll CTR1          TCIE          LL_LPUART_DisableIT_TC
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_TC(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_TCIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_TCIE);
 }
 
 /* Legacy define */
@@ -2119,57 +2119,57 @@ __STATIC_INLINE void LL_LPUART_DisableIT_TC(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Disable TX Empty and TX FIFO Not Full Interrupt
-  * @rmtoll CR1        TXEIE_TXFNFIE  LL_LPUART_DisableIT_TXE_TXFNF
+  * @rmtoll CTR1        TXEIE_TXFNFIE  LL_LPUART_DisableIT_TXE_TXFNF
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_TXE_TXFNF(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_TXEIE_TXFNFIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_TXEIE_TXFNFIE);
 }
 
 /**
   * @brief  Disable Parity Error Interrupt
-  * @rmtoll CR1          PEIE          LL_LPUART_DisableIT_PE
+  * @rmtoll CTR1          PEIE          LL_LPUART_DisableIT_PE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_PE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_PEIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_PEIE);
 }
 
 /**
   * @brief  Disable Character Match Interrupt
-  * @rmtoll CR1          CMIE          LL_LPUART_DisableIT_CM
+  * @rmtoll CTR1          CMIE          LL_LPUART_DisableIT_CM
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_CM(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_CMIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_CMIE);
 }
 
 /**
   * @brief  Disable TX FIFO Empty Interrupt
-  * @rmtoll CR1          TXFEIE        LL_LPUART_DisableIT_TXFE
+  * @rmtoll CTR1          TXFEIE        LL_LPUART_DisableIT_TXFE
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_TXFE(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_TXFEIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_TXFEIE);
 }
 
 /**
   * @brief  Disable RX FIFO Full Interrupt
-  * @rmtoll CR1          RXFFIE        LL_LPUART_DisableIT_RXFF
+  * @rmtoll CTR1          RXFFIE        LL_LPUART_DisableIT_RXFF
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_RXFF(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR1, USART_CR1_RXFFIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR1, USART_CR1_RXFFIE);
 }
 
 /**
@@ -2178,68 +2178,68 @@ __STATIC_INLINE void LL_LPUART_DisableIT_RXFF(USART_TypeDef *LPUARTx)
   *         error, overrun error or noise flag (FE=1 or ORE=1 or NF=1 in the LPUARTx_ISR register).
   *         - 0: Interrupt is inhibited
   *         - 1: An interrupt is generated when FE=1 or ORE=1 or NF=1 in the LPUARTx_ISR register.
-  * @rmtoll CR3          EIE           LL_LPUART_DisableIT_ERROR
+  * @rmtoll CTR3          EIE           LL_LPUART_DisableIT_ERROR
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_ERROR(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_EIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_EIE);
 }
 
 /**
   * @brief  Disable CTS Interrupt
-  * @rmtoll CR3          CTSIE         LL_LPUART_DisableIT_CTS
+  * @rmtoll CTR3          CTSIE         LL_LPUART_DisableIT_CTS
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_CTS(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_CTSIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_CTSIE);
 }
 
 /**
   * @brief  Disable Wake Up from Stop Mode Interrupt
-  * @rmtoll CR3          WUFIE         LL_LPUART_DisableIT_WKUP
+  * @rmtoll CTR3          WUFIE         LL_LPUART_DisableIT_WKUP
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_WKUP(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_WUFIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_WUFIE);
 }
 
 /**
   * @brief  Disable TX FIFO Threshold Interrupt
-  * @rmtoll CR3          TXFTIE        LL_LPUART_DisableIT_TXFT
+  * @rmtoll CTR3          TXFTIE        LL_LPUART_DisableIT_TXFT
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_TXFT(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_TXFTIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_TXFTIE);
 }
 
 /**
   * @brief  Disable RX FIFO Threshold Interrupt
-  * @rmtoll CR3          RXFTIE        LL_LPUART_DisableIT_RXFT
+  * @rmtoll CTR3          RXFTIE        LL_LPUART_DisableIT_RXFT
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableIT_RXFT(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_RXFTIE);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_RXFTIE);
 }
 
 /**
   * @brief  Check if the LPUART IDLE Interrupt  source is enabled or disabled.
-  * @rmtoll CR1          IDLEIE        LL_LPUART_IsEnabledIT_IDLE
+  * @rmtoll CTR1          IDLEIE        LL_LPUART_IsEnabledIT_IDLE
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_IDLE(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_IDLEIE) == (USART_CR1_IDLEIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_IDLEIE) == (USART_CR1_IDLEIE)) ? 1UL : 0UL);
 }
 
 /* Legacy define */
@@ -2247,24 +2247,24 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_IDLE(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Check if the LPUART RX Not Empty and LPUART RX FIFO Not Empty Interrupt is enabled or disabled.
-  * @rmtoll CR1        RXNEIE_RXFNEIE  LL_LPUART_IsEnabledIT_RXNE_RXFNE
+  * @rmtoll CTR1        RXNEIE_RXFNEIE  LL_LPUART_IsEnabledIT_RXNE_RXFNE
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_RXNE_RXFNE(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_RXNEIE_RXFNEIE) == (USART_CR1_RXNEIE_RXFNEIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_RXNEIE_RXFNEIE) == (USART_CR1_RXNEIE_RXFNEIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART Transmission Complete Interrupt is enabled or disabled.
-  * @rmtoll CR1          TCIE          LL_LPUART_IsEnabledIT_TC
+  * @rmtoll CTR1          TCIE          LL_LPUART_IsEnabledIT_TC
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_TC(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_TCIE) == (USART_CR1_TCIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_TCIE) == (USART_CR1_TCIE)) ? 1UL : 0UL);
 }
 
 /* Legacy define */
@@ -2272,112 +2272,112 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_TC(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Check if the LPUART TX Empty and LPUART TX FIFO Not Full Interrupt is enabled or disabled
-  * @rmtoll CR1         TXEIE_TXFNFIE  LL_LPUART_IsEnabledIT_TXE_TXFNF
+  * @rmtoll CTR1         TXEIE_TXFNFIE  LL_LPUART_IsEnabledIT_TXE_TXFNF
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_TXE_TXFNF(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_TXEIE_TXFNFIE) == (USART_CR1_TXEIE_TXFNFIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_TXEIE_TXFNFIE) == (USART_CR1_TXEIE_TXFNFIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART Parity Error Interrupt is enabled or disabled.
-  * @rmtoll CR1          PEIE          LL_LPUART_IsEnabledIT_PE
+  * @rmtoll CTR1          PEIE          LL_LPUART_IsEnabledIT_PE
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_PE(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_PEIE) == (USART_CR1_PEIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_PEIE) == (USART_CR1_PEIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART Character Match Interrupt is enabled or disabled.
-  * @rmtoll CR1          CMIE          LL_LPUART_IsEnabledIT_CM
+  * @rmtoll CTR1          CMIE          LL_LPUART_IsEnabledIT_CM
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_CM(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_CMIE) == (USART_CR1_CMIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_CMIE) == (USART_CR1_CMIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART TX FIFO Empty Interrupt is enabled or disabled
-  * @rmtoll CR1          TXFEIE        LL_LPUART_IsEnabledIT_TXFE
+  * @rmtoll CTR1          TXFEIE        LL_LPUART_IsEnabledIT_TXFE
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_TXFE(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_TXFEIE) == (USART_CR1_TXFEIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_TXFEIE) == (USART_CR1_TXFEIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART RX FIFO Full Interrupt is enabled or disabled
-  * @rmtoll CR1          RXFFIE        LL_LPUART_IsEnabledIT_RXFF
+  * @rmtoll CTR1          RXFFIE        LL_LPUART_IsEnabledIT_RXFF
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_RXFF(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR1, USART_CR1_RXFFIE) == (USART_CR1_RXFFIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR1, USART_CR1_RXFFIE) == (USART_CR1_RXFFIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART Error Interrupt is enabled or disabled.
-  * @rmtoll CR3          EIE           LL_LPUART_IsEnabledIT_ERROR
+  * @rmtoll CTR3          EIE           LL_LPUART_IsEnabledIT_ERROR
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_ERROR(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_EIE) == (USART_CR3_EIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_EIE) == (USART_CR3_EIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART CTS Interrupt is enabled or disabled.
-  * @rmtoll CR3          CTSIE         LL_LPUART_IsEnabledIT_CTS
+  * @rmtoll CTR3          CTSIE         LL_LPUART_IsEnabledIT_CTS
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_CTS(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_CTSIE) == (USART_CR3_CTSIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_CTSIE) == (USART_CR3_CTSIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if the LPUART Wake Up from Stop Mode Interrupt is enabled or disabled.
-  * @rmtoll CR3          WUFIE         LL_LPUART_IsEnabledIT_WKUP
+  * @rmtoll CTR3          WUFIE         LL_LPUART_IsEnabledIT_WKUP
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_WKUP(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_WUFIE) == (USART_CR3_WUFIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_WUFIE) == (USART_CR3_WUFIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if LPUART TX FIFO Threshold Interrupt is enabled or disabled
-  * @rmtoll CR3          TXFTIE        LL_LPUART_IsEnabledIT_TXFT
+  * @rmtoll CTR3          TXFTIE        LL_LPUART_IsEnabledIT_TXFT
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_TXFT(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_TXFTIE) == (USART_CR3_TXFTIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_TXFTIE) == (USART_CR3_TXFTIE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Check if LPUART RX FIFO Threshold Interrupt is enabled or disabled
-  * @rmtoll CR3          RXFTIE        LL_LPUART_IsEnabledIT_RXFT
+  * @rmtoll CTR3          RXFTIE        LL_LPUART_IsEnabledIT_RXFT
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_RXFT(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_RXFTIE) == (USART_CR3_RXFTIE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_RXFTIE) == (USART_CR3_RXFTIE)) ? 1UL : 0UL);
 }
 
 /**
@@ -2390,101 +2390,101 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledIT_RXFT(USART_TypeDef *LPUARTx)
 
 /**
   * @brief  Enable DMA Mode for reception
-  * @rmtoll CR3          DMAR          LL_LPUART_EnableDMAReq_RX
+  * @rmtoll CTR3          DMAR          LL_LPUART_EnableDMAReq_RX
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDMAReq_RX(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_DMAR);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_DMAR);
 }
 
 /**
   * @brief  Disable DMA Mode for reception
-  * @rmtoll CR3          DMAR          LL_LPUART_DisableDMAReq_RX
+  * @rmtoll CTR3          DMAR          LL_LPUART_DisableDMAReq_RX
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDMAReq_RX(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_DMAR);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_DMAR);
 }
 
 /**
   * @brief  Check if DMA Mode is enabled for reception
-  * @rmtoll CR3          DMAR          LL_LPUART_IsEnabledDMAReq_RX
+  * @rmtoll CTR3          DMAR          LL_LPUART_IsEnabledDMAReq_RX
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledDMAReq_RX(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_DMAR) == (USART_CR3_DMAR)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_DMAR) == (USART_CR3_DMAR)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable DMA Mode for transmission
-  * @rmtoll CR3          DMAT          LL_LPUART_EnableDMAReq_TX
+  * @rmtoll CTR3          DMAT          LL_LPUART_EnableDMAReq_TX
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDMAReq_TX(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_SET_BIT(LPUARTx->CR3, USART_CR3_DMAT);
+  ATOMIC_SET_BIT(LPUARTx->CTR3, USART_CR3_DMAT);
 }
 
 /**
   * @brief  Disable DMA Mode for transmission
-  * @rmtoll CR3          DMAT          LL_LPUART_DisableDMAReq_TX
+  * @rmtoll CTR3          DMAT          LL_LPUART_DisableDMAReq_TX
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDMAReq_TX(USART_TypeDef *LPUARTx)
 {
-  ATOMIC_CLEAR_BIT(LPUARTx->CR3, USART_CR3_DMAT);
+  ATOMIC_CLEAR_BIT(LPUARTx->CTR3, USART_CR3_DMAT);
 }
 
 /**
   * @brief  Check if DMA Mode is enabled for transmission
-  * @rmtoll CR3          DMAT          LL_LPUART_IsEnabledDMAReq_TX
+  * @rmtoll CTR3          DMAT          LL_LPUART_IsEnabledDMAReq_TX
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledDMAReq_TX(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_DMAT) == (USART_CR3_DMAT)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_DMAT) == (USART_CR3_DMAT)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable DMA Disabling on Reception Error
-  * @rmtoll CR3          DDRE          LL_LPUART_EnableDMADeactOnRxErr
+  * @rmtoll CTR3          DDRE          LL_LPUART_EnableDMADeactOnRxErr
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_EnableDMADeactOnRxErr(USART_TypeDef *LPUARTx)
 {
-  SET_BIT(LPUARTx->CR3, USART_CR3_DDRE);
+  SET_BIT(LPUARTx->CTR3, USART_CR3_DDRE);
 }
 
 /**
   * @brief  Disable DMA Disabling on Reception Error
-  * @rmtoll CR3          DDRE          LL_LPUART_DisableDMADeactOnRxErr
+  * @rmtoll CTR3          DDRE          LL_LPUART_DisableDMADeactOnRxErr
   * @param  LPUARTx LPUART Instance
   * @retval None
   */
 __STATIC_INLINE void LL_LPUART_DisableDMADeactOnRxErr(USART_TypeDef *LPUARTx)
 {
-  CLEAR_BIT(LPUARTx->CR3, USART_CR3_DDRE);
+  CLEAR_BIT(LPUARTx->CTR3, USART_CR3_DDRE);
 }
 
 /**
   * @brief  Indicate if DMA Disabling on Reception Error is disabled
-  * @rmtoll CR3          DDRE          LL_LPUART_IsEnabledDMADeactOnRxErr
+  * @rmtoll CTR3          DDRE          LL_LPUART_IsEnabledDMADeactOnRxErr
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_LPUART_IsEnabledDMADeactOnRxErr(USART_TypeDef *LPUARTx)
 {
-  return ((READ_BIT(LPUARTx->CR3, USART_CR3_DDRE) == (USART_CR3_DDRE)) ? 1UL : 0UL);
+  return ((READ_BIT(LPUARTx->CTR3, USART_CR3_DDRE) == (USART_CR3_DDRE)) ? 1UL : 0UL);
 }
 
 /**

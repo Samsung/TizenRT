@@ -97,7 +97,6 @@ int up_check_proddownload(void)
  *   and mapped but before any devices have been initialized.
  *
  ************************************************************************************/
-
 void board_initialize(void)
 {
     stm32h745_haltick_init();
@@ -130,6 +129,9 @@ void board_initialize(void)
 #endif
 
     //up_flashinitialize();
+#if defined(CONFIG_TIMER)
+    stm32h745_tim_init("/dev/timer0", 16);
+#endif
 
     lldbg("Board init \r\n");
 }

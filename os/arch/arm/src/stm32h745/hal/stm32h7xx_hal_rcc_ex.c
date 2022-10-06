@@ -893,12 +893,12 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     assert_param(IS_RCC_RTCCLKSOURCE(PeriphClkInit->RTCClockSelection));
 
     /* Enable write access to Backup domain */
-    SET_BIT(PWR->CR1, PWR_CR1_DBP);
+    SET_BIT(PWR->CTR1, PWR_CR1_DBP);
 
     /* Wait for Backup domain Write protection disable */
     tickstart = HAL_GetTick();
 
-    while((PWR->CR1 & PWR_CR1_DBP) == 0U)
+    while((PWR->CTR1 & PWR_CR1_DBP) == 0U)
     {
       if((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
       {

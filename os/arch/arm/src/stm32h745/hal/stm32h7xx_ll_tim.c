@@ -368,7 +368,7 @@ ErrorStatus LL_TIM_Init(TIM_TypeDef *TIMx, LL_TIM_InitTypeDef *TIM_InitStruct)
   assert_param(IS_LL_TIM_COUNTERMODE(TIM_InitStruct->CounterMode));
   assert_param(IS_LL_TIM_CLOCKDIVISION(TIM_InitStruct->ClockDivision));
 
-  tmpcr1 = LL_TIM_ReadReg(TIMx, CR1);
+  tmpcr1 = LL_TIM_ReadReg(TIMx, CTR1);
 
   if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(TIMx))
   {
@@ -382,8 +382,8 @@ ErrorStatus LL_TIM_Init(TIM_TypeDef *TIMx, LL_TIM_InitTypeDef *TIM_InitStruct)
     MODIFY_REG(tmpcr1, TIM_CR1_CKD, TIM_InitStruct->ClockDivision);
   }
 
-  /* Write to TIMx CR1 */
-  LL_TIM_WriteReg(TIMx, CR1, tmpcr1);
+  /* Write to TIMx CTR1 */
+  LL_TIM_WriteReg(TIMx, CTR1, tmpcr1);
 
   /* Set the Autoreload value */
   LL_TIM_SetAutoReload(TIMx, TIM_InitStruct->Autoreload);
@@ -664,8 +664,8 @@ ErrorStatus LL_TIM_HALLSENSOR_Init(TIM_TypeDef *TIMx, LL_TIM_HALLSENSOR_InitType
   /* Disable the CC1 and CC2: Reset the CC1E and CC2E Bits */
   TIMx->CCER &= (uint32_t)~(TIM_CCER_CC1E | TIM_CCER_CC2E);
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 = LL_TIM_ReadReg(TIMx, CR2);
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 = LL_TIM_ReadReg(TIMx, CTR2);
 
   /* Get the TIMx CCMR1 register value */
   tmpccmr1 = LL_TIM_ReadReg(TIMx, CCMR1);
@@ -702,8 +702,8 @@ ErrorStatus LL_TIM_HALLSENSOR_Init(TIM_TypeDef *TIMx, LL_TIM_HALLSENSOR_InitType
   tmpccer |= (uint32_t)(TIM_HallSensorInitStruct->IC1Polarity);
   tmpccer |= (uint32_t)(TIM_CCER_CC1E | TIM_CCER_CC2E);
 
-  /* Write to TIMx CR2 */
-  LL_TIM_WriteReg(TIMx, CR2, tmpcr2);
+  /* Write to TIMx CTR2 */
+  LL_TIM_WriteReg(TIMx, CTR2, tmpcr2);
 
   /* Write to TIMx SMCR */
   LL_TIM_WriteReg(TIMx, SMCR, tmpsmcr);
@@ -870,8 +870,8 @@ static ErrorStatus OC1Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
   /* Get the TIMx CCER register value */
   tmpccer = LL_TIM_ReadReg(TIMx, CCER);
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 = LL_TIM_ReadReg(TIMx, CR2);
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 = LL_TIM_ReadReg(TIMx, CTR2);
 
   /* Get the TIMx CCMR1 register value */
   tmpccmr1 = LL_TIM_ReadReg(TIMx, CCMR1);
@@ -906,8 +906,8 @@ static ErrorStatus OC1Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     MODIFY_REG(tmpcr2, TIM_CR2_OIS1N, TIM_OCInitStruct->OCNIdleState << 1U);
   }
 
-  /* Write to TIMx CR2 */
-  LL_TIM_WriteReg(TIMx, CR2, tmpcr2);
+  /* Write to TIMx CTR2 */
+  LL_TIM_WriteReg(TIMx, CTR2, tmpcr2);
 
   /* Write to TIMx CCMR1 */
   LL_TIM_WriteReg(TIMx, CCMR1, tmpccmr1);
@@ -949,8 +949,8 @@ static ErrorStatus OC2Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
   /* Get the TIMx CCER register value */
   tmpccer =  LL_TIM_ReadReg(TIMx, CCER);
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 = LL_TIM_ReadReg(TIMx, CR2);
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 = LL_TIM_ReadReg(TIMx, CTR2);
 
   /* Get the TIMx CCMR1 register value */
   tmpccmr1 = LL_TIM_ReadReg(TIMx, CCMR1);
@@ -985,8 +985,8 @@ static ErrorStatus OC2Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     MODIFY_REG(tmpcr2, TIM_CR2_OIS2N, TIM_OCInitStruct->OCNIdleState << 3U);
   }
 
-  /* Write to TIMx CR2 */
-  LL_TIM_WriteReg(TIMx, CR2, tmpcr2);
+  /* Write to TIMx CTR2 */
+  LL_TIM_WriteReg(TIMx, CTR2, tmpcr2);
 
   /* Write to TIMx CCMR1 */
   LL_TIM_WriteReg(TIMx, CCMR1, tmpccmr1);
@@ -1028,8 +1028,8 @@ static ErrorStatus OC3Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
   /* Get the TIMx CCER register value */
   tmpccer =  LL_TIM_ReadReg(TIMx, CCER);
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 = LL_TIM_ReadReg(TIMx, CR2);
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 = LL_TIM_ReadReg(TIMx, CTR2);
 
   /* Get the TIMx CCMR2 register value */
   tmpccmr2 = LL_TIM_ReadReg(TIMx, CCMR2);
@@ -1064,8 +1064,8 @@ static ErrorStatus OC3Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     MODIFY_REG(tmpcr2, TIM_CR2_OIS3N, TIM_OCInitStruct->OCNIdleState << 5U);
   }
 
-  /* Write to TIMx CR2 */
-  LL_TIM_WriteReg(TIMx, CR2, tmpcr2);
+  /* Write to TIMx CTR2 */
+  LL_TIM_WriteReg(TIMx, CTR2, tmpcr2);
 
   /* Write to TIMx CCMR2 */
   LL_TIM_WriteReg(TIMx, CCMR2, tmpccmr2);
@@ -1107,8 +1107,8 @@ static ErrorStatus OC4Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
   /* Get the TIMx CCER register value */
   tmpccer = LL_TIM_ReadReg(TIMx, CCER);
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  LL_TIM_ReadReg(TIMx, CR2);
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  LL_TIM_ReadReg(TIMx, CTR2);
 
   /* Get the TIMx CCMR2 register value */
   tmpccmr2 = LL_TIM_ReadReg(TIMx, CCMR2);
@@ -1134,8 +1134,8 @@ static ErrorStatus OC4Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     MODIFY_REG(tmpcr2, TIM_CR2_OIS4, TIM_OCInitStruct->OCIdleState << 6U);
   }
 
-  /* Write to TIMx CR2 */
-  LL_TIM_WriteReg(TIMx, CR2, tmpcr2);
+  /* Write to TIMx CTR2 */
+  LL_TIM_WriteReg(TIMx, CTR2, tmpcr2);
 
   /* Write to TIMx CCMR2 */
   LL_TIM_WriteReg(TIMx, CCMR2, tmpccmr2);
@@ -1194,7 +1194,7 @@ static ErrorStatus OC5Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     assert_param(IS_LL_TIM_OCIDLESTATE(TIM_OCInitStruct->OCIdleState));
 
     /* Set the Output Idle state */
-    MODIFY_REG(TIMx->CR2, TIM_CR2_OIS5, TIM_OCInitStruct->OCIdleState << 8U);
+    MODIFY_REG(TIMx->CTR2, TIM_CR2_OIS5, TIM_OCInitStruct->OCIdleState << 8U);
 
   }
 
@@ -1255,7 +1255,7 @@ static ErrorStatus OC6Config(TIM_TypeDef *TIMx, LL_TIM_OC_InitTypeDef *TIM_OCIni
     assert_param(IS_LL_TIM_OCIDLESTATE(TIM_OCInitStruct->OCIdleState));
 
     /* Set the Output Idle state */
-    MODIFY_REG(TIMx->CR2, TIM_CR2_OIS6, TIM_OCInitStruct->OCIdleState << 10U);
+    MODIFY_REG(TIMx->CTR2, TIM_CR2_OIS6, TIM_OCInitStruct->OCIdleState << 10U);
   }
 
   /* Write to TIMx CCMR3 */

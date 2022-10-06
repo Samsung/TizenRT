@@ -352,7 +352,7 @@ extern "C" {
 
   /**
   * @brief  Set the voltage Regulator mode during deep sleep mode
-  * @rmtoll CR1    LPDS         LL_PWR_SetRegulModeDS
+  * @rmtoll CTR1    LPDS         LL_PWR_SetRegulModeDS
   * @param  RegulMode This parameter can be one of the following values:
   *         @arg @ref LL_PWR_REGU_DSMODE_MAIN
   *         @arg @ref LL_PWR_REGU_DSMODE_LOW_POWER
@@ -360,54 +360,54 @@ extern "C" {
   */
 __STATIC_INLINE void LL_PWR_SetRegulModeDS(uint32_t RegulMode)
 {
-  MODIFY_REG(PWR->CR1, PWR_CR1_LPDS, RegulMode);
+  MODIFY_REG(PWR->CTR1, PWR_CR1_LPDS, RegulMode);
 }
 
 /**
   * @brief  Get the voltage Regulator mode during deep sleep mode
-  * @rmtoll CR1    LPDS         LL_PWR_GetRegulModeDS
+  * @rmtoll CTR1    LPDS         LL_PWR_GetRegulModeDS
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_REGU_DSMODE_MAIN
   *         @arg @ref LL_PWR_REGU_DSMODE_LOW_POWER
   */
 __STATIC_INLINE uint32_t LL_PWR_GetRegulModeDS(void)
 {
-  return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_LPDS));
+  return (uint32_t)(READ_BIT(PWR->CTR1, PWR_CR1_LPDS));
 }
 
 /**
   * @brief  Enable Power Voltage Detector
-  * @rmtoll CR1    PVDEN       LL_PWR_EnablePVD
+  * @rmtoll CTR1    PVDEN       LL_PWR_EnablePVD
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnablePVD(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_PVDEN);
+  SET_BIT(PWR->CTR1, PWR_CR1_PVDEN);
 }
 
 /**
   * @brief  Disable Power Voltage Detector
-  * @rmtoll CR1    PVDEN       LL_PWR_DisablePVD
+  * @rmtoll CTR1    PVDEN       LL_PWR_DisablePVD
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisablePVD(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_PVDEN);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_PVDEN);
 }
 
 /**
   * @brief  Check if Power Voltage Detector is enabled
-  * @rmtoll CR1    PVDEN       LL_PWR_IsEnabledPVD
+  * @rmtoll CTR1    PVDEN       LL_PWR_IsEnabledPVD
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledPVD(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_PVDEN) == (PWR_CR1_PVDEN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_PVDEN) == (PWR_CR1_PVDEN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Configure the voltage threshold detected by the Power Voltage Detector
-  * @rmtoll CR1    PLS       LL_PWR_SetPVDLevel
+  * @rmtoll CTR1    PLS       LL_PWR_SetPVDLevel
   * @param  PVDLevel This parameter can be one of the following values:
   *         @arg @ref LL_PWR_PVDLEVEL_0
   *         @arg @ref LL_PWR_PVDLEVEL_1
@@ -421,12 +421,12 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledPVD(void)
   */
 __STATIC_INLINE void LL_PWR_SetPVDLevel(uint32_t PVDLevel)
 {
-  MODIFY_REG(PWR->CR1, PWR_CR1_PLS, PVDLevel);
+  MODIFY_REG(PWR->CTR1, PWR_CR1_PLS, PVDLevel);
 }
 
 /**
   * @brief  Get the voltage threshold detection
-  * @rmtoll CR1    PLS       LL_PWR_GetPVDLevel
+  * @rmtoll CTR1    PLS       LL_PWR_GetPVDLevel
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_PVDLEVEL_0
   *         @arg @ref LL_PWR_PVDLEVEL_1
@@ -439,136 +439,136 @@ __STATIC_INLINE void LL_PWR_SetPVDLevel(uint32_t PVDLevel)
   */
 __STATIC_INLINE uint32_t LL_PWR_GetPVDLevel(void)
 {
-  return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_PLS));
+  return (uint32_t)(READ_BIT(PWR->CTR1, PWR_CR1_PLS));
 }
 
 /**
   * @brief  Enable access to the backup domain
-  * @rmtoll CR1    DBP       LL_PWR_EnableBkUpAccess
+  * @rmtoll CTR1    DBP       LL_PWR_EnableBkUpAccess
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableBkUpAccess(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_DBP);
+  SET_BIT(PWR->CTR1, PWR_CR1_DBP);
 }
 
 /**
   * @brief  Disable access to the backup domain
-  * @rmtoll CR1    DBP       LL_PWR_DisableBkUpAccess
+  * @rmtoll CTR1    DBP       LL_PWR_DisableBkUpAccess
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableBkUpAccess(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_DBP);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_DBP);
 }
 
 /**
   * @brief  Check if the backup domain is enabled
-  * @rmtoll CR1    DBP       LL_PWR_IsEnabledBkUpAccess
+  * @rmtoll CTR1    DBP       LL_PWR_IsEnabledBkUpAccess
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledBkUpAccess(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_DBP) == (PWR_CR1_DBP)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_DBP) == (PWR_CR1_DBP)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable the Flash Power Down in Stop Mode
-  * @rmtoll CR1    FLPS       LL_PWR_EnableFlashPowerDown
+  * @rmtoll CTR1    FLPS       LL_PWR_EnableFlashPowerDown
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableFlashPowerDown(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_FLPS);
+  SET_BIT(PWR->CTR1, PWR_CR1_FLPS);
 }
 
 /**
   * @brief  Disable the Flash Power Down in Stop Mode
-  * @rmtoll CR1    FLPS       LL_PWR_DisableFlashPowerDown
+  * @rmtoll CTR1    FLPS       LL_PWR_DisableFlashPowerDown
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableFlashPowerDown(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_FLPS);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_FLPS);
 }
 
 /**
   * @brief  Check if the Flash Power Down in Stop Mode is enabled
-  * @rmtoll CR1    FLPS       LL_PWR_IsEnabledFlashPowerDown
+  * @rmtoll CTR1    FLPS       LL_PWR_IsEnabledFlashPowerDown
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledFlashPowerDown(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_FLPS) == (PWR_CR1_FLPS)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_FLPS) == (PWR_CR1_FLPS)) ? 1UL : 0UL);
 }
 
 #if defined (PWR_CR1_BOOSTE)
 /**
   * @brief  Enable the Analog Voltage Booster (VDDA)
-  * @rmtoll CR1    BOOSTE     LL_PWR_EnableAnalogBooster
+  * @rmtoll CTR1    BOOSTE     LL_PWR_EnableAnalogBooster
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAnalogBooster(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_BOOSTE);
+  SET_BIT(PWR->CTR1, PWR_CR1_BOOSTE);
 }
 
 /**
   * @brief  Disable the Analog Voltage Booster (VDDA)
-  * @rmtoll CR1    BOOSTE     LL_PWR_DisableAnalogBooster
+  * @rmtoll CTR1    BOOSTE     LL_PWR_DisableAnalogBooster
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAnalogBooster(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_BOOSTE);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_BOOSTE);
 }
 
 /**
   * @brief  Check if the Analog Voltage Booster (VDDA) is enabled
-  * @rmtoll CR1    BOOSTE     LL_PWR_IsEnabledAnalogBooster
+  * @rmtoll CTR1    BOOSTE     LL_PWR_IsEnabledAnalogBooster
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAnalogBooster(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_BOOSTE) == (PWR_CR1_BOOSTE)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_BOOSTE) == (PWR_CR1_BOOSTE)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_BOOSTE */
 
 #if defined (PWR_CR1_AVD_READY)
 /**
   * @brief  Enable the Analog Voltage Ready to isolate the BOOST IP until VDDA will be ready
-  * @rmtoll CR1    AVD_READY  LL_PWR_EnableAnalogVoltageReady
+  * @rmtoll CTR1    AVD_READY  LL_PWR_EnableAnalogVoltageReady
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAnalogVoltageReady(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AVD_READY);
+  SET_BIT(PWR->CTR1, PWR_CR1_AVD_READY);
 }
 
 /**
   * @brief  Disable the Analog Voltage Ready (VDDA)
-  * @rmtoll CR1    AVD_READY  LL_PWR_DisableAnalogVoltageReady
+  * @rmtoll CTR1    AVD_READY  LL_PWR_DisableAnalogVoltageReady
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAnalogVoltageReady(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AVD_READY);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AVD_READY);
 }
 
 /**
   * @brief  Check if the Analog Voltage Booster (VDDA) is enabled
-  * @rmtoll CR1    AVD_READY  LL_PWR_IsEnabledAnalogVoltageReady
+  * @rmtoll CTR1    AVD_READY  LL_PWR_IsEnabledAnalogVoltageReady
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAnalogVoltageReady(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AVD_READY) == (PWR_CR1_AVD_READY)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AVD_READY) == (PWR_CR1_AVD_READY)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AVD_READY */
 
 /**
   * @brief  Set the internal Regulator output voltage in STOP mode
-  * @rmtoll CR1    SVOS       LL_PWR_SetStopModeRegulVoltageScaling
+  * @rmtoll CTR1    SVOS       LL_PWR_SetStopModeRegulVoltageScaling
   * @param  VoltageScaling This parameter can be one of the following values:
   *         @arg @ref LL_PWR_REGU_VOLTAGE_SVOS_SCALE3
   *         @arg @ref LL_PWR_REGU_VOLTAGE_SVOS_SCALE4
@@ -577,12 +577,12 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledAnalogVoltageReady(void)
   */
 __STATIC_INLINE void LL_PWR_SetStopModeRegulVoltageScaling(uint32_t VoltageScaling)
 {
-  MODIFY_REG(PWR->CR1, PWR_CR1_SVOS, VoltageScaling);
+  MODIFY_REG(PWR->CTR1, PWR_CR1_SVOS, VoltageScaling);
 }
 
 /**
   * @brief  Get the internal Regulator output voltage in STOP mode
-  * @rmtoll CR1    SVOS       LL_PWR_GetStopModeRegulVoltageScaling
+  * @rmtoll CTR1    SVOS       LL_PWR_GetStopModeRegulVoltageScaling
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_REGU_VOLTAGE_SVOS_SCALE3
   *         @arg @ref LL_PWR_REGU_VOLTAGE_SVOS_SCALE4
@@ -590,42 +590,42 @@ __STATIC_INLINE void LL_PWR_SetStopModeRegulVoltageScaling(uint32_t VoltageScali
   */
 __STATIC_INLINE uint32_t LL_PWR_GetStopModeRegulVoltageScaling(void)
 {
-  return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_SVOS));
+  return (uint32_t)(READ_BIT(PWR->CTR1, PWR_CR1_SVOS));
 }
 
 /**
   * @brief  Enable Analog Power Voltage Detector
-  * @rmtoll CR1    AVDEN       LL_PWR_EnableAVD
+  * @rmtoll CTR1    AVDEN       LL_PWR_EnableAVD
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAVD(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AVDEN);
+  SET_BIT(PWR->CTR1, PWR_CR1_AVDEN);
 }
 
 /**
   * @brief  Disable Analog Power Voltage Detector
-  * @rmtoll CR1    AVDEN       LL_PWR_DisableAVD
+  * @rmtoll CTR1    AVDEN       LL_PWR_DisableAVD
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAVD(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AVDEN);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AVDEN);
 }
 
 /**
   * @brief  Check if Analog Power Voltage Detector is enabled
-  * @rmtoll CR1    AVDEN       LL_PWR_IsEnabledAVD
+  * @rmtoll CTR1    AVDEN       LL_PWR_IsEnabledAVD
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAVD(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AVDEN) == (PWR_CR1_AVDEN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AVDEN) == (PWR_CR1_AVDEN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Configure the voltage threshold to be detected by the Analog Power Voltage Detector
-  * @rmtoll CR1    ALS       LL_PWR_SetAVDLevel
+  * @rmtoll CTR1    ALS       LL_PWR_SetAVDLevel
   * @param  AVDLevel This parameter can be one of the following values:
   *         @arg @ref LL_PWR_AVDLEVEL_0
   *         @arg @ref LL_PWR_AVDLEVEL_1
@@ -635,12 +635,12 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledAVD(void)
   */
 __STATIC_INLINE void LL_PWR_SetAVDLevel(uint32_t AVDLevel)
 {
-  MODIFY_REG(PWR->CR1, PWR_CR1_ALS, AVDLevel);
+  MODIFY_REG(PWR->CTR1, PWR_CR1_ALS, AVDLevel);
 }
 
 /**
   * @brief  Get the Analog Voltage threshold to be detected by the Analog Power Voltage Detector
-  * @rmtoll CR1    ALS       LL_PWR_GetAVDLevel
+  * @rmtoll CTR1    ALS       LL_PWR_GetAVDLevel
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_AVDLEVEL_0
   *         @arg @ref LL_PWR_AVDLEVEL_1
@@ -649,268 +649,268 @@ __STATIC_INLINE void LL_PWR_SetAVDLevel(uint32_t AVDLevel)
   */
 __STATIC_INLINE uint32_t LL_PWR_GetAVDLevel(void)
 {
-  return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_ALS));
+  return (uint32_t)(READ_BIT(PWR->CTR1, PWR_CR1_ALS));
 }
 
 #if defined (PWR_CR1_AXIRAM1SO)
 /**
   * @brief  Enable the AXI RAM1 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM1SO     LL_PWR_EnableAXIRAM1ShutOff
+  * @rmtoll CTR1    AXIRAM1SO     LL_PWR_EnableAXIRAM1ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAXIRAM1ShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AXIRAM1SO);
+  SET_BIT(PWR->CTR1, PWR_CR1_AXIRAM1SO);
 }
 
 /**
   * @brief  Disable the AXI RAM1 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM1SO     LL_PWR_DisableAXIRAM1ShutOff
+  * @rmtoll CTR1    AXIRAM1SO     LL_PWR_DisableAXIRAM1ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAXIRAM1ShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AXIRAM1SO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AXIRAM1SO);
 }
 
 /**
   * @brief  Check if the AXI RAM1 shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    AXIRAM1SO     LL_PWR_IsEnabledAXIRAM1ShutOff
+  * @rmtoll CTR1    AXIRAM1SO     LL_PWR_IsEnabledAXIRAM1ShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAXIRAM1ShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AXIRAM1SO) == (PWR_CR1_AXIRAM1SO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AXIRAM1SO) == (PWR_CR1_AXIRAM1SO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AXIRAM1SO */
 
 #if defined (PWR_CR1_AXIRAM2SO)
 /**
   * @brief  Enable the AXI RAM2 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM2SO     LL_PWR_EnableAXIRAM2ShutOff
+  * @rmtoll CTR1    AXIRAM2SO     LL_PWR_EnableAXIRAM2ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAXIRAM2ShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AXIRAM2SO);
+  SET_BIT(PWR->CTR1, PWR_CR1_AXIRAM2SO);
 }
 
 /**
   * @brief  Disable the AXI RAM2 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM2SO     LL_PWR_DisableAXIRAM2ShutOff
+  * @rmtoll CTR1    AXIRAM2SO     LL_PWR_DisableAXIRAM2ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAXIRAM2ShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AXIRAM2SO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AXIRAM2SO);
 }
 
 /**
   * @brief  Check if the AXI RAM2 shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    AXIRAM2SO     LL_PWR_IsEnabledAXIRAM2ShutOff
+  * @rmtoll CTR1    AXIRAM2SO     LL_PWR_IsEnabledAXIRAM2ShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAXIRAM2ShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AXIRAM2SO) == (PWR_CR1_AXIRAM2SO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AXIRAM2SO) == (PWR_CR1_AXIRAM2SO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AXIRAM2SO */
 
 #if defined (PWR_CR1_AXIRAM3SO)
 /**
   * @brief  Enable the AXI RAM3 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM3SO     LL_PWR_EnableAXIRAM3ShutOff
+  * @rmtoll CTR1    AXIRAM3SO     LL_PWR_EnableAXIRAM3ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAXIRAM3ShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AXIRAM3SO);
+  SET_BIT(PWR->CTR1, PWR_CR1_AXIRAM3SO);
 }
 
 /**
   * @brief  Disable the AXI RAM3 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AXIRAM3SO     LL_PWR_DisableAXIRAM3ShutOff
+  * @rmtoll CTR1    AXIRAM3SO     LL_PWR_DisableAXIRAM3ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAXIRAM3ShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AXIRAM3SO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AXIRAM3SO);
 }
 
 /**
   * @brief  Check if the AXI RAM3 shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    AXIRAM3SO     LL_PWR_IsEnabledAXIRAM3ShutOff
+  * @rmtoll CTR1    AXIRAM3SO     LL_PWR_IsEnabledAXIRAM3ShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAXIRAM3ShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AXIRAM3SO) == (PWR_CR1_AXIRAM3SO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AXIRAM3SO) == (PWR_CR1_AXIRAM3SO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AXIRAM3SO */
 
 #if defined (PWR_CR1_AHBRAM1SO)
 /**
   * @brief  Enable the AHB RAM1 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AHBRAM1SO     LL_PWR_EnableAHBRAM1ShutOff
+  * @rmtoll CTR1    AHBRAM1SO     LL_PWR_EnableAHBRAM1ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAHBRAM1ShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AHBRAM1SO);
+  SET_BIT(PWR->CTR1, PWR_CR1_AHBRAM1SO);
 }
 
 /**
   * @brief  Disable the AHB RAM1 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AHBRAM1SO     LL_PWR_DisableAHBRAM1ShutOff
+  * @rmtoll CTR1    AHBRAM1SO     LL_PWR_DisableAHBRAM1ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAHBRAM1ShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AHBRAM1SO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AHBRAM1SO);
 }
 
 /**
   * @brief  Check if the AHB RAM1 shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    AHBRAM1SO     LL_PWR_IsEnabledAHBRAM1ShutOff
+  * @rmtoll CTR1    AHBRAM1SO     LL_PWR_IsEnabledAHBRAM1ShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAHBRAM1ShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AHBRAM1SO) == (PWR_CR1_AHBRAM1SO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AHBRAM1SO) == (PWR_CR1_AHBRAM1SO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AHBRAM1SO */
 
 #if defined (PWR_CR1_AHBRAM2SO)
 /**
   * @brief  Enable the AHB RAM2 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AHBRAM2SO     LL_PWR_EnableAHBRAM2ShutOff
+  * @rmtoll CTR1    AHBRAM2SO     LL_PWR_EnableAHBRAM2ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableAHBRAM2ShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_AHBRAM2SO);
+  SET_BIT(PWR->CTR1, PWR_CR1_AHBRAM2SO);
 }
 
 /**
   * @brief  Disable the AHB RAM2 shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    AHBRAM2SO     LL_PWR_DisableAHBRAM2ShutOff
+  * @rmtoll CTR1    AHBRAM2SO     LL_PWR_DisableAHBRAM2ShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableAHBRAM2ShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_AHBRAM2SO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_AHBRAM2SO);
 }
 
 /**
   * @brief  Check if the AHB RAM2 shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    AHBRAM2SO     LL_PWR_IsEnabledAHBRAM2ShutOff
+  * @rmtoll CTR1    AHBRAM2SO     LL_PWR_IsEnabledAHBRAM2ShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledAHBRAM2ShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_AHBRAM2SO) == (PWR_CR1_AHBRAM2SO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_AHBRAM2SO) == (PWR_CR1_AHBRAM2SO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_AHBRAM2SO */
 
 #if defined (PWR_CR1_ITCMSO)
 /**
   * @brief  Enable the ITCM shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    ITCMSO     LL_PWR_EnableITCMSOShutOff
+  * @rmtoll CTR1    ITCMSO     LL_PWR_EnableITCMSOShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableITCMSOShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_ITCMSO);
+  SET_BIT(PWR->CTR1, PWR_CR1_ITCMSO);
 }
 
 /**
   * @brief  Disable the ITCM shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    ITCMSO     LL_PWR_DisableITCMSOShutOff
+  * @rmtoll CTR1    ITCMSO     LL_PWR_DisableITCMSOShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableITCMSOShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_ITCMSO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_ITCMSO);
 }
 
 /**
   * @brief  Check if the ITCM shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    ITCMSO     LL_PWR_IsEnabledITCMShutOff
+  * @rmtoll CTR1    ITCMSO     LL_PWR_IsEnabledITCMShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledITCMShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_ITCMSO) == (PWR_CR1_ITCMSO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_ITCMSO) == (PWR_CR1_ITCMSO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_ITCMSO */
 
 #if defined (PWR_CR1_HSITFSO)
 /**
   * @brief  Enable the USB and FDCAN shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    HSITFSO     LL_PWR_EnableHSITFShutOff
+  * @rmtoll CTR1    HSITFSO     LL_PWR_EnableHSITFShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableHSITFShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_HSITFSO);
+  SET_BIT(PWR->CTR1, PWR_CR1_HSITFSO);
 }
 
 /**
   * @brief  Disable the USB and FDCAN shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    HSITFSO     LL_PWR_DisableHSITFShutOff
+  * @rmtoll CTR1    HSITFSO     LL_PWR_DisableHSITFShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableHSITFShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_HSITFSO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_HSITFSO);
 }
 
 /**
   * @brief  Check if the USB and FDCAN shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    HSITFSO     LL_PWR_IsEnabledHSITFShutOff
+  * @rmtoll CTR1    HSITFSO     LL_PWR_IsEnabledHSITFShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledHSITFShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_HSITFSO) == (PWR_CR1_HSITFSO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_HSITFSO) == (PWR_CR1_HSITFSO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_HSITFSO */
 
 #if defined (PWR_CR1_SRDRAMSO)
 /**
   * @brief  Enable the SRD AHB RAM shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    SRDRAMSO     LL_PWR_EnableSRDRAMShutOff
+  * @rmtoll CTR1    SRDRAMSO     LL_PWR_EnableSRDRAMShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableSRDRAMShutOff(void)
 {
-  SET_BIT(PWR->CR1, PWR_CR1_SRDRAMSO);
+  SET_BIT(PWR->CTR1, PWR_CR1_SRDRAMSO);
 }
 
 /**
   * @brief  Disable the SRD AHB RAM shut-off in DStop/DStop2 mode
-  * @rmtoll CR1    SRDRAMSO     LL_PWR_DisableSRDRAMShutOff
+  * @rmtoll CTR1    SRDRAMSO     LL_PWR_DisableSRDRAMShutOff
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableSRDRAMShutOff(void)
 {
-  CLEAR_BIT(PWR->CR1, PWR_CR1_SRDRAMSO);
+  CLEAR_BIT(PWR->CTR1, PWR_CR1_SRDRAMSO);
 }
 
 /**
   * @brief  Check if the SRD AHB RAM shut-off in DStop/DStop2 mode is enabled
-  * @rmtoll CR1    SRDRAMSO     LL_PWR_IsEnabledSRDRAMShutOff
+  * @rmtoll CTR1    SRDRAMSO     LL_PWR_IsEnabledSRDRAMShutOff
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledSRDRAMShutOff(void)
 {
-  return ((READ_BIT(PWR->CR1, PWR_CR1_SRDRAMSO) == (PWR_CR1_SRDRAMSO)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR1, PWR_CR1_SRDRAMSO) == (PWR_CR1_SRDRAMSO)) ? 1UL : 0UL);
 }
 #endif /* PWR_CR1_SRDRAMSO */
 
 /**
   * @brief  Enable Backup Regulator
-  * @rmtoll CR2    BREN       LL_PWR_EnableBkUpRegulator
+  * @rmtoll CTR2    BREN       LL_PWR_EnableBkUpRegulator
   * @note When set, the Backup Regulator (used to maintain backup SRAM content in Standby and
   *       VBAT modes) is enabled. If BRE is reset, the backup Regulator is switched off. The backup
   *       SRAM can still be used but its content will be lost in the Standby and VBAT modes. Once set,
@@ -920,67 +920,67 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledSRDRAMShutOff(void)
   */
 __STATIC_INLINE void LL_PWR_EnableBkUpRegulator(void)
 {
-  SET_BIT(PWR->CR2, PWR_CR2_BREN);
+  SET_BIT(PWR->CTR2, PWR_CR2_BREN);
 }
 
 /**
   * @brief  Disable Backup Regulator
-  * @rmtoll CR2    BREN       LL_PWR_DisableBkUpRegulator
+  * @rmtoll CTR2    BREN       LL_PWR_DisableBkUpRegulator
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableBkUpRegulator(void)
 {
-  CLEAR_BIT(PWR->CR2, PWR_CR2_BREN);
+  CLEAR_BIT(PWR->CTR2, PWR_CR2_BREN);
 }
 
 /**
   * @brief  Check if the backup Regulator is enabled
-  * @rmtoll CR2    BREN      LL_PWR_IsEnabledBkUpRegulator
+  * @rmtoll CTR2    BREN      LL_PWR_IsEnabledBkUpRegulator
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledBkUpRegulator(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_BREN) == (PWR_CR2_BREN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_BREN) == (PWR_CR2_BREN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable VBAT and Temperature monitoring
-  * @rmtoll CR2    MONEN       LL_PWR_EnableMonitoring
+  * @rmtoll CTR2    MONEN       LL_PWR_EnableMonitoring
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableMonitoring(void)
 {
-  SET_BIT(PWR->CR2, PWR_CR2_MONEN);
+  SET_BIT(PWR->CTR2, PWR_CR2_MONEN);
 }
 
 /**
   * @brief  Disable VBAT and Temperature monitoring
-  * @rmtoll CR2    MONEN       LL_PWR_DisableMonitoring
+  * @rmtoll CTR2    MONEN       LL_PWR_DisableMonitoring
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableMonitoring(void)
 {
-  CLEAR_BIT(PWR->CR2, PWR_CR2_MONEN);
+  CLEAR_BIT(PWR->CTR2, PWR_CR2_MONEN);
 }
 
 /**
   * @brief  Check if the VBAT and Temperature monitoring is enabled
-  * @rmtoll CR2    MONEN      LL_PWR_IsEnabledMonitoring
+  * @rmtoll CTR2    MONEN      LL_PWR_IsEnabledMonitoring
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledMonitoring(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_MONEN) == (PWR_CR2_MONEN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_MONEN) == (PWR_CR2_MONEN)) ? 1UL : 0UL);
 }
 
 #if defined (SMPS)
 /**
   * @brief  Configure the PWR supply
-  * @rmtoll CR3          BYPASS          LL_PWR_ConfigSupply
-  * @rmtoll CR3          LDOEN           LL_PWR_ConfigSupply
-  * @rmtoll CR3          SMPSEN          LL_PWR_ConfigSupply
-  * @rmtoll CR3          SMPSEXTHP       LL_PWR_ConfigSupply
-  * @rmtoll CR3          SMPSLEVEL       LL_PWR_ConfigSupply
+  * @rmtoll CTR3          BYPASS          LL_PWR_ConfigSupply
+  * @rmtoll CTR3          LDOEN           LL_PWR_ConfigSupply
+  * @rmtoll CTR3          SMPSEN          LL_PWR_ConfigSupply
+  * @rmtoll CTR3          SMPSEXTHP       LL_PWR_ConfigSupply
+  * @rmtoll CTR3          SMPSLEVEL       LL_PWR_ConfigSupply
   * @param  SupplySource This parameter can be one of the following values:
   *         @arg @ref LL_PWR_LDO_SUPPLY
   *         @arg @ref LL_PWR_DIRECT_SMPS_SUPPLY
@@ -996,14 +996,14 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledMonitoring(void)
 __STATIC_INLINE void LL_PWR_ConfigSupply(uint32_t SupplySource)
 {
   /* Set the power supply configuration */
-  MODIFY_REG(PWR->CR3, (PWR_CR3_SMPSLEVEL | PWR_CR3_SMPSEXTHP | PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS), SupplySource);
+  MODIFY_REG(PWR->CTR3, (PWR_CR3_SMPSLEVEL | PWR_CR3_SMPSEXTHP | PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS), SupplySource);
 }
 #else
 /**
   * @brief  Configure the PWR supply
-  * @rmtoll CR3          BYPASS          LL_PWR_ConfigSupply
-  * @rmtoll CR3          LDOEN           LL_PWR_ConfigSupply
-  * @rmtoll CR3          SCUEN           LL_PWR_ConfigSupply
+  * @rmtoll CTR3          BYPASS          LL_PWR_ConfigSupply
+  * @rmtoll CTR3          LDOEN           LL_PWR_ConfigSupply
+  * @rmtoll CTR3          SCUEN           LL_PWR_ConfigSupply
   * @param  SupplySource This parameter can be one of the following values:
   *         @arg @ref LL_PWR_LDO_SUPPLY
   *         @arg @ref LL_PWR_EXTERNAL_SOURCE_SUPPLY
@@ -1012,18 +1012,18 @@ __STATIC_INLINE void LL_PWR_ConfigSupply(uint32_t SupplySource)
 __STATIC_INLINE void LL_PWR_ConfigSupply(uint32_t SupplySource)
 {
   /* Set the power supply configuration */
-  MODIFY_REG(PWR->CR3, (PWR_CR3_SCUEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS), SupplySource);
+  MODIFY_REG(PWR->CTR3, (PWR_CR3_SCUEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS), SupplySource);
 }
 #endif /* defined (SMPS) */
 
 #if defined (SMPS)
 /**
   * @brief  Get the PWR supply
-  * @rmtoll CR3          BYPASS          LL_PWR_GetSupply
-  * @rmtoll CR3          LDOEN           LL_PWR_GetSupply
-  * @rmtoll CR3          SMPSEN          LL_PWR_GetSupply
-  * @rmtoll CR3          SMPSEXTHP       LL_PWR_GetSupply
-  * @rmtoll CR3          SMPSLEVEL       LL_PWR_GetSupply
+  * @rmtoll CTR3          BYPASS          LL_PWR_GetSupply
+  * @rmtoll CTR3          LDOEN           LL_PWR_GetSupply
+  * @rmtoll CTR3          SMPSEN          LL_PWR_GetSupply
+  * @rmtoll CTR3          SMPSEXTHP       LL_PWR_GetSupply
+  * @rmtoll CTR3          SMPSLEVEL       LL_PWR_GetSupply
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_LDO_SUPPLY
   *         @arg @ref LL_PWR_DIRECT_SMPS_SUPPLY
@@ -1038,14 +1038,14 @@ __STATIC_INLINE void LL_PWR_ConfigSupply(uint32_t SupplySource)
 __STATIC_INLINE uint32_t LL_PWR_GetSupply(void)
 {
   /* Get the power supply configuration */
-  return(uint32_t)(READ_BIT(PWR->CR3, (PWR_CR3_SMPSLEVEL | PWR_CR3_SMPSEXTHP | PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)));
+  return(uint32_t)(READ_BIT(PWR->CTR3, (PWR_CR3_SMPSLEVEL | PWR_CR3_SMPSEXTHP | PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)));
 }
 #else
 /**
   * @brief  Get the PWR supply
-  * @rmtoll CR3          BYPASS          LL_PWR_GetSupply
-  * @rmtoll CR3          LDOEN           LL_PWR_GetSupply
-  * @rmtoll CR3          SCUEN           LL_PWR_GetSupply
+  * @rmtoll CTR3          BYPASS          LL_PWR_GetSupply
+  * @rmtoll CTR3          LDOEN           LL_PWR_GetSupply
+  * @rmtoll CTR3          SCUEN           LL_PWR_GetSupply
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_LDO_SUPPLY
   *         @arg @ref LL_PWR_EXTERNAL_SOURCE_SUPPLY
@@ -1053,43 +1053,43 @@ __STATIC_INLINE uint32_t LL_PWR_GetSupply(void)
 __STATIC_INLINE uint32_t LL_PWR_GetSupply(void)
 {
   /* Get the power supply configuration */
-  return(uint32_t)(READ_BIT(PWR->CR3, (PWR_CR3_SCUEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)));
+  return(uint32_t)(READ_BIT(PWR->CTR3, (PWR_CR3_SCUEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)));
 }
 #endif /* defined (SMPS) */
 
 /**
   * @brief  Enable battery charging
-  * @rmtoll CR3          VBE           LL_PWR_EnableBatteryCharging
+  * @rmtoll CTR3          VBE           LL_PWR_EnableBatteryCharging
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableBatteryCharging(void)
 {
-  SET_BIT(PWR->CR3, PWR_CR3_VBE);
+  SET_BIT(PWR->CTR3, PWR_CR3_VBE);
 }
 
 /**
   * @brief  Disable battery charging
-  * @rmtoll CR3          VBE           LL_PWR_DisableBatteryCharging
+  * @rmtoll CTR3          VBE           LL_PWR_DisableBatteryCharging
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableBatteryCharging(void)
 {
-  CLEAR_BIT(PWR->CR3, PWR_CR3_VBE);
+  CLEAR_BIT(PWR->CTR3, PWR_CR3_VBE);
 }
 
 /**
   * @brief  Check if battery charging is enabled
-  * @rmtoll CR3          VBE           LL_PWR_IsEnabledBatteryCharging
+  * @rmtoll CTR3          VBE           LL_PWR_IsEnabledBatteryCharging
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledBatteryCharging(void)
 {
-  return ((READ_BIT(PWR->CR3, PWR_CR3_VBE) == (PWR_CR3_VBE)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR3, PWR_CR3_VBE) == (PWR_CR3_VBE)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Set the Battery charge resistor impedance
-  * @rmtoll CR3          VBRS          LL_PWR_SetBattChargResistor
+  * @rmtoll CTR3          VBRS          LL_PWR_SetBattChargResistor
   * @param  Resistor This parameter can be one of the following values:
   *         @arg @ref LL_PWR_BATT_CHARG_RESISTOR_5K
   *         @arg @ref LL_PWR_BATT_CHARGRESISTOR_1_5K
@@ -1097,79 +1097,79 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledBatteryCharging(void)
   */
 __STATIC_INLINE void LL_PWR_SetBattChargResistor(uint32_t Resistor)
 {
-  MODIFY_REG(PWR->CR3, PWR_CR3_VBRS, Resistor);
+  MODIFY_REG(PWR->CTR3, PWR_CR3_VBRS, Resistor);
 }
 
 /**
   * @brief  Get the Battery charge resistor impedance
-  * @rmtoll CR3          VBRS          LL_PWR_GetBattChargResistor
+  * @rmtoll CTR3          VBRS          LL_PWR_GetBattChargResistor
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_BATT_CHARG_RESISTOR_5K
   *         @arg @ref LL_PWR_BATT_CHARGRESISTOR_1_5K
   */
 __STATIC_INLINE uint32_t LL_PWR_GetBattChargResistor(void)
 {
-  return (uint32_t)(READ_BIT(PWR->CR3, PWR_CR3_VBRS));
+  return (uint32_t)(READ_BIT(PWR->CTR3, PWR_CR3_VBRS));
 }
 
 /**
   * @brief  Enable the USB regulator
-  * @rmtoll CR3          USBREGEN           LL_PWR_EnableUSBReg
+  * @rmtoll CTR3          USBREGEN           LL_PWR_EnableUSBReg
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableUSBReg(void)
 {
-  SET_BIT(PWR->CR3, PWR_CR3_USBREGEN);
+  SET_BIT(PWR->CTR3, PWR_CR3_USBREGEN);
 }
 
 /**
   * @brief  Disable the USB regulator
-  * @rmtoll CR3          USBREGEN           LL_PWR_DisableUSBReg
+  * @rmtoll CTR3          USBREGEN           LL_PWR_DisableUSBReg
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableUSBReg(void)
 {
-  CLEAR_BIT(PWR->CR3, PWR_CR3_USBREGEN);
+  CLEAR_BIT(PWR->CTR3, PWR_CR3_USBREGEN);
 }
 
 /**
   * @brief  Check if the USB regulator is enabled
-  * @rmtoll CR3          USBREGEN           LL_PWR_IsEnabledUSBReg
+  * @rmtoll CTR3          USBREGEN           LL_PWR_IsEnabledUSBReg
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledUSBReg(void)
 {
-  return ((READ_BIT(PWR->CR3, PWR_CR3_USBREGEN) == (PWR_CR3_USBREGEN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR3, PWR_CR3_USBREGEN) == (PWR_CR3_USBREGEN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable the USB voltage detector
-  * @rmtoll CR3          USB33DEN           LL_PWR_EnableUSBVoltageDetector
+  * @rmtoll CTR3          USB33DEN           LL_PWR_EnableUSBVoltageDetector
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_EnableUSBVoltageDetector(void)
 {
-  SET_BIT(PWR->CR3, PWR_CR3_USB33DEN);
+  SET_BIT(PWR->CTR3, PWR_CR3_USB33DEN);
 }
 
 /**
   * @brief  Disable the USB voltage detector
-  * @rmtoll CR3          USB33DEN           LL_PWR_DisableUSBVoltageDetector
+  * @rmtoll CTR3          USB33DEN           LL_PWR_DisableUSBVoltageDetector
   * @retval None
   */
 __STATIC_INLINE void LL_PWR_DisableUSBVoltageDetector(void)
 {
-  CLEAR_BIT(PWR->CR3, PWR_CR3_USB33DEN);
+  CLEAR_BIT(PWR->CTR3, PWR_CR3_USB33DEN);
 }
 
 /**
   * @brief  Check if the USB voltage detector is enabled
-  * @rmtoll CR3          USB33DEN           LL_PWR_IsEnabledUSBVoltageDetector
+  * @rmtoll CTR3          USB33DEN           LL_PWR_IsEnabledUSBVoltageDetector
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsEnabledUSBVoltageDetector(void)
 {
-  return ((READ_BIT(PWR->CR3, PWR_CR3_USB33DEN) == (PWR_CR3_USB33DEN)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR3, PWR_CR3_USB33DEN) == (PWR_CR3_USB33DEN)) ? 1UL : 0UL);
 }
 
 #if defined (PWR_CPUCR_PDDS_D2)
@@ -1914,74 +1914,74 @@ __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_MMCVDO(void)
 
 /**
   * @brief  Get Backup Regulator ready Flag
-  * @rmtoll CR2   BRRDY       LL_PWR_IsActiveFlag_BRR
+  * @rmtoll CTR2   BRRDY       LL_PWR_IsActiveFlag_BRR
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_BRR(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_BRRDY) == (PWR_CR2_BRRDY)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_BRRDY) == (PWR_CR2_BRRDY)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Indicate whether the VBAT level is above or below low threshold
-  * @rmtoll CR2   VBATL       LL_PWR_IsActiveFlag_VBATL
+  * @rmtoll CTR2   VBATL       LL_PWR_IsActiveFlag_VBATL
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_VBATL(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_VBATL) == (PWR_CR2_VBATL)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_VBATL) == (PWR_CR2_VBATL)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Indicate whether the VBAT level is above or below high threshold
-  * @rmtoll CR2   VBATH       LL_PWR_IsActiveFlag_VBATH
+  * @rmtoll CTR2   VBATH       LL_PWR_IsActiveFlag_VBATH
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_VBATH(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_VBATH) == (PWR_CR2_VBATH)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_VBATH) == (PWR_CR2_VBATH)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Indicate whether the CPU temperature level is above or below low threshold
-  * @rmtoll CR2   TEMPL       LL_PWR_IsActiveFlag_TEMPL
+  * @rmtoll CTR2   TEMPL       LL_PWR_IsActiveFlag_TEMPL
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_TEMPL(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_TEMPL) == (PWR_CR2_TEMPL)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_TEMPL) == (PWR_CR2_TEMPL)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Indicate whether the CPU temperature level is above or below high threshold
-  * @rmtoll CR2   TEMPH       LL_PWR_IsActiveFlag_TEMPH
+  * @rmtoll CTR2   TEMPH       LL_PWR_IsActiveFlag_TEMPH
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_TEMPH(void)
 {
-  return ((READ_BIT(PWR->CR2, PWR_CR2_TEMPH) == (PWR_CR2_TEMPH)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR2, PWR_CR2_TEMPH) == (PWR_CR2_TEMPH)) ? 1UL : 0UL);
 }
 
 #if defined (SMPS)
 /**
   * @brief  Indicate whether the SMPS external supply is ready or not
-  * @rmtoll CR3   SMPSEXTRDY       LL_PWR_IsActiveFlag_SMPSEXT
+  * @rmtoll CTR3   SMPSEXTRDY       LL_PWR_IsActiveFlag_SMPSEXT
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_SMPSEXT(void)
 {
-  return ((READ_BIT(PWR->CR3, PWR_CR3_SMPSEXTRDY) == (PWR_CR3_SMPSEXTRDY)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR3, PWR_CR3_SMPSEXTRDY) == (PWR_CR3_SMPSEXTRDY)) ? 1UL : 0UL);
 }
 #endif /* SMPS */
 
 /**
   * @brief  Indicate whether the USB supply is ready or not
-  * @rmtoll CR3   USBRDY       LL_PWR_IsActiveFlag_USB
+  * @rmtoll CTR3   USBRDY       LL_PWR_IsActiveFlag_USB
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_USB(void)
 {
-  return ((READ_BIT(PWR->CR3, PWR_CR3_USB33RDY) == (PWR_CR3_USB33RDY)) ? 1UL : 0UL);
+  return ((READ_BIT(PWR->CTR3, PWR_CR3_USB33RDY) == (PWR_CR3_USB33RDY)) ? 1UL : 0UL);
 }
 
 #if defined (DUAL_CORE)

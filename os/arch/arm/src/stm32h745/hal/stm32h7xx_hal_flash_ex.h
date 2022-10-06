@@ -770,10 +770,10 @@ typedef struct
   */
 #if defined (DUAL_BANK)
 #define __HAL_FLASH_SET_PSIZE(__PSIZE__, __BANK__) (((__BANK__) == FLASH_BANK_1)  ? \
-                              MODIFY_REG(FLASH->CR1, FLASH_CR_PSIZE, (__PSIZE__)) : \
-                              MODIFY_REG(FLASH->CR2, FLASH_CR_PSIZE, (__PSIZE__)))
+                              MODIFY_REG(FLASH->CTR1, FLASH_CR_PSIZE, (__PSIZE__)) : \
+                              MODIFY_REG(FLASH->CTR2, FLASH_CR_PSIZE, (__PSIZE__)))
 #else
-#define __HAL_FLASH_SET_PSIZE(__PSIZE__, __BANK__)  MODIFY_REG(FLASH->CR1, FLASH_CR_PSIZE, (__PSIZE__))
+#define __HAL_FLASH_SET_PSIZE(__PSIZE__, __BANK__)  MODIFY_REG(FLASH->CTR1, FLASH_CR_PSIZE, (__PSIZE__))
 #endif /* DUAL_BANK */
 
 /**
@@ -784,10 +784,10 @@ typedef struct
   */
 #if defined (DUAL_BANK)
 #define __HAL_FLASH_GET_PSIZE(__BANK__) (((__BANK__) == FLASH_BANK_1) ? \
-                              READ_BIT((FLASH->CR1), FLASH_CR_PSIZE)  : \
-                              READ_BIT((FLASH->CR2), FLASH_CR_PSIZE))
+                              READ_BIT((FLASH->CTR1), FLASH_CR_PSIZE)  : \
+                              READ_BIT((FLASH->CTR2), FLASH_CR_PSIZE))
 #else
-#define __HAL_FLASH_GET_PSIZE(__BANK__)  READ_BIT((FLASH->CR1), FLASH_CR_PSIZE)
+#define __HAL_FLASH_GET_PSIZE(__BANK__)  READ_BIT((FLASH->CTR1), FLASH_CR_PSIZE)
 #endif /* DUAL_BANK */
 
 #endif /* FLASH_CR_PSIZE */

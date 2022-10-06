@@ -222,16 +222,16 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
     UART_AdvFeatureConfig(huart);
   }
 
-  /* Enable the Driver Enable mode by setting the DEM bit in the CR3 register */
-  SET_BIT(huart->Instance->CR3, USART_CR3_DEM);
+  /* Enable the Driver Enable mode by setting the DEM bit in the CTR3 register */
+  SET_BIT(huart->Instance->CTR3, USART_CR3_DEM);
 
   /* Set the Driver Enable polarity */
-  MODIFY_REG(huart->Instance->CR3, USART_CR3_DEP, Polarity);
+  MODIFY_REG(huart->Instance->CTR3, USART_CR3_DEP, Polarity);
 
   /* Set the Driver Enable assertion and deassertion times */
   temp = (AssertionTime << UART_CR1_DEAT_ADDRESS_LSB_POS);
   temp |= (DeassertionTime << UART_CR1_DEDT_ADDRESS_LSB_POS);
-  MODIFY_REG(huart->Instance->CR1, (USART_CR1_DEDT | USART_CR1_DEAT), temp);
+  MODIFY_REG(huart->Instance->CTR1, (USART_CR1_DEDT | USART_CR1_DEAT), temp);
 
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
@@ -401,7 +401,7 @@ HAL_StatusTypeDef HAL_MultiProcessorEx_AddressLength_Set(UART_HandleTypeDef *hua
   __HAL_UART_DISABLE(huart);
 
   /* Set the address length */
-  MODIFY_REG(huart->Instance->CR2, USART_CR2_ADDM7, AddressLength);
+  MODIFY_REG(huart->Instance->CTR2, USART_CR2_ADDM7, AddressLength);
 
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
@@ -441,7 +441,7 @@ HAL_StatusTypeDef HAL_UARTEx_StopModeWakeUpSourceConfig(UART_HandleTypeDef *huar
   __HAL_UART_DISABLE(huart);
 
   /* Set the wake-up selection scheme */
-  MODIFY_REG(huart->Instance->CR3, USART_CR3_WUS, WakeUpSelection.WakeUpEvent);
+  MODIFY_REG(huart->Instance->CTR3, USART_CR3_WUS, WakeUpSelection.WakeUpEvent);
 
   if (WakeUpSelection.WakeUpEvent == UART_WAKEUP_ON_ADDRESS)
   {
@@ -483,7 +483,7 @@ HAL_StatusTypeDef HAL_UARTEx_EnableStopMode(UART_HandleTypeDef *huart)
   __HAL_LOCK(huart);
 
   /* Set UESM bit */
-  ATOMIC_SET_BIT(huart->Instance->CR1, USART_CR1_UESM);
+  ATOMIC_SET_BIT(huart->Instance->CTR1, USART_CR1_UESM);
 
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -502,7 +502,7 @@ HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart)
   __HAL_LOCK(huart);
 
   /* Clear UESM bit */
-  ATOMIC_CLEAR_BIT(huart->Instance->CR1, USART_CR1_UESM);
+  ATOMIC_CLEAR_BIT(huart->Instance->CTR1, USART_CR1_UESM);
 
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -528,7 +528,7 @@ HAL_StatusTypeDef HAL_UARTEx_EnableFifoMode(UART_HandleTypeDef *huart)
   huart->gState = HAL_UART_STATE_BUSY;
 
   /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
+  tmpcr1 = READ_REG(huart->Instance->CTR1);
 
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
@@ -538,7 +538,7 @@ HAL_StatusTypeDef HAL_UARTEx_EnableFifoMode(UART_HandleTypeDef *huart)
   huart->FifoMode = UART_FIFOMODE_ENABLE;
 
   /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
+  WRITE_REG(huart->Instance->CTR1, tmpcr1);
 
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
@@ -569,7 +569,7 @@ HAL_StatusTypeDef HAL_UARTEx_DisableFifoMode(UART_HandleTypeDef *huart)
   huart->gState = HAL_UART_STATE_BUSY;
 
   /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
+  tmpcr1 = READ_REG(huart->Instance->CTR1);
 
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
@@ -579,7 +579,7 @@ HAL_StatusTypeDef HAL_UARTEx_DisableFifoMode(UART_HandleTypeDef *huart)
   huart->FifoMode = UART_FIFOMODE_DISABLE;
 
   /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
+  WRITE_REG(huart->Instance->CTR1, tmpcr1);
 
   huart->gState = HAL_UART_STATE_READY;
 
@@ -616,19 +616,19 @@ HAL_StatusTypeDef HAL_UARTEx_SetTxFifoThreshold(UART_HandleTypeDef *huart, uint3
   huart->gState = HAL_UART_STATE_BUSY;
 
   /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
+  tmpcr1 = READ_REG(huart->Instance->CTR1);
 
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
 
   /* Update TX threshold configuration */
-  MODIFY_REG(huart->Instance->CR3, USART_CR3_TXFTCFG, Threshold);
+  MODIFY_REG(huart->Instance->CTR3, USART_CR3_TXFTCFG, Threshold);
 
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
 
   /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
+  WRITE_REG(huart->Instance->CTR1, tmpcr1);
 
   huart->gState = HAL_UART_STATE_READY;
 
@@ -665,19 +665,19 @@ HAL_StatusTypeDef HAL_UARTEx_SetRxFifoThreshold(UART_HandleTypeDef *huart, uint3
   huart->gState = HAL_UART_STATE_BUSY;
 
   /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
+  tmpcr1 = READ_REG(huart->Instance->CTR1);
 
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
 
   /* Update RX threshold configuration */
-  MODIFY_REG(huart->Instance->CR3, USART_CR3_RXFTCFG, Threshold);
+  MODIFY_REG(huart->Instance->CTR3, USART_CR3_RXFTCFG, Threshold);
 
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
 
   /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
+  WRITE_REG(huart->Instance->CTR1, tmpcr1);
 
   huart->gState = HAL_UART_STATE_READY;
 
@@ -858,7 +858,7 @@ HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_IT(UART_HandleTypeDef *huart, uint8_t
       if (huart->ReceptionType == HAL_UART_RECEPTION_TOIDLE)
       {
         __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_IDLEF);
-        ATOMIC_SET_BIT(huart->Instance->CR1, USART_CR1_IDLEIE);
+        ATOMIC_SET_BIT(huart->Instance->CTR1, USART_CR1_IDLEIE);
       }
       else
       {
@@ -920,7 +920,7 @@ HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_
       if (huart->ReceptionType == HAL_UART_RECEPTION_TOIDLE)
       {
         __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_IDLEF);
-        ATOMIC_SET_BIT(huart->Instance->CR1, USART_CR1_IDLEIE);
+        ATOMIC_SET_BIT(huart->Instance->CTR1, USART_CR1_IDLEIE);
       }
       else
       {
@@ -963,10 +963,10 @@ static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTy
   assert_param(IS_UART_ADDRESSLENGTH_DETECT(WakeUpSelection.AddressLength));
 
   /* Set the USART address length */
-  MODIFY_REG(huart->Instance->CR2, USART_CR2_ADDM7, WakeUpSelection.AddressLength);
+  MODIFY_REG(huart->Instance->CTR2, USART_CR2_ADDM7, WakeUpSelection.AddressLength);
 
   /* Set the USART address node */
-  MODIFY_REG(huart->Instance->CR2, USART_CR2_ADD, ((uint32_t)WakeUpSelection.Address << UART_CR2_ADDRESS_LSB_POS));
+  MODIFY_REG(huart->Instance->CTR2, USART_CR2_ADD, ((uint32_t)WakeUpSelection.Address << UART_CR2_ADDRESS_LSB_POS));
 }
 
 /**
@@ -994,8 +994,8 @@ static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart)
   {
     rx_fifo_depth = RX_FIFO_DEPTH;
     tx_fifo_depth = TX_FIFO_DEPTH;
-    rx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
-    tx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
+    rx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CTR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
+    tx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CTR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
     huart->NbTxDataToProcess = ((uint16_t)tx_fifo_depth * numerator[tx_fifo_threshold]) /
                                (uint16_t)denominator[tx_fifo_threshold];
     huart->NbRxDataToProcess = ((uint16_t)rx_fifo_depth * numerator[rx_fifo_threshold]) /

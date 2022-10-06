@@ -1503,68 +1503,68 @@ typedef struct
   */
 /**
   * @brief  Enable timer counter.
-  * @rmtoll CR1          CEN           LL_TIM_EnableCounter
+  * @rmtoll CTR1          CEN           LL_TIM_EnableCounter
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_EnableCounter(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR1, TIM_CR1_CEN);
+  SET_BIT(TIMx->CTR1, TIM_CR1_CEN);
 }
 
 /**
   * @brief  Disable timer counter.
-  * @rmtoll CR1          CEN           LL_TIM_DisableCounter
+  * @rmtoll CTR1          CEN           LL_TIM_DisableCounter
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_DisableCounter(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR1, TIM_CR1_CEN);
+  CLEAR_BIT(TIMx->CTR1, TIM_CR1_CEN);
 }
 
 /**
   * @brief  Indicates whether the timer counter is enabled.
-  * @rmtoll CR1          CEN           LL_TIM_IsEnabledCounter
+  * @rmtoll CTR1          CEN           LL_TIM_IsEnabledCounter
   * @param  TIMx Timer instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_TIM_IsEnabledCounter(TIM_TypeDef *TIMx)
 {
-  return ((READ_BIT(TIMx->CR1, TIM_CR1_CEN) == (TIM_CR1_CEN)) ? 1UL : 0UL);
+  return ((READ_BIT(TIMx->CTR1, TIM_CR1_CEN) == (TIM_CR1_CEN)) ? 1UL : 0UL);
 }
 
 /**
   * @brief  Enable update event generation.
-  * @rmtoll CR1          UDIS          LL_TIM_EnableUpdateEvent
+  * @rmtoll CTR1          UDIS          LL_TIM_EnableUpdateEvent
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_EnableUpdateEvent(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR1, TIM_CR1_UDIS);
+  CLEAR_BIT(TIMx->CTR1, TIM_CR1_UDIS);
 }
 
 /**
   * @brief  Disable update event generation.
-  * @rmtoll CR1          UDIS          LL_TIM_DisableUpdateEvent
+  * @rmtoll CTR1          UDIS          LL_TIM_DisableUpdateEvent
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_DisableUpdateEvent(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR1, TIM_CR1_UDIS);
+  SET_BIT(TIMx->CTR1, TIM_CR1_UDIS);
 }
 
 /**
   * @brief  Indicates whether update event generation is enabled.
-  * @rmtoll CR1          UDIS          LL_TIM_IsEnabledUpdateEvent
+  * @rmtoll CTR1          UDIS          LL_TIM_IsEnabledUpdateEvent
   * @param  TIMx Timer instance
   * @retval Inverted state of bit (0 or 1).
   */
 __STATIC_INLINE uint32_t LL_TIM_IsEnabledUpdateEvent(TIM_TypeDef *TIMx)
 {
-  return ((READ_BIT(TIMx->CR1, TIM_CR1_UDIS) == (uint32_t)RESET) ? 1UL : 0UL);
+  return ((READ_BIT(TIMx->CTR1, TIM_CR1_UDIS) == (uint32_t)RESET) ? 1UL : 0UL);
 }
 
 /**
@@ -1576,7 +1576,7 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledUpdateEvent(TIM_TypeDef *TIMx)
   *        - Update generation through the slave mode controller
   * @note Update event source set to LL_TIM_UPDATESOURCE_COUNTER: only counter
   *       overflow/underflow generates an update interrupt or DMA request if enabled.
-  * @rmtoll CR1          URS           LL_TIM_SetUpdateSource
+  * @rmtoll CTR1          URS           LL_TIM_SetUpdateSource
   * @param  TIMx Timer instance
   * @param  UpdateSource This parameter can be one of the following values:
   *         @arg @ref LL_TIM_UPDATESOURCE_REGULAR
@@ -1585,12 +1585,12 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledUpdateEvent(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_SetUpdateSource(TIM_TypeDef *TIMx, uint32_t UpdateSource)
 {
-  MODIFY_REG(TIMx->CR1, TIM_CR1_URS, UpdateSource);
+  MODIFY_REG(TIMx->CTR1, TIM_CR1_URS, UpdateSource);
 }
 
 /**
   * @brief  Get actual event update source
-  * @rmtoll CR1          URS           LL_TIM_GetUpdateSource
+  * @rmtoll CTR1          URS           LL_TIM_GetUpdateSource
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_UPDATESOURCE_REGULAR
@@ -1598,12 +1598,12 @@ __STATIC_INLINE void LL_TIM_SetUpdateSource(TIM_TypeDef *TIMx, uint32_t UpdateSo
   */
 __STATIC_INLINE uint32_t LL_TIM_GetUpdateSource(TIM_TypeDef *TIMx)
 {
-  return (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_URS));
+  return (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_URS));
 }
 
 /**
   * @brief  Set one pulse mode (one shot v.s. repetitive).
-  * @rmtoll CR1          OPM           LL_TIM_SetOnePulseMode
+  * @rmtoll CTR1          OPM           LL_TIM_SetOnePulseMode
   * @param  TIMx Timer instance
   * @param  OnePulseMode This parameter can be one of the following values:
   *         @arg @ref LL_TIM_ONEPULSEMODE_SINGLE
@@ -1612,12 +1612,12 @@ __STATIC_INLINE uint32_t LL_TIM_GetUpdateSource(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_SetOnePulseMode(TIM_TypeDef *TIMx, uint32_t OnePulseMode)
 {
-  MODIFY_REG(TIMx->CR1, TIM_CR1_OPM, OnePulseMode);
+  MODIFY_REG(TIMx->CTR1, TIM_CR1_OPM, OnePulseMode);
 }
 
 /**
   * @brief  Get actual one pulse mode.
-  * @rmtoll CR1          OPM           LL_TIM_GetOnePulseMode
+  * @rmtoll CTR1          OPM           LL_TIM_GetOnePulseMode
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_ONEPULSEMODE_SINGLE
@@ -1625,7 +1625,7 @@ __STATIC_INLINE void LL_TIM_SetOnePulseMode(TIM_TypeDef *TIMx, uint32_t OnePulse
   */
 __STATIC_INLINE uint32_t LL_TIM_GetOnePulseMode(TIM_TypeDef *TIMx)
 {
-  return (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_OPM));
+  return (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_OPM));
 }
 
 /**
@@ -1636,8 +1636,8 @@ __STATIC_INLINE uint32_t LL_TIM_GetOnePulseMode(TIM_TypeDef *TIMx)
   * @note Switching from Center Aligned counter mode to Edge counter mode (or reverse)
   *       requires a timer reset to avoid unexpected direction
   *       due to DIR bit readonly in center aligned mode.
-  * @rmtoll CR1          DIR           LL_TIM_SetCounterMode\n
-  *         CR1          CMS           LL_TIM_SetCounterMode
+  * @rmtoll CTR1          DIR           LL_TIM_SetCounterMode\n
+  *         CTR1          CMS           LL_TIM_SetCounterMode
   * @param  TIMx Timer instance
   * @param  CounterMode This parameter can be one of the following values:
   *         @arg @ref LL_TIM_COUNTERMODE_UP
@@ -1649,7 +1649,7 @@ __STATIC_INLINE uint32_t LL_TIM_GetOnePulseMode(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_SetCounterMode(TIM_TypeDef *TIMx, uint32_t CounterMode)
 {
-  MODIFY_REG(TIMx->CR1, (TIM_CR1_DIR | TIM_CR1_CMS), CounterMode);
+  MODIFY_REG(TIMx->CTR1, (TIM_CR1_DIR | TIM_CR1_CMS), CounterMode);
 }
 
 /**
@@ -1657,8 +1657,8 @@ __STATIC_INLINE void LL_TIM_SetCounterMode(TIM_TypeDef *TIMx, uint32_t CounterMo
   * @note Macro IS_TIM_COUNTER_MODE_SELECT_INSTANCE(TIMx) can be used to
   *       check whether or not the counter mode selection feature is supported
   *       by a timer instance.
-  * @rmtoll CR1          DIR           LL_TIM_GetCounterMode\n
-  *         CR1          CMS           LL_TIM_GetCounterMode
+  * @rmtoll CTR1          DIR           LL_TIM_GetCounterMode\n
+  *         CTR1          CMS           LL_TIM_GetCounterMode
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_COUNTERMODE_UP
@@ -1671,11 +1671,11 @@ __STATIC_INLINE uint32_t LL_TIM_GetCounterMode(TIM_TypeDef *TIMx)
 {
   uint32_t counter_mode;
 
-  counter_mode = (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_CMS));
+  counter_mode = (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_CMS));
 
   if (counter_mode == 0U)
   {
-    counter_mode = (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_DIR));
+    counter_mode = (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_DIR));
   }
 
   return counter_mode;
@@ -1683,35 +1683,35 @@ __STATIC_INLINE uint32_t LL_TIM_GetCounterMode(TIM_TypeDef *TIMx)
 
 /**
   * @brief  Enable auto-reload (ARR) preload.
-  * @rmtoll CR1          ARPE          LL_TIM_EnableARRPreload
+  * @rmtoll CTR1          ARPE          LL_TIM_EnableARRPreload
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_EnableARRPreload(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR1, TIM_CR1_ARPE);
+  SET_BIT(TIMx->CTR1, TIM_CR1_ARPE);
 }
 
 /**
   * @brief  Disable auto-reload (ARR) preload.
-  * @rmtoll CR1          ARPE          LL_TIM_DisableARRPreload
+  * @rmtoll CTR1          ARPE          LL_TIM_DisableARRPreload
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_DisableARRPreload(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR1, TIM_CR1_ARPE);
+  CLEAR_BIT(TIMx->CTR1, TIM_CR1_ARPE);
 }
 
 /**
   * @brief  Indicates whether auto-reload (ARR) preload is enabled.
-  * @rmtoll CR1          ARPE          LL_TIM_IsEnabledARRPreload
+  * @rmtoll CTR1          ARPE          LL_TIM_IsEnabledARRPreload
   * @param  TIMx Timer instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_TIM_IsEnabledARRPreload(TIM_TypeDef *TIMx)
 {
-  return ((READ_BIT(TIMx->CR1, TIM_CR1_ARPE) == (TIM_CR1_ARPE)) ? 1UL : 0UL);
+  return ((READ_BIT(TIMx->CTR1, TIM_CR1_ARPE) == (TIM_CR1_ARPE)) ? 1UL : 0UL);
 }
 
 /**
@@ -1720,7 +1720,7 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledARRPreload(TIM_TypeDef *TIMx)
   * @note Macro IS_TIM_CLOCK_DIVISION_INSTANCE(TIMx) can be used to check
   *       whether or not the clock division feature is supported by the timer
   *       instance.
-  * @rmtoll CR1          CKD           LL_TIM_SetClockDivision
+  * @rmtoll CTR1          CKD           LL_TIM_SetClockDivision
   * @param  TIMx Timer instance
   * @param  ClockDivision This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CLOCKDIVISION_DIV1
@@ -1730,7 +1730,7 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledARRPreload(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_SetClockDivision(TIM_TypeDef *TIMx, uint32_t ClockDivision)
 {
-  MODIFY_REG(TIMx->CR1, TIM_CR1_CKD, ClockDivision);
+  MODIFY_REG(TIMx->CTR1, TIM_CR1_CKD, ClockDivision);
 }
 
 /**
@@ -1739,7 +1739,7 @@ __STATIC_INLINE void LL_TIM_SetClockDivision(TIM_TypeDef *TIMx, uint32_t ClockDi
   * @note Macro IS_TIM_CLOCK_DIVISION_INSTANCE(TIMx) can be used to check
   *       whether or not the clock division feature is supported by the timer
   *       instance.
-  * @rmtoll CR1          CKD           LL_TIM_GetClockDivision
+  * @rmtoll CTR1          CKD           LL_TIM_GetClockDivision
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_CLOCKDIVISION_DIV1
@@ -1748,7 +1748,7 @@ __STATIC_INLINE void LL_TIM_SetClockDivision(TIM_TypeDef *TIMx, uint32_t ClockDi
   */
 __STATIC_INLINE uint32_t LL_TIM_GetClockDivision(TIM_TypeDef *TIMx)
 {
-  return (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_CKD));
+  return (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_CKD));
 }
 
 /**
@@ -1780,7 +1780,7 @@ __STATIC_INLINE uint32_t LL_TIM_GetCounter(TIM_TypeDef *TIMx)
 
 /**
   * @brief  Get the current direction of the counter
-  * @rmtoll CR1          DIR           LL_TIM_GetDirection
+  * @rmtoll CTR1          DIR           LL_TIM_GetDirection
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_COUNTERDIRECTION_UP
@@ -1788,7 +1788,7 @@ __STATIC_INLINE uint32_t LL_TIM_GetCounter(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE uint32_t LL_TIM_GetDirection(TIM_TypeDef *TIMx)
 {
-  return (uint32_t)(READ_BIT(TIMx->CR1, TIM_CR1_DIR));
+  return (uint32_t)(READ_BIT(TIMx->CTR1, TIM_CR1_DIR));
 }
 
 /**
@@ -1879,24 +1879,24 @@ __STATIC_INLINE uint32_t LL_TIM_GetRepetitionCounter(TIM_TypeDef *TIMx)
   * @brief  Force a continuous copy of the update interrupt flag (UIF) into the timer counter register (bit 31).
   * @note This allows both the counter value and a potential roll-over condition signalled by the UIFCPY flag to be read
   *       in an atomic way.
-  * @rmtoll CR1          UIFREMAP      LL_TIM_EnableUIFRemap
+  * @rmtoll CTR1          UIFREMAP      LL_TIM_EnableUIFRemap
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_EnableUIFRemap(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR1, TIM_CR1_UIFREMAP);
+  SET_BIT(TIMx->CTR1, TIM_CR1_UIFREMAP);
 }
 
 /**
   * @brief  Disable update interrupt flag (UIF) remapping.
-  * @rmtoll CR1          UIFREMAP      LL_TIM_DisableUIFRemap
+  * @rmtoll CTR1          UIFREMAP      LL_TIM_DisableUIFRemap
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_DisableUIFRemap(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR1, TIM_CR1_UIFREMAP);
+  CLEAR_BIT(TIMx->CTR1, TIM_CR1_UIFREMAP);
 }
 
 /**
@@ -1923,33 +1923,33 @@ __STATIC_INLINE uint32_t LL_TIM_IsActiveUIFCPY(uint32_t Counter)
   * @note Only on channels that have a complementary output.
   * @note Macro IS_TIM_COMMUTATION_EVENT_INSTANCE(TIMx) can be used to check
   *       whether or not a timer instance is able to generate a commutation event.
-  * @rmtoll CR2          CCPC          LL_TIM_CC_EnablePreload
+  * @rmtoll CTR2          CCPC          LL_TIM_CC_EnablePreload
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_CC_EnablePreload(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR2, TIM_CR2_CCPC);
+  SET_BIT(TIMx->CTR2, TIM_CR2_CCPC);
 }
 
 /**
   * @brief  Disable  the capture/compare control bits (CCxE, CCxNE and OCxM) preload.
   * @note Macro IS_TIM_COMMUTATION_EVENT_INSTANCE(TIMx) can be used to check
   *       whether or not a timer instance is able to generate a commutation event.
-  * @rmtoll CR2          CCPC          LL_TIM_CC_DisablePreload
+  * @rmtoll CTR2          CCPC          LL_TIM_CC_DisablePreload
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_CC_DisablePreload(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR2, TIM_CR2_CCPC);
+  CLEAR_BIT(TIMx->CTR2, TIM_CR2_CCPC);
 }
 
 /**
   * @brief  Set the updated source of the capture/compare control bits (CCxE, CCxNE and OCxM).
   * @note Macro IS_TIM_COMMUTATION_EVENT_INSTANCE(TIMx) can be used to check
   *       whether or not a timer instance is able to generate a commutation event.
-  * @rmtoll CR2          CCUS          LL_TIM_CC_SetUpdate
+  * @rmtoll CTR2          CCUS          LL_TIM_CC_SetUpdate
   * @param  TIMx Timer instance
   * @param  CCUpdateSource This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CCUPDATESOURCE_COMG_ONLY
@@ -1958,12 +1958,12 @@ __STATIC_INLINE void LL_TIM_CC_DisablePreload(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_CC_SetUpdate(TIM_TypeDef *TIMx, uint32_t CCUpdateSource)
 {
-  MODIFY_REG(TIMx->CR2, TIM_CR2_CCUS, CCUpdateSource);
+  MODIFY_REG(TIMx->CTR2, TIM_CR2_CCUS, CCUpdateSource);
 }
 
 /**
   * @brief  Set the trigger of the capture/compare DMA request.
-  * @rmtoll CR2          CCDS          LL_TIM_CC_SetDMAReqTrigger
+  * @rmtoll CTR2          CCDS          LL_TIM_CC_SetDMAReqTrigger
   * @param  TIMx Timer instance
   * @param  DMAReqTrigger This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CCDMAREQUEST_CC
@@ -1972,12 +1972,12 @@ __STATIC_INLINE void LL_TIM_CC_SetUpdate(TIM_TypeDef *TIMx, uint32_t CCUpdateSou
   */
 __STATIC_INLINE void LL_TIM_CC_SetDMAReqTrigger(TIM_TypeDef *TIMx, uint32_t DMAReqTrigger)
 {
-  MODIFY_REG(TIMx->CR2, TIM_CR2_CCDS, DMAReqTrigger);
+  MODIFY_REG(TIMx->CTR2, TIM_CR2_CCDS, DMAReqTrigger);
 }
 
 /**
   * @brief  Get actual trigger of the capture/compare DMA request.
-  * @rmtoll CR2          CCDS          LL_TIM_CC_GetDMAReqTrigger
+  * @rmtoll CTR2          CCDS          LL_TIM_CC_GetDMAReqTrigger
   * @param  TIMx Timer instance
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_TIM_CCDMAREQUEST_CC
@@ -1985,7 +1985,7 @@ __STATIC_INLINE void LL_TIM_CC_SetDMAReqTrigger(TIM_TypeDef *TIMx, uint32_t DMAR
   */
 __STATIC_INLINE uint32_t LL_TIM_CC_GetDMAReqTrigger(TIM_TypeDef *TIMx)
 {
-  return (uint32_t)(READ_BIT(TIMx->CR2, TIM_CR2_CCDS));
+  return (uint32_t)(READ_BIT(TIMx->CTR2, TIM_CR2_CCDS));
 }
 
 /**
@@ -2115,12 +2115,12 @@ __STATIC_INLINE uint32_t LL_TIM_CC_IsEnabledChannel(TIM_TypeDef *TIMx, uint32_t 
   *         CCER         CC4P          LL_TIM_OC_ConfigOutput\n
   *         CCER         CC5P          LL_TIM_OC_ConfigOutput\n
   *         CCER         CC6P          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS1          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS2          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS3          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS4          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS5          LL_TIM_OC_ConfigOutput\n
-  *         CR2          OIS6          LL_TIM_OC_ConfigOutput
+  *         CTR2          OIS1          LL_TIM_OC_ConfigOutput\n
+  *         CTR2          OIS2          LL_TIM_OC_ConfigOutput\n
+  *         CTR2          OIS3          LL_TIM_OC_ConfigOutput\n
+  *         CTR2          OIS4          LL_TIM_OC_ConfigOutput\n
+  *         CTR2          OIS5          LL_TIM_OC_ConfigOutput\n
+  *         CTR2          OIS6          LL_TIM_OC_ConfigOutput
   * @param  TIMx Timer instance
   * @param  Channel This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CHANNEL_CH1
@@ -2141,7 +2141,7 @@ __STATIC_INLINE void LL_TIM_OC_ConfigOutput(TIM_TypeDef *TIMx, uint32_t Channel,
   CLEAR_BIT(*pReg, (TIM_CCMR1_CC1S << SHIFT_TAB_OCxx[iChannel]));
   MODIFY_REG(TIMx->CCER, (TIM_CCER_CC1P << SHIFT_TAB_CCxP[iChannel]),
              (Configuration & TIM_CCER_CC1P) << SHIFT_TAB_CCxP[iChannel]);
-  MODIFY_REG(TIMx->CR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel]),
+  MODIFY_REG(TIMx->CTR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel]),
              (Configuration & TIM_CR2_OIS1) << SHIFT_TAB_OISx[iChannel]);
 }
 
@@ -2296,15 +2296,15 @@ __STATIC_INLINE uint32_t LL_TIM_OC_GetPolarity(TIM_TypeDef *TIMx, uint32_t Chann
   *       supporting the break feature. Macro IS_TIM_BREAK_INSTANCE(TIMx)
   *       can be used to check whether or not a timer instance provides
   *       a break input.
-  * @rmtoll CR2         OIS1          LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS2N         LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS2          LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS2N         LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS3          LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS3N         LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS4          LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS5          LL_TIM_OC_SetIdleState\n
-  *         CR2         OIS6          LL_TIM_OC_SetIdleState
+  * @rmtoll CTR2         OIS1          LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS2N         LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS2          LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS2N         LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS3          LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS3N         LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS4          LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS5          LL_TIM_OC_SetIdleState\n
+  *         CTR2         OIS6          LL_TIM_OC_SetIdleState
   * @param  TIMx Timer instance
   * @param  Channel This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CHANNEL_CH1
@@ -2324,20 +2324,20 @@ __STATIC_INLINE uint32_t LL_TIM_OC_GetPolarity(TIM_TypeDef *TIMx, uint32_t Chann
 __STATIC_INLINE void LL_TIM_OC_SetIdleState(TIM_TypeDef *TIMx, uint32_t Channel, uint32_t IdleState)
 {
   uint8_t iChannel = TIM_GET_CHANNEL_INDEX(Channel);
-  MODIFY_REG(TIMx->CR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel]),  IdleState << SHIFT_TAB_OISx[iChannel]);
+  MODIFY_REG(TIMx->CTR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel]),  IdleState << SHIFT_TAB_OISx[iChannel]);
 }
 
 /**
   * @brief  Get the IDLE state of an output channel
-  * @rmtoll CR2         OIS1          LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS2N         LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS2          LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS2N         LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS3          LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS3N         LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS4          LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS5          LL_TIM_OC_GetIdleState\n
-  *         CR2         OIS6          LL_TIM_OC_GetIdleState
+  * @rmtoll CTR2         OIS1          LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS2N         LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS2          LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS2N         LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS3          LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS3N         LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS4          LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS5          LL_TIM_OC_GetIdleState\n
+  *         CTR2         OIS6          LL_TIM_OC_GetIdleState
   * @param  TIMx Timer instance
   * @param  Channel This parameter can be one of the following values:
   *         @arg @ref LL_TIM_CHANNEL_CH1
@@ -2356,7 +2356,7 @@ __STATIC_INLINE void LL_TIM_OC_SetIdleState(TIM_TypeDef *TIMx, uint32_t Channel,
 __STATIC_INLINE uint32_t LL_TIM_OC_GetIdleState(TIM_TypeDef *TIMx, uint32_t Channel)
 {
   uint8_t iChannel = TIM_GET_CHANNEL_INDEX(Channel);
-  return (READ_BIT(TIMx->CR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel])) >> SHIFT_TAB_OISx[iChannel]);
+  return (READ_BIT(TIMx->CTR2, (TIM_CR2_OIS1 << SHIFT_TAB_OISx[iChannel])) >> SHIFT_TAB_OISx[iChannel]);
 }
 
 /**
@@ -3110,39 +3110,39 @@ __STATIC_INLINE uint32_t LL_TIM_IC_GetPolarity(TIM_TypeDef *TIMx, uint32_t Chann
   * @brief  Connect the TIMx_CH1, CH2 and CH3 pins  to the TI1 input (XOR combination).
   * @note Macro IS_TIM_XOR_INSTANCE(TIMx) can be used to check whether or not
   *       a timer instance provides an XOR input.
-  * @rmtoll CR2          TI1S          LL_TIM_IC_EnableXORCombination
+  * @rmtoll CTR2          TI1S          LL_TIM_IC_EnableXORCombination
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_IC_EnableXORCombination(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR2, TIM_CR2_TI1S);
+  SET_BIT(TIMx->CTR2, TIM_CR2_TI1S);
 }
 
 /**
   * @brief  Disconnect the TIMx_CH1, CH2 and CH3 pins  from the TI1 input.
   * @note Macro IS_TIM_XOR_INSTANCE(TIMx) can be used to check whether or not
   *       a timer instance provides an XOR input.
-  * @rmtoll CR2          TI1S          LL_TIM_IC_DisableXORCombination
+  * @rmtoll CTR2          TI1S          LL_TIM_IC_DisableXORCombination
   * @param  TIMx Timer instance
   * @retval None
   */
 __STATIC_INLINE void LL_TIM_IC_DisableXORCombination(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR2, TIM_CR2_TI1S);
+  CLEAR_BIT(TIMx->CTR2, TIM_CR2_TI1S);
 }
 
 /**
   * @brief  Indicates whether the TIMx_CH1, CH2 and CH3 pins are connectected to the TI1 input.
   * @note Macro IS_TIM_XOR_INSTANCE(TIMx) can be used to check whether or not
   * a timer instance provides an XOR input.
-  * @rmtoll CR2          TI1S          LL_TIM_IC_IsEnabledXORCombination
+  * @rmtoll CTR2          TI1S          LL_TIM_IC_IsEnabledXORCombination
   * @param  TIMx Timer instance
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_TIM_IC_IsEnabledXORCombination(TIM_TypeDef *TIMx)
 {
-  return ((READ_BIT(TIMx->CR2, TIM_CR2_TI1S) == (TIM_CR2_TI1S)) ? 1UL : 0UL);
+  return ((READ_BIT(TIMx->CTR2, TIM_CR2_TI1S) == (TIM_CR2_TI1S)) ? 1UL : 0UL);
 }
 
 /**
@@ -3308,7 +3308,7 @@ __STATIC_INLINE void LL_TIM_SetEncoderMode(TIM_TypeDef *TIMx, uint32_t EncoderMo
   * @brief  Set the trigger output (TRGO) used for timer synchronization .
   * @note Macro IS_TIM_MASTER_INSTANCE(TIMx) can be used to check
   *       whether or not a timer instance can operate as a master timer.
-  * @rmtoll CR2          MMS           LL_TIM_SetTriggerOutput
+  * @rmtoll CTR2          MMS           LL_TIM_SetTriggerOutput
   * @param  TIMx Timer instance
   * @param  TimerSynchronization This parameter can be one of the following values:
   *         @arg @ref LL_TIM_TRGO_RESET
@@ -3323,14 +3323,14 @@ __STATIC_INLINE void LL_TIM_SetEncoderMode(TIM_TypeDef *TIMx, uint32_t EncoderMo
   */
 __STATIC_INLINE void LL_TIM_SetTriggerOutput(TIM_TypeDef *TIMx, uint32_t TimerSynchronization)
 {
-  MODIFY_REG(TIMx->CR2, TIM_CR2_MMS, TimerSynchronization);
+  MODIFY_REG(TIMx->CTR2, TIM_CR2_MMS, TimerSynchronization);
 }
 
 /**
   * @brief  Set the trigger output 2 (TRGO2) used for ADC synchronization .
   * @note Macro IS_TIM_TRGO2_INSTANCE(TIMx) can be used to check
   *       whether or not a timer instance can be used for ADC synchronization.
-  * @rmtoll CR2          MMS2          LL_TIM_SetTriggerOutput2
+  * @rmtoll CTR2          MMS2          LL_TIM_SetTriggerOutput2
   * @param  TIMx Timer Instance
   * @param  ADCSynchronization This parameter can be one of the following values:
   *         @arg @ref LL_TIM_TRGO2_RESET
@@ -3353,7 +3353,7 @@ __STATIC_INLINE void LL_TIM_SetTriggerOutput(TIM_TypeDef *TIMx, uint32_t TimerSy
   */
 __STATIC_INLINE void LL_TIM_SetTriggerOutput2(TIM_TypeDef *TIMx, uint32_t ADCSynchronization)
 {
-  MODIFY_REG(TIMx->CR2, TIM_CR2_MMS2, ADCSynchronization);
+  MODIFY_REG(TIMx->CTR2, TIM_CR2_MMS2, ADCSynchronization);
 }
 
 /**
