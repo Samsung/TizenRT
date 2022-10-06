@@ -45,16 +45,6 @@ jobs:
       - *docker-cp
       - *build-job
 
-  artik053/st_things:
-    machine:
-      image: ubuntu-2004:202201-02
-    working_directory: ~/TizenRT
-    steps:
-      - attach_workspace:
-          at: ~/TizenRT
-      - *docker-cp
-      - *build-job
-
   artik053/tc:
     machine:
       image: ubuntu-2004:202201-02
@@ -115,15 +105,32 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8720e/hello:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8720e/loadable_apps:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
 workflows:
   version: 2
   build-tizenrt:
     jobs:
       - checkout_code
       - artik055s/audio:
-          requires:
-            - checkout_code
-      - artik053/st_things:
           requires:
             - checkout_code
       - artik053/tc:
@@ -142,5 +149,11 @@ workflows:
           requires:
             - checkout_code
       - rtl8721csm/loadable_apps:
+          requires:
+            - checkout_code
+      - rtl8720e/hello:
+          requires:
+            - checkout_code
+      - rtl8720e/loadable_apps:
           requires:
             - checkout_code
