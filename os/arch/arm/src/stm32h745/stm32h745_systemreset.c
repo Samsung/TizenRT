@@ -59,6 +59,7 @@
 #include <tinyara/board.h>
 #include <tinyara/reboot_reason.h>
 #include "up_arch.h"
+#include <sys/boardctl.h>
 
 #include <stm32h7xx_ll_rcc.h>
 #include <stm32h7xx_ll_bus.h>
@@ -238,12 +239,26 @@ bool up_reboot_reason_is_written(void)
  ****************************************************************************/
 int board_reset(int status)
 {
-	up_systemreset();
+	if (status == M7_M4_RESET) {	/* only if status is M7_M4_RESET */
+		stm32h745_system_reset();
+	} else {			/* in all other cases reset only M7 */
+		up_systemreset();
+	}
 	return 0;
 }
 
-
-
+/****************************************************************************
+ * Name: stm32h745_system_reset
+ *
+ * Description:
+ *   Reset board.  This function may or may not be supported by a
+ *   particular board architecture.
+ *
+ ****************************************************************************/
+void stm32h745_system_reset(void)
+{
+    __NVIC_SystemReset();
+}
 
 
 

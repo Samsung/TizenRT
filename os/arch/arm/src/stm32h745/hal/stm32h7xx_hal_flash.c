@@ -200,13 +200,13 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
 #endif /* FLASH_OPTCR_PG_OTP */
       {
         /* Set PG bit */
-        SET_BIT(FLASH->CR1, FLASH_CR_PG);
+        SET_BIT(FLASH->CTR1, FLASH_CR_PG);
       }
     }
     else
     {
       /* Set PG bit */
-      SET_BIT(FLASH->CR2, FLASH_CR_PG);
+      SET_BIT(FLASH->CTR2, FLASH_CR_PG);
     }
 #else /* Single Bank */
 #if defined (FLASH_OPTCR_PG_OTP)
@@ -219,7 +219,7 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
 #endif /* FLASH_OPTCR_PG_OTP */
       {
         /* Set PG bit */
-        SET_BIT(FLASH->CR1, FLASH_CR_PG);
+        SET_BIT(FLASH->CTR1, FLASH_CR_PG);
       }
 #endif /* DUAL_BANK */
 
@@ -264,12 +264,12 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
       if(bank == FLASH_BANK_1)
       {
         /* If the program operation is completed, disable the PG */
-        CLEAR_BIT(FLASH->CR1, FLASH_CR_PG);
+        CLEAR_BIT(FLASH->CTR1, FLASH_CR_PG);
       }
       else
       {
         /* If the program operation is completed, disable the PG */
-        CLEAR_BIT(FLASH->CR2, FLASH_CR_PG);
+        CLEAR_BIT(FLASH->CTR2, FLASH_CR_PG);
       }
     }
 #else /* Single Bank */
@@ -283,7 +283,7 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t FlashAddress,
 #endif /* FLASH_OPTCR_PG_OTP */
     {
       /* If the program operation is completed, disable the PG */
-      CLEAR_BIT(FLASH->CR1, FLASH_CR_PG);
+      CLEAR_BIT(FLASH->CTR1, FLASH_CR_PG);
     }
 #endif /* DUAL_BANK */
   }
@@ -373,7 +373,7 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
 #endif /* FLASH_OPTCR_PG_OTP */
       {
         /* Set PG bit */
-        SET_BIT(FLASH->CR1, FLASH_CR_PG);
+        SET_BIT(FLASH->CTR1, FLASH_CR_PG);
       }
 
       /* Enable End of Operation and Error interrupts for Bank 1 */
@@ -391,7 +391,7 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
       pFlash.ProcedureOnGoing = FLASH_PROC_PROGRAM_BANK2;
 
       /* Set PG bit */
-      SET_BIT(FLASH->CR2, FLASH_CR_PG);
+      SET_BIT(FLASH->CTR2, FLASH_CR_PG);
 
       /* Enable End of Operation and Error interrupts for Bank2 */
 #if defined (FLASH_CR_OPERRIE)
@@ -416,7 +416,7 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t FlashAddre
 #endif /* FLASH_OPTCR_PG_OTP */
     {
       /* Set PG bit */
-      SET_BIT(FLASH->CR1, FLASH_CR_PG);
+      SET_BIT(FLASH->CTR1, FLASH_CR_PG);
     }
 
       /* Enable End of Operation and Error interrupts for Bank 1 */
@@ -785,28 +785,28 @@ __weak void HAL_FLASH_OperationErrorCallback(uint32_t ReturnValue)
   */
 HAL_StatusTypeDef HAL_FLASH_Unlock(void)
 {
-  if(READ_BIT(FLASH->CR1, FLASH_CR_LOCK) != 0U)
+  if(READ_BIT(FLASH->CTR1, FLASH_CR_LOCK) != 0U)
   {
     /* Authorize the FLASH Bank1 Registers access */
     WRITE_REG(FLASH->KEYR1, FLASH_KEY1);
     WRITE_REG(FLASH->KEYR1, FLASH_KEY2);
 
     /* Verify Flash Bank1 is unlocked */
-    if (READ_BIT(FLASH->CR1, FLASH_CR_LOCK) != 0U)
+    if (READ_BIT(FLASH->CTR1, FLASH_CR_LOCK) != 0U)
     {
       return HAL_ERROR;
     }
   }
 
 #if defined (DUAL_BANK)
-  if(READ_BIT(FLASH->CR2, FLASH_CR_LOCK) != 0U)
+  if(READ_BIT(FLASH->CTR2, FLASH_CR_LOCK) != 0U)
   {
     /* Authorize the FLASH Bank2 Registers access */
     WRITE_REG(FLASH->KEYR2, FLASH_KEY1);
     WRITE_REG(FLASH->KEYR2, FLASH_KEY2);
 
     /* Verify Flash Bank2 is unlocked */
-    if (READ_BIT(FLASH->CR2, FLASH_CR_LOCK) != 0U)
+    if (READ_BIT(FLASH->CTR2, FLASH_CR_LOCK) != 0U)
     {
       return HAL_ERROR;
     }
@@ -823,20 +823,20 @@ HAL_StatusTypeDef HAL_FLASH_Unlock(void)
 HAL_StatusTypeDef HAL_FLASH_Lock(void)
 {
   /* Set the LOCK Bit to lock the FLASH Bank1 Control Register access */
-  SET_BIT(FLASH->CR1, FLASH_CR_LOCK);
+  SET_BIT(FLASH->CTR1, FLASH_CR_LOCK);
 
   /* Verify Flash Bank1 is locked */
-  if (READ_BIT(FLASH->CR1, FLASH_CR_LOCK) == 0U)
+  if (READ_BIT(FLASH->CTR1, FLASH_CR_LOCK) == 0U)
   {
     return HAL_ERROR;
   }
 
 #if defined (DUAL_BANK)
   /* Set the LOCK Bit to lock the FLASH Bank2 Control Register access */
-  SET_BIT(FLASH->CR2, FLASH_CR_LOCK);
+  SET_BIT(FLASH->CTR2, FLASH_CR_LOCK);
 
   /* Verify Flash Bank2 is locked */
-  if (READ_BIT(FLASH->CR2, FLASH_CR_LOCK) == 0U)
+  if (READ_BIT(FLASH->CTR2, FLASH_CR_LOCK) == 0U)
   {
     return HAL_ERROR;
   }

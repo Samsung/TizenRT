@@ -1418,7 +1418,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_DeInit(TIM_HandleTypeDef *htim)
   * @param  htim TIM PWM handle
   * @retval None
   */
-__weak void __weak_HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
+__weak void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(htim);
@@ -1433,7 +1433,7 @@ __weak void __weak_HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
   * @param  htim TIM PWM handle
   * @retval None
   */
-__weak void __weak_HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim)
+__weak void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef *htim)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(htim);
@@ -2673,10 +2673,10 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_Init(TIM_HandleTypeDef *htim, uint32_t OnePul
   TIM_Base_SetConfig(htim->Instance, &htim->Init);
 
   /* Reset the OPM Bit */
-  htim->Instance->CR1 &= ~TIM_CR1_OPM;
+  htim->Instance->CTR1 &= ~TIM_CR1_OPM;
 
   /* Configure the OPM Mode */
-  htim->Instance->CR1 |= OnePulseMode;
+  htim->Instance->CTR1 |= OnePulseMode;
 
   /* Initialize the DMA burst operation state */
   htim->DMABurstState = HAL_DMA_BURST_STATE_READY;
@@ -5597,8 +5597,8 @@ HAL_StatusTypeDef HAL_TIM_ConfigTI1Input(TIM_HandleTypeDef *htim, uint32_t TI1_S
   assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
   assert_param(IS_TIM_TI1SELECTION(TI1_Selection));
 
-  /* Get the TIMx CR2 register value */
-  tmpcr2 = htim->Instance->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 = htim->Instance->CTR2;
 
   /* Reset the TI1 selection */
   tmpcr2 &= ~TIM_CR2_TI1S;
@@ -5607,7 +5607,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigTI1Input(TIM_HandleTypeDef *htim, uint32_t TI1_S
   tmpcr2 |= TI1_Selection;
 
   /* Write to TIMxCR2 */
-  htim->Instance->CR2 = tmpcr2;
+  htim->Instance->CTR2 = tmpcr2;
 
   return HAL_OK;
 }
@@ -6933,7 +6933,7 @@ static void TIM_DMATriggerHalfCplt(DMA_HandleTypeDef *hdma)
 void TIM_Base_SetConfig(TIM_TypeDef *TIMx, TIM_Base_InitTypeDef *Structure)
 {
   uint32_t tmpcr1;
-  tmpcr1 = TIMx->CR1;
+  tmpcr1 = TIMx->CTR1;
 
   /* Set TIM Time Base Unit parameters ---------------------------------------*/
   if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(TIMx))
@@ -6953,7 +6953,7 @@ void TIM_Base_SetConfig(TIM_TypeDef *TIMx, TIM_Base_InitTypeDef *Structure)
   /* Set the auto-reload preload */
   MODIFY_REG(tmpcr1, TIM_CR1_ARPE, Structure->AutoReloadPreload);
 
-  TIMx->CR1 = tmpcr1;
+  TIMx->CTR1 = tmpcr1;
 
   /* Set the Autoreload value */
   TIMx->ARR = (uint32_t)Structure->Period ;
@@ -6989,8 +6989,8 @@ static void TIM_OC1_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
 
   /* Get the TIMx CCMR1 register value */
   tmpccmrx = TIMx->CCMR1;
@@ -7034,8 +7034,8 @@ static void TIM_OC1_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
     tmpcr2 |= OC_Config->OCNIdleState;
   }
 
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR1 */
   TIMx->CCMR1 = tmpccmrx;
@@ -7064,8 +7064,8 @@ void TIM_OC2_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
 
   /* Get the TIMx CCMR1 register value */
   tmpccmrx = TIMx->CCMR1;
@@ -7110,8 +7110,8 @@ void TIM_OC2_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
     tmpcr2 |= (OC_Config->OCNIdleState << 2U);
   }
 
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR1 */
   TIMx->CCMR1 = tmpccmrx;
@@ -7140,8 +7140,8 @@ static void TIM_OC3_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
 
   /* Get the TIMx CCMR2 register value */
   tmpccmrx = TIMx->CCMR2;
@@ -7184,8 +7184,8 @@ static void TIM_OC3_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
     tmpcr2 |= (OC_Config->OCNIdleState << 4U);
   }
 
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR2 */
   TIMx->CCMR2 = tmpccmrx;
@@ -7214,8 +7214,8 @@ static void TIM_OC4_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
 
   /* Get the TIMx CCMR2 register value */
   tmpccmrx = TIMx->CCMR2;
@@ -7244,8 +7244,8 @@ static void TIM_OC4_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
     tmpcr2 |= (OC_Config->OCIdleState << 6U);
   }
 
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR2 */
   TIMx->CCMR2 = tmpccmrx;
@@ -7275,8 +7275,8 @@ static void TIM_OC5_SetConfig(TIM_TypeDef *TIMx,
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
   /* Get the TIMx CCMR1 register value */
   tmpccmrx = TIMx->CCMR3;
 
@@ -7297,8 +7297,8 @@ static void TIM_OC5_SetConfig(TIM_TypeDef *TIMx,
     /* Set the Output Idle state */
     tmpcr2 |= (OC_Config->OCIdleState << 8U);
   }
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR3 */
   TIMx->CCMR3 = tmpccmrx;
@@ -7328,8 +7328,8 @@ static void TIM_OC6_SetConfig(TIM_TypeDef *TIMx,
 
   /* Get the TIMx CCER register value */
   tmpccer = TIMx->CCER;
-  /* Get the TIMx CR2 register value */
-  tmpcr2 =  TIMx->CR2;
+  /* Get the TIMx CTR2 register value */
+  tmpcr2 =  TIMx->CTR2;
   /* Get the TIMx CCMR1 register value */
   tmpccmrx = TIMx->CCMR3;
 
@@ -7351,8 +7351,8 @@ static void TIM_OC6_SetConfig(TIM_TypeDef *TIMx,
     tmpcr2 |= (OC_Config->OCIdleState << 10U);
   }
 
-  /* Write to TIMx CR2 */
-  TIMx->CR2 = tmpcr2;
+  /* Write to TIMx CTR2 */
+  TIMx->CTR2 = tmpcr2;
 
   /* Write to TIMx CCMR3 */
   TIMx->CCMR3 = tmpccmrx;

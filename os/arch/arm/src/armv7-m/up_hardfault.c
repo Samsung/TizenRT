@@ -115,6 +115,11 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 {
 	uint32_t *regs = (uint32_t *)context;
 	system_exception_location = regs[REG_R15];
+
+#ifdef CONFIG_ARCH_CHIP_STM32H745
+	stm32h745_flash_ecc_handler();
+#endif
+
 	/* Get the value of the program counter where the fault occurred */
 
 #ifndef CONFIG_ARMV7M_USEBASEPRI

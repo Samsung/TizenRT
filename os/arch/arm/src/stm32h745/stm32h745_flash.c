@@ -66,17 +66,16 @@
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define STM32H745_FLASH_TOTAL_SIZE   (1024 * 1024)  /*Should be changed as a using*/
+#define STM32H745_FLASH_TOTAL_SIZE   (1024 * 1024 * 2)  /*Should be changed as a using*/
 #define STM32H745_FLASH_BLOCK_SIZE   (32)           /*Should be changed as a using*/
 #define STM32H745_FLASH_ERASE_SIZE   (128 * 1024)   /*Should be changed as a using*/
-#define STM32H745_FLASH_SECTOR_NB    (STM32H745_FLASH_TOTAL_SIZE / STM32H745_FLASH_ERASE_SIZE)
+#define STM32H745_FLASH_SECTOR_NB    (16)           /*Total bank number*/
+#define STM32H745_FLASH_SECTOR_NB_EACH_BANK (8)     /*each banks number*/
 
-#define STM32H745_FLASH_FIRST_ADDRESS (0x08000000)
 #define STM32H745_FLASH_BASE_ADDRESS  (0x08000000)   /*Should be changed as a using*/
 #define STM32H745_FLASH_MAX_ADDRESS   (STM32H745_FLASH_BASE_ADDRESS + STM32H745_FLASH_TOTAL_SIZE)
 
 #define STM32H745_FLASH_SECTOR_SIZE   (128 * 1024)
-#define STM32H745_FLASH_FIRST_SECTOR  ((STM32H745_FLASH_BASE_ADDRESS - STM32H745_FLASH_FIRST_ADDRESS) / STM32H745_FLASH_SECTOR_SIZE)
 
 /************************************************************************************
  * Private Types
@@ -84,7 +83,7 @@
 
 /* This type represents the state of the MTD device.  The struct mtd_dev_s must
  * appear at the beginning of the definition so that you can freely cast between
- * pointers to struct mtd_dev_s and struct amebad_dev_s.
+ * pointers to struct mtd_dev_s.
  */
 struct stm32h745_mtd_dev_s 
 {
@@ -114,24 +113,49 @@ static ssize_t stm32h745_write(FAR struct mtd_dev_s *dev, off_t offset, size_t n
 
 /************************************************************************************
  * Name: stm32h745_erase
+ * Description: 
+ *   startblock BANK1 : 0 ~ 7
+ *   startblock BANK2 : 8 ~ 15
  ************************************************************************************/\
 static int stm32h745_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
     ssize_t result=OK;
     static FLASH_EraseInitTypeDef EraseInitStruct;
     uint32_t SECTORError = 0;
+    int Banks;
+    int Sector;
+
+    if(nblocks < 1)
+    {
+        return ERROR;
+    }
+
+    if(startblock < STM32H745_FLASH_SECTOR_NB_EACH_BANK)
+    {
+        Banks  = FLASH_BANK_1;
+        Sector = startblock;
+    }
+    else if(startblock < STM32H745_FLASH_SECTOR_NB)
+    {
+        Banks  = FLASH_BANK_2;
+        Sector = startblock - STM32H745_FLASH_SECTOR_NB_EACH_BANK;
+    }
+    else
+    {
+        return ERROR;
+    }
 
     __DSB();
     __ISB();
 
     __disable_irq();
-    stm32h745_irq_clear_pending_all();
+//    stm32h745_irq_clear_pending_all();
     HAL_FLASH_Unlock();
     /* Fill EraseInit structure*/
     EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
     EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_2;
-    EraseInitStruct.Banks         = FLASH_BANK_1;
-    EraseInitStruct.Sector        = STM32H745_FLASH_FIRST_SECTOR + startblock;
+    EraseInitStruct.Banks         = Banks;
+    EraseInitStruct.Sector        = Sector;
     EraseInitStruct.NbSectors     = nblocks;
 
     if(HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError) != HAL_OK)
@@ -290,6 +314,39 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
     return (FAR struct mtd_dev_s *)&g_dev_s;
 }
 
+/************************************************************************************
+ * Name: stm32h745_flash_ecc_handler
+ ************************************************************************************/
+
+void stm32h745_flash_ecc_handler(void)
+{
+    int ecc_sector;
+
+    if(__HAL_FLASH_GET_FLAG_BANK1(FLASH_FLAG_DBECCERR_BANK1))
+    {
+        ecc_sector = (int)((int)(READ_REG(FLASH->ECC_FA1) * STM32H745_FLASH_BLOCK_SIZE) / STM32H745_FLASH_SECTOR_SIZE);
+        
+        __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_SNECCERR_BANK1);
+        __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_DBECCERR_BANK1);
+        
+        stm32h745_erase(NULL, ecc_sector, 1);
+        lldbg("ECC Error recovery handler\n");
+        lldbg("BANK1 Sector erased:%d\n", ecc_sector);
+    }
+
+    if(__HAL_FLASH_GET_FLAG_BANK2(FLASH_FLAG_DBECCERR_BANK2))
+    {
+        ecc_sector = (int)((int)(READ_REG(FLASH->ECC_FA2) * STM32H745_FLASH_BLOCK_SIZE) / STM32H745_FLASH_SECTOR_SIZE);
+        ecc_sector = ecc_sector + STM32H745_FLASH_SECTOR_NB_EACH_BANK;
+        
+        __HAL_FLASH_CLEAR_FLAG_BANK2(FLASH_FLAG_SNECCERR_BANK2);
+        __HAL_FLASH_CLEAR_FLAG_BANK2(FLASH_FLAG_DBECCERR_BANK2);
+
+        stm32h745_erase(NULL, ecc_sector, 1);
+        lldbg("ECC Error recovery handler\n");
+        lldbg("BANK2 Sector erased:%d\n", ecc_sector);
+    }
+}
 
 
 

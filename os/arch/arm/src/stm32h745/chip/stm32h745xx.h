@@ -962,7 +962,7 @@ typedef struct
   __IO uint32_t ACR;             /*!< FLASH access control register,                            Address offset: 0x00  */
   __IO uint32_t KEYR1;           /*!< Flash Key Register for bank1,                             Address offset: 0x04  */
   __IO uint32_t OPTKEYR;         /*!< Flash Option Key Register,                                Address offset: 0x08  */
-  __IO uint32_t CR1;             /*!< Flash Control Register for bank1,                         Address offset: 0x0C  */
+  __IO uint32_t CTR1;             /*!< Flash Control Register for bank1,                         Address offset: 0x0C  */
   __IO uint32_t SR1;             /*!< Flash Status Register for bank1,                          Address offset: 0x10  */
   __IO uint32_t CCR1;            /*!< Flash Control Register for bank1,                         Address offset: 0x14  */
   __IO uint32_t OPTCR;           /*!< Flash Option Control Register,                            Address offset: 0x18  */
@@ -987,7 +987,7 @@ typedef struct
   uint32_t      RESERVED1[40];   /*!< Reserved, 0x64 to 0x100                                                         */
   __IO uint32_t KEYR2;           /*!< Flash Key Register for bank2,                             Address offset: 0x104 */
   uint32_t      RESERVED2;       /*!< Reserved, 0x108                                                                 */
-  __IO uint32_t CR2;             /*!< Flash Control Register for bank2,                         Address offset: 0x10C */
+  __IO uint32_t CTR2;             /*!< Flash Control Register for bank2,                         Address offset: 0x10C */
   __IO uint32_t SR2;             /*!< Flash Status Register for bank2,                          Address offset: 0x110 */
   __IO uint32_t CCR2;            /*!< Flash Status Register for bank2,                          Address offset: 0x114 */
   uint32_t      RESERVED3[4];    /*!< Reserved, 0x118 to 0x124                                                        */
@@ -1138,8 +1138,8 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;      /*!< I2C Control register 1,            Address offset: 0x00 */
-  __IO uint32_t CR2;      /*!< I2C Control register 2,            Address offset: 0x04 */
+  __IO uint32_t CTR1;      /*!< I2C Control register 1,            Address offset: 0x00 */
+  __IO uint32_t CTR2;      /*!< I2C Control register 2,            Address offset: 0x04 */
   __IO uint32_t OAR1;     /*!< I2C Own address 1 register,        Address offset: 0x08 */
   __IO uint32_t OAR2;     /*!< I2C Own address 2 register,        Address offset: 0x0C */
   __IO uint32_t TIMINGR;  /*!< I2C Timing register,               Address offset: 0x10 */
@@ -1256,10 +1256,10 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;       /*!< PWR power control register 1,            Address offset: 0x00 */
+  __IO uint32_t CTR1;       /*!< PWR power control register 1,            Address offset: 0x00 */
   __IO uint32_t CSR1;      /*!< PWR power control status register 1,     Address offset: 0x04 */
-  __IO uint32_t CR2;       /*!< PWR power control register 2,            Address offset: 0x08 */
-  __IO uint32_t CR3;       /*!< PWR power control register 3,            Address offset: 0x0C */
+  __IO uint32_t CTR2;       /*!< PWR power control register 2,            Address offset: 0x08 */
+  __IO uint32_t CTR3;       /*!< PWR power control register 3,            Address offset: 0x0C */
   __IO uint32_t CPUCR;     /*!< PWR CPU control register,                Address offset: 0x10 */
   __IO uint32_t CPU2CR;    /*!< PWR CPU2 control register,               Address offset: 0x14 */
   __IO uint32_t D3CR;      /*!< PWR D3 domain control register,          Address offset: 0x18 */
@@ -1442,8 +1442,8 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;      /*!< SAI block x configuration register 1,     Address offset: 0x04 */
-  __IO uint32_t CR2;      /*!< SAI block x configuration register 2,     Address offset: 0x08 */
+  __IO uint32_t CTR1;      /*!< SAI block x configuration register 1,     Address offset: 0x04 */
+  __IO uint32_t CTR2;      /*!< SAI block x configuration register 2,     Address offset: 0x08 */
   __IO uint32_t FRCR;     /*!< SAI block x frame configuration register, Address offset: 0x0C */
   __IO uint32_t SLOTR;    /*!< SAI block x slot register,                Address offset: 0x10 */
   __IO uint32_t IMR;      /*!< SAI block x interrupt mask register,      Address offset: 0x14 */
@@ -1550,8 +1550,8 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;           /*!< SPI/I2S Control register 1,                      Address offset: 0x00 */
-  __IO uint32_t CR2;           /*!< SPI Control register 2,                          Address offset: 0x04 */
+  __IO uint32_t CTR1;           /*!< SPI/I2S Control register 1,                      Address offset: 0x00 */
+  __IO uint32_t CTR2;           /*!< SPI Control register 2,                          Address offset: 0x04 */
   __IO uint32_t CFG1;          /*!< SPI Configuration register 1,                    Address offset: 0x08 */
   __IO uint32_t CFG2;          /*!< SPI Configuration register 2,                    Address offset: 0x0C */
   __IO uint32_t IER;           /*!< SPI/I2S Interrupt Enable register,               Address offset: 0x10 */
@@ -1596,8 +1596,8 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;         /*!< TIM control register 1,                   Address offset: 0x00 */
-  __IO uint32_t CR2;         /*!< TIM control register 2,                   Address offset: 0x04 */
+  __IO uint32_t CTR1;         /*!< TIM control register 1,                   Address offset: 0x00 */
+  __IO uint32_t CTR2;         /*!< TIM control register 2,                   Address offset: 0x04 */
   __IO uint32_t SMCR;        /*!< TIM slave mode control register,          Address offset: 0x08 */
   __IO uint32_t DIER;        /*!< TIM DMA/interrupt enable register,        Address offset: 0x0C */
   __IO uint32_t SR;          /*!< TIM status register,                      Address offset: 0x10 */
@@ -1667,9 +1667,9 @@ typedef struct
 
 typedef struct
 {
-  __IO uint32_t CR1;    /*!< USART Control register 1,                 Address offset: 0x00 */
-  __IO uint32_t CR2;    /*!< USART Control register 2,                 Address offset: 0x04 */
-  __IO uint32_t CR3;    /*!< USART Control register 3,                 Address offset: 0x08 */
+  __IO uint32_t CTR1;    /*!< USART Control register 1,                 Address offset: 0x00 */
+  __IO uint32_t CTR2;    /*!< USART Control register 2,                 Address offset: 0x04 */
+  __IO uint32_t CTR3;    /*!< USART Control register 3,                 Address offset: 0x08 */
   __IO uint32_t BRR;    /*!< USART Baud rate register,                 Address offset: 0x0C */
   __IO uint32_t GTPR;   /*!< USART Guard time and prescaler register,  Address offset: 0x10 */
   __IO uint32_t RTOR;   /*!< USART Receiver Time Out register,         Address offset: 0x14 */
@@ -1790,8 +1790,8 @@ typedef struct
 /* HRTIM common register definition */
 typedef struct
 {
-  __IO uint32_t CR1;        /*!< HRTIM control register1,                                    Address offset: 0x00 */
-  __IO uint32_t CR2;        /*!< HRTIM control register2,                                    Address offset: 0x04 */
+  __IO uint32_t CTR1;        /*!< HRTIM control register1,                                    Address offset: 0x00 */
+  __IO uint32_t CTR2;        /*!< HRTIM control register2,                                    Address offset: 0x04 */
   __IO uint32_t ISR;        /*!< HRTIM interrupt status register,                            Address offset: 0x08 */
   __IO uint32_t ICR;        /*!< HRTIM interrupt clear register,                             Address offset: 0x0C */
   __IO uint32_t IER;        /*!< HRTIM interrupt enable register,                            Address offset: 0x10 */

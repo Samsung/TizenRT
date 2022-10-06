@@ -321,11 +321,11 @@ HAL_StatusTypeDef HAL_PWREx_ConfigSupply (uint32_t SupplySource)
 #if defined (PWR_FLAG_SCUEN)
   if (__HAL_PWR_GET_FLAG (PWR_FLAG_SCUEN) == 0U)
 #else
-  if ((PWR->CR3 & (PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)) != (PWR_CR3_SMPSEN | PWR_CR3_LDOEN))
+  if ((PWR->CTR3 & (PWR_CR3_SMPSEN | PWR_CR3_LDOEN | PWR_CR3_BYPASS)) != (PWR_CR3_SMPSEN | PWR_CR3_LDOEN))
 #endif /* defined (PWR_FLAG_SCUEN) */
   {
     /* Check supply configuration */
-    if ((PWR->CR3 & PWR_SUPPLY_CONFIG_MASK) != SupplySource)
+    if ((PWR->CTR3 & PWR_SUPPLY_CONFIG_MASK) != SupplySource)
     {
       /* Supply configuration update locked, can't apply a new supply config */
       return HAL_ERROR;
@@ -340,7 +340,7 @@ HAL_StatusTypeDef HAL_PWREx_ConfigSupply (uint32_t SupplySource)
   }
 
   /* Set the power supply configuration */
-  MODIFY_REG (PWR->CR3, PWR_SUPPLY_CONFIG_MASK, SupplySource);
+  MODIFY_REG (PWR->CTR3, PWR_SUPPLY_CONFIG_MASK, SupplySource);
 
   /* Get tick */
   tickstart = HAL_GetTick ();
@@ -384,7 +384,7 @@ HAL_StatusTypeDef HAL_PWREx_ConfigSupply (uint32_t SupplySource)
   */
 uint32_t HAL_PWREx_GetSupplyConfig (void)
 {
-  return (PWR->CR3 & PWR_SUPPLY_CONFIG_MASK);
+  return (PWR->CTR3 & PWR_SUPPLY_CONFIG_MASK);
 }
 
 /**
@@ -431,7 +431,7 @@ HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling (uint32_t VoltageScaling)
 #if defined(SYSCFG_PWRCR_ODEN) /* STM32H74xxx and STM32H75xxx lines */
   if (VoltageScaling == PWR_REGULATOR_VOLTAGE_SCALE0)
   {
-    if ((PWR->CR3 & PWR_CR3_LDOEN) == PWR_CR3_LDOEN)
+    if ((PWR->CTR3 & PWR_CR3_LDOEN) == PWR_CR3_LDOEN)
     {
       /* Set the voltage range */
       MODIFY_REG (PWR->D3CR, PWR_D3CR_VOS, PWR_REGULATOR_VOLTAGE_SCALE1);
@@ -541,7 +541,7 @@ HAL_StatusTypeDef HAL_PWREx_ControlStopModeVoltageScaling (uint32_t VoltageScali
   assert_param (IS_PWR_STOP_MODE_REGULATOR_VOLTAGE (VoltageScaling));
 
   /* Return the stop mode voltage range */
-  MODIFY_REG (PWR->CR1, PWR_CR1_SVOS, VoltageScaling);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_SVOS, VoltageScaling);
 
   return HAL_OK;
 }
@@ -553,7 +553,7 @@ HAL_StatusTypeDef HAL_PWREx_ControlStopModeVoltageScaling (uint32_t VoltageScali
 uint32_t HAL_PWREx_GetStopModeVoltageRange (void)
 {
   /* Return the stop voltage scaling */
-  return (PWR->CR1 & PWR_CR1_SVOS);
+  return (PWR->CTR1 & PWR_CR1_SVOS);
 }
 /**
   * @}
@@ -743,7 +743,7 @@ void HAL_PWREx_EnterSTOP2Mode (uint32_t Regulator, uint8_t STOPEntry)
   assert_param (IS_PWR_STOP_ENTRY (STOPEntry));
 
   /* Select the regulator state in Stop mode */
-  MODIFY_REG (PWR->CR1, PWR_CR1_LPDS, Regulator);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_LPDS, Regulator);
 
   /* Go to DStop2 mode (deep retention) when CPU domain enters Deepsleep */
   SET_BIT (PWR->CPUCR, PWR_CPUCR_RETDS_CD);
@@ -821,7 +821,7 @@ void HAL_PWREx_EnterSTOPMode (uint32_t Regulator, uint8_t STOPEntry, uint32_t Do
   assert_param (IS_PWR_DOMAIN (Domain));
 
   /* Select the regulator state in Stop mode */
-  MODIFY_REG (PWR->CR1, PWR_CR1_LPDS, Regulator);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_LPDS, Regulator);
 
   /* Select the domain Power Down DeepSleep */
   if (Domain == PWR_D1_DOMAIN)
@@ -1212,7 +1212,7 @@ void HAL_PWREx_ReleaseCore (uint32_t CPU)
 void HAL_PWREx_EnableFlashPowerDown (void)
 {
   /* Enable the Flash Power Down */
-  SET_BIT (PWR->CR1, PWR_CR1_FLPS);
+  SET_BIT (PWR->CTR1, PWR_CR1_FLPS);
 }
 
 /**
@@ -1226,7 +1226,7 @@ void HAL_PWREx_EnableFlashPowerDown (void)
 void HAL_PWREx_DisableFlashPowerDown (void)
 {
   /* Disable the Flash Power Down */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_FLPS);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_FLPS);
 }
 
 #if defined (PWR_CR1_SRDRAMSO)
@@ -1258,7 +1258,7 @@ void HAL_PWREx_EnableMemoryShutOff (uint32_t MemoryBlock)
   assert_param (IS_PWR_MEMORY_BLOCK (MemoryBlock));
 
   /* Enable memory block shut-off */
-  SET_BIT (PWR->CR1, MemoryBlock);
+  SET_BIT (PWR->CTR1, MemoryBlock);
 }
 
 /**
@@ -1284,7 +1284,7 @@ void HAL_PWREx_DisableMemoryShutOff (uint32_t MemoryBlock)
   assert_param (IS_PWR_MEMORY_BLOCK (MemoryBlock));
 
   /* Disable memory block shut-off */
-  CLEAR_BIT (PWR->CR1, MemoryBlock);
+  CLEAR_BIT (PWR->CTR1, MemoryBlock);
 }
 #endif /* defined (PWR_CR1_SRDRAMSO) */
 
@@ -1627,7 +1627,7 @@ HAL_StatusTypeDef HAL_PWREx_EnableBkUpReg (void)
   uint32_t tickstart;
 
   /* Enable the Backup regulator */
-  SET_BIT (PWR->CR2, PWR_CR2_BREN);
+  SET_BIT (PWR->CTR2, PWR_CR2_BREN);
 
   /* Get tick */
   tickstart = HAL_GetTick ();
@@ -1653,7 +1653,7 @@ HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg (void)
   uint32_t tickstart;
 
   /* Disable the Backup regulator */
-  CLEAR_BIT (PWR->CR2, PWR_CR2_BREN);
+  CLEAR_BIT (PWR->CTR2, PWR_CR2_BREN);
 
   /* Get tick */
   tickstart = HAL_GetTick ();
@@ -1679,7 +1679,7 @@ HAL_StatusTypeDef HAL_PWREx_EnableUSBReg (void)
   uint32_t tickstart;
 
   /* Enable the USB regulator */
-  SET_BIT (PWR->CR3, PWR_CR3_USBREGEN);
+  SET_BIT (PWR->CTR3, PWR_CR3_USBREGEN);
 
   /* Get tick */
   tickstart = HAL_GetTick ();
@@ -1705,7 +1705,7 @@ HAL_StatusTypeDef HAL_PWREx_DisableUSBReg (void)
   uint32_t tickstart;
 
   /* Disable the USB regulator */
-  CLEAR_BIT (PWR->CR3, PWR_CR3_USBREGEN);
+  CLEAR_BIT (PWR->CTR3, PWR_CR3_USBREGEN);
 
   /* Get tick */
   tickstart = HAL_GetTick ();
@@ -1729,7 +1729,7 @@ HAL_StatusTypeDef HAL_PWREx_DisableUSBReg (void)
 void HAL_PWREx_EnableUSBVoltageDetector (void)
 {
   /* Enable the USB voltage detector */
-  SET_BIT (PWR->CR3, PWR_CR3_USB33DEN);
+  SET_BIT (PWR->CTR3, PWR_CR3_USB33DEN);
 }
 
 /**
@@ -1739,7 +1739,7 @@ void HAL_PWREx_EnableUSBVoltageDetector (void)
 void HAL_PWREx_DisableUSBVoltageDetector (void)
 {
   /* Disable the USB voltage detector */
-  CLEAR_BIT (PWR->CR3, PWR_CR3_USB33DEN);
+  CLEAR_BIT (PWR->CTR3, PWR_CR3_USB33DEN);
 }
 
 /**
@@ -1758,10 +1758,10 @@ void HAL_PWREx_EnableBatteryCharging (uint32_t ResistorValue)
   assert_param (IS_PWR_BATTERY_RESISTOR_SELECT (ResistorValue));
 
   /* Specify the charging resistor */
-  MODIFY_REG (PWR->CR3, PWR_CR3_VBRS, ResistorValue);
+  MODIFY_REG (PWR->CTR3, PWR_CR3_VBRS, ResistorValue);
 
   /* Enable the Battery charging */
-  SET_BIT (PWR->CR3, PWR_CR3_VBE);
+  SET_BIT (PWR->CTR3, PWR_CR3_VBE);
 }
 
 /**
@@ -1771,7 +1771,7 @@ void HAL_PWREx_EnableBatteryCharging (uint32_t ResistorValue)
 void HAL_PWREx_DisableBatteryCharging (void)
 {
   /* Disable the Battery charging */
-  CLEAR_BIT (PWR->CR3, PWR_CR3_VBE);
+  CLEAR_BIT (PWR->CTR3, PWR_CR3_VBE);
 }
 
 #if defined (PWR_CR1_BOOSTE)
@@ -1785,10 +1785,10 @@ void HAL_PWREx_DisableBatteryCharging (void)
 void HAL_PWREx_EnableAnalogBooster (void)
 {
   /* Enable the Analog voltage */
-  SET_BIT (PWR->CR1, PWR_CR1_AVD_READY);
+  SET_BIT (PWR->CTR1, PWR_CR1_AVD_READY);
 
   /* Enable VDDA booster */
-  SET_BIT (PWR->CR1, PWR_CR1_BOOSTE);
+  SET_BIT (PWR->CTR1, PWR_CR1_BOOSTE);
 }
 
 /**
@@ -1798,10 +1798,10 @@ void HAL_PWREx_EnableAnalogBooster (void)
 void HAL_PWREx_DisableAnalogBooster (void)
 {
   /* Disable VDDA booster */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_BOOSTE);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_BOOSTE);
 
   /* Disable the Analog voltage */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_AVD_READY);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_AVD_READY);
 }
 #endif /* defined (PWR_CR1_BOOSTE) */
 /**
@@ -1861,7 +1861,7 @@ void HAL_PWREx_DisableAnalogBooster (void)
 void HAL_PWREx_EnableMonitoring (void)
 {
   /* Enable the VBAT and Temperature monitoring */
-  SET_BIT (PWR->CR2, PWR_CR2_MONEN);
+  SET_BIT (PWR->CTR2, PWR_CR2_MONEN);
 }
 
 /**
@@ -1871,7 +1871,7 @@ void HAL_PWREx_EnableMonitoring (void)
 void HAL_PWREx_DisableMonitoring (void)
 {
   /* Disable the VBAT and Temperature monitoring */
-  CLEAR_BIT (PWR->CR2, PWR_CR2_MONEN);
+  CLEAR_BIT (PWR->CTR2, PWR_CR2_MONEN);
 }
 
 /**
@@ -1884,7 +1884,7 @@ uint32_t HAL_PWREx_GetTemperatureLevel (void)
   uint32_t tempLevel, regValue;
 
   /* Read the temperature flags */
-  regValue = READ_BIT (PWR->CR2, (PWR_CR2_TEMPH | PWR_CR2_TEMPL));
+  regValue = READ_BIT (PWR->CTR2, (PWR_CR2_TEMPH | PWR_CR2_TEMPL));
 
   /* Check if the temperature is below the threshold */
   if (regValue == PWR_CR2_TEMPL)
@@ -1915,7 +1915,7 @@ uint32_t HAL_PWREx_GetVBATLevel (void)
   uint32_t VBATLevel, regValue;
 
   /* Read the VBAT flags */
-  regValue = READ_BIT (PWR->CR2, (PWR_CR2_VBATH | PWR_CR2_VBATL));
+  regValue = READ_BIT (PWR->CTR2, (PWR_CR2_VBATH | PWR_CR2_VBATL));
 
   /* Check if the VBAT is below the threshold */
   if (regValue == PWR_CR2_VBATL)
@@ -1980,7 +1980,7 @@ void HAL_PWREx_ConfigAVD (PWREx_AVDTypeDef *sConfigAVD)
   assert_param (IS_PWR_AVD_MODE (sConfigAVD->Mode));
 
   /* Set the ALS[18:17] bits according to AVDLevel value */
-  MODIFY_REG (PWR->CR1, PWR_CR1_ALS, sConfigAVD->AVDLevel);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_ALS, sConfigAVD->AVDLevel);
 
   /* Clear any previous config */
 #if !defined (DUAL_CORE)
@@ -2025,7 +2025,7 @@ void HAL_PWREx_ConfigAVD (PWREx_AVDTypeDef *sConfigAVD)
 void HAL_PWREx_EnableAVD (void)
 {
   /* Enable the Analog Voltage Detector */
-  SET_BIT (PWR->CR1, PWR_CR1_AVDEN);
+  SET_BIT (PWR->CTR1, PWR_CR1_AVDEN);
 }
 
 /**
@@ -2035,7 +2035,7 @@ void HAL_PWREx_EnableAVD (void)
 void HAL_PWREx_DisableAVD (void)
 {
   /* Disable the Analog Voltage Detector */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_AVDEN);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_AVDEN);
 }
 
 /**
@@ -2046,7 +2046,7 @@ void HAL_PWREx_DisableAVD (void)
 void HAL_PWREx_PVD_AVD_IRQHandler (void)
 {
   /* Check if the Programmable Voltage Detector is enabled (PVD) */
-  if (READ_BIT (PWR->CR1, PWR_CR1_PVDEN) != 0U)
+  if (READ_BIT (PWR->CTR1, PWR_CR1_PVDEN) != 0U)
   {
 #if defined (DUAL_CORE)
     if (HAL_GetCurrentCPUID () == CM7_CPUID)
@@ -2079,7 +2079,7 @@ void HAL_PWREx_PVD_AVD_IRQHandler (void)
   }
 
   /* Check if the Analog Voltage Detector is enabled (AVD) */
-  if (READ_BIT (PWR->CR1, PWR_CR1_AVDEN) != 0U)
+  if (READ_BIT (PWR->CTR1, PWR_CR1_AVDEN) != 0U)
   {
 #if defined (DUAL_CORE)
     if (HAL_GetCurrentCPUID () == CM7_CPUID)

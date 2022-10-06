@@ -107,7 +107,6 @@ void up_earlyserialinit(void)
 {
   LL_USART_InitTypeDef USART_InitStruct = {0};
   LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   CONSOLE_CLOCK_SOURCE();
 

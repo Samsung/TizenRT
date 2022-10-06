@@ -258,28 +258,28 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
      CRx registers */
   if (LL_USART_IsEnabled(USARTx) == 0U)
   {
-    /*---------------------------- USART CR1 Configuration ---------------------
-     * Configure USARTx CR1 (USART Word Length, Parity, Mode and Oversampling bits) with parameters:
+    /*---------------------------- USART CTR1 Configuration ---------------------
+     * Configure USARTx CTR1 (USART Word Length, Parity, Mode and Oversampling bits) with parameters:
      * - DataWidth:          USART_CR1_M bits according to USART_InitStruct->DataWidth value
      * - Parity:             USART_CR1_PCE, USART_CR1_PS bits according to USART_InitStruct->Parity value
      * - TransferDirection:  USART_CR1_TE, USART_CR1_RE bits according to USART_InitStruct->TransferDirection value
      * - Oversampling:       USART_CR1_OVER8 bit according to USART_InitStruct->OverSampling value.
      */
-    MODIFY_REG(USARTx->CR1,
+    MODIFY_REG(USARTx->CTR1,
                (USART_CR1_M | USART_CR1_PCE | USART_CR1_PS |
                 USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8),
                (USART_InitStruct->DataWidth | USART_InitStruct->Parity |
                 USART_InitStruct->TransferDirection | USART_InitStruct->OverSampling));
 
-    /*---------------------------- USART CR2 Configuration ---------------------
-     * Configure USARTx CR2 (Stop bits) with parameters:
+    /*---------------------------- USART CTR2 Configuration ---------------------
+     * Configure USARTx CTR2 (Stop bits) with parameters:
      * - Stop Bits:          USART_CR2_STOP bits according to USART_InitStruct->StopBits value.
      * - CLKEN, CPOL, CPHA and LBCL bits are to be configured using LL_USART_ClockInit().
      */
     LL_USART_SetStopBitsLength(USARTx, USART_InitStruct->StopBits);
 
-    /*---------------------------- USART CR3 Configuration ---------------------
-     * Configure USARTx CR3 (Hardware Flow Control) with parameters:
+    /*---------------------------- USART CTR3 Configuration ---------------------
+     * Configure USARTx CTR3 (Hardware Flow Control) with parameters:
      * - HardwareFlowControl: USART_CR3_RTSE, USART_CR3_CTSE bits according to
      *   USART_InitStruct->HardwareFlowControl value.
      */
@@ -421,14 +421,14 @@ ErrorStatus LL_USART_ClockInit(USART_TypeDef *USARTx, LL_USART_ClockInitTypeDef 
     assert_param(IS_LL_USART_CLOCKPHASE(USART_ClockInitStruct->ClockPhase));
     assert_param(IS_LL_USART_LASTBITCLKOUTPUT(USART_ClockInitStruct->LastBitClockPulse));
 
-    /*---------------------------- USART CR2 Configuration -----------------------
-     * Configure USARTx CR2 (Clock signal related bits) with parameters:
+    /*---------------------------- USART CTR2 Configuration -----------------------
+     * Configure USARTx CTR2 (Clock signal related bits) with parameters:
      * - Clock Output:                USART_CR2_CLKEN bit according to USART_ClockInitStruct->ClockOutput value
      * - Clock Polarity:              USART_CR2_CPOL bit according to USART_ClockInitStruct->ClockPolarity value
      * - Clock Phase:                 USART_CR2_CPHA bit according to USART_ClockInitStruct->ClockPhase value
      * - Last Bit Clock Pulse Output: USART_CR2_LBCL bit according to USART_ClockInitStruct->LastBitClockPulse value.
      */
-    MODIFY_REG(USARTx->CR2,
+    MODIFY_REG(USARTx->CTR2,
                USART_CR2_CLKEN | USART_CR2_CPHA | USART_CR2_CPOL | USART_CR2_LBCL,
                USART_ClockInitStruct->ClockOutput | USART_ClockInitStruct->ClockPolarity |
                USART_ClockInitStruct->ClockPhase | USART_ClockInitStruct->LastBitClockPulse);

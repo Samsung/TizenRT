@@ -223,7 +223,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit, uint32_t
           status = HAL_ERROR;
         }
         /* if the erase operation is completed, disable the Bank1 BER Bit */
-        FLASH->CR1 &= (~FLASH_CR_BER);
+        FLASH->CTR1 &= (~FLASH_CR_BER);
       }
 #if defined (DUAL_BANK)
       /* Wait for last operation to be completed on Bank 2 */
@@ -234,7 +234,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit, uint32_t
           status = HAL_ERROR;
         }
         /* if the erase operation is completed, disable the Bank2 BER Bit */
-        FLASH->CR2 &= (~FLASH_CR_BER);
+        FLASH->CTR2 &= (~FLASH_CR_BER);
       }
 #endif /* DUAL_BANK */
     }
@@ -254,7 +254,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit, uint32_t
           status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE, FLASH_BANK_1);
 
           /* If the erase operation is completed, disable the SER Bit */
-          FLASH->CR1 &= (~(FLASH_CR_SER | FLASH_CR_SNB));
+          FLASH->CTR1 &= (~(FLASH_CR_SER | FLASH_CR_SNB));
         }
 #if defined (DUAL_BANK)
         if((pEraseInit->Banks & FLASH_BANK_2) == FLASH_BANK_2)
@@ -263,7 +263,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Erase(FLASH_EraseInitTypeDef *pEraseInit, uint32_t
           status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE, FLASH_BANK_2);
 
           /* If the erase operation is completed, disable the SER Bit */
-          FLASH->CR2 &= (~(FLASH_CR_SER | FLASH_CR_SNB));
+          FLASH->CTR2 &= (~(FLASH_CR_SER | FLASH_CR_SNB));
         }
 #endif /* DUAL_BANK */
 
@@ -624,14 +624,14 @@ void HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit)
   */
 HAL_StatusTypeDef HAL_FLASHEx_Unlock_Bank1(void)
 {
-  if(READ_BIT(FLASH->CR1, FLASH_CR_LOCK) != 0U)
+  if(READ_BIT(FLASH->CTR1, FLASH_CR_LOCK) != 0U)
   {
     /* Authorize the FLASH Bank1 Registers access */
     WRITE_REG(FLASH->KEYR1, FLASH_KEY1);
     WRITE_REG(FLASH->KEYR1, FLASH_KEY2);
 
     /* Verify Flash Bank1 is unlocked */
-    if (READ_BIT(FLASH->CR1, FLASH_CR_LOCK) != 0U)
+    if (READ_BIT(FLASH->CTR1, FLASH_CR_LOCK) != 0U)
     {
       return HAL_ERROR;
     }
@@ -647,7 +647,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Unlock_Bank1(void)
 HAL_StatusTypeDef HAL_FLASHEx_Lock_Bank1(void)
 {
   /* Set the LOCK Bit to lock the FLASH Bank1 Registers access */
-  SET_BIT(FLASH->CR1, FLASH_CR_LOCK);
+  SET_BIT(FLASH->CTR1, FLASH_CR_LOCK);
   return HAL_OK;
 }
 
@@ -658,14 +658,14 @@ HAL_StatusTypeDef HAL_FLASHEx_Lock_Bank1(void)
   */
 HAL_StatusTypeDef HAL_FLASHEx_Unlock_Bank2(void)
 {
-  if(READ_BIT(FLASH->CR2, FLASH_CR_LOCK) != 0U)
+  if(READ_BIT(FLASH->CTR2, FLASH_CR_LOCK) != 0U)
   {
     /* Authorize the FLASH Bank2 Registers access */
     WRITE_REG(FLASH->KEYR2, FLASH_KEY1);
     WRITE_REG(FLASH->KEYR2, FLASH_KEY2);
 
     /* Verify Flash Bank1 is unlocked */
-    if (READ_BIT(FLASH->CR2, FLASH_CR_LOCK) != 0U)
+    if (READ_BIT(FLASH->CTR2, FLASH_CR_LOCK) != 0U)
     {
       return HAL_ERROR;
     }
@@ -681,7 +681,7 @@ HAL_StatusTypeDef HAL_FLASHEx_Unlock_Bank2(void)
 HAL_StatusTypeDef HAL_FLASHEx_Lock_Bank2(void)
 {
   /* Set the LOCK Bit to lock the FLASH Bank2 Registers access */
-  SET_BIT(FLASH->CR2, FLASH_CR_LOCK);
+  SET_BIT(FLASH->CTR2, FLASH_CR_LOCK);
   return HAL_OK;
 }
 #endif /* DUAL_BANK */
@@ -714,7 +714,7 @@ HAL_StatusTypeDef HAL_FLASHEx_ComputeCRC(FLASH_CRCInitTypeDef *pCRCInit, uint32_
     if (pCRCInit->Bank == FLASH_BANK_1)
     {
       /* Enable CRC feature */
-      FLASH->CR1 |= FLASH_CR_CRC_EN;
+      FLASH->CTR1 |= FLASH_CR_CRC_EN;
 
       /* Clear CRC flags in Status Register: CRC end of calculation and CRC read error */
       FLASH->CCR1 |= (FLASH_CCR_CLR_CRCEND | FLASH_CCR_CLR_CRCRDERR);
@@ -754,7 +754,7 @@ HAL_StatusTypeDef HAL_FLASHEx_ComputeCRC(FLASH_CRCInitTypeDef *pCRCInit, uint32_
       (*CRC_Result) = FLASH->CRCDATA;
 
       /* Disable CRC feature */
-      FLASH->CR1 &= (~FLASH_CR_CRC_EN);
+      FLASH->CTR1 &= (~FLASH_CR_CRC_EN);
 
       /* Clear CRC flags */
       __HAL_FLASH_CLEAR_FLAG_BANK1(FLASH_FLAG_CRCEND_BANK1 | FLASH_FLAG_CRCRDERR_BANK1);
@@ -763,7 +763,7 @@ HAL_StatusTypeDef HAL_FLASHEx_ComputeCRC(FLASH_CRCInitTypeDef *pCRCInit, uint32_
     else
     {
       /* Enable CRC feature */
-      FLASH->CR2 |= FLASH_CR_CRC_EN;
+      FLASH->CTR2 |= FLASH_CR_CRC_EN;
 
       /* Clear CRC flags in Status Register: CRC end of calculation and CRC read error */
       FLASH->CCR2 |= (FLASH_CCR_CLR_CRCEND | FLASH_CCR_CLR_CRCRDERR);
@@ -803,7 +803,7 @@ HAL_StatusTypeDef HAL_FLASHEx_ComputeCRC(FLASH_CRCInitTypeDef *pCRCInit, uint32_
       (*CRC_Result) = FLASH->CRCDATA;
 
       /* Disable CRC feature */
-      FLASH->CR2 &= (~FLASH_CR_CRC_EN);
+      FLASH->CTR2 &= (~FLASH_CR_CRC_EN);
 
       /* Clear CRC flags */
       __HAL_FLASH_CLEAR_FLAG_BANK2(FLASH_FLAG_CRCEND_BANK2 | FLASH_FLAG_CRCRDERR_BANK2);
@@ -861,12 +861,12 @@ static void FLASH_MassErase(uint32_t VoltageRange, uint32_t Banks)
   {
 #if defined (FLASH_CR_PSIZE)
     /* Reset Program/erase VoltageRange for Bank1 and Bank2 */
-    FLASH->CR1 &= (~FLASH_CR_PSIZE);
-    FLASH->CR2 &= (~FLASH_CR_PSIZE);
+    FLASH->CTR1 &= (~FLASH_CR_PSIZE);
+    FLASH->CTR2 &= (~FLASH_CR_PSIZE);
 
     /* Set voltage range */
-    FLASH->CR1 |= VoltageRange;
-    FLASH->CR2 |= VoltageRange;
+    FLASH->CTR1 |= VoltageRange;
+    FLASH->CTR2 |= VoltageRange;
 #endif /* FLASH_CR_PSIZE */
 
     /* Set Mass Erase Bit */
@@ -880,12 +880,12 @@ static void FLASH_MassErase(uint32_t VoltageRange, uint32_t Banks)
     {
 #if defined (FLASH_CR_PSIZE)
       /* Set Program/erase VoltageRange for Bank1 */
-      FLASH->CR1 &= (~FLASH_CR_PSIZE);
-      FLASH->CR1 |=  VoltageRange;
+      FLASH->CTR1 &= (~FLASH_CR_PSIZE);
+      FLASH->CTR1 |=  VoltageRange;
 #endif /* FLASH_CR_PSIZE */
 
       /* Erase Bank1 */
-      FLASH->CR1 |= (FLASH_CR_BER | FLASH_CR_START);
+      FLASH->CTR1 |= (FLASH_CR_BER | FLASH_CR_START);
     }
 
 #if defined (DUAL_BANK)
@@ -893,12 +893,12 @@ static void FLASH_MassErase(uint32_t VoltageRange, uint32_t Banks)
     {
 #if defined (FLASH_CR_PSIZE)
       /* Set Program/erase VoltageRange for Bank2 */
-      FLASH->CR2 &= (~FLASH_CR_PSIZE);
-      FLASH->CR2 |= VoltageRange;
+      FLASH->CTR2 &= (~FLASH_CR_PSIZE);
+      FLASH->CTR2 |= VoltageRange;
 #endif /* FLASH_CR_PSIZE */
 
       /* Erase Bank2 */
-      FLASH->CR2 |= (FLASH_CR_BER | FLASH_CR_START);
+      FLASH->CTR2 |= (FLASH_CR_BER | FLASH_CR_START);
     }
 #endif /* DUAL_BANK */
   }
@@ -936,14 +936,14 @@ void FLASH_Erase_Sector(uint32_t Sector, uint32_t Banks, uint32_t VoltageRange)
   {
 #if defined (FLASH_CR_PSIZE)
     /* Reset Program/erase VoltageRange and Sector Number for Bank1 */
-    FLASH->CR1 &= ~(FLASH_CR_PSIZE | FLASH_CR_SNB);
+    FLASH->CTR1 &= ~(FLASH_CR_PSIZE | FLASH_CR_SNB);
 
-    FLASH->CR1 |= (FLASH_CR_SER | VoltageRange | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
+    FLASH->CTR1 |= (FLASH_CR_SER | VoltageRange | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
 #else
     /* Reset Sector Number for Bank1 */
-    FLASH->CR1 &= ~(FLASH_CR_SNB);
+    FLASH->CTR1 &= ~(FLASH_CR_SNB);
 
-    FLASH->CR1 |= (FLASH_CR_SER | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
+    FLASH->CTR1 |= (FLASH_CR_SER | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
 #endif /* FLASH_CR_PSIZE */
   }
 
@@ -952,14 +952,14 @@ void FLASH_Erase_Sector(uint32_t Sector, uint32_t Banks, uint32_t VoltageRange)
   {
 #if defined (FLASH_CR_PSIZE)
     /* Reset Program/erase VoltageRange and Sector Number for Bank2 */
-    FLASH->CR2 &= ~(FLASH_CR_PSIZE | FLASH_CR_SNB);
+    FLASH->CTR2 &= ~(FLASH_CR_PSIZE | FLASH_CR_SNB);
 
-    FLASH->CR2 |= (FLASH_CR_SER | VoltageRange  | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
+    FLASH->CTR2 |= (FLASH_CR_SER | VoltageRange  | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
 #else
     /* Reset Sector Number for Bank2 */
-    FLASH->CR2 &= ~(FLASH_CR_SNB);
+    FLASH->CTR2 &= ~(FLASH_CR_SNB);
 
-    FLASH->CR2 |= (FLASH_CR_SER | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
+    FLASH->CTR2 |= (FLASH_CR_SER | (Sector << FLASH_CR_SNB_Pos) | FLASH_CR_START);
 #endif /* FLASH_CR_PSIZE */
   }
 #endif /* DUAL_BANK */

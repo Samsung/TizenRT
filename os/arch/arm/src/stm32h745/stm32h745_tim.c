@@ -59,6 +59,9 @@
 #include <time.h>
 #include <debug.h>
 #include <tinyara/arch.h>
+
+#include <tinyara/timer.h>
+#include <tinyara/irq.h>
 #include <arch/board/board.h>
 
 #include "nvic.h"
@@ -69,128 +72,361 @@
 #include "chip.h"
 #include <stm32h7xx_hal.h>
 
+#if defined(CONFIG_TIMER)
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+#define TIMER_SYSTEMFREQ 200000000
 
 /****************************************************************************
- * Private Function prototypes
+ * Private Types
  ****************************************************************************/
-TIM_HandleTypeDef htim4;
-
-/* TIM4 init function */
-void MX_TIM4_Init(void)
+struct stm32h745_tim_lowerhalf_s 
 {
+  const struct timer_ops_s *ops;  /* Lowerhalf operations */
+  TIM_HandleTypeDef htim;
+  bool started;       /* True: Timer is started */
+  tccb_t callback;
+  void *arg;          /* Argument passed to upper half callback */
+  uint32_t timeout;
+  int irq;
+};
 
-  /* USER CODE BEGIN TIM4_Init 0 */
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+static int  stm32h745_tim_start(struct timer_lowerhalf_s *lower);
+static int  stm32h745_tim_stop(struct timer_lowerhalf_s *lower);
+static int  stm32h745_tim_getstatus(struct timer_lowerhalf_s *lower, struct timer_status_s *status);
+static int  stm32h745_tim_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeout);
+static void stm32h745_tim_setcallback(struct timer_lowerhalf_s *lower, CODE tccb_t callback, void *arg);
+static int  stm32h745_tim_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned long arg);
 
-  /* USER CODE END TIM4_Init 0 */
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+static const struct timer_ops_s g_timer_ops = 
+{
+  .start = stm32h745_tim_start,
+  .stop = stm32h745_tim_stop,
+  .getstatus = stm32h745_tim_getstatus,
+  .settimeout = stm32h745_tim_settimeout,
+  .setcallback = stm32h745_tim_setcallback,
+  .ioctl = stm32h745_tim_ioctl,
+};
 
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
+static struct stm32h745_tim_lowerhalf_s g_tim_lowerhalf = 
+{
+  .ops = &g_timer_ops,
+  .started = false,
+};
 
-  /* USER CODE BEGIN TIM4_Init 1 */
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+/****************************************************************************
+ * Name: stm32h745_tim_handler
+ *
+ * Description:
+ *   timer interrupt handler
+ *
+ * Input Parameters:
+ *
+ * Returned Values:
+ *
+ ****************************************************************************/
+static void stm32h745_tim_handler(int irq, FAR void *context, FAR void *arg)
+{
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)arg;
 
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 9999;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 99;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  uint32_t next_interval_us = 0;
+  DEBUGASSERT(priv);
+
+  if(priv->callback != NULL)
   {
-    Error_Handler();
+    priv->callback(&next_interval_us, priv->arg);
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 49;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM4_Init 2 */
 
-  /* USER CODE END TIM4_Init 2 */
-  HAL_TIM_MspPostInit(&htim4);
-
+  __HAL_TIM_CLEAR_IT(&priv->htim, TIM_IT_UPDATE);
 }
 
-void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
+
+/****************************************************************************
+ * Name: stm32h745_tim_start
+ *
+ * Description:
+ *   Start the timer, resetting the time to the current timeout,
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the "lower-half"
+ *           driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int  stm32h745_tim_start(struct timer_lowerhalf_s *lower)
 {
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
 
-  if(tim_pwmHandle->Instance==TIM4)
+  DEBUGASSERT(priv);
+  if (!priv)
   {
-  /* USER CODE BEGIN TIM4_MspInit 0 */
+    return ERROR;
+  }
 
-  /* USER CODE END TIM4_MspInit 0 */
-    /* TIM4 clock enable */
-    __HAL_RCC_TIM4_CLK_ENABLE();
-  /* USER CODE BEGIN TIM4_MspInit 1 */
+  __HAL_TIM_SET_COUNTER(&priv->htim, 0);
+  if(HAL_TIM_Base_Start_IT(&priv->htim) == HAL_OK)
+  {
+    return ERROR;
+  }
 
-  /* USER CODE END TIM4_MspInit 1 */
+  priv->started = true;
+  return OK;
+}
+
+/****************************************************************************
+ * Name: stm32h745_tim_stop
+ *
+ * Description:
+ *   Stop the timer
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the "lower-half"
+ *           driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int  stm32h745_tim_stop(struct timer_lowerhalf_s *lower)
+{
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
+
+  DEBUGASSERT(priv);
+  if (!priv)
+  {
+    return ERROR;
+  }
+
+  __HAL_TIM_SET_COUNTER(&priv->htim, 0);
+  if(HAL_TIM_Base_Stop_IT(&priv->htim) == HAL_OK)
+  {
+    return ERROR;
+  }
+
+  priv->started = false;
+  return OK;
+}
+
+/****************************************************************************
+ * Name: stm32h745_tim_getstatus
+ *
+ * Description:
+ *   get GPT status
+ *
+ * Input Parameters:
+ *   lower   - A pointer the publicly visible representation of the
+ *             "lower-half" driver state structure.
+ *   status  - A pointer saved current GPT status
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int  stm32h745_tim_getstatus(struct timer_lowerhalf_s *lower, struct timer_status_s *status)
+{
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
+
+  if (priv->started)
+  {
+    status->flags |= TCFLAGS_ACTIVE;
+  }
+
+  if (priv->callback)
+  {
+    status->flags |= TCFLAGS_HANDLER;
+  }
+
+  status->timeleft = 0;
+
+  return OK;
+}
+
+/****************************************************************************
+ * Name: stm32h745_tim_settimeout
+ *
+ * Description:
+ *   Set a new timeout value (and reset the timer)
+ *
+ * Input Parameters:
+ *   lower   - A pointer the publicly visible representation of the
+ *             "lower-half" driver state structure.
+ *   timeout - The new timeout value in microseconds.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int  stm32h745_tim_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeout)
+{
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
+
+  DEBUGASSERT(priv);
+  if (!priv)
+  {
+    return ERROR;
+  }
+
+  priv->htim.Init.Prescaler = 19999;
+  priv->htim.Init.CounterMode = TIM_COUNTERMODE_UP;
+  priv->htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  priv->htim.Init.RepetitionCounter = 0;
+  priv->htim.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+  priv->htim.Init.Period = (uint16_t)(((TIMER_SYSTEMFREQ / (priv->htim.Init.Prescaler + 1)) / 1000)*timeout - 1);
+
+  if (HAL_TIM_Base_Init(&priv->htim) != HAL_OK)
+  {
+    return ERROR;
+  }
+
+  priv->timeout = timeout;
+  return OK;
+}
+
+/****************************************************************************
+ * Name: stm32h745_tim_setcallback
+ *
+ * Description:
+ *   Set the user provided timeout callback.
+ *
+ * Input Parameters:
+ *   lower    - A pointer the publicly visible representation of the
+ *              "lower-half" driver state structure.
+ *   callback - The new timer expiration function pointer. If this
+ *              function pointer is NULL, then the reset-on-expiration
+ *              behavior is restored,
+ *  arg       - Argument that will be provided in the callback
+ *
+ * Returned Values:
+ *   The previous timer expiration function pointer or NULL is there was
+ *   no previous function pointer.
+ *
+ ****************************************************************************/
+static void stm32h745_tim_setcallback(struct timer_lowerhalf_s *lower, CODE tccb_t callback, void *arg)
+{
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
+  
+  DEBUGASSERT(priv);
+
+  if(priv)
+  {
+    irqstate_t flags = irqsave();
+
+    /* Save the new callback */
+    priv->callback = callback;
+    priv->arg = arg;
+
+    irqrestore(flags);
   }
 }
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
+/****************************************************************************
+ * Name: stm32h745_tim_ioctl
+ *
+ * Description:
+ *   Any ioctl commands that are not recognized by the "upper-half" driver
+ *   are forwarded to the lower half driver through this method.
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the "lower-half"
+ *           driver state structure.
+ *   cmd   - The ioctl command value
+ *   arg   - The optional argument that accompanies the 'cmd'.  The
+ *           interpretation of this argument depends on the particular
+ *           command.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+static int  stm32h745_tim_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned long arg)
 {
+  struct stm32h745_tim_lowerhalf_s *priv = (struct stm32h745_tim_lowerhalf_s *)lower;
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(timHandle->Instance==TIM4)
+  DEBUGASSERT(priv);
+  if (!priv)
   {
-  /* USER CODE BEGIN TIM4_MspPostInit 0 */
-
-  /* USER CODE END TIM4_MspPostInit 0 */
-
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**TIM4 GPIO Configuration
-    PB7     ------> TIM4_CH2
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_7;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN TIM4_MspPostInit 1 */
-
-  /* USER CODE END TIM4_MspPostInit 1 */
+    return ERROR;
   }
 
-}
+  int ret = ERROR;
 
-void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
-{
-
-  if(tim_pwmHandle->Instance==TIM4)
+  switch (cmd)
   {
-  /* USER CODE BEGIN TIM4_MspDeInit 0 */
-
-  /* USER CODE END TIM4_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_TIM4_CLK_DISABLE();
-  /* USER CODE BEGIN TIM4_MspDeInit 1 */
-
-  /* USER CODE END TIM4_MspDeInit 1 */
+  case TCIOC_SETDIV:
+    break;
+  case TCIOC_GETDIV:
+    break;
+  case TCIOC_SETMODE:
+    break;
+  case TCIOC_SETRESOLUTION:
+    break;
+  case TCIOC_SETIRQPRIO:
+    break;
+  case TCIOC_SETCLKSRC:
+    break;
+  default:
+    break;
   }
+
+  return ret;
 }
 
 /****************************************************************************
  * Public Function prototypes
  * This timer is testing system clock, expected 5msec toggle PB7
  ****************************************************************************/
-int stm32h745_tim4_init(void)
+int stm32h745_tim_init(const char *devpath, int timer)
 {
-    MX_TIM4_Init();
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  struct stm32h745_tim_lowerhalf_s *priv = NULL;
+  priv = &g_tim_lowerhalf;
+
+  switch (timer) 
+  {
+  case 15:  /* TIMER 15  */
+    __HAL_RCC_TIM15_CLK_ENABLE();
+    priv->htim.Instance = TIM15;
+    priv->irq = STM32H745_IRQ_TIM15;
+    break;
+
+  case 16:  /* TIMER 16 */
+    __HAL_RCC_TIM16_CLK_ENABLE();
+    priv->htim.Instance = TIM16;
+    priv->irq = STM32H745_IRQ_TIM16;
+    break;
+
+  default:
+    priv = NULL;
+    return ERROR;
+  }
+
+  irq_attach(priv->irq, stm32h745_tim_handler, priv);
+  up_enable_irq(priv->irq);
+
+  priv->started = false;
+  priv->callback = NULL;
+
+  if (!timer_register(devpath, (struct timer_lowerhalf_s *)priv))
+  {
+    return ERROR;
+  }
+
+  return OK;
 }
 
-
+#endif
 
 
 

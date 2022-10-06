@@ -380,8 +380,8 @@ do {                                                                           \
  ((__FLAG__) == PWR_FLAG_AVDO)       ? ((PWR->CSR1 & PWR_CSR1_AVDO)       == PWR_CSR1_AVDO)      :\
  ((__FLAG__) == PWR_FLAG_ACTVOSRDY)  ? ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY)  == PWR_CSR1_ACTVOSRDY) :\
  ((__FLAG__) == PWR_FLAG_VOSRDY)     ? ((PWR->D3CR & PWR_D3CR_VOSRDY)     == PWR_D3CR_VOSRDY)    :\
- ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CR3 & PWR_CR3_SMPSEXTRDY)   == PWR_CR3_SMPSEXTRDY) :\
- ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CR2 & PWR_CR2_BRRDY)        == PWR_CR2_BRRDY)      :\
+ ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CTR3 & PWR_CR3_SMPSEXTRDY)   == PWR_CR3_SMPSEXTRDY) :\
+ ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CTR2 & PWR_CR2_BRRDY)        == PWR_CR2_BRRDY)      :\
  ((__FLAG__) == PWR_FLAG_CPU_HOLD)   ? ((PWR->CPU2CR & PWR_CPU2CR_HOLD1F) == PWR_CPU2CR_HOLD1F)  :\
  ((__FLAG__) == PWR_FLAG_CPU2_HOLD)  ? ((PWR->CPUCR & PWR_CPUCR_HOLD2F)   == PWR_CPUCR_HOLD2F)   :\
  ((__FLAG__) == PWR_FLAG_SB)         ? ((PWR->CPUCR & PWR_CPUCR_SBF)      == PWR_CPUCR_SBF)      :\
@@ -392,11 +392,11 @@ do {                                                                           \
  ((__FLAG__) == PWR_FLAG2_SB_D1)     ? ((PWR->CPU2CR & PWR_CPU2CR_SBF_D1) == PWR_CPU2CR_SBF_D1)  :\
  ((__FLAG__) == PWR_FLAG_SB_D2)      ? ((PWR->CPUCR & PWR_CPUCR_SBF_D2)   == PWR_CPUCR_SBF_D2)   :\
  ((__FLAG__) == PWR_FLAG2_SB_D2)     ? ((PWR->CPU2CR & PWR_CPU2CR_SBF_D2) == PWR_CPU2CR_SBF_D2)  :\
- ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CR3 & PWR_CR3_USB33RDY)     == PWR_CR3_USB33RDY)   :\
- ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CR2 & PWR_CR2_TEMPH)        == PWR_CR2_TEMPH)      :\
- ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CR2 & PWR_CR2_TEMPL)        == PWR_CR2_TEMPL)      :\
- ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CR2 & PWR_CR2_VBATH)        == PWR_CR2_VBATH)      :\
- ((PWR->CR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
+ ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CTR3 & PWR_CR3_USB33RDY)     == PWR_CR3_USB33RDY)   :\
+ ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CTR2 & PWR_CR2_TEMPH)        == PWR_CR2_TEMPH)      :\
+ ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CTR2 & PWR_CR2_TEMPL)        == PWR_CR2_TEMPL)      :\
+ ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CTR2 & PWR_CR2_VBATH)        == PWR_CR2_VBATH)      :\
+ ((PWR->CTR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
 #else /* Single core lines */
 #if defined (PWR_CPUCR_SBF_D2) /* STM32H72x, STM32H73x, STM32H74x and STM32H75x lines */
 #if defined (SMPS) /* STM32H725 and STM32H735 lines */
@@ -405,34 +405,34 @@ do {                                                                           \
  ((__FLAG__) == PWR_FLAG_AVDO)       ? ((PWR->CSR1 & PWR_CSR1_AVDO)      == PWR_CSR1_AVDO)       :\
  ((__FLAG__) == PWR_FLAG_ACTVOSRDY)  ? ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == PWR_CSR1_ACTVOSRDY)  :\
  ((__FLAG__) == PWR_FLAG_VOSRDY)     ? ((PWR->D3CR & PWR_D3CR_VOSRDY)    == PWR_D3CR_VOSRDY)     :\
- ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CR3 & PWR_FLAG_SMPSEXTRDY) == PWR_FLAG_SMPSEXTRDY) :\
- ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)       :\
+ ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CTR3 & PWR_FLAG_SMPSEXTRDY) == PWR_FLAG_SMPSEXTRDY) :\
+ ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CTR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)       :\
  ((__FLAG__) == PWR_FLAG_SB)         ? ((PWR->CPUCR & PWR_CPUCR_SBF)     == PWR_CPUCR_SBF)       :\
  ((__FLAG__) == PWR_FLAG_STOP)       ? ((PWR->CPUCR & PWR_CPUCR_STOPF)   == PWR_CPUCR_STOPF)     :\
  ((__FLAG__) == PWR_FLAG_SB_D1)      ? ((PWR->CPUCR & PWR_CPUCR_SBF_D1)  == PWR_CPUCR_SBF_D1)    :\
  ((__FLAG__) == PWR_FLAG_SB_D2)      ? ((PWR->CPUCR & PWR_CPUCR_SBF_D2)  == PWR_CPUCR_SBF_D2)    :\
- ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)    :\
- ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)       :\
- ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)       :\
- ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)       :\
- ((PWR->CR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
+ ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CTR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)    :\
+ ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CTR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)       :\
+ ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CTR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)       :\
+ ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CTR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)       :\
+ ((PWR->CTR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
 #else /* STM32H723, STM32H733, STM32H742, STM32H743, STM32H750 and STM32H753 lines */
 #define __HAL_PWR_GET_FLAG(__FLAG__)                                                            \
 (((__FLAG__) == PWR_FLAG_PVDO)      ? ((PWR->CSR1 & PWR_CSR1_PVDO)      == PWR_CSR1_PVDO)      :\
  ((__FLAG__) == PWR_FLAG_AVDO)      ? ((PWR->CSR1 & PWR_CSR1_AVDO)      == PWR_CSR1_AVDO)      :\
  ((__FLAG__) == PWR_FLAG_ACTVOSRDY) ? ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == PWR_CSR1_ACTVOSRDY) :\
  ((__FLAG__) == PWR_FLAG_VOSRDY)    ? ((PWR->D3CR & PWR_D3CR_VOSRDY)    == PWR_D3CR_VOSRDY)    :\
- ((__FLAG__) == PWR_FLAG_SCUEN)     ? ((PWR->CR3 & PWR_CR3_SCUEN)       == PWR_CR3_SCUEN)      :\
- ((__FLAG__) == PWR_FLAG_BRR)       ? ((PWR->CR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
+ ((__FLAG__) == PWR_FLAG_SCUEN)     ? ((PWR->CTR3 & PWR_CR3_SCUEN)       == PWR_CR3_SCUEN)      :\
+ ((__FLAG__) == PWR_FLAG_BRR)       ? ((PWR->CTR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
  ((__FLAG__) == PWR_FLAG_SB)        ? ((PWR->CPUCR & PWR_CPUCR_SBF)     == PWR_CPUCR_SBF)      :\
  ((__FLAG__) == PWR_FLAG_STOP)      ? ((PWR->CPUCR & PWR_CPUCR_STOPF)   == PWR_CPUCR_STOPF)    :\
  ((__FLAG__) == PWR_FLAG_SB_D1)     ? ((PWR->CPUCR & PWR_CPUCR_SBF_D1)  == PWR_CPUCR_SBF_D1)   :\
  ((__FLAG__) == PWR_FLAG_SB_D2)     ? ((PWR->CPUCR & PWR_CPUCR_SBF_D2)  == PWR_CPUCR_SBF_D2)   :\
- ((__FLAG__) == PWR_FLAG_USB33RDY)  ? ((PWR->CR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
- ((__FLAG__) == PWR_FLAG_TEMPH)     ? ((PWR->CR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
- ((__FLAG__) == PWR_FLAG_TEMPL)     ? ((PWR->CR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
- ((__FLAG__) == PWR_FLAG_VBATH)     ? ((PWR->CR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
- ((PWR->CR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
+ ((__FLAG__) == PWR_FLAG_USB33RDY)  ? ((PWR->CTR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
+ ((__FLAG__) == PWR_FLAG_TEMPH)     ? ((PWR->CTR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
+ ((__FLAG__) == PWR_FLAG_TEMPL)     ? ((PWR->CTR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
+ ((__FLAG__) == PWR_FLAG_VBATH)     ? ((PWR->CTR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
+ ((PWR->CTR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
 #endif /* defined (SMPS) */
 #else /* STM32H7Axxx and STM32H7Bxxx lines */
 #if defined (SMPS) /* STM32H7AxxQ and STM32H7BxxQ lines */
@@ -440,33 +440,33 @@ do {                                                                           \
 (((__FLAG__) == PWR_FLAG_PVDO)       ? ((PWR->CSR1 & PWR_CSR1_PVDO)      == PWR_CSR1_PVDO)      :\
  ((__FLAG__) == PWR_FLAG_AVDO)       ? ((PWR->CSR1 & PWR_CSR1_AVDO)      == PWR_CSR1_AVDO)      :\
  ((__FLAG__) == PWR_FLAG_ACTVOSRDY)  ? ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == PWR_CSR1_ACTVOSRDY) :\
- ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
+ ((__FLAG__) == PWR_FLAG_BRR)        ? ((PWR->CTR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
  ((__FLAG__) == PWR_FLAG_VOSRDY)     ? ((PWR->SRDCR & PWR_SRDCR_VOSRDY)  == PWR_SRDCR_VOSRDY)   :\
  ((__FLAG__) == PWR_FLAG_STOP)       ? ((PWR->CPUCR & PWR_CPUCR_STOPF)   == PWR_CPUCR_STOPF)    :\
  ((__FLAG__) == PWR_FLAG_SB)         ? ((PWR->CPUCR & PWR_CPUCR_SBF)     == PWR_CPUCR_SBF)      :\
  ((__FLAG__) == PWR_FLAG_MMCVDO)     ? ((PWR->CSR1 & PWR_CSR1_MMCVDO)    == PWR_CSR1_MMCVDO)    :\
- ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CR3 & PWR_CR3_SMPSEXTRDY)  == PWR_CR3_SMPSEXTRDY) :\
- ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
- ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
- ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
- ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
- ((PWR->CR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
+ ((__FLAG__) == PWR_FLAG_SMPSEXTRDY) ? ((PWR->CTR3 & PWR_CR3_SMPSEXTRDY)  == PWR_CR3_SMPSEXTRDY) :\
+ ((__FLAG__) == PWR_FLAG_USB33RDY)   ? ((PWR->CTR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
+ ((__FLAG__) == PWR_FLAG_TEMPH)      ? ((PWR->CTR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
+ ((__FLAG__) == PWR_FLAG_TEMPL)      ? ((PWR->CTR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
+ ((__FLAG__) == PWR_FLAG_VBATH)      ? ((PWR->CTR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
+ ((PWR->CTR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
 #else /* STM32H7Axx and STM32H7Bxx lines */
 #define __HAL_PWR_GET_FLAG(__FLAG__)                                                            \
 (((__FLAG__) == PWR_FLAG_PVDO)      ? ((PWR->CSR1 & PWR_CSR1_PVDO)      == PWR_CSR1_PVDO)      :\
  ((__FLAG__) == PWR_FLAG_AVDO)      ? ((PWR->CSR1 & PWR_CSR1_AVDO)      == PWR_CSR1_AVDO)      :\
  ((__FLAG__) == PWR_FLAG_ACTVOSRDY) ? ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == PWR_CSR1_ACTVOSRDY) :\
- ((__FLAG__) == PWR_FLAG_BRR)       ? ((PWR->CR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
+ ((__FLAG__) == PWR_FLAG_BRR)       ? ((PWR->CTR2 & PWR_CR2_BRRDY)       == PWR_CR2_BRRDY)      :\
  ((__FLAG__) == PWR_FLAG_VOSRDY)    ? ((PWR->SRDCR & PWR_SRDCR_VOSRDY)  == PWR_SRDCR_VOSRDY)   :\
- ((__FLAG__) == PWR_FLAG_SCUEN)     ? ((PWR->CR3 & PWR_CR3_SCUEN)       == PWR_CR3_SCUEN)      :\
+ ((__FLAG__) == PWR_FLAG_SCUEN)     ? ((PWR->CTR3 & PWR_CR3_SCUEN)       == PWR_CR3_SCUEN)      :\
  ((__FLAG__) == PWR_FLAG_STOP)      ? ((PWR->CPUCR & PWR_CPUCR_STOPF)   == PWR_CPUCR_STOPF)    :\
  ((__FLAG__) == PWR_FLAG_SB)        ? ((PWR->CPUCR & PWR_CPUCR_SBF)     == PWR_CPUCR_SBF)      :\
  ((__FLAG__) == PWR_FLAG_MMCVDO)    ? ((PWR->CSR1 & PWR_CSR1_MMCVDO)    == PWR_CSR1_MMCVDO)    :\
- ((__FLAG__) == PWR_FLAG_USB33RDY)  ? ((PWR->CR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
- ((__FLAG__) == PWR_FLAG_TEMPH)     ? ((PWR->CR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
- ((__FLAG__) == PWR_FLAG_TEMPL)     ? ((PWR->CR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
- ((__FLAG__) == PWR_FLAG_VBATH)     ? ((PWR->CR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
- ((PWR->CR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
+ ((__FLAG__) == PWR_FLAG_USB33RDY)  ? ((PWR->CTR3 & PWR_CR3_USB33RDY)    == PWR_CR3_USB33RDY)   :\
+ ((__FLAG__) == PWR_FLAG_TEMPH)     ? ((PWR->CTR2 & PWR_CR2_TEMPH)       == PWR_CR2_TEMPH)      :\
+ ((__FLAG__) == PWR_FLAG_TEMPL)     ? ((PWR->CTR2 & PWR_CR2_TEMPL)       == PWR_CR2_TEMPL)      :\
+ ((__FLAG__) == PWR_FLAG_VBATH)     ? ((PWR->CTR2 & PWR_CR2_VBATH)       == PWR_CR2_VBATH)      :\
+ ((PWR->CTR2 & PWR_CR2_VBATL) == PWR_CR2_VBATL))
 #endif /* SMPS */
 #endif /* PWR_CPUCR_SBF_D2 */
 #endif /* DUAL_CORE */

@@ -103,6 +103,14 @@
 static uint8_t *shared_mem;
 static uint32_t hsem_statusreg = 0x00000000;
 
+typedef void (*stm32h745_shared_memory_interrupt_callback_t)(void);
+
+static stm32h745_shared_memory_interrupt_callback_t interrupt_callback = NULL;
+
+void stm32h745_shared_memory_set_interrupt_callback(stm32h745_shared_memory_interrupt_callback_t callback) {
+    interrupt_callback = callback;
+}
+
 /****************************************************************************
  * Private Functions - stm32h745_up_interrupt
  ****************************************************************************/
@@ -118,6 +126,10 @@ static int  up_interrupt(int irq, void *context, FAR void *arg)
     HSEM_COMMON->ICR = ((uint32_t)hsem_statusreg);
 
     lldbg("HSEM interrupt 0x%08x\n", hsem_statusreg);
+
+    if (interrupt_callback) {
+        interrupt_callback();
+    }
 
     return OK;
 }
@@ -164,19 +176,25 @@ int stm32h745_shared_memory_init(uint32_t hsem_id)
  *   Initialize shared memory
  *
  ****************************************************************************/
-int stm32h745_shared_memory_write(uint32_t index, uint8_t *src_addr, uint32_t size, uint32_t hsem_id)
+int stm32h745_shared_memory_write(uint32_t index, uint8_t *src_addr, uint32_t size, bool notification, uint32_t hsem_id)
 {
     //If core use cache, need to clean cache
-    if(hsem_id >= HSEM_ID_MAX)
+    if(notification == true)
     {
-        return ERROR;
+        if(hsem_id >= HSEM_ID_MAX)
+        {
+            return ERROR;
+        }
     }
-
     memcpy(&shared_mem[index], src_addr, size);
 
-    while(HAL_HSEM_FastTake(hsem_id) != HAL_OK){};
-    HAL_HSEM_Release(hsem_id, 0);
-    //If core use cache, need to clean cache
+    if(notification == true)
+    {
+        while(HAL_HSEM_FastTake(hsem_id) != HAL_OK){};
+        HAL_HSEM_Release(hsem_id, 0);
+        
+        //If core use cache, need to clean cache
+    }
     return OK;
 }
 

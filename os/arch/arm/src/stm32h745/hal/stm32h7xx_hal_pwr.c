@@ -236,7 +236,7 @@ void HAL_PWR_DeInit (void)
 void HAL_PWR_EnableBkUpAccess (void)
 {
   /* Enable access to RTC and backup registers */
-  SET_BIT (PWR->CR1, PWR_CR1_DBP);
+  SET_BIT (PWR->CTR1, PWR_CR1_DBP);
 }
 
 /**
@@ -249,7 +249,7 @@ void HAL_PWR_EnableBkUpAccess (void)
 void HAL_PWR_DisableBkUpAccess (void)
 {
   /* Disable access to RTC and backup registers */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_DBP);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_DBP);
 }
 /**
   * @}
@@ -425,7 +425,7 @@ void HAL_PWR_ConfigPVD (PWR_PVDTypeDef *sConfigPVD)
   assert_param (IS_PWR_PVD_MODE (sConfigPVD->Mode));
 
   /* Set PLS[7:5] bits according to PVDLevel value */
-  MODIFY_REG (PWR->CR1, PWR_CR1_PLS, sConfigPVD->PVDLevel);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_PLS, sConfigPVD->PVDLevel);
 
   /* Clear previous config */
 #if !defined (DUAL_CORE)
@@ -470,7 +470,7 @@ void HAL_PWR_ConfigPVD (PWR_PVDTypeDef *sConfigPVD)
 void HAL_PWR_EnablePVD (void)
 {
   /* Enable the power voltage detector */
-  SET_BIT (PWR->CR1, PWR_CR1_PVDEN);
+  SET_BIT (PWR->CTR1, PWR_CR1_PVDEN);
 }
 
 /**
@@ -480,7 +480,7 @@ void HAL_PWR_EnablePVD (void)
 void HAL_PWR_DisablePVD (void)
 {
   /* Disable the power voltage detector */
-  CLEAR_BIT (PWR->CR1, PWR_CR1_PVDEN);
+  CLEAR_BIT (PWR->CTR1, PWR_CR1_PVDEN);
 }
 
 /**
@@ -619,7 +619,7 @@ void HAL_PWR_EnterSTOPMode (uint32_t Regulator, uint8_t STOPEntry)
   assert_param (IS_PWR_STOP_ENTRY (STOPEntry));
 
   /* Select the regulator state in STOP mode */
-  MODIFY_REG (PWR->CR1, PWR_CR1_LPDS, Regulator);
+  MODIFY_REG (PWR->CTR1, PWR_CR1_LPDS, Regulator);
 
   /* Configure the PWR mode for the different Domains */
 #if defined (DUAL_CORE)
