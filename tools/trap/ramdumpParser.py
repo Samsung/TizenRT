@@ -777,6 +777,17 @@ def find_crash_point(log_file, elf):
                         print('\tPC value might be invalid.')
             print('\tPC & LR values not in any text range! No probable crash point detected.')
 
+    # Parse the contents based on tokens in log file for memory allocation failure data
+    with open(log_file) as searchfile:
+        mm_fail = 0
+        for line in searchfile:
+            # Print the mm allocation failure data during crash (if crashed during mm allocation)
+            if ('mm_manage_alloc_fail:' in line) and (mm_fail == 0):
+                print('\nMemory allocation failure logs are as below:')
+                mm_fail = 1
+            if (mm_fail == 1):
+                print(line)
+
     print('\n4. Call stack of last run thread\n')
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
@@ -838,17 +849,21 @@ def format_log_file(log_file):
 	with open(log_file, "r") as f:
 		data = f.readlines()
 	with open(log_file, "w") as f:
+		assertinlog = False #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
 		trunc = True # False if log line is to be retained, True otherwise
 		for line in data:
-			# Truncate logs after first crash dump: up_assert
-			if ('up_assert: Assertion failed at file:' in line) and (trunc == False):
-				break
-			# Truncate logs before first crash dump: up_assert
-			if 'up_assert: Assertion failed at file:' in line:
-				trunc = False
-			if trunc:
-				# Do not write line and move to the next line
-				continue
+			if 'up_assert: ' in line:
+				assertinlog = True
+			if assertinlog:
+				# Truncate logs after first crash dump: up_assert
+				if ('up_assert: Assertion failed at file:' in line) and (trunc == False):
+					break
+				# Truncate logs before first crash dump: up_assert
+				if 'up_assert: Assertion failed at file:' in line:
+					trunc = False
+				if trunc:
+					# Do not write line and move to the next line
+					continue
 
 			delete_idx = 0
 			# Timestamp present if line starts with '['
