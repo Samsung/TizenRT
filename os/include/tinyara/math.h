@@ -172,6 +172,17 @@ static __inline unsigned long long __DOUBLE_BITS(double __f)
 #define M_2_SQRTPI 1.1283791670955125738961589031215452
 
 /****************************************************************************
+ * Public Type Definitions
+ ****************************************************************************/
+typedef float float_t;
+
+#ifdef CONFIG_HAVE_DOUBLE
+typedef double double_t;
+#else
+typedef float double_t;
+#endif
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
