@@ -26,6 +26,7 @@ enum {
 	REBOOT_SYSTEM_SYS_RESET_CORE = REBOOT_BOARD_SPECIFIC2, /* System reset by Core */
 	REBOOT_SYSTEM_BOD_RESET      = REBOOT_BOARD_SPECIFIC3, /* Brownout reset */
 	REBOOT_SYSTEM_TZWD_RESET     = REBOOT_BOARD_SPECIFIC4, /* TrustZone Watch dog */
+	REBOOT_SYSTEM_FCS_RESET      = REBOOT_BOARD_SPECIFIC5, /* System reset by wrong HW register */
 };
 
 #endif /* __AMEBAD_REBOOT_REASON_H__ */
