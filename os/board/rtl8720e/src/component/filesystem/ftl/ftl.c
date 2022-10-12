@@ -122,6 +122,32 @@ extern bool ftl_page_erase(struct Page_T *p);
 void ftl_mapping_table_init(void);
 uint16_t read_mapping_table(uint16_t logical_addr);
 
+/* Flash Status Bit */
+#define FLASH_STATUS_BITS 0x2c
+uint32_t backup_state = 0;
+
+static void ftl_setstatusbits(uint32_t NewState)
+{
+	flash_t flash;
+
+	if (!NewState) {	/* If to disable */
+		backup_state = flash_get_status(&flash);	/* Read State */
+		backup_state = backup_state & 0xFF;		/* Only compare status bits */
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Clear */
+			FLASH_Write_Unlock();
+		}
+	} else {
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState); /* Set State */
+			FLASH_Write_Unlock();
+		}
+		backup_state = 0;	/* Clear backup state */
+	}
+}
+
 uint8_t ftl_flash_read(uint32_t start_addr, uint32_t len, uint32_t *data)
 {
 	uint8_t ret = 0;
@@ -151,7 +177,9 @@ void ftl_flash_write(uint32_t start_addr, uint32_t len, uint32_t data)
 	flash_t flash;
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(0);
 	flash_write_word(&flash, start_addr, data);
+	ftl_setstatusbits(1);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 #endif
 }
@@ -164,7 +192,9 @@ bool ftl_flash_erase_sector(uint32_t addr)
 	flash_t flash;
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(0);
 	flash_erase_sector(&flash, addr);
+	ftl_setstatusbits(1);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 #endif
 	return TRUE;
