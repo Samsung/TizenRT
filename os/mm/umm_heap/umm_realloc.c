@@ -104,13 +104,17 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
+	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
-#else
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 	return ret;
 }
@@ -147,13 +151,17 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		return NULL;
 	}	
 	/* User supports a single heap on app separation */
+	ret = mm_realloc(BASE_HEAP, oldmem, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(BASE_HEAP, oldmem, size, caller_retaddr);
-#else
-	ret = mm_realloc(BASE_HEAP, oldmem, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
@@ -183,18 +191,22 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 
 	prev_heap_idx = heap_idx;
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
-#else
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
+				, caller_retaddr
 #endif
+				);
 		if (ret != NULL) {
 			mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			, caller_retaddr
+#endif
+			);
 
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 

@@ -87,17 +87,21 @@ static void *kheap_malloc(size_t size, size_t caller_retaddr)
 	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+		ret = mm_malloc(&kheap[heap_idx], size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&kheap[heap_idx], size, caller_retaddr);
-#else
-		ret = mm_malloc(&kheap[heap_idx], size);
+				, caller_retaddr
 #endif
+				);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			, caller_retaddr
+#endif
+			);
 	return NULL;
 }
 
@@ -140,13 +144,17 @@ void *kmm_malloc_at(int heap_index, size_t size)
 	}
 
 	kheap = kmm_get_baseheap();
+	ret = mm_malloc(&kheap[heap_index], size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
-#else
-	ret = mm_malloc(&kheap[heap_index], size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 	return ret;
 }

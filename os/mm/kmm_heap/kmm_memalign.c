@@ -106,13 +106,17 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 	}
 
 	kheap = kmm_get_baseheap();
+	ret = mm_memalign(&kheap[heap_index], alignment, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_memalign(&kheap[heap_index], alignment, size, caller_retaddr);
-#else
-	ret = mm_memalign(&kheap[heap_index], alignment, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 	return ret;
 }
@@ -147,17 +151,21 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 #endif
 	struct mm_heap_s *kheap = kmm_get_baseheap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size, caller_retaddr);
-#else
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size);
+				, caller_retaddr
 #endif
+				);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			, caller_retaddr
+#endif
+			);
 	return NULL;
 }
 
