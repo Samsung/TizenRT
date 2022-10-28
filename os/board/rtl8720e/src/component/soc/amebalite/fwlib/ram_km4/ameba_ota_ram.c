@@ -480,5 +480,41 @@ int OTA_Image2SignatureCheck(uint32_t input_addr)
 	return TRUE;
 }
 
+/* Secure Key Derive Function structure */
+typedef struct {
+	unsigned char *password;	/* Password */
+	size_t plen;			/* Password length */
+	unsigned char *salt;		/* Salt */
+	size_t slen;			/* Salt length */
+	unsigned int iteration_count;
+	unsigned char *dstbuf;		/* derived key buffer */
+	size_t dlen;			/* derived key buffer length */
+} secure_kdf_struc;
+
+int Ameba_KeyDeriveFunc(const unsigned char *password, size_t plen,
+			const unsigned char *salt, size_t slen,
+			unsigned int iteration_count,
+			unsigned char *dstbuf, size_t dlen)
+{
+	int ret;
+	secure_kdf_struc KDF_input;
+
+	if (dstbuf == NULL) /* output buff is empty */
+		return FALSE;
+
+	KDF_input.password = password;
+	KDF_input.plen = plen;
+	KDF_input.salt = salt;
+	KDF_input.slen = slen;
+	KDF_input.iteration_count = iteration_count;
+	KDF_input.dstbuf = dstbuf;
+	KDF_input.dlen = dlen;
+
+	up_allocate_secure_context(4096);
+	ret = Secure_KeyDeriveFunc(&KDF_input);	/* PBKDF2 API */
+	up_free_secure_context();
+
+	return ret;
+}
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
 
