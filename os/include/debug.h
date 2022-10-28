@@ -1315,7 +1315,7 @@ int get_errno(void);
 #define mllvdbg     (void)
 #endif
 
-#if defined(CONFIG_MM_ASSERT_ON_FAIL) && defined(CONFIG_APP_BINARY_SEPARATION) && defined (__KERNEL__)
+#if defined(CONFIG_MM_ASSERT_ON_FAIL) && (defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_APP_BINARY_SEPARATION) && defined (__KERNEL__)))
 #define mfdbg lldbg
 #else
 #define mfdbg dbg

@@ -117,13 +117,17 @@ void *malloc_at(int heap_index, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
+	ret = mm_malloc(&BASE_HEAP[heap_index], size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_malloc(&BASE_HEAP[heap_index], size, caller_retaddr);
-#else
-	ret = mm_malloc(&BASE_HEAP[heap_index], size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 	return ret;
 }
@@ -151,17 +155,21 @@ static void *heap_malloc(size_t size, int s, int e, size_t caller_retaddr)
 	void *ret;
 
 	for (heap_idx = s; heap_idx <= e; heap_idx++) {
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
-#else
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size);
+				, caller_retaddr
 #endif
+				);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			, caller_retaddr
+#endif
+			);
 	return NULL;
 }
 #endif
@@ -224,13 +232,17 @@ FAR void *malloc(size_t size)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User supports a single heap on app separation */
+	ret = mm_malloc(BASE_HEAP, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_malloc(BASE_HEAP, size, caller_retaddr);
-#else
-	ret = mm_malloc(BASE_HEAP, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */

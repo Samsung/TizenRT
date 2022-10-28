@@ -101,13 +101,17 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 		return NULL;
 	}
 
+	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size, caller_retaddr);
-#else
-	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 	return ret;
 }
@@ -142,30 +146,38 @@ FAR void *memalign(size_t alignment, size_t size)
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User supports a single heap on app separation */
+	ret = mm_memalign(BASE_HEAP, alignment, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_memalign(BASE_HEAP, alignment, size, caller_retaddr);
-#else
-	ret = mm_memalign(BASE_HEAP, alignment, size);
+			, caller_retaddr
 #endif
+			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
 
 	int heap_idx;
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size, caller_retaddr);
-#else
-		ret = mm_memalign(&BASE_HEAP[heap_idx], alignment, size);
+				, caller_retaddr
 #endif
+				);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP);
+	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			, caller_retaddr
+#endif
+			);
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 	return ret;
 }
