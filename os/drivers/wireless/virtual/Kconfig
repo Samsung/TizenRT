@@ -1,4 +1,0 @@
-menuconfig VIRTUAL_WLAN
-	bool "Virtual Wireless Module support"
-	default n
-	select PIPES

@@ -1,3 +1,0 @@
-config ENTRY_CY4390x_DEMO
-	bool "cy4390x Demo example"
-	depends on EXAMPLES_CY4390x_DEMO

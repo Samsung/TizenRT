@@ -1,3 +1,0 @@
-config ENTRY_NTPCLIENT_TEST
-	bool "\"NTP Client Test\" example"
-	depends on EXAMPLES_NTPCLIENT_TEST

@@ -1,7 +1,0 @@
-/Make_bin.dep
-/Make_ubin.dep
-/Make_kbin.dep
-/mm_heap/mm_heap_regioninfo.c
-/.depend
-/*.lib
-

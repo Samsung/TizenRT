@@ -1,3 +1,0 @@
-config ENTRY_KERNEL_SAMPLE
-	bool "OS test example"
-	depends on EXAMPLES_KERNEL_SAMPLE

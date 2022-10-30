@@ -1,3 +1,0 @@
-config ENTRY_CTX_SWITCH
-	bool "\"Context Switching Performance\" example"
-	depends on EXAMPLES_CTX_SWITCH_PERFORMANCE

@@ -1,3 +1,0 @@
-config ENTRY_##APP_NAME_UPPER##
-	bool "\"##APP_NAME##\" Application"
-	depends on APP_##APP_NAME_UPPER##

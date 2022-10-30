@@ -1,3 +1,0 @@
-config ENTRY_HEAVY_SIGNAL_MESSAGE_TEST
-	bool "Heavy Signal Message Test Sample"
-	depends on EXAMPLES_HEAVY_SIGNAL_MESSAGE_TEST

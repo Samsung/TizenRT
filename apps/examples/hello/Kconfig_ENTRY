@@ -1,3 +1,0 @@
-config ENTRY_HELLO
-	bool "\"Hello, World!\" example"
-	depends on EXAMPLES_HELLO

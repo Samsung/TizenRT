@@ -1,3 +1,0 @@
-config ENTRY_PROTOBUF_TEST
-	bool "Protocol Buffers example"
-	depends on EXAMPLES_PROTOBUF_TEST

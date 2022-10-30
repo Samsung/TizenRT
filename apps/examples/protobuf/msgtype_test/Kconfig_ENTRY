@@ -1,3 +1,0 @@
-config ENTRY_PROTOBUF_MSGTYPE_TEST
-	bool "Protocol Buffers Serialize/Deserialize Test"
-	depends on EXAMPLES_PROTOBUF_MSGTYPE_TEST

@@ -1,9 +1,0 @@
-#
-# For a description of the syntax of this configuration file,
-# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
-#
-config DEBUG_SYSTEM_APP
-	bool "Enable system debug application with tash inerface"
-	default n
-	depends on TASH
-	depends on DEBUG_SYSTEM

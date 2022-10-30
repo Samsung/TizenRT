@@ -1,3 +1,0 @@
-config ENTRY_SYSCALL_PERFORMANCE
-	bool "Syscall Performance Example"
-	depends on EXAMPLES_SYSCALL_PERFORMANCE

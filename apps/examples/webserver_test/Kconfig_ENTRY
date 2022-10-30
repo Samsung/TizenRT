@@ -1,3 +1,0 @@
-config ENTRY_WEBSERVER_TEST
-	bool "TizenRT Webserver test"
-	depends on EXAMPLES_WEBSERVER_TEST

@@ -1,3 +1,0 @@
-config ENTRY_TLS_BENCHMARK
-	bool "TLS benchmark program"
-	depends on EXAMPLES_TLS_BENCHMARK

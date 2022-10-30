@@ -1,3 +1,0 @@
-config ENTRY_ERR_REPORT
-	bool "error_report"
-	depends on EXAMPLES_ERR_REPORT

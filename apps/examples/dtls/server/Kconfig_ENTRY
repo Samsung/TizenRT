@@ -1,3 +1,0 @@
-config ENTRY_DTLS_SERVER
-	bool "DTLS server application"
-	depends on EXAMPLES_DTLS_SERVER

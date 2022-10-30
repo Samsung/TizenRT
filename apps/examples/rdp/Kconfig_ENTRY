@@ -1,3 +1,0 @@
-config ENTRY_RDP
-	bool "Read Protect example"
-	depends on EXAMPLES_RDP

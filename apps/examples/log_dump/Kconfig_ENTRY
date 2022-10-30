@@ -1,3 +1,0 @@
-config ENTRY_LOG_DUMP
-	bool "Log dump example"
-	depends on EXAMPLES_LOG_DUMP

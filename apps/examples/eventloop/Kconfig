@@ -1,6 +1,0 @@
-config EXAMPLES_EVENTLOOP
-	bool "Event loop Example"
-	default n
-	select EVENTLOOP
-	---help---
-		Enable the Eventloop Example

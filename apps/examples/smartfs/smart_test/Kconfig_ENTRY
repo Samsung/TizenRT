@@ -1,3 +1,0 @@
-config ENTRY_SMART_TEST
-	bool "SMART filesystem test tool"
-	depends on EXAMPLES_SMART_TEST

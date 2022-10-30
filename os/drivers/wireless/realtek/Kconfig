@@ -1,7 +1,0 @@
-menuconfig RTK_WLAN
-	bool "Realtek Wireless Module support"
-	default n
-
-
-
-

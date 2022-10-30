@@ -1,3 +1,0 @@
-config ENTRY_PROTOBUF_GTEST
-	bool "Protocol Buffers gtest"
-	depends on EXAMPLES_PROTOBUF_GTEST
