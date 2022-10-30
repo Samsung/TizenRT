@@ -1,8 +1,0 @@
-#
-# For a description of the syntax of this configuration file,
-# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
-#
-
-if ARCH_CHIP_LX6
-
-endif # ARCH_CHIP_LX6
