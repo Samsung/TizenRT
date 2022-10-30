@@ -1,6 +1,0 @@
-config EXAMPLES_EEPROM_TEST
-	bool "\"EE, TEST\" example in tash"
-	default n
-	---help---
-		Enable the \"EE_TEST\" example in tash
-

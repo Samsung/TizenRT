@@ -1,3 +1,0 @@
-config ENTRY_SECLINK_TOOL
-	bool "seclink tool"
-	depends on EXAMPLES_SECLINK_TOOL

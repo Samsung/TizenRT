@@ -1,3 +1,0 @@
-config ENTRY_MEMORY_FRAGMENTATION_TEST
-	bool "Memory fragmentation test"
-	depends on EXAMPLES_MEMORY_FRAGMENTATION_TEST

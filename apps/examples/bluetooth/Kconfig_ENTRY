@@ -1,3 +1,0 @@
-config ENTRY_BT_UNIT_TEST
-	bool "Enable bt_unit_test"
-	depends on EXAMPLES_BT_UNIT_TEST

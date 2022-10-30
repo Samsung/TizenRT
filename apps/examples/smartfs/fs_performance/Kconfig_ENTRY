@@ -1,3 +1,0 @@
-config ENTRY_FS_PERFORMANCE
-	bool "Fs Performance Test example"
-	depends on EXAMPLES_FS_PERF0RMANCE

@@ -1,3 +1,0 @@
-config ENTRY_SECURITY_API_TEST
-	bool "Security API Test"
-	depends on EXAMPLES_SECURITY_API_TEST

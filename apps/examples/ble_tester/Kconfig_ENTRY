@@ -1,3 +1,0 @@
-config ENTRY_BLE_TESTER
-	bool "BLE spec tester"
-	depends on EXAMPLES_BLE_TESTER

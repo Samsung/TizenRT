@@ -1,3 +1,0 @@
-config ENTRY_IOTJS_STARTUP
-	bool "IoT.js StartUp example"
-	depends on EXAMPLES_IOTJS_STARTUP

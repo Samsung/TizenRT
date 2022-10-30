@@ -1,3 +1,0 @@
-config ENTRY_TELNETD
-	bool "Telnet daemon example"
-	depends on EXAMPLES_TELNETD

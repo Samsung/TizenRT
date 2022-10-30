@@ -1,3 +1,0 @@
-config ENTRY_FTPC
-	bool "FTP client example"
-	depends on EXAMPLES_FTPC

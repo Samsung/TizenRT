@@ -1,3 +1,0 @@
-config ENTRY_LWM2M_CLIENT
-	bool "lwm2m client application"
-	depends on EXAMPLES_LWM2M_CLIENT

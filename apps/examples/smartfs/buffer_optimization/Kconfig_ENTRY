@@ -1,3 +1,0 @@
-config ENTRY_SMARTFS_BUF_OPTIMIZATION
-	bool "SmartFs Buffer Optimization example"
-	depends on EXAMPLES_SMARTFS_BUF_OPTIMIZATION

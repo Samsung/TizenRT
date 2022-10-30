@@ -1,3 +1,0 @@
-config ENTRY_NETTEST
-	bool "Sample App for testing network related functionalities like TCP/UDP/IGMP?ICMP etc."
-	depends on EXAMPLES_NETTEST
