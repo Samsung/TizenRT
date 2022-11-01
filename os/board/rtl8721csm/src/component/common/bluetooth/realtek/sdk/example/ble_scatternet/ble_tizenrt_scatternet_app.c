@@ -47,6 +47,9 @@ extern uint8_t ble_app_link_table_size;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+#if defined(CONFIG_BLE_INDICATION)
+extern void *ble_tizenrt_indicate_sem;
+#endif
 extern BLE_TIZENRT_BOND_REQ *ble_tizenrt_bond_req_info;
 extern uint8_t ble_client_connect_is_running;
 extern void *ble_tizenrt_modify_whitelist_sem;
@@ -171,7 +174,10 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 os_mutex_give(ble_tizenrt_write_sem);
             if(ble_tizenrt_write_no_rsp_sem != NULL)
                 os_mutex_give(ble_tizenrt_write_no_rsp_sem);
-
+#if defined(CONFIG_BLE_INDICATION)
+            if(ble_tizenrt_indicate_sem != NULL)
+                os_mutex_give(ble_tizenrt_indicate_sem);
+#endif
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
             client_init_parm->trble_device_disconnected_cb(disconnected);
         }
@@ -188,6 +194,21 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 os_mem_free(notify_result);
             } else {
                 debug_print("Notify_result parameter is NULL \n");
+            }
+        }
+			break;
+
+        case BLE_TIZENRT_INDICATION_MSG:
+        {
+            debug_print("Handle indicate_result msg \n");
+            T_TIZENRT_CLIENT_INDICATION *indicate_result = callback_msg.u.buf;
+            if(indicate_result)
+            {
+                client_init_parm->trble_operation_indication_cb(&indicate_result->handle, &indicate_result->indi_data);
+                os_mem_free(indicate_result->indi_data.data);
+                os_mem_free(indicate_result);
+            } else {
+                debug_print("Indicate_result parameter is NULL \n");
             }
         }
 			break;
@@ -1655,9 +1676,34 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                 APP_PRINT_INFO2("INDICATION: handle 0x%x, value_size %d",
                                 p_gcs_cb_data->cb_content.notif_ind.handle,
                                 p_gcs_cb_data->cb_content.notif_ind.value_size);
-                dbg("INDICATION VALUE: %b \n",
-                                TRACE_BINARY(p_gcs_cb_data->cb_content.read_result.value_size,
-                                             p_gcs_cb_data->cb_content.read_result.p_value));
+                debug_print("INDICATION: handle 0x%x, value_size %d",
+                                 p_gcs_cb_data->cb_content.notif_ind.handle,
+                                 p_gcs_cb_data->cb_content.notif_ind.value_size);
+                T_TIZENRT_CLIENT_INDICATION *indicate_result = os_mem_alloc(0, sizeof(T_TIZENRT_CLIENT_INDICATION));
+                if (indicate_result) {
+                    indicate_result->indi_data.data = os_mem_alloc(0, p_gcs_cb_data->cb_content.notif_ind.value_size);
+                    if (indicate_result->indi_data.data)
+                    {
+                        memcpy(indicate_result->indi_data.data, p_gcs_cb_data->cb_content.notif_ind.p_value,
+                                                        p_gcs_cb_data->cb_content.notif_ind.value_size);
+                        indicate_result->indi_data.length = p_gcs_cb_data->cb_content.notif_ind.value_size;
+                        indicate_result->handle.conn_handle = conn_id;
+                        indicate_result->handle.attr_handle = p_gcs_cb_data->cb_content.notif_ind.handle;
+                        debug_print("Indication: 0x \n");
+                        for (int i = 0; i < indicate_result->indi_data.length; i++)
+                        {
+                            debug_print("%x",indicate_result->indi_data.data[i]);
+                        }
+                        if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_INDICATION_MSG, indicate_result) == false)
+                        {
+                            os_mem_free(indicate_result->indi_data.data);
+                            os_mem_free(indicate_result);
+                            debug_print("callback msg send fail \n");
+                        }
+                    } else {
+                        debug_print("Memory allocation failed \n");
+                    }
+                }
             }
             else
             {
@@ -1700,6 +1746,9 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
 }
 
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
+#if defined(CONFIG_BLE_INDICATION)
+T_SEND_DATA_RESULT g_scatternet_indicate_result = {0};
+#endif
 T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id, void *p_data)
 {
     T_APP_RESULT app_result = APP_RESULT_SUCCESS;
@@ -1722,7 +1771,20 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                             p_param->event_data.send_data_result.credits);
             if (p_param->event_data.send_data_result.cause == GAP_SUCCESS)
             {
-                debug_print("PROFILE_EVT_SEND_DATA_COMPLETE success \n");
+                dbg("PROFILE_EVT_SEND_DATA_COMPLETE success \n");
+#if defined(CONFIG_BLE_INDICATION)
+                g_scatternet_indicate_result.credits = p_param->event_data.send_data_result.credits;
+                g_scatternet_indicate_result.cause = p_param->event_data.send_data_result.cause,
+                g_scatternet_indicate_result.service_id = p_param->event_data.send_data_result.service_id,
+                g_scatternet_indicate_result.attrib_idx = p_param->event_data.send_data_result.attrib_idx,
+                g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
+                if((g_scatternet_indicate_result.cause == 0x0) && (os_mutex_give(ble_tizenrt_indicate_sem)))
+                {
+                    debug_print("recieve indicate response \n");
+                } else {
+                    dbg("fail to give indicate semaphore \n");
+                }
+#endif
             }
             else
             {
