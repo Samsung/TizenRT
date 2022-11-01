@@ -796,6 +796,11 @@ uint16_t read_mapping_table(uint16_t logical_addr)
 	uint32_t byte_index = bit_index / 8;
 	uint32_t byte_offset = bit_index % 8;
 
+	if (ftl_mapping_table == NULL) {
+		FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] ftl_mapping_table is null!");
+		ASSERT(0);
+	}
+	
 	uint16_t phy_addr = ftl_mapping_table[byte_index] + (ftl_mapping_table[byte_index + 1] << 8);
 	phy_addr = (phy_addr & (0xfff << byte_offset)) >> byte_offset;
 	phy_addr *= 2;
@@ -810,6 +815,11 @@ void write_mapping_table(uint16_t logical_addr, uint8_t pageID, uint16_t cell_in
 	uint32_t byte_index = bit_index / 8;
 	uint32_t byte_offset = bit_index % 8;
 	uint32_t phy_addr_offset = (pageID * PAGE_element + cell_index) / 2;//8 bytes aligned
+
+	if (ftl_mapping_table == NULL) {
+		FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] ftl_mapping_table is null!");
+		ASSERT(0);
+	}
 
 	if (4 == byte_offset) {
 		uint8_t phy_addr_offset_l = phy_addr_offset & 0x0f;
@@ -1253,6 +1263,11 @@ uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
 		uint32_t i;
 		for (i = 0; i < g_PAGE_num; ++i) {
 			ftl_page_write(g_pPage + i, INFO_beg_index, 0x0);
+		}
+
+		if (ftl_mapping_table == NULL) {
+			FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] ftl_mapping_table is null!");
+			ASSERT(0);
 		}
 
 		//clear ftl_mapping_table
