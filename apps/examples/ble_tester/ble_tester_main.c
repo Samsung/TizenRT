@@ -1001,6 +1001,15 @@ int ble_tester_main(int argc, char *argv[])
 			} else {
 				RMC_LOG(RMC_SERVER_TAG, "[INDI] Send Indi OK\n");
 			}
+		} else if (strncmp(argv[1], "test8", 5) == 0) {
+			ret = ble_server_set_adv_type(BLE_ADV_TYPE_IND, NULL);
+			RMC_LOG(RMC_SERVER_TAG, "ble_server_set_adv_type(BLE_ADV_TYPE_IND) ret: %d\n", ret);
+			ret = ble_server_start_adv();
+			RMC_LOG(RMC_SERVER_TAG, "ble_server_start_adv() ret: %d\n", ret);
+		} else if (strncmp(argv[1], "test9", 5) == 0) {
+			ble_device_connected_list list;
+			ret = ble_client_connected_device_list(&list);
+			RMC_LOG(RMC_SERVER_TAG, "ble_client_connected_device_list() ret: %d, num of connected device:%d\n", ret, list.connected_count);
 		} else {
 			RMC_LOG(RMC_TAG, "Fail to run command [ %s ]\n", argv[1]);
 		}
