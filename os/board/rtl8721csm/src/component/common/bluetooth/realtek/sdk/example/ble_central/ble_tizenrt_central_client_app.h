@@ -51,6 +51,7 @@ typedef enum
 	BLE_TIZENRT_SCANNED_DEVICE_MSG,
   BLE_TIZENRT_DISCONNECTED_MSG,
   BLE_TIZENRT_NOTIFICATION_MSG,
+  BLE_TIZENRT_INDICATION_MSG,
   BLE_TIZENRT_READ_RESULT_MSG,
 	BLE_TIZENRT_APP_MSG_MAX
 } BLE_TIZENRT_CLIENT_APP_CALLBACK_TYPE;
@@ -67,6 +68,11 @@ typedef struct
   trble_data noti_data;
 } T_TIZENRT_CLIENT_NOTIFICATION;
 
+typedef struct
+{
+  trble_operation_handle handle;
+  trble_data indi_data;
+} T_TIZENRT_CLIENT_INDICATION;
 
 typedef struct
 {

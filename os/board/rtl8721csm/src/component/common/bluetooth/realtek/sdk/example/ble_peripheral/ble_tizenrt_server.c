@@ -23,6 +23,7 @@ bool is_server_init = false;
 uint16_t server_profile_count = 0;
 trble_server_init_config server_init_parm;
 bool (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
+T_SEND_DATA_RESULT *send_indication_result = NULL;
 
 trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
 {
@@ -242,6 +243,10 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     return TRBLE_SUCCESS;
 }
 
+#if defined(CONFIG_BLE_INDICATION)
+extern T_SEND_DATA_RESULT g_scatternet_indicate_result;
+void *ble_tizenrt_indicate_sem = NULL;
+#endif
 trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
 {
     debug_print("send indicate abs_handle 0x%x \n", attr_handle);
@@ -254,6 +259,19 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
     {
         return TRBLE_NOT_FOUND;
     }
+
+#if defined(CONFIG_BLE_INDICATION)
+    if(ble_tizenrt_indicate_sem == NULL)
+    {
+        if(false == os_mutex_create(&ble_tizenrt_indicate_sem))
+        {
+            dbg("creat indication mutex fail! \n");
+            return TRBLE_FAIL;
+        } else {
+            debug_print("creat indication mutex 0x%x success \n", ble_tizenrt_indicate_sem);
+        }
+    }
+#endif
 
     T_TIZENRT_NOTIFY_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_INDICATE_PARAM));;
     if(!param)
@@ -280,7 +298,30 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
         debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
+
+#if defined(CONFIG_BLE_INDICATION)
+    int wticks = 0;
+    while(wticks++ < 30)
+    {
+        debug_print("wticks %d \n", wticks);
+        if(os_mutex_take(ble_tizenrt_indicate_sem, 1000))
+        {
+            debug_print("take indicate mutex success \n");
+            debug_print("conn_id %d att_handle 0x%x! \n", con_handle, attr_handle);
+            if(send_indication_result->cause == GAP_SUCCESS)
+            {
+                debug_print("send indicate success \n");
+                return TRBLE_SUCCESS;
+            } else {
+                debug_print("send indicate fail \n");
+                return TRBLE_FAIL;
+            }
+        }
+    }
+    return TRBLE_FAIL;
+#else
     return TRBLE_SUCCESS;
+#endif
 }
 
 trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_errorcode)

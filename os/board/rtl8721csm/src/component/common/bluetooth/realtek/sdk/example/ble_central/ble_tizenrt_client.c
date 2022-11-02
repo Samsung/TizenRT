@@ -64,6 +64,7 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
 	client_init_parm->trble_device_connected_cb = init_parm->trble_device_connected_cb;
 	client_init_parm->trble_device_disconnected_cb = init_parm->trble_device_disconnected_cb;
 	client_init_parm->trble_operation_notification_cb = init_parm->trble_operation_notification_cb;
+	client_init_parm->trble_operation_indication_cb = init_parm->trble_operation_indication_cb;
 
     write_request_result = &g_write_result;
     write_no_rsponse_result = &g_write_no_rsp_result;

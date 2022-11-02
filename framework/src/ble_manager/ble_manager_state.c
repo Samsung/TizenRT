@@ -138,6 +138,16 @@ static void _event_caller(int evt_pri, void *data) {
 			
 			callback(msg->param[1], attr_handle, read_result);
 		} break;
+		case BLE_EVT_CLIENT_INDI: {
+			ble_client_operation_indication_cb callback = msg->param[0];
+			ble_attr_handle attr_handle = *(ble_attr_handle *)(msg->param[2] + sizeof(ble_conn_handle));
+
+			ble_data read_result[1];
+			read_result->length = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(ble_attr_handle));
+			read_result->data = (uint8_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(ble_attr_handle) + sizeof(read_result->length));
+			
+			callback(msg->param[1], attr_handle, read_result);
+		} break;
 		case BLE_EVT_SCAN_STATE: {
 			ble_scan_state_e state = *(ble_scan_state_e *)msg->param[2];
 			ble_client_scan_state_changed_cb callback = msg->param[0];
@@ -1082,6 +1092,27 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		if (ctx && ctx->callbacks.notification_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.notification_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
+		}
+	} break;
+
+    case BLE_EVT_CLIENT_INDI: {
+		if (msg->param == NULL) {
+			break;
+		}
+		int i;
+		ble_client_ctx_internal *ctx = NULL;
+		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
+
+		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+			if (g_client_table[i].conn_handle == conn_handle) {
+				ctx = &g_client_table[i];
+				break;
+			}
+		}
+
+		if (ctx && ctx->callbacks.indication_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.indication_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;
