@@ -559,7 +559,15 @@ trble_result_e rtw_ble_server_start_adv(void)
         {
             le_get_conn_info(i, &conn_info);
             if(conn_info.role == GAP_LINK_ROLE_SLAVE)
-                return TRBLE_FAIL;
+            {
+                trble_adv_type_e adv_evt_type;
+                T_GAP_CAUSE ret;
+                ret = le_adv_get_param(GAP_PARAM_ADV_EVENT_TYPE, (void *)&adv_evt_type);
+                if (adv_evt_type != TRBLE_ADV_TYPE_NONCONN_IND || ret != GAP_CAUSE_SUCCESS)
+                {
+                    return TRBLE_FAIL;
+                }
+            }
         }
     }
 
