@@ -590,7 +590,7 @@ trble_result_e rtw_ble_server_start_adv(void)
         debug_print("Waiting for adv start \n");
         os_delay(100);
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
+    } while((new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING) && ((new_state.gap_adv_sub_state != GAP_ADV_TO_IDLE_CAUSE_CONN)&&(new_state.gap_adv_state != GAP_ADV_STATE_IDLE)));
 
     return TRBLE_SUCCESS;
 }
