@@ -24,6 +24,7 @@ uint16_t server_profile_count = 0;
 trble_server_init_config server_init_parm;
 bool (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
 T_SEND_DATA_RESULT *send_indication_result = NULL;
+extern T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state;
 
 trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
 {
@@ -597,6 +598,11 @@ trble_result_e rtw_ble_server_start_adv(void)
     {   
         debug_print("Waiting for adv start \n");
         os_delay(100);
+        if (ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state == GAP_ADV_TO_IDLE_CAUSE_CONN)
+        {
+            ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state = GAP_ADV_TO_IDLE_CAUSE_STOP;
+            break;
+        }
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
 

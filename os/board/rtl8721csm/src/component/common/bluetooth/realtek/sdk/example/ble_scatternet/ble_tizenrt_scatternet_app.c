@@ -634,6 +634,7 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
                             bt_addr[1],
                             bt_addr[0]);
         }
+        ble_tizenrt_scatternet_gap_dev_state.gap_init_state = new_state.gap_init_state;
     }
 
     if (ble_tizenrt_scatternet_gap_dev_state.gap_adv_state != new_state.gap_adv_state)
@@ -648,11 +649,13 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
             {
                 dbg("GAP adv stopped \n");
             }
+            ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state = new_state.gap_adv_sub_state;
         }
         else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
         {
             dbg("GAP adv start \n");
         }
+        ble_tizenrt_scatternet_gap_dev_state.gap_adv_state = new_state.gap_adv_state;
     }
 
     if (ble_tizenrt_scatternet_gap_dev_state.gap_scan_state != new_state.gap_scan_state)
@@ -677,8 +680,8 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
                 debug_print("callback msg send fail \n");
             }
         }
+        ble_tizenrt_scatternet_gap_dev_state.gap_scan_state = new_state.gap_scan_state;
     }
-    ble_tizenrt_scatternet_gap_dev_state = new_state;
 }
 
 /**
