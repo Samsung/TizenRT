@@ -24,6 +24,7 @@
 #    It verifies the package by calculating the crc and comparing it with the value of the header.
 
 import os
+import sys
 
 os_folder = os.path.dirname(__file__) + '/..'
 tool_folder = os_folder + '/tools/'
@@ -31,7 +32,9 @@ output_folder = os_folder + '/../build/output/bin/'
 
 def check_package_size():
     # Run script for checking binary sizes
-    os.system('python ' + tool_folder + 'check_package_size.py')
+    ret = os.system('python ' + tool_folder + 'check_package_size.py')
+    if ret != 0 :
+        sys.exit(1)
 
 def check_package_header():
     # Run script for checking binary sizes
