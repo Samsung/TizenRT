@@ -40,7 +40,7 @@ extern "C" {
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] newOxm  OxMs to be added (ref. oic.sec.oxm)
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST 'oxms' request recieves a response from resource server.
+ *            POST 'oxms' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult MOTAddMOTMethod(void *ctx, OCProvisionDev_t *targetDeviceInfo,
@@ -52,7 +52,7 @@ OCStackResult MOTAddMOTMethod(void *ctx, OCProvisionDev_t *targetDeviceInfo,
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] oxmSelValue Method of multiple ownership transfer (ref. oic.sec.oxm)
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST 'oxmsel' request recieves a response from resource server.
+ *            POST 'oxmsel' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult MOTSelectMOTMethod(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
@@ -64,7 +64,7 @@ OCStackResult MOTSelectMOTMethod(void *ctx, const OCProvisionDev_t *targetDevice
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] momType Mode of multiple ownership transfer (ref. oic.sec.mom)
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST 'mom' request recieves a response from resource server.
+ *            POST 'mom' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult MOTChangeMode(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
@@ -77,7 +77,7 @@ OCStackResult MOTChangeMode(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
  * @param[in] preconfPIN Preconfig PIN which is used while multiple owner authentication
  * @param[in] preconfPINLen Byte length of preconfig PIN
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST credential request recieves a response from resource server.
+ *            POST credential request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult MOTProvisionPreconfigPIN(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
@@ -119,7 +119,7 @@ OCStackResult MOTAddPreconfigPIN(const OCProvisionDev_t *targetDeviceInfo,
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] subOwner sub-owner UUID to be removed
  * @param[in] resultCallback callback provided by API user, callback will be invoked when
- *            DELETE 'subowneruuid' request recieves a response from resource server.
+ *            DELETE 'subowneruuid' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult MOTRemoveSubOwner(void* ctx,

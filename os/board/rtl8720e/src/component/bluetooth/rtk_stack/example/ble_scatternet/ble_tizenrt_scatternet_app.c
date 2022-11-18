@@ -1587,7 +1587,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
             }
             if(os_mutex_give(ble_tizenrt_read_sem))
             {
-                debug_print("recieve read result \n");
+                debug_print("receive read result \n");
             } else {
                 if(p_gcs_cb_data->cb_content.read_result.cause == GAP_SUCCESS)
                     os_mem_free(ble_tizenrt_scatternet_read_results[conn_id].read_data.data);
@@ -1611,7 +1611,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                 g_scatternet_write_result.type = p_gcs_cb_data->cb_content.write_result.type;
                 if(os_mutex_give(ble_tizenrt_write_sem))
                 {
-                debug_print("recieve write response \n");
+                debug_print("receive write response \n");
                 } else {
                 debug_print("fail to give write semaphore \n");
                 }

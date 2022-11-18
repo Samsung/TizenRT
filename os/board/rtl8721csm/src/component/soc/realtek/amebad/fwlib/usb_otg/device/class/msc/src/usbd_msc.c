@@ -761,7 +761,7 @@ static int fun_set_alt(struct usb_function *f, unsigned interface, unsigned alt)
         req->complete = (usb_req_complete_t)usbd_msc_bulk_in_complete;
     }
 
-    // enable bulk out endpoint and alloc requset to recieve data from host
+    // enable bulk out endpoint and alloc requset to receive data from host
     if (mscdev->out_ep != NULL) {
         /* restart endpoint */
         if (mscdev->out_ep->driver_data != NULL) {

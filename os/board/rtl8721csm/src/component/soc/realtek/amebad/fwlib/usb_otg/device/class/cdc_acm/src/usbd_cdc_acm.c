@@ -306,7 +306,7 @@ static int cdc_init_resource(struct usb_cdc_dev_t *dev)
         dev->bulk_in_ep->driver_data = dev;
     }
 
-    // Enable data out endpoint and alloc requset to recieve data from host
+    // Enable data out endpoint and alloc requset to receive data from host
     if (dev->bulk_out_ep != NULL) {
         if (dev->bulk_out_ep->driver_data != NULL) {
             usb_ep_disable(dev->bulk_out_ep);

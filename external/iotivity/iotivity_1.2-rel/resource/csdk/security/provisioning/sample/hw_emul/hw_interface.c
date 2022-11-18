@@ -152,7 +152,7 @@ exit:
 
 
 /********************************************
- * mbedtls pk setup fucntions
+ * mbedtls pk setup functions
  */
 
 int SetupRSAContext(mbedtls_pk_context* ctx, void* key_context)

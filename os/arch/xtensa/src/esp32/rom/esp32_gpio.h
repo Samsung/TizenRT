@@ -122,7 +122,7 @@ void gpio_init(void);
  *   set_mask     - the gpios that need high level.
  *   clear_mask   - the gpios that need low level.
  *   enable_mask  - the gpios that need be changed.
- *   disable_mask - the gpios that need diable output.
+ *   disable_mask - the gpios that need disable output.
  *
  * Returned Value:
  *  None
@@ -144,7 +144,7 @@ void gpio_output_set(uint32_t set_mask, uint32_t clear_mask, uint32_t enable_mas
  *   set_mask     - the gpios that need high level.
  *   clear_mask   - the gpios that need low level.
  *   enable_mask  - the gpios that need be changed.
- *   disable_mask - the gpios that need diable output.
+ *   disable_mask - the gpios that need disable output.
  *
  * Returned Value:
  *  None

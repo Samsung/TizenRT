@@ -146,7 +146,7 @@ typedef struct
 /**
  * @brief HRS Control Point data, variable length during connection, max can reach 17 bytes.
  *
- * HRS Control Point data used to store the Control Point Command recieved from the client.
+ * HRS Control Point data used to store the Control Point Command received from the client.
 */
 typedef struct
 {

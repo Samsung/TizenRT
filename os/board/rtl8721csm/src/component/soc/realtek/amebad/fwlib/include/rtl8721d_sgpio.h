@@ -34,7 +34,7 @@
   * Introduction
   *****************************************************************************************
   * SGPIO:
-  *		- SGPIO, which is 1-pin serial GPIO, combines standard GPIO and Timer fucntion. 
+  *		- SGPIO, which is 1-pin serial GPIO, combines standard GPIO and Timer function. 
   *				It can easily realize the conversion between serial data and parallel data.
   *				Capture functionality is also added to measure the input waveform.
   *				SGPIO used for security element.
