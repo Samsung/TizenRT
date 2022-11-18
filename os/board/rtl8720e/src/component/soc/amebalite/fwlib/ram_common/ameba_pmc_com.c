@@ -949,7 +949,7 @@ void SOCPS_AP_suspend_config(u32 type, u32 Protection)
 		Rtemp |= LSYS_CKSL_SPIC(BIT_LSYS_CKSL_SPIC_LBUS);
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Rtemp);
 	} else {
-		/* switch clock to XTAL, disable dummy cycle and diable cal */
+		/* switch clock to XTAL, disable dummy cycle and disable cal */
 		FLASH_ClockSwitch(BIT_LSYS_CKSL_SPIC_LBUS, 0);
 	}
 

@@ -24,7 +24,7 @@
 #define LSYS_BIT_PWC_BT                            ((u32)0x00000001 << 1)          /*!<R/W 0  This is BT function total power cut control 1: Enable BT power cut 0: Disable */
 #define LSYS_PWC_BT(x)                             ((u32)(((x) & 0x00000001) << 1))
 #define LSYS_GET_PWC_BT(x)                         ((u32)(((x >> 1) & 0x00000001)))
-#define LSYS_BIT_POW_ON_SOC                        ((u32)0x00000001 << 0)          /*!<R/W 0  1:SYS PMC request to enable HP SOC power cut and diable ISO 0: SYS PMC request to disable HP SOC power cut and enable ISO */
+#define LSYS_BIT_POW_ON_SOC                        ((u32)0x00000001 << 0)          /*!<R/W 0  1:SYS PMC request to enable HP SOC power cut and disable ISO 0: SYS PMC request to disable HP SOC power cut and enable ISO */
 #define LSYS_POW_ON_SOC(x)                         ((u32)(((x) & 0x00000001) << 0))
 #define LSYS_GET_POW_ON_SOC(x)                     ((u32)(((x >> 0) & 0x00000001)))
 /** @} */

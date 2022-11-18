@@ -1629,7 +1629,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
             }
             if(os_mutex_give(ble_tizenrt_read_sem))
             {
-                debug_print("recieve read result \n");
+                debug_print("receive read result \n");
             } else {
                 if(p_gcs_cb_data->cb_content.read_result.cause == GAP_SUCCESS)
                     os_mem_free(ble_tizenrt_scatternet_read_results[conn_id].read_data.data);
@@ -1653,7 +1653,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                 g_scatternet_write_result.type = p_gcs_cb_data->cb_content.write_result.type;
                 if(os_mutex_give(ble_tizenrt_write_sem))
                 {
-                debug_print("recieve write response \n");
+                debug_print("receive write response \n");
                 } else {
                 debug_print("fail to give write semaphore \n");
                 }
@@ -1783,7 +1783,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                 g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
                 if((g_scatternet_indicate_result.cause == 0x0) && (os_mutex_give(ble_tizenrt_indicate_sem)))
                 {
-                    debug_print("recieve indicate response \n");
+                    debug_print("receive indicate response \n");
                 } else {
                     dbg("fail to give indicate semaphore \n");
                 }

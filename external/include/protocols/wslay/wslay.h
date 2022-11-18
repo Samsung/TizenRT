@@ -237,7 +237,7 @@ ssize_t wslay_frame_send(wslay_frame_context_ptr ctx, struct wslay_frame_iocb *i
  * received frame.  iocb->data is pointed to the buffer containing
  * received payload data.  This buffer is allocated by the library and
  * must be read-only.  iocb->data_length is the number of payload
- * bytes recieved.  This function calls recv_callback if it needs to
+ * bytes received.  This function calls recv_callback if it needs to
  * receive additional bytes. If it cannot receive any single bytes of
  * payload, it returns WSLAY_ERR_WANT_READ.  If the library detects
  * protocol violation in a received frame, this function returns

@@ -142,7 +142,7 @@ OCStackResult OCDoMultipleOwnershipTransfer(void* ctx,
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] subOwner sub-owner UUID to be removed
  * @param[in] resultCallback callback provided by API user, callback will be invoked when
- *            DELETE 'subowneruuid' request recieves a response from resource server.
+ *            DELETE 'subowneruuid' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCRemoveSubOwner(void* ctx,
@@ -156,7 +156,7 @@ OCStackResult OCRemoveSubOwner(void* ctx,
  * @param[in] ctx Application context would be returned in result callback
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] resultCallback callback provided by API user, callback will be invoked when
- *            DELETE 'subowneruuid' request recieves a response from resource server.
+ *            DELETE 'subowneruuid' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCRemoveAllSubOwner(void* ctx,
@@ -217,7 +217,7 @@ OCStackResult OCDiscoverMultipleOwnedDevices(unsigned short timeout, OCProvision
  * @param[in] pDev2 Pointer to OCProvisionDev_t instance,respresenting device to be provisioned.
  * @param[in] acl ACL for device 2. If this is not required set NULL.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionPairwiseDevices(void* ctx, OicSecCredType_t type, size_t keySize,
@@ -232,7 +232,7 @@ OCStackResult OCProvisionPairwiseDevices(void* ctx, OicSecCredType_t type, size_
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] acl ACL to provision.
  * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
+              request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionACL(void *ctx, const OCProvisionDev_t *selectedDeviceInfo, OicSecAcl_t *acl,
@@ -252,7 +252,7 @@ OCStackResult OCSaveACL(const OicSecAcl_t* acl);
  * @param[in] ctx Application context would be returned in result callback.
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
+              request receives a response from resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCGetCredResource(void* ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -264,7 +264,7 @@ OCStackResult OCGetCredResource(void* ctx, const OCProvisionDev_t *selectedDevic
  * @param[in] ctx Application context would be returned in result callback.
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
+              request receives a response from resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCGetACLResource(void* ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -277,7 +277,7 @@ OCStackResult OCGetACLResource(void* ctx, const OCProvisionDev_t *selectedDevice
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] pconf PCONF pointer.
  * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
+              request receives a response from resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionDirectPairing(void* ctx, const OCProvisionDev_t *selectedDeviceInfo, OicSecPconf_t *pconf,
@@ -291,7 +291,7 @@ OCStackResult OCProvisionDirectPairing(void* ctx, const OCProvisionDev_t *select
  * @param[in] pDev1 Pointer to OCProvisionDev_t instance,respresenting resource to be provsioned.
    @param[in] pDev2 Pointer to OCProvisionDev_t instance,respresenting resource to be provsioned.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionCredentials(void *ctx, OicSecCredType_t type, size_t keySize,
@@ -311,7 +311,7 @@ OCStackResult OCProvisionCredentials(void *ctx, OicSecCredType_t type, size_t ke
  * @param[in] preconfigPin string of preconfigured PIN.
  * @param[in] preconfigPinLen string length of 'preconfigPin'.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionPreconfigPin(void *ctx,
@@ -338,7 +338,7 @@ OCStackResult OCAddPreconfigPin(const OCProvisionDev_t *targetDeviceInfo,
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] momType Mode of multiple ownership transfer (ref. oic.sec.mom)
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST 'mom' request recieves a response from resource server.
+ *            POST 'mom' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCChangeMOTMode(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
@@ -350,7 +350,7 @@ OCStackResult OCChangeMOTMode(void *ctx, const OCProvisionDev_t *targetDeviceInf
  * @param[in] targetDeviceInfo Selected target device.
  * @param[in] oxmSelValue Method of multiple ownership transfer (ref. oic.sec.oxm)
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            POST 'oxmsel' request recieves a response from resource server.
+ *            POST 'oxmsel' request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCSelectMOTMethod(void *ctx, const OCProvisionDev_t *targetDeviceInfo,
@@ -504,7 +504,7 @@ void OCDeletePdAclList(OicSecPdAcl_t* pPdAcl);
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] crl CRL to provision.
  * @param[in] resultCallback callback provided by API user, callback will be called when provisioning
-              request recieves a response from resource server.
+              request receives a response from resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionCRL(void* ctx, const OCProvisionDev_t *selectedDeviceInfo, OicSecCrl_t *crl,
@@ -518,7 +518,7 @@ OCStackResult OCProvisionCRL(void* ctx, const OCProvisionDev_t *selectedDeviceIn
  * @param[in] credId CredId of trust certificate chain to be provisioned to the device.
  * @param[in] selectedDeviceInfo Pointer to OCProvisionDev_t instance,respresenting resource to be provsioned.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult OCProvisionTrustCertChain(void *ctx, OicSecCredType_t type, uint16_t credId,

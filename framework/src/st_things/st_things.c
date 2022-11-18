@@ -110,7 +110,7 @@ int get_reset_confirm_cb(things_reset_result_func_type *func_carrier, things_es_
 }
 
 /**
- * This callback will be registered with the DA Stack to recieve easy-setup events.
+ * This callback will be registered with the DA Stack to receive easy-setup events.
  * The status will be passed to the application through the callback registered by the application.
  */
 void get_things_status_cb(things_es_enrollee_state_e state)

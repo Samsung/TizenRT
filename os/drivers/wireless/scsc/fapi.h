@@ -1956,7 +1956,7 @@ struct fapi_signal {
 			__le16 direction;
 			__le32 duration;
 			__le32 received_packets;
-			__le32 recieved_octets;
+			__le32 received_octets;
 			__le32 kbps;
 			__le16 idle_ratio;
 			__le16 int_latency;
@@ -1974,7 +1974,7 @@ struct fapi_signal {
 			__le32 duration;
 			__le32 received_packets;
 			__le32 failed_count;
-			__le32 recieved_octets;
+			__le32 received_octets;
 			__le32 kbps;
 			__le16 idle_ratio;
 			__le16 int_latency;

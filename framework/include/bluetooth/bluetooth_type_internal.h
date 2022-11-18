@@ -1190,7 +1190,7 @@ typedef void (*bt_hrp_collector_scan_result_cb)(int result,
  * @param[in] result The result of a request
  * @param[in] request_handle The requesting GATT handle
  * @param[in] type : Heart Rate Value , Body Sensor Location or Heart Control Point
- * @param[in] value : Int value corresponding to the type recieved .
+ * @param[in] value : Int value corresponding to the type received .
  * @param[in] user_data The user data passed from the requesting function
  *
  */

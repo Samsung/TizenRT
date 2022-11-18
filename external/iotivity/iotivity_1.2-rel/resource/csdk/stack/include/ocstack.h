@@ -614,7 +614,7 @@ const OCDPDev_t* OCGetDirectPairedDevices(void);
  * @param[in] peer Target device to establish direct-pairing.
  * @param[in] pmSel Selected mode of pairing.
  * @param[in] pinNumber PIN number for authentication, pin lenght is defined DP_PIN_LENGTH(8).
- * @param[in] resultCallback Callback fucntion to event status of process.
+ * @param[in] resultCallback Callback function to event status of process.
  * @return OTM_SUCCESS in case of success and other value otherwise.
  */
 OCStackResult OCDoDirectPairing(void *ctx, OCDPDev_t* peer, OCPrm_t pmSel, char *pinNumber,
@@ -840,7 +840,7 @@ int OCEncrypt(const unsigned char *pt, size_t pt_len,
         unsigned char **ct, size_t *ct_len);
 
 /**
- * Generic Decryption fucntion to decrypt data buffer in ct
+ * Generic Decryption function to decrypt data buffer in ct
  * and update in pt and len in pt_len. (AES-CBC-HMAC)
  *
  * @param[in] ct ciphered to be decrypted
