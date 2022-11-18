@@ -59,6 +59,7 @@ def check_binary_size(bin_type, part_size):
         print("   Built " + bin_type + " (" + number_with_comma(BINARY_SIZE) + " bytes) is greater than its partition (" + number_with_comma(PARTITION_SIZE) + " bytes).")
         print("   " + bin_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
         os.remove(output_path)
+        global FAIL_TO_BUILD
         FAIL_TO_BUILD = True
 
 def check_binary_header(bin_type):
