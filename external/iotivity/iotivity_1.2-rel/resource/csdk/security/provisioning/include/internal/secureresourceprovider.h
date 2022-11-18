@@ -38,7 +38,7 @@ extern "C"
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] acl ACL to provision.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
+ *            provisioning request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionACL(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -57,7 +57,7 @@ OCStackResult SRPSaveACL(const OicSecAcl_t *acl);
  *
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
+ *            provisioning request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPGetCredResource(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -68,7 +68,7 @@ OCStackResult SRPGetCredResource(void *ctx, const OCProvisionDev_t *selectedDevi
  *
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
+ *            provisioning request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPGetACLResource(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -84,7 +84,7 @@ OCStackResult SRPGetACLResource(void *ctx, const OCProvisionDev_t *selectedDevic
  * @param[in] credId CredId of trust certificate chain to be provisioned to the device.
  * @param[in] selectedDeviceInfo Pointer to OCProvisionDev_t instance,respresenting resource to be provsioned.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return  OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionTrustCertChain(void *ctx, OicSecCredType_t type, uint16_t credId,
@@ -134,7 +134,7 @@ void SRPRemoveTrustCertChainNotifier(void);
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] pconf PCONF pointer.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
+ *            provisioning request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -146,7 +146,7 @@ OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selec
  * @param[in] selectedDeviceInfo Selected target device.
  * @param[in] pconf PCONF pointer.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from resource server.
+ *            provisioning request receives a response from resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selectedDeviceInfo,
@@ -159,7 +159,7 @@ OCStackResult SRPProvisionDirectPairing(void *ctx, const OCProvisionDev_t *selec
  * @param[in] pDev1 Pointer to PMOwnedDeviceInfo_t instance,respresenting resource to be provsioned.
    @param[in] pDev2 Pointer to PMOwnedDeviceInfo_t instance,respresenting resource to be provsioned.
  * @param[in] resultCallback callback provided by API user, callback will be called when
- *            provisioning request recieves a response from first resource server.
+ *            provisioning request receives a response from first resource server.
  * @return OC_STACK_OK in case of success and other value otherwise.
  */
 OCStackResult SRPProvisionCredentials(void *ctx,OicSecCredType_t type, size_t keySize,

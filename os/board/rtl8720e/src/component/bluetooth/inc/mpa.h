@@ -22,7 +22,7 @@ extern "C" {
  * \brief   Provide functions to control L2CAP layer in Bluetooth stack.
  * \details MPA(Multi protocol adaptor) is designed for user to implement protocols over L2CAP easily.
  *          Many functions are provided to connect, disconnect or send data over L2CAP channels.
- *          Upstream messages can be received in callback fucntions registered in MPA.\n
+ *          Upstream messages can be received in callback functions registered in MPA.\n
  * \note    The structure here must be sycn with internal btif layer.
  *
  */

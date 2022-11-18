@@ -710,7 +710,7 @@ int rtw_push_to_xqueue(_xqueue *queue, void *message, u32 timeout_ms);
 
 /**
  * @brief  This function receives a message from a queue.
- *		   The message is recieved by copy so a buffer adequate size must be provided.
+ *		   The message is received by copy so a buffer adequate size must be provided.
  * @param[in] queue: The handle to the queue from which the message is to be received.
  * @param[in] message: The pointer to the buffer into which the received message will be copied.
  * @param[in] timeout_ms: The maximum amout of time the task should block waiting for a message to

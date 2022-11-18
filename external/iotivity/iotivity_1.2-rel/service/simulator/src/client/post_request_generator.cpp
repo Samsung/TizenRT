@@ -108,7 +108,7 @@ void POSTRequestGenerator::SendAllRequests()
 void POSTRequestGenerator::onResponseReceived(SimulatorResult result,
         const SimulatorResourceModel &repModel, const RequestInfo &reqInfo)
 {
-    OIC_LOG(DEBUG, TAG, "Response recieved");
+    OIC_LOG(DEBUG, TAG, "Response received");
     m_responseCnt++;
     completed();
 }

@@ -152,7 +152,7 @@ extern    "C"
 								 ;
 
 #ifdef OBSOLETE					/* from old iperf: no longer supported. Add some of these back someday */
-	"-d, --dualtest           Do a bidirectional test simultaneously\n" "-L, --listenport #       port to recieve bidirectional tests back on\n" "-I, --stdin              input the data to be transmitted from stdin\n" "-F, --fileinput <name>   input the data to be transmitted from a file\n" "-r, --tradeoff           Do a bidirectional test individually\n" "-T, --ttl       #        time-to-live, for multicast (default 1)\n" "-x, --reportexclude [CDMSV]   exclude C(connection) D(data) M(multicast) S(settings) V(server) reports\n" "-y, --reportstyle C      report as a Comma-Separated Values\n"
+	"-d, --dualtest           Do a bidirectional test simultaneously\n" "-L, --listenport #       port to receive bidirectional tests back on\n" "-I, --stdin              input the data to be transmitted from stdin\n" "-F, --fileinput <name>   input the data to be transmitted from a file\n" "-r, --tradeoff           Do a bidirectional test individually\n" "-T, --ttl       #        time-to-live, for multicast (default 1)\n" "-x, --reportexclude [CDMSV]   exclude C(connection) D(data) M(multicast) S(settings) V(server) reports\n" "-y, --reportstyle C      report as a Comma-Separated Values\n"
 #endif
 	const char iperf_version[] = PACKAGE_STRING;
 

@@ -93,7 +93,7 @@ static CAResult_t CAEDRManagerInitializeMutex(void);
 static void CAEDRManagerTerminateMutex(void);
 
 /**
- * This callback is registered to recieve data on any open RFCOMM connection.
+ * This callback is registered to receive data on any open RFCOMM connection.
  */
 static void CAEDRDataRecvCallback(bt_socket_received_data_s *data, void *userData);
 
@@ -113,7 +113,7 @@ static CAResult_t CAEDRStopDeviceDiscovery(void);
 static CAResult_t CAEDRStartServiceSearch(const char *remoteAddress);
 
 /**
- * This callback is registered to recieve all bluetooth nearby devices
+ * This callback is registered to receive all bluetooth nearby devices
  * when device scan is initiated.
  */
 static void CAEDRDeviceDiscoveryCallback(int result,
@@ -122,7 +122,7 @@ static void CAEDRDeviceDiscoveryCallback(int result,
                                          void *userData);
 
 /**
- * This callback is registered to recieve all the services remote
+ * This callback is registered to receive all the services remote
  * bluetooth device supports when service search initiated.
  */
 static void CAEDRServiceSearchedCallback(int result, bt_device_sdp_info_s *sdpInfo,

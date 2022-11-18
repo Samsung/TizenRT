@@ -813,7 +813,7 @@ typedef enum t_bt_event
     BT_EVENT_HFP_AG_HF_CODEC_TYPE_SELECTED            = 0x34a8,
 
     /**
-     * \brief Indicate HFP AG SCO packet recieved \ref T_BT_EVENT_PARAM_HFP_AG_SCO_DATA_IND.
+     * \brief Indicate HFP AG SCO packet received \ref T_BT_EVENT_PARAM_HFP_AG_SCO_DATA_IND.
      */
     BT_EVENT_HFP_AG_SCO_DATA_IND                      = 0x34a9,
 

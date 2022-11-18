@@ -341,7 +341,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count);
  *
  * @details @b #include <tinyalsa/tinyalsa.h>
  * @param[out] pcm         A PCM handle.
- * @param[out] data        The audio sample array which will contain the audio data recieved from the input stream
+ * @param[out] data        The audio sample array which will contain the audio data received from the input stream
  * @param[in]  frame_count The number of frames that the user wants to read
  * @return On success, number of frames read returned. On failure, a negative number returned.
  * @since TizenRT v1.1
