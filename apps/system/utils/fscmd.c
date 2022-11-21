@@ -103,11 +103,12 @@
 #define CMD_FAILED_ERRNO  "%s : %s failed: %d\n"
 
 /** Define FS Type **/
-#define NONEFS_TYPE     "None FS"
-#define SMARTFS_TYPE    "smartfs"
-#define PROCFS_TYPE     "procfs"
-#define ROMFS_TYPE      "romfs"
-#define TMPFS_TYPE      "tmpfs"
+#define NONEFS_TYPE        "None FS"
+#define SMARTFS_TYPE       "smartfs"
+#define PROCFS_TYPE        "procfs"
+#define ROMFS_TYPE         "romfs"
+#define TMPFS_TYPE         "tmpfs"
+#define USERFS_PART_NAME   "userfs"
 
 /****************************************************************************
  * Private Types
@@ -136,6 +137,26 @@ static void fscmd_free(FAR char *path)
 		free(path);
 	}
 }
+
+
+#if defined(CONFIG_SECOND_FLASH_PART_NAME) || defined(CONFIG_FLASH_PART_NAME)
+static int get_partition_index(char *partname, char *part)
+{
+	int partno = 0;
+	int name_len = strlen(part);
+
+	while (*partname) {
+		if (!strncmp(partname, part, name_len)) {
+			if (*(partname + name_len) == ',') {
+				return partno;
+			}
+		}
+		partno++;
+		while (*(partname)++ != ',');
+	}
+	return ERROR;
+}
+#endif
 
 #ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
@@ -1347,7 +1368,7 @@ enum fs_minor_num_e {
 };
 typedef enum fs_minor_num_e fs_minor_t;
 
-static int format_filesystem(fs_minor_t minor)
+static int format_userfs(fs_minor_t minor)
 {
 	char name[CONFIG_PATH_MAX];
 	int fd;
@@ -1357,20 +1378,36 @@ static int format_filesystem(fs_minor_t minor)
 		printf("Invalid minor number : %d", minor);
 		return ERROR;
 	}
-	for (int i = 0; i < 9; i++) {
-		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
-		fd = open(name, O_RDWR);
-		if (fd < 0) {
-			continue;
-		}
-		/* TODO Multi root of smartfs should be considered when it enabled */
-		ret = ioctl(fd, BIOC_BULKERASE, 0);
-		close(fd);
-		if (ret != OK) {
-			printf("Low level format failed ret : %d errno : %d", ret, errno);
-			return ret;
-		}
-		break;
+	int index = ERROR;
+	if (minor == FS_BLOCK_MINOR_SECONDARY) {
+#ifdef CONFIG_SECOND_FLASH_PART_NAME
+			index = get_partition_index(CONFIG_SECOND_FLASH_PART_NAME, USERFS_PART_NAME);
+#else
+			printf("config CONFIG_SECOND_FLASH_PARTITION_NAME must be enabled to format\n");
+			return ERROR;
+#endif
+	} else {
+#ifdef CONFIG_FLASH_PART_NAME
+		index = get_partition_index(CONFIG_FLASH_PART_NAME, USERFS_PART_NAME);
+#else
+		printf("config CONFIG_FLASH_PART_NAME must be enabled to format\n");
+		return ERROR;
+#endif
+	}
+	if (index == ERROR) {
+		printf("Userfs partition not found, index : %d, minor : %d", index, minor);
+		return ERROR;
+	}
+	snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, index);
+	fd = open(name, O_RDWR);
+	if (fd < 0) {
+		return ret;
+	}
+	ret = ioctl(fd, BIOC_BULKERASE, 0);
+	close(fd);
+	if (ret != OK) {
+		printf("Low level format failed ret : %d errno : %d", ret, errno);
+		return ret;
 	}
 	if (ret == OK) {
 		printf("Low level format finished, Please reboot device\n");
@@ -1394,9 +1431,9 @@ static int tash_format(int argc, char **args)
 	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
 
 	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
-		ret = format_filesystem(FS_BLOCK_MINOR_PRIMARY);
+		ret = format_userfs(FS_BLOCK_MINOR_PRIMARY);
 	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
-		ret = format_filesystem(FS_BLOCK_MINOR_SECONDARY);
+		ret = format_userfs(FS_BLOCK_MINOR_SECONDARY);
 	} else {
 		printf("Usage: format [internal | external] \n");
 		ret = ERROR;
