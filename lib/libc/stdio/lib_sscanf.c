@@ -689,9 +689,10 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					if (!width) {
 						/* No... Guess a field width using some heuristics */
 
-						int tmpwidth = findwidth(buf, fmt);
-						width = MIN(sizeof(tmp) - 1, tmpwidth);
+						width = findwidth(buf, fmt);
 					}
+
+					width = MIN(sizeof(tmp) - 1, width);
 
 					/* Copy the numeric string into a temporary working
 					 * buffer.
@@ -836,9 +837,10 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 					if (!width) {
 						/* No... Guess a field width using some heuristics */
 
-						int tmpwidth = findwidth(buf, fmt);
-						width = MIN(sizeof(tmp) - 1, tmpwidth);
+						width = findwidth(buf, fmt);
 					}
+
+					width = MIN(sizeof(tmp) - 1, width);
 
 					/* Copy the real string into a temporary working buffer. */
 

@@ -68,9 +68,10 @@ FAR char *strdup(const char *s)
 {
 	FAR char *news = NULL;
 	if (s) {
-		news = (FAR char *)lib_malloc(strlen(s) + 1);
+		size_t len = strlen(s) + 1;
+		news = (FAR char *)lib_malloc(len);
 		if (news) {
-			strcpy(news, s);
+			strncpy(news, s, len);
 		}
 	}
 

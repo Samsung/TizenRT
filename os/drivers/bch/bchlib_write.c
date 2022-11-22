@@ -94,6 +94,11 @@ ssize_t bchlib_write(FAR void *handle, FAR const char *buffer, size_t offset, si
 		return 0;
 	}
 
+	if (bch->sectsize <= 0) {
+		fdbg("ERROR: Invalid sector size bch->sectsize = %d\n", bch->sectsize);
+		return -1;
+	}
+
 	/* Convert the file position into a sector number and offset. */
 	sector     = offset / bch->sectsize;
 	sectoffset = offset - sector * bch->sectsize;

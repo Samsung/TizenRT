@@ -83,7 +83,7 @@
  ****************************************************************************/
 int bchdev_unregister(FAR const char *chardev)
 {
-	FAR struct bchlib_s *bch;
+	FAR struct bchlib_s *bch = NULL;
 	int fd;
 	int ret;
 
@@ -108,7 +108,7 @@ int bchdev_unregister(FAR const char *chardev)
 	ret = ioctl(fd, DIOC_GETPRIV, (unsigned long)((uintptr_t)&bch));
 	(void)close(fd);
 
-	if (ret < 0) {
+	if (ret < 0 || !bch) {
 		fdbg("ERROR: ioctl failed: %d\n", errno);
 		return -errno;
 	}
