@@ -95,6 +95,11 @@ static void dump_node(struct mm_allocnode_s *node, node_type_t type)
 	char is_stack[9] = "'s stack";
 #endif
 
+	if (!node) {
+		mfdbg("Unable to dump NULL node\n");
+		return;
+	}
+
 	if (type == TYPE_CORRUPTED) {
 		mfdbg("CORRUPTED NODE: addr = 0x%08x size = %u preceding size = %u\n", node, node->size, MM_PREV_NODE_SIZE(node));
 	} else if (type == TYPE_OVERFLOWED) {
