@@ -67,9 +67,11 @@ typedef enum _REGULATION_TXPWR_LMT {
 	TXPWR_LMT_GL = 9, // Global, The mininum of all
 	TXPWR_LMT_UKRAINE = 10,
 	TXPWR_LMT_CN = 11,
-	TXPWR_LMT_NCC = 12,
-	TXPWR_LMT_MAX_REGULATION_NUM = 13,
-	TXPWR_LMT_NA = 14  /* Not support, choose NA */
+	TXPWR_LMT_QATAR = 12,
+	TXPWR_LMT_UK = 13,
+	TXPWR_LMT_NCC = 14,
+	TXPWR_LMT_MAX_REGULATION_NUM = 15,
+	TXPWR_LMT_NA = 16  /* Not support, choose NA */
 } REGULATION_TXPWR_LMT;
 
 /*------------------------------Define structure----------------------------*/

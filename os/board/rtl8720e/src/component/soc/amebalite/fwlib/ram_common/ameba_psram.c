@@ -45,6 +45,60 @@ static u32 PSRAM_CALIB_PATTERN[6] = {
 	0x69969669,
 };
 
+u16 psram_type = 0;
+
+/**
+  * @brief get psram clk info
+  * @param  none
+  * @retval PSRAM Type
+  */
+void PSRAM_CLK_INFO_Update(VOID)
+{
+	SocClk_Info_TypeDef SocClk_info;
+
+	// 0. get clk info
+	BOOT_SocClk_Info_Get_ClkInfo(&SocClk_info);
+
+	// 1.get psram clk info
+	psram_type = SocClk_info.bdnum;
+
+}
+
+/**
+  * @brief print psram clk info
+  * @param  none
+  * @retval  none
+  */
+void PSRAM_CLK_INFO_Pirnt(void)
+{
+	u32 PsramClk, PLLCLk, Div;
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
+	u32 ClkSel = LSYS_GET_CKSL_PSRAM(Temp);
+	u32 LBusSrc = LSYS_GET_CKSL_LBUS(Temp);
+
+	if (ClkSel == BIT_LSYS_CKSL_PSRAM_LBUS) {
+		if (LBusSrc) {
+			//current lbus clk is xtal
+			PsramClk = XTAL_ClkGet();
+		} else {
+			//current lbus clk is osc4m
+			PsramClk = 4000000;
+		}
+	} else {
+		Div = LSYS_GET_CKD_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKD_GRP0));
+		Div += 1;
+
+		if (ClkSel == BIT_LSYS_CKSL_PSRAM_CPUPLL) {
+			PLLCLk = PLL_ClkGet(CLK_CPU_MPLL);
+			PsramClk = PLLCLk / Div;
+		} else if (ClkSel == BIT_LSYS_CKSL_PSRAM_DSPPLL) {
+			PLLCLk = PLL_ClkGet(CLK_CPU_DPLL);
+			PsramClk = PLLCLk / Div;
+		}
+	}
+	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "PSRAM Ctrl CLK: %d Hz \n", PsramClk);
+}
+
 /**
   * @brief  Fills each PSPHY_InitStruct member with its default value.
   * @param  PSPHY_InitStruct: pointer to an PSPHY_InitStruct structure which will be initialized.
@@ -96,7 +150,7 @@ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct)
 	//0x04
 	psram_phy->PSPHY_CAL_PAR = PSPHY_PRE_CAL_PHASE(PSPHY_InitStruct->PSRAMP_PRE_CAL_PHASE) | \
 							   PSPHY_CFG_CAL_JMIN(PSPHY_InitStruct->PSRAMP_CFG_CAL_JMIN) | \
-							   PSPHY_CFG_CAL_JMAX(PSPHY_InitStruct ->PSRAMP_CFG_CAL_JMAX) | \
+							   PSPHY_CFG_CAL_JMAX(PSPHY_InitStruct->PSRAMP_CFG_CAL_JMAX) | \
 							   PSPHY_CFG_CAL_J(PSPHY_InitStruct->PSRAMP_CFG_CAL_J) | \
 							   PSPHY_CFG_CAL_N(PSPHY_InitStruct->PSRAMP_CFG_CAL_N);
 	//0x18
@@ -131,7 +185,7 @@ void PSRAM_CTRL_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_InitStruct->PSRAMC_ck_mtims = 0x1;
 	PCTL_InitStruct->PSRAMC_cs_active_hold = 0x1;
 	PCTL_InitStruct->PSRAMC_cs_seq_timeout = 0x10;
-	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0c;
+	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0;	//disable for seq performance
 	PCTL_InitStruct->PSRAMC_rd_dum_len = APM_WR_DUMMY_LATENCY;
 	PCTL_InitStruct->PSRAMC_wr_dum_len = APM_WR_DUMMY_LATENCY;
 	PCTL_InitStruct->WR_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
@@ -193,18 +247,17 @@ void PSRAM_CTRL_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
   */
 void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 {
-	u8 type;
-	type = ChipInfo_PSRAMType();
+
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_PALADIUM) {
-		type = PSRAM_B_256Mb;
+		psram_type = 0x3;
 	}
 
 	// choose psram
 	PCTL_InitStruct->PSRAMC_qspi_psram = 0x1;
 
-	if (type == PSRAM_B_256Mb) {
+	if (psram_type > 0x1) {
 		PCTL_InitStruct->PSRAMC_page_size = 0xa; // page 1024 bytes
-	} else if (type == PSRAM_B_32Mb) {
+	} else {
 		PCTL_InitStruct->PSRAMC_page_size = 0x7; // page 128 bytes
 	}
 
@@ -222,9 +275,9 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_InitStruct->PSRAMC_ck_mtims = 0x1;
 	PCTL_InitStruct->PSRAMC_cs_active_hold = 0x0;
 	PCTL_InitStruct->PSRAMC_cs_seq_timeout = 0x10;
-	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0c;
-	PCTL_InitStruct->PSRAMC_rd_dum_len = 0xc;
-	PCTL_InitStruct->PSRAMC_wr_dum_len = 0xc;
+	PCTL_InitStruct->PSRAMC_cs_tcem = 0x0;	// disable for seq performance
+	PCTL_InitStruct->PSRAMC_rd_dum_len = 0x3;
+	PCTL_InitStruct->PSRAMC_wr_dum_len = 0x3;  //tCSHI 6ns for >=166MHz
 	PCTL_InitStruct->WR_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
 	PCTL_InitStruct->RD_VL_EN = (!PSRSAM_FIX_LATENCY);	// 1:variable latency 0:fix latency
 	if (PCTL_InitStruct->RD_VL_EN) {
@@ -252,15 +305,24 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	PCTL_InitStruct->PSRAMC_seq_wr_en = 0x1;
 
 	//auto mode setting
-	if (PCTL_InitStruct->RD_VL_EN) {
-		PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_CLK - 4);
-		PCTL_InitStruct->PSRAMC_auto_wr_latency =  2 * (PSRAM_WB_INIT_VL_WR_LATENCY_CLK - 1);
+	if (psram_type <= 0x1) {
+		if (PCTL_InitStruct->RD_VL_EN) {
+			PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_CLK - 4);
+			PCTL_InitStruct->PSRAMC_auto_wr_latency = 2 * (PSRAM_WB_INIT_VL_WR_LATENCY_CLK - 1);
+		} else {
+			PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_CLK - 4);
+			PCTL_InitStruct->PSRAMC_auto_wr_latency =  2 * (PSRAM_WB_INIT_FIX_WR_LATENCY_CLK - 1);
+		}
 	} else {
-		PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_CLK - 4);
-		PCTL_InitStruct->PSRAMC_auto_wr_latency =  2 * (PSRAM_WB_INIT_FIX_WR_LATENCY_CLK - 1);
-
-
+		if (PCTL_InitStruct->RD_VL_EN) {
+			PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_200CLK - 4);
+			PCTL_InitStruct->PSRAMC_auto_wr_latency = 2 * (PSRAM_WB_INIT_VL_WR_LATENCY_200CLK - 1);
+		} else {
+			PCTL_InitStruct->PSRAMC_auto_rd_latency = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_200CLK - 4);
+			PCTL_InitStruct->PSRAMC_auto_wr_latency = 2 * (PSRAM_WB_INIT_FIX_WR_LATENCY_200CLK - 1);
+		}
 	}
+
 	PCTL_InitStruct->PSRAMC_frd_cmd = 0xa0;
 	PCTL_InitStruct->PSRAMC_wr_cmd = 0x20;
 	PCTL_InitStruct->PSRAMC_auto_addr_len = 0x5;
@@ -268,12 +330,19 @@ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct)
 	//user mode setting
 	PCTL_InitStruct->PSRAMC_user_addr_len = 0x5;
 	PCTL_InitStruct->PSRAMC_user_cmd_len = 0x1;
-	if (PCTL_InitStruct->RD_VL_EN) {
-		PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_CLK - 4);
+
+	if (psram_type <= 0x1) {
+		if (PCTL_InitStruct->RD_VL_EN) {
+			PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_CLK - 4);
+		} else {
+			PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_CLK - 4);
+		}
 	} else {
-		PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_CLK - 4);
-
-
+		if (PCTL_InitStruct->RD_VL_EN) {
+			PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_VL_RD_LATENCY_200CLK - 4);
+		} else {
+			PCTL_InitStruct->PSRAMC_user_rd_dummy_len = (2 * PSRAM_WB_INIT_FIX_RD_LATENCY_200CLK - 4);
+		}
 	}
 }
 
@@ -396,10 +465,17 @@ void PSRAM_WB_DEVIC_Init(void)
 			  PSRAM_WB_DRIVE_STRENGTH(0x0) | \
 			  PSRAM_WB_DPD_EN(1);	 // keep default driving stength
 
-	data[1] = PSRAM_WB_BURST_LENGTH(0x0) | \
-			  PSRAM_WB_HyBURSE_EN | \
-			  PSRAM_WB_FIX_LATENCY_EN(PSRSAM_FIX_LATENCY) | \
-			  PSRAM_WB_INIT_LATENCY(0x1);		// 1 for 6T 150M, 2 for 7T 200M (need modifycation)
+	if (psram_type <= 1) {
+		data[1] = PSRAM_WB_BURST_LENGTH(0x0) | \
+				  PSRAM_WB_HyBURSE_EN | \
+				  PSRAM_WB_FIX_LATENCY_EN(PSRSAM_FIX_LATENCY) | \
+				  PSRAM_WB_INIT_LATENCY(0x1);		// 1 for 6T 150M, 2 for 7T 200M
+	} else {
+		data[1] = PSRAM_WB_BURST_LENGTH(0x0) | \
+				  PSRAM_WB_HyBURSE_EN | \
+				  PSRAM_WB_FIX_LATENCY_EN(PSRSAM_FIX_LATENCY) | \
+				  PSRAM_WB_INIT_LATENCY(0x2);		// 1 for 6T 150M, 2 for 7T 200M
+	}
 	PSRAM_REG_Write(1, PSRAM_WB_CR0, 2, data);
 }
 
@@ -412,6 +488,7 @@ void PSRAM_WB_DEVIC_Init(void)
   * @param  read_data: read data output buf
   * @retval None
   */
+NON_DRAM_TEXT_SECTION
 void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR)
 {
 	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
@@ -422,7 +499,7 @@ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR)
 
 	/* Enter User Mode */
 	psram_ctrl->CTRLR0 |= BIT_USER_MODE;
-
+	
 	/* Disable SSIENR to program control registers*/
 	psram_ctrl->SSIENR = 0;
 
@@ -487,6 +564,7 @@ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR)
   * @param  write_data: write data buf
   * @retval None
   */
+NON_DRAM_TEXT_SECTION
 void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data)
 {
 	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
@@ -653,7 +731,7 @@ void PSRAM_calwindow(int window_start, int window_end, PCAL_InitTypeDef *PCAL_In
   * @retval None
   * @note cache will be disable during calibration
   */
-BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct)
+BOOL PSRAM_calibration(VOID)
 {
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 
@@ -664,23 +742,25 @@ BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct)
 	u32 tempdatard[6] = {0, 0, 0, 0, 0, 0};
 	int window_start = -1;
 	int window_end = -1;
+	int window_size = 0;
+
 	int windowt_start = -1;
 	int windowt_size = 0;
 	int windowt_end = -1;
-	u32 window_rank = 16;
-	PCAL_InitStruct->window_size = 0;
+
+	int phase_cnt = -1;
 
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 	DCache_Disable();
 	/*Disable HW calibration*/
 	psram_phy->PSPHY_CAL_CTRL &= (~PSPHY_BIT_CFG_CAL_EN);
 	for (phase = 0x1; phase <= 0x8; phase = phase * 2) {
+		windowt_size = 0;
+		windowt_start = -1;
+		windowt_end = -1;
+		//DBG_8195A("===phase %x =====\n",phase);
 
-		if (phase == 0x8) {
-			window_rank = 32;
-		}
-
-		for (caltempN = 0; caltempN < window_rank; caltempN++) {
+		for (caltempN = 0; caltempN < 32; caltempN++) {
 			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN | PSPHY_PRE_CAL_PHASE(phase);
 			HAL_WRITE32(PSRAM_BASE, 0x0, tempdatawr[0]);
 			HAL_WRITE32(PSRAM_BASE, 0x50000, tempdatawr[1]);
@@ -697,26 +777,31 @@ BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct)
 			tempdatard[5] = HAL_READ32(PSRAM_BASE, 0x250000);
 
 			if (_memcmp(tempdatard, PSRAM_CALIB_PATTERN, 24) == 0) {
-
+				//DBG_8195A("ok %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
 				if (windowt_start < 0) {
 					windowt_start = caltempN;
 				}
 				windowt_end = windowt_start + windowt_size;
 				windowt_size ++;
 
-				if (windowt_end == 79) {
-					window_start = windowt_start;
-					window_end = windowt_end;
-					PSRAM_calwindow(window_start, window_end, PCAL_InitStruct);
+				if (caltempN == (32 - 1)) {
+					if (windowt_size > window_size) {
+						window_start = windowt_start;
+						window_end = windowt_end;
+						window_size = windowt_size;
+						phase_cnt = phase;
+					}
 				}
-//				DBG_8195A("windowt_start = %x windowt_end = %x windowt_size = %x \n", windowt_start, windowt_end, windowt_size);
 			} else {
-//				DBG_8195A("fail %x %x %x %x %x %x\n", tempdatard[0], tempdatard[1], tempdatard[2], tempdatard[3], tempdatard[4], tempdatard[5]);
+				//DBG_8195A("fail %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
 				if (windowt_start >= 0) {
-					window_start = windowt_start;
-					window_end = windowt_end;
-					PSRAM_calwindow(window_start, window_end, PCAL_InitStruct);
+					if (windowt_size > window_size) {
+						window_start = windowt_start;
+						window_end = windowt_end;
+						window_size = windowt_size;
+						phase_cnt = phase;
 
+					}
 					windowt_start = -1;
 					windowt_size = 0;
 					windowt_end = -1;
@@ -725,21 +810,21 @@ BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct)
 		}
 	}
 
-	DBG_8195A("N = 0x%x J = 0x%x JMAX = 0x%x Phase = 0x%x window_size=%d\n", (PCAL_InitStruct->CAL_N), (PCAL_InitStruct->CAL_J), (PCAL_InitStruct->CAL_JMAX),
-			  (PCAL_InitStruct->phase), (PCAL_InitStruct->window_size));
+
+	DBG_8195A("CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
 
 	DCache_Enable();
 
-	if ((PCAL_InitStruct->window_size) < 9) {
+	if ((window_size) < 9) {
 		return _FALSE;
 	}
 	tempPHYPara &= (~0xfffff);
-	tempPHYPara |= PSPHY_CFG_CAL_JMAX(PCAL_InitStruct->CAL_JMAX) | \
-				   PSPHY_CFG_CAL_J(PCAL_InitStruct->CAL_J)	| \
-				   PSPHY_CFG_CAL_N(PCAL_InitStruct->CAL_N);
-	/*set N/J/PHASE initial value HW calibration*/
-	psram_phy->PSPHY_CAL_PAR = tempPHYPara | PSPHY_PRE_CAL_PHASE(PCAL_InitStruct->phase);
+	tempPHYPara |= PSPHY_CFG_CAL_JMAX((window_end - window_start) / 2 - 2) | \
+				   PSPHY_CFG_CAL_J((window_end - window_start) / 2 - 2)	| \
+				   PSPHY_CFG_CAL_N((window_end + window_start) / 2) | \
+				   PSPHY_PRE_CAL_PHASE(phase_cnt);
 
+	psram_phy->PSPHY_CAL_PAR = tempPHYPara;
 
 	/*start HW calibration*/
 	psram_phy->PSPHY_CAL_CTRL |= PSPHY_BIT_CFG_CAL_EN;
@@ -756,6 +841,7 @@ BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct)
   * @retval None
   * @note only in auto mode, disacle before using user mode
   */
+NON_DRAM_TEXT_SECTION
 void PSRAM_AutoGating(u32 Enable, u32 IDleCnt, u32 ResumeCnt)
 {
 	u32 Rtemp = 0;
@@ -792,10 +878,12 @@ void PSRAM_AutoGating(u32 Enable, u32 IDleCnt, u32 ResumeCnt)
   * @retval None
   * @note None
   */
+NON_DRAM_TEXT_SECTION
 void set_psram_sleep_mode(u32 type)
 {
 	u8 psram_halfsleep[2];
 	u32 cur_src = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
+	u8 psraminfo[2];
 
 	PSRAM_AutoGating(DISABLE, 10, 3);
 
@@ -809,9 +897,15 @@ void set_psram_sleep_mode(u32 type)
 		PSRAM_REG_Write(0, 0x06, 2, psram_halfsleep);
 
 	} else {
-		psram_halfsleep[0] = 0xFF;
-		psram_halfsleep[1] = 0xE1;
 
+		PSRAM_REG_Read(1, 0x0, 2, psraminfo, 0);
+		if (psraminfo[1] == 0x5F) {
+			psram_halfsleep[0] = 0xFF;
+			psram_halfsleep[1] = 0x20;
+		} else {
+			psram_halfsleep[0] = 0xFF;
+			psram_halfsleep[1] = 0xE1;
+		}
 		PSRAM_REG_Write(1, 0x1, 2, psram_halfsleep);
 
 	}
@@ -830,6 +924,7 @@ void set_psram_sleep_mode(u32 type)
   * @retval None
   * @note None
   */
+NON_DRAM_TEXT_SECTION
 void set_psram_wakeup_mode(u32 type)
 {
 	u32 temp;
@@ -861,6 +956,7 @@ void set_psram_wakeup_mode(u32 type)
 
 }
 
+NON_DRAM_TEXT_SECTION
 void set_psram_suspend_and_restore(u8 restore)
 {
 	RRAM_TypeDef *rram = RRAM_DEV;

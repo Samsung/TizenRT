@@ -169,12 +169,23 @@ struct rx_pkt_attrib	{
 #endif
 
 	struct phydm_phyinfo_struct phy_info;
+#if (PHYDM_VERSION == 3) /*for halbb physts_rxd*/
+	u8 A1_matched;
+	u8 macid_from_rxdesc;
+	u8 frame_type; //subtype not included
+	u8 bc;
+#endif
+
 };
 
 //These definition is used for Rx packet reordering.
 #define SN_LESS(a, b)		(((a-b)&0x800)!=0)
 #define SN_EQUAL(a, b)	(a == b)
+#if defined(CONFIG_RX_REORDER_WIN_SIZE)
+#define REORDER_WIN_SIZE	CONFIG_RX_REORDER_WIN_SIZE	//NR_RECVFRAME
+#else
 #define REORDER_WIN_SIZE	4	// reduce due to skbdata num limit//NR_RECVFRAME
+#endif
 //#define REORDER_ENTRY_NUM	128
 #define REORDER_WAIT_TIME	(30) // (ms)
 
@@ -256,11 +267,11 @@ accesser of recv_priv: rtw_recv_entry(dispatch / passive level); recv_thread(pas
 using enter_critical section to protect
 */
 struct recv_priv {
-	_lock	lock;
+	//_lock	lock;
 
 	//_queue	blk_strms[MAX_RX_NUMBLKS];    // keeping the block ack frame until return ack
 	_queue	free_recv_queue;
-	_queue	recv_pending_queue;
+	//_queue	recv_pending_queue;
 	_queue	uc_swdec_pending_queue;
 
 
@@ -296,10 +307,6 @@ struct recv_priv {
 	_queue	free_recv_buf_queue;
 	u32	free_recv_buf_queue_cnt;
 
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	_queue	recv_buf_pending_queue;
-#endif
-
 #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 	// Rx
 #if defined(CONFIG_AXI_HCI)
@@ -316,6 +323,7 @@ struct recv_priv {
 	s8 rssi;
 	s8 snr;
 	s8 rxpwdb;
+	u8 signal_strength_backup;
 	u8 signal_strength;
 	u8 signal_qual;
 	u8 noise;
@@ -335,7 +343,7 @@ struct recv_priv {
 	u8 promisc_len_used;
 	u8 promisc_type;
 	_list promisc_list;
-	_lock promisc_lock;
+	//_lock promisc_lock;
 	u32 promisc_bk_rcr;
 	u16 promisc_bk_rxfltmap2;
 	u8 promisc_mgntframe_enabled;
@@ -352,7 +360,7 @@ struct recv_priv {
 
 struct sta_recv_priv {
 
-	_lock	lock;
+	//_lock	lock;
 	sint	option;
 
 	//_queue	blk_strms[MAX_RX_NUMBLKS];
@@ -442,14 +450,6 @@ struct recv_frame_hdr {
 	u8 bWapiCheckPNInDecrypt;
 	u8 bIsWaiPacket;
 #endif
-
-#ifdef CONFIG_RTK_MESH
-	// it's a mandatory field, for rx (e.g., validate_mpdu) to distinguish an 11s frame
-	unsigned char		is_11s;	///<  1: 11s
-	struct  rtw_ieee80211s_hdr mesh_header;
-	unsigned char		prehop_11s[ETH_ALEN];
-#endif // CONFIG_RTK_MESH
-
 };
 
 union recv_frame {
@@ -484,41 +484,8 @@ extern sint rtw_enqueue_recvbuf_to_head(struct recv_buf *precvbuf, _queue *queue
 extern sint rtw_enqueue_recvbuf(struct recv_buf *precvbuf, _queue *queue);
 extern struct recv_buf *rtw_dequeue_recvbuf(_queue *queue);
 
-#ifdef CONFIG_TRACE_SKB
-#define __rtw_enqueue_recvframe(precvframe, queue, Q) \
-	do{\
-		set_skb_list_flag(precvframe->u.hdr.pkt, SKBLIST_RECVFRAME_##Q);\
-		rtw_enqueue_recvframe(precvframe, queue);\
-	}while (0)
-#define __rtw_alloc_recvframe(queue, precvframe, Q) \
-	(\
-		precvframe = rtw_alloc_recvframe(queue),\
-		precvframe ? clear_skb_list_flag(precvframe->u.hdr.pkt, SKBLIST_RECVFRAME_##Q):0,\
-		precvframe\
-	)
-#endif
-
 extern void rtw_free_recvframe_queue(_queue *pframequeue,  _queue *pfree_recv_queue);
 u32 rtw_free_uc_swdec_pending_queue(_adapter *adapter);
-
-#ifdef CONFIG_TRACE_SKB
-#define __rtw_enqueue_recvbuf_to_head(precvbuf, queue, Q) \
-	do{\
-		set_skb_list_flag(precvbuf->pskb, SKBLIST_RECVBUF_##Q);\
-		rtw_enqueue_recvbuf_to_head(precvbuf, queue);\
-	}while (0)
-#define __rtw_enqueue_recvbuf(precvbuf, queue, Q) \
-	do{\
-		set_skb_list_flag(precvbuf->pskb, SKBLIST_RECVBUF_##Q);\
-		rtw_enqueue_recvbuf(precvbuf, queue);\
-	}while (0)
-#define __rtw_dequeue_recvbuf(queue, precvbuf, Q) \
-	(\
-		precvbuf = rtw_dequeue_recvbuf(queue),\
-		precvbuf ? clear_skb_list_flag(precvbuf->pskb, SKBLIST_RECVBUF_##Q):0,\
-		precvbuf\
-	)
-#endif
 
 void rtw_reordering_ctrl_timeout_handler(void *pcontext);
 

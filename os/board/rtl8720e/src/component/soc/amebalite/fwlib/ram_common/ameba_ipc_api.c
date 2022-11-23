@@ -37,7 +37,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 	__ipc_table_start__ = (u8 *)__section_begin(".ipc.table.data");
 	__ipc_table_end__ = (u8 *)__section_end(".ipc.table.data");
 #endif
-	IPC_INIT_TABLE *ipc_init_table = (IPC_INIT_TABLE *)__ipc_table_start__;
+	IPC_INIT_TABLE *ipc_init_table = (IPC_INIT_TABLE *)(void *)__ipc_table_start__;
 	u32 ipc_num = ((__ipc_table_end__ - __ipc_table_start__) / sizeof(IPC_INIT_TABLE));
 
 	for (i = 0; i < ipc_num; i++) {
@@ -101,16 +101,6 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 }
 
 /**
-  * @brief  share ipc memory between internal core by global register.
-  * @param None
-  * @retval   None
-  */
-void ipc_share_memory_init(void)
-{
-	RRAM_DEV->IPC_Share_Mem = (u32) __kr4_ipc_memory_start__;
-}
-
-/**
   * @brief  exchange messages between KM0 and KM4.
   * @param  IPC_Dir: Specifies core to core direction
   *          This parameter can be one of the following values:
@@ -129,7 +119,7 @@ void ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 	/* Check the parameters */
 	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
 
-	PIPC_MSG_STRUCT IPC_MSG = (PIPC_MSG_STRUCT)__kr4_ipc_memory_start__;
+	PIPC_MSG_STRUCT IPC_MSG = (PIPC_MSG_STRUCT)(void *)__kr4_ipc_memory_start__;
 	u32 msg_idx = 16 * ((IPC_Dir >> 4) & 0xF) + 8 * (IPC_Dir & 0xF) + IPC_ChNum;
 	IPC_TypeDef *IPCx = NULL;
 
@@ -179,10 +169,8 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 	PIPC_MSG_STRUCT IPC_MSG = NULL;
 	u32 msg_idx = 16 * ((IPC_Dir >> 4) & 0xF) + 8 * (IPC_Dir & 0xF) + IPC_ChNum;
 
-#ifndef ARM_CORE_CA7
 	DCache_Invalidate((u32)__kr4_ipc_memory_start__, 3 * 16 * sizeof(IPC_MSG_STRUCT));
-#endif
-	IPC_MSG = (PIPC_MSG_STRUCT)__kr4_ipc_memory_start__;
+	IPC_MSG = (PIPC_MSG_STRUCT)(void *)__kr4_ipc_memory_start__;
 
 	return &IPC_MSG[msg_idx];
 }

@@ -24,7 +24,7 @@
 
 #define CONFIG_LITTLE_ENDIAN
 
-#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #ifndef CONFIG_PLATFORM_AMEBA_X
 #define CONFIG_PLATFORM_AMEBA_X 1
 #endif
@@ -49,7 +49,6 @@
 #define ALL_DH_GROUPS
 #endif
 
-//#define CONFIG_RTK_MESH
 
 /* For promiscuous mode */
 #define CONFIG_PROMISC
@@ -58,7 +57,6 @@
 #define CONFIG_CONCURRENT_MODE
 /****************** configurations for concurrent mode ************************/
 #ifdef CONFIG_CONCURRENT_MODE
-//#define CONFIG_MCC_MODE
 //#define CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
 #define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN) + 1)
 #define CONFIG_IFACE_NUMBER	2
@@ -72,7 +70,6 @@
 #define CONFIG_WPS
 #if 0
 #define CONFIG_WPS_AP
-#define CONFIG_P2P_NEW
 #endif
 
 /***************************** for Debug message ******************************/
@@ -85,6 +82,7 @@
 #define RTL8188E_SUPPORT 0
 #define RTL8188F_SUPPORT 0
 #define RTL8711B_SUPPORT 0
+#define RTL8720E_SUPPORT 0
 #define RTL8721D_SUPPORT 0
 #define RTL8723D_SUPPORT 0
 #define RTL8195B_SUPPORT 0
@@ -97,13 +95,6 @@
 /******************** Configurations for each platform ************************/
 #if (CONFIG_PLATFORM_AMEBA_X == 1)
 /******************* Ameba Series Common Configurations ***********************/
-#if defined(CONFIG_HIGH_TP_TEST) || defined(CONFIG_INIC_IPC_HIGH_TP)
-#define SKB_PRE_ALLOCATE_RX	1
-#define EXCHANGE_LXBUS_RX_SKB 1
-#else
-#define SKB_PRE_ALLOCATE_RX	0
-#define EXCHANGE_LXBUS_RX_SKB 0
-#endif
 //#define CONFIG_WLAN_HAL_RX_TASK
 
 #define NOT_SUPPORT_RF_MULTIPATH
@@ -120,6 +111,9 @@
 #elif defined(CONFIG_PLATFORM_8721D)
 /******************************* AmebaD (8721D) *******************************/
 #include "autoconf_8721d.h"
+#elif defined(CONFIG_PLATFORM_AMEBADPLUS)
+/******************************* AmebaDPLUS (8721F) *******************************/
+#include "autoconf_8721f.h"
 #elif defined(CONFIG_PLATFORM_8195BHP)
 /***************************** AmebaPro (8195BHP) *****************************/
 #include "autoconf_8195b.h"
@@ -171,24 +165,8 @@
 //#define CONFIG_IEEE80211R
 #endif
 
-/*************************** Config for MP_MODE *******************************/
-//#define CONFIG_MP_INCLUDED
-#ifdef CONFIG_MP_INCLUDED
-#define MP_DRIVER 1
-#undef CONFIG_ANTENNA_DIVERSITY
-#undef CONFIG_BT_COEXIST_SOC
-#undef CONFIG_REG_ENABLE_KFREE
-#define CONFIG_REG_ENABLE_KFREE 1	 // 1: enable, 2: disable
-#else /* undef CONFIG_MP_INCLUDED  */
-#define MP_DRIVER 0
-#endif /* #ifdef CONFIG_MP_INCLUDED */
-/************************* Config for MP_MODE end *****************************/
 
-#ifdef CONFIG_RTK_MESH
-#define CONFIG_BEACON_PERIOD 1024
-#else
 #define CONFIG_BEACON_PERIOD 100
-#endif
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
 

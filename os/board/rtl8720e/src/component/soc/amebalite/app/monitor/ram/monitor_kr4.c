@@ -222,7 +222,7 @@ CmdRamHelp(
 	(void) argc;
 	(void) *argv;
 
-	COMMAND_TABLE *cmd_table = (COMMAND_TABLE *)__cmd_table_start__;
+	COMMAND_TABLE *cmd_table = (COMMAND_TABLE *)(void *)__cmd_table_start__;
 	u32 cmd_mum = ((__cmd_table_end__ - __cmd_table_start__) / sizeof(COMMAND_TABLE));
 	u32	index ;
 

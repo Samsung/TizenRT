@@ -338,6 +338,14 @@ struct pwrctrl_priv {
 #endif
 #endif
 
+#ifdef CONFIG_SMART_DTIM
+	u8  smartdtim_enable;
+	u8  smartdtim_resume_enable;
+	u8  smartdtim_check_period;
+	u8  smartdtim_threshold;
+	u8  smartdtim_change_dtim;
+#endif
+
 #ifdef CONFIG_WOWLAN_DHCP_RENEW
 	u8  dhcp_renew_rsvd_page_locate;
 	u8 *dhcp_renew_pkt;
@@ -371,13 +379,38 @@ struct pwrctrl_priv {
 	u32 sniffer_interval;
 #endif
 
+#ifdef CONFIG_WOWLAN_PARAM
+	u8  wowlan_param_conf;
+	u8  fw_disconnect_check_period;
+	u8  fw_disconnect_trypktnum;
+	u8  pno_enable;
+	u8  pno_timeout;
+	u8  l2_keepalive_period;
+#endif
+
+#ifdef CONFIG_ARP_REQUEST_KEEP_ALIVE
+	u8  arpreq_enable;
+	u8  arpreq_powerbit;
+	u8  arpreq_dtim1to;
+	u8  arpreq_rsvd_page_locate;
+#endif
+
+#ifdef CONFIG_WOWLAN_IO_WDT
+	u8  wdt_enable;
+	u8  wdt_gpio;
+	u8  wdt_interval;
+#endif
+
+#ifdef CONFIG_FW_DRIVER_COEXIST
+	u32 dynamic_timer_record;
+	u32 pwr_check_timer_record;
+#endif
 };
 
 #define RTW_PWR_STATE_CHK_INTERVAL 2000
 
 #define _rtw_set_pwr_state_check_timer(pwrctrlpriv, ms) \
 	do { \
-		/*DBG_871X("%s _rtw_set_pwr_state_check_timer(%p, %d)\n", __FUNCTION__, (pwrctrlpriv), (ms));*/ \
 		rtw_set_timer(&(pwrctrlpriv)->pwr_state_check_timer, (ms)); \
 	} while(0)
 

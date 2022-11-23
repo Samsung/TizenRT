@@ -239,6 +239,13 @@ typedef struct {
 
 #define PSRAM_WB_INIT_FIX_WR_LATENCY_CLK	12
 #define PSRAM_WB_INIT_VL_WR_LATENCY_CLK		6
+
+#define PSRAM_WB_INIT_FIX_RD_LATENCY_200CLK		14
+#define PSRAM_WB_INIT_VL_RD_LATENCY_200CLK		7
+
+#define PSRAM_WB_INIT_FIX_WR_LATENCY_200CLK		14
+#define PSRAM_WB_INIT_VL_WR_LATENCY_200CLK		7
+
 /**
   * @}
   */
@@ -251,7 +258,7 @@ typedef struct {
 /** @defgroup PSRAM_Exported_Functions PSRAM Exported Functions
   * @{
   */
-
+_LONG_CALL_ void PSRAM_CLK_INFO_Update(VOID);
 _LONG_CALL_ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_CTRL_StructInit(PCTL_InitTypeDef *PCTL_InitStruct);
@@ -259,7 +266,7 @@ _LONG_CALL_ void PSRAM_CTRL_Init(PCTL_InitTypeDef *PCTL_InitStruct);
 _LONG_CALL_ void PSRAM_REG_Read(u32 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
 _LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data);
-_LONG_CALL_ BOOL PSRAM_calibration(PCAL_InitTypeDef *PCAL_InitStruct);
+_LONG_CALL_ BOOL PSRAM_calibration(VOID);
 _LONG_CALL_ void PSRAM_CTRL_WB_StructInit(PCTL_InitTypeDef *PCTL_InitStruct);
 _LONG_CALL_ void PSRAM_WB_REG_Write(u32 regnum, u32 write_len, u8 *write_data);
 _LONG_CALL_ void PSRAM_WB_REG_Read(u32 regnum, u32 read_len, u8 *read_data, u32 CR);
@@ -271,6 +278,7 @@ _LONG_CALL_ void set_psram_wakeup_mode(u32 type);
 _LONG_CALL_ void set_psram_suspend_and_restore(u8 restore);
 
 _LONG_CALL_ VOID PSRAM_CTRL_SPU(u32 state);
+_LONG_CALL_ void PSRAM_CLK_INFO_Pirnt(void);
 
 /**
   * @}

@@ -110,6 +110,25 @@ extern VOID UpdateInterruptMask8730a(PADAPTER Adapter, u32 *pAddMSRB, u32 *pRemo
 extern void ClearWlPmcInterrupt8730a(PADAPTER padapter);
 extern BOOLEAN InterruptRecognized8730a(PADAPTER Adapter);
 
+#elif defined(CONFIG_RTL8721F)
+extern u32 rtl8721f_init_desc_ring(_adapter *padapter);
+extern u32 rtl8721f_free_desc_ring(_adapter *padapter);
+extern void rtl8721f_reset_desc_ring(_adapter *padapter);
+extern void EnableDMA8721f(PADAPTER padapter);
+extern void EnableInterrupt8721f(PADAPTER padapter);
+extern void DisableDMA8721f(PADAPTER padapter);
+extern void DisableInterrupt8721f(PADAPTER padapter);
+extern s32 InterruptHandle8721f(PADAPTER Adapter);
+extern void lxbus_set_intf_ops(struct _io_ops *pops);
+extern void rtl8721f_xmit_tasklet(void *priv);
+extern void rtl8721f_recv_tasklet(void *priv);
+extern void rtl8721f_prepare_bcn_tasklet(void *priv);
+extern void rtl8721f_tx_int_handler(_adapter *padapter);
+extern void InitInterrupt8721f(PADAPTER padapter);
+extern VOID UpdateInterruptMask8721f(PADAPTER Adapter, u32 *pAddMSRB, u32 *pRemoveMSR);
+extern void ClearWlPmcInterrupt8721f(PADAPTER padapter);
+extern BOOLEAN InterruptRecognized8721f(PADAPTER Adapter);
+
 #elif defined(CONFIG_RTL8720E)
 extern u32 rtl8720e_init_desc_ring(_adapter *padapter);
 extern u32 rtl8720e_free_desc_ring(_adapter *padapter);

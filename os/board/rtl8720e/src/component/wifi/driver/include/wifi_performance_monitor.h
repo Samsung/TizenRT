@@ -47,6 +47,7 @@ struct WIFI_TIME {
 	u32 wlan_send_time;
 	u32 wlan_send_time1;
 	u32 wlan_send_time2;
+	u32 wlan_send_time3;
 
 	u32 wlan_send_skb_time;
 
@@ -66,19 +67,21 @@ struct WIFI_TIME {
 	u32 xmitframe_coalesce_time;
 
 	u32 dump_xframe_time;
+	u32 xmit_task_time;
+	u32 xmit_handler_time;
+	u32 dequeue_xmitbuf_time;
 };
 
 #ifdef WIFI_PERFORMANCE_MONITOR
 extern struct WIFI_TIME wifi_time_test;
+extern struct WIFI_TIME wifi_time_result;
 void wifi_performance_print();
 
-#define WIFI_MONITOR_TIMER_START(x)	do {x = WIFI_PMTimer_GetCount(); \
+#define WIFI_MONITOR_TIMER_START(x)	do { wifi_time_test.x = WIFI_PMTimer_GetCount(); \
 										} while(0);
 
 #define WIFI_MONITOR_TIMER_END(x, len)	do { if (len > 500) \
-												x = WIFI_PMTimer_GetPassTime(x); \
-											else \
-												x = 0; \
+												wifi_time_result.x = WIFI_PMTimer_GetPassTime( wifi_time_test.x); \
 										}while(0);
 #else
 #define WIFI_MONITOR_TIMER_START(x)

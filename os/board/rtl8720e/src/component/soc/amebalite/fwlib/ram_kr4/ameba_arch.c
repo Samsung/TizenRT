@@ -44,7 +44,6 @@
 /*----------------------------------------------------------------------------
   Clock Variable definitions
  *----------------------------------------------------------------------------*/
-IMAGE2_RAM_DATA_SECTION
 uint32_t SystemCoreClock = 150000000;/*!< System Clock Frequency (Core Clock)*/
 
 extern uint64_t ullNextTime;

@@ -147,5 +147,5 @@ int rtw_coex_bt_enable(_adapter *padapter, u8 enable);
 void rtw_coex_wifi_enable(PADAPTER padapter, u8 enable);
 u16 rtw_coex_wifi_tdma_scan_start(PADAPTER padapter, RT_SCAN_TYPE scan_type);
 u16 rtw_coex_wifi_tdma_scan_handle(PADAPTER padapter);
-
+u8 rtw_coex_is_bt_disabled(PADAPTER padapter);
 #endif /* __RTW_BTCOEX_SOC_H__ */

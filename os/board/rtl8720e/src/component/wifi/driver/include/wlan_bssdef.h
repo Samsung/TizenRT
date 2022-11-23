@@ -290,12 +290,25 @@ typedef struct _WLAN_BCN_INFO {
 	unsigned char	ht_info_infos_0;
 } WLAN_BCN_INFO, *PWLAN_BCN_INFO;
 
-#if defined(RTL8730E_WIFI_TEST) || defined(RTL8720E_WIFI_TEST)  //MBSSID test
+#ifdef CONFIG_MBSSID_AX
+#define MAX_VIRTUAL_AP_NUM	8
+typedef struct _mbssid_virtual_ap_info {
+	u8					bssid_idx;	// from bssid-index ie
+	NDIS_802_11_SSID	Ssid;		//from ssid ie
+} mbssid_virtual_ap_info_t;
+
 typedef struct _mbssid_info {
-	u8 is_virtual_ap;
-	u8 bssid_idx;
-	u8 bssid_max;
-	u8 bssid_ref[6];
+	u8 mbssid_enable;	// AP support mbssid
+	u8 mbssid_complete;	// MBSSID element carriy complete non-transmitted BSSID profile
+	u8 mbssid_ema;		//enhanced MBSSID advertisement
+	u8 bssid_max;		//max_bssid_indicator
+	u8 bssid_ref[6];		// transmitted-BSSID
+	u8 virtual_ap_num;	// num of non-transmitted BSSID
+	u8 bssid_idx_to_join;	//bssid index of non-transmitted BSSID to join
+	u8 is_virtual_ap;		// 1: ap to join is non-transmitted
+	mbssid_virtual_ap_info_t virtual_ap_info[MAX_VIRTUAL_AP_NUM]; 	// store non-transmitted BSSID profile
+	u8 *mbssid_ie; 		//start with non-transmitted BSSID profile
+	u16 mbssid_ie_len;
 } mbssid_info_t;
 #endif
 
@@ -309,15 +322,11 @@ typedef struct _mbssid_info {
 typedef struct _WLAN_BSSID_EX {
 	u32					Length;
 	NDIS_802_11_MAC_ADDRESS		MacAddress;
-#if defined(RTL8730E_WIFI_TEST) || defined(RTL8720E_WIFI_TEST)  //MBSSID test
+#ifdef CONFIG_MBSSID_AX
 	mbssid_info_t mbssid_info;
 #endif
-#ifdef CONFIG_P2P_NEW
-	u8					Reserved[1];		//[0]: IS beacon frame
-	u8					bP2pNetwork;
-#else
+
 	u8					Reserved[2];		//[0]: IS beacon frame
-#endif
 	NDIS_802_11_SSID			Ssid;
 	u32					Privacy;
 	NDIS_802_11_RSSI			Rssi;			//(in dBM,raw data ,get from PHY)

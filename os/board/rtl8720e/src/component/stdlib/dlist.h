@@ -210,7 +210,7 @@ static inline void list_splice_init(struct list_head *list,
  * @member:	the name of the list_struct within the struct.
  */
 #define list_entry(ptr, type, member) \
-	((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+	((type *)(void*)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
 /**
 * list_first_entry - get the first element from a list

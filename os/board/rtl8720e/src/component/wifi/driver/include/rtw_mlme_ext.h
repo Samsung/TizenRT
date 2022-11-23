@@ -40,6 +40,7 @@
 #define REASSOC_TO		(300) //(50)
 //#define DISCONNECT_TO	(3000)
 #define ADDBA_TO			(2000)
+#define DEFRAG_TO (2000)
 
 #define LINKED_TO (1) //unit:2 sec, 1x2=2 sec
 
@@ -49,11 +50,9 @@
 #define REASSOC_LIMIT	(4)
 #define READDBA_LIMIT	(2)
 
-#if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI)
-#define ROAMING_LIMIT	5
-#else
+
 #define ROAMING_LIMIT	8
-#endif
+
 //#define	IOCMD_REG0		0x10250370
 //#define	IOCMD_REG1		0x10250374
 //#define	IOCMD_REG2		0x10250378
@@ -272,6 +271,10 @@ typedef enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_48 = 48,		/*Japan*/
 	RTW_RD_5G_49 = 49,		/**/
 	RTW_RD_5G_50 = 50,		/*Russia*/
+	RTW_RD_5G_51 = 51,		/*Tunisia*/
+	RTW_RD_5G_52 = 52,		/*US (include Ch144)(2018 Dec 05 New standard, include ch144)Add FCC 5.9G Channel*/
+	RTW_RD_5G_53 = 53,		/*Korea*/
+	RTW_RD_5G_54 = 54,
 	//===== Add new channel plan above this line===============//
 	RT_CHANNEL_DOMAIN_5G_MAX
 } RT_CHANNEL_DOMAIN_5G, *PRT_CHANNEL_DOMAIN_5G;
@@ -512,10 +515,6 @@ struct mlme_ext_info {
 	struct HE_mu_edca_element		HE_mu_edca;
 #endif
 
-#ifdef CONFIG_MCC_MODE
-	WLAN_BSSID_EX
-	network;	//join network or bss_network, if in ap mode, it is the same to cur_network.network. //use mlme_priv->cur_network.network. YJ,del,140408
-#endif
 	struct FW_Sta_Info		FW_sta_info[NUM_STA];
 
 #ifdef CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
@@ -592,14 +591,6 @@ struct mlme_ext_priv {
 	u8	cur_wireless_mode;	// NETWORK_TYPE
 	u8	max_chan_nums;
 	RT_CHANNEL_INFO		channel_set[MAX_CHANNEL_NUM + 1];
-#ifdef CONFIG_P2P_NEW
-	RT_CHANNEL_INFO		social_channel_set[4];
-	RT_CHANNEL_INFO		special_channel[2];
-	u8			special_mac[ETH_ALEN];
-	u16		scan_mode;
-	u8		bremain_on_channel;
-	_timer remainon_timer;
-#endif
 	u8	basicrate[NumRates];
 	u8	datarate[NumRates];
 
@@ -630,9 +621,6 @@ struct mlme_ext_priv {
 	u16 	 action_public_rxseq;
 
 	/* for softap power save */
-#ifdef CONFIG_P2P_NEW
-	u8 action_public_dialog_token;
-#endif
 #if CONFIG_AUTO_RECONNECT
 	_timer reconnect_timer;
 	u8 reconnect_deauth_filtered;
@@ -659,191 +647,6 @@ struct mlme_ext_priv {
 	u8 bConcurrentFlushingSTA;
 #endif
 	transition_disable_ctx transition_disable;
-#ifdef CONFIG_RTK_MESH
-	u8 mesh_enable;
-	u8 mesh_id[32];
-#ifdef CONFIG_SAE_SUPPORT
-	enum {
-		RTW_IEEE80211_MESH_SEC_NONE = 0x0,
-		RTW_IEEE80211_MESH_SEC_AUTHED = 0x1,
-		RTW_IEEE80211_MESH_SEC_SECURED = 0x2,
-	} mesh_security;
-#endif
-	struct MESH_Share meshare; 	// mesh share data
-	u16 mesh_max_neightbor;
-	s32 mesh_rssi_threshold;
-
-	u8 mesh_root_enable;
-	u8 mesh_portal_enable;
-
-	_timer mesh_expire_timer;
-	struct wlan_ethhdr_t    ethhdr;
-
-	u32 mesh_path_root_interval;
-	u32 fwded_mcast;		/* Mesh forwarded multicast frames */
-	u32 fwded_unicast;		/* Mesh forwarded unicast frames */
-	u32 fwded_frames;		/* Mesh total forwarded frames */
-	u32 dropped_frames_ttl;	/* Not transmitted since mesh_ttl == 0*/
-	u32 dropped_frames_no_route;	/* Not transmitted, no route found */
-	u32 dropped_frames_congestion;/* Not forwarded due to congestion */
-	u32 preq_id;
-	/* Time when it's ok to send next PERR */
-	unsigned long next_perr;
-	u32 mesh_sn; /* Local mesh Sequence Number */
-	unsigned long  last_sn_update;
-
-	/* protected by mesh_preq_lock*/
-	struct mesh_rreq_retry_entry *rreq_head, *rreq_tail;
-	struct hash_table       *mesh_rreq_retry_queue;
-	/* End of protected by mesh_preq_lock*/
-
-
-	struct hash_table       *proxy_table; /* protected by mesh_proxy_lock*/
-#ifdef PU_STANDARD
-	struct hash_table       *proxyupdate_table; /* protected by mesh_proxyupdate_lock*/
-#endif
-	struct hash_table       *pathsel_table;
-	struct mpp_tb           *pann_mpp_tb;
-
-	struct MESH_FAKE_MIB_T  mesh_fake_mib;
-	unsigned char           root_mac[ETH_ALEN];       // Tree Base root MAC
-
-
-	_lock             		 mesh_path_lock;
-	_lock           		 mesh_queue_lock;
-	_lock            		 mesh_preq_lock;
-	_lock           		 mesh_proxy_lock;
-	_lock            		 mesh_proxyupdate_lock;
-
-#ifdef SMP_SYNC
-
-	int                     mesh_proxy_lock_owner;
-	int                     mesh_proxyupdate_lock_owner;
-	int                     mesh_preq_lock_owner;
-	int                     mesh_queue_lock_owner;
-	int                     mesh_path_lock_owner;
-
-	unsigned char			mesh_proxy_lock_func[50];
-	unsigned char			mesh_proxyupdate_lock_func[50];
-	unsigned char			mesh_preq_lock_func[50];
-	unsigned char			mesh_queue_lock_func[50];
-	unsigned char			mesh_path_lock_func[50];
-
-#endif
-
-	u16 seqNum;     // record for  recently sent multicast packet
-	/*
-	dev->priv->base_addr = 0 is wds
-	dev->priv->base_addr = 1 is mesh
-	We provide only one mesh device now. Although it is possible that more than one
-	mesh devices bind with one physical interface simultaneously. RTL8186 shares the
-	same MAC address with multiple virtual devices. Hence, the mesh data frame can't
-	be handled (rx) by mesh devices correctly.
-	*/
-
-	struct net_device		*mesh_dev;
-#if defined(CONFIG_RTL_MESH_SINGLE_IFACE)
-	struct rtl8192cd_priv	*mesh_priv_sc;
-	struct rtl8192cd_priv	*mesh_priv_first;
-#endif
-#ifdef _MESH_ACL_ENABLE_
-	struct mesh_acl_poll	*pmesh_acl_poll;
-	struct list_head		mesh_aclpolllist;	// this is for poll management
-	struct list_head		mesh_acl_list;		// this is for auth checking
-#if defined(SMP_SYNC) && (defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI))
-	spinlock_t			mesh_acl_list_lock;
-#endif
-#endif
-	struct net_device_stats;
-	/*protected by mesh_queue_lock*/
-	DOT11_QUEUE2			*pathsel_queue;		// pathselection QUEUE
-	int pid_pathsel;
-
-	struct net_device_stats	mesh_stats;
-
-	u8					mesh_Version;
-	// WLAN Mesh Capability
-	s16					mesh_PeerCAP_cap;		// peer capability-Cap number (Signed!)
-	u8					mesh_PeerCAP_flags;		// peer capability-flags
-	u8					mesh_PowerSaveCAP;		// Power Save capability
-	u8					mesh_SyncCAP;			// Synchronization capability
-	u8					mesh_MDA_CAP;			// MDA capability
-	u32					mesh_ChannelPrecedence;	// Channel Precedence
-	u8					mesh_fix_channel;	// for Mesh auto channel scan used
-
-	u8					mesh_HeaderFlags;		// mesh header in mesh flags field
-
-	//for mesh channel switch
-	u8                  mesh_swchnl_channel;    //0:do not need to switch channel,  others: the channel switch procedure is ongoing
-	u8                  mesh_swchnl_offset;
-	u8                  mesh_swchnl_ttl;
-	u8                  mesh_swchnl_flag;
-	u16                 mesh_swchnl_reason;
-	u32                 mesh_swchnl_precedence;
-	u8                  mesh_swchnl_counter;
-
-#ifdef MESH_BOOTSEQ_AUTH
-	struct timer_list		mesh_auth_timer;		///< for unestablish (And establish to unestablish) MP mesh_auth_hdr
-
-	// mesh_auth_hdr:
-	//  It is a list structure, only stores unAuth MP entry
-	//  Each entry is a pointer pointing to an entry in "stat_info->mesh_mp_ptr"
-	//  and removed by successful "Auth" or "Expired"
-	struct list_head		mesh_auth_hdr;
-#endif
-
-	_timer mesh_peer_link_timer;	///< for unestablish (And establish to unestablish) MP mesh_unEstablish_hdr
-#ifdef CONFIG_SAE_SUPPORT
-	_timer mesh_auth_sae_timer;
-	_list mesh_unAuth_hdr;
-#endif
-	// mesh_unEstablish_hdr:
-	//  It is a list structure, only stores unEstablish (or Establish -> unEstablish [MP_HOLDING])MP entry
-	//  Each entry is a pointer pointing to an entry in "stat_info->mesh_mp_ptr"
-	//  and removed by successful "Peer link setup" or "Expired"
-	_list		mesh_unEstablish_hdr;
-
-	// mesh_mp_hdr:
-	//  It is a list of MP/MAP/MPP who has already passed "Peer link setup"
-	//  Each entry is a pointer pointing to an entry in "stat_info->mesh_mp_ptr"
-	//  Every entry is inserted by "successful peer link setup"
-	//  and removed by "Expired"
-	_list		mesh_mp_hdr;
-
-	_lock			mesh_mp_hdr_lock; // protect mesh_auth_hdr, mesh_unEstablish_hdr, mesh_mp_hdr
-
-	struct MESH_Profile		mesh_profile[1];	// Configure by WEB in the future, Maybe delete, Preservation before delete
-
-
-#ifdef MESH_BOOTSEQ_STRESS_TEST
-	unsigned long			mesh_stressTestCounter;
-#endif	// MESH_BOOTSEQ_STRESS_TEST
-
-	// Throughput statistics (sounder)
-	unsigned int			mesh_log;
-	unsigned long			log_time;
-
-#ifdef _MESH_ACL_ENABLE_
-	unsigned char			meshAclCacheAddr[MACADDRLEN];
-	unsigned char			meshAclCacheMode;
-#endif
-
-#ifdef CONFIG_RTK_VLAN_SUPPORT
-	struct vlan_info mesh_vlan;
-#endif
-
-#if defined(RTL_MESH_TXCACHE)
-	struct mesh_txcache_t mesh_txcache;
-#endif
-
-#ifdef MESH_USE_METRICOP
-	u32                          toMeshMetricAuto; // timeout, check mesh_fake_mib for further description
-#endif
-
-#ifdef CONFIG_SAE_SUPPORT
-	struct ampe_config ampe_conf;
-#endif
-#endif // CONFIG_RTK_MESH
 
 	/*ap csa related*/
 	u8 ap_switch_chl_flag;
@@ -1085,7 +888,13 @@ unsigned int OnAction_wnm(_adapter *adapter, union recv_frame *precv_frame);
 unsigned int OnAction_wmm(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_p2p(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_csa(_adapter *padapter, union recv_frame *precv_frame);
-
+#ifdef CONFIG_TWT
+void issue_action_twt(_adapter *padapter, u8 setup, struct twt_ie_t *twt_ie);
+unsigned int OnAction_twt(_adapter *padapter, union recv_frame *precv_frame);
+#endif
+#ifdef CONFIG_80211AC_VHT
+unsigned int OnAction_vht(_adapter *padapter, union recv_frame *precv_frame);
+#endif
 
 void mlmeext_joinbss_event_callback(_adapter *padapter, int join_res);
 void mlmeext_sta_del_event_callback(_adapter *padapter);
@@ -1105,13 +914,11 @@ void sa_query_timer_hdl(struct sta_info *psta);
 
 #define set_survey_timer(mlmeext, ms) \
 	do { \
-		/*DBG_871X("%s set_survey_timer(%p, %d)\n", __FUNCTION__, (mlmeext), (ms));*/ \
 		rtw_set_timer(&(mlmeext)->survey_timer, (ms)); \
 	} while(0)
 
 #define set_link_timer(mlmeext, ms) \
 	do { \
-		/*DBG_871X("%s set_link_timer(%p, %d)\n", __FUNCTION__, (mlmeext), (ms));*/ \
 		rtw_set_timer(&(mlmeext)->link_timer, (ms)); \
 	} while(0)
 
@@ -1245,7 +1052,7 @@ const struct cmd_hdl wlancmds[] = {
 //	GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), tdls_hdl) /*62*/
 	GEN_MLME_EXT_HANDLER(sizeof(struct TDLSoption_param), NULL) /*62*/
 
-	GEN_MLME_EXT_HANDLER(0, rtw_p2p_cmd_hdl) /*63*/
+	GEN_MLME_EXT_HANDLER(0, NULL) /*63*/
 
 	GEN_MLME_EXT_HANDLER(0, rtw_rm_post_event_hdl)/*64*/
 	GEN_MLME_EXT_HANDLER(sizeof(void *), rtw_free_stainfo_hdl)/*65*/

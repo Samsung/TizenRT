@@ -39,6 +39,13 @@ u8 rtw_odm_radar_detect_polling_int_ms(struct dvobj_priv *dvobj);
 #endif /* (PHYDM_VERSION == 2) */
 
 #if (PHYDM_VERSION == 3)
+u8 rtw_odm_get_dfs_domain(struct dvobj_priv *dvobj);
+u8 rtw_odm_dfs_domain_unknown(struct dvobj_priv *dvobj);
+void rtw_odm_radar_detect_reset(_adapter *adapter);
+void rtw_odm_radar_detect_disable(_adapter *adapter);
+void rtw_odm_radar_detect_enable(_adapter *adapter);
+BOOLEAN rtw_odm_radar_detect(_adapter *adapter);
+u8 rtw_odm_radar_detect_polling_int_ms(struct dvobj_priv *dvobj);
 #define rtw_phydm_ability_ops(adapter, ops, ability)
 #define rtw_phydm_set_dbg_info(padapter, dm_func)
 /*mapping to habb_supportability_t*/
@@ -97,7 +104,12 @@ bool rtw_odm_adaptivity_needed(_adapter *adapter);
 
 static inline u32 rtw_phydm_ability_get(_adapter *adapter)
 {
+#if (PHYDM_VERSION == 3)
+	//TODO
+	return 0;
+#else
 	return rtw_phydm_ability_ops(adapter, HAL_PHYDM_ABILITY_GET, 0);
+#endif
 }
 
 #endif	//_RTW_ODM_H_

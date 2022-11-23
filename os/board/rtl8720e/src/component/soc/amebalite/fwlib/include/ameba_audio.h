@@ -1544,6 +1544,15 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_CODEC_MICBIAS_Power
+  * @{
+  */
+#define MICBIAS_POWER_ON			((u32)0x00000000)
+#define MICBIAS_POWER_DOWN			((u32)0x00000001)
+/**
+  * @}
+  */
+
 /** @defgroup AUDIO_CODEC_Mute
   * @{
   */
@@ -1573,6 +1582,7 @@ typedef struct {
 
 _LONG_CALL_ void AUDIO_CODEC_SetLDOMode(u32 ldo_mode);
 _LONG_CALL_ void AUDIO_CODEC_Init(u32 application, CODEC_InitTypeDef *CODEC_InitStruct);
+_LONG_CALL_ void AUDIO_CODEC_AmicInit(void);
 _LONG_CALL_ void AUDIO_CODEC_SetAmicInSE(u32 Amic_sel);
 _LONG_CALL_ void AUIDO_CODEC_SetLineinSE(u32 Linein_sel);
 _LONG_CALL_ void AUDIO_CODEC_MuteAmicIn(u32 NewState, u32 Amic_sel);
@@ -1587,12 +1597,15 @@ _LONG_CALL_ void AUDIO_CODEC_SetDACASRC(u32 NewState, u32 sr);
 _LONG_CALL_ void AUDIO_CODEC_SetADCMode(u32 adc_sel, u32 powermode);
 _LONG_CALL_ void AUDIO_CODEC_SetLOSE(void);
 _LONG_CALL_ void AUDIO_CODEC_SelTesttone(u32 NewState, u32 fc);
-_LONG_CALL_ void AUDIO_CODEC_MuteDAC(u32 NewState);
-_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToAmic(u32 ad_chn, u32 adc_sel);
-_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToDmic(u32 dmic_sel, u32 adc_sel);
+_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToAmic(u32 ad_chn, u32 amic_num);
+_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToDmic(u32 ad_chn, u32 dmic_num);
 _LONG_CALL_ void AUDIO_CODEC_SelI2SSRC(u32 src);
 _LONG_CALL_ void AUDIO_CODEC_DeInit(u32 application);
 _LONG_CALL_ void AUDIO_CODEC_MuteDmicIn(u32 NewState, u32 Dmic_sel);
+_LONG_CALL_ void AUDIO_CODEC_SetMicbiasMode(u32 micbias_mode);
+_LONG_CALL_ void AUDIO_CODEC_MutePlayback(u32 NewState);
+_LONG_CALL_ void AUDIO_CODEC_MuteRecord(u32 NewState, u32 adc_sel);
+_LONG_CALL_ void AUDIO_CODEC_SetHPF(u32 adc_sel, u32 fc, u32 NewState);
 
 /**
   * @}

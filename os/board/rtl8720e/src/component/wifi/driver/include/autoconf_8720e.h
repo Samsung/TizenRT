@@ -20,9 +20,6 @@
 #define CONFIG_RTL8720E
 #endif
 
-#ifndef CONFIG_RTL8720E
-#define CONFIG_RTL8720E
-#endif
 #undef RTL8720E_SUPPORT
 #define RTL8720E_SUPPORT 1
 
@@ -34,7 +31,6 @@
 /* For efuse or flash config end */
 
 /* PHY layer band config */
-#define CONFIG_DFS
 #define NOT_SUPPORT_40M
 /* 0: 20 MHz, 1: 40 MHz, 2: 80 MHz, 3: 160MHz, 4: 80+80MHz
 * 2.4G use bit 0 ~ 3, 5G use bit 4 ~ 7
@@ -55,19 +51,18 @@
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
 #define CONFIG_EAP
 
-#ifdef CONFIG_BT_EN
 #define CONFIG_BT_COEXIST
-#endif
 
 //#define CONFIG_WIFI_MESH 0
 
-//#define RX_SHORTCUT
-//#define TX_SHORTCUT
+#define RX_SHORTCUT
+#define TX_SHORTCUT
 
 /* For 11 ax function */
 #define CONFIG_80211AX_HE
 #ifdef CONFIG_80211AX_HE
 //#define CONFIG_MBSSID_AX
+//#define CONFIG_TWT
 #endif
 //#define CONFIG_DEBUG_RTL871X
 
@@ -77,7 +72,6 @@
 #endif
 #endif
 
-#define TXBD_PRE_MALLOC
 #define RTL8720E_SPECIFIC
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR  // rtw_phydm_fill_desc_dpt -> todo
 
@@ -92,10 +86,11 @@
 #define DRV_BB_DFS_DISABLE
 #define DRV_BB_RUA_DISABLE
 #define DRV_BB_LA_MODE_DISABLE
+#define DRV_BB_TDMADIG_DISABLE
 #define DRV_BB_DIG_MCC_DISABLE
+#define DRV_BB_PWR_CTRL_DISABLE
 #define PHL_MAX_STA_NUM NUM_STA
 #define PLATFOM_IS_LITTLE_ENDIAN	1/*for halbb use*/
-#define CONFIG_PHYDM_CMD  /*can save 172KB code size*/
 
 /*Wifi verification*/
 #if defined(CONFIG_WIFI_VERIFY_TRUEPHY) || defined(CONFIG_WIFI_VERIFY_PSPHY)
@@ -103,21 +98,51 @@
 #define DISABLE_FW
 #define DISABLE_BB_RF
 #endif
+#ifdef CONFIG_WIFI_VERIFY_ASIC
+#define RTL8720E_WIFI_TEST 1  // add wifi testcode for debug
+#endif
+
+//#define CONFIG_DFS_TEST  // add for dfs test
 
 /* enable csi function */
 #define CONFIG_CSI
 
-/* For FPGA and PXP test code */
-#if defined(CONFIG_WIFI_VERIFY)
-#define RTL8720E_WIFI_TEST 1  // remove this when verification complete
-#endif
-
 #define RTL8720E_WL_TODO
-#define DISABLE_BB_WATCHDOG
 
 #define CONFIG_REG_ENABLE_KFREE 0  // 0: Depend on efuse(flash), 1: enable, 2: disable
 
 #define PHYSTS_WORK_AROUND
 #define RTL8720E_WORK_AROUND
+
+/*************************** Config for MP_MODE *******************************/
+//#define CONFIG_MP_INCLUDED
+#ifdef CONFIG_MP_INCLUDED
+#define MP_DRIVER 1
+#undef CONFIG_ANTENNA_DIVERSITY
+#undef CONFIG_BT_COEXIST_SOC
+#undef CONFIG_REG_ENABLE_KFREE
+#define CONFIG_REG_ENABLE_KFREE 1	 // 1: enable, 2: disable
+#define CONFIG_PHYDM_CMD  /*disable it in normal driver,can save 172KB code size*/
+#else /* undef CONFIG_MP_INCLUDED  */
+#define MP_DRIVER 0
+#endif /* #ifdef CONFIG_MP_INCLUDED */
+/************************* Config for MP_MODE end *****************************/
+
+#ifndef CONFIG_PHYDM_CMD
+#define DRV_BB_DBG_TRACE_DISABLE
+#define DRV_BB_PMAC_TX_DISABLE
+#define DRV_BB_CMN_RPT_DISABLE
+#define DRV_BB_STATISTICS_DISABLE
+#define DRV_BB_DGB_SUPPORT_DISABLE
+#endif
+
+
+/* debug log level */
+#define RELEASE_WIFI
+#ifdef RELEASE_WIFI
+#define RTW_MSG_LEVEL    RTW_MSG_ERROR
+#else
+#define RTW_MSG_LEVEL    RTW_MSG_WARNING
+#endif
 #endif /*#ifndef AUTOCONF_8720E_H */
 

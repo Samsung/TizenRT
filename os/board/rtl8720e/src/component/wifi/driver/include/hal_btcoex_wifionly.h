@@ -19,7 +19,7 @@
 #include <hal_data.h>
 
 /* Define the ICs that support hal btc common file structure */
-#if defined(CONFIG_RTL8730A) && defined(CONFIG_BT_COEXIST)
+#if (defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8720E)) && defined(CONFIG_BT_COEXIST)
 #define CONFIG_BTCOEX_SUPPORT_BTC_CMN
 #endif
 

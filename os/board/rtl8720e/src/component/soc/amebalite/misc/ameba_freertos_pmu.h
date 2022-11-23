@@ -21,8 +21,10 @@ typedef enum {
 	PMU_DSP_RUN,
 	PMU_PSRAM_DEVICE,
 	PMU_WLAN_FW_DEVICE,
-
-	PMU_DEV_USER_BASE	= 18, /*number 17 ~ 31 is reserved for customer use*/
+#if defined(CONFIG_BT) && CONFIG_BT
+	PMU_BT_DEVICE,
+#endif
+	PMU_DEV_USER_BASE	= 19, /*number 19 ~ 31 is reserved for customer use*/
 
 	PMU_MAX				= 31
 } PMU_DEVICE;

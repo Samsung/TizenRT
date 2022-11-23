@@ -138,9 +138,6 @@ typedef struct {
 	rtw_wps_type_t          wps_type;         /**< WPS type                                                                  */
 	unsigned int                      channel;          /**< Radio channel that the AP beacon was received on                          */
 	rtw_802_11_band_t       band;             /**< Radio band                                                                */
-#ifdef CONFIG_P2P_NEW
-	unsigned char			p2p_role;
-#endif
 } rtw_scan_result_t;
 
 /**
@@ -311,8 +308,8 @@ struct rtw_plcp_info {
   * @brief  The structure is used to describe therx buffer
   */
 struct rtw_rx_buffer {
-	struct rtw_plcp_info *head;
-	struct rtw_plcp_info *tail;
+	struct rtw_plcp_info *head; ///< head
+	struct rtw_plcp_info *tail;   ///< tail
 };
 #endif
 

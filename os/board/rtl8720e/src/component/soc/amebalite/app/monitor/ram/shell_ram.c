@@ -287,7 +287,7 @@ VOID shell_init_ram(VOID)
 	__cmd_table_end__ = (u8 *)__section_end(".cmd.table.data");
 #endif
 
-	shell_ctl.pCmdTbl = (PCOMMAND_TABLE)__cmd_table_start__;
+	shell_ctl.pCmdTbl = (PCOMMAND_TABLE)(void *)__cmd_table_start__;
 	shell_ctl.CmdTblSz = ((__cmd_table_end__ - __cmd_table_start__) / sizeof(COMMAND_TABLE));
 
 	shell_ctl.ExecuteCmd = _FALSE;

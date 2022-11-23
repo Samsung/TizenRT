@@ -57,32 +57,89 @@ void sys_jtag_off(void)
   */
 void sys_clear_ota_signature(void)
 {
-	u32 AddrStart, Offset, PhyAddr;
-	u32 FwAddr = 0;
-	u8 EmpSig = 0;
+	u32 PhyAddr;
+	u8 Ota2Use = _FALSE;
+	u8 otaDstIdx;
+	u8 otaCurIdx;
+	u32 ota_sig[2];
+	u32 Address[2];
+	u32 cur_ver = 0;
+	u8 empty_sig[4] = {0x0, 0x0, 0x0, 0x0};
+	u32 AddrStart;
+	int ImgID = 0;
 
 	RSIP_REG_TypeDef *RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 
-	u32 CtrlTemp = RSIP->FLASH_MMU[0].RSIP_REMAPxBAR;
-	u32 OffsetTemp = RSIP->FLASH_MMU[0].RSIP_REMAPxOR;
+	for (ImgID = 1; ImgID < 2; ImgID++) {
+		AddrStart = RSIP->FLASH_MMU[ImgID].RSIP_REMAPxOR;
 
-	if (OffsetTemp & RSIP_BIT_REMAP_x_ENABLE) {
-		AddrStart = RSIP_GET_REMAP_BASE_x_ADDR(CtrlTemp);
-		Offset = RSIP_GET_REMAP_x_OFFSET(OffsetTemp);
+		if (AddrStart & RSIP_BIT_REMAP_x_ENABLE) {
+			PhyAddr = (AddrStart >> 9) << 5;
 
-		PhyAddr = (AddrStart + Offset) << RSIP_REMAP_REGION_ADDR_SHIFT;
+			if (ImgID == OTA_IMGID_IMG2) {
+				/* append certificate and manifest */
+				PhyAddr = PhyAddr - 0x2000;
 
-		if (PhyAddr == LS_IMG2_OTA1_ADDR) {
-			FwAddr = LS_IMG2_OTA1_ADDR;
-		} else {
-			FwAddr = LS_IMG2_OTA2_ADDR;
+				if (PhyAddr == IMG_ADDR[ImgID][OTA_INDEX_1]) {
+					Ota2Use = _FALSE;
+				} else {
+					Ota2Use = _TRUE;
+				}
+
+			} else {
+				/* append manifest */
+				PhyAddr = PhyAddr - 0x1000;
+				if (PhyAddr == IMG_ADDR[ImgID][OTA_INDEX_1]) {
+					Ota2Use = _FALSE;
+				} else {
+					Ota2Use = _TRUE;
+				}
+			}
+
 		}
-	}
 
-	if(FwAddr == 0){
-		DBG_8195A("Wrong FwAddr in sys_clear_ota_signature \r\n");
+		if (Ota2Use) {
+			otaCurIdx = OTA_INDEX_2;
+		} else {
+			otaCurIdx = OTA_INDEX_1;
+		}
+
+		otaDstIdx = otaCurIdx ^ 1;
+
+		Address[otaCurIdx] = IMG_ADDR[ImgID][otaCurIdx] - SPI_FLASH_BASE;
+		Address[otaDstIdx] = IMG_ADDR[ImgID][otaDstIdx] - SPI_FLASH_BASE;
+
+		if (ImgID == OTA_IMGID_IMG2) {
+			Address[otaCurIdx] = Address[otaCurIdx] + 0x1000; /* skip certificate for image2 */
+			Address[otaDstIdx] = Address[otaDstIdx] + 0x1000; /* skip certificate for image2 */
+		}
+
+		/* get current firmware version */
+		ota_readstream_user(Address[otaCurIdx] + 20, 4, (u8 *)&cur_ver);
+
+		if (cur_ver == 0x0) {
+			DBG_8195A("[%s] IMGID: %d, current firmware is OTA%d, current version: 0x%08x is already cleared\n", __func__, ImgID, (otaCurIdx + 1), cur_ver);
+			return;
+		}
+
+		/* check if another firmware is valid */
+		ota_readstream_user(Address[otaCurIdx], 4, (u8 *)&ota_sig[0]);
+		ota_readstream_user(Address[otaCurIdx] + 4, 4, (u8 *)&ota_sig[1]);
+
+
+		if (0x35393138 != ota_sig[0] || 0x31313738 != ota_sig[1]) {
+			DBG_8195A("[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
+			return;
+		}
+
+		DBG_8195A("[%s] IMGID: %d, current OTA%d, current version: 0x%08x\n", __func__, ImgID, (otaCurIdx + 1), cur_ver);
+		DBG_8195A("[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx], otaDstIdx + 1,
+				  Address[otaDstIdx]);
+		FLASH_EreaseDwordsXIP(Address[otaCurIdx] + 20, 1);
+		FLASH_EreaseDwordsXIP(Address[otaDstIdx] + 20, 1);
+		FLASH_TxData12BXIP(Address[otaDstIdx] + 20, 4, (u8 *)&cur_ver);
+		FLASH_TxData12BXIP(Address[otaCurIdx] + 20, 4, empty_sig);
 	}
-	FLASH_WriteStream(FwAddr - SPI_FLASH_BASE, 4, &EmpSig);
 }
 
 /**
@@ -91,61 +148,87 @@ void sys_clear_ota_signature(void)
   */
 void sys_recover_ota_signature(void)
 {
-	u32 AddrStart, Offset, PhyAddr;
+	u32 PhyAddr;
 	u8 Ota2Use = _FALSE;
-	u32 DstAddr, CurAddr;
-	u8 OldSig, NewSig;
-	u8 *buf;
+	u8 otaDstIdx;
+	u8 otaCurIdx;
+	u32 ota_sig[2];
+	u32 Address[2];
+	u32 cur_ver = 0;
+	u8 empty_sig[4] = {0x0, 0x0, 0x0, 0x0};
+	u32 AddrStart;
+	int ImgID = 0;
 
 	RSIP_REG_TypeDef *RSIP = ((RSIP_REG_TypeDef *) RSIP_REG_BASE);
 
-	u32 CtrlTemp = RSIP->FLASH_MMU[0].RSIP_REMAPxBAR;
-	u32 OffsetTemp = RSIP->FLASH_MMU[0].RSIP_REMAPxOR;
+	for (ImgID = 1; ImgID < 2; ImgID++) {
+		AddrStart = RSIP->FLASH_MMU[ImgID].RSIP_REMAPxOR;
 
-	if (OffsetTemp & RSIP_BIT_REMAP_x_ENABLE) {
-		AddrStart = RSIP_GET_REMAP_BASE_x_ADDR(CtrlTemp);
-		Offset = RSIP_GET_REMAP_x_OFFSET(OffsetTemp);
+		if (AddrStart & RSIP_BIT_REMAP_x_ENABLE) {
+			PhyAddr = (AddrStart >> 9) << 5;
 
-		PhyAddr = (AddrStart + Offset) << RSIP_REMAP_REGION_ADDR_SHIFT;
+			if (ImgID == OTA_IMGID_IMG2) {
+				/* append certificate and manifest */
+				PhyAddr = PhyAddr - 0x2000;
 
-		if (PhyAddr == LS_IMG2_OTA1_ADDR) {
-			Ota2Use = _FALSE;
-		} else {
-			Ota2Use = _TRUE;
+				if (PhyAddr == IMG_ADDR[ImgID][OTA_INDEX_1]) {
+					Ota2Use = _FALSE;
+				} else {
+					Ota2Use = _TRUE;
+				}
+
+			} else {
+				/* append manifest */
+				PhyAddr = PhyAddr - 0x1000;
+				if (PhyAddr == IMG_ADDR[ImgID][OTA_INDEX_1]) {
+					Ota2Use = _FALSE;
+				} else {
+					Ota2Use = _TRUE;
+				}
+			}
+
 		}
+
+		if (Ota2Use) {
+			otaDstIdx = OTA_INDEX_1;
+		} else {
+			otaDstIdx = OTA_INDEX_2;
+		}
+
+		otaCurIdx = otaDstIdx ^ 1;
+
+		Address[otaDstIdx] = IMG_ADDR[ImgID][otaDstIdx] - SPI_FLASH_BASE;
+		Address[otaCurIdx] = IMG_ADDR[ImgID][otaCurIdx] - SPI_FLASH_BASE;
+
+		if (ImgID == OTA_IMGID_IMG2) {
+			Address[otaDstIdx] = Address[otaDstIdx] + 0x1000; /* skip certificate */
+			Address[otaCurIdx] = Address[otaCurIdx] + 0x1000; /* skip certificate */
+		}
+
+		/* get current firmware version */
+		ota_readstream_user(Address[otaCurIdx] + 20, 4, (u8 *)&cur_ver);
+
+		if (cur_ver == 0x0) {
+			cur_ver = 1 << 16 | 1; /* set version as default value */
+		}
+
+		/* check if recover target firmware is valid */
+		ota_readstream_user(Address[otaCurIdx], 4, (u8 *)&ota_sig[0]);
+		ota_readstream_user(Address[otaCurIdx] + 4, 4, (u8 *)&ota_sig[1]);
+
+		if (0x35393138 != ota_sig[0] || 0x31313738 != ota_sig[1]) {
+			DBG_8195A("[%s] IMGID: %d, current firmware is OTA%d, target firmware OTA%d is invalid\n", __func__, ImgID, (otaCurIdx + 1), (otaDstIdx + 1));
+			return;
+		}
+
+		DBG_8195A("[%s] IMGID: %d, current OTA%d, current version: 0x%08x\n", __func__, ImgID, (otaCurIdx + 1), cur_ver);
+		DBG_8195A("[%s] IMGID: %d, current OTA%d Address: 0x%08x, target OTA%d Address: 0x%08x\n", __func__, ImgID, otaCurIdx + 1, Address[otaCurIdx], otaDstIdx + 1,
+				  Address[otaDstIdx]);
+		FLASH_EreaseDwordsXIP(Address[otaDstIdx] + 20, 1);
+		FLASH_EreaseDwordsXIP(Address[otaCurIdx] + 20, 1);
+		FLASH_TxData12BXIP(Address[otaDstIdx] + 20, 4, (u8 *)&cur_ver);
+		FLASH_TxData12BXIP(Address[otaCurIdx] + 20, 4, empty_sig);
 	}
-
-	if (Ota2Use) {
-		CurAddr = LS_IMG2_OTA2_ADDR;
-		DstAddr = LS_IMG2_OTA1_ADDR;
-	} else {
-		CurAddr = LS_IMG2_OTA1_ADDR;
-		DstAddr = LS_IMG2_OTA2_ADDR;
-	}
-
-	/* Get signature of the two firmware */
-	ota_readstream_user(DstAddr, 4, &OldSig);
-	ota_readstream_user(CurAddr, 4, &NewSig);
-	DBG_8195A("old sig: %08x, new sig:%08x\n", OldSig, NewSig);
-
-	if (OldSig == NewSig) {
-		return;
-	}
-
-	/* Backup first 4KB of the old firmware */
-	buf = (u8 *)pvPortMalloc(4096);
-	ota_readstream_user(DstAddr, 4096, buf);
-
-	/* Modify signature */
-	_memcpy(buf, &NewSig, 4);
-
-	/* Erase first sector */
-	flash_erase_sector(NULL, DstAddr);
-
-	/* Write back 4KB to first sector */
-	flash_stream_write(NULL, DstAddr, 4096, buf);
-
-	vPortFree(buf);
 }
 
 /**

@@ -165,8 +165,12 @@ enum {
 	TIMER7 = 7,
 	TIMER8 = 8,
 	TIMER9 = 9,
+	TIMER10 = 10,
+	TIMER11 = 11,
+	TIMER12 = 12,
+	TIMER13 = 13,
 
-	GTIMER_MAX = 10
+	GTIMER_MAX = 14
 };
 
 ///@}

@@ -309,7 +309,7 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
 		}
 	} else {
 		while (len >= 4) {
-			*((u32 *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
+			*((u32 *)(void *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
 			pbuf += 4;
 			address += 4;
 			len -= 4;

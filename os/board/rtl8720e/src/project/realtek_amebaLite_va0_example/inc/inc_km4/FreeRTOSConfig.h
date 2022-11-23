@@ -52,7 +52,7 @@ extern uint32_t SystemCoreClock;
 #define __IASMARM__ 0 /* IAR */
 #endif
 #include "platform_autoconf.h"
-
+#include "ameba_userheapcfg.h"
 
 /* Cortex M33 port configuration. */
 #define configENABLE_MPU								0
@@ -68,6 +68,8 @@ extern uint32_t SystemCoreClock;
 #endif
 #define configRUN_FREERTOS_SECURE_ONLY					0
 
+#define configSUPPORT_STATIC_ALLOCATION					0
+
 
 /* Constants related to the behaviour or the scheduler. */
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION			0
@@ -82,22 +84,6 @@ extern uint32_t SystemCoreClock;
 #define configMINIMAL_STACK_SIZE						( ( unsigned short ) 512 )
 #define configMINIMAL_SECURE_STACK_SIZE					( 1024 )
 #define configMAX_TASK_NAME_LEN							( 10 )
-
-//AP
-#if defined(CONFIG_AS_INIC_AP)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 100 * 1024 ) )
-//NP
-#elif defined(CONFIG_AS_INIC_NP)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200 * 1024 ) )
-//Single Core
-#elif defined(CONFIG_SINGLE_CORE_WIFI)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 200* 1024 ) ) //default
-#if defined(CONFIG_HIGH_TP_TEST)
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 250 * 1024 ) )
-#endif
-#else
-#define configTOTAL_HEAP_SIZE						( ( size_t ) ( 40 * 1024 ) )
-#endif
 
 #define secureconfigTOTAL_SRAM_HEAP_SIZE			( ( ( size_t ) ( 6 * 1024 ) ) )
 #define secureconfigTOTAL_PSRAM_HEAP_SIZE			( ( ( size_t ) ( 128 * 1024 ) ) )

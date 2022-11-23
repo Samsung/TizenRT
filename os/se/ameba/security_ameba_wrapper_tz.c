@@ -873,9 +873,9 @@ int se_initialize(void)
 {
 	int res = se_register(SECLINK_PATH, &g_ameba_lower);
 	if (res != 0) {
+		lldbg("se3\n");
 		return -1;
 	}
-
 	return 0;
 }
 #endif

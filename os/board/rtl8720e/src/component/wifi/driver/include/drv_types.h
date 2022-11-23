@@ -38,7 +38,7 @@
 #endif
 
 // Assign memory sectinon usage
-#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include <section_config.h>
 //#include "rtl_utility_ram.h"
 #include "platform_stdlib.h"
@@ -51,48 +51,6 @@
 
 #define CONFIG_DOSCAN_IN_BUSYTRAFFIC
 //#define CONFIG_SPCT_CH_SWITCH
-
-#ifdef CONFIG_TRACE_SKB
-#define SKBLIST_ALL								0xFFFFFFFF
-// receive
-#define	SKBLIST_RECVBUF_MASK					0x0000000F
-#define	SKBLIST_RECVBUF							0x00000001
-#define	SKBLIST_RECVBUF_FREEQUEUE				0x00000002
-#define	SKBLIST_RECVBUF_PENDINGQUEUE			0x00000004
-
-#define	SKBLIST_RECVFRAME_MASK					0x000000F0
-#define	SKBLIST_RECVFRAME						0x00000010
-#define	SKBLIST_RECVFRAME_FREEQUEUE				0x00000020
-#define	SKBLIST_RECVFRAME_SWDECQUEUE			0x00000040
-
-#define	SKBLIST_RECVFRAME_REORDERQUEUE			0x00000080
-
-
-// transmit
-#define	SKBLIST_XMITBUF_MASK					0x0000FF00
-#define	SKBLIST_XMITBUF							0x00000100
-#define	SKBLIST_XMITEXTBUF						0x00000200
-#define	SKBLIST_XMITBUF_FREEQUEUE				0x00000400
-#define	SKBLIST_XMITEXTBUF_FREEQUEUE			0x00000800
-#define	SKBLIST_XMITBUF_PENDINGQUEUE			0x00001000
-#ifdef CONFIG_SDIO_TX_MULTI_QUEUE
-#define	SKBLIST_XMITBUF_PENDING0QUEUE			0x00002000
-#define	SKBLIST_XMITBUF_PENDING1QUEUE			0x00004000
-#define	SKBLIST_XMITBUF_PENDING2QUEUE			0x00008000
-#endif
-
-#define	SKBLIST_XMITFRAME_MASK					0x0FFF0000
-#define	SKBLIST_XMITFRAME						0x00010000
-#define	SKBLIST_XMITFRAME_FREEQUEUE				0x00020000
-#define	SKBLIST_XMITFRAME_SLEEPQUEUE			0x00040000
-#define	SKBLIST_XMITFRAME_VOQUEUE				0x00100000
-#define	SKBLIST_XMITFRAME_VIQUEUE				0x00200000
-#define	SKBLIST_XMITFRAME_BEQUEUE				0x00400000
-#define	SKBLIST_XMITFRAME_BKQUEUE				0x00800000
-#define	SKBLIST_XMITFRAME_BMQUEUE				0x01000000
-
-#define	SKBLIST_POOL							0x10000000
-#endif
 
 enum _NIC_VERSION {
 
@@ -118,24 +76,12 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 //#include "p2p/p2p.h"
 #include <rtw_ht.h>
 
-#ifdef CONFIG_80211AC_VHT
-#include <rtw_vht.h>
-#endif
-
 #ifdef CONFIG_80211AX_HE
 #include <rtw_he.h>
 #endif
 
-#ifdef CONFIG_RTK_MESH
-#include <mesh.h>
-#include <hash_table.h>
-#include <mesh_route.h>
-#include <mesh_security.h>
-#include <mesh_util.h>
-#include <freertos/wrapper.h>
-#ifdef CONFIG_SAE_SUPPORT
-#include <mesh_sae.h>
-#endif
+#ifdef CONFIG_TWT
+#include <rtw_twt.h>
 #endif
 
 #include <wlan_basic_types.h>
@@ -148,6 +94,11 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <phl_def.h>
 #include <phl.h>
 #include <hal_com.h>
+
+#ifdef CONFIG_80211AC_VHT
+#include <rtw_vht.h>
+#endif
+
 #ifdef RTW_HALMAC
 #include <hal_com_h2c.h>
 #endif
@@ -174,9 +125,6 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <rtw_mlme_ext.h>
 #include <rtw_mi.h>
 #include <wifi_performance_monitor.h>
-#ifdef CONFIG_P2P_NEW
-#include <rtw_p2p.h>
-#endif
 //#include <rtw_tdls.h>
 #include <rtw_ap.h>
 #include <rtw_efuse.h>
@@ -206,10 +154,6 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #endif
 
 #include <rtw_btcoex_wifionly.h>
-
-#ifdef CONFIG_MCC_MODE
-#include <hal_mcc.h>
-#endif
 
 #ifdef CONFIG_IEEE80211R
 #include <rtw_ft.h>
@@ -288,32 +232,6 @@ struct registry_priv {
 	u8	AmplifierType_5G;
 
 	u8	GLNA_Type;
-
-#ifdef CONFIG_MCC_MODE
-	u32 rtw_mcc_single_tx_cri;
-	u32 rtw_mcc_ap_bw20_target_tx_tp;
-#if !defined(NOT_SUPPORT_40M)
-	u32 rtw_mcc_ap_bw40_target_tx_tp;
-#endif
-#if !defined(NOT_SUPPORT_80M)
-	u32 rtw_mcc_ap_bw80_target_tx_tp;
-#endif
-	u32 rtw_mcc_sta_bw20_target_tx_tp;
-#if !defined(NOT_SUPPORT_40M)
-	u32 rtw_mcc_sta_bw40_target_tx_tp;
-#endif
-#if !defined(NOT_SUPPORT_80M)
-	u32 rtw_mcc_sta_bw80_target_tx_tp;
-#endif
-	u8 rtw_mcc_duration;
-	u8 rtw_mcc_tsf_sync_offset;
-	u8 rtw_mcc_start_time_offset;
-	u8 rtw_mcc_interval;
-	s8 rtw_mcc_guard_offset0;
-	s8 rtw_mcc_guard_offset1;
-	u8 rtw_mcc_pattern_table_idx;
-	u8 rtw_mcc_enable_rmcc;
-#endif
 };
 
 //For registry parameters
@@ -476,11 +394,6 @@ struct halmacpriv {
 
 	/* For asynchronous functions */
 	struct halmac_indicator *indicator;
-
-#ifdef CONFIG_SDIO_HCI
-	/* Store hardware tx queue page number setting */
-	u16 txpage[HW_QUEUE_ENTRY];
-#endif /* CONFIG_SDIO_HCI */
 };
 #endif
 
@@ -571,7 +484,7 @@ struct dvobj_priv {
 
 	struct mi_state iface_state;
 
-#if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8711B) ||defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E)
+#if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8711B) ||defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 
 	struct macid_ctl_t macid_ctl;
 #endif
@@ -591,32 +504,6 @@ struct dvobj_priv {
 	struct halmacpriv hmpriv;
 #endif
 	/*-------- below is for SDIO INTERFACE --------*/
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	//
-	// SDIO ISR Related
-	//
-	u32 sdio_himr;
-
-	//
-	// SDIO Tx FIFO related.
-	//
-	// HIQ, MID, LOW, PUB free pages; padapter->xmitpriv.free_txpg
-	u8  SdioTxFIFOFreePage[TX_FREE_PG_QUEUE];
-	_lock SdioTxFIFOFreePageLock;
-
-	//
-	// SDIO Rx FIFO related.
-	//
-	u16 SdioRxFIFOSize;
-
-#ifdef INTF_DATA
-	INTF_DATA intf_data;
-#endif
-#ifdef INTF_OPS
-	INTF_OPS intf_ops;
-#endif
-
-#endif //CONFIG_SDIO_HCI
 
 #if 0
 	struct rtw_traffic_statistics	traffic_stat;
@@ -637,13 +524,6 @@ struct dvobj_priv {
 	_lock	irq_th_lock;
 #endif//CONFIG_AXI_HCI
 
-#ifdef CONFIG_MCC_MODE
-	struct mcc_obj_priv	mcc_objpriv;
-	//unsigned char		oper_channel;	/* saved channel info when call set_channel_bw */
-	//unsigned char		oper_bwmode;
-	//unsigned char		oper_ch_offset;	/* PRIME_CHNL_OFFSET */
-	//u32					on_oper_ch_time;
-#endif
 };
 
 #define rfctl_to_dvobj(rfctl) container_of((rfctl), struct dvobj_priv, rf_ctl)
@@ -718,10 +598,6 @@ struct _ADAPTER {
 	struct	mp_priv	mppriv;
 #endif
 
-#ifdef CONFIG_P2P_NEW
-	struct wifidirect_info	wdinfo;
-#endif
-
 #ifdef CONFIG_WAPI_SUPPORT
 	u8	WapiSupport;
 	RT_WAPI_T	wapiInfo;
@@ -732,7 +608,6 @@ struct _ADAPTER {
 	struct hal_ops	HalFunc;
 
 	s32	bDriverStopped;
-	s32	bSurpriseRemoved;
 	s32	bCardDisableWOHSM;
 	u8	RxStop;	//Used to stop rx thread as early as possible
 	_sema	RxProtect_sema;	//Used to protect RX when in rtw_set_mode
@@ -749,13 +624,10 @@ struct _ADAPTER {
 #if defined(CONFIG_EVENT_THREAD_MODE)
 	_thread_hdl_	evtThread;
 #endif
-	struct task_struct	isrThread;
-	struct task_struct	cmdThread;
-#ifdef CONFIG_XMIT_THREAD_MODE
-	struct task_struct	xmitThread;
-#endif
-	struct task_struct	recvtasklet_thread;
-	struct task_struct	xmittasklet_thread;
+
+	struct task_struct	single_thread;
+	struct task_struct	little_stack_thread;
+
 #ifdef CONFIG_SDIO_XMIT_THREAD
 	struct task_struct	SdioXmitThread;
 #endif
@@ -835,19 +707,6 @@ struct _ADAPTER {
 	*/
 	u8 b_suspend_ap_rx;
 
-#ifdef CONFIG_MCC_MODE
-	struct mcc_adapter_priv mcc_adapterpriv;
-	/* notes:
-	**	if isprimary is true, the adapter_type value is 0, iface_id is IFACE_ID0 for PRIMARY_ADAPTER
-	**	if isprimary is false, the adapter_type value is 1, iface_id is IFACE_ID1 for VIRTUAL_ADAPTER
-	**	refer to iface_id if iface_nums>2 and isprimary is false and the adapter_type value is 0xff.*/
-	u8 hw_port; /*interface port type, it depends on HW port */
-
-	/*extend to support multi interface*/
-	/*IFACE_ID0 is equals to PRIMARY_ADAPTER
-	IFACE_ID1 is equals to VIRTUAL_ADAPTER*/
-	//u8 iface_id;
-#endif
 };
 
 #define dvobj_to_macidctl(dvobj) (&(dvobj->macid_ctl))

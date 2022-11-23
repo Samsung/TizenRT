@@ -310,7 +310,6 @@ int promisc_add_packet_filter(u8 filter_id, rtw_packet_filter_pattern_t *patt, r
 			DCache_Clean((u32)patt->pattern, (u32)patt->mask_size);
 		}
 	}
-
 	param_buf[0] = filter_id;
 	param_buf[1] = (u32)patt;
 	param_buf[2] = rule;

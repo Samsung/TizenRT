@@ -23,21 +23,21 @@
 
 int TIMx_irq[TimerNum] = {
 #if defined (RSICV_CORE_KR4)
-	TIMER0_IRQ_KR4,
-	TIMER1_IRQ_KR4,
-	TIMER2_IRQ_KR4,
-	TIMER3_IRQ_KR4,
-	TIMER4_IRQ_KR4,
-	TIMER5_IRQ_KR4,
-	TIMER6_IRQ_KR4,
-	TIMER7_IRQ_KR4,
+	TIMER0_IRQ,
+	TIMER1_IRQ,
+	TIMER2_IRQ,
+	TIMER3_IRQ,
+	TIMER4_IRQ,
+	TIMER5_IRQ,
+	TIMER6_IRQ,
+	TIMER7_IRQ,
 	NULL,
 	NULL,
-	TIMER10_IRQ_KR4,
-	TIMER11_IRQ_KR4,
-	TIMER12_IRQ_KR4,
-	TIMER13_IRQ_KR4,
-	TIMER14_IRQ_KR4,
+	TIMER10_IRQ,
+	TIMER11_IRQ,
+	TIMER12_IRQ,
+	TIMER13_IRQ,
+	TIMER14_IRQ,
 #elif defined (ARM_CORE_CM4)
 	TIMER0_IRQ,
 	TIMER1_IRQ,
@@ -54,22 +54,6 @@ int TIMx_irq[TimerNum] = {
 	TIMER12_IRQ,
 	TIMER13_IRQ,
 	TIMER14_IRQ,
-#elif defined (ARM_CORE_CA7)
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	TIMER6_IRQ_DSP,
-	TIMER7_IRQ_DSP,
-	NULL,
-	NULL,
-	TIMER10_IRQ_DSP,
-	TIMER11_IRQ_DSP,
-	TIMER12_IRQ_DSP,
-	TIMER13_IRQ_DSP,
-	TIMER14_IRQ_DSP,
 #endif
 };
 
@@ -158,7 +142,7 @@ u32 TIM_IT_CCx[PWM_CHAN_MAX] = {
 
 /**
   * @brief  Enables or Disables the TIMx Update event(UEV).
-  * @param  in_TIMx: where x can be 0-9 to select the TIM peripheral.
+  * @param  in_TIMx: where x can be 0-14 to select the TIM peripheral.
   * @param  NewState: new state of the TIMx UDIS bit
   *          This parameter can be:ENABLE or DISABLE
   * @note
@@ -183,7 +167,7 @@ void RTIM_UpdateDisableConfig(RTIM_TypeDef *in_TIMx, u32 NewState)
 
 /**
   * @brief  Enables or disables TIMx peripheral Preload register on ARR.
-  * @param  in_TIMx: where x can be 0-9 to select the TIM peripheral.
+  * @param  in_TIMx: where x can be 0-14 to select the TIM peripheral.
   * @param  NewState: new state of the TIMx peripheral Preload register
   *          This parameter can be: ENABLE or DISABLE.
   * @note
@@ -207,7 +191,7 @@ void RTIM_ARRPreloadConfig(RTIM_TypeDef *in_TIMx, u32 NewState)
 
 /**
   * @brief  Configures the TIMx Update Request Interrupt source.
-  * @param  in_TIMx: where x can be 0-9 to select the TIM peripheral.
+  * @param  in_TIMx: where x can be 0-14 to select the TIM peripheral.
   * @param  TIM_UpdateSource: specifies the Update source.
   *          This parameter can be one of the following values:
   *            @arg TIM_UpdateSource_Global: Source of update is the counter
@@ -417,6 +401,8 @@ void RTIM_CCxInit(RTIM_TypeDef *in_TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u1
 	assert_param(IS_TIM_OCPRELOAD_STATE(TIM_CCInitStruct->TIM_OCProtection));
 	assert_param(IS_TIM_CHANNEL(TIM_Channel));
 
+	u32 Status;
+
 	/* Reset the CCMR Bit */
 	in_TIMx->CCRx[TIM_Channel] = 0;
 
@@ -430,6 +416,23 @@ void RTIM_CCxInit(RTIM_TypeDef *in_TIMx, TIM_CCInitTypeDef *TIM_CCInitStruct, u1
 		in_TIMx->CCRx[TIM_Channel] = (TIM_CCInitStruct->TIM_CCPolarity |
 								   TIM_CCInitStruct->TIM_ICPulseMode);
 	}
+
+	/* Generate an update event */
+	/* 1) reload the CCRx immediatly */
+	/* 2) hadrware will clear this bit after reload, about 71.936 us (2*32k cycles)  */
+	/* 3) UEV will reset counter, and counter will start from 0 */
+	/* 4) gen a interrupt if use TIM_UpdateSource_Global */
+	in_TIMx->EGR = TIM_PSCReloadMode_Immediate;
+
+	/* poll EGR UG done */
+	while (1) {
+		if (in_TIMx->SR & TIM_BIT_UG_DONE) {
+			break;
+		}
+	}
+
+	Status = in_TIMx->SR;
+	in_TIMx->SR = Status;
 }
 
 /**

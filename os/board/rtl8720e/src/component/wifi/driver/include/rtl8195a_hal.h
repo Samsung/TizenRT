@@ -32,9 +32,6 @@
 #include "rtl8195a/rtl8195a_xmit.h"
 #include "rtl8195a/rtl8195a_cmd.h"
 #include "rtl8195a/rtl8195a_pmu_cmd.h"
-#ifdef CONFIG_MCC_MODE
-#include "rtl8195a/rtl8195a_mcc.h"
-#endif
 #include "rtl8195a/rtl8195a_led.h"
 #include "rtl8195a/Hal8195APwrSeq.h"
 #include "rtl8195a/Hal8195APhyReg.h"

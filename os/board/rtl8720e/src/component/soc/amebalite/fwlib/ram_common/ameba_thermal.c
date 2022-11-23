@@ -56,7 +56,6 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 	assert_param(IS_TM_DOWN_SAMPLE_RATE(TM_InitStruct->TM_DownSampRate));
 	assert_param(IS_TM_ADC_CLK_DIV(TM_InitStruct->TM_AdcClkDiv));
 
-	/* Disable thermal, clear pending interrupt */
 	TM_Cmd(DISABLE);
 
 	thermal->TM_CTRL &= ~TM_MASK_OSR;
@@ -337,7 +336,7 @@ void TM_SetLatch(u32 NewState)
 /**
   * @brief  Configure over-temp protect threshold for comparison with TEMP_OUT.
   * @param  TM_HighPtThre: When TEMP_OUT > TM_HighPtThre, it will set aon reset.
-  * @note   Only between 0x046 (70¡ãC) and 0x08C (140¡ãC) are valid.
+  * @note   Only between 0x046 (70ï¿½ï¿½C) and 0x08C (140ï¿½ï¿½C) are valid.
   * @param  NewState: new state of the thermal over-temp protect comparison.
   *   			This parameter can be: ENABLE or DISABLE.
   * @retval None

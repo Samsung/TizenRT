@@ -274,7 +274,7 @@ exit:
 			mbedtls_ssl_conf_verify(conf, _verify_func, NULL);
 		}
 
-#if MBEDTLS_SSL_MAX_CONTENT_LEN == 4096
+#if defined(MBEDTLS_SSL_MAX_CONTENT_LEN) && MBEDTLS_SSL_MAX_CONTENT_LEN == 4096
 		if ((ret = mbedtls_ssl_conf_max_frag_len(conf, MBEDTLS_SSL_MAX_FRAG_LEN_4096)) < 0) {
 			printf("\n[HTTPC] ERROR: mbedtls_ssl_conf_max_frag_len %d\n", ret);
 			ret = -1;
@@ -432,5 +432,25 @@ int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t
 	}
 
 	return ret;
+#endif
+}
+
+int httpc_tls_set_ciphersuites(struct httpc_conn *conn, int *ciphersuites)
+{
+#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
+	return -1;
+#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
+	mbedtls_ssl_context *ssl_ctx = (mbedtls_ssl_context *) conn->tls;
+
+	if (ssl_ctx) {
+		mbedtls_ssl_config *ssl_conf = (mbedtls_ssl_config *) ssl_ctx->conf;
+
+		if (ssl_conf && ciphersuites) {
+			mbedtls_ssl_conf_ciphersuites(ssl_conf, ciphersuites);
+			return 0;
+		}
+	}
+
+	return -1;
 #endif
 }
