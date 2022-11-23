@@ -152,6 +152,17 @@ void  analogin_deinit(analogin_t *obj)
 	/* Disable ADC  */
 	ADC_Cmd(DISABLE);
 }
+
+/**
+  * @brief Get channel voltage in mV according to conversion data from normal channel(0-5 & 7-9).
+  * @param adc_data: ADC conversion data from normal channel.
+  * @return Normal channel voltage in mV.
+  */
+uint32_t analogin_voltage_norm(uint16_t adc_data)
+{
+	return ADC_GetVoltage(adc_data);
+}
+
 /**
   * @}
   */

@@ -16,7 +16,7 @@ void sdp_fill_o_field(char *sdp_buf, int size, uint8_t *username, uint32_t sessi
 {
 	char line[SDP_LINE_LEN] = {0};
 	sprintf(line, "o=%s %d %d %s %s %d.%d.%d.%d" CRLF \
-			, (username) ? username : "-", session_id, session_version, nettype, addrtype, unicast_addr[0], unicast_addr[1], unicast_addr[2], unicast_addr[3]);
+			, (username) ? (char *)username : "-", session_id, session_version, nettype, addrtype, unicast_addr[0], unicast_addr[1], unicast_addr[2], unicast_addr[3]);
 	sdp_strcat(sdp_buf, size, line);
 }
 
@@ -24,7 +24,7 @@ void sdp_fill_s_field(char *sdp_buf, int size, uint8_t *session_name)
 {
 	char line[SDP_LINE_LEN] = {0};
 	sprintf(line, "s=%s" CRLF \
-			, (session_name) ? session_name : " ");
+			, (session_name) ? (char *)session_name : " ");
 	sdp_strcat(sdp_buf, size, line);
 }
 

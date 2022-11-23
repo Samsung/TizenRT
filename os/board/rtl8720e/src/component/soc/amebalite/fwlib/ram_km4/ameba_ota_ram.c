@@ -26,50 +26,60 @@
   *          - 1: set ok
   *          - 0: set fail
   */
-
-#define OTA1_ADDR 0x6000
-#define OTA2_ADDR 0X106000
-
-IMAGE2_RAM_TEXT_SECTION
 u32 OTA_Change(u32 OTAIdx)
 {
 	u32 BitIdx = 0;
-	u32 ota2_sig[2];
+	u32 ota_sig[2];
+	int ver[2] = {0};
+	int i = 0;
+	int ImgID = 0;
+	u32 Address;
+	u32 ota_addr[2];
 
-	ota2_sig[0] = HAL_READ32(SPI_FLASH_BASE, OTA2_ADDR);
-	ota2_sig[1] = HAL_READ32(SPI_FLASH_BASE, OTA2_ADDR + 4);
+	for (ImgID = 1; ImgID < 2; ImgID++) {
 
-	for (int i = 0; i < 2; i++) {
-		DBG_8195A("%x", ota2_sig[i]);
-	}
-
-	if (0x35393138 == ota2_sig[0] && 0x31313738 == ota2_sig[1]) {
-		BitIdx = 2;
-	} else {
-		BitIdx = 1;
-	}
-
-	ota2_sig[0] = 0x35393138;
-	ota2_sig[1] = 0x31313738;
-
-	/* even bits 0 currrent is OTA1 */
-	if (BitIdx == 1) {
-		if (OTAIdx == OTA_INDEX_1) {
-			DBG_8195A("currrent is OTA1, select OTA1 \n");
-		} else {
-			DBG_8195A("currrent is OTA1, select OTA2 \n");
-			FLASH_EreaseDwordsXIP(OTA1_ADDR, 2);
-			FLASH_EreaseDwordsXIP(OTA2_ADDR, 2);
-			FLASH_TxData12BXIP(OTA2_ADDR, 8, (u8 *)ota2_sig);
+		for (i = 0; i < 2; i++) {
+			Address = IMG_ADDR[ImgID][i] - SPI_FLASH_BASE;
+			if (ImgID == OTA_IMGID_IMG2) {
+				Address = Address + 0x1000; /* skip certificate */
+			}
+			ota_sig[0] = HAL_READ32(SPI_FLASH_BASE, Address);
+			ota_sig[1] = HAL_READ32(SPI_FLASH_BASE, Address + 4);
+			if (0x35393138 == ota_sig[0] && 0x31313738 == ota_sig[1]) {
+				ver[i] = OTA_GET_FWVERSION(Address);
+			} else {
+				ver[i] = -1;
+			}
 		}
-	} else { /* odd bits 0 currrent is OTA2 */
-		if (OTAIdx == OTA_INDEX_1) {
-			DBG_8195A("currrent is OTA2, select OTA1 \n");
-			FLASH_EreaseDwordsXIP(OTA1_ADDR, 2);
-			FLASH_EreaseDwordsXIP(OTA2_ADDR, 2);
-			FLASH_TxData12BXIP(OTA1_ADDR, 8, (u8 *)ota2_sig);
+
+		BitIdx = (ver[0] > ver[1]) ? 0 : 1;
+
+		ota_sig[0] = 0x35393138;
+		ota_sig[1] = 0x31313738;
+
+		/* 0 currrent is OTA1 */
+		/* 1 currrent is OTA2 */
+		if (BitIdx == OTAIdx) {
+			DBG_8195A("[%s] IMGID: %d, currrent is OTA %d, select OTA %d \n", __func__, ImgID, BitIdx + 1, OTAIdx + 1);
 		} else {
-			DBG_8195A("currrent is OTA2, select OTA2 \n");
+			if (ver[OTAIdx] < 0) {
+				DBG_8195A("[%s] IMGID: %d, currrent is OTA %d, select OTA %d is invalid\n", __func__, ImgID, BitIdx + 1, OTAIdx + 1);
+				return _FALSE;
+			}
+			DBG_8195A("[%s] IMGID: %d, currrent is OTA %d, select OTA %d \n", __func__, ImgID, BitIdx + 1, OTAIdx + 1);
+			/* exchange ota1 version and ota2 version */
+			ota_addr[OTA_INDEX_1] = IMG_ADDR[ImgID][OTA_INDEX_1] - SPI_FLASH_BASE;
+			ota_addr[OTA_INDEX_2] = IMG_ADDR[ImgID][OTA_INDEX_2] - SPI_FLASH_BASE;
+
+			if (ImgID == OTA_IMGID_IMG2) {
+				ota_addr[OTA_INDEX_1] = ota_addr[OTA_INDEX_1] + 0x1000; /* skip certificate */
+				ota_addr[OTA_INDEX_2] = ota_addr[OTA_INDEX_2] + 0x1000; /* skip certificate */
+			}
+
+			FLASH_EreaseDwordsXIP(ota_addr[OTA_INDEX_1] + 20, 1);
+			FLASH_EreaseDwordsXIP(ota_addr[OTA_INDEX_2] + 20, 1);
+			FLASH_TxData12BXIP(ota_addr[OTA_INDEX_1] + 20, 4, (u8 *)&ver[OTA_INDEX_2]);
+			FLASH_TxData12BXIP(ota_addr[OTA_INDEX_2] + 20, 4, (u8 *)&ver[OTA_INDEX_1]);
 		}
 	}
 
@@ -89,8 +99,8 @@ u32 Cert_PKHash_OTP_ADDR = SEC_PKKEY_PK1_0;
 #define TIZENRT_KERNEL_HEADER_LEN 0x10
 
 typedef struct {
-	u8 *AuthAlg; 
-	u8 *HashAlg; 
+	u8 *AuthAlg;
+	u8 *HashAlg;
 	u8 ManiAuth;
 	u8 ManiHash;
 	u8 *Pk;
@@ -387,14 +397,14 @@ SBOOT_FAIL:
 	return FALSE;
 }
 
-IMAGE2_RAM_TEXT_SECTION
+//IMAGE2_RAM_TEXT_SECTION
 int OTA_Image2SignatureCheck(uint32_t input_addr)
 {
 	SubImgInfo_TypeDef SubImgInfo[12];
 	Certificate_TypeDef Cert;
 	Manifest_TypeDef Manifest;
 	u32 LogAddr, PhyAddr, ImgAddr, TotalLen = 0, TotalLen_KM4 = 0;
-	u8 Index = 0, Cnt, i; 
+	u8 Index = 0, Cnt, i;
 	int ret;
 
 	char *Km0Label[] = {"KR4 XIP IMG", "KR4 PSRAM", "KR4 DATA"};
@@ -517,4 +527,3 @@ int Ameba_KeyDeriveFunc(const unsigned char *password, size_t plen,
 	return ret;
 }
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
-

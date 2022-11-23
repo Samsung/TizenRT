@@ -56,7 +56,6 @@ enum rtw_ft_capability {
 
 #define rtw_ft_reset_status(a) \
 	do { \
-		DBG_871X("%s",__func__);\
 		((a)->mlmepriv.ft_info->ft_status = RTW_FT_UNASSOCIATED_STA); \
 	} while (0)
 

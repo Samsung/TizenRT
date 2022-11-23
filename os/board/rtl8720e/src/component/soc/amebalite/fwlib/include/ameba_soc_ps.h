@@ -1,6 +1,8 @@
 #ifndef _HAL_SOCPS_H_
 #define _HAL_SOCPS_H_
 
+#define SOCPS_FLASH_DEEPDOWN_EN	0
+
 typedef struct {
 	u32 Module;
 	u32 Status;
@@ -9,8 +11,8 @@ typedef struct {
 typedef struct {
 	u32 Module;
 	u32 Group;
-	u32 Msk_KM4;
-	u32 Msk_KR4;
+	u32 Msk_NP;
+	u32 Msk_AP;
 	u32 Msk_DSP;
 } WakeEvent_TypeDef;
 

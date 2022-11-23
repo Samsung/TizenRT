@@ -17,6 +17,7 @@
 #include "objects.h"
 #include "PinNames.h"
 #include "i2c_api.h"
+#include "ameba_i2c.h"
 #include "pinmap.h"
 
 // See I2CSlave.h

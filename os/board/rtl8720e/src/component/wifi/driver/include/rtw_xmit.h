@@ -23,15 +23,13 @@
 /*---------------------------------------
   Define MAX_XMITBUF_SZ
 ---------------------------------------*/
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+#if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 
 #ifdef CONFIG_TX_AGGREGATION	//effect only for SDIO and GSPI Interface
 #define MAX_XMITBUF_SZ	(20480)	// 20k
 #else
 
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-#define HAL_INTERFACE_OVERHEAD_XMIT_BUF 12	//HAL_INTERFACE_CMD (4) + HAL_INTERFACE_STATUS (8)
-#elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+#if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #define HAL_INTERFACE_OVERHEAD_XMIT_BUF 0
 #endif
 
@@ -51,26 +49,15 @@
 
 #endif	//interface define. SDIO/GSPI/LXbus/PCI/USB
 
-
-
 /*--------------------------------------------------------------*/
 /*  Define MAX_XMITBUF_SZ										*/
 /*--------------------------------------------------------------*/
-#if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI)
-
-#ifndef CONFIG_HIGH_TP
-#define NR_XMITBUFF	(2)	//Decrease recv frame (8->2) due to memory limitation - YangJue
-#else
-#define NR_XMITBUFF (128)
-#endif //CONFIG_HIGH_TP
-
-#elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+#if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #if defined(CONFIG_INIC_IPC_HIGH_TP)
 #define NR_XMITBUFF	(24)
 #else
 #define NR_XMITBUFF (8)
 #endif //CONFIG_INIC_IPC_HIGH_TP
-
 #endif //interface define
 
 /*--------------------------------------------------------------*/
@@ -177,11 +164,9 @@ do {\
 } while (0)
 
 
-#define HWXMIT_ENTRY	4
-
 #if  defined(CONFIG_RTL8812A) || defined(CONFIG_RTL8821A)|| defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8711B) \
 	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8730A) \
-	|| defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E)
+	|| defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 #define TXDESC_SIZE 40
 #elif defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8735B)
 #define TXDESC_SIZE 48
@@ -193,14 +178,9 @@ do {\
 #define EARLY_MODE_INFO_SIZE	8
 #endif
 
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-#define TXDESC_OFFSET TXDESC_SIZE
-
-#endif
-
 #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #if defined(CONFIG_RTL8711B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || \
-	defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E)// buffer descriptor architecture
+	defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)// buffer descriptor architecture
 #define TXDESC_OFFSET TXDESC_SIZE
 #else
 #define TXDESC_OFFSET 0
@@ -251,7 +231,7 @@ struct tx_desc {
 
 	unsigned int txdw7;
 #if defined(CONFIG_LX_HCI)||defined(CONFIG_RTL8188F) ||defined(CONFIG_RTL8192E) ||defined(CONFIG_RTL8723D) ||defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B) || \
-	defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E)
+	defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 	unsigned int txdw8;
 
 	unsigned int txdw9;
@@ -279,7 +259,7 @@ union txdesc {
 #endif
 
 struct rtw_tx_ring {
-#if ((RTL8711B_SUPPORT == 1) || (RTL8721D_SUPPORT == 1) || (RTL8195B_SUPPORT == 1) || (RTL8710C_SUPPORT == 1) || (RTL8730A_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1))
+#if ((RTL8711B_SUPPORT == 1) || (RTL8721D_SUPPORT == 1) || (RTL8195B_SUPPORT == 1) || (RTL8710C_SUPPORT == 1) || (RTL8730A_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1)) || (RTL8721F_SUPPORT == 1)
 	struct tx_buf_desc	*desc;
 #else
 	struct tx_desc	*desc;
@@ -351,18 +331,6 @@ struct pkt_attrib {
 	u8 	retry_limit_by_user; //for user control retry limit
 	struct sta_info *psta;
 
-#ifdef CONFIG_MCC_MODE
-	u8	spe_rpt;
-	u8	null_0;
-	u8	null_1;
-	u16	sw_define;
-	u8	raw;
-#endif
-#ifdef CONFIG_RTK_MESH
-	u8	is_11s;			// for transmitting 11s data frame (to rewrite 4 addresses)
-	u8	nhop_11s[ETH_ALEN]; // to record "da" in start_xmit //#JZDBG this looks like "ta"
-	u8	prehop_11s[ETH_ALEN];
-#endif
 #ifdef TX_SHORTCUT
 	u8 sc_entry_id;
 	u8 ether_hdr[14];
@@ -438,16 +406,6 @@ struct xmit_buf {
 
 	struct submit_ctx *sctx;
 
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	u8 *phead;
-	u8 *pdata;
-	u8 *ptail;
-	u8 *pend;
-	u32 ff_hwaddr;
-	u8	pg_num;
-	u8	agg_num;
-#endif
-
 #if defined(DBG_XMIT_BUF )|| defined(DBG_XMIT_BUF_EXT)
 	u8 no;
 #endif
@@ -474,11 +432,6 @@ struct xmit_frame {
 
 	struct xmit_buf *pxmitbuf;
 
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	u8	pg_num;
-	u8	agg_num;
-#endif
-
 #if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 	u32 TxDexAddr;
 	u32 HdrLen;
@@ -492,18 +445,10 @@ struct xmit_frame {
 #ifdef CONFIG_XMIT_ACK
 	u8 ack_report;
 #endif
-#ifdef CONFIG_RTK_MESH
-	//unsigned char		is_11s;			// for transmitting 11s data frame (to rewrite 4 addresses)
-	//unsigned char		nhop_11s[ETH_ALEN]; // to record "da" in start_xmit
-	//unsigned char		prehop_11s[ETH_ALEN];
-	struct  rtw_ieee80211s_hdr mesh_header;
-#endif
 #ifdef TX_SHORTCUT
 	int tx_shortcut_idx;
 #endif
-#if defined(RTL8730E_WIFI_TEST) || defined(RTL8720E_WIFI_TEST)  //UL MU
-	u8 raw_type;
-#endif
+	u8 raw_type;//Test code construct trigger frame for mu test
 };
 
 struct tx_servq {
@@ -513,16 +458,14 @@ struct tx_servq {
 };
 
 struct sta_xmit_priv {
-	_lock	lock;
+	//_lock	lock;
 	sint	option;
 	sint	apsd_setting;	//When bit mask is on, the associated edca queue supports APSD.
 
 
 	//struct tx_servq blk_q[MAX_NUMBLKS];
-	struct tx_servq	be_q;			//priority == 0,3
-	struct tx_servq	bk_q;			//priority == 1,2
-	struct tx_servq	vi_q;			//priority == 4,5
-	struct tx_servq	vo_q;			//priority == 6,7
+	struct tx_servq	blk_q;
+
 	_list 	legacy_dz;
 	_list  apsd;
 
@@ -558,11 +501,7 @@ struct	xmit_priv	{
 	_lock	lock;
 
 	//_queue	blk_strms[MAX_NUMBLKS];
-	_queue	be_pending;
-	_queue	bk_pending;
-	_queue	vi_pending;
-	_queue	vo_pending;
-	_queue	bm_pending;
+	_queue	pending;
 
 	//_queue	legacy_dz_queue;
 	//_queue	apsd_queue;
@@ -587,8 +526,7 @@ struct	xmit_priv	{
 	u64	last_tx_bytes;
 	u64	last_tx_pkts;
 
-	struct hw_xmit *hwxmits;
-	u8	hwxmit_entry;
+	struct hw_xmit hwxmits;
 
 #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 	// Tx
@@ -598,7 +536,7 @@ struct	xmit_priv	{
 #endif
 
 	_queue free_xmitbuf_queue;
-	_queue pending_xmitbuf_queue;
+	//_queue pending_xmitbuf_queue;
 	u8 *pallocated_xmitbuf;
 	u8 *pxmitbuf;
 	uint free_xmitbuf_cnt;
@@ -626,14 +564,6 @@ struct	xmit_priv	{
 };
 
 extern struct xmit_buf *rtw_alloc_xmitbuf_ext(struct xmit_priv *pxmitpriv, u32 size);
-#ifdef CONFIG_TRACE_SKB
-#define __rtw_alloc_xmitbuf_ext(pxmitpriv, pxmitbuf, size) \
-	(\
-		pxmitbuf = rtw_alloc_xmitbuf_ext(pxmitpriv, size),\
-		pxmitbuf ? set_skb_list_flag(pxmitbuf->pkt, SKBLIST_XMITEXTBUF):0,\
-		pxmitbuf\
-	)
-#endif
 extern s32 rtw_free_xmitbuf_ext(struct xmit_priv *pxmitpriv, struct xmit_buf *pxmitbuf);
 
 extern struct xmit_buf *rtw_alloc_xmitbuf(struct xmit_priv *pxmitpriv);
@@ -642,9 +572,9 @@ extern s32 rtw_free_xmitbuf(struct xmit_priv *pxmitpriv, struct xmit_buf *pxmitb
 extern struct xmit_frame *rtw_alloc_xmitframe(struct xmit_priv *pxmitpriv);
 extern s32 rtw_free_xmitframe(struct xmit_priv *pxmitpriv, struct xmit_frame *pxmitframe);
 extern void rtw_free_xmitframe_queue(struct xmit_priv *pxmitpriv, _queue *pframequeue);
-struct tx_servq *rtw_get_sta_pending(_adapter *padapter, struct sta_info *psta, sint up, u8 *ac);
+struct tx_servq *rtw_get_sta_pending(_adapter *padapter, struct sta_info *psta);
 extern s32 rtw_xmitframe_enqueue(_adapter *padapter, struct xmit_frame *pxmitframe);
-extern struct xmit_frame *rtw_dequeue_xframe(struct xmit_priv *pxmitpriv, struct hw_xmit *phwxmit_i, sint entry);
+extern struct xmit_frame *rtw_dequeue_xframe(struct xmit_priv *pxmitpriv, struct hw_xmit *phwxmit_i);
 
 void rtw_count_tx_stats(_adapter *padapter, struct xmit_frame *pxmitframe, int sz);
 extern void rtw_update_protection(_adapter *padapter, u8 *ie, uint ie_len);
@@ -662,15 +592,13 @@ void _rtw_init_sta_xmit_priv(struct sta_xmit_priv *psta_xmitpriv);
 s32 rtw_txframes_pending(_adapter *padapter);
 s32 rtw_txframes_sta_ac_pending(_adapter *padapter, struct pkt_attrib *pattrib);
 void rtw_txframes_update_attrib_vcs_info(_adapter *padapter, struct xmit_frame *pxmitframe);
-void rtw_init_hwxmits(struct hw_xmit *phwxmit, sint entry);
 
 
 s32 _rtw_init_xmit_priv(struct xmit_priv *pxmitpriv, _adapter *padapter);
 void _rtw_free_xmit_priv(struct xmit_priv *pxmitpriv);
 
 
-void rtw_alloc_hwxmits(_adapter *padapter);
-void rtw_free_hwxmits(_adapter *padapter);
+void rtw_init_hwxmits(_adapter *padapter);
 
 
 s32 rtw_xmit(_adapter *padapter, _pkt **pkt);

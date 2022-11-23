@@ -109,6 +109,7 @@ struct sae_data {
 	u32 sae_grp_idx;		/* index to the current group in the sae_groups	*/
 	u16 last_peer_cmit_seq_num;	/* seq number of commit frame in wlan header */
 	u16 last_peer_cfrm_seq_num;	/* seq number of confirm frame in wlan header */
+	u16 last_status;		/* status code */
 	u8 h2e;					/* hash to element support */
 	u8 pmk[SAE_PMK_LEN];
 	u8 pmkid[SAE_PMKID_LEN];

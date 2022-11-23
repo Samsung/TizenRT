@@ -105,10 +105,10 @@ typedef unsigned char           bool;
 #endif
 #endif
 
-#define UCHAR                   uint8_t
-#define USHORT                  uint16_t
-#define UINT                    uint32_t
-#define ULONG                   uint32_t
+typedef uint8_t UCHAR;
+typedef uint16_t USHORT;
+typedef uint32_t UINT;
+typedef uint32_t ULONG;
 
 //typedef struct { volatile int counter; } atomic_t;
 

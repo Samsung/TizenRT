@@ -207,10 +207,11 @@ enum PMC_CORE_ROLE_TYPE {
   */
 
 typedef struct {
-	u32 np_tickles_debug; /* open km0 tickles log, it will encrease power consumption */
-	u32 km0_pll_off;
-	u32 km0_audio_vad_on;
+	u32 np_tickles_debug;
+	u32 np_pll_off;
+	u32 np_audio_vad_on;
 	u32 np_config_ddr; /* 0 for APM Psram, 1 for Winbond Psram, 2 for DDR */
+	u32 np_osc4m_close;
 } PSCFG_TypeDef;
 
 typedef struct {
@@ -221,6 +222,9 @@ typedef struct {
 } WIFICFG_TypeDef;
 
 extern PSCFG_TypeDef ps_config;
+
+extern u32 psp_temp;
+extern u32 psplim_temp;
 
 void SOCPS_SleepCG_RAM(VOID);
 void np_pm_init(void);
@@ -250,6 +254,7 @@ void ap_tickless_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum);
 uint32_t pmu_get_km4sleeptime(void);
 uint32_t pmu_get_kr4sleeptime(void);
 void SOCPS_ResMemMode(u32 module);
-
+void SOCPS_Kr4_StartTbl_Restore(void);
+void SOCPS_Kr4_StartTbl_Backup(void);
 #endif //_AMEBA_PMC_H_
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

@@ -148,6 +148,8 @@ typedef struct _RT_PMAC_PKT_INFO {
 	UCHAR			Nsts;
 	UINT			N_sym;
 	UCHAR			SIGA2B3;
+	UCHAR			PPDU_Type;
+	UCHAR			HE_ERSU_RU106;
 } RT_PMAC_PKT_INFO, *PRT_PMAC_PKT_INFO;
 
 typedef struct _RT_PMAC_TX_INFO {
@@ -180,6 +182,7 @@ typedef struct _RT_PMAC_TX_INFO {
 	u8			VHT_SIG_B_CRC;
 	u8			VHT_Delimiter[4];
 	u8			MacAddress[6];
+	u16			RU_Alloc;
 } RT_PMAC_TX_INFO, *PRT_PMAC_TX_INFO;
 
 typedef void (*MPT_WORK_ITEM_HANDLER)(IN void *Adapter);
@@ -300,6 +303,7 @@ enum {
 	MP_CHANNEL,
 	MP_BANDWIDTH,
 	MP_TXPOWER,
+	MP_RXPATH,
 	MP_ANT_TX,
 	MP_ANT_RX,
 	MP_CTX,
@@ -331,7 +335,9 @@ enum {
 	MP_DPK,
 	MP_GET_TSSIDE,
 	MP_SET_TSSIDE,
-	MP_PHYDM
+	MP_PHYDM,
+	MP_TX_PLCP_USER,
+	MP_TX_PLCP_DATA
 };
 
 struct mp_priv {
@@ -377,6 +383,12 @@ struct mp_priv {
 	u16 antenna_tx;
 	u16 antenna_rx;
 //	u8 curr_rfpath;
+
+	/* add for support pmac tx: start */
+	u8 ppdu_type;  //0:cck;1:legacy;2:ht_mf;3:ht_gf;4:vht;5:he_su;6:he_er_su;7:he_mu_ofdma;8:he_tb
+	u8 er_su_ru_106_en;  //he_er_su:0-242tone;1-106tone
+	u16 ru_alloc;
+	/* add for support pmac tx: end */
 
 	u8 check_mp_pkt;
 	u32 rssi_avg_cal;
@@ -654,6 +666,30 @@ typedef enum _OFDM_TX_MODE {
 	OFDM_SingleCarrier	= 2,
 	OFDM_SingleTone 	= 4,
 } OFDM_TX_MODE;
+
+typedef enum _MP_PPDU_TYPE {
+	RTW_MP_TYPE_CCK = 0,
+	RTW_MP_TYPE_LEGACY,
+	RTW_MP_TYPE_HT_MF,
+	RTW_MP_TYPE_HT_GF,
+	RTW_MP_TYPE_VHT,
+	RTW_MP_TYPE_HE_SU,
+	RTW_MP_TYPE_HE_ER_SU,
+	RTW_MP_TYPE_HE_MU_OFDMA,
+	RTW_MP_TYPE_HE_TB
+} PPDU_TYPE;
+
+#define PPDU_TYPE_STR(idx)\
+	(idx == RTW_MP_TYPE_CCK) ? "CCK" :\
+	(idx == RTW_MP_TYPE_LEGACY) ? "LEGACY" :\
+	(idx == RTW_MP_TYPE_HT_MF) ? "HT_MF" :\
+	(idx == RTW_MP_TYPE_HT_GF) ? "HT_GF" :\
+	(idx == RTW_MP_TYPE_VHT) ? "VHT" :\
+	(idx == RTW_MP_TYPE_HE_SU) ? "HE_SU" :\
+	(idx == RTW_MP_TYPE_HE_ER_SU) ? "HE_ER_SU" :\
+	(idx == RTW_MP_TYPE_HE_MU_OFDMA) ? "HE_MU" :\
+	(idx == RTW_MP_TYPE_HE_TB) ? "HE_TB" :\
+	"UNknow"
 
 #define MPT_IS_CCK_RATE(_value)		(MPT_RATE_1M <= _value && _value <= MPT_RATE_11M)
 #define MPT_IS_OFDM_RATE(_value)	(MPT_RATE_6M <= _value && _value <= MPT_RATE_54M)

@@ -56,8 +56,8 @@ const I2C_DevTable I2C_DEV_TABLE[2] = {
 	{I2C0_DEV, I2C0_IRQ},
 	{I2C1_DEV, I2C1_IRQ},
 #else
-	{I2C0_DEV, I2C0_IRQ_KR4},
-	{I2C1_DEV, I2C1_IRQ_KR4},
+	{I2C0_DEV, I2C0_IRQ},
+	{I2C1_DEV, I2C1_IRQ},
 #endif
 };
 

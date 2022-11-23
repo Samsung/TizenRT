@@ -53,7 +53,7 @@ extern struct netif xnetif[NET_IF_NUM];
  ******************************************************/
 static internal_join_block_param_t *join_block_param = NULL;
 
-#if defined(CONFIG_MBED_ENABLED) || defined (CONFIG_AS_INIC_NP)
+#if defined(CONFIG_MBED_ENABLED) || defined (CONFIG_AS_INIC_NP) || defined (CONFIG_MAC_LBK)
 rtw_mode_t wifi_mode = RTW_MODE_STA;
 #else
 extern rtw_mode_t wifi_mode;
@@ -67,6 +67,7 @@ write_fast_connect_info_ptr p_store_fast_connect_info = NULL;
 
 /* The flag to check if wifi init is completed */
 static int _wifi_is_on = 0;
+extern void *param_indicator;
 
 /******************************************************
  *               Variables Definitions
@@ -481,12 +482,13 @@ int wifi_off(void)
 int wifi_set_mode(rtw_mode_t mode)
 {
 	int ret = 0;
-#ifdef CONFIG_WLAN_SWITCH_MODE
 	rtw_mode_t curr_mode, next_mode;
+#ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	u8 autoreconnect_mode;
 #endif
 #endif
+
 	device_mutex_lock(RT_DEV_LOCK_WLAN);
 
 	if ((rltk_wlan_running(WLAN0_IDX) == 0) &&
@@ -496,7 +498,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		return -1;
 	}
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
 #ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	wifi_get_autoreconnect(&autoreconnect_mode);
@@ -518,7 +519,6 @@ int wifi_set_mode(rtw_mode_t mode)
 	if (ret < 0) {
 		goto Exit;
 	}
-#endif
 
 	if ((wifi_mode == RTW_MODE_STA) && (mode == RTW_MODE_AP)) {
 		RTW_API_INFO("\n\r[%s] WIFI Mode Change: STA-->AP", __FUNCTION__);
@@ -579,7 +579,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		wifi_mode = mode;
 	}
 #ifdef CONFIG_CONCURRENT_MODE
-#ifdef CONFIG_WLAN_SWITCH_MODE
 	else if ((wifi_mode == RTW_MODE_STA_AP) && (mode == RTW_MODE_STA)) {
 		RTW_API_INFO("\n\rWIFI Mode Change: CONCURRENT-->STA");
 #if CONFIG_LWIP_LAYER
@@ -597,13 +596,11 @@ int wifi_set_mode(rtw_mode_t mode)
 		wifi_mode = mode;
 	}
 #endif
-#endif
 	else {
 		RTW_API_INFO("\n\rWIFI Mode Change: not support");
 		goto Exit;
 	}
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
 	ret = rltk_set_mode_posthandle(curr_mode, next_mode, WLAN0_NAME);
 	if (ret < 0) {
 		goto Exit;
@@ -621,20 +618,18 @@ int wifi_set_mode(rtw_mode_t mode)
 	}
 #endif
 #endif
-#endif
+
 
 	device_mutex_unlock(RT_DEV_LOCK_WLAN);
 	return 0;
 
 Exit:
-#ifdef CONFIG_WLAN_SWITCH_MODE
 #ifndef CONFIG_AS_INIC_NP
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	/* enable auto reconnect */
 	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
 		wifi_config_autoreconnect(autoreconnect_mode, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL);
 	}
-#endif
 #endif
 #endif
 	device_mutex_unlock(RT_DEV_LOCK_WLAN);

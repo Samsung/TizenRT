@@ -33,7 +33,7 @@
 //	Commented by Albert 20101105
 //	Increase the scanning timeout because of increasing the SURVEY_TO value.
 
-#ifdef CONFIG_BT_COEXIST_SOC
+#if defined(CONFIG_BT_COEXIST_SOC) || defined(CONFIG_BT_COEXIST)
 #define 	SCANNING_TIMEOUT 	12000
 #else
 #define 	SCANNING_TIMEOUT 	8000
@@ -280,20 +280,12 @@ struct mlme_priv {
 
 	//uint wireless_mode; no used, remove it
 
-	u32	scan_interval;
-
 	_timer assoc_timer;
 
 	u8 assoc_by_bssid;
-	u8 assoc_by_rssi;
 
 	_timer scan_to_timer; // driver itself handles scan_timeout status.
 	u32 scan_start_time; // used to evaluate the time spent in scanning
-
-#ifdef CONFIG_SET_SCAN_DENY_TIMER
-	_timer set_scan_deny_timer;
-	ATOMIC_T set_scan_deny; //0: allowed, 1: deny
-#endif
 
 	struct qos_priv qospriv;
 
@@ -376,21 +368,6 @@ struct mlme_priv {
 	u32 wps_assoc_resp_ie_len;
 
 
-#ifdef CONFIG_P2P_NEW
-	u8 *p2p_beacon_ie;
-	u8 *p2p_probe_req_ie;
-	u8 *p2p_probe_resp_ie;
-//	u8 *p2p_go_probe_resp_ie; //for GO
-	u8 *p2p_assoc_req_ie;
-	u8 *p2p_assoc_rsp_ie;
-
-	u32 p2p_beacon_ie_len;
-	u32 p2p_probe_req_ie_len;
-	u32 p2p_probe_resp_ie_len;
-//	u32 p2p_go_probe_resp_ie_len; //for GO
-	u32 p2p_assoc_req_ie_len;
-	u32 p2p_assoc_rsp_ie_len;
-#endif
 #endif //CONFIG_WPS
 
 	_lock	bcn_update_lock;
@@ -398,15 +375,10 @@ struct mlme_priv {
 
 	u8 ori_ch;
 	u8 ori_bw;
-	u8 ori_offset;
 #ifdef CONFIG_80211AC_VHT
 	u8 ori_vht_en;
 #endif
 	u32 lastscantime;
-
-#ifdef CONFIG_CONCURRENT_MODE
-	u8	scanning_via_buddy_intf;
-#endif
 
 #ifdef CONFIG_MULTICAST
 	u32 multicast_list[MULTICAST_LIST_SIZE];
@@ -570,12 +542,7 @@ extern void rtw_get_encrypt_decrypt_from_registrypriv(_adapter *adapter);
 extern void _rtw_join_timeout_handler(_adapter *adapter);
 extern void rtw_scan_timeout_handler(_adapter *adapter);
 
-extern void rtw_dynamic_check_timer_handlder(_adapter *adapter);
-#ifdef CONFIG_SET_SCAN_DENY_TIMER
-extern void rtw_set_scan_deny_timer_hdl(_adapter *adapter);
-void rtw_set_scan_deny(struct mlme_priv *mlmepriv, u32 ms);
-#endif
-
+extern u8 rtw_dynamic_check_timer_handlder(_adapter *adapter);
 
 extern int _rtw_init_mlme_priv(_adapter *padapter);
 

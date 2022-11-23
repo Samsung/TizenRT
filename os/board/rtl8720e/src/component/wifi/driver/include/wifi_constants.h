@@ -550,8 +550,13 @@ typedef enum {
   */
 typedef enum {
 	RTW_NETWORK_B   = 1,    /**< b mode */
+	RTW_NETWORK_A   = 2,    /**< a mode */
 	RTW_NETWORK_BG  = 3,   /**< bg mode */
-	RTW_NETWORK_BGN = 11 /**< bgn mode */
+	RTW_NETWORK_A_N   = 10,    /**< a+n mode */
+	RTW_NETWORK_BGN = 13, /**< bgn mode */
+	RTW_NETWORK_A_N_AC   = 26,    /**< a+n+ac mode */
+	RTW_NETWORK_BGN_AX = 45, /**< bgn+ax mode */
+	RTW_NETWORK_A_N_AC_AX   = 58    /**< a+n+ac+ax mode */
 } rtw_network_mode_t;
 
 /**
@@ -684,32 +689,16 @@ typedef enum {
 	WIFI_EVENT_JOIN_STATUS,			///<internally use for joinstatus indicate
 
 	/* p2p event */
-	WIFI_EVENT_P2P_SEND_ACTION_DONE = 15,
+	WIFI_EVENT_P2P_SEND_ACTION_DONE,
 
 	/* wpa event */
-	WIFI_EVENT_WPA_STA_WPS_START = 20,
+	WIFI_EVENT_WPA_STA_WPS_START,
 	WIFI_EVENT_WPA_WPS_FINISH,
 	WIFI_EVENT_WPA_EAPOL_START,
 	WIFI_EVENT_WPA_EAPOL_RECVD,
 
-	/* 11s event */
-	WIFI_EVENT_11S_PATHSEL_GEN_RREQ = 59,
-	WIFI_EVENT_11S_PATHSEL_GEN_RERR,
-	WIFI_EVENT_11S_PATHSEL_RECV_RREQ,
-	WIFI_EVENT_11S_PATHSEL_RECV_RREP,
-	WIFI_EVENT_11S_PATHSEL_RECV_RERR,
-	WIFI_EVENT_11S_PATHSEL_RECV_PANN,
-	WIFI_EVENT_11S_PATHSEL_RECV_RANN,
-
-	WIFI_EVENT_11S_PATHSEL_GEN_PREQ = 150,
-	WIFI_EVENT_11S_PATHSEL_GEN_PERR,
-	WIFI_EVENT_11S_PATHSEL_RECV_PREQ,
-	WIFI_EVENT_11S_PATHSEL_RECV_PREP,
-	WIFI_EVENT_11S_PATHSEL_RECV_PERR,
-	WIFI_EVENT_11S_PATHSEL_RECV_GANN,
-
 	/* csi rx done event */
-	WIFI_EVENT_CSI_DONE = 160,
+	WIFI_EVENT_CSI_DONE,
 
 	WIFI_EVENT_MAX,
 } rtw_event_indicate_t;

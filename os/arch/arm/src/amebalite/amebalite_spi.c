@@ -871,7 +871,7 @@ static uint16_t amebalite_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 {
 	FAR struct amebalite_spidev_s *priv = (FAR struct amebalite_spidev_s *)dev;
 
-	uint16_t ret;
+	uint16_t ret = 0;
 	DEBUGASSERT(priv);
 
 	if (priv->role == AMEBALITE_SPI_MASTER) {

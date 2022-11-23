@@ -380,7 +380,7 @@ void psk_init(_adapter *padapter, unsigned char *pie, unsigned short ielen);
 void psk_derive(_adapter *padapter, unsigned char *passphrase, unsigned char *ssid);
 u16 psk_strip_rsn_pairwise(u8 *ie, u16 ie_len);
 u16 psk_strip_wpa_pairwise(u8 *ie, u16 ie_len);
-u16 psk_strip_rsn_akmp(u8 *ie, u16 ie_len);
+u16 psk_strip_rsn_akmp(u8 *ie, u16 ie_len, u32 wpa_mode);
 
 #endif // _RTW_PSK_H_
 

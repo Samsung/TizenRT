@@ -114,6 +114,7 @@ uart_index_get(PinName tx)
 		return 0;
 	} else {
 		assert_param(0);
+		return 1;
 	}
 }
 
@@ -335,7 +336,14 @@ uart_irqhandler(
 				uart_rxdone_callback(puart_adapter);
 			}
 		}
+
+		if (reg_lsr & RUART_BIT_TIMEOUT_INT) {
+			UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_TOICF);
+		}
+
 		//UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
+
+
 	}
 
 	//line status INT
@@ -357,7 +365,10 @@ uart_irqhandler(
 		if (RegValue & RUART_BIT_BREAK_INT) {
 			DBG_8195A("%s: LSR break error interrupt\n", __FUNCTION__);
 		}
-		UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
+		/* clear Receiver Line Status */
+		UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_RLSICF);
+		/* keep on receiving data after RXFIFO_ERR happens */
+//		UART_INTConfig(puart_adapter->UARTx, RUART_BIT_ERBI | RUART_BIT_ELSI, DISABLE);
 	}
 
 	return 0;

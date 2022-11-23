@@ -75,7 +75,7 @@ void set_show_timestamp_diff(uint8_t action)
 	flag_show_ts_diff = action;
 }
 
-uint32_t get_show_timestamp_diff()
+uint32_t get_show_timestamp_diff(void)
 {
 	return flag_show_ts_diff;
 }
@@ -121,6 +121,7 @@ int check_rtsp_url(struct rtsp_context *rtsp_ctx)
 			return -1;
 		}
 	}
+	return 0;
 }
 
 uint32_t rtsp_get_timestamp(struct stream_context *stream_ctx, uint32_t current_clock_tick)
@@ -227,8 +228,8 @@ void rtsp_session_init(struct rtsp_context *rtsp_ctx)
 	session->version = 0;
 	session->start_time = 0;
 	session->end_time = 0;
-	session->name = "ameba";
-	session->user = "-";
+	session->name = (uint8_t *)"ameba";
+	session->user = (uint8_t *)"-";
 }
 
 void rtsp_stream_context_init(struct rtsp_context *rtsp_ctx, struct stream_context *stream_ctx)
@@ -457,13 +458,13 @@ char *rtsp_parse_header_line(struct rtsp_context *rtsp_ctx, char *header)
 		if (rtsp_ctx->rtsp_url[0] != 0) {
 			char *start = header + 8;
 			char *search = NULL;
-			search = strstr(start, rtsp_ctx->rtsp_url);
+			search = strstr(start, (char *)rtsp_ctx->rtsp_url);
 			//printf("search = %s\r\n",search);
 			//printf("rtsp_url = %s\r\n",rtsp_ctx->rtsp_url);
 			if (search != NULL) {
-				if (search[strlen(rtsp_ctx->rtsp_url)] != ' ') {
+				if (search[strlen((char *)rtsp_ctx->rtsp_url)] != ' ') {
 					rtsp_ctx->rtsp_url_config = 0;
-					printf("search error = %x\r\n", search[strlen(rtsp_ctx->rtsp_url)]);
+					printf("search error = %x\r\n", search[strlen((char *)rtsp_ctx->rtsp_url)]);
 				} else {
 					rtsp_ctx->rtsp_url_config = 1;
 				}
@@ -822,7 +823,7 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 		sprintf(string, "a=rtpmap:%d H264/%d" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d packetization-mode=0%s%s" CRLF \
-				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? config : "", spspps_string);
+				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "", spspps_string);
 		break;
 	case (AV_CODEC_ID_H265):
 		if (base64_sps[0] != 0) {
@@ -845,7 +846,7 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 		sprintf(string, "a=rtpmap:%d H265/%d" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d packetization-mode=0%s%s" CRLF \
-				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? config : "", spspps_string);
+				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "", spspps_string);
 		break;
 #endif
 	case (AV_CODEC_ID_PCMU):
@@ -865,13 +866,13 @@ static void create_sdp_a_string(char *string, struct stream_context *s, void *ex
 				"a=fmtp:%d streamtype=5; profile-level-id=15; mode=AAC-hbr%s; sizeLength=13; indexLength=3; indexDeltaLength=3; constantDuration=1024; Profile=1" CRLF \
 				"a=control:streamid=%d" CRLF \
 				/*	"a=type:broadcast" CRLF \*/
-				, (s->codec->pt + s->stream_id), s->samplerate, s->channel, (s->codec->pt + s->stream_id), config ? config : "", s->stream_id);
+				, (s->codec->pt + s->stream_id), s->samplerate, s->channel, (s->codec->pt + s->stream_id), config ? (char *)config : "", s->stream_id);
 		break;
 	case (AV_CODEC_ID_MP4V_ES):
 		sprintf(string, "a=rtpmap:%d MPEG4-ES/%d" CRLF \
 				"a=control:streamid=%d" CRLF \
 				"a=fmtp:%d profile-level-id=1%s" CRLF \
-				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? config : "");
+				, (s->codec->pt + s->stream_id), s->codec->clock_rate, s->stream_id, (s->codec->pt + s->stream_id), config ? (char *)config : "");
 		break;
 	case (AV_CODEC_ID_OPUS):
 		sprintf(string, "a=rtpmap:%d opus/%d/%d" CRLF \
@@ -1034,7 +1035,7 @@ void rtsp_cmd_describe(struct rtsp_context *rtsp_ctx)
 void rtsp_cmd_setup(struct rtsp_context *rtsp_ctx)
 {
 	memset(rtsp_ctx->response, 0, RTSP_RESPONSE_BUF_SIZE);
-	char *castmode;
+	const char *castmode;
 	switch (rtsp_ctx->transport[rtsp_ctx->nb_streams_setup].castMode) {
 	case (UNICAST_TCP_MODE):
 	case (UNICAST_UDP_MODE):

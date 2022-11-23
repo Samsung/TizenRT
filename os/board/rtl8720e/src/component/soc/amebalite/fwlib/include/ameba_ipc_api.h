@@ -29,7 +29,6 @@ typedef struct _IPC_MSG_STRUCT_ {
 
 void ipc_table_init(IPC_TypeDef *IPCx);
 void ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
-void ipc_share_memory_init(void);
 PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum);
 
 #endif

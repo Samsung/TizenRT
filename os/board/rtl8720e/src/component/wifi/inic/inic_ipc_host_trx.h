@@ -22,7 +22,11 @@
 #define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
 
 /* -------------------------------- Macros ---------------------------------- */
+#ifdef CONFIG_HIGH_TP_TEST
 #define HOST_SKB_NUM 5
+#else
+#define HOST_SKB_NUM 4
+#endif
 #define SKB_WLAN_TX_EXTRA_LEN 74
 
 /* ------------------------------- Data Types ------------------------------- */

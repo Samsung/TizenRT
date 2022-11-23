@@ -46,6 +46,7 @@ rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *) = NULL;
 
 extern rtw_mode_t wifi_mode;
+extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
 rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback = NULL;
 rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback = NULL;
@@ -483,12 +484,10 @@ int wifi_set_mode(rtw_mode_t mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
-#ifdef CONFIG_WLAN_SWITCH_MODE
-	rtw_mode_t curr_mode, next_mode;
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	u8 autoreconnect_mode;
 #endif
-#endif
+
 	device_mutex_lock(RT_DEV_LOCK_WLAN);//INIC_IPC_API_TODO
 
 	if ((wifi_is_running(WLAN0_IDX) == 0) &&
@@ -498,7 +497,6 @@ int wifi_set_mode(rtw_mode_t mode)
 		return -1;
 	}
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 	wifi_get_autoreconnect(&autoreconnect_mode);
 	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
@@ -511,7 +509,6 @@ int wifi_set_mode(rtw_mode_t mode)
 			}
 		}
 	}
-#endif
 #endif
 
 	param_buf[0] = mode;
@@ -535,49 +532,51 @@ int wifi_set_mode(rtw_mode_t mode)
 			wifi_mode = mode;
 		}
 #ifdef CONFIG_CONCURRENT_MODE
-#ifdef CONFIG_WLAN_SWITCH_MODE
 		else if ((wifi_mode == RTW_MODE_STA_AP) && (mode == RTW_MODE_STA)) {
 #if CONFIG_LWIP_LAYER
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 			dhcps_deinit();
+#endif
 			LwIP_netif_set_down(1);
 			LwIP_netif_set_link_down(1);
 #endif
 			wifi_mode = RTW_MODE_STA;
 		} else if ((wifi_mode == RTW_MODE_STA) && (mode == RTW_MODE_STA_AP)) {
 #if CONFIG_LWIP_LAYER
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 			dhcps_init(&xnetif[1]);
+#endif
 			LwIP_netif_set_up(1);
 			LwIP_netif_set_link_up(1);
 #endif
 			wifi_mode = mode;
 		}
-#endif
+
 #endif
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 		/* enable auto reconnect */
 		if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
 			wifi_config_autoreconnect(autoreconnect_mode, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL);
 		}
 #endif
-#endif
+
 		device_mutex_unlock(RT_DEV_LOCK_WLAN);
 		return ret;
 	} else {
-#ifdef CONFIG_WLAN_SWITCH_MODE
 #if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
 		/* enable auto reconnect */
 		if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
 			wifi_config_autoreconnect(autoreconnect_mode, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL);
 		}
 #endif
-#endif
+
 		device_mutex_unlock(RT_DEV_LOCK_WLAN);
 		return -1;
 	}
 }
 
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* userdata)
 {
 	/* To avoid gcc warnings */
@@ -619,6 +618,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	}
 #endif
 }
+#endif
 
 int wifi_start_ap(rtw_softap_info_t *softAP_config)
 {
@@ -628,9 +628,11 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	DCache_Clean((u32)softAP_config->password, softAP_config->password_len);
 	DCache_Clean((u32)softAP_config, sizeof(rtw_softap_info_t));
 	param_buf[0] = (u32)softAP_config;
-
+	
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, wifi_ap_sta_assoc_hdl, NULL);
 	wifi_reg_event_handler(WIFI_EVENT_STA_DISASSOC, wifi_ap_sta_disassoc_hdl, NULL);
+#endif
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_START_AP, param_buf, 1);
 

@@ -110,7 +110,7 @@ u8 ChipInfo_PSRAMType(void)
 	u8 i = 0;
 	u16 BDnum = ChipInfo_BDNum();
 	u32 sysdata;
-	u8 memoryinfo;
+	u8 memoryinfo = 0;
 
 	/* debug package */
 	if ((BDnum == 0xFFFF) || (BDnum == 1014)) {

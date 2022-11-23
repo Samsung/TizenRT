@@ -14,13 +14,7 @@
 /*For MP mode setting*/
 //#define SUPPORT_MP_MODE		1
 
-/**
-* For common flash usage
-*/
-#define AP_SETTING_SECTOR		0x000FE000
-#define UART_SETTING_SECTOR	0x000FC000
-#define SPI_SETTING_SECTOR		0x000FC000
-#define FAST_RECONNECT_DATA 	0x105000
+
 #define CONFIG_ENABLE_RDP		0
 
 /**
@@ -67,9 +61,6 @@
 #define CONFIG_USE_MBEDTLS 1
 #endif
 #define CONFIG_SSL_CLIENT_PRIVATE_IN_TZ 0
-
-/* For Simple Link */
-#define CONFIG_INCLUDE_SIMPLE_CONFIG		0
 
 /* For fast DHCP when fast connect*/
 #define CONFIG_FAST_DHCP 0
@@ -126,8 +117,6 @@
 #undef CONFIG_LWIP_LAYER
 #define CONFIG_LWIP_LAYER	0
 
-#undef CONFIG_INCLUDE_SIMPLE_CONFIG
-#define CONFIG_INCLUDE_SIMPLE_CONFIG		0
 #undef CONFIG_OTA_UPDATE
 #define CONFIG_OTA_UPDATE				0
 #endif
@@ -158,16 +147,5 @@
 #endif
 
 /*******************************************************************************/
-
-/**
- * For WPS configurations
- */
-
-#if CONFIG_ENABLE_WPS
-#define WPS_CONNECT_RETRY_COUNT		4
-#define WPS_CONNECT_RETRY_INTERVAL	5000 // in ms
-#endif
-
-//#define CONFIG_BT_CES_DEMO 1
 
 #endif //__PLATFORM_OPTS_NP_H__

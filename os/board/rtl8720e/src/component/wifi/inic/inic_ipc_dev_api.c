@@ -317,6 +317,11 @@ void inic_ipc_api_dev_task(void)
 			p_ipc_msg->ret = ret;
 			break;
 		}
+		case IPC_API_WIFI_GET_NETWORK_MODE: {
+			ret = wifi_get_network_mode();
+			p_ipc_msg->ret = ret;
+			break;
+		}
 		case IPC_API_WIFI_SET_WPS_PHASE: {
 			unsigned char is_trigger_wps = (unsigned char)p_ipc_msg->param_buf[0];
 			ret = wifi_set_wps_phase(is_trigger_wps);

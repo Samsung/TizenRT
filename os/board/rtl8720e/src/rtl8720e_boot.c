@@ -296,7 +296,6 @@ void board_initialize(void)
 	//InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI4);
 	//InterruptEn(UART_LOG_IRQ, INT_PRI4);
 
-	ipc_share_memory_init();
 	ipc_table_init(IPCKM4_DEV);
 
 	/*switch shell control to KM0 */

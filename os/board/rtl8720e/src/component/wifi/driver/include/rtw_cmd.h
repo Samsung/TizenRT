@@ -107,10 +107,6 @@ struct	evt_priv {
 	u8	*evt_buf;	//shall be non-paged, and 4 bytes aligned
 	u8	*evt_allocated_buf;
 	u32	evt_done_cnt;
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-	u8	*c2h_mem;
-	u8	*allocated_c2h_mem;
-#endif
 
 };
 
@@ -134,7 +130,8 @@ extern struct evt_obj *rtw_dequeue_evt(_queue *queue);
 extern void rtw_free_evt_obj(struct evt_obj *pcmd);
 #endif
 
-thread_return rtw_cmd_thread(thread_context context);
+void rtw_cmd_resource_free(_adapter *padapter);
+u8 rtw_cmd_process(_adapter *padapter, void *task);
 
 extern u32 rtw_init_cmd_priv(struct cmd_priv *pcmdpriv);
 extern void rtw_free_cmd_priv(struct cmd_priv *pcmdpriv);
@@ -660,14 +657,6 @@ struct drvextra_cmd_parm {
 	unsigned char *pbuf;
 };
 
-#ifdef CONFIG_P2P_NEW
-// CMD param Formart for p2p cmd handler
-struct p2p_cmd_parm {
-	int id; //p2p cmd id
-	int type_size; // Can use this field as the type id or command size
-	unsigned char *pbuf;
-};
-#endif
 /*------------------- Below are used for RF/BB tunning ---------------------*/
 
 struct	setantenna_parm {
@@ -935,9 +924,7 @@ extern u8 rtw_setfwra_cmd(_adapter *padapter, u8 type);
 extern u8 rtw_addbareq_cmd(_adapter *padapter, u8 tid, u8 *addr);
 
 extern u8 rtw_dynamic_chk_wk_cmd(_adapter *adapter);
-#ifdef CONFIG_P2P_NEW
-u8 rtw_p2p_cmd(_adapter *padapter, int subid);
-#endif
+
 u8 rtw_lps_ctrl_wk_cmd(_adapter *padapter, u8 lps_ctrl_type, u8 enqueue);
 #if (RATE_ADAPTIVE_SUPPORT==1)
 u8 rtw_rpt_timer_cfg_cmd(_adapter *padapter, u16 minRptTime);
@@ -977,7 +964,6 @@ u8 rtw_c2h_packet_wk_cmd(_adapter *adapter, u8 *c2h_evt, u16 length);
 #endif
 u8 rtw_drvextra_cmd_hdl(_adapter *padapter, unsigned char *pbuf);
 
-u8 rtw_p2p_cmd_hdl(_adapter *padapter, unsigned char *pbuf);
 u8 rtw_rm_post_event_hdl(_adapter *padapter, u8 *pbuf);
 
 extern void rtw_survey_cmd_callback(_adapter  *padapter, struct cmd_obj *pcmd);

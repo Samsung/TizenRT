@@ -142,6 +142,7 @@ struct security_priv {
 	//keeps the auth_type & enc_status from upper layer ioctl(wpa_supplicant or wzc)
 	u32 ndisauthtype;	// NDIS_802_11_AUTHENTICATION_MODE
 	u32 ndisencryptstatus;	// NDIS_802_11_ENCRYPTION_STATUS
+	u32 wpa_mode;
 
 	//WLAN_BSSID_EX sec_bss;  //for joinbss (h2c buffer) usage //YJ,del,140410
 
@@ -158,13 +159,6 @@ struct security_priv {
 
 	WPA_GLOBAL_INFO		wpa_global_info;
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
-	u8					*palloc_wpastainfo_buf[AP_STA_NUM];
-#else
-	u8					*palloc_wpastainfo_buf;
-#endif
-	u32					alloc_wpastainfo_size;
-	WPA_STA_INFO		*wpa_sta_info[NUM_STA - 2];
 	u8 wpa_passphrase[IW_PASSPHRASE_MAX_SIZE + 1];
 
 #ifdef CONFIG_WPS

@@ -72,31 +72,20 @@ cp $BINDIR/target_img2.axf $BINDIR/target_pure_img2.axf
 
 arm-none-eabi-strip $BINDIR/target_pure_img2.axf
 
-if [ "${CONFIG_XIP_FLASH}" == "y" ];then
-	arm-none-eabi-objcopy -R .xip_image2.text -R .ARM.extab -R .ARM.exidx \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/sram_2.bin
+arm-none-eabi-objcopy -j .bluetooth_trace.text \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
 
-	arm-none-eabi-objcopy -j .null.null \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram2.bin
+arm-none-eabi-objcopy -j .sram_only.text.data \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/sram_only.bin
 
-	arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
+arm-none-eabi-objcopy -j .psram_image2.text.data \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram_2.bin
 
-	arm-none-eabi-objcopy -j .bluetooth_trace.text \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
-else
-	arm-none-eabi-objcopy -j .null.null \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/psram_2.bin
+arm-none-eabi-objcopy -j .sram_image2.text.data \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/sram_2.bin
 
-	arm-none-eabi-objcopy -j .bluetooth_trace.text \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
-
-	arm-none-eabi-objcopy -R .xip_image2.text -R .ARM.extab -R .ARM.exidx -R .bluetooth_trace.text \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/sram_2.bin
-
-	arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx \
-	-Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
-fi
+arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx \
+-Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
 
 #For Bluetooth Trace
 if [ "${CONFIG_BT_EN}" == "y" ];then
@@ -119,29 +108,25 @@ $GNUUTL/pad16.sh $BINDIR/sram_2.bin
 $GNUUTL/pad16.sh $BINDIR/psram_2.bin
 $GNUUTL/pad16.sh $BINDIR/xip_image2.bin
 
-if [ "${CONFIG_XIP_FLASH}" == "y" ];then
-	$GNUUTL/prepend_header.sh $BINDIR/sram_2.bin  __ram_image2_text_start__  $BINDIR/target_img2.map
-	$GNUUTL/prepend_header.sh $BINDIR/psram_2.bin  __psram_image2_text_start__  $BINDIR/target_img2.map
-	$GNUUTL/prepend_header.sh $BINDIR/xip_image2.bin  __km4_flash_text_start__  $BINDIR/target_img2.map
-else
-	$GNUUTL/prepend_header.sh $BINDIR/sram_2.bin  __ram_image2_text_start__  $BINDIR/target_img2.map
-	$GNUUTL/prepend_header.sh $BINDIR/psram_2.bin  __psram_image2_text_start__  $BINDIR/target_img2.map
-	$GNUUTL/prepend_header.sh $BINDIR/xip_image2.bin  __km4_flash_text_start__  $BINDIR/target_img2.map
-fi
+$GNUUTL/prepend_header.sh $BINDIR/sram_only.bin __sram_only_start__  $BINDIR/target_img2.map
+$GNUUTL/prepend_header.sh $BINDIR/sram_2.bin  __sram_image2_start__   $BINDIR/target_img2.map
+$GNUUTL/prepend_header.sh $BINDIR/psram_2.bin  __psram_image2_start__   $BINDIR/target_img2.map
+$GNUUTL/prepend_header.sh $BINDIR/xip_image2.bin  __km4_flash_text_start__  $BINDIR/target_img2.map
 
 python $GNUUTL/code_analyze.py
 
-cat $BINDIR/xip_image2_prepend.bin $BINDIR/psram_2_prepend.bin $BINDIR/sram_2_prepend.bin > $BINDIR/km4_image2_all.bin
+cat $BINDIR/xip_image2_prepend.bin $BINDIR/psram_2_prepend.bin $BINDIR/sram_2_prepend.bin $BINDIR/sram_only_prepend.bin > $BINDIR/km4_image2_all.bin
 
 $GNUUTL/pad.sh $BINDIR/km4_image2_all.bin
 
 if [ "${BUILD_TYPE}" == "MFG" ];then
-	cat $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin \
-	> $BINDIR/kr4_km4_image2.bin
+	cat $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin \
 	mv $BINDIR/kr4_km4_image2.bin $BINDIR/kr4_km4_image2_mp.bin
-	rm $BINDIR/km4_image2_all.bin
 fi
 
+if [ -f $BINDIR/kr4_km4_image2.bin ];then
+	$BINDIR/kr4_km4_image2.bin;
+fi
 echo "========== Image manipulating end =========="
 
 function copy_bootloader()

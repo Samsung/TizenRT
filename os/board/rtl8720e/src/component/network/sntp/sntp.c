@@ -260,7 +260,7 @@ struct tm sntp_gen_system_time(int timezone)
 /**
  * SNTP Change time server address, must be called before @ref sntp_init
  */
-static char *sntp_server_addresses[];
+static const char *sntp_server_addresses[];
 int sntp_set_timeserver(unsigned int ntp_server_addr)
 {
 	static char str_addr[16];
@@ -397,7 +397,7 @@ static void sntp_request(void *arg);
 /** The UDP pcb used by the SNTP client */
 static struct udp_pcb *sntp_pcb;
 /** Addresses of servers */
-static char *sntp_server_addresses[] = {SNTP_SERVER_ADDRESS};
+static const char *sntp_server_addresses[] = {SNTP_SERVER_ADDRESS};
 #if SNTP_SUPPORT_MULTIPLE_SERVERS
 /** The currently used server (initialized to 0) */
 static u8_t sntp_current_server;
@@ -750,7 +750,7 @@ int atcmd_sntp(char *hostname)
 {
 
 	ip_addr_t sntp_server_address;
-	err_t err;
+	err_t err = ERR_OK;
 
 	if (sntp_pcb == NULL) {
 		sntp_pcb = udp_new();

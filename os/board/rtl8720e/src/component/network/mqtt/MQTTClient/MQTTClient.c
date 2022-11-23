@@ -14,6 +14,7 @@
  *    Allan Stockdill-Mander/Ian Craggs - initial API and implementation and/or initial documentation
  *******************************************************************************/
 #include "MQTTClient.h"
+
 const char *const msg_types_str[] = {
 	"Reserved",
 	"CONNECT",

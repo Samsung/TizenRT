@@ -126,14 +126,6 @@ void rtw_mi_buddy_intf_stop(_adapter *adapter);
 void rtw_mi_suspend_free_assoc_resource(_adapter *adapter);
 void rtw_mi_buddy_suspend_free_assoc_resource(_adapter *adapter);
 
-#ifdef CONFIG_SET_SCAN_DENY_TIMER
-void rtw_mi_set_scan_deny(_adapter *adapter, u32 ms);
-void rtw_mi_buddy_set_scan_deny(_adapter *adapter, u32 ms);
-#else
-#define rtw_mi_set_scan_deny(adapter, ms) do {} while (0)
-#define rtw_mi_buddy_set_scan_deny(adapter, ms) do {} while (0)
-#endif
-
 u8 rtw_mi_is_scan_deny(_adapter *adapter);
 u8 rtw_mi_buddy_is_scan_deny(_adapter *adapter);
 
@@ -180,16 +172,6 @@ u8 rtw_mi_check_miracast_enabled(_adapter *padapter);
 #ifdef CONFIG_XMIT_THREAD_MODE
 u8 rtw_mi_check_pending_xmitbuf(_adapter *padapter);
 u8 rtw_mi_buddy_check_pending_xmitbuf(_adapter *padapter);
-#endif
-
-#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
-#ifdef CONFIG_RTL8822B
-#include <rtl8822b_hal.h>
-#else
-extern s32 _dequeue_writeport(PADAPTER padapter);
-#endif
-u8 rtw_mi_dequeue_writeport(_adapter *padapter);
-u8 rtw_mi_buddy_dequeue_writeport(_adapter *padapter);
 #endif
 
 void rtw_mi_adapter_reset(_adapter *padapter);

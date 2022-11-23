@@ -35,6 +35,27 @@ u32 WakeEventFlag_KM4 = _FALSE;
 extern SLEEP_ParamDef sleep_param;
 VOID SOCPS_WakeFromPG_KM4(VOID);
 
+#define IDLE_STACK_SIZE 84
+
+SRAM_ONLY_DATA_SECTION
+u32 stack_idle[IDLE_STACK_SIZE] __ALIGNED(32);
+//portBYTE_ALIGNMENT = 8
+#define portBYTE_ALIGNMENT_MASK    ( 0x0007 )
+__STATIC_INLINE void pmu_psp_modify(u8 backup)
+{
+	if (backup) {
+		psp_temp = __get_PSP();
+		psplim_temp = __get_PSPLIM();
+
+		__set_PSPLIM((uint32_t)&stack_idle[0]);
+		__set_PSP((uint32_t)&stack_idle[IDLE_STACK_SIZE - 1]  & ~portBYTE_ALIGNMENT_MASK);
+
+	} else {
+		__set_PSPLIM(psplim_temp);
+		__set_PSP(psp_temp);
+	}
+}
+
 VOID SOCPS_NVICBackup_HP(void)
 {
 	int i = 0;
@@ -122,31 +143,17 @@ VOID SOCPS_MPUReFill_HP(VOID)
 	MPU->CTRL = PMC_BK.MPU_BK.CTRL;
 }
 
+/* User can add platform related power management code in this function to
+ * power off the system. This funtion will excutes again after system
+ * recovery, but goes different if-else branch, xSystemPowerStatus is used
+ * to distinguish that.
+ */
 _OPTIMIZE_NONE_
-IMAGE2_RAM_TEXT_SECTION
-VOID SOCPS_SleepPG(VOID)
+NON_DRAM_TEXT_SECTION
+void vPortSystemPowerOff(VOID)
 {
-	u32 nDeviceIdOffset = 0;
 	u32 Rtemp = 0;
-	u32 KR4_is_NP;
-
-	//InterruptDis(UART_LOG_IRQ);
-	Img2EntryFun0.RamWakeupFun = SOCPS_WakeFromPG_KM4;
-
-	/* exec sleep hook functions */
-	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
-	if (nDeviceIdOffset != PMU_MAX) {
-		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
-		DBG_8195A("DBG: Sleep blocked because Dev %x  busy\n", nDeviceIdOffset);
-		return;
-	}
-
-	KR4_is_NP = LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1));
-
-	/* enable boot from ps */
-	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG);
-	Rtemp |= LSYS_BIT_BOOT_WAKE_FROM_PS_HS;
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, Rtemp);
+	u32 KR4_is_NP = LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1));
 
 	/*Backup KM4 IPC configuration*/
 	PMC_BK.IPCbackup_HP = IPC_IERGet(IPCKM4_DEV);
@@ -232,9 +239,9 @@ VOID SOCPS_SleepPG(VOID)
 			//currently set 1 to all rw_prot register
 
 		} else {
-			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
-
 			set_psram_suspend_and_restore(ENABLE);
+
+			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
 
 			Cache_Enable(ENABLE);
 		}
@@ -275,6 +282,33 @@ resume:
 		Rtemp &= ~PMC_BIT_KM4_IRQ_MASK;
 		HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
 	}
+}
+
+NON_DRAM_TEXT_SECTION
+VOID SOCPS_SleepPG(VOID)
+{
+	u32 nDeviceIdOffset = 0;
+	u32 Rtemp = 0;
+
+	//InterruptDis(UART_LOG_IRQ);
+	Img2EntryFun0.RamWakeupFun = SOCPS_WakeFromPG_KM4;
+
+	/* exec sleep hook functions */
+	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
+	if (nDeviceIdOffset != PMU_MAX) {
+		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
+		DBG_8195A("DBG: Sleep blocked because Dev %x  busy\n", nDeviceIdOffset);
+		return;
+	}
+
+	/* enable boot from ps */
+	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG);
+	Rtemp |= LSYS_BIT_BOOT_WAKE_FROM_PS_HS;
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, Rtemp);
+
+	pmu_psp_modify(ENABLE);
+	vPortSystemPowerOff();
+	pmu_psp_modify(DISABLE);
 
 	/* clear boot from ps */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG);
@@ -313,7 +347,7 @@ void SOCPS_vWFSSVCHandler_KM4(void)
 	);
 }
 
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 VOID SOCPS_WakeFromPG_KM4(VOID)
 {
 	/* we should Cache_Flush when we wake */
@@ -355,34 +389,11 @@ VOID SOCPS_WakeFromPG_KM4(VOID)
 }
 
 
-IMAGE2_RAM_TEXT_SECTION
-void SOCPS_SleepCG(void)
+NON_DRAM_TEXT_SECTION
+void vPortSystemClockGate(VOID)
 {
-	u32 nDeviceIdOffset = 0;
 	u32 Rtemp;
-	u32 KR4_is_NP = 0;
-
-	KR4_is_NP = LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1));
-
-	/* exec sleep hook functions */
-	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
-	if (nDeviceIdOffset != PMU_MAX) {
-		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
-		DBG_8195A("Oops: Sleep Fail %x !!!!!\n", nDeviceIdOffset);
-		return;
-	}
-
-	/* mask KM4 irqs */
-	Rtemp = HAL_READ32(PMC_BASE, SYSPMC_CTRL);
-	Rtemp |= PMC_BIT_KM4_IRQ_MASK;
-	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
-
-	for (int32_t x = 0; x <= MAX_PERIPHERAL_IRQ_NUM / 32; x++) {
-		if (NVIC->ISER[x] & NVIC->ISPR[x]) {
-			DBG_PRINTF(MODULE_KM4, LEVEL_ERROR, "x: %d, ISER: 0x%x, ISPR: 0x%x\n", x, NVIC->ISER[x], NVIC->ISPR[x]);
-			goto resume;
-		}
-	}
+	u32 KR4_is_NP = LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1));
 
 	if (KR4_is_NP) {
 		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4C AP\n");
@@ -422,9 +433,9 @@ void SOCPS_SleepCG(void)
 		//TODO: set token bit, close KR4 access authority
 
 	} else {
-		SOCPS_NP_suspend_and_resume(SLEEP_CG, ENABLE);
-
 		set_psram_suspend_and_restore(ENABLE);
+
+		SOCPS_NP_suspend_and_resume(SLEEP_CG, ENABLE);
 
 		Cache_Enable(ENABLE);
 	}
@@ -435,6 +446,37 @@ void SOCPS_SleepCG(void)
 		Rtemp &= ~PMC_BIT_PMEN_SLEP;
 		HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
 	}
+}
+
+NON_DRAM_TEXT_SECTION
+void SOCPS_SleepCG(void)
+{
+	u32 nDeviceIdOffset = 0;
+	u32 Rtemp;
+
+	/* exec sleep hook functions */
+	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
+	if (nDeviceIdOffset != PMU_MAX) {
+		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
+		DBG_8195A("Oops: Sleep Fail %x !!!!!\n", nDeviceIdOffset);
+		return;
+	}
+
+	/* mask KM4 irqs */
+	Rtemp = HAL_READ32(PMC_BASE, SYSPMC_CTRL);
+	Rtemp |= PMC_BIT_KM4_IRQ_MASK;
+	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
+
+	for (int32_t x = 0; x <= MAX_PERIPHERAL_IRQ_NUM / 32; x++) {
+		if (NVIC->ISER[x] & NVIC->ISPR[x]) {
+			DBG_PRINTF(MODULE_KM4, LEVEL_ERROR, "x: %d, ISER: 0x%x, ISPR: 0x%x\n", x, NVIC->ISER[x], NVIC->ISPR[x]);
+			goto resume;
+		}
+	}
+
+	pmu_psp_modify(ENABLE);
+	vPortSystemClockGate();
+	pmu_psp_modify(DISABLE);
 
 resume:
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_KM4_IRQ_MASK) {

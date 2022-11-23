@@ -46,13 +46,13 @@ PWRCFG_TypeDef np_aon_pwrmgt_config[] = {
 
 /*Each Module can only be ON by one of the three masks*/
 WakeEvent_TypeDef sleep_wevent_config[] = {
-//  	Module							Group				Msk_KM4				Msk_KR4				Msk_DSP
+//  	Module							Group				Msk_NP				Msk_AP				Msk_DSP
 	{WAKE_SRC_VAD,							1,					OFF,				OFF,				OFF},
-	{WAKE_SRC_AON_WAKEPIN,					1,					OFF,				OFF,				OFF},
+	{WAKE_SRC_AON_WAKEPIN,				1,					OFF,				OFF,				OFF},
 	{WAKE_SRC_AON_TIM,						1,					OFF,				OFF,				OFF},
-	{WAKE_SRC_PWR_DOWN,						0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_PWR_DOWN,					0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_BOR,							0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_ADC_COMP,						0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_ADC_COMP,					0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_ADC,							0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_AON_RTC,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_SPI1,							0,					OFF,				OFF,				OFF},
@@ -60,7 +60,7 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_CTOUCH,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_GPIOB,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_GPIOA,						0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_UART_LOG,						0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_UART_LOG,					0,					OFF,				ON,				OFF},
 	{WAKE_SRC_UART3,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_UART2,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_UART1,						0,					OFF,				OFF,				OFF},
@@ -73,15 +73,12 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_Timer2,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_Timer1,						0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_Timer0,						0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_WDG0,							0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_IPC_DSP,						0,					OFF,				OFF,				ON},
-	{WAKE_SRC_IPC_KM4,						0,					ON,					OFF,				OFF},
-	{WAKE_SRC_IPC_KR4,						0,					OFF,				ON,					OFF},
-	{WAKE_SRC_BT_WAKE_HOST,					0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_DSP_WAKE,						0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_WDG0,						0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_BT_WAKE_HOST,				0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_DSP_WAKE,					0,					OFF,				OFF,				OFF},
 	{WAKE_SRC_AP_WAKE,						0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_WIFI_FTSR_MAILBOX,			0,					OFF,				OFF,				OFF},
-	{WAKE_SRC_WIFI_FISR_FESR,				0,					OFF,				OFF,				OFF},
+	{WAKE_SRC_WIFI_FTSR_MAILBOX,			0,					ON,				OFF,				OFF},
+	{WAKE_SRC_WIFI_FISR_FESR,				0,					ON,				OFF,				OFF},
 
 	{0xFFFFFFFF,							0,					OFF,				OFF,				OFF},	/* Table end */
 };
@@ -94,13 +91,13 @@ PWRCFG_TypeDef sleep_sram_config[] = {
 	{REG_CTRL_GRP_LRET_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS_REV},	//retention sram
 	{REG_CTRL_GRP_HSYS_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//hs sram E0
 	{REG_CTRL_GRP_HSYS_E1_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//hs sram E1
-	//{REG_CTRL_GRP_WLK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//wlk4 sram
+	{REG_CTRL_GRP_WLK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//wlk4 sram    /*lite A cut patch: set the reg to active to keep rxpktbuf on for lpsoffload*/
 	//{REG_CTRL_GRP_WPON_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//wpon sram
-	//{REG_CTRL_GRP_BTONK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_SD},	//bt on sram E0
-	//{REG_CTRL_GRP_BTONK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_SD},	//bt on sram E1
+	{REG_CTRL_GRP_BTONK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//bt on sram E0 /*lite A cut patch: set the reg to active to keep bt_mem on for bt */
+	{REG_CTRL_GRP_BTONK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//bt on sram E1
 	//{REG_CTRL_GRP_BTOFFK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_SD_REV},	//bt off sram E0
 	//{REG_CTRL_GRP_BTOFFK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_SD_REV},	//bt off sram E1
-	{REG_CTRL_GRP_HIFI5_E5_CTRL0,		BIT_MEM_CTRL_LPS_SD},	//HIFI5 DTCM
+	{REG_CTRL_GRP_HIFI5_E5_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//HIFI5 DTCM
 	{0xFFFFFFFF,							OFF},	/* Table end */
 };
 
@@ -117,7 +114,7 @@ u8 aon_wakepin[2] = {
 };
 
 /* you should set dsleep_wevent_config.BIT_GPIO_WAKE_STS ON if you use wakepin */
-/* can be used by sleep mode & deep sleep mode */
+/* can be used by sleep mode (power-gating) & deep sleep mode */
 WAKEPIN_TypeDef sleep_wakepin_config[] = {
 //  wakepin		Status		Polarity
 	{WAKUP_0,		OFF,			1},	/* wakeup_0 config */
@@ -126,11 +123,12 @@ WAKEPIN_TypeDef sleep_wakepin_config[] = {
 	{0xFFFFFFFF,	OFF,			0},	/* Table end */
 };
 
-IMAGE2_RAM_DATA_SECTION
 PSCFG_TypeDef ps_config = {
-	.km0_pll_off = TRUE,
-	.km0_audio_vad_on = FALSE,
-	.np_config_ddr = WB_PSRAM_SlEEP_Mode,
+	.np_tickles_debug = FALSE,
+//	.np_pll_off = TRUE,
+//	.np_audio_vad_on = FALSE,
+//	.np_config_ddr = WB_PSRAM_SlEEP_Mode,
+	.np_osc4m_close = FALSE,
 };
 #endif
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

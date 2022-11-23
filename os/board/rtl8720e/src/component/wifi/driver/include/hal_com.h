@@ -22,10 +22,11 @@
 
 #include "HalVerDef.h"
 #include "hal_pg.h"
+#include "hal_def.h"
 #include "hal_intf.h"
 #include "hal_phy.h"
 #include "hal_phy_reg.h"
-#if  defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8730E)
+#if  defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 #include "wififw_reg_rom.h"
 #elif defined(CONFIG_RTL8720E)
 #include "wififw_reg_ram.h"
@@ -41,7 +42,7 @@
 #if(PHYDM_VERSION > 1)
 #include "hal_com_c2h.h"
 #endif
-#include "hal_def.h"
+
 //----------------------------------------------------------------------------
 //       Rate Definition
 //----------------------------------------------------------------------------
@@ -222,13 +223,6 @@ typedef enum _FIRMWARE_SOURCE {
 	FW_SOURCE_HEADER_FILE = 1,		//from header file
 } FIRMWARE_SOURCE, *PFIRMWARE_SOURCE;
 
-#ifdef CONFIG_MCC_IQK_OFFLOAD
-typedef enum _CH_SW_USE_CASE {
-	CH_SW_USE_CASE_TDLS		= 0,
-	CH_SW_USE_CASE_MCC		= 1
-} CH_SW_USE_CASE;
-#endif
-
 #define QSLT_BK							0x2//0x01
 #define QSLT_BE							0x0
 #define QSLT_VI							0x5//0x4
@@ -387,12 +381,6 @@ void SetHalODMVar(
 
 u8 SetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
 u8 GetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
-
-#ifdef CONFIG_MCC_IQK_OFFLOAD
-s8 rtw_hal_ch_sw_iqk_info_search(_adapter *padapter, u8 central_chnl, u8 bw_mode);
-void rtw_hal_ch_sw_iqk_info_backup(_adapter *adapter);
-void rtw_hal_ch_sw_iqk_info_restore(_adapter *padapter, u8 ch_sw_use_case);
-#endif
 
 
 #endif

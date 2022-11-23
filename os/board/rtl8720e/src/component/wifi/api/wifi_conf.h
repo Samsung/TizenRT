@@ -565,6 +565,14 @@ int wifi_get_mac_address(rtw_mac_t *mac);
 int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting);
 
 /**
+ * @brief  This function is used to get wifi mode
+ * 	for station mode when connecting to AP.
+ * @param[in]  no
+ * @return  0-unconnected, 4-wifi4, 5-wifi5, 6-wifi6.
+ */
+int wifi_get_network_mode(void);
+
+/**
  * @brief  Set the network mode according to the data rate its supported.
  * 	Driver works in BGN mode in default after driver initialization.
  * 	This function is used to change wireless network mode
@@ -1090,9 +1098,41 @@ int wifi_wowlan_set_arp_rsp_keep_alive(int enable);
 #endif
 
 #if defined CONFIG_WOWLAN_DTIMTO || defined __DOXYGEN__
+/**
+ * @brief   tcp keep alive fine tune
+ *
+ * @param[in]   dtimto_enable : enable or disable
+ * @param[in]   retry_inc : change dtim to this value
+ * @param[in]   ack_timeout : timeout for wait tcp ack
+ * @param[in]   dtim : TBTT interval
+ * @return  RTW_SUCCESS
+ */
 int wifi_wowlan_set_dtimto(uint8_t dtimto_enable, uint8_t retry_inc, uint8_t ack_timeout, uint8_t dtim);
 #endif
 
+/**
+ * @brief   smart dtim in wowlan keep alive
+ *
+ * @param[in]   check_period : check period of TBTT
+ * @param[in]   threshold : threshold of beacon lose
+ * @param[in]   change_dtim : change dtim
+ * @param[in]   dtim : TBTT interval
+ * @return  RTW_SUCCESS
+ */
+#if defined CONFIG_SMART_DTIM  || defined __DOXYGEN
+int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t change_dtim, uint8_t dtim);
+#endif
+
+/**
+ * @brief   wowlan parameter setting
+ *
+ * @param[in]   fwdis_period : fw decision disconnect check period
+ * @param[in]   fwdis_trypktnum : fw decision disconnect null packet retry
+ * @param[in]   pno_enable : pno method enable
+ * @param[in]   pno_timeout : timeout for wait ap enable
+ * @param[in]   l2_keepalive_period : send period of l2 keep alive
+ * @return  RTW_SUCCESS
+ */
 #if defined CONFIG_WOWLAN_PARAM || defined __DOXYGEN__
 int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
 								 u8  fwdis_trypktnum,
@@ -1101,10 +1141,30 @@ int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
 								 u8  l2_keepalive_period);
 #endif
 
-#if defined CONFIG_SMART_DTIM || defined __DOXYGEN__
-int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t change_dtim, uint8_t dtim);
+
+#if defined CONFIG_ARP_REQUEST_KEEP_ALIVE  || defined __DOXYGEN__
+/**
+ * @brief   use ARP request as keep alive packet instead of null frame
+ *
+ * @param[in]   powerbit : power bit setting
+ * @param[in]   dtim1to : change to dtim1
+ * @return  RTW_SUCCESS
+ */
+int wifi_wowlan_set_arpreq_keepalive(u8  powerbit,
+									 u8  dtim1to);
 #endif
 
+#if defined CONFIG_WOWLAN_IO_WDT || defined __DOXYGEN__
+/**
+ * @brief   set gpio pull ctrl in wowlan
+ *
+ * @param[in]   gpio : gpiof number
+ * @param[in]   interval : pull ctrl interval
+ * @return  RTW_SUCCESS
+ */
+int wifi_wowlan_set_wdt(u8  gpio,
+						u8  interval);
+#endif
 
 // WoWlan related
 //-------------------------------------------------------------//
@@ -1124,30 +1184,6 @@ int wifi_wowlan_ctrl(int enable);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
-#endif
-
-#if defined CONFIG_RTK_MESH || defined __DOXYGEN__
-/**
- * @brief  print current mac filter list
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_list_mac_filter(void);
-
-/**
- * @brief  print current mesh ID
- * @param[out]  mesh_id : point to the mesh ID that will get
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_get_mesh_id(unsigned char *mesh_id);
-
-/**
- * @brief  set mesh RSSI threshold
- * @param[in]  ifname: can be WLAN0_NAME or WLAN1_NAME
- * @param[in]  rssi: the mesh RSSI threshold value that will set
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_set_mesh_rssi_threshold(const char *ifname, s32 rssi);
-
 #endif
 
 /**

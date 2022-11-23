@@ -209,7 +209,7 @@ void inic_ipc_dev_init_priv(void)
 	/* Initialize the tX task */
 	if (pdTRUE != xTaskCreate((TaskFunction_t)inic_xmit_tasklet, \
 							  (const char *const)"inic_ipc_dev_tx_tasklet", 1024, NULL, \
-							  tskIDLE_PRIORITY + 6, NULL)) {
+							  tskIDLE_PRIORITY + CONFIG_INIC_IPC_DEV_XMIT_PRI, NULL)) {
 		DBG_8195A("Create inic_ipc_dev_tx_tasklet Err!!\n");
 	}
 }

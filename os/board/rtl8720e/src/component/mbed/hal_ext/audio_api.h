@@ -229,6 +229,31 @@ void audio_set_param(audio_t *obj, audio_sr sample_rate, audio_wl word_length);
 void audio_set_dma_buffer(audio_t *obj, u8 *tx_buf, u8 *rx_buf, u32 page_size, audio_page_num page_num);
 
 /**
+  * @brief  Set the audio sample rate and word length.
+  * @param  obj: Audio object define in application software.
+  * @param  sample_rate: this parameter can be one of the following values:
+  *            @arg ASR_8KHZ: sample rate is 8kHz
+  *            @arg ASR_16KHZ: sample rate is 16kHz
+  *            @arg ASR_32KHZ: sample rate is 32kHz
+  *            @arg ASR_44p1KHZ: sample rate is 44.1kHz
+  *            @arg ASR_48KHZ: sample rate is 48kHz
+  *            @arg ASR_88p2KHZ: sample rate is 88.2kHz
+  *            @arg ASR_96KHZ: sample rate is 96kHz
+  * @param  word_length: this parameter can be one of the following values:
+  *            @arg WL_8BIT: sample bit is 8 bit
+  *            @arg WL_16BIT: sample bit is 16 bit
+  *            @arg WL_24BIT: sample bit is 24 bit (World length is 24bits but ADC and DAC are 16bits)
+  * @param  tx_ch: select tx channel:
+  *            @arg A_MONO: mono
+  *            @arg A_STEREO: stereo
+  * @param  rx_ch: select rx channel:
+  *            @arg A_MONO: mono
+  *            @arg A_STEREO: stereo
+  * @retval none
+  */
+void audio_set_param_adv(audio_t *obj, audio_sr sample_rate, audio_wl word_length, audio_ch tx_ch, audio_ch rx_ch);
+
+/**
   * @brief  Set tx interrupt handler.
   * @param  obj: Audio object define in application software.
   * @param  tx_handler: User defined IRQ callback function.
@@ -597,6 +622,24 @@ void audio_input_r_eq(audio_t *obj, audio_eq eq, BOOL en, u32 h0, u32 b0, u32 b1
  *  @retval none
  */
 void audio_output_l_eq(audio_t *obj, audio_eq eq, BOOL en, u32 h0, u32 b0, u32 b1, u32 a0, u32 a1);
+
+/**
+  * @brief  Control left channel digital microphone gain .
+  * @param  obj: Audio object define in application software.
+  * @param  dmic_gain: 0,12,24,36 dB
+  * @retval none
+  */
+void audio_l_dmic_gain(audio_t *obj, audio_dmic_gain dmic_gain);
+
+/**
+  * @brief  Control right channel digital microphone gain .
+  * @param  obj: Audio object define in application software.
+  * @param  dmic_gain: 0,12,24,36 dB
+  * @retval none
+  */
+void audio_r_dmic_gain(audio_t *obj, audio_dmic_gain dmic_gain);
+
+void audio_set_param_adv(audio_t *obj, audio_sr sample_rate, audio_wl word_length, audio_ch tx_ch, audio_ch rx_ch);
 #endif
 
 

@@ -307,6 +307,11 @@ int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic)
 	return ret;
 }
 
+int wifi_get_network_mode(void)
+{
+	return inic_ipc_api_host_message_send(IPC_API_WIFI_GET_NETWORK_MODE, NULL, 0);
+}
+
 int wifi_set_network_mode(rtw_network_mode_t mode)
 {
 	int ret = 0;

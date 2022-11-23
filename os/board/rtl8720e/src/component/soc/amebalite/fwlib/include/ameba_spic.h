@@ -1027,6 +1027,37 @@ typedef void (*FLASH_STRUCT_INIT_FUNC)(FLASH_InitTypeDef *FLASH_InitStruct);
 
 #define SPIC_VALID_CMD_MASK		(0xffff)
 
+/** @defgroup Flash_Region_Type
+  * @{
+  */
+typedef enum _FLASH_REGION_TYPE_ {
+	IMG_BOOT   =   0,
+	IMG_BOOT_OTA   	= 1,
+	IMG_IMG2_OTA1	= 2,
+	IMG_IMG2_OTA2  	= 3,
+	IMG_IMG3_OTA1 	= 4,
+	IMG_IMG3_OTA2   = 5,
+	IMG_DSP			= 6,
+	FTL   =   	7,
+	USER  =   	8,
+	RSVD = 		9,
+	SYS_DATA	=	10,
+} FLASH_REGION_TYPE, *PFLASH_REGION_TYPE;
+
+/**
+  * @brief  FLASH Layout Info Structure Definition
+  */
+typedef struct {
+	u32 region_type;
+	u32 start_addr;
+	u32 end_addr;
+} FlashLayoutInfo_TypeDef;
+
+extern u32 FLASH_RESERVED_DATA_BASE;
+extern u32 FLASH_SYSTEM_DATA_ADDR;
+extern u32 LFS_FLASH_BASE_ADDR;
+extern u32 LFS_DEVICE_SIZE;
+void flash_layout_init(void);
 /* MANUAL_GEN_END */
 
 #endif

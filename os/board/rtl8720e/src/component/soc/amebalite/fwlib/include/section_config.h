@@ -94,27 +94,25 @@
 #define IMAGE2_ENTRY_SECTION                     \
             SECTION(".image2.entry.data")
 
-#define IMAGE2_RAM_TEXT_SECTION                     \
-            SECTION(".image2.sram.text")
-
-#define IMAGE2_RAM_DATA_SECTION                     \
-            SECTION(".image2.sram.data")
-
 #define SDRAM_DATA_SECTION
-
-#if defined (ARM_CORE_CM4)
-#define PSRAM_TEXT_SECTION			SECTION(".psram.text")
-#define PSRAM_DATA_SECTION			SECTION(".psram.data")
-#define PSRAM_RODATA_SECTION		SECTION(".psram.rodata")
-#define PSRAM_BSS_SECTION			SECTION(".psram.bss")
-#define PSRAM_HEAP_SECTION			SECTION(".psram.heap")
-#elif defined (RSICV_CORE_KR4)
 #define PSRAM_TEXT_SECTION
 #define PSRAM_DATA_SECTION
 #define PSRAM_RODATA_SECTION
 #define PSRAM_BSS_SECTION
 #define PSRAM_HEAP_SECTION
-#endif
+
+#define TIMESENSITIVE_TEXT_SECTION			SECTION(".timesensitive.text")
+#define TIMESENSITIVE_DATA_SECTION			SECTION(".timesensitive.data")
+
+/* non.dram can put in Flash(No DeepPowerDown) or SRAM after psram disabled, such as pmc code */
+#define NON_DRAM_TEXT_SECTION				SECTION(".non.dram.text")
+
+/* .sramdram.only means cannot put in Flash, such as flash api, interrupt isr */
+#define SRAMDRAM_ONLY_TEXT_SECTION			SECTION(".sramdram.only.text")
+
+/* sram only used in pmc flow, such as deepsleep entry when flash deep down or after psram disabled */
+#define SRAM_ONLY_TEXT_SECTION				SECTION(".sram.only.text")
+#define SRAM_ONLY_DATA_SECTION				SECTION(".sram.only.data")
 
 #define SBOOT_HEAP_SECTION			SECTION(".sboot.heap")
 
@@ -181,33 +179,11 @@
 /* rom map */
 #define ROM_FUNCTION_MAP		SECTION(".rommap.data")
 
-//3 FW Section
-#define FW_ROM_TEXT_SECTION                         \
-        SECTION(".FW.rom.text")
-
-#define FW_ROM_DATA_SECTION                         \
-        SECTION(".FW.rom.rodata")
-
-#define FW_ROM_BSS_SECTION                         \
-        SECTION(".FW.rom.bss")
-
 /* image3 secure image */
 #define IMAGE3_ENTRY_SECTION                     \
 	SECTION(".image3.nsc_entry.text")
 
-#if defined(ARM_CORE_CA7)
-#undef	HAL_ROM_TEXT_SECTION
-#undef	HAL_ROM_DATA_SECTION
-#undef	HAL_ROM_BSS_SECTION
-#undef	LIBC_ROM_TEXT_SECTION
-#undef	LIBC_ROM_DATA_SECTION
 
-#define	HAL_ROM_TEXT_SECTION
-#define	HAL_ROM_DATA_SECTION
-#define	HAL_ROM_BSS_SECTION
-#define LIBC_ROM_TEXT_SECTION
-#define	LIBC_ROM_DATA_SECTION
-#endif
 
 /*USB_OTG define*/
 #define OTG_ROM_TEXT_SECTION

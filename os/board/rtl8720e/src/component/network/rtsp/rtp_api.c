@@ -6,7 +6,6 @@ void rtp_object_init(struct rtp_object *payload)
 {
 	memset(payload, 0, sizeof(struct rtp_object));
 	INIT_LIST_HEAD(&payload->rtp_list);
-	rtw_mutex_init(&payload->list_lock);
 	payload->state = RTP_OBJECT_IDLE;
 }
 
@@ -18,9 +17,8 @@ void rtp_object_deinit(struct rtp_object *payload)
 	if (payload->extra != NULL) {
 		free(payload->extra);
 	}
-	memset(payload, 0, sizeof(struct rtp_object));
 	INIT_LIST_HEAD(&payload->rtp_list);
-	rtw_mutex_free(&payload->list_lock);
+	memset(payload, 0, sizeof(struct rtp_object));
 	payload->state = RTP_OBJECT_IDLE;
 }
 

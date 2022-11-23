@@ -983,7 +983,7 @@ void dhcps_set_addr_pool(int addr_pool_set, struct ip_addr *addr_pool_start, str
 
 
 #define DOMAIN_NAME "amebaiot.com"
-char *domain_name = DOMAIN_NAME;
+const char *domain_name = DOMAIN_NAME;
 uint8_t domain_name_buf[sizeof(DOMAIN_NAME) + 1];
 
 static void dnss_receive_udp_packet_handler(

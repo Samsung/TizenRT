@@ -256,9 +256,16 @@ int wifi_set_group_id(unsigned char value)
 #endif
 }
 
+int wifi_get_network_mode(void)
+{
+	return rltk_get_wifi_mode();
+}
+
+
 int wifi_set_network_mode(rtw_network_mode_t mode)
 {
-	if ((mode == RTW_NETWORK_B) || (mode == RTW_NETWORK_BG) || (mode == RTW_NETWORK_BGN)) {
+	if ((mode == RTW_NETWORK_B) || (mode == RTW_NETWORK_BG) || (mode == RTW_NETWORK_BGN) || (mode == RTW_NETWORK_BGN_AX)
+		|| (mode == RTW_NETWORK_A) || (mode == RTW_NETWORK_A_N) || (mode == RTW_NETWORK_A_N_AC) || (mode == RTW_NETWORK_A_N_AC_AX)) {
 		return rltk_wlan_wireless_mode((unsigned char) mode);
 	}
 
