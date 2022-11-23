@@ -194,6 +194,17 @@ typedef struct _IPC_INIT_TABLE_ {
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
 /**
+  * @brief IPC SEM IDX
+  */
+typedef enum {
+	IPC_SEM_IMQ = 0,
+	IPC_SEM_FLASH,
+	IPC_SEM_2,		/* reserved for futural use*/
+	IPC_SEM_3,		/* reserved for futural use*/
+	IPC_SEM_4,		/* reserved for futural use*/
+} IPC_SEM_IDX;
+
+/**
   * @}
   */
 
@@ -257,8 +268,11 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_R2M_WAKE_AP					1	/*!<  KR4 -->  KM4 Wakeup*/
 #define IPC_R2M_WIFI_FW_INFO				2	/*!<  KR4 -->  KM4 FW Info*/
 #define IPC_R2M_FLASHPG_REQ				3	/*!<  KR4 -->  KM4 Flash Program REQUEST*/
+#define IPC_R2M_IMQ_TRX_TRAN				4	/*!<  KR4 -->  KM4 IMQ Message Exchange */
 //#define IPC_R2M_Channel4				4
 //#define IPC_R2M_Channel5				5
+#define IPC_R2M_BT_API_TRAN					5	/*!<  KR4 -->  KM4 BT API Exchange */
+// #define IPC_R2M_BT_DATA_TRAN				5	/*!<  KR4 -->  KM4 BT DATA Exchange */
 #define IPC_R2M_WIFI_TRX_TRAN				6	/*!<  KR4 -->  KM4 WIFI Message Exchange */
 #define IPC_R2M_WIFI_API_TRAN				7	/*!<  KR4 -->  KM4 API WIFI Message Exchange */
 
@@ -266,6 +280,7 @@ typedef struct _IPC_INIT_TABLE_ {
 //#define IPC_R2D_Channel1				1
 //#define IPC_R2D_Channel2				2
 //#define IPC_R2D_Channel3				3
+#define IPC_R2D_IMQ_TRX_TRAN			4	/*!<  KR4 -->  DSP IMQ Message Exchange */
 //#define IPC_R2D_Channel4				4
 //#define IPC_R2D_Channel5				5
 //#define IPC_R2D_Channel6				6
@@ -281,15 +296,18 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_M2R_WIFI_FW_INFO						1	/*!<  KM4 -->  KR4 FW Info*/
 #define IPC_M2R_WAKE_AP							2	/*!<  KM4 -->  KR4 Wakeup*/
 #define IPC_M2R_LOGUART_RX_SWITCH				3	/*!<  KM4 -->  KR4 Loguart Rx Switch*/
-#define IPC_M2R_FLASHPG_REQ						4	/*!<  KM4 -->  KR4 IFlash Program Request*/
+#define IPC_M2R_IMQ_TRX_TRAN					4	/*!<  KM4 -->  KR4 IMQ Message Exchange */
 //#define IPC_M2R_Channel5						5
+#define IPC_M2R_BT_API_TRAN						5	/*!<  KM4 -->  KR4 BT API Exchange */
+// #define IPC_M2R_BT_DATA_TRAN					5	/*!<  KM4 -->  KR4 BT DATA Exchange */
 #define IPC_M2R_WIFI_TRX_TRAN						6	/*!<  KM4 -->  KR4 WIFI Message Exchange */
 #define IPC_M2R_WIFI_API_TRAN						7	/*!<  KM4 -->  KR4 WIFI API Message Exchange */
 
 #define IPC_M2D_WAKE_DSP						0	/*!<  KM4 -->  DSP Wakeup */
 //#define IPC_M2D_Channel1							1
 #define IPC_M2D_LOGUART_RX_SWITCH				2	/*!<  KM4 -->  DSP Loguart Rx Switch*/
-//#define IPC_M2D_Channel3						3
+#define IPC_M2D_802154_TRAN						3
+#define IPC_M2D_IMQ_TRX_TRAN					4	/*!<  KM4 -->  DSP IMQ Message Exchange */
 //#define IPC_M2D_Channel4						4
 //#define IPC_M2D_Channel5						5
 //#define IPC_M2D_Channel6						6
@@ -305,6 +323,7 @@ typedef struct _IPC_INIT_TABLE_ {
 //#define IPC_D2R_Channel1						1
 //#define IPC_D2R_Channel2						2
 //#define IPC_D2R_Channel3						3
+#define IPC_D2R_IMQ_TRX_TRAN					4	/*!<  DSP -->  KR4 IMQ Message Exchange */
 //#define IPC_D2R_Channel4						4
 //#define IPC_D2R_Channel5						5
 //#define IPC_D2R_Channel6						6
@@ -313,11 +332,33 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_D2M_TICKLESS_INDICATION				0	/*!<  DSP -->  KM4 Tickless Indicate */
 //#define IPC_D2M_WIFI_TRX_TRAN						1	/*!<  DSP -->  KM4 WIFI Message Exchange */
 //#define IPC_D2M_WIFI_API_TRAN						2	/*!<  DSP -->  KM4 WIFI API Message Exchange */
-//#define IPC_D2M_Channel3						3
+#define IPC_D2M_802154_TRAN						3
+#define IPC_D2M_IMQ_TRX_TRAN					4	/*!<  DSP -->  KM4 IMQ Message Exchange */
 //#define IPC_D2M_Channel4						4
 //#define IPC_D2M_Channel5						5
 //#define IPC_D2M_Channel6						6
 //#define IPC_D2M_Channel7						7
+/**
+  * @}
+  */
+
+/** @defgroup IPC_SEM_PXID
+  * @{
+  */
+#define KM4_IPC_PXID BIT(0)
+#define KR4_IPC_PXID BIT(1)
+#define DSP_IPC_PXID BIT(2)
+#define CA7_IPC_PXID BIT(3)
+
+#if defined(ARM_CORE_CM4)
+#define IPC_FLASH_LOCK  KM4_IPC_PXID
+#elif defined(ARM_CORE_CA7)
+#define IPC_FLASH_LOCK  KR4_IPC_PXID
+#elif defined(RSICV_CORE_KR4)
+#define IPC_FLASH_LOCK  DSP_IPC_PXID
+#else
+#define IPC_FLASH_LOCK  CA7_IPC_PXID
+#endif
 /**
   * @}
   */
@@ -339,8 +380,8 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData);
-u32 IPC_SEMTake(u32 SEM_Idx, u32 PXID_Idx);
-u32 IPC_SEMFree(u32 SEM_Idx, u32 PXID_Idx);
+u32 IPC_SEMTake(IPC_SEM_IDX SEM_Idx, u32 PXID_Idx);
+u32 IPC_SEMFree(IPC_SEM_IDX SEM_Idx, u32 PXID_Idx);
 
 /**
   * @}

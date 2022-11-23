@@ -23,6 +23,7 @@
 #undef  CONFIG_FT
 #undef  CONFIG_EQC
 #undef  CONFIG_QA
+#undef  CONFIG_OLT
 #undef  CONFIG_CornerTest
 #undef  CONFIG_POST_SIM
 
@@ -32,8 +33,11 @@
 #undef  CONFIG_TRUSTZONE
 
 /*
- * < CONFIG BOOT OPTION
+ * < CONFIG Link Option
  */
+#define CONFIG_CODE_XIP_DATA_PSRAM 1
+#undef  CONFIG_CODE_PSRAM_DATA_SRAM
+#undef  CONFIG_CODE_XIP_DATA_SRAM
 #undef  CONFIG_XIP_FLASH
 
 /*
@@ -84,7 +88,6 @@
 /*
  * < CONFIG BT
  */
-#undef  CONFIG_BT_EN
 #undef  CONFIG_BT
 #undef  CONFIG_BT_AP
 #undef  CONFIG_BT_NP
@@ -131,10 +134,10 @@
 /*
  * < Audio Config
  */
-#undef  CONFIG_AUDIO_EN
 #undef  CONFIG_AUDIO_FWK
 #undef  CONFIG_MEDIA_PLAYER
 #undef  CONFIG_AUDIO_SPEECH
+#undef  CONFIG_AUDIO_RPC
 
 /*
  * < IMQ Config
@@ -153,3 +156,7 @@
 #undef  CONFIG_TOOLCHAIN_ARM_GCC
 #undef  CONFIG_LINK_ROM_LIB
 #define CONFIG_LINK_ROM_SYMB 1
+/*
+ * < CONFIG USE FLASH LAYOUT CFG
+ */
+#define  CONFIG_USE_FLASHCFG

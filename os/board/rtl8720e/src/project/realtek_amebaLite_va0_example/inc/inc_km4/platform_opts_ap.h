@@ -15,13 +15,6 @@
 
 /******************************************************************************/
 
-/**
-* For common flash usage
-*/
-#define AP_SETTING_SECTOR		0x000FE000
-#define UART_SETTING_SECTOR		0x000FC000
-#define SPI_SETTING_SECTOR		0x000FC000
-#define FAST_RECONNECT_DATA 	(0x80000 - 0x1000)
 
 #define CONFIG_ENABLE_RDP		0
 
@@ -48,11 +41,15 @@
 #define CONFIG_HILINK			0//on or off for huawei hilink
 
 /* For WPS and P2P */
-#define CONFIG_ENABLE_WPS		0
+#define CONFIG_ENABLE_WPS		1
 #define CONFIG_ENABLE_P2P		0//on/off p2p cmd in log_service or interactive mode
 #define CONFIG_ENABLE_WPS_DISCOVERY	0
 #if CONFIG_ENABLE_P2P
 #define CONFIG_ENABLE_WPS_AP		1
+#endif
+#if CONFIG_ENABLE_WPS
+#define WPS_CONNECT_RETRY_COUNT		4
+#define WPS_CONNECT_RETRY_INTERVAL	5000 // in ms
 #endif
 #if (CONFIG_ENABLE_P2P && ((CONFIG_ENABLE_WPS_AP == 0) || (CONFIG_ENABLE_WPS == 0)))
 #error "If CONFIG_ENABLE_P2P, need to define CONFIG_ENABLE_WPS_AP 1"
@@ -67,9 +64,6 @@
 #undef CONFIG_USE_MBEDTLS
 #define CONFIG_USE_MBEDTLS 1
 #endif
-
-/* For Simple Link */
-#define CONFIG_INCLUDE_SIMPLE_CONFIG		0
 
 #define CONFIG_GAGENT			0
 #define CONFIG_JOINLINK    0

@@ -72,7 +72,9 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 		wifi_data_to_flash.security_type = RTW_SECURITY_WEP_PSK;
 		break;
 	case RTW_SECURITY_WPA_TKIP_PSK:
+	case RTW_SECURITY_WPA_AES_PSK:
 	case RTW_SECURITY_WPA2_AES_PSK:
+	case RTW_SECURITY_WPA2_TKIP_PSK:
 #ifdef CONFIG_SAE_SUPPORT
 	case RTW_SECURITY_WPA3_AES_PSK:
 #endif
@@ -186,7 +188,9 @@ WIFI_RETRY_LOOP:
 			wifi.key_id = key_id;
 			break;
 		case RTW_SECURITY_WPA_TKIP_PSK:
+		case RTW_SECURITY_WPA_AES_PSK:
 		case RTW_SECURITY_WPA2_AES_PSK:
+		case RTW_SECURITY_WPA2_TKIP_PSK:
 #ifdef CONFIG_SAE_SUPPORT
 		case RTW_SECURITY_WPA3_AES_PSK:
 #endif
@@ -262,6 +266,7 @@ int check_is_the_same_ap()
 
 int Erase_Fastconnect_data(void)
 {
+#ifndef CONFIG_USE_FLASHCFG
 	flash_t flash;
 
 	if (p_wifi_do_fast_connect != NULL) {
@@ -269,6 +274,7 @@ int Erase_Fastconnect_data(void)
 		flash_erase_sector(&flash, FAST_RECONNECT_DATA);
 		device_mutex_unlock(RT_DEV_LOCK_FLASH);
 	}
+#endif
 	return 0;
 }
 

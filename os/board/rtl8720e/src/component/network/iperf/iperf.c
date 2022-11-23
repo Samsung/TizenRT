@@ -8,7 +8,7 @@
 #if defined(CONFIG_AS_INIC_AP)
 #define BSD_STACK_SIZE		    1024
 #else
-#define BSD_STACK_SIZE		    256
+#define BSD_STACK_SIZE		    512
 #endif
 #define DEFAULT_PORT            5001
 #define DEFAULT_TIME            10
@@ -463,7 +463,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 			client_hdr.tv_sec  = htonl(now / 1000);
 			client_hdr.tv_usec = htonl((now % 1000) * 1000);
 			memcpy(udp_client_buffer, &client_hdr, sizeof(client_hdr));
-			while ((skbdata_used_num > (max_skb_buf_num - 5)) || (skbbuf_used_num > (max_local_skb_num - 5))) {
+			while ((max_skb_buf_num - skbdata_used_num) < 3 || (max_local_skb_num - skbbuf_used_num) < 3) {
 				vTaskDelay(1);
 			}
 			if (sendto(iperf_data.client_fd, udp_client_buffer, iperf_data.buf_size, 0, (struct sockaddr *)&ser_addr, addrlen) < 0) {

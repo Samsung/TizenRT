@@ -31,7 +31,7 @@ If you want to change this file please make sure notify all driver teams maintai
 #define STA_DM_CTRL_ACTIVE			BIT(0)
 #define STA_DM_CTRL_CFO_TRACKING	BIT(1)
 
-#ifdef CONFIG_BEAMFORMING
+#ifdef CONFIG_BEAMFORMEE_VHT
 #define	BEAMFORMING_HT_BEAMFORMER_ENABLE	BIT(0)	/*Declare sta support beamformer*/
 #define	BEAMFORMING_HT_BEAMFORMEE_ENABLE	BIT(1)	/*Declare sta support beamformee*/
 #define	BEAMFORMING_HT_BEAMFORMER_TEST		BIT(2)	/*Transmiting Beamforming no matter the target supports it or not*/
@@ -163,14 +163,6 @@ enum wireless_set {
 
 /*--------------------Define Struct-----------------------------------*/
 
-#ifdef CONFIG_BEAMFORMING
-struct bf_cmn_info {
-	u8	ht_beamform_cap;		/*Sta capablity*/
-	u16	vht_beamform_cap;		/*Sta capablity*/
-	u16	p_aid;
-	u8	g_id;
-};
-#endif
 struct rssi_info {
 	s8		rssi;
 	s8		rssi_cck;
@@ -222,9 +214,6 @@ struct cmn_sta_info {
 	u8	stbc_en: 2;			/*[Driver] really transmitt STBC*/
 	u8	ldpc_en: 2;			/*[Driver] really transmitt LDPC*/
 	enum wireless_set	support_wireless_set;/*[Driver]*/
-#ifdef CONFIG_BEAMFORMING
-	struct bf_cmn_info	bf_info;	/*[Driver]*/
-#endif
 	u8	sm_ps: 2;			/*[Driver]*/
 	struct dtp_info dtp_stat;		/*[PHYDM] Dynamic Tx power offset*/
 	u8	wireless_mode;	/*enum wlan_mode, [Driver], move from sta_info to cmn_sta_info for compating ax */

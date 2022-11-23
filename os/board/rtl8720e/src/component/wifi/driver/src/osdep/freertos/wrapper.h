@@ -165,20 +165,16 @@ extern void restore_flags(void);
 //	2003/12/26. The value is reduced from 2048 to 1658 for GSPI
 //	2014/02/05. The value is 1650 for 8195A LX_BUS
 #define SKB_RESERVED_FOR_SAFETY	8//0
-#ifdef CONFIG_RTK_MESH
-#define SKB_WLAN_TX_EXTRA_LEN	(TXDESC_SIZE + WLAN_HDR_A4_QOS_LEN + WLAN_MAX_IV_LEN + WLAN_HDR_MAX_MESH_HDR_LEN +WLAN_SNAP_HEADER - WLAN_ETHHDR_LEN)
-#else
+
 #define SKB_WLAN_TX_EXTRA_LEN	(TXDESC_SIZE + WLAN_HDR_A4_QOS_LEN + WLAN_MAX_IV_LEN + WLAN_SNAP_HEADER - WLAN_ETHHDR_LEN)
-#endif
+
 #define RX_DRIVER_INFO				32
 
-#if (defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI)
-#define HAL_INTERFACE_OVERHEAD_SKB_DATA 12	//HAL_INTERFACE_CMD (4) + HAL_INTERFACE_STATUS (8)
-#elif defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+#if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #define HAL_INTERFACE_OVERHEAD_SKB_DATA 0
 #endif
 
-#if defined CONFIG_GSPI_HCI || defined CONFIG_SDIO_HCI || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+#if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 #if defined(CONFIG_MP_INCLUDED)
 #define MAX_RX_PKT_LIMIT			((WLAN_MAX_PROTOCOL_OVERHEAD + WLAN_MAX_ETHFRM_LEN + 511) / 512) // 4, for lxbus
 #define MAX_RX_PKT_SIZE					MAX_RX_PKT_LIMIT*512	// MAX_SKB_BUF_SIZE = 0+32+40+512*4+0 = 2120
@@ -187,15 +183,10 @@ extern void restore_flags(void);
 #define MAX_RX_PKT_SIZE				WLAN_MAX_PROTOCOL_OVERHEAD + WLAN_MAX_ETHFRM_LEN	// MAX_RX_PKT_SIZE = 64+1514 = 1578
 #define MAX_RX_PKT_LIMIT				((MAX_RX_PKT_SIZE + 511) / 512)			// ((1578 + 512)  / 512) = 4
 #endif
-
-#if defined(CONFIG_HIGH_TP_TEST) && !defined(CONFIG_INIC_IPC_HIGH_TP)
-#define MAX_SKB_BUF_SIZE			2104
-#else
 #define MAX_SKB_BUF_SIZE			(HAL_INTERFACE_OVERHEAD_SKB_DATA+RX_DRIVER_INFO+\
 												((TXDESC_SIZE>RXDESC_SIZE)? TXDESC_SIZE:RXDESC_SIZE) +\
 												MAX_RX_PKT_SIZE +\
 												SKB_RESERVED_FOR_SAFETY)	// 0+32+40+1578+8 = 1658
-#endif
 
 #else
 #define MAX_SKB_BUF_SIZE	2048
@@ -204,7 +195,7 @@ extern void restore_flags(void);
 #if 0
 struct  sk_buff_head {
 	struct list_head	*next, *prev;
-	u32			qlen;
+	uint32_t			qlen;
 };
 
 struct sk_buff {
@@ -350,30 +341,9 @@ static __inline__ unsigned char *skb_end_pointer(const struct sk_buff *skb)
  */
 struct net_device;
 extern void kfree_skb_chk_key(struct sk_buff *skb, struct net_device *root_dev);
-#ifdef CONFIG_TRACE_SKB
-extern void show_skb(void);
-extern int _set_skb_list_flag(struct sk_buff *skb, unsigned int queueflag);
-extern void dump_skb_list(void);
-#define set_skb_list_flag(skb, queueflag) \
-	(\
-		_set_skb_list_flag((skb), queueflag), \
-		(skb) ? (skb)->funcname[(skb)->list_idx] = __FUNCTION__:NULL \
-	)
-extern int _clear_skb_list_flag(struct sk_buff *skb, unsigned int queueflag);
-#define clear_skb_list_flag(skb, queueflag) \
-	(\
-		_clear_skb_list_flag((skb), queueflag), \
-		(skb) ? (skb)->funcname[(skb)->list_idx] = __FUNCTION__ : NULL \
-	)
-#define dev_kfree_skb_any(trx, holder, skb)	\
-	do{\
-		clear_skb_list_flag(skb, SKBLIST_##trx##holder##_MASK);\
-		set_skb_list_flag(skb, SKBLIST_POOL);\
-		kfree_skb_chk_key(skb, skb->dev);\
-	}while (0)
-#else
+
 #define dev_kfree_skb_any(skb)	kfree_skb_chk_key(skb, skb->dev)
-#endif
+
 extern struct sk_buff *dev_alloc_skb(unsigned int length, unsigned int reserve_len);
 extern struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 extern struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
@@ -424,15 +394,20 @@ int dev_alloc_name(struct net_device *net_dev, const char *ifname);
 // Timer Operation
 //----- ------------------------------------------------------------------
 void init_timer(struct timer_list *timer);
-void mod_timer(struct timer_list *timer, u32 delay_time_ms);
+void mod_timer(struct timer_list *timer, uint32_t delay_time_ms);
 void  cancel_timer_ex(struct timer_list *timer);
 void del_timer_sync(struct timer_list *timer);
 void init_timer_wrapper(void);
 void deinit_timer_wrapper(void);
 
 void	rtw_init_timer(_timer *ptimer, void *adapter, TIMER_FUN pfunc, void *cntx, const char *name);
-void	rtw_set_timer(_timer *ptimer, u32 delay_time);
-u8		rtw_cancel_timer(_timer *ptimer);
+void	rtw_set_timer(_timer *ptimer, uint32_t delay_time);
+uint8_t		rtw_cancel_timer(_timer *ptimer);
 void	rtw_del_timer(_timer *ptimer);
+void init_timer_pool(void);
+void deinit_timer_pool(void);
 
 #endif //__WRAPPER_H__
+
+
+

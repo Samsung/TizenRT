@@ -42,7 +42,7 @@ void PLL_I2S_Div(u32 div)
   * @brief  CPU PLL open/close
   * @param  status: ENABLE/DISABLE
   */
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void PLL_CPU(u32 status)
 {
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
@@ -75,7 +75,7 @@ void PLL_CPU(u32 status)
   * @brief  DSP PLL open/close
   * @param  status: ENABLE/DISABLE
   */
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void PLL_DSP(u32 status)
 {
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;
@@ -109,7 +109,7 @@ void PLL_DSP(u32 status)
   when two plls are closed, need close PLL BG; when need to open pll, need open PLL BG first
   * @param  status: ENABLE/DISABLE
   */
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void PLL_BG(u32 status)
 {
 	PLL_TypeDef *PLL = (PLL_TypeDef *)PLL_BASE;

@@ -16,10 +16,11 @@ struct gdma_memcopy_s {
 	GDMA_InitTypeDef GDMA_InitStruct;
 };
 
+TIMESENSITIVE_DATA_SECTION
 struct gdma_memcopy_s gdma_memcpy;
 //xSemaphoreHandle dma_memcpy_sema = NULL;
 
-IMAGE2_RAM_TEXT_SECTION
+TIMESENSITIVE_TEXT_SECTION
 static u32 memcpy_gdma_int(void *pData)
 {
 	/* To avoid gcc warnings */
@@ -37,7 +38,7 @@ static u32 memcpy_gdma_int(void *pData)
 	return TRUE;
 }
 
-IMAGE2_RAM_TEXT_SECTION
+TIMESENSITIVE_TEXT_SECTION
 void memcpy_gdma_init(void)
 {
 	gdma_memcpy.dma_done = 1;
@@ -55,7 +56,7 @@ void memcpy_gdma_init(void)
 	//xSemaphoreTake(dma_memcpy_sema, portMAX_DELAY);
 }
 
-IMAGE2_RAM_TEXT_SECTION
+TIMESENSITIVE_TEXT_SECTION
 static inline u32 memcpy_use_cpu(void *dest, void *src, u32 size)
 {
 	/* To avoid gcc warnings */
@@ -73,7 +74,7 @@ static inline u32 memcpy_use_cpu(void *dest, void *src, u32 size)
 	return FALSE;
 }
 
-IMAGE2_RAM_TEXT_SECTION
+TIMESENSITIVE_TEXT_SECTION
 int memcpy_gdma(void *dest, void *src, u32 size)
 {
 	u32 size_4byte = size & ~(0x03);

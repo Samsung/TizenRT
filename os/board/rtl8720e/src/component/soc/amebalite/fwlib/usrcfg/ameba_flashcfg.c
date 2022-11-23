@@ -21,6 +21,7 @@
 
 void flash_init_userdef(void);
 void nand_init_userdef(void);
+void flash_layout_init(void);
 
 /**
 * @brif Indicate the flash baudrate. It can be one of the following value:
@@ -82,6 +83,28 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 	{0xFF,			0xFFFFFFFF,		FlashClassNone,		0xFFFFFFFF,		NULL},
 };
 
+/*
+* @brif	Flash layout is set according to Flash Layout in User Manual
+*  In each entry, the first item is flash regoin type, the second item is start address, the second item is end address */
+const FlashLayoutInfo_TypeDef Flash_Layout[] = {
+	{IMG_BOOT, 		0x08000000, 0x08006FFF}, //Boot Manifest(4K) + KM4 Bootloader(24K)
+	{RSVD, 			0x08007000, 0x0800EFFF}, //Reserved(32K)
+	{FTL,			0x0800F000, 0x08012FFF}, //FTL for BT(16K), The start offset of flash pages which is allocated to FTL physical map.
+	//Users should modify it according to their own memor
+	{SYS_DATA,		0x08013000, 0x08013FFF}, //System data(4K)
+	{IMG_IMG2_OTA1, 0x08014000, 0x081DFFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 IMG2 OTA1
+	{IMG_IMG3_OTA1, 0x081E0000, 0x081FFFFF}, //Manifest(4K) + RDP IMG OTA1
+	{IMG_BOOT_OTA, 	0x08200000, 0x08206FFF}, //Boot Manifest(4K) + KM4 Bootloader(24K) OTA
+	{IMG_IMG2_OTA2, 0x08214000, 0x083DFFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 IMG2 OTA2
+	{IMG_IMG3_OTA2, 0x083E0000, 0x083FFFFF}, //Manifest(4K) + RDP IMG OTA2
+	{IMG_DSP,		0x08400000, 0x087DFFFF}, //Manifest(4K) + DSP IMG, only one DSP region in layout
+	{USER, 			0x087E0000, 0x087FFFFF}, //Littlefs for user(32K)
+
+	/* End */
+	{0xFF, 			0xFFFFFFFF, 0xFFFFFFFF},
+};
+
+
 /**
  * @brief  To adopt user defined class, need to initialize the parameters in the function below
  *       with its default values according to flash Spec, and add additional config code if need.
@@ -135,5 +158,62 @@ void flash_init_userdef(void)
 	//TODO
 
 }
+
+u32 IMG_ADDR[4][2] = {0}; /* IMG Flash Physical Address use for OTA */
+
+u32 FLASH_RESERVED_DATA_BASE; /* Flash reserved data base address */
+u32 FLASH_SYSTEM_DATA_ADDR;	/* Flash system data address */
+
+u32 LFS_FLASH_BASE_ADDR; /* Littlefs Flash start address */
+u32 LFS_DEVICE_SIZE;  /* Littlefs Flash region size */
+
+u32 ftl_phy_page_start_addr;	/* The start offset of flash pages which is allocated to FTL physical map.
+																	Users should modify it according to their own memory layout!! */
+u8 ftl_phy_page_num = 3;		/* The number of physical map pages, default is 3*/
+
+/**
+ * @brief  Initialize ota image flash physical address, littlefs base, ftl base, reserved base and system data address.
+ * @param none.
+ * @retval none
+ */
+void flash_layout_init(void)
+{
+	u32 i = 0;
+	u32 temp;
+
+	while (Flash_Layout[i].region_type != 0xFF) {
+		temp = Flash_Layout[i].region_type;
+		if (temp == IMG_BOOT) {
+			IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_1] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_BOOT_OTA) {
+			IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_2] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_IMG2_OTA1) {
+			IMG_ADDR[OTA_IMGID_IMG2][OTA_INDEX_1] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_IMG2_OTA2) {
+			IMG_ADDR[OTA_IMGID_IMG2][OTA_INDEX_2] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_IMG3_OTA1) {
+			IMG_ADDR[OTA_IMGID_IMG3][OTA_INDEX_1] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_IMG3_OTA2) {
+			IMG_ADDR[OTA_IMGID_IMG3][OTA_INDEX_2] = Flash_Layout[i].start_addr;
+		} else if (temp == IMG_DSP) {
+			IMG_ADDR[OTA_IMGID_DSP][OTA_INDEX_1] = Flash_Layout[i].start_addr;
+			IMG_ADDR[OTA_IMGID_DSP][OTA_INDEX_2] = Flash_Layout[i].start_addr;
+		} else if (temp == USER) {
+			LFS_FLASH_BASE_ADDR = Flash_Layout[i].start_addr - SPI_FLASH_BASE;
+			LFS_DEVICE_SIZE = Flash_Layout[i].end_addr - Flash_Layout[i].start_addr + 1;
+		} else if (temp == FTL) {
+			ftl_phy_page_start_addr = Flash_Layout[i].start_addr - SPI_FLASH_BASE;
+			ftl_phy_page_num = (Flash_Layout[i].end_addr - Flash_Layout[i].start_addr + 1) / 0x1000 - 1;
+		} else if (temp == RSVD) {
+			FLASH_RESERVED_DATA_BASE = Flash_Layout[i].start_addr - SPI_FLASH_BASE;
+		} else if (temp == SYS_DATA) {
+			FLASH_SYSTEM_DATA_ADDR = Flash_Layout[i].start_addr - SPI_FLASH_BASE;
+		}
+
+		i++;
+	}
+
+}
+
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

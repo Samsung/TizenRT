@@ -73,7 +73,6 @@ CSRCS += ameba_i2c.c \
 	ameba_codec.c \
 	ameba_sport.c \
 	ameba_vad.c \
-	ameba_flash_ram.c \
 	ameba_pll.c \
 	ameba_clk.c \
 	ameba_chipinfo.c \

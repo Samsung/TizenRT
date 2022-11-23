@@ -12,6 +12,10 @@
 ///@{
 #include "device.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined (CONFIG_PLATFORM_8195B)
 /** @addtogroup power mode POWER MODE
  *  @ingroup    hal

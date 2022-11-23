@@ -17,7 +17,8 @@
 
 #include "ameba_soc.h"
 
-IMAGE2_RAM_DATA_SECTION
+#define FLASH_RAM_TEXT_SECTION	SRAMDRAM_ONLY_TEXT_SECTION
+
 uint32_t PrevIrqStatus;
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
@@ -31,11 +32,12 @@ void FLASH_UserMode_Exit(void);
   *		- all interrupt include systick will be stopped.
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
 	/* disable irq */
 	PrevIrqStatus = irq_disable_save();
+	/* Get core-to-core hardware semphone */
 }
 
 /**
@@ -44,7 +46,7 @@ void FLASH_Write_Lock(void)
   *		- all interrupt will be restored.
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
 	/* restore irq */
@@ -60,7 +62,7 @@ void FLASH_Write_Unlock(void)
 *		Only work in OneBitMode.
 * @retval none
 */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data)
 {
 	FLASH_Write_Lock();
@@ -78,7 +80,7 @@ void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data)
   * @param    Status: pointer to byte array to be sent
   * @retval     none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status)
 {
 	FLASH_Write_Lock();
@@ -94,7 +96,7 @@ void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status)
   * @param    NewState: ENABLE/DISABLE
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
 {
 	FLASH_Write_Lock();
@@ -115,7 +117,7 @@ void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
   *		- for compatibility with amebaz, which has 16-byte TX FIFO is 16 byte and max len is 16-cmdlen = 12 byte
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
 {
 	FLASH_Write_Lock();
@@ -136,7 +138,7 @@ void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
   * 		the address in will be erased.
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_EraseXIP(u32 EraseType, u32 Address)
 {
 	FLASH_Write_Lock();
@@ -164,7 +166,7 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
   *		- FLASH_EraseXIP is recommended if need
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_EreaseDwordsXIP(u32 address, u32 dword_num)
 {
 	u32 data[2];
@@ -213,7 +215,7 @@ void FLASH_EreaseDwordsXIP(u32 address, u32 dword_num)
   *		- should use FLASH_SW_CS_Control to protect flash write
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 {
 	FLASH_Write_Lock();
@@ -233,7 +235,7 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
   * @retval   status: Success:1 or Failure: Others.
   * @note auto mode is ok, because we have flash cache
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 int  FLASH_ReadStream(u32 address, u32 len, u8 *data)
 {
 	assert_param(data != NULL);
@@ -277,7 +279,7 @@ int  FLASH_ReadStream(u32 address, u32 len, u8 *data)
 		}
 	} else {
 		while (len >= 4) {
-			*((u32 *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
+			*((u32 *)(void *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
 			pbuf += 4;
 			address += 4;
 			len -= 4;
@@ -302,7 +304,7 @@ int  FLASH_ReadStream(u32 address, u32 len, u8 *data)
   * @param  data: Pointer to a byte array that is to be written.
   * @retval   status: Success:1 or Failure: Others.
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 int  FLASH_WriteStream(u32 address, u32 len, u8 *data)
 {
 	// Check address: 4byte aligned & page(256bytes) aligned
@@ -383,7 +385,7 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *data)
   * @param  Protection:  if disable interrupt when switch clock:
   * @retval   None
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_ClockSwitch(u32 Source, u32 Protection)
 {
 	u32 Temp = 0;
@@ -451,7 +453,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 		}
 
 		if (flash_init_para.phase_shift_idx != 0) {
-		FLASH_CalibrationNewCmd(ENABLE);
+			FLASH_CalibrationNewCmd(ENABLE);
 		} else {
 			FLASH_Read_HandShake_Cmd(flash_init_para.FLASH_rd_sample_dly_cycle_cal - 2, ENABLE);
 		}
@@ -474,7 +476,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	}
 }
 
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -484,7 +486,7 @@ void FLASH_UserMode_Enter(void)
 	while (!(spi_flash->CTRLR0 & BIT_USER_MODE));
 }
 
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_UserMode_Exit(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -500,7 +502,7 @@ void FLASH_UserMode_Exit(void)
 *		Only work in OneBitMode.
 * @retval none
 */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -548,7 +550,7 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 	/* Caller decide to Exit user mode */
 }
 
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_RxCmd(u8 cmd, u32 read_len, u8 *read_data)
 {
 	/* Do Tx in user mode firstly */
@@ -569,7 +571,7 @@ void FLASH_RxCmd(u8 cmd, u32 read_len, u8 *read_data)
 *			@arg WAIT_WRITE_EN: wait until flash status WLE(Write Enbale Latch) bit is set.
 * @retval none
 */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_WaitBusy_InUserMode(u32 WaitType)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -609,7 +611,7 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType)
 	Sector/Block/Chip Erase, Write Status Register instruction.
 * @retval none
 */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_WriteEn_InUserMode(void)
 {
 	/* Wait for flash busy done */
@@ -632,7 +634,7 @@ void FLASH_WriteEn_InUserMode(void)
 *		- This function can only be used to tx cmd(WREN,WRSR,DP,RDP,ERASE etc.),not used to tx data.
 * @retval none
 */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -693,7 +695,7 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData)
   *			TX_NDF can't prevent TX FIFO overflow, so driver should check SR.TFNF before push data to FIFO.
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
@@ -773,7 +775,7 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
   * @param    Status: pointer to byte array to be sent
   * @retval     none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_SetStatus(u8 Cmd, u32 Len, u8 *Status)
 {
 	/* Do Tx in user mode firstly */
@@ -793,7 +795,7 @@ void FLASH_SetStatus(u8 Cmd, u32 Len, u8 *Status)
   * @param    NewState: ENABLE/DISABLE
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_SetStatusBits(u32 SetBits, u32 NewState)
 {
 	u8 status[2];
@@ -852,7 +854,7 @@ void FLASH_SetStatusBits(u32 SetBits, u32 NewState)
   * 		the address in will be erased.
   * @retval none
   */
-IMAGE2_RAM_TEXT_SECTION
+FLASH_RAM_TEXT_SECTION
 void FLASH_Erase(u32 EraseType, u32 Address)
 {
 	u8 Addr[4];

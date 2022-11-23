@@ -123,6 +123,7 @@ u32 OTPGetCRC(void)
   *          - _SUCCESS: read ok
   *          - _FAIL: read fail
   */
+NON_DRAM_TEXT_SECTION
 static u32 OTP_Read8(u32 Addr, u8 *Data)
 {
 	u32 TmpIdx = 0;
@@ -718,6 +719,7 @@ u32 EFUSEWrite8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 Data, UNUSED_WARN_
 /**
   * @brief  define alias name to compatible with old API
   */
+NON_DRAM_TEXT_SECTION
 u32 EFUSE_PMAP_READ8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 *Data, UNUSED_WARN_DIS u8 L25OutVoltage)
 {
 	return OTP_Read8(Addr, Data);

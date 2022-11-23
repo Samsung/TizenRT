@@ -96,6 +96,11 @@ void wifi_set_publish_wakeup(void)
 	rtw_hal_set_publish_wakeup();
 }
 
+extern void rtw_hal_set_tcp_mode(void);
+void wifi_set_tcpssl_keepalive(void)
+{
+	rtw_hal_set_tcp_mode();
+}
 
 #endif
 
@@ -199,34 +204,6 @@ int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len,
 	tcp_header[2] = (uint8_t)(peer_port >> 8);
 	tcp_header[3] = (uint8_t)(peer_port & 0xff);
 
-	uint32_t seqno = 0;
-	uint32_t ackno = 0;
-	uint16_t wnd = 0;
-	extern int lwip_gettcpstatus(int s, uint32_t *seqno, uint32_t *ackno, uint16_t *wnd);
-	lwip_gettcpstatus(socket_fd, &seqno, &ackno, &wnd);
-	// seqno
-	tcp_header[4] = (uint8_t)(seqno >> 24);
-	tcp_header[5] = (uint8_t)((seqno & 0x00ff0000) >> 16);
-	tcp_header[6] = (uint8_t)((seqno & 0x0000ff00) >> 8);
-	tcp_header[7] = (uint8_t)(seqno & 0x000000ff);
-	// ackno
-	tcp_header[8] = (uint8_t)(ackno >> 24);
-	tcp_header[9] = (uint8_t)((ackno & 0x00ff0000) >> 16);
-	tcp_header[10] = (uint8_t)((ackno & 0x0000ff00) >> 8);
-	tcp_header[11] = (uint8_t)(ackno & 0x000000ff);
-	// window
-	tcp_header[14] = (uint8_t)(wnd >> 8);
-	tcp_header[15] = (uint8_t)(wnd & 0xff);
-	// checksum
-	uint32_t tcp_checksum32 = 0;
-	uint16_t tcp_checksum16 = 0;
-	tcp_checksum32 = _checksum32(tcp_checksum32, pseudo_header, sizeof(pseudo_header));
-	tcp_checksum32 = _checksum32(tcp_checksum32, tcp_header, sizeof(tcp_header));
-	tcp_checksum32 = _checksum32(tcp_checksum32, content, len);
-	tcp_checksum16 = _checksum32to16(tcp_checksum32);
-	tcp_header[16] = (uint8_t)(tcp_checksum16 >> 8);
-	tcp_header[17] = (uint8_t)(tcp_checksum16 & 0xff);
-
 	// eth header
 	uint8_t eth_header[ETH_HDR_LEN] = {/*dstaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*dstaddr*/,
 												   /*srcaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*srcaddr*/, 0x08, 0x00
@@ -262,6 +239,36 @@ int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len,
 	}
 	// src addr
 	memcpy(eth_header + ETH_ALEN, LwIP_GetMAC(0), ETH_ALEN);
+
+	uint32_t seqno = 0;
+	uint32_t ackno = 0;
+	uint16_t wnd = 0;
+	extern int lwip_gettcpstatus(int s, uint32_t *seqno, uint32_t *ackno, uint16_t *wnd);
+	lwip_gettcpstatus(socket_fd, &seqno, &ackno, &wnd);
+	// seqno
+	tcp_header[4] = (uint8_t)(seqno >> 24);
+	tcp_header[5] = (uint8_t)((seqno & 0x00ff0000) >> 16);
+	tcp_header[6] = (uint8_t)((seqno & 0x0000ff00) >> 8);
+	tcp_header[7] = (uint8_t)(seqno & 0x000000ff);
+	// ackno
+	tcp_header[8] = (uint8_t)(ackno >> 24);
+	tcp_header[9] = (uint8_t)((ackno & 0x00ff0000) >> 16);
+	tcp_header[10] = (uint8_t)((ackno & 0x0000ff00) >> 8);
+	tcp_header[11] = (uint8_t)(ackno & 0x000000ff);
+	// window
+	tcp_header[14] = (uint8_t)(wnd >> 8);
+	tcp_header[15] = (uint8_t)(wnd & 0xff);
+	// checksum
+	uint32_t tcp_checksum32 = 0;
+	uint16_t tcp_checksum16 = 0;
+	tcp_checksum32 = _checksum32(tcp_checksum32, pseudo_header, sizeof(pseudo_header));
+	tcp_checksum32 = _checksum32(tcp_checksum32, tcp_header, sizeof(tcp_header));
+	tcp_checksum32 = _checksum32(tcp_checksum32, content, len);
+	tcp_checksum16 = _checksum32to16(tcp_checksum32);
+	tcp_header[16] = (uint8_t)(tcp_checksum16 >> 8);
+	tcp_header[17] = (uint8_t)(tcp_checksum16 & 0xff);
+
+	netif_set_link_down(&xnetif[0]); // simulate system enter sleep
 
 	// eth frame without FCS
 	uint32_t frame_len = sizeof(eth_header) + sizeof(ip_header) + sizeof(tcp_header) + len;
@@ -397,6 +404,34 @@ int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t c
 
 	rtw_set_smartdtim(check_period, threshold, change_dtim);
 
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_ARP_REQUEST_KEEP_ALIVE
+extern void rtw_set_arpreq_keepalive(u8  powerbit,
+									 u8  dtim1to);
+
+int wifi_wowlan_set_arpreq_keepalive(u8  powerbit,
+									 u8  dtim1to)
+{
+	int ret = 0;
+	rtw_set_arpreq_keepalive(powerbit, dtim1to);
+
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_WOWLAN_IO_WDT
+extern void rtw_set_wdt(u8  gpio,
+						u8  interval);
+
+
+int wifi_wowlan_set_wdt(u8  gpio,
+						u8  interval)
+{
+	int ret = 0;
+	rtw_set_wdt(gpio, interval);
 	return ret;
 }
 #endif

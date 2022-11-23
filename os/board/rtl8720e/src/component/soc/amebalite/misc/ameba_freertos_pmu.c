@@ -21,14 +21,6 @@ static uint32_t sysactive_timeout_flag = 0;
 
 u32 tickless_debug = 0;
 
-#define IDLE_STACK_SIZE 512
-
-IMAGE2_RAM_DATA_SECTION
-u32 stack_idle[IDLE_STACK_SIZE] __ALIGNED(32);
-IMAGE2_RAM_DATA_SECTION
-u32 psp_temp;
-IMAGE2_RAM_DATA_SECTION
-u32 psplim_temp;
 
 /* ++++++++ FreeRTOS macro implementation ++++++++ */
 
@@ -178,9 +170,9 @@ VOID aontimer_int(u32 Data)
 {
 	(VOID)Data;
 
-	DBG_8195A("aontimer handler 1\n", SOCPS_AONWakeReason());
+	DBG_8195A("aontimer handler 1: %x\n", SOCPS_AONWakeReason());
 	SOCPS_AONTimerClearINT();
-	DBG_8195A("aontimer handler 2\n", SOCPS_AONWakeReason());
+	DBG_8195A("aontimer handler 2: %x\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
 
@@ -202,8 +194,8 @@ VOID aontimer_test()
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		SOCPS_AONTimer(2000);
 		SOCPS_AONTimerINT_EN(ENABLE);
-		InterruptRegister(aontimer_int, AON_TIM_IRQ_KR4, NULL, 3);
-		InterruptEn(AON_TIM_IRQ_KR4, 3);
+		InterruptRegister(aontimer_int, AON_TIM_IRQ, NULL, 3);
+		InterruptEn(AON_TIM_IRQ, 3);
 		SOCPS_SetAPWakeEvent_MSK1(WAKE_SRC_AON_TIM, ENABLE);
 	}
 #endif
@@ -225,6 +217,12 @@ int freertos_ready_to_sleep(void)
 	if (freertos_systick_check(current_tick, sleepwakelock_timeout) == FALSE) {
 		return FALSE;
 	}
+
+	/* DSP shall PG firstly because DSP power is higher than AP */
+	if ((sleep_type == SLEEP_PG) && dsp_status_on()) {
+		return FALSE;
+	}
+
 
 	if (wakelock == 0) {
 		return TRUE;
@@ -272,33 +270,6 @@ int freertos_ready_to_dsleep(void)
 	}
 }
 
-#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
-__STATIC_INLINE void pmu_psp_modify(u8 backup)
-{
-#if defined (ARM_CORE_CM4)
-	if (backup) {
-		psp_temp = __get_PSP();
-		psplim_temp = __get_PSPLIM();
-
-		__set_PSPLIM((uint32_t)&stack_idle[0]);
-		__set_PSP((uint32_t)&stack_idle[IDLE_STACK_SIZE & ~portBYTE_ALIGNMENT_MASK]);
-	} else {
-		__set_PSPLIM(psplim_temp);
-		__set_PSP(psp_temp);
-	}
-
-#elif defined (RSICV_CORE_KR4)
-
-	if (backup) {
-		psp_temp = __get_SP();
-		__set_SP((uint32_t)&stack_idle[IDLE_STACK_SIZE & ~portBYTE_ALIGNMENT_MASK]);
-	} else {
-		__set_SP(psp_temp);
-	}
-#endif
-}
-#endif
-
 /*
  *  It is called when freertos is going to sleep.
  *  At this moment, all sleep conditons are satisfied. All freertos' sleep pre-processing are done.
@@ -306,9 +277,7 @@ __STATIC_INLINE void pmu_psp_modify(u8 backup)
  *  @param  expected_idle_time : The time that FreeRTOS expect to sleep.
  *                               If we set this value to 0 then FreeRTOS will do nothing in its sleep function.
  **/
-#if defined (ARM_CORE_CA7)
 
-#else
 void freertos_pre_sleep_processing(unsigned int *expected_idle_time)
 {
 	uint32_t tick_before_sleep;
@@ -337,13 +306,9 @@ void freertos_pre_sleep_processing(unsigned int *expected_idle_time)
 #endif
 
 	if (sleep_type == SLEEP_PG) {
-		pmu_psp_modify(ENABLE);
 		SOCPS_SleepPG();
-		pmu_psp_modify(DISABLE);
 	} else {
-		pmu_psp_modify(ENABLE);
 		SOCPS_SleepCG();
-		pmu_psp_modify(DISABLE);
 	}
 
 	/*  update kernel tick by calculating passed tick from gtimer */
@@ -359,7 +324,7 @@ void freertos_pre_sleep_processing(unsigned int *expected_idle_time)
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 
 	sysactive_timeout_flag = 0;
-	sleepwakelock_timeout = xTaskGetTickCountFromISR() + 2;
+	pmu_set_sysactive_timeFromISR(2);
 
 	if (tickless_debug) {
 #if defined (ARM_CORE_CM4)
@@ -370,7 +335,7 @@ void freertos_pre_sleep_processing(unsigned int *expected_idle_time)
 	}
 
 }
-#endif
+
 
 CONFIG_FW_CRITICAL_CODE_SECTION
 #if !defined(CONFIG_PLATFORM_TIZENRT_OS)

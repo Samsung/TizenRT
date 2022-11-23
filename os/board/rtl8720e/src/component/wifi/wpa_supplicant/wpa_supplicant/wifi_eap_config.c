@@ -282,7 +282,7 @@ int eap_start(char *method)
 	return -1;
 #endif
 }
-
+//customize for Tizenrt to pass SVACE test
 int connect_by_open_system(char *target_ssid)
 {
 	int ret;

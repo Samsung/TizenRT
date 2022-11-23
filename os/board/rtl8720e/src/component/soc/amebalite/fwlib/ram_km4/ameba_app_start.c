@@ -88,7 +88,7 @@ typedef struct fault_handler_back_trace_s {
 uint32_t hard_fault_back_trace_buf[FAULT_BACK_TRACE_BUF_DEPTH];
 uint32_t hard_fault_back_trace_sp_offset[FAULT_BACK_TRACE_BUF_DEPTH];
 extern u8 __flash_text_end__[];
-extern u8 __ram_image2_text_start__[];
+// extern u8 __ram_image2_text_start__[];
 extern u8 __ram_image2_text_end__[];
 extern u8 __sram_text_start__[];
 extern u8 __sram_text_end__[];
@@ -96,7 +96,7 @@ const uint32_t hard_fault_back_trace_txt_range[] = {
     /* code start,              code end */
     0x0001E000,                 0x00034000,             // conde in ITCM ROM
     (uint32_t)&__flash_text_start__,   (uint32_t)&__flash_text_end__,  // code in XIP //FENG no xip for lite, these 2 are in region KM4_BD_PSRAM_NS_NTZ
-    (uint32_t)&__ram_image2_text_start__, (uint32_t)&__ram_image2_text_end__,    // code in PSRAM //FENG these 2 are actually psram text in lite ld
+    // (uint32_t)&__ram_image2_text_start__, (uint32_t)&__ram_image2_text_end__,    // code in PSRAM //FENG these 2 are actually psram text in lite ld
     (uint32_t)&__sram_text_start__,   (uint32_t)&__sram_text_end__,      // code in Internal SRAM
 
     0xFFFFFFFF                                          // end of list
@@ -1149,7 +1149,6 @@ VOID VectorTableOverride(VOID)
 #endif
 }
 
-IMAGE2_RAM_TEXT_SECTION
 void app_psram_suspend(void)
 {
 	RRAM_TypeDef *rram = RRAM_DEV;
@@ -1252,7 +1251,8 @@ void app_start(void)
 
 	mpu_init();
 	app_mpu_nocache_init();
-
+	
+	flash_layout_init();
 #ifndef CONFIG_XIP_FLASH
 	app_psram_suspend();
 #endif

@@ -185,12 +185,12 @@ static int amebalite_gpt_start(struct timer_lowerhalf_s *lower)
 	if (!priv->started) {
 		if (priv->freerunmode) {	/* Free Run Mode */
 			priv->obj.handler = (void *)amebalite_gpt_handler;
-			priv->obj.hid = priv;
+			priv->obj.hid = (uint32_t) priv;
 			gtimer_start_periodical(&priv->obj, 0xFFFFFFFF, priv->obj.handler, priv->obj.hid);
 		} else {				/* Alarm Mode */
 			if (priv->callback != NULL) {
 				priv->obj.handler = (void *)amebalite_gpt_handler;
-				priv->obj.hid = priv;
+				priv->obj.hid = (uint32_t) priv;
 				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, priv->obj.handler, priv->obj.hid);
 			} else {
 				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, NULL, NULL);
@@ -357,7 +357,7 @@ static void amebalite_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t ca
 		/* If no callback is attached, the timer stops at the first interrupt */
 		if (callback != NULL && priv->started) {
 			priv->obj.handler = (void *)amebalite_gpt_handler;
-			priv->obj.hid = priv;
+			priv->obj.hid = (uint32_t) priv;
 		} else {
 			priv->obj.handler = NULL;
 			priv->obj.hid = NULL;

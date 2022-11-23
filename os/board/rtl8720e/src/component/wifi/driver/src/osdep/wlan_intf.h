@@ -57,6 +57,7 @@ int rltk_wlan_start(int idx_wlan);
 int rltk_wlan_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics);
 unsigned char rltk_wlan_running(unsigned char idx);		// interface is up. 0: interface is down
 int rltk_wlan_handshake_done(void);
+int rltk_get_wifi_mode(void);
 int rltk_wlan_wireless_mode(unsigned char mode);
 int rltk_wlan_set_wps_phase(unsigned char is_trigger_wps);
 int rltk_wlan_set_eap_phase(unsigned char is_trigger_eap);
@@ -79,11 +80,10 @@ void rltk_psk_info_set(struct psk_info *psk_data);
 void rltk_psk_info_get(struct psk_info *psk_data);
 __u8 rltk_wlan_is_mp(void);
 
-#ifdef CONFIG_WLAN_SWITCH_MODE
 int rltk_wlan_reinit_drv_sw(const char *ifname, rtw_mode_t mode);
 int rltk_set_mode_prehandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
 int rltk_set_mode_posthandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
-#endif
+
 
 #ifdef CONFIG_IEEE80211W
 void rltk_wlan_tx_sa_query(unsigned char key_type);
@@ -163,13 +163,6 @@ extern int rtw_wx_del_custome_ie(const char *ifname);
 
 int rltk_coex_set_ble_scan_duty(__u8 duty);
 
-#ifdef CONFIG_RTK_MESH
-extern int rtw_ex_set_mesh(const char *ifname, __u8 enable);
-extern int rtw_ex_set_mesh_id(const char *ifname, void *mesh_id, int id_len);
-extern int rtw_ex_get_mesh_id(const char *ifname, void *mesh_id);
-extern int rtw_ex_set_mesh_rssi_threshold(const char *ifname, __s32 rssi);
-extern int rtw_ex_get_mesh_rssi_threshold(const char *ifname, __s32 *rssi);
-#endif
 extern int rtw_ex_read_mac(unsigned char wlan_idx, rtw_mac_t *mac);
 extern int rtw_ex_get_client_list(unsigned char wlan_idx, rtw_maclist_t *client_list_buffer);
 #ifdef CONFIG_ANTENNA_DIVERSITY

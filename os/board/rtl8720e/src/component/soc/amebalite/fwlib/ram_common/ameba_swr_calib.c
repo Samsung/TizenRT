@@ -71,6 +71,7 @@ u8 SWR_Calib_Get_Value_AUD(void)
 	}
 }
 
+NON_DRAM_TEXT_SECTION
 void SWR_Calib_Load(void)
 {
 	u32 temp, Rtemp;
@@ -109,8 +110,7 @@ void SWR_Calib_Load(void)
 	}
 }
 
-
-
+NON_DRAM_TEXT_SECTION
 void SWR_Calib_RaiseVoltage(void)
 {
 	u32 temp, Rtemp;
@@ -187,7 +187,7 @@ void SWR_Calib_RaiseVoltage(void)
 
 }
 
-
+NON_DRAM_TEXT_SECTION
 void SWR_Calib_ReduceVoltage(void)
 {
 	u32 temp, Rtemp;

@@ -71,7 +71,8 @@ typedef struct {
 	unsigned char ImgID;
 	unsigned char AuthAlg;
 	unsigned char HashAlg;
-	unsigned int ImgVer;
+	unsigned short MajorImgVer;
+	unsigned short MinorImgVer;
 	unsigned int ImgSize;
 	unsigned int SecEpoch;
 	unsigned char RsipIV[16];

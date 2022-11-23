@@ -52,6 +52,7 @@
 CSRCS += ameba_intfcfg_kr4.c \
 	 ameba_intfcfg_km4.c \
 	 ameba_sleepcfg.c \
+ 	 ameba_flashcfg.c \
 
 DEPPATH += --dep-path component/soc/amebalite/fwlib/usrcfg
 VPATH += :component/soc/amebalite/fwlib/usrcfg

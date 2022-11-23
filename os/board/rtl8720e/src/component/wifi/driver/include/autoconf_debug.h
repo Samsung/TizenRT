@@ -54,7 +54,6 @@
 #define DBG_PWR_INDEX 1			// DebugComponents: bit30 */
 #endif /* (DM_DBG == 1) */
 #else /* (CONFIG_PLATFORM_AMEBA_X != 1) */
-//#define CONFIG_TRACE_SKB
 //#define WLAN_INTF_DBG
 #endif /* (CONFIG_PLATFORM_AMEBA_X == 1) */
 /***************************** for Debug message ******************************/

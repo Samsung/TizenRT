@@ -8,19 +8,15 @@
  */
 
 #include "ameba_soc.h"
-IMAGE2_RAM_DATA_SECTION
+u32 psp_temp;
+u32 psplim_temp;
+
 u32 PMC_MemMode_BK[10];
-IMAGE2_RAM_DATA_SECTION
 u32 LBUS_CLK;
-IMAGE2_RAM_DATA_SECTION
 u32 PSRAM_CLK;
-IMAGE2_RAM_DATA_SECTION
 u32 SPIC_CLK;
-IMAGE2_RAM_DATA_SECTION
 u32 PLFM_CLK;
-IMAGE2_RAM_DATA_SECTION
 u32 HIFI_CLK;
-IMAGE2_RAM_DATA_SECTION
 MEMMode_TypeDef PMC_MemMode_Def[] = {
 //		Module								MEM_SD					MEM_DS					MEM_LS
 	{
@@ -66,7 +62,6 @@ MEMMode_TypeDef PMC_MemMode_Def[] = {
   *		 @arg MEM_SD_MODE : shut down mode
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetMemMode(u32 module, u32 mem_mode)
 {
 	u32 Rtemp = 0;
@@ -93,12 +88,15 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode)
 		temp |= LSYS_BIT_SHARE_BT_MEM;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL, temp);
 
-	} else if (module == REG_CTRL_GRP_WLK4_E0_CTRL0) {
+	}
+	/*lite A cut patch: rxpktbuf power mode cannot be control by mac 0x90, it can be only control by system REG_CTRL_GRP_WLK4_E0_CTRL04100_C748[14:12]*/
+#if 0
+	else if (module == REG_CTRL_GRP_WLK4_E0_CTRL0) {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL);
 		temp |= LSYS_BIT_SHARE_WL_MEM;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL, temp);
 	}
-
+#endif
 }
 
 //TODO
@@ -115,7 +113,6 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode)
   *            @arg PMC_BIT_PST_SLEP_ESOC: power enable SOC platform when PMC enter into sleep mode (clock-gating)
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_PWROption(u32 pwrmgt_option)
 {
 	HAL_WRITE32(PMC_BASE, SYSPMC_OPT, pwrmgt_option);
@@ -135,7 +132,6 @@ void SOCPS_PWROption(u32 pwrmgt_option)
   * @note wakeup state: sleep PG & CG & deep sleep
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity)
 {
 	u32 Rtemp = 0;
@@ -168,7 +164,6 @@ void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity)
   * @note Dbnc_cycle is valid when Status is set ENABLE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status)
 {
 	u32 Rtemp = 0;
@@ -203,7 +198,6 @@ void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status)
   * @param  None
   * @retval BIT(0): wakepin0, BIT(1): wakepin1
   */
-IMAGE2_RAM_TEXT_SECTION
 int SOCPS_WakePinCheck(void)
 {
 	int WakePin = 0;
@@ -232,7 +226,6 @@ VOID SOCPS_WakePinClearINT(u32 wakepin)
   * @note This is 100KHz timer, max counter = 0xFFFFFFFF/100000/60 = 715min
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_AONTimer(u32 SDuration)
 {
 	if (SDuration == 0) {
@@ -250,7 +243,6 @@ void SOCPS_AONTimer(u32 SDuration)
   * @note wakeup state:sleep PG & CG & deep sleep
   * @retval The current Aon Timer counter, the unit is ms.
   */
-IMAGE2_RAM_TEXT_SECTION
 u32 SOCPS_AONTimerGet(VOID)
 {
 	u32 Rtemp = 0;
@@ -267,7 +259,6 @@ u32 SOCPS_AONTimerGet(VOID)
   * @param  Status: interrupt status
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_AONTimerINT_EN(u32 Status)
 {
 	u32 Rtemp = 0;
@@ -309,7 +300,6 @@ VOID SOCPS_AONTimerClearINT(void)
   *		 @arg AON_BIT_CHIPEN_LP_ISR_EVT
   *		 @arg AON_BIT_CHIPEN_SP_ISR_EVT
   */
-IMAGE2_RAM_TEXT_SECTION
 int SOCPS_AONWakeReason(void)
 {
 	int reason = 0;
@@ -328,7 +318,6 @@ int SOCPS_AONWakeReason(void)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -351,7 +340,6 @@ void SOCPS_SetNPWakeEvent_MSK0(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -374,7 +362,6 @@ void SOCPS_SetNPWakeEvent_MSK1(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetNPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
 {
 	if (Group) {
@@ -392,7 +379,6 @@ void SOCPS_SetNPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -415,7 +401,6 @@ void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -438,7 +423,6 @@ void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetAPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
 {
 	if (Group) {
@@ -456,7 +440,6 @@ void SOCPS_SetAPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetDSPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -479,7 +462,6 @@ void SOCPS_SetDSPWakeEvent_MSK0(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetDSPWakeEvent_MSK1(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
@@ -502,7 +484,6 @@ void SOCPS_SetDSPWakeEvent_MSK1(u32 Option, u32 NewStatus)
   * @param  NewStatus: TRUE/FALSE.
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_SetDSPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
 {
 	if (Group) {
@@ -517,7 +498,6 @@ void SOCPS_SetDSPWakeEvent(u32 Option, u32 Group, u32 NewStatus)
   *  @brief set work modules/wake up event after deepsleep.
   *  @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_deepsleepInit(void)
 {
 	static u32 npdslp_pwrmgt_config_val;
@@ -549,7 +529,7 @@ void SOCPS_deepsleepInit(void)
   * @retval None
   *
   */
-IMAGE2_RAM_TEXT_SECTION
+SRAM_ONLY_TEXT_SECTION
 void SOCPS_DeepSleep_RAM(void)
 {
 	u32 Rtemp = 0;
@@ -586,7 +566,6 @@ void SOCPS_DeepSleep_RAM(void)
   * @param  None
   * @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 static void SOCPS_PMC_Patch(void)
 {
 	u32 Rtemp = 0;
@@ -664,7 +643,6 @@ static void SOCPS_PMC_Patch(void)
   *  @brief set work modules/wake up event after sleep.
   *  @retval None
   */
-IMAGE2_RAM_TEXT_SECTION
 void SOCPS_sleepInit(void)
 {
 
@@ -702,6 +680,23 @@ void SOCPS_sleepInit(void)
 	HAL_WRITE32(PMC_BASE, SYSPMC_OPT, npcg_pwrmgt_config_val);
 	DBG_PRINTF(MODULE_PMC, LEVEL_INFO, "SYSPMC_OPT %x\n", HAL_READ32(PMC_BASE, SYSPMC_OPT));
 
+	/* default open ipc wakemask */
+	if (KR4_is_NP) {
+		SOCPS_SetNPWakeEvent_MSK0(WAKE_SRC_IPC_KR4, ENABLE);
+		SOCPS_SetAPWakeEvent_MSK0(WAKE_SRC_IPC_KM4, ENABLE);
+	} else {
+		SOCPS_SetNPWakeEvent_MSK0(WAKE_SRC_IPC_KM4, ENABLE);
+		SOCPS_SetAPWakeEvent_MSK0(WAKE_SRC_IPC_KR4, ENABLE);
+	}
+	SOCPS_SetDSPWakeEvent_MSK0(WAKE_SRC_IPC_DSP, ENABLE);
+
+	sleep_wevent_config_val[0][0] = HAL_READ32(PMC_BASE, WAK_MASK0_NP);
+	sleep_wevent_config_val[0][1] = HAL_READ32(PMC_BASE, WAK_MASK1_NP);
+	sleep_wevent_config_val[1][0] = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
+	sleep_wevent_config_val[1][1] = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
+	sleep_wevent_config_val[2][0] = HAL_READ32(PMC_BASE, WAK_MASK0_DSP);
+	sleep_wevent_config_val[2][1] = HAL_READ32(PMC_BASE, WAK_MASK1_DSP);
+
 	/*wake event setting*/
 	for (i = 0;;) {
 		/*  Check if search to end */
@@ -715,11 +710,7 @@ void SOCPS_sleepInit(void)
 		if (group == 1 || group == 0) {
 
 			//NP wakeevent msk setting
-			if (KR4_is_NP) {
-				wevent_msk = sleep_wevent_config[i].Msk_KR4;
-			} else {
-				wevent_msk = sleep_wevent_config[i].Msk_KM4;
-			}
+			wevent_msk = sleep_wevent_config[i].Msk_NP;
 
 			if (wevent_msk == ON) {
 				sleep_wevent_config_val[0][group] |= sleep_wevent_config[i].Module;
@@ -728,11 +719,7 @@ void SOCPS_sleepInit(void)
 			}
 
 			//AP wakeevent msk setting
-			if (KR4_is_NP) {
-				wevent_msk = sleep_wevent_config[i].Msk_KM4;
-			} else {
-				wevent_msk = sleep_wevent_config[i].Msk_KR4;
-			}
+			wevent_msk = sleep_wevent_config[i].Msk_AP;
 
 			if (wevent_msk == ON) {
 				sleep_wevent_config_val[1][group] |= sleep_wevent_config[i].Module;
@@ -811,7 +798,7 @@ void SOCPS_sleepInit(void)
 	}
 }
 
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void LOGUART_WaitTxComplete(void)
 {
 	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
@@ -833,22 +820,26 @@ void LOGUART_WaitTxComplete(void)
 	DelayUs(8);
 }
 
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_OSC4M_CTRL(u8 open)
 {
 	u32 Rtemp;
 
 	if (open) {
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-		Rtemp |= APBPeriph_LOGUART_CLOCK;
-		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+		if (ps_config.np_osc4m_close) {
+			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+			Rtemp |= APBPeriph_LOGUART_CLOCK;
+			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+		}
 	} else {
 
 		LOGUART_WaitTxComplete();
 
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-		Rtemp &= ~APBPeriph_LOGUART_CLOCK;
-		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+		if (ps_config.np_osc4m_close) {
+			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+			Rtemp &= ~APBPeriph_LOGUART_CLOCK;
+			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+		}
 	}
 }
 
@@ -859,12 +850,13 @@ void SOCPS_OSC4M_CTRL(u8 open)
   *		 @arg BIT_LSYS_CKSL_PSRAM_DSPPLL
   *		 @arg BIT_LSYS_CKSL_PSRAM_LBUS
   */
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_PSRAM_ClkSet(u8 Source)
 {
 	u32 cur_src = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
 
 	if (Source != cur_src) {
+		DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 		if ((Source == BIT_LSYS_CKSL_PSRAM_LBUS) &&
 			((cur_src == BIT_LSYS_CKSL_PSRAM_CPUPLL) || (cur_src == BIT_LSYS_CKSL_PSRAM_DSPPLL))) {
 			//psram clk switch from pll to xtal
@@ -890,11 +882,11 @@ void SOCPS_PSRAM_ClkSet(u8 Source)
 }
 
 
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_Voltage_Switch(u8 sleep)
 {
 	/* active is 1.0V, need switch voltage */
-	if (SWR_CORE_Vol_Get() == 0x01) {
+	if (SWR_CORE_Vol_Get() == CORE_VOL_1P0) {
 		if (sleep) {
 			/* enter SLP: reduce voltage to LDO@0.9V SWR@PWM */
 			SWR_Calib_ReduceVoltage();
@@ -912,7 +904,7 @@ void SOCPS_Voltage_Switch(u8 sleep)
   * @retval None
   */
 _OPTIMIZE_NONE_
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_AP_suspend_config(u32 type, u32 Protection)
 {
 	(void)type;
@@ -986,7 +978,7 @@ void SOCPS_AP_suspend_config(u32 type, u32 Protection)
   * @retval None
   */
 _OPTIMIZE_NONE_
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_AP_resume_config(u32 type, u32 Protection)
 {
 	(void)type;
@@ -1043,7 +1035,7 @@ void SOCPS_AP_resume_config(u32 type, u32 Protection)
 }
 
 
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void SOCPS_NP_suspend_and_resume(u32 type, u8 enable)
 {
 	u32 Rtemp;
@@ -1062,12 +1054,13 @@ void SOCPS_NP_suspend_and_resume(u32 type, u8 enable)
 			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Rtemp);
 		}
 
+#if SOCPS_FLASH_DEEPDOWN_EN
 		if (SYSCFG_OTP_FlashDSleepEn()) {
 			FLASH_DeepPowerDown(DISABLE);
 			/* to fix hw bug: between flash user read and auto read wrap, need single auto read, otherwise SPIC may return error */
 			Rtemp = HAL_READ32(SPI_FLASH_BASE, 0);
 		}
-
+#endif
 		SOCPS_Voltage_Switch(DISABLE);
 
 		if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_SINGLE) {
@@ -1082,8 +1075,9 @@ void SOCPS_NP_suspend_and_resume(u32 type, u8 enable)
 		SOCPS_Voltage_Switch(ENABLE);
 
 		SOCPS_OSC4M_CTRL(DISABLE);
-
+#if SOCPS_FLASH_DEEPDOWN_EN
 		FLASH_DeepPowerDown(ENABLE);
+#endif
 	}
 }
 

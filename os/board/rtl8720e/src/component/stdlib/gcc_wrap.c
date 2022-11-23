@@ -44,4 +44,10 @@ void __wrap__free_r(void *reent, void *p)
 	vPortFree(p);
 }
 
+void *__wrap__calloc_r(void *reent, size_t xWantedCnt, size_t xWantedSize)
+{
+	(void) reent;
+	return pvPortCalloc(xWantedCnt, xWantedSize);
+}
+
 #endif

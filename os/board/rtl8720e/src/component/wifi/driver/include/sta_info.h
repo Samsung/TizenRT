@@ -82,8 +82,7 @@ struct tx_sc_entry {
 struct sta_info {
 
 	_lock	lock;
-	_list	list; //free_sta_queue
-	_list	hash_list; //sta_hash
+	_list		list; //sta_list
 	//_list asoc_list; //20061114
 	//_list sleep_list;//sleep_q
 	//_list wakeup_list;//wakeup_q
@@ -98,6 +97,11 @@ struct sta_info {
 	struct cmn_sta_info cmn;
 #endif
 
+	WPA_STA_INFO		*wpa_sta_info;
+
+#ifdef CONFIG_TWT
+	u8 twt_id;	/*bit0 represent id0, .......bit7 represent id7*/
+#endif
 
 	_queue sleep_q;
 	unsigned int sleepq_len;
@@ -133,8 +137,10 @@ struct sta_info {
 
 	//for A-MPDU TX, ADDBA timeout check
 	_timer addba_retry_timer;
+	//for empty defrag queue
+	_timer defrag_queue_timer;
 	//for A-MPDU Rx reordering buffer control
-	struct recv_reorder_ctrl recvreorder_ctrl[MAXTID];
+	struct recv_reorder_ctrl *recvreorder_ctrl[MAXTID];
 	//for A-MPDU Tx
 	//unsigned char		ampdu_txen_bitmap;
 	u16	BA_starting_seqctrl[MAXTID];
@@ -208,24 +214,6 @@ struct sta_info {
 #ifdef CONFIG_LPS_PG
 	u8		lps_pg_rssi_lv;
 #endif
-#ifdef CONFIG_RTK_MESH
-	struct MESH_Neighbor_Entry	mesh_neighbor_TBL;	//mesh_neighbor
-	_list	mesh_mp_ptr;	// MESH MP list
-	u16 reason;
-
-#ifdef CONFIG_SAE_SUPPORT
-	unsigned char aek[MBEDTLS_DIGEST_LENGTH];
-	unsigned char my_nonce[32];
-	unsigned char peer_nonce[32];
-	unsigned char mtk[16];
-	unsigned char mgtk[16];
-	unsigned char igtk[16];
-	_list	mesh_auth_ptr;	// MESH AUTH list
-	u8 user_group_id;			//for user to set group id
-	struct sae_data *sae_priv;
-#endif
-
-#endif
 
 	//for DM
 	RSSI_STA	 rssi_stat;
@@ -286,20 +274,15 @@ struct sta_info {
 
 struct	sta_priv {
 
-	u8 *pallocated_stainfo_buf;
-	u32 allocated_stainfo_size;
-#ifdef CONFIG_WLAN_SWITCH_MODE
-	u8 *pstainfo_buf[2 + AP_STA_NUM];
-#else
-	u8 *pstainfo_buf;
-#endif
-	_queue	free_sta_queue;
+	//u8 *pstainfo_buf[2 + AP_STA_NUM];
 
-	_lock sta_hash_lock;
-	_list   sta_hash[NUM_STA];
+	//_queue	free_sta_queue;
+
+	_lock sta_list_lock;
+	_list   sta_list;
 	int asoc_sta_count;
-	_queue sleep_q;
-	_queue wakeup_q;
+	//_queue sleep_q;
+	//_queue wakeup_q;
 
 	_adapter *padapter;
 
@@ -307,6 +290,7 @@ struct	sta_priv {
 	_list auth_list;
 	_lock asoc_list_lock;
 	_lock auth_list_lock;
+	_lock expire_lock;
 
 	unsigned int auth_to;  //sec, time to expire in authenticating.
 	unsigned int assoc_to; //sec, time to expire before associating.
@@ -328,24 +312,6 @@ struct	sta_priv {
 };
 
 
-__inline static u32 wifi_mac_hash(u8 *mac)
-{
-	u32 x;
-
-	x = mac[0];
-	x = (x << 2) ^ mac[1];
-	x = (x << 2) ^ mac[2];
-	x = (x << 2) ^ mac[3];
-	x = (x << 2) ^ mac[4];
-	x = (x << 2) ^ mac[5];
-
-	x ^= x >> 8;
-	x  = x & (NUM_STA - 1);
-
-	return x;
-}
-
-
 extern u32	_rtw_init_sta_priv(_adapter *padapter);
 extern u32	_rtw_free_sta_priv(struct sta_priv *pstapriv);
 extern struct sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr);
@@ -356,6 +322,7 @@ extern struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr);
 extern u32 rtw_init_bcmc_stainfo(_adapter *padapter);
 extern struct sta_info *rtw_get_bcmc_stainfo(_adapter *padapter);
 extern u8 rtw_access_ctrl(_adapter *padapter, u8 *mac_addr);
-
+extern struct recv_reorder_ctrl *rtw_alloc_reorder_ctrl(_adapter *padapter);
+extern void rtw_free_reorder_ctrl(_adapter *padapter, struct sta_info *psta, u8 tid);
 #endif //_STA_INFO_H_
 

@@ -303,165 +303,6 @@ RTW_PACK_STRUCT_END
 #  include "pack_end.h"
 #endif
 
-#ifdef CONFIG_RTK_MESH
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#  include "pack_begin.h"
-#endif
-RTW_PACK_STRUCT_BEGIN
-struct rtw_ieee80211_mgmt {
-	u16 frame_control;
-	u16 duration;
-	u8 da[6];
-	u8 sa[6];
-	u8 bssid[6];
-	u16 seq_ctrl;
-	union {
-		struct {
-			u16 auth_alg;
-			u16 auth_transaction;
-			u16 status_code;
-			/* possibly followed by Challenge text */
-			u8 variable[1];
-		}  auth;
-		struct {
-			u16 reason_code;
-			u8 variable[1];
-		}  deauth;
-		struct {
-			u16 capab_info;
-			u16 listen_interval;
-			/* followed by SSID and Supported rates */
-			u8 variable[1];
-		}  assoc_req;
-		struct {
-			u16 capab_info;
-			u16 status_code;
-			u16 aid;
-			/* followed by Supported rates */
-			u8 variable[1];
-		}  assoc_resp, reassoc_resp;
-		struct {
-			u16 capab_info;
-			u16 listen_interval;
-			u8 current_ap[6];
-			/* followed by SSID and Supported rates */
-			u8 variable[1];
-		}  reassoc_req;
-		struct {
-			u16 reason_code;
-			u8 variable[1];
-		}  disassoc;
-		struct {
-			u8 timestamp[8];
-			u16 beacon_int;
-			u16 capab_info;
-			/* followed by some of SSID, Supported rates,
-			 * FH Params, DS Params, CF Params, IBSS Params, TIM */
-			u8 variable[1];
-		}  beacon;
-		struct {
-			/* only variable items: SSID, Supported rates */
-			u8 variable[1];
-		}  probe_req;
-		struct {
-			u8 timestamp[8];
-			u16 beacon_int;
-			u16 capab_info;
-			/* followed by some of SSID, Supported rates,
-			 * FH Params, DS Params, CF Params, IBSS Params */
-			u8 variable[1];
-		}  probe_resp;
-		struct {
-			u8 category;
-			union {
-				struct {
-					u8 action_code;
-					u8 dialog_token;
-					u8 status_code;
-					u8 variable[1];
-				}  wmm_action;
-				struct {
-					u8 action_code;
-					u8 element_id;
-					u8 length;
-					u8 switch_mode;
-					u8 new_chan;
-					u8 switch_count;
-				}  chan_switch;
-				struct {
-					u8 action;
-					u8 sta_addr[ETH_ALEN];
-					u8 target_ap_addr[ETH_ALEN];
-					u8 variable[1]; /* FT Request */
-				}  ft_action_req;
-				struct {
-					u8 action;
-					u8 sta_addr[ETH_ALEN];
-					u8 target_ap_addr[ETH_ALEN];
-					u16 status_code;
-					u8 variable[1]; /* FT Request */
-				}  ft_action_resp;
-				struct {
-					u8 action;
-					u8 trans_id[2];
-				}  sa_query_req;
-				struct {
-					u8 action; /* */
-					u8 trans_id[2];
-				}  sa_query_resp;
-				struct {
-					u8 action;
-					u8 dialogtoken;
-					u8 variable[1];
-				}  wnm_sleep_req;
-				struct {
-					u8 action;
-					u8 dialogtoken;
-					u16 keydata_len;
-					u8 variable[1];
-				}  wnm_sleep_resp;
-				struct {
-					u8 action;
-					u8 variable[1];
-				}  public_action;
-				struct {
-					u8 action; /* 9 */
-					u8 oui[3];
-					/* Vendor-specific content */
-					u8 variable[1];
-				}  vs_public_action;
-				struct {
-					u8 action; /* 7 */
-					u8 dialog_token;
-					u8 req_mode;
-					u16 disassoc_timer;
-					u8 validity_interval;
-					/* BSS Termination Duration (optional),
-					 * Session Information URL (optional),
-					 * BSS Transition Candidate List
-					 * Entries */
-					u8 variable[1];
-				}  bss_tm_req;
-				struct {
-					u8 action; /* 8 */
-					u8 dialog_token;
-					u8 status_code;
-					u8 bss_termination_delay;
-					/* Target BSSID (optional),
-					 * BSS Transition Candidate List
-					 * Entries (optional) */
-					u8 variable[1];
-				}  bss_tm_resp;
-			} u;
-		}  action;
-	} u;
-} RTW_PACK_STRUCT_STRUCT;
-RTW_PACK_STRUCT_END
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#  include "pack_end.h"
-#endif
-#endif //#ifdef CONFIG_RTK_MESH
-
 #define IEEE80211_3ADDR_LEN 24
 #define IEEE80211_4ADDR_LEN 30
 #define IEEE80211_FCS_LEN    4
@@ -688,6 +529,7 @@ RTW_PACK_STRUCT_END
 #define WLAN_EID_OVERLAPPING_BSS_SCAN_PARAMS 74
 #define WLAN_EID_MMIE 76
 #define WLAN_EID_NONTRANSMITTED_BSSID_CAPABILITY 83
+#define WLAN_EID_MULTIPLE_BSSID_INDEX 85
 #define WLAN_EID_VHT_CAPABILITY 191
 #define WLAN_EID_VHT_OPERATION 192
 #define WLAN_EID_VHT_OPERATING_MODE_NOTIFICATION 199
@@ -701,7 +543,7 @@ RTW_PACK_STRUCT_END
 #define WLAN_EID_PREP 131
 #define WLAN_EID_PERR 132
 #define WLAN_EID_MIC 140
-
+#define WLAN_EID_TWT 216
 #define WLAN_EID_VENDOR_SPECIFIC 221
 #define WLAN_EID_GENERIC (WLAN_EID_VENDOR_SPECIFIC)
 
@@ -1243,6 +1085,8 @@ enum rtw_ieee80211_category {
 	RTW_WLAN_CATEGORY_MULTIHOP_ACTION = 14,
 	RTW_WLAN_CATEGORY_SELF_PROTECTED = 15, /* add for CONFIG_IEEE80211W, none 11w also can use */
 	RTW_WLAN_CATEGORY_WMM = 17,
+	RTW_WLAN_CATEGORY_VHT = 21,
+	RTW_WLAN_CATEGORY_TWT = 22,
 	RTW_WLAN_CATEGORY_P2P = 0x7f,//P2P action frames
 };
 
@@ -1299,6 +1143,13 @@ enum rtw_ieee80211_ht_actioncode {
 	RTW_WLAN_ACTION_MIMP_CP_BF = 6,
 	RTW_WLAN_ACTION_ASEL_INDICATES_FB = 7,
 	RTW_WLAN_ACTION_HI_INFO_EXCHG = 8,
+};
+
+/* VHT features action code */
+enum rtw_ieee80211_vht_actioncode {
+	RTW_WLAN_ACTION_VHT_COMPRESSED_BEAMFORMING = 0,
+	RTW_WLAN_ACTION_VHT_GROUPID_MANAGEMENT = 1,
+	RTW_WLAN_ACTION_VHT_OPMODE_NOTIFICATION = 2,
 };
 
 /* BACK (block-ack) parties */
@@ -1394,11 +1245,6 @@ u8 rtw_is_wps_ie(u8 *ie_ptr, uint *wps_ielen);
 
 void dump_ies(u8 *buf, u32 buf_len);
 void dump_wps_ie(u8 *ie, u32 ie_len);
-
-#ifdef CONFIG_P2P_NEW
-u8 *rtw_get_p2p_ie(u8 *in_ie, uint in_len, u8 *p2p_ie, uint *p2p_ielen);
-u8 *rtw_get_p2p_attr(u8 *p2p_ie, uint p2p_ielen, u8 target_attr_id, u8 *buf_attr, u32 *len_attr);
-#endif
 
 //struct registry_priv;
 //int rtw_generate_ie(struct registry_priv *pregistrypriv);

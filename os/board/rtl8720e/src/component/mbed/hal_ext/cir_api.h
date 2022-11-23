@@ -3,7 +3,7 @@
   * @file    cir_api.h
   * @author
   * @version V1.0.0
-  * @brief   This file provides following mbed I2S API
+  * @brief   This file provides following mbed style CIR API
   ******************************************************************************
   * @attention
   *

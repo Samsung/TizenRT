@@ -53,17 +53,6 @@
 #define WLAN_A3_PN_OFFSET	24
 #define WLAN_A4_PN_OFFSET	30
 
-#ifdef CONFIG_RTK_MESH
-// Define mesh header length, But 11s data 11s mgt frame header length different, So have two type.
-#define WLAN_HDR_A4_MESH_DATA_LEN 34		// WLAN_HDR_A4_LEN + MeshHeader_Len(4 bytes)
-#define WLAN_HDR_A6_MESH_DATA_LEN 46		// WLAN_HDR_A4_LEN + MeshHeader_Len(16 bytes)
-#define WLAN_HDR_A4_MESH_DATA_LEN_QOS 36	// WLAN_HDR_A4_LEN + MeshHeader_Len(4 bytes) + QOS
-#define WLAN_HDR_A6_MESH_DATA_LEN_QOS 48	// WLAN_HDR_A4_LEN + MeshHeader_Len(16 bytes) + QOS
-// #define WLAN_HDR_A4_MESH_MGT_LEN 34		// always processed by daemon (raw socket)
-
-#define WLAN_HDR_MAX_MESH_HDR_LEN	18
-#endif // CONFIG_RTK_MESH
-
 #define WLAN_MIN_ETHFRM_LEN	60
 #if WIFI_LOGO_CERTIFICATION
 #define WLAN_MAX_ETHFRM_LEN	4000
@@ -80,13 +69,9 @@
 #define WLAN_MAX_IV_LEN		8
 #define WLAN_MAX_ICV_LEN	8
 #define WLAN_MAX_MIC_LEN	8
-#ifdef CONFIG_RTK_MESH
-#define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_LEN+WLAN_MAX_IV_LEN\
-						+WLAN_HDR_MAX_MESH_HDR_LEN+WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)	//=64+18
-#else
+
 #define WLAN_MAX_PROTOCOL_OVERHEAD (WLAN_HDR_A4_QOS_LEN+WLAN_MAX_IV_LEN\
 						+WLAN_SNAP_HEADER+WLAN_MAX_MIC_LEN+WLAN_MAX_ICV_LEN)	//=64
-#endif
 
 #define P80211CAPTURE_VERSION	0x80211001
 
@@ -108,10 +93,7 @@ enum WIFI_FRAME_TYPE {
 	WIFI_CTRL_TYPE =	(BIT(2)),
 	WIFI_DATA_TYPE =	(BIT(3)),
 	WIFI_QOS_DATA_TYPE	= (BIT(7) | BIT(3)),	//!< QoS Data
-#ifdef CONFIG_RTK_MESH
-	// Hardware of 8186 doesn't support it. Confirm by David, 2007/1/5
-	WIFI_EXT_TYPE  =	(BIT(2) | BIT(3))	///< 11 is 802.11S Extended Type
-#endif
+
 };
 
 enum WIFI_FRAME_SUBTYPE {
@@ -129,9 +111,6 @@ enum WIFI_FRAME_SUBTYPE {
 	WIFI_AUTH           = (BIT(7) | BIT(5) | BIT(4) | WIFI_MGT_TYPE),
 	WIFI_DEAUTH         = (BIT(7) | BIT(6) | WIFI_MGT_TYPE),
 	WIFI_ACTION         = (BIT(7) | BIT(6) | BIT(4) | WIFI_MGT_TYPE),
-#ifdef CONFIG_RTK_MESH
-	WIFI_MULTIHOP_ACTION 	= (BIT(7) | BIT(6) | BIT(5) | BIT(4) | WIFI_MGT_TYPE),	// (Refer: Draft 1.06, Page 8, 7.1.3.1.2, Table 7-1, 2007/08/13 by popen)
-#endif
 
 	// below is for control frame
 	WIFI_PSPOLL         = (BIT(7) | BIT(5) | WIFI_CTRL_TYPE),
@@ -140,6 +119,7 @@ enum WIFI_FRAME_SUBTYPE {
 	WIFI_ACK            = (BIT(7) | BIT(6) | BIT(4) | WIFI_CTRL_TYPE),
 	WIFI_CFEND          = (BIT(7) | BIT(6) | BIT(5) | WIFI_CTRL_TYPE),
 	WIFI_CFEND_CFACK    = (BIT(7) | BIT(6) | BIT(5) | BIT(4) | WIFI_CTRL_TYPE),
+	WIFI_TRIGGER        = (BIT(5) | WIFI_CTRL_TYPE),
 
 	// below is for data frame
 	WIFI_DATA           = (0 | WIFI_DATA_TYPE),
@@ -152,12 +132,6 @@ enum WIFI_FRAME_SUBTYPE {
 	WIFI_CF_ACKPOLL     = (BIT(6) | BIT(5) | BIT(4) | WIFI_DATA_TYPE),
 	WIFI_QOS_DATA_NULL	= (BIT(6) | WIFI_QOS_DATA_TYPE),
 
-#ifdef CONFIG_RTK_MESH    // (CAUTION!! Below not exist in D1.06!!)
-	// Because hardware of RTL8186 doen's support TYPE=11, we use BIT(7) | WIFI_DATA_TYPE to
-	// simulate TYPE=11, 2007/1/8
-	WIFI_11S_MESH	    = (WIFI_QOS_DATA_TYPE),	// CAUTION!! Below not exist in D1.06!!
-	WIFI_11S_MESH_ACTION = (BIT(5) | WIFI_11S_MESH),	///< Mesh Action
-#endif
 };
 
 enum WIFI_REASON_CODE	{
@@ -314,26 +288,26 @@ enum WIFI_REG_DOMAIN {
 
 #define SetToDs(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_TO_DS_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_TO_DS_); \
 	} while(0)
 
-#define GetToDs(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_TO_DS_)) != 0)
+#define GetToDs(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_TO_DS_)) != 0)
 
 #define ClearToDs(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_TO_DS_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_TO_DS_)); \
 	} while(0)
 
 #define SetFrDs(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_FROM_DS_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_FROM_DS_); \
 	} while(0)
 
-#define GetFrDs(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_FROM_DS_)) != 0)
+#define GetFrDs(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_FROM_DS_)) != 0)
 
 #define ClearFrDs(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_FROM_DS_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_FROM_DS_)); \
 	} while(0)
 
 #define get_tofr_ds(pframe)	((GetToDs(pframe) << 1) | GetFrDs(pframe))
@@ -341,148 +315,148 @@ enum WIFI_REG_DOMAIN {
 
 #define SetMFrag(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_MORE_FRAG_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_MORE_FRAG_); \
 	} while(0)
 
-#define GetMFrag(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_MORE_FRAG_)) != 0)
+#define GetMFrag(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_MORE_FRAG_)) != 0)
 
 #define ClearMFrag(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_MORE_FRAG_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_MORE_FRAG_)); \
 	} while(0)
 
 #define SetRetry(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_RETRY_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_RETRY_); \
 	} while(0)
 
-#define GetRetry(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_RETRY_)) != 0)
+#define GetRetry(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_RETRY_)) != 0)
 
 #define ClearRetry(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_RETRY_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_RETRY_)); \
 	} while(0)
 
 #define SetPwrMgt(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_PWRMGT_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_PWRMGT_); \
 	} while(0)
 
-#define GetPwrMgt(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_PWRMGT_)) != 0)
+#define GetPwrMgt(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_PWRMGT_)) != 0)
 
 #define ClearPwrMgt(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_PWRMGT_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_PWRMGT_)); \
 	} while(0)
 
 #define SetMData(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_MORE_DATA_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_MORE_DATA_); \
 	} while(0)
 
-#define GetMData(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_MORE_DATA_)) != 0)
+#define GetMData(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_MORE_DATA_)) != 0)
 
 #define ClearMData(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_MORE_DATA_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_MORE_DATA_)); \
 	} while(0)
 
 #define SetPrivacy(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(_PRIVACY_); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_PRIVACY_); \
 	} while(0)
 
-#define GetPrivacy(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_PRIVACY_)) != 0)
+#define GetPrivacy(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_PRIVACY_)) != 0)
 
 #define ClearPrivacy(pbuf)	\
 	do	{	\
-		*(unsigned short *)(pbuf) &= (~cpu_to_le16(_PRIVACY_)); \
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_PRIVACY_)); \
 	} while(0)
 
 
-#define GetOrder(pbuf)	(((*(unsigned short *)(pbuf)) & le16_to_cpu(_ORDER_)) != 0)
+#define GetOrder(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_ORDER_)) != 0)
 
-#define GetFrameType(pbuf)	(le16_to_cpu(*(unsigned short *)(pbuf)) & (BIT(3) | BIT(2)))
+#define GetFrameType(pbuf)	(le16_to_cpu(*(unsigned short *)(void*)(pbuf)) & (BIT(3) | BIT(2)))
 
-#define get_frame_sub_type(pbuf)	(cpu_to_le16(*(unsigned short *)(pbuf)) & (BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2)))
+#define get_frame_sub_type(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)(pbuf)) & (BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2)))
 
 
 #define set_frame_sub_type(pbuf, type) \
 	do {    \
-		*(unsigned short *)(pbuf) &= cpu_to_le16(~(BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))); \
-		*(unsigned short *)(pbuf) |= cpu_to_le16(type); \
+		*(unsigned short *)(void*)(pbuf) &= cpu_to_le16(~(BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(type); \
 	} while (0)
 
 #define SetFrameType(pbuf,type)	\
 	do { 	\
-		*(unsigned short *)(pbuf) &= cpu_to_le16(~(BIT(3) | BIT(2))); \
-		*(unsigned short *)(pbuf) |= cpu_to_le16(type); \
+		*(unsigned short *)(void*)(pbuf) &= cpu_to_le16(~(BIT(3) | BIT(2))); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(type); \
 	} while(0)
 
-#define GetFrameSubType(pbuf)	(cpu_to_le16(*(unsigned short *)(pbuf)) & (BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2)))
+#define GetFrameSubType(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)(pbuf)) & (BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2)))
 
 #define SetFrameSubType(pbuf,type) \
 	do {    \
-		*(unsigned short *)(pbuf) &= cpu_to_le16(~(BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))); \
-		*(unsigned short *)(pbuf) |= cpu_to_le16(type); \
+		*(unsigned short *)(void*)(pbuf) &= cpu_to_le16(~(BIT(7) | BIT(6) | BIT(5) | BIT(4) | BIT(3) | BIT(2))); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(type); \
 	} while(0)
 
-#define GetSequence(pbuf)	(cpu_to_le16(*(unsigned short *)((SIZE_PTR)(pbuf) + 22)) >> 4)
+#define GetSequence(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22)) >> 4)
 
-#define GetFragNum(pbuf)	(cpu_to_le16(*(unsigned short *)((SIZE_PTR)(pbuf) + 22)) & 0x0f)
+#define GetFragNum(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22)) & 0x0f)
 
-#define GetTupleCache(pbuf)	(cpu_to_le16(*(unsigned short *)((SIZE_PTR)(pbuf) + 22)))
+#define GetTupleCache(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22)))
 
 #define SetFragNum(pbuf, num) \
 	do {    \
-		*(unsigned short *)((SIZE_PTR)(pbuf) + 22) = \
-			((*(unsigned short *)((SIZE_PTR)(pbuf) + 22)) & le16_to_cpu(~(0x000f))) | \
+		*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22) = \
+			((*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22)) & le16_to_cpu(~(0x000f))) | \
 			cpu_to_le16(0x0f & (num));     \
 	} while(0)
 
 #define SetSeqNum(pbuf, num) \
 	do {    \
-		*(unsigned short *)((SIZE_PTR)(pbuf) + 22) = \
-			((*(unsigned short *)((SIZE_PTR)(pbuf) + 22)) & le16_to_cpu((unsigned short)~0xfff0)) | \
+		*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22) = \
+			((*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 22)) & le16_to_cpu((unsigned short)~0xfff0)) | \
 			le16_to_cpu((unsigned short)(0xfff0 & (num << 4))); \
 	} while(0)
-#define GetFrameControl(pbuf)(cpu_to_le16(*(unsigned short*)((SIZE_PTR)(pbuf))))
-#define GetDuration(pbuf) (cpu_to_le16(*(unsigned short*)((SIZE_PTR)(pbuf) + 2)))
+#define GetFrameControl(pbuf)(cpu_to_le16(*(unsigned short*)(void*)((SIZE_PTR)(pbuf))))
+#define GetDuration(pbuf) (cpu_to_le16(*(unsigned short*)(void*)((SIZE_PTR)(pbuf) + 2)))
 #define SetDuration(pbuf, dur) \
 	do {    \
-		*(unsigned short *)((SIZE_PTR)(pbuf) + 2) = cpu_to_le16(0xffff & (dur)); \
+		*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 2) = cpu_to_le16(0xffff & (dur)); \
 	} while(0)
 
 
 #define SetPriority(pbuf, tid)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16(tid & 0xf); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(tid & 0xf); \
 	} while(0)
 
-#define GetPriority(pbuf)	((le16_to_cpu(*(unsigned short *)(pbuf))) & 0xf)
+#define GetPriority(pbuf)	((le16_to_cpu(*(unsigned short *)(void*)(pbuf))) & 0xf)
 
 #define SetEOSP(pbuf, eosp)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16( (eosp & 1) << 4); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16( (eosp & 1) << 4); \
 	} while(0)
 
 #define SetAckpolicy(pbuf, ack)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16( (ack & 3) << 5); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16( (ack & 3) << 5); \
 	} while(0)
 
-#define GetAckpolicy(pbuf) (((le16_to_cpu(*(unsigned short *)pbuf)) >> 5) & 0x3)
+#define GetAckpolicy(pbuf) (((le16_to_cpu(*(unsigned short *)(void*)pbuf)) >> 5) & 0x3)
 
-#define GetAMsdu(pbuf) (((le16_to_cpu(*(unsigned short *)pbuf)) >> 7) & 0x1)
+#define GetAMsdu(pbuf) (((le16_to_cpu(*(unsigned short *)(void*)pbuf)) >> 7) & 0x1)
 
 #define SetAMsdu(pbuf, amsdu)	\
 	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16( (amsdu & 1) << 7); \
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16( (amsdu & 1) << 7); \
 	} while(0)
 
-#define GetAid(pbuf)	(cpu_to_le16(*(unsigned short *)((SIZE_PTR)(pbuf) + 2)) & 0x3fff)
+#define GetAid(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + 2)) & 0x3fff)
 
-#define GetTid(pbuf)	(cpu_to_le16(*(unsigned short *)((SIZE_PTR)(pbuf) + (((GetToDs(pbuf)<<1)|GetFrDs(pbuf))==3?30:24))) & 0x000f)
+#define GetTid(pbuf)	(cpu_to_le16(*(unsigned short *)(void*)((SIZE_PTR)(pbuf) + (((GetToDs(pbuf)<<1)|GetFrDs(pbuf))==3?30:24))) & 0x000f)
 
 #define GetAddr1Ptr(pbuf)	((unsigned char *)((SIZE_PTR)(pbuf) + 4))
 
@@ -494,73 +468,6 @@ enum WIFI_REG_DOMAIN {
 
 //WIFI_WMM
 #define GetQosControl(pbuf) (unsigned char *)((SIZE_PTR)(pbuf) + (((GetToDs(pbuf)<<1)|GetFrDs(pbuf))==3?30:24))
-
-#ifdef CONFIG_RTK_MESH
-
-#define SetMeshControlPresent(pbuf, present)	\
-	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16((present & 0x1) << 8); \
-	} while(0)
-
-#define SetMeshPsLevel(pbuf, pslevel) \
-	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16((pslevel & 0x1) << 9); \
-	} while(0)
-
-#define SetRSPI(pbuf, rspi) \
-	do	{	\
-		*(unsigned short *)(pbuf) |= cpu_to_le16((rspi & 0x1) << 10); \
-	} while(0)
-
-//#define GetMeshHeaderFlagWithoutQOS(pbuf)	((unsigned char *)(pbuf) + 30)
-//#define GetGetMeshHeaderFlag(pbuf)			((unsigned char *)(pbuf) + 32)
-#define GetMeshHeaderFlagWithoutQOS(pbuf)	(GetQosControl(pbuf)+0)
-#define GetGetMeshHeaderFlag(pbuf)			(GetQosControl(pbuf)+2)
-
-
-//#define GetMeshHeaderTTLWithOutQOS(pbuf)	((unsigned char *)(pbuf) + 31)  	// mesh header ttl
-//#define GetMeshHeaderTTL(pbuf)				((unsigned char *)(pbuf) + 33)  	// mesh header ttl
-#define GetMeshHeaderTTLWithOutQOS(pbuf)	(GetMeshHeaderFlagWithoutQOS(pbuf)+1)
-#define GetMeshHeaderTTL(pbuf)				(GetGetMeshHeaderFlag(pbuf)+1)
-
-//#define GetMeshHeaderSeqNumWithoutQOS(pbuf)	((unsigned short *)((unsigned long)(pbuf) + 32))	// Don't use cpu_to_le16(Other not use cpu_to_le16)
-//#define GetMeshHeaderSeqNum(pbuf)			((unsigned short *)((unsigned long)(pbuf) + 34))	// Don't use cpu_to_le16(Other not use cpu_to_le16)
-#define GetMeshHeaderSeqNumWithoutQOS(pbuf)	((unsigned int *)(GetMeshHeaderTTLWithOutQOS(pbuf)+1))
-#define GetMeshHeaderSeqNum(pbuf)			((unsigned int *)(GetMeshHeaderTTL(pbuf)+1))
-
-/*
-#define SetMeshHeaderSeqNum(pbuf, num) \
-	do {    \
-		*(unsigned short *)((unsigned long)(pbuf) + 34) = \
-			((*(unsigned short *)((unsigned long)(pbuf) + 34)) & le16_to_cpu((unsigned short)~0xffff)) | \
-			le16_to_cpu((unsigned short)(0xffff & num )); \
-	} while(0)
-*/
-#define SetMeshHeaderSeqNum(pbuf, num)		(*GetMeshHeaderSeqNum(pbuf) = (num))
-
-
-
-//debug note:
-//(u16 *)pHeader)[0] - flow control field
-//((u16 *)((u8 *)pHeader + 24/30))[0] - QoS control field
-//((u8 *)pHeader)[26/32] - mesh control field (i.e pQoS+2)
-
-#define ETHER_ADDR_EQUAL(a, b)  	(((((const u16 *)a)[0] ^ ((const u16 *)b)[0]) | (((const u16 *)a)[1] ^ ((const u16 *)b)[1]) | (((const u16 *)a)[2] ^ ((const u16 *)b)[2])) == 0)
-#define HAS_A4(pHeader)             ((((u16 *)pHeader)[0] & cpu_to_le16(_TO_DS_ | _FROM_DS_)) == cpu_to_le16(_TO_DS_ | _FROM_DS_))
-#define HAS_A5(pHeader)             (HAS_A4(pHeader) ? (((u8 *)pHeader)[32] & cpu_to_le16(BIT1 | BIT0) == 1):(((u8 *)pHeader)[26] & cpu_to_le16(BIT1 | BIT0) == 1))
-#define HAS_A6(pHeader)             (HAS_A5(pHeader))
-#define HAS_TO_DS(pHeader)          ((((u16 *)pHeader)[0] & cpu_to_le16(_TO_DS_)) != 0)
-#define HAS_FR_DS(pHeader)          ((((u16 *)pHeader)[0] & cpu_to_le16(_FROM_DS_)) != 0)
-#define HAS_MESH_CTL_FIELD(pHeader) (HAS_A4(pHeader) ? ((((u16 *)((u8 *)pHeader + 30))[0] & cpu_to_le16(RTW_IEEE80211_QOS_CTL_MESH_CONTROL_PRESENT)) == cpu_to_le16(RTW_IEEE80211_QOS_CTL_MESH_CONTROL_PRESENT)):((((u16 *)((u8 *)pHeader + 24))[0] & cpu_to_le16(RTW_IEEE80211_QOS_CTL_MESH_CONTROL_PRESENT)) == cpu_to_le16(RTW_IEEE80211_QOS_CTL_MESH_CONTROL_PRESENT)))
-#define IS_DATA(pHeader)            ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FTYPE_DATA)) == cpu_to_le16(RTW_IEEE80211_FTYPE_DATA))
-#define IS_MGMT(pHeader)            ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT))
-#define IS_ACTION(pHeader)          ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE | RTW_IEEE80211_FCTL_STYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT | RTW_IEEE80211_STYPE_ACTION))
-#define IS_PROBE_REQ(pHeader)       ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE | RTW_IEEE80211_FCTL_STYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT | RTW_IEEE80211_STYPE_PROBE_REQ))
-#define IS_PROBE_RSP(pHeader)       ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE | RTW_IEEE80211_FCTL_STYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT | RTW_IEEE80211_STYPE_PROBE_RESP))
-#define IS_BEACON(pHeader)          ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE | RTW_IEEE80211_FCTL_STYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT | RTW_IEEE80211_STYPE_BEACON))
-#define IS_AUTH(pHeader)            ((((u16 *)pHeader)[0] & cpu_to_le16(RTW_IEEE80211_FCTL_FTYPE | RTW_IEEE80211_FCTL_STYPE)) == cpu_to_le16(RTW_IEEE80211_FTYPE_MGMT | RTW_IEEE80211_STYPE_AUTH))
-
-#endif // CONFIG_RTK_MESH
 
 #define MacAddr_isBcst(addr) \
 ( \
@@ -694,15 +601,6 @@ __inline static int IsFrameTypeCtrl(unsigned char *pframe)
 #define _PUBLIC_ACTION_IE_OFFSET_	8
 
 #define _FIXED_IE_LENGTH_			_BEACON_IE_OFFSET_
-
-#ifdef CONFIG_RTK_MESH
-#define	_MESH_SP_OPEN_IE_OFFSET_		4 // 2(cat + action) + 2(cap)
-#define	_MESH_SP_CONFIRM_IE_OFFSET_		6 // 2(cat + action) + 2(cap) + 2(AID)
-#define	_MESH_SP_CLOSE_IE_OFFSET_		2 // 2(cat + action)
-#define	_MESH_HEADER_WITH_AE_		16	// mesh header with AE(Address Extension)
-#define	_MESH_HEADER_WITHOUT_AE_	4	// mesh header without AE(Address Extension)
-#define	_MESH_ACTIVE_FIELD_OFFSET_	2	// mesh active field Category+Action length
-#endif
 
 #define _SSID_IE_				0
 #define _SUPPORTEDRATES_IE_	1
@@ -916,135 +814,6 @@ typedef	enum _ELEMENT_ID {
 ------------------------------------------------------------------------------*/
 #define _WMM_IE_Length_				7  // for WMM STA
 #define _WMM_Para_Element_Length_		24
-
-#ifdef CONFIG_RTK_MESH
-
-typedef struct _ieee80211_rann_ie_ {
-	u8 rann_flags;
-	u8 rann_hopcount;
-	u8 rann_ttl;
-	u8 rann_addr[6];
-	u32 rann_seq;
-	u32 rann_interval;
-	u32 rann_metric;
-} ieee80211_rann_ie;
-
-typedef struct _ieee80211_ampe_ie_ {
-	u8 selected_pairwise_suite[4];
-	u8 local_nonce[32];
-	u8 peer_nonce[32];
-} ieee80211_ampe_ie;
-
-typedef union _mesh_formation_info_ {
-	struct {
-		u8 connected_to_mesh_gate : 1;
-		u8 number_of_peerings : 6;
-		u8 connected_to_as : 1;
-	};
-	u8 u8Val;
-} mesh_formation_info;
-
-typedef union _mesh_capability_ {
-	struct {
-		u8 accepting_additional_mesh_peerings : 1;
-		u8 mcca_supported : 1;
-		u8 mcca_enabled : 1;
-		u8 forwarding : 1;
-		u8 mbac_enabled : 1;
-		u8 tbtt_adjusting : 1;
-		u8 mesh_power_save_level : 1;
-		u8 reserved : 1;
-	};
-	u8 u8Val;
-} mesh_capability;
-
-//element ID: 113, length: 7
-typedef union _Mesh_Configuration_IE_ {
-	struct {
-		u8 active_path_selection_protocol_identifier;
-		u8 active_path_selection_metric_identifier;
-		u8 congestion_control_mode_identifier;
-		u8 synchronization_method_identifier;
-		u8 authentication_protocol_identifier;
-		mesh_formation_info mesh_formation_info;
-		mesh_capability mesh_capability;
-	};
-	u8 Octets[7];
-} mesh_config_ie;
-
-//element ID: 117, length+ID: 5, 7, 9, 21, 23, or 25 p692
-typedef struct _Mesh_Peering_Management_IE_ {
-	u16 mesh_peering_protocol_identifier;
-	u16 local_link_id;
-	u16 peer_link_id; //conditional
-	u16 reason_code; //conditional
-	u8 choosen_pmk[16]; //optional
-} mesh_peering_management_ie;
-
-/* Parsed Information Elements */
-typedef struct rtw_ieee802_11_elems_ext {
-	u8 *ssid;
-	u8 ssid_len;
-	u8 *supp_rates;
-	u8 supp_rates_len;
-	u8 *fh_params;
-	u8 fh_params_len;
-	u8 *ds_params;
-	u8 ds_params_len;
-	u8 *cf_params;
-	u8 cf_params_len;
-	u8 *tim;
-	u8 tim_len;
-	u8 *ibss_params;
-	u8 ibss_params_len;
-	u8 *challenge;
-	u8 challenge_len;
-	u8 *erp_info;
-	u8 erp_info_len;
-	u8 *ext_supp_rates;
-	u8 ext_supp_rates_len;
-	u8 *wpa_ie;
-	u8 wpa_ie_len;
-	u8 *rsn_ie;
-	u8 rsn_ie_len;
-	u8 *wme;
-	u8 wme_len;
-	u8 *wme_tspec;
-	u8 wme_tspec_len;
-	u8 *wps_ie;
-	u8 wps_ie_len;
-	u8 *power_cap;
-	u8 power_cap_len;
-	u8 *supp_channels;
-	u8 supp_channels_len;
-	u8 *mdie;
-	u8 mdie_len;
-	u8 *ftie;
-	u8 ftie_len;
-	u8 *timeout_int;
-	u8 timeout_int_len;
-	u8 *ht_capabilities;
-	u8 ht_capabilities_len;
-	u8 *ht_operation;
-	u8 ht_operation_len;
-	//u8 *vendor_ht_cap;
-	//u8 vendor_ht_cap_len;
-	u8 *vendor_specific;
-	u8 vendor_specific_len;
-#ifdef CONFIG_RTK_MESH
-	u8 mesh_id_len;
-	u8 *mesh_id;
-	u8 mesh_configuration_len;
-	mesh_config_ie *mesh_configuration;
-	u8 mesh_peering_mgmnt_len;
-	u8 *mesh_peering_mgmnt;
-	u8 mic_len;
-	u8 *mic;
-#endif //CONFIG_RTK_MESH
-} dot_11_IEs;
-#define SAE_AUTH_COMMIT                 1
-#define SAE_AUTH_CONFIRM                2
-#endif //CONFIG_RTK_MESH
 
 
 /**

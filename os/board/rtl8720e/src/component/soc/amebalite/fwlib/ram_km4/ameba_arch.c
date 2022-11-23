@@ -45,7 +45,6 @@
 /*----------------------------------------------------------------------------
   Clock Variable definitions
  *----------------------------------------------------------------------------*/
-IMAGE2_RAM_DATA_SECTION
 uint32_t SystemCoreClock = 150000000;/*!< System Clock Frequency (Core Clock)*/
 
 /*----------------------------------------------------------------------------
@@ -73,7 +72,6 @@ void SystemInit(void)
 #endif
 }
 
-IMAGE2_RAM_TEXT_SECTION
 void Systick_Cmd(u32 enable)
 {
 	if (enable) {
@@ -88,7 +86,6 @@ void Systick_Cmd(u32 enable)
 	__DSB();
 }
 
-IMAGE2_RAM_TEXT_SECTION
 u32 Systick_State(void)
 {
 	if (SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) {
@@ -99,7 +96,6 @@ u32 Systick_State(void)
 }
 
 /* Notice: Maximum miss 1 tick because of cpu clock changed */
-IMAGE2_RAM_TEXT_SECTION
 void Systick_update(void)
 {
 	/* write any value will reset current register */
@@ -117,7 +113,7 @@ void Systick_update(void)
   *		 @arg CLK_CPU_LBUS
    *		 @arg CLK_CPU_XTAL
   */
-IMAGE2_RAM_TEXT_SECTION
+NON_DRAM_TEXT_SECTION
 void CPU_ClkSet(u32 Source)
 {
 	u32 CpuClk, PreState;

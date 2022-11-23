@@ -1154,22 +1154,27 @@ enum CORE_Vol_TYPE {
  * @ the Max space for RRAM_TypeDef is 0x80, user can alloc space from RRAM_USER_RSVD
  *****************************************************************************/
 typedef struct {
-	u8 RRAM_SYS_RSVD[256];/* resvd for system */
+	__IO u8 RRAM_SYS_RSVD[256];/* resvd for system */
 
-	u32 IPC_Share_Mem; /* RETENTION_RAM_SYS_OFFSET 0x80 */
-	u32 PLLD_Clk_Info;
+	__IO u32 IPC_Share_Mem; /* RETENTION_RAM_SYS_OFFSET 0x80 */
+	__IO u32 PLLD_Clk_Info;
 
-	u8 PSRAM_TYPE;
-	u8 CORE_Vol_Flag;
+	__IO u8 PSRAM_TYPE;
+	__IO u8 CORE_Vol_Flag;
 
-	u8 SWRCALIB_AON_LDO_09;
-	u8 SWRCALIB_PWM_135;
-	u8 SWRCALIB_CORE_LDO_10;
-	u8 SWRCALIB_PWM_10;
+	__IO u8 SWRCALIB_AON_LDO_09;
+	__IO u8 SWRCALIB_PWM_135;
+	__IO u8 SWRCALIB_CORE_LDO_10;
+	__IO u8 SWRCALIB_PWM_10;
 
-	u8 PMC_CORE_ROLE_Flag;
+	__IO u8 PMC_CORE_ROLE_Flag;
+	__IO u8 kr4_BackupTbl_Done;
 
-	u8 RRAM_USER_RSVD[241];
+	__IO u32 IMQ_HEAP_ADDR[4];
+	__IO u32 IMQ_HEAP_SIZE[4];
+	__IO u32 IMQ_INIT_DONE;
+
+	__IO u8 RRAM_USER_RSVD[204];
 } RRAM_TypeDef;
 /** @} */
 

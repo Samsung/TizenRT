@@ -870,21 +870,23 @@
 		+ HE_OP_MAX_COHOST_BSSID_LEN + HE_OP_6G_OPER_INFO_LEN)
 
 //TODO
-struct he_actrl_bsr {
 
+struct he_actrl_bsr {
+	void *bsr;
 };
 
 struct he_actrl_uph {
-
+	void *uph;
 };
 
 struct he_actrl_bqr {
-
+	void *bqr;
 };
 
 struct he_actrl_cas {
-
+	void *cas;
 };
+
 
 struct he_variant_actrl {
 	struct he_actrl_bsr actrl_bsr;	//buffer status report
@@ -892,6 +894,7 @@ struct he_variant_actrl {
 	struct he_actrl_bqr actrl_bqr;	//bandwidth query report
 	struct he_actrl_cas actrl_cas;	//command and status
 };
+
 
 struct he_priv {
 	u8 he_option;
@@ -925,7 +928,7 @@ struct HE_mu_edca_element {
 };
 
 void HE_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
-void HE_operation_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
+void HE_operation_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE, u8 update);
 void HE_mu_edca_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE, u8 first);
 
 void rtw_he_nss_to_mcsmap(u8 nss, u8 *target_mcs_map, u8 *cur_mcs_map);

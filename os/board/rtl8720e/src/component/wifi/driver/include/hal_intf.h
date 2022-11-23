@@ -163,10 +163,7 @@ typedef enum _HW_VARIABLES {
 #endif
 #endif
 	HW_VAR_SET_ICV,
-#ifdef CONFIG_MCC_MODE
-	HW_VAR_TSF_AUTO_SYNC,
-	HW_VAR_GET_TSF,
-#endif
+
 #ifdef USER_CTL_POWER_SAVE
 	HW_VAR_SET_UCPS_MODE,
 	HW_VAR_SET_UCPS_RADIO,
@@ -182,17 +179,13 @@ typedef enum _HW_VARIABLES {
 #ifdef CONFIG_BT_COEXIST_SOC
 	HW_VAR_BTCOEX_RUN_CASE,
 #endif
-#ifdef CONFIG_MCC_IQK_OFFLOAD
-	HW_VAR_CH_SW_NEED_TO_TAKE_CARE_IQK_INFO,
-	HW_VAR_CH_SW_IQK_INFO_BACKUP,
-	HW_VAR_CH_SW_IQK_INFO_RESTORE,
-#endif
 	HW_VAR_DATA_RATE_FALLBACK,
 	HW_VAR_RETRY_LIMIT,
 	HW_VAR_CTRL_PKT_RPT,
 	HW_VAR_PORT1_NETTYPE,
 	HW_VAR_TX_AGG_MAX_NUM,
 	HW_VAR_CCA_EDCCA,
+	HW_VAR_TXBUF_PKT_NUM,
 
 	/* add for 11ax support: start */
 	HW_VAR_BSS_COLOR,
@@ -228,6 +221,9 @@ typedef enum _HAL_DEF_VARIABLE {
 	HAL_DEF_MACID_SLEEP, // Support for MACID sleep
 	HAL_DEF_DBG_RX_INFO_DUMP,
 	HAL_DEF_MAX_AMPDU_BUF_SIZE,
+	HAL_DEF_EXPLICIT_BEAMFORMEE,
+	HAL_DEF_VHT_MU_BEAMFORMEE,
+	HAL_DEF_BEAMFORMEE_CAP,
 } HAL_DEF_VARIABLE;
 
 typedef enum _HAL_ODM_VARIABLE {
@@ -326,6 +322,7 @@ struct hal_ops {
 #endif //CONFIG_WOWLAN
 
 	void	(*set_bwmode_handler)(_adapter *padapter, enum channel_width Bandwidth, u8 Offset);
+	u32(*get_11ax_limitation)(void);
 	void	(*set_channel_handler)(_adapter *padapter, u8 channel);
 	void	(*set_chnl_bw_handler)(_adapter *padapter, u8 channel, enum channel_width Bandwidth, u8 Offset40, u8 Offset80);
 
@@ -413,13 +410,17 @@ struct hal_ops {
 	void (*add_bb_sta)(_adapter *padapter, struct sta_info *psta);
 	void (*del_bb_sta)(_adapter *padapter, struct sta_info *psta);
 	void (*phydm_cmd)(_adapter *padapter, char *input, char *output, u32 out_len);
-	void (*set_bss_color)(_adapter *padapter, u8 bss_color, enum phl_phy_idx phy_idx);
 	void (*set_TXOP_thres)(_adapter *padapter, u16 rts_th, u8 enable);
+	u8(*set_bss_color)(_adapter *padapter, u8 bss_color, enum phl_phy_idx phy_idx);
 #ifdef CONFIG_CSI
-	u8(*csi_en)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
-	u8(*csi_cfg)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
-	u8(*csi_report)(_adapter *padapter, u32 plen, u8 *pbuf, u32 *len, rtw_csi_header_t *csi_hdr);
+	s32(*csi_en)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
+	s32(*csi_cfg)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
+	s32(*csi_report)(_adapter *padapter, u32 plen, u8 *pbuf, u32 *len, rtw_csi_header_t *csi_hdr);
 #endif
+#ifdef CONFIG_TWT
+	u8(*hal_twt_para_set)(_adapter *padapter, twt_para_t twt_para, u8 enable);
+#endif
+	void	(*SetSpatialReuse)(_adapter *padapter, u8 *val, u8 enable, u8 first);
 };
 
 typedef	enum _RT_EEPROM_TYPE {
@@ -814,6 +815,9 @@ u32 rtl8721dd_set_hal_ops(_adapter *padapter);
 #elif defined(CONFIG_RTL8730A)
 u32 rtl8730aa_set_hal_ops(_adapter *padapter);
 #define hal_set_hal_ops rtl8730aa_set_hal_ops
+#elif defined(CONFIG_RTL8721F)
+u32 rtl8721fa_set_hal_ops(_adapter *padapter);
+#define hal_set_hal_ops rtl8721fa_set_hal_ops
 #elif defined(CONFIG_RTL8720E)
 u32 rtl8720ea_set_hal_ops(_adapter *padapter);
 #define hal_set_hal_ops rtl8720ea_set_hal_ops
@@ -834,7 +838,7 @@ u8 rtl8735ba_set_hal_ops(PADAPTER);
 #define hal_set_hal_ops(__adapter) rtl8735ba_set_hal_ops(__adapter)
 #endif
 
-#if defined(RTL8730E_WIFI_TEST) || defined(RTL8720E_WIFI_TEST)  //MBSSID test
+#ifdef CONFIG_MBSSID_AX
 void rtw_hal_mbssid_sta_cfg(_adapter *padapter, u8 enable, mbssid_info_t mbssid_info);
 #endif
 
@@ -855,6 +859,11 @@ u8 rtw_hal_csi_en(_adapter *padapter, rtw_csi_action_parm_t *act_param);
 u8 rtw_hal_csi_cfg(_adapter *padapter, rtw_csi_action_parm_t *act_param);
 u8 rtw_hal_csi_report(_adapter *padapter, u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_hdr);
 #endif /* CONFIG_CSI */
+
+#ifdef CONFIG_TWT
+u32 rtw_hal_twt_para_set(_adapter *padapter, twt_para_t twt_para, u8 enable);
+#endif
+void rtw_hal_set_spatial_reuse(_adapter *padapter, u8 *val, u8 enable, u8 first);
 
 #endif //__HAL_INTF_H__
 

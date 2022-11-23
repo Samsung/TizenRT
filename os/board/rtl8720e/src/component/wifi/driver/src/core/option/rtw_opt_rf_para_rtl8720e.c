@@ -70,10 +70,7 @@ enum halrf_pw_by_rate_rate_type {
 
 enum halrf_pw_lmt_bandwidth_type {
 	PW_LMT_BW_20M = 0,
-	PW_LMT_BW_40M = 1,
-	PW_LMT_BW_80M = 2,
-	PW_LMT_BW_160M = 3,
-	PW_LMT_MAX_BANDWIDTH_NUM = 4
+	PW_LMT_MAX_BANDWIDTH_NUM
 };
 
 enum halrf_pw_lmt_ratesection_type {

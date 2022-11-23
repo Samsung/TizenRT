@@ -6,6 +6,7 @@
 #endif
 
 #include <platform_stdlib.h>
+#include "osdep_service.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
@@ -249,8 +250,8 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		idx = 1;
 	}
 #endif
-
-	extern struct static_ip_config user_static_ip;
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
+	struct static_ip_config user_static_ip;
 	if (user_static_ip.use_static_ip) {
 		LwIP_SetIP(0, user_static_ip.addr, user_static_ip.netmask, user_static_ip.gw);
 		iptab[3] = (uint8_t)(user_static_ip.addr >> 24);
@@ -260,7 +261,7 @@ uint8_t LwIP_DHCP(uint8_t idx, uint8_t dhcp_state)
 		printf("\n\rSet Interface %d static IP : %d.%d.%d.%d\n", idx, iptab[3], iptab[2], iptab[1], iptab[0]);
 		return 0;
 	}
-
+#endif
 	pnetif = &xnetif[idx];
 	if (DHCP_state == 0) {
 #if LWIP_VERSION_MAJOR >= 2
