@@ -192,7 +192,7 @@ ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 #CMN_CSRCS += amebalite_reboot_reason.c #FIXME
 endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
-#CMN_CSRCS += amebalite_signature.c	#FIXME
+CMN_CSRCS += amebalite_signature.c
 endif
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
 EXTRA_LIBS += ${TOPDIR}/board/rtl8720e/src/libs/lib_btgap.a
