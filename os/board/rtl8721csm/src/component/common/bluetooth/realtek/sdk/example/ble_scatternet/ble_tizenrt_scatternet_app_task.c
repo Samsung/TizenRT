@@ -173,20 +173,25 @@ void ble_tizenrt_scatternet_app_task_deinit(void)
     }
     if (ble_tizenrt_read_sem) {
         os_mutex_delete(ble_tizenrt_read_sem);
+		ble_tizenrt_read_sem = NULL;
     }
     if (ble_tizenrt_write_sem) {
         os_mutex_delete(ble_tizenrt_write_sem);
+		ble_tizenrt_write_sem = NULL;
     }
     if (ble_tizenrt_write_no_rsp_sem) {
         os_mutex_delete(ble_tizenrt_write_no_rsp_sem);
+		ble_tizenrt_write_no_rsp_sem = NULL;
     }
 #if defined(CONFIG_BLE_INDICATION)
     if (ble_tizenrt_indicate_sem) {
         os_mutex_delete(ble_tizenrt_indicate_sem);
+		ble_tizenrt_indicate_sem = NULL;
     }
 #endif
     if (ble_tizenrt_modify_whitelist_sem) {
         os_mutex_delete(ble_tizenrt_modify_whitelist_sem);
+		ble_tizenrt_modify_whitelist_sem= NULL;
     }
 
     ble_tizenrt_scatternet_io_queue_handle = NULL;

@@ -139,6 +139,9 @@ void ble_tizenrt_app_task_init(void)
 }
 
 extern T_ATTRIB_APPL *tizenrt_ble_service_tbl;
+#if defined(CONFIG_BLE_INDICATION)
+extern void *ble_tizenrt_indicate_sem;
+#endif
 void ble_tizenrt_app_task_deinit(void)
 {
     if (ble_tizenrt_io_queue_handle) {
@@ -157,6 +160,13 @@ void ble_tizenrt_app_task_deinit(void)
     if (ble_tizenrt_callback_task_handle) {
         os_task_delete(ble_tizenrt_callback_task_handle);
     }
+
+#if defined(CONFIG_BLE_INDICATION)
+    if (ble_tizenrt_indicate_sem) {
+        os_mutex_delete(ble_tizenrt_indicate_sem);
+        ble_tizenrt_indicate_sem = NULL;
+    }
+#endif
 
     ble_tizenrt_io_queue_handle = NULL;
     ble_tizenrt_evt_queue_handle = NULL;
