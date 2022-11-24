@@ -77,7 +77,7 @@ enum node_type_e {
 };
 typedef enum node_type_e node_type_t;
 
-#if defined(__KERNEL__)
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 extern bool abort_mode;
 #endif
 /****************************************************************************
