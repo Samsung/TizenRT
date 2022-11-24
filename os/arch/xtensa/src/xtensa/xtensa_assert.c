@@ -84,6 +84,11 @@ bool abort_mode = false;
 #endif
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
+
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
 
@@ -180,6 +185,11 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 #endif
+
+	/* Print the extra arguments (if any) from ASSERT_INFO macro */
+	if (assert_info_str[0]) {
+		lldbg("%s\n", assert_info_str);
+	}
 
 	xtensa_assert(EXIT_FAILURE);
 }
