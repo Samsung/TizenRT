@@ -123,6 +123,11 @@ static bool recursive_abort = false;
 bool g_upassert = false;
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
+
+/****************************************************************************
  * Private Data
  ****************************************************************************/
 
@@ -920,6 +925,11 @@ void up_assert(const uint8_t *filename, int lineno)
 #else
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
+
+	/* Print the extra arguments (if any) from ASSERT_INFO macro */
+	if (assert_info_str[0]) {
+		lldbg("%s\n", assert_info_str);
+	}
 
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))

@@ -148,6 +148,11 @@ extern int g_irq_nums[3];
 #define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
 
 /****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
+
+/****************************************************************************
  * Private Data
  ****************************************************************************/
 
@@ -511,6 +516,10 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 
+	/* Print the extra arguments (if any) from ASSERT_INFO macro */
+	if (assert_info_str[0]) {
+		lldbg("%s\n", assert_info_str);
+	}
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 	if (IS_HPWORK || IS_LPWORK) {

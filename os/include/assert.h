@@ -68,8 +68,10 @@
  ****************************************************************************/
 
 #include <tinyara/compiler.h>
+#include <tinyara/config.h>
 #include <stdint.h>
 
+extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -83,6 +85,12 @@
 #undef PANIC					/* Unconditional abort */
 
 #ifdef CONFIG_HAVE_FILENAME
+#define ASSERT_INFO(f, fmt, ...) \
+	{ if (!(f))	{ \
+			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
+			  up_assert((const uint8_t *)__FILE__, (int)__LINE__); \
+		} \
+	}
 
 #define ASSERT(f) \
 	{ if (!(f)) up_assert((const uint8_t *)__FILE__, (int)__LINE__); }
@@ -114,6 +122,12 @@
 
 #else
 
+#define ASSERT_INFO(f, fmt, ...) \
+	{ if (!(f))	{ \
+			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
+			  up_assert(); \
+			} \
+	}
 /**
  * @brief Assert if the condition is not true
  *
