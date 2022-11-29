@@ -158,7 +158,7 @@ function concatenate_binary_without_signing()
 
 	if [ "${CONFIG_AMEBALITE_TRUSTZONE}" != "y" ];then
 		echo "========== Concatenate_binary for TZ disabled =========="
-		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
+		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/kr4_km4_image2.bin
 	else
 		echo "========== Concatenate_binary for TZ enabled =========="
 		cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/kr4_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all.bin > $BINDIR/kr4_km4_image2.bin
