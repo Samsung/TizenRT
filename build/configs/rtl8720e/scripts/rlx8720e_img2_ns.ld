@@ -83,7 +83,7 @@ MEMORY
 	/* IMG2 RAM */
 	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20012020, LENGTH = 0x20040000 - 0x20012020	/* KM4 BD RAM: 184k */
 	KR4_BD_RAM (rwx) :                      ORIGIN = 0x20040060, LENGTH = 0x2007A000 - 0x20040060	/* KR4 BD RAM: 232k */
-	KM4_HEAP_EXT (rwx) :                    ORIGIN = 0x2007A000, LENGTH = 0x200B0000 - 0x2007A000	/* KM4 HEAP EXT: 280k(8720EA) */
+	KM4_HEAP_EXT (rwx) :                    ORIGIN = 0x2007A000, LENGTH = 0x200B0000 - 0x2007A000	/* KM4 HEAP EXT: 216k(8720EA) */
 	KM4_BD_RAM_TZ_NSC (rwx) :               ORIGIN = 0x200B0020, LENGTH = 0x200B1000 - 0x200B0020	/* KM4 BD RAM NSC: 4k */
 	KM4_BD_RAM_TZ_ENTRY (rwx) :             ORIGIN = 0x200B1000, LENGTH = 0x200B3000 - 0x200B1000	/* KM4 BD RAM ENTRY: 8k */
 	KM4_BD_RAM_TZ_S (rwx) :                 ORIGIN = 0x300B3020, LENGTH = 0x300C0000 - 0x300B3020	/* KM4 BD RAM S: 52k */
@@ -299,10 +299,27 @@ SECTIONS
 
 	.bdram_heap.start (NOLOAD):
 	{
+		/* For TizenRT to locate idle thread stack */
 		_sbss = ABSOLUTE(.);
 		__bdram_heap_buffer_start__ = .;
+		/* For TizenRT to locate idle thread stack */
 		_ebss = ABSOLUTE(.);
 	} > KM4_BD_RAM
+
+	/* psram part */
+	.psram_image2.text.data :
+	{
+		*(.timesensitive.data*)
+		*(.data*)
+
+		/*cache line size aligned in order to avoid MMU remap err*/
+		. = ALIGN(32);
+	} > KM4_BD_PSRAM
+
+	.psram_heap.start (NOLOAD):
+	{
+		__psram_heap_buffer_start__ = .;
+	} > KM4_BD_PSRAM
 
 	.bluetooth_trace.text :
 	{
