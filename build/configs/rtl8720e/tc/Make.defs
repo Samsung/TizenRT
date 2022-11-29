@@ -54,11 +54,7 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
-LDSCRIPT = rlx8720e_img2_ns.ld
-else
-LDSCRIPT = rlx8720e_img2_is.ld
-endif
+LDSCRIPT = rlx8720e_img2.ld
 
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
