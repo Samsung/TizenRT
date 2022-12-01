@@ -155,6 +155,7 @@ SECTIONS
 		*(.gnu.linkonce.b.*)
 		*(COMMON)
 		_ebss = ABSOLUTE(.);
+		_sidle_stack = ABSOLUTE(.);
 	} > sram
 
 	/* Stabs debugging sections. */

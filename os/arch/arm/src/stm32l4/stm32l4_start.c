@@ -77,12 +77,11 @@
 #define SRAM2_START  STM32L4_SRAM2_BASE
 #define SRAM2_END    (SRAM2_START + STM32L4_SRAM2_SIZE)
 
-#define IDLE_STACK ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
-#define HEAP_BASE  ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE)
+#define IDLE_STACK ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
+#define HEAP_BASE  ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE)
 
-/* g_idle_topstack: _sbss is the start of the BSS region as defined by the
- * linker script. _ebss lies at the end of the BSS region. The idle task
- * stack starts at the end of BSS and is of size CONFIG_IDLETHREAD_STACKSIZE.
+/* g_idle_topstack: The idle task stack starts at the end of BSS _ebss and
+ * at _sidle_stack and is of size CONFIG_IDLETHREAD_STACKSIZE.
  * The IDLE thread is the thread that the system boots on and, eventually,
  * becomes the IDLE, do nothing task that runs only when there is nothing
  * else to run.  The heap continues from there until the end of memory.
@@ -312,7 +311,7 @@ void __start(void)
 #ifdef CONFIG_STACK_COLORATION
 	/* Set the IDLE stack to the coloration value and jump into nx_start() */
 
-	go_os_start((FAR void *)&_ebss, CONFIG_IDLETHREAD_STACKSIZE);
+	go_os_start((FAR void *)&_sidle_stack, CONFIG_IDLETHREAD_STACKSIZE);
 #else
 	/* Call os_start() */
 	up_sys_timer_deinitialize();

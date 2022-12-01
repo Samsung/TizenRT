@@ -123,7 +123,7 @@
  */
 
 #ifndef IDLE_STACK_BASE
-#  define IDLE_STACK_BASE _ebss
+#  define IDLE_STACK_BASE _sidle_stack
 #endif
 
 #define IDLE_STACK_TOP  IDLE_STACK_BASE+CONFIG_IDLETHREAD_STACKSIZE
@@ -138,6 +138,7 @@
 
 	.global	_sbss				/* Start of .bss in RAM */
 	.global	_ebss				/* End+1 of .bss in RAM */
+	.global  _sidle_stack			/* Start of idle stack */
 #ifdef CONFIG_BOOT_RUNFROMFLASH
 	.global	_eronly				/* Where .data defaults are stored in FLASH */
 	.global	_sdata				/* Where .data needs to reside in SDRAM */
@@ -505,7 +506,7 @@ arm_data_initialize:
 	 *   _ebss is the end of the BSS regsion (see linker script)
 	 *
 	 * Typical Configuration:
-	 *   The idle task stack starts at the end of BSS and is of size
+	 *   The idle task stack starts at _sidle_stack and is of size
 	 *   CONFIG_IDLETHREAD_STACKSIZE.  The heap continues from there
 	 * until the end of memory.  See g_idle_topstack below.
 	 */
@@ -514,6 +515,7 @@ arm_data_initialize:
 .Linitparms:
 	.long	_sbss
 	.long	_ebss
+	.long  _sidle_stack
 
 #ifdef CONFIG_BOOT_RUNFROMFLASH
 	.type	.Ldatainit, %object

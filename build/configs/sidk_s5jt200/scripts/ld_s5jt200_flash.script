@@ -125,6 +125,7 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = ABSOLUTE(.);
+		_sidle_stack = ABSOLUTE(.);
 	} > sram
 
 	/* Stabs debugging sections. */

@@ -106,13 +106,13 @@
  * 0x0003:ffff - End of flash
  * 0x2000:0000 - Start of SRAM and start of .data (_sdata)
  *             - End of .data (_edata) abd start of .bss (_sbss)
- *             - End of .bss (_ebss) and bottom of idle stack
- *             - _ebss + CONFIG_IDLETHREAD_STACKSIZE = end of idle stack, start of heap
+ *             - End of .bss (_ebss) and start of idle stack (_sidle_stack)
+ *             - _sidle_stack + CONFIG_IDLETHREAD_STACKSIZE = end of idle stack, start of heap
  * 0x2000:ffff - End of SRAM and end of heap
  */
 
-#define IDLE_STACK		(_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
-#define HEAP_BASE		(_ebss+CONFIG_IDLETHREAD_STACKSIZE)
+#define IDLE_STACK		(_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
+#define HEAP_BASE		(_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE)
 
 /************************************************************************************
  * Global Symbols
@@ -485,10 +485,10 @@ g_intstackbase:
 
 /* Variables: _sbss is the start of the BSS region (see ld.script) _ebss is the end
  * of the BSS regsion (see ld.script). The idle task stack starts at the end of BSS
- * and is of size CONFIG_IDLETHREAD_STACKSIZE.  The IDLE thread is the thread that
- * the system boots on and, eventually, becomes the idle, do nothing task that runs
- * only when there is nothing else to run.  The heap continues from there until the
- * end of memory.  See g_idle_topstack below.
+ * and at _sidle_stack and is of size CONFIG_IDLETHREAD_STACKSIZE.  The IDLE thread
+ * is the thread that the system boots on and, eventually, becomes the idle, do
+ * nothing task that runs only when there is nothing else to run.  The heap continues
+ * from there until the end of memory.  See g_idle_topstack below.
  */
 
 	.globl	g_idle_topstack
