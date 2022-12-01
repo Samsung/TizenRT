@@ -44,10 +44,11 @@ void app_init_psram(void);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 extern void vPortEnterCritical(void);
 extern void vPortExitCritical(void);
+extern unsigned int _sidle_stack;
 extern unsigned int _ebss;
 extern unsigned int __StackLimit;
 extern unsigned int __PsramStackLimit;
-#define IDLE_STACK ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
+#define IDLE_STACK ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
 #define HEAP_BASE  ((uintptr_t)&_ebss+CONFIG_IDLETHREAD_STACKSIZE)
 #define HEAP_LIMIT ((uintptr_t)&__StackLimit)
 #define PSRAM_HEAP_BASE ((uintptr_t)&__psram_bss_end__[0])

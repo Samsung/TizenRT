@@ -61,7 +61,7 @@
  * Preprocessor Definitions
  ************************************************************************************/
 
-#define IDLE_STACK      ((unsigned)&_ebss+CONFIG_IDLETHREAD_STACKSIZE-4)
+#define IDLE_STACK      ((unsigned)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
 
 #ifndef ARMV8M_PERIPHERAL_INTERRUPTS
 #error ARMV8M_PERIPHERAL_INTERRUPTS must be defined to the number of I/O interrupts to be supported
@@ -83,9 +83,8 @@ extern void exception_common(void);
  * Public data
  ************************************************************************************/
 
-/* Provided by the linker script to indicate the end of the BSS */
-
-extern char _ebss;
+/* Provided by the linker script to indicate the start of idle stack */
+extern char _sidle_stack;
 
 /* The v7m vector table consists of an array of function pointers, with the first
  * slot (vector zero) used to hold the initial stack pointer.

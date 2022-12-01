@@ -41,6 +41,7 @@ extern int main(void);
 extern u32 GlobalDebugEnable;
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
+extern unsigned int _sidle_stack;
 extern unsigned int __StackStart;
 extern unsigned int __StackLimit;
 extern uint8_t __psram_heap_buffer_start__[];
@@ -48,8 +49,8 @@ extern unsigned int __PsramStackLimit;
 void NS_ENTRY BOOT_IMG3(void);
 void app_init_psram(void);
 
-#define IDLE_STACK ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE-4)
-#define HEAP_BASE  ((uintptr_t)&__StackStart+CONFIG_IDLETHREAD_STACKSIZE)
+#define IDLE_STACK ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
+#define HEAP_BASE  ((uintptr_t)&__StackStart + CONFIG_IDLETHREAD_STACKSIZE)
 #define HEAP_LIMIT ((uintptr_t)&__StackLimit)
 #define PSRAM_HEAP_BASE ((uintptr_t)&__psram_heap_buffer_start__)
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)

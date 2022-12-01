@@ -107,6 +107,7 @@ SECTIONS
         *(.gnu.linkonce.b.*)
         *(COMMON)
         _ebss = ABSOLUTE(.);
+	_sidle_stack = ABSOLUTE(.);
     } > ksram
 
     /* Stabs debugging sections */

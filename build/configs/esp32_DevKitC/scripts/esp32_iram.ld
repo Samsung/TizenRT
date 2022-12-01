@@ -180,6 +180,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _ebss = ABSOLUTE(.);
+    _sidle_stack = ABSOLUTE(.);
 
     /* Uninitialized .bss */
     *(.noinit)

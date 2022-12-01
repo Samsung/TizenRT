@@ -327,6 +327,7 @@ SECTIONS
 		. = ALIGN (32);
 		*(.psram.heap*)
 	} > PSRAM_NS
+	_sidle_stack = ABSOLUTE(ORIGIN(MSP_RAM_NS) + LENGTH(MSP_RAM_NS)) - 1024;
 	__StackLimit = ABSOLUTE(ORIGIN(BD_RAM_NS) + LENGTH(BD_RAM_NS));
 	__PsramStackLimit = ABSOLUTE(ORIGIN(PSRAM_NS) + LENGTH(PSRAM_NS));
 }

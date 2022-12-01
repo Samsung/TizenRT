@@ -126,6 +126,7 @@ SECTIONS
       *(.gnu.linkonce.b*)
       *(COMMON)
       _ebss = . ;
+      _sidle_stack = . ;
     }
 
     /* Stabs debugging sections.    */

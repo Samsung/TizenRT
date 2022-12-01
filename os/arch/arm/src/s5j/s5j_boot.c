@@ -189,7 +189,7 @@ void arm_boot(void)
 	 * Do not call any function between this and os_start.
 	 */
 
-	go_os_start((void *)&_ebss, CONFIG_IDLETHREAD_STACKSIZE);
+	go_os_start((void *)&_sidle_stack, CONFIG_IDLETHREAD_STACKSIZE);
 #else
 	os_start();
 #endif

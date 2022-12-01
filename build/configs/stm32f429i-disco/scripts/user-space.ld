@@ -124,6 +124,7 @@ SECTIONS
         *(.gnu.linkonce.b.*)
         *(COMMON)
         _ebss = ABSOLUTE(.);
+	_sidle_stack = ABSOLUTE(.);
     } > usram
 
     /* Stabs debugging sections */
