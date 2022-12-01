@@ -139,6 +139,7 @@
 	.global	_sbss				/* Start of .bss in RAM */
 	.global	_ebss				/* End+1 of .bss in RAM */
 	.global  _sidle_stack			/* Start of idle stack */
+	.global  _sint_heap_start		/* Start of heap in internal RAM */
 #ifdef CONFIG_BOOT_RUNFROMFLASH
 	.global	_eronly				/* Where .data defaults are stored in FLASH */
 	.global	_sdata				/* Where .data needs to reside in SDRAM */
@@ -516,6 +517,7 @@ arm_data_initialize:
 	.long	_sbss
 	.long	_ebss
 	.long  _sidle_stack
+	.long  _sint_heap_start
 
 #ifdef CONFIG_BOOT_RUNFROMFLASH
 	.type	.Ldatainit, %object

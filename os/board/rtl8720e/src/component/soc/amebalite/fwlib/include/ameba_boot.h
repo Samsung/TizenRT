@@ -92,8 +92,8 @@ extern uint8_t __bdram_heap_buffer_start__[];
 extern uint8_t __bdram_heap_buffer_size__[];
 extern uint8_t __km4_sram_heap_extend_start__[];
 extern uint8_t __km4_sram_heap_extend_length__[];
-extern uint8_t __psram_heap_buffer_start__[];
-extern uint8_t __psram_heap_buffer_size__[];
+extern unsigned int _sext_heap_start;
+extern unsigned int _sint_heap_start;
 
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
