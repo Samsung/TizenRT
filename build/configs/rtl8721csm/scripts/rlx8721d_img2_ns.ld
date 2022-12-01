@@ -306,6 +306,8 @@ SECTIONS
 		*(.bfsram.data*)
 		end = .;
 		_ebss = ABSOLUTE(.);
+		/* Heap start address in internal RAM */
+		_sint_heap_start = ABSOLUTE(.);
 	} > BD_RAM_NS
 
 
@@ -402,6 +404,8 @@ SECTIONS
 		*libexternal.a:*(.bss*)
 		*libframework.a:*(.bss*)
 		__psram_bss_end__ = .;
+		/* Heap start address in external RAM */
+		_sext_heap_start = ABSOLUTE(.);
 	} > PSRAM_NS
 
 	.psram_heap.data :
@@ -409,7 +413,7 @@ SECTIONS
 		. = ALIGN (32);
 		*(.psram.heap*)
 	} > PSRAM_NS
-	_sidle_stack = ABSOLUTE(ORIGIN(MSP_RAM_NS) + LENGTH(MSP_RAM_NS)) - 1024;
+	_sidle_stack = ABSOLUTE(ORIGIN(MSP_RAM_NS) + LENGTH(MSP_RAM_NS)) - CONFIG_IDLETHREAD_STACKSIZE;
 	__StackLimit = ABSOLUTE(ORIGIN(BD_RAM_NS) + LENGTH(BD_RAM_NS));
 	__PsramStackLimit = ABSOLUTE(ORIGIN(PSRAM_NS) + LENGTH(PSRAM_NS));
 }

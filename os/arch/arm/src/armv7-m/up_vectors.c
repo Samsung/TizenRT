@@ -84,7 +84,7 @@ extern void exception_common(void);
  ************************************************************************************/
 
 /* Provided by the linker script to indicate the start of idle stack */
-extern char _sidle_stack;
+extern uint32_t _sidle_stack;
 
 /* The v7m vector table consists of an array of function pointers, with the first
  * slot (vector zero) used to hold the initial stack pointer.

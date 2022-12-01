@@ -315,7 +315,8 @@ SECTIONS
 
 	.psram_heap.start (NOLOAD):
 	{
-		__psram_heap_buffer_start__ = .;
+		/* Heap start address in external RAM */
+		_sext_heap_start = ABSOLUTE(.);
 	} > KM4_BD_PSRAM
 
 	.bluetooth_trace.text :
@@ -324,8 +325,9 @@ SECTIONS
 		*(.BTTRACE)
 		__btrace_end__ = .;
 	} > BTRACE
-	_sidle_stack = ABSOLUTE(ORIGIN(KM4_MSP_RAM_NS) + LENGTH(KM4_MSP_RAM_NS)) - 1024;
-	__StackStart = ABSOLUTE(ORIGIN(KM4_HEAP_EXT));
+	/* Heap start address in internal RAM */
+	_sint_heap_start = ABSOLUTE(ORIGIN(KM4_HEAP_EXT));
+	_sidle_stack = ABSOLUTE(ORIGIN(KM4_MSP_RAM_NS) + LENGTH(KM4_MSP_RAM_NS)) - CONFIG_IDLETHREAD_STACKSIZE;
 	__StackLimit = ABSOLUTE(ORIGIN(KM4_HEAP_EXT) + LENGTH(KM4_HEAP_EXT));
 	__PsramStackLimit = ABSOLUTE(ORIGIN(KM4_BD_PSRAM) + LENGTH(KM4_BD_PSRAM));
 }

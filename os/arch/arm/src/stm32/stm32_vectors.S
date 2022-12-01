@@ -109,12 +109,13 @@
  * 0x2000:0000 - Start of SRAM and start of .data (_sdata)
  *             - End of .data (_edata) abd start of .bss (_sbss)
  *             - End of .bss (_ebss) and start of idle stack (_sidle_stack)
- *             - _sidle_stack + CONFIG_IDLETHREAD_STACKSIZE = end of idle stack, start of heap
+ *             - _sidle_stack + CONFIG_IDLETHREAD_STACKSIZE = end of idle stack and
+ *             - _sint_heap_start start of heap
  * 0x2000:ffff - End of SRAM and end of heap
  */
 
 #define IDLE_STACK		(_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
-#define HEAP_BASE		(_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE)
+#define HEAP_BASE		(_sint_heap_start)
 
 /************************************************************************************
  * Global Symbols
