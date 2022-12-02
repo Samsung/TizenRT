@@ -72,6 +72,8 @@
 #include "sched/sched.h"
 #include "xtensa.h"
 
+bool abort_mode = false;
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -167,6 +169,8 @@ static void xtensa_assert(int errorcode)
 void up_assert(const uint8_t *filename, int lineno)
 {
 	board_autoled_on(LED_ASSERTION);
+
+	abort_mode = true;
 
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
