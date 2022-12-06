@@ -134,9 +134,6 @@ __nspe_phy_addr__ = ORIGIN(PHY_IMG2);
 __kr4_start_table_backup_addr__ = ORIGIN(KR4_BOOT_RAM_BACKUP);
 /*__audio_buffer_start__ = ORIGIN(AUDIO_BUFFER);*/
 
-__km4_sram_heap_extend_start__ = ORIGIN(KM4_HEAP_EXT);
-__km4_sram_heap_extend_length__ = LENGTH(KM4_HEAP_EXT);
-
 _stext_flash = __km4_flash_text_start__;
 _etext_flash = LENGTH(KM4_IMG2_XIP);
 __flash_text_start__ = _stext_flash;
