@@ -449,9 +449,20 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
 		case BLE_TIZENRT_MSG_STOP_ADV:
 			ret = le_adv_stop();
 			break;
-		case BLE_TIZENRT_MSG_DISCONNECT:
-			ret = le_disconnect(0);
-			break;
+        case BLE_TIZENRT_MSG_DISCONNECT:
+        {
+            trble_conn_handle param = *((trble_conn_handle *)pdata);
+            if (pdata)
+            {
+                debug_print("\r\n[%s] disconn_id 0x%x", __FUNCTION__, param);
+                ret = le_disconnect(param);
+                if(ret)
+                    printf("\r\n[%s] le_disconnect fail 0x%x ", __FUNCTION__, ret);
+            } else {
+                debug_print("\n[%s] Disconnect parameter is NULL", __FUNCTION__);
+            }
+        }
+            break;
 		case BLE_TIZENRT_MSG_NOTIFY:
         {
             T_TIZENRT_NOTIFY_PARAM *param = pdata;
