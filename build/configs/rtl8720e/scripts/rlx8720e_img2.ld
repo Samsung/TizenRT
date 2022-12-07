@@ -83,18 +83,15 @@ MEMORY
 	/* IMG2 RAM */
 	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20012020, LENGTH = 0x20040000 - 0x20012020	/* KM4 BD RAM: 184k */
 	KR4_BD_RAM (rwx) :                      ORIGIN = 0x20040060, LENGTH = 0x2007A000 - 0x20040060	/* KR4 BD RAM: 232k */
-	KM4_HEAP_EXT (rwx) :                    ORIGIN = 0x2007A000, LENGTH = 0x200B0000 - 0x2007A000	/* KM4 HEAP EXT: 216k(8720EA) */
-	KM4_BD_RAM_TZ_NSC (rwx) :               ORIGIN = 0x200B0020, LENGTH = 0x200B1000 - 0x200B0020	/* KM4 BD RAM NSC: 4k */
-	KM4_BD_RAM_TZ_ENTRY (rwx) :             ORIGIN = 0x200B1000, LENGTH = 0x200B3000 - 0x200B1000	/* KM4 BD RAM ENTRY: 8k */
-	KM4_BD_RAM_TZ_S (rwx) :                 ORIGIN = 0x300B3020, LENGTH = 0x300C0000 - 0x300B3020	/* KM4 BD RAM S: 52k */
+	KM4_HEAP_EXT (rwx) :                    ORIGIN = 0x2007A000, LENGTH = 0x200C0000 - 0x2007A000	/* KM4 HEAP EXT: 280k */
 
 	/* KM4 Non-secure PSRAM */
-	KM4_BD_PSRAM (rwx) :                    ORIGIN = 0x60000020, LENGTH = 0x60347000 - 0x60000020	/* KM4 MAIN RAM NS : 3356 */
-	KR4_BD_PSRAM (rwx) :                    ORIGIN = 0x6039C020, LENGTH = 0x60400000 - 0x6039C020	/* KR4 BD PSRAM: 400k */
+	KM4_BD_PSRAM (rwx) :                    ORIGIN = 0x60000020, LENGTH = 0x60379000 - 0x60000020	/* KM4 MAIN RAM NS : 3556 */
+	KR4_BD_PSRAM (rwx) :                    ORIGIN = 0x603CE020, LENGTH = 0x60400000 - 0x603CE020	/* KR4 BD PSRAM: 200k */
 
-	KM4_BD_PSRAM_TZ_NSC (rwx) :             ORIGIN = 0x60347020, LENGTH = 0x60348000 - 0x60347020	/* KM4 BD RAM NSC: 4k */
-	KM4_BD_PSRAM_TZ_ENTRY (rwx) :           ORIGIN = 0x60348000, LENGTH = 0x6034C000 - 0x60348000	/* KM4 BD RAM ENTRY: 16k */
-	KM4_BD_PSRAM_TZ_S (rwx) :               ORIGIN = 0x7034C020, LENGTH = 0x7039C000 - 0x7034C020	/* KM4 BD RAM S: 320k */
+	KM4_BD_PSRAM_TZ_NSC (rwx) :             ORIGIN = 0x60379020, LENGTH = 0x6037A000 - 0x60379020	/* KM4 BD RAM NSC: 4k */
+	KM4_BD_PSRAM_TZ_ENTRY (rwx) :           ORIGIN = 0x6037A000, LENGTH = 0x6037E000 - 0x6037A000	/* KM4 BD RAM ENTRY: 16k */
+	KM4_BD_PSRAM_TZ_S (rwx) :               ORIGIN = 0x7037E020, LENGTH = 0x703CE000 - 0x7037E020	/* KM4 BD RAM S: 320k */
 
 	/* Retention RAM */
 	RETENTION_RAM (rwx) :                   ORIGIN = 0x4100CE00, LENGTH = 0x4100D000 - 0x4100CE00	/* KR4 Retention SRAM: 512B: 0k */
@@ -110,7 +107,7 @@ MEMORY
 	KR4_STDLIB_HEAP_RAM (rw) :              ORIGIN = 0x20002000, LENGTH = 0x20003000 - 0x20002000	/* KR4 ROM STDLIB HEAP: 4k */
 
 	/* Flash */
-	PHY_IMG1 (rx) :                         ORIGIN = 0x08001020, LENGTH = 0x08009000 - 0x08001020	/* KM4 Bootloader Physical address: 24k */
+	PHY_IMG1 (rx) :                         ORIGIN = 0x08001020, LENGTH = 0x08009000 - 0x08001020	/* KM4 Bootloader Physical address: 32k */
 	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0F800020, LENGTH = 0x10000000 - 0x0F800020	/* KM4 Bootloader Virtual address: 8192k */
 	PHY_IMG2 (rx) :                         ORIGIN = 0x08014000, LENGTH = 0x081E0000 - 0x08014000	/* KR4/KM4 IMG2 Physical address: 1840k */
 	KM4_IMG3 (rx) :                         ORIGIN = 0x081E0000, LENGTH = 0x08200000 - 0x081E0000	/* KM4 IMG3: 128k */
