@@ -100,7 +100,6 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	mfdbg(" - caller address = 0x%08x\n", caller);
 #endif
 
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
 	struct mallinfo info;
 	memset(&info, 0, sizeof(struct mallinfo));
 	for (int idx = startidx; idx <= endidx; idx++) {
@@ -109,6 +108,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	mfdbg(" - largest free size : %d\n", info.mxordblk);
 	mfdbg(" - total free size   : %d\n", info.fordblks);
 
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
 #endif
