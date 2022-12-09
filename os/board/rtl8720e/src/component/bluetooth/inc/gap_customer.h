@@ -2,10 +2,11 @@
 #define GAP_CUSTOMER_H
 
 #include "platform_opts_bt.h"
-
 #if UPPER_STACK_VERSION == VERSION_2019
-
 #include "bt_flags.h"
+#elif UPPER_STACK_VERSION == VERSION_2021
+#include "upperstack_config.h"
+#endif
 
 typedef struct
 {
@@ -19,6 +20,5 @@ typedef struct
 
 bool gap_get_bt_version_info(T_BT_VERSION_INFO *p_info);
 
-#endif
 
 #endif /* GAP_DTM_H */

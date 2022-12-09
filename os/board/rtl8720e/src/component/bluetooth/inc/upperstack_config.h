@@ -5,7 +5,7 @@
 #ifndef _UPPERSTACK_CONFIG_H_
 #define _UPPERSTACK_CONFIG_H_
 
-#define F_BT_BREDR_SUPPORT                  1       /* support BT Legacy */
+#define F_BT_BREDR_SUPPORT                  0       /* support BT Legacy */
 
 #define F_BT_LE_SUPPORT                     1       /* support BT Low Energy */
 
@@ -19,6 +19,7 @@
 #define F_BT_LE_GATT_CLIENT_SUPPORT              (F_BT_LE_SUPPORT && 1)
 #define F_BT_LE_GATT_SERVER_SUPPORT              (F_BT_LE_SUPPORT && 1)
 #define F_BT_LE_SMP_OOB_SUPPORT                  (F_BT_LE_SUPPORT && 1)
+#define F_BT_LE_BOND_KEY_REQ_SUPPORT             (F_BT_LE_SUPPORT && 0)
 
 //BT 4.0
 #define F_BT_LE_READ_REMOTE_FEATS                (F_BT_LE_SUPPORT && 1)
@@ -103,6 +104,7 @@
 /*============================================================================*
  *               Dualmode Configuration Flags
  *============================================================================*/
+#define F_BT_KEY_PRESS_SUPPORT              (F_BT_LE_4_2_KEY_PRESS_SUPPORT || F_BT_BREDR_SUPPORT)
 #define F_BT_OOB_SUPPORT                         (F_BT_LE_SMP_OOB_SUPPORT || F_BT_LE_4_2_SC_OOB_SUPPORT || F_BT_BREDR_SUPPORT)
 #define F_BT_SC_LINK_CONVERT_SUPPORT             (F_BT_BREDR_SUPPORT&&F_BT_LE_4_2_SC_SUPPORT&&1)
 
