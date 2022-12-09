@@ -633,10 +633,12 @@ enum _WIFI_EVENT_INDICATE{
 	WIFI_EVENT_IP_CHANGED = 16,
 	WIFI_EVENT_ICV_ERROR = 17,
 	WIFI_EVENT_CHALLENGE_FAIL = 18,
-	
-		/* csi rx done event */
-	WIFI_EVENT_CSI_DONE = 160,
-	
+
+
+	/* csi rx done event */
+	WIFI_EVENT_CSI_DONE = 19,
+
+
 	WIFI_EVENT_MAX,
 };
 typedef unsigned long rtw_event_indicate_t;

@@ -593,10 +593,10 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param)
 	return ret;
 }
 
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_header)
+int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 {
 	int ret = 0;
-	ret = rltk_wlan_csi_report(buf_len, csi_buf, len, csi_header);
+	ret = rltk_wlan_csi_report(buf_len, csi_buf, len);
 	return ret;
 }
 /*--------------------------------porting interl api -------------------- */
