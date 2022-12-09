@@ -536,13 +536,16 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
         return TRBLE_INVALID_STATE;
     }
 
-    if (con_handle != 0)
+    trble_conn_handle *conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
+    if(conn_id == NULL)
     {
-        return TRBLE_NOT_FOUND;
+        debug_print("\n[%s] Memory allocation failed \n");
+        return TRBLE_FAIL;
     }
-
-    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DISCONNECT, NULL) == false)
+    *conn_id = con_handle;
+    if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_DISCONNECT, conn_id) == false)
     {
+        os_mem_free(conn_id);
         debug_print("msg send fail \n");
         return TRBLE_FAIL;
     }
