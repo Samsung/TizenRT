@@ -644,6 +644,19 @@ bool le_get_dev_bond_info(T_LE_KEY_ENTRY *p_entry, uint8_t *p_data);
  */
 T_LE_KEY_ENTRY *le_set_dev_bond_info(uint16_t length, uint8_t *p_data, bool *exist);
 
+/**
+ * @brief   Get device LTK information.
+ *
+ * @param[in] p_entry        Pointer to the key entry of bonded device.
+ * @param[in] remote         Read the remote LTK or the local LTK.
+ * @param[out] p_key_len     Pointer to LTK key length to read.
+ * @param[out] p_ltk         Pointer to LTK  to read.
+ * @return Operation result.
+ * @retval true     Operation success.
+ * @retval false    Operation failure.
+ */
+bool le_get_dev_ltk(T_LE_KEY_ENTRY *p_entry, bool remote, uint8_t *p_key_len, uint8_t *p_ltk);
+
 /** @} */ /* End of group GAP_LE_STORAGE_EXPORT_Functions */
 /** @} */ /* End of group GAP_LE_STORAGE */
 

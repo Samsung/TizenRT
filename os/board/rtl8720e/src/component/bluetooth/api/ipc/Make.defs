@@ -49,10 +49,8 @@
 #
 ############################################################################
 
-CSRCS += rtk_bt_le_gap.c \
-		rtk_bt_common.c \
-		rtk_bt_device.c \
-		rtk_bt_gatt.c \
+CSRCS += bt_ipc_host_api.c \
+		bt_ipc_parameter_conversion.c
 
-DEPPATH += --dep-path component/bluetooth/api
-VPATH += :component/bluetooth/api
+DEPPATH += --dep-path component/bluetooth/api/ipc
+VPATH += :component/bluetooth/api/ipc

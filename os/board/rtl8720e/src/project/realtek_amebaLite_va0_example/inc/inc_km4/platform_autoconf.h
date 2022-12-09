@@ -88,8 +88,8 @@
 /*
  * < CONFIG BT
  */
-#undef  CONFIG_BT
-#undef  CONFIG_BT_AP
+#define  CONFIG_BT 1
+#define  CONFIG_BT_AP 1
 #undef  CONFIG_BT_NP
 #undef  CONFIG_BT_SINGLE_CORE
 

@@ -49,10 +49,8 @@
 #
 ############################################################################
 
-CSRCS += rtk_bt_le_gap.c \
-		rtk_bt_common.c \
-		rtk_bt_device.c \
-		rtk_bt_gatt.c \
+CSRCS += scatternet.c \
+	 ble_tizenrt_combo.c
 
-DEPPATH += --dep-path component/bluetooth/api
-VPATH += :component/bluetooth/api
+DEPPATH += --dep-path component/bluetooth/example/ble_scatternet
+VPATH += :component/bluetooth/example/ble_scatternet

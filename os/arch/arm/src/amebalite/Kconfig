@@ -80,7 +80,7 @@ menu "Realtek RTL8720E BLE Support"
 config AMEBALITE_BLE
 	bool "Enable Amebalite BLE"
 	default n
-	select FTL_ENABLED
+#	select FTL_ENABLED
 
 if AMEBALITE_BLE
 config FTL_ENABLED
