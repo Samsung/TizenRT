@@ -825,47 +825,35 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param)
 	return ret;
 }
 
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_header)
+int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 {
 	int ret = 0;
-	u32 param_buf[4];
+	u32 param_buf[3];
 
 	void *csi_buf_temp = rtw_zmalloc(buf_len);
 	if (csi_buf_temp == NULL) {
 		return -1;
 	}
-	rtw_csi_header_t *csi_header_temp = (rtw_csi_header_t *)rtw_malloc(sizeof(rtw_csi_header_t));
-	if (csi_header_temp == NULL) {
-		rtw_mfree((u8 *)csi_buf_temp, 0);
-		return -1;
-	}
 	u32 *len_temp = (u32 *)rtw_zmalloc(sizeof(u32));
 	if (len_temp == NULL) {
 		rtw_mfree((u8 *)csi_buf_temp, 0);
-		rtw_mfree((u8 *)csi_header_temp, 0);
 		return -1;
 	}
 
 	param_buf[0] = (u32)csi_buf_temp;
 	param_buf[1] = (u32)buf_len;
-	param_buf[2] = (u32)csi_header_temp;
-	param_buf[3] = (u32)len_temp;
+	param_buf[2] = (u32)len_temp;
 	DCache_CleanInvalidate((u32)csi_buf_temp, buf_len);
-	DCache_CleanInvalidate((u32)csi_header_temp, sizeof(rtw_csi_header_t));
 	DCache_CleanInvalidate((u32)len_temp, sizeof(u32));
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 4);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 3);
 	DCache_Invalidate((u32)csi_buf_temp, buf_len);
 	rtw_memcpy(csi_buf, csi_buf_temp, buf_len);
-
-	DCache_Invalidate((u32)csi_header_temp, sizeof(rtw_csi_header_t));
-	rtw_memcpy(csi_header, csi_header_temp, sizeof(rtw_csi_header_t));
 
 	DCache_Invalidate((u32)len_temp, sizeof(u32));
 	rtw_memcpy(len, len_temp, sizeof(u32));
 
 	rtw_mfree((u8 *)csi_buf_temp, 0);
-	rtw_mfree((u8 *)csi_header_temp, 0);
 	rtw_mfree((u8 *)len_temp, 0);
 	return ret;
 }

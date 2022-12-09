@@ -656,15 +656,12 @@ void inic_ipc_api_dev_task(void)
 		case IPC_API_WIFI_GET_CSI_REPORT: {
 			void *csi_buf = (u8 *)p_ipc_msg->param_buf[0];
 			u32 buf_len = (u32)p_ipc_msg->param_buf[1];
-			rtw_csi_header_t *csi_header = (rtw_csi_header_t *)p_ipc_msg->param_buf[2];
-			u32 *len = (u32 *)p_ipc_msg->param_buf[3];
+			u32 *len = (u32 *)p_ipc_msg->param_buf[2];
 			DCache_Invalidate((u32)csi_buf, buf_len);
-			DCache_Invalidate((u32)csi_header, sizeof(rtw_csi_header_t));
 			DCache_Invalidate((u32)len, sizeof(u32));
 
-			ret = wifi_csi_report(buf_len, csi_buf, len, csi_header);
+			ret = wifi_csi_report(buf_len, csi_buf, len);
 			DCache_Clean((u32)csi_buf, buf_len);
-			DCache_Clean((u32)csi_header, sizeof(rtw_csi_header_t));
 			DCache_Clean((u32)len, sizeof(u32));
 			p_ipc_msg->ret = ret;
 			break;

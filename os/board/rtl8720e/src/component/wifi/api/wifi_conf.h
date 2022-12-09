@@ -1199,19 +1199,17 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 int wifi_csi_config(rtw_csi_action_parm_t *act_param);
 
 /**
- * @brief  get csi raw data and other info(sta or softap)
+ * @brief  get csi raw data and csi hdr info
  * @param[in]  buf_len: buffer size for getting csi info
- * @param[in]  csi_buf: the pointer to csi raw data buffer
+ * @param[in]  csi_buf: the pointer to csi data buffer
  * @param[in]  len: the size of csi raw data
- * @param[in]  csi_header: the pointer to csi extra info buffer
  * @Example:
  *    unsigned char *csi_buf = NULL;
- *    rtw_csi_header_t csi_hdr = {0};
  *    csi_buf = rtw_zmalloc(buf_len);
- *    wifi_csi_report(buf_len,csi_buf,len,&csi_hdr);
+ *    wifi_csi_report(buf_len,csi_buf,&len);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
-int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_header);
+int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 /**
 * @}
 */
@@ -1228,4 +1226,3 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_he
   */
 
 #endif // __WIFI_API_H
-
