@@ -33,17 +33,17 @@
 
 #define IP_ADDR_INVALID "0.0.0.0"
 extern int wifi_csi_config(rtw_csi_action_parm_t *act_param);
-extern int wifi_csi_report(uint32_t buf_len, uint8_t *csi_buf, uint32_t *len, rtw_csi_header_t *csi_header);
+extern int wifi_csi_report(uint32_t buf_len, uint8_t *csi_buf, uint32_t *len);
 extern int wifi_is_running(unsigned char wlan_idx);
 static sem_t wc_ready_sema;
 
-static unsigned int csi_raw_data_len = 2048;
+static unsigned int csi_data_len = 2048;
 
 /* wifi csi report callback */
 void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdata)
 {
 	sem_post(&wc_ready_sema);
-	csi_raw_data_len = flags;
+	csi_data_len = flags;
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -54,9 +54,12 @@ int wificsi_main(int argc, char *argv[])
 {
 	printf("WIFI CSI\n");
 	rtw_csi_action_parm_t act_param = {0};
-	rtw_csi_header_t csi_hdr = {0};
 	unsigned int len;
 	unsigned char *csi_buf = NULL;
+	unsigned long long *buff_tmp = NULL; /* to printf csi data*/
+	unsigned int csi_seq_num;
+	unsigned int timestamp;
+	unsigned char i = 0;
 	act_param.group_num = 0;
 	act_param.mode = 2;  /* currently only supported */
 	act_param.accuracy = 0;
@@ -82,7 +85,7 @@ int wificsi_main(int argc, char *argv[])
 	sem_init(&wc_ready_sema, 0, 0);
 
 	/* register wifi event callback function */
-	wifi_reg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb, NULL);
+	wifi_reg_event_handler(15, example_wifi_csi_report_cb, NULL);
 
 	/* csi cfg and csi en */
 	act_param.act = 1;  /* csi cfg */
@@ -92,7 +95,7 @@ int wificsi_main(int argc, char *argv[])
 	act_param.act = 0;  /* csi en */
 	act_param.enable = 1;
 	wifi_csi_config(&act_param);
-	csi_buf = malloc(csi_raw_data_len);
+	csi_buf = malloc(csi_data_len);
 	if (csi_buf) {
 		while (1) {
 			/* example: when wifi csi rx done, call csi report handle function. */
@@ -102,11 +105,14 @@ int wificsi_main(int argc, char *argv[])
 				wifi_csi_config(&act_param);
 				break;
 			}
-			wifi_csi_report(csi_raw_data_len, csi_buf, &len, &csi_hdr);
+			wifi_csi_report(csi_data_len, csi_buf, &len);
 			/*do something for handing csi info*/
-			printf("\n CSI data extracted from the peer package:\n");
-			for (int i = 0; i < len; i++) {
-				printf("%02X ", *(csi_buf + i));
+			timestamp = (int)(csi_buf[18] << 24) | (int)(csi_buf[17] << 16) | (int)(csi_buf[16] << 8) | (int)csi_buf[15];
+			csi_seq_num = (int)(csi_buf[37] << 24) | (int)(csi_buf[36] << 16) | (int)(csi_buf[35] << 8) | (int)csi_buf[34];
+			printf("\n[CH INFO] csi_sequence = %d,timestamp = %d us, csi data: \n", csi_seq_num, timestamp);
+			buff_tmp = (u64 *)csi_buf;
+			for (int i = 0; i < 19; i++) {
+				printf("[%02d]0x%016llx\n", i, buff_tmp[i]);
 			}
 				printf("\n CSI raw data done!\n");
 
@@ -116,7 +122,7 @@ int wificsi_main(int argc, char *argv[])
 
 
 	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(WIFI_EVENT_CSI_DONE, example_wifi_csi_report_cb);
+	wifi_unreg_event_handler(15, example_wifi_csi_report_cb);
 
 	sem_destroy(&wc_ready_sema);
 

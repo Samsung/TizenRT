@@ -415,7 +415,7 @@ struct hal_ops {
 #ifdef CONFIG_CSI
 	s32(*csi_en)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
 	s32(*csi_cfg)(_adapter *padapter, rtw_csi_action_parm_t *act_param);
-	s32(*csi_report)(_adapter *padapter, u32 plen, u8 *pbuf, u32 *len, rtw_csi_header_t *csi_hdr);
+	s32(*csi_report)(_adapter *padapter, u32 plen, u8 *pbuf, u32 *len);
 #endif
 #ifdef CONFIG_TWT
 	u8(*hal_twt_para_set)(_adapter *padapter, twt_para_t twt_para, u8 enable);
@@ -857,7 +857,7 @@ void rtw_hal_set_bss_color(_adapter *padapter, u8 bss_color, enum phl_phy_idx ph
 #ifdef CONFIG_CSI
 u8 rtw_hal_csi_en(_adapter *padapter, rtw_csi_action_parm_t *act_param);
 u8 rtw_hal_csi_cfg(_adapter *padapter, rtw_csi_action_parm_t *act_param);
-u8 rtw_hal_csi_report(_adapter *padapter, u32 buf_len, u8 *csi_buf, u32 *len, rtw_csi_header_t *csi_hdr);
+u8 rtw_hal_csi_report(_adapter *padapter, u32 buf_len, u8 *csi_buf, u32 *len);
 #endif /* CONFIG_CSI */
 
 #ifdef CONFIG_TWT
@@ -866,4 +866,3 @@ u32 rtw_hal_twt_para_set(_adapter *padapter, twt_para_t twt_para, u8 enable);
 void rtw_hal_set_spatial_reuse(_adapter *padapter, u8 *val, u8 enable, u8 first);
 
 #endif //__HAL_INTF_H__
-

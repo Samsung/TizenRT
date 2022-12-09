@@ -111,7 +111,7 @@ int rltk_wlan_get_sta_max_data_rate(unsigned char *inidata_rate);
 void rltk_wlan_set_no_beacon_timeout(unsigned char timeout_sec);
 
 int rltk_wlan_csi_config(rtw_csi_action_parm_t *act_param);
-int rltk_wlan_csi_report(__u32 buf_len, __u8 *csi_buf, __u32 *len, rtw_csi_header_t *csi_hdr);
+int rltk_wlan_csi_report(__u32 buf_len, __u8 *csi_buf, __u32 *len);
 
 //add temporarily
 extern int rtw_wx_get_essid(unsigned char wlan_idx, __u8 *ssid);
