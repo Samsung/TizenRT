@@ -103,11 +103,11 @@ function SELECT_OPTION()
 			echo ======================================================
 			echo "  \"Select build Option\""
 			echo ======================================================
-			echo "  \"1. Build with Current Configurations\""
+			echo "  \"1. Build with Current Configuration\""
 			echo "  \"2. Re-configure\""
-			echo "  \"3. Menuconfig\""
-			echo "  \"4. Build Clean\""
-			echo "  \"5. Build Dist-Clean\""
+			echo "  \"3. Modify Current Configuration\""
+			echo "  \"4. Clean Build\""
+			echo "  \"5. Clean Build and Re-Configure\""
 			echo "  \"6. Build SmartFS Image\""
 			if [ "${STATUS}" == "BUILT" ]; then
 				echo "  \"d. Download\""
@@ -166,7 +166,7 @@ function SELECT_OPTION()
 
 function BUILD_TEST()
 {
-	# excute a shell script for build test
+	# execute a shell script for build test
 	pushd ${OSDIR} > /dev/null
 	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
 	popd > /dev/null
@@ -218,23 +218,23 @@ function SELECT_BOARD()
 		read SELECTED_BOARD
 	fi
 
-	# treate "test"
+	# treat "test"
 	if [ "${SELECTED_BOARD}" == "t" -o "${SELECTED_BOARD}" == "test" -o "${SELECTED_BOARD}" == "TEST" ]; then
 		BUILD_TEST
 		exit 1
 	fi
 
-	# treate "exit"
+	# treat "exit"
 	if [ "${SELECTED_BOARD}" == "x" -o "${SELECTED_BOARD}" == "exit" -o "${SELECTED_BOARD}" == "EXIT" ]; then
 		exit 1
 	fi
 
-	# treate selected number
+	# treat selected number
 	if [ ! -z ${BOARDNAME_STR[${SELECTED_BOARD}]} ]; then
 		BOARD=${BOARDNAME_STR[${SELECTED_BOARD}]}	
 	fi
 
-	# treate given board string
+	# treat given board string
 	if [ -z ${BOARD} ]; then
 		IDX=1
 		for BOARDNAME_MEMBER in ${BOARDNAME_STR[@]}; do
@@ -286,18 +286,18 @@ function SELECT_CONFIG()
 		read SELECTED_CONFIG
 	fi
 
-	# treate "exit"
+	# treat "exit"
 	if [ "${SELECTED_CONFIG}" == "x" -o "${SELECTED_CONFIG}" == "exit" -o "${SELECTED_CONFIG}" == "EXIT" ]; then
 		exit 0
 	fi
 
-	# treate selected number
+	# treat selected number
 	if [ ! -z ${CONFIGNAME_STR[${SELECTED_CONFIG}]} ]; then
 		CONFIG=${CONFIGNAME_STR[${SELECTED_CONFIG}]}
 		
 	fi
 
-	# treate given config string
+	# treat given config string
 	if [ -z ${CONFIG} ]; then
 		IDX=1
 		for CONFIGNAME_MEMBER in ${CONFIGNAME_STR[@]}; do
