@@ -174,10 +174,6 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 os_mutex_give(ble_tizenrt_write_sem);
             if(ble_tizenrt_write_no_rsp_sem != NULL)
                 os_mutex_give(ble_tizenrt_write_no_rsp_sem);
-#if defined(CONFIG_BLE_INDICATION)
-            if(ble_tizenrt_indicate_sem != NULL)
-                os_mutex_give(ble_tizenrt_indicate_sem);
-#endif
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
             client_init_parm->trble_device_disconnected_cb(disconnected);
         }
@@ -211,7 +207,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 debug_print("Indicate_result parameter is NULL \n");
             }
         }
-			break;
+            break;
 
         case BLE_TIZENRT_CALLBACK_TYPE_CONN:
         {
@@ -225,12 +221,22 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                                 connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
                 trble_server_connected_t p_func = server_init_parm.connected_cb;
                 p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
+
+#if defined(CONFIG_BLE_INDICATION)
+                if(connected->conn_type == TRBLE_SERVER_DISCONNECTED)
+                {
+                    if(ble_tizenrt_indicate_sem != NULL)
+                    {
+                        os_mutex_give(ble_tizenrt_indicate_sem);
+                    }
+                }	
+#endif
             } else {
                 debug_print("NULL connected callback \n");
             }
             os_mem_free(connected);
         }
-		    break;
+            break;
 
         case BLE_TIZENRT_CALLBACK_TYPE_PROFILE:
         {
@@ -1786,24 +1792,26 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
             if (p_param->event_data.send_data_result.cause == GAP_SUCCESS)
             {
                 dbg("PROFILE_EVT_SEND_DATA_COMPLETE success \n");
-#if defined(CONFIG_BLE_INDICATION)
-                g_scatternet_indicate_result.credits = p_param->event_data.send_data_result.credits;
-                g_scatternet_indicate_result.cause = p_param->event_data.send_data_result.cause,
-                g_scatternet_indicate_result.service_id = p_param->event_data.send_data_result.service_id,
-                g_scatternet_indicate_result.attrib_idx = p_param->event_data.send_data_result.attrib_idx,
-                g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
-                if((g_scatternet_indicate_result.cause == 0x0) && (os_mutex_give(ble_tizenrt_indicate_sem)))
-                {
-                    debug_print("receive indicate response \n");
-                } else {
-                    dbg("fail to give indicate semaphore \n");
-                }
-#endif
             }
             else
             {
                 dbg("PROFILE_EVT_SEND_DATA_COMPLETE failed \n");
             }
+
+#if defined(CONFIG_BLE_INDICATION)
+            g_scatternet_indicate_result.credits = p_param->event_data.send_data_result.credits;
+            g_scatternet_indicate_result.cause = p_param->event_data.send_data_result.cause,
+            g_scatternet_indicate_result.service_id = p_param->event_data.send_data_result.service_id,
+            g_scatternet_indicate_result.attrib_idx = p_param->event_data.send_data_result.attrib_idx,
+            g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
+
+            if(os_mutex_give(ble_tizenrt_indicate_sem))
+            {
+                dbg("give indicate semaphore success \n");
+            } else {
+                dbg("fail to give indicate semaphore \n");
+            }
+#endif
             break;
 
         default:

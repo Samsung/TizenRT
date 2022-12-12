@@ -610,6 +610,8 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
         debug_print("msg send fail \n");
         return TRBLE_FAIL; 
     }
+
+	ble_read_results[handle->conn_handle].cause = 0xFF;
     int ticks = 0;
     while(ticks++ < 30)
     {
@@ -617,6 +619,8 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
         if(os_mutex_take(ble_tizenrt_read_sem, 1000))
         {  
             debug_print("take sema success \n");
+            os_mutex_delete(ble_tizenrt_read_sem);
+            ble_tizenrt_read_sem = NULL;
             if(ble_read_results[handle->conn_handle].cause == GAP_SUCCESS)
             {
                 out_data->length = ble_read_results[handle->conn_handle].read_data.length;
@@ -680,6 +684,8 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
         debug_print("msg send fail \n");
         return TRBLE_FAIL; 
     }
+
+	write_request_result->cause = 0xFF;
     int wticks = 0;
     while(wticks++ < 30)
     {
@@ -688,6 +694,8 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
         {  
             debug_print("take write mutex success \n");
             debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
+            os_mutex_delete(ble_tizenrt_write_sem);
+            ble_tizenrt_write_sem = NULL;
             if(write_request_result->cause == GAP_SUCCESS)
             {
                 debug_print("write_req success \n");
@@ -745,6 +753,7 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
         return TRBLE_FAIL; 
     }
 
+	write_no_rsponse_result->cause = 0xFF;
     int wticks = 0;
     while(wticks++ < 30)
     {
@@ -753,6 +762,8 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
         {
             debug_print("take write_no_rsp mutex success \n");
             debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
+            os_mutex_delete(ble_tizenrt_write_no_rsp_sem);
+            ble_tizenrt_write_no_rsp_sem = NULL;
             if(write_no_rsponse_result->cause == GAP_SUCCESS)
             {
                 debug_print("send write_cmd success \n");

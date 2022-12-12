@@ -180,15 +180,19 @@ void ble_tizenrt_central_app_task_deinit(void)
     }
     if (ble_tizenrt_read_sem) {
         os_mutex_delete(ble_tizenrt_read_sem);
+		ble_tizenrt_read_sem = NULL;
     }
     if (ble_tizenrt_write_sem) {
         os_mutex_delete(ble_tizenrt_write_sem);
+		ble_tizenrt_write_sem = NULL;
     }
     if (ble_tizenrt_write_no_rsp_sem) {
         os_mutex_delete(ble_tizenrt_write_no_rsp_sem);
+		ble_tizenrt_write_no_rsp_sem = NULL;
     }
     if (ble_tizenrt_modify_whitelist_sem) {
         os_mutex_delete(ble_tizenrt_modify_whitelist_sem);
+		ble_tizenrt_modify_whitelist_sem= NULL;
     }
 
     ble_tizenrt_central_io_queue_handle = NULL;
