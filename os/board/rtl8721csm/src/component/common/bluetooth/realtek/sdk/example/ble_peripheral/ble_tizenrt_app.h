@@ -40,65 +40,65 @@ extern "C" {
 
 typedef enum
 {
-	BLE_TIZENRT_MSG_START_ADV = 12,
-	BLE_TIZENRT_MSG_STOP_ADV,
-	BLE_TIZENRT_MSG_DISCONNECT,
-	BLE_TIZENRT_MSG_NOTIFY,
-	BLE_TIZENRT_MSG_INDICATE,
-	BLE_TIZENRT_MSG_DELETE_BOND,
-	BLE_TIZENRT_MSG_DELETE_BOND_ALL,
-	BLE_TIZENRT_SERVER_MSG_MAX
+    BLE_TIZENRT_MSG_START_ADV = 12,
+    BLE_TIZENRT_MSG_STOP_ADV,
+    BLE_TIZENRT_MSG_DISCONNECT,
+    BLE_TIZENRT_MSG_NOTIFY,
+    BLE_TIZENRT_MSG_INDICATE,
+    BLE_TIZENRT_MSG_DELETE_BOND,
+    BLE_TIZENRT_MSG_DELETE_BOND_ALL,
+    BLE_TIZENRT_SERVER_MSG_MAX
 } BLE_TIZENRT_SERVER_MSG_TYPE;
 
 typedef enum
 {
 	BLE_TIZENRT_CALLBACK_TYPE_CONN = 8,
-	BLE_TIZENRT_CALLBACK_TYPE_PROFILE,
-  BLE_TIZENRT_CALLBACK_TYPE_MAX
+    BLE_TIZENRT_CALLBACK_TYPE_PROFILE,
+    BLE_TIZENRT_CALLBACK_TYPE_MAX
 } BLE_TIZENRT_CALLBACK_TYPE;
 
 typedef struct
 {
-  trble_attr_handle att_handle;
-  trble_conn_handle conn_id;
-	uint8_t	 *data;
-  uint16_t len;
+    trble_attr_handle att_handle;
+    trble_conn_handle conn_id;
+    uint8_t	 *data;
+    uint16_t len;
 } T_TIZENRT_NOTIFY_PARAM;
 
 typedef struct
 {
-  trble_attr_handle att_handle;
-  trble_conn_handle conn_id;
-	uint8_t	 *data;
-  uint16_t len;
+    trble_attr_handle att_handle;
+    trble_conn_handle conn_id;
+    uint8_t	 *data;
+    uint16_t len;
 } T_TIZENRT_INDICATE_PARAM;
 
 typedef struct
 {
-  uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
+    uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_DIRECT_ADV_PARAM;
 
 typedef struct
 {
-  bool flag;
-  T_GAP_CAUSE result;
-  uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
+    bool flag;
+    T_GAP_CAUSE result;
+    uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_SERVER_DELETE_BOND_PARAM;
 
 typedef struct
 {
-	trble_attr_cb_type_e type;
-  trble_conn_handle conn_id;
-  trble_attr_handle att_handle;
-  void *arg;
-  trble_server_cb_t cb;
+    trble_attr_cb_type_e type;
+    trble_conn_handle conn_id;
+    trble_attr_handle att_handle;
+    void *arg;
+    trble_server_cb_t cb;
 } T_TIZENRT_PROFILE_CALLBACK_DATA;
 
 typedef struct
 {
-	trble_conn_handle conn_id;
-  trble_server_connection_type_e conn_type;
-  uint8_t remote_bd[TRBLE_BD_ADDR_MAX_LEN];
+    trble_conn_handle conn_id;
+    trble_server_connection_type_e conn_type;
+    uint8_t remote_bd[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_CONNECTED_CALLBACK_DATA;
 
 

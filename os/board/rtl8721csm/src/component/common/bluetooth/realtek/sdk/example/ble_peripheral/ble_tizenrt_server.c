@@ -245,7 +245,6 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
 }
 
 #if defined(CONFIG_BLE_INDICATION)
-extern T_SEND_DATA_RESULT g_scatternet_indicate_result;
 void *ble_tizenrt_indicate_sem = NULL;
 #endif
 trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
@@ -301,6 +300,7 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
     }
 
 #if defined(CONFIG_BLE_INDICATION)
+    send_indication_result->cause = 0xFF;
     int wticks = 0;
     while(wticks++ < 30)
     {
@@ -309,6 +309,8 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
         {
             debug_print("take indicate mutex success \n");
             debug_print("conn_id %d att_handle 0x%x! \n", con_handle, attr_handle);
+            os_mutex_delete(ble_tizenrt_indicate_sem);
+            ble_tizenrt_indicate_sem = NULL;
             if(send_indication_result->cause == GAP_SUCCESS)
             {
                 debug_print("send indicate success \n");
