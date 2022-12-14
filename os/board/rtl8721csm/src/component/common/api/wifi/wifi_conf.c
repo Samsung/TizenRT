@@ -792,6 +792,7 @@ int wifi_connect(
 				rtw_memcpy(reason.ssid, join_result->network_info.ssid.val, 32);
 				reason.ssid_len = join_result->network_info.ssid.len;
 				reason.reason_code = RTK_STATUS_SUCCESS;
+				error_flag = RTW_NO_ERROR;
 
 				if (g_link_up) {
 					if (reason.reason_code) {

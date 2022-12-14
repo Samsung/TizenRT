@@ -236,6 +236,7 @@ typedef struct {
 	trwifi_status_e wifi_status;    /**<  @ref trwifi_status                     */
 	struct timeval disconn_time;    // optional: store the last time when the connection is disconnected
 	int32_t reason_code;            // optional: the reason why connection is disconnected. value is vendor specific
+	char bssid[TRWIFI_MACADDR_LEN];	/**<	bssid is a mac address of AP */
 } trwifi_info;
 
 typedef uint16_t trwifi_cmd;

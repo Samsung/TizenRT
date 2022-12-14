@@ -30,6 +30,7 @@ struct wifimgr_info_msg {
 	char *softap_ssid;
 	int rssi;
 	wifimgr_state_e state;
+	char bssid[WIFIMGR_MACADDR_LEN];	/**<	bssid is a mac address of AP */
 };
 typedef struct wifimgr_info_msg wifimgr_info_msg_s;
 

@@ -228,9 +228,10 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	}
 	char softap_ssid[WIFIMGR_SSID_LEN + 1];
 	wifimgr_info_msg_s winfo = {info->ssid, softap_ssid,
-								0, WIFIMGR_UNINITIALIZED};
+								0, WIFIMGR_UNINITIALIZED, {0, }};
 	wifimgr_get_info(WIFIMGR_ALL_INFO, &winfo);
 	info->rssi = winfo.rssi;
+	memcpy(info->bssid, winfo.bssid, WIFIMGR_MACADDR_LEN);
 	_convert_state(&winfo.state, &info->status, &info->mode);
 
 	// wifi manager stores softap ssid and ap ssid connected

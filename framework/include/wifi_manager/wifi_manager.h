@@ -197,6 +197,7 @@ typedef struct {
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
+	char bssid[WIFIMGR_MACADDR_LEN];	/**<	bssid is a mac address of AP */
 } wifi_manager_info_s;
 
 /**
