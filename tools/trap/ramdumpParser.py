@@ -57,7 +57,6 @@ CONFIG_PATH = '../../os/.config'
 MAKEFILE_PATH = '../../os/Make.defs'
 HEAPINFO_PATH = '../../os/include/tinyara/mm/heapinfo_internal.h'
 BIN_ADDR_FXN = 'elf_show_all_bin_section_addr'
-debug_cmd = 'addr2line'
 file_data = 'HeapInfo'
 
 # Top level class to parse the dump and assert logs parsing feature
@@ -72,12 +71,9 @@ class dumpParser:
 			self.pc = pc
 
 	# Init function for dumpParser Class
-	def __init__(self, dump_file=None, elf=None, gdb_path=None, nm_path=None, readelf_path=None, log_file=None, debug=False):
+	def __init__(self, dump_file=None, elf=None, log_file=None, debug=False):
 		self.dump_file=dump_file		# dump file
 		self.elf=elf				# Elf file
-		self.gdb_path=gdb_path			# Path of GDB tool
-		self.nm_path=nm_path			# Path of NM tool
-		self.readelf_path=readelf_path		# Path of readelf tool
 		self.log_file=log_file			# Path of Log file passed as argument
 		self.symbol_lookup_table = []		# Lookup table to store key(addr) value(symbol) from elf
 		self.stack_table = []			# Lookup table created from stack contents of assert log file
@@ -113,7 +109,7 @@ class dumpParser:
 		# Read the elf header to get the offset of text section and ARM exidx section
 		# These offsets will be used while creating ARM exidx table as well as while reading
 		# the address from ELF file at a particular text address
-		with os.popen(self.readelf_path + ' -S ' + elf) as readelf_fd:
+		with os.popen('arm-none-eabi-readelf -S ' + elf) as readelf_fd:
 			elfdata = readelf_fd.readlines()
 			for line in elfdata:
 				if '.text' in line:
@@ -265,7 +261,7 @@ class dumpParser:
 	# Function to setup the Address to Symbol mapping table from the ELF file ( tinyara in our case)
 	def setup_symbol_table(self,tinyara_elf_file, debug=False):
 		# Reading the tinyara elf and preparing the symbol map table
-		with os.popen(self.nm_path + ' -n ' + tinyara_elf_file) as elf_file_fd_nm:
+		with os.popen('arm-none-eabi-nm -n ' + tinyara_elf_file) as elf_file_fd_nm:
 			symbols = elf_file_fd_nm.readlines()
 			for line in symbols:
 				s = line.split(' ')
@@ -478,7 +474,7 @@ class dumpParser:
 				symname, offset = r # Update both symbol name and offset
 
 			address = '{0:x}'.format(frame.pc)
-			cmd = ['addr2line', '-e', self.elf, address]
+			cmd = ['arm-none-eabi-addr2line -e', self.elf, address]
 			fd_popen = subprocess.Popen(cmd, stdout=subprocess.PIPE).stdout
 			data = fd_popen.read().decode()
 			temp = data.split('/')[-1]
@@ -958,17 +954,11 @@ def usage():
 	print('Following options are available')
 	print('\t-r, --dump_file                 RAM/FLASH dump_file along with path')
 	print('\t-t, --log_file                  Enter Logfile which contains stackdump during assert')
-	print('\t-G, --gdb_path                  Enter gdb tool path')
-	print('\t-N, --nm_path                   Enter nm tool path')
-	print('\t-E, --readelf_path              Enter readelf tool path')
 	print('\t-h, --help                      Show help')
 	print('')
 	print('syntax :')
 	print('--------')
-	print('python3 %s -r Filename_ramBaseAddr_ramEndAddr.bin -G <Gdb path> -N < NM path> ' % sys.argv[0])
-	print('')
-	print('I assume, gdb and nm tool exist in your linux machine like /usr/bin/gdb and /usr/bin/nm, so hard coded this path inside script')
-	print('')
+	print('python3 %s -r Filename_ramBaseAddr_ramEndAddr.bin' % sys.argv[0])
 	print('Below example if you give dump file as path: ')
 	print('--------------------------------------------')
 	print('python3 ramdumpParser.py -r build/output/bin/ramdump_0x4a0000_0x6a0000.bin')
@@ -982,9 +972,7 @@ def usage():
 	print('--------')
 	print('1) For getting call stack CONFIG_FRAME_POINTER flag should be enabled in your build')
 	print('')
-	print('If you do not have gdb and nm path set, please pass the path as below')
-	print('')
-	print('python3 ramdumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin -G <your_gdb_path> -N <your_nm_path>')
+	print('python3 ramdumpParser.py -r /build/bin/ramdump_0x4a0000_0x6a0000.bin')
 	print('')
 	print('')
 	print('*************************************************************')
@@ -1000,12 +988,9 @@ def main():
 	programCounter = 0
 	stackSize = 0
 	have_ram_kernel_text = False
-	gdb_path='/usr/bin/gdb'
-	nm_path='/usr/bin/nm'
-	readelf_path='/usr/bin/readelf'
 
 	try:
-		opts, args = GetOpt(sys.argv[1:],'r:e:G:N:d:t:g:h', ['dump_file=','gdb_path=','nm_path=','readelf_path=','log_file=','help'])
+		opts, args = GetOpt(sys.argv[1:],'r:t:h', ['dump_file=','log_file=','help'])
 	except GetoptError as e:
 		print(' ')
 		print(' ')
@@ -1016,12 +1001,6 @@ def main():
 	for opt, arg in opts:
 		if opt in ('-r', '--dump_file'):
 			dump_file = arg
-		elif opt in ('-G', '--gdb_path'):
-			gdb_path = arg
-		elif opt in ('-N', '--nm_path'):
-			nm_path = arg
-		elif opt in ('-E', '--readelf_path'):
-			readelf_path = arg
 		elif opt in ('-t', '--log_file'):
 			log_file = arg
 		elif opt in ('-h', '--help'):
@@ -1039,28 +1018,15 @@ def main():
 		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
 		usage()
 
-	access_check_list = [
-		("gdb", gdb_path),
-		("nm", nm_path),
-		("readelf", readelf_path)
-	]
-
 	exist_check_list = [
 		("dump_file", dump_file),
 		("log_file", log_file),
 		("elf", elf)
-	] + access_check_list
+	]
 
 	for name, path in exist_check_list:
 		if path and not os.path.exists(path):
 			print(f"{path} does not exist. Please provide the proper path for {name}...")
-			sys.exit(1)
-
-	for name, path in access_check_list:
-		if not os.access(path, os.X_OK):
-			print(f"!!! No execute permissions on {name} path {path}")
-			print("!!! Please check the path settings")
-			print("!!! If this tool is being run from a shared location, contact the maintainer")
 			sys.exit(1)
 
 	# Format log file if timestamp is present at the start of each line
@@ -1094,7 +1060,7 @@ def main():
 			have_ram_kernel_text = True
 
 		# Calling the Constructor with the initial set of arguments
-		rParser = dumpParser(dump_file=dump_file,elf=elf,gdb_path=gdb_path,nm_path=nm_path,readelf_path=readelf_path,log_file=log_file, debug=False)
+		rParser = dumpParser(dump_file=dump_file,elf=elf,log_file=log_file, debug=False)
 
 
 		# Setup the Symbol table lookup with given System.map file
@@ -1291,7 +1257,7 @@ def main():
 			owner = rParser.read_word(point + 8)
 			pid = rParser.read_halfword(point + 12)
 			if preceding & MM_ALLOC_BIT :
-				fd_popen = subprocess.Popen([debug_cmd, '-e', elf, hex(owner)], stdout=subprocess.PIPE).stdout
+				fd_popen = subprocess.Popen(['arm-none-eabi-addr2line -e', elf, hex(owner)], stdout=subprocess.PIPE).stdout
 				data = fd_popen.read().decode()
 				fd_popen.close()
 				if pid >= 0:
