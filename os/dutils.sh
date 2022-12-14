@@ -19,7 +19,10 @@
 # dutils.sh
 
 OSDIR=`test -d ${0%/*} && cd ${0%/*}; pwd`
+CONFIGFILE="${OSDIR}/.config"
 TOPDIR="${OSDIR}/.."
+BINDIR="${TOPDIR}/build/output/bin"
+TRAPDIR="${TOPDIR}/tools/trap"
 DOCKER_VERSION="1.5.5"
 
 
@@ -57,6 +60,63 @@ function FIND_DBGBINFILE()
 	KERNEL_DBG_BIN="tinyara$EXEEXT"
 }
 
+function TRAP_MENU()
+{
+	echo =============================================================================
+	echo "  \"Select binary to debug crash with TRAP tool\""
+	echo =============================================================================
+	echo "  \"1. Default binary from previous build at build/output/bin location\""
+	echo "  \"2. Custom binary at any location\""
+	echo "  \"x. Exit\""
+	echo =============================================================================
+
+	read SELECT_BIN
+	case ${SELECT_BIN,,} in
+		1|default)
+			if [ -z "$(ls -A $BINDIR)" ]; then
+				echo "No output file in $BINDIR, Build the code and run TRAP again."
+				return
+			fi
+			echo "Enter the crash log file name: (ex: ../tools/trap/testlogs)"
+			read LOG_FILE
+			if [ ! -f ${LOG_FILE} ]; then
+				echo "$LOG_FILE: No such file, try again"
+				return
+			fi
+			TRAP_RUN log $LOG_FILE
+			;;
+		2|manual)
+			echo "Enter the following wrt os directory"
+			echo ""
+			echo "Enter the binary folder name: (ex: ../../build/output/bin/)"
+			read EXT_BIN_DIR
+			if [ -z "$(ls -A $EXT_BIN_DIR)" ]; then
+				echo "$EXT_BIN_DIR Folder does not exit, try again"
+				return
+			fi
+
+			echo "Enter the configuration file name: (ex: .config)"
+			read CONFIG_FILE
+			if [ ! -f ${CONFIG_FILE} ]; then
+				echo "$CONFIG_FILE: No such file, try again"
+				return
+			fi
+
+			echo "Enter the crash log file name: (ex: testlogs)"
+			read LOG_FILE
+			if [ ! -f ${LOG_FILE} ]; then
+				echo "$LOG_FILE: No such file, try again"
+				return
+			fi
+
+			TRAP_RUN log $LOG_FILE $EXT_BIN_DIR $CONFIG_FILE
+			;;
+		x|exit)
+			exit 1
+			;;
+	esac
+
+}
 function TOOLCHAIN_MENU()
 {
 	FIND_DBGBINFILE
@@ -153,7 +213,8 @@ function MENU()
 			echo ======================================================
 			echo "  \"Select Option\""
 			echo ======================================================
-			echo "  \"1. Run Toolchain Command\""
+			echo "  \"1. Run TRAP Debug tool\""
+			echo "  \"2. Run Toolchain Command\""
 			echo "  \"h. Help\""
 			echo "  \"x. Exit\""
 			echo ======================================================
@@ -161,7 +222,10 @@ function MENU()
 		fi
 
 		case ${SELECTED_START,,} in
-		1|tool)
+		1|trap)
+			TRAP_MENU
+			;;
+		2|tool)
 			TOOLCHAIN_MENU
 			;;
 		h|help)
@@ -187,6 +251,30 @@ function TOOLCHAIN()
 	docker run --rm -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} $ARGS
 }
 
+function TRAP_RUN()
+{
+	TRAPCMD="ramdumpParser.py -t $2"
+
+	if [ ! -z "$3" ]; then
+		# Append the binary path
+		TRAPCMD+=" -b ../../os/"$3
+	fi
+	if [ ! -z "$4" ]; then
+		# Append the config path
+		TRAPCMD+=" -c ../../os/"$4
+	fi
+
+	# Parse kernel elf path
+	make -C "tools" -f Makefile.export TOPDIR=".." EXPORTDIR=".."
+	source "./makeinfo.sh"
+	rm -f "makeinfo.sh"
+	TRAPCMD+=" -e tinyara$EXEEXT"
+
+	echo "Executing: $TRAPCMD"
+	# execute TRAP script
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:1.5.6 python3.7 $TRAPCMD
+}
+
 function HELP()
 {
 	echo "Usage:	dutils.sh [menu] | [help] | [tool toolchain_cmd]"
@@ -195,6 +283,11 @@ function HELP()
 	echo "help	Display this help menu"
 	echo "tool	Enter toolchain command which will be executed in docker"
 	echo "	Ex: dutils.sh tool nm <relative path to binary file>"
+	echo "log	Enter custom log file which will be execute TRAP in docker"
+	echo "	Ex: dutils.sh log -t <relative path to log file>"
+	echo "    : dutils.sh log -t logs"
+	echo "	Ex: dutils.sh log -t <relative path to log file> -b <relative path to test binaries> -c <relative path to configuration file>"
+	echo "    : dutils.sh log -t logs -b ../../os/testbin/ -c ../../os/cfile"
 	echo ""
 }
 
@@ -209,6 +302,8 @@ elif [ "$1" == "tool" ]; then
 	else
 		TOOLCHAIN $@
 	fi
+elif [ "$1" == "log" ]; then
+	TRAP_RUN $@
 elif [ "$1" == "help" ]; then
 	HELP
 else
