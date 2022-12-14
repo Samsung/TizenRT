@@ -138,7 +138,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 	struct mm_allocnode_s *prev;
 	struct mm_allocnode_s *next;
 	bool aborted = false;
-#if defined(__KERNEL__)
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	aborted = abort_mode;
 #endif
 #if CONFIG_KMM_REGIONS > 1
