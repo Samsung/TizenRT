@@ -129,16 +129,21 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 		rtw_cancel_timer(&(scan_timer));
 		vddbg("scan is called before timeout\r\n");
 	} else {
-		rtw_init_timer(&(scan_timer), &(scan_timer), _scan_timer_handler, &(scan_timer), "dynamic_chk_timer");
+		rtw_init_timer(&(scan_timer), &(scan_timer), _scan_timer_handler, &(scan_timer), "scan_list_timer");
 		vddbg("Start scan timer\n");
 	}
 
 	rtw_set_timer(&(scan_timer), SCAN_TIMER_DURATION);
 
 	scan_number	 = 0;
+	int ret = RTW_SUCCESS;
 	if(g_scan_num != 0)  
 	{
 		saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
+		if (saved_scan_list == NULL) {
+			vddbg("Fail to malloc scan_list\n");
+			ret = RTW_NOMEM;
+		}
 	}
 	else
 	{
@@ -153,7 +158,7 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 			rtw_del_timer(&(scan_timer));
 		}
 		rtw_mutex_put(&scanlistbusy);
-		return RTW_NOMEM;
+		return ret;
 	}
 
 	while(p_scan_list) {
@@ -342,7 +347,7 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 
 		res = save_scan_list(p_scan_list);
 		if (res != RTW_SUCCESS)
-			vddbg("\r\nFail to malloc scan_list\r\n");
+			vddbg("\r\nSave scan list failed\r\n");
 		TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
 		_free_scanlist();
 		if (g_scan_list) {
