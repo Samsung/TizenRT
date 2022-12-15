@@ -264,13 +264,13 @@ typedef size_t mmaddress_t;             /* 32 bit address space */
  */
 
 struct mm_allocnode_s {
-	mmsize_t size;					/* Size of this chunk */
 	mmsize_t preceding;				/* Size of the preceding chunk */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t alloc_call_addr;			/* malloc call address */
 	pid_t pid;					/* PID info */
 	uint16_t reserved;				/* Reserved for future use. */
 #endif
+	mmsize_t size;					/* Size of this chunk */
 
 };
 
@@ -302,8 +302,13 @@ struct mm_allocnode_s {
 /* This describes a free chunk */
 
 struct mm_freenode_s {
-	mmsize_t size;				/* Size of this chunk */
 	mmsize_t preceding;			/* Size of the preceding chunk */
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	mmaddress_t alloc_call_addr;			/* malloc call address */
+	pid_t pid;					/* PID info */
+	uint16_t reserved;				/* Reserved for future use. */
+#endif
+	mmsize_t size;				/* Size of this chunk */
 	FAR struct mm_freenode_s *flink;	/* Supports a doubly linked list */
 	FAR struct mm_freenode_s *blink;
 };
@@ -311,12 +316,7 @@ struct mm_freenode_s {
 /* What is the size of the freenode? */
 
 #define MM_PTR_SIZE sizeof(FAR struct mm_freenode_s *)
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#define SIZEOF_MM_FREENODE \
-	(SIZEOF_MM_ALLOCNODE - SIZEOF_MM_MALLOC_DEBUG_INFO + 2 * MM_PTR_SIZE)
-#else
 #define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE)
-#endif
 
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
