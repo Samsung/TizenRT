@@ -68,6 +68,7 @@
 #define IS_ALLOCATED_NODE(x)		(((x)->preceding & MM_ALLOC_BIT) != 0)
 #define IS_FREE_NODE(x)			(!IS_ALLOCATED_NODE(x))
 
+#define MM_LAST_CORRUPT_SIZE		(1024)	/* Size of last node to dump in corruption scenario */
 /****************************************************************************
  * Public data
  ****************************************************************************/
@@ -118,6 +119,19 @@ static void dump_node(struct mm_allocnode_s *node, char *node_type)
 #endif
 }
 
+static void dump_corrupt_heap_region(uint32_t start, uint32_t end)
+{
+	mfdbg("#########################################################################################\n");
+	mfdbg("Dump heap : 0x%08x - 0x%08x\n", start, end);
+	mfdbg("#########################################################################################\n");
+	for (; start < end; start += 32) {
+		uint32_t *ptr = (uint32_t *)start;
+		mfdbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+			   start, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+	}
+	mfdbg("#########################################################################################\n");
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -137,6 +151,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 #else
 #define region 0
 #endif
+	uint32_t start_corrupt = 0;
+	uint32_t end_corrupt = 0;
 	bool iscorrupt_f = false;
 	bool iscorrupt_r = false;
 
@@ -168,6 +184,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			mfdbg("=========================================================================================\n");
 			dump_node(heap->mm_heapstart[region], "HEAP START NODE");
 			iscorrupt_f = true;
+			start_corrupt = (uint32_t)(heap->mm_heapstart[region]);
 			mfdbg("=========================================================================================\n");
 		} else {
 			/* Forward traversal of heap */
@@ -182,6 +199,11 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dump_node(prev, "PREV NODE");
 					dump_node(node, "CORRUPT NODE");
 					iscorrupt_f = true;
+					if (prev->size <= MM_LAST_CORRUPT_SIZE) {
+						start_corrupt = (uint32_t)prev;
+					} else {
+						start_corrupt = (uint32_t)prev + prev->size - MM_LAST_CORRUPT_SIZE;
+					}
 					mfdbg("=========================================================================================\n");
 					break;
 				}
@@ -195,6 +217,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node((struct mm_allocnode_s *)((char *)prev - MM_PREV_NODE_SIZE(prev)), "PREV NODE");
 				dump_node(prev, "CORRUPT NODE");
 				iscorrupt_f = true;
+				start_corrupt = (uint32_t)prev - (MM_PREV_NODE_SIZE(prev) <= MM_LAST_CORRUPT_SIZE ? MM_PREV_NODE_SIZE(prev) : MM_LAST_CORRUPT_SIZE);
 				mfdbg("=========================================================================================\n");
 			}
 		}
@@ -205,6 +228,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			mfdbg("=========================================================================================\n");
 			dump_node(heap->mm_heapend[region], "HEAP END NODE");
 			iscorrupt_r = true;
+			end_corrupt = (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE;
 			mfdbg("#########################################################################################\n");
 		} else {
 			/* Backward traversal of heap */
@@ -218,6 +242,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					dump_node(node, "CORRUPT NODE");
 					dump_node(prev, "PREV NODE");
 					iscorrupt_r = true;
+					end_corrupt = (uint32_t)prev + (prev->size <= MM_LAST_CORRUPT_SIZE ? prev->size : MM_LAST_CORRUPT_SIZE);
 					mfdbg("#########################################################################################\n");
 					break;
 				}
@@ -229,6 +254,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				dump_node(prev, "CORRUPT NODE");
 				dump_node((struct mm_allocnode_s *)((char *)prev + prev->size), "PREV NODE");
 				iscorrupt_r = true;
+				node = (struct mm_allocnode_s *)((char *)prev + prev->size);
+				end_corrupt = (uint32_t)node + (node->size <= MM_LAST_CORRUPT_SIZE ? node->size : MM_LAST_CORRUPT_SIZE);
 				mfdbg("#########################################################################################\n");
 			}
 		}
@@ -241,6 +268,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		}
 
 		if (iscorrupt_f || iscorrupt_r) {
+			dump_corrupt_heap_region(start_corrupt, end_corrupt);
 			return -1;
 		}
 	}
