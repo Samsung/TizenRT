@@ -154,6 +154,7 @@ function MENU()
 			echo "  \"Select Option\""
 			echo ======================================================
 			echo "  \"1. Run Toolchain Command\""
+			echo "  \"h. Help\""
 			echo "  \"x. Exit\""
 			echo ======================================================
 			read SELECTED_START
@@ -162,6 +163,9 @@ function MENU()
 		case ${SELECTED_START,,} in
 		1|tool)
 			TOOLCHAIN_MENU
+			;;
+		h|help)
+			HELP
 			;;
 		x|exit)
 			exit 1
@@ -190,7 +194,7 @@ function HELP()
 	echo "menu	Display interactive menu"
 	echo "help	Display this help menu"
 	echo "tool	Enter toolchain command which will be executed in docker"
-	echo "	Ex: dbuild.sh tool nm <relative path to binary file>"
+	echo "	Ex: dutils.sh tool nm <relative path to binary file>"
 	echo ""
 }
 
