@@ -92,12 +92,14 @@ Finally, you are prompted to select a build option as shown below:
 ======================================================
   "Select build Option"
 ======================================================
-  "1. Build with Current Configurations"
+  "1. Build with Current Configuration"
   "2. Re-configure"
-  "3. Menuconfig"
-  "4. Build Clean"
-  "5. Build Dist-Clean"
+  "3. Modify Current Configuration"
+  "4. Clean Build"
+  "5. Clean Build and Re-Configure"
+  "6. Build SmartFS Image"
   "d. Download"
+  "t. Build Test"
   "x. Exit"
 ======================================================
 ```
