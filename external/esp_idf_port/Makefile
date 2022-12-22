@@ -146,8 +146,8 @@ $(COBJS): esp32_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 clean: 
-	$(MAKE) clean -C soc
-	$(MAKE) clean -C esp32
+	$(Q) $(MAKE) clean -C soc
+	$(Q) $(MAKE) clean -C esp32
 	$(call DELFILE, $(OBJS))
 	$(call DELFILE, .built)
 

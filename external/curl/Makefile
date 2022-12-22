@@ -42,6 +42,8 @@ x509asn1.c curl_sasl.c hostsyn.c netrc.c socks.c curl_sspi.c http2.c non-ascii.c
 include vtls/Make.defs
 include vauth/Make.defs
 
+ROMFS_PATH = $(TOPDIR)/../tools/fs/contents-romfs
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(patsubst %.c, curl_%$(OBJEXT), $(CSRCS))
 
@@ -63,7 +65,7 @@ $(COBJS): curl_%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 .built: $(OBJS)
-	cp curl-certificates.crt $(TOPDIR)/../tools/fs/contents-romfs
+	cp curl-certificates.crt $(ROMFS_PATH)
 	$(call ARCHIVE, $(BIN), $(OBJS))
 	$(Q) touch .built
 
@@ -76,7 +78,7 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm -f $(TOPDIR)/../tools/fs/contents-romfs/curl-certificates.crt
+	$(call DELFILE, $(ROMFS_PATH)/curl-certificates.crt)
 
 distclean: clean
 	$(call DELFILE, Make.dep)
