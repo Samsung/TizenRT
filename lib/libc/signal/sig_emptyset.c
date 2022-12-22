@@ -88,7 +88,7 @@
  *   signals are excluded.
  *
  * Parameters:
- *   set - Signal set to initalize
+ *   set - Signal set to initialize
  *
  * Return Value:
  *   0 (OK), or -1 (ERROR) if the signal set cannot be initialized.

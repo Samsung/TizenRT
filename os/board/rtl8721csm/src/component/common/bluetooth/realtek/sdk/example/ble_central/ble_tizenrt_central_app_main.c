@@ -260,7 +260,7 @@ void ble_tizenrt_central_app_deinit(void)
 		gcs_delete_client();
 		bte_deinit();
 		bt_trace_uninit();
-		dbg("BT Stack deinitalized \n");
+		dbg("BT Stack deinitialized \n");
 	}
 #endif
 }

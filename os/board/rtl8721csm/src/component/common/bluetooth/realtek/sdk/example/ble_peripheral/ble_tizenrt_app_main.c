@@ -217,7 +217,7 @@ void ble_tizenrt_app_deinit(void)
 		bte_deinit();
 		bt_trace_uninit();
 		memset(&ble_tizenrt_gap_dev_state, 0, sizeof(T_GAP_DEV_STATE));
-		dbg("BT Stack deinitalized \n");
+		dbg("BT Stack deinitialized \n");
 	}
 #endif
     tizenrt_ble_srv_count = 0;

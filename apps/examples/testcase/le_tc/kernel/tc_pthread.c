@@ -1062,7 +1062,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	sleep(SEC_2);
 
 #ifdef CONFIG_PTHREAD_MUTEX_TYPES
-	/* initalize mutex with PTHREAD_MUTEX_RECURSIVE attribute */
+	/* initialize mutex with PTHREAD_MUTEX_RECURSIVE attribute */
 	pthread_mutex_init(&g_mutex, &attr);
 
 	ret_chk = pthread_mutex_lock(&g_mutex);

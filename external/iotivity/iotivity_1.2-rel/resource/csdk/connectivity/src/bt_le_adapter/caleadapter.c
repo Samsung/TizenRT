@@ -402,7 +402,7 @@ static void CAStopLEQueues();
 static void CATerminateLEQueues();
 
 /**
- * This function will initalize the Receiver and Sender queues for
+ * This function will initialize the Receiver and Sender queues for
  * GattServer. This function will in turn call the functions
  * CAInitBleServerReceiverQueue() and CAInitBleServerSenderQueue() to
  * initialize the queues.
@@ -415,7 +415,7 @@ static void CATerminateLEQueues();
 static CAResult_t CAInitLEServerQueues();
 
 /**
- * This function will initalize the Receiver and Sender queues for
+ * This function will initialize the Receiver and Sender queues for
  * GattClient. This function will inturn call the functions
  * CAInitBleClientReceiverQueue() and CAInitBleClientSenderQueue() to
  * initialize the queues.
@@ -429,7 +429,7 @@ static CAResult_t CAInitLEServerQueues();
 static CAResult_t CAInitLEClientQueues();
 
 /**
- * This function will initalize the Receiver queue for
+ * This function will initialize the Receiver queue for
  * GattServer. This will initialize the queue to process the function
  * CABLEServerSendDataThread() when ever the task is added to this
  * queue.
@@ -442,7 +442,7 @@ static CAResult_t CAInitLEClientQueues();
 static CAResult_t CAInitLEServerSenderQueue();
 
 /**
- * This function will initalize the Receiver queue for
+ * This function will initialize the Receiver queue for
  * GattClient. This will initialize the queue to process the function
  * CABLEClientSendDataThread() when ever the task is added to this
  * queue.

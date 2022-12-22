@@ -796,7 +796,7 @@ ecma_builtin_string_prototype_object_replace_get_string (ecma_builtin_replace_se
                              ecma_value_t);
 
     /* An error might occure during the array copy and
-     * uninitalized elements must not be freed. */
+     * uninitialized elements must not be freed. */
     ecma_length_t values_copied = 0;
 
     for (ecma_length_t i = 0;

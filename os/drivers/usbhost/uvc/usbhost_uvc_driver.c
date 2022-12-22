@@ -1316,7 +1316,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 			return 0;
 		}
 
-		/* Allocate and initalize the input terminal entity */
+		/* Allocate and initialize the input terminal entity */
 		term = uvc_alloc_entity(type | UVC_TERM_INPUT, itdes->bTerminalID, 1, itdes->bControlSize);
 		if (term == NULL) {
 			udbg("Memory allocation failure!!\n");

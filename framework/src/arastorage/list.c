@@ -85,7 +85,7 @@ struct list {
 /**
  * Initialize a list.
  *
- * This function initalizes a list. The list will be empty after this
+ * This function initializes a list. The list will be empty after this
  * function has been called.
  *
  * \param list The list to be initialized.
