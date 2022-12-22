@@ -954,6 +954,9 @@ def usage():
 	print('Following options are available')
 	print('\t-r, --dump_file                 RAM/FLASH dump_file along with path')
 	print('\t-t, --log_file                  Enter Logfile which contains stackdump during assert')
+	print('\t-b, --bin_path                  Enter binary folder path other than default binary')
+	print('\t-c, --config_Path               Enter configuration file path for above binary')
+	print('\t-e, --elf_path                  Enter kernel elf file name')
 	print('\t-h, --help                      Show help')
 	print('')
 	print('syntax :')
@@ -966,6 +969,10 @@ def usage():
 	print('Below example if you give simple assert log file as path: ')
 	print('---------------------------------------------------------')
 	print('python3 ramdumpParser.py -r log.txt ')
+	print('')
+	print('Below example if you give binary file other than default as path: ')
+	print('---------------------------------------------------------')
+	print('python3 ramdumpParser.py -r log.txt -b ../../os/vidisha/bin/ -c ../../os/cfile -e tinayara.axf')
 	print('')
 	print('')
 	print('Note:')
@@ -980,9 +987,12 @@ def usage():
 	sys.exit(1)
 
 def main():
+	global BIN_PATH
+	global CONFIG_PATH
 	dump_file = None
 	log_file = None
 	elf = None
+	elf_path = None
 	framePointer = 0
 	stackPointer = 0
 	programCounter = 0
@@ -990,7 +1000,7 @@ def main():
 	have_ram_kernel_text = False
 
 	try:
-		opts, args = GetOpt(sys.argv[1:],'r:t:h', ['dump_file=','log_file=','help'])
+            opts, args = GetOpt(sys.argv[1:],'r:t:b:c:e:h', ['dump_file=','log_file=','bin_path=','config_path=','elf_path=','help'])
 	except GetoptError as e:
 		print(' ')
 		print(' ')
@@ -1003,16 +1013,27 @@ def main():
 			dump_file = arg
 		elif opt in ('-t', '--log_file'):
 			log_file = arg
+		elif opt in ('-b', '--bin_path'):
+			bin_path = arg
+			BIN_PATH = bin_path
+		elif opt in ('-c', '--config_path'):
+			config_path = arg
+			CONFIG_PATH = config_path
+		elif opt in ('-e', '--elf_ext'):
+			elf_path = arg
 		elif opt in ('-h', '--help'):
 			usage()
 
-	# Read tinyara extension from Make.defs
-	with open(MAKEFILE_PATH, 'r') as fd:
-		lines = fd.readlines()
-		for line in lines:
-			if 'EXEEXT =' in line:
-				ext = (line.split("=")[1].strip())
-	elf = (BIN_PATH + 'tinyara' + ext)
+	if not elf_path:
+		# Read tinyara extension from Make.defs
+		with open(MAKEFILE_PATH, 'r') as fd:
+			lines = fd.readlines()
+			for line in lines:
+				if 'EXEEXT =' in line:
+					ext = (line.split("=")[1].strip())
+		elf = (BIN_PATH + 'tinyara' + ext)
+	else:
+		elf = BIN_PATH + elf_path
 
 	if not log_file and not dump_file:
 		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
