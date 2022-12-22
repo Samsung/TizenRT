@@ -1863,7 +1863,7 @@ OCStackResult SendDirectStackResponse(const CAEndpoint_t* endPoint, const uint16
         CARequestInfo_t reqInfo = {.method = CA_POST };
         /* The following initialization is not done in a single initializer block as in
          * arduino, .c file is compiled as .cpp and moves it from C99 to C++11.  The latter
-         * does not have designated initalizers. This is a work-around for now.
+         * does not have designated initializers. This is a work-around for now.
          */
         reqInfo.info.type = CA_MSG_NONCONFIRM;
         reqInfo.info.messageId = coapID;
@@ -2542,7 +2542,7 @@ OCStackResult OCStartMulticastServer(void)
 {
     if(stackState != OC_STACK_INITIALIZED)
     {
-        OIC_LOG(ERROR, TAG, "OCStack is not initalized. Cannot start multicast server.");
+        OIC_LOG(ERROR, TAG, "OCStack is not initialized. Cannot start multicast server.");
         return OC_STACK_ERROR;
     }
     CAResult_t ret = CAStartListeningServer();
