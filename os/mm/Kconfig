@@ -154,3 +154,11 @@ config MM_ASSERT_ON_FAIL
 	---help---
 		When memory allocation fails, make assertion.
 		From the application binary with loadable build, it will be reloaded.
+
+config MM_DUMP_CORRPUTED_HEAP
+	bool "Dump the complete corrupted heap"
+	default n
+	---help---
+		When we find a heap corruption, we can dump the entire heap, so that
+		it can be manually analyzed to find more information about the corruption.
+

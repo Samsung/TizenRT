@@ -268,7 +268,13 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		}
 
 		if (iscorrupt_f || iscorrupt_r) {
+#if defined(CONFIG_MM_DUMP_CORRPUTED_HEAP)
+			mfdbg("CONFIG_MM_DUMP_CORRPUTED_HEAP enabled. Dumping full heap!!\n");
+			dump_corrupt_heap_region(heap->mm_heapstart[region], (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE);
+#else
+			mfdbg("Dumping the corrupted heap area\n");
 			dump_corrupt_heap_region(start_corrupt, end_corrupt);
+#endif
 			return -1;
 		}
 	}
