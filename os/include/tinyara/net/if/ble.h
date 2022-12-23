@@ -351,6 +351,7 @@ typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *dat
 typedef trble_result_e (*trble_set_adv_resp)(struct bledev *dev, trble_data *data);
 typedef trble_result_e (*trble_set_adv_type)(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 typedef trble_result_e (*trble_set_adv_interval)(struct bledev *dev, uint16_t interval);
+typedef trble_result_e (*trble_set_adv_txpower)(struct bledev *dev, uint8_t txpower);
 typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
 
@@ -403,6 +404,7 @@ struct trble_ops {
 	trble_set_adv_resp set_adv_resp;
 	trble_set_adv_type set_adv_type;
 	trble_set_adv_interval set_adv_interval;
+	trble_set_adv_txpower set_adv_txpower;
 	trble_start_adv start_adv;
 	trble_stop_adv stop_adv;
 };
