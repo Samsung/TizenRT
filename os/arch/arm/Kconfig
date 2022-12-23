@@ -75,12 +75,13 @@ config ARCH_CHIP_AMEBAD
 		Realtek AMEBAD architectures (ARM Cortex-M23/33).
 
 config ARCH_CHIP_STM32H745
-          bool "STMicro STM32H745"
-          select ARCH_HAVE_MPU
-          select ARCH_HAVE_I2CRESET
-          select ARCH_HAVE_HEAPCHECK if DEBUG
-          ---help---
-                  STMicro STM32 architectures (ARM Cortex-M7/M4 Dual core).
+	bool "STMicro STM32H745"
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	select BOARDCTL_BOARD_HEADER
+	---help---
+		STMicro STM32 architectures (ARM Cortex-M7/M4 Dual core).
 
 config ARCH_CHIP_AMEBALITE
 	bool "Realtek AMEBALITE"
