@@ -420,6 +420,14 @@ ble_result_e ble_server_set_adv_interval(unsigned int interval)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_server_set_adv_tx_power(uint8_t txpower)
+{
+	blemgr_msg_s msg = {BLE_CMD_SET_ADV_TXPOWER, BLE_MANAGER_FAIL, (void *)(&txpower), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_start_adv(void)
 {
 	blemgr_msg_s msg = {BLE_CMD_START_ADV, BLE_MANAGER_FAIL, NULL, NULL};

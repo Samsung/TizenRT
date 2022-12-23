@@ -148,6 +148,14 @@ This randomness helps reduce the possibility of collisions between advertisement
 */
 ble_result_e ble_server_set_adv_interval(unsigned int interval);
 
+/* Set tx power for advertising
+   Arguement txpower: 
+			0x00(-9dBm) ~ 0x31(15.5dBm) 
+			step : 0.5dBm
+			tested value: 0x06, 0x1A, 0x26
+*/
+ble_result_e ble_server_set_adv_tx_power(uint8_t txpower);
+
 ble_result_e ble_server_start_adv(void);
 ble_result_e ble_server_stop_adv(void);
 
