@@ -284,6 +284,12 @@ config BOARDCTL_RESET
 		Architecture specific logic must provide the board_reset()
 		interface.
 
+config BOARDCTL_BOARD_HEADER
+	bool
+	default n
+	---help---
+		If selected, it will include a header with board specification values.
+
 config BOARDCTL_UNIQUEID
 	bool "Return board unique ID"
 	default n
