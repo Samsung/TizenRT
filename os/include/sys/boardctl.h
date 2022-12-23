@@ -62,6 +62,10 @@
 
 #include <tinyara/fs/ioctl.h>
 
+#ifdef CONFIG_BOARDCTL_BOARD_HEADER
+#include <arch/chip/boardctl.h>
+#endif
+
 #ifdef CONFIG_LIB_BOARDCTL
 
 /****************************************************************************
