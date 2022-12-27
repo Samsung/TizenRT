@@ -211,3 +211,57 @@ This is moved to .config at executing configure.sh and used to build TizenRT.
 This is a build options set like setting of including path, ARM build options, linker script name and so on.  
 There is the DOWNLOAD definition to support "make download xx" command too.
 
+### Linker Variables
+
+Linker script has memory configuration information.  
+file path : *build/configs/<BOARD_NAME>/scripts/<SCRIPTS_NAME>.ld* 
+
+In addition to the SECTION information, add the following variables as well to mark the following:  
+1. `_sbss`: Start of .bss section
+2. `_ebss`: End+1 of .bss section
+3. `_sidle_stack`: Start of idle stack
+4. `__sint_heap_start`: Start of heap in internal RAM region
+5. `__sext_heap_start`: Start of heap in external RAM region
+
+For example,  
+
+1. The remaining RAM region after bss region can be set as idle thread stack and internal heap regions(`build/configs/sidk_s5jt200/scripts/ld_s5jt200_flash.script`):
+```
+	.bss : {
+		_sbss = ABSOLUTE(.);
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		. = ALIGN(4);
+		_ebss = ABSOLUTE(.);
+		_sidle_stack = ABSOLUTE(.);
+		. = . + CONFIG_IDLETHREAD_STACKSIZE ;
+		/* Heap start address in internal RAM */
+		_sint_heap_start = ABSOLUTE(.);
+	} > sram
+```
+2. Idle thread stack and internal heap regions should be set at a different region (other than end of bss) as per the memory layout (`build/configs/rtl8720e/scripts/rlx8720e_img2.ld`):
+```
+	.ram_image2.bss (NOLOAD):
+	{
+		__bss_start__ = .;
+		*(.bss*)
+		*(COMMON)
+		__bss_end__ = .;
+	} > KM4_BD_RAM
+
+	.psram_heap.start (NOLOAD):
+	{
+		/* Heap start address in external RAM */
+		_sext_heap_start = ABSOLUTE(.);
+	} > KM4_BD_PSRAM
+
+	/* Heap start address in internal RAM */
+	_sint_heap_start = ABSOLUTE(ORIGIN(KM4_HEAP_EXT));
+	_sidle_stack = ABSOLUTE(ORIGIN(KM4_MSP_RAM_NS) + LENGTH(KM4_MSP_RAM_NS)) - CONFIG_IDLETHREAD_STACKSIZE;
+```
+
+In addition to the above information, export the CONFIG_IDLETHREAD_STACKSIZE to the linker script using below statement in the board `Make.defs` for all configurations (`build/configs/sidk_s5jt200/hello/Make.defs`):  
+```
+LDFLAGS += --defsym=CONFIG_IDLETHREAD_STACKSIZE=$(CONFIG_IDLETHREAD_STACKSIZE)
+```
