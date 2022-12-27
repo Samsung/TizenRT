@@ -55,7 +55,7 @@ unsigned int baudrates_length = sizeof(baudrates) / sizeof(BAUDRATE_MAP);
 
 static uint32_t hci_tp_baudrate;
 uint8_t  hci_tp_lgc_efuse[BT_EFUSE_TABLE_LEN];
-uint8_t  hci_tp_phy_efuse[16];
+uint8_t  hci_tp_phy_efuse[19];
 
 
 static uint32_t cal_bit_shift(uint32_t Mask)
@@ -502,11 +502,20 @@ void bt_read_efuse(void)
        EFUSE_PMAP_READ8(0, 0x120 + Idx, hci_tp_phy_efuse + Idx, L25EOUTVOLTAGE);
     }
 
+    EFUSE_PMAP_READ8(0, 0x1FD, hci_tp_phy_efuse + 16, L25EOUTVOLTAGE);
+    EFUSE_PMAP_READ8(0, 0x1FE, hci_tp_phy_efuse + 17, L25EOUTVOLTAGE);
+    EFUSE_PMAP_READ8(0, 0x1FF, hci_tp_phy_efuse + 18, L25EOUTVOLTAGE);
+
     if(!CHECK_SW(EFUSE_SW_DRIVER_DEBUG_LOG))
     {
         /* 0 */
-        hci_board_debug("==bt phy_efuse 0x120~0x130:==\r\n ");
+        hci_board_debug("\r\n==bt phy_efuse 0x120~0x12F:==\r\n ");
         for (Idx = 0; Idx < 16; Idx++)
+        {
+            hci_board_debug("\n%x:", hci_tp_phy_efuse[Idx]);
+        }
+        hci_board_debug("\r\n==bt phy_efuse 0x1FD~0x1FF:==\r\n ");
+        for (Idx = 16; Idx < 19; Idx++)
         {
             hci_board_debug("\n%x:", hci_tp_phy_efuse[Idx]);
         }

@@ -732,6 +732,14 @@ int rtw_ble_server_set_adv_interval(unsigned int interval)
     return TRBLE_SUCCESS;
 }
 
+int rtw_ble_server_set_adv_txpower(unsigned int txpower)
+{
+
+    uint16_t tx_gain = txpower;
+    le_adv_set_tx_power(0, tx_gain);
+    return TRBLE_SUCCESS;
+}
+
 trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *addr)
 {
     if(type == TRBLE_ADV_TYPE_DIRECT && addr == NULL)
