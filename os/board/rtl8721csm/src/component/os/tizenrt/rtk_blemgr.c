@@ -98,6 +98,7 @@ trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval);
+trble_result_e trble_netmgr_set_adv_txpower(struct bledev *dev, uint16_t txpower);
 trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 
@@ -149,6 +150,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_set_adv_resp,
 	trble_netmgr_set_adv_type,
 	trble_netmgr_set_adv_interval,
+	trble_netmgr_set_adv_txpower,
 	trble_netmgr_start_adv,
 	trble_netmgr_stop_adv,
 };
@@ -440,6 +442,11 @@ trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e ad
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval)
 {
 	return rtw_ble_server_set_adv_interval(interval);
+}
+
+trble_result_e trble_netmgr_set_adv_txpower(struct bledev *dev, uint16_t txpower)
+{
+	return rtw_ble_server_set_adv_txpower(txpower);
 }
 
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev)

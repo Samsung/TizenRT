@@ -546,6 +546,19 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, set_adv_resp, (dev, buf));
 	}
 	break;
+	case LWNL_REQ_BLE_SET_ADV_TXPOWER:
+	{
+		uint16_t txpower = 0;
+
+		if (data != NULL) {
+			txpower = *(uint16_t *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, set_adv_txpower, (dev, txpower));
+	}
+	break;
 	case LWNL_REQ_BLE_START_ADV:
 	{
 		TRBLE_DRV_CALL(ret, dev, start_adv, (dev));
