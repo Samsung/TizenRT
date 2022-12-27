@@ -58,7 +58,7 @@ TRAP Script provides two interfaces:
 
 ### TRAP using CUI
 
-#### To display Debug Symbols/Crash point using assert logs
+#### To display Debug Symbols/Crash point using default build binary
 1. Change the directory to trap
 ```
 cd $TIZENRT_BASEDIR/tools/trap/
@@ -278,6 +278,43 @@ Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
 
 4. Miscellaneous information:
 -----------------------------------------------------------------------------------------
+```
+
+#### To display Debug Symbols/Crash point using binary other than default build binary
+1. Run Ramdump Parser Script and see the Output  
+    $ python3 ramdumpParser.py -t `<Log file path>` -b `<binary folder path>` -c `<configuration file path>`
+```
+vidisha@vidisha:~/tizenRT/tools/trap(trap)$ sudo python3 ramdumpParser.py -t logs -b ../../os/vidisha/bin/ -c ../../os/cfile
+
+
+*************************************************************
+dump_file                   : None
+log_file                    : logs
+Number of binary            : 1 [kernel]
+"kernel" elf_file           : ../../os/vidisha/bin/tinyara.axf
+*************************************************************
+
+-----------------------------------------------------------------------------------------
+1. Crash Binary             : kernel
+
+2. Crash type               : code assertion by code ASSERT or PANIC
+
+3. Crash point
+	-  up_assert: Assertion failed at file:init/os_start.c line: 621 task: Idle Task
+
+
+	- Code asserted in normal thread.
+
+4. Call stack of last run thread
+
+Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
+ User stack
+0x10004fa0	 0xe00183c	 kernel  	  thread_create	/root/tizenrt/os/kernel/task/task_create.c:133
+0x10004fe0	 0x10010d90	 kernel  	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
+
+x. Miscellaneous information:
+-----------------------------------------------------------------------------------------
+vidisha@vidisha:~/tizenRT/tools/trap(trap)$
 ```
 
 #### To get call stack using RAM dump
