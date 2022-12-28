@@ -55,6 +55,8 @@ void app_init_psram(void);
 #define PSRAM_HEAP_BASE ((uintptr_t)&_sext_heap_start)
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
 
+const uintptr_t g_idle_topstack = IDLE_STACK;
+
 void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
 	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
