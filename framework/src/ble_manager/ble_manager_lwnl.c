@@ -453,6 +453,16 @@ trble_result_e ble_drv_set_adv_interval(uint16_t interval)
 	return res;
 }
 
+trble_result_e ble_drv_set_adv_txpower(uint8_t txpower)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_ADV_TXPOWER}, sizeof(txpower), (void *)&txpower, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_start_adv()
 {
 	trble_result_e res = TRBLE_SUCCESS;

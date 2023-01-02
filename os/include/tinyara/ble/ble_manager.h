@@ -81,5 +81,6 @@ trble_result_e ble_drv_set_adv_data(trble_data *data);
 trble_result_e ble_drv_set_adv_resp(trble_data *data);
 trble_result_e ble_drv_set_adv_type(trble_adv_type_e adv_type, trble_addr *addr);
 trble_result_e ble_drv_set_adv_interval(uint16_t interval);
+trble_result_e ble_drv_set_adv_txpower(uint8_t txpower);
 trble_result_e ble_drv_start_adv(void);
 trble_result_e ble_drv_stop_adv(void);
