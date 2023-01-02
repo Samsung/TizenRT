@@ -964,6 +964,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_set_adv_interval(interval);
 	} break;
 
+	case BLE_CMD_SET_ADV_TXPOWER: {
+		BLE_STATE_CHECK;
+
+		uint8_t txpower = *(uint8_t *)msg->param;
+		ret = ble_drv_set_adv_txpower(txpower);
+	} break;
+
 	case BLE_CMD_START_ADV: {
 		BLE_STATE_CHECK;
 
