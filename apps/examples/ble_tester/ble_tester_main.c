@@ -745,12 +745,103 @@ int ble_tester_main(int argc, char *argv[])
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
 
+
 			pthread_t pid;
 			if (pthread_create(&pid, NULL, (pthread_startroutine_t)_ble_server_process, NULL) < 0) {
 				return -1;
 			}
+			
+			RMC_LOG(RMC_SERVER_TAG, "Delay 0 Seconds ...\n");
+			ble_server_set_adv_tx_power(0x06);
+
 			pthread_detach(pid);
 			
+		} else if (strncmp(argv[1], "init_delay", 11) == 0) {
+			/*
+			1. BLE Manager init
+			*/
+			if (is_ble_init == 1) {
+				RMC_LOG(RMC_TAG, "init is already done\n");
+			} else {
+				ret = ble_manager_init(&server_config);
+				if (ret != BLE_MANAGER_SUCCESS) {
+					if (ret != BLE_MANAGER_ALREADY_WORKING) {
+						RMC_LOG(RMC_TAG, "init fail[%d]\n", ret);
+						goto tester_done;
+					}
+					RMC_LOG(RMC_TAG, "init is already done\n");
+					ret = ble_manager_deinit();
+					if (ret != BLE_MANAGER_SUCCESS) {
+						RMC_LOG(RMC_TAG, "deinit fail[%d]\n", ret);
+						goto tester_done;
+					}
+					ret = ble_manager_init(&server_config);
+					if (ret != BLE_MANAGER_SUCCESS) {
+						RMC_LOG(RMC_TAG, "init fail[%d]\n", ret);
+						goto tester_done;
+					}
+				} else {
+					RMC_LOG(RMC_TAG, "init with config done[%d]\n", ret);
+				}
+
+				is_ble_init = 1;
+				usleep(100 * 1000);
+			}
+
+			/*
+			2. Start server (= advertising)
+			*/
+			ble_data data[1] = { 0, };
+			data->data = g_adv_raw;
+			data->length = sizeof(g_adv_raw);
+
+			ret = ble_server_set_adv_data(data);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv raw data[%d]\n", ret);
+				goto tester_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Set adv raw data ... ok\n");
+
+			data->data = g_adv_resp;
+			data->length = sizeof(g_adv_resp);
+
+			ret = ble_server_set_adv_resp(data);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv resp data[%d]\n", ret);
+				goto tester_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Set adv resp data ... ok\n");
+
+			ret = ble_server_set_adv_type(BLE_ADV_TYPE_IND, NULL);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv type[%d]\n", ret);
+				goto tester_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Set adv type ... ok\n");
+
+			ret = ble_server_start_adv();
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to start adv [%d]\n", ret);
+				goto tester_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
+
+			pthread_t pid;
+			if (pthread_create(&pid, NULL, (pthread_startroutine_t)_ble_server_process, NULL) < 0) {
+				return -1;
+			}
+
+			RMC_LOG(RMC_SERVER_TAG, "Delay 5 Seconds ...\n");
+			usleep(5 * 1000 * 1000);
+			ble_server_set_adv_tx_power(0x06);
+
+			pthread_detach(pid);
+			
+		} else if (strncmp(argv[1], "tx", 3) == 0) {
+			uint8_t txpower = atoi(argv[2]);
+			RMC_LOG(RMC_SERVER_TAG, "Set tx power : %d...\n", txpower);
+			ble_server_set_adv_tx_power(txpower);
+
 		} else if (strncmp(argv[1], "set", 4) == 0) {
 			/*
 			set packet size and count
