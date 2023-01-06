@@ -306,6 +306,7 @@ SECTIONS
 		*(.bfsram.data*)
 		end = .;
 		_ebss = ABSOLUTE(.);
+		*(._ebss.data*)
 	} > BD_RAM_NS
 
 

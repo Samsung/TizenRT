@@ -52,9 +52,14 @@ extern unsigned int __PsramStackLimit;
 #define HEAP_LIMIT ((uintptr_t)&__StackLimit)
 #define PSRAM_HEAP_BASE ((uintptr_t)&__psram_bss_end__[0])
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
+#define SRAM_EBSS_SECTION SECTION("._ebss.data")
+
+SRAM_EBSS_SECTION
+static unsigned char srHeap[(CONFIG_SRAM_HEAP_SIZE*1024)+CONFIG_IDLETHREAD_STACKSIZE];
+
 void os_heap_init(void){
 	kregionx_start[0] = (void *)HEAP_BASE;
-	kregionx_size[0] = (size_t)(HEAP_LIMIT - HEAP_BASE);
+	kregionx_size[0] = (size_t)(CONFIG_SRAM_HEAP_SIZE*1024);
 #if CONFIG_KMM_REGIONS >= 2
 	int region_idx;
 	if(TRUE == psram_dev_config.psram_dev_enable) {
