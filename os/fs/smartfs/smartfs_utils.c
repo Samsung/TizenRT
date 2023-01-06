@@ -161,7 +161,7 @@ struct sector_entry_queue_s {
 	uint16_t logsector;			/* Logical sector number */
 	uint16_t parentsector;		/* Logical sector which is chain with this */
 	uint16_t parentoffset;		/* Offset of parent entry in parent sector */
-	uint16_t time;				/* Timestamp of entry */
+	uint32_t time;				/* Timestamp of entry */
 };
 
 struct sector_recover_info_s {
