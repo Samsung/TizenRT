@@ -249,6 +249,15 @@ typedef size_t mmsize_t;
 #error Unknown CONFIG_ARCH option, malloc debug feature wont work.
 #endif
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+/* This macro updates a caller return address in the 'mem' node.
+ * This will show the real owner of the 'mem' even it's allocated through wrapping APIs of malloc.
+ */
+#define DEBUG_SET_CALLER_ADDR(mem) heapinfo_set_caller_addr(mem, __builtin_return_address(0))
+#else
+#define DEBUG_SET_CALLER_ADDR(mem)
+#endif
+
 /* typedef is used for defining size of address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -679,6 +688,7 @@ int mm_size2ndx(size_t size);
 void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
+void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr);
 
 void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);

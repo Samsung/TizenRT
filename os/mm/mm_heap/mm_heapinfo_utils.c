@@ -129,6 +129,30 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 }
 
 /****************************************************************************
+ * Name: heapinfo_set_caller_addr
+ *
+ * Description:
+ * Set caller address of malloc API to mem chunk
+ * It is only called in DEBUG_SET_CALLER_ADDR macro
+ ****************************************************************************/
+void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr)
+{
+	struct mm_allocnode_s *node;
+	struct mm_heap_s *heap;
+
+	heap = mm_get_heap(address);
+	if (heap) {
+		node = (struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
+		mm_takesemaphore(heap);
+		heapinfo_update_node(node, caller_retaddr);
+		mm_givesemaphore(heap);
+	} else {
+		mdbg("Failed to set caller address, heap not found. addr:%x\n", address);
+	}
+
+}
+
+/****************************************************************************
  * Name: heapinfo_exclude_stacksize
  *
  * Description:
