@@ -1085,15 +1085,14 @@ static int tash_rm(int argc, char **args)
 {
 	char *fullpath;
 	int ret = OK;
-
-	if (args[2]) {
+	if (argc == 3) {
 		fullpath = get_fullpath(args[2]);
 		if (strncmp(args[1], "-r", strlen(args[1])) == 0) {
 			ret = delete_entry(fullpath);
 		} else {
 			FSCMD_OUTPUT("Usage: rm [-r] [FILE/DIR]\n");
 		}
-	} else {
+	} else if (argc == 2) {
 		fullpath = get_fullpath(args[1]);
 		ret = unlink(fullpath);
 		if (ret != OK) {
@@ -1102,6 +1101,9 @@ static int tash_rm(int argc, char **args)
 			return ret;
 		}
 		FSCMD_OUTPUT("%s deleted\n", fullpath);
+	} else {
+		FSCMD_OUTPUT("Usage: rm [FILE/DIR] or rm [-r] [FILE/DIR]\n");
+		return ERROR;
 	}
 
 	if (fullpath) {
