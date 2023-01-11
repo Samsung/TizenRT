@@ -24,7 +24,7 @@ TOPDIR="${OSDIR}/.."
 BINDIR="${TOPDIR}/build/output/bin"
 TRAPDIR="${TOPDIR}/tools/trap"
 DOCKER_VERSION="1.5.5"
-
+OUTPUTFILE="dutils_output_"
 
 # Checking docker is installed
 nodocker() {
@@ -207,6 +207,7 @@ function MENU()
 	unset SELECTED_START
 
 	while [ 1 ]; do
+		OUTPUTFILE="dutils_output_"
 		if [ ! -z "$1" ];then
 			SELECTED_START=$1
 		else
@@ -243,12 +244,21 @@ function MENU()
 function TOOLCHAIN()
 {
 	ARGS=arm-none-eabi-$2
+
+	OUTPUTFILE+="$2"
+	TIMESTAMP=$(date "+%Y.%m.%d-%H.%M.%S")
+	OUTPUTFILE=$OUTPUTFILE"_"$TIMESTAMP.txt
+
 	while test $# -gt 0; do
 		ARGS+=" "$3
 		shift
 	done
-	echo $ARGS
-	docker run --rm -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} $ARGS
+
+	echo "Executing: $ARGS" | tee $OUTPUTFILE
+	echo "" >> $OUTPUTFILE
+	docker run --rm -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} $ARGS | tee -a $OUTPUTFILE
+
+	echo ">> Output is stored in $OUTPUTFILE"
 }
 
 function TRAP_RUN()
@@ -264,15 +274,22 @@ function TRAP_RUN()
 		TRAPCMD+=" -c ../../os/"$4
 	fi
 
+	OUTPUTFILE+="trap"
+	TIMESTAMP=$(date "+%Y.%m.%d-%H.%M.%S")
+	OUTPUTFILE=$OUTPUTFILE"_"$TIMESTAMP.txt
+
 	# Parse kernel elf path
 	make -C "tools" -f Makefile.export TOPDIR=".." EXPORTDIR=".."
 	source "./makeinfo.sh"
 	rm -f "makeinfo.sh"
 	TRAPCMD+=" -e tinyara$EXEEXT"
 
-	echo "Executing: $TRAPCMD"
+	echo "Executing: $TRAPCMD" | tee $OUTPUTFILE
+	echo "" >> $OUTPUTFILE
 	# execute TRAP script
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:1.5.6 python3.7 $TRAPCMD
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:1.5.6 python3.7 $TRAPCMD | tee -a $OUTPUTFILE
+
+	echo ">> Output is stored in $OUTPUTFILE"
 }
 
 function HELP()
