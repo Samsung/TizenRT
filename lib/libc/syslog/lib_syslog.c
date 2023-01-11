@@ -58,13 +58,16 @@
 
 #include <stdio.h>
 #include <syslog.h>
-
+#include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/streams.h>
 #if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
 #include <tinyara/logm.h>
 #endif
 #include "syslog/syslog.h"
+#if CONFIG_NFILE_STREAMS > 0
+#include "lib_internal.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -121,9 +124,10 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 	struct lib_outstream_s stream;
 #endif
 
+	int ret;
+
 #if defined(CONFIG_SYSLOG_TIMESTAMP)
 	struct timespec ts;
-	int ret;
 
 	/* Get the current time */
 
@@ -154,6 +158,14 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 
 	lib_rawoutstream(&stream, 1);
 
+#if CONFIG_NFILE_STREAMS > 0 && (defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__))
+	if(!up_interrupt_context() && getpid() != 0){
+		lib_take_semaphore(stdout);
+	}
+#elif CONFIG_NFILE_STREAMS > 0
+	lib_take_semaphore(stdout);
+#endif
+
 #if defined(CONFIG_SYSLOG_TIMESTAMP)
 	/* Pre-pend the message with the current time */
 
@@ -161,8 +173,16 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 		(void)lib_sprintf((FAR struct lib_outstream_s *)&stream, "[%6d.%06d]", ts.tv_sec, ts.tv_nsec / 1000);
 	}
 #endif
+	ret = lib_vsprintf(&stream.public,fmt,ap);
 
-	return lib_vsprintf(&stream.public, fmt, ap);
+#if CONFIG_NFILE_STREAMS > 0 && (defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__))
+        if(!up_interrupt_context() && getpid() != 0){
+                lib_give_semaphore(stdout);
+        }
+#elif CONFIG_NFILE_STREAMS > 0
+	lib_give_semaphore(stdout);
+#endif
+	return ret;
 
 #elif defined(CONFIG_ARCH_LOWPUTC)
 	/* Wrap the low-level output in a stream object and let lib_vsprintf
