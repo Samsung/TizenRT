@@ -748,8 +748,8 @@ uint16_t rtk_bt_set_evt_cb_direct_calling(uint8_t group, uint32_t evt_bit_mask)
 
 	direct_call_t.group = group;
 	direct_call_t.evt_bit_mask = evt_bit_mask;
-	ret = bt_ipc_api_host_message_send(RTK_BT_IPC_COMMON, RTK_BT_ACT_IPC_ENABLE_DIRECT_CALL,
-										&direct_call_t, sizeof(rtk_bt_direct_call_t));
+	ret = bt_ipc_api_host_message_send(RTK_BT_IPC_COMMON, RTK_BT_ACT_IPC_ENABLE_DIRECT_CALL, 
+									(uint8_t *)&direct_call_t, sizeof(rtk_bt_direct_call_t));
 	if (ret[0] != RTK_BT_OK) {
 		printf("[core AP][IPC] %s fail ! \r\n", __func__);
 	}
@@ -845,7 +845,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 {
 	rtk_bt_evt_t *p_evt = (rtk_bt_evt_t *)evt;
 
-	if(!evt)
+	if(!p_evt)
 		return RTK_BT_ERR_POINTER_INVALID;
 
 #if defined(CONFIG_BT_SINGLE_CORE) && CONFIG_BT_SINGLE_CORE || \
@@ -864,7 +864,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 		return RTK_BT_ERR_NOT_READY;
 
 	/* If the evt cb is not direct calling, send evt msg to event task */
-	if(false == osif_msg_send(g_evt_queue, &evt, BT_TIMEOUT_NONE))
+	if(false == osif_msg_send(g_evt_queue, &p_evt, BT_TIMEOUT_NONE))
 		return RTK_BT_ERR_OS_OPERATION;
 	
 	return 0;

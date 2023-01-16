@@ -82,7 +82,7 @@
 #define RTL8188E_SUPPORT 0
 #define RTL8188F_SUPPORT 0
 #define RTL8711B_SUPPORT 0
-#define RTL8720E_SUPPORT 0
+#define RTL8720E_SUPPORT 1
 #define RTL8721D_SUPPORT 0
 #define RTL8723D_SUPPORT 0
 #define RTL8195B_SUPPORT 0
@@ -90,6 +90,7 @@
 #define RTL8730A_SUPPORT 0
 #define RTL8730E_SUPPORT 0
 #define RTL8735B_SUPPORT 0
+#define RTL8721F_SUPPORT 0
 /************************ config to support chip end **************************/
 
 /******************** Configurations for each platform ************************/

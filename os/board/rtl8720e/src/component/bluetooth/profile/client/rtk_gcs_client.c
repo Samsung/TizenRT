@@ -153,10 +153,10 @@ void general_client_read_res_hdl(void *data)
 					"type: %d, status: %d, handle: 0x%04x\r\n",
 					read_res->profile_id, read_res->conn_handle,
 					read_res->type, read_status, handle);
-			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, "read result");
+			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
 			
 			ble_tizenrt_read_result[read_res->conn_handle].by_handle.len = read_res->by_handle.len;
-			ble_tizenrt_read_result[read_res->conn_handle].by_handle.value = osif_mem_alloc(0, read_res->by_handle.len);
+			ble_tizenrt_read_result[read_res->conn_handle].by_handle.value = (uint8_t *)osif_mem_alloc(0, read_res->by_handle.len);
 			if(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value){
 				memcpy(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value, read_res->by_handle.value, read_res->by_handle.len);
 			} else {
@@ -170,10 +170,10 @@ void general_client_read_res_hdl(void *data)
 						"type: %d, status: %d, handle: 0x%04x\r\n",
 						read_res->profile_id, read_res->conn_handle,
 						read_res->type, read_status, handle);
-			gattc_dump(read_res->by_uuid_per.len, read_res->by_uuid_per.value, "read result");
+			gattc_dump(read_res->by_uuid_per.len, read_res->by_uuid_per.value, (uint8_t *)"read result");
 
 			ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.len = read_res->by_uuid_per.len;
-			ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value = osif_mem_alloc(0, read_res->by_uuid_per.len);
+			ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value = (uint8_t *)osif_mem_alloc(0, read_res->by_uuid_per.len);
 			if(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value){
 				memcpy(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value, read_res->by_uuid_per.value, read_res->by_uuid_per.len);
 			} else {
@@ -187,10 +187,10 @@ void general_client_read_res_hdl(void *data)
 					"type: %d, status: %d, len:%d\r\n",
 					read_res->profile_id, read_res->conn_handle,
 					read_res->type, read_status, read_res->by_handle.len);
-			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, "read result");
+			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
 
 			ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.len = read_res->multiple_variable_per.len;
-			ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value = osif_mem_alloc(0, read_res->multiple_variable_per.len);
+			ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value = (uint8_t *)osif_mem_alloc(0, read_res->multiple_variable_per.len);
 			if(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value){
 				memcpy(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value, read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
 			} else {
@@ -280,11 +280,11 @@ void general_client_notify_hdl(void *data)
 	printf("[APP] GATTC notify received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			ntf_ind->profile_id, ntf_ind->conn_handle, ntf_ind->value_handle);
 	
-	gattc_dump(ntf_ind->len, ntf_ind->value, "notify event");
+	gattc_dump(ntf_ind->len, ntf_ind->value, (uint8_t *)"notify event");
 	trble_data read_result;
 	read_result.length = ntf_ind->len;
 	memcpy(read_result.data, ntf_ind->value, read_result.length);
-	client_init_parm->trble_operation_notification_cb(&ntf_ind->conn_handle, &read_result);
+	client_init_parm->trble_operation_notification_cb((trble_operation_handle *)&ntf_ind->conn_handle, &read_result);
 }
 
 void general_client_indicate_hdl(void *data)
@@ -295,7 +295,7 @@ void general_client_indicate_hdl(void *data)
 
 	printf("[APP] GATTC indicate received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
-	gattc_dump(indicate_ind->len, indicate_ind->value, "indicate event");
+	gattc_dump(indicate_ind->len, indicate_ind->value, (uint8_t *)"indicate event");
 
 	cfm_param.profile_id = indicate_ind->profile_id;
 	cfm_param.conn_handle = indicate_ind->conn_handle;

@@ -236,7 +236,7 @@ RDP_FAIL:
 	return FALSE;
 }
 
-int BOOT_Validate_PubKey_OTA(u8 AuthAlg, u8 *Pk, u8 *Hash)
+int BOOT_Validate_PubKey_OTA(u8 *AuthAlg, u8 *Pk, u8 *Hash)
 {
 	int ret;
 	OTA_SIG_CHECK_ADAPTER pkey_info;
@@ -249,7 +249,7 @@ int BOOT_Validate_PubKey_OTA(u8 AuthAlg, u8 *Pk, u8 *Hash)
 	return ret;
 }
 
-int BOOT_Validate_Signature_OTA(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg, u32 Len, u8 *Sig)
+int BOOT_Validate_Signature_OTA(u8 *AuthAlg, u8 *HashAlg, u8 *Pk, u8 *Msg, u32 Len, u8 *Sig)
 {
 	int ret;
 	OTA_SIG_CHECK_ADAPTER sig_info;
@@ -265,7 +265,7 @@ int BOOT_Validate_Signature_OTA(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg, u32 Len
 	return ret;
 }
 
-int BOOT_Validate_ImgHash_OTA(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num)
+int BOOT_Validate_ImgHash_OTA(u8 *HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num)
 {
 	int ret;
 	OTA_SIG_CHECK_ADAPTER hash_info;
@@ -321,20 +321,20 @@ int BOOT_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubI
 			break;
 		}
 	}
-	ret = BOOT_Validate_PubKey_OTA(AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
+	ret = BOOT_Validate_PubKey_OTA(&AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
 	}
 
 	/* 2.4 validate signature */
-	ret = BOOT_Validate_Signature_OTA(AuthAlg, HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN,
+	ret = BOOT_Validate_Signature_OTA(&AuthAlg, &HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN,
 								  Manifest->Signature);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
 	}
 
 	/* 2.5 calculate and validate image hash */
-	ret = BOOT_Validate_ImgHash_OTA(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
+	ret = BOOT_Validate_ImgHash_OTA(&HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
 	}
@@ -379,13 +379,13 @@ int BOOT_CertificateCheck_OTA(Certificate_TypeDef *Cert, u32 Addr)
 	}
 
 	/* 3.3 validate pubkey hash */
-	ret = BOOT_Validate_PubKey_OTA(AuthAlg, Cert->SBPubKey, PubKeyHash);
+	ret = BOOT_Validate_PubKey_OTA(&AuthAlg, Cert->SBPubKey, PubKeyHash);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
 	}
 
 	/* 3.4 validate signature */
-	ret = BOOT_Validate_Signature_OTA(AuthAlg, HashAlg, Cert->SBPubKey, (u8 *)Cert, Cert->TableSize, Signature);
+	ret = BOOT_Validate_Signature_OTA(&AuthAlg, &HashAlg, Cert->SBPubKey, (u8 *)Cert, Cert->TableSize, Signature);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
 	}
@@ -512,9 +512,9 @@ int Ameba_KeyDeriveFunc(const unsigned char *password, size_t plen,
 	if (dstbuf == NULL) /* output buff is empty */
 		return FALSE;
 
-	KDF_input.password = password;
+	KDF_input.password = (unsigned char *)password;
 	KDF_input.plen = plen;
-	KDF_input.salt = salt;
+	KDF_input.salt = (unsigned char *)salt;
 	KDF_input.slen = slen;
 	KDF_input.iteration_count = iteration_count;
 	KDF_input.dstbuf = dstbuf;

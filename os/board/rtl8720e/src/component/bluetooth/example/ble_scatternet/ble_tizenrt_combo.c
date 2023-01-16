@@ -47,13 +47,13 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
         return TRBLE_INVALID_STATE;
     }
 
-    client_init_parm = osif_mem_alloc(0, sizeof(trble_client_init_config));
+    client_init_parm = (trble_client_init_config *)osif_mem_alloc(0, sizeof(trble_client_init_config));
     if (client_init_parm == NULL) {
         debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;
     }
 
-    ble_tizenrt_scatternet_conn_ind = osif_mem_alloc(0, sizeof(rtk_bt_le_conn_ind_t));
+    ble_tizenrt_scatternet_conn_ind = (rtk_bt_le_conn_ind_t *)osif_mem_alloc(0, sizeof(rtk_bt_le_conn_ind_t));
     if (ble_tizenrt_scatternet_conn_ind == NULL) {
         debug_print("Memory allocation failed \n");
         return TRBLE_FAIL;

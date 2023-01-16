@@ -141,14 +141,14 @@ int sstorage_main(int argc, char *argv[])
 	}
 
 	printf("Read Raw data from Slot: %d, Area A\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, rwbuf, 1)) {
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
 		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
 	}
 
 	sleep(1);
 	address += SLOT_AREA_OFFEST;
 	printf("\nRead Raw data from Slot: %d, Area B\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, rwbuf, 1)) {
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
 		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
 	}
 
@@ -197,14 +197,14 @@ int sstorage_main(int argc, char *argv[])
 	}
 
 	printf("Read Raw data from Slot: %d, Area A\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, rwbuf, 1)) {
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
 		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
 	}
 
 	sleep(1);
 	address += SLOT_AREA_OFFEST;
 	printf("\nRead Raw data from Slot: %d, Area B\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, rwbuf, 1)) {
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
 		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
 	}
 

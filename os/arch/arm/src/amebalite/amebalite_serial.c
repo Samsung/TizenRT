@@ -241,7 +241,7 @@ static int rtl8720e_log_up_attach(struct uart_dev_s *dev);
 static void rtl8720e_log_up_detach(struct uart_dev_s *dev);
 static int rtl8720e_log_up_interrupt(int irq, void *context, FAR void *arg);
 static int rtl8720e_log_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
-static int rtl8720e_log_up_receive(struct uart_dev_s *dev, uint8_t *status);
+static int rtl8720e_log_up_receive(struct uart_dev_s *dev, unsigned int *status);
 static void rtl8720e_log_up_rxint(struct uart_dev_s *dev, bool enable);
 static bool rtl8720e_log_up_rxavailable(struct uart_dev_s *dev);
 static void rtl8720e_log_up_send(struct uart_dev_s *dev, int ch);
@@ -255,7 +255,7 @@ static int rtl8720e_up_attach(struct uart_dev_s *dev);
 static void rtl8720e_up_detach(struct uart_dev_s *dev);
 static int rtl8720e_up_interrupt(int irq, void *context, FAR void *arg);
 static int rtl8720e_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
-static int rtl8720e_up_receive(struct uart_dev_s *dev, uint8_t *status);
+static int rtl8720e_up_receive(struct uart_dev_s *dev, unsigned int *status);
 static void rtl8720e_up_rxint(struct uart_dev_s *dev, bool enable);
 static bool rtl8720e_up_rxavailable(struct uart_dev_s *dev);
 static void rtl8720e_up_send(struct uart_dev_s *dev, int ch);
@@ -671,7 +671,7 @@ static int rtl8720e_log_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned l
  *
  ****************************************************************************/
 
-static int rtl8720e_log_up_receive(struct uart_dev_s *dev, uint8_t *status)
+static int rtl8720e_log_up_receive(struct uart_dev_s *dev, unsigned int *status)
 {
 	struct rtl8720e_up_dev_s *priv = (struct rtl8720e_up_dev_s *)dev->priv;
 	uint32_t rxd;
@@ -1001,7 +1001,7 @@ static int rtl8720e_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long 
  *
  ****************************************************************************/
 
-static int rtl8720e_up_receive(struct uart_dev_s *dev, uint8_t *status)
+static int rtl8720e_up_receive(struct uart_dev_s *dev, unsigned int *status)
 {
 	struct rtl8720e_up_dev_s *priv = (struct rtl8720e_up_dev_s *)dev->priv;
 	uint32_t rxd;

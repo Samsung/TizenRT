@@ -92,8 +92,6 @@ ifeq ($(CONFIG_AMEBALITE_WIFI),y)
 include component/wifi/api/Make.defs
 include component/wifi/promisc/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
-include component/os/os_dep/Make.defs
-include component/os/tizenrt/Make.defs
 include component/soc/amebalite/misc/Make.defs
 endif
 

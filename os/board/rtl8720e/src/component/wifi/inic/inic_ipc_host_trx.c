@@ -140,7 +140,6 @@ static void inic_ipc_host_rx_tasklet(void)
 	_queue *recv_queue = NULL;
 	struct pbuf *p_buf = NULL;
 	int index = 0;
-	err_enum_t error = ERR_OK;
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
 	recv_queue = &g_inic_host_priv.recv_queue;
@@ -155,7 +154,7 @@ static void inic_ipc_host_rx_tasklet(void)
 			g_inic_host_priv.rx_pkts++;
 
 			struct netdev *dev_tmp = NULL;
-			dev_tmp = rtk_get_netdev(index);
+			dev_tmp = (struct netdev *)rtk_get_netdev(index);
 			struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
 			if (netif->input(p_buf, netif) != ERR_OK) {
 				LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));

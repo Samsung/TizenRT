@@ -242,7 +242,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 		APP_PROMOTE("[APP] Just work pairing need user to confirm, conn_handle: %d!\r\n", 
 																pair_cfm_ind->conn_handle);
 		rtk_bt_le_pair_cfm_t pair_cfm_param = {0};
-		uint16_t ret = 0;
 		pair_cfm_param.conn_handle = pair_cfm_ind->conn_handle;
 		pair_cfm_param.confirm = 1;
 		ret = rtk_bt_le_sm_pairing_confirm(&pair_cfm_param);
@@ -295,7 +294,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
 
 			uint16_t mtu_size;
-			if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(auth_cplt_ind->conn_handle, mtu_size)){
+			if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(auth_cplt_ind->conn_handle, &mtu_size)){
 				dbg("[APP] Get mtu size failed \r\n");
 			}
 			ble_tizenrt_bond_list[auth_cplt_ind->conn_handle].is_bonded = true;
