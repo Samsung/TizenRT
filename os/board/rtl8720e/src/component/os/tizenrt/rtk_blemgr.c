@@ -124,6 +124,8 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_connected_device_list,
 	trble_netmgr_connected_info,
 	trble_netmgr_operation_enable_notification,
+	NULL,
+	NULL,
 	trble_netmgr_operation_read,
 	trble_netmgr_operation_write,
 	trble_netmgr_operation_write_no_response,
@@ -131,6 +133,7 @@ struct trble_ops g_trble_drv_ops = {
 	// Server
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
+	NULL,
 	trble_netmgr_attr_set_data,
 	trble_netmgr_attr_get_data,
 	trble_netmgr_attr_reject,
@@ -143,7 +146,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_set_adv_resp,
 	trble_netmgr_set_adv_type,
 	trble_netmgr_set_adv_interval,
-	trble_netmgr_start_adv,
+	NULL,
 	trble_netmgr_stop_adv,
 };
 
@@ -246,7 +249,7 @@ trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
 	trble_result_e ret = TRBLE_UNSUPPORTED;
 	
 	if (msg->cmd == TRBLE_MSG_GET_VERSION) {
-		uint8_t *version = (uint8_t *)msg->data;
+		// uint8_t *version = (uint8_t *)msg->data;
 		// temporary remove
 		// ret = rtw_ble_get_version(version);
 	}

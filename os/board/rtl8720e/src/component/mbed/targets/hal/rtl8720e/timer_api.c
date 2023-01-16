@@ -134,7 +134,7 @@ uint64_t gtimer_read_us(gtimer_t *obj)   //need to be test in IAR(64bit computin
 {
 	assert_param((obj->timer_id < GTIMER_MAX) && (obj->timer_id != TIMER8) && (obj->timer_id != TIMER9));
 
-	uint64_t time_us;
+	uint64_t time_us = 0;
 	if (obj->timer_id <= TIMER7) {
 		time_us = (uint64_t)(gtimer_read_tick(obj) * ((float)1000000 / 32768));
 	} else if (obj->timer_id >= TIMER10) {

@@ -68,6 +68,11 @@
 
 #include "chip.h"
 
+/*----------------------------------------------------------------------------
+  Clock Variable definitions
+ *----------------------------------------------------------------------------*/
+#define configCPU_CLOCK_HZ								150000000
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -79,13 +84,11 @@
  *
  */
 
-
 /* The size of the reload field is 24 bits.  Verify that the reload value
  * will fit in the reload register.
  */
-extern uint32_t SystemCoreClock; 
 
-#define SYSTICK_RELOAD ((SystemCoreClock / CLK_TCK) - 1)
+#define SYSTICK_RELOAD ((configCPU_CLOCK_HZ / CLK_TCK) - 1)
 
 #if SYSTICK_RELOAD > 0x00ffffff
 #  error SYSTICK_RELOAD exceeds the range of the RELOAD register

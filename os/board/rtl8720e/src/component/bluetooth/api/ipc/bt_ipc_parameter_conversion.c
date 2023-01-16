@@ -626,11 +626,11 @@ static int gattc_ipc_write_param_push(uint8_t *buf, rtk_bt_gattc_write_param_t *
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	/* parsing data */
-	p_write_param->data = (const void *)end;
+	p_write_param->data = (void *)end;
 	if (end + param->length > buf + size_limit)
 		goto exit;
 	memcpy((void *)p_write_param->data, (void *)param->data, param->length);
-	p_write_param->data = (const void *)(end - buf);
+	p_write_param->data = (void *)(end - buf);
 	*actual_size = (uint32_t)((end + param->length) - buf);
 
 	return 0;

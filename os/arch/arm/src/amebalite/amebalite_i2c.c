@@ -1123,7 +1123,7 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 		priv = (struct amebalite_i2c_priv_s *)&amebalite_i2c1_priv;
  	} else {
 	 	printf("Please select I2CO or I2C1 bus\n");
-	 	return -1;
+	 	return NULL;
  	}
 
  /* Initialize private data for the first time, increment reference count,

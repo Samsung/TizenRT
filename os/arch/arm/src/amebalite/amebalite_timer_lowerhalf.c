@@ -193,7 +193,7 @@ static int amebalite_gpt_start(struct timer_lowerhalf_s *lower)
 				priv->obj.hid = (uint32_t) priv;
 				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, priv->obj.handler, priv->obj.hid);
 			} else {
-				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, NULL, NULL);
+				gtimer_start_periodical(&priv->obj, priv->gpt_timeout, NULL, 0);
 			}
 		}
 		priv->started = true;
@@ -360,7 +360,7 @@ static void amebalite_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t ca
 			priv->obj.hid = (uint32_t) priv;
 		} else {
 			priv->obj.handler = NULL;
-			priv->obj.hid = NULL;
+			priv->obj.hid = 0;
 		}
 
 		irqrestore(flags);

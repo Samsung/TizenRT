@@ -82,14 +82,14 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
         return TRBLE_INVALID_STATE;
     }
 
-    rtk_bt_le_addr_t bd_addr;
-	
-    if (RTK_BT_FAIL == rtk_bt_le_gap_get_address(&bd_addr)) {
+	rtk_bt_le_addr_t rtk_bd_addr;
+
+    if (RTK_BT_FAIL == rtk_bt_le_gap_get_address(&rtk_bd_addr)) {
         debug_print("Failed to get local addr. \n");
         return TRBLE_FAIL;
     }
 
-	memcpy(mac, &bd_addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
+	memcpy(mac, &rtk_bd_addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
     return TRBLE_SUCCESS; 
 }
 
@@ -223,11 +223,11 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
         return TRBLE_NOT_FOUND;
     } 
 
-	T_SERVER_ID app_id;
+	T_SERVER_ID app_id = 0;
     uint16_t cha_index = 0;
     rtk_bt_gatts_ntf_and_ind_param_t param;
 	
-    param.data = osif_mem_alloc(0, data_length);
+    param.data = (void *)osif_mem_alloc(0, data_length);
     if(!param.data)
     {
         osif_mem_free(param.data);
@@ -247,7 +247,7 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
 	param.app_id = app_id;
 	param.conn_handle = con_handle;
 	param.index = cha_index;
-    memcpy(param.data, data_ptr, data_length);
+    memcpy((void*)param.data, data_ptr, data_length);
     param.len = data_length;
     param.seq = 0;
 	
@@ -625,7 +625,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
         return TRBLE_INVALID_ARGS;
     }
 	
-    if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num(device_count)){
+    if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num((uint8_t *)device_count)){
 		debug_print("get bond num failed \n");
     }
     debug_print("bonded num : %d \n", *device_count);
@@ -638,7 +638,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
 
     rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
     memset(bond_info, 0, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
-	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, device_count)){
+	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, (uint8_t *)device_count)){
 		debug_print("get bond info failed \n");
 		osif_mem_free(bond_info);
 		return TRBLE_FAIL;
@@ -696,7 +696,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 		if(!memcmp(bonded_device_list[i].bd_addr.mac, bond_addr, TRBLE_BD_ADDR_MAX_LEN))
 		{
 			addr.type = bonded_device_list[i].bd_addr.type;
-			bool bond_addr_found = true;
+			bond_addr_found = true;
 			break;
 		}
 	}

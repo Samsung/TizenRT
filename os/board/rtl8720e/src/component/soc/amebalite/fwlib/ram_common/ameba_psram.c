@@ -71,7 +71,7 @@ void PSRAM_CLK_INFO_Update(VOID)
   */
 void PSRAM_CLK_INFO_Pirnt(void)
 {
-	u32 PsramClk, PLLCLk, Div;
+	u32 PsramClk = 0, PLLCLk, Div;
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
 	u32 ClkSel = LSYS_GET_CKSL_PSRAM(Temp);
 	u32 LBusSrc = LSYS_GET_CKSL_LBUS(Temp);

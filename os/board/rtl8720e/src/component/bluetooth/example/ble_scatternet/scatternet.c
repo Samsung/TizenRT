@@ -52,26 +52,26 @@ static uint8_t scan_rsp_data[] = {
     0x00,
 };
 
-static rtk_bt_le_adv_param_t adv_param = {
-    .interval_min = 0x30,
-    .interval_max = 0x60,
-    .type = RTK_BT_LE_ADV_TYPE_IND,
-    .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
-    .peer_addr = {
-        .type = (rtk_bt_le_addr_type_t)0,
-        .addr_val = {0},
-    },
-    .channel_map = RTK_BT_LE_ADV_CHNL_ALL,
-    .filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
-};
+// static rtk_bt_le_adv_param_t adv_param = {
+//     .interval_min = 0x30,
+//     .interval_max = 0x60,
+//     .type = RTK_BT_LE_ADV_TYPE_IND,
+//     .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
+//     .peer_addr = {
+//         .type = (rtk_bt_le_addr_type_t)0,
+//         .addr_val = {0},
+//     },
+//     .channel_map = RTK_BT_LE_ADV_CHNL_ALL,
+//     .filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+// };
 
-static rtk_bt_le_scan_param_t scan_param = {
-    .type          = RTK_BT_LE_SCAN_TYPE_PASSIVE,
-    .interval      = 0x60,
-    .window        = 0x30,
-    .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
-    .filter_policy = RTK_BT_LE_SCAN_FILTER_ALLOW_ALL,
-};
+// static rtk_bt_le_scan_param_t scan_param = {
+//     .type          = RTK_BT_LE_SCAN_TYPE_PASSIVE,
+//     .interval      = 0x60,
+//     .window        = 0x30,
+//     .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
+//     .filter_policy = RTK_BT_LE_SCAN_FILTER_ALLOW_ALL,
+// };
 
 typedef struct {
     bool is_active;
@@ -468,8 +468,7 @@ static uint16_t app_get_gatts_app_id(uint8_t event, void *data)
 
 static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t event, void *data)
 {
-	// printf("ble_peripheral_gatts_service_callback: app_id = %d, HID_SRV_ID = %d \r\n",app_id,HID_SRV_ID);
-	uint16_t app_id = 0xFFFF;
+	/* printf("ble_peripheral_gatts_service_callback: app_id = %d, HID_SRV_ID = %d \r\n",app_id,HID_SRV_ID); */
 
     if (RTK_BT_GATTS_EVT_MTU_EXCHANGE == event) {
         rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
@@ -587,7 +586,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
                                                     ble_tizenrt_scatternet_gap_app_callback));
         BT_APP_PROCESS(rtk_bt_set_evt_cb_direct_calling(RTK_BT_LE_GP_GAP, 
                                     1 << RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND));
-        memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const uint8_t*)RTK_BT_DEV_NAME));
+        memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const char *)RTK_BT_DEV_NAME));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name)); 
         BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
 		

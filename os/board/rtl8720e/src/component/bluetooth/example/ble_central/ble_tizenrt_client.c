@@ -39,8 +39,8 @@ trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
         return TRBLE_FAIL;
     }
 
-    client_init_parm = osif_mem_alloc(0, sizeof(trble_client_init_config));
-	ble_tizenrt_conn_ind = osif_mem_alloc(0, sizeof(rtk_bt_le_conn_ind_t));
+    client_init_parm = (trble_client_init_config *)osif_mem_alloc(0, sizeof(trble_client_init_config));
+	ble_tizenrt_conn_ind = (rtk_bt_le_conn_ind_t *)osif_mem_alloc(0, sizeof(rtk_bt_le_conn_ind_t));
 	
     if(client_init_parm == NULL)
     {
@@ -173,7 +173,7 @@ void scan_stop_cb(void *arg)
     if (RTK_BT_OK != rtk_bt_le_gap_stop_scan())
     {
  	   debug_print("stop scan failed! \n");
- 	   return TRBLE_FAIL;
+       return TRBLE_FAIL;
     }
     rtk_bt_le_gap_dev_state_t new_state;
     do {
@@ -444,7 +444,7 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
 	bool bond_addr_found = false;
 	
 	del_bond_addr = addr->mac;
-    if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num(&device_count)){
+    if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num((uint8_t *)&device_count)){
 		debug_print("get bond num failed \n");
     }
     debug_print("bonded num : %d \n", device_count);
@@ -455,13 +455,13 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
         return TRBLE_FAIL;
     }
 
-    rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, device_count * sizeof(rtk_bt_le_bond_info_t));
+    rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, device_count * sizeof(rtk_bt_le_bond_info_t));
 	if(!bond_info){
 		debug_print("bond info malloc failed \n");
 		return TRBLE_FAIL;
 	}
     memset(bond_info, 0, device_count * sizeof(rtk_bt_le_bond_info_t));
-	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, &device_count)){
+	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, (uint8_t *)&device_count)){
 		debug_print("get bond info failed \n");
 		osif_mem_free(bond_info);
 		return TRBLE_FAIL;

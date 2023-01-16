@@ -261,7 +261,7 @@ static void cmd_wifi_sta_and_ap(int argc, char **argv)
 	while (1) {
 		char essid[33];
 		wifi_get_setting(WLAN0_IDX, &wlan_setting);
-		rtw_memcpy(essid, (unsigned char *)wlan_setting.ssid, strlen(wlan_setting.ssid));
+		rtw_memcpy(essid, (unsigned char *)wlan_setting.ssid, strlen((const char *)wlan_setting.ssid));
 		if (strlen(essid) > 0) {
 			if (strncmp((const char *)essid, (const char *)argv[1], sizeof(essid)) == 0) {
 				nvdbg("\n\r%s started", argv[1]);
@@ -297,8 +297,8 @@ static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num
 		return -1;
 	}
 
-	if (wifi_get_scan_records(&ap_num, scan_buf) < 0) {
-		rtw_mfree(scan_buf, 0);
+	if (wifi_get_scan_records((unsigned int *)&ap_num, scan_buf) < 0) {
+		rtw_mfree((u8 *)scan_buf, 0);
 		return -1;
 	}
 
@@ -311,7 +311,7 @@ static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num
 			pwifi->security_type = scanned_ap_info->security;
 		}
 	}
-	rtw_mfree(scan_buf, 0);
+	rtw_mfree((u8 *)scan_buf, 0);
 	return 0;
 
 }
@@ -335,7 +335,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 	} else {
 		_find_ap_from_scan_buf(ssid, (void *)&wifi, scanned_ap_num);
 
-		if (strcmp(wifi.ssid, ssid) == 0) {
+		if (strcmp((const char *)wifi.ssid, ssid) == 0) {
 			*security_mode = wifi.security_type;
 			*channel = wifi.channel;
 			ret = 1;
@@ -506,7 +506,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 		break;
 	default:
 		while (1) {
-			security_type = _get_ap_security_mode((char*)ssid, &security_type, &ap_channel);
+			security_type = _get_ap_security_mode((char *)ssid, &security_type, (u8 *) &ap_channel);
 			if (security_type >= 0)
 				break;
 
@@ -697,11 +697,8 @@ int8_t cmd_wifi_disconnect(void)
 void cmd_wifi_info(int argc, char **argv)
 {
 	int i = 0;
-	u8 *ifname[2] = {(unsigned char*)WLAN0_NAME, (unsigned char*)WLAN1_NAME};
+	u8 wlan_idx[2] = {0, 1};
 	rtw_sw_statistics_t sw_stats;
-#ifdef CONFIG_MEM_MONITOR
-	extern int min_free_heap_size;
-#endif
 
 	rtw_wifi_setting_t setting;
 	for (i = 0; i < NET_IF_NUM; i++) {
@@ -711,8 +708,8 @@ void cmd_wifi_info(int argc, char **argv)
 
 			rltk_wlan_statistic(i, &sw_stats);
 
-			wifi_get_setting((const char *)ifname[i], &setting); // Need to change to use WLAN_IDX instead of ifname if using this API
-			wifi_show_setting((const char *)ifname[i], &setting);
+			wifi_get_setting(wlan_idx[i], &setting); // Need to change to use WLAN_IDX instead of ifname if using this API
+			wifi_show_setting(wlan_idx[i], &setting);
 
 			if (setting.mode == RTW_MODE_AP || i == 1) {
 				int client_number;
@@ -802,7 +799,7 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
 
 			/* Perform the ioctl to set the MAC address */
-			ret = netdev_ifrioctl(sockfd, 1813, (unsigned long)&req);
+			ret = netdev_ifrioctl(NULL, 1813, &req);
 			close(sockfd);
 		}
 	}
@@ -811,8 +808,9 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
-	int ret;
 #if 0
+	int ret;
+
 	/* if (wifi_is_running(WLAN0_IDX)) {
 		if (wifi_set_mode(RTW_MODE_STA) < 0) {
 			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
@@ -842,7 +840,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 	//wifi_show_setting(WLAN0_NAME, &setting);
 
 #if CONFIG_LWIP_LAYER
-	uint8_t *mac = LwIP_GetMAC(0);
+	uint8_t *mac = (uint8_t *)LwIP_GetMAC(0);
 	nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	_netlib_setmacaddr(CONFIG_WIFIMGR_STA_IFNAME, mac);
 #endif
@@ -1004,48 +1002,6 @@ exit:
 		vPortFree(pscan_config);
 }
 #endif
-void cmd_wifi_scan(int argc, char **argv) // Deprecated Function
-{
-
-	u8 *channel_list = NULL;
-	u8 *pscan_config = NULL;
-
-	if (argc > 2) {
-		int i = 0;
-		int num_channel = atoi(argv[1]);
-
-		channel_list = (u8 *)kmm_zalloc(num_channel);
-		if (!channel_list) {
-			ndbg("\n\r ERROR: Can't malloc memory for channel list");
-			goto exit;
-		}
-		pscan_config = (u8 *)kmm_zalloc(num_channel);
-		if (!pscan_config) {
-			ndbg("\n\r ERROR: Can't malloc memory for pscan_config");
-			goto exit;
-		}
-		//parse command channel list
-		for (i = 2; i <= argc - 1; i++) {
-			*(channel_list + i - 2) = (u8)atoi(argv[i]);
-			*(pscan_config + i - 2) = PSCAN_ENABLE;
-		}
-
-		if (wifi_set_pscan_chan(channel_list, pscan_config, num_channel) < 0) {
-			ndbg("\n\rERROR: wifi set partial scan channel fail");
-			goto exit;
-		}
-	}
-
-	if (wifi_scan_networks(app_scan_result_handler, NULL) != RTW_SUCCESS) {
-		ndbg("\n\rERROR: wifi scan failed");
-		goto exit;
-	}
-exit:
-	if (argc > 2 && channel_list)
-		kmm_free(channel_list);
-	if (argc > 2 && pscan_config)
-		kmm_free(pscan_config);
-}
 
 #if CONFIG_WEBSERVER
 static void cmd_wifi_start_webserver(int argc, char **argv)
@@ -1101,9 +1057,9 @@ static void cmd_debug(int argc, char **argv)
 	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
 		nvdbg("\r\n%d", wifi_set_mac_address(argv[2]));
 	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {
-		u8 mac[18] = {0};
-		wifi_get_mac_address((char *)mac);
-		nvdbg("\r\n%s", mac);
+		// rtw_mac_t *mac;
+		// wifi_get_mac_address(mac);
+		// nvdbg("\r\n%s", mac);
 	} else if (strncmp(argv[1], "ps_on", strlen("ps_on")) == 0) {
 		nvdbg("\r\n%d", wifi_enable_powersave());
 	} else if (strncmp(argv[1], "ps_off", strlen("ps_off")) == 0) {

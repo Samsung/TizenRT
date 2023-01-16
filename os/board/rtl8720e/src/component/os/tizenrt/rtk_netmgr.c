@@ -413,7 +413,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	if (config) {
 		if ((config->channel >= 1) && (config->channel <= 13)) {
 			/* If Channel Information is given by User */
-			channel_list = (unsigned char *)malloc(1); //only do 1 channel instead of multiple channels for now
+			channel_list = (char *)malloc(1); //only do 1 channel instead of multiple channels for now
 			if (!channel_list) {
 				printf("[ATWs]ERROR: Can't malloc memory for channel list\n\r");
 				return TRWIFI_FAIL;
@@ -547,7 +547,6 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 				wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
 			} else if (g_mode == RTK_WIFI_STATION_IF) {
 				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
-					int rssi;
 					wifi_info->wifi_status = TRWIFI_CONNECTED;
 					rtw_phy_statistics_t phy_statistics;
 					if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){

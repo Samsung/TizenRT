@@ -59,7 +59,6 @@ int wificsi_main(int argc, char *argv[])
 	unsigned long long *buff_tmp = NULL; /* to printf csi data*/
 	unsigned int csi_seq_num;
 	unsigned int timestamp;
-	unsigned char i = 0;
 	act_param.group_num = 0;
 	act_param.mode = 2;  /* currently only supported */
 	act_param.accuracy = 0;
@@ -95,7 +94,7 @@ int wificsi_main(int argc, char *argv[])
 	act_param.act = 0;  /* csi en */
 	act_param.enable = 1;
 	wifi_csi_config(&act_param);
-	csi_buf = malloc(csi_data_len);
+	csi_buf = (unsigned char *)malloc(csi_data_len);
 	if (csi_buf) {
 		while (1) {
 			/* example: when wifi csi rx done, call csi report handle function. */

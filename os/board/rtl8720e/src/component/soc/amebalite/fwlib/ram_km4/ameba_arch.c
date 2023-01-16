@@ -41,11 +41,13 @@
 
 #define MHZ_TICK_CNT (1000000)
 
+
 #define configCPU_CLOCK_HZ								SystemCoreClock
 /*----------------------------------------------------------------------------
   Clock Variable definitions
  *----------------------------------------------------------------------------*/
-uint32_t SystemCoreClock = 150000000;/*!< System Clock Frequency (Core Clock)*/
+
+ uint32_t SystemCoreClock = 150000000;/*!< System Clock Frequency (Core Clock)*/
 
 /*----------------------------------------------------------------------------
   Clock functions

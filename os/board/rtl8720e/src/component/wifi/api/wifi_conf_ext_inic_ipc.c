@@ -471,7 +471,7 @@ void wifi_autoreconnect_hdl(rtw_security_t security_type,
 	param.password_len = password_len;
 	param.key_id = key_id;
 
-	if (wifi_autoreconnect_task.task != NULL) {
+	if (wifi_autoreconnect_task.task != 0) {
 #if CONFIG_LWIP_LAYER
 		dhcp_stop(&xnetif[0]);
 #endif
@@ -484,7 +484,7 @@ void wifi_autoreconnect_hdl(rtw_security_t security_type,
 				return;
 			}
 
-			if (wifi_autoreconnect_task.task == NULL) {
+			if (wifi_autoreconnect_task.task == 0) {
 				break;
 			}
 		}
