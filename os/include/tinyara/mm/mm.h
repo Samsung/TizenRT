@@ -195,6 +195,7 @@
 #define HEAPINFO_DETAIL_FREE 4
 #define HEAPINFO_DETAIL_SPECIFIC_HEAP 5
 #define HEAPINFO_INIT_PEAK 6
+#define HEAPINFO_DUMP_HEAP 7
 #define HEAPINFO_PID_ALL -1
 
 #define HEAPINFO_INIT_INFO -1
@@ -214,6 +215,10 @@
 #define KREGION_START (size_t)kregionx_start[0]
 #define KREGION_SIZE  kregionx_size[0]
 #define KREGION_END (KREGION_START + KREGION_SIZE)
+#endif
+
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+extern bool abort_mode;
 #endif
 
 /* Determines the size of the chunk size/offset type */
@@ -683,6 +688,8 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 int mm_size2ndx(size_t size);
 
+void mm_dump_heap_region(uint32_t start, uint32_t end);
+int heap_dbg(const char *fmt, ...);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
 void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid);
@@ -696,6 +703,7 @@ void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid
 void heapinfo_exclude_stacksize(void *stack_ptr);
 void heapinfo_peak_init(struct mm_heap_s *heap);
 void heapinfo_dealloc_tcbinfo(void *address, pid_t pid);
+void heapinfo_dump_heap(struct mm_heap_s *heap);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 void heapinfo_update_group(mmsize_t size, pid_t pid);
 void heapinfo_update_group_info(pid_t pid, int group, int type);

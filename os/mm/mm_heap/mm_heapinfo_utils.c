@@ -57,6 +57,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <tinyara/sched.h>
+#include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
 
 /****************************************************************************
@@ -219,5 +220,38 @@ void heapinfo_dealloc_tcbinfo(void *address, pid_t pid)
 		heap->alloc_list[hash_pid].curr_alloc_size = 0;
 		heap->alloc_list[hash_pid].peak_alloc_size = 0;
 		heap->alloc_list[hash_pid].num_alloc_free = 0;
+	}
+}
+
+/************************************************************************
+ * Name: heapinfo_dump_heap
+ *
+ * Description: Print the hex value contents of heap.
+ ************************************************************************/
+void heapinfo_dump_heap(struct mm_heap_s *heap)
+{
+#if CONFIG_KMM_REGIONS > 1
+	int region;
+#else
+#define region 0
+#endif
+#if CONFIG_KMM_REGIONS > 1
+	for (region = 0; region < heap->mm_nregions; region++)
+#endif
+	{
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+		if (!abort_mode && !up_interrupt_context())
+#endif
+		{
+			mm_takesemaphore(heap);
+		}
+
+		mm_dump_heap_region((uint32_t)(heap->mm_heapstart[region]), (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE);
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+		if (!abort_mode && !up_interrupt_context())
+#endif
+		{
+			mm_givesemaphore(heap);
+		}
 	}
 }
