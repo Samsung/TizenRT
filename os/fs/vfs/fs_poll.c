@@ -273,36 +273,43 @@ int file_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 	FAR struct inode *inode;
 	int ret = -ENOSYS;
 
-	DEBUGASSERT(filep != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep != NULL);
 	inode = filep->f_inode;
 
-	if (inode != NULL) {
-		/* Is a driver registered? Does it support the poll method?
-		 * If not, return -ENOSYS
-		 */
+	/* If inode is null, notify error result */
+	if (inode == NULL) {
+		/* Error case, it is lost connection, There can be readable data exist */
+		fds->revents |= (POLLERR | POLLHUP);
+		fds->revents &= ~POLLOUT;
+		sem_post(fds->sem);
+		return OK;
+	}
+	
+	/* Is a driver registered? Does it support the poll method?
+	 * If not, return -ENOSYS
+	 */
 
-		if (INODE_IS_DRIVER(inode) &&
-			inode->u.i_ops != NULL && inode->u.i_ops->poll != NULL) {
-			/* Yes, it does... Setup the poll */
+	if (INODE_IS_DRIVER(inode) &&
+		inode->u.i_ops != NULL && inode->u.i_ops->poll != NULL) {
+		/* Yes, it does... Setup the poll */
 
-			ret = (int)inode->u.i_ops->poll(filep, fds, setup);
-		}
+		ret = (int)inode->u.i_ops->poll(filep, fds, setup);
+	}
 
-		/* Regular files (and block devices) are always readable and
-		 * writable. Open Group: "Regular files shall always poll TRUE for
-		 * reading and writing."
-		 */
+	/* Regular files (and block devices) are always readable and
+	 * writable. Open Group: "Regular files shall always poll TRUE for
+	 * reading and writing."
+	 */
 
-		if (INODE_IS_MOUNTPT(inode) || INODE_IS_BLOCK(inode)) {
-			if (setup) {
-				fds->revents |= (fds->events & (POLLIN | POLLOUT));
-				if (fds->revents != 0) {
-					sem_post(fds->sem);
-				}
+	if (INODE_IS_MOUNTPT(inode) || INODE_IS_BLOCK(inode)) {
+		if (setup) {
+			fds->revents |= (fds->events & (POLLIN | POLLOUT));
+			if (fds->revents != 0) {
+				sem_post(fds->sem);
 			}
-
-			ret = OK;
 		}
+
+		ret = OK;
 	}
 
 	return ret;
