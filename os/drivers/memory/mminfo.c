@@ -116,11 +116,16 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap = mm_get_app_heap_with_name(option->app_name);
 			break;
 #endif
+
 		default:
 			break;
 		}
 		if (heap == NULL) {
 			return -EINVAL;
+		}
+		if (option->mode == HEAPINFO_DUMP_HEAP) {
+			heapinfo_dump_heap(heap);
+			return OK;
 		}
 		if (option->mode == HEAPINFO_INIT_PEAK) {
 			heap->peak_alloc_size = 0;

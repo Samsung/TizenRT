@@ -72,9 +72,6 @@
 /****************************************************************************
  * Public data
  ****************************************************************************/
-#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-extern bool abort_mode;
-#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -117,19 +114,6 @@ static void dump_node(struct mm_allocnode_s *node, char *node_type)
 	mfdbg("%s owner pid = %d%s, allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
 #endif
 #endif
-}
-
-static void dump_corrupt_heap_region(uint32_t start, uint32_t end)
-{
-	mfdbg("#########################################################################################\n");
-	mfdbg("Dump heap : 0x%08x - 0x%08x\n", start, end);
-	mfdbg("#########################################################################################\n");
-	for (; start < end; start += 32) {
-		uint32_t *ptr = (uint32_t *)start;
-		mfdbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			   start, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
-	}
-	mfdbg("#########################################################################################\n");
 }
 
 /****************************************************************************
@@ -270,10 +254,10 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		if (iscorrupt_f || iscorrupt_r) {
 #if defined(CONFIG_MM_DUMP_CORRPUTED_HEAP)
 			mfdbg("CONFIG_MM_DUMP_CORRPUTED_HEAP enabled. Dumping full heap!!\n");
-			dump_corrupt_heap_region(heap->mm_heapstart[region], (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE);
+			heapinfo_dump_heap_region(heap->mm_heapstart[region], (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE);
 #else
 			mfdbg("Dumping the corrupted heap area\n");
-			dump_corrupt_heap_region(start_corrupt, end_corrupt);
+			mm_dump_heap_region(start_corrupt, end_corrupt);
 #endif
 			return -1;
 		}

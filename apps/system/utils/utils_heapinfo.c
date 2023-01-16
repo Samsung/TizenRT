@@ -215,7 +215,7 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "ikb:ap:fgr")) != ERROR) {
+	while ((opt = getopt(argc, args, "ikb:d:ap:fgr")) != ERROR) {
 		switch (opt) {
 		/* i : initialize the peak allocated memory size. */
 		case 'i':
@@ -234,6 +234,19 @@ int utils_heapinfo(int argc, char **args)
 			heap_name = options.app_name;
 			break;
 #endif
+		case 'd':
+			options.mode = HEAPINFO_DUMP_HEAP;
+			if (strncmp(optarg, "kernel", 7) == 0) {
+				options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
+			}
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			else {
+				options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
+				strncpy(options.app_name, optarg, BIN_NAME_MAX - 1);
+				options.app_name[BIN_NAME_MAX - 1] = '\0';
+			}
+#endif
+			break;
 		/* a, p, f, g, e : select heapinfo display options */
 		case 'a':
 			options.mode = HEAPINFO_DETAIL_ALL;
@@ -291,25 +304,26 @@ int utils_heapinfo(int argc, char **args)
 	}
 	close(heapinfo_fd);
 
-	if (init_flag == true) {
+	if (options.mode != HEAPINFO_DUMP_HEAP) {
+		if (init_flag == true) {
 #ifdef CONFIG_BUILD_PROTECTED
-		printf("[%s]", heap_name);
+			printf("[%s]", heap_name);
 #endif
-		printf("Peak allocated memory size is cleared\n");
-		return OK;
-	}
+			printf("Peak allocated memory size is cleared\n");
+			return OK;
+		}
 
-	heapinfo_show_taskinfo();
+		heapinfo_show_taskinfo();
 
 
-	if (heapinfo_display_flag == HEAPINFO_DISPLAY_GROUP) {
+		if (heapinfo_display_flag == HEAPINFO_DISPLAY_GROUP) {
 #ifdef CONFIG_HEAPINFO_USER_GROUP
-		heapinfo_show_group();
+			heapinfo_show_group();
 #else
-		printf("NOT supported!! Please enable CONFIG_HEAPINFO_USER_GROUP\n");
+			printf("NOT supported!! Please enable CONFIG_HEAPINFO_USER_GROUP\n");
 #endif
+		}
 	}
-
 	return OK;
 
 usage:
@@ -333,5 +347,6 @@ usage:
 	printf(" -r             Show the all region information\n");
 #endif
 	printf(" -i             Initialize the peak allocated size\n");
+	printf(" -d NAME	Dump entire heap. NAME can be either \"kernel\" or the app name\n");
 	return ERROR;
 }
