@@ -22,7 +22,7 @@ struct rtl_btinfo
 static void rtk_notify_info_to_wifi(uint8_t length, uint8_t *report_info)
 {
     uint8_t para_length = 1 + length;
-    uint8_t *p = (uint8_t *)kmm_malloc(para_length * sizeof(uint8_t));
+    uint8_t *p = (uint8_t *)rtw_malloc(para_length * sizeof(uint8_t));
     struct rtl_btinfo *report = (struct rtl_btinfo *)(report_info);
 
     *(p++) = report->cmd;
@@ -43,7 +43,7 @@ static void rtk_notify_info_to_wifi(uint8_t length, uint8_t *report_info)
     
 
     	rltk_coex_mailbox_to_wifi(report_info, report->len + 2);
-    kmm_free(p);
+    rtw_free(p);
     /* send BT INFO to Wi-Fi driver */
 }
 

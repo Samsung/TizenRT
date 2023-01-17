@@ -171,9 +171,12 @@ static void _tizenrt_init_sema(_sema *sema, int init_val)
 	if (*sema == NULL) {
 		*sema = (_sema) _tizenrt_zmalloc(sizeof(sem_t));
 		if (*sema == NULL) {
-			DBG_ERR("Failed to kmm_zalloc\n");
+			DBG_ERR("Failed to zalloc\n");
 			return;
 		}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		DEBUG_SET_CALLER_ADDR(*sema);
+#endif
 	} else {
 		DBG_ERR("Already inited\n");
 		return;
@@ -240,6 +243,9 @@ static void _tizenrt_mutex_init(_mutex *pmutex)
 			DBG_ERR("Failed\n");
 			goto err_exit;
 		}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		DEBUG_SET_CALLER_ADDR(*pmutex);
+#endif
 	}
 	err = pthread_mutexattr_init(&mutex_attr);
 	if (err) {
@@ -269,6 +275,9 @@ err_exit:
 			DBG_ERR("Failed\n");
 			return;
 		}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		DEBUG_SET_CALLER_ADDR(*pmutex);
+#endif
 	}
 	sem_init(*pmutex, 0, 1);
 	sem_setprotocol(*pmutex, SEM_PRIO_NONE);
@@ -406,6 +415,9 @@ static void _tizenrt_spinlock_init(_lock *plock)
 			DBG_ERR("Failed\n");
 			return;
 		}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		DEBUG_SET_CALLER_ADDR(*plock);
+#endif
 	}
 	sem_init(*plock, 0, 1);
 	sem_setprotocol(*plock, SEM_PRIO_NONE);
@@ -868,12 +880,18 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 		DBG_ERR("Fail to alloc priv\n");
 		return NULL;
 	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	DEBUG_SET_CALLER_ADDR(timer);
+#endif
 	timer->work_hdl = (struct work_s *)_tizenrt_zmalloc(sizeof(struct work_s));
 	if (timer->work_hdl == NULL) {
 		DBG_ERR("Fail to alloc timer->work_hdl\n");
 		kmm_free(timer);
 		return NULL;
 	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	DEBUG_SET_CALLER_ADDR(timer->work_hdl);
+#endif
 	timer->live = 0;
 	timer->timevalue = xTimerPeriodInTicks;
 	timer->data = pvTimerID;
@@ -895,6 +913,9 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 		kmm_free(timer);
 		return NULL;
 	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	DEBUG_SET_CALLER_ADDR(timer_entry);
+#endif
 	timer_entry->timer = timer;
 
 	_tizenrt_mutex_get(&_tizenrt_timer_mutex);
