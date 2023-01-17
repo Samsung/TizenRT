@@ -86,7 +86,8 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 
 #ifdef CONFIG_HAVE_FILENAME
 #define ASSERT_INFO(f, fmt, ...) \
-	{ if (!(f))	{ \
+	{ \
+		if (!(f)) { \
 			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
 			  up_assert((const uint8_t *)__FILE__, (int)__LINE__); \
 		} \
@@ -132,10 +133,11 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 #else
 
 #define ASSERT_INFO(f, fmt, ...) \
-	{ if (!(f))	{ \
+	{ \
+		if (!(f)) { \
 			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
 			  up_assert(); \
-			} \
+		} \
 	}
 /**
  * @brief Assert if the condition is not true
