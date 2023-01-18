@@ -932,12 +932,12 @@ void cmd_wifi_scan(int argc, char **argv)
 		int i = 0;
 		int num_channel = atoi(argv[1]);
 
-		channel_list = (u8 *)kmm_zalloc(num_channel);
+		channel_list = (u8 *)rtw_zmalloc(num_channel);
 		if (!channel_list) {
 			ndbg("\n\r ERROR: Can't malloc memory for channel list");
 			goto exit;
 		}
-		pscan_config = (u8 *)kmm_zalloc(num_channel);
+		pscan_config = (u8 *)rtw_zmalloc(num_channel);
 		if (!pscan_config) {
 			ndbg("\n\r ERROR: Can't malloc memory for pscan_config");
 			goto exit;
@@ -960,9 +960,9 @@ void cmd_wifi_scan(int argc, char **argv)
 	}
 exit:
 	if (argc > 2 && channel_list)
-		kmm_free(channel_list);
+		rtw_free(channel_list);
 	if (argc > 2 && pscan_config)
-		kmm_free(pscan_config);
+		rtw_free(pscan_config);
 }
 
 #if CONFIG_WEBSERVER

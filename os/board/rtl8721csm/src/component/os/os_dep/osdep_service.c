@@ -348,6 +348,12 @@ u8* rtw_vmalloc(u32 sz)
 #else
 	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
 #endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
+#endif
 	return pbuf;
 }
 
@@ -358,6 +364,12 @@ u8* rtw_zvmalloc(u32 sz)
 	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
 	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
 #endif
 	return pbuf;
 }
@@ -380,6 +392,12 @@ u8* rtw_malloc(u32 sz)
 #else
 	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
 #endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
+#endif
 	return pbuf;
 }
 
@@ -390,6 +408,12 @@ u8* rtw_zmalloc(u32 sz)
 	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
 	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
 #endif
 	return pbuf;
 }
@@ -403,6 +427,12 @@ u8* rtw_calloc(u32 nelements, u32 elementSize)
 		add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
 		add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
 #endif
     return pbuf;
 }

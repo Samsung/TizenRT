@@ -621,7 +621,14 @@ bool osif_msg_peek(void *p_handle, void *p_msg, uint32_t wait_ms)
 /****************************************************************************/
 void *osif_mem_alloc(RAM_TYPE ram_type, size_t size)
 {
-	return kmm_malloc(size);
+	u8 *pbuf = kmm_malloc(size);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
+#endif
+	return pbuf;
 }
 
 /****************************************************************************/
@@ -629,7 +636,14 @@ void *osif_mem_alloc(RAM_TYPE ram_type, size_t size)
 /****************************************************************************/
 void *osif_mem_aligned_alloc(RAM_TYPE ram_type, size_t size, uint8_t alignment)
 {
-	return kmm_memalign(alignment, size);
+	u8 *pbuf = kmm_memalign(alignment, size);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
+#endif
+	return pbuf;
 }
 
 /****************************************************************************/
