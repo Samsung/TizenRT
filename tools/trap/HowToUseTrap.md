@@ -460,8 +460,11 @@ Choose from the following options:-
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit TRAP Tool
-6. Reboot TARGET Device
+5. Dump specific file from target device
+r. Reboot TARGET Device
+x. Exit TRAP tool
+You may chose mutiple dump options together by entering the option numbers consectuively
+For Example - '14' to dump both RAM and External USERFS partition contents OR '35' to print RAM, USERFS and FILE contents
 1 (-> RAM Dump option chosen)
 ```
 5. If RAM Dump option is chosen, tool will prompt the user for the regions to be dumped on successful handshake
@@ -500,8 +503,11 @@ Choose from the following options:-
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit TRAP Tool
-6. Reboot TARGET Device
+5. Dump specific file from target device
+r. Reboot TARGET Device
+x. Exit TRAP Tool
+You may chose mutiple dump options together by entering the option numbers consectuively
+For Example - '14' to dump both RAM and External USERFS partition contents OR '35' to print RAM, USERFS and FILE contents
 2 (-> Userfs Dump option chosen)
 ```
 8. If Userfs Dump option is chosen, tool will dump the region on successful handshake
@@ -525,8 +531,11 @@ Choose from the following options:-
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit TRAP Tool
-6. Reboot TARGET Device
+5. Dump specific file from target device
+r. Reboot TARGET Device
+x. Exit TRAP Tool
+You may chose mutiple dump options together by entering the option numbers consectuively
+For Example - '14' to dump both RAM and External USERFS partition contents OR '35' to print RAM, USERFS and FILE contents
 4 (-> External Userfs Partition dump option chosen)
 ```
 10. If External Userfs Partition dump option is chosen, tool will dump the Userfs partition on the External Flash on successful handshake..
@@ -552,9 +561,12 @@ Choose from the following options:-
 2. Userfs Dump
 3. Both RAM and Userfs dumps
 4. External Userfs Partition Dump
-5. Exit TRAP Tool
-6. Reboot TARGET Device
-6 (-> Reboot TARGET Device option chosen)
+5. Dump specific file from target device
+r. Reboot TARGET Device
+x. Exit TRAP Tool
+You may chose mutiple dump options together by entering the option numbers consectuively
+For Example - '14' to dump both RAM and External USERFS partition contents OR '35' to print RAM, USERFS and FILE contents
+r (-> Reboot TARGET Device option chosen)
 ```
 12. If Reboot TARGET Device option is chosen, tool will send a Reboot signal string to the TARGET device and exit
 ```
@@ -562,7 +574,7 @@ CONFIG_BOARD_ASSERT_AUTORESET needs to be enabled to reboot TARGET Device after 
 do_handshake: Target Handshake successful
 Dump tool exits after successful operation
 ```
-13. The TRAP tool exits if user chooses Option 5.
+13. The TRAP tool exits if user chooses Option 'x'.
 ```
 Dump tool exits after successful operation
 ```

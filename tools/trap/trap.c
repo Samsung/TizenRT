@@ -367,10 +367,11 @@ int main(int argc, char *argv[])
 	char *dev_file;
 	char tty_path[TTYPATH_LEN] = {0, };
 	char tty_type[TTYTYPE_LEN] = {0, };
-	int choice;
+	char choice[4] = {'\0'};
 	char c;
 	char handshake_string[HANDSHAKE_STR_LEN_MAX];
 	int DUMP_FLAGS;
+	int choice_index = 0;
 
 	ret = 1;
 
@@ -384,12 +385,10 @@ int main(int argc, char *argv[])
 	dev_file = argv[1];
 
 	/* Get the tty type  */
-	if (!strcmp(dev_file, "/dev/ttyUSB1")) {
-		strncpy(tty_type, "ttyUSB1", TTYTYPE_LEN);
-	} else if (!strcmp(dev_file, "/dev/ttyUSB0")) {
-		strncpy(tty_type, "ttyUSB0", TTYTYPE_LEN);
-	} else if (!strcmp(dev_file, "/dev/ttyACM0")) {
-		strncpy(tty_type, "ttyACM0", TTYTYPE_LEN);
+	if (!strncmp(dev_file, "/dev/ttyUSB", 11)) {
+		strncpy(tty_type, &dev_file[5], TTYTYPE_LEN);
+	} else if (!strncmp(dev_file, "/dev/ttyACM", 11)) {
+		strncpy(tty_type, &dev_file[5], TTYTYPE_LEN);
 	} else {
 		printf("Undefined tty %s\n", dev_file);
 		return -1;
@@ -421,38 +420,43 @@ int main(int argc, char *argv[])
 	printf("Target device locked and ready to DUMP!!!\n");
 
 	while (1) {
-		printf("Choose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Exit TRAP Tool\n6. Reboot TARGET Device\n7. Dump specific file from Target Device\n");
+		printf("\nChoose from the following options:-\n1. RAM Dump\n2. Userfs Dump\n3. Both RAM and Userfs dumps\n4. External Userfs Partition Dump\n5. Dump specific file from target device\nr. Reboot TARGET Device\nx. Exit TRAP tool\n");
+		printf("\nYou may chose mutiple dump options together by entering the option numbers consectuively\nFor Example - \'14\' to dump both RAM and External USERFS partition contents OR \'35\' to print RAM, USERFS and FILE contents\n");
 		fflush(stdout);
-		scanf("%d", &choice);
+		scanf("%s", choice);
 		getchar();
 
 		DUMP_FLAGS = CLEAR_DUMP_FLAGS;
 
-		switch (choice) {
-		case 1:
-			DUMP_FLAGS |= RAMDUMP_FLAG;
-			break;
-		case 2:
-			DUMP_FLAGS |= USERFSDUMP_FLAG;
-			break;
-		case 3:
-			DUMP_FLAGS |= RAMDUMP_FLAG;
-			DUMP_FLAGS |= USERFSDUMP_FLAG;
-			break;
-		case 4:
-			DUMP_FLAGS |= EXTUSERFS_DUMP_FLAG;
-			break;
-		case 5:
-			break;
-		case 6:
-			DUMP_FLAGS |= REBOOT_DEVICE_FLAG;
-			break;
-		case 7:
-			DUMP_FLAGS |= FILE_DUMP_FLAG;
-			break;
-		default:
-			printf("Invalid Input\n");
-			continue;
+		while (choice_index < 4 && choice[choice_index] != '\0') {
+			switch (choice[choice_index]) {
+			case '1':
+				DUMP_FLAGS |= RAMDUMP_FLAG;
+				break;
+			case '2':
+				DUMP_FLAGS |= USERFSDUMP_FLAG;
+				break;
+			case '3':
+				DUMP_FLAGS |= RAMDUMP_FLAG;
+				DUMP_FLAGS |= USERFSDUMP_FLAG;
+				break;
+			case '4':
+				DUMP_FLAGS |= EXTUSERFS_DUMP_FLAG;
+				break;
+			case '5':
+				DUMP_FLAGS |= FILE_DUMP_FLAG;
+				break;
+			case 'r':
+				DUMP_FLAGS |= REBOOT_DEVICE_FLAG;
+				break;
+			case 'x':
+				break;
+			default:
+				printf("Invalid Input\n");
+				continue;
+			}
+
+			choice_index++;
 		}
 
 		if (DUMP_FLAGS & REBOOT_DEVICE_FLAG) {
