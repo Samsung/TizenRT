@@ -99,6 +99,7 @@ static size_t writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
 static unsigned char *out_buf;
 static bool compress_full_block;	/* indicate completion of complete block compression */
 static int compress_ret;
+static int read_last_n_nodes = 0;
 
 /****************************************************************************
  * Private Functions
@@ -176,6 +177,13 @@ int log_dump_compress_lastblock(void)
 {
 	read_node = (struct log_dump_chunk_s *)sq_peek(&log_dump_chunks);	/* reset the read node to head */
 
+	if (read_last_n_nodes > 0) {
+		int number_of_nodes = log_dump_size / LOG_CHUNK_SIZE;
+		for (int n = 1; n < (number_of_nodes - read_last_n_nodes); n++) {
+			read_node = (struct log_dump_chunk_s *)sq_next((sq_entry_t *)read_node);
+		}
+	}
+
 	if (read_node == NULL) {
 		lldbg("empty read node\n");
 		return LOG_DUMP_MEM_FAIL;
@@ -232,14 +240,15 @@ static void log_dump_mem_check(size_t max_size)
 
 int log_dump_set(FAR const char *buffer, size_t buflen)
 {
-	(void)buflen;
 
 	if (strncmp(buffer, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1) == 0) {
+		read_last_n_nodes = 0;
 		is_started_to_save = true;
 	} else if (strncmp(buffer, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1) == 0) {
 		is_started_to_save = false;
-	} else {
-		return LOG_DUMP_OPT_FAIL;
+	} else if (strncmp(buffer, LOGDUMP_OFFSET, strlen(LOGDUMP_OFFSET) + 1) == 0) {
+		read_last_n_nodes = buflen;
+		log_dump_read_wake();
 	}
 	return LOG_DUMP_OK;
 }
