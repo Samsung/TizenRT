@@ -100,6 +100,12 @@ static unsigned char *out_buf;
 static bool compress_full_block;	/* indicate completion of complete block compression */
 static int compress_ret;
 
+/* Structures used to compress last partially filled block */
+static unsigned char *last_comp_block;
+static size_t last_comp_block_size;
+static int last_comp_block_ptr;
+static bool compress_last_block;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -118,12 +124,30 @@ int log_dump_init(void)
 		lldbg("memory allocation failure\n");
 		return LOG_DUMP_MEM_FAIL;
 	}
+
+	/* The buffers allocated below are required for log-dump till the 
+	 * device is shut down or restarted. So these buffers MUST NEVER
+	 * BE FREED. 
+	 */
 	uncomp_array = (signed char *)kmm_malloc(CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (uncomp_array == NULL) {
 		lldbg("memory allocation failure\n");
-		kmm_free(node);
-		return LOG_DUMP_MEM_FAIL;
+		goto exit_with_node;
 	}
+
+	out_buf = allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
+	if (out_buf == NULL) {
+		lldbg("memory allocation failure\n");
+		goto exit_with_uncomp;
+	}
+
+	last_comp_block = allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
+	if (last_comp_block == NULL) {
+		lldbg("memory allocation failure\n");
+		goto exit_with_outbuf;
+	}
+
+
 	node->comp_head = 0;		/* since first node */
 
 	compress_curbytes = 0;
@@ -135,13 +159,16 @@ int log_dump_init(void)
 	is_started_to_save = true;
 
 	return LOG_DUMP_OK;
-}
 
-/* Structures used to compress last partially filled block */
-unsigned char *last_comp_block;
-size_t last_comp_block_size;
-int last_comp_block_ptr;
-bool compress_last_block;
+exit_with_outbuf:
+	kmm_free(out_buf);
+exit_with_uncomp:
+	kmm_free(uncomp_array);
+exit_with_node:
+	kmm_free(node);
+
+	return LOG_DUMP_MEM_FAIL;
+}
 
 /* This is used to wake up the compression thread to compress current log data */
 int log_dump_read_wake(void)
@@ -189,18 +216,10 @@ int log_dump_compress_lastblock(void)
 
 	last_comp_block_size = CONFIG_LOG_DUMP_CHUNK_SIZE;
 
-	last_comp_block = allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
-
-	if (last_comp_block == NULL) {
-		lldbg("memory allocation failure\n");
-		return LOG_DUMP_MEM_FAIL;
-	}
-
 	compress_ret = compress_block(&last_comp_block[4], &last_comp_block_size, uncomp_array, uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
 		lldbg("Fail to compress compress_ret = %d\n", compress_ret);
-		kmm_free(last_comp_block);
 		return -compress_ret;
 	}
 
@@ -216,6 +235,14 @@ int log_dump_compress_lastblock(void)
 
 static void log_dump_mem_check(size_t max_size)
 {
+	/* If kernel heap is locked, then we cannot perform any
+	 * mem free opeartions. So we just return here. The mem
+	 * free will be done when the kernel heap is released
+	 */
+	if (IS_KMM_LOCKED()) {
+		return;
+	}
+
 	if (log_dump_size > max_size) {
 		/* remove extra chunks from start */
 		size_t extra_chunk_size = log_dump_size - max_size;
@@ -249,6 +276,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 	/* need to check if the current chunks size is over max_log_size or greater than x% of free heap */
 
 	size_t max_size;
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	*free_size = kmm_get_heap_free_size();
 #else
@@ -260,6 +288,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 #endif
 	*free_size = mem.fordblks;
 #endif
+
 	size_t percent_free_size = (*free_size * CONFIG_LOG_DUMP_MAX_FREE_HEAP) / 100;
 
 	if (percent_free_size < CONFIG_LOG_DUMP_MAX_SIZE) {
@@ -272,6 +301,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 
 		if (log_dump_size + LOG_CHUNK_SIZE < max_size) {
 			/* memory available, so fetch a new buffer */
+
 			struct log_dump_chunk_s *node = (struct log_dump_chunk_s *)kmm_malloc(LOG_CHUNK_SIZE);
 
 			if (node == NULL) {
@@ -331,20 +361,31 @@ int log_dump_save(char ch)
 		return LOG_DUMP_OK;
 	}
 
+	/* If the uncompress buffer is already full and not released because
+	 * the compression is blocked by kernel heap lock, then we will not
+	 * accept any more data into the uncompress buffer.
+	 */
+	if (uncomp_curbytes == CONFIG_LOG_DUMP_CHUNK_SIZE) {
+		return LOG_DUMP_MEM_FAIL;
+	}
+
 	size_t free_size = 0;
 	int ret = 0;
 	uncomp_array[uncomp_curbytes] = ch;
 	uncomp_curbytes++;
 	if (uncomp_curbytes == CONFIG_LOG_DUMP_CHUNK_SIZE) {
-		/* compress the block, add it to the nodes, reset the uncomp_array */
-		set_comp_head = true;
 
-		out_buf = allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
-
-		if (out_buf == NULL) {
-			lldbg("memory allocation failure\n");
+		/* If kernel heap is locked we cannot allocate new buffers.
+		 * Also, we cannot perform compress operation, since the compression
+		 * code internally tries to allocate memory. So, we will just ignore
+		 * the log data until the kernel heap lock is released.
+		 */
+		if (IS_KMM_LOCKED()) {
 			return LOG_DUMP_MEM_FAIL;
 		}
+
+		/* compress the block, add it to the nodes, reset the uncomp_array */
+		set_comp_head = true;
 
 		compress_full_block = true;
 
@@ -365,7 +406,6 @@ int log_dump_save(char ch)
 
 		if (compress_ret < 0) {
 			lldbg("Fail to compress ret = %d\n", compress_ret);
-			kmm_free(out_buf);
 			return compress_ret;
 		}
 		uncomp_curbytes = 0;	/* reset */
@@ -373,13 +413,12 @@ int log_dump_save(char ch)
 		for (int i = 0; i < LOG_DUMP_COMPRESS_NODESZ - 1; i++) {
 			ret = log_dump_tobuffer(comp_size[i], &free_size);
 			if (ret < 0) {
-				kmm_free(out_buf);
 				return ret;
 			} else if (ret == LOG_DUMP_OK_HEAPCHK) {
 				char fsz_array[LOG_DUMP_STRLEN_FREEHEAP];	/* For Free heap memory string */
 				snprintf(fsz_array, sizeof(size_t), "<fsz:%08d>", free_size);
-				for (int i = 0; i < sizeof(fsz_array); i++) {
-					uncomp_array[uncomp_curbytes++] = fsz_array[i];
+				for (int n = 0; n < sizeof(fsz_array); n++) {
+					uncomp_array[uncomp_curbytes++] = fsz_array[n];
 				}
 			}
 		}
@@ -387,7 +426,6 @@ int log_dump_save(char ch)
 		for (int write_idx = 0; write_idx < writesize; write_idx++) {
 			ret = log_dump_tobuffer(out_buf[write_idx], &free_size);
 			if (ret < 0) {
-				kmm_free(out_buf);
 				return ret;
 			}
 			if (ret == LOG_DUMP_OK_HEAPCHK) {
@@ -398,7 +436,6 @@ int log_dump_save(char ch)
 				}
 			}
 		}
-		kmm_free(out_buf);
 	}
 	return ret;
 }
