@@ -455,6 +455,9 @@ extern uint32_t g_cur_app;
 #define BASE_HEAP       g_kmmheap
 #endif
 
+// Check if the kernel heap has been locked by any process.
+#define IS_KMM_LOCKED()		(g_kmmheap->mm_counts_held > 0 ? 1 : 0)
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
