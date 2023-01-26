@@ -1,5 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 8f2f9721c3a58eaeb029bbea0119127ab2f81749_2023/01/26-17:30:19 ==‎
+1.	add lock to prevent from accessing 0 address 
+2.	add data length check to avoid hardfault
+3.	fix hardfault caused by timer task preempt wifi driver task
+
 == version 3c66306d59c8311e8df6ac472c2437cae19e7191_2022/07/13-16:50:35 ==‎
 1.	Add check and timer in defragment process in lib_wlan
 

@@ -1980,6 +1980,7 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 	scan_buf_arg scan_buf;
 	int ret;
 
+	scan_buf.buf_len = 0;
 	scan_buf.buf_len = scan_buflen;
 	scan_buf.buf = (char *)rtw_malloc(scan_buf.buf_len);
 	if (!scan_buf.buf) {
@@ -2054,9 +2055,10 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 		ret = RTW_SUCCESS;
 	}
 
-	if (scan_buf.buf)
+	if (scan_buf.buf) {
 		rtw_free(scan_buf.buf);
-
+		scan_buf.buf = NULL;
+	}
 	return ret;
 }
 
