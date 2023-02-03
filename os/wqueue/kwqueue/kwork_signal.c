@@ -24,6 +24,7 @@
 
 #include <signal.h>
 #include <errno.h>
+#include <tinyara/sched.h>
 
 #include <tinyara/wqueue.h>
 
@@ -51,6 +52,8 @@
 int work_signal(int qid)
 {
 	pid_t pid;
+	uint8_t state;
+
 	/* Get the process ID of the worker thread */
 #ifdef CONFIG_SCHED_HPWORK
 	if (qid == HPWORK) {
@@ -88,5 +91,21 @@ int work_signal(int qid)
 		return -EINVAL;
 	}
 
-	return work_qsignal(pid);
+	/* Signal must be sent only when worker thread is sigwait state.
+	 * Otherwise, unnecessary signal will be sent(when worker thread is
+	 * processing the work queue).
+	 */
+
+	state = task_getstate(pid);
+	if (state == TSTATE_WAIT_SIG) {
+		/* Send signal to wake up the signal waiting thread */
+		return work_qsignal(pid);
+	} else if (state >= 0) {
+		/* It's already working, just return without signaling */
+		return OK;
+	} else {
+		/* Less than zero, No task with this pid was found */
+		sdbg("ERROR! kwqueue pid = %d is not alive\n", pid);
+		return state;
+	}
 }
