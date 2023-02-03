@@ -824,6 +824,15 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg);
  */
 FAR struct tcb_s *sched_gettcb(pid_t pid);
 
+/**
+ * @ingroup SCHED_KERNEL
+ * @brief Get the task state associated with the pid.
+ * @details @b #include <tinyara/sched.h>
+ * @param[in] pid Pid for tcb
+ * @return On success, returns task state. On error, less than zero is returned.
+ */
+uint8_t task_getstate(pid_t pid);
+
 /* File system helpers **********************************************************/
 /* These functions all extract lists from the group structure assocated with the
  * currently executing task.
