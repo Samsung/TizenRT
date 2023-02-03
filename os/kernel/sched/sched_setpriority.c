@@ -106,7 +106,7 @@
  *   sched_priority - The new task priority
  *
  * Return Value:
- *   On success, sched_setparam() returns 0 (OK). On error, -1 (ERROR) is
+ *   On success, sched_setpriority() returns 0 (OK). On error, -1 (ERROR) is
  *   returned, and errno is set appropriately.
  *
  *  EINVAL The parameter 'param' is invalid or does not make sense for the
