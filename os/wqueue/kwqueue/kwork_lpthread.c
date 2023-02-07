@@ -235,7 +235,7 @@ int work_lpstart(void)
 			int errcode = errno;
 			DEBUGASSERT(errcode > 0);
 
-			slldbg("kernel_thread %d failed: %d\n", wndx, errcode);
+			sdbg("kernel_thread %d failed: %d\n", wndx, errcode);
 			sched_unlock();
 			return -errcode;
 		}
