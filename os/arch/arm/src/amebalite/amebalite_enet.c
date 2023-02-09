@@ -60,7 +60,7 @@
 #include <stdbool.h>
 #include <net/if.h>
 #include <debug.h>
-#include "ameba_enet.h"
+#include <amebalite_enet.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
@@ -203,7 +203,7 @@ void up_netinitialize(void)
 	//struct netdev *dev = NULL;
 
 	alloc_size = sizeof(struct netdev);
-DiagPrintf("\n\r%s: amebalite_register_dev", __func__);
+
 	ameba_nm_dev_wlan0 = amebalite_register_dev(alloc_size);
 	if (ameba_nm_dev_wlan0 == NULL) {
 		rtw_printf("Failed to register amebalite netdev\n");
