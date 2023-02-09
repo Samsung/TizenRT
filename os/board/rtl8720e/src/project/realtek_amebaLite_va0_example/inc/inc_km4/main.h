@@ -7,7 +7,7 @@
 #define ATVER_1 1 // For First AT command
 #define ATVER_2 2 // For UART Module AT command
 
-#if SUPPORT_UART_LOG_SERVICE
+#if defined(SUPPORT_UART_LOG_SERVICE) && SUPPORT_UART_LOG_SERVICE
 #define ATCMD_VER ATVER_2
 #else
 #define ATCMD_VER ATVER_1

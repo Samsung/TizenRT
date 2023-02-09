@@ -68,7 +68,7 @@ extern uint32_t SystemCoreClock;
 #endif
 #define configRUN_FREERTOS_SECURE_ONLY					0
 
-#define configSUPPORT_STATIC_ALLOCATION					0
+#define configSUPPORT_STATIC_ALLOCATION					1
 
 
 /* Constants related to the behaviour or the scheduler. */

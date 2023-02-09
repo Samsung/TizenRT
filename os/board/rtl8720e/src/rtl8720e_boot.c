@@ -278,6 +278,7 @@ void app_mbedtls_rom_init(void)
 #ifdef CONFIG_BOARD_INITIALIZE
 void board_initialize(void)
 {
+	DiagPrintf("\n\r%s: enter function", __func__);
 	for (u32 rw_prot = 0; rw_prot <= 0x5C; rw_prot += 4) {
 		HAL_WRITE32(0x4100DE00, rw_prot, 0);
 	}
@@ -305,7 +306,7 @@ void board_initialize(void)
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_spi_initialize();
-	board_i2s_initialize();
+	// board_i2s_initialize();
 #ifdef CONFIG_WATCHDOG
 	amebalite_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
@@ -333,12 +334,15 @@ void board_initialize(void)
 #ifdef CONFIG_FTL_ENABLED
 	app_ftl_init();
 #endif
+	DiagPrintf("\n\r%s: before wlan init", __func__);
 #ifdef CONFIG_AMEBALITE_WIFI
 	wlan_initialize();
 #endif
+	DiagPrintf("\n\r%s: after wlan init", __func__);
 #ifdef CONFIG_AMEBALITE_BLE
 	bt_ipc_api_init_host();
 #endif
+	DiagPrintf("\n\r%s: end of board init", __func__);
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
