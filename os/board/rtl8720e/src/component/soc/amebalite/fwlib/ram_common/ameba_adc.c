@@ -59,45 +59,30 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
 	}
-	//CAPTOUCH_TypeDef *CapTouch = CAPTOUCH_DEV;
+
+	CAPTOUCH_TypeDef *CapTouch = CAPTOUCH_DEV;
 	u32 value = 0;
 	u8 len, i;
-	//u8 FT_Type;
-	//u32 Temp;
-	//u32 FT_Type_Address = 0x1F0;
+	u8 FT_Type;
+	u32 Temp;
+	u32 FT_Type_Address = 0x7EB;
 
 	assert_param(IS_ADC_MODE(ADC_InitStruct->ADC_OpMode));
 	assert_param(IS_ADC_SAMPLE_CLK(ADC_InitStruct->ADC_ClkDiv));
 	assert_param(ADC_InitStruct->ADC_CvlistLen < 16);
-#if 0
+
 	EFUSE_PMAP_READ8(0, FT_Type_Address, &FT_Type, L25EOUTVOLTAGE);
-	FT_Type &= (BIT(1) | BIT(0));
+	/* [2:0] Vref Selection */
+	FT_Type &= 0x7;
 
-	if (FT_Type == 0x2) {
-		/*Set CT_ANA_ADC_REG1X_LPAD register with 2'b 00*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG1X_LPAD;
-		Temp &= ~(BIT(6) | BIT(7));
-		CapTouch->CT_ANA_ADC_REG1X_LPAD = Temp;
-
-		/*Set CT_ANA_ADC_REG0X_LPAD register with 3'b 101*/
+	if (FT_Type == 0x3) {
+		/* Set CT_ANA_ADC_REG0X_LPAD register with 3'b 011 */
 		Temp = (u32)CapTouch->CT_ANA_ADC_REG0X_LPAD;
-		Temp &= ~(BIT(9));
-		Temp |= (BIT(8) | BIT(10));
-		CapTouch->CT_ANA_ADC_REG0X_LPAD = Temp;
-
-	} else {
-		/*Set CT_ANA_ADC_REG1X_LPAD register with 2'b 00*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG1X_LPAD;
-		Temp &= ~(BIT(6) | BIT(7));
-		CapTouch->CT_ANA_ADC_REG1X_LPAD = Temp;
-
-		/*Set CT_ANA_ADC_REG0X_LPAD register with 3'b 100*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG0X_LPAD;
-		Temp &= ~(BIT(8) | BIT(9));
-		Temp |= BIT(10);
+		Temp &= ~(0x7 << 8);
+		Temp |= (0x3 << 8);
 		CapTouch->CT_ANA_ADC_REG0X_LPAD = Temp;
 	}
-#endif
+
 	/* Disable ADC, clear pending interrupt, clear FIFO */
 	ADC_Cmd(DISABLE);
 
@@ -410,6 +395,7 @@ void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl)
 
 	/* Enable comparison interrupt */
 	ADC_INTConfig(ADC_IT_COMP_CH_EN(ADC_channel), ENABLE);
+	ADC_INTConfig(ADC_IT_COMPRE_CH_EN(ADC_channel), ENABLE);
 }
 
 /**
@@ -621,4 +607,62 @@ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 		RTIM_Cmd(TIMx[Tim_Idx], DISABLE);
 	}
 }
+
+/**
+  * @brief  Get voltage value in mV.
+  * @param  chan_data: ADC conversion data.
+  * @retval ADC voltage value in mV.
+  */
+s32 ADC_GetVoltage(u16 chan_data)
+{
+	u16 K_A, K_B, K_C;
+	s64 ka, kb, kc;
+	u8 EfuseBuf[6];
+	u32 AdcCalAddr = 0x704;
+	s32 ch_vol;
+
+	for (u8 index = 0; index < 6; index++) {
+		EFUSE_PMAP_READ8(0, AdcCalAddr + index, EfuseBuf + index, L25EOUTVOLTAGE);
+	}
+	K_A = EfuseBuf[1] << 8 | EfuseBuf[0];
+	K_B = EfuseBuf[3] << 8 | EfuseBuf[2];
+	K_C = EfuseBuf[5] << 8 | EfuseBuf[4];
+
+	if (K_A == 0xFFFF) {
+		K_A = 0xFF22;
+	}
+
+	if (K_B == 0xFFFF) {
+		K_B = 0x6E39;
+	}
+
+	if (K_C == 0xFFFF) {
+		K_C = 0xFD58;
+	}
+
+	ka = (K_A & BIT15) ? -(0x10000 - K_A) : (K_A & 0x7FFF);
+	kb = (K_B & 0xFFFF);
+	kc = (K_C & BIT15) ? -(0x10000 - K_C) : (K_C & 0x7FFF);
+
+	ch_vol = (ka * chan_data * chan_data) / 67108864 + (kb * chan_data) / 32768 + kc / 64;
+
+	return ch_vol;
+
+}
+
+/**
+  * @brief Get internal R resistance of V33 channels(CH0~CH5) in divided mode.
+  * @param none.
+  * @retval Internal R resistance value in Kohm.
+  */
+u32 ADC_GetInterR(void)
+{
+	u32 AdcResAddr = 0x7EC;
+	u8 r_offset;
+
+	EFUSE_PMAP_READ8(0, AdcResAddr, &r_offset, L25EOUTVOLTAGE);
+
+	return ((u32)r_offset + 400);
+}
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

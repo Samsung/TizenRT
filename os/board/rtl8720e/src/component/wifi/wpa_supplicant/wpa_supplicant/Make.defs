@@ -49,7 +49,7 @@
 #
 ############################################################################
 
-CSRCS += wifi_eap_config.c\
+CSRCS += #wifi_eap_config.c\
 #	 wifi_p2p_config.c \
 	 wifi_wps_config.c \
 

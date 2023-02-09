@@ -175,10 +175,11 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
   * @param  GDMA_ChNum: 0 ~ 7.
   * @param  MultiBlockCount: block counts.
   * @param  pGdmaChLli: LLP node list, point to a Linked List Item.
+  * @param  round: 0: Linear list, last node id last one 1:last node is not the end.
   * @retval   None
   */
 __weak
-void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_CH_LLI *pGdmaChLli)
+void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_CH_LLI *pGdmaChLli, u32 round)
 {
 	u32 CtlxLow, CtlxUp;
 	PGDMA_CH_LLI_ELE pLliEle = &pGdmaChLli->LliEle;
@@ -207,7 +208,7 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
 		pLliEle = &pGdmaChLli->LliEle;
 
 		/* Clear the last element llp enable bit */
-		if (1 == MultiBlockCount) {
+		if ((1 == MultiBlockCount) & (~round)) {
 			CtlxLow &= ~(BIT_CTLX_LO_LLP_DST_EN |
 						 BIT_CTLX_LO_LLP_SRC_EN);
 		}
@@ -713,11 +714,12 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 
 	if (found) {
 		GDMA_ChnlRegister(GDMA_Index, GDMA_ChNum);
+		if (IrqFun != NULL) {
 
-		IrqNum = GDMA_IrqNum[GDMA_ChNum];
-
-		InterruptRegister(IrqFun, IrqNum, IrqData, IrqPriority);
-		InterruptEn(IrqNum, IrqPriority);
+			IrqNum = GDMA_IrqNum[GDMA_ChNum];
+			InterruptRegister(IrqFun, IrqNum, IrqData, IrqPriority);
+			InterruptEn(IrqNum, IrqPriority);
+		}
 
 		return GDMA_ChNum;
 	} else {

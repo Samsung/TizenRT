@@ -6,6 +6,8 @@
 #define WAIT_TXSM_STABLE_CNT            (1000)
 #define WAIT_TXSM_STABLE_ONCE_TIME      (50)
 #define WAIT_RPWM_STABLE_BREAK_CNT      (100)
+#define BACKUP 			FALSE
+#define RESTORE 			TRUE
 
 /*--------------------Define Enum---------------------------------------*/
 /* TxPauseReasonCode */
@@ -136,6 +138,7 @@ typedef enum _SBEATPC_ {
 } SBEATPC, *PSBEATPC;
 
 /*--------------------Function declaration---------------------------------*/
+extern u8 wifi_is_enable;
 extern u8 GetRPWMValue_8720E(void);
 extern void WaitHWStateReady_8720E(void);
 extern void PsOpenRF_8720E(void);
@@ -144,16 +147,21 @@ extern void PsOpenRFHIOE_8720E(void);
 extern void PsCloseRFHIOE_8720E(void);
 extern void SysClkDown_8720E(void);
 extern void SysClkUp_8720E(void);
-extern void LowLPSOff_8720E(u8 LowLPSEnable);
 extern BOOLEAN WaitTxStateMachineOk_8720E(void);
 extern void LowPowerRxBeacon_8720E(BOOLEAN on);
 extern void PSPeriodCCA_8720E(BOOLEAN on);
 extern void WriteTxPause_8720E(u8 value, u8 rcode);
 extern void SetTxPauseFWInfo_8720E(u8 BitMask, u8 UserValue);
 extern void WriteTxPauseWithMask_8720E(u8 mask, u8 value, u8 rcode);
-extern void PwrGatedInitBBTRX(BOOLEAN on);
+extern void PwrGatedBKRSTxReg_8720E(BOOLEAN on);
+extern void PwrGatedBKRSCtrlInfo_8720E(BOOLEAN on);
+extern void PwrGatedBKRSMACTXPower_8720E(BOOLEAN on);
+extern void PwrGatedInitBBTRX_8720E(BOOLEAN on);
+extern void BeaconModeBBAGCtableUpdate_8720E(BOOLEAN on);
 extern void BeaconModeDCKbackup_8720E(void);
-extern void PwrGatedInitDRFC(BOOLEAN on);
+extern void PwrGatedInitDRFC_8720E(BOOLEAN on);
+extern void PwrGatedBKRSBBTSSIREG_8720E(BOOLEAN on);
+extern void PwrGatedWifiParmBkRs_8720E(BOOLEAN on);
 extern void PwrGatedInitBB(void);
 extern void PwrGatedInitLLTAndPageAlloc_8720E(void);
 #endif  /* __WIFIFW_POWERCTRL_RAM_H__ */

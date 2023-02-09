@@ -19,10 +19,11 @@
 
 /** @brief bt ipc dev api task private struct */
 struct bt_ipc_dev_api_task_struct {
-	void		*task;	/* I: workqueue thread */
-	void		*wakeup_sema;    /* for internal use only */
-	void		*terminate_sema; /* for internal use only */
+	void		*task;            /* I: workqueue thread */
+	void		*wakeup_sema;     /* for internal use only */
+	void		*terminate_sema;  /* for internal use only */
 	uint32_t	blocked;          /* for internal use only */
+	uint8_t		task_is_running;  /* for indicate task running */
 };
 
 typedef struct bt_ipc_dev_request_message {

@@ -26,13 +26,6 @@
 
 #define MQTT_OVER_SSL (1)
 #if (MQTT_OVER_SSL)
-#if CONFIG_USE_POLARSSL
-#include "polarssl/config.h"
-#include "polarssl/net.h"
-#include "polarssl/ssl.h"
-#include "polarssl/error.h"
-#include "polarssl/memory.h"
-#elif CONFIG_USE_MBEDTLS
 #include "mbedtls/config.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
@@ -42,7 +35,6 @@
 #include "mbedtls/version.h"
 #if (MBEDTLS_VERSION_NUMBER == 0x03000000)
 #include "mbedtls/psa_util.h"
-#endif
 #endif
 #endif
 
@@ -79,12 +71,8 @@ struct Network {
 
 #if (MQTT_OVER_SSL)
 	unsigned char use_ssl;
-#if CONFIG_USE_POLARSSL
-	ssl_context *ssl;
-#elif CONFIG_USE_MBEDTLS
 	mbedtls_ssl_context *ssl;
 	mbedtls_ssl_config *conf;
-#endif
 	char *rootCA;
 	char *clientCA;
 	char *private_key;

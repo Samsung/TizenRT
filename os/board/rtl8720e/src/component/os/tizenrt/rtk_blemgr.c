@@ -147,6 +147,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_set_adv_type,
 	trble_netmgr_set_adv_interval,
 	NULL,
+	trble_netmgr_start_adv,
 	trble_netmgr_stop_adv,
 };
 

@@ -31,23 +31,23 @@
 #define NR_RECVBUFF (32)
 #endif //CONFIG_HIGH_TP
 
-#define RECV_BULK_IN_ADDR		0x80
-#define RECV_INT_IN_ADDR		0x81
+#define RECV_BULK_IN_ADDR			0x80
+#define RECV_INT_IN_ADDR			0x81
 
 #define PHY_RSSI_SLID_WIN_MAX			100
 #define PHY_LINKQUALITY_SLID_WIN_MAX		20
 
 // Rx smooth factor
-#define Rx_Smooth_Factor (20)
+#define Rx_Smooth_Factor			(20)
 
-#define RXFRAME_ALIGN	8
-#define RXFRAME_ALIGN_SZ	(1<<RXFRAME_ALIGN)
+#define RXFRAME_ALIGN				8
+#define RXFRAME_ALIGN_SZ			(1<<RXFRAME_ALIGN)
 
-#define DRVINFO_SZ	4 // unit is 8bytes
+#define DRVINFO_SZ				4 // unit is 8bytes
 
-#define MAX_RXFRAME_CNT	512
-#define MAX_RX_NUMBLKS		(32)
-#define RECVFRAME_HDR_ALIGN 128
+#define MAX_RXFRAME_CNT				512
+#define MAX_RX_NUMBLKS				(32)
+#define RECVFRAME_HDR_ALIGN			128
 
 #define SNAP_SIZE sizeof(struct ieee80211_snap_hdr)
 
@@ -55,9 +55,10 @@
 #define RX_CMD_QUEUE				1
 #define RX_MAX_QUEUE				2
 
-#define MAX_SUBFRAME_COUNT	64
+#define MAX_SUBFRAME_COUNT			64
+#define RX_SC_ENTRY_NUM				4
 
-#define RX_SC_ENTRY_NUM 	4
+#define SIG_SAMP_INTERVAL			1000
 
 //for Rx reordering buffer control
 struct recv_reorder_ctrl {
@@ -96,14 +97,6 @@ struct	stainfo_rxcache	{
 struct smooth_rssi_data {
 	u32	elements[100];	//array to store values
 	u32	index;			//index to current array to store
-	u32	total_num;		//num of valid elements
-	u32	total_val;		//sum of valid elements
-};
-
-struct signal_stat {
-	u8	update_req;		//used to indicate
-	u8	avg_val;		//avg of valid elements
-	u8	latest_val;		//latest valid elements
 	u32	total_num;		//num of valid elements
 	u32	total_val;		//sum of valid elements
 };
@@ -218,37 +211,34 @@ struct recv_buf_stat {
 
 #define EOR BIT(30)
 
-#if defined(CONFIG_LX_HCI)
-#define LX_MAX_RX_QUEUE		1// MSDU packet queue, Rx Command Queue
-#define LX_MAX_RX_COUNT		4//RX_Q_DESC_NUM// 128
+#define MAX_RX_QUEUE		1 // MSDU packet queue, Rx Command Queue
 
+#if defined(CONFIG_LX_HCI)
+#define LX_MAX_RX_COUNT		4 //RX_Q_DESC_NUM// 128
 struct rtw_rx_ring {
-#if ((RTL8711B_SUPPORT == 1) || (RTL8721D_SUPPORT == 1))
+#if (RTL8721D_SUPPORT == 1)
 	struct recv_buf_stat	*desc;
 #else
 	struct recv_stat	*desc;
 #endif
-
 	dma_addr_t		dma;
 	unsigned int		idx;
-	struct sk_buff	*rx_buf[LX_MAX_RX_COUNT];
+	struct sk_buff		*rx_buf[LX_MAX_RX_COUNT];
 };
 #endif // CONFIG_LX_HCI
 
 #if defined(CONFIG_AXI_HCI)
-#define AXI_MAX_RX_QUEUE		1 // MSDU packet queue, Rx Command Queue
 #if defined(CONFIG_RX_RING_COUNT)
-#define AXI_MAX_RX_COUNT		CONFIG_RX_RING_COUNT //RX_Q_DESC_NUM// 128
+#define AXI_MAX_RX_COUNT	CONFIG_RX_RING_COUNT //RX_Q_DESC_NUM// 128
 #else
-#define AXI_MAX_RX_COUNT		4 //RX_Q_DESC_NUM// 128
+#define AXI_MAX_RX_COUNT	4 //RX_Q_DESC_NUM// 128
 #endif
-
 struct rtw_rx_ring {
 	struct recv_buf_stat	*desc;
 
 	dma_addr_t		dma;
 	unsigned int		idx;
-	struct sk_buff	*rx_buf[AXI_MAX_RX_COUNT];
+	struct sk_buff		*rx_buf[AXI_MAX_RX_COUNT];
 };
 #endif // CONFIG_AXI_HCI
 
@@ -258,7 +248,7 @@ struct rx_sc_entry {
 	u8 wifi_addr[3 * ETH_ALEN]; //A1 A2 A3
 	u32 is_dirty;//0 is free, 1 is alloced
 };
-#endif
+#endif // RX_SHORTCUT
 
 /*
 accesser of recv_priv: rtw_recv_entry(dispatch / passive level); recv_thread(passive) ; returnpkt(dispatch)
@@ -267,133 +257,53 @@ accesser of recv_priv: rtw_recv_entry(dispatch / passive level); recv_thread(pas
 using enter_critical section to protect
 */
 struct recv_priv {
-	//_lock	lock;
-
-	//_queue	blk_strms[MAX_RX_NUMBLKS];    // keeping the block ack frame until return ack
-	_queue	free_recv_queue;
-	//_queue	recv_pending_queue;
-	_queue	uc_swdec_pending_queue;
-
-
-	u8 *pallocated_frame_buf;
-	u8 *precv_frame_buf;
-
-	uint free_recvframe_cnt;
-
-	_adapter	*adapter;
-
-#if (PHYDM_VERSION == 1)
-	u32	bIsAnyNonBEPkts;
-#else
-	u32 is_any_non_be_pkts;
+	_queue			free_recv_queue;
+	_queue			uc_swdec_pending_queue;
+	u8			*pallocated_frame_buf;
+	u8			*precv_frame_buf;
+	uint			free_recvframe_cnt;
+	_adapter		*adapter;
+	u8			*pallocated_recv_buf;
+	u8			*precv_buf;    // 4 alignment
+	_queue			free_recv_buf_queue;
+	u32			free_recv_buf_queue_cnt;
+	struct rtw_rx_ring	rx_ring[MAX_RX_QUEUE];
+	int			rxringcount;
+	u16			rxbuffersize;
+#ifdef RX_SHORTCUT
+	struct rx_sc_entry	rx_sc_ent[RX_SC_ENTRY_NUM];
+	int			rx_sc_replace_idx;
 #endif
-	u64	rx_bytes;
-	u64	last_rx_bytes;
-	u64	rx_pkts;
-	u32	rx_drop;
-	u32 rx_overflow;
-	u16	rx_frame_null_cnt;
-	u16	rx_skb_null_cnt;
-	u16	rx_reorder_drop_cnt;
-	u16	rx_reorder_timeout_cnt;
-
-	uint  rx_icv_err;
-	uint  rx_largepacket_crcerr;
-	uint  rx_smallpacket_crcerr;
-	uint  rx_middlepacket_crcerr;
-
-	u8 *pallocated_recv_buf;
-	u8 *precv_buf;    // 4 alignment
-	_queue	free_recv_buf_queue;
-	u32	free_recv_buf_queue_cnt;
-
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-	// Rx
-#if defined(CONFIG_AXI_HCI)
-	struct rtw_rx_ring	rx_ring[AXI_MAX_RX_QUEUE];
-#else
-	struct rtw_rx_ring	rx_ring[LX_MAX_RX_QUEUE];
-#endif
-	int 	rxringcount;
-	u16	rxbuffersize;
-#endif
-
-	//For display the phy informatiom
-	u8 signal_strength_dbg;	// for debug
-	s8 rssi;
-	s8 snr;
-	s8 rxpwdb;
-	u8 signal_strength_backup;
-	u8 signal_strength;
-	u8 signal_qual;
-	u8 noise;
-	int RxSNRdB[2];
-	s8 RxRssi[2];
-	int FalseAlmCnt_all;
-
-	_timer signal_stat_timer;
-	u32 signal_stat_sampling_interval;
-	//u32 signal_stat_converging_constant;
-	struct signal_stat signal_qual_data;
-	struct signal_stat signal_strength_data;
-	struct signal_stat signal_snr_data;
+};
 
 #ifdef CONFIG_PROMISC
+struct promisc_priv {
 	u8 promisc_enabled;
 	u8 promisc_len_used;
 	u8 promisc_type;
 	_list promisc_list;
-	//_lock promisc_lock;
 	u32 promisc_bk_rcr;
 	u16 promisc_bk_rxfltmap2;
 	u8 promisc_mgntframe_enabled;
 	s8 promisc_dest_ap_rssi_avg;
-#endif
-
-#ifdef RX_SHORTCUT
-	struct rx_sc_entry	rx_sc_ent[RX_SC_ENTRY_NUM];
-	int	rx_sc_replace_idx;
-#endif
 };
-
-#define rtw_set_signal_stat_timer(recvpriv) rtw_set_timer(&(recvpriv)->signal_stat_timer, (recvpriv)->signal_stat_sampling_interval)
+#endif
 
 struct sta_recv_priv {
-
-	//_lock	lock;
 	sint	option;
-
-	//_queue	blk_strms[MAX_RX_NUMBLKS];
 	_queue defrag_q;	 //keeping the fragment frame until defrag
-
 	struct	stainfo_rxcache rxcache;
-
-	//uint	sta_rx_bytes;
-	//uint	sta_rx_pkts;
-	//uint	sta_rx_fail;
-
 };
 
 struct recv_buf {
 	_list list;
-
-//	_lock recvbuf_lock;
-
-//	u32	ref_cnt;
-
 	PADAPTER adapter;
-
-//	u8	*pbuf;
-//	u8	*pallocated_buf;
-
 	u32	len;
 	u8	*phead;
 	u8	*pdata;
 	u8	*ptail;
 	u8	*pend;
-
 	_pkt	*pskb;
-//	u8	reuse;
 };
 
 /*
@@ -442,14 +352,6 @@ struct recv_frame_hdr {
 	struct sta_info *psta;
 	//for A-MPDU Rx reordering buffer control
 	struct recv_reorder_ctrl *preorder_ctrl;
-
-#ifdef CONFIG_WAPI_SUPPORT
-	u8 UserPriority;
-	u8 WapiTempPN[16];
-	u8 WapiSrcAddr[6];
-	u8 bWapiCheckPNInDecrypt;
-	u8 bIsWaiPacket;
-#endif
 };
 
 union recv_frame {
@@ -472,18 +374,13 @@ typedef enum _RX_PACKET_TYPE {
 	C2H_PACKET = 5
 } RX_PACKET_TYPE, *PRX_PACKET_TYPE;
 
-extern union recv_frame *_rtw_alloc_recvframe(_queue *pfree_recv_queue);   //get a free recv_frame from pfree_recv_queue
 extern void rtw_init_recvframe(union recv_frame *precvframe, struct recv_priv *precvpriv);
 extern int	 rtw_free_recvframe(union recv_frame *precvframe, _queue *pfree_recv_queue);
 
 #define rtw_dequeue_recvframe(queue) rtw_alloc_recvframe(queue)
-extern int _rtw_enqueue_recvframe(union recv_frame *precvframe, _queue *queue);
-extern sint rtw_enqueue_recvframe(union recv_frame *precvframe, _queue *queue);
-extern union recv_frame *rtw_alloc_recvframe(_queue *pfree_recv_queue);   //get a free recv_frame from pfree_recv_queue
-extern sint rtw_enqueue_recvbuf_to_head(struct recv_buf *precvbuf, _queue *queue);
-extern sint rtw_enqueue_recvbuf(struct recv_buf *precvbuf, _queue *queue);
-extern struct recv_buf *rtw_dequeue_recvbuf(_queue *queue);
 
+extern union recv_frame *rtw_alloc_recvframe(_queue *pfree_recv_queue);   //get a free recv_frame from pfree_recv_queue
+union recv_frame *recvframe_chk_defrag(PADAPTER padapter, union recv_frame *precv_frame);
 extern void rtw_free_recvframe_queue(_queue *pframequeue,  _queue *pfree_recv_queue);
 u32 rtw_free_uc_swdec_pending_queue(_adapter *adapter);
 
@@ -672,12 +569,10 @@ __inline static s32 translate_percentage_to_dbm(u32 SignalStrengthIndex)
 
 struct sta_info;
 
-extern void _rtw_init_sta_recv_priv(struct sta_recv_priv *psta_recvpriv);
 extern void  mgt_dispatcher(_adapter *padapter, union recv_frame *precv_frame);
 int process_recv_indicatepkts(_adapter *padapter, union recv_frame *prframe);
 
 void rtw_rxhandler(_adapter *padapter, struct recv_buf *precvbuf);
-u32 rtw_free_buf_pending_queue(_adapter *adapter);
 union recv_frame *decryptor(_adapter *padapter, union recv_frame *precv_frame);
 
 #ifdef RX_SHORTCUT
@@ -686,6 +581,7 @@ int rtw_get_rx_sc_index(ADAPTER *Adapter, unsigned char *hdr);
 int rtw_get_rx_sc_free_entry(ADAPTER *Adapter, unsigned char *hdr);
 int rtw_check_rx_shortcut_path(_adapter *adapter, union recv_frame *precv_frame);
 #endif
+extern void rtw_signal_stat_timer_hdl(void *FunctionContext);
 
 #endif
 

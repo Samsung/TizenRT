@@ -178,6 +178,8 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 
 	g_host_ipc_api_request_info.API_ID = IPC_API_WIFI_IP_UPDATE;
 	g_host_ipc_api_request_info.param_buf[0] = (u32)LwIP_GetIP(0);
+	DCache_Clean(g_host_ipc_api_request_info.param_buf[0], 4);
+
 	DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 
 	rtw_memset(&g_host_ipc_api_msg, 0, sizeof(IPC_MSG_STRUCT));
@@ -221,7 +223,6 @@ void inic_ipc_api_host_task(void)
 #ifdef IPC_DIR_MSG_RX
 		PIPC_MSG_STRUCT p_ipc_recv_msg = ipc_get_message(IPC_DIR_MSG_RX, \
 										 IPC_D2H_WIFI_API_TRAN);
-		DCache_Invalidate((u32)p_ipc_recv_msg, sizeof(IPC_MSG_STRUCT));
 		p_ipc_msg = (inic_ipc_dev_request_message *)p_ipc_recv_msg->msg;
 #else
 		p_ipc_msg = (inic_ipc_dev_request_message *)ipc_get_message(IPC_INT_CHAN_WIFI_API_TRAN);
@@ -301,6 +302,7 @@ void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
  */
 int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 {
+	int ret = 0;
 	rtw_down_sema(&g_host_inic_api_message_send_sema);
 
 	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
@@ -332,9 +334,9 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 			break;
 		}
 	}
-
+	ret = g_host_ipc_api_request_info.ret;
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
-	return g_host_ipc_api_request_info.ret;
+	return ret;
 }
 
 /**
@@ -358,15 +360,15 @@ void inic_ipc_api_init_host(VOID)
 		}
 }
 
-unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id)
+u64 inic_ipc_host_get_wifi_tsf(unsigned char port_id)
 {
-	unsigned int ret = 0;
+	u64 ret = 0;
 #ifdef CONFIG_PLATFORM_AMEBAD2
 	/* in ips, it will return 0 and will not hang, thus no need additional check*/
 	if (port_id == 0) {
-		ret = HAL_READ32(WIFI_REG_BASE, 0x560);//REG_P0_TSFTR_L
+		ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x564)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x560); //REG_P0_TSFTR
 	} else if (port_id == 1) {
-		ret = HAL_READ32(WIFI_REG_BASE, 0x568);//REG_P1_TSFTR_L
+		ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x56C)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x568); //REG_P1_TSFTR
 	}
 #else
 	UNUSED(port_id);

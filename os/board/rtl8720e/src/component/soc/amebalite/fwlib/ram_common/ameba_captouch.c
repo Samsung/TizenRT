@@ -55,6 +55,10 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 {
 	u8 i;
 
+	u8 FT_Type;
+	u32 Temp;
+	u32 FT_Type_Address = 0x7EB;
+
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
 	assert_param(CapTouch_InitStruct->CT_DebounceEn <= 1);
@@ -70,6 +74,18 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_MbiasCurrent <= 0x3F);
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_ETCNNoiseThr <= 0xFFF);
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_ETCPNoiseThr <= 0xFFF);
+	}
+
+	EFUSE_PMAP_READ8(0, FT_Type_Address, &FT_Type, L25EOUTVOLTAGE);
+	/* [2:0] Vref Selection */
+	FT_Type &= 0x7;
+
+	if (FT_Type == 0x3) {
+		/* Set CT_ANA_ADC_REG0X_LPAD register with 3'b 011 */
+		Temp = (u32)CapTouch->CT_ANA_ADC_REG0X_LPAD;
+		Temp &= ~(0x7 << 8);
+		Temp |= (0x3 << 8);
+		CapTouch->CT_ANA_ADC_REG0X_LPAD = Temp;
 	}
 
 	/* Disable CTC, clear pending interrupt*/

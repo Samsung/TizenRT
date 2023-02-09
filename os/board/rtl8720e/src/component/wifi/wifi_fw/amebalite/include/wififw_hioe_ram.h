@@ -22,6 +22,9 @@
 #define HIOECMD_ARfcRegBaseAddr		(0x17000)
 #define HIOECMD_DRfcRegBaseAddr		(0x1E000)
 
+#define HIOE_DM_INITVALTAB_TYPE(x) 	((x)|BIT(4))
+#define HIOE_CMDFILE_SIZE(x)		((sizeof(x) - 4)*2)
+
 #define HIOECMD_WM0(reg_addr)		\
 	(HIOE_ACCESS_DWORD_MODE | ((((u32)(reg_addr)) & HIOE_REG_ADDR_MASK)<<HIOE_REG_ADDR_MASK_SHT))
 
@@ -42,9 +45,12 @@ typedef struct HIOECmdFileRSValue {
 } HIOECmdFileRSVal;
 /*--------------------Function declaration---------------------------------*/
 extern u32 PG_BackupRestoreREGTable[];
-extern void SetHIOESingleCmdValWM_8720E(u32 CmdAddrIn8byte, u32 value);
-extern void SetHIOESingleCmdValBM_8720E(u32 cmdaddrIn4byte, u8 value);
-extern void SetHIOEConfigFile_8720E(void);
+extern void HIOESetSingleCmdValWM_8720E(u32 CmdAddrIn8byte, u32 value);
+extern void HIOESetSingleCmdValBM_8720E(u32 cmdaddrIn4byte, u8 value);
+extern BOOLEAN HIOECmdInitValTypeChk_8720E(u8 HIOECmdType, u8 InitValByteMask);
+extern BOOLEAN HIOEChkChanelIdle_8720E(u32 chn_ctrl_reg, u32 backup_req_bit, u32 restore_reg_bit);
+extern void HIOEInitCmdFileToTXFF_8720E(u32 *HIOECmdFileTab, HIOECmdFileRSVal *HIOECmdFileRsValTab, u32 TXFF_Offset);
+extern void HIOESetHIOEConfigFile_8720E(void);
 extern void HIOEBackupRestore_8720E(bool mode);
-extern void CHKHigh8kTXFFPGUseOverlap_8720E(void);
+extern void HIOECHKHigh8kTXFFPGUseOverlap_8720E(void);
 #endif

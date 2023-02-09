@@ -82,7 +82,6 @@ void pmu_release_deepwakelock(uint32_t nDeviceId);
 
 void pmu_set_dev_wakeup_tick(u32 nDeviceId, u32 Ms);
 uint32_t pmu_set_sysactive_time(uint32_t timeout);
-uint32_t pmu_set_sysactive_timeFromISR(uint32_t timeout);
 void pmu_register_sleep_callback(u32 nDeviceId, PSM_HOOK_FUN sleep_hook_fun, void *sleep_param_ptr,
 								 PSM_HOOK_FUN wakeup_hook_fun, void *wakeup_param_ptr);
 void pmu_unregister_sleep_callback(u32 nDeviceId);

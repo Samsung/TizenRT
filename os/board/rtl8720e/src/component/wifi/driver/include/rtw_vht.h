@@ -32,8 +32,6 @@
 #define SET_VHT_CAPABILITY_ELE_MAX_MPDU_LENGTH(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(_pEleStart, 0, 2, _val)
 #define SET_VHT_CAPABILITY_ELE_CHL_WIDTH(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(_pEleStart, 2, 2, _val)
 #define SET_VHT_CAPABILITY_ELE_RX_LDPC(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(_pEleStart, 4, 1, _val)
-#define SET_VHT_CAPABILITY_ELE_SHORT_GI80M(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE(_pEleStart, 5, 1, _val)
-#define SET_VHT_CAPABILITY_ELE_SHORT_GI160M(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE(_pEleStart, 6, 1, _val)
 #define SET_VHT_CAPABILITY_ELE_TX_STBC(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE(_pEleStart, 7, 1, _val)
 #define SET_VHT_CAPABILITY_ELE_RX_STBC(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE((_pEleStart)+1, 0, 3, _val)
 #define SET_VHT_CAPABILITY_ELE_SU_BFER(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE((_pEleStart)+1, 3, 1, _val)
@@ -56,8 +54,6 @@
 #define GET_VHT_CAPABILITY_ELE_MAX_MPDU_LENGTH(_pEleStart)			LE_BITS_TO_1BYTE(_pEleStart, 0, 2)
 #define GET_VHT_CAPABILITY_ELE_CHL_WIDTH(_pEleStart)				LE_BITS_TO_1BYTE(_pEleStart, 2, 2)
 #define GET_VHT_CAPABILITY_ELE_RX_LDPC(_pEleStart)			LE_BITS_TO_1BYTE(_pEleStart, 4, 1)
-#define GET_VHT_CAPABILITY_ELE_SHORT_GI80M(_pEleStart)				LE_BITS_TO_1BYTE(_pEleStart, 5, 1)
-#define GET_VHT_CAPABILITY_ELE_SHORT_GI160M(_pEleStart)				LE_BITS_TO_1BYTE(_pEleStart, 6, 1)
 #define GET_VHT_CAPABILITY_ELE_TX_STBC(_pEleStart)				LE_BITS_TO_1BYTE(_pEleStart, 7, 1)
 #define GET_VHT_CAPABILITY_ELE_RX_STBC(_pEleStart)				LE_BITS_TO_1BYTE((_pEleStart)+1, 0, 3)
 #define GET_VHT_CAPABILITY_ELE_SU_BFER(_pEleStart)					LE_BITS_TO_1BYTE((_pEleStart)+1, 3, 1)
@@ -121,40 +117,19 @@ struct vht_priv {
 	u8	ldpc_cap;
 	u8	stbc_cap;
 	u16	beamform_cap;
-
-	u8	sgi_80m;/* short GI */
-	u8	ampdu_len;
-
-	u8	vht_highest_rate;
 	u8	vht_mcs_map[2];
-
-	u8 op_present: 1; /* vht_op is present */
-	u8 notify_present: 1; /* vht_op_mode_notify is present */
-
-	u8 vht_cap[32];
-	u8 vht_op[VHT_OP_IE_LEN];
-	u8 vht_op_mode_notify;
 };
 
-u8	rtw_get_vht_highest_rate(u8 *pvht_mcs_map);
-u16	rtw_vht_mcs_to_data_rate(u8 bw, u8 short_GI, u8 vht_mcs_rate);
-u64	rtw_vht_mcs_map_to_bitmap(u8 *mcs_map, u8 nss);
-void	rtw_vht_use_default_setting(_adapter *padapter);
-u32	rtw_build_vht_operation_ie(_adapter *padapter, u8 *pbuf, u8 channel);
-u32	rtw_build_vht_op_mode_notify_ie(_adapter *padapter, u8 *pbuf, u8 bw);
-u32	rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf);
-void	update_sta_vht_info_apmode(_adapter *padapter, PVOID psta);
-void	update_hw_vht_param(_adapter *padapter);
-void	VHT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
-void	VHT_operation_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
-void	rtw_process_vht_op_mode_notify(_adapter *padapter, u8 *pframe, PVOID sta);
-u32	rtw_restructure_vht_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_len, uint *pout_len);
-void	VHTOnAssocRsp(_adapter *padapter);
-u8	rtw_vht_mcsmap_to_nss(u8 *pvht_mcs_map);
+u8 rtw_get_vht_highest_rate(u8 *pvht_mcs_map);
+u64 rtw_vht_mcs_map_to_bitmap(u8 *mcs_map, u8 nss);
+void rtw_vht_use_default_setting(_adapter *padapter);
+u32 rtw_build_vht_operation_ie(_adapter *padapter, u8 *pbuf, u8 channel);
+u32 rtw_build_vht_op_mode_notify_ie(_adapter *padapter, u8 *pbuf, u8 bw);
+u32 rtw_build_vht_cap_ie(_adapter *padapter, u8 *pbuf);
+void rtw_process_vht_op_mode_notify(_adapter *padapter, u8 *pframe, PVOID sta);
+u32 rtw_restructure_vht_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_len, uint *pout_len);
+u8 rtw_vht_mcsmap_to_nss(u8 *pvht_mcs_map);
 void rtw_vht_nss_to_mcsmap(u8 nss, u8 *target_mcs_map, u8 *cur_mcs_map);
-void rtw_vht_ies_attach(_adapter *padapter, WLAN_BSSID_EX *pcur_network);
-void rtw_vht_ies_detach(_adapter *padapter, WLAN_BSSID_EX *pcur_network);
-void rtw_check_for_vht20(_adapter *adapter, u8 *ies, int ies_len);
 void rtw_bf_get_vht_gid_mgnt_packet(_adapter *padapter, union recv_frame *rframe);
 
 #endif /* _RTW_VHT_H_ */

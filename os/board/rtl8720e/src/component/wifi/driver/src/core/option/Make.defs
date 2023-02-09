@@ -49,7 +49,7 @@
 #
 ############################################################################
 
-CSRCS += rtw_opt_rf_para_rtl8720e.c
+CSRCS += rtw_opt_rf_para.c
 
 DEPPATH += --dep-path component/wifi/driver/src/core/option
 VPATH += :component/wifi/driver/src/core/option

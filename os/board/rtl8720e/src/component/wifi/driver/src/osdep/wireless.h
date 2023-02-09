@@ -52,7 +52,6 @@ typedef	int64_t __i64;
 /* Modes of operation */
 enum RTK_IW_MODE {
 	RTW_MODE_AUTO = 0,		/* Let the driver decides */
-	RTW_MODE_ADHOC,			/* Single cell network */
 	RTW_MODE_INFRA,			/* Multi cell network, roaming, ... */
 	RTW_MODE_MASTER			/* Synchronisation master or Access Point */
 };
@@ -63,25 +62,6 @@ enum RTK_IW_MODE {
 
 /* SIOCSIWAUTH/SIOCGIWAUTH struct rtw_param flags */
 #define RTW_AUTH_INDEX		0x0FFF
-
-/* SIOCSIWAUTH/SIOCGIWAUTH parameters (0 .. 4095)
- * (RTW_AUTH_INDEX mask in struct rtw_param flags; this is the index of the
- * parameter that is being set/get to; value will be read/written to
- * struct rtw_param value field) */
-enum RTK_IW_AUTH_PARAM {
-	RTW_AUTH_WPA_VERSION = 0,
-	RTW_AUTH_CIPHER_PAIRWISE,
-	RTW_AUTH_CIPHER_GROUP,
-	RTW_AUTH_KEY_MGMT,
-	RTW_AUTH_TKIP_COUNTERMEASURES,
-	RTW_AUTH_DROP_UNENCRYPTED,
-	RTW_AUTH_80211_AUTH_ALG,
-	RTW_AUTH_WPA_ENABLED,
-	RTW_AUTH_RX_UNENCRYPTED_EAPOL,
-	RTW_AUTH_ROAMING_CONTROL,
-	RTW_AUTH_PRIVACY_INVOKED
-};
-
 
 /* RTW_AUTH_80211_AUTH_ALG values (bit field) */
 #define RTW_AUTH_ALG_OPEN_SYSTEM	0x00000001

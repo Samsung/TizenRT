@@ -668,18 +668,6 @@ typedef enum _RATR_TABLE_MODE {
 #define IS_CCK_RATE(_rate) 				(MGN_1M == _rate || _rate == MGN_2M || _rate == MGN_5_5M || _rate == MGN_11M )
 #define IS_OFDM_RATE(_rate)				(MGN_6M <= _rate && _rate <= MGN_54M )
 
-#ifdef CONFIG_IEEE80211K
-struct rate_section_ent {
-	u8 tx_num; /* value of RF_TX_NUM */
-	u8 rate_num;
-	u8 *rates;
-};
-
-extern struct rate_section_ent rates_by_sections[];
-
-#define rate_section_to_tx_num(section) (rates_by_sections[(section)].tx_num)
-#define rate_section_rate_num(section) (rates_by_sections[(section)].rate_num)
-#endif
 /* NOTE: This data is for statistical purposes; not all hardware provides this
  *       information for frames received.  Not setting these will not cause
  *       any adverse affects. */
@@ -1232,11 +1220,7 @@ struct rtw_ieee80211_channel {
 
 #define VENDOR_HT_CAPAB_OUI_TYPE 0x33 /* 00-90-4c:0x33 */
 
-u8 hal_ch_offset_to_secondary_ch_offset(u8 ch_offset);
-u8 *rtw_set_ie_ch_switch(u8 *buf, u32 *buf_len, u8 ch_switch_mode, u8 new_ch, u8 ch_switch_cnt);
-u8 *rtw_set_ie_secondary_ch_offset(u8 *buf, u32 *buf_len, u8 secondary_ch_offset);
-
-u8 *rtw_get_ie_ex(u8 *in_ie, uint in_len, u8 eid, u8 *oui, u8 oui_len, u8 *ie, uint *ielen);
+u8 *wifi_rom_get_ie_ex(u8 *in_ie, uint in_len, u8 eid, u8 *oui, u8 oui_len, u8 *ie, uint *ielen);
 int rtw_ies_remove_ie(u8 *ies, uint *ies_len, uint offset, u8 eid, u8 *oui, u8 oui_len);
 
 int rtw_get_wapi_ie(u8 *in_ie, uint in_len, u8 *wapi_ie, u16 *wapi_len);
@@ -1246,14 +1230,7 @@ u8 rtw_is_wps_ie(u8 *ie_ptr, uint *wps_ielen);
 void dump_ies(u8 *buf, u32 buf_len);
 void dump_wps_ie(u8 *ie, u32 ie_len);
 
-//struct registry_priv;
-//int rtw_generate_ie(struct registry_priv *pregistrypriv);
-
-void rtw_get_bcn_info(struct wlan_network *pnetwork);
-int rtw_parse_sec_ie_akm_mgc(u8 *ie, int ie_len, int *auth_key_mgmt, int *mgmt_group_cipher);
-
-void rtw_macaddr_cfg(u8 *mac_addr);
-
+int wifi_rom_parse_sec_ie_akm_mgc(u8 *ie, int ie_len, int *auth_key_mgmt, int *mgmt_group_cipher);
 u16 rtw_mcs_rate(u8 rf_type, u8 bw_40MHz, u8 short_GI_20, u8 short_GI_40, unsigned char *MCS_rate);
 
 

@@ -128,7 +128,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 		}
 	}
 
-	/* Step2: Adjust R_CAL. Enter the following loop: each loop decides one bit of 4800002c[13:8]-RCAL, i.e. the first loop decides RCAL[5], the second loop decides RCAL[4] ¡­, suppose the current loop is N (N=1..6) */
+	/* Step2: Adjust R_CAL. Enter the following loop: each loop decides one bit of 4800002c[13:8]-RCAL, i.e. the first loop decides RCAL[5], the second loop decides RCAL[4] Â¡Â­, suppose the current loop is N (N=1..6) */
 	/* Loop Step1: Set RCAL[6-N] = 0x1 */
 	/* Loop Step2: Wait some time for clock stable (this wait time decide by SW) */
 	/* Loop Step3: Enable Calibration: 0x4800_2840 = 0x8200_0000 */
@@ -174,7 +174,12 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 		regu->REGU_32KOSC |= min_delta_r;
 
 		/* It takes 1ms to stable */
-		DelayMs(1);
+		if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
+			DelayMs(2);
+
+		} else {
+			DelayMs(1);
+		}
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(AON128K_CAL_CLK);
@@ -190,8 +195,10 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 	DBG_8195A("[CAL131K]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
 
 	if (cur_ppm >= ppm_limit) {
-		DBG_8195A("[CAL131K]: PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
-		assert_param(0);
+		DBG_8195A("[CAL131K]: !!! cal fail !!! PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
+		if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
+			assert_param(0);
+		}
 	}
 
 	return TRUE;
@@ -384,6 +391,28 @@ void OSC4M_Init(void)
 {
 
 }
+/**
+  * @brief  XTAL Init
+  * @note This is the special setting of amebalite. Special settings are required because the XTAL default parameter is not optimal.
+  */
+void XTAL_INIT(void)
+{
+	XTAL_TypeDef *xtal = XTAL_BASE;
+
+	xtal->XTAL_ANAPAR_XTAL_ON_0 = 0x008103FF; /*04h*/
+	xtal->XTAL_ANAPAR_XTAL_ON_1 = 0xFC3B9D80; /*08h*/
+	xtal->XTAL_ANAPAR_XTAL_ON_2 = 0x00000BE9; /*0ch*/
+	xtal->XTAL_ANAPAR_XTAL_OFF_0 = 0xCC0FFF90; /*10h*/
+	xtal->XTAL_ANAPAR_XTAL_OFF_1 = 0x00000068; /*14h*/
+
+	xtal->XTAL_FEN = 0x00000004; /*1ch*/
+	xtal->XTAL_ANAPAR_XTAL_PDCK = 0x000DFFD0; /*20h*/
+	xtal->XTAL_ANAPAR_XTAL_AAC = 0xC7FEFE04; /*24h*/
+	xtal->XTAL_ANAPAR_XTAL_AAC_ON_1 = 0x0000003C; /*28h*/
+	xtal->XTAL_ANAPAR_XTAL_MODE_DEC_ON_0 = 0x988365E2; /*2ch*/
+
+}
+
 void XTAL_AACK(void)
 {
 	u32 temp;
@@ -445,5 +474,32 @@ void XTAL_PDCK(void)
 	xtal->XTAL_ANAPAR_XTAL_PDCK |= XTAL_BIT_EN_XTAL_PDCK_DIGI;
 
 }
+
+/**
+  * @brief  Set CPU clock Source.
+  * @param  Source: This parameter can be one of the following values:
+  *		 @arg CLK_CPU_DPLL
+  *		 @arg CLK_CPU_MPLL
+  *		 @arg CLK_CPU_LBUS
+   *		 @arg CLK_CPU_XTAL
+  */
+void CPU_ClkSet_NonOS(u32 Source)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
+
+	/* 1. Select CPU clock source */
+	if (Source != LSYS_GET_CKSL_PLFM(Temp)) {
+		Temp &= ~(LSYS_MASK_CKSL_PLFM);
+		Temp |=  LSYS_CKSL_PLFM(Source);
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Temp);
+
+		__DSB();
+		__NOP();
+	}
+
+	/* 2. update for DelayUs */
+	RBSS_UDELAY_CLK = CPU_ClkGet() / MHZ_TICK_CNT;
+}
+
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

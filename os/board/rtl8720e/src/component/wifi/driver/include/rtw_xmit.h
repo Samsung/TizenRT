@@ -53,11 +53,7 @@
 /*  Define MAX_XMITBUF_SZ										*/
 /*--------------------------------------------------------------*/
 #if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-#if defined(CONFIG_INIC_IPC_HIGH_TP)
-#define NR_XMITBUFF	(24)
-#else
 #define NR_XMITBUFF (8)
-#endif //CONFIG_INIC_IPC_HIGH_TP
 #endif //interface define
 
 /*--------------------------------------------------------------*/
@@ -80,7 +76,7 @@
 #define XMIT_BE_QUEUE (2)
 #define XMIT_BK_QUEUE (3)
 
-#if defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8735B)
+#if defined(CONFIG_PLATFORM_8735B)
 #define VO_QUEUE_INX		0
 #define VI_QUEUE_INX		1
 #define BE_QUEUE_INX		2
@@ -112,7 +108,7 @@
 #else
 #define HW_QUEUE_ENTRY		8
 #endif
-#endif // #if defined(CONFIG_PLATFORM_8195BHP)
+#endif // #if defined(CONFIG_PLATFORM_8735B)
 
 #define WEP_IV(pattrib_iv, dot11txpn, keyidx)\
 do{\
@@ -164,9 +160,8 @@ do {\
 } while (0)
 
 
-#if  defined(CONFIG_RTL8812A) || defined(CONFIG_RTL8821A)|| defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8711B) \
-	|| defined(CONFIG_RTL8188F) || defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8730A) \
-	|| defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8723D) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
+#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8730A) \
+	|| defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 #define TXDESC_SIZE 40
 #elif defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8735B)
 #define TXDESC_SIZE 48
@@ -174,30 +169,17 @@ do {\
 #define TXDESC_SIZE 32
 #endif
 
-#ifdef CONFIG_TX_EARLY_MODE
-#define EARLY_MODE_INFO_SIZE	8
-#endif
-
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-#if defined(CONFIG_RTL8711B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || \
-	defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)// buffer descriptor architecture
 #define TXDESC_OFFSET TXDESC_SIZE
-#else
-#define TXDESC_OFFSET 0
-#endif
 #define TX_DESC_NEXT_DESC_OFFSET	40
-#endif
-
-#define TX_FRAGMENTATION_THRESHOLD 			2346
+#define TX_FRAGMENTATION_THRESHOLD 	2346
 
 #ifdef TX_SHORTCUT
-#define TX_SC_ENTRY_NUM 	4
+#define TX_SC_ENTRY_NUM 		4
 #endif
 
 union Keytype {
 	u8   skey[16];
 	u32  lkey[4];
-	//u8  llkey[32];
 };
 
 // Suppose (TX_DESC_MODE=1) ==> Segment number for each tx_buf_desc is 4. 2X4 = 8 (double words).
@@ -213,32 +195,22 @@ struct tx_buf_desc {
 };
 
 struct tx_desc {
-
 	//DWORD 0
 	unsigned int txdw0;
-
 	unsigned int txdw1;
-
 	unsigned int txdw2;
-
 	unsigned int txdw3;
-
 	unsigned int txdw4;
-
 	unsigned int txdw5;
-
 	unsigned int txdw6;
-
 	unsigned int txdw7;
-#if defined(CONFIG_LX_HCI)||defined(CONFIG_RTL8188F) ||defined(CONFIG_RTL8192E) ||defined(CONFIG_RTL8723D) ||defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B) || \
+#if defined(CONFIG_LX_HCI)|| defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B) || \
 	defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
 	unsigned int txdw8;
-
 	unsigned int txdw9;
 #endif
 #if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8735B)
 	unsigned int txdw10;
-
 	unsigned int txdw11;
 #endif
 };
@@ -249,9 +221,6 @@ union txdesc {
 	unsigned int value[TXDESC_SIZE >> 2];
 };
 
-
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-
 #if defined(CONFIG_AXI_HCI) || defined(CONFIG_WLAN_HAL_TEST)
 #define PCI_MAX_TX_QUEUE_COUNT	 HW_QUEUE_ENTRY
 #else
@@ -259,7 +228,7 @@ union txdesc {
 #endif
 
 struct rtw_tx_ring {
-#if ((RTL8711B_SUPPORT == 1) || (RTL8721D_SUPPORT == 1) || (RTL8195B_SUPPORT == 1) || (RTL8710C_SUPPORT == 1) || (RTL8730A_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1)) || (RTL8721F_SUPPORT == 1)
+#if ((RTL8721D_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1)) || (RTL8721F_SUPPORT == 1)
 	struct tx_buf_desc	*desc;
 #else
 	struct tx_desc	*desc;
@@ -270,14 +239,9 @@ struct rtw_tx_ring {
 	_queue			queue;
 	u32				qlen;
 };
-#endif // #if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 
 struct	hw_xmit	{
-	//_lock xmit_lock;
-	//_list	pending;
-	_queue *sta_queue;
-	//struct hw_txqueue *phwtxqueue;
-	//sint	txcmdcnt;
+	_queue sta_queue;
 	int	accnt;
 };
 
@@ -325,6 +289,7 @@ struct pkt_attrib {
 	u8	triggered;//for ap mode handling Power Saving sta
 	u8	qsel;
 	u8	eosp;
+	u8	order;// +htc/order bit: fc->bit15
 	u8	rate;
 	u8	intel_proxim;
 	u8 	retry_ctrl;
@@ -336,6 +301,14 @@ struct pkt_attrib {
 	u8 ether_hdr[14];
 #endif
 	u8	navusehdr;	//NAVUSEHDR
+
+#if defined (CONFIG_MSFT) && CONFIG_MSFT
+	u8 rate_fallback_table_idx;
+#endif
+#ifdef CONFIG_RELAY_MESH
+	u8	tx_swap;
+	u8 	ul_swap;
+#endif
 };
 
 #define WLANHDR_OFFSET	64
@@ -383,54 +356,39 @@ void rtw_sctx_done_err(struct submit_ctx **sctx, int status);
 void rtw_sctx_done(struct submit_ctx **sctx);
 
 typedef struct _XIMT_BUF_ {
-	u32     AllocatBufAddr;
-	u32     BufAddr;
-	u32     BufLen;
+	u32			AllocatBufAddr;
+	u32			BufAddr;
+	u32			BufLen;
 } XIMT_BUF, *PXIMT_BUF;
 
 struct xmit_buf {
-	_list	list;
-
-	_adapter *padapter;
-
-	_pkt *pkt;
-	u8 *pbuf;
-
-	void *priv_data;
-
-	u16 buf_tag; // 0: Normal xmitbuf, 1: extension xmitbuf, 2:cmd xmitbuf
-	u16 flags;
-	u32 alloc_sz;
-
-	u32  len;
-
-	struct submit_ctx *sctx;
-
+	_list			list;
+	_adapter		*padapter;
+	_pkt			*pkt;
+	u8			*pbuf;
+	void			*priv_data;
+	u16			buf_tag; // 0: Normal xmitbuf, 1: extension xmitbuf, 2:cmd xmitbuf
+	u16			flags;
+	u32			alloc_sz;
+	u32			len;
+	struct submit_ctx	*sctx;
 #if defined(DBG_XMIT_BUF )|| defined(DBG_XMIT_BUF_EXT)
-	u8 no;
+	u8			no;
 #endif
-
 #if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
-	XIMT_BUF BufInfo[4];
-	u32 BlockNum;
+	XIMT_BUF		BufInfo[4];
+	u32			BlockNum;
 #endif
 };
 
-
 struct xmit_frame {
-	_list	list;
-
-	struct pkt_attrib attrib;
-
-	_pkt *pkt;
-
-	int	frame_tag;
-
-	_adapter *padapter;
-
-	u8	*buf_addr;
-
-	struct xmit_buf *pxmitbuf;
+	_list			list;
+	struct pkt_attrib	attrib;
+	_pkt			*pkt;
+	int			frame_tag;
+	_adapter		*padapter;
+	u8			*buf_addr;
+	struct xmit_buf		*pxmitbuf;
 
 #if defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
 	u32 TxDexAddr;
@@ -458,24 +416,12 @@ struct tx_servq {
 };
 
 struct sta_xmit_priv {
-	//_lock	lock;
 	sint	option;
 	sint	apsd_setting;	//When bit mask is on, the associated edca queue supports APSD.
-
-
-	//struct tx_servq blk_q[MAX_NUMBLKS];
 	struct tx_servq	blk_q;
-
 	_list 	legacy_dz;
 	_list  apsd;
-
 	u16 txseq_tid[MAXTID];
-
-	//uint	sta_tx_bytes;
-	//u64	sta_tx_pkts;
-	//uint	sta_tx_fail;
-
-
 };
 
 
@@ -496,71 +442,34 @@ struct agg_pkt_info {
 };
 
 
-struct	xmit_priv	{
-
-	_lock	lock;
-
-	//_queue	blk_strms[MAX_NUMBLKS];
-	_queue	pending;
-
-	//_queue	legacy_dz_queue;
-	//_queue	apsd_queue;
-
-	u8 *pallocated_frame_buf;
-	u8 *pxmit_frame_buf;
-	uint free_xmitframe_cnt;
-
-	//uint mapping_addr;
-	//uint pkt_sz;
-
-	_queue	free_xmit_queue;
-
-	_adapter	*adapter;
-
-	u8	vcs;
-	//u16  rts_thresh;
-
-	u64	tx_bytes;
-	u64	tx_pkts;
-	u64	tx_drop;
-	u64	last_tx_bytes;
-	u64	last_tx_pkts;
-
-	struct hw_xmit hwxmits;
-
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI) || defined(CONFIG_AXI_HCI)
+struct xmit_priv {
+	_lock			lock;
+	u8			*pallocated_frame_buf;
+	u8			*pxmit_frame_buf;
+	uint			free_xmitframe_cnt;
+	_queue			free_xmit_queue;
+	_adapter		*adapter;
+	u8			vcs;
 	// Tx
 	struct rtw_tx_ring	tx_ring[PCI_MAX_TX_QUEUE_COUNT];
-	int	txringcount[PCI_MAX_TX_QUEUE_COUNT];
-	u8 	beaconDMAing;		//flag of indicating beacon is transmiting to HW by DMA
-#endif
-
-	_queue free_xmitbuf_queue;
-	//_queue pending_xmitbuf_queue;
-	u8 *pallocated_xmitbuf;
-	u8 *pxmitbuf;
-	uint free_xmitbuf_cnt;
+	u8			beaconDMAing;		//flag of indicating beacon is transmiting to HW by DMA
+	_queue			free_xmitbuf_queue;
+	u8			*pallocated_xmitbuf;
+	u8			*pxmitbuf;
+	uint			free_xmitbuf_cnt;
 #if USE_XMIT_EXTBUFF
-	_queue free_xmit_extbuf_queue;
-	u8 *pallocated_xmit_extbuf;
-	u8 *pxmit_extbuf;
-	uint free_xmit_extbuf_cnt;
+	_queue			free_xmit_extbuf_queue;
+	u8			*pallocated_xmit_extbuf;
+	u8			*pxmit_extbuf;
+	uint			free_xmit_extbuf_cnt;
 #endif
-	u8   hw_ssn_seq_no;/* mapping to REG_HW_SEQ 0,1,2,3 */
-
-	u16	nqos_ssn;
+#if (defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8735B))
+	u8			hw_ssn_seq_no;/* mapping to REG_HW_SEQ 0,1,2,3 */
+#endif // (defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8735B))
 #ifdef CONFIG_XMIT_ACK
-	u8 ccx_txok;
+	u8			ccx_txok;
 #endif
-
-	u16 tx_agg_max_num;
-
-#ifdef CONFIG_TX_EARLY_MODE
-
-#define MAX_AGG_PKT_NUM 256 //Max tx ampdu coounts		
-
-	struct agg_pkt_info agg_pkt[MAX_AGG_PKT_NUM];
-#endif
+	u16			tx_agg_max_num;
 };
 
 extern struct xmit_buf *rtw_alloc_xmitbuf_ext(struct xmit_priv *pxmitpriv, u32 size);
@@ -598,9 +507,6 @@ s32 _rtw_init_xmit_priv(struct xmit_priv *pxmitpriv, _adapter *padapter);
 void _rtw_free_xmit_priv(struct xmit_priv *pxmitpriv);
 
 
-void rtw_init_hwxmits(_adapter *padapter);
-
-
 s32 rtw_xmit(_adapter *padapter, _pkt **pkt);
 
 sint xmitframe_enqueue_for_sleeping_sta(_adapter *padapter, struct xmit_frame *pxmitframe);
@@ -623,11 +529,10 @@ thread_return	rtw_xmit_thread(thread_context context);
 #endif
 
 u32	rtw_get_ff_hwaddr(struct xmit_frame	*pxmitframe);
+int dump_mgntframe(_adapter *padapter, struct xmit_frame *pmgntframe);
 
-extern s32 rtw_xmit_mgnt(_adapter *padapter, struct xmit_frame *pmgntframe);
 extern s32 rtw_xmit_data(PADAPTER padapter, struct xmit_frame *pxmitframe);
 extern s32 rtw_xmit_xmitbuf(_adapter *padapter, struct xmit_buf *pxmitbuf);
-extern u32 ffaddr2deviceId(struct dvobj_priv *pdvobj, u32 addr);
 #ifdef CONFIG_IEEE80211W
 extern s32 rtw_mgmt_xmitframe_coalesce(_adapter *padapter, _pkt *pkt, struct xmit_frame *pxmitframe);
 #endif

@@ -7,7 +7,7 @@
 #include "rtl8721d.h"
 #endif
 
-#if defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "ameba.h"
 #endif
 

@@ -323,6 +323,32 @@
 #define BIT_FS_GTINT0_INT                          ((u32)0x00000001 << 0)          /*!<RW1C 0  General Timer[0] interrupt */
 /** @} */
 
+/** @defgroup REG_PHYSTS_REL
+ * @brief PHYSTS REALSE
+ * @{
+ **/
+#define BIT_MASK_PHY_STS_STR                       ((u32)0x000000FF << 24)          /*!<R/W 0  physts start read address,8 bytes unit */
+#define BIT_PHY_STS_STR(x)                         ((u32)(((x) & 0x000000FF) << 24))
+#define BIT_GET_PHY_STS_STR(x)                     ((u32)(((x >> 24) & 0x000000FF)))
+#define BIT_MASK_PHY_STS_NUM                       ((u32)0x000000FF << 16)          /*!<R/W 0  physts packet number in physts buffer */
+#define BIT_PHY_STS_NUM(x)                         ((u32)(((x) & 0x000000FF) << 16))
+#define BIT_GET_PHY_STS_NUM(x)                     ((u32)(((x >> 16) & 0x000000FF)))
+#define BIT_PHY_SYS_POLL                           ((u32)0x00000001 << 0)          /*!<R/W 0  physts release polling,when polling done,write the bit to 0 */
+/** @} */
+
+/** @defgroup REG_CHANNEL_INFO_REL
+ * @brief CHANNEL INFO REALSE
+ * @{
+ **/
+#define BIT_MASK_CHINFO_STR                        ((u32)0x000000FF << 24)          /*!<R/W 0  channel info start read address,8 bytes unit */
+#define BIT_CHINFO_STR(x)                          ((u32)(((x) & 0x000000FF) << 24))
+#define BIT_GET_CHINFO_STR(x)                      ((u32)(((x >> 24) & 0x000000FF)))
+#define BIT_MASK_CHINFO_NUM                        ((u32)0x000000FF << 16)          /*!<R/W 0  channel info packet number in csi buffer */
+#define BIT_CHINFO_NUM(x)                          ((u32)(((x) & 0x000000FF) << 16))
+#define BIT_GET_CHINFO_NUM(x)                      ((u32)(((x >> 16) & 0x000000FF)))
+#define BIT_CHINFO_POLL                            ((u32)0x00000001 << 0)          /*!<R/W 0  channel info release polling,when polling done,write the bit to 0 */
+/** @} */
+
 /**************************************************************************//**
  * @defgroup REG_TC0_CTRL
  * @brief Counter 0 data
@@ -1343,8 +1369,9 @@
 #define REG_FWISR                                    0x0134
 #define REG_FTIMR                                    0x0138
 #define REG_FTISR                                    0x013C
-#define REG_PKTBUF_DBG_CTRL                          0x0140
-#define REG_PKTBUF_DBG_DATA_L                        0x0144
+#define REG_PHYSTS_REL                               0x0140
+#define REG_CHANNEL_INFO_REL                         0x0144
+
 #define REG_PKTBUF_DBG_DATA_H                        0x0148
 //#define REG_                                         0x014C
 #define REG_TC0_CTRL                                 0x0150

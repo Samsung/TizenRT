@@ -27,7 +27,7 @@ extern "C"
 #endif
 
 #ifndef UUID128_STR
-#define UUID128_STR "%08x-%04x-%04x-%04x-%04x%08x"
+#define UUID128_STR "%08lx-%04x-%04x-%04x-%04x%08lx"
 #endif
 
 #ifndef UUID128_VAL
@@ -52,6 +52,8 @@ extern "C"
     } while (0)
 
 void ble_addr_to_str(void *paddr, char *str, uint32_t len);
+
+int str_to_int(char *str);
 
 int hexnum_str_to_int(char *str);
 

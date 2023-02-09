@@ -720,23 +720,27 @@ extern "C"
   */
 
 /** @brief Local Device Name */
-typedef struct {
+typedef struct
+{
 	uint8_t  local_name[40];
 } T_LOCAL_NAME;
 
 /** @brief Local Device Appearance */
-typedef struct {
+typedef struct
+{
 	uint16_t local_appearance;
 	uint8_t  padding[2];
 } T_LOCAL_APPEARANCE;
 
 /** @brief Local IRK */
-typedef struct {
+typedef struct
+{
 	uint8_t local_irk[16];
 } T_LOCAL_IRK;
 
 /** @brief Remote Bluetooth device address info */
-typedef struct {
+typedef struct
+{
 	uint8_t  addr[6];
 	uint8_t  remote_bd_type;
 	uint8_t  bond_flags;
@@ -744,7 +748,8 @@ typedef struct {
 
 #if F_BT_LE_PRIVACY_SUPPORT
 /** @brief LE privacy information */
-typedef struct {
+typedef struct
+{
 	bool is_discov;
 	bool central_addr_resolv;
 	bool resolv_addr_only;
@@ -752,26 +757,30 @@ typedef struct {
 #endif
 
 /** @brief LE CCCD info */
-typedef struct {
+typedef struct
+{
 	uint16_t        handle;
 	uint16_t        ccc_bits;
 } T_CCCD_ELEM;
 
-typedef struct {
+typedef struct
+{
 	uint8_t data_length;
 	uint8_t padding[3];
 	uint8_t data[1];
 } T_CCCD_DATA;
 
 /** @brief LE Key Type */
-typedef enum {
+typedef enum
+{
 	LE_KEY_UNAUTHEN              = 0x04, /**< SSP generated link key without MITM protection. */
 	LE_KEY_AUTHEN                = 0x05, /**< SSP generated link key with MITM protection. */
 	LE_KEY_UNAUTHEN_P256         = 0x07, /**< Security Connections generated link key without MITM protection. */
 	LE_KEY_AUTHEN_P256           = 0x08, /**< Security Connections link key with MITM protection. */
 } T_LE_KEY_TYPE;
 
-typedef struct {
+typedef struct
+{
 	uint8_t local_bd_type;
 	uint16_t flags;
 	T_LE_REMOTE_BD remote_bd;
@@ -784,7 +793,8 @@ typedef struct {
 } T_LE_DEV_INFO;
 
 /** @brief LE key entry */
-typedef struct {
+typedef struct
+{
 	bool is_used;
 	uint8_t idx;
 	uint16_t flags;
@@ -794,6 +804,13 @@ typedef struct {
 	T_LE_REMOTE_BD remote_bd;
 	T_LE_REMOTE_BD resolved_remote_bd;
 } T_LE_KEY_ENTRY;
+
+typedef struct
+{
+	uint8_t link_key_length;
+	uint8_t padding[3];
+	uint8_t key[28];
+} T_LE_LTK;
 
 /** End of GAP_LE_STORAGE_Exported_Types
   * @}
@@ -1338,6 +1355,31 @@ bool le_delete_dev_info(T_LE_REMOTE_BD remote_bd);
  * @retval false    Operation failure.
  */
 bool le_get_bond_priority(uint8_t *p_bond_num, uint8_t *p_pri_table);
+
+/**
+ * @brief   Modify local LTK.
+ *
+ * @param[in] p_entry        Pointer to the key entry of bonded device.
+ * @param[in] key_length     key length, Range: 7 to 16.
+ * @param[in] p_ltk          Pointer to local ltk to save.
+ * @return Operation result.
+ * @retval true     Operation success.
+ * @retval false    Operation failure.
+ */
+bool le_set_local_ltk(T_LE_KEY_ENTRY *p_entry, uint8_t key_length, uint8_t *p_ltk);
+
+/**
+ * @brief   Erase CCCD except specific attribute handle.
+ *
+ *          NOTE: This function can only be used for standby state (i.e., no link, not initiating, etc.).
+ *
+ * @param[in] handle_num     Number of attribute handle of CCCD which will not be erased
+ * @param[in] p_handle       Pointer to attribute handle of CCCD which will not be erased
+ * @return Operation result.
+ * @retval true     Operation success.
+ * @retval false    Operation failure.
+ */
+bool le_clear_cccd_data(uint16_t handle_num, uint16_t *p_handle);
 
 /** @} */ /* End of group GAP_LE_STORAGE_EXPORT_Functions */
 /** @} */ /* End of group GAP_LE_STORAGE */

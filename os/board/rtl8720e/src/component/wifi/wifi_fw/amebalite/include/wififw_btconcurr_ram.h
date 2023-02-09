@@ -191,12 +191,11 @@ typedef struct _H2C_BT_Tdma_Parm_ {
 	/* B1 */
 	u8  	TBTTOnPeriod;
 	/* B2 */
-	u8  	Rsvd0                   		: 2;
+	u8  	B2Rsvd0                   		: 2;
 	u8   	PanEnable               		: 1;
-	u8   	PsPoll                  		: 1;
-	u8   	WifiRandomSlot          		: 1;
-	u8  	WifiWindowSlot          		: 1;
-	u8   	Rsvd1                   		: 2;
+	u8   	B2Rsvd1                  		: 1;
+	u8   	WifiWindowSlot          		: 1;
+	u8   	B2Rsvd2                   		: 3;
 	/* B3 */
 	u8  	NoTxPause               		: 1;
 	u8  	Valueof778InWIFI        	: 1;
@@ -448,11 +447,6 @@ extern void InitBTCoexTimer_8720E(u8 duration);
 extern void Write778_8720E(u8 value);
 extern void TdmaChangeCoexTable_8720E(u8  slot);
 extern void BTNullSetting_8720E(u8  bPowerBit, u16 offset, u8  lsb, u8  msb);
-extern void IssueBTQNull_8720E(u8  bPowerBit, u8  lsb, u8  msb);
-extern void BTRoleChangeTimerHDL_8720E(void);
-extern void BTRoleChangeTBTTHDL_8720E(void);
-extern void BTRoleChangeDefaultSetting_8720E(void);
-extern void BTC_BackupAntennaSetting_8720E(u8  option);
 extern void InitBTMailbox_8720E(void);
 extern BOOLEAN FillMailbox_8720E(u8 cmd, u8 length, u8 *pparm);
 extern void WL2BTMailboxSend_8720E(u8 cmd, u8 length, u8 *pparm);
@@ -467,7 +461,6 @@ extern void H2CHDL_BT_Init_Param_8720E(u8 *pbuf);
 extern void C2HBTInfo_8720E(u8  option);
 extern void C2HWlanInfo_8720E(void);
 extern void InitBTCoex_8720E(void);
-extern void InitBTScoreboard_8720E(void);
 extern void BT_TDMA_Slot_Operation_0and3_8720E(u8  slot_num);
 extern void BT_TDMA_Slot_Operation_1and4_8720E(u8  slot_num);
 extern void BT_TDMA_Slot_Operation_2and5_8720E(u8  slot_num);
@@ -480,7 +473,6 @@ extern void BTypeTDMATimeOuthdl_8720E(void);
 extern void BTC_RestoreDefaultCoexTable_8720E(void);
 extern void BTC_PWRBitOverWrite_8720E(u8  PortNum, u8  mode);
 extern void BTC_PsTdmaIssueNull_8720E(BOOLEAN Powerbit, u8 PortNum);
-extern void BTC_PsTdmaIssuePsPoll_8720E(void);
 extern void BTC_PsTdmaOnBcn_8720E(void);
 extern void BTC_BtIqkAction_8720E(u8  allow);
 extern BOOLEAN BTC_BtIqkCheck_8720E(void);
@@ -489,11 +481,13 @@ extern BOOLEAN BTC_ProceedBtSlot_8720E(void);
 extern void BTC_ProtectBCN_8720E(void);
 extern void BTC_RestoreBtSlot_8720E(void);
 extern u8 BTC_GenRandomValue_8720E(u8 range, u8 count);
-extern void BTC_WifiRandomSlot_8720E(void);
 extern void BTC_WifiWindowSlot_8720E(void);
+extern void IssueBTQNull_8720E(u8  bPowerBit, u8  lsb, u8  msb);
 extern void BTC_Set_GntBt_8720E(u8 control);
+#if CONFIG_BTCOEX_SLOT_DEBUG
 extern void InitBTCoexDebugPort_8720E(void);
 extern void BTC_SlotGpioDbgCtrl_8720E(u32 GPIO_Pin, u32 Val);
+#endif
 extern void BTC_AOACSwitch_8720E(u8  state);
 
 #endif /* #ifndef __ASSEMBLY__ */

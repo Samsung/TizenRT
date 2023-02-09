@@ -71,6 +71,7 @@ extern u8 __retention_entry_func__[];
 
 extern u8 __kr4_start_table_backup_addr__[];
 extern u8 __audio_buffer_start__[];
+extern u8 __audio_buffer_length__[];
 
 extern u8 __kr4_flash_text_start__[];
 extern u8 __kr4_ipc_memory_start__[];
@@ -88,10 +89,14 @@ extern u8 __ca32_fip_flash_start__[];
 extern u8 __ca32_fip_dram_start__[];
 extern u8 __nspe_phy_addr__[];
 
-extern uint8_t __bdram_heap_buffer_start__[];
-extern uint8_t __bdram_heap_buffer_size__[];
-extern unsigned int _sext_heap_start;
-extern unsigned int _sint_heap_start;
+extern u8 __bdram_heap_buffer_start__[];
+extern u8 __bdram_heap_buffer_size__[];
+extern u8 __km4_sram_heap_extend_start__[];
+extern u8 __km4_sram_heap_extend_size__[];
+extern u8 __psram_heap_buffer_start__[];
+extern u8 __psram_heap_buffer_size__[];
+extern u8 __psram_heap_extend_start__[];
+extern u8 __psram_heap_extend_size__[];
 
 /* sym for stdlib rom */
 extern u8 __rom_stdlib_bss_start__[];
@@ -209,13 +214,11 @@ typedef struct {
 } RSIP_OTFDef;
 
 typedef struct {
-	u16	bdnum;
 	u32	PLLM_CLK;
+	u32	PLLD_CLK;
+	u8	Vol_Type;
 	u8	CPU_CKD;/* KM4/KR4/SRAM is the same clock */
 	u8	PSRAMC_CKD;
-	u8	SPIC_CKD;
-	u8	HBUS_CKD;/* GDMA is the same clock */
-	u8	ECDSA_CKD;
 } SocClk_Info_TypeDef;
 
 typedef u8(*FuncPtr)(void);
@@ -231,23 +234,19 @@ extern void BOOT_Image1(void);
 extern void BOOT_WakeFromPG(void);
 extern void BOOT_RccConfig(void);
 extern PRAM_START_FUNCTION BOOT_SectionInit(void);
-extern void BOOT_SocClk_Info_Get_ClkInfo(SocClk_Info_TypeDef *pSocClk_info);
 
 extern RAM_START_FUNCTION Img2EntryFun0; //RamWakeupFun
 
 extern u8 Boot_Log_En;
-extern u8 Boot_PSRAM_En;
-extern u8 Boot_PSRAM_APM;
-extern u8 Force_OTA1_GPIO;
 extern u32 OTA_Region[4][2];
 extern u32 HUK_Derive_En;
 extern MMU_ConfDef Flash_MMU_Config[];
 extern RCC_ConfDef RCC_Config[];
-extern RSIP_OTFDef RSIP_OTF_Config[];
 extern FuncPtr FwCheckCallback;
 extern FuncPtr OTASelectHook;
 extern u8 Boot_DSP_Enbale;
-extern u8 Boot_Clk_Config_Level;
+extern SocClk_Info_TypeDef SocClk_Info[];
+extern u8 Boot_SocClk_Info_Idx;
 
 #define BOOT_FROM_OTA1		0
 #define BOOT_FROM_OTA2		1
@@ -256,7 +255,6 @@ extern u8 Boot_Clk_Config_Level;
 #define IS_BOOT_ADDR(addr)			((addr >= HS_BOOT_ADDR_START) && (addr <= HS_BOOT_ADDR_END))
 #define IS_HS_SRAM_S_ADDR(addr)		((addr >= HS_SRAM_S_ADDR_START) && (addr <= HS_SRAM_S_ADDR_END))
 #define IS_LS_SRAM_ADDR(addr)		((addr >= LS_SRAM_ADDR_START) && (addr <= LS_SRAM_ADDR_END))
-#define  ISPLLD				BIT7
 
 #if (defined(CONFIG_POST_SIM))
 #define POSTSIM_FLAG(x)   BKUP_Set(BKUP_REG1, BIT(x));

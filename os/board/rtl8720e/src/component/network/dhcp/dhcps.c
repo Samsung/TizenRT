@@ -3,7 +3,6 @@
 #include "tcpip.h"
 #include "wifi_constants.h"
 #include "lwip_netconf.h"
-extern rtw_mode_t wifi_mode;
 //static struct dhcp_server_state dhcp_server_state_machine;
 static uint8_t dhcp_server_state_machine = DHCP_SERVER_STATE_IDLE;
 /* recorded the client MAC addr(default sudo mac) */
@@ -620,20 +619,21 @@ static void dhcps_send_nak(struct pbuf *packet_buffer)
   * @param  packet buffer packet buffer for UDP.
   * @retval None.
   */
-static void dhcps_send_ack(struct pbuf *packet_buffer)
+static err_t dhcps_send_ack(struct pbuf *packet_buffer)
 {
 	struct pbuf *newly_malloc_packet_buffer = NULL;
+	err_t send_ret = ERR_OK;
 
 	// newly malloc a longer pbuf for dhcp ack rather than using the short pbuf from dhcp request
 	newly_malloc_packet_buffer = pbuf_alloc(PBUF_TRANSPORT, DHCP_MSG_LEN + DHCP_OPTION_TOTAL_LENGTH_MAX, PBUF_RAM);
 	if (newly_malloc_packet_buffer == NULL) {
 		printf("\r\n[%s] error:  pbuf alloc fail !", __func__);
-		return;
+		return ERR_BUF;
 	}
 	if (pbuf_copy(newly_malloc_packet_buffer, packet_buffer) != ERR_OK) {
 		printf("\r\n[%s] error:  pbuf copy fail !", __func__);
 		pbuf_free(newly_malloc_packet_buffer);
-		return;
+		return ERR_BUF;
 	}
 	dhcp_message_total_options_lenth = DHCP_OPTION_TOTAL_LENGTH_MAX;
 	dhcp_message_repository = (struct dhcp_msg *)newly_malloc_packet_buffer->payload;
@@ -652,7 +652,7 @@ static void dhcps_send_ack(struct pbuf *packet_buffer)
 			etharp_add_static_entry(&dhcps_allocated_client_address, &dhcps_allocated_client_ethaddr);
 #endif
 #endif
-			udp_sendto_if(dhcps_pcb, newly_malloc_packet_buffer, &dhcps_allocated_client_address, DHCP_CLIENT_PORT, dhcps_netif);
+			send_ret = udp_sendto_if(dhcps_pcb, newly_malloc_packet_buffer, &dhcps_allocated_client_address, DHCP_CLIENT_PORT, dhcps_netif);
 #if ETHARP_SUPPORT_STATIC_ENTRIES
 #if LWIP_VERSION_MAJOR >= 2
 			etharp_remove_static_entry(ip_2_ip4(&dhcps_allocated_client_address));
@@ -664,10 +664,11 @@ static void dhcps_send_ack(struct pbuf *packet_buffer)
 		} else
 			// broadcast
 		{
-			udp_sendto_if(dhcps_pcb, newly_malloc_packet_buffer, &dhcps_send_broadcast_address, DHCP_CLIENT_PORT, dhcps_netif);
+			send_ret = udp_sendto_if(dhcps_pcb, newly_malloc_packet_buffer, &dhcps_send_broadcast_address, DHCP_CLIENT_PORT, dhcps_netif);
 		}
 	}
 	pbuf_free(newly_malloc_packet_buffer);
+	return send_ret;
 }
 
 /**
@@ -882,6 +883,7 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 	/* To avoid gcc warnings */
 	(void) sender_addr;
 	(void) arg;
+	err_t send_result = ERR_OK;
 
 	int16_t total_length_of_packet_buffer;
 	struct pbuf *merged_packet_buffer = NULL;
@@ -892,7 +894,7 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 		return;
 	}
 	if (sender_port == DHCP_CLIENT_PORT) {
-		if (netif_get_idx(ip_current_input_netif()) == 0 && wifi_mode == RTW_MODE_STA_AP) {
+		if (netif_get_idx(ip_current_input_netif()) == 0) {
 			pbuf_free(udp_packet_buffer);
 			return;
 		}
@@ -917,7 +919,15 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 #if (debug_dhcps)
 			printf("%s DHCP_SERVER_STATE_ACK\n", __func__);
 #endif
-			dhcps_send_ack(udp_packet_buffer);
+			/*retry 20 times for alloc skb while softap TX UDP packet*/
+			for (int retry = 1; retry < 20; retry++) {
+				send_result = dhcps_send_ack(udp_packet_buffer);
+				if (send_result != ERR_OK) {
+					vTaskDelay(10);//ms
+				} else {
+					break;
+				}
+			}
 #if (!IS_USE_FIXED_IP)
 #if LWIP_VERSION_MAJOR >= 2
 			mark_ip_in_table((uint8_t)ip4_addr4(ip_2_ip4(&dhcps_allocated_client_address)));

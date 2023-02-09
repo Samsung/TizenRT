@@ -374,6 +374,18 @@
 /* MANUAL_GEN_START */
 
 //Please add your defination here
+/*==========SWR Calibration Register Address Definition==========*/
+#define		SEC_VOL_AUDIO_VREF_1V8_F		0x7DE
+#define		SEC_VOL_AUDIO_VREF_1V8_S		0x7DF
+#define		SEC_VOL_SWR_PFM_125		0x7E0
+#define		SEC_VOL_SWR_PWM_135		0x7E1
+#define		SEC_VOL_SWR_PFM_09		0x7E2
+#define		SEC_VOL_SWR_PWM_10		0x7E3
+#define		SEC_VOL_AON_LDO_09		0x7E4
+#define		SEC_VOL_CORE_LDO_10		0x7E5
+#define		SEC_VOL_ANA_LDO_180		0x7E6
+/** @} */
+
 #define SEC_BOOT_ALG              (SEC_CFG2 + 3)
 #define SEC_GET_AUTH_ALG(x)       ((u8)((x) & 0x0F))
 #define SEC_GET_HASH_ALG(x)       ((u8)((x >> 4) & 0x0F))

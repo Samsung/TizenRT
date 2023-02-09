@@ -580,6 +580,15 @@ typedef struct {
   * @}
   */
 
+/** @defgroup CapTouch_Data_Setting
+  * @{
+  */
+#define CTC_CH_ID(x)				((u32)((x >> 12) & 0x0000000F))
+#define CTC_CH_DATA(x)				((u32)((x) & 0x00000FFF))
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -606,7 +615,10 @@ u32 CapTouch_GetChStatus(CAPTOUCH_TypeDef *CapTouch, u32 Channel);
 void CapTouch_SetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u32 Threshold);
 void CapTouch_SetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 Mbias);
 u32 CapTouch_GetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
+u32 CapTouch_GetChAbsThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
 u32 CapTouch_GetNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 type);
+void CapTouch_SetNNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Threshold);
+void CapTouch_SetPNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Threshold);
 u32 CapTouch_GetChBaseline(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
 u32 CapTouch_GetChAveData(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
 /**

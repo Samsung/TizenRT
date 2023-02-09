@@ -23,11 +23,12 @@ uint16_t server_profile_count = 0;
 trble_server_init_config server_init_parm;
 uint16_t rtw_ble_server_adv_interval = 352;
 trble_adv_type_e rtw_ble_server_adv_type = 0;
-uint8_t rtw_ble_server_adv_direct_type;
+uint8_t rtw_ble_server_direct_addr_type;
 static uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 static uint8_t adv_direct_addr[TRBLE_BD_ADDR_MAX_LEN];
-extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
 extern T_ATTRIB_APPL *tizenrt_ble_service_tbl;
+extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
+extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 
 trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm)
 {	
@@ -71,6 +72,8 @@ trble_result_e rtw_ble_server_deinit(void)
 
     ble_tizenrt_peripheral_main(0);
 	osif_mem_free(tizenrt_ble_service_tbl);
+	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
+	tizenrt_ble_srv_count = 0;
     is_server_init = false;
     return TRBLE_SUCCESS; 
 }
@@ -92,9 +95,6 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
 	memcpy(mac, &rtk_bd_addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
     return TRBLE_SUCCESS; 
 }
-
-extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
-extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 
 /* set data pointer of attribute value */
 trble_result_e rtw_ble_server_att_set_data_ptr(trble_attr_handle attr_handle, uint8_t *new_data_ptr)
@@ -328,7 +328,7 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     return conn_handle;
 }
 
-void rtw_ble_server_adv_into_idle(void)
+trble_result_e rtw_ble_server_adv_into_idle(void)
 {
     rtk_bt_le_gap_dev_state_t new_state;
     if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
@@ -406,6 +406,7 @@ void rtw_ble_server_adv_into_idle(void)
 		}
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     debug_print("ADV STATE : IDLE \n");
+	return TRBLE_SUCCESS;
 }
 
 /* Set Advertisement Data API */
@@ -566,8 +567,13 @@ trble_result_e rtw_ble_server_start_adv(void)
 	adv_param.channel_map = RTK_BT_LE_ADV_CHNL_ALL;
 	adv_param.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
 	rtk_bt_le_addr_t peer_addr;
-	peer_addr.type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
-	memset(peer_addr.addr_val, 0, RTK_BD_ADDR_LEN);
+	if(rtw_ble_server_adv_type == TRBLE_ADV_TYPE_DIRECT) {
+		peer_addr.type = rtw_ble_server_direct_addr_type;
+		memcpy(peer_addr.addr_val, adv_direct_addr, RTK_BD_ADDR_LEN);
+	} else {
+		peer_addr.type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
+		memset(peer_addr.addr_val, 0, RTK_BD_ADDR_LEN);
+	}
 	adv_param.peer_addr = peer_addr;
 	
     if(RTK_BT_OK != rtk_bt_le_gap_start_adv(&adv_param))
@@ -644,8 +650,8 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
 		return TRBLE_FAIL;
 	}
 	for(int i = 0; i < (*device_count); i++){
-		memcpy(bonded_device_list[i].bd_addr.mac, bond_info[i].addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
-		bonded_device_list[i].bd_addr.type = bond_info[i].addr.type;
+		memcpy(bonded_device_list[i].bd_addr.mac, bond_info[i].remote_addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
+		bonded_device_list[i].bd_addr.type = bond_info[i].remote_addr.type;
 		debug_print("bond_dev[%d]: bd 0x%02x%02x%02x%02x%02x%02x, addr_type %d \n",
                             i,
                             bonded_device_list[i].bd_addr.mac[5],
@@ -756,9 +762,9 @@ trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *ad
     if(rtw_ble_server_adv_type == TRBLE_ADV_TYPE_DIRECT)
     {
         if (addr->type == TRBLE_ADDR_TYPE_PUBLIC) {
-            rtw_ble_server_adv_direct_type = GAP_REMOTE_ADDR_LE_PUBLIC;
+            rtw_ble_server_direct_addr_type = GAP_REMOTE_ADDR_LE_PUBLIC;
         } else {
-            rtw_ble_server_adv_direct_type = GAP_REMOTE_ADDR_LE_RANDOM;
+            rtw_ble_server_direct_addr_type = GAP_REMOTE_ADDR_LE_RANDOM;
         }
 
         memcpy(adv_direct_addr, addr->mac, sizeof(adv_direct_addr));

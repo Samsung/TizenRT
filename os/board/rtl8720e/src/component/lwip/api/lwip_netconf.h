@@ -20,16 +20,9 @@ extern "C" {
 #include "platform_opts.h"
 #include "autoconf.h"
 #include "lwipconf.h"
+#include "lwip/netifapi.h"
 // macros
 /* Give default value if not defined */
-#ifndef NET_IF_NUM
-#ifdef CONFIG_CONCURRENT_MODE
-#define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN) + 1)
-#else
-#define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN))
-#endif  // end of CONFIG_CONCURRENT_MODE
-#endif  // end of NET_IF_NUM
-
 #define IP_ADDR_INVALID 0x00000000
 
 /* Private typedef -----------------------------------------------------------*/

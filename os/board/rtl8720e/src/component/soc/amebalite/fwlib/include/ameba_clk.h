@@ -88,6 +88,7 @@
 /** @defgroup CLK_Exported_Constants CLK Exported Constants
   * @{
   */
+#define MHZ_TICK_CNT (1000000)
 
 /** @defgroup CPU_CLK_Source definitions
   * @{
@@ -145,6 +146,44 @@
   * @}
   */
 
+/** @defgroup PLL_CLK_definitions
+  * @{
+  */
+#define PLL_330M		((u32)330000000)	/*This is minimum value*/
+#define PLL_442P368M	((u32)442368000)	/* generate 98.304M for I2S */
+#define PLL_400M		((u32)400000000)
+#define PLL_450M		((u32)450000000)
+#define PLL_480M		((u32)480000000)
+#define PLL_500M		((u32)500000000)
+#define PLL_589P824M	((u32)589824000)	/* generate 98.304M for I2S */
+#define PLL_600M		((u32)600000000)
+#define PLL_660M		((u32)660000000)	/*This is maximum value*/
+/**
+  * @}
+  */
+
+/** @defgroup Soc_CLK_LIMIT_definitions
+  * @{
+  */
+
+#define ISPLLM					0
+#define ISPLLD					BIT7
+
+#define CLKDIV(x)				(x)
+#define CLKDIV_ROUND_UP(X, Y)	( ( ( X ) + ( Y ) - 1 ) / ( Y ) )
+
+#define CPU_0P9V_CLK_LIMIT		(200 * MHZ_TICK_CNT)
+#define CPU_1P0V_CLK_LIMIT		(240 * MHZ_TICK_CNT)
+
+#define DSP_0P9V_CLK_LIMIT		(400 * MHZ_TICK_CNT)
+#define DSP_1P0V_CLK_LIMIT		(500 * MHZ_TICK_CNT)
+
+#define HBUS_0P9V_CLK_LIMIT		(100 * MHZ_TICK_CNT)
+#define HBUS_1P0V_CLK_LIMIT		(150 * MHZ_TICK_CNT)
+
+#define PSRAMC_CLK_LIMIT		(500 * MHZ_TICK_CNT)
+#define SPIC_CLK_LIMIT			(240 * MHZ_TICK_CNT)
+#define ECDSA_CLK_LIMIT			(100 * MHZ_TICK_CNT)
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SDM32K_CLK_Exported_Functions SDM32K_CLK Exported Functions
@@ -175,6 +214,7 @@ _LONG_CALL_  u32 CPU_ClkSrc_Get(void);
   */
 _LONG_CALL_ u32 XTAL_ClkGet(void);
 _LONG_CALL_ u32 PLL_ClkGet(u8 pll_type);
+_LONG_CALL_ void PLL_ClkSet(u8 pll_type, u32 PllClk);
 /**
   * @}
   */
@@ -197,6 +237,9 @@ _LONG_CALL_ void PLL_AP_ClkTune(u32 Option);
 _LONG_CALL_ void PLL_CPU(u32 status);
 _LONG_CALL_ void PLL_DSP(u32 status);
 _LONG_CALL_ void PLL_BG(u32 status);
+_LONG_CALL_ bool PLL_State(u8 pll_type);
+_LONG_CALL_ void PLL_ClkSet(u8 pll_type, u32 PllClk);
+
 
 
 /* Registers Definitions --------------------------------------------------------*/
@@ -237,6 +280,8 @@ u32 OSC131K_Calibration(u32 ppm_limit);
 void OSC4M_Init(void);
 void XTAL_AACK(void);
 void XTAL_PDCK(void);
+void XTAL_INIT(void);
+void CPU_ClkSet_NonOS(u32 Source);
 
 #endif //_AMEBA_CLK_H_
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

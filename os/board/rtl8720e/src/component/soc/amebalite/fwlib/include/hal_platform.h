@@ -339,13 +339,6 @@
 #define KM4_PPC_BASE_S           0x5100E300        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
 #define KM4_PPC2_BASE_S          0x5100EB00        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
 
-#define KM4_AF0_BASE_S           0x5100EE00        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-#define KM4_AF1_BASE_S           0x5100F200        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-#define KM4_AF2_BASE_S           0x5100F500        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-#define KM4_AF3_BASE_S           0x5100F800        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-#define KM4_AF4_BASE_S           0x5100FB00        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-#define KM4_AF5_BASE_S           0x5100FE00        /* ID:S6-5, Inter. Type:APB4, Top Address:0x41001FFF, Size(KB):4K, Clk Domain:HS_APB_CLK */
-
 #define UART0_REG_BASE_S         0x51010000        /* ID:S6-6, Inter. Type:APB4, Top Address:0x41010FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define UART1_REG_BASE_S         0x51011000        /* ID:S6-7, Inter. Type:APB4, Top Address:0x41011FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
 #define UART2_REG_BASE_S         0x51012000        /* ID:S6-8, Inter. Type:APB4, Top Address:0x41012FFF, Size(KB):4K, Clk Domain:PERI_LCLK */
@@ -481,13 +474,6 @@
 
 #define KM4_PPC				((PPC_TypeDef			*) KM4_PPC_BASE_S)			/*KM4 */
 #define KM4_PPC2			((PPC_TypeDef			*) KM4_PPC2_BASE_S)			/*KM4 */
-
-#define KM4_AF0				((ADDRFILTER_TypeDef			*) KM4_AF0_BASE_S)			/*KM4 */
-#define KM4_AF1				((ADDRFILTER_TypeDef			*) KM4_AF1_BASE_S)			/*KM4 */
-#define KM4_AF2				((ADDRFILTER_TypeDef			*) KM4_AF2_BASE_S)			/*KM4 */
-#define KM4_AF3				((ADDRFILTER_TypeDef			*) KM4_AF3_BASE_S)			/*KM4 */
-#define KM4_AF4				((ADDRFILTER_TypeDef			*) KM4_AF4_BASE_S)			/*KM4 */
-#define KM4_AF5				((ADDRFILTER_TypeDef			*) KM4_AF5_BASE_S)			/*KM4 */
 
 #define IPCKR4_DEV 			((IPC_TypeDef 			*) IPC0_REG_BASE)				/*KR4 */
 #define IPCKM4_DEV 			((IPC_TypeDef 			*) IPC1_REG_BASE)				/*KM4 */

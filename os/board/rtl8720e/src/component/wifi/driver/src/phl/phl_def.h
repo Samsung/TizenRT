@@ -46,10 +46,6 @@ enum rtw_drv_mode {
 	RTW_DRV_MODE_MAX = 255
 };
 
-struct rtw_wifi_role_t {
-	u8 hw_band;/*useless, just for halbb*/
-};
-
 /*==================phl_country.h of g6 driver============= ===*/
 enum TP_OVERWRITE {
 	TPO_CHILE = 0,
@@ -100,7 +96,7 @@ enum wlan_mode {
 	WLAN_MD_11ANAC	= (WLAN_MD_11A | WLAN_MD_11N | WLAN_MD_11AC),
 	WLAN_MD_11BGNAC = (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N | WLAN_MD_11AC),
 	WLAN_MD_11GNAC  = (WLAN_MD_11G | WLAN_MD_11N | WLAN_MD_11AC),
-	WLAN_MD_24G_MIX = (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N | WLAN_MD_11AC | WLAN_MD_11AX),
+	WLAN_MD_24G_MIX = (WLAN_MD_11B | WLAN_MD_11G | WLAN_MD_11N  | WLAN_MD_11AX),
 	WLAN_MD_5G_MIX	= (WLAN_MD_11A | WLAN_MD_11N | WLAN_MD_11AC | WLAN_MD_11AX),
 	WLAN_MD_6G_MIX 	= (WLAN_MD_11A | WLAN_MD_11AX),
 	WLAN_MD_MAX	= (WLAN_MD_24G_MIX | WLAN_MD_5G_MIX),
@@ -312,7 +308,6 @@ struct protocol_cap_t {
 	/* MAC related */
 	u8 htc_rx: 1;
 	u8 trig_padding: 2;	//hal_mac used
-	u8 sm_ps: 2;
 	/* bit0:twt requester; bit1:twt responder; bit2:b-twt;
 	 * bit3:Flex twt schedule; bit4:psr responder; bit5:sst;
 	 */
@@ -353,6 +348,7 @@ struct protocol_cap_t {
 	u8 stbc_ht_tx: 1;	//halbb used
 	u8 stbc_ht_rx: 2;	//halbb used
 	u8 stbc_vht_rx: 3;	//halbb used
+	u8 stbc_vht_tx: 1;
 	u8 stbc_he_rx: 1;	//halbb used
 	u8 stbc_he_tx: 1;
 	u8 ltf_gi;	//halbb used
@@ -424,7 +420,6 @@ enum rtw_dev_state {
 struct rtw_hal_stainfo_t;
 struct rtw_phl_stainfo_t {
 	bool active;
-	struct rtw_wifi_role_t *wrole;
 	struct rtw_hal_stainfo_t *hal_sta;
 	struct rtw_stats stats;
 	enum wlan_mode wmode;
@@ -435,6 +430,19 @@ struct rtw_phl_stainfo_t {
 	u8 mac_addr[6];	/* driver */
 };
 
+struct efuse_info {
+	u8 thermal_a;
+	u8 tssi_2g[11];
+	u8 rxgain_2g_cck;
+	u8 rxgain_2g_ofdm;
+#if defined(SUPPORT_5G_CHANNEL)
+	u8 tssi_5g[14];
+	u8 rxgain_5gl;
+	u8 rxgain_5gm;
+	u8 rxgain_5gh;
+#endif
+};
+
 struct rtw_phl_com_t {
 	enum rtw_hci_type hci_type;/*useless, ameba is always axi, but hallbb need this!*/
 	enum rtw_drv_mode drv_mode;/*normal or mp mode*/
@@ -443,9 +451,13 @@ struct rtw_phl_com_t {
 	struct rtw_dfs_t dfs_info;
 	struct rtw_iot_t id;
 	void *phl_priv; /*pointer to adapter*/
+	bool ap_mode; /*provide ap mode information to BB DIG*/
 #if (PHYDM_VERSION == 3)
 	struct rtw_stats phl_stats;
 	u8 edcca_mode;
+	struct efuse_info efuse_data;
 #endif
+	u8 bb_log;
+	u8 csa_switch_ch;/*add for bb reset rssi only when csa switch channel*/
 };
 #endif

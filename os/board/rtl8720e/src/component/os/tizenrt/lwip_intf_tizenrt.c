@@ -44,12 +44,10 @@ extern struct netdev *ameba_nm_dev_wlan1;
 // External Reference
 //----- ------------------------------------------------------------------
 
-extern rtw_mode_t wifi_mode;
-
 //static
 struct netdev *rtk_get_netdev(int idx)
 {
-	if (wifi_mode == RTW_MODE_STA_AP && idx == 1)
+	if (idx == 1)
 	    return ameba_nm_dev_wlan1;
 	else
 	    return ameba_nm_dev_wlan0;
@@ -207,22 +205,12 @@ int netif_is_valid_IP(int idx, unsigned char *ip_dest)
 #ifdef CONFIG_NET_NETMGR
 int get_idx_from_dev(struct netdev *dev)
 {
-
-	switch (wifi_mode) {
-	case RTW_MODE_STA_AP:
-		if (!strcmp(WLAN0_NAME, dev->ifname))
-			return 0;
-		else if(!strcmp(WLAN1_NAME, dev->ifname))
-			return 1;
-		else
-			return -1;
-	default:
-		if (!strcmp(WLAN0_NAME, dev->ifname))
-			return 0;
-		else
-			return -1;
-	}
-
+	if (!strcmp(WLAN0_NAME, dev->ifname))
+		return 0;
+	else if(!strcmp(WLAN1_NAME, dev->ifname))
+		return 1;
+	else
+		return -1;
 }
 #endif
 #if !defined(CONFIG_MBED_ENABLED)

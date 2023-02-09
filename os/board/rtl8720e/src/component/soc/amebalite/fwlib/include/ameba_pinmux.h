@@ -306,7 +306,7 @@ void PAD_InputCtrl(u8 PinName, u32 NewState)
 		return;
 	}
 
-	RTemp = HAL_READ32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL0);
+	RTemp = HAL_READ32(PINMUX_REG_BASE, REG_PAD_REG_DUMMY_0);
 
 	PadShift = PinName - _PA_28;
 
@@ -316,7 +316,7 @@ void PAD_InputCtrl(u8 PinName, u32 NewState)
 		RTemp &= (~ BIT(PadShift));
 	}
 
-	HAL_WRITE32(PINMUX_REG_BASE, REG_DDR_PAD_CTRL0, RTemp);
+	HAL_WRITE32(PINMUX_REG_BASE, REG_PAD_REG_DUMMY_0, RTemp);
 }
 /**
   * @}

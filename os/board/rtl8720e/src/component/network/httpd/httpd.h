@@ -38,11 +38,7 @@
 #define HTTPD_TLS_POLARSSL       0    /*!< Use PolarSSL for TLS when HTTPS */
 #define HTTPD_TLS_MBEDTLS        1    /*!< Use mbedTLS for TLS when HTTPS */
 
-#if CONFIG_USE_POLARSSL
-#define HTTPD_USE_TLS            HTTPD_TLS_POLARSSL
-#elif CONFIG_USE_MBEDTLS
 #define HTTPD_USE_TLS            HTTPD_TLS_MBEDTLS
-#endif
 
 /**
   * @brief  The structure is the context used for HTTP request header parsing.

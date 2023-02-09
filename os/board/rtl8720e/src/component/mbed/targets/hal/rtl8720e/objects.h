@@ -224,6 +224,7 @@ struct i2s_s {
 	uint8_t word_length;
 	uint8_t channel_length;
 	uint8_t direction;
+	uint8_t fifo_num;
 	uint8_t role;
 	uint8_t mode;
 };

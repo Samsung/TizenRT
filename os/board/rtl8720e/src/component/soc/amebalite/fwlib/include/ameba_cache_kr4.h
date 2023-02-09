@@ -63,35 +63,6 @@
   * @{
   */
 /**
-  * @brief  Disable/Enable I/D cache.
-  * @param  Enable
-  *   This parameter can be any combination of the following values:
-  *		 @arg ENABLE: L1 & L2 cache enable
-  *		 @arg ENABLE: L1 & L2 cache disable
-  */
-__STATIC_INLINE
-void Cache_Enable(u32 Enable)
-{
-	if (Enable) {
-		EnableICache();
-		EnableDCache();
-	} else {
-		DisableICache();
-		DisableDCache();
-	}
-}
-
-/**
-  * @brief  invalidate all I/D cache.
-  */
-__STATIC_INLINE
-void Cache_Flush(void)
-{
-	InvalidateICache();
-	InvalidateDCache();
-}
-
-/**
   * @brief  Enable Icache.
   */
 __STATIC_INLINE
@@ -106,7 +77,7 @@ void ICache_Enable(void)
 __STATIC_INLINE
 void ICache_Disable(void)
 {
-	EnableDCache();
+	DisableICache();
 }
 
 /**
@@ -133,7 +104,9 @@ u32 DCache_IsEnabled(void)
 __STATIC_INLINE
 void DCache_Enable(void)
 {
-	EnableDCache();
+	if (!DCache_IsEnabled()) { //if D-Cache is enabled, no need to invalidate D-Cache
+		EnableDCache();
+	}
 }
 
 /**
@@ -167,9 +140,9 @@ void DCache_Invalidate(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		InvalidateDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		InvalidateDCache_by_Addr((u32 *)addr, len);
@@ -199,9 +172,9 @@ void DCache_Clean(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		CleanDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		CleanDCache_by_Addr((u32 *)addr, len);
@@ -230,14 +203,44 @@ void DCache_CleanInvalidate(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		CleanInvalidateDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		CleanInvalidateDCache_by_Addr((u32 *)addr, len);
 	}
 }
+
+/**
+  * @brief  Disable/Enable I/D cache.
+  * @param  Enable
+  *   This parameter can be any combination of the following values:
+  *		 @arg ENABLE: L1 & L2 cache enable
+  *		 @arg ENABLE: L1 & L2 cache disable
+  */
+__STATIC_INLINE
+void Cache_Enable(u32 Enable)
+{
+	if (Enable) {
+		ICache_Enable();
+		DCache_Enable();
+	} else {
+		ICache_Disable();
+		DCache_Disable();
+	}
+}
+
+/**
+  * @brief  invalidate all I/D cache.
+  */
+__STATIC_INLINE
+void Cache_Flush(void)
+{
+	InvalidateICache();
+	InvalidateDCache();
+}
+
 /**
   * @}
   */

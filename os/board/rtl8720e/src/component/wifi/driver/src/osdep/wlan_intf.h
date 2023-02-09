@@ -50,125 +50,84 @@ struct sk_buff {
 //----- ------------------------------------------------------------------
 // Wlan Interface opened for upper layer
 //----- ------------------------------------------------------------------
-int rltk_wlan_init(int idx_wlan, rtw_mode_t mode);				//return 0: success. -1:fail
-void rltk_wlan_deinit(void);
-void rltk_wlan_deinit_fastly(void);
-int rltk_wlan_start(int idx_wlan);
-int rltk_wlan_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics);
-unsigned char rltk_wlan_running(unsigned char idx);		// interface is up. 0: interface is down
-int rltk_wlan_handshake_done(void);
-int rltk_get_wifi_mode(void);
-int rltk_wlan_wireless_mode(unsigned char mode);
-int rltk_wlan_set_wps_phase(unsigned char is_trigger_wps);
-int rltk_wlan_set_eap_phase(unsigned char is_trigger_eap);
-unsigned char rltk_wlan_get_eap_phase(void);
-int rltk_wlan_set_eap_method(unsigned char eap_method);
-int rltk_wlan_is_connected_to_ap(void);
+int wifi_if1_init(void);
+int wifi_if2_init(void);
+void wifi_if1_deinit(void);
+void wifi_if2_deinit(void);
 void rltk_wlan_set_scan_chan_interval(unsigned short interval_ms);
-int rltk_wlan_change_channel_plan(unsigned char channel_plan);
-int rltk_del_station(unsigned char wlan_idx, unsigned char *hwaddr);
-int rltk_get_auto_chl(unsigned char wlan_idx, unsigned char *channel_set, unsigned char channel_num);
-int rltk_wlan_get_disconn_reason_code(unsigned short *reason);
-int rltk_change_mac_address_from_ram(int idx, unsigned char *mac);
-int rltk_wlan_set_wifi_mac_address(__u8 *wifi_mac);
-int rltk_wlan_get_wifi_mac_address(__u8 *mac);
-int rltk_wlan_set_bt_mac_address(__u8 *bt_mac);
-int rltk_wlan_get_bt_mac_address(__u8 *mac);
-int rltk_wlan_get_ap_dtim(__u8 *dtim_period);
 
-void rltk_psk_info_set(struct psk_info *psk_data);
-void rltk_psk_info_get(struct psk_info *psk_data);
-__u8 rltk_wlan_is_mp(void);
+/**
+ * @brief  Get scan results
+ * @param[inout]  AP_num: input the pointer to the number of scanned ap info which
+ * 	want to get, output the number of scanned ap info whicn can actually get.
+ * @param[in]  scan_buf: pointer to the buf where scan result will be stored, the
+ * 	scanned AP info will be stored one by one in form of struct rtw_scan_result_t.
+ * @return  RTW_SUCCESS or RTW_ERROR.
+ * @note  For synchronized scan or asynchronized scan which do not config RTW_SCAN_REPORT_EACH,
+ * 	if once called wifi_scan_networks but not use this API to get scanned AP info,
+ * 	driver memory for these scanned AP will not be freed until next time
+ * 	wifi_scan_networks is called.
+ * @note  For asynchronized scan which config RTW_SCAN_REPORT_EACH, every time a
+ * 	AP is scanned, the AP info will be directly reported through scan_report_each_mode_user_callback
+ * 	and freed after user callback executed, thus there is no need to use this function to get scan result.
+ */
+int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
 
-int rltk_wlan_reinit_drv_sw(const char *ifname, rtw_mode_t mode);
-int rltk_set_mode_prehandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
-int rltk_set_mode_posthandle(rtw_mode_t curr_mode, rtw_mode_t next_mode, const char *ifname);
+/**
+ * @brief  Abort onoging wifi scan
+ * @return  RTW_SUCCESS or RTW_ERROR.
+ * @note  This is an asynchronized function and will return immediately, return value
+ * 	only indicates whether the scan abort cmd is successfully notified to driver or not.
+ * 	When scan is actually aborted, the user callback registered in wifi_scan_networks
+ * 	will be executed.If there is no wifi scan in progress, this function will just return
+ * 	RTW_SUCCESS and user callback won't be executed.
+ */
+int wifi_scan_abort(void);
 
-
-#ifdef CONFIG_IEEE80211W
-void rltk_wlan_tx_sa_query(unsigned char key_type);
-void rltk_wlan_tx_deauth(unsigned char b_broadcast, unsigned char key_type);
-void rltk_wlan_tx_auth(void);
-#endif
-
-void rltk_wlan_set_indicate_mgnt(int enable);
-int rltk_wlan_init_mac_filter(void);
-int rltk_wlan_deinit_mac_filter(void);
-int rltk_wlan_add_mac_filter(unsigned char *hwaddr);
-int rltk_wlan_del_mac_filter(unsigned char *hwaddr);
-
-int rltk_set_hidden_ssid(const char *ifname, unsigned char value);
-unsigned char rltk_get_band_type(void);
-unsigned int rltk_wlan_get_tsf(unsigned char port_id);
 int rltk_wlan_get_ccmp_key(unsigned char *uncst_key, unsigned char *group_key);
-int rltk_wlan_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, unsigned char tx_rate);
-int rltk_wlan_set_EDCA_param(unsigned int AC_param);
-int rltk_wlan_set_TX_CCA(unsigned char enable);
-int rltk_wlan_get_txbuf_remain_pkt_num(void);
-int rltk_wlan_ap_switch_chl_and_inform_sta(unsigned char new_chl, unsigned char chl_switch_cnt, ap_channel_switch_callback_t callback);
-int rltk_wlan_set_cts2self_dur_and_send(unsigned char wlan_idx, unsigned short duration);
-int rltk_wlan_get_sta_max_data_rate(unsigned char *inidata_rate);
-void rltk_wlan_set_no_beacon_timeout(unsigned char timeout_sec);
-
-int rltk_wlan_csi_config(rtw_csi_action_parm_t *act_param);
-int rltk_wlan_csi_report(__u32 buf_len, __u8 *csi_buf, __u32 *len);
+int rltk_wlan_wireless_mode(unsigned char mode);
+extern int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_msg);
+#define rtw_iwpriv_command(wlan_idx, cmd,show_msg)	wifi_hal_iwpriv_command(wlan_idx, cmd,show_msg)
 
 //add temporarily
-extern int rtw_wx_get_essid(unsigned char wlan_idx, __u8 *ssid);
-extern int rtw_wx_set_essid(unsigned char wlan_idx, __u8 *ssid, __u16 ssid_len);
+extern int rtw_wx_set_essid(__u8 *ssid, __u16 ssid_len);
 extern int rtw_wx_set_wap(unsigned char wlan_idx, __u8 *bssid);
-extern int rtw_wx_get_wap(unsigned char wlan_idx, __u8 *bssid);
-extern int rtw_wx_set_auth(const char *ifname, __u16 idx, __u32 value);
-extern int rtw_wx_set_enc_ext(const char *ifname, __u16 alg, __u8 *addr, int key_idx, int set_tx, __u8 *seq, __u16 seq_len, __u8 *key, __u16 key_len);
-extern int rtw_wx_get_enc_ext(unsigned char wlan_idx, __u16 *alg, __u8 *key_idx, __u8 *passphrase);
-extern int rtw_wx_get_auth_type(unsigned char wlan_idx, unsigned int *auth_type);
+extern int rtw_wx_set_auth(unsigned char wlan_idx, __u32 value);
+extern int rtw_wx_set_enc_ext(unsigned char wlan_idx, __u16 alg, __u8 *addr, int key_idx, int set_tx, __u8 *seq, __u16 seq_len, __u8 *key, __u16 key_len);
 extern int rtw_wx_set_passphrase(unsigned char wlan_idx, __u8 *passphrase, __u16 passphrase_len);
-extern int rtw_wx_set_wpa_mode(const char *ifname, unsigned int wpa_mode);
 extern int rtw_wx_connect_local(rtw_network_info_t *connect_param);
-extern int rtw_wx_get_passphrase(unsigned char wlan_idx, __u8 *passphrase);
-#ifdef CONFIG_IEEE80211W
-extern int rtw_wx_set_mfp_support(unsigned char wlan_idx, __u8 value);
-#endif
-#ifdef CONFIG_SAE_SUPPORT
-extern int rtw_wx_set_group_id(unsigned char wlan_idx, __u8 value);
-#endif
-extern int rtw_wx_set_pmk_cache_enable(unsigned char wlan_idx, __u8 value);
 extern int rtw_wx_set_mode(unsigned char wlan_idx, int mode);
-extern int rtw_wx_get_mode(unsigned char wlan_idx, int *mode);
-extern int rtw_wx_set_ap_essid(unsigned char wlan_idx, __u8 *ssid, __u16 ssid_len);
-extern int rtw_wx_get_phy_statistic(rtw_phy_statistics_t *phy_statistic);
-extern int rtw_wx_set_freq(unsigned char wlan_idx, __u8 ch);
-extern int rtw_wx_get_freq(unsigned char wlan_idx, __u8 *ch);
+extern int rtw_wx_set_ap_essid(rtw_softap_info_t *softAP_config, unsigned char value);
+
+/**
+ * @brief  Set the listening channel.
+ * @param[in]  wlan_idx: 0 means set channel for promisc STA,
+ *  1 means set channel to start Soft AP.
+ * @param[in]  ch: The desired channel.
+ * @return  RTW_SUCCESS: If the channel is successfully set.
+ * @return  RTW_ERROR: If the channel is not successfully set.
+ * @note  DO NOT call this function for STA mode wifi driver,
+ * 	since driver will determine the channel from its
+ * 	received beacon.
+ */
+extern int wifi_set_freq(unsigned char wlan_idx, __u8 ch);
+
+/**
+ * @brief  Get the current channel.
+ * @param[in]  wlan_idx: 0 means get current STA channel,
+ *  1 means get current Soft AP channel.
+ * @param[out]  channel: A pointer to the variable where the
+ * 	channel value will be written.
+ * @return  RTW_SUCCESS: If the channel is successfully read.
+ * @return  RTW_ERROR: If the channel is not successfully read.
+ */
+extern int wifi_get_freq(unsigned char wlan_idx, __u8 *ch);
+
 extern int rtw_wx_set_scan(rtw_scan_param_t *scan_param, unsigned char block);
-extern int rtw_wx_get_scan_results(unsigned int *AP_num, char *scan_buf);
-extern int rtw_wx_scan_abort(void);
-extern int rtw_wx_get_scan(unsigned char wlan_idx, char *buf, __u16 buf_len);
-extern int rtw_wx_send_eapol(const char *ifname, char *buf, __u16 buf_len, __u16 flags);
-extern int rtw_wx_send_raw_frame(raw_data_desc_t *raw_data_desc);
-#ifdef CONFIG_WPS
-extern int rtw_wx_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
-#endif
-extern int rtw_pm_set(rtw_pm_option_t type, __u8 *param);
-#if CONFIG_AUTO_RECONNECT
-extern int rtw_wx_set_autoreconnect(__u8 mode, __u8 retry_times, __u16 timeout);
-extern int rtw_wx_get_autoreconnect(__u8 *mode);
-#endif
-extern int rtw_ex_get_channel_plan(__u8 idx, __u8 *channel_plan);
 #ifdef CONFIG_WOWLAN
-extern int rtw_wowlan_ctrl(const char *ifname, rtw_wowlan_option_t type, void *param);
+extern int rtw_wowlan_ctrl(unsigned char wlan_idx, rtw_wowlan_option_t type, void *param);
 #endif
-extern int rtw_wx_set_custome_ie(const char *ifname, void *cus_ie, int ie_num);
-extern int rtw_wx_update_custome_ie(const char *ifname, void *cus_ie, int ie_index);
-extern int rtw_wx_del_custome_ie(const char *ifname);
 
-int rltk_coex_set_ble_scan_duty(__u8 duty);
-
-extern int rtw_ex_read_mac(unsigned char wlan_idx, rtw_mac_t *mac);
-extern int rtw_ex_get_client_list(unsigned char wlan_idx, rtw_maclist_t *client_list_buffer);
-#ifdef CONFIG_ANTENNA_DIVERSITY
-extern int rtw_ex_get_antenna_info(unsigned char wlan_idx, unsigned char *antenna);
-#endif
-extern int rtw_iwpriv_command(const char *ifname, char *cmd, int show_msg);
 //promisc related
 extern int promisc_filter_retransmit_pkt(unsigned char enable, unsigned char filter_interval_ms);
 extern int promisc_set(rtw_rcr_level_t enabled, void (*callback)(unsigned char *, unsigned int, void *), unsigned char len_used);

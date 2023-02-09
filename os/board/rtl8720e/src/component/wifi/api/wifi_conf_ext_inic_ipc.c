@@ -16,11 +16,8 @@
 #if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
 #include "at_cmd/atcmd_wifi.h"
 #endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "platform_opts_bt.h"
-#endif
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-#include <wifi_wps_config.h>
 #endif
 #ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
@@ -63,8 +60,6 @@ extern unsigned char dhcp_mode_sta;
 /******************************************************
  *               Variables Declarations
  ******************************************************/
-extern rtw_mode_t wifi_mode;
-
 void *param_indicator;
 struct task_struct wifi_autoreconnect_task = {0};
 
@@ -87,16 +82,6 @@ struct task_struct wifi_autoreconnect_task = {0};
 #define GW_ADDR2   1
 #define GW_ADDR3   1
 #endif
-
-#if CONFIG_AUTO_RECONNECT
-#ifndef AUTO_RECONNECT_COUNT
-#define AUTO_RECONNECT_COUNT	8
-#endif
-#ifndef AUTO_RECONNECT_INTERVAL
-#define AUTO_RECONNECT_INTERVAL	5	// in sec
-#endif
-#endif
-
 /******************************************************
  *               Function Definitions
  ******************************************************/
@@ -214,17 +199,28 @@ int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting)
 	return ret;
 }
 
-int wifi_set_powersave_mode(u8 ips_mode, u8 lps_mode)
+int wifi_set_ips_enable(u8 enable)
 {
 	int ret = 0;
-	u32 param_buf[2];
+	u32 param_buf[1];
 
-	param_buf[0] = (u32)ips_mode;
-	param_buf[1] = (u32)lps_mode;
+	param_buf[0] = (u32)enable;
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_POWERSAVE_MODE, param_buf, 2);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_IPS_EN, param_buf, 1);
 	return ret;
 }
+
+int wifi_set_lps_enable(u8 enable)
+{
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)enable;
+
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_LPS_EN, param_buf, 1);
+	return ret;
+}
+
 
 //----------------------------------------------------------------------------//
 
@@ -286,9 +282,9 @@ int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *statistic)
 	return ret;
 }
 
-int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic)
+int wifi_fetch_phy_statistic(unsigned char wlan_idx, rtw_phy_statistics_t *phy_statistic)
 {
-	u32 param_buf[1];
+	u32 param_buf[2];
 	int ret = 0;
 
 	rtw_phy_statistics_t *phy_statistic_temp = (rtw_phy_statistics_t *)rtw_malloc(sizeof(rtw_phy_statistics_t));
@@ -297,9 +293,10 @@ int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic)
 	}
 
 	param_buf[0] = (u32)phy_statistic_temp;
+	param_buf[1] = (u32)wlan_idx;
 	DCache_CleanInvalidate((u32)phy_statistic_temp, sizeof(rtw_phy_statistics_t));
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_PHY_STATISTIC, param_buf, 1);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_PHY_STATISTIC, param_buf, 2);
 
 	DCache_Invalidate((u32)phy_statistic_temp, sizeof(rtw_phy_statistics_t));
 	rtw_memcpy(phy_statistic, phy_statistic_temp, sizeof(rtw_phy_statistics_t));
@@ -387,14 +384,13 @@ int wifi_set_eap_method(unsigned char eap_method)
 #endif
 }
 
-int wifi_send_eapol(const char *ifname, char *buf, __u16 buf_len, __u16 flags)
+int wifi_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags)
 {
 	int ret = 0;
 	u32 param_buf[4];
 
-	DCache_Clean((u32)ifname, strlen(ifname));
 	DCache_Clean((u32)buf, (u32)buf_len);
-	param_buf[0] = (u32)ifname;
+	param_buf[0] = (u32)wlan_idx;
 	param_buf[1] = (u32)buf;
 	param_buf[2] = buf_len;
 	param_buf[3] = flags;
@@ -473,7 +469,7 @@ void wifi_autoreconnect_hdl(rtw_security_t security_type,
 
 	if (wifi_autoreconnect_task.task != 0) {
 #if CONFIG_LWIP_LAYER
-		dhcp_stop(&xnetif[0]);
+		netifapi_dhcp_stop(&xnetif[0]);
 #endif
 		u32 start_tick = rtw_get_current_time();
 		while (1) {
@@ -494,10 +490,10 @@ void wifi_autoreconnect_hdl(rtw_security_t security_type,
 #endif
 }
 
-int wifi_config_autoreconnect(__u8 mode, __u8 retry_times, __u16 timeout)
+int wifi_config_autoreconnect(__u8 mode)
 {
 	int ret = -1;
-	u32 param_buf[3];
+	u32 param_buf[1];
 #if CONFIG_AUTO_RECONNECT
 	if (mode == RTW_AUTORECONNECT_DISABLE) {
 		p_wlan_autoreconnect_hdl = NULL;
@@ -506,9 +502,7 @@ int wifi_config_autoreconnect(__u8 mode, __u8 retry_times, __u16 timeout)
 	}
 
 	param_buf[0] = mode;
-	param_buf[1] = retry_times;
-	param_buf[2] = timeout;
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_CONFIG_AUTORECONNECT, param_buf, 3);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_CONFIG_AUTORECONNECT, param_buf, 1);
 #endif
 	return ret;
 
@@ -542,10 +536,10 @@ int wifi_get_autoreconnect(__u8 *mode)
  *
  * u8 test_1[] = {221, 2, 2, 2};
  * u8 test_2[] = {221, 2, 1, 1};
- * rtw_custom_ie_t buf[2] = {{test_1, PROBE_REQ},
- *		 {test_2, PROBE_RSP | BEACON}};
+ * rtw_custom_ie_t buf[2] = {{test_1, BEACON},
+ *		 {test_2, PROBE_RSP}};
  * u8 buf_test2[] = {221, 2, 1, 3} ;
- * rtw_custom_ie_t buf_update = {buf_test2, PROBE_REQ};
+ * rtw_custom_ie_t buf_update = {buf_test2, PROBE_RSP};
  *
  * add ie list
  * static void cmd_add_ie(int argc, char **argv)
@@ -559,10 +553,10 @@ int wifi_get_autoreconnect(__u8 *mode)
  *	 wifi_update_custom_ie(&buf_update, 2);
  * }
  *
- * delete all ie
+ * delete all ie for specific wlan interface
  * static void cmd_del_ie(int argc, char **argv)
  * {
- *	 wifi_del_custom_ie();
+ *	 wifi_del_custom_ie(SOFTAP_WLAN_INDEX);
  * }
  */
 int wifi_add_custom_ie(void *cus_ie, int ie_num)
@@ -606,12 +600,13 @@ int wifi_update_custom_ie(void *cus_ie, int ie_index)
 	return ret;
 }
 
-int wifi_del_custom_ie()
+int wifi_del_custom_ie(unsigned char wlan_idx)
 {
-	u32 param_buf[1];
+	u32 param_buf[2];
 
 	param_buf[0] = 2;//type 2 means delete
-	return inic_ipc_api_host_message_send(IPC_API_WIFI_CUS_IE, param_buf, 1);
+	param_buf[1] = (u32)wlan_idx;
+	return inic_ipc_api_host_message_send(IPC_API_WIFI_CUS_IE, param_buf, 2);
 }
 //----------------------------------------------------------------------------//
 void wifi_set_indicate_mgnt(int enable)
@@ -803,9 +798,9 @@ void wifi_set_no_beacon_timeout(unsigned char timeout_sec)
 	inic_ipc_api_host_message_send(IPC_API_WIFI_SET_NO_BEACON_TIMEOUT, param_buf, 1);
 }
 
-unsigned int wifi_get_tsf_low(unsigned char port_id)
+u64 wifi_get_tsf(unsigned char port_id)
 {
-	return inic_ipc_host_get_wifi_tsf_low(port_id);
+	return inic_ipc_host_get_wifi_tsf(port_id);
 }
 
 int wifi_get_txbuf_pkt_num(void)
@@ -822,6 +817,7 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param)
 	param_buf[0] = (u32)act_param;
 	DCache_Clean((u32)act_param, sizeof(rtw_csi_action_parm_t));
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_CONFIG_CSI, param_buf, 1);
+	DCache_Invalidate((u32)act_param, sizeof(rtw_csi_action_parm_t));
 	return ret;
 }
 
@@ -834,6 +830,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 	if (csi_buf_temp == NULL) {
 		return -1;
 	}
+
 	u32 *len_temp = (u32 *)rtw_zmalloc(sizeof(u32));
 	if (len_temp == NULL) {
 		rtw_mfree((u8 *)csi_buf_temp, 0);
@@ -846,7 +843,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 	DCache_CleanInvalidate((u32)csi_buf_temp, buf_len);
 	DCache_CleanInvalidate((u32)len_temp, sizeof(u32));
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 3);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 4);
 	DCache_Invalidate((u32)csi_buf_temp, buf_len);
 	rtw_memcpy(csi_buf, csi_buf_temp, buf_len);
 

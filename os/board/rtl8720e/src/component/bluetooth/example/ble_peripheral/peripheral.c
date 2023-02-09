@@ -48,6 +48,16 @@ static uint8_t scan_rsp_data[] = {
 	0x00,
 };
 
+static rtk_bt_le_security_param_t sec_param = {
+    .io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+    .oob_data_flag = 0,
+    .bond_flag = 1,
+    .mitm_flag = 0,
+    .sec_pair_flag = 0,
+    .use_fixed_key = 0,
+    .fixed_key = 000000,
+};
+
 // static rtk_bt_le_adv_param_t adv_param = {
 // 	.interval_min = 0x30,
 // 	.interval_max = 0x60,
@@ -155,7 +165,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 						conn_update_ind->conn_handle, 
 						conn_update_ind->conn_interval,
 						conn_update_ind->conn_latency, 
-						conn_update_ind->timeout);
+						conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -170,7 +180,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 				rmt_update_req->conn_interval_max,
 				rmt_update_req->conn_interval_min,
 				rmt_update_req->conn_latency,
-				rmt_update_req->timeout);
+				rmt_update_req->supv_timeout);
 		return RTK_BT_EVT_CB_ACCEPT;
 		break;
 	}
@@ -202,18 +212,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 					phy_update_ind->tx_phy, 
 					phy_update_ind->rx_phy);
 		}
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_WHITELIST_MODIFY_IND: {
-		rtk_bt_le_wl_modify_ind_t *wl_modify_ind = 
-										(rtk_bt_le_wl_modify_ind_t *)param;
-		if (wl_modify_ind->err) {
-			dbg("[APP] Modify whilte list failed, op: %d\r\n", wl_modify_ind->op);
-		} else {
-			dbg("[APP] Modify whilte list success, op: %d\r\n", wl_modify_ind->op);
-		}
-
 		break;
 	}
 
@@ -307,7 +305,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gatts_app_callback(uint8_t eve
 {
 	if(RTK_BT_GATTS_EVT_MTU_EXCHANGE == event){
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
-		// printf("ble_tizenrt_peripheral_gatts_app_callback: RTK_BT_GATTS_EVT_MTU_EXCHANGE \r\n");
 		if(p_gatt_mtu_ind->result == RTK_BT_OK){
 			dbg("mtu exchange successfully: mtu_size = %d, conn_handle = %d \r\n",p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
 		}else{
@@ -336,11 +333,14 @@ int ble_tizenrt_peripheral_main(uint8_t enable)
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS;
 		bt_app_conf.mtu_size = 180;
+		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.prefer_all_phy = 0;
-		bt_app_conf.prefer_tx_phy = 1 | 1<<2;
-		bt_app_conf.prefer_rx_phy = 1 | 1<<2;
+		bt_app_conf.prefer_tx_phy = 1 | 1<<1 | 1<<2;
+		bt_app_conf.prefer_rx_phy = 1 | 1<<1 | 1<<2;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.user_def_service = false;
+		bt_app_conf.cccd_not_check = false;
 
 		/* Enable BT */
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf)); 
@@ -354,16 +354,19 @@ int ble_tizenrt_peripheral_main(uint8_t enable)
 		memcpy(name,(unsigned char*)RTK_BT_DEV_NAME,strlen((const char*)RTK_BT_DEV_NAME));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name)); 
 		BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
-		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data,sizeof(adv_data))); 
-		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(scan_rsp_data,sizeof(scan_rsp_data)));
-//		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param)); 
+		
+		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTS, ble_tizenrt_peripheral_gatts_app_callback));
 		BT_APP_PROCESS(ble_tizenrt_srv_add());
+		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data))); 
+		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(scan_rsp_data, sizeof(scan_rsp_data)));
+		//BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param)); 
 	}
 	else if (0 == enable)
 	{
-		/* Reset all service related variables */
-		BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
+		/* no need to unreg callback here, it is done in rtk_bt_disable */
+		// BT_APP_PROCESS(rtk_bt_evt_unregister_callback(RTK_BT_LE_GP_GATTS));
+		
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
 		dbg("Peripheral deinit\r\n");

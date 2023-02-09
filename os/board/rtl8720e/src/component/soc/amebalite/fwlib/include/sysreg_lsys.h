@@ -24,7 +24,7 @@
 #define LSYS_BIT_PWC_BT                            ((u32)0x00000001 << 1)          /*!<R/W 0  This is BT function total power cut control 1: Enable BT power cut 0: Disable */
 #define LSYS_PWC_BT(x)                             ((u32)(((x) & 0x00000001) << 1))
 #define LSYS_GET_PWC_BT(x)                         ((u32)(((x >> 1) & 0x00000001)))
-#define LSYS_BIT_POW_ON_SOC                        ((u32)0x00000001 << 0)          /*!<R/W 0  1:SYS PMC request to enable HP SOC power cut and disable ISO 0: SYS PMC request to disable HP SOC power cut and enable ISO */
+#define LSYS_BIT_POW_ON_SOC                        ((u32)0x00000001 << 0)          /*!<R/W 0  1:SYS PMC request to enable HP SOC power cut and diable ISO 0: SYS PMC request to disable HP SOC power cut and enable ISO */
 #define LSYS_POW_ON_SOC(x)                         ((u32)(((x) & 0x00000001) << 0))
 #define LSYS_GET_POW_ON_SOC(x)                     ((u32)(((x >> 0) & 0x00000001)))
 /** @} */
@@ -1159,22 +1159,29 @@ typedef struct {
 	__IO u32 IPC_Share_Mem; /* RETENTION_RAM_SYS_OFFSET 0x80 */
 	__IO u32 PLLD_Clk_Info;
 
-	__IO u8 PSRAM_TYPE;
-	__IO u8 CORE_Vol_Flag;
-
-	__IO u8 SWRCALIB_AON_LDO_09;
-	__IO u8 SWRCALIB_PWM_135;
-	__IO u8 SWRCALIB_CORE_LDO_10;
-	__IO u8 SWRCALIB_PWM_10;
-
-	__IO u8 PMC_CORE_ROLE_Flag;
-	__IO u8 kr4_BackupTbl_Done;
-
 	__IO u32 IMQ_HEAP_ADDR[4];
 	__IO u32 IMQ_HEAP_SIZE[4];
 	__IO u32 IMQ_INIT_DONE;
 
-	__IO u8 RRAM_USER_RSVD[204];
+	__IO u32 AP_WAKEUP_STATUS;
+	__IO u32 PSRAM_CKSL_BK;
+
+	__IO u8 PSRAM_TYPE;
+	__IO u8 PSRAM_RESUMECNT_BOOT;
+	__IO u8 CORE_Vol_Flag;
+
+	__IO u8 SWRCALIB_AON_LDO_09;
+	__IO u8 SWRCALIB_PWM_125; //store mode1 PWM125 autoload by HW, used by Reduce Voltage
+	__IO u8 SWRCALIB_PWM_135; //store mode1 PWM135 prefetched from efuse, used by Raise Voltage
+	__IO u8 SWRCALIB_CORE_LDO_09; //store CORE_LDO_09 autoload by HW, used by Reduce Voltage in mode1
+	__IO u8 SWRCALIB_CORE_LDO_10; //store CORE_LDO_10 prefetched from efuse, used by Raise Voltage in mode1
+	__IO u8 SWRCALIB_PWM_09; //store mode0 PWM09 autoload by HW, used by Reduce Voltage
+	__IO u8 SWRCALIB_PWM_10; //store mode0 PWM10 prefetched from efuse, used by Raise Voltage
+
+	__IO u8 PMC_CORE_ROLE_Flag;
+	__IO u8 kr4_BackupTbl_Done;
+
+	__IO u8 RRAM_USER_RSVD[193];
 } RRAM_TypeDef;
 /** @} */
 

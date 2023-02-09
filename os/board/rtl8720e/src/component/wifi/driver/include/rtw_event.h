@@ -20,30 +20,6 @@
 #ifndef _RTW_EVENT_H_
 #define _RTW_EVENT_H_
 
-#ifdef CONFIG_H2CLBK
-#include <h2clbk.h>
-#endif
-
-/*
-Used to report a bss has been scanned
-
-*/
-struct survey_event	{
-	WLAN_BSSID_EX bss;
-};
-
-/*
-Used to report that the requested site survey has been done.
-
-bss_cnt indicates the number of bss that has been reported.
-
-
-*/
-struct surveydone_event {
-	unsigned int	bss_cnt;
-
-};
-
 /*
 Used to report the link result of joinning the given bss
 
@@ -80,27 +56,6 @@ struct stadel_event {
 
 struct addba_event {
 	unsigned int tid;
-};
-
-
-#ifdef CONFIG_H2CLBK
-struct c2hlbk_event {
-	unsigned char mac[6];
-	unsigned short	s0;
-	unsigned short	s1;
-	unsigned int	w0;
-	unsigned char	b0;
-	unsigned short  s2;
-	unsigned char	b1;
-	unsigned int	w1;
-};
-#endif//CONFIG_H2CLBK
-
-#define GEN_EVT_CODE(event)	event ## _EVT_
-
-struct fwevent {
-	u32	parmsize;
-	void (*event_callback)(_adapter *dev, u8 *pbuf);
 };
 
 #endif // _WLANEVENT_H_

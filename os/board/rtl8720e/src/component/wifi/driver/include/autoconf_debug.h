@@ -20,7 +20,6 @@
 /***************************** for Debug message ******************************/
 //#define CONFIG_DEBUG
 //#define CONFIG_DEBUG_RTL871X
-#define CONFIG_MEM_MONITOR	MEM_MONITOR_SIMPLE
 #define DBG 0 /* for phy dm debug */
 
 #if (CONFIG_PLATFORM_AMEBA_X == 1)

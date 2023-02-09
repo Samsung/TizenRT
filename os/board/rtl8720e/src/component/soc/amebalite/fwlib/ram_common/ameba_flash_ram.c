@@ -38,6 +38,7 @@ void FLASH_Write_Lock(void)
 	/* disable irq */
 	PrevIrqStatus = irq_disable_save();
 	/* Get core-to-core hardware semphone */
+	IPC_SEMTake(IPC_SEM_FLASH, IPC_FLASH_LOCK);
 }
 
 /**
@@ -49,6 +50,8 @@ void FLASH_Write_Lock(void)
 FLASH_RAM_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
+	/* Free core-to-core hardware semphone */
+	IPC_SEMFree(IPC_SEM_FLASH, IPC_FLASH_LOCK);
 	/* restore irq */
 	irq_enable_restore(PrevIrqStatus);
 }
@@ -169,7 +172,7 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
 FLASH_RAM_TEXT_SECTION
 void FLASH_EreaseDwordsXIP(u32 address, u32 dword_num)
 {
-	u32 data[2];
+	u8 data[256];
 	u32 idx = 0;
 	u32 opt_sector = address & ~(0xFFF);
 	u32 erase_addr = address;
@@ -182,26 +185,22 @@ void FLASH_EreaseDwordsXIP(u32 address, u32 dword_num)
 	for (idx = 0; idx < 0x1000; idx += 4) {
 		u32 read_addr = opt_sector + idx;
 
-		_memcpy(data, (const void *)(SPI_FLASH_BASE + read_addr), 4);
-
-		if (erase_num > 0) {
-			if (erase_addr == read_addr) {
-				data[0] = 0xFFFFFFFF;
-				erase_addr += 4;
-				erase_num--;
-			}
+		if ((erase_num > 0) && (erase_addr == read_addr)) {
+			erase_addr += 4;
+			erase_num--;
+		} else {
+			_memcpy(data, (const void *)(SPI_FLASH_BASE + read_addr), 4);
+			FLASH_TxData12BXIP((FLASH_RESERVED_DATA_BASE + idx), 4, (u8 *)data);
 		}
-
-		FLASH_TxData12BXIP((FLASH_RESERVED_DATA_BASE + idx), 4, (u8 *)data);
 	}
 
 	/* erase this sector */
 	FLASH_EraseXIP(EraseSector, opt_sector);
 
 	/* write this sector with target data erased */
-	for (idx = 0; idx < 0x1000; idx += 8) {
-		_memcpy(data, (const void *)(SPI_FLASH_BASE + FLASH_RESERVED_DATA_BASE + idx), 8);
-		FLASH_TxData12BXIP((opt_sector + idx), 8, (u8 *)data);
+	for (idx = 0; idx < 0x1000; idx += 256) {
+		_memcpy(data, (const void *)(SPI_FLASH_BASE + FLASH_RESERVED_DATA_BASE + idx), 256);
+		FLASH_WriteStream((opt_sector + idx), 256, (u8 *)data);
 	}
 }
 
@@ -236,63 +235,11 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
   * @note auto mode is ok, because we have flash cache
   */
 FLASH_RAM_TEXT_SECTION
-int  FLASH_ReadStream(u32 address, u32 len, u8 *data)
+int  FLASH_ReadStream(u32 address, u32 len, u8 *pbuf)
 {
-	assert_param(data != NULL);
+	assert_param(pbuf != NULL);
 
-	u32 offset_to_align;
-	u32 i;
-	u32 read_word;
-	u8 *ptr;
-	u8 *pbuf;
-
-	offset_to_align = address & 0x03;
-	pbuf = data;
-	if (offset_to_align != 0) {
-		/* the start address is not 4-bytes aligned */
-		read_word = HAL_READ32(SPI_FLASH_BASE, (address - offset_to_align));
-		ptr = (u8 *)&read_word + offset_to_align;
-		offset_to_align = 4 - offset_to_align;
-		for (i = 0; i < offset_to_align; i++) {
-			*pbuf = *(ptr + i);
-			pbuf++;
-			len--;
-			if (len == 0) {
-				break;
-			}
-		}
-	}
-
-	/* address = next 4-bytes aligned */
-	address = (((address - 1) >> 2) + 1) << 2;
-
-	ptr = (u8 *)&read_word;
-	if ((u32)pbuf & 0x03) {
-		while (len >= 4) {
-			read_word = HAL_READ32(SPI_FLASH_BASE, address);
-			for (i = 0; i < 4; i++) {
-				*pbuf = *(ptr + i);
-				pbuf++;
-			}
-			address += 4;
-			len -= 4;
-		}
-	} else {
-		while (len >= 4) {
-			*((u32 *)(void *)pbuf) = HAL_READ32(SPI_FLASH_BASE, address);
-			pbuf += 4;
-			address += 4;
-			len -= 4;
-		}
-	}
-
-	if (len > 0) {
-		read_word = HAL_READ32(SPI_FLASH_BASE, address);
-		for (i = 0; i < len; i++) {
-			*pbuf = *(ptr + i);
-			pbuf++;
-		}
-	}
+	_memcpy(pbuf, (const void *)(SPI_FLASH_BASE + address), len);
 
 	return 1;
 }
@@ -305,69 +252,25 @@ int  FLASH_ReadStream(u32 address, u32 len, u8 *data)
   * @retval   status: Success:1 or Failure: Others.
   */
 FLASH_RAM_TEXT_SECTION
-int  FLASH_WriteStream(u32 address, u32 len, u8 *data)
+int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
 {
 	// Check address: 4byte aligned & page(256bytes) aligned
 	u32 page_begin = address & (~0xff);
-	u32 page_end = (address + len) & (~0xff);
+	u32 page_end = (address + len - 1) & (~0xff);
 	u32 page_cnt = ((page_end - page_begin) >> 8) + 1;
 
 	u32 addr_begin = address;
 	u32 addr_end = (page_cnt == 1) ? (address + len) : (page_begin + 0x100);
 	u32 size = addr_end - addr_begin;
-	u8 *buffer = data;
-	u8 write_data[12];
-
-	u32 offset_to_align;
-	u32 read_word;
-	u32 i;
 
 	FLASH_Write_Lock();
 	while (page_cnt) {
-		offset_to_align = addr_begin & 0x3;
-
-		if (offset_to_align != 0) {
-			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin - offset_to_align);
-			for (i = offset_to_align; i < 4; i++) {
-				read_word = (read_word & (~(0xff << (8 * i)))) | ((*buffer) << (8 * i));
-				size--;
-				buffer++;
-				if (size == 0) {
-					break;
-				}
-			}
-			FLASH_TxData(addr_begin - offset_to_align, 4, (u8 *)&read_word);
-		}
-
-		addr_begin = (((addr_begin - 1) >> 2) + 1) << 2;
-		for (; size >= 12 ; size -= 12) {
-			_memcpy(write_data, buffer, 12);
-			FLASH_TxData(addr_begin, 12, write_data);
-
-			buffer += 12;
-			addr_begin += 12;
-		}
-
-		for (; size >= 4; size -= 4) {
-			_memcpy(write_data, buffer, 4);
-			FLASH_TxData(addr_begin, 4, write_data);
-
-			buffer += 4;
-			addr_begin += 4;
-		}
-
-		if (size > 0) {
-			read_word = HAL_READ32(SPI_FLASH_BASE, addr_begin);
-			for (i = 0; i < size; i++) {
-				read_word = (read_word & (~(0xff << (8 * i)))) | ((*buffer) << (8 * i));
-				buffer++;
-			}
-			FLASH_TxData(addr_begin, 4, (u8 *)&read_word);
-		}
+		FLASH_TxData(addr_begin, size, pbuf);
+		pbuf += size;
 
 		page_cnt--;
 		addr_begin = addr_end;
-		addr_end = (page_cnt == 1) ? (address + len) : (((addr_begin >> 8) + 1) << 8);
+		addr_end = (page_cnt == 1) ? (address + len) : (addr_begin + 0x100);
 		size = addr_end - addr_begin;
 	}
 
@@ -409,7 +312,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SPIC_CTRL, Temp);
 
 		if (flash_init_para.phase_shift_idx != 0) {
-		FLASH_CalibrationNewCmd(DISABLE);
+			FLASH_CalibrationNewCmd(DISABLE);
 		} else {
 			FLASH_Read_HandShake_Cmd(0, DISABLE);
 		}

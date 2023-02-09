@@ -443,9 +443,9 @@ int Parse_Server_info(u8 *data, int data_len)
 
 }
 #endif
-static void SC_show_wifi_setting(const char *ifname, rtw_wifi_setting_t *pSetting)
+static void SC_show_wifi_setting(unsigned char wlan_idx, rtw_wifi_setting_t *pSetting)
 {
-	printf("\n\r\nWIFI  %s Setting:", ifname);
+	printf("\n\r\nWLAN%d Setting:", wlan_idx);
 	printf("\n\r==============================");
 
 	switch (pSetting->mode) {
@@ -505,8 +505,8 @@ static int  SC_check_and_show_connection_info(void)
 #endif
 
 #if !(defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD)  || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-	wifi_get_setting(WLAN0_IDX, &setting);
-	SC_show_wifi_setting(WLAN0_NAME, &setting);
+	wifi_get_setting(STA_WLAN_INDEX, &setting);
+	SC_show_wifi_setting(STA_WLAN_INDEX, &setting);
 #endif
 
 #if CONFIG_LWIP_LAYER
@@ -1006,7 +1006,7 @@ int sc_set_val2(rtw_network_info_t *wifi)
 		remove_filter();
 		filter1_add_enable();
 #endif
-		wifi_set_channel(fixed_channel_num);
+		wifi_set_freq(STA_WLAN_INDEX, fixed_channel_num);
 		rtw_init_sema(&sc_dsoc_sema, 0);
 		if (wifi_set_promisc(RTW_PROMISC_ENABLE_2, sc_callback_handler, 1) != 0) {
 			printf("\nset promisc failed\n");
@@ -1076,7 +1076,7 @@ enum sc_result SC_connect_to_AP(void)
 
 #if CONFIG_AUTO_RECONNECT
 	/* disable auto reconnect */
-	wifi_config_autoreconnect(0, 0, 0);
+	wifi_config_autoreconnect(0);
 #endif
 
 #if 1
@@ -1153,7 +1153,7 @@ wifi_connect_fail:
 
 wifi_connect_end:
 #if CONFIG_AUTO_RECONNECT
-	wifi_config_autoreconnect(1, 10, 5);
+	wifi_config_autoreconnect(1);//please goto wifi_set_user_config,set auto_reconnect_count=10,auto_reconnect_interval=5
 #endif
 	return ret;
 
@@ -1402,7 +1402,7 @@ static void simple_config_kick_STA(void)
 		unsigned char *pmac = client_info.mac_list[client_idx].octet;
 		printf("kick out sta: %02x:%02x:%02x:%02x:%02x:%02x\n",
 			   pmac[0], pmac[1], pmac[2], pmac[3], pmac[4], pmac[5]);
-		wifi_del_station(WLAN0_IDX, pmac);
+		wifi_del_station(SOFTAP_WLAN_INDEX, pmac);
 		++client_idx;
 	}
 	return;
@@ -1536,7 +1536,7 @@ static int SimpleConfig_softAP_start(const char *ap_name, const char *ap_passwor
 {
 	int timeout = 20;
 #if CONFIG_LWIP_LAYER
-	struct netif *pnetif = &xnetif[0];
+	struct netif *pnetif = &xnetif[SOFTAP_WLAN_INDEX];
 #endif
 	rtw_softap_info_t softAP_config = {0};
 	int ret = 0;
@@ -1549,13 +1549,11 @@ static int SimpleConfig_softAP_start(const char *ap_name, const char *ap_passwor
 	u32 addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	u32 netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	u32 gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(0, addr, netmask, gw);
+	LwIP_SetIP(SOFTAP_WLAN_INDEX, addr, netmask, gw);
 #endif
 
-	wifi_set_powersave_mode(IPS_MODE_NONE, LPS_MODE_NONE);//add to close powersave
-#ifdef CONFIG_WPS_AP
-	wpas_wps_dev_config(LwIP_GetMAC(0), 1);
-#endif
+	wifi_set_ips_enable(FALSE);
+	wifi_set_lps_enable(FALSE);
 
 	softAP_config.ssid.len = strlen(ap_name);
 	rtw_memcpy(softAP_config.ssid.val, (unsigned char *)ap_name, softAP_config.ssid.len);
@@ -1574,7 +1572,7 @@ static int SimpleConfig_softAP_start(const char *ap_name, const char *ap_passwor
 
 	while (1) {
 		rtw_wifi_setting_t setting;
-		wifi_get_setting(WLAN0_IDX, &setting);
+		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
 		if (strlen((char *)setting.ssid) > 0) {
 			if (strcmp((const char *) setting.ssid, (const char *)ap_name) == 0) {
 				//printf("%s started\n", ap_name);
@@ -1658,7 +1656,7 @@ static void simple_config_channel_control(void *para)
 
 		if (simple_config_softAP_onAuth == 1) {
 			wifi_set_promisc(RTW_PROMISC_DISABLE, NULL, 0);
-			wifi_set_channel(simple_config_softAP_channel);
+			wifi_set_freq(STA_WLAN_INDEX, simple_config_softAP_channel);
 			//move to simple_config_callback() for assoc req recved before go to here if keep auth and assoc req after promisc_recv_func.
 			//wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, sc_sta_asso_cb, NULL);
 
@@ -1712,7 +1710,7 @@ static void simple_config_channel_control(void *para)
 						printf("\r\nin simple_config_test fix channel = %d ssid: %s\n", fix_channel, g_ssid);
 						is_fixed_channel = 1;
 						fixed_channel_num = fix_channel;
-						wifi_set_channel(fix_channel);
+						wifi_set_freq(STA_WLAN_INDEX, fix_channel);
 #if SC_SOFTAP_EN
 						if (simple_config_softAP_channel != fixed_channel_num) {
 							simple_config_softAP_channel = fixed_channel_num;
@@ -1736,7 +1734,7 @@ static void simple_config_channel_control(void *para)
 				if (simple_config_result == -1) {
 					printf("\r\nsimple_config_test restart for result = -1");
 					delta_time = 60;
-					wifi_set_channel(1);
+					wifi_set_freq(STA_WLAN_INDEX, 1);
 					is_need_connect_to_AP = 0;
 					is_fixed_channel = 0;
 					fixed_channel_num = 0;
@@ -1755,7 +1753,7 @@ static void simple_config_channel_control(void *para)
 #endif
 				}
 
-				if (wifi_set_channel(simple_config_promisc_channel_tbl[ch_idx]) == 0) {
+				if (wifi_set_freq(STA_WLAN_INDEX, simple_config_promisc_channel_tbl[ch_idx]) == 0) {
 					start_time = xTaskGetTickCount();
 					printf("\n\rSwitch to channel(%d)\n", simple_config_promisc_channel_tbl[ch_idx]);
 				}
@@ -1862,7 +1860,7 @@ enum sc_result simple_config_test(rtw_network_info_t *wifi)
 	channel_set[1] = 6;
 	channel_set[2] = 11;
 
-	auto_chl = wifi_get_auto_chl(WLAN0_IDX, channel_set, sizeof(channel_set) / sizeof(channel_set[0]));
+	auto_chl = wifi_get_auto_chl(SOFTAP_WLAN_INDEX, channel_set, sizeof(channel_set) / sizeof(channel_set[0]));
 
 	if (auto_chl <= 0) {
 		printf("Get softAP channel error\n, use static channel\n");

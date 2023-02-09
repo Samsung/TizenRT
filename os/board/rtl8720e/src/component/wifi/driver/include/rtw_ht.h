@@ -26,8 +26,8 @@
 
 struct ht_priv {
 	u8	ht_enable;
-	u32	ht_option;
-	u32	ampdu_enable;//for enable Tx A-MPDU
+	u8	ht_option;
+	u8	ampdu_enable;//for enable Tx A-MPDU
 	//u8	baddbareq_issued[16];
 	//u32	tx_amsdu_enable;//for enable Tx A-MSDU
 	//u32	tx_amdsu_maxlen; // 1: 8k, 0:4k ; default:8k, for tx
@@ -42,9 +42,6 @@ struct ht_priv {
 	u8	agg_enable_bitmap;
 	//u8	ADDBA_retry_count;
 	u8	candidate_tid_bitmap;
-
-	u8	stbc_cap;
-	u8	smps_cap; /*spatial multiplexing power save mode. 0:static SMPS, 1:dynamic SMPS, 3:SMPS disabled, 2:reserved*/
 
 	struct rtw_ieee80211_ht_cap ht_cap;
 
@@ -78,7 +75,6 @@ typedef enum AGGRE_SIZE {
 #define HT_CAP_ELE_CAP_INFO(_pEleStart)					((u8 *)(_pEleStart))
 #define GET_HT_CAP_ELE_LDPC_CAP(_pEleStart)				LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 0, 1)
 #define GET_HT_CAP_ELE_CHL_WIDTH(_pEleStart)			LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 1, 1)
-#define GET_HT_CAP_ELE_SM_PS(_pEleStart)				LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 2, 2)
 #define GET_HT_CAP_ELE_GREENFIELD(_pEleStart)			LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 4, 1)
 #define GET_HT_CAP_ELE_SHORT_GI20M(_pEleStart)			LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 5, 1)
 #define GET_HT_CAP_ELE_SHORT_GI40M(_pEleStart)			LE_BITS_TO_1BYTE(((u8 *)(_pEleStart)), 6, 1)
@@ -92,7 +88,6 @@ typedef enum AGGRE_SIZE {
 
 #define SET_HT_CAP_ELE_LDPC_CAP(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 0, 1, _val)
 #define SET_HT_CAP_ELE_CHL_WIDTH(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 1, 1, _val)
-#define SET_HT_CAP_ELE_SM_PS(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 2, 2, _val)
 #define SET_HT_CAP_ELE_GREENFIELD(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 4, 1, _val)
 #define SET_HT_CAP_ELE_SHORT_GI20M(_pEleStart, _val)		SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 5, 1, _val)
 #define SET_HT_CAP_ELE_SHORT_GI40M(_pEleStart, _val)		SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)), 6, 1, _val)
@@ -142,5 +137,8 @@ typedef enum AGGRE_SIZE {
 #define SET_HT_OP_ELE_PCO_ACTIVE(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)) + 5, 2, 1, _val)
 #define SET_HT_OP_ELE_PCO_PHASE(_pEleStart, _val)			SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart)) + 5, 3, 1, _val)
 
+/* Extended Capabilities: n bytes */
+#define GET_EXT_CAP_MBSSID(_pEleStart)					LE_BITS_TO_1BYTE(((u8 *)(_pEleStart) + 2), 6, 1)
+#define SET_EXT_CAP_MBSSID(_pEleStart, _val)				SET_BITS_TO_LE_1BYTE(((u8 *)(_pEleStart) + 2), 6, 1, _val)
 #endif	//_RTL871X_HT_H_
 

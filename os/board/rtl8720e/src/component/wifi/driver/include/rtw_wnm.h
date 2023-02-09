@@ -3,33 +3,33 @@
 
 #define WNM_SUPPORT_IWPRIV_DBG 1
 #define RTW_RRM_NB_RPT_EN		BIT(1)
-#define RTW_MAX_NB_RPT_NUM	8
+#define RTW_MAX_NB_RPT_NUM	16
 
 #define rtw_roam_busy_scan(a, nb)	\
-	(nb && ((a)->mlmepriv.LinkDetectInfo.bBusyTraffic == _TRUE) && \
+	(nb && (rtw_get_mlmepriv(a)->LinkDetectInfo.bBusyTraffic == _TRUE) && \
 	(((nb)->ch_cnt) < ((nb)->nb_rpt_ch_list_num)))
 
 #define rtw_wnm_btm_preference_cap(a) \
-	((a)->mlmepriv.nb_info && (a)->mlmepriv.nb_info->preference_en == _TRUE)
+	(rtw_get_rmpriv(a)->nb_info && rtw_get_rmpriv(a)->nb_info->preference_en == _TRUE)
 
 #define rtw_btm_roam(a)	\
 	((rtw_to_roam(a) > 0) && rtw_chk_roam_flags(a, RTW_ROAM_ON_BTM) \
-	&& ((a)->mlmepriv.roam_status == RTW_ROAM_BTM_RUNNING))
+	&& (rtw_get_rmpriv(a)->roam_status == RTW_ROAM_BTM_RUNNING))
 
 /* target Bssid can not be own mac address*/
 #define rtw_wnm_btm_diff_bss(a) \
 	((rtw_wnm_btm_preference_cap(a)) && \
-	(is_zero_mac_addr((a)->mlmepriv.nb_info->roam_target_addr) == _FALSE) && \
-	(rtw_memcmp((a)->mlmepriv.nb_info->roam_target_addr,\
-		(a)->mlmepriv.cur_network.network.MacAddress, ETH_ALEN) == _FALSE)  && \
-	(rtw_memcmp((a)->mlmepriv.nb_info->roam_target_addr,\
-		(a)->eeprompriv.mac_addr,ETH_ALEN) == _FALSE))
+	(is_zero_mac_addr(rtw_get_rmpriv(a)->nb_info->roam_target_addr) == _FALSE) && \
+	(rtw_memcmp(rtw_get_rmpriv(a)->nb_info->roam_target_addr,\
+		rtw_get_bssid(a), ETH_ALEN) == _FALSE)  && \
+	(rtw_memcmp(rtw_get_rmpriv(a)->nb_info->roam_target_addr,\
+		(a)->mac_addr,ETH_ALEN) == _FALSE))
 
 
 #define rtw_wnm_btm_roam_candidate(a, c) \
 	((rtw_wnm_btm_preference_cap(a)) && \
-	(is_zero_mac_addr((a)->mlmepriv.nb_info->roam_target_addr) == _FALSE) && \
-	(rtw_memcmp((a)->mlmepriv.nb_info->roam_target_addr,\
+	(is_zero_mac_addr(rtw_get_rmpriv(a)->nb_info->roam_target_addr) == _FALSE) && \
+	(rtw_memcmp(rtw_get_rmpriv(a)->nb_info->roam_target_addr,\
 		(c)->network.MacAddress, ETH_ALEN)))
 
 #define rtw_wnm_set_ext_cap_btm(_pEleStart, _val) \

@@ -91,12 +91,12 @@ PWRCFG_TypeDef sleep_sram_config[] = {
 	{REG_CTRL_GRP_LRET_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS_REV},	//retention sram
 	{REG_CTRL_GRP_HSYS_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//hs sram E0
 	{REG_CTRL_GRP_HSYS_E1_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//hs sram E1
-	{REG_CTRL_GRP_WLK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//wlk4 sram    /*lite A cut patch: set the reg to active to keep rxpktbuf on for lpsoffload*/
-	//{REG_CTRL_GRP_WPON_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//wpon sram
-	{REG_CTRL_GRP_BTONK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//bt on sram E0 /*lite A cut patch: set the reg to active to keep bt_mem on for bt */
-	{REG_CTRL_GRP_BTONK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_ACTIVE},	//bt on sram E1
-	//{REG_CTRL_GRP_BTOFFK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_SD_REV},	//bt off sram E0
-	//{REG_CTRL_GRP_BTOFFK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_SD_REV},	//bt off sram E1
+	{REG_CTRL_GRP_WLK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//wlk4 sram
+	{REG_CTRL_GRP_WPON_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//wpon sram
+	{REG_CTRL_GRP_BTONK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//bt on sram E0
+	{REG_CTRL_GRP_BTONK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//bt on sram E1
+	{REG_CTRL_GRP_BTOFFK4_E0_CTRL0,		BIT_MEM_CTRL_LPS_DS_REV},	//bt off sram E0
+	{REG_CTRL_GRP_BTOFFK4_E1_CTRL0,		BIT_MEM_CTRL_LPS_DS_REV},	//bt off sram E1
 	{REG_CTRL_GRP_HIFI5_E5_CTRL0,		BIT_MEM_CTRL_LPS_DS},	//HIFI5 DTCM
 	{0xFFFFFFFF,							OFF},	/* Table end */
 };
@@ -128,7 +128,7 @@ PSCFG_TypeDef ps_config = {
 //	.np_pll_off = TRUE,
 //	.np_audio_vad_on = FALSE,
 //	.np_config_ddr = WB_PSRAM_SlEEP_Mode,
-	.np_osc4m_close = FALSE,
+//	.np_osc4m_close = FALSE,
 };
 #endif
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

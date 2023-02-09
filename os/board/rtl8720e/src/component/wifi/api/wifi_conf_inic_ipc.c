@@ -15,11 +15,8 @@
 #if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
 #include "at_cmd/atcmd_wifi.h"
 #endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "platform_opts_bt.h"
-#endif
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-#include <wifi_wps_config.h>
 #endif
 
 #if defined(CONFIG_AS_INIC_AP)
@@ -45,7 +42,6 @@ static internal_join_block_param_t *join_block_param = NULL;
 rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *) = NULL;
 
-extern rtw_mode_t wifi_mode;
 extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
 rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback = NULL;
@@ -336,12 +332,11 @@ void wifi_set_user_config(void)
 	p_wifi_user_config->rtw_tx_pwr_by_rate	= 2;	// 0: disable, 1: enable, 2: Depend on efuse(flash)
 	p_wifi_user_config->rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 
-	p_wifi_user_config->rtw_powersave_en = 1;
-
 #ifdef CONFIG_SAE_SUPPORT
 	// set to 'ENABLE' when using WPA3
 	p_wifi_user_config->rtw_cmd_tsk_spt_wap3 = ENABLE;
 #endif
+	p_wifi_user_config->wifi_wpa_mode = WPA_AUTO_MODE;
 
 	p_wifi_user_config->g_user_ap_sta_num = NUM_STA;//NUM_STA (2 + AP_STA_NUM)
 
@@ -355,11 +350,6 @@ void wifi_set_user_config(void)
 #else
 	p_wifi_user_config->rtw_lps_level = LPS_NORMAL;
 #endif
-#ifdef CONFIG_PLATFORM_8195BHP
-	p_wifi_user_config->rtw_lps_level = LPS_NORMAL;
-	p_wifi_user_config->rtw_power_mgnt = PS_MODE_MAX;//PS_MODE_MIN
-#endif
-	p_wifi_user_config->rtw_ps_timeout = 20;// default: 20
 	p_wifi_user_config->smart_ps = 2;
 
 	/* AP */
@@ -367,6 +357,9 @@ void wifi_set_user_config(void)
 
 	p_wifi_user_config->bAcceptAddbaReq = (u8)_TRUE; // 0:Reject AP's Add BA req, 1:Accept AP's Add BA req.
 	p_wifi_user_config->bIssueAddbaReq = (u8)_TRUE;
+#ifdef CONFIG_80211AC_VHT
+	p_wifi_user_config->ampdu_factor = 0;
+#endif
 
 	p_wifi_user_config->bCheckDestAddress = (u8)_TRUE;
 
@@ -383,6 +376,10 @@ void wifi_set_user_config(void)
 #endif
 
 	p_wifi_user_config->channel_plan = 0;
+	p_wifi_user_config->country_code = RTW_COUNTRY_MAX;
+
+	p_wifi_user_config->auto_reconnect_count = 8;
+	p_wifi_user_config->auto_reconnect_interval = 5;/* in sec*/
 
 	DCache_Clean((u32)p_wifi_user_config, sizeof(struct wifi_user_conf));
 	param_buf[0] = (u32)p_wifi_user_config;
@@ -418,7 +415,7 @@ int wifi_on(rtw_mode_t mode)
 {
 	int ret = 1;
 	u32 param_buf[1];
-
+	static u32 wifi_boot = 0;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != RTK_STATUS_SUCCESS) {
@@ -434,21 +431,24 @@ int wifi_on(rtw_mode_t mode)
 	param_buf[0] = mode;
 	inic_ipc_host_init_skb();
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_ON, param_buf, 1);
-	init_timer_wrapper();
 
-	if (p_wifi_do_fast_connect && (mode == RTW_MODE_STA)) {
-		p_wifi_do_fast_connect();
+	if (wifi_boot == 0) {
+		wifi_boot = 1;
+		init_timer_wrapper();
+		init_timer_pool();
+
+		if (p_wifi_do_fast_connect && (mode == RTW_MODE_STA)) {
+			p_wifi_do_fast_connect();
+		}
 	}
 
 	if (ret == RTW_SUCCESS) { //wifi on success
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 #if CONFIG_LWIP_LAYER
-		LwIP_netif_set_up(0);
-		if (mode == RTW_MODE_AP) {
-			LwIP_netif_set_link_up(0);
-		} else if (mode == RTW_MODE_STA_AP) {
-			LwIP_netif_set_up(1);
-			LwIP_netif_set_link_up(1);
+		if (mode == RTW_MODE_STA) {
+			LwIP_netif_set_up(0);
 		}
+#endif
 #endif
 	}
 
@@ -459,121 +459,14 @@ int wifi_off(void)
 {
 	int ret = 0;
 
-	if ((wifi_is_running(WLAN0_IDX) == 0) &&
-		(wifi_is_running(WLAN1_IDX) == 0)) {
-		RTW_API_INFO("\n\rWIFI is not running");
-		return 0;
-	}
-
-#if CONFIG_LWIP_LAYER
-#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
-	dhcps_deinit();
-	LwIP_DHCP(0, DHCP_STOP);
-#endif
-	LwIP_netif_set_down(0);
-	LwIP_netif_set_down(1);
-#endif
-
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_OFF, NULL, 0);
-	deinit_timer_wrapper();
-
 	return ret;
 }
 
 int wifi_set_mode(rtw_mode_t mode)
 {
-	int ret = 0;
-	u32 param_buf[1];
-#if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
-	u8 autoreconnect_mode;
-#endif
+	(void) mode;
 
-	device_mutex_lock(RT_DEV_LOCK_WLAN);//INIC_IPC_API_TODO
-
-	if ((wifi_is_running(WLAN0_IDX) == 0) &&
-		(wifi_is_running(WLAN1_IDX) == 0)) {
-		RTW_API_INFO("\n\r[%s] WIFI is not running", __FUNCTION__);
-		device_mutex_unlock(RT_DEV_LOCK_WLAN);
-		return -1;
-	}
-
-#if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
-	wifi_get_autoreconnect(&autoreconnect_mode);
-	if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
-		wifi_config_autoreconnect(RTW_AUTORECONNECT_DISABLE, 0, 0);
-
-		// if set to AP mode, delay until the autoconnect task is finished
-		if ((mode == RTW_MODE_AP) || (mode == RTW_MODE_STA_AP)) {
-			while (param_indicator != NULL) {
-				rtw_msleep_os(2);
-			}
-		}
-	}
-#endif
-
-	param_buf[0] = mode;
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_MODE, param_buf, 1);
-
-	if (ret == RTW_SUCCESS) {
-		if ((wifi_mode == RTW_MODE_STA) && (mode == RTW_MODE_AP)) {
-#if CONFIG_LWIP_LAYER
-			LwIP_netif_set_link_up(0);
-#endif
-			wifi_mode = mode;
-		} else if ((wifi_mode == RTW_MODE_AP) && (mode == RTW_MODE_STA)) {
-#if CONFIG_LWIP_LAYER
-			LwIP_netif_set_link_down(0);
-#endif
-			wifi_mode = mode;
-		} else if ((wifi_mode == RTW_MODE_AP) && (mode == RTW_MODE_PROMISC)) {
-#if CONFIG_LWIP_LAYER
-			LwIP_netif_set_link_down(0);
-#endif
-			wifi_mode = mode;
-		}
-#ifdef CONFIG_CONCURRENT_MODE
-		else if ((wifi_mode == RTW_MODE_STA_AP) && (mode == RTW_MODE_STA)) {
-#if CONFIG_LWIP_LAYER
-#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
-			dhcps_deinit();
-#endif
-			LwIP_netif_set_down(1);
-			LwIP_netif_set_link_down(1);
-#endif
-			wifi_mode = RTW_MODE_STA;
-		} else if ((wifi_mode == RTW_MODE_STA) && (mode == RTW_MODE_STA_AP)) {
-#if CONFIG_LWIP_LAYER
-#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
-			dhcps_init(&xnetif[1]);
-#endif
-			LwIP_netif_set_up(1);
-			LwIP_netif_set_link_up(1);
-#endif
-			wifi_mode = mode;
-		}
-
-#endif
-
-#if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
-		/* enable auto reconnect */
-		if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
-			wifi_config_autoreconnect(autoreconnect_mode, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL);
-		}
-#endif
-
-		device_mutex_unlock(RT_DEV_LOCK_WLAN);
-		return ret;
-	} else {
-#if defined(CONFIG_AUTO_RECONNECT) && CONFIG_AUTO_RECONNECT
-		/* enable auto reconnect */
-		if (autoreconnect_mode != RTW_AUTORECONNECT_DISABLE) {
-			wifi_config_autoreconnect(autoreconnect_mode, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL);
-		}
-#endif
-
-		device_mutex_unlock(RT_DEV_LOCK_WLAN);
-		return -1;
-	}
+	return 0;
 }
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
@@ -637,18 +530,33 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_START_AP, param_buf, 1);
 
 	if (ret == RTW_SUCCESS) {
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-		const char *ifname = WLAN0_NAME;
-		wpas_wps_init(ifname);
-#endif
 #if CONFIG_LWIP_LAYER
-		if (wifi_mode == RTW_MODE_STA_AP) {
-			LwIP_netif_set_link_up(1);
-		} else {
-			LwIP_netif_set_link_up(0);
-		}
+		LwIP_netif_set_up(SOFTAP_WLAN_INDEX);
+		LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);
 #endif
 	}
+
+	return ret;
+}
+
+int wifi_stop_ap(void)
+{
+	int ret = 0;
+
+	if (wifi_is_running(SOFTAP_WLAN_INDEX) == 0) {
+		RTW_API_INFO("\n\rWIFI is not running");
+		return 0;
+	}
+
+#if CONFIG_LWIP_LAYER
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
+	dhcps_deinit();
+#endif
+	LwIP_netif_set_down(1);
+	LwIP_netif_set_link_down(1);
+#endif
+
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_STOP_AP, NULL, 0);
 
 	return ret;
 }

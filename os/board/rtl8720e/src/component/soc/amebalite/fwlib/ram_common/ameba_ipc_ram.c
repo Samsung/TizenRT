@@ -68,9 +68,9 @@ u32 IPC_IERGet(IPC_TypeDef *IPCx)
   *		 		@arg IPC_DSP_TO_KR4: DSP send request to KR4
   *		 		@arg IPC_DSP_TO_KM4: DSP send request to KM4
   * @param  IPC_ChNum: 0 ~ 7.
-  * @retval   None
+  * @retval   0/1
   */
-void IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
+u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 {
 	/* Check the parameters */
 	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
@@ -88,9 +88,11 @@ void IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 	}
 
 	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-		DBG_8195A("Last Req not clean!\n");
+		DBG_8195A("IPC_INTReq CPUID: %d, Dir: 0x%x, ChNum: %d, Last Req not clean!\n", SYS_CPUID(), IPC_Dir, IPC_ChNum);
+		return 0;
 	} else {
-		IPCx->IPC_TX_DATA |= (BIT(IPC_ChNum + ipc_shift));
+		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+		return 1;
 	}
 }
 
@@ -127,9 +129,6 @@ u32 IPC_INTHandler(void *Data)
 	u32 i;
 	IrqStatus = IPCx->IPC_ISR;
 
-	/* clr 3 times in case isr is not cleared */
-	IPCx->IPC_ISR = IrqStatus;
-	IPCx->IPC_ISR = IrqStatus;
 	IPCx->IPC_ISR = IrqStatus;
 
 	for (i = 0; i < 32; i++) {

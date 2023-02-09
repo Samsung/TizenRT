@@ -327,7 +327,6 @@
 
 #define REG_INIRTS_RATE_SEL				0x0480
 #define REG_DATA_SC						0x0483
-//#define REG_INIDATA_RATE_SEL			0x0484
 #define REG_MACID_SLEEP_3				0x0484
 #define REG_MACID_SLEEP_1				0x0488
 
@@ -1343,9 +1342,7 @@ Current IOREG MAP
 #define BD_MAC2					BIT(9)
 #define BD_MAC1					BIT(10)
 #define IC_MACPHY_MODE		BIT(11)
-#if !defined(CONFIG_PLATFORM_8710C) //by Chris_yang, because it has conflict with platform CHIP_VER
 #define CHIP_VER				(BIT(12)|BIT(13)|BIT(14)|BIT(15))
-#endif
 #define BT_FUNC					BIT(16)
 #define VENDOR_ID				BIT(19)
 #define EXT_VENDOR_ID			(BIT(18)|BIT(19)) //Currently only for RTL8723B
@@ -1690,7 +1687,7 @@ Current IOREG MAP
 #define BIT_BBPSF_MPDUCHKEN	BIT[5]	//{This bit is set to 1 to enable MAC to inform BB enter power saving mode as rx unmatch my MACID unicast or unmatch my BSSID Broadcast/Mutlicast packets, for non_ampdu case. Only valid when BIT_BBPSF_MHCHKEN is set 1.}						
 #define BIT_BBPSF_MHCHKEN		BIT[4]	//{This bit is set to 1 to enable MAC to inform BB enter power saving mode as rx unmatch my MACID unicast or unmatch my BSSID Broadcast/Mutlicast packets}						
 #define BIT_BBPSF_ERRCHKEN		BIT[3]	//{This bit is set to 1 to enable MAC to inform BB enter power saving mode as rx FCS error packets number is large than the FCS error packet threshold defined by BBPSF_ERRTHR.}						
-#define BIT_MASK_BBPSF_ERRTHR	0x07	//{FCS error packet threshold: 3'd0: 1 packets; 3'd1: 2 packets; 3'd2: 4 packets; 3'd3: 6 packets¡­¡­}						
+#define BIT_MASK_BBPSF_ERRTHR	0x07	//{FCS error packet threshold: 3'd0: 1 packets; 3'd1: 2 packets; 3'd2: 4 packets; 3'd3: 6 packetsï¿½ï¿½ï¿½ï¿½}						
 #define BIT_SHIFT_BBPSF_ERRTHR	0
 
 //2 REG_BT_COEX (0x764)

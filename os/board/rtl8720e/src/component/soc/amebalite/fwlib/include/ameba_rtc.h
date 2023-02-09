@@ -66,7 +66,7 @@
 #define RTC_ALME(x)         ((u32)(((x) & 0x00000001) << 8))
 #define RTC_BIT_FMT         ((u32)0x00000001 << 7)          /*!<R/W 0  Hour format *0: 24 hour/day format *1: AM/PM hour format */
 #define RTC_FMT(x)          ((u32)(((x) & 0x00000001) << 7))
-#define RTC_MASK_OSEL       ((u32)0x00000003 << 5)          /*!<R/W 0  Output selection.There bits are used to select the flag to be routed to RTC_OUT output. *00: Output disabled *01: Alarm output enabled *10: Clock output is clk_spre (default:1Hz) *11: Clock output is clk_apre (default:512Hz) */
+#define RTC_MASK_OSEL       ((u32)0x00000003 << 5)          /*!<R/W 0  Output selection.There bits are used to select the flag to be routed to RTC_OUT output. *00: Output disabled *01: Alarm output enabled *10: Clock output is clk_spre (default:1Hz) *11: Clock output is clk_apre (default:256Hz) */
 #define RTC_OSEL(x)         ((u32)(((x) & 0x00000003) << 5))
 #define RTC_GET_OSEL(x)     ((u32)(((x >> 5) & 0x00000003)))
 #define RTC_BIT_BYPSHAD     ((u32)0x00000001 << 3)          /*!<R/W 0  Bypass the shadow registers. *0: Calendar values (when reading from RTC_TR) are taken from the shadow register, which are updated once every two RTCCLK cycles. *1: Calendar values (when reading from RTC_TR) are taken directly from the calendar counters. */

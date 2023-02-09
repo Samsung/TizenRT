@@ -69,10 +69,10 @@
 #define REG_DBG_DWORD_7         		    	REG_MACID_SLEEP3		//484
 
 //3 2byte
-#define REG_DBG_WORD_0        			    	REG_MCUTST_II		//1c4  		
-#define REG_DBG_WORD_1        					REG_SW_DEFINED_PAGE2	//1BC 
-#define REG_DBG_WORD_2        			    	REG_SW_DEFINED_PAGE2+2	//1BE 
-#define REG_DBG_WORD_3        			    	REG_FW_DBG5_V1		//64 
+#define REG_DBG_WORD_0        			    	REG_MCUTST_II		//1c4
+#define REG_DBG_WORD_1        					REG_SW_DEFINED_PAGE2	//1BC
+#define REG_DBG_WORD_2        			    	REG_SW_DEFINED_PAGE2+2	//1BE
+#define REG_DBG_WORD_3        			    	REG_FW_DBG5_V1		//64
 #define REG_DBG_WORD_4        			    	REG_FW_DBG5_V1+2		//66
 #define REG_DBG_WORD_5         		    	REG_DBG_DWORD_1		//84
 #define REG_DBG_WORD_6         		   	 	REG_DBG_DWORD_1+2		//86
@@ -165,8 +165,6 @@
 
 // 13.) WoWlan wakeup reason
 #define REG_WoW_REASON          		    	REG_DBG_BYTE_5   		//1C7
-#define REG_AOAC_REASON 			    		REG_DBG_BYTE_16		//6A
-#define REG_AOAC_DEBUG 				    	REG_DBG_BYTE_17		//6B
 
 // 14.) SAPPS debug
 #define REG_SAPPS_DEBUG_DWORD1 			    REG_DBG_DWORD_2		//50
@@ -270,8 +268,8 @@ typedef enum _FW_ERR_POWER_REASON3_ {
 	BIT_WLANON_PERIOD          				= 9,
 	BIT_SCAN_EN      							= 10,
 	BIT_S4_TXCPUMGQ_NOT_EMPTY				= 11,
-	BIT_LEPAP_NOT_END						= 12
-
+	BIT_LEPAP_NOT_END						= 12,
+	BIT_TWTSP_NOT_END						= 13
 } FW_ERR_POWER_REASON3, *PFW_ERR_POWER_REASON3;
 
 typedef enum _FW_ERR_POWER_REASON4_ {
@@ -285,7 +283,8 @@ typedef enum _FW_ERR_POWER_REASON4_ {
 	BIT_CPUMQ_EMPTY 							= 8,
 	BIT_IOT_DELAY_WAKEUP 					= 9,
 	BIT_RCVING_TIMHIT_BCN 					= 10,
-	BIT_BB_FUNC_NOT_RST						= 11
+	BIT_BB_FUNC_NOT_RST						= 11,
+	BIT_BCN_DCK_NOT_RDY 					= 12
 
 } FW_ERR_POWER_REASON4, *PFW_ERR_POWER_REASON4;
 

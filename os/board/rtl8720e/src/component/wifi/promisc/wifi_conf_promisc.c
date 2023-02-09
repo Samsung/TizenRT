@@ -25,14 +25,6 @@
 /******************************************************
  *               Variables Definitions
  ******************************************************/
-#if (defined(CONFIG_MBED_ENABLED) || defined(CONFIG_PLATFORM_TIZENRT_OS))
-rtw_mode_t wifi_mode = RTW_MODE_STA;
-#endif
-extern rtw_mode_t wifi_mode;
-
-/******************************************************
- *               Variables Definitions
- ******************************************************/
 
 /******************************************************
  *               Function Definitions
@@ -62,30 +54,15 @@ void wifi_enter_promisc_mode()
 #ifdef CONFIG_PROMISC
 	rtw_wifi_setting_t setting = {0};
 
-	if (wifi_mode == RTW_MODE_STA_AP) {
-		wifi_off();
-		rtw_msleep_os(20);
-		wifi_on(RTW_MODE_PROMISC);
-	} else {
-		wifi_get_setting(WLAN0_IDX, &setting);
+	/* stop softap fisrt*/
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
+		wifi_stop_ap();
+	}
 
-		switch (setting.mode) {
-		case RTW_MODE_AP:    //In AP mode
-#if defined(CONFIG_PLATFORM_8710C) && (defined(CONFIG_BT) && CONFIG_BT)
-			wifi_set_mode(RTW_MODE_PROMISC);
-#else
-			wifi_off();//modified by Chris Yang for iNIC
-			rtw_msleep_os(20);
-			wifi_on(RTW_MODE_PROMISC);
-#endif
-			break;
-		case RTW_MODE_STA:		//In STA mode
-			if (strlen((const char *)setting.ssid) > 0) {
-				wifi_disconnect();
-			}
-		default:
-			break;
-		}
+	/* disconnect to ap if already connected*/
+	wifi_get_setting(STA_WLAN_INDEX, &setting);
+	if (strlen((const char *)setting.ssid) > 0) {
+		wifi_disconnect();
 	}
 #endif
 }

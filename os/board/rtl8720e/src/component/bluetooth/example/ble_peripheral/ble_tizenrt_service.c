@@ -290,7 +290,7 @@ static int setup_ble_srv_dec_add_attr(rtk_bt_gatt_attr_t *attr, uint8_t profile_
 
 static int setup_ble_char_dec_add_attr(rtk_bt_gatt_attr_t *attr, uint8_t profile_index)
 {
-	struct rtk_bt_gatt_chrc *charac = (struct rtk_bt_gatt_chrc *)osif_mem_alloc(0, sizeof(struct rtk_bt_gatt_chrc));;
+	struct rtk_bt_gatt_chrc *charac = (struct rtk_bt_gatt_chrc *)osif_mem_alloc(0, sizeof(struct rtk_bt_gatt_chrc));
 	if(server_init_parm.profile[profile_index].uuid_length == 2){
 		uint16_t uuid_16 = server_init_parm.profile[profile_index].uuid[1] << 8 | server_init_parm.profile[profile_index].uuid[0];
 		struct bt_uuid_16 *bt_uuid_16_s = (struct bt_uuid_16 *)osif_mem_alloc(0, sizeof(struct bt_uuid_16));
@@ -370,7 +370,7 @@ void ble_tizenrt_free_srv_info(struct rtk_bt_gatt_service *srv_info)
 				uint16_t uuid16 = BT_UUID_16(srv_info->attrs[i].uuid)->val;
 				if (BT_UUID_GATT_CHRC_VAL == uuid16)
 				{
-					struct bt_uuid_16 *char_attr_val = BT_UUID_16((struct rtk_bt_gatt_chrc*)srv_info->attrs[i].user_data);
+					struct rtk_bt_gatt_chrc *char_attr_val = (struct rtk_bt_gatt_chrc*)srv_info->attrs[i].user_data;
 					osif_mem_free(char_attr_val->uuid);
 				}
 				osif_mem_free(srv_info->attrs[i].user_data);

@@ -14,7 +14,7 @@
 #include <platform_stdlib.h>
 #include "wifi_wps_config.h"
 
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "platform_opts_bt.h"
 #endif
 
@@ -79,25 +79,6 @@ typedef struct {
 extern void _wifi_p2p_wps_success(const u8 *peer_addr, int registrar);
 extern void _wifi_p2p_wps_failed();
 #endif
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-extern u32 _wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg);
-extern void *_wps_registrar_get_msg(void *priv, u32 *op_code);
-extern void *_wps_registrar_init(void *priv, const void *pcfg);
-extern void _wps_registrar_deinit(void *priv);
-extern void *_wps_registrar_alloc();
-extern int _wps_registrar_add_pin(void *priv, const u8 *addr,
-								  const u8 *uuid, const u8 *pin, size_t pin_len,
-								  int timeout);
-extern int _wps_registrar_button_pushed(void *priv,
-										const u8 *p2p_dev_addr);
-extern int _wps_registrar_wps_cancel(void *priv);
-extern void _wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf);
-extern void _wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf);
-extern void _wpas_wsc_registrar_send_eap_fail(void *priv);
-extern void _wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf);
-extern void *_eap_wsc_server_process_hdl(void *priv, void *req, u8 id);
-extern void _eap_wsc_server_reset(void *priv);
-#endif
 extern void wpas_wsc_sta_wps_start_hdl(char *buf, int buf_len, int flags, void *userdata);
 extern void wpas_wsc_wps_finish_hdl(char *buf, int buf_len, int flags, void *userdata);
 extern void wpas_wsc_server_wps_finish_hdl(char *buf, int buf_len, int flags, void *userdata);
@@ -125,29 +106,18 @@ void *wps_registrar_init(void *priv, void *pcfg)
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) pcfg;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_init(priv, pcfg);
-#else
 	return NULL;
-#endif
 }
 
 void wps_registrar_deinit(void *priv)
 {
 	/* To avoid gcc warnnings */
 	(void) priv;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_wps_registrar_deinit(priv);
-#endif
 }
 
 void *wps_registrar_alloc(void)
 {
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_alloc();
-#else
 	return NULL;
-#endif
 }
 
 u32 wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg)
@@ -156,11 +126,8 @@ u32 wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg)
 	(void) priv;
 	(void) op_code;
 	(void) pmsg;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_process_msg(priv, op_code, pmsg);
-#else
+
 	return 0;
-#endif
 }
 
 void *wps_registrar_get_msg(void *priv, u32 *op_code)
@@ -168,11 +135,8 @@ void *wps_registrar_get_msg(void *priv, u32 *op_code)
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) op_code;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_get_msg(priv, op_code);
-#else
+
 	return NULL;
-#endif
 }
 
 
@@ -187,11 +151,8 @@ int wps_registrar_add_pin(void *priv, const u8 *addr,
 	(void) pin;
 	(void) pin_len;
 	(void) timeout;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_add_pin(priv, NULL, NULL, pin, pin_len, 0);
-#else
+
 	return 0;
-#endif
 }
 
 int wps_registrar_button_pushed(void *priv,
@@ -200,23 +161,15 @@ int wps_registrar_button_pushed(void *priv,
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) p2p_dev_addr;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_button_pushed(priv, p2p_dev_addr);
-#else
 	return 0;
-#endif
 }
 
 int wps_registrar_wps_cancel(void *priv)
 {
 	/* To avoid gcc warnnings */
 	(void) priv;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _wps_registrar_wps_cancel(priv);
-#else
-	return 0;
-#endif
 
+	return 0;
 }
 
 void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
@@ -224,9 +177,6 @@ void wpas_wsc_ap_send_eap_reqidentity(void *priv, u8 *rx_buf)
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) rx_buf;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_wpas_wsc_ap_send_eap_reqidentity(priv, rx_buf);
-#endif
 }
 
 void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
@@ -234,18 +184,13 @@ void wpas_wsc_ap_check_eap_rspidentity(void *priv, u8 *rx_buf)
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) rx_buf;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_wpas_wsc_ap_check_eap_rspidentity(priv, rx_buf);
-#endif
 }
 
 void wpas_wsc_registrar_send_eap_fail(void *priv)
 {
 	/* To avoid gcc warnnings */
 	(void) priv;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_wpas_wsc_registrar_send_eap_fail(priv);
-#endif
+
 }
 
 void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
@@ -253,9 +198,7 @@ void wpas_wsc_registrar_handle_recvd(void *priv, u8 *rx_buf)
 	/* To avoid gcc warnnings */
 	(void) priv;
 	(void) rx_buf;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_wpas_wsc_registrar_handle_recvd(priv, rx_buf);
-#endif
+
 }
 
 void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
@@ -264,20 +207,14 @@ void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id)
 	(void) priv;
 	(void) req;
 	(void) id;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	return _eap_wsc_server_process_hdl(priv, req, id);
-#else
+
 	return NULL;
-#endif
 }
 
 void eap_wsc_server_reset(void *priv)
 {
 	/* To avoid gcc warnnings */
 	(void) priv;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-	_eap_wsc_server_reset(priv);
-#endif
 }
 
 #if CONFIG_ENABLE_WPS
@@ -285,9 +222,6 @@ xqueue_handle_t queue_for_credential;
 char wps_pin_code[33];
 u16 config_method;
 u8 wps_password_id;
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-static TaskHandle_t ap_wps_task = NULL;
-#endif
 static unsigned char wps_stop_notified = 0;
 
 void wps_check_and_show_connection_info(void)
@@ -297,7 +231,7 @@ void wps_check_and_show_connection_info(void)
 	/* Start DHCP Client */
 	LwIP_DHCP(0, DHCP_START);
 #endif
-	wifi_get_setting(WLAN0_IDX, &setting);
+	wifi_get_setting(STA_WLAN_INDEX, &setting);
 	/*show setting*/
 	printf("\n\r\nWIFI  %s Setting:", WLAN0_NAME);
 	printf("\n\r==============================");
@@ -1062,138 +996,18 @@ void wps_stop(void)
 	wpas_wsc_wps_finish_hdl(NULL, 0, 0, NULL);
 }
 
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-static int ap_wps_start(u16 wps_config, char *pin)
-{
-	u8 authorized_mac[ETH_ALEN];
-	int ret = 0;
-	u32 pin_val = 0;
-
-	if (queue_for_credential != NULL) {
-		os_xqueue_delete(queue_for_credential);
-		queue_for_credential = NULL;
-	}
-
-	queue_for_credential = os_xqueue_create(1, sizeof(authorized_mac));
-	if (!queue_for_credential) {
-		return -1;
-	}
-
-	wifi_reg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_server_wps_finish_hdl, NULL);
-	wifi_reg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl, NULL);
-
-	wifi_set_wps_phase(ENABLE);
-
-	if (wps_config == WPS_CONFIG_KEYPAD) {
-		pin_val = atoi(pin);
-		if (!wps_pin_valid(pin_val)) {
-			printf("\n\rWPS-AP: Enter pin code is unvalid.");
-			goto exit;
-		}
-		ret = wpas_wps_registrar_add_pin((unsigned char const *)pin, strlen(pin));
-	} else if (wps_config == WPS_CONFIG_DISPLAY) {
-		ret = wpas_wps_registrar_add_pin((unsigned char const *)pin, strlen(pin));
-	} else {
-		ret = wpas_wps_registrar_button_pushed();
-	}
-
-	if (ret < 0) {
-		goto exit;
-	}
-
-	printf("\n\rWPS-AP: wait for STA connect!\n");
-	os_xqueue_receive(queue_for_credential, authorized_mac, 120); //max wait 2min
-
-	if (!wpas_wps_registrar_check_done()) {
-		ret = -1;
-		wpas_wps_registrar_wps_cancel();
-	}
-
-exit:
-	wifi_set_wps_phase(0);
-	os_xqueue_delete(queue_for_credential);
-	queue_for_credential = NULL;
-	printf("\n\rWPS-AP: Finished!\n");
-
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_STA_WPS_START, wpas_wsc_sta_wps_start_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_WPS_FINISH, wpas_wsc_server_wps_finish_hdl);
-	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, wpas_wsc_eapol_recvd_hdl);
-
-	return ret;
-}
-
-static void wifi_start_ap_wps_thread_hdl(void *param)
-{
-	ap_wps_start(config_method, wps_pin_code);  //Not support WPS_CONFIG_KEYPAD
-
-	ap_wps_task = NULL;
-	vTaskDelete(NULL);
-}
-
-void wifi_start_ap_wps_thread(u16 config_methods, char *pin)
-{
-	if ((config_methods != WPS_CONFIG_PUSHBUTTON)
-		&& (config_methods != WPS_CONFIG_DISPLAY)
-		&& (config_methods != WPS_CONFIG_KEYPAD)) {
-		printf("\n\rWPS-AP: Wps method(%d) is wrong. Not triger WPS.\n", config_methods);
-		return;
-	}
-	config_method = config_methods;
-	if (config_methods == WPS_CONFIG_DISPLAY
-		|| config_methods == WPS_CONFIG_KEYPAD) {
-		if (pin) {
-			strncpy(wps_pin_code, pin, sizeof(wps_pin_code));
-		} else {
-			printf("\n\rWPS-AP: PIN is NULL. Not triger WPS.\n");
-			return;
-		}
-	}
-	if (ap_wps_task != NULL) { //push item to wait queue to finish last ap_wps task
-		printf("\n\rWPS-AP: Wait for last ap_wps task exiting...\n");
-		if (queue_for_credential) {
-			os_xqueue_send(queue_for_credential, NULL, 0);
-		}
-		while (ap_wps_task != NULL) {
-			vTaskDelay(1);
-		}
-		vTaskDelay(20);
-		printf("\n\rLast ap_wps task completed.\n");
-	}
-	if (xTaskCreate(wifi_start_ap_wps_thread_hdl, ((const char *)"ap_wps"), 256, NULL, tskIDLE_PRIORITY + 3, &ap_wps_task) != pdPASS) {
-		printf("\n\r%s xTaskCreate(ap_wps thread) failed", __FUNCTION__);
-	}
-}
-
-#endif //CONFIG_ENABLE_WPS_AP
-
 int wps_judge_staion_disconnect(void)
 {
 	rtw_wifi_setting_t setting = {0};
 
-
-	if (wifi_get_setting(WLAN0_IDX, &setting) != 0) {
+	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != 0) {
 		return -1;
 	}
 
-	switch (setting.mode) {
-	case RTW_MODE_AP:		//In AP mode
-		//modified by Chris Yang for iNIC
-#if defined(CONFIG_PLATFORM_8710C) && (defined(CONFIG_BT) && CONFIG_BT)
-		wifi_set_mode(RTW_MODE_STA);
-#else
-		wifi_off();
-		vTaskDelay(20);
-		wifi_on(RTW_MODE_STA);
-#endif
-		break;
-	case RTW_MODE_STA:		//In STA mode
-		if (os_strlen((char *)setting.ssid) > 0) {
-			wifi_disconnect();
-		}
-	default:
-		break;
+	if (os_strlen((char *)setting.ssid) > 0) {
+		wifi_disconnect();
 	}
+
 	return 0;
 }
 
@@ -1241,53 +1055,4 @@ exit:
 	return;
 }
 
-#if defined(CONFIG_ENABLE_WPS_AP) && CONFIG_ENABLE_WPS_AP
-/*
-cmd_ap_wps for AP WSC setting. command style:
-cmd_ap_wps pbc or cmd_ap_wps pin 12345678
-*/
-void cmd_ap_wps(int argc, char **argv)
-{
-	rtw_wifi_setting_t setting = {0};
-	if (wifi_is_running(WLAN1_IDX)) {
-		printf("\n\rNot support con-current softAP WSC!\n\r");
-		return;
-	}
-	wifi_get_setting(WLAN0_IDX, &setting);
-	if (setting.mode != RTW_MODE_AP) {
-		printf("\n\rOnly valid for RTW_MODE_AP!\n\r");
-		return;
-	}
-
-	if ((argc == 2 || argc == 3) && (argv[1] != NULL)) {
-		if (strcmp(argv[1], "pin") == 0) {
-			unsigned int pin_val = 0;
-			if (argc == 3) {
-				pin_val = atoi(argv[2]);
-				if (!wps_pin_valid(pin_val)) {
-					printf("\n\rWPS-AP: Device pin code is invalid. Not trigger WPS.\n\r");
-					return;
-				}
-				printf("\n\rWPS-AP: Start AP WPS PIN Keypad.\n");
-				wifi_start_ap_wps_thread(WPS_CONFIG_KEYPAD, argv[2]);
-			} else {
-				char device_pin[10];
-				pin_val = wps_generate_pin();
-				sprintf(device_pin, "%08d", pin_val);
-				printf("\n\rWPS: Start WPS PIN Display. PIN: %s\n\r", device_pin);
-				wifi_start_ap_wps_thread(WPS_CONFIG_DISPLAY, (char *)device_pin);
-			}
-		} else if (strcmp(argv[1], "pbc") == 0) {
-			printf("\n\rWPS-AP: Start AP WPS PBC\n");
-			wifi_start_ap_wps_thread(WPS_CONFIG_PUSHBUTTON, NULL);
-		} else {
-			printf("\n\rWPS-AP Usage:\"wifi_ap_wps pin [pin_code]\" or \"wifi_ap_wps pbc\"\n");
-			return;
-		}
-	} else {
-		printf("\n\rWPS-AP Usage:\"wifi_ap_wps pin [pin_code]\" or \"wifi_ap_wps pbc\"\n");
-	}
-	return;
-}
-#endif //CONFIG_ENABLE_P2P
 #endif //CONFIG_ENABLE_WPS

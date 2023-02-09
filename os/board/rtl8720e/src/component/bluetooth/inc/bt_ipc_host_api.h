@@ -14,8 +14,8 @@
 #include "platform_opts_bt.h"
 #include "rtk_bt_common.h"
 
-#define IPC_HOST_API_DATA_MAX   972   // 244*4
-#define IPC_HOST_API_RET_MAX    40
+#define IPC_HOST_API_DATA_MAX   972   // 243*4
+#define IPC_HOST_API_RET_MAX    104    //26*4 = the ret size of bt_ipc_host_request_message
 
 /* ------------------------------- Data Types ------------------------------- */
 
@@ -32,7 +32,7 @@ typedef struct bt_ipc_host_request_message {
 	uint32_t	API_ID;
 	uint32_t	buf_size;
 	uint8_t		param_buf[IPC_HOST_API_DATA_MAX];
-	int32_t		ret[10];
+	int32_t		ret[IPC_HOST_API_RET_MAX>>2];
 } bt_ipc_host_request_message;
 
 /**

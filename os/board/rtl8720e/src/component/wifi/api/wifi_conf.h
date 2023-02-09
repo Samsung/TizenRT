@@ -135,23 +135,6 @@ extern __u32 GlobalDebugEnable;
 /** @} */
 
 
-/** @defgroup NET_IF_NUM_Def
-   *@{
-   */
-/**
-* @brief define NET_IF_NUM
-*/
-#ifndef NET_IF_NUM
-#ifdef CONFIG_CONCURRENT_MODE
-#define NET_IF_NUM		2
-#else
-#define NET_IF_NUM		1
-#endif
-#endif
-/**
-* @}
-*/
-
 /** @defgroup BIT_Def
    *@{
    */
@@ -229,21 +212,6 @@ typedef struct {
 	unsigned char		block;
 } internal_join_block_param_t;
 
-#if defined CONFIG_WOWLAN || defined __DOXYGEN__
-/**
- * @brief  The enumeration is wowlan pattern param.
- */
-typedef struct {
-	unsigned int	filter_id;
-	unsigned int	polarity;
-	unsigned int	type;
-	unsigned int	offset;
-	unsigned char	*bitmask;
-	unsigned char	*pattern;
-} wowlan_pattern_param_t;
-#endif
-
-
 /* ie format
  * +-----------+--------+-----------------------+
  * |element ID | length | content in length byte|
@@ -308,12 +276,11 @@ int wifi_off(void);
 
 /**
  * @brief  Check if the specified wlan interface  is running.
- * @param[in]  wlan_idx: can be set as WLAN0_IDX or WLAN1_IDX.
+ * @param[in]  wlan_idx: can be set as STA_WLAN_INDEX or SOFTAP_WLAN_INDEX.
  * @return  If the function succeeds, the return value is 1.
  * 	Otherwise, return 0.
- * @note  For STA mode, only use WLAN0_IDX
- * 	For AP mode, only use WLAN0_IDX
- * 	For CONCURRENT mode, use WLAN0_IDX for sta and WLAN1_IDX for ap
+ * @note  For STA mode, use STA_WLAN_INDEX
+ * 	For AP mode, use SOFTAP_WLAN_INDEX
  */
 int wifi_is_running(unsigned char wlan_idx);
 
@@ -360,6 +327,13 @@ int wifi_is_connected_to_ap(void);
 rtw_join_status_t wifi_get_join_status(void);
 
 /**
+ * @brief  set join status during wifi connectection
+ * @param  join status
+ * @return None
+ */
+void wifi_set_join_status(rtw_join_status_t status);
+
+/**
  * @brief  Initiate a scan to search for 802.11 networks.
   * Synchronized scan and asynchronized scan can be confgiured by the input param block.
   * For asynchronized scan, there are two different ways about how the scan result will be reported.
@@ -384,68 +358,35 @@ rtw_join_status_t wifi_get_join_status(void);
 int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block);
 
 /**
- * @brief  Get scan results
- * @param[inout]  AP_num: input the pointer to the number of scanned ap info which
- * 	want to get, output the number of scanned ap info whicn can actually get.
- * @param[in]  scan_buf: pointer to the buf where scan result will be stored, the
- * 	scanned AP info will be stored one by one in form of struct rtw_scan_result_t.
- * @return  RTW_SUCCESS or RTW_ERROR.
- * @note  For synchronized scan or asynchronized scan which do not config RTW_SCAN_REPORT_EACH,
- * 	if once called wifi_scan_networks but not use this API to get scanned AP info,
- * 	driver memory for these scanned AP will not be freed until next time
- * 	wifi_scan_networks is called.
- * @note  For asynchronized scan which config RTW_SCAN_REPORT_EACH, every time a
- * 	AP is scanned, the AP info will be directly reported through scan_report_each_mode_user_callback
- * 	and freed after user callback executed, thus there is no need to use this function to get scan result.
- */
-int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
-
-/**
- * @brief  Abort onoging wifi scan
- * @return  RTW_SUCCESS or RTW_ERROR.
- * @note  This is an asynchronized function and will return immediately, return value
- * 	only indicates whether the scan abort cmd is successfully notified to driver or not.
- * 	When scan is actually aborted, the user callback registered in wifi_scan_networks
- * 	will be executed.If there is no wifi scan in progress, this function will just return
- * 	RTW_SUCCESS and user callback won't be executed.
- */
-int wifi_scan_abort(void);
-
-/**
- * @brief  Set IPS/LPS mode.
- * @param[in]  ips_mode: The desired IPS mode. It becomes effective
- * 	when wlan enter IPS.
- * 	IPS is the abbreviation of Inactive Power Save mode.
+ * @brief  Enable or disable IPS. IPS is the abbreviation of Inactive Power Save mode.
  * 	Wi-Fi automatically turns RF off if it is not associated to AP.
- * 	- ips_mode could be IPS_MODE_NONE,IPS_MODE_NORMAL or IPS_MODE_RESUME.
- * 	IPS_MODE_NONE means disable ips, IPS_MODE_NORMAL means enable ips,
- * 	IPS_MODE_RESUME means resume to the last ips powermode which
- * 	recorded in wifi driver.
- * @param[in]  lps_mode: The desired LPS mode. It becomes effective
- * 	when wlan enter LPS.
- * 	LPS is the abbreviation of Leisure Power Save mode.
+ * @param[in]  enable: It could be TRUE or FALSE.
+ * 	FALSE means disable ips, TRUE means enable ips.
+ * @return  RTW_SUCCESS if setting IPS successful.
+ * @return  RTW_ERROR otherwise.
+ */
+int wifi_set_ips_enable(u8 enable);
+
+/**
+ * @brief  Enable or disable LPS. LPS is the abbreviation of Leisure Power Save mode.
  * 	Wi-Fi automatically turns RF off during the association to AP
  * 	if traffic is not busy, while it also automatically turns RF on
  * 	to listen to the beacon of the associated AP.
- * 	- lps_mode could be LPS_MODE_NONE,LPS_MODE_NORMAL or LPS_MODE_RESUME.
- * 	LPS_MODE_NONE means disable lps, LPS_MODE_NORMAL means enable lps,
- * 	LPS_MODE_RESUME means resume to the last lps powermode which recorded
- * 	in wifi driver.
- * @return  RTW_SUCCESS if setting the corresponding mode successful.
+ * @param[in]  enable: It could be TRUE or FALSE.
+ * 	FALSE means disable LPS, TRUE means enable LPS.
+ * @return  RTW_SUCCESS if setting LPS successful.
  * @return  RTW_ERROR otherwise.
  */
-int wifi_set_powersave_mode(u8 ips_mode, u8 lps_mode);
+int wifi_set_lps_enable(u8 enable);
 
 /**
  * @brief  Set reconnection mode with configuration.
  * @param[in]  mode: Set 1/0 to enalbe/disable the reconnection mode.
- * @param[in]  retry_times: The number of retry limit.
- * @param[in]  timeout: The timeout value (in seconds).
  * @return  0 if success, otherwise return -1.
  * @note  Defining CONFIG_AUTO_RECONNECT in "autoconf.h" needs to be
  * 	done before compiling, or this API won't be effective.
  */
-int wifi_config_autoreconnect(__u8 mode, __u8 retry_times, __u16 timeout);
+int wifi_config_autoreconnect(__u8 mode);
 
 /**
  * @brief  Get the result of setting reconnection mode.
@@ -501,6 +442,16 @@ int wifi_set_mode(rtw_mode_t mode);
 int wifi_start_ap(rtw_softap_info_t *softAP_config);
 
 /**
+ * @brief  Disable Wi-Fi interface-2.
+ * @param  None
+ * @return  RTW_SUCCESS: deinit success,
+ * 	wifi mode is changed to RTW_MODE_STA.
+ * @return  RTW_ERROR: otherwise.
+ */
+int wifi_stop_ap(void);
+
+
+/**
  * @brief  Get the associated clients with SoftAP.
  * @param[out]  client_list_buffer: The location where the client
  * 	list will be stored.
@@ -515,7 +466,7 @@ int wifi_get_associated_client_list(
 
 /**
  * @brief  delete a STA
- * @param[in]  wlan_idx: the wlan interface index, can be WLAN0_IDX or WLAN1_IDX.
+ * @param[in]  wlan_idx: the wlan interface index, should be SOFTAP_WLAN_INDEX.
  * @param[in]  hwaddr: the pointer to the MAC address of the STA
  * 	which will be deleted
  * @return  RTW_SUCCESS or RTW_ERROR
@@ -523,27 +474,8 @@ int wifi_get_associated_client_list(
  */
 int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr);
 
-/**
- * @brief  Set the listening channel for promiscuous mode.
- * 	Promiscuous mode will receive all the packets in
- * 	this channel.
- * @param[in]  channel: The desired channel.
- * @return  RTW_SUCCESS: If the channel is successfully set.
- * @return  RTW_ERROR: If the channel is not successfully set.
- * @note  DO NOT call this function for STA mode wifi driver,
- * 	since driver will determine the channel from its
- * 	received beacon.
- */
+/* For INIC wifi_set_channel function. */
 int wifi_set_channel(int channel);
-
-/**
- * @brief  Get the current channel on STA interface(WLAN0_NAME).
- * @param[out]  channel: A pointer to the variable where the
- * 	channel value will be written.
- * @return  RTW_SUCCESS: If the channel is successfully read.
- * @return  RTW_ERROR: If the channel is not successfully read.
- */
-int wifi_get_channel(int *channel);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -554,7 +486,7 @@ int wifi_get_mac_address(rtw_mac_t *mac);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
- * @param[in]  wlan_idx: WLAN0_IDX or WLAN1_IDX.
+ * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX.
  * @param[out]  psetting: Points to the rtw_wifi_setting_t structure which information is gotten.
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
@@ -800,20 +732,21 @@ int wifi_get_ccmp_key(unsigned char *uncst_key, unsigned char *group_key);
 
 /**
  * @brief  Show the TX and RX statistic information which counted by software(wifi driver,not phy layer).
- * @param[in]  idx: the wlan interface index, can be WLAN0_IDX or WLAN1_IDX.
+ * @param[in]  idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_IDX.
  * @return  NULL.
  */
 int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *sw_statistics);
 
 /**
  * @brief  fetch statistic info about wifi.
+ * @param[in]  idx: the wlan interface index, can be STA_WLAN_INDEX or SOFT_WLAN_INDEX.
  * @param[out]  phy_statistic: The location where the statistic
  * 	info will be stored, for detail info, please refer to structrtw_phy_statistics .
  * @return  RTW_SUCCESS: If the statistic info is successfully get.
  * @return  RTW_ERROR: If the statistic info is not successfully get.
  * @note  the statistic info will only be valid after connected to AP successfully.
  */
-int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic);
+int wifi_fetch_phy_statistic(unsigned char wlan_idx, rtw_phy_statistics_t *phy_statistic);
 
 /**
  * @brief  get current remaining number of packets in HW TX buffer.
@@ -858,7 +791,7 @@ WL_BAND_TYPE wifi_get_band_type(void);
 
 /**
  * @brief  get an auto channel
- * @param[in]  wlan_idx: the wlan interface index, can be WLAN0_IDX or WLAN1_IDX.
+ * @param[in]  wlan_idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX.
  * @param[in]  channel_set: the pointer to the channel set
  * 	auto channel will select from this channel set
  * @param[in]  channel_num: the number of channel in channel set
@@ -870,11 +803,11 @@ int wifi_get_auto_chl(
 	unsigned char channel_num);
 
 /**
- * @brief	Get wifi TSF register[31:0].
+ * @brief	Get wifi TSF register[63:32]&[31:0].
  * @param[in]	port: wifi port 0/1.
- * @return TSF[31:0] or 0
+ * @return TSF[63:0] or 0
  */
-unsigned int wifi_get_tsf_low(unsigned char port_id);
+u64 wifi_get_tsf(unsigned char port_id);
 
 /**
  * @brief  switch to a new channel in AP mode and using CSA to inform sta
@@ -927,7 +860,7 @@ int wifi_set_wps_phase(unsigned char is_trigger_wps);
 /**
  * @brief  set WPS IE in Probe Request/Probe Response/Beacon/
  * 	Association Request/Association Response
- * @param[in]  wlan_idx: the wlan interface index, can be WLAN0_IDX or WLAN1_IDX
+ * @param[in]  wlan_idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
  * @param[in]  buf: the pointer to buf which store the WPS IE
  * @param[in]  buf_len: the length of buf
  * @param[in]  flags:
@@ -964,14 +897,14 @@ int wifi_set_eap_method(unsigned char eap_method);
 
 /**
  * @brief  send 802.1X EAP frame
- * @param[in]  ifname: the wlan interface name,
- * 	ifname should be WLAN0_NAME or WLAN1_NAME
+ * @param[in]  wlan_idx: the wlan interface index,
+ * 	wlan_idx should be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
  * @param[in]  buf: the pointer to buf which store the EAP frame
  * @param[in]  buf_len: the length of buf
  * @param[in]  flags: reserved, set to 0
  * @return  RTW_ERROR or RTW SUCCESS
  */
-int wifi_send_eapol(const char *ifname, char *buf, __u16 buf_len, __u16 flags);
+int wifi_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 /**
  * @brief  Set ble scan duty when coex.
@@ -988,8 +921,6 @@ int wifi_btcoex_set_ble_scan_duty(u8 duty);
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE list.
  * @param[in]  ie_num: The number of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
- * @note  Defininig CONFIG_CUSTOM_IE in "autoconf.h" needs to be done
- * 	before compiling, or this API won't be effective.
  */
 int wifi_add_custom_ie(void *cus_ie, int ie_num);
 
@@ -999,19 +930,16 @@ int wifi_add_custom_ie(void *cus_ie, int ie_num);
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
- * @note  Defininig CONFIG_CUSTOM_IE in "autoconf.h" needs to be
- * 	done before compiling, or this API won't be effective.
  */
 int wifi_update_custom_ie(void *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE list. (Information Element)
- * @param  None
+ * @param[in]  wlan_idx,
+ * 	wlan_idx should be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
  * @return  0 if success, otherwise return -1.
- * @note  Defininig CONFIG_CUSTOM_IE in "autoconf.h" needs to be
- * 	done before compiling, or this API won't be effective.
  */
-int wifi_del_custom_ie(void);
+int wifi_del_custom_ie(unsigned char wlan_idx);
 
 /**
  * @brief  send raw frame
@@ -1055,7 +983,7 @@ int wifi_set_TX_CCA(unsigned char enable);
 
 /**
  * @brief  set duration and send a CTS2SELF frame
- * @param[in]  wlan_idx: the wlan interface index, can be WLAN0_IDX or WLAN1_IDX
+ * @param[in]  wlan_idx: the wlan interface index, can be STA_WLAN_IDX or SOFTAP_WLAN_IDX
  * @param[in]  duration: the duration value for the CTS2SELF frame
  * @return  RTW_SUCCESS or RTW_ERROR.
  */

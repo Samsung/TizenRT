@@ -200,10 +200,15 @@ typedef struct {
 	rtw_security_t		security_type;   /**< the security type of connected AP or softAP */
 	unsigned char 		password[65];   /**< the password of connected AP or softAP */
 	unsigned char		key_idx;
+	unsigned char		iw_mode;	/**< RTK_IW_MODE */
+	unsigned char		alg;		/**< RTW_IW_ENC_ALG */
+	unsigned int		auth_type;
 } rtw_wifi_setting_t;
 #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
 #pragma pack()
 #endif
+
+extern rtw_wifi_setting_t wifi_setting[2];
 
 /**
   * @brief  The structure is used to describe the setting when configure the network.
@@ -276,12 +281,12 @@ typedef struct {
 	unsigned char bssid[6];
 	unsigned char encrypt;
 	signed char rssi;
-#if defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT
+#if (defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT) || defined __DOXYGEN__
 	rtw_rx_type_t type;
 #endif
 } ieee80211_frame_info_t;
 
-#if defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT
+#if (defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT) || defined __DOXYGEN__
 /**
   * @brief  The structure is used to describe the plcp header
   */
@@ -331,7 +336,7 @@ typedef struct {
 	unsigned char mac_addr[6];
 } rtw_mac_filter_list_t;
 
-#ifdef CONFIG_RTL8735B
+#if defined CONFIG_RTL8735B || defined __DOXYGEN__
 /**
   * @brief  The structure is used to describe the wowlan pattern
   */
@@ -437,14 +442,15 @@ typedef struct {
 struct  wifi_user_conf {
 	unsigned char rtw_adaptivity_en;
 	unsigned char rtw_adaptivity_mode;
+	unsigned char rtw_adaptivity_th_l2h_ini;
 
 	unsigned char rtw_tx_pwr_lmt_enable;	///< 0: disable, 1: enable, 2: Depend on efuse(flash)
 	unsigned char rtw_tx_pwr_by_rate;	///< 0: disable, 1: enable, 2: Depend on efuse(flash)
 	unsigned char rtw_trp_tis_cert_en;
 
-	unsigned char rtw_powersave_en;
-
 	unsigned char rtw_cmd_tsk_spt_wap3;
+
+	rtw_wpa_mode wifi_wpa_mode;
 
 	unsigned char g_user_ap_sta_num;
 
@@ -453,7 +459,6 @@ struct  wifi_user_conf {
 	unsigned char lps_enter_threshold;
 	unsigned char rtw_power_mgnt;
 	unsigned char rtw_lps_level;
-	unsigned char rtw_ps_timeout;
 	unsigned char smart_ps;
 
 	/* AP */
@@ -463,6 +468,8 @@ struct  wifi_user_conf {
 
 	unsigned char bAcceptAddbaReq;
 	unsigned char bIssueAddbaReq;	///< 0: disable issue addba request, 1: enable issue addba request
+
+	unsigned char ampdu_factor;	///for vht capability IE
 
 	unsigned char bCheckDestAddress; ///< 0: don't check dest mac and ip address for station, 1: check dest mac and ip address for station
 
@@ -481,6 +488,12 @@ struct  wifi_user_conf {
 	unsigned char ap_polling_sta;
 
 	unsigned char channel_plan;
+
+	unsigned char country_code;
+
+	/*for auto reconnect*/
+	unsigned char auto_reconnect_count;
+	unsigned char auto_reconnect_interval; // in sec
 } ;
 extern  struct wifi_user_conf wifi_user_config;
 
@@ -499,28 +512,6 @@ typedef struct {
 	unsigned char mac_addr[6];
 } rtw_csi_action_parm_t;
 
-/**
-  * @brief  The structure is used to describe the extra info of csi report
-  */
-typedef struct {
-	unsigned char mac_addr[6];  /**< may be sta addr, driver define */
-	unsigned char trig_addr[6];  /**< add new,tx addr for trig chan_info */
-	unsigned int hw_assigned_timestamp;  /**< rxdesc: u32 r_rx_tsfl */
-	unsigned char channel;  /**< driver define */
-	unsigned char bandwidth; /**< rxdesc: u8 bw */
-	unsigned char rx_data_rate;  /**< rxdesc: u16 rx_rate <ack> */
-	unsigned char protocol_mode; /**< add new,ofdm(0)/ht(1)/vht(2)/he(3) */
-	unsigned char nc;  /**< ch_rpt_hdr_info */
-	unsigned char nr;  /**< ch_rpt_hdr_info */
-	unsigned short num_sub_carrier;  /**< cfg param, driver define */
-	unsigned char num_bit_per_tone;  /**< cfg param, driver define per I/Q */
-	unsigned char avg_idle_noise_pwr;  /**< ch_rpt_hdr_info */
-	unsigned char evm[2];  /**< ch_rpt_hdr_info + phy_info_rpt */
-	unsigned char rssi[2];  /**< phy_info_rpt */
-	unsigned int csi_data_length;  /**< ch_rpt_hdr_info */
-	unsigned char rxsc;  /**< phy_info_rpt */
-	unsigned char csi_valid;  /**< ch_rpt_hdr_info */
-} rtw_csi_header_t;
 /** @} */
 
 #ifdef	__cplusplus

@@ -18,7 +18,6 @@
 #ifndef __WRAPPER_H__
 #define __WRAPPER_H__
 
-
 //----- ------------------------------------------------------------------
 // Include Files
 //----- ------------------------------------------------------------------
@@ -340,6 +339,7 @@ static __inline__ unsigned char *skb_end_pointer(const struct sk_buff *skb)
  *	External functions
  */
 struct net_device;
+
 extern void kfree_skb_chk_key(struct sk_buff *skb, struct net_device *root_dev);
 
 #define dev_kfree_skb_any(skb)	kfree_skb_chk_key(skb, skb->dev)
@@ -352,43 +352,71 @@ extern unsigned char *skb_pull(struct sk_buff *skb, unsigned int len);
 //----- ------------------------------------------------------------------
 // Device structure
 //----- ------------------------------------------------------------------
+
+struct signal_stat {
+	u8	update_req;		//used to indicate
+	u8	avg_val;		//avg of valid elements
+	u8	latest_val;		//latest valid elements
+	u32	total_num;		//num of valid elements
+	u32	total_val;		//sum of valid elements
+};
+
 struct net_device_stats {
-	unsigned long   rx_packets;             /* total packets received       */
-	unsigned long   tx_packets;             /* total packets transmitted    */
-	unsigned long   rx_dropped;             /* no space in linux buffers    */
-	unsigned long   tx_dropped;             /* no space available in linux  */
-	unsigned long   rx_bytes;               /* total bytes received         */
-	unsigned long   tx_bytes;               /* total bytes transmitted      */
-	unsigned long   rx_overflow;            /* rx fifo overflow count       */
+
+	unsigned long	rx_packets;				/*!< total packets received       */
+	unsigned long	tx_packets;				/*!<total packets transmitted    */
+	unsigned long	rx_dropped;				/*!< no space in buffers    */
+	unsigned long	tx_dropped;				/*!< no space available  */
+	unsigned long	rx_bytes;				/*!< total bytes received         */
+	unsigned long	tx_bytes;				/*!< total bytes transmitted      */
+	unsigned long	rx_overflow;			/*!< rx fifo overflow count       */
+
+	u64		last_tx_bytes;
+	u64		last_tx_pkts;
+	u64		last_rx_bytes;
+	u16		rx_reorder_drop_cnt;
+	u16		rx_reorder_timeout_cnt;
+	_timer		signal_stat_timer;
+	u32		is_any_non_be_pkts;
+	struct signal_stat signal_qual_data;
+	struct signal_stat signal_strength_data;
+	struct signal_stat signal_snr_data;
+
+	/* For display the phy informatiom */
+	int RxSNRdB[2];
+	s8 rssi;
+	s8 snr;
+	u8 signal_strength;
+	u8 signal_qual;
+#if defined(CONFIG_RTL8735B)
+	u8 signal_strength_backup;
+#endif // defined(CONFIG_RTL8735B)
 };
 
 struct net_device {
-	char			name[16];
 	void			*priv;		/* pointer to private data */
 	unsigned char		dev_addr[6];	/* set during bootup */
-	int (*init)(void);
-	int (*open)(struct net_device *dev);
-	int (*stop)(struct net_device *dev);
-	int (*hard_start_xmit)(struct sk_buff *skb, struct net_device *dev);
-	struct net_device_stats *(*get_stats)(struct net_device *dev);
+	int	(*hard_start_xmit)(struct sk_buff *skb, struct net_device *dev);
 };
 
 typedef struct {
-	struct net_device *dev;		/* Binding wlan driver netdev */
-	void *skb;			/* pending Rx packet */
-	unsigned int tx_busy;
-	unsigned int rx_busy;
-	unsigned char enable;
-	unsigned char mac[6];
-	_sema netif_rx_sema;            /* prevent race condition on .skb in rltk_netif_rx() */
+	struct net_device	dev;		/* Binding wlan driver netdev */
+	void			*skb;		/* pending Rx packet */
+	unsigned int		tx_busy;
+	unsigned int		rx_busy;
+	unsigned char		enable;
+	unsigned char		mac[6];
+	_sema			netif_rx_sema;	/* prevent race condition on .skb in rltk_netif_rx() */
 } Rltk_wlan_t;
 
+extern Rltk_wlan_t rltk_wlan_info[NET_IF_NUM];
+
 #define netdev_priv(dev)		dev->priv
+#define rtw_is_netdev_enable(idx)	(rltk_wlan_info[idx].enable)
+#define rtw_get_netdev(idx)		(&(rltk_wlan_info[idx].dev))
 
-extern struct net_device *alloc_etherdev(int sizeof_priv);
-void free_netdev(struct net_device *dev);
-int dev_alloc_name(struct net_device *net_dev, const char *ifname);
-
+extern int netdev_open(struct net_device *pnetdev);
+extern int netdev_if2_open(struct net_device *pnetdev);
 
 //----- ------------------------------------------------------------------
 // Timer Operation

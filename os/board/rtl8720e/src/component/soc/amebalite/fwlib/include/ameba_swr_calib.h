@@ -31,24 +31,7 @@ enum Swr_Calib_Info {
   * @}
   */
 
-/** @defgroup VOL_SWR_OTP_Address_define
-  * @{
-  */
-#define		VOL_AUDIO_VREF_1V8_F		0x7DE
-#define		VOL_AUDIO_VREF_1V8_S		0x7DF
-#define		VOL_SWR_PFM_125		0x7E0
-#define		VOL_SWR_PWM_135		0x7E1
-#define		VOL_SWR_PFM_09		0x7E2
-#define		VOL_SWR_PWM_10		0x7E3
-#define		VOL_AON_LDO_09		0x7E4
-#define		VOL_CORE_LDO_10		0x7E5
-#define		VOL_ANA_LDO_180		0x7E6
-
-/**
-  * @}
-  */
-
-/** @defgroup VOL_SWR_OTP_Address_define
+/** @defgroup VOL_SWR_OTP_Address_Index_define
   * @{
   */
 #define		SWR_PFM_125		0
@@ -70,14 +53,26 @@ enum Swr_Calib_Info {
   * @}
   */
 
+/** @defgroup SWR_Calib_Vol_Change_Dir_define
+  * @{
+  */
+#define RaiseVol		1
+#define ReduceVol		0
+/**
+  * @}
+  */
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SWR_Calib_Exported_Functions SWR_Calib Exported Functions
   * @{
   */
+_LONG_CALL_ u8 SWR_Calib_Get_Value(u8 swr_idx);
 _LONG_CALL_ u8 SWR_Calib_Get_Value_AUD(void);
 _LONG_CALL_ void SWR_Calib_Load(void);
 _LONG_CALL_ void SWR_Calib_RaiseVoltage(void);
 _LONG_CALL_ void SWR_Calib_ReduceVoltage(void);
+_LONG_CALL_ void SWR_CORE_Vol_Set(u8 vol_type);
+_LONG_CALL_ u8 SWR_CORE_Vol_Get(void);
 /**
   * @}
   */

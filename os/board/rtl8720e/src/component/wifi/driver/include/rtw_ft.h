@@ -31,8 +31,8 @@ enum rtw_ft_capability {
 	RTW_FT_PEER_OTD_EN = BIT(3),
 };
 
-#define rtw_ft_chk_status(a, s) \
-	((a)->mlmepriv.ft_info->ft_status == (s))
+#define rtw_ft_chk_status(padapter, s) \
+	((padapter->pshare_adapter)->rmpriv->ft_info->ft_status == (s))
 
 #define rtw_ft_roam_status(a, s)	\
 	((rtw_to_roam(a) > 0) && rtw_ft_chk_status(a, s))
@@ -42,35 +42,35 @@ enum rtw_ft_capability {
 	(rtw_ft_chk_status(a, RTW_FT_ASSOCIATING_STA)) ||	\
 	(rtw_ft_chk_status(a, RTW_FT_ASSOCIATED_STA)))
 
-#define rtw_ft_set_status(a, s) \
+#define rtw_ft_set_status(padapter, s) \
 	do { \
-		((a)->mlmepriv.ft_info->ft_status = (s)); \
+		((padapter->pshare_adapter)->rmpriv->ft_info->ft_status = (s)); \
 	} while (0)
 
-#define rtw_ft_lock_set_status(a, s, irq) \
+#define rtw_ft_lock_set_status(padapter, s, irq) \
 	do { \
-		rtw_enter_critical_bh(&(a)->mlmepriv.lock, ((_irqL *)(irq)));	\
-		((a)->mlmepriv.ft_info->ft_status = (s));	\
-		rtw_exit_critical_bh(&(a)->mlmepriv.lock, ((_irqL *)(irq)));	\
+		rtw_enter_critical_bh(&rtw_get_mlmepriv(a)->lock, ((_irqL *)(irq)));	\
+		((padapter->pshare_adapter)->rmpriv->ft_info->ft_status = (s));	\
+		rtw_exit_critical_bh(&rtw_get_mlmepriv(a)->lock, ((_irqL *)(irq)));	\
 	} while (0)
 
-#define rtw_ft_reset_status(a) \
+#define rtw_ft_reset_status(padapter) \
 	do { \
-		((a)->mlmepriv.ft_info->ft_status = RTW_FT_UNASSOCIATED_STA); \
+		((padapter->pshare_adapter)->rmpriv->ft_info->ft_status = RTW_FT_UNASSOCIATED_STA); \
 	} while (0)
 
 
-#define rtw_ft_chk_flags(a, f) \
-	((a)->mlmepriv.ft_flags & (f))
+#define rtw_ft_chk_flags(padapter, f) \
+	((padapter->pshare_adapter)->rmpriv->ft_flags & (f))
 
-#define rtw_ft_set_flags(a, f) \
+#define rtw_ft_set_flags(padapter, f) \
 	do { \
-		((a)->mlmepriv.ft_flags |= (f)); \
+		((padapter->pshare_adapter)->rmpriv->ft_flags |= (f)); \
 	} while (0)
 
-#define rtw_ft_clr_flags(a, f) \
+#define rtw_ft_clr_flags(padapter, f) \
 	do { \
-		((a)->mlmepriv.ft_flags &= ~(f)); \
+		((padapter->pshare_adapter)->rmpriv->ft_flags &= ~(f)); \
 	} while (0)
 
 #define rtw_ft_roam(a)	\
@@ -80,9 +80,9 @@ enum rtw_ft_capability {
 	((rtw_ft_chk_flags(a, RTW_FT_EN)) && \
 	(((t) == WPA_KEY_MGMT_FT_IEEE8021X) || ((t) == WPA_KEY_MGMT_FT_PSK)))
 
-#define rtw_ft_otd_roam_en(a)	\
+#define rtw_ft_otd_roam_en(padapter)	\
 	((rtw_ft_chk_flags(a, RTW_FT_OTD_EN))	\
-	&& ((a)->mlmepriv.ft_info->ft_cap & 0x01))
+	&& ((padapter->pshare_adapter)->rmpriv->ft_info->ft_cap & 0x01))
 
 #define rtw_ft_otd_roam(a) \
 	(rtw_ft_chk_flags(a, RTW_FT_OTD_EN) && rtw_ft_chk_flags(a, RTW_FT_PEER_OTD_EN))
@@ -201,7 +201,7 @@ struct rsn_ie_hdr {
 
 void rtw_ft_info_init(_adapter *padapter);
 
-void rtw_ft_info_deinit(struct mlme_priv *pmlmepriv);
+void rtw_ft_info_deinit(_adapter *padapter);
 
 void rtw_ft_enable(_adapter *padapter);
 

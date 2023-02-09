@@ -38,7 +38,7 @@
 #endif
 
 // Assign memory sectinon usage
-#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include <section_config.h>
 //#include "rtl_utility_ram.h"
 #include "platform_stdlib.h"
@@ -61,6 +61,16 @@ enum _NIC_VERSION {
 
 };
 
+/* Add for halbb, It may be wrong if g6 driver add other type for BIT6, */
+enum rtw_hci_type {
+	RTW_HCI_PCIE = (1U << 0),
+	RTW_HCI_USB = (1U << 1),
+	RTW_HCI_SDIO = (1U << 2),
+	RTW_HCI_GSPI = (1U << 3),
+	RTW_HCI_AXI = (1U << 6),
+	RTW_HCI_MAX,
+};
+
 typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 
 #include "wireless.h"
@@ -69,7 +79,6 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <device_lock.h>
 #include <rtw_byteorder.h>
 #include <rtw_io.h>
-#include <hci_spec.h>
 #include <cmn_info/rtw_sta_info.h>
 #include <wlan_bssdef.h>
 #include <wifi.h>
@@ -113,9 +122,10 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <rtw_security.h>
 #include <rom_rtw_security.h>
 #include <rtw_pwrctrl.h>
-#include <rtw_eeprom.h>
+#include <rtw_pwrctrl_sd1.h>
 #include <sta_info.h>
 #include <rtw_mlme.h>
+#include <rtw_layer2_rm.h>
 #include <rtw_debug.h>
 #include <ieee80211.h>
 #include <rom_ieee80211.h>
@@ -123,22 +133,17 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <rtw_rf.h>
 #include <rtw_event.h>
 #include <rtw_mlme_ext.h>
-#include <rtw_mi.h>
+#include <rtw_80211frame.h>
+#include <rtw_dfs.h>
 #include <wifi_performance_monitor.h>
 //#include <rtw_tdls.h>
 #include <rtw_ap.h>
-#include <rtw_efuse.h>
 
 #include <osdep_intf.h>
 
 #include <hci_intfs.h>
-
 #ifdef CONFIG_HARDWARE_8192E
 #include <wifi_conf.h>
-#endif
-
-#ifdef CONFIG_WAPI_SUPPORT
-#include <rtw_wapi.h>
 #endif
 
 #ifdef CONFIG_MP_INCLUDED
@@ -146,14 +151,13 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #endif
 
 #ifdef CONFIG_BT_COEXIST
-#include <rtw_btcoex.h>
+#include <btc_api.h>
 #endif
 
 #ifdef CONFIG_BT_COEXIST_SOC
 #include <rtw_btcoex_soc.h>
 #endif
 
-#include <rtw_btcoex_wifionly.h>
 
 #ifdef CONFIG_IEEE80211R
 #include <rtw_ft.h>
@@ -162,81 +166,47 @@ typedef struct _ADAPTER _adapter, ADAPTER, *PADAPTER;
 #include <rtw_wnm.h>
 #endif
 
-#define SPEC_DEV_ID_NONE BIT(0)
-#define SPEC_DEV_ID_DISABLE_HT BIT(1)
-#define SPEC_DEV_ID_ENABLE_PS BIT(2)
-#define SPEC_DEV_ID_RF_CONFIG_1T1R BIT(3)
-#define SPEC_DEV_ID_RF_CONFIG_2T2R BIT(4)
-#define SPEC_DEV_ID_ASSIGN_IFNAME BIT(5)
+#define CHANNEL_MAX_NUMBER						14	// 14 is the max channel number
+#define CHANNEL_MAX_NUMBER_2G					14
+#define CHANNEL_MAX_NUMBER_5G					54	// Please refer to "phy_GetChnlGroup8812A" and "Hal_ReadTxPowerInfo8812A"
+#define CHANNEL_MAX_NUMBER_5G_80M				7
 
-#define BUFLEN(a)	strnlen(a,sizeof(a))
+// Tx Power Limit Table Size
+#define MAX_REGULATION_NUM						TXPWR_LMT_MAX_REGULATION_NUM
+#define MAX_2_4G_BANDWITH_NUM					2 // 20M, 40M
+#if defined(NOT_SUPPORT_RF_MULTIPATH) && (!defined(CONFIG_80211AC_VHT))
+#define MAX_RATE_SECTION_NUM					3 // CCk, OFDM, HT
+#define MAX_BASE_NUM_IN_PHY_REG_PG_2_4G			3 //  CCK:1,OFDM:1, HT:1(MCS0_MCS7)
+#else
+#define MAX_RATE_SECTION_NUM					10
+#define MAX_BASE_NUM_IN_PHY_REG_PG_2_4G			10 //  CCK:1,OFDM:1, HT:4, VHT:4
+#endif
+#define MAX_5G_BANDWITH_NUM						4
+#define MAX_BASE_NUM_IN_PHY_REG_PG_5G			9 // OFDM:1, HT:4, VHT:4
+
+#define SPEC_DEV_ID_NONE		BIT(0)
+#define SPEC_DEV_ID_DISABLE_HT		BIT(1)
+#define SPEC_DEV_ID_ENABLE_PS		BIT(2)
+#define SPEC_DEV_ID_RF_CONFIG_1T1R	BIT(3)
+#define SPEC_DEV_ID_RF_CONFIG_2T2R	BIT(4)
+#define SPEC_DEV_ID_ASSIGN_IFNAME	BIT(5)
+
+#define BUFLEN(a)			strnlen(a,sizeof(a))
 
 typedef unsigned char			BOOLEAN, *PBOOLEAN;
 typedef unsigned char			u1Byte, *pu1Byte;
 typedef unsigned short			u2Byte, *pu2Byte;
 typedef unsigned int			u4Byte, *pu4Byte;
 typedef unsigned long long		u8Byte, *pu8Byte;
-typedef signed char				s1Byte, *ps1Byte;
+typedef signed char			s1Byte, *ps1Byte;
 
 struct specific_device_id {
-
 	u32		flags;
-
 	u16		idVendor;
 	u16		idProduct;
 
 };
 
-struct registry_priv {
-	u8	wireless_mode;//A, B, G, auto
-	u8	band_type;
-	u8	ips_mode;
-	//UAPSD
-
-	/* Short GI support Bit Map */
-	/* BIT0 - 20MHz, 1: support, 0: non-support */
-	/* BIT1 - 40MHz, 1: support, 0: non-support */
-	/* BIT2 - 80MHz, 1: support, 0: non-support */
-	/* BIT3 - 160MHz, 1: support, 0: non-support */
-	u8	short_gi;
-	/* BIT0: Enable VHT LDPC Rx, BIT1: Enable VHT LDPC Tx, BIT4: Enable HT LDPC Rx, BIT5: Enable HT LDPC Tx */
-	u8	ldpc_cap;
-	/* BIT0: Enable VHT STBC Rx, BIT1: Enable VHT STBC Tx, BIT4: Enable HT STBC Rx, BIT5: Enable HT STBC Tx */
-	u8	stbc_cap;
-
-#ifdef CONFIG_80211AC_VHT
-	u8	ampdu_factor;
-#endif /* CONFIG_80211AC_VHT */
-
-	u32	country_code;
-
-	u8 	ifname[16];
-	u8 	if2name[16];
-
-	u8	RegPwrTblSel;
-
-	u8 adaptivity_en;
-	u8 adaptivity_mode;
-	u8 adaptivity_dml;
-	u8 adaptivity_dc_backoff;
-	s8 adaptivity_th_l2h_ini;
-
-#ifdef RTW_HALMAC
-	u8 boffefusemask;
-	BOOLEAN bFileMaskEfuse;
-#endif
-
-	s8	TxBBSwing_2G;
-	s8	TxBBSwing_5G;
-	u8	AmplifierType_2G;
-	u8	AmplifierType_5G;
-
-	u8	GLNA_Type;
-};
-
-//For registry parameters
-#define RGTRY_OFT(field) ((u32)FIELD_OFFSET(struct registry_priv,field))
-#define RGTRY_SZ(field)   sizeof(((struct registry_priv*) 0)->field)
 #define BSSID_OFT(field) ((u32)FIELD_OFFSET(WLAN_BSSID_EX,field))
 #define BSSID_SZ(field)   sizeof(((PWLAN_BSSID_EX) 0)->field)
 
@@ -249,16 +219,6 @@ struct registry_priv {
 #define REGSTY_IS_BW_5G_SUPPORT(bw_mode, bw) (REGSTY_BW_5G((bw_mode)) >= (bw))
 
 #define MAX_CONTINUAL_URB_ERR 4
-
-#ifdef CONFIG_CONCURRENT_MODE
-#define is_primary_adapter(adapter) (adapter->adapter_type == PRIMARY_ADAPTER)
-#define get_iface_type(adapter) (adapter->iface_type)
-#define get_hw_port(adapter) (adapter->hw_port)
-#else
-#define is_primary_adapter(adapter) (1)
-#define get_iface_type(adapter) (IFACE_PORT0)
-#define get_hw_port(adapter) (HW_PORT0)
-#endif
 
 enum _IFACE_ID {
 	IFACE_ID0, /*PRIMARY_ADAPTER*/
@@ -286,8 +246,6 @@ enum _hw_port {
 	HW_PORT4,
 	MAX_HW_PORT,
 };
-
-_adapter *dvobj_get_port0_adapter(struct dvobj_priv *dvobj);
 
 enum _ADAPTER_TYPE {
 	PRIMARY_ADAPTER,
@@ -333,88 +291,21 @@ struct rf_ctl_t {
 
 #ifdef CONFIG_DFS
 	u8 csa_ch;
-
-#ifdef CONFIG_DFS_MASTER
-	_timer radar_detect_timer;
-	bool radar_detect_by_others;
-	u8 radar_detect_enabled;
-	bool radar_detected;
-
-	u8 radar_detect_ch;
-	u8 radar_detect_bw;
-	u8 radar_detect_offset;
-
-	systime cac_start_time;
-	systime cac_end_time;
-	u8 cac_force_stop;
-
-#ifdef CONFIG_DFS_SLAVE_WITH_RADAR_DETECT
-	u8 dfs_slave_with_rd;
-#endif
-	u8 dfs_ch_sel_d_flags;
-
-	u8 dbg_dfs_master_fake_radar_detect_cnt;
-	u8 dbg_dfs_master_radar_detect_trigger_non;
-	u8 dbg_dfs_master_choose_dfs_ch_first;
-#endif
 #endif
 };
 
 #define RTW_CAC_STOPPED 0
-#ifdef CONFIG_DFS_MASTER
-#define IS_CAC_STOPPED(rfctl) ((rfctl)->cac_end_time == RTW_CAC_STOPPED)
-#define IS_CH_WAITING(rfctl) (!IS_CAC_STOPPED(rfctl) && time_after((rfctl)->cac_end_time, rtw_get_current_time()))
-#define IS_UNDER_CAC(rfctl) (IS_CH_WAITING(rfctl) && time_after(rtw_get_current_time(), (rfctl)->cac_start_time))
-#define IS_RADAR_DETECTED(rfctl) ((rfctl)->radar_detected)
-#else
+
 #define IS_CAC_STOPPED(rfctl) 1
 #define IS_CH_WAITING(rfctl) 0
 #define IS_UNDER_CAC(rfctl) 0
 #define IS_RADAR_DETECTED(rfctl) 0
-#endif /* CONFIG_DFS_MASTER */
 
 
 #ifdef CONFIG_DFS_SLAVE_WITH_RADAR_DETECT
 #define IS_DFS_SLAVE_WITH_RD(rfctl) ((rfctl)->dfs_slave_with_rd)
 #else
 #define IS_DFS_SLAVE_WITH_RD(rfctl) 0
-#endif
-
-#ifdef RTW_HALMAC
-struct halmac_indicator {
-	struct submit_ctx *sctx;
-	u8 *buffer;
-	u32 buf_size;
-	u32 ret_size;
-	u32 status;
-};
-
-struct halmacpriv {
-	/* flags */
-
-	/* For asynchronous functions */
-	struct halmac_indicator *indicator;
-};
-#endif
-
-#if 0
-struct rtw_traffic_statistics {
-	/* tx statistics */
-	u64	tx_bytes;
-	u64	tx_pkts;
-	u64	tx_drop;
-	u64	cur_tx_bytes;
-	u64	last_tx_bytes;
-	u32	cur_tx_tp; /* Tx throughput in MBps. */
-
-	/* rx statistics */
-	u64	rx_bytes;
-	u64	rx_pkts;
-	u64	rx_drop;
-	u64	cur_rx_bytes;
-	u64	last_rx_bytes;
-	u32	cur_rx_tp; /* Rx throughput in MBps. */
-};
 #endif
 
 #define SEC_CAP_CHK_BMC	BIT0
@@ -434,99 +325,7 @@ struct macid_bmp {
 #endif
 };
 
-struct macid_ctl_t {
-	_lock lock;
-	u8 num;
-	struct macid_bmp used;
-	struct macid_bmp bmc;
-	struct macid_bmp if_g[CONFIG_IFACE_NUMBER];
-	struct macid_bmp ch_g[2]; /* 2 ch concurrency */
-
-	u8 iface_bmc[CONFIG_IFACE_NUMBER]; /* bmc TX macid for each iface*/
-
-	u8 h2c_msr[MACID_NUM_SW_LIMIT];
-	u8 bw[MACID_NUM_SW_LIMIT];
-	u8 vht_en[MACID_NUM_SW_LIMIT];
-	u32 rate_bmp0[MACID_NUM_SW_LIMIT];
-	u32 rate_bmp1[MACID_NUM_SW_LIMIT];
-
-	struct sta_info *sta[MACID_NUM_SW_LIMIT]; /* corresponding stainfo when macid is not shared */
-
-	/* macid sleep registers */
-	u16 reg_sleep_m0;
-#if (MACID_NUM_SW_LIMIT > 32)
-	u16 reg_sleep_m1;
-#endif
-#if (MACID_NUM_SW_LIMIT > 64)
-	u16 reg_sleep_m2;
-#endif
-#if (MACID_NUM_SW_LIMIT > 96)
-	u16 reg_sleep_m3;
-#endif
-};
-
-struct dvobj_priv {
-	void *if1;
-#ifdef CONFIG_CONCURRENT_MODE
-	void *if2;
-#endif
-
-	unsigned char	oper_channel; /* saved channel info when call set_channel_bw */
-	unsigned char	oper_bwmode;
-	unsigned char	oper_ch_offset;/* PRIME_CHNL_OFFSET */
-	systime on_oper_ch_time;
-
-	//For 92D, DMDP have 2 interface.
-	//u8	InterfaceNumber;
-	//u8	NumInterfaces;
-	void *padapters[MAX_IFACE_PORT];
-	u8 iface_nums; // total number of ifaces used runtime
-
-	struct mi_state iface_state;
-
-#if defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8711B) ||defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8735B) || defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
-
-	struct macid_ctl_t macid_ctl;
-#endif
-//#ifdef CONFIG_80211AC_VHT
-	struct rf_ctl_t rf_ctl;
-//#endif
-
-	//In /Out Pipe information
-	//int	RtInPipe[2];
-	u8	RtOutPipe[3];//int	RtOutPipe[3];
-	u8	Queue2Pipe[HW_QUEUE_ENTRY];//for out pipe mapping
-
-	//u8	irq_alloc;
-
-#ifdef RTW_HALMAC
-	void *halmac;
-	struct halmacpriv hmpriv;
-#endif
-	/*-------- below is for SDIO INTERFACE --------*/
-
-#if 0
-	struct rtw_traffic_statistics	traffic_stat;
-#endif
-
-
-	/*-------- below is for PCIE INTERFACE --------*/
-
-#ifdef CONFIG_LX_HCI
-	u8	irq_alloc;
-	u8	irq_enabled;
-	_lock	irq_th_lock;
-#endif //CONFIG_LX_HCI
-
-#ifdef CONFIG_AXI_HCI
-	u8	irq_alloc;
-	u8	irq_enabled;
-	_lock	irq_th_lock;
-#endif//CONFIG_AXI_HCI
-
-};
-
-#define rfctl_to_dvobj(rfctl) container_of((rfctl), struct dvobj_priv, rf_ctl)
+#define rfctl_to_share_adapter(rfctl) container_of((rfctl), struct share_adapter, rf_ctl)
 
 typedef enum _DRIVER_STATE {
 	DRIVER_NORMAL = 0,
@@ -534,202 +333,304 @@ typedef enum _DRIVER_STATE {
 	DRIVER_REPLACE_DONGLE = 2,
 } DRIVER_STATE;
 
-#ifdef CONFIG_INTEL_PROXIM
-struct proxim {
-	bool proxim_support;
-	bool proxim_on;
-
-	void *proximity_priv;
-	int (*proxim_rx)(_adapter *padapter,
-					 union recv_frame *precv_frame);
-	u8(*proxim_get_var)(_adapter *padapter, u8 type);
-};
-#endif	//CONFIG_INTEL_PROXIM
-
-#ifdef CONFIG_MAC_LOOPBACK_DRIVER
-typedef struct loopbackdata {
-	_sema	sema;
-	_thread_hdl_ lbkthread;
-	u8 bstop;
-	u32 cnt;
-	u16 size;
-	u16 txsize;
-	u8 txbuf[0x8000];
-	u16 rxsize;
-	u8 rxbuf[0x8000];
-	u8 msg[100];
-
-} LOOPBACKDATA, *PLOOPBACKDATA;
-#endif
-
 struct tsf_info {
 	u8 sync_port;/*tsf sync from portx*/
 	u8 offset; /*tsf timer offset*/
 };
 
-struct _ADAPTER {
-	u16	HardwareType;
-	u16	interface_type;//USB,SDIO,SPI,PCI
-	u32	work_mode; //STA, AP, STA+AP, PROMISC, P2P
+struct wps_priv {
+#ifdef CONFIG_WPS
+	u8 *wps_probe_req_ie;
+	u16 wps_probe_req_ie_len;
+	u8 *wps_assoc_req_ie;
+	u16 wps_assoc_req_ie_len;
 
-	struct	dvobj_priv	*dvobj;
-	struct	mlme_priv	mlmepriv;
-	struct	mlme_ext_priv	mlmeextpriv;
-	struct	cmd_priv	cmdpriv;
-	struct	evt_priv	evtpriv;
-#ifdef CONFIG_IEEE80211K
-	struct	rm_priv 	*rmpriv;
+	u8 *wps_beacon_ie;
+	u8 *wps_probe_resp_ie;
+	u8 *wps_assoc_resp_ie; // for CONFIG_IOCTL_CFG80211, this IE could include p2p ie
+
+	u16 wps_beacon_ie_len;
+	u16 wps_probe_resp_ie_len;
+	u16 wps_assoc_resp_ie_len;
 #endif
-	//struct	io_queue	*pio_queue;
-	struct 	io_priv	iopriv;
-	struct	xmit_priv	xmitpriv;
-	struct	recv_priv	recvpriv;
-	struct	sta_priv	stapriv;
-	struct	security_priv	securitypriv;
-	//_lock   security_key_mutex; /* add for CONFIG_IEEE80211W, none 11w also can use */
-	struct	registry_priv	registrypriv;
-	struct	pwrctrl_priv	pwrctrlpriv;
-	struct 	eeprom_priv eeprompriv;
-
-	struct rtw_phl_com_t *phl_com;
-	struct rtw_wifi_role_t phl_role;
-
-#ifdef CONFIG_MP_INCLUDED
-	struct	mp_priv	mppriv;
-#endif
-
-#ifdef CONFIG_WAPI_SUPPORT
-	u8	WapiSupport;
-	RT_WAPI_T	wapiInfo;
-#endif
-
-	PVOID		HalData;
-	u32 		hal_data_sz;
-	struct hal_ops	HalFunc;
-
-	s32	bDriverStopped;
-	s32	bCardDisableWOHSM;
-	u8	RxStop;	//Used to stop rx thread as early as possible
-	_sema	RxProtect_sema;	//Used to protect RX when in rtw_set_mode
-
-	u32	IsrContent;
-	u32	ImrContent;
-
-	u8	EepromAddressSize;
-	u8	hw_init_completed;
-	u8	bDriverIsGoingToUnload;
-	u8	init_adpt_in_progress;
-	u8	bMpDriver;
-
-#if defined(CONFIG_EVENT_THREAD_MODE)
-	_thread_hdl_	evtThread;
-#endif
-
-	struct task_struct	single_thread;
-	struct task_struct	little_stack_thread;
-
-#ifdef CONFIG_SDIO_XMIT_THREAD
-	struct task_struct	SdioXmitThread;
-#endif
-
-#ifdef CONFIG_BT_COEXIST_SOC
-	struct task_struct	btmailboxThread;
-	_queue	btmailboxQueue;
-	struct coex_priv *coexpriv;
-#endif
-#if defined (CONFIG_WOWLAN) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
-	struct task_struct	driver_resumeThread;
-#endif
-
-	void (*intf_start)(_adapter *adapter);
-	void (*intf_stop)(_adapter *adapter);
-	_nic_hdl	pnetdev;
-	int		bup;
-	struct net_device_stats stats;
-	u8 net_closed;
-
-	u8 bFWReady;
-	//u8 bBTFWReady;
-	//u8 bReadPortCancel;
-	//u8 bWritePortCancel;
-	u8 bRxRSSIDisplay;
-
-	_adapter *pbuddy_adapter;
-
-	_mutex *hw_init_mutex;
-	u8 iface_type; //interface port type
-	_mutex *ph2c_fwcmd_mutex;
-
-	/*extend to support multi interface*/
-	u8 iface_id;
-
-#if defined(CONFIG_CONCURRENT_MODE)
-	u8 isprimary; //is primary adapter or not
-	u8 adapter_type;
-	struct tsf_info tsf;
-
-	//for global synchronization
-	_mutex *psetch_mutex;
-	_mutex *psetbw_mutex;
-#endif
-
-#ifdef CONFIG_INTEL_PROXIM
-	/* intel Proximity, should be alloc mem
-	 * in intel Proximity module and can only
-	 * be used in intel Proximity mode */
-	struct proxim proximity;
-#endif	//CONFIG_INTEL_PROXIM
-
-#ifdef CONFIG_MAC_LOOPBACK_DRIVER
-	PLOOPBACKDATA ploopback;
-#endif
-
-	u16 fix_rate;
-	u8 fix_bw;
-	u8 driver_tx_bw_mode;
-
-#ifdef CONFIG_CAC_TEST
-	unsigned char     in_cta_test;
-#endif
-	/* This flag is used to dynamically enabling debug message if
-	  	certain sympton happen. Use iwpriv command to enable it */
-#if defined(CONFIG_DEBUG_DYNAMIC)
-	u8	debug_level;
-#endif
-
-	// for user define DM
-	u8 ra_mask_user_en;
-	u32 ra_mask_define;
-	u8 auto_rate_fallback_user_en;
-
-	/*
-	 * If is true, driver won't process any rx packets from ap port
-	*/
-	u8 b_suspend_ap_rx;
-
 };
 
-#define dvobj_to_macidctl(dvobj) (&(dvobj->macid_ctl))
-#define dvobj_to_rfctl(dvobj) (&(dvobj->rf_ctl))
-#define dvobj_get_primary_adapter(dvobj)	((_adapter*)((dvobj)->if1))
-#define dvobj_to_regsty(dvobj) (&(((_adapter*)(dvobj->if1))->registrypriv))
+struct halphy_data_t {
+#if (PHYDM_VERSION < 3)
+	s8			TxPwrByRateOffset[TX_PWR_BY_RATE_NUM_BAND]
+	[TX_PWR_BY_RATE_NUM_RF]
+	[TX_PWR_BY_RATE_NUM_RF]
+	[TX_PWR_BY_RATE_NUM_RATE];
+	u8			Index24G_CCK_Base[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
+	u8			Index24G_BW40_Base[MAX_RF_PATH][CHANNEL_MAX_NUMBER];
+	//If only one tx, only BW20 and OFDM are used.
+	s8			OFDM_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+	s8			BW20_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+#if !defined(NOT_SUPPORT_RF_MULTIPATH)
+	s8			CCK_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+	s8			BW40_24G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+#endif
+	/* 5G TX power info for target TX power*/
+#if defined(SUPPORT_5G_CHANNEL)
+	u8			Index5G_BW40_Base[MAX_RF_PATH][CENTER_CH_5G_ALL_NUM];
+#if !defined(NOT_SUPPORT_80M)
+	u8			Index5G_BW80_Base[MAX_RF_PATH][CENTER_CH_5G_80M_NUM];
+#endif
+	s8			OFDM_5G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+	s8			BW20_5G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+	s8			BW40_5G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+#if !defined(NOT_SUPPORT_80M)
+	s8			BW80_5G_Diff[MAX_RF_PATH][MAX_TX_COUNT];
+#endif
+#endif
+	/* 2 Power Limit Table */
+	/* Power Limit Table for 2.4G */
+	s8			TxPwrLimit_2_4G[MAX_REGULATION_NUM]
+	[MAX_2_4G_BANDWITH_NUM]
+	[MAX_RATE_SECTION_NUM]
+	[CHANNEL_MAX_NUMBER_2G]
+	[MAX_RF_PATH];
+#if defined(SUPPORT_5G_CHANNEL)
+	/* Power Limit Table for 5G */
+	s8			TxPwrLimit_5G[MAX_REGULATION_NUM]
+	[MAX_5G_BANDWITH_NUM]
+	[MAX_RATE_SECTION_NUM]
+	[CHANNEL_MAX_NUMBER_5G]
+	[MAX_RF_PATH];
+#endif
+	/* Store the original power by rate value of the base of each rate section of rf path A & B */
+	u8			TxPwrByRateBase2_4G[TX_PWR_BY_RATE_NUM_RF]
+	[TX_PWR_BY_RATE_NUM_RF]
+	[MAX_BASE_NUM_IN_PHY_REG_PG_2_4G];
+#if defined(SUPPORT_5G_CHANNEL)
+	u8			TxPwrByRateBase5G[TX_PWR_BY_RATE_NUM_RF]
+	[TX_PWR_BY_RATE_NUM_RF]
+	[MAX_BASE_NUM_IN_PHY_REG_PG_5G];
+#endif
+#endif // (PHYDM_VERSION < 3)
+};
 
-#define adapter_to_dvobj(adapter) (adapter->dvobj)
-#define adapter_to_regsty(adapter) dvobj_to_regsty(adapter_to_dvobj((adapter)))
-#define adapter_to_pwrctl(adapter) (&adapter->pwrctrlpriv)
-#define adapter_to_rfctl(adapter) dvobj_to_rfctl(adapter_to_dvobj((adapter)))
-#define adapter_to_macidctl(adapter) dvobj_to_macidctl(adapter_to_dvobj((adapter)))
-#define adapter_mac_addr(adapter) (adapter->eeprompriv.mac_addr)
-#define adapter_to_chset(adapter) (adapter->mlmeextpriv.channel_set)
+struct share_adapter {
+	_adapter			*primary_adapter;
+	_adapter			*second_adapter;
+	u8				iface_nums;		/* total number of ifaces used runtime */
+	struct recv_priv		recvpriv;
+	struct xmit_priv		xmitpriv;
+	struct rf_ctl_t			rf_ctl;
+	struct ap_priv			appriv;
+	struct pwrctrl_priv		pwrctrlpriv;
+	struct mlme_ext_priv		mlmeextpriv;
+	struct mlme_priv		mlmepriv;
+	struct rtw_phl_com_t		phl_com;
+	struct wps_priv			wpspriv;
+	struct pwrctrl_priv_sd1		pwrctrlsd1_priv;
+	struct rm_priv			*rmpriv;
+	struct share_security_priv	share_securitypriv;
+#ifdef CONFIG_PROMISC
+	struct promisc_priv		promiscpriv;
+#endif // CONFIG_PROMISC
+#ifdef CONFIG_MP_INCLUDED
+	struct	mp_priv			mppriv;
+#endif
+	PVOID				HalData;
+	unsigned char			oper_channel;		/* saved channel info when call set_channel_bw */
+	unsigned char			oper_bwmode;
+	unsigned char			oper_ch_offset;		/* PRIME_CHNL_OFFSET */
+	systime				on_oper_ch_time;
+#ifdef RTW_HALMAC
+	void				*halmac;
+#endif
+	u8				irq_alloc;
+	u8				irq_enabled;
+	_lock				irq_th_lock;
+	struct task_struct		single_thread;
+	struct task_struct		little_stack_thread;
+#ifdef CONFIG_BT_COEXIST_SOC
+	_queue				btmailboxQueue;
+	struct coex_priv		*coexpriv;
+	struct task_struct		btmailboxThread;
+#endif
+#if defined (CONFIG_WOWLAN) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+	struct task_struct		driver_resumeThread;
+#endif
+};
 
-#define adapter_to_phydm(adapter) (&(GET_HAL_DATA(adapter)->odmpriv))
-#define dvobj_to_phydm(dvobj) adapter_to_phydm(dvobj_get_primary_adapter(dvobj))
+struct _ADAPTER {
+	struct share_adapter		*pshare_adapter;
+	_adapter			*pbuddy_adapter;
 
-#define rtw_get_intf_type(adapter) (((PADAPTER)adapter)->interface_type)
+	u32				work_mode;	//STA, AP, STA+AP, PROMISC, P2P
+	struct mlme_ext_info		mlmext_info;	//for sta/adhoc mode, including current scanning/connecting/connected related info.
+	struct cmd_priv			cmdpriv;
+	struct sta_priv			stapriv;
+	struct security_priv		securitypriv;
+	struct qos_priv			qospriv;
+	struct ht_priv			htpriv;
+#ifdef CONFIG_80211AC_VHT
+	struct vht_priv			vhtpriv;
+#endif
+#ifdef CONFIG_80211AX_HE
+	struct he_priv			hepriv;
+#endif
+	struct halphy_data_t		halphy_data;
+	struct wlan_network		cur_network;
+	s32				bDriverStopped;
+	u8				RxStop;	//Used to stop rx thread as early as possible
+	u8				hw_init_completed;
+	u8				bMpDriver;
+	_nic_hdl			pnetdev;
+	int				bup;
+	struct net_device_stats		stats;
+	u8				net_closed;
+	sint				fw_state;	//shall we protect this variable? maybe not necessarily...
+	u8				bFWReady;
+	u8				iface_type; //interface port type
+	/*extend to support multi interface*/
+	u8				iface_id;
+#if defined(CONFIG_CONCURRENT_MODE)
+	u8				isprimary; //is primary padapter or not
+	u8				adapter_type;
+#if defined(CONFIG_RTL8735B)
+	struct tsf_info			tsf;
+#endif
+#endif
+	u16				fix_rate;
+	u8				mac_addr[6];
+	u8				fix_vcs;
+	u8				driver_tx_bw_mode;
+	struct hw_xmit			pending_queue;
+};
 
-__inline static u8 *myid(struct eeprom_priv *peepriv)
+#define intf_stop hci_intf_stop
+
+/* Get elementes from padapter. */
+#ifdef CONFIG_CONCURRENT_MODE
+#define is_primary_adapter(padapter)		(padapter->adapter_type == PRIMARY_ADAPTER)
+#define get_iface_type(padapter)		(padapter->iface_type)
+#define get_hw_port(padapter)			(padapter->hw_port)
+#else
+#define is_primary_adapter(padapter)		(1)
+#define get_iface_type(padapter)		(IFACE_PORT0)
+#define get_hw_port(padapter)			(HW_PORT0)
+#endif
+#define rtw_get_stapriv(padapter)		(&(padapter->stapriv))
+#define rtw_get_securepriv(padapter)		(&(padapter->securitypriv))
+#define rtw_get_pmlmeinfo(padapter)		(&(padapter->mlmext_info))
+#define rtw_get_qospriv(padapter)		(&(padapter->qospriv))
+#define rtw_get_htpriv(padapter)		(&(padapter->htpriv))
+#define rtw_get_vhtpriv(padapter)		(&(padapter->vhtpriv))
+#define rtw_get_hepriv(padapter)		(&(padapter->hepriv))
+#define rtw_get_cur_network(padapter)		(&(padapter->cur_network))
+#define rtw_get_bssid(padapter)			(padapter->cur_network.network.MacAddress)
+#define rtw_get_stats(padapter)			(&(padapter->stats))
+#define rtw_get_pendingqueue(padapter)		(&(padapter->pending_queue))
+#define rtw_get_cmdpriv(padapter)		(&(padapter->cmdpriv))
+#define rtw_get_halphydata(padapter)		(&(padapter->halphy_data))
+#define adapter_mac_addr(padapter)		(padapter->mac_addr)
+
+/* Get elements from pshare_adapter. */
+#define rtw_get_pshare(padapter)		((padapter)->pshare_adapter)
+#define rtw_get_adapter(index, padapter)	((index == 0) ? ((_adapter *)padapter)->pshare_adapter->primary_adapter : ((_adapter *)padapter)->pshare_adapter->second_adapter)
+#define rtw_get_xmitpriv(padapter)		(&(padapter->pshare_adapter->xmitpriv))
+#define rtw_get_recvpriv(padapter)		(&(padapter->pshare_adapter->recvpriv))
+#define rtw_get_mlmepriv(padapter)		(&(padapter->pshare_adapter->mlmepriv))
+#define rtw_get_mlmeextpriv(padapter)		(&(padapter->pshare_adapter->mlmeextpriv))
+#define rtw_get_appriv(padapter)		(&(padapter->pshare_adapter->appriv))
+#define rtw_get_sharesecpriv(padapter)		(&(padapter->pshare_adapter->share_securitypriv))
+#define rtw_get_singlethread(padapter)		(&(padapter->pshare_adapter->single_thread))
+#define rtw_get_littlethread(padapter)		(&(padapter->pshare_adapter->little_stack_thread))
+#define adapter_to_pwrctl_sd1(padapter)		(&(padapter->pshare_adapter->pwrctrlsd1_priv))
+#define adapter_to_chset(padapter)		(padapter->pshare_adapter->mlmeextpriv.channel_set)
+#if defined (CONFIG_WOWLAN) && defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+#define rtw_get_driverresumethread(padapter)	(&(padapter->pshare_adapter->driver_resumeThread))
+#endif
+#ifdef CONFIG_BT_COEXIST_SOC
+#define rtw_get_btmailboxthread(padapter)	(&(padapter->pshare_adapter->btmailboxThread))
+#define rtw_get_coexpriv(padapter)		(padapter->pshare_adapter->coexpriv)
+#define rtw_get_btmailboxqueue(padapter)	(&(padapter->pshare_adapter->btmailboxQueue))
+#endif
+#define rtw_get_wpspriv(padapter)		(&(padapter->pshare_adapter->wpspriv))
+#define rtw_get_rmpriv(padapter)		(padapter->pshare_adapter->rmpriv)
+#define rtw_set_rmpriv(padapter, value)		(padapter->pshare_adapter->rmpriv = value)
+#ifdef CONFIG_PROMISC
+#define rtw_get_promisc(padapter)		(&(padapter->pshare_adapter->promiscpriv))
+#endif
+#define rtw_get_pwrctrlpriv(padapter)		(&(padapter->pshare_adapter->pwrctrlpriv))
+#define rtw_get_haldata(padapter)		((HAL_DATA_TYPE *)((padapter)->pshare_adapter->HalData))
+#define rtw_set_haldata(padapter, hal_info)	(padapter->pshare_adapter->HalData = hal_info)
+#define rtw_get_phlcom(padapter)		(&(padapter->pshare_adapter->phl_com))
+#ifdef CONFIG_MP_INCLUDED
+#define rtw_get_mppriv(padapter)		(&(padapter->pshare_adapter->mppriv))
+#endif
+#define adapter_to_rfctl(padapter)		(&(rtw_get_pshare(padapter)->rf_ctl))
+#define rtw_get_intf_type(padapter)		(rtw_get_haldata(padapter)->interface_type)
+#define adapter_to_phydm(padapter)		(&(rtw_get_haldata(padapter)->odmpriv))
+#define adapter_to_csipriv(padapter)		(&(rtw_get_haldata(padapter)->csipriv))
+
+/* Get special elements. */
+#define rtw_set_signal_stat_timer(padapter)	rtw_set_timer(&(padapter->stats.signal_stat_timer), SIG_SAMP_INTERVAL)
+#define rtw_get_pnetwork(pcur_network)		(&(((struct wlan_network *)pcur_network)->network))
+#define get_my_bssid(pnetwork)			(((WLAN_BSSID_EX *)pnetwork)->MacAddress)
+#define CHECK_STA_IS_LINKED(padapter)		((((padapter->fw_state) & (WIFI_STATION_STATE | _FW_LINKED)) == (WIFI_STATION_STATE | _FW_LINKED)) ? 1: 0)
+#define CHECK_STA_UNDER_LINKING(padapter)	((((padapter->fw_state) & (WIFI_STATION_STATE | _FW_UNDER_LINKING)) == (WIFI_STATION_STATE | _FW_UNDER_LINKING)) ? 1: 0)
+#define CHECK_AP_HAS_STA_LINKED(padapter)	(((&padapter->stapriv)->asoc_sta_count > 2) ? (((&padapter->stapriv)->asoc_sta_count) - 2) : 0)
+
+extern struct wifi_user_conf			wifi_user_config;
+
+__inline static sint check_fwstate(_adapter *padapter, sint state)
 {
-	return (peepriv->mac_addr);
+	if (padapter->fw_state & state) {
+		return _TRUE;
+	} else if ((state == WIFI_FW_NULL_STATE) &&
+			   (padapter->fw_state == WIFI_FW_NULL_STATE)) {
+		return _TRUE;
+	}
+	return _FALSE;
+}
+
+__inline static sint get_fwstate(_adapter *padapter)
+{
+	return padapter->fw_state;
+}
+
+/*
+ * No Limit on the calling context,
+ * therefore set it to be the critical section...
+ *
+ * ### NOTE:#### (!!!!)
+ * MUST TAKE CARE THAT BEFORE CALLING THIS FUNC, YOU SHOULD HAVE LOCKED pmlmepriv->lock
+ */
+__inline static void set_fwstate(_adapter *padapter, sint state)
+{
+	struct mlme_priv *pmlmepriv = rtw_get_mlmepriv(padapter);
+	padapter->fw_state |= state;
+	//FOR HW integration
+	if (_FW_UNDER_SURVEY == state) {
+		pmlmepriv->bScanInProcess = _TRUE;
+	}
+}
+
+__inline static void _clr_fwstate_(_adapter *padapter, sint state)
+{
+	struct mlme_priv *pmlmepriv = rtw_get_mlmepriv(padapter);
+
+	padapter->fw_state &= ~state;
+	//FOR HW integration
+	if (_FW_UNDER_SURVEY == state) {
+		pmlmepriv->bScanInProcess = _FALSE;
+	}
+}
+
+__inline static void clr_fwstate(_adapter *padapter, sint state)
+{
+	_irqL irqL;
+	struct mlme_priv *pmlmepriv = rtw_get_mlmepriv(padapter);
+
+	rtw_enter_critical_bh(&pmlmepriv->lock, &irqL);
+	if (check_fwstate(padapter, state) == _TRUE) {
+		padapter->fw_state ^= state;
+	}
+	rtw_exit_critical_bh(&pmlmepriv->lock, &irqL);
 }
 
 #if 0 //#if (CONFIG_LWIP_LAYER == 0)

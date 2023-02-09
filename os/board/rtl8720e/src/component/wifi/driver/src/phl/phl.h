@@ -16,12 +16,13 @@ struct regulatory_domain_mapping {
 };
 #define MAX_RD_MAP_NUM 108
 
-void rtw_phl_init_stainfo(_adapter *padapter, struct sta_info *psta);
-void rtw_phl_deinit_stainfo(_adapter *padapter, struct sta_info *psta);
-int rtw_phl_com_init(_adapter *padapter);
+
+void rtw_phl_com_init(_adapter *padapter);
 void rtw_phl_com_deinit(_adapter *padapter);
 
 #if (PHYDM_VERSION == 3)/*ax ic : AmebaSmart, AmebaLite*/
+#define rtw_phl_init_stainfo(padapter, psta)	wifi_hal_phl_stainfo_init(padapter, psta)
+#define rtw_phl_deinit_stainfo(padapter, psta)	wifi_hal_phl_stainfo_deinit(padapter, psta)
 void rtw_phl_final_cap_decision(_adapter *padapter);
 void rtw_phl_rx_count(struct rtw_stats *stats,  u8 is_bcmc, int size);
 void rtw_phl_tx_count(struct rtw_stats *stats,  u8 is_bcmc, int size);
@@ -33,6 +34,8 @@ void rtw_phl_set_edcca_mode(_adapter *padapter);
 #define rtw_phl_tx_count(stats, is_bcmc, size)
 #define rtw_phl_traffic_statistics(stats)
 #define rtw_phl_set_edcca_mode(padapter)
+#define rtw_phl_init_stainfo(padapter, psta)
+#define rtw_phl_deinit_stainfo(padapter, psta)
 #endif/*(PHYDM_VERSION == 3)*/
 
 #endif

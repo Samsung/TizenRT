@@ -355,8 +355,6 @@ int promisc_remove_packet_filter(u8 filter_id)
 static void promisc_callback(unsigned char *buf, unsigned int len, void *userdata)
 {
 	struct eth_frame *frame = (struct eth_frame *) rtw_malloc(sizeof(struct eth_frame));
-	_lock lock;
-	_irqL irqL;
 
 	if (frame) {
 		frame->prev = NULL;
@@ -366,7 +364,7 @@ static void promisc_callback(unsigned char *buf, unsigned int len, void *userdat
 		frame->len = len;
 		frame->rssi = ((ieee80211_frame_info_t *)userdata)->rssi;
 
-		rtw_enter_critical(&lock, &irqL);
+		rtw_enter_critical(NULL, NULL);
 
 		if (eth_buffer.tail) {
 			eth_buffer.tail->next = frame;
@@ -377,17 +375,15 @@ static void promisc_callback(unsigned char *buf, unsigned int len, void *userdat
 			eth_buffer.tail = frame;
 		}
 
-		rtw_exit_critical(&lock, &irqL);
+		rtw_exit_critical(NULL, NULL);
 	}
 }
 
 struct eth_frame *retrieve_frame(void)
 {
 	struct eth_frame *frame = NULL;
-	_lock lock;
-	_irqL irqL;
 
-	rtw_enter_critical(&lock, &irqL);
+	rtw_enter_critical(NULL, NULL);
 
 	if (eth_buffer.head) {
 		frame = eth_buffer.head;
@@ -401,7 +397,7 @@ struct eth_frame *retrieve_frame(void)
 		}
 	}
 
-	rtw_exit_critical(&lock, &irqL);
+	rtw_exit_critical(NULL, NULL);
 
 	return frame;
 }
@@ -462,8 +458,6 @@ static void promisc_test(int duration, unsigned char len_used)
 static void promisc_callback_all(unsigned char *buf, unsigned int len, void *userdata)
 {
 	struct eth_frame *frame = (struct eth_frame *) rtw_malloc(sizeof(struct eth_frame));
-	_lock lock;
-	_irqL irqL;
 
 	if (frame) {
 		frame->prev = NULL;
@@ -492,7 +486,7 @@ static void promisc_callback_all(unsigned char *buf, unsigned int len, void *use
 
 		frame->rssi = ((ieee80211_frame_info_t *)userdata)->rssi;
 
-		rtw_enter_critical(&lock, &irqL);
+		rtw_enter_critical(NULL, NULL);
 
 		if (eth_buffer.tail) {
 			eth_buffer.tail->next = frame;
@@ -503,7 +497,7 @@ static void promisc_callback_all(unsigned char *buf, unsigned int len, void *use
 			eth_buffer.tail = frame;
 		}
 
-		rtw_exit_critical(&lock, &irqL);
+		rtw_exit_critical(NULL, NULL);
 	}
 }
 static void promisc_test_all(int duration, unsigned char len_used)

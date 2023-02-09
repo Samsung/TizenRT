@@ -24,7 +24,7 @@
 
 #define CONFIG_LITTLE_ENDIAN
 
-#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #ifndef CONFIG_PLATFORM_AMEBA_X
 #define CONFIG_PLATFORM_AMEBA_X 1
 #endif
@@ -58,11 +58,9 @@
 /****************** configurations for concurrent mode ************************/
 #ifdef CONFIG_CONCURRENT_MODE
 //#define CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
-#define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN) + 1)
-#define CONFIG_IFACE_NUMBER	2
-#else
-#define NET_IF_NUM ((CONFIG_ETHERNET) + (CONFIG_WLAN))
-#define CONFIG_IFACE_NUMBER	1
+#define NET_IF_NUM	3
+/* Temp macro for new concurrent test. */
+#define CONFIG_CONCURRENT_NEW
 #endif
 /**************** configurations for concurrent mode end **********************/
 
@@ -82,15 +80,15 @@
 #define RTL8188E_SUPPORT 0
 #define RTL8188F_SUPPORT 0
 #define RTL8711B_SUPPORT 0
-#define RTL8720E_SUPPORT 1
+#define RTL8720E_SUPPORT 0
 #define RTL8721D_SUPPORT 0
 #define RTL8723D_SUPPORT 0
 #define RTL8195B_SUPPORT 0
 #define RTL8710C_SUPPORT 0
 #define RTL8730A_SUPPORT 0
 #define RTL8730E_SUPPORT 0
-#define RTL8735B_SUPPORT 0
 #define RTL8721F_SUPPORT 0
+#define RTL8735B_SUPPORT 0
 /************************ config to support chip end **************************/
 
 /******************** Configurations for each platform ************************/
@@ -106,31 +104,18 @@
 #define PHYDM	2
 #define HALBBRF	3
 
-#if defined(CONFIG_PLATFORM_8711B)
-/******************************* AmebaZ (8711B) *******************************/
-#include "autoconf_8711b.h"
-#elif defined(CONFIG_PLATFORM_8721D)
+#if defined(CONFIG_PLATFORM_8721D)
 /******************************* AmebaD (8721D) *******************************/
 #include "autoconf_8721d.h"
 #elif defined(CONFIG_PLATFORM_AMEBADPLUS)
 /******************************* AmebaDPLUS (8721F) *******************************/
 #include "autoconf_8721f.h"
-#elif defined(CONFIG_PLATFORM_8195BHP)
-/***************************** AmebaPro (8195BHP) *****************************/
-#include "autoconf_8195b.h"
 #elif defined(CONFIG_PLATFORM_8735B)
 /***************************** AmebaPro2 (8735B) ******************************/
 #include "autoconf_8735b.h"
-#elif defined(CONFIG_PLATFORM_8710C)
-/******************************* AmebaZ2 (8710C) ******************************/
-#include "autoconf_8710c.h"
 #elif defined(CONFIG_PLATFORM_AMEBAD2)
-/******************************* AmebaD2 testchip(8730A)/ mpchip(8730E) ******************************/
-#if defined(CONFIG_RLE1080_A_CUT)
-#include "autoconf_8730a.h"
-#else
+/******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8730e.h"
-#endif
 #elif defined(CONFIG_PLATFORM_AMEBALITE)
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"

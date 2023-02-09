@@ -51,6 +51,7 @@
 #define F_BT_LE_5_0_DTM_SUPPORT                  (F_BT_LE_5_0_SUPPORT && F_BT_LE_4_0_DTM_SUPPORT && 1)
 #define F_BT_LE_5_0_SET_PHYS_SUPPORT             (F_BT_LE_5_0_SUPPORT && 1)
 #define F_BT_LE_5_0_READ_POWER_SUPPORT           (F_BT_LE_5_0_SUPPORT && 1)
+#define F_BT_LE_5_0_RF_PATH_SUPPORT              ((F_BT_LE_5_0_AE_ADV_SUPPORT || F_BT_LE_5_2_POWER_CONTROL_SUPPORT) && 1)
 
 //BT 5.1
 #define F_BT_LE_5_1_SUPPORT                               (F_BT_LE_SUPPORT && 1)

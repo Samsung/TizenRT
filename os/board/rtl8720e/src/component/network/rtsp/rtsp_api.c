@@ -1377,20 +1377,6 @@ Redo:
 				break;
 			}
 		}
-#if 0
-		if (rltk_wlan_running(0) > 0) {
-			wifi_get_setting(WLAN0_IDX, &setting);
-			mode = setting.mode;
-			if (((wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) && (*(u32 *)LwIP_GetIP(0) != IP_ADDR_INVALID)) && (mode == IW_MODE_INFRA)) {
-				printf("connect successful sta mode\r\n");
-				break;
-			}
-			if (wifi_is_running(WLAN0_IDX) && (mode == RTW_MODE_AP)) {
-				printf("connect successful ap mode\r\n");
-				break;
-			}
-		}
-#endif
 	}
 
 	rtw_interface_t interface = (mode == RTW_MODE_STA) ? RTW_STA_INTERFACE : RTW_AP_INTERFACE;

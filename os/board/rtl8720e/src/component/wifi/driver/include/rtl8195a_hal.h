@@ -189,7 +189,7 @@ typedef struct _RT_8723B_FIRMWARE_HDR {
 
 #define EFUSE_PROTECT_BYTES_BANK		16
 
-#define GET_RF_TYPE(priv)			(GET_HAL_DATA(priv)->rf_type)
+#define GET_RF_TYPE(priv)			(rtw_get_haldata(priv)->rf_type)
 
 // Description: Determine the types of C2H events that are the same in driver and Fw.
 // Fisrt constructed by tynli. 2009.10.09.
@@ -235,8 +235,8 @@ typedef enum tag_ChipID_Definition {
 } CHIP_TD_E;
 
 
-#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
-#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
+#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
+#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
 
 //========================================================
 //			TXBD and RXBD definition
@@ -426,7 +426,6 @@ u8 rtw_flash_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data);
 u8 rtw_config_map_read(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
 u8 rtw_config_map_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
 
-void rtl8195a_set_hal_ops(struct hal_ops *pHalFunc);
 void lxbus_set_intf_ops(struct _io_ops	*pops);
 void SetHwReg8195A(PADAPTER padapter, u8 variable, u8 *val);
 void GetHwReg8195A(PADAPTER padapter, u8 variable, u8 *val);
@@ -441,7 +440,6 @@ void rtl8195a_InitBeaconMaxError(PADAPTER padapter, u8 InfraMode);
 void	_InitBurstPktLen_8195AB(PADAPTER Adapter);
 #ifdef CONFIG_WOWLAN
 void _8051Reset8195a(PADAPTER padapter);
-void Hal_DetectWoWMode(PADAPTER pAdapter);
 #endif //CONFIG_WOWLAN
 
 void rtl8195a_start_thread(_adapter *padapter);
@@ -454,17 +452,9 @@ void rtl8195ab_cancle_checkbthang_workqueue(_adapter *adapter);
 void rtl8195ab_hal_check_bt_hang(_adapter *adapter);
 #endif
 
-#ifdef CONFIG_WOWLAN
-void rtw_get_current_ip_address(PADAPTER padapter, u8 *pcurrentip);
-void rtw_get_sec_iv(PADAPTER padapter, u8 *pcur_dot11txpn, u8 *StaAddr);
-#endif
-
 #ifdef CONFIG_GPIO_WAKEUP
 void HalSetOutPutGPIO(PADAPTER padapter, u8 index, u8 OutPutValue);
 #endif
-
-void Hal_ReadRFGainOffset(PADAPTER pAdapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
-
 
 //1TODO: Chris
 #if 1

@@ -7,11 +7,89 @@
 #if defined(CONFIG_USE_TCM_HEAP) && CONFIG_USE_TCM_HEAP
 #include "tcm_heap.h"
 #endif
-#include <basic_types.h>
 
 #define OSDEP_DBG(x, ...) do {} while(0)
 
 extern struct osdep_service_ops osdep_service;
+
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+
+int max_mutex_num = MAX_MUTEX_BUF_NUM;
+struct mutex_buf {
+	struct list_head list;
+	StaticSemaphore_t mutex;
+};
+
+struct mutex_buf mutex_pool[MAX_MUTEX_BUF_NUM];
+static struct list_head wrapper_mutexbuf_list;
+int mutexbuf_used_num, mutex_dynamic_num;
+int max_mutexbuf_used_num;
+int mutexpool_flag = 0;
+
+static __inline__ void *get_mutex_from_poll(struct list_head *phead, int *count)
+{
+	StaticSemaphore_t *mutex;
+	struct list_head *plist;
+
+	if (mutexpool_flag == 0) {
+		return NULL;
+	}
+
+	save_and_cli();
+	if (list_empty(phead)) {
+		restore_flags();
+		return NULL;
+	}
+
+	plist = phead->next;
+	list_del_init(plist);
+
+	mutex = (StaticSemaphore_t *)((unsigned int)plist + sizeof(struct list_head));
+
+	*count = *count + 1;
+
+	restore_flags();
+
+	return (unsigned char *)mutex;
+}
+
+static void release_mutex_to_poll(unsigned char *buf, struct list_head *phead, int *count)
+{
+	struct list_head *plist;
+	plist = (struct list_head *)(((unsigned int)buf) - sizeof(struct list_head));
+	list_add_tail(plist, phead);
+
+	*count = *count - 1;
+}
+
+static u8 rtw_get_mutex_dynamic_flag(_sema sema)
+{
+	StaticSemaphore_t *pqueue = (StaticSemaphore_t *)sema;
+	return pqueue->ucDummy6;
+}
+
+#endif
+
+void init_mutex_pool(void)
+{
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	int i;
+
+	memset(mutex_pool, '\0', max_mutex_num * sizeof(struct mutex_buf));
+	INIT_LIST_HEAD(&wrapper_mutexbuf_list);
+
+	for (i = 0; i < max_mutex_num; i++) {
+		INIT_LIST_HEAD(&mutex_pool[i].list);
+		list_add_tail(&mutex_pool[i].list, &wrapper_mutexbuf_list);
+	}
+
+	mutexbuf_used_num = 0;
+	max_mutexbuf_used_num = 0;
+	mutex_dynamic_num = 0;
+
+	mutexpool_flag = 1;
+#endif
+}
 
 u16
 _htons(u16 n)
@@ -78,9 +156,9 @@ u32 rtw_atoi(u8 *s)
 void *tcm_heap_malloc(int size);
 void *tcm_heap_calloc(int size);
 #endif
-u8 *_rtw_vmalloc(u32 sz)
+void *_rtw_vmalloc(u32 sz)
 {
-	u8 *pbuf = NULL;
+	void *pbuf = NULL;
 #if defined(CONFIG_USE_TCM_HEAP) && CONFIG_USE_TCM_HEAP
 	pbuf = tcm_heap_malloc(sz);
 #endif
@@ -94,9 +172,9 @@ u8 *_rtw_vmalloc(u32 sz)
 	return pbuf;
 }
 
-u8 *_rtw_zvmalloc(u32 sz)
+void *_rtw_zvmalloc(u32 sz)
 {
-	u8 *pbuf = NULL;
+	void *pbuf = NULL;
 #if defined(CONFIG_USE_TCM_HEAP) && CONFIG_USE_TCM_HEAP
 	pbuf = tcm_heap_calloc(sz);
 #endif
@@ -127,10 +205,10 @@ void _rtw_vmfree(u8 *pbuf, u32 sz)
 	}
 }
 
-u8 *_rtw_malloc(u32 sz)
+void *_rtw_malloc(u32 sz)
 {
 	if (osdep_service.rtw_malloc) {
-		u8 *pbuf = osdep_service.rtw_malloc(sz);
+		void *pbuf = osdep_service.rtw_malloc(sz);
 		return pbuf;
 	} else {
 		OSDEP_DBG("Not implement osdep service: rtw_malloc");
@@ -139,10 +217,10 @@ u8 *_rtw_malloc(u32 sz)
 	return NULL;
 }
 
-u8 *_rtw_zmalloc(u32 sz)
+void *_rtw_zmalloc(u32 sz)
 {
 	if (osdep_service.rtw_zmalloc) {
-		u8 *pbuf = osdep_service.rtw_zmalloc(sz);
+		void *pbuf = osdep_service.rtw_zmalloc(sz);
 		return pbuf;
 	} else {
 		OSDEP_DBG("Not implement osdep service: rtw_zmalloc");
@@ -151,10 +229,10 @@ u8 *_rtw_zmalloc(u32 sz)
 	return NULL;
 }
 
-u8 *_rtw_calloc(u32 nelements, u32 elementSize)
+void *_rtw_calloc(u32 nelements, u32 elementSize)
 {
 	u32 sz = nelements * elementSize;
-	u8 *pbuf = _rtw_zmalloc(sz);
+	void *pbuf = _rtw_zmalloc(sz);
 	return pbuf;
 }
 
@@ -167,185 +245,9 @@ void _rtw_mfree(u8 *pbuf, u32 sz)
 	}
 }
 
-#ifdef CONFIG_MEM_MONITOR
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-_list mem_table;
-int mem_used_num;
-#endif
-int min_free_heap_size;
-
-void init_mem_monitor(_list *pmem_table, int *used_num)
+void *rtw_vmalloc(u32 sz)
 {
-	/* To avoid gcc warnings */
-	(void) pmem_table;
-	(void) used_num;
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	rtw_init_listhead(pmem_table);
-	*used_num = 0;
-#endif
-	min_free_heap_size = rtw_getFreeHeapSize();
-}
-
-void deinit_mem_monitor(_list *pmem_table, int *used_num)
-{
-	/* To avoid gcc warnings */
-	(void) pmem_table;
-	(void) used_num;
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	_list *plist;
-	struct mem_entry *mem_entry;
-
-	if (*used_num > 0) {
-		DBG_ERR("Have %d mem_entry kept in monitor", *used_num);
-	} else {
-		DBG_INFO("No mem_entry kept in monitor");
-	}
-
-	save_and_cli();
-
-	while (rtw_end_of_queue_search(pmem_table, get_next(pmem_table)) == _FALSE)	{
-		plist = get_next(pmem_table);
-		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
-
-		DBG_ERR("Not release memory at %p with size of %d", mem_entry->ptr, mem_entry->size);
-
-		rtw_list_delete(plist);
-		_rtw_mfree((u8 *) mem_entry, sizeof(struct mem_entry));
-	}
-
-	restore_flags();
-#endif
-}
-
-void add_mem_usage(_list *pmem_table, void *ptr, int size, int *used_num, int flag)
-{
-	/* To avoid gcc warnings */
-	(void) pmem_table;
-	(void) used_num;
-
-	int free_heap_size = rtw_getFreeHeapSize();
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	struct mem_entry *mem_entry;
-#endif
-	if (ptr == NULL) {
-		DBG_ERR("Catch a mem alloc fail with size of %d, current heap free size = %d", size, free_heap_size);
-		return;
-	} else {
-		if (flag == MEM_MONITOR_FLAG_WPAS) {
-			DBG_INFO("Alloc memory at %p with size of %d", ptr, size);
-		} else {
-			DBG_INFO("Alloc memory at %p with size of %d", ptr, size);
-		}
-	}
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	mem_entry = (struct mem_entry *) _rtw_malloc(sizeof(struct mem_entry));
-
-	if (mem_entry == NULL) {
-		DBG_ERR("Fail to alloc mem_entry");
-		return;
-	}
-
-	memset(mem_entry, 0, sizeof(struct mem_entry));
-	mem_entry->ptr = ptr;
-	mem_entry->size = size;
-
-	save_and_cli();
-	rtw_list_insert_head(&mem_entry->list, pmem_table);
-	restore_flags();
-
-	*used_num ++;
-#endif
-	if (min_free_heap_size > free_heap_size) {
-		min_free_heap_size = free_heap_size;
-	}
-}
-
-void del_mem_usage(_list *pmem_table, void *ptr, int *used_num, int flag)
-{
-	/* To avoid gcc warnings */
-	(void) pmem_table;
-	(void) ptr;
-	(void) used_num;
-	(void) flag;
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	_list *plist;
-	struct mem_entry *mem_entry = NULL;
-
-	if (ptr == NULL) {
-		return;
-	}
-
-	if (flag == MEM_MONITOR_FLAG_WPAS) {
-		DBG_INFO("Free memory at %p", ptr);
-	} else {
-		DBG_INFO("Free memory at %p", ptr);
-	}
-
-	save_and_cli();
-
-	plist = get_next(pmem_table);
-	while ((rtw_end_of_queue_search(pmem_table, plist)) == _FALSE) {
-		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
-		if (mem_entry->ptr == ptr) {
-			rtw_list_delete(plist);
-			break;
-		}
-		plist = get_next(plist);
-	}
-
-	restore_flags();
-
-	if (plist == pmem_table) {
-		DBG_ERR("Fail to find the mem_entry in mem table");
-	} else {
-		*used_num --;
-		_rtw_mfree((u8 *) mem_entry, sizeof(struct mem_entry));
-	}
-#endif
-}
-
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-int get_mem_usage(_list *pmem_table)
-{
-	_list *plist;
-	struct mem_entry *mem_entry;
-	int mem_usage = 0;
-	int entry_num = 0;
-
-	save_and_cli();
-
-	if ((plist = get_next(pmem_table)) == NULL) {
-		DBG_ERR("No mem table available\n");
-		restore_flags();
-		return 0;
-	}
-
-	while (rtw_end_of_queue_search(pmem_table, plist) == _FALSE) {
-		entry_num ++;
-		mem_entry = LIST_CONTAINOR(plist, struct mem_entry, list);
-		mem_usage += mem_entry->size;
-
-		DBG_INFO("size of mem_entry(%d)=%d\n", entry_num, mem_entry->size);
-		plist = get_next(plist);
-	}
-
-	restore_flags();
-
-	DBG_INFO("Get %d mem_entry\n", entry_num);
-
-	return mem_usage;
-}
-#endif
-
-
-u8 *rtw_vmalloc(u32 sz)
-{
-	u8 *pbuf = _rtw_vmalloc(sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
+	void *pbuf = _rtw_vmalloc(sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
         if (pbuf)
         {
@@ -355,14 +257,9 @@ u8 *rtw_vmalloc(u32 sz)
 	return pbuf;
 }
 
-u8 *rtw_zvmalloc(u32 sz)
+void *rtw_zvmalloc(u32 sz)
 {
-	u8 *pbuf = _rtw_zvmalloc(sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
+	void *pbuf = _rtw_zvmalloc(sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
         if (pbuf)
         {
@@ -375,21 +272,11 @@ u8 *rtw_zvmalloc(u32 sz)
 void rtw_vmfree(u8 *pbuf, u32 sz)
 {
 	_rtw_vmfree(pbuf, sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	del_mem_usage(NULL, pbuf, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
 }
 
-u8 *rtw_malloc(u32 sz)
+void *rtw_malloc(u32 sz)
 {
-	u8 *pbuf = _rtw_malloc(sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
+	void *pbuf = _rtw_malloc(sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
         if (pbuf)
         {
@@ -399,14 +286,9 @@ u8 *rtw_malloc(u32 sz)
 	return pbuf;
 }
 
-u8 *rtw_zmalloc(u32 sz)
+void *rtw_zmalloc(u32 sz)
 {
-	u8 *pbuf = _rtw_zmalloc(sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
+	void *pbuf = _rtw_zmalloc(sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
         if (pbuf)
         {
@@ -416,16 +298,9 @@ u8 *rtw_zmalloc(u32 sz)
 	return pbuf;
 }
 
-u8 *rtw_calloc(u32 nelements, u32 elementSize)
+void *rtw_calloc(u32 nelements, u32 elementSize)
 {
-	u8 *pbuf = _rtw_calloc(nelements, elementSize);
-
-	u32 sz = nelements * elementSize;
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
+	void *pbuf = _rtw_calloc(nelements, elementSize);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
         if (pbuf)
         {
@@ -438,13 +313,7 @@ u8 *rtw_calloc(u32 nelements, u32 elementSize)
 void rtw_mfree(u8 *pbuf, u32 sz)
 {
 	_rtw_mfree(pbuf, sz);
-#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
-	del_mem_usage(&mem_table, pbuf, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
-#else
-	del_mem_usage(NULL, pbuf, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
-#endif
 }
-#endif
 
 void *rtw_malloc2d(int h, int w, int size)
 {
@@ -540,6 +409,34 @@ void rtw_list_delete(_list *plist)
 
 void rtw_init_sema(_sema *sema, int init_val)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	StaticSemaphore_t *mutex;
+
+	mutex = (StaticSemaphore_t *)get_mutex_from_poll(&wrapper_mutexbuf_list, &mutexbuf_used_num);
+
+	if (mutex == NULL) {
+		if (mutexpool_flag) {
+			mutex_dynamic_num++;
+			printf("static mutex is not avaliable. mutexbuf_used_num: %d\n", mutexbuf_used_num);
+		}
+		goto exit;
+	} else {
+		memset(mutex, '\0', sizeof(*mutex));
+		if (osdep_service.rtw_init_sema_static) {
+			osdep_service.rtw_init_sema_static(sema, init_val, mutex);
+		} else {
+			OSDEP_DBG("Not implement osdep service: rtw_init_sema_static");
+		}
+	}
+
+	if (mutexbuf_used_num > max_mutexbuf_used_num) {
+		max_mutexbuf_used_num = mutexbuf_used_num;
+	}
+
+	return;
+exit:
+#endif
+
 	if (osdep_service.rtw_init_sema) {
 		osdep_service.rtw_init_sema(sema, init_val);
 	} else {
@@ -549,6 +446,21 @@ void rtw_init_sema(_sema *sema, int init_val)
 
 void rtw_free_sema(_sema *sema)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	if ((*sema) == NULL) {
+		return;
+	}
+	if (rtw_get_mutex_dynamic_flag(*sema)) {
+		save_and_cli();
+		release_mutex_to_poll((unsigned char *)*sema, &wrapper_mutexbuf_list, &mutexbuf_used_num);
+		restore_flags();
+	} else {
+		if (mutexpool_flag) {
+			mutex_dynamic_num--;
+		}
+	}
+#endif
+
 	if (osdep_service.rtw_free_sema) {
 		osdep_service.rtw_free_sema(sema);
 	} else {
@@ -563,13 +475,10 @@ void rtw_free_sema(_sema *sema)
 #if defined(__GNUC__) && defined(CONFIG_PLATFORM_8735B)
 #include <cmsis_gcc.h>	// for __get_xPSR()
 #endif
-#if defined(CONFIG_PLATFORM_8710C)
-#include <cmsis.h>
-#endif
 
 int rtw_in_interrupt(void)
 {
-#ifdef ARM_CORE_CA7
+#ifdef ARM_CORE_CA32
 	return (__get_mode() != CPSR_M_USR) && (__get_mode() != CPSR_M_SYS);
 #else
 #if defined(__ICCARM__)
@@ -587,7 +496,6 @@ int rtw_in_interrupt(void)
 #endif
 #endif
 }
-
 
 void rtw_up_sema(_sema *sema)
 {
@@ -639,6 +547,34 @@ u32 rtw_down_sema(_sema *sema)
 
 void rtw_mutex_init(_mutex *pmutex)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	StaticSemaphore_t *mutex;
+
+	mutex = (StaticSemaphore_t *)get_mutex_from_poll(&wrapper_mutexbuf_list, &mutexbuf_used_num);
+
+	if (mutex == NULL) {
+		if (mutexpool_flag) {
+			mutex_dynamic_num++;
+			printf("static mutex is not avaliable. mutexbuf_used_num: %d\n", mutexbuf_used_num);
+		}
+		goto exit;
+	} else {
+		memset(mutex, '\0', sizeof(*mutex));
+		if (osdep_service.rtw_mutex_init_static) {
+			osdep_service.rtw_mutex_init_static(pmutex, mutex);
+		} else {
+			OSDEP_DBG("Not implement osdep service: rtw_mutex_init");
+		}
+	}
+
+	if (mutexbuf_used_num > max_mutexbuf_used_num) {
+		max_mutexbuf_used_num = mutexbuf_used_num;
+	}
+
+	return;
+exit:
+#endif
+
 	if (osdep_service.rtw_mutex_init) {
 		osdep_service.rtw_mutex_init(pmutex);
 	} else {
@@ -648,6 +584,21 @@ void rtw_mutex_init(_mutex *pmutex)
 
 void rtw_mutex_free(_mutex *pmutex)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	if ((*pmutex) == NULL) {
+		return;
+	}
+	if (rtw_get_mutex_dynamic_flag(*pmutex)) {
+		save_and_cli();
+		release_mutex_to_poll((unsigned char *)*pmutex, &wrapper_mutexbuf_list, &mutexbuf_used_num);
+		restore_flags();
+	} else {
+		if (mutexpool_flag) {
+			mutex_dynamic_num--;
+		}
+	}
+#endif
+
 	if (osdep_service.rtw_mutex_free) {
 		osdep_service.rtw_mutex_free(pmutex);
 	} else {
@@ -812,6 +763,34 @@ u32 rtw_end_of_queue_search(_list *head, _list *plist)
 #if 1
 void rtw_spinlock_init(_lock *plock)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	StaticSemaphore_t *mutex;
+
+	mutex = (StaticSemaphore_t *)get_mutex_from_poll(&wrapper_mutexbuf_list, &mutexbuf_used_num);
+
+	if (mutex == NULL) {
+		if (mutexpool_flag) {
+			mutex_dynamic_num++;
+			printf("static mutex is not avaliable. mutexbuf_used_num: %d\n", mutexbuf_used_num);
+		}
+		goto exit;
+	} else {
+		memset(mutex, '\0', sizeof(*mutex));
+		if (osdep_service.rtw_spinlock_init_static) {
+			osdep_service.rtw_spinlock_init_static(plock, mutex);
+		} else {
+			OSDEP_DBG("Not implement osdep service: rtw_mutex_init");
+		}
+	}
+
+	if (mutexbuf_used_num > max_mutexbuf_used_num) {
+		max_mutexbuf_used_num = mutexbuf_used_num;
+	}
+
+	return;
+exit:
+#endif
+
 	if (osdep_service.rtw_spinlock_init) {
 		osdep_service.rtw_spinlock_init(plock);
 	} else {
@@ -819,8 +798,24 @@ void rtw_spinlock_init(_lock *plock)
 	}
 }
 
+
 void rtw_spinlock_free(_lock *plock)
 {
+#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+	if ((*plock) == NULL) {
+		return;
+	}
+	if (rtw_get_mutex_dynamic_flag(*plock)) {
+		save_and_cli();
+		release_mutex_to_poll((unsigned char *)*plock, &wrapper_mutexbuf_list, &mutexbuf_used_num);
+		restore_flags();
+	} else {
+		if (mutexpool_flag) {
+			mutex_dynamic_num--;
+		}
+	}
+#endif
+
 	if (osdep_service.rtw_spinlock_free) {
 		osdep_service.rtw_spinlock_free(plock);
 	} else {
@@ -952,7 +947,7 @@ _list	*rtw_get_queue_head(_queue	*queue)
 }
 #endif
 
-u32 rtw_get_current_time(void)
+uint32_t rtw_get_current_time(void)
 {
 	if (osdep_service.rtw_get_current_time) {
 		return osdep_service.rtw_get_current_time();
@@ -963,10 +958,10 @@ u32 rtw_get_current_time(void)
 	return 0;
 }
 
-u32 rtw_systime_to_ms(u32 in_systime)
+u32 rtw_systime_to_ms(u32 systimer)
 {
 	if (osdep_service.rtw_systime_to_ms) {
-		return osdep_service.rtw_systime_to_ms(in_systime);
+		return osdep_service.rtw_systime_to_ms(systimer);
 	} else {
 		OSDEP_DBG("Not implement osdep service: rtw_systime_to_ms");
 	}
@@ -974,15 +969,15 @@ u32 rtw_systime_to_ms(u32 in_systime)
 	return 0;
 }
 
-u32 rtw_systime_to_sec(u32 in_systime)
+u32 rtw_systime_to_sec(u32 systimer)
 {
 	if (osdep_service.rtw_systime_to_sec) {
-		return osdep_service.rtw_systime_to_sec(in_systime);
+		return osdep_service.rtw_systime_to_sec(systimer);
 	} else {
 		OSDEP_DBG("Not implement osdep service: rtw_systime_to_sec");
-}
+	}
 
-return 0;
+	return 0;
 }
 
 u32 rtw_ms_to_systime(u32 ms)
@@ -1333,16 +1328,38 @@ void rtw_resume_task(void *task)
 	return;
 }
 
+void rtw_suspend_task_all(void)
+{
+	if (osdep_service.rtw_suspend_task_all) {
+		osdep_service.rtw_suspend_task_all();
+	} else {
+		OSDEP_DBG("Not implement osdep service: rtw_suspend_task_all");
+	}
+
+	return;
+}
+
+void rtw_resume_task_all(void)
+{
+	if (osdep_service.rtw_resume_task_all) {
+		osdep_service.rtw_resume_task_all();
+	} else {
+		OSDEP_DBG("Not implement osdep service: rtw_resume_task_all");
+	}
+
+	return;
+}
+
 _timerHandle rtw_timerCreate(const signed char *pcTimerName,
 							 osdepTickType xTimerPeriodInTicks,
 							 u32 uxAutoReload,
 							 void *pvTimerID,
 							 TIMER_FUN pxCallbackFunction)
 {
-	if (osdep_service.rtw_timerCreate)
+	if (osdep_service.rtw_timerCreate){
 		return osdep_service.rtw_timerCreate(pcTimerName, xTimerPeriodInTicks, uxAutoReload,
 											 pvTimerID, pxCallbackFunction);
-	else {
+	} else {
 		OSDEP_DBG("Not implement osdep service: rtw_timerCreate");
 	}
 

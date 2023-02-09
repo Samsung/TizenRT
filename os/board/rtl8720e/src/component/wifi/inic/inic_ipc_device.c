@@ -83,7 +83,6 @@ void inic_ipc_dev_event_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 #ifdef IPC_DIR_MSG_RX
 	PIPC_MSG_STRUCT p_ipc_recv_msg = ipc_get_message(IPC_DIR_MSG_RX, \
 									 IPC_H2D_WIFI_TRX_TRAN);
-	DCache_Invalidate((u32)p_ipc_recv_msg, sizeof(IPC_MSG_64_STRUCT));
 	p_ipc_msg = (inic_ipc_ex_msg_t *)p_ipc_recv_msg->msg;
 #else
 	p_ipc_msg = (inic_ipc_ex_msg_t *)ipc_get_message(IPC_INT_CHAN_WIFI_TRX_TRAN);
@@ -103,14 +102,13 @@ void inic_ipc_dev_event_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 		ret = _SUCCESS;
 	}
 
-	/* enqueuing message is seccussful, send acknowledgement to another
-	 * port. */
-	p_ipc_msg->event_num = IPC_WIFI_MSG_READ_DONE;
 	if (ret == _SUCCESS) {
 		p_ipc_msg->msg_len = 0;
 	} else {
 		p_ipc_msg->msg_len = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
 	}
+	/* enqueuing message is seccussful, send acknowledgement to another port*/
+	p_ipc_msg->event_num = IPC_WIFI_MSG_READ_DONE;
 #ifdef CONFIG_ENABLE_CACHE
 	DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_ex_msg_t));
 #endif /* CONFIG_ENABLE_CACHE */

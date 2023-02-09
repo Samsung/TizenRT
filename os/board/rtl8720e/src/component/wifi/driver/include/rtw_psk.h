@@ -357,12 +357,11 @@ static __inline__ OCTET_STRING SubStr(OCTET_STRING f, unsigned short s, unsigned
 #define Message_CopyReplayCounter(f1, f2)	memcpy(f1.Octet + ReplayCounterPos, f2.Octet + ReplayCounterPos, KEY_RC_LEN)
 #define Message_DefaultReplayCounter(li)	(((li.field.HighPart == 0xffffffff) && (li.field.LowPart == 0xffffffff) ) ?1:0)
 
-#define GET_MY_HWADDR(padapter)		((padapter)->eeprompriv.mac_addr)
 #define LargeIntegerOverflow(x)			(x.field.HighPart == 0xffffffff) && (x.field.LowPart == 0xffffffff)
 #define LargeIntegerZero(x)				memset(&x.charData, 0, 8)
 #define Octet16IntegerOverflow(x)			LargeIntegerOverflow(x.field.HighPart) && LargeIntegerOverflow(x.field.LowPart)
 #define Octet16IntegerZero(x)				memset(&x.charData, 0, 16)
-#define SetNonce(ocDst, oc32Counter)		SetEAPOL_KEYIV(ocDst, oc32Counter)
+#define SetNonce(ocDst, oc32Counter)		wifi_rom_set_eapolkeyiv(ocDst, oc32Counter)
 
 #if defined(CONFIG_IEEE80211W) || defined(CONFIG_SAE_SUPPORT)
 extern const unsigned char igtk_expansion_const[];
@@ -378,8 +377,22 @@ void ClientEAPOLKeyRecvd(_adapter *padapter, struct sta_info *psta);
 void init_wpa_sta_info(_adapter *padapter, struct sta_info *psta);
 void psk_init(_adapter *padapter, unsigned char *pie, unsigned short ielen);
 void psk_derive(_adapter *padapter, unsigned char *passphrase, unsigned char *ssid);
-u16 psk_strip_rsn_pairwise(u8 *ie, u16 ie_len);
-u16 psk_strip_wpa_pairwise(u8 *ie, u16 ie_len);
+u16 wifi_rom_psk_strip_rsn_pairwise(u8 *ie, u16 ie_len);
+u16 wifi_rom_psk_strip_wpa_pairwise(u8 *ie, u16 ie_len);
+extern void wifi_rom_message_replaycounter_oc2li(OCTET_STRING f, LARGE_INTEGER *li);
+extern int wifi_rom_message_equalreplaycounter(LARGE_INTEGER li1, OCTET_STRING f);
+extern int wifi_rom_message_smallerequalreplaycounter(LARGE_INTEGER li1, OCTET_STRING f);
+extern int wifi_rom_message_largerreplaycounter(LARGE_INTEGER li1, OCTET_STRING f);
+extern void wifi_rom_message_setreplaycounter(OCTET_STRING f, unsigned long h, unsigned long l);
+extern void wifi_rom_inc_largeinteger(LARGE_INTEGER *x);
+extern OCTET32_INTEGER *wifi_rom_inc_octet32_integer(OCTET32_INTEGER *x);
+extern void wifi_rom_set_eapolkeyiv(OCTET_STRING ocDst, OCTET32_INTEGER oc32Counter);
+extern int wifi_rom_check_mic(OCTET_STRING EAPOLMsgRecvd, unsigned char *key, int keylen);
+extern int wifi_rom_decrypt_WPA2keydata(OCTET_STRING EAPOLMsgRecvd, OCTET_STRING EapolKeyMsgRecvd, unsigned char *key, int keylen, unsigned char *kek,
+										int keklen,
+										unsigned char *kout, int kout_size);
+extern int wifi_rom_decrypt_GTK(OCTET_STRING EAPOLMsgRecvd, unsigned char *kek, int keklen, int keylen, unsigned char *kout, int kout_size);
+
 u16 psk_strip_rsn_akmp(u8 *ie, u16 ie_len, u32 wpa_mode);
 
 #endif // _RTW_PSK_H_

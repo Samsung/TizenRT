@@ -13,6 +13,7 @@ extern "C"
 {
 #endif
 
+#include <bt_api_config.h>
 #include <dlist.h>
 #include <rtk_bt_att_defs.h>
 
@@ -272,6 +273,24 @@ struct rtk_bt_gatt_chrc
 	}
 
 /**
+ * @typedef   rtk_bt_gatts_client_supported_features_t
+ * @brief     GATT Service Client Supported Features bit field.
+ */
+typedef enum {
+	RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_ROBUST_CACHING_BIT = 0x01, /*!< The client supports robust caching. */
+	RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT = 0x02,    /*!< The client supports Enhanced ATT bearer. */
+	RTK_BT_GATTS_CLIENT_SUPPORTED_FEATURES_MULTI_NOTIF_BIT = 0x04,    /*!< The client supports receiving ATT_MULTIPLE_HANDLE_VALUE_NTF PDUs. */
+} rtk_bt_gatts_client_supported_features_t;
+
+/**
+ * @typedef   rtk_bt_gatts_server_supported_features_t
+ * @brief     GATT Service Server Supported Features bit field.
+ */
+typedef enum {
+	RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT = 0x01,		/*!< The server supports Enhanced ATT bearer. */
+} rtk_bt_gatts_server_supported_features_t;
+
+/**
  * @typedef   rtk_bt_gatts_srv_type_t
  * @brief     Service type.
  */
@@ -356,6 +375,7 @@ typedef struct
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< ID of L2CAP channel to send the response, MUST be same as cid in @ref rtk_bt_gatts_read_ind_t. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
 	uint16_t index;							/*!< Attribute index in service */
 	uint8_t err_code;						/*!< Error code, if NOT ERR_RESP, equals 0 */
 	uint16_t len;							/*!< Response Value length, when err_code == 0 */
@@ -371,6 +391,7 @@ typedef struct
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
 	uint16_t index;							/*!< Attribute index in service */
 	uint8_t type;							/*!< Write type */
 	uint8_t err_code;						/*!< Error code, if NOT ERR_RESP, equals 0 */
@@ -385,6 +406,7 @@ typedef struct
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
 	uint16_t index;							/*!< Attribute index in service */
 	uint16_t len;							/*!< Indicate Value length */
 	const void *data;						/*!< Indicate Value data */
@@ -401,8 +423,10 @@ struct rtk_bt_gatt_service
 	uint16_t app_id;						/*!< Service app_id */
 	rtk_bt_gatt_attr_t *attrs;				/*!< Service Attributes */
 	size_t attr_count;						/*!< Service Attribute count */
+#if !RTK_BLE_MGR_LIB
 	bool assgin_handle_flag;				/*!< Flag of if the service start attr handle is assigned by user */		
 	uint16_t start_handle;					/*!< User assigned start attr handle of service */
+#endif
 	rtk_bt_gatts_srv_type_t type;			/*!< Service type */			
 	uint8_t register_status;				/*!< Service register status */
 	void * user_data;						/*!< Service user data */			
@@ -440,6 +464,7 @@ typedef struct {
 typedef struct {
 	uint16_t app_id;						/*!< Every service has a app_id */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< L2CAP channel ID to indicate which channel the request is received from */
 	uint16_t index;							/*!< Attribute index in service */
 	uint16_t offset;						/*!< offset in data, for blob read */
 } rtk_bt_gatts_read_ind_t;
@@ -465,6 +490,7 @@ typedef struct
 {
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< L2CAP channel ID to indicate which channel the request is received from */
 	uint16_t index;							/*!< Attribute index in service */
 	uint16_t offset;						/*!< offset in data, for queue write */
 	rtk_bt_gatts_write_type_t  type;		/*!< Write type */
@@ -480,6 +506,7 @@ typedef struct
 {
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< L2CAP channel ID to indicate which channel the request is received from */
 	uint16_t index;							/*!< Attribute index in service */
 	uint16_t value;							/*!< cccd value */
 } rtk_bt_gatts_cccd_ind_t;
@@ -492,14 +519,26 @@ typedef struct
 {
 	uint8_t app_id;							/*!< Every service has a app_id. */
 	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< L2CAP channel ID to indicate which channel the data is sent to */
 	uint16_t index;							/*!< Attribute index in service */
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
 	uint16_t err_code;						/*!< Error code, if no error is 0. */
 } rtk_bt_gatts_ntf_and_ind_ind_t;
 
-
 /**
- * @defgroup  bt_gatts BT GATT server APIs
+ * @struct    rtk_bt_gatts_client_supported_features_ind_t
+ * @brief     Bluetooth GATT server's Client Supported Features Characteristic writed event msg.
+ */
+typedef struct
+{
+	uint16_t conn_handle;					/*!< Connection handle for a client */
+	uint16_t cid;							/*!< L2CAP channel ID to indicate which channel the write procedure is processed. */
+	uint8_t features;						/*!< Client Supported Features after writed, which is bit combination of @ref rtk_bt_gatts_client_supported_features_t. */
+} rtk_bt_gatts_client_supported_features_ind_t;
+
+/********************************* Functions Declaration *******************************/
+/**
+ * @defgroup  bt_gatts BT GATT Server APIs
  * @brief     BT GATT server related function APIs
  * @ingroup   BT_APIs
  * @{
@@ -507,7 +546,7 @@ typedef struct
 
 /**
  * @fn        uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
- * @brief     Register GATT service.
+ * @brief     Register GATT service, will cause event @ref RTK_BT_GATTS_EVT_REGISTER_SERVICE
  * @param[in] param: The parameters for registering service app.
  * @return
  *            - 0  : Succeed
@@ -517,9 +556,9 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
 /**
  * @fn         uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param)
- * @brief      Notify action initiated by server. If attribute value is longer than
- * 			   ATT_MTU-3 octects, then only the first ATT_MTU-3 octects can be sent
- * 			   in a notification.
+ * @brief      Notify action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND.
+ *             If attribute value is longer than ATT_MTU-3 octects, then only
+ *             the first ATT_MTU-3 octects can be sent in a notification.
  * @param[in]  param: The parameters for notification.
  * @return
  *            - 0  : Succeed
@@ -529,10 +568,10 @@ uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param);
 
 /**
  * @fn         uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param)
- * @brief      Indicate action initiated by server. If attribute value is longer than
- * 			   ATT_MTU-3 octects, then only the first ATT_MTU-3 octects can be sent
- * 			   in a indication.
- * @param[in]  param: The parameters for notification.
+ * @brief      Indicate action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND
+ *             If attribute value is longer than ATT_MTU-3 octects, then only 
+ *             the first ATT_MTU-3 octects can be sent in a indication.
+ * @param[in]  param: The parameters for indication.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

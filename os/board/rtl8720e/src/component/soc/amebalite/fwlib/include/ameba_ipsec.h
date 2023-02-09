@@ -717,6 +717,8 @@ _LONG_CALL_ int CRYPTO_CipherEncryptAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *mes
 _LONG_CALL_ int CRYPTO_CipherDecryptAD(HAL_CRYPTO_ADAPTER *pIE, IN const u8 *message, IN const u32 msglen, IN const u8 *piv, IN const u32 ivlen,
 									   IN const u8 *paad, IN const u32 aadlen, OUT u8 *pResult, OUT u8 *pTag);
 _LONG_CALL_ int CRYPTO_SendSeqBuf(u8 *pDigest, hw_sha_context *ctx);
+_LONG_CALL_ void hash_save(hw_sha_context *ctx);
+
 /**
   * @}
   */
@@ -733,9 +735,11 @@ _LONG_CALL_ int CRYPTO_SendSeqBuf(u8 *pDigest, hw_sha_context *ctx);
 #define FIFOCNT_TIMEOUT		0x100000
 extern HAL_CRYPTO_ADAPTER crypto_engine;
 extern HAL_CRYPTO_ADAPTER crypto_sha_engine;
+extern u32 SHA_OTPKEY;
 
 #define AES_ENGINE	0x0
 #define SHA_ENGINE	0x1
+#define IPSEC_DMA_BVAL	((u32)0x00000001 << 17)
 
 __STATIC_INLINE
 int rtl_cryptoEngine_init(void)

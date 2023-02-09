@@ -2,7 +2,7 @@
 //#include <flash/stm32_flash.h>
 #if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
-#if CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
@@ -16,14 +16,13 @@
 #if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
 #include "at_cmd/atcmd_wifi.h"
 #endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "platform_opts_bt.h"
 #endif
-#ifdef CONFIG_BT_COEXIST
-#include "bt_intf.h"
-#endif
 
+#include "freertos/wrapper.h"
 
+extern u8 rtw_pmf_mode;
 
 
 /******************************************************
@@ -36,7 +35,6 @@
 /******************************************************
  *               Variables Declarations
  ******************************************************/
-extern rtw_wpa_mode wifi_wpa_mode;
 
 /******************************************************
  *               Variables Definitions
@@ -56,8 +54,33 @@ int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode)
 	if (wpa_mode > WPA2_WPA3_MIXED_MODE) {
 		return -1;
 	} else {
-		wifi_wpa_mode = wpa_mode;
+		wifi_user_config.wifi_wpa_mode = wpa_mode;
 		return 0;
 	}
 }
 
+int wifi_set_pmf_mode(u8 pmf_mode)
+{
+	struct net_device *dev;
+
+	dev = rtw_get_netdev(STA_WLAN_INDEX);
+	ASSERT(dev != NULL);
+
+	if ((pmf_mode != 0) && (pmf_mode != 1) && (pmf_mode != 2)) {
+		printf("PMF mode not supported!\r\n");
+		return -1;
+	}
+
+	rtw_pmf_mode = pmf_mode;
+	return 0;
+}
+
+int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param)
+{
+	if (rfk_param == NULL) {
+		return _FAIL;
+	}
+	int res = 0;
+	res = rltk_coex_bt_rfk(rfk_param);
+	return res;
+}

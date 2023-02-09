@@ -43,31 +43,6 @@
 #define BTCOEX_ALIVE	BIT(4)
 #endif /* CONFIG_BT_COEXIST */
 
-#ifdef CONFIG_WOWLAN
-#define DEFAULT_PATTERN_NUM 1  		/* ICMP */
-#define MAX_CUSTOM_PATTERN_NUM 20
-#define MAX_WKFM_CAM_NUM	22		/* Frame Mask Cam number for pattern match */
-#define MAX_WKFM_SIZE		16 /* (16 bytes for WKFM bit mask, 16*8 = 128 bits) */
-#define MAX_WKFM_PATTERN_SIZE	128
-#define WKFMCAM_ADDR_NUM 8//6
-//#define WKFMCAM_SIZE 		24 /* each entry need 6*4 bytes */
-
-enum pattern_type {
-	PATTERN_BROADCAST = 0,
-	PATTERN_MULTICAST,
-	PATTERN_UNICAST,
-	PATTERN_VALID,
-	PATTERN_INVALID,
-};
-
-typedef struct rtl_priv_pattern {
-	int len;
-	char content[MAX_WKFM_PATTERN_SIZE];
-	char mask[MAX_WKFM_SIZE];
-} rtl_priv_pattern_t;
-
-#endif // CONFIG_WOWLAN
-
 #define LPS_TX_TP_TH	3000	//Kbps
 #define LPS_RX_TP_TH	3000	//Kbps
 #define LPS_BI_TP_TH	5000	//Kbps
@@ -168,11 +143,6 @@ typedef enum _rt_rf_power_state {
 #define	RT_RF_LPS_DISALBE_2R			BIT(30)	// When LPS is on, disable 2R if no packet is received or transmittd.
 #define	RT_RF_LPS_LEVEL_ASPM			BIT(31)	// LPS with ASPM
 
-#define	RT_IN_PS_LEVEL(ppsc, _PS_FLAG)		((ppsc->cur_ps_level & _PS_FLAG) ? _TRUE : _FALSE)
-#define	RT_CLEAR_PS_LEVEL(ppsc, _PS_FLAG)	(ppsc->cur_ps_level &= (~(_PS_FLAG)))
-#define	RT_SET_PS_LEVEL(ppsc, _PS_FLAG)		(ppsc->cur_ps_level |= _PS_FLAG)
-
-
 enum _PS_BBRegBackup_ {
 	PSBBREG_RF0 = 0,
 	PSBBREG_RF1,
@@ -183,125 +153,48 @@ enum _PS_BBRegBackup_ {
 
 struct pwrctrl_priv {
 	_pwrlock	lock;
-	volatile u8 rpwm; // requested power state for fw
-	volatile u8 cpwm; // fw current power state. updated when 1. read from HCPWM 2. driver lowers power level
-	volatile u8 tog; // toggling
-	volatile u8 cpwm_tog; // toggling
 
-	u8	pwr_mode;
-	u8	bcn_ant_mode;
-	u8	dtim;
-	u32	alives;
-	u64  wowlan_fw_iv;
-//TODO
-//	_workitem cpwm_event;
-#ifdef CONFIG_LPS_RPWM_TIMER
-	u8 brpwmtimeout;
-	_workitem rpwmtimeoutwi;
-	_timer pwr_rpwm_timer;
-#endif // CONFIG_LPS_RPWM_TIMER
-	u8	bpower_saving;
-	u8	bTDMA;
+	u8	ips_user_req;
+	u8	ips_driver_req;
+	uint	bips_processing;
+	u32	ips_deny_time; /* will deny IPS when system time is smaller than this */
+	u8	ps_processing; /* temporarily used to mark whether in rtw_ps_processor */
 
-	u8	b_hw_radio_off;
-	u8	reg_rfoff;
-	u8	reg_pdnmode; //powerdown mode
-	u32	rfoff_reason;
+	u8	lps_user_req;
+	u8	lps_driver_req;
+	u8	lps_cur_state;
 
-	//RF OFF Level
-	u32	cur_ps_level;
-	u32	reg_rfps_level;
-
-
-
-#if defined(CONFIG_PCI_HCI) || defined(CONFIG_LX_HCI)
-	//just for PCIE ASPM
-	u8	b_support_aspm; // If it supports ASPM, Offset[560h] = 0x40, otherwise Offset[560h] = 0x00.
-	u8	b_support_backdoor;
-
-	//just for PCIE ASPM
-	u8	const_amdpci_aspm;
-#endif
-
-	uint 	ips_enter_cnts;
-	uint 	ips_leave_cnts;
-
-	u8	ps_enable;
-	u8	ips_mode;
-	u8	ips_org_mode;
-	u8	ips_mode_req; // used to accept the mode setting request, will update to ipsmode later
-	uint bips_processing;
-	u32 ips_deny_time; /* will deny IPS when system time is smaller than this */
-	u8 ps_processing; /* temporarily used to mark whether in rtw_ps_processor */
-
-	u8	bLeisurePs;
 	u8	LpsIdleCount;
-	u8	power_mgnt;
-	u8	org_power_mgnt;
-	u8	bFwCurrentInPSMode;
+	u8	lps_mode;
 	u32	DelayLPSLastTimeStamp;
-	u8 	btcoex_rfon;
-	s32		pnp_current_pwr_state;
-	u8		pnp_bstop_trx;
 
-	u8		bInSuspend;
-#ifdef	CONFIG_BT_COEXIST
-	u8		bAutoResume;
-	u8		autopm_cnt;
-#endif
-	u8		bSupportRemoteWakeup;
+	u8	lps_level; /*LPS_NORMAL,LPA_CG,LPS_PG*/
+	u8	lps_dtim;
+	u8	lps_enter_threshold;
+
+	u8	lps_chk_by_tp;
+	u16	lps_tx_tp_th; // Kbps
+	u16	lps_rx_tp_th; // Kbps
+	u16	lps_bi_tp_th; // Kbps // TRX TP
+	int	lps_chk_cnt_th;
+	int	lps_chk_cnt;
+
+	u8	bInSuspend;
+	u8	bcn_ant_mode;
+	u64  wowlan_fw_iv;
 #ifdef CONFIG_WOWLAN
-	u8      wowlan_txpause_status;
-	u8		wowlan_mode;
-#if defined(CONFIG_WOWLAN_HW_CAM)
-	u8		wowlan_pattern;
-	u8		wowlan_magic;
-	u8		wowlan_unicast;
-	bool	default_patterns_en;
-	_mutex	wowlan_pattern_cam_mutex;
-	u8		wowlan_pattern_idx;
-	struct rtl_priv_pattern	patterns[MAX_WKFM_CAM_NUM];
-#endif
-	u8		wowlan_wake_reason;
-#ifdef CONFIG_WOWLAN_CUSTOM_PATTERN
-	wowlan_pattern_t	wowlan_custom_pattern[MAX_CUSTOM_PATTERN_NUM];
-	u8		wowlan_custom_pattern_count;
-#endif
-	u8		bLowPwrRxBCN;
-	u8		bLowPwrRxBCNOfdmOff;
+	u8	wowlan_mode;
+	u8	wowlan_wake_reason;
 #endif // CONFIG_WOWLAN
-	_timer 	pwr_state_check_timer;
-	int		pwr_state_check_interval;
-	u8		pwr_state_check_cnts;
-
-	int 		ps_flag;
+	_timer pwr_state_check_timer;
+	int	pwr_state_check_interval;
+	u8	pwr_state_check_cnts;
 
 	rt_rf_power_state	rf_pwrstate;//cur power state
 	//rt_rf_power_state 	current_rfpwrstate;
 	rt_rf_power_state	change_rfpwrstate;
 
-	u8		wepkeymask;
-	u8		bHWPowerdown;//if support hw power down
-	u8		bHWPwrPindetect;
-	u8		bkeepfwalive;
-	u8		brfoffbyhw;
-	unsigned long PS_BBRegBackup[PSBBREG_TOTALCNT];
-
-#ifdef CONFIG_INTEL_PROXIM
-	u8	stored_power_mgnt;
-#endif
-
-	u8 lps_level_bk;
-	u8 lps_level; /*LPS_NORMAL,LPA_CG,LPS_PG*/
-#ifdef CONFIG_LPS_PG
-	u8 lpspg_rsvd_page_locate;
-	u8 blpspg_info_up;
-#endif
-
-#ifdef CONFIG_WOWLAN_SSL_KEEP_ALIVE
-	u8 ssl_info_rsvd_page_locate;
-	u8 ssl_pattern_rsvd_page_locate;
-#endif
+	u8	bkeepfwalive;
 
 #ifdef TDMA_POWER_SAVING
 	u8	tdma_slot_period;
@@ -310,101 +203,11 @@ struct pwrctrl_priv {
 	u8	tdma_rfon_period_len_3;
 #endif
 
-	u8	ps_timeout;
-
-	u8	lps_dtim;
-	u8  lps_enter_threshold;
-
-	u8	lps_chk_by_tp;
-	u16 lps_tx_tp_th; // Kbps
-	u16 lps_rx_tp_th; // Kbps
-	u16 lps_bi_tp_th; // Kbps // TRX TP
-	int lps_chk_cnt_th;
-	int lps_chk_cnt;
-	u32 lps_tx_pkts;
-	u32 lps_rx_pkts;
-
-#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
-	u8  tcp_keep_alive_rsvd_page_locate;
-	u32 tcp_keep_alive_interval_ms;
-	u32 tcp_keep_alive_resend_ms;
-	u8  tcp_keep_alive_wake_sys;
-	u8 *tcp_keep_alive_pkt;
-	u32 tcp_keep_alive_pkt_size;
-#ifdef CONFIG_WOWLAN_DTIMTO
-	u8  tcp_keep_alive_dtimto_enable;
-	u8  tcp_keep_alive_dtimto_retry_inc;
-	u8  tcp_keep_alive_dtimto_ack_timeout;
-#endif
-#endif
-
-#ifdef CONFIG_SMART_DTIM
-	u8  smartdtim_enable;
-	u8  smartdtim_resume_enable;
-	u8  smartdtim_check_period;
-	u8  smartdtim_threshold;
-	u8  smartdtim_change_dtim;
-#endif
-
-#ifdef CONFIG_WOWLAN_DHCP_RENEW
-	u8  dhcp_renew_rsvd_page_locate;
-	u8 *dhcp_renew_pkt;
-	u32 dhcp_renew_pkt_size;
-	u16 dhcp_renew_lease_time;
-	u16 dhcp_renew_t1;
-#endif
-
-#ifdef CONFIG_WOWLAN_DYNAMIC_TX_PWR
-	u8  dynamic_tx_pwr_threshold_rssi_low;
-	u8  dynamic_tx_pwr_threshold_rssi_high;
-	u8  dynamic_tx_pwr_offset_db_low;
-	u8  dynamic_tx_pwr_offset_db_high;
-#endif
-
-#ifdef CONFIG_ARP_KEEP_ALIVE
-	u8  arp_rsp_keep_alive_enable;
-	u8  gw_ip[4];
-	u8  tcp_ip[4];
-	u8  tcp_mac[6];
-#endif
-
-#ifdef USER_CTL_POWER_SAVE
-	u8 uc_ps_enable;
-	/*auto turn off radio timer in user ctrl ps mode*/
-	u16 auto_rfoff_timer;
-	/*after enter wowlan,wifi FW sniffer for some
-	wakeup broadcast packet for sniffer timer
-	every sniffer_interval.*/
-	u8 sniffer_timer;
-	u32 sniffer_interval;
-#endif
-
-#ifdef CONFIG_WOWLAN_PARAM
-	u8  wowlan_param_conf;
-	u8  fw_disconnect_check_period;
-	u8  fw_disconnect_trypktnum;
-	u8  pno_enable;
-	u8  pno_timeout;
-	u8  l2_keepalive_period;
-#endif
-
-#ifdef CONFIG_ARP_REQUEST_KEEP_ALIVE
-	u8  arpreq_enable;
-	u8  arpreq_powerbit;
-	u8  arpreq_dtim1to;
-	u8  arpreq_rsvd_page_locate;
-#endif
-
-#ifdef CONFIG_WOWLAN_IO_WDT
-	u8  wdt_enable;
-	u8  wdt_gpio;
-	u8  wdt_interval;
-#endif
-
-#ifdef CONFIG_FW_DRIVER_COEXIST
+#if defined (CONFIG_FW_DRIVER_COEXIST) || defined (CONFIG_MSFT) && CONFIG_MSFT
 	u32 dynamic_timer_record;
 	u32 pwr_check_timer_record;
 #endif
+
 };
 
 #define RTW_PWR_STATE_CHK_INTERVAL 2000
@@ -435,14 +238,9 @@ void LPS_Leave(PADAPTER padapter);
 //u8 rtw_interface_ps_func(_adapter *padapter,HAL_INTF_PS_FUNC efunc_id,u8* val);
 int _rtw_pwr_wakeup(_adapter *padapter, u32 ips_deffer_ms, const char *caller);
 #define rtw_pwr_wakeup(adapter) _rtw_pwr_wakeup(adapter, RTW_PWR_STATE_CHK_INTERVAL, __FUNCTION__)
-int rtw_pm_set_ips(_adapter *padapter, u8 mode);
-int rtw_pm_set_lps(_adapter *padapter, u8 mode);
+int rtw_pm_set_ips_enable(_adapter *padapter, u8 enable);
+int rtw_pm_set_lps_enable(_adapter *padapter, u8 enable);
 int rtw_pm_set_lps_level(_adapter *padapter, u8 level);
 int rtw_pm_set_tdma_param(_adapter *padapter, u8 tdma_slot_period, u8 tdma_rfon_period_len_1, u8 tdma_rfon_period_len_2, u8 tdma_rfon_period_len_3);
 #endif  //__RTL871X_PWRCTRL_H_
-
-#ifdef USER_CTL_POWER_SAVE
-void rtw_ucps_cmd(_adapter *padapter, u8 enable);
-void rtw_ucps_close_rf(_adapter *padapter, u8 enable);
-#endif
 

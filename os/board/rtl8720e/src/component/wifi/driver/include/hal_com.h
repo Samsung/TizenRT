@@ -26,9 +26,9 @@
 #include "hal_intf.h"
 #include "hal_phy.h"
 #include "hal_phy_reg.h"
-#if  defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8730E) || defined(CONFIG_RTL8721F)
+#if  defined(CONFIG_RTL8730A) || defined(CONFIG_RTL8730E)
 #include "wififw_reg_rom.h"
-#elif defined(CONFIG_RTL8720E)
+#elif defined(CONFIG_RTL8720E) || defined(CONFIG_RTL8721F)
 #include "wififw_reg_ram.h"
 #else
 #include "hal_com_reg.h"
@@ -39,9 +39,7 @@
 #endif
 #include "hal_wowlan_sd1.h"
 
-#if(PHYDM_VERSION > 1)
 #include "hal_com_c2h.h"
-#endif
 
 //----------------------------------------------------------------------------
 //       Rate Definition
@@ -293,6 +291,7 @@ enum STAINFO_ITEM {
 	STAINFO_RAINFO_SGI = 9,
 	STAINFO_RAINFO_VHT = 10,
 	STAINFO_WIRELESS_MODE = 11,
+	STAINFO_ASSOC_RSSI = 12,
 	STAINFO_MAX,
 };
 
@@ -312,12 +311,6 @@ void	HalSetBrateCfg(
 	IN PADAPTER		Adapter,
 	IN u8			*mBratesOS,
 	OUT u16			*pBrateCfg);
-
-BOOLEAN
-Hal_MappingOutPipe(
-	IN	PADAPTER	pAdapter,
-	IN	u8		NumOutPipe
-);
 
 BOOLEAN
 HAL_IsLegalChannel(
@@ -347,33 +340,26 @@ void rtw_hal_update_sta_info(_adapter *padapter, struct wlan_network *pnetwork, 
 void rtw_hal_ra_deregister(PADAPTER padapter, struct sta_info *psta, bool is_connect);
 void rtw_hal_update_sta_ra_info(_adapter *padapter, struct sta_info *psta);
 void rtw_hal_ra_update(PADAPTER padapter, struct sta_info *psta);
-
-#elif (PHYDM_VERSION == 1)
-#define rtw_hal_update_sta_info(padapter, pnetwork, psta)
-#define rtw_hal_ra_deregister(padapter, psta, is_connect)
-#define rtw_hal_update_sta_ra_info(padapter, psta)
-#define rtw_hal_ra_update(padapter, psta)
 #endif
-
 
 /* ax only, update phl_sta->asoc_cap */
 void rtw_hal_update_asoc_cap(_adapter *padapter, struct sta_info *psta);
 void rtw_hal_update_asoc_cap_apmode(_adapter *padapter, struct sta_info *psta);
 
-#if defined (CONFIG_RTL8188F) ||defined (CONFIG_RTL8192E) ||defined (CONFIG_RTL8723D)|| defined (CONFIG_RTL8711B) || defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B)
+#if defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B)
+
 typedef enum _RT_MEDIA_STATUS {
 	RT_MEDIA_DISCONNECT = 0,
 	RT_MEDIA_CONNECT       = 1
 } RT_MEDIA_STATUS;
 
-
-void GetHalODMVar(
+void wifi_hal_odmvar_get(
 	PADAPTER				Adapter,
 	HAL_ODM_VARIABLE		eVariable,
 	PVOID					pValue1,
 	PVOID					pValue2);
 
-void SetHalODMVar(
+void wifi_hal_odmvar_set(
 	PADAPTER				Adapter,
 	HAL_ODM_VARIABLE		eVariable,
 	PVOID					pValue1,
@@ -382,7 +368,7 @@ void SetHalODMVar(
 u8 SetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
 u8 GetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
 
+#endif // defined(CONFIG_RTL8721D) || defined(CONFIG_RTL8195B) || defined(CONFIG_RTL8710C) || defined(CONFIG_RTL8735B)
 
-#endif
 #endif //__HAL_COMMON_H__
 

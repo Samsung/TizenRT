@@ -240,19 +240,6 @@ void cmd_ping(int argc, char **argv)
 				if (argc == 2) {
 					g_ping_terminate = 1;
 					//vTaskDelay(100);
-					if (g_ping_task) {
-						if (ping_socket >= 0) {
-							close(ping_socket);
-						}
-						if (ping_buf) {
-							vPortFree(ping_buf);
-							ping_buf = NULL;
-						}
-						if (reply_buf) {
-							vPortFree(reply_buf);
-							reply_buf = NULL;
-						}
-					}
 					return;
 				} else {
 					goto Exit;

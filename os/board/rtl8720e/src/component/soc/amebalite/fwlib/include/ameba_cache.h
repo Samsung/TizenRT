@@ -82,55 +82,6 @@
 /** @defgroup CACHE_Exported_Functions FLash Cache Exported Functions
   * @{
   */
-/**
-  * @brief  Disable/Enable I/D cache.
-  * @param  Enable
-  *   This parameter can be any combination of the following values:
-  *		 @arg ENABLE cache enable & SPIC read 16bytes every read command
-  *		 @arg DISABLE cache disable & SPIC read 4bytes every read command
-  */
-__STATIC_INLINE
-void Cache_Enable(u32 Enable)
-{
-	if (Enable) {
-		SCB_EnableICache();
-		SCB_EnableDCache();
-	} else {
-		SCB_DisableICache();
-		SCB_DisableDCache();
-	}
-}
-
-#if defined (ARM_CORE_CM4)
-/**
-  * @brief  Disable/Enable Nonsecure I/D cache by secure world.
-  * @param  Enable
-  *   This parameter can be any combination of the following values:
-  *		 @arg ENABLE cache enable & SPIC read 16bytes every read command
-  *		 @arg DISABLE cache disable & SPIC read 4bytes every read command
-  */
-__STATIC_INLINE
-void Cache_Enable_NS(u32 Enable)
-{
-	if (Enable) {
-		SCB_EnableICache_NS();
-		SCB_EnableDCache_NS();
-	} else {
-		SCB_DisableICache_NS();
-		SCB_DisableDCache_NS();
-	}
-}
-#endif
-
-/**
-  * @brief  flush I/D cache.
-  */
-__STATIC_INLINE
-void Cache_Flush(void)
-{
-	SCB_InvalidateICache();
-	SCB_InvalidateDCache();
-}
 
 /**
   * @brief  Enable Icache.
@@ -174,7 +125,9 @@ u32 DCache_IsEnabled(void)
 __STATIC_INLINE
 void DCache_Enable(void)
 {
-	SCB_EnableDCache();
+	if (!DCache_IsEnabled()) { //if D-Cache is enabled, no need to invalidate D-Cache
+		SCB_EnableDCache();
+	}
 }
 
 /**
@@ -208,9 +161,9 @@ void DCache_Invalidate(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		SCB_InvalidateDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		SCB_InvalidateDCache_by_Addr((u32 *)addr, len);
@@ -240,9 +193,9 @@ void DCache_Clean(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		SCB_CleanDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		SCB_CleanDCache_by_Addr((u32 *)addr, len);
@@ -271,13 +224,63 @@ void DCache_CleanInvalidate(u32 Address, u32 Bytes)
 	if ((Address == 0xFFFFFFFF) && (Bytes == 0xFFFFFFFF)) {
 		SCB_CleanInvalidateDCache();
 	} else {
-		if ((addr & 0x1F) != 0) {
-			addr = (Address >> 5) << 5;   //32-byte aligned
-			len = ((((Address + Bytes - 1) >> 5) + 1) << 5) - addr; //next 32-byte aligned
+		if (!IS_CACHE_LINE_ALIGNED_ADDR(Address)) {
+			addr = Address & CACHE_LINE_ADDR_MSK; //region is [Address, Address + Bytes)
+			len = Address - addr + Bytes; // need add length of [addr, Address)
 		}
 
 		SCB_CleanInvalidateDCache_by_Addr((u32 *)addr, len);
 	}
+}
+
+/**
+  * @brief  Disable/Enable I/D cache.
+  * @param  Enable
+  *   This parameter can be any combination of the following values:
+  *		 @arg ENABLE cache enable & SPIC read 16bytes every read command
+  *		 @arg DISABLE cache disable & SPIC read 4bytes every read command
+  */
+__STATIC_INLINE
+void Cache_Enable(u32 Enable)
+{
+	if (Enable) {
+		ICache_Enable();
+		DCache_Enable();
+	} else {
+		ICache_Disable();
+		DCache_Disable();
+	}
+}
+
+#if defined (ARM_CORE_CM4)
+/**
+  * @brief  Disable/Enable Nonsecure I/D cache by secure world.
+  * @param  Enable
+  *   This parameter can be any combination of the following values:
+  *		 @arg ENABLE cache enable & SPIC read 16bytes every read command
+  *		 @arg DISABLE cache disable & SPIC read 4bytes every read command
+  */
+__STATIC_INLINE
+void Cache_Enable_NS(u32 Enable)
+{
+	if (Enable) {
+		SCB_EnableICache_NS();
+		SCB_EnableDCache_NS();
+	} else {
+		SCB_DisableICache_NS();
+		SCB_DisableDCache_NS();
+	}
+}
+#endif
+
+/**
+  * @brief  flush I/D cache.
+  */
+__STATIC_INLINE
+void Cache_Flush(void)
+{
+	SCB_InvalidateICache();
+	SCB_InvalidateDCache();
 }
 
 /**

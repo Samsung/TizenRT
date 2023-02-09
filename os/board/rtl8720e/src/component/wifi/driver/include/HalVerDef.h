@@ -192,7 +192,7 @@ typedef	struct tag_HAL_VERSION {
 #define IS_8723A_A_CUT(version)				((IS_8723_SERIES(version)) ? ( IS_A_CUT(version)?TRUE : FALSE) : FALSE)
 #define IS_8723A_B_CUT(version)				((IS_8723_SERIES(version)) ? ( IS_B_CUT(version)?TRUE : FALSE) : FALSE)
 
-#define IS_VENDOR_8188E_I_CUT_SERIES(_Adapter)		((IS_8188E(GET_HAL_DATA(_Adapter)->VersionID)) ? ((GET_CVID_CUT_VERSION(GET_HAL_DATA(_Adapter)->VersionID) >= I_CUT_VERSION) ? TRUE : FALSE) : FALSE)
+#define IS_VENDOR_8188E_I_CUT_SERIES(_Adapter)		((IS_8188E(rtw_get_haldata(_Adapter)->VersionID)) ? ((GET_CVID_CUT_VERSION(rtw_get_haldata(_Adapter)->VersionID) >= I_CUT_VERSION) ? TRUE : FALSE) : FALSE)
 
 #endif
 

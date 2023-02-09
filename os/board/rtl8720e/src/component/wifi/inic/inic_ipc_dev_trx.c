@@ -140,7 +140,7 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 		g_ipc_dev_priv.tx_bytes += skb->len;
 		g_ipc_dev_priv.tx_pkts++;
 		WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
-		rltk_wlan_send_skb(p_ipc_msg->msg_len, skb);
+		wifi_send_skb(p_ipc_msg->msg_len, skb);
 		WIFI_MONITOR_TIMER_END(wlan_send_skb_time, skb->len);
 		break;
 	default:

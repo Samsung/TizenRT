@@ -90,7 +90,6 @@
 #define ISR_PSTIMEOUT2						ISR_PSTIMEOUT2_8720E
 #define CHECKTWTClientNULL				CHECKTWTClientNULL_8720E
 #define CHECKTWTClientSPEND				CHECKTWTClientSPEND_8720E
-#define PSTWTBcnEarlyProcess				PSTWTBcnEarlyProcess_8720E
 #define PSTWTEarlyProcess					PSTWTEarlyProcess_8720E
 #define PSTWTBcnToProcess					PSTWTBcnToProcess_8720E
 #define PSTWTBcnRxProcess					PSTWTBcnRxProcess_8720E
@@ -150,11 +149,15 @@
 #define MediaConnection					MediaConnection_8720E
 
 // hioe
-#define SetHIOESingleCmdValWM SetHIOESingleCmdValWM_8720E
-#define SetHIOESingleCmdValBM SetHIOESingleCmdValBM_8720E
-#define SetHIOEConfigFile 				SetHIOEConfigFile_8720E
+#define HIOESetSingleCmdValWM 			HIOESetSingleCmdValWM_8720E
+#define HIOESetSingleCmdValBM 			HIOESetSingleCmdValBM_8720E
+#define HIOECmdInitValTypeChk			HIOECmdInitValTypeChk_8720E
+#define HIOEChkChanelIdle					HIOEChkChanelIdle_8720E
+#define HIOEInitCmdFileToTXFF 			HIOEInitCmdFileToTXFF_8720E
+
+#define HIOESetConfigFile 				HIOESetConfigFile_8720E
 #define HIOEBackupRestore 				HIOEBackupRestore_8720E
-#define CHKHigh8kTXFFPGUseOverlap 		CHKHigh8kTXFFPGUseOverlap_8720E
+#define HIOECHKHigh8kTXFFPGUseOverlap 		HIOECHKHigh8kTXFFPGUseOverlap_8720E
 //ddma
 #define InitDDMA					  			InitDDMA_8720E
 #define WaitDDMARDY                			WaitDDMARDY_8720E
@@ -185,7 +188,15 @@
 #define PSRxBcnProcess 					PSRxBcnProcess_8720E
 #define LowPowerRxBeacon 					LowPowerRxBeacon_8720E
 #define PSPeriodCCA							PSPeriodCCA_8720E
+#define BeaconModeBBAGCtableUpdate 	BeaconModeBBAGCtableUpdate_8720E
 #define BeaconModeDCKbackup 				BeaconModeDCKbackup_8720E
+#define PwrGatedBKRSTxReg					PwrGatedBKRSTxReg_8720E
+#define PwrGatedBKRSCtrlInfo				PwrGatedBKRSCtrlInfo_8720E
+#define PwrGatedBKRSMACTXPower			PwrGatedBKRSMACTXPower_8720E
+#define PwrGatedInitDRFC 					PwrGatedInitDRFC_8720E
+#define PwrGatedBKRSBBTSSIREG			PwrGatedBKRSBBTSSIREG_8720E
+#define PwrGatedInitBBTRX					PwrGatedInitBBTRX_8720E
+#define PwrGatedWifiParmBkRs				PwrGatedWifiParmBkRs_8720E
 #define Set32KLpsOption 					Set32KLpsOption_8720E
 #define InitBcnEarlyAdjustStat 			InitBcnEarlyAdjustStat_8720E
 #define InitBcnEarlyAdjustPID 			InitBcnEarlyAdjustPID_8720E
@@ -197,7 +208,6 @@
 #define BcnEarlyADJSTSSearchBaseValue BcnEarlyADJSTSSearchBaseValue_8720E
 #define BcnEarlyADJSTSCheckBaseValue	BcnEarlyADJSTSCheckBaseValue_8720E
 #endif
-#define LowLPSOff                       		LowLPSOff_8720E
 #define SetSmartPSTimer					SetSmartPSTimer_8720E
 #define SetPwrStateReg						SetPwrStateReg_8720E
 #define ResetPSParm							ResetPSParm_8720E
@@ -221,10 +231,9 @@
 #define PS_S0ToS6State						PS_S0ToS6State_8720E
 #define PS_S6ToS0State						PS_S6ToS0State_8720E
 //LPS offload
-#define LPSOfld_HIOECmdFileToTXFF 		LPSOfld_HIOECmdFileToTXFF_8720E
 #define LPSOfld_HIOECmdFileInit 		LPSOfld_HIOECmdFileInit_8720E
 #define LPSOfld_RxbcnModeCmdFileValInit	LPSOfld_RxbcnModeCmdFileValInit_8720E
-#define LPSOfld_ByPassLsysWakeInt 		LPSOfld_ByPassLsysWakeInt_8720E
+#define LPSOfld_ExitRxbcnModeCmdFileValInit LPSOfld_ExitRxbcnModeCmdFileValInit_8720E
 #define LPSOfld_SwtHIOECmdFile 			LPSOfld_SwtHIOECmdFile_8720E
 #define LPSOfld_IMRSetting 				LPSOfld_IMRSetting_8720E
 #define LPSOfld_SetBcnErlyandTimeout	LPSOfld_SetBcnErlyandTimeout_8720E
@@ -247,12 +256,21 @@
 //RA
 #define InitCtrlInfo 						InitCtrlInfo_8720E
 #if CONFIG_CSI_REPORT
+#define HALBB_FW_BBReset					HALBB_FW_BBReset_8720E
+#define CheckCSITxNullDone				CheckCSITxNullDone_8720E
+#define CheckNoCSIClientEnable			CheckNoCSIClientEnable_8720E
+#define CheckNextCSIClientTxnull		CheckNextCSIClientTxnull_8720E
+#define CheckCSIClientTxnullRty			CheckCSIClientTxnullRty_8720E
 #define IssueCSITXNull						IssueCSITXNull_8720E
 #define SetPeriodTxNullAddrRate			SetPeriodTxNullAddrRate_8720E
 #define H2CHDL_Set_CSI_TXNULL 			H2CHDL_Set_CSI_TXNULL_8720E
+#define CSIEnableClientParameter		CSIEnableClientParameter_8720E
+#define CSIDisableClientParameter		CSIDisableClientParameter_8720E
 #endif
 #define halbb_fw_read_rf_reg				halbb_fw_read_rf_reg_8720e
 #define halbb_fw_write_rf_reg			halbb_fw_write_rf_reg_8720e
+#define halbb_fw_set_bb_reg 				halbb_fw_set_bb_reg_8720e
+#define halbb_fw_get_bb_reg				halbb_fw_get_bb_reg_8720e
 
 //Wolwan
 #define InitRemoteWakeUp 					InitRemoteWakeUp_8720E
@@ -335,10 +353,6 @@
 #define PollingReg							PollingReg_8720E
 
 //BTCoex
-#define BTRoleChangeTimerHDL           	BTRoleChangeTimerHDL_8720E
-#define BTRoleChangeTBTTHDL            	BTRoleChangeTBTTHDL_8720E
-#define BTRoleChangeDefaultSetting 	BTRoleChangeDefaultSetting_8720E
-#define BTC_BackupAntennaSetting    	BTC_BackupAntennaSetting_8720E
 #define InitBTMailbox                  		InitBTMailbox_8720E
 #define FillMailbox                    		FillMailbox_8720E
 #define BT2WLMailboxINTHDL             	BT2WLMailboxINTHDL_8720E
@@ -351,7 +365,6 @@
 #define H2CHDL_BT_Init_Param           	H2CHDL_BT_Init_Param_8720E
 #define C2HWlanInfo                    		C2HWlanInfo_8720E
 #define InitBTCoex                     		InitBTCoex_8720E
-#define InitBTScoreboard               	InitBTScoreboard_8720E
 #define BT_TDMA_Slot_Operation_0and3	BT_TDMA_Slot_Operation_0and3_8720E
 #define BT_TDMA_Slot_Operation_1and4	BT_TDMA_Slot_Operation_1and4_8720E
 #define BT_TDMA_Slot_Operation_2and5	BT_TDMA_Slot_Operation_2and5_8720E
@@ -364,7 +377,6 @@
 #define BTC_RestoreDefaultCoexTable	BTC_RestoreDefaultCoexTable_8720E
 #define BTC_PWRBitOverWrite				BTC_PWRBitOverWrite_8720E
 #define BTC_PsTdmaIssueNull            	BTC_PsTdmaIssueNull_8720E
-#define BTC_PsTdmaIssuePsPoll			BTC_PsTdmaIssuePsPoll_8720E
 #define BTC_PsTdmaOnBcn					BTC_PsTdmaOnBcn_8720E
 #define BTC_BtIqkAction                	BTC_BtIqkAction_8720E
 #define BTC_BtIqkCheck                 	BTC_BtIqkCheck_8720E
@@ -373,10 +385,9 @@
 #define BTC_ProtectBCN                 	BTC_ProtectBCN_8720E
 #define BTC_RestoreBtSlot              	BTC_RestoreBtSlot_8720E
 #define BTC_GenRandomValue             	BTC_GenRandomValue_8720E
-#define BTC_WifiRandomSlot             	BTC_WifiRandomSlot_8720E
 #define BTC_WifiWindowSlot             	BTC_WifiWindowSlot_8720E
 #define BTC_Set_GntBt             		BTC_Set_GntBt_8720E
-#if (CONFIG_BTCOEX_GPIO_DEBUG || CONFIG_BTCOEX_SLOT_DEBUG)
+#if CONFIG_BTCOEX_SLOT_DEBUG
 #define InitBTCoexDebugPort            	InitBTCoexDebugPort_8720E
 #define BTC_SlotGpioDbgCtrl            	BTC_SlotGpioDbgCtrl_8720E
 #endif
@@ -460,7 +471,6 @@
 #define RTL8720E_CHINFO_AHB_BASE            	0x40052000
 //2 sysreg access
 #define SYSTEM_CTRL_BASE_LPSYS_OFFSET		0x200
-#define SYSTEM_CTRL_BASE_LPPMC_OFFSET		0x300
 //3 retention access
 #define RETENTION_RAM_AHB_FW_BASE			  	0x000C0130
 
@@ -509,12 +519,6 @@
 #define ReadPortBBUlong(offset)             	(rtl_inl((offset)+RTL8720E_BBREG_AHB_BASE))
 #define ReadPortBBUshort(offset)            	(rtl_inw((offset)+RTL8720E_BBREG_AHB_BASE))
 #define ReadPortBBUchar(offset)             	(rtl_inb((offset)+RTL8720E_BBREG_AHB_BASE))
-
-//3 RF Reg only support dword mode
-#define WritePortARFCUlong(offset, value)  rtl_outl(4*(offset)+RTL8720E_ARFCREG_AHB_BASE, value)
-#define WritePortDRFCUlong(offset, value)  rtl_outl(4*(offset)+RTL8720E_DRFCREG_AHB_BASE, value)
-#define ReadPortARFCUlong(offset)             	(rtl_inl(4*(offset)+RTL8720E_ARFCREG_AHB_BASE))
-#define ReadPortDRFCUlong(offset)             	(rtl_inl(4*(offset)+RTL8720E_DRFCREG_AHB_BASE))
 
 //3 SEC CAM
 #define WriteSECCAMDWord(offset, value)  	rtl_outl((offset)+RTL8720E_SECCAM_AHB_BASE, value)

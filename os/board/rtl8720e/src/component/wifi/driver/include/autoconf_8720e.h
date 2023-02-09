@@ -28,6 +28,7 @@
 
 /* For efuse or flash config start */
 #define CONFIG_EFUSE_SEPARATE
+#define CONFIG_EFUSE_RAW
 /* For efuse or flash config end */
 
 /* PHY layer band config */
@@ -53,10 +54,13 @@
 
 #define CONFIG_BT_COEXIST
 
-//#define CONFIG_WIFI_MESH 0
+//#define CONFIG_ARP_KEEP_ALIVE
 
-#define RX_SHORTCUT
-#define TX_SHORTCUT
+//#define CONFIG_WIFI_MESH 0
+#if WIFI_LOGO_CERTIFICATION == 0
+#define RX_SHORTCUT /*there's no reoder in rx short right now, wifi logo need ping 10k which needs reorder*/
+#define TX_SHORTCUT /*there's no sw encrypt in tx short right now, wifi logo need htc which needs sw encrypt*/
+#endif
 
 /* For 11 ax function */
 #define CONFIG_80211AX_HE
@@ -70,6 +74,9 @@
 #ifdef CONFIG_80211AX_HE
 #define CONFIG_MBSSID_AX
 #endif
+/*HW AES encrypt frame with HTC will be wrong,but wifi6 logo need HTC and require high level of TP,
+so use SW AES encrypt with IPSEC.  */
+#define SW_ENCRYPT_HTC_PKT
 #endif
 
 #define RTL8720E_SPECIFIC
@@ -134,6 +141,7 @@
 #define DRV_BB_CMN_RPT_DISABLE
 #define DRV_BB_STATISTICS_DISABLE
 #define DRV_BB_DGB_SUPPORT_DISABLE
+#define DRV_RF_DBG_TRACE_DISABLE
 #endif
 
 

@@ -201,6 +201,10 @@ enum PMC_CORE_ROLE_TYPE {
 /**
   * @}
   */
+enum PMC_AP_WAKE_STATUS {
+	PMC_WLAN_STATUS = 0,
+	PMC_MAX = 31,
+};
 
 /**
   * @}
@@ -256,5 +260,9 @@ uint32_t pmu_get_kr4sleeptime(void);
 void SOCPS_ResMemMode(u32 module);
 void SOCPS_Kr4_StartTbl_Restore(void);
 void SOCPS_Kr4_StartTbl_Backup(void);
+
+#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+extern void rtl8720e_system_resume_wlan(void);
+#endif
 #endif //_AMEBA_PMC_H_
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

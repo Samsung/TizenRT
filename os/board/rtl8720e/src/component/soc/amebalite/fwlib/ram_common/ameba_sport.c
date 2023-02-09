@@ -50,8 +50,7 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 	SP_InitStruct->SP_SR = SP_48K;
 	SP_InitStruct->SP_SelTDM = SP_TX_NOTDM;
 	SP_InitStruct->SP_SelFIFO = SP_TX_FIFO2;
-	SP_InitStruct->SP_SelI2S0MonoStereo = SP_CH_STEREO;
-	SP_InitStruct->SP_SelI2S1MonoStereo = SP_CH_STEREO;
+	SP_InitStruct->SP_SelI2SMonoStereo = SP_CH_STEREO;
 	SP_InitStruct->SP_SetMultiIO = SP_TX_MULTIIO_DIS;
 	SP_InitStruct->SP_SelClk = CKSL_I2S_XTAL40M;
 	SP_InitStruct->SP_Bclk = (32 * ((SP_InitStruct->SP_SelTDM) + 1) * 2 * (SP_InitStruct->SP_SR));
@@ -411,8 +410,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		assert_param(IS_SP_SEL_TX_CH(SP_InitStruct->SP_SelCh));
 		assert_param(IS_SP_SEL_TX_TDM(SP_InitStruct->SP_SelTDM));
 		assert_param(IS_SP_SEL_TX_FIFO(SP_InitStruct->SP_SelFIFO));
-		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2S0MonoStereo));
-		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2S1MonoStereo));
+		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2SMonoStereo));
 		assert_param(IS_SP_SET_TX_MULTIIO(SP_InitStruct->SP_SetMultiIO));
 
 		switch (SP_InitStruct->SP_SelChLen) {
@@ -442,15 +440,11 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_CTRL0 |= ((SP_DATA_LEN_SEL_TX_0(SP_InitStruct->SP_SelWordLen)) | (SP_DATA_FORMAT_SEL_TX(SP_InitStruct->SP_SelDataFormat))
 							 | (SP_SEL_I2S_TX_CH(SP_InitStruct->SP_SelCh)));
 
-		if (SP_InitStruct->SP_SelI2S0MonoStereo == SP_CH_STEREO) {
+		if (SP_InitStruct->SP_SelI2SMonoStereo == SP_CH_STEREO) {
 			SPORTx->SP_CTRL0 &= ~ SP_BIT_EN_I2S_MONO_TX_0;
-		} else {
-			SPORTx->SP_CTRL0 |= (SP_BIT_EN_I2S_MONO_TX_0);
-		}
-
-		if (SP_InitStruct->SP_SelI2S1MonoStereo == SP_CH_STEREO) {
 			SPORTx->SP_DIRECT_CTRL1 &= ~ SP_BIT_EN_I2S_MONO_TX_1;
 		} else {
+			SPORTx->SP_CTRL0 |= (SP_BIT_EN_I2S_MONO_TX_0);
 			SPORTx->SP_DIRECT_CTRL1 |= (SP_BIT_EN_I2S_MONO_TX_1);
 		}
 
@@ -508,8 +502,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		assert_param(IS_SP_SEL_RX_CH(SP_InitStruct->SP_SelCh));
 		assert_param(IS_SP_SEL_RX_TDM(SP_InitStruct->SP_SelTDM));
 		assert_param(IS_SP_SEL_RX_FIFO(SP_InitStruct->SP_SelFIFO));
-		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2S0MonoStereo));
-		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2S1MonoStereo));
+		assert_param(IS_SP_CHN_NUM(SP_InitStruct->SP_SelI2SMonoStereo));
 		assert_param(IS_SP_SET_RX_MULTIIO(SP_InitStruct->SP_SetMultiIO));
 
 		switch (SP_InitStruct->SP_SelChLen) {
@@ -537,15 +530,11 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_CTRL0 &= ~(SP_MASK_SEL_I2S_RX_CH | SP_MASK_TDM_MODE_SEL_RX);
 		SPORTx->SP_CTRL0 |= (SP_SEL_I2S_RX_CH(SP_InitStruct->SP_SelCh));
 
-		if (SP_InitStruct->SP_SelI2S0MonoStereo == SP_CH_STEREO) {
+		if (SP_InitStruct->SP_SelI2SMonoStereo == SP_CH_STEREO) {
 			SPORTx->SP_FORMAT &= ~ SP_BIT_EN_I2S_MONO_RX_0;
-		} else {
-			SPORTx->SP_FORMAT |= (SP_BIT_EN_I2S_MONO_RX_0);
-		}
-
-		if (SP_InitStruct->SP_SelI2S1MonoStereo == SP_CH_STEREO) {
 			SPORTx->SP_DIRECT_CTRL1 &= ~ SP_BIT_EN_I2S_MONO_RX_1;
 		} else {
+			SPORTx->SP_FORMAT |= (SP_BIT_EN_I2S_MONO_RX_0);
 			SPORTx->SP_DIRECT_CTRL1 |= (SP_BIT_EN_I2S_MONO_RX_1);
 		}
 
@@ -664,6 +653,16 @@ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
 }
 
 /**
+  * @brief  Set SPORT and GDMA handshake on or off.
+  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @retval None
+  */
+void AUDIO_SP_SetSelfLPBK(AUDIO_SPORT_TypeDef *SPORTx)
+{
+	SPORTx->SP_CTRL0 |= SP_BIT_LOOPBACK;
+}
+
+/**
   * @brief  Set the AUDIO SPORT word length.
   * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
   * @param  SP_TX_WordLen: the value of word length.
@@ -671,30 +670,42 @@ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
   *            @arg SP_TXWL_16: sample bit is 16 bit
   *            @arg SP_TXWL_20: sample bit is 20 bit
   *            @arg SP_TXWL_24: sample bit is 24 bit
-  *            @arg SP_TXWL_24: sample bit is 32 bit
-  * @param  SP_RX_WordLen: the value of word length.
-  *          This parameter can be one of the following values:
-  *            @arg SP_RXWL_16: sample bit is 16 bit
-  *            @arg SP_RXWL_16: sample bit is 20 bit
-  *            @arg SP_RXWL_16: sample bit is 24 bit
-  *            @arg SP_RXWL_16: sample bit is 32 bit
+  *            @arg SP_TXWL_32: sample bit is 32 bit
   * @retval None
   */
 
-/*TX/RX word length 分别配置，但FIFO0和FIFO1的TX保持一致，FIFO0和FIFO1的RX保持一致*/
-void AUDIO_SP_SetWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_TX_WordLen, u32 SP_RX_WordLen)
+void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_TX_WordLen)
 {
 	assert_param(IS_SP_TX_WL(SP_TX_WordLen));
-	assert_param(IS_SP_RX_WL(SP_RX_WordLen));
 
 	SPORTx->SP_CTRL0 &= ~(SP_MASK_DATA_LEN_SEL_TX_0);
 	SPORTx->SP_CTRL0 |= SP_DATA_LEN_SEL_TX_0(SP_TX_WordLen);
 
+	SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_TX_1);
+	SPORTx->SP_DIRECT_CTRL1 |=  SP_DATA_LEN_SEL_TX_1(SP_TX_WordLen);
+}
+
+/**
+  * @brief  Set the AUDIO SPORT word length.
+  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  SP_RX_WordLen: the value of word length.
+  *          This parameter can be one of the following values:
+  *            @arg SP_RXWL_16: sample bit is 16 bit
+  *            @arg SP_RXWL_20: sample bit is 20 bit
+  *            @arg SP_RXWL_24: sample bit is 24 bit
+  *            @arg SP_RXWL_32: sample bit is 32 bit
+  * @retval None
+  */
+
+void AUDIO_SP_SetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_RX_WordLen)
+{
+	assert_param(IS_SP_RX_WL(SP_RX_WordLen));
+
 	SPORTx->SP_FORMAT &= ~(SP_MASK_DATA_LEN_SEL_RX_0);
 	SPORTx->SP_FORMAT |= SP_DATA_LEN_SEL_RX_0(SP_RX_WordLen);
 
-	SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_TX_1 | SP_MASK_DATA_LEN_SEL_RX_1);
-	SPORTx->SP_DIRECT_CTRL1 |=  SP_DATA_LEN_SEL_TX_1(SP_TX_WordLen) | SP_DATA_LEN_SEL_RX_1(SP_RX_WordLen);
+	SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_RX_1);
+	SPORTx->SP_DIRECT_CTRL1 |= SP_DATA_LEN_SEL_RX_1(SP_RX_WordLen);
 }
 
 /**
@@ -861,7 +872,7 @@ void AUDIO_SP_SetPinMux(u32 i2s_sel, u32 pinfunc_sel)
 }
 
 /**
-  * @brief    Initialize GDMA peripheral for sending data (FIFO_0).
+  * @brief    Initialize GDMA peripheral single block mode for sending data.
   * @param  Index: 0.
   * @param  SelGDMA: GDMA Int or Ext.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
@@ -946,7 +957,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 }
 
 /**
-  * @brief    Initialize GDMA peripheral for receiving data (FIFO_0).
+  * @brief    Initialize GDMA peripheral single block mode for receiving data.
   * @param  Index: 0.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
@@ -1065,172 +1076,241 @@ BOOL AUDIO_SP_RXGDMA_Restart(
 	return _TRUE;
 }
 
-BOOL AUDIO_SP_LPBKGDMA_Init(
-	u32 Index,
-	GDMA_InitTypeDef *GDMA_InitStruct,
-	void *CallbackData,
-	IRQ_FUN CallbackFunc,
-	u32 Length
-)
-{
-	u8 GdmaChnl;
-
-	assert_param(GDMA_InitStruct != NULL);
-	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 4);
-	if (GdmaChnl == 0xFF) {
-		// No Available DMA channel
-		return _FALSE;
-	}
-
-	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
-
-	/*set GDMA initial structure member value*/
-	GDMA_InitStruct->MuliBlockCunt = 0;
-	GDMA_InitStruct->GDMA_ReloadSrc = 1;
-	GDMA_InitStruct->GDMA_ReloadDst = 1;
-	GDMA_InitStruct->MaxMuliBlock = 1;
-	GDMA_InitStruct->GDMA_DIR = TTFCPeriToPeri;
-	GDMA_InitStruct->GDMA_DstHandshakeInterface = AUDIO_DEV_TABLE[Index].Tx_HandshakeInterface;
-	GDMA_InitStruct->GDMA_DstAddr = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_FIFO_0_WR_ADDR;
-	GDMA_InitStruct->GDMA_Index = 0;
-	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
-	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
-	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-	GDMA_InitStruct->GDMA_DstInc = NoChange;
-	GDMA_InitStruct->GDMA_SrcInc = NoChange;
-
-	/* Move 4 bytes each DMA transaction*/
-	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
-	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
-
-	/*configure GDMA block size*/
-	GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
-
-	/*configure GDMA source address */
-	GDMA_InitStruct->GDMA_SrcHandshakeInterface = AUDIO_DEV_TABLE[Index].Rx_HandshakeInterface;
-	GDMA_InitStruct->GDMA_SrcAddr = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_RX_FIFO_0_RD_ADDR;
-
-	/*  Enable GDMA for TX */
-	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
-	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-
-	return _TRUE;
-}
-
 /**
-  * @brief    Initialize multi-block GDMA peripheral for sending data.
+  * @brief    Initialize GDMA peripheral linklist mode for sending data.
   * @param  Index: 0.
+  * @param  SelGDMA: GDMA Int or Ext.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
   * @param  CallbackData: GDMA callback data.
   * @param  CallbackFunc: GDMA callback function.
-  * @param  pTXData: TX Buffer.
-  * @param  Length: TX Count.
+  * @param  Length: BlockSize.
+  * @param  MaxLLP: LLP mode max number.
+  * @param  Lli: This parameter stores the address pointing to the next Linked List Item in block chaining.
   * @retval   TRUE/FLASE
   */
 
-BOOL AUDIO_SP_MulTXGDMA_Init(
+BOOL AUDIO_SP_LLPTXGDMA_Init(
 	u32 Index,
+	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
 	IRQ_FUN CallbackFunc,
-	u8 *pTXData,
-	u32 Length
+	u32 Length,
+	u32 MaxLLP,
+	struct GDMA_CH_LLI *Lli
 )
 {
+	u32 i;
 	u8 GdmaChnl;
 
 	assert_param(GDMA_InitStruct != NULL);
+	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
+
+	u32 pTxData = Lli[0].LliEle.Sarx;
+
 	/*obtain a DMA channel and register DMA interrupt handler*/
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI4);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 12);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return _FALSE;
 	}
 
-	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
-
 	/*set GDMA initial structure member value*/
 	GDMA_InitStruct->MuliBlockCunt = 0;
 	GDMA_InitStruct->GDMA_ReloadSrc = 0;
-	GDMA_InitStruct->GDMA_ReloadDst = 1;
-	GDMA_InitStruct->MaxMuliBlock = Length / AUDIO_BLOCK_SIZE;
-	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
-	GDMA_InitStruct->GDMA_DstHandshakeInterface = AUDIO_DEV_TABLE[Index].Tx_HandshakeInterface;
-	GDMA_InitStruct->GDMA_DstAddr = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_FIFO_0_WR_ADDR;
+	GDMA_InitStruct->GDMA_ReloadDst = 0;
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
+	GDMA_InitStruct->MaxMuliBlock = MaxLLP;
+	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_DstInc = NoChange;
-	GDMA_InitStruct->GDMA_SrcInc = IncType;
-
-	/*Cofigure GDMA transfer*/
-
-	/*  24bits or 16bits mode*/
-	if (((Length & 0x03) == 0) && (((u32)(pTXData) & 0x03) == 0)) {
-		/*  4-bytes aligned, move 4 bytes each transfer*/
-		GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
-		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-		GDMA_InitStruct->GDMA_BlockSize = AUDIO_BLOCK_SIZE >> 2;
-	} else if (((Length & 0x01) == 0) && (((u32)(pTXData) & 0x01) == 0)) {
-		/*  2-bytes aligned, move 2 bytes each transfer*/
-		GDMA_InitStruct->GDMA_SrcMsize   = MsizeEight;
-		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
-		GDMA_InitStruct->GDMA_BlockSize = AUDIO_BLOCK_SIZE >> 1;
-	} else {
-		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=0x%x,  Length=%d\n", pTXData, Length);
-		return _FALSE;
-	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
+	GDMA_InitStruct->GDMA_DstInc = NoChange;
+	GDMA_InitStruct->GDMA_SrcInc = IncType;
+	GDMA_InitStruct->GDMA_LlpSrcEn = 1;
+	GDMA_InitStruct->GDMA_LlpDstEn = 1;
 
-	/*configure GDMA source address*/
-	GDMA_InitStruct->GDMA_SrcAddr = (u32)pTXData;
+	if (SelGDMA == GDMA_INT) {
+		GDMA_InitStruct->GDMA_DstHandshakeInterface = AUDIO_DEV_TABLE[Index].Tx_HandshakeInterface;
+		for (i = 0; i < MaxLLP; i++) {
+			Lli[i].LliEle.Darx = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_FIFO_0_WR_ADDR;
+		}
 
-	/*  Enable GDMA for TX*/
+	} else {
+		GDMA_InitStruct->GDMA_DstHandshakeInterface = AUDIO_DEV_TABLE[Index].Tx_HandshakeInterface1;
+		for (i = 0; i < MaxLLP; i++) {
+			Lli[i].LliEle.Darx = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_FIFO_1_WR_ADDR;
+		}
+	}
+
+	/*  Cofigure GDMA transfer */
+	/*  24bits or 16bits mode */
+	if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
+		/*  4-bytes aligned, move 4 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
+	} else if (((Length & 0x01) == 0) && (((u32)(pTxData) & 0x01) == 0)) {
+		/*  2-bytes aligned, move 2 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize   = MsizeEight;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
+	} else {
+		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pTxData, Length);
+		return _FALSE;
+	}
+
+
+	for (i = 0; i < MaxLLP; i++) {
+		Lli[i].BlockSize = GDMA_InitStruct->GDMA_BlockSize;
+	}
+
+	/*configure GDMA source address */
+	GDMA_InitStruct->GDMA_SrcAddr = pTxData;
+
+	/*  Enable GDMA for TX */
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
+	GDMA_SetLLP(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->MaxMuliBlock, Lli, 1);
+	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
 	return _TRUE;
 }
 
 /**
-  * @brief  Enable SPORT TX counter.
-  * @param  index: select SPORT.
-  * @param  comp_val: When counter equal comp_val,SPORT will send interrupt to DSP.
+  * @brief  Initialize GDMA peripheral linklist mode for receiving data.
+  * @param  Index: 0.
+  * @param  SelGDMA: GDMA Int or Ext.
+  * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
+  *         the configuration information for the GDMA peripheral.
+  * @param  CallbackData: GDMA callback data.
+  * @param  CallbackFunc: GDMA callback function.
+  * @param  Length: BlockSize.
+  * @param  MaxLLP: LLP mode max number.
+  * @param  Lli: This parameter stores the address pointing to the next Linked List Item in block chaining.
+  * @retval   TRUE/FLASE
   */
+BOOL AUDIO_SP_LLPRXGDMA_Init(
+	u32 Index,
+	u32 SelGDMA,
+	GDMA_InitTypeDef *GDMA_InitStruct,
+	void *CallbackData,
+	IRQ_FUN CallbackFunc,
+	u32 Length,
+	u32 MaxLLP,
+	struct GDMA_CH_LLI *Lli
+)
+{
+	u8 GdmaChnl;
+	u32 i;
 
-void AUDIO_SP_SetTXCounter(u32 index, u32 comp_val)
+	assert_param(GDMA_InitStruct != NULL);
+	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
+
+	/*obtain a DMA channel and register DMA interrupt handler*/
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 12);
+	if (GdmaChnl == 0xFF) {
+		// No Available DMA channel
+		return _FALSE;
+	}
+
+	/*set GDMA initial structure member value*/
+	GDMA_InitStruct->MuliBlockCunt = 0;
+	GDMA_InitStruct->GDMA_ReloadSrc = 0;
+	GDMA_InitStruct->GDMA_ReloadDst = 0;
+	GDMA_InitStruct->MaxMuliBlock = MaxLLP;
+	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
+	GDMA_InitStruct->GDMA_Index = 0;
+	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
+	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	GDMA_InitStruct->GDMA_DstInc = IncType;
+	GDMA_InitStruct->GDMA_SrcInc = NoChange;
+	GDMA_InitStruct->GDMA_LlpSrcEn = 1;
+	GDMA_InitStruct->GDMA_LlpDstEn = 1;
+
+	if (SelGDMA == GDMA_INT) {
+		GDMA_InitStruct->GDMA_SrcHandshakeInterface = AUDIO_DEV_TABLE[Index].Rx_HandshakeInterface;
+		for (i = 0; i < MaxLLP; i++) {
+			Lli[i].LliEle.Sarx = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_RX_FIFO_0_RD_ADDR;
+		}
+	} else {
+		GDMA_InitStruct->GDMA_SrcHandshakeInterface = AUDIO_DEV_TABLE[Index].Rx_HandshakeInterface1;
+		for (i = 0; i < MaxLLP; i++) {
+			Lli[i].LliEle.Sarx = (u32)&AUDIO_DEV_TABLE[Index].SPORTx->SP_RX_FIFO_1_RD_ADDR;
+		}
+	}
+
+	/*  Cofigure GDMA transfer */
+	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
+
+	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
+	GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
+
+	/*check GDMA block size*/
+	for (i = 0; i < MaxLLP; i++) {
+		Lli[i].BlockSize = GDMA_InitStruct->GDMA_BlockSize;
+	}
+
+	/*configure GDMA destination address */
+	GDMA_InitStruct->GDMA_DstAddr = Lli[0].LliEle.Darx;
+
+	/*  Enable GDMA for RX */
+	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
+	GDMA_SetLLP(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->MaxMuliBlock, Lli, 1);
+	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
+
+	return _TRUE;
+}
+
+/**
+  * @brief  Enable or disable SPORT TX counter interrupt.
+  * @param  index: select SPORT.
+  * @param  state: enable or disable.
+  */
+void AUDIO_SP_SetTXCounter(u32 index, u32 state)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_TX_SPORT_INTERRUPT;
+	if (state == ENABLE) {
+		SPORTx->SP_RX_LRCLK |= SP_BIT_EN_TX_SPORT_INTERRUPT;
+	} else {
+		SPORTx->SP_RX_LRCLK &= ~SP_BIT_EN_TX_SPORT_INTERRUPT;
+	}
+}
+
+/**
+  * @brief  Set SPORT TX counter comp_val, When counter equal comp_val,SPORT will send interrupt to DSP.
+  * @param  index: select SPORT.
+  * @param  comp_val.
+  */
+void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_RX_LRCLK &= ~SP_MASK_TX_SPORT_COMPARE_VAL;
 	SPORTx->SP_RX_LRCLK |= SP_TX_SPORT_COMPARE_VAL(comp_val);
-
 }
 
-/**
-  * @brief  Enable SPORT RX counter.
-  * @param  index: select SPORT.
-  * @param  comp_val: When counter equal comp_val,SPORT will send interrupt to DSP.
-  */
 
-void AUDIO_SP_SetRXCounter(u32 index, u32 comp_val)
+/**
+  * @brief  Clear SPORT TX counter irq.
+  * @param  index: select SPORT index.
+  */
+void AUDIO_SP_ClearTXCounterIrq(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_COUNTER1 |= SP_BIT_EN_RX_SPORT_INTERRUPT;
-	SPORTx->SP_RX_COUNTER1 &= ~SP_MASK_RX_SPORT_COMPARE_VAL;
-	SPORTx->SP_RX_COUNTER1 |= SP_RX_SPORT_COMPARE_VAL(comp_val);
-
+	SPORTx->SP_RX_LRCLK |= SP_BIT_CLR_TX_SPORT_RDY;
 }
 
+
 /**
-  * @brief  Get sport tx counter.
+  * @brief  Get SPORT TX counter.
   * @param  index: select SPORT.
   */
-u32 AUDIO_SP_GetTXCounter(u32 index)
+u32 AUDIO_SP_GetTXCounterVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
@@ -1238,17 +1318,59 @@ u32 AUDIO_SP_GetTXCounter(u32 index)
 	return tx_counter;
 }
 
+
 /**
-  * @brief  Get sport rx counter.
+  * @brief  Enable or disable SPORT RX counter interrupt.
+  * @param  index: select SPORT.
+  * @param  state: enable or disable.
+  */
+void AUDIO_SP_SetRXCounter(u32 index, u32 state)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (state == ENABLE) {
+		SPORTx->SP_RX_COUNTER1 |= SP_BIT_EN_RX_SPORT_INTERRUPT;
+	} else {
+		SPORTx->SP_RX_COUNTER1 &= ~SP_BIT_EN_RX_SPORT_INTERRUPT;
+	}
+}
+
+
+/**
+  * @brief  Set SPORT RX counter comp_val, When counter equal comp_val,SPORT will send interrupt to DSP.
+  * @param  index: select SPORT.
+  * @param  comp_val.
+  */
+void AUDIO_SP_SetRXCounterCompVal(u32 index, u32 comp_val)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_RX_COUNTER1 &= ~SP_MASK_RX_SPORT_COMPARE_VAL;
+	SPORTx->SP_RX_COUNTER1 |= SP_RX_SPORT_COMPARE_VAL(comp_val);
+}
+
+
+/**
+  * @brief  Clear SPORT RX counter irq.
+  * @param  index: select SPORT index.
+  */
+void AUDIO_SP_ClearRXCounterIrq(u32 index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_RX_COUNTER1 |= SP_BIT_CLR_RX_SPORT_RDY;
+}
+
+
+/**
+  * @brief  Get SPORT RX counter.
   * @param  index: select SPORT.
   */
-u32 AUDIO_SP_GetRXCounter(u32 index)
+u32 AUDIO_SP_GetRXCounterVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
 	u32 rx_counter = ((SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_SPORT_COUNTER) >> 5;
 	return rx_counter;
 }
+
 
 void AUDIO_SP_Deinit(u32 index, u32 direction)
 {
@@ -1267,8 +1389,3 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 
 
 /******************* (C) COPYRIGHT 2017 Realtek Semiconductor *****END OF FILE****/
-
-
-
-
-

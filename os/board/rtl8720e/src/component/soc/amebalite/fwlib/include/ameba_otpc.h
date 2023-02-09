@@ -341,7 +341,7 @@ enum OTP_OPMode {
 /* physical EFUSE write forbid */
 #define LOGICAL_MAP_SECTION_LEN					0x1FD /*!< logical mapping efuse len in physical address */
 #define OTP_USER_START								0x380 /*!< physical map user start address*/
-#define OTP_USER_END								0x4FF /*!< physical map user end address*/
+#define OTP_USER_END								0x500 /*!< physical map user end address*/
 #define OTP_USER_LEN								(OTP_USER_END - OTP_USER_START+1) /*!< physical map user section len in byte 0x380~0x4FF*/
 
 /**
@@ -422,6 +422,10 @@ extern u32 EFUSE_LMAP_READ(u8 *pbuf);
 extern u32 EFUSE_LMAP_WRITE(u32 addr, u32 cnts, u8 *data);
 extern u32 EFUSE_RemainLength(void);
 extern u32 EFUSE_GetCRC(void);
+extern u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
+extern u32 OTP_Read8(u32 Addr, u8 *Data);
+extern u32 OTP_Write8(u32 Addr, u8 Data);
+extern u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
 
 /**
   * @}

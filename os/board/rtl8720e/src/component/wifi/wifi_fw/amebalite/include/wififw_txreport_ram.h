@@ -73,9 +73,6 @@ typedef struct _TxRpt_Cfg_ {
 
 /*------------------------------Function declaration--------------------------*/
 extern void InitCtrlInfo_8720E(void);
-extern void H2CHDL_Set_CSI_TXNULL_8720E(u8 *pbuf);
-extern void SetPeriodTxNullAddrRate_8720E(u16 offset);
-extern void IssueCSITXNull_8720E(void);
 extern void ParseTRXRpt(void);
 
 #endif  /* #ifndef   __WIFIFW_TXREPORT_RAM_H__ */

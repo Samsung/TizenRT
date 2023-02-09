@@ -65,6 +65,14 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+#elif defined (CONFIG_PLATFORM_AMEBADPLUS)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "platform_stdlib_amebadplus.h"
+#ifdef __cplusplus
+}
+#endif
 #elif defined(CONFIG_PLATFORM_8195BHP)
 #ifdef __cplusplus
 extern "C" {

@@ -57,6 +57,7 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_OFF,
 	IPC_API_WIFI_SET_MODE,
 	IPC_API_WIFI_START_AP,
+	IPC_API_WIFI_STOP_AP,
 	IPC_API_WIFI_SCAN_NETWROKS,
 	IPC_API_WIFI_GET_SCANNED_AP_INFO,
 	IPC_API_WIFI_SCAN_ABORT,
@@ -68,7 +69,8 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_DRIVE_IS_MP,
 	IPC_API_WIFI_GET_ASSOCIATED_CLIENT_LIST,
 	IPC_API_WIFI_GET_SETTING,
-	IPC_API_WIFI_SET_POWERSAVE_MODE,
+	IPC_API_WIFI_SET_IPS_EN,
+	IPC_API_WIFI_SET_LPS_EN,
 	IPC_API_WIFI_SET_MFP_SUPPORT,
 	IPC_API_WIFI_SET_GROUP_ID,
 	IPC_API_WIFI_SET_PMK_CACHE_EN,
@@ -102,6 +104,8 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	//inter
 	IPC_API_WIFI_COEX_SET_PTA,
 	IPC_API_WIFI_SET_WPA_MODE,
+	IPC_API_WIFI_SET_PMF_MODE,
+	IPC_API_WIFI_COEX_BT_RFK,
 	//promisc
 	IPC_API_PROMISC_FILTER_RETRANSMIT_PKT,
 	IPC_API_PROMISC_FILTER_WITH_LEN,
@@ -165,7 +169,7 @@ void inic_ipc_scan_each_report_user_callback_indicate(rtw_scan_result_t *scanned
 void inic_ipc_ap_ch_switch_callback_indicate(unsigned char channel, rtw_channel_switch_res_t ret);
 int inic_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int inic_ipc_get_lwip_info(u32 type, unsigned char *input, int index);
-unsigned int inic_ipc_host_get_wifi_tsf_low(unsigned char port_id);
+u64 inic_ipc_host_get_wifi_tsf(unsigned char port_id);
 int inic_ipc_host_get_txbuf_pkt_num(void);
 extern void inic_ipc_host_init_skb(VOID);
 #endif /* __INIC_IPC_H__ */

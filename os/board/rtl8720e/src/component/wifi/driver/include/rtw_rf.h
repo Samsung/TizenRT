@@ -183,11 +183,5 @@ u32 rtw_freq2ch(u32 freq);
 #define rtw_is_5g_band3(ch) ((ch) >= 100 && (ch) <= 144)
 #define rtw_is_5g_band4(ch) ((ch) >= 149 && (ch) <= 177)
 
-u8 rtw_is_dfs_range(u32 hi, u32 lo);
-u8 rtw_is_dfs_ch(u8 ch);
-u8 rtw_is_dfs_chbw(u8 ch, u8 bw, u8 offset);
-bool rtw_is_long_cac_range(u32 hi, u32 lo, u8 dfs_region);
-bool rtw_is_long_cac_ch(u8 ch, u8 bw, u8 offset, u8 dfs_region);
-
 #endif //_RTL8711_RF_H_
 

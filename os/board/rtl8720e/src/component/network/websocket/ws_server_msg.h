@@ -14,11 +14,8 @@ struct ws_data_header_type {
 
 #define WS_SERVER_TLS_POLARSSL       0    /*!< Use PolarSSL for TLS when WSCLIENT */
 #define WS_SERVER_TLS_MBEDTLS        1    /*!< Use mbedTLS for TLS when WSCLIENT */
-#if CONFIG_USE_POLARSSL
-#define WS_SERVER_USE_TLS            WS_SERVER_TLS_POLARSSL
-#elif CONFIG_USE_MBEDTLS
+
 #define WS_SERVER_USE_TLS            WS_SERVER_TLS_MBEDTLS
-#endif
 
 #define WS_SERVER_SEND_BY_POLL			0    /*!< WS server send data when polling */
 #define WS_SERVER_SEND_DIRECTLY			1    /*!< WS server send data directly */

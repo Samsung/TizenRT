@@ -56,6 +56,9 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 	assert_param(IS_TM_DOWN_SAMPLE_RATE(TM_InitStruct->TM_DownSampRate));
 	assert_param(IS_TM_ADC_CLK_DIV(TM_InitStruct->TM_AdcClkDiv));
 
+	/* Disable thermal, clear pending interrupt */
+	TM_INTConfig(TM_BIT_IMR_TM_HIGH_WT | TM_BIT_IMR_TM_LOW_WT, DISABLE);
+
 	TM_Cmd(DISABLE);
 
 	thermal->TM_CTRL &= ~TM_MASK_OSR;
@@ -66,20 +69,21 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 		thermal->TM_CTRL &= ~TM_BIT_ADCCKSEL;
 	}
 
-	TM_SetLatch(DISABLE);
+	TM_MaxTempClr();
+	TM_MinTempClr();
+
+	thermal->TM_TIMER = TM_TIME_PERIOD(TM_InitStruct->TM_TimePeriod);
+
+	TM_Cmd(ENABLE);
 
 	TM_HighPtConfig(TM_InitStruct->TM_HighProtectThreshold, ENABLE);
 	TM_HighWtConfig(TM_InitStruct->TM_HighWarnThreshold, ENABLE);
 	TM_LowWtConfig(TM_InitStruct->TM_LowWarnThreshold, ENABLE);
 
-	TM_MaxTempClr();
-	TM_MinTempClr();
-	// clear all interrupt
 	TM_INTClear();
 
-	thermal->TM_TIMER = TM_TIME_PERIOD(TM_InitStruct->TM_TimePeriod);
-
 	TM_INTConfig(TM_BIT_IMR_TM_HIGH_WT | TM_BIT_IMR_TM_LOW_WT, ENABLE);
+
 }
 
 /**
@@ -118,19 +122,23 @@ void TM_Cmd(u32 NewState)
 		thermal = TM_DEV_S;
 	}
 
-	TM_PwrProgCmd(ENABLE);
 
 	if (NewState != DISABLE) {
+		TM_PwrProgCmd(ENABLE);
 		thermal->TM_CTRL |= TM_BIT_POWCUT;
 		thermal->TM_CTRL |= TM_BIT_POW;
+		thermal->TM_TH_CTRL &= ~TM_BIT_ISO_THM;
 		thermal->TM_CTRL |= TM_BIT_RSTB;
+		TM_PwrProgCmd(DISABLE);
+		while ((thermal->TM_CTRL & TM_BIT_EN_LATCH) != 0); // polling latch signal until low
 	} else {
+		TM_PwrProgCmd(ENABLE);
 		thermal->TM_CTRL &= ~TM_BIT_RSTB;
 		thermal->TM_CTRL &= ~TM_BIT_POW;
 		thermal->TM_CTRL &= ~TM_BIT_POWCUT;
+		TM_PwrProgCmd(DISABLE);
 	}
 
-	TM_PwrProgCmd(DISABLE);
 }
 
 /**
@@ -343,6 +351,7 @@ void TM_SetLatch(u32 NewState)
   */
 void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 {
+	u32 val;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
@@ -353,7 +362,11 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 
 	if (NewState != DISABLE) {
 		assert_param((TM_HighPtThre >= 0x46) && (TM_HighPtThre <= 0x8C));
-		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_PT_EN | TM_HIGH_PT_THR(TM_HighPtThre));
+		val = thermal->TM_TH_CTRL;
+		val &= ~TM_MASK_HIGH_PT_THR;
+		val |= TM_HIGH_PT_THR(TM_HighPtThre);
+		thermal->TM_TH_CTRL = val;
+		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_PT_EN);
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_HIGHCMP_PT_EN;
 	}
@@ -371,6 +384,7 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
   */
 void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
 {
+	u32 val;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
@@ -378,8 +392,12 @@ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
 	}
 
 	if (NewState != DISABLE) {
-		assert_param(TM_HighWtThre < 0x100);
-		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_WT_EN | TM_HIGH_WT_THR(TM_HighWtThre));
+//		assert_param(TM_HighWtThre < 0x7D);
+		val = thermal->TM_TH_CTRL;
+		val &= ~TM_MASK_HIGH_WT_THR;
+		val |= TM_HIGH_WT_THR(TM_HighWtThre);
+		thermal->TM_TH_CTRL = val;
+		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_WT_EN);
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_HIGHCMP_WT_EN;
 	}
@@ -396,6 +414,7 @@ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
   */
 void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
 {
+	u32 val;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
@@ -403,12 +422,73 @@ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
 	}
 
 	if (NewState != DISABLE) {
-		assert_param(TM_LowWtThre < 0x200);
-		thermal->TM_TH_CTRL |= (TM_BIT_LOWCMP_WT_EN | TM_LOW_WT_THR(TM_LowWtThre));
+//		assert_param(TM_LowWtThre < 0x128);
+		val = thermal->TM_TH_CTRL;
+		val &= ~TM_MASK_LOW_WT_THR;
+		val |= TM_LOW_WT_THR(TM_LowWtThre);
+		thermal->TM_TH_CTRL = val;
+		thermal->TM_TH_CTRL |= (TM_BIT_LOWCMP_WT_EN);
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_LOWCMP_WT_EN;
 	}
 
+}
+
+/**
+  * @brief  Get Celsius Degree
+  * @param  Data: TM_RESULT(Binary complement form)
+  * @retval Temperature value of float type
+  */
+float TM_GetCdegree(u32 Data)
+{
+	int integer = 0;
+	float decimal = 0;
+	float Cdegree = 0;
+	u32 temp = 0;
+
+	if (Data >= 0x40000) {
+		temp = 0x80000 - Data;
+		integer = (int)(temp) / 1024;
+		decimal = (float)(TEMP_DECIMAL_OUT(temp)) / 1024;
+		Cdegree = 0 - (integer + decimal);
+
+	} else {
+		integer = (int)(Data) / 1024;
+		decimal = (float)(TEMP_DECIMAL_OUT(Data)) / 1024;
+		Cdegree = (integer + decimal);
+
+	}
+
+	return Cdegree;
+
+}
+
+/**
+  * @brief  Get Fahrenheit Degree
+  * @param  Data: TM_RESULT(Binary complement form)
+  * @retval Temperature value of float type
+  */
+float TM_GetFdegree(u32 Data)
+{
+	int integer = 0;
+	float decimal = 0;
+	float Cdegree = 0;
+	u32 temp = 0;
+
+	if (Data >= 0x40000) {
+		temp = 0x80000 - Data;
+		integer = (int)(temp) / 1024;
+		decimal = (float)(TEMP_DECIMAL_OUT(temp)) / 1024;
+		Cdegree = 0 - (integer + decimal);
+
+	} else {
+		integer = (int)(Data) / 1024;
+		decimal = (float)(TEMP_DECIMAL_OUT(Data)) / 1024;
+		Cdegree = (integer + decimal);
+
+	}
+
+	return ((Cdegree * 1.8) + 32);
 }
 
 /******************* (C) COPYRIGHT 2020 Realtek Semiconductor *****END OF FILE****/

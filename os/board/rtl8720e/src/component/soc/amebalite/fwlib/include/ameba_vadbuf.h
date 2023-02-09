@@ -233,9 +233,7 @@ typedef struct {
   * @{
   */
 
-/** @defgroup VAD_Exported_Normal_Functions
-  * @{
-  */
+
 _LONG_CALL_ void AUDIO_CODEC_VADStart(void);
 _LONG_CALL_ void AUDIO_CODEC_SelVADSrc(u32 codec_index);
 _LONG_CALL_ void AUDIO_CODEC_ENVADIRQ(u32 mode);
@@ -246,9 +244,6 @@ _LONG_CALL_ void AUDIO_CODEC_VADBuf_move_one(u32 codec_index, u32 block_index, u
 _LONG_CALL_ void AUDIO_CODEC_VADBuf_move_two(u32 codec_index_0, u32 codec_index_1, u32 block_index, u32 transfer_mode);
 _LONG_CALL_ void AUDIO_CODEC_VADBuf_move_three(u32 codec_index_0, u32 codec_index_1, u32 codec_index_2, u32 block_index, u32 transfer_mode);
 _LONG_CALL_ void AUDIO_CODEC_VADBuf_move_four(u32 codec_index_0, u32 codec_index_1, u32 codec_index_2, u32 codec_index_3, u32 block_index, u32 transfer_mode);
-/**
-  * @}
-  */
 
 /**
   * @}

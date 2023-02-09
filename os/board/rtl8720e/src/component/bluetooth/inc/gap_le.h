@@ -47,7 +47,8 @@ extern "C"
   * @{
   */
 /** @brief  GAP LE Parameter Types List.*/
-typedef enum {
+typedef enum
+{
 	GAP_PARAM_DEV_STATE                = 0x220, //!< Device's current GAP device state. Read/Write. Size is sizeof(TGapDevState).
 	GAP_PARAM_APPEARANCE               = 0x221, //!< Local Device's Appearance. Read/Write. size is uint16. Appearance value please refer to GAP Appearance Values.(@ref GAP_LE_APPEARANCE_VALUES)
 	GAP_PARAM_DEVICE_NAME              = 0x222, //!< Local Device's Name. Write Only. Name string length is GAP_DEVICE_NAME_LEN.
@@ -72,6 +73,9 @@ typedef enum {
 	GAP_PARAM_DS_DATA_OFFSET           = 0x232, //!< Downstream pool buffer data offset.  Read only.  size is uint16.
 	GAP_PARAM_LE_REMAIN_CREDITS        = 0x233, //!< Remain credits avaiable for TX.  Read only.  size is uint16.
 	GAP_PARAM_MAX_WL_SIZE              = 0x234, //!< Max white list size.  Read only.  size is uint16.
+#if F_BT_LE_GAP_CENTRAL_SUPPORT
+	GAP_PARAM_MASTER_INIT_GATT_MTU_REQ = 0x23b, //!< Master initiate the GATT exchange MTU procedure. Write Only. Size is uint8. Default value is true.
+#endif
 } T_GAP_LE_PARAM_TYPE;
 
 /**
@@ -534,6 +538,9 @@ typedef enum
 #if F_BT_LE_5_2_ISOC_CIS_SUPPORT
     GAP_PARAM_CIS_HOST_SUPPORT         = 0x237, //!< Host supports creating CISes.
 #endif
+#if F_BT_LE_GAP_CENTRAL_SUPPORT
+    GAP_PARAM_MASTER_INIT_GATT_MTU_REQ = 0x238, //!< Master initiate the GATT exchange MTU procedure. Write Only. Size is uint8. Default value is true.
+#endif
 } T_GAP_LE_PARAM_TYPE;
 
 /**
@@ -952,3 +959,7 @@ bool le_check_supported_features(uint8_t array_index, uint8_t feature_mask);
 #endif
 
 #endif /* GAP_LE_H */
+
+
+
+

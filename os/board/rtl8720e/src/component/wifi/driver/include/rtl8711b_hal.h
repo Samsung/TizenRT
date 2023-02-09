@@ -226,7 +226,7 @@ typedef struct _RT_8723B_FIRMWARE_HDR {
 
 #define EFUSE_PROTECT_BYTES_BANK		16
 
-#define GET_RF_TYPE(priv)			(GET_HAL_DATA(priv)->rf_type)
+#define GET_RF_TYPE(priv)			(rtw_get_haldata(priv)->rf_type)
 
 // Description: Determine the types of C2H events that are the same in driver and Fw.
 // Fisrt constructed by tynli. 2009.10.09.
@@ -281,8 +281,8 @@ typedef enum tag_ChipID_Definition {
 	CHIPID_8710BN_A0_VV2 = 0xF8, /* PACKAGE_QFN32, the same as CHIPID_8710BN */
 } CHIP_TD_E;
 
-#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
-#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
+#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
+#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
 
 //========================================================
 //			TXBD and RXBD definition
@@ -480,7 +480,6 @@ u8 rtw_flash_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data);
 u8 rtw_config_map_read(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
 u8 rtw_config_map_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
 
-void rtl8711b_set_hal_ops(struct hal_ops *pHalFunc);
 void lxbus_set_intf_ops(struct _io_ops	*pops);
 void SetHwReg8711B(PADAPTER padapter, u8 variable, u8 *val);
 void GetHwReg8711B(PADAPTER padapter, u8 variable, u8 *val);
@@ -488,6 +487,7 @@ u8 SetHalDefVar8711B(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
 u8 GetHalDefVar8711B(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
 void SetHalODMVar8711B(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, BOOLEAN bSet);
 void GetHalODMVar8711B(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, PVOID pValue2);
+void rtl8711b_Set_AC_Param(u32 ACParam[], u32 *pBE_param);
 
 // register
 void rtl8711b_InitBeaconParameters(PADAPTER padapter);
@@ -495,7 +495,6 @@ void rtl8711b_InitBeaconMaxError(PADAPTER padapter, u8 InfraMode);
 void	_InitBurstPktLen_8711BB(PADAPTER Adapter);
 #ifdef CONFIG_WOWLAN
 void _8051Reset8711b(PADAPTER padapter);
-void Hal_DetectWoWMode(PADAPTER pAdapter);
 #endif //CONFIG_WOWLAN
 
 void rtl8711b_start_thread(_adapter *padapter);
@@ -506,11 +505,6 @@ void rtl8711bb_init_checkbthang_workqueue(_adapter *adapter);
 void rtl8711bb_free_checkbthang_workqueue(_adapter *adapter);
 void rtl8711bb_cancle_checkbthang_workqueue(_adapter *adapter);
 void rtl8711bb_hal_check_bt_hang(_adapter *adapter);
-#endif
-
-#ifdef CONFIG_WOWLAN
-void rtw_get_current_ip_address(PADAPTER padapter, u8 *pcurrentip);
-void rtw_get_sec_iv(PADAPTER padapter, u8 *pcur_dot11txpn, u8 *StaAddr);
 #endif
 
 u32 rtl8710b_wlan_suspend(u32 expected_idle_time, void *param);
@@ -527,9 +521,6 @@ s32 c2h_id_filter_ccx_8711B(u8 *buf);
 s32 c2h_handler_8711B(PADAPTER padapter, u8 *pC2hEvent);
 u8 MRateToHwRate8723B(u8  rate);
 u8 HwRateToMRate8723B(u8	 rate);
-
-void Hal_ReadRFGainOffset(PADAPTER pAdapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
-
 
 //1TODO: Chris
 #if 1
