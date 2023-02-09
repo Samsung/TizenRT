@@ -646,6 +646,9 @@ extern "C"
 #if F_BT_KEY_PRESS_SUPPORT
 #define GAP_AUTHEN_BIT_KEYPRESS_FLAG         0x0010 //!<  Keypress notifaction is preferred
 #endif
+#if F_BT_SC_LINK_CONVERT_SUPPORT
+#define GAP_AUTHEN_BIT_CT2_FLAG              0x0020 //!<  CT2 flag is preferred
+#endif
 #define GAP_AUTHEN_BIT_FORCE_BONDING_FLAG    0x0100 //!<  Force bonding is required
 #if F_BT_BREDR_SUPPORT
 #define GAP_AUTHEN_BIT_SC_BR_FLAG            0x0400 //!<  Secure connection for BR/EDR is required

@@ -19,6 +19,7 @@
 /* internal head files */
 #include "inic_ipc_host_trx.h"
 #include "inic_ipc_msg_queue.h"
+#include "wifi_performance_monitor.h"
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <netdev_mgr_internal.h>
 #define CONFIG_ENABLE_CACHE
@@ -149,10 +150,12 @@ static void inic_ipc_host_rx_tasklet(void)
 		while ((precvbuf = inic_dequeue_recvbuf(recv_queue))) {
 			p_buf = precvbuf->p_buf;
 			index = precvbuf->idx_wlan;
-
 			g_inic_host_priv.rx_bytes += p_buf->len;
 			g_inic_host_priv.rx_pkts++;
-
+			
+			if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
+				index = 0;
+			}
 			struct netdev *dev_tmp = NULL;
 			dev_tmp = (struct netdev *)rtk_get_netdev(index);
 			struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
@@ -329,7 +332,7 @@ void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg)
 int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 					   int total_len)
 {
-	//WIFI_MONITOR_TIMER_START(wlan_send_time);
+	WIFI_MONITOR_TIMER_START(wlan_send_time);
 	struct sk_buff *skb = NULL;
 	struct skb_buf *skb_buf = NULL;
 	struct eth_drv_sg *psg_list;
@@ -368,9 +371,9 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	psg_list = sg_list;
 	for (i = 0; i < sg_len; i++) {
 		psg_list = &sg_list[i];
-		//WIFI_MONITOR_TIMER_START(wlan_send_time2);
+		WIFI_MONITOR_TIMER_START(wlan_send_time2);
 		rtw_memcpy(skb->tail, (void *)(psg_list->buf), psg_list->len);
-		//WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
+		WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
 		skb_put(skb, psg_list->len);
 	}
 
@@ -378,12 +381,14 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
 	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
 #endif /* CONFIG_ENABLE_CACHE */
-
-	//WIFI_MONITOR_TIMER_START(wlan_send_time3);
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
+		idx = 1;
+	}
+	WIFI_MONITOR_TIMER_START(wlan_send_time3);
 	inic_ipc_host_send_skb(idx, skb);
-	//WIFI_MONITOR_TIMER_END(wlan_send_time3, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_time3, total_len);
 	rtw_up_sema(&g_inic_host_priv.host_send_sema);
-	//WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
+	WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
 
 	return ret;
 }

@@ -47,6 +47,8 @@
 #define WLAN_HDR_A4_LEN		30
 #define WLAN_HDR_A3_QOS_LEN	26
 #define WLAN_HDR_A4_QOS_LEN	32
+#define WLAN_HDR_A3_QOS_HTC_LEN	30
+#define WLAN_HDR_A4_QOS_HTC_LEN	36
 #define WLAN_SSID_MAXLEN	32
 #define WLAN_DATA_MAXLEN	2312
 
@@ -57,7 +59,7 @@
 #if WIFI_LOGO_CERTIFICATION
 #define WLAN_MAX_ETHFRM_LEN	4000
 #else
-#if defined(CONFIG_INIC_IPC_HIGH_TP)
+#if defined(CONFIG_ETH_LARGE_PKT)
 // customer requirement, send udp multicast frames around 1890 bytes without fragmentation
 #define WLAN_MAX_ETHFRM_LEN	1904
 #else
@@ -373,6 +375,15 @@ enum WIFI_REG_DOMAIN {
 		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_PRIVACY_)); \
 	} while(0)
 
+#define SetOrder(pbuf)	\
+	do	{	\
+		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(_ORDER_); \
+	} while (0)
+
+#define ClearOrder(pbuf)	\
+	do	{	\
+		*(unsigned short *)(void*)(pbuf) &= (~cpu_to_le16(_ORDER_)); \
+	} while(0)
 
 #define GetOrder(pbuf)	(((*(unsigned short *)(void*)(pbuf)) & le16_to_cpu(_ORDER_)) != 0)
 
@@ -959,7 +970,6 @@ typedef enum _HT_CAP_AMPDU_FACTOR {
 
 /* 802.11n HT capabilities masks */
 #define IEEE80211_HT_CAP_SUP_WIDTH		0x0002
-#define IEEE80211_HT_CAP_SM_PS			0x000C
 #define IEEE80211_HT_CAP_GRN_FLD		0x0010
 #define IEEE80211_HT_CAP_SGI_20			0x0020
 #define IEEE80211_HT_CAP_SGI_40			0x0040
@@ -1004,14 +1014,6 @@ typedef enum _HT_CAP_AMPDU_FACTOR {
 #define IEEE80211_MIN_AMPDU_BUF 0x8
 #define IEEE80211_MAX_AMPDU_BUF 0x40
 
-
-/* Spatial Multiplexing Power Save Modes */
-#define WLAN_HT_CAP_SM_PS_STATIC		0
-#define WLAN_HT_CAP_SM_PS_DYNAMIC	1
-#define WLAN_HT_CAP_SM_PS_INVALID	2
-#define WLAN_HT_CAP_SM_PS_DISABLED	3
-
-
 #define OP_MODE_PURE                    0
 #define OP_MODE_MAY_BE_LEGACY_STAS      1
 #define OP_MODE_20MHZ_HT_STA_ASSOCED    2
@@ -1026,7 +1028,7 @@ typedef enum _HT_CAP_AMPDU_FACTOR {
 #define HT_INFO_HT_PARAM_SRV_INTERVAL_GRANULARITY	((u8) BIT(5))
 
 #define HT_INFO_OPERATION_MODE_OP_MODE_MASK	\
-		((u16) (0x0001 | 0x0002))
+		((u8) (0x0003))
 #define HT_INFO_OPERATION_MODE_OP_MODE_OFFSET		0
 #define HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT	((u8) BIT(2))
 #define HT_INFO_OPERATION_MODE_TRANSMIT_BURST_LIMIT	((u8) BIT(3))
@@ -1348,21 +1350,6 @@ enum P2P_PS {
 #define	WFD_DEVINFO_SESSION_AVAIL			0x0010
 #define	WFD_DEVINFO_WSD						0x0040
 #define	WFD_DEVINFO_PC_TDLS					0x0080
-
-#ifdef CONFIG_WAPI_SUPPORT
-#ifndef IW_AUTH_WAPI_VERSION_1
-#define IW_AUTH_WAPI_VERSION_1		0x00000008
-#endif
-#ifndef IW_AUTH_KEY_MGMT_WAPI_PSK
-#define IW_AUTH_KEY_MGMT_WAPI_PSK	0x04
-#endif
-#ifndef IW_AUTH_WAPI_ENABLED
-#define IW_AUTH_WAPI_ENABLED		0x20
-#endif
-#ifndef IW_ENCODE_ALG_SM4
-#define IW_ENCODE_ALG_SM4			0x20
-#endif
-#endif
 
 #ifndef _CUSTOM_IE_TYPE_
 #define _CUSTOM_IE_TYPE_

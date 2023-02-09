@@ -157,10 +157,6 @@ extern void cmd_simple_config(int argc, char **argv);
 extern void cmd_update(int argc, char **argv);
 #endif
 
-#if CONFIG_WEBSERVER
-extern void start_web_server(void);
-extern void stop_web_server(void);
-#endif
 extern void cmd_app(int argc, char **argv);
 #if CONFIG_ENABLE_WPS
 extern void cmd_wps(int argc, char **argv);
@@ -182,107 +178,6 @@ extern void cmd_p2p_connect(int argc, char **argv);
 #if defined(CONFIG_RTL8195A) || defined(CONFIG_RTL8711B) || defined(CONFIG_RTL8721D)
 extern u32 CmdDumpWord(IN u16 argc, IN u8 *argv[]);
 extern u32 CmdWriteWord(IN u16 argc, IN u8 *argv[]);
-#endif
-#ifdef CONFIG_CONCURRENT_MODE
-static void cmd_wifi_sta_and_ap(int argc, char **argv)
-{
-	int timeout = 20; //, mode;
-	int channel;
-	rtw_softap_info_t softAP_config = {0};
-	rtw_wifi_setting_t wlan_setting = {0};
-
-	if ((argc != 3) && (argc != 4)) {
-		ndbg("\n\rUsage: wifi_ap SSID CHANNEL [PASSWORD]");
-		return;
-	}
-
-	if (atoi((const char *)argv[2]) > 14) {
-		ndbg("\n\r bad channel!Usage: wifi_ap SSID CHANNEL [PASSWORD]");
-		return;
-	}
-
-#if 0
-	//Check mode
-	wifi_get_setting(WLAN0_IDX, &wlan_setting);
-	mode = wlan_setting.mode;
-
-	switch(mode) {
-		case RTW_MODE_MASTER:	//In AP mode
-			cmd_wifi_off(0, NULL);
-			cmd_wifi_on(0, NULL);
-			break;
-		case RTW_MODE_INFRA:		//In STA mode
-			unsigned char ssid[33];
-			rtw_memcpy(ssid, (unsigned char *)wlan_setting.ssid, strlen(wlan_setting.ssid));
-			if(strlen(ssid) > 0)
-				cmd_wifi_disconnect(0, NULL);
-	}
-#endif
-	wifi_off();
-
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-	//delay 20 Ticks
-#else
-	rtw_msleep_os(20);
-#endif
-	if (wifi_on(RTW_MODE_STA_AP) < 0) {
-		ndbg("\n\rERROR: Wifi on failed!");
-		return;
-	}
-
-	nvdbg("\n\rStarting AP ...");
-	channel = atoi((const char *)argv[2]);
-	if (channel > 13) {
-		ndbg("\n\rChannel is from 1 to 13. Set channel 1 as default!\n");
-		channel = 1;
-	}
-
-	//Populate softAP values
-	softAP_config.ssid.len = strlen((const char *)argv[1]);
-	rtw_memcpy(softAP_config.ssid.val, (unsigned char *)argv[1], softAP_config.ssid.len);
-	softAP_config.security_type = RTW_SECURITY_WPA2_AES_PSK;
-	softAP_config.password = (unsigned char*)argv[3];
-	softAP_config.password_len = strlen((const char *)argv[3]);
-	softAP_config.channel = channel;
-
-	if (argc == 4) {
-		if (wifi_start_ap(&softAP_config) != RTW_SUCCESS) {
-			ndbg("\n\rERROR: Operation failed!");
-			return;
-		}
-	} else {
-		if (wifi_start_ap(&softAP_config) != RTW_SUCCESS) {
-			ndbg("\n\rERROR: Operation failed!");
-			return;
-		}
-	}
-
-	while (1) {
-		char essid[33];
-		wifi_get_setting(WLAN0_IDX, &wlan_setting);
-		rtw_memcpy(essid, (unsigned char *)wlan_setting.ssid, strlen((const char *)wlan_setting.ssid));
-		if (strlen(essid) > 0) {
-			if (strncmp((const char *)essid, (const char *)argv[1], sizeof(essid)) == 0) {
-				nvdbg("\n\r%s started", argv[1]);
-				break;
-			}
-		}
-
-		if (timeout == 0) {
-			ndbg("\n\rERROR: Start AP timeout!");
-			break;
-		}
-
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-	//TODO
-	//Delay 1s
-#else
-		rtw_msleep_os(1);
-#endif
-		timeout--;
-	}
-}
 #endif
 
 static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num)
@@ -350,32 +245,19 @@ void dhcpd_event(void)
 {
 	return;
 }
-
+extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 {
 	int ret = 0;
 	rtw_security_t security_type;
 	char *password;
 	rtw_softap_info_t rtw_AP_config = {0};
-
-	if (wifi_is_running(WLAN0_IDX)) {
-		if (wifi_set_mode(RTW_MODE_AP) < 0) {
-			ndbg("\n\rERROR: Wifi Set Mode to SoftAP failed!");
-			return -1;
-		}
-	} else {
-		wifi_off();
-#if defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
-		//TODO
-		//Delay 20 Ticks
-#else
-		rtw_msleep_os(20);
+#if CONFIG_LWIP_LAYER
+	struct netif *pnetif = &xnetif[STA_WLAN_INDEX];
+	u32 ip_addr;
+	u32 netmask;
+	u32 gw;
 #endif
-		if (wifi_on(RTW_MODE_AP) < 0) {
-			ndbg("\n\rERROR: Wifi on failed!");
-			return -1;
-		}
-	}
 	nvdbg("\n\rStarting AP ...");
 
 	switch (softap_config->ap_auth_type) {
@@ -420,12 +302,30 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	rtw_AP_config.password_len = softap_config->passphrase_length;
 	rtw_AP_config.channel = softap_config->channel;
 
+
+#if CONFIG_LWIP_LAYER
+	dhcps_stop(pnetif);
+	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	netmask = WIFI_MAKEU32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
+	gw = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+#endif
+
+	wifi_stop_ap();
 	if (wifi_start_ap(&rtw_AP_config) != RTW_SUCCESS) {
 		ndbg("\n\rERROR: Operation failed!");
 		return -1;
 	}
 
 	nvdbg("\r\nap start");
+
+#if CONFIG_LWIP_LAYER
+	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
+	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
+	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
+	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+	dhcps_start(pnetif);
+#endif
 
 	return ret;
 }
@@ -808,32 +708,7 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
-#if 0
-	int ret;
-
-	/* if (wifi_is_running(WLAN0_IDX)) {
-		if (wifi_set_mode(RTW_MODE_STA) < 0) {
-			ndbg("\n\rERROR: Wifi Set Mode to STA failed!\n");
-			return RTK_STATUS_ERROR;
-		}
-	} else */
-	{
-		/* Kill init thread after all init tasks done */
-		ret = wifi_on(RTW_MODE_STA);
-
-		if (ret != RTW_SUCCESS) {
-			ndbg("\n\rrtk_wifi_start failed\n");
-			return RTK_STATUS_ERROR;
-		}
-		nvdbg("\r\n===============>>wifi_on success!!\r\n");
-	}
-#endif
 	wifi_on(RTW_MODE_STA);
-
-#if 0//RTW_AUTO_RECONNECT
-	//setup reconnection flag
-	wifi_set_autoreconnect(1);
-#endif
 
 	rtw_wifi_setting_t setting;
 	wifi_get_setting(WLAN0_IDX, &setting);
@@ -850,44 +725,14 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 
 int8_t cmd_wifi_off(void)
 {
-#if 0
-	int mode;
-	rtw_wifi_setting_t wlan_setting;
-
-#if CONFIG_WEBSERVER
-	stop_web_server();
-#endif
-#if CONFIG_ENABLE_P2P
-	cmd_wifi_p2p_stop(0, NULL);
-#else
-	if ((!wifi_is_running(WLAN0_IDX)) &&
-		(!wifi_is_running(WLAN1_IDX))) {
-		RTW_API_INFO("\n\rWIFI is not running");
-		return 0;
-	}
-
-	wifi_get_setting(WLAN0_IDX, &wlan_setting);
-	mode = wlan_setting.mode;
-
-
-	if (mode == RTW_MODE_MASTER) {
-		RTW_API_INFO("\n\rWIFI Mode Change: AP, disable beacon\r\n");
-		wifi_set_mode(RTW_MODE_INFRA); //this wifi_set_mode is used incorrectly
-		rtw_msleep_os(50);
-	} else if (mode == RTW_MODE_INFRA) {
-		unsigned char ssid[33];
-		rtw_memcpy(ssid, (unsigned char *)wlan_setting.ssid, strlen(wlan_setting.ssid));
-		if (strlen(ssid) > 0){
-			RTW_API_INFO("\n\rWIFI Mode Change: STA, disconnecting\r\n");
-			wifi_disconnect();
-		}
-	}
-	RTW_API_INFO("\n\rWIFI Mode Change instead of WIFI reload\r\n");
-	return 0;
-#endif
-#endif
-
 	if (!wifi_off())
+		return 0;
+	return -1;
+}
+
+int8_t cmd_wifi_stop_ap(void)
+{
+	if (!wifi_stop_ap())
 		return 0;
 	return -1;
 }
@@ -930,8 +775,6 @@ static void _free_scanlist(void)
 }
 
 extern int8_t wifi_scan_result_callback(trwifi_scan_list_s *scan_list, int scan_num);
-
-
 
 #if SCAN_WITH_SSID
 static void cmd_wifi_scan_with_ssid(int argc, char **argv)
@@ -1003,13 +846,6 @@ exit:
 }
 #endif
 
-#if CONFIG_WEBSERVER
-static void cmd_wifi_start_webserver(int argc, char **argv)
-{
-	start_web_server();
-}
-#endif
-
 static void cmd_wifi_iwpriv(int argc, char **argv)
 {
 	if (argc == 2 && argv[1]) {
@@ -1030,16 +866,6 @@ static void cmd_cpustat(int argc, char **argv)
 {
 	vTaskGetRunTimeStats((char *)cBuffer);
 	ndbg(cBuffer);
-}
-#endif
-#if 0//defined(CONFIG_RTL8195A) || defined(CONFIG_RTL8711B) || defined(CONFIG_RTL8721D)
-static void cmd_dump_reg(int argc, char **argv)
-{
-	CmdDumpWord(argc - 1, (u8 **)(argv + 1));
-}
-static void cmd_edit_reg(int argc, char **argv)
-{
-	CmdWriteWord(argc - 1, (u8 **)(argv + 1));
 }
 #endif
 static void cmd_exit(int argc, char **argv)

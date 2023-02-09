@@ -55,11 +55,11 @@ struct iperf_udp_client_hdr {
 
 	/* burst control */
 	uint32_t burstheaderstart; /* 0xAAAAAAAA for Sniffer Watch */
-	uint32_t burststart; /* burststart TSF */
+	uint64_t burststart; /* burststart TSF */
 	uint32_t dataseq; /* packet sequnce in this burst 0 ~ burstsize - 1 */
 	uint32_t burstsize; /* packet number in this burst */
 	uint32_t burstindex; /* burst index */
-	uint32_t burstperiod; /* burst period */
+	uint64_t burstperiod; /* burst period */
 };
 
 struct tmda_timer_sync_hdr {
@@ -88,14 +88,14 @@ char *udp_server_buffer = NULL;
 char *timer_client_buffer = NULL;
 char *timer_server_buffer = NULL;
 _sema	timer_sync_ok_sema = NULL;
-u32 sync_time = 0;
+u64 sync_time = 0;
 u8 timer_sync_ok = 0;
 #define TIMER_SYNC_REQ			0xBBBBBBBB
 #define TIMER_SYNC_RSP			0xCCCCCCCC
 
 static void udp_client_handler(void *param);
 static void tcp_client_handler(void *param);
-u32 udp_get_tdma_time(void);
+u64 udp_get_tdma_time(void);
 
 int tcp_client_func(struct iperf_data_t iperf_data)
 {
@@ -375,7 +375,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 	uint32_t id_cnt = 0;
 	u8 tdma_start = 0;
 	u8 tdma_timeout = 0;
-	static u32 burststart = 0;
+	static u64 burststart = 0;
 	u32 dataseq = 0;
 	int offtime = 0;
 	u32 temp = 0;
@@ -544,8 +544,8 @@ Exit2:
 #include "timers.h"
 TimerHandle_t		recv_timeout_timer;
 static u32 rf_status = 1;
-static u32 burststart_g = 0;
-static u32 burstperiod_g = 0;
+static u64 burststart_g = 0;
+static u64 burstperiod_g = 0;
 
 static u32 udp_server_stop = 0;
 xSemaphoreHandle udp_server_rfoff_sema = NULL;
@@ -559,7 +559,7 @@ static void udp_server_timeout_handler(void)
 #ifdef RFOFF_USER_TIMER
 	if (rf_status == 1) {
 		//u32 current_tsf = HAL_READ32(WIFI_REG_BASE, 0x560);
-		u32 current_time = udp_get_tdma_time();
+		u64 current_time = udp_get_tdma_time();
 		int offtime = burstperiod_g - (current_time - burststart_g) / 1000; //us->ms
 		if (offtime > MIN_RFOFF_TIME) {
 			wifi_rf_contrl(OFF);
@@ -603,7 +603,7 @@ int udp_server_timeout_start(size_t delay)
 
 void udp_server_rfoff_thread(void)
 {
-	u32 current_time = 0;
+	u64 current_time = 0;
 	int offtime = 0; //us->ms
 
 	do {
@@ -614,7 +614,7 @@ void udp_server_rfoff_thread(void)
 		}
 
 		//current_tsf = HAL_READ32(WIFI_REG_BASE, 0x560);
-		u32 current_time = udp_get_tdma_time();
+		current_time = udp_get_tdma_time();
 		offtime = burstperiod_g - (current_time - burststart_g) / 1000; //us->ms
 
 		if (offtime > MIN_RFOFF_TIME) {
@@ -654,13 +654,13 @@ int udp_server_timeout_init(void)
 
 
 
-u32 udp_get_tdma_time(void)
+u64 udp_get_tdma_time(void)
 {
-	if (wifi_get_tsf_low(1) < sync_time) {
+	if (wifi_get_tsf(1) < sync_time) {
 		DBG_8195A("get tdma time err!\n");
 		return 0;
 	} else {
-		return (wifi_get_tsf_low(1) - sync_time);
+		return (wifi_get_tsf(1) - sync_time);
 	}
 }
 
@@ -677,12 +677,12 @@ int udp_server_timeout_deinit(void)
 int udp_server_burststop(void)
 {
 	struct iperf_udp_client_hdr client_hdr;
-	u32 burststart = 0;
+	u64 burststart = 0;
 	u32 dataseq = 0;
 	u32 burstsize = 0;
 	int offtime = 0;
-	u32 current_time = 0;
-	u32 burstperiod = 0;
+	u64 current_time = 0;
+	u64 burstperiod = 0;
 	u32 lastpktcheck = 0;
 
 	memcpy(&client_hdr, udp_server_buffer, sizeof(client_hdr));
@@ -789,7 +789,7 @@ void tdma_timer_sync_server(void *param)
 				sync_hdr.rsp = TIMER_SYNC_RSP;
 				memcpy(timer_server_buffer, &sync_hdr, sizeof(sync_hdr));
 				send(iperf_data->client_fd, timer_server_buffer, sizeof(sync_hdr), TCP_NODELAY);
-				sync_time = wifi_get_tsf_low(1);
+				sync_time = wifi_get_tsf(1);
 				printf("\n\rtime:%d\n", sync_time);
 			}
 		}
@@ -819,7 +819,7 @@ void tdma_timer_sync_client(void *param)
 	struct iperf_tcp_client_hdr client_hdr;
 	struct tmda_timer_sync_hdr sync_hdr;
 	struct iperf_data_t *iperf_data = (struct iperf_data_t *)param;
-	u32 delta_time = 0;
+	u64 delta_time = 0;
 
 	vTaskDelay(100);
 	sync_hdr.headerstart = 0xAAAAAAAA;
@@ -863,13 +863,13 @@ void tdma_timer_sync_client(void *param)
 				printf("\n\r[ERROR] %s: TCP client send data error", __func__);
 				goto Exit1;
 			}
-			delta_time = wifi_get_tsf_low(1);
+			delta_time = wifi_get_tsf(1);
 			recv(iperf_data->client_tcp, timer_client_buffer, sizeof(sync_hdr), 0);
 			memcpy(&sync_hdr, timer_client_buffer, sizeof(sync_hdr));
 			if (sync_hdr.rsp == 0xCCCCCCCC) {
-				delta_time = wifi_get_tsf_low(1) - delta_time;
+				delta_time = wifi_get_tsf(1) - delta_time;
 				if (delta_time < 2000) {
-					sync_time = wifi_get_tsf_low(1);
+					sync_time = wifi_get_tsf(1);
 					printf("\n\rtimer sync ok!%d\n", sync_time);
 					xSemaphoreGive(timer_sync_ok_sema);
 					break;

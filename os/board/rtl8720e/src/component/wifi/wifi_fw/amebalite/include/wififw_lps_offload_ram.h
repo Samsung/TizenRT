@@ -10,16 +10,14 @@
 #define LPSOfld_BCNTO	(10000)//us
 #define LPSOfld_TSFT_DIFF_THRES	(1000)//us
 #define KeyCAMHIOEEntrySize (16)
-#define LPSOfld_ChkHWHIOEActive()	((ReadMACRegDWord(REG_HW_IOE_CR_CHN_ON) & BIT_HIOE_RESTORE_REQ_CHN_ON) | (ReadMACRegDWord(REG_HW_IOE_CR_CHN_OFF) & BIT_HIOE_RESTORE_REQ_CHN_OFF))//ACTIVE BIT BUG FIX IN FUTURE
 
 /*------------------------------Function declaration--------------------------*/
-extern void LPSOfld_HIOECmdFileToTXFF_8720E(u32 *HIOECmdFileTab, HIOECmdFileRSVal *HIOECmdFileRsValTab, u32 TXFF_Offset);
 extern void LPSOfld_HIOECmdFileInit_8720E(void);
 extern void LPSOfld_RxbcnModeCmdFileValInit_8720E(void);
-extern void LPSOfld_ByPassLsysWakeInt_8720E(BOOLEAN ByPassLsysWakeEn, BOOLEAN HWCtrlTRXOnOff);
+extern void LPSOfld_ExitRxbcnModeCmdFileValInit_8720E(void);
 extern void LPSOfld_SwtHIOECmdFile_8720E(BOOLEAN OnHIOECmdFileType, BOOLEAN OffHIOECmdFileType);
 extern void LPSOfld_IMRSetting_8720E(BOOLEAN HWCtrlTRXOnOff);
-extern void LPSOfld_SetBcnErlyandTimeout_8720E(u8 bcnearlyitvl, u32 bcntimeout);
+extern void LPSOfld_SetBcnErlyandTimeout_8720E(u8 bcnearlyitvlms, u8 bcnearlyitvl128us, u8 bcnearlyitvl32us, u32 bcntimeout);
 extern void LPSOfld_FuncInit_8720E(void);
 extern void LPSOfld_PGResume_8720E(void);
 extern void LPSOfld_HWCtrlTRXOnOff_8720E(BOOLEAN HWCtrlTRXOnOff);

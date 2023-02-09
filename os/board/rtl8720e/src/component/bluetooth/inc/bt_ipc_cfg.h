@@ -22,7 +22,7 @@
 
 #elif defined(CONFIG_PLATFORM_AMEBAD2)
 
-#if defined(ARM_CORE_CA7)
+#if defined(ARM_CORE_CA32)
 #define BT_IPC_DIR_EVENT_RX IPC_NP_TO_AP
 #define BT_IPC_DIR_API_TX IPC_AP_TO_NP
 #define BT_IPC_DIR_DATA_RX IPC_NP_TO_AP

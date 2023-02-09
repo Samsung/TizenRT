@@ -79,6 +79,8 @@ extern void CPU_ClkSet(u32 Source);
 extern void SystemCoreClockUpdate(void);
 
 extern void Systick_Cmd(u32 enable);
+extern u32 Systick_State(void);
+
 
 extern uint32_t irq_disable_save(void);
 extern void irq_enable_restore(uint32_t PrevStatus);

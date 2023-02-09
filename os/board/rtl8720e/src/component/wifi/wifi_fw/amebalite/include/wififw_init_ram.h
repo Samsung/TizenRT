@@ -1,9 +1,6 @@
 #ifndef __WIFIFW_INIT_RAM_H__
 #define __WIFIFW_INIT_RAM_H__
 
-#ifndef CONFIG_WIFI_FW_VERIFY
-#define CONFIG_WIFI_FW_VERIFY 0
-#endif
 
 /* REG_CLKDIV 0x0008 */
 #define MAC_CLK_20M				(0x2 << BIT_SHIFT_MAC_CLK_SEL)
@@ -39,5 +36,6 @@ extern void Wifi_FW_TaskIdle(void);
 extern void Fw_test_main(void);
 extern void FwIntInit(void);
 extern void TimerTest(void);
+extern void SOCZB_test_main(void);
 
 #endif /* __WIFIFW_INIT_RAM_H__ */

@@ -25,6 +25,7 @@ extern rtk_bt_le_conn_ind_t *ble_tizenrt_conn_ind;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
+extern uint16_t scan_timeout;
 
 trble_device_connected ble_tizenrt_bond_list[GAP_MAX_LINKS] = {0};
 
@@ -37,7 +38,6 @@ trble_device_connected ble_tizenrt_bond_list[GAP_MAX_LINKS] = {0};
 			return -1;									  \
 		}												   \
 	} while (0)
-
 
 static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code, void *param)
 {
@@ -73,6 +73,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 			memcpy(scanned_device.raw_data, scan_res_ind->adv_report.data, scan_res_ind->adv_report.len);
 			scanned_device.raw_data_length = scan_res_ind->adv_report.len;
 		}
+		scanned_device.addr.type = scan_res_ind->adv_report.addr.type;
 		memcpy(scanned_device.addr.mac, scan_res_ind->adv_report.addr.addr_val, RTK_BD_ADDR_LEN);
 		scanned_device.rssi = scan_res_ind->adv_report.rssi;
 		client_init_parm->trble_device_scanned_cb(&scanned_device);
@@ -125,7 +126,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
 				connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
-				connected_dev.conn_info.scan_timeout = conn_ind->timeout;
+				connected_dev.conn_info.scan_timeout = scan_timeout;
 				connected_dev.conn_info.is_secured_connect = is_secured;
 				connected_dev.conn_info.mtu = mtu_size;
 				client_init_parm->trble_device_connected_cb(&connected_dev);
@@ -174,7 +175,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 						conn_update_ind->conn_handle, 
 						conn_update_ind->conn_interval,
 						conn_update_ind->conn_latency, 
-						conn_update_ind->timeout);
+						conn_update_ind->supv_timeout);
 		}
 		break;
 	}
@@ -189,7 +190,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 				rmt_update_req->conn_interval_max,
 				rmt_update_req->conn_interval_min,
 				rmt_update_req->conn_latency,
-				rmt_update_req->timeout);
+				rmt_update_req->supv_timeout);
 		return RTK_BT_EVT_CB_ACCEPT;
 		break;
 	}
@@ -221,18 +222,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 					phy_update_ind->tx_phy, 
 					phy_update_ind->rx_phy);
 		}
-		break;
-	}
-
-	case RTK_BT_LE_GAP_EVT_WHITELIST_MODIFY_IND: {
-		rtk_bt_le_wl_modify_ind_t *wl_modify_ind = 
-										(rtk_bt_le_wl_modify_ind_t *)param;
-		if (wl_modify_ind->err) {
-			dbg("[APP] Modify whilte list failed, op: %d\r\n", wl_modify_ind->op);
-		} else {
-			dbg("[APP] Modify whilte list success, op: %d\r\n", wl_modify_ind->op);
-		}
-
 		break;
 	}
 
@@ -292,7 +281,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 		if (auth_cplt_ind->err) {
 			dbg("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n", 
 					auth_cplt_ind->err, auth_cplt_ind->conn_handle);
-
+		} else {
+			dbg("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
 			uint16_t mtu_size;
 			if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(auth_cplt_ind->conn_handle, &mtu_size)){
 				dbg("[APP] Get mtu size failed \r\n");
@@ -305,13 +295,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 			memcpy(connected_dev.conn_info.addr.mac, ble_tizenrt_conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 			connected_dev.conn_info.conn_interval = ble_tizenrt_conn_ind->conn_interval;
 			connected_dev.conn_info.slave_latency = ble_tizenrt_conn_ind->conn_latency;
-			connected_dev.conn_info.scan_timeout = ble_tizenrt_conn_ind->timeout;
+			connected_dev.conn_info.scan_timeout = scan_timeout;
 			connected_dev.conn_info.is_secured_connect = is_secured;
 			connected_dev.conn_info.mtu = mtu_size;
 			client_init_parm->trble_device_connected_cb(&connected_dev);
-
-		} else {
-			dbg("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
 		}
 		break;
 	}
@@ -408,6 +395,16 @@ static rtk_bt_le_scan_param_t scan_param = {
 	.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
 	.filter_policy = RTK_BT_LE_SCAN_FILTER_ALLOW_ALL,
 };
+	
+static rtk_bt_le_security_param_t sec_param = {
+	.io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+	.oob_data_flag = 0,
+	.bond_flag = 1,
+	.mitm_flag = 0,
+	.sec_pair_flag = 0,
+	.use_fixed_key = 0,
+	.fixed_key = 000000,
+};
 
 extern bool rtk_bt_pre_enable(void);
 int ble_tizenrt_central_main(uint8_t enable)
@@ -426,11 +423,15 @@ int ble_tizenrt_central_main(uint8_t enable)
 		//set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTC;
 		bt_app_conf.mtu_size = 180;
+		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.prefer_all_phy = 0;
-		bt_app_conf.prefer_tx_phy = 1 | 1<<2;
-		bt_app_conf.prefer_rx_phy = 1 | 1<<2;
+		bt_app_conf.prefer_tx_phy = 1 | 1<<1 | 1<<2;
+		bt_app_conf.prefer_rx_phy = 1 | 1<<1 | 1<<2;
 		bt_app_conf.max_tx_octets = 0x40;
 		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.user_def_service = false;
+		bt_app_conf.cccd_not_check = false;
+		
 		/* Enable BT */
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
 
@@ -443,6 +444,7 @@ int ble_tizenrt_central_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_tizenrt_central_gap_app_callback));
 		BT_APP_PROCESS(rtk_bt_set_evt_cb_direct_calling(RTK_BT_LE_GP_GAP, 
 														1 << RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND));
+		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 		/* Initilize GATT (client) part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, ble_tizenrt_central_gattc_app_callback));
 		BT_APP_PROCESS(general_client_add());

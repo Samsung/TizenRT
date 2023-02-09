@@ -36,48 +36,45 @@
 #error "Cut Error"
 #endif  //IS_CUT_TEST(CONFIG_CHIP_SEL)
 #define ROM_VERSION_VERA            0xFF
+#define CONFIG_H2C_LOGO				0
 
 //3 General
 #define CONFIG_TXBEACON_IGNORE_EDCCA	0
-#define CONFIG_TX_PAUSE_DRV_INFO		1
+#define CONFIG_TX_PAUSE_DRV_INFO		0
 #define CONFIG_RF_JAGUAR                0   //8723d no support new 3-wire
 #define CONFIG_SW_QUEUE_TX		0
 #define CONFIG_CSI_REPORT			1
 
 //3 PS Related
-#define CONFIG_SAPPS                    1
-#define CONFIG_INACTIVE_PS              1//must enable in formal FW //for RTD3
+#define CONFIG_SAPPS                    0
+#define CONFIG_INACTIVE_PS              0
 #define CONFIG_HW_PS_CTRL               1
 #define CONFIG_BCNEARLY_FIXED		1
 #define CONFIG_BCNEARLY_ADJUST_V1       0       //must not both enable!!
 #define CONFIG_BCNEARLY_ADJUST_V2       0
 #define CONFIG_BCNADJ_LPSOFFLOAD_V1    0   //david_liu,220419
 #define CONFIG_BCNADJ_LPSOFFLOAD_V2    0   //david_liu,220419
-#define CONFIG_BEACON_MODE		0
+#define CONFIG_BEACON_MODE		1
+#define CONFIG_LPS_Normal		1
 #define CONFIG_PERIOD_CCA		0
 #define CONFIG_S1_NULL1_IVL_PATCH       0
 #define CONFIG_LPS_Offload 		0
 #define CONFIG_LPS_I_TWT 		0
-#if CONFIG_LPS_Offload
-#define LPSOFLD_MULTIBCN_PATCH 0//bcnearly and bcn agg early both trigger HIOE on cause bcn agg early cannot be used to multibcn lps mode, need ECO
-#else
-#define LPSOFLD_MULTIBCN_PATCH 0
-#endif
 
 //3 BT Coex Related
 #define CONFIG_BTCOEX                    1//must enable in formal FW
 #define CONFIG_BTMAILBOX                 1//should enable CONFIG_BTCOEX first
-#define CONFIG_BTSCOREBRD                1
+#define CONFIG_BTSCOREBRD                0
 #define CONFIG_ZBMAILBOX                 1
 
 //3 Remote WakeUp
 #define CONFIG_NDP                  0
-#define CONFIG_DELAY_WAKEUP       0
+#define CONFIG_DELAY_WAKEUP       1
 #define CONFIG_DIG_OFFLOAD 0
 
 //3 Dynamic Mechanism Offload
 #define CONFIG_RATE_ADAPTIVE        1//keep the macro control for some case that need to reduce FW image size
-#define CONFIG_TPBASE_RA			0
+#define CONFIG_TPBASE_RA			1
 #define CONFIG_RA_PS_MODE           0
 #define CONFIG_POWER_TRAINING_WIL   1
 #define CONFIG_11AC_1SS             0
@@ -105,8 +102,7 @@
 //1  Debug control
 #define CONFIG_PS_DEBUG                 1
 #define CONFIG_BTCOEX_LOG_DEBUG         0
-#define CONFIG_BTCOEX_GPIO_DEBUG        0
-#define CONFIG_BTCOEX_SLOT_DEBUG        0
+#define CONFIG_BTCOEX_SLOT_DEBUG        1
 
 //1 Test & verification control
 #define CONFIG_DV_SIMULATION_TEST		0

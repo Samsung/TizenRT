@@ -124,7 +124,7 @@ u32 OTPGetCRC(void)
   *          - _FAIL: read fail
   */
 NON_DRAM_TEXT_SECTION
-static u32 OTP_Read8(u32 Addr, u8 *Data)
+u32 OTP_Read8(u32 Addr, u8 *Data)
 {
 	u32 TmpIdx = 0;
 	u32 bResult = _FAIL;
@@ -280,7 +280,7 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
   *          - _SUCCESS: write ok
   *          - _FAIL: write fail
   */
-static u32 OTP_Write8(u32 Addr, u8 Data)
+u32 OTP_Write8(u32 Addr, u8 Data)
 {
 	u8 Temp;
 	u8 Target;
@@ -488,7 +488,7 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
   *          - _SUCCESS: read ok
   *          - _FAIL: read fail
   */
-static u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
+u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 {
 	u32 OTP_Addr = 0;
 	u32 offset;
@@ -573,7 +573,7 @@ static u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
   *          - _SUCCESS: write ok
   *          - _FAIL: write fail
   */
-static u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
+u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 {
 	u32	base, offset;
 	u32 bytemap = 0, byte_change = 0, wordmap = 0, word_change = 0;

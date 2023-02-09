@@ -11,6 +11,17 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
+#ifdef CONFIG_IEEE80211K
+struct rate_section_ent {
+	u8 tx_num; /* value of RF_TX_NUM */
+	u8 rate_num;
+	u8 *rates;
+};
+
+#define rate_section_to_tx_num(section) (rates_by_sections[(section)].tx_num)
+#define rate_section_rate_num(section) (rates_by_sections[(section)].rate_num)
+#endif
+
 void rm_init_rtw_op_class(_adapter *padapter);
 u8 rm_set_rtw_op_class(u32 country_code);
 u8 rm_get_oper_class_via_ch(u8 ch);
@@ -23,7 +34,7 @@ u8 translate_dbm_to_rcpi(s8 SignalPower);
 int is_wildcard_bssid(u8 *bssid);
 
 int rm_get_path_a_max_tx_power(_adapter *adapter, s8 *path_a);
-int rm_get_tx_power(PADAPTER adapter, enum rf_path path, enum MGN_RATE rate, s8 *pwr);
-int rm_get_rx_sensitivity(PADAPTER adapter, enum channel_width bw, enum MGN_RATE rate, s8 *pwr);
+int rm_get_tx_power(PADAPTER adapter, enum rf_path path, u8 rate, s8 *pwr);
+int rm_get_rx_sensitivity(PADAPTER adapter, enum channel_width bw, u8 rate, s8 *pwr);
 
 #endif /* _RTW_RM_UTIL_H_ */

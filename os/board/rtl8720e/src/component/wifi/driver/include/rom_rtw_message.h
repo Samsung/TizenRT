@@ -22,7 +22,7 @@ typedef enum {
 	ROM_F_RTW_MSGP_MAX
 } rom_f_rtw_msgp_t;
 
-#if defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_8735B)
+#if defined(CONFIG_PLATFORM_8735B)
 char **get_rom_e_rtw_msgp_str(void);
 #define rom_e_rtw_msg_printf(name, fmt, args...) \
 	do {\
@@ -57,7 +57,7 @@ extern const char *const rom_e_rtw_msgp_str_[ROM_E_RTW_MSGP_MAX];
 	}while(0)
 #endif
 
-#if defined(CONFIG_PLATFORM_8195BHP) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_8735B)
+#if defined(CONFIG_PLATFORM_8735B)
 char **get_rom_f_rtw_msgp_str(void);
 #define rom_f_rtw_msg_printf(name, fmt, args...) \
 	do {\

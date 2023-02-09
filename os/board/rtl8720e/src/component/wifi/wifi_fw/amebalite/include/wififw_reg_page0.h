@@ -134,8 +134,9 @@
 #define BIT_GET_WL_PMC_CNT_PAR(x)              ((u32)(((x >> 8) & 0x0000003F)))
 #define BIT_CUR_PST_IS_LPS                     ((u32)0x00000001 << 4)          /*!<RO   indicate current WL power status is LPS mode */
 #define BIT_WL_PMC_LPS_EN                      ((u32)0x00000001 << 2)          /*!<R/W 0  Inform WLAN PMC FSM to enter LPS mode. (auto clear when ready) */
-//redefine
-//#define BIT_WL_PMC_OFFMAC                      ((u32)0x00000001 << 1)          /*!<R/W 0  Inform WLAN PMC FSM to power OFF mode, include clock, isolation, power control for MAC only (clear when Power Ready) */
+#ifndef BIT_WL_PMC_OFFMAC
+#define BIT_WL_PMC_OFFMAC                      ((u32)0x00000001 << 1)          /*!<R/W 0  Inform WLAN PMC FSM to power OFF mode, include clock, isolation, power control for MAC only (clear when Power Ready) */
+#endif
 #define BIT_WL_PMC_ONMAC                       ((u32)0x00000001 << 0)          /*!<R/W 0  Inform WLAN PMC FSM to power On mode, include clock, isolation, power control for MAC only (clear when Power Ready) */
 /** @} */
 

@@ -48,7 +48,7 @@ typedef enum _RF_TX_NUM {
 	RF_TX_NUM_NONIMPLEMENT,
 } RF_TX_NUM;
 
-#if (RTL8721D_SUPPORT == 1) || (RTL8710C_SUPPORT == 1) || (RTL8730A_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1)
+#if (RTL8721D_SUPPORT == 1) || (RTL8735B_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1)  || (RTL8721F_SUPPORT == 1)
 #define MAX_POWER_INDEX 		0x7F //8721d TXAGC power index extends 1 bit (6 bit->7bit), 0.25dB a step
 #else
 #define MAX_POWER_INDEX 		0x3F
@@ -224,7 +224,6 @@ PHY_GetTxPowerIndexBase(
 s8
 PHY_GetTxPowerLimit(
 	IN	PADAPTER		Adapter,
-	IN	u32				RegPwrTblSel,
 	IN	enum band_type		Band,
 	IN	enum channel_width	Bandwidth,
 	IN	u8				RfPath,

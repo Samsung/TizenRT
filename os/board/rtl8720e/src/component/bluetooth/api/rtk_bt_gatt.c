@@ -93,6 +93,69 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param)
 
 
 /********************************* GATTC API *********************************/
+#if RTK_BLE_MGR_LIB
+uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
+{
+	uint16_t ret = 0;
+	rtk_bt_gattc_register_t param = {
+		.profile_id = profile_id,
+		.srv_uuid = srv_uuid,
+	};
+
+	if(!rtk_bt_is_enable())
+		return RTK_BT_ERR_NOT_READY;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_REGISTER_PROFILE, 
+						  &param, sizeof(rtk_bt_gattc_register_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
+{
+	uint16_t ret = 0;
+	rtk_bt_gattc_register_t param = {
+		.profile_id = profile_id,
+		.srv_uuid = srv_uuid,
+	};
+
+	if(!rtk_bt_is_enable())
+		return RTK_BT_ERR_NOT_READY;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_UNREGISTER_PROFILE, 
+						  &param, sizeof(rtk_bt_gattc_register_t));
+
+	return ret;
+}
+
+uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+
+	if (!rtk_bt_is_enable())
+		return RTK_BT_ERR_NOT_READY;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_DISCOVER, 
+						  (void *)&conn_handle, sizeof(uint16_t));
+
+	return ret; 
+}
+
+uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param)
+{
+	uint16_t ret = 0;
+
+	if (!rtk_bt_is_enable())
+		return RTK_BT_ERR_NOT_READY;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_FIND, 
+						  (void *)p_find_param, sizeof(rtk_bt_gattc_find_param_t));
+
+	return ret; 
+}
+
+#else /* #if RTK_BLE_MGR_LIB */
+
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id)
 {
 	uint16_t ret = 0;
@@ -121,10 +184,10 @@ uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id)
 	return ret;
 }
 
-uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_id)
+uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_handle)
 {
 	uint16_t ret = 0;
-	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id,conn_id);
+	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id, conn_handle);
 
 	if(!rtk_bt_is_enable())
 		return RTK_BT_ERR_NOT_READY;
@@ -135,10 +198,10 @@ uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_id)
 	return ret;	
 }
 
-uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_id)
+uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_handle)
 {
 	uint16_t ret = 0;
-	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id,conn_id);
+	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id, conn_handle);
 
 	if(!rtk_bt_is_enable())
 		return RTK_BT_ERR_NOT_READY;
@@ -147,6 +210,18 @@ uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_id)
 														(void *)&attch_id, 4);
 
 	return ret;	
+}
+
+uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
+{
+	uint16_t ret = 0;
+	if(!rtk_bt_is_enable())
+		return RTK_BT_ERR_NOT_READY;
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_EXCHANGE_MTU, 
+							(void *)&conn_handle, sizeof(uint16_t));
+	
+	return ret;
 }
 
 uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param)
@@ -163,6 +238,8 @@ uint16_t rtk_bt_gattc_discover(rtk_bt_gattc_discover_param_t *p_dis_param)
 
 	return ret; 
 }
+
+#endif /* #if RTK_BLE_MGR_LIB */
 
 uint16_t rtk_bt_gattc_read(rtk_bt_gattc_read_param_t *p_read_param)
 {

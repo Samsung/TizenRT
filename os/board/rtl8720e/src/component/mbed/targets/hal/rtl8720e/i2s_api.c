@@ -26,7 +26,7 @@
   */
 
 /** @defgroup MBED_I2S
- *  @brief      MBED_I2S driver modules.
+ *  @brief    MBED_I2S driver modules.
  *  @{
  */
 
@@ -84,7 +84,8 @@ static SP_GDMA_STRUCT SPGdmaStruct;
 static SP_TX_INFO sp_tx_info;
 static SP_RX_INFO sp_rx_info;
 static I2S_USER_CB I2SUserCB; //Pointer to I2S User Callback
-
+static struct GDMA_CH_LLI LliTx[SP_MAX_DMA_PAGE_NUM];
+static struct GDMA_CH_LLI LliRx[SP_MAX_DMA_PAGE_NUM];
 
 /**
   * @}
@@ -152,8 +153,6 @@ static u32 *i2s_get_free_rx_page(void)
 
 static void I2S_TX_ISR(void)
 {
-	char *tx_addr;
-
 	SP_GDMA_STRUCT *gs = &SPGdmaStruct;
 	PGDMA_InitTypeDef GDMA_InitStruct;
 	GDMA_InitStruct = &(gs->SpTxGdmaInitStruct);
@@ -162,14 +161,11 @@ static void I2S_TX_ISR(void)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	i2s_release_tx_page();
-	tx_addr = (char *)i2s_get_ready_tx_page();
-	AUDIO_SP_TXGDMA_Restart(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, (u32)tx_addr, sp_tx_info.tx_page_size);
+	i2s_get_ready_tx_page();
 }
 
 static void I2S_RX_ISR(void)
 {
-	char *rx_addr;
-
 	SP_GDMA_STRUCT *gs = &SPGdmaStruct;
 	PGDMA_InitTypeDef GDMA_InitStruct;
 	GDMA_InitStruct = &(gs->SpRxGdmaInitStruct);
@@ -180,16 +176,15 @@ static void I2S_RX_ISR(void)
 
 	//read data
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
-	DCache_CleanInvalidate(((u32)prx_block->rx_addr & CACHE_LINE_ADDR_MSK), (sp_rx_info.rx_page_size + CACHE_LINE_SIZE));   //clean before read rx page
-	I2SUserCB.RxCCB(0, (void *)(u32)prx_block->rx_addr);
+	DCache_CleanInvalidate((u32)prx_block->rx_addr, sp_rx_info.rx_page_size);
+	I2SUserCB.RxCCB((uint32_t)NULL, (void *)(u32)prx_block->rx_addr);
 
-	rx_addr = (char *)i2s_get_free_rx_page();
-	AUDIO_SP_RXGDMA_Restart(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, (u32)rx_addr, sp_rx_info.rx_page_size);
+	i2s_get_free_rx_page();
 }
 
 /**
-  * @brief  Initializes the I2S device, include clock/function/interrupt/I2S registers.
-  * @param  obj: i2s object define in application software.
+  * @brief  Initialize the I2S device, including clock, function, interrupt and I2S registers.
+  * @param  obj: I2S object defined in application software.
   * @param  sck: Serial clock PinName according to pinmux spec.
   * @param  ws: Word select PinName according to pinmux spec.
   * @param  sd_tx: Tx PinName according to pinmux spec.
@@ -231,35 +226,40 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 	/*Sport Init*/
 	AUDIO_SP_Reset(SPORTx);
 	AUDIO_SP_StructInit(&SP_InitStruct);
-	SP_InitStruct.SP_SelI2S0MonoStereo = obj->channel_num;
+	SP_InitStruct.SP_SelI2SMonoStereo = obj->channel_num;
 	SP_InitStruct.SP_SelWordLen = obj->word_length;
 	SP_InitStruct.SP_SelChLen = obj->channel_length;
 	SP_InitStruct.SP_SR = obj->sampling_rate;
-	SP_InitStruct.SP_SetMultiIO = SP_TX_MULTIIO_EN;
-	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_EN;
+	SP_InitStruct.SP_SelFIFO = obj->fifo_num;
+	SP_InitStruct.SP_SelTDM = obj->fifo_num;
 	if (obj->direction == I2S_DIR_TX) {
+		if (obj->mode == MULTIIO) {
+			SP_InitStruct.SP_SetMultiIO = SP_TX_MULTIIO_EN;
+		}
 		AUDIO_SP_Init(obj->i2s_idx, SP_DIR_TX, &SP_InitStruct);
 	} else {
+		if (obj->mode == MULTIIO) {
+			SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_EN;
+		}
 		AUDIO_SP_Init(obj->i2s_idx, SP_DIR_RX, &SP_InitStruct);
 	}
-
 	AUDIO_SP_SetMasterSlave(SPORTx, obj->role);
 }
 
 /**
-  * @brief  Sets page number, page size, page address.
-  * @param  obj: i2s object define in application software.
-  * @param  tx_buf: pointer to the start address of Tx page.
-  * @param  rx_buf: pointer to the start address of Rx page.
-  * @param  page_num: page number. This parameter must be set to a value in the 2~4 range
-  * @param  page_size: page size. This parameter must be set to a value in the 4~16384 bytes range
+  * @brief  Set page number, page size and page address.
+  * @param  obj: I2S object defined in application software.
+  * @param  tx_buf: Pointer to the start address of Tx page.
+  * @param  rx_buf: Pointer to the start address of Rx page.
+  * @param  page_num: Page number. This parameter must be set to a value in the 2~4 range.
+  * @param  page_size: Page size. This parameter must be set to a value in the 4~16384 Bytes range.
   * @retval none
   */
 void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 						uint32_t page_num, uint32_t page_size)
 {
 	//uint8_t i2s_idx = obj->i2s_idx;
-	u32 i;
+	u32 i, j;
 
 	if ((page_num < 2) || (page_num > 8) || (page_size < 8)) {
 		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: PageNum(%d) valid value is 2~8; PageSize(%d must > 8)\r\n", \
@@ -287,6 +287,20 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 		sp_tx_info.tx_page_size = page_size;
 		sp_tx_info.tx_page_num = page_num;
 
+		for (j = 0; j < page_num + 1; j++) {
+
+			if (j == 0) {
+				LliTx[j].LliEle.Sarx = (u32)tx_buf + (page_num) * page_size;
+			} else {
+				LliTx[j].LliEle.Sarx = (u32)tx_buf + (j - 1) * page_size;
+			}
+
+			if (j == page_num) {
+				LliTx[j].pNextLli = &LliTx[1];
+			} else {
+				LliTx[j].pNextLli = &LliTx[j + 1];
+			}
+		}
 	} else {
 
 		sp_rx_info.rx_gdma_cnt = 0;
@@ -307,17 +321,24 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 		sp_rx_info.rx_page_size = page_size;
 		sp_rx_info.rx_page_num = page_num;
 
-
+		for (j = 0; j < page_num; j++) {
+			LliRx[j].LliEle.Darx = (u32)rx_buf + j * page_size;
+			if (j == page_num - 1) {
+				LliRx[j].pNextLli = &LliRx[0];
+			} else {
+				LliRx[j].pNextLli = &LliRx[j + 1];
+			}
+		}
 	}
 
 }
 
 
 /**
-  * @brief  Sets TX interrupt handler.
-  * @param  obj: i2s object define in application software.
+  * @brief  Register TX interrupt handler.
+  * @param  obj: I2S object defined in application software.
   * @param  handler: TX interrupt callback function.
-  * @param  id: TX interrupt callback function parameter.
+  * @param  id: TX interrupt callback parameter.
   * @retval none
   */
 void i2s_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
@@ -326,15 +347,17 @@ void i2s_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 	(void) handler;
 	(void) id;
 
-	u32 *tx_addr = (u32 *)i2s_get_ready_tx_page();
-	AUDIO_SP_TXGDMA_Init(obj->i2s_idx, GDMA_INT, &SPGdmaStruct.SpTxGdmaInitStruct, &SPGdmaStruct, (IRQ_FUN)I2S_TX_ISR, (u8 *)tx_addr, sp_tx_info.tx_page_size);
+	i2s_get_ready_tx_page();
+	AUDIO_SP_LLPTXGDMA_Init(obj->i2s_idx, GDMA_INT, &SPGdmaStruct.SpTxGdmaInitStruct, &SPGdmaStruct, (IRQ_FUN)I2S_TX_ISR, sp_tx_info.tx_page_size,
+							sp_tx_info.tx_page_num + 1, LliTx);
+
 }
 
 /**
-  * @brief  Sets RX interrupt handler.
-  * @param  obj: i2s object define in application software.
+  * @brief  Register RX interrupt handler.
+  * @param  obj: I2S object defined in application software.
   * @param  handler: RX interrupt callback function.
-  * @param  id: RX interrupt callback function parameter.
+  * @param  id: RX interrupt callback parameter.
   * @retval none
   */
 void i2s_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
@@ -344,18 +367,19 @@ void i2s_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 
 	I2SUserCB.RxCCB = handler;
 
-	u32 *rx_addr = (u32 *)i2s_get_free_rx_page();
-	AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_INT, &SPGdmaStruct.SpRxGdmaInitStruct, &SPGdmaStruct, (IRQ_FUN)I2S_RX_ISR, (u8 *)rx_addr, sp_rx_info.rx_page_size);
+	i2s_get_free_rx_page();
+	AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &SPGdmaStruct.SpRxGdmaInitStruct, &SPGdmaStruct, (IRQ_FUN)I2S_RX_ISR, sp_rx_info.rx_page_size,
+							sp_rx_info.rx_page_num,
+							LliRx);
 }
 
 /**
-  * @brief  Sets i2s data transfer direction.
-  * @param  obj: i2s object define in application software.
-  * @param  trx_type: transfer direction.
-  *          This parameter can be one of the following values:
-  *            @arg I2S_DIR_RX: Rx receive direction
-  *            @arg I2S_DIR_TX: Tx transmission direction
-  *            @arg I2S_DIR_TXRX: Tx & Rx bi-direction
+  * @brief  Set I2S data transfer direction.
+  * @param  obj: I2S object defined in application software.
+  * @param  trx_type: Transfer direction. This parameter can be one of the following values:
+  *   @arg I2S_DIR_RX: Rx receive direction.
+  *   @arg I2S_DIR_TX: Tx transmission direction.
+  *   @arg I2S_DIR_TXRX: Tx & Rx bi-direction.
   * @retval none
   */
 void i2s_set_direction(i2s_t *obj, int trx_type)
@@ -370,35 +394,35 @@ void i2s_set_direction(i2s_t *obj, int trx_type)
 }
 
 /**
-  * @brief  Sets i2s channel number, sample rate, word length.
-  * @param  obj: i2s object define in application software.
-  * @param  channel_num: this parameter can be one of the following values:
-  *            @arg CH_STEREO: stereo channel
-  *            @arg CH_MONO: mono channel
-  * @param  rate: this parameter can be one of the following values:
-  *            @arg SR_8KHZ: sample rate is 8kHz
-  *            @arg SR_12KHZ: sample rate is 12kHz
-  *            @arg SR_16KHZ: sample rate is 16kHz
-  *            @arg SR_24KHZ: sample rate is 24kHz
-  *            @arg SR_32KHZ: sample rate is 32kHz
-  *            @arg SR_48KHZ: sample rate is 48kHz
-  *            @arg SR_64KHZ: sample rate is 64kHz
-  *            @arg SR_96KHZ: sample rate is 96kHz
-  *            @arg SR_192KHZ: sample rate is 192kHz
-  *            @arg SR_384KHZ: sample rate is 384kHz
-  *            @arg SR_7p35KHZ: sample rate is 7.35kHz
-  *            @arg SR_11p025KHZ: sample rate is 11.025kHz
-  *            @arg SR_14p7KHZ: sample rate is 14.7kHz
-  *            @arg SR_22p05KHZ: sample rate is 22.05kHz
-  *            @arg SR_29p4KHZ: sample rate is 29.4kHz
-  *            @arg SR_44p1KHZ: sample rate is 44.1kHz
-  *            @arg SR_58p8KHZ: sample rate is 58.8kHz
-  *            @arg SR_88p2KHZ: sample rate is 88.2kHz
-  *            @arg SR_176p4KHZ: sample rate is 176.4kHz
-  * @param  word_len: this parameter can be one of the following values:
-  *            @arg WL_16b: sample bit is 16 bit
-  *            @arg WL_24b: sample bit is 24 bit
-  *            @arg WL_32b: sample bit is 32 bit
+  * @brief  Set I2S channel number, sample rate and word length.
+  * @param  obj: I2S object defined in application software.
+  * @param  channel_num: This parameter can be one of the following values:
+  *   @arg CH_STEREO: Stereo channel.
+  *   @arg CH_MONO: Mono channel.
+  * @param  rate: This parameter can be one of the following values:
+  *   @arg SR_8KHZ: Sample rate is 8kHz.
+  *   @arg SR_12KHZ: Sample rate is 12kHz.
+  *   @arg SR_16KHZ: Sample rate is 16kHz.
+  *   @arg SR_24KHZ: Sample rate is 24kHz.
+  *   @arg SR_32KHZ: Sample rate is 32kHz.
+  *   @arg SR_48KHZ: Sample rate is 48kHz.
+  *   @arg SR_64KHZ: Sample rate is 64kHz.
+  *   @arg SR_96KHZ: Sample rate is 96kHz.
+  *   @arg SR_192KHZ: Sample rate is 192kHz.
+  *   @arg SR_384KHZ: Sample rate is 384kHz.
+  *   @arg SR_7p35KHZ: Sample rate is 7.35kHz
+  *   @arg SR_11p025KHZ: Sample rate is 11.025kHz.
+  *   @arg SR_14p7KHZ: Sample rate is 14.7kHz
+  *   @arg SR_22p05KHZ: Sample rate is 22.05kHz.
+  *   @arg SR_29p4KHZ: Sample rate is 29.4kHz
+  *   @arg SR_44p1KHZ: Sample rate is 44.1kHz.
+  *   @arg SR_58p8KHZ: Sample rate is 58.8kHz
+  *   @arg SR_88p2KHZ: Sample rate is 88.2kHz.
+  *   @arg SR_176p4KHZ: Sample rate is 176.4kHz.
+  * @param  word_len: This parameter can be one of the following values:
+  *   @arg WL_16b: Sample bit is 16 bit.
+  *   @arg WL_24b: Sample bit is 24 bit.
+  *   @arg WL_32b: Sample bit is 32 bit.
   * @retval none
   */
 void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
@@ -407,7 +431,7 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 	obj->sampling_rate = rate;
 	obj->word_length = word_len;
 
-	SP_InitStruct.SP_SelI2S0MonoStereo = channel_num;
+	SP_InitStruct.SP_SelI2SMonoStereo = channel_num;
 	SP_InitStruct.SP_SelWordLen = word_len;
 	SP_InitStruct.SP_SR = rate;
 
@@ -419,8 +443,8 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 }
 
 /**
-  * @brief  Deinitializes the I2S device, include function/interrupt/I2S registers.
-  * @param  obj: i2s object define in application software.
+  * @brief  Deinitialize the I2S device, including function, interrupt and I2S registers.
+  * @param  obj: I2S object defined in application software.
   * @retval none
   */
 void i2s_deinit(i2s_t *obj)
@@ -433,11 +457,9 @@ void i2s_deinit(i2s_t *obj)
 }
 
 /**
-  * @brief  Gets current tx page address.
-  * @param  obj: i2s object define in application software.
-  * @retval address of current tx page or NULL
-  * @note current page own by cpu, return address of current tx page
-  * @note current page own by i2s, return NULL
+  * @brief  Get current tx page address.
+  * @param  obj: I2S object defined in application software.
+  * @return Address of current tx page if it is owned by CPU or NULL if it is owned by I2S.
   */
 int *i2s_get_tx_page(i2s_t *obj)
 {
@@ -455,9 +477,9 @@ int *i2s_get_tx_page(i2s_t *obj)
 }
 
 /**
-  * @brief  Sets current tx page own by i2s.
-  * @param  obj: i2s object define in application software.
-  * @param  pbuf: tx buffer adderss.
+  * @brief  Set current tx page owned by I2S.
+  * @param  obj: I2S object defined in application software.
+  * @param  pbuf: Tx buffer adderss.
   * @retval none
   */
 void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
@@ -468,6 +490,8 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
 	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_usr_cnt]);
 
 	memcpy((void *)ptx_block->tx_addr, pbuf, sp_tx_info.tx_page_size);
+	DCache_CleanInvalidate((u32)ptx_block->tx_addr, sp_tx_info.tx_page_size);
+
 	ptx_block->tx_gdma_own = 1;
 	sp_tx_info.tx_usr_cnt++;
 	if (sp_tx_info.tx_usr_cnt == sp_tx_info.tx_page_num) {
@@ -477,8 +501,8 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
 }
 
 /**
-  * @brief  Sets current rx page own by i2s.
-  * @param  obj: i2s object define in application software.
+  * @brief  Set current rx page owned by I2S.
+  * @param  obj: I2S object defined in application software.
   * @retval none
   */
 void i2s_recv_page(i2s_t *obj)
@@ -497,8 +521,8 @@ void i2s_recv_page(i2s_t *obj)
 }
 
 /**
-  * @brief  Enable i2s interrupt and function.
-  * @param  obj: i2s object define in application software.
+  * @brief  Enable I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
   * @retval none
   */
 void i2s_enable(i2s_t *obj)
@@ -518,8 +542,8 @@ void i2s_enable(i2s_t *obj)
 }
 
 /**
-  * @brief  Disable i2s interrupt and function.
-  * @param  obj: i2s object define in application software.
+  * @brief  Disable I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
   * @retval none
   */
 void i2s_disable(i2s_t *obj)
@@ -558,4 +582,3 @@ void i2s_disable(i2s_t *obj)
   * @}
   */
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
-

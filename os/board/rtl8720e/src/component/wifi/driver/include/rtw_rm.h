@@ -40,6 +40,7 @@ struct rm_clock {
 };
 
 struct rm_priv {
+#ifdef CONFIG_IEEE80211K
 	u8 enable;
 	_queue ev_queue;
 	_queue rm_queue;
@@ -51,10 +52,34 @@ struct rm_priv {
 
 	/* rm debug */
 	void *prm_sel;
+
+#if defined(CONFIG_RTW_WNM)
+	struct roam_nb_info *nb_info;
+#endif
+#endif
+
+#ifdef CONFIG_LAYER2_ROAMING
+	u8 roam_flags;
+	u8 roam_status;
+	u8 to_roam; /* roaming trying times */
+	struct wlan_network *roam_network; /* the target of active roam */
+	u8 roam_rssi_diff_th; /* rssi difference threshold for active scan candidate selection */
+	u8 roam_scan_int;		/* scan interval for active roam (Unit:2 second)*/
+	u16 roam_scanr_exp_ms; /* scan result expire time in ms  for roam */
+	u8 roam_tgt_addr[ETH_ALEN]; /* request to roam to speicific target without other consideration */
+	u8 roam_rssi_threshold;
+	u32 last_roaming;
+	bool need_to_roam;
+	u8 previous_ap[ETH_ALEN];
+#endif
+
+#ifdef CONFIG_IEEE80211R
+	u8	ft_flags;
+	struct ft_roam_info *ft_info;
+#endif
+
 };
 
-void rtw_init_rm(_adapter *padapter);
-void rtw_free_rm_priv(_adapter *padapter);
 void rtw_rm_enable(_adapter *padapter);
 void rtw_rm_disable(_adapter *padapter);
 void rtw_check_peer_rm_cap(_adapter *padapter, struct wlan_network *pnetwork);

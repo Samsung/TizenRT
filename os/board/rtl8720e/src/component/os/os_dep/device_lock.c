@@ -52,7 +52,7 @@ void device_mutex_free(RT_DEV_LOCK_E device)
 void device_mutex_lock(RT_DEV_LOCK_E device)
 {
 	device_mutex_init(device);
-	while (rtw_mutex_get_timeout(&device_mutex[device], 10000) != 1) {
+	while (rtw_mutex_get_timeout(&device_mutex[device], 10000) < 0) {
 		printf("device lock timeout: %d\n", (int)device);
 	}
 }

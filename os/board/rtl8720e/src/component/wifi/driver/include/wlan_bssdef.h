@@ -84,7 +84,6 @@ NDIS_802_11_CONFIGURATION, *PNDIS_802_11_CONFIGURATION;
 
 
 typedef enum _NDIS_802_11_NETWORK_INFRASTRUCTURE {
-	Ndis802_11IBSS,
 	Ndis802_11Infrastructure,
 	Ndis802_11AutoUnknown,
 	Ndis802_11InfrastructureMax,     // Not a real value, defined as upper bound
@@ -321,7 +320,7 @@ typedef struct _mbssid_info {
 
 typedef struct _WLAN_BSSID_EX {
 	u32					Length;
-	NDIS_802_11_MAC_ADDRESS		MacAddress;
+	u8					MacAddress[6];
 #ifdef CONFIG_MBSSID_AX
 	mbssid_info_t mbssid_info;
 #endif

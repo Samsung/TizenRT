@@ -14,7 +14,15 @@ extern "C"
 #endif
 
 /* ------------------------------- Data Types ------------------------------- */
-/**  @brief  APP's Bluetooth BR/EDR link connection database */
+/**
+ * @struct    rtk_bt_avrcp_absolute_volume_set_t
+ * @brief     Bluetooth AVRCP absolute volume set.
+ */
+typedef struct {
+	uint8_t bd_addr[6];
+	uint8_t volume;
+} rtk_bt_avrcp_absolute_volume_set_t;
+
 /**
  * @struct    rtk_bt_avrcp_volume_t
  * @brief     Bluetooth AVRCP volume status.

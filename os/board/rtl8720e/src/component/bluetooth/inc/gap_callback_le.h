@@ -390,6 +390,9 @@ extern "C"
 #if F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT
 #define GAP_MSG_LE_READ_REMOTE_VERSION              0x1B //!<Response msg type for le_read_remote_version
 #endif
+#if F_BT_LE_5_0_AE_ADV_SUPPORT
+#define GAP_MSG_LE_ADV_SET_CONN_OWN_ADDR_TYPE_INFO  0x1C //!<Information of own address type for advertiser using adv set
+#endif
 
 //gap_bond_le.h
 #define GAP_MSG_LE_BOND_MODIFY_INFO                 0x20 //!<Notification msg type for bond modify
@@ -399,6 +402,10 @@ extern "C"
 #endif
 #if F_BT_LE_ATT_SIGNED_WRITE_SUPPORT
 #define GAP_MSG_LE_GATT_SIGNED_STATUS_INFO          0x23 //!<Notification msg type for le signed status information
+#endif
+#if F_BT_LE_BOND_KEY_REQ_SUPPORT
+/* The type of callback will only be used when gap_param_key_manager equals 2 and no matching key entry is found*/
+#define GAP_MSG_LE_BOND_KEY_REQ                     0x24 //!<Notification msg type for le bond key request information
 #endif
 
 //gap_scan.h
@@ -431,7 +438,6 @@ extern "C"
 #define GAP_MSG_LE_DTM_TRANSMITTER_TEST_V4          0x77 //!<Response msg type for le_dtm_transmitter_test_v4
 #endif
 #endif
-
 #if F_BT_LE_5_0_AE_SCAN_SUPPORT
 //gap_ext_scan.h
 #define GAP_MSG_LE_EXT_ADV_REPORT_INFO                      0x50 //!<Notification msg type for le extended adv report
@@ -629,6 +635,17 @@ typedef struct
 } T_LE_READ_REMOTE_VERSION_RSP;
 #endif
 
+#if F_BT_LE_5_0_AE_ADV_SUPPORT
+/** @brief  Information of own address type for advertiser using adv set.*/
+typedef struct
+{
+    uint8_t         conn_id;
+    uint8_t         adv_handle;
+    uint8_t         own_address_type;
+    uint16_t        cause;
+} T_LE_ADV_SET_CONN_OWN_ADDR_TYPE_INFO;
+#endif
+
 //gap_bond_le.h
 /** @brief  Bond information modify type*/
 typedef enum
@@ -673,6 +690,17 @@ typedef struct
     uint32_t        local_sign_count;
     uint32_t        remote_sign_count;
 } T_LE_GATT_SIGNED_STATUS_INFO;
+#endif
+
+#if F_BT_LE_BOND_KEY_REQ_SUPPORT
+typedef struct
+{
+    uint8_t                     bd_addr[6];
+    T_GAP_REMOTE_ADDR_TYPE      remote_addr_type;
+    T_GAP_KEY_TYPE              key_type;           /**< Key type. */
+    uint8_t                     key_len;            /**< Provided by APP. */
+    uint8_t                     link_key[28];       /**< Provided by APP. */
+} T_LE_BOND_KEY_REQ;
 #endif
 
 #if F_BT_LE_4_0_DTM_SUPPORT
@@ -1042,6 +1070,9 @@ typedef union
 #if F_BT_LE_READ_REMOTE_VERSION_INFO_SUPPORT
     T_LE_READ_REMOTE_VERSION_RSP             *p_le_read_remote_version_rsp;
 #endif
+#if F_BT_LE_5_0_AE_ADV_SUPPORT
+    T_LE_ADV_SET_CONN_OWN_ADDR_TYPE_INFO     *p_le_adv_set_conn_own_addr_type_info;
+#endif
 //gap_bond_le.h
     T_LE_BOND_MODIFY_INFO                    *p_le_bond_modify_info;
 #if F_BT_LE_4_2_KEY_PRESS_SUPPORT
@@ -1050,6 +1081,9 @@ typedef union
 #endif
 #if F_BT_LE_ATT_SIGNED_WRITE_SUPPORT
     T_LE_GATT_SIGNED_STATUS_INFO             *p_le_gatt_signed_status_info;
+#endif
+#if F_BT_LE_BOND_KEY_REQ_SUPPORT
+    T_LE_BOND_KEY_REQ                        *p_le_bond_key_req;
 #endif
 //gap_scan.h
 #if F_BT_LE_GAP_SCAN_SUPPORT

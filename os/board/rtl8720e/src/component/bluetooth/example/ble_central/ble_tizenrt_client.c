@@ -30,6 +30,7 @@ rtk_bt_gattc_write_ind_t *ble_write_request_result = NULL;
 rtk_bt_gattc_write_ind_t *ble_write_no_rsp_result = NULL;
 rtk_bt_le_conn_ind_t *ble_tizenrt_conn_ind = NULL;
 bool is_secured = false;
+uint16_t scan_timeout = 0;
 static uint16_t general_profile_id = GCS_CLIENT_PROFILE_ID;
 
 trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm)
@@ -173,7 +174,7 @@ void scan_stop_cb(void *arg)
     if (RTK_BT_OK != rtk_bt_le_gap_stop_scan())
     {
  	   debug_print("stop scan failed! \n");
-       return TRBLE_FAIL;
+       return;
     }
     rtk_bt_le_gap_dev_state_t new_state;
     do {
@@ -321,8 +322,9 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     conn_param.conn_interval_max = conn_info->conn_interval;
 	conn_param.conn_interval_min = conn_info->conn_interval;
     conn_param.conn_latency = conn_info->slave_latency;
-    /* Defines the timeout multiplier as a multiple of 10ms. */
-    conn_param.timeout = conn_info->scan_timeout / 10;
+    conn_param.supv_timeout = 1000;
+	conn_param.scan_timeout = conn_info->scan_timeout / 10;
+	scan_timeout = conn_param.scan_timeout;
 	conn_param.own_addr_type = 0;
 	conn_param.scan_interval = 0x60;
 	conn_param.scan_window = 0x30;
@@ -416,7 +418,7 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
     memcpy(out_connected_device->conn_info.addr.mac, conn_info.remote.addr_val, GAP_BD_ADDR_LEN);
 
 	for(int i = 0; i < bond_size; i++){
-		if(!memcmp(conn_info.remote.addr_val, bond_info[i].addr.addr_val, GAP_BD_ADDR_LEN)){
+		if(!memcmp(conn_info.remote.addr_val, bond_info[i].remote_addr.addr_val, GAP_BD_ADDR_LEN)){
 			is_bonded = true;
 			break;
 		}		
@@ -469,8 +471,8 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
 
 	for(int i = 0; i < (device_count); i++)
 	{
-		if(!memcmp(bond_info[i].addr.addr_val, addr->mac, TRBLE_BD_ADDR_MAX_LEN)){
-			del_addr.type = bond_info[i].addr.type;
+		if(!memcmp(bond_info[i].remote_addr.addr_val, addr->mac, TRBLE_BD_ADDR_MAX_LEN)){
+			del_addr.type = bond_info[i].remote_addr.type;
 			bond_addr_found = true;
 			break;
 		}
@@ -779,12 +781,19 @@ trble_result_e rtw_ble_client_operation_enable_notification(trble_operation_hand
         return TRBLE_FAIL;
     }
 
-    uint8_t val[2] = {0x1, 0x0};
-    trble_data in_data;
-    in_data.length = 2;
-    in_data.data = val;
+    rtk_bt_gattc_update_cccd_param_t p_update_cccd_param = {0};
+	p_update_cccd_param.conn_handle = handle->conn_handle;
+	p_update_cccd_param.profile_id = general_profile_id;
+	p_update_cccd_param.cccd_handle = handle->attr_handle;
+	p_update_cccd_param.char_val_handle = handle->attr_handle - 1;
+	p_update_cccd_param.bnotify = true;
 
-    return rtw_ble_client_operation_write(handle, &in_data);
+	if (RTK_BT_OK != rtk_bt_gattc_enable_notify_or_indicate(&p_update_cccd_param))
+    {
+        debug_print("enable notify failed! \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_deinit(void)

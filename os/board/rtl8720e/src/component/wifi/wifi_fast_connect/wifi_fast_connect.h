@@ -40,5 +40,7 @@ extern write_fast_connect_info_ptr p_store_fast_connect_info;
 
 int check_is_the_same_ap(void);
 void wifi_fast_connect_enable(unsigned char enable);
+void wifi_fast_connect_load_fast_dhcp(void);
+int wifi_check_fast_connect_data(struct wlan_fast_reconnect *data);
 #endif
 #endif //#ifndef __WIFI_FAST_CONNECT__

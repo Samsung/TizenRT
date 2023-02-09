@@ -59,7 +59,8 @@ extern "C" {
 typedef uint8_t T_CLIENT_ID; //!< Client ID
 
 /** @brief  Discovery state during discovery procedure.*/
-typedef enum {
+typedef enum
+{
 	DISC_STATE_IDLE,
 	DISC_STATE_SRV,
 	DISC_STATE_SRV_DONE,
@@ -75,7 +76,8 @@ typedef enum {
 } T_DISCOVERY_STATE;
 
 /** @brief  Discovery result type*/
-typedef enum {
+typedef enum
+{
 	DISC_RESULT_ALL_SRV_UUID16,
 	DISC_RESULT_ALL_SRV_UUID128,
 	DISC_RESULT_SRV_DATA,
@@ -90,20 +92,23 @@ typedef enum {
 } T_DISCOVERY_RESULT_TYPE;
 
 /** @brief  GATT write type*/
-typedef enum {
+typedef enum
+{
 	GATT_WRITE_TYPE_REQ = 0x01,    /**<  ATT "Write Request"  */
 	GATT_WRITE_TYPE_CMD = 0x02,           /**<  ATT "Write Command"  */
 	GATT_WRITE_TYPE_SIGNED_CMD = 0x04     /**<  ATT "Signed Write Command"  */
 } T_GATT_WRITE_TYPE;
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;   /**< The handle of the last attribute
     within the service definition */
 	uint16_t    uuid16;             /**< 16 bit UUID */
 } T_GATT_SERVICE_ELEM16;
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;
 	/**< The handle of the last attribute within the service definition */
@@ -111,14 +116,16 @@ typedef struct {
 } T_GATT_SERVICE_ELEM128;
 
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;
 	/**< The handle of the last attribute within the service definition */
 } T_GATT_SERVICE_BY_UUID_ELEM;
 
 /** @brief  Characteristic declaration for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;   /**<  Attribute handle */
 	uint16_t    properties;    /**< Characteristic Properties, high nibble is reserved */
 	uint16_t    value_handle;  /**<  Characteristic Value Handle */
@@ -126,7 +133,8 @@ typedef struct {
 } T_GATT_CHARACT_ELEM16;
 
 /** @brief  Characteristic declaration for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;    /**<  Attribute handle */
 	uint16_t    properties;     /**< Characteristic Properties, high nibble is reserved */
 	uint16_t    value_handle;   /**<  Characteristic Value Handle */
@@ -134,19 +142,22 @@ typedef struct {
 } T_GATT_CHARACT_ELEM128;
 
 /** @brief  Characteristic descriptor for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    handle;         /**< Attribute handle */
 	uint16_t    uuid16;         /**< 16 bit UUID */
 } T_GATT_CHARACT_DESC_ELEM16;
 
 /** @brief  Characteristic descriptor for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    handle;         /**< Attribute handle */
 	uint8_t     uuid128[16];    /**< 128 bit UUID */
 } T_GATT_CHARACT_DESC_ELEM128;
 
 /** @brief  Relationship discovery for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;
 	uint16_t    att_handle;
 	uint16_t    end_group_handle;
@@ -154,7 +165,8 @@ typedef struct {
 } T_GATT_RELATION_ELEM16;
 
 /** @brief  Relationship discovery for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;
 	uint16_t    att_handle;
 	uint16_t    end_group_handle;
@@ -162,7 +174,8 @@ typedef struct {
 } T_GATT_RELATION_ELEM128;
 
 /** @brief  Discovery result data*/
-typedef union {
+typedef union
+{
 	T_GATT_SERVICE_ELEM16        *p_srv_uuid16_disc_data;
 	T_GATT_SERVICE_ELEM128       *p_srv_uuid128_disc_data;
 	T_GATT_SERVICE_BY_UUID_ELEM  *p_srv_disc_data;
@@ -181,7 +194,8 @@ typedef union {
   *
   * Discovery procedure related data to inform application
   */
-typedef struct {
+typedef struct
+{
 	T_DISCOVERY_STATE disc_state;
 } T_DISC_STATE_CB_DATA;
 
@@ -189,19 +203,22 @@ typedef struct {
   *
   * Discovery result data will be sent to upper through the callback
   */
-typedef struct {
+typedef struct
+{
 	T_DISCOVERY_RESULT_TYPE result_type;
 	T_DISCOVERY_RESULT_DATA result_data;
 } T_DISC_RESULT_CB_DATA;
 
-typedef struct {
+typedef struct
+{
 	uint16_t handle;
 	uint16_t read_len;
 	uint16_t total_len;
 	uint8_t *p_data;
 } T_READ_MULTI_DATA;
 
-typedef struct {
+typedef struct
+{
 	T_CLIENT_ID client_id;
 	uint16_t cause;
 	uint16_t num_handle;
@@ -212,7 +229,8 @@ typedef struct {
   *
   * Message data type, when data sent to app directly
   */
-typedef enum {
+typedef enum
+{
 	CLIENT_APP_CB_TYPE_DISC_STATE,
 	CLIENT_APP_CB_TYPE_DISC_RESULT,
 	CLIENT_APP_CB_TYPE_READ_MULTI_RESULT
@@ -222,7 +240,8 @@ typedef enum {
   *
   * Client received data from server, when no specific client registered, will be sent to app directly
   */
-typedef union {
+typedef union
+{
 	T_DISC_STATE_CB_DATA   disc_state_data;
 	T_DISC_RESULT_CB_DATA  disc_result_data;
 	T_READ_MULTI_RESULT_CB_DATA  read_multi_result_data;
@@ -232,7 +251,8 @@ typedef union {
   *
   * Callback data sent to application directly from client, include type and content
   */
-typedef struct {
+typedef struct
+{
 	T_CLIENT_CB_TYPE     cb_type;
 	T_CLIENT_CB_DATA     cb_content;
 } T_CLIENT_APP_CB_DATA;
@@ -295,6 +315,7 @@ bool client_cfg_use_ext_api(bool use_ext);
 */
 #endif
 
+
 #ifdef  __cplusplus
 }
 #endif      /*  __cplusplus */
@@ -302,3 +323,4 @@ bool client_cfg_use_ext_api(bool use_ext);
 #endif
 
 #endif /* PROFILE_CLIENT_DEF_H */
+

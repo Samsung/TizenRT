@@ -1,7 +1,7 @@
 ﻿#ifndef _AMEBA_COMP_H_
 #define _AMEBA_COMP_H_
 
-/** @addtogroup COMP
+/** @addtogroup ADC
   * @verbatim
   *****************************************************************************************
   * Introduction
@@ -44,7 +44,7 @@
   * @{
   */
 
-/** @defgroup COMP
+/** @addtogroup ADC
   * @brief Comparator driver modules
   * @{
   */
@@ -540,7 +540,6 @@ _LONG_CALL_ void CMP_INTConfig(u32 Cmp_IT, u32 NewState);
 _LONG_CALL_ u32 CMP_GetISR(void);
 _LONG_CALL_ void CMP_INTClearPendingBit(u32 Cmp_IT);
 _LONG_CALL_ u32 CMP_GetCompStatus(u8 channel);
-_LONG_CALL_ u32 CMP_GetLastChan(void);
 _LONG_CALL_ void CMP_ResetCSwList(void);
 _LONG_CALL_ void CMP_AutoShutCmd(u32 NewState);
 _LONG_CALL_ void CMP_AutoCSwCmd(u32 NewState);

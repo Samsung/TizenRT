@@ -15,7 +15,6 @@
 #ifndef __HAL_DM_H__
 #define __HAL_DM_H__
 
-//#define adapter_to_phydm(adapter) (&(GET_HAL_DATA(adapter)->odmpriv))
 //#define dvobj_to_phydm(dvobj) adapter_to_phydm(dvobj_get_primary_adapter(dvobj))
 
 void rtw_hal_turbo_edca(_adapter *adapter);

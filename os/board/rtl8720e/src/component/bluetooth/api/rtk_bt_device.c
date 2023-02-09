@@ -12,6 +12,7 @@
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 #include <bt_ipc_host_api.h>
 #include <bt_ipc_profile_config.h>
+#include <bt_ipc_parameter_conversion.h>
 #endif
 
 static bool b_bt_enabled = false;
@@ -66,6 +67,9 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 										(uint8_t *)app_default_conf, sizeof(rtk_bt_app_conf_t));
 		if (ret[0] != RTK_BT_OK) {
 			printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		} else {
+			/* check whether need memcpy return value */
+			rtk_bt_device_copy_act_ret_param(RTK_BT_DEVICE_IPC_ACT_BT_ENABLE, (void*)app_default_conf, &ret[1]);
 		}
 		err = (uint16_t)ret[0];
 		osif_mem_free(ret);

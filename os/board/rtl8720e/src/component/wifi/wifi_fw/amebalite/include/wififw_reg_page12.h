@@ -356,7 +356,7 @@
 #define REG_DDMA_CHSTATUS                            0x12E8
 //#define REG_                                         0x12EC
 #define REG_DDMA_CHKSUM                              0x12F0
-//#define REG_                                         0x12F4
+//#define REG_DUMMY                                    0x12F4
 //#define REG_                                         0x12F8
 #define REG_DDMA_MONITOR                             0x12FC
 

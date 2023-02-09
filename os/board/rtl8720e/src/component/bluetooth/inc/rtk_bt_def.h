@@ -60,7 +60,7 @@ enum rtk_bt_err_common {
 	RTK_BT_ERR_ALREADY_DONE         =   0x0D,   /*!< 13 */
 	RTK_BT_ERR_ALREADY_IN_PROGRESS  =   0x0E,   /*!< 14 */
 	RTK_BT_ERR_POINTER_INVALID      =   0x0F,   /*!< 15 */
-	RTK_BT_ERR_IO                   =   0x10,   /*!< 16 */
+	RTK_BT_ERR_NO_CREDITS           =   0x10,   /*!< 16 */
 	RTK_BT_ERR_NO_BUFS              =   0x11,   /*!< 17 */
 	RTK_BT_ERR_NO_ENTRY             =   0x12,   /*!< 18 */
 	RTK_BT_ERR_NO_RESOURCE          =   0x13,   /*!< 19 */
@@ -76,6 +76,8 @@ enum rtk_bt_err_common {
 	RTK_BT_ERR_SYNC_TIMEOUT         =   0x1D,   /*!< 29 */
 	RTK_BT_ERR_LOWER_STACK_API      =   0x1E,   /*!< 30 */
 	RTK_BT_ERR_LOWER_STACK_CB       =   0x1F,   /*!< 31 */
+	RTK_BT_ERR_CREATE_CONN_TIMEOUT  =   0x20,   /*!< 32 */
+	RTK_BT_ERR_NO_CASE_ELEMENT      =   0x21,   /*!< 33 */
 	RTK_BT_ERR_UNKNOWN              =   0xFF,   /*!< 255 */
 };
 

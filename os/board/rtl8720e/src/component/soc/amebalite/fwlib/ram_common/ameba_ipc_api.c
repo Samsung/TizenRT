@@ -120,8 +120,8 @@ void ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
 
 	PIPC_MSG_STRUCT IPC_MSG = (PIPC_MSG_STRUCT)(void *)__kr4_ipc_memory_start__;
-	u32 msg_idx = 16 * ((IPC_Dir >> 4) & 0xF) + 8 * (IPC_Dir & 0xF) + IPC_ChNum;
-	IPC_TypeDef *IPCx = NULL;
+	u32 msg_idx = IPC_TX_CHANNEL_NUM * IPC_TX_CHANNEL_SWITCH(IPC_Dir) + IPC_TX0_CHANNEL_NUM * IPC_TX0_CHANNEL_SWITCH(IPC_Dir) + IPC_ChNum;
+	IPC_TypeDef *IPCx = 0;
 
 	switch (IPC_Dir) {
 	case IPC_KR4_TO_KM4:
@@ -167,10 +167,10 @@ void ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 {
 	PIPC_MSG_STRUCT IPC_MSG = NULL;
-	u32 msg_idx = 16 * ((IPC_Dir >> 4) & 0xF) + 8 * (IPC_Dir & 0xF) + IPC_ChNum;
+	u32 msg_idx = IPC_TX_CHANNEL_NUM * IPC_TX_CHANNEL_SWITCH(IPC_Dir) + IPC_TX0_CHANNEL_NUM * IPC_TX0_CHANNEL_SWITCH(IPC_Dir) + IPC_ChNum;
 
-	DCache_Invalidate((u32)__kr4_ipc_memory_start__, 3 * 16 * sizeof(IPC_MSG_STRUCT));
 	IPC_MSG = (PIPC_MSG_STRUCT)(void *)__kr4_ipc_memory_start__;
+	DCache_Invalidate((u32)&IPC_MSG[msg_idx], sizeof(IPC_MSG_STRUCT));
 
 	return &IPC_MSG[msg_idx];
 }

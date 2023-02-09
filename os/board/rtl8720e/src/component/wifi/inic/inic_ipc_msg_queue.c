@@ -49,7 +49,6 @@ struct ipc_msg_q_priv {
 static struct ipc_msg_q_priv g_ipc_msg_q_priv __attribute__((aligned(64)));
 #ifdef IPC_DIR_MSG_TX
 inic_ipc_ex_msg_t g_inic_ipc_ex_msg __attribute__((aligned(64)));
-IPC_MSG_64_STRUCT g_inic_ipc_msg __attribute__((aligned(64)));
 #else
 static inic_ipc_ex_msg_t g_inic_ipc_ex_msg = {0};
 #endif
@@ -176,7 +175,6 @@ void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *))
 
 	rtw_memset(&g_ipc_msg_q_priv, 0, sizeof(struct ipc_msg_q_priv));
 	rtw_memset(&g_inic_ipc_ex_msg, 0, sizeof(inic_ipc_ex_msg_t));
-	rtw_memset(&g_inic_ipc_msg, 0, sizeof(IPC_MSG_STRUCT));
 
 	/* initialize queue. */
 	rtw_init_queue(&(g_ipc_msg_q_priv.msg_queue));
@@ -289,13 +287,9 @@ u8 inic_ipc_msg_get_queue_status(void)
  */
 void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 {
+	IPC_MSG_STRUCT g_inic_ipc_msg;
+
 	u32 cnt = 100000;
-	/* Get the warning of queue's depth not enough in peer, delay send the
-	 * the next message.
-	 */
-	if (p_ipc_msg->msg_len == IPC_WIFI_MSG_MEMORY_NOT_ENOUGH) {
-		rtw_mdelay_os(5);
-	}
 
 	rtw_down_sema(&g_ipc_msg_q_priv.msg_send_sema);
 
@@ -309,6 +303,12 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 			break;
 		}
 	}
+	/* Get the warning of queue's depth not enough after recv MSG_READ_DONE,
+	delay send the next message */
+	if (g_inic_ipc_ex_msg.msg_len == IPC_WIFI_MSG_MEMORY_NOT_ENOUGH) {
+		rtw_mdelay_os(1);
+	}
+
 	/* Send the new message after last one acknowledgement */
 	g_inic_ipc_ex_msg.event_num = p_ipc_msg->event_num;
 	g_inic_ipc_ex_msg.msg_addr = p_ipc_msg->msg_addr;
@@ -319,7 +319,6 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 	g_inic_ipc_msg.msg_type = IPC_USER_POINT;
 	g_inic_ipc_msg.msg = (u32)&g_inic_ipc_ex_msg;
 	g_inic_ipc_msg.msg_len = sizeof(inic_ipc_ex_msg_t);
-	DCache_Clean((u32)&g_inic_ipc_msg, sizeof(IPC_MSG_64_STRUCT));
 	ipc_send_message(IPC_DIR_MSG_TX, IPC_INT_CHAN_WIFI_TRX_TRAN, \
 					 (PIPC_MSG_STRUCT)&g_inic_ipc_msg);
 #else

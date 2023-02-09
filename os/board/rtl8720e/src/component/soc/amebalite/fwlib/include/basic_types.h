@@ -54,6 +54,14 @@
 #define NULL 0
 #endif
 
+#ifndef MIN
+#define MIN(x, y)			(((x) < (y)) ? (x) : (y))
+#endif
+
+#ifndef MAX
+#define MAX(x, y)			(((x) > (y)) ? (x) : (y))
+#endif
+
 #ifdef __GNUC__
 #define __weak                  __attribute__((weak))
 #define likely(x)               __builtin_expect ((x), 1)
@@ -163,6 +171,7 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 #endif
 
 
+#ifndef BIT0
 #define BIT0	0x0001
 #define BIT1	0x0002
 #define BIT2	0x0004
@@ -195,6 +204,7 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 #define BIT29	0x20000000
 #define BIT30	0x40000000
 #define BIT31	0x80000000
+#endif
 
 #define BIT_(__n)       (1U<<(__n))
 
@@ -277,22 +287,33 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 // Byte Swapping routine.
 //
 #define EF1Byte	(u8)
-#define EF2Byte 	le16_to_cpu
-#define EF4Byte	le32_to_cpu
+#define EF2Byte (u16)
+#define EF4Byte	(u32)
 
 //
 // Read LE format data from memory
 //
-#define ReadEF1Byte(_ptr)		EF1Byte(*((u8 *)(_ptr)))
-#define ReadEF2Byte(_ptr)		EF2Byte(*((u16 *)(_ptr)))
-#define ReadEF4Byte(_ptr)		EF4Byte(*((u32 *)(_ptr)))
-
+#if defined (RSICV_CORE_KR4)
+#define ReadEF1Byte(_ptr)			EF1Byte(*((u8 *)(_ptr)))
+#define ReadEF2Byte(_ptr)			(ReadEF1Byte(_ptr) | (ReadEF1Byte((u32)(_ptr) + 1) << 8))
+#define ReadEF4Byte(_ptr)			(ReadEF2Byte(_ptr) | (ReadEF2Byte((u32)(_ptr) + 2) << 16))
+#else
+#define ReadEF1Byte(_ptr)			EF1Byte(*((u8 *)(_ptr)))
+#define ReadEF2Byte(_ptr)			EF2Byte(*((u16 *)(_ptr)))
+#define ReadEF4Byte(_ptr)			EF4Byte(*((u32 *)(_ptr)))
+#endif
 //
 // Write LE data to memory
 //
+#if defined (RSICV_CORE_KR4)
+#define WriteEF1Byte(_ptr, _val)	(*((u8 *)(_ptr)))=EF1Byte(_val)
+#define WriteEF2Byte(_ptr, _val)	do {WriteEF1Byte(_ptr, _val); WriteEF1Byte(((u32)(_ptr) + 1), ((_val) >> 8));} while(0)
+#define WriteEF4Byte(_ptr, _val)	do {WriteEF2Byte(_ptr, _val); WriteEF2Byte(((u32)(_ptr) + 2), ((_val) >> 16));} while(0)
+#else
 #define WriteEF1Byte(_ptr, _val)	(*((u8 *)(_ptr)))=EF1Byte(_val)
 #define WriteEF2Byte(_ptr, _val)	(*((u16 *)(_ptr)))=EF2Byte(_val)
 #define WriteEF4Byte(_ptr, _val)	(*((u32 *)(_ptr)))=EF4Byte(_val)
+#endif
 
 //
 //	Example:
@@ -317,7 +338,7 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 //		4-byte pointer in litten-endian system.
 //
 #define LE_P4BYTE_TO_HOST_4BYTE(__pStart) \
-	(EF4Byte(*((u32 *)(__pStart))))
+	ReadEF4Byte(__pStart)
 
 //
 //	Description:
@@ -348,12 +369,10 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 //		Set subfield of little-endian 4-byte value to specified value.
 //
 #define SET_BITS_TO_LE_4BYTE(__pStart, __BitOffset, __BitLen, __Value) \
-	*((u32 *)(__pStart)) = \
-		EF4Byte( \
-			LE_BITS_CLEARED_TO_4BYTE(__pStart, __BitOffset, __BitLen) \
-			| \
-			( (((u32)__Value) & BIT_LEN_MASK_32(__BitLen)) << (__BitOffset) ) \
-		);
+	WriteEF4Byte(__pStart, \
+		EF4Byte(LE_BITS_CLEARED_TO_4BYTE(__pStart, __BitOffset, __BitLen) \
+			| ( (((u32)(__Value)) & BIT_LEN_MASK_32(__BitLen)) << (__BitOffset) ) ) \
+			)
 
 
 #define BIT_LEN_MASK_16(__BitLen) \
@@ -363,7 +382,7 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 	(BIT_LEN_MASK_16(__BitLen) << (__BitOffset))
 
 #define LE_P2BYTE_TO_HOST_2BYTE(__pStart) \
-	(EF2Byte(*((u16 *)(__pStart))))
+	ReadEF2Byte(__pStart)
 
 #define LE_BITS_TO_2BYTE(__pStart, __BitOffset, __BitLen) \
 	( \
@@ -380,12 +399,10 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 	)
 
 #define SET_BITS_TO_LE_2BYTE(__pStart, __BitOffset, __BitLen, __Value) \
-	*((u16 *)(__pStart)) = \
-		EF2Byte( \
-			LE_BITS_CLEARED_TO_2BYTE(__pStart, __BitOffset, __BitLen) \
-			| \
-			( (((u16)__Value) & BIT_LEN_MASK_16(__BitLen)) << (__BitOffset) ) \
-		);
+	WriteEF2Byte(__pStart, \
+		EF2Byte(LE_BITS_CLEARED_TO_2BYTE(__pStart, __BitOffset, __BitLen) \
+			| ( (((u16)__Value) & BIT_LEN_MASK_16(__BitLen)) << (__BitOffset) )) \
+		)
 
 #define BIT_LEN_MASK_8(__BitLen) \
 		(0xFF >> (8 - (__BitLen)))

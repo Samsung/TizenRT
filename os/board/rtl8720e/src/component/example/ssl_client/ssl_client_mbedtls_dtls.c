@@ -75,7 +75,7 @@ static void ssl_client(void *param)
 	/*
 	 * 1. Start the connection
 	 */
-	printf("\n\r  . Connecting to tcp/%s/%s...", server_host, SERVER_PORT);
+	printf("\n\r  . Connecting to udp/%s/%s...", server_host, SERVER_PORT);
 
 	mbedtls_net_init(&server_fd);
 

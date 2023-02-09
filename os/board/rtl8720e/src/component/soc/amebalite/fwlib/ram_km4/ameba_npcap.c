@@ -53,7 +53,7 @@ void kr4_power_gate(void)
 		}
 	}
 
-	RCC_PeriphClockCmd(APBPeriph_KR4, APBPeriph_KR4_CLOCK, DISABLE);
+	RCC_PeriphClockCmd(APBPeriph_NULL, APBPeriph_KR4_CLOCK, DISABLE);
 
 	/*unmask kr4 irqs*/
 	Rtemp = HAL_READ32(PMC_BASE, SYSPMC_CTRL);
@@ -161,7 +161,7 @@ u32 kr4_suspend(u32 type)
 	u32 ret = _SUCCESS;
 	SLEEP_ParamDef *sleep_param;
 	u32 duration = 0;
-	u32 sleep_wevent_config_val[2] = {0};
+	RRAM_TypeDef *rram = RRAM_DEV;
 
 	sleep_param = (SLEEP_ParamDef *)ipc_get_message(IPC_KR4_TO_KM4, IPC_R2M_TICKLESS_INDICATION);
 
@@ -182,14 +182,9 @@ u32 kr4_suspend(u32 type)
 	/*clean np wake pending interrupt*/
 	NVIC_ClearPendingIRQ(NP_WAKE_IRQ);
 
-	sleep_wevent_config_val[1] = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
-	sleep_wevent_config_val[0] = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
-
-	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
-		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "register np_wake_irq\n");
-		InterruptRegister(NPWAP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
-		InterruptEn(NP_WAKE_IRQ, INT_PRI5);
-	}
+	DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "register np_wake_irq\n");
+	InterruptRegister(NPWAP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
+	InterruptEn(NP_WAKE_IRQ, INT_PRI5);
 
 	if (type == SLEEP_CG) {
 		kr4_clock_gate();
@@ -197,20 +192,35 @@ u32 kr4_suspend(u32 type)
 		kr4_power_gate();
 	}
 
-	SOCPS_NP_suspend_config(type);
+	if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_AP2NP) {
+		if (!dsp_status_on()) {
+			SOCPS_AP_suspend_config(type, ENABLE);
+		}
+	}
 
 	return ret;
 }
 
 void kr4_resume(void)
 {
+	RRAM_TypeDef *rram = RRAM_DEV;
+
 	if (kr4_status_on()) {
 		return;
 	}
 
 	pmu_acquire_wakelock(PMU_KR4_RUN);
+	pmu_acquire_wakelock(PMU_OS);
 
-	SOCPS_NP_resume_config(kr4_sleep_type);
+	if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_AP2NP) {
+		if (!dsp_status_on()) {
+			SOCPS_AP_resume_config(kr4_sleep_type, ENABLE);
+		}
+#if defined (CONFIG_FW_DRIVER_COEXIST) && CONFIG_FW_DRIVER_COEXIST
+		//request FW leave 32k and wakeup driver, by rpwm int
+		rtl8720e_system_resume_wlan();
+#endif
+	}
 
 	if (kr4_sleep_type == SLEEP_CG) {
 		kr4_clock_on();
@@ -225,7 +235,6 @@ void kr4_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqSta
 	UNUSED(Data);
 	UNUSED(IrqStatus);
 	UNUSED(ChanNum);
-	u32 Rtemp;
 	SLEEP_ParamDef *psleep_param;
 
 	DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "kr4_tickless_ipc_int\n");
@@ -245,21 +254,9 @@ void kr4_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqSta
 
 	kr4_sleep_type = psleep_param->sleep_type;
 
-	switch (psleep_param->sleep_type) {
-	case SLEEP_PG:
-		if (_SUCCESS == kr4_suspend(SLEEP_PG)) {
-			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG);
-			Rtemp |= LSYS_BIT_BOOT_WAKE_FROM_PS_LS;
-			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, Rtemp);
-		}
-		break;
-	case SLEEP_CG:
-		if (_SUCCESS == kr4_suspend(SLEEP_CG)) {
-			pmu_set_sysactive_timeFromISR(2);
-		}
-		break;
-
-	default:
+	if ((psleep_param->sleep_type == SLEEP_PG) || (psleep_param->sleep_type == SLEEP_CG)) {
+		kr4_suspend(psleep_param->sleep_type);
+	} else {
 		DBG_8195A("unknow sleep type\n");
 	}
 

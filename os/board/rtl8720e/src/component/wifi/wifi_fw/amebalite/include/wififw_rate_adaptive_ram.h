@@ -42,7 +42,6 @@
 #endif
 
 #define RA_Pending_Code 	0
-
 /*@--------------------------[Enum]------------------------------------------*/
 
 
@@ -815,11 +814,11 @@ typedef struct TPBASE_RA_PARM {
 	u8 base_gi_ltf;
 	u32 BaseTP;
 	u32 CurrentTP;
-	u8  try_down_gi_ltf[2];
+	u8  try_down_gi_ltf[3];
 	u8  try_up_gi_ltf[2];
-	u8 trydown_rateidxtable[2];
+	u8 trydown_rateidxtable[3];
 	u8 tryup_rateidxtable[2];
-	u32 trydown_rateidxTPtable[2];
+	u32 trydown_rateidxTPtable[3];
 	u32 tryup_rateidxTPtable[2];
 	u8 fewpacket_trydec_cnt;
 	u8 fewpacket_cnt;
@@ -906,7 +905,6 @@ fw_fixed_ctrl_info_rate(
  *
  * @param macid
  * @param start_rssi
- * @param bw_idx
  * @return Please Place Description here.
  * @retval extern
  */
@@ -915,8 +913,7 @@ fw_fixed_ctrl_info_rate(
 extern void
 Halbb_start_rate(
 	u8 macid,
-	u8 start_rssi,
-	u8 bw_idx
+	u8 start_rssi
 );
 #if 0
 /**
@@ -980,29 +977,6 @@ get_tx_statistics(
 //---------------------------------------------------------------------
 // Others
 //---------------------------------------------------------------------
-/**
- * @brief rate_idx_to_rate_field
- *
- * @param mode
- * @param rate_idx
- * @return Please Place Description here.
- * @retval extern
- */
-
-extern u8
-rate_idx_to_rate_field(
-	u8 mode,
-	u8 rate_idx
-);
-
-/**
- * @brief rate_idx_to_rate_field
- *
- * @param mode
- * @param rate_idx
- * @return Please Place Description here.
- * @retval extern
- */
 
 extern void
 rate_idx_to_mcs_ss(

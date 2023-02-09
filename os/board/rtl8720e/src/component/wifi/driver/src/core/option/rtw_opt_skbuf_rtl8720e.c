@@ -10,9 +10,9 @@
 #define MAX_LOCAL_SKB_NUM    (MAX_SKB_BUF_NUM + 2)
 #define RX_Q_DESC_NUM		4
 #else
-#define MAX_SKB_BUF_NUM      4
+#define MAX_SKB_BUF_NUM      6
 #define MAX_LOCAL_SKB_NUM    (MAX_SKB_BUF_NUM + 2)
-#define RX_Q_DESC_NUM		2
+#define RX_Q_DESC_NUM		4
 #endif
 
 unsigned int nr_recvframe = MAX_SKB_BUF_NUM;
@@ -47,7 +47,13 @@ struct skb_data {
 	atomic_t ref __attribute__((aligned(32)));
 };
 
+
+#if WIFI_LOGO_CERTIFICATION
+#define MAX_RECVBUF_SZ     4598
+#else
 #define MAX_RECVBUF_SZ     2112
+#endif
+
 
 struct rx_ring_pool_t {
 	u8 buf[RX_Q_DESC_NUM][MAX_RECVBUF_SZ];

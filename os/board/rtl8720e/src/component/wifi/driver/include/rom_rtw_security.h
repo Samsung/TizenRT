@@ -87,11 +87,11 @@ void aesccmp_construct_mic_header2(
 u32 aes_80211_encrypt(
 	u8 *pframe, u32 wlan_hdr_len, \
 	u32 payload_len, u8 *key, \
-	u32 frame_type, u8 *mic);
+	u32 frame_type);
 
 u32 aes_80211_decrypt(
 	u8 *pframe, u32 wlan_hdr_len, \
 	u32 payload_len, u8 *key, \
-	u32 frame_type, u8 *mic);
+	u32 frame_type);
 #endif	//__ROM_RTW_SECURITY_H_
 

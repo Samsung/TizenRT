@@ -27,25 +27,9 @@
 #if (PHYDM_VERSION == 2)
 void rtw_odm_acquirespinlock(_adapter *adapter, enum rt_spinlock_type type);
 void rtw_odm_releasespinlock(_adapter *adapter, enum rt_spinlock_type type);
-#ifdef CONFIG_DFS_MASTER
-u8 rtw_odm_get_dfs_domain(struct dvobj_priv *dvobj);
-u8 rtw_odm_dfs_domain_unknown(struct dvobj_priv *dvobj);
-void rtw_odm_radar_detect_reset(_adapter *adapter);
-void rtw_odm_radar_detect_disable(_adapter *adapter);
-void rtw_odm_radar_detect_enable(_adapter *adapter);
-BOOLEAN rtw_odm_radar_detect(_adapter *adapter);
-u8 rtw_odm_radar_detect_polling_int_ms(struct dvobj_priv *dvobj);
-#endif /* CONFIG_DFS_MASTER */
 #endif /* (PHYDM_VERSION == 2) */
 
 #if (PHYDM_VERSION == 3)
-u8 rtw_odm_get_dfs_domain(struct dvobj_priv *dvobj);
-u8 rtw_odm_dfs_domain_unknown(struct dvobj_priv *dvobj);
-void rtw_odm_radar_detect_reset(_adapter *adapter);
-void rtw_odm_radar_detect_disable(_adapter *adapter);
-void rtw_odm_radar_detect_enable(_adapter *adapter);
-BOOLEAN rtw_odm_radar_detect(_adapter *adapter);
-u8 rtw_odm_radar_detect_polling_int_ms(struct dvobj_priv *dvobj);
 #define rtw_phydm_ability_ops(adapter, ops, ability)
 #define rtw_phydm_set_dbg_info(padapter, dm_func)
 /*mapping to habb_supportability_t*/
@@ -57,11 +41,6 @@ typedef enum _ODM_Support_Ability_Definition {
 	ODM_BB_CCK_PD					= 0,/*not exist*/
 } ODM_ABILITY_E;
 #endif /*(PHYDM_VERSION == 3)*/
-
-#if (PHYDM_VERSION == 1)
-void rtw_odm_acquirespinlock(_adapter *adapter,	RT_SPINLOCK_TYPE type);
-void rtw_odm_releasespinlock(_adapter *adapter,	RT_SPINLOCK_TYPE type);
-#endif /*(PHYDM_VERSION == 1)*/
 
 typedef enum _HAL_PHYDM_OPS {
 	HAL_PHYDM_DIS_ALL_FUNC,

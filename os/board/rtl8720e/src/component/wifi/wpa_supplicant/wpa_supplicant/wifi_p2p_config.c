@@ -96,7 +96,7 @@ int wifi_start_p2p_go(char *ssid, char *passphrase, u8 channel)
 		return -1;
 	}
 
-	netif_set_default(pnetif);
+	netifapi_netif_set_default(pnetif);
 
 	// start dhcp server
 	dhcps_init(pnetif);

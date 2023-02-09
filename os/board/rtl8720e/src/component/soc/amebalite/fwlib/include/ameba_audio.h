@@ -1290,7 +1290,7 @@ typedef struct {
 	u32 CODEC_SelI2STxCHLen;			/*!< Specifies the AUDIO SPORT TX Channel length
 										This parameter can be a value of @ref AUDIO_CODEC_Channel_Length  */
 
-	u32 CODEC_SelI2STxDataFormat;		/*!< Specifies the AUDIO CODEC I2S RX selection of data fornat
+	u32 CODEC_SelI2STxDataFormat;		/*!< Specifies the AUDIO CODEC I2S TX selection of data fornat
 										This parameter can be a value of @ref AUDIO_CODEC_Interface_Format */
 
 	u32 CODEC_SelI2SRxSR;				/*!< Specifies the AUDIO CODEC RX Sample rate
@@ -1308,7 +1308,7 @@ typedef struct {
 	u32 CODEC_SelRxI2STdm;				/*!< Specifies the AUDIO CODEC Rx I2S TDM MODE
 										This parameter can be a value of @ref AUDIO_CODEC_I2S_TDM_Mode */
 
-} CODEC_InitTypeDef;
+} I2S_InitTypeDef;
 /**
   * @}
   */
@@ -1410,26 +1410,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup AUDIO_CODEC_Application_Mode
-  * @{
-  */
-#define APP_AMIC_IN			((u32)0x00000001)
-#define APP_DMIC_IN			((u32)0x00000002)
-#define APP_LINE_IN			((u32)0x00000003)
-#define APP_LINE_OUT		((u32)0x00000004)
-#define APP_DAAD_LPBK		((u32)0x00000005)
-#define APP_PDM_OUT			((u32)0x00000006)
-
-#define IS_CODEC_APP_SEL(SEL) (((SEL) == APP_AMIC_IN) || \
-							((SEL) == APP_DMIC_IN) || \
-							((SEL) == APP_LINE_IN) || \
-							((SEL) == APP_LINE_OUT) || \
-							((SEL) == APP_DAAD_LPBK) || \
-							((SEL) == APP_PDM_OUT))
-/**
-  * @}
-  */
-
 /** @defgroup AUDIO_CODEC_AMIC
   * @{
   */
@@ -1479,8 +1459,7 @@ typedef struct {
   * @{
   */
 #define NORMALPOWER						((u32)0x00000001)
-#define LOWPOWER						((u32)0x00000002)
-#define SHUTDOWN						((u32)0x00000003)
+#define SHUTDOWN						((u32)0x00000000)
 /**
   * @}
   */
@@ -1535,20 +1514,11 @@ typedef struct {
   * @}
   */
 
-/** @defgroup AUDIO_CODEC_LDO_Power
+/** @defgroup AUDIO_CODEC_Power_Mode
   * @{
   */
-#define LDO_POWER_ON			((u32)0x00000000)
-#define LDO_POWER_DOWN			((u32)0x00000001)
-/**
-  * @}
-  */
-
-/** @defgroup AUDIO_CODEC_MICBIAS_Power
-  * @{
-  */
-#define MICBIAS_POWER_ON			((u32)0x00000000)
-#define MICBIAS_POWER_DOWN			((u32)0x00000001)
+#define POWER_ON			((u32)0x00000001)
+#define POWER_DOWN			((u32)0x00000000)
 /**
   * @}
   */
@@ -1571,6 +1541,126 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_CODEC_LintOut_Mode
+  * @{
+  */
+#define SINGLE			((u32)0x00000000)
+#define DIFF			((u32)0x00000001)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_Sample_Rate_Source
+  * @{
+  */
+#define SOURCE0			((u32)0x00000000)
+#define SOURCE1			((u32)0x00000001)
+#define SOURCE2			((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_DAC_Source
+  * @{
+  */
+#define I2SL					((u32)0x00000000)
+#define TESTTONE			((u32)0x00000001)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_ADC_MUTE_Control
+  * @{
+  */
+#define LINEIN				((u32)0x00000001)
+#define MICIN				((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_DAC_MUTE_Control
+  * @{
+  */
+#define ANALOGIN			((u32)0x00000001)
+#define DACIN				((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_PATH
+  * @{
+  */
+#define DACPATH			((u32)0x00000001)
+#define ADCPATH			((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_ADC_Mix_Select
+  * @{
+  */
+#define DMIC			((u32)0x00000001)
+#define ANAAD				((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_DAC_Channel
+  * @{
+  */
+#define DAC_L			((u32)0x00000000)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_ADC_Decimation_Source
+  * @{
+  */
+#define AUDIO_ADC			((u32)0x00000000)
+#define ANC				((u32)0x00000001)
+#define MUSIC			((u32)0x00000002)
+#define ANCANDMUSIC				((u32)0x00000003)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_Application
+  * @{
+  */
+
+#define APP_AMIC_RECORD ((u32)0x00000000)
+#define APP_DMIC_RECORD ((u32)0x00000001)
+#define APP_LINE_OUT	((u32)0x00000002)
+#define APP_PDM_OUT		((u32)0x00000003)
+#define APP_TESTTONE	((u32)0x00000004)
+#define APP_DAAD_LPBK	((u32)0x00000005)
+#define APP_ADDA_LPBK	((u32)0x00000006)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_PAD
+  * @{
+  */
+#define PAD_DACL ((u32)0x00000000)
+#define PAD_MIC1 ((u32)0x00000001)
+#define PAD_MIC2 ((u32)0x00000002)
+#define PAD_MIC3 ((u32)0x00000003)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_CODEC_Zero_Detection_Function_Select
+  * @{
+  */
+#define IME				 ((u32)0x00000000)
+#define ZDET_IME		 ((u32)0x00000001)
+#define ZDET_STEP		 ((u32)0x00000002)
+#define ZDET_TIMEOUT	 ((u32)0x00000003)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -1579,33 +1669,55 @@ typedef struct {
 /** @defgroup AUDIO_CODEC_Exported_Functions AUDIO_CODEC Exported Functions
   * @{
   */
+_LONG_CALL_ void AUDIO_CODEC_SetAudioIP(u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetI2SIP(u32 i2s_sel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetI2SSRC(u32 i2s_sel, u32 src);
+_LONG_CALL_ void AUDIO_CODEC_SetANAClk(u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetI2SRXTDM(u32 i2s_sel, u32 tdmmode);
+_LONG_CALL_ void AUDIO_CODEC_I2S_StructInit(I2S_InitTypeDef *I2S_Struct);
+_LONG_CALL_ void AUDIO_CODEC_SetI2SParameters(u32 i2s_sel, u32 path, I2S_InitTypeDef *I2S_Struct);
+_LONG_CALL_ void AUDIO_CODEC_SetADCSRSrc(u32 src, u32 sr);
+_LONG_CALL_ void AUDIO_CODEC_SetDACSRSrc(u32 src, u32 sr);
+_LONG_CALL_ void AUDIO_CODEC_DisPAD(u32 path);
+_LONG_CALL_ void AUDIO_CODEC_SetLDOMode(u32 powermode);
+_LONG_CALL_ void AUDIO_CODEC_EnableADC(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCVolume(u32 adc_sel, u32 gain);
+_LONG_CALL_ void AUDIO_CODEC_SetADCHPF(u32 adc_sel, u32 fc, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCASRC(u32 adc_sel, u32 sr, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCMute(u32 adc_sel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCMixMute(u32 adc_num, u32 type,				  u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCANASrc(u32 ad_chn, u32 amic_num);
+_LONG_CALL_ void AUDIO_CODEC_SetADCANAFilter(u32 adc_num, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBiasPowerMode(u32 powermode);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBstPowerMode(u32 amic_num, u32 powermode);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBstInputMode(u32 amic_num, u32 mode);
+_LONG_CALL_ void AUDIO_CODEC_SetMicBstGain(u32 amic_sel, u32 gain);
+_LONG_CALL_ void AUDIO_CODEC_SetADCDmicFilter(u32 adc_num, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDmicSrc(u32 ad_chn, u32 dmic_num);
+_LONG_CALL_ void AUDIO_CODEC_SetDACSrc(u32 i2s_sel, u32 dac_l_src, u32 dac_r_src);
+_LONG_CALL_ void AUDIO_CODEC_EnableDAC(u32 channel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDACMute(u32 channel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDACVolume(u32 channel, u32 gain);
+_LONG_CALL_ void AUDIO_CODEC_SetDACHPF(u32 channel, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDACASRC(u32 sr, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDACPowerMode(u32 channel, u32 powermode);
+_LONG_CALL_ void AUDIO_CODEC_SetLineOutPowerMode(u32 channel, u32 powermode);
+_LONG_CALL_ void AUDIO_CODEC_SetLineOutMode(u32 channel, u32 mode);
+_LONG_CALL_ void AUDIO_CODEC_SetLineOutMute(u32 channel, u32 type, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetPDMClk(u32 channel, u32 clk, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetTesttone(u32 fc, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDAADLPBK(u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADDALPBK(u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCDecimationSrc(u32 adc_sel, u32 type);
+_LONG_CALL_ void AUDIO_CODEC_SetDACZDET(u32 channel, u32 type);
+_LONG_CALL_ void AUDIO_CODEC_SetDACZDETTimeOut(u32 channel, u32 time_out);
+_LONG_CALL_ void AUDIO_CODEC_SetADCZDET(u32 adc_sel, u32 type);
+_LONG_CALL_ void AUDIO_CODEC_SetADCZDETTimeOut(u32 adc_sel, u32 time_out);
+_LONG_CALL_ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
+_LONG_CALL_ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
 
-_LONG_CALL_ void AUDIO_CODEC_SetLDOMode(u32 ldo_mode);
-_LONG_CALL_ void AUDIO_CODEC_Init(u32 application, CODEC_InitTypeDef *CODEC_InitStruct);
-_LONG_CALL_ void AUDIO_CODEC_AmicInit(void);
-_LONG_CALL_ void AUDIO_CODEC_SetAmicInSE(u32 Amic_sel);
-_LONG_CALL_ void AUIDO_CODEC_SetLineinSE(u32 Linein_sel);
-_LONG_CALL_ void AUDIO_CODEC_MuteAmicIn(u32 NewState, u32 Amic_sel);
-_LONG_CALL_ void AUDIO_CODEC_MuteLineIn(u32 NewState, u32 Linein_sel);
-_LONG_CALL_ void AUDIO_CODEC_SetMicBstGain(u32 Amic_sel, u32 gain);
-_LONG_CALL_ void AUDIO_CODEC_SelDmicClk(u32 clk);
-_LONG_CALL_ void AUDIO_CODEC_SetPDM(u32 NewState, u32 clk);
-_LONG_CALL_ void AUDIO_CODEC_SetADCVolume(u32 tdmmode, u32 Gain);
-_LONG_CALL_ void AUDIO_CODEC_SetADCASRC(u32 NewState, u32 tdmmode, u32 sr);
-_LONG_CALL_ void AUDIO_CODEC_SetDACVolume(u32 Gain);
-_LONG_CALL_ void AUDIO_CODEC_SetDACASRC(u32 NewState, u32 sr);
-_LONG_CALL_ void AUDIO_CODEC_SetADCMode(u32 adc_sel, u32 powermode);
-_LONG_CALL_ void AUDIO_CODEC_SetLOSE(void);
-_LONG_CALL_ void AUDIO_CODEC_SelTesttone(u32 NewState, u32 fc);
-_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToAmic(u32 ad_chn, u32 amic_num);
-_LONG_CALL_ void AUDIO_CODEC_SelADCSrcToDmic(u32 ad_chn, u32 dmic_num);
-_LONG_CALL_ void AUDIO_CODEC_SelI2SSRC(u32 src);
-_LONG_CALL_ void AUDIO_CODEC_DeInit(u32 application);
-_LONG_CALL_ void AUDIO_CODEC_MuteDmicIn(u32 NewState, u32 Dmic_sel);
-_LONG_CALL_ void AUDIO_CODEC_SetMicbiasMode(u32 micbias_mode);
-_LONG_CALL_ void AUDIO_CODEC_MutePlayback(u32 NewState);
-_LONG_CALL_ void AUDIO_CODEC_MuteRecord(u32 NewState, u32 adc_sel);
-_LONG_CALL_ void AUDIO_CODEC_SetHPF(u32 adc_sel, u32 fc, u32 NewState);
 
 /**
   * @}

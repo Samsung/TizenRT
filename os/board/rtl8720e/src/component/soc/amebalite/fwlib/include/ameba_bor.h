@@ -71,7 +71,7 @@
 /** @defgroup  BOR_Debounce_Threshold
   * @{
   */
-#define IS_BOR_INTR_DBNC_THRES(DBNC)    ((DBNC) <= 0x7)
+#define IS_BOR_DBNC_THRES(DBNC)    ((DBNC) <= 0x7)
 /**
   * @}
   */
@@ -103,7 +103,7 @@
 
 VOID BOR_ThresholdSet(u32 Thres_Fall, u32 Thres_Rise);
 void BOR_Enable(u32 newstatus);
-VOID BOR_DbncSet(u32 Option, u32 Dbnc_Value);
+VOID BOR_DbncSet(u32 Dbnc_Value);
 VOID BOR_ClearINT(void);
 VOID BOR_ModeSet(u32 Option);
 

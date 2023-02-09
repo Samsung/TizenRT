@@ -62,7 +62,8 @@ typedef uint8_t T_CLIENT_ID; //!< Client ID
 
 
 /** @brief  Discovery state during discovery procedure.*/
-typedef enum {
+typedef enum
+{
 	DISC_STATE_IDLE,
 	DISC_STATE_SRV,
 	DISC_STATE_SRV_DONE,
@@ -78,7 +79,8 @@ typedef enum {
 } T_DISCOVERY_STATE;
 
 /** @brief  Discovery result type*/
-typedef enum {
+typedef enum
+{
 	DISC_RESULT_ALL_SRV_UUID16,
 	DISC_RESULT_ALL_SRV_UUID128,
 	DISC_RESULT_SRV_DATA,
@@ -93,20 +95,23 @@ typedef enum {
 } T_DISCOVERY_RESULT_TYPE;
 
 /** @brief  GATT write type*/
-typedef enum {
+typedef enum
+{
 	GATT_WRITE_TYPE_REQ = 0x01,    /**<  ATT "Write Request"  */
 	GATT_WRITE_TYPE_CMD = 0x02,           /**<  ATT "Write Command"  */
 	GATT_WRITE_TYPE_SIGNED_CMD = 0x04     /**<  ATT "Signed Write Command"  */
 } T_GATT_WRITE_TYPE;
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;   /**< The handle of the last attribute
     within the service definition */
 	uint16_t    uuid16;             /**< 16 bit UUID */
 } T_GATT_SERVICE_ELEM16;
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;
 	/**< The handle of the last attribute within the service definition */
@@ -114,14 +119,16 @@ typedef struct {
 } T_GATT_SERVICE_ELEM128;
 
 
-typedef struct {
+typedef struct
+{
 	uint16_t    att_handle;         /**< The handle for the service declaration */
 	uint16_t    end_group_handle;
 	/**< The handle of the last attribute within the service definition */
 } T_GATT_SERVICE_BY_UUID_ELEM;
 
 /** @brief  Characteristic declaration for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;   /**<  Attribute handle */
 	uint16_t    properties;    /**< Characteristic Properties, high nibble is reserved */
 	uint16_t    value_handle;  /**<  Characteristic Value Handle */
@@ -129,7 +136,8 @@ typedef struct {
 } T_GATT_CHARACT_ELEM16;
 
 /** @brief  Characteristic declaration for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;    /**<  Attribute handle */
 	uint16_t    properties;     /**< Characteristic Properties, high nibble is reserved */
 	uint16_t    value_handle;   /**<  Characteristic Value Handle */
@@ -137,19 +145,22 @@ typedef struct {
 } T_GATT_CHARACT_ELEM128;
 
 /** @brief  Characteristic descriptor for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    handle;         /**< Attribute handle */
 	uint16_t    uuid16;         /**< 16 bit UUID */
 } T_GATT_CHARACT_DESC_ELEM16;
 
 /** @brief  Characteristic descriptor for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    handle;         /**< Attribute handle */
 	uint8_t     uuid128[16];    /**< 128 bit UUID */
 } T_GATT_CHARACT_DESC_ELEM128;
 
 /** @brief  Relationship discovery for 16 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;
 	uint16_t    att_handle;
 	uint16_t    end_group_handle;
@@ -157,7 +168,8 @@ typedef struct {
 } T_GATT_RELATION_ELEM16;
 
 /** @brief  Relationship discovery for 128 bit UUID.*/
-typedef struct {
+typedef struct
+{
 	uint16_t    decl_handle;
 	uint16_t    att_handle;
 	uint16_t    end_group_handle;
@@ -165,7 +177,8 @@ typedef struct {
 } T_GATT_RELATION_ELEM128;
 
 /** @brief  Discovery result data*/
-typedef union {
+typedef union
+{
 	T_GATT_SERVICE_ELEM16        *p_srv_uuid16_disc_data;
 	T_GATT_SERVICE_ELEM128       *p_srv_uuid128_disc_data;
 	T_GATT_SERVICE_BY_UUID_ELEM  *p_srv_disc_data;
@@ -184,7 +197,8 @@ typedef union {
   *
   * Discovery procedure related data to inform application
   */
-typedef struct {
+typedef struct
+{
 	T_DISCOVERY_STATE disc_state;
 } T_DISC_STATE_CB_DATA;
 
@@ -192,7 +206,8 @@ typedef struct {
   *
   * Discovery result data will be sent to upper through the callback
   */
-typedef struct {
+typedef struct
+{
 	T_DISCOVERY_RESULT_TYPE result_type;
 	T_DISCOVERY_RESULT_DATA result_data;
 } T_DISC_RESULT_CB_DATA;
@@ -202,7 +217,8 @@ typedef struct {
   *
   * Message data type, when data sent to app directly
   */
-typedef enum {
+typedef enum
+{
 	CLIENT_APP_CB_TYPE_DISC_STATE,
 	CLIENT_APP_CB_TYPE_DISC_RESULT
 } T_CLIENT_CB_TYPE;
@@ -211,7 +227,8 @@ typedef enum {
   *
   * Client received data from server, when no specific client registered, will be sent to app directly
   */
-typedef union {
+typedef union
+{
 	T_DISC_STATE_CB_DATA   disc_state_data;
 	T_DISC_RESULT_CB_DATA  disc_result_data;
 } T_CLIENT_CB_DATA;
@@ -220,7 +237,8 @@ typedef union {
   *
   * Callback data sent to application directly from client, include type and content
   */
-typedef struct {
+typedef struct
+{
 	T_CLIENT_CB_TYPE     cb_type;
 	T_CLIENT_CB_DATA     cb_content;
 } T_CLIENT_APP_CB_DATA;
@@ -258,7 +276,8 @@ typedef void (*P_FUN_DISCONNECT_CB)(uint8_t conn_id);
 /** @defgroup T_FUN_CLIENT_CBS Specific Client Callback Functions Struct
   * @{
   */
-typedef struct {
+typedef struct
+{
 	P_FUN_DISCOVER_STATE_CB    discover_state_cb;   //!< Discovery state callback function pointer
 	P_FUN_DISCOVER_RESULT_CB   discover_result_cb;  //!< Discovery reault callback function pointer
 	P_FUN_READ_RESULT_CB       read_result_cb;      //!< Read response callback function pointer
@@ -518,6 +537,31 @@ T_GAP_CAUSE client_attr_write(uint8_t conn_id, T_CLIENT_ID client_id,
   */
 T_GAP_CAUSE client_attr_ind_confirm(uint8_t conn_id);
 
+/**
+ * @brief Send the exchange MTU request.
+ * This function is used to send the exchange MTU request.
+ *
+ * @param[in] conn_id         Connection id indicate which link is.
+ * @retval GAP_CAUSE_SUCCESS: Write request success.
+ * @retval other: Write request failed.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    uint8_t *p_data_buf;
+    uint16_t data_offset;
+    static T_USER_CMD_PARSE_RESULT cmd_send_mtu_req(T_USER_CMD_PARSED_VALUE *p_parse_value)
+    {
+      T_GAP_CAUSE cause;
+      uint8_t conn_id = p_parse_value->dw_param[0];
+
+      cause = client_send_exchange_mtu_req(conn_id);
+      return (T_USER_CMD_PARSE_RESULT)cause;
+    }
+ * \endcode
+ */
+T_GAP_CAUSE client_send_exchange_mtu_req(uint8_t conn_id);
+
+
 /** End of GATT_Client_Exported_Functions
 * @}
 */
@@ -586,7 +630,8 @@ typedef void (*P_FUN_DISCONNECT_CB)(uint8_t conn_id);
 /** @defgroup T_FUN_CLIENT_CBS Specific Client Callback Functions Struct
   * @{
   */
-typedef struct {
+typedef struct
+{
 	P_FUN_DISCOVER_STATE_CB    discover_state_cb;   //!< Discovery state callback function pointer
 	P_FUN_DISCOVER_RESULT_CB   discover_result_cb;  //!< Discovery result callback function pointer
 	P_FUN_READ_RESULT_CB       read_result_cb;      //!< Read response callback function pointer
@@ -828,6 +873,41 @@ T_GAP_CAUSE client_attr_write(uint8_t conn_id, T_CLIENT_ID client_id,
   */
 T_GAP_CAUSE client_attr_ind_confirm(uint8_t conn_id);
 
+/**
+ * @brief Send the exchange MTU request.
+ *
+ * @param[in] conn_id         Connection id indicate which link is.
+ * @retval GAP_CAUSE_SUCCESS: Exchange MTU request success.
+ * @retval other: Exchange MTU request failed.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    static T_USER_CMD_PARSE_RESULT cmd_send_mtu_req(T_USER_CMD_PARSED_VALUE *p_parse_value)
+    {
+      T_GAP_CAUSE cause;
+      uint8_t conn_id = p_parse_value->dw_param[0];
+
+      cause = client_send_exchange_mtu_req(conn_id);
+      return (T_USER_CMD_PARSE_RESULT)cause;
+    }
+    void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
+    {
+        T_LE_GAP_MSG gap_msg;
+        memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
+        switch (p_gap_msg->subtype)
+        {
+            case GAP_MSG_LE_CONN_MTU_INFO:
+            {
+                app_handle_conn_mtu_info_evt(gap_msg.msg_data.gap_conn_mtu_info.conn_id,
+                                            gap_msg.msg_data.gap_conn_mtu_info.mtu_size);
+            }
+            break;
+        }
+    }
+ * \endcode
+ */
+T_GAP_CAUSE client_send_exchange_mtu_req(uint8_t conn_id);
+
 #if F_BT_ATT_READ_MULTIPLE_VARIABLE
 /**
  * @brief  Read multiple variable characteristic values.
@@ -915,6 +995,7 @@ T_GAP_CAUSE client_attr_read_multi_variable(uint8_t conn_id, T_CLIENT_ID client_
 */
 #endif
 
+
 #ifdef  __cplusplus
 }
 #endif      /*  __cplusplus */
@@ -922,3 +1003,4 @@ T_GAP_CAUSE client_attr_read_multi_variable(uint8_t conn_id, T_CLIENT_ID client_
 #endif
 
 #endif /* PROFILE_CLIENT_H */
+

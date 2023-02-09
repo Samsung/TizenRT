@@ -101,17 +101,11 @@ struct security_priv {
 	union pn48		dot11Grprxpn[4];			// PN48 used for Grp Key recv. NumGroupKey: 4.
 
 	//extend security capabilities for AP_MODE
-	unsigned int dot8021xalg;//0:disable, 1:psk, 2:802.1x
 	unsigned int wpa_psk;//0:disable, bit(0): WPA, bit(1):WPA2
 	unsigned int wpa_group_cipher;
 	unsigned int wpa2_group_cipher;
 	unsigned int wpa_pairwise_cipher;
 	unsigned int wpa2_pairwise_cipher;
-
-#ifdef CONFIG_WPS
-	u8 wps_ie[MAX_WPS_IE_LEN];//added in assoc req
-	int wps_ie_len;
-#endif
 
 #ifdef CONFIG_IEEE80211W
 	u8   ieee80211w;//11w capability
@@ -134,7 +128,7 @@ struct security_priv {
 
 	//u8	packet_cnt;//unused, removed
 
-	s32	sw_encrypt;//from registry_priv
+	s32	sw_encrypt;
 
 	s32 	hw_decrypted;//if the rx packets is hw_decrypted==_FALSE, it means the hw has not been ready.
 
@@ -145,11 +139,6 @@ struct security_priv {
 	u32 wpa_mode;
 
 	//WLAN_BSSID_EX sec_bss;  //for joinbss (h2c buffer) usage //YJ,del,140410
-
-	NDIS_802_11_WEP ndiswep;
-
-	u8 supplicant_ie[MAX_WPA_IE_LEN];  //store sta security information element
-	u8 rsnxe_ie[MAX_WPA_IE_LEN];
 
 	//for tkip countermeasure
 	u32 last_mic_err_time;
@@ -168,6 +157,11 @@ struct security_priv {
 	u8	eap_phase;
 #endif
 
+};
+
+struct share_security_priv {
+	u8 supplicant_ie[MAX_WPA_IE_LEN];  //store sta security information element
+	u8 rsnxe_ie[MAX_WPA_IE_LEN];
 };
 
 struct sha256_state {
@@ -365,17 +359,8 @@ static const unsigned long K[64] = {
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
-u32 rtw_aes_encrypt(_adapter *padapter, u8 *pxmitframe);
-u32 rtw_tkip_encrypt(_adapter *padapter, u8 *pxmitframe);
-void rtw_wep_encrypt(_adapter *padapter, u8  *pxmitframe);
-
-
 #ifdef CONFIG_IEEE80211W
 u32	rtw_BIP_verify(_adapter *padapter, u8 *precvframe);
 #endif /* CONFIG_IEEE80211W */
-
-u32	rtw_init_sec_priv(_adapter *padapter);
-void	rtw_free_sec_priv(struct security_priv *psecpriv);
-
 #endif	//__RTL871X_SECURITY_H_
 

@@ -4,6 +4,8 @@
 /*--------------------Define --------------------------------------------*/
 #define HALBB_START_H2CID	0x40
 #define HALBB_END_H2CID		0x5f
+#define CSICLIENTNUM		0x3
+
 //==================C2H event format ====================
 // Field     SYNC       CMD_LEN     CONTENT    CMD_SEQ      CMD_ID
 // BITS  [127:120]  [119:112]      [111:16]          [15:8]        [7:0]
@@ -464,20 +466,29 @@ typedef struct _H2CParam_INACTIVEPSParm_ {
 //3 Class3: Dynamic Mechaism
 //H2C Index: 0x58
 //TX null data
-typedef struct _csi_report_parm_ {
+typedef struct _CSI_Txnull_Parm_ {
 	u8		Enable;
-	u8 		TxNullPeriod;
 	u16	TxNullRate;
-
+	u8 		Macid;
+	u8		NullPeriod;
 	u8		TxRevAddr[6];
 	u8		TxNullPowerBit;
-	u8		TxNullRtycnt;
-	u8		TxNull0Cycle;
-	u8		TxNull0CycleOK;
-	u8		TxNull1Cycle;
-	u8		TxNull1CycleOK;
+	//u8		TxNull0Cycle;
+	//u8		TxNull0CycleOK;
+	//u8		TxNull0retrycnt;
+	//u8		TxNull1Cycle;
+	//u8		TxNull1CycleOK;
+	//u8		TxNull1retrycnt;
+	u8		TxNullCycle;
+	u8		TxNullCycleOK;
+	u8		TxNullretrycnt;
 	u8		TxNullCycleOn;
+} CSITxnull_Parm, *PCSITxnull_Parm;
 
+typedef struct _CSI_Report_Parm_ {
+	u8 		CSIWorkEn;
+	u8 		TxNullPeriod;
+	CSITxnull_Parm CSITxnullParm[CSICLIENTNUM];
 } CSIReport_Parm, *PCSIReport_Parm;
 
 //3 Class7: Class no define

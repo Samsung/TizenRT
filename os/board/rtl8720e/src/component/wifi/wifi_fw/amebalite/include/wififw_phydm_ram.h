@@ -34,12 +34,10 @@
 #define NUM_HE_RATE                     24
 #define NUM_VHT_RATE                    40  // 8198F is 4SS
 #define NUM_HT_RATE                     32
-#define NUM_MULTI_TRY                   3   // 4
-#define CONFIG_RA_TABLE_1SS_FIRST       0
+#define NUM_MULTI_TRY                   2   // 4
 #define BW_SWITCH_DISABLE_2SS_ALL       0
 
 //---New Band Switch Mode
-#define RA_BW_MULTI_TRY_MODE    1 // TODO: pstainfo_ra->multi_bw[idx] is not
 #define COMMON_RATE_DOWN_OFFSET 3
 #define LIMIT_RATE_SIZE         2
 #define GILTF_TRAINING 1
@@ -118,17 +116,14 @@
 #define RAMSK_HT_VHT_OFFSET     32
 #define RAMSK_HT_HE_OFFSET      (RAMSK_HT_VHT_OFFSET+40)
 
-/* precomp. differ from ICs*/
-#define CONFIG_160M 0
-
 /*-------------------- Define logic and bitwise operation  ---------------*/
 typedef struct phydm_rate_adaptive {
 	u8 RATE_UP_RTY_RATIO[RATESIZE];
 	u8 RATE_DOWN_RTY_RATIO[RATESIZE];
 	//u8 first_rate_down; /*ARFB first rate down number ex: Reg0x430=00000001, first_try_rate_down = 4*/
 	//u8 first_try_rate_down; /*ARFB first rate down number ex: Reg0x430=01020304, first_try_rate_down = 2*/
-	u16 retry_ratio_per_rate_ma[BWSIZE][RATESIZE];
-	u16 variance_per_rate[BWSIZE][RATESIZE];
+	u16 retry_ratio_per_rate_ma[RATESIZE];
+	u16 variance_per_rate[RATESIZE];
 	u8 DIFF2VAR_TABLE[RETRY_RATIO_VAR_SIZE];
 	//u8 rpt_per_macid[3];
 } PHYDM_RA_T, *PPHYDM_RA_T;
@@ -254,9 +249,7 @@ typedef struct _bb_sta_info {
 	u16 TOTAL_CNT_C2H;
 	// ra report info -- End
 
-	u64 ra_mask;
-	u32 ra_mask0;
-	u32 ra_mask1;
+	u32 ra_mask;
 	u32 backup_mask;
 	// su-ra info
 	u8 highest_rate;
@@ -305,12 +298,10 @@ typedef struct _bb_sta_info {
 	u16 ra_ratio;       /*MA vlaue of ra_ratio*/
 	u16 ra_down_ratio;  /*MA vlaue of ra_down_ratio*/
 
-	u8 dcm_cap: 1;
-	u8 er_cap: 1;
 	u8 ldpc_cap: 1;
-	u8 stbc_cap: 1;
 	u8 fix_giltf_en: 1;
 	u8 fix_giltf: 3;
+	u8 rsvd8: 3;
 
 	u8 try_ness;
 	u8 try_ness_max;
@@ -325,6 +316,7 @@ typedef struct _bb_sta_info {
 	u8 ra_info_rsvd7: 4;
 	// ======================================== //
 
+#ifdef HALBB_CSI_RATE
 	// ============= CSI rate ctrl info ============== //
 	u8 ra_csi_rate_en: 1;
 	u8 fixed_csi_rate_en: 1;
@@ -333,7 +325,7 @@ typedef struct _bb_sta_info {
 	u8 band_num;
 	u16 fixed_csi_rate;
 	// ======================================== //
-
+#endif
 	// ============= FW fixed rate (H2C) ============== /
 	u8 bfixed_rate: 1;
 	u8 fixed_gi_ltf: 3;
@@ -358,16 +350,9 @@ typedef struct _bb_sta_info {
 	u8 ra_mask_rsvd0: 4;
 	// ======================================================== //
 
-	u8 pre_rty_idx: 5;
-	u8 Rate_Support_Type: 3; /*0:legacy, 1:1SS, 2:2SS, 3:3SS, 4:4SS*/
-
-	u8 pre_rate_up_cnt_th;
 
 	u8 up_fail_limit_rate[LIMIT_RATE_SIZE]; /*for 1SS & 2ss rate*/
 	u16 up_fail_limit_cnt[LIMIT_RATE_SIZE];
-	u8 multi_bw[MULTI_RATE_NUM]; /*multi_bw[0]: 2nd rate, multi_bw[1]: 3rd rate*/
-	u16 Pkt_cnt;
-	u16 total_cnt_rpt;
 #if 0 // CONFIG_PKT_BASED_RA
 	u8 ra_decision_occur_num;
 	u8 trig_ra_pkt_num; /*make ra decision when collect enough(trig_ra_pkt_num) pachets*/
@@ -377,12 +362,8 @@ typedef struct _bb_sta_info {
 
 	//
 	u8 ser_try_cnt;
-	//
-	u8 ser_polluted_d1;
-	//
+
 	u8 wd_not_release;
-	u16 wd_init_rate;
-	u32 agg_type;
 	//
 	u16 rate_up_fail_cnt_lmt_val;
 	u8    multi_try_times: 4;
@@ -392,50 +373,17 @@ typedef struct _bb_sta_info {
 	//u8    ra_up_fail_rssi;
 	u8    ra_candidate_rate1;
 	u8    ra_candidate_rate2;
-	u8    ra_stage;
 	u8    no_rate_up_cnt;
-	u8    pcr_shift;
 
-	u8 d_o_timer_max;
-	u8 d_o_timer_cnt;
 	u16 decision_offset_n;
 	u16 decision_offset_p;
+#ifdef CONFIG_RA_DEBUG
+	u8 d_o_timer_max;
+	u8 d_o_timer_cnt;
 	u8 d_o_timer_state;
 	BOOLEAN d_o_timer_en;
-
+#endif
 } BB_STA_INFO, *PBB_STA_INFO;
-
-typedef struct _bb_com {
-	//PWR_BY_RATE_1SS (0-11), PWR_BY_RATE_2SS (11-23), PWR_BY_RATW_1SS_DCM (24-27), PWR_BY_RATW_2SS_DCM (28-31)
-	s16 pwr_by_rate_table[32];//only for HE /* s(9,2) for 2bit frac.*/
-	//LDPC_SNR_TABLE (0-11), BCC_SNR_TABLE (12-23)
-	s16 snr_table[24]; //only for HE
-
-	u8 pri20_ch_bitmap;
-	u8 tx_ant_num: 3;
-	u8 rsvd0: 5;
-	u8 rsvd1[2];
-
-//#if 1 //CONFIG_DYN_L2H_TH_SUPPORT
-	u16 lowrt_rty_cnt;
-	u16 rsvd_dyn_l2h;
-//#endif
-
-	/* DW 1 */
-// Debug Comp
-	u32 halbb_fwdbg_comp;
-	/* Debug com for all bb features */
-	u8 halbb_fwdbg_trace;
-	u8 bb_com_rsvd0;
-	u8 bb_com_rsvd1;
-	u8 is_disra_by_ps;
-
-
-	//u32 RTY_C2H;
-	PHYDM_RA_T phydm_ra;
-
-	u32 com_rsvd0;
-} BB_COM, *PBB_COM;
 
 
 typedef  struct _RA_ADP_FUNC_ { /*the 4-th layer*/
@@ -460,7 +408,14 @@ struct _PPHYDM {
 
 	u8 en_th_adapt;
 	u8 max_ser_try_cnt;
-	BB_COM		com;
+	//u32 RTY_C2H;
+	PHYDM_RA_T phydm_ra;
+	//BB_COM		com;
+#ifdef CONFIG_RA_DEBUG
+	u32 halbb_fwdbg_comp;
+	/* Debug com for all bb features */
+	u8 halbb_fwdbg_trace;
+#endif
 };
 
 #endif

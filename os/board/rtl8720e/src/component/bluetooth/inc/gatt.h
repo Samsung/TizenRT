@@ -533,7 +533,8 @@ when CCCD is write by client, no matter it is changed or not */
 /**
  * \ingroup     GATT_ATTRIBUTE
  */
-typedef struct {
+typedef struct
+{
 	uint16_t    flags;              /**< Attribute flags @ref GATT_ATTRIBUTE_FLAG */
 	uint8_t     type_value[2 + 14]; /**< 16 bit UUID + included value or 128 bit UUID */
 	uint16_t    value_len;          /**< Length of value */

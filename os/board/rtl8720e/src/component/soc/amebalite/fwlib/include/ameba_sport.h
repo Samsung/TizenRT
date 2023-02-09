@@ -687,10 +687,7 @@ typedef struct {
 	u32 SP_SelFIFO; 	/*!< Specifies the AUDIO SPORT selection of Tx FIFO CHANNEL
 								This parameter can be a value of @ref AUDIO_SPORT_Tx_FIFO */
 
-	u32 SP_SelI2S0MonoStereo;	/*!< Specifies the AUDIO SPORT channel number
-									This parameter can be a value of @ref AUDIO_SPORT_Channel_Number */
-
-	u32 SP_SelI2S1MonoStereo; /*!< Specifies the AUDIO SPORT channel number
+	u32 SP_SelI2SMonoStereo;	/*!< Specifies the AUDIO SPORT channel number
 									This parameter can be a value of @ref AUDIO_SPORT_Channel_Number */
 
 	u32 SP_SetMultiIO;	/*!< Specifies the AUDIO SPORT selection of Tx MultiIO Mode
@@ -947,6 +944,7 @@ typedef struct {
   */
 
 /** @defgroup AUDIO_SPORT_I2S_Selection
+* @{
 */
 
 #define I2S0	((u32)0x00000000)
@@ -970,6 +968,7 @@ typedef struct {
 */
 
 /** @defgroup AUDIO_SPORT_Pinmux_Function_Mode
+* @{
 */
 
 #define DOUT0_FUNC	((u32)0x00000000)
@@ -1033,6 +1032,15 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_SPORT_I2S_Mode
+* @{
+*/
+#define TDM		((u32)0x00000000)
+#define MULTIIO	((u32)0x00000001)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -1048,7 +1056,8 @@ _LONG_CALL_ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_Init
 _LONG_CALL_ void AUDIO_SP_TXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_RXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
-_LONG_CALL_ void AUDIO_SP_SetWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_Tx_WordLen, u32 SP_Rx_WordLen);
+_LONG_CALL_ void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_Tx_WordLen);
+_LONG_CALL_ void AUDIO_SP_SetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_Rx_WordLen);
 _LONG_CALL_ u32 AUDIO_SP_GetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx);
 _LONG_CALL_ u32 AUDIO_SP_GetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx);
 _LONG_CALL_ void AUDIO_SP_SetMonoStereo(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MonoStereo);
@@ -1057,14 +1066,25 @@ _LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *
 									  IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length);
 _LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pRxData, u32 Length);
+_LONG_CALL_ BOOL AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
+_LONG_CALL_ BOOL AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
 _LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum,	u32 TX_addr,	u32 TX_length);
 _LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
-_LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 comp_val);
-_LONG_CALL_ void AUDIO_SP_SetRXCounter(u32 index, u32 comp_val);
-_LONG_CALL_ u32 AUDIO_SP_GetTXCounter(u32 index);
-_LONG_CALL_ u32 AUDIO_SP_GetRXCounter(u32 index);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
 _LONG_CALL_ void AUDIO_SP_SetMasterSlave(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MasterSlave);
+_LONG_CALL_ void AUDIO_SP_Reset(AUDIO_SPORT_TypeDef *SPORTx);
+_LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 state);
+_LONG_CALL_ void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val);
+_LONG_CALL_ void AUDIO_SP_ClearTXCounterIrq(u32 index);
+_LONG_CALL_ u32 AUDIO_SP_GetTXCounterVal(u32 index);
+_LONG_CALL_ void AUDIO_SP_SetRXCounter(u32 index, u32 state);
+_LONG_CALL_ void AUDIO_SP_SetRXCounterCompVal(u32 index, u32 comp_val);
+_LONG_CALL_ void AUDIO_SP_ClearRXCounterIrq(u32 index);
+_LONG_CALL_ u32 AUDIO_SP_GetRXCounterVal(u32 index);
+_LONG_CALL_ void AUDIO_SP_SetSelfLPBK(AUDIO_SPORT_TypeDef *SPORTx);
+
 
 /**
   * @}

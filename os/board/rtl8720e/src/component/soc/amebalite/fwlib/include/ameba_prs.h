@@ -20,6 +20,8 @@ typedef struct {
 	u8 PRS_ConsumerType;		/*!< Specifies PRS consumer signal type which can be a value of
 									@ref PRS_Consumer_Signal_Type_Definitions */
 
+	u8 PRS_TimerOfIn;			/*!< Specifies whether input timer overflow signal to PRS */
+
 	u8 PRS_ReverseSig;			/*!< Specifies whether to reverse source signal from producer after receiving it */
 
 	u16 PRS_DebounceCnt;		/*!< Specifies debounce count under XTAL40MHz clock */
@@ -37,27 +39,14 @@ typedef struct {
 /** @defgroup PRS_Producer_Signal_Type_Definitions
   * @{
   */
-#define PRS_SRC0_NONE					((u8)0x00)
-#define PRS_SRC0_GPIO					((u8)0x01)
-#define PRS_SRC0_CMP					((u8)0x02)
-#define PRS_SRC0_AUDIO_0				((u8)0x03)
-#define PRS_SRC0_AUDIO_1				((u8)0x04)
-#define PRS_SRC0_AUDIO_2				((u8)0x05)
-#define PRS_SRC0_MASK					((u8)0x0F)
-#define PRS_GET_SRC0(sel)				((u8)((sel) & PRS_SRC0_MASK) >> 0)
+#define PRS_SRC_NONE					((u8)0x0)
+#define PRS_SRC_GPIO					((u8)0x1)
+#define PRS_SRC_CMP						((u8)0x2)
+#define PRS_SRC_AUDIO_0					((u8)0x3)
+#define PRS_SRC_AUDIO_1					((u8)0x4)
+#define PRS_SRC_AUDIO_2					((u8)0x5)
 
-#define PRS_SRC1_TIM_OF					((u8)0x10)
-#define PRS_SRC1_MASK					((u8)0xF0)
-#define PRS_GET_SRC1(sel)				((u8)((sel) & PRS_SRC1_MASK) >> 4)
-
-
-#define IS_PRS_PRODUCER_TYPE(sel)		(((((sel) & PRS_SRC0_MASK) == PRS_SRC0_NONE) || \
-										(((sel) & PRS_SRC0_MASK) == PRS_SRC0_GPIO) || \
-										(((sel) & PRS_SRC0_MASK) == PRS_SRC0_CMP) || \
-										(((sel) & PRS_SRC0_MASK) == PRS_SRC0_AUDIO_0) || \
-										(((sel) & PRS_SRC0_MASK) == PRS_SRC0_AUDIO_1) || \
-										(((sel) & PRS_SRC0_MASK) == PRS_SRC0_AUDIO_2)) && \
-										(((((sel) & PRS_SRC1_MASK) & 0xE0) == 0x00)))
+#define IS_PRS_PRODUCER_TYPE(sel)		((sel) < 0x0f)
 
 /**
   * @}
@@ -90,6 +79,7 @@ _LONG_CALL_ void PRS_StructInit(PRS_InitTypeDef *PRS_InitStruct);
 _LONG_CALL_ void PRS_Init(PRS_InitTypeDef *PRS_InitStruct);
 _LONG_CALL_ void PRS_SrcConfig(u8 SrcType);
 _LONG_CALL_ void PRS_DstConfig(u8 DstType);
+_LONG_CALL_ void PRS_TimOfInCmd(u32 NewState);
 _LONG_CALL_ void PRS_ReverseCmd(u32 NewState);
 _LONG_CALL_ void PRS_SetDbcCnt(u16 Dbc_Cnt);
 

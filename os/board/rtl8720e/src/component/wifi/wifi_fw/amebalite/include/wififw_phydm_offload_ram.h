@@ -43,5 +43,7 @@ typedef struct _RSSI_PARM_ {
 extern void DIGByRSSILps_8720E(u16 phystsofst);
 extern u32 halbb_fw_read_rf_reg_8720e(enum rf_path path, u32 reg_addr, u32 bit_mask);
 extern bool halbb_fw_write_rf_reg_8720e(enum rf_path path, u32 reg_addr, u32 bit_mask, u32 data);
+extern u32 halbb_fw_get_bb_reg_8720e(u32 addr, u32 mask);
+extern void halbb_fw_set_bb_reg_8720e(u32 addr, u32 mask, u32 val);
 
 #endif

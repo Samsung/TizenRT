@@ -778,6 +778,8 @@ typedef struct {
 #define ADC_MASK_COMP_STS_CH(x)					(u32)(0x00000003 << ADC_SHIFT_COMP_STS_CH(x))
 
 #define ADC_IT_COMP_CH_EN(x)					((u32)0x00000001 << ((8+x)))
+#define ADC_IT_COMPRE_CH_EN(x)					((u32)0x00000001 << ((19+x)))
+
 /**
   * @}
   */
@@ -824,6 +826,8 @@ _LONG_CALL_ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState);
 _LONG_CALL_ void ADC_SetDmaEnable(u32 newState);
 _LONG_CALL_ u32 ADC_RXGDMA_Init(GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc,
 								u8 *pDataBuf, u32 DataLen);
+_LONG_CALL_ s32 ADC_GetVoltage(u16 chan_data);
+_LONG_CALL_ u32 ADC_GetInterR(void);
 
 /**
   * @}

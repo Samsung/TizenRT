@@ -58,6 +58,24 @@ extern "C" {
 #ifndef WLAN1_IDX
 #define WLAN1_IDX	1  /**< wlan1 index */
 #endif
+
+#ifndef STA_WLAN_INDEX
+#define STA_WLAN_INDEX	0
+#endif
+
+#ifndef SOFTAP_WLAN_INDEX
+#define SOFTAP_WLAN_INDEX	1
+#endif
+
+#ifndef STA_WLAN_NAME
+#define STA_WLAN_NAME	"wlan0"
+#endif
+
+#ifndef SOFTAP_WLAN_NAME
+#define SOFTAP_WLAN_NAME	"wlan1"
+#endif
+
+
 /** @} */
 
 
@@ -170,11 +188,11 @@ typedef enum {
 } rtw_result_t;
 
 /**
-  * @brief  The enumeration lists the possible security types to set when connection.\n
-  *			Station mode supports OPEN, WEP, and WPA2.\n
-  *			AP mode support OPEN and WPA2.
-  */
-enum {
+ * @brief The enumeration lists the possible security types to set when connection.\n
+ *			Station mode supports OPEN, WEP, and WPA2.\n
+ *			AP mode support OPEN and WPA2.
+ */
+typedef enum {
 	RTW_SECURITY_OPEN           = 0,                                                /**< Open security                           */
 	RTW_SECURITY_WEP_PSK        = WEP_ENABLED,                                      /**< WEP Security with open authentication   */
 	RTW_SECURITY_WEP_SHARED     = (WEP_ENABLED | SHARED_ENABLED),                   /**< WEP Security with shared authentication */
@@ -201,8 +219,8 @@ enum {
 	RTW_SECURITY_UNKNOWN        = -1,                                               /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
 
 	RTW_SECURITY_FORCE_32_BIT   = 0x7fffffff                                        /**< Exists only to force rtw_security_t type to 32 bits */
-};
-typedef long rtw_security_t;
+} rtw_security_t;
+
 
 /**
  * @brief The enumeration lists wpa mode
@@ -588,8 +606,7 @@ typedef enum {
 	RTW_PROMISC_ENABLE_5 = 6 /**< Fetch all unicast 802.11 packets, data frame and beacon in same BSSID*/
 } rtw_rcr_level_t;
 
-
-#if defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT
+#if (defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT) || defined __DOXYGEN__
 /**
  * @brief The enumeration lists the promisc rx type.
  */
@@ -731,27 +748,6 @@ typedef enum {
 	LPS_PG,             ///<pg
 	LPS_LEVEL_MAX,
 } lps_level;
-
-
-/**
-* @brief The enumeration lists the LPS mode.
-*/
-typedef enum { // for lps_mode
-	LPS_MODE_NONE = 0,   /**< none */
-	LPS_MODE_NORMAL,    /**< normal  mode */
-	LPS_MODE_RESUME,    /**< resume  mode*/
-	LPS_MODE_NUM
-} LPS_mode;
-
-/**
-  * The enumeration lists the IPS mode.
-  */
-typedef enum  { // for ips_mode
-	IPS_MODE_NONE = 0,   /**< none */
-	IPS_MODE_NORMAL,    /**< normal mode*/
-	IPS_MODE_RESUME,    /**< resume mode */
-	IPS_MODE_NUM
-} IPS_mode;
 
 
 /**

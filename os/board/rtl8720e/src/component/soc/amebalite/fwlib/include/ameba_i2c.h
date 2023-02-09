@@ -635,6 +635,15 @@ typedef struct {
 } I2C_InitTypeDef;
 
 /**
+  * @brief  I2C IntMode Structure Definition
+  */
+typedef struct {
+	void (*I2CSendSem)(u32 IsWrite);    /*!< Interface for releasing semaphores */
+	void (*I2CWaitSem)(u32 IsWrite);    /*!< Interface for acquiring semaphores */
+	I2C_TypeDef *I2Cx;
+} I2C_IntModeCtrl;
+
+/**
   * @brief  I2C dev Table Definition
   */
 typedef struct {
@@ -734,6 +743,9 @@ _LONG_CALL_ u8 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u32 m
 _LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
 _LONG_CALL_ u8 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u32 ms);
 _LONG_CALL_ u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
+_LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
+_LONG_CALL_ void I2C_MasterISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
 
 /**
   * @}
@@ -787,6 +799,7 @@ extern u32 I2C_SLAVEWRITE_PATCH;
 extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_EARLY_RX_DONE 			-1
+#define I2C_TRX_BUFFER_DEPTH 16
 
 #endif
 

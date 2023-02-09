@@ -32,6 +32,8 @@ uint32_t server_ip = 0;
 #define WIFI_RETRYCOUNT 5
 #define WIFI_FAST_CON_PARTION_SIZE 0x400
 #define TOTAL_PARTION_SIZE 0x1000
+int wifi_check_fast_connect_data(struct wlan_fast_reconnect *data);
+
 /*
 * Usage:
 *       wifi connection indication trigger this function to save current
@@ -52,7 +54,7 @@ int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int server_
 	u32 channel = 0;
 
 	/* STEP1: get current connect info from wifi driver*/
-	if (wifi_get_setting(WLAN0_IDX, &setting) || setting.mode == RTW_MODE_AP) {
+	if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
 		RTW_API_INFO("\r\n %s():wifi_get_setting fail or ap mode", __func__);
 		return RTW_ERROR;
 	}
@@ -134,12 +136,12 @@ int wifi_do_fast_connect(void)
 	struct psk_info PSK_INFO;
 
 #if CONFIG_LWIP_LAYER
-	netif_set_up(&xnetif[0]);
+	netifapi_netif_set_up(&xnetif[0]);
 #endif
 
 #if CONFIG_AUTO_RECONNECT
 	//setup reconnection flag
-	if (wifi_config_autoreconnect(1, AUTO_RECONNECT_COUNT, AUTO_RECONNECT_INTERVAL) < 0) {
+	if (wifi_config_autoreconnect(1) < 0) {
 		return -1;
 	}
 #endif
@@ -166,6 +168,13 @@ int wifi_do_fast_connect(void)
 		rtw_memcpy(PSK_INFO.psk_essid, data->psk_essid, sizeof(data->psk_essid));
 		rtw_memcpy(PSK_INFO.psk_passphrase, data->psk_passphrase, sizeof(data->psk_passphrase));
 		rtw_memcpy(PSK_INFO.wpa_global_PSK, data->wpa_global_PSK, sizeof(data->wpa_global_PSK));
+
+		if (wifi_check_fast_connect_data(data) < 0) {
+			printf("[FAST_CONNECT] Fast connect profile is wrong, abort fast connection\n");
+			free(data);
+			return -1;
+		}
+
 		wifi_psk_info_set(&PSK_INFO);
 
 		channel = data->channel;
@@ -246,7 +255,7 @@ int check_is_the_same_ap()
 		struct wlan_fast_reconnect data;
 		rtw_wifi_setting_t setting;
 
-		if (wifi_get_setting(WLAN0_IDX, &setting) || setting.mode == RTW_MODE_AP) {
+		if (wifi_get_setting(STA_WLAN_INDEX, &setting) || setting.mode == RTW_MODE_AP) {
 			RTW_API_INFO("\r\n %s():wifi_get_setting fail or ap mode", __func__);
 			return 0;
 		}
@@ -304,4 +313,56 @@ void wifi_fast_connect_enable(u8 enable)
 			p_store_fast_connect_info = write_fast_connect_data_to_flash;
 		}
 	}
+}
+
+/*
+* Usage:
+*       This function load previous saved ip in flash for fast dhcp.
+*
+*/
+void wifi_fast_connect_load_fast_dhcp(void)
+{
+#if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
+	struct wlan_fast_reconnect *data;
+	data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
+	if (data) {
+		memset(data, 0xff, sizeof(struct wlan_fast_reconnect));
+		sys_read_wlan_data_from_flash((uint8_t *)data, sizeof(struct wlan_fast_reconnect));
+
+		/* Check whether stored flash profile is empty */
+		struct wlan_fast_reconnect *empty_data;
+		empty_data = (struct wlan_fast_reconnect *)malloc(sizeof(struct wlan_fast_reconnect));
+		if (empty_data) {
+			memset(empty_data, 0xff, sizeof(struct wlan_fast_reconnect));
+			if (memcmp(empty_data, data, sizeof(struct wlan_fast_reconnect)) == 0) {
+				free(data);
+				free(empty_data);
+				return;
+			}
+			free(empty_data);
+		}
+
+		offer_ip = data->offer_ip;
+		server_ip = data->server_ip;
+		free(data);
+	}
+#endif
+}
+
+int wifi_check_fast_connect_data(struct wlan_fast_reconnect *data)
+{
+	//Check SSID
+	int ret = 0;
+	if ((strlen((const char *)data->psk_essid) > 32) || (strlen((const char *)data->psk_essid) == 0)) {
+		ret = -1;
+		return ret;
+	}
+
+	//Check Password
+	if (strlen((const char *)data->psk_passphrase) > 64) {
+		ret = -1;
+		return ret;
+	}
+
+	return ret;
 }

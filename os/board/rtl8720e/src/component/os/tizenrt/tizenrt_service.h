@@ -319,4 +319,6 @@ int rtw_printf_info(const char *format,...);
 extern u32 random_seed;
 #endif
 
+#define configSUPPORT_STATIC_ALLOCATION					0
+
 #endif							/* _CUSTOMER_RTOS_SERVICE_H_ */

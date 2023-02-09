@@ -37,16 +37,14 @@ struct eth_drv_sg {
 //----- ------------------------------------------------------------------
 // Wlan Interface Provided
 //----- ------------------------------------------------------------------
-unsigned char rltk_wlan_check_isup(int idx);
 void rltk_wlan_tx_inc(int idx);
 void rltk_wlan_tx_dec(int idx);
 struct sk_buff *rltk_wlan_get_recv_skb(int idx);
 struct sk_buff *rltk_wlan_alloc_skb(unsigned int total_len);
 void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
-void rltk_wlan_send_skb(int idx, struct sk_buff *skb);	//struct sk_buff as defined above comment line
+void wifi_send_skb(int idx, struct sk_buff *skb);	//struct sk_buff as defined above comment line
 int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len);
 void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
-unsigned char rltk_wlan_running(unsigned char idx);		// interface is up. 0: interface is down
 
 //----- ------------------------------------------------------------------
 // Network Interface provided

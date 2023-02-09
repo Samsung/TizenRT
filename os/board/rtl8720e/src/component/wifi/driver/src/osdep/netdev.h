@@ -60,40 +60,25 @@
 #define RECV_STACK_FOR_WPS 0
 #endif
 
-#define XMIT_STACKSIZE		256
-#define CMD_STACKSIZE_FOR_SAE	1024
-#ifdef CONFIG_IEEE80211K
-#define CMD_STACKSIZE		768
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
+#define LITTLE_STACKSIZE		256
 #else
-#define CMD_STACKSIZE		512 //1024
-#endif
+#define LITTLE_STACKSIZE		(512 + 256 + 128 + RECV_STACK_FOR_WPS)
+#endif // defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE)
 
 
-#if defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE)
-#define RECV_STACKSIZE		256
-#else
-#define RECV_STACKSIZE		(512 + 256 + 128 + RECV_STACK_FOR_WPS)
-#endif // defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBALITE)
-
-#define XMIT_TASKLET_STACKSIZE	 256
 #define RECV_TASKLET_STACKSIZE	(1024 + RECV_STACK_FOR_WPS)
-#define SDIOXMIT_STACKSIZE	256
+
 #define DRIVER_RESUME_TASK_STACKSIZE 256
 
+#define rtw_netdev_priv(netdev) (netdev_priv(netdev))
 
-struct rtw_netdev_priv_indicator {
-	void *priv;
-	u32 sizeof_priv;
-};
-
-#define rtw_netdev_priv(netdev) ( ((struct rtw_netdev_priv_indicator *)netdev_priv(netdev))->priv )
-
-#define ADPT_FMT "%s"
-#define ADPT_ARG(adapter) adapter->pnetdev->name
+#define ADPT_FMT "wlan%d"
+#define ADPT_ARG(adapter) adapter->iface_type
 #define FUNC_NDEV_FMT "%s"
 #define FUNC_NDEV_ARG(ndev) __func__
 #define FUNC_ADPT_FMT "%s(%s)"
-#define FUNC_ADPT_ARG(adapter) __func__, adapter->pnetdev->name
+#define FUNC_ADPT_ARG(adapter) __func__, adapter->iface_type
 
 #include "wifi_constants.h"
 #include "wifi_structures.h"

@@ -53,12 +53,6 @@ If you want to change this file please make sure notify all driver teams maintai
 #define HT_LDPC_EN	BIT(0)
 #define VHT_LDPC_EN	BIT(1)
 
-#define	SM_PS_STATIC	0
-#define	SM_PS_DYNAMIC	1
-#define	SM_PS_INVALID	2
-#define	SM_PS_DISABLE	3
-
-
 /*cmn_sta_info.ra_sta_info.txrx_state*/
 #define	TX_STATE				0
 #define	RX_STATE				1
@@ -214,7 +208,6 @@ struct cmn_sta_info {
 	u8	stbc_en: 2;			/*[Driver] really transmitt STBC*/
 	u8	ldpc_en: 2;			/*[Driver] really transmitt LDPC*/
 	enum wireless_set	support_wireless_set;/*[Driver]*/
-	u8	sm_ps: 2;			/*[Driver]*/
 	struct dtp_info dtp_stat;		/*[PHYDM] Dynamic Tx power offset*/
 	u8	wireless_mode;	/*enum wlan_mode, [Driver], move from sta_info to cmn_sta_info for compating ax */
 	/*u8		pw2cca_over_TH_cnt;*/

@@ -19,7 +19,7 @@ ROM_E_RTW_MSGPOOL(DM_RA_4,	"%s(): mac_id=%d raid=0x%x bw=%d mask=0x%x\r\n")
 ROM_E_RTW_MSGPOOL(DM_DIG_1,	"CurrentIGI(0x%02x)\n\n")
 // DBG_PWR_TRACKING
 ROM_E_RTW_MSGPOOL(PWR_TRACKING_1,	"Thermal = 0x%02X\r\n")
-ROM_E_RTW_MSGPOOL(PWR_TRACKING_2,	"delta = %d, AVG Thermal = 0x%02X, EFUSE = 0x%02X, PackageType = 0x%02X\r\n")
+ROM_E_RTW_MSGPOOL(PWR_TRACKING_2,	"delta = %d, AVG Thermal = 0x%02X, EFUSE = 0x%02X\r\n")
 ROM_E_RTW_MSGPOOL(PWR_TRACKING_3,	"Channel = %d, CCK PwrBase = 0x%02X, HT40M PwrBase = 0x%02X, OFDMdiff = %d, 20Mdiff = %d \n\r")
 ROM_E_RTW_MSGPOOL(PWR_TRACKING_4,	"Remnant_CCKSwingIdx  = %d\n\r")
 ROM_E_RTW_MSGPOOL(PWR_TRACKING_5,	"Remnant_OFDMSwingIdx = %d\n\r")

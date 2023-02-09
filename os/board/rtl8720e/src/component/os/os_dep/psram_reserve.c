@@ -1,7 +1,6 @@
 #include <string.h>		// memset()
 #include <psram_reserve.h>
 //#include <ameba_soc.h>
-#include <section_config.h>
 
 static struct Psram_Heap g_Psram_heap;
 
@@ -11,7 +10,7 @@ static	_lock	Psram_heap_lock;
 #define configTOTAL_PSRAM_HEAP_SIZE		(0x200000)
 #define configBYTE_PSRAM_ALIGNMENT			32
 
-PSRAM_HEAP_SECTION
+//PSRAM_HEAP_SECTION
 static unsigned char psRAMHeap[configTOTAL_PSRAM_HEAP_SIZE];
 
 void Psram_heap_init(void)

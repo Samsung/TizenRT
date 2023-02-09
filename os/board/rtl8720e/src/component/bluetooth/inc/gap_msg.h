@@ -352,7 +352,8 @@ extern "C"
   */
 
 /** @brief GAP connection states*/
-typedef enum {
+typedef enum
+{
 	GAP_CONN_STATE_DISCONNECTED, //!< Disconnected.
 	GAP_CONN_STATE_CONNECTING,   //!< Connecting.
 	GAP_CONN_STATE_CONNECTED,    //!< Connected.
@@ -371,7 +372,8 @@ typedef enum {
   * @{
   */
 /** @brief  Device State.*/
-typedef struct {
+typedef struct
+{
 	uint8_t gap_init_state: 1;  //!< @ref GAP_INIT_STATE
 	uint8_t gap_adv_sub_state: 1;  //!< @ref GAP_ADV_SUB_STATE
 	uint8_t gap_adv_state: 2;   //!< @ref GAP_ADV_STATE
@@ -380,74 +382,86 @@ typedef struct {
 } T_GAP_DEV_STATE;
 
 /** @brief  The msg_data of GAP_MSG_LE_DEV_STATE_CHANGE.*/
-typedef struct {
+typedef struct
+{
 	T_GAP_DEV_STATE new_state;
 	uint16_t cause;
 } T_GAP_DEV_STATE_CHANGE;
 
 
 /** @brief  The msg_data of GAP_MSG_LE_CONN_STATE_CHANGE.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 	uint8_t new_state;
 	uint16_t disc_cause;
 } T_GAP_CONN_STATE_CHANGE;
 
 /** @brief  The msg_data of GAP_MSG_LE_CONN_PARAM_UPDATE.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 	uint8_t status;
 	uint16_t cause;
 } T_GAP_CONN_PARAM_UPDATE;
 
 /** @brief  The msg_data of GAP_MSG_LE_AUTHEN_STATE_CHANGE.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 	uint8_t new_state;
 	uint16_t status;
 } T_GAP_AUTHEN_STATE;
 
 /** @brief  The msg_data of GAP_MSG_LE_BOND_PASSKEY_DISPLAY.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 } T_GAP_BOND_PASSKEY_DISPLAY;
 
 /** @brief  The msg_data of GAP_MSG_LE_BOND_USER_CONFIRMATION.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 } T_GAP_BOND_USER_CONF;
 
 /** @brief  The msg_data of T_GAP_BOND_JUST_WORK_CONF.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 } T_GAP_BOND_JUST_WORK_CONF;
 /** @brief  The msg_data of GAP_MSG_LE_BOND_PASSKEY_INPUT.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 	uint8_t key_press;
 } T_GAP_BOND_PASSKEY_INPUT;
 
 /** @brief  The msg_data of GAP_MSG_LE_BOND_OOB_INPUT.*/
-typedef struct {
+typedef struct
+{
 	uint8_t conn_id;
 } T_GAP_BOND_OOB_INPUT;
 
 /** @brief  The msg_data of GAP_MSG_LE_CONN_MTU_INFO.*/
-typedef struct {
+typedef struct
+{
 	uint8_t   conn_id;
 	uint16_t  mtu_size;
 } T_GAP_CONN_MTU_INFO;
 
 /** @brief  The msg_data of GAP_MSG_LE_EXT_ADV_STATE_CHANGE.*/
 #if F_BT_LE_5_0_AE_ADV_SUPPORT
-typedef struct {
+typedef struct
+{
 	uint8_t  adv_handle;
 	uint8_t  new_state;
 	uint16_t cause;
 } T_GAP_EXT_ADV_STATE_CHANGE;
 #endif
 /** @brief  The msg_data of T_LE_GAP_MSG. */
-typedef union {
+typedef union
+{
 	T_GAP_DEV_STATE_CHANGE     gap_dev_state_change;
 	T_GAP_CONN_STATE_CHANGE    gap_conn_state_change;
 	T_GAP_CONN_PARAM_UPDATE    gap_conn_param_update;
@@ -465,7 +479,8 @@ typedef union {
 } T_LE_GAP_MSG_DATA;
 
 /** @brief  As the param of T_IO_MSG. type is IO_MSG_TYPE_BT_STATUS. */
-typedef struct {
+typedef struct
+{
 	T_LE_GAP_MSG_DATA msg_data;
 } T_LE_GAP_MSG;
 

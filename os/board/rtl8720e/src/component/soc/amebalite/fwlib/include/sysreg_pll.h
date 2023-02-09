@@ -347,7 +347,6 @@ typedef struct {
 
 /* MANUAL_GEN_START */
 
-//Please add your defination here
 
 /* MANUAL_GEN_END */
 

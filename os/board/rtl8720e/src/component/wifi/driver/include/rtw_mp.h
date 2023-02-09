@@ -271,11 +271,6 @@ typedef struct _MPT_CONTEXT {
 	u8		APK_bound[2];	//for APK	path A/path B
 	BOOLEAN		bMptIndexEven;
 
-#ifdef CONFIG_RTL8188E
-	u8 		backup0x52_RF_A;
-	u8 		backup0x52_RF_B;
-#endif
-
 	u8			h2cReqNum;
 	u8			c2hBuf[20];
 
@@ -398,7 +393,6 @@ struct mp_priv {
 	u8 bSetTxPower;
 	u8 bCCKTxPowerAdjust;
 	u8 bFAStatistics;
-//	uint ForcedDataRate;
 	u8 mp_dm;
 	struct wlan_network mp_network;
 	NDIS_802_11_MAC_ADDRESS network_macaddr;
@@ -720,7 +714,7 @@ typedef enum _MP_PPDU_TYPE {
 
 extern s32 init_mp_priv(_adapter *padapter);
 extern void free_mp_priv(struct mp_priv *pmp_priv);
-extern s32 MPT_InitializeAdapter(_adapter *padapter, u8 Channel);
+extern s32 wifi_hal_mp_init(_adapter *padapter, u8 Channel);
 extern void MPT_DeInitAdapter(_adapter *padapter);
 extern s32 mp_start_test(_adapter *padapter);
 extern void mp_stop_test(_adapter *padapter);
@@ -747,6 +741,16 @@ extern u32 read_bbreg(_adapter *padapter, u32 addr, u32 bitmask);
 extern void write_bbreg(_adapter *padapter, u32 addr, u32 bitmask, u32 val);
 extern u32 read_rfreg(_adapter *padapter, u8 rfpath, u32 addr);
 extern void write_rfreg(_adapter *padapter, u8 rfpath, u32 addr, u32 val);
+
+extern void wifi_hal_mp_resetbb(_adapter *pAdapter);
+extern void wifi_hal_mp_settxedca(_adapter *pAdapter);
+extern void wifi_hal_mp_rx_cca(_adapter *pAdapter, bool cca_en);
+extern int wifi_hal_mp_arx(struct net_device *dev, struct rtw_point *wrqu);
+extern void wifi_hal_mp_txdesc(PADAPTER adapter, struct mp_priv *pmp_priv);
+extern void wifi_hal_mp_dump(_adapter *padapter, u32 column);
+extern void wifi_hal_mp_rx_filter(_adapter *padapter);
+extern void wifi_hal_mp_dpk(struct net_device *dev, struct rtw_point *wrqu);
+extern void PHY_SetRFPathSwitch(PADAPTER pAdapter, BOOLEAN is_main);
 
 extern void	SetChannel(_adapter *pAdapter);
 extern void	SetBandwidth(_adapter *pAdapter);
@@ -779,7 +783,8 @@ extern u32	GetPhyRxPktCRC32Error(_adapter *pAdapter);
 extern s32	SetPowerTracking(_adapter *padapter, u8 enable);
 extern void	GetPowerTracking(_adapter *padapter, u8 *enable);
 
-extern u32	mp_query_psd(_adapter *pAdapter, u8 *data, int data_len);
+extern u32	wifi_hal_mp_query_psd(_adapter *pAdapter, u8 *data, int data_len);
+extern void wifi_hal_mp_crystal_cap(_adapter *pAdapter, u32 CrystalCapVal);
 
 
 extern void Hal_SetAntenna(_adapter *pAdapter);
@@ -806,7 +811,6 @@ extern void Hal_TriggerRFThermalMeter(_adapter *pAdapter);
 extern u8 Hal_ReadRFThermalMeter(_adapter *pAdapter);
 extern void Hal_SetCCKContinuousTx(_adapter *pAdapter, u8 bStart);
 extern void Hal_SetOFDMContinuousTx(_adapter *pAdapter, u8 bStart);
-extern void Hal_ProSetCrystalCap(_adapter *pAdapter, u32 CrystalCapVal);
 extern void _rtw_mp_xmit_priv(struct xmit_priv *pxmitpriv);
 extern void MP_PHY_SetRFPathSwitch(_adapter *pAdapter, BOOLEAN bMain);
 extern u32 mpt_ProQueryCalTxPower(_adapter *pAdapter, u8 RfPath);

@@ -56,6 +56,15 @@ __STATIC_INLINE void pmu_psp_modify(u8 backup)
 	}
 }
 
+__STATIC_INLINE void SOCPS_Wakeup_Status_Polling(void)
+{
+	if (LSYS_GET_KR4_IS_NP(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_SYSTEM_CFG1))) {
+		while (RRAM_DEV->AP_WAKEUP_STATUS) {
+			DelayUs(2);
+		}
+	}
+}
+
 VOID SOCPS_NVICBackup_HP(void)
 {
 	int i = 0;
@@ -213,12 +222,12 @@ void vPortSystemPowerOff(VOID)
 		} else {
 			DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4G NP\n");
 
-			SOCPS_NP_suspend_and_resume(SLEEP_PG, DISABLE);
+			SOCPS_NP_suspend(SLEEP_PG);
 
 			DCache_Clean(0xFFFFFFFF, 0xFFFFFFFF);
 			Cache_Enable(DISABLE);
 
-			set_psram_suspend_and_restore(DISABLE);
+			set_psram_suspend();
 
 			/* close CPU */
 			Rtemp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
@@ -239,9 +248,9 @@ void vPortSystemPowerOff(VOID)
 			//currently set 1 to all rw_prot register
 
 		} else {
-			set_psram_suspend_and_restore(ENABLE);
+			set_psram_resume();
 
-			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
+			SOCPS_NP_resume(SLEEP_PG);
 
 			Cache_Enable(ENABLE);
 		}
@@ -254,7 +263,7 @@ void vPortSystemPowerOff(VOID)
 			//currently set 1 to all rw_prot register
 
 		} else {
-			SOCPS_NP_suspend_and_resume(SLEEP_PG, ENABLE);
+			SOCPS_NP_resume(SLEEP_PG);
 			DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4GW NP\n");
 		}
 
@@ -290,9 +299,6 @@ VOID SOCPS_SleepPG(VOID)
 	u32 nDeviceIdOffset = 0;
 	u32 Rtemp = 0;
 
-	//InterruptDis(UART_LOG_IRQ);
-	Img2EntryFun0.RamWakeupFun = SOCPS_WakeFromPG_KM4;
-
 	/* exec sleep hook functions */
 	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
 	if (nDeviceIdOffset != PMU_MAX) {
@@ -314,6 +320,8 @@ VOID SOCPS_SleepPG(VOID)
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG);
 	Rtemp &= ~LSYS_BIT_BOOT_WAKE_FROM_PS_HS;
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, Rtemp);
+
+	SOCPS_Wakeup_Status_Polling();
 
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 	WakeEventFlag_KM4 = _FALSE;
@@ -406,12 +414,11 @@ void vPortSystemClockGate(VOID)
 	} else {
 		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4C NP\n");
 
-		SOCPS_NP_suspend_and_resume(SLEEP_CG, DISABLE);
+		SOCPS_NP_suspend(SLEEP_CG);
 
 		DCache_Clean(0xFFFFFFFF, 0xFFFFFFFF);
-		Cache_Enable(DISABLE);
 
-		set_psram_suspend_and_restore(DISABLE);
+		set_psram_suspend();
 
 		/* don't close CPU*/
 		Rtemp = HAL_READ32(PMC_BASE, SYSPMC_OPT);
@@ -433,11 +440,9 @@ void vPortSystemClockGate(VOID)
 		//TODO: set token bit, close KR4 access authority
 
 	} else {
-		set_psram_suspend_and_restore(ENABLE);
+		set_psram_resume();
 
-		SOCPS_NP_suspend_and_resume(SLEEP_CG, ENABLE);
-
-		Cache_Enable(ENABLE);
+		SOCPS_NP_resume(SLEEP_CG);
 	}
 
 	if (HAL_READ32(PMC_BASE, SYSPMC_CTRL) & PMC_BIT_PMEN_SLEP) {
@@ -486,7 +491,11 @@ resume:
 		HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
 	}
 
+	SOCPS_Wakeup_Status_Polling();
+
 	/* TODO: exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
 }
+
+

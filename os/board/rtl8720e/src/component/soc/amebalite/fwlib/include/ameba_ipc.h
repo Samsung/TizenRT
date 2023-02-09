@@ -261,6 +261,18 @@ typedef enum {
   * @}
   */
 
+/** @defgroup IPC_TX_CHANNEL
+  * @{
+  */
+#define IPC_TX_CHANNEL_NUM						16
+#define IPC_TX_CHANNEL_SWITCH(x)				((u32)(((x >> 4) & 0x0000000F)))
+#define IPC_TX0_CHANNEL_NUM						8
+#define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
+
+/**
+  * @}
+  */
+
 /** @defgroup IPC_KR4_Tx_Channel
   * @{
   */
@@ -352,7 +364,7 @@ typedef enum {
 
 #if defined(ARM_CORE_CM4)
 #define IPC_FLASH_LOCK  KM4_IPC_PXID
-#elif defined(ARM_CORE_CA7)
+#elif defined(ARM_CORE_CA32)
 #define IPC_FLASH_LOCK  KR4_IPC_PXID
 #elif defined(RSICV_CORE_KR4)
 #define IPC_FLASH_LOCK  DSP_IPC_PXID
@@ -375,7 +387,7 @@ typedef enum {
 void IPC_INTConfig(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, u32 NewState);
 void IPC_IERSet(IPC_TypeDef *IPCx, u32 IPC_Chs);
 u32 IPC_IERGet(IPC_TypeDef *IPCx);
-void IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
+u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);

@@ -794,16 +794,16 @@
 
 /* Set HE variant HT Control field */
 #define SET_HE_VAR_HTC(_pStart) \
-	SET_BITS_TO_LE_4BYTE((u8 *)_pStart, 0, 2, HE_VAR_HTC)
+	SET_BITS_TO_LE_1BYTE((u8 *)_pStart, 0, 2, HE_VAR_HTC)
 
 #define SET_HE_VAR_HTC_CID_BSR(_pStart) \
-	SET_BITS_TO_LE_4BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_BSR)
+	SET_BITS_TO_LE_1BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_BSR)
 #define SET_HE_VAR_HTC_CID_UPH(_pStart) \
-	SET_BITS_TO_LE_4BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_UPH)
+	SET_BITS_TO_LE_1BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_UPH)
 #define SET_HE_VAR_HTC_CID_BQR(_pStart) \
-	SET_BITS_TO_LE_4BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_BQR)
+	SET_BITS_TO_LE_1BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_BQR)
 #define SET_HE_VAR_HTC_CID_CAS(_pStart) \
-	SET_BITS_TO_LE_4BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_CAS)
+	SET_BITS_TO_LE_1BYTE((u8 *)_pStart, 2, 4, HE_VAR_HTC_CID_CAS)
 
 /* Get HE variant HT Control field */
 #define GET_HE_VAR_HTC(_pStart) \
@@ -869,44 +869,10 @@
 		+ HE_OP_BASIC_MCS_LEN + HE_OP_VHT_OPER_INFO_LEN \
 		+ HE_OP_MAX_COHOST_BSSID_LEN + HE_OP_6G_OPER_INFO_LEN)
 
-//TODO
-
-struct he_actrl_bsr {
-	void *bsr;
-};
-
-struct he_actrl_uph {
-	void *uph;
-};
-
-struct he_actrl_bqr {
-	void *bqr;
-};
-
-struct he_actrl_cas {
-	void *cas;
-};
-
-
-struct he_variant_actrl {
-	struct he_actrl_bsr actrl_bsr;	//buffer status report
-	struct he_actrl_uph actrl_uph;	//UL power headroom
-	struct he_actrl_bqr actrl_bqr;	//bandwidth query report
-	struct he_actrl_cas actrl_cas;	//command and status
-};
-
-
 struct he_priv {
 	u8 he_option;
-
 	u8 pre_he_muedca_cnt;
-
-	u8 op_present; /* he_op is present */
-
-	u8 he_cap[HE_CAP_ELE_MAX_LEN];
-	u8 he_op[HE_OP_ELE_MAX_LEN];
-
-	struct he_variant_actrl actrl_ele; //HTC aggregated control subfield
+	u8 he_muedca_enabled;
 };
 
 struct HE_caps_element {
@@ -916,27 +882,13 @@ struct HE_caps_element {
 	unsigned char ppe_thres[HE_CAP_ELE_PPE_THRE_MAX_LEN];	/* option */
 };
 
-struct mu_ac_parameter {
-	u8 ac_aifsn;
-	u8 cw; /* ECWmin, ECWmax (CW = 2^ECW - 1) */
-	u8 timer;
-};
-
-struct HE_mu_edca_element {
-	u8 qos_info; /* AP/STA specific QoS info */
-	struct mu_ac_parameter edca[4]; /* AC_BE, AC_BK, AC_VI, AC_VO */
-};
-
 void HE_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE);
 void HE_operation_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE, u8 update);
 void HE_mu_edca_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE, u8 first);
-
 void rtw_he_nss_to_mcsmap(u8 nss, u8 *target_mcs_map, u8 *cur_mcs_map);
-u64	rtw_he_mcs_map_to_bitmap(u8 *mcs_map, u8 nss);
-
+u64 rtw_he_mcs_map_to_bitmap(u8 *mcs_map, u8 nss);
 u8 rtw_he_get_highest_rate(u8 *he_mcs_map);
 u32 rtw_restructure_he_ie(_adapter *padapter, u8 *in_ie, u8 *out_ie, uint in_len, uint *pout_len);
-void HEOnAssocRsp(_adapter *padapter);
-
+void rtw_he_fill_htc(_adapter *padapter, u8 *phtc_buf);
 
 #endif //_RTW_HE_H_

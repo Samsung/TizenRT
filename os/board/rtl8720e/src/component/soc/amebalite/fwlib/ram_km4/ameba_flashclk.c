@@ -19,7 +19,6 @@ static u8 check_config_reg = 0;
 extern FlashInfo_TypeDef Flash_AVL[];
 extern u16 Flash_ReadMode;
 extern u16 Flash_Speed;
-extern u8 BOOT_SocClk_Info_Get_SPIC_DIV(void);
 
 /* When OTF enabled, FLASH_CalibrationNew in ROM will Fail because Cache In RSIP is not Clean */
 BOOT_RAM_TEXT_SECTION
@@ -473,17 +472,17 @@ u32 flash_rx_mode_switch(u8 read_mode)
 BOOT_RAM_TEXT_SECTION
 void flash_highspeed_setup(void)
 {
-	u8 read_mode;
-	u8 flash_speed;
-	u8 SPIC_CKD;
+	u8 read_mode, flash_speed;
+	u8 spic_ckd;
+	u32 pllm_clk = PLL_ClkGet(CLK_CPU_MPLL);
 
 	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
 	flash_speed = flash_get_option(Flash_Speed, _TRUE);
 
-	SPIC_CKD = BOOT_SocClk_Info_Get_SPIC_DIV() - 1; /* Get SPIC max speed of this BDNum */
-	flash_speed  = (SPIC_CKD > flash_speed) ? SPIC_CKD : flash_speed;
+	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, SPIC_CLK_LIMIT) - 1;
+	flash_speed = MAX(flash_speed, spic_ckd);
 
-	__asm volatile("cpsid i");
+	__disable_irq();
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.
 	 * Disable DREIR to avoid that interrupt hanler time is lager than 0x1_0000 SPIC cycles.
@@ -512,5 +511,6 @@ void flash_highspeed_setup(void)
 		flash_handshake_highspeed(flash_speed);
 	}
 
-	__asm volatile("cpsie i");
+	__enable_irq();
 }
+

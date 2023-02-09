@@ -5,6 +5,8 @@
 #define MACID_CLIENT						0
 #define MAX_LEAKAGE_LIMIT   				3
 #define LEAKAGE_DELAY_TIME					5
+#define MAC_RS_TXREG_NUM 	20
+#define MAC_RS_TXPWRREG_NUM 	102
 
 /*TIMER allcation*/
 #define TIMER_TC0_CTRL						REG_TC0_CTRL    //instead of PowerTranning
@@ -55,16 +57,16 @@
 
 #define DEFAULT_PS_BCN_EARLY_MIN     	1
 #define DEFAULT_PS_BCN_EARLY   	     	3
-#define DEFAULT_PS_BCN_EARLY_128US   	5
+#define DEFAULT_PS_BCN_EARLY_128US   	0
 #define DEFAULT_PS_BCN_EARLY_32US    	0
 #define DEFAULT_PS_BCN_EARLY_32K   	 	5
-#define DEFAULT_PS_BCN_EARLY_128US_32K	2
-#define DEFAULT_PS_BCN_EARLY_32US_32K	1
-#define DEFAULT_BCN_TO_PERIOD_32K			20
+#define DEFAULT_PS_BCN_EARLY_128US_32K	0
+#define DEFAULT_PS_BCN_EARLY_32US_32K	0
+#define DEFAULT_BCN_TO_PERIOD_32K			15
 
 #define DEFAULT_PS_BCN_EARLY_V_32K   	 5
-#define DEFAULT_PS_BCN_EARLY_V_128US_32K   2
-#define DEFAULT_PS_BCN_EARLY_V_32US_32K    1
+#define DEFAULT_PS_BCN_EARLY_V_128US_32K   0
+#define DEFAULT_PS_BCN_EARLY_V_32US_32K    0
 
 #define DEFAULT_PS_32K_EARLY(x)       	(((DEFAULT_PS_BCN_EARLY_V_32K+(x)) << 5)+(DEFAULT_PS_BCN_EARLY_V_128US_32K<< 2)+(DEFAULT_PS_BCN_EARLY_V_32US_32K))
 #define BCN_PS_32K_SHIFT_MAX(x)        	(((DEFAULT_PS_BCN_EARLY_V_32K+(x)) << 5)+(DEFAULT_PS_BCN_EARLY_V_128US_32K<< 2)+(DEFAULT_PS_BCN_EARLY_V_32US_32K))
@@ -344,6 +346,8 @@ typedef struct _LPSOFFLOAD_Parm_ {
 	u8	InHWCtrlOnOffPeriod: 1;
 	u16 RxbcnModeCmdFileStartAddr;
 	u16 RxbcnModeCmdFileEndAddr;
+	u16 ExitRxbcnModeCmdFileStartAddr;
+	u16 ExitRxbcnModeCmdFileEndAddr;
 	u16 TRXOnCmdFileHWStartAddr;
 	u16 TRXOnCmdFileFWStartAddr;
 	u16 TRXOnCmdFileEndAddr;
@@ -421,6 +425,17 @@ typedef struct _LPSPG_PARM_ {
 	u8	rsvd: 6;
 	u32	ARFC18;
 	u32	DRFC18;
+	u32 	ARFC0;
+	u32 	DRFC0;
+	u32 BB8038;
+	u32 BB803C;
+	u8 RxBcnMode_status;
+	u8 BKBcnMode_status;
+	u32 mactxreg[MAC_RS_TXREG_NUM];
+	u32 macid0ctrlinfo[10];
+	u32 mactxpower[MAC_RS_TXPWRREG_NUM];
+	u32 tssi_bbpage56[64];
+	u32 tssi_bbpage58[64];
 } LPSPG_PARM, *PLPSPG_PARM;
 
 typedef enum _ITWTCLT_ {
@@ -447,6 +462,8 @@ typedef struct _LPS_ITWT_PARM_ {
 	u8		FLOW_ID;//client number
 	u8		TWTVALID;
 	u8		TWTBCNTo;
+	u32	TWTTSFRxBcn;
+	u32	TWTTSFKeepAlive;
 	ITWTCLIENT_PARM ITWTCLIENT1;
 	ITWTCLIENT_PARM ITWTCLIENT2;
 	ITWTCLIENT_PARM ITWTCLIENT3;
@@ -508,7 +525,6 @@ extern void SAPPSEarlyHDL_8720E(void);
 extern void SAPLPS_8720E(void);
 extern BOOLEAN CHECKTWTClientNULL_8720E(void);
 extern BOOLEAN CHECKTWTClientSPEND_8720E(void);
-extern void PSTWTBcnEarlyProcess_8720E(void);
 extern void PSTWTEarlyProcess_8720E(void);
 extern void PSTWTBcnToProcess_8720E(void);
 extern void PSTWTBcnRxProcess_8720E(void);

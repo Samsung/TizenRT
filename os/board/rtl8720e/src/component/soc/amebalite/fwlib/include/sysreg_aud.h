@@ -244,6 +244,7 @@ typedef struct {
 } AUD_TypeDef;
 
 #define AUD_SYS_BASE ((AUD_TypeDef *) (0x41022100))
+#define AUD_SYS_BASE_S ((AUD_TypeDef *) (0x51022100))
 
 /** @} */
 /* AUTO_GEN_END */

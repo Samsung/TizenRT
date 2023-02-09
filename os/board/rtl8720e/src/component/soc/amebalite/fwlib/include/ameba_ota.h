@@ -19,17 +19,14 @@
 #define _AMEBA_OTA_H_
 
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
-#define SERVER_LOCAL	1
-#define SERVER_CLOUD	2
-#define SERVER_TYPE		SERVER_LOCAL						/*configure OTA demo type*/
 #define MAX_IMG_NUM		4
 
 #define HTTP_OTA_UPDATE
 #define HTTPS_OTA_UPDATE
-#define SDCARD_OTA_UPDATE
+#define OTA_CLEAR_PATTERN	0
 
 #define BUF_SIZE			2048								/*the size of the buffer used for receiving firmware data from server*/
 
@@ -37,6 +34,12 @@ extern u32 IMG_ADDR[MAX_IMG_NUM][2];
 
 
 #if (defined HTTP_OTA_UPDATE) || (defined HTTPS_OTA_UPDATE)
+
+#include <mbedtls/config.h>
+#include <mbedtls/platform.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl.h>
+
 
 #define HEADER_BAK_LEN			32
 #define HEADER_LEN				8
@@ -105,14 +108,14 @@ typedef struct {
   * @brief  OTA target image manifest structure definition
   */
 typedef struct {
-	unsigned int Pattern[2];
-	unsigned char Rsvd1[8];
-	unsigned char Ver;
-	unsigned char ImgID;
-	unsigned char AuthAlg;
-	unsigned char HashAlg;
-	unsigned short MajorImgVer;
-	unsigned short MinorImgVer;
+	u32 Pattern[2];
+	u8 Rsvd1[8];
+	u8 Ver;
+	u8 ImgID;
+	u8 AuthAlg;
+	u8 HashAlg;
+	u16 MajorImgVer;
+	u16 MinorImgVer;
 } update_manifest_info;
 
 
@@ -133,16 +136,49 @@ typedef struct {
 	u8 NextImgFg;			/*!< Specifies the Flag that Buffer belong to next image. */
 	u8 NextImgBuf[BUF_SIZE];/*!< Specifies the Buffer belong to next image. */
 	int NextImgLen;			/*!< Specifies the Buffer Length belong to next image. */
-	u32 FlashAddr;			/*!< Specifies the Flash Address.
-									This parameter is used to write the Image to the flash. */
 	int ReadBytes;		/*!< Specifies the Bytes already received. */
 	int RemainBytes;		/*!< Specifies the Remain Bytes of OTA firmware. */
-	int ImgOffset;		/*!< Specifies the Offset of Manifest in firmware. */
+	u32 ImgId;		/*!< Specifies the Image ID.*/
+	u32 ImgOffset;		/*!< Specifies the Offset of Manifest in firmware. */
+	u32	ImageLen;	/*!< Specifies the OTA image length. */
+	u32 FlashAddr;			/*!< Specifies the Flash Address.
+									This parameter is used to write the Image to the flash. */
 	int SigCnt;		/*!< Specifies the Manifest received length. */
 	u8 SigFg;		/*!< Specifies the Flag that Manifest received finished. */
 	u8 SkipBootOTAFg;	/*!< Specifies the Flag that skip update the bootloader. */
 	u8 FirstBufFg;		/*!< Specifies the Flag that exist a buffer before downloading. */
+	u8 IsGetHdr;		/*!< Specifies the Flag that get ota target header. */
+	u8 targetIdx;		/*!< Specifies the ota target index. */
+	int index;			/*!< Specifies the current image index. */
 } update_ota_ctrl_info;
+
+typedef struct {
+	mbedtls_ssl_context ssl;
+	mbedtls_ssl_config conf;
+} update_tls;
+
+typedef struct {
+	char *url;
+	int len;
+	u16 port;
+	char *host;
+	char *resource;
+} update_redirect_conn;
+
+/**
+  * @brief  OTA http connection information structure definition
+  */
+typedef struct {
+	char *host;
+	int port;
+	char *resource;
+	int fd;
+	u8 type;
+	update_tls *tls;
+	update_ota_ctrl_info *otactrl;
+	update_redirect_conn *redirect;
+	update_ota_target_hdr *otaTargetHdr;
+} ota_context;
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -161,6 +197,10 @@ typedef struct {
 
 #define OTA_IMAG			0								/*identify the OTA image*/
 
+#define OTA_LOCAL			0
+#define OTA_HTTP			1
+#define OTA_HTTPS			2
+
 /**
   * @}
   */
@@ -176,47 +216,12 @@ typedef struct {
   */
 u32 OTA_Change(u32 OTAIdx);
 
-void *ota_update_malloc(unsigned int size);
-void ota_update_free(void *buf);
-void ota_platform_reset(void);
-int ota_write_ota2_addr(uint32_t ota_addr);
 u32 ota_get_cur_index(u32 idx);
-int  ota_readstream_user(u32 address, u32 len, u8 *data);
-
-u32 recv_file_info_from_server(u8 *Recvbuf, u32 len, int socket);
-u32 recv_ota_file_hdr(u8 *Recvbuf, u32 *len, update_ota_target_hdr *pOtaTgtHdr, int socket);
-u32 get_ota_tartget_header(u8 *buf, u32 len, update_ota_target_hdr *pOtaTgtHdr, u8 target_idx);
-void erase_ota_target_flash(u32 addr, u32 len);
-u32 download_new_fw_from_server(int socket, update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int index);
 u32 verify_ota_checksum(update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int index);
-u32 change_ota_version(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index, int index);
-
-
-#if (defined HTTP_OTA_UPDATE) || (defined HTTPS_OTA_UPDATE)
-int  parser_url(char *url, char *host, u16 *port, char *resource);
-int parse_http_response(unsigned char *response, unsigned int response_len, http_response_result_t *result);
-#ifdef HTTP_OTA_UPDATE
-int update_ota_http_connect_server(int server_socket, char *host, int port);
-u32 recv_ota_file_hdr_http(u8 *Recvbuf, u32 writelen, u32 *len, update_ota_target_hdr *pOtaTgtHdr, int socket);
-int http_read_socket(int socket, u8 *recevie_buf, int buf_len);
-u32 download_new_fw_from_server_http(u8 *first_buf, unsigned int firstbuf_len, int socket,
-									 update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int index);
-int http_update_ota(char *host, int port, char *resource);
-#endif
-#ifdef HTTPS_OTA_UPDATE
-#include <mbedtls/config.h>
-#include <mbedtls/platform.h>
-#include <mbedtls/net_sockets.h>
-#include <mbedtls/ssl.h>
-u32 recv_ota_file_hdr_https(u8 *Recvbuf, u32 writelen, u32 *len, update_ota_target_hdr *pOtaTgtHdr,
-							mbedtls_ssl_context *ssl);
-int https_read_socket(mbedtls_ssl_context *ssl, u8 *recevie_buf, int buf_len);
-u32 download_new_fw_from_server_https(u8 *first_buf, unsigned int firstbuf_len, mbedtls_ssl_context *ssl,
-									  update_ota_target_hdr *pOtaTgtHdr, u8 targetIdx, int index);
-int https_update_ota(char *host, int port, char *resource);
-#endif
-#endif
-
+u32 ota_update_manifest(update_ota_target_hdr *pOtaTgtHdr, u32 ota_target_index, int index);
+int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 type);
+void ota_update_deinit(ota_context *ctx);
+int ota_update_start(ota_context *ctx);
 
 #define OTA_GET_FWVERSION(address) \
 	(HAL_READ16(SPI_FLASH_BASE, address + 22) << 16) | HAL_READ16(SPI_FLASH_BASE, address + 20)

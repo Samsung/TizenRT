@@ -41,6 +41,10 @@ extern struct netif xnetif[NET_IF_NUM];
 
 #if CONFIG_WLAN
 
+static struct eth_addr *dst_eth_ret = NULL;
+static struct eth_addr *dhcp_dst_eth_ret = NULL;
+static int local_lan = 0;
+
 #ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE
 #define IP_HDR_LEN   20
 #define TCP_HDR_LEN  20
@@ -208,14 +212,38 @@ int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len,
 	uint8_t eth_header[ETH_HDR_LEN] = {/*dstaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*dstaddr*/,
 												   /*srcaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*srcaddr*/, 0x08, 0x00
 									  };
-	struct eth_addr *dst_eth_ret = NULL;
+
 	ip4_addr_t *dst_ip, *dst_ip_ret = NULL;
+	ip4_addr_t *dhcp_dst_ip, *dhcp_dst_ip_ret = NULL;
 	uint8_t *mask = LwIP_GetMASK(0);
 	uint8_t *temp_ip = LwIP_GetIP(0);
 	dst_ip = (ip4_addr_t *) peer_ip;
 	if (!ip4_addr_netcmp(dst_ip, (ip4_addr_t *)temp_ip, (ip4_addr_t *)mask)) {
 		//outside local network
 		dst_ip = (ip4_addr_t *) LwIP_GetGW(0);
+	} else {
+		local_lan = 1;
+		dhcp_dst_ip = (ip4_addr_t *) LwIP_GetGW(0);
+		// dhcp addr
+		if (LwIP_etharp_find_addr(0, dhcp_dst_ip, &dhcp_dst_eth_ret, (const ip4_addr_t **)&dhcp_dst_ip_ret) >= 0) {
+			memcpy(eth_header, dhcp_dst_eth_ret->addr, ETH_ALEN);
+		} else {
+			LwIP_etharp_request(0, dhcp_dst_ip);
+			int retry_cnt = 0;
+			vTaskDelay(100);
+			while (LwIP_etharp_find_addr(0, dhcp_dst_ip, &dhcp_dst_eth_ret, (const ip4_addr_t **)&dhcp_dst_ip_ret) < 0) {
+				LwIP_etharp_request(0, dhcp_dst_ip);
+				vTaskDelay(100);
+				retry_cnt++;
+				if (retry_cnt > 500) {
+					break;
+				}
+			}
+
+			if (retry_cnt < 500) {
+				memcpy(eth_header, dhcp_dst_eth_ret->addr, ETH_ALEN);
+			}
+		}
 	}
 	// dst addr
 	if (LwIP_etharp_find_addr(0, dst_ip, &dst_eth_ret, (const ip4_addr_t **)&dst_ip_ret) >= 0) {
@@ -268,7 +296,7 @@ int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len,
 	tcp_header[16] = (uint8_t)(tcp_checksum16 >> 8);
 	tcp_header[17] = (uint8_t)(tcp_checksum16 & 0xff);
 
-	netif_set_link_down(&xnetif[0]); // simulate system enter sleep
+	netifapi_netif_set_link_down(&xnetif[0]); // simulate system enter sleep
 
 	// eth frame without FCS
 	uint32_t frame_len = sizeof(eth_header) + sizeof(ip_header) + sizeof(tcp_header) + len;
@@ -602,20 +630,17 @@ int wifi_set_dhcp_offload(void)
 	uint8_t eth_header[ETH_HDR_LEN] = {/*dstaddr*/ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF /*dstaddr*/,
 												   /*srcaddr*/ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /*srcaddr*/, 0x08, 0x00
 									  };
-	struct eth_addr *dst_eth_ret = NULL;
+
 	ip4_addr_t *dst_ip, *dst_ip_ret = NULL;
 	dst_ip = (ip4_addr_t *) gw_ip;
 
 	// dst addr
-	if (LwIP_etharp_find_addr(0, dst_ip, &dst_eth_ret, (const ip4_addr_t **)&dst_ip_ret) >= 0) {
-		memcpy(eth_header, dst_eth_ret->addr, ETH_ALEN);
+	if (local_lan == 1) {
+		memcpy(eth_header, dhcp_dst_eth_ret->addr, ETH_ALEN);
 	} else {
-		LwIP_etharp_request(0, dst_ip);
-		vTaskDelay(1000);
-		if (LwIP_etharp_find_addr(0, dst_ip, &dst_eth_ret, (const ip4_addr_t **)&dst_ip_ret) >= 0) {
-			memcpy(eth_header, dst_eth_ret->addr, ETH_ALEN);
-		}
+		memcpy(eth_header, dst_eth_ret->addr, ETH_ALEN);
 	}
+
 
 	printf("LwIP_GetMAC2\r\n");
 	// src addr
@@ -662,7 +687,7 @@ int wifi_wlan_redl_fw(void)
 {
 	int ret = 0;
 
-	ret = rtw_wowlan_ctrl(WLAN0_NAME, RTW_WOWLAN_REDOWNLOAD_FW, NULL);
+	ret = rtw_wowlan_ctrl(STA_WLAN_INDEX, RTW_WOWLAN_REDOWNLOAD_FW, NULL);
 
 	return ret;
 }
@@ -672,7 +697,7 @@ int wifi_wowlan_ctrl(int enable)
 	int ret = 0;
 	u8 param = (u8)enable;
 
-	ret = rtw_wowlan_ctrl(WLAN0_NAME, RTW_WOWLAN_CTRL, &param);
+	ret = rtw_wowlan_ctrl(STA_WLAN_INDEX, RTW_WOWLAN_CTRL, &param);
 
 	return ret;
 }
@@ -681,8 +706,22 @@ int wifi_wowlan_ctrl(int enable)
 extern void rtw_hal_set_ssl_pattern(char *pattern, uint8_t len, uint16_t prefix_len);
 void wifi_wowlan_set_ssl_pattern(char *pattern, uint8_t len, uint16_t prefix_len)
 {
+#ifdef CONFIG_WOWLAN_TCP_KEEP_ALIVE_TEST
+	extern void fw_set_ssl_pattern(char *pattern, uint8_t len, uint16_t prefix_len);
+	fw_set_ssl_pattern(pattern, len, prefix_len);
+#else
 	rtw_hal_set_ssl_pattern(pattern, len, prefix_len);
+#endif
 }
+
+#ifdef CONFIG_WOWLAN_SSL_SERVER_KEEP_ALIVE
+extern void rtw_hal_set_ssl_serverkeepalive(uint16_t timeout, char *pattern, uint8_t len, uint16_t prefix_len);
+void wifi_wowlan_set_serverkeepalive(uint16_t timeout, char *pattern, uint8_t len, uint16_t prefix_len)
+{
+	rtw_hal_set_ssl_serverkeepalive(timeout, pattern, len, prefix_len);
+}
+#endif
+
 #endif
 
 #ifdef CONFIG_WOWLAN_CUSTOM_PATTERN
@@ -725,7 +764,7 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern)
 #endif
 
 	rtw_memcpy(&wowlan_pattern, &pattern, sizeof(wowlan_pattern_t));
-	ret = rtw_wowlan_ctrl(WLAN0_NAME, RTW_WOWLAN_SET_PATTREN, &wowlan_pattern);
+	ret = rtw_wowlan_ctrl(STA_WLAN_INDEX, RTW_WOWLAN_SET_PATTREN, &wowlan_pattern);
 
 	return ret;
 }

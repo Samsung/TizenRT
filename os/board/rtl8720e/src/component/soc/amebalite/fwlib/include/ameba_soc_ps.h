@@ -1,8 +1,6 @@
 #ifndef _HAL_SOCPS_H_
 #define _HAL_SOCPS_H_
 
-#define SOCPS_FLASH_DEEPDOWN_EN	0
-
 typedef struct {
 	u32 Module;
 	u32 Status;
@@ -44,10 +42,13 @@ extern void SOCPS_SleepCG(void);
 
 extern void SOCPS_deepsleepInit(void);
 extern void SOCPS_sleepInit(void);
-extern void SOCPS_NP_suspend_config(u32 type);
-extern void SOCPS_NP_resume_config(u32 type);
-extern void SOCPS_PLL_open(u8 enable);
-extern void SOCPS_OSC4M_CTRL(u8 open);
+extern void SOCPS_AP_suspend_config(u32 type, u32 Protection);
+extern void SOCPS_AP_resume_config(u32 type, u32 Protection);
+extern void SOCPS_NP_suspend(u32 type);
+extern void SOCPS_NP_resume(u32 type);
+extern void SOCPS_PSRAM_ClkSet(u8 Source);
+extern void SOCPS_Voltage_Switch(u8 sleep);
+
 
 extern int SOCPS_AONWakeReason(void);
 extern int SOCPS_WakePinCheck(void);

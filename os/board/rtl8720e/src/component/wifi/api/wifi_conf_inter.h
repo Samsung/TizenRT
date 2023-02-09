@@ -47,6 +47,13 @@ extern "C" {
 void wifi_btcoex_set_pta(pta_type_t type);
 
 /**
+  * @brief Write BT RFK  data to RFC
+  * @param  calibration data
+  * @retval  BT RFK result(1:success  0:failed)
+  */
+int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
+
+/**
  * @brief  Set global variable wifi_wpa_mode.
  * @param[in]  wpa_mode:
  	(WPA_AUTO_MODE,WPA_ONLY_MODE, WPA2_ONLY_MODE,
@@ -54,6 +61,16 @@ void wifi_btcoex_set_pta(pta_type_t type);
  * @return  0:success  -1:fail.
  */
 int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
+
+/**
+ * @brief  Dynamically modify the working mode of pmf.
+ * @param[in]  pmf_mode:
+ 	0: none
+ 	1: optional
+ 	2: required
+ * @return  0:success  -1:fail.
+ */
+int wifi_set_pmf_mode(u8 pmf_mode);
 
 #ifdef __cplusplus
 }

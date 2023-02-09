@@ -81,7 +81,7 @@ static int _verify_func(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 	if (*flags) {
 		printf("\n[HTTPC] ERROR: certificate verify\n%s\n", buf);
 	} else {
-		printf("\n[HTTPC] Certificate verified\n%s\n", buf);
+		//printf("\n[HTTPC] Certificate verified\n%s\n", buf);
 	}
 
 	return 0;

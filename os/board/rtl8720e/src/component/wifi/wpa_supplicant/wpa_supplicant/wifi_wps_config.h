@@ -47,36 +47,11 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid);
  */
 void cmd_wps(int argc, char **argv);
 
-/**
- * @brief  Start a WPS registrar thread.
- * @warning Before invoking this function, the Wi-Fi should be in SoftAP mode.
- * @param[in]  config_methods: WPS configure method. Options are: WPS_CONFIG_DISPLAY, WPS_CONFIG_KEYPAD, and WPS_CONFIG_PUSHBUTTON.
- * @param[in]  pin: PIN number. Can be set to NULL.
- * @return  None
- * @note  Please make sure CONFIG_ENABLE_WPS and CONFIG_ENABLE_WPS_AP are enabled in platform_opts.h.\n
- *			You can reference @ref cmd_ap_wps() to know how to choose input parameters.
- */
-void wifi_start_ap_wps_thread(u16 config_methods, char *pin);
-
-/**
- * @brief  Command to start WPS registrar process for commonly use. Can refer to ATWw in atcmd_wifi.c.
- * @warning Before invoking this function, the Wi-Fi should be in SoftAP mode.
- * @param[in]  argc: Command line argument. Argument count.
- * @param[in]  argv: Command line argument. Argument vector.
- * @return  0 on success
- * @note  Command style for example:
- *			- cmd_ap_wps pbc
- *			- cmd_ap_wps pin
- *			- cmd_ap_wps pin 12345678
- * @note  Please make sure CONFIG_ENABLE_WPS and CONFIG_ENABLE_WPS_AP are enabled in platform_opts.h.
- */
-void cmd_ap_wps(int argc, char **argv);
-
 /* extern function declaration */
 extern int wpas_wps_enrollee_init_probe_ie(u16 config_methods);
 extern int wpas_wps_enrollee_init_assoc_ie(void);
 extern void wpas_wps_deinit(void);
-extern int wpas_wps_init(const char *ifname);
+extern int wpas_wps_init(unsigned char wlan_idx);
 extern unsigned int wps_generate_pin(void);
 extern unsigned int wps_pin_valid(unsigned int pin);
 

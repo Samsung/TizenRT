@@ -31,10 +31,11 @@
   */
 void PRS_StructInit(PRS_InitTypeDef *PRS_InitStruct)
 {
-	PRS_InitStruct->PRS_ProducerType = PRS_SRC0_GPIO | PRS_SRC1_TIM_OF;
+	PRS_InitStruct->PRS_ProducerType = PRS_SRC_GPIO;
 	PRS_InitStruct->PRS_ConsumerType = PRS_DST_TIM_EN | PRS_DST_PWM_TRIG;
+	PRS_InitStruct->PRS_TimerOfIn = ENABLE;
 	PRS_InitStruct->PRS_ReverseSig = DISABLE;
-	PRS_InitStruct->PRS_DebounceCnt = 0X0;
+	PRS_InitStruct->PRS_DebounceCnt = 0x0;
 }
 
 /**
@@ -47,6 +48,7 @@ void PRS_Init(PRS_InitTypeDef *PRS_InitStruct)
 {
 	PRS_SrcConfig(PRS_InitStruct->PRS_ProducerType);
 	PRS_DstConfig(PRS_InitStruct->PRS_ConsumerType);
+	PRS_TimOfInCmd(PRS_InitStruct->PRS_TimerOfIn);
 	PRS_ReverseCmd(PRS_InitStruct->PRS_ReverseSig);
 	PRS_SetDbcCnt(PRS_InitStruct->PRS_DebounceCnt);
 }
@@ -54,7 +56,7 @@ void PRS_Init(PRS_InitTypeDef *PRS_InitStruct)
 /**
   * @brief  Specify the source signal type of PRS.
   * @param  SrcType: Specified signal source.
-  *   			This parameter can be a value or combinations of @ref PRS_Producer_Signal_Type_Definitions.
+  *   			This parameter can be a value of @ref PRS_Producer_Signal_Type_Definitions.
   * @retval None
   */
 void PRS_SrcConfig(u8 SrcType)
@@ -62,11 +64,9 @@ void PRS_SrcConfig(u8 SrcType)
 	assert_param(IS_PRS_PRODUCER_TYPE(SrcType));
 
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL);
-	Temp &= ~(LSYS_MASK_PRS_SRC_SEL | LSYS_BIT_PRS_IN_TIM_OF);
-	Temp |= LSYS_PRS_SRC_SEL(SrcType & PRS_SRC0_MASK);
-	Temp |= LSYS_PRS_IN_TIM_OF(PRS_GET_SRC1(SrcType));
+	Temp &= ~LSYS_MASK_PRS_SRC_SEL;
+	Temp |= LSYS_PRS_SRC_SEL(SrcType);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL, Temp);
-
 }
 
 /**
@@ -83,6 +83,7 @@ void PRS_DstConfig(u8 DstType)
 		u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL);
 		Temp &= ~(LSYS_BIT_PRS_OUT_PWM_TRIG | LSYS_BIT_PRS_OUT_TIM_EN);
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL, Temp);
+		return;
 	}
 
 	if (DstType & PRS_DST_TIM_EN) {
@@ -96,6 +97,24 @@ void PRS_DstConfig(u8 DstType)
 		Temp |= LSYS_BIT_PRS_OUT_PWM_TRIG;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL, Temp);
 	}
+}
+
+/**
+  * @brief Enable or disable basic timer overflow input.
+  * @param NewState: can be ENABLE or DISABLE.
+  * @retval None.
+  */
+void PRS_TimOfInCmd(u32 NewState)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL);
+
+	if (NewState != DISABLE) {
+		Temp |= LSYS_BIT_PRS_IN_TIM_OF;
+	} else {
+		Temp &= ~LSYS_BIT_PRS_IN_TIM_OF;
+	}
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PRS_CTRL, Temp);
 }
 
 /**

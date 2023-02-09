@@ -8,6 +8,8 @@
  *****************************************************************************/
 #define BIT_TXPWR_CTL_CLK_EN                       ((u32)0x00000001 << 31)          /*!<R/W 0  IF set to 1, txpwr_ctrl clock enable, only work when BIT_TXPWR_CTL_ENGCLK set to 1, */
 #define BIT_TXPWR_CTL_ENGCLK                       ((u32)0x00000001 << 30)          /*!<R/W 0  If set to 1, enable txpwr_ctrl clock gating function. */
+#define BIT_WLAN_RX_REQ_SIFS_CLR                   ((u32)0x00000001 << 29)          /*!<R/W 0  When set, enable sifs clear wlan_rx_req */
+#define BIT_DIS_WAIT_HE_SIGB                       ((u32)0x00000001 << 28)          /*!<R/W 0  When set, will not wait and check he mu sigb and ndp info */
 #define BIT_WMAC_20MHZBW                           ((u32)0x00000001 << 26)          /*!<R/W 1   */
 #define BIT_WMAC_M11J                              ((u32)0x00000001 << 24)          /*!<R/W 0   */
 #define BIT_DATA_FW_STS_FILTER                     ((u32)0x00000001 << 18)          /*!<R/W 0  When this bit is set,Accept data frame in partial length condition. It will take effect when RxFilter3-5 is disabled and RxFilter 0-2 is enabled. */
@@ -21,6 +23,11 @@
 #define BIT_APPEND_MHDR_LEN(x)                     ((u32)(((x) & 0x00000007) << 8))
 #define BIT_GET_APPEND_MHDR_LEN(x)                 ((u32)(((x >> 8) & 0x00000007)))
 #define BIT_APSDOFF                                ((u32)0x00000001 << 6)          /*!<R/W 0  1：MAC issue sleep signal to disable BB/AFE/RF TRX function. After MAC has finished, APSDOFF_STATUS will report“1”. 0：MAC issue wakeup signal to recall BB/AFE/RF back to RX idle mode. After MAC has finished,APSDOFF _STATUS will report “0”. */
+#define BIT_R_RXTRIG_TX_CHK                        ((u32)0x00000001 << 5)          /*!<R/W 0  when set to 1,when tx type is tb,will chk fcs of trigger frame and if phy_rst is high when sifs reach,set 0 will not check */
+#define BIT_R_RXTRIG_DIS_UPD_AID                   ((u32)0x00000001 << 4)          /*!<R/W 0  1:will only update aid_fit info when the first trigger in a ppdu is parsered 0:will update aid_fit info every time when two or more trigger aggregate in a ppdu */
+#define BIT_R_RXTRIG_DIS_CHK_A1                    ((u32)0x00000001 << 3)          /*!<R/W 0  1:will not check if A1 of trigger frame is my unicast or broadcast address 0:will check if A1 of trigger frame is my unicast or broadcast address */
+#define BIT_R_DIS_CHK_NEW_TBREQ                    ((u32)0x00000001 << 2)          /*!<R/W 0  1:rxtrig req_in will assert every time when aid fit if two or more trigger aggregate in a ppdu 0:rxtrig req_in will not assert again when there is already a correct trigger received */
+#define BIT_R_DIS_ABORT_TB_ELY                     ((u32)0x00000001 << 1)          /*!<R/W 0  1:will abort ptcl generating tb data when macrx_active is low 0:will abort ptcl generating tb data when new rxtrig req_in is assert */
 #define BIT_IC_MACPHY_M                            ((u32)0x00000001 << 0)          /*!<R/W 0  To make ASIC become BB+RF only, and put out the MAC_PHY interface */
 /** @} */
 
@@ -283,6 +290,8 @@
 #define BIT_MASK_EIFS                              ((u32)0x0000FFFF << 16)          /*!<R/W 0x013A  This register sets the EIFS value mentioned in 802.11 specification. It is in units of us. To receive 1Mbps ACK frame, EIFS = SIFS + 144us (preamble length) + 48us (PLCP header length) + 112us (14 bytes of data) = 314us. */
 #define BIT_EIFS(x)                                ((u32)(((x) & 0x0000FFFF) << 16))
 #define BIT_GET_EIFS(x)                            ((u32)(((x >> 16) & 0x0000FFFF)))
+#define BIT_R_RESP_ERSU_DISUSE_RX                  ((u32)0x00000001 << 13)          /*!<R/W 0  0:rx er su will response tx er su */
+#define BIT_R_RESP_DCM_DISUSE_RX                   ((u32)0x00000001 << 12)          /*!<R/W 0  0:rx dcm will response tx dcm when ctrl info is valid and inf0_dcm=1 */
 #define BIT_MASK_CTS2TO                            ((u32)0x00000FFF << 0)          /*!<R/W 0x2D  This register sets the CTS2 time out value after CTS1 in Dual CTS sequence. It is in units of us. */
 #define BIT_CTS2TO(x)                              ((u32)(((x) & 0x00000FFF) << 0))
 #define BIT_GET_CTS2TO(x)                          ((u32)(((x >> 0) & 0x00000FFF)))
@@ -353,7 +362,7 @@
 #define BIT_MASK_BITMAP_CONDITION                  ((u32)0x00000003 << 26)          /*!<R/W 0  ADDBA condition: 0: HW start sequence - 64. 1: HW start sequence - 128. 2: HW start sequence - 256. 3: HW start sequence - 512. */
 #define BIT_BITMAP_CONDITION(x)                    ((u32)(((x) & 0x00000003) << 26))
 #define BIT_GET_BITMAP_CONDITION(x)                ((u32)(((x >> 26) & 0x00000003)))
-#define BIT_BITMAP_SSNBK_COUNTER_CLR               ((u32)0x00000001 << 25)          /*!<W1C 0  Clear BIT_BITMAP_SSNBK_COUNTER. */
+#define BIT_BITMAP_SSNBK_COUNTER_CLR               ((u32)0x00000001 << 25)          /*!<RW1C 0  Clear BIT_BITMAP_SSNBK_COUNTER. */
 #define BIT_BITMAP_FORCE                           ((u32)0x00000001 << 24)          /*!<R/W 0  Under the BIT_BITMAP_EN = 1 condition. 1: Rx’s packet always checks sequence number by BIT_BITMAP_CONDITION. 0: Disable */
 #define BIT_MASK_RXPKT_TYPE                        ((u32)0x0000003F << 18)          /*!<R 0  The type and subtype field of frame control of rx packet */
 #define BIT_RXPKT_TYPE(x)                          ((u32)(((x) & 0x0000003F) << 18))

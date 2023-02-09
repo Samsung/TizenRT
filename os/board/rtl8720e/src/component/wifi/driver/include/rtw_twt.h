@@ -158,5 +158,17 @@ struct twt_ie_t {
 	struct twt_ie_other_t twt_ie_o;
 };
 
+enum twt_class {
+	TWTCLIENTA               = 0x0,
+	TWTCLIENTB               = 0x1,
+	TWTCLIENTC               = 0x2,
+	TWTCLIENTD               = 0x3,
+	TWTCLIENTE               = 0x4,
+};
+
+void rtw_twt_timer_enable(u8 idx, u8 port);
+void rtw_twt_timer_disable(u8 idx);
+void rtw_twt_set_early_time(u8 idx, u8 early_time);
+void rtw_twt_set_target_wake_time(u8 idx, u64 twt);
 #endif
 

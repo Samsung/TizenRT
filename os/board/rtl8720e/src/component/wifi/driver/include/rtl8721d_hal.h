@@ -23,6 +23,7 @@
 
 #include "drv_types.h"
 //#include "rtl8721d/rtl8721d_pmu_task.h"
+#include "ameba_soc.h"
 #include "hal_data.h"
 
 #include "rtl8721d/rtl8721d_spec.h"
@@ -224,7 +225,7 @@ typedef struct _RT_8723B_FIRMWARE_HDR {
 
 #define EFUSE_PROTECT_BYTES_BANK		16
 
-#define GET_RF_TYPE(priv)			(GET_HAL_DATA(priv)->rf_type)
+#define GET_RF_TYPE(priv)			(rtw_get_haldata(priv)->rf_type)
 
 // Description: Determine the types of C2H events that are the same in driver and Fw.
 // Fisrt constructed by tynli. 2009.10.09.
@@ -247,8 +248,8 @@ typedef enum tag_ChipID_Definition {
 	CHIPID_8710BN_A0_VV2 = 0xF8, /* PACKAGE_QFN32, the same as CHIPID_8710BN */
 } CHIP_TD_E;
 
-#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
-#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(GET_HAL_DATA(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
+#define INCLUDE_MULTI_FUNC_BT(_Adapter)		(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_BT)
+#define INCLUDE_MULTI_FUNC_GPS(_Adapter)	(rtw_get_haldata(_Adapter)->MultiFunc & RT_MULTI_FUNC_GPS)
 
 //========================================================
 //			TXBD and RXBD definition
@@ -414,10 +415,16 @@ s32 rtl8721d_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw);
 s32 rtl8721d_FirmwareDisable(PADAPTER padapter);
 void rtl8721d_InitializeFirmwareVars(PADAPTER padapter);
 
+void wifi_hal_read_adapterinfo(PADAPTER padapter);
+void wifi_hal_read_chipversion(PADAPTER padapter);
+void wifi_hal_init_haldata(PADAPTER padapter);
+void wifi_hal_free_haldata(PADAPTER padapter);
+u32 wifi_hal_init(PADAPTER padapter);
+u32 wifi_hal_deinit(PADAPTER padapter);
+
 void rtl8721d_InitAntenna_Selection(PADAPTER padapter);
 void rtl8721d_DeinitAntenna_Selection(PADAPTER padapter);
 void rtl8721d_CheckAntenna_Selection(PADAPTER padapter);
-void rtl8721d_init_default_value(PADAPTER padapter);
 
 s32 rtl8721d_InitLLTTable(PADAPTER padapter);
 
@@ -427,7 +434,7 @@ s32 CardDisableWithoutHWSM(PADAPTER padapter);
 // EFuse
 //u8 GetEEPROMSize8721d(PADAPTER padapter);
 void Hal_InitPGData(PADAPTER padapter, u8 *PROMContent);
-void Hal_EfuseParseIDCode(PADAPTER padapter, u8 *hwinfo);
+void Hal_EfuseParseIDCode(PADAPTER padapter, u8 *hwinfo, u8 *autoload_fail_flag);
 void Hal_EfuseParseTxPowerInfo_8721D(PADAPTER padapter, u8 *PROMContent, BOOLEAN AutoLoadFail);
 void Hal_EfuseParseBTCoexistInfo_8721D(PADAPTER padapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
 void Hal_EfuseParseEEPROMVer_8721D(PADAPTER padapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
@@ -436,6 +443,7 @@ void Hal_EfuseParseCustomerID_8721D(PADAPTER padapter, u8 *hwinfo, BOOLEAN AutoL
 void Hal_EfuseParseAntennaDiversity_8721D(PADAPTER padapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
 void Hal_EfuseParseXtal_8721D(PADAPTER pAdapter, u8 *hwinfo, u8 AutoLoadFail);
 void Hal_EfuseParseThermalMeter_8721D(PADAPTER padapter, u8 *hwinfo, u8 AutoLoadFail);
+void wifi_hal_get_efusedefinition(PADAPTER	padapter, u8 efuseType, u8 type, void *pOut, u8 bPseudoTest);
 
 //bt enable in efuse
 bool Hal_BT_Is_Supported(PADAPTER padapter);
@@ -450,20 +458,27 @@ void C2HPacketHandler_8721D(PADAPTER padapter, u8 *pbuffer, u16 length);
 
 u8 rtw_flash_read(PADAPTER padapter, u16 addr, u16 cnts, u8 *data);
 u8 rtw_flash_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data);
-u8 rtw_config_map_read(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
-u8 rtw_config_map_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 efuse);
+u8 rtw_config_map_read(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 is_phycial);
+u8 rtw_config_map_write(PADAPTER padapter, u16 addr, u16 cnts, u8 *data, u8 is_phycial);
 
 void rtl8721d_ResumeTxBeacon(PADAPTER padapter);
 void rtl8721d_StopTxBeacon(PADAPTER padapter);
+void ROM_WIFI_TxBeacon_Ctrl(u8 enable);
 
-void rtl8721d_set_hal_ops(struct hal_ops *pHalFunc);
-void lxbus_set_intf_ops(struct _io_ops	*pops);
-void SetHwReg8721D(PADAPTER padapter, u8 variable, u8 *val);
-void GetHwReg8721D(PADAPTER padapter, u8 variable, u8 *val);
-u8 SetHalDefVar8721D(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
-u8 GetHalDefVar8721D(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
-void SetHalODMVar8721D(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, BOOLEAN bSet);
-void GetHalODMVar8721D(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, PVOID pValue2);
+void wifi_hal_hwreg_set(PADAPTER padapter, u8 variable, u8 *val);
+void wifi_hal_hwreg_get(PADAPTER padapter, u8 variable, u8 *val);
+u8 wifi_hal_defaultvar_set(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
+u8 wifi_hal_defaultvar_get(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
+void wifi_hal_odmvar_set(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, BOOLEAN bSet);
+void wifi_hal_odmvar_get(PADAPTER Adapter, HAL_ODM_VARIABLE eVariable, PVOID pValue1, PVOID pValue2);
+void ROM_WIFI_Set_AC_Param(u32 ACParam[], u32 *pBE_param);
+#define wifi_hal_set_ac_param ROM_WIFI_Set_AC_Param
+void ROM_WIFI_WRITE_CAM(u8 entry, u16 ctrl, u8 *mac, u8 *key);
+void ROM_WIFI_READ_CAM(u8 id, u8 *ctrl, u8 *mac, u8 *key);
+#define wifi_rom_write_cam(entry, ctrl, mac, key)	ROM_WIFI_WRITE_CAM(entry, ctrl, mac, key)
+#define wifi_rom_read_cam(id, ctrl, mac, key)	ROM_WIFI_READ_CAM(id, ctrl, mac, key)
+#define write_cam_spp_amsdu_valid(entry, value) ROM_WIFI_WriteCamSppAmsduValid(entry, value)
+#define clear_cam_entry(entry) ROM_WIFI_ClearCamEntry(entry)
 
 // register
 void rtl8721d_InitBeaconParameters(PADAPTER padapter);
@@ -471,7 +486,6 @@ void rtl8721d_InitBeaconMaxError(PADAPTER padapter, u8 InfraMode);
 void	_InitBurstPktLen_8721DB(PADAPTER Adapter);
 #ifdef CONFIG_WOWLAN
 void _8051Reset8721d(PADAPTER padapter);
-void Hal_DetectWoWMode(PADAPTER pAdapter);
 #endif //CONFIG_WOWLAN
 
 #if defined(CONFIG_CHECK_BT_HANG) && defined(CONFIG_BT_COEXIST)
@@ -503,8 +517,9 @@ s32 c2h_id_filter_ccx_8721D(u8 *buf);
 u8 MRateToHwRate8723B(u8  rate);
 u8 HwRateToMRate8723B(u8	 rate);
 
-void Hal_ReadRFGainOffset(PADAPTER pAdapter, u8 *hwinfo, BOOLEAN AutoLoadFail);
-
+void wifi_hal_dbg(_adapter *padapter, struct rtw_point *p);
+int wifi_hal_phydm_dbg(_adapter *padapter, union rtwreq_data *wrqu);
+int wifi_hal_iwpriv_command(unsigned char wlan_idx, char *cmd, int show_msg);
 
 //1TODO: Chris
 #if 1

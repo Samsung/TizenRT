@@ -13,43 +13,9 @@ u32 psplim_temp;
 
 u32 PMC_MemMode_BK[10];
 u32 LBUS_CLK;
-u32 PSRAM_CLK;
 u32 SPIC_CLK;
 u32 PLFM_CLK;
 u32 HIFI_CLK;
-MEMMode_TypeDef PMC_MemMode_Def[] = {
-//		Module								MEM_SD					MEM_DS					MEM_LS
-	{
-		REG_CTRL_GRP_LRET_E0_CTRL0,		BIT_MEM_CTRL_LPS_SD_REV,	BIT_MEM_CTRL_LPS_DS_REV,	BIT_MEM_CTRL_LPS_LS_REV
-	},	//retention sram
-	{
-		REG_CTRL_GRP_HSYS_E0_CTRL0,		BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//hs sram E0
-	{
-		REG_CTRL_GRP_HSYS_E1_CTRL0,		BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//hs sram E1
-	{
-		REG_CTRL_GRP_WLK4_E0_CTRL0,	BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//wlk4 sram
-	{
-		REG_CTRL_GRP_WPON_E0_CTRL0,	BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//wpon sram
-	{
-		REG_CTRL_GRP_BTONK4_E0_CTRL0,	BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//bt on sram E0
-	{
-		REG_CTRL_GRP_BTONK4_E1_CTRL0,	BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//bt on sram E1
-	{
-		REG_CTRL_GRP_BTOFFK4_E0_CTRL0,	BIT_MEM_CTRL_LPS_SD_REV,	BIT_MEM_CTRL_LPS_DS_REV,	BIT_MEM_CTRL_LPS_LS_REV
-	},	//bt off sram E0
-	{
-		REG_CTRL_GRP_BTOFFK4_E1_CTRL0,	BIT_MEM_CTRL_LPS_SD_REV,	BIT_MEM_CTRL_LPS_DS_REV,	BIT_MEM_CTRL_LPS_LS_REV
-	},	//bt off sram E1
-	{
-		REG_CTRL_GRP_HIFI5_E5_CTRL0,		BIT_MEM_CTRL_LPS_SD,		BIT_MEM_CTRL_LPS_DS,		BIT_MEM_CTRL_LPS_LS
-	},	//HIFI5 shared-sram
-};
 
 /**
   * @brief  set sram mem mode
@@ -65,33 +31,20 @@ MEMMode_TypeDef PMC_MemMode_Def[] = {
 void SOCPS_SetMemMode(u32 module, u32 mem_mode)
 {
 	u32 Rtemp = 0;
-	u32 temp = 0;
-	u32 index = 0;
-	for (index = 0; index < 10; index++) {
-		if (module == PMC_MemMode_Def[index].Module) {
-			break;
-		}
-	}
-
-	if (10 == index) {
-		return;
-	}
 
 	Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, module);
 	Rtemp &= (~CTRL_MASK_GRP_x_PWR_LPS);
 	Rtemp |= CTRL_GRP_x_PWR_LPS(mem_mode);
 	HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, module, Rtemp);
 	//DBG_8195A("mem set 0x%x = 0x%x\n", module, HAL_READ32(SYSTEM_MEM_CTRL_BASE, module));
-
+#if 0
 	if ((module == REG_CTRL_GRP_BTOFFK4_E0_CTRL0) || (module == REG_CTRL_GRP_BTOFFK4_E1_CTRL0)) {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL);
 		temp |= LSYS_BIT_SHARE_BT_MEM;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL, temp);
-
 	}
-	/*lite A cut patch: rxpktbuf power mode cannot be control by mac 0x90, it can be only control by system REG_CTRL_GRP_WLK4_E0_CTRL04100_C748[14:12]*/
-#if 0
-	else if (module == REG_CTRL_GRP_WLK4_E0_CTRL0) {
+
+	if (module == REG_CTRL_GRP_WLK4_E0_CTRL0) {
 		temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL);
 		temp |= LSYS_BIT_SHARE_WL_MEM;
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PLAT_CTRL, temp);
@@ -782,6 +735,25 @@ void SOCPS_sleepInit(void)
 		i++;
 	}
 
+	/*lite A cut patch: set rxpktbuf & BTON memory active in LPS for ACUT bug: rxpktbuf & BTON memory mode can only be controlled by system */
+	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
+		u32 Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_WLK4_E0_CTRL0);
+		Rtemp &= (~CTRL_MASK_GRP_x_PWR_LPS);
+		Rtemp |= CTRL_GRP_x_PWR_LPS(BIT_MEM_CTRL_LPS_ACTIVE);
+		HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_WLK4_E0_CTRL0, Rtemp);
+
+		Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_BTONK4_E0_CTRL0);
+		Rtemp &= (~CTRL_MASK_GRP_x_PWR_LPS);
+		Rtemp |= CTRL_GRP_x_PWR_LPS(BIT_MEM_CTRL_LPS_ACTIVE);
+		HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_BTONK4_E0_CTRL0, Rtemp);
+
+		Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_BTONK4_E1_CTRL0);
+		Rtemp &= (~CTRL_MASK_GRP_x_PWR_LPS);
+		Rtemp |= CTRL_GRP_x_PWR_LPS(BIT_MEM_CTRL_LPS_ACTIVE);
+		HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, REG_CTRL_GRP_BTONK4_E1_CTRL0, Rtemp);
+	}
+
+
 	/* set aon wake pin */
 	/* clear all wakeup pin first, and then enable by config */
 	for (i = 0;;) {
@@ -798,51 +770,6 @@ void SOCPS_sleepInit(void)
 	}
 }
 
-NON_DRAM_TEXT_SECTION
-void LOGUART_WaitTxComplete(void)
-{
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	u32 lsr;
-
-	/* Wait for LogUart print out */
-	while (1) {
-		lsr = UARTLOG->LOGUART_UART_LSR;
-
-		if ((lsr & LOGUART_BIT_TP1F_EMPTY) && (lsr & LOGUART_BIT_TP2F_EMPTY) && (lsr & LOGUART_BIT_TP3F_EMPTY)  && \
-			(lsr & LOGUART_BIT_TP4F_EMPTY) && (!(lsr & LOGUART_BIT_RPF_DRDY)) && (lsr & LOGUART_BIT_TX_EMPTY)) {
-			break;
-		}
-
-		DelayUs(100);
-	}
-
-	/* delay at least 12 cycles of one bit time to make sure the last data is completely out of tx fifo, 1.5Mbps(xtal40M) is 12/1.5M = 8us */
-	DelayUs(8);
-}
-
-NON_DRAM_TEXT_SECTION
-void SOCPS_OSC4M_CTRL(u8 open)
-{
-	u32 Rtemp;
-
-	if (open) {
-		if (ps_config.np_osc4m_close) {
-			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-			Rtemp |= APBPeriph_LOGUART_CLOCK;
-			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
-		}
-	} else {
-
-		LOGUART_WaitTxComplete();
-
-		if (ps_config.np_osc4m_close) {
-			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-			Rtemp &= ~APBPeriph_LOGUART_CLOCK;
-			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
-		}
-	}
-}
-
 /**
   * @brief  Set psram clock Source.
   * @param  Source: This parameter can be one of the following values:
@@ -854,17 +781,18 @@ NON_DRAM_TEXT_SECTION
 void SOCPS_PSRAM_ClkSet(u8 Source)
 {
 	u32 cur_src = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
+	RRAM_TypeDef *rram = RRAM_DEV;
 
 	if (Source != cur_src) {
 		DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
 		if ((Source == BIT_LSYS_CKSL_PSRAM_LBUS) &&
 			((cur_src == BIT_LSYS_CKSL_PSRAM_CPUPLL) || (cur_src == BIT_LSYS_CKSL_PSRAM_DSPPLL))) {
 			//psram clk switch from pll to xtal
-			PSRAM_AutoGating(DISABLE, 1, 16);
+			PSRAM_AutoGating(DISABLE, Psram_IDLETIME_PLL, rram->PSRAM_RESUMECNT_BOOT);
 		} else if ((cur_src == BIT_LSYS_CKSL_PSRAM_LBUS) &&
 				   ((Source == BIT_LSYS_CKSL_PSRAM_CPUPLL) || (Source == BIT_LSYS_CKSL_PSRAM_DSPPLL))) {
 			//psram clk switch from xtal to pll
-			PSRAM_AutoGating(DISABLE, 10, 3);
+			PSRAM_AutoGating(DISABLE, Psram_IDLETIME_XTAL, Psram_RESUMECNT_XTAL);
 		}
 
 		RCC_PeriphClockSource_PSRAM(Source);
@@ -872,11 +800,11 @@ void SOCPS_PSRAM_ClkSet(u8 Source)
 		if ((Source == BIT_LSYS_CKSL_PSRAM_LBUS) &&
 			((cur_src == BIT_LSYS_CKSL_PSRAM_CPUPLL) || (cur_src == BIT_LSYS_CKSL_PSRAM_DSPPLL))) {
 			//psram clk switch from pll to xtal
-			PSRAM_AutoGating(ENABLE, 10, 3);
+			PSRAM_AutoGating(ENABLE, Psram_IDLETIME_XTAL, Psram_RESUMECNT_XTAL);
 		} else if ((cur_src == BIT_LSYS_CKSL_PSRAM_LBUS) &&
 				   ((Source == BIT_LSYS_CKSL_PSRAM_CPUPLL) || (Source == BIT_LSYS_CKSL_PSRAM_DSPPLL))) {
 			//psram clk switch from xtal to pll
-			PSRAM_AutoGating(ENABLE, 1, 16);
+			PSRAM_AutoGating(ENABLE, Psram_IDLETIME_PLL, rram->PSRAM_RESUMECNT_BOOT);
 		}
 	}
 }
@@ -898,6 +826,51 @@ void SOCPS_Voltage_Switch(u8 sleep)
 }
 
 
+/*
+	to fix bug: when switch psram clk, master cannot access psram
+	when psram switch to pll: FW wakeup AP first -> AP open pll and switch psram to pll -> AP request FW to wakeup driver (enable rxdma)
+	when psram switch to xtal: NP check pll status -> switch psram to xtal & close pll
+*/
+_OPTIMIZE_NONE_
+NON_DRAM_TEXT_SECTION
+static void SOCPS_AP_PLL_close(void)
+{
+	if (PLL_State(CLK_CPU_MPLL)) {
+		RRAM_DEV->PSRAM_CKSL_BK = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
+		SOCPS_PSRAM_ClkSet(BIT_LSYS_CKSL_PSRAM_LBUS);
+
+		PLL_CPU(DISABLE);
+		PLL_DSP(DISABLE);
+		PLL_BG(DISABLE);
+	}
+}
+
+_OPTIMIZE_NONE_
+NON_DRAM_TEXT_SECTION
+static void SOCPS_AP_PLL_open(void)
+{
+	u32 Rtemp = 0;
+
+	if (!PLL_State(CLK_CPU_MPLL)) {
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+		Rtemp &= ~APBPeriph_PLL_CLOCK;
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+
+		/* open PLL */
+		PLL_BG(ENABLE);
+		PLL_CPU(ENABLE);
+		PLL_DSP(ENABLE);
+
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
+		Rtemp |= APBPeriph_PLL_CLOCK;
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+
+		/* psram clock source switch to pll */
+		SOCPS_PSRAM_ClkSet(RRAM_DEV->PSRAM_CKSL_BK);
+	}
+}
+
+
 /**
   * @brief  before NP enter CG/PG, NP should config some modules for power save
   * @param  type: CG/PG
@@ -915,9 +888,6 @@ void SOCPS_AP_suspend_config(u32 type, u32 Protection)
 	if (Protection) {
 		PreState_irq = irq_disable_save();
 	}
-
-	PSRAM_CLK = LSYS_GET_CKSL_PSRAM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
-	SOCPS_PSRAM_ClkSet(BIT_LSYS_CKSL_PSRAM_LBUS);
 
 	/* PLL:
 	1. switch modules that used PLL to XTAL
@@ -941,7 +911,7 @@ void SOCPS_AP_suspend_config(u32 type, u32 Protection)
 		Rtemp |= LSYS_CKSL_SPIC(BIT_LSYS_CKSL_SPIC_LBUS);
 		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Rtemp);
 	} else {
-		/* switch clock to XTAL, disable dummy cycle and disable cal */
+		/* switch clock to XTAL, disable dummy cycle and diable cal */
 		FLASH_ClockSwitch(BIT_LSYS_CKSL_SPIC_LBUS, 0);
 	}
 
@@ -955,10 +925,6 @@ void SOCPS_AP_suspend_config(u32 type, u32 Protection)
 
 	PLFM_CLK = LSYS_GET_CKSL_PLFM(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0));
 	CPU_ClkSet(CLK_CPU_LBUS);
-
-	PLL_CPU(DISABLE);
-	PLL_DSP(DISABLE);
-	PLL_BG(DISABLE);
 
 	/* add 5mA load for 0.9v ldo, can decrease LPS SWR@PWM mode power */
 	REGU_TypeDef *REGU = REGU_BASE;
@@ -990,18 +956,7 @@ void SOCPS_AP_resume_config(u32 type, u32 Protection)
 		PreState_irq = irq_disable_save();
 	}
 
-	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-	Rtemp &= ~APBPeriph_PLL_CLOCK;
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
-
-	/* open PLL */
-	PLL_BG(ENABLE);
-	PLL_CPU(ENABLE);
-	PLL_DSP(ENABLE);
-
-	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1);
-	Rtemp |= APBPeriph_PLL_CLOCK;
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKE_GRP1, Rtemp);
+	SOCPS_AP_PLL_open();
 
 	//TRNG need pll, so after open pll, should init trng again
 	RCC_PeriphClockCmd(APBPeriph_TRNG, APBPeriph_TRNG_CLOCK, ENABLE);
@@ -1026,58 +981,54 @@ void SOCPS_AP_resume_config(u32 type, u32 Protection)
 	Rtemp |= LSYS_CKSL_HIFI(HIFI_CLK);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Rtemp);
 
-	/* 4. psram clock source switch to pll */
-	SOCPS_PSRAM_ClkSet(PSRAM_CLK);
-
 	if (Protection) {
 		irq_enable_restore(PreState_irq);
 	}
 }
 
 
+
 NON_DRAM_TEXT_SECTION
-void SOCPS_NP_suspend_and_resume(u32 type, u8 enable)
+void SOCPS_NP_suspend(u32 type)
+{
+	RRAM_TypeDef *rram = RRAM_DEV;
+
+	if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_SINGLE) {
+		SOCPS_AP_suspend_config(type, DISABLE);
+		SOCPS_AP_PLL_close();
+	} else if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_AP2NP) {
+		SOCPS_AP_PLL_close();
+	}
+
+	SOCPS_Voltage_Switch(ENABLE);
+
+	FLASH_DeepPowerDown(ENABLE);
+}
+
+NON_DRAM_TEXT_SECTION
+void SOCPS_NP_resume(u32 type)
 {
 	u32 Rtemp;
 	RRAM_TypeDef *rram = RRAM_DEV;
 
-	if (enable) {
-		SOCPS_OSC4M_CTRL(ENABLE);
-
-		/* LBUS clock source switch to XTAL40M */
-		if (LSYS_GET_CKSL_LBUS(HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0))) {
-			//current lbus clk is xtal
-		} else {
-			//current lbus clk is osc4m
-			Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
-			Rtemp |= LSYS_BIT_CKSL_LBUS;
-			HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0, Rtemp);
-		}
-
-#if SOCPS_FLASH_DEEPDOWN_EN
-		if (SYSCFG_OTP_FlashDSleepEn()) {
-			FLASH_DeepPowerDown(DISABLE);
-			/* to fix hw bug: between flash user read and auto read wrap, need single auto read, otherwise SPIC may return error */
-			Rtemp = HAL_READ32(SPI_FLASH_BASE, 0);
-		}
-#endif
-		SOCPS_Voltage_Switch(DISABLE);
-
-		if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_SINGLE) {
-			SOCPS_AP_resume_config(type, DISABLE);
-		}
-
-	} else {
-		if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_SINGLE) {
-			SOCPS_AP_suspend_config(type, DISABLE);
-		}
-
-		SOCPS_Voltage_Switch(ENABLE);
-
-		SOCPS_OSC4M_CTRL(DISABLE);
-#if SOCPS_FLASH_DEEPDOWN_EN
-		FLASH_DeepPowerDown(ENABLE);
-#endif
+	if (SYSCFG_OTP_FlashDSleepEn()) {
+		FLASH_DeepPowerDown(DISABLE);
+		/* to fix hw bug: between flash user read and auto read wrap, need single auto read, otherwise SPIC may return error */
+		Rtemp = HAL_READ32(SPI_FLASH_BASE, 0);
 	}
+
+	SOCPS_Voltage_Switch(DISABLE);
+
+	if (rram->PMC_CORE_ROLE_Flag == PMC_CORE_ROLE_SINGLE) {
+		SOCPS_AP_resume_config(type, DISABLE);
+	}
+
+	/* ipsec in SOC domain, when wakefrom PG, need reinit ipsec */
+#ifdef CONFIG_MBED_TLS_ENABLED
+	if (type == SLEEP_PG) {
+		rtl_cryptoEngine_init();
+	}
+#endif
+
 }
 

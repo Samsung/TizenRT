@@ -39,7 +39,8 @@ extern "C"
   */
 
 /** @brief ATT bearer type*/
-typedef enum {
+typedef enum
+{
 	GAP_CHANN_TYPE_LE_ATT,     //!< ATT bearer on LE transport.
 	GAP_CHANN_TYPE_LE_ECFC,    //!< EATT bearer on LE transport.
 	GAP_CHANN_TYPE_BREDR_ATT,  //!< ATT bearer on BR/EDR transport.
@@ -47,7 +48,8 @@ typedef enum {
 } T_GAP_CHANN_TYPE;
 
 /** @brief L2CAP channel connection state*/
-typedef enum {
+typedef enum
+{
 	GAP_CHANNEL_STATE_DISCONNECTED  = 0, //!< Disconnected.
 	GAP_CHANNEL_STATE_CONNECTING    = 1, //!< Connecting.
 	GAP_CHANNEL_STATE_CONNECTED     = 2, //!< Connected.
@@ -55,7 +57,8 @@ typedef enum {
 } T_GAP_CHANNEL_STATE;
 
 /** @brief  L2CAP channel information.*/
-typedef struct {
+typedef struct
+{
 	uint8_t           bd_addr[6];
 	uint8_t           bd_type;
 	T_GAP_CHANN_TYPE  chann_type;
@@ -117,6 +120,20 @@ bool gap_chann_get_handle(uint8_t *bd_addr, uint8_t bd_type, uint16_t *p_conn_ha
  * @retval other channel number
  */
 uint8_t gap_chann_get_num(uint16_t conn_handle);
+
+/**
+ * @brief  Get CID.
+ *
+ * @param[in]       conn_handle      Connection handle of the ACL link
+ * @param[in]       cid_record_num   Number of CID could be recorded by @ref p_cid
+ * @param[in, out]  p_cid            Pointer to CID
+ * @param[in, out]  p_cid_num        Pointer to number of CID
+ * @return Get result
+ * @retval true Success
+ * @retval false Get failed
+ */
+bool gap_chann_get_cid(uint16_t conn_handle, uint8_t cid_record_num, uint16_t *p_cid,
+                       uint8_t *p_cid_num);
 /** @} */ /* End of group GAP_CHANNEL_EXPORT_Functions */
 
 /** @} */ /* End of group GAP_CHANNEL_MODULE */

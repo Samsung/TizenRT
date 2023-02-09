@@ -20,8 +20,6 @@
 #ifndef __STA_INFO_H_
 #define __STA_INFO_H_
 
-#define IBSS_START_MAC_ID	2
-
 #define NUM_ACL 16
 
 //if mode ==0, then the sta is allowed once the addr is hit.
@@ -241,6 +239,9 @@ struct sta_info {
 	struct tx_sc_entry	tx_sc_ent[TX_SC_ENTRY_NUM];
 	int tx_sc_replace_idx;
 #endif
+#ifdef CONFIG_CSI
+	u32 rx_csi_cnt;
+#endif
 };
 
 #define sta_rx_pkts(sta) \
@@ -273,47 +274,14 @@ struct sta_info {
 #define STA_PKTS_FMT "(m:%llu, c:%llu, d:%llu)"
 
 struct	sta_priv {
-
-	//u8 *pstainfo_buf[2 + AP_STA_NUM];
-
-	//_queue	free_sta_queue;
-
 	_lock sta_list_lock;
 	_list   sta_list;
 	int asoc_sta_count;
-	//_queue sleep_q;
-	//_queue wakeup_q;
 
 	_adapter *padapter;
 
-	_list asoc_list;
-	_list auth_list;
-	_lock asoc_list_lock;
-	_lock auth_list_lock;
-	_lock expire_lock;
-
-	unsigned int auth_to;  //sec, time to expire in authenticating.
-	unsigned int assoc_to; //sec, time to expire before associating.
-	unsigned int expire_to; //sec , time to expire after associated.
-
-	/* pointers to STA info; based on allocated AID or NULL if AID free
-	 * AID is in the range 1-2007, so sta_aid[0] corresponders to AID 1
-	 * and so on
-	 */
-	struct sta_info *sta_aid[NUM_STA];
-
-	u16 sta_dz_bitmap;//only support 15 stations, staion aid bitmap for sleeping sta.
-	u16 tim_bitmap;//only support 15 stations, aid=0~15 mapping bit0~bit15
-
-	u16 max_num_sta;
-//TODO: AP
-//	struct wlan_acl_pool acl_list;
-
 };
 
-
-extern u32	_rtw_init_sta_priv(_adapter *padapter);
-extern u32	_rtw_free_sta_priv(struct sta_priv *pstapriv);
 extern struct sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr);
 extern u32 rtw_free_stainfo_enqueue_cmd(_adapter *padapter, struct sta_info *psta);
 extern u32 rtw_free_stainfo(_adapter *padapter, struct sta_info *psta);

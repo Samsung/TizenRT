@@ -145,6 +145,16 @@ u32 LDO_PSRAM(u32 NewState)
 {
 	REGU_TypeDef *regu = REGU_BASE;
 	u32 Rtemp;
+	u8 Value;
+
+	/*autoload ANA LDO 1.8v from otp*/
+	Value = SWR_Calib_Get_Value(ANA_LDO_180);
+	if (Value != Swr_Calib_Nocalib) {
+		Rtemp = regu->REGU_LDO_3318_CTRL;
+		Rtemp &= ~(REGU_MASK_VOADJ_L_3318);
+		Rtemp |= REGU_VOADJ_L_3318(Value);
+		regu->REGU_LDO_3318_CTRL = Rtemp;
+	}
 
 	Rtemp = regu->REGU_LDO_3318_CTRL;
 	if (NewState == ENABLE) {

@@ -478,20 +478,12 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 
 #else /* OS_NO_C_LIB_DEFINES */
 
-#if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2)
-#ifdef CONFIG_MEM_MONITOR
-uint8_t *os_malloc(uint32_t sz);
-void os_mfree(uint8_t *pbuf, uint32_t sz);
-#ifndef os_free
-#define os_free(p, sz) os_mfree(((uint8_t*)(p)), (sz))
-#endif
-#else
+#if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
 #ifndef os_malloc
 #define os_malloc(sz) _rtw_malloc(sz)
 #endif
 #ifndef os_free
 #define os_free(p, sz) _rtw_mfree(((uint8_t*)(p)), (sz))
-#endif
 #endif
 #endif
 extern void *os_zalloc(size_t size);

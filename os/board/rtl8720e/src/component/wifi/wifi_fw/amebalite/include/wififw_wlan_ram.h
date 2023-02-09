@@ -20,5 +20,6 @@
 #include "wififw_sysmib_ram.h"
 #include "wififw_halbb_cmd_ram.h"
 #include "wififw_phydm_offload_ram.h"
+#include "wififw_csireport_ram.h"
 
 #endif  /* __WLAN_RAM_H__ */

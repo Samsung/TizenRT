@@ -751,7 +751,8 @@ extern "C"
   */
 #if F_BT_LE_GAP_CENTRAL_SUPPORT
 /** @brief GAP connection phy types*/
-typedef enum {
+typedef enum
+{
 	GAP_CONN_PARAM_1M = 0,
 #if F_BT_LE_5_0_AE_ADV_SUPPORT
 	GAP_CONN_PARAM_2M = 1,
@@ -761,14 +762,16 @@ typedef enum {
 #endif
 
 /** @brief GAP link roles */
-typedef enum {
+typedef enum
+{
 	GAP_LINK_ROLE_UNDEFINED,    //!< Unknown.
 	GAP_LINK_ROLE_MASTER,       //!< Role is master.
 	GAP_LINK_ROLE_SLAVE         //!< Role is slave.
 } T_GAP_ROLE;
 
 /** @brief LE connection parameter types */
-typedef enum {
+typedef enum
+{
 	GAP_PARAM_CONN_BD_ADDR         = 0x270,//!< Address of connected device. Read only. Size is uint8[B_MAX_ADV_LEN]. Set to all zeros when not connected.
 	GAP_PARAM_CONN_BD_ADDR_TYPE    = 0x271,//!< Address type of connected device. Read only. Size is uint8. Set to zero when not connected.
 	GAP_PARAM_CONN_INTERVAL        = 0x272,//!< Current connection interval.  Read only. Size is uint16.  Range is 7.5ms to 4 seconds (0x0006 to 0x0C80).  Default is 0 (no connection).
@@ -788,7 +791,8 @@ typedef enum {
 } T_LE_CONN_PARAM_TYPE;
 
 /** @brief  Connected device information.*/
-typedef struct {
+typedef struct
+{
 	T_GAP_CONN_STATE conn_state;             //!< Connection state
 	T_GAP_ROLE       role;                   //!< Device role
 	uint8_t          remote_bd[GAP_BD_ADDR_LEN];  //!< Remote address
@@ -797,7 +801,8 @@ typedef struct {
 
 #if F_BT_LE_GAP_CENTRAL_SUPPORT
 /** @brief  Definition of LE connection request parameter.*/
-typedef struct {
+typedef struct
+{
 	uint16_t scan_interval;/**< Time interval from when the Controller started its last scan
                                 until it begins the subsequent scan on the primary advertising channel.
 
@@ -1333,13 +1338,15 @@ T_GAP_CAUSE le_set_conn_param(T_GAP_CONN_PARAM_TYPE type,
 /**
  * @brief   Create a connection to a connectable advertiser. @ref le_set_conn_param shall be called first to set connection parameters.
  *
- * @param[in] init_phys  The PHY(s) on which the advertising packets should be received on the primary advertising channel and the PHYs
- *                       for which connection parameters have been specified.
+ * @param[in] init_phys  A bit field that indicates the PHY(s) on which the advertising packets should be received on the primary
+ *                       advertising channel and the PHYs for which connection parameters have been specified. @ref GAP_PHYS_CONN_INIT.
  * @param[in] remote_bd The Peer's Public Device Address, Random (static) Device Address, Non-Resolvable Private Address, or
                         Resolvable Private Address depending on the Peer_Address_Type parameter.
  * @param[in] remote_bd_type The type of address used in the connectable advertisement sent by the peer.
  * @param[in] local_bd_type  The type of address being used in the connection request packets.
- * @param[in] scan_timeout  Scan timeout value.
+ * @param[in] scan_timeout  Scan timeout value. If time has expired before connection has been established, stack will
+ *                          cancel create connection.
+ *                          Time = N * 10 ms, if time equals 0, stack will wait forever.
  * @return  result.
  * @retval GAP_CAUSE_SUCCESS Send request success
  * @retval GAP_CAUSE_NON_CONN Failed. No connection
@@ -1434,7 +1441,34 @@ T_GAP_CAUSE le_set_conn_param(T_GAP_CONN_PARAM_TYPE type,
 T_GAP_CAUSE le_connect(uint8_t init_phys, uint8_t *remote_bd,
 					   T_GAP_REMOTE_ADDR_TYPE remote_bd_type,
 					   T_GAP_LOCAL_ADDR_TYPE local_bd_type, uint16_t scan_timeout);
+
+/**
+  * @brief      Confirm @ref GAP_MSG_LE_CONN_UPDATE_IND for specified connection when the previous result of @ref GAP_MSG_LE_CONN_UPDATE_IND
+  *             is @ref APP_RESULT_PENDING.
+  *
+  *             NOTE: The function should only be used by @ref GAP_LINK_ROLE_MASTER when the previous result of @ref GAP_MSG_LE_CONN_UPDATE_IND
+  *                   is @ref APP_RESULT_PENDING.
+  *
+  * @param[in] conn_id  Connection ID
+  * @param[in] result   @ref APP_RESULT_SUCCESS: accept
+  *                     @ref APP_RESULT_REJECT: reject
+  * @return  result.
+  * @retval  GAP_CAUSE_SUCCESS Send request success.
+  * @retval  GAP_CAUSE_SEND_REQ_FAILED Send request sent fail.
+  * @retval  GAP_CAUSE_NON_CONN Failed. No connection.
+  *
+  * <b>Example usage</b>
+  * \code{.c}
+    void test()
+    {
+        T_GAP_CAUSE cause = le_conn_update_cfm(conn_id, result);
+    }
+  *
+  * \endcode
+  */
+T_GAP_CAUSE le_conn_update_cfm(uint8_t conn_id, uint16_t result);
 #endif
+
 /**
   * @brief      Send connection parameter update request msg to bt stack. Connection parameter update result will be returned
   *             by @ref app_handle_conn_param_update_evt.
@@ -1567,3 +1601,5 @@ T_GAP_CAUSE le_update_conn_param(uint8_t   conn_id,
 #endif
 
 #endif /* GAP_CONN_LE_H */
+
+

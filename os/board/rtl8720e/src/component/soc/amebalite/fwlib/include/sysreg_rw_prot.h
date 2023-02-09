@@ -268,7 +268,7 @@
 /* MANUAL_GEN_START */
 
 //Please add your defination here
-
+#define SYSON_RW_PROT_BASE						(0x4100DE00)
 /* MANUAL_GEN_END */
 
 #endif

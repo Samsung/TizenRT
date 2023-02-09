@@ -56,33 +56,6 @@
 #define CONFIG_FW_C2H_PKT
 #define PHYDM_VERSION	2 /*phydm trunk*/
 
-#if defined(CONFIG_HARDWARE_8188F)
-#define CONFIG_RTL8188F
-#undef RTL8188F_SUPPORT
-#define RTL8188F_SUPPORT 1
-/* For DM support */
-#define RATE_ADAPTIVE_SUPPORT 0
-#elif defined(CONFIG_HARDWARE_8192E)
-#define CONFIG_RTL8192E
-#undef RTL8192E_SUPPORT
-#define RTL8192E_SUPPORT 1
-/* For DM support */
-#define RATE_ADAPTIVE_SUPPORT 0
-#elif defined(CONFIG_HARDWARE_8723D)
-#define CONFIG_RTL8723D
-#undef RTL8723D_SUPPORT
-#define RTL8723D_SUPPORT 1
-/* For DM support */
-#define RATE_ADAPTIVE_SUPPORT 0
-#elif defined(CONFIG_HARDWARE_8188E)
-#define CONFIG_RTL8188E
-#undef RTL8188E_SUPPORT
-#define RTL8188E_SUPPORT 1
-/* For DM support */
-#define RATE_ADAPTIVE_SUPPORT 1
-#else
-#error " PLATFORM ERROR"
-#endif /* CONFIG_HARDWARE_8188F */
 /*************************** Non Ameba Series End *****************************/
 
 #define CONFIG_REG_ENABLE_KFREE 0	// 0: Depend on efuse(flash), 1: enable, 2: disable

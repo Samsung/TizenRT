@@ -188,7 +188,7 @@
 /* ================================================
   * Sections only for other MCU based wlan driver
   *========================================== ======*/
-#if !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_8710C) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_8735B) && !defined(CONFIG_PLATFORM_AMEBALITE) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_8735B) && !defined(CONFIG_PLATFORM_AMEBALITE) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include <drv_conf.h>
 
 #define SUCCESS	0

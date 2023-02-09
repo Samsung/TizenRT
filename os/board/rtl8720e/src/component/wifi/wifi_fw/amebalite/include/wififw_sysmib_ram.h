@@ -129,9 +129,6 @@ typedef struct _mib_info_ {
 	u8						preiod_cca_bbreg_backup[7];
 	u8						period_cca_rssi;
 #endif
-	u8                                  RxShiftEn: 1;
-	u8                                  DMAShiftMode: 1;
-	u8                                  rsvd: 6;
 	u32                    RF_18;
 } mib_info, *Pmib_info;
 

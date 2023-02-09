@@ -11,7 +11,7 @@
 #define __DRV_CONF_H__
 
 #include "autoconf.h"
-#if ((RTL8711B_SUPPORT==1) || (RTL8721D_SUPPORT == 1) || (RTL8730A_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1))
+#if ((RTL8721D_SUPPORT == 1) || (RTL8720E_SUPPORT == 1) || (RTL8730E_SUPPORT == 1) || (RTL8721F_SUPPORT == 1))
 #include "platform_autoconf.h"
 #endif
 
@@ -57,11 +57,6 @@
 
 #ifndef CONFIG_RTW_NHM_EN
 #define CONFIG_RTW_NHM_EN 0
-#endif
-
-//#define CONFIG_DFS_SLAVE_WITH_RADAR_DETECT
-#if defined(CONFIG_DFS_SLAVE_WITH_RADAR_DETECT) && !defined(CONFIG_DFS_MASTER)
-#define CONFIG_DFS_MASTER
 #endif
 
 #ifndef CONFIG_RTW_DFS_REGION_DOMAIN

@@ -5,7 +5,11 @@
 ** pmksa internal control flag
 **
 */
+#if WIFI_LOGO_CERTIFICATION
 #define rtw_pmk_cache_enable 1		/* 1:enable;  0:disable  */
+#else
+#define rtw_pmk_cache_enable 0
+#endif
 /*
 ** pmksa internal encrypted bssid size
 **

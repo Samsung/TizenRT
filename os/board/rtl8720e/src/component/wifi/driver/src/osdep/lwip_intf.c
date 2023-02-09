@@ -9,10 +9,12 @@
 
 //#define _LWIP_INTF_C_
 #include <autoconf.h>
+#include "ethernetif.h"
 #include <lwip_intf.h>
 #if !defined(CONFIG_MBED_ENABLED)
-#if CONFIG_LWIP_LAYER
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
+#include "freertos/wrapper.h"
 #endif
 #endif
 #include <osdep_service.h>
@@ -41,7 +43,7 @@
  */
 void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #if defined(CONFIG_MBED_ENABLED)
 	//rtw_memcpy(xnetif[idx_wlan]->hwaddr, dev_addr, 6);
 	//set netif hwaddr later
@@ -53,6 +55,9 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
 	inic_ipc_dev_set_netif_info(idx_wlan, dev_addr);
 #endif
 #endif
+	(void)idx_wlan;
+	(void)dev;
+	(void)dev_addr;
 }
 
 /**
@@ -66,7 +71,7 @@ void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr)
  */
 int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	struct eth_drv_sg *last_sg;
 	struct sk_buff *skb = NULL;
 	int ret = 0;
@@ -79,7 +84,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	DBG_TRACE("%s is called", __FUNCTION__);
 
 	save_and_cli();
-	if (rltk_wlan_check_isup(idx)) {
+	if (rtw_is_netdev_enable(idx)) {
 		rltk_wlan_tx_inc(idx);
 	} else {
 		DBG_ERR("netif is DOWN");
@@ -104,7 +109,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
 
 	WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
-	rltk_wlan_send_skb(idx, skb);
+	wifi_send_skb(idx, skb);
 	WIFI_MONITOR_TIMER_END(wlan_send_skb_time, total_len);
 	WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
 
@@ -113,7 +118,13 @@ exit:
 	rltk_wlan_tx_dec(idx);
 	restore_flags();
 	return ret;
+#else
+	(void)idx;
+	(void)sg_list;
+	(void)sg_len;
+	(void)total_len;
 #endif
+	return -1;
 }
 
 /**
@@ -126,7 +137,7 @@ exit:
  */
 void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	struct eth_drv_sg *last_sg;
 	struct sk_buff *skb;
 
@@ -144,6 +155,10 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 			skb_pull(skb, sg_list->len);
 		}
 	}
+#else
+	(void)idx;
+	(void)sg_list;
+	(void)sg_len;
 #endif
 }
 
@@ -151,7 +166,7 @@ int netif_is_valid_IP(int idx, unsigned char *ip_dest)
 {
 #if defined(CONFIG_MBED_ENABLED)
 	return 1;
-#elif (CONFIG_LWIP_LAYER == 1)
+#elif defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	return LwIP_netif_is_valid_IP(idx, ip_dest);
 #elif defined(CONFIG_AS_INIC_NP)
 	return inic_ipc_get_lwip_info(IPC_WLAN_IS_VALID_IP, ip_dest, idx);
@@ -163,7 +178,7 @@ int netif_is_valid_IP(int idx, unsigned char *ip_dest)
 #if !defined(CONFIG_MBED_ENABLED)
 unsigned char *netif_get_hwaddr(int idx_wlan)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	return LwIP_GetMAC(idx_wlan);
 #elif defined(CONFIG_AS_INIC_NP)
 	return (unsigned char *)inic_ipc_get_lwip_info(IPC_WLAN_GET_HW_ADDR, NULL, idx_wlan);
@@ -186,7 +201,7 @@ void set_callback_func(emac_callback p, void *data)
 void netif_rx(int idx, unsigned int len)
 {
 	WIFI_MONITOR_TIMER_START(netif_rx_time);
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #if defined(CONFIG_MBED_ENABLED)
 	emac_callback_func(emac_callback_data, NULL, len);
 #else
@@ -201,12 +216,13 @@ void netif_rx(int idx, unsigned int len)
 	WIFI_MONITOR_TIMER_END(ethernetif_recv_time, len);
 #endif
 	WIFI_MONITOR_TIMER_END(netif_rx_time, len);
+	(void)len;
 }
 
 #ifdef CONFIG_WOWLAN
 unsigned char *rltk_wlan_get_ip(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	return LwIP_GetIP(idx);
 #elif defined(CONFIG_AS_INIC_NP)
 	return (unsigned char *)inic_ipc_get_lwip_info(IPC_WLAN_GET_IP, NULL, idx);
@@ -216,7 +232,7 @@ unsigned char *rltk_wlan_get_ip(int idx)
 }
 unsigned char *rltk_wlan_get_gw(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	return LwIP_GetGW(idx);
 #elif defined(CONFIG_AS_INIC_NP)
 	return (unsigned char *)inic_ipc_get_lwip_info(IPC_WLAN_GET_GW, NULL, idx);
@@ -227,7 +243,7 @@ unsigned char *rltk_wlan_get_gw(int idx)
 
 unsigned char *rltk_wlan_get_gwmask(int idx)
 {
-#if (CONFIG_LWIP_LAYER == 1)
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	return LwIP_GetMASK(idx);
 #elif defined(CONFIG_AS_INIC_NP)
 	return (unsigned char *)inic_ipc_get_lwip_info(IPC_WLAN_GET_GWMSK, NULL, idx);
