@@ -583,8 +583,9 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 		nvdbg("[RTK] Link callback handles: registered\n");
 	}
 
-	if (cmd_wifi_ap(softap_config) != RTK_STATUS_SUCCESS) {
-		ndbg("[RTK] Failed to start AP mode\n");
+	ret = cmd_wifi_ap(softap_config);
+	if (ret != RTK_STATUS_SUCCESS) {
+		ndbg("[RTK] Failed to start AP mode(%d)\n", ret);
 		return ret;
 	}
 	g_mode = RTK_WIFI_SOFT_AP_IF;
