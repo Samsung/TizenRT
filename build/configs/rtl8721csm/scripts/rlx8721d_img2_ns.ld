@@ -383,6 +383,7 @@ SECTIONS
 	.psram_image2.data :
 	{
 		. = ALIGN (32);
+		__sdata_ext = .;
 		*(.psram.data*)
 		. = ALIGN (32);
 		*(.psram.rodata*)
@@ -390,6 +391,7 @@ SECTIONS
 		*libiotivity.a:*(.data*)
 		*libexternal.a:*(.data*)
 		*libframework.a:*(.data*)
+		__edata_ext = .;
 	} > PSRAM_NS
 
 	.psram_image2.bss :
