@@ -155,6 +155,11 @@ CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
+ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/flatbuffers/include
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+endif
 
 ##########################################################################################################################################
 CFLAGS += -march=armv8-m.main+dsp 
