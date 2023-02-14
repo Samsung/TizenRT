@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config MEM_LEAK_CHECKER
+	bool "Memory Leak Checker"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
+	select OPTIMIZE_APP_RELOAD_TIME if APP_BINARY_SEPARATION
+	---help---
+		Enable support for Memory Leak Checker. This requires arch/arm/src/<chip>/memory_region.h to work for the selected board.
+
+if MEM_LEAK_CHECKER
+
+config MEM_LEAK_CHECKER_HASH_TABLE_SIZE
+	int "size of hash table"
+	default 1007
+	---help---
+		The size of the hash table for searching. It is preferred to have this as a prime number
+
+config MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
+	int "max allocation counts"
+	default 3000
+	---help---
+		It must be larger than the total number of memory allocations.
+
+endif

@@ -135,6 +135,26 @@ struct elf_loadinfo_s {
 	bool cached_read;			/* Whether to use caching while loading */
 };
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+struct bin_addr_info_s {
+        uint32_t text_addr;
+        uint32_t text_size;
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+        uint32_t rodata_addr;
+        uint32_t data_addr;
+        uint32_t bss_addr;
+#endif
+#ifdef CONFIG_MEM_LEAK_CHECKER
+        uint32_t rodata_size;
+        uint32_t data_size;
+        uint32_t bss_size;
+#endif
+#endif
+};
+typedef struct bin_addr_info_s bin_addr_info_t;
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -254,6 +274,19 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 int elf_unload(struct elf_loadinfo_s *loadinfo);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+
+/****************************************************************************
+ * Name: get_bin_addr_list
+ *
+ * Description:
+ *   Returns the pointer to the bin info address list
+ *
+ * Returned Value:
+ *   Pointer to the bin info address list
+ ****************************************************************************/
+
+bin_addr_info_t *get_bin_addr_list(void);
+
 void *elf_find_text_section_addr(int bin_idx);
 void elf_show_all_bin_section_addr(void);
 #endif

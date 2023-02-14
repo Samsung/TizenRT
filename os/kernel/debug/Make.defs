@@ -20,6 +20,10 @@ ifeq ($(CONFIG_DEBUG_SYSTEM),y)
 CSRCS += sysdbg.c
 endif
 
+ifeq ($(CONFIG_MEM_LEAK_CHECKER),y)
+CSRCS += mem_leak_checker.c
+endif
+
 CSRCS += dbg_termination_info.c
 ifeq ($(CONFIG_DEBUG_MM_WARN),y)
 CSRCS += memdbg.c

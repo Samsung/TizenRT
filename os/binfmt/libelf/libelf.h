@@ -419,19 +419,6 @@ int elf_cache_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, 
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-struct bin_addr_info_s {
-	uint32_t text_addr;
-	uint32_t text_size;
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	uint32_t rodata_addr;
-	uint32_t data_addr;
-	uint32_t bss_addr;
-#endif
-#endif
-};
-typedef struct bin_addr_info_s bin_addr_info_t;
-
 void elf_save_bin_section_addr(struct binary_s *bin);
 void elf_delete_bin_section_addr(uint8_t bin_idx);
 #ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
