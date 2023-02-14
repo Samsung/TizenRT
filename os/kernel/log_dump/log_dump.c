@@ -56,6 +56,7 @@
 #define LOG_DUMP_MEM_FAIL		-1
 #define LOG_DUMP_COMPHEAD_OFFSET	-1
 #define LOG_DUMP_OPT_FAIL		-2
+#define LOG_DUMP_FAIL			-99
 #define LOG_DUMP_STRLEN_FREEHEAP		15	/* String size to display Free heap size */
 #define LOG_DUMP_COMPRESS_NODESZ	5	/* use 4 char to store compressed node size */
 
@@ -382,6 +383,14 @@ int log_dump_save(char ch)
 		 */
 		if (IS_KMM_LOCKED()) {
 			return LOG_DUMP_MEM_FAIL;
+		}
+
+		/* If the current thread priority is greater than the compress thread
+		 * priority, then there will be a lockup since both threads cannot proceed. 
+		 * So, in this case, we will return without performing the compression.
+		 */
+		if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO) {
+			return LOG_DUMP_FAIL;
 		}
 
 		/* compress the block, add it to the nodes, reset the uncomp_array */

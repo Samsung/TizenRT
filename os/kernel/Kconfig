@@ -1004,6 +1004,11 @@ config LOG_DUMP
 
 if LOG_DUMP
 
+config LOG_DUMP_PRIO
+	int "Log dump comrpess thread priority"
+	range 0 250
+	default 200
+
 config LOG_DUMP_CHUNK_SIZE
 	int "Log dump chunk size in bytes"
 	range 0 LOG_DUMP_MAX_SIZE
