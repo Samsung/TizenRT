@@ -297,7 +297,7 @@ static inline void os_do_appstart(void)
 #ifdef CONFIG_LOG_DUMP
 	svdbg("Starting log_dump thread\n");
 
-	pid = kernel_thread(LOG_DUMP_NAME, 200, LOG_DUMP_STACKSIZE, log_dump, NULL);
+	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
 	if (pid < 0) {
 		sdbg("Failed to start log dump");
 	}
