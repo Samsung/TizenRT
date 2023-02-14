@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_HELLO_TFMICRO
+	bool "\"Hello, Tensorflow Lite Micro!\" C++ example"
+	default n
+	depends on HAVE_CXXINITIALIZE && EXTERNAL_TFMICRO
+	---help---
+		Enable the \"Hello, Tensorflow Lite Micro!\" C++ example
+
+config USER_ENTRYPOINT
+	string
+	default "hello_tfmicro_main" if ENTRY_HELLO_TFMICRO

@@ -1,0 +1,3 @@
+config ENTRY_HELLO_TFMICRO
+	bool "\"Hello, Tensorflow Lite Micro!\" C++ example"
+	depends on EXAMPLES_HELLO_TFMICRO
