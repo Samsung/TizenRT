@@ -308,8 +308,10 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
 			binary_manager_register_kpart(partno, partsize, partoffset * geo.blocksize);
+#ifdef CONFIG_USE_BP
 		} else if (!strncmp(types, "bootparam,", 10)) {
 			binary_manager_register_bppart(partno, partsize);
+#endif
 		}
 #endif
 #ifdef CONFIG_MTD_PARTITION_NAMES

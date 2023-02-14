@@ -119,10 +119,13 @@ int binary_manager(int argc, char *argv[])
 	int ret;
 	bool is_found_ubin = true;
 #endif
+
+#ifdef CONFIG_USE_BP
 	if (binary_manager_update_bpinfo() != BINMGR_OK) {
 		is_found_bootparam = false;
 		goto errout_with_nobinary;
 	}
+#endif
 
 	if (binary_manager_get_kcount() <= 0 || !binary_manager_scan_kbin()) {
 		is_found_kpart = false;
@@ -199,9 +202,14 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_DOWNLOAD_PATH:
 			binary_manager_get_inactive_path(request_msg.requester_pid, request_msg.data.bin_name);
 			break;
+		case BINMGR_GET_CURRENT_PATH:
+			binary_manager_get_active_path(request_msg.requester_pid, request_msg.data.bin_name);
+			break;
+#ifdef CONFIG_USE_BP
 		case BINMGR_SETBP:
 			binary_manager_update_bootparam(request_msg.requester_pid, request_msg.data.type);
 			break;
+#endif
 		case BINMGR_UPDATE:
 #ifdef CONFIG_APP_BINARY_SEPARATION
 			binary_manager_execute_loader(LOADCMD_UPDATE, 0);

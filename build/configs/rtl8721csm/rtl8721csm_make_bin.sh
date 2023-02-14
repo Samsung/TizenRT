@@ -127,14 +127,20 @@ function copy_bootloader()
 
 	source ${CONFIG}
 
+	if [ "${CONFIG_BOOTLOADER_DYNAMIC_PARTITIONS}" == "y" ];then
+		BL_TYPE="_dynamic_partitions"
+	else
+		BL_TYPE="_fixed_partitions"
+	fi
+
 	if [ "${CONFIG_AMEBAD_TRUSTZONE}" != "y" ];then
 		echo "========== Copy_bootloader for TZ disabled =========="
-		cp $BOOT_PATH/km4_boot_all.bin $BINDIR/km4_boot_all.bin
+		cp $BOOT_PATH$BL_TYPE/km4_boot_all.bin $BINDIR/km4_boot_all.bin
 	else
 		echo "========== Copy_bootloader for TZ enabled =========="
-		cp $BOOT_PATH/km4_boot_all_tz.bin $BINDIR/km4_boot_all.bin
+		cp $BOOT_PATH$BL_TYPE/km4_boot_all_tz.bin $BINDIR/km4_boot_all.bin
 	fi
-	cp $BOOT_PATH/km0_boot_all.bin $BINDIR/km0_boot_all.bin
+	cp $BOOT_PATH$BL_TYPE/km0_boot_all.bin $BINDIR/km0_boot_all.bin
 }
 
 function concatenate_binary_without_signing()

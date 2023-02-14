@@ -547,7 +547,9 @@ endif
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/validate_output.py
 endif
+ifeq ($(CONFIG_USE_BP),y)
 	$(Q) $(call MAKE_BOOTPARAM)
+endif
 
 ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)
 ifneq ($(findstring "smartfs",$(CONFIG_FLASH_PART_TYPE)), "smartfs")

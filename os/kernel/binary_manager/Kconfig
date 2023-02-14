@@ -3,6 +3,12 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+config USE_BP
+	bool "Enable bootparameters"
+	default n
+	---help---
+		This enables the use of bootparameters
+
 config BINARY_MANAGER
 	bool "Enable Binary Manager"
 	default n

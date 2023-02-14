@@ -123,10 +123,11 @@ void binary_manager_register_kpart(int part_num, int part_size, int part_offset)
 bool binary_manager_scan_kbin(void)
 {
 	int ret;
-	binmgr_bpdata_t *bp_data;
 	kernel_binary_header_t header_data;
 	char filepath[BINARY_PATH_LEN];
 
+#ifdef CONFIG_USE_BP
+	binmgr_bpdata_t *bp_data;
 	bp_data = binary_manager_get_bpdata();
 	/* Verify running kernel binary based on bootparam */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[bp_data->active_idx].devnum);
@@ -138,6 +139,27 @@ bool binary_manager_scan_kbin(void)
 		bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
 		return true;
 	}
+#else
+	uint32_t latest_ver = 0;
+
+	for (int part_idx = 0; part_idx < kernel_info.part_count; part_idx++) {
+		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[part_idx].devnum);
+		ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true); /* do we need to do crc check? */
+		if (ret == OK && latest_ver < header_data.version) {
+			/* Update latest version and inuse index */
+			kernel_info.version = header_data.version;
+			kernel_info.inuse_idx = part_idx;
+			latest_ver = header_data.version;
+		}
+	}
+
+	bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
+
+	/* Found valid binary */
+	if (kernel_info.version != 0) {
+		return true;
+	}
+#endif
 
 	return false;
 }
@@ -200,6 +222,7 @@ int binary_manager_check_kernel_update(void)
 *************************************************************************************/
 int binary_manager_update_kernel_binary(void)
 {
+#ifdef CONFIG_USE_BP
 	int ret;
 	binmgr_bpinfo_t bp_info;
 
@@ -223,7 +246,16 @@ int binary_manager_update_kernel_binary(void)
 		bmdbg("Already running kernel binary is the latest\n");
 		return BINMGR_ALREADY_UPDATED;
 	}
+#else
+	int ret;
 
+	ret = binary_manager_check_kernel_update();
+
+	if (ret < 0) {
+		bmdbg("Failed to check for kernel update %d\n", ret);
+		return ret;
+	}
+#endif
 	/* No, Reboot for kernel update */
 	printf("==> [REBOOT] Board will be rebooted for new binary loading");
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
