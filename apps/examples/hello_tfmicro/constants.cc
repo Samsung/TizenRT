@@ -31,40 +31,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_
-#define TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_
+#include "constants.h"
 
-#include <math.h>
-#include <cmath>
+/* This is a small number so that it's easy to read the logs */
+const int kInferencesPerCycle = 20;
 
-#include "tensorflow/lite/c/builtin_op_data.h"
-
-namespace tflite {
-namespace ops {
-namespace micro {
-
-// Returns the floating point value for a fused activation:
-inline float ActivationValFloat(TfLiteFusedActivation act, float a) {
-  switch (act) {
-    case kTfLiteActNone:
-      return a;
-    case kTfLiteActRelu:
-      return fmax(0.0f, a);
-    case kTfLiteActRelu1:
-      return fmax(-1.0f, fmin(a, 1.0f));
-    case kTfLiteActRelu6:
-      return fmax(0.0f, fmin(a, 6.0f));
-    case kTfLiteActTanh:
-      return tanh(a);
-    case kTfLiteActSignBit:
-      return signbit(a);
-    case kTfLiteActSigmoid:
-      return 1.0f / (1.0f + std::exp(-a));
-  }
-}
-
-}  // namespace micro
-}  // namespace ops
-}  // namespace tflite
-
-#endif  // TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_

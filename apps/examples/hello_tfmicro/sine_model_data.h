@@ -31,40 +31,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_
-#define TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_
+/* This is a standard TensorFlow Lite model file that has been converted into a
+ C data array, so it can be easily compiled into a binary for devices that
+ don't have a file system. It was created using the command:
+ xxd -i sine_model.tflite > sine_model_data.cc
+*/
+#ifndef TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_SINE_MODEL_DATA_H_
+#define TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_SINE_MODEL_DATA_H_
 
-#include <math.h>
-#include <cmath>
+extern const unsigned char g_sine_model_data[];
+extern const int g_sine_model_data_len;
 
-#include "tensorflow/lite/c/builtin_op_data.h"
-
-namespace tflite {
-namespace ops {
-namespace micro {
-
-// Returns the floating point value for a fused activation:
-inline float ActivationValFloat(TfLiteFusedActivation act, float a) {
-  switch (act) {
-    case kTfLiteActNone:
-      return a;
-    case kTfLiteActRelu:
-      return fmax(0.0f, a);
-    case kTfLiteActRelu1:
-      return fmax(-1.0f, fmin(a, 1.0f));
-    case kTfLiteActRelu6:
-      return fmax(0.0f, fmin(a, 6.0f));
-    case kTfLiteActTanh:
-      return tanh(a);
-    case kTfLiteActSignBit:
-      return signbit(a);
-    case kTfLiteActSigmoid:
-      return 1.0f / (1.0f + std::exp(-a));
-  }
-}
-
-}  // namespace micro
-}  // namespace ops
-}  // namespace tflite
-
-#endif  // TENSORFLOW_LITE_MICRO_KERNELS_ACTIVATION_UTILS_H_
+#endif  /* TENSORFLOW_LITE_MICRO_EXAMPLES_HELLO_WORLD_SINE_MODEL_DATA_H_ */

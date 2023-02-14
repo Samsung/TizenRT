@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
-CONFIGURED_EXT += tfmicro
+ifeq ($(CONFIG_EXAMPLES_HELLO_TFMICRO),y)
+CONFIGURED_APPS += examples/hello_tfmicro
 endif
