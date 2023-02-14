@@ -32,6 +32,12 @@
 
 binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_result_t *update_result)
 {
+#ifndef CONFIG_USE_BP
+	/* In the case of 3.1 bootloader, we dont have bp. So we need not
+	 * update the bp to swap partitions, it is automatically done on
+	 * reboot, so return success */
+	return BINMGR_OK;
+#else
 	binmgr_result_type_e ret;
 	binmgr_request_t request_msg;
 	binmgr_setbp_response_t response_msg;
@@ -78,6 +84,7 @@ binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_res
 	}
 
 	return response_msg.result;
+#endif
 }
 
 binmgr_result_type_e binary_manager_update_binary(void)
@@ -179,6 +186,40 @@ binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *d
 	}
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_GET_DOWNLOAD_PATH, binary_name);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getpath_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	if (response_msg.result == BINMGR_OK) {
+		bmvdbg("Download path : %s\n", response_msg.binpath);
+		strncpy(download_path, response_msg.binpath, strlen(response_msg.binpath) + 1);
+	}
+
+	return response_msg.result;
+}
+
+binmgr_result_type_e binary_manager_get_current_path(char *binary_name, char *download_path)
+{
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_getpath_response_t response_msg;
+
+	if (binary_name == NULL || strlen(binary_name) > BIN_NAME_MAX - 1) {
+		bmdbg("Invalid parameter\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_GET_CURRENT_PATH, binary_name);
 	if (ret != BINMGR_OK) {
 		return ret;
 	}

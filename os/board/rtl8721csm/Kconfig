@@ -5,6 +5,16 @@
 
 if ARCH_BOARD_RTL8721CSM
 
+config BOOTLOADER_FIXED_PARTITIONS
+    bool "Use bootloader that supports fixed partitions"
+    default y
+    depends on !USE_BP
+
+config BOOTLOADER_DYNAMIC_PARTITIONS
+    bool "Use bootloader that supports dynamic partitions"
+    default y
+    depends on USE_BP
+
 config FLASH_START_ADDR
     hex
     default 0x8000000

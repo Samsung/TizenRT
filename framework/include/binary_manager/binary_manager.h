@@ -115,6 +115,19 @@ binmgr_result_type_e binary_manager_unregister_state_changed_callback(void);
 binmgr_result_type_e binary_manager_get_download_path(char *binary_name, char *download_path);
 
 /**
+ * @brief Get the path to current running binary
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  User can perform file operations with returned filepath : open, read, write, lseek, close.
+ *  It returns a path of kernel or user binary's active partition.
+ * @param[in] binary_name The binary name to update
+ * @param[out] current_path The path to the running binary. The maximum length is BINARY_PATH_LEN.
+ * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) on success. On failure, negative value is returned.
+ * @since TizenRT v3.1 PRE
+ */
+binmgr_result_type_e binary_manager_get_current_path(char *binary_name, char *current_path);
+
+/**
  * @brief Get a state of binary
  * @details @b #include <binary_manager/binary_manager.h>\n
  *  It sends a message the binary manager to get a state of binary with binary name.

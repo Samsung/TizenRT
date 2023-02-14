@@ -222,7 +222,7 @@ void binary_manager_get_info_all(int requester_pid)
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
 }
 
-int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
+static int binary_manager_get_path(int requester_pid, char *bin_name, bool inactive)
 {
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int bin_idx;
@@ -242,7 +242,7 @@ int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
 		kerinfo = binary_manager_get_kdata();
 		if (kerinfo->part_count > 1) {
 			response_msg.result = BINMGR_OK;
-			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ 1].devnum);
+			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kerinfo->part_info[kerinfo->inuse_idx ^ inactive].devnum);
 		} else {
 			response_msg.result = BINMGR_NOT_FOUND;
 		}
@@ -260,7 +260,7 @@ int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
 	} else {
 		/* Return devpath for partition to download binary on success */
 		response_msg.result = BINMGR_OK;
-		snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ 1)));
+		snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx) ^ inactive)));
 	}
 #endif
 
@@ -269,4 +269,14 @@ send_result:
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getpath_response_t));
 
 	return response_msg.result;
+}
+
+int binary_manager_get_active_path(int requester_pid, char *bin_name)
+{
+	return binary_manager_get_path(requester_pid, bin_name, false);
+}
+
+int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
+{
+	return binary_manager_get_path(requester_pid, bin_name, true);
 }

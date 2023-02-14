@@ -21,7 +21,11 @@
 ifeq ($(CONFIG_BINARY_MANAGER),y)
 
 CSRCS += binary_manager.c binary_manager_getinfo.c binary_manager_response.c
-CSRCS += binary_manager_data.c binary_manager_bootparam.c binary_manager_verify.c
+CSRCS += binary_manager_data.c binary_manager_verify.c
+
+ifeq ($(CONFIG_USE_BP),y)
+CSRCS += binary_manager_bootparam.c
+endif
 
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 CSRCS += binary_manager_load.c binary_manager_callback.c binary_manager_deinit.c
