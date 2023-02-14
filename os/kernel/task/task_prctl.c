@@ -354,6 +354,21 @@ int prctl(int option, ...)
 		return ret;
 	}
 #endif
+#ifdef CONFIG_MEM_LEAK_CHECKER
+	case PR_MEM_LEAK_CHECKER:
+	{
+		int ret;
+		int checker_pid;
+		char *bin_name;
+		checker_pid = va_arg(ap, int);
+		bin_name = va_arg(ap, char *);
+
+		ret = run_mem_leak_checker(checker_pid, bin_name);
+		va_end(ap);
+
+		return ret;
+	}
+#endif
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	case PR_REBOOT_REASON_READ:
 	{
