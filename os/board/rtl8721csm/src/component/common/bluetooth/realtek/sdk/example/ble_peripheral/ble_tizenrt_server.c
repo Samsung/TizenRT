@@ -389,6 +389,7 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
 
 void rtw_ble_server_adv_into_idle(void)
 {
+    uint8_t max_count = 0;
     T_GAP_DEV_STATE new_state;
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 
@@ -408,7 +409,13 @@ void rtw_ble_server_adv_into_idle(void)
         {
             do {   
                 debug_print("ADV STATE : START \n");
+                max_count++;
                 os_delay(100);
+                if(max_count == 20)
+                {
+                    dbg("loop count reaches %d \n", max_count);
+                    return TRBLE_FAIL;
+                }
                 le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
             } while(new_state.gap_adv_state == GAP_ADV_STATE_START);
 
@@ -427,7 +434,13 @@ void rtw_ble_server_adv_into_idle(void)
         {
             do {   
                 debug_print("ADV STATE : STOPPING \n");
+                max_count++;
                 os_delay(100);
+                if(max_count == 20)
+                {
+                    dbg("loop count reaches %d \n", max_count);
+                    return TRBLE_FAIL;
+                }
                 le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
             } while(new_state.gap_adv_state == GAP_ADV_STATE_STOP);
 
@@ -446,9 +459,16 @@ void rtw_ble_server_adv_into_idle(void)
         break;
     }
 
+    max_count = 0;
     do {   
         debug_print("Waiting for adv idle \n");
+        max_count++;
         os_delay(100);
+        if(max_count == 20)
+        {
+            dbg("loop count reaches %d \n", max_count);
+            return TRBLE_FAIL;
+        }
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
 
@@ -557,6 +577,7 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 
 trble_result_e rtw_ble_server_start_adv(void)
 {
+    uint8_t max_count = 0;
     uint8_t link_num = le_get_active_link_num();
     if(link_num)
     {
@@ -589,11 +610,18 @@ trble_result_e rtw_ble_server_start_adv(void)
         }
         do {   
             debug_print("Waiting for adv stop \n");
+            max_count++;
             os_delay(100);
+            if(max_count == 20)
+            {
+                dbg("loop count reaches %d \n", max_count);
+                return TRBLE_FAIL;
+            }
             le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
 
+    max_count = 0;
     if(ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_START_ADV, NULL) == false)
     {
         debug_print("msg send fail \n");
@@ -602,11 +630,17 @@ trble_result_e rtw_ble_server_start_adv(void)
     do
     {   
         debug_print("Waiting for adv start \n");
+        max_count++;
         os_delay(100);
         if (ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state == GAP_ADV_TO_IDLE_CAUSE_CONN)
         {
             ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state = GAP_ADV_TO_IDLE_CAUSE_STOP;
             break;
+        }
+        if(max_count == 20)
+        {
+            dbg("loop count reaches %d \n", max_count);
+            return TRBLE_FAIL;
         }
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
     } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
@@ -616,6 +650,7 @@ trble_result_e rtw_ble_server_start_adv(void)
 
 trble_result_e rtw_ble_server_stop_adv(void)
 {
+    uint8_t max_count = 0;
     T_GAP_DEV_STATE new_state;
     le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 
@@ -630,6 +665,11 @@ trble_result_e rtw_ble_server_stop_adv(void)
         do {
             debug_print("Waiting for adv stop \n");
             os_delay(100);
+            if(max_count == 20)
+            {
+                dbg("loop count reaches %d \n", max_count);
+                return TRBLE_FAIL;
+            }
             le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }

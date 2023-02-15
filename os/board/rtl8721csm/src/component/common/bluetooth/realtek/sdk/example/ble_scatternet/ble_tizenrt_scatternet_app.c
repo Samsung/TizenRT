@@ -447,13 +447,17 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
         {
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
-                debug_print("[Upstream] Start Adv Success \n");
+                dbg("[Upstream] Start Adv Success \n");
             else
-                debug_print("[Upstream] Start Adv Fail !! \n");   
+                dbg("[Upstream] Start Adv Fail !! 0x%x \n", ret);
         }
 			break;
 		case BLE_TIZENRT_MSG_STOP_ADV:
 			ret = le_adv_stop();
+			if(GAP_CAUSE_SUCCESS == ret)
+                           dbg("[Upstream] Stop Adv Success \n");
+                       else
+                           dbg("[Upstream] Stop Adv Fail !! 0x%x \n", ret);
 			break;
         case BLE_TIZENRT_MSG_DISCONNECT:
         {
