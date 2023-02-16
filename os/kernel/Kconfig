@@ -1026,4 +1026,8 @@ config LOG_DUMP_MAX_FREE_HEAP
 	int "Maximum percent of memory occupied by logs compared to free heap"
 	default 20
 
+config LOG_DUMP_NUMBUFS
+	int "Number of buffers to reserve for log dump"
+	default 2
+
 endif # LOG_DUMP
