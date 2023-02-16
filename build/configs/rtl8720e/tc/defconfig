@@ -1374,6 +1374,7 @@ CONFIG_ENABLE_UPTIME=y
 #
 # Binary manager
 #
+CONFIG_USE_BP=y
 # CONFIG_BINARY_MANAGER is not set
 
 #
