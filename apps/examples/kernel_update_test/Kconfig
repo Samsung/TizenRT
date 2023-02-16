@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_KERNEL_UPDATE
+	bool "\" kernel update test\" example"
+	default n
+	---help---
+		Enable the \"kernel update test\" example
+
+config USER_ENTRYPOINT
+	string
+	default "kernel_update_main" if ENTRY_KERNEL_UPDATE
