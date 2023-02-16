@@ -51,6 +51,11 @@
 #define BLE_STATE_MANAGER_RMC_HANDLE_OTA_COMMAND (0xff01)
 #define BLE_STATE_MANAGER_RMC_HANDLE_OTA_INDI_CCCD (0xff03)
 
+#define BLE_ES_GATT_SERVICE     (0x7A01)
+#define BLE_ES_RESPONSE_CHAR    (0x7A02)
+#define BLE_ES_RESPONSE_CHAR_CCCD (0x7A04) 
+#define BLE_ES_REQUEST_CHAR     (0x7A06)
+
 #define COMBO_TEST_ADV_INTERVAL_PERFORMANCE (0x0020) // 20ms
 #define COMBO_TEST_ADV_INTERVAL_BALANCED (0x0650) // 1010ms
 #define COMBO_TEST_ADV_INTERVAL_POWERSAVE (0x4000) // 10240ms
@@ -308,6 +313,7 @@ static void ble_peri_cb_charact_ota(ble_server_attr_cb_type_e type, ble_conn_han
 	RMC_LOG(RMC_SERVER_TAG, "[CHAR_OTA][%s] type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, attr_handle);
 }
 
+#if 0
 static ble_server_gatt_t gatt_profile[] = {
 	{.type = BLE_SERVER_GATT_SERVICE, .uuid = {0x12,0xB6,0x6E,0x45,0xA7,0x68,0x9D,0x8D,0x9A,0x40,0x17,0x2B,0xE9,0xCB,0xF2,0x13}, .uuid_length = 16,
 	.attr_handle = BLE_APP_HANDLE_SERVICE_0,},
@@ -356,6 +362,168 @@ static uint8_t g_adv_raw[] = {
 static uint8_t g_adv_resp[] = {
 	0x11, 0x09, 'T', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
 };
+
+#else
+ 
+typedef struct {
+    int value;
+} callback_arg;
+
+static callback_arg cb_arg;
+
+
+static void ServerRespCharCb(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle handle, void* arg)
+{
+    char *arg_str = "None";
+    if (arg != NULL)
+    {
+        arg_str = (char *)arg;
+    }
+
+    printf("Server Resp [%s] type : %d / conn_handle : %d / attr_handle : %02x \n", arg_str, type, conn_handle, handle);
+
+    switch (type) {
+        case BLE_SERVER_ATTR_CB_WRITING:
+            break;
+        case BLE_SERVER_ATTR_CB_READING:
+            break;
+        case BLE_SERVER_ATTR_CB_WRITING_NO_RSP:
+            break;
+        default:
+            printf("Should not come here");
+            break;
+    }
+}
+
+#define ATT_PAYLOAD_LENGTH_MAX	(240)
+
+static int indication_payload_length = ATT_PAYLOAD_LENGTH_MAX; 
+
+static void test_send_indication(ble_conn_handle conn_handle)
+{
+    ble_data data;
+	uint8_t payload[ATT_PAYLOAD_LENGTH_MAX];
+	int ret;
+
+	for(int i = 0 ; i < ATT_PAYLOAD_LENGTH_MAX; i++ )
+	{
+			payload[i] = 'A' + (i % 26);
+	}
+    
+	data.data = payload;
+    data.length = indication_payload_length;
+
+	printf("%s() is called(handle:%d), payloadlength = %d\n", __func__, conn_handle, data.length);
+
+    ret = ble_server_attr_set_data(BLE_ES_RESPONSE_CHAR+1, &data);
+    if (BLE_MANAGER_SUCCESS != ret)
+    {
+        printf("ble_server_attr_set_data failed with return [%d]", ret);
+        return ;
+    }
+    
+	ret = ble_server_charact_indicate(BLE_ES_RESPONSE_CHAR+1, conn_handle, &data);
+    if (BLE_MANAGER_SUCCESS != ret)
+    {
+        printf("ble_server_charact_indicate failed with return [%d]", ret);
+        return ;
+    }
+
+    printf("Indication Sent.");
+}
+
+ble_conn_handle g_req_handle = 0xFFFF;
+
+static void *_es_server_process(void *val)
+{
+		while(1)
+		{
+				if(g_req_handle != 0xFFFF)
+				{
+					test_send_indication(g_req_handle);
+					g_req_handle = 0xFFFF;
+				}
+				usleep(2000 * 1000);
+		}
+}
+
+static void ServerRespDescCb(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle handle, void* arg)
+{
+    char *arg_str = "None";
+    if (arg != NULL)
+    {
+        arg_str = (char *)arg;
+    }
+    printf("arg_str [%s] / type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, handle);
+}
+
+static void ServerReqCharCb(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle handle, void* arg)
+{
+    uint8_t remoteAddress[BLE_BD_ADDR_MAX_LEN];
+
+    char *arg_str = "None";
+    if (arg != NULL)
+    {
+        arg_str = (char *)arg;
+    }
+
+    printf("Server Req[%s] type : %d / conn_handle : %d / attr_handle : %02x \n", arg_str, type, conn_handle, handle);
+	g_req_handle = conn_handle;
+}
+
+// BLE ES Service and Characteristic definition
+static ble_server_gatt_t gatt_profile[] = {
+    {
+        .type = BLE_SERVER_GATT_SERVICE,
+        .uuid = {0x16,0xE8,0x0E,0xF7,0x69,0xEB,0x87,0xA9,0x63,0x4F,0x84,0xC7,0x29,0xD5,0xE3,0xAD},
+        .uuid_length = 16,
+        .attr_handle = BLE_ES_GATT_SERVICE,
+    },
+    {
+        .type = BLE_SERVER_GATT_CHARACT, // Response
+        .uuid = {0x56,0xB2,0x16,0x82,0x04,0x95,0x31,0x88,0xC4,0x42,0x80,0x45,0x82,0x19,0x24,0xE9},
+        .uuid_length = 16,
+        .property =  BLE_ATTR_PROP_READ | BLE_ATTR_PROP_INDICATE,
+        .permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+        .attr_handle = BLE_ES_RESPONSE_CHAR,
+        .cb =ServerRespCharCb,
+        .arg = &cb_arg
+    },
+    {
+        .type = BLE_SERVER_GATT_DESC,
+        .uuid = {0x29, 0x02},
+        .uuid_length = 2,
+        .property =  BLE_ATTR_PROP_NOTIFY | BLE_ATTR_PROP_INDICATE,
+        .permission = BLE_ATTR_PERM_R_PERMIT | BLE_ATTR_PERM_W_PERMIT,
+        .attr_handle = BLE_ES_RESPONSE_CHAR_CCCD,
+        .cb = ServerRespDescCb,
+        .arg = &cb_arg
+    },
+    {
+        .type = BLE_SERVER_GATT_CHARACT, // Request
+        .uuid = {0x18,0xD2,0x03,0x7F,0x78,0x9D,0xB6,0x90,0x86,0x4B,0x37,0x46,0x4F,0x33,0x7B,0xAD},
+        .uuid_length = 16,
+        .property =  BLE_ATTR_PROP_READ | BLE_ATTR_PROP_WRITE,
+        .permission = BLE_ATTR_PERM_R_PERMIT | BLE_ATTR_PERM_W_PERMIT,
+        .attr_handle = BLE_ES_REQUEST_CHAR,
+        .cb = ServerReqCharCb,
+        .arg = &cb_arg
+    }
+};
+static uint8_t g_adv_raw[] = { 
+	0x02, 0x01, 0x04, 0x1b, 0xff, 0x75, 0x00, 0x42, 
+    0x0c, 0x83, 0x05, 0x5d, 0x30, 0x41, 0x4a, 0x54, 
+    0x56, 0x53, 0x31, 0x00, 0x04, 0x01, 0x88, 0x57, 
+    0x1d, 0xf1, 0x62, 0x93, 0x06, 0x02, 0x04};
+
+static uint8_t g_adv_resp[] = {
+	0x07, 0xff, 0x75, 0x00, 0x52, 0x52, 0x52, 0x52, 
+    0x11, 0x09, 0x5b, 0x76, 0x61, 0x63, 0x75, 0x75, 
+    0x6d, 0x5d, 0x20, 0x53, 0x61, 0x6d, 0x73, 0x75, 
+    0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00};
+#endif
+
+
 
 static ble_scan_callback_list scan_config = {
 	ble_scan_state_changed_cb,
@@ -746,7 +914,12 @@ int ble_tester_main(int argc, char *argv[])
 			RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
 
 			pthread_t pid;
+			/*
 			if (pthread_create(&pid, NULL, (pthread_startroutine_t)_ble_server_process, NULL) < 0) {
+				return -1;
+			}
+			*/
+			if (pthread_create(&pid, NULL, (pthread_startroutine_t)_es_server_process, NULL) < 0) {
 				return -1;
 			}
 			pthread_detach(pid);
@@ -1001,6 +1174,16 @@ int ble_tester_main(int argc, char *argv[])
 			} else {
 				RMC_LOG(RMC_SERVER_TAG, "[INDI] Send Indi OK\n");
 			}
+		} else if (strncmp(argv[1], "mtu", 4) == 0) {
+			indication_payload_length = atoi(argv[2]); 
+			printf("indication_payload_length : %d\n", indication_payload_length);
+
+		} else if (strncmp(argv[1], "get_mtu", 8) == 0) {
+
+			uint16_t current_mtu_size;
+			le_get_conn_param(/*GAP_PARAM_CONN_MTU_SIZE*/0x275, &current_mtu_size, 0);
+			printf("current_mtu_size : %d\n", current_mtu_size);
+
 		} else {
 			RMC_LOG(RMC_TAG, "Fail to run command [ %s ]\n", argv[1]);
 		}
