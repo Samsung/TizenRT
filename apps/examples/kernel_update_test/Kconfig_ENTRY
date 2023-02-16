@@ -1,0 +1,3 @@
+config ENTRY_KERNEL_UPDATE
+	bool "\"kernel update test\" example"
+	depends on EXAMPLES_KERNEL_UPDATE
