@@ -1,0 +1,3 @@
+config ENTRY_LWAIFW_SINE_APP_TEST
+	bool "LW AI Framework example"
+	depends on EXAMPLES_LWAIFW_SINE_APP_TEST
