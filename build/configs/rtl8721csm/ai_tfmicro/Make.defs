@@ -77,6 +77,9 @@ else
   ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHXXINCLUDES += -isystem $(TOPDIR)/../external/include/libcxx
   ARCHXXINCLUDES += -isystem $(TOPDIR)/../framework/include
+ifeq ($(CONFIG_LW_AIFW),y)
+  ARCHXXINCLUDES += -isystem $(TOPDIR)/../framework/src/lw_aifw/include
+endif
   ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 endif
 
