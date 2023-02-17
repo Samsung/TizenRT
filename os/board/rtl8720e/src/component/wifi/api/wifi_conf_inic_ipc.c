@@ -83,8 +83,10 @@ static void _wifi_join_status_indicate(rtw_join_status_t join_status)
 {
 	/* step 1: internal process for wifi_connect*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 #if CONFIG_LWIP_LAYER
 		LwIP_netif_set_link_up(0);
+#endif
 #endif
 
 		/* if not use fast dhcp, store fast connect info to flash when connect successfully*/
@@ -107,9 +109,11 @@ static void _wifi_join_status_indicate(rtw_join_status_t join_status)
 	}
 
 	if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 #if CONFIG_LWIP_LAYER
 		LwIP_DHCP_stop(0);
 		LwIP_netif_set_link_down(0);
+#endif
 #endif
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 		rtk_reason_t reason;
@@ -530,9 +534,11 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_START_AP, param_buf, 1);
 
 	if (ret == RTW_SUCCESS) {
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 #if CONFIG_LWIP_LAYER
 		LwIP_netif_set_up(SOFTAP_WLAN_INDEX);
 		LwIP_netif_set_link_up(SOFTAP_WLAN_INDEX);
+#endif
 #endif
 	}
 
@@ -548,12 +554,12 @@ int wifi_stop_ap(void)
 		return 0;
 	}
 
-#if CONFIG_LWIP_LAYER
 #if !defined(CONFIG_PLATFORM_TIZENRT_OS)
+#if CONFIG_LWIP_LAYER
 	dhcps_deinit();
-#endif
 	LwIP_netif_set_down(1);
 	LwIP_netif_set_link_down(1);
+#endif
 #endif
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_STOP_AP, NULL, 0);

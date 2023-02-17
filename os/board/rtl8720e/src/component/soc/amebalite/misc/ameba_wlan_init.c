@@ -21,9 +21,11 @@ void _init_thread(void *param)
 	/* To avoid gcc warnings */
 	(void) param;
 
-#if 0//CONFIG_LWIP_LAYER
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
+#if CONFIG_LWIP_LAYER
 	/* Initilaize the LwIP stack */
 	LwIP_Init();
+#endif
 #endif
 
 	/* wait for inic_ipc_device ready, after that send WIFI_ON ipc msg to device */
