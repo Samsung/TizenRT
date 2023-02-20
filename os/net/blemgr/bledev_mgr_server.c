@@ -28,6 +28,11 @@ static void ble_server_connected_null_cb(trble_conn_handle con_handle, trble_ser
 	return;
 }
 
+static void ble_server_mtu_update_null_cb(trble_conn_handle con_handle, uint16_t mtu_size)
+{
+	return;
+}
+
 static void ble_server_null_cb(trble_attr_cb_type_e type, trble_conn_handle linkindex, trble_attr_handle handle, void *arg)
 {
 	return;
@@ -66,6 +71,7 @@ static trble_gatt_t gatt_null_profile[] = {
 // This config is for empty server.
 static trble_server_init_config g_server_null_config = {
 	ble_server_connected_null_cb,
+	ble_server_mtu_update_null_cb,
 	true,
 	gatt_null_profile,
 	sizeof(gatt_null_profile) / sizeof(trble_gatt_t)
