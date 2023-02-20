@@ -54,7 +54,8 @@ typedef enum
 {
 	BLE_TIZENRT_CALLBACK_TYPE_CONN = 8,
     BLE_TIZENRT_CALLBACK_TYPE_PROFILE,
-    BLE_TIZENRT_CALLBACK_TYPE_MAX
+    BLE_TIZENRT_CALLBACK_TYPE_MTU_UPDATE,
+    BLE_TIZENRT_CALLBACK_TYPE_MAX,
 } BLE_TIZENRT_CALLBACK_TYPE;
 
 typedef struct
@@ -100,6 +101,12 @@ typedef struct
     trble_server_connection_type_e conn_type;
     uint8_t remote_bd[TRBLE_BD_ADDR_MAX_LEN];
 } T_TIZENRT_CONNECTED_CALLBACK_DATA;
+
+typedef struct
+{
+    trble_conn_handle conn_id;
+    uint16_t mtu_size;
+} T_TIZENRT_MTU_UDPATE_CALLBACK_DATA;
 
 
 /**
