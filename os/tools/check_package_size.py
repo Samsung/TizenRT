@@ -32,6 +32,7 @@ build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
 
 FAIL_TO_BUILD = False
+WARNING_RATIO = 95
 
 def number_with_comma_align(number):
     return ("{:10,}".format(number))
@@ -50,17 +51,22 @@ def check_binary_size(bin_type, part_size):
     BINARY_SIZE=os.path.getsize(output_path)
     PARTITION_SIZE = part_size
 
-    # Print each information
-    print(bin_type + "\tBinary Size : " + number_with_comma_align(BINARY_SIZE) + " bytes" + "\tPartition Size : " + number_with_comma_align(PARTITION_SIZE) + " bytes")
-
     # Compare the partition size and its binary size
+    used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
     if PARTITION_SIZE < int(BINARY_SIZE) :
-        print("   !!!!!!!! ERROR !!!!!!!")
-        print("   Built " + bin_type + " (" + number_with_comma(BINARY_SIZE) + " bytes) is greater than its partition (" + number_with_comma(PARTITION_SIZE) + " bytes).")
-        print("   " + bin_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        fail_type_list.append(bin_type)
         os.remove(output_path)
         global FAIL_TO_BUILD
         FAIL_TO_BUILD = True
+        check_result = "FAIL"
+    elif used_ratio > WARNING_RATIO :
+        check_result = "WARNING"
+    else :
+        check_result = "PASS"
+
+    # Print each information
+    print(" {:7}".format(bin_type) + " " + number_with_comma_align(BINARY_SIZE) + " bytes   " +
+            number_with_comma_align(PARTITION_SIZE) + " bytes    " + "{:6}".format(used_ratio) + "%    " + check_result)
 
 def check_binary_header(bin_type):
     # Read the binary name from .bininfo
@@ -131,6 +137,9 @@ APP2_PARTITION_SIZE = int(SIZE_LIST[APP2_IDX]) * 1024
 
 # Check if the binary size is smaller than its partition size
 print("\n========== Size Verification of built Binaries ==========")
+print("Type        Binary Size     Partition Size      used(%)")
+
+fail_type_list = []
 check_binary_size("KERNEL", KERNEL_PARTITION_SIZE)
 if CONFIG_APP_BINARY_SEPARATION == "y" :
     if APP1_IDX != 0 :
@@ -142,6 +151,9 @@ if CONFIG_APP_BINARY_SEPARATION == "y" :
 
 if FAIL_TO_BUILD == True :
     # Stop to build, because there is mismatched size problem.
+    print("!!!!!!!! ERROR !!!!!!!")
+    for fail_type in fail_type_list :
+        print("=> " + fail_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
     sys.exit(1)
 else :
     print("=> Size verification SUCCESS!! The size of all binaries are OK.\n")
