@@ -141,6 +141,7 @@ extern void promisc_issue_probersp(unsigned char *da);
 extern void promisc_stop_tx_beacn(void);
 extern void promisc_resume_tx_beacn(void);
 
+extern int wifi_get_tx_powertable(u32* powertable);
 #ifdef	__cplusplus
 }
 #endif

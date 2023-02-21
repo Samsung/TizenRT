@@ -1138,6 +1138,16 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
+
+/**
+ * @brief  get transmit power table
+ * @param[in]  powertable: powertable
+ * @Example:
+ *    u32* powertable = NULL;
+ *    ret = wifi_get_tx_powertable(powertable);
+ * @return  RTW_SUCCESS or RTW_ERROR
+ */
+int wifi_get_tx_powertable(u32* powertable);
 /**
 * @}
 */
