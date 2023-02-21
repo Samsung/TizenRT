@@ -856,4 +856,31 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 }
 //----------------------------------------------------------------------------//
 
+int wifi_get_tx_powertable(u32* powertable)
+{
+	u32 param_buf[1];
+	int ret = 0;
+
+	param_buf[0] = (u32)powertable;
+	DCache_CleanInvalidate((u32)powertable, 28*4);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_TX_POWERTABLE, param_buf, 1);
+	DCache_Invalidate((u32)powertable, 28*4);
+
+	return ret;
+}
+void wifi_print_tx_powertable(void)
+{
+	u32 powertable[28];
+	(void)wifi_get_tx_powertable(powertable);
+
+	vddbg("RTL8720E Realmap\r\n");
+	vddbg("CCK      : %g %g %g %g\r\n",((double)(powertable[3]&0x000000FF)/4),((double)((powertable[3]&0x0000FF00)>>8)/4),((double)((powertable[3]&0x00FF0000)>>16)/4),((double)((powertable[3]&0xFF000000)>>24)/4));
+	vddbg("OFDM     : %g %g %g %g %g %g %g %g\r\n",((double)(powertable[7]&0x000000FF)/4),((double)((powertable[7]&0x0000FF00)>>8)/4),((double)((powertable[7]&0x00FF0000)>>16)/4),((double)((powertable[7]&0xFF000000)>>24)/4),
+			((double)(powertable[11]&0x000000FF)/4),((double)((powertable[11]&0x0000FF00)>>8)/4),((double)((powertable[11]&0x00FF0000)>>16)/4),((double)((powertable[11]&0xFF000000)>>24)/4));
+	vddbg("11nHT20  : %g %g %g %g %g %g %g %g %g %g %g %g \r\n",((double)(powertable[15]&0x000000FF)/4),((double)((powertable[15]&0x0000FF00)>>8)/4),((double)((powertable[15]&0x00FF0000)>>16)/4),((double)((powertable[15]&0xFF000000)>>24)/4),
+			((double)(powertable[19]&0x000000FF)/4),((double)((powertable[19]&0x0000FF00)>>8)/4),((double)((powertable[19]&0x00FF0000)>>16)/4),((double)((powertable[19]&0xFF000000)>>24)/4),
+			((double)(powertable[23]&0x000000FF)/4),((double)((powertable[23]&0x0000FF00)>>8)/4),((double)((powertable[23]&0x00FF0000)>>16)/4),((double)((powertable[23]&0xFF000000)>>24)/4));
+	vddbg("HE DCM   : %g %g %g %g\r\n",((double)(powertable[27]&0x000000FF)/4),((double)((powertable[27]&0x0000FF00)>>8)/4),((double)((powertable[27]&0x00FF0000)>>16)/4),((double)((powertable[27]&0xFF000000)>>24)/4));
+}
+
 #endif	//#if CONFIG_WLAN
