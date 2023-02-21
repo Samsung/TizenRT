@@ -30,6 +30,7 @@ cfg_file = os_folder + '/.config'
 tool_folder = os_folder + '/tools'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
+output_file_name = output_folder + '/tinyara_binarysize.txt'
 
 FAIL_TO_BUILD = False
 WARNING_RATIO = 95
@@ -59,14 +60,20 @@ def check_binary_size(bin_type, part_size):
         global FAIL_TO_BUILD
         FAIL_TO_BUILD = True
         check_result = "FAIL"
+        result_mark = ""
     elif used_ratio > WARNING_RATIO :
         check_result = "WARNING"
+        result_mark = ":warning:"
     else :
         check_result = "PASS"
+        result_mark = ":heavy_check_mark:"
 
     # Print each information
     print(" {:7}".format(bin_type) + " " + number_with_comma_align(BINARY_SIZE) + " bytes   " +
             number_with_comma_align(PARTITION_SIZE) + " bytes    " + "{:6}".format(used_ratio) + "%    " + check_result)
+    # File print each information
+    outfile.write(bin_type + " | " + number_with_comma(BINARY_SIZE) + " bytes | " +
+        number_with_comma(PARTITION_SIZE) + " bytes | " + str(used_ratio)+"%" + " | " + result_mark + check_result + "\n")
 
 def check_binary_header(bin_type):
     # Read the binary name from .bininfo
@@ -139,6 +146,12 @@ APP2_PARTITION_SIZE = int(SIZE_LIST[APP2_IDX]) * 1024
 print("\n========== Size Verification of built Binaries ==========")
 print("Type        Binary Size     Partition Size      used(%)")
 
+# File print init
+outfile = open(output_file_name, 'w')
+outfile.write("========== Size Verification of built Binaries ==========\n")
+outfile.write("Type | Binary Size | Partition Size | used(%) | result\n")
+outfile.write("-- | -- | -- | -- | --\n")
+
 fail_type_list = []
 check_binary_size("KERNEL", KERNEL_PARTITION_SIZE)
 if CONFIG_APP_BINARY_SEPARATION == "y" :
@@ -148,7 +161,7 @@ if CONFIG_APP_BINARY_SEPARATION == "y" :
         check_binary_size("APP2", APP2_PARTITION_SIZE)
     if CONFIG_SUPPORT_COMMON_BINARY == "y" :
         check_binary_size("COMMON", COMMON_PARTITION_SIZE)
-
+outfile.close()
 if FAIL_TO_BUILD == True :
     # Stop to build, because there is mismatched size problem.
     print("!!!!!!!! ERROR !!!!!!!")
