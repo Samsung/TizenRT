@@ -85,6 +85,7 @@ static trwifi_scan_list_s *g_scan_list;
 static int g_scan_num;
 extern struct netdev *ameba_nm_dev_wlan0;
 rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_scan_result);
+int softap_flag = 0;
 
 
 #define SCAN_TIMER_DURATION 180000
@@ -364,6 +365,7 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 		/*extern const char lib_wlan_rev[];
 		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
 		wuret = TRWIFI_SUCCESS;
+		softap_flag = 0;
 		rtw_mutex_init(&scanlistbusy);
 	} else {
 		ndbg("Already %d\n", g_mode);
@@ -589,7 +591,7 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 	}
 	g_mode = RTK_WIFI_SOFT_AP_IF;
 	nvdbg("[RTK] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
-
+	softap_flag = 1;
 	ret = TRWIFI_SUCCESS;
 
 	return ret;
@@ -617,6 +619,7 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_STATION_IF;
 		wuret = TRWIFI_SUCCESS;
+		softap_flag = 0;
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
@@ -632,6 +635,7 @@ trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev)
 		if (ret == RTK_STATUS_SUCCESS) {
 			g_mode = RTK_WIFI_NONE;
 			wuret = TRWIFI_SUCCESS;
+			softap_flag = 0;
 			nvdbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			ndbg("[RTK] Stop AP mode fail\n");
