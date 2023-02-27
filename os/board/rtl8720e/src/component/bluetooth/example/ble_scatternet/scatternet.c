@@ -467,6 +467,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t eve
         if(p_gatt_mtu_ind->result == RTK_BT_OK){
             dbg("[APP] GATTS mtu exchange successfully, mtu_size: %d, conn_handle: %d \r\n",
                         p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
+            server_init_parm.mtu_update_cb(p_gatt_mtu_ind->conn_handle, p_gatt_mtu_ind->mtu_size);
         }else{
             dbg("[APP] GATTS mtu exchange fail \r\n");
         }
@@ -522,6 +523,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t eve
 	uint16_t profile_id = 0xFFFF;
 
 	if (RTK_BT_GATTC_EVT_MTU_EXCHANGE == event) {
+		printf("[NP######## %s : %d]\n", __FUNCTION__, __LINE__);
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
 		if(p_gatt_mtu_ind->result == RTK_BT_OK){
 			dbg("[APP] GATTC mtu exchange success, mtu_size: %d, conn_handle: %d \r\n",
