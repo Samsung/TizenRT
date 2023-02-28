@@ -118,7 +118,7 @@ if [ ! -d "${boardconfigpath}" ]; then
   exit 3
 fi
 
-src_makedefs="${boardconfigpath}/Make.defs"
+src_makedefs=${boardconfigpath}/../Make.defs
 dest_makedefs="${TOPDIR}/Make.defs"
 
 if [ ! -r "${src_makedefs}" ]; then
