@@ -1257,13 +1257,19 @@ int http_send_response(struct http_client_t *client, int status, const char *bod
 {
 	const char* status_message = (status == 200) ? "OK" : body;
 
-	int body_len = strlen(body);
+	int body_len = 0;
+	if (body) {
+		body_len = strlen(body);
+	}
 	return http_send_response_helper(client, status, status_message, body, body_len, headers);
 }
 
 int http_send_response_with_status_msg(struct http_client_t *client, int status, const char* status_message, const char* body, struct http_keyvalue_list_t *headers)
 {
-	int body_len = strlen(body);
+	int body_len = 0;
+	if (body) {
+		body_len = strlen(body);
+	}
 	return http_send_response_helper(client, status, status_message, body, body_len, headers);
 }
 
