@@ -175,13 +175,11 @@ int elf_loadctors(FAR struct elf_loadinfo_s *loadinfo)
 		if ((shdr->sh_flags & SHF_ALLOC) == 0) {
 			/* Allocate memory to hold a copy of the .ctor section */
 
-			loadinfo->binp->sections[BIN_CTOR] = (uint32_t)malloc_user_at(loadinfo->uheap, ctorsize);
-			if (!loadinfo->binp->sections[BIN_CTOR]) {
+			loadinfo->ctors = (binfmt_ctor_t *)kmm_malloc(ctorsize);
+			if (!loadinfo->ctors) {
 				berr("Failed to allocate memory for .ctors\n");
 				return -ENOMEM;
 			}
-
-			loadinfo->ctors = (binfmt_ctor_t *)loadinfo->binp->sections[BIN_CTOR];
 
 			/* Read the section header table into memory */
 

@@ -131,10 +131,8 @@ static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo)
 	binfo("  datasize:     %ld\n", (long)loadinfo->binp->sizes[BIN_DATA]);
 	binfo("  filelen:      %ld\n", (long)loadinfo->filelen);
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	binfo("  ctoralloc:    %08lx\n", (long)loadinfo->ctoralloc);
 	binfo("  ctors:        %08lx\n", (long)loadinfo->ctors);
 	binfo("  nctors:       %d\n", loadinfo->nctors);
-	binfo("  dtoralloc:    %08lx\n", (long)loadinfo->dtoralloc);
 	binfo("  dtors:        %08lx\n", (long)loadinfo->dtors);
 	binfo("  ndtors:       %d\n", loadinfo->ndtors);
 #endif
@@ -249,8 +247,8 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	}
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	binp->sections[BIN_CTOR] = loadinfo.ctoralloc;
-	binp->sections[BIN_DTOR] = loadinfo.dtoralloc;
+	binp->sections[BIN_CTOR] = loadinfo.ctors;
+	binp->sections[BIN_DTOR] = loadinfo.dtors;
 #endif
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS

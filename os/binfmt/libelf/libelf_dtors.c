@@ -175,13 +175,12 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo)
 		if ((shdr->sh_flags & SHF_ALLOC) == 0) {
 			/* Allocate memory to hold a copy of the .dtor section */
 
-			loadinfo->binp->sections[BIN_DTOR] = (uint32_t)malloc_user_at(loadinfo->uheap, dtorsize);
-			if (!loadinfo->binp->sections[BIN_DTOR]) {
+			loadinfo->dtors = (binfmt_dtor_t *)kmm_malloc(dtorsize);
+			if (!loadinfo->dtors)
+			{
 				berr("Failed to allocate memory for .dtors\n");
 				return -ENOMEM;
 			}
-
-			loadinfo->dtors = (binfmt_dtor_t *)loadinfo->binp->sections[BIN_DTOR];
 
 			/* Read the section header table into memory */
 
