@@ -132,7 +132,7 @@ private:
 // Define a statically constructed CHellowWorld instance if C++ static
 // initializers are supported by the platform
 
-#ifdef CONFIG_HAVE_CXXINITIALIZE
+#if defined(CONFIG_HAVE_CXXINITIALIZE) || defined(CONFIG_BINFMT_CONSTRUCTORS)
 static CHelloWorld g_HelloWorld;
 #endif
 
@@ -165,7 +165,7 @@ extern "C"
 
 		// Exercise an statically constructed C++ object
 
-#ifdef CONFIG_HAVE_CXXINITIALIZE
+#if defined(CONFIG_HAVE_CXXINITIALIZE) || defined(CONFIG_BINFMT_CONSTRUCTORS)
 		printf("helloxx_main: Saying hello from the statically constructed instance\n");
 		g_HelloWorld.HelloWorld();
 #endif
