@@ -579,6 +579,7 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
     read_param.type = RTK_BT_GATT_CHAR_READ_BY_HANDLE;
 	read_param.by_handle.handle = handle->attr_handle;
 
+    ble_read_results[handle->conn_handle].status = 0xff;
     if (RTK_BT_OK != rtk_bt_gattc_read(&read_param))
     {
         debug_print("read failed! \n");
@@ -592,6 +593,8 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
         if(osif_sem_take(ble_tizenrt_read_sem, 1000))
         {  
             debug_print("take sema success \n");
+            osif_sem_delete(ble_tizenrt_read_sem);
+            ble_tizenrt_read_sem = NULL;
             if(ble_read_results[handle->conn_handle].status == RTK_BT_STATUS_DONE)
             {
                 out_data->length = ble_read_results[handle->conn_handle].by_handle.len;
@@ -655,7 +658,8 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
 	if(!write_param.data){
 		debug_print("write failed: cannot alloc memory \n");
 	}
-	
+
+    ble_write_request_result->status = 0xff;
     if (RTK_BT_FAIL == rtk_bt_gattc_write(&write_param))
     {
         if (write_param.data)
@@ -672,6 +676,8 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
         {  
             debug_print("take write sema success \n");
             debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
+            osif_sem_delete(ble_tizenrt_write_sem);
+            ble_tizenrt_write_sem = NULL;
             if(ble_write_request_result->status == RTK_BT_STATUS_DONE)
             {
                 debug_print("write_req success \n");
@@ -728,7 +734,8 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
 	if(!write_param.data){
 		debug_print("write failed: cannot alloc memory \n");
 	}
-	
+
+    ble_write_no_rsp_result->status = 0xff;
     if (RTK_BT_FAIL == rtk_bt_gattc_write(&write_param))
     {
         debug_print("read failed! \n");
@@ -744,6 +751,8 @@ trble_result_e rtw_ble_client_operation_write_no_response(trble_operation_handle
         {
             debug_print("take write_no_rsp sema success \n");
             debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
+            osif_sem_delete(ble_tizenrt_write_no_rsp_sem);
+            ble_tizenrt_write_no_rsp_sem = NULL;
             if(ble_write_no_rsp_result->status == RTK_BT_STATUS_DONE)
             {
                 debug_print("send write_cmd success \n");

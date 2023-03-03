@@ -231,6 +231,23 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         dbg("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n", 
                 disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
+
+        if(ble_client_connect_is_running)
+			ble_client_connect_is_running = 0;
+
+		if(ble_tizenrt_read_sem != NULL) {
+			osif_sem_give(ble_tizenrt_read_sem);
+			ble_tizenrt_read_sem = NULL;
+		}
+		if(ble_tizenrt_write_sem != NULL) {
+			osif_sem_give(ble_tizenrt_write_sem);
+			ble_tizenrt_write_sem = NULL;
+		}
+		if(ble_tizenrt_write_no_rsp_sem != NULL) {
+			osif_sem_give(ble_tizenrt_write_no_rsp_sem);
+			ble_tizenrt_write_no_rsp_sem = NULL;
+		}
+        
         memset(&conn_link[disconn_ind->conn_handle], 0, sizeof(app_conn_table_t));
         /* gattc action */
         general_client_detach_conn(disconn_ind->conn_handle);
@@ -523,7 +540,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t eve
 	uint16_t profile_id = 0xFFFF;
 
 	if (RTK_BT_GATTC_EVT_MTU_EXCHANGE == event) {
-		printf("[NP######## %s : %d]\n", __FUNCTION__, __LINE__);
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
 		if(p_gatt_mtu_ind->result == RTK_BT_OK){
 			dbg("[APP] GATTC mtu exchange success, mtu_size: %d, conn_handle: %d \r\n",
