@@ -53,7 +53,7 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(LD) $(LDELFFLAGS) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) --end-group
 	$(Q) $(NM) -u $(BIN) | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
 else
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) --end-group
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) $(LIBSUPXX) --end-group
 endif
 
 clean:
