@@ -315,7 +315,7 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 #endif
 
 	if (leak_cnt > 0 || broken_cnt > 0) {
-		printf("Type   |    Addr   |   Size   |  Owner  | PID \n");
+		printf("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
 		printf("---------------------------------------------------\n");
 
 		mm_takesemaphore((struct mm_heap_s *)leak_checker.heap);
@@ -347,7 +347,7 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 					 */
 					pid = (-1) * pid;
 				}
-				printf("LEAK   |  %p  | %8d | %p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
+				printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
 			} else if (node->reserved == MEM_BROKEN) {
 				printf("BROKEN | %p\n", node);
 			}
