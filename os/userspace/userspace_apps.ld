@@ -80,13 +80,6 @@ SECTIONS
       _etext_flash = . ;
     }
 
-  .init_section :
-    {
-      _sinit = . ;
-      *(.init_array .init_array.*)
-      _einit = . ;
-    }
-
   .rodata :
     {
       _srodata = . ;
