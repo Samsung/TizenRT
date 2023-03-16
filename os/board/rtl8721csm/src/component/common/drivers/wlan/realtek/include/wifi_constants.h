@@ -149,6 +149,7 @@ enum {
     RTW_SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                      /**< WPS with AES security                   */
 
     RTW_SECURITY_WPA3_AES_PSK 	= (WPA3_SECURITY | AES_ENABLED),						/**< WPA3-AES with AES security  */
+    RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED),		/**< WPA3-SAE/WPA2 with AES security         */
 
     RTW_SECURITY_UNKNOWN        = -1,                                               /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
 
@@ -157,7 +158,7 @@ enum {
 typedef long rtw_security_t;
 
 enum {
-    RTW_ENCRYPTION_UNKNOWN = 0,                 
+    RTW_ENCRYPTION_UNKNOWN = 0,
     RTW_ENCRYPTION_OPEN = 1,
     RTW_ENCRYPTION_WEP40 = 2,
     RTW_ENCRYPTION_WPA_TKIP = 3,
@@ -166,7 +167,7 @@ enum {
     RTW_ENCRYPTION_WPA2_AES = 6,
     RTW_ENCRYPTION_WPA2_MIXED = 7,
     RTW_ENCRYPTION_WEP104 = 9,
-    RTW_ENCRYPTION_UNDEF = 0xFF,                 
+    RTW_ENCRYPTION_UNDEF = 0xFF,
 };
 typedef unsigned long rtw_encryption_t;
 
@@ -382,7 +383,7 @@ enum {
 	RTW_COUNTRY_YT,
 	RTW_COUNTRY_ZA,
 	RTW_COUNTRY_ZW,
-	
+
 	RTW_COUNTRY_MAX
 
 };
@@ -561,7 +562,7 @@ typedef unsigned long rtw_tx_pwr_percentage_t;
 enum _WIFI_EVENT_INDICATE{
 	WIFI_EVENT_CONNECT = 0,
 	WIFI_EVENT_DISCONNECT = 1,
-	WIFI_EVENT_FOURWAY_HANDSHAKE_DONE = 2,	
+	WIFI_EVENT_FOURWAY_HANDSHAKE_DONE = 2,
 	WIFI_EVENT_SCAN_RESULT_REPORT = 3,
 	WIFI_EVENT_SCAN_DONE = 4,
 	WIFI_EVENT_RECONNECTION_FAIL = 5,

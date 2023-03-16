@@ -79,6 +79,7 @@ typedef enum {
 	TRWIFI_AUTH_WPA2_PSK,				 /**<  WPA2_PSK mode							 */
 	TRWIFI_AUTH_WPA3_PSK,				 /**<  WPA3_PSK mode							 */
 	TRWIFI_AUTH_WPA_AND_WPA2_PSK,		 /**<  WPA_PSK and WPA_PSK mixed mode			 */
+	TRWIFI_AUTH_WPA2_AND_WPA3_PSK,		 /**<  WPA2_PSK and WPA3_PSK mixed mode			 */
 	TRWIFI_AUTH_WPA_PSK_ENT,			 /**<  Enterprise WPA_PSK mode					 */
 	TRWIFI_AUTH_WPA2_PSK_ENT,			 /**<  Enterprise WPA2_PSK mode					 */
 	TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT,	 /**<  Enterprise WPA_PSK and WPA_PSK mixed mode */

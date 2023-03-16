@@ -3,13 +3,13 @@
   * This module is a confidential and proprietary property of RealTek and
   * possession or use of this module requires written permission of RealTek.
   *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved. 
+  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
   *
 ******************************************************************************/
 #if 0
 #include "FreeRTOS.h"
 #include "task.h"
-#include "semphr.h" 
+#include "semphr.h"
 
 #include "main.h"
 #include "main_test.h"
@@ -55,7 +55,7 @@ void init_thread(void *param)
 	//setup reconnection flag
 	wifi_set_autoreconnect(1);
 #endif
-	printf("\n\r%s(%d), Available heap 0x%x", __FUNCTION__, __LINE__, xPortGetFreeHeapSize());	
+	printf("\n\r%s(%d), Available heap 0x%x", __FUNCTION__, __LINE__, xPortGetFreeHeapSize());
 #endif
 
 #if CONFIG_INTERACTIVE_MODE
@@ -63,7 +63,7 @@ void init_thread(void *param)
 	vSemaphoreCreateBinary(uart_rx_interrupt_sema);
 	xSemaphoreTake(uart_rx_interrupt_sema, 1/portTICK_RATE_MS);
 	start_interactive_mode();
-#endif	
+#endif
 
 	/* Kill init thread after all init tasks done */
 	vTaskDelete(NULL);
@@ -97,6 +97,10 @@ static void print_scan_result( rtw_scan_result_t* record )
             ( record->security == RTW_SECURITY_WPA_WPA2_TKIP_PSK ) ? "WPA/WPA2 TKIP" :
             ( record->security == RTW_SECURITY_WPA_WPA2_AES_PSK ) ? "WPA/WPA2 AES" :
             ( record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK ) ? "WPA/WPA2 Mixed" :
+#ifdef CONFIG_SAE_SUPPORT
+            ( record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WP3-SAE AES" :
+            ( record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
+#endif
              "Unknown",
             record->signal_strength, MAC_ARG(record->BSSID.octet)   );
 #else
@@ -118,6 +122,7 @@ static void print_scan_result( rtw_scan_result_t* record )
                                  ( record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK ) ? "WPA/WPA2 Mixed" :
 #ifdef CONFIG_SAE_SUPPORT
                                  ( record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WP3-SAE AES" :
+                                 ( record->security == RTW_SECURITY_WPA2_WPA3_MIXED) ? "WPA2/WPA3-SAE AES" :
 #endif
                                  "Unknown");
 
@@ -166,7 +171,7 @@ void _helloworld_timer_handlder (void *FunctionContext)
 	_timer *adapter = (_timer *)FunctionContext;
 
 	printf("hello world\r\n");
-	
+
 	rtw_set_timer(adapter, 2000);
 }
 
