@@ -136,7 +136,7 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 	rtw_set_timer(&(scan_timer), SCAN_TIMER_DURATION);
 
 	scan_number	 = 0;
-	if(g_scan_num != 0)  
+	if(g_scan_num != 0)
 	{
 		saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
 	}
@@ -258,6 +258,9 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 		case RTW_SECURITY_WPA3_AES_PSK:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA3_PSK;
 			break;
+		case RTW_SECURITY_WPA2_WPA3_MIXED:
+			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA2_AND_WPA3_PSK;
+			break;
 		default:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_UNKNOWN;
 			break;
@@ -316,6 +319,9 @@ rtw_result_t app_scan_result_handler(rtw_scan_handler_result_t *malloced_scan_re
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES;
 			break;
 		case RTW_SECURITY_WPA3_AES_PSK:
+			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES;
+			break;
+		case RTW_SECURITY_WPA2_WPA3_MIXED:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES;
 			break;
 		default:
@@ -457,7 +463,7 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	if (g_mode == RTK_WIFI_NONE) {
 		int ret = RTK_STATUS_SUCCESS;
-		
+
 		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 		if (ret != RTK_STATUS_SUCCESS) {
 			ndbg("[RTK] Link callback handles: register failed !\n");

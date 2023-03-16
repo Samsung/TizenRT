@@ -66,6 +66,8 @@ trwifi_ap_auth_type_e wifimgr_convert2trwifi_auth(wifi_manager_ap_auth_type_e at
 		return TRWIFI_AUTH_WPA3_PSK;
 	case WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK:
 		return TRWIFI_AUTH_WPA_AND_WPA2_PSK;
+	case WIFI_MANAGER_AUTH_WPA2_AND_WPA3_PSK:
+		return TRWIFI_AUTH_WPA2_AND_WPA3_PSK;
 	case WIFI_MANAGER_AUTH_WPA_PSK_ENT:
 		return TRWIFI_AUTH_WPA_PSK_ENT;
 	case WIFI_MANAGER_AUTH_WPA2_PSK_ENT:
@@ -124,6 +126,8 @@ wifi_manager_ap_auth_type_e wifimgr_convert2wifimgr_auth(trwifi_ap_auth_type_e a
 		return WIFI_MANAGER_AUTH_WPA3_PSK;
 	case TRWIFI_AUTH_WPA_AND_WPA2_PSK:
 		return WIFI_MANAGER_AUTH_WPA_AND_WPA2_PSK;
+	case TRWIFI_AUTH_WPA2_AND_WPA3_PSK:
+		return WIFI_MANAGER_AUTH_WPA2_AND_WPA3_PSK;
 	case TRWIFI_AUTH_WPA_PSK_ENT:
 		return WIFI_MANAGER_AUTH_WPA_PSK_ENT;
 	case TRWIFI_AUTH_WPA2_PSK_ENT:
