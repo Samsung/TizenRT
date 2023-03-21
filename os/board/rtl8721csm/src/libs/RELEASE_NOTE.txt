@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 517c1fa28480faa51eb5d535c4b432c9d7559740_2023/03/21-09:21:38 ==
+1.	Mask partial connected AP information log
+
 == version 6a75cc5c78e2e79b4fe66f6d1a489a0dc14065b9_2023/03/15-17:59:41 ==
 1.	Fix softap start fail issue
 
