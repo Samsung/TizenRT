@@ -807,7 +807,9 @@ static int rtl8720e_up_setup(struct uart_dev_s *dev)
 	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
-
+#if (CONFIG_UART4_BAUD != 1500000)
+#error "Error Amebalite UART4 works with fixed baud rate: 1,500,000. Please set it to 1500000 in the menuconfig"
+#endif
 	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
 		irq_disable(RTL8720E_UART_LOG_IRQ-16);
 		irq_unregister(RTL8720E_UART_LOG_IRQ-16);
