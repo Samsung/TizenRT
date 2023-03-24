@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include "AIServiceCore.h"
 #include "AICSVDataSource.h"
