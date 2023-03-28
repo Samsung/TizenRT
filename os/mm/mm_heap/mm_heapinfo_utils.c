@@ -154,6 +154,23 @@ void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr)
 }
 
 /****************************************************************************
+ * Name: heapinfo_set_stack_node
+ *
+ * Description:
+ * This function sets a heap node as a stack node by setting negative value in the pid value.
+ * This function requires allocated stack pointer and assigned pid value.
+ ****************************************************************************/
+void heapinfo_set_stack_node(void *stack_ptr, pid_t pid)
+{
+	struct mm_allocnode_s *node;
+
+	node = (struct mm_allocnode_s *)(stack_ptr - SIZEOF_MM_ALLOCNODE);
+
+	DEBUGASSERT(node && pid > 0);
+	node->pid = (-1) * (pid);
+}
+
+/****************************************************************************
  * Name: heapinfo_exclude_stacksize
  *
  * Description:
