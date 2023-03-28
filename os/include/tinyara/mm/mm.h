@@ -703,6 +703,7 @@ void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr);
 void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
+void heapinfo_set_stack_node(void *stack_ptr, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
 void heapinfo_peak_init(struct mm_heap_s *heap);
 void heapinfo_dealloc_tcbinfo(void *address, pid_t pid);
