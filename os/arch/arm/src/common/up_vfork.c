@@ -66,6 +66,10 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#include <tinyara/mm/mm.h>
+#endif
+
 #include "up_vfork.h"
 #include "sched/sched.h"
 
@@ -181,6 +185,11 @@ pid_t up_vfork(const struct vfork_s *context)
 		task_vforkabort(child, -ret);
 		return (pid_t)ERROR;
 	}
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Update the pid information in stack node */
+	heapinfo_set_stack_node(child->cmn.stack_alloc_ptr, child->cmn.pid);
+#endif
 
 	/* How much of the parent's stack was utilized?  The ARM uses
 	 * a push-down stack so that the current stack pointer should
