@@ -187,7 +187,11 @@ pid_t up_vfork(const struct vfork_s *context)
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Update the pid information in stack node */
+	/* Exclude a stack node from heap usages of current thread.
+	 * This will be shown separately as stack usages.
+	 */
+	heapinfo_exclude_stacksize(child->cmn.stack_alloc_ptr);
+	/* Update the pid information to set a stack node */
 	heapinfo_set_stack_node(child->cmn.stack_alloc_ptr, child->cmn.pid);
 #endif
 
