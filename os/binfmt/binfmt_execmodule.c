@@ -217,14 +217,12 @@ int exec_module(FAR struct binary_s *binp)
 	 * for calculating the heap usage per threads.
 	 */
 	int hashpid = PIDHASH(getpid());
-	struct mm_allocnode_s *node;
 
 	binp->uheap->alloc_list[hashpid].pid = HEAPINFO_INIT_INFO;
 	binp->uheap->alloc_list[hashpid].curr_alloc_size = 0;
 	binp->uheap->alloc_list[hashpid].num_alloc_free = 0;
 
-	node = (struct mm_allocnode_s *)((void *)stack - SIZEOF_MM_ALLOCNODE);
-	node->pid = (-1) * (newtcb->cmn.pid);
+	heapinfo_set_stack_node(stack, newtcb->cmn.pid);
 #endif
 
 	/* We can free the argument buffer now.

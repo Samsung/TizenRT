@@ -194,10 +194,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Update the pid information in stack node */
-	struct mm_allocnode_s *node;
-
-	node = (struct mm_allocnode_s *)(tcb->cmn.stack_alloc_ptr - SIZEOF_MM_ALLOCNODE);
-	node->pid = (-1) * (tcb->cmn.pid);
+	heapinfo_set_stack_node(tcb->cmn.stack_alloc_ptr, tcb->cmn.pid);
 #endif
 
 	/* Setup to pass parameters to the new task */
