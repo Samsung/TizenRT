@@ -62,9 +62,6 @@
 #include <debug.h>
 #include <errno.h>
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include <tinyara/mm/mm.h>
-#endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
@@ -294,9 +291,6 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 */
 		up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_size);
 #endif
-#endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_exclude_stacksize(tcb->stack_alloc_ptr);
 #endif
 		board_led_on(LED_STACKCREATED);
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION

@@ -374,7 +374,11 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Update the pid information in stack node */
+	/* Exclude a stack node from heap usages of current thread.
+	 * This will be shown separately as stack usages.
+	 */
+	heapinfo_exclude_stacksize(ptcb->cmn.stack_alloc_ptr);
+	/* Update the pid information to set a stack node */
 	heapinfo_set_stack_node(ptcb->cmn.stack_alloc_ptr, ptcb->cmn.pid);
 #endif
 

@@ -193,7 +193,11 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 		goto errout_with_tcb;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Update the pid information in stack node */
+	/* Exclude a stack node from heap usages of current thread.
+	 * This will be shown separately as stack usages.
+	 */
+	heapinfo_exclude_stacksize(tcb->cmn.stack_alloc_ptr);
+	/* Update the pid information to set a stack node */
 	heapinfo_set_stack_node(tcb->cmn.stack_alloc_ptr, tcb->cmn.pid);
 #endif
 
