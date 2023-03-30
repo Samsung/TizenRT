@@ -46,7 +46,7 @@
 #include "amebad_spi.h"
 #include "mbed/targets/hal/rtl8721d/PinNames.h"
 #include "mbed/hal/spi_api.h"
-
+#include "mbed/hal/gpio_api.h"
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -75,10 +75,9 @@
 #define spiinfo(format, ...)   printf(format, ##__VA_ARGS__)
 #define spierr(format, ...)    printf(format, ##__VA_ARGS__)
 #else
-#define spiinfo(format, ...)
-//#define spierr(format, ...)
+#define spiinfo(format, ...)   
+#define spierr(format, ...)    printf(format, ##__VA_ARGS__)
 #endif
-#define spierr(format, ...)   printf(format, ##__VA_ARGS__)
 
 #define AMEBAD_SPI_MASTER	0
 #define AMEBAD_SPI_SLAVE	1
@@ -98,6 +97,12 @@ struct amebad_spidev_s {
 	uint32_t actual;            /* Actual clock frequency */
 
 	spi_t spi_object;
+#ifdef CONFIG_SPI_CS
+	gpio_t gpio_cs0;
+	gpio_t gpio_cs1;
+#else
+	gpio_t gpio_cs0;
+#endif
 	uint32_t spi_idx;
 	PinName spi_mosi;
 	PinName spi_miso;
@@ -675,6 +680,39 @@ int amebad_spi0cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
  ************************************************************************************/
 void amebad_spi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
+	FAR struct amebad_spidev_s *priv = (FAR struct amebad_spidev_s *)dev;
+
+#ifdef CONFIG_SPI_CS
+	if (selected == 1) {
+		if (devid == 0){ 
+			//Select cs0, unselect cs1
+			//lldbg("selected cs0\n");
+			gpio_write(&priv->gpio_cs0, 0);
+			gpio_write(&priv->gpio_cs1, 1);
+		} else {
+			//Select cs1, unselect cs0
+			gpio_write(&priv->gpio_cs1, 0);
+			gpio_write(&priv->gpio_cs0, 1);
+		}
+	} else {
+		if (devid == 0) {
+			//Unselect cs0
+			//lldbg("unselect cs0\n");
+			gpio_write(&priv->gpio_cs0, 1);
+		} else {
+			//Unselect cs1
+			gpio_write(&priv->gpio_cs1, 1);
+		}
+	}
+#else
+	//Select single slave cs0
+	if (selected == 1) {
+		gpio_write(&priv->gpio_cs0, 0);
+	}else{
+		gpio_write(&priv->gpio_cs0, 1);
+	}
+#endif
+
 	return;
 }
 
@@ -747,7 +785,7 @@ static uint32_t amebad_spi_setfrequency(FAR struct spi_dev_s *dev,
 		if (priv->role == AMEBAD_SPI_MASTER)
 			spi_frequency(&priv->spi_object, priv->frequency);
 	}
-
+	spiinfo("current frequency is : %d\n", priv->frequency);
 	return priv->frequency;
 }
 
@@ -1092,7 +1130,31 @@ static void amebad_spi_bus_initialize(struct amebad_spidev_s *priv)
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
 
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
+	/* Initialize the SPI semaphore that enforces mutually exclusive access */
 
+    sem_init(&priv->exclsem, 0, 1);
+
+#ifdef CONFIG_SPI_CS
+
+	//PA_15 as SPI1_CS_0
+	gpio_init(&priv->gpio_cs0, PA_15);
+	gpio_write(&priv->gpio_cs0, 1);
+	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs0, PullNone);
+
+	//PB_3 as SPI1_CS_1
+	gpio_init(&priv->gpio_cs1, PB_3);
+	gpio_write(&priv->gpio_cs1, 1);
+	gpio_dir(&priv->gpio_cs1, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs1, PullNone);
+#else
+
+	//PA_15 as SPI1_CS_0
+	gpio_init(&priv->gpio_cs0, PA_15);
+	gpio_write(&priv->gpio_cs0, 1);
+	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs0, PullNone);
+#endif
 }
 
 /************************************************************************************
