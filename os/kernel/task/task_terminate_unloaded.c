@@ -104,6 +104,11 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 {
 	irqstate_t saved_state;
 
+	/* Suppress context changes for a bit so that the task is unloaded seemlessly.
+	 */
+
+	sched_lock();
+
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
 	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
 	if (IS_BINARY_MAINTASK(tcb) && up_mpu_check_active(&tcb->mpu_regs[0])) {
@@ -144,6 +149,8 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 	 * So marking alloc pointer to NULL for skipping to release.
 	 */
 	tcb->stack_alloc_ptr = NULL;
+
+	sched_unlock();
 
 	/* Deallocate its TCB */
 
