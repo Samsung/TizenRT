@@ -100,6 +100,29 @@ config AMEBAD_I2CTIMEOTICKS
 	default 500
 	depends on !AMEBAD_I2C_DYNTIMEO
 
+config RTL8721D_SPI
+	bool "RTL8721D_SPI
+	default n
+
+config SPI1_MASTER
+	bool "SPI1_MASTER"
+	select RTL8721D_SPI
+	default y
+
+if RTL8721D_SPI
+config CONFIG_SPI_CS
+	bool "Multi-slaves CS pins"
+	default n
+
+config CONFIG_SPI_EXCHANGE
+	bool "Enable SPI EXCHANGE"
+	default y
+
+config CONFIG_SPI_CMDDATA
+	bool "Enable SPI CMDDATA"
+	default y
+endif
+
 endmenu
 
 menu "Realtek RTL8721D WIFI Support"
@@ -107,9 +130,7 @@ menu "Realtek RTL8721D WIFI Support"
 config AMEBAD_WIFI
 	bool "Enable Amebad WIFI"
 	default n
-
 endmenu
-
 menu "Realtek RTL8721D BLE Support"
 
 config AMEBAD_BLE
