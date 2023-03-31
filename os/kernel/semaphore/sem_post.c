@@ -215,7 +215,6 @@ int sem_post(FAR sem_t *sem)
 
 		/* Perform the semaphore unlock operation. */
 		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
-		ASSERT(sem->semcount < SEM_VALUE_MAX);
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 
