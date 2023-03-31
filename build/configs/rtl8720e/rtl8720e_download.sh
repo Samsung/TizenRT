@@ -30,7 +30,7 @@ function pre_download()
 {
 	source ${TOP_PATH}/os/.bininfo
 	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
-	cp -p ${BIN_PATH}/kernel_rtl8720e_200204.trpk ${IMG_TOOL_PATH}/kernel_rtl8720e_200204.trpk
+	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
 	if [ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]; then
 		if test -f "${BIN_PATH}/${APP1_BIN_NAME}"; then
 			APP_NUM=$(($APP_NUM+1))
@@ -50,7 +50,7 @@ function pre_download()
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
-		cp -p ${BIN_PATH}/rtl8720e_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
+		cp -p ${SMARTFS_BIN_PATH} ${IMG_TOOL_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
 	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
 }
