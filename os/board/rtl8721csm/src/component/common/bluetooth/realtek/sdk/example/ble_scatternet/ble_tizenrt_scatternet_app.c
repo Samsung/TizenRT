@@ -556,6 +556,34 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
             }
         }
             break;
+        case BLE_TIZENRT_MSG_CONN_PARAM_UPDATE:
+        {
+            T_TIZENRT_CONN_UPDATE_PARAM *param = pdata;
+            if(param)
+            {
+                int ret;
+                uint16_t conn_id = (uint16_t)param->conn_id;
+                u16 conn_interval_min = param->min_conn_interval;
+                u16 conn_interval_max = param->max_conn_interval;
+                u16 conn_latency = param->slave_latency;
+                u16 supervision_timeout = param->supervision_timeout;
+                ret = le_update_conn_param(conn_id,
+                                           conn_interval_min,
+                                           conn_interval_max,
+                                           conn_latency,
+                                           supervision_timeout,
+                                           2 * (conn_interval_min - 1),
+                                           2 * (conn_interval_max - 1));
+                if(GAP_CAUSE_SUCCESS == ret)
+                    dbg("[Upstream] Connection parameter update success \n");
+                else
+                    dbg("[Upstream] Connection parameter update fail !! 0x%x \n", ret);
+            }else {
+                debug_print("Connection parameter update parameter is NULL \n");
+            }
+        }
+            break;
+
 		default:
 			break;
 	}

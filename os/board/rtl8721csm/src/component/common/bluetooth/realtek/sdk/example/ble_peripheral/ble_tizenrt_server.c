@@ -551,6 +551,32 @@ bool rtw_ble_server_conn_is_any_active(void)
         return false;
 }
 
+trble_result_e rtw_ble_server_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
+{
+    if (is_server_init != true)
+    {
+        return TRBLE_INVALID_STATE;
+    }
+
+    T_TIZENRT_CONN_UPDATE_PARAM *param = os_mem_alloc(0, sizeof(T_TIZENRT_CONN_UPDATE_PARAM));;
+    if(!param)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+    param->conn_id = *conn_handle;
+    param->min_conn_interval = conn_param->min_conn_interval;
+    param->max_conn_interval = conn_param->max_conn_interval;
+    param->slave_latency = conn_param->slave_latency;
+    param->supervision_timeout = conn_param->supervision_timeout;
+    if (ble_tizenrt_server_send_msg(BLE_TIZENRT_MSG_CONN_PARAM_UPDATE, param) == false){
+        os_mem_free(param);
+        debug_print("msg send fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS; 
+}
+
 trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 {
     if (is_server_init != true)

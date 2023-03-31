@@ -55,6 +55,13 @@ typedef struct {
 	trble_addr_type_e type;
 } trble_addr;
 
+typedef struct {
+	uint16_t min_conn_interval;
+	uint16_t max_conn_interval;
+	uint16_t slave_latency;
+	uint16_t supervision_timeout;
+} trble_conn_param;
+
 typedef enum {
 	// Common
 	LWNL_REQ_BLE_INIT,
@@ -65,6 +72,7 @@ typedef enum {
 	LWNL_REQ_BLE_DEL_BOND_ALL,
 	LWNL_REQ_BLE_CONN_IS_ACTIVE,
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
+	LWNL_REQ_BLE_CONN_PARAM_UPDATE,
 	LWNL_REQ_BLE_IOCTL,
 	
 	// Scanner
@@ -312,6 +320,7 @@ typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_addr *addr
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
 typedef trble_result_e (*trble_conn_is_active)(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 typedef trble_result_e (*trble_conn_is_any_active)(struct bledev *dev, bool *is_active);
+typedef trble_result_e (*trble_conn_param_update)(struct bledev *dev, trble_conn_handle *con_handle, trble_conn_param *conn_param);
 typedef trble_result_e (*trble_drv_ioctl)(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
@@ -367,6 +376,7 @@ struct trble_ops {
 	trble_delete_bond_all del_bond_all;
 	trble_conn_is_active conn_is_active;
 	trble_conn_is_any_active conn_is_any_active;
+	trble_conn_param_update conn_param_update;
 	trble_drv_ioctl drv_ioctl;
 
 	/* Scanner(Observer) */

@@ -69,6 +69,13 @@ typedef struct {
 	ble_addr_type_e type;
 } ble_addr;
 
+typedef struct {
+	uint16_t min_conn_interval;
+	uint16_t max_conn_interval;
+	uint16_t slave_latency;
+	uint16_t supervision_timeout;
+} ble_conn_param;
+
 /**
  * @brief Result types of BLE Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */

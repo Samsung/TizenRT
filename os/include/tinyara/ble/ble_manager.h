@@ -45,6 +45,7 @@ trble_result_e ble_drv_delete_bonded(trble_addr *addr);
 trble_result_e ble_drv_delete_bonded_all(void);
 trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_active);
 trble_result_e ble_drv_conn_is_any_active(bool *is_active);
+trble_result_e ble_drv_conn_param_update(trble_conn_handle *con_handle, trble_conn_param *conn_param);
 trble_result_e ble_drv_ioctl(trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/

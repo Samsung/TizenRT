@@ -60,6 +60,7 @@ trble_result_e trble_netmgr_delete_bond(struct bledev *dev, trble_addr *addr);
 trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev);
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
 trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_active);
+trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param);
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
@@ -112,6 +113,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_delete_bond_all,
 	trble_netmgr_conn_is_active,
 	trble_netmgr_conn_is_any_active,
+	trble_netmgr_conn_param_update,
 	trble_netmgr_ioctl,
 
 	// Observer
@@ -249,6 +251,11 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 {
 	*is_active = rtw_ble_server_conn_is_any_active();
 	return TRBLE_SUCCESS;
+}
+
+trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param)
+{
+	return rtw_ble_server_conn_param_update(conn_handle, conn_param);
 }
 
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)

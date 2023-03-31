@@ -907,6 +907,16 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_attr_reject(attr_handle, app_errorcode);
 	} break;
 
+	case BLE_CMD_CONN_PARAM_UPDATE: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_conn_handle *conn_handle = (trble_conn_handle *)param->param[0];
+		trble_conn_param *conn_param = (trble_conn_param *)param->param[1];
+
+		ret = ble_drv_conn_param_update(conn_handle, conn_param);
+	} break;
+
 	case BLE_CMD_SERVER_DISCONNECT: {
 		BLE_STATE_CHECK;
 

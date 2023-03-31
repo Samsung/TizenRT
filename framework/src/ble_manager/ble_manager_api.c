@@ -106,6 +106,15 @@ ble_result_e ble_manager_get_version(uint8_t version[3])
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param)
+{
+	blemgr_msg_params param = { 2, {(void *)con_handle, (void *) conn_param} };
+	blemgr_msg_s msg = {BLE_CMD_CONN_PARAM_UPDATE, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 /* Scanner */
 ble_result_e ble_client_start_scan(ble_scan_filter *filter, ble_scan_callback_list *callbacks)
 {

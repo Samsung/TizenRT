@@ -380,6 +380,16 @@ trble_result_e ble_drv_attr_reject(trble_attr_handle attr_handle, uint8_t app_er
 	return res;
 }
 
+trble_result_e ble_drv_conn_param_update(trble_conn_handle *con_handle, trble_conn_param *conn_param)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)con_handle, (void *)conn_param} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CONN_PARAM_UPDATE}, sizeof(msg_data), (void *)(&msg_data), (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
 trble_result_e ble_drv_server_disconnect(trble_conn_handle con_handle)
 {
 	trble_result_e res = TRBLE_SUCCESS;
