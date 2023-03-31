@@ -123,6 +123,9 @@ void ble_tizenrt_scatternet_app_le_gap_init(void)
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(slave_init_mtu_req),
                      &slave_init_mtu_req);
 
+    /* Set maximum mtu size, the maximum is 512 */
+    gap_config_max_mtu_size(512);
+
     /* Set advertising parameters */
     le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
     le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(adv_filter_policy), &adv_filter_policy);

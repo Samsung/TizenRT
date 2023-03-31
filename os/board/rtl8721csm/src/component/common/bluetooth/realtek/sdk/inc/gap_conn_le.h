@@ -228,6 +228,7 @@ uint8_t     le_get_idle_link_num(void);
 /**
  * @brief   Terminates the existing connection. When link is disconnected, app_handle_conn_state_evt will be
  *          called with new_state as @ref GAP_CONN_STATE_DISCONNECTED.
+ *          The disconnection reason is HCI_ERR_REMOTE_USER_TERMINATE.
  *
  * @param[in] conn_id connection ID to be disconnected.
  * @return  Operation result.
@@ -287,6 +288,33 @@ uint8_t     le_get_idle_link_num(void);
  * \endcode
  */
 T_GAP_CAUSE le_disconnect(uint8_t conn_id);
+
+/**
+ * @brief   Terminates the existing connection with reason. When link is disconnected, app_handle_conn_state_evt will be
+ *          called with new_state as @ref GAP_CONN_STATE_DISCONNECTED.
+ *
+ * @param[in] conn_id connection ID to be disconnected.
+ * @param[in] reason disconnection reason.
+ *           @arg  HCI_ERR_REMOTE_USER_TERMINATE: 0x13
+ *           @arg  HCI_ERR_REMOTE_LOW_RESOURCE: 0x14
+ *           @arg  HCI_ERR_REMOTE_POWER_OFF: 0x15
+ *           @arg  HCI_ERR_UNSUPPORTED_REMOTE_FEAT: 0x1A
+ *           @arg  HCI_ERR_UNACCEPTABLE_CONN_INTERVAL: 0x3B
+ * @return  Operation result.
+ * @retval GAP_CAUSE_SUCCESS Send request success
+ * @retval GAP_CAUSE_NON_CONN Failed. No connection
+ * @retval GAP_CAUSE_INVALID_PARAM Failed. Invalid parameter
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    void test()
+    {
+        uint8_t conn_id = 0x01;
+        le_disconnect_with_reason(conn_id, HCI_ERR_REMOTE_USER_TERMINATE);
+    }
+ * \endcode
+ */
+T_GAP_CAUSE le_disconnect_with_reason(uint8_t conn_id, uint8_t reason);
 
 /**
  * @brief   Read rssi value of the connection. RSSI value will be returned by
@@ -607,8 +635,8 @@ T_GAP_CAUSE le_connect(uint8_t init_phys, uint8_t *remote_bd,
   * @param[in] conn_interval_max  Value range: 0x0006 - 0x0C80 (7.5ms - 4000ms, 1.25ms/step).
   * @param[in] conn_latency  Value range: 0x0000 - 0x01F3.
   * @param[in] supervision_timeout  Value range: 0x000A - 0x0C80 (100ms - 32000ms, 10ms/step).
-  * @param[in] ce_length_min  Value range: 0x0006 - 0x0C80 (7.5ms - 4000ms, 1.25ms/step).
-  * @param[in] ce_length_max  Value range: 0x0006 - 0x0C80 (7.5ms - 4000ms, 1.25ms/step).
+  * @param[in] ce_length_min  Value range: 0x0000 - 0xFFFF (0 - 65535ms, 0.625ms/step).
+  * @param[in] ce_length_max  Value range: 0x0000 - 0xFFFF (0 - 65535ms, 0.625ms/step).
   * @return  result.
   * @retval GAP_CAUSE_SUCCESS Send request success.
   * @retval GAP_CAUSE_NON_CONN Failed. No connection.
