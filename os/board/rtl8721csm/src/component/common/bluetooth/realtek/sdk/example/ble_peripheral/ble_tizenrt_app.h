@@ -47,6 +47,7 @@ typedef enum
     BLE_TIZENRT_MSG_INDICATE,
     BLE_TIZENRT_MSG_DELETE_BOND,
     BLE_TIZENRT_MSG_DELETE_BOND_ALL,
+    BLE_TIZENRT_MSG_CONN_PARAM_UPDATE,
     BLE_TIZENRT_SERVER_MSG_MAX
 } BLE_TIZENRT_SERVER_MSG_TYPE;
 
@@ -65,6 +66,15 @@ typedef struct
     uint8_t	 *data;
     uint16_t len;
 } T_TIZENRT_NOTIFY_PARAM;
+
+typedef struct
+{
+    trble_conn_handle conn_id;
+    uint16_t min_conn_interval;
+    uint16_t max_conn_interval;
+    uint16_t slave_latency;
+    uint16_t supervision_timeout;
+} T_TIZENRT_CONN_UPDATE_PARAM;
 
 typedef struct
 {

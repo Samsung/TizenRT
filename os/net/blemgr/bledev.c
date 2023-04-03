@@ -475,6 +475,21 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, attr_reject, (dev, attr_handle, err_code));
 	}
 	break;
+	case LWNL_REQ_BLE_CONN_PARAM_UPDATE:
+	{
+		trble_conn_handle *conn_handle;
+		trble_conn_param *conn_param;
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		conn_handle = (trble_conn_handle *)param.param[0];
+		conn_param = (trble_conn_param *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, conn_param_update, (dev,  conn_handle, conn_param));
+	}
+	break;
 	case LWNL_REQ_BLE_SERVER_DISCONNECT:
 	{
 		trble_conn_handle con_handle = 0;
