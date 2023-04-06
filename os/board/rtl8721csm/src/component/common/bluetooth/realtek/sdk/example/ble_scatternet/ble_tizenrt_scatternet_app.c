@@ -255,7 +255,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
 
         case BLE_TIZENRT_CALLBACK_TYPE_MTU_UPDATE:
         {
-            T_TIZENRT_MTU_UDPATE_CALLBACK_DATA *mtu_update = callback_msg.u.buf;
+            T_TIZENRT_MTU_UPDATE_CALLBACK_DATA *mtu_update = callback_msg.u.buf;
             if(mtu_update != NULL && server_init_parm.mtu_update_cb)
             {
                 trble_server_mtu_update_t p_func = server_init_parm.mtu_update_cb;
@@ -978,7 +978,7 @@ void ble_tizenrt_scatternet_app_handle_authen_state_evt(uint8_t conn_id, uint8_t
 void ble_tizenrt_scatternet_app_handle_conn_mtu_info_evt(uint8_t conn_id, uint16_t mtu_size)
 {
     APP_PRINT_INFO2("ble_tizenrt_scatternet_app_handle_conn_mtu_info_evt: conn_id %d, mtu_size %d", conn_id, mtu_size);
-    T_TIZENRT_MTU_UDPATE_CALLBACK_DATA *mtu_data = os_mem_alloc(0, sizeof(T_TIZENRT_MTU_UDPATE_CALLBACK_DATA));
+    T_TIZENRT_MTU_UPDATE_CALLBACK_DATA *mtu_data = os_mem_alloc(0, sizeof(T_TIZENRT_MTU_UPDATE_CALLBACK_DATA));
 
     if(mtu_data)
     {

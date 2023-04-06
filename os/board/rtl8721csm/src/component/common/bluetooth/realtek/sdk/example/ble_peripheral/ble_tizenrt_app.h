@@ -116,7 +116,7 @@ typedef struct
 {
     trble_conn_handle conn_id;
     uint16_t mtu_size;
-} T_TIZENRT_MTU_UDPATE_CALLBACK_DATA;
+} T_TIZENRT_MTU_UPDATE_CALLBACK_DATA;
 
 
 /**
