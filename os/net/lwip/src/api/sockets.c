@@ -451,7 +451,7 @@ struct lwip_sock *trycheck_selwait_socket(int s, pid_t pid)
 	struct lwip_sock *sock;
 	sock = tryget_socket_by_pid(s, pid);
 
-	if (!sock->conn) {
+	if (sock && !sock->conn) {
 		return sock;
 	}
 	return NULL;
