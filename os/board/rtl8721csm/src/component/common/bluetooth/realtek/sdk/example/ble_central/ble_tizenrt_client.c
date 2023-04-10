@@ -436,6 +436,35 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     return TRBLE_SUCCESS;
 }
 
+trble_result_e rtw_ble_client_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
+{
+    T_TIZENRT_CLIENT_CONN_UPDATE_PARAM *update_param = os_mem_alloc(0, sizeof(T_TIZENRT_CLIENT_CONN_UPDATE_PARAM));
+    if(!update_param)
+    {
+        debug_print("Memory allocation failed \n");
+        return TRBLE_FAIL;
+    }
+    update_param->conn_id = *conn_handle;
+    update_param->min_conn_interval = conn_param->min_conn_interval;
+    update_param->max_conn_interval = conn_param->max_conn_interval;
+    update_param->slave_latency = conn_param->slave_latency;
+    update_param->supervision_timeout = conn_param->supervision_timeout;
+
+    if(GAP_CONN_STATE_CONNECTED == ble_app_link_table[*conn_handle].conn_state)
+    {
+        if (ble_tizenrt_client_send_msg(BLE_TIZENRT_CONN_PARAM_UPDATE, update_param) == false)
+        {
+            os_mem_free(update_param);
+            debug_print("msg send fail \n");
+            return TRBLE_FAIL;
+        }
+    } else {
+        debug_print("Invaild conn handle %d \n", *conn_handle);
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS; 
+}
+
 trble_result_e rtw_ble_client_read_connected_device_list(trble_connected_list* out_connected_list)
 { 
     if (out_connected_list == NULL)

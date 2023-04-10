@@ -55,11 +55,17 @@ typedef struct {
 	trble_addr_type_e type;
 } trble_addr;
 
+typedef enum {
+	TRBLE_SLAVE_CONN_PARAM_UPDATE,
+	TRBLE_MASTER_CONN_PARAM_UPDATE,
+} trble_conn_param_role;
+
 typedef struct {
 	uint16_t min_conn_interval;
 	uint16_t max_conn_interval;
 	uint16_t slave_latency;
 	uint16_t supervision_timeout;
+	trble_conn_param_role role;
 } trble_conn_param;
 
 typedef enum {
