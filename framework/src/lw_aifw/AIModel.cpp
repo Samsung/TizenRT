@@ -25,7 +25,7 @@
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/version.h>
 #include "lw_aifw/lw_aifw_log.h"
-#include "AIModel.h"
+#include "include/AIModel.h"
 
 namespace lw_aifw {
 	tflite::ops::micro::AllOpsResolver g_Resolver;

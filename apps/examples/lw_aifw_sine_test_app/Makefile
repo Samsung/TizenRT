@@ -63,6 +63,7 @@ ASRCS	=
 CXXSRCS	=
 
 CFLAGS +=
+CXXFLAGS += -Wno-pedantic
 
 MAINSRC = lwaifw_sine_test_main.cpp
 CXXSRCS +=

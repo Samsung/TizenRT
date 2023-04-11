@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 #include "lw_aifw/lw_aifw_log.h"
-#include "AICSVFileReader.h"
+#include "lw_aifw/AICSVFileReader.h"
 
 //#define CSVREADER_DEBUG 1
 namespace lw_aifw {

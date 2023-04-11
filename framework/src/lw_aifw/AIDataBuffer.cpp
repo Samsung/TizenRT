@@ -18,7 +18,7 @@
 
 #include <tinyara/config.h>
 #include "lw_aifw/lw_aifw_log.h"
-#include "AIDataBuffer.h"
+#include "include/AIDataBuffer.h"
 
 namespace lw_aifw {
 
