@@ -70,8 +70,8 @@ typedef struct {
 } ble_addr;
 
 typedef enum {
-	SLAVE_CONN_PARAM_UPDATE,
-	MASTER_CONN_PARAM_UPDATE
+	BLE_SLAVE_CONN_PARAM_UPDATE,
+	BLE_MASTER_CONN_PARAM_UPDATE
 } ble_conn_param_role;
 
 typedef struct {
