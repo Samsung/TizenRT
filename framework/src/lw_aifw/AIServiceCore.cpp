@@ -22,6 +22,8 @@
 #include <errno.h>
 #include "lw_aifw/lw_aifw_log.h"
 #include "lw_aifw/AIServiceCore.h"
+#include "include/AIDataBuffer.h"
+#include "include/AIModel.h"
 
 #ifndef CONFIG_LW_AIFW_MODEL_MEM_POOL_SIZE
 #define LW_AIFW_MODEL_MEM_POOL_SIZE 4096
