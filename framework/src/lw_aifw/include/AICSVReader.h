@@ -16,24 +16,25 @@
  *
  ****************************************************************************/
 
-#include "include/AICSVReader.h"
-#include <stdio.h>
+#pragma once
+
+#include <stdint.h>
+#include "lw_aifw/lw_aifw_result.h"
 
 namespace lw_aifw {
+	typedef void (*rawDataCollectedListener)(LW_AIFW_RESULT result, float *data, uint16_t dataCount, void *args);
 
-	AICSVReader::AICSVReader() : mRawDataCollectedListener(NULL), mRawDataCollectedCBArgs(NULL)
-	{
-	}
-
-	AICSVReader::~AICSVReader()
-	{
-	}
-
-	void AICSVReader::setRawDataCollectedListener(rawDataCollectedListener listener, void *calbackFuncArgs)
-	{
-		mRawDataCollectedListener = listener;
-		mRawDataCollectedCBArgs = calbackFuncArgs;
-	}
+	class AICSVReader {
+	protected:
+		rawDataCollectedListener mRawDataCollectedListener;
+		/* ToDo: plan to use std::function & remove mRawDataCollectedCBArgs */
+		void *mRawDataCollectedCBArgs;
+	public:
+		AICSVReader();
+		virtual ~AICSVReader();
+		virtual void setRawDataCollectedListener(rawDataCollectedListener listener, void *calbackFuncArgs);
+		virtual LW_AIFW_RESULT init(void) = 0;
+		virtual LW_AIFW_RESULT getSourceData(void) = 0;
+	};
 
 } /* lw_aifw */
-

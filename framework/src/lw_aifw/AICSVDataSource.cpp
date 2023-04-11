@@ -18,8 +18,9 @@
 
 #include "lw_aifw/AICSVDataSource.h"
 #include "lw_aifw/lw_aifw_log.h"
-#include "lw_aifw/AICSVFileReader.h"
-#include "lw_aifw/AICSVArrayReader.h"
+#include "include/AICSVReader.h"
+#include "include/AICSVFileReader.h"
+#include "include/AICSVArrayReader.h"
 
 namespace lw_aifw {
 	

@@ -16,24 +16,30 @@
  *
  ****************************************************************************/
 
-#include "include/AICSVReader.h"
+#pragma once
+#include <stdint.h>
 #include <stdio.h>
+#include "lw_aifw/lw_aifw_result.h"
+#include "AICSVReader.h"
 
 namespace lw_aifw {
 
-	AICSVReader::AICSVReader() : mRawDataCollectedListener(NULL), mRawDataCollectedCBArgs(NULL)
-	{
-	}
-
-	AICSVReader::~AICSVReader()
-	{
-	}
-
-	void AICSVReader::setRawDataCollectedListener(rawDataCollectedListener listener, void *calbackFuncArgs)
-	{
-		mRawDataCollectedListener = listener;
-		mRawDataCollectedCBArgs = calbackFuncArgs;
-	}
+	class AICSVArrayReader : public AICSVReader {
+	private:
+		char *m_Header;
+		uint16_t m_SensorLength;
+		float *m_DataValues;
+		int m_SensorCount;
+		uint16_t m_RowCount;
+		uint16_t m_RowOffset;
+		LW_AIFW_RESULT read(float *&values, uint16_t &numberofValues);
+	public:
+		AICSVArrayReader(float *datavalues, uint16_t sensorCount, uint16_t rowCount);
+		~AICSVArrayReader();
+		LW_AIFW_RESULT init(void);
+		LW_AIFW_RESULT getSourceData(void);
+		uint16_t getSensorCount(void) const;
+	};
 
 } /* lw_aifw */
 
