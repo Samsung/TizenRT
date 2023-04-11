@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "AIServiceCore.h"
-#include "AICSVDataSource.h"
+#include "lw_aifw/AIServiceCore.h"
 #include "lw_aifw/lw_aifw.h"
 #include "lw_aifw/lw_aifw_log.h"
 #include "lw_aifw/lw_aifw_utils.h"
 #include "lw_aifw/lw_aifw_result.h"
+#include "lw_aifw/AICSVDataSource.h"
 #include "lwaifw_sine_test_model.h"
 #include "lwaifw_sine_test_main.h"
 #include "lwaifw_sine_test_input.h"

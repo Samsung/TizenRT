@@ -21,7 +21,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include "lw_aifw/lw_aifw_log.h"
-#include "AIServiceCore.h"
+#include "lw_aifw/AIServiceCore.h"
 
 #ifndef CONFIG_LW_AIFW_MODEL_MEM_POOL_SIZE
 #define LW_AIFW_MODEL_MEM_POOL_SIZE 4096

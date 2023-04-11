@@ -21,11 +21,11 @@
 #include <signal.h>
 #include "lw_aifw/lw_aifw.h"
 #include "lw_aifw/AIDataSource.h"
-#include "AIDataBuffer.h"
-#include "AIModel.h"
 
 namespace lw_aifw {
 
+class AIModel;
+class AIDataBuffer;
 class AIServiceCore
 {
 private:

@@ -16,12 +16,10 @@
  *
  ****************************************************************************/
 
+#include "lw_aifw/AICSVDataSource.h"
 #include "lw_aifw/lw_aifw_log.h"
-#include "AICSVDataSource.h"
-/* ToDo: DataSource is application scope. This class to be moved in application. 
-Then below #ifdef will be removed */
-#include "AICSVFileReader.h"
-#include "AICSVArrayReader.h"
+#include "lw_aifw/AICSVFileReader.h"
+#include "lw_aifw/AICSVArrayReader.h"
 
 namespace lw_aifw {
 	
