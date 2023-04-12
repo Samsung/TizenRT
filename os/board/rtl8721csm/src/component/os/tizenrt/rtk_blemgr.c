@@ -255,7 +255,18 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 
 trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
-	return rtw_ble_server_conn_param_update(conn_handle, conn_param);
+	if (conn_param->role == TRBLE_SLAVE_CONN_PARAM_UPDATE)
+	{
+		return rtw_ble_server_conn_param_update(conn_handle, conn_param);
+	}
+	else if (conn_param->role == TRBLE_MASTER_CONN_PARAM_UPDATE)
+	{
+		return rtw_ble_client_conn_param_update(conn_handle, conn_param);
+	}
+	else
+	{
+		return TRBLE_FAIL;
+	}
 }
 
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)

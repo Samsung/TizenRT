@@ -127,10 +127,10 @@ typedef struct
 
 typedef enum
 {
-	BLE_TIZENRT_START_SCAN,
-	BLE_TIZENRT_STOP_SCAN,
+  BLE_TIZENRT_START_SCAN,
+  BLE_TIZENRT_STOP_SCAN,
   BLE_TIZENRT_CONNECT,
-	BLE_TIZENRT_DISCONNECT,
+  BLE_TIZENRT_DISCONNECT,
   BLE_TIZENRT_BOND,
   BLE_TIZENRT_READ,
   BLE_TIZENRT_WRITE,
@@ -139,8 +139,18 @@ typedef enum
   BLE_TIZENRT_DELETE_BOND,
   BLE_TIZENRT_CLEAR_ALL_BONDS,
   BLE_TIZENRT_MODIFY_WHITELIST,
+  BLE_TIZENRT_CONN_PARAM_UPDATE,
   BLE_TIZENRT_CLIENT_MSG_MAX
 } BLE_TIZENRT_CLIENT_MSG_TYPE;
+
+typedef struct
+{
+    trble_conn_handle conn_id;
+    uint16_t min_conn_interval;
+    uint16_t max_conn_interval;
+    uint16_t slave_latency;
+    uint16_t supervision_timeout;
+} T_TIZENRT_CLIENT_CONN_UPDATE_PARAM;
 
 /*============================================================================*
  *                              Variables

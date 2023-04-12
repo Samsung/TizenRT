@@ -556,7 +556,8 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
             }
         }
             break;
-        case BLE_TIZENRT_MSG_CONN_PARAM_UPDATE:
+        case BLE_TIZENRT_CONN_PARAM_UPDATE:          //Connection parameter update for central
+        case BLE_TIZENRT_MSG_CONN_PARAM_UPDATE:      //Connection parameter update for peripheral
         {
             T_TIZENRT_CONN_UPDATE_PARAM *param = pdata;
             if(param)

@@ -69,11 +69,17 @@ typedef struct {
 	ble_addr_type_e type;
 } ble_addr;
 
+typedef enum {
+	BLE_SLAVE_CONN_PARAM_UPDATE,
+	BLE_MASTER_CONN_PARAM_UPDATE
+} ble_conn_param_role;
+
 typedef struct {
 	uint16_t min_conn_interval;
 	uint16_t max_conn_interval;
 	uint16_t slave_latency;
 	uint16_t supervision_timeout;
+	ble_conn_param_role role;
 } ble_conn_param;
 
 /**
