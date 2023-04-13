@@ -297,9 +297,9 @@ void up_stack_color(FAR void *stackbase, size_t nbytes)
 {
 	/* Take extra care that we do not write outsize the stack boundaries */
 
-	uint32_t *stkptr = (uint32_t *)(((uintptr_t)stackbase + 3) & ~3);
-	uintptr_t stkend = (((uintptr_t)stackbase + nbytes) & ~3);
-	size_t nwords = (stkend - (uintptr_t)stackbase) >> 2;
+	uint32_t *stkptr = (uint32_t *)STACK_ALIGN_UP((uintptr_t)stackbase);
+	uintptr_t stkend = STACK_ALIGN_DOWN((uintptr_t)stackbase + nbytes);
+	size_t nwords = (stkend - (uintptr_t)stkptr) >> 2;
 
 	/* Set the entire stack to the coloration value */
 

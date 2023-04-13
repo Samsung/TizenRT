@@ -107,8 +107,8 @@ static size_t do_stackcheck(uintptr_t alloc, size_t size)
 
 	/* Get aligned addresses and adjusted sizes */
 
-	start = alloc & ~3;
-	end = (alloc + size + 3) & ~3;
+	start = STACK_ALIGN_UP(alloc);
+	end = STACK_ALIGN_DOWN(alloc + size);
 	size = end - start;
 
 	/* The ARM uses a push-down stack:  the stack grows toward lower addresses
