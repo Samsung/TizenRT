@@ -315,12 +315,12 @@ config MOTOROLA_SREC
 		and should not be selected if you are not using the GNU toolchain.
 
 config RAW_BINARY
-	bool "Raw binary format"
-	default n
+	bool
+	default y
 	---help---
-		Create the tinyara.bin in the raw binary format that is used with many
-		different loaders using the GNU objcopy program.  This option
-		should not be selected if you are not using the GNU toolchain.
+		Create the tinyara.bin in the raw binary format that is used with many 
+		different loaders using the GNU objcopy program. 
+		This configuration should always be enabled mandatorily in TizenRT.	
 
 menuconfig UBOOT_UIMAGE
 	bool "U-Boot uImage"
