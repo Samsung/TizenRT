@@ -79,6 +79,8 @@
 #include <arch/armv7-r/irq.h>
 #elif defined(CONFIG_ARCH_ARMV8M_FAMILY)
 #include <arch/armv8-m/irq.h>
+#elif defined(CONFIG_ARCH_ARMV7A_FAMILY)
+#include <arch/armv7-a/irq.h>
 #else
 #include <arch/arm/irq.h>
 #endif
@@ -86,6 +88,7 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
+#define CURRENT_REGS (g_current_regs[up_cpu_index()])
 
 /****************************************************************************
  * Public Types
@@ -111,6 +114,46 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+
+EXTERN volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_cpu_index
+ *
+ * Description:
+ *   Return an index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   An integer index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_index(void);
+#endif
+
+/****************************************************************************
+ * Inline functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_interrupt_context
+ *
+ * Description:
+ *   Return true is we are currently executing in the interrupt
+ *   handler context.
+ *
+ ****************************************************************************/
+
+bool up_interrupt_context(void);
 #undef EXTERN
 #ifdef __cplusplus
 }

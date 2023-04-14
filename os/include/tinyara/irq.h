@@ -138,6 +138,18 @@ void irq_info(void);
 
 #endif
 
+#ifdef CONFIG_IRQCOUNT
+irqstate_t enter_critical_section(void);
+#else
+#  define enter_critical_section() irqsave()
+#endif
+
+#ifdef CONFIG_IRQCOUNT
+void leave_critical_section(irqstate_t flags);
+#else
+#  define leave_critical_section(f) irqrestore(f)
+#endif
+
 /**
  * @cond
  * @internal

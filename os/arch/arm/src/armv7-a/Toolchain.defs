@@ -1,0 +1,243 @@
+############################################################################
+#
+#  Copyright 2023 Samsung Electronics All Rights Reserved.
+#  
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+# 
+#  http://www.apache.org/licenses/LICENSE-2.0
+# 
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+#  either express or implied. See the License for the specific
+#  language governing permissions and limitations under the License.
+# 
+############################################################################
+############################################################################
+# arch/arm/src/armv7-a/Toolchain.defs
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Setup for the selected toolchain
+
+#
+# Select and allow the selected toolchain to be overridden by a command-line
+#selection.
+#
+
+ifeq ($(filter y, \
+      $(CONFIG_ARMV7A_TOOLCHAIN_BUILDROOT) \
+    ),y)
+  CONFIG_ARMV7A_TOOLCHAIN ?= BUILDROOT
+endif
+
+ifeq ($(filter y, \
+      $(CONFIG_ARMV7A_TOOLCHAIN_GNU_EABI) \
+    ),y)
+  CONFIG_ARMV7A_TOOLCHAIN ?= GNU_EABI
+endif
+
+#
+# Supported toolchains
+#
+# Each toolchain definition should set:
+#
+#  CROSSDEV         The GNU toolchain triple (command prefix)
+#  ARCHCPUFLAGS     CPU-specific flags selecting the instruction set
+#                   FPU options, etc.
+#  ARCHOPTIMIZATION The optimization level that results in
+#                   reliable code generation.
+#
+
+ifeq ($(CONFIG_ARM_THUMB),y)
+  ARCHCPUFLAGS += -mthumb
+endif
+
+ifeq ($(CONFIG_ARCH_CORTEXA5),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a5
+else ifeq ($(CONFIG_ARCH_CORTEXA7),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a7
+else ifeq ($(CONFIG_ARCH_CORTEXA8),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a8
+else ifeq ($(CONFIG_ARCH_CORTEXA9),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a9
+else ifeq ($(CONFIG_ARCH_CORTEXA32),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a32
+endif
+
+ifneq ($(CONFIG_ARM_DPFPU32),y)
+  ARCHFPUD16 = -d16
+endif
+
+# Cortex-A5  | -mfpu=vfpv4-fp16 | -mfpu=vfpv4-d16-fp16 | -mfpu=neon-fp16
+# Cortex-A7  | -mfpu=vfpv4      | -mfpu=vfpv4-d16      | -mfpu=neon-vfpv4
+# Cortex-A8  | -mfpu=vfpv3      |                      | -mfpu=neon (alias for neon-vfpv3)
+# Cortex-A9  | -mfpu=vfpv3-fp16 | -mfpu=vfpv3-d16-fp16 | -mfpu=neon-fp16
+# Cortex-A15 | -mfpu=vfpv4      |                      | -mfpu=neon-vfpv4
+
+ifeq ($(CONFIG_ARCH_FPU),y)
+  ifeq ($(CONFIG_ARM_FPU_ABI_SOFT),y)
+    ARCHCPUFLAGS += -mfloat-abi=softfp
+  else
+    ARCHCPUFLAGS += -mfloat-abi=hard
+  endif
+
+  ifeq ($(CONFIG_ARM_NEON),y)
+    ARCHNEON = neon-
+  endif
+  ifeq ($(CONFIG_ARCH_CORTEXA8),y)
+    ARCHFPU = vfpv3
+  else ifeq ($(CONFIG_ARCH_CORTEXA32),y)
+    ARCHFPU = vfpv4
+  else ifeq ($(CONFIG_ARCH_CORTEXA9),y)
+    ARCHFPU = vfpv3
+  else
+    ARCHFPU = vfpv4
+  endif
+  ARCHCPUFLAGS += -mfpu=$(ARCHNEON)$(ARCHFPU)
+
+else
+  ARCHCPUFLAGS += -mfloat-abi=soft
+endif
+
+ifeq ($(CONFIG_MM_KASAN),y)
+  ARCHOPTIMIZATION += -fsanitize=kernel-address
+endif
+
+ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_OPTLEVEL)
+else ifeq ($(CONFIG_DEBUG_FULLOPT),y)
+  ARCHOPTIMIZATION += -Os
+  MAXOPTIMIZATION ?= -Os
+endif
+
+ifneq ($(CONFIG_DEBUG_NOOPT),y)
+  ARCHOPTIMIZATION += -fno-strict-aliasing
+endif
+
+ifeq ($(CONFIG_FRAME_POINTER),y)
+  ARCHOPTIMIZATION += -fno-omit-frame-pointer -fno-optimize-sibling-calls
+else
+  ARCHOPTIMIZATION += -fomit-frame-pointer
+endif
+
+ifeq ($(CONFIG_STACK_CANARIES),y)
+  ARCHOPTIMIZATION += -fstack-protector-all
+endif
+
+ifeq ($(CONFIG_ARCH_COVERAGE),y)
+  ARCHOPTIMIZATION += -fprofile-generate -ftest-coverage
+endif
+
+ifeq ($(CONFIG_ENDIAN_BIG),y)
+  TARGET_ARCH := armeb
+else
+  TARGET_ARCH := arm
+endif
+
+ARCHCFLAGS += -fno-common
+ARCHCXXFLAGS += -fno-common -nostdinc++
+
+ARCHCFLAGS += -Wall -Wstrict-prototypes -Wshadow -Wundef
+ARCHCXXFLAGS += -Wall -Wshadow -Wundef
+
+ifneq ($(CONFIG_CXX_EXCEPTION),y)
+  ARCHCXXFLAGS += -fno-exceptions -fcheck-new
+endif
+
+ifneq ($(CONFIG_CXX_RTTI),y)
+  ARCHCXXFLAGS += -fno-rtti
+endif
+
+LDFLAGS += -nostdlib
+
+# Optimization of unused sections
+
+ifeq ($(CONFIG_DEBUG_OPT_UNUSED_SECTIONS),y)
+  LDFLAGS          += --gc-sections
+  ARCHOPTIMIZATION += -ffunction-sections -fdata-sections
+endif
+
+# Debug link map
+
+ifeq ($(CONFIG_DEBUG_LINK_MAP),y)
+  LDFLAGS += --cref -Map=$(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx.map)
+endif
+
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  ARCHOPTIMIZATION += -g
+endif
+
+# NuttX buildroot under Linux or Cygwin
+
+ifeq ($(CONFIG_ARMV7A_TOOLCHAIN),BUILDROOT)
+ifeq ($(CONFIG_ARMV7A_OABI_TOOLCHAIN),y)
+  CROSSDEV ?= $(TARGET_ARCH)-nuttx-elf-
+else
+  CROSSDEV ?= $(TARGET_ARCH)-nuttx-eabi-
+endif
+endif
+
+# Generic GNU EABI toolchain
+
+ifeq ($(CONFIG_ARMV7A_TOOLCHAIN),GNU_EABI)
+  CROSSDEV ?= $(TARGET_ARCH)-none-eabi-
+endif
+
+# Default toolchain
+
+CC      = $(CROSSDEV)gcc
+CXX     = $(CROSSDEV)g++
+CPP     = $(CROSSDEV)gcc -E -P -x c
+STRIP   = $(CROSSDEV)strip --strip-unneeded
+OBJCOPY = $(CROSSDEV)objcopy
+OBJDUMP = $(CROSSDEV)objdump
+LD      = $(CROSSDEV)ld
+AR      = $(CROSSDEV)ar rcs
+NM      = $(CROSSDEV)nm
+
+# Link Time Optimization
+
+ifeq ($(CONFIG_LTO_FULL),y)
+  ARCHOPTIMIZATION += -flto
+  ifeq ($(CONFIG_ARMV7A_TOOLCHAIN),GNU_EABI)
+    LD := $(CROSSDEV)gcc
+    AR := $(CROSSDEV)gcc-ar rcs
+    NM := $(CROSSDEV)gcc-nm
+    ARCHOPTIMIZATION += -fuse-linker-plugin
+    ARCHOPTIMIZATION += -fno-builtin
+  endif
+endif
+
+# Add the builtin library
+
+EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-libgcc-file-name))
+
+ifneq ($(CONFIG_LIBM),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libm.a))
+endif
+
+ifeq ($(CONFIG_LIBSUPCXX),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libsupc++.a))
+endif
+
+ifeq ($(CONFIG_ARCH_COVERAGE),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libgcov.a))
+endif
