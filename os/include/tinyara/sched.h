@@ -320,6 +320,21 @@ struct dspace_s {
 };
 #endif
 
+/* struct stackinfo_s *******************************************************/
+
+/* Used to report stack information */
+
+struct stackinfo_s {
+	size_t    adj_stack_size;	/* Stack size after adjustment         */
+					/* for hardware, processor, etc.       */
+					/* (for debug purposes only)           */
+	FAR void *stack_alloc_ptr;	/* Pointer to allocated stack          */
+					/* Needed to deallocate stack          */
+	FAR void *stack_base_ptr;	/* Adjusted initial stack pointer      */
+					/* after the frame has been removed    */
+					/* from the stack.                     */
+};
+
 /* struct task_group_s ***********************************************************/
 /* All threads created by pthread_create belong in the same task group (along with
  * the thread of the original task).  struct task_group_s is a shared structure
@@ -570,6 +585,8 @@ struct tcb_s {
 	FAR void *stack_alloc_ptr;	/* Pointer to allocated stack          */
 	/* Need to deallocate stack            */
 	FAR void *adj_stack_ptr;	/* Adjusted stack_alloc_ptr for HW     */
+	FAR void *stack_base_ptr;              /* Adjusted initial stack pointer  */
+
 	/* The initial stack pointer value     */
 
 #ifdef CONFIG_MPU_STACKGUARD

@@ -134,3 +134,28 @@ config AUTOMOUNT_ROMFS
 	depends on FS_ROMFS
 	---help---
 		If enabled, mount romfs partition automatically at boot.
+
+config BOARD_ENTROPY_POOL
+        bool "Enable Board level storing of entropy pool structure"
+        default n
+        depends on CRYPTO_RANDOM_POOL
+        ---help---
+                Entropy pool structure can be provided by board source.
+                Use for this is, for example, to allocate entropy pool
+                from special area of RAM which content is kept over
+                system reset.
+
+config BOARD_INITRNGSEED
+        bool "Enable Board level initial seeding of entropy pool RNG"
+        default n
+        depends on CRYPTO_RANDOM_POOL
+        ---help---
+                If enabled, entropy pool random number generator will call
+                board_init_rndseed() upon initialization. This function
+                can then provide early entropy seed to the pool through
+                entropy injection APIs provided at 'nuttx/random.h'.
+
+config BOARD_USBDEV_SERIALSTR
+        bool
+        default n
+

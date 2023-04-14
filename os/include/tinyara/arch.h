@@ -339,11 +339,26 @@ int up_use_stack(FAR struct tcb_s *tcb, FAR void *stack, size_t stack_size);
  *
  *   - adj_stack_size: Stack size after removal of the stack frame from
  *     the stack
- *   - adj_stack_ptr: Adjusted initial stack pointer after the frame has
- *     been removed from the stack.  This will still be the initial value
- *     of the stack pointer when the task is started.
+ *   - stack_base_ptr: Adjusted stack base pointer after the TLS Data and
+ *     Arguments has been removed from the stack allocation.
  *
- * Inputs:
+ *   Here is the diagram after some allocation(tls, arg):
+ *
+ *                   +-------------+ <-stack_alloc_ptr(lowest)
+ *                   |  TLS Data   |
+ *                   +-------------+
+ *                   |  Arguments  |
+ *  stack_base_ptr-> +-------------+\
+ *                   |  Available  | +
+ *                   |    Stack    | |
+ *                |  |             | |
+ *                |  |             | +->adj_stack_size
+ *                v  |             | |
+ *                   |             | |
+ *                   |             | +
+ *                   +-------------+/
+ *
+ * Input Parameters:
  *   - tcb:  The TCB of new task
  *   - frame_size:  The size of the stack frame to allocate.
  *

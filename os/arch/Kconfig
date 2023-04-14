@@ -66,6 +66,10 @@ config ARCH_NEED_ADDRENV_MAPPING
 	bool
 	default n
 
+config ARCH_HAVE_MULTICPU
+        bool
+        default n
+
 config ARCH_HAVE_VFORK
 	bool
 	default n
@@ -103,6 +107,10 @@ config ARCH_USE_MMU
 		enable use of the MMU. For most architectures, this is not
 		really an option: It is required to use the MMU. In those
 		cases, this selection will always be forced.
+
+config ARCH_HAVE_FETCHADD
+        bool
+        default n
 
 config ARCH_USE_MPU
 	bool "Enable MPU"
@@ -455,6 +463,10 @@ config ARCH_STACKDUMP
 		To see symbols on call stack dump, please enable DEBUG_DISPLAY_SYMBOL.
 		It is possible to enable it when FS_ROMFS is enabled.
 		
+config ARCH_STACKDUMP_MAX_LENGTH
+        int "The maximum length for dump stack on assertions"
+        depends on ARCH_STACKDUMP
+        default 0
 
 config DEBUG_DISPLAY_SYMBOL
 	bool "Display symbols on call stack dump"
@@ -764,6 +776,16 @@ config BOOT_COPYTORAM
 endchoice
 
 menu "Boot Memory Configuration"
+
+config RAM_START
+        hex "Primary RAM start address (physical)"
+        default 0x0
+        ---help---
+                The physical start address of primary installed RAM.  "Primary" RAM
+                refers to the RAM that you link program code into.  If program code
+                does not execute out of RAM but from FLASH, then you may designate
+                any block of RAM as "primary."
+
 config RAM_VSTART
 	hex "Primary RAM start address (virtual)"
 	default 0x0
@@ -773,6 +795,15 @@ config RAM_VSTART
 		refers to the RAM that you link program code into.  If program code
 		does not execute out of RAM but from FLASH, then you may designate
 		any block of RAM as "primary."
+
+config RAM_SIZE
+        int "Primary RAM size"
+        default 0
+        ---help---
+                The size in bytes of the installed primary RAM. "Primary" RAM
+                refers to the RAM that you link program code into.  If program code
+                does not execute out of RAM but from FLASH, then you may designate
+                any block of RAM as "primary."
 
 config RAM_KREGIONx_START
 	string "An address or list of start address for kernel RAM region"

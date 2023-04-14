@@ -68,6 +68,8 @@
 #include <arch/armv7-r/syscall.h>
 #elif defined(CONFIG_ARCH_CORTEXM33) || defined(CONFIG_ARCH_CORTEXM55)
 #include <arch/armv8-m/syscall.h>
+#elif defined(CONFIG_ARCH_CORTEXA9) || defined(CONFIG_ARCH_CORTEXA32)
+#include <arch/armv7-a/syscall.h>
 #else
 #include <arch/arm/syscall.h>
 #endif

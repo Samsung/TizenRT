@@ -157,6 +157,14 @@ config ARCH_BOARD_STM32H745ZI_NUCLEO
 	---help---
 		STMicro STM32H745ZI-Nucleo board based on the STMicro STM32H745ZI MCU.
 
+config ARCH_BOARD_SABRE_6QUAD
+ 	bool "SABRE_6QUAD"
+	depends on ARCH_CHIP_IMX6
+	select ARCH_HAVE_BUTTONS
+	select ARCH_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_HAVE_RAM_KERNEL_TEXT
+ 
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -182,7 +190,7 @@ config ARCH_BOARD
 	default "rtl8720e"           if ARCH_BOARD_RTL8720E
 	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
 	default "stm32h745zi-nucleo" if ARCH_BOARD_STM32H745ZI_NUCLEO
-	
+	default "sabre-6quad"	     if ARCH_BOARD_SABRE_6QUAD	
 comment "Common Board Options"
 
 config ARCH_HAVE_LEDS
