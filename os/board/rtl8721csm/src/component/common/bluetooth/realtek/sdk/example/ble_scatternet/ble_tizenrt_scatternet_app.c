@@ -1832,6 +1832,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 #if defined(CONFIG_BLE_INDICATION)
 T_SEND_DATA_RESULT g_scatternet_indicate_result = {0};
+extern trble_attr_handle indicate_attr;
 #endif
 T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id, void *p_data)
 {
@@ -1863,17 +1864,19 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
             }
 
 #if defined(CONFIG_BLE_INDICATION)
-            g_scatternet_indicate_result.credits = p_param->event_data.send_data_result.credits;
-            g_scatternet_indicate_result.cause = p_param->event_data.send_data_result.cause,
-            g_scatternet_indicate_result.service_id = p_param->event_data.send_data_result.service_id,
-            g_scatternet_indicate_result.attrib_idx = p_param->event_data.send_data_result.attrib_idx,
-            g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
+            if (indicate_attr == p_param->event_data.send_data_result.attrib_idx){
+                g_scatternet_indicate_result.credits = p_param->event_data.send_data_result.credits;
+                g_scatternet_indicate_result.cause = p_param->event_data.send_data_result.cause,
+                g_scatternet_indicate_result.service_id = p_param->event_data.send_data_result.service_id,
+                g_scatternet_indicate_result.attrib_idx = p_param->event_data.send_data_result.attrib_idx,
+                g_scatternet_indicate_result.conn_id = p_param->event_data.send_data_result.conn_id;
 
-            if(os_mutex_give(ble_tizenrt_indicate_sem))
-            {
+                if(os_mutex_give(ble_tizenrt_indicate_sem))
+                {
                 dbg("give indicate semaphore success \n");
-            } else {
-                dbg("fail to give indicate semaphore \n");
+                } else {
+                    dbg("fail to give indicate semaphore \n");
+                }
             }
 #endif
             break;

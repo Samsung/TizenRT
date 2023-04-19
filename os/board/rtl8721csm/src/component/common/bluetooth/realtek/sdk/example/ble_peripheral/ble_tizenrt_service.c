@@ -56,6 +56,7 @@ bool tizenrt_ble_service_send_notify(uint8_t conn_id, uint16_t abs_handle, uint8
                             length, GATT_PDU_TYPE_NOTIFICATION);
 }
 
+trble_attr_handle indicate_attr;
 bool tizenrt_ble_service_send_indicate(uint8_t conn_id, uint16_t abs_handle, uint8_t *p_value,
                                      uint16_t length)
 {
@@ -73,6 +74,7 @@ bool tizenrt_ble_service_send_indicate(uint8_t conn_id, uint16_t abs_handle, uin
     /* send notification to client */
     debug_print("service_id %d index = 0x%x, value = 0x%x len = 0x%x \n",
                                         service_id, cha_index, *p_value, length);
+    indicate_attr = cha_index;
     return server_send_data(conn_id, service_id, cha_index, p_value,
                             length, GATT_PDU_TYPE_INDICATION);
 }
