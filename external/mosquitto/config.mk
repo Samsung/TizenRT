@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2023 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ WITH_TLS:=no
 # This must be disabled if using openssl < 1.0.
 WITH_TLS_PSK:=no
 
-# Comment out to disable client client threading support.
+# Comment out to disable client threading support.
 WITH_THREADING:=yes
 
 # Comment out to remove bridge support from the broker. This allow the broker
@@ -74,12 +74,14 @@ WITH_MEMORY_TRACKING:=no
 # information about the broker state.
 WITH_SYS_TREE:=no
 
+# Build with systemd support. If enabled, mosquitto will notify systemd after
+# initialization. See README in service/systemd/ for more information.
+# Setting to yes means the libsystemd-dev or similar package will need to be
+# installed.
+WITH_SYSTEMD:=no
+
 # Build with SRV lookup support.
 WITH_SRV:=no
-
-# Build using libuuid for clientid generation (Linux only - please report if
-# supported on your platform).
-WITH_UUID:=no
 
 # Build with websockets support on the broker.
 WITH_WEBSOCKETS:=no
@@ -92,18 +94,47 @@ WITH_DOCS:=no
 
 # Build with client support for SOCK5 proxy.
 WITH_SOCKS:=no
+# Build shared libraries
+WITH_SHARED_LIBRARIES:=no
+
+# Build with async dns lookup support for bridges (temporary). Requires glibc.
+#WITH_ADNS:=no
+
+# Build with bundled uthash.h
+WITH_BUNDLED_DEPS:=no
+
+# Build with unix domain socket support
+WITH_UNIX_SOCKETS:=no
+
+# Build mosquitto_sub with cJSON support
+WITH_CJSON:=no
+
+# Build mosquitto with support for the $CONTROL topics.
+WITH_CONTROL:=no
+
+# Build the broker with the jemalloc allocator
+WITH_JEMALLOC:=no
 
 # =============================================================================
 # End of user configuration
 # =============================================================================
 -include $(TOPDIR)/.config
-
-#MQTT_TOP=$(EXTDIR)/mosquitto
 MQTT_TOP=mosquitto
-VERSION=1.4.10
+MQTT_INCLUDE=../include/mosquitto
+VERSION=2.0.14
 
 ifeq ($(WITH_THREADING),yes)
+	LIB_LIBADD:=$(LIB_LIBADD) -lpthread
+	LIB_CPPFLAGS:=$(LIB_CPPFLAGS) -DWITH_THREADING
 	LIB_CFLAGS:=$(LIB_CFLAGS) -DWITH_THREADING
+	CLIENT_CPPFLAGS:=$(CLIENT_CPPFLAGS) -DWITH_THREADING
+	STATIC_LIB_DEPS:=$(STATIC_LIB_DEPS) -lpthread
+endif
+
+
+ifeq ($(WITH_UNIX_SOCKETS),yes)
+	LIB_CPPFLAGS:=$(LIB_CPPFLAGS) -DWITH_UNIX_SOCKETS
+	CLIENT_CPPFLAGS:=$(CLIENT_CPPFLAGS) -DWITH_UNIX_SOCKETS
 endif
 
 ifeq ($(CONFIG_NETUTILS_MQTT_SECURITY),y)
@@ -111,5 +142,5 @@ ifeq ($(CONFIG_NETUTILS_MQTT_SECURITY),y)
 endif
 
 MQTT_LIB_CFLAGS := $(LIB_CFLAGS) -D__TINYARA__ -DVERSION="\"${VERSION}\""
-MQTT_LIB_CFLAGS += -I$(MQTT_TOP)
+MQTT_LIB_CFLAGS += -I$(MQTT_TOP) -I$(MQTT_INCLUDE)
 CFLAGS += $(MQTT_LIB_CFLAGS)

@@ -1,67 +1,63 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
-Copyright (c) 2013,2014 Roger Light <roger@atchoo.org>
+Copyright (c) 2013-2020 Roger Light <roger@atchoo.org>
 
 All rights reserved. This program and the accompanying materials
-are made available under the terms of the Eclipse Public License v1.0
+are made available under the terms of the Eclipse Public License 2.0
 and Eclipse Distribution License v1.0 which accompany this distribution.
 
 The Eclipse Public License is available at
-   http://www.eclipse.org/legal/epl-v10.html
+   https://www.eclipse.org/legal/epl-2.0/
 and the Eclipse Distribution License is available at
   http://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
 Contributors:
    Roger Light - initial implementation and documentation.
 */
 
-#ifdef WITH_SRV
-#include <ares.h>
+#include "config.h"
 
-#include <arpa/nameser.h>
-#include <stdio.h>
-#include <string.h>
+#ifdef WITH_SRV
+#  include <ares.h>
+
+#  include <arpa/nameser.h>
+#  include <stdio.h>
+#  include <string.h>
 #endif
 
 #include "logging_mosq.h"
 #include "memory_mosq.h"
 #include "mosquitto_internal.h"
 #include "mosquitto.h"
+#include "util_mosq.h"
 
 #ifdef WITH_SRV
 static void srv_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
 {
 	struct mosquitto *mosq = arg;
 	struct ares_srv_reply *reply = NULL;
-	if (status == ARES_SUCCESS) {
+
+	UNUSED(timeouts);
+
+	if(status == ARES_SUCCESS){
 		status = ares_parse_srv_reply(abuf, alen, &reply);
-		if (status == ARES_SUCCESS) {
+		if(status == ARES_SUCCESS){
 			// FIXME - choose which answer to use based on rfc2782 page 3. */
 			mosquitto_connect(mosq, reply->host, reply->port, mosq->keepalive);
 		}
-	} else {
-		_mosquitto_log_printf(mosq, MOSQ_LOG_ERR, "Error: SRV lookup failed (%d).", status);
+	}else{
+		log__printf(mosq, MOSQ_LOG_ERR, "Error: SRV lookup failed (%d).", status);
 		/* FIXME - calling on_disconnect here isn't correct. */
 		pthread_mutex_lock(&mosq->callback_mutex);
-		if (mosq->on_disconnect) {
+		if(mosq->on_disconnect){
 			mosq->in_callback = true;
-			mosq->on_disconnect(mosq, mosq->userdata, 2);
+			mosq->on_disconnect(mosq, mosq->userdata, MOSQ_ERR_LOOKUP);
+			mosq->in_callback = false;
+		}
+		if(mosq->on_disconnect_v5){
+			mosq->in_callback = true;
+			mosq->on_disconnect_v5(mosq, mosq->userdata, MOSQ_ERR_LOOKUP, NULL);
 			mosq->in_callback = false;
 		}
 		pthread_mutex_unlock(&mosq->callback_mutex);
@@ -74,48 +70,53 @@ int mosquitto_connect_srv(struct mosquitto *mosq, const char *host, int keepaliv
 #ifdef WITH_SRV
 	char *h;
 	int rc;
-	if (!mosq) {
+	if(!mosq) return MOSQ_ERR_INVAL;
+
+	UNUSED(bind_address);
+
+	if(keepalive < 0 || keepalive > UINT16_MAX){
 		return MOSQ_ERR_INVAL;
 	}
 
 	rc = ares_init(&mosq->achan);
-	if (rc != ARES_SUCCESS) {
+	if(rc != ARES_SUCCESS){
 		return MOSQ_ERR_UNKNOWN;
 	}
 
-	if (!host) {
+	if(!host){
 		// get local domain
-	} else {
+	}else{
 #ifdef WITH_TLS
-		if (mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk) {
-			h = _mosquitto_malloc(strlen(host) + strlen("_secure-mqtt._tcp.") + 1);
-			if (!h) {
-				return MOSQ_ERR_NOMEM;
-			}
+		if(mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk){
+			h = mosquitto__malloc(strlen(host) + strlen("_secure-mqtt._tcp.") + 1);
+			if(!h) return MOSQ_ERR_NOMEM;
 			sprintf(h, "_secure-mqtt._tcp.%s", host);
-		} else {
+		}else{
 #endif
-			h = _mosquitto_malloc(strlen(host) + strlen("_mqtt._tcp.") + 1);
-			if (!h) {
-				return MOSQ_ERR_NOMEM;
-			}
+			h = mosquitto__malloc(strlen(host) + strlen("_mqtt._tcp.") + 1);
+			if(!h) return MOSQ_ERR_NOMEM;
 			sprintf(h, "_mqtt._tcp.%s", host);
 #ifdef WITH_TLS
 		}
 #endif
 		ares_search(mosq->achan, h, ns_c_in, ns_t_srv, srv_callback, mosq);
-		_mosquitto_free(h);
+		mosquitto__free(h);
 	}
 
-	pthread_mutex_lock(&mosq->state_mutex);
-	mosq->state = mosq_cs_connect_srv;
-	pthread_mutex_unlock(&mosq->state_mutex);
+	mosquitto__set_state(mosq, mosq_cs_connect_srv);
 
-	mosq->keepalive = keepalive;
+	mosq->keepalive = (uint16_t)keepalive;
 
 	return MOSQ_ERR_SUCCESS;
 
 #else
+	UNUSED(mosq);
+	UNUSED(host);
+	UNUSED(keepalive);
+	UNUSED(bind_address);
+
 	return MOSQ_ERR_NOT_SUPPORTED;
 #endif
 }
+
+
