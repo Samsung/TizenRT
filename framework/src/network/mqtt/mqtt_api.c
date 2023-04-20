@@ -59,7 +59,7 @@
 static mqtt_client_t *create_mqtt_client(void)
 {
 	mqtt_client_t *mqtt_client = NULL;
-	mqtt_client = (mqtt_client_t *)_mosquitto_malloc(sizeof(mqtt_client_t));
+	mqtt_client = (mqtt_client_t *)mosquitto__malloc(sizeof(mqtt_client_t));
 	if (mqtt_client == NULL) {
 		ndbg("ERROR: mqtt_client is null.\n");
 	}
@@ -77,7 +77,7 @@ static void destroy_mqtt_client(mqtt_client_t *client)
 
 		mosquitto_lib_cleanup();
 
-		_mosquitto_free(client);
+		mosquitto__free(client);
 	}
 }
 
@@ -110,7 +110,7 @@ static void on_message_callback(struct mosquitto *client, void *data, const stru
 	mqtt_client_t *mqtt_client = (mqtt_client_t *)data;
 	mqtt_msg_t *received_msg;
 
-	received_msg = (mqtt_msg_t *)_mosquitto_malloc(sizeof(mqtt_msg_t));
+	received_msg = (mqtt_msg_t *)mosquitto__malloc(sizeof(mqtt_msg_t));
 	if (!received_msg) {
 		ndbg("ERROR: received_msg is null.");
 		return;
@@ -127,7 +127,7 @@ static void on_message_callback(struct mosquitto *client, void *data, const stru
 		mqtt_client->config->on_message(mqtt_client, received_msg);
 	}
 
-	_mosquitto_free(received_msg);
+	mosquitto__free(received_msg);
 }
 
 static void on_publish_callback(struct mosquitto *client, void *data, int msg_id)

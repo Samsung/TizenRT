@@ -1,51 +1,90 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-
+#ifndef CONFIG_H
+#define CONFIG_H
 /* ============================================================
- * Control compile time options.
- * ============================================================
- *
- * Compile time options have moved to config.mk.
- */
+ * Platform options
+ * ============================================================ */
+
+#ifdef __APPLE__
+#  define __DARWIN_C_SOURCE
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__SYMBIAN32__)
+#  define _XOPEN_SOURCE 700
+#  define __BSD_VISIBLE 1
+#  define HAVE_NETINET_IN_H
+#elif defined(__QNX__)
+#  define _XOPEN_SOURCE 600
+#  define __BSD_VISIBLE 1
+#  define HAVE_NETINET_IN_H
+#else
+#  define _XOPEN_SOURCE 700
+#  define _DEFAULT_SOURCE 1
+#  define _POSIX_C_SOURCE 200809L
+#endif
+
+
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+#endif
+
+#define OPENSSL_LOAD_CONF
 
 /* ============================================================
  * Compatibility defines
- *
- * Generally for Windows native support.
  * ============================================================ */
-
 #if defined(_MSC_VER) && _MSC_VER < 1900
-#	define snprintf sprintf_s
+#  define snprintf sprintf_s
+#  define EPROTO ECONNABORTED
+#  ifndef ECONNABORTED
+#    define ECONNABORTED WSAECONNABORTED
+#  endif
+#  ifndef ENOTCONN
+#    define ENOTCONN WSAENOTCONN
+#  endif
+#  ifndef ECONNREFUSED
+#    define ECONNREFUSED WSAECONNREFUSED
+#  endif
 #endif
 
 #ifdef WIN32
-#	ifndef strcasecmp
-#		define strcasecmp strcmpi
-#	endif
-#define strtok_r strtok_s
-#define strerror_r(e, b, l) strerror_s(b, l, e)
+#  ifndef strcasecmp
+#    define strcasecmp strcmpi
+#  endif
+#  define strtok_r strtok_s
+#  define strerror_r(e, b, l) strerror_s(b, l, e)
 #endif
 
-#define uthash_malloc(sz) _mosquitto_malloc(sz)
-#define uthash_free(ptr,sz) _mosquitto_free(ptr)
 
-#ifndef EPROTO
-#	define EPROTO ECONNABORTED
+#define uthash_malloc(sz) mosquitto_malloc(sz)
+#define uthash_free(ptr,sz) mosquitto_free(ptr)
+
+
+#ifdef WITH_TLS
+#  include <openssl/opensslconf.h>
+#  if defined(WITH_TLS_PSK) && !defined(OPENSSL_NO_PSK)
+#    define FINAL_WITH_TLS_PSK
+#  endif
+#endif
+
+
+#ifdef __COVERITY__
+#  include <stdint.h>
+/* These are "wrong", but we don't use them so it doesn't matter */
+#  define _Float32 uint32_t
+#  define _Float32x uint32_t
+#  define _Float64 uint64_t
+#  define _Float64x uint64_t
+#  define _Float128 uint64_t
+#endif
+
+#define UNUSED(A) (void)(A)
+
+/* Android Bionic libpthread implementation doesn't have pthread_cancel */
+#ifndef ANDROID
+#  define HAVE_PTHREAD_CANCEL
+#endif
+
+#ifdef WITH_CJSON
+#  include <cjson/cJSON.h>
+#  define CJSON_VERSION_FULL (CJSON_VERSION_MAJOR*1000000+CJSON_VERSION_MINOR*1000+CJSON_VERSION_PATCH)
 #endif
 
 #ifdef WITH_MBEDTLS
@@ -56,4 +95,6 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ssl_cache.h"
 #include "mbedtls/entropy.h"
+#endif
+
 #endif

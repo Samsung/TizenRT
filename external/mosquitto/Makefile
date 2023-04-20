@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2023 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,25 +54,53 @@
 -include $(TOPDIR)/Make.defs
 include config.mk
 
+
 ASRCS		=
 CSRCS		=
-CSRCS += tls_mosq.c
-CSRCS += net_mosq.c
-CSRCS += send_client_mosq.c
-CSRCS += messages_mosq.c
-CSRCS += util_mosq.c
-CSRCS += socks_mosq.c
-CSRCS += will_mosq.c
+CSRCS += actions.c
+CSRCS += handle_connack.c
+CSRCS += handle_pubrec.c
 CSRCS += mosquitto.c
 CSRCS += logging_mosq.c
 CSRCS += send_mosq.c
-CSRCS += read_handle_shared.c
 CSRCS += srv_mosq.c
+CSRCS += packet_mosq.c
+CSRCS += utf8_mosq.c
+CSRCS += alias_mosq.c
+CSRCS += handle_disconnect.c
+CSRCS += handle_pubrel.c
+CSRCS += loop.c
 CSRCS += thread_mosq.c
-CSRCS += read_handle_client.c
 CSRCS += read_handle.c
-CSRCS += time_mosq.c
 CSRCS += memory_mosq.c
+CSRCS += property_mosq.c
+CSRCS += send_publish.c
+CSRCS += strings_mosq.c
+CSRCS += util_mosq.c
+CSRCS += callbacks.c
+CSRCS += handle_ping.c
+CSRCS += handle_suback.c
+CSRCS += net_mosq_ocsp.c
+CSRCS += send_subscribe.c
+CSRCS += util_topic.c
+CSRCS += connect.c
+CSRCS += handle_pubackcomp.c
+CSRCS += handle_unsuback.c
+CSRCS += messages_mosq.c
+CSRCS += options.c
+CSRCS += send_connect.c
+CSRCS += send_unsubscribe.c
+CSRCS += time_mosq.c
+CSRCS += will_mosq.c
+CSRCS += handle_auth.c
+CSRCS += handle_publish.c
+CSRCS += helpers.c
+CSRCS += misc_mosq.c
+CSRCS += packet_datatypes.c
+CSRCS += send_disconnect.c
+CSRCS += socks_mosq.c
+CSRCS += tls_mosq.c
+CSRCS += net_mosq.c
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
