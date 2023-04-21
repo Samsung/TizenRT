@@ -1,7 +1,7 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
 == version 963c4339b726c186d3456cc23ea09b69f4c94bf6_2023/04/14-15:13:49 ==
-1.	Fix amsdu packets refree error
+1.	Fix amsdu packets refree error, refree error is because the driver handles the first amsdu packet wrongly
 
 == version 517c1fa28480faa51eb5d535c4b432c9d7559740_2023/03/21-09:21:38 ==
 1.	Mask partial connected AP information log
