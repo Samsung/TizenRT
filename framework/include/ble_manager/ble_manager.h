@@ -175,3 +175,4 @@ ble_result_e ble_manager_get_version(uint8_t version[3]);
  *
  ****************************************************************************/
 ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
+
