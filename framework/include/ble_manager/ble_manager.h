@@ -157,3 +157,21 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active);
  *
  ****************************************************************************/
 ble_result_e ble_manager_get_version(uint8_t version[3]);
+
+
+/****************************************************************************
+ * Name: ble_manager_conn_param_update
+ *
+ * Description:
+ *   Request to update connection parameters
+ *
+ * Input Parameters:
+ *   con_handle : con handle for request
+ *   ble_conn_param : structure including connection parameters.
+ * 
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
