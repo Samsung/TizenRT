@@ -223,6 +223,31 @@ extern "C" {
 
 EXTERN volatile uint32_t *current_regs;
 
+
+/* ARM requires at least a 4-byte stack alignment.  For use with EABI and
+ * floating point, the stack must be aligned to 8-byte addresses.
+ */
+
+#ifndef CONFIG_STACK_ALIGNMENT
+
+/* The symbol  __ARM_EABI__ is defined by GCC if EABI is being used.  If you
+ * are not using GCC, make sure that CONFIG_STACK_ALIGNMENT is set correctly!
+ */
+
+#ifdef __ARM_EABI__
+#define CONFIG_STACK_ALIGNMENT 8
+#else
+#define CONFIG_STACK_ALIGNMENT 4
+#endif
+#endif
+
+/* Stack alignment macros */
+
+#define STACK_ALIGN_MASK    (CONFIG_STACK_ALIGNMENT - 1)
+#define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
+#define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
+
+
 /* This is the beginning of heap as provided from up_head.S.
  * This is the first address in DRAM after the loaded
  * program+bss+idle stack.  The end of the heap is
