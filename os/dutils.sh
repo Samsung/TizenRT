@@ -23,6 +23,8 @@ CONFIGFILE="${OSDIR}/.config"
 TOPDIR="${OSDIR}/.."
 BINDIR="${TOPDIR}/build/output/bin"
 TRAPDIR="${TOPDIR}/tools/trap"
+DOCKER_IMAGE=
+DOCKER_PUBLIC_IMAGE="tizenrt/tizenrt"
 DOCKER_VERSION="1.5.6"
 OUTPUTFILE="dutils_output_"
 
@@ -42,6 +44,38 @@ if ! which docker > /dev/null; then
 	nodocker 1>&2
 	exit 1
 fi
+
+# check docker image and pull docker image
+function GET_SPECIFIC_DOCKER_IMAGE()
+{
+	# check existed docker image for specified version
+	echo "Check Docker Image"
+	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
+	for im in ${DOCKER_IMAGES}; do
+		# check public image first
+		if [ "$im" == "$DOCKER_PUBLIC_IMAGE:$DOCKER_VERSION" ]; then
+			DOCKER_IMAGE=$DOCKER_PUBLIC_IMAGE
+			DOCKER_IMAGE_EXIST="true"
+			break
+		fi
+		# Can add other docker image
+	done
+
+	# pull the docker image with specified version
+	if [ "$DOCKER_IMAGE_EXIST" != "true" ]; then
+		# try to get public image first
+		docker pull ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}
+		if [ $? -eq 0 ]; then
+			echo "success to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
+			DOCKER_IMAGE=$DOCKER_PUBLIC_IMAGE
+			return
+		fi
+		echo "fail to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
+		# Can add other docker image
+		exit 1
+	fi
+}
+
 
 KERNEL_DBG_BIN=
 APP1_DBG_BIN=
@@ -256,7 +290,7 @@ function TOOLCHAIN()
 
 	echo "Executing: $ARGS" | tee $OUTPUTFILE
 	echo "" >> $OUTPUTFILE
-	docker run --rm -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} $ARGS | tee -a $OUTPUTFILE
+	docker run --rm -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} $ARGS | tee -a $OUTPUTFILE
 
 	echo ">> Output is stored in $OUTPUTFILE"
 }
@@ -287,7 +321,7 @@ function TRAP_RUN()
 	echo "Executing: $TRAPCMD" | tee $OUTPUTFILE
 	echo "" >> $OUTPUTFILE
 	# execute TRAP script
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:${DOCKER_VERSION} python3.7 $TRAPCMD | tee -a $OUTPUTFILE
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} python3.7 $TRAPCMD | tee -a $OUTPUTFILE
 
 	echo ">> Output is stored in $OUTPUTFILE"
 }
@@ -307,6 +341,9 @@ function HELP()
 	echo "    : dutils.sh log -t logs -b ../../os/testbin/ -c ../../os/cfile"
 	echo ""
 }
+
+GET_SPECIFIC_DOCKER_IMAGE
+echo "Docker Image Version : ${DOCKER_IMAGE}:${DOCKER_VERSION}"
 
 if [ -z "$1" ]; then
 	MENU

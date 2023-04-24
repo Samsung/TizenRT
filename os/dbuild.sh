@@ -24,6 +24,8 @@ TOPDIR="${OSDIR}/.."
 BUILDDIR="${TOPDIR}/build"
 BINDIR="${BUILDDIR}/output/bin"
 CONFIGDIR="${BUILDDIR}/configs"
+DOCKER_IMAGE=
+DOCKER_PUBLIC_IMAGE="tizenrt/tizenrt"
 DOCKER_VERSION="1.5.6"
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD_READY"
@@ -45,6 +47,38 @@ if ! which docker > /dev/null; then
 	nodocker 1>&2
 	exit 1
 fi
+
+# check docker image and pull docker image
+function GET_SPECIFIC_DOCKER_IMAGE()
+{
+	# check existed docker image for specified version
+	echo "Check Docker Image"
+	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
+	for im in ${DOCKER_IMAGES}; do
+		# check public image first
+		if [ "$im" == "$DOCKER_PUBLIC_IMAGE:$DOCKER_VERSION" ]; then
+			DOCKER_IMAGE=$DOCKER_PUBLIC_IMAGE
+			DOCKER_IMAGE_EXIST="true"
+			break
+		fi
+		# Can add other docker image
+	done
+
+	# pull the docker image with specified version
+	if [ "$DOCKER_IMAGE_EXIST" != "true" ]; then
+		# try to get public image first
+		docker pull ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}
+		if [ $? -eq 0 ]; then
+			echo "success to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
+			DOCKER_IMAGE=$DOCKER_PUBLIC_IMAGE
+			return
+		fi
+		echo "fail to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
+		# Can add other docker image
+		exit 1
+	fi
+}
+
 
 # Board Specific output files
 #
@@ -168,7 +202,7 @@ function BUILD_TEST()
 {
 	# execute a shell script for build test
 	pushd ${OSDIR} > /dev/null
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
 	popd > /dev/null
 }
 
@@ -421,7 +455,7 @@ function DOWNLOAD()
 {
 	# Currently supports ALL only, later this will have a menu
 	pushd ${OSDIR} > /dev/null
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
 	popd > /dev/null
 
 }
@@ -455,23 +489,7 @@ function BUILD()
 	HOSTNAME="-h=`git config user.name | tr -d ' '`" # set github username instead of hostname, "-h=`hostname`"
 	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
 	
-	DOCKER_IMAGES=`docker images | grep tizenrt/tizenrt | awk '{print $2}'`
-	for im in $DOCKER_IMAGES
-	do
-		if [ "$im" == "$DOCKER_VERSION" ]; then
-			DOCKER_IMAGE_EXIST="true"
-			break
-		fi
-	done
-
-	if [ "$DOCKER_IMAGE_EXIST" != "true" ]; then
-		docker pull tizenrt/tizenrt:${DOCKER_VERSION}
-		if [ ! $? -eq 0 ]; then
-			DOCKER_VERSION="latest"
-		fi
-	fi
-	echo "Docker Image Version : ${DOCKER_VERSION}"
-	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged tizenrt/tizenrt:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
 	UPDATE_STATUS
 }
 
@@ -500,6 +518,10 @@ function MENU()
 		esac
 	done
 }
+
+
+GET_SPECIFIC_DOCKER_IMAGE
+echo "Docker Image Version : ${DOCKER_IMAGE}:${DOCKER_VERSION}"
 
 UPDATE_STATUS
 if [ -z "$1" ]; then
