@@ -109,10 +109,10 @@ FAR struct tcb_s *sched_gettcb(pid_t pid)
 
 		/* Verify that the correct TCB was found. */
 
-		if (pid == g_pidhash[hash_ndx].pid) {
+		if (pid == g_pidhash[hash_ndx]->pid) {
 			/* Return the TCB associated with this pid (if any) */
 
-			ret = g_pidhash[hash_ndx].tcb;
+			ret = g_pidhash[hash_ndx]->tcb;
 		}
 	}
 

@@ -603,6 +603,11 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 
 	task_recover(tcb);
 
+	/* NOTE: signal handling needs to be done in a critical section. */
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#endif
+
 	/* Send the SIGCHILD signal to the parent task group */
 
 	task_signalparent(tcb, status);
@@ -643,6 +648,10 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	/* Deallocate anything left in the TCB's queues */
 
 	sig_cleanup(tcb);			/* Deallocate Signal lists */
+#endif
+
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
 #endif
 
 	/* This function can be re-entered in certain cases.  Set a flag

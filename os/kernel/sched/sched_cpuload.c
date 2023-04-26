@@ -192,8 +192,8 @@ void sched_clear_cpuload(pid_t pid)
 	 * defunct thread to zero.
 	 */
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
-		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx]->ticks[cpuload_idx];
+		g_pidhash[hash_ndx]->ticks[cpuload_idx] = 0;
 	}
 	irqrestore(flags);
 }
@@ -241,8 +241,11 @@ void weak_function sched_process_cpuload(void)
 	}
 	hash_index = PIDHASH(rtcb->pid);
 
+//PORTNOTE: Changes not made to this file. Nuttx loops the code below for SMP_NCPUS
+//TizenRT has already looped for SCHED_NCPULOAD
+//Not sure if this needs to be further looped inside CONFIG_SMP_NCPUS
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_pidhash[hash_index].ticks[cpuload_idx]++;
+		g_pidhash[hash_index]->ticks[cpuload_idx]++;
 
 		/* Increment tick count.  If the accumulated tick value exceed a time
 		 * constant, then shift the accumulators.
@@ -255,8 +258,8 @@ void weak_function sched_process_cpuload(void)
 			 * total.
 			 */
 			for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-				g_pidhash[i].ticks[cpuload_idx] >>= 1;
-				total += g_pidhash[i].ticks[cpuload_idx];
+				g_pidhash[i]->ticks[cpuload_idx] >>= 1;
+				total += g_pidhash[i]->ticks[cpuload_idx];
 			}
 
 			/* Save the new total. */
@@ -314,9 +317,9 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	 * do this too, but this would require a little more overhead.
 	 */
 
-	if (g_pidhash[hash_index].tcb && g_pidhash[hash_index].pid == pid) {
+	if (g_pidhash[hash_index]->tcb && g_pidhash[hash_index]->pid == pid) {
 		cpuload->total = g_cpuload_total[index];
-		cpuload->active = g_pidhash[hash_index].ticks[index];
+		cpuload->active = g_pidhash[hash_index]->ticks[index];
 		ret = OK;
 	}
 

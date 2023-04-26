@@ -127,6 +127,10 @@ int task_restart(pid_t pid)
 	FAR struct tcb_s *rtcb;
 	FAR struct task_tcb_s *tcb;
 	irqstate_t state;
+#ifdef CONFIG_SMP
+	int cpu;
+	int ret = 0;
+#endif
 
 	trace_begin(TTRACE_TAG_TASK, "task_restart");
 
@@ -134,7 +138,21 @@ int task_restart(pid_t pid)
 	 * we are futzing with its TCB
 	 */
 
+//PORTNOTE: in case of SMP, enter_critical_section is used instead of sched_lock
+//Nuttx has this locking inside group_kill_children function but TizenRT does not do this there
+#ifdef CONFIG_SMP
+	/* NOTE: sched_lock() is not enough for SMP
+	 * because tcb->group will be accessed from the child tasks
+	 */
+	irqstate_t flags = enter_critical_section();
+#else
+	/* Lock the scheduler so that there this thread will not lose priority
+	 * until all of its children are suspended.
+	 */
 	sched_lock();
+	//PORTNOTE: is it not necessary to unlock the scheduler in case of
+	//exiting suddenly due to error?
+#endif
 
 	/* Check if the task to restart is the calling task */
 
@@ -180,6 +198,15 @@ int task_restart(pid_t pid)
 		task_onexit((FAR struct tcb_s *)tcb, EXIT_SUCCESS);
 #endif
 
+#ifdef CONFIG_SMP
+		/* If the task is running on another CPU, then pause that CPU.
+		 * We can then manipulate the TCB of the restarted task and when
+		 * we resume that CPU, the restart can take effect.
+		 */
+
+		cpu = sched_pause_cpu(&tcb->cmn);
+#endif
+
 		/* Try to recover from any bad states */
 
 		task_recover((FAR struct tcb_s *)tcb);
@@ -195,7 +222,12 @@ int task_restart(pid_t pid)
 		 */
 
 		state = irqsave();
+#ifdef CONFIG_SMP
+		FAR dq_queue_t *tasklist = TLIST_HEAD(tcb->cmn.task_state, tcb->cmn.cpu);
+		dq_rem((FAR dq_entry_t *)tcb, tasklist);
+#else
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->cmn.task_state].list);
+#endif
 		tcb->cmn.task_state = TSTATE_TASK_INVALID;
 		irqrestore(state);
 
@@ -211,6 +243,12 @@ int task_restart(pid_t pid)
 		tcb->cmn.sched_priority = tcb->init_priority;
 
 		/* Reset the base task priority and the number of pending reprioritizations */
+
+#ifdef CONFIG_SMP
+//PORTNOTE: The counterpart of this line was not present in TizenRT at all
+//Has been added while porting SMP only
+		tcb->cmn.irqcount = 0;
+#endif
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 		tcb->cmn.base_priority = tcb->init_priority;
@@ -230,12 +268,28 @@ int task_restart(pid_t pid)
 		dq_addfirst((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
 		tcb->cmn.task_state = TSTATE_TASK_INACTIVE;
 
+#ifdef CONFIG_SMP
+		/* Resume the paused CPU (if any) */
+		if (cpu >= 0) {
+			ret = up_cpu_resume(cpu);
+			if (ret < 0) {
+				//PORTNOTE: not needed to unlock scheduler?
+				//In another case above it is not unlocked
+				return ret;
+			}
+		}
+#endif
+
 		/* Activate the task */
 
 		(void)task_activate((FAR struct tcb_s *)tcb);
 	}
 
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#else
 	sched_unlock();
+#endif
 	trace_end(TTRACE_TAG_TASK);
 	return OK;
 }

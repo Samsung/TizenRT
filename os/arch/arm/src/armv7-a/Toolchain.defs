@@ -107,7 +107,7 @@ ifeq ($(CONFIG_ARCH_FPU),y)
   else ifeq ($(CONFIG_ARCH_CORTEXA32),y)
     ARCHFPU = vfpv4
   else ifeq ($(CONFIG_ARCH_CORTEXA9),y)
-    ARCHFPU = vfpv3
+    ARCHFPU = fp16
   else
     ARCHFPU = vfpv4
   endif

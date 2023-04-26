@@ -293,6 +293,18 @@ typedef uint32_t clock_t;
 typedef uint32_t useconds_t;
 typedef int32_t suseconds_t;
 
+/* This is the smallest integer type that will hold a bitset of all CPUs */
+
+#if (CONFIG_SMP_NCPUS <= 8)
+typedef volatile uint8_t cpu_set_t;
+#elif (CONFIG_SMP_NCPUS <= 16)
+typedef volatile uint16_t cpu_set_t;
+#elif (CONFIG_SMP_NCPUS <= 32)
+typedef volatile uint32_t cpu_set_t;
+#else
+# error SMP: Extensions needed to support this number of CPUs
+#endif
+
 /* BSD types provided only to support porting to TinyAra. */
 
 typedef unsigned char u_char;
@@ -338,6 +350,11 @@ struct pthread_attr_s {
 	uint8_t policy;                         /* Pthread scheduler policy */
 	uint8_t inheritsched;                   /* Inherit parent prio/policy? */
 	struct pthread_region_s region[2];      /* space for user-space region if MPU supported */
+//PORTNOTE: Nuttx has this structure in include/pthread.h but in TizenRT it is here
+//Hence, added the affininty member here.
+#ifdef CONFIG_SMP
+	cpu_set_t affinity;			/* Set of permitted CPUs for the thread */
+#endif
 };
 typedef struct pthread_attr_s pthread_attr_t;
 

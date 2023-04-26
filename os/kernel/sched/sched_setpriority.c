@@ -88,6 +88,59 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: sched_nexttcb
+ *
+ * Description:
+ *   Get the next highest priority ready-to-run task.
+ *
+ * Input Parameters:
+ *   tcb - the TCB of task to reprioritize.
+ *
+ * Returned Value:
+ *   TCB of the next highest priority ready-to-run task.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+static FAR struct tcb_s *sched_nexttcb(FAR struct tcb_s *tcb)
+{
+	FAR struct tcb_s *ntcb = (FAR struct tcb_s *)tcb->flink;
+  	FAR struct tcb_s *rtrtcb;
+
+  	/* Which task should run next?  It will be either the next tcb in the
+	 * assigned task list (nxttcb) or a TCB in the g_readytorun list.  We can
+	 * only select a task from that list if the affinity mask includes the
+	 * tcb->cpu.
+	 * 
+	 * If pre-emption is locked or another CPU is in a critical section,
+	 * then use the 'nxttcb' which will probably be the IDLE thread.
+	 */
+
+	if (!sched_islocked_global() && !irq_cpu_locked(this_cpu())) {
+		/* Search for the highest priority task that can run on tcb->cpu */
+		for (rtrtcb = (FAR struct tcb_s *)g_readytorun.head; \
+				rtrtcb != NULL && !CPU_ISSET(tcb->cpu, &rtrtcb->affinity); \
+				rtrtcb = (FAR struct tcb_s *)rtrtcb->flink);
+
+		/* Return the TCN from the ready-to-run list if it is the next 
+		 * highets priority task
+		 */
+
+		if (rtrtcb != NULL && rtrtcb->sched_priority >= ntcb->sched_priority) {
+			return rtrtcb;
+		}
+	}
+
+	/* Otherwise, return the next TCB in g_assignedtasks[] list... which is
+	 * probably the TCB of the IDLE thread.
+	 * REVISIT: What if it is not the IDLE thread?
+	 */
+
+	return ntcb;
+}
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -123,6 +176,10 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 	FAR struct tcb_s *rtcb = this_task();
 	tstate_t task_state;
 	irqstate_t saved_state;
+#ifdef CONFIG_SMP
+	FAR struct tcb_s *ntcb;
+	int cpu;
+#endif
 
 	/* Verify that the requested priority is in the valid range */
 
@@ -152,7 +209,13 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 		 * ready to run task.
 		 */
 
-		if (sched_priority <= tcb->flink->sched_priority) {
+#ifdef CONFIG_SMP
+		ntcb = sched_nexttcb(tcb);
+		if (sched_priority <= ntcb->sched_priority)
+#else
+		if (sched_priority <= tcb->flink->sched_priority)
+#endif
+		{
 			/* A context switch will occur. */
 
 			up_reprioritize_rtr(tcb, (uint8_t)sched_priority);
@@ -172,6 +235,33 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 	 */
 
 	case TSTATE_TASK_READYTORUN:
+#ifdef CONFIG_SMP
+	case TSTATE_TASK_ASSIGNED:
+#endif
+
+#ifdef CONFIG_SMP
+		/* CASE 2a. The task is ready-to-run (but not running) but not
+		 * assigned to a CPU. An increase in priority could cause a context
+		 * switch. The task is not assigned to any CPU yet and mey be
+		 * scheduled to run on any CPU
+		 */
+
+		if (tcb->task_state == TSTATE_TASK_READYTORUN) {
+			cpu = sched_select_cpu(tcb->affinity);
+		} else {
+			/* CASE 2b. The task is ready to run, and assigned to a 
+			 * CPU. An increase in priority could cause this task to
+			 * beceome running but the task can only run on its assigned
+			 * CPU.
+			 */
+			cpu = tcb->cpu;
+		}
+
+		/* The running task is the task at the head of the g_Assignedtasks[]
+		 * list associated with the selected CPU.
+		 */
+		rtcb = current_task(cpu);
+#endif /* CONFIG_SMP */
 
 		/* A context switch will occur if the new priority of the ready-to
 		 * run task is (strictly) greater than the current running task
@@ -209,7 +299,9 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 	default:
 
 		/* CASE 3a. The task resides in a prioritized list. */
-
+//PORTNOTE: For checking the below if condition, Nuttx uses a macro expansion (TLIST_
+//BLOCKED) But the macro expansion is the same for SMP and non SMP cases, and consistent
+//with what has been used here below. Hence, I am not including new code
 		if (g_tasklisttable[task_state].prioritized) {
 			/* Remove the TCB from the prioritized task list */
 

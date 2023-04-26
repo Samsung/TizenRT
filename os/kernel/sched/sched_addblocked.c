@@ -116,6 +116,10 @@ void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state)
 	 * list
 	 */
 
+//PORTNOTE: In the if-else conditional below, TizenRT does not use TLIST_BLOCKED
+//macro expansion but rather uses the expanded form directly.
+//Also, the macro expansion is the same in this case with and without SMP
+//Hence, we do not need to add any code here
 	if (g_tasklisttable[task_state].prioritized) {
 		/* Add the task to a prioritized list */
 

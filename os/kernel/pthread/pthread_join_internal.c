@@ -181,6 +181,14 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 
 		(void)pthread_sem_give(&group->tg_joinsem);
 	} else {
+		/* NOTE: sched_lock() is not enough for SMP because
+		 * another CPU would continue the pthread and exit
+		 * sequences so need to protect it with a critical section
+		 */
+
+#ifdef CONFIG_SMP
+		irqstate_t flags = enter_critical_section();
+#endif
 		/* We found the join info structure.  Increment for the reference
 		 * to the join structure that we have.  This will keep things
 		 * stable for we have to do
@@ -258,6 +266,10 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 		 */
 
 		sched_unlock();
+
+#ifdef CONFIG_SMP
+		leave_critical_section(flags);
+#endif
 
 		/* Release our reference to the join structure and, if the reference
 		 * count decrements to zero, deallocate the join structure.

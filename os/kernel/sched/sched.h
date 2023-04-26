@@ -67,6 +67,7 @@
 #include <tinyara/clock.h>
 #endif
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -86,11 +87,36 @@
 
 /* These are macros to access the current CPU and the current task on a CPU.
  * These macros are intended to support a future SMP implementation.
+ * PORTNOTE: NOTE: this_task() for SMP is implemened elsewhere
  */
-#define current_task(cpu)      ((FAR struct tcb_s *)g_readytorun.head)
-#define this_cpu()             (0)
-#define this_task()            (current_task(this_cpu()))
+#ifdef CONFIG_SMP
+#define current_task(cpu)	((FAR struct tcb_s *)g_assignedtasks[cpu].head)
+#define this_cpu()		up_cpu_index()
+#else
+#define current_task(cpu)	((FAR struct tcb_s *)g_readytorun.head)
+#define this_cpu()		(0)
+#define this_task()		(current_task(this_cpu()))
+#endif
 
+//PORTNOTE: Only brought in the required macros on which SMP macros are dependant
+#define TLIST_ATTR_PRIORITIZED   (1 << 0) /* Bit 0: List is prioritized */
+#define TLIST_ATTR_INDEXED       (1 << 1) /* Bit 1: List is indexed by CPU */
+#define TLIST_ATTR_RUNNABLE      (1 << 2) /* Bit 2: List includes running task */
+
+//#define __TLIST_ATTR(s)			g_tasklisttable[s].attr
+//#define TLIST_ISPRIORITIZED(s)		((__TLIST_ATTR(s) & TLIST_ATTR_PRIORITIZED) != 0)
+//#define TLIST_ISINDEXED(s)		((__TLIST_ATTR(s) & TLIST_ATTR_INDEXED) != 0)
+//#define TLIST_ISRUNNABLE(s)		((__TLIST_ATTR(s) & TLIST_ATTR_RUNNABLE) != 0)
+
+#define __TLIST_HEAD(s)			(FAR dq_queue_t *)g_tasklisttable[s].list
+#define __TLIST_HEADINDEXED(s,c)	(&(__TLIST_HEAD(s))[c])
+
+#ifdef CONFIG_SMP
+#define TLIST_HEAD(s,c) 	__TLIST_HEAD(s)
+//#define TLIST_HEAD(s,c) 
+//	((TLIST_ISINDEXED(s)) ? __TLIST_HEADINDEXED(s, c) : __TLIST_HEAD(s))
+#define TLIST_BLOCKED(s)	__TLIST_HEAD(s)
+#endif
 
 /****************************************************************************
  * Public Type Definitions
@@ -151,6 +177,50 @@ extern volatile dq_queue_t g_readytorun;
  * currently active task at the head of the g_readytorun list, and (2) the
  * currently active task has disabled pre-emption.
  */
+
+#ifdef CONFIG_SMP
+/* In order to support SMP, the function of the g_readytorun list changes,
+ * The g_readytorun is still used but in the SMP case it will contain only:
+ *
+ *  - Only tasks/threads that are eligible to run, but not currently running,
+ *    and
+ *  - Tasks/threads that have not been assigned to a CPU.
+ *
+ * Otherwise, the TCB will be retained in an assigned task list,
+ * g_assignedtasks.  As its name suggests, on 'g_assignedtasks queue for CPU
+ * 'n' would contain only tasks/threads that are assigned to CPU 'n'.  Tasks/
+ * threads would be assigned a particular CPU by one of two mechanisms:
+ *
+ *  - (Semi-)permanently through an RTOS interfaces such as
+ *    pthread_attr_setaffinity(), or
+ *  - Temporarily through scheduling logic when a previously unassigned task
+ *    is made to run.
+ *
+ * Tasks/threads that are assigned to a CPU via an interface like
+ * pthread_attr_setaffinity() would never go into the g_readytorun list, but
+ * would only go into the g_assignedtasks[n] list for the CPU 'n' to which
+ * the thread has been assigned.  Hence, the g_readytorun list would hold
+ * only unassigned tasks/threads.
+ *
+ * Like the g_readytorun list in in non-SMP case, each g_assignedtask[] list
+ * is prioritized:  The head of the list is the currently active task on this
+ * CPU.  Tasks after the active task are ready-to-run and assigned to this
+ * CPU. The tail of this assigned task list, the lowest priority task, is
+ * always the CPU's IDLE task.
+ */
+
+extern volatile dq_queue_t g_assignedtasks[CONFIG_SMP_NCPUS];
+
+/* g_running_tasks[] holds a references to the running task for each cpu.
+ * It is valid only when up_interrupt_context() returns true.
+ */
+
+extern FAR struct tcb_s *g_running_tasks[CONFIG_SMP_NCPUS];
+#else
+//PORTNOTE: CONFIG_SMP_NCPUS should be dependant on SMP, but Nuttx uses this
+//without SMP, So I define a single list pointer separately without SMP
+extern FAR struct tcb_s *g_running_tasks;
+#endif
 
 extern volatile dq_queue_t g_pendingtasks;
 
@@ -222,7 +292,11 @@ extern volatile pid_t g_lastpid;
  * of tasks to CONFIG_MAX_TASKS.
  */
 
-extern struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
+//PORTNOTE: We are retaining the TizenRT structure for pidhash
+//All references will be needed to be handled accordingly
+
+extern struct pidhash_s **g_pidhash;
+extern volatile int g_npidhash;
 
 /* This is a table of task lists.  This table is indexed by the task state
  * enumeration type (tstate_t) and provides a pointer to the associated
@@ -231,6 +305,63 @@ extern struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
  */
 
 extern const struct tasklist_s g_tasklisttable[NUM_TASK_STATES];
+
+#ifdef CONFIG_SMP
+/* In the multiple CPU, SMP case, disabling context switches will not give a
+ * task exclusive access to the (multiple) CPU resources (at least without
+ * stopping the other CPUs): Even though pre-emption is disabled, other
+ * threads will still be executing on the other CPUS.
+ *
+ * There are additional rules for this multi-CPU case:
+ *
+ * 1. There is a global lock count 'g_cpu_lockset' that includes a bit for
+ *    each CPU: If the bit is '1', then the corresponding CPU has the
+ *    scheduler locked; if '0', then the CPU does not have the scheduler
+ *    locked.
+ * 2. Scheduling logic would set the bit associated with the cpu in
+ *    'g_cpu_lockset' when the TCB at the head of the g_assignedtasks[cpu]
+ *    list transitions has 'lockcount' > 0. This might happen when
+ *    sched_lock() is called, or after a context switch that changes the
+ *    TCB at the head of the g_assignedtasks[cpu] list.
+ * 3. Similarly, the cpu bit in the global 'g_cpu_lockset' would be cleared
+ *    when the TCB at the head of the g_assignedtasks[cpu] list has
+ *    'lockcount' == 0. This might happen when sched_unlock() is called, or
+ *    after a context switch that changes the TCB at the head of the
+ *    g_assignedtasks[cpu] list.
+ * 4. Modification of the global 'g_cpu_lockset' must be protected by a
+ *    spinlock, 'g_cpu_schedlock'. That spinlock would be taken when
+ *    sched_lock() is called, and released when sched_unlock() is called.
+ *    This assures that the scheduler does enforce the critical section.
+ *    NOTE: Because of this spinlock, there should never be more than one
+ *    bit set in 'g_cpu_lockset'; attempts to set additional bits should
+ *    be cause the CPU to block on the spinlock.  However, additional bits
+ *    could get set in 'g_cpu_lockset' due to the context switches on the
+ *    various CPUs.
+ * 5. Each the time the head of a g_assignedtasks[] list changes and the
+ *    scheduler modifies 'g_cpu_lockset', it must also set 'g_cpu_schedlock'
+ *    depending on the new state of 'g_cpu_lockset'.
+ * 6. Logic that currently uses the currently running tasks lockcount
+ *    instead uses the global 'g_cpu_schedlock'. A value of SP_UNLOCKED
+ *    means that no CPU has pre-emption disabled; SP_LOCKED means that at
+ *    least one CPU has pre-emption disabled.
+ */
+
+//PORTNOTE: The definition of spinlock_t has been imported by bringing in new files
+//os/include/tinyara/spinlock.h and os/arch/arm/include/spinlock.h
+//Definition of cpu_select_t is brought into include/sys/types.h
+
+extern volatile spinlock_t g_cpu_schedlock;
+
+/* Used to keep track of which CPU(s) hold the IRQ lock. */
+
+extern volatile spinlock_t g_cpu_locksetlock;
+extern volatile cpu_set_t g_cpu_lockset;
+
+/* Used to lock tasklist to prevent from concurrent access */
+
+extern volatile spinlock_t g_cpu_tasklistlock;
+
+#endif /* CONFIG_SMP */
 
 /****************************************************************************
  * Public Function Prototypes
@@ -266,6 +397,21 @@ void sched_timer_reassess(void);
 void weak_function sched_process_cpuload(void);
 #endif
 void sched_clear_cpuload(pid_t pid);
+#endif
+
+#ifdef CONFIG_SMP
+FAR struct tcb_s *this_task(void);
+
+int  sched_select_cpu(cpu_set_t affinity);
+int  sched_pause_cpu(FAR struct tcb_s *tcb);
+
+#  define sched_islocked_global() spin_islocked(&g_cpu_schedlock)
+#  define sched_islocked_tcb(tcb) sched_islocked_global()
+
+#else
+#  define sched_select_cpu(a)     (0)
+#  define sched_pause_cpu(t)      (-38)  /* -ENOSYS */
+#  define sched_islocked_tcb(tcb) ((tcb)->lockcount > 0)
 #endif
 
 bool sched_verifytcb(FAR struct tcb_s *tcb);

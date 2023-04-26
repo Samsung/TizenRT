@@ -52,7 +52,6 @@
 #ifndef __ASSEMBLY__
 #  include <stdint.h>
 #endif
-#define up_cpu_index() (0)
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
@@ -343,7 +342,7 @@ void restore_critical_section(void);
 #else
 #  define restore_critical_section()
 #endif
-/* Name: up_irq_save, up_irq_restore, and friends.
+/* Name: irqsave, irqrestore, and friends.
  *
  * NOTE: This function should never be called from application code and,
  * as a general rule unless you really know what you are doing, this

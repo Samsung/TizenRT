@@ -63,6 +63,10 @@ endif
 else ifeq ($(CONFIG_BINARY_MANAGER),y)
 CSRCS += sem_holder.c sem_list.c
 endif
+ifeq ($(CONFIG_SPINLOCK),y)
+CSRCS += spinlock.c
+endif
+
 # Include semaphore build support
 
 DEPPATH += --dep-path semaphore

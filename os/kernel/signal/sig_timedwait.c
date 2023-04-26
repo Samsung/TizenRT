@@ -124,6 +124,21 @@ static void sig_timeout(int argc, uint32_t itcb)
 	u.itcb = itcb;
 	ASSERT(u.wtcb);
 
+#ifdef CONFIG_SMP
+	irqstate_t flags;
+
+	/* We must be in a critical section in order to call up_unblock_task()
+	 * below.  If we are running on a single CPU architecture, then we know
+	 * interrupts a disabled an there is no need to explicitly call
+	 * enter_critical_section().  However, in the SMP case,
+	 * enter_critical_section() does much more than just disable interrupts on
+	 * the local CPU; it also manages spinlocks to assure the stability of the
+	 * TCB that we are manipulating.
+	 */
+
+	flags = enter_critical_section();
+#endif
+
 	/* There may be a race condition -- make sure the task is
 	 * still waiting for a signal
 	 */
@@ -138,8 +153,14 @@ static void sig_timeout(int argc, uint32_t itcb)
 #endif
 		up_unblock_task(u.wtcb);
 	}
+
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#endif
 }
 
+//PORTNOTE: There is another function sig_wait_irq() which has some SMP dependencies
+//and depends on CONFIG_CANCELLATION_POINTS, this config and function is not there in TizenRT
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

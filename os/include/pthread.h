@@ -136,6 +136,11 @@
 #define PTHREAD_INHERIT_SCHED         0
 #define PTHREAD_EXPLICIT_SCHED        1
 
+/* Detach state  */
+
+#define PTHREAD_CREATE_JOINABLE       0
+#define PTHREAD_CREATE_DETACHED       1
+
 /* Default priority */
 
 #define PTHREAD_DEFAULT_PRIORITY      100
@@ -476,6 +481,15 @@ int pthread_setschedparam(pthread_t thread, int policy, FAR const struct sched_p
  */
 int pthread_setschedprio(pthread_t thread, int prio);
 
+#ifdef CONFIG_SMP
+/* Thread affinity */
+
+int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
+                           FAR const cpu_set_t *cpuset);
+int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize,
+                           FAR cpu_set_t *cpuset);
+#endif
+
 /* Thread-specific Data Interfaces */
 /**
  * @ingroup PTHREAD_KERNEL
@@ -766,6 +780,15 @@ int pthread_attr_setstacksize(FAR pthread_attr_t *attr, long stacksize);
  * @since TizenRT v1.0
  */
 int pthread_attr_getstacksize(FAR const pthread_attr_t *attr, long *stackaddr);
+
+#ifdef CONFIG_SMP
+/* Set or obtain thread affinity attributes */
+
+int pthread_attr_setaffinity_np(FAR pthread_attr_t *attr, \
+                size_t cpusetsize, FAR const cpu_set_t *cpuset);
+int pthread_attr_getaffinity_np(FAR const pthread_attr_t *attr, \
+                size_t cpusetsize, cpu_set_t *cpuset);
+#endif
 
 /* Create, operate on, and destroy mutex attributes. */
 /**

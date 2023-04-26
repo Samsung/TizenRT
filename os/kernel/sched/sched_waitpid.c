@@ -220,8 +220,11 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	(void)enter_cancellation_point();
 
 	/* Disable pre-emption so that nothing changes in the following tests */
-
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#else
 	sched_lock();
+#endif
 
 	/* Get the TCB corresponding to this PID */
 
@@ -273,7 +276,11 @@ errout_with_errno:
 	set_errno(err);
 errout:
 	leave_cancellation_point();
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#else
 	sched_unlock();
+#endif
 	return ERROR;
 }
 
@@ -322,8 +329,11 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	(void)sigaddset(&sigset, SIGCHLD);
 
 	/* Disable pre-emption so that nothing changes while the loop executes */
-
+#ifdef CONFIG_SMP
+	irqstate_t flags =- enter_critial_section();
+#else
 	sched_lock();
+#endif
 
 	/* Verify that this task actually has children and that the requested PID
 	 * is actually a child of this task.
@@ -508,7 +518,11 @@ errout_with_errno:
 
 errout_with_lock:
 	leave_cancellation_point();
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#else
 	sched_unlock();
+#endif
 	return ERROR;
 }
 #endif							/* CONFIG_SCHED_HAVE_PARENT */

@@ -410,6 +410,16 @@ struct mm_heap_s {
 	 */
 
 	struct mm_freenode_s mm_nodelist[MM_NNODES + 1];
+
+	/* Free delay list, for some situations where we can't do free
+	 * immdiately.
+	 */
+#ifdef CONFIG_SMP
+	//PORTNOTE: - Added because it is related to SMP_NCPUS but is it required with v7-a or A32?
+	FAR struct mm_delaynode_s *mm_delaylist[CONFIG_SMP_NCPUS];
+#else
+	FAR struct mm_delaynode_s *mm_delaylist[1];
+#endif
 };
 
 /****************************************************************************
