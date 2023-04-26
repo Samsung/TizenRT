@@ -23,7 +23,7 @@ CONFIGFILE="${OSDIR}/.config"
 TOPDIR="${OSDIR}/.."
 BINDIR="${TOPDIR}/build/output/bin"
 TRAPDIR="${TOPDIR}/tools/trap"
-DOCKER_VERSION="1.5.5"
+DOCKER_VERSION="1.5.6"
 OUTPUTFILE="dutils_output_"
 
 # Checking docker is installed
@@ -287,7 +287,7 @@ function TRAP_RUN()
 	echo "Executing: $TRAPCMD" | tee $OUTPUTFILE
 	echo "" >> $OUTPUTFILE
 	# execute TRAP script
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:1.5.6 python3.7 $TRAPCMD | tee -a $OUTPUTFILE
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged tizenrt/tizenrt:${DOCKER_VERSION} python3.7 $TRAPCMD | tee -a $OUTPUTFILE
 
 	echo ">> Output is stored in $OUTPUTFILE"
 }
