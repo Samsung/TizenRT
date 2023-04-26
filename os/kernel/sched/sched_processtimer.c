@@ -109,53 +109,67 @@
 #if CONFIG_RR_INTERVAL > 0
 static inline void sched_process_timeslice(void)
 {
-	FAR struct tcb_s *rtcb = this_task();
+//PORTNOTE: In the counterpart for this function in Nuttx -> nxsched_process_scheduler
+//if SMP is enabled then the below work is done for all the CPUs instead of just one.
 
-	/* Check if the currently executing task uses round robin
-	 * scheduling.
-	 */
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
 
-	if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0) {
-		/* Yes, check if decrementing the timeslice counter
-		 * would cause the timeslice to expire
+	for (int i = 0; i < CONFIG_SMP_NCPUS; i++) {
+#endif
+
+		FAR struct tcb_s *rtcb = this_task();
+
+		/* Check if the currently executing task uses round robin
+		 * scheduling.
 		 */
 
-		if (rtcb->timeslice <= 1) {
-			/* Yes, Now check if the task has pre-emption disabled.
-			 * If so, then we will freeze the timeslice count at
-			 * the value until the next tick after pre-emption
-			 * has been enabled.
+		if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0) {
+			/* Yes, check if decrementing the timeslice counter
+			 * would cause the timeslice to expire
 			 */
 
-			if (!rtcb->lockcount) {
-				/* Reset the timeslice in any case. */
-
-				rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
-
-				/* We know we are at the head of the ready to run
-				 * prioritized list.  We must be the highest priority
-				 * task eligible for execution.  Check the next task
-				 * in the ready to run list.  If it is the same
-				 * priority, then we need to relinquish the CPU and
-				 * give that task a shot.
+			if (rtcb->timeslice <= 1) {
+				/* Yes, Now check if the task has pre-emption disabled.
+				 * If so, then we will freeze the timeslice count at
+				 * the value until the next tick after pre-emption
+				 * has been enabled.
 				 */
 
-				if (rtcb->flink && rtcb->flink->sched_priority >= rtcb->sched_priority) {
-					/* Just resetting the task priority to its current
-					 * value.  This this will cause the task to be
-					 * rescheduled behind any other tasks at the same
-					 * priority.
+				if (!rtcb->lockcount) {
+					/* Reset the timeslice in any case. */
+
+					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+
+					/* We know we are at the head of the ready to run
+					 * prioritized list.  We must be the highest priority
+					 * task eligible for execution.  Check the next task
+					 * in the ready to run list.  If it is the same
+					 * priority, then we need to relinquish the CPU and
+					 * give that task a shot.
 					 */
 
-					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
-				}
-			}
-		} else {
-			/* Decrement the timeslice counter */
+					if (rtcb->flink && rtcb->flink->sched_priority >= rtcb->sched_priority) {
+						/* Just resetting the task priority to its current
+						 * value.  This this will cause the task to be
+						 * rescheduled behind any other tasks at the same
+						 * priority.
+						 */
 
-			rtcb->timeslice--;
+						up_reprioritize_rtr(rtcb, rtcb->sched_priority);
+					}
+				}
+			} else {
+				/* Decrement the timeslice counter */
+
+				rtcb->timeslice--;
+			}
 		}
+#ifdef CONFIG_SMP
 	}
+
+	leave_critical_section(flags);
+#endif
 }
 #else
 #define sched_process_timeslice()
@@ -225,5 +239,16 @@ void sched_process_timer(void)
 
 	/* Process watchdogs */
 
+//PORTNOTE: In the function nxsched_process_wdtimer in Nuttx, the call is directly
+//transferred to wd_timer() if SMP is disabled and it is transferred after enter
+//_critical_section if SMP is enabled. Here we have a few more lines of code so
+//we need to see if only wd_timer() should be wrapped between enter and leave critical
+//section or all the LOC should be wrapped.
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#endif
 	wd_timer();
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#endif
 }

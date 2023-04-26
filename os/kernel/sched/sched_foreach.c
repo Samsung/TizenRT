@@ -88,8 +88,8 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg)
 	/* Vist each active task */
 
 	for (ndx = 0; ndx < CONFIG_MAX_TASKS; ndx++) {
-		if (g_pidhash[ndx].tcb) {
-			handler(g_pidhash[ndx].tcb, arg);
+		if (g_pidhash[ndx]->tcb) {
+			handler(g_pidhash[ndx]->tcb, arg);
 		}
 	}
 

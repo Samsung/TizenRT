@@ -258,6 +258,17 @@ endmenu # Clocks and Timers
 
 menu "Tasks and Scheduling"
 
+config SPINLOCK
+	bool "Support Spinlocks"
+	default n
+	---help---
+		Enables support for spinlocks.  Spinlocks are used primarily for
+		synchronization in SMP configurations but are available for general
+		synchronization between CPUs.  Use in a single CPU configuration would
+		most likely be fatal.  Note, however, that this does not depend on
+		CONFIG_ARCH_HAVE_MULTICPU.  This permits the use of spinlocks in
+		other novel architectures.
+
 choice
 	prompt "Initialization Task"
 	default INIT_ENTRYPOINT if !BUILD_KERNEL
@@ -267,6 +278,51 @@ config INIT_ENTRYPOINT
 	depends on !BUILD_KERNEL
 
 endchoice # Initialization task
+
+config IRQCOUNT
+	bool
+	default n
+
+config SCHED_RESUMESCHEDULER
+	bool
+	default n
+
+config SMP
+	bool "Symmetric Multi-Processing (SMP)"
+	default n
+	depends on ARCH_HAVE_MULTICPU
+	depends on ARCH_HAVE_TESTSET
+	depends on ARCH_INTERRUPTSTACK != 0
+	select SPINLOCK
+	select SCHED_RESUMESCHEDULER
+	select IRQCOUNT
+	---help---
+		Enables support for Symmetric Multi-Processing (SMP) on a multi-CPU platform.
+		N.B. SMP mode requires the use of ARCH_INTERRUPTSTACK:
+		CPU0 thread0  ->  IRQ enter -> add thread0 to block_list -> IRQ leave(crash)
+                                                                        ||
+                                                                        /\
+                                                                       /  \
+		CPU1 thread1  ->  block_task -> take thread0 from block_list -> run thread0
+		CPU0 IRQ handler use the stack of thread0, but thread0 may switch to CPU1, that
+                will caused IRQ handler stack corruption.
+
+if SMP
+
+config SMP_NCPUS
+	int "Number of CPUs"
+	default 4
+	range 1 32
+	---help---
+		This value identifies the number of CPUs supported by the processor
+		that will be used for SMP.
+
+		If CONFIG_DEBUG_FEATURES is enabled, then the value one is permitted
+		for CONFIG_SMP_NCPUS.  This is not normally a valid setting for an
+		SMP configuration.  However, running the SMP logic in a single CPU
+		configuration is useful during certain testing.
+
+endif # SMP
 
 config RR_INTERVAL
 	int "Round robin timeslice (MSEC)"

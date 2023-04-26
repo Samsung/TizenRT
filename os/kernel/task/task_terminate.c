@@ -160,11 +160,14 @@ int task_terminate(pid_t pid, bool nonblocking)
 	FAR struct tcb_s *dtcb;
 	irqstate_t saved_state;
 	trace_begin(TTRACE_TAG_TASK, "task_terminate");
+#ifdef CONFIG_SMP
+	int cpu;
+#endif
 
 	/* Make sure the task does not become ready-to-run while we are futzing with
 	 * its TCB by locking ourselves as the executing task.
 	 */
-
+//PORTNOTE: Nutx uses flags = enter_critical_section() instaed of sched_lock()
 	sched_lock();
 
 	/* Find for the TCB associated with matching PID */
@@ -180,7 +183,12 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	/* Verify our internal sanity */
 
-	if (dtcb->task_state == TSTATE_TASK_RUNNING || dtcb->task_state >= NUM_TASK_STATES) {
+#ifdef CONFIG_SMP
+	if (dtcb->task_state >= NUM_TASK_STATES)
+#else
+	if (dtcb->task_state == TSTATE_TASK_RUNNING || dtcb->task_state >= NUM_TASK_STATES)
+#endif
+       	{
 		sched_unlock();
 		PANIC();
 	}
@@ -217,10 +225,27 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	task_exithook(dtcb, EXIT_SUCCESS, nonblocking);
 
+#ifdef CONFIG_SMP
+	/* In the SMP case, the thread may be running on another CPU.  If that is
+	 * the case, then we will pause the CPU that the thread is running on.
+	 */
+
+	cpu = sched_pause_cpu(dtcb);
+
+	/* Get the task list associated with the thread's state and CPU */
+//PORTNOTE: This is an instance where a macro is added for use in the SMP case
+//and invoked when SMP is enabled, otherwise, TizenRT continues as it was
+	FAR dq_queue_t *tasklist = TLIST_HEAD(dtcb->task_state, cpu);
+#endif
+
 	/* Remove the task from the OS's tasks lists. */
 
 	saved_state = irqsave();
+#ifdef CONFIG_SMP
+	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
+#else
 	dq_rem((FAR dq_entry_t *)dtcb, (dq_queue_t *)g_tasklisttable[dtcb->task_state].list);
+#endif
 	dtcb->task_state = TSTATE_TASK_INVALID;
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */
@@ -232,6 +257,15 @@ int task_terminate(pid_t pid, bool nonblocking)
 	irqrestore(saved_state);
 
 	/* At this point, the TCB should no longer be accessible to the system */
+
+#ifdef CONFIG_SMP
+	/* Resume the paused CPU (if any) */
+
+	if (cpu >= 0) {
+		//TODO: We are not yet sure about how to handle a failure here
+		DEBUGVERIFY(up_cpu_resume(cpu));
+	}
+#endif
 
 	sched_unlock();
 

@@ -116,6 +116,9 @@ void sched_removeblocked(FAR struct tcb_s *btcb)
 	 * with this state
 	 */
 
+//PORTNOTE: HEre TizenRT is using the macro expansion of TLIST_BLOCKED directly
+//and the expansion is the same in case of SMP or otherwise. Hence, no need to
+//make any changes here
 	dq_rem((FAR dq_entry_t *)btcb, (dq_queue_t *)g_tasklisttable[task_state].list);
 
 	/* Make sure the TCB's state corresponds to not being in

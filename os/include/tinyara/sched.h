@@ -219,6 +219,9 @@ enum tstate_e {
 	TSTATE_TASK_INVALID = 0,	/* INVALID      - The TCB is uninitialized */
 	TSTATE_TASK_PENDING,		/* READY_TO_RUN - Pending preemption unlock */
 	TSTATE_TASK_READYTORUN,		/* READY-TO-RUN - But not running */
+#ifdef CONFIG_SMP
+	TSTATE_TASK_ASSIGNED,		/* READY-TO-RUN - Not running, but assigned to a CPU */
+#endif
 	TSTATE_TASK_RUNNING,		/* READY_TO_RUN - And running */
 
 	TSTATE_TASK_INACTIVE,		/* BLOCKED      - Initialized but not yet activated */
@@ -448,6 +451,10 @@ struct task_group_s {
 #endif
 #endif
 
+	/* Thread local storage ***************************************************/
+
+	FAR struct task_info_s *tg_info;
+
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* POSIX Signal Control Fields *********************************************** */
 
@@ -574,6 +581,14 @@ struct tcb_s {
 	uint8_t task_state;			/* Current state of the thread         */
 	uint16_t flags;				/* Misc. general status flags          */
 	int16_t lockcount;			/* 0=preemptable (not-locked)          */
+#ifdef CONFIG_SMP
+	uint8_t  cpu;				/* CPU index if running/assigned       */
+	cpu_set_t affinity;			/* Bit set of permitted CPUs           */
+#endif
+#ifdef CONFIG_IRQCOUNT
+	int16_t irqcount;			/* 0=NOT in critical section           */
+#endif
+
 #ifdef CONFIG_CANCELLATION_POINTS
 	int16_t cpcount;			/* Nested cancellation point count     */
 #endif
@@ -951,6 +966,52 @@ pid_t task_vforkstart(FAR struct task_tcb_s *child);
  * @internal
  */
 void task_vforkabort(FAR struct task_tcb_s *child, int errcode);
+
+/****************************************************************************
+ * Name: sched_resume_scheduler
+ *
+ * Description:
+ *   Called by architecture specific implementations that block task
+ *   execution.
+ *   This function prepares the scheduler for the thread that is about to be
+ *   restarted.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread to be restarted.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_RESUMESCHEDULER)
+void sched_resume_scheduler(FAR struct tcb_s *tcb);
+#else
+#  define sched_resume_scheduler(tcb)
+#endif
+
+/****************************************************************************
+ * Name: sched_suspend_scheduler
+ *
+ * Description:
+ *   Called by architecture specific implementations to resume task
+ *   execution.
+ *   This function performs scheduler operations for the thread that is about
+ *   to be suspended.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread to be restarted.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_SUSPENDSCHEDULER
+void sched_suspend_scheduler(FAR struct tcb_s *tcb);
+#else
+#  define sched_suspend_scheduler(tcb)
+#endif
 
 /**
  * @endcond

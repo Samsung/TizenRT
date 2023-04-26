@@ -1871,6 +1871,134 @@ void weak_function sched_process_cpuload(void);
 
 void irq_dispatch(int irq, FAR void *context);
 
+#ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: up_cpu_start
+ *
+ * Description:
+ *   In an SMP configuration, only one CPU is initially active (CPU 0).
+ *   System initialization occurs on that single thread. At the completion of
+ *   the initialization of the OS, just before beginning normal multitasking,
+ *   the additional CPUs would be started by calling this function.
+ *
+ *   Each CPU is provided the entry point to its IDLE task when started.  A
+ *   TCB for each CPU's IDLE task has been initialized and placed in the
+ *   CPU's g_assignedtasks[cpu] list.  No stack has been allocated or
+ *   initialized.
+ *
+ *   The OS initialization logic calls this function repeatedly until each
+ *   CPU has been started, 1 through (CONFIG_SMP_NCPUS-1).
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being started.  This will be a numeric
+ *         value in the range of one to (CONFIG_SMP_NCPUS-1).
+ *         (CPU 0 is already active)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int up_cpu_start(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_pause
+ *
+ * Description:
+ *   Save the state of the current task at the head of the
+ *   g_assignedtasks[cpu] task list and then pause task execution on the
+ *   CPU.
+ *
+ *   This function is called by the OS when the logic executing on one CPU
+ *   needs to modify the state of the g_assignedtasks[cpu] list for another
+ *   CPU.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be paused.
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_resume() must be called
+ *   later while still within the same critical section.
+ *
+ ****************************************************************************/
+
+int up_cpu_pause(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_pausereq
+ *
+ * Description:
+ *   Return true if a pause request is pending for this CPU.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be queried
+ *
+ * Returned Value:
+ *   true   = a pause request is pending.
+ *   false = no pasue request is pending.
+ *
+ ****************************************************************************/
+
+bool up_cpu_pausereq(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_paused
+ *
+ * Description:
+ *   Handle a pause request from another CPU.  Normally, this logic is
+ *   executed from interrupt handling logic within the architecture-specific
+ *   However, it is sometimes necessary to perform the pending pause
+ *   operation in other contexts where the interrupt cannot be taken
+ *   in order to avoid deadlocks.
+ *
+ *   This function performs the following operations:
+ *
+ *   1. It saves the current task state at the head of the current assigned
+ *      task list.
+ *   2. It waits on a spinlock, then
+ *   3. Returns from interrupt, restoring the state of the new task at the
+ *      head of the ready to run list.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be paused
+ *
+ * Returned Value:
+ *   On success, OK is returned.  Otherwise, a negated errno value indicating
+ *   the nature of the failure is returned.
+ *
+ ****************************************************************************/
+
+int up_cpu_paused(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_resume
+ *
+ * Description:
+ *   Restart the cpu after it was paused via up_cpu_pause(), restoring the
+ *   state of the task at the head of the g_assignedtasks[cpu] list, and
+ *   resume normal tasking.
+ *
+ *   This function is called after up_cpu_pause in order ot resume operation
+ *   of the CPU after modifying its g_assignedtasks[cpu] list.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being resumed.
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_pause() must have
+ *   previously been called within the same critical section.
+ *
+ ****************************************************************************/
+
+int up_cpu_resume(int cpu);
+#endif /* CONFIG_SMP */
+
 /****************************************************************************
  * Name: up_check_stack and friends
  *

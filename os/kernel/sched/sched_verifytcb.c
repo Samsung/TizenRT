@@ -99,5 +99,5 @@ bool sched_verifytcb(FAR struct tcb_s *tcb)
 {
 	/* Return true if the PID hashes to this TCB. */
 
-	return tcb == g_pidhash[PIDHASH(tcb->pid)].tcb;
+	return tcb == g_pidhash[PIDHASH(tcb->pid)]->tcb;
 }

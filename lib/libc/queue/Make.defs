@@ -58,6 +58,8 @@ CSRCS += sq_addlast.c sq_addfirst.c sq_addafter.c \
 CSRCS += dq_addlast.c dq_addfirst.c dq_addafter.c dq_addbefore.c \
 		  dq_rem.c dq_remlast.c dq_remfirst.c
 
+CSRCS += sq_cat.c dq_cat.c
+
 # Add the queue directory to the build
 
 DEPPATH += --dep-path queue

@@ -90,6 +90,15 @@ uintptr_t STUB_sched_rr_get_interval(int nbr, uintptr_t parm1,
 uintptr_t STUB_sched_setparam(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_sched_setscheduler(int nbr, uintptr_t parm1, uintptr_t parm2,
 								  uintptr_t parm3);
+
+//PORTNOTE: STUBS yet to be added proprerly
+//Does syscall.csv take care of this automatically?
+#ifdef CONFIG_SMP
+uintptr_t STUB_sched_getaffinity();
+uintptr_t STUB_sched_getcpu();
+uintptr_t STUB_sched_setaffinity();
+#endif
+
 uintptr_t STUB_sched_unlock(int nbr);
 uintptr_t STUB_sched_yield(int nbr);
 
@@ -291,6 +300,13 @@ uintptr_t STUB_pthread_setschedprio(int nbr, uintptr_t parm1,
 									uintptr_t parm2);
 uintptr_t STUB_pthread_setspecific(int nbr, uintptr_t parm1,
 								   uintptr_t parm2);
+
+//PORTNOTE: STUBS yet to be added properly
+//Does syscall.csv take care of this automatically?
+#ifdef CONFIG_SMP
+uintptr_t STUB_pthread_setaffinity_np();
+uintptr_t STUB_pthread_getaffinity_np();
+#endif
 
 uintptr_t STUB_pthread_cond_timedwait(int nbr, uintptr_t parm1,
 									  uintptr_t parm2, uintptr_t parm3);

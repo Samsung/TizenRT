@@ -59,6 +59,10 @@
 
 #include  "sched/sched.h"
 
+#ifdef CONFIG_SMP
+#include "irq/irq.h"
+#endif
+
 #ifndef CONFIG_DISABLE_SIGNALS
 #include "signal/signal.h"
 #endif
@@ -139,9 +143,25 @@ static void prepare_exit(struct tcb_s *tcb)
 
 int task_exit(void)
 {
-	FAR struct tcb_s *dtcb = this_task();
+	FAR struct tcb_s *dtcb;
 	FAR struct tcb_s *rtcb;
 	int ret;
+
+#ifdef CONFIG_SMP
+	int cpu;
+
+	/* Get the current CPU. By assumpition, we are within a critical section
+	 * and hence, the CPU index will remain stable.
+	 *
+	 * Avoid using this_task() because it may assume a state that is not
+	 * appropriate for an exiting task.
+	 */
+
+	cpu = this_cpu();
+	dtcb = current_task(cpu);
+#else
+	dtcb = this_task();
+#endif
 
 	trace_begin(TTRACE_TAG_TASK, "task_exit");
 
@@ -157,7 +177,12 @@ int task_exit(void)
 	 */
 
 	(void)sched_removereadytorun(dtcb);
+
+#ifdef CONFIG_SMP
+	rtcb = current_task(cpu);
+#else
 	rtcb = this_task();
+#endif
 
 	/* We are now in a bad state -- the head of the ready to run task list
 	 * does not correspond to the thread that is running.  Disabling pre-
@@ -169,6 +194,14 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount++;
+
+#ifdef CONFIG_SMP
+	/* Make sure that the system knows about the locked state */
+
+	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+			&g_cpu_schedlock);
+#endif
+
 	rtcb->task_state = TSTATE_TASK_READYTORUN;
 
 	/* Move the TCB to the specified blocked task list and delete it.  Calling
@@ -178,7 +211,24 @@ int task_exit(void)
 	 */
 
 	sched_addblocked(dtcb, TSTATE_TASK_INACTIVE);
+
+#ifdef CONFIG_SMP
+	/* NOTE:
+	 * During nxtask_terminate(), enter_critical_section() will be called
+	 * to deallocate tcb. However, this would acquire g_cpu_irqlock if
+	 * rtcb->irqcount = 0, event though we are in critical section.
+	 * To prevent from acquiring, increment rtcb->irqcount here.
+	 */
+
+	rtcb->irqcount++;
+#endif
+
 	ret = task_terminate(dtcb->pid, true);
+
+#ifdef CONFIG_SMP
+	rtcb->irqcount--;
+#endif
+
 	rtcb->task_state = TSTATE_TASK_RUNNING;
 
 	/* If there are any pending tasks, then add them to the ready-to-run
@@ -198,6 +248,15 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount--;
+
+#ifdef CONFIG_SMP
+	if (rtcb->lockcount == 0) {
+		/* Make sure that the system knows about the unlocked state */
+
+		spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+				&g_cpu_schedlock);
+	}
+#endif
 	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

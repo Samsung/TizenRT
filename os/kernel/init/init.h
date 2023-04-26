@@ -93,6 +93,46 @@
 void os_start(void);
 
 /****************************************************************************
+ * Name: os_smp_start
+ *
+ * Description:
+ *   In an SMP configution, only one CPU is initially active (CPU 0). System
+ *   initialization occurs on that single thread. At the completion of the
+ *   initialization of the OS, just before beginning normal multitasking,
+ *   the additional CPUs would be started by calling this function.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int os_smp_start(void);
+#endif
+
+/****************************************************************************
+ * Name: os_idle_trampoline
+ *
+ * Description:
+ *   This is the common IDLE task for CPUs 1 through (CONFIG_SMP_NCPUS-1).
+ *   It is equivalent to the CPU 0 IDLE logic in nx_start.c
+ *
+ * Input Parameters:
+ *   Standard task arguments.
+ *
+ * Returned Value:
+ *   This function does not return.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+void os_idle_trampoline(void);
+#endif
+
+/****************************************************************************
  * Name: os_bringup
  *
  * Description:

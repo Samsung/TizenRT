@@ -89,8 +89,8 @@ static void sched_releasepid(pid_t pid)
 	 * following action is atomic
 	 */
 
-	g_pidhash[hash_ndx].tcb = NULL;
-	g_pidhash[hash_ndx].pid = INVALID_PROCESS_ID;
+	g_pidhash[hash_ndx]->tcb = NULL;
+	g_pidhash[hash_ndx]->pid = INVALID_PROCESS_ID;
 
 #ifdef CONFIG_SCHED_CPULOAD
 	/* Decrement the total CPU load count held by this thread from total

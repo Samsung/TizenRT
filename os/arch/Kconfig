@@ -70,6 +70,10 @@ config ARCH_HAVE_MULTICPU
         bool
         default n
 
+config ARCH_HAVE_TESTSET
+	bool
+	default n
+
 config ARCH_HAVE_VFORK
 	bool
 	default n

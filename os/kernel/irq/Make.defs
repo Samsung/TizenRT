@@ -53,8 +53,16 @@
 CSRCS += irq_initialize.c irq_attach.c irq_dispatch.c irq_unexpectedisr.c
 CSRCS += fin_wait.c fin_notify.c
 
+ifeq ($(CONFIG_SMP), y)
+CSRCS += irq_spinlock.c
+endif
+
 ifeq ($(CONFIG_DEBUG_IRQ_INFO),y)
 CSRCS += irq_procfs.c
+endif
+
+ifeq ($(CONFIG_IRQCOUNT),y)
+CSRCS += irq_csection.c
 endif
 
 # Include irq build support

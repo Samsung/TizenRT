@@ -240,7 +240,11 @@ int group_signal(FAR struct task_group_s *group, FAR siginfo_t *siginfo)
 	 * nothing if were were called from an interrupt handler).
 	 */
 
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section()
+#else
 	sched_lock();
+#endif
 
 	/* Now visit each member of the group and perform signal handling checks. */
 
@@ -276,7 +280,11 @@ int group_signal(FAR struct task_group_s *group, FAR siginfo_t *siginfo)
 	}
 
 errout:
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#else
 	sched_unlock();
+#endif
 	return ret;
 
 #else

@@ -382,6 +382,19 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	heapinfo_set_stack_node(ptcb->cmn.stack_alloc_ptr, ptcb->cmn.pid);
 #endif
 
+#ifdef CONFIG_SMP
+	/* pthread_schedsetup() will set the affinity mask by inheriting the
+	 * setting from the parent task. We need to override this setting
+	 * with the value from the pthread attributes unless that value is
+	 * zero: Zero is the default value and simply means yo inherit the
+	 * parent thread's affinity mask
+	 */
+
+	if (attr->affinity != 0) {
+		ptcb->cmn.affinity = attr->affinity;
+	}
+#endif
+
 	/* Configure the TCB for a pthread receiving on parameter
 	 * passed by value
 	 */

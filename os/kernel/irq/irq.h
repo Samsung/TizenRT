@@ -62,6 +62,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/compiler.h>
+#include <tinyara/spinlock.h>
 
 /****************************************************************************
  * Definitions
@@ -89,6 +90,23 @@ extern struct irq g_irqvector[NR_IRQS];
  * Public Variables
  ****************************************************************************/
 
+#ifdef CONFIG_SMP
+/* This is the spinlock that enforces critical sections when interrupts are
+ * disabled.
+ */
+
+extern volatile spinlock_t g_cpu_irqlock;
+
+/* Used to keep track of which CPU(s) hold the IRQ lock. */
+
+extern volatile spinlock_t g_cpu_irqsetlock;
+extern volatile cpu_set_t g_cpu_irqset;
+
+/* Handles nested calls to enter_critical section from interrupt handlers */
+
+extern volatile uint8_t g_cpu_nestcount[CONFIG_SMP_NCPUS];
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -102,6 +120,33 @@ extern "C" {
 
 void weak_function irq_initialize(void);
 int irq_unexpected_isr(int irq, FAR void *context, FAR void *arg);
+
+#ifdef CONFIG_SMP
+/****************************************************************************
+ * Name:  irq_cpu_locked
+ *
+ * Description:
+ *   Test if the IRQ lock set OR if this CPU holds the IRQ lock
+ *   There is an interaction with pre-emption controls and IRQ locking:
+ *   Even if the pre-emption is enabled, tasks will be forced to pend if
+ *   the IRQ lock is also set UNLESS the CPU starting the task is the
+ *   holder of the IRQ lock.
+ *
+ * Input Parameters:
+ *   rtcb - Points to the blocked TCB that is ready-to-run
+ *
+ * Returned Value:
+ *   true  - IRQs are locked by a different CPU.
+ *   false - IRQs are unlocked OR if they are locked BUT this CPU
+ *           is the holder of the lock.
+ *
+ *   Warning: This values are volatile at only valid at the instance that
+ *   the CPU set was queried.
+ *
+ ****************************************************************************/
+
+bool irq_cpu_locked(int cpu);
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus

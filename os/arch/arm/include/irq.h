@@ -138,6 +138,8 @@ EXTERN volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
 
 #ifdef CONFIG_SMP
 int up_cpu_index(void);
+#else
+#define up_cpu_index() (0)
 #endif
 
 /****************************************************************************
