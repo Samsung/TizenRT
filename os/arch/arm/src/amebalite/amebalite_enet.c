@@ -65,7 +65,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/ble/ble_manager.h>
-#include "wifi_structures.h"
+#include "wifi_conf.h"
 
 //for concurrent mode, not supported now
 //#define RTK_CONCURRENT_MODE
@@ -79,11 +79,13 @@ extern err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen);
 extern struct trwifi_ops g_trwifi_drv_ops;
 extern struct trble_ops g_trble_drv_ops;
 
+#ifdef CONFIG_PROMISC
 extern void wifi_init_packet_filter(void);
 extern int wifi_add_packet_filter(unsigned char filter_id, rtw_packet_filter_pattern_t *patt, rtw_packet_filter_rule_t rule);
 extern int wifi_enable_packet_filter(unsigned char filter_id);
 extern int wifi_disable_packet_filter(unsigned char filter_id);
 extern int wifi_remove_packet_filter(unsigned char filter_id);
+#endif
 
 #define MULTICAST_IP_TO_MAC(ip) { (u8)0x01, \
 				  (u8)0x00, \
@@ -121,6 +123,7 @@ int rtk_set_multicast_packet_filters(int dev_index, const u8 *addr){
 
 	rule = RTW_POSITIVE_MATCHING;
 
+#ifdef CONFIG_PROMISC
 	wifi_init_packet_filter();
 	ret = wifi_add_packet_filter(dev_index, &packet_filter, rule);
 	if (ret != 0){
@@ -132,12 +135,14 @@ int rtk_set_multicast_packet_filters(int dev_index, const u8 *addr){
 		vddbg("wifi_enable_packet_filter fail, ret = %d\n",ret);
 		return ret;
 	}
+#endif
 	return ret;
 }
 
 int rtk_clear_packet_filters(int dev_index){
 	int ret = 0;
 
+#ifdef CONFIG_PROMISC
 	ret = wifi_disable_packet_filter(dev_index);
 	if (ret != 0){
 		vddbg("wifi_disable_packet_filter fail, ret = %d\n",ret);
@@ -148,7 +153,7 @@ int rtk_clear_packet_filters(int dev_index){
 		vddbg("wifi_remove_packet_filter fail, ret = %d\n",ret);
 		return ret;
 	}
-
+#endif
 	return ret;
 }
 

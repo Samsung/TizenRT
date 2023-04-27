@@ -79,13 +79,13 @@ include component/soc/amebalite/fwlib/ram_km4/Make.defs
 include component/soc/amebalite/fwlib/ram_common/Make.defs
 include component/soc/amebalite/fwlib/usrcfg/Make.defs
 include component/lwip/api/Make.defs
+include component/os_dep/Make.defs
 include component/wifi/Make.defs
 include component/wifi/inic/Make.defs
+include component/wifi/driver/src/core/Make.defs
 include component/wifi/driver/src/core/option/Make.defs
-include component/wifi/driver/src/osdep/freertos/Make.defs
 include component/ssl/mbedtls_ram_map/rom/Make.defs
 include component/mbed/targets/hal/rtl8720e/Make.defs
-include component/os/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
 
 ifeq ($(CONFIG_AMEBALITE_WIFI),y)
@@ -117,7 +117,7 @@ BOARD_SRCDIR = 	$(TOPDIR)/board
 PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaLite_va0_example
 COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
 DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
-DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_dep
+DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os_dep
 DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
 DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8720e
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
@@ -138,23 +138,15 @@ CFLAGS += -I$(TARGETDIR)/app/monitor/include
 CFLAGS += -I$(TARGETDIR)/app/xmodem
 CFLAGS += -I$(TARGETDIR)/swlib
 CFLAGS += -I$(TARGETDIR)/misc
-CFLAGS += -I$(COMPONENT_DIR)/stdlib
+CFLAGS += -I$(COMPONENT_DIR)/os_dep
 
 CFLAGS += -I$(COMPONENT_DIR)/wifi
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/osdep
+CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/intf
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wifi_config
-CFLAGS += -I$(COMPONENT_DIR)/wifi/wifi_fw/amebalite/include
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/hal/phydm
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/hal/phy_g6/bb
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/hal/rtl8720e
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/osdep
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/hal
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/hci
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/phl
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/src/core/option
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
@@ -162,13 +154,13 @@ CFLAGS += -I$(COMPONENT_DIR)/ssl/mbedtls_ram_map/rom
 
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
-CFLAGS += -I$(DIR_OSDEP)/include
+CFLAGS += -I$(DIR_OSDEP)
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
+CFLAGS += -I$(DIR_WIFI)/wifi_fast_connect
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8720e
-CFLAGS += -I$(COMPONENT_DIR)/os/os_dep/include
 CFLAGS += -I$(TOPDIR)/net/netmgr
 
 ifeq ($(CONFIG_AMEBALITE_BLE),y)
