@@ -55,6 +55,6 @@ CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/misc
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/project/realtek_amebaLite_va0_example/inc/inc_km4
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/ssl/mbedtls_ram_map/rom
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/os/os_dep/include
+CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/os_dep
 endif
 endif

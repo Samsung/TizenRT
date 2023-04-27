@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
-#include "platform_stdlib.h"
-#include <autoconf.h>
+
+#include <rtw_wifi_constants.h>
 
 #ifdef CONFIG_WLAN
 #define ATVER_1 1 // For First AT command
