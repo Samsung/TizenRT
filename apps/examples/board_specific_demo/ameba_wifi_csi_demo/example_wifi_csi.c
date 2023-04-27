@@ -84,7 +84,7 @@ int wificsi_main(int argc, char *argv[])
 	sem_init(&wc_ready_sema, 0, 0);
 
 	/* register wifi event callback function */
-	wifi_reg_event_handler(15, example_wifi_csi_report_cb, NULL);
+	wifi_reg_event_handler(14, example_wifi_csi_report_cb, NULL);
 
 	/* csi cfg and csi en */
 	act_param.act = 1;  /* csi cfg */
@@ -121,7 +121,7 @@ int wificsi_main(int argc, char *argv[])
 
 
 	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(15, example_wifi_csi_report_cb);
+	wifi_unreg_event_handler(14, example_wifi_csi_report_cb);
 
 	sem_destroy(&wc_ready_sema);
 
