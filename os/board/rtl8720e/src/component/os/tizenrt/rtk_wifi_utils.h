@@ -27,8 +27,11 @@
 #define __RTK_WIFI_UTILS_H
 
 #include <sys/types.h>
-#include "wifi_constants.h"
-#include "wifi_structures.h"
+#include "rom_rtw_rf.h"
+#include "rom_rtw_structs.h"
+#include "rom_rtw_defs.h"
+#include "rtw_wifi_constants.h"
+#include "rtw_wifi_struct.h"
 #include <tinyara/net/if/wifi.h>
 
 /* rtk return values */

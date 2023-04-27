@@ -37,7 +37,7 @@ rtw_result_t rtw_indicate_event_handle(int event_cmd, char *buf, int buf_len, in
 void wifi_indication(rtw_event_indicate_t event, char *buf, int buf_len, int flags)
 {
 	//
-	// If upper layer application triggers additional operations on receiving of wireless_send_event,
+	// If upper layer application triggers additional operations on wireless event,
 	// 		please strictly check current stack size usage (by using uxTaskGetStackHighWaterMark() )
 	//		, and tries not to share the same stack with wlan driver if remaining stack space is
 	//		not available for the following operations.

@@ -44,7 +44,7 @@ static void inic_ipc_host_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 	switch (p_ipc_msg->event_num) {
 	/* receive the data from device */
 	case IPC_WIFI_EVT_RECV_PKTS:
-		inic_ipc_host_rx_handler(p_ipc_msg->msg_len,
+		inic_ipc_host_rx_handler(p_ipc_msg->wlan_idx,
 								 (struct sk_buff *)(p_ipc_msg->msg_addr));
 		break;
 	/* other contrl operations */
@@ -98,9 +98,9 @@ void inic_ipc_host_event_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	}
 
 	if (ret == _SUCCESS) {
-		p_ipc_msg->msg_len = 0;
+		p_ipc_msg->msg_queue_status = 0;
 	} else {
-		p_ipc_msg->msg_len = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
+		p_ipc_msg->msg_queue_status = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
 	}
 	/* enqueuing message is seccussful, send acknowledgement to another port*/
 	p_ipc_msg->event_num = IPC_WIFI_MSG_READ_DONE;
@@ -123,7 +123,7 @@ void inic_ipc_init_host(VOID)
 	inic_ipc_host_init_priv();
 }
 /* ---------------------------- Global Variables ---------------------------- */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE   ipc_host_event_table[] = {
 	{IPC_USER_POINT,	inic_ipc_host_event_int_hdl,	(VOID *) NULL, IPC_DIR_MSG_RX, IPC_D2H_WIFI_TRX_TRAN, IPC_RX_FULL},

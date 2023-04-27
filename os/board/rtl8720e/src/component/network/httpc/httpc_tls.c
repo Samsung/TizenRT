@@ -19,33 +19,7 @@ int httpc_setsockopt_rcvtimeo(struct httpc_conn *conn, int recv_timeout)
 	return ret;
 }
 
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-#include "polarssl/ssl.h"
-#include "polarssl/memory.h"
-#include "polarssl/base64.h"
 
-struct httpc_tls {
-	ssl_context ctx;                 /*!< Context for PolarSSL */
-	x509_crt ca;                     /*!< CA certificates */
-	x509_crt cert;                   /*!< Certificate */
-	pk_context key;                  /*!< Private key */
-};
-
-static int _verify_func(void *data, x509_crt *crt, int depth, int *flags)
-{
-	char buf[1024];
-	x509_crt_info(buf, sizeof(buf) - 1, "", crt);
-
-	if (*flags) {
-		printf("\n[HTTPC] ERROR: certificate verify\n%s\n", buf);
-	} else {
-		printf("\n[HTTPC] Certificate verified\n%s\n", buf);
-	}
-
-	return 0;
-}
-
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 #include "mbedtls/ssl.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
@@ -101,7 +75,6 @@ static void *_calloc_func(size_t nmemb, size_t size)
 
 	return ptr;
 }
-#endif /* HTTPC_USE_POLARSSL */
 
 static int _random_func(void *p_rng, unsigned char *output, size_t output_len)
 {
@@ -114,80 +87,6 @@ static int _random_func(void *p_rng, unsigned char *output, size_t output_len)
 
 void *httpc_tls_new(int *sock, char *client_cert, char *client_key, char *ca_certs)
 {
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	int ret = 0;
-	struct httpc_tls *tls = NULL;
-
-	memory_set_own(pvPortMalloc, vPortFree);
-	tls = (struct httpc_tls *) malloc(sizeof(struct httpc_tls));
-
-	if (tls) {
-		ssl_context *ssl = &tls->ctx;
-
-		memset(tls, 0, sizeof(struct httpc_tls));
-		x509_crt_init(&tls->ca);
-		x509_crt_init(&tls->cert);
-		pk_init(&tls->key);
-		if ((ret = ssl_init(ssl)) != 0) {
-			printf("\n[HTTPC] ERROR: ssl_init %d\n", ret);
-			ret = -1;
-			goto exit;
-		}
-		ssl_set_endpoint(ssl, SSL_IS_CLIENT);
-		ssl_set_authmode(ssl, SSL_VERIFY_NONE);
-		ssl_set_rng(ssl, _random_func, NULL);
-		ssl_set_bio(ssl, net_recv, sock, net_send, sock);
-
-		if (client_cert && client_key) {
-			if ((ret = x509_crt_parse(&tls->cert, (const unsigned char *) client_cert, strlen(client_cert))) != 0) {
-				printf("\n[HTTPC] ERROR: x509_crt_parse %d\n", ret);
-				ret = -1;
-				goto exit;
-			}
-
-			if ((ret = pk_parse_key(&tls->key, (const unsigned char *) client_key, strlen(client_key), NULL, 0)) != 0) {
-				printf("\n[HTTPC] ERROR: pk_parse_key %d\n", ret);
-				ret = -1;
-				goto exit;
-			}
-
-			if ((ret = ssl_set_own_cert(ssl, &tls->cert, &tls->key)) != 0) {
-				printf("\n[HTTPC] ERROR: ssl_set_own_cert %d\n", ret);
-				ret = -1;
-				goto exit;
-			}
-		}
-
-		if (ca_certs) {
-			// set trusted ca certificates next to client certificate
-			if ((ret = x509_crt_parse(&tls->ca, (const unsigned char *) ca_certs, strlen(ca_certs))) != 0) {
-				printf("\n[HTTPC] ERROR: x509_crt_parse %d\n", ret);
-				ret = -1;
-				goto exit;
-			}
-
-			ssl_set_ca_chain(ssl, &tls->ca, NULL, NULL);
-			ssl_set_authmode(ssl, SSL_VERIFY_REQUIRED);
-			ssl_set_verify(ssl, _verify_func, NULL);
-		}
-	} else {
-		printf("\n[HTTPC] ERROR: malloc\n");
-		ret = -1;
-		goto exit;
-	}
-
-exit:
-	if (ret && tls) {
-		ssl_free(&tls->ctx);
-		x509_crt_free(&tls->ca);
-		x509_crt_free(&tls->cert);
-		pk_free(&tls->key);
-		free(tls);
-		tls = NULL;
-	}
-
-	return (void *) tls;
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	int ret = 0;
 	struct httpc_tls *tls = NULL;
 
@@ -315,20 +214,12 @@ exit:
 	}
 
 	return (void *) tls;
-#endif
 }
 
 void httpc_tls_free(void *tls_in)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
 
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	ssl_free(&tls->ctx);
-	x509_crt_free(&tls->ca);
-	x509_crt_free(&tls->cert);
-	pk_free(&tls->key);
-	free(tls);
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	mbedtls_ssl_free(&tls->ctx);
 	mbedtls_ssl_config_free(&tls->conf);
 	mbedtls_x509_crt_free(&tls->ca);
@@ -342,27 +233,11 @@ void httpc_tls_free(void *tls_in)
 #endif
 
 	free(tls);
-#endif
 }
 
 int httpc_tls_handshake(void *tls_in, char *host)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
-
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	int ret = 0;
-
-	ssl_set_hostname(&tls->ctx, host);
-
-	if ((ret = ssl_handshake(&tls->ctx)) != 0) {
-		printf("\n[HTTPC] ERROR: ssl_handshake %d\n", ret);
-		ret = -1;
-	} else {
-		printf("\n[HTTPC] Use ciphersuite %s\n", ssl_get_ciphersuite(&tls->ctx));
-	}
-
-	return ret;
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	int ret = 0;
 
 	mbedtls_ssl_set_hostname(&tls->ctx, host);
@@ -375,54 +250,31 @@ int httpc_tls_handshake(void *tls_in, char *host)
 	}
 
 	return ret;
-#endif
 }
 
 void httpc_tls_close(void *tls_in)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
 
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	ssl_close_notify(&tls->ctx);
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	mbedtls_ssl_close_notify(&tls->ctx);
-#endif
 }
 
 int httpc_tls_read(void *tls_in, uint8_t *buf, size_t buf_len)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
 
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	return ssl_read(&tls->ctx, buf, buf_len);
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	return mbedtls_ssl_read(&tls->ctx, buf, buf_len);
-#endif
 }
 
 int httpc_tls_write(void *tls_in, uint8_t *buf, size_t buf_len)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
 
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	return ssl_write(&tls->ctx, buf, buf_len);
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	return mbedtls_ssl_write(&tls->ctx, buf, buf_len);
-#endif
 }
 
 int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t buf_len)
 {
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	int ret = 0;
-
-	if ((ret = base64_encode(base64_buf, &buf_len, data, data_len)) != 0) {
-		printf("\n[HTTPC] ERROR: base64_encode %d\n", ret);
-		ret = -1;
-	}
-
-	return ret;
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	int ret = 0;
 	size_t output_len = 0;
 
@@ -432,14 +284,10 @@ int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t
 	}
 
 	return ret;
-#endif
 }
 
 int httpc_tls_set_ciphersuites(struct httpc_conn *conn, int *ciphersuites)
 {
-#if (HTTPC_USE_TLS == HTTPC_TLS_POLARSSL)
-	return -1;
-#elif (HTTPC_USE_TLS == HTTPC_TLS_MBEDTLS)
 	mbedtls_ssl_context *ssl_ctx = (mbedtls_ssl_context *) conn->tls;
 
 	if (ssl_ctx) {
@@ -452,5 +300,4 @@ int httpc_tls_set_ciphersuites(struct httpc_conn *conn, int *ciphersuites)
 	}
 
 	return -1;
-#endif
 }

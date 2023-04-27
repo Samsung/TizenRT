@@ -22,12 +22,9 @@
 //#define CONFIG_DEBUG_RTL871X
 #define DBG 0 /* for phy dm debug */
 
-#if (CONFIG_PLATFORM_AMEBA_X == 1)
 #define WLAN_INTF_DBG		0
 //#define CONFIG_DEBUG_DYNAMIC
 //#define DBG_TX 1
-//#define DBG_XMIT_BUF 1
-//#define DBG_XMIT_BUF_EXT 1
 #define DBG_TX_DROP_FRAME
 #define CONFIG_DBG_DISABLE_RDU_INTERRUPT
 
@@ -40,7 +37,6 @@
 /***************************** BB debug ***************************************/
 #define DBG_RX_INFO 1
 #define DBG_DM_DIG 1			/* DebugComponents: bit0 */
-#define DBG_DM_RA_MASK 1		/* DebugComponents: bit1 */
 #define DBG_DM_ANT_DIV 1		/* DebugComponents: bit6 */
 #define DBG_TX_RATE 1			/* DebugComponents: bit9 */
 #define DBG_DM_RA 1			/* DebugComponents: bit9 */
@@ -52,9 +48,6 @@
 /************************** PHY common debug **********************************/
 #define DBG_PWR_INDEX 1			// DebugComponents: bit30 */
 #endif /* (DM_DBG == 1) */
-#else /* (CONFIG_PLATFORM_AMEBA_X != 1) */
-//#define WLAN_INTF_DBG
-#endif /* (CONFIG_PLATFORM_AMEBA_X == 1) */
 /***************************** for Debug message ******************************/
 
 

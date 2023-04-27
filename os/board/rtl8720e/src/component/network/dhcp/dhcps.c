@@ -1,7 +1,7 @@
 
 #include "dhcps.h"
 #include "tcpip.h"
-#include "wifi_constants.h"
+#include "rtw_wifi_constants.h"
 #include "lwip_netconf.h"
 //static struct dhcp_server_state dhcp_server_state_machine;
 static uint8_t dhcp_server_state_machine = DHCP_SERVER_STATE_IDLE;
@@ -76,7 +76,7 @@ static void mark_ip_in_table(uint8_t d)
 		printf("\r\n ip_table.ip_range[3] = 0x%x\r\n", ip_table.ip_range[3]);
 #endif
 	} else if (128 < d && d <= 160) {
-		ip_table.ip_range[4] = MARK_RANGE5_IP_BIT(ip_table, d);
+		ip_table.ip_range[4] = MARK_RANGE5_IP_BIT(ip_table, d - 128);
 #if (debug_dhcps)
 		printf("\r\n ip_table.ip_range[4] = 0x%x\r\n", ip_table.ip_range[4]);
 #endif
@@ -888,11 +888,11 @@ static void dhcps_receive_udp_packet_handler(void *arg, struct udp_pcb *udp_pcb,
 	int16_t total_length_of_packet_buffer;
 	struct pbuf *merged_packet_buffer = NULL;
 
-	dhcp_message_repository = (struct dhcp_msg *)udp_packet_buffer->payload;
 	if (udp_packet_buffer == NULL) {
 		printf("\n\r Error!!!! System doesn't allocate any buffer \n\r");
 		return;
 	}
+	dhcp_message_repository = (struct dhcp_msg *)udp_packet_buffer->payload;
 	if (sender_port == DHCP_CLIENT_PORT) {
 		if (netif_get_idx(ip_current_input_netif()) == 0) {
 			pbuf_free(udp_packet_buffer);
@@ -1174,12 +1174,7 @@ void dhcps_init(struct netif *pnetif)
 	dhcps_num_of_available_ips = ((ntohl(dhcps_owned_last_ip.addr)
 								   - ntohl(dhcps_owned_first_ip.addr)) + 1);
 #endif
-#endif
 
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#if IP_SOF_BROADCAST
-	dhcps_pcb->so_options |= SOF_BROADCAST;
-#endif /* IP_SOF_BROADCAST */
 #endif
 
 #if IS_USE_FIXED_IP

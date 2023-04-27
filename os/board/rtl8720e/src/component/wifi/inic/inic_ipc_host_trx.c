@@ -56,21 +56,6 @@ struct host_priv {
 	u8 rsvd[16]; /* keep total size 64B alignment */
 };
 
-struct skb_data {
-	/* starting address must be aligned by 32 bytes for km4 cache. */
-	struct list_head list __attribute__((aligned(32)));
-	unsigned char buf[MAX_SKB_BUF_SIZE];
-	/* to protect ref when to invalid cache, its address must be
-	 * aligned by 32 bytes. */
-	atomic_t ref __attribute__((aligned(32)));
-};
-
-struct skb_buf {
-	struct list_head list;
-	struct sk_buff skb;
-	u8 rsvd[10];
-};
-
 /* -------------------------- Function declaration -------------------------- */
 
 /* ---------------------------- Global Variables ---------------------------- */
@@ -81,8 +66,8 @@ struct host_priv g_inic_host_priv __attribute__((aligned(64)));
 struct sk_buff *allocated_tx_skb = NULL;
 struct task_struct inic_ipc_host_rx_task;
 
-struct skb_data host_skb_data[HOST_SKB_NUM] __attribute__((aligned(64)));
-struct skb_buf host_skb_buf[HOST_SKB_NUM] __attribute__((aligned(64)));
+struct skb_data *host_skb_data;
+struct skb_info *host_skb_info;
 
 /* ---------------------------- Private Functions --------------------------- */
 /**
@@ -141,6 +126,7 @@ static void inic_ipc_host_rx_tasklet(void)
 	_queue *recv_queue = NULL;
 	struct pbuf *p_buf = NULL;
 	int index = 0;
+	err_enum_t error = ERR_OK;
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
 	recv_queue = &g_inic_host_priv.recv_queue;
@@ -175,6 +161,7 @@ static void inic_ipc_host_rx_tasklet(void)
 			inic_ipc_ipc_send_msg(&ipc_msg);
 		}
 	} while (1);
+
 }
 
 /**
@@ -194,7 +181,7 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
 
 	ipc_msg.event_num = IPC_WIFI_CMD_XIMT_PKTS;
 	ipc_msg.msg_addr = (u32)skb;
-	ipc_msg.msg_len = idx;
+	ipc_msg.wlan_idx = idx;
 	inic_ipc_ipc_send_msg(&ipc_msg);
 
 	return 0;
@@ -208,9 +195,33 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
  */
 void inic_ipc_host_init_skb(void)
 {
-	rtw_memset(host_skb_buf, 0, HOST_SKB_NUM * sizeof(struct skb_buf));
-	rtw_memset(host_skb_data, 0, HOST_SKB_NUM * sizeof(struct skb_data));
+	if (host_skb_info || host_skb_data) {
+		DBG_8195A("host_skb_info or host_skb_data not mfree|\n");
+		return;
+	}
+
+	host_skb_info = (struct skb_info *)rtw_zmalloc(skb_num_ap * sizeof(struct skb_info));
+	host_skb_data = (struct skb_data *)rtw_zmalloc(skb_num_ap * sizeof(struct skb_data));
+	if (!host_skb_info || !host_skb_data) {
+		DBG_8195A("%s=>skb malloc fail!\n\r", __func__);
+	}
+
+	/*make sure the real memory is set to zero, or DCache_Invalidate in inic_ipc_host_send will get wrong values*/
+	DCache_Clean((u32)host_skb_info, (skb_num_ap * sizeof(struct skb_info)));
+	DCache_Clean((u32)host_skb_data, (skb_num_ap * sizeof(struct skb_data)));
 }
+
+void inic_ipc_host_deinit_skb(void)
+{
+	if (host_skb_info) {
+		rtw_mfree((u8 *)host_skb_info, skb_num_ap * sizeof(struct skb_info));
+	}
+
+	if (host_skb_data) {
+		rtw_mfree((u8 *)host_skb_data, skb_num_ap * sizeof(struct skb_data));
+	}
+}
+
 /**
  * @brief  to initialize the parameters of recv.
  * @param  none
@@ -259,7 +270,7 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 	recv_queue = &(g_inic_host_priv.recv_queue);
 
 #ifdef CONFIG_ENABLE_CACHE
-	DCache_Invalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+	DCache_Invalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_info));
 	DCache_Invalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
 #endif /* CONFIG_ENABLE_CACHE */
 
@@ -296,7 +307,7 @@ RSP:
 	/*need cache clean here even if NP only need free skb,
 	because AP may occur cache full issue and flush to skb to memory, but list in skb is old*/
 	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_info));
 #endif /* CONFIG_ENABLE_CACHE */
 
 	ipc_msg.event_num = IPC_WIFI_MSG_RECV_DONE;
@@ -332,9 +343,9 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 {
 	WIFI_MONITOR_TIMER_START(wlan_send_time);
 	struct sk_buff *skb = NULL;
-	struct skb_buf *skb_buf = NULL;
+	struct skb_info *skb_info = NULL;
 	struct eth_drv_sg *psg_list;
-	unsigned char *skb_data = NULL;
+	struct skb_data *skb_data = NULL;
 	int ret = 0, i = 0;
 	static int used_skb_num = 0;
 	int size = 0;
@@ -343,9 +354,9 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 
 	/* allocate the skb buffer */
 
-	skb_buf = &host_skb_buf[used_skb_num];
-	skb = &host_skb_buf[used_skb_num].skb;
-	DCache_Invalidate((u32)skb_buf, sizeof(struct skb_buf));
+	skb_info = &host_skb_info[used_skb_num];
+	skb = &host_skb_info[used_skb_num].skb;
+	DCache_Invalidate((u32)skb_info, sizeof(struct skb_info));
 	if (skb->busy) {
 		/*AP doesn't have enough skb right now, taskdelay here will directly
 		block tcpip thred, so return ERR_BUF to inform upper layer*/
@@ -354,17 +365,17 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	}
 	memset(skb, '\0', sizeof(struct sk_buff));
 	size = SKB_DATA_ALIGN(total_len + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
-	skb_data = host_skb_data[used_skb_num].buf;
-	skb->head = skb_data;
-	skb->end = skb_data + size;
-	skb->data = skb_data + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
-	skb->tail = skb_data + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
+	skb_data = &host_skb_data[used_skb_num];
+	skb->head = skb_data->buf;
+	skb->end = skb_data->buf + size;
+	skb->data = skb_data->buf + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
+	skb->tail = skb_data->buf + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN);
 	skb->busy = 1;
 	skb->no_free = 1;
-	atomic_set(&LIST_CONTAINOR(skb->head, struct skb_data, buf)->ref, 1);
+	atomic_set(&skb_data->ref, 1);
 
 	used_skb_num++;
-	used_skb_num = used_skb_num % HOST_SKB_NUM;
+	used_skb_num = used_skb_num % skb_num_ap;
 
 	psg_list = sg_list;
 	for (i = 0; i < sg_len; i++) {
@@ -376,9 +387,10 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	}
 
 #ifdef CONFIG_ENABLE_CACHE
-	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+	DCache_CleanInvalidate((u32)skb_data, sizeof(struct skb_data));
+	DCache_CleanInvalidate((u32)skb_info, sizeof(struct skb_info));
 #endif /* CONFIG_ENABLE_CACHE */
+
 	WIFI_MONITOR_TIMER_START(wlan_send_time3);
 	inic_ipc_host_send_skb(idx, skb);
 	WIFI_MONITOR_TIMER_END(wlan_send_time3, total_len);

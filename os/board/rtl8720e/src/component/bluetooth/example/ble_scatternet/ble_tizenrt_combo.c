@@ -25,6 +25,10 @@ extern rtk_bt_gattc_read_ind_t *ble_read_results;
 extern rtk_bt_gattc_write_ind_t *ble_write_request_result;
 extern rtk_bt_gattc_write_ind_t *ble_write_no_rsp_result;
 
+extern void *ble_tizenrt_read_sem;
+extern void *ble_tizenrt_write_sem;
+extern void *ble_tizenrt_write_no_rsp_sem;
+
 extern trble_client_init_config *client_init_parm;
 extern rtk_bt_gattc_write_ind_t *ble_write_request_result;
 extern rtk_bt_gattc_write_ind_t *ble_write_no_rsp_result;
@@ -97,6 +101,13 @@ trble_result_e rtw_ble_combo_deinit(void)
 
     osif_mem_free(client_init_parm);
     client_init_parm = NULL;
+
+    osif_sem_delete(ble_tizenrt_read_sem);
+    ble_tizenrt_read_sem = NULL;
+    osif_sem_delete(ble_tizenrt_write_sem);
+    ble_tizenrt_write_sem = NULL;
+    osif_sem_delete(ble_tizenrt_write_no_rsp_sem);
+    ble_tizenrt_write_no_rsp_sem = NULL;
 
     osif_mem_free(ble_tizenrt_scatternet_conn_ind);
     ble_tizenrt_scatternet_conn_ind = NULL;

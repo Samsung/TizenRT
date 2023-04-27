@@ -11,14 +11,11 @@ This example demonstrate how to implement wifi fast reconnection
 **/
 #include <platform_opts.h>
 #include <wifi_fast_connect.h>
-#include <wifi_conf.h>
 
 #include "FreeRTOS.h"
 #include <task.h>
-#include <platform_stdlib.h>
 #include "osdep_service.h"
 #include "flash_api.h"
-#include "device_lock.h"
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include "system_data_api.h"
@@ -187,8 +184,13 @@ WIFI_RETRY_LOOP:
 		wifi.pscan_option = PSCAN_FAST_SURVEY;
 		wifi.security_type = security_type;
 		//SSID
-		strcpy((char *)wifi.ssid.val, (char *)(data->psk_essid));
 		wifi.ssid.len = strlen((char *)(data->psk_essid));
+		if (wifi.ssid.len > 32) {
+			printf("[FAST_CONNECT] SSID length can't exceed 32\n\r");
+			free(data);
+			return -1;
+		}
+		strncpy((char *)wifi.ssid.val, (char *)(data->psk_essid), sizeof(wifi.ssid.val) - 1);
 
 		switch (security_type) {
 		case RTW_SECURITY_WEP_PSK:
@@ -271,20 +273,6 @@ int check_is_the_same_ap()
 	}
 #endif
 	return ret;
-}
-
-int Erase_Fastconnect_data(void)
-{
-#ifndef CONFIG_USE_FLASHCFG
-	flash_t flash;
-
-	if (p_wifi_do_fast_connect != NULL) {
-		device_mutex_lock(RT_DEV_LOCK_FLASH);
-		flash_erase_sector(&flash, FAST_RECONNECT_DATA);
-		device_mutex_unlock(RT_DEV_LOCK_FLASH);
-	}
-#endif
-	return 0;
 }
 
 /*

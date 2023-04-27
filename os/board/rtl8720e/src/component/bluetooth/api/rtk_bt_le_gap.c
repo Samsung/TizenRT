@@ -14,6 +14,27 @@
 #include <rtk_bt_le_gap.h>
 #include <rtk_bt_device.h>
 
+uint16_t rtk_bt_le_gap_get_conn_id(uint16_t conn_handle, uint8_t *p_conn_id)
+{
+	uint16_t ret = 0;
+	rtk_bt_le_get_conn_id_t param = {
+		.conn_handle = conn_handle,
+		.p_conn_id = p_conn_id,
+	};
+
+	if (!rtk_bt_is_enable()) {
+		return RTK_BT_ERR_NOT_READY;
+	}
+
+	if (!p_conn_id) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_CONN_ID, &param, sizeof(rtk_bt_le_get_conn_id_t));
+
+	return ret;
+}
+
 uint16_t rtk_bt_le_gap_get_version(rtk_bt_le_version_info_t *version)
 {
 	uint16_t ret = 0;

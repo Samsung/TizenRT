@@ -170,7 +170,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 		break;
 	}
 
-	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: {
+	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: { //BT sync api shall not be called here
 		rtk_bt_le_remote_conn_update_req_ind_t *rmt_update_req = 
 								(rtk_bt_le_remote_conn_update_req_ind_t *)param;
 		dbg("[APP] Remote device request a change in conn param, conn_handle: %d, "	  \

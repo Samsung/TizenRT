@@ -58,7 +58,7 @@ uint16_t rtk_gap_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	(void)dst;
 	(void)src;
 
-	switch(act) {
+	switch (act) {
 #if RTK_BT_5_2_L2C_ECFC_SUPPORT
 	case RTK_BT_GAP_ACT_ECFC_REGISTER: {
 		rtk_bt_gap_ecfc_register_t *param = (rtk_bt_gap_ecfc_register_t *)dst;
@@ -75,7 +75,7 @@ uint16_t rtk_gap_copy_act_ret_param(uint16_t act, void *dst, void *src)
 }
 
 #if RTK_BT_5_2_L2C_ECFC_SUPPORT
-static int gap_ipc_ecfc_send_data_push(uint8_t *buf, rtk_bt_gap_ecfc_send_data_t *param, 
+static int gap_ipc_ecfc_send_data_push(uint8_t *buf, rtk_bt_gap_ecfc_send_data_t *param,
 									   uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
@@ -84,15 +84,17 @@ static int gap_ipc_ecfc_send_data_push(uint8_t *buf, rtk_bt_gap_ecfc_send_data_t
 
 	/* memory space for rtk_bt_gatts_ntf_and_ind_param_t */
 	size = sizeof(rtk_bt_gap_ecfc_send_data_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	struct_end = end;
 
 	size = param->length;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -118,8 +120,8 @@ void *bt_gap_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 	switch (act) {
 #if RTK_BT_5_2_L2C_ECFC_SUPPORT
 	case RTK_BT_GAP_ACT_ECFC_SEND_DATA:
-		ret = gap_ipc_ecfc_send_data_push((uint8_t *)host_msg->param_buf, (rtk_bt_gap_ecfc_send_data_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size);
+		ret = gap_ipc_ecfc_send_data_push((uint8_t *)host_msg->param_buf, (rtk_bt_gap_ecfc_send_data_t *)data,
+										  IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 #endif
 	default:
@@ -139,18 +141,18 @@ void *bt_gap_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 /* ===============================================rtk_bt_le_gap ipc action======================================= */
 static struct act_mem_option rtk_bt_le_gap_act_mem_op_tab[] = {
 	{RTK_BT_LE_GAP_ACT_GET_VERSION, sizeof(rtk_bt_le_version_info_t)},
-	{RTK_BT_LE_GAP_ACT_GET_DEVICE_ADDR, sizeof(rtk_bt_le_addr_t)}, 
+	{RTK_BT_LE_GAP_ACT_GET_DEVICE_ADDR, sizeof(rtk_bt_le_addr_t)},
 	{RTK_BT_LE_GAP_ACT_READ_RSSI, sizeof(int8_t)},
-	{RTK_BT_LE_GAP_ACT_GET_BOND_NUM, sizeof(uint8_t)}, 
-	{RTK_BT_LE_GAP_ACT_GET_BOND_INFO, sizeof(rtk_bt_le_bond_info_t)}, 
-	{RTK_BT_LE_GAP_ACT_GET_CONN_INFO,sizeof(rtk_bt_le_conn_info_t)}, 
-	{RTK_BT_LE_GAP_ACT_GET_DEV_STATE,sizeof(rtk_bt_le_gap_dev_state_t)}, 
-	{RTK_BT_LE_GAP_ACT_GET_ACTIVE_CONN, sizeof(rtk_bt_le_get_active_conn_t)}, 
-	{RTK_BT_LE_GAP_ACT_GET_CONN_HANDLE_BY_ADDR,sizeof(uint16_t)}, 
+	{RTK_BT_LE_GAP_ACT_GET_BOND_NUM, sizeof(uint8_t)},
+	{RTK_BT_LE_GAP_ACT_GET_BOND_INFO, sizeof(rtk_bt_le_bond_info_t)},
+	{RTK_BT_LE_GAP_ACT_GET_CONN_INFO, sizeof(rtk_bt_le_conn_info_t)},
+	{RTK_BT_LE_GAP_ACT_GET_DEV_STATE, sizeof(rtk_bt_le_gap_dev_state_t)},
+	{RTK_BT_LE_GAP_ACT_GET_ACTIVE_CONN, sizeof(rtk_bt_le_get_active_conn_t)},
+	{RTK_BT_LE_GAP_ACT_GET_CONN_HANDLE_BY_ADDR, sizeof(uint16_t)},
 	{RTK_BT_LE_GAP_ACT_GET_MTU_SIZE, sizeof(uint16_t)},
 	{RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV, sizeof(uint8_t)},
 	{RTK_BT_LE_GAP_ACT_PA_SYNC_CREATE, sizeof(uint8_t)},
-	{RTK_BT_LE_GAP_ACT_GET_TX_PENDING_NUM, sizeof(uint16_t)},	
+	{RTK_BT_LE_GAP_ACT_GET_TX_PENDING_NUM, sizeof(uint16_t)},
 	{RTK_BT_LE_GAP_ACT_MAX, 0}
 };
 
@@ -170,16 +172,15 @@ uint32_t rtk_le_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
 uint16_t rtk_le_copy_act_ret_param(uint16_t act, void *dst, void *src)
 {
 	if (act == RTK_BT_LE_GAP_ACT_GET_VERSION ||
-		act == RTK_BT_LE_GAP_ACT_GET_DEVICE_ADDR || 
-		act == RTK_BT_LE_GAP_ACT_GET_BOND_NUM ||
-		act == RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV) {
+		act == RTK_BT_LE_GAP_ACT_GET_DEVICE_ADDR ||
+		act == RTK_BT_LE_GAP_ACT_GET_BOND_NUM) {
 		memcpy((void *)dst, (void *)src, rtk_le_get_act_ret_param_size(act));
 	} else if (act == RTK_BT_LE_GAP_ACT_READ_RSSI) {
 		rtk_bt_le_read_rssi_param_t *read_rssi = (rtk_bt_le_read_rssi_param_t *)dst;
@@ -190,7 +191,7 @@ uint16_t rtk_le_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	} else if (act == RTK_BT_LE_GAP_ACT_GET_BOND_INFO) {
 		rtk_bt_le_get_bond_info_param_t *pget_bondinfo = (rtk_bt_le_get_bond_info_param_t *)dst;
 		memcpy((void *)pget_bondinfo->p_size, (void *)src, sizeof(uint8_t));
-		memcpy((void *)pget_bondinfo->p_bond_info, (void *)((uint8_t *)src + 4), sizeof(rtk_bt_le_bond_info_t)*(*pget_bondinfo->p_size));
+		memcpy((void *)pget_bondinfo->p_bond_info, (void *)((uint8_t *)src + 4), sizeof(rtk_bt_le_bond_info_t) * (*pget_bondinfo->p_size));
 	} else if (act == RTK_BT_LE_GAP_ACT_GET_DEV_STATE) {
 		rtk_bt_le_gap_dev_state_t *pget_dev_state = (rtk_bt_le_gap_dev_state_t *)dst;
 		memcpy((void *)pget_dev_state, (void *)src, rtk_le_get_act_ret_param_size(act));
@@ -206,19 +207,25 @@ uint16_t rtk_le_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	} else if (act == RTK_BT_LE_GAP_ACT_GET_TX_PENDING_NUM) {
 		rtk_bt_le_get_tx_pending_num_param_t *tx_pending_num_param = (rtk_bt_le_get_tx_pending_num_param_t *)dst;
 		memcpy((void *)tx_pending_num_param->p_tx_pending_num, (void *)src, rtk_le_get_act_ret_param_size(act));
-	} 
+	}
+#if RTK_BLE_5_0_AE_ADV_SUPPORT
+	else if (act == RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV) {
+		rtk_bt_le_ext_adv_create_t *p_create = (rtk_bt_le_ext_adv_create_t *)dst;
+		memcpy((void *)p_create->p_adv_handle, (void *)src, rtk_le_get_act_ret_param_size(act));
+	}
+#endif
 #if RTK_BLE_5_0_PA_SYNC_SUPPORT
 	else if (act == RTK_BT_LE_GAP_ACT_PA_SYNC_CREATE) {
 		rtk_bt_le_pa_sync_create_t *pa_sync_create = (rtk_bt_le_pa_sync_create_t *)dst;
 		memcpy((void *)pa_sync_create->p_sync_id, (void *)src, rtk_le_get_act_ret_param_size(act));
 	} else if (act == RTK_BT_LE_GAP_ACT_PA_SYNC_GET_PARAM) {
 		rtk_bt_le_pa_sync_get_param_t *sync_get_param = (rtk_bt_le_pa_sync_get_param_t *)dst;
-		uint8_t size = 0;		
-		if(sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_PERIODIC_ADV_LIST_SIZE 
-					|| sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_DEV_STATE) {
-			size = sizeof(uint8_t); 
-		} else if(sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_SYNCHRONIZED_PARAM) {
-			size = sizeof(rtk_bt_le_pa_sync_sync_param_t); 
+		uint8_t size = 0;
+		if (sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_PERIODIC_ADV_LIST_SIZE
+			|| sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_DEV_STATE) {
+			size = sizeof(uint8_t);
+		} else if (sync_get_param->type == RTK_BT_LE_PA_SYNC_PARAM_SYNCHRONIZED_PARAM) {
+			size = sizeof(rtk_bt_le_pa_sync_sync_param_t);
 		} else {
 			printf("RTK_BT_LE_GAP_ACT_PA_SYNC_GET_PARAM type is error\r\n");
 		}
@@ -232,11 +239,15 @@ uint16_t rtk_le_copy_act_ret_param(uint16_t act, void *dst, void *src)
 		*param->max_txpower = *((int8_t *)src + 1);
 	}
 #endif
+	else if (act == RTK_BT_LE_GAP_ACT_GET_CONN_ID) {
+		rtk_bt_le_get_conn_id_t *param = (rtk_bt_le_get_conn_id_t *)dst;
+		*param->p_conn_id = *((uint8_t *)src);
+	}
 	return RTK_BT_OK;
 }
 
-static int le_ipc_scan_info_filter_push(uint8_t *buf, rtk_bt_le_scan_info_filter_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_scan_info_filter_push(uint8_t *buf, rtk_bt_le_scan_info_filter_param_t *param,
+										uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
@@ -244,15 +255,17 @@ static int le_ipc_scan_info_filter_push(uint8_t *buf, rtk_bt_le_scan_info_filter
 
 	/* memory space for rtk_bt_gatts_ntf_and_ind_param_t */
 	size = sizeof(rtk_bt_le_scan_info_filter_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_filter, size);
 	end += ALIGN_UP(size, 4);
 
@@ -266,8 +279,40 @@ exit:
 }
 
 #if RTK_BLE_5_0_AE_ADV_SUPPORT
-static int le_ipc_set_ext_adv_data_push(uint8_t *buf, rtk_bt_le_ext_adv_data_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_create_ext_adv_push(uint8_t *buf, rtk_bt_le_ext_adv_create_t *param,
+									  uint32_t size_limit, uint32_t *actual_size)
+{
+	uint8_t *end = buf;
+	uint8_t *struct_end = NULL;
+	uint32_t size = 0;
+
+	/* memory space for rtk_bt_le_ext_adv_data_t */
+	size = sizeof(rtk_bt_le_ext_adv_create_t);
+	if (end + size > buf + size_limit) {
+		goto exit;
+	}
+	memcpy(end, param, size);
+	end += ALIGN_UP(size, 4);
+	struct_end = end;
+
+	size = sizeof(rtk_bt_le_ext_adv_param_t);
+	if (end + size > buf + size_limit) {
+		goto exit;
+	}
+	memcpy(end, param->p_adv_param, size);
+	end += ALIGN_UP(size, 4);
+
+	((rtk_bt_le_ext_adv_create_t *)buf)->p_adv_param = (rtk_bt_le_ext_adv_param_t *)(struct_end - buf);
+	*actual_size = (uint32_t)(end - buf);
+	return 0;
+
+exit:
+	printf("rtk_bt_le_ext_adv_create_t size is over deep copy buf\r\n");
+	return -1;
+}
+
+static int le_ipc_set_ext_adv_data_push(uint8_t *buf, rtk_bt_le_ext_adv_data_t *param,
+										uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
@@ -275,15 +320,17 @@ static int le_ipc_set_ext_adv_data_push(uint8_t *buf, rtk_bt_le_ext_adv_data_t *
 
 	/* memory space for rtk_bt_le_ext_adv_data_t */
 	size = sizeof(rtk_bt_le_ext_adv_data_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->pdata, size);
 	end += ALIGN_UP(size, 4);
 
@@ -298,23 +345,25 @@ exit:
 #endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
 
 #if RTK_BLE_5_0_PA_ADV_SUPPORT
-static int le_ipc_start_pa_push(uint8_t *buf, rtk_bt_le_pa_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_start_pa_push(uint8_t *buf, rtk_bt_le_pa_param_t *param,
+								uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *struct_end = NULL;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_pa_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	struct_end = end;
 
 	size = param->pa_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->pa_data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -327,7 +376,7 @@ exit:
 	return -1;
 }
 
-static int le_ipc_update_pa_push(uint8_t *buf, rtk_bt_le_pa_update_t *param, 
+static int le_ipc_update_pa_push(uint8_t *buf, rtk_bt_le_pa_update_t *param,
 								 uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
@@ -335,15 +384,17 @@ static int le_ipc_update_pa_push(uint8_t *buf, rtk_bt_le_pa_update_t *param,
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_pa_update_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	struct_end = end;
 
 	size = param->pa_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->pa_data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -358,23 +409,25 @@ exit:
 }
 #endif /* RTK_BLE_5_0_PA_ADV_SUPPORT */
 
-static int le_ipc_vendor_cmd_req_push(uint8_t *buf, rtk_bt_le_gap_vendor_cmd_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_vendor_cmd_req_push(uint8_t *buf, rtk_bt_le_gap_vendor_cmd_param_t *param,
+									  uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_gap_vendor_cmd_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->cmd_param, size);
 	end += ALIGN_UP(size, 4);
 
@@ -398,27 +451,31 @@ void *bt_le_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_
 	}
 	switch (act) {
 	case RTK_BT_LE_GAP_ACT_SCAN_INFO_FILTER:
-		ret = le_ipc_scan_info_filter_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_scan_info_filter_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size);
+		ret = le_ipc_scan_info_filter_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_scan_info_filter_param_t *)data,
+										   IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 	case RTK_BT_LE_GAP_ACT_VENDOR_CMD_REQ:
-		ret = le_ipc_vendor_cmd_req_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_gap_vendor_cmd_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size);
+		ret = le_ipc_vendor_cmd_req_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_gap_vendor_cmd_param_t *)data,
+										 IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 #if RTK_BLE_5_0_AE_ADV_SUPPORT
+	case RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV:
+		ret = le_ipc_create_ext_adv_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_ext_adv_create_t *)data,
+										 IPC_HOST_API_DATA_MAX, pactual_size);
+		break;
 	case RTK_BT_LE_GAP_ACT_SET_EXT_ADV_DATA:
 	case RTK_BT_LE_GAP_ACT_SET_EXT_SCAN_RSP_DATA:
-		ret = le_ipc_set_ext_adv_data_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_ext_adv_data_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size);
+		ret = le_ipc_set_ext_adv_data_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_ext_adv_data_t *)data,
+										   IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 #endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
 #if RTK_BLE_5_0_PA_ADV_SUPPORT
 	case RTK_BT_LE_GAP_ACT_START_PA:
-		ret = le_ipc_start_pa_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_pa_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size);
+		ret = le_ipc_start_pa_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_pa_param_t *)data,
+								   IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 	case RTK_BT_LE_GAP_ACT_UPDATE_PA:
-		ret = le_ipc_update_pa_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_pa_update_t *)data, 
+		ret = le_ipc_update_pa_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_pa_update_t *)data,
 									IPC_HOST_API_DATA_MAX, pactual_size);
 		break;
 #endif /* RTK_BLE_5_0_PA_ADV_SUPPORT */
@@ -494,7 +551,7 @@ uint32_t rtk_gatts_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
@@ -562,13 +619,13 @@ static uint32_t get_struct_attr_data_size(void *param)
 		size = attr->len;
 		break;
 	}
-	
+
 	return size;
 }
 
 /* push the multi-level pointer param to a blocked memory buf */
-static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service *param,
+										uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint16_t uuid_val;
@@ -581,26 +638,29 @@ static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service
 
 	/* memory space for struct rtk_bt_gatt_service */
 	size = sizeof(struct rtk_bt_gatt_service);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	buf_ptr->attrs = (rtk_bt_gatt_attr_t *)end;
 
 	/* memory space for struct rtk_bt_gatt_attr_t of attr_count num */
 	size = sizeof(rtk_bt_gatt_attr_t) * attr_count;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->attrs, size);
 	end += ALIGN_UP(size, 4);
-	
+
 	for (i = 0; i < attr_count; i++) {
 		buf_ptr->attrs[i].uuid = (const struct bt_uuid *)end;
 		/* memory space for struct bt_uuid */
 		size = get_struct_bt_uuid_size((struct bt_uuid *)param->attrs[i].uuid);
 
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param->attrs[i].uuid, size);
 		end += ALIGN_UP(size, 4);
 
@@ -608,9 +668,10 @@ static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service
 		if (param->attrs[i].user_data) {
 			buf_ptr->attrs[i].user_data = end;
 			size =  get_struct_attr_data_size(&param->attrs[i]);
-			
-			if (end + size > buf + size_limit)
+
+			if (end + size > buf + size_limit) {
 				goto exit;
+			}
 			memcpy(end, param->attrs[i].user_data, size);
 			end += ALIGN_UP(size, 4);
 		} else {
@@ -636,12 +697,13 @@ static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service
 			continue;
 		}
 
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, data_in_user_data, size);
 		end += ALIGN_UP(size, 4);
 	}
-	/* !!! The value of pointer should be assigned with memory address offset */ 
+	/* !!! The value of pointer should be assigned with memory address offset */
 	/* cause once the memory is copied by another core, the pointer memory addres is meanless, so memory address offset is useful */
 	for (i = 0; i < attr_count; i++) {
 		uuid_val = ((struct bt_uuid_16 *)param->attrs[i].uuid)->val;
@@ -658,7 +720,7 @@ static int gatts_ipc_reg_srv_param_push(uint8_t *buf, struct rtk_bt_gatt_service
 		buf_ptr->attrs[i].uuid = (const struct bt_uuid *)((uint8_t *)buf_ptr->attrs[i].uuid - buf);
 	}
 	buf_ptr->attrs = (rtk_bt_gatt_attr_t *)((uint8_t *)buf_ptr->attrs - buf);
-	
+
 	*actual_size = (uint32_t)(end - buf);
 	return 0;
 
@@ -667,8 +729,8 @@ exit:
 	return -1;
 }
 
-static int gatts_ipc_indicate_param_push(uint8_t *buf, rtk_bt_gatts_ntf_and_ind_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int gatts_ipc_indicate_param_push(uint8_t *buf, rtk_bt_gatts_ntf_and_ind_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
@@ -676,15 +738,17 @@ static int gatts_ipc_indicate_param_push(uint8_t *buf, rtk_bt_gatts_ntf_and_ind_
 
 	/* memory space for rtk_bt_gatts_ntf_and_ind_param_t */
 	size = sizeof(rtk_bt_gatts_ntf_and_ind_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -697,30 +761,32 @@ exit:
 	return -1;
 }
 
-static int gatts_ipc_notify_param_push(uint8_t *buf, rtk_bt_gatts_ntf_and_ind_param_t *param, 
-							uint32_t size_limit, uint32_t *actual_size)
+static int gatts_ipc_notify_param_push(uint8_t *buf, rtk_bt_gatts_ntf_and_ind_param_t *param,
+									   uint32_t size_limit, uint32_t *actual_size)
 {
 	/* the structure of notify param is same as indicate param */
 	return gatts_ipc_indicate_param_push(buf, param, size_limit, actual_size);
 }
 
-static int gatts_ipc_read_resp_param_push(uint8_t *buf, rtk_bt_gatts_read_resp_param_t *param, 
-							uint32_t size_limit, uint32_t *actual_size)
+static int gatts_ipc_read_resp_param_push(uint8_t *buf, rtk_bt_gatts_read_resp_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_gatts_read_resp_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -754,32 +820,32 @@ void *bt_gatts_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 	}
 	switch (act) {
 	case RTK_BT_GATTS_ACT_REGISTER_SERVICE:
-		if (gatts_ipc_reg_srv_param_push((uint8_t *)host_msg->param_buf, (struct rtk_bt_gatt_service *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (gatts_ipc_reg_srv_param_push((uint8_t *)host_msg->param_buf, (struct rtk_bt_gatt_service *)data,
+										 IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
 		break;
-	
+
 	case RTK_BT_GATTS_ACT_NOTIFY:
-		if (gatts_ipc_notify_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_ntf_and_ind_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)){
+		if (gatts_ipc_notify_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_ntf_and_ind_param_t *)data,
+										IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
 		break;
 
 	case RTK_BT_GATTS_ACT_INDICATE:
-		if (gatts_ipc_indicate_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_ntf_and_ind_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (gatts_ipc_indicate_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_ntf_and_ind_param_t *)data,
+										  IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
 		break;
 
 	case RTK_BT_GATTS_ACT_READ_RSP:
-		if (gatts_ipc_read_resp_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_read_resp_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (gatts_ipc_read_resp_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gatts_read_resp_param_t *)data,
+										   IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -790,7 +856,7 @@ void *bt_gatts_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -815,7 +881,7 @@ uint32_t rtk_gattc_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
@@ -864,7 +930,7 @@ static void gattc_ipc_read_evt_pop(rtk_bt_gattc_read_ind_t *read_evt)
 	case RTK_BT_GATT_CHAR_READ_BY_UUID:
 		read_evt->by_uuid_per.value = (uint8_t *)((uint8_t *)read_evt + (uint32_t)(read_evt->by_uuid_per.value));
 		break;
-	
+
 	case RTK_BT_GATT_CHAR_READ_MULTIPLE:
 		read_evt->multiple_per.value = (uint8_t *)((uint8_t *)read_evt + (uint32_t)(read_evt->multiple_per.value));
 		break;
@@ -905,27 +971,29 @@ void bt_gattc_ipc_pop_event_param(uint8_t act, void *param)
 
 #if !RTK_BLE_MGR_LIB
 /* push the multi-level pointer param to a blocked memory buf */
-static int gattc_ipc_read_param_push(uint8_t *buf, rtk_bt_gattc_read_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int gattc_ipc_read_param_push(uint8_t *buf, rtk_bt_gattc_read_param_t *param,
+									 uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	rtk_bt_gattc_read_param_t *p_read_param = (rtk_bt_gattc_read_param_t *)buf;
 	uint32_t size = 0;
-	uint32_t handle_cout=0;
+	uint32_t handle_cout = 0;
 
 	switch (param->type) {
 	case RTK_BT_GATT_CHAR_READ_MULTIPLE:
 		handle_cout = param->multiple.handle_count;
 		/* memory space for struct rtk_bt_gattc_read_param_t */
 		size = sizeof(rtk_bt_gattc_read_param_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		/* parsing handles */
 		p_read_param->multiple.handles = (uint16_t *)end;
-		if (end + handle_cout * 2 > buf + size_limit)
+		if (end + handle_cout * 2 > buf + size_limit) {
 			goto exit;
+		}
 		memcpy((void *)p_read_param->multiple.handles, (void *)param->multiple.handles, handle_cout * 2);
 		p_read_param->multiple.handles = (uint16_t *)(end - buf);
 		*actual_size = (uint32_t)((end + handle_cout * 2) - buf);
@@ -935,14 +1003,16 @@ static int gattc_ipc_read_param_push(uint8_t *buf, rtk_bt_gattc_read_param_t *pa
 		handle_cout = param->multiple_variable.handle_count;
 		/* memory space for struct rtk_bt_gattc_read_param_t */
 		size = sizeof(rtk_bt_gattc_read_param_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		/* parsing handles */
 		p_read_param->multiple_variable.handles = (uint16_t *)end;
-		if (end + handle_cout * 2 > buf + size_limit)
+		if (end + handle_cout * 2 > buf + size_limit) {
 			goto exit;
+		}
 		memcpy((void *)p_read_param->multiple_variable.handles, (void *)param->multiple_variable.handles, handle_cout * 2);
 		p_read_param->multiple_variable.handles = (uint16_t *)(end - buf);
 		*actual_size = (uint32_t)((end + handle_cout * 2) - buf);
@@ -963,8 +1033,8 @@ exit:
 #endif
 
 /* push the multi-level pointer param to a blocked memory buf */
-static int gattc_ipc_write_param_push(uint8_t *buf, rtk_bt_gattc_write_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int gattc_ipc_write_param_push(uint8_t *buf, rtk_bt_gattc_write_param_t *param,
+									  uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	rtk_bt_gattc_write_param_t *p_write_param = (rtk_bt_gattc_write_param_t *)buf;
@@ -972,14 +1042,16 @@ static int gattc_ipc_write_param_push(uint8_t *buf, rtk_bt_gattc_write_param_t *
 
 	/* memory space for struct rtk_bt_gattc_write_param_t */
 	size = sizeof(rtk_bt_gattc_write_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	/* parsing data */
 	p_write_param->data = (void *)end;
-	if (end + param->length > buf + size_limit)
+	if (end + param->length > buf + size_limit) {
 		goto exit;
+	}
 	memcpy((void *)p_write_param->data, (void *)param->data, param->length);
 	p_write_param->data = (void *)(end - buf);
 	*actual_size = (uint32_t)((end + param->length) - buf);
@@ -1002,8 +1074,8 @@ void *bt_gattc_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 	switch (act) {
 #if !RTK_BLE_MGR_LIB
 	case RTK_BT_GATTC_ACT_READ:
-		if (gattc_ipc_read_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gattc_read_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (gattc_ipc_read_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gattc_read_param_t *)data,
+									  IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1011,8 +1083,8 @@ void *bt_gattc_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 #endif
 
 	case RTK_BT_GATTC_ACT_WRITE:
-		if (gattc_ipc_write_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gattc_write_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (gattc_ipc_write_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_gattc_write_param_t *)data,
+									   IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1023,7 +1095,7 @@ void *bt_gattc_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1049,7 +1121,7 @@ uint32_t rtk_br_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
@@ -1082,14 +1154,14 @@ void *bt_br_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
 void bt_br_ipc_pop_event_param(uint8_t act, void *param)
 {
 	switch (act) {
-	
+
 	case RTK_BT_BR_GAP_INQUIRY_RESULT:
 		br_gap_ipc_inquiry_scan_evt_pop((rtk_bt_br_inquiry_result_t *)param);
 		break;
@@ -1120,7 +1192,7 @@ uint32_t rtk_a2dp_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
@@ -1133,22 +1205,24 @@ uint16_t rtk_a2dp_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	return RTK_BT_OK;
 }
 
-static int a2dp_ipc_stream_data_send_param_push(uint8_t *buf, rtk_bt_a2dp_stream_data_send_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int a2dp_ipc_stream_data_send_param_push(uint8_t *buf, rtk_bt_a2dp_stream_data_send_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	rtk_bt_a2dp_stream_data_send_t *p_data_send_param = (rtk_bt_a2dp_stream_data_send_t *)buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_a2dp_stream_data_send_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	/* parsing data */
 	p_data_send_param->frame_buf = (void *)end;
-	if (end + param->len > buf + size_limit)
+	if (end + param->len > buf + size_limit) {
 		goto exit;
+	}
 	memcpy((void *)p_data_send_param->frame_buf, (void *)param->frame_buf, param->len);
 	p_data_send_param->frame_buf = (void *)(end - buf);
 	*actual_size = (uint32_t)((end + param->len) - buf);
@@ -1169,10 +1243,10 @@ void *bt_a2dp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint3
 		return NULL;
 	}
 	switch (act) {
-	
+
 	case RTK_BT_A2DP_ACT_SEND_DATA:
-		if (a2dp_ipc_stream_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_a2dp_stream_data_send_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (a2dp_ipc_stream_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_a2dp_stream_data_send_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1183,7 +1257,7 @@ void *bt_a2dp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint3
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1243,7 +1317,7 @@ void *bt_avrcp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1288,22 +1362,24 @@ uint16_t rtk_spp_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	return RTK_BT_OK;
 }
 
-static int spp_ipc_data_send_param_push(uint8_t *buf, rtk_bt_spp_send_data_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int spp_ipc_data_send_param_push(uint8_t *buf, rtk_bt_spp_send_data_t *param,
+										uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	rtk_bt_spp_send_data_t *p_data_send_param = (rtk_bt_spp_send_data_t *)buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_spp_send_data_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	/* parsing data */
 	p_data_send_param->data = (void *)end;
-	if (end + param->len > buf + size_limit)
+	if (end + param->len > buf + size_limit) {
 		goto exit;
+	}
 	memcpy((void *)p_data_send_param->data, (void *)param->data, param->len);
 	p_data_send_param->data = (void *)(end - buf);
 	*actual_size = (uint32_t)((end + param->len) - buf);
@@ -1324,10 +1400,10 @@ void *bt_spp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 		return NULL;
 	}
 	switch (act) {
-	
+
 	case RTK_BT_SPP_ACT_SEND_DATA:
-		if (spp_ipc_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_spp_send_data_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (spp_ipc_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_spp_send_data_t *)data,
+										 IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1338,7 +1414,7 @@ void *bt_spp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1398,7 +1474,7 @@ void *bt_sdp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1430,7 +1506,7 @@ uint32_t rtk_hfp_get_act_ret_param_size(uint16_t act)
 		}
 		i++;
 	}
-	
+
 	return max_size;
 }
 
@@ -1443,22 +1519,24 @@ uint16_t rtk_hfp_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	return RTK_BT_OK;
 }
 
-static int hfp_ipc_sco_data_send_param_push(uint8_t *buf, rtk_bt_hfp_sco_data_send_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int hfp_ipc_sco_data_send_param_push(uint8_t *buf, rtk_bt_hfp_sco_data_send_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	rtk_bt_hfp_sco_data_send_t *p_data_send_param = (rtk_bt_hfp_sco_data_send_t *)buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_hfp_sco_data_send_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	/* parsing data */
 	p_data_send_param->buf = (void *)end;
-	if (end + param->len > buf + size_limit)
+	if (end + param->len > buf + size_limit) {
 		goto exit;
+	}
 	memcpy((void *)p_data_send_param->buf, (void *)param->buf, param->len);
 	p_data_send_param->buf = (void *)(end - buf);
 	*actual_size = (uint32_t)((end + param->len) - buf);
@@ -1480,10 +1558,10 @@ void *bt_hfp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 		return NULL;
 	}
 	switch (act) {
-	
+
 	case RTK_BT_HFP_ACT_SEND_SCO_DATA:
-		if (hfp_ipc_sco_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_hfp_sco_data_send_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (hfp_ipc_sco_data_send_param_push((uint8_t *)host_msg->param_buf, (rtk_bt_hfp_sco_data_send_t *)data,
+											 IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1494,7 +1572,7 @@ void *bt_hfp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1580,24 +1658,26 @@ uint16_t rtk_le_iso_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	return RTK_BT_OK;
 }
 
-static int le_ipc_iso_setup_path_push(uint8_t *buf, rtk_bt_le_iso_setup_path_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_iso_setup_path_push(uint8_t *buf, rtk_bt_le_iso_setup_path_param_t *param,
+									  uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_iso_setup_path_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->codec_config_len;
 
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_codec_config, size);
 	end += ALIGN_UP(size, 4);
 
@@ -1619,15 +1699,17 @@ static int le_ipc_iso_big_broadcaster_create_push(uint8_t *buf, rtk_bt_le_iso_bi
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_iso_big_broadcaster_create_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = sizeof(rtk_bt_le_iso_big_broadcaster_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_big_param, size);
 	end += ALIGN_UP(size, 4);
 
@@ -1641,24 +1723,26 @@ exit:
 	return -1;
 }
 
-static int le_ipc_iso_big_receiver_create_sync_push(uint8_t *buf, rtk_bt_le_iso_big_receiver_create_sync_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_iso_big_receiver_create_sync_push(uint8_t *buf, rtk_bt_le_iso_big_receiver_create_sync_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_iso_big_receiver_create_sync_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = sizeof(rtk_bt_le_iso_big_receiver_create_sync_param_t);
 
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_sync_param, size);
 	end += ALIGN_UP(size, 4);
 
@@ -1680,15 +1764,17 @@ static int le_ipc_iso_data_send_push(uint8_t *buf, rtk_bt_le_iso_data_send_info_
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_iso_data_send_info_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->data_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -1711,9 +1797,9 @@ void *bt_le_iso_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uin
 	}
 	switch (act) {
 	case RTK_BT_LE_ISO_ACT_CIG_SETUP_PATH:
-	case RTK_BT_LE_ISO_ACT_BIG_SETUP_PATH: 
-		if (le_ipc_iso_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_iso_setup_path_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+	case RTK_BT_LE_ISO_ACT_BIG_SETUP_PATH:
+		if (le_ipc_iso_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_iso_setup_path_param_t *)data,
+									   IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -1741,14 +1827,14 @@ void *bt_le_iso_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uin
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;		
+		break;
 
 	default:
 		memcpy((void *)host_msg->param_buf, (void *)data, buf_len);
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -1768,23 +1854,23 @@ void bt_le_iso_ipc_pop_event_param(uint8_t act, void *param)
 		break;
 	}
 }
-#else 
+#else
 uint32_t rtk_le_iso_get_act_ret_param_size(uint16_t act)
 {
 	(void)act;
-	return 0;	
+	return 0;
 }
 uint16_t rtk_le_iso_copy_act_ret_param(uint16_t act, void *dst, void *src)
 {
 	(void)act;
-	(void)dst;	
-	(void)src;	
+	(void)dst;
+	(void)src;
 	return RTK_BT_OK;
 }
 void *bt_le_iso_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
 {
 	(void)act;
-	(void)data;	
+	(void)data;
 	(void)buf_len;
 	(void)pactual_size;
 	return NULL;
@@ -1792,7 +1878,7 @@ void *bt_le_iso_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uin
 void bt_le_iso_ipc_pop_event_param(uint8_t act, void *param)
 {
 	(void)act;
-	(void)param;		
+	(void)param;
 }
 #endif
 /* ===============================================rtk_bt_le_audio ipc action======================================= */
@@ -1837,15 +1923,15 @@ uint32_t rtk_le_audio_get_act_ret_param_size(uint16_t act)
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
 static void le_audio_broadcast_source_create_ret_param_pop(void *dst, void *src)
 {
-	uint16_t i = 0 , j = 0 , k = 0;
+	uint16_t i = 0, j = 0, k = 0;
 	rtk_bt_le_audio_broadcast_source_create_param_t *dst_param = (rtk_bt_le_audio_broadcast_source_create_param_t *)dst;
 	rtk_bt_le_audio_broadcast_source_create_ipc_param_t *src_param = (rtk_bt_le_audio_broadcast_source_create_ipc_param_t *)src;
-	for(i = 0 ; i < dst_param->num_groups; i++) {
-		*dst_param->group[i].group_idx = src_param->group[i].group_idx; 
-		for(j = 0 ; j < dst_param->group[i].num_subgroups; j++) {
-			*dst_param->group[i].subgroup[j].subgroup_idx = src_param->group[i].subgroup[j].subgroup_idx; 
-			for(k = 0 ; k < dst_param->group[i].subgroup[j].num_bis; k++) {
-				*dst_param->group[i].subgroup[j].bis[k].bis_idx = src_param->group[i].subgroup[j].bis[k].bis_idx; 
+	for (i = 0 ; i < dst_param->num_groups; i++) {
+		*dst_param->group[i].group_idx = src_param->group[i].group_idx;
+		for (j = 0 ; j < dst_param->group[i].num_subgroups; j++) {
+			*dst_param->group[i].subgroup[j].subgroup_idx = src_param->group[i].subgroup[j].subgroup_idx;
+			for (k = 0 ; k < dst_param->group[i].subgroup[j].num_bis; k++) {
+				*dst_param->group[i].subgroup[j].bis[k].bis_idx = src_param->group[i].subgroup[j].bis[k].bis_idx;
 			}
 		}
 	}
@@ -1856,7 +1942,7 @@ uint16_t rtk_le_audio_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	if (act == RTK_BT_LE_AUDIO_ACT_CSIS_GEN_RSI) {
 		rtk_bt_le_audio_csis_gen_rsi_info_t *param = (rtk_bt_le_audio_csis_gen_rsi_info_t *)dst;
 		memcpy((void *)param->p_rsik, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
-	} 
+	}
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 	else if (act == RTK_BT_LE_AUDIO_ACT_SYNC_CREATE) {
 		rtk_bt_le_audio_sync_create_param_t *param = (rtk_bt_le_audio_sync_create_param_t *)dst;
@@ -1870,44 +1956,46 @@ uint16_t rtk_le_audio_copy_act_ret_param(uint16_t act, void *dst, void *src)
 	} else if (act == RTK_BT_LE_AUDIO_ACT_SYNC_GET_BIS_INFO) {
 		rtk_bt_le_audio_sync_get_bis_info_param_t *param = (rtk_bt_le_audio_sync_get_bis_info_param_t *)dst;
 		memcpy((void *)param->p_bis_info, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
-	} 
+	}
 #endif
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
-	else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE) {		
+	else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE) {
 		le_audio_broadcast_source_create_ret_param_pop(dst, src);
-	} else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_GET_INFO) {		
+	} else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_GET_INFO) {
 		rtk_bt_le_audio_broadcast_source_info_get_param_t *param = (rtk_bt_le_audio_broadcast_source_info_get_param_t *)dst;
 		memcpy((void *)param->p_info, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
-	} else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_GET_CONN_HANDLE) {		
+	} else if (act == RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_GET_CONN_HANDLE) {
 		rtk_bt_le_audio_broadcast_source_conn_handle_get_param_t *param = (rtk_bt_le_audio_broadcast_source_conn_handle_get_param_t *)dst;
 		memcpy((void *)param->p_bis_conn_handle, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
 	}
 #endif
-	else if (act == RTK_BT_LE_AUDIO_ACT_VCS_PARAM_GET) {		
+	else if (act == RTK_BT_LE_AUDIO_ACT_VCS_PARAM_GET) {
 		rtk_bt_le_audio_vcs_param_t *param = (rtk_bt_le_audio_vcs_param_t *)dst;
 		memcpy((void *)param, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
-	} else if (act == RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE) {		
+	} else if (act == RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE) {
 		rtk_bt_le_audio_vcs_get_volume_state_param_t *param = (rtk_bt_le_audio_vcs_get_volume_state_param_t *)dst;
 		memcpy((void *)param->p_vcs_volume_state, (void *)src, rtk_le_audio_get_act_ret_param_size(act));
 	}
 	return RTK_BT_OK;
 }
 
-static int le_ipc_audio_iso_data_send_push(uint8_t *buf, rtk_bt_le_audio_iso_data_send_info_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_iso_data_send_push(uint8_t *buf, rtk_bt_le_audio_iso_data_send_info_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_audio_iso_data_send_info_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = param->data_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_data, size);
 	((rtk_bt_le_audio_iso_data_send_info_t *)buf)->p_data = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
@@ -1920,36 +2008,40 @@ exit:
 	return -1;
 }
 
-static int le_ipc_audio_mcs_media_player_info_set_push(uint8_t *buf, rtk_bt_le_audio_mcs_media_player_info_set_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_mcs_media_player_info_set_push(uint8_t *buf, rtk_bt_le_audio_mcs_media_player_info_set_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_mcs_media_player_info_t *p_media_player_info = &param->media_player_info;
 
 	size = sizeof(rtk_bt_le_audio_mcs_media_player_info_set_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = p_media_player_info->player_name_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, p_media_player_info->p_player_name, size);
 	p_media_player_info->p_player_name = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
 
 	size = p_media_player_info->icon_fmt_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, p_media_player_info->p_icon_fmt, size);
 	p_media_player_info->p_icon_fmt = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
 
 	size = p_media_player_info->url_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, p_media_player_info->p_url, size);
 	p_media_player_info->p_url = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
@@ -1962,22 +2054,24 @@ exit:
 	return -1;
 }
 
-static int le_ipc_audio_mcs_media_track_info_set_push(uint8_t *buf, rtk_bt_le_audio_mcs_media_track_info_set_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_mcs_media_track_info_set_push(uint8_t *buf, rtk_bt_le_audio_mcs_media_track_info_set_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_mcs_media_track_info_t *p_media_track_info = &param->media_track_info;
 
 	size = sizeof(rtk_bt_le_audio_mcs_media_track_info_set_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = p_media_track_info->title_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, p_media_track_info->p_title, size);
 	p_media_track_info->p_title = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
@@ -1991,27 +2085,29 @@ exit:
 }
 
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
-static int le_ipc_audio_sync_setup_path_push(uint8_t *buf, rtk_bt_le_audio_sync_setup_data_path_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_sync_setup_path_push(uint8_t *buf, rtk_bt_le_audio_sync_setup_data_path_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_bis_setup_data_path_t *p_setup_param = &param->setup_param;
-	rtk_bt_le_audio_sync_setup_data_path_param_t *p_buf= (rtk_bt_le_audio_sync_setup_data_path_param_t *)buf;
+	rtk_bt_le_audio_sync_setup_data_path_param_t *p_buf = (rtk_bt_le_audio_sync_setup_data_path_param_t *)buf;
 
 	size = sizeof(rtk_bt_le_audio_sync_setup_data_path_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = p_setup_param->codec_config_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, p_setup_param->p_codec_config, size);
 	p_buf->setup_param.p_codec_config = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
-	
+
 	*actual_size = (uint32_t)(end - buf);
 	return 0;
 
@@ -2021,48 +2117,51 @@ exit:
 }
 #endif
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
-static int le_ipc_audio_broadcast_source_create_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_create_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_broadcast_source_create_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_create_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
-	rtk_bt_le_audio_broadcast_source_create_param_t * create_buf = (rtk_bt_le_audio_broadcast_source_create_param_t *)buf;
-	uint8_t i=0,j=0,k=0;
+	rtk_bt_le_audio_broadcast_source_create_param_t *create_buf = (rtk_bt_le_audio_broadcast_source_create_param_t *)buf;
+	uint8_t i = 0, j = 0, k = 0;
 	uint8_t *end = buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_audio_broadcast_source_create_param_t);
 	if (end + size > buf + size_limit) {
-		printf("%s size = %d,size_limit = %d\r\n",__func__,size,size_limit);
+		printf("%s size = %d,size_limit = %d\r\n", __func__, (int)size, (int)size_limit);
 		goto exit;
 	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
-	for(i=0;i<param->num_groups;i++) {
-		for(j=0;j<param->group[i].num_subgroups;j++) {
+	for (i = 0; i < param->num_groups; i++) {
+		for (j = 0; j < param->group[i].num_subgroups; j++) {
 			//copy codec_cfg_l2
 			size = param->group[i].subgroup[j].codec_cfg_l2_len;
-			if (end + size > buf + size_limit)
+			if (end + size > buf + size_limit) {
 				goto exit;
+			}
 			memcpy(end, param->group[i].subgroup[j].p_codec_cfg_l2, size);
 			create_buf->group[i].subgroup[j].p_codec_cfg_l2 = (uint8_t *)(end - buf);
 			end += ALIGN_UP(size, 4);
-			
+
 			//copy metadata
 			size = param->group[i].subgroup[j].metadata_len;
-			if (end + size > buf + size_limit)
+			if (end + size > buf + size_limit) {
 				goto exit;
+			}
 			memcpy(end, param->group[i].subgroup[j].p_metadata, size);
 			create_buf->group[i].subgroup[j].p_metadata = (uint8_t *)(end - buf);
 			end += ALIGN_UP(size, 4);
-			
-			for(k=0;k<param->group[i].subgroup[j].num_bis;k++) {
-				//copy p_codec_cfg_l3 
+
+			for (k = 0; k < param->group[i].subgroup[j].num_bis; k++) {
+				//copy p_codec_cfg_l3
 				size = param->group[i].subgroup[j].bis[k].codec_cfg_l3_len;
-				if (end + size > buf + size_limit)
+				if (end + size > buf + size_limit) {
 					goto exit;
+				}
 				memcpy(end, param->group[i].subgroup[j].bis[k].p_codec_cfg_l3, size);
 				create_buf->group[i].subgroup[j].bis[k].p_codec_cfg_l3 = (uint8_t *)(end - buf);
-				end += ALIGN_UP(size, 4);				
+				end += ALIGN_UP(size, 4);
 			}
 		}
 	}
@@ -2075,8 +2174,8 @@ exit:
 	return -1;
 }
 
-static int le_ipc_audio_broadcast_source_setup_path_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_broadcast_source_setup_path_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
@@ -2084,19 +2183,21 @@ static int le_ipc_audio_broadcast_source_setup_path_push(uint8_t *buf, rtk_bt_le
 	rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *p_buf = (rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *)buf;
 
 	size = sizeof(rtk_bt_le_audio_broadcast_source_setup_data_path_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = p_setup_param->codec_config_len;
-	if (end + size > buf + size_limit) 
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 
 	memcpy(end, p_setup_param->p_codec_config, size);
 	p_buf->setup_param.p_codec_config = (uint8_t *)(end - buf);
-	end += ALIGN_UP(size, 4);	
-	
+	end += ALIGN_UP(size, 4);
+
 	*actual_size = (uint32_t)(end - buf);
 	return 0;
 
@@ -2105,25 +2206,27 @@ exit:
 	return -1;
 }
 
-static int le_ipc_audio_broadcast_source_reconfig_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_reconfig_param_t *param, 
-									uint32_t size_limit, uint32_t *actual_size)
+static int le_ipc_audio_broadcast_source_reconfig_push(uint8_t *buf, rtk_bt_le_audio_broadcast_source_reconfig_param_t *param,
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_audio_broadcast_source_reconfig_param_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = param->metadata_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_metadata, size);
 	((rtk_bt_le_audio_broadcast_source_reconfig_param_t *)buf)->p_metadata = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
-	
+
 	*actual_size = (uint32_t)(end - buf);
 	return 0;
 
@@ -2142,22 +2245,22 @@ void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, u
 	}
 	switch (act) {
 	case RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND:
-		if (le_ipc_audio_iso_data_send_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_iso_data_send_info_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_iso_data_send_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_iso_data_send_info_t *)data,
+											IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;	
+		break;
 	case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_PLAYER_INFO_SET:
-		if (le_ipc_audio_mcs_media_player_info_set_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_mcs_media_player_info_set_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_mcs_media_player_info_set_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_mcs_media_player_info_set_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;	
+		break;
 	case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_TRACK_INFO_SET:
-		if (le_ipc_audio_mcs_media_track_info_set_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_mcs_media_track_info_set_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_mcs_media_track_info_set_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_mcs_media_track_info_set_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
@@ -2165,44 +2268,44 @@ void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, u
 
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 	case RTK_BT_LE_AUDIO_ACT_SYNC_SETUP_DATA_PATH:
-		if (le_ipc_audio_sync_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_sync_setup_data_path_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_sync_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_sync_setup_data_path_param_t *)data,
+											  IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;	
-#endif		
+		break;
+#endif
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
 	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE:
-		if (le_ipc_audio_broadcast_source_create_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_create_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_broadcast_source_create_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_create_param_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;	
+		break;
 
 	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_SETUP_DATA_PATH:
-		if (le_ipc_audio_broadcast_source_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_broadcast_source_setup_path_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;		
+		break;
 
 	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_RECONFIG:
-		if (le_ipc_audio_broadcast_source_reconfig_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_reconfig_param_t *)data, 
-									IPC_HOST_API_DATA_MAX, pactual_size)) {
+		if (le_ipc_audio_broadcast_source_reconfig_push((uint8_t *)host_msg->param_buf, (rtk_bt_le_audio_broadcast_source_reconfig_param_t *)data,
+				IPC_HOST_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(host_msg);
 			host_msg = NULL;
 		}
-		break;	
+		break;
 #endif
 	default:
 		memcpy((void *)host_msg->param_buf, (void *)data, buf_len);
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)host_msg;
 }
 
@@ -2214,34 +2317,34 @@ static void le_audio_ipc_iso_data_ind_evt_pop(rtk_bt_le_audio_direct_iso_data_in
 static void le_audio_ipc_mcs_client_read_result_ind_evt_pop(rtk_bt_le_audio_mcs_client_read_result_ind_t *evt)
 {
 	switch (evt->uuid) {
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
-			evt->data.media_player_name.player_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_name.player_name));
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
-			evt->data.media_player_icon_url.p_icon_url = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_icon_url.p_icon_url));
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
-			evt->data.track_title_url.title_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.track_title_url.title_name));
-			break;
-		default:
-			break;
-	}	
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
+		evt->data.media_player_name.player_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_name.player_name));
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
+		evt->data.media_player_icon_url.p_icon_url = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_icon_url.p_icon_url));
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
+		evt->data.track_title_url.title_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.track_title_url.title_name));
+		break;
+	default:
+		break;
+	}
 }
 static void le_audio_ipc_mcs_client_notify_result_ind_evt_pop(rtk_bt_le_audio_mcs_client_notify_result_ind_t *evt)
 {
 	switch (evt->uuid) {
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
-			evt->data.media_player_name.player_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_name.player_name));
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
-			evt->data.media_player_icon_url.p_icon_url = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_icon_url.p_icon_url));
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
-			evt->data.track_title_url.title_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.track_title_url.title_name));
-			break;
-		default:
-			break;
-	}	
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
+		evt->data.media_player_name.player_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_name.player_name));
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
+		evt->data.media_player_icon_url.p_icon_url = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.media_player_icon_url.p_icon_url));
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
+		evt->data.track_title_url.title_name = (uint8_t *)((uint8_t *)evt + (uint32_t)(evt->data.track_title_url.title_name));
+		break;
+	default:
+		break;
+	}
 }
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 static void le_audio_ipc_pa_adv_report_ind_evt_pop(rtk_bt_le_audio_pa_adv_report_ind_t *evt)
@@ -2263,7 +2366,7 @@ void bt_le_audio_ipc_pop_event_param(uint8_t act, void *param)
 		break;
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 	case RTK_BT_LE_AUDIO_EVT_PA_ADV_REPORT_IND:
-		le_audio_ipc_pa_adv_report_ind_evt_pop((rtk_bt_le_audio_pa_adv_report_ind_t*)param);
+		le_audio_ipc_pa_adv_report_ind_evt_pop((rtk_bt_le_audio_pa_adv_report_ind_t *)param);
 		break;
 #endif
 	default:
@@ -2274,19 +2377,19 @@ void bt_le_audio_ipc_pop_event_param(uint8_t act, void *param)
 uint32_t rtk_le_audio_get_act_ret_param_size(uint16_t act)
 {
 	(void)act;
-	return 0;	
+	return 0;
 }
 uint16_t rtk_le_audio_copy_act_ret_param(uint16_t act, void *dst, void *src)
 {
 	(void)act;
-	(void)dst;	
-	(void)src;	
+	(void)dst;
+	(void)src;
 	return RTK_BT_OK;
 }
 void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
 {
 	(void)act;
-	(void)data;	
+	(void)data;
 	(void)buf_len;
 	(void)pactual_size;
 	return NULL;
@@ -2294,19 +2397,19 @@ void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, u
 void bt_le_audio_ipc_pop_event_param(uint8_t act, void *param)
 {
 	(void)act;
-	(void)param;		
+	(void)param;
 }
 #endif
 #elif defined(CONFIG_BT_NP) && CONFIG_BT_NP
 /* ===============================================rtk_bt_le_gap_ipc_dev action======================================= */
 static struct evt_mem_option rtk_bt_gap_evt_mem_op_tab[] = {
 #if RTK_BT_5_2_L2C_ECFC_SUPPORT
-	{RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND, sizeof(rtk_bt_ecfc_conn_cmpl_ind_t)}, 
-	{RTK_BT_GAP_EVT_ECFC_DATA_IND, sizeof(rtk_bt_ecfc_data_ind_t)}, 
-	{RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND, sizeof(rtk_bt_ecfc_conn_req_ind_t)}, 
-	{RTK_BT_GAP_EVT_ECFC_DISCONN_IND, sizeof(rtk_bt_ecfc_disconn_ind_t)}, 
-	{RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND, sizeof(rtk_bt_ecfc_reconf_req_ind_t)}, 
-	{RTK_BT_GAP_EVT_ECFC_RECONF_RSP_IND, sizeof(rtk_bt_ecfc_reconf_rsp_ind_t)}, 
+	{RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND, sizeof(rtk_bt_ecfc_conn_cmpl_ind_t)},
+	{RTK_BT_GAP_EVT_ECFC_DATA_IND, sizeof(rtk_bt_ecfc_data_ind_t)},
+	{RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND, sizeof(rtk_bt_ecfc_conn_req_ind_t)},
+	{RTK_BT_GAP_EVT_ECFC_DISCONN_IND, sizeof(rtk_bt_ecfc_disconn_ind_t)},
+	{RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND, sizeof(rtk_bt_ecfc_reconf_req_ind_t)},
+	{RTK_BT_GAP_EVT_ECFC_RECONF_RSP_IND, sizeof(rtk_bt_ecfc_reconf_rsp_ind_t)},
 #endif
 	{RTK_BT_GAP_EVT_MAX, 0}
 };
@@ -2352,43 +2455,43 @@ void bt_gap_ipc_pop_cmd_param(uint8_t act, void *param)
 
 /* ===============================================rtk_bt_le_gap_ipc_dev action======================================= */
 static struct evt_mem_option rtk_bt_le_gap_evt_mem_op_tab[] = {
-	{RTK_BT_LE_GAP_EVT_ADV_START_IND, sizeof(rtk_bt_le_adv_start_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_ADV_STOP_IND, sizeof(rtk_bt_le_adv_stop_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_CONNECT_IND, sizeof(rtk_bt_le_conn_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_DISCONN_IND, sizeof(rtk_bt_le_disconn_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_SCAN_START_IND, sizeof(uint16_t)}, 
-	{RTK_BT_LE_GAP_EVT_SCAN_RES_IND, sizeof(rtk_bt_le_scan_res_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_SCAN_STOP_IND, sizeof(uint16_t)}, 
-	{RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND, sizeof(rtk_bt_le_conn_update_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND, sizeof(rtk_bt_le_remote_conn_update_req_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND, sizeof(rtk_bt_le_data_len_change_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND, sizeof(rtk_bt_le_phy_update_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND, sizeof(rtk_bt_le_auth_pair_cfm_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND, sizeof(rtk_bt_le_auth_key_display_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND, sizeof(rtk_bt_le_auth_key_input_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND, sizeof(rtk_bt_le_auth_key_cfm_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND, sizeof(rtk_bt_le_auth_oob_input_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND, sizeof(rtk_bt_le_auth_complete_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_BOND_MODIFY_IND, sizeof(rtk_bt_le_bond_modify_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_ADV_START_IND, sizeof(rtk_bt_le_adv_start_ind_t)},
+	{RTK_BT_LE_GAP_EVT_ADV_STOP_IND, sizeof(rtk_bt_le_adv_stop_ind_t)},
+	{RTK_BT_LE_GAP_EVT_CONNECT_IND, sizeof(rtk_bt_le_conn_ind_t)},
+	{RTK_BT_LE_GAP_EVT_DISCONN_IND, sizeof(rtk_bt_le_disconn_ind_t)},
+	{RTK_BT_LE_GAP_EVT_SCAN_START_IND, sizeof(uint16_t)},
+	{RTK_BT_LE_GAP_EVT_SCAN_RES_IND, sizeof(rtk_bt_le_scan_res_ind_t)},
+	{RTK_BT_LE_GAP_EVT_SCAN_STOP_IND, sizeof(uint16_t)},
+	{RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND, sizeof(rtk_bt_le_conn_update_ind_t)},
+	{RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND, sizeof(rtk_bt_le_remote_conn_update_req_ind_t)},
+	{RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND, sizeof(rtk_bt_le_data_len_change_ind_t)},
+	{RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND, sizeof(rtk_bt_le_phy_update_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND, sizeof(rtk_bt_le_auth_pair_cfm_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND, sizeof(rtk_bt_le_auth_key_display_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND, sizeof(rtk_bt_le_auth_key_input_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND, sizeof(rtk_bt_le_auth_key_cfm_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND, sizeof(rtk_bt_le_auth_oob_input_ind_t)},
+	{RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND, sizeof(rtk_bt_le_auth_complete_ind_t)},
+	{RTK_BT_LE_GAP_EVT_BOND_MODIFY_IND, sizeof(rtk_bt_le_bond_modify_ind_t)},
 #if RTK_BLE_5_0_AE_ADV_SUPPORT
-	{RTK_BT_LE_GAP_EVT_EXT_ADV_IND, sizeof(rtk_bt_le_ext_adv_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_EXT_ADV_IND, sizeof(rtk_bt_le_ext_adv_ind_t)},
 #endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
 #if RTK_BLE_5_0_AE_SCAN_SUPPORT
-	{RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND, sizeof(rtk_bt_le_ext_scan_res_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND, sizeof(rtk_bt_le_ext_scan_res_ind_t)},
 #endif /* RTK_BLE_5_0_AE_SCAN_SUPPORT */
 #if RTK_BLE_5_0_PA_ADV_SUPPORT
-	{RTK_BT_LE_GAP_EVT_PA_IND, sizeof(rtk_bt_le_pa_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_PA_IND, sizeof(rtk_bt_le_pa_ind_t)},
 #endif /* RTK_BLE_5_0_PA_ADV_SUPPORT */
 #if RTK_BLE_5_0_PA_SYNC_SUPPORT
-	{RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND, sizeof(rtk_bt_le_pa_sync_ind_t)}, 
-	{RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND, sizeof(rtk_bt_le_pa_adv_report_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND, sizeof(rtk_bt_le_pa_sync_ind_t)},
+	{RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND, sizeof(rtk_bt_le_pa_adv_report_ind_t)},
 #endif
 #if RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
-	{RTK_BT_LE_GAP_PAST_RECEIVED_INFO_IND, sizeof(rtk_bt_le_past_recv_ind_t)}, 
+	{RTK_BT_LE_GAP_PAST_RECEIVED_INFO_IND, sizeof(rtk_bt_le_past_recv_ind_t)},
 #endif
-	{RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND, sizeof(rtk_bt_le_modify_resolv_list_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND, sizeof(rtk_bt_le_modify_resolv_list_ind_t)},
 #if RTK_BLE_5_2_POWER_CONTROL_SUPPORT
-	{RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND, sizeof(rtk_bt_le_txpower_ind_t)}, 
+	{RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND, sizeof(rtk_bt_le_txpower_ind_t)},
 #endif
 	{RTK_BT_LE_GAP_EVT_MAX, 0}
 };
@@ -2420,6 +2523,11 @@ static void le_ipc_vendor_cmd_req_pop(rtk_bt_le_gap_vendor_cmd_param_t *vendor_c
 }
 
 #if RTK_BLE_5_0_AE_ADV_SUPPORT
+static void le_ipc_create_ext_adv_pop(rtk_bt_le_ext_adv_create_t *p_create)
+{
+	p_create->p_adv_param = (rtk_bt_le_ext_adv_param_t *)((uint8_t *)p_create + (uint32_t)p_create->p_adv_param);
+}
+
 static void le_ipc_set_ext_adv_data_pop(rtk_bt_le_ext_adv_data_t *ext_adv_data)
 {
 	ext_adv_data->pdata = (uint8_t *)((uint8_t *)ext_adv_data + (uint32_t)ext_adv_data->pdata);
@@ -2448,6 +2556,9 @@ void bt_le_ipc_pop_cmd_param(uint8_t act, void *param)
 		le_ipc_vendor_cmd_req_pop((rtk_bt_le_gap_vendor_cmd_param_t *)param);
 		break;
 #if RTK_BLE_5_0_AE_ADV_SUPPORT
+	case RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV:
+		le_ipc_create_ext_adv_pop((rtk_bt_le_ext_adv_create_t *)param);
+		break;
 	case RTK_BT_LE_GAP_ACT_SET_EXT_ADV_DATA:
 	case RTK_BT_LE_GAP_ACT_SET_EXT_SCAN_RSP_DATA:
 		le_ipc_set_ext_adv_data_pop((rtk_bt_le_ext_adv_data_t *)param);
@@ -2468,22 +2579,24 @@ void bt_le_ipc_pop_cmd_param(uint8_t act, void *param)
 
 #if RTK_BLE_5_0_AE_SCAN_SUPPORT
 static int le_ipc_ext_scan_res_evt_push(uint8_t *buf, rtk_bt_le_ext_scan_res_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+										uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_ext_scan_res_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -2499,22 +2612,24 @@ exit:
 
 #if RTK_BLE_5_0_PA_SYNC_SUPPORT
 static int le_ipc_pa_adv_report_evt_push(uint8_t *buf, rtk_bt_le_pa_adv_report_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_pa_adv_report_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->data_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_data, size);
 	end += ALIGN_UP(size, 4);
 
@@ -2540,15 +2655,15 @@ void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
 	switch (event) {
 #if RTK_BLE_5_0_AE_SCAN_SUPPORT
 	case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND:
-		ret = le_ipc_ext_scan_res_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_ipc_ext_scan_res_evt_push((uint8_t *)dev_msg->param_buf, data,
+										   IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 #endif /* RTK_BLE_5_0_AE_SCAN_SUPPORT */
 
 #if RTK_BLE_5_0_PA_SYNC_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND:
-		ret = le_ipc_pa_adv_report_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_ipc_pa_adv_report_evt_push((uint8_t *)dev_msg->param_buf, data,
+											IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 #endif /* RTK_BLE_5_0_PA_SYNC_SUPPORT */
 
@@ -2557,7 +2672,7 @@ void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	if (ret) {
 		osif_mem_free(dev_msg);
 		dev_msg = NULL;
@@ -2601,15 +2716,15 @@ static void gatts_ipc_reg_srv_param_pop(struct rtk_bt_gatt_service *srv_reg)
 	uint16_t uuid_val = 0;
 
 	attr_count = srv_reg->attr_count;
-	srv_reg->attrs = (void *) ((uint8_t *)srv_reg + (uint32_t)(srv_reg->attrs));
+	srv_reg->attrs = (void *)((uint8_t *)srv_reg + (uint32_t)(srv_reg->attrs));
 	for (i = 0; i < attr_count; i++) {
 		srv_reg->attrs[i].uuid = (void *)((uint8_t *)srv_reg + (uint32_t)(srv_reg->attrs[i].uuid));
 		if (srv_reg->attrs[i].user_data) {
-			srv_reg->attrs[i].user_data = (void *)((uint8_t *)srv_reg + 
-											(uint32_t)(srv_reg->attrs[i].user_data));
+			srv_reg->attrs[i].user_data = (void *)((uint8_t *)srv_reg +
+												   (uint32_t)(srv_reg->attrs[i].user_data));
 
 			if (BT_UUID_TYPE_16 == ((struct bt_uuid *)srv_reg->attrs[i].uuid)->type) {
-				uuid_val =  ((struct bt_uuid_16 *)srv_reg->attrs[i].uuid)->val;
+				uuid_val = ((struct bt_uuid_16 *)srv_reg->attrs[i].uuid)->val;
 				if (BT_UUID_GATT_CHRC_VAL == uuid_val) {
 					struct rtk_bt_gatt_chrc *chrc_user_data = srv_reg->attrs[i].user_data;
 					chrc_user_data->uuid = (void *)((uint8_t *)(srv_reg) + (uint32_t)(chrc_user_data->uuid));
@@ -2617,10 +2732,10 @@ static void gatts_ipc_reg_srv_param_pop(struct rtk_bt_gatt_service *srv_reg)
 					struct rtk_bt_gatt_caf *caf = srv_reg->attrs[i].user_data;
 					caf->handles = (uint16_t *)((uint8_t *)(srv_reg) + (uint32_t)(caf->handles));
 				}
-			}								
+			}
 		}
 	}
-	
+
 }
 
 static void gatts_ipc_indicate_param_pop(rtk_bt_gatts_ntf_and_ind_param_t *ind)
@@ -2639,22 +2754,24 @@ static void gatts_ipc_read_resp_param_pop(rtk_bt_gatts_read_resp_param_t *resp_r
 }
 
 int gatts_ipc_write_evt_push(uint8_t *buf, rtk_bt_gatts_write_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+							 uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_gatts_write_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->value, size);
 	end += ALIGN_UP(size, 4);
 
@@ -2701,8 +2818,8 @@ void *bt_gatts_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 	}
 	switch (event) {
 	case RTK_BT_GATTS_EVT_WRITE_IND:
-		if (gatts_ipc_write_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size)) {
+		if (gatts_ipc_write_evt_push((uint8_t *)dev_msg->param_buf, data,
+									 IPC_DEV_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(dev_msg);
 			dev_msg = NULL;
 		}
@@ -2713,7 +2830,7 @@ void *bt_gatts_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -2792,7 +2909,7 @@ void bt_gattc_ipc_pop_cmd_param(uint8_t act, void *param)
 }
 
 static int gattc_ipc_read_evt_push(uint8_t *buf, rtk_bt_gattc_read_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+								   uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *struct_end = NULL;
@@ -2801,15 +2918,17 @@ static int gattc_ipc_read_evt_push(uint8_t *buf, rtk_bt_gattc_read_ind_t *param,
 #if RTK_BLE_MGR_LIB
 
 	size = sizeof(rtk_bt_gattc_read_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	struct_end = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->value, size);
 	end += ALIGN_UP(size, 4);
 
@@ -2821,15 +2940,17 @@ static int gattc_ipc_read_evt_push(uint8_t *buf, rtk_bt_gattc_read_ind_t *param,
 	switch (param->type) {
 	case RTK_BT_GATT_CHAR_READ_BY_HANDLE:
 		size = sizeof(rtk_bt_gattc_read_ind_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		struct_end = end;
 
 		size = param->by_handle.len;
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param->by_handle.value, size);
 		end += ALIGN_UP(size, 4);
 
@@ -2839,33 +2960,37 @@ static int gattc_ipc_read_evt_push(uint8_t *buf, rtk_bt_gattc_read_ind_t *param,
 
 	case RTK_BT_GATT_CHAR_READ_BY_UUID:
 		size = sizeof(rtk_bt_gattc_read_ind_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		struct_end = end;
 
 		size = param->by_uuid_per.len;
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param->by_uuid_per.value, size);
 		end += ALIGN_UP(size, 4);
 
 		((rtk_bt_gattc_read_ind_t *)buf)->by_uuid_per.value = (uint8_t *)(struct_end - buf);
 		*actual_size = (uint32_t)(end - buf);
 		break;
-	
+
 	case RTK_BT_GATT_CHAR_READ_MULTIPLE:
 		size = sizeof(rtk_bt_gattc_read_ind_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		struct_end = end;
 
 		size = param->multiple_per.len;
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param->multiple_per.value, size);
 		end += ALIGN_UP(size, 4);
 
@@ -2875,15 +3000,17 @@ static int gattc_ipc_read_evt_push(uint8_t *buf, rtk_bt_gattc_read_ind_t *param,
 
 	case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
 		size = sizeof(rtk_bt_gattc_read_ind_t);
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param, size);
 		end += ALIGN_UP(size, 4);
 		struct_end = end;
 
 		size = param->multiple_variable_per.len;
-		if (end + size > buf + size_limit)
+		if (end + size > buf + size_limit) {
 			goto exit;
+		}
 		memcpy(end, param->multiple_variable_per.value, size);
 		end += ALIGN_UP(size, 4);
 
@@ -2906,22 +3033,24 @@ exit:
 }
 
 static int gatts_ipc_notify_indicate_evt_push(uint8_t *buf, rtk_bt_gattc_cccd_value_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_gattc_cccd_value_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->value, size);
 	end += ALIGN_UP(size, 4);
 
@@ -2944,7 +3073,7 @@ void *bt_gattc_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 	}
 	switch (event) {
 	case RTK_BT_GATTC_EVT_READ_RESULT_IND:
-		if (gattc_ipc_read_evt_push((uint8_t*)dev_msg->param_buf, data,
+		if (gattc_ipc_read_evt_push((uint8_t *)dev_msg->param_buf, data,
 									IPC_DEV_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(dev_msg);
 			dev_msg = NULL;
@@ -2953,8 +3082,8 @@ void *bt_gattc_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 
 	case RTK_BT_GATTC_EVT_NOTIFY_IND:
 	case RTK_BT_GATTC_EVT_INDICATE_IND:
-		if (gatts_ipc_notify_indicate_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size)) {
+		if (gatts_ipc_notify_indicate_evt_push((uint8_t *)dev_msg->param_buf, data,
+											   IPC_DEV_API_DATA_MAX, pactual_size)) {
 			osif_mem_free(dev_msg);
 			dev_msg = NULL;
 		}
@@ -2965,7 +3094,7 @@ void *bt_gattc_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -2995,22 +3124,24 @@ uint32_t get_bt_br_gap_evt_mem_size(uint8_t evt_code)
 }
 
 int br_gap_ipc_inquiry_result_evt_push(uint8_t *buf, rtk_bt_br_inquiry_result_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+									   uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_br_inquiry_result_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->eir_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_eir, size);
 	end += ALIGN_UP(size, 4);
 
@@ -3032,12 +3163,12 @@ void *bt_br_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
 		return NULL;
 	}
 	switch (event) {
-		case RTK_BT_BR_GAP_INQUIRY_RESULT:
-			if (br_gap_ipc_inquiry_result_evt_push((uint8_t*)dev_msg->param_buf, data,
-										IPC_DEV_API_DATA_MAX, pactual_size)) {
-				osif_mem_free(dev_msg);
-				dev_msg = NULL;
-			}
+	case RTK_BT_BR_GAP_INQUIRY_RESULT:
+		if (br_gap_ipc_inquiry_result_evt_push((uint8_t *)dev_msg->param_buf, data,
+											   IPC_DEV_API_DATA_MAX, pactual_size)) {
+			osif_mem_free(dev_msg);
+			dev_msg = NULL;
+		}
 		break;
 	/* TODO */
 
@@ -3046,7 +3177,7 @@ void *bt_br_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3105,7 +3236,7 @@ void *bt_a2dp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, u
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3128,10 +3259,10 @@ void bt_a2dp_ipc_pop_cmd_param(uint8_t act, void *param)
 
 /* ===============================================rtk_bt_avrcp_ipc_dev action======================================= */
 static struct evt_mem_option rtk_bt_avrcp_evt_mem_op_tab[] = {
-	{RTK_BT_AVRCP_EVT_CONN_IND, sizeof(rtk_bt_avrcp_conn_ind_t)}, 
+	{RTK_BT_AVRCP_EVT_CONN_IND, sizeof(rtk_bt_avrcp_conn_ind_t)},
 	{RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET, sizeof(rtk_bt_avrcp_absolute_volume_set_t)},
-	{RTK_BT_AVRCP_EVT_VOLUME_CHANGED, sizeof(rtk_bt_avrcp_volume_t)}, 
-	{RTK_BT_AVRCP_EVT_VOLUME_UP, 0}, 
+	{RTK_BT_AVRCP_EVT_VOLUME_CHANGED, sizeof(rtk_bt_avrcp_volume_t)},
+	{RTK_BT_AVRCP_EVT_VOLUME_UP, 0},
 	{RTK_BT_AVRCP_EVT_VOLUME_DOWN, 0}, 
 	{RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED, 0}, 
 	{RTK_BT_AVRCP_EVT_CONN_CMPL, 0}, 
@@ -3171,7 +3302,7 @@ void *bt_avrcp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3226,7 +3357,7 @@ void *bt_spp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3284,7 +3415,7 @@ void *bt_sdp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3350,7 +3481,7 @@ void *bt_hfp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
 		*pactual_size = buf_len;
 		break;
 	}
-	
+
 	return (void *)dev_msg;
 }
 
@@ -3401,22 +3532,24 @@ uint32_t get_bt_le_iso_evt_mem_size(uint8_t evt_code)
 	}
 }
 int iso_ipc_data_ind_evt_push(uint8_t *buf, rtk_bt_le_iso_direct_iso_data_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+							  uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint8_t *border[2] = {0};
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_iso_direct_iso_data_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 	border[0] = end;
 
 	size = param->buf_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_buf, size);
 	end += ALIGN_UP(size, 4);
 
@@ -3440,8 +3573,8 @@ void *bt_le_iso_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len,
 	}
 	switch (event) {
 	case RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND:
-		ret = iso_ipc_data_ind_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = iso_ipc_data_ind_evt_push((uint8_t *)dev_msg->param_buf, data,
+										IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 
 	default:
@@ -3452,7 +3585,7 @@ void *bt_le_iso_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len,
 	if (ret) {
 		osif_mem_free(dev_msg);
 		dev_msg = NULL;
-	}	
+	}
 	return (void *)dev_msg;
 }
 
@@ -3471,7 +3604,7 @@ static void le_ipc_iso_big_recevier_create_sync_pop(rtk_bt_le_iso_big_receiver_c
 static void le_ipc_iso_data_send_pop(rtk_bt_le_iso_data_send_info_t *param)
 {
 	param->p_data = (uint8_t *)((uint8_t *)param + (uint32_t)param->p_data);
-}	
+}
 
 void bt_le_iso_ipc_pop_cmd_param(uint8_t act, void *param)
 {
@@ -3501,16 +3634,16 @@ uint32_t get_bt_le_iso_evt_mem_size(uint8_t evt_code)
 }
 void *bt_le_iso_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size)
 {
-	(void)event;	
-	(void)data;	
-	(void)buf_len;	
+	(void)event;
+	(void)data;
+	(void)buf_len;
 	(void)pactual_size;
 	return NULL;
 }
 void bt_le_iso_ipc_pop_cmd_param(uint8_t act, void *param)
 {
-	(void)act;	
-	(void)param;		
+	(void)act;
+	(void)param;
 }
 #endif
 
@@ -3531,7 +3664,7 @@ static struct evt_mem_option rtk_bt_le_audio_evt_mem_op_tab[] = {
 	{RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND, sizeof(rtk_bt_le_audio_big_sync_state_ind_t)},
 	{RTK_BT_LE_AUDIO_EVT_PA_BIG_INFO_IND, sizeof(rtk_bt_le_audio_pa_biginfo_ind_t)},
 	{RTK_BT_LE_AUDIO_EVT_PA_ADV_REPORT_IND, sizeof(rtk_bt_le_audio_pa_adv_report_ind_t)},
-	{RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND, sizeof(rtk_bt_le_audio_bass_get_pa_sync_param_ind_t)},	
+	{RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND, sizeof(rtk_bt_le_audio_bass_get_pa_sync_param_ind_t)},
 	{RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND, sizeof(rtk_bt_le_audio_bass_get_big_sync_param_ind_t)},
 	{RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND, sizeof(rtk_bt_le_audio_bass_get_broadcast_code_ind_t)},
 	{RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND, sizeof(rtk_bt_le_audio_bass_set_prefer_bis_sync_ind_t)},
@@ -3558,20 +3691,22 @@ uint32_t get_bt_le_audio_evt_mem_size(uint8_t evt_code)
 	}
 }
 int le_audio_ipc_iso_data_ind_evt_push(uint8_t *buf, rtk_bt_le_audio_direct_iso_data_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+									   uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 
 	size = sizeof(rtk_bt_le_audio_direct_iso_data_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = param->buf_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_buf, size);
 	((rtk_bt_le_audio_direct_iso_data_ind_t *)buf)->p_buf = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
@@ -3585,45 +3720,49 @@ exit:
 }
 
 int le_audio_ipc_mcs_client_read_result_ind_evt_push(uint8_t *buf, rtk_bt_le_audio_mcs_client_read_result_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_mcs_client_read_result_ind_t *p_ind = (rtk_bt_le_audio_mcs_client_read_result_ind_t *)buf;
 
 	size = sizeof(rtk_bt_le_audio_mcs_client_read_result_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	switch (param->uuid) {
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
-			size = param->data.media_player_name.name_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.media_player_name.player_name, size);
-			p_ind->data.media_player_name.player_name = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
-			size = param->data.media_player_icon_url.url_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.media_player_icon_url.p_icon_url, size);
-			p_ind->data.media_player_icon_url.p_icon_url = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
-			size = param->data.track_title_url.title_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.track_title_url.title_name, size);
-			p_ind->data.track_title_url.title_name = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		default:
-			break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
+		size = param->data.media_player_name.name_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.media_player_name.player_name, size);
+		p_ind->data.media_player_name.player_name = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
+		size = param->data.media_player_icon_url.url_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.media_player_icon_url.p_icon_url, size);
+		p_ind->data.media_player_icon_url.p_icon_url = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
+		size = param->data.track_title_url.title_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.track_title_url.title_name, size);
+		p_ind->data.track_title_url.title_name = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	default:
+		break;
 	}
 
 	*actual_size = (uint32_t)(end - buf);
@@ -3634,45 +3773,49 @@ exit:
 	return -1;
 }
 int le_audio_ipc_mcs_client_notify_result_ind_evt_push(uint8_t *buf, rtk_bt_le_audio_mcs_client_notify_result_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_mcs_client_notify_result_ind_t *p_ind = (rtk_bt_le_audio_mcs_client_notify_result_ind_t *)buf;
 
 	size = sizeof(rtk_bt_le_audio_mcs_client_notify_result_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	switch (param->uuid) {
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
-			size = param->data.media_player_name.name_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.media_player_name.player_name, size);
-			p_ind->data.media_player_name.player_name = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
-			size = param->data.media_player_icon_url.url_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.media_player_icon_url.p_icon_url, size);
-			p_ind->data.media_player_icon_url.p_icon_url = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
-			size = param->data.track_title_url.title_len;
-			if (end + size > buf + size_limit)
-				goto exit;
-			memcpy(end, param->data.track_title_url.title_name, size);
-			p_ind->data.track_title_url.title_name = (uint8_t *)(end - buf);
-			end += ALIGN_UP(size, 4);
-			break;
-		default:
-			break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_NAME_CHAR_UUID:
+		size = param->data.media_player_name.name_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.media_player_name.player_name, size);
+		p_ind->data.media_player_name.player_name = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_OBJID_CHAR_UUID:
+		size = param->data.media_player_icon_url.url_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.media_player_icon_url.p_icon_url, size);
+		p_ind->data.media_player_icon_url.p_icon_url = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	case RTK_BT_LE_AUDIO_MEDIA_PLAYER_ICON_URL_CHAR_UUID:
+		size = param->data.track_title_url.title_len;
+		if (end + size > buf + size_limit) {
+			goto exit;
+		}
+		memcpy(end, param->data.track_title_url.title_name, size);
+		p_ind->data.track_title_url.title_name = (uint8_t *)(end - buf);
+		end += ALIGN_UP(size, 4);
+		break;
+	default:
+		break;
 	}
 
 	*actual_size = (uint32_t)(end - buf);
@@ -3684,23 +3827,25 @@ exit:
 }
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 int le_audio_ipc_pa_adv_report_ind_evt_push(uint8_t *buf, rtk_bt_le_audio_pa_adv_report_ind_t *param,
-								uint32_t size_limit, uint32_t *actual_size)
+		uint32_t size_limit, uint32_t *actual_size)
 {
 	uint8_t *end = buf;
 	uint32_t size = 0;
 	rtk_bt_le_audio_pa_adv_report_ind_t *buf_report = (rtk_bt_le_audio_pa_adv_report_ind_t *)buf;
 
 	size = sizeof(rtk_bt_le_audio_pa_adv_report_ind_t);
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param, size);
 	end += ALIGN_UP(size, 4);
 
 	size = param->data_len;
-	if (end + size > buf + size_limit)
+	if (end + size > buf + size_limit) {
 		goto exit;
+	}
 	memcpy(end, param->p_data, size);
-	buf_report->p_data = (uint8_t *)(end - buf);	
+	buf_report->p_data = (uint8_t *)(end - buf);
 	end += ALIGN_UP(size, 4);
 
 	*actual_size = (uint32_t)(end - buf);
@@ -3715,7 +3860,7 @@ void *bt_le_audio_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_le
 {
 	int ret = 0;
 	bt_ipc_dev_request_message *dev_msg = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(*dev_msg));
-	memset(dev_msg,0,sizeof(*dev_msg));
+	memset(dev_msg, 0, sizeof(*dev_msg));
 
 	if (!dev_msg) {
 		printf("%s allocate dev_msg fail \r\n", __func__);
@@ -3723,21 +3868,21 @@ void *bt_le_audio_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_le
 	}
 	switch (event) {
 	case RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND:
-		ret = le_audio_ipc_iso_data_ind_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_audio_ipc_iso_data_ind_evt_push((uint8_t *)dev_msg->param_buf, data,
+				IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 	case RTK_BT_LE_AUDIO_EVT_MCS_CLIENT_READ_RESULT_IND:
-		ret = le_audio_ipc_mcs_client_read_result_ind_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_audio_ipc_mcs_client_read_result_ind_evt_push((uint8_t *)dev_msg->param_buf, data,
+				IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 	case RTK_BT_LE_AUDIO_EVT_MCS_CLIENT_NOTIFY_RESULT_IND:
-		ret = le_audio_ipc_mcs_client_notify_result_ind_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_audio_ipc_mcs_client_notify_result_ind_evt_push((uint8_t *)dev_msg->param_buf, data,
+				IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 	case RTK_BT_LE_AUDIO_EVT_PA_ADV_REPORT_IND:
-		ret = le_audio_ipc_pa_adv_report_ind_evt_push((uint8_t*)dev_msg->param_buf, data,
-									IPC_DEV_API_DATA_MAX, pactual_size);
+		ret = le_audio_ipc_pa_adv_report_ind_evt_push((uint8_t *)dev_msg->param_buf, data,
+				IPC_DEV_API_DATA_MAX, pactual_size);
 		break;
 #endif
 	default:
@@ -3746,10 +3891,10 @@ void *bt_le_audio_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_le
 		break;
 	}
 
-	if(ret) {
+	if (ret) {
 		osif_mem_free(dev_msg);
 		dev_msg = NULL;
-	}	
+	}
 	return (void *)dev_msg;
 }
 
@@ -3766,7 +3911,7 @@ static void le_ipc_audio_mcs_media_player_info_set_pop(rtk_bt_le_audio_mcs_media
 static void le_ipc_audio_mcs_media_track_info_set_pop(rtk_bt_le_audio_mcs_media_track_info_set_t *param)
 {
 	param->media_track_info.p_title = (uint8_t *)((uint8_t *)param + (uint32_t)param->media_track_info.p_title);
-}	
+}
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
 static void le_ipc_audio_sync_setup_path_pop(rtk_bt_le_audio_sync_setup_data_path_param_t *param)
 {
@@ -3776,62 +3921,62 @@ static void le_ipc_audio_sync_setup_path_pop(rtk_bt_le_audio_sync_setup_data_pat
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
 static void le_ipc_audio_broadcast_source_create_pop(rtk_bt_le_audio_broadcast_source_create_param_t *param)
 {
-	uint8_t i=0,j=0,k=0;
+	uint8_t i = 0, j = 0, k = 0;
 
-	for(i=0;i<param->num_groups;i++) {
-		for(j=0;j<param->group[i].num_subgroups;j++) {
+	for (i = 0; i < param->num_groups; i++) {
+		for (j = 0; j < param->group[i].num_subgroups; j++) {
 			//restore codec_cfg_l2
 			param->group[i].subgroup[j].p_codec_cfg_l2 = (uint8_t *)((uint8_t *)param + (uint32_t)param->group[i].subgroup[j].p_codec_cfg_l2);
 
 			//restore metadata
 			param->group[i].subgroup[j].p_metadata = (uint8_t *)((uint8_t *)param + (uint32_t)param->group[i].subgroup[j].p_metadata);
-		
-			for(k=0;k<param->group[i].subgroup[j].num_bis;k++) {
-				//restore p_codec_cfg_l3 
-				param->group[i].subgroup[j].bis[k].p_codec_cfg_l3 = (uint8_t *)((uint8_t *)param + (uint32_t)param->group[i].subgroup[j].bis[k].p_codec_cfg_l3);			
+
+			for (k = 0; k < param->group[i].subgroup[j].num_bis; k++) {
+				//restore p_codec_cfg_l3
+				param->group[i].subgroup[j].bis[k].p_codec_cfg_l3 = (uint8_t *)((uint8_t *)param + (uint32_t)param->group[i].subgroup[j].bis[k].p_codec_cfg_l3);
 			}
 		}
 	}
 }
 static void le_ipc_audio_broadcast_source_setup_path_pop(rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *param)
 {
-		param->setup_param.p_codec_config = (uint8_t *)((uint8_t *)param + (uint32_t)param->setup_param.p_codec_config);
+	param->setup_param.p_codec_config = (uint8_t *)((uint8_t *)param + (uint32_t)param->setup_param.p_codec_config);
 }
 static void le_ipc_audio_broadcast_source_reconfig_pop(rtk_bt_le_audio_broadcast_source_reconfig_param_t *param)
 {
-		param->p_metadata = (uint8_t *)((uint8_t *)param + (uint32_t)param->p_metadata);
+	param->p_metadata = (uint8_t *)((uint8_t *)param + (uint32_t)param->p_metadata);
 }
 #endif
 void bt_le_audio_ipc_pop_cmd_param(uint8_t act, void *param)
 {
-	switch (act) {			
-		case RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND:
-			le_ipc_audio_iso_data_send_pop((rtk_bt_le_audio_iso_data_send_info_t *)param);
-			break;
-		case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_PLAYER_INFO_SET:
-			le_ipc_audio_mcs_media_player_info_set_pop((rtk_bt_le_audio_mcs_media_player_info_set_t *)param);
-			break;
-		case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_TRACK_INFO_SET:
-			le_ipc_audio_mcs_media_track_info_set_pop((rtk_bt_le_audio_mcs_media_track_info_set_t *)param);
-			break;
+	switch (act) {
+	case RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND:
+		le_ipc_audio_iso_data_send_pop((rtk_bt_le_audio_iso_data_send_info_t *)param);
+		break;
+	case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_PLAYER_INFO_SET:
+		le_ipc_audio_mcs_media_player_info_set_pop((rtk_bt_le_audio_mcs_media_player_info_set_t *)param);
+		break;
+	case RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_TRACK_INFO_SET:
+		le_ipc_audio_mcs_media_track_info_set_pop((rtk_bt_le_audio_mcs_media_track_info_set_t *)param);
+		break;
 #if (defined RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT)
-		case RTK_BT_LE_AUDIO_ACT_SYNC_SETUP_DATA_PATH:
-			le_ipc_audio_sync_setup_path_pop((rtk_bt_le_audio_sync_setup_data_path_param_t *)param);
-			break;
+	case RTK_BT_LE_AUDIO_ACT_SYNC_SETUP_DATA_PATH:
+		le_ipc_audio_sync_setup_path_pop((rtk_bt_le_audio_sync_setup_data_path_param_t *)param);
+		break;
 #endif
 #if (defined RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && (RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)
-		case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE:
-			le_ipc_audio_broadcast_source_create_pop((rtk_bt_le_audio_broadcast_source_create_param_t *)param);
-			break;
-		case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_SETUP_DATA_PATH:
-			le_ipc_audio_broadcast_source_setup_path_pop((rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *)param);
-			break;
-		case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_RECONFIG:
-			le_ipc_audio_broadcast_source_reconfig_pop((rtk_bt_le_audio_broadcast_source_reconfig_param_t *)param);
-			break;
+	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE:
+		le_ipc_audio_broadcast_source_create_pop((rtk_bt_le_audio_broadcast_source_create_param_t *)param);
+		break;
+	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_SETUP_DATA_PATH:
+		le_ipc_audio_broadcast_source_setup_path_pop((rtk_bt_le_audio_broadcast_source_setup_data_path_param_t *)param);
+		break;
+	case RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_RECONFIG:
+		le_ipc_audio_broadcast_source_reconfig_pop((rtk_bt_le_audio_broadcast_source_reconfig_param_t *)param);
+		break;
 #endif
-		default:
-			break;
+	default:
+		break;
 	}
 }
 #else
@@ -3842,16 +3987,16 @@ uint32_t get_bt_le_audio_evt_mem_size(uint8_t evt_code)
 }
 void *bt_le_audio_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size)
 {
-	(void)event;	
-	(void)data;	
-	(void)buf_len;	
+	(void)event;
+	(void)data;
+	(void)buf_len;
 	(void)pactual_size;
 	return NULL;
 }
 void bt_le_audio_ipc_pop_cmd_param(uint8_t act, void *param)
 {
-	(void)act;	
-	(void)param;		
+	(void)act;
+	(void)param;
 }
 #endif
 #endif

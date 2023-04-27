@@ -31,11 +31,6 @@
 #define HTTPC_DEBUG_ON           1    /*!< Enable httpc debug log */
 #define HTTPC_DEBUG_VERBOSE      2    /*!< Enable httpc verbose debug log */
 
-#define HTTPC_TLS_POLARSSL       0    /*!< Use PolarSSL for TLS when HTTPS */
-#define HTTPC_TLS_MBEDTLS        1    /*!< Use mbedTLS for TLS when HTTPS */
-
-#define HTTPC_USE_TLS            HTTPC_TLS_MBEDTLS
-
 /**
   * @brief  The structure is the context used for HTTP response header parsing.
   * @note   Only header string includes string terminator.

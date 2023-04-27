@@ -1,8 +1,6 @@
 #ifndef __WIFI_PERFORMANCE_MONITOR_H__
 #define __WIFI_PERFORMANCE_MONITOR_H__
 
-#include <platform_stdlib.h>
-
 #ifdef CONFIG_PLATFORM_8721D
 #include "rtl8721d.h"
 #endif
@@ -28,7 +26,6 @@ struct WIFI_TIME {
 
 	u32 recv_func_posthandle_time;
 	u32 recv_func_posthandle_time1;
-	u32 recv_func_posthandle_time2;
 	u32 recv_func_posthandle_time3;
 
 	u32 process_recv_indicatepkts_time;

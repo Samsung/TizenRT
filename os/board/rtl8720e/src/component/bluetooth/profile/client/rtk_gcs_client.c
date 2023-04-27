@@ -24,9 +24,9 @@ extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
 extern void *ble_tizenrt_write_no_rsp_sem;
 
-rtk_bt_gattc_read_ind_t ble_tizenrt_read_result[GAP_MAX_LINKS] = {0};
-rtk_bt_gattc_write_ind_t g_write_result = {0};
-rtk_bt_gattc_write_ind_t g_write_no_rsp_result = {0};
+extern rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINKS];
+extern rtk_bt_gattc_write_ind_t g_scatternet_write_result;
+extern rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result;
 
 void gattc_dump(uint16_t len, uint8_t* data, uint8_t* tag)
 {
@@ -137,7 +137,7 @@ void general_client_read_res_hdl(void *data)
 	rtk_bt_gattc_read_ind_t *read_res = (rtk_bt_gattc_read_ind_t *)data;
 	rtk_bt_status_t read_status = read_res->status;
 	uint16_t handle = 1;
-	ble_tizenrt_read_result[read_res->conn_handle].status = read_status;
+	ble_tizenrt_scatternet_read_results[read_res->conn_handle].status = read_status;
 	if (RTK_BT_STATUS_FAIL == read_status) {
 		printf("[APP] GATTC read failed, "
 				"profile_id: %d, conn_handle: %d, type: %d, err:0x%x\r\n",
@@ -155,10 +155,10 @@ void general_client_read_res_hdl(void *data)
 					read_res->type, read_status, handle);
 			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
 			
-			ble_tizenrt_read_result[read_res->conn_handle].by_handle.len = read_res->by_handle.len;
-			ble_tizenrt_read_result[read_res->conn_handle].by_handle.value = (uint8_t *)osif_mem_alloc(0, read_res->by_handle.len);
-			if(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value){
-				memcpy(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value, read_res->by_handle.value, read_res->by_handle.len);
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.len = read_res->by_handle.len;
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value = (uint8_t *)osif_mem_alloc(0, read_res->by_handle.len);
+			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value){
+				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value, read_res->by_handle.value, read_res->by_handle.len);
 			} else {
 				printf("Memory allocation failed \n");
 			}
@@ -172,10 +172,10 @@ void general_client_read_res_hdl(void *data)
 						read_res->type, read_status, handle);
 			gattc_dump(read_res->by_uuid_per.len, read_res->by_uuid_per.value, (uint8_t *)"read result");
 
-			ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.len = read_res->by_uuid_per.len;
-			ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value = (uint8_t *)osif_mem_alloc(0, read_res->by_uuid_per.len);
-			if(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value){
-				memcpy(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value, read_res->by_uuid_per.value, read_res->by_uuid_per.len);
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.len = read_res->by_uuid_per.len;
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value = (uint8_t *)osif_mem_alloc(0, read_res->by_uuid_per.len);
+			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value){
+				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value, read_res->by_uuid_per.value, read_res->by_uuid_per.len);
 			} else {
 				printf("Memory allocation failed \n");
 			}
@@ -189,10 +189,10 @@ void general_client_read_res_hdl(void *data)
 					read_res->type, read_status, read_res->by_handle.len);
 			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
 
-			ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.len = read_res->multiple_variable_per.len;
-			ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value = (uint8_t *)osif_mem_alloc(0, read_res->multiple_variable_per.len);
-			if(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value){
-				memcpy(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value, read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.len = read_res->multiple_variable_per.len;
+			ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value = (uint8_t *)osif_mem_alloc(0, read_res->multiple_variable_per.len);
+			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value){
+				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value, read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
 			} else {
 				printf("Memory allocation failed \n");
 			}
@@ -208,16 +208,16 @@ void general_client_read_res_hdl(void *data)
 		} else {
 			switch(read_res->type) {
 			case RTK_BT_GATT_CHAR_READ_BY_HANDLE:
-				if(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value)
-					osif_mem_free(ble_tizenrt_read_result[read_res->conn_handle].by_handle.value);
+				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value)
+					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value);
 			break;
 			case RTK_BT_GATT_CHAR_READ_BY_UUID:
-				if(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value)
-					osif_mem_free(ble_tizenrt_read_result[read_res->conn_handle].by_uuid_per.value);
+				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value)
+					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value);
 			break;
 			case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
-				if(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value)
-					osif_mem_free(ble_tizenrt_read_result[read_res->conn_handle].multiple_variable_per.value);
+				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value)
+					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value);
 			break;
 			default:
 				break;
@@ -249,9 +249,9 @@ void general_client_write_res_hdl(void *data)
 				write_res->type, write_res->err_code);
 		
 		if(RTK_BT_GATT_CHAR_WRITE_REQ == write_res->type){
-			g_write_result.status = write_status;
-			g_write_result.conn_handle = write_res->conn_handle;
-			g_write_result.type = write_res->type;
+			g_scatternet_write_result.status = write_status;
+			g_scatternet_write_result.conn_handle = write_res->conn_handle;
+			g_scatternet_write_result.type = write_res->type;
 			if(osif_sem_give(ble_tizenrt_write_sem))
 			{
 				printf("recieve write response \n");
@@ -259,9 +259,9 @@ void general_client_write_res_hdl(void *data)
 				printf("fail to give write semaphore \n");
 			}
 		}else if(RTK_BT_GATT_CHAR_WRITE_NO_RSP == write_res->type){
-			g_write_no_rsp_result.status = write_status;
-			g_write_no_rsp_result.conn_handle = write_res->conn_handle;
-			g_write_no_rsp_result.type = write_res->type;
+			g_scatternet_write_no_rsp_result.status = write_status;
+			g_scatternet_write_no_rsp_result.conn_handle = write_res->conn_handle;
+			g_scatternet_write_no_rsp_result.type = write_res->type;
 			if(osif_sem_give(ble_tizenrt_write_no_rsp_sem))
 			{
 				printf("recieve write response \n");

@@ -18,12 +18,9 @@
 
 
 /* add new definition of debug log level */
-#define RTW_MSG_OFF             1
 #define RTW_MSG_RESIDENT   2
 #define RTW_MSG_ERROR         3
 #define RTW_MSG_WARNING    4
-#define RTW_MSG_INFO            5
-#define RTW_MSG_DBG             6
 
 /* reserve definition for macro rom_e_rtw_msg_871X_LEVEL*/
 #define _drv_always_		1

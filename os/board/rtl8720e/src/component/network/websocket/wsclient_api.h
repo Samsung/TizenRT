@@ -108,6 +108,14 @@ void ws_poll(int timeout, wsclient_context **wsclient);
 void ws_dispatch(void (*callback)(wsclient_context **, int)) ;
 
 /*************************************************************************************************
+** Function Name  : ws_pong
+** Description    : callback function when getting pong message from server
+** Input          : function that resolve the pong message received
+** Return         : None
+**************************************************************************************************/
+void ws_pong(void (*callback)(wsclient_context **)) ;
+
+/*************************************************************************************************
 ** Function Name  : ws_getReadyState
 ** Description    : Getting the connection status
 ** Input          : wsclient: the websocket client context
@@ -163,4 +171,12 @@ int ws_handshake_header_custom_token(wsclient_context *wsclient, char *cus, int 
 ** Return         : result(0:ok, -1:fail)
 **************************************************************************************************/
 int ws_multisend_opts(wsclient_context *wsclient, int stable_buf_num);
+
+/*************************************************************************************************
+** Function Name  : ws_set_senddata_block_time
+** Description    : set ws_sendData block time. Default is non-block.
+** Input          : ms: the max block time
+** Return         : none
+**************************************************************************************************/
+void ws_set_senddata_block_time(uint32_t ms);
 #endif

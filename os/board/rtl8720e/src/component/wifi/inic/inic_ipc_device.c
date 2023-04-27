@@ -16,9 +16,8 @@
 
 /* -------------------------------- Includes -------------------------------- */
 #include "ameba_soc.h"
-#include "platform_stdlib.h"
 #include "osdep_service.h"
-#include "skbuff.h"
+#include "rtw_skbuff.h"
 
 #include "inic_ipc_dev_trx.h"
 #include "inic_ipc_msg_queue.h"
@@ -44,15 +43,10 @@ static void inic_ipc_dev_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 		 */
 		inic_ipc_dev_tx_handler(p_ipc_msg);
 		break;
-	case IPC_WIFI_MSG_ALLOC_SKB:
-		inic_ipc_dev_alloc_tx_skb(p_ipc_msg->msg_len, p_ipc_msg->msg_addr);
-		break;
 	case IPC_WIFI_MSG_RECV_DONE:
 		inic_ipc_dev_rx_done(p_ipc_msg);
 		break;
-	case IPC_WIFI_MSG_RECV_PENDING:
-		inic_ipc_dev_rx_pending();
-		break;
+
 	default:
 		DBG_8195A("Device Unknown Event(%d)!\n", \
 				  p_ipc_msg->event_num);
@@ -103,9 +97,9 @@ void inic_ipc_dev_event_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	}
 
 	if (ret == _SUCCESS) {
-		p_ipc_msg->msg_len = 0;
+		p_ipc_msg->msg_queue_status = 0;
 	} else {
-		p_ipc_msg->msg_len = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
+		p_ipc_msg->msg_queue_status = IPC_WIFI_MSG_MEMORY_NOT_ENOUGH;
 	}
 	/* enqueuing message is seccussful, send acknowledgement to another port*/
 	p_ipc_msg->event_num = IPC_WIFI_MSG_READ_DONE;
@@ -130,7 +124,7 @@ void inic_ipc_init(void)
 }
 
 /* ---------------------------- Global Variables ---------------------------- */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE   ipc_dev_event_table[] = {
 	{IPC_USER_POINT,	inic_ipc_dev_event_int_hdl, (VOID *) NULL, IPC_DIR_MSG_RX, IPC_H2D_WIFI_TRX_TRAN, IPC_RX_FULL},

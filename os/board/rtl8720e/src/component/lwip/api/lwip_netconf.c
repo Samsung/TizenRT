@@ -5,7 +5,7 @@
 #include "wifi_ind.h"
 #endif
 
-#include <platform_stdlib.h>
+#include "platform_stdlib.h"
 #include "osdep_service.h"
 
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
@@ -521,7 +521,6 @@ void LwIP_etharp_request(uint8_t idx, const ip4_addr_t *ipaddr)
 	etharp_request(pnetif, ipaddr);
 }
 
-#if !defined(CONFIG_MBED_ENABLED)
 int netif_get_idx(struct netif *pnetif)
 {
 #if (CONFIG_LWIP_LAYER == 1)
@@ -532,6 +531,8 @@ int netif_get_idx(struct netif *pnetif)
 		return 0;
 	case 1:
 		return 1;
+	case 2:
+		return 2;
 	default:
 		return -1;
 	}
@@ -540,7 +541,6 @@ int netif_get_idx(struct netif *pnetif)
 	return -1;
 #endif
 }
-#endif
 
 void LwIP_netif_set_up(uint8_t idx)
 {
@@ -558,12 +558,19 @@ void LwIP_netif_set_link_up(uint8_t idx)
 {
 	struct netif *pnetif = &xnetif[idx];
 	netifapi_netif_set_link_up(pnetif);
+	if (idx == SOFTAP_WLAN_INDEX) {
+		/*need modify the default netif to the interface you want to use to send broadcast packtes in concurrent mode*/
+		netifapi_netif_set_default(&xnetif[SOFTAP_WLAN_INDEX]);
+	}
 }
 
 void LwIP_netif_set_link_down(uint8_t idx)
 {
 	struct netif *pnetif = &xnetif[idx];
 	netifapi_netif_set_link_down(pnetif);
+	if (idx == SOFTAP_WLAN_INDEX) {
+		netifapi_netif_set_default(&xnetif[STA_WLAN_INDEX]);
+	}
 }
 
 uint8_t *LwIP_GetMAC(uint8_t idx)

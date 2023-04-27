@@ -25,7 +25,7 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/netmgr/netdev_mgr.h>
-#include "freertos/wrapper.h"
+// #include "freertos/wrapper.h"
 #include "osdep_service.h"
 /* WLAN CONFIG ---------------------------------------------------------------*/
 #define RTK_OK          0		/*!< RTK_err_t value indicating success (no error) */

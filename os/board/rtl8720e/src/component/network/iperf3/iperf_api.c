@@ -583,7 +583,7 @@ iperf_on_connect(struct iperf_test *test)
 	const char *rfc1123_fmt = "%a, %d %b %Y %H:%M:%S GMT";
 	char now_str[100];
 	char ipr[INET6_ADDRSTRLEN];
-	int port;
+	int port = 0;
 	struct sockaddr_storage sa;
 	struct sockaddr_in *sa_inP;
 #if defined (LWIP_IPV6) && LWIP_IPV6
@@ -964,6 +964,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 			memset(xbe, 0, sizeof(*xbe));
 			xbe->name = strdup(optarg);
 			if (!xbe->name) {
+				free(xbe);
 				i_errno = IESETSCTPBINDX;
 				return -1;
 			}
@@ -2101,7 +2102,8 @@ void
 connect_msg(struct iperf_stream *sp)
 {
 	char ipl[INET6_ADDRSTRLEN], ipr[INET6_ADDRSTRLEN];
-	int lport, rport;
+	int lport = 0;
+	int rport = 0;
 
 	if (getsockdomain(sp->socket) == AF_INET) {
 		inet_ntop(AF_INET, (void *) & ((struct sockaddr_in *) &sp->local_addr)->sin_addr, ipl, sizeof(ipl));

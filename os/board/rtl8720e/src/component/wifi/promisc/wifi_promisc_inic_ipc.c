@@ -1,8 +1,7 @@
-#if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS) && !defined(CONFIG_PLATFORM_TIZENRT_OS)
+
 #include "main.h"
 #if CONFIG_LWIP_LAYER
-#include "tcpip.h"
-#endif
+//#include "tcpip.h"
 #endif
 
 #include <osdep_service.h>
@@ -15,7 +14,6 @@
 #include "inic_ipc_api.h"
 #endif
 #if CONFIG_WLAN
-#include <platform_stdlib.h>
 
 #ifndef CONFIG_UNSUPPORT_PLCPHDR_RPT
 #define CONFIG_UNSUPPORT_PLCPHDR_RPT 0
@@ -25,22 +23,6 @@
 void (*ipc_promisc_callback)(unsigned char *, unsigned int, void *userdata) = NULL;
 //#endif
 
-extern void _promisc_deinit(void *padapter);
-extern int _promisc_recv_func(void *padapter, void *rframe);
-extern int _promisc_set(rtw_rcr_level_t enabled, void (*callback)(unsigned char *, unsigned int, void *), unsigned char len_used);
-extern unsigned char _is_promisc_enabled(void);
-extern int _promisc_get_fixed_channel(void *fixed_bssid, u8 *ssid, int *ssid_length);
-extern void _promisc_filter_by_ap_and_phone_mac(u8 enable, void *ap_mac, void *phone_mac);
-extern int _promisc_recv_lens_func(void *padapter, u8 *payload, u8 plen);
-extern int _promisc_filter_with_len(u16 len);
-extern int _promisc_filter_retransmit_plcp_pkt(u8 enable, u8 filter_interval_ms);
-extern int _promisc_set_mgntframe(u8 enable);
-extern int _promisc_get_chnl_by_bssid(u8 *bssid);
-extern void _promisc_update_candi_ap_rssi_avg(s8 rssi, u8 cnt);
-extern void _promisc_stop_tx_beacn(void);
-extern void _promisc_resume_tx_beacn(void);
-extern void _promisc_issue_probersp(unsigned char *da);
-// Add extra interfaces to make release sdk able to determine promisc API linking
 #if 0//only in NP,INIC_IPC_API_TODO
 void promisc_deinit(void *padapter)
 {
@@ -564,7 +546,7 @@ void cmd_promisc(int argc, char **argv)
 		//promisc_test(duration, 0);
 	{
 		promisc_test_all(duration, 0);
-	} else if ((argc == 3) && ((duration = atoi(argv[1])) > 0) && (strcmp(argv[2], "with_len") == 0) && (duration < 0x7FFFFFFF)) {
+	} else if ((argc == 3) && ((duration = atoi(argv[1])) > 0) && (strcmp(argv[2], "with_len") == 0)) {
 		promisc_test(duration, 1);
 	} else {
 		printf("\n\rUsage: %s DURATION_SECONDS [with_len]", argv[0]);
