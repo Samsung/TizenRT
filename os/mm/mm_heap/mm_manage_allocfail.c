@@ -23,10 +23,16 @@
 #include <tinyara/config.h>
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #include <stdio.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/mminfo.h>
+#endif
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_WATCHDOG)
+#include <tinyara/watchdog.h>
+#include <fcntl.h>
+#endif
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_WATCHDOG) || defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
+#include <errno.h>
 #endif
 #include <debug.h>
 #include <string.h>
@@ -44,6 +50,55 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+
+/************************************************************************
+ * Name: mm_heapinfo_stop_watchdog
+ *
+ * Description:
+ *   Stop the watchdog.
+ *   Forced stop or pause of the watchdog breaks the time guaranteed by the watchdog.
+ *   Therefore, if only watchdog is running and CONFIG_MM_ASSERT_ON_FAIL is enabled,
+ *   try to stop the watchdog.
+ *
+ * Return Value:
+ *   OK    - stopped watichdog or watchdog is not running.
+ *   ERROR - fail to stop watchdog
+ *
+ ************************************************************************/
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) && defined(CONFIG_WATCHDOG)
+static inline int mm_heapinfo_stop_watchdog(void)
+{
+	struct watchdog_status_s wd_status;
+	int fd = open(CONFIG_WATCHDOG_DEVPATH, O_RDWR);
+	if (fd < 0) {
+		mfdbg("Fail to open %s, errno %d\n", CONFIG_WATCHDOG_DEVPATH, get_errno());
+		return ERROR;
+	}
+
+	if (ioctl(fd, WDIOC_GETSTATUS, (unsigned long)&wd_status) != OK) {
+		mfdbg("Fail to get watchdog state, errno %d\n", get_errno());
+		return ERROR;
+	}
+
+	if (!(wd_status.flags & WDFLAGS_ACTIVE)) {
+		/* watchdog is not running */
+		return OK;
+	}
+
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+	/* watchdog can be stopped only when CONFIG_MM_ASSERT_ON_FAIL is enabled */
+	if (ioctl(fd, WDIOC_STOP, 0) == OK) {
+		return OK;
+	}
+	mfdbg("Fail to stop watchdog, errno %d\n", get_errno());
+#endif
+
+	return ERROR;
+}
+#else
+#define mm_heapinfo_stop_watchdog() OK
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -121,10 +176,24 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 #endif /* CONFIG_MM_ASSERT_ON_FAIL */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	for (int idx = startidx; idx <= endidx; idx++) {
-		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
-	}
+	/* heapinfo_parse_heap() operations can print logs for more than 3 minutes,
+	 * which can be rebooted by watchdog. So try to stop the watchdog. */
+
+	int ret = mm_heapinfo_stop_watchdog();
+
+#ifndef CONFIG_MM_ASSERT_ON_FAIL
+	/* If CONFIG_MM_ASSERT_ON_FAIL is enabled, will be rebooted anyway, So even if
+	 * fail to stop watchdog, print heapinfo_parse_heap log. */
+
+	if (ret == OK)
 #endif
+	{
+		for (int idx = startidx; idx <= endidx; idx++) {
+			heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
+		}
+	}
+
+#endif /* CONFIG_DEBUG_MM_HEAPINFO */
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	PANIC();
