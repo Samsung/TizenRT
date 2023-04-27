@@ -33,4 +33,8 @@ void AES_UnWRAP(unsigned char *cipher, int cipher_len,
 				unsigned char *kek,	int kek_len,
 				unsigned char *plain);
 
+int wifi_rom_omac1_aes_128_vector(u8 *key, size_t num_elem,
+								  u8 *addr[], u32 *len, u8 *mac);
+
+
 #endif

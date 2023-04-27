@@ -178,7 +178,6 @@ void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *))
 
 	/* initialize queue. */
 	rtw_init_queue(&(g_ipc_msg_q_priv.msg_queue));
-
 	/* assign the haddle function for the task */
 	g_ipc_msg_q_priv.task_hdl = task_hdl;
 
@@ -186,17 +185,14 @@ void inic_ipc_msg_q_init(void (*task_hdl)(inic_ipc_ex_msg_t *))
 	rtw_init_sema(&g_ipc_msg_q_priv.msg_q_sema, 0);
 	rtw_init_sema(&g_ipc_msg_q_priv.msg_send_sema, 0);
 	rtw_up_sema(&g_ipc_msg_q_priv.msg_send_sema);
-
 	for (i = 0; i < IPC_MSG_QUEUE_DEPTH; i++) {
 		g_ipc_msg_q_priv.ipc_msg_pool[i].is_used = 0;
 	}
 	g_ipc_msg_q_priv.queue_free = IPC_MSG_QUEUE_DEPTH;
-
 	/* Initialize the queue task */
 	if (rtw_create_task(&ipc_msgQ_wlan_task, (const char *const)"inic_msg_q_task", 1024, (0 + CONFIG_INIC_IPC_MSG_Q_PRI), (void*)inic_ipc_msg_q_task, NULL) != 1) {
 		DBG_8195A("Create inic_ipc_msg_q_task Err!!\n");
 	}
-
 	/* sign the queue is working */
 	g_ipc_msg_q_priv.b_queue_working = 1;
 }
@@ -232,7 +228,8 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 	/* To store the ipc message to queue's node. */
 	p_node->ipc_msg.event_num = p_ipc_msg->event_num;
 	p_node->ipc_msg.msg_addr = p_ipc_msg->msg_addr;
-	p_node->ipc_msg.msg_len = p_ipc_msg->msg_len;
+	p_node->ipc_msg.msg_queue_status = p_ipc_msg->msg_queue_status;
+	p_node->ipc_msg.wlan_idx = p_ipc_msg->wlan_idx;
 	p_node->is_used = 1;
 
 	/* put the ipc message to the queue */
@@ -287,7 +284,7 @@ u8 inic_ipc_msg_get_queue_status(void)
  */
 void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 {
-	IPC_MSG_STRUCT g_inic_ipc_msg;
+	IPC_MSG_STRUCT g_inic_ipc_msg = {0};
 
 	u32 cnt = 100000;
 
@@ -305,14 +302,15 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 	}
 	/* Get the warning of queue's depth not enough after recv MSG_READ_DONE,
 	delay send the next message */
-	if (g_inic_ipc_ex_msg.msg_len == IPC_WIFI_MSG_MEMORY_NOT_ENOUGH) {
+	if (g_inic_ipc_ex_msg.msg_queue_status == IPC_WIFI_MSG_MEMORY_NOT_ENOUGH) {
 		rtw_mdelay_os(1);
 	}
 
 	/* Send the new message after last one acknowledgement */
 	g_inic_ipc_ex_msg.event_num = p_ipc_msg->event_num;
 	g_inic_ipc_ex_msg.msg_addr = p_ipc_msg->msg_addr;
-	g_inic_ipc_ex_msg.msg_len = p_ipc_msg->msg_len;
+	g_inic_ipc_ex_msg.msg_queue_status = p_ipc_msg->msg_queue_status;
+	g_inic_ipc_ex_msg.wlan_idx = p_ipc_msg->wlan_idx;
 	DCache_Clean((u32)&g_inic_ipc_ex_msg, sizeof(inic_ipc_ex_msg_t));
 
 #ifdef IPC_DIR_MSG_TX

@@ -9,7 +9,7 @@
 #ifndef ROM_WPS_OS_H
 #define ROM_WPS_OS_H
 
-#if defined(CONFIG_PLATFORM_8195A) || defined(CONFIG_PLATFORM_8711B) || defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #ifndef CONFIG_AS_INIC_AP
 #include <rom_wlan_ram_map.h>
 extern struct _rom_wlan_ram_map rom_wlan_ram_map;
@@ -17,9 +17,8 @@ extern struct _rom_wlan_ram_map rom_wlan_ram_map;
 #define os_free(p, sz) rom_wlan_ram_map.rtw_mfree(((uint8_t*)(p)), (sz))
 #else
 #include <osdep_service.h>
-extern struct osdep_service_ops osdep_service;
-#define os_malloc(sz) osdep_service.rtw_malloc(sz)
-#define os_free(p, sz) osdep_service.rtw_mfree(((uint8_t*)(p)), (sz))
+#define os_malloc(sz) rtw_malloc(sz)
+#define os_free(p, sz) rtw_mfree(((uint8_t*)(p)), (sz))
 #endif
 #endif
 

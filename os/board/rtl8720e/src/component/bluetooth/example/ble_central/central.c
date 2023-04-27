@@ -180,7 +180,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_central_gap_app_callback(uint8_t evt_code
 		break;
 	}
 
-	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: {
+	case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND: { //BT sync api shall not be called here
 		rtk_bt_le_remote_conn_update_req_ind_t *rmt_update_req = 
 								(rtk_bt_le_remote_conn_update_req_ind_t *)param;
 		dbg("[APP] Remote device request a change in conn param, conn_handle: %d, "	  \
@@ -442,8 +442,6 @@ int ble_tizenrt_central_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_param(&scan_param));
 		/* Initilize GAP part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_tizenrt_central_gap_app_callback));
-		BT_APP_PROCESS(rtk_bt_set_evt_cb_direct_calling(RTK_BT_LE_GP_GAP, 
-														1 << RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND));
 		BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 		/* Initilize GATT (client) part */
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, ble_tizenrt_central_gattc_app_callback));

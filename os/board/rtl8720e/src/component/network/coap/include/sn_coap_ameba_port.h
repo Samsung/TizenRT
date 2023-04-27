@@ -12,7 +12,7 @@
 #include "diag.h"
 #include "platform_stdlib.h"
 #include "osdep_service.h"
-#include "wifi_constants.h"
+#include "rtw_wifi_constants.h"
 #include "wifi_conf.h"
 #include <lwipconf.h>
 #include <stdint.h>

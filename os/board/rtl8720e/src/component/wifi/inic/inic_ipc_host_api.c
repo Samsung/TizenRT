@@ -12,12 +12,12 @@
 
 ******************************************************************************/
 #include "inic_ipc_api.h"
-#include "wifi_conf.h"
 #include "lwip_netconf.h"
 #include "inic_ipc_cfg.h"
+#include "wifi_ind.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_IPC_HOST_API_PRIO 6
+#define CONFIG_INIC_IPC_HOST_API_PRIO 3
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 #define HOST_STACK_SIZE 2048
 #else
@@ -76,14 +76,15 @@ static void _inic_ipc_api_host_autoreconnect_handler(inic_ipc_dev_request_messag
 	char *password = (char *)p_ipc_msg->param_buf[3];
 	int password_len = (int)p_ipc_msg->param_buf[4];
 	int key_id = (int)p_ipc_msg->param_buf[5];
+
 	DCache_Invalidate((u32)ssid, ssid_len);
 	DCache_Invalidate((u32)password, password_len);
-
+#if CONFIG_AUTO_RECONNECT
 	if (p_wlan_autoreconnect_hdl) {
 		p_wlan_autoreconnect_hdl(security_type, ssid, ssid_len, password, password_len, key_id);
 	}
+#endif
 }
-
 
 static void _inic_ipc_api_host_eap_autoreconnect_handler(inic_ipc_dev_request_message *p_ipc_msg)
 {
@@ -274,6 +275,7 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
+	vTaskDelete(NULL);
 }
 
 /**
@@ -350,7 +352,6 @@ void inic_ipc_api_init_host(VOID)
 	rtw_init_sema(&g_host_inic_api_task_wake_sema, 0);
 	rtw_init_sema(&g_host_inic_api_message_send_sema, 0);
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
-
 	/*for updating ip address before sleep*/
 	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)_inic_ipc_ip_addr_update_in_wowlan, NULL, NULL, NULL);
 
@@ -421,7 +422,7 @@ void inic_ipc_mp_command(char *token, unsigned int cmd_len, int show_msg)
 #endif
 
 /* ---------------------------- Global Variables ---------------------------- */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE   ipc_api_host_table[] = {
 	{IPC_USER_POINT,	inic_ipc_api_host_int_hdl,	(VOID *) NULL, IPC_DIR_MSG_RX, IPC_D2H_WIFI_API_TRAN, IPC_RX_FULL},

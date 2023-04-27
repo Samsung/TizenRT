@@ -152,8 +152,11 @@ exit:
 		ret = -1;
 		goto exit;
 	}
-
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER == 0x03000000)
+	if ((ret = mbedtls_pk_parse_key(&wss_key, (const unsigned char *) server_key, strlen(server_key) + 1, NULL, 0, rtw_get_random_bytes_f_rng, (void *)1)) != 0) {
+#else
 	if ((ret = mbedtls_pk_parse_key(&wss_key, (const unsigned char *) server_key, strlen(server_key) + 1, NULL, 0)) != 0) {
+#endif
 		printf("\n[WS_SERVER] ERROR: mbedtls_pk_parse_key %d\n", ret);
 		ret = -1;
 		goto exit;

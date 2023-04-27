@@ -23,6 +23,7 @@
 #include "inic_ipc_msg_queue.h"
 #include "wifi_conf.h"
 #include "wifi_performance_monitor.h"
+#include "rtw_core_function.h"
 #define CONFIG_ENABLE_CACHE
 
 /* -------------------------------- Defines --------------------------------- */
@@ -47,23 +48,7 @@ struct ipc_dev_priv {
 	u8 rx_pending_flag; /* host rx pending flag */
 };
 
-struct skb_data {
-	/* starting address must be aligned by 32 bytes for km4 cache. */
-	struct list_head list __attribute__((aligned(32)));
-	unsigned char buf[MAX_SKB_BUF_SIZE];
-	/* to protect ref when to invalid cache, its address must be
-	 * aligned by 32 bytes. */
-	atomic_t ref __attribute__((aligned(32)));
-};
-
-struct skb_buf {
-	struct list_head list;
-	struct sk_buff skb;
-	u8 rsvd[10];
-};
-
 /* -------------------------- Function declaration -------------------------- */
-extern void kfree_skb(struct sk_buff *skb);
 
 /* ---------------------------- Global Variables ---------------------------- */
 
@@ -132,7 +117,7 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 	case IPC_WIFI_CMD_XIMT_PKTS:
 		skb = (struct sk_buff *)(p_ipc_msg->msg_addr);
 #ifdef CONFIG_ENABLE_CACHE
-		DCache_Invalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+		DCache_Invalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_info));
 		DCache_Invalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
 
 #endif /* CONFIG_ENABLE_CACHE */
@@ -140,7 +125,7 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 		g_ipc_dev_priv.tx_bytes += skb->len;
 		g_ipc_dev_priv.tx_pkts++;
 		WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
-		wifi_send_skb(p_ipc_msg->msg_len, skb);
+		wifi_if_send_skb(p_ipc_msg->wlan_idx, skb);
 		WIFI_MONITOR_TIMER_END(wlan_send_skb_time, skb->len);
 		break;
 	default:
@@ -224,12 +209,12 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 	_queue *p_xmit_queue = NULL;
 	struct ipc_dev_tx_buf *p_xmit_buf = NULL;
 
-	if (!wifi_is_running((unsigned char)p_ipc_msg->msg_len)) {
+	if (!wifi_is_running((unsigned char)p_ipc_msg->wlan_idx)) {
 		/*free skb and return*/
 		struct sk_buff *skb = (struct sk_buff *)p_ipc_msg->msg_addr;
 		skb->busy = 0;
-		struct skb_buf *skb_buf = container_of(skb, struct skb_buf, skb);
-		DCache_Clean((u32)skb_buf, sizeof(struct skb_buf));
+		struct skb_info *skb_info = container_of(skb, struct skb_info, skb);
+		DCache_Clean((u32)skb_info, sizeof(struct skb_info));
 		return;
 	}
 
@@ -247,7 +232,7 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 	/* To store the ipc message from host to queue's node. */
 	p_xmit_buf->ipc_msg.event_num = p_ipc_msg->event_num;
 	p_xmit_buf->ipc_msg.msg_addr = p_ipc_msg->msg_addr;
-	p_xmit_buf->ipc_msg.msg_len = p_ipc_msg->msg_len;
+	p_xmit_buf->ipc_msg.wlan_idx = p_ipc_msg->wlan_idx;
 
 	/* enqueue xmit buffer. */
 	inic_enqueue_xmitbuf(p_xmit_buf, p_xmit_queue);
@@ -258,44 +243,6 @@ END:
 }
 
 /**
- * @brief  to allocate the skb to store tx data from ipc host.
- * @param  len[in]: length to allocate buffer size.
- * @param  len[idx]: index of wlan interface which want to transmit.
- * @return none.
- */
-void inic_ipc_dev_alloc_tx_skb(int len, int idx)
-{
-	struct sk_buff *skb = NULL;
-	inic_ipc_ex_msg_t ipc_msg = {0};
-
-	if (!wifi_is_running((unsigned char)idx)) {
-		/* set skb to WLAN_IF_NOT_RUNNING to indicate corresponding wlan interface is not running*/
-		ipc_msg.msg_addr = FLAG_WLAN_IF_NOT_RUNNING;
-		goto send_response;
-	}
-
-	skb = rltk_wlan_alloc_skb(len);
-	if (skb == NULL) {
-		//DBG_8195A("Alloc tx buffer Err, alloc_sz %d!!\n\r", len);
-	}
-#ifdef CONFIG_ENABLE_CACHE
-	else {
-		DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-		DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
-	}
-#endif /* CONFIG_ENABLE_CACHE */
-	ipc_msg.msg_addr = (u32)skb;
-
-send_response:
-	/* response to request skb from host. */
-	ipc_msg.event_num = IPC_WIFI_MSG_ALLOC_SKB;
-	ipc_msg.msg_len = sizeof(struct sk_buff);
-	inic_ipc_ipc_send_msg(&ipc_msg);
-
-	return;
-}
-
-/**
  * @brief  receiving function to send the received data to host.
  * @param  idx_wlan[in]: which port of wifi to set.
  * @return none.
@@ -303,16 +250,20 @@ send_response:
 void inic_ipc_dev_recv(int idx)
 {
 	struct sk_buff *skb = NULL;
+	struct skb_info *skb_info = NULL;
+	struct skb_data *skb_data = NULL;
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
-	skb = rltk_wlan_get_recv_skb(idx);
+	skb = wifi_if_get_recv_skb(idx);
 
 	ipc_msg.event_num = IPC_WIFI_EVT_RECV_PKTS;
 	ipc_msg.msg_addr = (u32)skb;
-	ipc_msg.msg_len = idx;
+	ipc_msg.wlan_idx = idx;
 #ifdef CONFIG_ENABLE_CACHE
-	DCache_CleanInvalidate(((u32)skb->head - sizeof(struct list_head)), sizeof(struct skb_data));
-	DCache_CleanInvalidate(((u32)skb - sizeof(struct list_head)), sizeof(struct skb_buf));
+	skb_data =  LIST_CONTAINOR(skb->head, struct skb_data, buf);
+	skb_info =  LIST_CONTAINOR(skb, struct skb_info, skb);
+	DCache_CleanInvalidate(((u32)skb_data), sizeof(struct skb_data));
+	DCache_CleanInvalidate(((u32)skb_info), sizeof(struct skb_info));
 #endif /* CONFIG_ENABLE_CACHE */
 	inic_ipc_ipc_send_msg(&ipc_msg);
 }
@@ -328,13 +279,3 @@ void inic_ipc_dev_rx_done(inic_ipc_ex_msg_t *p_ipc_msg)
 	kfree_skb(skb);
 }
 
-/**
- * @brief  to notice dev rx pending from host.
- * @param  none.
- * @return none.
- */
-void inic_ipc_dev_rx_pending(void)
-{
-	g_ipc_dev_priv.rx_pending_flag = 1;
-	rtw_up_sema(&(g_ipc_dev_priv.rx_done_sema));
-}

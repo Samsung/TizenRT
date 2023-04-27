@@ -28,18 +28,6 @@
 #define CONFIG_TTLS 0
 #endif /* PRE_CONFIG_EAP*/
 
-#if CONFIG_TLS || CONFIG_PEAP || CONFIG_TTLS
-#define EAP_REMOVE_UNUSED_CODE 1
-#endif
-
-#if CONFIG_TTLS
-#define EAP_MSCHAPv2
-#define EAP_TTLS_MSCHAPv2
-//#define EAP_TTLS_EAP
-//#define EAP_TTLS_MSCHAP
-//#define EAP_TTLS_PAP
-//#define EAP_TTLS_CHAP
-#endif
 /************************ End of EAP configurations ***************************/
 
 #endif /* #ifndef AUTOCONF_EAP_H */

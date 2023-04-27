@@ -550,18 +550,6 @@ void bt_le_ipc_pop_cmd_param(uint8_t act, void *param);
 void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
 
 /**
- * @fn        void *bt_le_push_event_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
- * @brief     convert le event parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
- * @param[in] event: event code
- * @param[in] data: pointer to event parameter struct memory
- * @param[in] buf_len: event parameter struct length
- * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
- *            - pointer to ipc buffer memory
- */
-void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
-
-/**
  * @fn        uint32_t get_bt_gatts_evt_mem_size(uint8_t evt_code)
  * @brief     get gatts event need memory size
  * @param[in] evt_code: Event code

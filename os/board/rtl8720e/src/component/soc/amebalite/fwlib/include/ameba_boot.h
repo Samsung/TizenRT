@@ -221,6 +221,43 @@ typedef struct {
 	u8	PSRAMC_CKD;
 } SocClk_Info_TypeDef;
 
+
+typedef struct {
+	void (*rdp_decrypt_func)(u32 addr, u8 *key, u8  cnt, u8 *buf);
+	u32 psram_s_start_addr;
+} BOOT_EXPORT_SYMB_TABLE;
+
+typedef struct {
+	VOID (*RamStartFun)(VOID);
+	VOID (*RamWakeupFun)(VOID);
+	u32 VectorNS;
+} RAM_START_FUNCTION, *PRAM_START_FUNCTION;
+
+typedef struct _RAM_FUNCTION_START_TABLE_ {
+	VOID (*RamStartFun)(VOID);
+	VOID (*RamWakeupFun)(VOID);
+	VOID (*RamPatchFun0)(VOID);
+	VOID (*RamPatchFun1)(VOID);
+	VOID (*RamPatchFun2)(VOID);
+	VOID (*FlashStartFun)(VOID);
+	u32 Img1ValidCode;
+	BOOT_EXPORT_SYMB_TABLE *ExportTable;
+} RAM_FUNCTION_START_TABLE, *PRAM_FUNCTION_START_TABLE;
+
+typedef struct _DSLP_RETENTION_FUNC_TABLE_ {
+	VOID (*DSLPPatchFun0)(VOID);
+	u32	PatchLen;
+} DSLP_RETENTION_FUNC_TABLE, *PDSLP_RETENTION_FUNC_TABLE;
+
+#if defined (ARM_CORE_CM4)
+#define NS_ENTRY    __attribute__((cmse_nonsecure_entry))
+#ifdef __ICCARM__
+typedef __cmse_nonsecure_call void nsfunc(void);
+#else
+typedef void __attribute__((cmse_nonsecure_call)) nsfunc(void);
+#endif
+#endif
+
 typedef u8(*FuncPtr)(void);
 
 extern void SysTick_Handler(void);

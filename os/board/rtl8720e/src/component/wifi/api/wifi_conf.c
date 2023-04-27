@@ -1,31 +1,17 @@
 //----------------------------------------------------------------------------//
-//#include <flash/stm32_flash.h>
-#if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
 #include <dhcp/dhcps.h>
 #endif
-#endif
-#include <platform_stdlib.h>
 #include <wifi_conf.h>
 #include <wifi_ind.h>
+#include <rtw_drv_api.h>
 #include <osdep_service.h>
-#include <device_lock.h>
-
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#include "atcmd_wifi.h"
-#endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#include "platform_opts_bt.h"
-#endif
 
 #if defined(CONFIG_AS_INIC_NP)
 #include "inic_ipc_api.h"
 #endif
-
-void stop_bss_network(void);
-u8 rtw_set_chplan(u8 chplan);
 
 /******************************************************
  *                    Constants
@@ -39,11 +25,8 @@ u8 rtw_set_chplan(u8 chplan);
 /******************************************************
  *               Variables Declarations
  ******************************************************/
-
-#if !defined(CONFIG_MBED_ENABLED)
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
-#endif
 #endif
 
 extern Rltk_wlan_t	rltk_wlan_info[NET_IF_NUM];
@@ -74,6 +57,31 @@ extern void *param_indicator;
 
 #if CONFIG_WLAN
 //----------------------------------------------------------------------------//
+static void *_my_calloc(size_t nelements, size_t elementSize)
+{
+	size_t size;
+	void *ptr = NULL;
+
+	size = nelements * elementSize;
+	ptr = rtw_zmalloc(size);
+
+	return ptr;
+}
+
+static void _my_free(void *pbuf)
+{
+	rtw_free(pbuf);
+}
+
+static int _my_random(void *p_rng, unsigned char *output, size_t output_len)
+{
+	/* To avoid gcc warnings */
+	(void) p_rng;
+
+	rtw_get_random_bytes(output, output_len);
+	return 0;
+}
+
 static void _wifi_join_status_indicate(rtw_join_status_t join_status)
 {
 	/* step 1: internal process for different status*/
@@ -137,7 +145,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 		return RTW_BUSY;
 	}
 
-	if (is_promisc_enabled()) {
+	if (_is_promisc_enabled()) {
 		RTW_API_INFO("\npromisc is ongoing, can not do wifi connect now!");
 		return RTW_BUSY;
 	}
@@ -167,7 +175,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 	}
 
 	/* step3: set connect cmd to driver*/
-	result = rtw_wx_connect_local(connect_param);
+	result = rtw_joinbss_start_api(connect_param);
 	if (result != RTW_SUCCESS) {
 		rtw_join_status = RTW_JOINSTATUS_FAIL;
 		goto error;
@@ -184,7 +192,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 			block_param->join_timeout = RTW_JOIN_TIMEOUT;
 		}
 
-		if (rtw_down_timeout_sema(&block_param->join_sema, block_param->join_timeout) == RTW_FALSE) {
+		if (rtw_down_timeout_sema(&block_param->join_sema, block_param->join_timeout) == _FAIL) {
 			RTW_API_INFO("RTW API: Join bss timeout\r\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			result = RTW_TIMEOUT;
@@ -222,7 +230,7 @@ int wifi_disconnect(void)
 	//add extra 2 zero byte for check of #@ in wext_set_bssid()
 	const __u8 null_bssid[ETH_ALEN + 2] = {0, 0, 0, 0, 0, 1, 0, 0};
 
-	if (rtw_wx_set_wap(STA_WLAN_INDEX, (__u8 *)null_bssid) < 0) {
+	if (rtw_joinbss_set_bssid(STA_WLAN_INDEX, (__u8 *)null_bssid) < 0) {
 		RTW_API_INFO("\n\rWEXT: Failed to set bogus BSSID to disconnect");
 		ret = -1;
 	}
@@ -237,7 +245,7 @@ int wifi_is_running(unsigned char wlan_idx)
 
 //----------------------------------------------------------------------------//
 
-void wifi_set_user_config(void)
+_WEAK void wifi_set_user_config(void)
 {
 #ifndef CONFIG_AS_INIC_NP
 	// adaptivity
@@ -259,7 +267,7 @@ void wifi_set_user_config(void)
 #endif
 	wifi_user_config.wifi_wpa_mode = WPA_AUTO_MODE;
 
-	wifi_user_config.g_user_ap_sta_num = NUM_STA;//NUM_STA (2 + AP_STA_NUM)
+	wifi_user_config.g_user_ap_sta_num = AP_STA_NUM;
 
 	/* power save */
 	wifi_user_config.lps_dtim = 0;
@@ -301,6 +309,12 @@ void wifi_set_user_config(void)
 
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5; /* in sec*/
+
+	wifi_user_config.skb_num_np = SKB_NUM_NP;
+	wifi_user_config.skb_num_ap = 0;
+#ifdef CONFIG_MCC_MODE
+	wifi_user_config.en_mcc = (u8) ENABLE;
+#endif
 #endif
 }
 
@@ -318,7 +332,6 @@ static int _wifi_on_boot(void)
 {
 	int ret = 1;
 	static int event_init = 0;
-	struct net_device *pnetdev;
 
 	if (event_init == 0) {
 		init_event_callback_list();
@@ -331,8 +344,7 @@ static int _wifi_on_boot(void)
 
 	wifi_if1_init();
 
-	pnetdev = rtw_get_netdev(STA_WLAN_INDEX);
-	ret = netdev_open(pnetdev);
+	ret = wifi_if1_open();
 	if (ret == 0) {
 		_wifi_is_on = 1;
 
@@ -348,7 +360,7 @@ static int _wifi_on_boot(void)
 	}
 
 	if (wifi_user_config.channel_plan) {
-		rtw_set_chplan(wifi_user_config.channel_plan);
+		wifi_set_chplan(wifi_user_config.channel_plan);
 	}
 
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
@@ -361,7 +373,6 @@ static int _wifi_on_boot(void)
 static int _wifi_on_ap(void)
 {
 	int ret = 1;
-	struct net_device *pnetdev;
 
 	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		RTW_API_INFO("\n\rWIFI is already running\n");
@@ -374,8 +385,7 @@ static int _wifi_on_ap(void)
 		return ret;
 	}
 
-	pnetdev = rtw_get_netdev(SOFTAP_WLAN_INDEX);
-	ret = netdev_if2_open(pnetdev);
+	ret = wifi_if2_open();
 	if (ret < 0) {
 		RTW_API_INFO("\n\rERROR: Start WIFI AP Interface Failed!\n");
 		wifi_if2_deinit();
@@ -395,10 +405,14 @@ int wifi_on(rtw_mode_t mode)
 	static u32 wifi_boot = 0;
 	int ret = RTW_SUCCESS;
 
+	wifi_set_platform_rom_func(_my_calloc, _my_free, _my_random);
+
 	/* boot on STA */
 	if (wifi_boot == 0) {
 		wifi_boot = 1;
+		//wifi_heap_statistics(1);
 		ret = _wifi_on_boot();
+		//wifi_heap_statistics(0);
 		return ret;
 	}
 
@@ -465,14 +479,10 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 		}
 	}
 
-	if (is_promisc_enabled()) {
+	if (_is_promisc_enabled()) {
 		wifi_set_promisc(0, NULL, 0);
 	}
 
-	ret = rtw_wx_set_mode(wlan_idx, RTW_MODE_MASTER);
-	if (ret < 0) {
-		goto exit;
-	}
 	ret = wifi_set_freq(wlan_idx, softAP_config->channel);	//Set channel before starting ap
 	if (ret < 0) {
 		goto exit;
@@ -506,12 +516,12 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 		goto exit;
 	}
 
-	ret = rtw_wx_set_auth(wlan_idx, RTW_AUTH_ALG_OPEN_SYSTEM);
+	ret = rtw_bss_set_auth(wlan_idx, AUTH_ALG_OPEN_SYSTEM);
 	if (ret == 0) {
-		ret = rtw_wx_set_enc_ext(wlan_idx, alg, NULL, 0, key_idx, 0, 0, ext_key, ext_key_len);
+		ret = rtw_bss_set_enc(wlan_idx, alg, NULL, 0, key_idx, 0, 0, ext_key, ext_key_len);
 	}
 	if (ret == 0 && ext_key == NULL) {
-		ret = rtw_wx_set_passphrase(wlan_idx, (u8 *)softAP_config->password, softAP_config->password_len);
+		ret = rtw_bss_set_passphrase(wlan_idx, (u8 *)softAP_config->password, softAP_config->password_len);
 	}
 
 	if (ret < 0) {
@@ -519,7 +529,7 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	}
 
 open:
-	ret = rtw_wx_set_ap_essid(softAP_config, 1);
+	ret = rtw_ap_start_api(softAP_config, 1);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -541,7 +551,7 @@ int wifi_stop_ap(void)
 		return RTW_SUCCESS;
 	}
 
-	stop_bss_network();
+	wifi_stop_bss_network();
 
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 	dhcps_deinit();
@@ -579,7 +589,7 @@ int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block)
 	/* lock 2s to forbid suspend under scan */
 	rtw_wakelock_timeout(2 * 1000);
 
-	ret = rtw_wx_set_scan(scan_param, block);
+	ret = rtw_scan_start_api(scan_param, block);
 
 	return ret;
 }

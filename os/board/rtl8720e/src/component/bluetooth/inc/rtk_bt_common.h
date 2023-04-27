@@ -236,12 +236,17 @@ typedef enum {
 	RTK_BT_LE_GAP_READ_LOCAL_TX_POWER,
 	RTK_BT_LE_GAP_READ_REMOTE_TX_POWER,
 	RTK_BT_LE_GAP_TX_POWER_REPORT_SET,
+	RTK_BT_LE_GAP_ACT_GET_CONN_ID,
 	RTK_BT_LE_GAP_ACT_MAX,
 } rtk_bt_le_gap_act_t;
 
 /**
  * @typedef   rtk_bt_le_gap_evt_t
  * @brief     Bluetooth LE GAP event indication
+ * Default event callback msg is send from stack(api task) to event task, and excuted in event task. 
+ * But if event is direct calling, it will be directly excuted in stack(api task). This is designed  
+ * for those event that will return a result and affect the stack's behaviour.
+ * @note BT sync api cannot be excuted in callback case when this callback event case is direct calling.
  */
 typedef enum {
 	RTK_BT_LE_GAP_EVT_ADV_START_IND = 1,            /*!< Indicate LE adv started, with msg @ref rtk_bt_le_adv_start_ind_t */
@@ -770,11 +775,6 @@ typedef rtk_bt_evt_cb_ret_t (*rtk_bt_evt_cb_t)(uint8_t evt_code, void *data);
 
 /************************** Data structures for API internal use ***********************/
 typedef struct {
-	uint8_t group;
-	uint32_t evt_bit_mask;
-} rtk_bt_direct_call_t;
-
-typedef struct {
 	struct list_head list;
 	uint8_t group;
 	uint8_t act;
@@ -864,20 +864,6 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb);
  *            - others: Error code
  */
 uint16_t rtk_bt_evt_unregister_callback(uint8_t group);
-
-/**
- * @fn        uint16_t rtk_bt_set_evt_cb_direct_calling(uint8_t group, uint32_t evt_bit_mask)
- * @brief     Set event callback direct calling in stack. Default event callback is excuted in event task.
- *            If it is set direct calling, it will be excuted in stack. This is designed for those event
- *            that will return a result and affect the stack's behaviour.
- * @note      BT api cannot be excuted in callback when this callback event is set direct calling.
- * @param[in] group: API cmd/evt group
- * @param[in] evt_bit_mask: Event bit mask. e.g. 1<<RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND | 1<< RTK_BT_LE_GAP_EVT_XXX
- * @return
- *            - 0  : Succeed
- *            - others: Error code
- */
-uint16_t rtk_bt_set_evt_cb_direct_calling(uint8_t group, uint32_t evt_bit_mask);
 
 /**
  * @}

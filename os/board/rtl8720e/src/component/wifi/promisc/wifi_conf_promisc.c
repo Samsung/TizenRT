@@ -1,13 +1,8 @@
 //----------------------------------------------------------------------------//
-//#include <flash/stm32_flash.h>
-#if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
-#endif
 #include <platform_stdlib.h>
 #include <wifi_conf.h>
 #include <wifi_ind.h>
-#include <osdep_service.h>
-#include <device_lock.h>
 
 
 /******************************************************

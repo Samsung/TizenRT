@@ -7,18 +7,10 @@
 //#include <dhcp/dhcps.h>
 #endif
 
-#include <platform_stdlib.h>
 #include <wifi_conf.h>
 #include <wifi_ind.h>
 #include <osdep_service.h>
-#include <device_lock.h>
 
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#include "at_cmd/atcmd_wifi.h"
-#endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#include "platform_opts_bt.h"
-#endif
 #ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
 #endif
@@ -384,7 +376,7 @@ int wifi_set_eap_method(unsigned char eap_method)
 #endif
 }
 
-int wifi_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags)
+int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags)
 {
 	int ret = 0;
 	u32 param_buf[4];
@@ -399,7 +391,7 @@ int wifi_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flag
 	return ret;
 }
 
-static void _wifi_autoreconnect_thread(void *param)
+static void rtw_autoreconnect_thread(void *param)
 {
 #if CONFIG_AUTO_RECONNECT
 #if defined(configENABLE_TRUSTZONE) && (configENABLE_TRUSTZONE == 1)
@@ -452,12 +444,12 @@ static void _wifi_autoreconnect_thread(void *param)
 
 }
 
-void wifi_autoreconnect_hdl(rtw_security_t security_type,
+#if CONFIG_AUTO_RECONNECT
+void rtw_autoreconnect_hdl(rtw_security_t security_type,
 							char *ssid, int ssid_len,
 							char *password, int password_len,
 							int key_id)
 {
-#if CONFIG_AUTO_RECONNECT
 	static struct wifi_autoreconnect_param param;
 	param_indicator = &param;
 	param.security_type = security_type;
@@ -480,13 +472,13 @@ void wifi_autoreconnect_hdl(rtw_security_t security_type,
 				return;
 			}
 
-			if (wifi_autoreconnect_task.task == 0) {
+			if (wifi_autoreconnect_task.task == NULL) {
 				break;
 			}
 		}
 	}
 
-	rtw_create_task(&wifi_autoreconnect_task, (const char *)"wifi_autoreconnect", 512, 1, _wifi_autoreconnect_thread, &param);
+	rtw_create_task(&wifi_autoreconnect_task, (const char *)"wifi_autoreconnect", 512, 1, rtw_autoreconnect_thread, &param);
 #endif
 }
 
@@ -498,7 +490,7 @@ int wifi_config_autoreconnect(__u8 mode)
 	if (mode == RTW_AUTORECONNECT_DISABLE) {
 		p_wlan_autoreconnect_hdl = NULL;
 	} else {
-		p_wlan_autoreconnect_hdl = wifi_autoreconnect_hdl;
+		p_wlan_autoreconnect_hdl = rtw_autoreconnect_hdl;
 	}
 
 	param_buf[0] = mode;
@@ -855,7 +847,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 	return ret;
 }
 //----------------------------------------------------------------------------//
-
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 int wifi_get_tx_powertable(u32* powertable)
 {
 	u32 param_buf[1];
@@ -882,5 +874,5 @@ void wifi_print_tx_powertable(void)
 			((double)(powertable[23]&0x000000FF)/4),((double)((powertable[23]&0x0000FF00)>>8)/4),((double)((powertable[23]&0x00FF0000)>>16)/4),((double)((powertable[23]&0xFF000000)>>24)/4));
 	vddbg("HE DCM   : %g %g %g %g\r\n",((double)(powertable[27]&0x000000FF)/4),((double)((powertable[27]&0x0000FF00)>>8)/4),((double)((powertable[27]&0x00FF0000)>>16)/4),((double)((powertable[27]&0xFF000000)>>24)/4));
 }
-
+#endif
 #endif	//#if CONFIG_WLAN

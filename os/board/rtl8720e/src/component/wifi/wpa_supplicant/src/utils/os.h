@@ -10,12 +10,13 @@
 #define OS_H
 
 //#include "basic_types.h"
-#include <autoconf.h>
+#include <rtw_wifi_constants.h>
 #include "osdep_service.h"
 #if defined(PLATFORM_ALIOS)
 #include "alios/wrapper.h"
 #else
-#include "freertos/wrapper.h"
+#include <stdio.h>
+#include <string.h>
 #endif
 #include "utils/rom/rom_wps_os.h"
 
@@ -478,12 +479,12 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 
 #else /* OS_NO_C_LIB_DEFINES */
 
-#if !defined(CONFIG_PLATFORM_8195A) && !defined(CONFIG_PLATFORM_8711B) && !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
 #ifndef os_malloc
-#define os_malloc(sz) _rtw_malloc(sz)
+#define os_malloc(sz) rtw_malloc(sz)
 #endif
 #ifndef os_free
-#define os_free(p, sz) _rtw_mfree(((uint8_t*)(p)), (sz))
+#define os_free(p, sz) rtw_mfree(((uint8_t*)(p)), (sz))
 #endif
 #endif
 extern void *os_zalloc(size_t size);

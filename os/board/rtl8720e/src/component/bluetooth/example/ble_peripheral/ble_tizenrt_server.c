@@ -490,6 +490,11 @@ bool rtw_ble_server_conn_is_any_active(void)
 
 }
 
+trble_result_e rtw_ble_server_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
+{
+//to do
+}
+
 trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 {
     if (is_server_init != true)
@@ -525,7 +530,7 @@ trble_result_e rtw_ble_server_start_adv(void)
         rtk_bt_le_conn_info_t conn_info;
         for(uint8_t i = 0; i < active_conn.conn_num; i++)
         {
-			if (RTK_BT_OK != rtk_bt_le_gap_get_conn_info(i, &conn_info))
+			if (RTK_BT_OK != rtk_bt_le_gap_get_conn_info(active_conn.conn_handle[i], &conn_info))
 			{
 				debug_print("get conn info fail \n");
 				return TRBLE_FAIL;

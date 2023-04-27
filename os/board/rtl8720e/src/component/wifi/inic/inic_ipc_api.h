@@ -19,8 +19,10 @@
 #include "ameba_soc.h"
 
 #include "osdep_service.h"
-#include "wifi_structures.h"
-#include "wifi_constants.h"
+#include "rtw_wifi_constants.h"
+#include "wifi_conf.h"
+#include "rtw_skbuff.h"
+
 /* -------------------------------- Defines --------------------------------- */
 #define HOST_MSG_PARAM_NUM 9
 #define DEV_MSG_PARAM_NUM 6
@@ -101,7 +103,9 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_SET_NO_BEACON_TIMEOUT,
 	IPC_API_WIFI_CONFIG_CSI,
 	IPC_API_WIFI_GET_CSI_REPORT,
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	IPC_API_WIFI_GET_TX_POWERTABLE,
+#endif
 	//inter
 	IPC_API_WIFI_COEX_SET_PTA,
 	IPC_API_WIFI_SET_WPA_MODE,
@@ -156,6 +160,7 @@ typedef struct inic_ipc_dev_request_message {
 /* -------------------------- Function declaration -------------------------- */
 /*for ipc host api*/
 void inic_ipc_api_init_host(VOID);
+void inic_ipc_host_deinit_skb(void);
 void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum);
 int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len);
 

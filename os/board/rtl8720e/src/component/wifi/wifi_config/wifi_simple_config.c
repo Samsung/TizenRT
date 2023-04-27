@@ -9,23 +9,15 @@
 #include <sockets.h>
 #include <lwip_netconf.h>
 #endif
-#include <osdep_service.h>
-#include "platform_stdlib.h"
+#include "rtw_adapter.h"
 #include "wifi_simple_config_parser.h"
 #include "wifi_simple_config.h"
 #include "wifi_conf.h"
-
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#include "platform_opts_bt.h"
-#endif
+#include "wifi_ind.h"
 
 #if defined(CONFIG_BT_CONFIG) && CONFIG_BT_CONFIG
 #include "bt_config_wifi.h"
 #include "bt_config_app_main.h"
-#endif
-
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#include "atcmd_wifi.h"
 #endif
 
 #define WIFI_MESH_EN	0
@@ -56,6 +48,9 @@ extern u32 _ntohl(u32 n);
 #if CONFIG_WLAN
 #if (CONFIG_INCLUDE_SIMPLE_CONFIG)
 #include "wifi_conf.h"
+
+#define EAGAIN 11
+
 int is_promisc_callback_unlock = 0;
 int is_fixed_channel;
 int fixed_channel_num;
@@ -162,10 +157,6 @@ struct rtk_test_sc *backup_sc_ctx;
 static int pin_enable = 0;
 static int scan_start = 0;
 
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#include "pack_begin.h"
-#endif
-RTW_PACK_STRUCT_BEGIN
 struct ack_msg_scan {
 	u8_t flag;
 	u16_t length;
@@ -175,12 +166,7 @@ struct ack_msg_scan {
 	u32_t device_ip;
 	u8_t device_name[64];
 	u8_t pin_enabled;
-}
-RTW_PACK_STRUCT_STRUCT;
-RTW_PACK_STRUCT_END
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#include "pack_end.h"
-#endif
+} _PACKED_;
 
 static void set_device_name(char *device_name, int max_size)
 {
@@ -205,10 +191,6 @@ void SC_scan_thread(void *para)
 	socklen_t fromLen = sizeof(from);
 	struct ack_msg_scan ack_msg;
 
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#include "pack_begin.h"
-#endif
-	RTW_PACK_STRUCT_BEGIN
 	struct scan_msg {
 		unsigned char 	flag;
 		unsigned short 	length;
@@ -217,12 +199,7 @@ void SC_scan_thread(void *para)
 		unsigned char 	digest[16];
 		unsigned char 	smac[6];
 		unsigned short 	device_type;
-	};
-	RTW_PACK_STRUCT_STRUCT;
-	RTW_PACK_STRUCT_END
-#ifdef RTW_PACK_STRUCT_USE_INCLUDES
-#include "pack_end.h"
-#endif
+	} _PACKED_;
 
 	struct scan_msg *pMsg;
 
@@ -504,10 +481,8 @@ static int  SC_check_and_show_connection_info(void)
 	vTaskPrioritySet(NULL, tskIDLE_PRIORITY + 1);
 #endif
 
-#if !(defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD)  || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
 	wifi_get_setting(STA_WLAN_INDEX, &setting);
 	SC_show_wifi_setting(STA_WLAN_INDEX, &setting);
-#endif
 
 #if CONFIG_LWIP_LAYER
 	if (ret != DHCP_ADDRESS_ASSIGNED) {
@@ -1013,7 +988,7 @@ int sc_set_val2(rtw_network_info_t *wifi)
 			rtw_free_sema(&sc_dsoc_sema);
 			ret = -1;
 		}
-		if (rtw_down_timeout_sema(&sc_dsoc_sema, SSID_SOFTAP_TIMEOUT) == RTW_FALSE) {
+		if (rtw_down_timeout_sema(&sc_dsoc_sema, SSID_SOFTAP_TIMEOUT) == _FAIL) {
 			printf("\nsc callback failed\n");
 			wifi_set_promisc(RTW_PROMISC_DISABLE, NULL, 0);
 			rtw_free_sema(&sc_dsoc_sema);
@@ -1660,7 +1635,7 @@ static void simple_config_channel_control(void *para)
 			//move to simple_config_callback() for assoc req recved before go to here if keep auth and assoc req after promisc_recv_func.
 			//wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, sc_sta_asso_cb, NULL);
 
-			if (rtw_down_timeout_sema(&sc_sta_assoc_sema, SC_SOFTAP_TIMEOUT) == RTW_FALSE) {
+			if (rtw_down_timeout_sema(&sc_sta_assoc_sema, SC_SOFTAP_TIMEOUT) == _FAIL) {
 				//printf("no sta associated after 10s, start promisc\n");
 				simple_config_softAP_onAuth = 0;
 				wifi_set_promisc(RTW_PROMISC_ENABLE_2, simple_config_callback, 1);
@@ -2075,7 +2050,7 @@ void cmd_simple_config(int argc, char **argv)
 	simple_config_terminate = 0;
 
 #if !SC_SOFTAP_EN
-	wifi_set_mode(RTW_MODE_PROMISC);
+	//wifi_set_mode(RTW_MODE_PROMISC);
 #endif
 
 	if (init_test_data(custom_pin_code) == 0) {
@@ -2091,14 +2066,6 @@ void cmd_simple_config(int argc, char **argv)
 #endif
 		print_simple_config_result(ret);
 	}
-
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-	if (ret == SC_SUCCESS) {
-		at_printf("\n\r[ATWQ] OK");
-	} else {
-		at_printf("\n\r[ATWQ] ERROR:%d", ret);
-	}
-#endif
 
 #else
 	UNUSED(argc);

@@ -9,17 +9,9 @@
 #endif
 
 #include <platform_stdlib.h>
-#include <wifi_conf_inter.h>
+#include <wifi_conf.h>
 #include <wifi_ind.h>
-#include <osdep_service.h>
-#include <device_lock.h>
 
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#include "at_cmd/atcmd_wifi.h"
-#endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#include "platform_opts_bt.h"
-#endif
 #ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
 #endif

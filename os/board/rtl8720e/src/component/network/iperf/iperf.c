@@ -1,10 +1,9 @@
-#include "freertos_service.h"
+#include "osdep_service.h"
 #include "task.h"
 #include "main.h"
-#include "osdep_service.h"
+#include "lwip/sockets.h"
 
 #include <lwipconf.h>
-#include <platform_stdlib.h>
 #if defined(CONFIG_AS_INIC_AP)
 #define BSD_STACK_SIZE		    1024
 #else
@@ -48,6 +47,8 @@ struct iperf_data_t {
 	//uint8_t  terminate;
 	uint8_t  bidirection;
 	uint16_t  is_sub_stream; //Byte[1] : this client stream is created by bidirection parameter, Byte[0] : main stream id
+	struct iperf_data_t *prev;
+	struct iperf_data_t *next;
 };
 
 struct iperf_tcp_client_hdr {
@@ -92,6 +93,7 @@ struct iperf_udp_server_hdr {
 
 uint8_t g_is_iperf_init = 0;
 struct stream_id_t g_stream_id[MULTI_STREAM_NUM];
+struct iperf_data_t *stream_data_head = NULL;
 
 _mutex g_tptest_log_mutex = NULL;
 _mutex g_tptest_mutex = NULL;
@@ -159,24 +161,26 @@ struct iperf_data_t *init_stream_data(uint8_t protocol, uint8_t role)
 {
 	int8_t i = 0, stream_id = -1;
 	struct iperf_data_t *stream_data = NULL;
+	struct iperf_data_t *stream_data_tail = NULL;
 
 	for (i = 0; i < MULTI_STREAM_NUM; i++) {
 		if (g_stream_id[i].id_used == 0) {
 			g_stream_id[i].id_used = 1;
+			g_stream_id[i].terminate = 0;
 			stream_id = i;
 			break;
 		}
 	}
 
 	if (stream_id == -1) {
-		tptest_res_log("\n\r[ERROR] stream reach limit(%d)!\n", MULTI_STREAM_NUM);
+		tptest_res_log("\n\r[ERROR] stream reach limit(%d)!\n\r", MULTI_STREAM_NUM);
 		return NULL;
 	}
 
 	stream_data = pvPortMalloc(sizeof(struct iperf_data_t));
 	if (!stream_data) {
 		g_stream_id[stream_id].id_used = 0;
-		tptest_res_log("\n\r[ERROR] stream_data allocate failed!\n");
+		tptest_res_log("\n\r[ERROR] stream_data allocate failed!\n\r");
 		return NULL;
 	}
 
@@ -198,6 +202,21 @@ struct iperf_data_t *init_stream_data(uint8_t protocol, uint8_t role)
 		stream_data->bandwidth = DEFAULT_UDP_BANDWIDTH;
 		stream_data->tos_value = DEFAULT_UDP_TOS_VALUE;
 	}
+
+	if (stream_data_head == NULL) {
+		stream_data_head = stream_data;
+		stream_data_head->prev = NULL;
+		stream_data_head->next = NULL;
+	} else {
+		stream_data_tail = stream_data_head;
+		while (stream_data_tail->next != NULL) {
+			stream_data_tail = stream_data_tail->next;
+		}
+		stream_data_tail->next = stream_data;
+		stream_data->prev = stream_data_tail;
+		stream_data->next = NULL;
+	}
+
 	return stream_data;
 }
 
@@ -205,6 +224,19 @@ struct iperf_data_t *init_stream_data(uint8_t protocol, uint8_t role)
 void free_stream_data(struct iperf_data_t *stream_data)
 {
 	if (stream_data) {
+
+		if (stream_data == stream_data_head) {
+			stream_data_head = stream_data_head->next;
+			if (stream_data_head != NULL) {
+				stream_data_head->prev = NULL;
+			}
+		} else if (stream_data->next != NULL) {
+			(stream_data->next)->prev = stream_data->prev;
+			(stream_data->prev)->next = stream_data->next;
+		} else {
+			(stream_data->prev)->next = NULL;
+		}
+
 		g_stream_id[stream_data->stream_id].id_used = 0;
 		g_stream_id[stream_data->stream_id].terminate = 0;
 		vPortFree(stream_data);
@@ -261,7 +293,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 
 	tcp_client_buffer = pvPortMalloc(iperf_data.buf_size);
 	if (!tcp_client_buffer) {
-		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed\n\r", __func__);
 		goto exit2;
 	}
 
@@ -272,7 +304,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 
 	//create socket
 	if ((iperf_data.client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Create TCP socket failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Create TCP socket failed\n\r", __func__);
 		goto exit2;
 	}
 
@@ -282,15 +314,15 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 	ser_addr.sin_port = htons(iperf_data.port);
 	ser_addr.sin_addr.s_addr = inet_addr((char const *)iperf_data.server_ip);
 
-	tptest_res_log("\n\r%s: Server IP=%s, port=%d", __func__, iperf_data.server_ip, iperf_data.port);
-	tptest_res_log("\n\r%s: Create socket fd = %d", __func__, iperf_data.client_fd);
+	tptest_res_log("%s: Server IP=%s, port=%d\n\r", __func__, iperf_data.server_ip, iperf_data.port);
+	tptest_res_log("%s: Create socket fd = %d\n\r", __func__, iperf_data.client_fd);
 
 	//Connecting to server
 	if (connect(iperf_data.client_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Connect to server failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Connect to server failed\n\r", __func__);
 		goto exit1;
 	}
-	tptest_res_log("\n\r%s: Connect to server successfully", __func__);
+	tptest_res_log("%s: Connect to server successfully\n\r", __func__);
 
 	// For "iperf -d" command, send first packet with iperf client header
 	if (iperf_data.bidirection) {
@@ -301,7 +333,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 		client_hdr.mWinband = 0;
 		client_hdr.mAmount = htonl(~(iperf_data.time * 100) + 1);
 		if (send(iperf_data.client_fd, (char *) &client_hdr, sizeof(client_hdr), 0) <= 0) {
-			tptest_res_log("\n\r[ERROR] %s: TCP client send data error", __func__);
+			tptest_res_log("\n\r[ERROR] %s: TCP client send data error\n\r", __func__);
 			goto exit1;
 		}
 	}
@@ -313,7 +345,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 		report_start_time = start_time;
 		while (((end_time - start_time) <= (configTICK_RATE_HZ * iperf_data.time)) && (!g_stream_id[iperf_data.stream_id].terminate)) {
 			if (send(iperf_data.client_fd, tcp_client_buffer, iperf_data.buf_size, 0) <= 0) {
-				tptest_res_log("\n\r[ERROR] %s: TCP client send data error", __func__);
+				tptest_res_log("\n\r[ERROR] %s: TCP client send data error\n\r", __func__);
 				goto exit1;
 			}
 			total_size += iperf_data.buf_size;
@@ -329,7 +361,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 			}
 
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rtcp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("tcp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				bandwidth_time = end_time;
@@ -344,7 +376,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 		report_start_time = start_time;
 		while ((total_size < iperf_data.total_size) && (!g_stream_id[iperf_data.stream_id].terminate)) {
 			if (send(iperf_data.client_fd, tcp_client_buffer, iperf_data.buf_size, 0) <= 0) {
-				tptest_res_log("\n\r[ERROR] %s: TCP client send data error", __func__);
+				tptest_res_log("\n\r[ERROR] %s: TCP client send data error\n\r", __func__);
 				goto exit1;
 			}
 			total_size += iperf_data.buf_size;
@@ -360,7 +392,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 			}
 
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rtcp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("tcp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				bandwidth_time = end_time;
@@ -370,13 +402,17 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 		}
 	}
 
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		tptest_res_log("TCP Client terminated\n\r");
+	}
+
 	if (iperf_data.is_sub_stream && SUBSTREAM_FLAG) {
 		//This stream is created by bidirectional parameter
-		tptest_res_log("\n\rtcp_c: [END] id[%d] Bidirection Totally send %d KBytes in %d ms, %d Kbits/sec", iperf_data.is_sub_stream & 0xff, (int)(total_size / KB),
+		tptest_res_log("tcp_c: [END] id[%d] Bidirection Totally send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.is_sub_stream & 0xff, (int)(total_size / KB),
 					   (int)(end_time - start_time),
 					   (int)((total_size * 8) / (end_time - start_time)));
 	} else {
-		tptest_res_log("\n\rtcp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(total_size / KB),
+		tptest_res_log("tcp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
 					   (int)(end_time - start_time),
 					   (int)((total_size * 8) / (end_time - start_time)));
 	}
@@ -384,7 +420,7 @@ int tcp_client_func(struct iperf_data_t iperf_data)
 exit1:
 	closesocket(iperf_data.client_fd);
 exit2:
-	tptest_res_log("\n\r%s: Close client socket", __func__);
+	tptest_res_log("%s: Close client socket\n\r", __func__);
 	if (tcp_client_buffer) {
 		vPortFree(tcp_client_buffer);
 		tcp_client_buffer = NULL;
@@ -404,20 +440,23 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 	struct iperf_tcp_client_hdr client_hdr;
 	char *tcp_server_buffer = NULL;
 	struct iperf_data_t *tcp_client_data = NULL;
+	int socket_connect = 0;
+	fd_set read_fds;
+	struct timeval select_timeout;
 
 	tcp_server_buffer = pvPortMalloc(iperf_data.buf_size);
 	if (!tcp_server_buffer) {
-		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed", __func__);
-		goto exit4;
+		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed\n\r", __func__);
+		goto exit3;
 	}
 
 	//create socket
 	if ((iperf_data.server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Create socket failed", __func__);
-		goto exit4;
+		tptest_res_log("\n\r[ERROR] %s: Create socket failed\n\r", __func__);
+		goto exit3;
 	}
 
-	tptest_res_log("\n\r%s: Create socket fd = %d", __func__, iperf_data.server_fd);
+	tptest_res_log("%s: Create socket fd = %d\n\r", __func__, iperf_data.server_fd);
 
 	setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &n, sizeof(n));
 
@@ -429,24 +468,38 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 
 	// binding the TCP socket to the TCP server address
 	if (bind(iperf_data.server_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Bind socket failed", __func__);
-		goto exit3;
+		tptest_res_log("\n\r[ERROR] %s: Bind socket failed\n\r", __func__);
+		goto exit2;
 	}
-	tptest_res_log("\n\r%s: Bind socket successfully", __func__);
+	tptest_res_log("%s: Bind socket successfully\n\r", __func__);
 
 	//Make it listen to socket with max 20 connections
 	if (listen(iperf_data.server_fd, 20) != 0) {
-		tptest_res_log("\n\r[ERROR] %s: Listen socket failed", __func__);
-		goto exit3;
+		tptest_res_log("\n\r[ERROR] %s: Listen socket failed\n\r", __func__);
+		goto exit2;
 	}
-	tptest_res_log("\n\r%s: Listen port %d", __func__, iperf_data.port);
+	tptest_res_log("%s: Listen port %d\n\r", __func__, iperf_data.port);
 
-//Restart:
-	if ((iperf_data.client_fd = accept(iperf_data.server_fd, (struct sockaddr *)&client_addr, (u32_t *)&addrlen)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Accept TCP client socket error!", __func__);
-		goto exit3;
+	select_timeout.tv_sec = 0;
+	select_timeout.tv_usec = 500000; //500ms
+
+	while (!socket_connect && !g_stream_id[iperf_data.stream_id].terminate) {
+		FD_ZERO(&read_fds);
+		FD_SET(iperf_data.server_fd, &read_fds);
+		if (select(iperf_data.server_fd + 1, &read_fds, NULL, NULL, &select_timeout)) {
+			if (FD_ISSET(iperf_data.server_fd, &read_fds)) {
+				if ((iperf_data.client_fd = accept(iperf_data.server_fd, (struct sockaddr *)&client_addr, (u32_t *)&addrlen)) < 0) {
+					tptest_res_log("\n\r[ERROR] %s: Accept TCP client socket error!\n\r", __func__);
+					goto exit2;
+				}
+				socket_connect = 1;
+				tptest_res_log("%s: Accept connection successfully\n\r", __func__);
+			}
+		}
 	}
-	tptest_res_log("\n\r%s: Accept connection successfully", __func__);
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		goto exit2;
+	}
 
 	recv_size = recv(iperf_data.client_fd, tcp_server_buffer, iperf_data.buf_size, 0);
 	if (!iperf_data.bidirection) { //Server
@@ -457,8 +510,8 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 			tcp_client_data = init_stream_data('t', 'c');
 			rtw_mutex_put(&g_tptest_mutex);
 			if (tcp_client_data == NULL) {
-				tptest_res_log("\n\r[ERROR] init_stream_data failed!\n");
-				goto exit2;
+				tptest_res_log("\n\r[ERROR] init_stream_data failed!\n\r");
+				goto exit1;
 			}
 			if (client_hdr.mAmount != 0) {
 				client_hdr.mAmount = ntohl(client_hdr.mAmount);
@@ -477,7 +530,10 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 
 			if (xTaskCreate(iperf_test_handler, "iperf_test_handler", BSD_STACK_SIZE, (void *) tcp_client_data, tskIDLE_PRIORITY + 1 + PRIORITIE_OFFSET,
 							&tcp_client_data->task) != pdPASS) {
-				tptest_res_log("\n\rTCP ERROR: Create TCP client task failed.");
+				tptest_res_log("\n\rTCP ERROR: Create TCP client task failed.\n\r");
+				rtw_mutex_get(&g_tptest_mutex);
+				free_stream_data(tcp_client_data);
+				rtw_mutex_put(&g_tptest_mutex);
 				goto exit1;
 			}
 		}
@@ -489,10 +545,10 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 	while (!g_stream_id[iperf_data.stream_id].terminate) {
 		recv_size = recv(iperf_data.client_fd, tcp_server_buffer, iperf_data.buf_size, 0);  //MSG_DONTWAIT   MSG_WAITALL
 		if (recv_size < 0) {
-			tptest_res_log("\n\r[ERROR] %s: Receive data failed", __func__);
-			goto exit2;
+			tptest_res_log("\n\r[ERROR] %s: Receive data failed\n\r", __func__);
+			goto exit1;
 		} else if (recv_size == 0) {
-			//tptest_res_log("\n\r%s: [END] Totally receive %d KBytes in %d ms, %d Kbits/sec",__func__, (uint32_t) (total_size/KB),(uint32_t) (end_time-start_time),((uint32_t) (total_size*8)/(end_time - start_time)));
+			//tptest_res_log("%s: [END] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r",__func__, (uint32_t) (total_size/KB),(uint32_t) (end_time-start_time),((uint32_t) (total_size*8)/(end_time - start_time)));
 			//total_size=0;
 			//close(iperf_data.client_fd);
 			//goto Restart;
@@ -502,31 +558,31 @@ int tcp_server_func(struct iperf_data_t iperf_data)
 		total_size += recv_size;
 		report_size += recv_size;
 		if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-			tptest_res_log("\n\rtcp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+			tptest_res_log("tcp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 						   (int)((report_size * 8) / (end_time - report_start_time)));
 			report_start_time = end_time;
 			report_size = 0;
 		}
 	}
 
-	tptest_res_log("\n\rtcp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(total_size / KB),
-				   (int)(end_time - start_time),
-				   (int)((total_size * 8) / (end_time - start_time)));
+	if (total_size != 0) {
+		tptest_res_log("tcp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
+					   (int)(end_time - start_time),
+					   (int)((total_size * 8) / (end_time - start_time)));
+	}
 
 exit1:
-	rtw_mutex_get(&g_tptest_mutex);
-	free_stream_data(tcp_client_data);
-	rtw_mutex_put(&g_tptest_mutex);
-
-exit2:
 	// close the connected socket after receiving from connected TCP client
 	close(iperf_data.client_fd);
 
-exit3:
+exit2:
 	// close the listening socket
 	close(iperf_data.server_fd);
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		tptest_res_log("TCP Server terminated\n\r");
+	}
 
-exit4:
+exit3:
 	if (tcp_server_buffer) {
 		vPortFree(tcp_server_buffer);
 		tcp_server_buffer = NULL;
@@ -545,15 +601,11 @@ int udp_client_func(struct iperf_data_t iperf_data)
 	u32_t now;
 	uint32_t id_cnt = 0;
 	int tos_value = (int)iperf_data.tos_value;// fix optlen check fail issue in lwip_setsockopt_impl
-	extern int			skbbuf_used_num;
-	extern int			skbdata_used_num;
-	extern int			max_local_skb_num;
-	extern int			max_skb_buf_num;
 	char *udp_client_buffer = NULL;
 
 	udp_client_buffer = pvPortMalloc(iperf_data.buf_size);
 	if (!udp_client_buffer) {
-		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed\n\r", __func__);
 		goto exit2;
 	}
 
@@ -564,7 +616,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 
 	//create socket
 	if ((iperf_data.client_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Create UDP socket failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Create UDP socket failed\n\r", __func__);
 		goto exit2;
 	}
 
@@ -574,11 +626,11 @@ int udp_client_func(struct iperf_data_t iperf_data)
 	ser_addr.sin_port = htons(iperf_data.port);
 	ser_addr.sin_addr.s_addr = inet_addr((char const *)iperf_data.server_ip);
 
-	tptest_res_log("\n\r%s: Server IP=%s, port=%d", __func__, iperf_data.server_ip, iperf_data.port);
-	tptest_res_log("\n\r%s: Create socket fd = %d", __func__, iperf_data.client_fd);
+	tptest_res_log("%s: Server IP=%s, port=%d\n\r", __func__, iperf_data.server_ip, iperf_data.port);
+	tptest_res_log("%s: Create socket fd = %d\n\r", __func__, iperf_data.client_fd);
 
 	if (setsockopt(iperf_data.client_fd, IPPROTO_IP, IP_TOS, &tos_value, sizeof(tos_value)) != 0) {
-		tptest_res_log("\n\r[ERROR] %s: Set sockopt failed", __func__);
+		tptest_res_log("\n\r[ERROR] %s: Set sockopt failed\n\r", __func__);
 		goto exit1;
 	}
 
@@ -627,7 +679,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 			}
 
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rudp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("udp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				bandwidth_time = end_time;
@@ -647,11 +699,8 @@ int udp_client_func(struct iperf_data_t iperf_data)
 			client_hdr.tv_sec  = htonl(now / 1000);
 			client_hdr.tv_usec = htonl((now % 1000) * 1000);
 			memcpy(udp_client_buffer, &client_hdr, sizeof(client_hdr));
-			while ((skbdata_used_num > (max_skb_buf_num - 5)) || (skbbuf_used_num > (max_local_skb_num - 5))) {
-				vTaskDelay(1);
-			}
 			if (sendto(iperf_data.client_fd, udp_client_buffer, iperf_data.buf_size, 0, (struct sockaddr *)&ser_addr, addrlen) < 0) {
-				//tptest_res_log("\n\r[ERROR] %s: UDP client send data error",__func__);
+				//tptest_res_log("[ERROR] %s: UDP client send data error\n\r",__func__);
 			} else {
 				total_size += iperf_data.buf_size;
 				bandwidth_size += iperf_data.buf_size;
@@ -668,7 +717,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 			}
 
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rudp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("udp_c: id[%d] Send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				bandwidth_time = end_time;
@@ -678,13 +727,17 @@ int udp_client_func(struct iperf_data_t iperf_data)
 		}
 	}
 
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		tptest_res_log("UDP Client terminated\n\r");
+	}
+
 	if (iperf_data.is_sub_stream && SUBSTREAM_FLAG) {
 		//This stream is created by bidirectional parameter
-		tptest_res_log("\n\rudp_c: [END] id[%d] Bidirection Totally send %d KBytes in %d ms, %d Kbits/sec", iperf_data.is_sub_stream & 0xff, (int)(total_size / KB),
+		tptest_res_log("udp_c: [END] id[%d] Bidirection Totally send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.is_sub_stream & 0xff, (int)(total_size / KB),
 					   (int)(end_time - start_time),
 					   (int)((total_size * 8) / (end_time - start_time)));
 	} else {
-		tptest_res_log("\n\rudp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(total_size / KB),
+		tptest_res_log("udp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
 					   (int)(end_time - start_time),
 					   (int)((total_size * 8) / (end_time - start_time)));
 	}
@@ -732,11 +785,11 @@ int udp_client_func(struct iperf_data_t iperf_data)
 
 				UDP_Hdr = (struct iperf_udp_datagram *) udp_client_buffer;
 				hdr = (struct iperf_udp_server_hdr *)(UDP_Hdr + 1);
-				tptest_res_log("\n\r%s: Server Report", __func__);
+				tptest_res_log("%s: Server Report\n\r", __func__);
 				if ((ntohl(hdr->flags) & 0x80000000) != 0) {
 					stop_ms = ntohl(hdr->stop_sec) * 1000 + ntohl(hdr->stop_usec) / 1000;
 					total_len = (((uint64_t) ntohl(hdr->total_len1)) << 32) + ntohl(hdr->total_len2);
-					tptest_res_log("\n\rudp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(total_len / KB), (int)stop_ms,
+					tptest_res_log("udp_c: [END] id[%d] Totally send %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_len / KB), (int)stop_ms,
 								   (int)(total_len * 8 / stop_ms));
 				}
 			}
@@ -746,7 +799,7 @@ int udp_client_func(struct iperf_data_t iperf_data)
 exit1:
 	close(iperf_data.client_fd);
 exit2:
-	tptest_res_log("\n\r%s: Close client socket", __func__);
+	tptest_res_log("%s: Close client socket\n\r", __func__);
 	if (udp_client_buffer) {
 		vPortFree(udp_client_buffer);
 		udp_client_buffer = NULL;
@@ -767,19 +820,22 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	uint8_t time_boundary = 0, size_boundary = 0;
 	char *udp_server_buffer = NULL;
 	struct iperf_data_t *udp_client_data = NULL;
+	int socket_connect = 0;
+	fd_set read_fds;
+	struct timeval select_timeout;
 
 	udp_server_buffer = pvPortMalloc(iperf_data.buf_size);
 	if (!udp_server_buffer) {
-		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed", __func__);
-		goto exit3;
+		tptest_res_log("\n\r[ERROR] %s: Alloc buffer failed\n\r", __func__);
+		goto exit2;
 	}
 
 	//create socket
 	if ((iperf_data.server_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Create socket failed", __func__);
-		goto exit3;
+		tptest_res_log("\n\r[ERROR] %s: Create socket failed\n\r", __func__);
+		goto exit2;
 	}
-	tptest_res_log("\n\r%s: Create socket fd = %d, port = %d", __func__, iperf_data.server_fd, iperf_data.port);
+	tptest_res_log("%s: Create socket fd = %d, port = %d\n\r", __func__, iperf_data.server_fd, iperf_data.port);
 
 	setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &n, sizeof(n));
 
@@ -791,14 +847,30 @@ int udp_server_func(struct iperf_data_t iperf_data)
 
 	// binding the UDP socket to the UDP server address
 	if (bind(iperf_data.server_fd, (struct sockaddr *)&ser_addr, sizeof(ser_addr)) < 0) {
-		tptest_res_log("\n\r[ERROR] %s: Bind socket failed", __func__);
-		goto exit2;
+		tptest_res_log("\n\r[ERROR] %s: Bind socket failed\n\r", __func__);
+		goto exit1;
 	}
 
-	tptest_res_log("\n\r%s: Bind socket successfully", __func__);
+	tptest_res_log("%s: Bind socket successfully\n\r", __func__);
 
-	//wait for first packet to start
-	recv_size = recvfrom(iperf_data.server_fd, udp_server_buffer, iperf_data.buf_size, 0, (struct sockaddr *) &client_addr, (u32_t *)&addrlen);
+	select_timeout.tv_sec = 0;
+	select_timeout.tv_usec = 500000; //500ms
+
+	while (!socket_connect && !g_stream_id[iperf_data.stream_id].terminate) {
+		FD_ZERO(&read_fds);
+		FD_SET(iperf_data.server_fd, &read_fds);
+		if (select(iperf_data.server_fd + 1, &read_fds, NULL, NULL, &select_timeout)) {
+			if (FD_ISSET(iperf_data.server_fd, &read_fds)) {
+				//wait for first packet to start
+				recv_size = recvfrom(iperf_data.server_fd, udp_server_buffer, iperf_data.buf_size, 0, (struct sockaddr *) &client_addr, (u32_t *)&addrlen);
+				socket_connect = 1;
+			}
+		}
+	}
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		goto exit1;
+	}
+
 	total_size += recv_size;
 	report_size += recv_size;
 	start_time = xTaskGetTickCount();
@@ -807,8 +879,6 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	if (!iperf_data.bidirection) { //Server
 		//parser the amount of udp iperf setting
 		memcpy(&client_hdr, udp_server_buffer, sizeof(client_hdr));
-		printf("\nclient_hdr.mAmount = %x\n", (unsigned int)client_hdr.mAmount);
-
 		if (client_hdr.mAmount != 0) {
 			client_hdr.mAmount = ntohl(client_hdr.mAmount);
 			if (client_hdr.mAmount > 0x7fffffff) {
@@ -818,7 +888,6 @@ int udp_server_func(struct iperf_data_t iperf_data)
 				size_boundary = 1;
 			}
 		} else {
-			printf("\nNo boundary\n");
 			//set receive timeout
 			int recv_timeout = 500;
 
@@ -836,8 +905,8 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			udp_client_data = init_stream_data('u', 'c');
 			rtw_mutex_put(&g_tptest_mutex);
 			if (udp_client_data == NULL) {
-				tptest_res_log("\n\r[ERROR] init_stream_data failed!\n");
-				goto exit2;
+				tptest_res_log("[ERROR] init_stream_data failed!\n\r");
+				goto exit1;
 			}
 			if (time_boundary) {
 				udp_client_data->time = client_hdr.mAmount;
@@ -853,7 +922,10 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			udp_client_data->is_sub_stream = SUBSTREAM_FLAG | iperf_data.stream_id;
 			if (xTaskCreate(iperf_test_handler, "iperf_test_handler", BSD_STACK_SIZE, (void *) udp_client_data, tskIDLE_PRIORITY + 1 + PRIORITIE_OFFSET,
 							&udp_client_data->task) != pdPASS) {
-				tptest_res_log("\r\nUDP ERROR: Create UDP client task failed.");
+				tptest_res_log("\n\rUDP ERROR: Create UDP client task failed.\n\r");
+				rtw_mutex_get(&g_tptest_mutex);
+				free_stream_data(udp_client_data);
+				rtw_mutex_put(&g_tptest_mutex);
 				goto exit1;
 			}
 		}
@@ -871,7 +943,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		while (((end_time - start_time) <= (configTICK_RATE_HZ * client_hdr.mAmount))  && (!g_stream_id[iperf_data.stream_id].terminate)) {
 			recv_size = recvfrom(iperf_data.server_fd, udp_server_buffer, iperf_data.buf_size, 0, (struct sockaddr *) &client_addr, (u32_t *)&addrlen);
 			if (recv_size < 0) {
-				tptest_res_log("\n\r[ERROR] %s: Receive data failed", __func__);
+				tptest_res_log("\n\r[ERROR] %s: Receive data failed\n\r", __func__);
 				goto exit1;
 			}
 
@@ -888,7 +960,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			total_size += recv_size;
 			report_size += recv_size;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rudp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				report_size = 0;
@@ -898,7 +970,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		while ((total_size < client_hdr.mAmount) && (!g_stream_id[iperf_data.stream_id].terminate)) {
 			recv_size = recvfrom(iperf_data.server_fd, udp_server_buffer, iperf_data.buf_size, 0, (struct sockaddr *) &client_addr, (u32_t *)&addrlen);
 			if (recv_size < 0) {
-				tptest_res_log("\n\r[ERROR] %s: Receive data failed", __func__);
+				tptest_res_log("\n\r[ERROR] %s: Receive data failed\n\r", __func__);
 				goto exit1;
 			}
 
@@ -915,7 +987,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			total_size += recv_size;
 			report_size += recv_size;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rudp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				report_size = 0;
@@ -925,7 +997,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		while (!g_stream_id[iperf_data.stream_id].terminate) {
 			recv_size = recvfrom(iperf_data.server_fd, udp_server_buffer, iperf_data.buf_size, 0, (struct sockaddr *) &client_addr, (u32_t *)&addrlen);
 			if (recv_size < 0) {
-				tptest_res_log("\n\r%s: Receive data timeout", __func__);
+				tptest_res_log("%s: Receive data timeout\n\r", __func__);
 				goto exit1;
 			}
 
@@ -942,7 +1014,7 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			total_size += recv_size;
 			report_size += recv_size;
 			if ((iperf_data.report_interval != DEFAULT_REPORT_INTERVAL) && ((end_time - report_start_time) >= (configTICK_RATE_HZ * iperf_data.report_interval))) {
-				tptest_res_log("\n\rudp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
+				tptest_res_log("udp_s: id[%d] Receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(report_size / KB), (int)(end_time - report_start_time),
 							   (int)((report_size * 8) / (end_time - report_start_time)));
 				report_start_time = end_time;
 				report_size = 0;
@@ -950,21 +1022,20 @@ int udp_server_func(struct iperf_data_t iperf_data)
 		}
 	}
 
+	if (total_size != 0) {
+		tptest_res_log("udp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
+					   (int)(end_time - start_time),
+					   (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
+	}
+
 exit1:
-	tptest_res_log("\n\rudp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec", iperf_data.stream_id, (int)(total_size / KB),
-				   (int)(end_time - start_time),
-				   (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
-
-
-	rtw_mutex_get(&g_tptest_mutex);
-	free_stream_data(udp_client_data);
-	rtw_mutex_put(&g_tptest_mutex);
-
-exit2:
 	// close the listening socket
 	close(iperf_data.server_fd);
+	if (g_stream_id[iperf_data.stream_id].terminate) {
+		tptest_res_log("UDP Server terminated\n\r");
+	}
 
-exit3:
+exit2:
 	if (udp_server_buffer) {
 		vPortFree(udp_server_buffer);
 		udp_server_buffer = NULL;
@@ -980,30 +1051,34 @@ static void iperf_test_handler(void *param)
 	vTaskDelay(100);
 	if (stream_data->protocol == 'u') {
 		if (stream_data->role == 'c') {
-			tptest_res_log("\n\rStart UDP client! id = [%d]", stream_data->stream_id);
+			tptest_res_log("Start UDP client! id = [%d]\n\r", stream_data->stream_id);
 			udp_client_func(stream_data[0]);
-			tptest_res_log("\n\rUDP client stopped!");
+			tptest_res_log("UDP client stopped!\n\r");
 		} else if (stream_data->role == 's') {
-			tptest_res_log("\n\rStart UDP server! id = [%d]", stream_data->stream_id);
+			tptest_res_log("Start UDP server! id = [%d]\n\r", stream_data->stream_id);
 			udp_server_func(stream_data[0]);
-			tptest_res_log("\n\rUDP server stopped!");
+			tptest_res_log("UDP server stopped!\n\r");
 		}
 	} else if (stream_data->protocol == 't') {
 		if (stream_data->role == 'c') {
-			tptest_res_log("\n\rStart TCP client! id = [%d]", stream_data->stream_id);
+			tptest_res_log("Start TCP client! id = [%d]\n\r", stream_data->stream_id);
 			tcp_client_func(stream_data[0]);
-			tptest_res_log("\n\rTCP client stopped!");
+			tptest_res_log("TCP client stopped!\n\r");
 		} else if (stream_data->role == 's') {
-			tptest_res_log("\n\rStart TCP server! id = [%d]", stream_data->stream_id);
+			tptest_res_log("Start TCP server! id = [%d]\n\r", stream_data->stream_id);
 			tcp_server_func(stream_data[0]);
-			tptest_res_log("\n\rTCP server stopped!");
+			tptest_res_log("TCP server stopped!\n\r");
 		}
 	} else {
-		tptest_res_log("\n\r[ERROR] Wrong data");
+		tptest_res_log("\n\r[ERROR] Wrong data\n\r");
 	}
 
+	rtw_mutex_get(&g_tptest_mutex);
+	free_stream_data(stream_data);
+	rtw_mutex_put(&g_tptest_mutex);
+
 #if defined(INCLUDE_uxTaskGetStackHighWaterMark) && (INCLUDE_uxTaskGetStackHighWaterMark == 1)
-	tptest_res_log("\n\rMin available stack size of %s = %d * %d bytes", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL), sizeof(portBASE_TYPE));
+	tptest_res_log("Min available stack size of %s = %d * %d bytes\n\r", __FUNCTION__, uxTaskGetStackHighWaterMark(NULL), sizeof(portBASE_TYPE));
 #endif
 
 	vTaskDelete(NULL);
@@ -1015,7 +1090,9 @@ void cmd_iperf(int argc, char **argv)
 	uint8_t stream_id;
 	struct iperf_data_t *stream_data = NULL;
 	struct iperf_data_t *stream_data_s = NULL;
+	struct iperf_data_t *stream_data_list = NULL;
 	uint8_t protocol = 0;
+	int i = 0;
 
 	iperf_init();
 	rtw_mutex_get(&g_tptest_mutex);
@@ -1038,7 +1115,7 @@ void cmd_iperf(int argc, char **argv)
 			if (strcmp(argv[argv_count - 1], "-s") == 0) {
 				stream_data = init_stream_data(protocol, 's');
 				if (stream_data == NULL) {
-					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n");
+					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n\r");
 					goto exit;
 				}
 				argv_count++;
@@ -1046,6 +1123,14 @@ void cmd_iperf(int argc, char **argv)
 				if (argc == 3) {
 					stream_id = atoi(argv[2]);
 					g_stream_id[stream_id].terminate = 1;
+					rtw_mutex_put(&g_tptest_mutex);
+					return;
+				} else if (argc == 2) {
+					for (i = 0; i < MULTI_STREAM_NUM; i++) {
+						if (g_stream_id[i].id_used) {
+							g_stream_id[i].terminate = 1;
+						}
+					}
 					rtw_mutex_put(&g_tptest_mutex);
 					return;
 				} else {
@@ -1057,12 +1142,25 @@ void cmd_iperf(int argc, char **argv)
 				}
 				stream_data = init_stream_data(protocol, 'c');
 				if (stream_data == NULL) {
-					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n");
+					tptest_res_log("\n\r[ERROR] init_stream_data failed!\n\r");
 					goto exit;
 				}
 				strncpy((char *)stream_data->server_ip, argv[2], sizeof(stream_data->server_ip) - 1);
 				stream_data->server_ip[sizeof(stream_data->server_ip) - 1] = '\0';
 				argv_count += 2;
+			} else if (strcmp(argv[argv_count - 1], "?") == 0) {
+				if (argc == 2) {
+					stream_data_list = stream_data_head;
+					while (stream_data_list != NULL) {
+						tptest_res_log("[%d] %s_%s, port=%d\n\r", stream_data_list->stream_id, (stream_data_list->protocol == 't' ? "tcp" : "udp"),
+									   (stream_data_list->role == 'c' ? "client" : "server"), stream_data_list->port);
+						stream_data_list = stream_data_list->next;
+					}
+					rtw_mutex_put(&g_tptest_mutex);
+					return;
+				} else {
+					goto exit;
+				}
 			} else {
 				goto exit;
 			}
@@ -1139,14 +1237,14 @@ void cmd_iperf(int argc, char **argv)
 	if (stream_data->role == 's') {
 		if (xTaskCreate(iperf_test_handler, "iperf_test_handler", BSD_STACK_SIZE, (void *) stream_data, tskIDLE_PRIORITY + 2 + PRIORITIE_OFFSET,
 						&stream_data->task) != pdPASS) {
-			tptest_res_log("\r\nUDP ERROR: Create UDP server task failed.");
+			tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 			goto exit;
 		}
 	} else if (stream_data->role == 'c') {
 		if (stream_data->bidirection == 1) {
 			stream_data_s = init_stream_data(protocol, 's');
 			if (stream_data_s == NULL) {
-				tptest_res_log("\n\r[ERROR] init_stream_data failed!\n");
+				tptest_res_log("[ERROR] init_stream_data failed!\n\r");
 				goto exit;
 			}
 			stream_data_s->bidirection = 1;
@@ -1155,13 +1253,13 @@ void cmd_iperf(int argc, char **argv)
 			stream_data_s->total_size = stream_data->total_size;
 			if (xTaskCreate(iperf_test_handler, "iperf_test_handler", BSD_STACK_SIZE, (void *) stream_data_s, tskIDLE_PRIORITY + 2 + PRIORITIE_OFFSET,
 							&stream_data_s->task) != pdPASS) {
-				tptest_res_log("\r\nUDP ERROR: Create UDP server task failed.");
+				tptest_res_log("UDP ERROR: Create UDP server task failed.\n\r");
 				goto exit;
 			}
 		}
 		if (xTaskCreate(iperf_test_handler, "iperf_test_handler", BSD_STACK_SIZE, (void *) stream_data, tskIDLE_PRIORITY + 1 + PRIORITIE_OFFSET,
 						&stream_data->task) != pdPASS) {
-			tptest_res_log("\r\nUDP ERROR: Create UDP client task failed.");
+			tptest_res_log("UDP ERROR: Create UDP client task failed.\n\r");
 			vTaskDelete(stream_data_s->task);
 			goto exit;
 		}
@@ -1179,7 +1277,8 @@ exit:
 		printf("\n\r[ATWT] Command format ERROR!\n");
 		printf("\n\r[ATWT] Usage: ATWT=[-s|-c,host|stop],[options]\n");
 		printf("\n\r   Client/Server:\n");
-		printf("  \r	 stop  #		terminate specific stream id\n");
+		printf("  \r	  ?     		List all stream status\n");
+		printf("  \r	 stop  #		terminate specific stream id or terminate all stream if no id specified\n");
 		printf("  \r	 -i    #		seconds between periodic bandwidth reports\n");
 		printf("  \r	 -l    #		length of buffer to read or write (default 1460 Bytes)\n");
 		printf("  \r	 -p    #		server port to listen on/connect to (default 5001)\n");
@@ -1197,7 +1296,8 @@ exit:
 		printf("\n\r[ATWU] Command format ERROR!\n");
 		printf("\n\r[ATWU] Usage: ATWU=[-s|-c,host|stop][options]\n");
 		printf("\n\r   Client/Server:\n");
-		printf("  \r     stop  #        terminate specific stream id\n");
+		printf("  \r	  ?     		List all stream status\n");
+		printf("  \r     stop  #        terminate specific stream id or terminate all stream if no id specified\n");
 		printf("  \r     -i    #        seconds between periodic bandwidth reports\n");
 		printf("  \r     -l    #        length of buffer to read or write (default 1460 Bytes)\n");
 		printf("  \r     -p    #        server port to listen on/connect to (default 5001)\n");

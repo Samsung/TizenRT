@@ -25,7 +25,7 @@ typedef struct {
 	uint8_t   a2dp_role;                /*!< Default A2DP profile role(Only used in BR/EDR) */
 	uint8_t   spp_role;                	/*!< Default SPP profile role(Only used in BR/EDR) */
 	uint8_t   hfp_role;                 /*!< Default HFP profile role(Only used in BR/EDR) */
-	uint8_t   app_profile_support;      /*!< app profile support @ref rtk_bt_profile_t */
+	uint32_t   app_profile_support;      /*!< app profile support @ref rtk_bt_profile_t */
 	uint16_t  mtu_size;                 /*!< Deafult MTU config */
 	bool	  master_init_mtu_req;      /*!< Whether master auto initiate exchange MTU request when connected.
 											 When this value is false, user can use @ref uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
@@ -35,7 +35,9 @@ typedef struct {
 	uint8_t   prefer_rx_phy;            /*!< Deafult PHY config: preferred rx phy */
 	uint16_t  max_tx_octets;            /*!< Default data len config: Max tx octects */
 	uint16_t  max_tx_time;              /*!< Default data len config: Max tx time */
+#if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	uint16_t  max_stack_tx_pending_num; /*!< Default max stack tx pending num: default is RTK_BT_GATT_DEFAULT_CREDITS */
+#endif
 	uint8_t   irk[RTK_BT_LE_GAP_IRK_LEN];    		/*!< Local IRK data */
 	bool      user_def_service;         /*!< Whether register gap and gatt service in app, or use builtin service in stack */
 	bool      cccd_not_check;           /*!< Whether check if cccd is enabled before send indicate or notify. When true, cccd will not be checked;

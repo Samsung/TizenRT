@@ -23,6 +23,19 @@
 #undef RTL8720E_SUPPORT
 #define RTL8720E_SUPPORT 1
 
+/************************* Default Values of User Configure *****************************/
+/* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
+#define AP_STA_NUM	5
+/*wifi driver's trx buffer number, each skb cost about 2240 bytes of heap*/
+#ifdef CONFIG_HIGH_TP_TEST
+#define SKB_NUM_NP	10
+#define SKB_NUM_AP	5
+#else
+#define SKB_NUM_NP	6
+#define SKB_NUM_AP	4
+#endif
+/************************* Default Values of User Configure End***************************/
+
 /* Configure for bus */
 #define CONFIG_AXI_HCI
 
@@ -50,7 +63,7 @@
 /* Configurations for power saving */
 #define CONFIG_WOWLAN
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
-#define CONFIG_EAP
+// #define CONFIG_EAP
 
 #define CONFIG_BT_COEXIST
 
@@ -79,12 +92,8 @@ so use SW AES encrypt with IPSEC.  */
 #define SW_ENCRYPT_HTC_PKT
 #endif
 
-#define RTL8720E_SPECIFIC
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR  // rtw_phydm_fill_desc_dpt -> todo
 
-/* config for AP mode */
-#define AP_STA_NUM (5)  // reduce ram size, revert this when ddr or psram read
-// Decrease STA due to memory limitation - Alex Fang
 #define NUM_STA (2 + AP_STA_NUM)  // 2 + supported clients
 
 /*halbb halrf config*/
@@ -144,6 +153,14 @@ so use SW AES encrypt with IPSEC.  */
 #define DRV_RF_DBG_TRACE_DISABLE
 #endif
 
+/*Config for SKB Size*/
+#define SKB_CACHE_SZ	32/*max(AP_Core_Cache, NP_Core_Cache)*/
+#define SKB_ALIGNMENT	__attribute__((aligned(SKB_CACHE_SZ)))
+#define TXDESC_SIZE	40
+#define RXDESC_SIZE	24
+#define RXPHYSTS_SIZE 0
+#define WLAN_HW_INFO_LEN	40/*max(TXDESC_SIZE, RXDESC_SIZE+RXPHYSTS_SIZE)*/
+#define WLAN_MAX_ETHFRM_LEN	1514/*max payload size of wifi frame*/
 
 /* debug log level */
 #define RELEASE_WIFI
@@ -152,5 +169,8 @@ so use SW AES encrypt with IPSEC.  */
 #else
 #define RTW_MSG_LEVEL    RTW_MSG_WARNING
 #endif
+
+#define CONFIG_DOSCAN_IN_BUSYTRAFFIC
+#define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8720E_H */
 

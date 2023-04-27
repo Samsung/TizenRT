@@ -697,6 +697,9 @@ struct wpabuf *tls_connection_decrypt(void *tls_ctx,
 	 * to handle the possibility of the decrypted data being longer than
 	 * input data.
 	 */
+	if (NULL == in_data) {
+		return NULL;
+	}
 	size = (wpabuf_len(in_data) + 500) * 3;
 	out_data = wpabuf_alloc(size);
 	if (out_data == NULL) {

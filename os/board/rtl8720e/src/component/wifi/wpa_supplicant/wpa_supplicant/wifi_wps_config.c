@@ -10,13 +10,12 @@
 #include <lwip_netconf.h>
 #endif
 #include "wifi_conf.h"
+#include "wifi_ind.h"
 #include "wps/wps_defs.h"
 #include <platform_stdlib.h>
 #include "wifi_wps_config.h"
 
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_8710C) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 #include "platform_opts_bt.h"
-#endif
 
 // The maximum number of WPS credentials. The value should be in range of 1~10.
 int wps_max_cred_count = 10;
@@ -275,7 +274,7 @@ static void wps_config_wifi_setting(rtw_network_info_t *wifi, struct dev_credent
 {
 	printf("\r\nwps_config_wifi_setting\n");
 	//memcpy((void *)wifi->ssid, (void *)dev_cred->ssid, dev_cred->ssid_len);
-	strncpy((char *)wifi->ssid.val, (char *)&dev_cred->ssid[0], sizeof(wifi->ssid.val));
+	strncpy((char *)wifi->ssid.val, (char *)&dev_cred->ssid[0], dev_cred->ssid_len);
 	printf("\r\nwps_wifi.ssid = %s\n", wifi->ssid.val);
 	wifi->ssid.len = dev_cred->ssid_len;
 	printf("\r\nwps_wifi.ssid_len = %d\n", wifi->ssid.len);
@@ -697,7 +696,7 @@ static int wps_find_out_triger_wps_AP(char *target_ssid, unsigned char *target_b
 		printf("\n\rERROR: wifi scan failed");
 		goto exit;
 	}
-	if (rtw_down_timeout_sema(&wps_arg.scan_sema, SCAN_LONGEST_WAIT_TIME) == RTW_FALSE) {
+	if (rtw_down_timeout_sema(&wps_arg.scan_sema, SCAN_LONGEST_WAIT_TIME) == _FAIL) {
 		printf("\r\nWPS scan done early!\r\n");
 	}
 

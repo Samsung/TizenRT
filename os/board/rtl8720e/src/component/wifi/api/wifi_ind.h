@@ -78,7 +78,7 @@ void init_event_callback_list(void);
   * @param[in]  buf_len: The length of the buffer.
   * @param[in]  flags: Indicate some extra information, sometimes it is 0.
   * @retval None
-  * @note  If upper layer application triggers additional operations on receiving of wireless_send_event,
+  * @note  If upper layer application triggers additional operations on receiving of wireless event,
   *			please strictly check current stack size usage (by using uxTaskGetStackHighWaterMark() ),
   *			and tries not to share the same stack with wlan driver if remaining stack space is not available
   *			for the following operations.

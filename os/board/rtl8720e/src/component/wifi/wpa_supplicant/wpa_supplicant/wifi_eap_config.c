@@ -1,8 +1,6 @@
-#if !defined(CONFIG_MBED_ENABLED)
 #include "main.h"
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
-#endif
 #endif
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +8,7 @@
 #include <osdep_service.h>
 #include "utils/os.h"
 #include "wifi_conf.h"
-#include <platform_stdlib.h>
+#include "wifi_ind.h"
 
 #define WLAN0_NAME "wlan0"
 #ifndef ENABLE
@@ -45,9 +43,7 @@ void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_d
 void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data);
 int connect_by_open_system(char *target_ssid);
 
-#if !defined(CONFIG_MBED_ENABLED)
 int eap_start(char *method);
-#endif
 
 void set_eap_phase(unsigned char is_trigger_eap)
 {
@@ -65,7 +61,6 @@ int get_eap_method(void)
 	return eap_method;
 }
 
-#if !defined(CONFIG_MBED_ENABLED)
 void reset_config(void)
 {
 	eap_target_ssid = NULL;
@@ -103,7 +98,7 @@ void eap_disconnected_hdl(char *buf, int buf_len, int flags, void *handler_user_
 #if (RTL8192E_SUPPORT == 0)//devin_li rtl8192es_temp_mask	
 	wifi_unreg_event_handler(WIFI_EVENT_WPA_EAPOL_RECVD, eap_eapol_recvd_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, eap_disconnected_hdl);
-	eap_peer_unregister_methods();
+	//eap_peer_unregister_methods();
 	eap_sm_deinit();
 	//reset_config();
 #endif
@@ -277,28 +272,18 @@ int eap_start(char *method)
 
 int connect_by_open_system(char *target_ssid)
 {
-	int retry_count = 0, ret;
+	int ret;
 	rtw_network_info_t connect_param = {0};
 	if (target_ssid != NULL) {
 		rtw_memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);
 		connect_param.security_type = RTW_SECURITY_OPEN;
-		while (1) {
-			rtw_msleep_os(500);	//wait scan complete.
-			ret = wifi_connect(&connect_param, 1);
-			if (ret == RTW_SUCCESS) {
-				//printf("\r\n[EAP]Associate with AP success\n");
-				break;
-			}
-			if (retry_count == 0) {
-				//printf("\r\n[EAP]Associate with AP failed %d\n", ret);
-				return -1;
-			}
-			retry_count --;
-			printf("Retry connection...\n");
-
-			judge_station_disconnect();
-			set_eap_phase(ENABLE);
+		ret = wifi_connect(&connect_param, 1);
+		if (ret == RTW_SUCCESS) {
+			//printf("\r\n[EAP]Associate with AP success\n");
+			return 0;
+		} else {
+			return -1;
 		}
 	} else {
 		printf("\r\n[EAP]Target SSID is NULL\n");
@@ -313,7 +298,6 @@ void eap_autoreconnect_thread(void *method)
 	eap_start((char *)method);
 	vTaskDelete(NULL);
 }
-#endif
 
 void eap_autoreconnect_hdl(u8 method_id)
 {
@@ -341,7 +325,6 @@ void eap_autoreconnect_hdl(u8 method_id)
 #endif
 }
 
-//#if CONFIG_MBED_ENABLED
 // copy from ssl_client_ext.c
 
 #include <mbedtls/config.h>

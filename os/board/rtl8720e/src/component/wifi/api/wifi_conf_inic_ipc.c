@@ -3,25 +3,16 @@
 #include "main.h"
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>
-//#include <dhcp/dhcps.h>
+// #include <dhcp/dhcps.h>
 #endif
 
-#include <platform_stdlib.h>
 #include <wifi_conf.h>
 #include <wifi_ind.h>
 #include <osdep_service.h>
-#include <device_lock.h>
-
-#if (defined(CONFIG_EXAMPLE_UART_ATCMD) && CONFIG_EXAMPLE_UART_ATCMD) || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && CONFIG_EXAMPLE_SPI_ATCMD)
-#include "at_cmd/atcmd_wifi.h"
-#endif
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_8735B) || defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#include "platform_opts_bt.h"
-#endif
+#include <rtw_timer.h>
 
 #if defined(CONFIG_AS_INIC_AP)
 #include "inic_ipc_api.h"
-#include "freertos/wrapper.h"
 #endif
 /******************************************************
  *                    Constants
@@ -49,6 +40,8 @@ rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback = NULL;
 
 wifi_do_fast_connect_ptr p_wifi_do_fast_connect = NULL;
 write_fast_connect_info_ptr p_store_fast_connect_info = NULL;
+
+int skb_num_ap;
 /* Give default value if not defined */
 /******************************************************
  *               Function Definitions
@@ -205,7 +198,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 #endif
 			block_param->join_timeout = RTW_JOIN_TIMEOUT;
 
-		if (rtw_down_timeout_sema(&block_param->join_sema, block_param->join_timeout) == RTW_FALSE) {
+		if (rtw_down_timeout_sema(&block_param->join_sema, block_param->join_timeout) == _FAIL) {
 			RTW_API_INFO("RTW API: Join bss timeout\r\n");
 			rtw_join_status = RTW_JOINSTATUS_FAIL;
 			result = RTW_TIMEOUT;
@@ -318,7 +311,7 @@ int wifi_get_channel(int *channel)
 	return ret;
 }
 
-void wifi_set_user_config(void)
+_WEAK void wifi_set_user_config(void)
 {
 	u32 param_buf[1];
 	struct wifi_user_conf *p_wifi_user_config = (struct wifi_user_conf *)rtw_zmalloc(sizeof(struct wifi_user_conf));
@@ -342,7 +335,7 @@ void wifi_set_user_config(void)
 #endif
 	p_wifi_user_config->wifi_wpa_mode = WPA_AUTO_MODE;
 
-	p_wifi_user_config->g_user_ap_sta_num = NUM_STA;//NUM_STA (2 + AP_STA_NUM)
+	p_wifi_user_config->g_user_ap_sta_num = NUM_STA;
 
 	/* power save */
 	p_wifi_user_config->lps_dtim = 0;
@@ -384,6 +377,15 @@ void wifi_set_user_config(void)
 
 	p_wifi_user_config->auto_reconnect_count = 8;
 	p_wifi_user_config->auto_reconnect_interval = 5;/* in sec*/
+
+	p_wifi_user_config->skb_num_np = SKB_NUM_NP;
+	p_wifi_user_config->skb_num_ap = SKB_NUM_AP;
+
+#ifdef CONFIG_MCC_MODE
+	p_wifi_user_config->en_mcc = (u8) ENABLE;
+#endif
+
+	skb_num_ap = p_wifi_user_config->skb_num_ap;
 
 	DCache_Clean((u32)p_wifi_user_config, sizeof(struct wifi_user_conf));
 	param_buf[0] = (u32)p_wifi_user_config;
@@ -463,6 +465,7 @@ int wifi_off(void)
 {
 	int ret = 0;
 
+	//inic_ipc_host_deinit_skb();/*should be called after np deinit*/
 	return ret;
 }
 
@@ -525,7 +528,7 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	DCache_Clean((u32)softAP_config->password, softAP_config->password_len);
 	DCache_Clean((u32)softAP_config, sizeof(rtw_softap_info_t));
 	param_buf[0] = (u32)softAP_config;
-	
+
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, wifi_ap_sta_assoc_hdl, NULL);
 	wifi_reg_event_handler(WIFI_EVENT_STA_DISASSOC, wifi_ap_sta_disassoc_hdl, NULL);

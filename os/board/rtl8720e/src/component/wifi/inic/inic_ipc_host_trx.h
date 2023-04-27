@@ -7,11 +7,9 @@
 #define __INIC_IPC_HOST_TRX_H__
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
-//#include "freertos_service.h"
 #include "osdep_service.h"
-#include "platform_stdlib.h"
 #include "platform_opts.h"
-#include "skbuff.h"
+#include "rtw_skbuff.h"
 //#include "ethernetif.h"
 #include "lwip_netconf.h"
 
@@ -22,16 +20,10 @@
 #define SKB_DATA_ALIGN(X)	(((X) + (4 - 1)) & ~(4 - 1))
 
 /* -------------------------------- Macros ---------------------------------- */
-#ifdef CONFIG_HIGH_TP_TEST
-#define HOST_SKB_NUM 5
-#else
-#define HOST_SKB_NUM 4
-#endif
-#define SKB_WLAN_TX_EXTRA_LEN 74
-
 /* ------------------------------- Data Types ------------------------------- */
 
 /* ---------------------------- Global Variables ---------------------------- */
+extern int skb_num_ap;
 
 /* -------------------------- Function declaration -------------------------- */
 void inic_ipc_host_init_skb(void);

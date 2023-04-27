@@ -12,10 +12,8 @@
 
 ******************************************************************************/
 #include "inic_ipc_api.h"
-#include "wifi_conf.h"
-#include "wifi_conf_inter.h"
 
-#include "wlan_intf.h"
+#include "rtw_drv_api.h"
 #include "inic_ipc_cfg.h"
 
 /* -------------------------------- Defines --------------------------------- */
@@ -86,7 +84,7 @@ void inic_ipc_api_dev_task(void)
 			if (pWifi->password_len) {
 				DCache_Invalidate((u32)pWifi->password, pWifi->password_len);
 			}
-			ret = rtw_wx_connect_local(pWifi);
+			ret = rtw_joinbss_start_api(pWifi);
 			p_ipc_msg->ret = ret;
 			break;
 		}
@@ -382,17 +380,21 @@ void inic_ipc_api_dev_task(void)
 			u16 buf_len = (u16)p_ipc_msg->param_buf[2];
 			u16 flags = (u16)p_ipc_msg->param_buf[3];
 			DCache_Invalidate((u32)buf, buf_len);
-			ret = wifi_send_eapol(wlan_idx, buf, buf_len, flags);
+			ret = wifi_if_send_eapol(wlan_idx, buf, buf_len, flags);
 			p_ipc_msg->ret = ret;
 			break;
 		}
 		case IPC_API_WIFI_CONFIG_AUTORECONNECT: {
+#if CONFIG_AUTO_RECONNECT
 			u8 mode = (u8)p_ipc_msg->param_buf[0];
 			ret = wifi_config_autoreconnect(mode);
 			if (mode != RTW_AUTORECONNECT_DISABLE) {
 				p_wlan_autoreconnect_hdl = (p_wlan_autoreconnect_hdl_t)0xFFFFFFFF;
 			}
 			p_ipc_msg->ret = ret;
+#else
+			p_ipc_msg->ret = -1;
+#endif
 			break;
 		}
 		case IPC_API_WIFI_GET_AUTORECONNECT: {
@@ -512,13 +514,13 @@ void inic_ipc_api_dev_task(void)
 			rtw_rcr_level_t enabled = (rtw_rcr_level_t)p_ipc_msg->param_buf[0];
 			inic_ipc_promisc_callback_t callback = (inic_ipc_promisc_callback_t)p_ipc_msg->param_buf[1];
 			unsigned char len_used = (unsigned char)p_ipc_msg->param_buf[2];
-			ret = promisc_set(enabled, callback, len_used);
+			ret = _promisc_set(enabled, callback, len_used);
 
 			p_ipc_msg->ret = ret;
 			break;
 		}
 		case IPC_API_PROMISC_IS_ENABLED: {
-			ret = is_promisc_enabled();
+			ret = _is_promisc_enabled();
 			p_ipc_msg->ret = ret;
 			break;
 		}
@@ -528,14 +530,14 @@ void inic_ipc_api_dev_task(void)
 			int *ssid_length = (int *)p_ipc_msg->param_buf[2];
 			DCache_Invalidate((u32)fixed_bssid, ETH_ALEN);
 			DCache_Invalidate((u32)ssid, 33);
-			ret = promisc_get_fixed_channel(fixed_bssid, ssid, ssid_length);
+			ret = _promisc_get_fixed_channel(fixed_bssid, ssid, ssid_length);
 			p_ipc_msg->ret = ret;
 			break;
 		}
 		case IPC_API_PROMISC_ISSUE_PROBERSP: {
 			unsigned char *da = (unsigned char *)p_ipc_msg->param_buf[0];
 			DCache_Invalidate((u32)da, ETH_ALEN);
-			promisc_issue_probersp(da);
+			_promisc_issue_probersp(da);
 			break;
 		}
 		case IPC_API_WIFI_GET_AUTO_CHANNEL: {
@@ -571,7 +573,7 @@ void inic_ipc_api_dev_task(void)
 		}
 		case IPC_API_PROMISC_SET_MGNTFRAME: {
 			u8 enable = (u8)p_ipc_msg->param_buf[0];
-			ret = promisc_set_mgntframe(enable);
+			ret = _promisc_set_mgntframe(enable);
 			p_ipc_msg->ret = ret;
 			break;
 		}
@@ -585,15 +587,15 @@ void inic_ipc_api_dev_task(void)
 			if (phone_mac) {
 				DCache_Invalidate((u32)phone_mac, ETH_ALEN);
 			}
-			promisc_filter_by_ap_and_phone_mac(enable, ap_mac, phone_mac);
+			_promisc_filter_by_ap_and_phone_mac(enable, ap_mac, phone_mac);
 			break;
 		}
 		case IPC_API_PROMISC_TX_BEACON_CONTROL: {
 			u32 control = p_ipc_msg->param_buf[0];
 			if (control == 1) {
-				promisc_stop_tx_beacn();
+				_promisc_stop_tx_beacn();
 			} else if (control == 2) {
-				promisc_resume_tx_beacn();
+				_promisc_resume_tx_beacn();
 			}
 			break;
 		}
@@ -642,7 +644,7 @@ void inic_ipc_api_dev_task(void)
 		case IPC_API_PROMISC_UPDATE_CANDI_AP_RSSI_AVG: {
 			s8 rssi = (s8)p_ipc_msg->param_buf[0];
 			u8 cnt = (u8)p_ipc_msg->param_buf[1];
-			promisc_update_candi_ap_rssi_avg(rssi, cnt);
+			_promisc_update_candi_ap_rssi_avg(rssi, cnt);
 			break;
 		}
 		case IPC_API_PROMISC_GET_CHANNEL_BY_BSSID: {
@@ -650,7 +652,7 @@ void inic_ipc_api_dev_task(void)
 			if (bssid) {
 				DCache_Invalidate((u32)bssid, ETH_ALEN);
 			}
-			ret = promisc_get_chnl_by_bssid(bssid);
+			ret = _promisc_get_chnl_by_bssid(bssid);
 			p_ipc_msg->ret = ret;
 			break;
 		}
@@ -924,7 +926,7 @@ void inic_ipc_api_init_dev(VOID)
 }
 
 /* ---------------------------- Global Variables ---------------------------- */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE   ipc_api_dev_table[] = {
 	{IPC_USER_POINT,	inic_ipc_api_dev_int_hdl,	(VOID *) NULL, IPC_DIR_MSG_RX, IPC_H2D_WIFI_API_TRAN, IPC_RX_FULL},

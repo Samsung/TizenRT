@@ -105,6 +105,7 @@ a lot of data that needs to be copied, this should be set high. */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
 #if WIFI_LOGO_CERTIFICATION_CONFIG
 #define PBUF_POOL_SIZE          60 //for ping 10k test
+#define ARP_MAXAGE			720// modify 5min to 12min, for wifi6 logo 5.64.1 AP not response arp request in step10
 #define IP_REASS_MAXAGE		1
 #elif defined(ENABLE_AMAZON_COMMON)
 #define PBUF_POOL_SIZE          30
@@ -277,8 +278,7 @@ extern unsigned int sys_now(void);
 #endif
 #endif
 
-#if (defined(SUPPORT_UART_LOG_SERVICE) && (SUPPORT_UART_LOG_SERVICE)) \
-    || (defined(CONFIG_EXAMPLE_SPI_ATCMD) && (CONFIG_EXAMPLE_SPI_ATCMD))
+#if (defined(SUPPORT_UART_LOG_SERVICE) && (SUPPORT_UART_LOG_SERVICE))
 #undef  LWIP_SO_SNDTIMEO
 #define LWIP_SO_SNDTIMEO                        1
 

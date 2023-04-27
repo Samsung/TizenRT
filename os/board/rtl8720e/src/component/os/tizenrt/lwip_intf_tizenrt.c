@@ -18,12 +18,13 @@
 #include <lwip/init.h>
 #include <lwip/netif.h>
 #include <osdep_service.h>
-#include "autoconf.h"
+#include "rtw_autoconf.h"
+//#include "rtw_adapter.h"
 
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <sys/socket.h>
 #include <netdev_mgr_internal.h>
-#include "wifi_constants.h"
+#include "rtw_wifi_constants.h"
 #include <net/if.h>
 
 #ifndef WLAN0_NAME
@@ -106,7 +107,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 
 	unsigned int irq_flags = save_and_cli();
 	/*if (rltk_wlan_check_isup(idx)) {
-		rltk_wlan_tx_inc(idx);
+		wifi_if_tx_inc(idx);
 	} else {
 		DBG_ERR("netif is DOWN");
 		restore_flags(irq_flags);
@@ -129,7 +130,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 		Mac_data += sg_list->len;
 	}
 
-	skb = (struct sk_buff *)rltk_wlan_alloc_skb_0copy();
+	skb = (struct sk_buff *)wifi_if_alloc_skb_0copy();
 	if (skb == NULL) {
 		ndbg("\r\nrltk_wlan_alloc_skb()failed!\r\n");
 		goto exit;
@@ -141,7 +142,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	skb->len = total_len;
 	ret = 0;
 #else
-	skb = rltk_wlan_alloc_skb(total_len);
+	skb = wifi_if_alloc_skb(total_len);
 #endif
 
 	if (skb == NULL) {
@@ -156,11 +157,11 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	}
 #endif
 
-	rltk_wlan_send_skb(idx, skb);
+	wifi_if_send_skb(idx, skb);
 
 exit:
 	irq_flags = save_and_cli();
-	//rltk_wlan_tx_dec(idx);
+	//wifi_if_tx_dec(idx);
 	restore_flags(irq_flags);
 	return ret;
 #endif
@@ -185,7 +186,7 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 		DBG_ERR("skb is NULL");
 		return;
 	}
-	skb = rltk_wlan_get_recv_skb(idx);
+	skb = wifi_if_get_recv_skb(idx);
 	DBG_ASSERT(skb, "No pending rx skb");
 
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {

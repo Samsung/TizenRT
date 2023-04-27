@@ -16,9 +16,8 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include <platform_stdlib.h>
 #include "platform_opts.h"
-#include "autoconf.h"
+#include "rtw_wifi_constants.h"
 #include "lwipconf.h"
 #include "lwip/netifapi.h"
 // macros

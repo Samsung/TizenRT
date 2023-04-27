@@ -7,11 +7,9 @@
 #define __INIC_IPC_MSG_QUEUE_H__
 /* -------------------------------- Includes -------------------------------- */
 /* external head files */
-//#include "freertos_service.h"
 #include "osdep_service.h"
-#include "platform_stdlib.h"
 #include "platform_opts.h"
-#include "skbuff.h"
+#include "rtw_skbuff.h"
 
 /* internal head files */
 #include "inic_ipc.h"

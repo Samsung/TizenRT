@@ -1,15 +1,13 @@
 //----------------------------------------------------------------------------//
 //#include <flash/stm32_flash.h>
-#if !defined(CONFIG_MBED_ENABLED) && !defined(CONFIG_PLATFOMR_CUSTOMER_RTOS)
 #include "main.h"
 #if CONFIG_LWIP_LAYER
 #include "lwipconf.h"
 #include "lwip_netconf.h"
 #endif
-#endif
-#include <platform_stdlib.h>
 #include <wifi_conf.h>
 #include <wifi_ind.h>
+#include <rtw_drv_api.h>
 #include <osdep_service.h>
 #include <device_lock.h>
 
@@ -24,11 +22,8 @@
 /******************************************************
  *               Variables Declarations
  ******************************************************/
-
-#if !defined(CONFIG_MBED_ENABLED)
 #if CONFIG_LWIP_LAYER
 extern struct netif xnetif[NET_IF_NUM];
-#endif
 #endif
 
 /******************************************************
@@ -307,7 +302,7 @@ int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len,
 	memcpy(eth_frame + sizeof(eth_header) + sizeof(ip_header) + sizeof(tcp_header), content, len);
 
 #ifdef CONFIG_ARP_KEEP_ALIVE
-	rtw_set_arp_rsp_keep_alive(RTW_TRUE, (uint8_t *)dst_ip);
+	rtw_set_arp_rsp_keep_alive(_TRUE, (uint8_t *)dst_ip);
 #endif
 	rtw_set_keepalive_offload(eth_frame, frame_len, interval_ms, resend_ms, wake_sys);
 

@@ -17,14 +17,12 @@
 #define __INIC_IPC_H__
 
 /* -------------------------------- Includes -------------------------------- */
-#include <platform_stdlib.h>
 #include "platform_opts.h"
 
 #include "ameba_soc.h"
-#include "platform_stdlib.h"
 #include "osdep_service.h"
-#include "wifi_structures.h"
-#include "skbuff.h"
+#include "rtw_wifi_constants.h"
+#include "rtw_skbuff.h"
 
 #include "inic_ipc_cfg.h"
 
@@ -33,28 +31,20 @@
 #define rtw_memcpy			_memcpy
 #define FLAG_WLAN_IF_NOT_RUNNING		0xFFFFFFFF
 /* -------------------------------- Macros ---------------------------------- */
-#if defined (WIFI_LOGO_CERTIFICATION) && (WIFI_LOGO_CERTIFICATION)
-#define MAX_SKB_BUF_SIZE	4144
-#elif defined(CONFIG_PLATFORM_AMEBAD2)
-// customer requirement, send udp multicast frames around 1900 bytes without fragmentation
-#define MAX_SKB_BUF_SIZE	2048
-#else
-#define MAX_SKB_BUF_SIZE	1658
-#endif
+
 /* ------------------------------- Data Types ------------------------------- */
 typedef struct inic_ipc_ex_msg {
 	u32	event_num;
 	u32	msg_addr;
-	u32	msg_len;
-	u32 rsvd[13]; /* keep total size 64B aligned */
+	u32 msg_queue_status;
+	u32	wlan_idx;
+	u32 rsvd[12]; /* keep total size 64B aligned */
 } inic_ipc_ex_msg_t;
 
 enum IPC_WIFI_CTRL_TYPE {
 	IPC_WIFI_MSG_READ_DONE = 0,
 	IPC_WIFI_MSG_MEMORY_NOT_ENOUGH,
-	IPC_WIFI_MSG_ALLOC_SKB,
 	IPC_WIFI_MSG_RECV_DONE,
-	IPC_WIFI_MSG_RECV_PENDING,
 	IPC_WIFI_CMD_XIMT_PKTS,
 	IPC_WIFI_EVT_RECV_PKTS
 };

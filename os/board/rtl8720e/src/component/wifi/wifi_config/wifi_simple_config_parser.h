@@ -16,7 +16,7 @@ extern "C" {
 #define SIMPLE_CONFIG_PLATFORM_LIB 0
 
 #include "platform_opts.h"
-#include "autoconf.h"
+#include "rtw_wifi_constants.h"
 
 
 
