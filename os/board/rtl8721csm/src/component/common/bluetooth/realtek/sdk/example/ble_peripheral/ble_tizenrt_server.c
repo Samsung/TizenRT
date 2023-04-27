@@ -246,6 +246,7 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
 
 #if defined(CONFIG_BLE_INDICATION)
 void *ble_tizenrt_indicate_sem = NULL;
+extern trble_attr_handle indicate_attr;
 #endif
 trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
 {
@@ -314,6 +315,7 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
             if(send_indication_result->cause == GAP_SUCCESS)
             {
                 debug_print("send indicate success \n");
+                indicate_attr = NULL;
                 return TRBLE_SUCCESS;
             } else {
                 debug_print("send indicate fail \n");
