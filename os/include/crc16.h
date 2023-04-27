@@ -78,6 +78,14 @@ extern "C" {
 #endif
 
 /**
+ * The result value of crc16part and crc16 function does not match any CRC method.
+ * Please be careful if use these functions. 
+ * 
+ *      uint16_t crc16part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
+ *      uint16_t crc16(FAR const uint8_t *src, size_t len);
+*/
+
+/**
  * @brief  Continue CRC calculation on a part of the buffer.
  *
  * @details @b #include <crc16.h>
@@ -101,6 +109,80 @@ uint16_t crc16part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
  */
 
 uint16_t crc16(FAR const uint8_t *src, size_t len);
+
+/**
+ * @brief  Continue CRC16-CCITT calculation on a part of the buffer.
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt
+ * @param[in] len length for calculation
+ * @param[in] crc16val value for calculation
+ * @return On success, calculated 16-bit CRC-CCITT is returned. (calculated by polynomial 0x1021)
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
+
+/**
+ * @brief  Continue CRC16-CCITT calculation on a part of the buffer.
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt
+ * @param[in] len length for calculation
+ * @param[in] crc16val value for calculation
+ * @return On success, calculated 16-bit CRC-CCITT is returned. (calculated by polynomial 0x8408)
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_rev_part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
+
+/**
+ * @brief  Return a 16-bit CRC16-CCITT/Xmodem of the contents of the 'src' buffer, length 'len'
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt_xmodem
+ * @param[in] len length for calculation
+ * @return On success, calculated 16-bit CRC (Xmodem) is returned.
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_xmodem(FAR const uint8_t *src, size_t len);
+
+/**
+ * @brief  Return a 16-bit CRC16-CCITT/False of the contents of the 'src' buffer, length 'len'
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt_false
+ * @param[in] len length for calculation
+ * @return On success, calculated 16-bit CRC (False) is returned.
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_false(FAR const uint8_t *src, size_t len);
+
+/**
+ * @brief  Return a 16-bit CRC16-CCITT/aug of the contents of the 'src' buffer, length 'len'
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt_aug
+ * @param[in] len length for calculation
+ * @return On success, calculated 16-bit CRC (aug) is returned.
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_aug(FAR const uint8_t *src, size_t len);
+
+/**
+ * @brief  Return a 16-bit CRC16-CCITT/kermit of the contents of the 'src' buffer, length 'len'
+ *
+ * @details @b #include <crc16_ccitt.h>
+ * @param[in] src source number for crc16_ccitt_kermit
+ * @param[in] len length for calculation
+ * @return On success, calculated 16-bit CRC (kermit) is returned.
+ * @since TizenRT v3.1
+ */
+
+uint16_t crc16_ccitt_kermit(FAR const uint8_t *src, size_t len);
 
 #undef EXTERN
 #ifdef __cplusplus
