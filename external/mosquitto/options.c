@@ -359,6 +359,10 @@ int mosquitto_tls_insecure_set(struct mosquitto *mosq, bool value)
 	return MOSQ_ERR_SUCCESS;
 #else
 #ifdef WITH_MBEDTLS
+	if (!mosq) {
+		return MOSQ_ERR_INVAL;
+	}
+	mosq->tls_insecure = value;
 	return MOSQ_ERR_SUCCESS;
 #else
 	UNUSED(mosq);

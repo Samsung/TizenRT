@@ -476,6 +476,11 @@ static int net__try_connect_tcp(const char *host, uint16_t port, mosq_sock_t *so
 	if(bind_address){
 		freeaddrinfo(ainfo_bind);
 	}
+#if defined(__TINYARA__)
+	if (*sock == INVALID_SOCKET) {
+		return MOSQ_ERR_NO_CONN;
+	}
+#endif
 	if(!rp){
 		return MOSQ_ERR_ERRNO;
 	}
@@ -599,39 +604,22 @@ int net__socket_connect_tls(struct mosquitto *mosq)
 #endif
 
 #ifdef WITH_MBEDTLS
-void net__print_ssl_error(struct mosquitto *mosq)
-{
-	char ebuf[256];
-	unsigned long e;
-	int num = 0;
-
-	e = ERR_get_error();
-	while(e){
-		log__printf(mosq, MOSQ_LOG_ERR, "OpenSSL Error[%d]: %s", num, ERR_error_string(e, ebuf));
-		e = ERR_get_error();
-		num++;
-	}
-}
-
 int net__socket_connect_tls(struct mosquitto *mosq)
 {
-int r;
-log__printf(mosq, MOSQ_LOG_DEBUG, "Handshake Start.");
-/* Handshake */
-while ((r = mbedtls_ssl_handshake(mosq->ssl_ctx)) != 0) {
-	if (r != MBEDTLS_ERR_SSL_WANT_READ && r != MBEDTLS_ERR_SSL_WANT_WRITE) {
-		log__printf(mosq, MOSQ_LOG_ERR, "Error: handshake fail -%x", -r);
-		COMPAT_CLOSE(mosq->sock);
-		mosq->sock = INVALID_SOCKET;
-		return MOSQ_ERR_TLS;
+	int r;
+	log__printf(mosq, MOSQ_LOG_DEBUG, "Handshake Start.");
+	/* Handshake */
+	while ((r = mbedtls_ssl_handshake(mosq->ssl_ctx)) != 0) {
+		if (r != MBEDTLS_ERR_SSL_WANT_READ && r != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			log__printf(mosq, MOSQ_LOG_ERR, "Error: handshake fail -%x", -r);
+			COMPAT_CLOSE(mosq->sock);
+			mosq->sock = INVALID_SOCKET;
+			return MOSQ_ERR_TLS;
+		}
 	}
+	log__printf(mosq, MOSQ_LOG_DEBUG, "Handshake End.");
+	return MOSQ_ERR_SUCCESS;
 }
-log__printf(mosq, MOSQ_LOG_DEBUG, "Handshake End.");
-return MOSQ_ERR_SUCCESS;
-
-
-}
-
 #endif
 
 #ifdef WITH_TLS
@@ -958,6 +946,47 @@ int net__socket_connect_step3(struct mosquitto *mosq, const char *host)
 		}
 
 	}
+#elif defined WITH_MBEDTLS
+	if ((mosq->mbedtls_state == mosq_mbedtls_state_enabled) && mosq->ssl != NULL) {
+		int ret;
+
+		mosq->ssl_ctx = malloc(sizeof(mbedtls_ssl_context));
+
+		if (mosq->ssl_ctx == NULL) {
+			net__socket_close(mosq);
+			return MOSQ_ERR_NOMEM;
+		}
+
+		mbedtls_ssl_init(mosq->ssl_ctx);
+
+		if ((ret = mbedtls_ssl_setup(mosq->ssl_ctx, mosq->ssl)) != 0) {
+			log__printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_setup fail");
+			net__socket_close(mosq);
+			return MOSQ_ERR_TLS;
+		}
+
+		if (mosq->tls_hostname != NULL) {
+			if ((ret = mbedtls_ssl_set_hostname(mosq->ssl_ctx, mosq->tls_hostname)) != 0) {
+				log__printf(mosq, MOSQ_LOG_ERR, "Error: mbedtls_ssl_set_hostname fail");
+				net__socket_close(mosq);
+				return MOSQ_ERR_TLS;
+			}
+		}
+
+		mosq->net = malloc(sizeof(mbedtls_net_context));
+
+		if (mosq->net == NULL) {
+			net__socket_close(mosq);
+			return MOSQ_ERR_TLS;
+		}
+		((mbedtls_net_context *)mosq->net)->fd = (int)mosq->sock;
+		mbedtls_ssl_set_bio(mosq->ssl_ctx, mosq->net, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+		if (net__socket_connect_tls(mosq)) {
+			net__socket_close(mosq);
+			return MOSQ_ERR_TLS;
+		}
+	}
 #else
 	UNUSED(mosq);
 	UNUSED(host);
@@ -1044,6 +1073,28 @@ ssize_t net__read(struct mosquitto *mosq, void *buf, size_t count)
 		/* Call normal read/recv */
 
 #endif
+#ifdef WITH_MBEDTLS
+	int ret;
+	if ((mosq->mbedtls_state == mosq_mbedtls_state_enabled) && mosq->ssl_ctx) {
+		ret = mbedtls_ssl_read(mosq->ssl_ctx, buf, count);
+		if (ret < 0) {
+			if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
+				ret = -1;
+				set_errno(EAGAIN);
+			} else if (ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				ret = -1;
+				mosq->want_write = true;
+				set_errno(EAGAIN);
+			} else {
+				log__printf(mosq, MOSQ_LOG_ERR, "mbedtls Read Error %d", ret);
+			}
+		} else if (ret == 0) {
+			log__printf(mosq, MOSQ_LOG_INFO, "finish Read");
+		}
+		return (ssize_t)ret;
+	} else {
+		/* Call normal write/send */
+#endif
 
 #ifndef WIN32
 	return read(mosq->sock, buf, count);
@@ -1051,6 +1102,9 @@ ssize_t net__read(struct mosquitto *mosq, void *buf, size_t count)
 	return recv(mosq->sock, buf, count, 0);
 #endif
 
+#ifdef WITH_MBEDTLS
+	}
+#endif
 #ifdef WITH_TLS
 	}
 #endif
@@ -1075,6 +1129,17 @@ ssize_t net__write(struct mosquitto *mosq, const void *buf, size_t count)
 	}else{
 		/* Call normal write/send */
 #endif
+#ifdef WITH_MBEDTLS
+	int ret;
+	if ((mosq->mbedtls_state == mosq_mbedtls_state_enabled) && mosq->ssl_ctx) {
+		ret = mbedtls_ssl_write(mosq->ssl_ctx, buf, count);
+		if (ret < 0) {
+			log__printf(mosq, MOSQ_LOG_ERR, "mbedtls Write Error");
+		}
+		return (ssize_t)ret;
+	} else {
+		/* Call normal write/send */
+#endif
 
 #ifndef WIN32
 	return write(mosq->sock, buf, count);
@@ -1082,6 +1147,9 @@ ssize_t net__write(struct mosquitto *mosq, const void *buf, size_t count)
 	return send(mosq->sock, buf, count, 0);
 #endif
 
+#ifdef WITH_MBEDTLS
+	}
+#endif
 #ifdef WITH_TLS
 	}
 #endif
@@ -1092,23 +1160,34 @@ int net__socket_nonblock(mosq_sock_t *sock)
 {
 #ifndef WIN32
 	int opt;
+#	if defined(__TINYARA__)
+	if (*sock == INVALID_SOCKET) {
+		return 1;
+	}
+#	endif
 	/* Set non-blocking */
 	opt = fcntl(*sock, F_GETFL, 0);
 	if(opt == -1){
+#	if ! defined(__TINYARA__)		/* caller will close sock */
 		COMPAT_CLOSE(*sock);
+#	endif
 		*sock = INVALID_SOCKET;
 		return MOSQ_ERR_ERRNO;
 	}
 	if(fcntl(*sock, F_SETFL, opt | O_NONBLOCK) == -1){
 		/* If either fcntl fails, don't want to allow this client to connect. */
+#	if ! defined(__TINYARA__)		/* caller will close sock */
 		COMPAT_CLOSE(*sock);
+#	endif
 		*sock = INVALID_SOCKET;
 		return MOSQ_ERR_ERRNO;
 	}
 #else
 	unsigned long opt = 1;
 	if(ioctlsocket(*sock, FIONBIO, &opt)){
+#	if ! defined(__TINYARA__)		/* caller will close sock */
 		COMPAT_CLOSE(*sock);
+#	endif
 		*sock = INVALID_SOCKET;
 		return MOSQ_ERR_ERRNO;
 	}
