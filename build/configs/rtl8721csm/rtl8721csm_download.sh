@@ -51,9 +51,11 @@ function pre_download()
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
-		cp -p ${BIN_PATH}/rtl8721csm_smartfs.bin ${IMG_TOOL_PATH}/rtl8721csm_smartfs.bin
+		cp -p ${SMARTFS_BIN_PATH} ${IMG_TOOL_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
-	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
+	if test -f "${BIN_PATH}/${BOOTPARAM}.bin"; then
+		cp -p ${BIN_PATH}/${BOOTPARAM}.bin ${IMG_TOOL_PATH}/${BOOTPARAM}.bin
+	fi
 }
 
 
@@ -76,20 +78,12 @@ function board_erase()
 function post_download()
 {
 	cd ${IMG_TOOL_PATH}
-	[ -e ${BL1}.bin ] && rm ${BL1}.bin
-	[ -e ${BL2}.bin ] && rm ${BL2}.bin
-	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
-	if test -f "${APP1_BIN_NAME}"; then
-		[ -e ${APP1_BIN_NAME} ] && rm ${APP1_BIN_NAME}
-	fi
-	if test -f "${APP2_BIN_NAME}"; then
-		[ -e ${APP2_BIN_NAME} ] && rm ${APP2_BIN_NAME}
-	fi
-	if test -f "${COMMON_BIN_NAME}"; then
-		[ -e ${COMMON_BIN_NAME} ] && rm ${COMMON_BIN_NAME}
-	fi
-	if test -f "${SMARTFS_BIN_PATH}"; then
-		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
-	fi
-	[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
+	[ -e "${BL1}.bin" ] && rm ${BL1}.bin
+	[ -e "${BL2}.bin" ] && rm ${BL2}.bin
+	[ -e "${KERNEL_BIN_NAME}" ] && rm ${KERNEL_BIN_NAME}
+	[ -e "${APP1_BIN_NAME}" ] && rm ${APP1_BIN_NAME}
+	[ -e "${APP2_BIN_NAME}" ] && rm ${APP2_BIN_NAME}
+	[ -e "${COMMON_BIN_NAME}" ] && rm ${COMMON_BIN_NAME}
+	[ -e "${CONFIG_ARCH_BOARD}_smartfs.bin" ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
+	[ -e "${BOOTPARAM}.bin" ] && rm ${BOOTPARAM}.bin
 }
