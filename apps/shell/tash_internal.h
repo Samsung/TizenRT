@@ -78,6 +78,9 @@ extern int tash_execute_cmdline(char *buff);
 extern int tash_execute_cmd(char **args, int argc);
 extern int tash_init(void);
 extern void tash_stop(void);
+#ifdef CONFIG_TASH_REBOOT
+extern int tash_reboot(int argc, char **argv);
+#endif
 char *tash_read_input_line(int fd);
 void tash_check_security(int fd);
 #ifdef CONFIG_TASH_SCRIPT

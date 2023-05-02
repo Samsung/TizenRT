@@ -100,9 +100,6 @@ struct tash_cmd_info_s {
 static int tash_help(int argc, char **args);
 static int tash_clear(int argc, char **args);
 static int tash_exit(int argc, char **args);
-#ifdef CONFIG_TASH_REBOOT
-static int tash_reboot(int argc, char **argv);
-#endif
 #if TASH_MAX_STORE   > 0
 static int tash_history(int argc, char **argv);
 #endif
@@ -500,27 +497,6 @@ int check_exclam_cmd(char *buff)
 }
 #endif
 
-#ifdef CONFIG_TASH_REBOOT
-static int tash_reboot(int argc, char **argv)
-{
-	/*
-	 * Invoke the BOARDIOC_RESET board control to reset the board. If
-	 * the board_reset() function returns, then it was not possible to
-	 * reset the board due to some constraints.
-	 */
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_USER_INTENDED);
-#endif
-	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-
-	/*
-	 * boarctl() will not return in this case.  It if does, it means that
-	 * there was a problem with the reset operaion.
-	 */
-	return ERROR;
-}
-#endif /* CONFIG_TASH_REBOOT */
-
 /** @brief Launch a task to run tash cmd asynchronously
  *  @ingroup tash
  */
@@ -804,3 +780,24 @@ int tash_get_cmdpair(char *str, TASH_CMD_CALLBACK *cb, int index)
 	return ret;
 }
 #endif
+
+#ifdef CONFIG_TASH_REBOOT
+int tash_reboot(int argc, char **argv)
+{
+	/*
+	 * Invoke the BOARDIOC_RESET board control to reset the board. If
+	 * the board_reset() function returns, then it was not possible to
+	 * reset the board due to some constraints.
+	 */
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(REBOOT_SYSTEM_USER_INTENDED);
+#endif
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+
+	/*
+	 * boarctl() will not return in this case.  It if does, it means that
+	 * there was a problem with the reset operaion.
+	 */
+	return ERROR;
+}
+#endif /* CONFIG_TASH_REBOOT */

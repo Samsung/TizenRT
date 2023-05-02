@@ -24,6 +24,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <mbedtls/sha256.h>
+#ifdef CONFIG_TASH_REBOOT
+#include <sys/boardctl.h>
+#endif
 #include "tash_internal.h"
 
 #define SHA256_HASH_nCHAR  (64) // 32 bytes
@@ -76,6 +79,14 @@ void tash_check_security(int fd)
 			tash_free(input);
 			continue;
 		}
+
+		/* Allow reboot command regardless of TASH authentication */
+		#ifdef CONFIG_TASH_REBOOT
+		if (!strncmp((unsigned char *)input, "reboot", 7)) {
+			(void)tash_reboot(0, NULL);
+			return;
+		}
+		#endif
 
 		/* Convert user input to SHA256 hash value */
 		mbedtls_sha256((unsigned char *)input, input_len, input_sha256_hex, 0);
