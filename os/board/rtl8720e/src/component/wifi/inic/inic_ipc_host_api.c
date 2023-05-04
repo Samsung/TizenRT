@@ -168,6 +168,16 @@ static void _inic_ipc_api_host_set_netif_info_handler(inic_ipc_dev_request_messa
 	LwIP_wlan_set_netif_info(idx, NULL, dev_addr);
 }
 
+static void _inic_ipc_api_host_buffered_printf(inic_ipc_dev_request_message *p_ipc_msg)
+{
+	char *tmp_buffer = (char *)p_ipc_msg->param_buf[0];
+	int buf_size = (int)p_ipc_msg->param_buf[1];
+	DCache_Invalidate((u32)tmp_buffer, buf_size);
+
+	dbg("%s", tmp_buffer);
+	p_ipc_msg->ret = 0;
+}
+
 static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *param)
 {
 	/* To avoid gcc warnings */
@@ -265,6 +275,9 @@ void inic_ipc_api_host_task(void)
 			break;
 		case IPC_WIFI_EVT_SET_NETIF_INFO:
 			_inic_ipc_api_host_set_netif_info_handler(p_ipc_msg);
+			break;
+		case IPC_BUFFERED_PRINTF_NP:
+			_inic_ipc_api_host_buffered_printf(p_ipc_msg);
 			break;
 		default:
 			DBG_8195A("Host API Unknown event(%d)!\n\r", \
@@ -420,6 +433,13 @@ void inic_ipc_mp_command(char *token, unsigned int cmd_len, int show_msg)
 	inic_ipc_api_host_message_send(IPC_API_WIFI_MP_CMD, param_buf, 3);
 }
 #endif
+
+void inic_ipc_buffered_printf_set_np_enable(u8 enable)
+{
+	u32 param_buf[1];
+	param_buf[0] = (u32)enable;
+	inic_ipc_api_host_message_send(IPC_API_BUFFERED_PRINTF_SET_NP_EN, param_buf, 1);
+}
 
 /* ---------------------------- Global Variables ---------------------------- */
 #if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
