@@ -151,6 +151,11 @@ CONFIG_AMEBAD_TRUSTZONE=y
 # CONFIG_AMEBAD_RDP is not set
 
 #
+# Realtek RTL8721D CMSIS_NN Support
+#
+CONFIG_AMEBAD_CMSIS_NN=y
+
+#
 # Architecture Options
 #
 # CONFIG_ARCH_NOINTC is not set
