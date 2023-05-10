@@ -194,3 +194,11 @@ config AMEBAD_RDP_KEY
 	depends on AMEBAD_RDP
 
 endmenu
+
+menu "Realtek RTL8721D CMSIS_NN Support"
+
+config AMEBAD_CMSIS_NN
+	bool "Enable Amebad CMSIS_NN"
+	default n
+
+endmenu

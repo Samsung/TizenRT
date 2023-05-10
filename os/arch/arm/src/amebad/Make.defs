@@ -212,3 +212,11 @@ EXTRA_LIBS += $(TOPDIR)/board/rtl8721csm/src/libs/lib_wlan.a
 EXTRA_LIBS += $(TOPDIR)/board/rtl8721csm/src/libs/lib_wps.a
 endif
 endif
+
+ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+ifeq ($(CONFIG_ARCH_FPU),y)
+EXTRA_LIBS += $(TOPDIR)/board/rtl8721csm/src/libs/lib_cmsis_nn_fpu.a
+else
+EXTRA_LIBS += $(TOPDIR)/board/rtl8721csm/src/libs/lib_cmsis_nn.a
+endif
+endif
