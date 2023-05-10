@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CMSIS_NN
+	bool "CMSIS NN example"
+	default n
+	depends on AMEBAD_CMSIS_NN
+	---help---
+		Enable the CMSIS NN example
+
+config USER_ENTRYPOINT
+	string
+	default "cmsis_nn" if ENTRY_CMSIS_NN
