@@ -1,0 +1,3 @@
+config ENTRY_CMSIS_NN
+	bool "CMSIS NN example"
+	depends on EXAMPLES_CMSIS_NN
