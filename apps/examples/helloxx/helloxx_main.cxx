@@ -148,6 +148,9 @@ extern "C"
 {
 	int helloxx_main(int argc, char *argv[])
 	{
+		// Print the cpp version used
+		printf("c++ version used : %d\n", __cplusplus);
+
 		// Exercise an explictly instantiated C++ object
 
 		CHelloWorld *pHelloWorld = new CHelloWorld;
