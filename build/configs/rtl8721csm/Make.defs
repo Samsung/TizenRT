@@ -61,9 +61,15 @@ LDSCRIPT = rlx8721d_img2_is.ld
 endif
 
 ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
 LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++.a}
 EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
 EXTRA_LIBS += -lsupc++
+else
+LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++_nano.a}
+EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+EXTRA_LIBS += -lsupc++_nano
+endif
 endif
 
 ifeq ($(WINTOOL),y)
@@ -161,9 +167,15 @@ CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS)
 
 ifeq ($(CONFIG_HAVE_CXX),y)
   CXXFLAGS += -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__
-  CXXFLAGS += -fexceptions -fcheck-new -frtti
+  CXXFLAGS += -fcheck-new -frtti
   CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
 endif
+
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+  CXXFLAGS += -fexceptions
+else
+  CXXFLAGS += -fno-exceptions
+endif	
 
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
