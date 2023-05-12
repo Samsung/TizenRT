@@ -149,7 +149,14 @@ CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHXXINCLUDE
 
 ifeq ($(CONFIG_LIBCXX),y)
 CXXFLAGS = $(ARCHCPUFLAGS) -fcheck-new -fno-exceptions -fno-rtti
-CXXFLAGS += -std=c++11 -DCLOCK_MONOTONIC -D__TINYARA__ 
+CXXFLAGS += -DCLOCK_MONOTONIC -D__TINYARA__
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+  CXXFLAGS += -std=c++17
+else ifeq ($(CONFIG_CXX_VERSION_14),y)
+  CXXFLAGS += -std=c++14
+else
+  CXXFLAGS += -std=c++11
+endif
 CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections
 CXXFLAGS += -DCONFIG_WCHAR_BUILTIN 
 endif

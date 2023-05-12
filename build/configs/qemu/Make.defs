@@ -115,7 +115,14 @@ ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef
 ARCHWARNINGSXX = -Wall
 ARCHDEFINES =
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
-ARCHCXXFLAGS += -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3 -fpermissive -std=c++11
+ARCHCXXFLAGS += -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3 -fpermissive
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+  ARCHCXXFLAGS += -std=c++17
+else ifeq ($(CONFIG_CXX_VERSION_14),y)
+  ARCHCXXFLAGS += -std=c++14
+else
+  ARCHCXXFLAGS += -std=c++11
+endif
 ARCHWARNINGS += -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX += -Wno-sign-compare -Wshadow
 
@@ -130,7 +137,14 @@ endif
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
-CXXFLAGS += -std=c++11 -D__TINYARA__
+CXXFLAGS += -D__TINYARA__
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+  CXXFLAGS += -std=c++17
+else ifeq ($(CONFIG_CXX_VERSION_14),y)
+  CXXFLAGS += -std=c++14
+else
+  CXXFLAGS += -std=c++11
+endif
 CXXFLAGS += -fno-builtin -fno-exceptions -fcheck-new
 CXXFLAGS += -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
 ifeq ($(CONFIG_LIBCXX),y)
