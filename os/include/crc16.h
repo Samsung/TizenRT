@@ -161,24 +161,24 @@ uint16_t crc16_ccitt_xmodem(FAR const uint8_t *src, size_t len);
 uint16_t crc16_ccitt_false(FAR const uint8_t *src, size_t len);
 
 /**
- * @brief  Return a 16-bit CRC16-CCITT/aug of the contents of the 'src' buffer, length 'len'
+ * @brief  Return a 16-bit CRC16-CCITT/Aug of the contents of the 'src' buffer, length 'len'
  *
  * @details @b #include <crc16_ccitt.h>
  * @param[in] src source number for crc16_ccitt_aug
  * @param[in] len length for calculation
- * @return On success, calculated 16-bit CRC (aug) is returned.
+ * @return On success, calculated 16-bit CRC (Aug) is returned.
  * @since TizenRT v3.1
  */
 
 uint16_t crc16_ccitt_aug(FAR const uint8_t *src, size_t len);
 
 /**
- * @brief  Return a 16-bit CRC16-CCITT/kermit of the contents of the 'src' buffer, length 'len'
+ * @brief  Return a 16-bit CRC16-CCITT/Kermit of the contents of the 'src' buffer, length 'len'
  *
  * @details @b #include <crc16_ccitt.h>
  * @param[in] src source number for crc16_ccitt_kermit
  * @param[in] len length for calculation
- * @return On success, calculated 16-bit CRC (kermit) is returned.
+ * @return On success, calculated 16-bit CRC (Kermit) is returned.
  * @since TizenRT v3.1
  */
 
