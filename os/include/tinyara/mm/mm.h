@@ -869,7 +869,7 @@ struct mem_leak_checker_info_s {
 	void *heap;
 	int regions;
 };
-int run_mem_leak_checker(int checker_pid, char *bin_name);
+int run_all_mem_leak_checker(int checker_pid);
 #endif
 /**
  * @brief Free the memory from specified user heap.
