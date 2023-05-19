@@ -81,3 +81,12 @@ source se/ameba/Kconfig
 endif
 
 endif
+
+#
+# Config for setting security_level
+#
+config SECURITY_LEVEL
+	bool "Enable setting security level"
+	default y
+	---help---
+		Setting security level high or low.
