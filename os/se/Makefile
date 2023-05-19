@@ -39,7 +39,7 @@ endef
 $(foreach SDIR, $(SE_DIRS), $(eval $(call ADD_SE_MAKE_DEF, $(SDIR))))
 
 ifneq ($(SE_CSRCS),)
-SE_SRCS = $(addprefix $(SE_PATH)/, $(SE_CSRCS))
+SE_SRCS += $(addprefix $(SE_PATH)/, $(SE_CSRCS))
 endif
 
 ifneq ($(SE_LIB_GEN),)

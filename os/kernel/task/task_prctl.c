@@ -87,6 +87,10 @@
 #include <tinyara/reboot_reason.h>
 #endif
 
+#ifdef CONFIG_SECURITY_LEVEL
+#include <tinyara/security_level.h>
+#endif
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -389,6 +393,20 @@ int prctl(int option, ...)
 		up_reboot_reason_clear();
 		va_end(ap);
 		return OK;
+	}
+#endif
+#ifdef CONFIG_SECURITY_LEVEL
+	case PR_SET_SECURITY_LEVEL:
+	{
+		int ret = set_security_level();
+		va_end(ap);
+		return ret;
+	}
+	case PR_GET_SECURITY_LEVEL:
+	{
+		int ret = get_security_level();
+		va_end(ap);
+		return ret;
 	}
 #endif
 	default:

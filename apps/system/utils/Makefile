@@ -75,6 +75,10 @@ ifeq ($(CONFIG_SYSTEM_CMDS),y)
 CSRCS += systemcmd.c
 endif
 
+ifeq ($(CONFIG_SECURITY_LEVEL_CMDS),y)
+CSRCS += security_level_cmd.c
+endif
+
 ifeq ($(CONFIG_FS_CMDS),y)
 CSRCS += fscmd.c
 endif

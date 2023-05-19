@@ -100,6 +100,10 @@ static void tash_register_cmds(void)
 	iotjs_register_cmds();
 #endif
 
+#ifdef CONFIG_SECURITY_LEVEL_CMDS
+	security_level_register_utilcmds();
+#endif
+
 #ifdef CONFIG_DEBUG_SYSTEM_APP
 	sysdbgapp_init();
 #endif

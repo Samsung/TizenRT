@@ -12,6 +12,22 @@ config SYSTEM_CMDS
 		system commands. Because they can be used without TASH by function calling.
 		Let's enable system commands at each configuration.
 
+config SECURITY_LEVEL_CMDS
+	bool "Security level commands"
+	default y
+	depends on TASH
+	select SECURITY_API
+	select SECURITY_SS
+	select SECURITY_LEVEL
+	---help---
+		Enable setting security level command in TASH
+                If you enable this config, you can control the security level by using [high] or [low] option.
+		For example, if you input "sec_level high", OS security level becomes high,
+		so there are some restrictions to see secure informations, and so on.
+		If you input "sec_level low", OS security level becomes low,
+		so you can see all secure information, and so on.
+		You can see current state of security level by using [status] option.
+
 config FS_CMDS
 	bool "FS shell commands"
 	default y

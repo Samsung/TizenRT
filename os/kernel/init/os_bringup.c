@@ -104,6 +104,9 @@
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 #endif
+#ifdef CONFIG_SECURITY_LEVEL
+#include <tinyara/security_level.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -262,6 +265,13 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_SE
 	se_initialize();
+#endif
+
+#ifdef CONFIG_SECURITY_LEVEL
+	int ret = set_security_level();
+	if (ret != SECURITY_LEVEL_OK) {
+		dbg("[set_security_level] error ret : %d\n", ret);
+	}
 #endif
 
 #ifdef CONFIG_IOTDEV

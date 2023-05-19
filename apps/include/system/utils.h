@@ -22,6 +22,9 @@
 #ifdef CONFIG_SYSTEM_CMDS
 void system_register_utilcmds(void);
 #endif
+#ifdef CONFIG_SECURITY_LEVEL_CMDS
+void security_level_register_utilcmds(void);
+#endif
 #ifdef CONFIG_FS_CMDS
 void fs_register_utilcmds(void);
 #endif
