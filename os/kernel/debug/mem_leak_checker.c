@@ -304,16 +304,6 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 	volatile struct mm_allocnode_s *node;
 	uint32_t owner_addr;	
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-        bin_addr_info_t *bin_addr_info = (bin_addr_info_t *)get_bin_addr_list();
-	int bin_idx;
-	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
-                if (bin_addr_info[bin_idx].text_addr != 0) {
-                        printf("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), bin_addr_info[bin_idx].text_addr, bin_addr_info[bin_idx].text_size);
-                }
-        }
-#endif
-
 	if (leak_cnt > 0 || broken_cnt > 0) {
 		printf("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
 		printf("---------------------------------------------------\n");
@@ -412,5 +402,42 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 
 	print_info(bin_name, leak_cnt, broken_cnt, bin_text_addr);
 
+	return OK;
+}
+
+int run_all_mem_leak_checker(int checker_pid)
+{
+	int ret;
+	printf("\nKernel :\n");
+	ret = run_mem_leak_checker(checker_pid, "kernel");
+
+	if (ret != OK) {
+		return ERROR;
+	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	printf("\nBelow are text addresses of loadable apps (and common binary if enabled) :\n");
+	printf("The pc value of the allocation can be obtained by subtracting the text start address of the appropriate binary\n\n");
+	bin_addr_info_t *bin_addr_info = (bin_addr_info_t *)get_bin_addr_list();
+	int bin_idx;
+	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
+		if (bin_addr_info[bin_idx].text_addr != 0) {
+			printf("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), bin_addr_info[bin_idx].text_addr, bin_addr_info[bin_idx].text_size);
+		}
+	}
+	printf("\n");
+	/* bin_idx value zero is always reserved for common binary, so
+	 * skip checking common binary and start checking from index one
+	 */
+	for (bin_idx = 1; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
+		if (bin_addr_info[bin_idx].text_addr != 0) {
+			printf("%s :\n", BIN_NAME(bin_idx));
+			ret = run_mem_leak_checker(checker_pid, BIN_NAME(bin_idx));
+			if (ret != OK) {
+			       return ERROR;
+			}
+		}
+	}
+#endif
 	return OK;
 }

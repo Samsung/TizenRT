@@ -359,11 +359,9 @@ int prctl(int option, ...)
 	{
 		int ret;
 		int checker_pid;
-		char *bin_name;
 		checker_pid = va_arg(ap, int);
-		bin_name = va_arg(ap, char *);
 
-		ret = run_mem_leak_checker(checker_pid, bin_name);
+		ret = run_all_mem_leak_checker(checker_pid);
 		va_end(ap);
 
 		return ret;

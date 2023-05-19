@@ -24,37 +24,11 @@
 int mem_leak_checker_main(int argc, char **argv)
 {
 	int ret;
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	if (argc != 2) {
-#else 
-	if (argc != 1) {
-#endif
-		printf("Fail to launch MEMORY LEAK CHECKER : Invalid arguments.\n");
-		goto usage;
-	}
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	ret = prctl(PR_MEM_LEAK_CHECKER, getpid(), argv[1]);
-#else
-	ret = prctl(PR_MEM_LEAK_CHECKER, getpid(), NULL);
-#endif
+	ret = prctl(PR_MEM_LEAK_CHECKER, getpid());
 	if (ret < 0) {
 		printf("Fail to launch MEMORY LEAK CHECKER.\n");
 		return ERROR;
 	}
 
 	return OK;
-
-usage:
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	printf("\nUsage: mem_leak [TARGET]\n");
-	printf("\nTargets:\n");
-	printf(" kernel         Check memory leak from kernel threads.\n");
-	printf(" app1            Check memory leak from app1 Binary.\n");
-	printf(" app2            Check memory leak from app2 Binary.\n");
-#else
-	printf("\nUsage: mem_leak\n");
-#endif
-	return ERROR;
 }
