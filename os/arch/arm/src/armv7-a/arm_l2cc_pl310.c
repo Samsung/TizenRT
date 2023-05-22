@@ -333,6 +333,9 @@ void arm_l2ccinitialize(void)
    * cache configuration.
    */
 
+  //PORTNOTE: Temporarily adding this code to avoid assertion. This register is
+  //always returning zero value, even in nuttx.
+  if (getreg32(L2CC_ACR)) {
 #if defined(CONFIG_ARMV7A_ASSOCIATIVITY_8WAY)
   DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_ASS) == 0);
 #elif defined(CONFIG_ARMV7A_ASSOCIATIVITY_16WAY)
@@ -362,6 +365,7 @@ void arm_l2ccinitialize(void)
 #else
 #  error No way size selected
 #endif
+  }
 
   /* L2 configuration can only be changed if the cache is disabled,
    *

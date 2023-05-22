@@ -98,8 +98,6 @@
 #define TASK_CANCEL_ASYNCHRONOUS (1)
 
 
-//PORTNOTE: The below mentioned macros are mostly used in specific architecture codes and not in
-//General kernel/os code in Nuttx or TizenRT. May be removed if not required.
 /* CPU affinity mask helpers ****************************************************/
 
 /* These are not standard but are defined for Linux compatibility */
@@ -424,8 +422,6 @@ int sched_get_priority_min(int policy);
  */
 int sched_rr_get_interval(pid_t pid, FAR struct timespec *interval);
 
-//PORTNOTE: The descriptions for the below SMP dependant definitions are not available in Nuttx yet
-//Will be added later as suitable.
 #ifdef CONFIG_SMP
 /* Task affinity */
 

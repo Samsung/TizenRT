@@ -106,12 +106,7 @@ int sched_yield(void)
 	return sched_setpriority(rtcb, rtcb->sched_priority);
 
 #else
-	irqstate_t saved_state;
-
-	saved_state = enter_critical_section();
 	up_schedyield();
-	leave_critical_section(saved_state);
-
 	return OK;
 #endif							/* End of CONFIG_SCHED_YIELD_OPTIMIZATION */
 }

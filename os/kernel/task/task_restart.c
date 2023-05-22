@@ -126,11 +126,10 @@ int task_restart(pid_t pid)
 {
 	FAR struct tcb_s *rtcb;
 	FAR struct task_tcb_s *tcb;
-	irqstate_t state;
 #ifdef CONFIG_SMP
 	int cpu;
-	int ret = 0;
 #endif
+	int ret = OK;
 
 	trace_begin(TTRACE_TAG_TASK, "task_restart");
 
@@ -138,21 +137,14 @@ int task_restart(pid_t pid)
 	 * we are futzing with its TCB
 	 */
 
-//PORTNOTE: in case of SMP, enter_critical_section is used instead of sched_lock
-//Nuttx has this locking inside group_kill_children function but TizenRT does not do this there
-#ifdef CONFIG_SMP
 	/* NOTE: sched_lock() is not enough for SMP
 	 * because tcb->group will be accessed from the child tasks
 	 */
 	irqstate_t flags = enter_critical_section();
-#else
 	/* Lock the scheduler so that there this thread will not lose priority
 	 * until all of its children are suspended.
 	 */
 	sched_lock();
-	//PORTNOTE: is it not necessary to unlock the scheduler in case of
-	//exiting suddenly due to error?
-#endif
 
 	/* Check if the task to restart is the calling task */
 
@@ -161,8 +153,8 @@ int task_restart(pid_t pid)
 		/* Not implemented */
 
 		set_errno(ENOSYS);
-		trace_end(TTRACE_TAG_TASK);
-		return ERROR;
+		ret = ERROR;
+		goto ret_with_lock;
 	}
 
 	/* We are restarting some other task than ourselves */
@@ -182,8 +174,8 @@ int task_restart(pid_t pid)
 			 */
 
 			set_errno(ESRCH);
-			trace_end(TTRACE_TAG_TASK);
-			return ERROR;
+			ret = ERROR;
+			goto ret_with_lock;
 		}
 
 #if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
@@ -221,7 +213,6 @@ int task_restart(pid_t pid)
 		 * TCB should no longer be accessible to the system
 		 */
 
-		state = enter_critical_section();
 #ifdef CONFIG_SMP
 		FAR dq_queue_t *tasklist = TLIST_HEAD(tcb->cmn.task_state, tcb->cmn.cpu);
 		dq_rem((FAR dq_entry_t *)tcb, tasklist);
@@ -229,7 +220,6 @@ int task_restart(pid_t pid)
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->cmn.task_state].list);
 #endif
 		tcb->cmn.task_state = TSTATE_TASK_INVALID;
-		leave_critical_section(state);
 
 #ifndef CONFIG_DISABLE_SIGNALS
 		/* Deallocate anything left in the TCB's queues */
@@ -245,8 +235,6 @@ int task_restart(pid_t pid)
 		/* Reset the base task priority and the number of pending reprioritizations */
 
 #ifdef CONFIG_SMP
-//PORTNOTE: The counterpart of this line was not present in TizenRT at all
-//Has been added while porting SMP only
 		tcb->cmn.irqcount = 0;
 #endif
 
@@ -273,9 +261,7 @@ int task_restart(pid_t pid)
 		if (cpu >= 0) {
 			ret = up_cpu_resume(cpu);
 			if (ret < 0) {
-				//PORTNOTE: not needed to unlock scheduler?
-				//In another case above it is not unlocked
-				return ret;
+				goto ret_with_lock;
 			}
 		}
 #endif
@@ -285,11 +271,9 @@ int task_restart(pid_t pid)
 		(void)task_activate((FAR struct tcb_s *)tcb);
 	}
 
-#ifdef CONFIG_SMP
+ret_with_lock:
 	leave_critical_section(flags);
-#else
 	sched_unlock();
-#endif
 	trace_end(TTRACE_TAG_TASK);
-	return OK;
+	return ret;
 }

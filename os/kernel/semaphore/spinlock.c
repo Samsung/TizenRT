@@ -29,13 +29,8 @@
 #include <assert.h>
 
 #include <tinyara/spinlock.h>
-//PORTNOTE: check the analogue of this Nuttx file in TizenRT
-//Need to add this file for all the instrumentation flags and noting, etc
-#include <tinyara/sched_note.h>
 #include <arch/irq.h>
 
-//PORTNOTE: check the analogue of this Nuttx file in TizenRT
-//We are in the kernel/semaphore folder, this header file is in kernel/sched
 #include "../sched/sched.h"
 
 #ifdef CONFIG_SPINLOCK

@@ -99,7 +99,7 @@ FAR struct tcb_s *sched_gettcb(pid_t pid)
 {
 	FAR struct tcb_s *ret = NULL;
 	int hash_ndx;
-
+	irqstate_t flags = enter_critical_section();
 	/* Verify that the PID is within range */
 
 	if (pid >= 0) {
@@ -109,12 +109,23 @@ FAR struct tcb_s *sched_gettcb(pid_t pid)
 
 		/* Verify that the correct TCB was found. */
 
-		if (pid == g_pidhash[hash_ndx]->pid) {
+#ifdef CONFIG_SMP
+		if (pid == g_pidhash[this_cpu()][hash_ndx].pid) {
 			/* Return the TCB associated with this pid (if any) */
 
-			ret = g_pidhash[hash_ndx]->tcb;
+			ret = g_pidhash[this_cpu()][hash_ndx].tcb;
 		}
+#else
+		if (pid == g_pidhash[hash_ndx].pid) {
+			/* Return the TCB associated with this pid (if any) */
+
+			ret = g_pidhash[hash_ndx].tcb;
+		}
+#endif
+
 	}
+
+	leave_critical_section(flags);
 
 	/* Return the TCB. */
 

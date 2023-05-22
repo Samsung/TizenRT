@@ -88,37 +88,11 @@
  * of SWP and SWPB.
  */
 
-//Ignore for now
-//PORTNOTE: The below typedef has been commented out because this definition
-//has been taken care of in os/include/tinyara/spinlock.h
-
 typedef uint8_t spinlock_t;
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-
-/****************************************************************************
- * Name: up_testset
- *
- * Description:
- *   Perform an atomic test and set operation on the provided spinlock.
- *
- *   This function must be provided via the architecture-specific logic.
- *
- * Input Parameters:
- *   lock - The address of spinlock object.
- *
- * Returned Value:
- *   The spinlock is always locked upon return.  The value of previous value
- *   of the spinlock variable is returned, either SP_LOCKED if the spinlock
- *   as previously locked (meaning that the test-and-set operation failed to
- *   obtain the lock) or SP_UNLOCKED if the spinlock was previously unlocked
- *   (meaning that we successfully obtained the lock)
- *
- ****************************************************************************/
-
-// PORTNOTE: The above definition has been taken care of in os/include/tinyara/spinlock.h
 
 #endif /* __ASSEMBLY__ */
 #endif /* __ARCH_ARM_INCLUDE_SPINLOCK_H */

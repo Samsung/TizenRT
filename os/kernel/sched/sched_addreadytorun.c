@@ -115,7 +115,7 @@
  *
  ****************************************************************************/
 
-#ifndef CONFNIG_SMP
+#ifndef CONFIG_SMP
 bool sched_addreadytorun(FAR struct tcb_s *btcb)
 {
 	FAR struct tcb_s *rtcb = this_task();
@@ -168,7 +168,6 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	bool doswitch;
 	int task_state;
 	int cpu;
-	int this_cpu;
 
 	/* Check if the blocked TCB is locked to this CPU */
 
@@ -223,14 +222,14 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	 * situation.
 	 */
 
-	me = this_cpu();
+	int me = this_cpu();
 	if ((sched_islocked_global() || irq_cpu_locked(me)) && \
 			task_state != TSTATE_TASK_ASSIGNED) {
 		/* Add the new ready-to-run task to the g_pendingtasks task list for
 		 * now.
 		 */
 
-		sched_add_prioritized(btcb, (FAR dq_queue_t *)&g_pendingtasks);
+		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_pendingtasks);
 		btcb->task_state = TSTATE_TASK_PENDING;
 		doswitch = false;
 	} else if (task_state == TSTATE_TASK_READYTORUN) {
@@ -241,7 +240,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		 *
 		 * Add the task to the ready-to-run (but not running) task list
 		 */
-		sched_add_prioritized(btcb, (FAR dq_queue_t *)&g_readytorun);
+		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_readytorun);
 
 		btcb->task_state = TSTATE_TASK_READYTORUN;
 		doswitch = false;
@@ -250,7 +249,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		/* If we are modifying some assigned task list other than our own, we
 		 * will need to stop that CPU.
 		 */
-		if (cpu != this_cpu) {
+		if (cpu != me) {
 			DEBUGVERIFY(up_cpu_pause(cpu));
 		}
 
@@ -259,7 +258,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		 */
 
 		tasklist = (FAR dq_queue_t *)&g_assignedtasks[cpu];
-		switched = sched_add_prioritized(btcb, tasklist);
+		switched = sched_addprioritized(btcb, tasklist);
 
 		/* If the selected task list was the g_assignedtasks[] list and if the
 		 * new tasks is the highest priority (RUNNING) task, then a context
@@ -327,7 +326,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 					tasklist = (FAR dq_queue_t *)&g_readytorun;
 				}
 
-				sched_add_prioritized(next, tasklist);
+				sched_addprioritized(next, tasklist);
 			}
 
 			doswitch = true;
@@ -349,7 +348,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 
 		/* All done, restart the other CPU (if it was paused). */
 
-		if (cpu != this_cpu) {
+		if (cpu != me) {
 			DEBUGVERIFY(up_cpu_resume(cpu));
 			doswitch = false;
 		}

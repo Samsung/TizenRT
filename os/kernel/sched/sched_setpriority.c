@@ -299,9 +299,6 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 	default:
 
 		/* CASE 3a. The task resides in a prioritized list. */
-//PORTNOTE: For checking the below if condition, Nuttx uses a macro expansion (TLIST_
-//BLOCKED) But the macro expansion is the same for SMP and non SMP cases, and consistent
-//with what has been used here below. Hence, I am not including new code
 		if (g_tasklisttable[task_state].prioritized) {
 			/* Remove the TCB from the prioritized task list */
 

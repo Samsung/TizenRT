@@ -77,9 +77,6 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, FAR const cpu_se
 			(int)thread, cpusetsize, (uintmax_t)*cpuset);
 
 	/* Let sched_setaffinity do all of the work, adjusting the return value. */
-//PORTNOTE: File included from Nuttx, below function call is not yet included
-//in TizenRT, needs to be checked if and when needed
-//The current function is not called yet
 	ret = sched_setaffinity((pid_t)thread, cpusetsize, cpuset);
 	return ret < 0 ? -ret : OK;
 }

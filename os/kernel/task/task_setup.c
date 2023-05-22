@@ -138,7 +138,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	 * for the following operation.
 	 */
 
-	(void)sched_lock();
+	irqstate_t flags = enter_critical_section();
 
 	/* We'll try every allowable pid */
 
@@ -166,16 +166,25 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 		hash_ndx = PIDHASH(next_pid);
 
 		/* Check if there is a (potential) duplicate of this pid */
-
-		if (!g_pidhash[hash_ndx]->tcb) {
+#ifdef CONFIG_SMP
+		if (!g_pidhash[this_cpu()][hash_ndx].tcb) {
 			/* Assign this PID to the task */
-
-			g_pidhash[hash_ndx]->tcb = tcb;
-			g_pidhash[hash_ndx]->pid = next_pid;
+			g_pidhash[this_cpu()][hash_ndx].tcb = tcb;
+			g_pidhash[this_cpu()][hash_ndx].pid = next_pid;
+#else
+		if (!g_pidhash[hash_ndx].tcb) {
+			/* Assign this PID to the task */
+			g_pidhash[hash_ndx].tcb = tcb;
+			g_pidhash[hash_ndx].pid = next_pid;
+#endif
 #ifdef CONFIG_SCHED_CPULOAD
 			int cpuload_idx;
 			for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-				g_pidhash[hash_ndx]->ticks[cpuload_idx] = 0;
+#ifdef CONFIG_SMP
+				g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx] = 0;
+#else
+				g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+#endif
 			}
 #endif
 			tcb->pid = next_pid;
@@ -183,7 +192,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			/* Increment the task count */
 			g_alive_taskcount++;
 
-			(void)sched_unlock();
+			leave_critical_section(flags);
 			trace_end(TTRACE_TAG_TASK);
 			return OK;
 		}
@@ -193,7 +202,7 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	 * We cannot allow another task to be started.
 	 */
 
-	(void)sched_unlock();
+	leave_critical_section(flags);
 	set_errno(EBUSY);
 	trace_end(TTRACE_TAG_TASK);
 	return ERROR;

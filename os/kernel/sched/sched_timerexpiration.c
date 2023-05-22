@@ -18,8 +18,8 @@
 /************************************************************************
  * kernel/sched/sched_timerexpiration.c
  *
- *   Copyright (C) 2014-2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * Copyright (C) 2014-2015 Gregory Nutt. All rights reserved.
+ * Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -77,7 +77,7 @@
  ************************************************************************/
 /* In the original design, it was planned that sched_timer_reasses() be
  * called whenever there was a change at the head of the ready-to-run
- * list.  That call was intended to establish a new time-slice or to
+ * list.That call was intended to establish a new time-slice or to
  * stop an old time-slice timer.  However, it turns out that that
  * solution is too fragile:  The system is too vulnerable at the time
  * that the read-to-run list is modified in order to muck with timers.
@@ -138,6 +138,10 @@ static unsigned int g_timer_interval;
  */
 
 static struct timespec g_stop_time;
+#endif
+
+#if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC)
+static uint32_t sched_process_scheduler(uint32_t ticks, bool noswitches);
 #endif
 
 /************************************************************************
@@ -241,9 +245,9 @@ static void sched_timespec_subtract(FAR const struct timespec *ts1, FAR const st
  ************************************************************************/
 
 #if CONFIG_RR_INTERVAL > 0
-static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
+static unsigned int sched_process_timeslice(int cpu, unsigned int ticks, bool noswitches)
 {
-	FAR struct tcb_s *rtcb = this_task();
+	FAR struct tcb_s *rtcb = current_task(cpu);
 #ifdef KEEP_ALIVE_HACK
 	unsigned int ret = MSEC2TICK(CONFIG_RR_INTERVAL);
 #else
@@ -348,13 +352,94 @@ static unsigned int sched_process_timeslice(unsigned int ticks, bool noswitches)
 			}
 		}
 	}
+	/* If a context switch occurred, then need to return delay remaining for
+	 * the new task at the head of the ready to run list.
+	 */
+
+	FAR struct tcb_s *ntcb = current_task(cpu);
+
+	/* Check if the new task at the head of the ready-to-run has changed. */
+
+	if (rtcb != ntcb)
+	{
+		/* Recurse just to get the correct return value */
+
+		return sched_process_scheduler(0, true);
+	}
 
 	return ret;
 }
 #endif
 
 /****************************************************************************
- * Name:  sched_timer_process
+ * Name: sched_process_scheduler
+ *
+ * Description:
+ *   Check for operations specific to scheduling policy of the currently
+ *   active task on a single CPU.
+ *
+ * Input Parameters:
+ *   ticks - The number of ticks that have elapsed on the interval timer.
+ *   noswitches - True: Can't do context switches now.
+ *
+ * Returned Value:
+ *   The number if ticks remaining until the next time slice expires.
+ *   Zero is returned if there is no time slicing (i.e., the task at the
+ *   head of the ready-to-run list does not support round robin
+ *   scheduling).
+ *
+ *   The value one may returned under certain circumstances that probably
+ *   can't happen.  The value one is the minimal timer setup and it means
+ *   that a context switch is needed now, but cannot be performed because
+ *   noswitches == true.
+ *
+ ****************************************************************************/
+#if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC)
+static uint32_t sched_process_scheduler(uint32_t ticks, bool noswitches)
+{
+	irqstate_t flags;
+	flags = enter_critical_section();
+
+#ifdef CONFIG_SMP
+	uint32_t minslice = UINT32_MAX;
+	uint32_t timeslice;
+	int i;
+
+	/* If we are running on a single CPU architecture, then we know interrupts
+	 * are disabled and there is no need to explicitly call
+	 * enter_critical_section().  However, in the SMP case,
+	 * enter_critical_section() does much more than just disable interrupts on
+	 * the local CPU; it also manages spinlocks to assure the stability of the
+	 * TCB that we are manipulating.
+	 */
+
+	/* Perform scheduler operations on all CPUs */
+
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++)
+	{
+		timeslice = sched_process_timeslice(i, ticks, noswitches);
+		if (timeslice > 0 && timeslice < minslice)
+		{
+			minslice = timeslice;
+		}
+	}
+
+	return minslice < UINT32_MAX ? minslice : 0;
+
+#else
+	/* Perform scheduler operations on the single CPUs */
+
+	return sched_process_timeslice(0, ticks, noswitches);
+#endif
+	leave_critical_section(flags);
+
+}
+#else
+#define sched_process_scheduler(t,n) (0)
+#endif
+
+/****************************************************************************
+ * Name:sched_timer_process
  *
  * Description:
  *   Process events on timer expiration.
@@ -391,7 +476,7 @@ static unsigned int sched_timer_process(unsigned int ticks, bool noswitches)
 	 * timeslice.
 	 */
 
-	tmp = sched_process_timeslice(ticks, noswitches);
+	tmp = sched_process_scheduler(ticks, noswitches);
 	if (tmp > 0 && tmp < cmptime) {
 		rettime = tmp;
 	}

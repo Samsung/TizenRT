@@ -87,7 +87,6 @@
 
 /* These are macros to access the current CPU and the current task on a CPU.
  * These macros are intended to support a future SMP implementation.
- * PORTNOTE: NOTE: this_task() for SMP is implemened elsewhere
  */
 #ifdef CONFIG_SMP
 #define current_task(cpu)	((FAR struct tcb_s *)g_assignedtasks[cpu].head)
@@ -98,25 +97,19 @@
 #define this_task()		(current_task(this_cpu()))
 #endif
 
-//PORTNOTE: Only brought in the required macros on which SMP macros are dependant
 #define TLIST_ATTR_PRIORITIZED   (1 << 0) /* Bit 0: List is prioritized */
 #define TLIST_ATTR_INDEXED       (1 << 1) /* Bit 1: List is indexed by CPU */
 #define TLIST_ATTR_RUNNABLE      (1 << 2) /* Bit 2: List includes running task */
-
-//#define __TLIST_ATTR(s)			g_tasklisttable[s].attr
-//#define TLIST_ISPRIORITIZED(s)		((__TLIST_ATTR(s) & TLIST_ATTR_PRIORITIZED) != 0)
-//#define TLIST_ISINDEXED(s)		((__TLIST_ATTR(s) & TLIST_ATTR_INDEXED) != 0)
-//#define TLIST_ISRUNNABLE(s)		((__TLIST_ATTR(s) & TLIST_ATTR_RUNNABLE) != 0)
 
 #define __TLIST_HEAD(s)			(FAR dq_queue_t *)g_tasklisttable[s].list
 #define __TLIST_HEADINDEXED(s,c)	(&(__TLIST_HEAD(s))[c])
 
 #ifdef CONFIG_SMP
-#define TLIST_HEAD(s,c) 	__TLIST_HEAD(s)
-//#define TLIST_HEAD(s,c) 
-//	((TLIST_ISINDEXED(s)) ? __TLIST_HEADINDEXED(s, c) : __TLIST_HEAD(s))
-#define TLIST_BLOCKED(s)	__TLIST_HEAD(s)
+#define TLIST_HEAD(s, c) 	__TLIST_HEADINDEXED(s, c)
+#else
+#define TLIST_HEAD(s)		__TLIST_HEAD(s)
 #endif
+#define TLIST_BLOCKED(s)	__TLIST_HEAD(s)
 
 /****************************************************************************
  * Public Type Definitions
@@ -172,12 +165,6 @@ struct tasklist_s {
 
 extern volatile dq_queue_t g_readytorun;
 
-/* This is the list of all tasks that are ready-to-run, but cannot be placed
- * in the g_readytorun list because:  (1) They are higher priority than the
- * currently active task at the head of the g_readytorun list, and (2) the
- * currently active task has disabled pre-emption.
- */
-
 #ifdef CONFIG_SMP
 /* In order to support SMP, the function of the g_readytorun list changes,
  * The g_readytorun is still used but in the SMP case it will contain only:
@@ -210,17 +197,13 @@ extern volatile dq_queue_t g_readytorun;
  */
 
 extern volatile dq_queue_t g_assignedtasks[CONFIG_SMP_NCPUS];
+#endif
 
 /* g_running_tasks[] holds a references to the running task for each cpu.
  * It is valid only when up_interrupt_context() returns true.
  */
 
 extern FAR struct tcb_s *g_running_tasks[CONFIG_SMP_NCPUS];
-#else
-//PORTNOTE: CONFIG_SMP_NCPUS should be dependant on SMP, but Nuttx uses this
-//without SMP, So I define a single list pointer separately without SMP
-extern FAR struct tcb_s *g_running_tasks;
-#endif
 
 extern volatile dq_queue_t g_pendingtasks;
 
@@ -292,11 +275,12 @@ extern volatile pid_t g_lastpid;
  * of tasks to CONFIG_MAX_TASKS.
  */
 
-//PORTNOTE: We are retaining the TizenRT structure for pidhash
-//All references will be needed to be handled accordingly
-
-extern struct pidhash_s **g_pidhash;
+#ifdef CONFIG_SMP
+extern struct pidhash_s g_pidhash[CONFIG_SMP_NCPUS][CONFIG_MAX_TASKS];
 extern volatile int g_npidhash;
+#else
+extern struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
+#endif
 
 /* This is a table of task lists.  This table is indexed by the task state
  * enumeration type (tstate_t) and provides a pointer to the associated
@@ -345,10 +329,6 @@ extern const struct tasklist_s g_tasklisttable[NUM_TASK_STATES];
  *    means that no CPU has pre-emption disabled; SP_LOCKED means that at
  *    least one CPU has pre-emption disabled.
  */
-
-//PORTNOTE: The definition of spinlock_t has been imported by bringing in new files
-//os/include/tinyara/spinlock.h and os/arch/arm/include/spinlock.h
-//Definition of cpu_select_t is brought into include/sys/types.h
 
 extern volatile spinlock_t g_cpu_schedlock;
 

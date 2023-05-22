@@ -128,7 +128,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		/* Visit each node in the region
 		 * Retake the semaphore for each region to reduce latencies
 		 */
-		mm_takesemaphore(heap);
+		DEBUGVERIFY(mm_takesemaphore(heap));
 
 		if (mode != HEAPINFO_SIMPLE) {
 			heap_dbg("****************************************************************\n");
@@ -224,7 +224,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
 	heap_dbg("\nAvailable fragmented memory segments in heap memory\n");
 
-	mm_takesemaphore(heap);
+	DEBUGVERIFY(mm_takesemaphore(heap));
 
 	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
 		for (fnode = heap->mm_nodelist[ndx].flink; fnode && fnode->size; fnode = fnode->flink) {

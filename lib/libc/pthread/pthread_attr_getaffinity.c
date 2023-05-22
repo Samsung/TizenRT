@@ -1,5 +1,5 @@
 /****************************************************************************
- * sched/pthread/pthread_getaffinity.c
+ * libs/libc/pthread/pthread_attr_getaffinity.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -22,67 +22,41 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
 #include <sys/types.h>
-#include <stdint.h>
 #include <pthread.h>
-#include <sched.h>
+#include <debug.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
-
-#include <tinyara/sched.h>
-
-#include "pthread/pthread.h"
-
-#ifdef CONFIG_SMP
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_getaffinity_np
+ * Name:  pthread_attr_getaffinity
  *
  * Description:
- *   The pthread_getaffinity_np() function returns the CPU affinity mask
- *   of the thread thread in the buffer pointed to by cpuset.
- *
- *   The argument cpusetsize is the length (in bytes) of the buffer
- *   pointed to by cpuset.  Typically, this argument would be specified as
- *   sizeof(cpu_set_t).
  *
  * Input Parameters:
- *   thread     - The ID of thread whose affinity set will be retrieved.
- *   cpusetsize - Size of cpuset.  MUST be sizeofcpu_set_t().
- *   cpuset     - The location to return the thread's new affinity set.
+ *   attr
+ *   cpuset
  *
  * Returned Value:
- *   0 if successful.  Otherwise, an errno value is returned indicating the
- *   nature of the failure.
+ *   0 if successful.  Otherwise, an error code.
+ *
+ * Assumptions:
  *
  ****************************************************************************/
 
-int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset)
+int pthread_attr_getaffinity_np(FAR const pthread_attr_t *attr,
+                                size_t cpusetsize, cpu_set_t *cpuset)
 {
-	int ret;
+  linfo("attr=%p cpusetsize=%d cpuset=%p\n",
+         attr, (int)cpusetsize, cpuset);
 
-	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) && \
-			cpuset != NULL);
+  DEBUGASSERT(attr != NULL && cpusetsize == sizeof(cpu_set_t) &&
+                                            cpuset != NULL);
 
-	sinfo("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
-			(int)thread, cpusetsize, (uintmax_t)*cpuset);
-
-	/* Let sched_getaffinity do all of the work */
-	ret = sched_getaffinity((pid_t)thread, cpusetsize, cpuset);
-	if (ret < 0) {
-		/* If sched_getaffinity() fails, return the positive errno */
-
-		ret = -ret;
-	}
-
-	return ret;
+  *cpuset = attr->affinity;
+  return OK;
 }
-
-#endif /* CONFIG_SMP */

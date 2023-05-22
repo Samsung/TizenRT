@@ -166,7 +166,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	 * occur.
 	 */
 
-	if (rtcb->blink == NULL) {	//PORTNOTE: Check if required. Removed because we dont use this attribute in our tlist...  && TLIST_ISRUNNABLE(rtcb->task_state)) {
+	if (rtcb->blink == NULL) {
 		FAR struct tcb_s *ntcb;
 		FAR struct tcb_s *rtrtcb = NULL;
 		int current_cpu;

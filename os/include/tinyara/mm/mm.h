@@ -335,6 +335,11 @@ struct mm_freenode_s {
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
 
+struct mm_delaynode_s
+{
+	FAR struct mm_delaynode_s *flink;
+};
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 struct heapinfo_tcb_info_s {
 	int pid;
@@ -410,16 +415,13 @@ struct mm_heap_s {
 	 */
 
 	struct mm_freenode_s mm_nodelist[MM_NNODES + 1];
-
+	
 	/* Free delay list, for some situations where we can't do free
-	 * immdiately.
-	 */
-#ifdef CONFIG_SMP
-	//PORTNOTE: - Added because it is related to SMP_NCPUS but is it required with v7-a or A32?
+	* immdiately.
+	*/
+
 	FAR struct mm_delaynode_s *mm_delaylist[CONFIG_SMP_NCPUS];
-#else
-	FAR struct mm_delaynode_s *mm_delaylist[1];
-#endif
+
 };
 
 /****************************************************************************
@@ -502,7 +504,7 @@ int kmm_addregion(FAR void *heapstart, size_t heapsize);
 /* Functions contained in mm_sem.c ******************************************/
 
 void mm_seminitialize(FAR struct mm_heap_s *heap);
-void mm_takesemaphore(FAR struct mm_heap_s *heap);
+bool mm_takesemaphore(FAR struct mm_heap_s *heap);
 int mm_trysemaphore(FAR struct mm_heap_s *heap);
 void mm_givesemaphore(FAR struct mm_heap_s *heap);
 

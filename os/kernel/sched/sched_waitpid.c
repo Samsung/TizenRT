@@ -322,7 +322,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	/* waitpid() is a cancellation point */
 	(void)enter_cancellation_point();
-
+	
 	/* Create a signal set that contains only SIGCHLD */
 
 	(void)sigemptyset(&sigset);
@@ -330,7 +330,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	/* Disable pre-emption so that nothing changes while the loop executes */
 #ifdef CONFIG_SMP
-	irqstate_t flags =- enter_critial_section();
+	irqstate_t flags = enter_critical_section();
 #else
 	sched_lock();
 #endif

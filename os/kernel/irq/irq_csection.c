@@ -384,10 +384,6 @@ irqstate_t enter_critical_section(void)
 	 * lists have been initialized.
 	 */
 
-//PORTNOTE: Reference to g_os_initstate here without SMP, but without SMP, g_os_initstate
-//is NOT set in os_start() function. Hence this is likely to cause problems.
-//TizenRT does not originally have enter_critical_section() function at all,
-//Is this function needed in cases without SMP, or can that case be omitted?
 	if (!up_interrupt_context() && g_os_initstate >= OSINIT_TASKLISTS) {
 		FAR struct tcb_s *rtcb = this_task();
 		DEBUGASSERT(rtcb != NULL);
@@ -499,10 +495,6 @@ void leave_critical_section(irqstate_t flags)
 				 * released, then unlock the spinlock.
 				 */
 
-				if (!(spin_islocked(&g_cpu_irqlock) &&
-                                                (g_cpu_irqset & (1 << cpu)) != 0)) {
-					dbg("cpu = %d task = %s spin locked = %d irqset = 0x%08x\n", cpu, rtcb->name, spin_islocked(&g_cpu_irqlock), g_cpu_irqset);
-				}
 
 				DEBUGASSERT(spin_islocked(&g_cpu_irqlock) && 
 						(g_cpu_irqset & (1 << cpu)) != 0);

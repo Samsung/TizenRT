@@ -102,78 +102,7 @@
  *
  ************************************************************************/
 
-#ifndef CONFIG_SMP
-int sched_unlock(void)
-{
-	FAR struct tcb_s *rtcb = this_task();
-
-	/* Check for some special cases:  (1) rtcb may be NULL only during
-	 * early boot-up phases, and (2) sched_unlock() should have no
-	 * effect if called from the interrupt level.
-	 */
-
-	if (rtcb && !up_interrupt_context()) {
-		/* Prevent context switches throughout the following */
-
-		irqstate_t flags = enter_critical_section();
-
-		/* Decrement the preemption lock counter */
-
-		if (rtcb->lockcount) {
-			rtcb->lockcount--;
-		}
-
-		/* Check if the lock counter has decremented to zero.  If so,
-		 * then pre-emption has been re-enabled.
-		 */
-
-		if (rtcb->lockcount <= 0) {
-			rtcb->lockcount = 0;
-
-			/* Release any ready-to-run tasks that have collected in
-			 * g_pendingtasks.
-			 */
-
-			if (g_pendingtasks.head) {
-				up_release_pending();
-			}
-#if CONFIG_RR_INTERVAL > 0
-			/* If (1) the task that was running supported round-robin
-			 * scheduling and (2) if its time slice has already expired, but
-			 * (3) it could not slice out because pre-emption was disabled,
-			 * then we need to swap the task out now and reassess the interval
-			 * timer for the next time slice.
-			 */
-
-			if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0 && rtcb->timeslice == 0) {
-				/* Yes.. that is the situation.  But one more thing.  The call
-				 * to up_release_pending() above may have actually replaced
-				 * the task at the head of the read-to-run list.  In that case,
-				 * we need only to reset the timeslice value back to the
-				 * maximum.
-				 */
-
-				if (rtcb != this_task()) {
-					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
-				}
-#ifdef CONFIG_SCHED_TICKLESS
-				else {
-					sched_timer_reassess();
-				}
-#endif
-			}
-#endif
-		}
-
-		leave_critical_section(flags);
-	}
-
-	return OK;
-}
-
-#else /* CONFIG_SMP */
-//PORTNOTE: Duplicated function for now to avoid breaks in existing functioning
-//Should be merged with the above function later
+#ifdef CONFIG_SMP
 int sched_unlock(void)
 {
 	FAR struct tcb_s *rtcb;
@@ -206,7 +135,6 @@ int sched_unlock(void)
 		 */
 
 		if (rtcb->lockcount <= 0) {
-//PORTNOTE: Critical Monitor and instrumentation preemption related code omitted
 			/* Set the lock count to zero */
 
 			rtcb->lockcount = 0;
@@ -275,6 +203,75 @@ int sched_unlock(void)
 #ifdef CONFIG_SCHED_TICKLESS
 				else {
 					sched_reassess_timer();
+				}
+#endif
+			}
+#endif
+		}
+
+		leave_critical_section(flags);
+	}
+
+	return OK;
+}
+
+#else /* CONFIG_SMP */
+int sched_unlock(void)
+{
+	FAR struct tcb_s *rtcb = this_task();
+
+	/* Check for some special cases:  (1) rtcb may be NULL only during
+	 * early boot-up phases, and (2) sched_unlock() should have no
+	 * effect if called from the interrupt level.
+	 */
+
+	if (rtcb && !up_interrupt_context()) {
+		/* Prevent context switches throughout the following */
+
+		irqstate_t flags = enter_critical_section();
+
+		/* Decrement the preemption lock counter */
+
+		if (rtcb->lockcount) {
+			rtcb->lockcount--;
+		}
+
+		/* Check if the lock counter has decremented to zero.  If so,
+		 * then pre-emption has been re-enabled.
+		 */
+
+		if (rtcb->lockcount <= 0) {
+			rtcb->lockcount = 0;
+
+			/* Release any ready-to-run tasks that have collected in
+			 * g_pendingtasks.
+			 */
+
+			if (g_pendingtasks.head) {
+				up_release_pending();
+			}
+#if CONFIG_RR_INTERVAL > 0
+			/* If (1) the task that was running supported round-robin
+			 * scheduling and (2) if its time slice has already expired, but
+			 * (3) it could not slice out because pre-emption was disabled,
+			 * then we need to swap the task out now and reassess the interval
+			 * timer for the next time slice.
+			 */
+
+			if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0 && rtcb->timeslice == 0) {
+				/* Yes.. that is the situation.  But one more thing.  The call
+				 * to up_release_pending() above may have actually replaced
+				 * the task at the head of the read-to-run list.  In that case,
+				 * we need only to reset the timeslice value back to the
+				 * maximum.
+				 */
+
+				if (rtcb != this_task()) {
+					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+				}
+#ifdef CONFIG_SCHED_TICKLESS
+				else {
+					sched_timer_reassess();
 				}
 #endif
 			}
