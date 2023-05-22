@@ -73,6 +73,22 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem)
+{
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	FAR struct mm_delaynode_s *tmp = mem;
+	irqstate_t flags;
+
+	/* Delay the deallocation until a more appropriate time. */
+
+	flags = enter_critical_section();
+
+	tmp->flink = heap->mm_delaylist[up_cpu_index()];
+	heap->mm_delaylist[up_cpu_index()] = tmp;
+
+	leave_critical_section(flags);
+#endif
+}
 
 /****************************************************************************
  * Public Functions
@@ -111,8 +127,16 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.
 	 */
+	if (mm_takesemaphore(heap) == false)
+	{
+		/* Meet -ESRCH return, which means we are in situations
+		 * during context switching(See mm_takesemaphore() & getpid()).
+		 * Then add to the delay list.
+		 */
 
-	mm_takesemaphore(heap);
+		mm_add_delaylist(heap, mem);
+		return;
+	}
 
 	/* Map the memory chunk into a free node */
 

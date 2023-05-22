@@ -148,7 +148,8 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 	struct tcb_s *rtcb;
 	struct mqueue_inode_s *msgq;
 	int errval;
-
+	irqstate_t flags;
+	
 	/* Was a valid message queue descriptor provided? */
 
 	if (!mqdes) {
@@ -160,7 +161,7 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 
 	/* Get a pointer to the message queue */
 
-	sched_lock();
+	flags = enter_critical_section();
 	msgq = mqdes->msgq;
 
 	/* Get the current process ID */
@@ -213,11 +214,11 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 		msgq->ntmqdes           = NULL;
 	}
 
-	sched_unlock();
+	leave_critical_section(flags);
 	return OK;
 
 errout:
 	set_errno(errval);
-	sched_unlock();
+	leave_critical_section(flags);
 	return ERROR;
 }

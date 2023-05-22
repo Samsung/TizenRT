@@ -207,7 +207,6 @@ int waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options)
 
 	/* Disable pre-emption so that nothing changes while the loop executes */
 
-//PORTNOTE: Nuttx is specificall using enter_critical_section for SMP cases
 #ifdef CONFIG_SMP
 	irqstate_t flags = enter_critical_section();
 #else

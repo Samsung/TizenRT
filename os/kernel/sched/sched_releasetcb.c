@@ -82,15 +82,20 @@
 
 static void sched_releasepid(pid_t pid)
 {
+	irqstate_t flags = enter_critical_section();
 	int hash_ndx = PIDHASH(pid);
 
 	/* Make any pid associated with this hash available.  Note:
 	 * no special precautions need be taken here because the
 	 * following action is atomic
 	 */
-
-	g_pidhash[hash_ndx]->tcb = NULL;
-	g_pidhash[hash_ndx]->pid = INVALID_PROCESS_ID;
+#ifdef CONFIG_SMP
+	g_pidhash[this_cpu()][hash_ndx].tcb = NULL;
+	g_pidhash[this_cpu()][hash_ndx].pid = INVALID_PROCESS_ID;
+#else
+	g_pidhash[hash_ndx].tcb = NULL;
+	g_pidhash[hash_ndx].pid = INVALID_PROCESS_ID;
+#endif
 
 #ifdef CONFIG_SCHED_CPULOAD
 	/* Decrement the total CPU load count held by this thread from total
@@ -100,6 +105,7 @@ static void sched_releasepid(pid_t pid)
 #endif
 	/* Decrement the alive task count as task is exiting */
 	g_alive_taskcount--;
+	leave_critical_section(flags);
 }
 
 /************************************************************************

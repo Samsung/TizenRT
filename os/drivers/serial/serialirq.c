@@ -61,6 +61,9 @@
 #include <semaphore.h>
 #include <debug.h>
 #include <tinyara/serial/serial.h>
+#ifdef CONFIG_SMP
+#include <tinyara/irq.h>
+#endif
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -101,6 +104,10 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 {
 	uint16_t nbytes = 0;
 
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#endif
+
 	/* Send while we still have data in the TX buffer & room in the fifo */
 
 	while (dev->xmit.head != dev->xmit.tail && uart_txready(dev)) {
@@ -136,6 +143,9 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 	if (nbytes) {
 		dev->sent(dev);
 	}
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#endif
 }
 
 /************************************************************************************

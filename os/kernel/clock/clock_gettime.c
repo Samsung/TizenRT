@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/rtc.h>
+#include <tinyara/spinlock.h>
 
 #include <stdint.h>
 #include <time.h>
@@ -157,9 +158,11 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp)
 				 * setting.  When added to the elapsed time since the time-of-day
 				 * was last set, this gives us the current time.
 				 */
-
+				irqstate_t flags;
+				flags = spin_lock_irqsave(NULL);
 				ts.tv_sec  += (uint32_t)g_basetime.tv_sec;
 				ts.tv_nsec += (uint32_t)g_basetime.tv_nsec;
+				spin_unlock_irqrestore(NULL, flags);
 
 				/* Handle carry to seconds. */
 

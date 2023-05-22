@@ -59,6 +59,7 @@
 #include <stdint.h>
 #include <queue.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 
 #include "signal/signal.h"
 
@@ -105,6 +106,7 @@ sq_queue_t g_sigpendingsignal;
 
 sq_queue_t g_sigpendingirqsignal;
 
+extern spinlock_t g_sigaction_spin;
 /************************************************************************
  * Private Variables
  ************************************************************************/
@@ -260,6 +262,7 @@ void sig_allocateactionblock(void)
 {
 	sigactq_t *sigact;
 	int i;
+	irqstate_t flags;
 
 	/* Allocate a block of signal actions */
 
@@ -269,7 +272,9 @@ void sig_allocateactionblock(void)
 	}
 
 	sigact = g_sigactionalloc;
+	flags = spin_lock_irqsave(&g_sigaction_spin);
 	for (i = 0; i < NUM_SIGNAL_ACTIONS; i++) {
 		sq_addlast((FAR sq_entry_t *)sigact++, &g_sigfreeaction);
 	}
+	spin_unlock_irqrestore(&g_sigaction_spin, flags);
 }

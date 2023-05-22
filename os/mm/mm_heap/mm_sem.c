@@ -59,6 +59,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <sched.h>
 
 #include <tinyara/mm/mm.h>
 
@@ -140,8 +141,17 @@ int mm_trysemaphore(FAR struct mm_heap_s *heap)
  *
  ****************************************************************************/
 
-void mm_takesemaphore(FAR struct mm_heap_s *heap)
+bool mm_takesemaphore(FAR struct mm_heap_s *heap)
 {
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	if (up_interrupt_context())
+	{
+#if defined(CONFIG_SMP)
+		/* Can't take semaphore in SMP interrupt handler */
+		return false;
+#endif
+	}
+#endif
 	pid_t my_pid = getpid();
 
 	/* Do I already have the semaphore? */
@@ -169,6 +179,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 	}
 
 	mvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
+	return true;
 }
 
 /****************************************************************************
@@ -225,6 +236,6 @@ void mm_is_sem_available(void *address)
 		mdbg("Invalid Heap address given, Fail to check sem availability.\n");
 		return;
 	}
-	mm_takesemaphore(heap);
+	DEBUGVERIFY(mm_takesemaphore(heap));
 	mm_givesemaphore(heap);
 }

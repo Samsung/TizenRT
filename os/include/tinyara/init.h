@@ -79,10 +79,6 @@
 
 /* Initialization state.  OS bring-up occurs in several phases: */
 
-//PORTNOTE: g_os_initstate related definitions can be restricted to SMP but
-//currently enter/leave_critical sections refer to these without SMP also
-//But TizenRT does not set g_os_initstate without SMP, hence, that reference is
-//likely to fail.
 enum os_initstate_e
 {
 	OSINIT_POWERUP   = 0,  /* Power-up.  No initialization yet performed.

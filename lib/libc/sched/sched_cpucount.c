@@ -1,5 +1,5 @@
 /****************************************************************************
- * sched/pthread/pthread_getaffinity.c
+ * libs/libc/sched/sched_cpucount.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,17 +24,7 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <pthread.h>
 #include <sched.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
-
-#include <tinyara/sched.h>
-
-#include "pthread/pthread.h"
 
 #ifdef CONFIG_SMP
 
@@ -43,46 +33,34 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_getaffinity_np
+ * Name:  sched_cpucount
  *
  * Description:
- *   The pthread_getaffinity_np() function returns the CPU affinity mask
- *   of the thread thread in the buffer pointed to by cpuset.
- *
- *   The argument cpusetsize is the length (in bytes) of the buffer
- *   pointed to by cpuset.  Typically, this argument would be specified as
- *   sizeof(cpu_set_t).
+ *   Return the number of bits set in the 'set'.  This could be improved by
+ *   using CPU-specific bit counting instructions.
  *
  * Input Parameters:
- *   thread     - The ID of thread whose affinity set will be retrieved.
- *   cpusetsize - Size of cpuset.  MUST be sizeofcpu_set_t().
- *   cpuset     - The location to return the thread's new affinity set.
+ *   set - The set of CPUs to be counted.
  *
  * Returned Value:
- *   0 if successful.  Otherwise, an errno value is returned indicating the
- *   nature of the failure.
+ *   The number of CPUs in 'set'
  *
  ****************************************************************************/
 
-int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset)
+int sched_cpucount(FAR const cpu_set_t *set)
 {
-	int ret;
+  int count;
+  int cpu;
 
-	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) && \
-			cpuset != NULL);
+  for (cpu = 0, count = 0; cpu < CONFIG_SMP_NCPUS; cpu++)
+    {
+      if ((*set & (1 << cpu)) != 0)
+        {
+          count++;
+        }
+    }
 
-	sinfo("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
-			(int)thread, cpusetsize, (uintmax_t)*cpuset);
-
-	/* Let sched_getaffinity do all of the work */
-	ret = sched_getaffinity((pid_t)thread, cpusetsize, cpuset);
-	if (ret < 0) {
-		/* If sched_getaffinity() fails, return the positive errno */
-
-		ret = -ret;
-	}
-
-	return ret;
+  return count;
 }
 
 #endif /* CONFIG_SMP */

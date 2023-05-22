@@ -45,7 +45,6 @@ typedef uint8_t spinlock_t;
  *
  * SP_LOCKED and SP_UNLOCKED must be constants of type spinlock_t.
  */
-//PORTNOTE: os/arch/arm/include/spinlock.h is added for this purpose
 
 #include <arch/spinlock.h>
 

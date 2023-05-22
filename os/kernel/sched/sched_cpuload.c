@@ -192,10 +192,61 @@ void sched_clear_cpuload(pid_t pid)
 	 * defunct thread to zero.
 	 */
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx]->ticks[cpuload_idx];
-		g_pidhash[hash_ndx]->ticks[cpuload_idx] = 0;
+#ifdef CONFIG_SMP
+		g_cpuload_total[cpuload_idx] -= g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx];
+		g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx] = 0;
+#else
+		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
+		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+#endif
 	}
 	leave_critical_section(flags);
+}
+
+/****************************************************************************
+ * Name: sched_cpu_process_cpuload
+ *
+ * Description:
+ *   Collect data that can be used for CPU load measurements.
+ *
+ * Input Parameters:
+ *   cpu   - The CPU that we are performing the load operations on.
+ *   ticks - The ticks that we process in this cpuload.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions/Limitations:
+ *   This function is called from a timer interrupt handler with all
+ *   interrupts disabled.
+ *
+ ****************************************************************************/
+
+static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
+{
+	FAR struct tcb_s *rtcb = current_task(cpu);
+	int hash_index = PIDHASH(rtcb->pid);
+
+	if (g_cpusnap_arr) {
+		g_cpusnap_arr[g_cpusnap_head] = rtcb->pid;
+		if (++g_cpusnap_head >= g_cpusnap_arr_size) {
+			g_cpusnap_head = 0;
+		}
+	}
+
+	/* Increment the count on the currently executing thread */
+
+#ifdef CONFIG_SMP
+	g_pidhash[cpu][hash_index].ticks[cpuload_idx]++;
+#else
+	g_pidhash[hash_index].ticks[cpuload_idx]++;
+#endif
+
+	/* Increment tick count.  NOTE that the count is increment once for each
+	 * CPU on each sample interval.
+	 */
+
+	g_cpuload_total[cpuload_idx]++;
 }
 
 #ifndef CONFIG_SCHED_CPULOAD_EXTCLK
@@ -219,10 +270,13 @@ void sched_clear_cpuload(pid_t pid)
 
 void weak_function sched_process_cpuload(void)
 {
-	FAR struct tcb_s *rtcb = this_task();
-	int hash_index;
-	int i;
+	int i, j;
 	int cpuload_idx;
+	irqstate_t flags;
+
+	/* Perform scheduler operations on all CPUs. */
+
+	flags = enter_critical_section();
 
 	/* Increment the count on the currently executing thread
 	 *
@@ -233,33 +287,31 @@ void weak_function sched_process_cpuload(void)
 	 * do this too, but this would require a little more overhead.
 	 */
 
-	if (g_cpusnap_arr) {
-		g_cpusnap_arr[g_cpusnap_head] = rtcb->pid;
-		if (++g_cpusnap_head >= g_cpusnap_arr_size) {
-			g_cpusnap_head = 0;
-		}
-	}
-	hash_index = PIDHASH(rtcb->pid);
-
-//PORTNOTE: Changes not made to this file. Nuttx loops the code below for SMP_NCPUS
-//TizenRT has already looped for SCHED_NCPULOAD
-//Not sure if this needs to be further looped inside CONFIG_SMP_NCPUS
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_pidhash[hash_index]->ticks[cpuload_idx]++;
-
+		for (i = 0; i < CONFIG_SMP_NCPUS; i++)
+		{
+			sched_cpu_process_cpuload(i, cpuload_idx);
+		}
 		/* Increment tick count.  If the accumulated tick value exceed a time
 		 * constant, then shift the accumulators.
 		 */
 
-		if (++g_cpuload_total[cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
+		if (g_cpuload_total[cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
 			uint32_t total = 0;
 
 			/* Divide the tick count for every task by two and recalculate the
 			 * total.
 			 */
 			for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-				g_pidhash[i]->ticks[cpuload_idx] >>= 1;
-				total += g_pidhash[i]->ticks[cpuload_idx];
+#ifdef CONFIG_SMP
+				for (j = 0; j < CONFIG_SMP_NCPUS; j++) {
+					g_pidhash[j][i].ticks[cpuload_idx] >>= 1;
+					total += g_pidhash[j][i].ticks[cpuload_idx];
+				}
+#else
+				g_pidhash[i].ticks[cpuload_idx] >>= 1;
+				total += g_pidhash[i].ticks[cpuload_idx];
+#endif			
 			}
 
 			/* Save the new total. */
@@ -267,6 +319,8 @@ void weak_function sched_process_cpuload(void)
 			g_cpuload_total[cpuload_idx] = total;
 		}
 	}
+
+	leave_critical_section(flags);
 }
 #endif
 
@@ -317,11 +371,19 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	 * do this too, but this would require a little more overhead.
 	 */
 
-	if (g_pidhash[hash_index]->tcb && g_pidhash[hash_index]->pid == pid) {
+#ifdef CONFIG_SMP
+	if (g_pidhash[this_cpu()][hash_index].tcb && g_pidhash[this_cpu()][hash_index].pid == pid) {
 		cpuload->total = g_cpuload_total[index];
-		cpuload->active = g_pidhash[hash_index]->ticks[index];
+		cpuload->active = g_pidhash[this_cpu()][hash_index].ticks[index];
 		ret = OK;
 	}
+#else
+	if (g_pidhash[hash_index].tcb && g_pidhash[hash_index].pid == pid) {
+		cpuload->total = g_cpuload_total[index];
+		cpuload->active = g_pidhash[hash_index].ticks[index];
+		ret = OK;
+	}
+#endif
 
 	leave_critical_section(flags);
 	return ret;

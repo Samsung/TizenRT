@@ -159,8 +159,6 @@ static void sig_timeout(int argc, uint32_t itcb)
 #endif
 }
 
-//PORTNOTE: There is another function sig_wait_irq() which has some SMP dependencies
-//and depends on CONFIG_CANCELLATION_POINTS, this config and function is not there in TizenRT
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

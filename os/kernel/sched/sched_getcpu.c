@@ -1,5 +1,5 @@
 /****************************************************************************
- * sched/pthread/pthread_getaffinity.c
+ * sched/sched/sched_getcpu.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,65 +24,42 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <pthread.h>
 #include <sched.h>
-#include <assert.h>
-#include <errno.h>
-#include <debug.h>
+#include <tinyara/arch.h>
 
-#include <tinyara/sched.h>
-
-#include "pthread/pthread.h"
-
-#ifdef CONFIG_SMP
+#include "sched/sched.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_getaffinity_np
+ * Name: sched_getcpu
  *
  * Description:
- *   The pthread_getaffinity_np() function returns the CPU affinity mask
- *   of the thread thread in the buffer pointed to by cpuset.
+ *    sched_getcpu() returns the number of the CPU on which the calling
+ *    thread is currently executing.
  *
- *   The argument cpusetsize is the length (in bytes) of the buffer
- *   pointed to by cpuset.  Typically, this argument would be specified as
- *   sizeof(cpu_set_t).
+ *    The return CPU number is guaranteed to be valid only at the time of
+ *    the call.  Unless the CPU affinity has been fixed using
+ *    sched_setaffinity(), the OS might change the CPU at any time.  The
+ *    caller must allow for the possibility that the information returned is
+ *    no longer current by the time the call returns.
+ *
+ *    Non-Standard.  Functionally equivalent to the GLIBC __GNU_SOURCE
+ *    interface of the same name.
  *
  * Input Parameters:
- *   thread     - The ID of thread whose affinity set will be retrieved.
- *   cpusetsize - Size of cpuset.  MUST be sizeofcpu_set_t().
- *   cpuset     - The location to return the thread's new affinity set.
+ *   None
  *
  * Returned Value:
- *   0 if successful.  Otherwise, an errno value is returned indicating the
- *   nature of the failure.
+ *   A non-negative CPU number is returned on success.  -1 (ERROR) is
+ *   returned on failure with the errno value set to indicate the cause of
+ *   the failure.
  *
  ****************************************************************************/
 
-int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset)
+int sched_getcpu(void)
 {
-	int ret;
-
-	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) && \
-			cpuset != NULL);
-
-	sinfo("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
-			(int)thread, cpusetsize, (uintmax_t)*cpuset);
-
-	/* Let sched_getaffinity do all of the work */
-	ret = sched_getaffinity((pid_t)thread, cpusetsize, cpuset);
-	if (ret < 0) {
-		/* If sched_getaffinity() fails, return the positive errno */
-
-		ret = -ret;
-	}
-
-	return ret;
+  return up_cpu_index();  /* Does not fail */
 }
-
-#endif /* CONFIG_SMP */

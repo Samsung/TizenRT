@@ -66,13 +66,9 @@ endif
 
 ifeq ($(CONFIG_SMP),y)
 CSRCS += sched_cpuselect.c sched_cpupause.c
-#CSRCS += sched_getcpu.c
-##PORTNOTE: This file only has a dummy wrapper to up_get_cpu which is only used
-#in lookup.h and syscall.csv, not needed for now
+CSRCS += sched_getcpu.c
 
-#CSRCS += sched_getaffinity.c sched_setaffinity.c
-##PORTNOTE: These 2 files are not really used, functinos are not called but only
-#used in lookup.h and syscall.csv. Not ported for now
+CSRCS += sched_getaffinity.c sched_setaffinity.c
 CSRCS += sched_thistask.c
 endif
 

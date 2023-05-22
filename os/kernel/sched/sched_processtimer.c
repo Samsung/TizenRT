@@ -107,72 +107,113 @@
  ************************************************************************/
 
 #if CONFIG_RR_INTERVAL > 0
-static inline void sched_process_timeslice(void)
+static inline void sched_process_timeslice(int cpu)
 {
-//PORTNOTE: In the counterpart for this function in Nuttx -> nxsched_process_scheduler
-//if SMP is enabled then the below work is done for all the CPUs instead of just one.
 
-#ifdef CONFIG_SMP
-	irqstate_t flags = enter_critical_section();
+	FAR struct tcb_s *rtcb = current_task(cpu);
 
-	for (int i = 0; i < CONFIG_SMP_NCPUS; i++) {
-#endif
+	/* Check if the currently executing task uses round robin
+	 * scheduling.
+	 */
 
-		FAR struct tcb_s *rtcb = this_task();
-
-		/* Check if the currently executing task uses round robin
-		 * scheduling.
+	if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0) {
+		/* Yes, check if decrementing the timeslice counter
+		 * would cause the timeslice to expire
 		 */
 
-		if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0) {
-			/* Yes, check if decrementing the timeslice counter
-			 * would cause the timeslice to expire
+		if (rtcb->timeslice <= 1) {
+			/* Yes, Now check if the task has pre-emption disabled.
+			 * If so, then we will freeze the timeslice count at
+			 * the value until the next tick after pre-emption
+			 * has been enabled.
 			 */
 
-			if (rtcb->timeslice <= 1) {
-				/* Yes, Now check if the task has pre-emption disabled.
-				 * If so, then we will freeze the timeslice count at
-				 * the value until the next tick after pre-emption
-				 * has been enabled.
+			if (!rtcb->lockcount) {
+				/* Reset the timeslice in any case. */
+
+				rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+
+				/* We know we are at the head of the ready to run
+				 * prioritized list.  We must be the highest priority
+				 * task eligible for execution.  Check the next task
+				 * in the ready to run list.  If it is the same
+				 * priority, then we need to relinquish the CPU and
+				 * give that task a shot.
 				 */
 
-				if (!rtcb->lockcount) {
-					/* Reset the timeslice in any case. */
-
-					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
-
-					/* We know we are at the head of the ready to run
-					 * prioritized list.  We must be the highest priority
-					 * task eligible for execution.  Check the next task
-					 * in the ready to run list.  If it is the same
-					 * priority, then we need to relinquish the CPU and
-					 * give that task a shot.
+				if (rtcb->flink && rtcb->flink->sched_priority >= rtcb->sched_priority) {
+					/* Just resetting the task priority to its current
+					 * value.  This this will cause the task to be
+					 * rescheduled behind any other tasks at the same
+					 * priority.
 					 */
 
-					if (rtcb->flink && rtcb->flink->sched_priority >= rtcb->sched_priority) {
-						/* Just resetting the task priority to its current
-						 * value.  This this will cause the task to be
-						 * rescheduled behind any other tasks at the same
-						 * priority.
-						 */
-
-						up_reprioritize_rtr(rtcb, rtcb->sched_priority);
-					}
+					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
 				}
-			} else {
-				/* Decrement the timeslice counter */
-
-				rtcb->timeslice--;
 			}
-		}
-#ifdef CONFIG_SMP
-	}
+		} else {
+			/* Decrement the timeslice counter */
 
-	leave_critical_section(flags);
-#endif
+			rtcb->timeslice--;
+		}
+	}
 }
 #else
 #define sched_process_timeslice()
+#endif
+
+
+/****************************************************************************
+ * Name:  sched_process_scheduler
+ *
+ * Description:
+ *   Check for operations specific to scheduling policy of the currently
+ *   active task on all configured CPUs.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC)
+static inline void sched_process_scheduler(void)
+{
+	irqstate_t flags;
+	flags = enter_critical_section();
+
+#ifdef CONFIG_SMP
+	int i;
+	
+	/* If we are running on a single CPU architecture, then we know interrupts
+	 * are disabled and there is no need to explicitly call
+	 * enter_critical_section().  However, in the SMP case,
+	 * enter_critical_section() does much more than just disable interrupts on
+	 * the local CPU; it also manages spinlocks to assure the stability of the
+	 * TCB that we are manipulating.
+	 */
+
+
+	/* Perform scheduler operations on all CPUs */
+
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++)
+	  {
+	    sched_process_timeslice(i);
+	  }
+
+
+#else
+	/* Perform scheduler operations on the single CPUs */
+
+	sched_process_timeslice(0);
+#endif
+	leave_critical_section(flags);
+
+}
+#else
+#  define sched_process_scheduler()
 #endif
 
 /************************************************************************
@@ -235,15 +276,10 @@ void sched_process_timer(void)
 	 * timeslice.
 	 */
 
-	sched_process_timeslice();
+	sched_process_scheduler();
 
 	/* Process watchdogs */
 
-//PORTNOTE: In the function nxsched_process_wdtimer in Nuttx, the call is directly
-//transferred to wd_timer() if SMP is disabled and it is transferred after enter
-//_critical_section if SMP is enabled. Here we have a few more lines of code so
-//we need to see if only wd_timer() should be wrapped between enter and leave critical
-//section or all the LOC should be wrapped.
 #ifdef CONFIG_SMP
 	irqstate_t flags = enter_critical_section();
 #endif

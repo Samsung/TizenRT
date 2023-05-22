@@ -62,6 +62,9 @@ ifneq ($(CONFIG_CANCELLATION_POINTS),y)
 CSRCS += task_setcanceltype.c task_testcancel.c
 endif
 
+ifeq ($(CONFIG_SMP),y)
+CSRCS += sched_cpucount.c
+endif
 # Add the sched directory to the build
 
 DEPPATH += --dep-path sched
