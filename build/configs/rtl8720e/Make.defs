@@ -125,7 +125,7 @@ ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
   ARCHCFLAGS += -fno-common
 endif
-ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
+ARCHCXXFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
 # only version 4.9 supports color diagnostics
@@ -142,10 +142,16 @@ ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
 CFLAGS = $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe -ffunction-sections -fdata-sections
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
 CXXFLAGS = $(ARCHCXXFLAGS) $(ARCHWARNINGSXX) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES) -pipe
+
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+  CXXFLAGS += -fexceptions
+else
+  CXXFLAGS += -fno-exceptions
+endif	
+
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
 AFLAGS = $(CFLAGS) -D__ASSEMBLY__
-
 ##########################################################################################################################################
 CFLAGS += -mthumb
 CFLAGS += -mcmse

@@ -142,7 +142,7 @@ ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
   ARCHCFLAGS += -fno-common
 endif
 
-ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
+ARCHCXXFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
 
 ifeq ($(CONFIG_HAVE_CXX),y)
   ARCHCXXFLAGS = -fno-builtin $(ARCHCPUFLAGS)
