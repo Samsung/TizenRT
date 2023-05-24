@@ -48,7 +48,7 @@ fi
 # check docker image and pull docker image
 function GET_SPECIFIC_DOCKER_IMAGE()
 {
-	# check existed docker image for specified version
+	# check existing docker image for specified version
 	echo "Check Docker Image"
 	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
 	for im in ${DOCKER_IMAGES}; do
@@ -70,7 +70,7 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 			DOCKER_IMAGE=$DOCKER_PUBLIC_IMAGE
 			return
 		fi
-		echo "fail to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
+		echo "failed to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
 		# Can add other docker image
 		exit 1
 	fi
