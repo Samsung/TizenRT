@@ -1,0 +1,32 @@
+Parent repository: https://github.com/tensorflow/tflite-micro/
+Archived version: https://github.com/tensorflow/tflite-micro/archive82f593c1db6c25acfc0efb26989be6d6da8130fe.zip
+
+Source Code:
+lite\c 
+lite\core\*
+lite\schema
+lite\kernels
+lite\micro
+third_party/flatbuffers
+third_party/gemmlowp
+third_party/ruy
+
+Third Party components:
+FlatBuffers: https://github.com/google/flatbuffers/archive/a66de58af9565586832c276fbb4251fc416bf07f.zip
+Ruy: https://github.com/google/ruy/archive/54774a7a2cf85963777289193629d4bd42de4a59.zip
+Gemmlowp: https://github.com/google/gemmlowp/archive/719139ce755a0f31cbf1c37f7f98adcc7fc9f425.zip
+Ruy, Gemmlowp, FlatBuffers => Only header files are included, and library is not linked.
+
+Files excluded:
+lite\experimental\microfrontend
+third_party\hexagon => Not required, this is for Qualcomm DSP
+third_party\kissfft => Referenced from experimental\microfrontend
+third_party\xtensa => Not required
+memory_arena_threshold_test.cc => Required header file is not included in open source code
+lite\micro\kernels ==> all subfolders for arch or libs are excluded
+TF_LITE_USE_GLOBAL_CMATH_FUNCTIONS enable is required
+lite\kernels\internal\cppmath.h => TfLiteExpm1 disabled as expm1 not supported
+
+To Check:
+external/libcxx/complex & external/libcxx/math.h modifed to resolve compilation error
+

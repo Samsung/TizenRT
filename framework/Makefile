@@ -28,11 +28,6 @@ CXXSRCS =
 VPATH = .
 
 # Framework Directories
-
-CXXFLAGS += -I../external/tfmicro
-CXXFLAGS += -I../external/tfmicro/third_party/flatbuffers/include
-CXXFLAGS += -I../external/tfmicro/third_party/gemmlowp
-
 # BUILDIRS is the list of top-level directories containing Make.defs files
 
 BUILDIRS   := $(dir $(wildcard src/*/Make.defs))

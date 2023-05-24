@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,74 +17,78 @@ limitations under the License.
 
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/kernels/internal/reference/comparisons.h"
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/micro/kernels/micro_utils.h"
+#include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace arg_min_max {
+
+namespace {
 
 constexpr int kInputTensor = 0;
 constexpr int kAxis = 1;
 constexpr int kOutputTensor = 0;
-
-TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
-  return kTfLiteOk;
-}
 
 template <typename T1, typename T2, typename T3>
 inline void ArgMinMaxHelper(const RuntimeShape& input1_shape,
                             const T1* input1_data, const T3* input2_data,
                             const RuntimeShape& output_shape, T2* output_data,
                             bool is_arg_max) {
+  // Use Greater/Less from comparisons.h (formerly from kernels/micro_utils.h
+  // which was deprecated). Same as gtl::Greater but used here to reduce
+  // dependencies and binary size for micro environment.
   if (is_arg_max) {
     reference_ops::ArgMinMax(input1_shape, input1_data, input2_data,
-                             output_shape, output_data, micro::Greater());
+                             output_shape, output_data,
+                             reference_ops::GreaterFn<T1>);
   } else {
     reference_ops::ArgMinMax(input1_shape, input1_data, input2_data,
-                             output_shape, output_data, micro::Less());
+                             output_shape, output_data,
+                             reference_ops::LessFn<T1>);
   }
 }
 
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node, bool is_arg_max) {
-  const TfLiteTensor* input = GetInput(context, node, kInputTensor);
-  const TfLiteTensor* axis = GetInput(context, node, kAxis);
-  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
+  const TfLiteEvalTensor* input =
+      tflite::micro::GetEvalInput(context, node, kInputTensor);
+  const TfLiteEvalTensor* axis =
+      tflite::micro::GetEvalInput(context, node, kAxis);
+  TfLiteEvalTensor* output =
+      tflite::micro::GetEvalOutput(context, node, kOutputTensor);
 
-#define TF_LITE_ARG_MIN_MAX(data_type, axis_type, output_type)            \
-  ArgMinMaxHelper(GetTensorShape(input), GetTensorData<data_type>(input), \
-                  GetTensorData<axis_type>(axis), GetTensorShape(output), \
-                  GetTensorData<output_type>(output), is_arg_max)
+#define TF_LITE_ARG_MIN_MAX(data_type, axis_type, output_type)       \
+  ArgMinMaxHelper(tflite::micro::GetTensorShape(input),              \
+                  tflite::micro::GetTensorData<data_type>(input),    \
+                  tflite::micro::GetTensorData<axis_type>(axis),     \
+                  tflite::micro::GetTensorShape(output),             \
+                  tflite::micro::GetTensorData<output_type>(output), \
+                  is_arg_max)
   if (axis->type == kTfLiteInt32) {
     if (output->type == kTfLiteInt32) {
       switch (input->type) {
         case kTfLiteFloat32:
           TF_LITE_ARG_MIN_MAX(float, int32_t, int32_t);
           break;
-        case kTfLiteUInt8:
-          TF_LITE_ARG_MIN_MAX(uint8_t, int32_t, int32_t);
-          break;
         case kTfLiteInt8:
           TF_LITE_ARG_MIN_MAX(int8_t, int32_t, int32_t);
           break;
         default:
-          context->ReportError(context,
-                               "Only float32, uint8 and int8 are "
-                               "supported currently, got %s.",
-                               TfLiteTypeGetName(input->type));
+          MicroPrintf(
+              "Only float32, uint8_t and int8_t are "
+              "supported currently, got %s.",
+              TfLiteTypeGetName(input->type));
           return kTfLiteError;
       }
     } else {
-      context->ReportError(context,
-                           "Only int32 are supported currently, got %s.",
-                           TfLiteTypeGetName(output->type));
+      MicroPrintf("Only int32_t are supported currently, got %s.",
+                  TfLiteTypeGetName(output->type));
       return kTfLiteError;
     }
   } else {
-    context->ReportError(context, "Only int32 are supported currently, got %s.",
-                         TfLiteTypeGetName(axis->type));
+    MicroPrintf("Only int32_t are supported currently, got %s.",
+                TfLiteTypeGetName(axis->type));
     return kTfLiteError;
   }
 
@@ -101,22 +105,14 @@ TfLiteStatus ArgMaxEval(TfLiteContext* context, TfLiteNode* node) {
   return Eval(context, node, true);
 }
 
-}  // namespace arg_min_max
+}  // namespace
 
-TfLiteRegistration* Register_ARG_MAX() {
-  static TfLiteRegistration r = {};
-  r.prepare = arg_min_max::Prepare;
-  r.invoke = arg_min_max::ArgMaxEval;
-  return &r;
+TfLiteRegistration Register_ARG_MAX() {
+  return tflite::micro::RegisterOp(nullptr, nullptr, ArgMaxEval);
 }
 
-TfLiteRegistration* Register_ARG_MIN() {
-  static TfLiteRegistration r = {};
-  r.prepare = arg_min_max::Prepare;
-  r.invoke = arg_min_max::ArgMinEval;
-  return &r;
+TfLiteRegistration Register_ARG_MIN() {
+  return tflite::micro::RegisterOp(nullptr, nullptr, ArgMinEval);
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite

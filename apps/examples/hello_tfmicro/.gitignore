@@ -1,4 +1,11 @@
 /Make.dep
 /.depend
 /.built
-/*.o
+/*.asm
+/*.obj
+/*.rel
+/*.lst
+/*.sym
+/*.adb
+/*.lib
+/*.src

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2020 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,12 +30,8 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # Hello, Tensorflow Lite Micro! C++ Example
 ASRCS		=
 CSRCS		=
-CXXSRCS		= sine_model_data.cc constants.cc
+CXXSRCS		= constants.cc sine_model_data.cc
 MAINSRC		= main.cc
-
-CXXFLAGS	+= -I$(TOPDIR)/../external/tfmicro
-CXXFLAGS	+= -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
-CXXFLAGS	+= -I$(TOPDIR)/../external/tfmicro/third_party/flatbuffers/include
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

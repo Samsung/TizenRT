@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2022 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,81 +24,46 @@ ASRCS		=
 CSRCS		=
 CXXSRCS		=
 
-FLATBUFFER_INC = third_party/flatbuffers/include
-GEMMLOWP_INC   = third_party/gemmlowp
-
 CXXFLAGS += -Wno-shadow -Wno-pedantic -fno-permissive
 CXXFLAGS += -pipe -std=c++11
 CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
 CXXFLAGS += -ffunction-sections -fdata-sections
 CXXFLAGS += -DTF_LITE_DISABLE_X86_NEON
-CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
-CXXFLAGS += -I$(FLATBUFFER_INC) -I$(GEMMLOWP_INC) -I.
-
+CXXFLAGS += -DTF_LITE_USE_GLOBAL_CMATH_FUNCTIONS
 CXXFLAGS += -Wno-maybe-uninitialized
 CXXFLAGS += -Wno-missing-field-initializers
 CXXFLAGS += -Wno-type-limits -Wno-undef
 
 CFLAGS += -Wno-strict-prototypes
 CFLAGS += -DTF_LITE_DISABLE_X86_NEON
-CFLAGS += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
-CFLAGS += -I$(FLATBUFFER_INC) -I$(GEMMLOWP_INC) -I.
+
+TFMICRO_SRC_DIR = ./tensorflow/lite
+
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/schema/ -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/core/ -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/kernels/ -name "*.cc")
+#micro
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/ -maxdepth 1 -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/arena_allocator/ -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/memory_planner/ -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/testing/ -name "*.cc")
+CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/tflite_bridge/ -name "*.cc")
+
+#kernel files
+CXXSRCS += ./tensorflow/lite/micro/kernels/activations.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/activations_common.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected_common.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/kernel_util.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/logistic.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/logistic_common.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/softmax.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/softmax_common.cc
 
 CFLAGS += -Wno-maybe-uninitialized
 CFLAGS += -Wno-missing-field-initializers
 CFLAGS += -Wno-pointer-sign
 CFLAGS += -Wno-type-limits -Wno-undef
-
-CSRCS += tensorflow/lite/c/common.c
-CXXSRCS += tensorflow/lite/micro/kernels/concatenation.cc
-CXXSRCS += tensorflow/lite/micro/kernels/conv.cc
-CXXSRCS += tensorflow/lite/micro/kernels/depthwise_conv.cc
-CXXSRCS += tensorflow/lite/micro/kernels/softmax.cc
-CXXSRCS += tensorflow/lite/micro/kernels/all_ops_resolver.cc
-CXXSRCS += tensorflow/lite/micro/kernels/round.cc
-CXXSRCS += tensorflow/lite/micro/kernels/strided_slice.cc
-CXXSRCS += tensorflow/lite/micro/kernels/prelu.cc
-CXXSRCS += tensorflow/lite/micro/kernels/split.cc
-CXXSRCS += tensorflow/lite/micro/kernels/fully_connected.cc
-CXXSRCS += tensorflow/lite/micro/kernels/pad.cc
-CXXSRCS += tensorflow/lite/micro/kernels/mul.cc
-CXXSRCS += tensorflow/lite/micro/kernels/dequantize.cc
-CXXSRCS += tensorflow/lite/micro/kernels/unpack.cc
-CXXSRCS += tensorflow/lite/micro/kernels/arg_min_max.cc
-CXXSRCS += tensorflow/lite/micro/kernels/reshape.cc
-CXXSRCS += tensorflow/lite/micro/kernels/activations.cc
-CXXSRCS += tensorflow/lite/micro/kernels/logistic.cc
-CXXSRCS += tensorflow/lite/micro/kernels/ceil.cc
-CXXSRCS += tensorflow/lite/micro/kernels/elementwise.cc
-CXXSRCS += tensorflow/lite/micro/kernels/pooling.cc
-CXXSRCS += tensorflow/lite/micro/kernels/floor.cc
-CXXSRCS += tensorflow/lite/micro/kernels/svdf.cc
-CXXSRCS += tensorflow/lite/micro/kernels/maximum_minimum.cc
-CXXSRCS += tensorflow/lite/micro/kernels/pack.cc
-CXXSRCS += tensorflow/lite/micro/kernels/comparisons.cc
-CXXSRCS += tensorflow/lite/micro/kernels/reduce.cc
-CXXSRCS += tensorflow/lite/micro/kernels/quantize.cc
-CXXSRCS += tensorflow/lite/micro/kernels/logical.cc
-CXXSRCS += tensorflow/lite/micro/kernels/neg.cc
-CXXSRCS += tensorflow/lite/micro/kernels/add.cc
-CXXSRCS += tensorflow/lite/micro/test_helpers.cc
-CXXSRCS += tensorflow/lite/micro/debug_log.cc
-CXXSRCS += tensorflow/lite/micro/simple_memory_allocator.cc
-CXXSRCS += tensorflow/lite/micro/micro_error_reporter.cc
-CXXSRCS += tensorflow/lite/micro/micro_optional_debug_tools.cc
-CXXSRCS += tensorflow/lite/micro/debug_log_numbers.cc
-CXXSRCS += tensorflow/lite/micro/micro_interpreter.cc
-CXXSRCS += tensorflow/lite/micro/memory_planner/greedy_memory_planner.cc
-CXXSRCS += tensorflow/lite/micro/memory_planner/linear_memory_planner.cc
-CXXSRCS += tensorflow/lite/micro/micro_utils.cc
-CXXSRCS += tensorflow/lite/micro/micro_allocator.cc
-CXXSRCS += tensorflow/lite/micro/memory_helpers.cc
-CXXSRCS += tensorflow/lite/kernels/kernel_util.cc
-CXXSRCS += tensorflow/lite/kernels/internal/quantization_util.cc
-CXXSRCS += tensorflow/lite/core/api/error_reporter.cc
-CXXSRCS += tensorflow/lite/core/api/tensor_utils.cc
-CXXSRCS += tensorflow/lite/core/api/flatbuffer_conversions.cc
-CXXSRCS += tensorflow/lite/core/api/op_resolver.cc
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

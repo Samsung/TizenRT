@@ -9,4 +9,4 @@ config EXTERNAL_TFMICRO
 	select HAVE_CXX
 	select HAVE_CXXINITIALIZE
 	---help---
-		Enables Tensorflow lite for Microcontroller
+		Enables the Tensorflow lite for Microcontroller
