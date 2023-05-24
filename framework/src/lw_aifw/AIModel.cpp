@@ -20,15 +20,17 @@
 #include <iostream>
 #include <tensorflow/lite/c/common.h>
 #include <tensorflow/lite/schema/schema_generated.h>
-#include <tensorflow/lite/micro/kernels/all_ops_resolver.h>
-#include <tensorflow/lite/micro/micro_error_reporter.h>
+#include <tensorflow/lite/micro/all_ops_resolver.h>
+#include <tensorflow/lite/micro/tflite_bridge/micro_error_reporter.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
-#include <tensorflow/lite/version.h>
+#include <tensorflow/lite/micro/micro_profiler.h>
+
 #include "lw_aifw/lw_aifw_log.h"
 #include "include/AIModel.h"
 
 namespace lw_aifw {
-	tflite::ops::micro::AllOpsResolver g_Resolver;
+	tflite::AllOpsResolver g_Resolver;
+	tflite::MicroProfiler g_Profiler;
 	/*
 	input: memorySize in Bytes
 	*/
@@ -56,7 +58,8 @@ namespace lw_aifw {
 			g_Resolver,
 			this->m_TensorArena.get(),
 			this->m_TensorArenaSize,
-			this->m_ErrorReporter.get()
+			nullptr,
+			&g_Profiler
 		);
 
 		TfLiteStatus allocate_status = this->m_Interpreter->AllocateTensors();
@@ -146,7 +149,11 @@ namespace lw_aifw {
 	void *AIModel::invoke(void *inputData) {
 		int inputSize;
 		int outSize;
-		this->m_Input->data.data = inputData;
+		// Deep copy
+		float* value = (float*)(inputData);
+		for (int i = 0; i < this->m_InputField; i++) {
+			this->m_Input->data.f[i] = value[i];
+		}
 		inputSize = this->getInArraySize();
 		outSize = this->getOutArraySize();
 		LW_AIFW_LOGV("input_size =%d Member are:", inputSize);

@@ -15,32 +15,17 @@ limitations under the License.
 
 #include "tensorflow/lite/micro/micro_utils.h"
 
-#include <limits.h>
-#include <math.h>
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
+#include <limits>
 
 #include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/kernels/internal/compatibility.h"
 #include "tensorflow/lite/kernels/op_macros.h"
+#include "tensorflow/lite/micro/memory_helpers.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
-
-namespace {
-
-static const uint8_t kAsymmetricUInt8Min = 0;
-static const uint8_t kAsymmetricUInt8Max = UINT8_MAX;
-static const uint8_t kSymmetricUInt8Min = 1;
-static const uint8_t kSymmetricUInt8Max = UINT8_MAX;
-static const int8_t kAsymmetricInt8Min = INT8_MIN;
-static const int8_t kAsymmetricInt8Max = INT8_MAX;
-static const int kSymmetricInt8Scale = kAsymmetricInt8Max;
-
-static const int16_t kAsymmetricInt16Max = INT16_MAX;
-static const int kSymmetricInt16Scale = kAsymmetricInt16Max;
-
-static const int32_t kAsymmetricInt32Max = INT32_MAX;
-static const int kSymmetricInt32Scale = kAsymmetricInt32Max;
-
-}  // namespace
 
 int ElementCount(const TfLiteIntArray& dims) {
   int result = 1;
@@ -50,96 +35,26 @@ int ElementCount(const TfLiteIntArray& dims) {
   return result;
 }
 
-// Converts a float value into an unsigned eight-bit quantized value.
-uint8_t FloatToAsymmetricQuantizedUInt8(const float value, const float scale,
-                                        const int zero_point) {
-  int32_t result = round(value / scale) + zero_point;
-  if (result < kAsymmetricUInt8Min) {
-    result = kAsymmetricUInt8Min;
-  }
-  if (result > kAsymmetricUInt8Max) {
-    result = kAsymmetricUInt8Max;
-  }
-  return result;
+size_t EvalTensorBytes(const TfLiteEvalTensor* tensor) {
+  size_t bytes_per_element;
+  TFLITE_DCHECK(kTfLiteOk ==
+                TfLiteTypeSizeOf(tensor->type, &bytes_per_element));
+  return ElementCount(*tensor->dims) * bytes_per_element;
 }
 
-uint8_t FloatToSymmetricQuantizedUInt8(const float value, const float scale) {
-  int32_t result = round(value / scale);
-  if (result < kSymmetricUInt8Min) {
-    result = kSymmetricUInt8Min;
-  }
-  if (result > kSymmetricUInt8Max) {
-    result = kSymmetricUInt8Max;
-  }
-  return result;
-}
-
-int8_t FloatToAsymmetricQuantizedInt8(const float value, const float scale,
-                                      const int zero_point) {
-  return FloatToAsymmetricQuantizedUInt8(value, scale,
-                                         zero_point - kAsymmetricInt8Min) +
-         kAsymmetricInt8Min;
-}
-
-int8_t FloatToSymmetricQuantizedInt8(const float value, const float scale) {
-  return FloatToAsymmetricQuantizedInt8(value, scale, 0.0f);
-}
-
-int32_t FloatToSymmetricQuantizedInt32(const float value, const float scale) {
-  float quantized = round(value / scale);
-  if (quantized > INT_MAX) {
-    quantized = INT_MAX;
-  } else if (quantized < INT_MIN) {
-    quantized = INT_MIN;
-  }
-
-  return static_cast<int>(quantized);
-}
-
-void AsymmetricQuantize(const float* input, int8_t* output, int num_elements,
-                        float scale, int zero_point) {
-  for (int i = 0; i < num_elements; i++) {
-    output[i] = FloatToAsymmetricQuantizedInt8(input[i], scale, zero_point);
-  }
-}
-
-void AsymmetricQuantize(const float* input, uint8_t* output, int num_elements,
-                        float scale, int zero_point) {
-  for (int i = 0; i < num_elements; i++) {
-    output[i] = FloatToAsymmetricQuantizedUInt8(input[i], scale, zero_point);
-  }
-}
-
-void SymmetricQuantize(const float* input, int32_t* output, int num_elements,
-                       float scale) {
-  for (int i = 0; i < num_elements; i++) {
-    output[i] = FloatToSymmetricQuantizedInt32(input[i], scale);
-  }
-}
-
-void SymmetricPerChannelQuantize(const float* input, int32_t* output,
-                                 int num_elements, int num_channels,
-                                 float* scales) {
-  int elements_per_channel = num_elements / num_channels;
-  for (int i = 0; i < num_channels; i++) {
-    for (int j = 0; j < elements_per_channel; j++) {
-      output[i * elements_per_channel + j] = FloatToSymmetricQuantizedInt32(
-          input[i * elements_per_channel + j], scales[i]);
-    }
-  }
-}
-
-void SignedSymmetricPerChannelQuantize(const float* values,
-                                       TfLiteIntArray* dims,
-                                       int quantized_dimension,
-                                       int8_t* quantized_values,
-                                       float* scaling_factors) {
+void SignedSymmetricPerChannelQuantize(
+    const float* values, TfLiteIntArray* dims, int quantized_dimension,
+    int8_t* quantized_values, float* scaling_factors, TfLiteType type) {
   int input_size = ElementCount(*dims);
   int channel_count = dims->data[quantized_dimension];
   int per_channel_size = input_size / channel_count;
 
   int stride;
   int channel_stride;
+
+  int qmin = QMinFromTfLiteType(type);
+  int qmax = QMaxFromTfLiteType(type);
+
   if (quantized_dimension == 0) {
     stride = 1;
     channel_stride = per_channel_size;
@@ -147,7 +62,8 @@ void SignedSymmetricPerChannelQuantize(const float* values,
     stride = channel_count;
     channel_stride = 1;
   } else {
-    TF_LITE_FATAL("quantized dimension must be 0 or 3");
+    MicroPrintf("quantized dimension must be 0 or 3");
+    TFLITE_ABORT;
   }
 
   // Calculate scales for each channel.
@@ -160,92 +76,14 @@ void SignedSymmetricPerChannelQuantize(const float* values,
       min = fminf(min, values[idx]);
       max = fmaxf(max, values[idx]);
     }
-    scaling_factors[channel] =
-        fmaxf(fabs(min), fabs(max)) / kSymmetricInt8Scale;
+    scaling_factors[channel] = fmaxf(fabs(min), fabs(max)) / qmax;
     for (int i = 0; i < per_channel_size; i++) {
       int idx = channel * channel_stride + i * stride;
       const int32_t quantized_value =
           static_cast<int32_t>(roundf(values[idx] / scaling_factors[channel]));
       // Clamp: just in case some odd numeric offset.
-      quantized_values[idx] = fminf(
-          kSymmetricInt8Scale, fmaxf(-kSymmetricInt8Scale, quantized_value));
+      quantized_values[idx] = fminf(qmax, fmaxf(qmin + 1, quantized_value));
     }
-  }
-}
-
-void SignedSymmetricQuantize(const float* values, TfLiteIntArray* dims,
-                             int8_t* quantized_values, float* scaling_factor) {
-  int input_size = ElementCount(*dims);
-
-  float min = 0;
-  float max = 0;
-  for (int i = 0; i < input_size; i++) {
-    min = fminf(min, values[i]);
-    max = fmaxf(max, values[i]);
-  }
-  *scaling_factor = fmaxf(fabs(min), fabs(max)) / kSymmetricInt8Scale;
-  for (int i = 0; i < input_size; i++) {
-    const int32_t quantized_value =
-        static_cast<int32_t>(roundf(values[i] / *scaling_factor));
-    // Clamp: just in case some odd numeric offset.
-    quantized_values[i] = fminf(kSymmetricInt8Scale,
-                                fmaxf(-kSymmetricInt8Scale, quantized_value));
-  }
-}
-
-void SignedSymmetricQuantize(const float* values, TfLiteIntArray* dims,
-                             int16_t* quantized_values, float* scaling_factor) {
-  int input_size = ElementCount(*dims);
-
-  float min = 0;
-  float max = 0;
-  for (int i = 0; i < input_size; i++) {
-    min = fminf(min, values[i]);
-    max = fmaxf(max, values[i]);
-  }
-  *scaling_factor = fmaxf(fabs(min), fabs(max)) / kSymmetricInt16Scale;
-  for (int i = 0; i < input_size; i++) {
-    const int32_t quantized_value =
-        static_cast<int32_t>(roundf(values[i] / *scaling_factor));
-    // Clamp: just in case some odd numeric offset.
-    quantized_values[i] = fminf(kSymmetricInt16Scale,
-                                fmaxf(-kSymmetricInt16Scale, quantized_value));
-  }
-}
-
-void SignedSymmetricQuantize(const float* values, TfLiteIntArray* dims,
-                             int32_t* quantized_values, float* scaling_factor) {
-  int input_size = ElementCount(*dims);
-
-  float min = 0;
-  float max = 0;
-  for (int i = 0; i < input_size; i++) {
-    min = fminf(min, values[i]);
-    max = fmaxf(max, values[i]);
-  }
-
-  *scaling_factor = fmaxf(fabs(min), fabs(max)) / kSymmetricInt32Scale;
-  for (int i = 0; i < input_size; i++) {
-    const int32_t quantized_value =
-        static_cast<int32_t>(roundf(values[i] / *scaling_factor));
-    // Clamp: just in case some odd numeric offset.
-    quantized_values[i] = fminf(kSymmetricInt32Scale,
-                                fmaxf(-kSymmetricInt32Scale, quantized_value));
-  }
-}
-
-void SymmetricQuantize(const float* values, TfLiteIntArray* dims,
-                       uint8_t* quantized_values, float* scaling_factor) {
-  SignedSymmetricQuantize(values, dims,
-                          reinterpret_cast<int8_t*>(quantized_values),
-                          scaling_factor);
-}
-
-void SymmetricDequantize(const int8_t* values, const int size,
-                         const float dequantization_scale,
-                         float* dequantized_values) {
-  for (int i = 0; i < size; ++i) {
-    dequantized_values[i] = values[i] * dequantization_scale;
   }
 }
 
