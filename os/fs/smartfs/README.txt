@@ -24,7 +24,7 @@ Features
   This implementation is a full-feature file system from the perspective of
   file and directory access. The SMART File System was designed specifically
   for small SPI based FLASH parts (1-8 Mbyte for example), though this is not
-  a limitation.  It can certainly be used for flash memories of any size and has
+  a limitation. It can certainly be used for flash memories of any size and has
   been tested with devices as large as 128MiB (using a 2048 byte sector size
   with 65534 sectors).
   The FS includes support for:
@@ -33,6 +33,8 @@ Features
     - Directory Support
     - Open for reading / writing with seek capability.
     - Appending to the end of files and Overwriting existing file contents.
+
+  and, it employs the following to provide certain guarantees:
     - Static Wear levelling algorithm.
     - CRC checksums for error detection in data
     - Reduced RAM model for FLASH geometries with large number of sectors (16K-64K)
@@ -62,7 +64,7 @@ General operation
 
   The SMART File System divides the FLASH device or partition into equal
   sized sectors which are allocated("committed") and "released" as needed to perform
-  file read / write and directory management operations. Sectors are then "chained"
+  file read/write and directory management operations. Sectors are then "chained"
   together to build files and directories. The operations are split into two
   layers:
 
@@ -113,8 +115,8 @@ General operation
   number holding the files' data. Each file in the directory has a fixed-size
   "directory entry" that has bits to indicate if it is still active or has
   been deleted, file permission bits, first sector number, date (utc stamp),
-  and filename. The maximum filename length is set from the CONFIG_SMARTFS_
-  MAXNAMLEN config value at the time the mksmartfs command is executed.
+  and filename. The maximum filename length is set on the basis of
+  CONFIG_SMARTFS_MAXNAMLEN during the execution of the mksmartfs command.
   Changes to the CONFIG_SMARTFS_MAXNAMLEN parameter will not be reflected
   on the volume unless it is reformatted. The same is true for a few other
   changes including the sector size parameter.
@@ -245,15 +247,15 @@ General operation
   Journaling - the 'j' in jSmartFS
   ================================
 
-  One of the most significant addition proposed in the design of jSmartFS is
-  the journaling layer. Though it is implemented along with the Block Device
+  One of the most significant addition proposed in the new design of jSmartFS
+  is the journaling layer. Although it is implemented along with the Block Device
   Driver layer itself, it acts as a middleman between the Block Device ioctls
   and the HAL by logging an entry corresponding to any change to the flash
   memory.
 
   We track commit and release operations which provide sector level journaling
   also erase operations which provide block level journaling. Any of these
-  operations, before causing any change to flash content, gets a journal entry
+  operations, before causing a change to flash content, has its journal entry
   created in the designated journal area which is reserved at the end of the
   flash partition. This is called a "Check-in" journal entry. The operation
   then proceeds to make the change and its completion is marked by another
@@ -497,13 +499,13 @@ before opting to use SMARTFS:
 
 1. The implementation can support CRC-8 or CRC-16 error detection, and can
    relocate a failed write operation to a new sector. However with no bad
-   block management implementation, the code will continue it attempts at
-   using failing block / sector, reducing efficiency and possibly successfully
+   block management implementation, the code will continue its attempts to
+   use failing blocks/sectors, reducing efficiency and possibly successfully
    saving data in a block with questionable integrity. Hence, we try to avoid
    the bad block situation at all costs by mitigating wear severity.
 
 2. The total number of logical sectors on the device must be 65534 or less.
-   The number of logical sectors is based on the total device / partition
+   The number of logical sectors is based on the total device/partition
    size and the selected sector size. For larger flash parts, a larger
    sector size needs to be used to meet this requirement. Creating a
    geometry which results in 65536 sectors (a 32MByte FLASH with 512 byte
@@ -516,6 +518,13 @@ before opting to use SMARTFS:
    a. The logical sector number is a 16-bit field (i.e. 65535 is the max).
    b. Logical sector number 65535 (0xFFFF) is reserved as this is typically
       the "erased state" of the FLASH.
+
+3. SMARTFS is vulnerable to corruptions in the event of a sudden power-loss
+   which may leave the contents of the system in an inconsistenct state if
+   an operation was underway. The consequences may be in the form of an
+   inconsistent filesystem which is unfit for use, or corrupted files whose
+   contents cannot be determined to be correct or not. The CRC written to
+   every sector can only safeguard the fs to a certain extent.
 
 ioctls
 ======
