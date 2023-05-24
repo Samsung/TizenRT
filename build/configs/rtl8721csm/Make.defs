@@ -183,7 +183,7 @@ ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
   CXXFLAGS += -fexceptions
 else
   CXXFLAGS += -fno-exceptions
-endif	
+endif
 
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
