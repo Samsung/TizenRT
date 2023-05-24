@@ -1034,6 +1034,7 @@ copysign(_A1 __lcpp_x, _A2 __lcpp_y) _NOEXCEPT
     return copysign((__result_type)__lcpp_x, (__result_type)__lcpp_y);
 }
 
+#if 0
 #ifndef _LIBCPP_MSVCRT
 
 // erf
@@ -1419,7 +1420,7 @@ typename std::enable_if<std::is_integral<_A1>::value, double>::type
 trunc(_A1 __lcpp_x) _NOEXCEPT {return trunc((double)__lcpp_x);}
 
 #endif // !_LIBCPP_MSVCRT
-
+#endif
 } // extern "C++"
 
 #endif // __cplusplus
