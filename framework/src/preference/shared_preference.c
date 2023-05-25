@@ -104,6 +104,24 @@ int preference_shared_set_string(const char *key, char *value)
 	return prctl(PR_SET_PREFERENCE, &data);
 }
 
+int preference_shared_set_binary(const char *key, void *value, int len)
+{
+	preference_data_t data;
+
+	if (key == NULL || value == NULL || len <= 0) {
+		return PREFERENCE_INVALID_PARAMETER;
+	}
+
+	data.key = key;
+	data.type = SHARED_PREFERENCE;
+	data.attr.type = PREFERENCE_TYPE_BINARY;
+	data.attr.len = len;
+	data.value = value;
+
+	/* Set preference with prctl */
+	return prctl(PR_SET_PREFERENCE, &data);
+}
+
 /****************************************************************************
  * Get Functions
  ****************************************************************************/
@@ -193,6 +211,29 @@ int preference_shared_get_string(const char *key, char **value)
 	ret = prctl(PR_GET_PREFERENCE, &data);
 	if (ret == OK) {
 		*value = (char *)data.value;
+	}
+
+	return ret;
+}
+
+int preference_shared_get_binary(const char *key, void **value, int *len)
+{
+	int ret;
+	preference_data_t data;
+
+	if (key == NULL || value == NULL || len == NULL) {
+		return PREFERENCE_INVALID_PARAMETER;
+	}
+
+	data.key = key;
+	data.type = SHARED_PREFERENCE;
+	data.attr.type = PREFERENCE_TYPE_BINARY;
+
+	/* Get preference with prctl */
+	ret = prctl(PR_GET_PREFERENCE, &data);
+	if (ret == OK) {
+		*value = (void *)data.value;
+		*len = data.attr.len;
 	}
 
 	return ret;
