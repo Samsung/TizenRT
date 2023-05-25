@@ -157,6 +157,7 @@ struct xcptcontext {
 #ifdef CONFIG_BUILD_PROTECTED
 	uint32_t saved_lr;
 #endif
+	uint32_t saved_exec_ret;
 
 #ifdef CONFIG_BUILD_PROTECTED
 	/* This is the saved address to use when returning from a user-space
