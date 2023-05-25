@@ -27,26 +27,38 @@
 
 #include "tc_common.h"
 
-#define INT_KEY "INTEGER"
-#define DOUBLE_KEY "DOUBLE"
-#define BOOL_KEY "BOOL"
-#define STRING_KEY "STRING"
+#define INT_KEY		"INTEGER"
+#define DOUBLE_KEY	"DOUBLE"
+#define BOOL_KEY	"BOOL"
+#define STRING_KEY	"STRING"
+#define BINARY_KEY	"BINARY"
 
-#define SHARED_KEY_PATH "utc/preference"
-#define SHARED_INTKEY_PATH "utc/preference/INTEGER"
-#define SHARED_DOUBLEKEY_PATH "utc/preference/DOUBLE"
-#define SHARED_BOOLKEY_PATH "utc/preference/BOOL"
-#define SHARED_STRINGKEY_PATH "utc/preference/STRING"
+#define SHARED_KEY_PATH		"utc/preference"
+#define SHARED_INTKEY_PATH	"utc/preference/INTEGER"
+#define SHARED_DOUBLEKEY_PATH	"utc/preference/DOUBLE"
+#define SHARED_BOOLKEY_PATH	"utc/preference/BOOL"
+#define SHARED_STRINGKEY_PATH	"utc/preference/STRING"
+#define SHARED_BINARYKEY_PATH	"utc/preference/BINARY"
 
-#define INT_VALUE 300
-#define DOUBLE_VALUE 4.21
-#define BOOL_VALUE true
-#define STRING_VALUE "preference string value"
+#define INT_VALUE	300
+#define DOUBLE_VALUE	4.21
+#define BOOL_VALUE	true
+#define STRING_VALUE	"preference string value"
 
-#define INVALID_KEY "INVALIDKEY"
-#define CB_DATA "PREFERENCE_CBDATA"
+#define INVALID_KEY	"INVALIDKEY"
+#define CB_DATA		"PREFERENCE_CBDATA"
+
+struct bin_pref_val_s {
+	int val1;
+	char val2;
+} BINARY_VALUE;
 
 static bool cb_flag;
+
+bool check_binary_value(struct bin_pref_val_s *v, struct bin_pref_val_s b)
+{
+	return ((v->val1 == b.val1) && (v->val2 == b.val2));
+}
 
 static preference_changed_cb value_changed_cb(const char *key, void *user_data)
 {
@@ -142,6 +154,36 @@ static void utc_preference_set_string_n(void)
 
 	ret = preference_set_string(STRING_KEY, NULL);
 	TC_ASSERT_EQ("preference_set_string", ret, PREFERENCE_INVALID_PARAMETER);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_set_binary_p(void)
+{
+	int ret;
+	BINARY_VALUE.val1 = 123;
+	BINARY_VALUE.val2 = 'x';
+
+	ret = preference_set_binary(BINARY_KEY, (void *)&BINARY_VALUE, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_set_binary", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_set_binary_n(void)
+{
+	int ret;
+	BINARY_VALUE.val1 = 789;
+	BINARY_VALUE.val2 = 'z';
+
+	ret = preference_set_binary(BINARY_KEY, (void *)&BINARY_VALUE, 0);
+	TC_ASSERT_EQ("preference_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
+
+	ret = preference_set_binary(BINARY_KEY, NULL, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
+
+	ret = preference_set_binary(NULL, (void *)&BINARY_VALUE, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
 
 	TC_SUCCESS_RESULT();
 }
@@ -265,6 +307,54 @@ static void utc_preference_get_string_n(void)
 	ret = preference_get_string(INVALID_KEY, &value);
 	TC_ASSERT_EQ_CLEANUP("preference_get_string", value, NULL, free(value));
 	TC_ASSERT_EQ("preference_get_string", ret, PREFERENCE_KEY_NOT_EXIST);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_get_binary_p(void)
+{
+	int ret;
+	void *value = NULL;
+	int len;
+
+	BINARY_VALUE.val1 = 123;
+	BINARY_VALUE.val2 = 'x';
+
+	ret = preference_get_binary(BINARY_KEY, &value, &len);
+	TC_ASSERT_NEQ("preference_get_binary", value, NULL);
+	TC_ASSERT_EQ_CLEANUP("preference_get_binary", ret, OK, free(value));
+	TC_ASSERT_EQ_CLEANUP("preference_get_binary", check_binary_value((struct bin_pref_val_s *)value, BINARY_VALUE), true, free(value));
+	TC_ASSERT_EQ("preference_get_binary", len, sizeof(BINARY_VALUE));
+
+	/* Clean binary value allocated from preference */
+	free(value);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_get_binary_n(void)
+{
+	int ret;
+	void *value = NULL;
+	int len = -1;
+
+	ret = preference_get_binary(NULL, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_get_binary", ret, PREFERENCE_INVALID_PARAMETER);
+	TC_ASSERT_EQ("preference_get_binary", len, -1);
+
+	ret = preference_get_binary(INT_KEY, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_get_binary", ret, PREFERENCE_INVALID_PARAMETER);
+	TC_ASSERT_EQ("preference_get_binary", len, -1);
+
+	ret = preference_get_binary(INVALID_KEY, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_get_binary", ret, PREFERENCE_KEY_NOT_EXIST);
+	TC_ASSERT_EQ("preference_get_binary", len, -1);
+
+	/* Clean binary value allocated from preference */
+	free(value);
 
 	TC_SUCCESS_RESULT();
 }
@@ -505,6 +595,36 @@ static void utc_preference_shared_set_string_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void utc_preference_shared_set_binary_p(void)
+{
+	int ret;
+	BINARY_VALUE.val1 = 123;
+	BINARY_VALUE.val2 = 'x';
+
+	ret = preference_shared_set_binary(BINARY_KEY, (void *)&BINARY_VALUE, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_shared_set_binary", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_shared_set_binary_n(void)
+{
+	int ret;
+	BINARY_VALUE.val1 = 789;
+	BINARY_VALUE.val2 = 'z';
+
+	ret = preference_shared_set_binary(BINARY_KEY, (void *)&BINARY_VALUE, 0);
+	TC_ASSERT_EQ("preference_shared_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
+
+	ret = preference_shared_set_binary(BINARY_KEY, NULL, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_shared_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
+
+	ret = preference_shared_set_binary(NULL, (void *)&BINARY_VALUE, sizeof(BINARY_VALUE));
+	TC_ASSERT_EQ("preference_shared_set_binary", ret, PREFERENCE_INVALID_PARAMETER);
+
+	TC_SUCCESS_RESULT();
+}
+
 static void utc_preference_shared_get_int_p(void)
 {
 	int ret;
@@ -624,6 +744,54 @@ static void utc_preference_shared_get_string_n(void)
 	ret = preference_shared_get_string(INVALID_KEY, &value);
 	TC_ASSERT_EQ_CLEANUP("preference_shared_get_string", value, NULL, free(value));
 	TC_ASSERT_EQ("preference_shared_get_string", ret, PREFERENCE_KEY_NOT_EXIST);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_shared_get_binary_p(void)
+{
+        int ret;
+        void *value = NULL;
+	int len;
+
+        BINARY_VALUE.val1 = 123;
+        BINARY_VALUE.val2 = 'x';
+
+        ret = preference_shared_get_binary(BINARY_KEY, &value, &len);
+        TC_ASSERT_NEQ("preference_shared_get_binary", value, NULL);
+        TC_ASSERT_EQ_CLEANUP("preference_shared_get_binary", ret, OK, free(value));
+        TC_ASSERT_EQ_CLEANUP("preference_shared_get_binary", check_binary_value((struct bin_pref_val_s *)value, BINARY_VALUE), true, free(value));
+	TC_ASSERT_EQ("preference_shared_get_binary", len, sizeof(BINARY_VALUE));
+
+        /* Clean binary value allocated from preference */
+        free(value);
+
+        TC_SUCCESS_RESULT();
+}
+
+static void utc_preference_shared_get_binary_n(void)
+{
+	int ret;
+	void *value = NULL;
+	int len = -1;
+
+	ret = preference_shared_get_binary(NULL, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_shared_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_shared_get_binary", ret, PREFERENCE_INVALID_PARAMETER);
+	TC_ASSERT_EQ("preference_shared_get_binary", len, -1);
+
+	ret = preference_shared_get_binary(SHARED_INTKEY_PATH, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_shared_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_shared_get_binary", ret, PREFERENCE_INVALID_PARAMETER);
+	TC_ASSERT_EQ("preference_shared_get_binary", len, -1);
+
+	ret = preference_shared_get_binary(INVALID_KEY, &value, &len);
+	TC_ASSERT_EQ_CLEANUP("preference_shared_get_binary", value, NULL, free(value));
+	TC_ASSERT_EQ("preference_shared_get_binary", ret, PREFERENCE_KEY_NOT_EXIST);
+	TC_ASSERT_EQ("preference_shared_get_binary", len, -1);
+
+	/* Clean binary value allocated from preference */
+	free(value);
 
 	TC_SUCCESS_RESULT();
 }
@@ -798,6 +966,8 @@ int utc_preference_main(int argc, char *argv[])
 	utc_preference_set_bool_n();
 	utc_preference_set_string_p();
 	utc_preference_set_string_n();
+	utc_preference_set_binary_p();
+	utc_preference_set_binary_n();
 	utc_preference_get_int_p();
 	utc_preference_get_int_n();
 	utc_preference_get_double_p();
@@ -806,6 +976,8 @@ int utc_preference_main(int argc, char *argv[])
 	utc_preference_get_bool_n();
 	utc_preference_get_string_p();
 	utc_preference_get_string_n();
+	utc_preference_get_binary_p();
+	utc_preference_get_binary_n();
 	utc_preference_set_changed_cb_p();
 	utc_preference_set_changed_cb_n();
 	utc_preference_unset_changed_cb_p();
@@ -825,6 +997,8 @@ int utc_preference_main(int argc, char *argv[])
 	utc_preference_shared_set_bool_n();
 	utc_preference_shared_set_string_p();
 	utc_preference_shared_set_string_n();
+	utc_preference_shared_set_binary_p();
+	utc_preference_shared_set_binary_n();
 	utc_preference_shared_get_int_p();
 	utc_preference_shared_get_int_n();
 	utc_preference_shared_get_double_p();
@@ -833,6 +1007,8 @@ int utc_preference_main(int argc, char *argv[])
 	utc_preference_shared_get_bool_n();
 	utc_preference_shared_get_string_p();
 	utc_preference_shared_get_string_n();
+	utc_preference_shared_get_binary_p();
+	utc_preference_shared_get_binary_n();
 	utc_preference_shared_set_changed_cb_p();
 	utc_preference_shared_set_changed_cb_n();
 	utc_preference_shared_unset_changed_cb_p();
