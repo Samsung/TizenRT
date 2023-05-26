@@ -191,6 +191,14 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	heap->mm_nregions++;
 #endif
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* add guard nodes size to the newly added region as they are considered as allocated*/
+	heap->total_alloc_size += 2 * SIZEOF_MM_ALLOCNODE;
+	if (heap->peak_alloc_size < heap->total_alloc_size) {
+		heap->peak_alloc_size = heap->total_alloc_size;
+	}
+#endif
+
 	/* Add the single, large free node to the nodelist */
 
 	mm_addfreechunk(heap, node);
@@ -253,6 +261,10 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 	mm_seminitialize(heap);
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	heap->total_alloc_size = heap->peak_alloc_size = 0;
+#endif
+
 	/* Add the initial region of memory to the heap */
 
 	ret = mm_addregion(heap, heapstart, heapsize);
@@ -263,7 +275,6 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
 		heap->alloc_list[i].pid = HEAPINFO_INIT_INFO;
 	}
-	heap->total_alloc_size = heap->peak_alloc_size = 0;
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	heapinfo_update_group_info(INVALID_PROCESS_ID, HEAPINFO_INVALID_GROUPID, HEAPINFO_INIT_INFO);
 #endif
