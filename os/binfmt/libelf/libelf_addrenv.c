@@ -287,15 +287,15 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo)
 {
 	if (loadinfo->binp->sections[BIN_TEXT]) {
-		kmm_free(loadinfo->binp->sections[BIN_TEXT]);
-		loadinfo->binp->sections[BIN_TEXT] = NULL;
+		kmm_free((void *)(loadinfo->binp->sections[BIN_TEXT]));
+		loadinfo->binp->sections[BIN_TEXT] = (int)NULL;
 	}
 	if (loadinfo->binp->sections[BIN_DATA]) {
-		kmm_free(loadinfo->binp->sections[BIN_DATA]);
-		loadinfo->binp->sections[BIN_DATA] = NULL;
+		kmm_free((void *)(loadinfo->binp->sections[BIN_DATA]));
+		loadinfo->binp->sections[BIN_DATA] = (int)NULL;
 	}
 	if (loadinfo->binp->sections[BIN_RO]) {
-		kmm_free(loadinfo->binp->sections[BIN_RO]);
-		loadinfo->binp->sections[BIN_RO] = NULL;
+		kmm_free((void *)(loadinfo->binp->sections[BIN_RO]));
+		loadinfo->binp->sections[BIN_RO] = (int)NULL;
 	}
 }
