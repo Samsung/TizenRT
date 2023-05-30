@@ -263,6 +263,11 @@ template<class T, class charT, class traits>
 #include <cmath>
 #include <sstream>
 
+/*
+ * Header file includd libcxx/math.h to resolve compilation error of cmath hides defintions in math.h in C11 & C14.
+ * Reference: https://stackoverflow.com/questions/39130040/cmath-hides-isnan-in-math-h-in-c14-c11
+ */
+
 #include "libcxx/math.h"
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
