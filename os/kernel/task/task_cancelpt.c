@@ -284,7 +284,7 @@ void notify_cancellation(FAR struct tcb_s *tcb)
 	 * because it can compete with interrupt level activity.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Make sure that the cancellation pending indication is set. */
 
@@ -318,6 +318,6 @@ void notify_cancellation(FAR struct tcb_s *tcb)
 #endif
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 

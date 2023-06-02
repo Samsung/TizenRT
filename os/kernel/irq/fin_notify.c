@@ -54,7 +54,7 @@ int fin_notify(pid_t pid, int data)
 	int saved_state;
 	struct tcb_s *tcb;
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL) {
@@ -73,7 +73,7 @@ int fin_notify(pid_t pid, int data)
 		up_unblock_task(tcb);
 	}
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	return OK;
 }

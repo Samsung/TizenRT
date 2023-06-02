@@ -2057,7 +2057,7 @@ static int enc_ifdown(struct net_driver_s *dev)
 
 	/* Disable the Ethernet interrupt */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->lower->disable(priv->lower);
 
 	/* Cancel the TX poll timer and TX timeout timers */
@@ -2071,7 +2071,7 @@ static int enc_ifdown(struct net_driver_s *dev)
 	enc_pwrsave(priv);
 
 	priv->ifstate = ENCSTATE_DOWN;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Un-lock the SPI bus */
 	enc_unlock(priv);
@@ -2113,7 +2113,7 @@ static int enc_txavail(struct net_driver_s *dev)
 
 	/* Ignore the notification if the interface is not yet up */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (priv->ifstate == ENCSTATE_UP) {
 		/* Check if the hardware is ready to send another packet.  The driver
 		 * starts a transmission process by setting ECON1.TXRTS. When the packet is
@@ -2130,7 +2130,7 @@ static int enc_txavail(struct net_driver_s *dev)
 
 	/* Un-lock the SPI bus */
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	enc_unlock(priv);
 	return OK;
 }
@@ -2532,10 +2532,10 @@ int enc_stats(unsigned int devno, struct enc_stats_s *stats)
 
 	/* Disable the Ethernet interrupt */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	memcpy(stats, &priv->stats, sizeof(struct enc_stats_s));
 	memset(&priv->stats, 0, sizeof(struct enc_stats_s));
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 #endif

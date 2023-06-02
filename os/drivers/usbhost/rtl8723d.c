@@ -449,7 +449,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	 * longer available.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->disconnected = true;
 	g_rtk_wifi_connect = 0;
 
@@ -472,7 +472,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	/* call usbhost_destroy to free resource  */
 	usbhost_destroy(priv);
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 #endif	
 	return OK;
 }

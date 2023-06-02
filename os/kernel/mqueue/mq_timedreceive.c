@@ -119,7 +119,7 @@ static void mq_rcvtimeout(int argc, uint32_t pid)
 	 * attempt to send a message while we are doing this.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Get the TCB associated with this pid.  It is possible that task may no
 	 * longer be active when this watchdog goes off.
@@ -139,7 +139,7 @@ static void mq_rcvtimeout(int argc, uint32_t pid)
 
 	/* Interrupts may now be re-enabled. */
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 }
 
 /****************************************************************************
@@ -249,7 +249,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 	 * because messages can be sent from interrupt level.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Check if the message queue is empty.  If it is NOT empty, then we
 	 * will not need to start timer.
@@ -276,7 +276,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 
 		if (result != OK) {
 			set_errno(result);
-			irqrestore(saved_state);
+			leave_critical_section(saved_state);
 			sched_unlock();
 			wd_delete(rtcb->waitdog);
 			rtcb->waitdog = NULL;
@@ -301,7 +301,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 
 	/* We can now restore interrupts */
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	/* Check if we got a message from the message queue.  We might
 	 * not have a message if:

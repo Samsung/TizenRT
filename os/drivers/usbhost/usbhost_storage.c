@@ -365,13 +365,13 @@ static inline FAR struct usbhost_state_s *usbhost_allocclass(void)
 	 * our pre-allocated class instances from the free list.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	entry = g_freelist;
 	if (entry) {
 		g_freelist = entry->flink;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	ullvdbg("Allocated: %p\n", entry);
 	return (FAR struct usbhost_state_s *)entry;
 }
@@ -416,10 +416,10 @@ static inline void usbhost_freeclass(FAR struct usbhost_state_s *usbclass)
 
 	/* Just put the pre-allocated class structure back on the freelist */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	entry->flink = g_freelist;
 	g_freelist = entry;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #else
 static inline void usbhost_freeclass(FAR struct usbhost_state_s *usbclass)
@@ -448,18 +448,18 @@ static int usbhost_allocdevno(FAR struct usbhost_state_s *priv)
 	irqstate_t flags;
 	int devno;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (devno = 0; devno < 26; devno++) {
 		uint32_t bitno = 1 << devno;
 		if ((g_devinuse & bitno) == 0) {
 			g_devinuse |= bitno;
 			priv->sdchar = 'a' + devno;
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return OK;
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return -EMFILE;
 }
 
@@ -468,9 +468,9 @@ static void usbhost_freedevno(FAR struct usbhost_state_s *priv)
 	int devno = 'a' - priv->sdchar;
 
 	if (devno >= 0 && devno < 26) {
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 		g_devinuse &= ~(1 << devno);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 }
 
@@ -1727,7 +1727,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	 * is no longer available.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->disconnected = true;
 
 	/* Now check the number of references on the class instance.  If it is one,
@@ -1756,7 +1756,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 
@@ -1790,7 +1790,7 @@ static int usbhost_open(FAR struct inode *inode)
 	 * events.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (priv->disconnected) {
 		/* No... the block driver is no longer bound to the class.  That means that
 		 * the USB storage device is no longer connected.  Refuse any further
@@ -1804,7 +1804,7 @@ static int usbhost_open(FAR struct inode *inode)
 		priv->crefs++;
 		ret = OK;
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	usbhost_givesem(&priv->exclsem);
 	return ret;
@@ -1843,7 +1843,7 @@ static int usbhost_close(FAR struct inode *inode)
 	 * no asynchronous disconnect events.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Check if the USB mass storage device is still connected.  If the
 	 * storage device is not connected and the reference count just
@@ -1858,7 +1858,7 @@ static int usbhost_close(FAR struct inode *inode)
 		usbhost_destroy(priv);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 

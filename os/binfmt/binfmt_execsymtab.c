@@ -130,7 +130,7 @@ void exec_getsymtab(FAR const struct symtab_s **symtab, FAR int *nsymbols)
 	 * size are returned as a single atomic operation.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 #ifdef CONFIG_EXECFUNCS_HAVE_SYMTAB
 	/* If a bring-up symbol table has been provided and if the exec symbol
@@ -148,7 +148,7 @@ void exec_getsymtab(FAR const struct symtab_s **symtab, FAR int *nsymbols)
 
 	*symtab = g_exec_symtab;
 	*nsymbols = g_exec_nsymbols;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -176,10 +176,10 @@ void exec_setsymtab(FAR const struct symtab_s *symtab, int nsymbols)
 	 * size are set as a single atomic operation.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	g_exec_symtab = symtab;
 	g_exec_nsymbols = nsymbols;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 #endif							/* CONFIG_LIBC_EXECFUNCS */

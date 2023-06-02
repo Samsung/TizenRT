@@ -241,7 +241,7 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 		 * can be modified by the child thread.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 
 		/* Mark that status should be not be retained */
 
@@ -250,7 +250,7 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 		/* Free all pending exit status */
 
 		group_removechildren(rtcb->group);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 #endif
 

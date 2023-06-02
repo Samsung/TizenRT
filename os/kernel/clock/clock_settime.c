@@ -124,7 +124,7 @@ int clock_settime(clockid_t clock_id, FAR const struct timespec *tp)
 		 * possible.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 
 		/* Save the new base time. */
 
@@ -152,7 +152,7 @@ int clock_settime(clockid_t clock_id, FAR const struct timespec *tp)
 		g_basetime.tv_nsec -= bias.tv_nsec;
 		g_basetime.tv_sec  -= bias.tv_sec;
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		svdbg("basetime=(%ld,%lu) bias=(%ld,%lu)\n", (long)g_basetime.tv_sec, (unsigned long)g_basetime.tv_nsec, (long)bias.tv_sec, (unsigned long)bias.tv_nsec);
 	} else {

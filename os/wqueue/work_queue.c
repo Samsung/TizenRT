@@ -130,7 +130,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 	while (work_lock() < 0);
 #else
 	irqstate_t flags;
-	flags = irqsave();
+	flags = enter_critical_section();
 #endif
 
 	/* check whether requested work is in queue list or not */
@@ -140,7 +140,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 			work_unlock();
 #else
-			irqrestore(flags);
+			leave_critical_section(flags);
 #endif
 			return -EALREADY;
 		}
@@ -168,7 +168,7 @@ int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t w
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	work_unlock();
 #else
-	irqrestore(flags);
+	leave_critical_section(flags);
 #endif
 
 	return OK;

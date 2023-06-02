@@ -110,7 +110,7 @@ int irq_attach(int irq, xcpt_t isr, FAR void *arg)
 		 * to the unexpected interrupt handler.
 		 */
 
-		state = irqsave();
+		state = enter_critical_section();
 		if (isr == NULL) {
 			/* Disable the interrupt if we can before detaching it.  We might
 			 * not be able to do this if:  (1) the device does not have a
@@ -148,7 +148,7 @@ int irq_attach(int irq, xcpt_t isr, FAR void *arg)
 			g_irqvector[irq].irq_name[0] = '\0';
 		}
 #endif
-		irqrestore(state);
+		leave_critical_section(state);
 		ret = OK;
 	}
 

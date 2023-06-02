@@ -123,9 +123,9 @@ int binfmt_exit(FAR struct binary_s *bin)
 	while (address) {
 		mllvdbg("Remove addr %p from deplaed kufree, uheap (%p, %p)\n", address, uheap_start, uheap_end);
 		if (uheap_start <= (uint32_t)address && (uint32_t)address <= uheap_end) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			sq_rem((FAR sq_entry_t *)address, (FAR sq_queue_t *)&g_delayed_kufree);
-			irqrestore(flags);
+			leave_critical_section(flags);
 		}
 		address = (FAR void *)sq_next((FAR sq_entry_t *)address);
 	}

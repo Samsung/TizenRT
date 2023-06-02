@@ -173,7 +173,7 @@ static int can_open(FAR struct file *filep)
 			if (tmp == 1) {
 				/* Yes.. perform one time hardware initialization. */
 
-				irqstate_t flags = irqsave();
+				irqstate_t flags = enter_critical_section();
 				ret = dev_setup(dev);
 				if (ret == OK) {
 					/* Mark the FIFOs empty */
@@ -192,7 +192,7 @@ static int can_open(FAR struct file *filep)
 
 					dev->cd_ocount = tmp;
 				}
-				irqrestore(flags);
+				leave_critical_section(flags);
 			}
 		}
 		sem_post(&dev->cd_closesem);
@@ -260,9 +260,9 @@ static int can_close(FAR struct file *filep)
 
 			/* Free the IRQ and disable the CAN device */
 
-			flags = irqsave();	/* Disable interrupts */
+			flags = enter_critical_section();	/* Disable interrupts */
 			dev_shutdown(dev);	/* Disable the CAN */
-			irqrestore(flags);
+			leave_critical_section(flags);
 
 			sem_post(&dev->cd_closesem);
 		}
@@ -297,7 +297,7 @@ static ssize_t can_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 	if (buflen >= CAN_MSGLEN(0)) {
 		/* Interrupts must be disabled while accessing the cd_recv FIFO */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		while (dev->cd_recv.rx_head == dev->cd_recv.rx_tail) {
 			/* The receive FIFO is empty -- was non-blocking mode selected? */
 
@@ -349,7 +349,7 @@ static ssize_t can_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 		ret = nread;
 
 return_with_irqdisabled:
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 
 	return ret;
@@ -443,7 +443,7 @@ static ssize_t can_write(FAR struct file *filep, FAR const char *buffer, size_t 
 
 	/* Interrupts must disabled throughout the following */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Check if the TX is inactive when we started. In certain race conditions,
 	 * there may be a pending interrupt to kick things back off, but we will
@@ -540,7 +540,7 @@ static ssize_t can_write(FAR struct file *filep, FAR const char *buffer, size_t 
 	ret = nsent;
 
 return_with_irqdisabled:
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 
@@ -564,7 +564,7 @@ static inline ssize_t can_rtrread(FAR struct can_dev_s *dev, FAR struct canioctl
 
 	/* Disable interrupts through this operation */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Find an available slot in the pending RTR list */
 
@@ -590,7 +590,7 @@ static inline ssize_t can_rtrread(FAR struct can_dev_s *dev, FAR struct canioctl
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 

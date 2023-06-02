@@ -128,16 +128,16 @@ int sched_start_cpuload_snapshot(int ticks)
 {
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* Allocate data buffer for CPU load measurements in time interval */
 	g_cpusnap_arr = (pid_t *)kmm_realloc(g_cpusnap_arr, ticks * sizeof(pid_t));
 	if (g_cpusnap_arr == NULL) {
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return -ENOMEM;
 	}
 	g_cpusnap_arr_size = ticks;
 	g_cpusnap_head = 0;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return OK;
 }
@@ -186,7 +186,7 @@ void sched_clear_cpuload(pid_t pid)
 
 	hash_ndx = PIDHASH(pid);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* Decrement the total CPU load count held by this thread from the
 	 * total for all threads.  Then we can reset the count on this
 	 * defunct thread to zero.
@@ -195,7 +195,7 @@ void sched_clear_cpuload(pid_t pid)
 		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx]->ticks[cpuload_idx];
 		g_pidhash[hash_ndx]->ticks[cpuload_idx] = 0;
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 #ifndef CONFIG_SCHED_CPULOAD_EXTCLK
@@ -302,7 +302,7 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	 * synchronized when read.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Make sure that the entry is valid (TCB field is not NULL) and matches
 	 * the requested PID.  The first check is needed if the thread has exited.
@@ -323,7 +323,7 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 		ret = OK;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 #endif							/* CONFIG_SCHED_CPULOAD */

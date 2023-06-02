@@ -41,7 +41,7 @@
 
 static volatile spinlock_t g_irq_spin = SP_UNLOCKED;
 
-/* Handles nested calls to spin_lock_irqsave and spin_unlock_irqrestore */
+/* Handles nested calls to spin_lock_enter_critical_section and spin_unlock_irqrestore */
 
 static volatile uint8_t g_irq_spin_count[CONFIG_SMP_NCPUS];
 

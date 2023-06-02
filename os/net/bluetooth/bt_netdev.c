@@ -621,7 +621,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 
 	/* Disable interruption */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Cancel the TX poll timer and TX timeout timers */
 
@@ -635,7 +635,7 @@ static int btnet_ifdown(FAR struct net_driver_s *netdev)
 	/* Mark the device "down" */
 
 	priv->bd_bifup = false;
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 

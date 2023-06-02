@@ -117,7 +117,7 @@ int wd_cancel(WDOG_ID wdog)
 	 * cancellation is complete
 	 */
 
-	state = irqsave();
+	state = enter_critical_section();
 
 	/* Make sure that the watchdog is initialized (non-NULL) and is still
 	 * active.
@@ -179,6 +179,6 @@ int wd_cancel(WDOG_ID wdog)
 		ret = OK;
 	}
 
-	irqrestore(state);
+	leave_critical_section(state);
 	return ret;
 }

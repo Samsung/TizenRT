@@ -175,7 +175,7 @@ irqstate_t enter_critical_section(void)
 	 *
 	 * NOTE 1: Ideally this should disable interrupts on all CPUs, but most
 	 * architectures only support disabling interrupts on the local CPU.
-	 * NOTE 2: Interrupts may already be disabled, but we call irqsave()
+	 * NOTE 2: Interrupts may already be disabled, but we call enter_critical_section()
 	 * unconditionally because we need to return valid interrupt status in any
 	 * event.
 	 * NOTE 3: We disable local interrupts BEFORE taking the spinlock in order
@@ -210,7 +210,7 @@ try_again:
 		 *   2. We were in a critical section and interrupts on this
 		 *      this CPU were disabled -- this is an impossible case.
 		 *
-		 *   3. We were in critical section, but irqsave() only
+		 *   3. We were in critical section, but enter_critical_section() only
 		 *      disabled local interrupts on a different CPU;
 		 *      Interrupts could still be enabled on this CPU.
 		 *
@@ -498,6 +498,11 @@ void leave_critical_section(irqstate_t flags)
 				/* Decrement our count on the lock.  If all CPUs have
 				 * released, then unlock the spinlock.
 				 */
+
+				if (!(spin_islocked(&g_cpu_irqlock) &&
+                                                (g_cpu_irqset & (1 << cpu)) != 0)) {
+					dbg("cpu = %d task = %s spin locked = %d irqset = 0x%08x\n", cpu, rtcb->name, spin_islocked(&g_cpu_irqlock), g_cpu_irqset);
+				}
 
 				DEBUGASSERT(spin_islocked(&g_cpu_irqlock) && 
 						(g_cpu_irqset & (1 << cpu)) != 0);

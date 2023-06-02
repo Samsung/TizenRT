@@ -138,18 +138,18 @@ static void group_assigngid(FAR struct task_group_s *group)
 	for (;;) {
 		/* Increment the ID counter.  This is global data so be extra paranoid. */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		gid = ++g_gidcounter;
 
 		/* Check for overflow */
 
 		if (gid <= 0) {
 			g_gidcounter = 1;
-			irqrestore(flags);
+			leave_critical_section(flags);
 		} else {
 			/* Does a task group with this ID already exist? */
 
-			irqrestore(flags);
+			leave_critical_section(flags);
 			if (group_findbygid(gid) == NULL) {
 				/* Now assign this ID to the group and return */
 
@@ -318,10 +318,10 @@ int group_initialize(FAR struct task_tcb_s *tcb)
 #if defined(HAVE_GROUP_MEMBERS) || defined(CONFIG_ARCH_ADDRENV)
 	/* Add the initialized entry to the list of groups */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	group->flink = g_grouphead;
 	g_grouphead = group;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 #endif
 #if defined(CONFIG_PREFERENCE) && CONFIG_TASK_NAME_SIZE > 0

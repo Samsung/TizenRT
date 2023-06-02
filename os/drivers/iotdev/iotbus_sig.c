@@ -223,7 +223,7 @@ void iotbus_interrupt_trigger(iotbus_int_type_e int_type)
 
 	ibdbg("interrupt triggered int : %d, sig : %d\n", int_type, signal);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	struct int_node_s *itr = dev->table[int_type];
 	for (; itr != NULL; itr = itr->next) {
 		pid = itr->data->pid;
@@ -243,7 +243,7 @@ void iotbus_interrupt_trigger(iotbus_int_type_e int_type)
 			ibdbg("Trigger Error!\n");
 		}
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return;
 }
 

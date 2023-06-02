@@ -342,7 +342,7 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 	 * that the system timer is stable.
 	 */
 
-	state = irqsave();
+	state = enter_critical_section();
 
 	/* Check if abstime is selected */
 
@@ -377,7 +377,7 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 		ret = wd_start(timer->pt_wdog, delay, (wdentry_t)timer_timeout, 1, (uint32_t)((uintptr_t)timer));
 	}
 
-	irqrestore(state);
+	leave_critical_section(state);
 	return ret;
 }
 

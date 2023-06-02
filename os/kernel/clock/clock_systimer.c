@@ -132,9 +132,9 @@ clock_t clock_systimer(void)
 
 	/* 64-bit accesses are not atomic on most architectures. */
 
-	flags  = irqsave();
+	flags  = enter_critical_section();
 	sample = g_system_timer;
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return sample;
 
 #else							/* CONFIG_SYSTEM_TIME64 */

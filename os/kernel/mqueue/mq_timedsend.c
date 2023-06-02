@@ -119,7 +119,7 @@ static void mq_sndtimeout(int argc, uint32_t pid)
 	 * attempt to send a message while we are doing this.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Get the TCB associated with this pid.  It is possible that task may no
 	 * longer be active when this watchdog goes off.
@@ -139,7 +139,7 @@ static void mq_sndtimeout(int argc, uint32_t pid)
 
 	/* Interrupts may now be re-enabled. */
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 }
 
 /****************************************************************************
@@ -249,12 +249,12 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 	 */
 
 	sched_lock();
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	if (up_interrupt_context() ||	/* In an interrupt handler */
 		msgq->nmsgs < msgq->maxmsgs) {	/* OR Message queue not full */
 		/* Allocate the message */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		mqmsg = mq_msgalloc();
 	} else {
 		int ticks;
@@ -303,7 +303,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 
 		/* That is the end of the atomic operations */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* If any of the above failed, set the errno.  Otherwise, there should
 		 * be space for another message in the message queue.  NOW we can allocate

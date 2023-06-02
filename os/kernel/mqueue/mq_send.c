@@ -165,13 +165,13 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 	 *   non-FULL.  This would fail with EAGAIN, EINTR, or ETIMEOUT.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	if (up_interrupt_context() ||	/* In an interrupt handler */
 		msgq->nmsgs < msgq->maxmsgs ||	/* OR Message queue not full */
 		mq_waitsend(mqdes) == OK) {	/* OR Successfully waited for mq not full */
 		/* Allocate the message */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		mqmsg = mq_msgalloc();
 	} else {
 		/* We cannot send the message (and didn't even try to allocate it)
@@ -181,7 +181,7 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 		 * - When we tried waiting, the wait was unsuccessful.
 		 */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	sched_lock();

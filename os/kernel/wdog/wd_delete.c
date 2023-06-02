@@ -120,7 +120,7 @@ int wd_delete(WDOG_ID wdog)
 	 * it is being deallocated.
 	 */
 
-	state = irqsave();
+	state = enter_critical_section();
 
 	/* Check if the watchdog has been started. */
 
@@ -143,7 +143,7 @@ int wd_delete(WDOG_ID wdog)
 		 * We don't need interrupts disabled to do this.
 		 */
 
-		irqrestore(state);
+		leave_critical_section(state);
 		sched_kfree(wdog);
 	}
 
@@ -159,13 +159,13 @@ int wd_delete(WDOG_ID wdog)
 		sq_addlast((FAR sq_entry_t *)wdog, &g_wdfreelist);
 		g_wdnfree++;
 		DEBUGASSERT(g_wdnfree <= CONFIG_PREALLOC_WDOGS);
-		irqrestore(state);
+		leave_critical_section(state);
 	} else {
 		/* There is no guarantee that, this API is not called for statically
 		 * allocated timers as wd_delete is a global function. So restore the
 		 * irq properly so that it does not break the system */
 
-		irqrestore(state);
+		leave_critical_section(state);
 	}
 
 	/* Return success */

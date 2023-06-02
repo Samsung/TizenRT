@@ -115,7 +115,7 @@
 
 int task_activate(FAR struct tcb_s *tcb)
 {
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 #ifndef CONFIG_DISABLE_SIGNALS
 	int ret;
 	struct sigaction act;
@@ -142,6 +142,6 @@ int task_activate(FAR struct tcb_s *tcb)
 	}
 #endif
 	up_unblock_task(tcb);
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }

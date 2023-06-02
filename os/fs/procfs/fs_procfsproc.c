@@ -1003,9 +1003,9 @@ static int proc_open(FAR struct file *filep, FAR const char *relpath, int oflags
 
 	pid = (pid_t)tmp;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	tcb = sched_gettcb(pid);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	if (!tcb) {
 		fdbg("ERROR: PID %d is no longer valid\n", (int)pid);
@@ -1088,12 +1088,12 @@ static ssize_t proc_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 
 	/* Verify that the thread is still valid */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	tcb = sched_gettcb(procfile->pid);
 
 	if (!tcb) {
 		fdbg("ERROR: PID %d is not valid\n", (int)procfile->pid);
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return -ENODEV;
 	}
 
@@ -1134,7 +1134,7 @@ static ssize_t proc_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 		break;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Update the file offset */
 
@@ -1235,9 +1235,9 @@ static int proc_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 
 	pid = (pid_t)tmp;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	tcb = sched_gettcb(pid);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	if (!tcb) {
 		fdbg("ERROR: PID %d is not valid\n", (int)pid);
@@ -1357,9 +1357,9 @@ static int proc_readdir(struct fs_dirent_s *dir)
 
 		pid = procdir->pid;
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		tcb = sched_gettcb(pid);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		if (!tcb) {
 			fdbg("ERROR: PID %d is no longer valid\n", (int)pid);
@@ -1463,9 +1463,9 @@ static int proc_stat(const char *relpath, struct stat *buf)
 
 	pid = (pid_t)tmp;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	tcb = sched_gettcb(pid);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	if (!tcb) {
 		fdbg("ERROR: PID %d is no longer valid\n", (int)pid);

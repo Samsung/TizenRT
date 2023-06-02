@@ -136,7 +136,7 @@ void sem_recover(FAR struct tcb_s *tcb)
 	 * enforce that here).
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (tcb->task_state == TSTATE_WAIT_SEM) {
 		sem_t *sem = tcb->waitsem;
 		DEBUGASSERT(sem != NULL && sem->semcount < 0);
@@ -169,5 +169,5 @@ void sem_recover(FAR struct tcb_s *tcb)
 
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }

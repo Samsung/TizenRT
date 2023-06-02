@@ -248,7 +248,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 			 */
 
 			sched_lock();
-			int_state = irqsave();
+			int_state = enter_critical_section();
 
 			/* Convert the timespec to clock ticks.  We must disable pre-emption
 			 * here so that this time stays valid until the wait begins.
@@ -260,7 +260,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 				 * we fall through the if/then/else)
 				 */
 
-				irqrestore(int_state);
+				leave_critical_section(int_state);
 			} else {
 				/* Check the absolute time to wait.  If it is now or in the past, then
 				 * just return with the timedout condition.
@@ -272,7 +272,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					 * if/then/else
 					 */
 
-					irqrestore(int_state);
+					leave_critical_section(int_state);
 					ret = ETIMEDOUT;
 				} else {
 					/* Give up the mutex */
@@ -284,7 +284,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 						 * we fall through the if/then/else)
 						 */
 
-						irqrestore(int_state);
+						leave_critical_section(int_state);
 					} else {
 						/* Start the watchdog */
 
@@ -320,7 +320,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 						 * handling! (bad)
 						 */
 
-						irqrestore(int_state);
+						leave_critical_section(int_state);
 					}
 
 					/* Reacquire the mutex (retaining the ret). */

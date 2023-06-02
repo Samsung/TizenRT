@@ -221,7 +221,7 @@ int task_restart(pid_t pid)
 		 * TCB should no longer be accessible to the system
 		 */
 
-		state = irqsave();
+		state = enter_critical_section();
 #ifdef CONFIG_SMP
 		FAR dq_queue_t *tasklist = TLIST_HEAD(tcb->cmn.task_state, tcb->cmn.cpu);
 		dq_rem((FAR dq_entry_t *)tcb, tasklist);
@@ -229,7 +229,7 @@ int task_restart(pid_t pid)
 		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->cmn.task_state].list);
 #endif
 		tcb->cmn.task_state = TSTATE_TASK_INVALID;
-		irqrestore(state);
+		leave_critical_section(state);
 
 #ifndef CONFIG_DISABLE_SIGNALS
 		/* Deallocate anything left in the TCB's queues */

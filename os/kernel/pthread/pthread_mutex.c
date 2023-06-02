@@ -94,10 +94,10 @@ static void pthread_mutex_add(FAR struct pthread_mutex_s *mutex)
 
 	/* Add the mutex to the list of mutexes held by this task */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	mutex->flink = rtcb->mhead;
 	rtcb->mhead = mutex;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -247,7 +247,7 @@ int pthread_mutex_give(FAR struct pthread_mutex_s *mutex)
 		FAR struct pthread_tcb_s *rtcb = (FAR struct pthread_tcb_s *)this_task();
 		irqstate_t flags;
 
-		flags = irqsave();
+		flags = enter_critical_section();
 
 		/* Remove the mutex from the list of mutexes held by this task */
 
@@ -266,7 +266,7 @@ int pthread_mutex_give(FAR struct pthread_mutex_s *mutex)
 		}
 
 		mutex->flink = NULL;
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* Now release the underlying semaphore */
 
@@ -305,10 +305,10 @@ uint16_t pthread_disable_cancel(void)
 	 * because it can compete with interrupt level activity.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	old = tcb->cmn.flags & (TCB_FLAG_CANCEL_PENDING | TCB_FLAG_NONCANCELABLE);
 	tcb->cmn.flags &= ~(TCB_FLAG_CANCEL_PENDING | TCB_FLAG_NONCANCELABLE);
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return old;
 }
 
@@ -321,7 +321,7 @@ void pthread_enable_cancel(uint16_t cancelflags)
 	 * because it can compete with interrupt level activity.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	tcb->cmn.flags |= cancelflags;
 
 	/* What should we do if there is a pending cancellation?
@@ -338,6 +338,6 @@ void pthread_enable_cancel(uint16_t cancelflags)
 		pthread_exit(NULL);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #endif							/* CONFIG_CANCELLATION_POINTS */

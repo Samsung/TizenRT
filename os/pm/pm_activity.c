@@ -117,7 +117,7 @@ void pm_activity(int domain, int priority)
 	if (priority > 0) {
 		/* Add the priority to the accumulated counts in a critical section. */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		accum = (uint32_t)pdom->accum + priority;
 
 		/* Make sure that we do not overflow the underlying uint16_t representation */
@@ -159,7 +159,7 @@ void pm_activity(int domain, int priority)
 			(void)pm_update(domain, tmp);
 		}
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 }
 
@@ -195,11 +195,11 @@ void pm_stay(int domain, enum pm_state_e state)
 	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
 	pdom = &g_pmglobals.domain[domain];
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	DEBUGASSERT(state < PM_COUNT);
 	DEBUGASSERT(pdom->stay[state] < UINT16_MAX);
 	pdom->stay[state]++;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -233,11 +233,11 @@ void pm_relax(int domain, enum pm_state_e state)
 	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
 	pdom = &g_pmglobals.domain[domain];
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	DEBUGASSERT(state < PM_COUNT);
 	DEBUGASSERT(pdom->stay[state] > 0);
 	pdom->stay[state]--;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************

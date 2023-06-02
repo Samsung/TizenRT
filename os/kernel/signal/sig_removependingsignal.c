@@ -110,7 +110,7 @@ FAR sigpendq_t *sig_removependingsignal(FAR struct tcb_s *stcb, int signo)
 
 	DEBUGASSERT(group);
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	for (prevsig = NULL, currsig = (FAR sigpendq_t *)group->sigpendingq.head; (currsig && currsig->info.si_signo != signo); prevsig = currsig, currsig = currsig->flink) ;
 
@@ -122,7 +122,7 @@ FAR sigpendq_t *sig_removependingsignal(FAR struct tcb_s *stcb, int signo)
 		}
 	}
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	return currsig;
 }

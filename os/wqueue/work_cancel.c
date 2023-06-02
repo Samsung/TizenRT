@@ -126,7 +126,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 	while (work_lock() < 0);
 #else
 	irqstate_t flags;
-	flags = irqsave();
+	flags = enter_critical_section();
 #endif
 	if (work->worker != NULL) {
 		/* A little test of the integrity of the work queue */
@@ -141,7 +141,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 				work_unlock();
 #else
-				irqrestore(flags);
+				leave_critical_section(flags);
 #endif
 				return -ENOENT;
 			} else if (cur_work == work) {
@@ -163,7 +163,7 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	work_unlock();
 #else
-	irqrestore(flags);
+	leave_critical_section(flags);
 #endif
 	return ret;
 }

@@ -431,7 +431,7 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 			 * Interrupts will be re-enabled while we are waiting.
 			 */
 
-			flags = irqsave();
+			flags = enter_critical_section();
 			(void)clock_gettime(CLOCK_REALTIME, &abstime);
 
 			abstime.tv_sec += sec;
@@ -456,7 +456,7 @@ int poll(FAR struct pollfd *fds, nfds_t nfds, int timeout)
 				}
 			}
 
-			irqrestore(flags);
+			leave_critical_section(flags);
 		} else {
 			/* Wait for the poll event or signal with no timeout */
 

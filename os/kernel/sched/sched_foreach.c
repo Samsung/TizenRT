@@ -82,7 +82,7 @@
 
 void sched_foreach(sched_foreach_t handler, FAR void *arg)
 {
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 	int ndx;
 
 	/* Vist each active task */
@@ -93,5 +93,5 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }

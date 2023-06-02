@@ -107,12 +107,12 @@ static inline int test_bit(int nr, const long unsigned int *addr)
 	} while (0)
 /* spinlock related */
 #ifndef CONFIG_SPINLOCK
-#define spin_lock_irqsave(a, b) \
+#define spin_lock_enter_critical_section(a, b) \
 	UNUSED(a);  \
-	b = irqsave();
-#define spin_unlock_irqrestore(a, b) \
+	b = enter_critical_section();
+#define spin_unlock_leave_critical_section(a, b) \
 	UNUSED(a); \
-	 irqrestore((irqstate_t)b);
+	 leave_critical_section((irqstate_t)b);
 #define spin_lock_init(a) UNUSED(a);
 #endif							//CONFIG_SPINLOCK
 #define small_const_nbits(nbits) \

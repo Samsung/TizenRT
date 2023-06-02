@@ -130,7 +130,7 @@ int sem_trywait(FAR sem_t *sem)
 		 * because sem_post() may be called from an interrupt handler.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 
 		/* If the semaphore is available, give it to the requesting task */
 
@@ -152,7 +152,7 @@ int sem_trywait(FAR sem_t *sem)
 
 		/* Interrupts may now be enabled. */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	} else {
 		set_errno(EINVAL);
 	}

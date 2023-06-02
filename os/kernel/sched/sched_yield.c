@@ -108,9 +108,9 @@ int sched_yield(void)
 #else
 	irqstate_t saved_state;
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	up_schedyield();
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	return OK;
 #endif							/* End of CONFIG_SCHED_YIELD_OPTIMIZATION */

@@ -117,7 +117,7 @@ WDOG_ID wd_create(void)
 	 * timers.
 	 */
 
-	state = irqsave();
+	state = enter_critical_section();
 
 	/* If we are in an interrupt handler -OR- if the number of pre-allocated
 	 * timer structures exceeds the reserve, then take the next timer from
@@ -145,7 +145,7 @@ WDOG_ID wd_create(void)
 			/* If wdog is Null, g_wdnfree must be zero, else assert */
 			DEBUGASSERT(g_wdnfree == 0);
 		}
-		irqrestore(state);
+		leave_critical_section(state);
 	}
 
 	/* We are in a normal tasking context AND there are not enough unreserved,
@@ -156,7 +156,7 @@ WDOG_ID wd_create(void)
 	else {
 		/* We do not require that interrupts be disabled to do this. */
 
-		irqrestore(state);
+		leave_critical_section(state);
 		wdog = (FAR struct wdog_s *)kmm_malloc(sizeof(struct wdog_s));
 
 		/* Did we get one? */

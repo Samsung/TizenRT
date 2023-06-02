@@ -161,7 +161,7 @@ void usbhost_trace_common(uint32_t event)
 
 	/* Check if tracing is enabled for this ID */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (!g_disabled) {
 		/* Yes... save the new trace data at the head */
 
@@ -179,7 +179,7 @@ void usbhost_trace_common(uint32_t event)
 			}
 		}
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #endif							/* CONFIG_USBHOST_TRACE */
 

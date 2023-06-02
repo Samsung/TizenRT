@@ -116,9 +116,9 @@ static inline void sched_kucleanup(void)
 		if (heap && heap->mm_semaphore.semcount <= 0) {
 			continue;
 		}
-		flags = irqsave();
+		flags = enter_critical_section();
 		address = (FAR void *)sq_remfirst((FAR sq_queue_t *)&g_delayed_kufree);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* The address should always be non-NULL since that was checked in the
 		 * 'while' condition above.
@@ -162,9 +162,9 @@ static inline void sched_kcleanup(void)
 		 * we must disable interrupts around the queue operation.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		address = (FAR void *)sq_remfirst((FAR sq_queue_t *)&g_delayed_kfree);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* The address should always be non-NULL since that was checked in the
 		 * 'while' condition above.

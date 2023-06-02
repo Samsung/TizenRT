@@ -168,7 +168,7 @@ void weak_function timer_deleteall(pid_t pid)
 	FAR struct posix_timer_s *next;
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (timer = (FAR struct posix_timer_s *)g_alloctimers.head; timer; timer = next) {
 		next = timer->flink;
 		if (timer->pt_owner == pid) {
@@ -176,7 +176,7 @@ void weak_function timer_deleteall(pid_t pid)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 #endif							/* CONFIG_DISABLE_POSIX_TIMERS */

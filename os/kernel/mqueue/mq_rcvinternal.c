@@ -306,7 +306,7 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 		 * messages can be sent from interrupt handlers.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		for (btcb = (FAR struct tcb_s *)g_waitingformqnotfull.head; btcb && btcb->msgwaitq != msgq; btcb = btcb->flink) ;
 
 		/* If one was found, unblock it.  NOTE:  There is a race
@@ -320,7 +320,7 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 		msgq->nwaitnotfull--;
 		up_unblock_task(btcb);
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	trace_end(TTRACE_TAG_IPC);

@@ -137,7 +137,7 @@ static void ppd42ns_interrupt_handler(FAR void *arg)
 	}
 
 	/* disable interrupt */
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	if (priv->old_signal == GPIO_SIGNAL_LOW) {
 		/* signal LOW -> HIGH */
@@ -151,7 +151,7 @@ static void ppd42ns_interrupt_handler(FAR void *arg)
 	}
 
 	/* enable interrupt */
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************

@@ -514,11 +514,11 @@ static void platform_mif_irq_bit_mask(struct scsc_mif_abs *interface, int bit_nu
 		dev_err(NULL, "Incorrect INT number: %d\n", bit_num);
 		return;
 	}
-	spin_lock_irqsave(&platform->mif_spinlock, flags);
+	spin_lock_enter_critical_section(&platform->mif_spinlock, flags);
 	val = platform_mif_reg_read(platform, MAILBOX_WLBT_REG(INTMR0));
 	/* WRITE : 1 = Mask Interrupt */
 	platform_mif_reg_write(platform, MAILBOX_WLBT_REG(INTMR0), val | ((1 << bit_num) << 16));
-	spin_unlock_irqrestore(&platform->mif_spinlock, flags);
+	spin_unlock_leave_critical_section(&platform->mif_spinlock, flags);
 }
 
 static void platform_mif_irq_bit_unmask(struct scsc_mif_abs *interface, int bit_num)
@@ -531,11 +531,11 @@ static void platform_mif_irq_bit_unmask(struct scsc_mif_abs *interface, int bit_
 		dev_err(NULL, "Incorrect INT number: %d\n", bit_num);
 		return;
 	}
-	spin_lock_irqsave(&platform->mif_spinlock, flags);
+	spin_lock_enter_critical_section(&platform->mif_spinlock, flags);
 	val = platform_mif_reg_read(platform, MAILBOX_WLBT_REG(INTMR0));
 	/* WRITE : 0 = Unmask Interrupt */
 	platform_mif_reg_write(platform, MAILBOX_WLBT_REG(INTMR0), val & ~((1 << bit_num) << 16));
-	spin_unlock_irqrestore(&platform->mif_spinlock, flags);
+	spin_unlock_leave_critical_section(&platform->mif_spinlock, flags);
 }
 
 static void platform_mif_irq_reg_handler(struct scsc_mif_abs *interface, void (*handler)(int irq, void *data), void *dev)
@@ -543,10 +543,10 @@ static void platform_mif_irq_reg_handler(struct scsc_mif_abs *interface, void (*
 	struct platform_mif *platform = platform_mif_from_mif_abs(interface);
 	unsigned long flags;
 
-	spin_lock_irqsave(&platform->mif_spinlock, flags);
+	spin_lock_enter_critical_section(&platform->mif_spinlock, flags);
 	platform->r4_handler = handler;
 	platform->irq_dev = dev;
-	spin_unlock_irqrestore(&platform->mif_spinlock, flags);
+	spin_unlock_leave_critical_section(&platform->mif_spinlock, flags);
 }
 
 static void platform_mif_irq_unreg_handler(struct scsc_mif_abs *interface)
@@ -556,10 +556,10 @@ static void platform_mif_irq_unreg_handler(struct scsc_mif_abs *interface)
 #ifdef CONFIG_SCSC_WLAN_LOGLVL_ALL
 	dev_info(NULL, "Unregistering mif int handler %pS\n", interface);
 #endif
-	spin_lock_irqsave(&platform->mif_spinlock, flags);
+	spin_lock_enter_critical_section(&platform->mif_spinlock, flags);
 	platform->r4_handler = platform_mif_irq_default_handler;
 	platform->irq_dev = NULL;
-	spin_unlock_irqrestore(&platform->mif_spinlock, flags);
+	spin_unlock_leave_critical_section(&platform->mif_spinlock, flags);
 }
 
 static void platform_mif_irq_reg_reset_request_handler(struct scsc_mif_abs *interface, void (*handler)(int irq, void *data), void *dev)

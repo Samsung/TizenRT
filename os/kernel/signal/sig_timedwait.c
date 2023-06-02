@@ -228,7 +228,7 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 	 * can only be eliminated by disabling interrupts!
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Check if there is a pending signal corresponding to one of the
 	 * signals in the pending signal set argument.
@@ -257,7 +257,7 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 		/* Then dispose of the pending signal structure properly */
 
 		sig_releasependingsignal(sigpend);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* We will have to wait for a signal to be posted to this task. */
@@ -369,7 +369,7 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 			memcpy(info, &rtcb->sigunbinfo, sizeof(struct siginfo));
 		}
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	leave_cancellation_point();

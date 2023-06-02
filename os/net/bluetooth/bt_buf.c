@@ -237,7 +237,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 	 * then try the list of messages reserved for interrupt handlers
 	 */
 
-	flags = irqsave();			/* Always necessary in SMP mode */
+	flags = enter_critical_section();			/* Always necessary in SMP mode */
 	if (up_interrupt_context()) {
 #if CONFIG_BLUETOOTH_BUFFER_PREALLOC > CONFIG_BLUETOOTH_BUFFER_IRQRESERVE
 		/* Try the general free list */
@@ -246,7 +246,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			buf = g_buf_free;
 			g_buf_free = buf->flink;
 
-			irqrestore(flags);
+			leave_critical_section(flags);
 			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
@@ -257,12 +257,12 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 				buf = g_buf_free_irq;
 				g_buf_free_irq = buf->flink;
 
-				irqrestore(flags);
+				leave_critical_section(flags);
 				pool = POOL_BUFFER_IRQ;
 			} else
 #endif
 			{
-				irqrestore(flags);
+				leave_critical_section(flags);
 				return NULL;
 			}
 	}
@@ -277,7 +277,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			buf = g_buf_free;
 			g_buf_free = buf->flink;
 
-			irqrestore(flags);
+			leave_critical_section(flags);
 			pool = POOL_BUFFER_GENERAL;
 		} else
 #endif
@@ -286,7 +286,7 @@ FAR struct bt_buf_s *bt_buf_alloc(enum bt_buf_type_e type, FAR struct iob_s *iob
 			 * will have to allocate one from the kernel memory pool.
 			 */
 
-			irqrestore(flags);
+			leave_critical_section(flags);
 			buf = (FAR struct bt_buf_s *)kmm_malloc((sizeof(struct bt_buf_s)));
 
 			/* Check if we successfully allocated the buffer structure */
@@ -399,10 +399,10 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 		 * list from interrupt handlers.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		buf->flink = g_buf_free;
 		g_buf_free = buf;
-		irqrestore(flags);
+		leave_critical_section(flags);
 	} else
 #endif
 
@@ -416,10 +416,10 @@ void bt_buf_release(FAR struct bt_buf_s *buf)
 			 * list from interrupt handlers.
 			 */
 
-			flags = irqsave();
+			flags = enter_critical_section();
 			buf->flink = g_buf_free_irq;
 			g_buf_free_irq = buf;
-			irqrestore(flags);
+			leave_critical_section(flags);
 		} else
 #endif
 

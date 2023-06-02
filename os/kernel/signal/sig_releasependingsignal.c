@@ -114,9 +114,9 @@ void sig_releasependingsignal(FAR sigpendq_t *sigpend)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)sigpend, &g_sigpendingsignal);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* If this is a message pre-allocated for interrupts,
@@ -128,9 +128,9 @@ void sig_releasependingsignal(FAR sigpendq_t *sigpend)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)sigpend, &g_sigpendingirqsignal);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* Otherwise, deallocate it.  Note:  interrupt handlers

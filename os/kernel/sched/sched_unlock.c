@@ -115,7 +115,7 @@ int sched_unlock(void)
 	if (rtcb && !up_interrupt_context()) {
 		/* Prevent context switches throughout the following */
 
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 
 		/* Decrement the preemption lock counter */
 
@@ -165,7 +165,7 @@ int sched_unlock(void)
 #endif
 		}
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 
 	return OK;

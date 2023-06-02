@@ -139,7 +139,7 @@ int sem_wait(FAR sem_t *sem)
 	 * disabled because sem_post() may be called from an interrupt
 	 * handler.
 	 */
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* sem_wait() is a cancellation point */
 	if (enter_cancellation_point()) {
@@ -148,7 +148,7 @@ int sem_wait(FAR sem_t *sem)
 		 */
 		set_errno(ECANCELED);
 		leave_cancellation_point();
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		return ERROR;
 	}
 
@@ -247,6 +247,6 @@ int sem_wait(FAR sem_t *sem)
 	}
 
 	leave_cancellation_point();
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 	return ret;
 }

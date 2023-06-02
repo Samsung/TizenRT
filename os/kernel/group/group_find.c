@@ -124,15 +124,15 @@ FAR struct task_group_s *group_findbygid(gid_t gid)
 
 	/* Find the status structure with the matching GID  */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (group = g_grouphead; group; group = group->flink) {
 		if (group->tg_gid == gid) {
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return group;
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return NULL;
 }
 #endif
@@ -168,15 +168,15 @@ FAR struct task_group_s *group_findbypid(pid_t pid)
 
 	/* Find the status structure with the matching PID  */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (group = g_grouphead; group; group = group->flink) {
 		if (group->tg_task == pid) {
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return group;
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return NULL;
 }
 #endif

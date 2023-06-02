@@ -145,7 +145,7 @@ int sigsuspend(FAR const sigset_t *set)
 	 */
 
 	sched_lock();				/* Not necessary */
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Check if there is a pending signal corresponding to one of the
 	 * signals that will be unblocked by the new sigprocmask.
@@ -163,7 +163,7 @@ int sigsuspend(FAR const sigset_t *set)
 		ASSERT(sigpend);
 
 		sig_releasependingsignal(sigpend);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	} else {
 		/* Its time to wait. Save a copy of the old sigprocmask and install
 		 * the new (temporary) sigprocmask
@@ -180,7 +180,7 @@ int sigsuspend(FAR const sigset_t *set)
 		/* We are running again, restore the original sigprocmask */
 
 		rtcb->sigprocmask = saved_sigprocmask;
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Now, handle the (rare?) case where (a) a blocked signal was received
 		 * while the task was suspended but (b) restoring the original

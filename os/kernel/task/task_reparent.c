@@ -107,7 +107,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	 * the three task:  Child, current parent, and new parent.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Get the child tasks task group */
 
@@ -206,7 +206,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 #endif							/* CONFIG_SCHED_CHILD_STATUS */
 
 errout_with_ints:
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 #else
@@ -226,7 +226,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	 * the three task:  Child, current parent, and new parent.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Get the child tasks TCB (chtcb) */
 
@@ -308,7 +308,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 #endif							/* CONFIG_SCHED_CHILD_STATUS */
 
 errout_with_ints:
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 #endif

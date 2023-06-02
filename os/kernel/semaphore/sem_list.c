@@ -69,19 +69,19 @@ void sem_register(FAR sem_t *sem)
 	sem_t *sem_ptr;
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	sem_ptr = (sem_t *)sq_peek(&g_sem_list);
 	while (sem_ptr) {
 		if (sem_ptr == sem) {
 			/* Already registered */
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return;
 		}
 		sem_ptr = sq_next(sem_ptr);
 	}
 	/* Add semaphore to a list of kernel semaphore, g_sem_list */
 	sq_addlast((FAR sq_entry_t *)sem, &g_sem_list);
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -104,10 +104,10 @@ void sem_unregister(FAR sem_t *sem)
 {
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Remove semaphore from a list of kernel semaphore */
 	sq_rem((FAR sq_entry_t *)sem, &g_sem_list);
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }

@@ -102,9 +102,9 @@ static struct posix_timer_s *timer_allocate(void)
 	/* Try to get a preallocated timer from the free list */
 
 #if CONFIG_PREALLOC_TIMERS > 0
-	flags = irqsave();
+	flags = enter_critical_section();
 	ret = (struct posix_timer_s *)sq_remfirst((sq_queue_t *)&g_freetimers);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Did we get one? */
 
@@ -133,9 +133,9 @@ static struct posix_timer_s *timer_allocate(void)
 
 		/* And add it to the end of the list of allocated timers */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		sq_addlast((sq_entry_t *)ret, (sq_queue_t *)&g_alloctimers);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 
 	return ret;
