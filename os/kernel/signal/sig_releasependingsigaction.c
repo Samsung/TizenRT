@@ -104,9 +104,9 @@ void sig_releasependingsigaction(FAR sigq_t *sigq)
 		/* Make sure we avoid concurrent access to the free
 		 * list from interrupt handlers. */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)sigq, &g_sigpendingaction);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* If this is a message pre-allocated for interrupts,
@@ -117,9 +117,9 @@ void sig_releasependingsigaction(FAR sigq_t *sigq)
 		/* Make sure we avoid concurrent access to the free
 		 * list from interrupt handlers. */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)sigq, &g_sigpendingirqaction);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* Otherwise, deallocate it.  Note:  interrupt handlers

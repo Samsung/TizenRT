@@ -91,11 +91,11 @@ int logm_task(int argc, char *argv[])
 		}
 
 		if (LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ)) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			if (logm_change_bufsize(new_logm_bufsize) != OK) {
 				fprintf(stdout, "\n[LOGM] Failed to change buffer size\n");
 			}
-			irqrestore(flags);
+			leave_critical_section(flags);
 		}
 		usleep(logm_print_interval);
 	}

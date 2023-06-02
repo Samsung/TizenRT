@@ -136,13 +136,13 @@ static int binary_manager_deactivate_binary(int bin_idx)
 	/* Get a tcb of main task */
 	ptr = BIN_NRTLIST(bin_idx);
 	while (ptr) {
-		flags = irqsave();
+		flags = enter_critical_section();
 		/* Recover semaphores, message queue, and watchdog timer resources.*/
 		binary_manager_recover_tcb(ptr);
 		/* Remove the TCB from the task list associated with the state */
 		BM_DEACTIVATE_TASK(ptr);
 		ptr = ptr->bin_flink;
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 	/* Release all kernel semaphores held by the threads in binary */
 	binary_manager_release_binary_sem(bin_idx);

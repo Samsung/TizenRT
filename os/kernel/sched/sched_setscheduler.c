@@ -165,7 +165,7 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
 #if CONFIG_RR_INTERVAL > 0
 	/* Further, disable timer interrupts while we set up scheduling policy. */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	if (policy == SCHED_RR) {
 		/* Set round robin scheduling */
 
@@ -178,7 +178,7 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
 		tcb->timeslice = 0;
 	}
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 #endif
 
 	/* Set the new priority */

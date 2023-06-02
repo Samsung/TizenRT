@@ -120,7 +120,7 @@ void sem_timeout(int argc, uint32_t pid)
 
 	/* Disable interrupts to avoid race conditions */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Get the TCB associated with this pid.  It is possible that
 	 * task may no longer be active when this watchdog goes off.
@@ -140,7 +140,7 @@ void sem_timeout(int argc, uint32_t pid)
 
 	/* Interrupts may now be enabled. */
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -264,7 +264,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	errcode = OK;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	wd_start(rtcb->waitdog, ticks, (wdentry_t)sem_timeout, 1, getpid());
 
@@ -283,7 +283,7 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 
 	/* We can now restore interrupts and delete the watchdog */
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
 	leave_cancellation_point();

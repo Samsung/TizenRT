@@ -139,10 +139,10 @@ static inline int group_addmember(FAR struct task_group_s *group, pid_t pid)
 		 * may be traversed from an interrupt handler (read-only).
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		group->tg_members = newmembers;
 		group->tg_mxmembers = newmax;
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 
 	/* Assign this new pid to the group; group->tg_nmembers will be incremented

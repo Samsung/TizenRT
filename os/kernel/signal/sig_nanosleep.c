@@ -163,7 +163,7 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 	 * after the wait.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	starttick = clock_systimer();
 
 	/* Set up for the sleep.  Using the empty set means that we are not
@@ -192,7 +192,7 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 	if (errval == EAGAIN) {
 		/* The timeout "error" is the normal, successful result */
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 		leave_cancellation_point();
 		return OK;
 	}
@@ -230,7 +230,7 @@ int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp)
 		(void)clock_ticks2time((int)remaining, rmtp);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 errout:
 	set_errno(errval);

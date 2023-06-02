@@ -151,7 +151,7 @@ int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
 		 * ourselves from attempts to process signals from interrupts
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 
 		/* Okay, determine what we are supposed to do */
 
@@ -183,7 +183,7 @@ int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
 			break;
 		}
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Now, process any pending signals that were just unmasked */
 

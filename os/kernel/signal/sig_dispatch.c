@@ -136,9 +136,9 @@ static int sig_queueaction(FAR struct tcb_s *stcb, siginfo_t *info)
 
 			/* Put it at the end of the pending signals list */
 
-			saved_state = irqsave();
+			saved_state = enter_critical_section();
 			sq_addlast((FAR sq_entry_t *)sigq, &(stcb->sigpendactionq));
-			irqrestore(saved_state);
+			leave_critical_section(saved_state);
 		}
 	}
 
@@ -181,9 +181,9 @@ static FAR sigpendq_t *sig_allocatependingsignal(void)
 	else {
 		/* Try to get the pending signal structure from the free list */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sigpend = (FAR sigpendq_t *)sq_remfirst(&g_sigpendingsignal);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Check if we got one. */
 
@@ -220,13 +220,13 @@ static FAR sigpendq_t *sig_findpendingsignal(FAR struct task_group_s *group, int
 
 	/* Pending sigals can be added from interrupt level. */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Seach the list for a sigpendion on this signal */
 
 	for (sigpend = (FAR sigpendq_t *)group->sigpendingq.head; (sigpend && sigpend->info.si_signo != signo); sigpend = sigpend->flink) ;
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 	return sigpend;
 }
 
@@ -271,9 +271,9 @@ static FAR sigpendq_t *sig_addpendingsignal(FAR struct tcb_s *stcb, FAR siginfo_
 
 			/* Add the structure to the pending signal list */
 
-			saved_state = irqsave();
+			saved_state = enter_critical_section();
 			sq_addlast((FAR sq_entry_t *)sigpend, &group->sigpendingq);
-			irqrestore(saved_state);
+			leave_critical_section(saved_state);
 		}
 	}
 
@@ -327,12 +327,12 @@ int sig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info)
 		 * from the interrupt level.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		if (stcb->task_state == TSTATE_WAIT_SIG && sigismember(&stcb->sigwaitmask, info->si_signo)) {
 			memcpy(&stcb->sigunbinfo, info, sizeof(siginfo_t));
 			stcb->sigwaitmask = NULL_SIGNAL_SET;
 			up_unblock_task(stcb);
-			irqrestore(saved_state);
+			leave_critical_section(saved_state);
 		}
 
 		/* Its not one we are waiting for... Add it to the list of pending
@@ -340,7 +340,7 @@ int sig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info)
 		 */
 
 		else {
-			irqrestore(saved_state);
+			leave_critical_section(saved_state);
 			ASSERT(sig_addpendingsignal(stcb, info));
 		}
 	}
@@ -363,14 +363,14 @@ int sig_tcbdispatch(FAR struct tcb_s *stcb, siginfo_t *info)
 		 * signals can be queued from the interrupt level.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		if (stcb->task_state == TSTATE_WAIT_SIG) {
 			memcpy(&stcb->sigunbinfo, info, sizeof(siginfo_t));
 			stcb->sigwaitmask = NULL_SIGNAL_SET;
 			up_unblock_task(stcb);
 		}
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* If the task neither was waiting for the signal nor had a signal
 		 * handler attached to the signal, then the default action is

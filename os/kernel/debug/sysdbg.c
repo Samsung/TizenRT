@@ -314,7 +314,7 @@ static void sysdbg_print(void)
 		return;
 	}
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 #ifdef CONFIG_TASK_SCHED_HISTORY
 	lldbg("Displaying the TASK SCHEDULING HISTORY for %d count\n", max_task_count);
 	lldbg("*****************************************************************************\n");
@@ -392,7 +392,7 @@ static void sysdbg_print(void)
 #else
 	lldbg("CONFIG_SEMAPHORE_HISTORY is not enabled to view semaphore history");
 #endif
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 }
 
 /****************************************************************************
@@ -507,7 +507,7 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 		lldbg("sysdbg_struct is NULL\n");
 		return;
 	}
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	/* Keeping it circular buffer */
 	index = index & (max_sem_count - 1);
 
@@ -545,7 +545,7 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 	sysdbg_struct->sem_log[index].pid = ((struct tcb_s *)addr)->pid;
 	sysdbg_struct->sem_lastindex = index;
 	index++;
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 }
 
 /****************************************************************************
@@ -617,7 +617,7 @@ void save_task_scheduling_status(struct tcb_s *tcb)
 		return;
 	}
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	/* Keeping it circular buffer */
 	index = index & (max_task_count - 1);
 
@@ -632,7 +632,7 @@ void save_task_scheduling_status(struct tcb_s *tcb)
 	}
 	sysdbg_struct->task_lastindex = index;
 	index++;
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 }
 
@@ -779,7 +779,7 @@ static void sysdbg_monitor_disable(void)
 		return;
 	}
 	if (sysdbg_struct) {
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		/* Set the flag first to avoid any race condition */
 		sysdbg_monitor = false;
 #ifdef CONFIG_TASK_SCHED_HISTORY
@@ -810,7 +810,7 @@ static void sysdbg_monitor_disable(void)
 		kmm_free(sysdbg_struct);
 		sysdbg_struct = NULL;
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 	lldbg("Disabled sysdbg monitoring feature\n");
 	return;
@@ -848,7 +848,7 @@ static void sysdbg_monitor_enable(void)
 	|| defined(CONFIG_SEMAPHORE_HISTORY)
 	int size = 0;
 	irqstate_t saved_state;
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	if (sysdbg_struct == NULL) {
 		size = sizeof(sysdbg_t);
 		sysdbg_struct = (FAR struct sysdbg_s*)kmm_zalloc(size);
@@ -884,7 +884,7 @@ static void sysdbg_monitor_enable(void)
 		sysdbg_monitor = true;
 		lldbg("Enabled sysdbg monitoring feature\n");
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		return;
 	}
 
@@ -913,7 +913,7 @@ fail1:
 fail:
 	lldbg("Disabling sysdbg monitoring feature, kindly use less count\n");
 	sysdbg_monitor = false;
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 #else
 	lldbg("Kindly enable atleast one of the below config flags \n\r \
 		CONFIG_TASK_SCHED_HISTORY : To log Task scheduling history \n\r \

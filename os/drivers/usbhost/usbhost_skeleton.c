@@ -301,18 +301,18 @@ static int usbhost_allocdevno(FAR struct usbhost_state_s *priv)
 	irqstate_t flags;
 	int devno;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (devno = 0; devno < 26; devno++) {
 		uint32_t bitno = 1 << devno;
 		if ((g_devinuse & bitno) == 0) {
 			g_devinuse |= bitno;
 			priv->devchar = 'a' + devno;
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return OK;
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return -EMFILE;
 }
 
@@ -321,9 +321,9 @@ static void usbhost_freedevno(FAR struct usbhost_state_s *priv)
 	int devno = 'a' - priv->devchar;
 
 	if (devno >= 0 && devno < 26) {
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 		g_devinuse &= ~(1 << devno);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 }
 
@@ -967,7 +967,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	 * longer available.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->disconnected = true;
 
 	/* Now check the number of references on the class instance.  If it is one,
@@ -996,7 +996,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 

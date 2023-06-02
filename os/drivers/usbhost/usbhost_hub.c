@@ -909,7 +909,7 @@ static void usbhost_hub_event(FAR void *arg)
 	 * removed.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (!priv->disconnected) {
 		/* Wait for the next hub event */
 
@@ -919,7 +919,7 @@ static void usbhost_hub_event(FAR void *arg)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -964,7 +964,7 @@ static void usbhost_disconnect_event(FAR void *arg)
 	 * longer available.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Cancel any pending transfers on the interrupt IN pipe */
 
@@ -1022,7 +1022,7 @@ static void usbhost_disconnect_event(FAR void *arg)
 
 	kmm_free(hubclass);
 	hport->devclass = NULL;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -1371,7 +1371,7 @@ static int usbhost_disconnected(struct usbhost_class_s *hubclass)
 	 * any subsequent completions of asynchronous transfers.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->disconnected = true;
 
 	/* Cancel any pending work. There may be pending HUB work associated with
@@ -1383,7 +1383,7 @@ static int usbhost_disconnected(struct usbhost_class_s *hubclass)
 	/* Schedule the disconnection work */
 
 	ret = work_queue(LPWORK, &priv->work, (worker_t)usbhost_disconnect_event, hubclass, 0);
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 

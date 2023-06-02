@@ -116,9 +116,9 @@ void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)mqmsg, &g_msgfree);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* If this is a message pre-allocated for interrupts,
@@ -130,9 +130,9 @@ void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_addlast((FAR sq_entry_t *)mqmsg, &g_msgfreeirq);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	}
 
 	/* Otherwise, deallocate it.  Note:  interrupt handlers

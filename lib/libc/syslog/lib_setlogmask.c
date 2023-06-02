@@ -114,11 +114,11 @@ int setlogmask(int mask)
 	 * as interrupts.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	oldmask = g_syslog_mask;
 	g_syslog_mask = (uint8_t)mask;
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return oldmask;
 }

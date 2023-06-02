@@ -116,7 +116,7 @@ enum pm_state_e pm_checkstate(int domain)
 	 * logic in pm_activity().
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Check the elapsed time.  In periods of low activity, time slicing is
 	 * controlled by IDLE loop polling; in periods of higher activity, time
@@ -156,7 +156,7 @@ enum pm_state_e pm_checkstate(int domain)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return pdom->recommended;
 }
 

@@ -113,7 +113,7 @@ void sched_ufree(FAR void *address)
 		 * using the user deallocator.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 #if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
 	 defined(CONFIG_MM_KERNEL_HEAP)
 		DEBUGASSERT(!kmm_heapmember(address));
@@ -128,7 +128,7 @@ void sched_ufree(FAR void *address)
 #ifdef CONFIG_SCHED_WORKQUEUE
 		work_signal(LPWORK);
 #endif
-		irqrestore(flags);
+		leave_critical_section(flags);
 	} else {
 		/* No.. just deallocate the memory now. */
 
@@ -157,7 +157,7 @@ void sched_kfree(FAR void *address)
 		 * using the kernel deallocator.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		DEBUGASSERT(kmm_heapmember(address));
 
 		/* Delay the deallocation until a more appropriate time. */
@@ -169,7 +169,7 @@ void sched_kfree(FAR void *address)
 #ifdef CONFIG_SCHED_WORKQUEUE
 		work_signal(LPWORK);
 #endif
-		irqrestore(flags);
+		leave_critical_section(flags);
 	} else {
 		/* No.. just deallocate the memory now. */
 

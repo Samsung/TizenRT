@@ -211,7 +211,7 @@ int sem_post(FAR sem_t *sem)
 		 * handler.
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 
 		/* Perform the semaphore unlock operation. */
 		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
@@ -223,7 +223,7 @@ int sem_post(FAR sem_t *sem)
 
 		/* Interrupts may now be enabled. */
 
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 	} else {
 		set_errno(EINVAL);
 	}

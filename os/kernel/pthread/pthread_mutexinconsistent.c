@@ -102,11 +102,11 @@ void pthread_mutex_inconsistent(FAR struct pthread_tcb_s *tcb)
 	while (tcb->mhead != NULL) {
 		/* Remove the mutex from the TCB list */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		mutex = tcb->mhead;
 		tcb->mhead = mutex->flink;
 		mutex->flink = NULL;
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* Mark the mutex as INCONSISTENT and wake up any waiting thread */
 

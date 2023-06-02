@@ -97,7 +97,7 @@ static inline void timer_free(struct posix_timer_s *timer)
 
 	/* Remove the timer from the allocated list */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	sq_rem((FAR sq_entry_t *)timer, (sq_queue_t *)&g_alloctimers);
 
 	/* Return it to the free list if it is one of the preallocated timers */
@@ -105,13 +105,13 @@ static inline void timer_free(struct posix_timer_s *timer)
 #if CONFIG_PREALLOC_TIMERS > 0
 	if ((timer->pt_flags & PT_FLAGS_PREALLOCATED) != 0) {
 		sq_addlast((FAR sq_entry_t *)timer, (FAR sq_queue_t *)&g_freetimers);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	} else
 #endif
 	{
 		/* Otherwise, return it to the heap */
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 		sched_kfree(timer);
 	}
 }

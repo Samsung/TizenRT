@@ -147,7 +147,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
 #endif
 {
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 
 	extern bool abort_mode;
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
@@ -199,6 +199,6 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	PANIC();
 #endif
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #endif

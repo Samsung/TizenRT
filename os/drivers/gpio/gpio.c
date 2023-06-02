@@ -162,7 +162,7 @@ static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
 	 * This routine is called both task level and interrupt level,
 	 * so interrupts must be disabled.
 	 */
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Sample the new GPIO state */
 	DEBUGASSERT(lower->ops && lower->ops->get);
@@ -208,7 +208,7 @@ static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
 #endif
 
 	priv->gu_sample = sample;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 #if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
@@ -243,7 +243,7 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 	 * This routine is called both task level and interrupt level, so
 	 * interrupts must be disabled.
 	 */
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Visit each opened reference to the device */
 	rising  = 0;
@@ -285,7 +285,7 @@ static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
 		lower->ops->enable(lower, false, false, NULL);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #endif
 
@@ -302,7 +302,7 @@ static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned lon
 	int ret;
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	switch (arg) {
 	case GPIO_EDGE_NONE:
@@ -323,7 +323,7 @@ static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned lon
 		break;
 	default:
 		lldbg("Interrupt value is invalid\n");
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return ERROR;
 		break;
 	}
@@ -335,7 +335,7 @@ static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned lon
 		/* Disable further interrupts */
 		ret = lower->ops->enable(lower, false, false, NULL);
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return ret;
 }
@@ -570,10 +570,10 @@ static int gpio_close(FAR struct file *filep)
 	DEBUGASSERT(inode->i_private);
 	priv = (FAR struct gpio_upperhalf_s *)inode->i_private;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	closing = opriv->go_closing;
 	opriv->go_closing = true;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	if (closing) {
 		/* Another thread is doing the close */

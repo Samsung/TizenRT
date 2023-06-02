@@ -88,7 +88,7 @@ void binary_manager_reset_board(int reboot_reason)
 #ifdef CONFIG_BOARDCTL_RESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 #else
-	(void)irqsave();
+	(void)enter_critical_section();
 	sched_lock();
 	for (;;) {
 		lldbg("\nASSERT!! Push the reset button!\n");

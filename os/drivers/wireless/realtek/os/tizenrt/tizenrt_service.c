@@ -87,12 +87,12 @@ irqstate_t flags;
 void save_and_cli()
 {
 	flags = 0;
-	flags = irqsave();
+	flags = enter_critical_section();
 }
 
 void restore_flags()
 {
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 void cli()

@@ -121,9 +121,9 @@ FAR sigq_t *sig_allocatependingsigaction(void)
 	else {
 		/* Try to get the pending signal action structure from the free list */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sigq = (FAR sigq_t *)sq_remfirst(&g_sigpendingaction);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Check if we got one. */
 

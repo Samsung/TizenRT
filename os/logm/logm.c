@@ -87,11 +87,11 @@ int logm_internal(int flag, int indx, int priority, const char *fmt, va_list ap)
 	if (LOGM_STATUS(LOGM_READY) && !LOGM_STATUS(LOGM_BUFFER_RESIZE_REQ) \
 		&& flag == LOGM_NORMAL && !up_interrupt_context()) {
 
-		flags = irqsave();
+		flags = enter_critical_section();
 
 		if (LOGM_STATUS(LOGM_BUFFER_OVERFLOW)) {
 			g_logm_dropmsg_count++;
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return 0;
 		}
 
@@ -113,7 +113,7 @@ int logm_internal(int flag, int indx, int priority, const char *fmt, va_list ap)
 			g_logm_dropmsg_count = 1;
 			g_logm_overflow_offset = g_logm_tail;
 		}
-		irqrestore(flags);
+		leave_critical_section(flags);
 	} else {
 		/* Low Output: Sytem is not yet completely ready or this is called from interrupt handler */
 #ifdef CONFIG_ARCH_LOWPUTC

@@ -148,7 +148,7 @@ int sem_tickwait(FAR sem_t *sem, clock_t start, uint32_t delay)
 	 * enabled while we are blocked waiting for the semaphore.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* Try to take the semaphore without waiting. */
 
 	ret = sem_trywait(sem);
@@ -204,7 +204,7 @@ success_with_irqdisabled:
 	/* Error exits */
 
 errout_with_irqdisabled:
-	irqrestore(flags);
+	leave_critical_section(flags);
 	wd_delete(rtcb->waitdog);
 	rtcb->waitdog = NULL;
 	/* some functions (sem_trywait()) inside wd_delete() may fail and set the

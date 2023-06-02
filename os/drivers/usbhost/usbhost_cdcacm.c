@@ -508,13 +508,13 @@ static FAR struct usbhost_cdcacm_s *usbhost_allocclass(void)
 	 * our pre-allocated class instances from the free list.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	entry = g_freelist;
 	if (entry) {
 		g_freelist = entry->flink;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	uvdbg("Allocated: %p\n", entry);
 	return (FAR struct usbhost_cdcacm_s *)entry;
 }
@@ -559,10 +559,10 @@ static void usbhost_freeclass(FAR struct usbhost_cdcacm_s *usbclass)
 
 	/* Just put the pre-allocated class structure back on the freelist */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	entry->flink = g_freelist;
 	g_freelist = entry;
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #else
 static void usbhost_freeclass(FAR struct usbhost_cdcacm_s *usbclass)
@@ -591,18 +591,18 @@ static int usbhost_devno_alloc(FAR struct usbhost_cdcacm_s *priv)
 	irqstate_t flags;
 	int devno;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	for (devno = 0; devno < 32; devno++) {
 		uint32_t bitno = 1 << devno;
 		if ((g_devinuse & bitno) == 0) {
 			g_devinuse |= bitno;
 			priv->minor = devno;
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return OK;
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return -EMFILE;
 }
 
@@ -619,9 +619,9 @@ static void usbhost_devno_free(FAR struct usbhost_cdcacm_s *priv)
 	int devno = priv->minor;
 
 	if (devno >= 0 && devno < 32) {
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 		g_devinuse &= ~(1 << devno);
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 }
 
@@ -1991,7 +1991,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	 * is no longer available.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	priv->disconnected = true;
 
 	/* Let the upper half driver know that serial device is no longer
@@ -2049,7 +2049,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 
@@ -2085,7 +2085,7 @@ static int usbhost_setup(FAR struct uart_dev_s *uartdev)
 	 * isconnect events.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (priv->disconnected) {
 		/* No... the block driver is no longer bound to the class.  That means that
 		 * the USB CDC/ACM device is no longer connected.  Refuse any further
@@ -2100,7 +2100,7 @@ static int usbhost_setup(FAR struct uart_dev_s *uartdev)
 		ret = OK;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	usbhost_givesem(&priv->exclsem);
 	return ret;
 }
@@ -2140,7 +2140,7 @@ static void usbhost_shutdown(FAR struct uart_dev_s *uartdev)
 	 * no asynchronous disconnect events.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Check if the USB CDC/ACM device is still connected.  If the
 	 * CDC/ACM device is not connected and the reference count just
@@ -2155,7 +2155,7 @@ static void usbhost_shutdown(FAR struct uart_dev_s *uartdev)
 		usbhost_destroy(priv);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************

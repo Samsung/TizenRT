@@ -157,7 +157,7 @@ static int adc_open(FAR struct file *filep)
 				 * Yes.. perform one time hardware
 				 * initialization.
 				 */
-				irqstate_t flags = irqsave();
+				irqstate_t flags = enter_critical_section();
 				ret = dev->ad_ops->ao_setup(dev);
 				if (ret == OK) {
 					/* Mark the FIFOs empty */
@@ -174,7 +174,7 @@ static int adc_open(FAR struct file *filep)
 					dev->ad_ocount = tmp;
 				}
 
-				irqrestore(flags);
+				leave_critical_section(flags);
 			}
 		}
 
@@ -230,9 +230,9 @@ static int adc_close(FAR struct file *filep)
 			dev->ad_ocount = 0;
 
 			/* Free the IRQ and disable the ADC device */
-			flags = irqsave(); /* Disable interrupts */
+			flags = enter_critical_section(); /* Disable interrupts */
 			dev->ad_ops->ao_shutdown(dev); /* Disable the ADC */
-			irqrestore(flags);
+			leave_critical_section(flags);
 
 			sem_post(&dev->ad_closesem);
 		}
@@ -274,7 +274,7 @@ static ssize_t adc_read(FAR struct file *filep, FAR char *buffer,
 		 * Interrupts must be disabled while accessing the ad_recv
 		 * FIFO
 		 */
-		flags = irqsave();
+		flags = enter_critical_section();
 		while (dev->ad_recv.af_head == dev->ad_recv.af_tail) {
 			/*
 			 * The receive FIFO is empty
@@ -354,7 +354,7 @@ static ssize_t adc_read(FAR struct file *filep, FAR char *buffer,
 		ret = nread;
 
 return_with_irqdisabled:
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 
 	avdbg("Returning: %d\n", ret);
@@ -470,7 +470,7 @@ static int adc_poll(FAR struct file *filep, struct pollfd *fds, bool setup)
 	* and ad_recv FIFO.
 	*/
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	if (setup) {
 		/* Ignore waits that do not include POLLIN */
@@ -522,7 +522,7 @@ static int adc_poll(FAR struct file *filep, struct pollfd *fds, bool setup)
 	}
 
 return_with_irqdisabled:
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 #endif

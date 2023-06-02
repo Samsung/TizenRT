@@ -153,7 +153,7 @@ int group_addrenv(FAR struct tcb_s *tcb)
 
 	/* Are we going to change address environments? */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (gid != g_gid_current) {
 		/* Yes.. Is there a current address environment in place? */
 
@@ -188,7 +188,7 @@ int group_addrenv(FAR struct tcb_s *tcb)
 		g_gid_current = gid;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return OK;
 }
 

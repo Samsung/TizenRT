@@ -59,10 +59,10 @@ bt_atomic_t bt_atomic_incr(FAR bt_atomic_t *ptr)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value + 1;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return value;
 }
@@ -72,10 +72,10 @@ bt_atomic_t bt_atomic_decr(FAR bt_atomic_t *ptr)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value - 1;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return value;
 }
@@ -85,10 +85,10 @@ bt_atomic_t bt_atomic_setbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value | (1 << bitno);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return value;
 }
@@ -98,10 +98,10 @@ bt_atomic_t bt_atomic_clrbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value & ~(1 << bitno);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return value;
 }
@@ -125,10 +125,10 @@ bool bt_atomic_testsetbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value | (1 << bitno);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return (value & (1 << bitno)) != 0;
 }
@@ -138,10 +138,10 @@ bool bt_atomic_testclrbit(FAR bt_atomic_t *ptr, bt_atomic_t bitno)
 	irqstate_t flags;
 	bt_atomic_t value;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	value = *ptr;
 	*ptr = value & ~(1 << bitno);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return (value & (1 << bitno)) != 0;
 }

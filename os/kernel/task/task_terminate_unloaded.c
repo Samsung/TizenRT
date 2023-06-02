@@ -137,9 +137,9 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 #endif
 	sig_cleanup(tcb);
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */

@@ -55,9 +55,7 @@
 
 #include <video/video.h>
 #include <semaphore.h>
-
-#define enter_critical_section() irqsave()
-#define leave_critical_section(flag) irqrestore(flag)
+#include <tinyara/irq.h>
 
 struct vbuf_container_s {
 	struct v4l2_buffer buf;		/* Buffer information */

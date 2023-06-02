@@ -116,7 +116,7 @@ void mq_waitirq(FAR struct tcb_s *wtcb, int errcode)
 	 * attempt to send a message while we are doing this.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* It is possible that an interrupt/context switch beat us to the punch and
 	 * already changed the task's state.  NOTE:  The operations within the if
@@ -153,5 +153,5 @@ void mq_waitirq(FAR struct tcb_s *wtcb, int errcode)
 
 	/* Interrupts may now be enabled. */
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 }

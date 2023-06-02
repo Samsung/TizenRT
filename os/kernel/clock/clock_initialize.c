@@ -316,9 +316,9 @@ void clock_synchronize(void)
 
 	/* Re-initialize the time value to match the RTC */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	clock_inittime();
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 #endif
 

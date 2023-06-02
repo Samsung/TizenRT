@@ -100,7 +100,7 @@
 void gran_enter_critical(FAR struct gran_s *priv)
 {
 #ifdef CONFIG_GRAN_INTR
-	priv->irqstate = irqsave();
+	priv->irqstate = enter_critical_section();
 #else
 	int ret;
 
@@ -118,7 +118,7 @@ void gran_enter_critical(FAR struct gran_s *priv)
 void gran_leave_critical(FAR struct gran_s *priv)
 {
 #ifdef CONFIG_GRAN_INTR
-	irqrestore(priv->irqstate);
+	leave_critical_section(priv->irqstate);
 #else
 	sem_post(&priv->exclsem);
 #endif

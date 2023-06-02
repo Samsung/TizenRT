@@ -163,12 +163,12 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 	 * because messages can be sent from interrupt level.
 	 */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	/* Get the message from the message queue */
 
 	mqmsg = mq_waitreceive(mqdes);
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	/* Check if we got a message from the message queue.  We might
 	 * not have a message if:

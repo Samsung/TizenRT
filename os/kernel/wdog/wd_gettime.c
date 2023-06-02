@@ -108,7 +108,7 @@ int wd_gettime(WDOG_ID wdog)
 
 	/* Verify the wdog */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (wdog && WDOG_ISACTIVE(wdog)) {
 		/* Traverse the watchdog list accumulating lag times until we find the wdog
 		 * that we are looking for
@@ -120,13 +120,13 @@ int wd_gettime(WDOG_ID wdog)
 		for (curr = (FAR struct wdog_s *)g_wdactivelist.head; curr; curr = curr->next) {
 			delay += curr->lag;
 			if (curr == wdog) {
-				irqrestore(flags);
+				leave_critical_section(flags);
 				return delay;
 			}
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return 0;
 }
 

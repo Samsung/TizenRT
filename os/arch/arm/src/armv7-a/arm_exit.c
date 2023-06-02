@@ -164,7 +164,7 @@ void _exit(int status)
 	sched_foreach(_up_dumponexit, NULL);
 #endif
 
-	(void)irqsave();
+	(void)enter_critical_section();
 
 	/* Destroy the task at the head of the ready to run list. */
 

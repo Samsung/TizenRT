@@ -136,12 +136,12 @@ sigset_t sig_pendingset(FAR struct tcb_s *stcb)
 
 	sigpendset = NULL_SIGNAL_SET;
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 	for (sigpend = (FAR sigpendq_t *)group->sigpendingq.head; (sigpend); sigpend = sigpend->flink) {
 		sigaddset(&sigpendset, sigpend->info.si_signo);
 	}
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	return sigpendset;
 }

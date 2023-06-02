@@ -72,7 +72,7 @@ static FAR struct iob_s *iob_alloc_committed(void)
 	 * to protect the committed list:  We disable interrupts very briefly.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Take the I/O buffer from the head of the committed list */
 
@@ -90,7 +90,7 @@ static FAR struct iob_s *iob_alloc_committed(void)
 		iob->io_pktlen = 0;		/* Total length of the packet */
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return iob;
 }
 
@@ -124,7 +124,7 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 	 * we are waiting for I/O buffers to become free.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Try to get an I/O buffer.  If successful, the semaphore count will be
 	 * decremented atomically.
@@ -181,7 +181,7 @@ static FAR struct iob_s *iob_allocwait(bool throttled)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return iob;
 }
 
@@ -243,7 +243,7 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 	 * to protect the free list:  We disable interrupts very briefly.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 #if CONFIG_IOB_THROTTLE > 0
 	/* If there are free I/O buffers for this allocation */
@@ -280,7 +280,7 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 			g_throttle_sem.semcount--;
 			DEBUGASSERT(g_throttle_sem.semcount >= -CONFIG_IOB_THROTTLE);
 #endif
-			irqrestore(flags);
+			leave_critical_section(flags);
 
 			/* Put the I/O buffer in a known state */
 
@@ -292,6 +292,6 @@ FAR struct iob_s *iob_tryalloc(bool throttled)
 		}
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return NULL;
 }

@@ -240,7 +240,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	/* Remove the task from the OS's tasks lists. */
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 #ifdef CONFIG_SMP
 	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
 #else
@@ -254,7 +254,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 #ifdef CONFIG_PREFERENCE
 	preference_clear_callbacks(pid);
 #endif
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	/* At this point, the TCB should no longer be accessible to the system */
 

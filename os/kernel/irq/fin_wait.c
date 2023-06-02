@@ -68,7 +68,7 @@ int fin_wait(void)
 	int saved_state;
 	struct tcb_s *tcb;
 
-	saved_state = irqsave();
+	saved_state = enter_critical_section();
 
 	tcb = sched_self();
 	DEBUGASSERT(tcb);
@@ -79,7 +79,7 @@ int fin_wait(void)
 
 		/* If there is second pending irq, update the irq data. */
 		update_fin_queue(tcb);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		return ret;
 	}
 
@@ -91,7 +91,7 @@ int fin_wait(void)
 	/* If there is pending irq, update the irq data array. */
 	update_fin_queue(tcb);
 
-	irqrestore(saved_state);
+	leave_critical_section(saved_state);
 
 	return ret;
 }

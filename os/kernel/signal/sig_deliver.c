@@ -127,10 +127,10 @@ void sig_deliver(FAR struct tcb_s *stcb)
 		 * time, there should never be more than one signal in the sigpostedq
 		 */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_rem((FAR sq_entry_t *)sigq, &(stcb->sigpendactionq));
 		sq_addlast((FAR sq_entry_t *)sigq, &(stcb->sigpostedq));
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Call the signal handler (unless the signal was cancelled)
 		 *
@@ -210,9 +210,9 @@ void sig_deliver(FAR struct tcb_s *stcb)
 
 		/* Remove the signal from the sigpostedq */
 
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		sq_rem((FAR sq_entry_t *)sigq, &(stcb->sigpostedq));
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 
 		/* Then deallocate it */
 

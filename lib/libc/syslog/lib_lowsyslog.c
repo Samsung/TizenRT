@@ -150,9 +150,9 @@ int lowvsyslog(int priority, FAR const char *fmt, va_list ap)
 #if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
 		ret = logm_internal(LOGM_LOWPUT, LOGM_UNKNOWN, priority, fmt, ap);
 #else
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 		ret = lowvsyslog_internal(fmt, ap);
-		irqrestore(flags);
+		leave_critical_section(flags);
 #endif
 	}
 	return ret;

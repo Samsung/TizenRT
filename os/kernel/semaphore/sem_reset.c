@@ -105,7 +105,7 @@ int sem_reset(FAR sem_t *sem, int16_t count)
 	 * Prevent any access to the semaphore by interrupt handlers while we
 	 * are performing this operation.
 	 */
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/*
 	 * A negative count indicates the negated number of threads that are
@@ -134,7 +134,7 @@ int sem_reset(FAR sem_t *sem, int16_t count)
 	}
 
 	/* Allow any pending context switches to occur now */
-	irqrestore(flags);
+	leave_critical_section(flags);
 	sched_unlock();
 	return OK;
 }

@@ -32,9 +32,9 @@ static void mifintrbit_default_handler(int irq, void *data)
 	struct mifintrbit *intr = (struct mifintrbit *)data;
 	unsigned long flags;
 
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 	intr->mif->irq_bit_clear(intr->mif, irq);
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 }
 
 static void mifiintrman_isr(int irq, void *data)
@@ -50,7 +50,7 @@ static void mifiintrman_isr(int irq, void *data)
 #define MITIGATE_INTERRUPT_ISSUE	/* Temporary fix to mitigate an issue of interrupt not being serviced */
 #ifdef MITIGATE_INTERRUPT_ISSUE
 	do {
-		spin_lock_irqsave(&intr->spinlock, flags);
+		spin_lock_enter_critical_section(&intr->spinlock, flags);
 		while ((irq_reg[0] = intr->mif->irq_get(intr->mif)) != 0) {
 			for (bit = 0; bit < MIFINTRBIT_NUM_INT; bit++) {
 				if ((irq_reg[0] & (1 << bit)) && (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)) {
@@ -58,17 +58,17 @@ static void mifiintrman_isr(int irq, void *data)
 				}
 			}
 		}
-		spin_unlock_irqrestore(&intr->spinlock, flags);
+		spin_unlock_leave_critical_section(&intr->spinlock, flags);
 	} while (intr->mif->irq_get(intr->mif) != 0);
 #else
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 	irq_reg[0] = intr->mif->irq_get(intr->mif);
 	for (bit = 0; bit < MIFINTRBIT_NUM_INT; bit++) {
 		if ((irq_reg[0] & (1 << bit)) && (intr->mifintrbit_irq_handler[bit] != mifintrbit_default_handler)) {
 			intr->mifintrbit_irq_handler[bit](bit, intr->irq_data[bit]);
 		}
 	}
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 #endif
 }
 
@@ -78,7 +78,7 @@ int mifintrbit_alloc_tohost(struct mifintrbit *intr, mifintrbit_handler handler,
 	unsigned long flags;
 	int which_bit = 0;
 
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 
 	/* Search for free slots */
 	which_bit = find_first_zero_bit(intr->bitmap_tohost, MIFINTRBIT_NUM_INT);
@@ -88,7 +88,7 @@ int mifintrbit_alloc_tohost(struct mifintrbit *intr, mifintrbit_handler handler,
 	}
 
 	if (intr->mifintrbit_irq_handler[which_bit] != mifintrbit_default_handler) {
-		spin_unlock_irqrestore(&intr->spinlock, flags);
+		spin_unlock_leave_critical_section(&intr->spinlock, flags);
 		goto error;
 	}
 
@@ -98,12 +98,12 @@ int mifintrbit_alloc_tohost(struct mifintrbit *intr, mifintrbit_handler handler,
 	/* Update bit mask */
 	set_bit(which_bit, intr->bitmap_tohost);
 
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 
 	return which_bit;
 
 error:
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 	pr_err("%s: Error registering irq , which bit = %d\n", __func__, which_bit);
 	return -EIO;
 }
@@ -116,12 +116,12 @@ int mifintrbit_free_tohost(struct mifintrbit *intr, int which_bit)
 		goto error;
 	}
 
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 	intr->mifintrbit_irq_handler[which_bit] = mifintrbit_default_handler;
 	intr->irq_data[which_bit] = NULL;
 	/* Update bit mask */
 	clear_bit(which_bit, intr->bitmap_tohost);
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 
 	return 0;
 
@@ -136,7 +136,7 @@ int mifintrbit_alloc_fromhost(struct mifintrbit *intr, enum scsc_mif_abs_target 
 	int which_bit = 0;
 	unsigned long *p;
 
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 
 	if (target == SCSC_MIF_ABS_TARGET_R4) {
 		p = intr->bitmap_fromhost_r4;
@@ -156,11 +156,11 @@ int mifintrbit_alloc_fromhost(struct mifintrbit *intr, enum scsc_mif_abs_target 
 	/* Update bit mask */
 	set_bit(which_bit, p);
 
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 
 	return which_bit;
 error:
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 	pr_err("%s: Error allocating bit %d on %s\n", __func__, which_bit, target ? "M4" : "R4");
 	return -EIO;
 }
@@ -170,7 +170,7 @@ int mifintrbit_free_fromhost(struct mifintrbit *intr, int which_bit, enum scsc_m
 	unsigned long flags;
 	unsigned long *p;
 
-	spin_lock_irqsave(&intr->spinlock, flags);
+	spin_lock_enter_critical_section(&intr->spinlock, flags);
 
 	if (which_bit >= MIFINTRBIT_NUM_INT) {
 		goto error;
@@ -186,11 +186,11 @@ int mifintrbit_free_fromhost(struct mifintrbit *intr, int which_bit, enum scsc_m
 
 	/* Clear bit mask */
 	clear_bit(which_bit, p);
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 
 	return 0;
 error:
-	spin_unlock_irqrestore(&intr->spinlock, flags);
+	spin_unlock_leave_critical_section(&intr->spinlock, flags);
 	pr_err("%s: Error freeing bit %d on %s\n", __func__, which_bit, target ? "M4" : "R4");
 	return -EIO;
 }

@@ -120,12 +120,12 @@ void wd_recover(FAR struct tcb_s *tcb)
 	 * the future.
 	 */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	if (tcb->waitdog) {
 		(void)wd_cancel(tcb->waitdog);
 		(void)wd_delete(tcb->waitdog);
 		tcb->waitdog = NULL;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
