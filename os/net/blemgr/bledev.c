@@ -537,6 +537,18 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, get_conn_by_mac, (dev, bd_addr, con_handle));
 	}
 	break;
+	case LWNL_REQ_BLE_SET_DEVICE_NAME:
+	{
+		uint8_t* name;
+		if (data != NULL) {
+			name = (uint8_t*)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, set_gap_device_name, (dev, name));
+	}
+	break;
 
 	// Advertiser
 	case LWNL_REQ_BLE_SET_ADV_DATA:

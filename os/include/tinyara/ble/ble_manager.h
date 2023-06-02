@@ -76,6 +76,7 @@ trble_result_e ble_drv_attr_reject(trble_attr_handle attr_handle, uint8_t app_er
 trble_result_e ble_drv_server_disconnect(trble_conn_handle con_handle);
 trble_result_e ble_drv_get_mac_addr_by_conn_handle(trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_get_conn_handle_by_addr(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+trble_result_e ble_drv_set_device_name(uint8_t* name);
 
 /*** Advertiser(Broadcaster) ***/
 trble_result_e ble_drv_set_adv_data(trble_data *data);

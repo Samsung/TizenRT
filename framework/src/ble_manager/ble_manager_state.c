@@ -993,6 +993,11 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_stop_adv();
 	} break;
 
+	case BLE_CMD_SET_DEVICE_NAME: {
+		BLE_STATE_CHECK;
+		uint8_t* name = (uint8_t*) msg->param;
+		ret = ble_drv_set_device_name(name);
+	} break;
 	
 	// Event Handling
 	case BLE_EVT_CLIENT_CONNECT: {

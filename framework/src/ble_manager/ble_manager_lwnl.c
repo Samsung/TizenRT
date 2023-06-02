@@ -492,3 +492,13 @@ trble_result_e ble_drv_stop_adv()
 	}
 	return res;
 }
+
+trble_result_e ble_drv_set_device_name(uint8_t* name)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_DEVICE_NAME}, sizeof(name), (void *)name, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}

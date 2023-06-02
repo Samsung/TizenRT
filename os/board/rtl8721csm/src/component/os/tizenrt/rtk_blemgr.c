@@ -93,6 +93,7 @@ trble_result_e trble_netmgr_attr_reject(struct bledev *dev, trble_attr_handle at
 trble_result_e trble_netmgr_server_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+trble_result_e trble_netmgr_set_gap_device_name(struct bledev *dev, uint8_t* device_name);
 
 /*** Advertiser(Broadcaster) ***/
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
@@ -146,6 +147,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_server_disconnect,
 	trble_netmgr_get_mac_addr_by_conn_handle,
 	trble_netmgr_get_conn_handle_by_addr,
+	trble_netmgr_set_gap_device_name,
 
 	// Broadcaster
 	trble_netmgr_set_adv_data,
@@ -440,6 +442,10 @@ trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t 
 	return TRBLE_SUCCESS;
 }
 
+trble_result_e trble_netmgr_set_gap_device_name(struct bledev *dev, uint8_t* device_name)
+{
+	return rtw_ble_server_set_device_name(device_name);
+}
 
 /*** Advertiser(Broadcaster) ***/
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data)
