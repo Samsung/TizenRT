@@ -2054,8 +2054,10 @@ int wifi_scan_networks_with_ssid(int (results_handler)(char*buf, int buflen, cha
 		ret = RTW_SUCCESS;
 	}
 
-	if (scan_buf.buf)
+	if (scan_buf.buf) {
 		rtw_free(scan_buf.buf);
+		scan_buf.buf = NULL;
+	}
 
 	return ret;
 }

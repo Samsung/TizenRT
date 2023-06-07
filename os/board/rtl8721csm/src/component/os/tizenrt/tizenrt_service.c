@@ -887,6 +887,7 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 	if (timer->work_hdl == NULL) {
 		DBG_ERR("Fail to alloc timer->work_hdl\n");
 		kmm_free(timer);
+		timer = NULL;
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -911,6 +912,7 @@ _timerHandle _tizenrt_timerCreate(const signed char *pcTimerName, osdepTickType 
 	if (timer_entry == NULL) {
 		kmm_free(timer->work_hdl);
 		kmm_free(timer);
+		timer = NULL;
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -932,83 +934,106 @@ u32 _tizenrt_timerDelete(_timerHandle xTimer, osdepTickType xBlockTime)
 	_list *plist;
 	struct _tizenrt_timer_entry *timer_entry;
 
-	int ret = work_cancel(LPWORK, timer->work_hdl);
-	if (ret != OK && ret != -ENOENT) {
-		DBG_ERR(" failed! ret = %d\n", ret);
-		return _FAIL;
-	}
-
-	_tizenrt_mutex_get(&_tizenrt_timer_mutex);
-	plist = get_next(&_tizenrt_timer_table);
-	while ((_tizenrt_end_of_queue_search(&_tizenrt_timer_table, plist)) == _FALSE) {
-		timer_entry = LIST_CONTAINOR(plist, struct _tizenrt_timer_entry, list);
-		if (timer_entry->timer == timer) {
-			list_del_init(plist);
-			kmm_free(timer_entry);
-			break;
+	if (timer != NULL) {
+		int ret = work_cancel(LPWORK, timer->work_hdl);
+		if (ret != OK && ret != -ENOENT) {
+			DBG_ERR(" failed! ret = %d\n", ret);
+			return _FAIL;
 		}
-		plist = get_next(plist);
-	}
-	_tizenrt_mutex_put(&_tizenrt_timer_mutex);
-	if (plist == &_tizenrt_timer_table) {
+		_tizenrt_mutex_get(&_tizenrt_timer_mutex);
+		plist = get_next(&_tizenrt_timer_table);
+		while ((_tizenrt_end_of_queue_search(&_tizenrt_timer_table, plist)) == _FALSE) {
+			timer_entry = LIST_CONTAINOR(plist, struct _tizenrt_timer_entry, list);
+			if (timer_entry->timer == timer) {
+				list_del_init(plist);
+				kmm_free(timer_entry);
+				break;
+			}
+			plist = get_next(plist);
+		}
+		_tizenrt_mutex_put(&_tizenrt_timer_mutex);
+		if (plist == &_tizenrt_timer_table) {
+			return _FAIL;
+		}
+
+		timer->data = NULL;
+		timer->timer_hdl = NULL;
+		timer->timevalue = 0;
+		timer->live = 0;
+		kmm_free(timer->work_hdl);
+		kmm_free(timer);
+		timer = NULL;
+		return _SUCCESS;
+	} else {
+		DBG_ERR("timer is NULL\n");
 		return _FAIL;
 	}
-
-	timer->data = NULL;
-	timer->timer_hdl = NULL;
-	timer->timevalue = 0;
-	timer->live = 0;
-	kmm_free(timer->work_hdl);
-	kmm_free(timer);
-	return _SUCCESS;
 }
 
 u32 _tizenrt_timerIsTimerActive(_timerHandle xTimer)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
 
-	return timer->live;
+	if (timer != NULL) {
+		return timer->live;
+	} else {
+		return 0;	/*timer is not active for NULL case*/
+	}
 }
 
 u32 _tizenrt_timerStop(_timerHandle xTimer, osdepTickType xBlockTime)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
 
-	int ret = work_cancel(LPWORK, timer->work_hdl);
-	if (ret != OK && ret != -ENOENT) {
-		DBG_ERR(" failed! ret = %d\n", ret);
+	if (timer != NULL) {
+		int ret = work_cancel(LPWORK, timer->work_hdl);
+		if (ret != OK && ret != -ENOENT) {
+			DBG_ERR(" failed! ret = %d\n", ret);
+			return _FAIL;
+		}
+
+		timer->timevalue = 0;
+		timer->live = 0;
+		return _SUCCESS;
+	} else {
+		DBG_ERR("timer is NULL\n");
 		return _FAIL;
 	}
-
-	timer->timevalue = 0;
-	timer->live = 0;
-	return _SUCCESS;
 }
 
 u32 _tizenrt_timerChangePeriod(_timerHandle xTimer, osdepTickType xNewPeriod, osdepTickType xBlockTime)
 {
 	int ret;
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
-	ret = work_queue(LPWORK, timer->work_hdl, _tizenrt_timer_wrapper, (void *)(timer), xNewPeriod);
-	if (ret == -EALREADY) {
-		if (work_cancel(LPWORK, timer->work_hdl) != OK) {
-			DBG_ERR("Failed!\n");
-			return _FAIL;
+	if (timer != NULL) {
+		ret = work_queue(LPWORK, timer->work_hdl, _tizenrt_timer_wrapper, (void *)(timer), xNewPeriod);
+		if (ret == -EALREADY) {
+			if (work_cancel(LPWORK, timer->work_hdl) != OK) {
+				DBG_ERR("Failed!\n");
+				return _FAIL;
+			}
+			if (work_queue(LPWORK, timer->work_hdl, _tizenrt_timer_wrapper, (void *)(timer), xNewPeriod)) {
+				DBG_ERR("Failed!\n");
+				return _FAIL;
+			}
 		}
-		if (work_queue(LPWORK, timer->work_hdl, _tizenrt_timer_wrapper, (void *)(timer), xNewPeriod)) {
-			DBG_ERR("Failed!\n");
-			return _FAIL;
-		}
+		timer->live = 1;
+		return _SUCCESS;
+	} else {
+		DBG_ERR("timer is NULL\n");
+		return _FAIL;
 	}
-	timer->live = 1;
-
-	return _SUCCESS;
 }
 
 void *_tizenrt_timerGetID(_timerHandle xTimer)
 {
 	struct timer_list_priv *timer = (struct timer_list_priv *)xTimer;
-	return timer->data;
+	if (timer != NULL) {
+		return timer->data;
+	} else {
+		DBG_ERR("timer is NULL\n");
+		return NULL;	/*No data when timer is NULL*/
+	}
 }
 
 u32 _tizenrt_timerStart(_timerHandle xTimer, osdepTickType xBlockTime)
