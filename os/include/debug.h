@@ -502,10 +502,18 @@ int get_errno(void);
 #endif
 
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
-#define mfdbg(format, ...) if (abort_mode || up_interrupt_context()) \
-                                                             lldbg(format, ##__VA_ARGS__); \
-                                                        else \
-                                                             dbg(format, ##__VA_ARGS__);
+#define mfdbg(format, ...)					\
+	do {							\
+		if (abort_mode) {				\
+			if (CHECK_SECURE_PERMISSION()) {	\
+				lldbg(format, ##__VA_ARGS__);	\
+			}					\
+		} else if (up_interrupt_context()) {		\
+			lldbg(format, ##__VA_ARGS__);		\
+		} else {					\
+			dbg(format, ##__VA_ARGS__);		\
+		}						\
+	} while (0)
 #else
 #define mfdbg(format, ...) dbg(format, ##__VA_ARGS__)
 #endif

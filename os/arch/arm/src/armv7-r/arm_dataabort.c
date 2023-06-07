@@ -107,7 +107,7 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 
 	/* Crash -- possibly showing diagnostic debug information. */
 
-	lldbg("\nData abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
+	assertdbg("\nData abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
 	PANIC();
 	return regs;				/* To keep the compiler happy */
 }

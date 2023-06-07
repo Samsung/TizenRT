@@ -66,6 +66,7 @@
 #include <tinyara/board.h>
 #include <tinyara/syslog/syslog.h>
 #include <tinyara/usb/usbdev_trace.h>
+#include <tinyara/security_level.h>
 
 #include <arch/board/board.h>
 
@@ -124,28 +125,30 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 static void xtensa_assert(int errorcode) noreturn_function;
 static void xtensa_assert(int errorcode)
 {
+	if (CHECK_SECURE_PERMISSION()) {
 #ifdef CONFIG_DEBUG_ERROR
-	/* Dump the processor state */
+		/* Dump the processor state */
 
-	xtensa_dumpstate();
+		xtensa_dumpstate();
 #endif
 
 #ifdef CONFIG_ARCH_USBDUMP
-	/* Dump USB trace data */
+		/* Dump USB trace data */
 
-	(void)usbtrace_enumerate(assert_tracecallback, NULL);
+		(void)usbtrace_enumerate(assert_tracecallback, NULL);
 #endif
 
 #ifdef CONFIG_BOARD_CRASHDUMP
-	/* Perform board-specific crash dump */
+		/* Perform board-specific crash dump */
 
-	board_crashdump(up_getsp(), this_task(), filename, lineno);
+		board_crashdump(up_getsp(), this_task(), filename, lineno);
 #endif
+	}
 
 	/* Are we in an interrupt handler or the idle task? */
 
 	if (CURRENT_REGS || this_task()->pid == 0) {
-		/* Blink the LEDs forever */
+			/* Blink the LEDs forever */
 
 		(void)up_irq_save();
 		for (;;) {
@@ -177,18 +180,22 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	abort_mode = true;
 
+	lldbg("==============================================\n");
+	lldbg("Assertion failed\n");
+	lldbg("==============================================\n");
+
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 	struct tcb_s *rtcb = this_task();
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
+	assertdbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
 #else
-	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
+	assertdbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 #endif
 
 	/* Print the extra arguments (if any) from ASSERT_INFO macro */
 	if (assert_info_str[0]) {
-		lldbg("%s\n", assert_info_str);
+		assertdbg("%s\n", assert_info_str);
 	}
 
 	xtensa_assert(EXIT_FAILURE);
@@ -225,9 +232,9 @@ void xtensa_panic(int xptcode, uint32_t *regs)
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 	struct tcb_s *rtcb = this_task();
-	lldbg("Unhandled Exception %d task: %s\n", xptcode, rtcb->name);
+	assertdbg("Unhandled Exception %d task: %s\n", xptcode, rtcb->name);
 #else
-	lldbg("Unhandled Exception %d\n", xptcode);
+	assertdbg("Unhandled Exception %d\n", xptcode);
 #endif
 #endif
 
@@ -324,9 +331,9 @@ void xtensa_user(int exccause, uint32_t *regs)
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 	struct tcb_s *rtcb = this_task();
-	lldbg("User Exception: EXCCAUSE=%04x task: %s\n", exccause, rtcb->name);
+	assertdbg("User Exception: EXCCAUSE=%04x task: %s\n", exccause, rtcb->name);
 #else
-	lldbg("User Exception: EXCCAUSE=%04x\n", exccause);
+	assertdbg("User Exception: EXCCAUSE=%04x\n", exccause);
 #endif
 #endif
 

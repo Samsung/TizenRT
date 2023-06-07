@@ -102,7 +102,7 @@
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
-	lldbg("\nUndefined instruction at 0x%x\n", regs[REG_PC]);
+	assertdbg("\nUndefined instruction at 0x%x\n", regs[REG_PC]);
 	current_regs = regs;
 	PANIC();
 	return regs;				/* To keep the compiler happy */
