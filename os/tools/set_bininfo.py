@@ -35,14 +35,14 @@ output_folder = build_folder + '/output/bin'
 
 def save_bininfo(bin_name) :
     with open(os_folder + '/.bininfo', "a") as f :
-        if ("kernel" in bin_name) :
-            f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
         if ("app1" in bin_name) :
             f.write('APP1_BIN_NAME=' + bin_name + '\n')
-        if ("app2" in bin_name) :
+        elif ("app2" in bin_name) :
             f.write('APP2_BIN_NAME=' + bin_name + '\n')
-        if ("common" in bin_name) :
+        elif ("common" in bin_name) :
             f.write('COMMON_BIN_NAME=' + bin_name + '\n')
+        else :
+            f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
 
 # Delete previous .bininfo
 if os.path.isfile(os_folder + '/.bininfo') :
