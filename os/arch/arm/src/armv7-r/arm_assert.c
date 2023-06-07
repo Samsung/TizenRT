@@ -89,6 +89,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/usb/usbdev_trace.h>
 #include <arch/board/board.h>
+#include <tinyara/security_level.h>
 
 #include "up_arch.h"
 #include "sched/sched.h"
@@ -959,7 +960,15 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	abort_mode = true;
 
-	print_assert_detail(filename, lineno, fault_tcb);
+	lldbg("==============================================\n");
+	lldbg("Assertion failed\n");
+	lldbg("==============================================\n");
+#ifdef CONFIG_SECURITY_LEVEL
+	lldbg("security level: %d\n", get_security_level());
+#endif
+	if (CHECK_SECURE_PERMISSION()) {
+		print_assert_detail(filename, lineno, fault_tcb);
+	}
 
 #if defined(CONFIG_BOARD_ASSERT_AUTORESET)
 	(void)boardctl(BOARDIOC_RESET, 0);

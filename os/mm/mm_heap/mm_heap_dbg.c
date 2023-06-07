@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/security_level.h>
 
 /************************************************************************
  * Name: heap_dbg
@@ -34,14 +35,16 @@
 int heap_dbg(const char *fmt, ...)
 {
 	va_list ap;
-	int ret;
+	int ret = 0;
 
 	va_start(ap, fmt);
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	extern bool abort_mode;
 
 	if (abort_mode) {
-		ret = lowvsyslog(LOG_ERR, fmt, ap);
+		if (CHECK_SECURE_PERMISSION()) {
+			ret = lowvsyslog(LOG_ERR, fmt, ap);
+		}
 	} else {
 		ret = vsyslog(LOG_ERR, fmt, ap);
 	}

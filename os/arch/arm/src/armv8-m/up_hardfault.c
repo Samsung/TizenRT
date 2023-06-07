@@ -61,6 +61,7 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
+#include <tinyara/security_level.h>
 
 #include <tinyara/userspace.h>
 #include <arch/irq.h>
@@ -199,7 +200,9 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	}
 #endif
 
-	print_hardfault_detail(irq, regs);
+	if (CHECK_SECURE_PERMISSION()) {
+		print_hardfault_detail(irq, regs);
+	}
 
 	(void)irqsave();
 

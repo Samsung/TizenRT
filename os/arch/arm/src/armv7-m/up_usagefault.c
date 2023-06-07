@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <debug.h>
+#include <tinyara/security_level.h>
 
 #include <arch/irq.h>
 
@@ -119,7 +120,9 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 		system_exception_location = regs[REG_R14];
 	}
 
-	print_usagefault_detail(regs, cfsr);
+	if (CHECK_SECURE_PERMISSION()) {
+		print_usagefault_detail(regs, cfsr);
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);

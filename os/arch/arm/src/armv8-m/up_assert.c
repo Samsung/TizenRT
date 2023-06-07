@@ -91,7 +91,7 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/binfmt/elf.h>
 #endif
-
+#include <tinyara/security_level.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <arch/reboot_reason.h>
 #endif
@@ -515,9 +515,9 @@ static void _up_assert(int errorcode)
 static inline void recovery_assert(uint32_t asserted_location)
 {
 	irqstate_t flags = irqsave();
-	lldbg("Checking kernel heap for corruption...\n");
+	assertdbg("Checking kernel heap for corruption...\n");
 	if (mm_check_heap_corruption(g_kmmheap) == OK) {
-		lldbg("No kernel heap corruption detected\n");
+		assertdbg("No kernel heap corruption detected\n");
 	} else {
 		/* treat kernel fault */
 
@@ -595,7 +595,18 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)kernel_assert_location;
 	}
 
-	print_assert_detail(filename, lineno, fault_tcb, asserted_location);
+	lldbg("==============================================\n");
+	lldbg("Assertion failed\n");
+	lldbg("==============================================\n");
+#ifdef CONFIG_SECURITY_LEVEL
+	lldbg("security level: %d\n", get_security_level());
+#endif
+	/* Print assert detail information and dump state,
+	 * but if os security level is high, It is not printed.
+	 */
+	if (CHECK_SECURE_PERMISSION()) {
+		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
+	}
 
 	recovery_assert(asserted_location);
 }
