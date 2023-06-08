@@ -22,6 +22,7 @@ import os
 import sys
 import struct
 import string
+import shutil
 import config_util as util
 
 cfg_path = os.path.dirname(__file__) + '/../.config'
@@ -350,6 +351,11 @@ def make_common_binary_header():
 ############################################################################
 file_path  = sys.argv[1]
 binary_type = sys.argv[2]
+
+# copy orignal binary to (filename)_without_header.(ext)
+file_path_without_header = os.path.splitext(file_path)[0] + "_without_header" + os.path.splitext(file_path)[1]
+shutil.copyfile(file_path, file_path_without_header)
+
 if binary_type == 'kernel' :
     make_kernel_binary_header()
 elif binary_type == 'user' :
