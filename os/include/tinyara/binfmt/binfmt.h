@@ -121,6 +121,9 @@ struct binary_s {
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	uint8_t islibrary;			/* Is this bin object containing a library */
+#ifdef CONFIG_HAVE_CXX
+	uint8_t run_library_ctors;		/* Flag to check if we need to run ctors for common binary */
+#endif
 #ifdef CONFIG_ARM_MPU							/* MPU register values for common binary only */
 	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
 #endif

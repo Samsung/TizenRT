@@ -136,6 +136,9 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 				bin->filelen = load_attr->bin_size;
 				bin->offset = load_attr->offset;
 				bin->bin_ver = load_attr->bin_ver;
+#ifdef CONFIG_HAVE_CXX
+				bin->run_library_ctors = true;
+#endif
 				g_lib_binp = bin;
 			} else
 #endif
