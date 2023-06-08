@@ -51,25 +51,24 @@ The binary header will be added at front of TizenRT binary and it will be locate
 
 ## How to add Binary Header
 
-User should define MAKE_SAMSUNG_HEADER for binary header support in build/configs/`<board>`/`<name>`/Make.defs as below:
+User should define MAKE_SAMSUNG_HEADER for binary header support in build/configs/`<board>`/Make.defs as below:
 
 ```
-KERNEL_BINARY_PATH='xxxx.bin'
 SECURE_HEADER_SIZE=xx
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../os/tools/mksamsungheader.py ${KERNEL_BINARY_PATH} kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE}
 endef
 ```
-where,
-KERNEL_BINARY_PATH is the path where kernel binary is generated and stored.
-For example, in case of  RTL8721CSM it is generated here:
-```
-build/output/bin/km0_km4_image2.bin
-```
-Similarly in case of imxrt, the kernel binary is generated here:
-```
-build/output/bin/tinyara.bin
-```
-SECURE_HEADER_SIZE is the size of the secure header.
+This parameters are as follows:
 
+1. `$(1)` is source binary extension. This is used to import the source binary path in `mksamsungheader.py`, so we should fill it out as it is.
+2. `${SECURE_HEADER_SIZE}` is the size of the secure header. set a size as per board bootloader.
+
+
+The `MAKE_SAMSUNG_HEADER` is called after `MAKE_BOARD_SPECIFIC_BIN`. The binary name can be changed in `MAKE_BOARD_SPECIFIC_BIN`. So we manage kernel binary name using `board_metadata.txt`. The `mksamsungheader.py` gets kernel binary name from board_metadata.txt
+
+For example, rtl8721csm board's `board_metadata.txt` as below.
+```
+KERNEL="km0_km4_image2"
+```

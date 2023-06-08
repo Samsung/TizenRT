@@ -20,6 +20,7 @@
 import os
 import sys
 import string
+import shutil
 import config_util as util
 
 SOURCE_EXT_NAME = sys.argv[1]
@@ -67,21 +68,21 @@ if os.path.isfile(metadata_file) :
     for filename in os.listdir(output_folder) :
         if (filename == kernel_bin_name + '.' + SOURCE_EXT_NAME) :
             # Change the kernel bin name as "kernel_[board]_[version].extension"
-            os.rename(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + TARGET_EXT_NAME)
+            shutil.copyfile(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + TARGET_EXT_NAME)
             save_bininfo(BIN_NAME + '.' + TARGET_EXT_NAME)
             continue
         # Change the user bin name as "[user_bin_name]_[board]_[version]"
         if ("app1" == filename or "app2" == filename) :
             APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_" + filename.upper() + "_BIN_VER").rstrip("\n")
             USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + APP_BIN_VER
-            os.rename(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+            shutil.copyfile(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME + '.' + TARGET_EXT_NAME)
             save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
             continue
         # Change the common bin name as "common_[board]_[version]"
         if (filename == CONFIG_CMN_BIN_NAME) :
             COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
             COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
-            os.rename(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
+            shutil.copyfile(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
             save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
             continue
 else :

@@ -534,8 +534,9 @@ endif
 endif
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
+	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))
+
 	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
-	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXE), $(BIN_EXT))
 
 ifeq ($(CONFIG_INTELHEX_BINARY),y)
 	$(Q) echo "CP: $(BIN_EXE).hex"

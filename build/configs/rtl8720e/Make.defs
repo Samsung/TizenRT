@@ -236,7 +236,7 @@ endef
 SECURE_HEADER_SIZE=32
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../os/tools/mksamsungheader.py kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE}
 endef
 
 define MAKE_USER_SIGNING
