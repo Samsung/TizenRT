@@ -117,9 +117,25 @@
 static void exec_ctors(FAR void *arg)
 {
 	FAR const struct binary_s *binp = (FAR const struct binary_s *)arg;
-	binfmt_ctor_t *ctor = binp->ctors;
+	binfmt_ctor_t *ctor;
 	int i;
 
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	/* If common binary is enabled, we need to run its constructors first */
+	if (g_lib_binp->run_library_ctors) {
+		ctor = g_lib_binp->ctors;
+		for (i = 0; i < g_lib_binp->nctors; i++) {
+			binfo("Calling ctor %d at %p\n", i, (FAR void *)ctor);
+
+			(*ctor)();
+			ctor++;
+		}
+		/* unset the flag so that common binary constructors are executed only once */
+		g_lib_binp->run_library_ctors = false;
+	}
+#endif
+
+	ctor = binp->ctors;
 	/* Execute each constructor */
 
 	for (i = 0; i < binp->nctors; i++) {
@@ -262,13 +278,12 @@ int exec_module(FAR struct binary_s *binp)
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	/* Setup a start hook that will execute all of the C++ static constructors
-	 * on the newly created thread.  The struct binary_s must persist at least
-	 * until the new task has been started.
+	 * on the newly created thread. Common binary static constructions are also
+	 * executed during the first app's start hook. The struct binary_s must persist
+	 * at least until the new task has been started.
 	 */
 
-	if (binp->nctors > 0) {
-		task_starthook(newtcb, exec_ctors, (FAR void *)binp);
-	}
+	task_starthook(newtcb, exec_ctors, (FAR void *)binp);
 #endif
 
 	/* Get the assigned pid before we start the task */
