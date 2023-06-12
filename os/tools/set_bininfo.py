@@ -20,19 +20,15 @@
 import os
 import sys
 import string
-import shutil
 import config_util as util
 
-SOURCE_EXT_NAME = sys.argv[1]
 TARGET_EXT_NAME = "trpk" # TizenRT Package (TizenRT Header + output)
 
-
-# This script changes the kernel binary name as "kernel_[board]_[version]".
+# This script save the binary name as "[bin_type]_[board]_[version].extension" in .bininfo file
 
 os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
 build_folder = os_folder + '/../build'
-output_folder = build_folder + '/output/bin'
 
 def save_bininfo(bin_name) :
     with open(os_folder + '/.bininfo', "a") as f :
@@ -52,39 +48,35 @@ if os.path.isfile(os_folder + '/.bininfo') :
 # Check the board type. Because kernel binary name is different based on board type.
 BOARD_TYPE = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
 
-# Extract Common binary name
-CONFIG_CMN_BIN_NAME = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
-
+# Set the kernel bin name as "kernel_[board]_[version].extension"
 if util.check_config_existence(cfg_file, 'CONFIG_BOARD_BUILD_DATE') == True:
     BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n")
     BIN_NAME = 'kernel_' + BOARD_TYPE + '_' + BIN_VERSION
 else :
     BIN_NAME = 'kernel_' + BOARD_TYPE
 
-# Read the kernel binary name from board_metadata.txt.
+# Check board_metadata.txt
 metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
 if os.path.isfile(metadata_file) :
-    kernel_bin_name = util.get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n')
-    for filename in os.listdir(output_folder) :
-        if (filename == kernel_bin_name + '.' + SOURCE_EXT_NAME) :
-            # Change the kernel bin name as "kernel_[board]_[version].extension"
-            shutil.copyfile(output_folder + '/' + filename, output_folder + '/' + BIN_NAME + '.' + TARGET_EXT_NAME)
-            save_bininfo(BIN_NAME + '.' + TARGET_EXT_NAME)
-            continue
-        # Change the user bin name as "[user_bin_name]_[board]_[version]"
-        if ("app1" == filename or "app2" == filename) :
-            APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_" + filename.upper() + "_BIN_VER").rstrip("\n")
-            USER_BIN_NAME = filename + '_' + BOARD_TYPE + '_' + APP_BIN_VER
-            shutil.copyfile(output_folder + '/' + filename, output_folder + '/' + USER_BIN_NAME + '.' + TARGET_EXT_NAME)
-            save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
-            continue
-        # Change the common bin name as "common_[board]_[version]"
-        if (filename == CONFIG_CMN_BIN_NAME) :
-            COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
-            COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
-            shutil.copyfile(output_folder + '/' + CONFIG_CMN_BIN_NAME, output_folder + '/' + COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
-            save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
-            continue
+    save_bininfo(BIN_NAME + '.' + TARGET_EXT_NAME)
 else :
+    # if this board has not board_metadata.txt, kernal binary name is setted 'tinyara.bin'
     save_bininfo("tinyara.bin")
 
+# Set the user bin name as "app1_[board]_[version]"
+if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
+    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_VER=").rstrip("\n")
+    USER_BIN_NAME = 'app1_' + BOARD_TYPE + '_' + APP_BIN_VER
+    save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+
+# Set the user bin name as "app2_[board]_[version]"
+if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
+    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_VER=").rstrip("\n")
+    USER_BIN_NAME = 'app2_' + BOARD_TYPE + '_' + APP_BIN_VER
+    save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+
+# Set the common bin name as "common_[board]_[version]"
+if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
+    COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
+    COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
+    save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)

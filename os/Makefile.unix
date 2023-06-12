@@ -536,7 +536,8 @@ endif
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))
 
-	$(Q) python ./tools/set_bininfo.py $(BIN_EXT)
+	$(Q) python ./tools/set_bininfo.py
+	$(Q) python ./tools/convert_binary.py "$(BIN_EXT)" "$(OBJCOPY)" "$(OBJCOPYARGS)" "$(KERNEL_START)"
 
 ifeq ($(CONFIG_INTELHEX_BINARY),y)
 	$(Q) echo "CP: $(BIN_EXE).hex"
