@@ -78,14 +78,21 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 
 
 KERNEL_DBG_BIN=
-APP1_DBG_BIN=
-APP2_DBG_BIN=
-CMN_DBG_BIN=
+APP1_DBG_BIN=app1_dbg
+APP2_DBG_BIN=app2_dbg
+CMN_DBG_BIN=common_dbg
 function FIND_DBGBINFILE()
 {
-	APP1_DBG_BIN="app1_dbg"
-	APP2_DBG_BIN="app2_dbg"
-	CMN_DBG_BIN="common_dbg"
+	source $CONFIGFILE
+	if [ ! -z $CONFIG_APP1_BIN_NAME ]; then
+		APP1_DBG_BIN="${CONFIG_APP1_BIN_NAME}_dbg"
+	fi
+	if [ ! -z $CONFIG_APP2_BIN_NAME ]; then
+		APP2_DBG_BIN="${CONFIG_APP2_BIN_NAME}_dbg"
+	fi
+	if [ ! -z $CONFIG_COMMON_BINARY_NAME ]; then
+		CMN_DBG_BIN="${CONFIG_COMMON_BINARY_NAME}_dbg"
+	fi
 
 	make -C "tools" -f Makefile.export TOPDIR=".." EXPORTDIR=".."
 	source "./makeinfo.sh"
