@@ -111,6 +111,7 @@ typedef enum {
 	LWNL_REQ_BLE_SERVER_DISCONNECT,
 	LWNL_REQ_BLE_GET_MAC_BY_CONN,
 	LWNL_REQ_BLE_GET_CONN_BY_MAC,
+	LWNL_REQ_BLE_SET_DEVICE_NAME,
 
 	// Advertiser
 	LWNL_REQ_BLE_SET_ADV_DATA,
@@ -247,6 +248,7 @@ typedef enum {
 	TRBLE_ATTR_CB_WRITING,
 	TRBLE_ATTR_CB_READING,
 	TRBLE_ATTR_CB_WRITING_NO_RSP,
+	TRBLE_ATTR_CB_CCCD
 } trble_attr_cb_type_e;
 
 typedef void (*trble_server_cb_t)(trble_attr_cb_type_e type, trble_conn_handle con_handle, trble_attr_handle handle, void *arg);
@@ -362,6 +364,7 @@ typedef trble_result_e (*trble_attr_reject)(struct bledev *dev, trble_attr_handl
 typedef trble_result_e (*trble_server_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_get_mac_addr_by_conn_handle)(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 typedef trble_result_e (*trble_get_conn_handle_by_addr)(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
+typedef trble_result_e (*trble_set_device_name)(struct bledev *dev, uint8_t* name);
 
 /*** Advertiser(Broadcaster) ***/
 typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *data);
@@ -416,6 +419,7 @@ struct trble_ops {
 	trble_server_disconnect server_disconnect;
 	trble_get_mac_addr_by_conn_handle get_mac_by_conn;
 	trble_get_conn_handle_by_addr get_conn_by_mac;
+	trble_set_device_name set_gap_device_name;
 
 	/* Advertiser(Broadcaster) */
 	trble_set_adv_data set_adv_data;

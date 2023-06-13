@@ -44,7 +44,15 @@ typedef enum {
 	BLE_SERVER_ATTR_CB_WRITING,
 	BLE_SERVER_ATTR_CB_READING,
 	BLE_SERVER_ATTR_CB_WRITING_NO_RSP,
+	BLE_SERVER_ATTR_CB_CCCD,
 } ble_server_attr_cb_type_e;
+
+typedef enum {
+	BLE_SERVER_CCCD_DEFAULT 		= 0x0000,
+	BLE_SERVER_CCCD_NOTIFY  		= 0x0001,
+	BLE_SERVER_CCCD_INDICATE		= 0x0002,
+	BLE_SERVER_CCCD_NOTIFY_INDICATE	= 0x0003
+} ble_server_cccd_value_e;
 
 typedef void (*ble_server_cb_t)(ble_server_attr_cb_type_e type, ble_conn_handle con_handle, ble_attr_handle handle, void* arg);
 

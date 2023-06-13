@@ -41,6 +41,7 @@ extern uint16_t rtw_ble_server_att_get_length(trble_attr_handle attr_handle);
 extern trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_errorcode);
 extern uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(trble_conn_handle con_handle);
 extern trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac);
+extern trble_result_e rtw_ble_server_set_device_name(uint8_t* name);
 extern trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length);
 extern trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length);
 extern trble_result_e rtw_ble_server_set_adv_type(trble_adv_type_e type, trble_addr *param);

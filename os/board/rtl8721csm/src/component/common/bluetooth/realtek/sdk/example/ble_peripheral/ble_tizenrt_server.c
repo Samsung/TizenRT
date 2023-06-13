@@ -389,6 +389,12 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     return conn_id;
 }
 
+trble_result_e rtw_ble_server_set_device_name(uint8_t* name)
+{
+    le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN, name);
+    return TRBLE_SUCCESS;
+}
+
 void rtw_ble_server_adv_into_idle(void)
 {
     uint8_t max_count = 0;

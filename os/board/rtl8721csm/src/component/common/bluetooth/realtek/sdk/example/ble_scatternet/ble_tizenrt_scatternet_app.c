@@ -1907,6 +1907,11 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                 } else {
                     dbg("cccd 0x%x update : indicate disable \n", p_cha_info->abs_handle);
                 }
+                if (p_cha_info->cb)
+                {
+                    trble_server_cb_t p_func = p_cha_info->cb;
+                    p_func(TRBLE_ATTR_CB_CCCD, p_tizenrt_cb_data->conn_id, p_cha_info->abs_handle, p_tizenrt_cb_data->val);
+                }
                 break;
             }
 
