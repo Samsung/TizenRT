@@ -18,4 +18,11 @@
 
 /// @brief ss_info contains the slot information used in secure storage.
 
-#define SS_SLOT_INDEX_SECURITY_LEVEL    (32)
+/* wifi_manager */
+// wifi_manager_profile.c
+#define WIFI_PROFILE_SS_INDEX                   (1)
+#define WIFI_PROFILE_SS_INDEX_INTERNAL          (2)
+
+/* security_level */
+// security_level.c
+#define SS_SLOT_INDEX_SECURITY_LEVEL            (32)

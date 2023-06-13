@@ -31,6 +31,9 @@
 #include <security/security_api.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/netlog.h>
+#ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
+#include <tinyara/ss_slot_index.h>
+#endif
 #include "wifi_manager_profile.h"
 
 //#define WIFI_PROFILE_USE_ETC
@@ -44,11 +47,6 @@
 #define DELI_LEN 1
 
 #define WIFI_PROFILE_BUFSIZE 128
-
-#ifdef CONFIG_WIFI_PROFILE_SECURESTORAGE
-#define WIFI_PROFILE_SS_INDEX 1
-#define WIFI_PROFILE_SS_INDEX_INTERNAL 2
-#endif
 
 #define ENCODE_STRING(buf, size, data, pos)					\
 	do {													\
