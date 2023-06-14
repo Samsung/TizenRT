@@ -1,0 +1,13 @@
+Name:
+libjpeg - turbo
+License:
+libjpeg - turbo is covered by three compatible BSD - style open source licenses.Refer to [LICENSE] for a roll - up of license terms
+License File :
+COPYING
+URL :
+https : //sourceforge.net/projects/libjpeg-turbo/files/1.5.3/libjpeg-turbo-1.5.3.tar.gz
+Version : 1.5.3
+Description :
+libjpeg - turbo is a JPEG image codec that uses SIMD instructions(MMX, SSE2,
+		NEON, AltiVec) to accelerate baseline JPEG compression and decompression on
+	x86, x86 - 64, ARM, and PowerPC systems.

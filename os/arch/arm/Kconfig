@@ -106,6 +106,20 @@ config ARCH_CHIP_AMEBALITE
 	---help---
 		Realtek AMEBALITE architectures (ARM Cortex-M23/33).
 
+config ARCH_CHIP_AMEBASMART
+	bool "Realtek AMEBASMART"
+	select ARCH_CORTEXA32
+	select ARM_HAVE_NEON
+	select ARCH_HAVE_TRUSTZONE
+	select ARCH_HAVE_LOWVECTORS
+	select ARCH_HAVE_FETCHADD
+	select ARCH_HAVE_SDRAM
+	select BOOT_RUNFROMSDRAM
+	select ARCH_HAVE_ADDRENV
+	select ARCH_NEED_ADDRENV_MAPPING
+	---help---
+		Realtek AMEBASMART architectures (ARM Cortex-A32).
+
 endchoice
 
 config ARCH_CHIP
@@ -118,6 +132,7 @@ config ARCH_CHIP
 	default "stm32l4"	if ARCH_CHIP_STM32L4
 	default "amebad"	if ARCH_CHIP_AMEBAD
 	default "amebalite"	if ARCH_CHIP_AMEBALITE
+	default "amebasmart"	if ARCH_CHIP_AMEBASMART
 	default "stm32h745"     if ARCH_CHIP_STM32H745
 	default "imx6"		if ARCH_CHIP_IMX6
 
@@ -497,6 +512,9 @@ source arch/arm/src/amebad/Kconfig
 endif
 if ARCH_CHIP_AMEBALITE
 source arch/arm/src/amebalite/Kconfig
+endif
+if ARCH_CHIP_AMEBASMART
+source arch/arm/src/amebasmart/Kconfig
 endif
 if ARCH_CHIP_STM32H745
 source arch/arm/src/stm32h745/Kconfig

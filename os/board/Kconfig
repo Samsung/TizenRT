@@ -137,6 +137,16 @@ config ARCH_BOARD_RTL8720E
 	---help---
 		Realtek RTL8720E-Discovery board based on the Realtek RTL8720E MCU.
 
+config ARCH_BOARD_RTL8730E
+	bool "Realtek RTL8730E-Discovery board"
+	depends on ARCH_CHIP_RTL8730E
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
+	select ARCH_HAVE_RAM_KERNEL_TEXT
+	---help---
+		Realtek RTL8730E-Discovery board based on the Realtek RTL8730E MCU.
+
 config ARCH_BOARD_RTL8721CSM
 	bool "Realtek RTL8721CSM-Discovery board"
 	depends on ARCH_CHIP_RTL8721CSM
@@ -188,6 +198,7 @@ config ARCH_BOARD
 	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	default "stm32l4r9ai-disco"  if ARCH_BOARD_STM32L4R9AI_DISCO
 	default "rtl8720e"           if ARCH_BOARD_RTL8720E
+	default "rtl8730e"           if ARCH_BOARD_RTL8730E
 	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
 	default "stm32h745zi-nucleo" if ARCH_BOARD_STM32H745ZI_NUCLEO
 	default "sabre-6quad"	     if ARCH_BOARD_SABRE_6QUAD	
@@ -372,6 +383,9 @@ source board/stm32l4r9ai-disco/Kconfig
 endif
 if ARCH_BOARD_RTL8720E
 source board/rtl8720e/Kconfig
+endif
+if ARCH_BOARD_RTL8730E
+source board/rtl8730e/Kconfig
 endif
 if ARCH_BOARD_RTL8721CSM
 source board/rtl8721csm/Kconfig

@@ -1,0 +1,11 @@
+Any Realtek specific modifications to upstream libjpeg - turbo(1.5.3) should
+be listed here:
+
+(1) jconfig.h and jconfigint.h
+
+These are included upstream as jconfig.h.in and jconfigint.h.in.
+We have the option autogenerate these platform / version specific files(using
+		the libjpeg - turbo build system) or to manually create them.
+
+Autogenerating these files on linux gets us most of the way, but we've needed
+to add some multi - platform flexibility to the INLINE and SIZEOF_SIZE_T macros.
