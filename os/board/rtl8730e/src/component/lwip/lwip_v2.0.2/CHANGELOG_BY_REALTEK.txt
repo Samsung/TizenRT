@@ -1,0 +1,5 @@
+
+Modifications made by Realtek to patch lwip_v2.0.0 on Ameba's SDK which is originally based on lwip_v1.4.1
+
+2017-01-10: Chris (chrisyang@realtek.com)
+    * Add empty loopif.h into src/include/netif to avoid compile error

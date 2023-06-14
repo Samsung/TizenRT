@@ -1,0 +1,120 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "AMEBASMART Configuration Options"
+
+choice
+	prompt "AMEBASMART Chip Selection"
+	default ARCH_CHIP_RTL8730E
+	depends on ARCH_CHIP_AMEBASMART
+
+config ARCH_CHIP_RTL8730E
+	bool "RTL8730E"
+	select ARCH_CORTEXA32
+	select ARCH_HAVE_MULTICPU
+	select ARMV7A_HAVE_GICv2
+	select ARCH_HAVE_FPU
+	select AMEBASMART_WIFI
+
+endchoice
+
+menu "Realtek RTL8730E Peripheral Support"
+
+config RTL8730E_UART
+	bool "UART"
+	default n
+
+config RTL8730E_UART0
+	bool "UART 0"
+	default n
+	select RTL8730E_UART
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8730E_UART1
+	bool "UART 1"
+	default n
+	select RTL8730E_UART
+	select ARCH_HAVE_UART1
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8730E_UART2
+	bool "UART 2"
+	default n
+	select RTL8730E_UART
+	select ARCH_HAVE_UART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8730E_UART3
+	bool "UART 3"
+	default n
+	select RTL8730E_UART
+	select ARCH_HAVE_UART3
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config RTL8730E_UART4
+	bool "UART 4"
+	default n
+	select RTL8730E_UART
+	select ARCH_HAVE_UART4
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select SERIAL_CONSOLE
+
+config RTL8730E_SERIAL_FIFO
+	bool "UART SERIAL FIFO"
+	default n
+
+endmenu
+
+menu "Realtek RTL8730E WIFI Support"
+
+config AMEBASMART_WIFI
+	bool "Enable Amebasmart WIFI"
+	default n
+
+endmenu
+
+menu "Realtek RTL8730E BLE Support"
+
+config AMEBASMART_BLE
+	bool "Enable Amebasmart BLE"
+	default n
+	#select FTL_ENABLED
+
+if AMEBASMART_BLE
+config FTL_ENABLED
+	bool "Enable FTL"
+	default n
+
+config AMEBASMART_BLE_DEBUG
+	bool "Enable BLE Debug"
+	default n
+
+config AMEBASMART_BLE_PERIPHERAL
+	bool "Enable Amebasmart BLE Peripheral"
+	default n
+
+config AMEBASMART_BLE_CENTRAL
+	bool "Enable Amebasmart BLE Central"
+	default n
+
+if AMEBASMART_BLE_CENTRAL && AMEBASMART_BLE_PERIPHERAL
+	config AMEBASMART_BLE_SCATTERNET
+		bool "Enable Amebasmart BLE Scatternet"
+		default n
+endif
+
+endif
+
+endmenu
+
+menu "Realtek RTL8730E TrustZone Support"
+
+config AMEBASMART_TRUSTZONE
+	bool "Enable Amebasmart TrustZone"
+	default n
+	select ARMV8M_TRUSTZONE
+
+endmenu

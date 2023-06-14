@@ -1,0 +1,11 @@
+Name:
+libpng
+License:
+libpng license, more details in LICENSE file
+License File:
+COPYING
+URL:
+http://libpng.download/src/libpng16/libpng-1.6.34.tar.gz
+Version: 1.6.34
+Description:
+libpng is the official PNG reference library.

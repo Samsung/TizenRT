@@ -1,0 +1,7 @@
+#define UTS_VERSION "2023/03/31-03:20:51"
+#define RTL_FW_COMPILE_TIME "2023/03/31-03:20:51"
+#define RTL_FW_COMPILE_DATE "2023/03/31"
+#define RTL_FW_COMPILE_BY "auto_jenkins_wlan5"
+#define RTL_FW_COMPILE_HOST ""
+#define RTL_FW_COMPILE_DOMAIN ""
+#define RTL_FW_COMPILER "gcc version 10.2.0 (Realtek ASDK-10.2.0 Build 3484) "

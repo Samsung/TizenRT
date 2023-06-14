@@ -1,0 +1,86 @@
+
+/*
+ * < CONFIG BOOT OPTION
+ */
+#undef  CONFIG_XIP_FLASH
+
+/*
+ * < CONFIG SOC PS
+ */
+#define CONFIG_SOC_PS_EN 1
+#define CONFIG_SOC_PS_MODULE 1
+
+/*
+ * < CONFIG BT
+ */
+#undef  CONFIG_BT_MENU
+#undef  CONFIG_BT
+#undef  CONFIG_BT_AP
+#undef  CONFIG_BT_NP
+#undef  CONFIG_BT_SINGLE_CORE
+
+/*
+ * < CONFIG WIFI
+ */
+#define CONFIG_WLAN_MENU 1
+#define CONFIG_AS_INIC_KM4_NP_CA32_AP 1
+#undef  CONFIG_SINGLE_CORE_WIFI_KM4
+
+
+/*
+ * < MENUCONFIG FOR LP CONFIG
+ */
+
+/*
+ * < CONFIG CHIP
+ */
+#define CONFIG_RTL8721D 1
+#define ARM_CORE_CM0 1
+#define CONFIG_FPGA 1
+#define CONFIG_RL6678_A_CUT 1
+
+/*
+ * < CONFIG TEST MODE
+ */
+#undef  CONFIG_MP
+#undef  CONFIG_CP
+#undef  CONFIG_FT
+#undef  CONFIG_EQC
+
+/*
+ * < CONFIG OS
+ */
+#define CONFIG_KERNEL 1
+#define PLATFORM_FREERTOS 1
+#define TASK_SCHEDULER_DISABLED (0)
+
+/*
+ * < CLINTWOOD Config
+ */
+#undef  CONFIG_CLINTWOOD
+
+/*
+ * < CONFIG FUNCTION TEST
+ */
+#undef  CONFIG_PER_TEST
+
+/*
+ * < CONFIG WIFI FW
+ */
+#define CONFIG_WIFI_FW_EN 1
+#undef  CONFIG_WIFI_FW_VERIFY
+#undef  CONFIG_SOCZB_PTA_VERIFY
+
+/*
+ * To set debug msg flag
+ */
+#define CONFIG_DEBUG_LOG 1
+
+/*
+ * < Build Option
+ */
+#define CONFIG_TOOLCHAIN_ASDK 1
+#undef  CONFIG_TOOLCHAIN_ARM_GCC
+#undef  CONFIG_LINK_ROM_LIB
+#define CONFIG_LINK_ROM_SYMB 1
+

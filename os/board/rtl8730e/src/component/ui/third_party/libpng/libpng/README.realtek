@@ -1,0 +1,11 @@
+Any realtek specific modifications to upstream libpng(1.6.34) should
+be listed here:
+
+(1) pguos has added the following files.
+pngusr.h
+pgos.mk
+README.version
+
+(2) pnglibconf.h
+This is copied from scripts / pnglibconf.h.prebuilt.
+realtek has undefined PNG_WARNINGS_SUPPORTED.
