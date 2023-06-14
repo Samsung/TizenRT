@@ -1,0 +1,62 @@
+# GDB script for loading ram.bin process
+
+#===============================================================================
+#set GDB connection 
+set remotetimeout 100000
+target remote :2335
+
+#===============================================================================
+#Message display setting
+#disable all messages
+
+set verbose off
+set complaints 0
+set confirm off
+set exec-done-display off
+show exec-done-display
+set trace-commands off
+#set debug aix-thread off
+#set debug dwarf2-die 0
+set debug displaced off 
+set debug expression 0
+set debug frame 0
+set debug infrun 0
+set debug observer 0
+set debug overload 0
+#set debugvarobj 0  #Ameba_todo
+set pagination off
+set print address off
+set print symbol-filename off
+set print symbol off
+set print pretty off
+set print object off
+#set debug notification off
+set debug parser off
+set debug remote 0
+
+#===============================================================================
+#monitor reset 1
+#monitor sleep 20
+#monitor clrbp #Ameba_todo
+#===============================================================================
+#Load flash download file
+file ./image/target_img2.axf
+set $FLASHDATBUFSIZE = 0x800
+
+set $PERI_ON_BASE = 0x42008000
+set $$REG_BOOT_CFG = 0x0268
+set $CUT_VERSION = 1
+
+#monitor halt
+#x 0x42008238
+#set {int}0x42008238=0x00000003
+#x 0x42008238
+#b main
+#continue
+#clear main
+#Load the file
+#lo
+
+
+
+
