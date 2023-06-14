@@ -29,6 +29,9 @@ import config_util as util
 # parameter information :
 #
 # argv[1] is kernel binary extension
+# argv[2] is board specific objcopy tool name
+# argv[3] is board specific objcopy arguments
+# argv[4] is flash start address of kernel binary
 #
 ############################################################################
 
@@ -59,20 +62,48 @@ else :
 
 # Convert kernel binary to name stored in .bininfo
 kernel_trpk_name = util.get_binname_from_bininfo("KERNEL")
-shutil.copyfile(output_folder + '/' + kernel_bin_name, output_folder + '/' + kernel_trpk_name)
+if kernel_bin_name != kernel_trpk_name :
+    shutil.copyfile(output_folder + '/' + kernel_bin_name, output_folder + '/' + kernel_trpk_name)
 
-# Convert app binaries to name stored in .bininfo
+# Convert app1 binariy to name stored in .bininfo
 if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
     app1_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_NAME=").replace('"', '').rstrip("\n")
     app1_trpk_name = util.get_binname_from_bininfo("APP1")
-    shutil.copyfile(output_folder + '/' + app1_bin_name, output_folder + '/' + app1_trpk_name)
+    if app1_bin_name != app1_trpk_name :
+        shutil.copyfile(output_folder + '/' + app1_bin_name, output_folder + '/' + app1_trpk_name)
+
+# Convert app2 binary to name stored in .bininfo
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
     app2_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_NAME=").replace('"', '').rstrip("\n")
     app2_trpk_name = util.get_binname_from_bininfo("APP2")
-    shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
+    if app1_bin_name != app1_trpk_name :
+        shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
 
 # Convert common binary to name stored in .bininfo
 if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
     common_bin_name = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
     common_trpk_name = util.get_binname_from_bininfo("COMMON")
-    shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
+    if common_bin_name != common_trpk_name :
+        shutil.copyfile(output_folder + '/' + common_bin_name, output_folder + '/' + common_trpk_name)
+
+
+############################################################################
+# Convert kernel binary format to hex or srec
+############################################################################
+OBJCOPY = sys.argv[2]
+OBJCOPYARGS = sys.argv[3]
+KERNEL_START = sys.argv[4]
+
+source_bin_path = output_folder + '/' + kernel_bin_name
+
+# Convert kernel binary to hex format
+if util.check_config_existence(cfg_file, 'CONFIG_INTELHEX_BINARY') == True:
+    target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.hex'
+    print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.hex')
+    os.system('%s %s --change-addresses %s -I binary -O ihex %s %s' % (OBJCOPY, OBJCOPYARGS, KERNEL_START, source_bin_path, target_path))
+
+# Convert kernel binary to srec format
+if util.check_config_existence(cfg_file, 'CONFIG_MOTOROLA_SREC') == True:
+    target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.srec'
+    print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.srec')
+    os.system('%s %s --change-addresses %s -I binary -O srec %s %s' % (OBJCOPY, OBJCOPYARGS, KERNEL_START, source_bin_path, target_path))

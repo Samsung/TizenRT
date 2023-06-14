@@ -539,15 +539,6 @@ endif
 	$(Q) python ./tools/set_bininfo.py
 	$(Q) python ./tools/convert_binary.py "$(BIN_EXT)" "$(OBJCOPY)" "$(OBJCOPYARGS)" "$(KERNEL_START)"
 
-ifeq ($(CONFIG_INTELHEX_BINARY),y)
-	$(Q) echo "CP: $(BIN_EXE).hex"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) --change-addresses $(KERNEL_START) -I binary -O ihex $(BIN).bin $(BIN).hex
-endif
-ifeq ($(CONFIG_MOTOROLA_SREC),y)
-	$(Q) echo "CP: $(BIN_EXE).srec"
-	$(Q) $(OBJCOPY) $(OBJCOPYARGS) --change-addresses $(KERNEL_START) -I binary -O srec $(BIN).bin $(BIN).srec
-endif
-
 
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/validate_output.py
