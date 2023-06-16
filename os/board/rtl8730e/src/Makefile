@@ -81,7 +81,7 @@ include component/soc/amebad2/fwlib/ap_peripheral/Make.defs
 include component/soc/amebad2/fwlib/ap_core/Make.defs
 include component/soc/amebad2/fwlib/rom_common/Make.defs
 include component/soc/amebad2/swlib/Make.defs
-include component/ssl/mbedtls-2.16.9/library/Make.defs
+
 # Need to check this path
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
@@ -156,8 +156,6 @@ CFLAGS += -I$(COMPONENT_DIR)/wifi/promisc
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 CFLAGS += -I$(COMPONENT_DIR)/ssl/mbedtls_ram_map/rom
-CFLAGS += -I$(COMPONENT_DIR)/ssl/mbedtls-2.16.9/include
-CFLAGS += -I$(COMPONENT_DIR)/ssl/mbedtls-2.16.9/include/mbedtls
 
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)

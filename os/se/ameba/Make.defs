@@ -29,6 +29,12 @@ SE_CSRCS += security_ameba_wrapper_tz.c
 SE_CSRCS += rtl_security_api_wrapper_tz.c
 endif
 
+ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
+SE_CSRCS += security_ameba_wrapper_tz.c
+SE_CSRCS += rtl_security_api_wrapper_tz.c
+SE_CSRCS += rtl_se_smccc_wrapper.c
+endif
+
 ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/common/mbed/hal_ext/
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d
@@ -56,5 +62,19 @@ CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/project/realtek_amebaLite_va0_example/i
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/ssl/mbedtls_ram_map/rom
 CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/os_dep
+endif
+
+ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/hal_ext/
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/targets/hal/rtl8730e
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os_dep
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/app/monitor/include
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/cmsis
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/misc
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/fwlib/include
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/swlib
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/project/realtek_amebaD2_va0_example/inc/inc_ap
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/file_system/fatfs/r0.14b/include
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/file_system/fatfs
 endif
 endif

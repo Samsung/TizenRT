@@ -51,6 +51,11 @@ static uint32_t SLOT1_START_ADDR = 0x1d000;
 static uint32_t SLOT0_START_ADDR = 0x24000;
 static uint32_t SLOT1_START_ADDR = 0x27000;
 #endif
+#ifdef CONFIG_AMEBASMART_TRUSTZONE
+/* ToDo: Temporary set need changes based flash addr */
+static uint32_t SLOT0_START_ADDR = 0x200000;
+static uint32_t SLOT1_START_ADDR = 0x203000;
+#endif
 static uint32_t SLOT_SIZE = 0x1000;
 static uint32_t SLOT_AREA_OFFEST = 0x23000;
 
