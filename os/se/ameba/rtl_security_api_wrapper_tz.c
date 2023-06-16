@@ -101,6 +101,25 @@ static void ns_printf(const char *input)
 	printf("%s\n", input);
 }
 
+
+
+#ifdef CONFIG_AMEBASMART_TRUSTZONE
+void *rtl_set_ns_func(void)
+{
+	/* No need for RTL8730E */
+	return NULL;
+}
+
+void up_allocate_secure_context(size_t size)
+{
+	/* No need for RTL8730E */
+}
+
+void up_free_secure_context(void)
+{
+	/* No need for RTL8730E */
+}
+#else
 extern int rtw_get_random_bytes(void *dst, u32 size);
 void *rtl_set_ns_func(void)
 {
@@ -115,3 +134,4 @@ void *rtl_set_ns_func(void)
 
 	return (void *)&ns_func;
 }
+#endif

@@ -182,13 +182,9 @@ function copy_bootloader()
 
 	source ${CONFIG}
 
-	if [ "${CONFIG_AMEBASMART_TRUSTZONE}" != "y" ];then
-		echo "========== Copy_bootloader for TZ disabled =========="
-		cp $BOOT_PATH/km4_boot_all.bin $BINDIR/km4_boot_all.bin
-	else
-		echo "========== Copy_bootloader for TZ enabled =========="
-		cp $BOOT_PATH/km4_boot_all_tz.bin $BINDIR/km4_boot_all.bin
-	fi
+	echo "========== Copy_bootloader =========="
+	cp $BOOT_PATH/km4_boot_all.bin $BINDIR/km4_boot_all.bin
+
 }
 
 function concatenate_binary_without_signing()
@@ -200,19 +196,13 @@ function concatenate_binary_without_signing()
 
 	source ${CONFIG}
 
-	 if [ "${CONFIG_AMEBASMART_TRUSTZONE}" != "y" ];then
-		 echo "========== Concatenate_binary for TZ disabled =========="
-		 #cat $BINDIR/xip_image2_prepend.bin $BINDIR/ram_2_prepend.bin > $BINDIR/km4_image2_all.bin
-		 #cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin > $BINDIR/km0_km4_image2.bin
-		 cp $BINDIR/km0_km4_app.bin $GNUUTL/km0_km4_app_temp.bin
-		 $GNUUTL/rmcert.sh $GNUUTL/km0_km4_app_temp.bin
-		 $GNUUTL/pad.sh $GNUUTL/km0_km4_app_temp.bin
-		 cat $GNUUTL/cert.bin $GNUUTL/km0_km4_app_temp.bin $BINDIR/ap_image_all.bin > $BINDIR/km0_km4_ap_image_all.bin
-		 rm -rf $GNUUTL/km0_km4_app_temp.bin
-	# else
-		# echo "========== Concatenate_binary for TZ enabled =========="
-		# cat $GNUUTL/cert.bin $GNUUTL/manifest.bin $GNUUTL/km0_image2_all.bin $BINDIR/km4_image2_all.bin $BINDIR/km4_image3_all-en.bin > $BINDIR/km0_km4_image2.bin
-	 fi
+ 	echo "========== Concatenate_binary =========="
+ 	cp $BINDIR/km0_km4_app.bin $GNUUTL/km0_km4_app_temp.bin
+ 	$GNUUTL/rmcert.sh $GNUUTL/km0_km4_app_temp.bin
+ 	$GNUUTL/pad.sh $GNUUTL/km0_km4_app_temp.bin
+ 	cat $GNUUTL/cert.bin $GNUUTL/km0_km4_app_temp.bin $BINDIR/ap_image_all.bin > $BINDIR/km0_km4_ap_image_all.bin
+ 	rm -rf $GNUUTL/km0_km4_app_temp.bin
+
 }
 
 function concatenate_binary_with_signing()
