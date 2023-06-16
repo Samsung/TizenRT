@@ -760,7 +760,7 @@
   /* Set up the NOR FLASH region as the TIZENRT .text region */
 
 #  define TIZENRT_TEXT_VADDR       (CONFIG_FLASH_VSTART & 0xfff00000)
-#  define TIZENRT_TEXT_PADDR       (CONFIG_FLASH_START & 0xfff00000)
+#  define TIZENRT_TEXT_PADDR       (CONFIG_FLASH_START_ADDR & 0xfff00000)
 #  define TIZENRT_TEXT_PEND        ((CONFIG_FLASH_END + 0x000fffff) & 0xfff00000)
 #  define TIZENRT_TEXT_SIZE        (TIZENRT_TEXT_PEND - TIZENRT_TEXT_PADDR)
 

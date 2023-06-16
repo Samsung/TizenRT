@@ -5,14 +5,6 @@
 
 if ARCH_BOARD_RTL8730E
 
-config FLASH_START
-    hex
-    default 0x8000000
-    help
-        A start physical address of flash (in hex).
-        This is fixed value, so user doesn't need to change it.
-	Keep this value same as FLASH_START_ADDR.
-
 config FLASH_VSTART
     hex
     default 0x8000000

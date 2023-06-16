@@ -86,11 +86,11 @@
    * beginning of FLASH.
    */
 
-#  if !defined(CONFIG_FLASH_START) || !defined(CONFIG_FLASH_VSTART)
-#    error "CONFIG_FLASH_START or CONFIG_FLASH_VSTART is not defined"
+#  if !defined(CONFIG_FLASH_START_ADDR) || !defined(CONFIG_FLASH_VSTART)
+#    error "CONFIG_FLASH_START_ADDR or CONFIG_FLASH_VSTART is not defined"
 #  endif
 
-#  if CONFIG_FLASH_START == CONFIG_FLASH_VSTART
+#  if CONFIG_FLASH_START_ADDR == CONFIG_FLASH_VSTART
 #    define CONFIG_IDENTITY_TEXTMAP 1
 #  endif
 
@@ -113,11 +113,11 @@
    * beginning of FLASH.
    */
 
-#  if !defined(CONFIG_FLASH_START) || !defined(CONFIG_FLASH_VSTART)
-#    error "CONFIG_FLASH_START or CONFIG_FLASH_VSTART is not defined"
+#  if !defined(CONFIG_FLASH_START_ADDR) || !defined(CONFIG_FLASH_VSTART)
+#    error "CONFIG_FLASH_START_ADDR or CONFIG_FLASH_VSTART is not defined"
 #  endif
 
-#  if CONFIG_FLASH_START == CONFIG_FLASH_VSTART
+#  if CONFIG_FLASH_START_ADDR == CONFIG_FLASH_VSTART
 #    define CONFIG_IDENTITY_TEXTMAP 1
 #  endif
 
