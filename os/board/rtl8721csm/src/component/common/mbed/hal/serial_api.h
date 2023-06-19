@@ -88,6 +88,8 @@ typedef struct serial_s serial_t;
   */
 void serial_init(serial_t *obj, PinName tx, PinName rx);
 
+void serial_pin_init(PinName tx, PinName rx);
+
 /**
   * @brief  Deinitializes the UART device, include clock/function/interrupt/UART registers.
   * @param  obj: uart object define in application software.
