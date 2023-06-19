@@ -95,9 +95,9 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 	    {
 	        rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t*)p_data;
 	        if (RTK_BT_OK == p_ind_ind->err_code)
-	            dbg("[APP] BLE tizenrt notify succeed!\r\n");
+	            dbg("[APP] BLE tizenrt indication succeed!\r\n");
 	        else
-	            dbg("[APP] BLE tizenrt notify failed, local error: %d\r\n", p_ind_ind->err_code);
+	            dbg("[APP] BLE tizenrt indication failed, local error: %d\r\n", p_ind_ind->err_code);
 	        break;
 	    }
 
@@ -385,6 +385,7 @@ void ble_tizenrt_free_srv_info(struct rtk_bt_gatt_service *srv_info)
 }
 
 extern uint16_t server_profile_count;
+int attr_counter = 0;
 trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 {	
 	struct rtk_bt_gatt_service ble_tizenrt_srv = {0};
@@ -400,20 +401,22 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 	rtk_bt_gatt_attr_t ble_tizenrt_attrs[ble_tizenrt_srv.attr_count];
 	int j = 0;
 	int srv_count = 0;
-	for(int i = 0; i < server_profile_count; i++)
-	{
-		if(TRBLE_GATT_SERVICE == server_init_parm.profile[i].type){
+
+	while (attr_counter < server_profile_count){
+		if(TRBLE_GATT_SERVICE == server_init_parm.profile[attr_counter].type){
 			srv_count++;
 			if(srv_count > 1)
 				break;
-			setup_ble_srv_dec_add_attr(&ble_tizenrt_attrs[j++], i);
-		}else if(TRBLE_GATT_CHARACT == server_init_parm.profile[i].type){
-			setup_ble_char_dec_add_attr(&ble_tizenrt_attrs[j++], i);
-			setup_ble_char_val_desc_add_attr(&ble_tizenrt_attrs[j++], i);
-		}else if(TRBLE_GATT_DESC == server_init_parm.profile[i].type){
-			setup_ble_char_ccc_add_attr(&ble_tizenrt_attrs[j++], i);
+			setup_ble_srv_dec_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+		}else if(TRBLE_GATT_CHARACT == server_init_parm.profile[attr_counter].type){
+			setup_ble_char_dec_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+			setup_ble_char_val_desc_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+		}else if(TRBLE_GATT_DESC == server_init_parm.profile[attr_counter].type){
+			setup_ble_char_ccc_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
 		}
+		attr_counter++;
 	}
+
 	ble_tizenrt_srv.attrs = ble_tizenrt_attrs;
     debug_print("tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_size = %d start_handle = 0x%x \n",
                                                 index,

@@ -49,8 +49,7 @@
 #
 ############################################################################
 
-CSRCS += peripheral.c \
-	 ble_tizenrt_service.c \
+CSRCS += ble_tizenrt_service.c \
 	 ble_tizenrt_server.c
 
 DEPPATH += --dep-path component/bluetooth/example/ble_peripheral

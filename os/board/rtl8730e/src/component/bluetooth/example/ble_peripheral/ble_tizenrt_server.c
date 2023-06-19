@@ -261,6 +261,56 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     return TRBLE_SUCCESS;
 }
 
+trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
+{
+	if (is_server_init != true)
+	   {
+		   return TRBLE_INVALID_STATE;
+	   }
+	
+	   if (attr_handle == 0x0000) /* invalid attr_handle */
+	   {
+		   return TRBLE_NOT_FOUND;
+	   } 
+	
+	   T_SERVER_ID app_id = 0;
+	   uint16_t cha_index = 0;
+	   rtk_bt_gatts_ntf_and_ind_param_t param;
+	   
+	   param.data = (void *)osif_mem_alloc(0, data_length);
+	   if(!param.data)
+	   {
+		   osif_mem_free(param.data);
+		   debug_print("Memory allocation failed \n");
+		   return TRBLE_FAIL;
+	   }
+	
+	   for(uint8_t i = 0; i < tizenrt_ble_srv_count; i++)
+	   {
+		   if(tizenrt_ble_srv_database[i].start_handle < attr_handle && 
+			   tizenrt_ble_srv_database[i].start_handle + tizenrt_ble_srv_database[i].att_count >= attr_handle)
+		   {
+			   app_id = TIZENRT_SRV_ID + i;
+			   cha_index = attr_handle - tizenrt_ble_srv_database[i].start_handle;
+		   }
+	   }
+	   param.app_id = app_id;
+	   param.conn_handle = con_handle;
+	   param.index = cha_index;
+	   memcpy((void*)param.data, data_ptr, data_length);
+	   param.len = data_length;
+	   param.seq = 0;
+
+	   if(RTK_BT_OK != rtk_bt_gatts_indicate(&param))
+	   {
+		   osif_mem_free(param.data);
+		   debug_print("send indication fail \n");
+		   return TRBLE_FAIL;
+	   }
+	   osif_mem_free(param.data);
+	   return TRBLE_SUCCESS;
+}
+
 trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_errorcode)
 {
     if (is_server_init != true)
