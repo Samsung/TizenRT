@@ -424,6 +424,21 @@ static int rtl8721d_up_setup(struct uart_dev_s *dev)
 }
 
 /****************************************************************************
+ * Name: rtl8721d_up_setup_pin
+ *
+ * Description:
+ *   Operation is only setting serial pin.
+ *
+ ****************************************************************************/
+static int rtl8721d_up_setup_pin(struct uart_dev_s *dev)
+{
+	struct rtl8721d_up_dev_s *priv = (struct rtl8721d_up_dev_s *)dev->priv;
+	DEBUGASSERT(priv);
+	serial_pin_init(priv->tx, priv->rx);
+	return OK;
+}
+
+/****************************************************************************
  * Name: up_shutdown
  *
  * Description:
@@ -739,6 +754,7 @@ void up_serialinit(void)
 	uart_register("/dev/ttyS1", &TTYS1_DEV);
 #endif
 #ifdef TTYS2_DEV
+	rtl8721d_up_setup_pin(&TTYS2_DEV);
 	uart_register("/dev/ttyS2", &TTYS2_DEV);
 #endif
 
