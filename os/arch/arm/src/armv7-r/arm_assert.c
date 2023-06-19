@@ -897,29 +897,11 @@ static void _up_assert(int errorcode)
 }
 
 /****************************************************************************
- * Public Functions
+ * Name: print_assert_detail
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_assert
- ****************************************************************************/
-
-void up_assert(const uint8_t *filename, int lineno)
+static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb)
 {
-
-	board_autoled_on(LED_ASSERTION);
-	struct tcb_s *fault_tcb = this_task();
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
-	/* First time, when code reaches here abort_mode will be false and
-	   for next iteration (recursive abort case), abort_mode is already
-	   set to true and thus we can assume that we are in recursive abort
-	   mode and thus set the flag accordingly */
-	if (abort_mode) {
-		recursive_abort = true;
-	}
-#endif
-	abort_mode = true;
-
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
 #else
@@ -951,6 +933,33 @@ void up_assert(const uint8_t *filename, int lineno)
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), this_task(), (uint8_t *)filename, lineno);
 #endif
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_assert
+ ****************************************************************************/
+
+void up_assert(const uint8_t *filename, int lineno)
+{
+
+	board_autoled_on(LED_ASSERTION);
+	struct tcb_s *fault_tcb = this_task();
+#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL)
+	/* First time, when code reaches here abort_mode will be false and
+	   for next iteration (recursive abort case), abort_mode is already
+	   set to true and thus we can assume that we are in recursive abort
+	   mode and thus set the flag accordingly */
+	if (abort_mode) {
+		recursive_abort = true;
+	}
+#endif
+	abort_mode = true;
+
+	print_assert_detail(filename, lineno, fault_tcb);
 
 #if defined(CONFIG_BOARD_ASSERT_AUTORESET)
 	(void)boardctl(BOARDIOC_RESET, 0);
