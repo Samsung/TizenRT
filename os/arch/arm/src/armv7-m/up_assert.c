@@ -394,6 +394,62 @@ static void up_dumpstate(void)
 #endif
 
 /****************************************************************************
+ * Name: print_assert_detail
+ ****************************************************************************/
+
+static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
+{
+	irqstate_t flags = irqsave();
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
+#else
+	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
+#endif
+
+	/* Print the extra arguments (if any) from ASSERT_INFO macro */
+	if (assert_info_str[0]) {
+		lldbg("%s\n", assert_info_str);
+	}
+
+#if defined(CONFIG_DEBUG_WORKQUEUE)
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
+	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Code asserted in workqueue!\n");
+		lldbg("Running work function is %x.\n", work_get_current());
+	}
+#endif
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
+
+	up_dumpstate();
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	elf_show_all_bin_section_addr();
+#endif
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
+		lldbg("Checking current app heap for corruption...\n");
+		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
+			lldbg("No app heap corruption detected\n");
+		}
+	}
+#endif
+	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
+
+	/* Dump the asserted TCB */
+	lldbg("*******************************************\n");
+	lldbg("Asserted TCB Info\n");
+	lldbg("*******************************************\n");
+
+	task_show_tcbinfo(fault_tcb);
+
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
+#endif
+	irqrestore(flags);
+}
+
+/****************************************************************************
  * Name: _up_assert
  ****************************************************************************/
 static void _up_assert(int errorcode)
@@ -421,6 +477,36 @@ static void _up_assert(int errorcode)
 	}
 #endif
 #endif /* CONFIG_BOARD_ASSERT_AUTORESET */
+}
+
+/****************************************************************************
+ * Name: recovery_assert
+ ****************************************************************************/
+
+static inline void recovery_assert(uint32_t asserted_location)
+{
+	irqstate_t flags = irqsave();
+	lldbg("Checking kernel heap for corruption...\n");
+	if (mm_check_heap_corruption(g_kmmheap) == OK) {
+		lldbg("No kernel heap corruption detected\n");
+	} else {
+		/* treat kernel fault */
+
+		_up_assert(EXIT_FAILURE);
+	}
+	irqrestore(flags);
+
+#ifdef CONFIG_BINMGR_RECOVERY
+	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
+		/* Recover user fault through binary manager */
+		binary_manager_recover_userfault();
+	} else
+#endif
+	{
+		/* treat kernel fault */
+
+		_up_assert(EXIT_FAILURE);
+	}
 }
 
 /****************************************************************************
@@ -476,73 +562,7 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)kernel_assert_location;
 	}
 
-	irqstate_t flags = irqsave();
-#if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
-#else
-	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
-#endif
+	print_assert_detail(filename, lineno, fault_tcb, asserted_location);
 
-	/* Print the extra arguments (if any) from ASSERT_INFO macro */
-	if (assert_info_str[0]) {
-		lldbg("%s\n", assert_info_str);
-	}
-
-#if defined(CONFIG_DEBUG_WORKQUEUE)
-#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
-	if (IS_HPWORK || IS_LPWORK) {
-		lldbg("Code asserted in workqueue!\n");
-		lldbg("Running work function is %x.\n", work_get_current());
-	}
-#endif
-#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
-
-	up_dumpstate();
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	elf_show_all_bin_section_addr();
-#endif
-
-	lldbg("Checking kernel heap for corruption...\n");
-	if (mm_check_heap_corruption(g_kmmheap) == OK) {
-		lldbg("No kernel heap corruption detected\n");
-	} else {
-		/* treat kernel fault */
-
-		_up_assert(EXIT_FAILURE);
-	}
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
-		lldbg("Checking current app heap for corruption...\n");
-		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
-			lldbg("No app heap corruption detected\n");
-		}
-	}
-#endif
-	lldbg("Assert location (PC) : %08x\n", asserted_location);
-
-	/* Dump the asserted TCB */
-	lldbg("*******************************************\n");
-	lldbg("Asserted TCB Info\n");
-	lldbg("*******************************************\n");
-
-	task_show_tcbinfo(fault_tcb);
-
-#if defined(CONFIG_BOARD_CRASHDUMP)
-	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
-#endif
-
-	irqrestore(flags);
-
-#ifdef CONFIG_BINMGR_RECOVERY
-	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		/* Recover user fault through binary manager */
-		binary_manager_recover_userfault();
-	} else
-#endif
-	{
-		/* treat kernel fault */
-
-		_up_assert(EXIT_FAILURE);
-	}
+	recovery_assert(asserted_location);
 }
