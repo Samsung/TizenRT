@@ -75,6 +75,7 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     client_init_parm->trble_device_connected_cb = init_client->trble_device_connected_cb;
     client_init_parm->trble_device_disconnected_cb = init_client->trble_device_disconnected_cb;
     client_init_parm->trble_operation_notification_cb = init_client->trble_operation_notification_cb;
+    client_init_parm->trble_operation_indication_cb = init_client->trble_operation_indication_cb;
     client_init_parm->mtu = init_client->mtu;
 
     //init server

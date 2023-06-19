@@ -667,28 +667,8 @@ trble_result_e rtw_ble_client_operation_write(trble_operation_handle* handle, tr
 //        debug_print("write failed! \n");
         return TRBLE_FAIL;
     }
-
-    int wticks = 0;
-    while(wticks++ < 30)
-    {
-//        debug_print("wticks %d \n", wticks);
-        if(osif_sem_take(ble_tizenrt_write_sem, 1000))
-        {
-//            debug_print("take write sema success \n");
-//            debug_print("conn_id %d att_handle 0x%x! \n", handle->conn_handle, handle->attr_handle);
-            osif_sem_delete(ble_tizenrt_write_sem);
-            ble_tizenrt_write_sem = NULL;
-            if(ble_write_request_result->status == RTK_BT_STATUS_DONE)
-            {
-//                debug_print("write_req success \n");
-                return TRBLE_SUCCESS;
-            } else {
-//                debug_print("write_req fail \n");
-                return TRBLE_FAIL;
-            }
-        }
-    }
-    return TRBLE_FAIL; 
+    
+    return TRBLE_SUCCESS;
 }
 
 void *ble_tizenrt_write_no_rsp_sem = NULL;

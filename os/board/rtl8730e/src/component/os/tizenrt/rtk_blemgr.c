@@ -87,6 +87,7 @@ trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trbl
 /*** Peripheral(Server) ***/
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count);
 trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 trble_result_e trble_netmgr_attr_reject(struct bledev *dev, trble_attr_handle attr_handle, uint8_t app_errorcode);
@@ -138,13 +139,14 @@ struct trble_ops g_trble_drv_ops = {
 	// Server
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
-	NULL,
+	trble_netmgr_charact_indicate,
 	trble_netmgr_attr_set_data,
 	trble_netmgr_attr_get_data,
 	trble_netmgr_attr_reject,
 	trble_netmgr_server_disconnect,
 	trble_netmgr_get_mac_addr_by_conn_handle,
 	trble_netmgr_get_conn_handle_by_addr,
+	NULL,
 
 	// Broadcaster
 	trble_netmgr_set_adv_data,
@@ -158,7 +160,6 @@ struct trble_ops g_trble_drv_ops = {
 
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
 {
-	printf("[%s : %d]\n", __FILE__, __LINE__);
 	trble_result_e ret = TRBLE_INVALID_ARGS;
 	 if (!wifi_is_running(0)) {
 	 	TRBLE_TEST_ERR("[TRBLE] WiFi is off. Please turn on WiFi first.\n");
@@ -369,6 +370,11 @@ trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *coun
 trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data)
 {
 	return rtw_ble_server_charact_notify(attr_handle, con_handle, data->data, data->length);
+}
+
+trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data)
+{
+	return rtw_ble_server_charact_indicate(attr_handle, con_handle, data->data, data->length);
 }
 
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)

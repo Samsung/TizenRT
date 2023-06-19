@@ -864,17 +864,6 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, 
                                                     ble_tizenrt_scatternet_gattc_app_callback));
         BT_APP_PROCESS(general_client_add());
-#if RTK_BLE_5_0_AE_ADV_SUPPORT
-		ext_adv_param.filter_policy = adv_filter_policy;
-		BT_APP_PROCESS(rtk_bt_le_gap_create_ext_adv(&ext_adv_param, &adv_handle));
-		BT_APP_PROCESS(rtk_bt_le_gap_set_ext_adv_data(adv_handle, ext_adv_data, sizeof(ext_adv_data)));
-		BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(adv_handle, 0));
-#else
-		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data))); 
-		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(scan_rsp_data, sizeof(scan_rsp_data)));
-		adv_param.filter_policy = adv_filter_policy;
-		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param)); 
-#endif
 	}
 	else if (0 == enable)
     {
