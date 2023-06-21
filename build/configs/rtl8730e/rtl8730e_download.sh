@@ -29,7 +29,7 @@ APP_NUM=0
 function pre_download()
 {
 	source ${TOP_PATH}/os/.bininfo
-	cp -p ${BIN_PATH}/km4_boot_all.bin ${IMG_TOOL_PATH}/km4_boot_all.bin
+	cp -p ${BIN_PATH}/${BL1}.bin ${IMG_TOOL_PATH}/${BL1}.bin 
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
 	if [ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]; then
 		if test -f "${BIN_PATH}/${APP1_BIN_NAME}"; then
@@ -52,7 +52,9 @@ function pre_download()
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		cp -p ${SMARTFS_BIN_PATH} ${IMG_TOOL_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
-	cp -p ${BIN_PATH}/bootparam.bin ${IMG_TOOL_PATH}/bootparam.bin
+	if test -f "${BIN_PATH}/${BOOTPARAM}.bin"; then
+		cp -p ${BIN_PATH}/${BOOTPARAM}.bin ${IMG_TOOL_PATH}/${BOOTPARAM}.bin
+	fi
 }
 
 function board_download()
@@ -75,7 +77,9 @@ function post_download()
 {
 	cd ${IMG_TOOL_PATH}
 	[ -e ${BL1}.bin ] && rm ${BL1}.bin
-	[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
+	if test -f "${KERNEL_BIN_NAME}"; then
+		[ -e ${KERNEL_BIN_NAME} ] && rm ${KERNEL_BIN_NAME}
+	fi
 	if test -f "${APP1_BIN_NAME}"; then
 		[ -e ${APP1_BIN_NAME} ] && rm ${APP1_BIN_NAME}
 	fi
@@ -88,7 +92,9 @@ function post_download()
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
-	[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
+	if test -f "${BOOTPARAM}.bin"; then
+		[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
+	fi
 }
 
 
