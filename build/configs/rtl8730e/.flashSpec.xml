@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2022 Samsung Electronics All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ either express or implied. See the License for the specific
+ language governing permissions and limitations under the License.
+-->
+<flash name="ameba flash" virtual="false">
+    <!-- path attribute value must be relative path from project root -->
+    <executors>
+        <execute name="flash" path="${PROJECT_PATH}/os" command="make download" os="linux" bit="all"></execute>
+    </executors>
+    <options>
+        <option desc="Flash all binaries and images">ALL</option>
+        <option desc="Flash TizenRT km4 bootloader">BL1</option>
+        <option desc="Flash TizenRT kernel">KERNEL</option>
+        <option desc="Flash TizenRT userfs">USERFS</option>
+        <option desc="Flash TizenRT bootparam">BOOTPARAM</option>
+        <option desc="Erase TizenRT kernel">ERASE KERNEL</option>
+        <option desc="Erase TizenRT userfs">ERASE USERFS</option>
+        <option desc="Erase all binaries and images">ERASE ALL</option>
+    </options>
+</flash>
