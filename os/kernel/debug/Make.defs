@@ -15,6 +15,11 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+ifeq ($(CONFIG_CPP_HAVE_VARARGS),n)
+ifeq ($(CONFIG_SECURE_DEBUG_ASSERT),y)
+CSRCS += debug.c
+endif
+endif
 
 ifeq ($(CONFIG_DEBUG_SYSTEM),y)
 CSRCS += sysdbg.c
