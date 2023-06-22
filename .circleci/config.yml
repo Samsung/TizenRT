@@ -125,6 +125,16 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8730e/hello:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
 workflows:
   version: 2
   build-tizenrt:
@@ -155,5 +165,8 @@ workflows:
           requires:
             - checkout_code
       - rtl8720e/loadable_apps:
+          requires:
+            - checkout_code
+      - rtl8730e/hello:
           requires:
             - checkout_code
