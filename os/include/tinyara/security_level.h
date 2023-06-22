@@ -33,9 +33,9 @@
  * Global Type Declarations
  ********************************************************************************/
 enum security_level_result_e {
-        SECURITY_LEVEL_OK,
-        SECURITY_LEVEL_FAIL_READ,
-        SECURITY_LEVEL_INVALID_VALUE
+	SECURITY_LEVEL_OK,
+	SECURITY_LEVEL_FAIL_READ,
+	SECURITY_LEVEL_INVALID_VALUE
 };
 
 typedef enum security_level_result_e security_level_result_t;

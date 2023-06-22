@@ -82,35 +82,35 @@ static int security_level = 0;
  ****************************************************************************/
 int set_security_level(void)
 {
-        struct sec_lowerhalf_s *se = se_get_device();
-        hal_data output;
-        hal_result_e hal_ret;
-        security_level_result_t ret;
+	struct sec_lowerhalf_s *se = se_get_device();
+	hal_data output;
+	hal_result_e hal_ret;
+	security_level_result_t ret;
 
-        output.priv_len = 0;
-        output.priv = NULL;
-        output.data_len = 2;
-        output.data = (char *)kmm_malloc(output.data_len);
+	output.priv_len = 0;
+	output.priv = NULL;
+	output.data_len = 2;
+	output.data = (char *)kmm_malloc(output.data_len);
 
-        hal_ret = se->ops->read_storage(SS_SLOT_INDEX_SECURITY_LEVEL, &output);
-        if (hal_ret != HAL_SUCCESS) {
-                ret = SECURITY_LEVEL_FAIL_READ;
-                return ret;
-        }
-        
-        int result = atoi(output.data);
-        if (result == HIGH_SECURITY_LEVEL) {
-                security_level = 1;
-        } else if (result == LOW_SECURITY_LEVEL) {
-                security_level = 0;
-        } else {
-                ret = SECURITY_LEVEL_INVALID_VALUE;
-                return ret;
-        }
-        
-        printf("[set_security_level] security_level : %d\n", security_level);
-        ret = SECURITY_LEVEL_OK;
-        return ret;
+	hal_ret = se->ops->read_storage(SS_SLOT_INDEX_SECURITY_LEVEL, &output);
+	if (hal_ret != HAL_SUCCESS) {
+		ret = SECURITY_LEVEL_FAIL_READ;
+		return ret;
+	}
+
+	int result = atoi(output.data);
+	if (result == HIGH_SECURITY_LEVEL) {
+		security_level = 1;
+	} else if (result == LOW_SECURITY_LEVEL) {
+		security_level = 0;
+	} else {
+		ret = SECURITY_LEVEL_INVALID_VALUE;
+		return ret;
+	}
+
+	printf("[set_security_level] security_level : %d\n", security_level);
+	ret = SECURITY_LEVEL_OK;
+	return ret;
 }
 
 /****************************************************************************
@@ -131,5 +131,5 @@ int set_security_level(void)
  ****************************************************************************/
 int get_security_level(void)
 {
-        return security_level;
+	return security_level;
 }
