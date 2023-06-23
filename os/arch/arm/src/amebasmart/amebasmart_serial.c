@@ -381,8 +381,8 @@ static struct rtl8730e_up_dev_s g_uart1priv = {
 	.irq = RTL8730E_UART1_IRQ,
 	.tx = PA_10,
 	.rx = PA_9,
-	.rts = PA_22,
-	.cts = PA_23,
+	.rts = PA_11,
+	.cts = PA_12,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -415,10 +415,10 @@ static struct rtl8730e_up_dev_s g_uart2priv = {
 #endif
 	.baud = CONFIG_UART2_BAUD,
 	.irq = RTL8730E_UART2_IRQ,
-	.tx = PB_23,
-	.rx = PB_22,
-	.rts = PA_24,
-	.cts = PA_25,
+	.tx = PB_22,
+	.rx = PB_21,
+	.rts = PB_20,
+	.cts = PB_19,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -825,9 +825,9 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 		InterruptEn(RTL8730E_UART_LOG_IRQ-32, 4);
 	} else {
 		sdrv[uart_index_get(priv->tx)]->uart_idx = uart_index_get(priv->tx);
-	serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
-	serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
-	serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
+		serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);
+		serial_baud(sdrv[uart_index_get(priv->tx)], priv->baud);
+		serial_format(sdrv[uart_index_get(priv->tx)], priv->bits, priv->parity, priv->stopbit);
 
 #if defined(CONFIG_SERIAL_IFLOWCONTROL) || defined(CONFIG_SERIAL_OFLOWCONTROL)
 		if ((uart_index_get(priv->tx) == 0) || (uart_index_get(priv->tx) == 1) || (uart_index_get(priv->tx) == 2)) {
@@ -1303,4 +1303,5 @@ int up_getc(void)
 	return ch;
 }
 #endif							/* USE_SERIALDRIVER */
+
 

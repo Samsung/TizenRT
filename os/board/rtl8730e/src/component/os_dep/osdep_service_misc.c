@@ -124,6 +124,22 @@ int rtw_printf_info(const char *format,...)
 	return ret;
 }
 
+static IRQ_FUN TizenUserIrqFunTable[100];
+static int wrapper_IrqFun(int irq, FAR void *context, FAR void *arg)
+{
+	if (irq < AMEBASMART_IRQ_FIRST) {
+		DBG_INFO("INT %d should not come here\n", irq);
+		return OK;
+	}
+
+	if (TizenUserIrqFunTable[irq - AMEBASMART_IRQ_FIRST] != NULL) {
+		TizenUserIrqFunTable[irq - AMEBASMART_IRQ_FIRST]((VOID *)(arg));
+	} else {
+		DBG_INFO("INT_Entry Irq %d Fun Not Assign!!!!!\n", irq - AMEBASMART_IRQ_FIRST);
+	}
+	return OK;
+}
+
 BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
 {
 	if (IrqNum < 0) {
@@ -134,8 +150,8 @@ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
 	if (IrqNum == WL_DMA_IRQ || IrqNum == WL_PROTOCOL_IRQ) {
 		Priority = 4;
 	}
-
-	irq_attach(IrqNum + AMEBASMART_IRQ_FIRST, (xcpt_t)IrqFun, (void *)Data);
+	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32) IrqFun | 0x1);
+	irq_attach(IrqNum + AMEBASMART_IRQ_FIRST, (xcpt_t)wrapper_IrqFun, (void *)Data);
 	up_prioritize_irq(IrqNum + AMEBASMART_IRQ_FIRST, Priority);	// Use the API in arm_gicv2.c
 	return _TRUE;
 }
@@ -147,6 +163,7 @@ BOOL irq_unregister(IRQn_Type IrqNum)
 		return _TRUE;
 	}
 	irq_detach(IrqNum + AMEBASMART_IRQ_FIRST);
+	TizenUserIrqFunTable[IrqNum] = NULL;
 	return _TRUE;
 }
 
