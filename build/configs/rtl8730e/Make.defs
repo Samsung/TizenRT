@@ -219,7 +219,7 @@ endef
 SECURE_HEADER_SIZE=32
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../os/tools/mksamsungheader.py kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE}
   #FENG: Do not make samsung header first since bootloader not support
   #$(TOPDIR)/../build/tools/amebasmart/gnu_utility/dummy_DoNothing.py
 endef
