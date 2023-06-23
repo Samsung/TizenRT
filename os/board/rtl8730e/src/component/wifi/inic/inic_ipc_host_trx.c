@@ -206,7 +206,9 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
 void inic_ipc_host_init_skb(void)
 {
 	if (host_skb_info || host_skb_data) {
+#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 		DBG_8195A("host_skb_info or host_skb_data not mfree|\n");
+#endif
 		return;
 	}
 
