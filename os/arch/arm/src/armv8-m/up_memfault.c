@@ -100,6 +100,37 @@ extern uint32_t system_exception_location;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: print_memfault_detail
+ ****************************************************************************/
+
+static inline void print_memfault_detail(uint32_t *regs, uint32_t cfsr, uint32_t mmfar)
+{
+	lldbg("#########################################################################\n");
+	lldbg("PANIC!!! Memory Management Fault at instruction : 0x%08x\n", regs[REG_R15]);
+
+	if (cfsr & DACCVIOL) {
+		lldbg("FAULT TYPE: DACCVIOL (Data access violation occurred. Check MPU RW permissions).\n");
+	} else if (cfsr & IACCVIOL) {
+		lldbg("FAULT TYPE: IACCVIOL (Instruction access violation occurred. Check MPU XN region).\n");
+	} else if (cfsr & MSTKERR) {
+		lldbg("FAULT TYPE: MSTKERR (Error while stacking registers during exception entry).\n");
+	} else if (cfsr & MUNSTKERR) {
+		lldbg("FAULT TYPE: MUNSTKERR (Error while unstacking registers during exception return).\n");
+	} else if (cfsr & MLSPERR) {
+		lldbg("FAULT TYPE: MLSPERR (Error occurred during lazy state preservation of Floating Point unit registers).\n");
+	}
+
+	if (cfsr & MMARVALID) {
+		lldbg("FAULT ADDRESS: 0x%08x\n", mmfar);
+	} else {
+		lldbg("FAULT ADDRESS: Unable to determine fault address.\n");
+	}
+
+	lldbg("FAULT REGS: CFAULTS: 0x%08x MMFAR: 0x%08x\n", cfsr, mmfar);
+	lldbg("#########################################################################\n\n\n");
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -123,31 +154,11 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	uint32_t mmfar = getreg32(NVIC_MEMMANAGE_ADDR);
 	system_exception_location = regs[REG_R15];
-
-	lldbg("#########################################################################\n");
-	lldbg("PANIC!!! Memory Management Fault at instruction : 0x%08x\n", regs[REG_R15]);
-
-	if (cfsr & DACCVIOL) {
-		lldbg("FAULT TYPE: DACCVIOL (Data access violation occurred. Check MPU RW permissions).\n");
-	} else if (cfsr & IACCVIOL) {
-		lldbg("FAULT TYPE: IACCVIOL (Instruction access violation occurred. Check MPU XN region).\n");
+	if (cfsr & IACCVIOL) {
 		system_exception_location = regs[REG_R14];	/* The PC value might be invalid, so use LR */
-	} else if (cfsr & MSTKERR) {
-		lldbg("FAULT TYPE: MSTKERR (Error while stacking registers during exception entry).\n");
-	} else if (cfsr & MUNSTKERR) {
-		lldbg("FAULT TYPE: MUNSTKERR (Error while unstacking registers during exception return).\n");
-	} else if (cfsr & MLSPERR) {
-		lldbg("FAULT TYPE: MLSPERR (Error occurred during lazy state preservation of Floating Point unit registers).\n");
 	}
 
-	if (cfsr & MMARVALID) {
-		lldbg("FAULT ADDRESS: 0x%08x\n", mmfar);
-	} else {
-		lldbg("FAULT ADDRESS: Unable to determine fault address.\n");
-	}
-
-	lldbg("FAULT REGS: CFAULTS: 0x%08x MMFAR: 0x%08x\n", cfsr, mmfar);
-	lldbg("#########################################################################\n\n\n");
+	print_memfault_detail(regs, cfsr, mmfar);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	if (cfsr & IACCVIOL) {

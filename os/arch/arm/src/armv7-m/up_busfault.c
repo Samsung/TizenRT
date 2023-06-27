@@ -70,24 +70,11 @@ extern uint32_t system_exception_location;
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
+ * Name: print_busfault_detail
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_busfault
- *
- * Description:
- *   This is Bus Fault exception handler.
- *
- ****************************************************************************/
-
-int up_busfault(int irq, FAR void *context, FAR void *arg)
+static inline void print_busfault_detail(uint32_t *regs, uint32_t cfsr, uint32_t bfar)
 {
-	(void)irqsave();
-	uint32_t *regs = (uint32_t *)context;
-	uint32_t cfsr = getreg32(NVIC_CFAULTS);
-	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
-	system_exception_location = regs[REG_R15];
 
 	lldbg("#########################################################################\n");
 	lldbg("PANIC!!! Bus fault at instruction: 0x%08x\n", regs[REG_R15]);
@@ -114,6 +101,30 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 
 	lldbg("FAULT REGS: CFAULTS: 0x%08x BFAR: 0x%08x\n", cfsr, bfar);
 	lldbg("#########################################################################\n");
+
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_busfault
+ *
+ * Description:
+ *   This is Bus Fault exception handler.
+ *
+ ****************************************************************************/
+
+int up_busfault(int irq, FAR void *context, FAR void *arg)
+{
+	(void)irqsave();
+	uint32_t *regs = (uint32_t *)context;
+	uint32_t cfsr = getreg32(NVIC_CFAULTS);
+	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
+	system_exception_location = regs[REG_R15];
+
+	print_busfault_detail(regs, cfsr, bfar);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	if (cfsr & IBUSERR) {
