@@ -70,6 +70,35 @@ extern uint32_t system_exception_location;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: print_usagefault_detail
+ ****************************************************************************/
+
+static inline void print_usagefault_detail(uint32_t *regs, uint32_t cfsr)
+{
+	lldbg("#########################################################################\n");
+	lldbg("PANIC!!! Usagefault at instruction: 0x%08x\n", regs[REG_R15]);
+
+	if (cfsr & DIVBYZERO) {
+		lldbg("FAULT TYPE: DIVBYZERO (Divide by zero error has occurred).\n");
+	} else if (cfsr & UNALIGNED) {
+		lldbg("FAULT TYPE: UNALIGNED (Unaligned access error has occurred).\n");
+	} else if (cfsr & STKOF) {
+		lldbg("FAULT TYPE: STKOF (Stack overflow error has occurred).\n");
+	} else if (cfsr & NOCP) {
+		lldbg("FAULT TYPE: NOCP (A coprocessor error has occurred).\n");
+	} else if (cfsr & INVPC) {
+		lldbg("FAULT TYPE: INVPC (Integrity check error during EXC_RETURN).\n");
+	} else if (cfsr & INVSTATE) {
+		lldbg("FAULT TYPE: INVSTATE (Invalid state. Check EPSR T bit. XPSR = 0x%08x).\n", regs[REG_XPSR]);
+	} else if (cfsr & UNDEFINSTR) {
+		lldbg("FAULT TYPE: UNDEFINSTR (Undefined instruction executed).\n");
+	}
+
+	lldbg("FAULT REGS: CFAULTS: 0x%08x\n", cfsr);
+	lldbg("#########################################################################\n");
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -87,31 +116,13 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	uint32_t *regs = (uint32_t *)context;
 	uint32_t cfsr = getreg32(NVIC_CFAULTS);
 	system_exception_location = regs[REG_R15];
-
-	lldbg("#########################################################################\n");
-	lldbg("PANIC!!! Usagefault at instruction: 0x%08x\n", regs[REG_R15]);
-
-	if (cfsr & DIVBYZERO) {
-		lldbg("FAULT TYPE: DIVBYZERO (Divide by zero error has occurred).\n");
-	} else if (cfsr & UNALIGNED) {
-		lldbg("FAULT TYPE: UNALIGNED (Unaligned access error has occurred).\n");
-	} else if (cfsr & STKOF) {
-		lldbg("FAULT TYPE: STKOF (Stack overflow error has occurred).\n");
-	} else if (cfsr & NOCP) {
-		lldbg("FAULT TYPE: NOCP (A coprocessor error has occurred).\n");
-	} else if (cfsr & INVPC) {
-		lldbg("FAULT TYPE: INVPC (Integrity check error during EXC_RETURN).\n");
+	if (cfsr & INVPC) {
 		/* As PC value might be invalid use LR value to determine if
 		 * the crash occurred in the kernel space or in the user space */
 		system_exception_location = regs[REG_R14];
-	} else if (cfsr & INVSTATE) {
-		lldbg("FAULT TYPE: INVSTATE (Invalid state. Check EPSR T bit. XPSR = 0x%08x).\n", regs[REG_XPSR]);
-	} else if (cfsr & UNDEFINSTR) {
-		lldbg("FAULT TYPE: UNDEFINSTR (Undefined instruction executed).\n");
 	}
 
-	lldbg("FAULT REGS: CFAULTS: 0x%08x\n", cfsr);
-	lldbg("#########################################################################\n");
+	print_usagefault_detail(regs, cfsr);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	 up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);

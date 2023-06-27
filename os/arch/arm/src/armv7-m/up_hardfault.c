@@ -94,6 +94,50 @@ uint32_t system_exception_location;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: print_hardfault_detail
+ ****************************************************************************/
+
+static inline void print_hardfault_detail(int irq, uint32_t *regs)
+{
+	/* Dump some hard fault info */
+
+	lldbg("PANIC!!! Hard fault: %08x\n", getreg32(NVIC_HFAULTS));
+	lldbg("  IRQ: %d regs: %p\n", irq, regs);
+	lldbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
+		  getbasepri(), getprimask(), getipsr(), getcontrol());
+	lldbg("  CFAULTS: %08x HFAULTS: %08x DFAULTS: %08x BFAULTADDR: %08x AFAULTS: %08x\n",
+		  getreg32(NVIC_CFAULTS), getreg32(NVIC_HFAULTS),
+		  getreg32(NVIC_DFAULTS), getreg32(NVIC_BFAULT_ADDR),
+		  getreg32(NVIC_AFAULTS));
+	lldbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		  regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3],
+		  regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
+	lldbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		  regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11],
+		  regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
+
+#ifdef CONFIG_ARMV7M_USEBASEPRI
+#ifdef REG_EXC_RETURN
+	lldbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
+		  current_regs[REG_XPSR], current_regs[REG_BASEPRI],
+		  current_regs[REG_EXC_RETURN]);
+#else
+	lldbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
+		  current_regs[REG_XPSR], current_regs[REG_BASEPRI]);
+#endif
+#else
+#ifdef REG_EXC_RETURN
+	lldbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
+		  current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
+#else
+	lldbg("  xPSR: %08x PRIMASK: %08x (saved)\n",
+		  current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
+#endif
+#endif
+
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -156,44 +200,10 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	}
 #endif
 
-	/* Dump some hard fault info */
-
-	lldbg("PANIC!!! Hard fault: %08x\n", getreg32(NVIC_HFAULTS));
-	lldbg("  IRQ: %d regs: %p\n", irq, regs);
-	lldbg("  BASEPRI: %08x PRIMASK: %08x IPSR: %08x CONTROL: %08x\n",
-		  getbasepri(), getprimask(), getipsr(), getcontrol());
-	lldbg("  CFAULTS: %08x HFAULTS: %08x DFAULTS: %08x BFAULTADDR: %08x AFAULTS: %08x\n",
-		  getreg32(NVIC_CFAULTS), getreg32(NVIC_HFAULTS),
-		  getreg32(NVIC_DFAULTS), getreg32(NVIC_BFAULT_ADDR),
-		  getreg32(NVIC_AFAULTS));
-	lldbg("  R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3],
-		  regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-	lldbg("  R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		  regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11],
-		  regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
-
-#ifdef CONFIG_ARMV7M_USEBASEPRI
-#ifdef REG_EXC_RETURN
-	lldbg("  xPSR: %08x BASEPRI: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI],
-		  current_regs[REG_EXC_RETURN]);
-#else
-	lldbg("  xPSR: %08x BASEPRI: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_BASEPRI]);
-#endif
-#else
-#ifdef REG_EXC_RETURN
-	lldbg("  xPSR: %08x PRIMASK: %08x EXC_RETURN: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK], current_regs[REG_EXC_RETURN]);
-#else
-	lldbg("  xPSR: %08x PRIMASK: %08x (saved)\n",
-		  current_regs[REG_XPSR], current_regs[REG_PRIMASK]);
-#endif
-#endif
+	print_hardfault_detail(irq, regs);
 
 	(void)irqsave();
-	
+
 	PANIC();
 	return OK;
 }
