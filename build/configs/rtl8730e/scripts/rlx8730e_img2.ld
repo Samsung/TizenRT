@@ -126,11 +126,15 @@ __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
 __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
 
+_stext_flash = __km4_flash_text_start__;
+_etext_flash = _stext_flash + LENGTH(KM4_IMG2_XIP);
+
 SECTIONS
 {
 	.text :
 	{
 		. = ALIGN(0x4);
+		_stext_ram = ABSOLUTE(.);
 		__text_start__ = .;
 
 		*(.freertos_vectors)
@@ -162,7 +166,7 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 		. = ALIGN(4);
-		 __etext = .;
+		_etext_ram = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
 	.ARM.extab :
