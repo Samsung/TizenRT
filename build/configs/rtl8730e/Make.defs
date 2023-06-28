@@ -121,6 +121,9 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 endif
 
 ARCHCFLAGS += -fno-builtin 
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+  ARCHCFLAGS += -fno-common
+endif
 ARCHCXXFLAGS = -fno-builtin -fexceptions 
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
@@ -202,6 +205,21 @@ EXEEXT = .axf
 
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
+endif
+
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+# ELF module definitions
+
+CELFFLAGS = $(CFLAGS) -mlong-calls # --target1-abs
+CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
+
+LDELFFLAGS = -r -e main
+
+ifeq ($(WINTOOL),y)
+	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps.ld}"
+else
+	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps.ld
+endif
 endif
 
 LDFLAGS += --gc-sections
