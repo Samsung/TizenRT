@@ -45,9 +45,12 @@
 /* The largest size of messages is (CONFIG_NAME_MAX + 64) for communication with binary manager */
 #error "CONFIG_MQ_MAXMSGSIZE should be greater than (CONFIG_NAME_MAX + 64)"
 #endif
+
+#ifdef CONFIG_BINMGR_UPDATE
 #ifndef CONFIG_BOARDCTL_RESET
 /* CONFIG_BOARDCTL_RESET should be enabled for kernel binary update */
 #error "CONFIG_BOARDCTL_RESET should be enabled for kernel binary update"
+#endif
 #endif
 
 

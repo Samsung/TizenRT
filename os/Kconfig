@@ -250,7 +250,7 @@ endif # APP_BINARY_SEPARATION
 
 config BUILD_PROTECTED
 	bool
-	depends on ARCH_USE_MPU
+	depends on ARCH_USE_MPU || ARCH_USE_MMU
 	select LIB_SYSCALL
 	select BUILD_2PASS
 

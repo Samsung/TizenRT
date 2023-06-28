@@ -62,7 +62,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/mm.h>
+#ifdef CONFIG_ARM_MPU
 #include <tinyara/mpu.h>
+#endif
 #include "libelf.h"
 
 /****************************************************************************
@@ -222,13 +224,13 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 	}
 
 	/* Allocate the RAM partition to load the app into */
-#ifdef CONFIG_ARMV7M_MPU
+#if defined(CONFIG_ARMV7M_MPU)
 	loadinfo->binp->ramstart = kmm_memalign_at(CONFIG_HEAP_INDEX_LOADED_APP, loadinfo->binp->ramsize, loadinfo->binp->ramsize);
-#elif CONFIG_ARMV8M_MPU
+#elif defined(CONFIG_ARMV8M_MPU)
 	loadinfo->binp->ramsize = MPU_ALIGN_UP(loadinfo->binp->ramsize);
 	loadinfo->binp->ramstart = (uint32_t)kmm_memalign_at(CONFIG_HEAP_INDEX_LOADED_APP, MPU_ALIGNMENT_BYTES, loadinfo->binp->ramsize);
 #else
-#error "Unknown MPU version. Expected either ARMV7M or ARMV8M"
+	loadinfo->binp->ramstart = kmm_malloc_at(CONFIG_HEAP_INDEX_LOADED_APP, loadinfo->binp->ramsize);
 #endif
 
 	if (!loadinfo->binp->ramstart) {
@@ -294,8 +296,10 @@ void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo)
 		kmm_free((void *)(loadinfo->binp->sections[BIN_DATA]));
 		loadinfo->binp->sections[BIN_DATA] = (int)NULL;
 	}
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (loadinfo->binp->sections[BIN_RO]) {
 		kmm_free((void *)(loadinfo->binp->sections[BIN_RO]));
 		loadinfo->binp->sections[BIN_RO] = (int)NULL;
 	}
+#endif
 }

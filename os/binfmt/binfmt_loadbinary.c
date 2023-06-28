@@ -180,8 +180,9 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 #endif
 
 	elf_save_bin_section_addr(bin);
+#ifdef CONFIG_ARM_MPU
 	binfmt_set_mpu(bin);
-
+#endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
 		g_umm_app_id = (uint32_t *)(bin->sections[BIN_DATA] + 4);

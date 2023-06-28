@@ -598,7 +598,11 @@
 #define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW1 | PMD_CACHEABLE | \
                               PMD_SECT_S | PMD_SECT_DOM(0))
 #else
-#define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW1 | PMD_CACHEABLE | \
+//PORTNOTE
+//TODO: Temporarily changed PMD_SECT_AP_RW1 to PMD_SECT_AP_RW01 below
+//to provide access permission to loadable apps. This needs to be reverted
+//when we implement separate memory protection logic for loadable apps.
+#define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW01 | PMD_CACHEABLE | \
                               PMD_SECT_DOM(0))
 #endif
 

@@ -226,7 +226,7 @@
 #ifdef CONFIG_LIB_SYSCALL
 struct xcpt_syscall_s
 {
-#ifdef CONFIG_BUILD_KERNEL
+#ifdef CONFIG_BUILD_PROTECTED
   uint32_t cpsr;        /* The CPSR value */
 #endif
   uint32_t sysreturn;   /* The return PC */
@@ -267,7 +267,7 @@ struct xcptcontext
 
   uint32_t *saved_regs;
 
-#ifdef CONFIG_BUILD_KERNEL
+#ifdef CONFIG_BUILD_PROTECTED
   /* This is the saved address to use when returning from a user-space
    * signal handler.
    */

@@ -128,7 +128,7 @@ pid_t up_vfork(const struct vfork_s *context)
   child = task_vforksetup((start_t)(context->lr & ~1));
   if (!child)
     {
-      serr("ERROR: task_vforksetup failed\n");
+      sdbg("ERROR: task_vforksetup failed\n");
       return (pid_t)ERROR;
     }
 
@@ -218,7 +218,7 @@ pid_t up_vfork(const struct vfork_s *context)
           /* REVISIT:  This logic is *not* common. */
 
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
-#  ifdef CONFIG_BUILD_KERNEL
+#  ifdef CONFIG_BUILD_PROTECTED
 
           child->cmn.xcp.syscall[index].cpsr =
             parent->xcp.syscall[index].cpsr;

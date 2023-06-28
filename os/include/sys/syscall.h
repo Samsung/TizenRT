@@ -531,6 +531,7 @@ EXTERN const uintptr_t g_stublookup[SYS_nsyscalls];
  */
 
 EXTERN const uint8_t g_funcnparms[SYS_nsyscalls];
+EXTERN const char *g_funcnames[SYS_nsyscalls];
 
 /****************************************************************************
  * Public Functions

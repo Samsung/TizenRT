@@ -170,7 +170,8 @@
  #  define TCB_FLAG_SCHED_OTHER     (3 << TCB_FLAG_POLICY_SHIFT) /* Other scheding policy */
 #define TCB_FLAG_CPU_LOCKED        (1 << 7) /* Bit 7: Locked to this CPU */
 #define TCB_FLAG_EXIT_PROCESSING   (1 << 8) /* Bit 8: Exitting */
-											/* Bits 9-15: Available */
+#define TCB_FLAG_SYSCALL           (1 << 10)                     /* Bit 9: In a system call */
+/* Bits 11-15: Available */
 
 /* Values for struct task_group tg_flags */
 
