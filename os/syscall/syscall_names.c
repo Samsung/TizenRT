@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_pthread_start.c
+ * syscall/syscall_names.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -40,54 +40,66 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <pthread.h>
-#include <tinyara/arch.h>
 
+#if defined(CONFIG_LIB_SYSCALL) && defined(__KERNEL__)
+#include <syscall.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <sys/select.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/statfs.h>
+#include <sys/prctl.h>
+#include <sys/socket.h>
+#include <sys/mount.h>
+#include <sys/boardctl.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <poll.h>
+#include <time.h>
+#include <sched.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <signal.h>
+#include <mqueue.h>
 #include <assert.h>
 
-#include <arch/syscall.h>
+/* Errno access is awkward. We need to generate get_errno() and set_errno()
+ * interfaces to support the system calls, even though we don't use them
+ * ourself.
+ *
+ * The "normal" pre-processor defintions for these functions is in errno.h
+ * but we need the internal function prototypes in include/errno.h.
+ */
 
-#include "arm_internal.h"
+#undef get_errno
+#undef set_errno
 
-#if !defined(CONFIG_BUILD_FLAT) && defined(__KERNEL__) && \
-    !defined(CONFIG_DISABLE_PTHREAD)
+#include <tinyara/errno.h>
+#include <tinyara/clock.h>
+
 
 /****************************************************************************
- * Public Functions
+ * Public Data
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_pthread_start
- *
- * Description:
- *   In this kernel mode build, this function will be called to execute a
- *   pthread in user-space.  When the pthread is first started, a kernel-mode
- *   stub will first run to perform some housekeeping functions.  This
- *   kernel-mode stub will then be called transfer control to the user-mode
- *   pthread.
- *
- *   Normally the a user-mode start-up stub will also execute before the
- *   pthread actually starts.  See libc/pthread/pthread_create.c
- *
- * Input Parameters:
- *   entrypt - The user-space address of the pthread entry point
- *   arg     - Standard argument for the pthread entry point
- *
- * Returned Value:
- *   This function should not return.  It should call the user-mode start-up
- *   stub and that stub should call pthread_exit if/when the user pthread
- *   terminates.
- *
- ****************************************************************************/
+/* System call name tables.  This table is indexed by the system call numbers
+ * defined above.  Given the system call number, this table provides the
+ * name of the corresponding system function.
+ */
 
-void up_pthread_start(pthread_startroutine_t entrypt, pthread_addr_t arg)
+const char *g_funcnames[SYS_nsyscalls] =
 {
-  /* Let sys_call3() do all of the work */
-
-  sys_call2(SYS_pthread_start, (uintptr_t)entrypt,
-            (uintptr_t)arg);
-
-  PANIC();
-}
-
-#endif /* !CONFIG_BUILD_FLAT && __KERNEL__ && !CONFIG_DISABLE_PTHREAD */
+#  undef SYSCALL_LOOKUP1
+#  define SYSCALL_LOOKUP1(f, n, p) #f
+#  undef SYSCALL_LOOKUP
+#  define SYSCALL_LOOKUP(f, n, p)  #f
+#  include "syscall_lookup.h"
+};
+#endif /* CONFIG_LIB_SYSCALL && __KERNEL__ */

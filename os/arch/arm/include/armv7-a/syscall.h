@@ -54,8 +54,8 @@
  * through include/syscall.h or include/sys/sycall.h
  */
 
-#ifndef __ARCH_ARM_INCLUDE_SYSCALL_H
-#define __ARCH_ARM_INCLUDE_SYSCALL_H
+#ifndef __ARCH_ARM_INCLUDE_ARMV7A_SYSCALL_H
+#define __ARCH_ARM_INCLUDE_ARMV7A_SYSCALL_H
 
 /****************************************************************************
  * Included Files
@@ -63,6 +63,65 @@
 
 /* Include ARM architecture-specific syscall macros */
 #include <tinyara/config.h>
+
+#ifndef __ASSEMBLY__
+#include <stdint.h>
+#endif
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define SYS_syscall 0x00
+
+/* Configuration ********************************************************************/
+/* This logic uses three system calls {0,1,2} for context switching and one for the
+ * syscall return.  So a minimum of four syscall values must be reserved.  If
+ * CONFIG_BUILD_PROTECTED is defined, then four more syscall values must be reserved.
+ * If TRUSTZONE is enabled, then three more syscall values must be reserved.
+ */
+
+#ifdef CONFIG_LIB_SYSCALL
+
+#ifndef CONFIG_SYS_RESERVED
+#error "CONFIG_SYS_RESERVED must be defined to have the value"
+#endif //CONFIG_SYS_RESERVED
+
+#ifdef CONFIG_BUILD_PROTECTED
+
+#ifdef CONFIG_ARMV7A_TRUSTZONE
+#if CONFIG_SYS_RESERVED != 11
+#error "CONFIG_SYS_RESERVED must have the value 11"
+#endif
+#else
+#if CONFIG_SYS_RESERVED != 8
+#error "CONFIG_SYS_RESERVED must have the value 8"
+#endif
+#endif //CONFIG_ARMV7A_TRUSTZONE
+
+#else //CONFIG_BUILD_PROTECTED
+
+#ifdef CONFIG_ARMV7A_TRUSTZONE
+#if CONFIG_SYS_RESERVED != 7
+#error "CONFIG_SYS_RESERVED must have the value 7"
+#endif
+#else
+#if CONFIG_SYS_RESERVED != 4
+#error "CONFIG_SYS_RESERVED must have the value 4"
+#endif
+#endif //CONFIG_ARMV7A_TRUSTZONE
+
+#endif //CONFIG_BUILD_PROTECTED
+
+#endif //CONFIG_LIB_SYSCALL
+
+/* ARM System calls ***********************************************************/
+
+/* SYS call 0:
+ *
+ * int arm_saveusercontext(uint32_t *saveregs);
+ */
+
 #define SYS_save_context          (0)
 
 /* SYS call 1:
@@ -74,20 +133,132 @@
 
 /* SYS call 2:
  *
- * void arm_switchcontext(uint32_t **saveregs, uint32_t *restoreregs);
+ * void arm_switchcontext(uint32_t *saveregs, uint32_t *restoreregs);
  */
 
 #define SYS_switch_context        (2)
 
-#ifndef __ASSEMBLY__
-#include <stdint.h>
+#ifdef CONFIG_LIB_SYSCALL
+/* SYS call 3:
+ *
+ * void up_syscall_return(void);
+ */
+
+#define SYS_syscall_return        (3)
+
+#ifdef CONFIG_BUILD_PROTECTED
+/* SYS call 4:
+ *
+ * void up_task_start(main_t taskentry, int argc, FAR char *argv[])
+ *        noreturn_function;
+ */
+
+#define SYS_task_start            (4)
+
+/* SYS call 5:
+ *
+ * void up_pthread_start(pthread_startroutine_t entrypt, pthread_addr_t arg)
+ *        noreturn_function
+ */
+
+#define SYS_pthread_start         (5)
+
+/* SYS call 6:
+ *
+ * void signal_handler(_sa_sigaction_t sighand, int signo, FAR siginfo_t *info,
+ *                     FAR void *ucontext);
+ */
+
+#define SYS_signal_handler        (6)
+
+/* SYS call 7:
+ *
+ * void signal_handler_return(void);
+ */
+
+#define SYS_signal_handler_return (7)
+
+#ifdef CONFIG_ARMV7A_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
+
+#define SYS_init_securecontext        (8)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (9)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (10)
+#endif					/* CONFIG_BUILD_PROTECTED */
+#else
+#ifdef CONFIG_ARMV7A_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
+
+#define SYS_init_securecontext        (4)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (5)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (6)
 #endif
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#endif
+#else
+#ifdef CONFIG_ARMV7A_TRUSTZONE
+/* SYS call 3:
+ *
+ * void SecureContext_Init(void);
+ */
 
-#define SYS_syscall 0x900001
+#define SYS_init_securecontext        (3)
+
+/* SYS call 4:
+ *
+ * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
+ */
+
+#define SYS_allocate_securecontext        (4)
+
+/* SYS call 5:
+ *
+ * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
+ */
+
+#define SYS_free_securecontext        (5)
+#endif
+#endif					/* CONFIG_LIB_SYSCALL */
+
+/* The SYS_signal_handler_return is executed here... its value is not always
+ * available in this context and so is assumed to be 7.
+ */
+
+#ifndef SYS_signal_handler_return
+#define SYS_signal_handler_return (7)
+#elif SYS_signal_handler_return != 7
+#error "SYS_signal_handler_return was assumed to be 7"
+#endif
 
 /****************************************************************************
  * Public Types
@@ -274,4 +445,4 @@ extern "C" {
 #endif
 #endif
 
-#endif							/* __ARCH_ARM_INCLUDE_SYSCALL_H */
+#endif							/* __ARCH_ARM_INCLUDE_ARMV7A_SYSCALL_H */

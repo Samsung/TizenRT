@@ -64,7 +64,9 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
+#ifdef CONFIG_ARM_MPU
 #include <tinyara/mpu.h>
+#endif
 
 #include "binfmt.h"
 #include "libelf/libelf.h"

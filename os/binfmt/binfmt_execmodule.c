@@ -67,7 +67,9 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
+#ifdef CONFIG_ARM_MPU
 #include <tinyara/mpu.h>
+#endif
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_BINARY_MANAGER
