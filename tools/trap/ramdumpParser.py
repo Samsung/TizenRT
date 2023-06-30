@@ -781,6 +781,8 @@ def find_crash_point(log_file, elf):
                 word = line.split(':')
                 print('\n\t-', word[1], ':', word[2])
 
+    print('\n4. Code asserted in:')
+
     # Parse the contents based on tokens in log file to determine point of assertion in details
     with open(log_file) as searchfile:
         found_type = 0
@@ -813,7 +815,7 @@ def find_crash_point(log_file, elf):
                 is_interrupt_mode = 1
                 # It displays the interrupt handler information corresponding to the Interrupt
                 # The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
-                print("\n4. Assertion Data during interrupt mode:\n")
+                print("\n5. Assertion Data during interrupt mode:\n")
                 print('- Interrupt handler at addr\t\tSymbol_name')
                 os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
     with open(log_file) as searchfile:
@@ -826,9 +828,9 @@ def find_crash_point(log_file, elf):
                 print("\033[F", line)
 
     if (is_interrupt_mode):
-        print('\n5. Call stack of last run thread')
+        print('\n6. Call stack of last run thread')
     else:
-        print('\n4. Call stack of last run thread')
+        print('\n5. Call stack of last run thread')
 
     # Parse the contents based on tokens in log file for memory allocation failure data
     with open(log_file) as searchfile:
@@ -866,20 +868,36 @@ def find_crash_point(log_file, elf):
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
-    print('\nx. Miscellaneous information:')
+    print('\nh. Heap Region information:\n')
+
+    with open(log_file) as searchfile:
+        heap_corr = 0
+        for line in searchfile:
+            # Check if there is heap corruption or not
+            if 'Heap corruption detected' in line:
+                    heap_corr = 1
+        if (heap_corr == 1):
+            print(' -HEAP CORRUPTION DETECTED\n\n')
+        else:
+            print(' -NO HEAP CORRUPTION DETECTED\n\n')
 
     with open(log_file) as searchfile:
     # Parse the contents based on tokens in log file for heap corruption
-        heap_corr = 0
         for line in searchfile:
             # Print the heap corruption data (if any)
+            if 'Checking kernel heap for corruption...' in line:
+                print("\033[F", line)
+            if 'Checking current app heap for corruption...' in line:
+                print("\033[F", line)
+            if 'No kernel heap corruption detected' in line:
+                print("\033[F", line)
+            if 'No app heap corruption detected' in line:
+                print("\033[F", line)
             if 'mm_check_heap_corruption:' in line:
-                if (heap_corr == 0):
-                    print("\n## Heap Corruption Data:\n")
-                    heap_corr = 1
                 print("\033[F", line)
             if 'dump_node:' in line:
                 print("\033[F", line)
+
     with open(log_file) as searchfile:
         for line in searchfile:
             if 'allocated by code at addr' in line:
@@ -889,6 +907,8 @@ def find_crash_point(log_file, elf):
                 print('Allocated by code at addr\t\tFile_name')
                 os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 2")
                 break
+
+    print('\nx. Miscellaneous information:')
 
     # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
     # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
@@ -1098,6 +1118,9 @@ def main():
 			global g_etext_ram
 			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
 
+		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
+
 		# Find the point of crash in the kernel, application or common binaries
 		find_crash_point(log_file, elf)
 
@@ -1105,10 +1128,6 @@ def main():
 		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
 			#If architecture is cortex M, then run return without further script execution
 			return None
-
-		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
-			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
-			return
 
 		# If the log file is given, then parse that log file only and exit
 		if log_file is not None:
