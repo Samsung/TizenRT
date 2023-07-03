@@ -121,12 +121,12 @@ char *tash_read_input_line(int fd)
 	int nbytes;
 	int char_idx;
 	bool is_tab_pressed = false;
-#if TASH_MAX_STORE > 0
 	bool is_esc_pressed = false;
+	int prev_cmd_len = 0;
+#if TASH_MAX_STORE > 0
 	bool prepare_direction_key = false;
 	bool is_direction_pressed = false;
 	char direction;
-	int prev_cmd_len = 0;
 #endif
 #if !defined(CONFIG_DISABLE_POLL)
 	fd_set tfd;

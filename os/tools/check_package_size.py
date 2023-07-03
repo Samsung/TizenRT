@@ -113,9 +113,11 @@ KERNEL_PART_TMP_SIZE = FLASH_SIZE
 COMMON_PART_TMP_SIZE = FLASH_SIZE
 APP1_PART_TMP_SIZE = FLASH_SIZE
 APP2_PART_TMP_SIZE = FLASH_SIZE
-
+SIZE=len(SIZE_LIST)
 for name in NAME_LIST :
     PART_IDX += 1
+    if PART_IDX > SIZE :
+    	break
     if name == "kernel" or name == "os" :
         if KERNEL_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
             KERNEL_PART_TMP_SIZE = (int(SIZE_LIST[PART_IDX]) * 1024)
