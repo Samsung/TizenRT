@@ -445,6 +445,16 @@ void up_allocate_secure_context(TZ_ModuleId_t size);
  ****************************************************************************/
 
 void up_free_secure_context();
+
+#else		//CONFIG_ARMV8M_TRUSTZONE
+
+// Adding below defines to prevent errors when vendor code tries to call
+// security API's which are not implemented as they are not required by the 
+// architecture. For example ARMV7A does not use NSC based TZ calls.
+
+#define up_allocate_secure_context(size)
+#define up_free_secure_context()
+
 #endif
 
 /************************************************************************************
