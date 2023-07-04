@@ -27,12 +27,29 @@
 #ifndef __FRAMEWORK_INCLUDE_PREFERENCE_PREFERENCE_H__
 #define __FRAMEWORK_INCLUDE_PREFERENCE_PREFERENCE_H__
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 #include <stdbool.h>
 #include <tinyara/preference.h>
 
-#ifdef __cplusplus
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+#ifdef __cpluplus
 extern "C" {
 #endif
+
+/****************************************************************************
+ * Public Type Definitions
+ ****************************************************************************/
+enum preference_type_e {
+        PREFERENCE_TYPE_INT = 0,
+        PREFERENCE_TYPE_DOUBLE,
+        PREFERENCE_TYPE_BOOL,
+        PREFERENCE_TYPE_STRING,
+        PREFERENCE_TYPE_BINARY,
+};
 
 /****************************************************************************
  * Public Function Prototypes
