@@ -39,14 +39,6 @@
 #define PREF_PRIVATE_PATH PREF_PATH"/private"
 #define PREF_SHARED_PATH PREF_PATH"/shared"
 
-enum preference_type_e {
-	PREFERENCE_TYPE_INT = 0,
-	PREFERENCE_TYPE_DOUBLE,
-	PREFERENCE_TYPE_BOOL,
-	PREFERENCE_TYPE_STRING,
-	PREFERENCE_TYPE_BINARY,
-};
-
 /* Error Type of Result Value returned from Preference */
 enum preference_result_error_e {
 	PREFERENCE_IO_ERROR = -1,
