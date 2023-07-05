@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <tinyara/config.h>
+#include <tinyara/arch.h>
 #include <semaphore.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/kmalloc.h>

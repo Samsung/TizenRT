@@ -6,7 +6,7 @@
 config EXAMPLES_SSTORAGE
 	bool "Secure Storage example"
 	default n
-	depends on ARMV8M_TRUSTZONE && SE_AMEBA
+	depends on SE_AMEBA
 	---help---
 		Enable the Secure Storage example
 
