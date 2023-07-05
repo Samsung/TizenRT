@@ -148,12 +148,10 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm $(wildcard ./*/*.o)
 
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-	rm $(wildcard ./*/*.o)
 
 -include Make.dep
 .PHONY: preconfig
