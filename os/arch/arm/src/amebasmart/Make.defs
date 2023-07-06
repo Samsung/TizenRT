@@ -242,7 +242,7 @@ CHIP_CSRCS += amebasmart_watchdog_lowerhalf.c
 #CHIP_CSRCS += amebasmart_spi.c
 
 ifeq ($(CONFIG_BOARDCTL_RESET),y)
-#CHIP_CSRCS += amebasmart_systemreset.c
+CHIP_CSRCS += amebasmart_systemreset.c
 endif
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 #CMN_CSRCS += amebasmart_reboot_reason.c #FIXME
