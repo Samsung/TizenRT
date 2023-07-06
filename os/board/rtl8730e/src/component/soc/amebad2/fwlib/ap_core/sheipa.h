@@ -19,7 +19,7 @@
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 #include "FreeRTOS.h"
 #endif
-#include "debug.h"
+#include "debug_printf.h"
 #include "arm_gic.h"
 #include "arch_timer.h"
 #include "spinlock.h"

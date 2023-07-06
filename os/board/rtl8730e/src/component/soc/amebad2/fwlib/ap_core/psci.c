@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include "errno.h"
-#include "debug.h"
+#include "debug_printf.h"
 #include "psci.h"
 
 /**
