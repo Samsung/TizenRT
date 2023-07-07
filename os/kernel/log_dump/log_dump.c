@@ -373,7 +373,11 @@ static int compress_full_bufs(void)
 		mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
 
 		/* wait for completion of the current full block compression */
-		while (compress_full_block) ;
+		while (compress_full_block) {
+			if (sched_lockcount()) {
+				usleep(10000);
+			}
+		}
 
 		if (compress_ret < 0) {
 			lldbg("Fail to compress ret = %d\n", compress_ret);
