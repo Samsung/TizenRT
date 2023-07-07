@@ -12,7 +12,7 @@ config SECURITY_LINK_DRV
 
 if SECURITY_LINK_DRV
 
-source "$FRAMEWORK_DIR/src/seclink/Kconfig"
+source "$FRAMEWORK_DIR/src/security/seclink/Kconfig"
 
 config SECURITY_LINK_DRV_PROFILE
 	bool "Display security driver performance"

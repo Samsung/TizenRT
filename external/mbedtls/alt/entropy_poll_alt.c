@@ -17,8 +17,8 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/security_hal.h>
-#include <tinyara/seclink.h>
+#include <security/security_common.h>
+#include <security/security_auth.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -37,20 +37,20 @@
 static int mbedtls_generate_random_alt(unsigned char *data, unsigned int len)
 {
 	int ret;
-	sl_ctx shnd;
-	hal_data random = {data, len, NULL, 0};
+	security_handle shnd;
+	security_data random = {data, len};
 
-	ret = sl_init(&shnd);
-	if (ret != SECLINK_OK) {
+	ret = security_init(&shnd);
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
 
-	ret = sl_generate_random(shnd, len, &random);
-	sl_deinit(shnd);
-	if (ret != SECLINK_OK) {
+	ret = auth_generate_random(shnd, len, &random);
+	security_deinit(shnd);
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
-	return HAL_SUCCESS;
+	return SECURITY_OK;
 }
 
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)

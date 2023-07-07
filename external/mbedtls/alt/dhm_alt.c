@@ -46,8 +46,9 @@
  */
 
 #include <tinyara/config.h>
-#include <tinyara/seclink.h>
-#include <tinyara/security_hal.h>
+#include <security/security_common.h>
+#include <security/security_auth.h>
+#include <security/security_keymgr.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -211,14 +212,15 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 	unsigned int moduler = 0;
 	unsigned int generator = 0;
 	unsigned char *p;
-	hal_dh_data d_param;
-	sl_ctx shnd;
+	security_dh_param d_param;
+	security_handle shnd;
+	char key_path[7];
 
 	if (mbedtls_mpi_cmp_int(&ctx->P, 0) == 0) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
 	}
 
-	memset(&d_param, 0, sizeof(hal_dh_data));
+	memset(&d_param, 0, sizeof(security_dh_param));
 
 	if (mbedtls_supported_dhm_size_alt(x_size)) {
 		/*
@@ -227,13 +229,13 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		moduler = mbedtls_mpi_size(&ctx->P);
 		generator = mbedtls_mpi_size(&ctx->G);
 
-		d_param.P->data_len = moduler;
+		d_param.P->length = moduler;
 		d_param.P->data = (unsigned char *)malloc(moduler);
 		if (d_param.P->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.G->data_len = generator;
+		d_param.G->length = generator;
 		d_param.G->data = (unsigned char *)malloc(generator);
 		if (d_param.G->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
@@ -248,16 +250,16 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.pubkey->data_len = x_size;
+		d_param.pubkey->length = x_size;
 		switch (x_size) {
 		case DHM_1024:
-			d_param.mode = HAL_DH_1024;
+			d_param.mode = DH_1024;
 			break;
 		case DHM_2048:
-			d_param.mode = HAL_DH_2048;
+			d_param.mode = DH_2048;
 			break;
 		case DHM_4096:
-			d_param.mode = HAL_DH_4096;
+			d_param.mode = DH_4096;
 			break;
 		default:
 			ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
@@ -267,15 +269,16 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		/*
 		 *  2. Generate X values and calculate GX from sss.
 		 */
-		ret = sl_init(&shnd);
-		if (ret != SECLINK_OK) {
+		ret = security_init(&shnd);
+		if (ret != SECURITY_OK) {
 			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
 			goto cleanup;
 		}
 
-		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
-		if (ret != SECLINK_OK) {
-			sl_deinit(shnd);
+		snprintf(key_path, 7, "ss/%d", ctx->key_index);
+		ret = auth_generate_dhparams(shnd, key_path, &d_param);
+		if (ret != SECURITY_OK) {
+			security_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
 		}
@@ -283,20 +286,20 @@ int mbedtls_dhm_make_params(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		/*
 		 *  3. Export GX from unsigned binary data
 		 */
-		MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->GX, d_param.pubkey->data, d_param.pubkey->data_len));
+		MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->GX, d_param.pubkey->data, d_param.pubkey->length));
 
 		/*
 		 *  4. Export G, P, GX
 		 */
 		p = output;
-		DHM_MPI_EXPORT(&ctx->P, d_param.P->data_len);
-		DHM_MPI_EXPORT(&ctx->G, d_param.G->data_len);
-		DHM_MPI_EXPORT(&ctx->GX, d_param.pubkey->data_len);
+		DHM_MPI_EXPORT(&ctx->P, d_param.P->length);
+		DHM_MPI_EXPORT(&ctx->G, d_param.G->length);
+		DHM_MPI_EXPORT(&ctx->GX, d_param.pubkey->length);
 
 		*olen = p - output;
-		ctx->len = d_param.P->data_len;
+		ctx->len = d_param.P->length;
 
-		sl_deinit(shnd);
+		security_deinit(shnd);
 	} else {
 		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 	}
@@ -363,14 +366,15 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 {
 	int ret = 0;
 	int generator = 0;
-	hal_dh_data d_param;
-	sl_ctx shnd;
+	security_dh_param d_param;
+	security_handle shnd;
+	char key_path[7];
 
 	if (ctx == NULL || olen < 1 || olen > ctx->len) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
 	}
 
-	memset(&d_param, 0, sizeof(hal_dh_data));
+	memset(&d_param, 0, sizeof(security_dh_param));
 
 	if (mbedtls_supported_dhm_size_alt(x_size)) {
 		/*
@@ -378,13 +382,13 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		 */
 		generator = mbedtls_mpi_size(&ctx->G);
 
-		d_param.P->data_len = x_size;
+		d_param.P->length = x_size;
 		d_param.P->data = (unsigned char *)malloc(x_size);
 		if (d_param.P->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.G->data_len = generator;
+		d_param.G->length = generator;
 		d_param.G->data = (unsigned char *)malloc(generator);
 		if (d_param.G->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
@@ -399,16 +403,16 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.pubkey->data_len = x_size;
+		d_param.pubkey->length = x_size;
 		switch (x_size) {
 		case DHM_1024:
-			d_param.mode = HAL_DH_1024;
+			d_param.mode = DH_1024;
 			break;
 		case DHM_2048:
-			d_param.mode = HAL_DH_2048;
+			d_param.mode = DH_2048;
 			break;
 		case DHM_4096:
-			d_param.mode = HAL_DH_4096;
+			d_param.mode = DH_4096;
 			break;
 		default:
 			ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
@@ -418,15 +422,16 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		/*
 		 *  2. Generate X values and calculate GX from sss.
 		 */
-		ret = sl_init(&shnd);
-		if (ret != SECLINK_OK) {
+		ret = security_init(&shnd);
+		if (ret != SECURITY_OK) {
 			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
 			goto cleanup;
 		}
 
-		ret = sl_dh_generate_param(shnd, ctx->key_index, &d_param);
-		if (ret != SECLINK_OK) {
-			sl_deinit(shnd);
+		snprintf(key_path, 7, "ss/%d", ctx->key_index);
+		ret = auth_generate_dhparams(shnd, key_path, &d_param);
+		if (ret != SECURITY_OK) {
+			security_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
 		}
@@ -434,15 +439,15 @@ int mbedtls_dhm_make_public(mbedtls_dhm_context *ctx, int x_size, unsigned char 
 		/*
 		 *  3. Export GX from unsigned binary data
 		 */
-		MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->GX, d_param.pubkey->data, d_param.pubkey->data_len));
+		MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->GX, d_param.pubkey->data, d_param.pubkey->length));
 
 		if ((ret = dhm_check_range(&ctx->GX, &ctx->P)) != 0) {
-			sl_deinit(shnd);
+			security_deinit(shnd);
 			goto cleanup;
 		}
 
 		MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&ctx->GX, output, olen));
-		sl_deinit(shnd);
+		security_deinit(shnd);
 	} else {
 		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 	}
@@ -537,15 +542,16 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 	unsigned int moduler = 0;
 	unsigned int generator = 0;
 	unsigned int pubkey = 0;
-	hal_dh_data d_param;
-	hal_data shared_secret = {output, output_size, NULL, 0};
-	sl_ctx shnd;
+	security_dh_param d_param;
+	security_data shared_secret = {output, output_size};
+	security_handle shnd;
+	char key_path[7];
 
 	if (ctx == NULL || output_size < ctx->len) {
 		return MBEDTLS_ERR_DHM_BAD_INPUT_DATA;
 	}
 
-	memset(&d_param, 0, sizeof(hal_dh_data));
+	memset(&d_param, 0, sizeof(security_dh_param));
 
 	if (mbedtls_supported_dhm_size_alt(ctx->len)) {
 		/*
@@ -555,19 +561,19 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 		generator = mbedtls_mpi_size(&ctx->G);
 		pubkey = mbedtls_mpi_size(&ctx->GY);
 
-		d_param.P->data_len = moduler;
+		d_param.P->length = moduler;
 		d_param.P->data = (unsigned char *)malloc(moduler);
 		if (d_param.P->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.G->data_len = generator;
+		d_param.G->length = generator;
 		d_param.G->data = (unsigned char *)malloc(generator);
 		if (d_param.G->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
 			goto cleanup;
 		}
-		d_param.pubkey->data_len = pubkey;
+		d_param.pubkey->length = pubkey;
 		d_param.pubkey->data = (unsigned char *)malloc(pubkey);
 		if (d_param.pubkey->data == NULL) {
 			ret = MBEDTLS_ERR_DHM_ALLOC_FAILED;
@@ -580,13 +586,13 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 
 		switch (ctx->len) {
 		case DHM_1024:
-			d_param.mode = HAL_DH_1024;
+			d_param.mode = DH_1024;
 			break;
 		case DHM_2048:
-			d_param.mode = HAL_DH_2048;
+			d_param.mode = DH_2048;
 			break;
 		case DHM_4096:
-			d_param.mode = HAL_DH_4096;
+			d_param.mode = DH_4096;
 			break;
 		default:
 			ret = MBEDTLS_ERR_DHM_INVALID_FORMAT;
@@ -596,15 +602,16 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 		/*
 		 *  2. Calculate shared secret(K) from sss.
 		 */
-		ret = sl_init(&shnd);
-		if (ret != SECLINK_OK) {
+		ret = security_init(&shnd);
+		if (ret != SECURITY_OK) {
 			ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
 			goto cleanup;
 		}
 
-		ret = sl_dh_compute_shared_secret(shnd, &d_param, ctx->key_index, &shared_secret);
-		if (ret != SECLINK_OK) {
-			sl_deinit(shnd);
+		snprintf(key_path, 7, "ss/%d", ctx->key_index);
+		ret = auth_compute_dhparams(shnd, key_path, &d_param, &shared_secret);
+		if (ret != SECURITY_OK) {
+			security_deinit(shnd);
 			ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 			goto cleanup;
 		}
@@ -612,11 +619,11 @@ int mbedtls_dhm_calc_secret(mbedtls_dhm_context *ctx, unsigned char *output, siz
 		/*
 		 *  3. Export K
 		 */
-		*olen = shared_secret.data_len;
+		*olen = shared_secret.length;
 
 		MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->K, output, *olen));
 
-		sl_deinit(shnd);
+		security_deinit(shnd);
 	} else {
 		return MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 	}

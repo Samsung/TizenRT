@@ -6,5 +6,6 @@
 config SECURITY_LINK
     bool "Enable Security Link"
     default n
+    depends on SECURITY_API
     ---help---
         Intercommunicate between Security features in User space and HAL which is in kernel space

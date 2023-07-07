@@ -11,7 +11,7 @@ def CreateTmp():
 
 root_dir = '../../../../'
 security_api_dir = root_dir + 'framework/src/security/'
-seclink_dir = root_dir + 'framework/src/seclink/'
+seclink_dir = root_dir + 'framework/src/security/seclink/'
 seclink_inc_dir = root_dir + 'os/include/tinyara/'
 system_inc_dir = root_dir + 'os/include/tinyara/fs/'
 seclink_drv_path = root_dir + 'os/drivers/seclink/'

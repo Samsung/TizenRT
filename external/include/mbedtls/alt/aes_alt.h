@@ -17,8 +17,7 @@
  ****************************************************************************/
 #pragma once
 
-#include <tinyara/seclink.h>
-#include <tinyara/security_hal.h>
+#include <security/security_common.h>
 
 /**
  * \brief The AES context-type definition.
@@ -30,11 +29,11 @@
  */
 typedef struct
 {
-	sl_ctx shnd;
+	security_handle shnd;
 	uint32_t enc_key_idx;
-	hal_key_type enc_key_type;
+	security_key_type enc_key_type;
 	uint32_t dec_key_idx;
-	hal_key_type dec_key_type;
+	security_key_type dec_key_type;
 	int nr;			  /*!< The number of rounds. */
 	uint32_t *rk;	  /*!< AES round keys. */
 	uint32_t buf[68]; /*!< Unaligned data buffer. This buffer can
