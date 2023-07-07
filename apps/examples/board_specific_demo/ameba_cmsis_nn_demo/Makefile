@@ -140,7 +140,7 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-	@$(MKDEP) $(ROOTDEPPATH) "$(CC)"-- $(CFLAGS) -- $(SRCS) >Make.dep
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	@touch $@
 
 depend: .depend
@@ -148,12 +148,14 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
-	rm $(wildcard ./*/*.o)
+	$(Q) ( if [ ! -z "$(wildcard ./*/*.o)" ]; then \
+		rm $(wildcard ./*/*.o); \
+	    fi; \
+	)
 
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-	rm $(wildcard ./*/*.o)
 
 -include Make.dep
 .PHONY: preconfig
