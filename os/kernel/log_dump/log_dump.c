@@ -457,7 +457,7 @@ int log_dump_save(char ch)
 			 * priority, then there will be a lockup since both threads cannot proceed. 
 			 * So, in this case, we will return without performing the compression.
 			 */
-			if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO) {
+			if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount()) {
 				return LOG_DUMP_FAIL;
 			}
 
