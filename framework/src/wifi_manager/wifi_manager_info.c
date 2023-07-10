@@ -60,6 +60,7 @@ int wifimgr_get_info(int flag, wifimgr_info_msg_s *info)
 			return -1;
 		}
 		info->rssi = info_utils.rssi;
+		memcpy(info->bssid, info_utils.bssid, WIFIMGR_MACADDR_LEN);
 	}
 
 	if ((flag & WIFIMGR_STATE) != 0) {
