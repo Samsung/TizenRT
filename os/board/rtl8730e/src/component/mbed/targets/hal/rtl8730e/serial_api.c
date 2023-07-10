@@ -478,6 +478,14 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 #endif
 }
 
+void serial_pin_init(PinName tx, PinName rx) 
+{
+	pin_function(tx, PINMUX_FUNCTION_UART);
+	pin_function(rx, PINMUX_FUNCTION_UART);
+	pin_mode(tx, PullUp);
+	pin_mode(rx, PullUp);
+}
+
 /**
   * @brief  Deinitialize the UART device, including clock, function, interrupt and UART registers.
   * @param  obj: UART object defined in application software.
