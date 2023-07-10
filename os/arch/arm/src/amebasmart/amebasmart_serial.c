@@ -842,6 +842,22 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 }
 
 /****************************************************************************
+ * Name: rtl8730e_up_setup_pin
+ *
+ * Description:
+ *   Operation is only setting serial pin.
+ *
+ ****************************************************************************/
+static int rtl8730e_up_setup_pin(struct uart_dev_s *dev)
+{
+	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
+	DEBUGASSERT(priv);
+
+	serial_pin_init(priv->tx, priv->rx);
+	return OK;
+}
+
+/****************************************************************************
  * Name: up_shutdown
  *
  * Description:
@@ -1145,12 +1161,18 @@ void up_serialinit(void)
 
 	/* Register all UARTs */
 #ifdef TTYS0_DEV
+/* Default LOGUART(UART4) is already running and could not be reinit or stopped */
+#if !defined(CONFIG_UART4_SERIAL_CONSOLE)
+	rtl8730e_up_setup_pin(&TTYS0_DEV);
+#endif
 	uart_register("/dev/ttyS0", &TTYS0_DEV);
 #endif
 #ifdef TTYS1_DEV
+	rtl8730e_up_setup_pin(&TTYS1_DEV);
 	uart_register("/dev/ttyS1", &TTYS1_DEV);
 #endif
 #ifdef TTYS2_DEV
+	rtl8730e_up_setup_pin(&TTYS2_DEV);
 	uart_register("/dev/ttyS2", &TTYS2_DEV);
 #endif
 
