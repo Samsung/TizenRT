@@ -126,7 +126,8 @@ static int binary_manager_load_binary(int bin_idx, char *path, load_attr_t *load
 			/* Set the data in table from header */
 			BIN_LOAD_ATTR(bin_idx) = *load_attr;
 			strncpy(BIN_NAME(bin_idx), load_attr->bin_name, BIN_NAME_MAX);
-			bmdbg("Load success! [Name: %s] [Version: %d] [Partition: %s] %s\n", BIN_NAME(bin_idx), BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), BINARY_COMP_TYPE);
+			bmdbg("Load success! [Name: %s] [Version: %d] [Partition: %s] [Text start : 0x%08x] %s\n", BIN_NAME(bin_idx), 
+					BIN_LOADVER(bin_idx), GET_PARTNAME(BIN_USEIDX(bin_idx)), elf_find_text_section_addr(bin_idx), BINARY_COMP_TYPE);
 			return OK;
 		} else if (errno == ENOMEM) {
 			/* Sleep for a moment to get available memory */
