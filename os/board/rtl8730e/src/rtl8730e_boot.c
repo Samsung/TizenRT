@@ -250,7 +250,7 @@ void board_gpio_initialize(void)
 #endif
 }
 
-void amebasmart_mount_partions(void)
+void amebasmart_mount_partitions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
@@ -324,7 +324,7 @@ void board_initialize(void)
 	}
 #endif
 
-	amebasmart_mount_partions();
+	amebasmart_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_spi_initialize();

@@ -250,7 +250,7 @@ void board_gpio_initialize(void)
 #endif
 }
 
-void amebad_mount_partions(void)
+void amebad_mount_partitions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
@@ -311,7 +311,7 @@ void board_initialize(void)
 	shell_init_rom(0, 0);
 	//shell_init_ram();
 	ipc_table_init();
-	amebad_mount_partions();
+	amebad_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_spi_initialize();
