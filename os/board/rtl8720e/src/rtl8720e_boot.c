@@ -207,7 +207,7 @@ void board_gpio_initialize(void)
 #endif
 }
 
-void amebalite_mount_partions(void)
+void amebalite_mount_partitions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
@@ -301,7 +301,7 @@ void board_initialize(void)
 	/*switch shell control to KM0 */
 	//InterruptDis(UART_LOG_IRQ);
 
-	amebalite_mount_partions();
+	amebalite_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_spi_initialize();

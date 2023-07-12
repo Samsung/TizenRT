@@ -127,7 +127,7 @@ int up_check_proddownload(void)
  ************************************************************************************/
 extern int board_ledc_setup(void);
 
-void esp32_devKit_mount_partions(void)
+void esp32_devKit_mount_partitions(void)
 {
 #ifdef CONFIG_FLASH_PARTITION
 	int ret;
@@ -254,7 +254,7 @@ void board_initialize(void)
 #ifdef CONFIG_ESP32_SPIFLASH
 	esp_partition_initialize();
 #endif
-	esp32_devKit_mount_partions();
+	esp32_devKit_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_ledc_setup();
