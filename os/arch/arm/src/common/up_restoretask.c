@@ -76,7 +76,7 @@ void up_restoretask(struct tcb_s *tcb)
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
 
 		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
-			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}
 		}

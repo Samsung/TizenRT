@@ -189,7 +189,7 @@ int task_terminate(pid_t pid, bool nonblocking)
 	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
 	if (IS_BINARY_MAINTASK(dtcb) && up_mpu_check_active(&dtcb->mpu_regs[0])) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 			up_mpu_disable_region(&dtcb->mpu_regs[i]);
 		}
 #else

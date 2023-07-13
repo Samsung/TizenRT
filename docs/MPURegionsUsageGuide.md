@@ -55,7 +55,7 @@
 	```c
 	void mpu_region_initialize(struct mpu_usages_s *mpu)
 
-	offset += MPU_NUM_REGIONS;
+	offset += NUM_APP_REGIONS;
 	mpu->nregion_xxx_xx = offset;
 	```
 2. **Board specific MPU region reservation**

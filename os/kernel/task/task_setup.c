@@ -466,7 +466,7 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #ifdef CONFIG_ARM_MPU
 		int i = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		for (; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER)
+		for (; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER)
 #endif
 		{
 			tcb->mpu_regs[i + MPU_REG_RNR] = rtcb->mpu_regs[i + MPU_REG_RNR];
