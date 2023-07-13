@@ -100,6 +100,8 @@ struct ap_scan_list {
 };
 typedef struct ap_scan_list ap_scan_list_s;
 
+static int valid_ch_list[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165};
+static int valid_ch_list_size = sizeof(valid_ch_list)/sizeof(valid_ch_list[0]);
 static ap_scan_list_s *saved_scan_list = NULL;
 static uint32_t scan_number = 0;
 static _timer scan_timer;
@@ -408,13 +410,21 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	g_scan_list = NULL;
 	char *channel_list = NULL;
 	int i = 0;
+	int ch_valid = 0;
 	rtw_scan_param_t scan_param = {0};
 
 	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler; //print_ssid_scan_result
 
 	if (config) {
-		if ((config->channel >= 1) && (config->channel <= 13)) {
+		for (i = 0; i < valid_ch_list_size; i++){
+			if (config->channel == valid_ch_list[i]){
+				ch_valid = 1;
+				break;
+			}
+		}
+
+		if (ch_valid) {
 			/* If Channel Information is given by User */
 			channel_list = (char *)malloc(1); //only do 1 channel instead of multiple channels for now
 			if (!channel_list) {
@@ -441,7 +451,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 			}
 		}
 
-		if(config->ssid_length > 0 || ((config->channel >= 1) && (config->channel <= 13))) {
+		if(config->ssid_length > 0 || (ch_valid)) {
 			/* Scan with SSID, or Scan with SSID And Channel */
 			scan_param.ssid = (char *)config->ssid;
 			if(config->ssid_length > 0 && config->channel == 0) {
@@ -570,6 +580,9 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 
 trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config)
 {
+	int i = 0;
+	int ch_valid = 0;
+
 	if (!softap_config) {
 		return TRWIFI_INVALID_ARGS;
 	}
@@ -585,6 +598,17 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 		return TRWIFI_FAIL;
 	} else {
 		nvdbg("[RTK] Link callback handles: registered\n");
+	}
+
+	for (i = 0; i < valid_ch_list_size; i++){
+		if (softap_config->channel == valid_ch_list[i]){
+			ch_valid = 1;
+			break;
+		}
+	}
+	if (!ch_valid){
+		ndbg("\r\nAP channel is wrong: %d;\n", softap_config->channel);
+		return TRWIFI_INVALID_ARGS;
 	}
 
 	ret = cmd_wifi_ap(softap_config);

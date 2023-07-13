@@ -281,11 +281,6 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 		return TRWIFI_INVALID_ARGS;
 	}
 
-	if (softap_config->channel > 14 || softap_config->channel < 1) {
-		ndbg("\r\nAP channel is wrong: %d;\n", softap_config->channel);
-		return TRWIFI_INVALID_ARGS;
-	}
-
 	if (softap_config->ssid_length < 1) {
 		ndbg("\r\nAP ssid_length is wrong: %s,	%d;\n", softap_config->ssid, softap_config->ssid_length);
 		return TRWIFI_INVALID_ARGS;
