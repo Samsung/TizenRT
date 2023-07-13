@@ -202,7 +202,7 @@ int unload_module(FAR struct binary_s *binp)
 		if (binp->islibrary) {
 #if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_disable_region(&binp->cmn_mpu_regs[i]);
 			}
 #else

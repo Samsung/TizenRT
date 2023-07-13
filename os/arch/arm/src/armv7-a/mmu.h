@@ -664,6 +664,7 @@
 #  define ALL_PGTABLE_SIZE PGTABLE_SIZE
 #endif
 
+
 /* Virtual Page Table Location **********************************************/
 
 #ifdef CONFIG_PAGING

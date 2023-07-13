@@ -125,7 +125,7 @@ struct binary_s {
 	uint8_t run_library_ctors;		/* Flag to check if we need to run ctors for common binary */
 #endif
 #ifdef CONFIG_ARM_MPU							/* MPU register values for common binary only */
-	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * MPU_NUM_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
+	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * NUM_APP_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
 #endif
 #endif
 	FAR char *const *argv;			/* Argument list */

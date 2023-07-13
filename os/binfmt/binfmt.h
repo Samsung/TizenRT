@@ -184,7 +184,7 @@ static inline void binfmt_set_mpu(struct binary_s *binp)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (binp->islibrary) {
 		/* Set MPU register values to real MPU h/w */
-		for (int i = 0; i < MPU_REG_NUMBER * MPU_NUM_REGIONS; i += MPU_REG_NUMBER) {
+		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 			up_mpu_set_register(&regs[i]);
 		}
 	}

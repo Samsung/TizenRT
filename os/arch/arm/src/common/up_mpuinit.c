@@ -76,12 +76,12 @@ void mpu_region_initialize(struct mpu_usages_s *mpu)
 	uint8_t offset = mpu->nregion_board_specific;
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	offset += MPU_NUM_REGIONS;
+	offset += NUM_APP_REGIONS;
 	mpu->nregion_common_bin = offset;
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	offset += MPU_NUM_REGIONS;
+	offset += NUM_APP_REGIONS;
 	mpu->nregion_app_bin = offset;
 #endif
 

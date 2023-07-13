@@ -94,6 +94,7 @@ config OPTIMIZE_APP_RELOAD_TIME
 config BINFMT_SECTION_UNIFIED_MEMORY
 	bool "Allocate section memory as one chunk"
 	depends on OPTIMIZE_APP_RELOAD_TIME
+	depends on ARM_MPU
 	default n
 	---help---
 		When this option is enabled, binary loader allocates one big memory chunk enough to contain each loading sections
@@ -101,7 +102,7 @@ config BINFMT_SECTION_UNIFIED_MEMORY
 		When this option is disabled, by default, loader allocates separated memory for each section.
 		In ARMv7m MPU, there are size and address alignment restrictions, so it can enhance memory usage efficiency.
 		In ARMv8m MPU, there is no restriction about address alignment, it is not recommended to use this option.
-
+		This option does not provide any advantage when MMU is being used.
 
 config SAVE_BIN_SECTION_ADDR
 	bool "Save binary section address"
