@@ -130,7 +130,7 @@ SECTIONS
     _sidle_stack = ABSOLUTE(.);
     . = . + CONFIG_IDLETHREAD_STACKSIZE ;
     /* Heap start address in internal RAM */
-    _sint_heap_start = ABSOLUTE(.);
+    _sint_heap = ABSOLUTE(.);
 
     /* Uninitialized .bss */
     *(.noinit)

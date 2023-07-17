@@ -307,7 +307,7 @@ SECTIONS
 		end = .;
 		_ebss = ABSOLUTE(.);
 		/* Heap start address in internal RAM */
-		_sint_heap_start = ABSOLUTE(.);
+		_sint_heap = ABSOLUTE(.);
 	} > BD_RAM_NS
 
 
@@ -407,7 +407,7 @@ SECTIONS
 		*libframework.a:*(.bss*)
 		__psram_bss_end__ = .;
 		/* Heap start address in external RAM */
-		_sext_heap_start = ABSOLUTE(.);
+		_sext_heap = ABSOLUTE(.);
 	} > PSRAM_NS
 
 	.psram_heap.data :

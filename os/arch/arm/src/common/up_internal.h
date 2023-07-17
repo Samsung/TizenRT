@@ -278,8 +278,8 @@ EXTERN uint32_t _edata;			/* End+1 of .data */
 EXTERN uint32_t _sbss;			/* Start of .bss */
 EXTERN uint32_t _ebss;			/* End+1 of .bss */
 EXTERN uint32_t _sidle_stack;		/* Start of idle stack */
-EXTERN uint32_t _sint_heap_start;	/* Start of heap in internal RAM region */
-EXTERN uint32_t __sext_heap_start;	/* Start of heap in external RAM region */
+EXTERN uint32_t _sint_heap;	/* Start of heap in internal RAM region */
+EXTERN uint32_t _sext_heap;	/* Start of heap in external RAM region */
 
 /* Sometimes, functions must be executed from RAM.  In this case, the following
  * macro may be used (with GCC!) to specify a function that will execute from
