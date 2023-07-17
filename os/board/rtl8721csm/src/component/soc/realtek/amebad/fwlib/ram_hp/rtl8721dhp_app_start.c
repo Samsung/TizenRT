@@ -45,14 +45,14 @@ void app_init_psram(void);
 extern void vPortEnterCritical(void);
 extern void vPortExitCritical(void);
 extern unsigned int _sidle_stack;
-extern unsigned int _sint_heap_start;
-extern unsigned int _sext_heap_start;
+extern unsigned int _sint_heap;
+extern unsigned int _sext_heap;
 extern unsigned int __StackLimit;
 extern unsigned int __PsramStackLimit;
 #define IDLE_STACK ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
-#define HEAP_BASE  ((uintptr_t)&_sint_heap_start)
+#define HEAP_BASE  ((uintptr_t)&_sint_heap)
 #define HEAP_LIMIT ((uintptr_t)&__StackLimit)
-#define PSRAM_HEAP_BASE ((uintptr_t)&_sext_heap_start)
+#define PSRAM_HEAP_BASE ((uintptr_t)&_sext_heap)
 #define PSRAM_HEAP_LIMIT ((uintptr_t)&__PsramStackLimit)
 
 const uintptr_t g_idle_topstack = IDLE_STACK;

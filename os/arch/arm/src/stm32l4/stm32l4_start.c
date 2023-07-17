@@ -78,7 +78,7 @@
 #define SRAM2_END    (SRAM2_START + STM32L4_SRAM2_SIZE)
 
 #define IDLE_STACK ((uintptr_t)&_sidle_stack + CONFIG_IDLETHREAD_STACKSIZE - 4)
-#define HEAP_BASE  ((uintptr_t)&_sint_heap_start)
+#define HEAP_BASE  ((uintptr_t)&_sint_heap)
 
 /* g_idle_topstack: The idle task stack starts at the end of BSS _ebss and
  * at _sidle_stack and is of size CONFIG_IDLETHREAD_STACKSIZE.

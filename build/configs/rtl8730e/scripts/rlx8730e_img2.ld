@@ -314,7 +314,7 @@ SECTIONS
 	{
 		. = ALIGN(64);
 		__psram_heap_buffer_start__ = .;
-		_sext_heap_start = ABSOLUTE(.);
+		_sext_heap = ABSOLUTE(.);
 		_psram_heap_start = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
