@@ -781,6 +781,8 @@ def find_crash_point(log_file, elf):
                 word = line.split(':')
                 print('\n\t-', word[1], ':', word[2])
 
+    print('\n4. Code asserted in:')
+
     # Parse the contents based on tokens in log file to determine point of assertion in details
     with open(log_file) as searchfile:
         found_type = 0
@@ -813,7 +815,7 @@ def find_crash_point(log_file, elf):
                 is_interrupt_mode = 1
                 # It displays the interrupt handler information corresponding to the Interrupt
                 # The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
-                print("\n4. Assertion Data during interrupt mode:\n")
+                print("\n5. Assertion Data during interrupt mode:\n")
                 print('- Interrupt handler at addr\t\tSymbol_name')
                 os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
     with open(log_file) as searchfile:
@@ -826,9 +828,9 @@ def find_crash_point(log_file, elf):
                 print("\033[F", line)
 
     if (is_interrupt_mode):
-        print('\n5. Call stack of last run thread')
+        print('\n6. Call stack of last run thread')
     else:
-        print('\n4. Call stack of last run thread')
+        print('\n5. Call stack of last run thread')
 
     # Parse the contents based on tokens in log file for memory allocation failure data
     with open(log_file) as searchfile:
@@ -866,34 +868,221 @@ def find_crash_point(log_file, elf):
     print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
-    print('\nx. Miscellaneous information:')
+    print('\nh. Heap Region information:\n')
+
+    with open(log_file) as searchfile:
+        heap_corr = 0
+        for line in searchfile:
+            # Check if there is heap corruption or not
+            if 'Heap corruption detected' in line:
+                    heap_corr = 1
+        if (heap_corr == 1):
+            print('\t!!!! HEAP CORRUPTION DETECTED !!!!\n\n')
+        else:
+            print('\t!!!! NO HEAP CORRUPTION DETECTED !!!!\n\n')
+
+    class heap_node:
+        def __init__(self, node_info):
+            #Split node data using "," and parse info
+            node_info = node_info.split(",")
+            addr_at = node_info[0].index("addr =") + len("addr =")
+            type_at = node_info[1].index("type =") + len("type =")
+            size_at = node_info[2].index("size =") + len("size =")
+            prec_add_at = node_info[3].index("preceding size =") + len("preceding size =")
+
+            owner_pid_info = node_info[4].split("(")
+            owner_pid_at = owner_pid_info[0].index("owner pid =") + len("owner pid =")
+            isStack = 'X'
+            sind = owner_pid_info[1].find('stack')
+            pid_str = '('+str(owner_pid_info[1])
+            if (sind !=-1):
+                isStack ='O'
+                pid_str = '('+str(owner_pid_info[1][0:sind])+')'
+            
+            alloca_at = node_info[5].index("allocated by code at addr = ")+len("allocated by code at addr = ")
+
+            self.addr = node_info[0][addr_at:].replace(" ","")
+
+            self.isAllocated = "O"
+            if node_info[1][type_at:].replace(" ","") == "F" or node_info[1][type_at:].replace(" ","") == "f":
+                self.isAllocated = "X"
+
+            self.size = node_info[2][size_at:].replace(" ","")
+            self.preceding_size = node_info[3][prec_add_at:].replace(" ","")
+            
+            self.ownerpid = str(abs(int(owner_pid_info[0][owner_pid_at:].replace(" ",""))))+" "+pid_str            
+            self.stacknode = isStack
+            self.allocAt =  node_info[5][alloca_at:].replace(" ","")
+
+            isKernel = True
+            addrcmd = ""
+            address = int(self.allocAt, 16)
+
+            for app_idx in range(g_app_idx):
+                #check if address falls in app
+                if (address >= int(hex(g_stext_app[app_idx]),16) and address < int(hex(g_etext_app[app_idx]),16)):
+                    isKernel = False
+                    addr = address - int(hex(g_stext_app[app_idx]), 16)
+                    addrcmd = 'arm-none-eabi-addr2line -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr) 
+
+            #if address is in kernel
+            if isKernel == True:
+                addrcmd = "arm-none-eabi-addr2line -e {file} {trans_address}".format(file= elf,trans_address=hex(address))
+            
+
+            self.filename = os.popen(addrcmd).read()
+
+        def print_info(self):
+            print("\tAddress        : ", self.addr)
+            print("\tAllocated node : ", self.isAllocated)
+            print("\tSize           : ", self.size)
+            print("\tPreceding size : ", self.preceding_size)
+            print("\tOwner pid      : ", self.ownerpid)
+            print("\tStack node     : ", self.stacknode)
+            print("\tAllocated by   : ", self.allocAt + " (" + self.filename[ :-1] +")")
 
     with open(log_file) as searchfile:
     # Parse the contents based on tokens in log file for heap corruption
-        heap_corr = 0
+        def parseCorruptHeapInfo(line):
+            heap_corrupted =  False
+            while 'Heap start =' in line:
+                #Read start and end address from heap
+                heap_start_at =  line.index("Heap start = ") + len("Heap start = ")
+                start_info = line[heap_start_at:].split(' ')
+                heap_start_add = start_info[0]
+                heap_end_add = start_info[-1][:-1]             
+                line = next(searchfile)
+                print("Checking corruption ({} - {}) : ".format(heap_start_add,heap_end_add), end="")
+
+                #Skip unnecessary info
+                if ('#######' in line):
+                    line = next(searchfile)
+                else:
+                    print("Heap NOT corrupted")
+
+                #Check if heap is corrupted
+                if 'Heap corruption detected in mm_heapstart node' in line:
+                    heap_corrupted = True
+                    print("Heap corruption detected in heap start node")
+                    while 'HEAP START NODE' not in line:
+                        line = next(searchfile)
+                    node_info = ""
+                    while ('HEAP START NODE' in line):
+                        node_info+= line[:-1] + ","
+                        line =next(searchfile)
+                    print("  Heap Start Node : ")
+                    start_heap_node = heap_node(node_info)
+                    start_heap_node.print_info()
+                    
+                elif 'Heap corruption detected.' in line:
+                    heap_corrupted = True
+                    print("Heap corrupted")
+                    line = next(searchfile)
+
+                    while 'Forward traversal of heap' in line:
+                        line = next(searchfile)
+                        if ('==========' in line):
+                            line =next(searchfile)
+
+                            #Parse previous, current and next node
+                            node_info = ""
+                            while ('PREV NODE' in line):
+                                node_info+= line[:-1] + ","
+                                line =next(searchfile)
+                            print("  Previous Node : ")
+                            prev_heap_node = heap_node(node_info)
+                            prev_heap_node.print_info()
+
+                            node_info = ""
+                            while ('CORRUPT NODE' in line):
+                                node_info+= line[:-1] + ","
+                                line =next(searchfile)
+                            curr_heap_node = heap_node(node_info)
+
+                            while 'CORRUPT NODE' not in line and 'HEAP END NODE'  not in line:
+                                line = next(searchfile)
+
+                            if 'CORRUPT NODE' not in line:
+                                print(" Corrupt Node : ")
+                                curr_heap_node.print_info()
+
+                            if ('CORRUPT NODE' in line):
+                                node_info = ""
+                                while ('CORRUPT NODE' in line):
+                                    node_info+= line[:-1] + ","
+                                    line =next(searchfile)
+                                curr_heap_node_2 = heap_node(node_info)
+
+                                if(curr_heap_node.addr != curr_heap_node_2.addr):
+                                    print(" Corrupt Node 1 : ")
+                                    curr_heap_node.print_info()
+                                    print(" Corrupt Node 2: ")
+                                    curr_heap_node_2.print_info()
+                                else:
+                                    print(" Corrupt Node : ")
+                                    curr_heap_node.print_info()
+
+                                node_info = ""
+                                while ('PREV NODE' in line):
+                                    node_info+= line[:-1] + ","
+                                    line =next(searchfile)
+                                print("  Next Node : ")
+                                next_heap_node = heap_node(node_info)								
+                                next_heap_node.print_info()
+
+                            elif ('HEAP END NODE' in line):
+                                node_info = ""
+                                while ('HEAP END NODE' in line):
+                                    node_info+= line[:-1] + ","
+                                    line =next(searchfile)
+                                print("  Next Node : ")
+                                next_heap_node = heap_node(node_info)								
+                                next_heap_node.print_info()
+                    print()
+            return heap_corrupted
+
+
         for line in searchfile:
             # Print the heap corruption data (if any)
-            if 'mm_check_heap_corruption:' in line:
-                if (heap_corr == 0):
-                    print("\n## Heap Corruption Data:\n")
-                    heap_corr = 1
-                print("\033[F", line)
-            if 'dump_node:' in line:
-                print("\033[F", line)
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if 'allocated by code at addr' in line:
-                print("## Code Location of possible corrupted node allocation:")
-                # It displays the debug symbols corresponding to the corrupted heap node
-                # The last argument to debugsymbolviewer specifies whether or not to check for corrupted heap node addresses (2)
-                print('Allocated by code at addr\t\tFile_name')
-                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 2")
-                break
+            if 'Checking kernel heap for corruption...' in line:
+                print("Checking kernel heap for corruption")
+                line = next(searchfile)
+                if parseCorruptHeapInfo(line) == False:
+                    print("No Kernel heap corruption detected.\n")
+
+            if 'Checking current app heap for corruption...' in line:
+                print("Checking application heap for corruption")
+                line = next(searchfile)
+                if parseCorruptHeapInfo(line) == False:
+                    print("No app heap corruption detected.\n")
+
+    print('\nx. Miscellaneous information:')
 
     # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
     # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
-    print('-----------------------------------------------------------------------------------------')
+
+    #Parse content of file for displaying tasks
+    with open(log_file) as searchfile:
+        for line in searchfile:
+            if 'Stack overflow error has occurred' in line:
+                print("\n!! Stack overflow error has occurred !!")
+            if 'List of all tasks in the system:' in line:
+                print("\nList of all tasks in the system:\n")
+                line = next(searchfile)
+                line = next(searchfile)
+                while '*******************' not in line:
+                    start_idx = 0
+                    if 'task_show_alivetask_list:' in line:
+                        start_idx += len('task_show_alivetask_list:')
+                    if 'task_taskdump:' in line:
+                        start_idx += len('task_taskdump:')
+                    print(line[start_idx:], end = "")
+                    line = next(searchfile) 
+                
+
+
+    print('----------------------------------------------------------------------------------------------------')
 
 # Function to format logs and delete the timestamp (format-[xxxxxxxxx]) if it consists of timestamp at the start of each log line
 def format_log_file(log_file):
@@ -1098,6 +1287,9 @@ def main():
 			global g_etext_ram
 			g_etext_ram = rParser.get_address_of_symbol("_etext_ram")
 
+		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
+
 		# Find the point of crash in the kernel, application or common binaries
 		find_crash_point(log_file, elf)
 
@@ -1105,10 +1297,6 @@ def main():
 		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
 			#If architecture is cortex M, then run return without further script execution
 			return None
-
-		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
-			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
-			return
 
 		# If the log file is given, then parse that log file only and exit
 		if log_file is not None:
