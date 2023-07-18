@@ -65,7 +65,7 @@
 #define SS_BASE_ADDRESS 0x14000
 #endif
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
-#define SS_BASE_ADDRESS 0x1F0000 /* ToDo: Temporary set need changes based flash addr */
+#define SS_BASE_ADDRESS 0x1C000
 #endif
 
 
