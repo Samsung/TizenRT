@@ -115,6 +115,5 @@ menu "Realtek RTL8730E TrustZone Support"
 config AMEBASMART_TRUSTZONE
 	bool "Enable Amebasmart TrustZone"
 	default n
-	select ARMV8M_TRUSTZONE
 
 endmenu
