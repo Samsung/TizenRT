@@ -101,7 +101,7 @@ config AMEBAD_I2CTIMEOTICKS
 	depends on !AMEBAD_I2C_DYNTIMEO
 
 config RTL8721D_SPI
-	bool "RTL8721D_SPI
+	bool "RTL8721D_SPI"
 	default n
 
 config SPI1_MASTER
