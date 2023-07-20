@@ -6,7 +6,7 @@
 config HAVE_CXXINITIALIZE
 	bool "Have C++ initialization"
 	default n
-	depends on HAVE_CXX
+	depends on HAVE_CXX && BUILD_FLAT
 	select SYSTEM_PREAPP_INIT
 	---help---
 		The platform-specific logic includes support for initialization
