@@ -51,6 +51,8 @@ comment "LLVM C++ Library (libcxx)"
 config LIBCXX
 	bool "Build LLVM libcxx"
 	default n
+	select HAVE_CXXINITIALIZE if BUILD_FLAT
+	select BINFMT_CONSTRUCTORS if APP_BINARY_SEPARATION
 	---help---
 		LLVM libc++ can be built by selecting this option.
 
