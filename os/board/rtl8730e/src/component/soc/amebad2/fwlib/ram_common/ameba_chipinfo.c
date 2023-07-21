@@ -31,7 +31,9 @@ const MemoryInfo_TypeDef Memory_Info[] = {
 	{0x1,		0x9,			0x29,		DDR_Type_DDR3L,			DDR_Size_2G,		0},			/* 1027(QFN144) ddr3L 2G+nand 2G*/
 	{0x0,		0xA,			0x0A,		DDR_Type_DDR2,			DDR_Size_1G,		0},			/* 1028(QFN144) ddr2 1G+nand 1G*/
 	{0x1,		0xA,			0x2A,		DDR_Type_DDR2,			DDR_Size_1G,		0},			/* /1029(QFN144) ddr2 1G+nand 1G*/
-
+	{0x0,		0xB,			0x0B,		Memory_Type_PSRAM,		PSRAM_Size_64M,		Vendor_PSRAM_A},			/* 1034(QFN100) psram 64Mb+nor 128Mb*/
+	{0x0,		0xC,			0x0C,		Memory_Type_PSRAM,		PSRAM_Size_64M, 	Vendor_PSRAM_A},			/* 1037(QFN144) psram 64Mb+nor 64Mb*/
+	
 	{0xFF,		0xFF,		0xFF,		Memory_Type_None,		DDR_Size_None,		Vendor_None}, /* End */
 };
 
