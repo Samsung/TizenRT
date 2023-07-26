@@ -1921,7 +1921,7 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
     priv->read = this_read;
     priv->ioctl = this_ioctl;
 #ifdef CONFIG_MTD_REGISTRATION
-    priv->mtd.name = "stm32l4_flash";
+    priv->name = "stm32l4_flash";
 #endif
   }
 
