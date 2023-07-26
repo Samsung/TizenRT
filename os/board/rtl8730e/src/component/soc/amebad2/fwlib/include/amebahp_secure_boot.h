@@ -89,11 +89,4 @@ typedef struct {
 	uint32_t Len;
 } SubImgInfo_TypeDef;
 
-int SBOOT_GetMdType(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);
-int SBOOT_Validate_Algorithm(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash);
-int SBOOT_Validate_PubKey(u8 AuthAlg, u8 *Pk, u8 *Hash);
-int SBOOT_Validate_Signature(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg, u32 Len, u8 *Sig);
-int SBOOT_Validate_ImgHash(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num);
-int SBOOT_SignatureVerify(u8 *PubKeyHash, Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgCnt);
-
 #endif

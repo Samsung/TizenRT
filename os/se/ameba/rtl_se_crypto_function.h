@@ -124,3 +124,24 @@ typedef struct {
 	hal_key_type factory_slot_key_type[USABLE_FACTORY_KEY_INDEX];
 } factory_struc;
 
+
+/* Kernel Image Verification Structure */
+#ifdef CONFIG_AMEBASMART_TRUSTZONE
+#include "amebahp_secure_boot.h"
+
+typedef struct {
+	uint8_t *AuthAlg;
+	uint8_t *HashAlg;
+	uint8_t ManiAuth;
+	uint8_t ManiHash;
+	uint8_t *Pk;
+	uint8_t *Msg;
+	uint32_t Len;
+	uint8_t *Sig;
+	uint8_t *Hash;
+	uint8_t *ImgHash;
+	SubImgInfo_TypeDef *SubImgInfo;
+	Manifest_TypeDef *Manifest;
+	uint8_t Num;
+} OTA_SIG_CHECK_ADAPTER;
+#endif
