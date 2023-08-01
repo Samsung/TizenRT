@@ -101,7 +101,6 @@
 #include "messaging/message_ctrl.h"
 #endif
 #ifdef CONFIG_LOG_DUMP
-#include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 #endif
 #ifdef CONFIG_SECURITY_LEVEL
@@ -305,11 +304,11 @@ static inline void os_do_appstart(void)
 #endif
 
 #ifdef CONFIG_LOG_DUMP
-	svdbg("Starting log_dump thread\n");
-
-	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
+	svdbg("Starting log_dump manager thread\n");
+	
+	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_MANAGER_PRIO, CONFIG_LOG_DUMP_STACK_SIZE, log_dump_manager, NULL);
 	if (pid < 0) {
-		sdbg("Failed to start log dump");
+		sdbg("Failed to start log dump manager");
 	}
 #endif
 

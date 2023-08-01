@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,44 @@
  *
  ****************************************************************************/
 
-#ifndef __LOG_DUMP_INTERNAL_H
-#define __LOG_DUMP_INTERNAL_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-/****************************************************************************
- * Pre-Processor Definitions
- ****************************************************************************/
 
-/* Log Dump Thread information */
-#define LOG_DUMP_NAME        "log_dump"		/* Log dump thread name */
+#include "log_dump/log_dump.h"
+
+#include <tinyara/log_dump/log_dump.h>
+#include <tinyara/compression.h>
+#include <tinyara/config.h>
 
 /****************************************************************************
- * Public Types
+ * Pre-processor Definitions
  ****************************************************************************/
 /****************************************************************************
- * Public Data
+ * Private Type Declarations
+ ****************************************************************************/
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+/****************************************************************************
+ * Private Functions
  ****************************************************************************/
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/* Functions contained in log_dump_save.c ***********************************/
-int log_dump_save(char ch);
+int log_dump_compress(char *out_buf, char *in_buf, long unsigned int in_buf_size)
+{
+	int compressed_size = CONFIG_LOG_DUMP_CHUNK_SIZE;
+	int comp_ret;
 
-/* Functions contained in log_dump_manager.c ***********************************/
-int log_dump_manager(int argc, char *argv[]);
+	comp_ret = compress_block((unsigned char *)out_buf, &compressed_size, (unsigned char*)in_buf, in_buf_size);
+	if (comp_ret != LOG_DUMP_OK) {
+		compressed_size = LOG_DUMP_COMPRESS_FAIL;
+	}
 
-#endif		/* __LOG_DUMP_INTERNAL_H */
+	return compressed_size;
+}

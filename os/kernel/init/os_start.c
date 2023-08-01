@@ -98,9 +98,6 @@
 #endif
 #include  "init/init.h"
 #include  "debug/memdbg.h"
-#ifdef CONFIG_LOG_DUMP
-#include <tinyara/log_dump/log_dump_internal.h>
-#endif
 
 extern const uint32_t g_idle_topstack;
 

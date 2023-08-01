@@ -1000,34 +1000,57 @@ endmenu # Stack size information
 config LOG_DUMP
 	bool "Enable log dump functionality"
 	select COMPRESSION
+	select FS_AUTOMOUNT_PROCFS
 	default n
 
-if LOG_DUMP
+config LOG_DUMP_STACK_SIZE
+	int "Stack size of log dump manager thread"
+	depends on LOG_DUMP
+	range 0 32768
+	default 16384
+	
+config LOG_DUMP_UNCOMP_RING_SIZE
+	int "Number of log dump uncompressed buffer"
+	depends on LOG_DUMP
+	range 0 32
+	default 4
 
-config LOG_DUMP_PRIO
-	int "Log dump comrpess thread priority"
+config LOG_DUMP_UNCOMP_BUF_SIZE
+	int "Log dump uncompressed chunk size in bytes"
+	depends on LOG_DUMP
+	range 0 16384
+	default 2048
+
+config LOG_DUMP_SPARE_BUF_SIZE
+	int "Log dump spare buf size in bytes"
+	depends on LOG_DUMP
+	range 0 LOG_DUMP_UNCOMP_BUF_SIZE
+	default 1024
+
+config LOG_DUMP_MANAGER_PRIO
+	int "Log dump manager thread priority"
+	depends on LOG_DUMP
 	range 0 250
-	default 200
+	default 175
 
 config LOG_DUMP_CHUNK_SIZE
 	int "Log dump chunk size in bytes"
+	depends on LOG_DUMP
 	range 0 LOG_DUMP_MAX_SIZE
 	default 4096
 
 config LOG_DUMP_MAX_SIZE
 	int "Maximum size allocated for logs in bytes"
+	depends on LOG_DUMP
 	default 262144
 
 config LOG_DUMP_MEMCHECK_SIZE
 	int "Number of bytes written before checking the memory constraints"
+	depends on LOG_DUMP
 	default 1024
 
 config LOG_DUMP_MAX_FREE_HEAP
 	int "Maximum percent of memory occupied by logs compared to free heap"
+	depends on LOG_DUMP
 	default 20
 
-config LOG_DUMP_NUMBUFS
-	int "Number of buffers to reserve for log dump"
-	default 2
-
-endif # LOG_DUMP
