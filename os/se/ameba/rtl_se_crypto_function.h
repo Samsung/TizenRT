@@ -125,9 +125,14 @@ typedef struct {
 } factory_struc;
 
 
-/* Kernel Image Verification Structure */
+/* Kernel & User Image Verification Structure */
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
 #include "amebahp_secure_boot.h"
+#include "hal_platform.h"
+
+#define IMAGE_HEADER_LEN		0x20
+#define Cert_PKHash_OTP_ADDR		0x0320
+#define OTPC_REG_BASE			0x42000000
 
 typedef struct {
 	uint8_t *AuthAlg;
@@ -144,4 +149,14 @@ typedef struct {
 	Manifest_TypeDef *Manifest;
 	uint8_t Num;
 } OTA_SIG_CHECK_ADAPTER;
+
+typedef struct {
+	uint32_t signature[2];
+	uint32_t image_size;
+	uint32_t image_addr;
+
+	/* reserved for extention */
+	uint32_t sb_header;
+	uint32_t reserved[3];
+} IMAGE_HEADER;
 #endif

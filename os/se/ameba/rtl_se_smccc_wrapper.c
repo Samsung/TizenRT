@@ -368,3 +368,9 @@ int ameba_SBOOT_Validate_ImgHash(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
 	return ret;
 }
 
+int ameba_SBOOT_Validate_PubKey(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
+{
+	int ret = 0;
+	ret = invoke_securetest(0x82000037, (uint32_t)OTA_adapter, 0, 0, 0);
+	return ret;
+}
