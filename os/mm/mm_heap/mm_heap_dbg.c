@@ -74,3 +74,28 @@ void mm_dump_heap_region(uint32_t start, uint32_t end)
 	heap_dbg("#########################################################################################\n");
 }
 
+/************************************************************************
+ * Name: mm_dump_heap_free_node_list
+ *
+ * Description: Print the hex value contents of heap free nodes.
+ ************************************************************************/
+void mm_dump_heap_free_node_list(struct mm_heap_s *heap)
+{
+	struct mm_freenode_s *node;
+	heap_dbg("#########################################################################################\n");
+	heap_dbg("Dump heap free node list\n");
+	heap_dbg("[ndx], [HEAD]: [FREE NODES(SIZE)]\n");
+	heap_dbg("#########################################################################################\n");
+	for (uint8_t ndx = 0; ndx < MM_NNODES; ndx++) {
+		heap_dbg("%3d, %08x:", ndx, &heap->mm_nodelist[ndx]);
+		for (node = heap->mm_nodelist[ndx].flink; node; node = node->flink) {
+			heap_dbg(" %08x(%d)", node, node->size);
+		}
+		heap_dbg("\n");
+
+		if (heap->mm_nodelist[ndx].size != 0) {
+			mfdbg("    Corrupted HEAD of free node link %08x\n", &heap->mm_nodelist[ndx]);
+		}
+	}
+	heap_dbg("#########################################################################################\n");
+}
