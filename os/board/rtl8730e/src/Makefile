@@ -201,7 +201,9 @@ else
   CFLAGS += -I$(BOARD_SRCDIR)/common
   CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
   CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/armv7-a
+  CFLAGS += -I$(TARGETDIR)/bootloader
   CFLAGS += -I$(TOPDIR)/se/ameba
+  
 endif
 
 all: libboard$(LIBEXT)
