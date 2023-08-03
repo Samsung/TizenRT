@@ -287,8 +287,12 @@ uint32_t *arm_syscall(uint32_t *regs)
 			* set will determine the restored context.
 			*/
 
+		struct tcb_s *rtcb = sched_self();
 		CURRENT_REGS = (uint32_t *)regs[REG_R1];
 		DEBUGASSERT(CURRENT_REGS);
+
+		/* Restore rtcb data for context switching */
+		up_restoretask(rtcb);
 	 }
 	 break;
 
@@ -311,9 +315,13 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 	case SYS_switch_context:
 	 {
+		struct tcb_s *rtcb = sched_self();
 		DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
 		*(uint32_t **)regs[REG_R1] = regs;
 		CURRENT_REGS = (uint32_t *)regs[REG_R2];
+
+		/* Restore rtcb data for context switching */
+		up_restoretask(rtcb);
 	 }
 	 break;
 
