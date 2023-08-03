@@ -48,6 +48,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
+ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
+CSRCS += ameba_ota.c
+endif
 
 CSRCS += ameba_i2c.c \
 	ameba_rtc.c \
@@ -70,8 +73,7 @@ CSRCS += ameba_i2c.c \
 	ameba_chipinfo.c \
 	ameba_swr_calib.c \
 	ameba_spi.c \
-	ameba_rom_patch.c\
-	ameba_ota.c
+	ameba_rom_patch.c
 	#ameba_mpu_ram.c \
 	#ameba_otp.c \
 	#ameba_pmc_com.c \
