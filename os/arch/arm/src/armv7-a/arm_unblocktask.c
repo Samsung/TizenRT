@@ -114,6 +114,10 @@ sched_removeblocked(tcb);
 
           rtcb = this_task();
 
+	  /* Restore rtcb data for context switching */
+
+          up_restoretask(rtcb);
+
           /* Update scheduler parameters */
 
  	  // sched_resume_scheduler(rtcb);

@@ -81,15 +81,15 @@ void up_restoretask(struct tcb_s *tcb)
 			}
 		}
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (g_umm_app_id) {
-			*g_umm_app_id = tcb->app_id;
-		}
-#endif
 #endif
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (g_umm_app_id) {
+			*g_umm_app_id = tcb->app_id;
+		}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR

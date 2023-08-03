@@ -131,6 +131,10 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
           rtcb = this_task();
 
+	  /* Restore rtcb data for context switching */
+
+          up_restoretask(rtcb);
+
           /* Reset scheduler parameters */
 
      //     sched_resume_scheduler(rtcb);

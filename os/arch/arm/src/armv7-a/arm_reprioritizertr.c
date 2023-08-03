@@ -153,6 +153,10 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
               rtcb = this_task();
 
+	      /* Restore rtcb data for context switching */
+
+              up_restoretask(rtcb);
+
               /* Update scheduler parameters */
 
               //sched_resume_scheduler(rtcb);
