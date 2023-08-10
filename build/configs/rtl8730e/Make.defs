@@ -120,10 +120,7 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
   ARCHOPTIMIZATION += -fomit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
-ARCHCFLAGS += -fno-builtin 
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-  ARCHCFLAGS += -fno-common
-endif
+ARCHCFLAGS += -fno-builtin -fno-common
 ARCHCXXFLAGS = -fno-builtin -fexceptions 
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
