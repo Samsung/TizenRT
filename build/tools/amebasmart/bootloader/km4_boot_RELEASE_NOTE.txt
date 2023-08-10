@@ -1,0 +1,4 @@
+/* == "version" + "Realtek git version" + "compile date" + "compile time" == */
+
+== version a3af73b /08/07-15:34:11 ==
+1.	Add version info
