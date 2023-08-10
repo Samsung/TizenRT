@@ -120,11 +120,7 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
   ARCHOPTIMIZATION += -fomit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
-ARCHCFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
-
-ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
-  ARCHCFLAGS += -fno-common
-endif
+ARCHCFLAGS = -fno-builtin -fno-common -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
 ARCHCXXFLAGS = -fno-builtin -mcpu=cortex-m33 -mfpu=fpv5-sp-d16
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
