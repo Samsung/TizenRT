@@ -1058,6 +1058,7 @@ void app_hardfualt_s_prehanlder(uint32_t fault_id)
 {
 	//write reboot reason, TrustZone watchdog
 	BKUP_Write(BKUP_REG1, REBOOT_SYSTEM_TZWD_RESET);
+	PANIC();
 }
 #endif
 
