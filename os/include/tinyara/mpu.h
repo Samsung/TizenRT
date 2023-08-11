@@ -70,7 +70,7 @@ enum mpu_region_usages_e {
 
 #ifdef CONFIG_ARMV7M_MPU
 #define MPU_ALIGN_UP(a)			(1 << mpu_log2regionceil(0, a))
-#elif CONFIG_ARMV8M_MPU
+#elif defined(CONFIG_ARMV8M_MPU)
 #define MPU_ALIGNMENT_BYTES		32
 #define MPU_ALIGN_UP(a)			(((a) + MPU_ALIGNMENT_BYTES - 1) & ~(MPU_ALIGNMENT_BYTES - 1))
 #endif
