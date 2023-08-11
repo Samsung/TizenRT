@@ -25,6 +25,7 @@
 #include <semaphore.h>
 #include <tinyara/seclink_drv.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/ss_slot_index.h>
 #include "rtl_se_crypto_function.h"
 
 #ifdef CONFIG_AMEBAD_TRUSTZONE
@@ -68,6 +69,7 @@ int se_ameba_hal_init(hal_init_param *params)
 		ret = HAL_NOT_ENOUGH_MEMORY;
 		goto exit;
 	}
+	ns_buf[0] = SS_SLOT_INDEX_SECURITY_LEVEL + 1; /* SE Slot start from 0, need to offset */
 	ns_passin.ns_func_s = rtl_set_ns_func();
 	ns_passin.buf = ns_buf;
 	ns_passin.buf_len = NS_BUF_LEN;
