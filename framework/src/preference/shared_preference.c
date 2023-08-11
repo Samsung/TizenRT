@@ -26,6 +26,7 @@
 #include <sys/prctl.h>
 
 #include <tinyara/preference.h>
+#include <preference/preference.h>
 
 #include "preference_internal.h"
 

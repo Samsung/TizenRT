@@ -26,6 +26,7 @@
 #include <sys/prctl.h>
 
 #include <tinyara/preference.h>
+#include <preference/preference.h>
 
 #include "preference_internal.h"
 
@@ -276,7 +277,7 @@ int preference_remove_all(void)
 /****************************************************************************
  * Callback Functions
  ****************************************************************************/
-int preference_set_changed_cb(char *key, preference_changed_cb callback, void *user_data)
+int preference_set_changed_cb(const char *key, preference_changed_cb callback, void *user_data)
 {
 	int ret;
 	struct sigaction act;
@@ -307,7 +308,7 @@ int preference_set_changed_cb(char *key, preference_changed_cb callback, void *u
 	return prctl(PR_SET_PREFERENCE_CB, &data);
 }
 
-int preference_unset_changed_cb(char *key)
+int preference_unset_changed_cb(const char *key)
 {
 	if (key == NULL) {
 		return PREFERENCE_INVALID_PARAMETER;
