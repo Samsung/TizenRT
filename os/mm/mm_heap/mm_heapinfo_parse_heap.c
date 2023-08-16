@@ -55,6 +55,7 @@
 #include <tinyara/config.h>
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <syslog.h>
@@ -142,6 +143,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		}
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+			ASSERT(node->size);
 
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((pid == HEAPINFO_PID_ALL || node->pid == pid) && (node->preceding & MM_ALLOC_BIT) != 0) {
