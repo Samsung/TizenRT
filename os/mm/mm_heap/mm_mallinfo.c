@@ -115,6 +115,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			mvdbg("region=%d node=%p size=%u preceding=%u (%c)\n", region, node, node->size,
 				(node->preceding & ~MM_ALLOC_BIT), (node->preceding & MM_ALLOC_BIT) ? 'A' : 'F');
+			ASSERT(node->size);
 
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((node->preceding & MM_ALLOC_BIT) != 0) {

@@ -22,6 +22,7 @@
 #include <tinyara/config.h>
 #include <stdlib.h>
 #include <debug.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <queue.h>
@@ -127,6 +128,7 @@ static int get_node_cnt(void)
 	{
 		node_size = SIZEOF_MM_ALLOCNODE;
 		for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
 			if (node == leak_checker.heap_start[region]) {
 				continue;
@@ -168,6 +170,7 @@ static void fill_hash_table(int *leak_cnt, int *broken_cnt)
 	{
 		node_size = SIZEOF_MM_ALLOCNODE;
 		for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
 			if (node == leak_checker.heap_start[region]) {
 				continue;
@@ -323,6 +326,7 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 #endif
 		{
 			for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+				ASSERT(node->size);
 				if (node->reserved == MEM_LEAK) {
 					/* alloc_call_addr can be from kernel, app or common binary.
 					* based on the text addresses printed, user needs to check the
