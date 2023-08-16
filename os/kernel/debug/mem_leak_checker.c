@@ -278,7 +278,7 @@ static void ram_check(char *bin_name, int *leak_cnt, uint32_t *bin_text_addr)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	if (strncmp(bin_name, "kernel", strlen("kernel") + 1) == 0) {
-        	/* do nothing */
+		/* do nothing */
 	} else {
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 		search_addr((void *)info[CMN_BIN_IDX].data_addr, (void *)(info[CMN_BIN_IDX].data_addr + info[CMN_BIN_IDX].data_size), leak_cnt);
@@ -311,38 +311,37 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 		mm_takesemaphore((struct mm_heap_s *)leak_checker.heap);
 
 #if CONFIG_KMM_REGIONS > 1
-        int region;
+		int region;
 #else
 #define region 0
 #endif
 
-        /* Visit each region */
+		/* Visit each region */
 
 #if CONFIG_KMM_REGIONS > 1
-        for (region = 0; region < leak_checker.regions; region++)
+		for (region = 0; region < leak_checker.regions; region++)
 #endif
-        {
-
-                for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
-			if (node->reserved == MEM_LEAK) {
-				/* alloc_call_addr can be from kernel, app or common binary.
-				 * based on the text addresses printed, user needs to check the
-				 * corresponding binaries accordingly 
-				 */
-				owner_addr = node->alloc_call_addr;
-				pid_t pid = node->pid;
-				if (pid < 0) {
-					/* For stack allocated node, pid is negative value.
-					 * To use the pid, change it to original positive value.
-					 */
-					pid = (-1) * pid;
+		{
+			for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+				if (node->reserved == MEM_LEAK) {
+					/* alloc_call_addr can be from kernel, app or common binary.
+					* based on the text addresses printed, user needs to check the
+					* corresponding binaries accordingly
+					*/
+					owner_addr = node->alloc_call_addr;
+					pid_t pid = node->pid;
+					if (pid < 0) {
+						/* For stack allocated node, pid is negative value.
+						* To use the pid, change it to original positive value.
+						*/
+						pid = (-1) * pid;
+					}
+					printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
+				} else if (node->reserved == MEM_BROKEN) {
+					printf("BROKEN | %p\n", node);
 				}
-				printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
-			} else if (node->reserved == MEM_BROKEN) {
-				printf("BROKEN | %p\n", node);
 			}
 		}
-	}
 
 		mm_givesemaphore((struct mm_heap_s *)leak_checker.heap);
 
@@ -434,7 +433,7 @@ int run_all_mem_leak_checker(int checker_pid)
 			printf("%s :\n", BIN_NAME(bin_idx));
 			ret = run_mem_leak_checker(checker_pid, BIN_NAME(bin_idx));
 			if (ret != OK) {
-			       return ERROR;
+				return ERROR;
 			}
 		}
 	}
