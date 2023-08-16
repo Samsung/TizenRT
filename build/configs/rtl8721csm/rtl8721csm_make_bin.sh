@@ -79,7 +79,7 @@ arm-none-eabi-objcopy -Obinary $BINDIR/target_pure_img2.axf $BINDIR/target_img2.
 arm-none-eabi-objcopy -j .ram_image2.entry -j .ram_image2.text -j .ram_image2.data \
 -Obinary $BINDIR/target_pure_img2.axf $BINDIR/ram_2.bin
 
-arm-none-eabi-objcopy -j .xip_image2.text \
+arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx \
 -Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
 
 arm-none-eabi-objcopy -j .psram_image2.text -j .psram_image2.data \
