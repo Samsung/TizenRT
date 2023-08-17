@@ -109,7 +109,7 @@ Test Scenario 3: UART test with background iperf
 1. Find the UART port to be tested. For example, on the RTK8721 board, we will perform uart test for the uart1.
 2. Connect the uart (Rx, Tx, Gnd) lines from the test device to the Windows PC using Serial-USB converter.
 3. Enable CONFIG_UART_HW_TEST config. Build and download the binary.
-4. After boot up, run the uart_hw_test command at the tash prompt (find the appropiate console for windows to get tash prompt). In our example, we use putty console and enter appropriate serial COM number and open the tash prompt .
+4. After boot up, run the uart_hw_test command at the tash prompt (find the appropriate console for windows to get tash prompt). In our example, we use putty console and enter appropriate serial COM number and open the tash prompt .
 5. Input the appropriate port number . In our example, the uart1 appears as /dev/ttys2 on the device . Hence the port number is 2 .
 6. Run the "uart_test_windows.exe" executable file . But if you want to change something in the code and build again, then follow 7th step , else you can skip it .
 7. Compile the uart_test_windows.c file in windows using "gcc -o uart_test_windows uart_test_windows.c" in the specific directory in command prompt and it will create uart_test_windows.exe executable file. Run "uart_test_windows.exe" .
