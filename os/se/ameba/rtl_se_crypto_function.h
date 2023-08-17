@@ -155,7 +155,7 @@ typedef struct {
 	uint32_t image_size;
 	uint32_t image_addr;
 
-	/* reserved for extention */
+	/* reserved for extension */
 	uint32_t sb_header;
 	uint32_t reserved[3];
 } IMAGE_HEADER;
