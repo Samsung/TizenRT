@@ -100,26 +100,25 @@ config AMEBAD_I2CTIMEOTICKS
 	default 500
 	depends on !AMEBAD_I2C_DYNTIMEO
 
-config RTL8721D_SPI
-	bool "RTL8721D_SPI"
+config AMEBAD_SPI
+	bool "AMEBAD_SPI"
 	default n
 
-config SPI1_MASTER
-	bool "SPI1_MASTER"
-	select RTL8721D_SPI
+if AMEBAD_SPI
+config AMEBAD_SPI1_MASTER
+	bool "AMEBAD SPI1_MASTER"
 	default y
 
-if RTL8721D_SPI
-config CONFIG_SPI_CS
-	bool "Multi-slaves CS pins"
+config AMEBAD_SPI_CS
+	bool "AMEBAD Multi-slaves CS pins"
 	default n
 
-config CONFIG_SPI_EXCHANGE
-	bool "Enable SPI EXCHANGE"
+config AMEBAD_SPI_EXCHANGE
+	bool "Enable AMEBAD SPI EXCHANGE"
 	default y
 
-config CONFIG_SPI_CMDDATA
-	bool "Enable SPI CMDDATA"
+config AMEBAD_SPI_CMDDATA
+	bool "Enable AMEBAD SPI CMDDATA"
 	default y
 endif
 
