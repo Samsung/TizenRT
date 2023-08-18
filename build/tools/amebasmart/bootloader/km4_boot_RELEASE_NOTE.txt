@@ -1,4 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version c9394bc /08/18-09:21:15 ==
+1.	Fix mixed log during bootup
+2.	include target_loader.asm
+3.	include target_loader.map
+
 == version a3af73b /08/07-15:34:11 ==
 1.	Add version info
