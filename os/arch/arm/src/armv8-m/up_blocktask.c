@@ -143,7 +143,7 @@ void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 
 	if (switch_needed) {
 #ifdef CONFIG_ARMV8M_TRUSTZONE
-		if (tcb->tz_context) {
+		if (rtcb->tz_context) {
 			TZ_StoreContext_S(rtcb->tz_context);
 		}
 #endif
