@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 86ddfd8 /08/21-10:07:44 ==
+1.	add random IV for RDP
+
 == version c9394bc /08/18-09:21:15 ==
 1.	Fix mixed log during bootup
 2.	include target_loader.asm
