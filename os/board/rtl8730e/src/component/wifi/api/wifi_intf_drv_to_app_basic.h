@@ -209,6 +209,16 @@ typedef struct {
 	unsigned char		block;
 } internal_join_block_param_t;
 
+struct rtw_crypt_info {
+	u8 pairwise;
+	u8 mac_addr[6];
+	u8 wlan_idx;
+	u16 key_len;
+	u8 key[32];
+	u8 key_idx;
+	u32 cipher;
+};
+
 /**
   * @brief  The structure is used to describe the unique 6-byte MAC address.
   */
@@ -238,6 +248,14 @@ typedef int (*write_fast_connect_info_ptr)(unsigned int data1, unsigned int data
 typedef void (*ap_channel_switch_callback_t)(unsigned char channel, rtw_channel_switch_res_t ret);
 typedef void (*p_wlan_autoreconnect_hdl_t)(rtw_security_t, char *, int, char *, int, int);
 typedef void (*rtw_joinstatus_callback_t)(rtw_join_status_t join_status);
+
+/**
+  * @brief  The structure is used for fullmac to get wpa_supplicant's info for STA connect,
+  */
+typedef struct rtw_wpa_supp_connect {
+	u8 rsnxe_ie[RSNXE_MAX_LEN];
+	u8 rsnxe_len;
+} rtw_wpa_supp_connect_t;
 
 /**
   * @brief  The structure is used to describe the setting about SSID,
@@ -275,6 +293,7 @@ typedef struct {
 	unsigned char				channel;		/**< set to 0 means full channel scan, set to other value means only scan on the specified channel */
 	unsigned char				pscan_option;	/**< used when the specified channel is set, set to 0 for normal partial scan, set to PSCAN_FAST_SURVEY for fast survey*/
 	rtw_joinstatus_callback_t	joinstatus_user_callback;	/**< user callback for processing joinstatus, please set to NULL if not use it */
+	rtw_wpa_supp_connect_t	wpa_supp;
 } rtw_network_info_t;
 
 /**
@@ -286,7 +305,7 @@ typedef struct {
 	unsigned char		bssid[6];   /**< the bssid of connected AP or softAP */
 	unsigned char		channel;
 	rtw_security_t		security_type;   /**< the security type of connected AP or softAP */
-	unsigned char 		password[65];   /**< the password of connected AP or softAP */
+	unsigned char 		password[RTW_MAX_PSK_LEN];   /**< the password of connected AP or softAP */
 	unsigned char		key_idx;
 	unsigned char		iw_mode;	/**< RTK_IW_MODE */
 	unsigned char		alg;		/**< encryption algorithm */
@@ -346,8 +365,6 @@ struct  wifi_user_conf {
 
 	unsigned char channel_plan;
 
-	unsigned char country_code;
-
 	/*for auto reconnect*/
 	unsigned char auto_reconnect_count;
 	unsigned char auto_reconnect_interval; // in sec
@@ -364,9 +381,17 @@ struct  wifi_user_conf {
 
 	/* for Concurrent Mode */
 	unsigned char concurrent_enabled;	 ///< 0: STA or SoftAP only at any time, 1: STA and SoftAP may run at the same time
+
+	unsigned char rx_ampdu_num;
 } ;
 
 extern  struct wifi_user_conf wifi_user_config;
+
+typedef struct _pwr_lmt_regu_remap {
+	unsigned char	domain_code;
+	unsigned char	PwrLmtRegu_2g;
+	unsigned char	PwrLmtRegu_5g;
+} pwr_lmt_regu_remap;
 
 /**
   * @brief  The structure is used to describe the psk info
@@ -374,7 +399,7 @@ extern  struct wifi_user_conf wifi_user_config;
 struct psk_info {
 	unsigned char index;                  ///<  index
 	unsigned char psk_essid[32 + 4]; ///< refer to NDIS_802_11_LENGTH_SSID + 4
-	unsigned char psk_passphrase[64 + 1]; ///< refer to IW_PASSPHRASE_MAX_SIZE + 1
+	unsigned char psk_passphrase[RTW_MAX_PSK_LEN + 1]; ///< refer to IW_PASSPHRASE_MAX_SIZE + 1
 	unsigned char wpa_global_PSK[20 * 2]; ///< refer to A_SHA_DIGEST_LEN * 2
 };
 
@@ -389,6 +414,8 @@ typedef struct { /* software statistics for tx and rx*/
 	unsigned long   rx_bytes;               /*!< total bytes received         */
 	unsigned long   tx_bytes;               /*!< total bytes transmitted      */
 	unsigned long   rx_overflow;            /*!< rx fifo overflow count       */
+	unsigned int    tx_tp_kbps;
+	unsigned int    rx_tp_kbps;
 	unsigned int    max_skbbuf_used_number; /*!< max skb buffer used number       */
 	unsigned int    skbbuf_used_number;     /*!< current used skbbuf number       */
 	unsigned int    max_skbdata_used_number;/*!< max skb data used number       */
@@ -399,16 +426,17 @@ typedef struct { /* software statistics for tx and rx*/
   * @brief  The structure is used to describe the phy statistics
   */
 typedef struct {
-	signed char rssi;          /*!<average rssi in 1 sec (for STA mode) */
-	signed char snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
+	signed char	rssi;          /*!<average rssi in 1 sec (for STA mode) */
+	signed char	snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
 	/* todo*/
-	unsigned int false_alarm_cck;
-	unsigned int false_alarm_ofdm;
-	unsigned int cca_cck;
-	unsigned int cca_ofdm;
-	unsigned int tx_retry;
-	unsigned short tx_drop;
-	unsigned int rx_drop;
+	unsigned int	false_alarm_cck;
+	unsigned int	false_alarm_ofdm;
+	unsigned int	cca_cck;
+	unsigned int	cca_ofdm;
+	unsigned int	tx_retry;
+	unsigned short	tx_drop;
+	unsigned int	rx_drop;
+	unsigned int	supported_max_rate;
 } rtw_phy_statistics_t;
 
 /**
@@ -529,6 +557,17 @@ typedef struct {
 	unsigned char multi_type;/* 0&1 for multi sta CSI */
 } rtw_csi_action_parm_t;
 
+/**
+  * @brief  The structure is used to describe the cfg parameters used for channel switch announcement,
+  */
+typedef struct {
+	unsigned char new_chl;
+	unsigned char chl_switch_cnt;
+	unsigned char action_type;	/* 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action */
+	unsigned char bc_action_cnt; /* indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1*/
+	ap_channel_switch_callback_t callback;
+} rtw_csa_parm_t;
+
 #if defined CONFIG_RTL8735B || defined __DOXYGEN__
 /**
   * @brief  The structure is used to describe the wowlan pattern
@@ -599,7 +638,6 @@ typedef struct _cus_ie {
 struct net_device {
 	void			*priv;		/* pointer to private data */
 	unsigned char		dev_addr[6];	/* set during bootup */
-	int	(*hard_start_xmit)(struct sk_buff *skb, struct net_device *dev);
 };
 
 /**
@@ -768,6 +806,10 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config);
  * @return  RTW_ERROR: otherwise.
  */
 int wifi_stop_ap(void);
+
+int _wifi_on_ap(void);
+int _wifi_off_ap(void);
+
 
 #ifdef __cplusplus
 }

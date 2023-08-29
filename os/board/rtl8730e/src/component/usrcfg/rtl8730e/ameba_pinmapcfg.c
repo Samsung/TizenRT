@@ -41,7 +41,7 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PA_10,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_11,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_12,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_13,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PA_13,			GPIO_PuPd_UP,			GPIO_PuPd_UP},			 //
 	{_PA_14,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_15,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_16,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 	// QA board need pull up
@@ -70,20 +70,20 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PB_7,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PB_8,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PB_9,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
-	{_PB_10,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
-	{_PB_11,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
+	{_PB_10,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
+	{_PB_11,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_12,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PB_13,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PB_14,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PB_15,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PB_16,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
-	{_PB_17,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
+	{_PB_17,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_18,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PB_19,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PB_19,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_20,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PB_21,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 // boot sel
-	{_PB_22,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PB_23,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PB_22,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
+	{_PB_23,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_24,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 // PB24 internal pull high(80k)
 	{_PB_25,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_26,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
@@ -91,7 +91,7 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PB_28,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_29,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PB_30,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
-	{_PB_31,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
+	{_PB_31,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PC_0,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PC_1,			GPIO_PuPd_UP,				GPIO_PuPd_UP},			 //
 	{_PC_2,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //flash clk pull down for PG or 50uA

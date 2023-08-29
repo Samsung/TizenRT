@@ -28,7 +28,6 @@ extern "C" {
 */
 void RTAudioService_Init(void);
 
-
 #ifdef __cplusplus
 }
 #endif

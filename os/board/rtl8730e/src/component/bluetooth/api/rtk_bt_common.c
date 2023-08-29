@@ -11,6 +11,7 @@
 #include <rtk_bt_common.h>
 #include <rtk_bt_gap.h>
 #include <rtk_bt_le_gap.h>
+#include <rtk_bt_att_defs.h>
 #include <rtk_bt_gattc.h>
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 #include <bt_ipc_cfg.h>
@@ -23,10 +24,17 @@
 #include <rtk_bt_def.h>
 #endif
 #include <rtk_bt_device.h>
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
-#include <rtk_bt_mesh_api_stack.h>
-#include <rtk_bt_mesh_api_datatrans_model.h>
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+#include <rtk_bt_mesh_common.h>
+#include <rtk_bt_mesh_datatrans_model.h>
+#include <rtk_bt_mesh_light_model.h>
 #include <rtk_bt_mesh_def.h>
+#include <rtk_bt_mesh_generic_onoff_model.h>
+#include <rtk_bt_mesh_time_model.h>
+#include <rtk_bt_mesh_scheduler_model.h>
+#include <rtk_bt_mesh_scene_model.h>
+#include <rtk_bt_mesh_generic_default_transition_time.h>
+#include <rtk_bt_mesh_generic_model.h>
 #endif
 
 #define EVENT_NUM 64
@@ -54,11 +62,14 @@ static uint32_t rtk_bt_le_audio_evt_direct_calling_flag =
 	 (1 << RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND) |
 	 (1 << RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND) |
 	 (1 << RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND) |
-	 (1 << RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND));
+	 (1 << RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND) |
+	 (1 << RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND));
 static uint32_t rtk_bt_gap_evt_direct_calling_flag =
 	(1 << RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND);
 
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+static uint32_t rtk_bt_mesh_generic_onoff_server_model_evt_direct_calling_flag =
+	(1 << RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_GET);
 static uint32_t rtk_bt_mesh_datatrans_model_evt_direct_calling_flag =
 	(1 << RTK_BT_MESH_DATATRANS_MODEL_EVT_SERVER_READ);
 #endif
@@ -247,7 +258,7 @@ exit:
 	return err;
 }
 
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 static uint16_t rtk_bt_mesh_set_act(uint32_t group, uint16_t act, void *data, uint32_t len)
 {
 	int *ret = NULL;
@@ -639,7 +650,7 @@ static uint16_t bt_send_ipc_cmd(uint8_t group, uint8_t act, void *param, uint32_
 		err = rtk_bt_gatts_set_act(act, param, param_len);
 		break;
 
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	case RTK_BT_LE_GP_MESH_STACK:
 		group = RTK_BT_IPC_MESH_STACK;
 		err = rtk_bt_mesh_set_act(group, act, param, param_len);
@@ -654,6 +665,10 @@ static uint16_t bt_send_ipc_cmd(uint8_t group, uint8_t act, void *param, uint32_
 		break;
 	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
 		group = RTK_BT_IPC_MESH_DATATRANS_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_REMOTE_PROV_CLIENT_MODEL;
 		err = rtk_bt_mesh_set_act(group, act, param, param_len);
 		break;
 	case RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL:
@@ -674,6 +689,50 @@ static uint16_t bt_send_ipc_cmd(uint8_t group, uint8_t act, void *param, uint32_
 		break;
 	case RTK_BT_LE_GP_MESH_LIGHT_LC_CLIENT_MODEL:
 		group = RTK_BT_IPC_MESH_LIGHT_LC_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_TIME_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_SCHEDULER_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_SCENE_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_LEVEL_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_BATTERY_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_LOCATION_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_GENERIC_PROPERTY_CLIENT_MODEL;
+		err = rtk_bt_mesh_set_act(group, act, param, param_len);
+		break;
+	case RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL:
+		group = RTK_BT_IPC_MESH_SENSOR_CLIENT_MODEL;
 		err = rtk_bt_mesh_set_act(group, act, param, param_len);
 		break;
 #endif
@@ -749,9 +808,67 @@ static void rtk_bt_pre_excute_evt_hdl(uint8_t group, uint8_t act, void *ipc_msg)
 	} else if (RTK_BT_LE_GP_AUDIO == group) {
 		bt_le_audio_ipc_pop_event_param(act, param);
 	}
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
-	else if (RTK_BT_LE_GP_MESH_DATATRANS_MODEL == group) {
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	else if (RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL == group) {
+		bt_mesh_generic_onoff_server_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_DATATRANS_MODEL == group) {
 		bt_mesh_datatrans_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_SERVER_MODEL == group) {
+		bt_mesh_light_lightness_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_CTL_SERVER_MODEL == group) {
+		bt_mesh_light_ctl_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_CTL_TEMPERATURE_SERVER_MODEL == group) {
+		bt_mesh_light_ctl_temperature_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_HSL_SERVER_MODEL == group) {
+		bt_mesh_light_hsl_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_HSL_HUE_SERVER_MODEL == group) {
+		bt_mesh_light_hsl_hue_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_HSL_SATURATION_SERVER_MODEL == group) {
+		bt_mesh_light_hsl_saturation_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_XYL_SERVER_MODEL == group) {
+		bt_mesh_light_xyl_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_LC_SERVER_MODEL == group) {
+		bt_mesh_light_lc_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_LIGHT_LC_SETUP_SERVER_MODEL == group) {
+		bt_mesh_light_lc_setup_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL == group) {
+		bt_mesh_time_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL == group) {
+		bt_mesh_time_setup_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SCHEDULER_SERVER_MODEL == group) {
+		bt_mesh_scheduler_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SCHEDULER_SETUP_SERVER_MODEL == group) {
+		bt_mesh_scheduler_setup_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL == group) {
+		bt_mesh_scene_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL == group) {
+		bt_mesh_scene_setup_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL == group) {
+		bt_mesh_generic_default_transition_time_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL == group) {
+		bt_mesh_generic_level_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL == group) {
+		bt_mesh_generic_power_on_off_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL == group) {
+		bt_mesh_generic_power_level_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL == group) {
+		bt_mesh_generic_battery_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SERVER_MODEL == group) {
+		bt_mesh_generic_location_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL == group) {
+		bt_mesh_generic_location_setup_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL == group) {
+		bt_mesh_generic_user_property_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_CLIENT_PROPERTY_SERVER_MODEL == group) {
+		bt_mesh_generic_client_property_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL == group) {
+		bt_mesh_generic_admin_property_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL == group) {
+		bt_mesh_generic_manu_property_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL == group) {
+		bt_mesh_sensor_model_alloc_mem_for_event_param(act, ipc_msg);
+	} else if (RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL == group) {
+		bt_mesh_sensor_setup_model_alloc_mem_for_event_param(act, ipc_msg);
 	}
 #endif
 }
@@ -863,7 +980,7 @@ uint16_t rtk_bt_send_cmd(uint8_t group, uint8_t act, void *param, uint32_t param
 		goto end;
 	}
 
-	if (false == osif_sem_take(pcmd->psem, BT_API_SYNC_TIMEOUT)) {
+	if (false == osif_sem_take(pcmd->psem, BT_TIMEOUT_FOREVER)) {
 		/* if the pcmd has been added in pending list, and no stack_cb to pick it off
 		within api_sync_timeout, it need to be deleted here */
 		if (pcmd->list.next != NULL) {
@@ -955,12 +1072,12 @@ static void rtk_bt_evt_taskentry(void *ctx)
 				}
 				/* for pop param of some special acts */
 				rtk_bt_pre_excute_evt_hdl((uint8_t)p_ipc_msg->PROFILE_ID, (uint8_t)p_ipc_msg->EVENT_ID, (void *)p_ipc_msg);
-				p_ipc_msg->ret[0] = rtk_bt_excute_evt_cb((uint8_t)p_ipc_msg->PROFILE_ID, (uint8_t)p_ipc_msg->EVENT_ID, 
-														(void *)p_ipc_msg->param_buf, p_ipc_msg->buf_size);
+				p_ipc_msg->ret[0] = rtk_bt_excute_evt_cb((uint8_t)p_ipc_msg->PROFILE_ID, (uint8_t)p_ipc_msg->EVENT_ID,
+									(void *)p_ipc_msg->param_buf, p_ipc_msg->buf_size);
 				rtk_bt_post_excute_evt_hdl(p_ipc_msg);
 				/*set EVENT_ID to 0 to notify NP that event is finished*/
-				p_ipc_msg->EVENT_ID = 0xFFFFFFFF;
 				pevt->data = NULL;
+				p_ipc_msg->EVENT_ID = 0xFFFFFFFF;
 				DCache_Clean((uint32_t)p_ipc_msg, sizeof(bt_ipc_dev_request_message));
 				/* AP use static memory, no need to free */
 				// rtk_bt_event_free(pevt);
@@ -1242,11 +1359,47 @@ bool rtk_bt_check_evt_cb_direct_calling(uint8_t group, uint8_t evt_code)
 			ret = true;
 		}
 		break;
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
-	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
-		if (rtk_bt_mesh_datatrans_model_evt_direct_calling_flag & (1 << evt_code)) {
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	case RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL:
+		if (rtk_bt_mesh_generic_onoff_server_model_evt_direct_calling_flag) {
 			ret = true;
 		}
+		break;
+	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
+		if (rtk_bt_mesh_datatrans_model_evt_direct_calling_flag) {
+			ret = true;
+		}
+		break;
+	case RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_CTL_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_CTL_TEMPERATURE_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_HSL_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_HSL_HUE_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_HSL_SATURATION_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_XYL_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_LC_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_LIGHT_LC_SETUP_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SCHEDULER_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SCHEDULER_SETUP_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_CLIENT_PROPERTY_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL:
+	case RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL:
+		ret = true;
+		break;
 #endif
 	default:
 		break;

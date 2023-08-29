@@ -71,6 +71,25 @@ typedef enum {
 } OsalClock;
 
 /**
+ * @brief Enumerates audio clock type.
+ */
+typedef enum {
+	OSAL_AUDIO_CLOCK_1 = 0,
+	OSAL_AUDIO_CLOCK_2 = 1,
+	OSAL_AUDIO_CLOCK_3 = 2,
+	OSAL_AUDIO_CLOCK_MAX = 3
+} OsalAudioClock;
+
+/**
+ * @brief Enumerates tsf time mode.
+ */
+typedef enum {
+	OSAL_TSF_MASTER = 0,
+	OSAL_TSF_SLAVE = 1,
+	OSAL_TSF_MAX = 2
+} OsalTsfMode;
+
+/**
  * @brief Defines time.
  */
 typedef struct {
@@ -119,6 +138,39 @@ int64_t OsalGetSysTimeMs(OsalClock clock);
  * @version 1.0
  */
 int64_t OsalGetSysTimeNs(OsalClock clock);
+
+/**
+ * @brief Get current time in us.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+int64_t OsalGetDebugTimeUs(OsalClock clock);
+
+/**
+ * @brief Get current audio clock time in nanoseconds.
+ * @param audio_clock Indicates the audio clock type.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+int64_t OsalGetAudioClockTimeNs(OsalClock clock, OsalAudioClock audio_clock);
+
+/**
+ * @brief Set tsf mode.
+ * @param mode Indicates the tsf master or slave.
+ * @since 1.0
+ * @version 1.0
+ */
+void OsalSetTsfMode(OsalClock clock, OsalTsfMode mode);
+
+/**
+ * @brief Get current tsf time in ns.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+int64_t OsalGetTsfTimeNs(OsalClock clock);
 
 #ifdef __cplusplus
 }

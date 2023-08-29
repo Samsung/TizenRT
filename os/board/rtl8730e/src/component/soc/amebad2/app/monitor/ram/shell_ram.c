@@ -124,37 +124,6 @@ VOID shell_loguratRx_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	}
 }
 
-#ifndef MP_CMD_BUFLEN
-#define MP_CMD_BUFLEN 64
-#endif
-#ifndef STA_WLAN_INDEX
-#define STA_WLAN_INDEX		0
-#endif
-char mp_buf[MP_CMD_BUFLEN];
-char log_buf_temp[UART_LOG_CMD_BUFLEN];
-
-int mp_commnad_handler_shell(char *cmd)
-{
-#if defined (ARM_CORE_CM4)
-	char *token = NULL;
-
-	token = strtok(cmd, " ");
-
-	if (token && (strcmp(cmd, "iwpriv") == 0)) {
-		token = strtok(NULL, "");
-#ifdef CONFIG_MP_INCLUDED
-		wext_private_command(STA_WLAN_INDEX, token, 1, NULL);
-#endif
-		return TRUE;
-	}
-	return FALSE;
-#else
-	/* To avoid gcc warnings */
-	(void) cmd;
-	return FALSE;
-#endif
-}
-
 #ifdef ARM_CORE_CM0
 UART_LOG_BUF				tmp_log_buf;
 
@@ -263,13 +232,6 @@ static VOID shell_task_ram(VOID *Data)
 			strncpy(log_buf, (const char *)&pUartLogBuf->UARTLogBuf[i], LOG_SERVICE_BUFLEN - 1);
 #endif // SUPPORT_LOG_SERVICE
 
-			memset(mp_buf, 0, MP_CMD_BUFLEN);
-			memset(log_buf_temp, 0, UART_LOG_CMD_BUFLEN);
-#if defined(ARM_CORE_CA32) && defined(ARM_CORE_CM4)
-			strncpy(mp_buf, (const char *)&pUartLogBuf->UARTLogBuf[i], MP_CMD_BUFLEN - 1);
-#endif
-			memcpy(log_buf_temp, (const char *)&pUartLogBuf->UARTLogBuf[0], UART_LOG_CMD_BUFLEN - 1);
-
 			argc = shell_get_argc((const u8 *)&pUartLogBuf->UARTLogBuf[i]);
 			argv = shell_get_argv((const u8 *)&pUartLogBuf->UARTLogBuf[i]); /* UARTLogBuf will be changed */
 
@@ -277,25 +239,7 @@ static VOID shell_task_ram(VOID *Data)
 				/* step 1. for monitor cmd */
 				ret = shell_cmd_exec_ram(argc, argv);
 
-				/* step 2. for mp cmd */
-				if (ret == FALSE) {
-					ret = mp_commnad_handler_shell(mp_buf);
-
-					if (ret == TRUE) {
-						DiagPrintf("\n\r[MEM] After do cmd, available heap %d\n\r", xPortGetFreeHeapSize());
-						DiagPrintf("\r\n\n#\r\n"); //"#" is needed for mp tool
-					}
-				}
-
-				if (ret == FALSE) {
-#ifndef SUPPORT_LOG_SERVICE
-					DiagPrintf("\r\nunknown command '%s'", log_buf_temp);
-					DiagPrintf("\n\r[MEM] After do cmd, available heap %d\n\r", xPortGetFreeHeapSize());
-					DiagPrintf("\r\n\n#\r\n"); //"#" is needed for mp tool
-#endif
-				}
-
-				/* step 3. normal for LOG service */
+				/* step 2. for LOG service and mp*/
 				if (ret == FALSE) {
 					/* To avoid gcc warnings */
 					shell_cmd_exec_up_sema(argc, argv);

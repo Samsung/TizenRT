@@ -352,6 +352,7 @@ void inic_ipc_api_init_host(VOID)
 	rtw_init_sema(&g_host_inic_api_task_wake_sema, 0);
 	rtw_init_sema(&g_host_inic_api_message_send_sema, 0);
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
+
 	/*for updating ip address before sleep*/
 	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)_inic_ipc_ip_addr_update_in_wowlan, NULL, NULL, NULL);
 
@@ -436,7 +437,7 @@ void inic_ipc_mp_command(char *token, unsigned int cmd_len, int show_msg)
 #endif
 
 /* ---------------------------- Global Variables ---------------------------- */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS) || defined(CONFIG_PLATFORM_RTL8720F)
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE   ipc_api_host_table[] = {
 	{IPC_USER_POINT,	inic_ipc_api_host_int_hdl,	(VOID *) NULL, IPC_DIR_MSG_RX, IPC_D2H_WIFI_API_TRAN, IPC_RX_FULL},

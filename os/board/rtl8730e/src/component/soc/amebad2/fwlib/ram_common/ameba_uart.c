@@ -68,23 +68,38 @@
 
 #include "ameba_soc.h"
 
-const UART_DevTable UART_DEV_TABLE[4] = {
-	{UART0_DEV, GDMA_HANDSHAKE_INTERFACE_UART0_TX, GDMA_HANDSHAKE_INTERFACE_UART0_RX, UART0_IRQ},   /*uart0 */
-	{UART1_DEV, GDMA_HANDSHAKE_INTERFACE_UART1_TX, GDMA_HANDSHAKE_INTERFACE_UART1_RX, UART1_IRQ},	/*uart1 */
-	{UART2_DEV, GDMA_HANDSHAKE_INTERFACE_UART2_TX, GDMA_HANDSHAKE_INTERFACE_UART2_RX, UART2_IRQ},	/*uart2 */
-	{UART3_DEV, GDMA_HANDSHAKE_INTERFACE_UART3_TX, GDMA_HANDSHAKE_INTERFACE_UART3_RX, UART3_BT_IRQ},	/*uart3_bt */
+const UART_DevTable UART_DEV_TABLE[MAX_UART_INDEX] = {
+	{UART0_DEV, GDMA_HANDSHAKE_INTERFACE_UART0_TX, GDMA_HANDSHAKE_INTERFACE_UART0_RX, UART0_IRQ}, /* uart0 */
+	{UART1_DEV, GDMA_HANDSHAKE_INTERFACE_UART1_TX, GDMA_HANDSHAKE_INTERFACE_UART1_RX, UART1_IRQ}, /* uart1 */
+	{UART2_DEV, GDMA_HANDSHAKE_INTERFACE_UART2_TX, GDMA_HANDSHAKE_INTERFACE_UART2_RX, UART2_IRQ}, /* uart2 */
+	{UART3_DEV, GDMA_HANDSHAKE_INTERFACE_UART3_TX, GDMA_HANDSHAKE_INTERFACE_UART3_RX, UART3_BT_IRQ}, /* uart3_bt */
 };
 
-u32 UART_StateTx[4];
-u32 UART_StateRx[4];
+const u32 APBPeriph_UARTx[MAX_UART_INDEX] = {
+	APBPeriph_UART0,
+	APBPeriph_UART1,
+	APBPeriph_UART2,
+	APBPeriph_UART3
+};
+
+const u32 APBPeriph_UARTx_CLOCK[MAX_UART_INDEX] = {
+	APBPeriph_UART0_CLOCK,
+	APBPeriph_UART1_CLOCK,
+	APBPeriph_UART2_CLOCK,
+	APBPeriph_UART3_CLOCK
+};
+
+u32 UART_StateTx[MAX_UART_INDEX];
+u32 UART_StateRx[MAX_UART_INDEX];
 
 /**
-* @brief    configure UART TX DMA burst size .
-* @param  UARTx: where x can be 0/1/2.
-* @param  TxDmaBurstSize: UART TX DMA burst size.
-* @note     Because UART tx fifo depth and DMA fifo depth are both 16 in hardware.
-*              Therefore this value must be no more than 16.
-* @retval   None
+* @brief Configure UART TX DMA burst size.
+* @param UARTx: where x can be 0/1/2.
+* @param TxDmaBurstSize: UART TX DMA burst size.
+* @note UART tx fifo depth and DMA fifo depth are both 16 in hardware, so TxDmaBurstSize should be no more than 16.
+* @note TxDmaBurstSize should not be smaller than GDMA_DstMsize in function UART_TXGDMA_Init();
+*       For better performance, it is suggested to make TxDmaBurstSize be equal to GDMA_DstMsize, which is 4.
+* @retval None
 */
 void
 UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
@@ -100,12 +115,13 @@ UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
 }
 
 /**
-* @brief    configure UART RX DMA burst size .
-* @param  UARTx: where x can be 0/1/2.
-* @param  RxDmaBurstSize: UART RX DMA burst size.
-* @note     Alougth UART rx fifo depth is 64 in hardware,
-*            but becuase of the DMA fifo depth limit, this value is no more then 16
-* @retval   None
+* @brief Configure UART RX DMA burst size.
+* @param UARTx: where x can be 0/1/2.
+* @param RxDmaBurstSize: UART RX DMA burst size.
+* @note Although UART rx fifo depth is 64 in hardware, RxDmaBurstSize should be no more than 16 due to DMA fifo depth limit.
+* @note RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function UART_RXGDMA_Init();
+*       For better performance, it is suggested to make RxDmaBurstSize be equal to GDMA_SrcMsize, which is 16.
+* @retval None
 */
 void
 UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize)

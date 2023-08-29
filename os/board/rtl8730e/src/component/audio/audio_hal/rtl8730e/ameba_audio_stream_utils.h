@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
+#include "user_heap.h"
 #define ameba_audio_gdma_calloc User_Heap_calloc
 #define ameba_audio_gdma_free User_free
 #else
@@ -31,6 +32,8 @@ extern "C" {
 #define ameba_audio_gdma_free free
 #endif
 
+void ameba_audio_set_native_time(void);
+int64_t ameba_audio_get_now_ns(void);
 uint32_t ameba_audio_get_channel(uint32_t channel_count);
 uint32_t ameba_audio_get_tdm(uint32_t channel_count);
 uint32_t ameba_audio_get_fifo_num(uint32_t channel_count);
@@ -41,8 +44,10 @@ int ameba_audio_get_sp_format(AudioHwFormat format, uint32_t direction);
 int ameba_audio_get_sp_rate(uint32_t rate);
 int ameba_audio_get_codec_format(AudioHwFormat format, uint32_t direction);
 int ameba_audio_get_codec_rate(uint32_t rate);
+AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index);
+uint32_t ameba_audio_get_i2s_pin_func(uint32_t index);
 
-void ameba_audio_dump_gdma(u8 GDMA_ChNum);
+void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);
 void ameba_audio_dump_codec_regs(void);
 

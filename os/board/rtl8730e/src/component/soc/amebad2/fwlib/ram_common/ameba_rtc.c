@@ -134,6 +134,9 @@ u32 RTC_WaitForSynchro(void)
 
 	/* we can not poll RTC_ISR_RSF when RTC_CR_BYPSHAD */
 	if (RTC->RTC_CR & RTC_BIT_BYPSHAD) {
+		/* it will take four 32.768k clock cycles to wait the registers being synchronised */
+		DelayUs(125);
+
 		return 1;
 	}
 

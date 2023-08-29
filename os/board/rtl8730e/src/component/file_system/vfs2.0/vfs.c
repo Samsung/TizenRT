@@ -104,8 +104,7 @@ void vfs_assign_region(int vfs_type, char region)
 	(void) vfs_type;
 	(void) region;
 	return;
-#endif
-
+#else
 	if (vfs_type == VFS_FATFS) {
 		if (region == 1) {
 			FLASH_APP_BASE = VFS1_FLASH_BASE_ADDR;
@@ -116,6 +115,7 @@ void vfs_assign_region(int vfs_type, char region)
 		}
 	}
 	return;
+#endif
 }
 
 int vfs_register(vfs_opt *drv, int vfs_type)

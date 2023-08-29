@@ -144,7 +144,7 @@ imq_error_t IPC_Message_Queue_Send(u32 ID, u8 *buf, u32 size, int timeout)
 
 		rtw_msleep_os(1);
 
-		if (timeout != IMQ_WAIT_FOREVER) {
+		if (timeout != (int)IMQ_WAIT_FOREVER) {
 			timeout--;
 			if (timeout == 0) {
 				imq_assert_param(IMQ_TX_TIMEOUT);

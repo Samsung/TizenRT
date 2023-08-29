@@ -912,11 +912,16 @@ static void dnss_receive_udp_packet_handler(
 
 	struct dns_hdr *hdr = (struct dns_hdr *) udp_packet_buffer->payload;
 
+#if(defined(CONFIG_ENABLE_CAPTIVE_PORTAL) && CONFIG_ENABLE_CAPTIVE_PORTAL)
+	if (1) {
+		uint8_t len = strlen((uint8_t *) hdr + sizeof(struct dns_hdr)) + 1;
+		struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct dns_hdr) + len + 20, PBUF_RAM);
+#else
 	if (memcmp((uint8_t *) hdr + sizeof(struct dns_hdr), domain_name_buf, sizeof(domain_name_buf)) == 0) {
 		printf("\n\r query %s \n\r", domain_name);
 
 		struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct dns_hdr) + sizeof(domain_name_buf) + 20, PBUF_RAM);
-
+#endif
 		if (p) {
 			struct dns_hdr *rsp_hdr = (struct dns_hdr *) p->payload;
 			rsp_hdr->id = hdr->id;
@@ -926,6 +931,19 @@ static void dnss_receive_udp_packet_handler(
 			rsp_hdr->numanswers = PP_HTONS(1);
 			rsp_hdr->numauthrr = PP_HTONS(0);
 			rsp_hdr->numextrarr = PP_HTONS(0);
+#if(defined(CONFIG_ENABLE_CAPTIVE_PORTAL) && CONFIG_ENABLE_CAPTIVE_PORTAL)
+			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr), (uint8_t *) hdr + sizeof(struct dns_hdr), len - 1);
+			*(uint8_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len - 1) = 0;
+			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len) = PP_HTONS(1);
+			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 2) = PP_HTONS(1);
+			*((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 4) = 0xc0;
+			*((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 5) = 0x0c;
+			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 6) = PP_HTONS(1);
+			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 8) = PP_HTONS(1);
+			*(uint32_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 10) = PP_HTONL(0);
+			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 14) = PP_HTONS(4);
+			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + len + 16, (void *)&dhcps_local_address, 4);
+#else
 			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr), domain_name_buf, sizeof(domain_name_buf));
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + sizeof(domain_name_buf)) = PP_HTONS(1);
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + sizeof(domain_name_buf) + 2) = PP_HTONS(1);
@@ -936,6 +954,7 @@ static void dnss_receive_udp_packet_handler(
 			*(uint32_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + sizeof(domain_name_buf) + 10) = PP_HTONL(0);
 			*(uint16_t *)((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + sizeof(domain_name_buf) + 14) = PP_HTONS(4);
 			memcpy((uint8_t *) rsp_hdr + sizeof(struct dns_hdr) + sizeof(domain_name_buf) + 16, (void *)&dhcps_local_address, 4);
+#endif
 
 			udp_sendto(udp_pcb, p, sender_addr, sender_port);
 			pbuf_free(p);

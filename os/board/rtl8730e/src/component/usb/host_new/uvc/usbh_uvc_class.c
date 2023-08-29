@@ -88,7 +88,7 @@ static void usbh_uvc_set_alt(void)
 			uvc->cur_setting.ep_addr = uvc->cur_setting.altsetting->endpoint->bEndpointAddress;
 			uvc->cur_setting.ep_size = uvc->cur_setting.altsetting->endpoint->wMaxPacketSize;
 			uvc->cur_setting.interval = uvc->cur_setting.altsetting->endpoint->bInterval;
-			uvc->cur_setting.ep_type = uvc->cur_setting.altsetting->endpoint->bmAttributes & USB_EP_XFERTYPE_MASK;
+			uvc->cur_setting.ep_type = uvc->cur_setting.altsetting->endpoint->bmAttributes & USB_EP_XFER_TYPE_MASK;
 			uvc->cur_setting.bInterfaceNumber = uvc->cur_setting.cur_vs_intf->bInterfaceNumber;
 			uvc->cur_setting.valid = 1;
 		}
@@ -146,7 +146,7 @@ static u8 usbh_uvc_attach(usb_host_t *host)
 			uvc->cur_setting.ep_addr = uvc->cur_setting.altsetting->endpoint->bEndpointAddress;
 			uvc->cur_setting.ep_size = uvc->cur_setting.altsetting->endpoint->wMaxPacketSize;
 			uvc->cur_setting.interval = uvc->cur_setting.altsetting->endpoint->bInterval;
-			uvc->cur_setting.ep_type = uvc->cur_setting.altsetting->endpoint->bmAttributes & USB_EP_XFERTYPE_MASK;
+			uvc->cur_setting.ep_type = uvc->cur_setting.altsetting->endpoint->bmAttributes & USB_EP_XFER_TYPE_MASK;
 			uvc->cur_setting.bInterfaceNumber = uvc->cur_setting.cur_vs_intf->bInterfaceNumber;
 			uvc->cur_setting.valid = 1;
 			cur_ep_size = ep_size;

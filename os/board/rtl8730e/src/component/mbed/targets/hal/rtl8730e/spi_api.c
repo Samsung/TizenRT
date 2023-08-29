@@ -103,7 +103,7 @@ void spi_bus_tx_done_callback(VOID *spi_obj)
 
 	if (obj->bus_tx_done_handler) {
 		handler = (spi_irq_handler)obj->bus_tx_done_handler;
-		handler(obj->bus_tx_done_irq_id, 0);
+		handler(obj->bus_tx_done_irq_id, SpiTxIrq);
 	}
 }
 
@@ -1238,7 +1238,6 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
 	uint8_t  spi_idx = obj->spi_idx & 0x0F;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
-	uint32_t ret;
 	uint32_t timeout = 0;
 	uint32_t StartCount = 0;
 
@@ -1250,7 +1249,7 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
 	}
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) != _TRUE) {
+	if (ssi_int_read(ssi_adapter, rx_buffer, length) != _TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}
@@ -1265,7 +1264,7 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
 
 		/* time out */
 		if (SYSTIMER_GetPassTime(StartCount) > timeout_ms) {
-			ret = spi_stop_recv(obj);
+			spi_stop_recv(obj);
 			obj->state &= ~ SPI_STATE_RX_BUSY;
 			timeout = 1;
 
@@ -1297,7 +1296,6 @@ int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t le
 	uint8_t  spi_idx = obj->spi_idx & 0x0F;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
-	int ret;
 
 	if (obj->state & SPI_STATE_RX_BUSY) {
 		DBG_PRINTF(MODULE_SPI, LEVEL_WARN, "spi_slave_read_stream_dma: state(0x%x) is not ready\r\n", obj->state);
@@ -1305,7 +1303,7 @@ int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t le
 	}
 
 	obj->state |= SPI_STATE_RX_BUSY;
-	if ((ret = ssi_int_read(ssi_adapter, rx_buffer, length)) != _TRUE) {
+	if (ssi_int_read(ssi_adapter, rx_buffer, length) != _TRUE) {
 		obj->state &= ~SPI_STATE_RX_BUSY;
 		return -HAL_BUSY;
 	}
@@ -1313,7 +1311,7 @@ int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t le
 
 	while (obj->state & SPI_STATE_RX_BUSY) {
 		if (SSI_Busy(SPIx) == 0) {
-			ret = spi_stop_recv(obj);
+			spi_stop_recv(obj);
 			goto EndOfCS;
 		}
 	}

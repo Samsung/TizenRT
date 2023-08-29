@@ -520,13 +520,17 @@ int mbedtls_gcm_crypt_and_tag(mbedtls_gcm_context *ctx,
 
 #ifdef RTL_HW_CRYPTO
 	if (use_hw_crypto_func && (length <= RTL_CRYPTO_FRAGMENT)) {
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE) ;
-		unsigned char iv_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE) ;
-		unsigned char tag_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE) ;
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char iv_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
+		unsigned char tag_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
 		unsigned char *output_buf, *output_buf_aligned;
+		unsigned char *key_buf_aligned, *iv_buf_aligned, *tag_buf_aligned;
 
-		output_buf = (unsigned char *)mbedtls_calloc(1, (length + CACHE_LINE_SIZE * 2));
+		output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
 		output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+		key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+		iv_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(iv_buf));
+		tag_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(tag_buf));
 
 		memcpy(iv_buf_aligned, iv, iv_len);
 		memcpy(key_buf_aligned, ctx->key, ctx->cipher_ctx.key_bitlen / 8);

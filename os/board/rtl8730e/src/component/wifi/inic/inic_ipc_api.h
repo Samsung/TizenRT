@@ -42,7 +42,8 @@ enum IPC_WIFI_C2H_EVENT_TYPE {
 	IPC_WIFI_EVT_HDL,
 	IPC_WIFI_EVT_PROMISC_CALLBACK,
 	IPC_WIFI_EVT_GET_LWIP_INFO,
-	IPC_WIFI_EVT_SET_NETIF_INFO
+	IPC_WIFI_EVT_SET_NETIF_INFO,
+	IPC_WIFI_EVT_CFG80211_SCAN_REPORT
 };
 
 enum IPC_WIFI_H2C_EVENT_TYPE {
@@ -59,6 +60,8 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_ON,
 	IPC_API_WIFI_OFF,
 	IPC_API_WIFI_SET_MODE,
+	IPC_API_WIFI_INIT_AP,
+	IPC_API_WIFI_DEINIT_AP,
 	IPC_API_WIFI_START_AP,
 	IPC_API_WIFI_STOP_AP,
 	IPC_API_WIFI_SCAN_NETWROKS,
@@ -77,6 +80,7 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_SET_MFP_SUPPORT,
 	IPC_API_WIFI_SET_GROUP_ID,
 	IPC_API_WIFI_SET_PMK_CACHE_EN,
+	IPC_API_WIFI_SAE_STATUS,
 	IPC_API_WIFI_GET_SW_STATISTIC,
 	IPC_API_WIFI_GET_PHY_STATISTIC,
 	IPC_API_WIFI_SET_NETWORK_MODE,
@@ -109,6 +113,10 @@ enum IPC_WIFI_H2C_EVENT_TYPE {
 	IPC_API_WIFI_SET_WPA_MODE,
 	IPC_API_WIFI_SET_PMF_MODE,
 	IPC_API_WIFI_COEX_BT_RFK,
+	IPC_API_WIFI_COEX_ZB_RFK,
+	IPC_API_WIFI_SET_BT_SEL,
+	IPC_API_WIFI_ADD_KEY,
+	IPC_API_WIFI_GET_CHPLAN,
 	//promisc
 	IPC_API_PROMISC_FILTER_RETRANSMIT_PKT,
 	IPC_API_PROMISC_FILTER_WITH_LEN,
@@ -176,5 +184,8 @@ int inic_ipc_dev_set_netif_info(int idx_wlan, unsigned char *dev_addr);
 int inic_ipc_get_lwip_info(u32 type, unsigned char *input, int index);
 u64 inic_ipc_host_get_wifi_tsf(unsigned char port_id);
 int inic_ipc_host_get_txbuf_pkt_num(void);
+#ifdef CONFIG_CFG80211
+void inic_ipc_cfg80211_indicate_scan_report(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
+#endif
 extern void inic_ipc_host_init_skb(VOID);
 #endif /* __INIC_IPC_H__ */

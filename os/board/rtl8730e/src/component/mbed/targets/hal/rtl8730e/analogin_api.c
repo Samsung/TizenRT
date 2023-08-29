@@ -72,13 +72,18 @@ void analogin_init(analogin_t *obj, PinName pin)
 	obj->adc_idx = adc_idx;
 	obj->adc_pin = pin;
 
+	if (obj->adc_pin != VBAT_MEAS) {
+		/* Initialize ADC pin */
+		Pinmux_Config(obj->adc_pin, PINMUX_FUNCTION_CAPTOUCH);
+		PAD_PullCtrl(obj->adc_pin, PullNone);
+		/* Disable digital path input */
+		PAD_InputCtrl(obj->adc_pin, DISABLE);
+	}
+
 	/* Initialize ADC */
 	ADC_StructInit(&ADC_InitStruct);
 	ADC_InitStruct.ADC_CvlistLen = 0;
 	ADC_Init(&ADC_InitStruct);
-
-	/* Disable digital path input */
-	PAD_InputCtrl(obj->adc_pin, DISABLE);
 
 	ADC_Cmd(ENABLE);
 }
@@ -107,7 +112,7 @@ float analogin_read(analogin_t *obj)
 	ADC_SWTrigCmd(DISABLE);
 
 	data = ADC_Read();
-	value = (float)(ADC_CH_DATA(data)) / (float)(AnalogDatFull);
+	value = (float)(ADC_GET_DATA_GLOBAL(data)) / (float)(AnalogDatFull);
 
 	return (float)value;
 }
@@ -135,7 +140,7 @@ uint16_t analogin_read_u16(analogin_t *obj)
 
 	data = ADC_Read();
 
-	return (uint16_t)ADC_CH_DATA(data);
+	return (uint16_t)ADC_GET_DATA_GLOBAL(data);
 }
 
 /**
@@ -160,7 +165,7 @@ void  analogin_deinit(analogin_t *obj)
   * @param adc_data: ADC conversion data from normal channel.
   * @return Normal channel voltage in mV.
   */
-uint32_t analogin_voltage_norm(uint16_t adc_data)
+uint32_t analogin_voltage_norm(uint32_t adc_data)
 {
 	return ADC_GetVoltage(adc_data);
 }
@@ -170,7 +175,7 @@ uint32_t analogin_voltage_norm(uint16_t adc_data)
   * @param adc_data: ADC conversion data from VBAT channel.
   * @return VBAT channel voltage in mV.
   */
-uint32_t analogin_voltage_vbat(uint16_t adc_data)
+uint32_t analogin_voltage_vbat(uint32_t adc_data)
 {
 	return ADC_GetVBATVoltage(adc_data);
 }

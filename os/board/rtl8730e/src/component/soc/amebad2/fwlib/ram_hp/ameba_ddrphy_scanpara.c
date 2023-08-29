@@ -1988,7 +1988,7 @@ void rx_dq(void)
 		vref[vref_init] = vref_init + 44;
 	}
 	DBG_8195A("vref_init = %d\n", vref_init);
-	DBG_8195A("vref[] = %f\n", (int)vref[vref_init]);
+	DBG_8195A("vref[] = %d\n", (int)vref[vref_init]);
 	DBG_8195A("vref_range = %d\n", vref_range);
 
 	//store default initial TE from hwsetting

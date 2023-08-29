@@ -31,7 +31,7 @@ bool rtk_bt_pre_enable(void)
 	ret = bt_ipc_api_host_message_send(RTK_BT_IPC_DEVICE, RTK_BT_DEVICE_IPC_ACT_BT_PRE_ENABLE,
 									   NULL, 0);
 	if (ret[0] == 0) {
-		printf("[core CA7][IPC] %s fail ! \r\n", __func__);
+		printf("[core AP][IPC] %s fail ! \r\n", __func__);
 	}
 	err = (bool)ret[0];
 	osif_mem_free(ret);
@@ -44,7 +44,7 @@ bool rtk_bt_is_enable(void)
 	return b_bt_enabled;
 }
 
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 static bool mesh_stack_is_init = false;
 bool rtk_bt_mesh_is_enable(void)
 {
@@ -64,7 +64,7 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 	if (err) {
 		return err;
 	}
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	if (app_default_conf->app_profile_support & RTK_BT_PROFILE_MESH) {
 		mesh_stack_is_init = true;
 	}
@@ -73,9 +73,22 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 	{
 		int *ret = NULL;
+		uint32_t actual_size = 0;
+		bt_ipc_host_request_message *host_msg = NULL;
+
+		/* depy copy secondary memory pointed by pointer */
+		host_msg = (bt_ipc_host_request_message *)bt_device_push_cmd_ipc_buf(RTK_BT_DEVICE_IPC_ACT_BT_ENABLE, (void *)app_default_conf, sizeof(rtk_bt_app_conf_t), &actual_size);
+		if (!host_msg) {
+			printf("%s le get ipc buf fail \r\n", __func__);
+			goto exit;
+		}
+		if (actual_size > IPC_HOST_API_DATA_MAX) {
+			printf("%s: The param of %d is over ipc message memory\r\n", __func__, RTK_BT_DEVICE_IPC_ACT_BT_ENABLE);
+			goto exit;
+		}
 
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_DEVICE, RTK_BT_DEVICE_IPC_ACT_BT_ENABLE,
-										   (uint8_t *)app_default_conf, sizeof(rtk_bt_app_conf_t));
+										   host_msg->param_buf, actual_size);
 		if (ret[0] != RTK_BT_OK) {
 			printf("[core AP][IPC] %s fail ! \r\n", __func__);
 		} else {
@@ -84,13 +97,16 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 		}
 		err = (uint16_t)ret[0];
 		osif_mem_free(ret);
+exit:
+		if(host_msg)
+			osif_mem_free(host_msg);
 	}
 #else
 	err = bt_stack_enable(app_default_conf);
 #endif
 	if (err) {
 		rtk_bt_evt_deinit();
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 		if (app_default_conf->app_profile_support & RTK_BT_PROFILE_MESH) {
 			mesh_stack_is_init = false;
 		}
@@ -138,7 +154,7 @@ uint16_t rtk_bt_disable(void)
 
 	/* set the bt enable flag off */
 	b_bt_enabled = false;
-#if defined(RKT_BLE_MESH_SUPPORT) && RKT_BLE_MESH_SUPPORT
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	mesh_stack_is_init = false;
 #endif
 

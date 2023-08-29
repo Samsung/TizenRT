@@ -40,7 +40,7 @@
   *		 @arg PAD_DRV_ABILITITY_LOW
   *		 @arg PAD_DRV_ABILITITY_HIGH
   *  @retval None
-  *  @note invalid for PAD G: PB[25]/PB[26]/PB[27]/PB[28]/PB[29]/PB[30]/PB[31]/PC[0]
+  *  @note invalid for some pads
   *        SDIO pad driving strength is controlled by SDIO_PAD_CTRL
   */
 __weak HAL_ROM_TEXT_SECTION
@@ -133,11 +133,9 @@ void PAD_SleepPullCtrl(u8 PinName, u8 PullType)
   *		 @arg GPIO_Resistor_LARGE
   *		 @arg GPIO_Resistor_SMALL
   *  @retval None
-  *  @note Just for PAD B:
-  *        for PAD B: PA[9] ~ PA[16], PB[12], PB[13] 4.7Kohm/10Kohm
-  *  @note for PAD C: PA[18] ~ PA[31], PB[0] ~ PB[5] @1.8V
-  *            PU resistor is fixed to 485Kohm; PD resistor is fixed to 184Kohm
-  *  @note other PAD pins` PU/PD resistor only support 80Kohm @3.3V
+  *  @note Only some pads support to change pull resistor type
+  *  @note for some pads, PU resistor and PD resitor may be configured to respective values
+  *  @note for other other pads, PU/PD resistor only support fixed value
   */
 HAL_ROM_TEXT_SECTION
 void PAD_ResistorCtrl(u8 PinName, u8 RType)
@@ -178,8 +176,7 @@ void PAD_ResistorCtrl(u8 PinName, u8 RType)
   *  @param NewStatus: enable or disable (shutdown)
   *  @retval None
   *  @note PAD_BIT_GPIOx_DIS 0: enable pad; 1: shutdown pad
-  *  @note This configuration has no effect on audio pads (Group C)
-  *        in which pin located at PA[18] ~ PA[31], PB[0] ~ PB[5].
+  *  @note only valid for digital function, invalid for audio analog pads
   */
 HAL_ROM_TEXT_SECTION
 void PAD_CMD(u8 PinName, u8 NewStatus)

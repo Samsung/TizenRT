@@ -684,8 +684,6 @@ typedef struct {
 
 	u32 SP_Fix_Bclk;
 
-	u32 SP_Sel_FixBclk;
-
 } SP_InitTypeDef;
 
 /**
@@ -928,15 +926,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup AUDIO_SPORT_Fix_BCLK
-* @{
-*/
-#define FIX_BCLK_10M			((u32)0x00000000)
-#define FIX_BCLK_20M			((u32)0x00000001)
-/**
-  * @}
-  */
-
 /** @defgroup AUDIO_SPORT_I2S
 * @{
 */
@@ -974,15 +963,15 @@ typedef struct {
 /** @defgroup AUDIO_SPORT_Sample_Rate
 * @{
 */
-#define SP_8K			(8)
-#define SP_12K			(12)
-#define SP_24K			(24)
-#define SP_16K			(16)
-#define SP_32K			(32)
-#define SP_48K			(48)
-#define SP_96K			(96)
-#define SP_192K			(192)
-#define SP_384K			(384)
+#define SP_8K			(8000)
+#define SP_12K			(12000)
+#define SP_24K			(24000)
+#define SP_16K			(16000)
+#define SP_32K			(32000)
+#define SP_48K			(48000)
+#define SP_96K			(96000)
+#define SP_192K			(192000)
+#define SP_384K			(384000)
 #define SP_11P025K		(11025)
 #define SP_44P1K		(44100)
 #define SP_88P2K		(88200)
@@ -997,6 +986,33 @@ typedef struct {
 */
 #define TDM		((u32)0x00000000)
 #define MULTIIO	((u32)0x00000001)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_I2S_FIXED_BCLK_DIV
+  * @{
+  */
+#define DSP_SRC_BCLK_DIV4   ((u32)0x00000000)
+#define DSP_SRC_BCLK_DIV2   ((u32)0x00000001)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_I2S_MCLK
+  * @{
+  */
+#define DSP_SRC_MCLK_DIV4   ((u32)0x00000000)
+#define DSP_SRC_MCLK_DIV2   ((u32)0x00000001)
+#define DSP_SRC_MCLK        ((u32)0x00000002)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_XTAL40M
+  * @{
+  */
+#define I2S_XTAL40M	40000000
 /**
   * @}
   */

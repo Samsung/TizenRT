@@ -394,6 +394,8 @@ typedef struct {
 /* MANUAL_GEN_START */
 
 //Please add your defination here
+#define LPSXTAL_DIGI_EN			0x4
+#define LPSXTAL_DIGI_DIS		0x0
 
 /* MANUAL_GEN_END */
 

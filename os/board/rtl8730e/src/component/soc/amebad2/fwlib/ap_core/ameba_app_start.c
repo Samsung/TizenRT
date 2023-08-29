@@ -94,12 +94,13 @@ void app_start(void)
 	/* Get flash_init_para info for AP */
 	_memcpy((void *)&flash_init_para, (const void *)HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_FLASH_PARA_ADDR), sizeof(FLASH_InitTypeDef));
 
-	flash_layout_init();
+	// flash_layout_init();
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	main();
 #endif
 #if defined( __ICCARM__ )
+	extern void __iar_data_init3();
 	__iar_data_init3();
 #endif
 }

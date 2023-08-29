@@ -37,6 +37,10 @@
 #define USB_OTG_FIFO_BASE								0x1000UL
 #define USB_OTG_FIFO_SIZE								0x1000UL
 
+/* USB Core HW Configurations */
+#define USB_OTG_MAX_ENDPOINTS							5U
+#define USB_OTG_IN_TOKEN_QUEUE_DEPTH					8U
+
 /* USB OTG addon registers */
 #define USB_OTG_ADDON_REG_CTRL							0x30004UL
 #define USB_OTG_ADDON_REG_VND_STS_OUT					0x3001CUL
@@ -296,7 +300,7 @@
 /********************  Bit definition for GRSTCTL register  ********************/
 #define USB_OTG_GRSTCTL_CSRST_Pos                (0U)
 #define USB_OTG_GRSTCTL_CSRST_Msk                (0x1UL << USB_OTG_GRSTCTL_CSRST_Pos) /*!< 0x00000001 */
-#define USB_OTG_GRSTCTL_CSRST                    (USB_OTG_GRSTCTL_CSRST_Msk)     /*!< Core soft reset, NOT USED */
+#define USB_OTG_GRSTCTL_CSRST                    (USB_OTG_GRSTCTL_CSRST_Msk)     /*!< Core soft reset */
 #define USB_OTG_GRSTCTL_INTKNQFLSH_Pos           (3U)
 #define USB_OTG_GRSTCTL_INTKNQFLSH_Msk           (0x1UL << USB_OTG_GRSTCTL_INTKNQFLSH_Pos) /*!< 0x00000008 */
 #define USB_OTG_GRSTCTL_INTKNQFLSH               (USB_OTG_GRSTCTL_INTKNQFLSH_Msk)   /*!< IN Token Sequence Learning Queue Flush */
@@ -315,6 +319,9 @@
 #define USB_OTG_GRSTCTL_TXFNUM_2                 (0x04UL << USB_OTG_GRSTCTL_TXFNUM_Pos) /*!< 0x00000100 */
 #define USB_OTG_GRSTCTL_TXFNUM_3                 (0x08UL << USB_OTG_GRSTCTL_TXFNUM_Pos) /*!< 0x00000200 */
 #define USB_OTG_GRSTCTL_TXFNUM_4                 (0x10UL << USB_OTG_GRSTCTL_TXFNUM_Pos) /*!< 0x00000400 */
+#define USB_OTG_GRSTCTL_CSRSTDONE_Pos            (29U)
+#define USB_OTG_GRSTCTL_CSRSTDONE_Msk            (0x1UL << USB_OTG_GRSTCTL_CSRSTDONE_Pos) /*!< 0x40000000 */
+#define USB_OTG_GRSTCTL_CSRSTDONE                USB_OTG_GRSTCTL_CSRSTDONE_Msk    /*!< Core soft reset done */
 #define USB_OTG_GRSTCTL_DMAREQ_Pos               (30U)
 #define USB_OTG_GRSTCTL_DMAREQ_Msk               (0x1UL << USB_OTG_GRSTCTL_DMAREQ_Pos) /*!< 0x40000000 */
 #define USB_OTG_GRSTCTL_DMAREQ                   USB_OTG_GRSTCTL_DMAREQ_Msk    /*!< DMA request signal */
@@ -577,6 +584,11 @@
 #define USB_OTG_GUID_USER_ID_Msk                 (0xFFFFFFFFUL << USB_OTG_GUID_USER_ID_Pos) /*!< 0xFFFFFFFF */
 #define USB_OTG_GUID_USER_ID                     USB_OTG_GUID_USER_ID_Msk    /*!< User ID field */
 
+/********************  Bit definition for GHWCFG4 register  ********************/
+#define USB_OTG_GHWCFG4_DEDFIFO_Pos               (25U)
+#define USB_OTG_GHWCFG4_DEDFIFO_Msk               (0x1UL << USB_OTG_GHWCFG4_DEDFIFO_Pos) /*!< 0x02000000 */
+#define USB_OTG_GHWCFG4_DEDFIFO                   USB_OTG_GHWCFG4_DEDFIFO_Msk    /*!< Enable Dedicated Transmit FIFO For device IN Endpoints */
+
 /********************  Bit definition for HPTXFSIZ register  ********************/
 #define USB_OTG_HPTXFSIZ_PTXSA_Pos               (0U)
 #define USB_OTG_HPTXFSIZ_PTXSA_Msk               (0xFFFFUL << USB_OTG_HPTXFSIZ_PTXSA_Pos) /*!< 0x0000FFFF */
@@ -584,6 +596,14 @@
 #define USB_OTG_HPTXFSIZ_PTXFD_Pos               (16U)
 #define USB_OTG_HPTXFSIZ_PTXFD_Msk               (0xFFFFUL << USB_OTG_HPTXFSIZ_PTXFD_Pos) /*!< 0xFFFF0000 */
 #define USB_OTG_HPTXFSIZ_PTXFD                   USB_OTG_HPTXFSIZ_PTXFD_Msk    /*!< Host periodic TxFIFO depth */
+
+/********************  Bit definition for DPTXFSIZ_DIEPTXF register  ********************/
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXSA_Pos        (0U)
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXSA_Msk        (0xFFFFUL << USB_OTG_DPTXFSIZ_DIEPTXF_TXSA_Pos) /*!< 0x0000FFFF */
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXSA            USB_OTG_DPTXFSIZ_DIEPTXF_TXSA_Msk    /*!< TxFIFO start address */
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXFD_Pos        (16U)
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXFD_Msk        (0xFFFFUL << USB_OTG_DPTXFSIZ_DIEPTXF_TXFD_Pos) /*!< 0xFFFF0000 */
+#define USB_OTG_DPTXFSIZ_DIEPTXF_TXFD            USB_OTG_DPTXFSIZ_DIEPTXF_TXFD_Msk    /*!< TxFIFO depth */
 
 /******************************************************************************/
 /******************** Bit Definition for USB OTG Host Mode Registers **********/
@@ -1325,7 +1345,7 @@ typedef struct {
 	__IO u32 GPWRDN;               /*!< Reserved                                            058h */
 	u32  Reserved5C[41];           /*!< Reserved                                       05Ch-0FFh */
 	__IO u32 HPTXFSIZ;             /*!< Host Periodic Tx FIFO Size Reg                      100h */
-	__IO u32 DPTXFSIZ[15];         /*!< Device Periodic Transmit FIFO                            */
+	__IO u32 DPTXFSIZ_DIEPTXF[15]; /*!< Device Periodic Transmit FIFO Size (shared TxFIFO) / Device IN Endpoint Transmit FIFO Size (dedicated TxFIFO) 104h */
 } USB_OTG_GlobalTypeDef;
 
 /* USB OTG Device Registers */
@@ -1343,7 +1363,7 @@ typedef struct {
 	__IO u32 DVBUSDIS;        /*!< dev VBUS discharge Register                              828h */
 	__IO u32 DVBUSPULSE;      /*!< dev VBUS Pulse Register                                  82Ch */
 	__IO u32 DTKNQR3;         /*!< Device IN Token Sequence Learning Queue Read Register 3  830h */
-	__IO u32 DTKNQR4;         /*!< Device IN Token Sequence Learning Queue Read Register 4  834h */
+	__IO u32 DIEPEMPMSK;      /*!< Device IN Endpoint FIFO Empty Interrupt Mask Register    834h */
 	u32 Reserved38[2];        /*!< Reserved                                            838h-83Ch */
 } USB_OTG_DeviceTypeDef;
 

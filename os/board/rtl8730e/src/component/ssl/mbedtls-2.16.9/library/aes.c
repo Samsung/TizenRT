@@ -1118,8 +1118,12 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx,
 {
 #ifdef RTL_HW_CRYPTO
 	if (use_hw_crypto_func) {
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE);
-		unsigned char output_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE);
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char output_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
+		unsigned char *key_buf_aligned, *output_buf_aligned;
+
+		key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+		output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
 
 		if (mode == MBEDTLS_AES_DECRYPT) {
 			memcpy(key_buf_aligned, ctx->dec_key, ((ctx->nr - 6) * 4));
@@ -1186,19 +1190,22 @@ int mbedtls_aes_crypt_cbc(mbedtls_aes_context *ctx,
 #ifdef RTL_HW_CRYPTO
 
 	if (use_hw_crypto_func) {
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE);
-		unsigned char iv_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE);
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char iv_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
 		unsigned char iv_tmp[16];
 		size_t length_done = 0;
 		unsigned char *output_buf, *output_buf_aligned;
+		unsigned char *key_buf_aligned, *iv_buf_aligned;
 
 		if (length % 16) {
 			return (MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH);
 		}
 
 		if (length > 0) {
-			output_buf = (unsigned char *)mbedtls_calloc(1, (length + CACHE_LINE_SIZE * 2));
+			output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
 			output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+			key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+			iv_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(iv_buf));
 
 			memcpy(iv_buf_aligned, iv, 16);
 
@@ -1494,10 +1501,11 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
 		int c;
 		size_t stream_bytes = 0;
 		size_t n;
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE);
-		unsigned char iv_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE);
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char iv_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
 		size_t length_done = 0;
 		unsigned char *output_buf, *output_buf_aligned;
+		unsigned char *key_buf_aligned, *iv_buf_aligned;
 
 		n = *iv_off;
 
@@ -1519,8 +1527,10 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
 
 		if (length > 0) {
 			stream_bytes = length % 16;
-			output_buf = (unsigned char *)mbedtls_calloc(1, (length + CACHE_LINE_SIZE * 2));
+			output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
 			output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+			key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+			iv_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(iv_buf));
 
 			memcpy(iv_buf_aligned, iv, 16);
 			memcpy(key_buf_aligned, ctx->enc_key, ((ctx->nr - 6) * 4));
@@ -1661,8 +1671,9 @@ int mbedtls_aes_crypt_ofb(mbedtls_aes_context *ctx,
 	if (use_hw_crypto_func) {
 		size_t n;
 		size_t stream_bytes = 0;
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE);
-		unsigned char iv_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE);
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char iv_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
+		unsigned char *key_buf_aligned, *iv_buf_aligned;
 		size_t length_done = 0;
 		unsigned char *output_buf, *output_buf_aligned;
 		int i;
@@ -1681,8 +1692,10 @@ int mbedtls_aes_crypt_ofb(mbedtls_aes_context *ctx,
 
 		if (length > 0) {
 			stream_bytes = length % 16;
-			output_buf = (unsigned char *)mbedtls_calloc(1, (length + CACHE_LINE_SIZE * 2));
+			output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
 			output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+			key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+			iv_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(iv_buf));
 
 			memcpy(iv_buf_aligned, iv, 16);
 			memcpy(key_buf_aligned, ctx->enc_key, ((ctx->nr - 6) * 4));
@@ -1762,10 +1775,11 @@ int mbedtls_aes_crypt_ctr(mbedtls_aes_context *ctx,
 #ifdef RTL_HW_CRYPTO
 	if (use_hw_crypto_func) {
 		size_t n;
-		unsigned char key_buf_aligned[CACHE_LINE_ALIGMENT(32)] ALIGNMTO(CACHE_LINE_SIZE);
-		unsigned char iv_buf_aligned[CACHE_LINE_ALIGMENT(16)] ALIGNMTO(CACHE_LINE_SIZE);
+		unsigned char key_buf[CACHE_LINE_ALIGMENT(32) + CACHE_LINE_SIZE];
+		unsigned char iv_buf[CACHE_LINE_ALIGMENT(16) + CACHE_LINE_SIZE];
 		size_t length_done = 0;
 		unsigned char *output_buf, *output_buf_aligned;
+		unsigned char *key_buf_aligned, *iv_buf_aligned;
 		int i, j;
 
 		n = *nc_off;
@@ -1781,8 +1795,10 @@ int mbedtls_aes_crypt_ctr(mbedtls_aes_context *ctx,
 		}
 
 		if (length > 0) {
-			output_buf = (unsigned char *)mbedtls_calloc(1, (length + CACHE_LINE_SIZE * 2));
+			output_buf = (unsigned char *)mbedtls_calloc(1, (CACHE_LINE_ALIGMENT(length) + CACHE_LINE_SIZE));
 			output_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(output_buf));
+			key_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(key_buf));
+			iv_buf_aligned = (unsigned char *)(CACHE_LINE_ALIGMENT(iv_buf));
 
 			memcpy(iv_buf_aligned, nonce_counter, 16);
 			memcpy(key_buf_aligned, ctx->enc_key, ((ctx->nr - 6) * 4));

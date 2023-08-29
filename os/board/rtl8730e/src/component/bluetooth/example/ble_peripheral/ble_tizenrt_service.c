@@ -7,6 +7,7 @@
 #include <rtk_service_config.h>
 #include <ble_tizenrt_service.h>
 #include <rtk_bt_def.h>
+#include <rtk_bt_att_defs.h>
 
 #define BLE_TIZENRT_READ_MAX_LEN     20
 

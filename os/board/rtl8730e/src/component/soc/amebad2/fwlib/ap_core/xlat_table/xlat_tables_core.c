@@ -799,7 +799,7 @@ void mmap_add_region_ctx(xlat_ctx_t *ctx, const mmap_region_t *mm)
 	if (ret != 0) {
 		ERROR("mmap_add_region_check() failed. error %d\n", ret);
 		assert(false);
-		return;
+		//return;
 	}
 
 	/*

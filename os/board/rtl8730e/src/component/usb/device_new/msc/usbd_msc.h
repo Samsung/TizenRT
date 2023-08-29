@@ -24,64 +24,65 @@
 /* Exported defines ----------------------------------------------------------*/
 
 /* CTRL buffer size */
-#define USBD_MSC_CTRL_BUF_SIZE             512U
+#define USBD_MSC_CTRL_BUF_SIZE						512U
 
 /* MSC Device parameters */
-#define USBD_MSC_VID                                 0x0BDAU
-#define USBD_MSC_PID                                 0x8730U
-#define USBD_MSC_CONFIG_DESC_SIZE                    32U
-#define USBD_MSC_LANGID_STRING                       0x0409U
-#define USBD_MSC_MFG_STRING_DESC_SIZE                16U
-#define USBD_MSC_PRODUCT_STRING_DESC_SIZE            34U
-#define USBD_MSC_SN_STRING_DESC_SIZE                 26U
+#define USBD_MSC_VID								0x0BDAU
+#define USBD_MSC_PID								0x8730U
+#define USBD_MSC_CONFIG_DESC_SIZE					32U
+#define USBD_MSC_LANGID_STRING						0x0409U
+#define USBD_MSC_MFG_STRING_DESC_SIZE				16U
+#define USBD_MSC_PRODUCT_STRING_DESC_SIZE			34U
+#define USBD_MSC_SN_STRING_DESC_SIZE				26U
 #define USBD_MSC_SELF_POWERED						1U
 
 /* MSC Endpoint parameters */
-#define USBD_MSC_BULK_IN_EP                          0x81U  /* EP1 for BULK IN */
-#define USBD_MSC_BULK_OUT_EP                       0x02U  /* EP2 for BULK OUT */
-#define USBD_MSC_HS_MAX_PACKET_SIZE             512U   /* High speed BULK IN & OUT packet size */
-#define USBD_MSC_FS_MAX_PACKET_SIZE             64U    /* Full speed BULK IN & OUT packet size */
+#define USBD_MSC_BULK_IN_EP							0x81U  /* EP1 for BULK IN */
+#define USBD_MSC_BULK_OUT_EP						0x02U  /* EP2 for BULK OUT */
+#define USBD_MSC_HS_MAX_PACKET_SIZE					512U   /* High speed BULK IN & OUT packet size */
+#define USBD_MSC_FS_MAX_PACKET_SIZE					64U    /* Full speed BULK IN & OUT packet size */
 
 /* MSC configurations */
-#define USBD_MSC_RAM_DISK                    0       /* Use RAM as storage media, for test purpose only */
+#define USBD_MSC_RAM_DISK							0      /* Use RAM as storage media, for test purpose only */
+#define USBD_MSC_FIX_CV_TEST_ISSUE					0      /* Enable for CV test */
 
-#define USBD_MSC_BLK_BITS                    9
-#define USBD_MSC_BLK_SIZE                   (1 << USBD_MSC_BLK_BITS)
-#define USBD_MSC_BUFLEN                     (32*512) /* Default size of buffer length */
+#define USBD_MSC_BLK_BITS							9
+#define USBD_MSC_BLK_SIZE							(1 << USBD_MSC_BLK_BITS)
+#define USBD_MSC_BUFLEN								(32*512) /* Default size of buffer length */
 /* RAM disk configurations */
 #if USBD_MSC_RAM_DISK
-#define USBD_MSC_RAM_DISK_SIZE              (USBD_MSC_BUFLEN * 2) // Should be >= 32KB
-#define USBD_MSC_RAM_DISK_SECTORS           (USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS)
+#define USBD_MSC_RAM_DISK_SIZE						(USBD_MSC_BUFLEN * 2) // Should be >= 32KB
+#define USBD_MSC_RAM_DISK_SECTORS					(USBD_MSC_RAM_DISK_SIZE >> USBD_MSC_BLK_BITS)
 #endif
 
 /* MSC Request Codes */
-#define USBD_MSC_REQUEST_RESET               0xFF
-#define USBD_MSC_REQUEST_GET_MAX_LUN         0xFE
+#define USBD_MSC_REQUEST_RESET						0xFF
+#define USBD_MSC_REQUEST_GET_MAX_LUN				0xFE
 
 /* CBW/CSW configurations */
-#define USBD_MSC_CB_WRAP_LEN                         31U
-#define USBD_MSC_CB_SIGN                             0x43425355U    /*spells out USBC */
-#define USBD_MSC_MAX_DATA                            256U
-#define USBD_MSC_CS_WRAP_LEN                         13U
-#define USBD_MSC_CS_SIGN                             0x53425355U      /* spells out 'USBS' */
+#define USBD_MSC_CB_WRAP_LEN						31U
+#define USBD_MSC_CB_SIGN							0x43425355U    /*spells out USBC */
+#define USBD_MSC_MAX_DATA							256U
+#define USBD_MSC_CS_WRAP_LEN						13U
+#define USBD_MSC_CS_SIGN							0x53425355U      /* spells out 'USBS' */
 
 /* CSW Status Definitions */
-#define USBD_MSC_CSW_CMD_PASSED                0x00U
-#define USBD_MSC_CSW_CMD_FAILED                0x01U
-#define USBD_MSC_CSW_PHASE_ERROR               0x02U
+#define USBD_MSC_CSW_CMD_PASSED						0x00U
+#define USBD_MSC_CSW_CMD_FAILED						0x01U
+#define USBD_MSC_CSW_PHASE_ERROR					0x02U
 
 /* BOT State */
-#define USBD_MSC_IDLE                      0U       /* Idle state */
-#define USBD_MSC_DATA_OUT                  1U       /* Data Out state */
-#define USBD_MSC_DATA_IN                   2U       /* Data In state */
-#define USBD_MSC_LAST_DATA_IN              3U       /* Last Data In Last */
-#define USBD_MSC_SEND_DATA                 4U       /* Send Immediate data */
-#define USBD_MSC_NO_DATA                   5U       /* No data Stage */
+#define USBD_MSC_IDLE								0U       /* Idle state */
+#define USBD_MSC_DATA_OUT							1U       /* Data Out state */
+#define USBD_MSC_DATA_IN							2U       /* Data In state */
+#define USBD_MSC_LAST_DATA_IN						3U       /* Last Data In Last */
+#define USBD_MSC_SEND_DATA							4U       /* Send Immediate data */
+#define USBD_MSC_NO_DATA							5U       /* No data Stage */
 
 /* BOT Status */
-#define USBD_MSC_STATUS_NORMAL             0U
-#define USBD_MSC_STATUS_RECOVERY           1U
-#define USBD_MSC_STATUS_ERROR              2U
+#define USBD_MSC_STATUS_NORMAL						0U
+#define USBD_MSC_STATUS_RECOVERY					1U
+#define USBD_MSC_STATUS_ERROR						2U
 
 /* Sense */
 #define SENSE_LIST_DEEPTH                           4U
@@ -129,11 +130,11 @@ typedef struct {
 	u8 phase_error;
 	u8 is_open;
 	u8 ro;
-	u8 intf;
 	u8 bot_state;
 	u8 bot_status;
 	u32 data_length;
 	u8 *data;
+	u8 *ctrl_buf;
 	us_sense_typedef scsi_sense [SENSE_LIST_DEEPTH];
 	u8 scsi_sense_head;
 	u8 scsi_sense_tail;

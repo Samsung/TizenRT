@@ -24,21 +24,19 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
-/* USB device configurations */
+/* USB descriptor configurations */
 #define USBD_MAX_NUM_INTERFACES			16U
 #define USBD_MAX_NUM_CONFIGURATION		16U
-#define USBD_MAX_ENDPOINTS				5U
-#define USBD_MAX_RX_FIFO_SIZE			512U
-#define USBD_MAX_NPTX_FIFO_SIZE			256U
-#define USBD_MAX_PTX_FIFO_SIZE			256U
 
 /* USB device string descriptor index */
 #define USBD_IDX_LANGID_STR				0x00U
 #define USBD_IDX_MFC_STR				0x01U
 #define USBD_IDX_PRODUCT_STR			0x02U
 #define USBD_IDX_SERIAL_STR				0x03U
-#define USBD_IDX_CONFIG_STR				0x04U
-#define USBD_IDX_INTERFACE_STR			0x05U
+
+/* USB device interrupt enable flag*/
+#define USBD_SOF_INTR                 (BIT0)
+#define USBD_EOPF_INTR                (BIT1)
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -60,18 +58,15 @@ typedef enum {
 
 /* USB configuration structure */
 typedef struct {
-	u8 max_ep_num;			/* Max endpoint number used, 1~5, EP0-INOUT, EP1-IN, EP2-OUT, EP3-IN, EP4-OUT */
-	u32 rx_fifo_size;		/* RX FIFO size */
-	u32 nptx_fifo_size;		/* Non-Periodical TX FIFO size */
-	u32 ptx_fifo_size;		/* Periodical TX FIFO size */
 	u8 speed;				/* USB speed:
 							   USB_SPEED_HIGH: USB 2.0 PHY, e.g. AmebaD/AmebaSmart
 							   USB_SPEED_HIGH_IN_FULL: USB 2.0 PHY in full speed mode, e.g. AmebaD/AmebaSmart
 							   USB_SPEED_FULL: USB 1.1 transceiver, e.g. AmebaDPlus */
 	u8 dma_enable;			/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
-	u8 self_powered;		/* Self powered or not, 0-bus powered, 1-self powered */
 	u8 isr_priority;		/* USB ISR thread priority */
-	u32 nptx_max_err_cnt[USBD_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
+	u8 ext_intr_en;			/* allow class to enable some interrupts*/
+	u8 intr_use_ptx_fifo;	/* Use Periodic TX FIFO for INTR IN transfer, only for shared TxFIFO mode */
+	u32 nptx_max_err_cnt[USB_OTG_MAX_ENDPOINTS]; /* Max Non-Periodical TX transfer error count allowed, if transfer
 							   error count is higher than this value, the transfer status will be determined as failed */
 } usbd_config_t;
 
@@ -92,8 +87,10 @@ typedef struct {
 	u32 ep0_recv_rem_len;					/* The remain data length to receive */
 
 	u8 test_mode;							/* Test mode */
+
+	u8 self_powered;						/* Self powered or not, 0-bus powered, 1-self powered */
+	u8 remote_wakeup_en;					/* Remote wakeup enable or not, 0-disabled, 1-enabled */
 	u8 remote_wakeup;						/* Remote wakeup */
-	u8 alt_setting;							/* Interface alternate setting */
 
 	u8 *ctrl_buf;							/* Buffer for control transfer */
 
@@ -103,13 +100,11 @@ typedef struct {
 
 /* USB class driver */
 typedef struct _usbd_class_driver_t {
-	u8 *(*get_descriptor)(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
+	u8 *(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 
 	u8(*set_config)(usb_dev_t *dev, u8 config);
 	u8(*clear_config)(usb_dev_t *dev, u8 config);
 	u8(*setup)(usb_dev_t *dev, usb_setup_req_t  *req);
-	u8(*get_class_descriptor)(usb_dev_t *dev, usb_setup_req_t  *req);
-	u8(*clear_feature)(usb_dev_t *dev, usb_setup_req_t  *req);
 
 	u8(*sof)(usb_dev_t *dev);
 	u8(*suspend)(usb_dev_t *dev);
@@ -148,6 +143,7 @@ u8 usbd_ep0_receive(usb_dev_t *dev, u8 *buf, u16 len);
 u8 usbd_ep0_transmit_status(usb_dev_t *dev);
 u8 usbd_ep0_receive_status(usb_dev_t *dev);
 u8 usbd_ep0_set_stall(usb_dev_t *dev);
+void usbd_get_str_desc(const char *str, u8 *desc, u16 *len);
 
 #endif /* USBD_H */
 

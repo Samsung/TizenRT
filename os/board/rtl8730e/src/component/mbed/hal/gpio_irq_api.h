@@ -58,7 +58,7 @@ typedef void (*gpio_irq_handler)(uint32_t id, gpio_irq_event event);
   * @param  handler: Interrupt handler to be assigned to the specified pin.
   * @param  id: handler id.
   * @retval none
-  * @note this API only works for Port A pins
+  * @note this API supports all port pins
   */
 int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32_t id);
 
@@ -66,7 +66,7 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
   * @brief  Deinitializes the GPIO device interrupt mode, include mode/trigger/polarity registers.
   * @param  obj: gpio irq object define in application software.
   * @retval none
-  * @note this API only works for Port A pins
+  * @note this API supports all port pins
   */
 void gpio_irq_free(gpio_irq_t *obj);
 

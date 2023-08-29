@@ -15,7 +15,11 @@
 #include "inic_ipc_msg_queue.h"
 
 /* -------------------------------- Defines --------------------------------- */
+#ifndef CONFIG_CFG80211
 #define IPC_MSG_QUEUE_DEPTH (10)
+#else
+#define IPC_MSG_QUEUE_DEPTH (20)
+#endif
 #define IPC_MSG_QUEUE_WARNING_DEPTH (4)
 
 /* -------------------------------- Macros ---------------------------------- */
@@ -292,7 +296,14 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 
 	u32 cnt = 100000;
 
+	/* wifi_hal_interrupt_handle(little_thread) will call rtw_enter_critical(close cpu scheduling), before call this func.
+	if another thread(single_thread) hasn't up_sema, little_thread and single_thread will deadlock */
+	/* LINUX_TODO: better method? */
+#ifdef CONFIG_CFG80211
+	save_and_cli();
+#else
 	rtw_down_sema(&g_ipc_msg_q_priv.msg_send_sema);
+#endif
 
 	/* Wait for another port ack acknowledgement last message sending */
 	while (g_inic_ipc_ex_msg.event_num != IPC_WIFI_MSG_READ_DONE) {
@@ -327,5 +338,9 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 	ipc_send_message(IPC_INT_CHAN_WIFI_TRX_TRAN, (PIPC_MSG_STRUCT)&g_inic_ipc_ex_msg);
 #endif /* IPC_DIR_MSG_TX */
 
+#ifdef CONFIG_CFG80211
+	restore_flags();
+#else
 	rtw_up_sema(&g_ipc_msg_q_priv.msg_send_sema);
+#endif
 }

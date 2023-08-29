@@ -46,7 +46,7 @@ static int is_stdio(FILE *stream)
 FILE *__wrap_fopen(const char *filename, const char *mode)
 {
 	if (lfs_mount_fail) {
-		VFS_DBG(FS_ERROR, "vfs init fail, fopen is not allowed");
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
 		return NULL;
 	}
 
@@ -204,6 +204,11 @@ int  __wrap_fflush(FILE *stream)
 
 int __wrap_remove(const char *filename)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	int ret = 0;
 	char name[1024] = {0};
 	int prefix_len = 0;
@@ -237,6 +242,11 @@ int __wrap_remove(const char *filename)
 
 int __wrap_rename(const char *oldname, const char *newname)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	int ret = 0;
 	char old_name[1024] = {0};
 	char new_name[1024] = {0};
@@ -346,6 +356,11 @@ char *__wrap_fgets(char *str, int num, FILE *stream)
 
 DIR *__wrap_opendir(const char *name)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return NULL;
+	}
+
 	int prefix_len = 0;
 	int user_id = 0;
 	int vfs_id = find_vfs_number(name, &prefix_len, &user_id);
@@ -405,6 +420,11 @@ int __wrap_scandir(const char *dirp, struct dirent ***namelist,
 
 int __wrap_rmdir(const char *path)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	int ret = 0;
 	char name[1024] = {0};
 	int prefix_len = 0;
@@ -438,6 +458,11 @@ int __wrap_rmdir(const char *path)
 
 int __wrap_mkdir(const char *pathname, mode_t mode)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	(void) mode;
 	int ret = 0;
 	char name[1024] = {0};
@@ -472,6 +497,11 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 
 int __wrap_access(const char *pathname, int mode)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	int ret = 0;
 	char name[1024] = {0};
 	int prefix_len = 0;
@@ -499,6 +529,11 @@ int __wrap_access(const char *pathname, int mode)
 
 int __wrap_stat(const char *path, struct stat *buf)
 {
+	if (lfs_mount_fail) {
+		VFS_DBG(VFS_ERROR, "vfs init fail, fopen is not allowed");
+		return -1;
+	}
+
 	int ret = 0;
 	char name[1024] = {0};
 	int prefix_len = 0;

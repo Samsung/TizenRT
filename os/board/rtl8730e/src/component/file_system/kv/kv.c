@@ -6,6 +6,7 @@
 
 #include "kv.h"
 #include "vfs.h"
+#include "ff.h"
 #include "littlefs_adapter.h"
 
 extern FILE *fopen(const char *filename, const char *mode);
@@ -31,7 +32,7 @@ int rt_kv_init(void)
 
 	sprintf(path, "%s:KV", prefix);
 	ret = mkdir(path, 0);
-	if (ret == LFS_ERR_EXIST) {
+	if (ret == LFS_ERR_EXIST || ret == -FR_EXIST) {
 		FS_DBG(FS_INFO, "KV dir already exist");
 		ret = 0;
 	}
@@ -71,7 +72,6 @@ int32_t rt_kv_set(const char *key, const void *val, int32_t len)
 	if (res != 1) {
 		FS_DBG(FS_ERROR, "fwrite failed,err is %d!!", res);
 	}
-
 	fclose((FILE *)finfo);
 	return res;
 }

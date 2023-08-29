@@ -3,6 +3,13 @@
 
 typedef struct {
 	u32 Module;
+	u32 MEM_SD;
+	u32 MEM_DS;
+	u32 MEM_LS;
+} MEMMode_TypeDef;
+
+typedef struct {
+	u32 Module;
 	u32 Status;
 } PWRCFG_TypeDef;
 
@@ -14,24 +21,8 @@ typedef struct {
 	u8 Msk_Ap;
 } WakeEvent_TypeDef;
 
-typedef struct {
-	u32 Module;
-	u32 MEM_SD;
-	u32 MEM_DS;
-	u32 MEM_LS;
-} MEMMode_TypeDef;
-
-typedef struct {
-	u32 wakepin;
-	u32 Status;
-	u32 Polarity; /* 1 is high, 0 is low */
-} WAKEPIN_TypeDef;
-
-extern u8 aon_wakepin[4];
-
 extern WakeEvent_TypeDef sleep_wevent_config[];
 extern PWRCFG_TypeDef sleep_sram_config[];
-extern WAKEPIN_TypeDef sleep_wakepin_config[];
 extern PWRCFG_TypeDef km0_pwrmgt_config[];
 extern PWRCFG_TypeDef aon_pwrmgt_config[];
 extern PWRCFG_TypeDef dsleep_aon_wevent_config[];
@@ -46,18 +37,7 @@ extern void SOCPS_SetNPWakeEvent_MSK0_HP(u32 Option, u32 NewStatus);
 extern void SOCPS_SetNPWakeEvent_MSK1_HP(u32 Option, u32 NewStatus);
 
 extern int SOCPS_AONWakeReason(void);
-extern int SOCPS_WakePinCheck(void);
-extern void SOCPS_AONTimer(u32 SDuration);
-extern void SOCPS_AONTimerINT_EN(u32 Status);
-extern u32 SOCPS_AONTimerGet(VOID);
-extern VOID SOC_AONTimerClearINT(void);
-extern void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity);
-extern void SOCPS_SetWakepinDebounce(u32 Dbnc_cycle, u32 Status);
-extern VOID SOC_WakePinClearINT(u32 wakepin);
-extern void SOCPS_AONTimer_HP(u32 SDuration);
 
-extern VOID SOC_AONTimerClearINT_HP(void);
-extern VOID SOC_WakePinClearINT_HP(u32 wakepin);
 
 extern VOID SOCPS_MMUReFill(VOID);
 

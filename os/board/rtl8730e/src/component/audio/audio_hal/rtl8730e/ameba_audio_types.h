@@ -74,7 +74,23 @@ enum {
 	AMEBA_AUDIO_DEVICE_SPEAKER         = 0,
 	/** play through headphone*/
 	AMEBA_AUDIO_DEVICE_HEADPHONE       = 1,
-	AMEBA_AUDIO_DEVICE_MAX_NUM         = 2,
+	/** play through I2S*/
+	AMEBA_AUDIO_DEVICE_I2S             = 2,
+	AMEBA_AUDIO_DEVICE_MAX_NUM         = 3,
+};
+
+/**
+ * @brief Defines all the audio capture sources.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum {
+	/** microphones */
+	AMEBA_AUDIO_IN_MIC                 = 0,
+	/** play through headphone*/
+	AMEBA_AUDIO_IN_I2S                 = 1,
+	AMEBA_AUDIO_IN_MAX_NUM             = 2,
 };
 
 /**
@@ -88,6 +104,17 @@ enum {
 	AMEBA_AUDIO_DMA_IRQ_MODE         = 0,
 	/** DMA no interrupt mode */
 	AMEBA_AUDIO_DMA_NOIRQ_MODE       = 1,
+};
+
+/**
+ * @brief Defines all the audio micbst type options.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum {
+	AMEBA_AUDIO_MICBST_LINEIN    = 0,
+	AMEBA_AUDIO_MICBST_MICIN     = 1,
 };
 
 #ifdef __cplusplus

@@ -113,7 +113,7 @@ void port_mode(port_t *obj, PinMode mode)
 	for (pin_idx = 0; pin_idx < max_num; pin_idx++) {
 		if (obj->mask & BIT(pin_idx)) {
 			/* PinName = (obj->port << 5 | pin_idx) */
-			pin_mode((obj->port << 5 | pin_idx), mode);
+			pin_mode((PinName)(obj->port << 5 | pin_idx), mode);
 		}
 	}
 }

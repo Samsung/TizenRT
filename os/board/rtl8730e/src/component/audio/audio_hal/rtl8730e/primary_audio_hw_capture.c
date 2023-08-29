@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_hw_compat.h"
 #include <inttypes.h>
 
 #include "audio_hw_debug.h"
@@ -23,6 +24,7 @@
 #include "hardware/audio/audio_hw_types.h"
 #include "hardware/audio/audio_hw_utils.h"
 #include "hardware/audio/audio_hw_capture.h"
+#include "osal_c/osal_time.h"
 #include "osdep_service.h"
 #include "primary_audio_hw_adapter.h"
 
@@ -70,6 +72,7 @@ struct PrimaryAudioHwCapture {
 	CAPTURE_MODE mode;
 	uint32_t channel_for_ref;
 	uint64_t mic_category;
+	uint32_t device;
 
 #if (NO_AFE_PURE_DATA_DUMP || NO_AFE_ALL_DATA_DUMP)
 	char *in_buf;  //2s data
@@ -149,6 +152,7 @@ static int PrimarySetCaptureFormat(struct AudioHwStream *stream, AudioHwFormat f
 static int DoInputStandby(struct PrimaryAudioHwCapture *cap)
 {
 	if (!cap->standby) {
+		ameba_audio_stream_rx_stop(cap->in_pcm);
 		ameba_audio_stream_rx_close(cap->in_pcm);
 		cap->in_pcm = NULL;
 		cap->standby = 1;
@@ -239,12 +243,30 @@ static uint32_t PrimaryGetCaptureLatency(const struct AudioHwCapture *stream)
 	return 15;
 }
 
-static int PrimaryGetCapturePosition(const struct AudioHwCapture *stream, uint32_t *frames, struct timespec *timestamp)
+static int PrimaryGetCapturePosition(const struct AudioHwCapture *stream, uint64_t *frames, struct timespec *timestamp)
 {
-	(void) stream;
-	(void) frames;
-	(void) timestamp;
-	return 0;
+	struct PrimaryAudioHwCapture *cap = (struct PrimaryAudioHwCapture *)stream;
+	int ret = -1;
+
+	rtw_mutex_get(&cap->lock);
+
+	if (cap->in_pcm) {
+		uint64_t captured_frames;
+		if (ameba_audio_stream_rx_get_position(cap->in_pcm, &captured_frames, timestamp) == 0) {
+			*frames = captured_frames;
+			HAL_AUDIO_VERBOSE("frames:%llu", *frames);
+			rtw_mutex_put(&cap->lock);
+			return 0;
+		} else {
+			HAL_AUDIO_ERROR("get ts fail");
+		}
+	} else {
+		HAL_AUDIO_ERROR("%s no in_pcm", __func__);
+	}
+
+	rtw_mutex_put(&cap->lock);
+
+	return ret;
 }
 
 static int ConfigureNoAfePureData(struct PrimaryAudioHwCapture *cap)
@@ -322,7 +344,7 @@ static int StartAudioHwCapture(struct PrimaryAudioHwCapture *cap)
 	int ret = HAL_OSAL_OK;
 	cap->config.channels = cap->requested_channels;
 
-	HAL_AUDIO_INFO("%s", __FUNCTION__);
+	//HAL_AUDIO_INFO("%s", __FUNCTION__);
 
 	switch (cap->mode) {
 	case CAPTURE_NO_AFE_PURE_DATA:
@@ -341,12 +363,13 @@ static int StartAudioHwCapture(struct PrimaryAudioHwCapture *cap)
 	}
 
 	cap->config.frame_size = PrimaryAudioHwCaptureFrameSize(&cap->stream) * cap->config.channels / cap->requested_channels;
-	HAL_AUDIO_INFO("rate = %" PRId32 " , channels = %" PRId32 ", format = %" PRId32 ", period_size = %" PRIu32 ", period_count = %" PRIu32 ", frame_size = %" PRId32
-				   "",
-				   cap->config.rate, cap->config.channels, cap->config.format, cap->config.period_size, cap->config.period_count, cap->config.frame_size);
+	HAL_AUDIO_VERBOSE("rate = %" PRId32 " , channels = %" PRId32 ", format = %" PRId32 ", period_size = %" PRIu32 ", period_count = %" PRIu32 ", frame_size = %"
+					  PRId32
+					  "",
+					  cap->config.rate, cap->config.channels, cap->config.format, cap->config.period_size, cap->config.period_count, cap->config.frame_size);
 
 	if (cap->in_pcm == NULL) {
-		cap->in_pcm = ameba_audio_stream_rx_init(cap->config);
+		cap->in_pcm = ameba_audio_stream_rx_init(cap->device, cap->config);
 
 	}
 
@@ -368,7 +391,7 @@ static ssize_t NoAfePureDataRead(struct AudioHwCapture *stream, void *buffer, si
 			HAL_AUDIO_ERROR("read bytes once is too large.");
 			return HAL_OSAL_ERR_INVALID_PARAM;
 		}
-		HAL_AUDIO_VERBOSE("read bytes:%d, driver_bytes:%d", bytes, driver_bytes);
+		HAL_AUDIO_VERBOSE("read bytes:%u, driver_bytes:%lu", bytes, driver_bytes);
 		ameba_audio_stream_rx_read(cap->in_pcm, cap->stream_buf, driver_bytes);
 		for (i = 0; i < driver_bytes / driver_frame_size; i++) {
 			if (cap->config.format == AUDIO_HW_FORMAT_PCM_16_BIT) {
@@ -497,7 +520,9 @@ static ssize_t PrimaryCaptureRead(struct AudioHwCapture *stream, void *buffer, s
 		// in this StartAudioHwCapture, it needs to check capture mode, so this apis should be called
 		// after setparameters. Because setparameters need to be set after RTAudioRecord_start(), so this api
 		// can only be called in the first time call RTAudioRecord_read().Don't move it to other place.
+		//int64_t rx_start_ns = OsalGetSysTimeNs(OSAL_TIME_MONOTONIC);
 		ret = StartAudioHwCapture(cap);
+		//HAL_AUDIO_INFO("rx init time:%lld ns", OsalGetSysTimeNs(OSAL_TIME_MONOTONIC) - rx_start_ns);
 		if (ret == 0) {
 			cap->standby = 0;
 		} else {
@@ -643,6 +668,7 @@ struct AudioHwCapture *GetAudioHwCaptureFuncs(struct AudioHwAdapter *adapter, co
 	rtw_mutex_init(&in->lock);
 	ladap->input = in;
 	in->mode = CAPTURE_NO_AFE_PURE_DATA;
+	in->device = AMEBA_AUDIO_IN_MIC;
 
 	in->config.rate = attrs->sample_rate;
 	in->config.format = attrs->format;
@@ -660,6 +686,11 @@ struct AudioHwCapture *GetAudioHwCaptureFuncs(struct AudioHwAdapter *adapter, co
 		}
 	} else {
 		in->config.mode = AUDIO_HW_DMA_IRQ_MODE;
+		if (attrs->buffer_bytes) {
+			in->config.period_size = attrs->buffer_bytes / PrimaryAudioHwCaptureFrameSize(&in->stream);
+		} else {
+			in->config.period_size = CAPTURE_PERIOD_SIZE;
+		}
 	}
 
 #if (NO_AFE_PURE_DATA_DUMP || NO_AFE_ALL_DATA_DUMP)
@@ -667,16 +698,20 @@ struct AudioHwCapture *GetAudioHwCaptureFuncs(struct AudioHwAdapter *adapter, co
 	in->out_buf = NULL;
 #endif
 
+	//both dmic_ref_amic and in_mic are in ameba's soc codec control, I2S does not use ameba's soc codec control.
 	if (desc->pins == AUDIO_HW_PIN_IN_DMIC_REF_AMIC) {
-		HAL_AUDIO_INFO("ref dmic & amic case..");
+		HAL_AUDIO_VERBOSE("ref dmic & amic case");
 		ameba_audio_ctl_set_mic_usage(ameba_audio_get_ctl(), AMEBA_AUDIO_CAPTURE_USAGE_DMIC_REF_AMIC);
 	} else if (desc->pins == AUDIO_HW_PIN_IN_MIC) {
-		HAL_AUDIO_INFO("ref amic case..");
+		HAL_AUDIO_VERBOSE("ref amic case");
 		ameba_audio_ctl_set_mic_usage(ameba_audio_get_ctl(), AMEBA_AUDIO_CAPTURE_USAGE_AMIC);
+	} else if (desc->pins == AUDIO_HW_PIN_IN_I2S) {
+		HAL_AUDIO_VERBOSE("i2s case");
+		in->device = AMEBA_AUDIO_IN_I2S;
 	} else {
 		HAL_AUDIO_ERROR("pins:%d for capture not supported, now using default amic instead", desc->pins);
 	}
 
-	HAL_AUDIO_INFO("%s done", __FUNCTION__);
+	HAL_AUDIO_VERBOSE("%s done", __FUNCTION__);
 	return &in->stream;
 }

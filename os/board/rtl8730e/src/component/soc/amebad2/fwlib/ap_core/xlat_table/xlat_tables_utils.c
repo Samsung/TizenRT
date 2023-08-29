@@ -325,7 +325,7 @@ static uint64_t *find_xlat_table_entry(uintptr_t virtual_addr,
 	 */
 	assert(false);
 
-	return NULL;
+	//return NULL;
 }
 
 

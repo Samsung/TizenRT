@@ -50,15 +50,15 @@ void ipc_app_init_thread(void *param)
 	/* init heap address and size in retention ram */
 	RRAM_TypeDef *rram = RRAM;
 
-	memset(imq_info_region.xStartAddress, 0, imq_info_region.xSizeInBytes);
-	memset(imq_heap_region.xStartAddress, 0, imq_heap_region.xSizeInBytes);
+	memset((void *)imq_info_region.xStartAddress, 0, imq_info_region.xSizeInBytes);
+	memset((void *)imq_heap_region.xStartAddress, 0, imq_heap_region.xSizeInBytes);
 
 	imq_printf(_INFO_, "IMQ_INIT_DONE: %lu\n", rram->IMQ_INIT_DONE);
 
 	rram->IMQ_HEAP_ADDR = imq_info_region.xStartAddress;
 	rram->IMQ_HEAP_SIZE = imq_info_region.xSizeInBytes;
 	rram->IMQ_INIT_DONE = 1;
-	DCache_Clean(rram, sizeof(RRAM_TypeDef));
+	DCache_Clean((u32)rram, sizeof(RRAM_TypeDef));
 
 	imq_printf(_INFO_, "IMQ_INIT_DONE: %lu\n", rram->IMQ_INIT_DONE);
 #else
@@ -77,7 +77,7 @@ void ipc_app_init_thread(void *param)
 	imq_info_region.xSizeInBytes = rram->IMQ_HEAP_SIZE;
 #endif
 	IPC_Message_Queue_Init();
-exit:
+
 	rtw_thread_exit();
 }
 

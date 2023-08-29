@@ -241,9 +241,9 @@ void PLL_I2S_98P304M_ClkTune(u32 ppm, u32 action)
   * @param  ppm: ~1.69ppm per FOF step
   * @param  action: slower or faster or reset
   *          This parameter can be one of the following values:
-  *            @arg PLL_AUTO: reset to auto 45.158M
-  *            @arg PLL_FASTER: pll clock faster than 45.158M
-  *            @arg PLL_SLOWER: pll clock slower than 45.158M
+  *            @arg PLL_AUTO: reset to auto 45.1584M
+  *            @arg PLL_FASTER: pll clock faster than 45.1584M
+  *            @arg PLL_SLOWER: pll clock slower than 45.1584M
   */
 void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action)
 {
@@ -256,11 +256,11 @@ void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action)
 
 
 	if (action == PLL_FASTER) {
-		F0F_new = 2071 + (u32)(ppm * 0.59);
+		F0F_new = 2076 + (u32)(ppm * 0.59);
 	} else if (action == PLL_SLOWER) {
-		F0F_new = 2071 - (u32)(ppm * 0.59);
+		F0F_new = 2076 - (u32)(ppm * 0.59);
 	} else {
-		F0F_new = 2071;
+		F0F_new = 2076;
 	}
 
 	PLL_BASE -> PLL_I2SPLL2_CTRL3 &= (~PLL_MASK_IPLL2_F0F_SDM);

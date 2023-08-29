@@ -16,6 +16,84 @@ extern "C"
 #include <basic_types.h>
 
 /**
+ * @struct    bt_uuid
+ * @brief     A 'tentative' type definition.
+ */
+struct bt_uuid
+{
+	uint8_t type;        /*!< UUID type */
+};
+
+/**
+ * @def       BT_UUID_INIT_16
+ * @brief     Initialize a 16-bit UUID.
+ * @param     value: 16-bit UUID value in host endianness.
+ */
+#define BT_UUID_INIT_16(value) \
+{                              \
+	.uuid = {BT_UUID_TYPE_16}, \
+	.val = (value),            \
+}
+
+/**
+ * @struct    bt_uuid_16
+ * @brief     UUID16 type definition.
+ */
+struct bt_uuid_16
+{
+	struct bt_uuid uuid; /*!< UUID generic type */
+	uint16_t val;		 /*!< UUID value, 16-bit in host endianness */
+};
+
+/**
+ * @struct    bt_uuid_128
+ * @brief     UUI128 type definition.
+ */
+struct bt_uuid_128
+{
+	struct bt_uuid uuid; /*!< UUID generic type */
+	uint8_t val[16]; /*!< UUID value, 128-bit in host endianness */
+};
+
+/**
+ * @def       CONTAINER_OF
+ * @brief     Get a pointer to a container structure from an element
+ * @param     ptr: pointer to a structure element
+ * @param     type: name of the type that @p ptr is an element of
+ * @param     field: the name of the field within the struct @p ptr points to
+ * @return    a pointer to the structure that contains @p ptr
+ */
+#ifndef CONTAINER_OF
+#define CONTAINER_OF(ptr, type, field) \
+	((type *)(((char *)(ptr)) - offsetof(type, field)))
+#endif
+
+/**
+ * @def       BT_UUID_DECLARE_16
+ * @brief     Helper to declare a 16-bit UUID inline.
+ * @param     value: 16-bit UUID value in host endianness.
+ * @return    Pointer to a generic UUID. @ref struct bt_uuid *
+ */
+#define BT_UUID_DECLARE_16(value) \
+((struct bt_uuid *)((struct bt_uuid_16[]){BT_UUID_INIT_16(value)}))
+
+/**
+ * @def       BT_UUID_16
+ * @brief     Helper macro to access the 16-bit UUID from a generic UUID pointer.
+ * @param     __u: Generic UUID pointer, @ref struct bt_uuid *
+ * @return    16-bit UUID pointer, @ref struct bt_uuid_16 *
+ */
+#define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
+
+/**
+ * @def       BT_UUID_128
+ * @brief     Helper macro to access the 128-bit UUID from a generic UUID pointer.
+ * @param     __u: Generic UUID pointer, @ref struct bt_uuid *
+ * @return    128-bit UUID pointer, @ref struct bt_uuid_128 *
+ */
+#define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
+
+/**
  * @def       RTK_BT_LE_DEFAULT_ATT_MTU_SIZE
  * @brief     Bluetooth default ATT MTU size.
  */
@@ -25,25 +103,25 @@ extern "C"
  * @def       BT_UUID_SIZE_16
  * @brief     Bluetooth UUID16 size.
  */
-#define BT_UUID_SIZE_16 2
+#define BT_UUID_SIZE_16                     2
 
 /**
  * @def       BT_UUID_SIZE_32
  * @brief     Bluetooth UUID32 size.
  */
-#define BT_UUID_SIZE_32 4
+#define BT_UUID_SIZE_32                     4
 
 /**
  * @def       BT_UUID_SIZE_128
  * @brief     Bluetooth UUID128 size.
  */
-#define BT_UUID_SIZE_128 16
+#define BT_UUID_SIZE_128                    16
 
 /**
  * @def       BT_UUID_SIZE_MAX
  * @brief     Bluetooth UUIDMAX size.
  */
-#define BT_UUID_SIZE_MAX BT_UUID_SIZE_128
+#define BT_UUID_SIZE_MAX                    BT_UUID_SIZE_128
 
 /**
  * @def       BT_UUID_GATT_PRIMARY_VAL
@@ -167,28 +245,6 @@ extern "C"
  * @brief     GATT Characteristic Aggregated Format UUID value
  */
 #define BT_UUID_GATT_CAF_VAL 				0x2905
-
-/**
- * @def   	  RTK_BT_GATT_INTERNAL
- * @brief     The attribute value is defined as a static(or global) variable in user APP,  
- *            and the variable's pointer will be passed into lower stack. If this attribute is 
- *            read by remote, lower stack will auto send this attribute value to response
- *            to read request, if this attribute is write by remote, lower stack will auto 
- * 	          write the attribute value into this variable and response to write request. 
- *            User APP layer need not to care it.
- *            
- */
-#define RTK_BT_GATT_INTERNAL                0
-
-/**
- * @def       RTK_BT_GATT_APP
- * @brief     This attribute will be handled by User APP. ALL read/write to this attribute 
- *            will be indicated to user app by a callback, and user App need to call 
- *            @ref rtk_bt_gatts_read_resp or @ref rtk_bt_gatts_write_resp to response to
- *            read/write request from remote and modify the attribute value maintained
- *            in user APP when recevie write request.
- */
-#define RTK_BT_GATT_APP                     1
 
 /**
  * @def       RTK_BT_GATT_CHRC_BROADCAST

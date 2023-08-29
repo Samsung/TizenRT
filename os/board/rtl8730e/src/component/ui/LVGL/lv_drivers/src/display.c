@@ -20,11 +20,10 @@
 #include "st7701s.h"
 #endif
 
-#define LAYER_ID 2
+#define LAYER_ID 0
 #define DISPLAY_WIDTH   480
 #define DISPLAY_HEIGHT  800
 
-static u8 *g_img_buffer = NULL;
 
 void display_init()
 {
@@ -36,30 +35,24 @@ void display_init()
 		image_format = ARGB8888;
 	}
 	st7701s_init(image_format);
-	g_img_buffer = st7701s_get_layer_buffer(LAYER_ID);
 #endif
 }
 
 void display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
 {
-	if (!g_img_buffer) {
+	u8 *img_buffer = st7701s_get_layer_buffer(LAYER_ID);
+	if (!img_buffer) {
 		return;
 	}
-
-	u32 y, i;
 
 	u32 w = ((u32) area->x2 - (u32) area->x1 + 1);
 	u32 h = ((u32) area->y2 - (u32) area->y1 + 1);
 
 	if (w == DISPLAY_WIDTH) {
-		memcpy(g_img_buffer + (u32) area->y1 * sizeof(u8) * DISPLAY_WIDTH * LV_COLOR_DEPTH / 8,
+		memcpy(img_buffer + (u32) area->y1 * sizeof(u8) * DISPLAY_WIDTH * LV_COLOR_DEPTH / 8,
 			   (u8 *) color_p, sizeof(u8) * DISPLAY_WIDTH * LV_COLOR_DEPTH / 8 * h);
 	} else {
-		for (y = 0, i = (u32) area->y1 ; i <= (u32) area->y2 ; ++i, ++y) {
-			memcpy(g_img_buffer + (u32) area->x1 * sizeof(u8) * LV_COLOR_DEPTH / 8 + i * sizeof(u8) * DISPLAY_WIDTH * LV_COLOR_DEPTH / 8,
-				   (u8 *) color_p + y * sizeof(u8) * w * LV_COLOR_DEPTH / 8,
-				   sizeof(u8) * w * LV_COLOR_DEPTH / 8);
-		}
+		return;
 	}
 
 #ifdef CONFIG_DISDLAY_DRIVER_ST7701S_EN

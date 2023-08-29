@@ -16,9 +16,7 @@
 #ifndef AMEBA_COMPONENT_AUDIO_HAL_SRC_INCLUDE_HAL_OSAL_ERRNOS_H
 #define AMEBA_COMPONENT_AUDIO_HAL_SRC_INCLUDE_HAL_OSAL_ERRNOS_H
 
-#ifndef __ICCARM__
-#include <sys/types.h>
-#endif
+#include "audio_hw_compat.h"
 #include <errno.h>
 
 #ifdef __cplusplus

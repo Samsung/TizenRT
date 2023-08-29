@@ -1344,7 +1344,7 @@ typedef struct {
 	u8 MIPI_BTADis;
 
 	u8 MIPI_LaneNum;
-	u8 MIPI_FrameRate;
+	u16 MIPI_FrameRate;
 	u16 MIPI_VideDataLaneFreq;	/* in Mbps */
 
 	u16 MIPI_HSA;				/* in bytes */

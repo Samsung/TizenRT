@@ -2,9 +2,25 @@
 
 ####  (1) <Enable RPC test config>
 
-In menuconfig enable IPC-2.0
+For rtl8720e:
+        MENUCONFIG FOR KM4 CONFIG  --->
+        IPC Message Queue Config  --->
+        Enable CONFIG IPC Message Queue->Enable IPC Message Queue->IPC_Message_Queue_1.0
 
-For rtl8726e:
+        MENUCONFIG FOR KR4 CONFIG  --->
+        IPC Message Queue Config  --->
+        Enable CONFIG IPC Message Queue->Enable IPC Message Queue->IPC_Message_Queue_1.0
+For rtl8730e:
+        MENUCONFIG FOR HP CONFIG  --->
+        IPC Message Queue Config  --->
+        Enable CONFIG IPC Message Queue->Enable IPC Message Queue->IPC_Message_Queue_2.0
+
+        MENUCONFIG FOR AP CONFIG  --->
+        IPC Message Queue Config  --->
+        Enable CONFIG IPC Message Queue->Enable IPC Message Queue->IPC_Message_Queue_2.0
+
+
+For rtl8720e:
 project\realtek_amebaLite_va0_example\GCC-RELEASE\project_kr4\vsdk\config\.config
 project\realtek_amebaLite_va0_example\GCC-RELEASE\project_km4\asdk\config\.config
 

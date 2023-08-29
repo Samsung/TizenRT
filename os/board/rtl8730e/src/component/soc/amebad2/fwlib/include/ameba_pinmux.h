@@ -270,7 +270,7 @@ _LONG_CALL_ void Pinmux_Swdoff(void);
   *    @arg ENABLE: Enable digital path input.
   *    @arg DISABLE: Disable digital path input.
   *  @retval None
-  *  @note only valid for PAD A: PA0~PA8
+  *  @note only valid for ADC and CTC pads
   */
 __STATIC_INLINE
 void PAD_InputCtrl(u8 PinName, u32 NewState)
@@ -301,7 +301,7 @@ void PAD_InputCtrl(u8 PinName, u32 NewState)
   *    @arg ENABLE: Enable digital path input.
   *    @arg DISABLE: Disable digital path input.
   *  @retval None
-  *  @note Only valid for Audio share PAD: PA18~PA31 & PB0~PB6.
+  *  @note Only valid for Audio share PADs.
   *  @note If PinName is 0xFF, all the pins of Audio share PAD will be controlled.
   */
 __STATIC_INLINE

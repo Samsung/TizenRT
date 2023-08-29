@@ -3,7 +3,7 @@
 
 #include "basic_types.h"
 
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_RTL8720F)
 struct _rom_ssl_ram_map {
 	/* OS interface */
 	void *(*ssl_malloc)(unsigned int sz);
@@ -61,7 +61,7 @@ struct _rom_mbedtls_ram_map {
 	void (*ssl_free)(void *);
 	int (*ssl_printf)(const char *, ...);
 
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_RTL8720F)
 	//AES HW CRYPTO
 	int (*hw_crypto_aes_ecb_init)(const u8 *key, const u32 keylen);
 	int (*hw_crypto_aes_ecb_decrypt)(
@@ -107,7 +107,7 @@ struct _rom_mbedtls_ram_map {
 #endif
 };
 
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_RTL8720F)
 extern struct _rom_ssl_ram_map rom_ssl_ram_map;
 #else
 extern struct _rom_mbedtls_ram_map rom_ssl_ram_map;

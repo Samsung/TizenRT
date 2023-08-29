@@ -147,7 +147,7 @@ void AUDIO_CODEC_SetI2SSRC(u32 i2s_sel, u32 src)
 }
 
 /**
-  * @brief  Enable or disable adc/dac ananlog clock.
+  * @brief  Enable or disable ad/da ananlog clock.
   * @param  newstate: enable or disable dac/adc analog clock.
   *			 This parameter can be one of the following values:
   *			   @arg ENABLE
@@ -557,8 +557,8 @@ static void AUDIO_CODEC_VREF_Calib(void)
 	u8 audio_vref_f_data = 0;
 	u8 audio_vref_s_data = 0;
 
-	EFUSE_PMAP_READ8(0, VOL_AUDIO_VREF_1V8_F, &audio_vref_f_data, L25EOUTVOLTAGE);
-	EFUSE_PMAP_READ8(0, VOL_AUDIO_VREF_1V8_S, &audio_vref_s_data, L25EOUTVOLTAGE);
+	OTP_Read8(VOL_AUDIO_VREF_1V8_F, &audio_vref_f_data);
+	OTP_Read8(VOL_AUDIO_VREF_1V8_S, &audio_vref_s_data);
 
 	/* Write AUDIO_VREF */
 	Tmp = AUD->AUD_MICBST_CTL1;
@@ -817,7 +817,7 @@ void AUDIO_CODEC_SetADCVolume(u32 adc_sel, u32 gain)
 
 
 /**
-  * @brief  Set HPF mode and select HPF FC
+  * @brief  Set per ADC channel HPF mode and select HPF FC
   * @param  adc_sel: select adc channel.
   *			 This parameter can be one of the following values:
   *			   @arg ADC1
@@ -966,7 +966,11 @@ void AUDIO_CODEC_SetADCHPF(u32 adc_sel, u32 fc, u32 newstate)
 }
 
 /**
-  * @brief  Set ADC ASRC mode.
+  * @brief  Select I2S and set ADC ASRC mode according to the sample rate.
+  * @param  i2s_sel: select i2s.
+  *			 This parameter can be one of the following values:
+  *			   @arg I2S0
+  *			   @arg I2S1
   * @param  adc_sel: select adc channel.
   *          This parameter can be one of the following values:
   *            @arg ADC1
@@ -984,7 +988,7 @@ void AUDIO_CODEC_SetADCHPF(u32 adc_sel, u32 fc, u32 newstate)
   *			   @arg ENABLE
   * @retval None
   */
-void AUDIO_CODEC_SetADCASRC(u32 adc_sel, u32 sr, u32 newstate)
+void AUDIO_CODEC_SetADCASRC(u32 i2s_sel, u32 adc_sel, u32 sr, u32 newstate)
 {
 
 	u32 Tmp;
@@ -997,15 +1001,30 @@ void AUDIO_CODEC_SetADCASRC(u32 adc_sel, u32 sr, u32 newstate)
 	}
 
 	if (sr == SR_96K || sr == SR_88P2K) {
-		Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_2);
-		Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_0;
-		Tmp |= AUD_ASRC_RATE_SEL_RX_0(1);
-		HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_2, Tmp);
+		if (i2s_sel == I2S0) {
+			Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_2);
+			Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_0;
+			Tmp |= AUD_ASRC_RATE_SEL_RX_0(1);
+			HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_2, Tmp);
+
+		} else {
+			Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_4);
+			Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_1;
+			Tmp |= AUD_ASRC_RATE_SEL_RX_1(1);
+			HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_4, Tmp);
+		}
 	} else {
-		Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_2);
-		Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_0;
-		Tmp |= AUD_ASRC_RATE_SEL_RX_0(0);
-		HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_2, Tmp);
+		if (i2s_sel == I2S0) {
+			Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_2);
+			Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_0;
+			Tmp |= AUD_ASRC_RATE_SEL_RX_0(0);
+			HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_2, Tmp);
+		} else {
+			Tmp = HAL_READ32(audio_base, CODEC_ASRC_CONTROL_4);
+			Tmp &= ~AUD_MASK_ASRC_RATE_SEL_RX_1;
+			Tmp |= AUD_ASRC_RATE_SEL_RX_1(0);
+			HAL_WRITE32(audio_base, CODEC_ASRC_CONTROL_4, Tmp);
+		}
 	}
 
 	Tmp = HAL_READ32(audio_base, CODEC_CLOCK_CONTROL_6);
@@ -1214,8 +1233,8 @@ void AUDIO_CODEC_SetADCMute(u32 adc_sel, u32 newstate)
 
 
 /**
-  * @brief  Set per adc mix mute ad input path to mute or unmute.
-  * @param  ad_chn: select adc input path channel
+  * @brief  Set per adc mix mute type and state.
+  * @param  adc_num: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADC1
   *			   @arg ADC2
@@ -1418,7 +1437,8 @@ void AUDIO_CODEC_SetADCMixMute(u32 adc_num, u32 type,  			      u32 newstate)
 }
 
 /**
-  * @brief  Select per adc analog ad source.
+  * @brief  Select analog ad source for per ad channel .
+  * @param  ad_chn: select per analog adc channel src.
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
   *			   @arg ADCHN2
@@ -1778,7 +1798,14 @@ void AUDIO_CODEC_SetMicBstPowerMode(u32 amic_num, u32 powermode)
 
 
 /**
-  * @brief Audio Codec micbias power on or power down.
+  * @brief Audio Codec micbias pcut power on or power down.
+  * @param  amic_num: select amic channel
+  *			 This parameter can be one of the following values:
+  *			   @arg AMIC1
+  *			   @arg AMIC2
+  *			   @arg AMIC3
+  *			   @arg AMIC4
+  *			   @arg AMIC5
   * @param	micbias_mode: micbias power on or power down
   * 		 This parameter can be one of the following values:
   * 		   @arg POWER_ON:
@@ -2156,8 +2183,8 @@ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate)
 }
 
 /**
-  * @brief  mute or unmute  dmic input path.
-  * @param  dmic_num: select adc input path channel
+  * @brief  Set dmic channel source.
+  * @param  ad_chn: select adc input path channel
   *			 This parameter can be one of the following values:
   *			   @arg ADCHN1
   *			   @arg ADCHN2
@@ -2167,7 +2194,7 @@ void AUDIO_CODEC_SetDmicClk(u32 clk, u32 newstate)
   *			   @arg ADCHN6
   *			   @arg ADCHN7
   *			   @arg ADCHN8
-  * @param  newstate: mute or unmute option for per DMIC mix.
+  * @param  dmic_num: mute or unmute option for per DMIC mix.
   *			 This parameter can be one of the following values:
   *			   @arg DMIC1
   *			   @arg DMIC2
@@ -2253,7 +2280,7 @@ void AUDIO_CODEC_SetDmicSrc(u32 ad_chn, u32 dmic_num)
 }
 
 /**
-  * @brief  Set ADC I2S source.
+  * @brief  Set I2S source for ADC.
   * @param  i2s_sel: select i2s.
   *			 This parameter can be one of the following values:
   *			   @arg I2S0
@@ -2579,9 +2606,11 @@ void AUDIO_CODEC_SetDACHPF(u32 channel, u32 newstate)
 
 /**
   * @brief  Enable or disable DAC ASRC mode and select asrc rate.
+  * @param  sr: sample rate
+  * @param  newstate: enable or disable per ad channel HPF mode
   *			 This parameter can be one of the following values:
-  *			   @arg DISABLE
   *			   @arg ENABLE
+  *			   @arg DISABLE
   * @retval None
   */
 void AUDIO_CODEC_SetDACASRC(u32 sr, u32 newstate)
@@ -3100,7 +3129,7 @@ void AUDIO_CODEC_SetADDALPBK(u32 newstate)
 }
 
 /**
-  * @brief  select ADC path decimation source
+  * @brief  Slect ADC path decimation source
   * @param  adc_sel: select adc channel
   *			 This parameter can be one of the following values:
   *			   @arg ADC1

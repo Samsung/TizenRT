@@ -196,6 +196,7 @@ ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
 # Temporary added to fix compile issue
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/file_system/fatfs
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/file_system/fatfs/r0.14b/include
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/file_system/vfs2.0
 
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/cmsis

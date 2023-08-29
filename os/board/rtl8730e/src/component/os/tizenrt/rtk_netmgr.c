@@ -691,20 +691,16 @@ trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
 	if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
 		int *mode = (int *)msg->data;
-		int ips_mode, lps_mode;
+		int lps_mode;
 		if (*mode == TRWIFI_POWERMODE_ON) {
 			ndbg("[RTK] set power mode on\n");
-			ips_mode = TRUE;
 			lps_mode = TRUE;
-			wifi_set_ips_enable(ips_mode);
-			wifi_set_ips_enable(ips_mode);
+			wifi_set_lps_enable(lps_mode);
 			return TRWIFI_SUCCESS;
 		} else if (*mode == TRWIFI_POWERMODE_OFF) {
 			ndbg("[RTK] set power mode off\n");
-			ips_mode = FALSE;
 			lps_mode = FALSE;
-			wifi_set_ips_enable(ips_mode);
-			wifi_set_ips_enable(ips_mode);
+			wifi_set_lps_enable(lps_mode);
 			return TRWIFI_SUCCESS;
 		}
 	}

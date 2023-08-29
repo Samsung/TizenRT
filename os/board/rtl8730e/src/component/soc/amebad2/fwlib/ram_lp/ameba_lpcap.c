@@ -11,15 +11,15 @@
 u32 ap_sleep_timeout = 0xffffffff;
 u8 ap_sleep_type;
 u32 ap_pll_backup;
-
+u32 APDslpEn;
 // 0x1 for core 0, 0x3 for core 0/1
 #define CORE_NUM 0x1
 void ap_power_on_ctrl(void)
 {
 	CA32_TypeDef *ca32 = CA32_BASE;
 
-	/* step 0: AP L1 Active mode */
-	ca32->CA32_SRAM_CTRL2 &= (~CA32_MASK_CORE_SRAM_DS);
+	/* step 0: AP L1/L2 Active mode */
+	ca32->CA32_SRAM_CTRL2 &= (~(CA32_MASK_CORE_SRAM_DS | CA32_BIT_L2_SRAM_RET));
 
 	/* step 1: set ISO */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_ISO, (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_ISO) | HSYS_BIT_ISO_HP_AP_TOP));
@@ -91,8 +91,8 @@ void ap_power_off_ctrl(void)
 	/* step 7: close ap l2 cache ram power */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC) & (~HSYS_BIT_PSW_HP_AP_L2));
 
-	/* AP L1 Cache DS mode */
-	ca32->CA32_SRAM_CTRL2 |= CA32_MASK_CORE_SRAM_DS;
+	/* AP L1 Cache DS mode and L2 RET mode */
+	ca32->CA32_SRAM_CTRL2 |= (CA32_MASK_CORE_SRAM_DS | CA32_BIT_L2_SRAM_RET);
 
 }
 
@@ -115,9 +115,12 @@ void ap_power_gate(void)
 	}
 
 	ap_power_off_ctrl();
+	pmu_release_wakelock(PMU_AP_RUN);
+	if (APDslpEn) {
+		pmu_release_deepwakelock(PMU_AP_RUN);
+	}
 
 	DBG_8195A("CA7PG-\n");
-	pmu_release_wakelock(PMU_AP_RUN);
 }
 
 void ap_power_on(void)
@@ -126,20 +129,17 @@ void ap_power_on(void)
 		DBG_8195A("AP PW Already\n");
 		return;
 	}
-
 	pmu_acquire_wakelock(PMU_AP_RUN);
+	pmu_acquire_deepwakelock(PMU_AP_RUN);
 
 	ap_power_on_ctrl();
 
 	DBG_8195A("CA7PW-\n");
-	/* use ipc interrupt to tell CA7 wake */
-	//IPC_MSG_STRUCT ipc_message = {0};
-	//ipc_send_message(IPC_LP_TO_AP, IPC_L2A_Channel1, &ipc_message);
 }
 
 void ap_clk_gate_ctrl(void)
 {
-
+	CA32_TypeDef *ca32 = CA32_BASE;
 	/* disable CA7 clock */
 	//HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE, HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & (~HSYS_BIT_CKE_AP));
 
@@ -147,14 +147,22 @@ void ap_clk_gate_ctrl(void)
 		/* disable CA7 PLL*/
 		PLL_AP(DISABLE);
 	}
+
+	/* AP L1 Cache DS mode and L2 RET mode */
+	ca32->CA32_SRAM_CTRL2 |= (CA32_MASK_CORE_SRAM_DS | CA32_BIT_L2_SRAM_RET);
 }
 
 void ap_clk_wake_ctrl(void)
 {
+	CA32_TypeDef *ca32 = CA32_BASE;
+
 	if (RRAM->APPLL_STATE == TRUE) {
 		/* open CA7 PLL*/
 		PLL_AP(ENABLE);
 	}
+
+	/* AP L1/L2 Active mode */
+	ca32->CA32_SRAM_CTRL2 &= (~(CA32_MASK_CORE_SRAM_DS | CA32_BIT_L2_SRAM_RET));
 	/* enable CA7 clock */
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE, HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) | HSYS_BIT_CKE_AP);
 }
@@ -180,9 +188,13 @@ void ap_clock_gate(void)
 #endif
 	/* since CA7 will be blocked even if interrupt happens, so still do clock gate here*/
 	ap_clk_gate_ctrl();
+	pmu_release_wakelock(PMU_AP_RUN);
+	if (APDslpEn) {
+		pmu_release_deepwakelock(PMU_AP_RUN);
+	}
 
 	DBG_8195A("CA7CG-\n");
-	pmu_release_wakelock(PMU_AP_RUN);
+
 }
 
 void ap_clock_on(void)
@@ -191,17 +203,12 @@ void ap_clock_on(void)
 		DBG_8195A("AP CW Already\n");
 		return;
 	}
-
 	pmu_acquire_wakelock(PMU_AP_RUN);
+	pmu_acquire_deepwakelock(PMU_AP_RUN);
 
 	ap_clk_wake_ctrl();
 
-	/* use ipc interrupt to tell CA7 wake */
-	IPC_MSG_STRUCT ipc_message = {0};
-	ipc_send_message(IPC_LP_TO_AP, IPC_L2A_Channel1, &ipc_message);
-
 	DBG_8195A("CA7CW-\n");
-
 }
 
 
@@ -219,7 +226,6 @@ void ap_resume(void)
 		DBG_8195A("already clk on\n");
 		return;
 	}
-
 	pmu_acquire_wakelock(PMU_AP_RUN);
 
 	/* check km4 state, km4 should be active before CA7 run*/
@@ -297,6 +303,11 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqStat
 	DCache_Invalidate((u32)psleep_param, sizeof(SLEEP_ParamDef));
 
 	ap_sleep_type = psleep_param->sleep_type;
+	if (psleep_param->dlps_enable) {
+		APDslpEn = TRUE;
+	} else {
+		APDslpEn = FALSE;
+	}
 
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:

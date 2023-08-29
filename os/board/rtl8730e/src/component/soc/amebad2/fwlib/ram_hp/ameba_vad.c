@@ -25,6 +25,10 @@
 
 /**
   * @brief  Power up the VAD module. Must be called before other configurations.
+  * @param  clock_source
+  *         This parameter can be one of the following values:
+  *            @arg VAD_OSC
+  *            @arg VAD_XTAL
   */
 void VAD_Power_Init(u32 clock_source)
 {
@@ -48,6 +52,22 @@ void VAD_Power_Init(u32 clock_source)
 	reg_val |= LSYS_CKSL_VADM(0);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, reg_val);
 }
+
+/**
+  * @brief  Set VAD 24bit
+  */
+void VAD_Set_Bit(void)
+{
+	VAD_TypeDef *VAD;
+	if (TrustZone_IsSecure()) {
+		VAD = ((VAD_TypeDef *)(VAD_REG_BASE_S));
+	} else {
+		VAD = ((VAD_TypeDef *)(VAD_REG_BASE));
+	}
+
+	VAD->VAD_BUF_CTRL0 &= ~VAD_BIT_BIT_SEL;
+}
+
 
 /**
   * @brief  Initialize the ADC path of the codec to be used
@@ -413,7 +433,7 @@ void VAD_Interrupt_set(u32 vad_interrupt_source, IRQ_FUN CallbackFunc, u32 IrqPr
 
 
 /**
-  * @brief  Configure VAD buf operation(single block)
+  * @brief  Configure VAD buf operation(one block)
   * @param  codec_index
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -485,7 +505,7 @@ void VAD_Buf_move_one(u32 codec_index, u32 block_index, u32 transfer_mode)
 }
 
 /**
-  * @brief  Configure VAD buf operation(double block)
+  * @brief  Configure VAD buf operation(two block)
   * @param  codec_index_x
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -620,7 +640,7 @@ void VAD_Buf_move_two(u32 codec_index_0, u32 codec_index_1, u32 block_index, u32
 
 
 /**
-  * @brief  Configure VAD buf operation(double block)
+  * @brief  Configure VAD buf operation(three block)
   * @param  codec_index_x
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -792,7 +812,7 @@ void VAD_Buf_move_three(u32 codec_index_0, u32 codec_index_1, u32 codec_index_2,
 
 
 /**
-  * @brief  Configure VAD buf operation(triple block)
+  * @brief  Configure VAD buf operation(four block)
   * @param  codec_index
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0

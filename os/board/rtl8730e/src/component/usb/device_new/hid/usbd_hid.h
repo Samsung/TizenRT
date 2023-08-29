@@ -90,7 +90,7 @@ struct usb_hid_device_t {
 	u32 IdleState;
 	u32 AltSetting;
 
-	u8 *ctrl_buf; 		/* TODO: Move this buffer to usb_dev_t */
+	u8 *ctrl_buf;
 	u8  ctrl_req;
 	u8  ctrl_data_len;	/* TODO: Remove and get the data length via usbd_core_get_rx_data_size? */
 	usbd_hid_usr_cb_t *cb;

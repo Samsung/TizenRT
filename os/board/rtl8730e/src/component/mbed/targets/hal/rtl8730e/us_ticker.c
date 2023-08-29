@@ -128,4 +128,7 @@ void us_ticker_disable_interrupt(void)
 void us_ticker_clear_interrupt(void)
 {
 	RTIM_INTClear(TIMx[APP_TIM_ID]);//AembaD TODO
+
+	/* make sure all intr pending bits cleared ok, to fix timeout is not enough in rom code */
+	RTIM_INTClear(TIMx[APP_TIM_ID]);
 }

@@ -31,6 +31,8 @@ extern "C" {
 #define TX_ANAR_IN_USE      ((uint32_t)0x00000001 << 9)
 #define TX_HPO_ANAL_IN_USE  ((uint32_t)0x00000001 << 10)
 #define TX_HPO_ANAR_IN_USE  ((uint32_t)0x00000001 << 11)
+#define TX_SPORT2_IN_USE    ((uint32_t)0x00000001 << 12)
+#define TX_SPORT3_IN_USE    ((uint32_t)0x00000001 << 13)
 
 #define RX_SPORT0_IN_USE    ((uint32_t)0x00000001 << 16)
 #define RX_SPORT1_IN_USE    ((uint32_t)0x00000001 << 17)
@@ -40,6 +42,10 @@ extern "C" {
 #define RX_AUDIO_IP_IN_USE  ((uint32_t)0x00000001 << 21)
 #define RX_I2S0_IN_USE      ((uint32_t)0x00000001 << 22)
 #define RX_I2S1_IN_USE      ((uint32_t)0x00000001 << 23)
+#define RX_SPORT2_IN_USE    ((uint32_t)0x00000001 << 24)
+#define RX_SPORT3_IN_USE    ((uint32_t)0x00000001 << 25)
+
+#define IS_6_8_CHANNEL(NUM) (((NUM) == 6) || ((NUM) == 8))
 
 enum {
 	AUDIOIP       = 0,
@@ -53,6 +59,8 @@ enum {
 	LINEOUTRANA   = 8,
 	HPOOUTLANA    = 9,
 	HPOOUTRANA    = 10,
+	SPORT2        = 11,
+	SPORT3        = 12,
 };
 
 typedef struct _GdmaCallbackData GdmaCallbackData;
@@ -68,24 +76,51 @@ typedef struct _StreamConfig {
 } StreamConfig;
 
 typedef struct _Stream {
-	StreamConfig config;
-	AudioBuffer *rbuffer;
-	GdmaCallbackData *gdma_struct;
-	SP_InitTypeDef sp_initstruct;
-	I2S_InitTypeDef i2s_initstruct;
-	uint32_t sport_dev_num;
-	uint32_t direction;
-	uint32_t frame_size;
-	uint32_t period_count;
-	uint32_t period_bytes;
-	uint32_t rate;
-	uint32_t gdma_cnt;
-	uint32_t gdma_irq_cnt;
-	_sema sem;
-	bool sem_need_post;
-	bool start_gdma;
-	uint32_t stream_mode;
-	struct GDMA_CH_LLI *gdma_ch_lli;
+	StreamConfig         config;
+	SP_InitTypeDef        sp_initstruct;
+	I2S_InitTypeDef       i2s_initstruct;
+	uint32_t              sport_dev_num;
+	AUDIO_SPORT_TypeDef  *sport_dev_addr;
+	uint32_t              period_count;
+	uint32_t              period_bytes;
+	uint32_t              rate;
+	bool                  start_gdma;
+	bool                  gdma_need_stop;
+	uint32_t              stream_mode;
+	struct GDMA_CH_LLI   *gdma_ch_lli;
+	bool                  restart_by_user;
+	uint32_t              direction;
+	uint64_t              trigger_tstamp;
+	uint64_t              total_counter;
+	uint32_t              sport_irq_count;
+	uint32_t              sport_compare_val;
+	uint64_t              total_counter_boundary;
+	bool                  extra_restart_by_user;
+
+	// member below for channel <= 4
+	AudioBuffer          *rbuffer;
+	GdmaCallbackData     *gdma_struct;
+	uint32_t              channel;
+	uint32_t              frame_size;
+	uint32_t              gdma_cnt;
+	uint32_t              gdma_irq_cnt;
+	_sema                 sem;
+	bool                  sem_need_post;
+	_sema                 sem_gdma_end;
+	bool                  sem_gdma_end_need_post;
+
+	// member below for channel > 4
+	AudioBuffer          *extra_rbuffer;
+	GdmaCallbackData     *extra_gdma_struct;
+	uint32_t              extra_channel;
+	uint32_t              extra_frame_size;
+	uint32_t              extra_gdma_cnt;
+	uint32_t              extra_gdma_irq_cnt;
+	_sema                 extra_sem;
+	bool                  extra_sem_need_post;
+	_sema                 extra_sem_gdma_end;
+	bool                  extra_sem_gdma_end_need_post;
+
 } Stream;
 
 typedef struct _GdmaCallbackData {

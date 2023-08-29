@@ -42,7 +42,7 @@ _LONG_CALL_ u32 SYSCFG_RLVersion(void);
 _LONG_CALL_ u32 SYSCFG_GetRLNum(void);
 _LONG_CALL_ VOID VectorTableAdd(VOID);
 
-#ifndef CONFIG_RL6678_B_CUT
+#ifdef ARM_CORE_CM4
 #include "amebahp_secure_boot.h"
 
 int SBOOT_GetMdType_B(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac);

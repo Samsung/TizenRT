@@ -86,6 +86,7 @@ extern u8 __km0_image2_entry_func__[];
 extern u8 __km4_image2_entry_func__[];
 extern u8 __km4_audio_buf_start__[];
 extern u8 __ca32_fip_dram_start__[];
+extern u8 __ca32_flash_text_start__[];
 
 extern u8 __psram_heap_buffer_start__[];
 extern u8 __psram_heap_buffer_size__[];
@@ -325,11 +326,11 @@ extern u8 Boot_Agg_En;
 #define VOL_09					0
 #define VOL_10					1
 
-#define KM4_09V_CLK_LIMIT		280
-#define KM4_1P0V_CLK_LIMIT		360
+#define KM4_09V_CLK_LIMIT		250
+#define KM4_1P0V_CLK_LIMIT		333
 
-#define AP_09V_CLK_LIMIT		1080
-#define AP_1P0V_CLK_LIMIT		1480
+#define AP_09V_CLK_LIMIT		920
+#define AP_1P0V_CLK_LIMIT		1200
 
 #define IS_FLASH_ADDR(addr)			((addr >= SPI_FLASH_BASE) && (addr <= 0x0FFFFFFF))
 #define IS_BOOT_ADDR(addr)			((addr >= HS_BOOT_ADDR_START) && (addr <= HS_BOOT_ADDR_END))
@@ -347,12 +348,5 @@ extern u8 Boot_Agg_En;
 #define BOOT_CNT_MASK			0xFF
 #define BOOT_CNT_TOTAL_LIMIT	0x6
 #define BOOT_CNT_TRY_LIMIT		0x4
-
-#if (defined(CONFIG_POST_SIM))
-#define POSTSIM_FLAG(x)   BKUP_Set(BKUP_REG1, BIT(x));
-//#define SYSCFG_CHIPType_Get()   CHIP_TYPE_RTLSIM
-#else
-#define POSTSIM_FLAG(x)
-#endif
 
 #endif   //_HAL_AMEBA_BOOT_

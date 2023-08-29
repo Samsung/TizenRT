@@ -11,6 +11,7 @@
 #include <bt_api_config.h>
 #include <rtk_bt_common.h>
 #include <rtk_bt_le_gap.h>
+#include <rtk_bt_att_defs.h>
 #include <rtk_bt_gattc.h>
 #include <rtk_client_config.h>
 #include <rtk_gaps_client.h>
@@ -407,10 +408,9 @@ uint16_t gaps_client_attach_conn(uint16_t conn_handle)
 
 #if RTK_BLE_MGR_LIB
 	gaps_database[conn_id]->disc_state = DISC_DONE;
-	return RTK_BT_OK;
-#else
-	return rtk_bt_gattc_attach_connect(GAPS_CLIENT_PROFILE_ID, conn_handle);
 #endif
+
+	return RTK_BT_OK;
 }
 
 uint16_t gaps_client_detach_conn(uint16_t conn_handle)
@@ -426,11 +426,7 @@ uint16_t gaps_client_detach_conn(uint16_t conn_handle)
 		return ret;
 	}
 
-#if RTK_BLE_MGR_LIB
 	return RTK_BT_OK;
-#else
-	return rtk_bt_gattc_detach_connect(GAPS_CLIENT_PROFILE_ID, conn_handle);
-#endif
 }
 
 uint16_t gaps_client_add(void)
@@ -454,11 +450,7 @@ uint16_t gaps_client_delete(void)
 		}
 	}
 
-#if RTK_BLE_MGR_LIB
-	return rtk_bt_gattc_unregister_profile(GAPS_CLIENT_PROFILE_ID, gaps_uuid);
-#else
-	return rtk_bt_gattc_unregister_profile(GAPS_CLIENT_PROFILE_ID);
-#endif
+	return RTK_BT_OK;
 }
 
 uint16_t gaps_client_char_read(uint16_t conn_handle, gaps_charac_index_t char_index)

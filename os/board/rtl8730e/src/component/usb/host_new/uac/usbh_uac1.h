@@ -14,7 +14,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbh.h"
-#include "usbh_core.h"
 #include "usb_ch9.h"
 #include "usb_audio.h"
 

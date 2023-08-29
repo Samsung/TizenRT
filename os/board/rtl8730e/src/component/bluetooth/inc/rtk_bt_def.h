@@ -21,17 +21,17 @@ extern "C"
  * @typedef   rtk_bt_status_t
  * @brief     Bluetooth API status definition.
  */
-typedef enum{
+typedef enum {
 	RTK_BT_STATUS_DONE = 0,
 	RTK_BT_STATUS_CONTINUE,
 	RTK_BT_STATUS_FAIL,
-}rtk_bt_status_t;
+} rtk_bt_status_t;
 
 /**
  * @enum    rtk_bt_err_group
  * @brief     Bluetooth API err group mask.
  */
-enum rtk_bt_err_group{
+enum rtk_bt_err_group {
 	RTK_BT_ERR_COMMON_GROUP     =   0x0000,
 	RTK_BT_ERR_HCI_GROUP        =   0x0100,
 	RTK_BT_ERR_ATT_GROUP        =   0x0400,
@@ -189,14 +189,14 @@ enum rtk_bt_err_att {
 	RTK_BT_ATT_ERR_CCCD_IMPROPERLY_CONFIGURED   =   0xFD,
 	RTK_BT_ATT_ERR_PROC_ALREADY_IN_PROGRESS     =   0xFE,
 	RTK_BT_ATT_ERR_OUT_OF_RANGE                 =   0xFF,
-};   
+};
 
 /**
  * @enum      rtk_bt_err_smp
  * @brief     Bluetooth API smp sub err code. Details ref bluetooth spec
  */
 enum rtk_bt_err_smp {
-	/* pairing failed err code */   
+	/* pairing failed err code */
 	RTK_BT_SMP_ERR_PASSKEY_ENTRY_FAIL           =   0x01,
 	RTK_BT_SMP_ERR_OOB_NOT_AVAIABLE             =   0x02,
 	RTK_BT_SMP_ERR_AUTHEN_REQUIREMENTS          =   0x03,
@@ -251,10 +251,10 @@ enum rtk_bt_err_gatt {
 	RTK_BT_GATT_ERR_NOT_AUTHENTICATED      =    0x0F,
 	RTK_BT_GATT_ERR_NOT_ENCRYPTED          =    0x10,
 	RTK_BT_GATT_ERR_PROC_FAIL              =    0x11,
-};  
+};
 
 /**
- * @defgroup  BT_APIs BT_APIs
+ * @defgroup  BT_APIs BT APIs
  * @brief     List all BT related APIs
  */
 

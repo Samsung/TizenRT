@@ -53,12 +53,11 @@ VOID app_simulation_task(VOID *Data)
 
 	//u8  *argv[6];
 	static u32 test_done = 0;
-	simulation_stage_set(SIMULATION_KM4_CPUID, BIT_KM4_RUN_INTO_FLASH);
 
 	do {
 		/* this is an example, you can change to yourself code if needed */
 		if (test_done == 0) {
-			simulation_stage_set(SIMULATION_KM4_CPUID, BIT_KM4_SIMULATION_START);
+
 #if 0
 			//add simulation code here
 			argv[0] = "1";
@@ -70,7 +69,6 @@ VOID app_simulation_task(VOID *Data)
 			CmdDDRTest(6, argv);
 #endif
 			test_done = 1;
-			simulation_stage_set(SIMULATION_KM4_CPUID, BIT_KM4_SIMULATION_END);
 		} else {
 			vTaskDelay(1000);
 		}

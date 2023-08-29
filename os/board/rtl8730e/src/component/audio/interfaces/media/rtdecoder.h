@@ -89,7 +89,7 @@ enum RTDecoderFlags {
  * @since 1.0
  * @version 1.0
  */
-struct RTDecoder *RTDecoder_Create(char *mime_type);
+RTDecoder *RTDecoder_Create(char *mime_type);
 
 /**
  * @brief Destory RTDecoder.
@@ -98,7 +98,7 @@ struct RTDecoder *RTDecoder_Create(char *mime_type);
  * @since 1.0
  * @version 1.0
  */
-void	RTDecoder_Destory(struct RTDecoder *decoder);
+void	RTDecoder_Destory(RTDecoder *decoder);
 
 /**
  * @brief Configure the decoder. For decoding you would typically get the format from a demux.
@@ -113,7 +113,7 @@ void	RTDecoder_Destory(struct RTDecoder *decoder);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_Configure(struct RTDecoder *decoder, struct RTMediaFormat *media_format);
+rt_status_t RTDecoder_Configure(RTDecoder *decoder, RTMediaFormat *media_format);
 
 /**
  * @brief Start the decoder. A decoder must be configured before it can be started, and must be started
@@ -128,7 +128,7 @@ rt_status_t RTDecoder_Configure(struct RTDecoder *decoder, struct RTMediaFormat 
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_Start(struct RTDecoder *decoder);
+rt_status_t RTDecoder_Start(RTDecoder *decoder);
 
 /**
  * @brief Stop the decoder.
@@ -142,7 +142,7 @@ rt_status_t RTDecoder_Start(struct RTDecoder *decoder);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_Stop(struct RTDecoder *decoder);
+rt_status_t RTDecoder_Stop(RTDecoder *decoder);
 
 /**
  * @brief Flush the decoder.
@@ -156,7 +156,7 @@ rt_status_t RTDecoder_Stop(struct RTDecoder *decoder);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_Flush(struct RTDecoder *decoder);
+rt_status_t RTDecoder_Flush(RTDecoder *decoder);
 
 /**
  * @brief Get the index of the next available input buffer. An app will typically use this with
@@ -169,7 +169,7 @@ rt_status_t RTDecoder_Flush(struct RTDecoder *decoder);
  * @since 1.0
  * @version 1.0
  */
-ssize_t RTDecoder_DequeueInputBuffer(struct RTDecoder *decoder, int64_t timeout_us);
+ssize_t RTDecoder_DequeueInputBuffer(RTDecoder *decoder, int64_t timeout_us);
 
 /**
  * @brief Get an input buffer. The specified buffer index must have been previously obtained from
@@ -182,7 +182,7 @@ ssize_t RTDecoder_DequeueInputBuffer(struct RTDecoder *decoder, int64_t timeout_
  * @since 1.0
  * @version 1.0
  */
-void *RTDecoder_GetInputBuffer(struct RTDecoder *decoder, size_t idx, size_t *out_size);
+void *RTDecoder_GetInputBuffer(RTDecoder *decoder, size_t idx, size_t *out_size);
 
 /**
  * @brief Queue the specified buffer to the decoder for processing.
@@ -201,7 +201,7 @@ void *RTDecoder_GetInputBuffer(struct RTDecoder *decoder, size_t idx, size_t *ou
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_QueueInputBuffer(struct RTDecoder *decoder,
+rt_status_t RTDecoder_QueueInputBuffer(RTDecoder *decoder,
 									   size_t idx,
 									   size_t offset,
 									   size_t size,
@@ -223,7 +223,7 @@ rt_status_t RTDecoder_QueueInputBuffer(struct RTDecoder *decoder,
  * @since 1.0
  * @version 1.0
  */
-ssize_t RTDecoder_DequeueOutputBuffer(struct RTDecoder *decoder, struct RTDecoderBufferInfo *info, int64_t timeout_us);
+ssize_t RTDecoder_DequeueOutputBuffer(RTDecoder *decoder, RTDecoderBufferInfo *info, int64_t timeout_us);
 
 /**
  * @brief Get an output buffer. The specified buffer index must have been previously obtained from
@@ -236,7 +236,7 @@ ssize_t RTDecoder_DequeueOutputBuffer(struct RTDecoder *decoder, struct RTDecode
  * @since 1.0
  * @version 1.0
  */
-void *RTDecoder_GetOutputBuffer(struct RTDecoder *decoder, size_t idx, size_t *out_size);
+void *RTDecoder_GetOutputBuffer(RTDecoder *decoder, size_t idx, size_t *out_size);
 
 /**
  * @brief If you are done with a buffer, use this call to return the buffer to
@@ -252,7 +252,7 @@ void *RTDecoder_GetOutputBuffer(struct RTDecoder *decoder, size_t idx, size_t *o
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_ReleaseOutputBuffer(struct RTDecoder *decoder, size_t idx);
+rt_status_t RTDecoder_ReleaseOutputBuffer(RTDecoder *decoder, size_t idx);
 
 /**
  * @brief Get output format after decoding.
@@ -268,7 +268,7 @@ rt_status_t RTDecoder_ReleaseOutputBuffer(struct RTDecoder *decoder, size_t idx)
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTDecoder_GetOutputFormat(struct RTDecoder *decoder, int32_t *rate, int32_t *channel_count);
+rt_status_t RTDecoder_GetOutputFormat(RTDecoder *decoder, int32_t *rate, int32_t *channel_count);
 
 __END_DECLS
 

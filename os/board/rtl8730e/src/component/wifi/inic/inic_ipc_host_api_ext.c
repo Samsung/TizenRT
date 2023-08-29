@@ -297,7 +297,7 @@ int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting)
 	return ret;
 }
 
-int wifi_set_ips_enable(u8 enable)
+int wifi_set_ips_internal(u8 enable)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -403,7 +403,7 @@ int wifi_get_network_mode(void)
 	return inic_ipc_api_host_message_send(IPC_API_WIFI_GET_NETWORK_MODE, NULL, 0);
 }
 
-int wifi_set_network_mode(rtw_network_mode_t mode)
+int wifi_set_network_mode(enum wlan_mode mode)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -561,7 +561,7 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 	param.password_len = password_len;
 	param.key_id = key_id;
 
-	if (wifi_autoreconnect_task.task != 0) {
+	if (wifi_autoreconnect_task.task != NULL) {
 #if CONFIG_LWIP_LAYER
 		netifapi_dhcp_stop(&xnetif[0]);
 #endif
@@ -574,7 +574,7 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 				return;
 			}
 
-			if (wifi_autoreconnect_task.task == 0) {
+			if (wifi_autoreconnect_task.task == NULL) {
 				break;
 			}
 		}
@@ -869,16 +869,16 @@ int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr)
 
 }
 
-int wifi_ap_switch_chl_and_inform(unsigned char new_chl, unsigned char chl_switch_cnt, ap_channel_switch_callback_t callback)
+int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param)
 {
 	int ret = 0;
 	u32 param_buf[3];
-	p_ap_channel_switch_callback = callback;
+	p_ap_channel_switch_callback = csa_param->callback;
 
-	param_buf[0] = (u32)new_chl;
-	param_buf[1] = (u32)chl_switch_cnt;
-	param_buf[2] = (u32)callback;
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_AP_CH_SWITCH, param_buf, 3);
+	param_buf[0] = (u32)csa_param;
+	DCache_Clean((u32)csa_param, sizeof(rtw_csa_parm_t));
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_AP_CH_SWITCH, param_buf, 1);
+	DCache_Invalidate((u32)csa_param, sizeof(rtw_csa_parm_t));
 	return ret;
 }
 
@@ -956,6 +956,14 @@ void wifi_btcoex_set_pta(pta_type_t type)
 	inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_SET_PTA, param_buf, 1);
 }
 
+void wifi_btcoex_set_bt_ant(u8 bt_ant)
+{
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)bt_ant;
+	inic_ipc_api_host_message_send(IPC_API_WIFI_SET_BT_SEL, param_buf, 1);
+}
+
 int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode)
 {
 	u32 param_buf[1];
@@ -991,6 +999,13 @@ int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param)
 	param_buf[4] = (u32)rfk_param->rfk_data4;
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_BT_RFK, param_buf, 5);
+	return ret;
+}
+
+int wifi_zigbee_coex_zb_rfk(void)
+{
+	int ret = 0;
+	inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_ZB_RFK, NULL, 0);
 	return ret;
 }
 

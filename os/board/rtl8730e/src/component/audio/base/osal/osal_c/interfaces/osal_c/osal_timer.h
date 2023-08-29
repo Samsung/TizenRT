@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 #ifndef __linux__
-#define OSALC_TIMER_HANLDE_SIZE 32
+#define OSALC_TIMER_HANLDE_SIZE 60
 #endif
 
 /**

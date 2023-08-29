@@ -29,7 +29,7 @@
 static u8 usbd_vendor_set_config(usb_dev_t *dev, u8 config);
 static u8 usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static u8 usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u8 *usbd_vendor_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
+static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static u8 usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status);
 static u8 usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len);
 
@@ -163,9 +163,9 @@ static u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_
 /* USB Vendor Device High Speed Configuration Descriptor */
 static u8 usbd_vendor_hs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
 	/* USB Standard Configuration Descriptor */
-	USB_LEN_CFG_DESC,                               /* bLength */
-	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
-	USBD_VENDOR_CONFIG_DESC_SIZE,                       /* wTotalLength */
+	USB_LEN_CFG_DESC,								/* bLength */
+	USB_DESC_TYPE_CONFIGURATION,					/* bDescriptorType */
+	USBD_VENDOR_CONFIG_DESC_SIZE,					/* wTotalLength */
 	0x00,
 	0x01,                                           /* bNumInterfaces */
 	0x01,                                           /* bConfigurationValue */
@@ -183,75 +183,93 @@ static u8 usbd_vendor_hs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGN
 	0x00,                                           /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x04,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass */
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
-	/* BULK OUT Endpoint Descriptor */
+	/* INTR OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
+	USBD_VENDOR_INTR_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
+	USBD_VENDOR_HS_INTR_OUT_INTERVAL,				/* bInterval */
 
-	/* BULK IN Endpoint Descriptor */
+	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	0x00,                                            /* bInterval */
+	USBD_VENDOR_INTR_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
+	USBD_VENDOR_HS_INTR_IN_INTERVAL,				/* bInterval */
 
-	/* ISO OUT Endpoint Descriptor */
+	/* ISOC OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_OUT_EP,                            /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	USBD_VENDOR_HS_ISO_OUT_INTERVAL,                                           /* bInterval */
+	USBD_VENDOR_ISOC_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_HS_ISOC_OUT_INTERVAL,				/* bInterval */
 
-	/* ISO IN Endpoint Descriptor */
+	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_IN_EP,                             /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	USBD_VENDOR_HS_ISO_IN_INTERVAL,                                            /* bInterval */
+	USBD_VENDOR_ISOC_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_HS_ISOC_IN_INTERVAL,				/* bInterval */
 
 	/* Interface1 Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
 	0x00,                                           /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
-	0x02,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	0x04,                                           /* bNumEndpoints */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass */
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_BULK_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
+	0x00,											/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_MAX_PACKET_SIZE),
-	0x00                                            /* bInterval */
+	USBD_VENDOR_BULK_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
+	0x00,											/* bInterval */
+
+	/* ISO OUT Endpoint Descriptor */
+	USB_LEN_EP_DESC,                                /* bLength */
+	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
+	USBD_VENDOR_ISOC_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_HS_ISOC_OUT_INTERVAL,				/* bInterval */
+
+	/* ISO IN Endpoint Descriptor */
+	USB_LEN_EP_DESC,                                /* bLength */
+	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
+	USBD_VENDOR_ISOC_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_HS_ISOC_IN_INTERVAL,				/* bInterval */
 };  /* usbd_vendor_hs_config_desc */
 
 /* USB Vendor Device Full Speed Configuration Descriptor */
@@ -259,7 +277,7 @@ static u8 usbd_vendor_fs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGN
 	/* USB Standard Configuration Descriptor */
 	USB_LEN_CFG_DESC,                               /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
-	USBD_VENDOR_CONFIG_DESC_SIZE,                       /* wTotalLength */
+	USBD_VENDOR_CONFIG_DESC_SIZE,					/* wTotalLength */
 	0x00,
 	0x01,                                           /* bNumInterfaces */
 	0x01,                                           /* bConfigurationValue */
@@ -277,75 +295,93 @@ static u8 usbd_vendor_fs_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_DMA_ALIGN
 	0x00,                                           /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x04,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass*/
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
-	/* BULK OUT Endpoint Descriptor */
+	/* INTR OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
+	USBD_VENDOR_INTR_OUT_EP,                        /* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USBD_VENDOR_FS_INTR_OUT_INTERVAL,				/* bInterval */
 
-	/* BULK IN Endpoint Descriptor */
+	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00,                                            /* bInterval */
+	USBD_VENDOR_INTR_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USBD_VENDOR_FS_INTR_IN_INTERVAL,				/* bInterval */
 
-	/* ISO OUT Endpoint Descriptor */
+	/* ISOC OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_OUT_EP,                            /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	USBD_VENDOR_FS_ISO_OUT_INTERVAL,                                           /* bInterval */
+	USBD_VENDOR_ISOC_OUT_EP,                        /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_OUT_INTERVAL,               /* bInterval */
 
-	/* ISO IN Endpoint Descriptor */
+	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_IN_EP,                             /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	USBD_VENDOR_FS_ISO_IN_INTERVAL,                                            /* bInterval */
+	USBD_VENDOR_ISOC_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_IN_INTERVAL,                /* bInterval */
 
 	/* Interface1 Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
 	0x00,                                           /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
-	0x02,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	0x04,                                           /* bNumEndpoints */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass */
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_BULK_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
+	0x00,											/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_BULK_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
+	0x00,											/* bInterval */
+
+	/* ISOC OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00                                            /* bInterval */
+	USBD_VENDOR_ISOC_OUT_EP,                        /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_OUT_INTERVAL,               /* bInterval */
+
+	/* ISOC IN Endpoint Descriptor */
+	USB_LEN_EP_DESC,                                /* bLength */
+	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
+	USBD_VENDOR_ISOC_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_IN_INTERVAL,                /* bInterval */
 };  /* usbd_vendor_fs_config_desc */
 
 /* USB Vendor Device Other Speed Configuration Descriptor */
@@ -371,75 +407,93 @@ static u8 usbd_vendor_other_speed_config_desc[USBD_VENDOR_CONFIG_DESC_SIZE] USB_
 	0x00,                                           /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x04,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass*/
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
-	/* BULK OUT Endpoint Descriptor */
+	/* INTR OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
+	USBD_VENDOR_INTR_OUT_EP,                        /* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,                            /* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USBD_VENDOR_FS_INTR_OUT_INTERVAL,				/* bInterval */
 
-	/* BULK IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00,                                            /* bInterval */
+	/* INTR IN Endpoint Descriptor */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_INTR_IN_EP,							/* bEndpointAddress */
+	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
+	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USBD_VENDOR_FS_INTR_IN_INTERVAL,				/* bInterval */
 
-	/* ISO OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_OUT_EP,                            /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	USBD_VENDOR_FS_ISO_OUT_INTERVAL,                                           /* bInterval */
+	/* ISOC OUT Endpoint Descriptor */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_ISOC_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_OUT_INTERVAL,				/* bInterval */
 
-	/* ISO IN Endpoint Descriptor */
+	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_ISO_IN_EP,                             /* bEndpointAddress */
-	0x01,                                           /* bmAttributes: ISO */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	USBD_VENDOR_FS_ISO_IN_INTERVAL,                                            /* bInterval */
+	USBD_VENDOR_ISOC_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_IN_INTERVAL,                /* bInterval */
 
 	/* Interface1 Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
 	0x00,                                           /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
-	0x02,                                           /* bNumEndpoints */
-	0xff,                                           /* bInterfaceClass: Vendor */
-	0x00,                                           /* bInterfaceSubClass: No */
-	0x00,                                           /* bInterfaceProtocol: None */
+	0x04,                                           /* bNumEndpoints */
+	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
+	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass */
+	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* BULK OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_OUT_EP,                            /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
+	USBD_VENDOR_BULK_OUT_EP,                        /* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
 	0x00,                                           /* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USBD_VENDOR_BULK_IN_EP,                             /* bEndpointAddress */
-	0x02,                                           /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_MAX_PACKET_SIZE),
-	0x00                                            /* bInterval */
+	USBD_VENDOR_BULK_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
+	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
+	0x00,                                           /* bInterval */
+
+	/* ISOC OUT Endpoint Descriptor */
+	USB_LEN_EP_DESC,								/* bLength */
+	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
+	USBD_VENDOR_ISOC_OUT_EP,						/* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_OUT_INTERVAL,				/* bInterval */
+
+	/* ISOC IN Endpoint Descriptor */
+	USB_LEN_EP_DESC,                                /* bLength */
+	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
+	USBD_VENDOR_ISOC_IN_EP,                         /* bEndpointAddress */
+	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
+	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),			/* wMaxPacketSize: */
+	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
+	USBD_VENDOR_FS_ISOC_IN_INTERVAL,                /* bInterval */
 };  /* usbd_vendor_other_speed_config_desc */
 
 /* Vendor Class Driver */
@@ -454,22 +508,26 @@ usbd_class_driver_t usbd_vendor_driver = {
 
 /* Vendor Device */
 static usbd_vendor_dev_t usbd_vendor_dev;
-static u32 vendor_iso_in_value = 0;
-#if CONFIG_USBD_VENDOR_ISO_OUT_TEST
-static u32 vendor_iso_out_cnt = 0;
-#endif
-u32 iso_out_sum[USBD_VENDOR_ISO_OUT_XFER_CNT];
+
 /* Private functions ---------------------------------------------------------*/
 
-void usbd_vendor_send_data(u16 len)
+#if CONFIG_USBD_VENDOR_BULK_TEST
+
+/**
+  * @brief  Transmit BULK IN ZLP packet
+  * @retval Status
+  */
+static u8 usbd_vendor_transmit_bulk_zlp(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	/* Prepare to send ISO IN packet */
-	rtw_memset(cdev->in_buf, (vendor_iso_in_value & 0xFF), len);
-	vendor_iso_in_value++;
-	usbd_ep_transmit(cdev->dev, USBD_VENDOR_ISO_IN_EP, cdev->in_buf, len);
+	DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "BULK TX ZLP\n");
+	usbd_ep_transmit(cdev->dev, USBD_VENDOR_BULK_IN_EP, NULL, 0);
+
+	return HAL_OK;
 }
+
+#endif
 
 /**
   * @brief  Set Vendor class configuration
@@ -486,35 +544,34 @@ static u8 usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	cdev->dev = dev;
+	cdev->alt_setting = 0U;
 
-#if CONFIG_USBD_VENDOR_BULK_INOUT_TEST
-	/* Init BULK IN EP */
-	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_MAX_PACKET_SIZE : USBD_VENDOR_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, USBD_VENDOR_BULK_IN_EP, USB_CH_EP_TYPE_BULK, ep_mps);
+#if CONFIG_USBD_VENDOR_INTR_TEST
+	/* Init INTR IN EP */
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+	usbd_ep_init(dev, USBD_VENDOR_INTR_IN_EP, USB_CH_EP_TYPE_INTR, ep_mps);
+	cdev->intr_in_state = 0;
 
-	/* Init BULK OUT EP */
-	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_MAX_PACKET_SIZE : USBD_VENDOR_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, USBD_VENDOR_BULK_OUT_EP, USB_CH_EP_TYPE_BULK, ep_mps);
-
-	/* Prepare to receive next BULK OUT packet */
-	usbd_ep_receive(dev, USBD_VENDOR_BULK_OUT_EP, cdev->out_buf, USBD_VENDOR_OUT_BUF_SIZE);
+	/* Init INTR OUT EP */
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+	usbd_ep_init(dev, USBD_VENDOR_INTR_OUT_EP, USB_CH_EP_TYPE_INTR, ep_mps);
+	usbd_ep_receive(dev, USBD_VENDOR_INTR_OUT_EP, cdev->intr_out_buf, USBD_VENDOR_INTR_OUT_BUF_SIZE);
 #endif
 
-#if CONFIG_USBD_VENDOR_ISO_IN_TEST
+#if CONFIG_USBD_VENDOR_ISOC_TEST
 	/* Init ISO IN EP */
-	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_MAX_PACKET_SIZE : USBD_VENDOR_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, USBD_VENDOR_ISO_IN_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
-	usbd_vendor_send_data(USBD_VENDOR_IN_BUF_SIZE);
-#endif
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+	usbd_ep_init(dev, USBD_VENDOR_ISOC_IN_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
 
-#if CONFIG_USBD_VENDOR_ISO_OUT_TEST
 	/* Init ISO OUT EP */
-	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_MAX_PACKET_SIZE : USBD_VENDOR_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, USBD_VENDOR_ISO_OUT_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
-
-	/* Prepare to receive next ISO OUT packet */
-	usbd_ep_receive(dev, USBD_VENDOR_ISO_OUT_EP, cdev->out_buf, USBD_VENDOR_OUT_BUF_SIZE);
+	ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+	usbd_ep_init(dev, USBD_VENDOR_ISOC_OUT_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
+	usbd_ep_receive(dev, USBD_VENDOR_ISOC_OUT_EP, cdev->isoc_out_buf, USBD_VENDOR_ISOC_OUT_BUF_SIZE);
 #endif
+
+	if (cdev->cb->set_config != NULL) {
+		cdev->cb->set_config();
+	}
 
 	return ret;
 }
@@ -528,25 +585,34 @@ static u8 usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 static u8 usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
 {
 	u8 ret = 0U;
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
 	UNUSED(config);
 
-#if CONFIG_USBD_VENDOR_BULK_INOUT_TEST
-	/* DeInit BULK IN EP */
-	usbd_ep_deinit(dev, USBD_VENDOR_BULK_IN_EP);
+	if (cdev->alt_setting == 0U) {
+#if CONFIG_USBD_VENDOR_INTR_TEST
+		/* DeInit INTR IN EP */
+		usbd_ep_deinit(dev, USBD_VENDOR_INTR_IN_EP);
 
-	/* DeInit BULK OUT EP */
-	usbd_ep_deinit(dev, USBD_VENDOR_BULK_OUT_EP);
+		/* DeInit INTR OUT EP */
+		usbd_ep_deinit(dev, USBD_VENDOR_INTR_OUT_EP);
 #endif
+	} else {
+#if CONFIG_USBD_VENDOR_BULK_TEST
+		/* DeInit BULK IN EP */
+		usbd_ep_deinit(dev, USBD_VENDOR_BULK_IN_EP);
 
-#if CONFIG_USBD_VENDOR_ISO_IN_TEST
-	/* DeInit ISO IN EP */
-	usbd_ep_deinit(dev, USBD_VENDOR_ISO_IN_EP);
+		/* DeInit BULK OUT EP */
+		usbd_ep_deinit(dev, USBD_VENDOR_BULK_OUT_EP);
 #endif
+	}
 
-#if CONFIG_USBD_VENDOR_ISO_OUT_TEST
-	/* DeInit ISO OUT EP */
-	usbd_ep_deinit(dev, USBD_VENDOR_ISO_OUT_EP);
+#if CONFIG_USBD_VENDOR_ISOC_TEST
+	/* DeInit ISOC IN EP */
+	usbd_ep_deinit(dev, USBD_VENDOR_ISOC_IN_EP);
+
+	/* DeInit ISOC OUT EP */
+	usbd_ep_deinit(dev, USBD_VENDOR_ISOC_OUT_EP);
 #endif
 
 	return ret;
@@ -560,9 +626,11 @@ static u8 usbd_vendor_clear_config(usb_dev_t *dev, u8 config)
   */
 static u8 usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
+	u16 ep_mps;
 	u8 ret = HAL_OK;
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	DBG_PRINTF(MODULE_USB_OTG, LEVEL_TRACE,
+	DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE,
 			   "usbd_vendor_setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
 			   req->bmRequestType,
 			   req->bRequest,
@@ -570,10 +638,111 @@ static u8 usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
+	case USB_REQ_TYPE_STANDARD:
+		switch (req->bRequest) {
+		case USB_REQ_SET_INTERFACE:
+			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				if (req->wIndex == 0U) {
+					cdev->alt_setting = (u8)(req->wValue & 0xFF);
+#if CONFIG_USBD_VENDOR_ISOC_TEST
+					/* DeInit ISOC IN EP */
+					usbd_ep_deinit(dev, USBD_VENDOR_ISOC_IN_EP);
+
+					/* DeInit ISOC OUT EP */
+					usbd_ep_deinit(dev, USBD_VENDOR_ISOC_OUT_EP);
+#endif
+					if (cdev->alt_setting == 0U) {
+#if CONFIG_USBD_VENDOR_BULK_TEST
+						/* DeInit BULK IN EP */
+						usbd_ep_deinit(dev, USBD_VENDOR_BULK_IN_EP);
+
+						/* DeInit BULK OUT EP */
+						usbd_ep_deinit(dev, USBD_VENDOR_BULK_OUT_EP);
+#endif
+#if CONFIG_USBD_VENDOR_INTR_TEST
+						/* Init INTR IN EP */
+						ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+						usbd_ep_init(dev, USBD_VENDOR_INTR_IN_EP, USB_CH_EP_TYPE_INTR, ep_mps);
+						cdev->intr_in_state = 0;
+
+						/* Init INTR OUT EP */
+						ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
+						usbd_ep_init(dev, USBD_VENDOR_INTR_OUT_EP, USB_CH_EP_TYPE_INTR, ep_mps);
+						usbd_ep_receive(dev, USBD_VENDOR_INTR_OUT_EP, cdev->intr_out_buf, USBD_VENDOR_INTR_OUT_BUF_SIZE);
+#endif
+					} else {
+#if CONFIG_USBD_VENDOR_INTR_TEST
+						/* DeInit INTR IN EP */
+						usbd_ep_deinit(dev, USBD_VENDOR_INTR_IN_EP);
+
+						/* DeInit INTR OUT EP */
+						usbd_ep_deinit(dev, USBD_VENDOR_INTR_OUT_EP);
+#endif
+#if CONFIG_USBD_VENDOR_BULK_TEST
+						/* Init BULK IN EP */
+						ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
+						usbd_ep_init(dev, USBD_VENDOR_BULK_IN_EP, USB_CH_EP_TYPE_BULK, ep_mps);
+						cdev->bulk_in_state = 0;
+
+						/* Init BULK OUT EP */
+						ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
+						usbd_ep_init(dev, USBD_VENDOR_BULK_OUT_EP, USB_CH_EP_TYPE_BULK, ep_mps);
+						usbd_ep_receive(dev, USBD_VENDOR_BULK_OUT_EP, cdev->bulk_out_buf, USBD_VENDOR_BULK_OUT_BUF_SIZE);
+#endif
+					}
+#if CONFIG_USBD_VENDOR_ISOC_TEST
+					/* Init ISO IN EP */
+					ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+					usbd_ep_init(dev, USBD_VENDOR_ISOC_IN_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
+
+					/* Init ISO OUT EP */
+					ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
+					usbd_ep_init(dev, USBD_VENDOR_ISOC_OUT_EP, USB_CH_EP_TYPE_ISOC, ep_mps);
+					usbd_ep_receive(dev, USBD_VENDOR_ISOC_OUT_EP, cdev->isoc_out_buf, USBD_VENDOR_ISOC_OUT_BUF_SIZE);
+#endif
+				} else {
+					ret = HAL_ERR_HW;
+				}
+			} else {
+				ret = HAL_ERR_HW;
+			}
+			break;
+		case USB_REQ_GET_INTERFACE:
+			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				cdev->ctrl_buf[0] = cdev->alt_setting;
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, 1U);
+			} else {
+				ret = HAL_ERR_HW;
+			}
+			break;
+		case USB_REQ_GET_STATUS:
+			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				cdev->ctrl_buf[0] = 0U;
+				cdev->ctrl_buf[1] = 0U;
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, 2U);
+			} else {
+				ret = HAL_ERR_HW;
+			}
+			break;
+		default:
+			ret = HAL_ERR_HW;
+			break;
+		}
+		break;
 	case USB_REQ_TYPE_CLASS :
 	case USB_REQ_TYPE_VENDOR:
-		rtw_memcpy(dev->ctrl_buf, (void *)req, sizeof(usb_setup_req_t));
-		usbd_ep0_transmit(dev, dev->ctrl_buf, sizeof(usb_setup_req_t));
+		if (req->wLength) {
+			if (req->bmRequestType & 0x80U) {
+				cdev->cb->setup(req->bRequest, cdev->ctrl_buf, req->wLength, req->wValue);
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, req->wLength);
+			} else {
+				cdev->ctrl_req = req->bRequest;
+				cdev->ctrl_data_len = req->wLength;
+				usbd_ep0_receive(dev, cdev->ctrl_buf, req->wLength);
+			}
+		} else {
+			cdev->cb->setup(req->bRequest, cdev->ctrl_buf, 0, req->wValue);
+		}
 		break;
 	default:
 		ret = HAL_ERR_HW;
@@ -591,16 +760,58 @@ static u8 usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
   */
 static u8 usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status)
 {
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usbd_vendor_cb_t *cb = cdev->cb;
+
 	UNUSED(dev);
 
-	if (status == HAL_OK) {
-		DBG_PRINTF(MODULE_USB_OTG, LEVEL_TRACE, "EP%d TX done\n", ep_num);
+	if (cdev->alt_setting == 0U) {
+#if CONFIG_USBD_VENDOR_INTR_TEST
+		if (ep_num == (USBD_VENDOR_INTR_IN_EP & (~USB_REQ_DIR_MASK))) {
+			cdev->intr_in_state = 0U;
+			if (status == HAL_OK) {
+				DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "INTR TX done\n");
+			} else {
+				DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "INTR TX error: %d\n", status);
+			}
+			if (cb->intr_transmitted != NULL) {
+				cb->intr_transmitted(status);
+			}
+		}
+#endif
 	} else {
-		DBG_PRINTF(MODULE_USB_OTG, LEVEL_WARN, "EP%d TX error: %d\n", ep_num, status);
+#if CONFIG_USBD_VENDOR_BULK_TEST
+		if (ep_num == (USBD_VENDOR_BULK_IN_EP & (~USB_REQ_DIR_MASK))) {
+			if (status == HAL_OK) {
+				DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "BULK TX done\n");
+				if (cdev->bulk_in_zlp) {
+					cdev->bulk_in_zlp = 0;
+					usbd_vendor_transmit_bulk_zlp();
+				} else {
+					cdev->bulk_in_state = 0U;
+				}
+			} else {
+				DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "BULK TX error: %d\n", status);
+				cdev->bulk_in_state = 0U;
+			}
+			if (cb->bulk_transmitted != NULL) {
+				cb->bulk_transmitted(status);
+			}
+		}
+#endif
 	}
 
-#if CONFIG_USBD_VENDOR_ISO_IN_TEST
-	usbd_vendor_send_data(USBD_VENDOR_IN_BUF_SIZE);
+#if CONFIG_USBD_VENDOR_ISOC_TEST
+	if (ep_num == (USBD_VENDOR_ISOC_IN_EP & (~USB_REQ_DIR_MASK))) {
+		if (status == HAL_OK) {
+			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "ISOC TX done\n");
+		} else {
+			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "ISOC TX error: %d\n", status);
+		}
+		if (cb->isoc_transmitted != NULL) {
+			cb->isoc_transmitted(status);
+		}
+	}
 #endif
 
 	return HAL_OK;
@@ -616,39 +827,31 @@ static u8 usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	UNUSED(ep_num);
-	UNUSED(len);
+	UNUSED(dev);
 
-#if CONFIG_USBD_VENDOR_BULK_INOUT_TEST
-	rtw_memset((void *) cdev->in_buf, 0x55, USBD_VENDOR_IN_BUF_SIZE);
-	usbd_ep_transmit(dev, USBD_VENDOR_BULK_IN_EP, cdev->in_buf, USBD_VENDOR_IN_BUF_SIZE);
-
-	rtw_memset((void *) cdev->out_buf, 0, USBD_VENDOR_OUT_BUF_SIZE);
-	usbd_ep_receive(dev, USBD_VENDOR_BULK_OUT_EP, cdev->out_buf, USBD_VENDOR_OUT_BUF_SIZE);
-#endif
-
-#if CONFIG_USBD_VENDOR_ISO_OUT_TEST
-	u32 i = 0;
-
-	for (i = 0; i < USBD_VENDOR_OUT_BUF_SIZE; i++) {
-		iso_out_sum[vendor_iso_out_cnt] += cdev->out_buf[i];
+	if (len == 0) {
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d RX ZLP\n", ep_num);
+		return HAL_OK;
 	}
-	iso_out_sum[vendor_iso_out_cnt] /= USBD_VENDOR_OUT_BUF_SIZE;
 
-	vendor_iso_out_cnt++;
-	if (USBD_VENDOR_ISO_OUT_XFER_CNT == vendor_iso_out_cnt) {
-		for (i = 0; i < vendor_iso_out_cnt; i++) {
-			if (iso_out_sum[i] != i) {
-				DBG_8195A("usbd iso out data fail\n");
-				return HAL_ERR_HW;
-			}
+	if (cdev->alt_setting == 0U) {
+#if CONFIG_USBD_VENDOR_INTR_TEST
+		if (ep_num == (USBD_VENDOR_INTR_OUT_EP & (~USB_REQ_DIR_MASK))) {
+			cdev->cb->intr_received(cdev->intr_out_buf, len);
 		}
-		DBG_8195A("usbd iso out data success\n");
-		vendor_iso_out_cnt = 0;
+#endif
+	} else {
+#if CONFIG_USBD_VENDOR_BULK_TEST
+		if (ep_num == (USBD_VENDOR_BULK_OUT_EP & (~USB_REQ_DIR_MASK))) {
+			cdev->cb->bulk_received(cdev->bulk_out_buf, len);
+		}
+#endif
 	}
 
-	rtw_memset((void *) cdev->out_buf, 0, USBD_VENDOR_OUT_BUF_SIZE);
-	usbd_ep_receive(dev, USBD_VENDOR_ISO_OUT_EP, cdev->out_buf, USBD_VENDOR_OUT_BUF_SIZE);
+#if CONFIG_USBD_VENDOR_ISOC_TEST
+	if (ep_num == (USBD_VENDOR_ISOC_OUT_EP & (~USB_REQ_DIR_MASK))) {
+		cdev->cb->isoc_received(cdev->isoc_out_buf, len);
+	}
 #endif
 
 	return HAL_OK;
@@ -661,9 +864,11 @@ static u8 usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len)
   * @param  len: descriptor length
   * @retval descriptor buffer
   */
-static u8 *usbd_vendor_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
+static u8 *usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
 {
 	u8 *buf = NULL;
+
+	dev->self_powered = USBD_VENDOR_SELF_POWERED;
 
 	switch ((req->wValue >> 8) & 0xFF) {
 
@@ -750,34 +955,96 @@ static u8 *usbd_vendor_get_descriptor(usb_setup_req_t *req, usb_speed_type_t spe
   * @brief  Initialize vendor device
   * @retval Status
   */
-u8 usbd_vendor_init(void)
+u8 usbd_vendor_init(usbd_vendor_cb_t *cb)
 {
 	u8 ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
-	cdev->out_buf = rtw_zmalloc(USBD_VENDOR_OUT_BUF_SIZE);
-	if (cdev->out_buf == NULL) {
+	cdev->ctrl_buf = rtw_zmalloc(USBD_VENDOR_CTRL_BUF_SIZE);
+	if (cdev->ctrl_buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto Init_exit;
+		goto init_exit;
 	}
 
-	cdev->in_buf = rtw_zmalloc(USBD_VENDOR_IN_BUF_SIZE);
-	if (cdev->in_buf == NULL) {
+	cdev->bulk_out_buf = rtw_zmalloc(USBD_VENDOR_BULK_OUT_BUF_SIZE);
+	if (cdev->bulk_out_buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto Init_clean_bulk_out_buf_exit;
+		goto init_clean_ctrl_buf_exit;
 	}
 
-	rtw_memset((void *) iso_out_sum, 0, (USBD_VENDOR_ISO_OUT_XFER_CNT * 4));
+	cdev->bulk_in_buf = rtw_zmalloc(USBD_VENDOR_BULK_IN_BUF_SIZE);
+	if (cdev->bulk_in_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto init_clean_bulk_out_buf_exit;
+	}
+
+	cdev->intr_out_buf = rtw_zmalloc(USBD_VENDOR_INTR_OUT_BUF_SIZE);
+	if (cdev->intr_out_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto init_clean_bulk_in_buf_exit;
+	}
+
+	cdev->intr_in_buf = rtw_zmalloc(USBD_VENDOR_INTR_IN_BUF_SIZE);
+	if (cdev->intr_in_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto init_clean_intr_out_buf_exit;
+	}
+
+	cdev->isoc_out_buf = rtw_zmalloc(USBD_VENDOR_ISOC_OUT_BUF_SIZE);
+	if (cdev->isoc_out_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto init_clean_intr_in_buf_exit;
+	}
+
+	cdev->isoc_in_buf = rtw_zmalloc(USBD_VENDOR_ISOC_IN_BUF_SIZE);
+	if (cdev->isoc_in_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto init_clean_isoc_out_buf_exit;
+	}
+
+	if (cb != NULL) {
+		cdev->cb = cb;
+		if (cb->init != NULL) {
+			ret = cb->init();
+			if (ret != HAL_OK) {
+				goto init_clean_isoc_in_buf_exit;
+			}
+		}
+	}
 
 	usbd_register_class(&usbd_vendor_driver);
 
 	return ret;
 
-Init_clean_bulk_out_buf_exit:
-	rtw_free(cdev->out_buf);
-	cdev->out_buf = NULL;
+init_clean_isoc_in_buf_exit:
+	rtw_free(cdev->isoc_in_buf);
+	cdev->isoc_in_buf = NULL;
 
-Init_exit:
+init_clean_isoc_out_buf_exit:
+	rtw_free(cdev->isoc_out_buf);
+	cdev->isoc_out_buf = NULL;
+
+init_clean_intr_in_buf_exit:
+	rtw_free(cdev->intr_in_buf);
+	cdev->intr_in_buf = NULL;
+
+init_clean_intr_out_buf_exit:
+	rtw_free(cdev->intr_out_buf);
+	cdev->intr_out_buf = NULL;
+
+init_clean_bulk_in_buf_exit:
+	rtw_free(cdev->bulk_in_buf);
+	cdev->bulk_in_buf = NULL;
+
+init_clean_bulk_out_buf_exit:
+	rtw_free(cdev->bulk_out_buf);
+	cdev->bulk_out_buf = NULL;
+
+init_clean_ctrl_buf_exit:
+	rtw_free(cdev->ctrl_buf);
+	cdev->ctrl_buf = NULL;
+
+init_exit:
 	return ret;
 }
 
@@ -790,17 +1057,162 @@ u8 usbd_vendor_deinit(void)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 
+	if (cdev->cb != NULL) {
+		if (cdev->cb->deinit != NULL) {
+			cdev->cb->deinit();
+		}
+		cdev->cb = NULL;
+	}
+
 	usbd_unregister_class();
 
-	if (cdev->in_buf != NULL) {
-		rtw_free(cdev->in_buf);
-		cdev->in_buf = NULL;
+	if (cdev->ctrl_buf != NULL) {
+		rtw_free(cdev->ctrl_buf);
+		cdev->ctrl_buf = NULL;
 	}
 
-	if (cdev->out_buf != NULL) {
-		rtw_free(cdev->out_buf);
-		cdev->out_buf = NULL;
+	if (cdev->bulk_in_buf != NULL) {
+		rtw_free(cdev->bulk_in_buf);
+		cdev->bulk_in_buf = NULL;
 	}
+
+	if (cdev->bulk_out_buf != NULL) {
+		rtw_free(cdev->bulk_out_buf);
+		cdev->bulk_out_buf = NULL;
+	}
+
+	if (cdev->intr_in_buf != NULL) {
+		rtw_free(cdev->intr_in_buf);
+		cdev->intr_in_buf = NULL;
+	}
+
+	if (cdev->intr_out_buf != NULL) {
+		rtw_free(cdev->intr_out_buf);
+		cdev->intr_out_buf = NULL;
+	}
+
+	if (cdev->isoc_in_buf != NULL) {
+		rtw_free(cdev->isoc_in_buf);
+		cdev->isoc_in_buf = NULL;
+	}
+
+	if (cdev->isoc_out_buf != NULL) {
+		rtw_free(cdev->isoc_out_buf);
+		cdev->isoc_out_buf = NULL;
+	}
+
+	return HAL_OK;
+}
+
+u8 usbd_vendor_transmit_ctrl_data(u8 *buf, u16 len)
+{
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
+	u16 ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_HS_MAX_PACKET_SIZE : USB_FS_MAX_PACKET_SIZE;
+
+	if (len > ep_mps) {
+		len = ep_mps;
+	}
+
+	DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "CTRL TX len=%d\n", len);
+
+	rtw_memcpy(cdev->ctrl_buf, buf, len);
+
+	usbd_ep0_transmit(dev, cdev->ctrl_buf, len);
+
+	return HAL_OK;
+}
+
+u8 usbd_vendor_transmit_bulk_data(u8 *buf, u16 len)
+{
+	u8 ret = HAL_OK;
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	usb_dev_t *dev = cdev->dev;
+	u16 ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
+
+	if (len > USBD_VENDOR_BULK_IN_BUF_SIZE) {
+		len = USBD_VENDOR_BULK_IN_BUF_SIZE;
+	}
+
+	if (len == ep_mps) {
+		cdev->bulk_in_zlp = 1;
+	} else {
+		cdev->bulk_in_zlp = 0;
+	}
+
+	if (cdev->bulk_in_state == 0U) {
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "BULK TX len=%d data=%d\n", len, buf[0]);
+		cdev->bulk_in_state = 1U;
+		rtw_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
+		usbd_ep_transmit(cdev->dev, USBD_VENDOR_BULK_IN_EP, cdev->bulk_in_buf, len);
+	} else {
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "BULK TX len=%d data=%d: BUSY\n", len, buf[0]);
+		ret = HAL_BUSY;
+	}
+
+	return ret;
+}
+
+u8 usbd_vendor_receive_bulk_data(void)
+{
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+
+	usbd_ep_receive(cdev->dev, USBD_VENDOR_BULK_OUT_EP, cdev->bulk_out_buf, USBD_VENDOR_BULK_OUT_BUF_SIZE);
+
+	return HAL_OK;
+}
+
+u8 usbd_vendor_transmit_intr_data(u8 *buf, u16 len)
+{
+	u8 ret = HAL_OK;
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+
+	if (len > USBD_VENDOR_INTR_IN_BUF_SIZE) {
+		len = USBD_VENDOR_INTR_IN_BUF_SIZE;
+	}
+
+	if (cdev->intr_in_state == 0U) {
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "INTR TX len=%d data=%d\n", len, buf[0]);
+		cdev->intr_in_state = 1U;
+		rtw_memcpy((void *)cdev->intr_in_buf, (void *)buf, len);
+		usbd_ep_transmit(cdev->dev, USBD_VENDOR_INTR_IN_EP, cdev->intr_in_buf, len);
+	} else {
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "INTR TX len=%d data=%d: BUSY\n", len, buf[0]);
+		ret = HAL_BUSY;
+	}
+
+	return ret;
+}
+
+u8 usbd_vendor_receive_intr_data(void)
+{
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+
+	usbd_ep_receive(cdev->dev, USBD_VENDOR_INTR_OUT_EP, cdev->intr_out_buf, USBD_VENDOR_INTR_OUT_BUF_SIZE);
+
+	return HAL_OK;
+}
+
+u8 usbd_vendor_transmit_isoc_data(u8 *buf, u16 len)
+{
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+
+	if (len > USBD_VENDOR_ISOC_IN_BUF_SIZE) {
+		len = USBD_VENDOR_ISOC_IN_BUF_SIZE;
+	}
+
+	DBG_PRINTF(MODULE_USB_CLASS, LEVEL_INFO, "ISOC TX len=%d data=%d\n", len, buf[0]);
+	rtw_memcpy(cdev->isoc_in_buf, buf, len);
+	usbd_ep_transmit(cdev->dev, USBD_VENDOR_ISOC_IN_EP, cdev->isoc_in_buf, len);
+
+	return HAL_OK;
+}
+
+u8 usbd_vendor_receive_isoc_data(void)
+{
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+
+	usbd_ep_receive(cdev->dev, USBD_VENDOR_ISOC_OUT_EP, cdev->isoc_out_buf, USBD_VENDOR_ISOC_OUT_BUF_SIZE);
 
 	return HAL_OK;
 }

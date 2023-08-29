@@ -65,7 +65,7 @@ struct AudioHwCapture {
 	 * @return Returns <b>0</b> if capture frames and timestamp get successfully;
 	 * returns a negative value otherwise.
 	 */
-	int (*GetCapturePosition)(const struct AudioHwCapture *stream, uint32_t *frames, struct timespec *timestamp);
+	int (*GetCapturePosition)(const struct AudioHwCapture *stream, uint64_t *frames, struct timespec *timestamp);
 
 	/**
 	 * @brief Get system latency of the current <b>AudioHwCapture</b> object .

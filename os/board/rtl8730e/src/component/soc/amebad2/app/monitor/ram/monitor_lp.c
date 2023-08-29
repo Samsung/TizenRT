@@ -71,7 +71,7 @@ CmdTickPS(
 		u32 duration_ms = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
 
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		SOC_AONTimerClearINT();
+		SOCPS_AONTimerClearINT();
 		SOCPS_AONTimer(duration_ms);
 		SOCPS_AONTimerINT_EN(ENABLE);
 

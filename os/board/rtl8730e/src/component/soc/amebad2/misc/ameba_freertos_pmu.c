@@ -235,7 +235,7 @@ int freertos_ready_to_dsleep(void)
 VOID pg_aontimer_int(u32 Data)
 {
 	DBG_8195A("pg Hp aontimer handler 1\n", SOCPS_AONWakeReason());
-	SOC_AONTimerClearINT_HP();
+	SOCPS_AONTimerClearINT();
 	DBG_8195A("pg Hp aontimer handler 2\n", SOCPS_AONWakeReason());
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
@@ -273,8 +273,8 @@ void freertos_pre_sleep_processing(uint32_t *expected_idle_time)
 #if 0
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	u32 tmp = rand();
-	SOCPS_AONTimer_HP(tmp % 800 + 50);
-	SOCPS_AONTimerINT_EN_HP(ENABLE);
+	SOCPS_AONTimer(tmp % 800 + 50);
+	SOCPS_AONTimerINT_EN(ENABLE);
 	InterruptRegister(pg_aontimer_int, AON_TIM_IRQ, NULL, 7);
 	InterruptEn(AON_TIM_IRQ, 7);
 	SOCPS_SetNPWakeEvent_MSK0_HP(WAKE_SRC_AON_TIM, ENABLE);
@@ -297,7 +297,7 @@ void freertos_pre_sleep_processing(uint32_t *expected_idle_time)
 	missing_tick = tick_passed & 0x1F;
 
 	/* ms =x*1000/32768 = (x *1000) >>15 */
-	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 16);
+	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 
@@ -317,10 +317,14 @@ void freertos_pre_sleep_processing(uint32_t *expected_idle_time)
 	uint32_t tick_passed;
 	volatile uint32_t ms_passed = 0;
 
-	sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
-	max_sleep_time = 0;
-	sleep_param.dlps_enable = DISABLE;
-	//sleep_type = SLEEP_PG;
+	if (freertos_ready_to_dsleep()) {
+		sleep_param.sleep_time = 0;// do not wake on system schedule tick
+		sleep_param.dlps_enable = ENABLE;
+	} else {
+		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
+		max_sleep_time = 0;
+		sleep_param.dlps_enable = DISABLE;
+	}
 
 	sleep_param.sleep_type = sleep_type;
 
@@ -348,7 +352,7 @@ void freertos_pre_sleep_processing(uint32_t *expected_idle_time)
 	missing_tick = tick_passed & 0x1F;
 
 	/* ms =x*1000/32768 = (x *1000) >>15 */
-	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 16);
+	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 
@@ -527,9 +531,8 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 	system_can_yield = 0;
 
 	if (portGET_CORE_ID() == 0) {
-
-		/* disable sys tick and interrupt*/
-		arm_arch_timer_enable(pdFALSE);
+		/* mask sys tick interrupt*/
+		arm_arch_timer_int_mask(pdTRUE);
 
 		/* Enter a critical section but don't use the taskENTER_CRITICAL()
 		method as that will mask interrupts that should exit sleep mode. */
@@ -542,7 +545,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 		/* If a context switch is pending or a task is waiting for the scheduler
 		to be unsuspended then abandon the low power entry. */
 		if (eSleepStatus == eAbortSleep) {
-			arm_arch_timer_enable(pdTRUE);
+			arm_arch_timer_int_mask(pdFALSE);
 		} else if (freertos_ready_to_sleep()) {
 
 			//HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_BACKUP2, 0);
@@ -566,7 +569,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 					/* CPU1 may in WFI idle state. Wake it up to enter hotplug itself */
 					portENABLE_INTERRUPTS();
 					arm_gic_raise_softirq(1, 0);
-					arm_arch_timer_enable(pdTRUE);
+					arm_arch_timer_int_mask(pdFALSE);
 					DelayUs(100);
 					goto EXIT;
 				}
@@ -585,7 +588,7 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 			if (pmu_get_sleep_type() == SLEEP_PG) {
 				arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
 			}
-			arm_arch_timer_enable(pdTRUE);
+			arm_arch_timer_int_mask(pdFALSE);
 			//if (xModifiableIdleTime > 0) {
 			//	__asm volatile("dsb");
 			//	__asm volatile("wfi");
@@ -594,13 +597,15 @@ void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 			configPOST_SLEEP_PROCESSING(xModifiableIdleTime);
 		} else {
 			/* power saving when idle*/
-			arm_arch_timer_enable(pdTRUE);
+			arm_arch_timer_int_mask(pdFALSE);
 			__asm(" DSB");
 			__asm(" WFI");
 			__asm(" ISB");
 			/* power saving when idle*/
 		}
+#if ( configNUM_CORES > 1 )
 EXIT:
+#endif
 		/* Re-enable interrupts and sys tick*/
 		portENABLE_INTERRUPTS();
 	} else if (portGET_CORE_ID() == 1) {
@@ -628,12 +633,38 @@ EXIT:
 
 void pmu_acquire_wakelock(uint32_t nDeviceId)
 {
+	u32 PrevStatus;
+#ifndef ARM_CORE_CA32
+	PrevStatus = ulSetInterruptMaskFromISR();
+#else
+	PrevStatus = portDISABLE_INTERRUPTS();
+#endif
+
 	wakelock |= BIT(nDeviceId);
+
+#ifndef ARM_CORE_CA32
+	vClearInterruptMaskFromISR(PrevStatus);
+#else
+	portRESTORE_INTERRUPTS(PrevStatus);
+#endif
 }
 
 void pmu_release_wakelock(uint32_t nDeviceId)
 {
+	u32 PrevStatus;
+#ifndef ARM_CORE_CA32
+	PrevStatus = ulSetInterruptMaskFromISR();
+#else
+	PrevStatus = portDISABLE_INTERRUPTS();
+#endif
+
 	wakelock &= ~BIT(nDeviceId);
+
+#ifndef ARM_CORE_CA32
+	vClearInterruptMaskFromISR(PrevStatus);
+#else
+	portRESTORE_INTERRUPTS(PrevStatus);
+#endif
 }
 
 uint32_t pmu_get_wakelock_status(void)

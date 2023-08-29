@@ -46,7 +46,8 @@ enum IPC_WIFI_CTRL_TYPE {
 	IPC_WIFI_MSG_MEMORY_NOT_ENOUGH,
 	IPC_WIFI_MSG_RECV_DONE,
 	IPC_WIFI_CMD_XIMT_PKTS,
-	IPC_WIFI_EVT_RECV_PKTS
+	IPC_WIFI_EVT_RECV_PKTS,
+	IPC_WIFI_EVT_TX_DONE
 };
 
 /* -------------------------- Function declaration -------------------------- */

@@ -45,7 +45,6 @@ u8 ddr_init_index(void)
 		DBG_8195A("DDR Size is not configured\n");
 		DelayMs(10000);
 	}
-	return 0;
 }
 
 //////////////////////////////////////////////////
@@ -458,16 +457,16 @@ void rxi316_dram_init(struct rxi316_dram_device_info *rxi316_dram_info)
 	dram_type = rxi316_dram_info-> dev-> device_type;
 	if (rxi316_dram_info-> dev -> bst_len == BST_LEN_2) {
 		dram_bstlen = 2;
-		bst_size = 3;
+		bst_size = BST_LEN_16;
 	} else if (rxi316_dram_info-> dev -> bst_len == BST_LEN_4) {
 		dram_bstlen = 4;
-		bst_size  = 0;
+		bst_size  = BST_LEN_2;
 	} else if (rxi316_dram_info-> dev -> bst_len == BST_LEN_8) {
 		dram_bstlen = 8;
-		bst_size  = 1;
+		bst_size  = BST_LEN_4;
 	} else { // BST_16
 		dram_bstlen = 16;
-		bst_size  = 2;
+		bst_size  = BST_LEN_8;
 	}
 	dram_wl = rxi316_dram_info-> mode_reg-> dram_wr_lat;
 	dram_rl = rxi316_dram_info-> mode_reg-> dram_rd_lat;

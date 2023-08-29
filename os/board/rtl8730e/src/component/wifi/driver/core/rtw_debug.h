@@ -16,11 +16,11 @@
 #define RTW_INFO(x,...) do {} while (0)
 #define RTW_DBG(x,...) do {} while (0)
 
-
 /* add new definition of debug log level */
 #define RTW_MSG_RESIDENT   2
 #define RTW_MSG_ERROR         3
 #define RTW_MSG_WARNING    4
+#define RTW_MSG_DBG        5
 
 /* reserve definition for macro rom_e_rtw_msg_871X_LEVEL*/
 #define _drv_always_		1
@@ -29,8 +29,12 @@
 
 extern u32 GlobalDebugEnable;
 extern u8 OtherDebugPortEnable;
-extern u16 GlobalDebugLevel;
+extern u32 GlobalDebugModule;
 
+
+/* definition of module for debug log */
+#define _module_coex_				BIT(0)
+#define _module_coex_flag_			"BT_COEX"
 
 #undef	_dbgdump
 #undef   _dbgdump_nr
@@ -46,7 +50,7 @@ extern u16 GlobalDebugLevel;
 #if defined(RTW_MSG_LEVEL) && defined(_dbgdump_nr)
 
 #undef  RTW_RESIDENT
-#define RTW_RESIDENT(...)   \
+#define RTW_RESIDENT(...) \
 	do { \
 		if (RTW_MSG_LEVEL >= RTW_MSG_RESIDENT) { \
 			_dbgdump_nr(DRIVER_PREFIX __VA_ARGS__);\
@@ -54,8 +58,8 @@ extern u16 GlobalDebugLevel;
 	} while(0)
 
 
-#undef RTW_ERR
-#define RTW_ERR(...) 	\
+#undef  RTW_ERR
+#define RTW_ERR(...) \
 	do {\
 		if (RTW_MSG_LEVEL >= RTW_MSG_ERROR) { \
 			_dbgdump_nr(DRIVER_PREFIX"[ERROR]" __VA_ARGS__);\
@@ -64,15 +68,24 @@ extern u16 GlobalDebugLevel;
 
 #undef  RTW_WARN
 #define RTW_WARN(...) \
-	do{	\
+	do {\
 		if (RTW_MSG_LEVEL >= RTW_MSG_WARNING) { \
 			_dbgdump_nr(DRIVER_PREFIX"[WARNING]" __VA_ARGS__); \
+		} \
+	} while (0)
+
+#undef  RTW_DBG
+#define RTW_DBG(_Comp, Flag, Fmt) \
+	do {\
+		if ((RTW_MSG_LEVEL >= RTW_MSG_DBG) && (GlobalDebugModule && _Comp)) { \
+			_dbgdump_nr(DRIVER_PREFIX"[%s]", Flag); \
+			_dbgdump Fmt; \
 		} \
 	} while (0)
 #endif
 
 
-#if 	defined (_dbgdump)
+#if defined (_dbgdump)
 #if defined (__ICCARM__) || defined (__CC_ARM) ||defined(__GNUC__)
 
 extern int msg_uart_port(const char *fmt, ...);

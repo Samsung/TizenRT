@@ -12,7 +12,7 @@
 #define STDINT_H
 
 //#include <limits.h>
-
+#include <stdbool.h>
 #define INT8_MAX  CHAR_MAX
 #define INT8_MIN  CHAR_MIN
 #define UINT8_MAX UCHAR_MAX
@@ -135,8 +135,15 @@ typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
 #endif /* __aarch64__ */
 
+#if defined(__ICCARM__)
+#ifndef _SIZE_T
+#define _SIZE_T
 typedef unsigned int size_t;
-typedef unsigned char bool;
+#endif
+#else
+typedef unsigned int size_t;
+#endif
+//typedef unsigned char bool;
 
 #define true	1
 #define false	0

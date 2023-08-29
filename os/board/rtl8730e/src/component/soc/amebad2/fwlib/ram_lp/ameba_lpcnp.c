@@ -16,7 +16,6 @@ u32 np_flash_dummy = 0;
 u32 np_flash_phase_shift_idx = 0;
 u32 np_flash_FLASH_rd_sample_phase_cal = 0;
 u32 np_flash_FLASH_rd_sample_phase = 0;
-
 //u32 mem_type = 0;
 
 SRAM_ONLY_TEXT_SECTION
@@ -404,6 +403,14 @@ void np_power_gate_ctrl(void)
 		}
 
 	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1);
+
+		if ((Rtemp & (LSYS_BIT_BG_ON_MIPI | LSYS_BIT_BG_ON_USB2)) == 0) {
+			/* off ddrphy BG for psram chip, open by USB AND MIPI when need */
+			HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1) & (~LSYS_BIT_BG_PWR));
+		}
+
 		/* MP ECO */
 		np_set_psram_sleep_mode(ENABLE);
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  & (~LSYS_BIT_PWDPAD15N_DQ)));
@@ -697,6 +704,12 @@ void np_clk_gate_ctrl(void)
 		}
 
 	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
+		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1);
+
+		if ((Rtemp & (LSYS_BIT_BG_ON_MIPI | LSYS_BIT_BG_ON_USB2)) == 0) {
+			/* off ddrphy BG for psram chip, open by USB AND MIPI when need */
+			HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1) & (~LSYS_BIT_BG_PWR));
+		}
 		/* MP ECO */
 		if (ps_config.km0_config_psram) {
 			np_set_psram_sleep_mode(ENABLE);
@@ -987,10 +1000,10 @@ void np_clock_gate(void)
 	}
 
 	pmu_release_wakelock(PMU_KM4_RUN);
-
 	if (ps_config.km0_sleep_withM4) {
 		pmu_release_wakelock(PMU_OS);
 	}
+
 }
 
 void np_clock_on(void)
@@ -1065,6 +1078,7 @@ u32 np_suspend(u32 type)
 	NVIC_ClearPendingIRQ(WL_PROTOCOL_IRQ);
 	irq_enable(WL_PROTOCOL_IRQ);
 #endif
+
 	return ret;
 }
 
@@ -1077,6 +1091,7 @@ void np_resume(void)
 	irq_disable(WL_PROTOCOL_IRQ);
 #endif
 	pmu_acquire_wakelock(PMU_KM4_RUN);
+	pmu_acquire_deepwakelock(PMU_KM4_RUN);
 
 	if (np_sleep_type == SLEEP_CG) {
 		np_clock_on();
@@ -1101,11 +1116,16 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqStat
 	psleep_param = (SLEEP_ParamDef *)ipc_get_message(IPC_NP_TO_LP, IPC_N2L_TICKLESS_INDICATION);
 	DCache_Invalidate((u32)psleep_param, sizeof(SLEEP_ParamDef));
 
-	//set dlps
 	if (psleep_param->dlps_enable) {
+		pmu_release_deepwakelock(PMU_KM4_RUN);
+		pmu_release_deepwakelock(PMU_OS);
+	}
+
+	//set dlps
+	if (freertos_ready_to_dsleep()) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		if (psleep_param->sleep_time) {
-			SOC_AONTimerClearINT();
+			SOCPS_AONTimerClearINT();
 			SOCPS_AONTimer(psleep_param->sleep_time);
 			SOCPS_AONTimerINT_EN(ENABLE);
 		}

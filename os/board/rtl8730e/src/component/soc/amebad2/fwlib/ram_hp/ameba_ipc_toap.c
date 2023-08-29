@@ -53,7 +53,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	case LINUX_IPC_OTP_PHY_READ8:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
 		for (i = 0 ; i < (int)recv_req->len; i++) {
-			if (EFUSERead8(0, recv_req->addr + i, (u8 *)&recv_req->param_buf[i], L25EOUTVOLTAGE) !=  1) {
+			if (OTP_Read8((recv_req->addr + i), (u8 *)&recv_req->param_buf[i]) !=  1) {
 				otp_data[0] = -1;
 				break;
 			} else {
@@ -73,7 +73,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	case LINUX_IPC_OTP_PHY_WRITE8:
 		if (!recv_req->write_lock) {
 			for (i = 0 ; i < (int)recv_req->len; i++) {
-				EFUSEWrite8(0, recv_req->addr + i, recv_req->param_buf[i], L25EOUTVOLTAGE);
+				OTP_Write8(recv_req->addr + i, recv_req->param_buf[i]);
 			}
 			otp_data[0] = 1;
 			otp_data[1] = i + 1;
@@ -103,7 +103,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 		break;
 	case LINUX_IPC_OTP_LOGI_READ_MAP:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
-		otp_data[0] = EFUSE_LMAP_READ(recv_req->param_buf);
+		otp_data[0] = OTP_LogicalMap_Read(recv_req->param_buf, 0, OTP_LMAP_LEN);
 		DCache_CleanInvalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
 		DCache_Clean((u32)otp_data, 2);
 		DCache_Invalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
@@ -114,7 +114,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 		DCache_CleanInvalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 		break;
 	case LINUX_IPC_OTP_LOGI_WRITE_MAP:
-		otp_data[0] = EFUSE_LMAP_WRITE(recv_req->addr, recv_req->len, recv_req->param_buf);
+		otp_data[0] = OTP_LogicalMap_Write(recv_req->addr, recv_req->len, recv_req->param_buf);
 		DCache_Clean((u32)otp_data, 2);
 		DCache_Invalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 		ipc_msg.msg_type = IPC_USER_POINT;
@@ -125,7 +125,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 		break;
 	case LINUX_IPC_EFUSE_REMAIN_LEN:
 		DCache_Invalidate((u32)recv_req->param_buf, OPT_REQ_MSG_PARAM_NUM);
-		remain_length = EFUSE_RemainLength();
+		remain_length = otp_logical_remain();
 		recv_req->param_buf[0] = (remain_length >> 24) & 0xFF;
 		recv_req->param_buf[1] = (remain_length >> 16) & 0xFF;
 		recv_req->param_buf[2] = (remain_length >> 8) & 0xFF;

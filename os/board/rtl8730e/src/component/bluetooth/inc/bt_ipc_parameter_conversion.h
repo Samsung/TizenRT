@@ -16,12 +16,24 @@
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 
 /**
+ * @fn        void *bt_device_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
+ * @brief     convert bt device app parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
+ * @param[in] act: API cmd/evt group
+ * @param[in] data: pointer to app parameter struct memory
+ * @param[in] buf_len: app parameter struct length
+ * @param[out] pactual_size: pointer to returned ipc buffer size
+ * @return
+ *            - pointer to ipc buffer memory
+ */
+void *bt_device_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
+
+/**
  * @fn        uint16_t rtk_bt_device_copy_act_ret_param(uint16_t act, void *dst, void *src)
  * @brief     common bt device memory copy value from return memory of ipc to app
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -34,7 +46,7 @@ uint16_t rtk_bt_device_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_gap_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -45,7 +57,7 @@ void *bt_gap_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -55,7 +67,7 @@ uint16_t rtk_gap_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @fn        uint32_t rtk_le_get_act_ret_param_size(uint16_t act)
  * @brief     Get le ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_le_get_act_ret_param_size(uint16_t act);
@@ -66,7 +78,7 @@ uint32_t rtk_le_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -79,7 +91,7 @@ uint16_t rtk_le_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -96,7 +108,7 @@ void bt_le_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_gatts_get_act_ret_param_size(uint16_t act)
  * @brief     Get gatts ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_gatts_get_act_ret_param_size(uint16_t act);
@@ -107,7 +119,7 @@ uint32_t rtk_gatts_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -120,7 +132,7 @@ uint16_t rtk_gatts_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_gatts_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -137,7 +149,7 @@ void bt_gatts_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_gattc_get_act_ret_param_size(uint16_t act)
  * @brief     get gattc ipc return value size from dev
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_gattc_get_act_ret_param_size(uint16_t act);
@@ -148,7 +160,7 @@ uint32_t rtk_gattc_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -161,7 +173,7 @@ uint16_t rtk_gattc_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_gattc_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -175,10 +187,271 @@ void *bt_gattc_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint
 void bt_gattc_ipc_pop_event_param(uint8_t evt, void *param);
 
 /**
+ * @fn        uint32_t rtk_mesh_get_act_ret_param_size(uint32_t group, uint16_t act)
+ * @brief     get bt mesh ipc return value size from dev
+ * @param[in] group: API cmd group
+ * @param[in] act: API command
+ * @return
+ *            - ipc return value size
+ */
+uint32_t rtk_mesh_get_act_ret_param_size(uint32_t group, uint16_t act);
+
+/**
+ * @fn        uint16_t rtk_mesh_copy_act_ret_param(uint16_t act, void *dst, void *src)
+ * @brief     convert bt mesh app parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
+ * @param[in] act: API command
+ * @param[in] dst: destination address
+ * @param[in] src: source address
+ * @return
+ *            - ipc return value size
+ */
+uint16_t rtk_mesh_copy_act_ret_param(uint16_t act, void *dst, void *src);
+
+/**
+ * @fn        void bt_mesh_generic_onoff_server_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter's 2nd level ptr which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_onoff_server_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_datatrans_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter's 2nd level ptr which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_datatrans_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lightness_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lightness_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_ctl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_ctl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_ctl_temperature_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_ctl_temperature_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_hue_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_hue_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_saturation_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_saturation_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_xyl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_xyl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lc_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lc_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lc_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lc_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_time_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_time_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scheduler_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scheduler_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scheduler_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scheduler_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scene_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scene_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scene_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scene_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_default_transition_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_default_transition_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_power_on_off_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_power_on_off_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_power_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_power_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_battery_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_battery_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_location_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_location_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_location_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_location_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_user_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_user_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_client_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_client_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_admin_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_admin_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_manu_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_manu_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_sensor_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_sensor_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_sensor_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_sensor_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
  * @fn        uint32_t rtk_br_get_act_ret_param_size(uint16_t act)
  * @brief     Get br ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_br_get_act_ret_param_size(uint16_t act);
@@ -189,7 +462,7 @@ uint32_t rtk_br_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -202,7 +475,7 @@ uint16_t rtk_br_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_br_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -219,7 +492,7 @@ void bt_br_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_avrcp_get_act_ret_param_size(uint16_t act)
  * @brief     Get avrcp ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_avrcp_get_act_ret_param_size(uint16_t act);
@@ -230,7 +503,7 @@ uint32_t rtk_avrcp_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -243,7 +516,7 @@ uint16_t rtk_avrcp_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_avrcp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -260,7 +533,7 @@ void bt_avrcp_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_a2dp_get_act_ret_param_size(uint16_t act)
  * @brief     Get a2dp ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_a2dp_get_act_ret_param_size(uint16_t act);
@@ -271,7 +544,7 @@ uint32_t rtk_a2dp_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -284,7 +557,7 @@ uint16_t rtk_a2dp_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_a2dp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -301,7 +574,7 @@ void bt_a2dp_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_spp_get_act_ret_param_size(uint16_t act)
  * @brief     Get spp ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_spp_get_act_ret_param_size(uint16_t act);
@@ -312,7 +585,7 @@ uint32_t rtk_spp_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -325,7 +598,7 @@ uint16_t rtk_spp_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_spp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -342,7 +615,7 @@ void bt_spp_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_sdp_get_act_ret_param_size(uint16_t act)
  * @brief     Get sdp ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_sdp_get_act_ret_param_size(uint16_t act);
@@ -351,7 +624,7 @@ uint32_t rtk_sdp_get_act_ret_param_size(uint16_t act);
  * @fn        uint32_t rtk_hfp_get_act_ret_param_size(uint16_t act)
  * @brief     Get hfp ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_hfp_get_act_ret_param_size(uint16_t act);
@@ -362,7 +635,7 @@ uint32_t rtk_hfp_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -375,7 +648,7 @@ uint16_t rtk_hfp_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_hfp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -394,7 +667,7 @@ void bt_hfp_ipc_pop_event_param(uint8_t evt, void *param);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -407,7 +680,7 @@ uint16_t rtk_sdp_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_sdp_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -424,7 +697,7 @@ void bt_sdp_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_le_iso_get_act_ret_param_size(uint16_t act)
  * @brief     Get le iso ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_le_iso_get_act_ret_param_size(uint16_t act);
@@ -435,7 +708,7 @@ uint32_t rtk_le_iso_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -448,7 +721,7 @@ uint16_t rtk_le_iso_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_iso_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -465,7 +738,7 @@ void bt_le_iso_ipc_pop_event_param(uint8_t evt, void *param);
  * @fn        uint32_t rtk_le_audio_get_act_ret_param_size(uint16_t act)
  * @brief     Get le audio ipc return value size from dev.
  * @param[in] act: API command
- * @return    
+ * @return
  *            - ipc return value size
  */
 uint32_t rtk_le_audio_get_act_ret_param_size(uint16_t act);
@@ -476,7 +749,7 @@ uint32_t rtk_le_audio_get_act_ret_param_size(uint16_t act);
  * @param[in] act: API cmd/evt group
  * @param[in] dst: destination address
  * @param[in] src: source address
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - others: Error code
  */
@@ -489,7 +762,7 @@ uint16_t rtk_le_audio_copy_act_ret_param(uint16_t act, void *dst, void *src);
  * @param[in] data: pointer to app parameter struct memory
  * @param[in] buf_len: app parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -502,12 +775,31 @@ void *bt_le_audio_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, u
  */
 void bt_le_audio_ipc_pop_event_param(uint8_t evt, void *param);
 
+
+/**
+ * @fn        void bt_le_audio_push_event_ipc_ret(uint16_t event, void *dst, void *src)
+ * @brief     le audio memory copy value from return memory of app to ipc
+ * @param[in] event: event code
+ * @param[in] dst: destination address
+ * @param[in] src: source address
+ */
+void bt_le_audio_push_event_ipc_ret(uint16_t event, void *dst, void *src);
+
 #elif defined(CONFIG_BT_NP) && CONFIG_BT_NP
+
+/**
+ * @fn        void bt_device_ipc_pop_cmd_param(uint8_t act, void *param)
+ * @brief     pop received parameter contained in ipc buffer
+ * @param[in] act: API command
+ * @param[in] param: pointer to ipc buffer
+ */
+void bt_device_ipc_pop_cmd_param(uint8_t act, void *param);
+
 /**
  * @fn        uint32_t get_bt_gap_evt_mem_size(uint8_t evt_code)
  * @brief     get common gap event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_gap_evt_mem_size(uint8_t evt_code);
@@ -524,7 +816,7 @@ void bt_gap_ipc_pop_cmd_param(uint8_t act, void *param);
  * @fn        uint32_t get_bt_le_gap_evt_mem_size(uint8_t evt_code)
  * @brief     get le event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_le_gap_evt_mem_size(uint8_t evt_code);
@@ -544,7 +836,7 @@ void bt_le_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -553,7 +845,7 @@ void *bt_le_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
  * @fn        uint32_t get_bt_gatts_evt_mem_size(uint8_t evt_code)
  * @brief     get gatts event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_gatts_evt_mem_size(uint8_t evt_code);
@@ -573,7 +865,7 @@ void bt_gatts_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_gatts_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -582,7 +874,7 @@ void *bt_gatts_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
  * @fn        uint32_t get_bt_gattc_evt_mem_size(uint8_t evt_code)
  * @brief     get gattc event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_gattc_evt_mem_size(uint8_t evt_code);
@@ -602,16 +894,42 @@ void bt_gattc_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_gattc_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
 
 /**
+ * @fn        void *bt_mesh_push_event_ipc_buf(uint32_t group, uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size)
+ * @brief     convert bt mesh event parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
+ * @param[in] group: group code
+ * @param[in] event: event code
+ * @param[in] data: pointer to event parameter struct memory
+ * @param[in] buf_len: event parameter struct length
+ * @param[out] pactual_size: pointer to returned ipc buffer size
+ * @return
+ *            - pointer to ipc buffer memory
+ */
+void *bt_mesh_push_event_ipc_buf(uint32_t group, uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
+
+/**
+ * @fn        uint16_t rtk_mesh_copy_evt_ret_param(uint32_t group, uint8_t evt_code, uint8_t *cb_param, uint8_t *ipc_ret)
+ * @brief     copy ipc ret buffer to event buffer for stack
+ * @param[in] group: group code
+ * @param[in] evt_code: event code
+ * @param[in] cb_param: pointer to event struct
+ * @param[in] ipc_ret: IPC ret buffer pointer
+ * @param[out] action result
+ * @return
+ *            - pointer to ipc buffer memory
+ */
+uint16_t rtk_mesh_copy_evt_ret_param(uint32_t group, uint8_t evt_code, uint8_t *cb_param, uint8_t *ipc_ret);
+
+/**
  * @fn        uint32_t get_bt_br_gap_evt_mem_size(uint8_t evt_code)
  * @brief     get BR/EDR event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_br_gap_evt_mem_size(uint8_t evt_code);
@@ -631,7 +949,7 @@ void bt_br_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_br_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -640,7 +958,7 @@ void *bt_br_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uin
  * @fn        uint32_t get_bt_avrcp_evt_mem_size(uint8_t evt_code)
  * @brief     get avrcp event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_avrcp_evt_mem_size(uint8_t evt_code);
@@ -660,7 +978,7 @@ void bt_avrcp_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_avrcp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -669,7 +987,7 @@ void *bt_avrcp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, 
  * @fn        uint32_t get_bt_a2dp_evt_mem_size(uint8_t evt_code)
  * @brief     get a2dp event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_a2dp_evt_mem_size(uint8_t evt_code);
@@ -689,7 +1007,7 @@ void bt_a2dp_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_a2dp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -698,7 +1016,7 @@ void *bt_a2dp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, u
  * @fn        uint32_t get_bt_spp_evt_mem_size(uint8_t evt_code)
  * @brief     get spp event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_spp_evt_mem_size(uint8_t evt_code);
@@ -718,7 +1036,7 @@ void bt_spp_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_spp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -727,7 +1045,7 @@ void *bt_spp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
  * @fn        uint32_t get_bt_sdp_evt_mem_size(uint8_t evt_code)
  * @brief     get sdp event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_sdp_evt_mem_size(uint8_t evt_code);
@@ -747,7 +1065,7 @@ void bt_sdp_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_sdp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -756,7 +1074,7 @@ void *bt_sdp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
  * @fn        uint32_t get_bt_hfp_evt_mem_size(uint8_t evt_code)
  * @brief     get hfp event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_hfp_evt_mem_size(uint8_t evt_code);
@@ -776,7 +1094,7 @@ void bt_hfp_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_hfp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -785,7 +1103,7 @@ void *bt_hfp_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, ui
  * @fn        uint32_t get_bt_le_iso_evt_mem_size(uint8_t evt_code)
  * @brief     get le iso event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_le_iso_evt_mem_size(uint8_t evt_code);
@@ -805,7 +1123,7 @@ void bt_le_iso_ipc_pop_cmd_param(uint8_t act, void *param);
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_iso_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
@@ -814,7 +1132,7 @@ void *bt_le_iso_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len,
  * @fn        uint32_t get_bt_le_audio_evt_mem_size(uint8_t evt_code)
  * @brief     get le audio event need memory size
  * @param[in] evt_code: Event code
- * @return    
+ * @return
  *            - need memory size
  */
 uint32_t get_bt_le_audio_evt_mem_size(uint8_t evt_code);
@@ -828,13 +1146,22 @@ uint32_t get_bt_le_audio_evt_mem_size(uint8_t evt_code);
 void bt_le_audio_ipc_pop_cmd_param(uint8_t act, void *param);
 
 /**
+ * @fn        void bt_le_audio_pop_event_ipc_ret(uint16_t event, void *dst, void *src)
+ * @brief     le audio memory copy value from return memory of app to ipc
+ * @param[in] event: event code
+ * @param[in] dst: destination address
+ * @param[in] src: source address
+ */
+void bt_le_audio_pop_event_ipc_ret(uint16_t event, void *dst, void *src);
+
+/**
  * @fn        void *bt_le_audio_push_event_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
  * @brief     convert le audio event parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
  * @param[in] event: event code
  * @param[in] data: pointer to event parameter struct memory
  * @param[in] buf_len: event parameter struct length
  * @param[out] pactual_size: pointer to returned ipc buffer size
- * @return    
+ * @return
  *            - pointer to ipc buffer memory
  */
 void *bt_le_audio_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);

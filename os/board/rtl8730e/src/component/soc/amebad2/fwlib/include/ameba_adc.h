@@ -349,11 +349,11 @@
 #define ADC_BIT_IT_ERR_STS                  ((u32)0x00000001 << 7)          /*!<RW1C 0h   */
 #define ADC_BIT_IT_DAT_OVW_STS              ((u32)0x00000001 << 6)          /*!<RW1C 0h   */
 #define ADC_BIT_IT_FIFO_EMPTY_STS           ((u32)0x00000001 << 5)          /*!<RW1C 0h   */
-#define ADC_BIT_FIFO_OVER_STS               ((u32)0x00000001 << 4)          /*!<RW1C 0h   */
-#define ADC_BIT_FIFO_FULL_STS               ((u32)0x00000001 << 3)          /*!<RW1C 0h   */
-#define ADC_BIT_CHCV_END_STS                ((u32)0x00000001 << 2)          /*!<RW1C 0h   */
-#define ADC_BIT_CV_END_STS                  ((u32)0x00000001 << 1)          /*!<RW1C 0h   */
-#define ADC_BIT_CVLIST_END_STS              ((u32)0x00000001 << 0)          /*!<RW1C 0h   */
+#define ADC_BIT_IT_FIFO_OVER_STS            ((u32)0x00000001 << 4)          /*!<RW1C 0h   */
+#define ADC_BIT_IT_FIFO_FULL_STS            ((u32)0x00000001 << 3)          /*!<RW1C 0h   */
+#define ADC_BIT_IT_CHCV_END_STS             ((u32)0x00000001 << 2)          /*!<RW1C 0h   */
+#define ADC_BIT_IT_CV_END_STS               ((u32)0x00000001 << 1)          /*!<RW1C 0h   */
+#define ADC_BIT_IT_CVLIST_END_STS           ((u32)0x00000001 << 0)          /*!<RW1C 0h   */
 /** @} */
 
 /** @defgroup ADC_IT_CHNO_CON
@@ -389,9 +389,12 @@
  **/
 #define ADC_BIT_DAT_RDY_CHx                 ((u32)0x00000001 << 17)          /*!<R 0  This bit indicates that a conversion is done. Every time a conversion is done, this bit should be set to 1 and it would be cleared to 0 when a read operation of reg_adc_data_chx. */
 #define ADC_BIT_DAT_OVW_CHx                 ((u32)0x00000001 << 16)          /*!<R 0  This bit indicates that there is a data overwritten situation in bit_adc_data_global takeing place. A data overwritten situation is that a former conversion data is NOT read before a new conversion is written to data field. It would be cleared to 0 when a read operation of reg_adc_data_chx. 0: There is no data overwritten case. 1: There is a data overwritten case. */
-#define ADC_MASK_DATA_CHx                   ((u32)0x0000FFFF << 0)          /*!<R 0  This field contains the newsest conversion data of channel x [15:12]: which channel in channel list the data belongs to, only valid when bit_adc_ch_unmask=1 [11:0]: newest data */
-#define ADC_DATA_CHx(x)                     ((u32)(((x) & 0x0000FFFF) << 0))
-#define ADC_GET_DATA_CHx(x)                 ((u32)(((x >> 0) & 0x0000FFFF)))
+#define ADC_MASK_NUM_CHx                    ((u32)0x0000000F << 12)          /*!<R 0  This field contains the newsest conversion data of channel x [15:12]: which channel in channel list the data belongs to, only valid when bit_adc_ch_unmask=1 */
+#define ADC_NUM_CHx(x)                      ((u32)(((x) & 0x0000000F) << 12))
+#define ADC_GET_NUM_CHx(x)                  ((u32)(((x >> 12) & 0x0000000F)))
+#define ADC_MASK_DATA_CHx                   ((u32)0x00000FFF << 0)          /*!<R 0  This field contains the newsest conversion data of channel x [11:0]: newest data */
+#define ADC_DATA_CHx(x)                     ((u32)(((x) & 0x00000FFF) << 0))
+#define ADC_GET_DATA_CHx(x)                 ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ADC_DATA_GLOBAL
@@ -403,9 +406,12 @@
 #define ADC_GET_DAT_CH(x)                   ((u32)(((x >> 18) & 0x0000000F)))
 #define ADC_BIT_DAT_RDY_GLOBAL              ((u32)0x00000001 << 17)          /*!<R 0  This bit indicates that a conversion is done. Every time a conversion is done, this bit should be set to 1 and it would be cleared to 0 when a read operation of reg_adc_data_global */
 #define ADC_BIT_DAT_OVW_GLOBAL              ((u32)0x00000001 << 16)          /*!<R 0  This bit indicates that there is a data overwritten situation in bit_adc_data_global takes place. A data overwritten situation is that a former conversion data is NOT read before a new conversion is written to data field. 0: there is no data overwritten case. 1: there is a data overwritten case. */
-#define ADC_MASK_DATA_GLOBAL                ((u32)0x0000FFFF << 0)          /*!<R 0  This field contains the newsest conversion data of channel in the list. [15:12]: which channel in channel list the data belongs to, only valid when bit_adc_ch_unmask=1 [11:0]: newest data */
-#define ADC_DATA_GLOBAL(x)                  ((u32)(((x) & 0x0000FFFF) << 0))
-#define ADC_GET_DATA_GLOBAL(x)              ((u32)(((x >> 0) & 0x0000FFFF)))
+#define ADC_MASK_CH_NUM_GLOBAL              ((u32)0x0000000F << 12)          /*!<R 0  This field contains the newsest conversion data of channel in the list. [15:12]: which channel in channel list the data belongs to, only valid when bit_adc_ch_unmask=1 */
+#define ADC_CH_NUM_GLOBAL(x)                ((u32)(((x) & 0x0000000F) << 12))
+#define ADC_GET_CH_NUM_GLOBAL(x)            ((u32)(((x >> 12) & 0x0000000F)))
+#define ADC_MASK_DATA_GLOBAL                ((u32)0x00000FFF << 0)          /*!<R 0  This field contains the newsest conversion data of channel in the list. [11:0]: newest data */
+#define ADC_DATA_GLOBAL(x)                  ((u32)(((x) & 0x00000FFF) << 0))
+#define ADC_GET_DATA_GLOBAL(x)              ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ADC_FLR
@@ -580,11 +586,13 @@ typedef struct {
 #define ADC_CH3							((u8)0x03)
 #define ADC_CH4							((u8)0x04)
 #define ADC_CH5							((u8)0x05)
-#define ADC_CH6							((u8)0x06)
+#define ADC_CH6							((u8)0x06)	/*!< ADC VBAT channel */
 #define ADC_CH7							((u8)0x07)	/*!< ADC internal channel */
 #define ADC_CH8							((u8)0x08)	/*!< ADC internal channel */
 #define ADC_CH9							((u8)0x09)	/*!< ADC internal channel */
+
 #define ADC_CH_NUM						(10)
+#define ADC_EXT_CH_NUM					(6)
 #define ADC_GLOBAL						((u8)0xFF)
 
 #define IS_ADC_CHN_SEL(SEL)     (((SEL) == ADC_CH0) || \
@@ -597,6 +605,19 @@ typedef struct {
 									((SEL) == ADC_CH7) || \
 									((SEL) == ADC_CH8) || \
 									((SEL) == ADC_CH9))
+/**
+  * @}
+  */
+
+/** @defgroup ADC_Chn_Pad_Selection
+  * @{
+  */
+#define ADC_CH0_PIN						(_PA_0)
+#define ADC_CH1_PIN						(_PA_1)
+#define ADC_CH2_PIN						(_PA_2)
+#define ADC_CH3_PIN						(_PA_3)
+#define ADC_CH4_PIN						(_PA_4)
+#define ADC_CH5_PIN						(_PA_5)
 /**
   * @}
   */
@@ -678,6 +699,31 @@ typedef struct {
   * @}
   */
 
+/** @defgroup ADC_Interrupt_Control
+  * @{
+  */
+#define ADC_BIT_IT_ALL_EN				(ADC_BIT_IT_COMP_CH9_EN   |\
+										ADC_BIT_IT_COMP_CH8_EN   |\
+										ADC_BIT_IT_COMP_CH7_EN   |\
+										ADC_BIT_IT_COMP_CH6_EN   |\
+										ADC_BIT_IT_COMP_CH5_EN   |\
+										ADC_BIT_IT_COMP_CH4_EN   |\
+										ADC_BIT_IT_COMP_CH3_EN   |\
+										ADC_BIT_IT_COMP_CH2_EN   |\
+										ADC_BIT_IT_COMP_CH1_EN   |\
+										ADC_BIT_IT_COMP_CH0_EN   |\
+										ADC_BIT_IT_ERR_EN        |\
+										ADC_BIT_IT_DAT_OVW_EN    |\
+										ADC_BIT_IT_FIFO_EMPTY_EN |\
+										ADC_BIT_IT_FIFO_OVER_EN  |\
+										ADC_BIT_IT_FIFO_FULL_EN  |\
+										ADC_BIT_IT_CHCV_END_EN   |\
+										ADC_BIT_IT_CV_END_EN     |\
+										ADC_BIT_IT_CVLIST_END_EN)
+/**
+  * @}
+  */
+
 /** @defgroup ADC_Interrupt_Status
   * @{
   */
@@ -695,11 +741,11 @@ typedef struct {
 												ADC_BIT_IT_ERR_STS | \
 												ADC_BIT_IT_DAT_OVW_STS |\
 												ADC_BIT_IT_FIFO_EMPTY_STS |\
-												ADC_BIT_FIFO_OVER_STS |\
-												ADC_BIT_FIFO_FULL_STS |\
-												ADC_BIT_CHCV_END_STS |\
-												ADC_BIT_CV_END_STS |\
-												ADC_BIT_CVLIST_END_STS)
+												ADC_BIT_IT_FIFO_OVER_STS |\
+												ADC_BIT_IT_FIFO_FULL_STS |\
+												ADC_BIT_IT_CHCV_END_STS |\
+												ADC_BIT_IT_CV_END_STS |\
+												ADC_BIT_IT_CVLIST_END_STS)
 /**
   * @}
   */
@@ -730,8 +776,19 @@ typedef struct {
 /** @defgroup ADC_Data_Setting
   * @{
   */
-#define ADC_GET_DAT_CHID(x)				((u32)(((x >> 12) & 0x0000000F)))
-#define ADC_CH_DATA(x)					((u32)((x) & 0x00000FFF))
+#define ADC_ID_AND_DATA(x)						((u32)((x) & 0x0000FFFF))
+
+/**
+  * @}
+  */
+
+/** @defgroup ADC_OTP_Address_Setting
+  * @{
+  */
+#define NORM_VOL_ADDR			0x704 // OTP address for normal channel voltage calibration
+#define VBAT_VOL_ADDR			0x70A // OTP address for vbat channel voltage calibration
+#define VREF_SEL_ADDR			0x7EB // OTP address for vref selection
+#define INTER_R_ADDR			0x7EC // OTP address for internal resistance
 /**
   * @}
   */
@@ -759,8 +816,8 @@ _LONG_CALL_ u32 ADC_GetLastChan(void);
 _LONG_CALL_ void ADC_SetComp(u8 ADC_channel, u16 CompThresH, u16 CompThresL, u8 CompCtrl);
 _LONG_CALL_ void ADC_ResetCSwList(void);
 _LONG_CALL_ u32 ADC_Readable(void);
-_LONG_CALL_ u16 ADC_Read(void);
-_LONG_CALL_ void ADC_ReceiveBuf(u16 *pBuf, u32 len);
+_LONG_CALL_ u32 ADC_Read(void);
+_LONG_CALL_ void ADC_ReceiveBuf(u32 *pBuf, u32 len);
 _LONG_CALL_ void ADC_ClearFIFO(void);
 _LONG_CALL_ u32 ADC_GetStatus(void);
 _LONG_CALL_ void ADC_SWTrigCmd(u32 NewState);
@@ -770,8 +827,8 @@ _LONG_CALL_ void ADC_SetDmaEnable(u32 newState);
 _LONG_CALL_ u32 ADC_RXGDMA_Init(GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc,
 								u8 *pDataBuf, u32 DataLen);
 _LONG_CALL_ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan);
-_LONG_CALL_ s32 ADC_GetVoltage(u16 chan_data);
-_LONG_CALL_ s32 ADC_GetVBATVoltage(u16 vbat_data);
+_LONG_CALL_ s32 ADC_GetVoltage(u32 chan_data);
+_LONG_CALL_ s32 ADC_GetVBATVoltage(u32 vbat_data);
 _LONG_CALL_ u32 ADC_GetInterR(void);
 
 /**

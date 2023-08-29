@@ -16,9 +16,6 @@ extern "C"
 #include <bt_api_config.h>
 #include <dlist.h>
 #include <rtk_bt_def.h>
-#include <rtk_bt_att_defs.h>
-
-
 
 #if RTK_BLE_MGR_LIB
 
@@ -102,7 +99,7 @@ typedef struct {
 			uint8_t *p_instance_num;		/*!< Included service instance number */
     		uint8_t instance_id[20];		/*!< Included service instance id array */
 		} find_include_srv;					/*!< Find if a service is included in specific primary service by service UUID */
-	};										/*!< anonymous union member in rtk_bt_gattc_find_param_t */
+	};										/*!< Anonymous union member in rtk_bt_gattc_find_param_t */
 } rtk_bt_gattc_find_param_t;
 
 /**
@@ -110,8 +107,8 @@ typedef struct {
  * @brief     Bluetooth GATT client read type.
  */
 typedef enum {
-	RTK_BT_GATT_CHAR_READ_BY_HANDLE,			/*!< Read characteristic Value */
-	RTK_BT_GATT_CHAR_READ_BY_UUID,				/*!< Read Using characteristic UUID */
+	RTK_BT_GATT_CHAR_READ_BY_HANDLE,			/*!< Read characteristic value */
+	RTK_BT_GATT_CHAR_READ_BY_UUID,				/*!< Read using characteristic UUID */
 } rtk_bt_gattc_read_type_t;
 
 /**
@@ -121,18 +118,18 @@ typedef enum {
 typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
-	rtk_bt_gattc_read_type_t type;			/*!< Attribute Value Read Type */
+	rtk_bt_gattc_read_type_t type;			/*!< Characteristic value read type */
 	union {
 		struct by_handle_param {
-			uint16_t handle;				/*!< Attribute handle */
-		} by_handle;						/*!< Read Characteristic Value */
+			uint16_t handle;				/*!< Characteristic value handle */
+		} by_handle;						/*!< Read characteristic value */
 
 		struct by_uuid_param {
 			uint16_t start_handle;			/*!< Start attribute handle for search range */
 			uint16_t end_handle;			/*!< End attribute handle for search range */
 			rtk_bt_gattc_uuid_t char_uuid;	/*!< Characteristic UUID */
-		} by_uuid;							/*!< Read Using Characteristic UUID */
-	};										/*!< anonymous union member in rtk_bt_gattc_read_param_t */
+		} by_uuid;							/*!< Read using characteristic UUID */
+	};										/*!< Anonymous union member in rtk_bt_gattc_read_param_t */
 } rtk_bt_gattc_read_param_t;
 
 /**
@@ -140,9 +137,9 @@ typedef struct {
  * @brief     Bluetooth GATT client write type.
  */
 typedef enum {
-	RTK_BT_GATT_CHAR_WRITE_REQ = 0x01,			        /*!< Write characteristic Value request */
-	RTK_BT_GATT_CHAR_WRITE_NO_RSP = 0x02,				/*!< Write characteristic Value without response */
-	RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED = 0x04,		/*!< Write characteristic Value without response and with signed data */
+	RTK_BT_GATT_CHAR_WRITE_REQ = 0x00,			/*!< Write characteristic value request */
+	RTK_BT_GATT_CHAR_WRITE_NO_RSP,				/*!< Write characteristic value without response */
+	RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED,		/*!< Write characteristic value without response and with signed data */
 } rtk_bt_gattc_write_type_t;
 
 /**
@@ -153,7 +150,7 @@ typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
 	rtk_bt_gattc_write_type_t type;			/*!< Characteristic write type */
-	uint16_t handle;						/*!< Attribute handle */
+	uint16_t handle;						/*!< Characteristic value handle */
 	uint16_t length;						/*!< Length of the data */
 	void *data;								/*!< Data to be written */
 } rtk_bt_gattc_write_param_t;
@@ -171,16 +168,6 @@ typedef struct{
 	bool bnotify;							/*!< If notify bit is writed */
 	bool bindicate;							/*!< If indicate bit is writed */
 }rtk_bt_gattc_update_cccd_param_t;
-
-/**
- * @struct    rtk_bt_gattc_cfm_param_t
- * @brief     Bluetooth GATTC confirmation parameter.
- */
-typedef struct {
-	uint16_t profile_id;					/*!< Profile ID */
-	uint16_t conn_handle;					/*!< Connection handle */
-	uint16_t cid;							/*!< ID of L2CAP channel to send the confirmation, MUST be same as cid in @ref rtk_bt_gattc_cccd_value_ind_t. Ignored when RTK_BT_5_2_EATT_SUPPORT is 0. */
-} rtk_bt_gattc_cfm_param_t;
 
 /**
  * @struct    rtk_bt_gattc_discover_ind_t
@@ -367,16 +354,6 @@ typedef struct {
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid);
 
 /**
- * @fn         uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
- * @brief      Unregister GATT client profile.
- * @param[in]  p_reg_param: Pointer to GATT client profile parameters.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid);
-
-/**
  * @fn         rtk_bt_gattc_discover_all(uint16_t conn_handle)
  * @brief      Discover all attributes.
  * @param[in]  conn_handle: The handle of connection.
@@ -439,16 +416,6 @@ uint16_t rtk_bt_gattc_enable_notify_or_indicate(
  */
 uint16_t rtk_bt_gattc_disable_notify_or_indicate(
 								rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param);
-
-/**
- * @fn         uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param)
- * @brief      GATT client confirm for server indicate
- * @param p_cfm_param: Pointer to GATT client confirm parameters.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param);
 /**
  * @}
  */
@@ -468,8 +435,8 @@ uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param);
  * @brief     Bluetooth GATT client discover type.
  */
 typedef enum {
-	RTK_BT_GATT_DISCOVER_PRIMARY_ALL,			/*!< Discover all Primary services */
-	RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID,		/*!< Discover Primary services By service UUID */
+	RTK_BT_GATT_DISCOVER_PRIMARY_ALL,			/*!< Discover all primary services */
+	RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID,		/*!< Discover primary services By service UUID */
 	RTK_BT_GATT_DISCOVER_INCLUDE,				/*!< Find included services */
 	RTK_BT_GATT_DISCOVER_CHARACTERISTIC_ALL,	/*!< Discover all characteristic of a service */
 	RTK_BT_GATT_DISCOVER_CHARACTERISTIC_BY_UUID,/*!< Discover characteristic by UUID */
@@ -488,36 +455,36 @@ typedef struct {
 
 	union {
 		struct disc_primary_all_param {
-			uint8_t null;					/*!< Just for Integrity */
+			uint8_t dummy;					/*!< Useless, just for integrity */
 		} disc_primary_all;					/*!< Discover All Primary Services */
 
 		struct disc_primary_by_uuid_param {
 			uint8_t uuid[16];				/*!< Discover UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Discover UUID type */
-		} disc_primary_by_uuid;				/*!< Discover Primary Service by Service UUID */
+			uint8_t uuid_type;				/*!< Discover UUID type @rtk_bt_uuid_type_t */
+		} disc_primary_by_uuid;				/*!< Discover primary service by service UUID */
 
 		struct disc_inc_param {
-			uint16_t start_handle;			/*!< included service start handle */
-			uint16_t end_handle;			/*!< included service end handle */
-		} disc_inc;							/*!< Find Included Services */
+			uint16_t start_handle;			/*!< Included service start handle */
+			uint16_t end_handle;			/*!< Included service end handle */
+		} disc_inc;							/*!< Find included services */
 
 		struct disc_char_all_param {
-			uint16_t start_handle;			/*!< included service start handle */
-			uint16_t end_handle;			/*!< included service end handle */
-		} disc_char_all;					/*!< Discover All Characteristics of a Service */
+			uint16_t start_handle;			/*!< Included service start handle */
+			uint16_t end_handle;			/*!< Included service end handle */
+		} disc_char_all;					/*!< Discover all characteristics of a service */
 
 		struct disc_char_by_uuid_param {
-			uint16_t start_handle;			/*!< included service start handle */
-			uint16_t end_handle;			/*!< included service end handle */
+			uint16_t start_handle;			/*!< Included service start handle */
+			uint16_t end_handle;			/*!< Included service end handle */
 			uint8_t uuid[16];				/*!< Discover UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Discover UUID type */
-		} disc_char_by_uuid;				/*!< Discover Characteristics by UUID */
+			uint8_t uuid_type;				/*!< Discover UUID type @rtk_bt_uuid_type_t */
+		} disc_char_by_uuid;				/*!< Discover characteristics by UUID */
 
 		struct disc_descriptor_param {
-			uint16_t start_handle;			/*!< included service start handle */
-			uint16_t end_handle;			/*!< included service end handle */
-		} disc_descriptor;					/*!< Discover All Characteristic Descriptors */
-	};										/*!< anonymous union member in rtk_bt_gattc_discover_param_t */
+			uint16_t start_handle;			/*!< Included service start handle */
+			uint16_t end_handle;			/*!< Included service end handle */
+		} disc_descriptor;					/*!< Discover all characteristic descriptors */
+	};										/*!< Anonymous union member in rtk_bt_gattc_discover_param_t */
 	
 } rtk_bt_gattc_discover_param_t;
 
@@ -544,7 +511,7 @@ typedef struct {
 			uint16_t start_handle;			/*!< Primary service start handle */
 			uint16_t end_handle;			/*!< Primary service end handle */
 			uint8_t uuid[16];				/*!< Primary service UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Primary service UUID type */
+			uint8_t uuid_type;				/*!< Primary service UUID type @rtk_bt_uuid_type_t */
 		} disc_primary_all_per;				/*!< Discover primary all services result (per attribute) */
 
 		struct disc_primary_by_uuid_per_param {
@@ -557,7 +524,7 @@ typedef struct {
 			uint16_t start_handle;			/*!< Include service start handle */
 			uint16_t end_handle;			/*!< Include service end handle */
 			uint8_t uuid[16];				/*!< Include service UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Include service UUID type */
+			uint8_t uuid_type;				/*!< Include service UUID type @rtk_bt_uuid_type_t */
 		} disc_inc_per;						/*!< Find included services result (per service) */
 
 		struct disc_char_all_per_param {
@@ -565,7 +532,7 @@ typedef struct {
 			uint8_t properties;				/*!< Characteristic properties */
 			uint16_t value_handle;			/*!< Characteristic value attribute handle */
 			uint8_t uuid[16];				/*!< Characteristic UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Characteristic UUID type */
+			uint8_t uuid_type;				/*!< Characteristic UUID type @rtk_bt_uuid_type_t */
 		} disc_char_all_per;				/*!< Discover all characteristic of a service result (per attribute) */
 
 		struct disc_char_by_uuid_per_param {
@@ -573,15 +540,15 @@ typedef struct {
 			uint8_t properties;				/*!< Characteristic properties */
 			uint16_t value_handle;			/*!< Characteristic value attribute handle */
 			uint8_t uuid[16];				/*!< Characteristic UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Characteristic UUID type */
+			uint8_t uuid_type;				/*!< Characteristic UUID type @rtk_bt_uuid_type_t */
 		} disc_char_by_uuid_per;			/*!< Discover characteristic by UUID result (per attribute) */
 
 		struct disc_descriptor_per_param {
 			uint16_t handle;				/*!< Characteristic descriptor attribute handle */
 			uint8_t uuid[16];				/*!< Characteristic descriptor UUID value, in little-endian format */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Characteristic descriptor UUID type */
+			uint8_t uuid_type;				/*!< Characteristic descriptor UUID type @rtk_bt_uuid_type_t */
 		} disc_descriptor_per;				/*!< Discover all characteristic descriptors result (per attribute) */
-	};										/*!< anonymous union member in rtk_bt_gattc_evt_disc_res_t */
+	};										/*!< Anonymous union member in rtk_bt_gattc_discover_ind_t */
 } rtk_bt_gattc_discover_ind_t;
 
 /**
@@ -589,10 +556,10 @@ typedef struct {
  * @brief     Bluetooth GATT client read type.
  */
 typedef enum {
-	RTK_BT_GATT_CHAR_READ_BY_HANDLE,			/*!< Read characteristic Value */
-	RTK_BT_GATT_CHAR_READ_BY_UUID,				/*!< Read Using characteristic UUID */
-	RTK_BT_GATT_CHAR_READ_MULTIPLE,				/*!< Read Multiple characteristic Values */
-	RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE,	/*!< Read Multiple variable characteristic Values */
+	RTK_BT_GATT_CHAR_READ_BY_HANDLE,			/*!< Read characteristic value */
+	RTK_BT_GATT_CHAR_READ_BY_UUID,				/*!< Read using characteristic UUID */
+	RTK_BT_GATT_CHAR_READ_MULTIPLE,				/*!< Read multiple characteristic values */
+	RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE,	/*!< Read multiple variable characteristic values */
 } rtk_bt_gattc_read_type_t;
 
 
@@ -604,29 +571,29 @@ typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
-	rtk_bt_gattc_read_type_t type;			/*!< Attribute Value Read Type */
+	rtk_bt_gattc_read_type_t type;			/*!< Characteristic value read type */
 	union {
 		struct by_handle_param {
-			uint16_t handle;				/*!< Attribute handle */
+			uint16_t handle;				/*!< Characteristic value handle */
 		} by_handle;						/*!< Read Characteristic Value */
 
 		struct by_uuid_param {
-			uint16_t start_handle;			/*!< First requested handle number */
-			uint16_t end_handle;			/*!< Last requested handle number */
+			uint16_t start_handle;			/*!< Start of read handle range */
+			uint16_t end_handle;			/*!< End of read handle range */
 			uint8_t uuid[16];				/*!< 2 or 16 octet UUID */
-			rtk_bt_uuid_type_t uuid_type;	/*!< Read UUID type */
-		} by_uuid;							/*!< Read Using Characteristic UUID */
+			uint8_t uuid_type;				/*!< Read UUID type @rtk_bt_uuid_type_t */
+		} by_uuid;							/*!< Read using characteristic UUID */
 
 		struct multiple_param {
-			uint32_t handle_count;			/*!< The Number of multiple handles are used */
-			uint16_t *handles;				/*!< attribute handles array */
-		} multiple;							/*!< Read Multiple Characteristic Values */
+			uint32_t handle_count;			/*!< The number of multiple handles are used */
+			uint16_t *handles;				/*!< Characteristic value handles array */
+		} multiple;							/*!< Read multiple characteristic values */
 
 		struct multiple_variable_param {
-			uint32_t handle_count;			/*!< The Number of multiple handles are used */
-			uint16_t *handles;				/*!< attribute handles array */
-		} multiple_variable;				/*!< Read Multiple Variable Length Characteristic Values */
-	};										/*!< anonymous union member in rtk_bt_gattc_read_param_t */
+			uint32_t handle_count;			/*!< The number of multiple handles are used */
+			uint16_t *handles;				/*!< Characteristic value handles array */
+		} multiple_variable;				/*!< Read multiple variable length characteristic values */
+	};										/*!< Anonymous union member in rtk_bt_gattc_read_param_t */
 
 } rtk_bt_gattc_read_param_t;
 
@@ -638,7 +605,7 @@ typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
-	rtk_bt_gattc_read_type_t type;			/*!< Attribute Value Read Type */
+	rtk_bt_gattc_read_type_t type;			/*!< Characteristic value read type */
 	rtk_bt_status_t status;					/*!< GATTC read status,
 												@note: One read request may raise multiple read events because many attribute entries may be
 												reported as results when read complete. Each event reports one attribute entry.
@@ -650,29 +617,29 @@ typedef struct {
 	// uint8_t has_data;
 	union {
 		struct by_handle_res_param {
-			uint16_t handle;				/*!< Attribute Value handle */
-			uint16_t len;					/*!< The length of handle value */
-			uint8_t *value;					/*!< Handle value */
-		} by_handle;						/*!< Read Characteristic Value result */
+			uint16_t handle;				/*!< Characteristic value handle */
+			uint16_t len;					/*!< The length of characteristic value */
+			uint8_t *value;					/*!< Characteristic value */
+		} by_handle;						/*!< Read characteristic value result */
 
 		struct by_uuid_per_param {
-			uint16_t handle;				/*!< Attribute Value handle */
-			uint16_t len;					/*!< The length of handle value */
-			uint8_t *value;					/*!< Handle value */
-		} by_uuid_per;						/*!< Read Using Characteristic UUID result (per attribute) */
+			uint16_t handle;				/*!< Characteristic value handle */
+			uint16_t len;					/*!< The length of characteristic value */
+			uint8_t *value;					/*!< Characteristic value */
+		} by_uuid_per;						/*!< Read using characteristic UUID result (per attribute) */
 
 		struct multiple_per_param {
 			uint16_t dummy;					/*!< Useless, just for padding, make the 4 union element the same memory structure */
-			uint16_t len;					/*!< The length of handle value */
-			uint8_t *value;					/*!< Handle value */
-		} multiple_per;						/*!< Read Multiple Characteristic Values (per attribute) */
+			uint16_t len;					/*!< The length of characteristic value */
+			uint8_t *value;					/*!< Characteristic value */
+		} multiple_per;						/*!< Read multiple characteristic values (per attribute) */
 
 		struct multiple_variable_per_param {
-			uint16_t handle;				/*!< Useless, just for padding, make the 4 union element the same memory structure */
-			uint16_t len;					/*!< The length of handle value */
-			uint8_t *value;					/*!< Handle value */
-		} multiple_variable_per;			/*!< Read Multiple Variable Length Characteristic Values (per attribute) */
-	};										/*!< anonymous union member in rtk_bt_gattc_evt_read_res_t */
+			uint16_t dummy;					/*!< Useless, just for padding, make the 4 union element the same memory structure */
+			uint16_t len;					/*!< The length of characteristic value */
+			uint8_t *value;					/*!< Characteristic value */
+		} multiple_variable_per;			/*!< Read multiple variable length characteristic values (per attribute) */
+	};										/*!< Anonymous union member in rtk_bt_gattc_read_ind_t */
 } rtk_bt_gattc_read_ind_t;
 
 /**
@@ -680,9 +647,9 @@ typedef struct {
  * @brief     Bluetooth GATT client write type.
  */
 typedef enum {
-	RTK_BT_GATT_CHAR_WRITE_REQ = 0x00,			        /*!< Write characteristic Value request */
-	RTK_BT_GATT_CHAR_WRITE_NO_RSP,				/*!< Write characteristic Value without response */
-	RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED,		/*!< Write characteristic Value without response and with signed data */
+	RTK_BT_GATT_CHAR_WRITE_REQ = 0x00,			/*!< Write characteristic value request */
+	RTK_BT_GATT_CHAR_WRITE_NO_RSP,				/*!< Write characteristic value without response */
+	RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED,		/*!< Write characteristic value without response and with signed data */
 } rtk_bt_gattc_write_type_t;
 
 /**
@@ -693,8 +660,8 @@ typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
-	rtk_bt_gattc_write_type_t type;			/*!< Characteristic write type */
-	uint16_t handle;						/*!< Attribute handle */
+	rtk_bt_gattc_write_type_t type;			/*!< Characteristic value write type */
+	uint16_t handle;						/*!< Characteristic value handle */
 	uint16_t length;						/*!< Length of the data */
 	void *data;								/*!< Data to be written */
 } rtk_bt_gattc_write_param_t;
@@ -707,12 +674,12 @@ typedef struct {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
-	rtk_bt_gattc_write_type_t type;			/*!< Attribute Value write Type */
+	rtk_bt_gattc_write_type_t type;			/*!< Characteristic value write type */
 	rtk_bt_status_t status;					/*!< GATTC write status,
 												if status is @ref RTK_BT_STATUS_DONE, means write is success, 
 												if status is @ref RTK_BT_STATUS_FAIL, means write is failed, inquire err_code for the cause of failure */
 	uint16_t err_code;						/*!< GATTC write err_code, 0: success, others: failure cause */
-	uint16_t handle;						/*!< Attribute handle */
+	uint16_t handle;						/*!< Characteristic value handle */
 } rtk_bt_gattc_write_ind_t;
 
 /**
@@ -725,8 +692,8 @@ typedef struct{
 	uint16_t seq;							/*!< Sequence number, for convinience, not mandatory */
 	uint16_t char_val_handle;				/*!< Characteristic value handle */
 	uint16_t cccd_handle;					/*!< Client characteristic configuration descriptor(CCCD) handle */
-	bool bnotify;							/*!< If notify bit is writed */
-	bool bindicate;							/*!< If indicate bit is writed */
+	bool bnotify;							/*!< If notify bit need to write */
+	bool bindicate;							/*!< If indicate bit need to write */
 }rtk_bt_gattc_update_cccd_param_t;
 
 /**
@@ -742,8 +709,8 @@ typedef struct {
 												if status is @ref RTK_BT_STATUS_FAIL, means write is failed, inquire err_code for the cause of failure */
 	uint16_t err_code;						/*!< GATTC write err_code, 0: success, others: failure cause */
 	uint16_t cccd_handle;  					/*!< Client characteristic configuration descriptor(CCCD) handle */
-	bool bnotify;
-	bool bindicate;
+	bool bnotify;							/*!< If notify bit is writed */
+	bool bindicate;							/*!< If indicate bit is writed */
 } rtk_bt_gattc_cccd_update_ind_t;
 
 /**
@@ -755,20 +722,10 @@ typedef struct
 {
 	uint16_t profile_id;					/*!< Profile ID */
 	uint16_t conn_handle;					/*!< Connection handle */
-	uint16_t value_handle;					/*!< Attribute Value handle */
-	uint16_t len;							/*!< The length of handle value */
-	uint8_t *value;							/*!< Handle value */
+	uint16_t value_handle;					/*!< Characteristic value handle */
+	uint16_t len;							/*!< The length of characteristic value */
+	uint8_t *value;							/*!< characteristic value */
 } rtk_bt_gattc_cccd_value_ind_t;
-
-/**
- * @struct    rtk_bt_gattc_cfm_param_t
- * @brief     Bluetooth GATTC confirmation parameter.
- */
-typedef struct {
-	uint16_t profile_id;					/*!< Profile ID */
-	uint16_t conn_handle;					/*!< Connection handle */
-} rtk_bt_gattc_cfm_param_t;
-
 
 /********************************* Functions Declaration *******************************/
 /**
@@ -787,39 +744,6 @@ typedef struct {
  *            - Others: Error code
  */
 uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id);
-
-/**
- * @fn         uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id)
- * @brief      Unregister GATT client profile.
- * @param[in]  profile_id: The id of client profile.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id);
-
-/**
- * @fn         uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_handle)
- * @brief      Attach GATT client profile to a connection. If it is not attached,
- *             this profile will not be able to access the remote server information.
- * @param[in]  profile_id: The id of client profile.
- * @param[in]  conn_handle: The handle of connection.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_handle);
-
-/**
- * @fn         uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_handle)
- * @brief      Detach GATT client profile from a connection.
- * @param profile_id: The id of client profile.
- * @param conn_handle: The handle of connection.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_handle);
 
 /**
  * @fn         uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
@@ -885,16 +809,6 @@ uint16_t rtk_bt_gattc_enable_notify_or_indicate(
  */
 uint16_t rtk_bt_gattc_disable_notify_or_indicate(
 								rtk_bt_gattc_update_cccd_param_t *p_update_cccd_param);
-
-/**
- * @fn         uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param)
- * @brief      GATT client confirm for server indicate
- * @param p_cfm_param: Pointer to GATT client confirm parameters.
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param);
 /**
  * @}
  */

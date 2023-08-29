@@ -192,6 +192,7 @@ void inic_ipc_dev_init_priv(void)
 	g_ipc_dev_priv.rx_pending_flag = 0;
 
 	/* Initialize the tX task */
+	/*modify single thread task's priority lower than INIC XMIT, https://jira.realtek.com/browse/AMEBALITE-434*/
 	if (pdTRUE != xTaskCreate((TaskFunction_t)inic_xmit_tasklet, \
 							  (const char *const)"inic_ipc_dev_tx_tasklet", 1024, NULL, \
 							  tskIDLE_PRIORITY + CONFIG_INIC_IPC_DEV_XMIT_PRI, NULL)) {
@@ -277,5 +278,16 @@ void inic_ipc_dev_rx_done(inic_ipc_ex_msg_t *p_ipc_msg)
 {
 	struct sk_buff *skb = (struct sk_buff *)p_ipc_msg->msg_addr;
 	kfree_skb(skb);
+}
+
+void inic_ipc_dev_tx_done(int idx)
+{
+	inic_ipc_ex_msg_t ipc_msg = {0};
+
+	ipc_msg.event_num = IPC_WIFI_EVT_TX_DONE;
+	ipc_msg.msg_addr = 0;
+	ipc_msg.wlan_idx = idx;
+
+	inic_ipc_ipc_send_msg(&ipc_msg);
 }
 

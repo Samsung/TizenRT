@@ -177,7 +177,7 @@ static void i2s_rx_isr(void)
 	//read data
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 	DCache_CleanInvalidate((u32)prx_block->rx_addr, sp_rx_info.rx_page_size);
-	I2SUserCB.RxCCB(0, (void *)(u32)prx_block->rx_addr);
+	I2SUserCB.RxCCB(NULL, (void *)(u32)prx_block->rx_addr);
 	i2s_get_free_rx_page();
 }
 
@@ -206,26 +206,11 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
 
-	u32 clock;
 	u32 pin_func;
 
-	/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
-	if (!(obj->sampling_rate % 11025)) {
-		clock = CKSL_I2S_PLL45M;
-		PLL_I2S_45P158M(ENABLE);
-	} else {
-		clock = CKSL_I2S_PLL98M;
-		PLL_I2S_98P304M(ENABLE);
-	}
-
 	if (obj->i2s_idx == I2S2) {
-		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, ENABLE);
-		RCC_PeriphClockSource_SPORT(2, clock);
 		pin_func = PINMUX_FUNCTION_I2S2;
-
 	} else {
-		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
-		RCC_PeriphClockSource_SPORT(3, clock);
 		pin_func = PINMUX_FUNCTION_I2S3;
 	}
 
@@ -245,7 +230,7 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 	SP_InitStruct.SP_SR = obj->sampling_rate;
 	SP_InitStruct.SP_SelFIFO = obj->fifo_num;
 	SP_InitStruct.SP_SelTDM = obj->fifo_num;
-	SP_InitStruct.SP_SelClk = clock;
+	SP_InitStruct.SP_SelClk = obj->clock;
 
 	if (obj->direction == I2S_DIR_TX) {
 		if (obj->mode == MULTIIO) {

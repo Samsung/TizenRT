@@ -43,6 +43,7 @@
 #include "osal_c/osal_types.h"
 #include "cutils/parcel.h"
 
+#include "rtdata_source.h"
 #include "rtplayer_common.h"
 
 #ifdef __cplusplus
@@ -65,7 +66,7 @@ struct RTPlayerCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerStateChanged)(const struct RTPlayerCallback *listener, const struct RTPlayer *player, int state);
+	void (*OnRTPlayerStateChanged)(const RTPlayerCallback *listener, const RTPlayer *player, int state);
 
 	/**
 	 * @brief Called when player information is received.
@@ -77,7 +78,7 @@ struct RTPlayerCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerInfo)(const struct RTPlayerCallback *listener, const struct RTPlayer *player, int info, int extra);
+	void (*OnRTPlayerInfo)(const RTPlayerCallback *listener, const RTPlayer *player, int info, int extra);
 
 	/**
 	 * @brief Called when a player error occurs.
@@ -89,7 +90,7 @@ struct RTPlayerCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerError)(const struct RTPlayerCallback *listener, const struct RTPlayer *player, int error, int extra);
+	void (*OnRTPlayerError)(const RTPlayerCallback *listener, const RTPlayer *player, int error, int extra);
 };
 
 /**
@@ -99,7 +100,7 @@ struct RTPlayerCallback {
  * @since 1.0
  * @version 1.0
  */
-struct RTPlayer *RTPlayer_Create(void);
+RTPlayer *RTPlayer_Create(void);
 
 /**
  * @brief Destory RTPlayer.
@@ -108,7 +109,7 @@ struct RTPlayer *RTPlayer_Create(void);
  * @since 1.0
  * @version 1.0
  */
-void	RTPlayer_Destory(struct RTPlayer *player);
+void	RTPlayer_Destory(RTPlayer *player);
 
 /**
  * @brief Sets the source(url) to use.
@@ -124,7 +125,7 @@ void	RTPlayer_Destory(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_SetSource(struct RTPlayer *player, const char *url);
+rt_status_t RTPlayer_SetSource(RTPlayer *player, const char *url);
 
 /**
  * @brief Sets the RTDataSource to use.
@@ -140,7 +141,7 @@ rt_status_t RTPlayer_SetSource(struct RTPlayer *player, const char *url);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_SetDataSource(struct RTPlayer *player, struct RTDataSource *source);
+rt_status_t RTPlayer_SetDataSource(RTPlayer *player, RTDataSource *source);
 
 /**
  * @brief Prepares the player for playback, synchronously.
@@ -155,7 +156,7 @@ rt_status_t RTPlayer_SetDataSource(struct RTPlayer *player, struct RTDataSource 
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Prepare(struct RTPlayer *player);
+rt_status_t RTPlayer_Prepare(RTPlayer *player);
 
 /**
  * @brief Prepares the player for playback, asynchronously.
@@ -178,7 +179,7 @@ rt_status_t RTPlayer_Prepare(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_PrepareAsync(struct RTPlayer *player);
+rt_status_t RTPlayer_PrepareAsync(RTPlayer *player);
 
 /**
 * @brief Starts or resumes playback. If playback had previously been paused,
@@ -196,7 +197,7 @@ rt_status_t RTPlayer_PrepareAsync(struct RTPlayer *player);
 * @since 1.0
 * @version 1.0
 */
-rt_status_t RTPlayer_Start(struct RTPlayer *player);
+rt_status_t RTPlayer_Start(RTPlayer *player);
 
 /**
 * @brief Set the player to be looping or non-looping
@@ -212,7 +213,7 @@ rt_status_t RTPlayer_Start(struct RTPlayer *player);
 * @since 1.0
 * @version 1.0
 */
-rt_status_t RTPlayer_SetLooping(struct RTPlayer *player, int8_t loop);
+rt_status_t RTPlayer_SetLooping(RTPlayer *player, int8_t loop);
 
 /**
  * @brief Stops playback after playback has been started or paused.
@@ -227,7 +228,7 @@ rt_status_t RTPlayer_SetLooping(struct RTPlayer *player, int8_t loop);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Stop(struct RTPlayer *player);
+rt_status_t RTPlayer_Stop(RTPlayer *player);
 
 /**
  * @brief Pauses playback. Call RTPlayer_Start() to resume.
@@ -242,7 +243,7 @@ rt_status_t RTPlayer_Stop(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Pause(struct RTPlayer *player);
+rt_status_t RTPlayer_Pause(RTPlayer *player);
 
 /**
  * @brief Moves the media to specified time position.
@@ -258,7 +259,7 @@ rt_status_t RTPlayer_Pause(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Rewind(struct RTPlayer *player, int64_t msec);
+rt_status_t RTPlayer_Rewind(RTPlayer *player, int64_t msec);
 
 /**
  * @brief Resets the Player to its uninitialized state. After calling
@@ -275,7 +276,7 @@ rt_status_t RTPlayer_Rewind(struct RTPlayer *player, int64_t msec);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Reset(struct RTPlayer *player);
+rt_status_t RTPlayer_Reset(RTPlayer *player);
 
 /**
  * @brief Gets the current playback position.
@@ -291,7 +292,7 @@ rt_status_t RTPlayer_Reset(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_GetCurrentTime(struct RTPlayer *player, int64_t *msec);
+rt_status_t RTPlayer_GetCurrentTime(RTPlayer *player, int64_t *msec);
 
 /**
  * @brief Gets the duration of the file.
@@ -308,7 +309,7 @@ rt_status_t RTPlayer_GetCurrentTime(struct RTPlayer *player, int64_t *msec);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_GetDuration(struct RTPlayer *player, int64_t *msec);
+rt_status_t RTPlayer_GetDuration(RTPlayer *player, int64_t *msec);
 
 /**
  * @brief Checks whether the player is playing.
@@ -318,7 +319,7 @@ rt_status_t RTPlayer_GetDuration(struct RTPlayer *player, int64_t *msec);
  * @since 1.0
  * @version 1.0
  */
-int RTPlayer_IsPlaying(struct RTPlayer *player);
+int RTPlayer_IsPlaying(RTPlayer *player);
 
 /**
  * @brief Sets player callbacks.
@@ -328,7 +329,7 @@ int RTPlayer_IsPlaying(struct RTPlayer *player);
  * @since 1.0
  * @version 1.0
  */
-void RTPlayer_SetCallback(struct RTPlayer *player, struct RTPlayerCallback *callbacks);
+void RTPlayer_SetCallback(RTPlayer *player, RTPlayerCallback *callbacks);
 
 /**
  * @brief Sets player volume when play started.
@@ -345,7 +346,7 @@ void RTPlayer_SetCallback(struct RTPlayer *player, struct RTPlayerCallback *call
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_SetVolume(struct RTPlayer *player, float left, float right);
+rt_status_t RTPlayer_SetVolume(RTPlayer *player, float left, float right);
 
 /**
  * @brief Sets player speed when play started.
@@ -362,7 +363,7 @@ rt_status_t RTPlayer_SetVolume(struct RTPlayer *player, float left, float right)
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_SetSpeed(struct RTPlayer *player, float speed, float pitch);
+rt_status_t RTPlayer_SetSpeed(RTPlayer *player, float speed, float pitch);
 
 /**
  * @brief Invokes player request.
@@ -378,7 +379,7 @@ rt_status_t RTPlayer_SetSpeed(struct RTPlayer *player, float speed, float pitch)
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayer_Invoke(struct RTPlayer *player, Parcel *request, Parcel *reply);
+rt_status_t RTPlayer_Invoke(RTPlayer *player, Parcel *request, Parcel *reply);
 
 #ifdef __cplusplus
 }

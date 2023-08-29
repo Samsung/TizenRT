@@ -290,8 +290,8 @@ typedef struct _IPC_INIT_TABLE_ {
  * @{
  */
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
-#define IPC_A2L_UARTBRIDGE						1
-//#define IPC_A2L_Channel2						2
+//#define IPC_A2L_Channel1						1
+#define IPC_A2L_UARTBRIDGE						2
 //#define IPC_A2L_Channel3						3
 //#define IPC_A2L_Channel4						4
 //#define IPC_A2L_Channel5						5
@@ -344,7 +344,7 @@ u32 IPC_IERGet(IPC_TypeDef *IPCx);
 u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
-u32 IPC_INTHandler(int irq, void *context, void *Data);
+u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData);
 
 /**

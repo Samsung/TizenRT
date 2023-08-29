@@ -17,6 +17,8 @@
 
 #include "ameba_soc.h"
 
+extern BOOL vref_init_done;
+
 /**
   * @brief  Fills each CapTouch_InitStruct member with its default value.
   * @param  CapTouch_InitStruct: pointer to an CapTouch_InitTypeDef structure which will be initialized.
@@ -53,7 +55,9 @@ void CapTouch_StructInit(CapTouch_InitTypeDef *CapTouch_InitStruct)
   */
 void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_InitStruct)
 {
-	u8 i;
+	u32 i;
+	u32 value;
+	u8 vref_sel = 0x7;
 
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
@@ -64,7 +68,6 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 	assert_param(CapTouch_InitStruct->CT_ETCFactor <= 0xF);
 	assert_param(CapTouch_InitStruct->CT_ETCScanInterval <= 0x7F);
 
-
 	for (i = 0; i < CT_CHANNEL_NUM ; i++) {
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_DiffThrehold  <= 0xFFF);
 		assert_param(CapTouch_InitStruct->CT_Channel[i].CT_MbiasCurrent <= 0x3F);
@@ -74,6 +77,27 @@ void CapTouch_Init(CAPTOUCH_TypeDef *CapTouch, CapTouch_InitTypeDef *CapTouch_In
 
 	/* Disable CTC, clear pending interrupt*/
 	CapTouch_Cmd(CapTouch, DISABLE);
+
+	/* Calibrate Vref according to EFuse */
+	if (!vref_init_done) {
+		/* step1: read EFuse */
+		OTP_Read8(VREF_SEL_ADDR, &vref_sel);
+		/* [2:0]: Vref Selection */
+		vref_sel &= 0x7;
+
+		/* step2: update vref sel para */
+		value = CapTouch->CT_ANA_ADC_REG0X_LPAD;
+		value &= ~(0x7 << 8);
+		if (vref_sel == 0x3) {
+			value |= (0x3 << 8); // 011:0.85V
+		} else {
+			value |= (0x2 << 8); // 010:0.80V
+		}
+		CapTouch->CT_ANA_ADC_REG0X_LPAD = value;
+
+		vref_init_done = _TRUE;
+	}
+
 	CapTouch->CT_INTERRUPT_ENABLE = 0;
 	CapTouch->CT_INTERRUPT_ALL_CLR = CT_BIT_INTR_ALL_CLR;
 
@@ -537,7 +561,7 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
 
 	} while ((data & CT_BIT_AFIFO_RD_DATA_VLD) == 0);
 
-	return (data & CT_MASK_AFIFO_RD_DATA);
+	return CT_GET_AFIFO_RD_DATA(data);
 
 }
 
@@ -548,33 +572,33 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
   */
 void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch)
 {
-	DBG_8195A("\n%08x: %08x (CT_CTC_CTRL)\n", &(CapTouch->CT_CTC_CTRL), CapTouch->CT_CTC_CTRL);
-	DBG_8195A("%08x: %08x (CT_SCAN_PERIOD)\n", &(CapTouch->CT_SCAN_PERIOD), CapTouch->CT_SCAN_PERIOD);
-	DBG_8195A("%08x: %08x (CT_ETC_CTRL)\n", &(CapTouch->CT_ETC_CTRL), CapTouch->CT_ETC_CTRL);
-	DBG_8195A("%08x: %08x (CT_SNR_INF)\n", &(CapTouch->CT_SNR_INF), CapTouch->CT_SNR_INF);
-	DBG_8195A("%08x: %08x (CT_DEBUG_MODE_CTRL)\n", &(CapTouch->CT_DEBUG_MODE_CTRL), CapTouch->CT_DEBUG_MODE_CTRL);
-	DBG_8195A("%08x: %08x (CT_RAW_CODE_FIFO_STATUS)\n", &(CapTouch->CT_RAW_CODE_FIFO_STATUS), CapTouch->CT_RAW_CODE_FIFO_STATUS);
-	DBG_8195A("%08x: %08x (CT_RAW_CODE_FIFO_READ)\n", &(CapTouch->CT_RAW_CODE_FIFO_READ), CapTouch->CT_RAW_CODE_FIFO_READ);
-	DBG_8195A("%08x: %08x (CT_INTERRUPT_ENABLE)\n", &(CapTouch->CT_INTERRUPT_ENABLE), CapTouch->CT_INTERRUPT_ENABLE);
-	DBG_8195A("%08x: %08x (CT_INTERRUPT_STATUS)\n", &(CapTouch->CT_INTERRUPT_STATUS), CapTouch->CT_INTERRUPT_STATUS);
-	DBG_8195A("%08x: %08x (CT_RAW_INTERRUPT_STATUS)\n", &(CapTouch->CT_RAW_INTERRUPT_STATUS), CapTouch->CT_RAW_INTERRUPT_STATUS);
-	DBG_8195A("%08x: %08x (CT_INTERRUPT_ALL_CLR)\n", &(CapTouch->CT_INTERRUPT_ALL_CLR), CapTouch->CT_INTERRUPT_ALL_CLR);
-	DBG_8195A("%08x: %08x (CT_INTERRUPT_STATUS_CLR)\n", &(CapTouch->CT_INTERRUPT_STATUS_CLR), CapTouch->CT_INTERRUPT_STATUS_CLR);
-	DBG_8195A("%08x: %08x (CT_DEBUG_SEL)\n", &(CapTouch->CT_DEBUG_SEL), CapTouch->CT_DEBUG_SEL);
-	DBG_8195A("%08x: %08x (CT_DEBUG_PORT)\n", &(CapTouch->CT_DEBUG_PORT), CapTouch->CT_DEBUG_PORT);
-	DBG_8195A("%08x: %08x (CT_ECO_USE0)\n", &(CapTouch->CT_ECO_USE0), CapTouch->CT_ECO_USE0);
-	DBG_8195A("%08x: %08x (CT_ECO_USE1)\n", &(CapTouch->CT_ECO_USE1), CapTouch->CT_ECO_USE1);
-	DBG_8195A("%08x: %08x (CT_CTC_COMP_VERSION)\n", &(CapTouch->CT_CTC_COMP_VERSION), CapTouch->CT_CTC_COMP_VERSION);
+	DBG_8195A("\n%08p: %08x (CT_CTC_CTRL)\n", (void const *) & (CapTouch->CT_CTC_CTRL), CapTouch->CT_CTC_CTRL);
+	DBG_8195A("%08p: %08x (CT_SCAN_PERIOD)\n", (void const *) & (CapTouch->CT_SCAN_PERIOD), CapTouch->CT_SCAN_PERIOD);
+	DBG_8195A("%08p: %08x (CT_ETC_CTRL)\n", (void const *) & (CapTouch->CT_ETC_CTRL), CapTouch->CT_ETC_CTRL);
+	DBG_8195A("%08p: %08x (CT_SNR_INF)\n", (void const *) & (CapTouch->CT_SNR_INF), CapTouch->CT_SNR_INF);
+	DBG_8195A("%08p: %08x (CT_DEBUG_MODE_CTRL)\n", (void const *) & (CapTouch->CT_DEBUG_MODE_CTRL), CapTouch->CT_DEBUG_MODE_CTRL);
+	DBG_8195A("%08p: %08x (CT_RAW_CODE_FIFO_STATUS)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_STATUS), CapTouch->CT_RAW_CODE_FIFO_STATUS);
+	DBG_8195A("%08p: %08x (CT_RAW_CODE_FIFO_READ)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_READ), CapTouch->CT_RAW_CODE_FIFO_READ);
+	DBG_8195A("%08p: %08x (CT_INTERRUPT_ENABLE)\n", (void const *) & (CapTouch->CT_INTERRUPT_ENABLE), CapTouch->CT_INTERRUPT_ENABLE);
+	DBG_8195A("%08p: %08x (CT_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS), CapTouch->CT_INTERRUPT_STATUS);
+	DBG_8195A("%08p: %08x (CT_RAW_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_RAW_INTERRUPT_STATUS), CapTouch->CT_RAW_INTERRUPT_STATUS);
+	DBG_8195A("%08p: %08x (CT_INTERRUPT_ALL_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_ALL_CLR), CapTouch->CT_INTERRUPT_ALL_CLR);
+	DBG_8195A("%08p: %08x (CT_INTERRUPT_STATUS_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS_CLR), CapTouch->CT_INTERRUPT_STATUS_CLR);
+	DBG_8195A("%08p: %08x (CT_DEBUG_SEL)\n", (void const *) & (CapTouch->CT_DEBUG_SEL), CapTouch->CT_DEBUG_SEL);
+	DBG_8195A("%08p: %08x (CT_DEBUG_PORT)\n", (void const *) & (CapTouch->CT_DEBUG_PORT), CapTouch->CT_DEBUG_PORT);
+	DBG_8195A("%08p: %08x (CT_ECO_USE0)\n", (void const *) & (CapTouch->CT_ECO_USE0), CapTouch->CT_ECO_USE0);
+	DBG_8195A("%08p: %08x (CT_ECO_USE1)\n", (void const *) & (CapTouch->CT_ECO_USE1), CapTouch->CT_ECO_USE1);
+	DBG_8195A("%08p: %08x (CT_CTC_COMP_VERSION)\n", (void const *) & (CapTouch->CT_CTC_COMP_VERSION), CapTouch->CT_CTC_COMP_VERSION);
 
-	DBG_8195A("%08x: %08x (CT_CH[0].CT_CHx_CTRL)\n", &(CapTouch->CT_CH[0].CT_CHx_CTRL), CapTouch->CT_CH[0].CT_CHx_CTRL);
-	DBG_8195A("%08x: %08x (CT_CH[0].CT_CHx_NOISE_TH)\n", &(CapTouch->CT_CH[0].CT_CHx_NOISE_TH), CapTouch->CT_CH[0].CT_CHx_NOISE_TH);
-	DBG_8195A("%08x: %08x (CT_CH[0].CT_CHx_MBIAS_ATH)\n", &(CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH), CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH);
-	DBG_8195A("%08x: %08x (CT_CH[0].CT_CHx_DATA_INF)\n", &(CapTouch->CT_CH[0].CT_CHx_DATA_INF), CapTouch->CT_CH[0].CT_CHx_DATA_INF);
+	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_CTRL)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_CTRL), CapTouch->CT_CH[0].CT_CHx_CTRL);
+	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_NOISE_TH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_NOISE_TH), CapTouch->CT_CH[0].CT_CHx_NOISE_TH);
+	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_MBIAS_ATH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH), CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH);
+	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_DATA_INF)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_DATA_INF), CapTouch->CT_CH[0].CT_CHx_DATA_INF);
 
-	DBG_8195A("%08x: %08x (CT_ANA_ADC_REG0X_LPAD)\n", &(CapTouch->CT_ANA_ADC_REG0X_LPAD), CapTouch->CT_ANA_ADC_REG0X_LPAD);
-	DBG_8195A("%08x: %08x (CT_ANA_ADC_REG1X_LPAD)\n", &(CapTouch->CT_ANA_ADC_REG1X_LPAD), CapTouch->CT_ANA_ADC_REG1X_LPAD);
-	DBG_8195A("%08x: %08x (CT_ANA_ADC_REG0X_LPSD)\n", &(CapTouch->CT_ANA_ADC_REG0X_LPSD), CapTouch->CT_ANA_ADC_REG0X_LPSD);
-	DBG_8195A("%08x: %08x (CT_ANA_ADC_TIME_SET)\n", &(CapTouch->CT_ANA_ADC_TIME_SET), CapTouch->CT_ANA_ADC_TIME_SET);
+	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG0X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPAD), CapTouch->CT_ANA_ADC_REG0X_LPAD);
+	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG1X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG1X_LPAD), CapTouch->CT_ANA_ADC_REG1X_LPAD);
+	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG0X_LPSD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPSD), CapTouch->CT_ANA_ADC_REG0X_LPSD);
+	DBG_8195A("%08p: %08x (CT_ANA_ADC_TIME_SET)\n", (void const *) & (CapTouch->CT_ANA_ADC_TIME_SET), CapTouch->CT_ANA_ADC_TIME_SET);
 }
 
 /**

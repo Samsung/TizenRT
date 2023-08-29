@@ -825,12 +825,10 @@ GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority)
   * @brief  suspend a channel.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   IrqNum
   */
 __weak  void
 GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum)
 {
-	u32 CfgxLow;
 	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
 	if (TrustZone_IsSecure()) {
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
@@ -839,12 +837,60 @@ GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum)
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	CfgxLow = GDMA->CH[GDMA_ChNum].CFG_LOW;
-	CfgxLow &= ~BIT_CFGX_LO_CH_SUSP;
-	CfgxLow |= BIT_CFGX_LO_CH_SUSP;
-	GDMA->CH[GDMA_ChNum].CFG_LOW = CfgxLow;
+	GDMA->CH[GDMA_ChNum].CFG_LOW |= BIT_CFGX_LO_CH_SUSP;
+}
 
-	while (BIT_CFGX_LO_GET_CH_INACTIVE(GDMA->CH[GDMA_ChNum].CFG_LOW) == 0);
+/**
+  * @brief  resume a channel.
+  * @param  GDMA_Index: 0.
+  * @param  GDMA_ChNum: 0 ~ 7.
+  */
+__weak  void
+GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+	/* Check the parameters */
+	assert_param(IS_GDMA_Index(GDMA_Index));
+	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
+
+	GDMA->CH[GDMA_ChNum].CFG_LOW &= ~BIT_CFGX_LO_CH_SUSP;
+}
+
+/**
+  * @brief  abort a channel.
+  * @param  GDMA_Index: 0.
+  * @param  GDMA_ChNum: 0 ~ 7.
+  */
+__weak  void
+GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	u32 timeout;
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+	/* Check the parameters */
+	assert_param(IS_GDMA_Index(GDMA_Index));
+	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
+	while (1) {
+		timeout = 500;
+		GDMA_Suspend(GDMA_Index, GDMA_ChNum);
+		while (BIT_CFGX_LO_GET_CH_Status(GDMA->CH[GDMA_ChNum].CFG_LOW) == 0x6) {
+			timeout--;
+			if (timeout == 0) {
+				break;
+			}
+		}
+
+		if (timeout > 0) {
+			break;
+		}
+		GDMA_Resume(GDMA_Index, GDMA_ChNum);
+	}
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
 }
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

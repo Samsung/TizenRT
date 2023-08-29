@@ -136,7 +136,7 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 				  pmpu_cfg->region_size);
 		assert_param(0);
 	}
-	region_limit = pmpu_cfg->region_base + pmpu_cfg->region_size;
+	region_limit = pmpu_cfg->region_base + pmpu_cfg->region_size - 1;
 
 	mpu_disable();
 

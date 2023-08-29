@@ -32,8 +32,6 @@
 /** @addtogroup Ameba_Platform
   * @{
   */
-#define MAX_IMG_NUM			3
-
 #define OTA_CLEAR_PATTERN	0
 
 #define BUF_SIZE			2048								/*the size of the buffer used for receiving firmware data from server*/
@@ -44,8 +42,7 @@
 
 #if defined(CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI)
 #include "ff.h"
-#include <fatfs_ext/inc/ff_driver.h>
-#include <disk_if/inc/sdcard.h>
+#include "vfs_fatfs.h"
 
 #define SDCARD_OTA_UPDATE
 // larger _MAX_SS would accelerate the OTA procedure
@@ -53,7 +50,8 @@
 #define SD_OTA_BUF_SIZE 	_MAX_SS
 #endif
 
-extern u32 IMG_ADDR[MAX_IMG_NUM][2];
+
+extern u32 IMG_ADDR[3][2];
 
 /* Exported constants --------------------------------------------------------*/
 
@@ -63,10 +61,12 @@ extern u32 IMG_ADDR[MAX_IMG_NUM][2];
 /** @defgroup OTA_system_parameter_definitions
   * @{
   */
+#define MAX_IMG_NUM			2
 
 #define OTA_IMGID_BOOT		0
 #define OTA_IMGID_APP		1
 #define OTA_IMGID_APIMG		2
+#define OTA_IMGID_MAX		3
 
 #define OTA_IMAG			0								/*identify the OTA image*/
 

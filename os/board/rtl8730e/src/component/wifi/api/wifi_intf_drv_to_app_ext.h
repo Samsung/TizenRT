@@ -33,6 +33,7 @@
 
 
 #include "rtw_wifi_constants.h"
+#include "rom_rtw_defs.h"
 #include <platform_stdlib.h>
 #include "wifi_intf_drv_to_bt.h"
 #include "dlist.h"
@@ -96,16 +97,6 @@ int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
  * 	RTW_SUCCESS and user callback won't be executed.
  */
 int wifi_scan_abort(void);
-
-/**
- * @brief  Enable or disable IPS. IPS is the abbreviation of Inactive Power Save mode.
- * 	Wi-Fi automatically turns RF off if it is not associated to AP.
- * @param[in]  enable: It could be TRUE or FALSE.
- * 	FALSE means disable ips, TRUE means enable ips.
- * @return  RTW_SUCCESS if setting IPS successful.
- * @return  RTW_ERROR otherwise.
- */
-int wifi_set_ips_enable(u8 enable);
 
 /**
  * @brief  Enable or disable LPS. LPS is the abbreviation of Leisure Power Save mode.
@@ -219,14 +210,14 @@ int wifi_get_network_mode(void);
 
 /**
  * @brief  Set the network mode according to the data rate its supported.
- * 	Driver works in BGN mode in default after driver initialization.
+ * 	Driver works in BGNAX mode in default after driver initialization.
  * 	This function is used to change wireless network mode
  * 	for station mode before connecting to AP.
  * @param[in]  mode: Network mode to set. The value can be
- * 	RTW_NETWORK_B, RTW_NETWORK_BG and RTW_NETWORK_BGN.
+ * 	WLAN_MD_11B, WLAN_MD_11BG, WLAN_MD_11BGN and WLAN_MD_24G_MIX.
  * @return  RTW_SUCCESS or RTW_ERROR.
  */
-int wifi_set_network_mode(rtw_network_mode_t mode);
+int wifi_set_network_mode(enum wlan_mode mode);
 
 /**
   * @}
@@ -405,6 +396,14 @@ int wifi_set_mfp_support(unsigned char value);
 int wifi_set_group_id(unsigned char value);
 
 /**
+ * @brief  for wpa supplicant indicate sae status.
+ * @param[in]
+ * @return  RTW_SUCCESS if setting is successful.
+ * @return  RTW_ERROR otherwise.
+ */
+int wifi_sae_status_indicate(void);
+
+/**
  * @brief  enable or disable pmk cache.
  * @param[in] value:1 for enable, 0 for disable
  * @return  RTW_SUCCESS if setting is successful.
@@ -523,19 +522,17 @@ u64 wifi_get_tsf(unsigned char port_id);
 
 /**
  * @brief  switch to a new channel in AP mode and using CSA to inform sta
- * @param[in]  new_chl: the new channel will be switched to.
- * @param[in]  chl_switch_cnt: the channel switch cnt,
-* 	after chl_switch_cnt*102ms, ap will switch to new channel.
- * @param[in]  callback: this callback will be called after channel switch is done,
- * 	and will return the new channel number and channel switch result.
+ * @param[in]  csa_param: pointer to the csa config structure. The structure contains the following parameters:
+ *   		new_chl: the new channel will be switched to.
+ * 		chl_switch_cnt: the channel switch cnt, after chl_switch_cnt*102ms, ap will switch to new channel.
+ * 		callback: this callback will be called after channel switch is done, and will return the new channel number and channel switch result.
+ * 		action_type: 0: unicast csa action, 1: broadcast csa action, other values: disable transmit csa action.
+ * 		bc_action_cnt: indicate the number of broadcast csa actions to send for each beacon interval. only valid when action_type = 1.
  * @return  RTW_SUCCESS or RTW_ERROR, only indicate whether channel switch cmd is
  * 	successfully set to wifi driver.
  * @note  this function should be used when operating as AP.
  */
-int wifi_ap_switch_chl_and_inform(
-	unsigned char new_chl,
-	unsigned char chl_switch_cnt,
-	ap_channel_switch_callback_t callback);
+int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 
 /**
  * @brief  initialize mac address filter list
@@ -860,11 +857,25 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 void wifi_btcoex_set_pta(pta_type_t type);
 
 /**
+ * @brief  Set BTS0 or BTS1.
+ * @param[in]  bt_ant: the BT ant(BTS0/BTS1).
+ * @return  Null.
+ */
+void wifi_btcoex_set_bt_ant(u8 bt_ant);
+
+/**
   * @brief Write BT RFK  data to RFC
   * @param  calibration data
   * @retval  BT RFK result(1:success  0:failed)
   */
 int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
+
+/**
+  * @brief Zigbee Call WL RFK
+  * @param  void
+  * @retval  ZBC RFK result(0:success  -1:failed)
+  */
+int wifi_zigbee_coex_zb_rfk(void);
 
 /**
  * @brief  Set global variable wifi_wpa_mode.

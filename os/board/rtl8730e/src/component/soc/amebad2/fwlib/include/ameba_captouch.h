@@ -516,8 +516,8 @@ typedef struct {
 /** @defgroup CapTouch_INT_Operation
   * @{
   */
-#define  CT_CHX_PRESS_INT(x)			((u32)0x00000001 << (x))
-#define  CT_CHX_RELEASE_INT(x)			((u32)0x00000001 << ((x) + 8))
+#define CT_CHX_PRESS_INT(x)				BIT(x)
+#define CT_CHX_RELEASE_INT(x)			BIT((x) + 8)
 
 #define CT_ALL_INT_EN					(CT_MASK_TOUCH_PRESS_INTR_EN | \
 											CT_MASK_TOUCH_RELEASE_INTR_EN | \
@@ -533,11 +533,37 @@ typedef struct {
   * @}
   */
 
-/** @defgroup CapTouch_Channel_Number
+/** @defgroup CapTouch_Chn_Selection
   * @{
   */
-#define  CT_CHANNEL_NUM					9
+#define CTC_CH0							((u8)0x00)
+#define CTC_CH1							((u8)0x01)
+#define CTC_CH2							((u8)0x02)
+#define CTC_CH3							((u8)0x03)
+#define CTC_CH4							((u8)0x04)
+#define CTC_CH5							((u8)0x05)
+#define CTC_CH6							((u8)0x06)
+#define CTC_CH7							((u8)0x07)
+#define CTC_CH8							((u8)0x08) /* GTouch */
+
+#define CT_CHANNEL_NUM					(9)
 #define IS_CT_CHANNEL(CHANNEL_NUM)		(CHANNEL_NUM < CT_CHANNEL_NUM)
+/**
+  * @}
+  */
+
+/** @defgroup CapTouch_Chn_Pad_Selection
+  * @{
+  */
+#define CTC_CH0_PIN						(_PA_0)
+#define CTC_CH1_PIN						(_PA_1)
+#define CTC_CH2_PIN						(_PA_2)
+#define CTC_CH3_PIN						(_PA_3)
+#define CTC_CH4_PIN						(_PA_4)
+#define CTC_CH5_PIN						(_PA_5)
+#define CTC_CH6_PIN						(_PA_6)
+#define CTC_CH7_PIN						(_PA_7)
+#define CTC_CH8_PIN						(_PA_8)
 /**
   * @}
   */

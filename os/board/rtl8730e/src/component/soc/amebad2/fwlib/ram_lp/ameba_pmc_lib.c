@@ -363,7 +363,8 @@ void SOCPS_SleepCG_RAM(VOID)
 	HAL_WRITE32(PMC_BASE, SYSPMC_CTRL, Rtemp);
 
 	for (int32_t x = 0; x <= MAX_PERIPHERAL_IRQ_NUM / 32; x++) {
-		if (NVIC->ISER[x] & NVIC->ISPR[x]) {
+		Rtemp = NVIC->ISPR[x];
+		if (NVIC->ISER[x] & Rtemp) {
 			goto resume;
 		}
 	}
@@ -530,7 +531,8 @@ VOID SOCPS_SleepPG_LIB(VOID)
 	/*Refill KM4 IPC configuration*/
 	IPCLP_DEV->IPC_IMR = PMC_BK.IPCbackup;
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("PG wake event %x %x\n", HAL_READ32(PMC_BASE, WAK_STATUS0),
+		Rtemp = HAL_READ32(PMC_BASE, WAK_STATUS0);
+		DBG_8195A("PG wake event %x %x\n", Rtemp,
 				  HAL_READ32(PMC_BASE, WAK_STATUS1));
 	}
 

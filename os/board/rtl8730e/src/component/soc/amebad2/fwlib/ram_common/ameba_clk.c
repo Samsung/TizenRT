@@ -400,7 +400,7 @@ void XTAL_INIT(void)
 	xtal->XTAL_ANAPAR_XTAL_ON_0 = 0x008103FF; /*04h*/
 	xtal->XTAL_ANAPAR_XTAL_ON_1 = 0xFC3B9D80; /*08h*/
 	xtal->XTAL_ANAPAR_XTAL_ON_2 = 0x000009F5; /*0ch*/
-	xtal->XTAL_ANAPAR_XTAL_OFF_0 = 0xCC0FFE18; /*10h*/
+	xtal->XTAL_ANAPAR_XTAL_OFF_0 = 0xCC0FFA18; /*10h*/
 	xtal->XTAL_ANAPAR_XTAL_OFF_1 = 0x00000068; /*14h*/
 
 	xtal->XTAL_ANAPAR_XTAL_PDCK = 0x000DFFD0; /*20h*/
@@ -424,6 +424,18 @@ void XTAL_PDCK(void)
 	//EN_XTAL_PDCK_DIGI
 	xtal->XTAL_ANAPAR_XTAL_PDCK |= XTAL_BIT_EN_XTAL_PDCK_DIGI;
 
+}
+
+void XTAL_LPSDIG(u32 status)
+{
+	XTAL_TypeDef *xtal = XTAL_BASE;
+	if (status == ENABLE) {
+		/* enable lps xtal digital output in sleep mode */
+		xtal->XTAL_ANAPAR_XTAL_ON_2 = ((xtal->XTAL_ANAPAR_XTAL_ON_2) & (~XTAL_MASK_DUMMY)) | XTAL_DUMMY(LPSXTAL_DIGI_EN); /*0ch*/
+	} else {
+		/* enable lps xtal digital output in sleep mode */
+		xtal->XTAL_ANAPAR_XTAL_ON_2 = ((xtal->XTAL_ANAPAR_XTAL_ON_2) & (~XTAL_MASK_DUMMY)) | XTAL_DUMMY(LPSXTAL_DIGI_DIS); /*0ch*/
+	}
 }
 
 void CLK_SWITCH_XTAL(u32 State)

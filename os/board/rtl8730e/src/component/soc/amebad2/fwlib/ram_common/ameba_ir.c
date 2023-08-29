@@ -48,6 +48,8 @@ void IR_DeInit(void)
   */
 void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
 {
+	u32 TempVal = 0;
+
 	/* Configure IR clock divider. Formula: IR_CLK = IO_CLK/(1+IR_CLK_DIV) */
 	IRx->IR_CLK_DIV = (IR_InitStruct->IR_Clock) / (IR_InitStruct->IR_Freq) - 1;
 
@@ -59,7 +61,8 @@ void IR_Init(IR_TypeDef *IRx, IR_InitTypeDef *IR_InitStruct)
 		IRx->IR_TX_CONFIG &= 0x3F;
 
 		/* Configure TX mode parameters and disable all TX interrupt */
-		IRx->IR_TX_CONFIG |= (IR_TX_DUTY_NUM((IRx->IR_CLK_DIV + 1) / (IR_InitStruct->IR_DutyCycle))) | \
+		TempVal = IRx->IR_CLK_DIV;
+		IRx->IR_TX_CONFIG |= (IR_TX_DUTY_NUM((TempVal + 1) / (IR_InitStruct->IR_DutyCycle))) | \
 							 (IR_TX_DATA_TYPE_SET(IR_InitStruct->IR_TxInverse)) | \
 							 (IR_TX_FIFO_LEVEL_TH(IR_InitStruct->IR_TxFIFOThrLevel));
 		if (IR_InitStruct->IR_TxIdleLevel) {

@@ -26,17 +26,28 @@ extern "C"
 /**
  * @fn        bool rtk_bt_is_enable(void)
  * @brief     Check bt enable status
- * @return    
+ * @return
  *            - true  : enabled
  *            - false: not enabled
  */
 bool rtk_bt_is_enable(void);
 
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+/**
+ * @fn        bool rtk_bt_mesh_is_enable(void)
+ * @brief     Check bt mesh enable status
+ * @return
+ *            - true  : enabled
+ *            - false: not enabled
+ */
+bool rtk_bt_mesh_is_enable(void);
+#endif
+
 /**
  * @fn        uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
  * @brief     Enable BT.
  * @param[in] app_default_conf: Default config parameters
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
@@ -45,7 +56,7 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf);
 /**
  * @fn        uint16_t rtk_bt_disable(void)
  * @brief     Disable BT.
- * @return    
+ * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */

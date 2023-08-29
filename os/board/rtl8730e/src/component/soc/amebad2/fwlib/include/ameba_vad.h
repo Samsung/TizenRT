@@ -191,6 +191,7 @@
 
 
 void VAD_Power_Init(u32 clock_source);
+void VAD_Set_Bit(void);
 void VAD_ADC_Codec_Init(u32 codec_index);
 void VAD_ADC_Init(u32 ADC_index);
 void VAD_DMIC_Codec_Init(u32 codec_index);
