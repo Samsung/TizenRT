@@ -30,7 +30,7 @@ PWRCFG_TypeDef km0_pwrmgt_config[] = {
 	{PMC_BIT_PST_SLEP_EPWM,			OFF},	//BIT8: SWR mode selection when PMC enter into sleep mode-->1:keeps at PWM mode 0:switch to PFM
 	{PMC_MASK_PST_SLEP_VOLT,		0x0},	//BIT11:10: Sleep setting for SWR volt selection-->00:0.8v 01:0.9v 10/11:1.0v
 	{PMC_MASK_PST_SLEP_XMD,		0x0},	//BIT13:12: Sleep setting for XTAL mode selection-->00:off 01:LPS 2/3:Normal
-	{PMC_MASK_PST_SLEP_FBUS,		0x0},	//BIT15:14: Sleep setting for ls bus frequency selection-->00/01:ANA4M 10:XTAL 11:XTAL/2
+	{PMC_MASK_PST_SLEP_FBUS,		0x3},	//BIT15:14: Sleep setting for ls bus frequency selection-->00/01:ANA4M 10:XTAL 11:XTAL/2
 
 	{0xFFFFFFFF,					OFF},	/* Table end */
 };
@@ -88,7 +88,7 @@ WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_WDG0,							0,				OFF,				OFF,				OFF},
 	{WAKE_SRC_AP_WAKE,						0,				OFF,				OFF,				OFF},
 	{WAKE_SRC_NP_WAKE,						0,				OFF,				OFF,				OFF},
-	{WAKE_SRC_AON_TIM,						0,				ON,				OFF,				OFF},
+	{WAKE_SRC_AON_TIM,						0,				OFF,				OFF,				OFF},
 	{WAKE_SRC_WIFI_FTSR_MAILBOX,			0,				ON,				OFF,				OFF},
 	{WAKE_SRC_WIFI_FISR_FESR,				0,				ON,				OFF,				OFF},
 

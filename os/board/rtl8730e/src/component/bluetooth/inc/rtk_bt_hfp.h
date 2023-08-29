@@ -45,6 +45,8 @@ extern "C"
 #define RTK_BT_HFP_HF_LOCAL_ESCO_S4_SETTINGS             (1 << 9)
 
 #define RTK_BT_HFP_DEMO_DEFAULT_BATTERY_POWER_LEVEL 50
+#define RTK_BT_DEFAULT_SPEAKER_GAIN 14
+#define RTK_BT_DEFAULT_MICROPHONE_GAIN 14
 /* ------------------------------- Data Types ------------------------------- */
 
 /**
@@ -130,6 +132,26 @@ typedef struct
 } rtk_bt_hfp_batt_level_t;
 
 /**
+ * @struct    rtk_bt_hfp_microphone_gain_t
+ * @brief     hfp hf report microphone gain structure.
+ */
+typedef struct
+{
+	uint8_t bd_addr[6];								/*!< Remote BT address */
+	uint8_t gain;									/*!< level The current battery level, range from 0 to 100. */
+} rtk_bt_hfp_microphone_gain_t;
+
+/**
+ * @struct    rtk_bt_hfp_speaker_gain_t
+ * @brief     hfp hf report speaker gain structure.
+ */
+typedef struct
+{
+	uint8_t bd_addr[6];								/*!< Remote BT address */
+	uint8_t gain;									/*!< level The current battery level, range from 0 to 100. */
+} rtk_bt_hfp_speaker_gain_t;
+
+/**
  * @struct    rtk_bt_hfp_hf_battery_ind_t
  * @brief     hfp hf receive battery indicate req.
  */
@@ -138,6 +160,26 @@ typedef struct
 	uint8_t bd_addr[6];								/*!< Remote BT address */
 	uint8_t state;									/*!< state */
 } rtk_bt_hfp_hf_battery_ind_t;
+
+/**
+ * @struct    rtk_bt_hfp_hf_speaker_volume_changed_ind_t
+ * @brief     hfp hf receive speaker volume changed indication from ag.
+ */
+typedef struct
+{
+	uint8_t bd_addr[6];								/*!< Remote BT address */
+	uint8_t volume;									/*!< volume */
+} rtk_bt_hfp_hf_speaker_volume_changed_ind_t;
+
+/**
+ * @struct    rtk_bt_hfp_hf_mic_volume_changed_ind_t
+ * @brief     hfp hf receive mic volume changed indication from ag.
+ */
+typedef struct
+{
+	uint8_t bd_addr[6];								/*!< Remote BT address */
+	uint8_t volume;									/*!< volume */
+} rtk_bt_hfp_hf_mic_volume_changed_ind_t;
 
 /**
  * @struct    rtk_bt_hfp_call_incoming_t
@@ -167,6 +209,14 @@ typedef struct {
 	uint8_t					supported_repos;		/*!< Supported repositories */
 	uint32_t				pbap_supported_feat;	/*!< PBAP supported features */
 } rtk_bt_hfp_sdp_attr_info_t;
+
+/**
+ * @struct    rtk_bt_hfp_ag_features_ind_t
+ * @brief     hfp audio gating features indication sturct.
+ */
+typedef struct {
+	uint16_t capability;								/*!< features */
+} rtk_bt_hfp_ag_features_ind_t;
 
 /**
  * @struct    rtk_bt_hfp_conn_ind_t
@@ -370,14 +420,14 @@ uint16_t rtk_bt_hfp_call_incoming(uint8_t *bd_addr, const char *call_num, uint8_
 uint16_t rtk_bt_hfp_call_answer(uint8_t *bd_addr);
 
 /**
- * @fn        uint16_t rtk_bt_hfp_call_ternimate(uint8_t *bd_addr)
+ * @fn        uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr)
  * @brief     terminate call.
  * @param[in] bd_addr: bt address
  * @return    
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_hfp_call_ternimate(uint8_t *bd_addr);
+uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr);
 
 /**
  * @fn        uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t)
@@ -399,6 +449,28 @@ uint16_t rtk_bt_hfp_data_send(rtk_bt_hfp_sco_data_send_t *p_data_send_t);
  *            - Others: Error code
  */
 uint16_t rtk_bt_hfp_batt_level_report(uint8_t *bd_addr, uint8_t power_level);
+
+/**
+ * @fn        uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain)
+ * @brief     hfp report speaker gain.
+ * @param[in] bd_addr: bt address
+ * @param[in] gain: speaker gain (0 - 15)
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hfp_speaker_gain_report(uint8_t *bd_addr, uint8_t gain);
+
+/**
+ * @fn        uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain)
+ * @brief     hfp report microphone gain.
+ * @param[in] bd_addr: bt address
+ * @param[in] gain: microphone gain (0 - 15)
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain);
 
 /**
  * @}

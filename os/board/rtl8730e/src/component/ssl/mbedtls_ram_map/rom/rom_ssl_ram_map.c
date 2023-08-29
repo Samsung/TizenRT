@@ -10,7 +10,7 @@
 #endif
 
 /* RAM table referred by SSL ROM */
-#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_RTL8720F)
 SSL_RAM_MAP_SECTION
 struct _rom_ssl_ram_map rom_ssl_ram_map;
 #else

@@ -172,6 +172,7 @@ static void inic_ipc_host_rx_tasklet(void)
 		}
 	} while (1);
 
+	rtw_delete_task(&inic_ipc_host_rx_task);
 }
 
 /**
@@ -370,10 +371,20 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	skb = &host_skb_info[used_skb_num].skb;
 	DCache_Invalidate((u32)skb_info, sizeof(struct skb_info));
 	if (skb->busy) {
-		/*AP doesn't have enough skb right now, taskdelay here will directly
-		block tcpip thred, so return ERR_BUF to inform upper layer*/
-		rtw_up_sema(&g_inic_host_priv.host_send_sema);
-		return ERR_BUF;
+		for (i = 0; i < 2; i++) {
+			/* delay to wait skb free to resolve ping 10k fail issue. Don't delay too long, otherwise
+				the blocked tcpip thread would affect RX */
+			up_udelay(500);
+			DCache_Invalidate((u32)skb_info, sizeof(struct skb_info));
+			if (skb->busy == 0) {
+				break;
+			}
+		}
+		if (skb->busy) {
+			/*AP doesn't have enough skb right now, return ERR_BUF to inform upper layer*/
+			rtw_up_sema(&g_inic_host_priv.host_send_sema);
+			return ERR_BUF;
+		}
 	}
 	memset(skb, '\0', sizeof(struct sk_buff));
 	size = SKB_DATA_ALIGN(total_len + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));

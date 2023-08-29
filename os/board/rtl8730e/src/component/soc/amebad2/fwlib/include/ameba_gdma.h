@@ -173,7 +173,7 @@
  * @{
  *****************************************************************************/
 /********************  Bits definition for CFG register  *******************/
-#define BIT_CFGX_LO_GET_CH_INACTIVE(x)		((u32)(((x >> 0) & 0x00000001)))	/*Lower word Bit[0].Indicates if the channel is inactive 1:inactive 0:not inactive*/
+#define BIT_CFGX_LO_GET_CH_Status(x)		((u32)(((x >> 0) & 0x00000007)))	/*Lower word Bit[0:2].Indicates the channel status 111: suspend 011/101: working 110: it is normal when it only lasts for a few cycles*/
 #define BIT_CFGX_LO_CH_SUSP			((u32)(0x00000001 << 8))		/*Lower word Bit[8].Channel Suspend bit*/
 #define BIT_CFGX_CH_PRIOR				((u32)(0x0000000F<< 4))			/*Lower word Bit[4:7]. channel priority,  0 is the highest priority value, (DMAC_NUM_CHANNELS-1) is the lowest priroty value. If more than one channel are set with the same priroty value, the channel with small channel number index has higher priority.*/
 #define SET_CFGX_CH_PRIOR(x)			((u32)(((x) & 0x0000000F) << 4))
@@ -642,6 +642,8 @@ _LONG_CALL_ void GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8	 GDMA_GetIrqNum(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPriority);
 _LONG_CALL_  void GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_  void GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_  void GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
 
 /**
   * @}

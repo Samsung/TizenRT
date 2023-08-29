@@ -20,7 +20,13 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
 		return RTK_BT_ERR_NOT_READY;
 	if (!param)
 		return RTK_BT_ERR_POINTER_INVALID;
-	
+
+	if (param->type >= GATT_SERVICE_TYPE_RESERVED)
+		return RTK_BT_ERR_PARAM_INVALID;
+
+	if(param->attr_count == 0)
+		return RTK_BT_ERR_PARAM_INVALID;
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_REGISTER_SERVICE, 
 								(void *)param, sizeof(struct rtk_bt_gatt_service));
 
@@ -111,23 +117,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t 
 	return ret;
 }
 
-uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id, rtk_bt_gattc_uuid_t srv_uuid)
-{
-	uint16_t ret = 0;
-	rtk_bt_gattc_register_t param = {
-		.profile_id = profile_id,
-		.srv_uuid = srv_uuid,
-	};
-
-	if(!rtk_bt_is_enable())
-		return RTK_BT_ERR_NOT_READY;
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_UNREGISTER_PROFILE, 
-						  &param, sizeof(rtk_bt_gattc_register_t));
-
-	return ret;
-}
-
 uint16_t rtk_bt_gattc_discover_all(uint16_t conn_handle)
 {
 	uint16_t ret = 0;
@@ -168,48 +157,6 @@ uint16_t rtk_bt_gattc_register_profile(uint16_t profile_id)
 													(void *)&profile_id_local, 2);
 
 	return ret;
-}
-
-uint16_t rtk_bt_gattc_unregister_profile(uint16_t profile_id)
-{
-	uint16_t ret = 0;
-	uint16_t profile_id_local = profile_id;
-
-	if(!rtk_bt_is_enable())
-		return RTK_BT_ERR_NOT_READY;
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_UNREGISTER_PROFILE, 
-													(void *)&profile_id_local, 2);
-
-	return ret;
-}
-
-uint16_t rtk_bt_gattc_attach_connect(uint16_t profile_id, uint16_t conn_handle)
-{
-	uint16_t ret = 0;
-	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id, conn_handle);
-
-	if(!rtk_bt_is_enable())
-		return RTK_BT_ERR_NOT_READY;
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_ATTACH_CONN, 
-														(void *)&attch_id, 4);
-
-	return ret;	
-}
-
-uint16_t rtk_bt_gattc_detach_connect(uint16_t profile_id, uint16_t conn_handle)
-{
-	uint16_t ret = 0;
-	uint32_t attch_id = RTK_BT_GATTC_ATTACH_ID(profile_id, conn_handle);
-
-	if(!rtk_bt_is_enable())
-		return RTK_BT_ERR_NOT_READY;
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_DETACH_CONN, 
-														(void *)&attch_id, 4);
-
-	return ret;	
 }
 
 uint16_t rtk_bt_gattc_exchange_mtu(uint16_t conn_handle)
@@ -302,19 +249,3 @@ uint16_t rtk_bt_gattc_disable_notify_or_indicate(
 				
 	return ret; 
 }
-
-uint16_t rtk_bt_gattc_confirm(rtk_bt_gattc_cfm_param_t *p_cfm_param)
-{
-	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) 
-		return RTK_BT_ERR_NOT_READY;
-	if (!p_cfm_param)
-		return RTK_BT_ERR_POINTER_INVALID;
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_CONFIRM, 
-					(void *)p_cfm_param, sizeof(rtk_bt_gattc_cfm_param_t));
-				
-	return ret; 
-}
-

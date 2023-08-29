@@ -15,6 +15,7 @@
 #ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_CAPTURE_H
 #define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_CAPTURE_H
 
+#include "audio_hw_compat.h"
 #include "ameba_audio_stream.h"
 
 #ifdef __cplusplus
@@ -23,27 +24,14 @@ extern "C" {
 
 typedef struct _CaptureStream {
 	Stream stream;
-	uint32_t channel;
-	uint32_t frame_size;
-	bool restart_by_read;
-	int capture_type;
-// member below for channel > 4
-	AudioBuffer *extra_rbuffer;
-	GdmaCallbackData *extra_gdma_struct;
-	uint32_t extra_channel;
-	uint32_t extra_frame_size;
-	bool extra_restart_by_read;
-	uint32_t extra_gdma_cnt;
-	uint32_t extra_gdma_irq_cnt;
-	bool extra_sem_need_post;
-	bool gdma_need_stop;
-	_sema extra_sem;
 } CaptureStream;
 
-Stream *ameba_audio_stream_rx_init(StreamConfig config);
+Stream *ameba_audio_stream_rx_init(uint32_t device, StreamConfig config);
 void ameba_audio_stream_rx_start(Stream *stream);
+void ameba_audio_stream_rx_stop(Stream *stream);
 int  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes);
 void ameba_audio_stream_rx_close(Stream *stream);
+int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
 
 #ifdef __cplusplus
 }

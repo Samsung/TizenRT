@@ -14,11 +14,15 @@
  */
 #include "ameba_audio_stream_control.h"
 
+#include "audio_hw_compat.h"
+#include <inttypes.h>
+
 #include "platform_stdlib.h"
 #include "ameba_sport.h"
 #include "ameba_audio.h"
 #include "ameba_audio_types.h"
 #include "ameba_audio_hw_usrcfg.h"
+#include "ameba_audio_stream_utils.h"
 #include "audio_hw_debug.h"
 #include "audio_hw_osal_errnos.h"
 
@@ -33,66 +37,84 @@
 						|| ((NUM) == AMEBA_AUDIO_DMIC7) || ((NUM) == AMEBA_AUDIO_DMIC8))
 
 static StreamControl *g_control_instance = NULL;
-static _mutex s_stream_ctl_instance_lock;
+volatile uint32_t g_control_create = 0;
 
-int ameba_audio_ctl_set_mic_category_for_adc(StreamControl *control, uint32_t adc_num, uint32_t mic_category);
-
-__attribute__((constructor)) static void stream_ctl_instance_lock_init(void)
-{
-	HAL_AUDIO_INFO("create stream tcl single instance.");
-	rtw_mutex_init(&s_stream_ctl_instance_lock);
-}
-
-__attribute__((destructor)) static void stream_ctl_instance_lock_free(void)
-{
-	HAL_AUDIO_INFO("destroy stream tcl single instance.");
-	rtw_mutex_free(&s_stream_ctl_instance_lock);
-}
+int32_t ameba_audio_ctl_set_mic_category_for_adc(StreamControl *control, uint32_t adc_num, uint32_t mic_category);
 
 StreamControl *ameba_audio_get_ctl(void)
 {
-	rtw_mutex_get(&s_stream_ctl_instance_lock);
-	if (g_control_instance == NULL) {
-		g_control_instance = (StreamControl *)calloc(1, sizeof(StreamControl));
-		if (!g_control_instance) {
-			HAL_AUDIO_ERROR("calloc control fail");
-			return NULL;
+	uint32_t expected_value = 0;
+	uint32_t new_value = 1;
+
+	if (AudioHALAtomicCompareAddSwap(&g_control_create, &expected_value, &new_value)) {
+		if (g_control_instance == NULL) {
+			g_control_instance = (StreamControl *)calloc(1, sizeof(StreamControl));
+			if (!g_control_instance) {
+				HAL_AUDIO_ERROR("calloc control fail");
+				return NULL;
+			}
+			g_control_instance->board_amp_pin = AUDIO_HW_AMPLIFIER_PIN;
+			g_control_instance->amp_state = true;
+			g_control_instance->tx_state = false;
+			g_control_instance->playback_device = AMEBA_AUDIO_DEVICE_SPEAKER;
+			g_control_instance->capture_usage = AMEBA_AUDIO_CAPTURE_USAGE_AMIC;
+			g_control_instance->adc_use_status = 0;
+			g_control_instance->volume_for_dacl = 0x50;
+			g_control_instance->volume_for_dacr = 0x50;
+			g_control_instance->volume_for_adc[0] = 0x2f;
+			g_control_instance->volume_for_adc[1] = 0x2f;
+			g_control_instance->volume_for_adc[2] = 0x2f;
+			g_control_instance->volume_for_adc[3] = 0x2f;
+			g_control_instance->volume_for_adc[4] = 0x2f;
+			g_control_instance->volume_for_adc[5] = 0x2f;
+			g_control_instance->volume_for_adc[6] = 0x2f;
+			g_control_instance->volume_for_adc[7] = 0x2f;
+			g_control_instance->mic_category_for_adc[0] = AMEBA_AUDIO_AMIC1;
+			g_control_instance->mic_category_for_adc[1] = AMEBA_AUDIO_AMIC2;
+			g_control_instance->mic_category_for_adc[2] = AMEBA_AUDIO_AMIC3;
+			g_control_instance->mic_category_for_adc[3] = AMEBA_AUDIO_AMIC4;
+			g_control_instance->mic_category_for_adc[4] = AMEBA_AUDIO_AMIC5;
+			g_control_instance->mic_category_for_adc[5] = AMEBA_AUDIO_AMIC5;
+			g_control_instance->mic_category_for_adc[6] = AMEBA_AUDIO_AMIC5;
+			g_control_instance->mic_category_for_adc[7] = AMEBA_AUDIO_AMIC5;
+			g_control_instance->gain_for_micbst[0] = MICBST_GAIN_30DB;
+			g_control_instance->gain_for_micbst[1] = MICBST_GAIN_30DB;
+			g_control_instance->gain_for_micbst[2] = MICBST_GAIN_30DB;
+			g_control_instance->gain_for_micbst[3] = MICBST_GAIN_30DB;
+			g_control_instance->gain_for_micbst[4] = MICBST_GAIN_30DB;
+			g_control_instance->mute_for_adc[0] = false;
+			g_control_instance->mute_for_adc[1] = false;
+			g_control_instance->mute_for_adc[2] = false;
+			g_control_instance->mute_for_adc[3] = false;
+			g_control_instance->mute_for_adc[4] = false;
+			g_control_instance->mute_for_adc[5] = false;
+			g_control_instance->mute_for_adc[6] = false;
+			g_control_instance->mute_for_adc[7] = false;
+			g_control_instance->mute_for_mic_bst[0] = false;
+			g_control_instance->mute_for_mic_bst[1] = false;
+			g_control_instance->mute_for_mic_bst[2] = false;
+			g_control_instance->mute_for_mic_bst[3] = false;
+			g_control_instance->mute_for_mic_bst[4] = false;
+
 		}
-		g_control_instance->board_amp_pin = AUDIO_HW_AMPLIFIER_PIN;
-		g_control_instance->amp_state = false;
-		g_control_instance->playback_device = AMEBA_AUDIO_DEVICE_SPEAKER;
-		g_control_instance->capture_usage = AMEBA_AUDIO_CAPTURE_USAGE_AMIC;
-		g_control_instance->adc_use_status = 0;
-		g_control_instance->volume_for_dacl = 0x50;
-		g_control_instance->volume_for_dacr = 0x50;
-		g_control_instance->volume_for_adc[0] = 0x2f;
-		g_control_instance->volume_for_adc[1] = 0x2f;
-		g_control_instance->volume_for_adc[2] = 0x2f;
-		g_control_instance->volume_for_adc[3] = 0x2f;
-		g_control_instance->volume_for_adc[4] = 0x2f;
-		g_control_instance->volume_for_adc[5] = 0x2f;
-		g_control_instance->volume_for_adc[6] = 0x2f;
-		g_control_instance->volume_for_adc[7] = 0x2f;
-		g_control_instance->mic_category_for_adc[0] = AMEBA_AUDIO_AMIC1;
-		g_control_instance->mic_category_for_adc[1] = AMEBA_AUDIO_AMIC2;
-		g_control_instance->mic_category_for_adc[2] = AMEBA_AUDIO_AMIC3;
-		g_control_instance->mic_category_for_adc[3] = AMEBA_AUDIO_AMIC4;
-		g_control_instance->mic_category_for_adc[4] = AMEBA_AUDIO_AMIC5;
-		g_control_instance->mic_category_for_adc[5] = AMEBA_AUDIO_AMIC5;
-		g_control_instance->mic_category_for_adc[6] = AMEBA_AUDIO_AMIC5;
-		g_control_instance->mic_category_for_adc[7] = AMEBA_AUDIO_AMIC5;
-		g_control_instance->gain_for_micbst[0] = MICBST_GAIN_30DB;
-		g_control_instance->gain_for_micbst[1] = MICBST_GAIN_30DB;
-		g_control_instance->gain_for_micbst[2] = MICBST_GAIN_30DB;
-		g_control_instance->gain_for_micbst[3] = MICBST_GAIN_30DB;
-		g_control_instance->gain_for_micbst[4] = MICBST_GAIN_30DB;
 	}
 
-	rtw_mutex_put(&s_stream_ctl_instance_lock);
 	return g_control_instance;
 }
 
-int ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float right)
+void ameba_audio_destroy_ctl()
+{
+	uint32_t expected_value = 1;
+	uint32_t new_value = 0;
+
+	if (AudioHALAtomicCompareAddSwap(&g_control_create, &expected_value, &new_value)) {
+		if (g_control_instance != NULL) {
+			free(g_control_instance);
+		}
+	}
+}
+
+int32_t ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float right)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -124,35 +146,61 @@ int ameba_audio_ctl_set_tx_volume(StreamControl *control, float left, float righ
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted)
+int32_t ameba_audio_ctl_get_tx_volume(StreamControl *control, float *left, float *right)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
 		return HAL_OSAL_ERR_INVALID_OPERATION;
 	}
 
-	if (muted) {
-		HAL_AUDIO_INFO("dac mute.");
-		AUDIO_CODEC_SetDACVolume(DAC_L, 0);
-		AUDIO_CODEC_SetDACVolume(DAC_R, 0);
-		//max time wait: 175/44100ms
-		vTaskDelay(4 / portTICK_RATE_MS);
-		AUDIO_CODEC_SetDACMute(DAC_L, MUTE);
-		AUDIO_CODEC_SetDACMute(DAC_R, MUTE);
-	} else {
-		HAL_AUDIO_INFO("dac unmute.");
-		AUDIO_CODEC_SetDACMute(DAC_L, UNMUTE);
-		AUDIO_CODEC_SetDACMute(DAC_R, UNMUTE);
-		//no need to wait, because, we set volume here, and then data render
-		//to hardware, and hardware will itself fade in.
-		AUDIO_CODEC_SetDACVolume(DAC_L, control->volume_for_dacl);
-		AUDIO_CODEC_SetDACVolume(DAC_R, control->volume_for_dacr);
-	}
+	*left = (float)control->volume_for_dacl / (float)MAX_DAC_VOLUME;
+	*right = (float)control->volume_for_dacr / (float)MAX_DAC_VOLUME;
 
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin)
+int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+		if (muted) {
+			HAL_AUDIO_INFO("dac mute.");
+			AUDIO_CODEC_SetDACVolume(DAC_L, 0);
+			AUDIO_CODEC_SetDACVolume(DAC_R, 0);
+			//max time wait: 175/44100ms
+			vTaskDelay(4 / portTICK_RATE_MS);
+			AUDIO_CODEC_SetDACMute(DAC_L, MUTE);
+			AUDIO_CODEC_SetDACMute(DAC_R, MUTE);
+		} else {
+			HAL_AUDIO_INFO("dac unmute.");
+			AUDIO_CODEC_SetDACMute(DAC_L, UNMUTE);
+			AUDIO_CODEC_SetDACMute(DAC_R, UNMUTE);
+			//no need to wait, because, we set volume here, and then data render
+			//to hardware, and hardware will itself fade in.
+			AUDIO_CODEC_SetDACVolume(DAC_L, control->volume_for_dacl);
+			AUDIO_CODEC_SetDACVolume(DAC_R, control->volume_for_dacr);
+		}
+	}
+
+	control->tx_state = muted;
+	return HAL_OSAL_OK;
+}
+
+bool ameba_audio_ctl_get_tx_mute(StreamControl *control)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return false;
+	}
+
+	return control->tx_state;
+}
+
+int32_t ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -167,7 +215,7 @@ int ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin)
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_get_amp_pin(StreamControl *control)
+int32_t ameba_audio_ctl_get_amp_pin(StreamControl *control)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -176,18 +224,47 @@ int ameba_audio_ctl_get_amp_pin(StreamControl *control)
 	return control->board_amp_pin;
 }
 
-int ameba_audio_ctl_set_amp_state(StreamControl *control, bool state)
+int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
 		return HAL_OSAL_ERR_INVALID_OPERATION;
 	}
 
+	if (control->board_amp_pin < 0) {
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	GPIO_InitTypeDef gpio_initstruct_temp;
+	gpio_initstruct_temp.GPIO_Pin = control->board_amp_pin;
+	gpio_initstruct_temp.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(&gpio_initstruct_temp);
+
+	if (state == true) {
+		HAL_AUDIO_INFO("enable amp:%ld", control->board_amp_pin);
+		GPIO_WriteBit(control->board_amp_pin, 1);
+		vTaskDelay(AUDIO_HW_AMPLIFIER_ENABLE_TIME / portTICK_RATE_MS);
+	} else {
+		HAL_AUDIO_INFO("disable amp:%ld", control->board_amp_pin);
+		GPIO_WriteBit(control->board_amp_pin, 0);
+		vTaskDelay(AUDIO_HW_AMPLIFIER_DISABLE_TIME / portTICK_RATE_MS);
+	}
+
 	control->amp_state = state;
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_set_device_category(StreamControl *control, uint32_t device_category)
+bool ameba_audio_ctl_get_amp_state(StreamControl *control)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	return control->amp_state;
+}
+
+int32_t ameba_audio_ctl_set_device_category(StreamControl *control, uint32_t device_category)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -197,7 +274,7 @@ int ameba_audio_ctl_set_device_category(StreamControl *control, uint32_t device_
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_get_device_category(StreamControl *control)
+int32_t ameba_audio_ctl_get_device_category(StreamControl *control)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -206,7 +283,7 @@ int ameba_audio_ctl_get_device_category(StreamControl *control)
 	return control->playback_device;
 }
 
-int ameba_audio_ctl_set_mic_usage(StreamControl *control, uint32_t mic_usage)
+int32_t ameba_audio_ctl_set_mic_usage(StreamControl *control, uint32_t mic_usage)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -255,7 +332,7 @@ int ameba_audio_ctl_set_mic_usage(StreamControl *control, uint32_t mic_usage)
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_get_mic_usage(StreamControl *control)
+int32_t ameba_audio_ctl_get_mic_usage(StreamControl *control)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -264,7 +341,7 @@ int ameba_audio_ctl_get_mic_usage(StreamControl *control)
 	return control->capture_usage;
 }
 
-int ameba_audio_ctl_set_mic_category_for_adc(StreamControl *control, uint32_t adc_num, uint32_t mic_category)
+int32_t ameba_audio_ctl_set_mic_category_for_adc(StreamControl *control, uint32_t adc_num, uint32_t mic_category)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -279,14 +356,14 @@ int ameba_audio_ctl_set_mic_category_for_adc(StreamControl *control, uint32_t ad
 	control->adc_use_status |= ((uint32_t)0x00000001 << adc_num);
 
 	if (control->mic_category_for_adc[adc_num] != mic_category) {
-		HAL_AUDIO_INFO("ADC: %" PRIu32 " use mic: %" PRIu32 "", adc_num, mic_category);
+		HAL_AUDIO_VERBOSE("ADC: %" PRIu32 " use mic: %" PRIu32 "", adc_num, mic_category);
 		control->mic_category_for_adc[adc_num] = mic_category;
 	}
 
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_get_mic_category_for_adc(StreamControl *control, uint32_t adc_num)
+int32_t ameba_audio_ctl_get_mic_category_for_adc(StreamControl *control, uint32_t adc_num)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -296,7 +373,7 @@ int ameba_audio_ctl_get_mic_category_for_adc(StreamControl *control, uint32_t ad
 	return control->mic_category_for_adc[adc_num];
 }
 
-int ameba_audio_ctl_set_adc_volume(StreamControl *control, uint32_t adc_num, uint32_t volume)
+int32_t ameba_audio_ctl_set_adc_volume(StreamControl *control, uint32_t adc_num, uint32_t volume)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -317,7 +394,17 @@ int ameba_audio_ctl_set_adc_volume(StreamControl *control, uint32_t adc_num, uin
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_set_tdm_adc_volume(StreamControl *control, uint32_t channels, uint32_t volume)
+int32_t ameba_audio_ctl_get_adc_volume(StreamControl *control, uint32_t adc_num)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	return control->volume_for_adc[adc_num];
+}
+
+int32_t ameba_audio_ctl_set_tdm_adc_volume(StreamControl *control, uint32_t channels, uint32_t volume)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -340,7 +427,7 @@ int ameba_audio_ctl_set_tdm_adc_volume(StreamControl *control, uint32_t channels
 	return HAL_OSAL_OK;
 }
 
-int ameba_audio_ctl_set_mic_bst_gain(StreamControl *control, uint32_t mic_category, uint32_t gain)
+int32_t ameba_audio_ctl_set_mic_bst_gain(StreamControl *control, uint32_t mic_category, uint32_t gain)
 {
 	uint32_t amic_num;
 	if (control == NULL) {
@@ -382,7 +469,39 @@ int ameba_audio_ctl_set_mic_bst_gain(StreamControl *control, uint32_t mic_catego
 
 }
 
-int ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, uint32_t ppm, uint32_t action)
+int32_t ameba_audio_ctl_get_mic_bst_gain(StreamControl *control, uint32_t mic_category)
+{
+	uint32_t amic_num;
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	switch (mic_category) {
+	case AMEBA_AUDIO_AMIC1:
+		amic_num = AMIC1;
+		break;
+	case AMEBA_AUDIO_AMIC2:
+		amic_num = AMIC2;
+		break;
+	case AMEBA_AUDIO_AMIC3:
+		amic_num = AMIC3;
+		break;
+	case AMEBA_AUDIO_AMIC4:
+		amic_num = AMIC4;
+		break;
+	case AMEBA_AUDIO_AMIC5:
+		amic_num = AMIC5;
+		break;
+	default:
+		HAL_AUDIO_ERROR("mic category not supported:%" PRIu32 "", mic_category);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	return control->gain_for_micbst[amic_num - 1];
+}
+
+int32_t ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, uint32_t ppm, uint32_t action)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -396,4 +515,33 @@ int ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, uint32
 	}
 
 	return HAL_OSAL_OK;
+}
+
+int32_t ameba_audio_ctl_set_adc_mute(StreamControl *control, uint32_t adc_num, bool muted)
+{
+	uint32_t adc_state = UNMUTE;
+
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return HAL_OSAL_ERR_INVALID_OPERATION;
+	}
+
+	control->mute_for_adc[adc_num] = muted;
+
+	if (ameba_audio_is_audio_ip_in_use(CODEC)) {
+		adc_state = muted ? MUTE : UNMUTE;
+		AUDIO_CODEC_SetADCMute(adc_num, adc_state);
+	}
+
+	return HAL_OSAL_OK;
+}
+
+bool ameba_audio_ctl_get_adc_mute(StreamControl *control, uint32_t adc_num)
+{
+	if (control == NULL) {
+		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
+		return false;
+	}
+
+	return control->mute_for_adc[adc_num];
 }

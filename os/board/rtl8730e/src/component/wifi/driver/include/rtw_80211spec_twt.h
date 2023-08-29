@@ -90,7 +90,7 @@
 #define GET_TWT_PARA_REQ_TYPE_FLOW_TYPE(_pEleStart) \
 	LE_BITS_TO_1BYTE(_pEleStart, 6, 1)
 #define GET_TWT_PARA_REQ_TYPE_FLOW_ID(_pEleStart) \
-	LE_BITS_TO_1BYTE(_pEleStart, 7, 3)
+	LE_BITS_TO_2BYTE(_pEleStart, 7, 3)
 #define GET_TWT_PARA_REQ_TYPE_WAKE_INTERVAL_EXP(_pEleStart) \
 	LE_BITS_TO_1BYTE(_pEleStart + 1, 2, 5)
 #define GET_TWT_PARA_REQ_TYPE_TWT_PROTECTION(_pEleStart) \

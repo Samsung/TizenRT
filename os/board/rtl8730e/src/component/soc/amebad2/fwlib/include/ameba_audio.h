@@ -4991,7 +4991,7 @@ _LONG_CALL_ void AUDIO_CODEC_SetLDOMode(u32 powermode);
 _LONG_CALL_ void AUDIO_CODEC_EnableADC(u32 ad_chn, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetADCVolume(u32 adc_sel, u32 gain);
 _LONG_CALL_ void AUDIO_CODEC_SetADCHPF(u32 adc_sel, u32 fc, u32 newstate);
-_LONG_CALL_ void AUDIO_CODEC_SetADCASRC(u32 adc_sel, u32 sr, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetADCASRC(u32 i2s_sel, u32 adc_sel, u32 sr, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetADCMute(u32 adc_sel, u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetADCMixMute(u32 adc_num, u32 type,  			      u32 newstate);
 _LONG_CALL_ void AUDIO_CODEC_SetADCANASrc(u32 ad_chn, u32 amic_num);

@@ -25,14 +25,20 @@
 #define USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
 #define USB_LEN_DEV_DESC                               0x12U
 #define USB_LEN_CFG_DESC                               0x09U
+#define USB_LEN_IAD_DESC                               0x08U
 #define USB_LEN_IF_DESC                                0x09U
 #define USB_LEN_EP_DESC                                0x07U
 #define USB_LEN_OTG_DESC                               0x03U
 #define USB_LEN_LANGID_STR_DESC                        0x04U
 #define USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09U
 
-/* bmRequestType :D7 Data Phase Transfer Direction  */
+/* Device descriptor offset */
+#define USB_DEV_DESC_OFFSET_VID                        8U
+#define USB_DEV_DESC_OFFSET_PID                        10U
+
+/* bmRequestType :D7 Data Phase Transfer Direction */
 #define USB_REQ_DIR_MASK                               0x80U
+#define USB_REQ_ADDR_MASK                              0x7FU
 #define USB_H2D                                        0x00U
 #define USB_D2H                                        0x80U
 
@@ -71,6 +77,7 @@
 #define USB_DESC_TYPE_DEVICE_QUALIFIER                 0x06U
 #define USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07U
 #define USB_DESC_TYPE_INTERFACE_POWER                  0x08U
+#define USB_DESC_TYPE_IAD                              0x0BU
 
 #define USB_DESC_DEVICE                                ((USB_DESC_TYPE_DEVICE << 8) & 0xFF00U)
 #define USB_DESC_CONFIGURATION                         ((USB_DESC_TYPE_CONFIGURATION << 8) & 0xFF00U)
@@ -80,6 +87,11 @@
 #define USB_DESC_DEVICE_QUALIFIER                      ((USB_DESC_TYPE_DEVICE_QUALIFIER << 8) & 0xFF00U)
 #define USB_DESC_OTHER_SPEED_CONFIGURATION             ((USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION << 8) & 0xFF00U)
 #define USB_DESC_INTERFACE_POWER                       ((USB_DESC_TYPE_INTERFACE_POWER << 8) & 0xFF00U)
+
+/* Configuration descriptor offset */
+#define USB_CFG_DESC_OFFSET_ATTR                       7U
+#define USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED      BIT(6)
+#define USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP     BIT(5)
 
 #define USB_CONFIG_REMOTE_WAKEUP                       0x02U
 #define USB_CONFIG_SELF_POWERED                        0x01U
@@ -93,6 +105,9 @@
 #define USB_HS_MAX_PACKET_SIZE                         512U
 #define USB_FS_MAX_PACKET_SIZE                         64U
 #define USB_MAX_EP0_SIZE                               64U
+
+/* bmAttributes D1..0 Transfer type */
+#define USB_EP_XFER_TYPE_MASK                          0x03U
 
 /* USB speed */
 #define USB_SPEED_HIGH                                 0
@@ -131,6 +146,10 @@ typedef int usb_speed_type_t;
 typedef int usb_otg_mode_t;
 
 /* Exported macros -----------------------------------------------------------*/
+
+#define USB_EP_IS_IN(ep_num)	(((ep_num) & USB_REQ_DIR_MASK) == USB_D2H)
+#define USB_EP_IS_OUT(ep_num)	(((ep_num) & USB_REQ_DIR_MASK) == USB_H2D)
+#define USB_EP_ADDR(ep_num) ((ep_num) & USB_REQ_ADDR_MASK)
 
 /* Exported variables --------------------------------------------------------*/
 

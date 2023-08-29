@@ -68,6 +68,7 @@ int wifi_if1_open(void);
 int wifi_if2_open(void);
 void wifi_stop_bss_network(void);
 u8 wifi_set_chplan(u8 chplan);
+int wifi_get_chplan(u8 *chplan);
 int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 							   void (*free_func)(void *),
 							   int (*rand_func)(void *, unsigned char *, size_t));
@@ -80,7 +81,10 @@ extern int rtw_bss_set_passphrase(unsigned char wlan_idx, __u8 *passphrase, __u1
 extern int rtw_joinbss_start_api(rtw_network_info_t *connect_param);
 extern int rtw_ap_start_api(rtw_softap_info_t *softAP_config, unsigned char value);
 extern int rtw_scan_start_api(rtw_scan_param_t *scan_param, unsigned char block);
-
+extern void rtw_setkey(struct rtw_crypt_info *crypt);
+#ifndef CONFIG_EAP
+extern int rtw_joinbss_find_security_type(rtw_network_info_t *connect_param);
+#endif
 #ifdef CONFIG_WOWLAN_SD1
 extern int rtw_wowlan_ctrl(unsigned char wlan_idx, rtw_wowlan_option_t type, void *param);
 #endif

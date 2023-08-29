@@ -107,7 +107,7 @@
 #define IR_GET_TX_DUTY_NUM(x)                ((u32)(((x >> 16) & 0x00000FFF)))
 #define IR_BIT_TX_OUTPUT_INVERSE             ((u32)0x00000001 << 14)          /*!<R/W 0x0  *0: Not inverse active output *1: Inverse active output */
 #define IR_BIT_TX_DE_INVERSE                 ((u32)0x00000001 << 13)          /*!<R/W 0x0  *0: Not inverse FIFO define *1: Inverse FIFO define */
-#define IR_MASK_TX_FIFO_LEVEL_TH             ((u32)0x0000001F << 8)          /*!<R/W 0x0  Tx FIFO interrupt threshold is from 0 to 15. When Tx FIFO depth = < threshold value, interrupt is triggered. */
+#define IR_MASK_TX_FIFO_LEVEL_TH             ((u32)0x0000001F << 8)          /*!<R/W 0x0  Tx FIFO interrupt threshold. When Tx FIFO depth = < threshold value, interrupt is triggered. */
 #define IR_TX_FIFO_LEVEL_TH(x)               ((u32)(((x) & 0x0000001F) << 8))
 #define IR_GET_TX_FIFO_LEVEL_TH(x)           ((u32)(((x >> 8) & 0x0000001F)))
 #define IR_BIT_TX_IDLE_STATE                 ((u32)0x00000001 << 6)          /*!<R/W 0x0  Tx output state in idle *0: Low *1: High */

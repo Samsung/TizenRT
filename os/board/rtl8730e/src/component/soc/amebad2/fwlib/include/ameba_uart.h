@@ -702,12 +702,14 @@ _LONG_CALL_ void UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState);
 /** @} */
 
 /* Other Definitions --------------------------------------------------------*/
-extern UARTCFG_TypeDef uart_config[];
-extern const UART_DevTable UART_DEV_TABLE[4];
-extern u32 UART_StateTx[4];
-extern u32 UART_StateRx[4];
-
 #define MAX_UART_INDEX			(4)
+
+extern UARTCFG_TypeDef uart_config[];
+extern const UART_DevTable UART_DEV_TABLE[MAX_UART_INDEX];
+extern const u32 APBPeriph_UARTx[MAX_UART_INDEX];
+extern const u32 APBPeriph_UARTx_CLOCK[MAX_UART_INDEX];
+extern u32 UART_StateTx[MAX_UART_INDEX];
+extern u32 UART_StateRx[MAX_UART_INDEX];
 
 static inline void
 UART_SetTxFlag(u32 UartIdx, u32 Flag)

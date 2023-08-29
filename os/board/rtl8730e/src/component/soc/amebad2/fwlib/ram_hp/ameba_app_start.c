@@ -143,9 +143,10 @@ void app_fault_handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, 
 #endif
 }
 
+#if 0
 static VOID aontimer_dslp_handler(void)
 {
-	SOC_AONTimerClearINT_HP();
+	SOCPS_AONTimerClearINT();
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
 }
 
@@ -160,7 +161,7 @@ static VOID wakepin_dslp_handler(void)
 {
 	u32 pinidx;
 	pinidx = SOCPS_WakePinCheck();
-	SOC_WakePinClearINT_HP(pinidx);
+	SOCPS_WakePinClearINT(pinidx);
 }
 
 static VOID dslp_wake_handler(void)
@@ -188,6 +189,7 @@ static VOID dslp_wake_handler(void)
 		InterruptEn(AON_WAKEPIN_IRQ, 3);
 	}
 }
+#endif
 
 // The Main App entry point
 void app_start(void)
@@ -220,7 +222,8 @@ void app_start(void)
 	/* For reference only, users can modify the function if need */
 	/* Attention, the handler is needed to clear NVIC pending int and ip int in dslp flow */
 	if ((BootReason & AON_BIT_RSTF_DSLP) != 0) {
-		dslp_wake_handler();
+		//dslp_wake_handler();
+		//depends on user's request
 	}
 
 	SystemCoreClockUpdate();

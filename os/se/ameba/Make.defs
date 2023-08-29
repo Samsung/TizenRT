@@ -76,5 +76,6 @@ CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/swlib
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/project/realtek_amebaD2_va0_example/inc/inc_ap
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/file_system/fatfs/r0.14b/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/file_system/fatfs
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/file_system/vfs2.0
 endif
 endif

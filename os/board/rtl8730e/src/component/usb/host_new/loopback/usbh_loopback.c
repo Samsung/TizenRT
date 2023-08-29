@@ -53,7 +53,7 @@ static void usbh_loopback_get_endpoints(usbh_if_desc_t *intf)
 
 	for (tmp = 0; tmp < intf->bNumEndpoints; tmp++) {
 		ep_desc = &intf->ep_desc[tmp];
-		switch (ep_desc->bmAttributes & USB_EP_XFERTYPE_MASK) {
+		switch (ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) {
 		case USB_CH_EP_TYPE_INTR:
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 				loopback->intr_in_ep = ep_desc->bEndpointAddress;

@@ -25,6 +25,7 @@
 
 ADC_CalParaTypeDef CalParaNorm;
 ADC_CalParaTypeDef CalParaVBat;
+BOOL vref_init_done = _FALSE;
 
 /**
   * @brief	 Initializes the parameters in the ADC_InitStruct with default values.
@@ -50,55 +51,44 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 }
 
 /**
-  * @brief	 Initializes the ADC according to the specified parameters in ADC_InitStruct.
-  * @param  ADC_InitStruct: pointer to a ADC_InitTypeDef structure that contains
-  *         the configuration information for the ADC peripheral.
-  * @retval  None
+  * @brief Initialize ADC according to the specified parameters in ADC_InitStruct.
+  * @param ADC_InitStruct: pointer to a ADC_InitTypeDef structure that contains
+  *         the configuration information of the ADC peripheral.
+  * @retval None
   */
 void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 {
-	ADC_TypeDef	*adc = ADC;
-	//CAPTOUCH_TypeDef *CapTouch = CAPTOUCH_DEV;
-	u32 value = 0;
-	u8 len, i;
-	//u8 FT_Type;
-	//u32 Temp;
-	//u32 FT_Type_Address = 0x1F0;
+	ADC_TypeDef *adc = ADC;
+	u32 value;
+	int len, i;
+	u8 vref_sel = 0x7;
 
 	assert_param(IS_ADC_MODE(ADC_InitStruct->ADC_OpMode));
 	assert_param(IS_ADC_SAMPLE_CLK(ADC_InitStruct->ADC_ClkDiv));
 	assert_param(ADC_InitStruct->ADC_CvlistLen < 16);
-#if 0
-	EFUSE_PMAP_READ8(0, FT_Type_Address, &FT_Type, L25EOUTVOLTAGE);
-	FT_Type &= (BIT(1) | BIT(0));
 
-	if (FT_Type == 0x2) {
-		/*Set CT_ANA_ADC_REG1X_LPAD register with 2'b 00*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG1X_LPAD;
-		Temp &= ~(BIT(6) | BIT(7));
-		CapTouch->CT_ANA_ADC_REG1X_LPAD = Temp;
-
-		/*Set CT_ANA_ADC_REG0X_LPAD register with 3'b 101*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG0X_LPAD;
-		Temp &= ~(BIT(9));
-		Temp |= (BIT(8) | BIT(10));
-		CapTouch->CT_ANA_ADC_REG0X_LPAD = Temp;
-
-	} else {
-		/*Set CT_ANA_ADC_REG1X_LPAD register with 2'b 00*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG1X_LPAD;
-		Temp &= ~(BIT(6) | BIT(7));
-		CapTouch->CT_ANA_ADC_REG1X_LPAD = Temp;
-
-		/*Set CT_ANA_ADC_REG0X_LPAD register with 3'b 100*/
-		Temp = (u32)CapTouch->CT_ANA_ADC_REG0X_LPAD;
-		Temp &= ~(BIT(8) | BIT(9));
-		Temp |= BIT(10);
-		CapTouch->CT_ANA_ADC_REG0X_LPAD = Temp;
-	}
-#endif
 	/* Disable ADC, clear pending interrupt, clear FIFO */
 	ADC_Cmd(DISABLE);
+
+	/* Calibrate Vref according to EFuse */
+	if (!vref_init_done) {
+		/* step1: read EFuse */
+		OTP_Read8(VREF_SEL_ADDR, &vref_sel);
+		/* [2:0]: Vref Selection */
+		vref_sel &= 0x7;
+
+		/* step2: update vref sel para */
+		value = CAPTOUCH_DEV->CT_ANA_ADC_REG0X_LPAD;
+		value &= ~(0x7 << 8);
+		if (vref_sel == 0x3) {
+			value |= (0x3 << 8); // 011:0.85V
+		} else {
+			value |= (0x2 << 8); // 010:0.80V
+		}
+		CAPTOUCH_DEV->CT_ANA_ADC_REG0X_LPAD = value;
+
+		vref_init_done = _TRUE;
+	}
 
 	adc->ADC_INTR_CTRL = 0;
 	ADC_INTClear();
@@ -108,7 +98,8 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	adc->ADC_CLK_DIV = ADC_CLK_DIV(ADC_InitStruct->ADC_ClkDiv);
 
 	/* Set adc configuration*/
-	value = adc->ADC_CONF & (~(ADC_MASK_CVLIST_LEN | ADC_MASK_OP_MOD));
+	value = adc->ADC_CONF;
+	value &= ~(ADC_MASK_CVLIST_LEN | ADC_MASK_OP_MOD);
 	value |= ADC_OP_MOD(ADC_InitStruct->ADC_OpMode) | ADC_CVLIST_LEN(ADC_InitStruct->ADC_CvlistLen);
 	adc->ADC_CONF = value;
 
@@ -233,11 +224,11 @@ void ADC_INTClear(void)
   *            @arg ADC_BIT_IT_ERR_STS
   *            @arg ADC_BIT_IT_DAT_OVW_STS
   *            @arg ADC_BIT_IT_FIFO_EMPTY_STS
-  *            @arg ADC_BIT_FIFO_OVER_STS
-  *            @arg ADC_BIT_FIFO_FULL_STS
-  *            @arg ADC_BIT_CHCV_END_STS
-  *            @arg ADC_BIT_CV_END_STS
-  *            @arg ADC_BIT_CVLIST_END_STS
+  *            @arg ADC_BIT_IT_FIFO_OVER_STS
+  *            @arg ADC_BIT_IT_FIFO_FULL_STS
+  *            @arg ADC_BIT_IT_CHCV_END_STS
+  *            @arg ADC_BIT_IT_CV_END_STS
+  *            @arg ADC_BIT_IT_CVLIST_END_STS
   * @retval  None
   */
 void ADC_INTClearPendingBits(u32 ADC_IT)
@@ -265,11 +256,11 @@ void ADC_INTClearPendingBits(u32 ADC_IT)
   *            @arg ADC_BIT_IT_ERR_STS
   *            @arg ADC_BIT_IT_DAT_OVW_STS
   *            @arg ADC_BIT_IT_FIFO_EMPTY_STS
-  *            @arg ADC_BIT_FIFO_OVER_STS
-  *            @arg ADC_BIT_FIFO_FULL_STS
-  *            @arg ADC_BIT_CHCV_END_STS
-  *            @arg ADC_BIT_CV_END_STS
-  *            @arg ADC_BIT_CVLIST_END_STS
+  *            @arg ADC_BIT_IT_FIFO_OVER_STS
+  *            @arg ADC_BIT_IT_FIFO_FULL_STS
+  *            @arg ADC_BIT_IT_CHCV_END_STS
+  *            @arg ADC_BIT_IT_CV_END_STS
+  *            @arg ADC_BIT_IT_CVLIST_END_STS
   */
 u32 ADC_GetISR(void)
 {
@@ -424,11 +415,11 @@ u32 ADC_Readable(void)
 /**
   * @brief  Read data from ADC receive FIFO .
   * @param  None
-  * @retval  The conversion data.
+  * @retval The conversion data with the channel index that the data belongs to.
   */
-u16 ADC_Read(void)
+u32 ADC_Read(void)
 {
-	u16 value = (u16)ADC_GET_DATA_GLOBAL(ADC->ADC_DATA_GLOBAL);
+	u32 value = ADC_ID_AND_DATA(ADC->ADC_DATA_GLOBAL);
 
 	return value;
 }
@@ -439,7 +430,7 @@ u16 ADC_Read(void)
   * @param  len: the number of sample data to be read
   * @retval  None.
   */
-void ADC_ReceiveBuf(u16 *pBuf, u32 len)
+void ADC_ReceiveBuf(u32 *pBuf, u32 len)
 {
 	u32 i = 0;
 
@@ -594,13 +585,13 @@ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan)
 	s32 ka, kb, kc;
 
 	if (IsVBatChan) {
-		AdcCalAddr = 0x70A; /* vbat channel */
+		AdcCalAddr = VBAT_VOL_ADDR; /* vbat channel */
 	} else {
-		AdcCalAddr = 0x704; /* normal channel */
+		AdcCalAddr = NORM_VOL_ADDR; /* normal channel */
 	}
 
 	for (index = 0; index < 6; index++) {
-		EFUSE_PMAP_READ8(0, AdcCalAddr + index, EfuseBuf + index, L25EOUTVOLTAGE);
+		OTP_Read8((AdcCalAddr + index), (EfuseBuf + index));
 	}
 	K_A = EfuseBuf[1] << 8 | EfuseBuf[0];
 	K_B = EfuseBuf[3] << 8 | EfuseBuf[2];
@@ -646,7 +637,7 @@ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara, BOOL IsVBatChan)
   * @retval ADC voltage value in mV.
   * @note This function is for all the channels except channel6(VBAT).
   */
-s32 ADC_GetVoltage(u16 chan_data)
+s32 ADC_GetVoltage(u32 chan_data)
 {
 	s64 ka, kb;
 	s32 kc;
@@ -671,7 +662,7 @@ s32 ADC_GetVoltage(u16 chan_data)
   * @retval ADC voltage value in mV.
   * @note This function is only for channel6(VBAT).
   */
-s32 ADC_GetVBATVoltage(u16 vbat_data)
+s32 ADC_GetVBATVoltage(u32 vbat_data)
 {
 	s64 ka, kb;
 	s32 kc;
@@ -698,10 +689,9 @@ s32 ADC_GetVBATVoltage(u16 vbat_data)
   */
 u32 ADC_GetInterR(void)
 {
-	u32 AdcResAddr = 0x7EC;
 	u8 r_offset;
 
-	EFUSE_PMAP_READ8(0, AdcResAddr, &r_offset, L25EOUTVOLTAGE);
+	OTP_Read8(INTER_R_ADDR, &r_offset);
 
 	return ((u32)r_offset + 400);
 }

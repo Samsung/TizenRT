@@ -126,6 +126,7 @@ typedef enum {
 
 #define IS_PPC_PERIID(x)			((x >= SECFG_WIFI_CFG) && (x < SECFG_MAXNUM))
 
+#define IS_PPC_REG0(x)			(x <= SECFG_SPORT2_I2S)
 #define IS_PPC_REG1(x)			(x == SECFG_ZIGBEE) || \
 								(x == SECFG_DDR_BSTC) || \
 								(x == SECFG_DDR_PHY) || \

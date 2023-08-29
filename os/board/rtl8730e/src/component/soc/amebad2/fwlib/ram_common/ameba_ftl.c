@@ -105,7 +105,6 @@ void Ftl_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	ipc_msg.rsvd = 0;
 
 	PIPC_MSG_STRUCT	ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_AP_TO_NP, IPC_A2N_FTL_DATA_TRAN);
-	DCache_CleanInvalidate((u32)&ipc_msg_temp, 32);
 	addr = ipc_msg_temp->msg;
 
 	DCache_Invalidate(addr, CA7_CACHE_SIZE);

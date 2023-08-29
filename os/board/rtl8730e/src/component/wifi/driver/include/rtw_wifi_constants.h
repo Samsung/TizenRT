@@ -117,7 +117,9 @@
 #define WPA3_SECURITY		0x00800000	/**< wpa3 */
 #define WPS_ENABLED		0x10000000	/**< wps  enable*/
 
-#define RTW_MAX_PSK_LEN		(64)		/**< maxmum psk length */
+#define RTW_WPA2_MAX_PSK_LEN		(64)
+#define RTW_WPA3_MAX_PSK_LEN		(128)		/**< maxmum psk length */
+#define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN
 #define RTW_MIN_PSK_LEN		(8)		/**< minimum psk length */
 #define MCSSET_LEN		16		/**<mcsset length */
 
@@ -376,6 +378,13 @@ typedef enum {
 	RTW_COUNTRY_MAX
 
 } rtw_country_code_t;
+
+enum band_type {
+	BAND_ON_24G	= 0,
+	BAND_ON_5G	= 1,
+	BAND_ON_6G	= 2,
+	BAND_MAX,
+};
 
 /**
  * @brief The enumeration lists wpa mode
@@ -715,20 +724,6 @@ typedef enum {
 } rtw_wps_type_t;
 
 /**
-  * @brief  The enumeration lists all the network bgn mode.
-  */
-typedef enum {
-	RTW_NETWORK_B			= 1,		/**< b mode */
-	RTW_NETWORK_A			= 2,		/**< a mode */
-	RTW_NETWORK_BG  			= 3,		/**< bg mode */
-	RTW_NETWORK_A_N   		= 10,	/**< a+n mode */
-	RTW_NETWORK_BGN 		= 13,	/**< bgn mode */
-	RTW_NETWORK_A_N_AC   	= 26,	/**< a+n+ac mode */
-	RTW_NETWORK_BGN_AX 		= 45,	/**< bgn+ax mode */
-	RTW_NETWORK_A_N_AC_AX   = 58	/**< a+n+ac+ax mode */
-} rtw_network_mode_t;
-
-/**
   * @brief The enumeration lists the join status.
   */
 typedef enum {
@@ -821,8 +816,10 @@ typedef enum {
 	WIFI_EVENT_STA_ASSOC = 0,		///<used in p2p, simple config, 11s, customer
 	WIFI_EVENT_STA_DISASSOC,		///<used in p2p, customer
 	WIFI_EVENT_RX_MGNT,				///<used in p2p, customer
+	WIFI_EVENT_RX_MGNT_AP,
 	WIFI_EVENT_CONNECT,				///<used in ipv6 example, p2p, wifi_manager example
 	WIFI_EVENT_DISCONNECT,			///<used in wifi_manager example, p2p, eap
+	WIFI_EVENT_EXTERNAL_AUTH_REQ,
 
 	WIFI_EVENT_GROUP_KEY_CHANGED,
 	WIFI_EVENT_RECONNECTION_FAIL,

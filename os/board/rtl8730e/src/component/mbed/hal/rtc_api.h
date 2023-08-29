@@ -59,7 +59,9 @@ extern "C" {
 	(defined(CONFIG_PLATFORM_8735B) && (CONFIG_PLATFORM_8735B == 1)) || \
 	(defined(CONFIG_PLATFORM_AMEBAD2) && (CONFIG_PLATFORM_AMEBAD2 == 1)) || \
 	(defined(CONFIG_PLATFORM_AMEBALITE) && (CONFIG_PLATFORM_AMEBALITE == 1)) || \
-	(defined(CONFIG_PLATFORM_AMEBADPLUS) && (CONFIG_PLATFORM_AMEBADPLUS == 1))
+	(defined(CONFIG_PLATFORM_AMEBADPLUS) && (CONFIG_PLATFORM_AMEBADPLUS == 1)) || \
+	(defined(CONFIG_PLATFORM_RTL8720F) && (CONFIG_PLATFORM_RTL8720F == 1))
+
 ///@name AmebaZ and AmebaPro and AmebaD and AmebaPro2 and AmebaZ2
 ///@{
 typedef void (*alarm_irq_handler)(void);
@@ -173,7 +175,7 @@ void rtc_set_alarm_time(time_t t, alarm_irq_handler alarmHandler);
   */
 u32 rtc_set_comp(u8 func_en);
 ///@}
-#endif // CONFIG_PLATFORM_8735B 
+#endif // CONFIG_PLATFORM_8735B
 
 /*\@}*/
 

@@ -16,7 +16,7 @@
 #include "inic_ipc.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_INIC_IPC_DEV_XMIT_PRI 5
+#define CONFIG_INIC_IPC_DEV_XMIT_PRI 6
 /* -------------------------------- Macros ---------------------------------- */
 
 /* ------------------------------- Data Types ------------------------------- */
@@ -28,5 +28,5 @@ void inic_ipc_dev_init_priv(void);
 void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *ipc_msg);
 void inic_ipc_dev_recv(int idx);
 void inic_ipc_dev_rx_done(inic_ipc_ex_msg_t *p_ipc_msg);
-
+void inic_ipc_dev_tx_done(int idx);
 #endif /* __INIC_IPC_DEV_TX_H__ */

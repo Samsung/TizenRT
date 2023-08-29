@@ -30,8 +30,7 @@
 static u8 usbd_msc_set_config(usb_dev_t *dev, u8 config);
 static u8 usbd_msc_clear_config(usb_dev_t *dev, u8 config);
 static u8 usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u8 usbd_msc_clear_feature(usb_dev_t *dev, usb_setup_req_t *req);
-static u8 *usbd_msc_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
+static u8 *usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static u8 usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status);
 static u8 usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len);
 
@@ -303,7 +302,6 @@ usbd_class_driver_t usbd_msc_driver = {
 	.set_config = usbd_msc_set_config,
 	.clear_config = usbd_msc_clear_config,
 	.setup = usbd_msc_setup,
-	.clear_feature = usbd_msc_clear_feature,
 	.ep_data_in = usbd_msc_handle_ep_data_in,
 	.ep_data_out = usbd_msc_handle_ep_data_out,
 };
@@ -373,7 +371,9 @@ static SD_RESULT RAM_WriteBlocks(u32 sector, const u8 *data, u32 count)
 void  usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+#if USBD_MSC_FIX_CV_TEST_ISSUE
 	u16 ep_mps;
+#endif
 
 	cdev->csw.Signature = USBD_MSC_CS_SIGN;
 	cdev->csw.Status = status;
@@ -381,11 +381,15 @@ void  usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 
 	usbd_ep_transmit(dev, USBD_MSC_BULK_IN_EP, (u8 *)&cdev->csw, USBD_MSC_CS_WRAP_LEN);
 
+#if USBD_MSC_FIX_CV_TEST_ISSUE
+	/* Fix CV test failure */
 	if (cdev->bot_status == USBD_MSC_STATUS_RECOVERY) {
 		usbd_ep_deinit(dev, USBD_MSC_BULK_OUT_EP);
 		ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 		usbd_ep_init(dev, USBD_MSC_BULK_OUT_EP, USB_CH_EP_TYPE_BULK, ep_mps);
 	}
+#endif
+
 	/* Prepare EP to Receive next Cmd */
 	usbd_ep_receive(dev, USBD_MSC_BULK_OUT_EP, (u8 *)&cdev->cbw, USBD_MSC_CB_WRAP_LEN);
 }
@@ -486,6 +490,7 @@ static u8 usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	u8 ret = HAL_OK;
+	u16 ep_mps;
 
 	DBG_PRINTF(MODULE_USB_CLASS,
 			   LEVEL_TRACE,
@@ -496,70 +501,98 @@ static u8 usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
+	/* Standard request */
+	case USB_REQ_TYPE_STANDARD:
+		switch (req->bRequest) {
+		case USB_REQ_GET_STATUS:
+			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				cdev->ctrl_buf[0] = 0U;
+				cdev->ctrl_buf[1] = 0U;
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, 2U);
+			} else {
+				ret = HAL_ERR_PARA;
+			}
+			break;
+
+		case USB_REQ_GET_INTERFACE:
+			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+				cdev->ctrl_buf[0] = 0U;
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, 1U);
+			} else {
+				ret = HAL_ERR_PARA;
+			}
+			break;
+
+		case USB_REQ_SET_INTERFACE:
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			}
+			break;
+
+		case USB_REQ_CLEAR_FEATURE:
+			/* DeInit EP */
+			usbd_ep_deinit(dev, (u8)req->wIndex & 0xFF);
+			if ((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) {
+				ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+				usbd_ep_init(dev, USBD_MSC_BULK_IN_EP, USB_CH_EP_TYPE_BULK, ep_mps);
+			} else {
+				ep_mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
+				usbd_ep_init(dev, USBD_MSC_BULK_OUT_EP, USB_CH_EP_TYPE_BULK, ep_mps);
+			}
+
+			/* Handle BOT error */
+			if (cdev->bot_status == USBD_MSC_STATUS_ERROR) { /* Bad CBW Signature */
+				usbd_ep_set_stall(dev, USBD_MSC_BULK_IN_EP);
+				cdev->bot_status = USBD_MSC_STATUS_NORMAL;
+			} else if (((((u8)req->wIndex) & USB_REQ_DIR_MASK) == USB_D2H) && (cdev->bot_status != USBD_MSC_STATUS_RECOVERY)) {
+				usbd_msc_send_csw(dev, USBD_MSC_CSW_CMD_FAILED);
+			} else {
+				// Do nothing
+			}
+			break;
+
+		default:
+			ret = HAL_ERR_PARA;
+			break;
+		}
+		break;
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		switch (req->bRequest) {
 		case USBD_MSC_REQUEST_GET_MAX_LUN:
 			if ((req->wValue  == 0U) && (req->wLength == 1U) &&
-				((req->bmRequestType & 0x80U) == 0x80U)) {
-				dev->ctrl_buf[0] = 0U;
-				usbd_ep0_transmit(dev, dev->ctrl_buf, 1U);
+				((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H)) {
+				cdev->ctrl_buf[0] = 0U;
+				usbd_ep0_transmit(dev, cdev->ctrl_buf, 1U);
 			} else {
-				usbd_ep0_set_stall(dev);
-				ret = HAL_ERR_HW;
+				ret = HAL_ERR_PARA;
 			}
 			break;
 
 		case USBD_MSC_REQUEST_RESET :
 			if ((req->wValue  == 0U) && (req->wLength == 0U) &&
-				((req->bmRequestType & 0x80U) != 0x80U)) {
+				((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
 				cdev->bot_state  = USBD_MSC_IDLE;
 				cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 				/* Prepare to receive BOT cmd */
 				usbd_ep_receive(dev, USBD_MSC_BULK_OUT_EP, (u8 *)&cdev->cbw, USBD_MSC_CB_WRAP_LEN);
 			} else {
-				usbd_ep0_set_stall(dev);
-				ret = HAL_ERR_HW;
+				ret = HAL_ERR_PARA;
 			}
 			break;
 
 		default:
-			usbd_ep0_set_stall(dev);
-			ret = HAL_ERR_HW;
+			ret = HAL_ERR_PARA;
 			break;
 		}
 		break;
 
 	default:
-		usbd_ep0_set_stall(dev);
-		ret = HAL_ERR_HW;
+		ret = HAL_ERR_PARA;
 		break;
 	}
 
 	return ret;
-}
-
-/**
-  * @brief  Handle MSC specific clear feature requests
-  * @param  dev: USB device instance
-  * @param  req: USB CTRL requests
-  * @retval Status
-  */
-static u8 usbd_msc_clear_feature(usb_dev_t *dev, usb_setup_req_t *req)
-{
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
-
-	/* Handle BOT error */
-	if (cdev->bot_status == USBD_MSC_STATUS_ERROR) { /* Bad CBW Signature */
-		usbd_ep_set_stall(dev, USBD_MSC_BULK_IN_EP);
-		cdev->bot_status = USBD_MSC_STATUS_NORMAL;
-	} else if (((((u8)req->wIndex) & 0x80U) == 0x80U) && (cdev->bot_status != USBD_MSC_STATUS_RECOVERY)) {
-		usbd_msc_send_csw(dev, USBD_MSC_CSW_CMD_FAILED);
-	} else {
-		;
-	}
-
-	return HAL_OK;
 }
 
 /**
@@ -681,9 +714,11 @@ static u8 usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len)
   * @param  len: Descriptor length
   * @retval Status
   */
-static u8 *usbd_msc_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
+static u8 *usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
 {
 	u8 *buf = NULL;
+
+	dev->self_powered = USBD_MSC_SELF_POWERED;
 
 	switch ((req->wValue >> 8) & 0xFF) {
 
@@ -789,6 +824,12 @@ int usbd_msc_init(void)
 	cdev->disk_operation.disk_write = SD_WriteBlocks;
 #endif
 
+	cdev->ctrl_buf = rtw_zmalloc(USBD_MSC_CTRL_BUF_SIZE);
+	if (cdev->ctrl_buf == NULL) {
+		ret = HAL_ERR_MEM;
+		goto ctrl_buf_fail;
+	}
+
 	cdev->data = rtw_zmalloc(USBD_MSC_BUFLEN);
 	if (cdev->data == NULL) {
 		ret = HAL_ERR_MEM;
@@ -798,14 +839,21 @@ int usbd_msc_init(void)
 	cdev->blkbits = USBD_MSC_BLK_BITS;
 	cdev->blksize = USBD_MSC_BLK_SIZE;
 	if (cdev->disk_operation.disk_init()) {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_ERROR, "disk init fail\n");
+		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_ERROR, "Disk init failed\n");
 		rtw_free(cdev->data);
 		cdev->data = NULL;
 		return HAL_ERR_HW;
 	}
+
 	usbd_register_class(&usbd_msc_driver);
 
+	return HAL_OK;
+
 data_buf_fail:
+	rtw_free(cdev->ctrl_buf);
+	cdev->ctrl_buf = NULL;
+
+ctrl_buf_fail:
 	return ret;
 }
 
@@ -826,6 +874,11 @@ void usbd_msc_deinit(void)
 	if (cdev->data != NULL) {
 		rtw_free(cdev->data);
 		cdev->data = NULL;
+	}
+
+	if (cdev->ctrl_buf != NULL) {
+		rtw_free(cdev->ctrl_buf);
+		cdev->ctrl_buf = NULL;
 	}
 }
 

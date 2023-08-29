@@ -71,7 +71,7 @@
 void __cpu_idle(void)
 {
 	while (1);
-	return;
+	//return;
 }
 /* external function */
 extern void _exit(int sig);

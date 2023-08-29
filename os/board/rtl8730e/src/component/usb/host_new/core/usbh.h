@@ -237,16 +237,16 @@ void usbh_notify_class_state_change(usb_host_t *host);
 void usbh_notify_urb_state_change(usb_host_t *host);
 
 /* Transfer operations */
-u8 usbh_ctrl_set_interface(usb_host_t *host, u8 ep_num, u8 if_num);
+u8 usbh_ctrl_set_interface(usb_host_t *host, u8 if_num, u8 if_alt);
 u8 usbh_ctrl_set_feature(usb_host_t *host, u8 value);
 u8 usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_num);
 u8 usbh_ctrl_request(usb_host_t *host, usbh_setup_req_t *req, u8 *buf);
 u8 usbh_bulk_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u8 usbh_bulk_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
-u8 usbh_intr_receive_data(usb_host_t *host, u8       *buf, u8 len, u8 pipe_num);
-u8 usbh_intr_send_data(usb_host_t *host, u8 *buf, u8 len, u8 pipe_num);
-u8 usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u32 len, u8 pipe_num);
-u8 usbh_isoc_send_data(usb_host_t *host, u8 *buf, u32 len, u8 pipe_num);
+u8 usbh_intr_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
+u8 usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
+u8 usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
+u8 usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
 
 #endif /* USBD_H */

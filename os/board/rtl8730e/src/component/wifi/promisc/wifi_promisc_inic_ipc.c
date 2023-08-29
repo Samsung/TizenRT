@@ -43,17 +43,16 @@ int promisc_recv_func(void *padapter, void *rframe)
 #endif
 }
 
-int promisc_recv_lens_func(void *padapter, u8 *payload, u8 plen)
+int promisc_recv_lens_func(u8 *payload, u8 plen)
 {
 	/* To avoid gcc warnings */
-	(void) padapter;
 	(void) payload;
 	(void) plen;
 
 	// Never reach here if not define CONFIG_PROMISC
 #ifdef CONFIG_PROMISC
 #if defined(CONFIG_UNSUPPORT_PLCPHDR_RPT) && CONFIG_UNSUPPORT_PLCPHDR_RPT
-	return _promisc_recv_lens_func(padapter, payload, plen);
+	return _promisc_recv_lens_func(payload, plen);
 #else
 	return 0;
 #endif

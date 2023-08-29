@@ -398,6 +398,9 @@ uart_gtimer_handle(
 			puart_adapter->last_dma_addr = (u32)(puart_adapter->pRxBuf);
 		}
 	}
+
+	/* make sure all intr pending bits cleared ok, to avoid timeout is not enough in rom code */
+	RTIM_INTClear(TIMx[UART_TIMER_ID]);
 }
 
 /**
@@ -1433,7 +1436,7 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 	// Disable Rx interrupt
 	UART_INTConfig(puart_adapter->UARTx, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
 
-	UART_RXDMAConfig(puart_adapter->UARTx, 4);
+	UART_RXDMAConfig(puart_adapter->UARTx, 16);
 	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
 
 	ret1 = UART_RXGDMA_Init(puart_adapter->UartIndex, &puart_adapter->UARTRxGdmaInitStruct,

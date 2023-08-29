@@ -43,10 +43,11 @@ void lv_hal_init()
 
 	/*A small buffer for LittlevGL to draw the screen's content*/
 	static lv_color_t buf1[DISP_BUF_SIZE];
+	static lv_color_t buf2[DISP_BUF_SIZE];
 
 	/*Initialize a descriptor for the buffer*/
 	static lv_disp_draw_buf_t disp_buf;
-	lv_disp_draw_buf_init(&disp_buf, buf1, NULL, DISP_BUF_SIZE);
+	lv_disp_draw_buf_init(&disp_buf, buf1, buf2, DISP_BUF_SIZE);
 
 	/*Initialize and register a display driver*/
 	static lv_disp_drv_t disp_drv;
@@ -55,6 +56,7 @@ void lv_hal_init()
 	disp_drv.flush_cb   = display_flush;
 	disp_drv.hor_res    = 480;
 	disp_drv.ver_res    = 800;
+	disp_drv.full_refresh = 1;
 	lv_disp_drv_register(&disp_drv);
 
 	static lv_indev_drv_t indev_drv;

@@ -123,6 +123,9 @@
 #include "ameba_ledc.h"
 #include "ameba_audio.h"
 #include "ameba_sport.h"
+#include "ameba_aontimer.h"
+#include "ameba_wakepin.h"
+
 #ifndef ARM_CORE_CA32
 #include "ameba_cache.h"
 #else

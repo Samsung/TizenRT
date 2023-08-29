@@ -45,8 +45,7 @@ const AUDIO_DevTable AUDIO_DEV_TABLE[4] = {
 
 /**
   * @brief  Fills each SP_StructInit member with its default value.
-  * @param  SP_StructInit: pointer to an SP_StructInit structure which will be
-  *         initialized.
+  * @param  SP_StructInit: pointer to an SP_StructInit structure which will be initialized.
   * @retval None
   */
 void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
@@ -60,17 +59,19 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 	SP_InitStruct->SP_SelFIFO = SP_TX_FIFO2;
 	SP_InitStruct->SP_SelI2SMonoStereo = SP_CH_STEREO;
 	SP_InitStruct->SP_SetMultiIO = SP_TX_MULTIIO_DIS;
-	SP_InitStruct->SP_SelClk = CKSL_I2S_XTAL40M;
+	SP_InitStruct->SP_SelClk = I2S_XTAL40M;
 	SP_InitStruct->SP_Bclk = (32 * ((SP_InitStruct->SP_SelTDM) + 1) * 2 * (SP_InitStruct->SP_SR));
 	SP_InitStruct->SP_Fix_Bclk = DISABLE;
-	SP_InitStruct->SP_Sel_FixBclk = FIX_BCLK_20M;
+
 }
 
 
 /**
-  * @brief  register sport if this sport is used.
+  * @brief  Register sport.
   * @param  index: 0 ~ 3.
-  * @retval value: _TRUE/_FALSE
+  * @param  direction: SP_DIR_TX or SP_DIR_RX.
+  * @param  SP_StructInit: pointer to an SP_StructInit structure.
+  * @retval None
 */
 BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 {
@@ -131,7 +132,8 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 /**
 * @brief Unregister sport.
 * @param index: 0 ~ 3.
-* @retval value: _TRUE/_FALSE
+* @param  direction: SP_DIR_TX or SP_DIR_RX.
+* @retval None
 */
 void AUDIO_SP_Unregister(u32 index, u32 direction)
 {
@@ -156,6 +158,12 @@ void AUDIO_SP_Reset(AUDIO_SPORT_TypeDef *SPORTx)
 	SPORTx->SP_CTRL0 &= ~ SP_BIT_RESET;
 }
 
+
+/**
+  * @brief  Get sport tx channel length.
+  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @retval None
+*/
 u32 AUDIO_SP_GetTXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 {
 	u32 chn_len;
@@ -179,6 +187,11 @@ u32 AUDIO_SP_GetTXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 	return chn_len;
 }
 
+/**
+  * @brief  Get sport rx channel length.
+  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @retval None
+*/
 u32 AUDIO_SP_GetRXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 {
 	u32 chn_len;
@@ -202,32 +215,101 @@ u32 AUDIO_SP_GetRXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 	return chn_len;
 }
 
+/**
+  * @brief  Set AUDIO SPORT MCLK enable or disable.
+  * @param  index: sport index.
+  * @param  NewState: enable or disable.
+  * @retval None
+  */
+void AUDIO_SP_SetMclk(u32 index, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (NewState == ENABLE) {
+		SPORTx->SP_CTRL1 |= SP_BIT_ENABLE_MCLK;
+	} else {
+		SPORTx->SP_CTRL1 &= ~SP_BIT_ENABLE_MCLK;
+	}
+}
+
 
 /**
-  * @brief  Set the AUDIO SPORT BLCK divider factor.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
-  * @param  mi: the denominator of clock divider.
-  * @param  mi: the nominator of clock divider.
-  * @note  This api is used only when clock source is 40MHz.
-  * @note1  BLCK = 40MHz*(ni/mi).
-  * @note2  SP_CLK_MI_NI_UPDATE bit is used to update mi and ni to get the new clock rate.
-  *               This bit will be reset automatically when update is done.
+  * @brief  Set AUDIO SPORT MCLK divider factor.
+  * @param  mck_div: sport index.
+  * @param  div: MCLK output.
+  *          This parameter can be one of the following values:
+  *            @arg 0: MCLK output=dsp_src_clk/4
+  *            @arg 1: MCLK output=dsp_src_clk/2
+  *            @arg 2: MCLK output=dsp_src_clk
+  * @retval None
+  */
+void AUDIO_SP_SetMclkDiv(u32 index, u32 mck_div)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_CTRL0 &= ~SP_MASK_MCLK_SEL;
+	SPORTx->SP_CTRL0 |= SP_MCLK_SEL(mck_div);
+}
+
+/**
+  * @brief  Set AUDIO SPORT fixed BLCK mode.
+  * @param  index: sport index.
+  * @param  NewState: enable or disable fix bclk mode.
+  * @retval None
+  */
+void AUDIO_SP_SetFixBclk(u32 index, SP_InitTypeDef *SP_InitStruct)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (SP_InitStruct->SP_Fix_Bclk == ENABLE) {
+		SPORTx->SP_FORMAT |= SP_BIT_FIXED_BCLK;
+	} else {
+		SPORTx->SP_FORMAT &= ~SP_BIT_FIXED_BCLK;
+	}
+}
+
+/**
+  * @brief  Select AUDIO SPORT BCLK divider factor.
+  * @param  index: sport index.
+  * @param  bclk_sel: fixed bclk value.
+  *          This parameter can be one of the following values:
+  *            @arg DSP_SRC_CLK_DIV4: dsp_src_clk/4
+  *            @arg DSP_SRC_CLK_DIV2: dsp_src_clk/2
+  * @retval None
+  */
+void AUDIO_SP_SelFixBclk(u32 index, u32 bclk_sel)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (bclk_sel == DSP_SRC_BCLK_DIV2) {
+		SPORTx->SP_FORMAT |= SP_BIT_FIXED_BCLK_SEL;
+	} else {
+		SPORTx->SP_FORMAT &= ~SP_BIT_FIXED_BCLK_SEL;
+	}
+}
+
+/**
+  * @brief  Set AUDIO SPORT TX BLCK divider factor.
+  * @param	index: sport index.
+  * @param  clock: sport clock source.
+  * @param  sr: sport tx sample rate.
+  * @param  tdm: sport tx tdm mode.
+  * @param  chn_len: sport tx channel length.
+  * @retval None
   * @retval None
   */
 void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 {
 	u32 Tmp;
-	u32 MI;
-	u32 NI;
-	u32 Bclk_div;
+	u32 MI = 0;
+	u32 NI = 0;
+	u32 i = 1;
+	u32 bclk;
+	u32 bclk_div;
+	u32 channel_count;
 
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
-	switch (clock) {
-	default:
-		if ((!(sr % 4)) && ((sr * 1000) % 11025)) {  //48k系列
+	if (!(clock % 40000000)) {
+		if (!(sr % 4000)) {
 			MI = 1250;
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
+			NI = (chn_len / 4) * (tdm + 1) * (sr / 4000);
 		} else {
 			if (chn_len == 16 || chn_len == 32) {
 				MI = 50000;
@@ -240,57 +322,40 @@ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 				NI = (441 * 3 * (chn_len / 4) * (tdm + 1) * (sr / 11025)) / 10;
 			}
 		}
-		break;
-	case CKSL_I2S_PLL98M:
-		PLL_I2S_Div(index, 1);
-		if ((!(sr % 4)) && ((sr * 1000) % 11025)) {  //48k系列
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
-			MI = 3072;
+	} else {
+		channel_count = (tdm + 1) * 2;
+		bclk = channel_count * chn_len * sr;
+		NI = 1;
+
+		if (clock * NI % bclk == 0) {
+			MI = clock * NI / bclk;
 		} else {
-			DBG_8195A("PLL_98M: Not support this sample rate!\n");
-			return;
+			for (i = 1; i < 0x7FFF; i++) {
+				if (clock * i % bclk == 0) {
+					NI = i;
+					MI = clock * NI / bclk;
+					break;
+				}
+			}
 		}
-		break;
-	case CKSL_I2S_PLL45M:
-		PLL_I2S_Div(index, 1);
-		if (!(sr % 11025)) {  //44.1k系列
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 11025);
-			MI = 512;
-		} else {
-			DBG_8195A("PLL_45M: Not support this sample rate!\n");
-			return;
-		}
-		break;
-	case CKSL_I2S_PLL24M:
-		PLL_I2S_Div(index, 1);
-		if ((!(sr % 4)) && (sr <= 48)) { //48k系列,低于48k
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
-			MI = 768;
-		} else {
-			DBG_8195A("PLL_24M: Not support this sample rate!\n");
-			return;
-		}
-		break;
 	}
 
 	switch (chn_len) {
 	case SP_CL_16:
-		Bclk_div = 32;
+		bclk_div = 32;
 		break;
 	case SP_CL_20:
-		Bclk_div = 40;
+		bclk_div = 40;
 		break;
 	case SP_CL_24:
-		Bclk_div = 48;
+		bclk_div = 48;
 		break;
 	default:
-		Bclk_div = 64;
+		bclk_div = 64;
 		break;
 
 	}
 
-	assert_param(NI <= 0xFFFF);
-	assert_param(MI <= 0xFFFF);
 
 	Tmp = SPORTx->SP_SR_TX_BCLK ;
 	Tmp &= ~(SP_MASK_TX_MI | SP_MASK_TX_NI | SP_BIT_TX_MI_NI_UPDATE);
@@ -300,41 +365,52 @@ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	if (tdm == SP_TX_NOTDM) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
-		Tmp |= SP_TX_BCLK_DIV_RATIO(Bclk_div - 1);
+		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else if (tdm == SP_TX_TDM4) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
-		Tmp |= SP_TX_BCLK_DIV_RATIO(Bclk_div * 2 - 1);
+		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 2 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else if (tdm == SP_TX_TDM6) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
-		Tmp |= SP_TX_BCLK_DIV_RATIO(Bclk_div * 3 - 1);
+		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 3 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
-		Tmp |= SP_TX_BCLK_DIV_RATIO(Bclk_div * 4 - 1);
+		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 4 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	}
 
 }
 
+/**
+  * @brief  Set AUDIO SPORT RX BLCK divider factor.
+  * @param  index: sport index.
+  * @param  clock: sport clock source.
+  * @param  sr: sport rx sample rate.
+  * @param  tdm: sport rx tdm mode.
+  * @param  chn_len: sport rx channel length.
+  * @retval None
+  */
 void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 {
 	u32 Tmp;
-	u32 NI;
-	u32 MI;
-	u32 Bclk_div;
+	u32 NI = 0;
+	u32 MI = 0;
+	u32 bclk_div;
+	u32 i = 1;
+	u32 bclk;
+	u32 channel_count;
 
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
-	switch (clock) {
-	default:
-		if ((!(sr % 4)) && ((sr * 1000) % 11025)) {  //48k系列
+	if (!(clock % 40000000)) {
+		if (!(sr % 4000)) {
 			MI = 1250;
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
+			NI = (chn_len / 4) * (tdm + 1) * (sr / 4000);
 		} else {
 			if (chn_len == 16 || chn_len == 32) {
 				MI = 50000;
@@ -347,42 +423,23 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 				NI = (441 * 3 * (chn_len / 4) * (tdm + 1) * (sr / 11025)) / 10;
 			}
 		}
-		break;
-	case CKSL_I2S_PLL98M:
-		PLL_I2S_Div(index, 1);
-		if ((!(sr % 4)) && ((sr * 1000) % 11025)) {  //48k系列
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
-			MI = 3072;
-		} else {
-			DBG_8195A("PLL_98M: Not support this sample rate!\n");
-			return;
-		}
-		break;
-	case CKSL_I2S_PLL45M:
-		PLL_I2S_Div(index, 1);
-		if (!(sr % 11025)) {  //44.1k系列
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 11025);
-			MI = 512 ;
+	} else {
+		channel_count = (tdm + 1) * 2;
+		bclk = channel_count * chn_len * sr;
+		NI = 1;
 
+		if (clock * NI % bclk == 0) {
+			MI = clock * NI / bclk;
 		} else {
-			DBG_8195A("PLL_45M: Not support this sample rate!\n");
-			return;
+			for (i = 1; i < 0x7FFF; i++) {
+				if (clock * i % bclk == 0) {
+					NI = i;
+					MI = clock * NI / bclk;
+					break;
+				}
+			}
 		}
-		break;
-	case CKSL_I2S_PLL24M:
-		PLL_I2S_Div(index, 1);
-		if ((!(sr % 4)) && (sr <= 48)) { //<= 48k
-			NI = (chn_len / 4) * (tdm + 1) * (sr / 4);
-			MI = 768;
-		} else {
-			DBG_8195A("PLL_24M: Not support this sample rate!\n");
-			return;
-		}
-		break;
 	}
-
-	assert_param(MI <= 0xFFFF);
-	assert_param(NI <= 0xFFFF);
 
 	Tmp = SPORTx->SP_RX_BCLK ;
 	Tmp &= ~(SP_MASK_RX_MI | SP_MASK_RX_NI | SP_BIT_RX_MI_NI_UPDATE);
@@ -391,51 +448,47 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 
 	switch (chn_len) {
 	case SP_CL_16:
-		Bclk_div = 32;
+		bclk_div = 32;
 		break;
 	case SP_CL_20:
-		Bclk_div = 40;
+		bclk_div = 40;
 		break;
 	case SP_CL_24:
-		Bclk_div = 48;
+		bclk_div = 48;
 		break;
 	default:
-		Bclk_div = 64;
+		bclk_div = 64;
 		break;
 	}
 
 	if (tdm == SP_RX_NOTDM) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
-		Tmp |= SP_RX_BCLK_DIV_RATIO(Bclk_div - 1);
+		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else if (tdm == SP_RX_TDM4) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
-		Tmp |= SP_RX_BCLK_DIV_RATIO(Bclk_div * 2 - 1);
+		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 2 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else if (tdm == SP_TX_TDM6) {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
-		Tmp |= SP_RX_BCLK_DIV_RATIO(Bclk_div * 3 - 1);
+		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 3 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	} else {
 		Tmp = SPORTx->SP_TX_LRCLK ;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
-		Tmp |= SP_RX_BCLK_DIV_RATIO(Bclk_div * 4 - 1);
+		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 4 - 1);
 		SPORTx->SP_TX_LRCLK  = Tmp;
 	}
 }
 
-
 /**
-  * @brief  Initializes the AUDIO SPORT registers according to the specified parameters
-  *         in SP_InitStruct. *FIFO_0 and FIFO_1 have the same configuration.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
-  * @param  SP_InitStruct: pointer to an SP_InitTypeDef structure that contains
-  *         the configuration information for the specified AUDIO SPORT peripheral
-  * @note   AUDIO SPORT has two clock sources, one is 98.304MHz, the other is 45.1584MHz.
-  *         BIT_CTRL_CTLX_I2S_CLK_SRC can used to select the clock source.
+  * @brief  Initializes the AUDIO SPORT registers according to the specified parameters in SP_InitStruct.
+  * @param  index: 0 ~ 3.
+  * @param  direction: SP_DIR_TX or SP_DIR_RX.
+  * @param  SP_StructInit: pointer to an SP_StructInit structure which will be initialized.
   * @retval None
   */
 void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
@@ -450,9 +503,6 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 	if (SPORTx != AUDIO_SPORT0_DEV) {
 		SPORTx->SP_REG_MUX |= SP_MASK_REG_MUX;
 	}
-
-	/* Enable MCLK */
-	SPORTx->SP_CTRL1 |= SP_BIT_ENABLE_MCLK;
 
 	if (direction == SP_DIR_TX) {
 
@@ -681,7 +731,7 @@ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
 }
 
 /**
-  * @brief  Set SPORT and GDMA handshake on or off.
+  * @brief  Set SPORT self loopback mode.
   * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
   * @retval None
   */
@@ -776,8 +826,6 @@ u32 AUDIO_SP_GetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx)
   *            @arg SP_CH_MONO: mono channel, channel number is 1
   * @retval None
   */
-
-/*仅配置TX， RX默认配置Stereo,同时配置tRX_same_ch为0*/
 void AUDIO_SP_SetMonoStereo(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MonoStereo)
 {
 	assert_param(IS_SP_CHN_NUM(SP_MonoStereo));
@@ -817,14 +865,14 @@ void AUDIO_SP_SetMasterSlave(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MasterSlave)
 
 /**
   * @brief  Initialize GDMA peripheral single block mode for sending data.
-  * @param  Index: 0.
-  * @param  SelGDMA: GDMA Int or Ext.
+  * @param  Index: the index of sport.
+  * @param  SelGDMA: GDMA_INT or GDMA_EXT.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
   * @param  CallbackData: GDMA callback data.
   * @param  CallbackFunc: GDMA callback function.
   * @param  pTXData: TX Buffer.
-  * @param  Length: TX Count.
+  * @param  Length: TX length.
   * @retval   TRUE/FLASE
   */
 BOOL AUDIO_SP_TXGDMA_Init(
@@ -883,7 +931,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=0x%x,  Length=%d\n", pTXData, Length);
+		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%d\n", pTXData, Length);
 		return _FALSE;
 	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
@@ -901,14 +949,15 @@ BOOL AUDIO_SP_TXGDMA_Init(
 }
 
 /**
-  * @brief    Initialize GDMA peripheral single block mode for receiving data.
-  * @param  Index: 0.
+  * @brief  Initialize GDMA peripheral single block mode for receiving data.
+  * @param  Index: index of sport.
+  * @param  SelGDMA: GDMA_INT or GDMA_EXT.
   * @param  GDMA_InitStruct: pointer to a GDMA_InitTypeDef structure that contains
   *         the configuration information for the GDMA peripheral.
   * @param  CallbackData: GDMA callback data.
   * @param  CallbackFunc: GDMA callback function.
   * @param  pRXData: RX Buffer.
-  * @param  Length: RX Count.
+  * @param  Length: RX length.
   * @retval   TRUE/FLASE
   */
 BOOL AUDIO_SP_RXGDMA_Init(
@@ -1101,7 +1150,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pTxData, Length);
+		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
 		return _FALSE;
 	}
 
@@ -1220,7 +1269,7 @@ void AUDIO_SP_SetTXCounter(u32 index, u32 state)
 /**
   * @brief  Set SPORT TX counter comp_val, When counter equal comp_val,SPORT will send interrupt to DSP.
   * @param  index: select SPORT.
-  * @param  comp_val.
+  * @param  comp_val, it should be comp_val={32~8191}.
   */
 void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val)
 {
@@ -1306,6 +1355,11 @@ u32 AUDIO_SP_GetRXCounterVal(u32 index)
 	return rx_counter;
 }
 
+/**
+  * @brief  Deinit SPORT.
+  * @param  index: select SPORT.
+  * @param  direction: SP_DIR_TX OR SP_DIR_RX.
+  */
 void AUDIO_SP_Deinit(u32 index, u32 direction)
 {
 	assert_param(IS_SP_SET_DIR(direction));

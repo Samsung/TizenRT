@@ -101,7 +101,9 @@ MEMORY
 	/* Flash */
 	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0A000020, LENGTH = 0x0C000000 - 0x0A000020	/* KM4 Bootloader Virtual address: 32767k */
 	KM0_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0E000000 - 0x0C000020	/* KM0 IMG2 Virtual address: 32767k */
-	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0E000020, LENGTH = 0x10000000 - 0x0E000020	/* KM4 IMG2 Virtual address: 32767k */
+	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0D000020, LENGTH = 0x0E000000 - 0x0D000020	/* KM4 IMG2 Virtual address: 32767k */
+	CA32_IMG2_XIP (rx) :                    ORIGIN = 0x0E000020, LENGTH = 0x10000000 - 0x0E000020	/* KM0 IMG2 Virtual address: 32767k */
+
 	BTRACE (rx) :                           ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000	/* BT LOG Virtual address: 8192k */
 
 	/* CA32 ROM */
@@ -121,6 +123,7 @@ __km0_ipc_memory_start__ = ORIGIN(KM0_IPC_RAM);
 __km4_boot_text_start__ = ORIGIN(KM4_BOOT_XIP);
 __km0_flash_text_start__ = ORIGIN(KM0_IMG2_XIP);
 __km4_flash_text_start__ = ORIGIN(KM4_IMG2_XIP);
+__ca32_flash_text_start__ = ORIGIN(CA32_IMG2_XIP);
 
 __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);

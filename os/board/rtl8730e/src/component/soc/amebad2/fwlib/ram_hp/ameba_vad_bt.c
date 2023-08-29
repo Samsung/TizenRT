@@ -45,7 +45,7 @@ void BT_VAD_Start(void)
 /**
   * @brief  Set VAD 24bit
   */
-void BT_VAD_SetBit()
+void BT_VAD_SetBit(void)
 {
 	VAD_TypeDef *VAD;
 	if (TrustZone_IsSecure()) {
@@ -59,6 +59,10 @@ void BT_VAD_SetBit()
 
 /**
   * @brief  Enable VAD INITERRUPT
+  * @param  mode
+  *         This parameter can be one of the following values:
+  *            @arg VAD_INTERRUPT_RISING
+  *            @argVAD_INTERRUPT_FALLING
   */
 void BT_VAD_ENIRQ(u32 mode)
 {
@@ -84,6 +88,10 @@ void BT_VAD_ENIRQ(u32 mode)
 
 /**
   * @brief  Disable VAD INITERRUPT
+  * @param  mode
+  *         This parameter can be one of the following values:
+  *            @arg VAD_INTERRUPT_RISING
+  *            @argVAD_INTERRUPT_FALLING
   */
 void BT_VAD_DISIRQ(u32 mode)
 {
@@ -160,9 +168,8 @@ void BT_VAD_SetVoice(u32 voice_level)
 	HAL_WRITE32(audio_base, CODEC_VAD_VOICE_LEVEL, Tmp);
 }
 
-
 /**
-  * @brief  set the source for voice activity detection
+  * @brief  Select the source for voice activity detection
   * @param  codec_index
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -281,7 +288,7 @@ void BT_VAD_Buf_move_one(u32 codec_index, u32 block_index, u32 transfer_mode)
 }
 
 /**
-  * @brief  Configure VAD buf operation(double block)
+  * @brief  Configure VAD buf operation(two block)
   * @param  codec_index_x
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -424,7 +431,7 @@ void BT_VAD_Buf_move_two(u32 codec_index_0, u32 codec_index_1, u32 block_index, 
 
 
 /**
-  * @brief  Configure VAD buf operation(double block)
+  * @brief  Configure VAD buf operation(three block)
   * @param  codec_index_x
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0
@@ -603,7 +610,7 @@ void BT_VAD_Buf_move_three(u32 codec_index_0, u32 codec_index_1, u32 codec_index
 
 
 /**
-  * @brief  Configure VAD buf operation(triple block)
+  * @brief  Configure VAD buf operation(four block)
   * @param  codec_index
   *         This parameter can be one of the following values:
   *            @arg VAD_CODEC_ZERO: use codec0

@@ -44,7 +44,7 @@ static u32 SWR_Calib_Check(u32 swr_idx)
 	idx = swr_idx - 1;
 	Check_Addr = SWR_IDX_FLAG[idx];
 
-	EFUSE_PMAP_READ8(0, Check_Addr, &swr_data, L25EOUTVOLTAGE);
+	OTP_Read8(Check_Addr, &swr_data);
 
 	if ((swr_data & 0xF0) != 0xF0) {
 		return Swr_Calib_Twocalib;//calibration two times
@@ -185,7 +185,7 @@ void SWR_Calib_MEM(void)
 	Swr_Calib_MEM_PWM_Times = SWR_Calib_Check(Swr_MEM_PWM);
 
 	if (Swr_Calib_MEM_PWM_Times != Swr_Calib_Nocalib) {
-		EFUSE_PMAP_READ8(0, MEM_PWM_Addr, &MEM_PWM, L25EOUTVOLTAGE);
+		OTP_Read8(MEM_PWM_Addr, &MEM_PWM);
 		MEM_PWM_Value = SWR_Calib_Get_Value(MEM_PWM, Swr_MEM_PWM, Width_4Bit);
 		reg_tmp = SWR->SWR_ON_CTRL0;
 		reg_tmp &= ~(SWR_MASK_VOL_L1);
@@ -205,7 +205,7 @@ void SWR_Calib_MEM(void)
 	Swr_Calib_MEM_PFM_Times = SWR_Calib_Check(Swr_MEM_PFM);
 
 	if (Swr_Calib_MEM_PFM_Times != Swr_Calib_Nocalib) {
-		EFUSE_PMAP_READ8(0, MEM_PFM_Addr, &MEM_PFM, L25EOUTVOLTAGE);
+		OTP_Read8(MEM_PFM_Addr, &MEM_PFM);
 		MEM_PFM_Value = SWR_Calib_Get_Value(MEM_PFM, Swr_MEM_PFM, Width_4Bit);
 		reg_tmp = SWR->SWR_ON_CTRL0;
 		reg_tmp &= ~(SWR_MASK_VREFPFM_L);
@@ -248,7 +248,7 @@ void SWR_Calib_AUD(void)
 	Swr_Calib_AUD_PWM_Times = SWR_Calib_Check(Swr_AUD_PWM);
 
 	if (Swr_Calib_AUD_PWM_Times != Swr_Calib_Nocalib) {
-		EFUSE_PMAP_READ8(0, Audio_PWM_Addr, &Audio_PWM, L25EOUTVOLTAGE);
+		OTP_Read8(Audio_PWM_Addr, &Audio_PWM);
 		Audio_PWM_Value = SWR_Calib_Get_Value(Audio_PWM, Swr_AUD_PWM, Width_4Bit);
 		reg_tmp = SWR->SWR_ON_CTRL0;
 		reg_tmp &= ~(SWR_MASK_VOL_L1);
@@ -261,7 +261,7 @@ void SWR_Calib_AUD(void)
 	Swr_Calib_AUD_PFM_Times = SWR_Calib_Check(Swr_AUD_PFM);
 
 	if (Swr_Calib_AUD_PFM_Times != Swr_Calib_Nocalib) {
-		EFUSE_PMAP_READ8(0, Audio_PFM_Addr, &Audio_PFM, L25EOUTVOLTAGE);
+		OTP_Read8(Audio_PFM_Addr, &Audio_PFM);
 		Audio_PFM_Value = SWR_Calib_Get_Value(Audio_PFM, Swr_AUD_PFM, Width_4Bit);
 		reg_tmp = SWR->SWR_ON_CTRL0;
 		reg_tmp &= ~(SWR_MASK_VREFPFM_L);

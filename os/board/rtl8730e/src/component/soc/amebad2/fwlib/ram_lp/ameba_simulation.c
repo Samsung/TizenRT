@@ -59,7 +59,6 @@ VOID app_simulation_task(VOID *Data)
 		/* this is an example, you can change to yourself code if needed */
 		if (test_done == 0) {
 			//u32 temp = 0;
-			simulation_stage_set(SIMULATION_KM0_CPUID, BIT_KM0_SIMULATION_START);
 
 			//argv[0] = "block";
 			//argv[1] = "3";
@@ -68,7 +67,7 @@ VOID app_simulation_task(VOID *Data)
 			//hs_power_onoff_test(argc, argv);
 
 			test_done = 1;
-			simulation_stage_set(SIMULATION_KM0_CPUID, BIT_KM0_SIMULATION_END);
+
 		} else {
 			vTaskDelay(1000);
 		}

@@ -16,6 +16,18 @@
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 
 /**
+ * @fn        void *bt_device_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size)
+ * @brief     convert bt device app parameters to ipc buffer(copy memory from pointer of app parameter to ipc buffer)
+ * @param[in] act: API cmd/evt group
+ * @param[in] data: pointer to app parameter struct memory
+ * @param[in] buf_len: app parameter struct length
+ * @param[out] pactual_size: pointer to returned ipc buffer size
+ * @return
+ *            - pointer to ipc buffer memory
+ */
+void *bt_device_push_cmd_ipc_buf(uint16_t act, void *data, uint32_t buf_len, uint32_t *pactual_size);
+
+/**
  * @fn        uint16_t rtk_bt_device_copy_act_ret_param(uint16_t act, void *dst, void *src)
  * @brief     common bt device memory copy value from return memory of ipc to app
  * @param[in] act: API cmd/evt group
@@ -196,12 +208,244 @@ uint32_t rtk_mesh_get_act_ret_param_size(uint32_t group, uint16_t act);
 uint16_t rtk_mesh_copy_act_ret_param(uint16_t act, void *dst, void *src);
 
 /**
+ * @fn        void bt_mesh_generic_onoff_server_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter's 2nd level ptr which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_onoff_server_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
  * @fn        void bt_mesh_datatrans_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
  * @brief     alloc mem for event parameter's 2nd level ptr which is used to put returned data;
  * @param[in] evt_code: event code
  * @param[in] ipc_msg: pointer to ipc msg
  */
 void bt_mesh_datatrans_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lightness_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lightness_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_ctl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_ctl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_ctl_temperature_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_ctl_temperature_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_hue_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_hue_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_hsl_saturation_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_hsl_saturation_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_xyl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_xyl_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lc_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lc_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_light_lc_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_light_lc_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_time_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_time_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scheduler_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scheduler_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scheduler_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scheduler_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scene_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scene_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_scene_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_scene_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_default_transition_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_default_transition_time_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_power_on_off_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_power_on_off_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_power_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_power_level_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_battery_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_battery_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_location_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_location_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_location_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_location_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_user_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_user_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_client_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_client_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_admin_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_admin_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_generic_manu_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_generic_manu_property_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_sensor_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_sensor_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
+
+/**
+ * @fn        void bt_mesh_sensor_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg)
+ * @brief     alloc mem for event parameter which is used to put returned data;
+ * @param[in] evt_code: event code
+ * @param[in] ipc_msg: pointer to ipc msg
+ */
+void bt_mesh_sensor_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void *ipc_msg);
 
 /**
  * @fn        uint32_t rtk_br_get_act_ret_param_size(uint16_t act)
@@ -542,6 +786,15 @@ void bt_le_audio_ipc_pop_event_param(uint8_t evt, void *param);
 void bt_le_audio_push_event_ipc_ret(uint16_t event, void *dst, void *src);
 
 #elif defined(CONFIG_BT_NP) && CONFIG_BT_NP
+
+/**
+ * @fn        void bt_device_ipc_pop_cmd_param(uint8_t act, void *param)
+ * @brief     pop received parameter contained in ipc buffer
+ * @param[in] act: API command
+ * @param[in] param: pointer to ipc buffer
+ */
+void bt_device_ipc_pop_cmd_param(uint8_t act, void *param);
+
 /**
  * @fn        uint32_t get_bt_gap_evt_mem_size(uint8_t evt_code)
  * @brief     get common gap event need memory size
@@ -645,16 +898,6 @@ void bt_gattc_ipc_pop_cmd_param(uint8_t act, void *param);
  *            - pointer to ipc buffer memory
  */
 void *bt_gattc_push_event_ipc_buf(uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size);
-
-/**
- * @fn        uint32_t get_bt_mesh_evt_mem_size(uint32_t group, uint8_t evt_code)
- * @brief     get bt mesh event need memory size
- * @param[in] group: Group code
- * @param[in] evt_code: Event code
- * @return
- *            - need memory size
- */
-uint32_t get_bt_mesh_evt_mem_size(uint32_t group, uint8_t evt_code);
 
 /**
  * @fn        void *bt_mesh_push_event_ipc_buf(uint32_t group, uint16_t event, void *data, uint32_t buf_len, uint32_t *pactual_size)

@@ -73,7 +73,8 @@ uint8_t sys_get_boot_sel(void);
 
 #if ((defined(CONFIG_PLATFORM_AMEBAD2) && (CONFIG_PLATFORM_AMEBAD2 == 1)) || \
 	(defined(CONFIG_PLATFORM_AMEBALITE) && (CONFIG_PLATFORM_AMEBALITE == 1)) || \
-	(defined(CONFIG_PLATFORM_AMEBADPLUS) && (CONFIG_PLATFORM_AMEBADPLUS == 1)))
+	(defined(CONFIG_PLATFORM_AMEBADPLUS) && (CONFIG_PLATFORM_AMEBADPLUS == 1)) || \
+	(defined(CONFIG_PLATFORM_RTL8720F) && (CONFIG_PLATFORM_RTL8720F == 1)))
 /**
   * @brief  store or load adc calibration parameter
   * @param  write:  this parameter can be one of the following values:

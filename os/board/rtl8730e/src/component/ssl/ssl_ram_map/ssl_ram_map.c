@@ -26,7 +26,7 @@ extern int rtl_crypto_aes_cbc_encrypt(
 	IN const u8 *iv, 		IN const u32 ivlen,
 	OUT u8 *pResult);
 
-#if !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBALITE)  && !defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBALITE)  && !defined(CONFIG_PLATFORM_AMEBADPLUS) && !defined(CONFIG_PLATFORM_RTL8720F)
 //DES HW CRYPTO
 extern int rtl_crypto_des_cbc_init(IN const u8 *key, IN const u32 keylen);
 extern int rtl_crypto_des_cbc_decrypt(
@@ -64,7 +64,7 @@ int platform_set_malloc_free(void *(*malloc_func)(size_t),
 	rom_ssl_ram_map.hw_crypto_aes_cbc_decrypt = rtl_crypto_aes_cbc_decrypt;
 	rom_ssl_ram_map.hw_crypto_aes_cbc_encrypt = rtl_crypto_aes_cbc_encrypt;
 
-#if !defined(CONFIG_PLATFORM_8710C) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBALITE) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if !defined(CONFIG_PLATFORM_8710C) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBALITE) && !defined(CONFIG_PLATFORM_AMEBADPLUS) && !defined(CONFIG_PLATFORM_RTL8720F)
 	//DES HW CRYPTO
 	rom_ssl_ram_map.hw_crypto_des_cbc_init = rtl_crypto_des_cbc_init;
 	rom_ssl_ram_map.hw_crypto_des_cbc_decrypt = rtl_crypto_des_cbc_decrypt;

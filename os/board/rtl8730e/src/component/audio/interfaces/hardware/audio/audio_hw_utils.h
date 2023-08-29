@@ -52,6 +52,7 @@ static inline size_t GetAudioBytesPerSample(AudioHwFormat format)
 		size = sizeof(int32_t);
 		break;
 	case AUDIO_HW_FORMAT_PCM_24_BIT:
+	case AUDIO_HW_FORMAT_PCM_24_BIT_PACKED:
 		size = sizeof(uint8_t) * 3;
 		break;
 	case AUDIO_HW_FORMAT_PCM_16_BIT:

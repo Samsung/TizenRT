@@ -149,7 +149,7 @@ extern u32 ConfigDebug[];
 #define DBG_ERR_MSG_OFF(x)      (ConfigDebug[LEVEL_ERROR] &= ~BIT(x))
 #define DBG_WARN_MSG_OFF(x)     (ConfigDebug[LEVEL_WARN] &= ~BIT(x))
 #define DBG_INFO_MSG_OFF(x)     (ConfigDebug[LEVEL_INFO] &= ~BIT(x))
-#define DRIVER_PREFIX	"RTL8730E[Driver]: "
+#define DRIVER_PREFIX	"[RTW]: "
 
 #ifdef CONFIG_DEBUG_LOG
 #define DBG_8195A(...)     do {\

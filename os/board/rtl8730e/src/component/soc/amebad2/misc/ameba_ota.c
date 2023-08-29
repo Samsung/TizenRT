@@ -67,7 +67,6 @@
 #include "osdep_service.h"
 #include "flash_api.h"
 
-extern u32 IMG_ADDR[3][2];
 extern void sys_reset(void);
 
 /**

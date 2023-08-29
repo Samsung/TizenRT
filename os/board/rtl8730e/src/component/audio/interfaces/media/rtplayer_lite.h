@@ -65,7 +65,7 @@ struct RTPlayerLiteCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerLiteStateChanged)(const struct RTPlayerLiteCallback *listener, const struct RTPlayerLite *player, int state);
+	void (*OnRTPlayerLiteStateChanged)(const RTPlayerLiteCallback *listener, const RTPlayerLite *player, int state);
 
 	/**
 	 * @brief Called when player information is received.
@@ -77,7 +77,7 @@ struct RTPlayerLiteCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerLiteInfo)(const struct RTPlayerLiteCallback *listener, const struct RTPlayerLite *player, int info, int extra);
+	void (*OnRTPlayerLiteInfo)(const RTPlayerLiteCallback *listener, const RTPlayerLite *player, int info, int extra);
 
 	/**
 	 * @brief Called when a player error occurs.
@@ -89,7 +89,7 @@ struct RTPlayerLiteCallback {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	void (*OnRTPlayerLiteError)(const struct RTPlayerLiteCallback *listener, const struct RTPlayerLite *player, int error, int extra);
+	void (*OnRTPlayerLiteError)(const RTPlayerLiteCallback *listener, const RTPlayerLite *player, int error, int extra);
 };
 
 /**
@@ -99,7 +99,7 @@ struct RTPlayerLiteCallback {
  * @since 1.0
  * @version 1.0
  */
-struct RTPlayerLite *RTPlayerLite_Create(void);
+RTPlayerLite *RTPlayerLite_Create(void);
 
 /**
  * @brief Destory RTPlayerLite.
@@ -108,7 +108,7 @@ struct RTPlayerLite *RTPlayerLite_Create(void);
  * @since 1.0
  * @version 1.0
  */
-void	RTPlayerLite_Destory(struct RTPlayerLite *player);
+void	RTPlayerLite_Destory(RTPlayerLite *player);
 
 /**
  * @brief Sets the source(url) to use.
@@ -124,7 +124,7 @@ void	RTPlayerLite_Destory(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_SetSource(struct RTPlayerLite *player, const char *url);
+rt_status_t RTPlayerLite_SetSource(RTPlayerLite *player, const char *url);
 
 /**
  * @brief Prepares the player for playback, synchronously.
@@ -139,7 +139,7 @@ rt_status_t RTPlayerLite_SetSource(struct RTPlayerLite *player, const char *url)
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Prepare(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_Prepare(RTPlayerLite *player);
 
 /**
  * @brief Prepares the player for playback, asynchronously.
@@ -162,7 +162,7 @@ rt_status_t RTPlayerLite_Prepare(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_PrepareAsync(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_PrepareAsync(RTPlayerLite *player);
 
 /**
 * @brief Starts or resumes playback. If playback had previously been paused,
@@ -180,7 +180,7 @@ rt_status_t RTPlayerLite_PrepareAsync(struct RTPlayerLite *player);
 * @since 1.0
 * @version 1.0
 */
-rt_status_t RTPlayerLite_Start(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_Start(RTPlayerLite *player);
 
 /**
  * @brief Stops playback after playback has been started or paused.
@@ -195,7 +195,7 @@ rt_status_t RTPlayerLite_Start(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Stop(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_Stop(RTPlayerLite *player);
 
 /**
  * @brief Pauses playback. Call RTPlayerLite_Start() to resume.
@@ -210,7 +210,7 @@ rt_status_t RTPlayerLite_Stop(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Pause(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_Pause(RTPlayerLite *player);
 
 /**
  * @brief Moves the media to specified time position.
@@ -226,7 +226,7 @@ rt_status_t RTPlayerLite_Pause(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Rewind(struct RTPlayerLite *player, int64_t msec);
+rt_status_t RTPlayerLite_Rewind(RTPlayerLite *player, int64_t msec);
 
 /**
  * @brief Resets the Player to its uninitialized state. After calling
@@ -243,7 +243,7 @@ rt_status_t RTPlayerLite_Rewind(struct RTPlayerLite *player, int64_t msec);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Reset(struct RTPlayerLite *player);
+rt_status_t RTPlayerLite_Reset(RTPlayerLite *player);
 
 /**
  * @brief Gets the current playback position.
@@ -259,7 +259,7 @@ rt_status_t RTPlayerLite_Reset(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_GetCurrentTime(struct RTPlayerLite *player, int64_t *msec);
+rt_status_t RTPlayerLite_GetCurrentTime(RTPlayerLite *player, int64_t *msec);
 
 /**
  * @brief Gets the duration of the file.
@@ -276,7 +276,7 @@ rt_status_t RTPlayerLite_GetCurrentTime(struct RTPlayerLite *player, int64_t *ms
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_GetDuration(struct RTPlayerLite *player, int64_t *msec);
+rt_status_t RTPlayerLite_GetDuration(RTPlayerLite *player, int64_t *msec);
 
 /**
  * @brief Checks whether the player is playing.
@@ -286,7 +286,7 @@ rt_status_t RTPlayerLite_GetDuration(struct RTPlayerLite *player, int64_t *msec)
  * @since 1.0
  * @version 1.0
  */
-int RTPlayerLite_IsPlaying(struct RTPlayerLite *player);
+int RTPlayerLite_IsPlaying(RTPlayerLite *player);
 
 /**
  * @brief Sets player callbacks.
@@ -296,7 +296,7 @@ int RTPlayerLite_IsPlaying(struct RTPlayerLite *player);
  * @since 1.0
  * @version 1.0
  */
-void RTPlayerLite_SetCallback(struct RTPlayerLite *player, struct RTPlayerLiteCallback *callbacks);
+void RTPlayerLite_SetCallback(RTPlayerLite *player, RTPlayerLiteCallback *callbacks);
 
 /**
  * @brief Sets player volume when play started.
@@ -313,7 +313,7 @@ void RTPlayerLite_SetCallback(struct RTPlayerLite *player, struct RTPlayerLiteCa
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_SetVolume(struct RTPlayerLite *player, float left, float right);
+rt_status_t RTPlayerLite_SetVolume(RTPlayerLite *player, float left, float right);
 
 /**
  * @brief Sets player speed when play started.
@@ -330,7 +330,7 @@ rt_status_t RTPlayerLite_SetVolume(struct RTPlayerLite *player, float left, floa
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_SetSpeed(struct RTPlayerLite *player, float speed, float pitch);
+rt_status_t RTPlayerLite_SetSpeed(RTPlayerLite *player, float speed, float pitch);
 
 /**
  * @brief Invokes player request.
@@ -346,7 +346,7 @@ rt_status_t RTPlayerLite_SetSpeed(struct RTPlayerLite *player, float speed, floa
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTPlayerLite_Invoke(struct RTPlayerLite *player, Parcel *request, Parcel *reply);
+rt_status_t RTPlayerLite_Invoke(RTPlayerLite *player, Parcel *request, Parcel *reply);
 
 #ifdef __cplusplus
 }

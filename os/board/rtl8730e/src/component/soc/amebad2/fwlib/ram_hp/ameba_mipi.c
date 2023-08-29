@@ -109,8 +109,8 @@ void MIPI_DPHY_PLL_Set(MIPI_TypeDef *MIPIx, u32 dataLane_freq)
 	u16 fcode;
 	u32 freq_div, Value32;
 
-	if (dataLane_freq < 100) {
-		DBG_PRINTF(MODULE_LCD, LEVEL_ERROR, "dataLane_freq %d cannot less than 100M\n", dataLane_freq);
+	if (dataLane_freq < 100 || dataLane_freq > 1000) {
+		DBG_PRINTF(MODULE_LCD, LEVEL_ERROR, "dataLane_freq %dM is not support\n", dataLane_freq);
 		return;
 	} else if (dataLane_freq <= 200) { //100Mbps ~ 200Mbps
 		div_number = 4;
@@ -582,6 +582,19 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 
 }
 
+void MIPI_BG_CMD(u32 NewStatus)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1);
+
+	if (NewStatus) {
+		Temp |= LSYS_BIT_BG_PWR | LSYS_BIT_BG_ON_MIPI;
+	} else {
+		Temp &= ~LSYS_BIT_BG_ON_MIPI; //Do not close LSYS_BIT_BG_PWR for usb/ddr may use it
+	}
+
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1, Temp);
+}
+
 /**
   * @brief  Initializes the MIPIx DPHY and DSI module according to the specified parameters in the MIPI_InitStruct.
   * @param  MIPIx: where MIPIx can be MIPI.
@@ -591,6 +604,9 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
   */
 void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 {
+	/* Enable BG */
+	MIPI_BG_CMD(ENABLE);
+
 	MIPI_DPHY_init(MIPIx, MIPI_InitStruct);
 	MIPI_DSI_init(MIPIx, MIPI_InitStruct);
 }

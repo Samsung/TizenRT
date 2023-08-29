@@ -12,11 +12,6 @@ struct ws_data_header_type {
 	uint8_t masking_key[4];
 };
 
-#define WS_SERVER_TLS_POLARSSL       0    /*!< Use PolarSSL for TLS when WSCLIENT */
-#define WS_SERVER_TLS_MBEDTLS        1    /*!< Use mbedTLS for TLS when WSCLIENT */
-
-#define WS_SERVER_USE_TLS            WS_SERVER_TLS_MBEDTLS
-
 #define WS_SERVER_SEND_BY_POLL			0    /*!< WS server send data when polling */
 #define WS_SERVER_SEND_DIRECTLY			1    /*!< WS server send data directly */
 

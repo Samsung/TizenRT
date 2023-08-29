@@ -27,6 +27,8 @@
 #define AP_STA_NUM	12
 /************************* Default Values of User Configure End***************************/
 
+//#define CONFIG_CFG80211
+
 /* Configure for bus */
 #define CONFIG_AXI_HCI
 /* For efuse or flash config start */
@@ -44,7 +46,14 @@
 /* PHY layer band config end */
 
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
+#ifdef CONFIG_CFG80211
+#undef CONFIG_AUTO_RECONNECT
+#define CONFIG_AUTO_RECONNECT 0
+#else
 #define CONFIG_EAP
+#endif
+
+
 /* For phydm configurations */
 #define CONFIG_FW_C2H_PKT
 
@@ -62,7 +71,6 @@
 #endif
 
 //#define CONFIG_SUPPORT_DYNAMIC_TXPWR   //rtw_phydm_fill_desc_dpt todo
-//#define CONFIG_WIFI_MESH	0
 #define RTL8730E_WL_TODO
 
 #define NUM_STA (2 + AP_STA_NUM) /*one for bcmc, one for sta mode*/
@@ -74,7 +82,7 @@
 #define DRV_BB_TDMADIG_DISABLE
 #define DRV_BB_DIG_MCC_DISABLE
 #define DRV_BB_PWR_CTRL_DISABLE
-#define DRV_BB_ENV_MNTR_DISABLE
+//#define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_DFS_DISABLE
 #define PHL_MAX_STA_NUM NUM_STA
 
@@ -143,7 +151,6 @@ so use SW AES encrypt with IPSEC.  */
 #define MP_DRIVER 0
 #endif /* #ifdef CONFIG_MP_INCLUDED */
 /************************* Config for MP_MODE end *****************************/
-
 #ifndef CONFIG_PHYDM_CMD
 #define DRV_BB_DBG_TRACE_DISABLE
 #define DRV_BB_PMAC_TX_DISABLE

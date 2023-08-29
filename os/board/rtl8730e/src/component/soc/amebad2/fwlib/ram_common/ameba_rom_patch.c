@@ -915,17 +915,17 @@ VOID VectorTableAdd(VOID)
 }
 #endif
 
-#ifndef CONFIG_RL6678_B_CUT
+#ifdef ARM_CORE_CM4
 u32 Boot_Cut_Ver;
 // for security
 int SBOOT_GetMdType(u8 HashId, SHA2_TYPE *MdType, u8 *IsHmac)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return SBOOT_GetMdType_B(HashId, MdType, IsHmac);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return SBOOT_GetMdType_A(HashId, MdType, IsHmac);
+	} else {
+		return SBOOT_GetMdType_B(HashId, MdType, IsHmac);
 
 	}
 }
@@ -934,11 +934,11 @@ int CRYPTO_OTPKey_SHA_Init(u32 keynum, u32 status)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		/* SHA engine auto-load HMAC key */
-		return CRYPTO_OTPKey_SHA_Init_B(keynum, status);
-	} else {
 		return CRYPTO_OTPKey_SHA_Init_A(keynum, status);
+	} else {
+		return CRYPTO_OTPKey_SHA_Init_B(keynum, status);
 	}
 }
 
@@ -946,10 +946,10 @@ int rtl_crypto_hmac_sha2_update(IN u8 *message, IN u32 msglen, hw_sha_context *c
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return rtl_crypto_hmac_sha2_update_B(message, msglen, ctx);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return rtl_crypto_hmac_sha2_update_A(message, msglen, ctx);
+	} else {
+		return rtl_crypto_hmac_sha2_update_B(message, msglen, ctx);
 	}
 
 }
@@ -958,10 +958,10 @@ int rtl_crypto_hmac_sha2_final(OUT u8 *pDigest, hw_sha_context *ctx)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return rtl_crypto_hmac_sha2_final_B(pDigest, ctx);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return rtl_crypto_hmac_sha2_final_A(pDigest, ctx);
+	} else {
+		return rtl_crypto_hmac_sha2_final_B(pDigest, ctx);
 
 	}
 }
@@ -970,10 +970,10 @@ int rtl_crypto_sha2_init(IN const SHA2_TYPE sha2type, hw_sha_context *ctx)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return rtl_crypto_sha2_init_B(sha2type, ctx);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return rtl_crypto_sha2_init_A(sha2type, ctx);
+	} else {
+		return rtl_crypto_sha2_init_B(sha2type, ctx);
 
 	}
 
@@ -983,10 +983,10 @@ int rtl_crypto_sha2_update(IN u8 *message, IN u32 msglen, hw_sha_context *ctx)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return rtl_crypto_sha2_update_B(message, msglen, ctx);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return rtl_crypto_sha2_update_A(message, msglen, ctx);
+	} else {
+		return rtl_crypto_sha2_update_B(message, msglen, ctx);
 	}
 }
 
@@ -994,10 +994,10 @@ int rtl_crypto_sha2_final(OUT u8 *pDigest, hw_sha_context *ctx)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return rtl_crypto_sha2_final_B(pDigest, ctx);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return rtl_crypto_sha2_final_A(pDigest, ctx);
+	} else {
+		return rtl_crypto_sha2_final_B(pDigest, ctx);
 
 	}
 
@@ -1007,11 +1007,11 @@ int SBOOT_Validate_PubKey(u8 AuthAlg, u8 *Pk, u8 *Hash)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 
-		return SBOOT_Validate_PubKey_B(AuthAlg, Pk, Hash);
-	} else {
 		return SBOOT_Validate_PubKey_A(AuthAlg, Pk, Hash);
+	} else {
+		return SBOOT_Validate_PubKey_B(AuthAlg, Pk, Hash);
 
 	}
 
@@ -1021,10 +1021,10 @@ int SBOOT_Validate_Signature(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg, u32 Len, u
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return SBOOT_Validate_Signature_B(AuthAlg, HashAlg, Pk, Msg, Len, Sig);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return SBOOT_Validate_Signature_A(AuthAlg, HashAlg, Pk, Msg, Len, Sig);
+	} else {
+		return SBOOT_Validate_Signature_B(AuthAlg, HashAlg, Pk, Msg, Len, Sig);
 
 	}
 
@@ -1034,10 +1034,10 @@ int SBOOT_Validate_ImgHash(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgIn
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return SBOOT_Validate_ImgHash_B(HashAlg, ImgHash, SubImgInfo, Num);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return SBOOT_Validate_ImgHash_A(HashAlg, ImgHash, SubImgInfo, Num);
+	} else {
+		return SBOOT_Validate_ImgHash_B(HashAlg, ImgHash, SubImgInfo, Num);
 	}
 
 }
@@ -1047,10 +1047,10 @@ int CRYPTO_SHA_Init(HAL_CRYPTO_ADAPTER *pIE_I)
 	UNUSED(pIE_I);
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return CRYPTO_SHA_Init_B(NULL);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return CRYPTO_SHA_Init_A(NULL);
+	} else {
+		return CRYPTO_SHA_Init_B(NULL);
 	}
 
 }
@@ -1059,10 +1059,10 @@ int SBOOT_Validate_Algorithm(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash)
 {
 	Boot_Cut_Ver = SYSCFG_RLVersion();
 
-	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_B) {
-		return SBOOT_Validate_Algorithm_B(AuthAlg, HashAlg, ManiAuth, ManiHash);
-	} else {
+	if (Boot_Cut_Ver == SYSCFG_CUT_VERSION_A) {
 		return SBOOT_Validate_Algorithm_A(AuthAlg, HashAlg, ManiAuth, ManiHash);
+	} else {
+		return SBOOT_Validate_Algorithm_B(AuthAlg, HashAlg, ManiAuth, ManiHash);
 	}
 }
 #endif

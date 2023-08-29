@@ -259,7 +259,7 @@ void  cancel_timer_ex(struct timer_list *timer)
 	restore_flags(irq_flags);
 
 	if (plist == &timer_table) {
-		RTW_INFO("Fail to find the timer_entry(%08X) in timer table", timer->timer_hdl);
+		RTW_INFO("Fail to find the timer_entry(%08p) in timer table", timer->timer_hdl);
 	} else {
 		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
 	}

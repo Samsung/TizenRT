@@ -14,38 +14,15 @@ extern "C"
 #endif
 
 /*
- * PLATFORM_8710C (amebaZ2)
- */
-#if defined(CONFIG_PLATFORM_8710C)
-#define RTK_BLE_GAP_MAX_LINKS               3
-#define RTK_BLE_SUPPORT                     1
-
-#if RTK_BLE_SUPPORT
-#define RTK_BLE_4_0_SUPPORT                 1
-#define RTK_BLE_4_2_SUPPORT                 1
-#define RTK_BLE_5_0_SUPPORT                 0
-#define RTK_BLE_SMP_OOB_SUPPORT             0
-#endif /* RTK_BLE_SUPPORT */
-
-#if RTK_BLE_4_2_SUPPORT
-#define RTK_BLE_PRIVACY_SUPPORT             0
-#define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    0
-#endif /* RTK_BLE_4_2_SUPPORT */
-
-#if RTK_BLE_5_0_SUPPORT
-#define RTK_BLE_5_0_SET_PHYS_SUPPORT        0
-#endif /* RTK_BLE_5_0_SUPPORT */
-
-/*
  * PLATFORM_AMEBAD2 (amebaD2)
  */
-#elif defined(CONFIG_PLATFORM_AMEBAD2)
+#if defined(CONFIG_PLATFORM_AMEBAD2)
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
 #define RTK_BREDR_SUPPORT                   0
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
 
-#if RTK_BLE_SUPPORT
+#if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_4_0_SUPPORT                 1
 #define RTK_BLE_4_2_SUPPORT                 1
 #define RTK_BLE_5_0_SUPPORT                 1
@@ -54,12 +31,12 @@ extern "C"
 #define RTK_BLE_SMP_OOB_SUPPORT             1
 #endif /* RTK_BLE_SUPPORT */
 
-#if RTK_BLE_4_2_SUPPORT
+#if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
 #define RTK_BLE_PRIVACY_SUPPORT             1
 #define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
 #endif /* RTK_BLE_4_2_SUPPORT */
 
-#if RTK_BLE_5_0_SUPPORT
+#if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
 #define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
 #define RTK_BLE_5_0_AE_ADV_SUPPORT          0
 #define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
@@ -67,12 +44,12 @@ extern "C"
 #define RTK_BLE_5_0_PA_SYNC_SUPPORT        (0 && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 #endif /* RTK_BLE_5_0_SUPPORT */
 
-#if RTK_BLE_5_1_SUPPORT
+#if defined(RTK_BLE_5_1_SUPPORT) && RTK_BLE_5_1_SUPPORT
 #define RTK_BLE_5_1_PAST_SENDER_SUPPORT     0
 #define RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT  0
 #endif /* RTK_BLE_5_1_SUPPORT */
 
-#if RTK_BLE_5_2_SUPPORT
+#if defined(RTK_BLE_5_2_SUPPORT) && RTK_BLE_5_2_SUPPORT
 #define RTK_BLE_ISO_CIS_SUPPORT             0
 #define RTK_BLE_ISO_BIS_SUPPORT             0
 #define RTK_BLE_ISO_SUPPORT                 (RTK_BLE_ISO_CIS_SUPPORT || RTK_BLE_ISO_BIS_SUPPORT)
@@ -207,14 +184,18 @@ extern "C"
 #else
 #endif
 
-#if (RTK_BLE_ISO_BIS_SUPPORT == 1) && ((RTK_BLE_5_0_AE_ADV_SUPPORT == 0) || (RTK_BLE_5_0_AE_SCAN_SUPPORT == 0) || (RTK_BLE_5_0_PA_ADV_SUPPORT == 0) || (RTK_BLE_5_0_PA_SYNC_SUPPORT == 0))
-#error Please enable AE,AE Scan,PA,PA Sync for corret platform when enable ISO BIS!
+#if (defined(CONFIG_BT_ISO) && CONFIG_BT_ISO) && (defined(RTK_BLE_ISO_BIS_SUPPORT) && RTK_BLE_ISO_BIS_SUPPORT) && \
+    ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT) || \
+    (!defined(RTK_BLE_5_0_PA_ADV_SUPPORT) || !RTK_BLE_5_0_PA_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) || !RTK_BLE_5_0_PA_SYNC_SUPPORT))
+#error Please enable AE, AE Scan, PA, PA Sync for corret platform when enable ISO BIS!
 #endif
 
-#if (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
-            ((RTK_BLE_5_0_AE_ADV_SUPPORT == 0) || (RTK_BLE_5_0_AE_SCAN_SUPPORT == 0))
-#error Please enable AE,AE Scan for corret platform when enable LE AUDIO!
+
+#if (defined(CONFIG_BT_LEAUDIO) && CONFIG_BT_LEAUDIO) && (defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT) && \
+    ((!defined(RTK_BLE_5_0_AE_ADV_SUPPORT) || !RTK_BLE_5_0_AE_ADV_SUPPORT) || (!defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) || !RTK_BLE_5_0_AE_SCAN_SUPPORT))
+#error Please enable AE, AE Scan for corret platform when enable LE AUDIO!
 #endif
+
 
 #if ((defined(RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_SINK_SUPPORT) || (defined(RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT) && RTK_BLE_AUDIO_BROADCAST_SOURCE_SUPPORT)) && \
             ((RTK_BLE_5_0_AE_ADV_SUPPORT == 0) || (RTK_BLE_5_0_AE_SCAN_SUPPORT == 0)) 

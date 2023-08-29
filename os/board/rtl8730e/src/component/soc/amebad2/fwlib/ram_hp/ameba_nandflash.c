@@ -11,6 +11,11 @@
 #include "ameba_nandflash.h"
 
 u32 nand_l2p_table[2]; /*init to zero in __image1__*/
+#ifdef CONFIG_LINUX_FW_EN
+extern FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[];
+#else
+extern FlashLayoutInfo_TypeDef Flash_Layout_Nand[];
+#endif
 
 /*block_id shall less than 32, bacause the max region is 0x08300000 */
 u32 NAND_CHECK_IS_BAD_BLOCK(u32 block_id)
@@ -53,11 +58,33 @@ u32 Nand_Get_NandAddr(u32 RegionStart, u32 HostAddr)
 
 u32 Nand_L2P_Table(u32 HostAddr)
 {
-	if (HostAddr < OTA_Region[OTA_IMGID_APP][OTA_INDEX_1]) { /* KM4_BOOT */
+	u32 i = 0;
+	u32 temp;
+	u32 app_phy_start_addr;
+	u32 app_phy_end_addr;
+	FlashLayoutInfo_TypeDef *pLayout;
+
+#ifdef CONFIG_LINUX_FW_EN
+	pLayout = Flash_Layout_Nand_Linux;
+#else
+	pLayout = Flash_Layout_Nand;
+#endif
+
+	while (pLayout[i].region_type != 0xFF) {
+		temp = pLayout[i].region_type;
+		if (temp == IMG_APP_OTA1) {
+			app_phy_start_addr = pLayout[i].start_addr;
+			app_phy_end_addr = pLayout[i].end_addr;
+			break;
+		}
+		i++;
+	}
+
+	if (HostAddr < app_phy_start_addr) { /* KM4_BOOT */
 		return Nand_Get_NandAddr(SPI_FLASH_BASE, HostAddr);
 
-	} else if (HostAddr < OTA_Region[OTA_IMGID_APIMG][OTA_INDEX_1]) { /* PHY_IMG2 */
-		return Nand_Get_NandAddr(OTA_Region[OTA_IMGID_APP][OTA_INDEX_1], HostAddr);
+	} else if (HostAddr < app_phy_end_addr) { /* PHY_IMG2 */
+		return Nand_Get_NandAddr(app_phy_start_addr, HostAddr);
 
 	} else { /*Because the copy of FIP is all together，so no need to check the front part of the area*/
 		return HostAddr - SPI_FLASH_BASE;

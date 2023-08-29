@@ -16,8 +16,10 @@
 #ifndef AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_RECORD_H
 #define AMEBA_FWK_MEDIA_AUDIO_AUDIOLITE_INTERFACES_AUDIO_AUDIO_RECORD_H
 
+#include "audio/audio_time.h"
 #include "audio/audio_type.h"
 #include "osal_c/osal_types.h"
+#include "osal_c/osal_compat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,8 +36,8 @@ struct RTAudioRecord;
  */
 typedef struct {
 	/** sample rate of record
-	 * [amebalite] 8000, 11025, 22050, 24000, 32000, 44100, 48000, 88200, 96000
-	 * [amebaSmart] 8000, 11025, 22050, 24000, 32000, 44100, 48000, 88200, 96000
+	 * [amebalite] 8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 88200, 96000
+	 * [amebaSmart] 8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 88200, 96000
 	 * [amebad]to be supported */
 	uint32_t sample_rate;
 	/** channel count of record
@@ -51,7 +53,7 @@ typedef struct {
 	 * [amebaSmart]supports RTAUDIO_FORMAT_PCM_16_BIT, more to be supported
 	 * [amebad]to be supported */
 	uint32_t format;
-	/** device of record, supports RTPIN_IN_MIC and RTPIN_IN_DMIC_REF_AMIC*/
+	/** device of record, supports RTPIN_IN_MIC and RTPIN_IN_DMIC_REF_AMIC, RTPIN_IN_I2S*/
 	uint32_t device;
 	/** buffer bytes per one period of record*/
 	uint32_t buffer_bytes;
@@ -222,15 +224,7 @@ rt_status_t RTAudioRecord_SetFormat(struct RTAudioRecord *record, uint32_t forma
  * @brief Set params of record.
  *
  * @param record is the pointer of struct RTAudioRecord.
- * @param strs supports AMIC settings like:"ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3"
- * The meaning for the string: it means the channel 0 gets data from amic1.
- * channel 1 gets data from amic2, channel 2 gets data from amic3.
- * [amebalite]: 4 channels settings most.
- *              The default setting is :ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3;ch3_sel_amic=4.
- * [amebaSmart]: 8 channels settings most.
- *              The default setting is :ch0_sel_amic=1;ch1_sel_amic=2;ch2_sel_amic=3;ch3_sel_amic=4;
- *              ch4_sel_amic=4;ch5_sel_amic=4;ch6_sel_amic=4;ch7_sel_amic=4;
- * strs also supports audio capture mode settings like "cap_mode=no_afe_pure_data".
+ * @param strs supports audio capture mode settings like "cap_mode=no_afe_pure_data".
  * The meaning of the string is to choose "no_afe_pure_data" mode for audio capture.
  * [amebalite] & [amebaSmart]: There are 4 modes, all take the default above amic setting for example,
  *              the data stucture is as follows:
@@ -256,6 +250,22 @@ rt_status_t RTAudioRecord_SetFormat(struct RTAudioRecord *record, uint32_t forma
  * @version 1.0
  */
 rt_status_t RTAudioRecord_SetParameters(struct RTAudioRecord *audio_record, const char *strs);
+
+/**
+ * @brief Get timestamp of audio_record.
+ *
+ * @param audio_record is the pointer of struct RTAudioRecord.
+ * @param tstamp the timestamp get from audio framework, to be notice, this api can only
+ * be used when there's no mixing of two audio_records, for the mixing situation, to be supported.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t    RTAudioRecord_GetTimestamp(struct RTAudioRecord *audio_record, RTAudioTimestamp *tstamp);
 
 #ifdef __cplusplus
 }

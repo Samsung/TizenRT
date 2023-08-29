@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "audio_hw_compat.h"
 #include <inttypes.h>
 
+#include "ameba_audio_types.h"
 #include "ameba_audio_stream_control.h"
 #include "ameba_audio_stream_render.h"
 #include "audio_hw_osal_errnos.h"
@@ -30,6 +32,9 @@
 #define SHORT_PERIOD_SIZE         1024
 #define SHORT_PERIOD_COUNT        4
 #define AMPLIFIER_EN_PIN          "amp_pin"
+
+#define DUMP_FRAME            192000
+#define DUMP_ENABLE           0
 
 StreamConfig stream_output_config = {
 	.channels = 2,
@@ -199,7 +204,7 @@ static uint32_t PrimaryGetRenderLatency(const struct AudioHwRender *stream)
 	struct PrimaryAudioHwRender *out = (struct PrimaryAudioHwRender *)stream;
 	uint64_t sport_out_frames = ameba_audio_stream_tx_sport_rendered_frames(out->out_pcm);
 	uint32_t latency_ms = (out->written_to_driver - sport_out_frames) * 1000 / out->config.rate;
-	HAL_AUDIO_VERBOSE("hal written_to_driver:%lu, sport_out_frames:%lu, latency_ms:%d", out->written_to_driver, sport_out_frames, latency_ms);
+	HAL_AUDIO_VERBOSE("hal written_to_driver:%llu, sport_out_frames:%llu, latency_ms:%lu", out->written_to_driver, sport_out_frames, latency_ms);
 
 	uint32_t dma_buf_add_codec_latency_ms = (out->config.period_size * out->config.period_count + 36) * 1000 / out->config.rate;
 	if (latency_ms > dma_buf_add_codec_latency_ms * 2) {
@@ -219,15 +224,14 @@ static int PrimaryGetPresentationPosition(const struct AudioHwRender *stream, ui
 	rtw_mutex_get(&out->lock);
 
 	if (out->out_pcm) {
-		uint32_t avail;
-		if (ameba_audio_stream_tx_get_htimestamp(out->out_pcm, &avail, timestamp) == 0) {
-			size_t driver_buffer_size = out->config.period_size * out->config.period_count;
-			int64_t signed_frames = out->written - (uint64_t)driver_buffer_size + (uint64_t)avail;
-			HAL_AUDIO_PVERBOSE("out->written:%lu, driver_buffer_size:%d, avail:%lu, signed_frames:%lld, sec:%lld, nsec:%ld", out->written, driver_buffer_size, avail,
+		uint64_t rendered_frames;
+		if (ameba_audio_stream_tx_get_position(out->out_pcm, &rendered_frames, timestamp) == 0) {
+			int64_t signed_frames = out->written - (out->written_to_driver - rendered_frames);
+			HAL_AUDIO_PVERBOSE("out->written:%llu, rendered_frames:%llu, signed_frames:%lld, sec:%lld, nsec:%ld", out->written, rendered_frames,
 							   signed_frames, timestamp->tv_sec, timestamp->tv_nsec);
 			if (signed_frames >= 0) {
 				*frames = signed_frames;
-				HAL_AUDIO_VERBOSE("frames:%lu", *frames);
+				HAL_AUDIO_VERBOSE("frames:%llu", *frames);
 				rtw_mutex_put(&out->lock);
 				return 0;
 			}
@@ -293,6 +297,13 @@ static ssize_t PrimaryRenderWrite(struct AudioHwRender *stream, const void *buff
 		HAL_AUDIO_ERROR("out pcm is NULL!!!");
 	}
 
+	if (DUMP_ENABLE) {
+		if (out->written * frame_size + bytes <= DUMP_FRAME * frame_size) {
+			memcpy(out->buffer + out->written * frame_size, buffer, bytes);
+			DCache_Invalidate((u32)(out->buffer + out->written * frame_size), bytes);
+		}
+	}
+
 	//write successfully
 	if (ret >= 0) {
 		out->written += ret / frame_size;
@@ -318,6 +329,10 @@ void CloseAudioHwRender(struct AudioHwRender *render)
 	if (out->out_pcm) {
 		ameba_audio_stream_tx_close(out->out_pcm);
 		out->out_pcm = NULL;
+	}
+
+	if (DUMP_ENABLE) {
+		rtw_free(out->buffer);
 	}
 
 	rtw_mutex_free(&out->lock);
@@ -401,6 +416,11 @@ struct AudioHwRender *GetAudioHwRenderFuncs(struct AudioHwAdapter *adapter, cons
 		}
 	} else {
 		out->config.mode = AUDIO_HW_DMA_IRQ_MODE;
+		if (attrs->buffer_bytes) {
+			out->period_size = attrs->buffer_bytes / out->config.frame_size;
+		} else {
+			out->period_size = SHORT_PERIOD_SIZE;
+		}
 	}
 
 	out->config.period_size = out->period_size;
@@ -411,9 +431,14 @@ struct AudioHwRender *GetAudioHwRenderFuncs(struct AudioHwAdapter *adapter, cons
 					   out->config.rate, out->config.format,
 					   out->config.channels,
 					   out->config.frame_size, out->config.period_size);
-		out->out_pcm = ameba_audio_stream_tx_init(out->config);
+		out->out_pcm = ameba_audio_stream_tx_init(AMEBA_AUDIO_DEVICE_SPEAKER, out->config);
 	} else {
 		HAL_AUDIO_DEBUG("out pcm has been opened");
+	}
+
+	if (DUMP_ENABLE) {
+		out->buffer = (char *)rtw_zmalloc(DUMP_FRAME * out->config.frame_size);
+		HAL_AUDIO_INFO("dump buffer:%p", out->buffer);
 	}
 
 	return &out->stream;

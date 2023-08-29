@@ -125,6 +125,20 @@ struct AudioHwControl {
 	int32_t (*SetHardwareVolume)(struct AudioHwControl *control, float left_volume, float right_volume);
 
 	/**
+	 * @brief set audio dac volume.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param left_volume Indicates the left channel dac volume, from 0.0-1.0.
+	 * @param right_volume Indicates the right channel dac volume, from 0.0-1.0.
+	 * @return Returns a value listed below: \n
+	 * rt_status_t | Description
+	 * ----------------------| -----------------------
+	 * OSAL_OK | the operation is successful.
+	 * OSAL_ERR_INVALID_PARAM | the params are not proper.
+	 */
+	int32_t (*GetHardwareVolume)(struct AudioHwControl *control, float *left_volume, float *right_volume);
+
+	/**
 	 * @brief set audio amplifier pin.
 	 *
 	 * @param control Indicates the pointer to the audio control to operate.
@@ -144,6 +158,56 @@ struct AudioHwControl {
 	 * @return Returns amplifier pin value.
 	 */
 	int32_t (*GetAmplifierEnPin)(struct AudioHwControl *control);
+
+	/**
+	 * @brief Set Amplifier Mute.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param mute true means mute amplifier, false means unmute amplifier.
+	 * @return  Returns a value listed below: \n
+	 * rt_status_t | Description
+	 * ----------------------| -----------------------
+	 * OSAL_OK | the operation is successful.
+	 * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	int32_t (*SetAmplifierMute)(struct AudioHwControl *control, bool mute);
+
+	/**
+	 * @brief Get Amplifier Mute State.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @return  Returns the state of amplifier. true means amplifier is muted, false means amplifier is unmuted.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	bool (*GetAmplifierMute)(struct AudioHwControl *control);
+
+	/**
+	 * @brief Set Audio Codec Mute.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param mute true means mute dac, false means unmute dac.
+	 * @return  Returns a value listed below: \n
+	 * rt_status_t | Description
+	 * ----------------------| -----------------------
+	 * OSAL_OK | the operation is successful.
+	 * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	int32_t (*SetPlaybackMute)(struct AudioHwControl *control, bool mute);
+
+	/**
+	 * @brief Get Audio Codec Mute State.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @return  Returns the state of dac. true means dac is muted, false means dac is unmuted.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	bool (*GetPlaybackMute)(struct AudioHwControl *control);
 
 	/**
 	 * @brief set audio playback device type.
@@ -207,6 +271,18 @@ struct AudioHwControl {
 	int32_t (*SetCaptureChannelVolume)(struct AudioHwControl *control, uint32_t channel_num, uint32_t volume);
 
 	/**
+	 * @brief Get volume of record channel.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param channel_num Indicates the channel to get volume.
+	 * @return volume Indicates volume to set to channel_num, it can be 0x00-0xaf.
+	 *        This parameter can be -17.625dB~48dB in 0.375dB step
+	 *        0x00 -17.625dB
+	 *        0xaf 48dB
+	 */
+	int32_t (*GetCaptureChannelVolume)(struct AudioHwControl *control, uint32_t channel_num);
+
+	/**
 	 * @brief Set Capture volume for channel.
 	 *
 	 * @param control Indicates the pointer to the audio control to operate.
@@ -242,6 +318,19 @@ struct AudioHwControl {
 	 * @version 1.0
 	 */
 	int32_t (*SetMicBstGain)(struct AudioHwControl *control, uint32_t mic_category, uint32_t gain);
+
+	/**
+	 * @brief Get Micbst Gain.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param mic_category the mic type, can be AUDIO_HW_AMIC1...AUDIO_HW_DMIC8.
+	 *       [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
+	 *       [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
+	 * @return gain can be AUDIO_HW_MICBST_GAIN_0DB-AUDIO_HW_MICBST_GAIN_40DB
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	int32_t (*GetMicBstGain)(struct AudioHwControl *control, uint32_t mic_category);
 
 	/**
 	 * @brief Set mic usage.
@@ -293,6 +382,33 @@ struct AudioHwControl {
 	 * @version 1.0
 	 */
 	int32_t (*AdjustPLLClock)(struct AudioHwControl *control, uint32_t rate, uint32_t ppm, uint32_t action);
+
+	/**
+	 * @brief Set Audio ADC Mute.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param channel Indicates the channel number to mute or unmute.
+	 * @param mute true means mute adc, false means unmute adc.
+	 * @return  Returns a value listed below: \n
+	 * rt_status_t | Description
+	 * ----------------------| -----------------------
+	 * OSAL_OK | the operation is successful.
+	 * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	int32_t (*SetRecordMute)(struct AudioHwControl *control, uint32_t channel, bool mute);
+
+	/**
+	 * @brief Set Audio ADC Mute.
+	 *
+	 * @param control Indicates the pointer to the audio control to operate.
+	 * @param mute Indicates the record channel mute or unmute.
+	 * @return  Returns the mute state of record channel.
+	 * @since 1.0
+	 * @version 1.0
+	 */
+	bool (*GetRecordMute)(struct AudioHwControl *control, uint32_t channel);
 };
 
 struct AudioHwControl *GetAudioHwControl(void);

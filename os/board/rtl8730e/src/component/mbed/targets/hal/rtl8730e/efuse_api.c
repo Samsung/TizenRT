@@ -36,7 +36,7 @@
   */
 int efuse_get_remaining_length(void)
 {
-	return OTP_RemainLength();
+	return otp_logical_remain();
 }
 
 /**

@@ -27,7 +27,7 @@ extern "C" {
 
 typedef struct Parcel Parcel;
 
-Parcel *Parcel_Create();
+Parcel *Parcel_Create(void);
 rt_status_t Parcel_Destroy(Parcel *parcel);
 
 bool Parcel_WriteBool(Parcel *parcel, bool value);

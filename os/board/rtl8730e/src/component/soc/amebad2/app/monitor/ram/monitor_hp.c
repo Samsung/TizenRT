@@ -67,12 +67,16 @@ CmdTickPS(
 	}
 
 	if (_strcmp((const char *)argv[0], "dslp") == 0) {
-		u32 duration_ms = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
 
-		dsleep_param.dlps_enable = TRUE;
-		dsleep_param.sleep_time = duration_ms;
-		ipc_send_message(IPC_NP_TO_LP, IPC_N2L_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&dsleep_param);
-		while (1);
+		pmu_release_deepwakelock(PMU_OS);
+		pmu_release_wakelock(PMU_OS);
+
+		/* by ipc int directly */
+		//u32 duration_ms = _strtoul((const char *)(argv[1]), (char **)NULL, 10);
+		//dsleep_param.dlps_enable = TRUE;
+		//dsleep_param.sleep_time = duration_ms;
+		//ipc_send_message(IPC_NP_TO_LP, IPC_N2L_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&dsleep_param);
+		//while (1);
 	}
 
 	if (_strcmp((const char *)argv[0], "get") == 0) { // get sleep & wake time
@@ -188,15 +192,15 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
 		}
 
-		EFUSE_LMAP_WRITE(Addr, Len, (u8 *)(EfuseBuf));
+		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
 	}
 
 	if (_strcmp((const char *)argv[0], "rmap") == 0) {
 		MONITOR_LOG("efuse rmap \n");
 
-		ret = EFUSE_LMAP_READ(EfuseBuf);
+		ret = OTP_LogicalMap_Read(EfuseBuf, 0, OTP_LMAP_LEN);
 		if (ret == _FAIL) {
-			MONITOR_LOG("EFUSE_LogicalMap_Read fail \n");
+			MONITOR_LOG("OTP_LogicalMap_Read fail \n");
 		}
 
 		for (index = 0; index < 1024; index += 16) {
@@ -212,7 +216,7 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 		MONITOR_LOG("efuse rraw\n");
 
 		for (index = 0; index < OTP_USER_END; index++) {
-			EFUSE_PMAP_READ8(0, index, EfuseBuf + index, L25EOUTVOLTAGE);
+			OTP_Read8(index, (EfuseBuf + index));
 		}
 
 		for (index = 0; index < OTP_USER_END; index += 16) {
@@ -253,12 +257,12 @@ u32 cmd_efuse_protect(u16 argc, u8  *argv[])
 
 		for (index = 0; index < Len; index++) {
 			MONITOR_LOG("wraw: %x %x \n", Addr + index, EfuseBuf[index]);
-			EFUSE_PMAP_WRITE8(0, Addr + index, EfuseBuf[index], L25EOUTVOLTAGE);
+			OTP_Write8((Addr + index), EfuseBuf[index]);
 		}
 	}
 
 	if (_strcmp((const char *)argv[0], "getcrc") == 0) {
-		u32 crc = EFUSE_GetCRC();
+		u32 crc = OTPGetCRC();
 		DBG_8195A("new crc value is 0x%x", crc);
 	}
 

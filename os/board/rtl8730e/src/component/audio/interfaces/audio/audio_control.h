@@ -112,14 +112,29 @@ enum {
  * @param left_volume volume of left channel, 0.0-1.0.
  * @param right_volume volume of right channel, 0.0-1.0.
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetHardwareVolume(float left_volume, float right_volume);
+rt_status_t RTAudioControl_SetHardwareVolume(float left_volume, float right_volume);
+
+/**
+ * @brief Get Hardware Volume of audio dac.
+ *
+ * @param left_volume pointer of volume of left channel to get, 0.0-1.0.
+ * @param right_volume pointer of volume of right channel to get, 0.0-1.0.
+ * @return Returns a value listed below: \n
+ * int32_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioControl_GetHardwareVolume(float *left_volume, float *right_volume);
 
 /**
  * @brief Set Amplifier En Pin.
@@ -128,14 +143,14 @@ int32_t RTAudioControl_SetHardwareVolume(float left_volume, float right_volume);
  * fwlib/include/ameba_pinmux.h, for example, if your pin is _PB_7, it's value is "#define _PB_7 (0x27)"
  * which is 39 of uint32_t.So the amp_pin here should set 39.
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetAmplifierEnPin(uint32_t amp_pin);
+rt_status_t RTAudioControl_SetAmplifierEnPin(uint32_t amp_pin);
 
 /**
  * @brief Set Amplifier En Pin.
@@ -150,18 +165,64 @@ int32_t RTAudioControl_SetAmplifierEnPin(uint32_t amp_pin);
 int32_t RTAudioControl_GetAmplifierEnPin(void);
 
 /**
- * @brief Set Playback Device.
+ * @brief Set Amplifier Mute.
+ *
+ * @param mute true means mute amplifier, false means unmute amplifier.
+ * @return  Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioControl_SetAmplifierMute(bool mute);
+
+/**
+ * @brief Get Amplifier Mute State.
+ *
+ * @return  Returns the state of amplifier. true means amplifier is muted, false means amplifier is unmuted.
+ * @since 1.0
+ * @version 1.0
+ */
+bool RTAudioControl_GetAmplifierMute(void);
+
+/**
+ * @brief Set Audio Codec Mute.
+ *
+ * @param mute true means mute dac, false means unmute dac.
+ * @return  Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioControl_SetPlaybackMute(bool mute);
+
+/**
+ * @brief Get Audio Codec Mute State.
+ *
+ * @return  Returns the state of dac. true means dac is muted, false means dac is unmuted.
+ * @since 1.0
+ * @version 1.0
+ */
+bool RTAudioControl_GetPlaybackMute(void);
+
+/**
+ * @brief Set Playback Device. Please set it before create RTAudioTrack.
  *
  * @param device_category the device of playback, maybe RTAUDIO_DEVICE_SPEAKER or RTAUDIO_DEVICE_HEADPHONE.
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetPlaybackDevice(uint32_t device_category);
+rt_status_t RTAudioControl_SetPlaybackDevice(uint32_t device_category);
 
 /**
  * @brief Get Playback Device.
@@ -174,22 +235,21 @@ int32_t RTAudioControl_SetPlaybackDevice(uint32_t device_category);
 int32_t RTAudioControl_GetPlaybackDevice(void);
 
 /**
- * @brief Set Capture Mic type for channel.this function should be called after RTAudioRecord_Start
- *        and before RTAudioRecord_Read, otherwise it will not work.
+ * @brief Set Capture Mic type for channel.
  *
  * @param channel_num the channel number to set mic type.
  * @param mic_category the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
  *       [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
  *       [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetChannelMicCategory(uint32_t channel_num, uint32_t mic_category);
+rt_status_t RTAudioControl_SetChannelMicCategory(uint32_t channel_num, uint32_t mic_category);
 
 /**
  * @brief Get Mic Category.
@@ -204,8 +264,7 @@ int32_t RTAudioControl_SetChannelMicCategory(uint32_t channel_num, uint32_t mic_
 int32_t RTAudioControl_GetChannelMicCategory(uint32_t channel_num);
 
 /**
- * @brief Set Capture volume for channel.this function should be called after RTAudioRecord_Start
- *        and before RTAudioRecord_Read, otherwise it will not work.
+ * @brief Set Capture volume for channel.
  *
  * @param channel_num the channel number to set volume.
  * @param volume the value of volume, can be 0x00-0xaf.
@@ -213,18 +272,30 @@ int32_t RTAudioControl_GetChannelMicCategory(uint32_t channel_num);
   *          0x00 -17.625dB
   *          0xaf 48dB
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetCaptureChannelVolume(uint32_t channel_num, uint32_t volume);
+rt_status_t RTAudioControl_SetCaptureChannelVolume(uint32_t channel_num, uint32_t volume);
 
 /**
- * @brief Set Capture volume for channel.this function should be called after RTAudioRecord_Start
- *        and before RTAudioRecord_Read, otherwise it will not work.
+ * @brief Get Capture volume for channel.
+ *
+ * @param channel_num the channel number to get volume.
+ * @return the value of volume, can be 0x00-0xaf.
+  *          This parameter can be -17.625dB~48dB in 0.375dB step
+  *          0x00 -17.625dB
+  *          0xaf 48dB
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_GetCaptureChannelVolume(uint32_t channel_num);
+
+/**
+ * @brief Set Capture volume for channel.
  *
  * @param channels the total channels number to set volume, also the channels to capture.
  * @param volume the value of volume, can be 0x00-0xaf.
@@ -232,32 +303,43 @@ int32_t RTAudioControl_SetCaptureChannelVolume(uint32_t channel_num, uint32_t vo
   *          0x00 -17.625dB
   *          0xaf 48dB
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetCaptureVolume(uint32_t channels, uint32_t volume);
+rt_status_t RTAudioControl_SetCaptureVolume(uint32_t channels, uint32_t volume);
 
 /**
- * @brief Set Micbst Gain.this function should be called after RTAudioRecord_Start
- *        and before RTAudioRecord_Read, otherwise it will not work.
+ * @brief Set Micbst Gain.
  *
  * @param mic_category the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
  *       [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
  *       [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
  * @param gain can be RTAUDIO_MICBST_GAIN_0DB-RTAUDIO_MICBST_GAIN_40DB
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetMicBstGain(uint32_t mic_category, uint32_t gain);
+rt_status_t RTAudioControl_SetMicBstGain(uint32_t mic_category, uint32_t gain);
+
+/**
+ * @brief Get MicBst gain of microphone.
+ *
+ * @param mic_category the mic type, can be RTAUDIO_AMIC1...RTAUDIO_DMIC8.
+ *       [amebalite] support AMIC1-AMIC3, DMIC1-DMIC4
+ *       [amebasmart] support AMIC1-AMIC5, DMIC1-DMIC8
+ * @return gain of mic_category, can be RTAUDIO_MICBST_GAIN_0DB-RTAUDIO_MICBST_GAIN_40DB
+ * @since 1.0
+ * @version 1.0
+ */
+int32_t RTAudioControl_GetMicBstGain(uint32_t mic_category);
 
 /**
  * @brief Set mic usage.
@@ -268,14 +350,14 @@ int32_t RTAudioControl_SetMicBstGain(uint32_t mic_category, uint32_t gain);
  *        The reference data is always recorded from amic, even if the usage is
  *        RTAUDIO_CAPTURE_USAGE_DMIC, the default setting is RTAUDIO_CAPTURE_USAGE_AMIC.
  * @return Returns a value listed below: \n
- * int32_t | Description
+ * rt_status_t | Description
  * ----------------------| -----------------------
  * OSAL_OK | the operation is successful.
  * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_SetMicUsage(uint32_t mic_usage);
+rt_status_t RTAudioControl_SetMicUsage(uint32_t mic_usage);
 
 /**
  * @brief Get mic usage.
@@ -297,10 +379,40 @@ int32_t RTAudioControl_GetMicUsage(void);
  * @param rate sample rate of current stream
  * @param ppm ~1.55ppm per FOF step
  * @param action can be RTAUDIO_PLL_AUTO RTAUDIO_PLL_FASTER RTAUDIO_PLL_SLOWER
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | param not supported.
  * @since 1.0
  * @version 1.0
  */
-int32_t RTAudioControl_AdjustPLLClock(uint32_t rate, uint32_t ppm, uint32_t action);
+rt_status_t RTAudioControl_AdjustPLLClock(uint32_t rate, uint32_t ppm, uint32_t action);
+
+/**
+ * @brief Set Audio Record Mute.
+ *
+ * @param channel the channel to mute or unmute record.
+ * @param mute true means mute record, false means unmute record.
+ * @return  Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * HAL_OSAL_ERR_INVALID_OPERATION | HAL control instance not created.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioControl_SetRecordMute(uint32_t channel, bool mute);
+
+/**
+ * @brief Get Audio Record Mute State.
+ *
+ * @param channel the channel to mute or unmute state.
+ * @return  Returns the state of record. true means record is muted, false means record is unmuted.
+ * @since 1.0
+ * @version 1.0
+ */
+bool RTAudioControl_GetRecordMute(uint32_t channel);
 
 #ifdef __cplusplus
 }

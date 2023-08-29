@@ -28,6 +28,10 @@ VOID SOCPS_SleepPG(VOID)
 
 	SOCPS_SleepPG_LIB();
 
+	/* indicate KM4 status immediately after mem is ready, or km0 may miss 32k cmd when km4 resume wifi */
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW) | LSYS_BIT_NP_RUNNING);
+
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
 
@@ -52,6 +56,9 @@ void SOCPS_SleepCG(void)
 	}
 	SOCPS_SleepCG_LIB();
 
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_NP_STATUS_SW) | LSYS_BIT_NP_RUNNING);
+
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
@@ -75,37 +82,6 @@ u32 SOCPS_DsleepWakeStatusGet(void)
 	} else {
 		return FALSE;
 	}
-}
-
-/**
-  * @brief  get wakepin index.
-  * @param  None
-  * @retval BIT(0): wakepin0, BIT(1): wakepin1, BIT(2): wakepin2, BIT(3): wakepin3
-  */
-int SOCPS_WakePinCheck(void)
-{
-	int WakePin = 0;
-
-	WakePin = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_WAK_EVT);
-	WakePin = WakePin >> 4;
-
-	return WakePin;
-}
-
-/**
-  * @brief  get current AON timer.
-  * @param  None
-  * @note wakeup state:sleep PG & CG & deep sleep
-  * @retval The current Aon Timer counter, the unit is ms.
-  */
-u32 SOCPS_AONTimerGet(VOID)
-{
-	u32 Rtemp = 0;
-
-	/* use 32K */
-	Rtemp = AON_GET_TIM_CNT_CUR(HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_TIM_CNT));
-	Rtemp = Rtemp / 100;
-	return Rtemp;
 }
 
 /**

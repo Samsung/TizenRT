@@ -14,17 +14,15 @@
 #include "osif.h"
 #include "platform_opts_bt.h"
 #include "rtk_bt_le_gap.h"
+#include <rtk_bt_att_defs.h>
 #include "rtk_bt_gatts.h"
 #include "rtk_bt_gattc.h"
 #include "bt_ipc_cfg.h"
 #include "rtk_bt_common.h"
 
 /* -------------------------------- Defines --------------------------------- */
-#define CONFIG_BT_IPC_HOST_API_PRIO 4
-#define BT_IPC_HOST_API_STACK_SIZE 2048
 
 /* ---------------------------- Global Variables ---------------------------- */
-struct bt_ipc_host_api_task_struct	             btIpcHostApiTask = {0};
 void                           *bt_host_api_message_send_sema = NULL;
 
 bt_ipc_host_request_message bt_host_ipc_api_request_info __attribute__((aligned(64)));
@@ -49,16 +47,19 @@ void bt_ipc_host_api_hdl(void *Data, uint32_t IrqStatus, uint32_t ChanNum)
 	bt_ipc_dev_request_message *p_ipc_msg = NULL;
 	PIPC_MSG_STRUCT p_ipc_recv_msg = NULL;
 
-	if (bt_ipc_evt.data) {
-		printf("%s: bt_ipc_evt.data is not NULL ! \r\n", __func__);
-		return;
-	}
 	p_ipc_recv_msg = ipc_get_message(BT_IPC_DIR_EVENT_RX, \
 							BT_IPC_D2H_API_TRAN);
 	p_ipc_msg = (bt_ipc_dev_request_message *)p_ipc_recv_msg->msg;
 	DCache_Invalidate((uint32_t)p_ipc_msg, sizeof(bt_ipc_dev_request_message));
 	if (p_ipc_msg == NULL) {
 		printf("%s: Device IPC API message is NULL, invalid! \r\n", __func__);
+		return;
+	}
+	if (bt_ipc_evt.data) {
+		p_ipc_msg->ret[0] = 1;
+		p_ipc_msg->EVENT_ID = 0xFFFFFFFF;
+		DCache_Clean((uint32_t)p_ipc_msg, sizeof(bt_ipc_host_request_message));
+		printf("%s: bt_ipc_evt.data is not NULL ! \r\n", __func__);
 		return;
 	}
 	/* if task is running, wakeup */

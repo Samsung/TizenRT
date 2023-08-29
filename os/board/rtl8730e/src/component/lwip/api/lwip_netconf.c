@@ -107,6 +107,10 @@
 
 extern err_t ethernetif_init(struct netif *netif);
 
+#if defined(CONFIG_ETHERNET) && CONFIG_ETHERNET
+extern err_t ethernetif_mii_init(struct netif *netif);
+#endif
+
 struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 /* Private functions ---------------------------------------------------------*/
 /**

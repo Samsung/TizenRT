@@ -63,6 +63,8 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEM_SIZE                 (6*TCP_MSS)
 #elif defined(CONFIG_PLATFORM_AMEBADPLUS)
 #define MEM_SIZE                 (7*1024)
+#elif defined(CONFIG_PLATFORM_RTL8720F)
+#define MEM_SIZE                 (6*TCP_MSS)
 #elif defined(ENABLE_AMAZON_COMMON)
 #define MEM_SIZE                (10*1024)
 #else
@@ -73,6 +75,8 @@ a lot of data that needs to be copied, this should be set high. */
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
 #if defined(CONFIG_PLATFORM_AMEBALITE)
+#define MEMP_NUM_PBUF           50
+#elif defined(CONFIG_PLATFORM_RTL8720F)
 #define MEMP_NUM_PBUF           50
 #elif defined(CONFIG_PLATFORM_AMEBAD2)
 #define MEMP_NUM_PBUF           50
@@ -85,6 +89,8 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
 #if defined(CONFIG_PLATFORM_AMEBALITE)
+#define MEMP_NUM_TCP_PCB        6
+#elif defined(CONFIG_PLATFORM_RTL8720F)
 #define MEMP_NUM_TCP_PCB        6
 #else
 #define MEMP_NUM_TCP_PCB        10
@@ -152,6 +158,8 @@ a lot of data that needs to be copied, this should be set high. */
 #elif defined(CONFIG_PLATFORM_AMEBADPLUS)
 #define TCP_WND                 (5*TCP_MSS)
 #elif defined(CONFIG_PLATFORM_AMEBALITE)
+#define TCP_WND                 (5*TCP_MSS)
+#elif defined(CONFIG_PLATFORM_RTL8720F)
 #define TCP_WND                 (5*TCP_MSS)
 #elif defined(ENABLE_AMAZON_COMMON)
 #define TCP_WND                 (4*TCP_MSS)
@@ -239,7 +247,43 @@ extern unsigned int sys_now(void);
 
 #undef MEMP_NUM_PBUF
 #define MEMP_NUM_PBUF           100
+#elif defined(CONFIG_PLATFORM_RTL8720F) && defined (CONFIG_AS_INIC_AP)
+#undef MEM_SIZE
+#define MEM_SIZE                (26*TCP_MSS)
+
+#undef PBUF_POOL_SIZE
+#define PBUF_POOL_SIZE          64
+
+#undef TCP_SND_BUF
+#define TCP_SND_BUF             (24*TCP_MSS)
+
+#undef MEMP_NUM_TCP_SEG
+#define MEMP_NUM_TCP_SEG        (4* TCP_SND_BUF/TCP_MSS)
+
+#undef TCP_WND
+#define TCP_WND                 (16*TCP_MSS)
+
+#undef MEMP_NUM_PBUF
+#define MEMP_NUM_PBUF           100
 #elif defined(CONFIG_PLATFORM_AMEBAD2) && defined (CONFIG_AS_INIC_AP)
+#undef MEM_SIZE
+#define MEM_SIZE                (26*TCP_MSS)
+
+#undef PBUF_POOL_SIZE
+#define PBUF_POOL_SIZE          64
+
+#undef TCP_SND_BUF
+#define TCP_SND_BUF             (24*TCP_MSS)
+
+#undef MEMP_NUM_TCP_SEG
+#define MEMP_NUM_TCP_SEG        (4* TCP_SND_BUF/TCP_MSS)
+
+#undef TCP_WND
+#define TCP_WND                 (16*TCP_MSS)
+
+#undef MEMP_NUM_PBUF
+#define MEMP_NUM_PBUF           100
+#elif defined(CONFIG_PLATFORM_AMEBADPLUS)
 #undef MEM_SIZE
 #define MEM_SIZE                (26*TCP_MSS)
 
@@ -483,6 +527,15 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #define DEFAULT_TCP_RECVMBOX_SIZE       16
 #undef MEMP_NUM_TCPIP_MSG_INPKT
 #define MEMP_NUM_TCPIP_MSG_INPKT        16
+#elif defined(CONFIG_PLATFORM_RTL8720F) && defined (CONFIG_AS_INIC_AP)
+#undef TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE                 20
+#undef DEFAULT_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE       16
+#undef DEFAULT_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE       16
+#undef MEMP_NUM_TCPIP_MSG_INPKT
+#define MEMP_NUM_TCPIP_MSG_INPKT        16
 #elif defined(CONFIG_PLATFORM_AMEBAD2) && defined (CONFIG_AS_INIC_AP)
 #undef TCPIP_MBOX_SIZE
 #define TCPIP_MBOX_SIZE                 30
@@ -492,6 +545,24 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #define DEFAULT_TCP_RECVMBOX_SIZE       18
 #undef MEMP_NUM_TCPIP_MSG_INPKT
 #define MEMP_NUM_TCPIP_MSG_INPKT        20
+#elif defined(CONFIG_PLATFORM_RTL8720F) && defined (CONFIG_AS_INIC_AP)
+#undef TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE                 20
+#undef DEFAULT_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE       16
+#undef DEFAULT_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE       16
+#undef MEMP_NUM_TCPIP_MSG_INPKT
+#define MEMP_NUM_TCPIP_MSG_INPKT        16
+#elif defined(CONFIG_PLATFORM_AMEBADPLUS)
+#undef TCPIP_MBOX_SIZE
+#define TCPIP_MBOX_SIZE                 20
+#undef DEFAULT_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE       16
+#undef DEFAULT_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE       16
+#undef MEMP_NUM_TCPIP_MSG_INPKT
+#define MEMP_NUM_TCPIP_MSG_INPKT        16
 #endif
 #endif
 
@@ -581,5 +652,10 @@ Certain platform allows computing and verifying the IP, UDP, TCP and ICMP checks
 #undef LWIP_SOCKET_SET_ERRNO
 #define LWIP_SOCKET_SET_ERRNO           1
 #endif
+
+#define LWIP_MDNS_RESPONDER 	1
+#define LWIP_NUM_NETIF_CLIENT_DATA 1
+
+#define LWIP_NETIF_LOOPBACK             1
 
 #endif /* LWIP_HDR_LWIPOPTS_H */

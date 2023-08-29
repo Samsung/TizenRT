@@ -162,22 +162,6 @@ enum RTPlayerInvokeIds {
 	 * Parcel_Destroy(reply);
 	 */
 	RTPLAYER_INVOKE_ID_GET_CURRENT_TIME = 3,
-
-	/** This method id is responsible for getting cached address and size when cache function enable.
-	 * The request flow is like this:
-	 * Parcel *request = Parcel_Create();
-	 * Parcel *reply = Parcel_Create();
-	 * Parcel_WriteInt32(request, RTPLAYER_INVOKE_ID_GET_CACHE_ADDRESS_AND_LENGTH);
-	 * char* url = "http://172.29.35.145/River.mp3";
-	 * Parcel_WriteCString(request, url);
-	 * if (RTPlayer_Invoke(player, request, reply) == OK) {
-	 *     void* address = Parcel_ReadPointer(reply);
-	 *     int64_t size = Parcel_ReadInt64(reply);
-	 * }
-	 * Parcel_Destroy(request);
-	 * Parcel_Destroy(reply);
-	 */
-	RTPLAYER_INVOKE_ID_GET_CACHE_ADDRESS_AND_LENGTH = 4,
 };
 
 #ifdef __cplusplus

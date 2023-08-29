@@ -40,6 +40,7 @@ struct iperf_data_t {
 	uint32_t report_interval;
 	uint16_t port;
 	uint8_t  server_ip[16];
+	uint8_t  mul_ip[16];
 	uint8_t  role; // 'c' for client and 's' for server
 	uint8_t  protocol; // 'u' for udp and 't' for tcp
 	uint8_t  tos_value;
@@ -809,6 +810,7 @@ exit2:
 
 int udp_server_func(struct iperf_data_t iperf_data)
 {
+	ip_mreq mreq;
 	struct sockaddr_in   ser_addr, client_addr;
 	int                  addrlen = sizeof(struct sockaddr_in);
 	int                  n = 1;
@@ -838,6 +840,18 @@ int udp_server_func(struct iperf_data_t iperf_data)
 	tptest_res_log("%s: Create socket fd = %d, port = %d\n\r", __func__, iperf_data.server_fd, iperf_data.port);
 
 	setsockopt(iperf_data.server_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &n, sizeof(n));
+
+	if (strcmp((char const *)iperf_data.mul_ip, "\0") != 0) {
+		//initialize multi_addr join request
+		memset(&mreq, 0, sizeof(ip_mreq));
+		mreq.imr_multiaddr.s_addr = inet_addr((char const *)iperf_data.mul_ip);
+		mreq.imr_interface.s_addr =  htonl(INADDR_ANY);
+
+		if (setsockopt(iperf_data.server_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0) {
+			tptest_res_log("\n\r[ERROR] %s:  IGMP join failed\n\r", __func__);
+			goto exit1;
+		}
+	}
 
 	//initialize structure dest
 	memset(&ser_addr, 0, sizeof(ser_addr));
@@ -1021,14 +1035,14 @@ int udp_server_func(struct iperf_data_t iperf_data)
 			}
 		}
 	}
-
+exit1:
 	if (total_size != 0) {
 		tptest_res_log("udp_s: [END] id[%d] Totally receive %d KBytes in %d ms, %d Kbits/sec\n\r", iperf_data.stream_id, (int)(total_size / KB),
 					   (int)(end_time - start_time),
 					   (int)((uint64_t)(total_size * 8) / (end_time - start_time)));
 	}
 
-exit1:
+
 	// close the listening socket
 	close(iperf_data.server_fd);
 	if (g_stream_id[iperf_data.stream_id].terminate) {
@@ -1228,6 +1242,13 @@ void cmd_iperf(int argc, char **argv)
 				}
 				stream_data->time = atoi(argv[argv_count]);
 				argv_count += 2;
+			}  else if (strcmp(argv[argv_count - 1], "-B") == 0) {
+				if (argc < (argv_count + 1)) {
+					goto exit;
+				}
+				strncpy((char *)stream_data->mul_ip, argv[argv_count], sizeof(stream_data->mul_ip) - 1);
+				stream_data->mul_ip[sizeof(stream_data->mul_ip) - 1] = '\0';
+				argv_count += 2;
 			} else {
 				goto exit;
 			}
@@ -1303,6 +1324,7 @@ exit:
 		printf("  \r     -p    #        server port to listen on/connect to (default 5001)\n");
 		printf("\n\r   Server specific:\n");
 		printf("  \r     -s             run in server mode\n");
+		printf("  \r     -B             bind multicast address in udp server mode\n");
 		printf("\n\r   Client specific:\n");
 		printf("  \r     -b    #[KM]    for UDP, bandwidth to send at in bits/sec (default 1 Mbit/sec)\n");
 		printf("  \r     -c    <host>   run in client mode, connecting to <host>\n");

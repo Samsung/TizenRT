@@ -512,7 +512,7 @@ BOOL SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			DBG_8195A("SSI_TXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pTxData, Length);
+			DBG_8195A("SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
 			return _FALSE;
 		}
 	} else {
@@ -611,7 +611,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			DBG_8195A("SSI_RXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pRxData, Length);
+			DBG_8195A("SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pRxData, Length);
 			return _FALSE;
 		}
 	} else {

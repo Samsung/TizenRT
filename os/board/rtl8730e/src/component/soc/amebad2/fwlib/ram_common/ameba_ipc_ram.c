@@ -123,7 +123,7 @@ void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
   * @param  Data: the data pointer to IPCx
   * @retval 0
   */
-u32 IPC_INTHandler(int irq, void *context, void *Data)
+u32 IPC_INTHandler(void *Data)
 {
 	IPC_TypeDef *IPCx = (IPC_TypeDef *)Data;
 	u32 IrqStatus;

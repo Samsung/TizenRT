@@ -4,11 +4,6 @@
 #include "osdep_service.h"
 
 
-#define WSCLIENT_TLS_POLARSSL       0    /*!< Use PolarSSL for TLS when WSCLIENT */
-#define WSCLIENT_TLS_MBEDTLS        1    /*!< Use mbedTLS for TLS when WSCLIENT */
-
-#define WSCLIENT_USE_TLS            WSCLIENT_TLS_MBEDTLS
-
 /****************Define the debug message level*********************/
 #define DEBUG_WSCLIENT    1
 

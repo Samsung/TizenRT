@@ -94,6 +94,7 @@ enum {
 	RTPIN_IN_LINEIN   = 0x8000004u,
 	/**< dmic+ref-amic pin */
 	RTPIN_IN_DMIC_REF_AMIC = 0x8000005u,
+	RTPIN_IN_I2S           = 0x8000006u,
 };
 
 /**
@@ -145,6 +146,49 @@ enum {
 	RTAUDIO_EFFECT_PARAM_CENTER_FREQ     = 0x3u,
 	RTAUDIO_EFFECT_PARAM_BAND_FREQ_RANGE = 0x4u,
 	RTAUDIO_EFFECT_PARAM_GET_BAND        = 0x5u,
+};
+
+/**
+ * @brief Defines all the audio convert qualities.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum {
+	/** Invalid converter */
+	RTAudio_CONVERT_INVALID        = 0x0u,
+	RTAudio_CONVERT_LOW            = 0x1u,
+	RTAudio_CONVERT_MID            = 0x2u,
+	RTAudio_CONVERT_HIGH           = 0x3u,
+	RTAudio_CONVERT_VERY_HIGH      = 0x4u,
+	RTAudio_CONVERT_MAX            = 0x5u,
+};
+
+/**
+ * @brief Defines all the audio resample types.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum {
+	/** Invalid converter */
+	RTAudio_RESAMPLE_NONE          = 0x0u,
+	RTAudio_RESAMPLE_SOXR          = 0x1u,
+	RTAudio_RESAMPLE_SPEEX         = 0x2u,
+	RTAudio_RESAMPLE_MAX           = 0x3u,
+};
+
+/**
+ * @brief Defines all the audio min frames stages, only for mixer to use.
+ *
+ * @since 1.0
+ * @version 1.0
+ */
+enum {
+	/** allows more data for service to write to HAL one time, default uing it */
+	RTAUDIO_OUT_MIN_FRAMES_STAGE1  = 0,
+	/** allows less data for service to write to HAL one time */
+	RTAUDIO_OUT_MIN_FRAMES_STAGE2  = 1,
 };
 
 #ifdef __cplusplus

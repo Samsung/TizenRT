@@ -430,19 +430,12 @@ enum OTP_OPMode {
   * @{
   */
 
-extern u32 EFUSERead8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 *Data, UNUSED_WARN_DIS u8 L25OutVoltage);
-extern u32 EFUSEWrite8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 Data, UNUSED_WARN_DIS u8 L25OutVoltage);
-extern u32 EFUSE_PMAP_READ8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 *Data, UNUSED_WARN_DIS u8 L25OutVoltage);
-extern u32 EFUSE_PMAP_WRITE8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 Data, UNUSED_WARN_DIS u8 L25OutVoltage);
-extern u32 EFUSE_LMAP_READ(u8 *pbuf);
-extern u32 EFUSE_LMAP_WRITE(u32 addr, u32 cnts, u8 *data);
-extern u32 EFUSE_RemainLength(void);
-extern u32 EFUSE_GetCRC(void);
 extern u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len);
 extern u32 OTP_Read8(u32 Addr, u8 *Data);
 extern u32 OTP_Write8(u32 Addr, u8 Data);
 extern u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data);
-extern u32 OTP_RemainLength(void);
+extern u32 otp_logical_remain(void);
+extern u32 OTPGetCRC(void);
 
 /**
   * @}

@@ -45,18 +45,134 @@ cmd_reboot(
 	IN  u8  *argv[]
 )
 {
-	if (_strcmp((const char *)argv[0], "uartburn") == 0) {
-		BKUP_Set(0, BKUP_BIT_UARTBURN_BOOT);
-	} else if (_strcmp((const char *)argv[0], "uartburn_dbg") == 0) {
-		BKUP_Set(0, BKUP_BIT_UARTBURN_BOOT | BKUP_BIT_UARTBURN_DEBUG);
+	if (argc >= 1) {
+		if (_strcmp((const char *)argv[0], "uartburn") == 0) {
+			BKUP_Set(0, BKUP_BIT_UARTBURN_BOOT);
+		} else if (_strcmp((const char *)argv[0], "uartburn_dbg") == 0) {
+			BKUP_Set(0, BKUP_BIT_UARTBURN_BOOT | BKUP_BIT_UARTBURN_DEBUG);
+		}
 	}
 
 	DBG_8195A("\n\rRebooting ...\n\r");
-#ifdef AMEBAD2_TODO
-	NVIC_SystemReset();
-#endif
+
+	System_Reset();
+
 	return _TRUE;
 }
+
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+u32 cmd_efuse_protect(u16 argc, u8  *argv[])
+{
+	/* To avoid gcc warnings */
+	(void) argc;
+
+	u8 EfuseBuf[OTP_REAL_CONTENT_LEN];
+	u32 index;
+	u8 ret = 0;
+
+	/* efuse wmap 0x0 2 2187 */
+	/* efuse wmap 0x18 4 01020304 */
+	if (_strcmp((const char *)argv[0], "wmap") == 0) {
+		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		char *DString = (char *)argv[3];
+		u32 Cnt;
+
+		Cnt = _strlen(DString);
+		if (Cnt % 2) {
+			MONITOR_LOG("string length(%d) should be odd \n", Cnt);
+			return FALSE;
+		}
+
+		Cnt = Cnt / 2;
+		if (Cnt != Len) {
+			MONITOR_LOG("Oops: write lenth not match input string lentg, choose smaller one\n");
+			Len = (Cnt < Len) ? Cnt : Len;
+		}
+
+		MONITOR_LOG("efuse wmap write len:%d, string len:%d\n", Len, Cnt << 1);
+
+		for (index = 0; index < Len; index++) {
+			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
+		}
+
+		OTP_LogicalMap_Write(Addr, Len, (u8 *)(EfuseBuf));
+	}
+
+	if (_strcmp((const char *)argv[0], "rmap") == 0) {
+		MONITOR_LOG("efuse rmap \n");
+
+		ret = OTP_LogicalMap_Read(EfuseBuf, 0, OTP_LMAP_LEN);
+		if (ret == _FAIL) {
+			MONITOR_LOG("OTP_LogicalMap_Read fail \n");
+		}
+
+		for (index = 0; index < 1024; index += 16) {
+			MONITOR_LOG("EFUSE[%03x]: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", index,
+						EfuseBuf[index], EfuseBuf[index + 1], EfuseBuf[index + 2], EfuseBuf[index + 3],
+						EfuseBuf[index + 4], EfuseBuf[index + 5], EfuseBuf[index + 6], EfuseBuf[index + 7],
+						EfuseBuf[index + 8], EfuseBuf[index + 9], EfuseBuf[index + 10], EfuseBuf[index + 11],
+						EfuseBuf[index + 12], EfuseBuf[index + 13], EfuseBuf[index + 14], EfuseBuf[index + 15]);
+		}
+	}
+
+	if (_strcmp((const char *)argv[0], "rraw") == 0) {
+		MONITOR_LOG("efuse rraw\n");
+
+		for (index = 0; index < OTP_USER_END; index++) {
+			OTP_Read8(index, (EfuseBuf + index));
+		}
+
+		for (index = 0; index < OTP_USER_END; index += 16) {
+			MONITOR_LOG("RawMap[%03x]: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", index,
+						EfuseBuf[index], EfuseBuf[index + 1], EfuseBuf[index + 2], EfuseBuf[index + 3],
+						EfuseBuf[index + 4], EfuseBuf[index + 5], EfuseBuf[index + 6], EfuseBuf[index + 7],
+						EfuseBuf[index + 8], EfuseBuf[index + 9], EfuseBuf[index + 10], EfuseBuf[index + 11],
+						EfuseBuf[index + 12], EfuseBuf[index + 13], EfuseBuf[index + 14], EfuseBuf[index + 15]);
+		}
+	}
+
+	/* efuse wraw 0xA0 1 aa */
+	/* efuse wraw 0xA0 2 aabb */
+	/* efuse wraw 0xA0 4 aabbccdd */
+	if (_strcmp((const char *)argv[0], "wraw") == 0) {
+		u32 Addr = _strtoul((const char *)(argv[1]), (char **)NULL, 16);
+		u32 Len = _strtoul((const char *)(argv[2]), (char **)NULL, 16);
+		char *DString = (char *)argv[3];
+		u32 Cnt;
+
+		Cnt = _strlen(DString);
+		if (Cnt % 2) {
+			MONITOR_LOG("string length(%d) should be odd \n", Cnt);
+			return FALSE;
+		}
+
+		Cnt = Cnt / 2;
+		if (Cnt != Len) {
+			MONITOR_LOG("Oops: write lenth not match input string lentg, choose smaller one\n");
+			Len = (Cnt < Len) ? Cnt : Len;
+		}
+
+		for (index = 0; index < Len; index++) {
+			EfuseBuf[index] = _2char2hex(DString[index * 2], DString[index * 2 + 1]);
+		}
+
+		MONITOR_LOG("efuse wraw write len:%d, string len:%d\n", Len, Cnt << 1);
+
+		for (index = 0; index < Len; index++) {
+			MONITOR_LOG("wraw: %x %x \n", Addr + index, EfuseBuf[index]);
+			OTP_Write8((Addr + index), EfuseBuf[index]);
+		}
+	}
+
+	if (_strcmp((const char *)argv[0], "getcrc") == 0) {
+		u32 crc = OTPGetCRC();
+		DBG_8195A("new crc value is 0x%x", crc);
+	}
+
+	return 0;
+}
+#endif
 
 u32 cmd_dump_word(u16 argc, u8  *argv[])
 {
@@ -141,6 +257,11 @@ CmdTickPS(
 		pmu_release_wakelock(PMU_OS);
 	}
 
+	if (_strcmp((const char *)argv[0], "dslp") == 0) { // release
+		pmu_release_deepwakelock(PMU_OS);
+		pmu_release_wakelock(PMU_OS);
+	}
+
 	if (_strcmp((const char *)argv[0], "a") == 0) { // acquire
 		pmu_acquire_wakelock(PMU_OS);
 	}
@@ -170,150 +291,6 @@ CmdTickPS(
 	return _TRUE;
 }
 */
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-#if ( ( configGENERATE_RUN_TIME_STATS == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-static TaskHandle_t task_status_log_task_Handler = NULL;
-static char InfoBuffer[1024];
-static char InfoBuffer2[1024 * 2];
-static char time_delay;
-
-static char *prvWriteNameToBuffer(char *pcBuffer, const char *pcTaskName)
-{
-	size_t x;
-
-	/* Start by copying the entire string. */
-	strcpy(pcBuffer, pcTaskName);
-
-	/* Pad the end of the string with spaces to ensure columns line up when printed out. */
-	for (x = strlen(pcBuffer); x < (size_t)(configMAX_TASK_NAME_LEN - 1); x++)	{
-		pcBuffer[ x ] = ' ';
-	}
-
-	/* Terminate. */
-	pcBuffer[ x ] = (char) 0x00;
-
-	/* Return the new end of string. */
-	return &(pcBuffer[ x ]);
-}
-
-void vTaskGetRunTimeStats_rtk(char *pcWriteBuffer)
-{
-	TaskStatus_t *pxTaskStatusArray_old;
-	TaskStatus_t *pxTaskStatusArray_new;
-	UBaseType_t uxArraySize, x1, x2;
-	UBaseType_t uxArraySize_old;
-	UBaseType_t uxArraySize_new;
-	float ulTotalTime, ulStatsAsPercentage;
-	uint32_t ulTotalTime_old;
-	uint32_t ulTotalTime_new;
-
-	/* Make sure the write buffer does not contain a string. */
-	*pcWriteBuffer = (char) 0x00;
-
-	/* Take a snapshot of the number of tasks in case it changes while this function is executing. */
-	uxArraySize_old = uxTaskGetNumberOfTasks();
-
-	/* If configSUPPORT_DYNAMIC_ALLOCATION is set to 0 then pvPortMalloc() will equate to NULL. */
-	pxTaskStatusArray_old = pvPortMalloc(uxArraySize_old * sizeof(TaskStatus_t));
-
-	if (pxTaskStatusArray_old != NULL) {
-		uxArraySize_old = uxTaskGetSystemState(pxTaskStatusArray_old, uxArraySize_old, &ulTotalTime_old);
-	} else {
-		mtCOVERAGE_TEST_MARKER();
-	}
-
-	vTaskDelay(time_delay * 1000);
-
-	/* Take a snapshot of the number of tasks in case it changes while this function is executing. */
-	uxArraySize_new = uxTaskGetNumberOfTasks();
-
-	/* If configSUPPORT_DYNAMIC_ALLOCATION is set to 0 then pvPortMalloc() will equate to NULL. */
-	pxTaskStatusArray_new = pvPortMalloc(uxArraySize_new * sizeof(TaskStatus_t));
-
-	if (pxTaskStatusArray_new != NULL) {
-		uxArraySize_new = uxTaskGetSystemState(pxTaskStatusArray_new, uxArraySize_new, &ulTotalTime_new);
-	} else {
-		mtCOVERAGE_TEST_MARKER();
-	}
-
-	/* For percentage calculations. */
-	ulTotalTime = (float)((ulTotalTime_new - ulTotalTime_old));
-	/* Avoid divide by zero errors. */
-	if (ulTotalTime > 0UL) {
-		/* Create a human readable table from the binary data. */
-		for (x1 = 0; x1 < uxArraySize_new; x1++) {
-			for (x2 = 0; x2 < uxArraySize_old; x2++) {
-				if (pxTaskStatusArray_new[x1].xTaskNumber == pxTaskStatusArray_old[x2].xTaskNumber) {
-					ulStatsAsPercentage = (float)(pxTaskStatusArray_new[ x1 ].ulRunTimeCounter - pxTaskStatusArray_old[ x2 ].ulRunTimeCounter) / ulTotalTime * 100;
-					pcWriteBuffer = prvWriteNameToBuffer(pcWriteBuffer, pxTaskStatusArray_new[ x1 ].pcTaskName);
-					sprintf(pcWriteBuffer, "\t%u\t%-10u \t%8.2f%% \r\n", (unsigned int) pxTaskStatusArray_new[ x1 ].uxCurrentPriority,
-							((unsigned int) pxTaskStatusArray_new[ x1 ].ulRunTimeCounter - pxTaskStatusArray_old[ x2 ].ulRunTimeCounter),  ulStatsAsPercentage);
-					pcWriteBuffer += strlen(pcWriteBuffer);
-					break;
-				}
-			}
-		}
-	} else {
-		mtCOVERAGE_TEST_MARKER();
-	}
-
-	vPortFree(pxTaskStatusArray_old);
-	vPortFree(pxTaskStatusArray_new);
-}
-
-void task_status_log_task(void)
-{
-	while (1) {
-		vTaskGetRunTimeStats_rtk(InfoBuffer);
-		DiagPrintf("[CA32] FreeRTOS FreeHeapSize: %d \n", xPortGetFreeHeapSize());
-		vTaskList(InfoBuffer2);
-		DiagPrintf("[CA32] Name              State  Priority  Stack  Num \n");
-		DiagPrintf("%s \r\n", InfoBuffer2);
-		DiagPrintf("[CA32] Name             Priority  DeltaRunTime(us)  Percentage(total:200%%)\r\n");
-		DiagPrintf("%s\r\n", InfoBuffer);
-	}
-}
-
-u32 task_status(u16 argc, u8 *argv[])
-{
-	if (argc < 1) {
-		DiagPrintf("need more argument. e.g.  start, stop \n");
-		return 1;
-	}
-
-	if (!strcmp((const char *)argv[0], "start")) {
-		if (argc < 2) {
-			DiagPrintf("need time argument. e.g. \"status start 1\" \n");
-			return 1;
-		} else {
-			time_delay = strtoul((const char *)(argv[1]), (char **)NULL, 10);
-		}
-		if (!task_status_log_task_Handler) {
-			xTaskCreate((TaskFunction_t)task_status_log_task,
-						(const char *)"task_status_log_task",
-						(uint16_t)1024,
-						(void *)NULL,
-						(UBaseType_t)2,
-						(TaskHandle_t *)&task_status_log_task_Handler);
-		} else {
-			DiagPrintf("[CA32] task_status_log_task task is already running.\n");
-		}
-	} else if (!strcmp((const char *)argv[0], "stop")) {
-		if (task_status_log_task_Handler) {
-			vTaskDelete(task_status_log_task_Handler);
-			task_status_log_task_Handler = NULL;
-		} else {
-			DiagPrintf("[CA32] task_status_log_task task is NOT running.\n");
-		}
-	} else if (argc) {
-		DiagPrintf("invalid argument: %s \n", argv[0]);
-		return 1;
-	}
-	return 0;
-}
-#endif
-#endif
-
 CMD_TABLE_DATA_SECTION
 static COMMAND_TABLE   shell_cmd_table_rom[] = {
 	{
@@ -332,6 +309,15 @@ static COMMAND_TABLE   shell_cmd_table_rom[] = {
 		"\t\t Can write only one dword at the same time \n"
 		"\t\t Ex: EW Address Value \n"
 	},
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+	{
+		(const u8 *)"EFUSE",	8, cmd_efuse_protect,	(const u8 *)"\tEFUSE \n"
+		"\t\t wmap addr len data\n"
+		"\t\t rmap \n"
+		"\t\t <wmap 0x00 2 8195> efuse[0]=0x81, efuse [1]=0x98\n"
+		"\t\t <wmap 0xF0 4 11223344> [0xF0]=0x11, [0xF1]=0x22, [0xF2]=0x33, [0xF3]=0x44\n"
+	},
+#endif
 	{
 		(const u8 *)"REBOOT",	4, cmd_reboot,	(const u8 *)"\tREBOOT \n"
 		"\t\t <item, string> : \n"
@@ -345,15 +331,6 @@ static COMMAND_TABLE   shell_cmd_table_rom[] = {
 		"\t\t a: acquire os wakelock \n"
 	},
 	*/
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-#if ( ( configGENERATE_RUN_TIME_STATS == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
-	{
-		(const u8 *)"STATUS",  4, task_status, (const u8 *)"\tSTATUS \n"
-		"\t\t start <period>: start tasks status log\n"
-		"\t\t stop:  stop tasks status log \n"
-	},
-#endif
-#endif
 };
 
 u32 cmd_rom_table(void **PTable)

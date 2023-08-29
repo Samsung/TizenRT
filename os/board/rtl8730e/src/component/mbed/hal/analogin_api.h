@@ -82,14 +82,14 @@ uint16_t analogin_read_u16(analogin_t *obj);
   * @param adc_data: ADC conversion data from normal channel.
   * @return Normal channel voltage in mV.
   */
-uint32_t analogin_voltage_norm(uint16_t adc_data);
+uint32_t analogin_voltage_norm(uint32_t adc_data);
 
 /**
   * @brief Get channel voltage in mV according to conversion data from VBAT channel(6).
   * @param adc_data: ADC conversion data from VBAT channel.
   * @return VBAT channel voltage in mV.
   */
-uint32_t analogin_voltage_vbat(uint16_t adc_data);
+uint32_t analogin_voltage_vbat(uint32_t adc_data);
 
 ///@}
 /*\@}*/

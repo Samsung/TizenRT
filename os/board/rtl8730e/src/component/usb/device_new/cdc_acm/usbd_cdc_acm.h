@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * The header file for usbd_cdc.c
+  * The header file for usbd_cdc_acm.c
   *
   * This module is a confidential and proprietary property of RealTek and
   * possession or use of this module requires written permission of RealTek.
@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
+#include "usbd_cdc_acm_otp.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -51,6 +52,7 @@
 #define CDC_ACM_PRODUCT_STRING_DESC_SIZE            34U
 #define CDC_ACM_SN_STRING_DESC_SIZE                 26U
 #define CDC_ACM_SELF_POWERED                        1U
+#define CDC_ACM_REMOTE_WAKEUP_EN					1U
 
 /* CDC ACM Endpoint parameters */
 #define CDC_ACM_BULK_IN_EP                          0x81U  /* EP1 for BULK IN */
@@ -69,8 +71,8 @@
 #define CDC_ACM_INTR_IN_PACKET_SIZE                 10U    /* INTR IN packet size */
 #define CDC_ACM_INTR_IN_REQUEST_SIZE                8U     /* INTR IN request size */
 #define CDC_ACM_INTR_IN_DATA_SIZE                   2U     /* INTR IN data size */
-#define CDC_ACM_HS_INTR_IN_INTERVAL                 8U    /* High speed INTR IN interval */
-#define CDC_ACM_FS_INTR_IN_INTERVAL                 8U    /* Full speed INTR IN interval */
+#define CDC_ACM_HS_INTR_IN_INTERVAL                 8U     /* High speed INTR IN interval */
+#define CDC_ACM_FS_INTR_IN_INTERVAL                 8U     /* Full speed INTR IN interval */
 
 #define CDC_ACM_CTRL_BUF_SIZE                       512U   /* Control buffer size */
 
@@ -104,6 +106,7 @@ typedef struct {
 } usbd_cdc_acm_cb_t;
 
 typedef struct {
+	u8 *ctrl_buf;
 	u8  ctrl_req;
 	u8  ctrl_data_len;	/* TODO: Remove and get the data length via usbd_core_get_rx_data_size? */
 
@@ -118,6 +121,10 @@ typedef struct {
 #if CONFIG_CDC_ACM_NOTIFY
 	usbd_cdc_acm_ntf_t *intr_in_buf;
 	__IO u32 intr_in_state;
+#endif
+
+#ifdef CONFIG_USB_USE_OTP_DESC
+	usbd_otp_t otp;
 #endif
 
 	usbd_cdc_acm_cb_t *cb;

@@ -1040,7 +1040,7 @@ typedef enum _FLASH_REGION_TYPE_ {
 	IMG_APP_OTA1	= 2,
 	IMG_APP_OTA2  	= 3,
 	IMG_APIMG_OTA1	= 4,
-	IMG_APIMG_OTA2	= 5,
+	IMG_APIMG_OTA2 	= 5,
 	FTL   =   	6,
 	VFS1  =   	7,
 	VFS2  =   	8,

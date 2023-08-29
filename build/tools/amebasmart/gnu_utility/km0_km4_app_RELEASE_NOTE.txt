@@ -2,3 +2,7 @@
 
 == version 77121eeb /07/31-18:28:32 ==
 1.	Add version info	
+
+== version 02fd15b2 /07/31-18:21:31 ==
+1.	Sync to version 8.3c SDK
+

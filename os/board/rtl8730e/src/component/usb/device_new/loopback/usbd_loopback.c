@@ -29,7 +29,7 @@
 static u8 usbd_loopback_set_config(usb_dev_t *dev, u8 config);
 static u8 usbd_loopback_clear_config(usb_dev_t *dev, u8 config);
 static u8 usbd_loopback_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u8 *usbd_loopback_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
+static u8 *usbd_loopback_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static u8 usbd_loopback_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status);
 static u8 usbd_loopback_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len);
 static u8 usbd_loopback_handle_ep0_data_out(usb_dev_t *dev);
@@ -576,9 +576,11 @@ static u8 usbd_loopback_handle_ep0_data_out(usb_dev_t *dev)
   * @param  len: descriptor length
   * @retval descriptor buffer
   */
-static u8 *usbd_loopback_get_descriptor(usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
+static u8 *usbd_loopback_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
 {
 	u8 *buf = NULL;
+
+	dev->self_powered = USBD_LOOPBACK_SELF_POWERED;
 
 	switch ((req->wValue >> 8) & 0xFF) {
 

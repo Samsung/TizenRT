@@ -58,16 +58,17 @@ void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status)
 	PPC_TypeDef *PPC = KM4_PPC;
 	u32 Value, IsReg1, BitIndex;
 
-	assert_param(IS_PPC_PERIID(Perip));
-
 	if (IS_PPC_REG1(Perip)) {
 		Value = PPC->PPC_REG1;
 		BitIndex = Perip - 32;
 		IsReg1 = TRUE;
-	} else {
+	} else if (IS_PPC_REG0(Perip)) {
 		Value = PPC->PPC_REG0;
 		BitIndex = Perip;
 		IsReg1 = FALSE;
+	} else {
+		DBG_8195A("PPC PeripID[%d] illegal !!!\n", Perip);
+		assert_param(0);
 	}
 
 	if (Status == SECURE) {

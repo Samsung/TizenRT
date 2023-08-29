@@ -32,6 +32,8 @@
 /* USB Core ID */
 #define USB_OTG_CORE_ID_300A                   0x4F54300AU
 #define USB_OTG_CORE_ID_310A                   0x4F54310AU
+#define USB_OTG_CORE_ID_420A                   0x4F54420AU
+#define USB_OTG_CORE_ID_430A                   0x4F54430AU
 
 /* Exported types ------------------------------------------------------------*/
 

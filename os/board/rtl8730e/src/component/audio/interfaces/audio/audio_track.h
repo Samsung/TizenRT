@@ -20,6 +20,7 @@
 #include "audio/audio_time.h"
 #include "audio/audio_type.h"
 #include "osal_c/osal_types.h"
+#include "osal_c/osal_compat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +86,27 @@ void RTAudioTrack_Destroy(struct RTAudioTrack *track);
  * @version 1.0
  */
 rt_status_t RTAudioTrack_Init(struct RTAudioTrack *track, const RTAudioTrackConfig *config, uint32_t flags);
+
+/**
+ * @brief Set audio track play water level.
+ *
+ * @param track is the pointer of struct RTAudioTrack.
+ * @param bytes is the start playing water level bytes.
+ * @return Returns the water level bytes sets to audio framework.
+ * @since 1.0
+ * @version 1.0
+ */
+ssize_t RTAudioTrack_SetStartThresholdBytes(struct RTAudioTrack *track, ssize_t bytes);
+
+/**
+ * @brief Get audio track play water level.
+ *
+ * @param track is the pointer of struct RTAudioTrack.
+ * @return Returns the playing water level bytes of current audio track.
+ * @since 1.0
+ * @version 1.0
+ */
+ssize_t RTAudioTrack_GetStartThresholdBytes(struct RTAudioTrack *track);
 
 /**
  * @brief Start audio track.
@@ -380,7 +402,7 @@ rt_status_t RTAudioTrack_GetLatency(struct RTAudioTrack *track, uint32_t *latenc
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTAudioTrack_GetPosition(struct RTAudioTrack *track, uint32_t *position);
+rt_status_t RTAudioTrack_GetPosition(struct RTAudioTrack *track, uint64_t *position);
 
 #ifdef __cplusplus
 }

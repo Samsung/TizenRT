@@ -53,6 +53,9 @@ static u32 gtimer_timeout_handler(void *data)
 		handler(obj->hid);
 	}
 
+	/* make sure all intr pending bits cleared ok, to avoid timeout is not enough in rom code */
+	RTIM_INTClear(TIMx[tid]);
+
 	return 0;
 }
 

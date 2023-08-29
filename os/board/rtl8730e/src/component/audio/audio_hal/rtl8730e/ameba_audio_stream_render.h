@@ -15,6 +15,7 @@
 #ifndef AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_RENDER_H
 #define AMEBA_COMPONENT_AUDIO_AUDIO_HAL_RTL8726E_AMEBA_AUDIO_STREAM_RENDER_H
 
+#include "audio_hw_compat.h"
 #include "ameba_audio_stream.h"
 
 #ifdef __cplusplus
@@ -23,15 +24,10 @@ extern "C" {
 
 typedef struct _RenderStream {
 	Stream stream;
-	uint32_t trigger_tstamp;
-	uint32_t total_counter;
-	uint32_t sport_irq_count;
-	uint32_t sport_compare_val;
-	uint32_t total_counter_boundary;
-	bool restart_by_write;
+	uint64_t write_cnt;
 } RenderStream;
 
-Stream *ameba_audio_stream_tx_init(StreamConfig config);
+Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config);
 void ameba_audio_stream_tx_start(Stream *stream);
 uint32_t ameba_audio_stream_tx_get_buffer_status(Stream *stream);
 int  ameba_audio_stream_tx_write(Stream *stream, const void *data, uint32_t bytes, bool block);
@@ -39,6 +35,7 @@ void ameba_audio_stream_tx_stop(Stream *stream);
 void ameba_audio_stream_tx_close(Stream *stream);
 int  ameba_audio_stream_tx_set_amp_state(bool state);
 int  ameba_audio_stream_tx_get_htimestamp(Stream *stream, uint32_t *avail, struct timespec *tstamp);
+int  ameba_audio_stream_tx_get_position(Stream *stream, uint64_t *rendered_frames, struct timespec *tstamp);
 uint64_t ameba_audio_stream_tx_sport_rendered_frames(Stream *stream);
 
 #ifdef __cplusplus

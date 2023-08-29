@@ -322,11 +322,11 @@ void PSRAM_REG_Read(u32 addr, u32 read_len, u8 *read_data)
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
 	psram_ctrl->RX_NDF = RX_NDF(read_len);
 	psram_ctrl->TX_NDF = 0;
-	DBG_8195A("RX_NDF = %x %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
+	DBG_8195A("RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
 
 	//set rx mode
 	psram_ctrl->CTRLR0 |= TMOD(3);
-	DBG_8195A("CTRLR0 = %x %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* set flash_cmd: write cmd to fifo */
 	psram_ctrl->DR[0].BYTE = 0x40;
@@ -443,7 +443,7 @@ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data)
 
 	//set tx mode
 	psram_ctrl->CTRLR0 &= ~(TMOD(3));
-	DBG_8195A("CTRLR0 = %x %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* Set RX_NDF: frame number of receiving data. TX_NDF should be set in both transmit mode and receive mode.
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
@@ -510,11 +510,11 @@ void PSRAM_WB_REG_Read(u32 regnum, u32 read_len, u8 *read_data, u32 CR)
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
 	psram_ctrl->RX_NDF = RX_NDF(read_len);
 	psram_ctrl->TX_NDF = 0;
-	DBG_8195A("RX_NDF = %x %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
+	DBG_8195A("RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
 
 	//set rx mode
 	psram_ctrl->CTRLR0 |= TMOD(3);
-	DBG_8195A("CTRLR0 = %x %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* set flash_cmd: write cmd to fifo */
 	psram_ctrl->DR[0].BYTE = 0xe0;

@@ -9,6 +9,7 @@
 #include <bt_utils.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_common.h>
+#include <rtk_bt_att_defs.h>
 #include <rtk_bt_gattc.h>
 #include <rtk_client_config.h>
 #include <rtk_bt_le_gap.h>
@@ -43,7 +44,7 @@ void gattc_dump(uint16_t len, uint8_t* data, uint8_t* tag)
 			if (0 == j)
 				printf("%02x ", *(data + i));
 			else if (1 == j)
-				printf("%c", *(data + i));
+				printf("%c ", *(data + i));
 		}
 		printf("\n\r");
 	}
@@ -184,7 +185,7 @@ void general_client_read_res_hdl(void *data)
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
-			handle = read_res->multiple_variable_per.handle;
+//			handle = read_res->multiple_variable_per.handle;
 			printf("[APP] GATT client read result, profile_id: %d, conn_handle: %d, "
 					"type: %d, status: %d, len:%d\r\n",
 					read_res->profile_id, read_res->conn_handle,
@@ -295,25 +296,25 @@ void general_client_notify_hdl(void *data)
 void general_client_indicate_hdl(void *data)
 {
 	uint16_t ret = 0;
-	rtk_bt_gattc_cfm_param_t cfm_param = {0};
+//	rtk_bt_gattc_cfm_param_t cfm_param = {0};
 	rtk_bt_gattc_cccd_value_ind_t *indicate_ind = (rtk_bt_gattc_cccd_value_ind_t *)data;
 
 	printf("[APP] GATTC indicate received, profile_id: %d, conn_handle: %d, handle: 0x%x\r\n",
 			indicate_ind->profile_id, indicate_ind->conn_handle, indicate_ind->value_handle);
 	gattc_dump(indicate_ind->len, indicate_ind->value, (uint8_t *)"indicate event");
 
-	cfm_param.profile_id = indicate_ind->profile_id;
-	cfm_param.conn_handle = indicate_ind->conn_handle;
+//	cfm_param.profile_id = indicate_ind->profile_id;
+//	cfm_param.conn_handle = indicate_ind->conn_handle;
 	trble_data read_result;
 	
 	read_result.length = indicate_ind->len;
 	read_result.data = malloc(read_result.length);
 	memcpy(read_result.data, indicate_ind->value, read_result.length);
 	
-	ret = rtk_bt_gattc_confirm(&cfm_param);
-	if (RTK_BT_OK != ret) {
-		printf("[APP] GATTC confirm for indication failed! err: 0x%x\r\n", ret);
-	}
+//	ret = rtk_bt_gattc_confirm(&cfm_param);
+//	if (RTK_BT_OK != ret) {
+//		printf("[APP] GATTC confirm for indication failed! err: 0x%x\r\n", ret);
+//	}
 	
 	read_result.length = indicate_ind->len;
 	read_result.data = malloc(read_result.length);
@@ -390,12 +391,16 @@ rtk_bt_evt_cb_ret_t general_client_app_callback(uint8_t event, void *data)
 
 uint16_t general_client_attach_conn(uint16_t conn_handle)
 {
-	return rtk_bt_gattc_attach_connect(GCS_CLIENT_PROFILE_ID, conn_handle);
+	(void)conn_handle;
+	return RTK_BT_OK;
+
 }
 
 uint16_t general_client_detach_conn(uint16_t conn_handle)
 {
-	return rtk_bt_gattc_detach_connect(GCS_CLIENT_PROFILE_ID, conn_handle);
+	(void)conn_handle;
+	return RTK_BT_OK;
+
 }
 
 uint16_t general_client_add(void)
@@ -405,7 +410,7 @@ uint16_t general_client_add(void)
 
 uint16_t general_client_delete(void)
 {
-	return rtk_bt_gattc_unregister_profile(GCS_CLIENT_PROFILE_ID);
+	return RTK_BT_OK;
 }
 
 #else

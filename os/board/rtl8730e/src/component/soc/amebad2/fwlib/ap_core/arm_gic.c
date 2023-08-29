@@ -23,9 +23,9 @@ static inline void atomic_add(int i, atomic_t *v)
 	int result;
 #if defined( __ICCARM__ )
 	do {
-		result = __LDREXW(&v->counter);
+		result = __LDREXW((volatile uint32_t *)&v->counter);
 		result += i;
-		tmp = __STREXW(result, &v->counter);
+		tmp = __STREXW(result, (volatile uint32_t *)&v->counter);
 	} while (tmp != 0);
 #else
 	__asm volatile("@ atomic_add\n"
@@ -46,9 +46,9 @@ static inline void atomic_sub(int i, atomic_t *v)
 	int result;
 #if defined( __ICCARM__ )
 	do {
-		result = __LDREXW(&v->counter);
+		result = __LDREXW((volatile uint32_t *)&v->counter);
 		result -= i;
-		tmp = __STREXW(result, &v->counter);
+		tmp = __STREXW(result, (volatile uint32_t *)&v->counter);
 	} while (tmp != 0);
 #else
 	__asm volatile("@ atomic_sub\n"

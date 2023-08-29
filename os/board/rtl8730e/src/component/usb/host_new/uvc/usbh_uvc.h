@@ -12,7 +12,6 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
-#include "usbh_core.h"
 #include "usbh_uvc_desc.h"
 #include "usbh_uvc_intf.h"
 
@@ -36,10 +35,6 @@
 #define USHB_MAX_NUM_UNCOMP_FRAME		10
 
 #define USHB_MAX_NUM_VS_DESC			3
-
-#define USB_EP_XFERTYPE_MASK			0x3U
-
-
 
 #define UVC_URB_NUMS		4
 #define UVC_URB_SIZE		512*8

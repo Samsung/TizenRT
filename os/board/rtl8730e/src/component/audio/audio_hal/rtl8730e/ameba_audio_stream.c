@@ -14,6 +14,7 @@
  */
 #include "ameba_audio_stream.h"
 
+#include "audio_hw_compat.h"
 #include <inttypes.h>
 
 #include "audio_hw_debug.h"
@@ -38,6 +39,8 @@ AudioIpInfo g_audio_ip_info[] = {
 	{ LINEOUTRANA,  TX_ANAR_IN_USE,     0},
 	{ HPOOUTLANA,   TX_HPO_ANAL_IN_USE, 0},
 	{ HPOOUTRANA,   TX_HPO_ANAR_IN_USE, 0},
+	{ SPORT2,       TX_SPORT2_IN_USE,   RX_SPORT2_IN_USE},
+	{ SPORT3,       TX_SPORT3_IN_USE,   RX_SPORT3_IN_USE},
 };
 
 static uint32_t g_audio_ip_cnt = (sizeof((g_audio_ip_info)) / sizeof((g_audio_ip_info[0])));
@@ -83,6 +86,7 @@ void ameba_audio_set_audio_ip_use_status(uint32_t direction, uint32_t audio_ip, 
 bool ameba_audio_is_audio_ip_in_use(uint32_t audio_ip)
 {
 	uint32_t i = 0;
+
 	if (audio_ip > g_audio_ip_cnt) {
 		return false;
 	}
@@ -107,13 +111,17 @@ void ameba_audio_periphclock_init(uint32_t sport_num)
 		RCC_PeriphClockCmd(APBPeriph_SPORT0, APBPeriph_SPORT0_CLOCK, ENABLE);
 	} else if (sport_num == 1 && !ameba_audio_is_audio_ip_in_use(SPORT1)) {
 		RCC_PeriphClockCmd(APBPeriph_SPORT1, APBPeriph_SPORT1_CLOCK, ENABLE);
+	} else if (sport_num == 2 && !ameba_audio_is_audio_ip_in_use(SPORT2)) {
+		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, ENABLE);
+	} else if (sport_num == 3 && !ameba_audio_is_audio_ip_in_use(SPORT3)) {
+		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
 	}
 
 	RCC_PeriphClockSource_SPORT(sport_num, CKSL_I2S_XTAL40M);
 
 	if (!ameba_audio_is_audio_ip_in_use(CODEC) && !ameba_audio_is_audio_ip_in_use(POWER)) {
 		RCC_PeriphClockCmd(APBPeriph_AC, APBPeriph_AC_CLOCK, ENABLE);
-		RCC_PeriphClockCmd(APBPeriph_AUDIO, NULL, ENABLE);
+		RCC_PeriphClockCmd(APBPeriph_AUDIO, (uint32_t)NULL, ENABLE);
 		RCC_PeriphClockSource_AUDIOCODEC(CKSL_AC_XTAL);
 	}
 
@@ -129,6 +137,10 @@ void ameba_audio_reset_audio_ip_status(Stream *stream)
 		ameba_audio_set_audio_ip_use_status(stream->direction, SPORT0, false);
 	} else if (stream->sport_dev_num == 1) {
 		ameba_audio_set_audio_ip_use_status(stream->direction, SPORT1, false);
+	} else if (stream->sport_dev_num == 2) {
+		ameba_audio_set_audio_ip_use_status(stream->direction, SPORT2, false);
+	} else if (stream->sport_dev_num == 3) {
+		ameba_audio_set_audio_ip_use_status(stream->direction, SPORT3, false);
 	}
 
 	ameba_audio_set_audio_ip_use_status(stream->direction, CODEC, false);
@@ -138,7 +150,7 @@ void ameba_audio_reset_audio_ip_status(Stream *stream)
 	//ameba_audio_set_audio_ip_use_status(stream->direction, POWER, false);
 	//ameba_audio_set_audio_ip_use_status(stream->direction, LINEOUTANA, false);
 	if (!ameba_audio_is_audio_ip_in_use(CODEC) && !ameba_audio_is_audio_ip_in_use(POWER)) {
-		RCC_PeriphClockCmd(APBPeriph_AUDIO, NULL, DISABLE);
+		RCC_PeriphClockCmd(APBPeriph_AUDIO, (uint32_t)NULL, DISABLE);
 		RCC_PeriphClockCmd(APBPeriph_AC, APBPeriph_AC_CLOCK, DISABLE);
 	}
 
@@ -150,5 +162,12 @@ void ameba_audio_reset_audio_ip_status(Stream *stream)
 		RCC_PeriphClockCmd(APBPeriph_SPORT1, APBPeriph_SPORT1_CLOCK, DISABLE);
 	}
 
+	if (stream->sport_dev_num == 2 && !ameba_audio_is_audio_ip_in_use(SPORT2)) {
+		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, DISABLE);
+	}
+
+	if (stream->sport_dev_num == 3 && !ameba_audio_is_audio_ip_in_use(SPORT3)) {
+		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, DISABLE);
+	}
 	HAL_AUDIO_INFO("audioIP status: %" PRIu32 "", g_audio_ip_status);
 }

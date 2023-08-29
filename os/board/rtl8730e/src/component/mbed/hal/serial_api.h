@@ -169,7 +169,6 @@ void serial_control_loopback(serial_t *obj, bool enable);
   * @retval : received character
   * @note this function is asynchronous API.
   */
-
 int  serial_getc(serial_t *obj);
 
 /**

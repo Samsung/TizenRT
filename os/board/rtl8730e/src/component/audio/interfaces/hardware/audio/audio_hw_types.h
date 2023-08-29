@@ -122,10 +122,12 @@ enum AudioHwPortPin {
 	AUDIO_HW_PIN_OUT_HEADSET = 0x2u,       /**< Wired headset pin for output */
 	AUDIO_HW_PIN_OUT_LINEOUT = 0x4u,       /**< Line-out pin */
 	AUDIO_HW_PIN_OUT_HDMI    = 0x8u,       /**< HDMI output pin */
+	AUDIO_HW_PIN_OUT_I2S     = 0x9u,       /**< I2S output pin */
 	AUDIO_HW_PIN_IN_MIC      = 0x8000001u, /**< Microphone input pin */
 	AUDIO_HW_PIN_IN_HS_MIC   = 0x8000002u, /**< Wired headset microphone pin for input */
 	AUDIO_HW_PIN_IN_LINEIN   = 0x8000004u, /**< Line-in pin */
 	AUDIO_HW_PIN_IN_DMIC_REF_AMIC = 0x8000005u, /**< dmic+ref-amic pin */
+	AUDIO_HW_PIN_IN_I2S           = 0x8000006u, /**< i2s in pin */
 };
 
 /**

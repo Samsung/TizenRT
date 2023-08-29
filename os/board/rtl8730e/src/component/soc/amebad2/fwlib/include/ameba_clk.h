@@ -312,6 +312,7 @@ u32 OSC131K_Calibration(u32 ppm_limit);
 void OSC4M_Init(void);
 void XTAL_PDCK(void);
 void XTAL_INIT(void);
+void XTAL_LPSDIG(u32 status);
 void CLK_SWITCH_XTAL(u32 State);
 
 #define CA7_GET_CLKSEL(x)		((x >> 2) & 0x3)
@@ -320,11 +321,13 @@ void CLK_SWITCH_XTAL(u32 State);
 #define CLKDIV(x)			(x)
 
 #define NPPLL_1000M		1000
+#define NPPLL_920M		920
 #define NPPLL_800M		800
 
 #define APPLL_800M			800
 #define APPLL_1000M			1000
 #define APPLL_1080M			1080
+#define APPLL_1200M			1200
 #define APPLL_1480M			1400	// for Acut Vol when not cal
 #define APPLL_NULL			0
 

@@ -64,6 +64,7 @@
 #define RTL8188E_SUPPORT 0
 #define RTL8188F_SUPPORT 0
 #define RTL8720E_SUPPORT 0
+#define RTL8720F_SUPPORT 0
 #define RTL8721D_SUPPORT 0
 #define RTL8723D_SUPPORT 0
 #define RTL8195B_SUPPORT 0
@@ -97,7 +98,15 @@
 #elif defined(CONFIG_PLATFORM_AMEBALITE)
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"
+#elif defined(CONFIG_PLATFORM_AMEBAZ6)	/* TODO_claire, just for compile costdown IC */
+#include "autoconf_amebaz6.h"
+
+#elif defined(CONFIG_PLATFORM_RTL8720F)
+/******************************* Amebalite2 (8720f) ******************************/
+#include "autoconf_8720f.h"
+
 #endif
+
 /****************************** Ameba Series End ******************************/
 #endif /* (CONFIG_PLATFORM_AMEBA_X == 1) */
 /****************** Configurations for each platform end **********************/
@@ -110,14 +119,14 @@
 #if WIFI_LOGO_CERTIFICATION
 #undef WLAN_MAX_ETHFRM_LEN
 #define WLAN_MAX_ETHFRM_LEN	4000
+#define CONFIG_IEEE80211K
+#define CONFIG_LAYER2_ROAMING
 #endif
 
 /* 80211 - K V R */
-//#define CONFIG_IEEE80211K
-//#define CONFIG_LAYER2_ROAMING
 #ifdef CONFIG_LAYER2_ROAMING
-//#define CONFIG_RTW_WNM
-//#define CONFIG_IEEE80211R
+#define CONFIG_RTW_WNM
+#define CONFIG_IEEE80211R
 #endif
 
 

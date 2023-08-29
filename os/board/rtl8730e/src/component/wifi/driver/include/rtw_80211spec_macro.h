@@ -197,6 +197,7 @@
 #define RSN_HEADER_LEN 4
 #define RSN_SELECTOR_LEN 4
 #define RSNXE_MIN_LEN 3
+#define RSNXE_MAX_LEN (16)
 
 #define MAXTID	16
 #define WIRELESS_EXT		22
@@ -274,7 +275,7 @@
 
 #define WLAN_EID_EXT_CAP_MAX_LEN 10
 
-#define MAX_WPA_IE_LEN (256)
+#define MAX_WPA_IE_LEN (257)
 #define MAX_WPS_IE_LEN (512)
 #define MAX_P2P_IE_LEN (256)
 #define MAX_WFD_IE_LEN (128)
@@ -311,7 +312,9 @@
 
 /* Maximum size of the ESSID and NICKN strings */
 #define RTW_ESSID_MAX_SIZE	32
-#define RTW_PASSPHRASE_MAX_SIZE 64
+#define RTW_PASSPHRASE_WPA2_SIZE 64
+#define RTW_PASSPHRASE_WPA3_SIZE 128
+#define RTW_PASSPHRASE_MAX_SIZE RTW_PASSPHRASE_WPA3_SIZE
 
 #define BIP_MAX_KEYID 5
 #define BIP_AAD_SIZE  20
@@ -492,6 +495,7 @@
 
 #define SetPriority(pbuf, tid)	\
 	do	{	\
+		*(unsigned short *)(void*)(pbuf) &= ~0x000f; \
 		*(unsigned short *)(void*)(pbuf) |= cpu_to_le16(tid & 0xf); \
 	} while(0)
 
@@ -537,6 +541,11 @@
 		(addr[2] == 0xff) && (addr[3] == 0xff) && \
 		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
 )
+
+#define RTW_RSN_CAPABILITY_RSVD		BIT(15)
+#define RTW_RSNX_CAPABILITY_RSVD		(BIT(6) | BIT(7))
+#define RTW_RSNX_CAPABILITY_PROTECTED_TWT	BIT(4)
+#define RTW_RSNX_FIELD_LEN_MASK		0xF
 
 #define RTW_ERP_INFO_NON_ERP_PRESENT BIT(0)
 #define RTW_ERP_INFO_USE_PROTECTION BIT(1)

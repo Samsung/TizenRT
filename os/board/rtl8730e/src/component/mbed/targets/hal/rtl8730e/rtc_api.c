@@ -189,7 +189,7 @@ void rtc_init(void)
 
 	RTC_Init(&RTC_InitStruct);
 
-	RTC_BypassShadowCmd(ENABLE);
+	//RTC_BypassShadowCmd(ENABLE);
 
 	/* 32760 need add need add 15 cycles (256Hz) every 4 min*/
 	//RTC_SmoothCalibConfig(RTC_CalibSign_Positive, 15,

@@ -420,7 +420,7 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 	}
 
 	if (Idx  > LOGICAL_MAP_SECTION_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_PG_Packet no enough space %x \n");
+		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_PG_Packet no enough space %x \n", Idx);
 		return _FAIL;
 	}
 
@@ -561,8 +561,9 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 					OTP_Read8(OTP_Addr++, &data);
 
 					if ((offset >= addr) && (offset < addr + len)) {
-						pbuf[offset++ -addr] = data;
+						pbuf[offset - addr] = data;
 					}
+					offset++;
 				}
 			} else {
 				OTP_Addr += plen;
@@ -693,7 +694,7 @@ next:
   * @param  none
   * @retval OTP logical address remain length
   */
-u32 OTP_RemainLength(void)
+u32 otp_logical_remain(void)
 {
 	u32 Idx = 0;
 	u32 OTPData;
@@ -721,71 +722,5 @@ u32 OTP_RemainLength(void)
 	return (LOGICAL_MAP_SECTION_LEN - Idx);
 }
 
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSERead8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 *Data, UNUSED_WARN_DIS u8 L25OutVoltage)
-{
-	return  OTP_Read8(Addr, Data);
-}
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSEWrite8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 Data, UNUSED_WARN_DIS u8 L25OutVoltage)
-{
-	return OTP_Write8(Addr, Data);
-}
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSE_PMAP_READ8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 *Data, UNUSED_WARN_DIS u8 L25OutVoltage)
-{
-	return OTP_Read8(Addr, Data);
-}
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSE_PMAP_WRITE8(UNUSED_WARN_DIS u32 CtrlSetting, u32 Addr, u8 Data, UNUSED_WARN_DIS u8 L25OutVoltage)
-{
-	return OTP_Write8(Addr, Data);
-}
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSE_LMAP_READ(u8 *pbuf)
-{
-	return OTP_LogicalMap_Read(pbuf, 0, OTP_LMAP_LEN);
-}
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSE_LMAP_WRITE(u32 addr, u32 cnts, u8 *data)
-{
-	if (((cnts % 4) != 0) && (cnts != 1)) {
-		DBG_8195A("Warning Logical write should 4 bytes alignment\n");
-		DBG_8195A("Writing....\n");
-	}
-	return OTP_LogicalMap_Write(addr, cnts, data);
-}
-
-
-/**
-  * @brief  define alias name to compatible with old API
-  */
-u32 EFUSE_RemainLength(void)
-{
-	return OTP_RemainLength();
-}
-
-u32 EFUSE_GetCRC(void)
-{
-
-	return OTPGetCRC();
-}
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

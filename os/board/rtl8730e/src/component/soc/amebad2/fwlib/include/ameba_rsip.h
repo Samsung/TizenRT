@@ -277,6 +277,20 @@ typedef struct {
 /** @defgroup RSIP_Exported_Constants RSIP Exported Constants
   * @{
   */
+#define OTF_BOOTLOADER_IDX		0
+#define OTF_LP_IDX		1
+#define OTF_HP_IDX		2
+#define OTF_AP_IDX		3
+
+
+#define OTF_IV_BOOTLOADER_IDX		0
+#define OTF_IV_IMG2_IDX				1
+
+#define MMU_LP_IDX		0
+#define MMU_HP_IDX		1
+#define MMU_BOOTLOADER_IDX		2
+#define MMU_AP_IDX		3
+
 
 /** @defgroup RSIP_Key_Req_Poll_Times
   * @{

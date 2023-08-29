@@ -21,8 +21,6 @@ extern "C" {
 #endif
 #include <rtw_autoconf.h>
 
-
-
 typedef enum pta_type {
 	PTA_AUTO                 = 0,
 	PTA_WIFI			= 1,

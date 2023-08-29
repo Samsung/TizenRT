@@ -219,7 +219,8 @@ struct gtimer_s {
   */
 struct i2s_s {
 	uint8_t i2s_idx;
-	uint8_t sampling_rate;
+	u32 sampling_rate;
+	u32 clock;
 	uint8_t channel_num;
 	uint8_t channel_length;
 	uint8_t fifo_num;

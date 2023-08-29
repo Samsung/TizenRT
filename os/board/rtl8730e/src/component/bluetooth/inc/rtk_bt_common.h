@@ -166,6 +166,7 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL,    /*!< LE mesh generic on off client model group */
 	RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL,    /*!< LE mesh generic on off server model group */
 	RTK_BT_LE_GP_MESH_DATATRANS_MODEL,          /*!< LE mesh datatrans model group */
+	RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL,          /*!< LE mesh remote provisioning client model group */
 	RTK_BT_LE_GP_MESH_LIGHT_LIGHTNESS_CLIENT_MODEL,          /*!< LE mesh light lightness client model group */
 	RTK_BT_LE_GP_MESH_LIGHT_CTL_CLIENT_MODEL,          /*!< LE mesh light ctl client model group */
 	RTK_BT_LE_GP_MESH_LIGHT_HSL_CLIENT_MODEL,          /*!< LE mesh light hsl client model group */
@@ -184,6 +185,38 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_LIGHT_XYL_SETUP_SERVER_MODEL,          /*!< LE mesh light xyl setup server model group */
 	RTK_BT_LE_GP_MESH_LIGHT_LC_SERVER_MODEL,          /*!< LE mesh light lc server model group */
 	RTK_BT_LE_GP_MESH_LIGHT_LC_SETUP_SERVER_MODEL,          /*!< LE mesh light lc setup server model group */
+	RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL,          /*!< LE mesh time client model group */
+	RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL,          /*!< LE mesh time server model group */
+	RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL,          /*!< LE mesh time setup server model group */
+	RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL,          /*!< LE mesh scheduler client model group */
+	RTK_BT_LE_GP_MESH_SCHEDULER_SERVER_MODEL,          /*!< LE mesh scheduler server model group */
+	RTK_BT_LE_GP_MESH_SCHEDULER_SETUP_SERVER_MODEL,          /*!< LE mesh scheduler setup server model group */
+	RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL,          /*!< LE mesh scene client model group */
+	RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL,          /*!< LE mesh scene server model group */
+	RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL,          /*!< LE mesh scene setup server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL,          /*!< LE mesh generic default transition time client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL,          /*!< LE mesh generic default transition time server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL,          /*!< LE mesh generic level client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL,          /*!< LE mesh generic level server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL,          /*!< LE mesh generic power on off client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL,          /*!< LE mesh generic power on off server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL,          /*!< LE mesh generic power on off setup server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL,          /*!< LE mesh generic power level client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL,          /*!< LE mesh generic power level server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL,          /*!< LE mesh generic power level setup server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL,          /*!< LE mesh generic battery client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL,          /*!< LE mesh generic battery server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL,          /*!< LE mesh generic location client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SERVER_MODEL,          /*!< LE mesh generic location server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL,          /*!< LE mesh generic location setup server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL,          /*!< LE mesh generic property client model group */
+	RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL,          /*!< LE mesh generic user property server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL,          /*!< LE mesh generic admin property server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL,          /*!< LE mesh generic manufacturer property server model group */
+	RTK_BT_LE_GP_MESH_GENERIC_CLIENT_PROPERTY_SERVER_MODEL,          /*!< LE mesh generic client property server model group */
+	RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL,          /*!< LE mesh sensor client model group */
+	RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL,          /*!< LE mesh sensor server model group */
+	RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL,          /*!< LE mesh sensor setup server model group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 
@@ -231,7 +264,6 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_GET_BOND_INFO,
 	RTK_BT_LE_GAP_ACT_DELETE_BOND_DEVICE,
 	RTK_BT_LE_GAP_ACT_CLEAR_BOND_LIST,
-	RTK_BT_LE_GAP_ACT_VENDOR_CMD_REQ,
 	RTK_BT_LE_GAP_ACT_SET_EXT_ADV_DATA,
 	RTK_BT_LE_GAP_ACT_SET_EXT_SCAN_RSP_DATA,
 	RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV,
@@ -257,14 +289,15 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_READ_REMOTE_TX_POWER,
 	RTK_BT_LE_GAP_ACT_TX_POWER_REPORT_SET,
 	RTK_BT_LE_GAP_ACT_GET_CONN_ID,
+	RTK_BT_LE_GAP_ACT_ADV_STATE,
 	RTK_BT_LE_GAP_ACT_MAX,
 } rtk_bt_le_gap_act_t;
 
 /**
  * @typedef   rtk_bt_le_gap_evt_t
  * @brief     Bluetooth LE GAP event indication
- * Default event callback msg is send from stack(api task) to event task, and excuted in event task. 
- * But if event is direct calling, it will be directly excuted in stack(api task). This is designed  
+ * Default event callback msg is send from stack(api task) to event task, and excuted in event task.
+ * But if event is direct calling, it will be directly excuted in stack(api task). This is designed
  * for those event that will return a result and affect the stack's behaviour.
  * @note BT sync api cannot be excuted in callback case when this callback event case is direct calling.
  */
@@ -292,7 +325,7 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_PA_IND,                 		/*!< Indicate LE periodic adv state, with msg @ref rtk_bt_le_pa_ind_t*/
 	RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND,           	/*!< Indicate LE periodic adv synchronization state, with msg @ref rtk_bt_le_pa_sync_ind_t*/
 	RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND,      		/*!< Indicate LE periodic adv synchronization adv report, with msg @ref rtk_bt_le_pa_adv_report_ind_t*/
-	RTK_BT_LE_GAP_PAST_RECEIVED_INFO_IND,      		/*!< Indicate LE periodic adv sync transfer received info, with msg @ref rtk_bt_le_past_recv_ind_t*/
+	RTK_BT_LE_GAP_EVT_PAST_RECEIVED_INFO_IND,  		/*!< Indicate LE periodic adv sync transfer received info, with msg @ref rtk_bt_le_past_recv_ind_t*/
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND,       /*!< Indicate LE resolving list modified, with msg @ref rtk_bt_le_modify_resolv_list_ind_t */
 	RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND,	        /*!< Indicate LE Tx power report, with msg @ref rtk_bt_le_txpower_ind_t */
 	RTK_BT_LE_GAP_EVT_MAX,
@@ -333,16 +366,12 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_GATTC_ACT_REGISTER_PROFILE = 1,
-	RTK_BT_GATTC_ACT_UNREGISTER_PROFILE,
-	RTK_BT_GATTC_ACT_ATTACH_CONN,
-	RTK_BT_GATTC_ACT_DETACH_CONN,
 	RTK_BT_GATTC_ACT_EXCHANGE_MTU,
 	RTK_BT_GATTC_ACT_DISCOVER,
 	RTK_BT_GATTC_ACT_READ,
 	RTK_BT_GATTC_ACT_WRITE,
 	RTK_BT_GATTC_ACT_CCCD_ENABLE,
 	RTK_BT_GATTC_ACT_CCCD_DISABLE,
-	RTK_BT_GATTC_ACT_CONFIRM,
 	RTK_BT_GATTC_ACT_FIND,
 	RTK_BT_GATTC_ACT_MAX,
 } rtk_bt_gattc_act_t;
@@ -435,8 +464,10 @@ typedef enum {
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_INFO,
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_PAC_RECORD,
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_LC3_TABLE_MASK,
+	RTK_BT_LE_AUDIO_ACT_PACS_GET_BIS_ARRAY_BY_SYNC_INFO,
 	RTK_BT_LE_AUDIO_ACT_SYNC_ALLOCATE,
 	RTK_BT_LE_AUDIO_ACT_SYNC_RELEASE,
+	RTK_BT_LE_AUDIO_ACT_SYNC_FIND,
 	RTK_BT_LE_AUDIO_ACT_PA_SYNC_ESTABLISH,
 	RTK_BT_LE_AUDIO_ACT_PA_SYNC_TERMINATE,
 	RTK_BT_LE_AUDIO_ACT_SYNC_GET_SYNC_INFO,
@@ -456,6 +487,11 @@ typedef enum {
 	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_SETUP_DATA_PATH,
 	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_REMOVE_DATA_PATH,
 	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_RECONFIG,
+	RTK_BT_LE_AUDIO_ACT_BASS_CLIENT_GET_BRS_CHAR_DATA,
+	RTK_BT_LE_AUDIO_ACT_BASS_CLIENT_CP_ADD_SOURCE_BY_SYNC_INFO,
+	RTK_BT_LE_AUDIO_ACT_BASS_CLIENT_CP_MODIFY_SOURCE_BY_SYNC_INFO,
+	RTK_BT_LE_AUDIO_ACT_BASS_CLIENT_WRITE_CP_OP,
+	RTK_BT_LE_AUDIO_ACT_BASS_CLIENT_PAST,
 	RTK_BT_LE_AUDIO_ACT_GROUP_ALLOCATE,
 	RTK_BT_LE_AUDIO_ACT_GROUP_RELEASE,
 	RTK_BT_LE_AUDIO_ACT_GROUP_ADD_DEVICE,
@@ -484,22 +520,46 @@ typedef enum {
 	RTK_BT_LE_AUDIO_ACT_UNICAST_UPDATE,
 	RTK_BT_LE_AUDIO_ACT_CSIS_GEN_RSI,
 	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIRK,
+	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIZE,
 	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CHECK_ADV_RSI,
 	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CFG_DISCOVER,
 	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_GROUP,
 	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_DEVICE,
 	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_WRITE_LOCK,
-	RTK_BT_LE_AUDIO_ACT_MCS_CLIENT_SEND_MCP_OP,
-	RTK_BT_LE_AUDIO_ACT_MCS_CLIENT_READ_CHAR_VALUE,
-	RTK_BT_LE_AUDIO_ACT_MCS_CLIENT_CFG_CCCD,
-	RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_PLAYER_INFO_SET,
-	RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_TRACK_INFO_SET,
-	RTK_BT_LE_AUDIO_ACT_MCS_MEDIA_STATE_UPDATE,
-	RTK_BT_LE_AUDIO_ACT_MCS_SET_MCP_SUP_OPCODE,	
-	RTK_BT_LE_AUDIO_ACT_VCS_PARAM_SET,
-	RTK_BT_LE_AUDIO_ACT_VCS_PARAM_GET,
+	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA,
+	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_READ_CFM,
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_WRITE_MEDIA_CP,
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_READ_CHAR_VALUE,
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_CFG_CCCD,
+	RTK_BT_LE_AUDIO_ACT_VCS_SET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_VCS_GET_PARAM,
 	RTK_BT_LE_AUDIO_ACT_VCS_WRITE_CP,
-	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE,	
+	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE,
+	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_MUTE,
+	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_VOLUME,
+	RTK_BT_LE_AUDIO_ACT_MICS_CHANGE_MUTE,
+	RTK_BT_LE_AUDIO_ACT_MICS_SET_MUTE_VALUE,
+	RTK_BT_LE_AUDIO_ACT_MICS_GET_MUTE_VALUE,
+	RTK_BT_LE_AUDIO_ACT_MICS_SET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_MICS_GET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_VOCS_SET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_VOCS_GET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_VOCS_CFG_CCCD,
+	RTK_BT_LE_AUDIO_ACT_VOCS_READ_CHAR_VALUE,
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP,
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP_BY_GROUP,
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_AUDIO_LOCATION,
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_OUTPUT_DES,
+	RTK_BT_LE_AUDIO_ACT_VOCS_GET_SRV_DATA,
+	RTK_BT_LE_AUDIO_ACT_AICS_SET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_AICS_GET_PARAM,
+	RTK_BT_LE_AUDIO_ACT_AICS_CFG_CCCD,
+	RTK_BT_LE_AUDIO_ACT_AICS_READ_CHAR_VALUE,
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP,
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP_BY_GROUP,
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_INPUT_DES,
+	RTK_BT_LE_AUDIO_ACT_AICS_GET_SRV_DATA,
 	RTK_BT_LE_AUDIO_ACT_MAX,
 } rtk_bt_le_audio_act_t;
 
@@ -508,8 +568,9 @@ typedef enum {
  * @brief     Bluetooth LE audio event indication
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_ALL_DONE_IND = 1, 
-	RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND,					
+	RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND = 1,
+	RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND,			/* Direct calling, BT sync api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND,		/* Direct calling, BT sync api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND,
@@ -518,29 +579,58 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,       /* Direct calling, BT sync api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND,       /* Direct calling, BT sync api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND,      /* Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BASS_CP_IND,
+	RTK_BT_LE_AUDIO_EVT_BASS_BRS_MODIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_BASS_BA_ADD_SOURCE_IND,	
+	RTK_BT_LE_AUDIO_EVT_BASS_CLIENT_SYNC_INFO_REQ_IND,
+	RTK_BT_LE_AUDIO_EVT_BASS_CLIENT_BRS_DATA_IND, //0x10
 	RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_CODEC_CFG_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CP_QOS_CFG_IND,
+	RTK_BT_LE_AUDIO_EVT_ASCS_CP_QOS_CFG_IND, 
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_ENABLE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_DISABLE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_UPDATE_METADATA_IND,
+	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,			/* Direct calling, BT sync api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND, 
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SEARCH_DONE_IND, 
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SET_MEM_FOUND_IND,             
-	RTK_BT_LE_AUDIO_EVT_MCS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_MCS_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_MCS_CLIENT_NOTIFY_RESULT_IND,
 	RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_PA_BIG_INFO_IND,
 	RTK_BT_LE_AUDIO_EVT_PA_ADV_REPORT_IND,
 	RTK_BT_LE_AUDIO_EVT_BASE_DATA_MAPPING_MODIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND,
+	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND,	 //0x20
+	RTK_BT_LE_AUDIO_EVT_CAP_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_READ_RESULT_IND, 
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SEARCH_DONE_IND, 
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SET_MEM_FOUND_IND,  
+	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_WRITE_MEDIA_CP_IND,
+	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_READ_RESULT_IND,
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_NOTIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_VCS_VOLUME_CP_IND,
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_STATE_IND,
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_FLAG_IND,
+	RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND, //0x30
+	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_NOTIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OFFSET_STATE_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_AUDIO_LOCATION_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OUTPUT_DES_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_NOTIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_CP_RESULT_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_CP_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_WRITE_INPUT_DES_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND,
 	RTK_BT_LE_AUDIO_EVT_MAX,
 } rtk_bt_le_audio_evt_t;
 
@@ -772,6 +862,8 @@ typedef enum {
 	RTK_BT_HFP_ACT_CALL_TERMINATE,
 	RTK_BT_HFP_ACT_SEND_SCO_DATA,
 	RTK_BT_HFP_ACT_REPORT_BATT_LEVEL,
+	RTK_BT_HFP_ACT_REPORT_SPEAKER_GAIN,
+	RTK_BT_HFP_ACT_REPORT_MICROPHONE_GAIN,
 	RTK_BT_HFP_ACT_MAX,
 } rtk_bt_hfp_act_t;
 
@@ -781,12 +873,15 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_HFP_EVT_SDP_ATTR_INFO = 1,                  /*!< HFP AG get hf sdp data info */
+	RTK_BT_HFP_EVT_SUPPORTED_FEATURES_IND,             /*!< HFP AG supported features indication */
 	RTK_BT_HFP_EVT_CONN_IND,                           /*!< HFP connection indication */
 	RTK_BT_HFP_EVT_CONN_CMPL,                          /*!< HFP connection completed */
 	RTK_BT_HFP_EVT_CALL_STATUS,                        /*!< HFP CALL status indication */
 	RTK_BT_HFP_EVT_CALLER_ID_IND,                      /*!< HFP CALLER number indication */
 	RTK_BT_HFP_EVT_DISCONN_CMPL,                       /*!< HFP disconnection completed */
 	RTK_BT_HFP_EVT_HF_BATTERY_IND,                     /*!< HFP HF battery indicator req */
+	RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND,         /*!< HFP HF speaker volumer changed indicate */
+	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,             /*!< HFP HF mic volumer changed indicate */
 	RTK_BT_HFP_EVT_SCO_CONN_IND,                       /*!< HFP sco connection indication */
 	RTK_BT_HFP_EVT_SCO_CONN_CMPL,                      /*!< HFP sco connection completed */
 	RTK_BT_HFP_EVT_SCO_DATA_IND,                       /*!< HFP sco data indication. Direct calling, BT sync api shall not be called in this event case. */
@@ -826,6 +921,7 @@ typedef enum {
 	RTK_BT_GAP_ACT_ECFC_DISCONN_REQ,
 	RTK_BT_GAP_ACT_ECFC_SEND_DATA,
 	RTK_BT_GAP_ACT_ECFC_RECONF_REQ,
+	RTK_BT_GAP_ACT_VENDOR_CMD_REQ,
 	RTK_BT_GAP_ACT_MAX,
 } rtk_bt_gap_act_t;
 
@@ -949,7 +1045,7 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 
 /**
- * @fn        void rtk_bt_addr_to_str(uint8_t *paddr, char *str, uint32_t len)
+ * @fn        rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len)
  * @brief     Convert bt address hexnum to normal format string.
  * @param[in] type: Device address type
  * @param[in] paddr: Device address
