@@ -205,14 +205,14 @@ int serial_tx_empty(serial_t *obj);
 void serial_clear(serial_t *obj);
 
 /**
-  * @brief  enable UART break contol function.
+  * @brief  enable UART break control function.
   * @param  obj: uart object define in application software.
   * @retval none
   */
 void serial_break_set(serial_t *obj);
 
 /**
-  * @brief  disable UART break contol function.
+  * @brief  disable UART break control function.
   * @param  obj: uart object define in application software.
   * @retval none
   */

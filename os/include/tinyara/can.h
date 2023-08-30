@@ -217,7 +217,7 @@ struct can_txfifo_s {
 struct can_rtrwait_s {
 	sem_t cr_sem;				/* Wait for RTR response */
 	uint16_t cr_id;				/* The ID that is waited for */
-	FAR struct can_msg_s *cr_msg;	/* This is where the RTR reponse goes */
+	FAR struct can_msg_s *cr_msg;	/* This is where the RTR response goes */
 };
 
 /* This structure defines all of the operations providd by the architecture specific

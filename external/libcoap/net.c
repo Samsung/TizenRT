@@ -1688,7 +1688,7 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 						coap_get_tcp_header_type_from_initbyte(((unsigned char *)tcp_response->transport_hdr)[0] >> 4));
 				if (code >= 64 && !coap_is_mcast(&node->local)) {
 					if (coap_send(context, &node->remote, tcp_response) == COAP_INVALID_TID) {
-						debug("handle_request : cannot send TCP reponse\n");
+						debug("handle_request : cannot send TCP response\n");
 					}
 				}
 				coap_delete_pdu(tcp_response);
@@ -1719,7 +1719,7 @@ void handle_request(coap_context_t *context, coap_queue_t *node)
 static inline void handle_response(coap_context_t *context, coap_queue_t *sent, coap_queue_t *rcvd)
 {
 
-	/* Call application-specific reponse handler when available.  If
+	/* Call application-specific response handler when available.  If
 	 * not, we must acknowledge confirmable messages. */
 	if (context->response_handler) {
 		context->response_handler(context, &rcvd->remote, sent ? sent->pdu : NULL, rcvd->pdu, rcvd->id);
@@ -1893,10 +1893,10 @@ void coap_dispatch(coap_context_t *context)
 					response = coap_new_error_response(rcvd->pdu, COAP_RESPONSE_CODE(402), opt_filter);
 
 					if (!response) {
-						warn("coap_dispatch: cannot create error reponse\n");
+						warn("coap_dispatch: cannot create error response\n");
 					} else {
 						if (coap_send(context, &rcvd->remote, response) == COAP_INVALID_TID) {
-							warn("coap_dispatch: error sending reponse\n");
+							warn("coap_dispatch: error sending response\n");
 						}
 						coap_delete_pdu(response);
 					}
