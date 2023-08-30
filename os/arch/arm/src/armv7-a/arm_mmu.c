@@ -46,6 +46,39 @@
 #include "cp15_cacheops.h"
 #include "mmu.h"
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include <tinyara/mm/mm.h>
+#endif
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+static int l2_idx = 0;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+static void mmu_set_flags(uint32_t *val, bool ro, bool exec, uint8_t isL1)
+{
+	if (isL1) {
+		if (ro && exec) {
+			*val |= MMU_APP_L1_ROX;
+		} else if (ro) {
+			*val |= MMU_APP_L1_RO;
+		} else {
+			*val |= MMU_APP_L1_RW;
+		}
+	} else {
+		if (ro && exec) {
+			*val |= MMU_APP_L2_ROX;
+		} else if (ro) {
+			*val |= MMU_APP_L2_RO;
+		} else {
+			*val |= MMU_APP_L2_RW;
+		}
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -254,3 +287,252 @@ void mmu_invalidate_region(uint32_t vstart, size_t size)
     }
 }
 #endif
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+/****************************************************************************
+ * Name: mmu_get_os_l1_pgtbl
+ *
+ * Description:
+ *   Returns the virtual address of the kernel L1 page table.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ * Page table address
+ ****************************************************************************/
+uint32_t *mmu_get_os_l1_pgtbl(void)
+{
+	return (uint32_t *)PGTABLE_BASE_VADDR;
+}
+
+/****************************************************************************
+ * Name: mmu_allocate_app_l1_pgtbl
+ *
+ * Description:
+ *   Allocate space for L1 page table of application, in accordance with
+ *   the requirements of the arch specific mmu.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ * L1 Page table address
+ ****************************************************************************/
+uint32_t *mmu_allocate_app_l1_pgtbl(int app_id)
+{
+	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + (app_id * L1_PGTBL_SIZE));
+	l2_idx = 0;
+	return addr;
+}
+
+/****************************************************************************
+ * Name: mmu_allocate_app_l2_pgtbl
+ *
+ * Description:
+ *   Allocate space for L2 page table of application, in accordance with
+ *   the requirements of the arch specific mmu.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ * L2 Page table address
+ ****************************************************************************/
+uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
+{
+	/* Page table structure as follows:
+	 *
+	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... 4 | App1 L2 1 ... 4 | App2 L2 1 ... 4 |
+	 *
+	 * In the below calculation, we take (CONFIG_NUM_APPS + 1) because the first
+	 * page table is for kernel. Also, we reserve 4 L2 page tables for each app.
+	 */
+	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) + 
+			(app_id * 4 * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
+	return addr;
+}
+
+/****************************************************************************
+ * Name: mmu_update_app_l1_pgtbl_ospgtbl
+ *
+ * Description:
+ * Loop through the L1 page table.
+ * Copy kernel L1 page table to app page table.
+ * If the entry is pointing to a L2 page table
+ * Allocate L2 page table for app.
+ * Copy entries from kernel to app L2 table.
+ * Update the L2 page table address in L1 table.
+ * 
+ * Input Parameters:
+ * app_pgtbl: Pointer to L1 page table of app
+ *
+ ****************************************************************************/
+void mmu_update_app_l1_pgtbl_ospgtbl(uint32_t *app_l1_pgtbl)
+{
+	uint32_t *os_l1_pgtbl = (uint32_t *)PGTABLE_BASE_VADDR;
+	memcpy((void *)app_l1_pgtbl, (void *)os_l1_pgtbl, L1_PGTBL_SIZE);
+}
+
+/****************************************************************************
+ * Name: mmu_clear_app_pgtbl
+ *
+ * Description:
+ * Clear the app page tables. If required reset the entries in L1 page table.
+ *
+ * Input Parameters:
+ * app_id : Application id for clearing page tables.
+ *
+ * Returned Value:
+ *
+ ****************************************************************************/
+void mmu_clear_app_pgtbl(uint32_t app_id)
+{
+	uint32_t *addr;
+
+	// Clear L2 page tables
+	addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) +
+                       (app_id * 4 * L2_PGTBL_SIZE));
+	memset(addr, 0, 4 * L2_PGTBL_SIZE);
+	
+	if (app_id == 0) {
+		// Reset the L2 page entries in L1 page table
+		addr = (uint32_t *)PGTABLE_BASE_VADDR;
+		for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
+			if((addr[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
+				addr[i] &= PMD_SECT_PADDR_MASK;
+				addr[i] |= MMU_MEMFLAGS;
+			}
+		}
+	} else {
+		// Clear L1 page table
+		addr = (uint32_t *)(PGTABLE_BASE_VADDR + (app_id * L1_PGTBL_SIZE));
+		memset(addr, 0, 4 * L1_PGTBL_SIZE);
+	}
+}
+
+/****************************************************************************
+ * Name: mmu_map_app_region
+ *
+ * Description:
+ * The api will create page tables for the given section of app and update them with the
+ * access permissions as mentioned in the input parameters. While updating the page table,
+ * following is done:
+ * - Check if the given region can exactly fit into a 1MB section.
+ * - In this case, update the corresponding section in the l1 page table.
+ * - Otherwise, create an L2 page table and update it with default entries.
+ * - Later, update the access permissions in the L2 page table for the given memory region.
+ * - Update the L2 page table address in L1 page table. 
+ *
+ * Input Parameters:
+ * app_id :	Id of the app being updated.
+ * l1_pgtbl:	Pointer to the L1 page table allocated for the app.
+ * start:	Start address of memory region to be mapped.
+ * size:	Size of the memory region to be mapped.
+ * ro:		Whether this region is read-only?
+ * exec:	Whether this region has execute permission?
+ *
+ * Returned Value:
+ ****************************************************************************/
+void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t size, bool ro, bool exec)
+{
+	uint32_t idx;
+	uint32_t val;
+	uint32_t end = start + size;
+
+	// Run a loop until the entire region is mapped.
+	while (start < end) {
+		// Check if this address can be mapped to a section.
+		if (!(start & SECTION_MASK) && !(size & SECTION_MASK)) {
+			// Yes. Update the section entry in the the L1 page table.
+			idx = start >> 20;
+			val = start & PMD_PTE_PADDR_MASK;
+			mmu_set_flags(&val, ro, exec, true);
+			l1_pgtbl[idx] = val;
+
+			// Advance the memory region address.
+			start += SECTION_SIZE;
+		} else {	// Check if this address can be mapped to a small page.
+
+			// Check if L2 page table is not created.
+			idx = (start & 0xfff00000) >> 20;
+			uint32_t *l2_pgtbl = (uint32_t *)(l1_pgtbl[idx] & PMD_PTE_PADDR_MASK);
+			
+			if ((l1_pgtbl[idx] & PMD_TYPE_MASK) != PMD_TYPE_PTE) {
+				// Yes. Allocate L2 page table for app.
+				l2_pgtbl = mmu_allocate_app_l2_pgtbl(app_id, l2_idx++);
+
+				// Fill the newly allocated l2 page table with default kernel page entries
+				uint32_t l2_start = start & PMD_SECT_PADDR_MASK;
+                                for (int i = 0; i < L2_PGTBL_NENTRIES; i++) {
+                                        l2_pgtbl[i] = l2_start | MMU_L2_MEMFLAGS;
+                                        l2_start += SMALL_PAGE_SIZE;
+                                }
+
+				// Update L2 page table address in L1 page table.
+				val = (uint32_t)l2_pgtbl & PMD_PTE_PADDR_MASK;
+				val |= MMU_L1_PGTABFLAGS;
+				l1_pgtbl[idx] = val;
+			}
+
+			// Update the L2 page table entry.
+  			idx = (start & 0x000ff000) >> 12;
+			val = start & PTE_SMALL_PADDR_MASK;
+			mmu_set_flags(&val, ro, exec, false);
+			l2_pgtbl[idx] = val;
+
+			// Advance the memory region address.
+			start += SMALL_PAGE_SIZE;
+		}
+	}
+	cp15_invalidate_tlbs();
+}
+
+/****************************************************************************
+ * Name: mmu_map_app_region
+ *
+ * Description:
+ * Print the L1 and L2 page table entries corresponding to the application.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ ****************************************************************************/
+void mmu_dump_pgtbl(void)
+{
+	struct tcb_s *rtcb = sched_self();
+	if (rtcb->app_id < 1) {
+		return;
+	}
+
+	uint32_t *l1tbl = mmu_l1_pgtable();
+
+	lldbg("L1 page table base addr = 0x%08x\n", l1tbl);
+
+	lldbg("=========================================\n");
+	lldbg("ENTRY      TYPE    OUT             ACCESS\n");
+	lldbg("ADDR               ADDR                  \n");
+	lldbg("=========================================\n");
+	for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
+		if ((l1tbl[i] & PMD_SECT_AP1) && 	// Only print user areas.
+				(l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT) {
+			lldbg("0x%08x SECT    0x%08x      %s-%s\n", 
+					&l1tbl[i], 
+					l1tbl[i] & PMD_SECT_PADDR_MASK, 
+					(l1tbl[i] & PMD_SECT_AP2) ? "RO" : "RW", 
+					(l1tbl[i] & PMD_SECT_XN) ? "XN" : "X");
+		} else if((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
+			lldbg("0x%08x L1PTE   0x%08x\n", &l1tbl[i], l1tbl[i] & PMD_PTE_PADDR_MASK); 
+			uint32_t *l2tbl = (uint32_t *)(l1tbl[i] & PMD_PTE_PADDR_MASK);
+			for (int j = 0; j < L2_PGTBL_NENTRIES; j++) {
+				if ((l2tbl[j] & PTE_AP1) && 	// Only print user areas.
+						((l2tbl[j] & PTE_TYPE_MASK) != PTE_TYPE_FAULT)) {
+					lldbg("0x%08x PAGE    0x%08x      %s-%s\n", 
+						&l2tbl[j], 
+						l2tbl[j] & PTE_SMALL_PADDR_MASK, 
+						(l2tbl[j] & PTE_AP2) ? "RO" : "RW",
+						(l2tbl[j] & PTE_SMALL_XN) ? "XN" : "X");
+				}
+			}
+		}
+	}
+	lldbg("=========================================\n");
+}
+#endif // CONFIG_APP_BINARY_SEPARATION

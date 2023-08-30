@@ -54,6 +54,9 @@
 #  include <tinyara/page.h>
 #  include "arm.h"
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include "mmu.h"
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -175,6 +178,9 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 
   _alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n",
         regs[REG_PC], dfar, dfsr);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+  mmu_dump_pgtbl();
+#endif
   PANIC();
   return regs; /* To keep the compiler happy */
 }

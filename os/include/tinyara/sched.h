@@ -644,6 +644,11 @@ struct tcb_s {
 	uint32_t uheap;			/* User heap object pointer */
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t uspace;		/* User space object for app binary */
+	uint32_t app_id;			/* Indicates app id of the task */
+
+#ifdef CONFIG_ARCH_USE_MMU
+	uint32_t *pgtbl;			/* Pointer to L1 page table of app */
+#endif
 
 #ifdef CONFIG_ARM_MPU						/* MPU register values for loadable apps only */
 	uint32_t mpu_regs[MPU_REG_NUMBER * NUM_APP_REGIONS];	/* MPU for apps is configured during loading and disabled in task_terminate */
@@ -654,9 +659,6 @@ struct tcb_s {
 	uint32_t stack_mpu_regs[MPU_REG_NUMBER];		/* MPU for stack is configured during stack creation and disabled at stack release */
 #endif
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	uint32_t app_id;			/* Indicates app id of the task and used to index into umm_heap_table */
-#endif
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 	volatile TZ_ModuleId_t tz_context;

@@ -151,6 +151,9 @@ void binfmt_freeargv(FAR struct binary_s *bin);
 #define binfmt_freeargv(bin)
 #endif
 
+#ifdef CONFIG_ARCH_USE_MMU
+void binfmt_setup_app_pgtable(struct binary_s *binp);
+#endif
 
 #ifdef CONFIG_ARM_MPU
 static inline void binfmt_set_mpu(struct binary_s *binp)

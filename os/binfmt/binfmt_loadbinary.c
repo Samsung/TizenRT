@@ -179,9 +179,20 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	}
 #endif
 
+	/* Print Binary section address & size details */
+
+	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_TEXT], bin->sizes[BIN_TEXT]);
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_RO], bin->sizes[BIN_RO]);
+#endif
+	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_DATA], bin->sizes[BIN_DATA]);
+	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_BSS], bin->sizes[BIN_BSS]);
+
 	elf_save_bin_section_addr(bin);
-#ifdef CONFIG_ARM_MPU
+#if defined(CONFIG_ARM_MPU)
 	binfmt_set_mpu(bin);
+#elif defined(CONFIG_ARCH_USE_MMU)
+	binfmt_setup_app_pgtable(bin);
 #endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
@@ -210,15 +221,6 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		elf_delete_bin_section_addr(bin->binary_idx);
 		goto errout_with_unload;
 	}
-
-	/* Print Binary section address & size details */
-
-	binfo("[%s] text    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_TEXT], bin->sizes[BIN_TEXT]);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	binfo("[%s] rodata  start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_RO], bin->sizes[BIN_RO]);
-#endif
-	binfo("[%s] data    start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_DATA], bin->sizes[BIN_DATA]);
-	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_BSS], bin->sizes[BIN_BSS]);
 
 	return pid;
 

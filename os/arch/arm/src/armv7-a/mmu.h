@@ -325,6 +325,7 @@
 #define PMD_SECT_AP2         (1 << 15)    /* Bit 15: AP[2]:  Access permission bit 2 */
 #define PMD_SECT_S           (1 << 16)    /* Bit 16: Shareable bit */
 #define PMD_SECT_NG          (1 << 17)    /* Bit 17: Not global bit. */
+#define PMD_SECT_NS          (1 << 19)    /* Bit 19: Non-secure bit. */
 #define PMD_SECT_PADDR_MASK  (0xfff00000) /* Bits 20-31: Section base address, PA[31:20] */
 
 /* Super Section (differences only) */
@@ -457,6 +458,7 @@
 
 #define PTE_SMALL_FLAG_MASK  (0x0000003f) /* Bits 0-11: MMU flags (mostly) */
 #define PTE_SMALL_PADDR_MASK (0xfffff000) /* Bits 12-31: Small page base address, PA[31:12] */
+#define PTE_SMALL_XN		(1 << 0)	/* Bit 0 indicates execute never */
 
 /* Level 2 Translation Table Access Permissions:
  *
@@ -598,12 +600,14 @@
 #define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW1 | PMD_CACHEABLE | \
                               PMD_SECT_S | PMD_SECT_DOM(0))
 #else
-//PORTNOTE
-//TODO: Temporarily changed PMD_SECT_AP_RW1 to PMD_SECT_AP_RW01 below
-//to provide access permission to loadable apps. This needs to be reverted
-//when we implement separate memory protection logic for loadable apps.
-#define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW01 | PMD_CACHEABLE | \
+#define MMU_MEMFLAGS         (PMD_TYPE_SECT | PMD_SECT_AP_RW1 | PMD_CACHEABLE | \
                               PMD_SECT_DOM(0))
+#endif
+
+#ifdef CONFIG_SMP
+#define MMU_L2_MEMFLAGS         (PTE_TYPE_SMALL | PTE_AP_RW1 | PMD_CACHEABLE | PTE_S)
+#else
+#define MMU_L2_MEMFLAGS         (PTE_TYPE_SMALL | PTE_AP_RW1 | PMD_CACHEABLE)
 #endif
 
 #define MMU_IOFLAGS          (PMD_TYPE_SECT | PMD_SECT_AP_RW1 | PMD_DEVICE | \
@@ -623,7 +627,7 @@
 #  define MMU_L2_UTEXTFLAGS   (PTE_TYPE_SMALL | PTE_WRITE_BACK | PTE_AP_RW12_R0)
 #endif
 
-#define MMU_L1_DATAFLAGS      (PMD_TYPE_PTE | PMD_PTE_PXN | PMD_PTE_DOM(0))
+#define MMU_L1_DATAFLAGS      (PMD_TYPE_PTE | PMD_PTE_DOM(0) | PMD_PTE_NS)
 #define MMU_L2_UDATAFLAGS     (PTE_TYPE_SMALL | PTE_WRITE_BACK | PTE_AP_RW01)
 #define MMU_L2_KDATAFLAGS     (PTE_TYPE_SMALL | PTE_WRITE_BACK | PTE_AP_RW1)
 #define MMU_L2_UALLOCFLAGS    (PTE_TYPE_SMALL | PTE_WRITE_BACK | PTE_AP_RW01)
@@ -632,8 +636,7 @@
 #define MMU_L2_IOFLAGS        (PTE_TYPE_SMALL | PTE_DEVICE | PTE_AP_RW1)
 #define MMU_L2_STRONGLY_ORDER (PTE_TYPE_SMALL | PTE_STRONGLY_ORDER | PTE_AP_RW1)
 
-#define MMU_L1_PGTABFLAGS     (PMD_TYPE_PTE | PMD_PTE_PXN | PTE_WRITE_THROUGH | \
-                               PMD_PTE_DOM(0))
+#define MMU_L1_PGTABFLAGS     (PMD_TYPE_PTE | PMD_PTE_NS | PMD_PTE_DOM(0))
 #define MMU_L2_PGTABFLAGS     (PTE_TYPE_SMALL | PTE_WRITE_THROUGH | PTE_AP_RW1)
 
 #define MMU_L1_VECTORFLAGS    (PMD_TYPE_PTE | PMD_PTE_PXN | PMD_PTE_DOM(0))
@@ -641,11 +644,34 @@
 #define MMU_L2_VECTROFLAGS    (PTE_TYPE_SMALL | PTE_WRITE_THROUGH | PTE_AP_R1)
 #define MMU_L2_VECTORFLAGS    MMU_L2_VECTRWFLAGS
 
+#define MMU_APP_L1_RO		(PMD_TYPE_SECT | PMD_SECT_AP_R01 | PMD_CACHEABLE | \
+                              		PMD_SECT_DOM(0) | PMD_SECT_XN | PMD_SECT_NS)
+#define MMU_APP_L1_ROX		(PMD_TYPE_SECT | PMD_SECT_AP_R01 | PMD_CACHEABLE | \
+                              		PMD_SECT_DOM(0) | PMD_SECT_NS) 
+#ifdef CONFIG_SMP
+#define MMU_APP_L1_RW         	(PMD_TYPE_SECT | PMD_SECT_AP_RW01 | PMD_CACHEABLE | \
+                              		PMD_SECT_S | PMD_SECT_DOM(0) | PMD_SECT_XN | PMD_SECT_NS)
+#else
+#define MMU_APP_L1_RW		(PMD_TYPE_SECT | PMD_SECT_AP_RW01 | PMD_CACHEABLE | \
+					PMD_SECT_DOM(0) | PMD_SECT_XN | PMD_SECT_NS)
+#endif
+#define MMU_APP_L2_RO		(PTE_TYPE_SMALL | PMD_CACHEABLE | PTE_AP_R01 | PTE_SMALL_XN)
+#define MMU_APP_L2_ROX		(PTE_TYPE_SMALL | PMD_CACHEABLE | PTE_AP_R01)
+#ifdef CONFIG_SMP
+#define MMU_APP_L2_RW		(PTE_TYPE_SMALL | PMD_CACHEABLE | PTE_AP_RW01 | PTE_SMALL_XN | PTE_S)
+#else
+#define MMU_APP_L2_RW		(PTE_TYPE_SMALL | PMD_CACHEABLE | PTE_AP_RW01 | PTE_SMALL_XN)
+#endif
+
 /* Mapped section size */
 
 #define SECTION_SHIFT         (20)
 #define SECTION_SIZE          (1 << SECTION_SHIFT)   /* 1Mb */
 #define SECTION_MASK          (SECTION_SIZE - 1)
+
+#define SMALL_PAGE_SHIFT         (12)
+#define SMALL_PAGE_SIZE          (1 << SMALL_PAGE_SHIFT)   /* 4Kb */
+#define SMALL_PAGE_MASK          (SMALL_PAGE_SIZE - 1)
 
 /* The Cortex-A5 supports two translation table base address registers.  In
  * this, implementation, only Translation Table Base Register 0 (TTBR0) is
@@ -657,13 +683,40 @@
  * require up to 16Kb of memory.
  */
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+/* In case of app binary separation, we need separate page tables for each app.
+ * So, the page table size is set here based on the following conditions:
+ * 1. One L1 page table (16KB) for kernel
+ * 2. One L1 page table for each app
+ * 3. L2 page tables for each app and common binary
+ * 4. The number of L2 page tables required for the app depends on the size of the 
+ * apps. For example, if the app is 2MB, then it requires minimum of 2 L2 page tables
+ * (since each L2 table can map 1 MB memory). However, we are currently reserving 
+ * space assuming each app and common binary require 4 L2 page tables
+ * 5. The start address of first kernel L1 page table must be 16KB aligned
+ *
+ * Based on the above considerations, we setup the page table size as 
+ * 1 Kernel L1 table + 2 app L1 tables + (2 apps + 1 common) * 4 L2 page tables
+ * 16 KB + 16 KB + 16 KB + 3 * 4 * 1 KB = 60 KB
+ * 60 KB = 0xF000 ==> Round it up to 16KB boundary ==> 0x10000
+ */
+#define PGTABLE_SIZE       0x00010000
+#else
 #define PGTABLE_SIZE       0x00004000
+#endif
+
 #ifdef CONFIG_ARCH_ADDRENV
 #  define ALL_PGTABLE_SIZE (PGTABLE_SIZE * CONFIG_SMP_NCPUS)
 #else
 #  define ALL_PGTABLE_SIZE PGTABLE_SIZE
 #endif
 
+#define L1_PGTBL_SIZE		(16384)
+#define L1_PGTBL_ALIGNMENT	(16384)
+#define L1_PGTBL_NENTRIES	(4096)
+#define L2_PGTBL_SIZE		(1024)
+#define	L2_PGTBL_ALIGNMENT	(1024)
+#define L2_PGTBL_NENTRIES	(256)
 
 /* Virtual Page Table Location **********************************************/
 
@@ -1344,7 +1397,7 @@ static inline void cp15_wrdacr(unsigned int dacr)
 static inline void cp15_wrttb(unsigned int ttb)
 {
   __asm__ __volatile__
-    (
+      (
       "\tmcr p15, 0, %0, c2, c0, 0\n"
       "\tnop\n"
       "\tnop\n"
@@ -1391,6 +1444,18 @@ static inline uint32_t *mmu_l1_pgtable(void)
 
   pgtable = ttbr0 & TTBR0_BASE_MASK(0);
   return (uint32_t *)(pgtable - PGTABLE_BASE_PADDR + PGTABLE_BASE_VADDR);
+#elif defined(CONFIG_APP_BINARY_SEPARATION)
+  uint32_t ttbr0;
+  __asm__ __volatile__
+    (
+      "\tmrc p15, 0, %0, c2, c0, 0\n"
+      : "=r" (ttbr0)
+      :
+      :
+    );
+
+  ttbr0 &= TTBR0_BASE_MASK(0);
+  return (uint32_t *)ttbr0;
 #else
   return (uint32_t *)PGTABLE_BASE_VADDR;
 #endif
@@ -1597,6 +1662,7 @@ void mmu_l1_map_regions(const struct section_mapping_s *mappings,
 void mmu_invalidate_region(uint32_t vstart, size_t size);
 #endif
 
+void mmu_dump_pgtbl(void);
 #undef EXTERN
 #ifdef __cplusplus
 }
