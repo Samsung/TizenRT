@@ -576,7 +576,7 @@ u32 USI_UARTRxByteCntGet(USI_TypeDef* USIx)
 }
 
   /**
-  * @brief    enable or disable UART break contol function .
+  * @brief    enable or disable UART break control function .
   * @param  USIx: where x can be 0.
   * @param  NewState: This parameter can be: ENABLE or DISABLE.
   * @retval   None

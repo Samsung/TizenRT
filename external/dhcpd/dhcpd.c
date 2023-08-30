@@ -936,7 +936,7 @@ static int dhcpd_sendpacket(int bbroadcast)
 		printf("socket is not valid\n");
 	}
 
-	/* Then send the reponse to the DHCP client port at that address */
+	/* Then send the response to the DHCP client port at that address */
 
 	memset(&addr, 0, sizeof(struct sockaddr_in));
 	addr.sin_family = AF_INET;
@@ -977,7 +977,7 @@ static int dhcpd_send_offerpacket(void)
 	if (g_dhcpd_sockfd == -1) {
 		printf("dhcpd socket is not valid\n");
 	}
-	/* Then send the reponse to the DHCP client port at that address */
+	/* Then send the response to the DHCP client port at that address */
 
 	memset(&addr, 0, sizeof(struct sockaddr_in));
 	addr.sin_family = AF_INET;

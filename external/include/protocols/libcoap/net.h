@@ -342,7 +342,7 @@ coap_tid_t coap_send(coap_context_t *context, const coap_address_t *dst, coap_pd
  * @param context The context to use.
  * @param request The original request to respond to.
  * @param dst     The remote peer that sent the request.
- * @param code    The reponse code.
+ * @param code    The response code.
  * @param opts    A filter that specifies the options to copy from the
  *                @p request.
  *
