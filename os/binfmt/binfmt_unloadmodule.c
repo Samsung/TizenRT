@@ -211,6 +211,10 @@ int unload_module(FAR struct binary_s *binp)
 #endif
 		}
 #endif
+
+#ifdef CONFIG_ARCH_USE_MMU
+		mmu_clear_app_pgtbl(binp->binary_idx);
+#endif
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.
 		 */

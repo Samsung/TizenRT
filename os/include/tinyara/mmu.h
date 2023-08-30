@@ -34,8 +34,8 @@
  * Pre-processor Definitions
  ********************************************************************************/
 
-#define SMALL_PAGE_SIZE		(4096)	/* 4KB small page */
-#define MMU_ALIGNMENT_BYTES	SMALL_PAGE_SIZE
+#define SMALL_PAGE_SZ		(4096)	/* 4KB small page */
+#define MMU_ALIGNMENT_BYTES	SMALL_PAGE_SZ
 #define MMU_ALIGN_UP(a)		(((a) + MMU_ALIGNMENT_BYTES - 1) & ~(MMU_ALIGNMENT_BYTES - 1))
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -50,5 +50,14 @@
 /********************************************************************************
  * Public Function Prototypes
  ********************************************************************************/
+#ifdef CONFIG_APP_BINARY_SEPARATION
+uint32_t *mmu_get_os_l1_pgtbl();
+uint32_t *mmu_allocate_app_l1_pgtbl(int app_id);
+uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2_idx);
+void mmu_update_app_l1_pgtbl_ospgtbl(uint32_t *app_l1_pgtbl);
+void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t size, bool ro, bool exec);
+void mmu_dump_pgtbl(void);
+void mmu_clear_app_pgtbl(uint32_t app_id);
+#endif // CONFIG_APP_BINARY_SEPARATION
 
 #endif

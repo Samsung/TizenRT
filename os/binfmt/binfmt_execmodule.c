@@ -71,6 +71,9 @@
 #include <tinyara/mpu.h>
 #endif
 #include <tinyara/mm/mm.h>
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
+#include <tinyara/mmu.h>
+#endif
 
 #ifdef CONFIG_BINARY_MANAGER
 #include <string.h>
@@ -301,6 +304,9 @@ int exec_module(FAR struct binary_s *binp)
 #ifdef CONFIG_ARM_MPU
 	memset(rtcb->mpu_regs, 0, sizeof(rtcb->mpu_regs));
 #endif
+#ifdef CONFIG_ARCH_USE_MMU
+	rtcb->pgtbl = mmu_get_os_l1_pgtbl();
+#endif
 
 	/* Store the address of the applications userspace object in the newtcb  */
 	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
@@ -308,9 +314,7 @@ int exec_module(FAR struct binary_s *binp)
 	newtcb->cmn.uheap = (uint32_t)binp->uheap;
 
 #ifdef CONFIG_BINARY_MANAGER
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
 	newtcb->cmn.app_id = binp->binary_idx;
-#endif
 
 	/* Set task name as binary name */
 	strncpy(newtcb->cmn.name, binp->bin_name, CONFIG_TASK_NAME_SIZE);

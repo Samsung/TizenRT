@@ -75,6 +75,9 @@ ifeq ($(CONFIG_LIBC_EXECFUNCS),y)
 BINFMT_CSRCS += binfmt_execsymtab.c
 endif
 
+ifeq ($(CONFIG_ARCH_USE_MMU),y)
+BINFMT_CSRCS += binfmt_pgtable.c
+endif
 # Add configured binary modules
 
 VPATH =

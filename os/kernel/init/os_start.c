@@ -79,6 +79,9 @@
 #ifdef CONFIG_DRIVERS_OS_API_TEST
 #include  <tinyara/os_api_test_drv.h>
 #endif
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
+#include <tinyara/mmu.h>
+#endif
 
 #include  "sched/sched.h"
 #include  "signal/signal.h"
@@ -344,6 +347,10 @@ void os_start(void)
 	g_idletcb.cmn.entry.main = (main_t)os_start;
 	g_idletcb.cmn.flags = TCB_FLAG_TTYPE_KERNEL;
 
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
+	g_idletcb.cmn.app_id = 0;
+	g_idletcb.cmn.pgtbl = mmu_get_os_l1_pgtbl();
+#endif
 	/* Set the IDLE task name */
 
 #if CONFIG_TASK_NAME_SIZE > 0

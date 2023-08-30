@@ -52,7 +52,9 @@
 
 #include "sched/sched.h"
 #include "arm_internal.h"
-
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#include "mmu.h"
+#endif
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -148,6 +150,11 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
   _alert("Prefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n",
         regs[REG_PC], ifar, ifsr);
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+  mmu_dump_pgtbl();
+#endif
+
   PANIC();
   return regs; /* To keep the compiler happy */
 }
