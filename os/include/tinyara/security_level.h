@@ -18,7 +18,7 @@
 
 #ifndef __INCLUDE_SECURITY_LEVEL_H
 #define __INCLUDE_SECURITY_LEVEL_H
-
+#ifdef CONFIG_SECURITY_LEVEL
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -73,5 +73,17 @@ int set_security_level(void);
  *      0 : Low level of security. You can see all secure information.
  ****************************************************************************/
 int get_security_level(void);
+
+/****************************************************************************
+ * Name: CHECK_SECURE_PERMISSION
+ *
+ * Description:
+ *   This function returns whether security level is LOW_SECURITY_LEVEL,
+ *   or if CONFIG_SECURITY_LEVEL is disabled, returns true.
+ ****************************************************************************/
+#define CHECK_SECURE_PERMISSION() (get_security_level() == LOW_SECURITY_LEVEL)
+#else
+#define CHECK_SECURE_PERMISSION() (1)
+#endif
 
 #endif
