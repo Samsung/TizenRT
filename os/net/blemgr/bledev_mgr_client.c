@@ -51,9 +51,25 @@ static void bledrv_device_scanned_cb(trble_scanned_device *scanned_device)
 	return;
 }
 
-static void bledrv_device_disconnected_cb(trble_conn_handle conn_id)
+static void bledrv_device_disconnected_cb(trble_conn_handle conn_id, uint16_t cause)
 {
-	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, (void *)&conn_id, sizeof(trble_conn_handle));
+	int32_t size = sizeof(trble_conn_handle) + sizeof(uint16_t);
+	uint8_t *data = (uint8_t *)kmm_malloc(size);
+	if (data == NULL) {
+		BLE_LOGE(BLE_DRV_TAG, "out of memroy\n");
+		return;
+	}
+	
+	uint8_t *ptr = data;
+
+	// Copy conn handle
+	memcpy(ptr, &conn_id, sizeof(trble_conn_handle));
+	ptr += sizeof(trble_conn_handle);
+
+	// Copy disconnection cause
+	memcpy(ptr, &cause, sizeof(uint16_t));
+	
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, data, --(size));
 	return;
 }
 

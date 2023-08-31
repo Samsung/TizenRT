@@ -110,9 +110,10 @@ static void ble_device_scanned_cb_for_connect(ble_scanned_device *scanned_device
 	}
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_client_ctx *ctx, ble_conn_handle con_handle, uint16_t cause)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[Cause : %d]\n", __FUNCTION__, cause);
 	return;
 }
 
@@ -196,6 +197,14 @@ static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_conne
 	return;
 }
 
+static void ble_server_disconnected_cb(ble_conn_handle con_handle, uint16_t cause)
+{
+	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
+	RMC_LOG(RMC_SERVER_TAG, "conn : %d \n", con_handle);
+	RMC_LOG(RMC_SERVER_TAG, "cause : %d \n", cause);
+	return;
+}
+
 static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_size)
 {
 	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
@@ -265,6 +274,7 @@ static ble_client_callback_list client_config = {
 
 static ble_server_init_config server_config = {
 	ble_server_connected_cb,
+	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
