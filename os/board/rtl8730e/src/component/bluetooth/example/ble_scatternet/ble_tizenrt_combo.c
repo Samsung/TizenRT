@@ -39,6 +39,8 @@ extern bool is_server_init;
 extern uint16_t server_profile_count;
 extern T_ATTRIB_APPL *tizenrt_ble_service_tbl;
 extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
+extern int attr_counter;
+
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
@@ -118,6 +120,8 @@ trble_result_e rtw_ble_combo_deinit(void)
 	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
 	tizenrt_ble_srv_count = 0;
     is_server_init = false;
+
+    attr_counter = 0;
     return TRBLE_SUCCESS; 
 }
 
