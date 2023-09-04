@@ -259,12 +259,7 @@ volatile pid_t g_lastpid;
  *
  * the number of tasks to CONFIG_MAX_TASKS.
  */
-#ifdef CONFIG_SMP
-struct pidhash_s g_pidhash[CONFIG_SMP_NCPUS][CONFIG_MAX_TASKS];
-volatile int g_npidhash;
-#else
 struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
-#endif
 
 /* This is a table of task lists.  This table is indexed by
  * the task state enumeration type (tstate_t) and provides
@@ -273,34 +268,82 @@ struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
  * is an ordered list or not.
  */
 
-const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] = {
-	{NULL,                    false},	/* TSTATE_TASK_INVALID */
-	{&g_pendingtasks,         true },	/* TSTATE_TASK_PENDING */
+const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
+{
+  {                                              /* TSTATE_TASK_INVALID */
+    NULL,
+    0
+  },
+  {                                              /* TSTATE_TASK_PENDING */
+    &g_pendingtasks,
+    TLIST_ATTR_PRIORITIZED
+  },
 #ifdef CONFIG_SMP
-	{&g_readytorun,           true},	/* TSTATE_TASK_READYTORUN */
-	{g_assignedtasks,         true},	/* TSTATE_TASK_ASSIGNED */
-	{g_assignedtasks,         true},	/* TSTATE_TASK_RUNNING */
+  {                                              /* TSTATE_TASK_READYTORUN */
+    &g_readytorun,
+    TLIST_ATTR_PRIORITIZED
+  },
+  {                                              /* TSTATE_TASK_ASSIGNED */
+    g_assignedtasks,
+    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+  },
+  {                                              /* TSTATE_TASK_RUNNING */
+    g_assignedtasks,
+    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+  },
 #else
-	{&g_readytorun,           true },	/* TSTATE_TASK_READYTORUN */
-	{&g_readytorun,           true },	/* TSTATE_TASK_RUNNING */
-#endif /* CONFIG_SMP */
-	{&g_inactivetasks,        false},	/* TSTATE_TASK_INACTIVE */
-	{&g_waitingforsemaphore,  true },	/* TSTATE_WAIT_SEM */
-	{&g_waitingforfin,    true }		/* TSTATE_WAIT_FIN */
-#ifndef CONFIG_DISABLE_SIGNALS
-	,
-	{&g_waitingforsignal,     false}	/* TSTATE_WAIT_SIG */
+  {                                              /* TSTATE_TASK_READYTORUN */
+    &g_readytorun,
+    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+  },
+  {                                              /* TSTATE_TASK_RUNNING */
+    &g_readytorun,
+    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+  },
 #endif
+  {                                              /* TSTATE_TASK_INACTIVE */
+    &g_inactivetasks,
+    0
+  },
+  {                                              /* TSTATE_WAIT_SEM */
+    &g_waitingforsemaphore,
+    TLIST_ATTR_PRIORITIZED
+  },
+  {						/* TSTATE_WAIT_FIN */
+	  &g_waitingforfin,    
+	  TLIST_ATTR_PRIORITIZED
+  },
+  {                                              /* TSTATE_WAIT_SIG */
+    &g_waitingforsignal,
+    0
+  }
 #ifndef CONFIG_DISABLE_MQUEUE
-	,
-	{&g_waitingformqnotempty, true },	/* TSTATE_WAIT_MQNOTEMPTY */
-	{&g_waitingformqnotfull,  true }	/* TSTATE_WAIT_MQNOTFULL */
+  ,
+  {                                              /* TSTATE_WAIT_MQNOTEMPTY */
+    &g_waitingformqnotempty,
+    TLIST_ATTR_PRIORITIZED
+  },
+  {                                              /* TSTATE_WAIT_MQNOTFULL */
+    &g_waitingformqnotfull,
+    TLIST_ATTR_PRIORITIZED
+  }
 #endif
 #ifdef CONFIG_PAGING
-	,
-	{&g_waitingforfill,       true }	/* TSTATE_WAIT_PAGEFILL */
+  ,
+  {                                              /* TSTATE_WAIT_PAGEFILL */
+    &g_waitingforfill,
+    TLIST_ATTR_PRIORITIZED
+  }
+#endif
+#ifdef CONFIG_SIG_SIGSTOP_ACTION
+  ,
+  {                                              /* TSTATE_TASK_STOPPED */
+    &g_stoppedtasks,
+    0                                            /* See tcb->prev_state */
+  },
 #endif
 };
+
 
 /* This is the current initialization state.  The level of initialization
  * is only important early in the start-up sequence when certain OS or
@@ -537,14 +580,6 @@ void os_start(void)
 
  	/* Initialize the logic that determine unique process IDs. */
 
-#ifdef CONFIG_SMP
-	g_npidhash = 4;
-	while (g_npidhash <= CONFIG_SMP_NCPUS)
-	{
-		g_npidhash <<= 1;
-	}
-#endif
-
 	/* IDLE Group Initialization **********************************************/
 
 	for (i = 0; i < CONFIG_SMP_NCPUS; i++)
@@ -554,11 +589,7 @@ void os_start(void)
 		/* Assign the process ID(s) of ZERO to the idle task(s) */
 
 		hashndx  = PIDHASH(i);
-#ifdef CONFIG_SMP
-		g_pidhash[i][hashndx].tcb = &g_idletcb[i].cmn;
-#else
 		g_pidhash[hashndx].tcb = &g_idletcb[i].cmn;
-#endif
 		/* Allocate the IDLE group */
 #ifdef HAVE_TASK_GROUP
 

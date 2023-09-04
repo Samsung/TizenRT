@@ -61,7 +61,7 @@
  *
  ****************************************************************************/
 
-int up_saveusercontext(void *saveregs)
+int up_saveusercontext(uint32_t *saveregs)
 {
   return sys_call1(SYS_save_context, (uintptr_t)saveregs);
 }

@@ -166,25 +166,14 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 		hash_ndx = PIDHASH(next_pid);
 
 		/* Check if there is a (potential) duplicate of this pid */
-#ifdef CONFIG_SMP
-		if (!g_pidhash[this_cpu()][hash_ndx].tcb) {
-			/* Assign this PID to the task */
-			g_pidhash[this_cpu()][hash_ndx].tcb = tcb;
-			g_pidhash[this_cpu()][hash_ndx].pid = next_pid;
-#else
 		if (!g_pidhash[hash_ndx].tcb) {
 			/* Assign this PID to the task */
 			g_pidhash[hash_ndx].tcb = tcb;
 			g_pidhash[hash_ndx].pid = next_pid;
-#endif
 #ifdef CONFIG_SCHED_CPULOAD
 			int cpuload_idx;
 			for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-#ifdef CONFIG_SMP
-				g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx] = 0;
-#else
 				g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
-#endif
 			}
 #endif
 			tcb->pid = next_pid;

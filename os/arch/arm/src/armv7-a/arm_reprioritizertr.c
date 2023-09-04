@@ -162,7 +162,7 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 
               /* Update scheduler parameters */
 
-              //sched_resume_scheduler(rtcb);
+              sched_resume_scheduler(rtcb);
 
               /* Then switch contexts.  Any necessary address environment
                * changes will be made when the interrupt returns.
@@ -180,6 +180,11 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 				/* Save the task name which will be scheduled */
 				save_task_scheduling_status(nexttcb);
 #endif
+
+              /* Update scheduler parameters */
+
+              sched_resume_scheduler(nexttcb);
+
               /* Switch context to the context of the task at the head of the
                * ready to run list.
                */

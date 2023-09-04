@@ -191,6 +191,8 @@ void _exit(int status)
 	save_task_scheduling_status(tcb);
 #endif
 
+	sched_resume_scheduler(tcb);
+
 	/* Then switch contexts */
 
 	arm_fullcontextrestore(tcb->xcp.regs);

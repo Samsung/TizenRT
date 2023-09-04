@@ -109,19 +109,11 @@ FAR struct tcb_s *sched_gettcb(pid_t pid)
 
 		/* Verify that the correct TCB was found. */
 
-#ifdef CONFIG_SMP
-		if (pid == g_pidhash[this_cpu()][hash_ndx].pid) {
-			/* Return the TCB associated with this pid (if any) */
-
-			ret = g_pidhash[this_cpu()][hash_ndx].tcb;
-		}
-#else
 		if (pid == g_pidhash[hash_ndx].pid) {
 			/* Return the TCB associated with this pid (if any) */
 
 			ret = g_pidhash[hash_ndx].tcb;
 		}
-#endif
 
 	}
 

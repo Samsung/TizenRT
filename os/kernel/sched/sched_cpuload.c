@@ -192,13 +192,8 @@ void sched_clear_cpuload(pid_t pid)
 	 * defunct thread to zero.
 	 */
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-#ifdef CONFIG_SMP
-		g_cpuload_total[cpuload_idx] -= g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx];
-		g_pidhash[this_cpu()][hash_ndx].ticks[cpuload_idx] = 0;
-#else
 		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
 		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
-#endif
 	}
 	leave_critical_section(flags);
 }
@@ -236,11 +231,7 @@ static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
 
 	/* Increment the count on the currently executing thread */
 
-#ifdef CONFIG_SMP
-	g_pidhash[cpu][hash_index].ticks[cpuload_idx]++;
-#else
 	g_pidhash[hash_index].ticks[cpuload_idx]++;
-#endif
 
 	/* Increment tick count.  NOTE that the count is increment once for each
 	 * CPU on each sample interval.
@@ -303,15 +294,8 @@ void weak_function sched_process_cpuload(void)
 			 * total.
 			 */
 			for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-#ifdef CONFIG_SMP
-				for (j = 0; j < CONFIG_SMP_NCPUS; j++) {
-					g_pidhash[j][i].ticks[cpuload_idx] >>= 1;
-					total += g_pidhash[j][i].ticks[cpuload_idx];
-				}
-#else
 				g_pidhash[i].ticks[cpuload_idx] >>= 1;
 				total += g_pidhash[i].ticks[cpuload_idx];
-#endif			
 			}
 
 			/* Save the new total. */
@@ -371,19 +355,11 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	 * do this too, but this would require a little more overhead.
 	 */
 
-#ifdef CONFIG_SMP
-	if (g_pidhash[this_cpu()][hash_index].tcb && g_pidhash[this_cpu()][hash_index].pid == pid) {
-		cpuload->total = g_cpuload_total[index];
-		cpuload->active = g_pidhash[this_cpu()][hash_index].ticks[index];
-		ret = OK;
-	}
-#else
 	if (g_pidhash[hash_index].tcb && g_pidhash[hash_index].pid == pid) {
 		cpuload->total = g_cpuload_total[index];
 		cpuload->active = g_pidhash[hash_index].ticks[index];
 		ret = OK;
 	}
-#endif
 
 	leave_critical_section(flags);
 	return ret;

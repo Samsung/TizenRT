@@ -299,7 +299,7 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 	default:
 
 		/* CASE 3a. The task resides in a prioritized list. */
-		if (g_tasklisttable[task_state].prioritized) {
+		if (TLIST_ISPRIORITIZED(task_state)) {
 			/* Remove the TCB from the prioritized task list */
 
 			dq_rem((FAR dq_entry_t *)tcb, (FAR dq_queue_t *)g_tasklisttable[task_state].list);

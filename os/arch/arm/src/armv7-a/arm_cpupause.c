@@ -133,7 +133,7 @@ int up_cpu_paused(int cpu)
 
   /* Update scheduler parameters */
 
-  sched_suspend_scheduler(tcb);
+  //sched_suspend_scheduler(tcb);
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
   /* Notify that we are paused */
