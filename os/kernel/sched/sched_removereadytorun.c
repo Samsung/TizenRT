@@ -232,7 +232,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 			dq_rem((FAR dq_entry_t *)rtrtcb, (FAR dq_queue_t *)&g_readytorun);
 			dq_addfirst((FAR dq_entry_t *)rtrtcb, tasklist);
 			rtrtcb->cpu = cpu;
-			ntcb = rtcb;
+			ntcb = rtrtcb;
 		}
 
 		/* Will pre-emption be disabled after the switch? If the lockcount

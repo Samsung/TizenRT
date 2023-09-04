@@ -100,11 +100,7 @@ bool sched_verifytcb(FAR struct tcb_s *tcb)
 	bool valid;
 	irqstate_t flags = enter_critical_section();
 	/* Return true if the PID hashes to this TCB. */
-#ifdef CONFIG_SMP
-	valid = tcb == g_pidhash[this_cpu()][PIDHASH(tcb->pid)].tcb;
-#else
 	valid = tcb == g_pidhash[PIDHASH(tcb->pid)].tcb;
-#endif
 	leave_critical_section(flags);
 
 	return valid;

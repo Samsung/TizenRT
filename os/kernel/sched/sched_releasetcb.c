@@ -89,13 +89,8 @@ static void sched_releasepid(pid_t pid)
 	 * no special precautions need be taken here because the
 	 * following action is atomic
 	 */
-#ifdef CONFIG_SMP
-	g_pidhash[this_cpu()][hash_ndx].tcb = NULL;
-	g_pidhash[this_cpu()][hash_ndx].pid = INVALID_PROCESS_ID;
-#else
 	g_pidhash[hash_ndx].tcb = NULL;
 	g_pidhash[hash_ndx].pid = INVALID_PROCESS_ID;
-#endif
 
 #ifdef CONFIG_SCHED_CPULOAD
 	/* Decrement the total CPU load count held by this thread from total

@@ -116,7 +116,7 @@ void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state)
 	 * list
 	 */
 
-	if (g_tasklisttable[task_state].prioritized) {
+	if (TLIST_ISPRIORITIZED(task_state)) {
 		/* Add the task to a prioritized list */
 
 		sched_addprioritized(btcb, (FAR dq_queue_t *)g_tasklisttable[task_state].list);

@@ -76,13 +76,12 @@
 #if defined(CONFIG_SMP)
 #define PTHREAD_ATTR_INITIALIZER \
   { \
-    PTHREAD_DEFAULT_PRIORITY, /* priority */ \
-    PTHREAD_DEFAULT_POLICY,   /* policy */ \
-    PTHREAD_EXPLICIT_SCHED,   /* inheritsched */ \
-    PTHREAD_CREATE_JOINABLE,  /* detachstate */ \
-    0,                        /* affinity */ \
-    NULL,                     /* stackaddr */ \
-    PTHREAD_STACK_DEFAULT,    /* stacksize */ \
+	PTHREAD_STACK_DEFAULT,    /* stacksize */ \
+  	PTHREAD_DEFAULT_PRIORITY, /* priority */ \
+	PTHREAD_DEFAULT_POLICY,   /* policy */ \
+	PTHREAD_EXPLICIT_SCHED,   /* inheritsched */ \
+	{ {NULL, 0, 0}, {NULL, 0, 0} }, /* No MPU regions */ \
+	0,                        /* affinity */ \
   }
 #else
 #define PTHREAD_ATTR_INITIALIZER \
