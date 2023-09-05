@@ -160,8 +160,13 @@ echo "========== Image manipulating end =========="
 cp $GNUUTL/bl1_sram.bin $BINDIR/bl1_sram.bin
 cp $GNUUTL/bl1.bin $BINDIR/bl1.bin
 cp $GNUUTL/bl2_bl32.bin $BINDIR/bl2_bl32.bin
-cat $BINDIR/bl2_bl32.bin $BINDIR/ca32_image2_all.bin > $BINDIR/fip.bin
+#cat $BINDIR/bl2_bl32.bin $BINDIR/ca32_image2_all.bin > $BINDIR/fip.bin
+$GNUUTL/fiptool update $BINDIR/fip.bin --tb-fw $GNUUTL/bl2.bin --tos-fw $GNUUTL/bl32.bin --nt-fw $BINDIR/ca32_image2_all.bin
 
+if [ ! -f $BINDIR/fip.bin ] ; then
+	echo "No fip.bin"
+	exit 1
+fi
 $GNUUTL/prepend_header.sh $BINDIR/bl1_sram.bin  __ca32_bl1_sram_start__  $BINDIR/target_img2.map
 $GNUUTL/prepend_header.sh $BINDIR/bl1.bin  __ca32_bl1_dram_start__  $BINDIR/target_img2.map
 $GNUUTL/prepend_header.sh $BINDIR/fip.bin  __ca32_fip_dram_start__  $BINDIR/target_img2.map
@@ -169,9 +174,7 @@ cat $BINDIR/bl1_sram_prepend.bin $BINDIR/bl1_prepend.bin $BINDIR/fip_prepend.bin
 
 $GNUUTL/imagetool_hp.sh $BINDIR/ap_image_all.bin
 
-if [ -f $BINDIR/ap_image_all.bin ] && [ -f $BINDIR/km0_km4_app.bin ]; then \
-	$GNUUTL/prepend_ota_header.sh $BINDIR/km0_km4_app.bin $BINDIR/ap_image_all.bin; \
-fi
+
 
 function copy_bootloader()
 {
@@ -183,6 +186,10 @@ function copy_bootloader()
 	source ${CONFIG}
 
 	echo "========== Copy_bootloader =========="
+	if [ ! -f $BOOT_PATH/km4_boot_all.bin ];then
+		echo "No km4_boot_all.bin"
+		exit 1
+	fi
 	cp $BOOT_PATH/km4_boot_all.bin $BINDIR/km4_boot_all.bin
 
 }
@@ -197,6 +204,11 @@ function concatenate_binary_without_signing()
 	source ${CONFIG}
 
  	echo "========== Concatenate_binary =========="
+
+	if [ ! -f $BINDIR/km0_km4_app.bin ] || [ ! -f $BINDIR/ap_image_all.bin ];then
+		echo "No km0_km4_app.bin or ap_image_all.bin"
+		exit 1
+	fi
  	cp $BINDIR/km0_km4_app.bin $GNUUTL/km0_km4_app_temp.bin
  	$GNUUTL/rmcert.sh $GNUUTL/km0_km4_app_temp.bin
  	$GNUUTL/pad.sh $GNUUTL/km0_km4_app_temp.bin
@@ -249,6 +261,10 @@ function copy_km0_km4_image()
 	source ${CONFIG}
 
 	echo "========== Copy ap_image_all into bin output folder=========="
+	if [ ! -f $GNUUTL/km0_km4_app.bin ];then
+		echo "No km0_km4_app.bin"
+		exit 1
+	fi
 	cp $GNUUTL/km0_km4_app.bin $BINDIR/km0_km4_app.bin
 }
 
