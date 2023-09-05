@@ -17,11 +17,14 @@
  ****************************************************************************/
 #pragma once
 
-hal_key_type alt_get_keytype(unsigned int curve);
-hal_ecdsa_curve alt_get_curve(mbedtls_ecp_group_id curve);
-int alt_gen_key(sl_ctx shnd, hal_key_type key_type, int from);
-int alt_set_key(sl_ctx shnd,
-					   hal_key_type key_type,
-					   hal_data *pubkey,
-					   hal_data *prikey, int from);
+#include <security/security_common.h>
+#include "mbedtls/ecp.h"
+
+security_key_type alt_get_keytype(unsigned int curve);
+security_ecdsa_mode alt_get_curve(mbedtls_ecp_group_id curve);
+int alt_gen_key(security_handle shnd, security_key_type key_type, int from);
+int alt_set_key(security_handle shnd,
+					   security_key_type key_type,
+					   security_data *pubkey,
+					   security_data *prikey, int from);
 void alt_print_buffer(char *data, int buf_len, const char *message);

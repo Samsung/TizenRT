@@ -15,6 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
+
+SECLINK_DIR = $(TOPDIR)/../framework/src/security
+include $(SECLINK_DIR)/seclink/Make.defs
+
 ifeq ($(CONFIG_SECURITY_API), y)
 CSRCS += security_common.c security_utils.c
 

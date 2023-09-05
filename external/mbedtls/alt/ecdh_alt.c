@@ -45,8 +45,9 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <tinyara/seclink.h>
-#include <tinyara/security_hal.h>
+#include <security/security_common.h>
+#include <security/security_keymgr.h>
+#include <security/security_auth.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -68,19 +69,21 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp,
 							int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
 	unsigned int ret;
-	hal_key_type key_type;
-	sl_ctx shnd;
+	security_key_type key_type;
+	security_handle shnd;
 	unsigned char key_data[MBEDTLS_MAX_KEY_SIZE_ALT];
 	unsigned char key_priv[MBEDTLS_MAX_KEY_SIZE_ALT];
-	hal_data key = {key_data, sizeof(key_data), key_priv, sizeof(key_priv)};
+	security_data x_key = {key_data, sizeof(key_data)};
+	security_data y_key = {key_priv, sizeof(key_priv)};
+	char key_path[7];
 
-	if ((key_type = alt_get_keytype(grp->id)) == HAL_KEY_UNKNOWN) {
+	if ((key_type = alt_get_keytype(grp->id)) == KEY_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 		goto cleanup;
 	}
 
-	ret = sl_init(&shnd);
-	if (ret != SECLINK_OK) {
+	ret = security_init(&shnd);
+	if (ret != SECURITY_OK) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
@@ -88,25 +91,26 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp,
 	grp->key_index = ECP_KEY_INDEX;
 	if ((grp->key_index = alt_gen_key(shnd, key_type, ECP_KEY_INDEX)) == -1) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		sl_deinit(shnd);
+		security_deinit(shnd);
 		goto cleanup;
 	}
 
 	/* Get Public value from sss */
-	ret = sl_get_key(shnd, key_type, grp->key_index, &key);
-	if (ret != SECLINK_OK) {
+	snprintf(key_path, 7, "ss/%d", grp->key_index);
+	ret = keymgr_get_key(shnd, key_type, key_path, &x_key, &y_key);
+	if (ret != SECURITY_OK) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
-		(void)sl_remove_key(shnd, key_type, grp->key_index);
-		(void)sl_deinit(shnd);
+		(void)keymgr_remove_key(shnd, key_type, key_path);
+		(void)security_deinit(shnd);
 		goto cleanup;
 	}
 
 	/* Copy pub value to Q */
-	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->X, key.data, key.data_len));
-	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->Y, key.priv, key.priv_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->X, x_key.data, x_key.length));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Q->Y, y_key.data, y_key.length));
 	MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&Q->Z, 1));
 
-	(void)sl_deinit(shnd);
+	(void)security_deinit(shnd);
 	ret = 0;
 
 cleanup:
@@ -119,60 +123,62 @@ cleanup:
 int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z, const mbedtls_ecp_point *Q, const mbedtls_mpi *d, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
 	int ret;
-	hal_ecdh_data ecc_pub = {0,};
+	security_ecdh_param ecc_pub = {0,};
 	unsigned char shared_secret_data[MBEDTLS_MAX_KEY_SIZE_ALT];
-	hal_data shared_secret = {shared_secret_data, MBEDTLS_MAX_KEY_SIZE_ALT, NULL, 0};
-	sl_ctx shnd;
-	hal_key_type key_type = HAL_KEY_UNKNOWN;
+	security_data shared_secret = {shared_secret_data, MBEDTLS_MAX_KEY_SIZE_ALT};
+	security_handle shnd;
+	security_key_type key_type = KEY_UNKNOWN;
+	char key_path[7];
 
 	/* compute ECC shared secret with stored key (permanent) */
-	ret = sl_init(&shnd);
-	if (ret != SECLINK_OK) {
+	ret = security_init(&shnd);
+	if (ret != SECURITY_OK) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
 
-	memset(&ecc_pub, 0, sizeof(hal_ecdh_data));
+	memset(&ecc_pub, 0, sizeof(security_ecdh_param));
 
-	ecc_pub.pubkey_x = (hal_data *)malloc(sizeof(hal_data));
+	ecc_pub.pubkey_x = (security_data *)malloc(sizeof(security_data));
 	if (!ecc_pub.pubkey_x) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
-	ecc_pub.pubkey_y = (hal_data *)malloc(sizeof(hal_data));
+	ecc_pub.pubkey_y = (security_data *)malloc(sizeof(security_data));
 	if (!ecc_pub.pubkey_y) {
 		free(ecc_pub.pubkey_x);
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
 
-	ecc_pub.pubkey_x->data_len = mbedtls_mpi_size(&Q->X);
-	ecc_pub.pubkey_y->data_len = mbedtls_mpi_size(&Q->Y);
+	ecc_pub.pubkey_x->length = mbedtls_mpi_size(&Q->X);
+	ecc_pub.pubkey_y->length = mbedtls_mpi_size(&Q->Y);
 
-	if (!(ecc_pub.pubkey_x->data = (unsigned char *)malloc(ecc_pub.pubkey_x->data_len))) {
+	if (!(ecc_pub.pubkey_x->data = (unsigned char *)malloc(ecc_pub.pubkey_x->length))) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup_with_mem;
 	}
 
-	if (!(ecc_pub.pubkey_y->data = (unsigned char *)malloc(ecc_pub.pubkey_y->data_len))) {
+	if (!(ecc_pub.pubkey_y->data = (unsigned char *)malloc(ecc_pub.pubkey_y->length))) {
 		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup_with_mem;
 	}
 
-	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, ecc_pub.pubkey_x->data, ecc_pub.pubkey_x->data_len));
-	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, ecc_pub.pubkey_y->data, ecc_pub.pubkey_y->data_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->X, ecc_pub.pubkey_x->data, ecc_pub.pubkey_x->length));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&Q->Y, ecc_pub.pubkey_y->data, ecc_pub.pubkey_y->length));
 
-	if ((ecc_pub.curve = alt_get_curve(grp->id)) == HAL_ECDSA_UNKNOWN) {
+	if ((ecc_pub.curve = alt_get_curve(grp->id)) == ECDSA_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 		goto cleanup_with_mem;
 	}
 
-	ret = sl_ecdh_compute_shared_secret(shnd, &ecc_pub, grp->key_index, &shared_secret);
-	if (ret != SECLINK_OK) {
+	snprintf(key_path, 7, "ss/%d", grp->key_index);
+	ret = auth_compute_ecdhkey(shnd, key_path, &ecc_pub, &shared_secret);
+	if (ret != SECURITY_OK) {
 		ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
 		goto cleanup_with_mem;
 	}
-	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(z, shared_secret.data, shared_secret.data_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(z, shared_secret.data, shared_secret.length));
 
 	ret = 0;
 
@@ -192,12 +198,12 @@ cleanup_with_mem:
 	}
 
 cleanup:
-	if ((key_type = alt_get_keytype(grp->id)) == HAL_KEY_UNKNOWN) {
+	if ((key_type = alt_get_keytype(grp->id)) == KEY_UNKNOWN) {
 		ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
 	} else {
-		sl_remove_key(shnd, key_type, grp->key_index);
+		keymgr_remove_key(shnd, key_type, key_path);
 	}
-	sl_deinit(shnd);
+	security_deinit(shnd);
 
 	return ret;
 }

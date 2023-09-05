@@ -25,6 +25,7 @@
 extern "C" {
 #endif
 
+#define SECURITY_MAX_RAM_KEY          64
 #define SECURITY_MAX_KEY_BUF          256
 #define SECURITY_MAX_CERT_BUF         2048
 #define SECURITY_MAX_SS_BUF           4096
@@ -95,7 +96,7 @@ typedef enum {
 	ECDSA_SEC_P224R1,
 	ECDSA_SEC_P256R1,
 	ECDSA_SEC_P384R1,
-	ECDSA_SEC_P512R1,
+	ECDSA_SEC_P521R1,
 	ECDSA_UNKNOWN,
 } security_ecdsa_mode;
 
@@ -154,6 +155,7 @@ typedef enum {
 	AES_CBC_PKCS5,
 	AES_CBC_PKCS7,
 	AES_CTR,
+	AES_CFB128,
 	AES_UNKNOWN,
 } security_aes_mode;
 
@@ -178,6 +180,15 @@ typedef struct _security_aes_param {
 	security_aes_mode mode;
 	unsigned char *iv;
 	unsigned int iv_len;
+	unsigned int *iv_offset;
+	unsigned int *nc_off;
+	/* The 128-bit nonce and counter.
+	 * Refer mbedtls_aes_crypt_ctr() */
+	unsigned char *nonce_counter;
+	/* The saved stream block for resuming. This is
+	 * overwritten by the function.
+	 * Refer mbedtls_aes_crypt_ctr() */
+	unsigned char *stream_block;
 } security_aes_param;
 
 typedef struct _security_ecdsa_param {

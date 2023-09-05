@@ -56,7 +56,7 @@ static security_ecdsa_mode g_ecdsa_mode_table[] = {
 	ECDSA_SEC_P224R1,
 	ECDSA_SEC_P256R1,
 	ECDSA_SEC_P384R1,
-	ECDSA_SEC_P512R1,
+	ECDSA_SEC_P521R1,
 };
 
 static security_rsa_mode g_rsa_mode_table[] = {

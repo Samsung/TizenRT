@@ -193,6 +193,8 @@ hal_aes_algo secutils_convert_aesmode_s2h(security_aes_mode mode)
 		return HAL_AES_CBC_PKCS7;
 	case AES_CTR:
 		return HAL_AES_CTR;
+	case AES_CFB128:
+		return HAL_AES_CFB128;
 	case AES_UNKNOWN:
 		return HAL_AES_UNKNOWN;
 	}
@@ -229,7 +231,7 @@ hal_ecdsa_curve secutils_convert_ecdsamode_s2h(security_ecdsa_mode mode)
 		return HAL_ECDSA_SEC_P256R1;
 	case ECDSA_SEC_P384R1:
 		return HAL_ECDSA_SEC_P384R1;
-	case ECDSA_SEC_P512R1:
+	case ECDSA_SEC_P521R1:
 		return HAL_ECDSA_SEC_P521R1;
 	default:
 		return HAL_ECDSA_UNKNOWN;
@@ -280,8 +282,13 @@ int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hpa
 	if (hparam->mode == HAL_AES_UNKNOWN) {
 		return -1;
 	}
+	
 	hparam->iv = sparam->iv;
 	hparam->iv_len = sparam->iv_len;
+	hparam->iv_offset = sparam->iv_offset;
+	hparam->nc_off = sparam->nc_off;
+	hparam->nonce_counter = sparam->nonce_counter;
+	hparam->stream_block = sparam->stream_block;
 
 	return 0;
 }

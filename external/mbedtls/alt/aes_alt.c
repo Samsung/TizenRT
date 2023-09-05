@@ -16,8 +16,9 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/seclink.h>
-#include <tinyara/security_hal.h>
+#include <stdio.h>
+#include <security/security_common.h>
+#include <security/security_keymgr.h>
 #include <mbedtls/pk.h>
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -46,21 +47,21 @@
 
 #if defined(MBEDTLS_AES_ALT)
 
-static hal_key_type _mbedtls_get_aes_keytype(int keybits)
+static security_key_type _mbedtls_get_aes_keytype(int keybits)
 {
-	hal_key_type key_type;
+	security_key_type key_type;
 	switch (keybits) {
 	case 128:
-		key_type = HAL_KEY_AES_128;
+		key_type = KEY_AES_128;
 		break;
 	case 192:
-		key_type = HAL_KEY_AES_192;
+		key_type = KEY_AES_192;
 		break;
 	case 256:
-		key_type = HAL_KEY_AES_256;
+		key_type = KEY_AES_256;
 		break;
 	default:
-		key_type = HAL_KEY_UNKNOWN;
+		key_type = KEY_UNKNOWN;
 		break;
 	}
 	return key_type;
@@ -70,7 +71,7 @@ void mbedtls_aes_init(mbedtls_aes_context *ctx)
 {
 	int ret = 0;
 	memset(ctx, 0x0, sizeof(mbedtls_aes_context));
-	if ((ret = sl_init(&ctx->shnd)) != SECLINK_OK) {
+	if ((ret = security_init(&ctx->shnd)) != SECURITY_OK) {
 		assert(0);
 		return;
 	}
@@ -80,29 +81,34 @@ void mbedtls_aes_init(mbedtls_aes_context *ctx)
 
 void mbedtls_aes_free(mbedtls_aes_context *ctx)
 {
+	char key_path[7];
 	if (ctx->enc_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->enc_key_type, ctx->enc_key_idx);
+		snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+		keymgr_remove_key(ctx->shnd, ctx->enc_key_type, key_path);
 	}
 	if (ctx->dec_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->dec_key_type, ctx->dec_key_idx);
+		snprintf(key_path, 7, "ss/%d", ctx->dec_key_idx);
+		keymgr_remove_key(ctx->shnd, ctx->dec_key_type, key_path);
 	}
-	sl_deinit(ctx->shnd);
+	security_deinit(ctx->shnd);
 }
 
 int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key,
 							 unsigned int keybits)
 {
-	hal_key_type key_type = _mbedtls_get_aes_keytype(keybits);
-	if (key_type == HAL_KEY_UNKNOWN) {
+	security_key_type key_type = _mbedtls_get_aes_keytype(keybits);
+	if (key_type == KEY_UNKNOWN) {
 		return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
 	}
 
 	if (ctx->enc_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->enc_key_type, ctx->enc_key_idx);
+		char key_path[7];
+		snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+		keymgr_remove_key(ctx->shnd, ctx->enc_key_type, key_path);
 	}
-	hal_data aeskey = HAL_DATA_INITIALIZER;
+	security_data aeskey = {NULL, 0};
 	aeskey.data = (void *)key;
-	aeskey.data_len = keybits >> 3;
+	aeskey.length = keybits >> 3;
 
 	int key_idx = alt_set_key(ctx->shnd, key_type, &aeskey, NULL, 32);
 	if (key_idx == -1) {
@@ -117,17 +123,19 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key,
 int mbedtls_aes_setkey_dec(mbedtls_aes_context *ctx, const unsigned char *key,
 							 unsigned int keybits)
 {
-	hal_key_type key_type = _mbedtls_get_aes_keytype(keybits);
-	if (key_type == HAL_KEY_UNKNOWN) {
+	security_key_type key_type = _mbedtls_get_aes_keytype(keybits);
+	if (key_type == KEY_UNKNOWN) {
 		return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
 	}
 
 	if (ctx->dec_key_idx != KEY_INDEX_INVALID) {
-		sl_remove_key(ctx->shnd, ctx->dec_key_type, ctx->dec_key_idx);
+		char key_path[7];
+		snprintf(key_path, 7, "ss/%d", ctx->dec_key_idx);
+		keymgr_remove_key(ctx->shnd, ctx->dec_key_type, key_path);
 	}
-	hal_data aeskey = HAL_DATA_INITIALIZER;
+	security_data aeskey = {NULL, 0};
 	aeskey.data = (void *)key;
-	aeskey.data_len = keybits >> 3;
+	aeskey.length = keybits >> 3;
 
 	int key_idx = alt_set_key(ctx->shnd, key_type, &aeskey, NULL, 32);
 	if (key_idx == -1) {
@@ -144,18 +152,22 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx,
 							const unsigned char input[16],
 							unsigned char output[16])
 {
-	hal_data aes_in = {(void *)input, 16, NULL, 0};
-	hal_data aes_out = {(void *)output, 16, NULL, 0};
-	hal_aes_param aes_param = {HAL_AES_ECB_NOPAD, NULL, 0, 0, NULL, NULL, NULL};
+	security_data aes_in = {(void *)input, 16};
+	security_data aes_out = {(void *)output, 16};
+	security_aes_param aes_param = {AES_ECB_NOPAD, NULL, 0, 0, NULL, NULL, NULL};
+
 	int ret = 0;
+	char key_path[7];
 
 	if (mode == MBEDTLS_AES_ENCRYPT) {
-		ret = sl_aes_encrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+		ret = crypto_aes_encryption(ctx->shnd, &aes_param, key_path, &aes_in, &aes_out);
 	} else if (mode == MBEDTLS_AES_DECRYPT) {
-		ret = sl_aes_decrypt(ctx->shnd, &aes_in, &aes_param, ctx->dec_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->dec_key_idx);
+		ret = crypto_aes_decryption(ctx->shnd, &aes_param, key_path, &aes_in, &aes_out);
 	}
 
-	if (ret != SECLINK_OK) {
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 
@@ -169,18 +181,22 @@ int mbedtls_aes_crypt_cbc(mbedtls_aes_context *ctx,
 							const unsigned char *input,
 							unsigned char *output)
 {
-	hal_data aes_in = {(void *)input, 16, NULL, 0};
-	hal_data aes_out = {(void *)output, 16, NULL, 0};
-	hal_aes_param aes_param = {HAL_AES_CBC_NOPAD, iv, 16, 0, NULL, NULL, NULL};
+	security_data aes_in = {(void *)input, 16};
+	security_data aes_out = {(void *)output, 16};
+	security_aes_param aes_param = {AES_CBC_NOPAD, iv, 16, 0, NULL, NULL, NULL};
+	
 	int ret = 0;
+	char key_path[7];
 
 	if (mode == MBEDTLS_AES_ENCRYPT) {
-		ret = sl_aes_encrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+		ret = crypto_aes_encryption(ctx->shnd, &aes_in, &aes_param, key_path, &aes_out);
 	} else if (mode == MBEDTLS_AES_DECRYPT) {
-		ret = sl_aes_decrypt(ctx->shnd, &aes_in, &aes_param, ctx->dec_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->dec_key_idx);
+		ret = crypto_aes_decryption(ctx->shnd, &aes_in, &aes_param, key_path, &aes_out);
 	}
 
-	if (ret != SECLINK_OK) {
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 
@@ -196,17 +212,21 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
 							 const unsigned char *input,
 							 unsigned char *output)
 {
-	hal_data aes_in = {(void *)input, length, NULL, 0};
-	hal_data aes_out = {(void *)output, length, NULL, 0};
-	hal_aes_param aes_param = {HAL_AES_CFB128, iv, 16, iv_off, NULL, NULL, NULL};
+	security_data aes_in = {(void *)input, length};
+	security_data aes_out = {(void *)output, length};
+	security_aes_param aes_param = {AES_CFB128, iv, 16, iv_off, NULL, NULL, NULL};
+	
 	int ret = 0;
+	char key_path[7];
 
 	if (mode == MBEDTLS_AES_ENCRYPT) {
-		ret = sl_aes_encrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+		ret = crypto_aes_encryption(ctx->shnd, &aes_in, &aes_param, key_path, &aes_out);
 	} else if (mode == MBEDTLS_AES_DECRYPT) {
-		ret = sl_aes_decrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
+		snprintf(key_path, 7, "ss/%d", ctx->dec_key_idx);
+		ret = crypto_aes_decryption(ctx->shnd, &aes_in, &aes_param, key_path, &aes_out);
 	}
-	if (ret != SECLINK_OK) {
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 
@@ -221,13 +241,16 @@ int mbedtls_aes_crypt_ctr(mbedtls_aes_context *ctx,
 							const unsigned char *input,
 							unsigned char *output)
 {
-	hal_data aes_in = {(void *)input, length, NULL, 0};
-	hal_data aes_out = {(void *)output, length, NULL, 0};
-	hal_aes_param aes_param = {HAL_AES_CTR, NULL, 0, NULL, nc_off, nonce_counter, stream_block};
+	security_data aes_in = {(void *)input, length};
+	security_data aes_out = {(void *)output, length};
+	security_aes_param aes_param = {AES_CTR, NULL, 0, NULL, nc_off, nonce_counter, stream_block};
+	
 	int ret = 0;
+	char key_path[7];
 
-	ret = sl_aes_encrypt(ctx->shnd, &aes_in, &aes_param, ctx->enc_key_idx, &aes_out);
-	if (ret != SECLINK_OK) {
+	snprintf(key_path, 7, "ss/%d", ctx->enc_key_idx);
+	ret = crypto_aes_encryption(ctx->shnd, &aes_in, &aes_param, key_path, &aes_out);
+	if (ret != SECURITY_OK) {
 		return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
 	}
 
