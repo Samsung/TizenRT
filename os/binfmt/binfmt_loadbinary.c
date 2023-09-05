@@ -39,6 +39,7 @@
 #endif
 
 #include "binfmt.h"
+#include "binfmt_arch_apis.h"
 #include "binary_manager/binary_manager.h"
 
 #ifdef CONFIG_BINFMT_ENABLE
@@ -189,11 +190,8 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	binfo("[%s] bss     start addr =  0x%x  size = %u\n", bin->bin_name, bin->sections[BIN_BSS], bin->sizes[BIN_BSS]);
 
 	elf_save_bin_section_addr(bin);
-#if defined(CONFIG_ARM_MPU)
-	binfmt_set_mpu(bin);
-#elif defined(CONFIG_ARCH_USE_MMU)
-	binfmt_setup_app_pgtable(bin);
-#endif
+	binfmt_arch_init_mem_protect(bin);
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
 		g_umm_app_id = (uint32_t *)(bin->sections[BIN_DATA] + 4);

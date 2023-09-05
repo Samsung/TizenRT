@@ -64,11 +64,9 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
-#ifdef CONFIG_ARM_MPU
-#include <tinyara/mpu.h>
-#endif
 
 #include "binfmt.h"
+#include "binfmt_arch_apis.h"
 #include "libelf/libelf.h"
 
 #ifdef CONFIG_BINFMT_ENABLE
@@ -171,9 +169,9 @@ int unload_module(FAR struct binary_s *binp)
 		 */
 
 #ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
-			/* For MPU restrictions, binary loader allocates one big memory block enough to contains each loading sections
+			/* In this case, binary loader allocates one big memory block enough to contain all sections
 			 * and assigns each sections start address based on the size.
-			 * For free the each section, find the start address of big memory block.
+			 * Hence, we just need to find the start address of big memory block and free it.
 			 */
 			void *start_addr = elf_find_start_section_addr(binp);
 			binfo("Freeing section memory: %p\n", start_addr);
@@ -198,23 +196,7 @@ int unload_module(FAR struct binary_s *binp)
 		kmm_free((FAR void *)binp->sections[0]);
 #endif
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (binp->islibrary) {
-#if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_disable_region(&binp->cmn_mpu_regs[i]);
-			}
-#else
-			up_mpu_disable_region(&binp->cmn_mpu_regs[0]);
-#endif
-#endif
-		}
-#endif
-
-#ifdef CONFIG_ARCH_USE_MMU
-		mmu_clear_app_pgtbl(binp->binary_idx);
-#endif
+		binfmt_arch_deinit_mem_protect(binp);
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.
 		 */
