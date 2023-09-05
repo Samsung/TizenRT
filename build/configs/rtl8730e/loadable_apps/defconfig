@@ -446,7 +446,11 @@ CONFIG_GPIO=y
 #
 # CONFIG_LCD is not set
 CONFIG_BCH=y
-# CONFIG_RTC is not set
+CONFIG_RTC=y
+# CONFIG_RTC_ALARM is not set
+CONFIG_RTC_DRIVER=y
+# CONFIG_RTC_HIRES is not set
+# CONFIG_RTC_IOCTL is not set
 # CONFIG_WATCHDOG is not set
 # CONFIG_TIMER is not set
 CONFIG_MMINFO=y
