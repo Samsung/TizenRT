@@ -42,7 +42,7 @@ static void show_usage(void)
 
 static void tash_security_level(int argc, char **args)
 {
-        security_handle hnd;
+	security_handle hnd;
 	security_data ss_data = {NULL, 0};
 	char ss_path[7];
 	security_error ret;
