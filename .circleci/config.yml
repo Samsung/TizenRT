@@ -177,6 +177,6 @@ workflows:
       - rtl8720e/loadable_apps:
           requires:
             - checkout_code
-      - rtl8730e/hello:
+      - rtl8730e/hello_8M:
           requires:
             - checkout_code
