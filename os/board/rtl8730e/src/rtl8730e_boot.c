@@ -88,7 +88,7 @@
  ************************************************************************************/
 extern FAR struct gpio_lowerhalf_s *amebasmart_gpio_lowerhalf(u32 pinname, u32 pinmode, u32 pinpull);
 #ifdef CONFIG_PRODCONFIG
-extern u32 EFUSERead8(u32 CtrlSetting, u32 Addr, u8 *Data, u8 L25OutVoltage);
+extern u32 OTP_Read8(u32 Addr, u8 *Data);
 #endif
 #if defined(CONFIG_AUDIO_I2SCHAR) && defined(CONFIG_AMEBASMART_I2S)
 extern int i2schar_devinit(void);
@@ -105,7 +105,7 @@ extern int i2schar_devinit(void);
 static int up_check_prod(void)
 {
 	u8 prod_disable;
-	EFUSERead8(0, EFUSE_SEC_CONFIG_ADDR1, &prod_disable, L25EOUTVOLTAGE);
+	OTP_Read8(SEC_CFG1, &prod_disable);
 	if (prod_disable == 0xff) {
 		return OK;
 	}
