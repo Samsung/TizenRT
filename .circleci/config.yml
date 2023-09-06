@@ -125,7 +125,17 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8730e/hello:
+  rtl8730e/hello_8M:
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8730e/loadable_8M:
     machine:
       image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
