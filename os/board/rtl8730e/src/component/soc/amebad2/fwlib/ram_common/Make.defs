@@ -72,11 +72,11 @@ CSRCS += ameba_i2c.c \
 	ameba_chipinfo.c \
 	ameba_swr_calib.c \
 	ameba_spi.c \
-	ameba_rom_patch.c\
-	ameba_aontimer.c\
-	ameba_wakepin.c
+	ameba_rom_patch.c \
+	ameba_aontimer.c \
+	ameba_wakepin.c \
+	ameba_otp.c
 	#ameba_mpu_ram.c \
-	#ameba_otp.c \
 	#ameba_pmc_com.c \
 	#ameba_prs.c \
 	#ameba_codec.c \
