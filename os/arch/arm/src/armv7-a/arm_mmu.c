@@ -65,6 +65,8 @@ static void mmu_set_flags(uint32_t *val, bool ro, bool exec, uint8_t isL1)
 			*val |= MMU_APP_L1_ROX;
 		} else if (ro) {
 			*val |= MMU_APP_L1_RO;
+		} else if (exec) {
+			*val |= MMU_APP_L1_RWX;
 		} else {
 			*val |= MMU_APP_L1_RW;
 		}
@@ -73,6 +75,8 @@ static void mmu_set_flags(uint32_t *val, bool ro, bool exec, uint8_t isL1)
 			*val |= MMU_APP_L2_ROX;
 		} else if (ro) {
 			*val |= MMU_APP_L2_RO;
+		} else if (exec) {
+			*val |= MMU_APP_L2_RWX;
 		} else {
 			*val |= MMU_APP_L2_RW;
 		}
