@@ -6,3 +6,6 @@
 == version 02fd15b2 /07/31-18:21:31 ==
 1.	Sync to version 8.3c SDK
 
+
+== version 125fbc78 /09/08-11:12:35 ==
+1. 	Fix BLE connection handle 

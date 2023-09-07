@@ -182,7 +182,7 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
                 os_mutex_give(ble_tizenrt_write_no_rsp_sem);
 
             trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
-            client_init_parm->trble_device_disconnected_cb(disconnected);
+            client_init_parm->trble_device_disconnected_cb(disconnected, 0);
         }
             break;
 

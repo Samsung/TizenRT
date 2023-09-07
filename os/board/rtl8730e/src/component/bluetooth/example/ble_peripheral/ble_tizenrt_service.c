@@ -165,6 +165,9 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 					p_cha_info = &tizenrt_ble_srv_database[srv_index].chrc_info[i];
 				}
 			}
+			p_cha_info->data_len = p_write_ind->len;
+			memcpy(p_cha_info->data, p_write_ind->value, p_write_ind->len);
+
             debug_print("app_id 0x%x Attribute 0x%x write_type %d len %d data 0x \n",
                             tizenrt_ble_srv_database[srv_index].app_id, 
                             p_cha_info->abs_handle,
