@@ -272,15 +272,6 @@ void amebasmart_mount_partitions(void)
 #endif /* CONFIG_FLASH_PARTITION */
 }
 
-#ifdef CONFIG_FTL_ENABLED
-extern u8 ftl_phy_page_num;
-extern u32 ftl_phy_page_start_addr;
-static void app_ftl_init(void)
-{
-	ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
-}
-#endif
-
 void amebasmart_memory_initialize(void)
 {
 
@@ -352,9 +343,6 @@ void board_initialize(void)
 			lldbg("Failed to register the RTC driver: %d\n", ret);
 		}
 	}
-#endif
-#ifdef CONFIG_FTL_ENABLED
-	app_ftl_init();
 #endif
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();

@@ -81,13 +81,8 @@ menu "Realtek RTL8730E BLE Support"
 config AMEBASMART_BLE
 	bool "Enable Amebasmart BLE"
 	default n
-	#select FTL_ENABLED
 
 if AMEBASMART_BLE
-config FTL_ENABLED
-	bool "Enable FTL"
-	default n
-
 config AMEBASMART_BLE_DEBUG
 	bool "Enable BLE Debug"
 	default n
