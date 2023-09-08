@@ -82,13 +82,11 @@ include component/soc/amebad2/fwlib/ap_core/Make.defs
 include component/soc/amebad2/fwlib/rom_common/Make.defs
 include component/soc/amebad2/swlib/Make.defs
 
-# Need to check this path
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
 include component/wifi/Make.defs
 include component/wifi/inic/Make.defs
 include component/wifi/driver/core/Make.defs
-#include component/ssl/mbedtls_ram_map/rom/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
 include component/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
@@ -151,11 +149,9 @@ CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/core
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/intf
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
-# Not sure if promsic needed
 CFLAGS += -I$(COMPONENT_DIR)/wifi/promisc
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
-CFLAGS += -I$(COMPONENT_DIR)/ssl/mbedtls_ram_map/rom
 
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
@@ -167,19 +163,14 @@ CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
 CFLAGS += -I$(COMPONENT_DIR)/os_dep
 CFLAGS += -I$(TOPDIR)/net/netmgr
-# Temporary include for it to compile, might not be needed in TizenRT
+# Temporary keep it, need further check whether the usb needs the filesystem
 CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs/r0.14b/include
 CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 
-
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/profile/client
-endif
-
-ifeq ($(CONFIG_FTL_ENABLED),y)
-CFLAGS += -I$(COMPONENT_DIR)/filesystem/ftl
 endif
 
 #CFLAGS += -DARM_CORE_CM4

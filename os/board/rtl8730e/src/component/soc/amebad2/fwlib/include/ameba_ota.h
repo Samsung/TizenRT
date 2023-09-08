@@ -40,17 +40,6 @@
 #define HEADER_LEN			8
 #define SUB_HEADER_LEN		24
 
-#if defined(CONFIG_AS_INIC_AP) || defined(CONFIG_SINGLE_CORE_WIFI)
-#include "ff.h"
-#include "vfs_fatfs.h"
-
-#define SDCARD_OTA_UPDATE
-// larger _MAX_SS would accelerate the OTA procedure
-#undef SD_OTA_BUF_SIZE
-#define SD_OTA_BUF_SIZE 	_MAX_SS
-#endif
-
-
 extern u32 IMG_ADDR[3][2];
 
 /* Exported constants --------------------------------------------------------*/
