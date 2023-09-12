@@ -1,0 +1,32 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config TESTING_SMP
+	tristate "SMP example"
+	default n
+	depends on SMP
+	---help---
+		Enable the SMP example.  This example basically extracts the pthread
+		barrier test from apps/testing/ostest and adds some instrumentation
+		useful for debugging SMP implementations.
+
+if TESTING_SMP
+
+config TESTING_SMP_NBARRIER_THREADS
+	int "Number of barrier threads"
+	default 8
+	---help---
+		Specifies the number of threads to create in the SMP test.  The default
+		is 8 but a smaller number may be needed on systems without sufficient memory
+		to start so many threads.
+
+config SMP_TEST_PTHREAD
+	bool "Test SMP with Pthreads"
+	default y
+	---help---
+		Test smp functionality using pthreads if this is enabled. Else, test the
+		smp functionality with tasks.
+
+endif
