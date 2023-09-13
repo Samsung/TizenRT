@@ -697,6 +697,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t eve
         if(p_gatt_mtu_ind->result == RTK_BT_OK){
             dbg("[APP] GATTS mtu exchange successfully, mtu_size: %d, conn_handle: %d \r\n",
                         p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
+            if(RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role){
+                server_init_parm.mtu_update_cb( p_gatt_mtu_ind->conn_handle, p_gatt_mtu_ind->mtu_size);
+            }
         }else{
             dbg("[APP] GATTS mtu exchange fail \r\n");
         }
@@ -820,7 +823,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 
         //set GAP configuration
 		bt_app_conf.app_profile_support = RTK_BT_PROFILE_GATTS | RTK_BT_PROFILE_GATTC;
-		bt_app_conf.mtu_size = 180;
+		bt_app_conf.mtu_size = 512;
 		bt_app_conf.master_init_mtu_req = true;
 		bt_app_conf.prefer_all_phy = 0;
 		bt_app_conf.prefer_tx_phy = 1 | 1<<1 | 1<<2;
