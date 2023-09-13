@@ -71,9 +71,8 @@
 #ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
 #include <tinyara/logm.h>
-#endif
-
 #include <tinyara/security_level.h>
+#endif
 
 #include <syslog.h>
 
