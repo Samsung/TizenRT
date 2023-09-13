@@ -358,7 +358,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         role = disconn_ind->role ? "slave" : "master";
         dbg("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n", 
                 disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-        client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
 
         if(ble_client_connect_is_running)
             ble_client_connect_is_running = 0;
@@ -382,8 +381,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         /* gattc action */
         general_client_detach_conn(disconn_ind->conn_handle);
         /* gap action */
-        if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
-            //rtk_bt_le_gap_start_adv(&adv_param);
+        if(RTK_BT_LE_ROLE_MASTER == disconn_ind->role){
+            client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
+        }else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
+            server_init_parm.disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
         }
         break;
     }
