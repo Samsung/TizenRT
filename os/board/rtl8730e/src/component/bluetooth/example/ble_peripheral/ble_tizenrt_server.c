@@ -552,11 +552,6 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
         return TRBLE_INVALID_STATE;
     }
 
-    if (con_handle != 0)
-    {
-        return TRBLE_NOT_FOUND;
-    }
-
     if(RTK_BT_FAIL == rtk_bt_le_gap_disconnect(con_handle))
     {
         debug_print("disconnect fail \n");
