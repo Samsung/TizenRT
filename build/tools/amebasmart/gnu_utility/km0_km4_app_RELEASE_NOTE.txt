@@ -1,8 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 77121eeb /07/31-18:28:32 ==
-1.	Add version info	
+== version 125fbc78 /09/08-11:12:35 ==
+1. 	Fix BLE connection handle
 
-== version 02fd15b2 /07/31-18:21:31 ==
+== version 02fd15b2 /08/28-19:21:31 ==
 1.	Sync to version 8.3c SDK
 
+== version 77121eeb /07/31-18:28:32 ==
+1.	Add version info	

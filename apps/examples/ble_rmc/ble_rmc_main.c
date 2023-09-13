@@ -691,7 +691,27 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 		int id = atoi(argv[2]);
 
-		ret = ble_client_disconnect(ctx_list[id]);
+		for (int i = 0; i < RMC_MAX_CONNECTION; i++){
+			if (ctx_list[i] != NULL && ctx_list[i]->conn_handle == id){
+				ret = ble_client_disconnect(ctx_list[i]);
+				break;
+			}
+		}
+		
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
+			goto ble_rmc_done;
+		}
+		RMC_LOG(RMC_CLIENT_TAG, "disconnect ok\n");
+	}
+
+	if (strncmp(argv[1], "disconns", 9) == 0) {
+		if (argc < 3) {
+			goto ble_rmc_done;
+		}
+		int id = atoi(argv[2]);
+		
+		ret = ble_server_disconnect(id);
 		if (ret != BLE_MANAGER_SUCCESS) {
 			RMC_LOG(RMC_CLIENT_TAG, "disconnect fail[%d]\n", ret);
 			goto ble_rmc_done;
