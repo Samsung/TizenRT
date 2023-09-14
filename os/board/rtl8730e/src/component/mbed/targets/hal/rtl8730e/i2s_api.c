@@ -202,6 +202,7 @@ static void i2s_pinmux_config(u32 pin_name, u32 pin_func)
   */
 void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx, PinName mck)
 {
+	obj->i2s_idx = 2;
 	DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: Use I2S%d \n", __func__, obj->i2s_idx);
 
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
