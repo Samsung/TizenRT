@@ -80,6 +80,7 @@ include component/soc/amebad2/fwlib/ram_common/Make.defs
 include component/soc/amebad2/fwlib/ap_peripheral/Make.defs
 include component/soc/amebad2/fwlib/ap_core/Make.defs
 include component/soc/amebad2/fwlib/rom_common/Make.defs
+include component/soc/amebad2/fwlib/ram_hp/Make.defs
 include component/soc/amebad2/swlib/Make.defs
 
 include component/usrcfg/rtl8730e/Make.defs
