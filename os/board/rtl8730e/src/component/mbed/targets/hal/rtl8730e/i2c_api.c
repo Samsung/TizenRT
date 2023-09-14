@@ -268,7 +268,7 @@ int i2c_write_timeout(i2c_t *obj, int address, char *data, int length, int stop,
   * @param  stop: Specify whether a STOP is issued after all the bytes are received.
   * @return Length of received data.
   */
-int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
+int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 {
 	/* To avoid gcc warnings */
 	(void) stop;
@@ -318,7 +318,7 @@ int i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
   * @param  stop: Specify whether a STOP is issued after all the bytes are sent.
   * @return Length of sent data.
   */
-int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
+int rtk_i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 {
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		/* Deinit I2C first */
