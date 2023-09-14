@@ -28,7 +28,11 @@
 #define CONFIG_WLAN 1
 #define CONFIG_AS_INIC_AP 1
 #define CONFIG_LWIP_LAYER 1
-#undef  CONFIG_HIGH_TP_TEST
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+#define  CONFIG_HIGH_TP_TEST 1
+#else
+#undef CONFIG_HIGH_TP_TEST
+#endif
 
 
 /*

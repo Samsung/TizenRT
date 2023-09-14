@@ -17,10 +17,9 @@ _WEAK void wifi_set_user_config(void)
 	rtw_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config */
-	wifi_user_config.concurrent_enabled = (u8)_TRUE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
+	wifi_user_config.concurrent_enabled = (u8)_FALSE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5; /* in sec*/
-#if !defined(CONFIG_PLATFORM_TIZENRT_OS)
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
 	wifi_user_config.skb_num_np = 22; /*In INIC mode for all traffics except tx data, In single core mode for all traffics*/
 	wifi_user_config.skb_num_ap = 5; /*In INIC mode for tx data packtes, not used in single core mode*/
@@ -28,12 +27,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.skb_num_np = 22;  /*4 for rx_ring_buffer + 16 for rx_ampdu + 2 for mgnt trx*/
 	wifi_user_config.skb_num_ap = 4;
 #endif
-#else /*set high tp config for TizenRT*/
-		wifi_user_config.skb_num_np = 22; /*In INIC mode for all traffics except tx data, In single core mode for all traffics*/
-		wifi_user_config.skb_num_ap = 5; /*In INIC mode for tx data packtes, not used in single core mode*/
-#endif
 	wifi_user_config.rx_ampdu_num = 16;
-
 #ifdef CONFIG_SINGLE_CORE_WIFI
 	wifi_user_config.skb_num_ap = 0;
 #endif
