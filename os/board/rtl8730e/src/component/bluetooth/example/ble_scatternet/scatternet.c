@@ -101,18 +101,18 @@ static uint8_t scan_rsp_data[] = {
     0x00,
 };
 
- static rtk_bt_le_adv_param_t adv_param = {
-     .interval_min = 0x30,
-     .interval_max = 0x60,
-     .type = RTK_BT_LE_ADV_TYPE_IND,
-     .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
-     .peer_addr = {
-         .type = (rtk_bt_le_addr_type_t)0,
-         .addr_val = {0},
-     },
-     .channel_map = RTK_BT_LE_ADV_CHNL_ALL,
-	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
-};
+// static rtk_bt_le_adv_param_t adv_param = {
+//     .interval_min = 0x30,
+//     .interval_max = 0x60,
+//     .type = RTK_BT_LE_ADV_TYPE_IND,
+//     .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
+//     .peer_addr = {
+//         .type = (rtk_bt_le_addr_type_t)0,
+//         .addr_val = {0},
+//     },
+//     .channel_map = RTK_BT_LE_ADV_CHNL_ALL,
+//	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+//};
 #endif
 
  static rtk_bt_le_scan_param_t scan_param = {
@@ -124,15 +124,15 @@ static uint8_t scan_rsp_data[] = {
      .duplicate_opt = 0,
  };
 
-static rtk_bt_le_security_param_t sec_param = {
-    .io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
-    .oob_data_flag = 0,
-    .bond_flag = 1,
-    .mitm_flag = 0,
-    .sec_pair_flag = 0,
-    .use_fixed_key = 0,
-    .fixed_key = 000000,
-};
+//static rtk_bt_le_security_param_t sec_param = {
+//    .io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+//    .oob_data_flag = 0,
+//    .bond_flag = 1,
+//    .mitm_flag = 0,
+//    .sec_pair_flag = 0,
+//    .use_fixed_key = 0,
+//    .fixed_key = 000000,
+//};
 
 #if RTK_BLE_PRIVACY_SUPPORT
 static bool privacy_enable = false;
@@ -163,7 +163,7 @@ rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result = {0};
 trble_device_connected ble_tizenrt_scatternet_bond_list[RTK_BLE_GAP_MAX_LINKS] = {0};
 
-static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_code, void* param) 
+static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_code, void* param, uint32_t len)
 {
     char le_addr[30] = {0};
     char *role;
@@ -688,7 +688,7 @@ static uint16_t app_get_gatts_app_id(uint8_t event, void *data)
     return app_id;
 }
 
-static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t event, void *data)
+static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t event, void *data, uint32_t len)
 {
 	/* printf("ble_peripheral_gatts_service_callback: app_id = %d, HID_SRV_ID = %d \r\n",app_id,HID_SRV_ID); */
 
@@ -750,7 +750,7 @@ static uint16_t app_get_gattc_profile_id(uint8_t event, void *data)
     return profile_id;
 }
 
-static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t event, void *data)
+static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t event, void *data, uint32_t len)
 {
 	uint16_t profile_id = 0xFFFF;
 
@@ -844,7 +844,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
         dbg("[APP] BD_ADDR: %s\r\n", addr_str);
 		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_param(&scan_param));
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, 
-                                                    ble_tizenrt_scatternet_gap_app_callback));
+                                                    (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gap_app_callback));
         memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const char *)RTK_BT_DEV_NAME));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name)); 
         BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
@@ -862,11 +862,11 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 
         /* gatts related */
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTS, 
-                                                    ble_tizenrt_scatternet_gatts_app_callback));
+                                                    (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gatts_app_callback));
 		BT_APP_PROCESS(ble_tizenrt_srv_add());
         /* gattc related */
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, 
-                                                    ble_tizenrt_scatternet_gattc_app_callback));
+                                                    (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gattc_app_callback));
         BT_APP_PROCESS(general_client_add());
 	}
 	else if (0 == enable)
