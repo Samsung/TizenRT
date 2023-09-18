@@ -288,6 +288,11 @@ void general_client_notify_hdl(void *data)
 	trble_data read_result;
 	read_result.length = ntf_ind->len;
 	read_result.data = (uint8_t *)malloc(read_result.length);
+	if (!read_result.data)
+	{
+		printf("fail to malloc data %s\n", __FUNCTION__);
+		return;
+	}
 	memcpy(read_result.data, ntf_ind->value, read_result.length);
 	client_init_parm->trble_operation_notification_cb((trble_operation_handle *)&ntf_ind->conn_handle, &read_result);
 	free(read_result.data);
@@ -306,10 +311,6 @@ void general_client_indicate_hdl(void *data)
 //	cfm_param.conn_handle = indicate_ind->conn_handle;
 	trble_data read_result;
 	
-	read_result.length = indicate_ind->len;
-	read_result.data = (uint8_t *)malloc(read_result.length);
-	memcpy(read_result.data, indicate_ind->value, read_result.length);
-	
 //	ret = rtk_bt_gattc_confirm(&cfm_param);
 //	if (RTK_BT_OK != ret) {
 //		printf("[APP] GATTC confirm for indication failed! err: 0x%x\r\n", ret);
@@ -317,6 +318,11 @@ void general_client_indicate_hdl(void *data)
 	
 	read_result.length = indicate_ind->len;
 	read_result.data = (uint8_t *)malloc(read_result.length);
+	if (!read_result.data)
+	{
+		printf("fail to malloc data %s\n", __FUNCTION__);
+		return;
+	}
 	memcpy(read_result.data, indicate_ind->value, read_result.length);
 	client_init_parm->trble_operation_indication_cb((trble_operation_handle *)&indicate_ind->conn_handle, &read_result);
 	free(read_result.data);

@@ -2245,7 +2245,7 @@ void bt_mesh_sensor_setup_model_alloc_mem_for_event_param(uint8_t evt_code, void
 uint32_t rtk_br_get_act_ret_param_size(uint16_t act)
 {
 //	uint8_t i = 0;
-//	uint32_t max_size = 0;
+	uint32_t max_size = 0;
 //	/* foreach event table */
 //	while (1) {
 //		if (rtk_bt_br_gap_act_mem_op_tab[i].act == act) {
@@ -2259,8 +2259,7 @@ uint32_t rtk_br_get_act_ret_param_size(uint16_t act)
 //		i++;
 //	}
 //
-//	return max_size;
-	return RTK_BT_OK;
+	return max_size;
 }
 
 uint16_t rtk_br_copy_act_ret_param(uint16_t act, void *dst, void *src)

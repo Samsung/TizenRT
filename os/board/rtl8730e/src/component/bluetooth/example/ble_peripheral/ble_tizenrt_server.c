@@ -693,7 +693,11 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
     }
 
     rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
-    memset(bond_info, 0, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
+    if (!bond_info) {
+        printf("%s allocate bond_info fail \r\n", __func__);
+        return TRBLE_FAIL;
+    }
+	memset(bond_info, 0, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
 	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, (uint8_t *)device_count)){
 		debug_print("get bond info failed \n");
 		osif_mem_free(bond_info);
@@ -713,8 +717,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
                             bonded_device_list[i].bd_addr.type);
 	}
 
-	if (bond_info)
-        osif_mem_free(bond_info);
+    osif_mem_free(bond_info);
 	
     return TRBLE_SUCCESS;
 }

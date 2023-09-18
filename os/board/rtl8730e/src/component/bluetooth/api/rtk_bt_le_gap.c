@@ -1356,6 +1356,10 @@ bool rtk_bt_le_sm_is_device_bonded(rtk_bt_le_addr_t *paddr)
 	rtk_bt_le_bond_info_t *bond_info =
 		(rtk_bt_le_bond_info_t *)osif_mem_alloc(RAM_TYPE_DATA_ON,
 				bond_size * sizeof(rtk_bt_le_bond_info_t));
+	if (!bond_info) {
+		printf("%s allocate bond_info fail \r\n", __func__);
+		return false;
+	}
 	memset(bond_info, 0, bond_size * sizeof(rtk_bt_le_bond_info_t));
 
 	if (rtk_bt_le_sm_get_bond_info(bond_info, &bond_size) == RTK_BT_OK) {
