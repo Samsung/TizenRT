@@ -77,7 +77,6 @@ def make_bootparam():
     kernel_data_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
     FLASH_START_ADDR = util.get_value_from_file(config_file_path, "CONFIG_FLASH_START_ADDR=")
-    FLASH_SIZE = util.get_value_from_file(config_file_path, "CONFIG_FLASH_SIZE=")
     names = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
     sizes = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
     names = filter(None, names)
@@ -85,28 +84,14 @@ def make_bootparam():
 
     INITIAL_ACTIVE_IDX = 0
 
-    # Check partitions of kernel and bootparam
+    # Check addresses of kernel partitions
     kernel_address = []
     offset = 0
-    bp_part_size = 0
     for index, name in enumerate(names):
         if name == "kernel":
             # Get addresses of kernel partitions
             address = hex(int(FLASH_START_ADDR, 16) + offset)
             kernel_address.append(address)
-        if name == "bootparam":
-            # Get size of bootparam partition
-            bp_part_size = int(sizes[index]) * 1024
-            # Verify partition size and offset of boot parameters
-            if bp_part_size == 0:
-                print "FAIL!! No bootparam partition."
-                sys.exit(1)
-            elif bp_part_size != SIZE_OF_BP_PARTITION:
-                print "FAIL!! Bootparam partition size should be 8K. Please re-configure."
-                sys.exit(1)
-            elif offset != int(FLASH_SIZE) - int(SIZE_OF_BP_PARTITION):
-                print "FAIL!! Bootparam should be located at the end of flash with 8K. Please re-configure."
-                sys.exit(1)
         offset += int(sizes[index]) * 1024
 
     # Verify kernel partitions

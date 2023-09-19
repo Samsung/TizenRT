@@ -539,12 +539,12 @@ endif
 	$(Q) python ./tools/set_bininfo.py
 	$(Q) python ./tools/convert_binary.py "$(BIN_EXT)" "$(OBJCOPY)" "$(OBJCOPYARGS)" "$(KERNEL_START)"
 
+ifeq ($(CONFIG_USE_BP),y)
+	$(Q) $(call MAKE_BOOTPARAM)
+endif
 
 ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/validate_output.py
-endif
-ifeq ($(CONFIG_USE_BP),y)
-	$(Q) $(call MAKE_BOOTPARAM)
 endif
 
 ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)

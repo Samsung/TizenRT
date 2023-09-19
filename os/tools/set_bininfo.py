@@ -23,6 +23,7 @@ import string
 import config_util as util
 
 TARGET_EXT_NAME = "trpk" # TizenRT Package (TizenRT Header + output)
+BP_EXT_NAME = "bin" # Boot parameter Extension
 
 # This script save the binary name as "[bin_type]_[board]_[version].extension" in .bininfo file
 
@@ -38,6 +39,8 @@ def save_bininfo(bin_name) :
             f.write('APP2_BIN_NAME=' + bin_name + '\n')
         elif ("common" in bin_name) :
             f.write('COMMON_BIN_NAME=' + bin_name + '\n')
+        elif ("bootparam" in bin_name) :
+            f.write('BOOTPARAM_BIN_NAME=' + bin_name + '\n')
         else :
             f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
 
@@ -80,3 +83,7 @@ if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True
     COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
     COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
     save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
+
+# Set the boot parameter bin name as "bootparam.bin"
+if util.check_config_existence(cfg_file, 'CONFIG_USE_BP') == True :
+    save_bininfo('bootparam' + '.' + BP_EXT_NAME)
