@@ -113,6 +113,12 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 					p_cha_info = &tizenrt_ble_srv_database[srv_index].chrc_info[i];
 				}
 			}
+
+			if (p_cha_info == NULL){
+				dbg("[APP] p_cha_info is null\r\n");
+				break;
+			}
+
             debug_print("app_id 0x%x index 0x%x abs_handle 0x%x \n", 
                             tizenrt_ble_srv_database[srv_index].app_id,
                             p_cha_info->index,
@@ -164,6 +170,11 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 				if(p_write_ind->index == tizenrt_ble_srv_database[srv_index].chrc_info[i].index){
 					p_cha_info = &tizenrt_ble_srv_database[srv_index].chrc_info[i];
 				}
+			}
+
+			if (p_cha_info == NULL){
+				dbg("[APP] p_cha_info is null\r\n");
+				break;
 			}
 
 			p_cha_info->data_len = p_write_ind->len; 

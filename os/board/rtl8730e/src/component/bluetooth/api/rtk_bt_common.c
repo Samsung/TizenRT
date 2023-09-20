@@ -893,16 +893,16 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len)
 
 	switch (addr->type) {
 	case RTK_BT_LE_ADDR_TYPE_PUBLIC:
-		strcpy(type, "public");
+		strncpy(type, "public", 7);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RANDOM:
-		strcpy(type, "random");
+		strncpy(type, "random", 7);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC:
-		strcpy(type, "public-id");
+		strncpy(type, "public-id", 10);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RPA_RANDOM:
-		strcpy(type, "random-id");
+		strncpy(type, "random-id", 10);
 		break;
 	default:
 		snprintf(type, sizeof(type), "0x%02x", addr->type);
@@ -939,9 +939,9 @@ void rtk_bt_addr_to_str(uint8_t addr_type, uint8_t *paddr, char *str, uint32_t l
 	case RTK_BT_ADDR_LE_RPA_RANDOM:
 		strcpy(str_type + strlen(str_type), "le random-id");
 		break;
-	case RTK_BT_ADDR_CLASSIC:
-		strcpy(str_type + strlen(str_type), "classic");
-		break;
+//	case RTK_BT_ADDR_CLASSIC:
+//		strcpy(str_type + strlen(str_type), "classic");
+//		break;
 	default:
 		snprintf(str_type, sizeof(str_type), "0x%02x", addr_type);
 		break;
@@ -1006,13 +1006,29 @@ uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint3
 {
 	uint8_t ret = 0;
 	rtk_bt_evt_cb_t cb_func = NULL;
+	uint16_t index = 0;
 
 	if (group < RTK_BT_API_BR_BASE) {
-		cb_func = rtk_bt_le_evt_cb_tbl[group - RTK_BT_API_LE_BASE];
+		/* check if the input index is greater than rtk_bt_le_evt_cb_tbl's array size*/
+		index = group - RTK_BT_API_LE_BASE;
+		if ( index > (RTK_BT_LE_GP_MAX - RTK_BT_API_LE_BASE)-1){
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		cb_func = rtk_bt_le_evt_cb_tbl[index];
 	} else if (group < RTK_BT_API_COMMON_BASE) {
-		cb_func = rtk_bt_br_evt_cb_tbl[group - RTK_BT_API_BR_BASE];
+		/* check if the input index is greater than rtk_bt_br_evt_cb_tbl's array size*/
+		index = group - RTK_BT_API_BR_BASE;
+		if ( index > (RTK_BT_BR_GP_MAX - RTK_BT_API_BR_BASE)-1){
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		cb_func = rtk_bt_br_evt_cb_tbl[index];
 	} else { /* if (group >= RTK_BT_API_COMMON_BASE) */
-		cb_func = rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE];
+		/* check if the input index is greater than rtk_bt_evt_cb_tbl's array size*/
+		index = group - RTK_BT_API_COMMON_BASE;
+		if ( index > (RTK_BT_COMMON_GP_MAX - RTK_BT_API_COMMON_BASE)-1){
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		cb_func = rtk_bt_evt_cb_tbl[index];
 	}
 
 	if (cb_func) {

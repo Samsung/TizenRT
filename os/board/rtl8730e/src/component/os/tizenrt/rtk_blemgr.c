@@ -253,7 +253,7 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 
 trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
-//todo
+	return TRBLE_SUCCESS;
 }
 
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
