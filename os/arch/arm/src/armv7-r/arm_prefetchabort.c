@@ -76,6 +76,7 @@
 #include <debug.h>
 
 #include <tinyara/irq.h>
+#include <tinyara/security_level.h>
 
 #include "sched/sched.h"
 #include "up_internal.h"
@@ -103,8 +104,9 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 	current_regs = regs;
 
 	/* Crash -- possibly showing diagnostic debug information. */
-
-	assertdbg("\nPrefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	if (CHECK_SECURE_PERMISSION()) {
+		lldbg("\nPrefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	}
 	PANIC();
 	return regs;				/* To keep the compiler happy */
 }

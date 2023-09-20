@@ -184,18 +184,20 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed\n");
 	lldbg("==============================================\n");
 
+	if (CHECK_SECURE_PERMISSION()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
-	struct tcb_s *rtcb = this_task();
-	assertdbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
+		struct tcb_s *rtcb = this_task();
+		lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, rtcb->name);
 #else
-	assertdbg("Assertion failed at file:%s line: %d\n", filename, lineno);
+		lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
 #endif
 #endif
 
-	/* Print the extra arguments (if any) from ASSERT_INFO macro */
-	if (assert_info_str[0]) {
-		assertdbg("%s\n", assert_info_str);
+		/* Print the extra arguments (if any) from ASSERT_INFO macro */
+		if (assert_info_str[0]) {
+			lldbg("%s\n", assert_info_str);
+		}
 	}
 
 	xtensa_assert(EXIT_FAILURE);
@@ -229,14 +231,16 @@ void xtensa_panic(int xptcode, uint32_t *regs)
 
 	board_autoled_on(LED_ASSERTION);
 
+	if (CHECK_SECURE_PERMISSION()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
-	struct tcb_s *rtcb = this_task();
-	assertdbg("Unhandled Exception %d task: %s\n", xptcode, rtcb->name);
+		struct tcb_s *rtcb = this_task();
+		lldbg("Unhandled Exception %d task: %s\n", xptcode, rtcb->name);
 #else
-	assertdbg("Unhandled Exception %d\n", xptcode);
+		lldbg("Unhandled Exception %d\n", xptcode);
 #endif
 #endif
+	}
 
 	CURRENT_REGS = regs;
 	xtensa_assert(EXIT_FAILURE);	/* Should not return */
@@ -328,14 +332,16 @@ void xtensa_user(int exccause, uint32_t *regs)
 
 	board_autoled_on(LED_ASSERTION);
 
+	if (CHECK_SECURE_PERMISSION()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
-	struct tcb_s *rtcb = this_task();
-	assertdbg("User Exception: EXCCAUSE=%04x task: %s\n", exccause, rtcb->name);
+		struct tcb_s *rtcb = this_task();
+		lldbg("User Exception: EXCCAUSE=%04x task: %s\n", exccause, rtcb->name);
 #else
-	assertdbg("User Exception: EXCCAUSE=%04x\n", exccause);
+		lldbg("User Exception: EXCCAUSE=%04x\n", exccause);
 #endif
 #endif
+	}
 
 	CURRENT_REGS = regs;
 	xtensa_assert(EXIT_FAILURE);	/* Should not return */
