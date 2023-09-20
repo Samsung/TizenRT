@@ -400,7 +400,6 @@ static void up_dumpstate(void)
 
 static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
 {
-	irqstate_t flags = irqsave();
 #if CONFIG_TASK_NAME_SIZE > 0
 	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
 #else
@@ -447,7 +446,6 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
 #endif
-	irqrestore(flags);
 }
 
 /****************************************************************************
@@ -484,21 +482,10 @@ static void _up_assert(int errorcode)
  * Name: recovery_assert
  ****************************************************************************/
 
-static inline void recovery_assert(uint32_t asserted_location)
+static inline void recovery_assert(uint32_t asserted_location, bool is_kmm_corruption)
 {
-	irqstate_t flags = irqsave();
-	assertdbg("Checking kernel heap for corruption...\n");
-	if (mm_check_heap_corruption(g_kmmheap) == OK) {
-		assertdbg("No kernel heap corruption detected\n");
-	} else {
-		/* treat kernel fault */
-
-		_up_assert(EXIT_FAILURE);
-	}
-	irqrestore(flags);
-
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
+	if (!is_kmm_corruption && IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
 	} else
@@ -543,7 +530,11 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	size_t kernel_assert_location = 0;
 	ARCH_GET_RET_ADDRESS(kernel_assert_location)
+
+	irqstate_t flags = irqsave();
+
 	struct tcb_s *fault_tcb = this_task();
+	bool is_kmm_corruption = false;
 
 	board_led_on(LED_ASSERTION);
 
@@ -574,7 +565,13 @@ void up_assert(const uint8_t *filename, int lineno)
 	 */
 	if (CHECK_SECURE_PERMISSION()) {
 		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
+		lldbg("Checking kernel heap for corruption...\n");
+	}
+	if (mm_check_heap_corruption(g_kmmheap) != OK) {
+		is_kmm_corruption = true;
 	}
 
-	recovery_assert(asserted_location);
+	irqrestore(flags);
+
+	recovery_assert(asserted_location, is_kmm_corruption);
 }

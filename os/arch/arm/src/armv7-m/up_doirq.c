@@ -62,6 +62,7 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <arch/board/board.h>
+#include <tinyara/security_level.h>
 
 #include "up_arch.h"
 #include "up_internal.h"
@@ -112,10 +113,7 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	uint32_t stack_remain;
 
 	stack_remain = (CONFIG_ARCH_INTERRUPTSTACK & ~3) - up_check_intstack();
-	if (stack_remain < 8) {
-		assertdbg("STACK OVERFLOW!!\n");
-		PANIC();
-	}
+	ASSERT_INFO(stack_remain >= 8, "STACK OVERFLOW!!\n");
 #endif
 	/* Current regs non-zero indicates that we are processing an interrupt;
 	 * regs holds the state of the interrupted logic; current_regs holds the

@@ -77,6 +77,7 @@
 #include <debug.h>
 
 #include <arch/irq.h>
+#include <tinyara/security_level.h>
 
 #include "up_internal.h"
 
@@ -102,7 +103,9 @@
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
-	assertdbg("\nUndefined instruction at 0x%x\n", regs[REG_PC]);
+	if (CHECK_SECURE_PERMISSION()) {
+		lldbg("\nUndefined instruction at 0x%x\n", regs[REG_PC]);
+	}
 	current_regs = regs;
 	PANIC();
 	return regs;				/* To keep the compiler happy */
