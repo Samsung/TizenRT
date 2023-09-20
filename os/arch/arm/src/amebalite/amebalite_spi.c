@@ -584,9 +584,8 @@ static int amebalite_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 			/* The only case that an error should occur here is if the wait was
 			 * awakened by a signal.
 			 */
-			printf("ret == OK : %d errno == EINTR: %d\n", ret, errno);
-			// DEBUGASSERT(ret == OK || errno == EINTR);	//KAI Error is -1 becausee of einter
-		} while (errno == EINTR);
+			DEBUGASSERT(errno != EINTR);
+		} while (ret < OK);
 	} else {
 		(void)sem_post(&priv->exclsem);
 		ret = OK;
@@ -1090,8 +1089,8 @@ static void amebalite_spi_bus_initialize(struct amebalite_spidev_s *priv)
 
 	priv->spi_object.spi_idx = priv->spi_idx;
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
-
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
+	sem_init(&priv->exclsem, 0, 1);
 
 }
 
