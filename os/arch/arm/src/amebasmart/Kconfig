@@ -66,6 +66,65 @@ config RTL8730E_SERIAL_FIFO
 	bool "UART SERIAL FIFO"
 	default n
 
+config AMEBASMART_SPI
+	bool "AMEBASMART_SPI"
+	default n
+	
+if AMEBASMART_SPI
+
+config AMEBASMART_SPI_EXCHANGE
+	bool "Enable AMEBASMART SPI EXCHANGE"
+	default y
+
+endif
+
+config AMEBASMART_I2C
+	bool "AMEBASMART_I2C"
+	default n
+if AMEBASMART_I2C
+config AMEBASMART_I2C_DYNTIMEO
+	bool "[AMEBASMART I2C]Use dynamic timeouts"
+	default n
+if AMEBASMART_I2C_DYNTIMEO
+config AMEBASMART_I2C_DYNTIMEO_USECPERBYTE
+	int "[AMEBASMART I2C]Timeout Microseconds per Byte"
+	default 500
+	depends on AMEBASMART_I2C_DYNTIMEO
+
+config AMEBASMART_I2C_DYNTIMEO_STARTSTOP
+	int "[AMEBASMART I2C]Timeout for Start/Stop (Milliseconds)"
+	default 1000
+	depends on AMEBASMART_I2C_DYNTIMEO
+endif
+config AMEBASMART_I2CTIMEOSEC
+	int "[AMEBASMART I2C]Timeout seconds"
+	default 0
+	depends on !AMEBASMART_I2C_DYNTIMEO
+
+config AMEBASMART_I2CTIMEOMS
+	int "[AMEBASMART I2C]Timeout Milliseconds"
+	default 500
+	depends on !AMEBASMART_I2C_DYNTIMEO
+
+config AMEBASMART_I2CTIMEOTICKS
+	int "[AMEBASMART I2C]Timeout for Done and Stop (ticks)"
+	default 500
+	depends on !AMEBASMART_I2C_DYNTIMEO
+endif
+
+config AMEBASMART_I2S
+	bool "Enable Amebasmart I2S"
+	default n
+
+if AMEBASMART_I2S
+config AMEBASMART_I2S_RX
+	bool "Enable I2S RX"
+	default n
+
+config AMEBASMART_I2S_TX
+	bool "Enable I2S TX"
+	default n
+endif
 endmenu
 
 menu "Realtek RTL8730E WIFI Support"
