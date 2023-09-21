@@ -36,7 +36,7 @@ _WEAK void wifi_set_user_config(void)
 
 	/*Regulatory related*/
 	wifi_user_config.channel_plan = 0;
-	wifi_user_config.rtw_tx_pwr_lmt_enable = 2;	/* 0: disable, 1: enable, 2: Depend on efuse(flash) */
+	wifi_user_config.rtw_tx_pwr_lmt_enable = 0;	/* 0: disable, 1: enable, 2: Depend on efuse(flash) */
 	wifi_user_config.rtw_tx_pwr_by_rate	= 2;	/* 0: disable, 1: enable, 2: Depend on efuse(flash) */
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_adaptivity_en = DISABLE;
