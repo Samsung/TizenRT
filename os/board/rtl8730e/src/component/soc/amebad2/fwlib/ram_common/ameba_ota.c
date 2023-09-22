@@ -19,8 +19,6 @@
 #include "rtl_se_crypto_function.h"
 #include "bootloader_hp.h"
 #define TIZENRT_KERNEL_HEADER_LEN 0x10
-Certificate_TypeDef Cert;
-SubImgInfo_TypeDef SubImgInfo[12];
 static int SBOOT_Validate_Algorithm_OTA(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash)
 {
 	int ret;
@@ -32,7 +30,7 @@ static int SBOOT_Validate_Algorithm_OTA(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u
 	ret = ameba_SBOOT_Validate_Algorithm(&algo_info);
 	return ret;
 }
-static int SBOOT_Validate_Signature_OTA(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg, u32 Len, u8 *Sig)
+static int SBOOT_Validate_Signature_OTA(u8 *AuthAlg, u8 *HashAlg, u8 *Pk, u8 *Msg, u32 Len, u8 *Sig)
 {
 	int ret;
 	OTA_SIG_CHECK_ADAPTER sig_info;
@@ -47,7 +45,7 @@ static int SBOOT_Validate_Signature_OTA(u8 AuthAlg, u8 HashAlg, u8 *Pk, u8 *Msg,
 	return ret;
 }
 
-static int SBOOT_Validate_ImgHash_OTA(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num)
+static int SBOOT_Validate_ImgHash_OTA(u8 *HashAlg, u8 *ImgHash, SubImgInfo_TypeDef *SubImgInfo, u8 Num)
 {
 	int ret;
 	OTA_SIG_CHECK_ADAPTER hash_info;
@@ -61,7 +59,7 @@ static int SBOOT_Validate_ImgHash_OTA(u8 HashAlg, u8 *ImgHash, SubImgInfo_TypeDe
 	return ret;
 }
 
-static int SBOOT_Validate_PubKey_OTA(u8 AuthAlg, u8 *Pk, u8 *Hash)
+static int SBOOT_Validate_PubKey_OTA(u8 *AuthAlg, u8 *Pk, u8 *Hash)
 {
 
 	int ret;
@@ -85,7 +83,7 @@ static void BOOT_ImgCopy_OTA(void *__restrict dst0, const void *__restrict src0,
 static int User_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum)
 {
 	int ret;
-	u8 AuthAlg, HashAlg;
+	u8 AuthAlg = 0, HashAlg = 0;
 	
 	/*1. verify signature*/
 	/*1.1 Initialize hash engine*/
@@ -102,7 +100,7 @@ static int User_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_TypeDe
 	
 	/* 1.3 validate signature */
 
-	ret = SBOOT_Validate_Signature_OTA(AuthAlg, HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, (u8 *)Manifest->Signature);
+	ret = SBOOT_Validate_Signature_OTA(&AuthAlg, &HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, (u8 *)Manifest->Signature);
 
 	if (ret != 0) {
 		printf ("%s User image validate Signature failed\n", __func__);
@@ -111,7 +109,7 @@ static int User_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_TypeDe
 
 	/* 1.4 calculate and validate image hash */
 
-	ret = SBOOT_Validate_ImgHash_OTA(HashAlg, (u8 *)Manifest->ImgHash, SubImgInfo, SubImgNum);
+	ret = SBOOT_Validate_ImgHash_OTA(&HashAlg, (u8 *)Manifest->ImgHash, SubImgInfo, SubImgNum);
 
 	if (ret != 0) {
 		printf ("%s User image validate ImgHash failed\n",__func__);
@@ -167,7 +165,7 @@ static int Kernel_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_Type
 	int ret;
 	u8 i;
 	char *Name[] = {"IMG1", "IMG2", "IMG3", "AP BL1&FIP"};
-	u8 AuthAlg, HashAlg;
+	u8 AuthAlg = 0, HashAlg = 0;
 	
 	if (SYSCFG_OTP_SBootEn() == FALSE) {
 	
@@ -190,7 +188,7 @@ static int Kernel_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_Type
 			break;
 		}
 	}
-	ret = SBOOT_Validate_PubKey_OTA(AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
+	ret = SBOOT_Validate_PubKey_OTA(&AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
 
 	if (ret != 0) {
 		printf ("%s Kernel image validate PubKey failed\n",__func__);
@@ -200,7 +198,7 @@ static int Kernel_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_Type
 	/* 2.4 validate signature */
 
 	
-	ret = SBOOT_Validate_Signature_OTA(AuthAlg, HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, Manifest->Signature);
+	ret = SBOOT_Validate_Signature_OTA(&AuthAlg, &HashAlg, Manifest->SBPubKey, (u8 *)Manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, Manifest->Signature);
 
 	if (ret != 0) {
 		printf ("%s Kernel image validate Signature failed\n",__func__);
@@ -209,7 +207,7 @@ static int Kernel_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_Type
 
 	/* 2.5 calculate and validate image hash */
 		
-	ret = SBOOT_Validate_ImgHash_OTA(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
+	ret = SBOOT_Validate_ImgHash_OTA(&HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 
 	if (ret != 0) {
 		printf ("%s Kernel image validate ImgHash failed\n",__func__);
@@ -221,7 +219,7 @@ static int Kernel_SignatureCheck_OTA(Manifest_TypeDef *Manifest, SubImgInfo_Type
 
 SBOOT_FAIL:
 	printf("%s VERIFY FAIL, ret = %d\n", Name[Manifest->ImgID], ret);
-	for (int i = 0; i < 32; i ++){
+	for (i = 0; i < 32; i ++){
 		printf("%02x",*(Manifest->SBPubKey + i));
 	}
 	return FALSE;
@@ -233,7 +231,7 @@ static int Kernel_CertificateCheck_OTA(Certificate_TypeDef *Cert, u32 Addr)
 	u8 PubKeyHash[32];
 	u8 i;
 	int ret = 0;
-	u8 AuthAlg, HashAlg;
+	u8 AuthAlg = 0, HashAlg = 0;
 
 	/* 1. check if secure boot enable. */
 	if (SYSCFG_OTP_SBootEn() == FALSE) {
@@ -241,7 +239,7 @@ static int Kernel_CertificateCheck_OTA(Certificate_TypeDef *Cert, u32 Addr)
 		return FALSE;
 	}
 
-	BOOT_ImgCopy_OTA(Signature, (void *)(Addr + Cert->TableSize), SIGN_MAX_LEN);
+	BOOT_ImgCopy_OTA(&Signature, (void *)(Addr + Cert->TableSize), SIGN_MAX_LEN);
 
 	/* 2. read public key hash from OTP.*/
 	
@@ -261,7 +259,7 @@ static int Kernel_CertificateCheck_OTA(Certificate_TypeDef *Cert, u32 Addr)
 	}
 
 	/* 3.3 validate pubkey hash */
-	ret = SBOOT_Validate_PubKey_OTA(AuthAlg, Cert->SBPubKey, PubKeyHash);
+	ret = SBOOT_Validate_PubKey_OTA(&AuthAlg, Cert->SBPubKey, PubKeyHash);
 
 	if (ret != 0) {
 		printf ("%s Kernel image validate PubKey failed\n",__func__);
@@ -269,7 +267,7 @@ static int Kernel_CertificateCheck_OTA(Certificate_TypeDef *Cert, u32 Addr)
 	}
 
 	/* 3.4 validate signature */
-	ret = SBOOT_Validate_Signature_OTA(AuthAlg, HashAlg, Cert->SBPubKey, (u8 *)Cert, Cert->TableSize, Signature);
+	ret = SBOOT_Validate_Signature_OTA(&AuthAlg, &HashAlg, Cert->SBPubKey, (u8 *)Cert, Cert->TableSize, Signature);
 	if (ret != 0) {
 		printf ("%s Kernel image validate Signature failed\n",__func__);
 		goto SBOOT_FAIL;
@@ -289,7 +287,6 @@ int OTA_UserImageSignatureCheck(uint32_t input_addr)
 {
 	
 	SubImgInfo_TypeDef SubImgInfo;
-
 	Manifest_TypeDef Manifest;
 
 	u32 PhyAddr;
@@ -318,8 +315,9 @@ int OTA_UserImageSignatureCheck(uint32_t input_addr)
 static int BOOT_OTA_AP (u32 addr)
 {
 	u8 Cnt;
-	u8 ret;
+	SubImgInfo_TypeDef SubImgInfo;
 	Manifest_TypeDef Manifest;
+	Certificate_TypeDef Cert;
 	
 	char *APLabel[] = {"AP BL1 SRAM", "AP BL1 DRAM", "AP FIP"};
 	u32 PhyAddr = (u32) addr;
@@ -329,7 +327,7 @@ static int BOOT_OTA_AP (u32 addr)
 	
 	if (BOOT_LoadSubImage_OTA(&SubImgInfo, PhyAddr, Cnt, APLabel, TRUE) == TRUE) {
 				/* AP ECC verify if need */
-		if (Kernel_SignatureCheck_OTA(&Manifest, SubImgInfo, Cnt, &Cert, KEYID_AP) == FALSE){
+		if (Kernel_SignatureCheck_OTA(&Manifest, &SubImgInfo, Cnt, &Cert, KEYID_AP) == FALSE){
 			return FALSE;
 		}
 	} else {
@@ -337,7 +335,7 @@ static int BOOT_OTA_AP (u32 addr)
 			return FALSE;
 		}
 
-
+	return TRUE;
 
 }
 
@@ -346,8 +344,9 @@ int OTA_KernelImageSignatureCheck(uint32_t input_addr)
 	u32 ImgAddr = 0;
 	u32 TotalLen = 0; 
 	u32 TotalLen_KM4 = 0;
-	
+	SubImgInfo_TypeDef SubImgInfo[12];
 	Manifest_TypeDef Manifest;
+	Certificate_TypeDef Cert;
 	u8 Cnt;
 	u8 i;
 	u32 Index = 0;

@@ -78,6 +78,10 @@ void *__inhibit_loop_to_libcall _memset(void *m, int c, size_t n)
 		   we can set large blocks quickly.  */
 		buffer = (d << 8) | d;
 		buffer |= (buffer << 16);
+		/*
+		* SVACE-UNREACHABLE_CODE : It was depends on the chip architecture is 32bit or 64bit and the #define LBLOCKSIZE (sizeof(long)) value set by the user
+		* Realtek: To cover all architecture RTK solution
+		*/
 		for (i = 32; i < LBLOCKSIZE * 8; i <<= 1) {
 			buffer = (buffer << i) | buffer;
 		}

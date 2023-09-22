@@ -306,15 +306,6 @@ void board_initialize(void)
 
 	/* init console */
 	shell_init_rom(0, 0);
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	shell_init_ram();
-
-	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_RTLSIM) || \
-		(SYSCFG_CHIPType_Get() == CHIP_TYPE_PALADIUM)) {
-		app_simulation_init();
-	}
-#endif
-
 	amebasmart_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
@@ -336,7 +327,7 @@ void board_initialize(void)
 	struct rtc_lowerhalf_s *rtclower;
 	int ret;
 
-	rtclower = amebasmart_rtc_lowerhalf();
+	rtclower = (FAR struct rtc_lowerhalf_s *)amebasmart_rtc_lowerhalf();
 	if (rtclower) {
 		ret = rtc_initialize(0, rtclower);
 		if (ret < 0) {

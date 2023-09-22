@@ -46,11 +46,7 @@ void rtw_free_sema(_sema *sema)
 
 void rtw_up_sema(_sema *sema)
 {
-	if (rtw_in_interrupt()) {
-		sem_post((sem_t *)(*sema));
-	} else {
-		sem_post((sem_t *)(*sema));
-	}
+	sem_post((sem_t *)(*sema));
 }
 
 void rtw_up_sema_from_isr(_sema *sema)

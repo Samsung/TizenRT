@@ -132,7 +132,7 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 
 	obj->pwm_idx = pwm_chan;
 	obj->period = 0x10000 * (prescaler + 1) / 40;
-	obj->pulse = 0x1000 * (prescaler + 1) / 40;
+	obj->pulse = 0x1000 * (float)((prescaler + 1)) / 40;
 
 	if (!timer8_start) {
 		pwmout_timer8_init(obj);

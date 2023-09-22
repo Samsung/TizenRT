@@ -144,7 +144,9 @@ static struct amebasmart_lowerhalf_s g_rtc_lowerhalf = {
 	.ops = &g_rtc_ops,
 };
 
+#ifdef CONFIG_RTC_ALARM
 static alarm_t g_amebasmart_alarm;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -219,7 +221,7 @@ static int amebasmart_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_t
 
 	/* Convert the one second epoch time to a struct tm */
 
-	ret = gmtime_r(&timer, (FAR struct tm *)rtctime);
+	ret = (int)gmtime_r(&timer, (FAR struct tm *)rtctime);
 
 	sem_post(&rtc->devsem);
 
