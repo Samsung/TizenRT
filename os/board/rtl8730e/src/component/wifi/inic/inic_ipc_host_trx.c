@@ -125,7 +125,9 @@ static void inic_ipc_host_rx_tasklet(void)
 	_queue *recv_queue = NULL;
 	struct pbuf *p_buf = NULL;
 	int index = 0;
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	err_enum_t error = ERR_OK;
+#endif
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
 	recv_queue = &g_inic_host_priv.recv_queue;
@@ -217,6 +219,15 @@ void inic_ipc_host_init_skb(void)
 	host_skb_data = (struct skb_data *)rtw_zmalloc(wifi_user_config.skb_num_ap * sizeof(struct skb_data));
 	if (!host_skb_info || !host_skb_data) {
 		DBG_8195A("%s=>skb malloc fail!\n\r", __func__);
+		if (host_skb_info) {
+			rtw_mfree((u8 *)host_skb_info, 0);
+			host_skb_info = NULL;
+		}
+		if (host_skb_data) {
+			rtw_mfree((u8 *)host_skb_data, 0);
+			host_skb_data = NULL;
+		}
+		return;
 	}
 
 	/*make sure the real memory is set to zero, or DCache_Invalidate in inic_ipc_host_send will get wrong values*/
@@ -309,6 +320,12 @@ void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb)
 
 	/* allocate host_recv_buf and associate to the p_buf */
 	precvbuf = (struct host_recv_buf *)rtw_zmalloc(sizeof(struct host_recv_buf));
+	if (!precvbuf) {
+		if (p_buf) {
+			pbuf_free(p_buf);
+		}
+		goto RSP;
+	}
 	precvbuf->p_buf = p_buf;
 	precvbuf->idx_wlan = idx_wlan;
 

@@ -561,7 +561,7 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 	param.password_len = password_len;
 	param.key_id = key_id;
 
-	if (wifi_autoreconnect_task.task != NULL) {
+	if (wifi_autoreconnect_task.task != 0) {
 #if CONFIG_LWIP_LAYER
 		netifapi_dhcp_stop(&xnetif[0]);
 #endif
@@ -574,7 +574,7 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 				return;
 			}
 
-			if (wifi_autoreconnect_task.task == NULL) {
+			if (wifi_autoreconnect_task.task == 0) {
 				break;
 			}
 		}
@@ -935,7 +935,7 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 	DCache_CleanInvalidate((u32)csi_buf_temp, buf_len);
 	DCache_CleanInvalidate((u32)len_temp, sizeof(u32));
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 4);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_CSI_REPORT, param_buf, 3);
 	DCache_Invalidate((u32)csi_buf_temp, buf_len);
 	rtw_memcpy(csi_buf, csi_buf_temp, buf_len);
 

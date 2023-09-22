@@ -547,7 +547,7 @@ void cmd_promisc(int argc, char **argv)
 		//promisc_test(duration, 0);
 	{
 		promisc_test_all(duration, 0);
-	} else if ((argc == 3) && ((duration = atoi(argv[1])) > 0) && (strcmp(argv[2], "with_len") == 0)) {
+	} else if ((argc == 3) && ((duration = atoi(argv[1])) > 0) && (duration < 0x7FFFFFFF) && (strcmp(argv[2], "with_len") == 0)) {
 		promisc_test(duration, 1);
 	} else {
 		printf("\n\rUsage: %s DURATION_SECONDS [with_len]", argv[0]);
