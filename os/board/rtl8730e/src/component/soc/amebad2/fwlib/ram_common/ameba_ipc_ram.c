@@ -87,13 +87,19 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 	default:
 		break;
 	}
-
-	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-		DBG_8195A("IPC Dir: %s, ChNum: %d, Last Req not clean!\n", Dir[(IPC_TX_CHANNEL_SWITCH(IPC_Dir) << 1) + IPC_TX0_CHANNEL_SWITCH(IPC_Dir)], IPC_ChNum);
-		return 0;
+	if (IPCx != NULL){
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
+			DBG_8195A("IPC Dir: %s, ChNum: %d, Last Req not clean!\n", Dir[(IPC_TX_CHANNEL_SWITCH(IPC_Dir) << 1) + IPC_TX0_CHANNEL_SWITCH(IPC_Dir)], IPC_ChNum);
+			return 0;
+		} else {
+			IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+			return 1;
+		}
 	} else {
-		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
-		return 1;
+
+		DBG_8195A("IPCx is NULL\n");
+		return 0;
+
 	}
 }
 

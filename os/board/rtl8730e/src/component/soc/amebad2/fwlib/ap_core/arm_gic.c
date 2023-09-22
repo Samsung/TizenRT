@@ -227,7 +227,7 @@ void arm_gic_eoi(uint32_t irq)
 	arm_gic_freq_restore();
 }
 
-#if (CONFIG_CPUS_NUM > 1)
+#if defined(CONFIG_CPUS_NUM) && (CONFIG_CPUS_NUM > 1)
 void arm_gic_raise_softirq(uint32_t cpu, uint32_t irq)
 {
 	if (irq > 15 || cpu > 7) {
@@ -247,6 +247,10 @@ static void gic_dist_init(void)
 	gic_irqs = sys_read32(GICD_TYPER) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
 	gic_irqs = gic_irqs < GIC_MAX_NUM_INTR ? gic_irqs : GIC_MAX_NUM_INTR;
+	/*
+	 * SVACE-UNREACHABLE_CODE : It was depends on the #define GIC_MAX_NUM_INTR value set by the user
+	 * Realtek: To cover all architecture RTK solution
+	 */
 	if (gic_irqs > 1020) {
 		gic_irqs = 1020;
 	}

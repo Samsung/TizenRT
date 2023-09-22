@@ -40,7 +40,6 @@
 #include "scu.h"
 #include "arm_internal.h"
 #include "amebasmart_config.h"
-#include "amebasmart_clockconfig.h"
 #include "amebasmart_memorymap.h"
 #include "amebasmart_boot.h"
 #include "sctlr.h"
@@ -355,10 +354,6 @@ void arm_boot(void)
   /* Disable the watchdog timer */
 
   amebasmart_wdtdisable();
-
-  /* Initialize clocking to settings provided by board-specific logic */
-
-  amebasmart_clockconfig();
 
   /* Initialize the FPU */
 

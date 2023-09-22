@@ -63,7 +63,7 @@ uint32_t us_ticker_read(void)
 	uint64_t us_tick;
 
 	tick_cnt = SYSTIMER_TickGet(); //up counter
-	us_tick = tick_cnt * (1000000 / 32768);
+	us_tick = (uint64_t)tick_cnt * (1000000 / 32768);
 
 	return ((uint32_t)us_tick);
 }

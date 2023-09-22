@@ -106,6 +106,10 @@ void *_memchr(const void *src_void, int c, size_t length)
 		asrc = (unsigned long *) src;
 		mask = d << 8 | d;
 		mask = mask << 16 | mask;
+		/*
+		* SVACE-UNREACHABLE_CODE : It was depends on the chip architecture is 32bit or 64bit and the #define LBLOCKSIZE (sizeof(long)) value set by the user
+		* Realtek: To cover all architecture RTK solution
+		*/
 		for (i = 32; i < LBLOCKSIZE * 8; i <<= 1) {
 			mask = (mask << i) | mask;
 		}

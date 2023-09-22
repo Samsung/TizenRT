@@ -68,8 +68,6 @@ int DiagVSprintf(char *buf, const char *fmt, va_list ap)
 				shift = 20;
 			} else if (((*lpforchk) >= 0x1000000) && ((*lpforchk) < 0x10000000)) {
 				shift = 24;
-			} else if ((*lpforchk) >= 0x10000000) {
-				shift = 28;
 			} else {
 				shift = 28;
 			}
@@ -325,8 +323,6 @@ int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...)
 				shift = 20;
 			} else if (((*lpforchk) >= 0x1000000) && ((*lpforchk) < 0x10000000)) {
 				shift = 24;
-			} else if ((*lpforchk) >= 0x10000000) {
-				shift = 28;
 			} else {
 				shift = 28;
 			}
