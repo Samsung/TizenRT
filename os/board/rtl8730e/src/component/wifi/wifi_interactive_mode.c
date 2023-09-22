@@ -594,10 +594,13 @@ int8_t cmd_wifi_disconnect(void)
 void cmd_wifi_info(int argc, char **argv)
 {
 	int i = 0;
-	u8 wlan_idx[2] = {0, 1};
+	u8 wlan_idx[NET_IF_NUM];// Declared the array size as follow the NET_IF_NUM
 	rtw_sw_statistics_t sw_stats;
-
 	rtw_wifi_setting_t setting;
+
+	memset(wlan_idx, 0, NET_IF_NUM);
+	wlan_idx[1] = 1; // Fixed , 1st element must be 0:STA and 2nd element must be 1:SoftAP
+
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
 			nvdbg("\n\r\nWIFI %s Status: Running", ifname[i]);
@@ -952,7 +955,7 @@ static void cmd_debug(int argc, char **argv)
 		int i = 0;
 		int len = 0;
 		for (i = 1; i < argc; i++) {
-			strcpy(&buf[len], argv[i]);
+			strncpy(&buf[len], argv[i], strlen(argv[i]));
 			len = strlen(copy);
 			buf[len++] = ' ';
 			buf[len] = '\0';
