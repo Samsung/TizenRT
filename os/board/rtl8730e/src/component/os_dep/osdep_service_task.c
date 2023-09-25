@@ -30,6 +30,8 @@ int rtw_create_task(struct task_struct *ptask, const char *name,
 {
 	int func_addr, ctx_addr;
 	pid_t pid;
+	/* The following character array of size 9 is used to store pointer address in hex represented as ascii.
+	   As address has 32-bit integer value, the maximum string length in hex is 8 with 1 null character.*/
 	char str_func_addr[9];
 	char str_ctx_addr[9];
 	char *task_info[3];

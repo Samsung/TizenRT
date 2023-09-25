@@ -93,6 +93,8 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
                       void *p_param, uint16_t stack_size, uint16_t priority)
 {
 	pid_t pid;
+	/* The following character array of size 9 is used to store pointer address in hex represented as ascii.
+	   As address has 32-bit integer value, the maximum string length in hex is 8 with 1 null character.*/
 	char routine_addr[9], param_addr[9];
 	char *task_info[3];
 
@@ -452,6 +454,8 @@ bool osif_mutex_give(void *p_handle)
 bool osif_msg_queue_create(void **pp_handle, uint32_t msg_num, uint32_t msg_size)
 {
 	mqd_t pmqd;
+	/* The following character array of size 9 is used to store pointer address in hex represented as ascii.
+	   As address has 32-bit integer value, the maximum string length in hex is 8 with 1 null character.*/
 	char mq_name[9];
 	struct mq_attr attr;
 	int ret;
