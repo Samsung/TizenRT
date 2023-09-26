@@ -88,23 +88,23 @@
 
 void task_show_tcbinfo(struct tcb_s *tcb)
 {
-	lldbg("State       : %u\n", tcb->task_state);
-	lldbg("Flags       : %u\n", tcb->flags);
-	lldbg("Lock count  : %u\n", tcb->lockcount);
+	lldbg_noarg("State       : %u\n", tcb->task_state);
+	lldbg_noarg("Flags       : %u\n", tcb->flags);
+	lldbg_noarg("Lock count  : %u\n", tcb->lockcount);
 #if CONFIG_RR_INTERVAL > 0
-	lldbg("Timeslice   : %d\n", tcb->timeslice);
+	lldbg_noarg("Timeslice   : %d\n", tcb->timeslice);
 #endif
-	lldbg("Waitdog     : %p\n", tcb->waitdog);
-	lldbg("WaitSem     : %p\n", tcb->waitsem);
+	lldbg_noarg("Waitdog     : %p\n", tcb->waitdog);
+	lldbg_noarg("WaitSem     : %p\n", tcb->waitsem);
 #ifndef CONFIG_DISABLE_MQUEUE
-	lldbg("MsgwaitQ    : %p\n", tcb->msgwaitq);
+	lldbg_noarg("MsgwaitQ    : %p\n", tcb->msgwaitq);
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
-	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
+	lldbg_noarg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
 #endif
 #ifdef CONFIG_LIB_SYSCALL
-	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
-	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
+	lldbg_noarg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
+	lldbg_noarg("Syscall     : %p\n", tcb->xcp.syscall);
 #endif
 }
 
@@ -122,11 +122,11 @@ static void task_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 
 	/* Dump interesting properties of this task */
 
-	lldbg(TASKDUMP_FORMAT, TASKDUMP_VALUE);
+	lldbg_noarg(TASKDUMP_FORMAT, TASKDUMP_VALUE);
 
 #ifdef CONFIG_STACK_COLORATION
 	if (used_stack_size == tcb->adj_stack_size) {
-		lldbg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
+		lldbg_noarg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
 #endif
 }
@@ -139,14 +139,15 @@ static void task_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 
 void task_show_alivetask_list(void)
 {
-	lldbg("*******************************************\n");
-	lldbg("List of all tasks in the system:\n");
-	lldbg("*******************************************\n");
+	lldbg_noarg("---------------------------------------------------------------------------------------------------\n");
+	lldbg_noarg("List of all tasks in the system:\n");
+	lldbg_noarg("---------------------------------------------------------------------------------------------------\n");
 
-	lldbg(TASKDUMP_ARGS_FORMAT, TASKDUMP_ARGS);
-	lldbg("---------------------------------------------------------------------------------------------------\n");
+	lldbg_noarg(TASKDUMP_ARGS_FORMAT, TASKDUMP_ARGS);
+	lldbg_noarg("---------------------------------------------------------------------------------------------------\n");
 
 	/* Dump interesting properties of each task in the crash environment */
 
 	sched_foreach(task_taskdump, NULL);
+	lldbg_noarg("---------------------------------------------------------------------------------------------------\n");
 }

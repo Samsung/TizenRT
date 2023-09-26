@@ -47,7 +47,7 @@
 #include <arch/board/board.h>
 
 //#include "chip.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "imx_boot.h"
 #include "sabre-6quad.h"
 

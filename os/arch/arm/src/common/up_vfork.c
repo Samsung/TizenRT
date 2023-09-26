@@ -71,28 +71,12 @@
 #endif
 
 #include "up_vfork.h"
+#include "up_internal.h"
 #include "sched/sched.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* ARM requires at least a 4-byte stack alignment.  For use with EABI and
- * floating point, the stack must be aligned to 8-byte addresses.
- */
-
-#ifndef CONFIG_STACK_ALIGNMENT
-
-/* The symbol  __ARM_EABI__ is defined by GCC if EABI is being used.  If you
- * are not using GCC, make sure that CONFIG_STACK_ALIGNMENT is set correctly!
- */
-
-#ifdef __ARM_EABI__
-#define CONFIG_STACK_ALIGNMENT 8
-#else
-#define CONFIG_STACK_ALIGNMENT 4
-#endif
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -175,7 +159,7 @@ pid_t up_vfork(const struct vfork_s *context)
 	 * requested.
 	 */
 
-	stacksize = parent->adj_stack_size + CONFIG_STACK_ALIGNMENT - 1;
+	stacksize = parent->adj_stack_size + STACK_ALIGNMENT - 1;
 
 	/* Allocate the stack for the TCB */
 

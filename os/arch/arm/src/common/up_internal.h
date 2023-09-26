@@ -66,6 +66,13 @@
 #include <stdint.h>
 #endif
 
+
+/****************************************************************************
+ * Inline functions
+ ****************************************************************************/
+#define _alert lldbg
+#define PRIx32 "x"
+#define PRId32 "x"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -122,11 +129,29 @@
 #undef CONFIG_RAMLOG_SYSLOG
 #endif
 
+/* For use with EABI and floating point, the stack must be aligned to 8-byte
+ * addresses.
+ */
+
+#ifdef __ARM_EABI__
+#define STACK_ALIGNMENT		8
+#else
+#define STACK_ALIGNMENT		4
+#endif
+
+/* Stack alignment macros */
+
+#define STACK_ALIGN_MASK    (STACK_ALIGNMENT - 1)
+#define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
+#define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
+
 /* Check if an interrupt stack size is configured */
 
 #ifndef CONFIG_ARCH_INTERRUPTSTACK
 #define CONFIG_ARCH_INTERRUPTSTACK 0
 #endif
+
+#define INTSTACK_SIZE (CONFIG_ARCH_INTERRUPTSTACK & ~STACK_ALIGN_MASK)
 
 /* Macros to handle saving and restoring interrupt state.  In the current ARM
  * model, the state is always copied to and from the stack and TCB.  In the
@@ -168,6 +193,11 @@
 #endif
 #define up_restorestate(regs) (current_regs = regs)
 
+#elif defined(CONFIG_ARCH_CORTEXA32)
+
+#define arm_savestate(regs)    (regs = (uint32_t *)CURRENT_REGS)
+#define arm_restorestate(regs) (CURRENT_REGS = regs)
+
 /* Otherwise, for the ARM7 and ARM9.  The state is copied in full from stack
  * to stack.  This is not very efficient and should be fixed to match Cortex-A5.
  */
@@ -188,6 +218,30 @@
 
 #endif
 
+/* Toolchain dependent, linker defined section addresses */
+
+#if defined(__ICCARM__)
+#  define _START_TEXT  __sfb(".text")
+#  define _END_TEXT    __sfe(".text")
+#  define _START_BSS   __sfb(".bss")
+#  define _END_BSS     __sfe(".bss")
+#  define _DATA_INIT   __sfb(".data_init")
+#  define _START_DATA  __sfb(".data")
+#  define _END_DATA    __sfe(".data")
+#else
+#  define _START_TEXT  &_stext
+#  define _END_TEXT    &_etext
+#  define _START_BSS   &_sbss
+#  define _END_BSS     &_ebss
+#  define _DATA_INIT   &_eronly
+#  define _START_DATA  &_sdata
+#  define _END_DATA    &_edata
+#  define _START_TDATA &_stdata
+#  define _END_TDATA   &_etdata
+#  define _START_TBSS  &_stbss
+#  define _END_TBSS    &_etbss
+#endif
+
 /* This is the value used to mark the stack for subsequent stack monitoring
  * logic.
  */
@@ -198,6 +252,20 @@
 
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
 #define CURRENT_REGS (g_current_regs[up_cpu_index()])
+
+#define getreg8(a)     (*(volatile uint8_t *)(a))
+#define putreg8(v,a)   (*(volatile uint8_t *)(a) = (v))
+#define getreg16(a)    (*(volatile uint16_t *)(a))
+#define putreg16(v,a)  (*(volatile uint16_t *)(a) = (v))
+#define getreg32(a)    (*(volatile uint32_t *)(a))
+#define putreg32(v,a)  (*(volatile uint32_t *)(a) = (v))
+
+/* Non-atomic, but more effective modification of registers */
+
+#define modreg8(v,m,a)  putreg8((getreg8(a) & ~(m)) | ((v) & (m)), (a))
+#define modreg16(v,m,a) putreg16((getreg16(a) & ~(m)) | ((v) & (m)), (a))
+#define modreg32(v,m,a) putreg32((getreg32(a) & ~(m)) | ((v) & (m)), (a))
+
 #endif
 
 /****************************************************************************
@@ -331,6 +399,60 @@ EXTERN uint32_t _eramfuncs;		/* Copy destination end address in RAM */
 #ifndef CONFIG_MPU_STACK_GUARD_SIZE
 #define CONFIG_MPU_STACK_GUARD_SIZE 0
 #endif
+
+#if defined(CONFIG_ARCH_CORTEXA32)
+void modifyreg8(unsigned int addr, uint8_t clearbits, uint8_t setbits);
+void modifyreg16(unsigned int addr, uint16_t clearbits, uint16_t setbits);
+void modifyreg32(unsigned int addr, uint32_t clearbits, uint32_t setbits);
+void arm_boot(void);
+uint32_t *arm_decodeirq(uint32_t *regs);
+void arm_fullcontextrestore(uint32_t *restoreregs) noreturn_function;
+void arm_switchcontext(uint32_t **saveregs, uint32_t *restoreregs);
+void arm_sigdeliver(void);
+uint32_t *arm_doirq(int irq, uint32_t *regs);
+uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr);
+uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr);
+uint32_t *arm_syscall(uint32_t *regs);
+uint32_t *arm_undefinedinsn(uint32_t *regs);
+void arm_vectorundefinsn(void);
+void arm_vectorsvc(void);
+void arm_vectorprefetch(void);
+void arm_vectordata(void);
+void arm_vectoraddrexcptn(void);
+void arm_vectorirq(void);
+void arm_vectorfiq(void);
+
+#if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+uintptr_t arm_intstack_alloc(void);
+uintptr_t arm_intstack_top(void);
+#endif
+
+#ifdef CONFIG_PAGING
+void arm_pginitialize(void);
+uint32_t *arm_va2pte(uintptr_t vaddr);
+#else /* CONFIG_PAGING */
+# define arm_pginitialize()
+#endif /* CONFIG_PAGING */
+
+#ifdef CONFIG_ARCH_FPU
+void arm_fpuconfig(void);
+#else
+#  define arm_fpuconfig()
+#endif
+
+#ifdef CONFIG_ARCH_L2CACHE
+void arm_l2ccinitialize(void);
+#else
+#  define arm_l2ccinitialize()
+#endif
+
+#if defined(CONFIG_NET) && !defined(CONFIG_NETDEV_LATEINIT)
+void arm_netinitialize(void);
+#else
+# define arm_netinitialize()
+#endif
+
+#else 
 
 /* Low level initialization provided by board-level logic ******************/
 
@@ -469,6 +591,24 @@ void up_restorefpu(const uint32_t *regs);
 #define up_restorefpu(regs)
 #endif
 
+/* Networking ***************************************************************/
+
+#ifdef CONFIG_NET
+void up_netinitialize(void);
+#else
+#define up_netinitialize()
+#endif
+
+/* Cache control ************************************************************/
+
+#ifdef CONFIG_ARCH_L2CACHE
+void up_l2ccinitialize(void);
+#else
+#define up_l2ccinitialize()
+#endif
+
+#endif	// CONFIG_ARCH_CORTEXA32
+
 /* System timer *************************************************************/
 
 void up_timer_initialize(void);
@@ -506,18 +646,6 @@ void lowconsole_init(void);
 void weak_function up_dmainitialize(void);
 #endif
 
-/* Cache control ************************************************************/
-
-#ifdef CONFIG_ARCH_L2CACHE
-void up_l2ccinitialize(void);
-#else
-#define up_l2ccinitialize()
-#endif
-
-/* Watchdog timer ***********************************************************/
-
-void up_wdtinit(void);
-
 /* LED interfaces provided by board-level logic *****************************/
 
 #ifdef CONFIG_ARCH_LEDS
@@ -528,20 +656,6 @@ void board_led_off(int led);
 #define board_led_initialize()
 #define board_led_on(led)
 #define board_led_off(led)
-#endif
-
-/* Networking ***************************************************************/
-
-/* Defined in board/up_network.c for board-specific Ethernet implementations,
- * or chip/xyx_ethernet.c for chip-specific Ethernet implementations, or
- * common/up_etherstub.c for a cornercase where the network is enabled yet
- * there is no Ethernet driver to be initialized.
- */
-
-#ifdef CONFIG_NET
-void up_netinitialize(void);
-#else
-#define up_netinitialize()
 #endif
 
 /* USB **********************************************************************/
@@ -562,7 +676,7 @@ void up_rnginitialize(void);
 
 /* Debug ********************************************************************/
 #ifdef CONFIG_STACK_COLORATION
-void up_stack_color(FAR void *stackbase, size_t nbytes);
+void up_stack_color(FAR void *stackbase, void *stackend);
 void go_os_start(void *pv, unsigned int nbytes)
 	__attribute__ ((naked, no_instrument_function, noreturn));
 #endif

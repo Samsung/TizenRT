@@ -74,7 +74,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "imx_gpio.h"
 #include "sabre-6quad.h"
 

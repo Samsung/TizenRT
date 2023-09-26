@@ -79,7 +79,7 @@
 #include "common.h"
 #endif
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
 #include "osdep_service.h"

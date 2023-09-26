@@ -38,7 +38,7 @@
 #include "arm.h"
 #include "mmu.h"
 #include "scu.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "amebasmart_config.h"
 #include "amebasmart_memorymap.h"
 #include "amebasmart_boot.h"

@@ -454,6 +454,19 @@ config ARCH_IRQPRIO
 		interrupts with certain configuration options.  So this selection
 		should be used with caution.
 
+config ARCH_MMUDUMP
+	bool "Dump MMU settings on assertions"
+	default n
+	depends on ARCH_USE_MMU
+	---help---
+		Enable to dump the MMU page tables when a crash happens.
+
+config ARCH_TASKDUMP
+	bool "Dump Task info on assertions"
+	default n
+	---help---
+		Enable to dump info about all tasks when a crash happens.
+
 config ARCH_STACKDUMP
 	bool "Dump stack on assertions"
 	default n

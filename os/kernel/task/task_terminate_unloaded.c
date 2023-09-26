@@ -109,15 +109,21 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 
 	sched_lock();
 
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+#if defined(CONFIG_APP_BINARY_SEPARATION)
 	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
-	if (IS_BINARY_MAINTASK(tcb) && up_mpu_check_active(&tcb->mpu_regs[0])) {
+	if (IS_BINARY_MAINTASK(tcb)) {
+#if defined(CONFIG_ARM_MPU)
+		if (up_mpu_check_active(&tcb->mpu_regs[0])) {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
-			up_mpu_disable_region(&tcb->mpu_regs[i]);
-		}
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_disable_region(&tcb->mpu_regs[i]);
+			}
 #else
-		up_mpu_disable_region(&tcb->mpu_regs[0]);
+			up_mpu_disable_region(&tcb->mpu_regs[0]);
+#endif
+		}
+#elif defined(CONFIG_ARCH_USE_MMU)
+		mmu_clear_app_pgtbl(tcb->app_id);
 #endif
 	}
 #endif

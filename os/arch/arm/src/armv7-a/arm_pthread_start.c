@@ -47,7 +47,7 @@
 
 #include <arch/syscall.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 #if !defined(CONFIG_BUILD_FLAT) && defined(__KERNEL__) && \
     !defined(CONFIG_DISABLE_PTHREAD)

@@ -43,7 +43,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/tls.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Public Functions

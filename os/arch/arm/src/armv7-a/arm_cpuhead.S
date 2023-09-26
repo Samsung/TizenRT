@@ -49,7 +49,7 @@
 #include "mmu.h"
 #include "smp.h"
 #include "chip.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 
 #ifdef CONFIG_SMP
 

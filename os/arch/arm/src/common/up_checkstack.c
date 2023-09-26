@@ -98,18 +98,14 @@ static size_t do_stackcheck(uintptr_t alloc, size_t size);
  *
  ****************************************************************************/
 
-static size_t do_stackcheck(uintptr_t alloc, size_t size)
+static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 {
-	FAR uintptr_t start;
-	FAR uintptr_t end;
+	start = STACK_ALIGN_UP(start);
+	end = STACK_ALIGN_DOWN(end);
+
+	size_t size = end - start;
 	FAR uint32_t *ptr;
 	size_t mark;
-
-	/* Get aligned addresses and adjusted sizes */
-
-	start = alloc & ~3;
-	end = (alloc + size + 3) & ~3;
-	size = end - start;
 
 	/* The ARM uses a push-down stack:  the stack grows toward lower addresses
 	 * in memory.  We need to start at the lowest address in the stack memory
@@ -178,7 +174,7 @@ static size_t do_stackcheck(uintptr_t alloc, size_t size)
 
 size_t up_check_tcbstack(FAR struct tcb_s *tcb)
 {
-	return do_stackcheck((uintptr_t)tcb->stack_alloc_ptr + CONFIG_MPU_STACK_GUARD_SIZE, tcb->adj_stack_size);
+	return do_stackcheck((uintptr_t)tcb->stack_alloc_ptr, (uintptr_t)tcb->adj_stack_ptr);
 }
 
 ssize_t up_check_tcbstack_remain(FAR struct tcb_s *tcb)
@@ -191,9 +187,9 @@ size_t up_check_stack(void)
 	return up_check_tcbstack(this_task());
 }
 
-size_t up_check_assertstack(uintptr_t alloc, size_t size)
+size_t up_check_assertstack(uintptr_t start, uintptr_t end)
 {
-	return do_stackcheck((uintptr_t)alloc, size);
+	return do_stackcheck(start, end);
 }
 
 ssize_t up_check_stack_remain(void)
@@ -204,24 +200,28 @@ ssize_t up_check_stack_remain(void)
 #ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 size_t up_check_nestirqstack(void)
 {
-	return do_stackcheck((uintptr_t)&g_nestedirqstkalloc, (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3));
+	return do_stackcheck((uintptr_t)&g_nestedirqstkalloc, (uintptr_t)&g_nestedirqstkbase);
 }
 
 size_t up_check_nestirqstack_remain(void)
 {
-	return (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3) - up_check_nestirqstack();
+	return (STACK_ALIGN_DOWN(CONFIG_ARCH_INTERRUPTSTACK) - up_check_nestirqstack());
 }
 #endif
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 size_t up_check_intstack(void)
 {
-	return do_stackcheck((uintptr_t)&g_intstackalloc, (CONFIG_ARCH_INTERRUPTSTACK & ~3));
+#ifdef CONFIG_SMP
+	return do_stackcheck((uintptr_t)arm_intstack_alloc(), (uintptr_t)arm_intstack_top());
+#else
+	return do_stackcheck((uintptr_t)&g_intstackalloc, (uintptr_t)&g_intstackbase);
+#endif
 }
 
 size_t up_check_intstack_remain(void)
 {
-	return (CONFIG_ARCH_INTERRUPTSTACK & ~3) - up_check_intstack();
+	return STACK_ALIGN_DOWN(CONFIG_ARCH_INTERRUPTSTACK) - up_check_intstack();
 }
 #endif
 

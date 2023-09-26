@@ -45,7 +45,7 @@
 #include <string.h>
 #include <tinyara/irq.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions

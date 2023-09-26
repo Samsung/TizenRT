@@ -46,7 +46,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "imx_iomuxc.h"
 
 /****************************************************************************

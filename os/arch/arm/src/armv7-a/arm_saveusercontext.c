@@ -42,7 +42,7 @@
 #include <tinyara/config.h>
 
 #include <arch/syscall.h>
-#include "arm_internal.h"
+#include "up_internal.h"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

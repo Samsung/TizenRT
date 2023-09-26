@@ -49,7 +49,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/sched_note.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "cp15_cacheops.h"
 #include "gic.h"
 #include "sched/sched.h"

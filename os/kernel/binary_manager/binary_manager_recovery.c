@@ -215,6 +215,8 @@ void binary_manager_deactivate_rtthreads(int bin_idx)
 void binary_manager_recover_userfault(void)
 {
 	int bin_idx;
+	/* Get a tcb of fault thread for fault handling */
+	struct tcb_s *tcb = this_task();
 #ifndef CONFIG_BINMGR_RELOAD_REBOOT // Board Reset for binary reloading
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* If a fault happens in common binary or user binaries, it needs to reload all user binaries */
@@ -225,11 +227,9 @@ void binary_manager_recover_userfault(void)
 		binary_manager_deactivate_rtthreads(bin_idx);
 	}
 	/* Send fault message and Unblock fault message sender */
+	bin_idx = tcb->group->tg_binidx;
 	return binary_manager_unblock_fault_message_sender(bin_idx);
 #else
-	/* Get a tcb of fault thread for fault handling */
-	struct tcb_s *tcb = this_task();
-
 	if (tcb != NULL && tcb->group != NULL) {
 		/* Exclude realtime task/pthreads from scheduling */
 		bin_idx = tcb->group->tg_binidx;

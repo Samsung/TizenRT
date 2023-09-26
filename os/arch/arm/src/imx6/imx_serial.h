@@ -44,7 +44,7 @@
 
 #include <tinyara/config.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "imx_config.h"
 
 /****************************************************************************
