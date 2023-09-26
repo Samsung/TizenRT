@@ -129,15 +129,13 @@ __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
 __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
 
-_stext_flash = __km4_flash_text_start__;
-_etext_flash = _stext_flash + LENGTH(KM4_IMG2_XIP);
-
 SECTIONS
 {
 	.text :
 	{
 		. = ALIGN(0x4);
 		_stext_ram = ABSOLUTE(.);
+		_stext_flash = ABSOLUTE(.);
 		__text_start__ = .;
 
 		*(.freertos_vectors)
@@ -228,9 +226,12 @@ SECTIONS
 
 	.init_array :
 	{
+
 		PROVIDE_HIDDEN (__init_array_start = .);
+		_sinit = ABSOLUTE(.);
 		KEEP (*(SORT(.init_array.*)))
 		KEEP (*(.init_array*))
+		_einit = ABSOLUTE(.);
 		PROVIDE_HIDDEN (__init_array_end = .);
 	} > CA32_BL3_DRAM_NS
 
@@ -243,6 +244,7 @@ SECTIONS
 
 		. = ALIGN(4096);
 		__text_end__ = .;
+		_etext_flash = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
 	.data :
