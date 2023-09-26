@@ -41,7 +41,7 @@
 
 #include <tinyara/config.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "hardware/imx_ccm.h"
 #include "imx_config.h"
 #include "imx_clockconfig.h"

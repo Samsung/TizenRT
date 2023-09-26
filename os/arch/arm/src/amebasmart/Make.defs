@@ -53,14 +53,14 @@ HEAD_ASRC  =
 # Common ARM files
 
 #include common/Make.defs
-CMN_CSRCS += arm_assert.c arm_allocateheap.c arm_blocktask.c
-CMN_CSRCS += arm_createstack.c arm_exit.c arm_fullcontextrestore.c
-CMN_CSRCS += arm_initialize.c arm_lowputs.c
+CMN_CSRCS += arm_assert.c up_allocateheap.c arm_blocktask.c
+CMN_CSRCS += up_createstack.c arm_exit.c arm_fullcontextrestore.c
+CMN_CSRCS += arm_initialize.c up_lowputs.c
 CMN_CSRCS += arm_modifyreg16.c arm_modifyreg32.c
 CMN_CSRCS += arm_modifyreg8.c arm_nputs.c arm_releasepending.c
-CMN_CSRCS += arm_releasestack.c arm_reprioritizertr.c arm_saveusercontext.c
+CMN_CSRCS += up_releasestack.c arm_reprioritizertr.c arm_saveusercontext.c
 CMN_CSRCS += arm_stackframe.c arm_switchcontext.c
-CMN_CSRCS += arm_vfork.c arm_unblocktask.c arm_usestack.c
+CMN_CSRCS += arm_vfork.c arm_unblocktask.c up_usestack.c
 
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CMN_CSRCS += up_reboot_reason.c
@@ -68,16 +68,16 @@ endif
 
 ifneq ($(CONFIG_ALARM_ARCH),y)
   ifneq ($(CONFIG_TIMER_ARCH),y)
-    CMN_CSRCS += arm_mdelay.c arm_udelay.c
+    CMN_CSRCS += up_mdelay.c up_udelay.c
   endif
 endif
 
 ifeq ($(CONFIG_STACK_COLORATION),y)
-  CMN_CSRCS += arm_checkstack.c
+  CMN_CSRCS += up_checkstack.c
 endif
 
 ifneq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
-  CMN_CSRCS += arm_idle.c
+  CMN_CSRCS += up_idle.c
 endif
 
 ifeq ($(CONFIG_BUILD_PROTECTED)$(CONFIG_BUILD_KERNEL),y)
@@ -149,9 +149,9 @@ CMN_ASRCS += cp15_invalidate_dcache_all.S cp15_invalidate_dcache.S
 CMN_CSRCS += arm_cache.c arm_dataabort.c up_interruptcontext.c
 CMN_CSRCS += arm_doirq.c arm_gicv2.c arm_gicv2_dump.c
 CMN_CSRCS += arm_initialstate.c arm_mmu.c arm_prefetchabort.c
-CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c
+CMN_CSRCS += arm_schedulesigaction.c arm_sigdeliver.c arm_schedyield.c
 CMN_CSRCS += arm_syscall.c arm_tcbinfo.c arm_undefinedinsn.c
-CMN_CSRCS += arm_perf.c up_checkspace.c up_restoretask.c
+CMN_CSRCS += arm_perf.c arm_unblocktask_withoutsavereg.c up_checkspace.c up_restoretask.c
 
 ifeq ($(CONFIG_ARMV7A_L2CC_PL310),y)
   CMN_CSRCS += arm_l2cc_pl310.c

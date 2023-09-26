@@ -54,11 +54,19 @@
 
 #include "addrenv.h"
 #include "arm.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "group/group.h"
 #include "signal/signal.h"
 #define svcinfo sllvdbg
 #define svcerr slldbg
+#define INDEX_ERROR (-1)
+
+
+uint32_t user_assert_location;
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t *g_umm_app_id;
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -177,6 +185,7 @@ static void dispatch_syscall(void)
 
 uint32_t *arm_syscall(uint32_t *regs)
 {
+	struct tcb_s *rtcb = sched_self();
 	uint32_t cmd;
 #ifdef CONFIG_BUILD_PROTECTED
 	uint32_t cpsr;
@@ -206,6 +215,80 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 	switch (cmd)
 		{
+      /* R0=SYS_save_context:  This is a save context command:
+       *
+       *   int up_saveusercontext(void *saveregs);
+       *
+       * At this point, the following values are saved in context:
+       *
+       *   R0 = SYS_save_context
+       *   R1 = saveregs
+       *
+       * In this case, we simply need to copy the current registers to the
+       * save register space references in the saved R1 and return.
+       */
+
+      case SYS_save_context:
+        {
+          DEBUGASSERT(regs[REG_R1] != 0);
+          memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
+        }
+        break;
+
+	/* R0=SYS_restore_context:  Restore task context
+	*
+	* void arm_fullcontextrestore(uint32_t *restoreregs)
+	*   noreturn_function;
+	*
+	* At this point, the following values are saved in context:
+	*
+	*   R0 = SYS_restore_context
+	*   R1 = restoreregs
+	*/
+
+	case SYS_restore_context:
+	 {
+		/* Replace 'regs' with the pointer to the register set in
+			* regs[REG_R1].  On return from the system call, that register
+			* set will determine the restored context.
+			*/
+
+		CURRENT_REGS = (uint32_t *)regs[REG_R1];
+		DEBUGASSERT(CURRENT_REGS);
+
+		/* Restore rtcb data for context switching */
+		up_restoretask(rtcb);
+	 }
+	 break;
+
+	/* R0=SYS_switch_context:  This a switch context command:
+	*
+	*   void arm_switchcontext(uint32_t **saveregs,
+	*				uint32_t *restoreregs);
+	*
+	* At this point, the following values are saved in context:
+	*
+	*   R0 = SYS_switch_context
+	*   R1 = saveregs
+	*   R2 = restoreregs
+	*
+	* In this case, we do both: We save the context registers to the save
+	* register area reference by the saved contents of R1 and then set
+	* regs to the save register area referenced by the saved
+	* contents of R2.
+	*/
+
+	case SYS_switch_context:
+	 {
+		DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
+		*(uint32_t **)regs[REG_R1] = regs;
+		CURRENT_REGS = (uint32_t *)regs[REG_R2];
+
+		/* Restore rtcb data for context switching */
+		up_restoretask(rtcb);
+	 }
+	 break;
+
 	/* R0=SYS_syscall_return:  This a SYSCALL return command:
 	*
 	*   void arm_syscall_return(void);
@@ -221,12 +304,15 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_LIB_SYSCALL
 	case SYS_syscall_return:
 	 {
-		struct tcb_s *rtcb = sched_self();
 		int index = (int)rtcb->xcp.nsyscalls - 1;
 
 		/* Make sure that there is a saved SYSCALL return address. */
 
 		DEBUGASSERT(index >= 0);
+		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index < 0 || index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
 
 		/* Setup to return to the saved SYSCALL return address in
 			* the original mode.
@@ -269,61 +355,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 break;
 #endif
 
-	/* R0=SYS_restore_context:  Restore task context
-	*
-	* void arm_fullcontextrestore(uint32_t *restoreregs)
-	*   noreturn_function;
-	*
-	* At this point, the following values are saved in context:
-	*
-	*   R0 = SYS_restore_context
-	*   R1 = restoreregs
-	*/
-
-	case SYS_restore_context:
-	 {
-		/* Replace 'regs' with the pointer to the register set in
-			* regs[REG_R1].  On return from the system call, that register
-			* set will determine the restored context.
-			*/
-
-		struct tcb_s *rtcb = sched_self();
-		CURRENT_REGS = (uint32_t *)regs[REG_R1];
-		DEBUGASSERT(CURRENT_REGS);
-
-		/* Restore rtcb data for context switching */
-		up_restoretask(rtcb);
-	 }
-	 break;
-
-	/* R0=SYS_switch_context:  This a switch context command:
-	*
-	*   void arm_switchcontext(uint32_t **saveregs,
-	*				uint32_t *restoreregs);
-	*
-	* At this point, the following values are saved in context:
-	*
-	*   R0 = SYS_switch_context
-	*   R1 = saveregs
-	*   R2 = restoreregs
-	*
-	* In this case, we do both: We save the context registers to the save
-	* register area reference by the saved contents of R1 and then set
-	* regs to the save register area referenced by the saved
-	* contents of R2.
-	*/
-
-	case SYS_switch_context:
-	 {
-		struct tcb_s *rtcb = sched_self();
-		DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
-		*(uint32_t **)regs[REG_R1] = regs;
-		CURRENT_REGS = (uint32_t *)regs[REG_R2];
-
-		/* Restore rtcb data for context switching */
-		up_restoretask(rtcb);
-	 }
-	 break;
 
 	/* R0=SYS_task_start:  This a user task start
 	*
@@ -341,7 +372,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_BUILD_PROTECTED
 	case SYS_task_start:
 	 {
-		struct tcb_s *rtcb = sched_self();
 		DEBUGASSERT(rtcb->uspace);
 		/* Set up to return to the user-space _start function in
 			* unprivileged mode.  We need:
@@ -378,7 +408,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 #if !defined(CONFIG_BUILD_FLAT) && !defined(CONFIG_DISABLE_PTHREAD)
 	case SYS_pthread_start:
 	 {
-		struct tcb_s *rtcb = sched_self();
 		DEBUGASSERT(rtcb->uspace);
 		/* Set up to enter the user-space pthread start-up function in
 			* unprivileged mode. We need:
@@ -399,25 +428,24 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 break;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
-	/* R0=SYS_signal_handler:  This a user signal handler callback
-	*
-	* void signal_handler(_sa_sigaction_t sighand, int signo,
-	*				siginfo_t *info, void *ucontext);
-	*
-	* At this point, the following values are saved in context:
-	*
-	*   R0 = SYS_signal_handler
-	*   R1 = sighand
-	*   R2 = signo
-	*   R3 = info
-	*	  ucontext (on the stack)
-	*/
+		/* R0=SYS_signal_handler:  This a user signal handler callback
+		 *
+		 * void signal_handler(_sa_sigaction_t sighand, int signo,
+		 *                     FAR siginfo_t *info, FAR void *ucontext);
+		 *
+		 * At this point, the following values are saved in context:
+		 *
+		 *   R0 = SYS_signal_handler
+		 *   R1 = sighand
+		 *   R2 = signo
+		 *   R3 = info
+		 *        ucontext (on the stack)
+		 */
 
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler:
 	{
 
-		struct tcb_s *rtcb = sched_self();
 		/* Remember the caller's return address */
 
 		DEBUGASSERT(rtcb->uspace);
@@ -469,20 +497,19 @@ uint32_t *arm_syscall(uint32_t *regs)
 	 break;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
-	/* R0=SYS_signal_handler_return:  This a user signal handler callback
-	*
-	*   void signal_handler_return(void);
-	*
-	* At this point, the following values are saved in context:
-	*
-	*   R0 = SYS_signal_handler_return
-	*/
+		/* R0=SYS_signal_handler_return:  This a user signal handler callback
+		 *
+		 *   void signal_handler_return(void);
+		 *
+		 * At this point, the following values are saved in context:
+		 *
+		 *   R0 = SYS_signal_handler_return
+		 */
 
+#if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler_return:
 	{
 
-		struct tcb_s *rtcb = sched_self();
 		/* Set up to return to the kernel-mode signal dispatching logic. */
 
 		DEBUGASSERT(rtcb->xcp.sigreturn != 0);
@@ -519,7 +546,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 	default:
 	{
 #ifdef CONFIG_LIB_SYSCALL
-		struct tcb_s *rtcb = sched_self();
 		int index = rtcb->xcp.nsyscalls;
 
 		/* Verify that the SYS call number is within range */
@@ -531,6 +557,14 @@ uint32_t *arm_syscall(uint32_t *regs)
 			*/
 
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
+		if (index >= CONFIG_SYS_NNEST) {
+			return INDEX_ERROR;
+		}
+
+		if (cmd == SYS_up_assert) {
+			/* get the user assert location from the LR value */
+			user_assert_location = regs[REG_R14];
+		}
 
 		/* Setup to return to dispatch_syscall in privileged mode. */
 

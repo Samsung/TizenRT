@@ -401,15 +401,19 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 		addr = (uint32_t *)PGTABLE_BASE_VADDR;
 		for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
 			if((addr[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
-				addr[i] &= PMD_SECT_PADDR_MASK;
+				addr[i] = addr[i - 1] & PMD_SECT_PADDR_MASK;
+				addr[i] += SECTION_SIZE;
 				addr[i] |= MMU_MEMFLAGS;
 			}
 		}
 	} else {
 		// Clear L1 page table
 		addr = (uint32_t *)(PGTABLE_BASE_VADDR + (app_id * L1_PGTBL_SIZE));
-		memset(addr, 0, 4 * L1_PGTBL_SIZE);
+		memset(addr, 0, L1_PGTBL_SIZE);
 	}
+
+	cp15_wrttb((uint32_t)(mmu_get_os_l1_pgtbl()) | TTBR0_RGN_WBWA | TTBR0_IRGN0);
+	cp15_invalidate_tlbs();
 }
 
 /****************************************************************************
@@ -499,7 +503,7 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
  *
  * Returned Value:
  ****************************************************************************/
-void mmu_dump_pgtbl(void)
+void mmu_dump_app_pgtbl(void)
 {
 	struct tcb_s *rtcb = sched_self();
 	if (rtcb->app_id < 1) {
@@ -508,27 +512,27 @@ void mmu_dump_pgtbl(void)
 
 	uint32_t *l1tbl = mmu_l1_pgtable();
 
-	lldbg("L1 page table base addr = 0x%08x\n", l1tbl);
+	lldbg_noarg("L1 page table base addr = 0x%08x\n", l1tbl);
 
-	lldbg("=========================================\n");
-	lldbg("ENTRY      TYPE    OUT             ACCESS\n");
-	lldbg("ADDR               ADDR                  \n");
-	lldbg("=========================================\n");
+	lldbg_noarg("=====================================================================\n");
+	lldbg_noarg("ENTRY      TYPE    OUT             ACCESS\n");
+	lldbg_noarg("ADDR               ADDR                  \n");
+	lldbg_noarg("=====================================================================\n");
 	for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
 		if ((l1tbl[i] & PMD_SECT_AP1) && 	// Only print user areas.
 				(l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT) {
-			lldbg("0x%08x SECT    0x%08x      %s-%s\n", 
+			lldbg_noarg("0x%08x SECT    0x%08x      %s-%s\n", 
 					&l1tbl[i], 
 					l1tbl[i] & PMD_SECT_PADDR_MASK, 
 					(l1tbl[i] & PMD_SECT_AP2) ? "RO" : "RW", 
 					(l1tbl[i] & PMD_SECT_XN) ? "XN" : "X");
 		} else if((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
-			lldbg("0x%08x L1PTE   0x%08x\n", &l1tbl[i], l1tbl[i] & PMD_PTE_PADDR_MASK); 
+			lldbg_noarg("0x%08x L1PTE   0x%08x\n", &l1tbl[i], l1tbl[i] & PMD_PTE_PADDR_MASK); 
 			uint32_t *l2tbl = (uint32_t *)(l1tbl[i] & PMD_PTE_PADDR_MASK);
 			for (int j = 0; j < L2_PGTBL_NENTRIES; j++) {
 				if ((l2tbl[j] & PTE_AP1) && 	// Only print user areas.
 						((l2tbl[j] & PTE_TYPE_MASK) != PTE_TYPE_FAULT)) {
-					lldbg("0x%08x PAGE    0x%08x      %s-%s\n", 
+					lldbg_noarg("0x%08x PAGE    0x%08x      %s-%s\n", 
 						&l2tbl[j], 
 						l2tbl[j] & PTE_SMALL_PADDR_MASK, 
 						(l2tbl[j] & PTE_AP2) ? "RO" : "RW",
@@ -537,6 +541,6 @@ void mmu_dump_pgtbl(void)
 			}
 		}
 	}
-	lldbg("=========================================\n");
+	lldbg_noarg("=====================================================================\n");
 }
 #endif // CONFIG_APP_BINARY_SEPARATION

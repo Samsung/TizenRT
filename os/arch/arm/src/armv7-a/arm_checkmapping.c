@@ -48,7 +48,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/page.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 #ifdef CONFIG_PAGING
 

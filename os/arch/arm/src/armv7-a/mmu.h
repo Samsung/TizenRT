@@ -1668,7 +1668,6 @@ void mmu_l1_map_regions(const struct section_mapping_s *mappings,
 void mmu_invalidate_region(uint32_t vstart, size_t size);
 #endif
 
-void mmu_dump_pgtbl(void);
 #undef EXTERN
 #ifdef __cplusplus
 }

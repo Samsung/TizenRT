@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/common/up_usestack.c
+ *  arch/arm/src/armv7-a/arm_unblock_task_without_savereg.c
  *
- *   Copyright (C) 2007-2009, 2013 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,116 +56,120 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
 #include <sched.h>
+#include <assert.h>
 #include <debug.h>
-
-#include <tinyara/kmalloc.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
 
+#include "sched/sched.h"
+#include "group/group.h"
+#include "clock/clock.h"
 #include "up_internal.h"
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
 
 /****************************************************************************
- * Pre-processor Macros
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Types
+ * Private Data
  ****************************************************************************/
 
 /****************************************************************************
- * Private Function Prototypes
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_use_stack
+ * Name: up_unblock_task_without_savereg
  *
  * Description:
- *   Setup up stack-related information in the TCB using pre-allocated stack
- *   memory.  This function is called only from task_init() when a task or
- *   kernel thread is started (never for pthreads).
- *
- *   The following TCB fields must be initialized:
- *
- *   - adj_stack_size: Stack size after adjustment for hardware,
- *     processor, etc.  This value is retained only for debug
- *     purposes.
- *   - stack_alloc_ptr: Pointer to allocated stack
- *   - adj_stack_ptr: Adjusted stack_alloc_ptr for HW.  The
- *     initial value of the stack pointer.
+ *   Move the TCB to the ready-to-run list and Switch context to the context
+ *   of the task at the head of the ready to run list without saving old context.
+ *   If it is in interrupt context, it doesn't copy the current_regs into the OLD tcb.
+ *   If not, it calls up_fullcontextrestore to perform the user context switch.
  *
  * Inputs:
- *   - tcb: The TCB of new task
- *   - stack_size:  The allocated stack size.
- *
- *   NOTE:  Unlike up_stack_create() and up_stack_release, this function
- *   does not require the task type (ttype) parameter.  The TCB flags will
- *   always be set to provide the task type to up_use_stack() if it needs
- *   that information.
+ *   tcb: Refers to the tcb to be unblocked.  This tcb is
+ *     in one of the waiting tasks lists.  It must be moved to
+ *     the ready-to-run list and, if it is the highest priority
+ *     ready to run taks, executed.
  *
  ****************************************************************************/
-
-int up_use_stack(struct tcb_s *tcb, void *stack, size_t stack_size)
+void up_unblock_task_without_savereg(struct tcb_s *tcb)
 {
-	size_t top_of_stack;
-	size_t size_of_stack;
+	struct tcb_s *rtcb;
 
-	/* Is there already a stack allocated? */
+	/* Remove the task from the blocked task list */
+	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
 
-	if (tcb->stack_alloc_ptr) {
-		/* Yes... Release the old stack allocation */
+	/* Reset its timeslice.  This is only meaningful for round
+	* robin tasks but it doesn't here to do it for everything
+	*/
 
-		up_release_stack(tcb, tcb->flags & TCB_FLAG_TTYPE_MASK);
+#if CONFIG_RR_INTERVAL > 0
+	tcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+#endif
+
+	/* Add the task in the correct location in the prioritized
+	* g_readytorun task list
+	*/
+
+	if (sched_addprioritized(tcb, (FAR dq_queue_t *)&g_readytorun)) {
+		/* The new btcb was added at the head of the ready-to-run list.	It
+		* is now to new active task!
+		*/
+
+		ASSERT(tcb->flink != NULL);
+		tcb->task_state = TSTATE_TASK_RUNNING;
+		tcb->flink->task_state = TSTATE_TASK_READYTORUN;
+
+	} else {
+		/* The new btcb was added in the middle of the ready-to-run list */
+
+		tcb->task_state = TSTATE_TASK_READYTORUN;
 	}
 
-	/* Save the new stack allocation */
+	/*
+	* Are we in an interrupt handler?
+	*/
+	if (CURRENT_REGS) {
 
-	tcb->stack_alloc_ptr = stack;
+		/* Restore the exception context of the rtcb at the (new) head
+		 * of the g_readytorun task list.
+		 */
 
-	/* The ARM uses a push-down stack:  the stack grows toward lower addresses
-	 * in memory.  The stack pointer register, points to the lowest, valid
-	 * work address (the "top" of the stack).  Items on the stack are
-	 * referenced as positive word offsets from sp.
-	 */
+		rtcb = this_task();
 
-#ifdef CONFIG_ARCH_ARMV7A_FAMILY
-	top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_size;
-#else
-	top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_size - 4;
+		/* Restore rtcb data for context switching */
+
+		up_restoretask(rtcb);
+
+		/* Then switch contexts */
+
+          arm_restorestate(rtcb->xcp.regs);
+	}
+
+	/* No, then we will need to perform the user context switch */
+
+	else {
+		/* Switch context to the context of the task at the head of the
+		 * ready to run list.
+		 */
+
+		struct tcb_s *nexttcb = this_task();
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which will be scheduled */
+		save_task_scheduling_status(nexttcb);
 #endif
+		/* Then switch contexts */
 
-	/* The ARM stack must be aligned; 4 byte alignment for OABI and 8-byte
-	 * alignment for EABI. If necessary top_of_stack must be rounded down
-	 * to the next boundary
-	 */
-
-	top_of_stack = STACK_ALIGN_DOWN(top_of_stack);
-
-	/* The size of the stack in bytes is then the difference between
-	 * the top and the bottom of the stack (+4 because if the top
-	 * is the same as the bottom, then the size is one 32-bit element).
-	 * The size need not be aligned.
-	 */
-
-#ifdef CONFIG_ARCH_ARMV7A_FAMILY
-	size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr;
-#else
-	size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
-#endif
-
-	/* Save the adjusted stack values in the struct tcb_s */
-
-	tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
-	tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
-	tcb->adj_stack_size = size_of_stack;
-
-#ifdef CONFIG_STACK_COLORATION
-	up_stack_color(tcb->stack_alloc_ptr, tcb->adj_stack_ptr);
-#endif
-	return OK;
+		arm_fullcontextrestore(nexttcb->xcp.regs);
+	}
 }

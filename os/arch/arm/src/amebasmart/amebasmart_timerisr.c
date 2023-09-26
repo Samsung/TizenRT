@@ -31,7 +31,7 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "gic.h"
 #include "arch_timer.h"
 

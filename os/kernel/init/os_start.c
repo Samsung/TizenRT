@@ -350,6 +350,7 @@ void os_start(void)
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
 	g_idletcb.cmn.app_id = 0;
 	g_idletcb.cmn.pgtbl = mmu_get_os_l1_pgtbl();
+	lldbg("Kernel Page table is at 0x%08x\n", g_idletcb.cmn.pgtbl);
 #endif
 	/* Set the IDLE task name */
 

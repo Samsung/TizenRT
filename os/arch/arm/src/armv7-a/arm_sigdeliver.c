@@ -52,7 +52,7 @@
 #include <arch/board/board.h>
 
 #include "sched/sched.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

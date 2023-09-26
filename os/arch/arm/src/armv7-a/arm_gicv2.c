@@ -49,7 +49,7 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "gic.h"
 
 #ifdef CONFIG_ARMV7A_HAVE_GICv2

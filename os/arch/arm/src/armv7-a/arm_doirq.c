@@ -50,7 +50,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "group/group.h"
 #include "gic.h"
 
@@ -58,6 +58,7 @@
  * Public Functions
  ****************************************************************************/
 
+int g_irq_num = -1; /* Array to store the last three interrupt numbers */
 /****************************************************************************
  * Name: arm_doirq
  *
@@ -69,6 +70,9 @@
 
 uint32_t *arm_doirq(int irq, uint32_t *regs)
 {
+	/* Store the interrupt number for reference during assert */
+	g_irq_num = irq;
+
   board_autoled_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
   PANIC();
@@ -113,6 +117,8 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
   regs         = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = NULL;
 #endif
+	/* Reset the interrupt number values */
+	g_irq_num = -1;
 
   board_autoled_off(LED_INIRQ);
   return regs;

@@ -56,10 +56,15 @@
 #endif
 
 #include "sched/sched.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
 #endif
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+
+extern uint32_t system_exception_location;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -153,23 +158,23 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
   /* Save the saved processor context in CURRENT_REGS where it can be
    * accessed for register dumps and possibly context switching.
    */
-
+  uint32_t *saved_state = CURRENT_REGS;
   CURRENT_REGS = regs;
+
+  system_exception_location = regs[REG_R15];
 
   /* Crash -- possibly showing diagnostic debug information. */
 
   _alert("Prefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n",
         regs[REG_PC], ifar, ifsr);
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-  mmu_dump_pgtbl();
-#endif
-
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif
 
   PANIC();
+  regs = CURRENT_REGS;
+  CURRENT_REGS = saved_state;
   return regs; /* To keep the compiler happy */
 }
 

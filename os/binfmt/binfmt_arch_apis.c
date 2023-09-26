@@ -91,7 +91,7 @@ void *binfmt_arch_allocate_section(uint32_t size)
 
 uint32_t binfmt_arch_align_mem(uint32_t val)
 {
-#if defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU)
+#if defined(CONFIG_ARM_MPU)
 	return MPU_ALIGN_UP(val);
 #elif defined(CONFIG_ARCH_USE_MMU)
 	return MMU_ALIGN_UP(val);
@@ -109,9 +109,9 @@ void binfmt_arch_init_mem_protect(struct binary_s *binp)
 
 void binfmt_arch_deinit_mem_protect(struct binary_s *binp)
 {
-#if (defined(CONFIG_ARMV7M_MPU) || defined(CONFIG_ARMV8M_MPU))
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (binp->islibrary) {
+#if defined(CONFIG_ARM_MPU)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 			up_mpu_disable_region(&binp->cmn_mpu_regs[i]);
@@ -119,9 +119,9 @@ void binfmt_arch_deinit_mem_protect(struct binary_s *binp)
 #else
 		up_mpu_disable_region(&binp->cmn_mpu_regs[0]);
 #endif
-	}
-#endif
 #elif defined(CONFIG_ARCH_USE_MMU)
-	mmu_clear_app_pgtbl(binp->binary_idx);
+		mmu_clear_app_pgtbl(binp->binary_idx);
+#endif
+	}
 #endif
 }

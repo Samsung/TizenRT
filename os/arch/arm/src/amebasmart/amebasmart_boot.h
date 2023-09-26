@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "chip.h"
 
 /****************************************************************************

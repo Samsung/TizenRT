@@ -28,7 +28,7 @@
 
 #include <tinyara/arch.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "sctlr.h"
 #include "gic.h"
 

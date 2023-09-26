@@ -52,7 +52,7 @@
 #include "imx_iomuxc.h"
 #include "imx_gpio.h"
 #include "imx_lowputc.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "hardware/imx_pinmux.h"
 #include <arch/board/board.h> /* Include last:  has dependencies */
 

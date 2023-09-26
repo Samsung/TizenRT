@@ -55,7 +55,7 @@
 #include "arm.h"
 #include "mmu.h"
 #include "scu.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "imx_config.h"
 #include "imx_clockconfig.h"
 #include "imx_memorymap.h"

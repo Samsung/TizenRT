@@ -48,7 +48,11 @@
 
 #include "sched/sched.h"
 #include "group/group.h"
-#include "arm_internal.h"
+#include "up_internal.h"
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#include <tinyara/debug/sysdbg.h>
+#endif
+
 
 /****************************************************************************
  * Public Functions
@@ -118,11 +122,10 @@ void up_release_pending(void)
       else
         {
           struct tcb_s *nexttcb = this_task();
-
-          /* Update scheduler parameters */
-
-        //  sched_resume_scheduler(nexttcb);
-
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(nexttcb);
+#endif
           /* Switch context to the context of the task at the head of the
            * ready to run list.
            */

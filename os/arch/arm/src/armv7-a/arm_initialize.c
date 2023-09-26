@@ -43,7 +43,7 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Private Functions
@@ -114,9 +114,6 @@ void up_initialize(void)
 	/* Initialize the interrupt subsystem */
 
 	up_irqinitialize();
-  /* Add any extra memory fragments to the memory manager */
-
-  arm_addregion();
 
 #ifdef CONFIG_PM
   /* Initialize the power management subsystem.  This MCU-specific function

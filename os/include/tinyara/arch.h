@@ -1892,7 +1892,7 @@ struct tcb_s;
 size_t up_check_tcbstack(FAR struct tcb_s *tcb);
 ssize_t up_check_tcbstack_remain(FAR struct tcb_s *tcb);
 size_t up_check_stack(void);
-size_t up_check_assertstack(uintptr_t alloc, size_t size);
+size_t up_check_assertstack(uintptr_t start, uintptr_t end);
 ssize_t up_check_stack_remain(void);
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 size_t up_check_intstack(void);

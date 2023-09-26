@@ -61,7 +61,7 @@
 #include <tinyara/serial/serial.h>
 
 #include "chip.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "gic.h"
 #include "hardware/imx_uart.h"
 #include "imx_config.h"

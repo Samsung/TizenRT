@@ -245,11 +245,11 @@ void elf_addrenv_free(FAR struct elf_loadinfo_s *loadinfo)
 		kmm_free((void *)(loadinfo->binp->sections[BIN_TEXT]));
 		loadinfo->binp->sections[BIN_TEXT] = (int)NULL;
 	}
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (loadinfo->binp->sections[BIN_DATA]) {
 		kmm_free((void *)(loadinfo->binp->sections[BIN_DATA]));
 		loadinfo->binp->sections[BIN_DATA] = (int)NULL;
 	}
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (loadinfo->binp->sections[BIN_RO]) {
 		kmm_free((void *)(loadinfo->binp->sections[BIN_RO]));
 		loadinfo->binp->sections[BIN_RO] = (int)NULL;

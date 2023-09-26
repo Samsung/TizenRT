@@ -51,8 +51,10 @@
 
 #include "arm.h"
 #include "sched/sched.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "irq/irq.h"
+#ifndef CONFIG_DISABLE_SIGNALS
+
 
 /****************************************************************************
  * Public Functions
@@ -442,3 +444,5 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
     }
 }
 #endif /* CONFIG_SMP */
+
+#endif							/* !CONFIG_DISABLE_SIGNALS */

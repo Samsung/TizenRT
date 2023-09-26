@@ -44,7 +44,7 @@
 #include <tinyara/arch.h>
 
 #include "sched/sched.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -526,7 +526,7 @@ int up_backtrace(struct tcb_s *tcb,
 #  ifdef CONFIG_SMP
                                arm_intstack_top(),
 #  else
-                               &g_intstacktop,
+                               &g_intstackbase,
 #  endif /* CONFIG_SMP */
                                &sp, (void *)up_backtrace + 10,
                                buffer, size, &skip);

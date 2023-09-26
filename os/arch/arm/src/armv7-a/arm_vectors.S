@@ -297,7 +297,7 @@ arm_vectorirq:
 
 #if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
 .Lirqstacktop:
-	.word	g_intstacktop
+	.word	g_intstackbase
 #endif
 	.size	arm_vectorirq, . - arm_vectorirq
 
@@ -837,7 +837,7 @@ arm_vectorfiq:
 	.size	arm_vectorfiq, . - arm_vectorfiq
 
 /****************************************************************************
- *  Name: g_intstackalloc/g_intstacktop
+ *  Name: g_intstackalloc/g_intstackbase
  ****************************************************************************/
 
 #if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
@@ -846,13 +846,13 @@ arm_vectorfiq:
 
 	.globl	g_intstackalloc
 	.type	g_intstackalloc, object
-	.globl	g_intstacktop
-	.type	g_intstacktop, object
+	.globl	g_intstackbase
+	.type	g_intstackbase, object
 
 g_intstackalloc:
 	.skip	((CONFIG_ARCH_INTERRUPTSTACK + 4) & ~7)
-g_intstacktop:
-	.size	g_intstacktop, 0
+g_intstackbase:
+	.size	g_intstackbase, 0
 	.size	g_intstackalloc, (CONFIG_ARCH_INTERRUPTSTACK & ~7)
 
 /****************************************************************************

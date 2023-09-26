@@ -53,7 +53,7 @@
 #include <arch/irq.h>
 
 #include "arm_vfork.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "sched/sched.h"
 
 /****************************************************************************

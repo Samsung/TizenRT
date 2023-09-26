@@ -49,7 +49,7 @@
 #include <tinyara/spinlock.h>
 #include <tinyara/sched_note.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "gic.h"
 #include "sched/sched.h"
 

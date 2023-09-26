@@ -42,7 +42,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "sctlr.h"
 
 /****************************************************************************

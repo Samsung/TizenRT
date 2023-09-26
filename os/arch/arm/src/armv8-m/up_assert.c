@@ -391,7 +391,7 @@ static void up_dumpstate(void)
 		lldbg("  base: %08x\n", stackbase);
 		lldbg("  size: %08x\n", stacksize);
 #ifdef CONFIG_STACK_COLORATION
-		lldbg("  used: %08x\n", up_check_assertstack((uintptr_t)(stackbase - stacksize), stacksize));
+		lldbg("  used: %08x\n", up_check_assertstack((uintptr_t)(stackbase - stacksize), stackbase));
 #endif
 		up_stackdump(sp, stackbase);
 	}

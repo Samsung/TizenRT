@@ -48,7 +48,7 @@
 #include <tinyara/irq.h>
 
 #include "sched/sched.h"
-#include "arm_internal.h"
+#include "up_internal.h"
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <tinyara/reboot_reason.h>
@@ -62,6 +62,11 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
 #endif
+
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+uint32_t system_exception_location;
 
 /****************************************************************************
  * Public Functions
@@ -180,21 +185,21 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
   /* Save the saved processor context in CURRENT_REGS where it can be
    * accessed for register dumps and possibly context switching.
    */
-
+  uint32_t *saved_state = CURRENT_REGS;
   CURRENT_REGS = regs;
-
+  system_exception_location = regs[REG_R15];
   /* Crash -- possibly showing diagnostic debug information. */
 
   _alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n",
         regs[REG_PC], dfar, dfsr);
-#ifdef CONFIG_APP_BINARY_SEPARATION
-  mmu_dump_pgtbl();
-#endif
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
 #endif
+  
   PANIC();
+  regs = CURRENT_REGS;
+  CURRENT_REGS = saved_state;
   return regs; /* To keep the compiler happy */
 }
 

@@ -44,7 +44,7 @@
 #include <stdint.h>
 #include <debug.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 
 /****************************************************************************
  * Public Functions

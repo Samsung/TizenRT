@@ -55,7 +55,7 @@
 #include <tinyara/irq.h>
 #include <arch/board/board.h>
 
-#include "arm_internal.h"
+#include "up_internal.h"
 #include "chip.h"
 #include "imx_gpio.h"
 #include "imx_ecspi.h"
