@@ -30,6 +30,9 @@
 #ifdef CONFIG_DEBUG_SYSTEM_APP
 #include <apps/system/sysdbgapp_init.h>
 #endif
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+#include <apps/system/dat_init.h>
+#endif
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
 #endif
@@ -106,6 +109,9 @@ static void tash_register_cmds(void)
 
 #ifdef CONFIG_DEBUG_SYSTEM_APP
 	sysdbgapp_init();
+#endif
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+	dat_init();
 #endif
 }
 #endif							/* CONFIG_TASH */

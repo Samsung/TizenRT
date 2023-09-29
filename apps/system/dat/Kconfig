@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config SYSTEM_DEBUG_ANALYSER_TOOL
+	bool "Debug Analyser Tool App"
+	default n
+	depends on TASH
+	depends on DEBUG_SYSTEM
+	depends on DRIVERS_OS_API_TEST
+	---help---
+		This application is an example program that retrieves the module's information
+		at application level for various modules such such as applications, tcb, mpu
+		using the "dat" command. This config enables the DAT application.

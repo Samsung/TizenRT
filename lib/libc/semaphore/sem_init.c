@@ -110,7 +110,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 		/* Initialize the semaphore count */
 
 		sem->semcount = (int16_t)value;
-#ifdef CONFIG_SEMAPHORE_HISTORY
+#if defined(CONFIG_SEMAPHORE_HISTORY) && defined(__KERNEL__)
 		save_semaphore_history(sem, (void *)NULL, SEM_INIT);
 #endif
 

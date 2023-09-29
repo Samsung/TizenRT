@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2022 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_DRIVERS_OS_API_TEST),y)
-include os_api_test$(DELIM)application$(DELIM)Make.defs
-include os_api_test$(DELIM)kernel$(DELIM)Make.defs
-include os_api_test$(DELIM)network$(DELIM)Make.defs
-include os_api_test$(DELIM)filesystem$(DELIM)Make.defs
-CSRCS += os_api_test_drv.c
-DEPPATH += --dep-path os_api_test
-VPATH += :os_api_test
+ifeq ($(CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL),y)
+CONFIGURED_APPS += system/dat
 endif

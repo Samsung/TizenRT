@@ -159,6 +159,10 @@ void _exit(int status)
 	 */
 	sllvdbg("TCB=%p exiting\n", this_task());
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+	/* Save the task name which is being switched out */
+	save_task_scheduling_status(this_task());
+#endif
 #if defined(CONFIG_DUMP_ON_EXIT) && defined(CONFIG_DEBUG)
 	sllvdbg("Other tasks:\n");
 	sched_foreach(_up_dumponexit, NULL);

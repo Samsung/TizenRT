@@ -79,6 +79,11 @@ void up_schedyield(void)
 
 	if (rtcb->sched_priority <= ntcb->sched_priority) {
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+		/* Save the task name which is being switched out */
+
+		save_task_scheduling_status(rtcb);
+#endif
 		/* Remove the TCB from the ready-to-run list */
 
 		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
@@ -118,6 +123,11 @@ void up_schedyield(void)
 
 		if (current_regs) {
 
+#ifdef CONFIG_TASK_SCHED_HISTORY
+			/* Save the task name which will be scheduled */
+
+			save_task_scheduling_status(ntcb);
+#endif
 			/* Yes, then we have to do things differently.
 			 * Just copy the current_regs into the OLD rtcb.
 			 * rtcb is the tcb of task which is yeilding the resource
@@ -155,11 +165,11 @@ void up_schedyield(void)
 
 			trace_sched(NULL, ntcb);
 
-	#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */
 
 			save_task_scheduling_status(ntcb);
-	#endif
+#endif
 			/* Then switch contexts */
 
 			up_fullcontextrestore(ntcb->xcp.regs);

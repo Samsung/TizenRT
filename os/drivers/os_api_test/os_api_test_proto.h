@@ -40,4 +40,26 @@ int test_net_pbuf(int cmd, unsigned long arg);
 #if defined(CONFIG_AUTOMOUNT_USERFS) && defined(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM)
 int test_fs_get_devname(void);
 #endif
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+#ifdef CONFIG_SYSTIME_TIME64
+uint64_t test_get_app_start_time_sec(int cmd, unsigned long arg);
+#else
+uint32_t test_get_app_start_time_sec(int cmd, unsigned long arg);
+#endif
+uint8_t test_mpu_get_active_regions(int cmd, unsigned long arg);
+#endif
+#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+uint8_t test_get_app_memory_addr(int cmd, unsigned long arg);
+#endif
+#endif
+#endif
+#ifdef CONFIG_STACK_COLORATION
+uint8_t test_tcb_info(int cmd, unsigned long arg);
+#endif
+uint8_t test_gtasklist_info(int cmd, unsigned long arg);
+#ifdef CONFIG_ARCH_STACKDUMP
+uint8_t test_tcb_callstack_info(int cmd, unsigned long arg);
+#endif
 #endif

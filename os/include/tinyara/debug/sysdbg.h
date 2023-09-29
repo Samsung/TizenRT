@@ -37,6 +37,18 @@
 #define TASK_NAME_SIZE 15
 
 #define SEMAPHORE_STATUS_SIZE 2
+
+/********************************************************************************
+ * Public Type Definitions
+ ********************************************************************************/
+#ifdef CONFIG_SYSTEM_DEBUG_ANALYSER_TOOL
+#ifdef CONFIG_SYSTIME_TIME64
+extern uint64_t app_start_time_sec[3];
+#else
+extern uint32_t app_start_time_sec[3];
+#endif
+extern unsigned int app_start_time_csec[3];
+#endif
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -64,7 +76,7 @@ struct sched_history_s {
 #endif
 	pid_t pid;
 	uint8_t sched_priority;
-	struct tcb_s *ptcb;
+	uint8_t context_switch_reason;
 };
 
 typedef struct sched_history_s sched_history_t;
@@ -72,7 +84,6 @@ typedef struct sched_history_s sched_history_t;
 struct irq_history_s {
 	clock_t time;
 	uint32_t irq;
-	void *fn;
 };
 
 typedef struct irq_history_s irq_history_t;
@@ -118,7 +129,7 @@ struct sysdbg_s {
 typedef struct sysdbg_s sysdbg_t;
 
 extern void save_task_scheduling_status(struct tcb_s *tcb);
-extern void save_irq_scheduling_status(uint32_t irq, void *fn);
+extern void save_irq_scheduling_status(uint32_t irq);
 extern void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status);
 
 #undef EXTERN
