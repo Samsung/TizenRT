@@ -160,7 +160,6 @@ static int binary_manager_load(int bin_idx)
 	int ret;
 	int bin_count;
 	load_attr_t load_attr;
-	bool need_update_bp;
 	char devpath[BINARY_PATH_LEN];
 	user_binary_header_t user_header_data;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
@@ -168,6 +167,9 @@ static int binary_manager_load(int bin_idx)
 #endif
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
+#endif
+#ifdef CONFIG_USE_BP
+	bool need_update_bp = false;
 #endif
 
 	if (bin_idx < 0) {
@@ -192,8 +194,6 @@ static int binary_manager_load(int bin_idx)
 		bin_count = BIN_COUNT(bin_idx);
 	}
 
-	need_update_bp = false;
-
 	do {
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		if (!binp)
@@ -208,7 +208,9 @@ static int binary_manager_load(int bin_idx)
 				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
+#ifdef CONFIG_USE_BP
 					need_update_bp = true;
+#endif
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
@@ -238,7 +240,9 @@ static int binary_manager_load(int bin_idx)
 				bmdbg("Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
+#ifdef CONFIG_USE_BP
 					need_update_bp = true;
+#endif
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
@@ -281,6 +285,7 @@ static int binary_manager_load(int bin_idx)
 
 		ret = binary_manager_load_binary(bin_idx, devpath, &load_attr);
 		if (ret == OK) {
+#ifdef CONFIG_USE_BP
 			if (need_update_bp) {
 				/* Update boot param data because the binary not written to bootparam is loaded */
 				binmgr_bpdata_t update_bp_data;
@@ -295,12 +300,15 @@ static int binary_manager_load(int bin_idx)
 					bmdbg("Fail to update bootparam to recover, %d\n", ret);
 				}
 			}
+#endif
 			return BINMGR_OK;
 		}
 		if (--bin_count > 0) {
 			/* Change index 0 to 1 and 1 to 0. */
 			BIN_USEIDX(bin_idx) ^= 1;
+#ifdef CONFIG_USE_BP
 			need_update_bp = true;
+#endif
 			bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 		} else {
 			bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
@@ -597,12 +605,15 @@ static int reloading_thread(int argc, char *argv[])
 static int update_thread(int argc, char *argv[])
 {
 	int ret;
+	int bin_idx;
+	uint32_t bin_count = binary_manager_get_ucount();
 
-	/* Check whether there is kernel binary for update.
-	 * If kernel update exists, board will be rebooted. Or, it will return negative values. */
-	ret = binary_manager_update_kernel_binary();
-	if (ret != BINMGR_ALREADY_UPDATED) {
-		/* Return errors except for BINMGR_ALREADY_UPDATE which means already the latest kernel binary is running */
+	/* Check whether there is binary for update.
+	 * If kernel binary to update exists, board will be rebooted.
+	 * And if common or user biaries binary to update exist, it will be return BINMGR_OK.
+	 */
+	ret = binary_manager_check_update();
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -610,9 +621,6 @@ static int update_thread(int argc, char *argv[])
 	printf("==> [REBOOT] Board will be rebooted for new binary loading");
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
 #else
-	int bin_idx;
-	uint32_t bin_count = binary_manager_get_ucount();
-
 	/* Else, Reload all binaries */
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
@@ -635,8 +643,10 @@ static int update_thread(int argc, char *argv[])
 	/* Deinitialize modules in kernel */
 	binary_manager_deinit_modules();
 
+#ifdef CONFIG_USE_BP
 	/* Update boot parameter data */
 	binary_manager_update_bpinfo();
+#endif
 
 	/* Load binary */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, bin_idx);

@@ -117,7 +117,9 @@ int binary_manager(int argc, char *argv[])
 	struct mq_attr attr;
 	binmgr_request_t request_msg;
 	bool is_found_kpart = true;
+#ifdef CONFIG_USE_BP
 	bool is_found_bootparam = true;
+#endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int ret;
 	bool is_found_ubin = true;
@@ -217,7 +219,7 @@ int binary_manager(int argc, char *argv[])
 #ifdef CONFIG_APP_BINARY_SEPARATION
 			binary_manager_execute_loader(LOADCMD_UPDATE, 0);
 #else
-			binary_manager_update_kernel_binary();
+			binary_manager_check_update();
 #endif
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -244,10 +246,12 @@ int binary_manager(int argc, char *argv[])
 errout_with_nobinary:
 	while (1) {
 		printf("=============== !!ERROR!! ============== \n");
+#ifdef CONFIG_USE_BP
 		if (!is_found_bootparam) {
 			printf("ERROR!! Not found user partitions because parsing a partition list is failed.\n");
 			printf("Please check whether the partition 'bootparam' exists in CONFIG_FLASH_PART_TYPE with 8K size.\n");
 		}
+#endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!is_found_ubin) {
 			printf("ERROR!! Not found user partitions because parsing a partition list is failed.\n");

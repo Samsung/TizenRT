@@ -202,6 +202,7 @@ int binary_manager_check_kernel_update(void)
 		if (kernel_info.version < header_data.version) {
 #endif
 			/* Need to update bootparam and reboot */
+			bmvdbg("Found new kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
 			return BINMGR_OK;
 		} else {
 			bmvdbg("Latest version is running, version %d\n", kernel_info.version);
@@ -209,21 +210,22 @@ int binary_manager_check_kernel_update(void)
 		}
 	}
 	return ret;
-}	
+}
 
 /*************************************************************************************
-* Name: binary_manager_update_kernel_binary
+* Name: binary_manager_check_update
 *
 * Description:
-*  This function checks whether there is a kernel update.
-*  It gets the latest bootparam and compares active index written in bootparam with current active index.
+*  This function checks whether there is update.
+*  In case of boot parameters, it gets the latest bootparam and compares active index written in bootparam with current active index.
 *  If they are different, reboot the board to boot kernel binary based on the latest bootparam.
+*  Otherwise, it checks whether the binary to update exist in their own inactive partition.
 *
 *************************************************************************************/
-int binary_manager_update_kernel_binary(void)
+int binary_manager_check_update(void)
 {
-#ifdef CONFIG_USE_BP
 	int ret;
+#ifdef CONFIG_USE_BP
 	binmgr_bpinfo_t bp_info;
 
 	/* Get the latest bootparam */
@@ -240,28 +242,62 @@ int binary_manager_update_kernel_binary(void)
 		return BINMGR_NOT_FOUND;
 	}
 
-	/* Running kernel binary is the latest? */
-	if (binary_manager_get_kdata()->inuse_idx == bp_info.bp_data.active_idx) {
-		/* Yes, current version is the latest. No need to update kernel */
-		bmdbg("Already running kernel binary is the latest\n");
-		return BINMGR_ALREADY_UPDATED;
+	/* Do kernel need to update? */
+	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.active_idx) {
+		/* Running partition and partition written in the latest BP are different.
+		 * Reboot to switch kernel binary in another partition. */
+		bmvdbg("Need to update to kernel binary in partition %d in the latest BP.\n", binary_manager_get_kdata()->part_info[bp_info.bp_data.active_idx].devnum);
+		goto reboot;
 	}
 #else
-	int ret;
-
 	ret = binary_manager_check_kernel_update();
-
-	if (ret < 0) {
+	if (ret == BINMGR_OK) {
+		/* Reboot to switch kernel binary in another partition. */
+		goto reboot;
+	} else if (ret != BINMGR_ALREADY_UPDATED && ret != BINMGR_NOT_FOUND) {
 		bmdbg("Failed to check for kernel update %d\n", ret);
 		return ret;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* Check if new common binary or user binaries exist */
+	int bin_idx;
+	uint32_t bin_count = binary_manager_get_ucount();
+	bool need_update = false;
+
+	/* Reload binaries if new binary is scanned */
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	for (bin_idx = BM_CMNLIB_IDX; bin_idx <= bin_count; bin_idx++) {
+#else
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 #endif
+		/* Scan binary files */
+		ret = binary_manager_check_user_update(bin_idx);
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			BIN_USEIDX(bin_idx) ^= 1;
+			need_update = true;
+		} else {
+			bmdbg("Fail to check user update: bin_idx %d, ret %d\n", bin_idx, ret);
+		}
+	}
+
+	if (!need_update) {
+		bmdbg("No App binaries to update\n");
+		return BINMGR_ALREADY_UPDATED;
+	}
+#endif
+#endif
+	return BINMGR_OK;
+
+reboot:
 	/* No, Reboot for kernel update */
 	printf("==> [REBOOT] Board will be rebooted for new binary loading");
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
 
 	return BINMGR_OK;
 }
+
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 /****************************************************************************
@@ -353,16 +389,21 @@ bool binary_manager_scan_ubin_all(void)
 	int ret;
 	int bin_idx;
 	int part_idx;
-	int bp_app_idx;
 	bool is_found;
+#ifdef CONFIG_USE_BP
+	int bp_app_idx;
 	uint32_t version;
 	binmgr_bpdata_t *bp_data;
+#endif
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
 	common_binary_header_t common_header_data;
+#endif
 	user_binary_header_t user_header_data;
 	char devpath[BINARY_PATH_LEN];
 
 	is_found = false;
 
+#ifdef CONFIG_USE_BP
 	bp_data = binary_manager_get_bpdata();
 	/* Update user binary data based on bootparam */
 	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
@@ -374,10 +415,13 @@ bool binary_manager_scan_ubin_all(void)
 		BIN_BPIDX(bin_idx) = bp_app_idx;
 		part_idx = bp_data->app_data[bp_app_idx].useidx;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
 		if (bin_idx == BM_CMNLIB_IDX) {
 			ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);			
 			version = common_header_data.version;
-		} else {
+		} else
+#endif
+		{
 			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);			
 			version = user_header_data.bin_ver;
 		}
@@ -395,6 +439,51 @@ bool binary_manager_scan_ubin_all(void)
 			bmdbg("Fail to find valid binary %s based on BP. \n", BIN_NAME(bin_idx));
 		}
 	}
+#else
+	uint32_t latest_ver = 0;
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	/* Scan Common binary on its own partitions */
+	bin_idx = BM_CMNLIB_IDX;
+	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
+		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);
+		if (ret == OK) {
+			is_found = true;
+			if (latest_ver < common_header_data.version) {
+				/* Return true it there is at least one valid binary */
+				BIN_USEIDX(bin_idx) = part_idx;
+				BIN_VER(bin_idx, part_idx) = common_header_data.version;
+				latest_ver = common_header_data.version;
+			}
+			bmdbg("Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), common_header_data.version);
+		} else {
+			bmdbg("Fail to find valid binary %s in partition %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
+		}
+	}
+#endif
+	/* Scan User binaries based on their own partitions */
+
+	for (bin_idx = 1; bin_idx <= g_bin_count; bin_idx++) {
+		latest_ver = 0;
+		for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
+			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);
+			if (ret == OK) {
+				is_found = true;
+				if (latest_ver < user_header_data.bin_ver) {
+					BIN_USEIDX(bin_idx) = part_idx;
+					BIN_VER(bin_idx, part_idx) = user_header_data.bin_ver;
+					BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
+					latest_ver = user_header_data.bin_ver;
+				}
+				bmdbg("Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), user_header_data.bin_ver);
+			} else {
+				bmdbg("Fail to find valid binary %s in partition %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
+			}
+		}
+	}
+#endif
 
 	return is_found;
 }
