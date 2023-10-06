@@ -54,11 +54,11 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 	/* Verify header data */
 	if (type == BINARY_KERNEL) {
 		kernel_binary_header_t *header_data = (kernel_binary_header_t *)header_input;
-		if (header_data->header_size == 0 || header_data->binary_size == 0 \
+		if (header_data->header_size != sizeof(kernel_binary_header_t) - CHECKSUM_SIZE || header_data->binary_size == 0 \
 		|| header_data->version < KERNEL_BIN_VER_MIN || header_data->version > KERNEL_BIN_VER_MAX) {
 			bmdbg("Invalid kernel header data : headersize %u, version %u, binary size %u\n", header_data->header_size, header_data->version, header_data->binary_size);
 			return ERROR;
-		}		
+		}
 		bmvdbg("Kernel binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
 	} else if (type == BINARY_USERAPP) {
 		user_binary_header_t *header_data = (user_binary_header_t *)header_input;
@@ -67,7 +67,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 		|| header_data->bin_ramsize == 0 || header_data->bin_size == 0) {
 			bmdbg("Invalid user header data : headersize %u, binsize %u, ramsize %u, bintype %u\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 			return ERROR;
-		}		
+		}
 		bmvdbg("User binary header : %u %u %u %u %s %u %u %u\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver);
 	} else {
 		/* Verify header data */
@@ -180,8 +180,8 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		while (bin_size > 0) {
 			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
 			ret = read(fd, (void *)crc_buffer, read_size);
-			if (ret < 0 || ret != read_size) {
-				bmdbg("Fail to read header for checksum : %d, errno %d\n", ret, errno);
+			if (ret != read_size) {
+				bmdbg("Fail to read header for checksum : ret %d, errno %d\n", ret, errno);
 				ret = BINMGR_OPERATION_FAIL;
 				goto errout_with_fd;
 			}
