@@ -344,10 +344,12 @@ static int binary_update_new_version_test(char *bin_name)
 	/* Copy current binary and update version. */
 	ret = binary_update_download_binary(&pre_bin_info, true, DOWNLOAD_VALID_BIN);
 	if (ret != OK) {
+		printf("\nfailed to update new binary with higer version\n");
 		return ret;
 	}
 
 	BM_SET_GROUP(type, BINARY_KERNEL);
+
 	ret = binary_manager_set_bootparam(type, &result);
 	printf("binary_manager_set_bootparam %d\n", ret);
 	if (ret != OK) {
@@ -378,6 +380,8 @@ static int binary_update_new_version_test(char *bin_name)
 static void binary_update_invalid_binary_test(void)
 {
 	int ret;
+	uint8_t type = 0;
+	binary_setbp_result_t result;
 	binary_update_info_t pre_bin_info;
 	binary_update_info_t cur_bin_info;
 
@@ -392,6 +396,20 @@ static void binary_update_invalid_binary_test(void)
 	ret = binary_update_download_binary(&pre_bin_info, true, DOWNLOAD_INVALID_BIN);
 	if (ret != OK) {
 		return;
+	}
+
+	BM_SET_GROUP(type, BINARY_KERNEL);
+
+	ret = binary_manager_set_bootparam(type, &result);
+	printf("binary_manager_set_bootparam %d\n", ret);
+	if (ret != OK) {
+		int idx;
+		if (ret == BINMGR_ALREADY_UPDATED) {
+			for (idx = 0; idx < BINARY_TYPE_MAX; idx++) {
+				printf("[%d] result %d\n", idx, result.result[idx]);
+			}
+		}
+		return ret;
 	}
 
 	ret = binary_update_reload();
