@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/mpu/Makefile
+# apps/examples/mem_protect/Makefile
 #
 #   Copyright (C) 2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,23 +54,22 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# MPU test! built-in application info
+# MEM_PROTECT test! built-in application info
 
-APPNAME = mpu_test
-FUNCNAME = mpu_tc_main
+APPNAME = mem_protect_test
+FUNCNAME = mem_protect_tc_main
 THREADEXEC = TASH_EXECMD_SYNC
 
 # Definitions to test application binary separation
-# CONFIG_MPUTEST_USE_PREBUILT_BINS
 APP1_BIN = micom
 APP2_BIN = wifi
 OUTPUT_DIR = $(TOPDIR)/../build/output/bin
 
-# mpu test! Example
+# mem_protect test! Example
 
 ASRCS =
 CSRCS =
-MAINSRC = mpu_test.c
+MAINSRC = mem_protect_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -99,8 +98,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_MPU_TEST_PROGNAME ?= mpu_test$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_MPU_TEST_PROGNAME)
+CONFIG_EXAMPLES_MEM_PROTECT_TEST_PROGNAME ?= mem_protect_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_MEM_PROTECT_TEST_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -134,7 +133,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MPU_TEST),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_MEM_PROTECT_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 

@@ -28,16 +28,16 @@
 #include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
 #include "os_api_test_proto.h"
-#ifdef CONFIG_EXAMPLES_MPU_TEST
+#ifdef CONFIG_EXAMPLES_MEM_PROTECT_TEST
 #include <tinyara/binfmt/binfmt.h>
-#include <tinyara/mpu_test.h>
+#include <tinyara/mem_protect_test.h>
 #include "binary_manager/binary_manager.h"
 #endif
 
 /****************************************************************************
  * Public variables
  ****************************************************************************/
-#ifdef CONFIG_EXAMPLES_MPU_TEST
+#ifdef CONFIG_EXAMPLES_MEM_PROTECT_TEST
 extern uint32_t _stext_flash;
 extern uint32_t _sdata;
 #endif
@@ -130,23 +130,23 @@ static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		break;
 #endif
 
-#ifdef CONFIG_EXAMPLES_MPU_TEST
-	case TESTIOC_MPUTEST:
+#ifdef CONFIG_EXAMPLES_MEM_PROTECT_TEST
+	case TESTIOC_MEM_PROTECTTEST:
 		ret = OK;
-		struct mputest_arg_s *obj = (struct mputest_arg_s*)arg;
+		struct mem_protecttest_arg_s *obj = (struct mem_protecttest_arg_s*)arg;
 		
 		if (!obj) {
 			return -EINVAL;
 		}
 
 		switch (obj->type) {
-		case MPUTEST_KERNEL_CODE:
+		case MEM_PROTECTTEST_KERNEL_CODE:
 			obj->addr = &_stext_flash;
 			break;
-		case MPUTEST_KERNEL_DATA:
+		case MEM_PROTECTTEST_KERNEL_DATA:
 			obj->addr = &_sdata;
 			break;
-		case MPUTEST_APP_ADDR:
+		case MEM_PROTECTTEST_APP_ADDR:
 		{
 			/* Find the current executing app and return an address
 			* which belongs to any other app in the system. Here,

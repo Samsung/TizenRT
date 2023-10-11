@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_MPU_TEST),y)
-CONFIGURED_APPS += examples/mpu
+ifeq ($(CONFIG_EXAMPLES_MEM_PROTECT_TEST),y)
+CONFIGURED_APPS += examples/mem_protect
 endif

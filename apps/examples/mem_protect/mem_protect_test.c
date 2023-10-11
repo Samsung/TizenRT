@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/// @file mpu_tc_main.c
-/// @brief Main Function for MPU TestCase Example
+/// @file mem_protect_tc_main.c
+/// @brief Main Function for MEM_PROTECT TestCase Example
 #include <tinyara/config.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -25,17 +25,17 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <tinyara/os_api_test_drv.h>
-#include <tinyara/mpu_test.h>
+#include <tinyara/mem_protect_test.h>
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int mpu_tc_main(int argc, char *argv[])
+int mem_protect_tc_main(int argc, char *argv[])
 #endif
 {
 	char ch;
 	int tc_fd;
-	struct mputest_arg_s obj;
+	struct mem_protecttest_arg_s obj;
 	int ret;
 
 	tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
@@ -49,14 +49,14 @@ int mpu_tc_main(int argc, char *argv[])
 
 	ch = getchar();
 	if (ch == 'R' || ch == 'r') {
-		printf("\nPress A for app MPU test\n");
-		printf("Press K for kernel MPU test\n");
+		printf("\nPress A for app MEM_PROTECT test\n");
+		printf("Press K for kernel MEM_PROTECT test\n");
 
 		ch = getchar();
 
 		if (ch == 'A' || ch == 'a') {
-			obj.type = MPUTEST_APP_ADDR;
-			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+			obj.type = MEM_PROTECTTEST_APP_ADDR;
+			ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 			if (ret < 0) {
 				printf("ERROR: Failed to fetch test address from kernel\n");
 				close(tc_fd);
@@ -85,8 +85,8 @@ int mpu_tc_main(int argc, char *argv[])
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				obj.type = MPUTEST_KERNEL_CODE;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				obj.type = MEM_PROTECTTEST_KERNEL_CODE;
+				ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -98,7 +98,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("\n************************************************\n");
 				printf("* Test to verify protection of Kernel code     *\n");
 				printf("* User Tasks should not be allowed to read     *\n");
-				printf("* kernel code space. MPU shall raise exception *\n");
+				printf("* kernel code space. MEM_PROTECT shall raise exception *\n");
 				printf("************************************************\n");
 				printf("INFO: Read Code: 0x%x\n", obj.addr);
 
@@ -107,8 +107,8 @@ int mpu_tc_main(int argc, char *argv[])
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-				obj.type = MPUTEST_KERNEL_DATA;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				obj.type = MEM_PROTECTTEST_KERNEL_DATA;
+				ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -120,7 +120,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("\n************************************************\n");
 				printf("* Test to verify protection of Kernel data     *\n");
 				printf("* User Tasks should not be allowed to read     *\n");
-				printf("* kernel data space. MPU shall raise exception *\n");
+				printf("* kernel data space. MEM_PROTECT shall raise exception *\n");
 				printf("************************************************\n");
 				printf("INFO: Read Data: 0x%x\n", obj.addr);
 
@@ -132,14 +132,14 @@ int mpu_tc_main(int argc, char *argv[])
 			}
 		}
 	} else if (ch == 'W' || ch == 'w') {
-		printf("\nPress A for app MPU test\n");
-		printf("Press K for kernel MPU test\n");
+		printf("\nPress A for app MEM_PROTECT test\n");
+		printf("Press K for kernel MEM_PROTECT test\n");
 
 		ch = getchar();
 
 		if (ch == 'A' || ch == 'a') {
-			obj.type = MPUTEST_APP_ADDR;
-			ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+			obj.type = MEM_PROTECTTEST_APP_ADDR;
+			ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 			if (ret < 0) {
 				printf("ERROR: Failed to fetch test address from kernel\n");
 				close(tc_fd);
@@ -168,8 +168,8 @@ int mpu_tc_main(int argc, char *argv[])
 
 			ch = getchar();
 			if (ch == 'C' || ch == 'c') {
-				obj.type = MPUTEST_KERNEL_CODE;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				obj.type = MEM_PROTECTTEST_KERNEL_CODE;
+				ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -181,7 +181,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("\n************************************************\n");
 				printf("* Test to verify protection of Kernel code     *\n");
 				printf("* User Tasks should not be allowed to write    *\n");
-				printf("* kernel code space. MPU shall raise exception *\n");
+				printf("* kernel code space. MEM_PROTECT shall raise exception *\n");
 				printf("************************************************\n");
 				printf("INFO: Write kernel space: 0x%x\n", obj.addr);
 
@@ -190,8 +190,8 @@ int mpu_tc_main(int argc, char *argv[])
 
 				printf("ERROR: User Task made invalid access to Kernel code space\n");
 			} else if (ch == 'D' || ch == 'd') {
-				obj.type = MPUTEST_KERNEL_DATA;
-				ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+				obj.type = MEM_PROTECTTEST_KERNEL_DATA;
+				ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 				if (ret < 0) {
 					printf("ERROR: Failed to fetch test address from kernel\n");
 					close(tc_fd);
@@ -203,7 +203,7 @@ int mpu_tc_main(int argc, char *argv[])
 				printf("\n************************************************\n");
 				printf("* Test to verify protection of Kernel data     *\n");
 				printf("* User Tasks should not be allowed to write    *\n");
-				printf("* kernel data space. MPU shall raise exception *\n");
+				printf("* kernel data space. MEM_PROTECT shall raise exception *\n");
 				printf("************************************************\n");
 				printf("INFO: Write kernel space: 0x%x\n", obj.addr);
 
