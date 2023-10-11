@@ -74,6 +74,7 @@ include analog$(DELIM)Make.defs
 include audio$(DELIM)Make.defs
 include bch$(DELIM)Make.defs
 include bluetooth$(DELIM)Make.defs
+include compression$(DELIM)Make.defs
 include cpuload$(DELIM)Make.defs
 include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
