@@ -124,6 +124,16 @@ typedef struct {
 	hal_key_type factory_slot_key_type[USABLE_FACTORY_KEY_INDEX];
 } factory_struc;
 
+/* Secure Key Derive Function structure */
+typedef struct {
+	unsigned char *password;
+	size_t plen;
+	unsigned char *salt;
+	size_t slen;
+	unsigned int iteration_count;
+	unsigned char *dstbuf;
+	size_t dlen;
+} secure_kdf_struc;
 
 /* Kernel & User Image Verification Structure */
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
