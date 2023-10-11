@@ -344,13 +344,13 @@ uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
 {
 	/* Page table structure as follows:
 	 *
-	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... 4 | App1 L2 1 ... 4 | App2 L2 1 ... 4 |
+	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... CONFIG_NUM_L2_PER_APP | App1 L2 1 ... CONFIG_NUM_L2_PER_APP | App2 L2 1 ... CONFIG_NUM_L2_PER_APP |
 	 *
 	 * In the below calculation, we take (CONFIG_NUM_APPS + 1) because the first
-	 * page table is for kernel. Also, we reserve 4 L2 page tables for each app.
+	 * page table is for kernel. Also, we reserve CONFIG_NUM_L2_PER_APP L2 page tables for each app.
 	 */
 	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) + 
-			(app_id * 4 * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
+			(app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
 	return addr;
 }
 
@@ -393,8 +393,8 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 
 	// Clear L2 page tables
 	addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) +
-                       (app_id * 4 * L2_PGTBL_SIZE));
-	memset(addr, 0, 4 * L2_PGTBL_SIZE);
+                       (app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE));
+	memset(addr, 0, CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE);
 	
 	if (app_id == 0) {
 		// Reset the L2 page entries in L1 page table
