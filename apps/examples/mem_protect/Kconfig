@@ -3,13 +3,13 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config EXAMPLES_MPU_TEST
-	bool "MPU TestCase Example"
+config EXAMPLES_MEM_PROTECT_TEST
+	bool "MEM_PROTECT TestCase Example"
 	depends on BUILD_PROTECTED
 	select DRIVERS_OS_API_TEST
 	---help---
-		Enable the MPU TestCase Example
+		Enable the Memory protection TestCase Example
 
 config USER_ENTRYPOINT
 	string
-	default "mpu_tc_main" if ENTRY_MPU_TEST
+	default "mem_protect_tc_main" if ENTRY_MEM_PROTECT_TEST

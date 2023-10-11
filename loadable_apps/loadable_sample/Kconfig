@@ -41,7 +41,7 @@ config EXAMPLES_RECOVERY_TEST
 	bool "Binary Manager Recovery example"
 	default y
 	depends on BINMGR_RECOVERY
-	select EXAMPLES_MPU_TEST
+	select EXAMPLES_MEM_PROTECT_TEST
 	select DRIVERS_OS_API_TEST
 	---help---
 		Enable the Binary Manager Recovery test
@@ -71,7 +71,7 @@ choice
 config EXAMPLES_RECOVERY_AGING_TEST
 	bool "Recovery Aging test"
 	depends on BINMGR_RECOVERY
-	select EXAMPLES_MPU_TEST
+	select EXAMPLES_MEM_PROTECT_TEST
 	select DRIVERS_OS_API_TEST
 	---help---
 		Enable Recovery Aging test. Another Test cannot run at the same time.

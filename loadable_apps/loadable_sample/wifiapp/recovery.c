@@ -29,13 +29,13 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <tinyara/os_api_test_drv.h>
-#include <tinyara/mpu_test.h>
+#include <tinyara/mem_protect_test.h>
 
 static void *assert_thread(void *index)
 {
 	int type;
 	int tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
-	struct mputest_arg_s obj;
+	struct mem_protecttest_arg_s obj;
 	int ret;
 
 	if (tc_fd < 0) {
@@ -51,8 +51,8 @@ static void *assert_thread(void *index)
 		PANIC();
 	} else if (type == 1) {
 		/* Access kernel code */
-		obj.type = MPUTEST_KERNEL_CODE;
-		ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+		obj.type = MEM_PROTECTTEST_KERNEL_CODE;
+		ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);
@@ -64,8 +64,8 @@ static void *assert_thread(void *index)
 		*(obj.addr) = 0xdeadbeef;
 	} else {
 		/* Access another binary 'micom' address */
-		obj.type = MPUTEST_APP_ADDR;
-		ret = ioctl(tc_fd, TESTIOC_MPUTEST, (unsigned long)&obj);
+		obj.type = MEM_PROTECTTEST_APP_ADDR;
+		ret = ioctl(tc_fd, TESTIOC_MEM_PROTECTTEST, (unsigned long)&obj);
 		if (ret < 0) {
 			printf("ERROR: Failed to obtain address from kernel\n");
 			close(tc_fd);

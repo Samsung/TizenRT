@@ -3021,10 +3021,10 @@ function toggle(id, link) {
 <li><a href="#CONFIG_EXAMPLES_MEDIASTREAMER_PASSPHRASE">1.18.4.88 <code>CONFIG_EXAMPLES_MEDIASTREAMER_PASSPHRASE</code>: Passphrase of AP</a></li>
 <li><a href="#CONFIG_EXAMPLES_MEDIASTREAMER_AUTHENTICATION">1.18.4.89 <code>CONFIG_EXAMPLES_MEDIASTREAMER_AUTHENTICATION</code>: Authentication type</a></li>
 <li><a href="#CONFIG_EXAMPLES_MEDIASTREAMER_CRYPTO">1.18.4.90 <code>CONFIG_EXAMPLES_MEDIASTREAMER_CRYPTO</code>: Encryption type</a></li>
-<li><a href="#CONFIG_EXAMPLES_MPU_TEST">1.18.4.91 <code>CONFIG_EXAMPLES_MPU_TEST</code>: MPU TestCase Example</a></li>
-<li><a href="#CONFIG_TC_MPU_ALL">1.18.4.92 <code>CONFIG_TC_MPU_ALL</code>: All</a></li>
-<li><a href="#CONFIG_TC_MPU_READ">1.18.4.93 <code>CONFIG_TC_MPU_READ</code>: Read</a></li>
-<li><a href="#CONFIG_TC_MPU_WRITE">1.18.4.94 <code>CONFIG_TC_MPU_WRITE</code>: Write</a></li>
+<li><a href="#CONFIG_EXAMPLES_MEM_PROTECT_TEST">1.18.4.91 <code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code>: MEM_PROTECT TestCase Example</a></li>
+<li><a href="#CONFIG_TC_MEM_PROTECT_ALL">1.18.4.92 <code>CONFIG_TC_MEM_PROTECT_ALL</code>: All</a></li>
+<li><a href="#CONFIG_TC_MEM_PROTECT_READ">1.18.4.93 <code>CONFIG_TC_MEM_PROTECT_READ</code>: Read</a></li>
+<li><a href="#CONFIG_TC_MEM_PROTECT_WRITE">1.18.4.94 <code>CONFIG_TC_MEM_PROTECT_WRITE</code>: Write</a></li>
 <li><a href="#CONFIG_EXAMPLES_MQTT_TEST">1.18.4.95 <code>CONFIG_EXAMPLES_MQTT_TEST</code>: \&quot;MQTT Test\&quot; example</a></li>
 <li><a href="#CONFIG_EXAMPLES_MTDPART">1.18.4.96 <code>CONFIG_EXAMPLES_MTDPART</code>: MTD partition test</a></li>
 <li><a href="#CONFIG_EXAMPLES_MTDPART_ARCHINIT">1.18.4.97 <code>CONFIG_EXAMPLES_MTDPART_ARCHINIT</code>: Architecture-specific initialization</a></li>
@@ -36512,10 +36512,10 @@ sizeof(FAR void *) == sizeof(unsigned long));
 </li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mediastreamer/Kconfig_ENTRY</code>
 </ul>
-<h3><a name="CONFIG_ENTRY_MPU_TEST"><code>CONFIG_ENTRY_MPU_TEST</code>: MPU TestCase Example</a></h3>
+<h3><a name="CONFIG_ENTRY_MEM_PROTECT_TEST"><code>CONFIG_ENTRY_MEM_PROTECT_TEST</code>: MEM_PROTECT TestCase Example</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_INIT_ENTRYPOINT"><code>CONFIG_INIT_ENTRYPOINT</code></a>, <a href="#CONFIG_EXAMPLES_MPU_TEST"><code>CONFIG_EXAMPLES_MPU_TEST</code></a>
+  <li><i>Dependencies</i>: <a href="#CONFIG_INIT_ENTRYPOINT"><code>CONFIG_INIT_ENTRYPOINT</code></a>, <a href="#CONFIG_EXAMPLES_MEM_PROTECT_TEST"><code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code></a>
 </li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig_ENTRY</code>
 </ul>
@@ -37723,40 +37723,40 @@ sizeof(FAR void *) == sizeof(unsigned long));
 <p>
   0 : None  1 : WEP 64 bits  2 : WEP 128 bits  3 : AES  4 : TKIP  5 : TIKP and AES  6 : Unknown</p>
 </ul>
-<h3><a name="CONFIG_EXAMPLES_MPU_TEST">1.18.4.91 <code>CONFIG_EXAMPLES_MPU_TEST</code>: MPU TestCase Example</a></h3>
+<h3><a name="CONFIG_EXAMPLES_MEM_PROTECT_TEST">1.18.4.91 <code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code>: MEM_PROTECT TestCase Example</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li><i>Dependencies</i>: <a href="#CONFIG_BUILD_PROTECTED"><code>CONFIG_BUILD_PROTECTED</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig</code>
 <p>
-  Enable the MPU TestCase Example</p>
+  Enable the MEM_PROTECT TestCase Example</p>
 </ul>
-<h3><a name="CONFIG_TC_MPU_ALL">1.18.4.92 <code>CONFIG_TC_MPU_ALL</code>: All</a></h3>
+<h3><a name="CONFIG_TC_MEM_PROTECT_ALL">1.18.4.92 <code>CONFIG_TC_MEM_PROTECT_ALL</code>: All</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>
     <i>Default</i>: n
   </li>
-  <li><i>Selects</i>: <a href="#CONFIG_TC_MPU_READ"><code>CONFIG_TC_MPU_READ</code></a>, <a href="#CONFIG_TC_MPU_WRITE"><code>CONFIG_TC_MPU_WRITE</code></a></li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MPU_TEST"><code>CONFIG_EXAMPLES_MPU_TEST</code></a></li>
+  <li><i>Selects</i>: <a href="#CONFIG_TC_MEM_PROTECT_READ"><code>CONFIG_TC_MEM_PROTECT_READ</code></a>, <a href="#CONFIG_TC_MEM_PROTECT_WRITE"><code>CONFIG_TC_MEM_PROTECT_WRITE</code></a></li>
+  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MEM_PROTECT_TEST"><code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig</code>
 </ul>
-<h3><a name="CONFIG_TC_MPU_READ">1.18.4.93 <code>CONFIG_TC_MPU_READ</code>: Read</a></h3>
+<h3><a name="CONFIG_TC_MEM_PROTECT_READ">1.18.4.93 <code>CONFIG_TC_MEM_PROTECT_READ</code>: Read</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>
     <i>Default</i>: n
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MPU_TEST"><code>CONFIG_EXAMPLES_MPU_TEST</code></a></li>
+  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MEM_PROTECT_TEST"><code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig</code>
 </ul>
-<h3><a name="CONFIG_TC_MPU_WRITE">1.18.4.94 <code>CONFIG_TC_MPU_WRITE</code>: Write</a></h3>
+<h3><a name="CONFIG_TC_MEM_PROTECT_WRITE">1.18.4.94 <code>CONFIG_TC_MEM_PROTECT_WRITE</code>: Write</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>
     <i>Default</i>: n
   </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MPU_TEST"><code>CONFIG_EXAMPLES_MPU_TEST</code></a></li>
+  <li><i>Dependencies</i>: <a href="#CONFIG_EXAMPLES_MEM_PROTECT_TEST"><code>CONFIG_EXAMPLES_MEM_PROTECT_TEST</code></a></li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig</code>
 </ul>
 <h3><a name="CONFIG_EXAMPLES_MQTT_TEST">1.18.4.95 <code>CONFIG_EXAMPLES_MQTT_TEST</code>: \&quot;MQTT Test\&quot; example</a></h3>
@@ -45555,7 +45555,7 @@ to spare, this editor will only be useful for very small files.
     <i>Default</i>: "mpu_tc_main"
     <p>
       <i>Dependency:</i>
-      <a href="#CONFIG_ENTRY_MPU_TEST"><code>CONFIG_ENTRY_MPU_TEST</code></a>
+      <a href="#CONFIG_ENTRY_MEM_PROTECT_TEST"><code>CONFIG_ENTRY_MEM_PROTECT_TEST</code></a>
     </p>
   </li>
   <li><i>Kconfig file</i>: <code>/home/sunghan/Work/TinyAra/Forked_TizenRT/apps/examples/mpu/Kconfig</code>

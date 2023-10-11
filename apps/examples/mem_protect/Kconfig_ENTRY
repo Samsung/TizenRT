@@ -1,0 +1,3 @@
+config ENTRY_MEM_PROTECT_TEST
+	bool "MEM_PROTECT TestCase Example"
+	depends on EXAMPLES_MEM_PROTECT_TEST

@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_MPUTEST_H
-#define __INCLUDE_TINYARA_MPUTEST_H
+#ifndef __INCLUDE_TINYARA_MEM_PROTECTTEST_H
+#define __INCLUDE_TINYARA_MEM_PROTECTTEST_H
 
 /****************************************************************************
  * Included Files
@@ -31,15 +31,15 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-#ifdef CONFIG_EXAMPLES_MPU_TEST
+#ifdef CONFIG_EXAMPLES_MEM_PROTECT_TEST
 enum {
-	MPUTEST_KERNEL_CODE,
-	MPUTEST_KERNEL_DATA,
-	MPUTEST_APP_ADDR,
+	MEM_PROTECTTEST_KERNEL_CODE,
+	MEM_PROTECTTEST_KERNEL_DATA,
+	MEM_PROTECTTEST_APP_ADDR,
 };
 #endif
 
-struct mputest_arg_s {
+struct mem_protecttest_arg_s {
 	uint32_t type;
 	volatile uint32_t *addr;
 };
@@ -48,4 +48,4 @@ struct mputest_arg_s {
  * Public Function Prototypes
  ****************************************************************************/
 
-#endif							/* __INCLUDE_TINYARA_MPUTEST_H */
+#endif							/* __INCLUDE_TINYARA_MEM_PROTECTTEST_H */
