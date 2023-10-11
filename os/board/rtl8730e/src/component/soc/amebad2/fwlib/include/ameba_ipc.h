@@ -1,4 +1,4 @@
-﻿#ifndef _AMEBAD2_IPC_H_
+#ifndef _AMEBAD2_IPC_H_
 #define _AMEBAD2_IPC_H_
 
 /* AUTO_GEN_START */
@@ -276,7 +276,7 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_N2A_WIFI_TRX_TRAN					0	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN					1	/*!<  NP -->  AP API WIFI Message Exchange */
-#define IPC_N2A_FTL_ACK_TRAN					2	/*!<  NP -->  AP FTL DONE Message Exchange */
+#define IPC_N2A_FTL_DATA_TRAN					2	/*!<  NP -->  AP FTL Message Exchange */
 #define IPC_N2A_BT_API_TRAN						3	/*!<  NP -->  AP BT API Exchange */
 #define IPC_N2A_BT_DATA_TRAN					4	/*!<  NP -->  AP BT DATA Message Exchange */
 #define IPC_N2A_802154_TRAN						5
@@ -300,7 +300,7 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_A2N_WIFI_TRX_TRAN					0	/*!<  AP -->  NP WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
-#define IPC_A2N_FTL_DATA_TRAN					2	/*!<  AP -->  NP API FTL Message Exchange */
+#define IPC_A2N_FTL_ACK_TRAN					2	/*!<  AP -->  NP API FTL Message Exchange */
 #define IPC_A2N_BT_API_TRAN						3	/*!<  AP -->  NP BT API Exchange */
 #define IPC_A2N_BT_DATA_TRAN					4	/*!<  AP -->  NP BT DATA Message Exchange */
 #define IPC_A2N_802154_TRAN						5

@@ -115,6 +115,8 @@ include component/bluetooth/example/ble_scatternet/Make.defs
 endif
 endif
 
+include component/file_system/ftl/Make.defs
+
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 BOARD_SRCDIR = 	$(TOPDIR)/board
 PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
@@ -167,6 +169,7 @@ CFLAGS += -I$(TOPDIR)/net/netmgr
 CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs/r0.14b/include
 CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
+CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc

@@ -29,7 +29,7 @@ _LONG_CALL_ uint32_t ftl_save_to_storage(void *pdata, uint16_t offset, uint16_t 
     */
 _LONG_CALL_ uint32_t ftl_load_from_storage(void *pdata, uint16_t offset, uint16_t size);
 
-_LONG_CALL_ void FTL_np_request_get(VOID *Data, u32 IrqStatus, u32 ChanNum);
+_LONG_CALL_ void FTL_ap_request_get(VOID *Data, u32 IrqStatus, u32 ChanNum);
 
 #endif
 

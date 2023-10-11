@@ -39,6 +39,10 @@
 //#define USE_LOCAL_DBG_DIRECT 1
 //#define MONITOR_STATUS_INFO 1
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define FTL_LONGEST_WAIT_TIME 0xffff
+#endif
+
 #define FTL_MAGIC_PATTERN_VER01 0x635E
 #define FTL_MAGIC_PATTERN_VER02 0x777F
 
@@ -107,8 +111,11 @@ struct Page_T {
 	uint32_t Data[PAGE_element];
 };
 
-
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+_sema  ftl_sem = NULL;
+#elif
 QueueHandle_t ftl_sem = NULL;
+#endif
 uint8_t *ftl_mapping_table = NULL;
 bool do_gc_in_idle = FALSE;
 uint8_t idle_gc_page_thres = 1;
@@ -118,6 +125,32 @@ extern uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data);
 extern bool ftl_page_erase(struct Page_T *p);
 void ftl_mapping_table_init(void);
 uint16_t read_mapping_table(uint16_t logical_addr);
+
+/* Flash Status Bit */
+#define FLASH_STATUS_BITS 0x2c
+uint32_t backup_state = 0;
+
+static void ftl_setstatusbits(uint32_t NewState)
+{
+	flash_t flash;
+
+	if (!NewState) {	/* If to disable */
+		backup_state = flash_get_status(&flash);	/* Read State */
+		backup_state = backup_state & 0xFF;		/* Only compare status bits */
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Clear */
+			FLASH_Write_Unlock();
+		}
+	} else {
+		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState); /* Set State */
+			FLASH_Write_Unlock();
+		}
+		backup_state = 0;	/* Clear backup state */
+	}
+}
 
 uint8_t ftl_flash_read(uint32_t start_addr, uint32_t len, uint32_t *data)
 {
@@ -148,7 +181,9 @@ void ftl_flash_write(uint32_t start_addr, uint32_t len, uint32_t data)
 	flash_t flash;
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(0);
 	flash_write_word(&flash, start_addr, data);
+	ftl_setstatusbits(1);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 #endif
 }
@@ -161,7 +196,9 @@ bool ftl_flash_erase_sector(uint32_t addr)
 	flash_t flash;
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	ftl_setstatusbits(0);
 	flash_erase_sector(&flash, addr);
+	ftl_setstatusbits(1);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 #endif
 	return TRUE;
@@ -549,9 +586,15 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 {
 	uint8_t result = 0;
 
-	if (NULL != ftl_sem) {
+	if (NULL != ftl_sem)
+	{
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_up_sema(&ftl_sem);
+#elif
 		xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY);
+#endif
 	}
+
 
 	if (g_doingGarbageCollection == 0) {
 		g_doingGarbageCollection = 1;
@@ -568,9 +611,15 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 		g_doingGarbageCollection = 0;
 	}
 
-	if (NULL != ftl_sem) {
-		xSemaphoreGiveRecursive(ftl_sem);
-	}
+		if (NULL != ftl_sem)
+		{
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+#elif
+			xSemaphoreGiveRecursive(ftl_sem);
+#endif
+		}
+
 
 	return result;
 }
@@ -1051,11 +1100,17 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //	}
 //
 //#endif
-	if (NULL != ftl_sem) {
-		if (xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY) == TRUE) {
+	if (NULL != ftl_sem){
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_up_sema(&ftl_sem);
+#elif
+		if(xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY) == TRUE)
+#endif
+		{
 			sem_flag = TRUE;
 		}
 	}
+
 
 	if (ftl_check_logical_addr(logical_addr)) {
 		FTL_ASSERT(0);
@@ -1135,9 +1190,14 @@ L_retry:
 		}
 	}
 
-	if (sem_flag) {
-		xSemaphoreGiveRecursive(ftl_sem);
-	}
+		if (sem_flag){
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+#elif
+			xSemaphoreGiveRecursive(ftl_sem);
+#endif
+		}
+
 
 	FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] w 0x%08x: 0x%08x (%d)\r\n", logical_addr, (unsigned int)w_data, (int)ret);
 
