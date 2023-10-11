@@ -374,3 +374,12 @@ int ameba_SBOOT_Validate_PubKey(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
 	ret = invoke_securetest(0x82000037, (uint32_t)OTA_adapter, 0, 0, 0);
 	return ret;
 }
+
+/* Secure Key Derive Function */
+int ameba_Secure_KeyDeriveFunc(secure_kdf_struc *KFD_info)
+{
+	int ret = 0;
+	ret = invoke_securetest(0x8200003E, (uint32_t)KFD_info, 0, 0, 0);
+	return ret;
+}
+
