@@ -245,6 +245,18 @@ config COMMON_BINARY_NAME
 
 endif # SUPPORT_COMMON_BINARY
 
+if ARCH_USE_MMU
+
+config NUM_L2_PER_APP
+	int "Number of L2 page tables per app"
+	default 4
+	---help---
+		Set the number of L2 page tables required per app binary.
+		Memory required for this number of L2 page tables will be reserved by the system.
+		If the number of L2 page tables required during run time exceeds this value, then 
+		the behavior is UNDEFINED. 
+endif # ARCH_USE_MMU
+
 endif # APP_BINARY_SEPARATION
 
 
