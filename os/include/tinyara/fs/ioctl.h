@@ -101,6 +101,7 @@
 #define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
 #define _FBIOCBASE      (0x2700)	/* Frame buffer character driver ioctl commands */
 #define _CPULOADBASE    (0x2800)	/* cpuload ioctl commands */
+#define _COMPBASE       (0x2900)	/* compress ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
@@ -432,6 +433,15 @@
 #define MMINFOIOC_HEAP              _MMINFOIOC(0x0001)
 #define MMINFOIOC_PARSE             _MMINFOIOC(0x0002)
 #define MMINFOIOC_MNG_ALLOCFAIL     _MMINFOIOC(0x0003)
+
+/* Compress driver ioctl definitions ************************/
+#define _COMPIOCVALID(c)    (_IOC_TYPE(c) == _COMPBASE)
+#define _COMPIOC(nr)        _IOC(_COMPBASE, nr)
+
+#define COMPIOC_COMPRESS           _COMPIOC(0x0001)
+#define COMPIOC_GET_COMP_TYPE      _COMPIOC(0x0002)
+#define COMPIOC_GET_COMP_NAME      _COMPIOC(0x0003)
+#define COMPIOC_DECOMPRESS	   _COMPIOC(0x0004)
 
 /* Cpuload driver ioctl definitions ************************/
 

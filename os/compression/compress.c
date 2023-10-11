@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include <tinyara/binfmt/compression/compress_read.h>
+#include <tinyara/compression.h>
 
 #if CONFIG_COMPRESSION_TYPE == LZMA
 #include <tinyara/lzma/LzmaLib.h>
@@ -34,6 +35,15 @@
 #error "Wrong compression type, please check CONFIG_COMPRESSION_TYPE"
 #endif
 
+/****************************************************************************
+ * Name: allocate compress buffer
+ *
+ * Description:
+ *   allocates given number of memory to a buffer 
+ *
+ * Returned Value:
+ *   unsigned char * buffer 
+ ****************************************************************************/
 unsigned char *allocate_compress_buffer(int offset, unsigned int size)
 {
 	unsigned int propsSize = 0;
@@ -46,6 +56,16 @@ unsigned char *allocate_compress_buffer(int offset, unsigned int size)
 	return out_buffer;
 }
 
+/****************************************************************************
+ * Name: compress_block
+ *
+ * Description:
+ *   compresses block in 'read_buffer' of readsize into 'out_buffer' of writesize
+ *
+ * Returned Value:
+ *   Non-negative value on Success.
+ *   Negative value on Failure.
+ ****************************************************************************/
 int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int size)
 {
 	int ret;
@@ -63,6 +83,52 @@ int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsi
 		if (ret > 0)
 			ret = -ret;
 	}
+#endif
+	return ret;
+}
+
+/****************************************************************************
+ * Name: decompress_block
+ *
+ * Description:
+ *   Decompress block in 'read_buffer' of readsize into 'out_buffer' of writesize
+ *
+ * Returned Value:
+ *   Non-negative value on Success.
+ *   Negative value on Failure.
+ ****************************************************************************/
+int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int *size)
+{
+	int ret = ERROR;
+#if CONFIG_COMPRESSION_TYPE == LZMA
+	/* LZMA specific logic for decompression */
+	*size -= (LZMA_PROPS_SIZE);
+	int read_size = *size;
+
+	ret = LzmaUncompress(&out_buffer[0], (unsigned int *)writesize, &read_buffer[LZMA_PROPS_SIZE], (unsigned int *)size, &read_buffer[0], LZMA_PROPS_SIZE);
+	if (ret == SZ_ERROR_FAIL) {
+		bcmpdbg("Failure to decompress with LZMAUncompress API\n");
+		ret = -ret;
+	}
+	else if (ret == SZ_OK && *size < read_size) {
+		bcmpdbg("Out buffer allocated is not sufficient, some inputs are still left to be uncompressed\n");
+		ret = ENOMEM;
+	}
+	else if (ret == SZ_ERROR_INPUT_EOF) {
+		bcmpdbg("Decompressed succesful with some output buffer left\n");
+		ret = SZ_OK;
+	}
+#elif CONFIG_COMPRESSION_TYPE == MINIZ	
+	/* Miniz specific logic for decompression */
+	ret = mz_uncompress(out_buffer, writesize, read_buffer, *size);
+	if (ret != Z_OK) {
+		bcmpdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
+		if (ret > 0)
+			ret = -ret;
+		else if (ret == Z_BUF_ERROR) {
+			ret = ENOMEM;
+		}
+	}	
 #endif
 	return ret;
 }

@@ -47,55 +47,7 @@ static struct s_buffer buffers;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: compress_decompress_block
- *
- * Description:
- *   Decompress block in 'read_buffer' of readsize into 'out_buffer' of writesize
- *
- * Returned Value:
- *   Non-negative value on Success.
- *   Negative value on Failure.
- ****************************************************************************/
- #if CONFIG_COMPRESSION_TYPE == LZMA
-static int compress_decompress_block(unsigned char *out_buffer, unsigned int *writesize, unsigned char *read_buffer, unsigned int *size, int index)
-#elif CONFIG_COMPRESSION_TYPE == MINIZ
-static int compress_decompress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int *size, int index)
-#endif
-{
-	int ret = ERROR;
-
-#if CONFIG_COMPRESSION_TYPE == LZMA
-	if (compression_header->compression_format == COMPRESSION_TYPE_LZMA) {
-		/* LZMA specific logic for decompression */
-		*writesize = compression_header->blocksize;
-		*size -= (LZMA_PROPS_SIZE);
-
-		ret = LzmaUncompress(&out_buffer[0], writesize, &read_buffer[LZMA_PROPS_SIZE], size, &read_buffer[0], LZMA_PROPS_SIZE);
-		if (ret == SZ_ERROR_FAIL) {
-			bcmpdbg("Failure to decompress with LZMAUncompress API\n");
-			ret = -ret;
-		}
-	}
-#elif CONFIG_COMPRESSION_TYPE == MINIZ
-		if (compression_header->compression_format == COMPRESSION_TYPE_MINIZ) {
-			/* Miniz specific logic for decompression */
-			*writesize = compression_header->blocksize;
-	
-			ret = mz_uncompress(out_buffer, writesize, read_buffer, *size);
-			if (ret != Z_OK) {
-				bcmpdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
-				if (ret > 0)
-					ret = -ret;
-			}
-		}
-#endif
-
-
-	return ret;
-}
-
+ 
 /****************************************************************************
  * Name: compress_blocks_to_read
  *
@@ -341,7 +293,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		size = (long unsigned int)block_readsize;
 #endif
 		/* Decompress block in read_buffer to out_buffer */
-		ret = compress_decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size, index);
+		ret = decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size);
 		if (ret == ERROR) {
 			bcmpdbg("Failed to decompress %d block of this binary\n", index);
 			buffer_index = ret;
