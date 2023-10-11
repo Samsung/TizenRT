@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <tinyara/os_api_test_drv.h>
+#include <tinyara/compression.h>
 #include "tc_common.h"
 #include "tc_internal.h"
 
@@ -37,6 +38,13 @@ int tc2_get_drvfd(void)
 }
 #endif
 
+static int g_comp_tc_fd;
+
+int get_compfd(void)
+{
+	return g_comp_tc_fd;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -45,14 +53,22 @@ int tc_compression_main(int argc, char *argv[])
 {
 #ifdef CONFIG_TC_COMPRESS_READ
 	g_tc_fd = open(OS_API_TEST_DRVPATH, O_WRONLY);
-
 	/*If FAIL : Failed to open testcase driver*/
 	if (g_tc_fd < 0) {
 		printf("Failed to open OS API test driver %d\n", errno);
 		return ERROR;
 	}
 
-	tc_compress_read_main();
+	g_comp_tc_fd = open(COMP_DRVPATH, O_WRONLY);
+	/*If FAIL : Failed to open compression driver*/
+	if (g_comp_tc_fd < 0) {
+		printf("Failed to open compression driver %d\n", errno);
+		close(g_tc_fd);
+		return ERROR;
+	}
+	
+	tc_compress_main();
+	close(g_comp_tc_fd);
 	close(g_tc_fd);
 #endif
 
