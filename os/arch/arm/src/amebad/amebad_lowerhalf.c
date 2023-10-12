@@ -205,7 +205,6 @@ static int amebad_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
 	} else {
 		gpio_irq_disable((gpio_irq_t *)&priv->obj);
 		gpio_irq_set((gpio_irq_t *)&priv->obj, event, 0);
-		gpio_irq_deinit((gpio_irq_t *)&priv->obj);
 	}
 
 	return OK;
@@ -256,8 +255,9 @@ FAR struct gpio_lowerhalf_s *amebad_gpio_lowerhalf(u32 pinname, u32 pinmode, u32
 		return NULL;
 	}
 	gpio_init(&lower->obj, pinname);
-    	gpio_dir(&lower->obj, pinmode);
-    	gpio_mode(&lower->obj, pinpull);
+	gpio_dir(&lower->obj, pinmode);
+	gpio_mode(&lower->obj, pinpull);
+
 	lower->pinmode =pinmode;
 	lower->pinpull = pinpull;
 	lower->ops = &amebad_gpio_ops;
