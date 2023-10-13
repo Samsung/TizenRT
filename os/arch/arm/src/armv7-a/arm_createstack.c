@@ -197,6 +197,7 @@ int up_create_stack(struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 
       tcb->stack_base_ptr = tcb->stack_alloc_ptr;
       tcb->adj_stack_size = size_of_stack;
+      tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
 
 #ifdef CONFIG_STACK_COLORATION
       /* If stack debug is enabled, then fill the stack with a
