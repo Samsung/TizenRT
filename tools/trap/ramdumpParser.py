@@ -600,7 +600,7 @@ def find_crash_point(log_file, elf):
                     continue
 
             # Get the assert location PC value
-            if 'up_assert: Assertion failed at file:' in line:
+            if 'Assertion failed at file:' in line:
                 assertline = line
             if 'Assert location (PC) :' in line:
                 word = line.split(':')
@@ -1072,46 +1072,42 @@ def find_crash_point(log_file, elf):
                 line = next(searchfile)
                 line = next(searchfile)
                 while '*******************' not in line:
-                    start_idx = 0
-                    if 'task_show_alivetask_list:' in line:
-                        start_idx += len('task_show_alivetask_list:')
-                    if 'task_taskdump:' in line:
-                        start_idx += len('task_taskdump:')
-                    print(line[start_idx:], end = "")
+                    start_idx = (re.search(':', line))
+                    print(line[start_idx.start() + 1:], end = "")
                     line = next(searchfile) 
                 
 
 
     print('----------------------------------------------------------------------------------------------------')
 
-# Function to format logs and delete the timestamp (format-[xxxxxxxxx]) if it consists of timestamp at the start of each log line
+# Function to format logs and delete the timestamp (format-|xxxxxxxxx|) if it consists of timestamp at the start of each log line
 def format_log_file(log_file):
 
 	# Delete unwanted logs (if any) and timestamp at the start of each line
 	with open(log_file, "r") as f:
 		data = f.readlines()
 	with open(log_file, "w") as f:
-		assertinlog = False #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
+		assertinlog = 0 #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
 		trunc = True # False if log line is to be retained, True otherwise
 		for line in data:
-			if 'up_assert: ' in line:
-				assertinlog = True
-			if assertinlog:
-				# Truncate logs after first crash dump: up_assert
-				if ('up_assert: Assertion failed at file:' in line) and (trunc == False):
-					break
-				# Truncate logs before first crash dump: up_assert
-				if 'up_assert: Assertion failed at file:' in line:
+			if 'Assertion failed at file:' in line:
+				assertinlog = assertinlog + 1
+			if assertinlog == 2:
+				# Truncate logs after first crash dump (repeated assert case)
+				break
+			if assertinlog == 1:
+				# Truncate logs before first crash dum
+				if 'Assertion failed at file:' in line:
 					trunc = False
 				if trunc:
 					# Do not write line and move to the next line
 					continue
 
 			delete_idx = 0
-			# Timestamp present if line starts with '['
-			if line[0] == '[':
-				for idx in range(0, len(line)):
-					if ']' == line[idx]:
+			# Timestamp present if line starts with '|'
+			if line[0] == '|':
+				for idx in range(1, len(line)):
+					if '|' == line[idx]:
 						delete_idx = idx + 1
 						break
 			if line[delete_idx] == ' ':	# Check for trailing white spaces
@@ -1123,16 +1119,17 @@ def format_log_file(log_file):
 	with open(log_file, "r") as f:
 		data = f.readlines()
 		for line in data:
-			if 'up_assert:' in line:
-				if line[0] != 'u':
+			if 'Assertion failed at file:' in line:
+				word = line.split()
+				if word[1] != 'Assertion':
 					for idx in range(0, len(line)):
-						if 'u' == line[idx]:
+						if 'A' == line[idx]:
 							delete_idx = idx
 							break
 					correctFormatString = line[delete_idx:]
 					print ("\n\t- Below log format is not supported in TRAP")
 					print ('\t\t-{0}\t- Instead, supported log format in TRAP is as follows:'.format(line))
-					print ("\t\t-{0}\n\tKindly modify the log file as per accepted format.\n".format(correctFormatString))
+					print ("\t\t-{0} {1}\n\tKindly modify the log file as per accepted format.\n".format(word[word.index('Assertion')-1], correctFormatString))
 					sys.exit(1)
 
 def usage():
