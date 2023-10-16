@@ -67,7 +67,7 @@ cd $TIZENRT_BASEDIR/tools/trap/
 First copy the entire crash logs to a file in tools/trap/`<log_file>`  
 The crash log format should be something like below:
 ```
-up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: app2
+print_assert_detail: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: app2
 up_dumpstate: sp:     1002cd0c
 up_dumpstate: IRQ stack:
 up_dumpstate:   base: 1002cea0
@@ -79,10 +79,10 @@ up_stackdump: 1002cd00: xxxxxxxx xxxxxxxx xxxxxxxx 0000000b 0000000e ffffffbc 01
 .
 mpu_show_regioninfo:        7            2200DC0          12C500               1               1               1
 mpu_show_regioninfo: *****************************************************************************
-up_assert: Checking kernel heap for corruption...
-up_assert: No kernel heap corruption detected
-up_assert: Checking current app heap for corruption...
-up_assert: No app heap corruption detected
+recovery_assert: Checking kernel heap for corruption...
+recovery_assert: No kernel heap corruption detected
+print_assert_detail: Checking current app heap for corruption...
+print_assert_detail: No app heap corruption detected
 elf_show_all_bin_section_addr: [common] Text Addr : 0x2100020, Text Size : 672480
 elf_show_all_bin_section_addr: [app] Text Addr : 0x232d2c0, Text Size : 179616
 up_assert: Assert location (PC) : 0x02100025
@@ -94,7 +94,7 @@ test@VirtualBox ~/tizenRTGH/tools/trap (master) $sudo python3 ramdumpParser.py -
 	- Below log format is not supported in TRAP
 		-|19:27:38.36| up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
 	- Instead, supported log format in TRAP is as follows:
-		-up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
+		-print_assert_detail: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
 
 	Kindly modify the log file as per accepted format.
 
@@ -300,7 +300,7 @@ Number of binary            : 1 [kernel]
 2. Crash type               : code assertion by code ASSERT or PANIC
 
 3. Crash point
-	-  up_assert: Assertion failed at file:init/os_start.c line: 621 task: Idle Task
+	-  print_assert_detail: Assertion failed at file:init/os_start.c line: 621 task: Idle Task
 
 
 	- Code asserted in normal thread.
