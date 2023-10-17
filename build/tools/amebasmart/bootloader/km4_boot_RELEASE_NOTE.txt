@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 47469fd /10/17-15:36:24 ==
+1.	printf flash size
+
 == version 51f1ff8 /09/06-10:47:32 ==
 1.	disable uart download if SWD is disabled
 
