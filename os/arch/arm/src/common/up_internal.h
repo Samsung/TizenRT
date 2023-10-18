@@ -193,7 +193,7 @@
 #endif
 #define up_restorestate(regs) (current_regs = regs)
 
-#elif defined(CONFIG_ARCH_CORTEXA32)
+#elif defined(CONFIG_ARCH_ARMV7A_FAMILY)
 
 #define arm_savestate(regs)    (regs = (uint32_t *)CURRENT_REGS)
 #define arm_restorestate(regs) (CURRENT_REGS = regs)
@@ -400,10 +400,7 @@ EXTERN uint32_t _eramfuncs;		/* Copy destination end address in RAM */
 #define CONFIG_MPU_STACK_GUARD_SIZE 0
 #endif
 
-#if defined(CONFIG_ARCH_CORTEXA32)
-void modifyreg8(unsigned int addr, uint8_t clearbits, uint8_t setbits);
-void modifyreg16(unsigned int addr, uint16_t clearbits, uint16_t setbits);
-void modifyreg32(unsigned int addr, uint32_t clearbits, uint32_t setbits);
+#if defined(CONFIG_ARCH_ARMV7A_FAMILY)
 void arm_boot(void);
 uint32_t *arm_decodeirq(uint32_t *regs);
 void arm_fullcontextrestore(uint32_t *restoreregs) noreturn_function;
@@ -607,7 +604,7 @@ void up_l2ccinitialize(void);
 #define up_l2ccinitialize()
 #endif
 
-#endif	// CONFIG_ARCH_CORTEXA32
+#endif	// CONFIG_ARCH_ARMV7A_FAMILY
 
 /* System timer *************************************************************/
 
