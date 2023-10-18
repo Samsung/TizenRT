@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 86182df 2023/10/18-17:20:22 ==
+1. 	Modify Coex Case for Wifi Scan, used PTA instead of TDMA
+
 == version f51d53f 2023/10/11-19:23:32 ==
 1. 	Modify FTL Flash access in NP to avoid error
 
