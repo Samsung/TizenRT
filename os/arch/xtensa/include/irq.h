@@ -315,6 +315,28 @@ irqstate_t xtensa_enable_interrupts(irqstate_t mask);
 
 irqstate_t xtensa_disable_interrupts(irqstate_t mask);
 
+/****************************************************************************
+ * Name: up_cpu_index
+ *
+ * Description:
+ *   Return an index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   An integer index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
+ *   corresponds to the currently executing CPU.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_index(void);
+#else
+#define up_cpu_index() (0)
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }

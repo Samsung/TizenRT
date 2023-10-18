@@ -261,7 +261,7 @@ static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
 
 void weak_function sched_process_cpuload(void)
 {
-	int i, j;
+	int i;
 	int cpuload_idx;
 	irqstate_t flags;
 

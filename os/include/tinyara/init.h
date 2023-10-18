@@ -58,6 +58,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
+#include <sys/types.h>
 
 /****************************************************************************
  * Pre-processor Definitions

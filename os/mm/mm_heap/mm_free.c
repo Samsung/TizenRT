@@ -64,6 +64,7 @@
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include  <tinyara/sched.h>
 #endif
+#include <tinyara/arch.h>
 #include "mm_node.h"
 
 /****************************************************************************
