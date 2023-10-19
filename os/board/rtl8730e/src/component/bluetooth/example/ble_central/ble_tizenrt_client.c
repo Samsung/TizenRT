@@ -344,6 +344,30 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     return TRBLE_SUCCESS;
 }
 
+trble_result_e rtw_ble_client_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
+{
+	rtk_bt_le_update_conn_param_t param;
+
+	if(conn_handle == NULL || conn_param == NULL)
+	{
+		debug_print("Invalid input \n");
+		return TRBLE_INVALID_ARGS;
+	}
+
+	param.conn_handle = *conn_handle;
+	param.conn_interval_min = conn_param->min_conn_interval;
+	param.conn_interval_max = conn_param->max_conn_interval;
+	param.conn_latency = conn_param->slave_latency;
+	param.supv_timeout = conn_param->supervision_timeout;
+
+	if(RTK_BT_FAIL == rtk_bt_le_gap_update_conn_param(&param))
+	{
+		debug_print("connection update fail \n");
+		return TRBLE_FAIL;
+	}
+	return TRBLE_SUCCESS; 
+}
+
 trble_result_e rtw_ble_client_read_connected_device_list(trble_connected_list* out_connected_list)
 { 
     if (out_connected_list == NULL)
