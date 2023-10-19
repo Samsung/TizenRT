@@ -125,7 +125,7 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8730e/hello_8M:
+  rtl8730e/hello:
     machine:
       image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
@@ -135,7 +135,7 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8730e/loadable_apps_8M:
+  rtl8730e/loadable_apps:
     machine:
       image: ubuntu-2004:202201-02
     working_directory: ~/TizenRT
@@ -177,9 +177,9 @@ workflows:
       - rtl8720e/loadable_apps:
           requires:
             - checkout_code
-      - rtl8730e/hello_8M:
+      - rtl8730e/hello:
           requires:
             - checkout_code
-      - rtl8730e/loadable_apps_8M:
+      - rtl8730e/loadable_apps:
           requires:
             - checkout_code
