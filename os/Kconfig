@@ -294,7 +294,7 @@ config BOARD_BUILD_DATE
 config BINARY_SIGNING
 	bool
 	default n
-	depends on ARCH_BOARD_RTL8721CSM
+	depends on ARCH_BOARD_RTL8721CSM || ARCH_BOARD_RTL8720E || ARCH_BOARD_RTL8730E
 	---help---
 		Enable Encryption and Secure boot.
 		But this config is set as n and invisible because binary signing is not supported here.

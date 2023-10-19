@@ -117,6 +117,7 @@ config ARCH_CHIP_AMEBASMART
 	select BOOT_RUNFROMSDRAM
 	select ARCH_HAVE_ADDRENV
 	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_HAVE_HEAPCHECK if DEBUG
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).
 
@@ -263,14 +264,16 @@ config ARCH_CORTEXR4
 	select ARCH_ARMV7R_FAMILY
 
 config ARCH_CORTEXA32
-        bool
-        default n
-        select ARCH_DCACHE
-        select ARCH_ICACHE
-        select ARCH_HAVE_MMU
-        select ARCH_USE_MMU
-        select ARCH_HAVE_THREAD_LOCAL
-        select ARM_HAVE_MPCORE
+	bool
+	default n
+	select ARCH_DCACHE
+	select ARCH_ICACHE
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_MMU
+	select ARCH_USE_MMU
+	select ARCH_HAVE_THREAD_LOCAL
+	select ARM_HAVE_MPCORE
 	select ARCH_ARMV7A_FAMILY
 
 config ARCH_ARMV7M_FAMILY
@@ -288,7 +291,6 @@ config ARCH_ARMV7R_FAMILY
 config ARCH_ARMV7A_FAMILY
 	bool
 	default n
-	select SERIAL_CONSOLE
 
 config ARCH_FAMILY
 	string
