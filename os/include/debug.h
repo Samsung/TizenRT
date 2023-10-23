@@ -504,7 +504,7 @@ int get_errno(void);
 #define mfdbg(format, ...)					\
 	do {							\
 		if (abort_mode) {				\
-			if (CHECK_SECURE_PERMISSION()) {	\
+			if (!IS_SECURE_STATE()) {		\
 				lldbg(format, ##__VA_ARGS__);	\
 			}					\
 		} else if (up_interrupt_context()) {		\

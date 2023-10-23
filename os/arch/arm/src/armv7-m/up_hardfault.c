@@ -201,7 +201,7 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	}
 #endif
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		print_hardfault_detail(irq, regs);
 	}
 

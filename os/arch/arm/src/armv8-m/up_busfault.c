@@ -124,7 +124,7 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
 	system_exception_location = regs[REG_R15];
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		print_busfault_detail(regs, cfsr, bfar);
 	}
 

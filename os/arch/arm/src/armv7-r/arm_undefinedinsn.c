@@ -103,7 +103,7 @@
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		lldbg("\nUndefined instruction at 0x%x\n", regs[REG_PC]);
 	}
 	current_regs = regs;

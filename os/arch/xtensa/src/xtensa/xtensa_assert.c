@@ -125,7 +125,7 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 static void xtensa_assert(int errorcode) noreturn_function;
 static void xtensa_assert(int errorcode)
 {
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 #ifdef CONFIG_DEBUG_ERROR
 		/* Dump the processor state */
 
@@ -184,7 +184,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("Assertion failed\n");
 	lldbg("==============================================\n");
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 		struct tcb_s *rtcb = this_task();
@@ -231,7 +231,7 @@ void xtensa_panic(int xptcode, uint32_t *regs)
 
 	board_autoled_on(LED_ASSERTION);
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 		struct tcb_s *rtcb = this_task();
@@ -332,7 +332,7 @@ void xtensa_user(int exccause, uint32_t *regs)
 
 	board_autoled_on(LED_ASSERTION);
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 #if defined(CONFIG_DEBUG)
 #if CONFIG_TASK_NAME_SIZE > 0 && defined(CONFIG_DEBUG_ERROR)
 		struct tcb_s *rtcb = this_task();

@@ -966,7 +966,10 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg("security level: %d\n", get_security_level());
 #endif
-	if (CHECK_SECURE_PERMISSION()) {
+	/* Print assert detail information and dump state,
+	 * but if the OS is seucre state, do not print assertion failed logs.
+	 */
+	if (!IS_SECURE_STATE()) {
 		print_assert_detail(filename, lineno, fault_tcb);
 	}
 

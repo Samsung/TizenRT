@@ -42,7 +42,7 @@ int heap_dbg(const char *fmt, ...)
 	extern bool abort_mode;
 
 	if (abort_mode) {
-		if (CHECK_SECURE_PERMISSION()) {
+		if (!IS_SECURE_STATE()) {
 			ret = lowvsyslog(LOG_ERR, fmt, ap);
 		}
 	} else {

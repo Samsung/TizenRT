@@ -123,7 +123,7 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 		system_exception_location = regs[REG_R14];
 	}
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		print_usagefault_detail(regs, cfsr);
 	}
 
