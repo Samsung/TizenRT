@@ -142,7 +142,6 @@ FAR char *getcwd(FAR char *buf, size_t size)
 	/* Copy the cwd to the user buffer */
 
 	strncpy(buf, pwd, pwd_len);
-	sched_unlock();
 	return buf;
 }
 #endif							/* CONFIG_NFILE_DESCRIPTORS && !CONFIG_DISABLE_ENVIRON */
