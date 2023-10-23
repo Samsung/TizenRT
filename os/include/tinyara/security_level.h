@@ -84,7 +84,12 @@ int get_security_level(void);
  *   This function returns security level.
  *   If CONFIG_SECURITY_LEVEL is disabled, returns LOW_SECURITY_LEVEL.
  ****************************************************************************/
+#if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 #define IS_SECURE_STATE() get_security_level()
+#else
+#define IS_SECURE_STATE() prctl(PR_GET_SECURITY_LEVEL)
+#endif
+
 #else
 #define IS_SECURE_STATE() (LOW_SECURITY_LEVEL)
 #endif

@@ -35,16 +35,18 @@
 int heap_dbg(const char *fmt, ...)
 {
 	va_list ap;
-	int ret = 0;
+	int ret;
+
+	if (IS_SECURE_STATE()) {
+		return 0;
+	}
 
 	va_start(ap, fmt);
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	extern bool abort_mode;
 
 	if (abort_mode) {
-		if (!IS_SECURE_STATE()) {
-			ret = lowvsyslog(LOG_ERR, fmt, ap);
-		}
+		ret = lowvsyslog(LOG_ERR, fmt, ap);
 	} else {
 		ret = vsyslog(LOG_ERR, fmt, ap);
 	}
