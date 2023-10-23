@@ -269,7 +269,11 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	/* On success, return the PID */
 
 	leave_cancellation_point();
-	sched_unlock();
+#ifdef CONFIG_SMP
+        leave_critical_section(flags);
+#else
+        sched_unlock();
+#endif
 	return pid;
 
 errout_with_errno:
@@ -510,7 +514,11 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	}
 
 	leave_cancellation_point();
-	sched_unlock();
+#ifdef CONFIG_SMP
+        leave_critical_section(flags);
+#else
+        sched_unlock();
+#endif
 	return (int)pid;
 
 errout_with_errno:
