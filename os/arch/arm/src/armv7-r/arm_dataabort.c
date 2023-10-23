@@ -107,7 +107,7 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 	current_regs = regs;
 
 	/* Crash -- possibly showing diagnostic debug information. */
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		lldbg("\nData abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
 	}
 	PANIC();

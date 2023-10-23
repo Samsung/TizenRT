@@ -159,7 +159,7 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 		system_exception_location = regs[REG_R14];	/* The PC value might be invalid, so use LR */
 	}
 
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		print_memfault_detail(regs, cfsr, mmfar);
 	}
 

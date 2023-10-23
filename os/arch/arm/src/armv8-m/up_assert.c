@@ -593,9 +593,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg("security level: %d\n", get_security_level());
 #endif
 	/* Print assert detail information and dump state,
-	 * but if os security level is high, It is not printed.
+	 * but if the OS is seucre state, do not print assertion failed logs.
 	 */
-	if (CHECK_SECURE_PERMISSION()) {
+	if (!IS_SECURE_STATE()) {
 		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
 		lldbg("Checking kernel heap for corruption...\n");
 	}
