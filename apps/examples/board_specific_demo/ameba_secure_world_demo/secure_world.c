@@ -31,11 +31,16 @@
 		-r: run the read test\n \
 		-w: run the write test\n \
 		opt1:\n \
-	        -a secure_world_address: take the address as input, default: 0x735C021\n \
-		Valid Range: 0x7034C020 - 0x7039C000\n ");
+	        -a secure_world_address: take the address as input, default: 0x70383020\n \
+		Valid Range (RTL8720E) : 0x7034C020 - 0x7039C000\n \
+		Valid Range (RTL8730E) : 0x70000000 - 0x7FFFFFFF\n");
 
 #ifdef  CONFIG_AMEBALITE_TRUSTZONE
 volatile uint32_t  *address = CONFIG_AMEBALITE_SECURE_WORLD_ADDRESS;
+#endif
+
+#ifdef  CONFIG_AMEBASMART_TRUSTZONE
+volatile uint32_t  *address = CONFIG_AMEBASMART_SECURE_WORLD_ADDRESS;
 #endif
 
 /****************************************************************************
@@ -69,14 +74,18 @@ int secure_world_main(int argc, char *argv[])
 			return 0;
 		}
 	}
+
 	if (!r_flag && !w_flag) {
 		SHOW_USAGE
 	} else if (r_flag) {
-                printf("Trying to read data from %x\n", address);
-                value = *address;
-        } else {
-                printf("Trying to write data at %x\n", address);
-                *address = 1234;
-        }
+		printf("Trying to read data from %x\n", address);
+		value = *address;
+		printf("data : %d\n", value);
+	} else {
+		printf("Trying to write data at %x\n", address);
+		*address = 1234;
+		printf("Read Data from %x : %d\n", address, *address);
+	}
+	
 	return 0;
 }
