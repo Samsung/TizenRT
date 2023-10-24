@@ -4,11 +4,11 @@
 #
 
 config EXAMPLES_SSTORAGE
-	bool "Secure Storage example"
+	bool "Secure Storage Write Protecion example"
 	default n
-	depends on SE_AMEBA
+	depends on SE_AMEBA && BUILD_FLAT && MTD_BYTE_WRITE
 	---help---
-		Enable the Secure Storage example
+		Enable the Secure Storage Write Protection example
 
 config USER_ENTRYPOINT
 	string

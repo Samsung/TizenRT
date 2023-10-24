@@ -64,7 +64,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
-MAINSRC = secure_storage.c
+MAINSRC = ss_write_protection_test.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

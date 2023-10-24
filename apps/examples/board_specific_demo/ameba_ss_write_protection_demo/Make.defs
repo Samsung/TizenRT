@@ -52,5 +52,5 @@
 ############################################################################
 
 ifeq ($(CONFIG_EXAMPLES_SSTORAGE),y)
-CONFIGURED_APPS += examples/board_specific_demo/ameba_secure_storage_demo/
+CONFIGURED_APPS += examples/board_specific_demo/ameba_ss_write_protection_demo/
 endif
