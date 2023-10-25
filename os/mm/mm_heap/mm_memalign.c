@@ -277,7 +277,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	 */
 
 	if (ret) {
-		mvdbg("Allocated %p, size %u\n", ret, size);
+		mllvdbg("Allocated %p, size %u\n", ret, size);
 	}
 
 	return ret;
