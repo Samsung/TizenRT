@@ -86,12 +86,10 @@ int blemgr_post_message(blemgr_msg_s *msg)
 		return -1;
 	}
 
-	res = sem_wait(hmsg.signal);
-	if (res < 0) {
-		sem_destroy(hmsg.signal);
-		BLE_ERR;
-		return -2;
+	while (sem_wait(hmsg.signal) < 0) {
+		DEBUGASSERT(get_errno() == EINTR);
 	}
+
 	sem_destroy(hmsg.signal);
 
 	return 0;
