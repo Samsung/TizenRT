@@ -1013,10 +1013,10 @@ static void tc_pthread_pthread_timed_wait(void)
 	ret_chk = pthread_create(&waiter, &attr, thread_waiter, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 
-	TC_ASSERT_EQ("pthread_create", g_bpthreadcallback, true);
-
 	ret_chk = pthread_join(waiter, &result);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_ASSERT_EQ("pthread_create", g_bpthreadcallback, true);
 
 	TC_SUCCESS_RESULT();
 }
