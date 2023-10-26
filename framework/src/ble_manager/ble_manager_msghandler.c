@@ -86,8 +86,7 @@ int blemgr_post_message(blemgr_msg_s *msg)
 		return -1;
 	}
 
-	while(sem_wait(hmsg.signal) < 0)
-	{
+	while (sem_wait(hmsg.signal) < 0) {
 		DEBUGASSERT(get_errno() == EINTR);
 	}
 
