@@ -374,7 +374,7 @@ static void tc_sched_waitpid(void)
 	TC_ASSERT_EQ("waitpid", ret_chk, ERROR);
 	TC_ASSERT_EQ("waitpid", errno, ECHILD);
 
-	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
+	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep2sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
 	ret_chk = waitpid(child_pid, &status, 0);

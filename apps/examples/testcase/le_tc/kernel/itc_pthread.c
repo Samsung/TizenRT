@@ -49,6 +49,7 @@
 #define LOOP_SIZE CONFIG_ITC_KERN_PTHREAD_LOOP_SIZE
 
 static pthread_t g_pthread;
+static pthread_t g_pthread_self;
 static bool g_flag;
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_key_t g_key;
@@ -81,7 +82,7 @@ static void *thread_setgetname(void *param)
 */
 static void *thread_equal_check(void *param)
 {
-	if (pthread_equal(g_pthread, pthread_self()) == false) {
+	if (pthread_equal(g_pthread_self, pthread_self()) == false) {
 		g_flag = false;
 		return NULL;
 	}
@@ -285,13 +286,14 @@ static void itc_pthread_equal_pthread_self_p(void)
 	int ret_chk;
 
 	g_flag = false;
-	ret_chk = pthread_create(&g_pthread, NULL, thread_equal_check, NULL);
+	ret_chk = pthread_create(&g_pthread_self, NULL, thread_equal_check, NULL);
 	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
 	sleep(WAIT_TIME_1);
-	TC_ASSERT_EQ_CLEANUP("pthread_create", g_flag, true, pthread_detach(g_pthread));
 
-	ret_chk = pthread_join(g_pthread, NULL);
+	ret_chk = pthread_join(g_pthread_self, NULL);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_ASSERT_EQ_CLEANUP("pthread_create", g_flag, true, pthread_detach(g_pthread_self));
 
 	TC_SUCCESS_RESULT();
 }
@@ -366,8 +368,8 @@ int itc_pthread_main(void)
 	itc_pthread_pthread_kill_n_rekill();
 	itc_pthread_pthread_cond_init_destroy_n();
 	itc_pthread_setgetname_np_p_reset_name();
-	itc_pthread_equal_pthread_self_p();
 	itc_pthread_mutex_init_destroy_p_multitime();
 	itc_pthread_key_create_set_get_delete_specific_p_multitime();
+	itc_pthread_equal_pthread_self_p();
 	return 0;
 }
