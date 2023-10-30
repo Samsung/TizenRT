@@ -55,6 +55,9 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
+#endif
 #include "sched/sched.h"
 #include "irq/irq.h"
 #include "arm_internal.h"
@@ -530,6 +533,10 @@ static void arm_assert(void)
 void up_assert(FAR const uint8_t *filename, int linenum)
 {
   board_autoled_on(LED_ASSERTION);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	reboot_reason_write_user_intended();
+#endif
 
   /* Flush any buffered SYSLOG data (prior to the assertion) */
 

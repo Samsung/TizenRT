@@ -102,6 +102,11 @@ static inline void arm_color_intstack(void)
 
 void up_initialize(void)
 {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_init();
+	lldbg("[Reboot Reason] : %d\n", up_reboot_reason_read());
+#endif
+
   /* Colorize the interrupt stack */
 
   arm_color_intstack();
