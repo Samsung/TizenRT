@@ -50,6 +50,11 @@
 #include "sched/sched.h"
 #include "arm_internal.h"
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #ifdef CONFIG_PAGING
 #  include <tinyara/page.h>
 #  include "arm.h"
@@ -160,6 +165,10 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 segfault:
   _alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n",
         regs[REG_PC], dfar, dfsr);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+#endif
   PANIC();
   return regs; /* To keep the compiler happy */
 }
@@ -180,6 +189,10 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
         regs[REG_PC], dfar, dfsr);
 #ifdef CONFIG_APP_BINARY_SEPARATION
   mmu_dump_pgtbl();
+#endif
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
 #endif
   PANIC();
   return regs; /* To keep the compiler happy */

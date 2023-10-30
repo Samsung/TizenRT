@@ -50,6 +50,11 @@
 #  include <tinyara/page.h>
 #endif
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
+#endif
+
 #include "sched/sched.h"
 #include "arm_internal.h"
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -130,6 +135,11 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
     {
       _alert("Prefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n",
             regs[REG_PC], ifar, ifsr);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
+
       PANIC();
     }
 
@@ -153,6 +163,10 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
   mmu_dump_pgtbl();
+#endif
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif
 
   PANIC();

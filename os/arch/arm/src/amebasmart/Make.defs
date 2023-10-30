@@ -62,6 +62,10 @@ CMN_CSRCS += arm_releasestack.c arm_reprioritizertr.c arm_saveusercontext.c
 CMN_CSRCS += arm_stackframe.c arm_switchcontext.c
 CMN_CSRCS += arm_vfork.c arm_unblocktask.c arm_usestack.c
 
+ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
+CMN_CSRCS += up_reboot_reason.c
+endif
+
 ifneq ($(CONFIG_ALARM_ARCH),y)
   ifneq ($(CONFIG_TIMER_ARCH),y)
     CMN_CSRCS += arm_mdelay.c arm_udelay.c
