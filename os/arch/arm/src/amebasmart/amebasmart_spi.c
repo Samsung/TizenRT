@@ -106,6 +106,7 @@ struct amebasmart_spidev_s {
 	int8_t nbits;               /* Width of word in bits */
 	uint8_t mode;               /* Mode 0,1,2,3 */
 	int role;
+	gpio_t gpio_cs0;
 };
 
 enum amebasmart_delay_e {
@@ -169,7 +170,7 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv);
 
 static const struct spi_ops_s g_spi0ops = {
 	.lock         = amebasmart_spi_lock,
-	.select       = amebasmart_spi0select,
+	.select       = amebasmart_spi_select,
 	.setfrequency = amebasmart_spi_setfrequency,
 	.setmode      = amebasmart_spi_setmode,
 	.setbits      = amebasmart_spi_setbits,
@@ -223,7 +224,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 
 static const struct spi_ops_s g_spi1ops = {
 	.lock         = amebasmart_spi_lock,
-	.select       = amebasmart_spi1select,
+	.select       = amebasmart_spi_select,
 	.setfrequency = amebasmart_spi_setfrequency,
 	.setmode      = amebasmart_spi_setmode,
 	.setbits      = amebasmart_spi_setbits,
@@ -595,7 +596,7 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 }
 
 /************************************************************************************
- * Name: amebasmart_spi0select
+ * Name: amebasmart_spi_select
  *
  * Description:
  *   Enable/disable the SPI slave select. The implementation of this method
@@ -611,8 +612,14 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
  *
  *
  ************************************************************************************/
-void amebasmart_spi0select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+void amebasmart_spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	if (selected == 1) {
+		gpio_write(&priv->gpio_cs0, 0);
+	} else {
+		gpio_write(&priv->gpio_cs0, 1);
+	}
 	return;
 }
 
@@ -653,28 +660,6 @@ uint8_t amebasmart_spi0status(FAR struct spi_dev_s *dev, enum spi_dev_e devid)
 int amebasmart_spi0cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
 {
 	return 0;
-}
-
-/************************************************************************************
- * Name: amebasmart_spi1select
- *
- * Description:
- *   Enable/disable the SPI slave select. The implementation of this method
- *   must include handshaking:  If a device is selected, it must hold off
- *   all other attempts to select the device until the device is deselecte.
- *
- * Input Parameters:
- *   dev -       Device-specific state data
- *   devid -    Device Id
- *   selected - whether it is selected or not
- *
- * Returned Value: None
- *
- *
- ************************************************************************************/
-void amebasmart_spi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
-{
-	return;
 }
 
 /************************************************************************************
@@ -1091,6 +1076,11 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv)
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
+
+	gpio_init(&priv->gpio_cs0, priv->spi_cs);
+	gpio_write(&priv->gpio_cs0, 1);
+	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs0, PullNone);
 }
 
 /************************************************************************************
