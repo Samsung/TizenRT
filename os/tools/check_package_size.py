@@ -61,6 +61,7 @@ def check_binary_size(bin_type, part_size):
         else :
             fail_type_list.append(bin_type)
             os.remove(output_path)
+            global FAIL_TO_BUILD
             FAIL_TO_BUILD = True
             check_result = "FAIL"
             result_mark = ""
@@ -68,6 +69,7 @@ def check_binary_size(bin_type, part_size):
         if PARTITION_SIZE < int(BINARY_SIZE) :
             fail_type_list.append(bin_type)
             os.remove(output_path)
+            global FAIL_TO_BUILD
             FAIL_TO_BUILD = True
             check_result = "FAIL"
             result_mark = ""
