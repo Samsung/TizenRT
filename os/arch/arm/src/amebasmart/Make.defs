@@ -244,8 +244,9 @@ endif
 ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CHIP_CSRCS += amebasmart_systemreset.c
 endif
+
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
-#CMN_CSRCS += amebasmart_reboot_reason.c #FIXME
+CMN_CSRCS += amebasmart_reboot_reason.c
 endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
 #CMN_CSRCS += amebasmart_signature.c
