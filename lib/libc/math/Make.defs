@@ -81,6 +81,11 @@ CSRCS += lib_tanl.c lib_tanhl.c lib_asinhl.c lib_acoshl.c lib_atanhl.c lib_erfl.
 CSRCS += lib_copysignl.c lib_truncl.c lib_nextafterl.c lib_nexttowardl.c lib_remainderl.c
 CSRCS += lib_remquol.c
 
+CSRCS += lib_erfc.c lib_erfcf.c lib_erfcl.c
+CSRCS += lib_expm1.c lib_expm1f.c lib_expm1l.c
+CSRCS += lib_lround.c lib_lroundf.c lib_lroundl.c
+CSRCS += lib_llround.c lib_llroundf.c lib_llroundl.c
+CSRCS += lib_nan.c lib_nanf.c lib_nanl.c
 CSRCS += __cos.c __sin.c lib_gamma.c lib_lgamma.c
 
 CSRCS += lib_libexpi.c lib_libsqrtapprox.c
