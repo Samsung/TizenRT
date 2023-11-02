@@ -118,7 +118,7 @@ function TRAP_MENU()
 				echo "No output file in $BINDIR, Build the code and run TRAP again."
 				return
 			fi
-			echo "Enter the crash log file name: (ex: ../tools/trap/testlogs)"
+			echo "Enter the crash log file name relative to os folder: (ex: ../tools/trap/testlogs)"
 			read LOG_FILE
 			if [ ! -f ${LOG_FILE} ]; then
 				echo "$LOG_FILE: No such file, try again"
@@ -304,7 +304,7 @@ function TOOLCHAIN()
 
 function TRAP_RUN()
 {
-	TRAPCMD="ramdumpParser.py -t $2"
+	TRAPCMD="ramdumpParser.py -t /root/tizenrt/os/$2"
 
 	if [ ! -z "$3" ]; then
 		# Append the binary path
