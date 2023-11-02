@@ -51,7 +51,7 @@
 #ifdef CONFIG_HAVE_DOUBLE
 long long llround(double x)
 {
-  return (long long)round(x);
+	return (long long)round(x);
 }
 #endif
 #endif

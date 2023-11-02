@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long int lroundl(long double x)
 {
-  return (long int)roundl(x);
+	return (long int)roundl(x);
 }
 #endif

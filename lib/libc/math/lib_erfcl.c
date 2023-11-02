@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double erfcl(long double x)
 {
-  return 1 - erfl(x);
+	return 1 - erfl(x);
 }
 #endif

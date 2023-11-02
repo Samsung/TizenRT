@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double erfc(double x)
 {
-  return 1 - erf(x);
+	return 1 - erf(x);
 }
 #endif

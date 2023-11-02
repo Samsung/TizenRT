@@ -47,5 +47,5 @@
 
 float expm1f(float x)
 {
-  return expf(x) - 1.0;
+	return expf(x) - 1.0;
 }
