@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double nanl(const char *tagp)
 {
-  return (long double)NAN;
+	return (long double)NAN;
 }
 #endif

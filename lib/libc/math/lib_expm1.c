@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double expm1(double x)
 {
-  return exp(x) - 1.0;
+	return exp(x) - 1.0;
 }
 #endif

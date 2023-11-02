@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_DOUBLE
 double nan(const char *tagp)
 {
-  return (double)NAN;
+	return (double)NAN;
 }
 #endif

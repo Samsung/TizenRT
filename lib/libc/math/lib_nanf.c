@@ -47,5 +47,5 @@
 
 float nanf(const char *tagp)
 {
-  return (float)NAN;
+	return (float)NAN;
 }

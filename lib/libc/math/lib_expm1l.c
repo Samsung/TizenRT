@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double expm1l(long double x)
 {
-  return expl(x) - 1.0;
+	return expl(x) - 1.0;
 }
 #endif

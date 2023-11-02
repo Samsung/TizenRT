@@ -50,6 +50,6 @@
 #ifdef CONFIG_HAVE_LONG_LONG
 long long llroundf(float x)
 {
-  return (long long)roundf(x);
+	return (long long)roundf(x);
 }
 #endif
