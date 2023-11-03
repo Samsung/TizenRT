@@ -571,7 +571,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	size_t kernel_assert_location = 0;
 	ARCH_GET_RET_ADDRESS(kernel_assert_location)
 	struct tcb_s *fault_tcb = this_task();
-
+	bool is_kmm_corruption = false;
 
 	board_autoled_on(LED_ASSERTION);
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -607,6 +607,10 @@ void up_assert(const uint8_t *filename, int lineno)
 	 */
 	if (!IS_SECURE_STATE()) {
 		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
+	} else {
+		if (mm_check_heap_corruption(g_kmmheap) != OK) {
+			is_kmm_corruption = true;
+		}
 	}
 
 	lldbg_noarg("##########################################################################################################################################\n");
@@ -614,7 +618,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	irqrestore(flags);
 
 #ifdef CONFIG_BINMGR_RECOVERY
-	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
+	if (!is_kmm_corruption && IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
 	} else
