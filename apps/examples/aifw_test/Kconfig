@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_AIFW_TEST
+	bool "AIFW test application"
+	default n
+	depends on AIFW
+	---help---
+		AIFW test application
+
+if EXAMPLES_AIFW_TEST
+config PRODUCT_AI_MODEL_FILE_SUPPORT
+	bool "Support file based AI Model"
+	default y
+	---help---
+		Support file based AI Model
+endif
+
+config USER_ENTRYPOINT
+	string
+	default "aifw_test_main" if ENTRY_AIFW_TEST
+

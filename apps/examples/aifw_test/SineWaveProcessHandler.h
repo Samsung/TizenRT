@@ -15,38 +15,24 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#pragma once
 
-/**
- * @file lwaifw_sine_test_input.h
- * @brief Model input
- */
+#include <memory>
+#include "aifw/aifw.h"
+#include "aifw/AIProcessHandler.h"
 
-#ifndef __lwaifw_sine_test_input_h__
-#define __lwaifw_sine_test_input_h__
+class SineWaveProcessHandler : public aifw::AIProcessHandler
+{
+public:
+	SineWaveProcessHandler();
+	~SineWaveProcessHandler();
 
-#define NO_OF_ROWS_TO_READ 20
-#define NO_OF_SENSORS 1
+	AIFW_RESULT parseData(void *data, uint16_t count, float *parsedData, AIModelAttribute *modelAttribute);
+	AIFW_RESULT preProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, float *invokeInput, AIModelAttribute *modelAttribute);
+	AIFW_RESULT postProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, float *resultData, AIModelAttribute *modelAttribute);
 
-float gDataValues[NO_OF_ROWS_TO_READ][NO_OF_SENSORS] = {
-	{0.942477},
-	{1.256637},
-	{1.570796},
-	{1.884956},
-	{2.199115},
-	{2.513274},
-	{2.523274},
-	{3.147593},
-	{3.455752},
-	{3.769912},
-	{0.942477},
-	{1.256637},
-	{1.570796},
-	{1.884956},
-	{2.199115},
-	{2.513274},
-	{2.523274},
-	{3.147593},
-	{3.455752},
-	{3.769912}
+private:
+	float *mRawData;
+	float *mInvokeOutput;
 };
-#endif /* __lwaifw_sine_test_input_h__ */
+

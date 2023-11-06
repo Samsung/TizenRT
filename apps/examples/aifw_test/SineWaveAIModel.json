@@ -1,0 +1,22 @@
+{
+    "crc32": 12345,
+    "version": "123456",
+    "modelfile": "/mnt/AI/SineWaveAIModel.tflite",
+    "features": [],
+    "inferenceinterval": 2000,
+    "modelcode": 12345678,
+
+    "maxrowsdatabuffer": 1,
+    "rawdatacount":1,
+    "windowsize": 1,
+    "invokeinputcount": 1,
+    "invokeoutputcount": 1,
+    "postprocessresultcount": 1,
+    "inferenceresultcount": 1,
+    
+    "preprocessing": {
+        "mean": [],
+        "std": []
+    }
+}
+
