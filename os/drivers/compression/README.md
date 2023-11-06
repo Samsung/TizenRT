@@ -25,7 +25,7 @@ the compression type.
 
 For this cmd, user needs to pass a char pointer as arg that needs to be allocated memory with a size of
 COMP_NAME_SIZE (compression.h). This should be allocated memory before passing to the ioctl.
-The ioctl funtion will store the compression type name string in the char pointer.
+The ioctl function will store the compression type name string in the char pointer.
 
 ## 4. COMPIOC_DECOMPRESS cmd :
 
@@ -33,17 +33,17 @@ For this cmd, user needs to pass a struct compress_header pointer as arg to the 
 the members of the struct as below : <br />
 input_size      -> input size of compressed data <br />
 input_buffer    -> compressed data <br />
-output_buffer   -> should be allocated before passing to ioctl funtion <br />
+output_buffer   -> should be allocated before passing to ioctl function <br />
 output_size     -> three cases are possible for output size which is discussed below 
 
 - ##### when output size passed is equal to actual decompressed data size : <br />
         This is the case where user knows the size of decompressed data. The ioctl function will call the
-        decompress funtion and it will store the decompressed data in output_buffer and output_size will 
+        decompress function and it will store the decompressed data in output_buffer and output_size will 
         remain same.
     
 - ##### when output size passed is more than actual decompressed data size : <br />
         This is the case where user does not know the size of decompressed data and passes the output size 
-        larger than required for output buffer. The ioctl function will call the decompress funtion and it will
+        larger than required for output buffer. The ioctl function will call the decompress function and it will
         store the decompressed data in output buffer and update the output_size as the actual decompressed 
         data size .Here, output_size after the ioctl call will be less than before.
 
