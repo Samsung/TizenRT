@@ -180,8 +180,6 @@ void board_gpio_initialize(void)
 			PA_3, PIN_OUTPUT, PullNone
 		}, {
 			PB_5, PIN_OUTPUT, PullNone
-		}, {
-			PA_12, PIN_INPUT, PullDown
 		},
 		/*		{PA_6, PIN_OUTPUT, PullNone},
 				{PA_7, PIN_OUTPUT, PullNone},
