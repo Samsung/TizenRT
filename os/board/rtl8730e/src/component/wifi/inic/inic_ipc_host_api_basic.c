@@ -398,7 +398,17 @@ int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block)
 	scan_each_report_user_callback_ptr = scan_param->scan_report_each_mode_user_callback;
 
 	if (scan_param->ssid) {
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+		/* for TizenRT, ensure the entire ssid array is cleaned when ssid is empty */
+		if (strlen(scan_param->ssid) == 0) {
+			DCache_Clean((u32)scan_param->ssid, (TRWIFI_PASSPHRASE_LEN + 1));
+		}
+		else {
+			DCache_Clean((u32)scan_param->ssid, strlen(scan_param->ssid));
+		}
+#else
 		DCache_Clean((u32)scan_param->ssid, strlen(scan_param->ssid));
+#endif
 	}
 	if (scan_param->channel_list) {
 		DCache_Clean((u32)scan_param->channel_list, scan_param->channel_list_num);
