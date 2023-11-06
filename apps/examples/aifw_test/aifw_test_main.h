@@ -15,31 +15,24 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
-
-#include <stdint.h>
 
 /**
- * @brief Enum defines types of data source.
- * DataSource implementation for each defined type is done in application.
+ * @file aifw_test_main.h
+ * @brief Sample application to show case usage of AI Framework basic functionality such as data collection, pre-processing, inference, post-processing, and finally ensembling.
  */
-typedef enum _DATA_SOURCE {
-	_CSV_ARRAY = 3,
-	_CSV_FILE = 4
-} DATA_SOURCE;
 
-struct model_input_output {
-		int InputCount;
-		int OutputCount;
-		float *InputVals;
-		float *OutputVals;
-};
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int lw_aifw_sine_test_app_main(int argc, char *argv[]);
+/**
+ * @brief: It initializes AI Helper module. Model set is then loaded with its unique model code.
+ * A service is started for the model set. After this application will start receiving callback data collection callback.
+ * @return: -1 indicated error. 0 indicates success
+*/
+int aifw_test_main(int argc, char *argv[]);
 
 #ifdef __cplusplus
 }

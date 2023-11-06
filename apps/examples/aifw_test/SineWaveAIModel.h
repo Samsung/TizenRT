@@ -29,11 +29,34 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-==============================================================================*/ 
-#ifndef __lwaifw_sine_test_model_h__
-#define __lwaifw_sine_test_model_h__
+==============================================================================*/
+
+#pragma once
+#include "aifw/aifw.h"
+static const char sine_wave_version[] = "123456";
+extern const unsigned char sine_wave_model[];
+
+static const AIModelAttribute gSineWaveModelAttribute = {
+    12345, /* crc32 */
+    sine_wave_version, /* version */
+    {'\0'}, /* modelPath */
+    sine_wave_model, /* model */
+    NULL, /* features */
+    0, /* featuresCount */
+    2000, /* inferenceInterval */
+    12345678, /* modelCode */
+    1, /* maxRowsDataBuffer */
+    1, /* rawDataCount */
+    1, /* windowSize */
+    1, /* invokeInputCount */
+    1, /* invokeOutputCount */
+    1, /* postProcessResultCount */
+    1, /* inferenceResultCount */
+    NULL, /* MeanVals */
+    NULL /* STDVals */
+};
  
-unsigned char g_sine_model[] = {
+const unsigned char sine_wave_model[] = {
     0x18, 0x00, 0x00, 0x00, 0x54, 0x46, 0x4c, 0x33, 0x00, 0x00, 0x0e, 0x00,
     0x18, 0x00, 0x04, 0x00, 0x08, 0x00, 0x0c, 0x00, 0x10, 0x00, 0x14, 0x00,
     0x0e, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x10, 0x0a, 0x00, 0x00,
@@ -255,4 +278,3 @@ unsigned char g_sine_model[] = {
     0x00, 0x00, 0x0a, 0x00, 0x0c, 0x00, 0x07, 0x00, 0x00, 0x00, 0x08, 0x00,
     0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x03, 0x00, 0x00, 0x00};
 
-#endif /* __lwaifw_sine_test_model_h__ */

@@ -1,0 +1,4 @@
+config ENTRY_AIFW_TEST
+	bool "AI Framework example"
+	depends on EXAMPLES_AIFW_TEST
+

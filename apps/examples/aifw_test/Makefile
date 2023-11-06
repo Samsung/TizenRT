@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/lw_aifw_test/Makefile
+# apps/examples/aifw_test/Makefile
 #
 #   Copyright (C) 2009-2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,19 +54,17 @@
 include $(APPDIR)/Make.defs
 
 CXXEXT ?= .cpp
+# C++ Test Example
 
-APPNAME = sine_test_app
-FUNCNAME = lw_aifw_sine_test_app_main
+APPNAME = aifw_test
+FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-ASRCS	=
-CXXSRCS	=
-
-CFLAGS +=
-CXXFLAGS += -Wno-pedantic
-
-MAINSRC = lwaifw_sine_test_main.cpp
-CXXSRCS +=
+# C++ Test Example
+ASRCS		=
+CSRCS		=
+CXXSRCS		= SineWaveInferenceHandler.cpp SineWaveProcessHandler.cpp
+MAINSRC		= $(FUNCNAME)$(CXXEXT)
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))
@@ -85,17 +83,17 @@ OBJS		+= $(MAINOBJ)
 endif
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-BIN		= ..\..\libapps$(LIBEXT)
+BIN		= $(APPDIR)\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
+  BIN		= $(APPDIR)\\libapps$(LIBEXT)
 else
-  BIN		= ../../libapps$(LIBEXT)
+  BIN		= $(APPDIR)/libapps$(LIBEXT)
 endif
 endif
 
-CONFIG_EXAMPLES_LWAIFW_SINE_APP_TEST_PROGNAME ?= lw_aifw_sine_test_app$(EXEEXT)
-PROGNAME	= $(CONFIG_EXAMPLES_LWAIFW_SINE_APP_TEST_PROGNAME)
+CONFIG_EXAMPLES_AIFW_TEST_PROGNAME ?= aifw_test$(EXEEXT)
+PROGNAME	= $(CONFIG_EXAMPLES_AIFW_TEST_PROGNAME)
 
 ROOTDEPPATH	= --dep-path .
 
@@ -140,7 +138,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LWAIFW_SINE_APP_TEST),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_AIFW_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
