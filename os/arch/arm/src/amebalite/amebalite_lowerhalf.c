@@ -205,6 +205,7 @@ static int amebalite_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling
 	} else {
 		gpio_irq_disable((gpio_irq_t *)&priv->obj);
 		gpio_irq_set((gpio_irq_t *)&priv->obj, event, 0);
+		gpio_irq_deinit((gpio_irq_t *)&priv->obj);
 	}
 
 	return OK;
