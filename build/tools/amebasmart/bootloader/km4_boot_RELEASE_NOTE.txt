@@ -1,5 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 09bfc14 /11/06-15:37:33==
+1.	add more logs for booting status, SBOOT and RDP
+2.	implement feature to verify RDP image
+3.	disable some not important logs to prevent mix log
+4.	increase hotfix wait time from 50ms to 100ms.
+
 == version b5602c7 /10/19-17:42:15==
 1.	set loguart baudrate according to efuse
 2.	print current loguart baudrate
