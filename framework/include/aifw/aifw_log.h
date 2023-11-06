@@ -17,46 +17,45 @@
  ****************************************************************************/
 
 /**
- * @file lw_aifw/lw_aifw_log.h.h
- * @brief This file defines macros used to add debug logs in Light Weight AI Framework and it's applications.
+ * @file aifw/aifw_log.h
+ * @brief This file defines macros used to add debug logs in AI Framework and it's applications.
  *
  * Log levels are Error, Information and Verbose. Error is by default enabled.
  */
 
-#ifndef __LW_AIFW_LOGS_H__
-#define __LW_AIFW_LOGS_H__
+#ifndef __AIFW_LOGS_H__
+#define __AIFW_LOGS_H__
 #include <stdio.h>
 #include <string.h>
 
 static const char *file_name = 0;
-#define TAG "[LW_AIFW]"
-#define TAG_LW_AIFW_UTILS "[LW_AIFW_UTILS]"
+#define TAG "[AIFW]"
+#define TAG_AIFW_UTILS "[AIFW_UTILS]"
 #define _FILE_NAME file_name ? file_name : (file_name = strrchr(__FILE__, '/') ? (char *)(strrchr(__FILE__, '/') + 1) : __FILE__)
 
-#define PRINT_LOG(color, tag, ...) \
-	do { \
+#define PRINT_LOG(color, tag, ...)                                           \
+	do {                                                                     \
 		printf(color tag "[%s]::%s():%d: ", _FILE_NAME, __func__, __LINE__); \
-		printf(__VA_ARGS__); \
-		printf("\e[m\n"); \
+		printf(__VA_ARGS__);                                                 \
+		printf("\033[m\n");                                                  \
 	} while (0)
 
-#ifdef CONFIG_LW_AIFW_LOGE
-#define LW_AIFW_LOGE(...) PRINT_LOG("\e[31mE", TAG, __VA_ARGS__)
+#ifdef CONFIG_AIFW_LOGE
+#define AIFW_LOGE(...) PRINT_LOG("\033[31mE", TAG, __VA_ARGS__)
 #else
-#define LW_AIFW_LOGE(...)
+#define AIFW_LOGE(...)
 #endif
 
-#ifdef CONFIG_LW_AIFW_LOGI
-#define LW_AIFW_LOGI(...) PRINT_LOG("\e[32mI", TAG, __VA_ARGS__)
+#ifdef CONFIG_AIFW_LOGI
+#define AIFW_LOGI(...) PRINT_LOG("\033[32mI", TAG, __VA_ARGS__)
 #else
-#define LW_AIFW_LOGI(...)
+#define AIFW_LOGI(...)
 #endif
 
-#ifdef CONFIG_LW_AIFW_LOGV
-#define LW_AIFW_LOGV(...) PRINT_LOG("\e[mV", TAG, __VA_ARGS__)
+#ifdef CONFIG_AIFW_LOGV
+#define AIFW_LOGV(...) PRINT_LOG("\033[mV", TAG, __VA_ARGS__)
 #else
-#define LW_AIFW_LOGV(...)
+#define AIFW_LOGV(...)
 #endif
 
-#endif /*__LW_AIFW_LOGS_H__*/
-
+#endif /*__AIFW_LOGS_H__*/

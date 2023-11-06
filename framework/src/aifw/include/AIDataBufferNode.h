@@ -17,25 +17,39 @@
  ****************************************************************************/
 
 #pragma once
-#include "lw_aifw/lw_aifw_result.h"
-#include "lw_aifw/AIDataSource.h"
 
-namespace lw_aifw {
+#include <stdlib.h>
+#include "stdio.h"
+#include "stdint.h"
+#include "sys/types.h"
 
-class AICSVReader;
-class AICSVDataSource : public AIDataSource {
-private:
-	uint16_t m_SensorCount;
-	std::shared_ptr<AICSVReader> mAICSVReader;
+namespace aifw {
+
+class AIDataBufferNode
+{
 public:
-	AICSVDataSource(const char *sourceName);
-	AICSVDataSource(float *datavalues, uint16_t sensorCount, uint16_t rowCount);
-	~AICSVDataSource();
-	std::shared_ptr<AICSVReader> getCSVReader(void);
-	LW_AIFW_RESULT shareData(void* data);
-	LW_AIFW_RESULT getDataAsync(void);
-	static void onRawDataCollectedListener(LW_AIFW_RESULT result, float *data, uint16_t dataCount, void *args);
+	bool mIsEmpty;
+	float *mData;
+	AIDataBufferNode *mPrev;
+	AIDataBufferNode *mNext;
+
+	/**
+	 * @brief Construct the AIDataBufferNode class instance.
+	 */
+	AIDataBufferNode(uint16_t rowSize) :
+		mIsEmpty(true), mData(NULL), mPrev(NULL), mNext(NULL)
+	{
+		mData = (float *)calloc(rowSize, sizeof(float));
+	}
+
+	/**
+	 * @brief AIDataBufferNode destructor.
+	 */
+	~AIDataBufferNode()
+	{
+		free(mData);
+	}
 };
 
-} /* lw_aifw */
+} // namespace aifw
 

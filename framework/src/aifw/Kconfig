@@ -1,0 +1,60 @@
+#
+#For a description of the syntax of this configuration file,
+#see kconfig - language at https: //www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config AIFW
+	bool "AI Framework"
+	default n
+	select HAVE_CXX
+	select HAVE_CXXINITIALIZE if BUILD_FLAT
+	select DAWIT_API
+	---help---
+		Enables AI Framework.
+
+if AIFW
+
+choice
+    prompt "Select runtime for the AI Framework"
+
+config AIFW_USE_TFMICRO
+    bool "Use TFMICRO runtime"
+    default n
+    select EXTERNAL_TFMICRO
+
+endchoice
+
+menu "AIFW Debug Logs"
+
+config AIFW_LOGS
+	bool "AIFW Logs"
+	default y
+	---help---
+		Enables AIFW logs
+
+if AIFW_LOGS
+
+config AIFW_LOGE
+	bool "AIFW Error Logs"
+	default y
+	---help---
+		Enables AIFW Error Logs
+
+config AIFW_LOGI
+	bool "AIFW Information Logs"
+	default n
+	---help---
+		Enables AIFW Information Logs
+
+config AIFW_LOGV
+	bool "AIFW Verbose Logs"
+	default n
+	---help---
+		Enables AIFW Verbose Logs
+
+endif #AIFW_LOGS
+
+endmenu
+
+endif #if AIFW
+
