@@ -6,15 +6,17 @@
 #include <osdep_service.h>
 #include <stdio.h>
 
+/* For Smart, need to align malloc to 64bytes (cache line size of AP) for cache operations */
+int align = 64;
+
 void *rtw_vmalloc(u32 sz)
 {
 	void *pbuf = NULL;
-	pbuf = kmm_malloc(sz);
+	pbuf = kmm_memalign(align, sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-        if (pbuf)
-        {
-            DEBUG_SET_CALLER_ADDR(pbuf);
-        }
+	if (pbuf){
+		DEBUG_SET_CALLER_ADDR(pbuf);
+	}
 #endif
 	return pbuf;
 }
@@ -23,13 +25,13 @@ void *rtw_zvmalloc(u32 sz)
 {
 	void *pbuf = NULL;
 
-	pbuf = kmm_zalloc(sz);
+	pbuf = kmm_memalign(align, sz);
+	if (pbuf){
+		memset(pbuf, 0 ,sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-        if (pbuf)
-        {
-            DEBUG_SET_CALLER_ADDR(pbuf);
-        }
+		DEBUG_SET_CALLER_ADDR(pbuf);
 #endif
+	}
 	return pbuf;
 }
 
@@ -43,12 +45,11 @@ void rtw_vmfree(u8 *pbuf, u32 sz)
 void *rtw_malloc(u32 sz)
 {
 	void *pbuf = NULL;
-	pbuf = kmm_malloc(sz);
+	pbuf = kmm_memalign(align, sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-        if (pbuf)
-        {
-            DEBUG_SET_CALLER_ADDR(pbuf);
-        }
+	if (pbuf){
+		DEBUG_SET_CALLER_ADDR(pbuf);
+	}
 #endif
 	return pbuf;
 }
@@ -57,26 +58,26 @@ void *rtw_zmalloc(u32 sz)
 {
 	void *pbuf = NULL;
 
-	pbuf = kmm_zalloc(sz);
+	pbuf = kmm_memalign(align, sz);
+	if (pbuf){
+		memset(pbuf, 0, sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-        if (pbuf)
-        {
-            DEBUG_SET_CALLER_ADDR(pbuf);
-        }
+		DEBUG_SET_CALLER_ADDR(pbuf);
 #endif
+	}
 	return pbuf;
 }
 
 void *rtw_calloc(u32 nelements, u32 elementSize)
 {
 	u32 sz = nelements * elementSize;
-	void *pbuf = kmm_zalloc(sz);
+	void *pbuf = kmm_memalign(align, sz);
+	if (pbuf){
+		memset(pbuf, 0, sz);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-        if (pbuf)
-        {
-            DEBUG_SET_CALLER_ADDR(pbuf);
-        }
+		DEBUG_SET_CALLER_ADDR(pbuf);
 #endif
+	}
 	return pbuf;
 }
 
