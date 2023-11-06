@@ -115,7 +115,7 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 		ret = ENOMEM;
 	}
 	else if (ret == SZ_ERROR_INPUT_EOF) {
-		bcmpdbg("Decompressed succesful with some output buffer left\n");
+		bcmpdbg("Decompressed successful with some output buffer left\n");
 		ret = SZ_OK;
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ	
