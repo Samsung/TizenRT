@@ -15,16 +15,22 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-ifeq ($(CONFIG_LW_AIFW), y)
 
-CXXSRCS += lw_aifw_utils.cpp AIServiceCore.cpp AIModel.cpp AIDataBuffer.cpp AIDataSource.cpp 
-CXXSRCS += AICSVDataSource.cpp AICSVReader.cpp AICSVArrayReader.cpp AICSVFileReader.cpp
+ifeq ($(CONFIG_AIFW), y)
 
-ifeq ($(CONFIG_LW_AIFW_READ_FROM_MANIFEST_FILE), y)
-CXXSRCS += AIManifestParser.cpp
+ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/flatbuffers/include
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+CXXSRCS += TFLM.cpp
 endif
 
-DEPPATH += --dep-path src/lw_aifw
-VPATH += :src/lw_aifw
+CSRCS += aifw_csv_reader_utils.c aifw_csv_reader.c
+CXXSRCS += AIModel.cpp AIModelService.cpp AIDataBuffer.cpp aifw_utils.cpp AIManifestParser.cpp AIInferenceHandler.cpp aifw_timer.cpp
+
+
+DEPPATH += --dep-path src/aifw
+VPATH += :src/aifw
 
 endif
+

@@ -16,10 +16,12 @@
  *
  ****************************************************************************/
 
-#include "lw_aifw/lw_aifw_utils.h"
-#include "lw_aifw/lw_aifw_log.h"
+#include <math.h>
+#include "aifw/aifw_utils.h"
+#include "aifw/aifw_log.h"
+#include "aifw/aifw.h"
 
-void normalizeData(float dataValues[], double meanVals[], double stdValues[], uint16_t countOfValues)
+void normalizeData(float dataValues[], float meanVals[], float stdValues[], uint16_t countOfValues)
 {
 	for (uint16_t i = 0; i < countOfValues; i++) {
 		dataValues[i] = dataValues[i] - meanVals[i];
@@ -27,37 +29,38 @@ void normalizeData(float dataValues[], double meanVals[], double stdValues[], ui
 	}
 }
 
-LW_AIFW_RESULT getMSE(float *realValues, float *predValues, int count, float *result){
+AIFW_RESULT getMSE(float *realValues, float *predValues, int count, float *result)
+{
 	if (realValues == NULL) {
-		LW_AIFW_LOGE("[Error] The parameter realValues is NULL \n");
-		return LW_AIFW_ERROR;
+		AIFW_LOGE("[Error] The parameter realValues is NULL \n");
+		return AIFW_ERROR;
 	}
 
 	if (predValues == NULL) {
-		LW_AIFW_LOGE("[Error] The parameter predValues is NULL \n");
-		return LW_AIFW_ERROR;
+		AIFW_LOGE("[Error] The parameter predValues is NULL \n");
+		return AIFW_ERROR;
 	}
 
 	if (count <= 0) {
-		LW_AIFW_LOGE("[Error] count is %d, the count value must be greater than 0 \n", count);
-		return LW_AIFW_ERROR;
+		AIFW_LOGE("[Error] count is %d, the count value must be greater than 0 \n", count);
+		return AIFW_ERROR;
 	}
 
 	float mse = 0.0;
-	for (int i = 0; i < count; i++){
+	for (int i = 0; i < count; i++) {
 		mse += pow(realValues[i] - predValues[i], 2);
 	}
-
 	*result = (mse / count);
-	return LW_AIFW_OK;
+	return AIFW_OK;
 }
 
-LW_AIFW_RESULT getRMSE(float *realValues, float *predValues, int count, float *result){
+AIFW_RESULT getRMSE(float *realValues, float *predValues, int count, float *result)
+{
 	float mseResult;
-	if (getMSE(realValues, predValues, count, &mseResult) == LW_AIFW_ERROR) {
-		return LW_AIFW_ERROR;
+	if (getMSE(realValues, predValues, count, &mseResult) == AIFW_ERROR) {
+		return AIFW_ERROR;
 	}
 	*result = sqrt(mseResult);
-
-	return LW_AIFW_OK;
+	return AIFW_OK;
 }
+
