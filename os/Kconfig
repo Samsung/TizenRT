@@ -533,8 +533,8 @@ menu "Database"
 source "$FRAMEWORK_DIR/src/arastorage/Kconfig"
 endmenu
 
-menu "Light Weight AI Framework"
-source "$FRAMEWORK_DIR/src/lw_aifw/Kconfig"
+menu "AI Framework"
+source "$FRAMEWORK_DIR/src/aifw/Kconfig"
 endmenu
 
 menu "AraUI Framework"
