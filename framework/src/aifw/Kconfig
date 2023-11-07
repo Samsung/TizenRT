@@ -8,19 +8,18 @@ config AIFW
 	default n
 	select HAVE_CXX
 	select HAVE_CXXINITIALIZE if BUILD_FLAT
-	select DAWIT_API
 	---help---
 		Enables AI Framework.
 
 if AIFW
 
 choice
-    prompt "Select runtime for the AI Framework"
+	prompt "Select runtime for the AI Framework"
+	default AIFW_USE_TFMICRO
 
 config AIFW_USE_TFMICRO
-    bool "Use TFMICRO runtime"
-    default n
-    select EXTERNAL_TFMICRO
+	bool "Use TFMICRO runtime"
+	select EXTERNAL_TFMICRO
 
 endchoice
 

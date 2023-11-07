@@ -21,8 +21,7 @@
  * @brief Interface class for AI operations.
  */
 
-#ifndef __AIENGINE_H__
-#define __AIENGINE_H__
+#pragma once
 
 #include "aifw/aifw.h"
 
@@ -61,6 +60,4 @@ public:
 };
 
 } /* namespace aifw */
-
-#endif /* __AIENGINE_H__ */
 

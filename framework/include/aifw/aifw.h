@@ -21,8 +21,7 @@
  * @brief This file defines/declares structures & functions exposed by framework for application.
  */
 
-#ifndef __AIFW_H__
-#define __AIFW_H__
+#pragma once
 
 #include "stdint.h"
 #include "limits.h"
@@ -117,5 +116,4 @@ struct AIModelAttribute {
 #ifdef __cplusplus
 }
 #endif
-#endif	/* __AIFW_H__ */
 

@@ -23,7 +23,8 @@
 #include "aifw/AIDataBuffer.h"
 #include "SineWaveProcessHandler.h"
 
-SineWaveProcessHandler::SineWaveProcessHandler() : mRawData(NULL), mInvokeOutput(NULL)
+SineWaveProcessHandler::SineWaveProcessHandler() :
+	mRawData(NULL), mInvokeOutput(NULL)
 {
 }
 
@@ -50,9 +51,9 @@ AIFW_RESULT SineWaveProcessHandler::parseData(void *data, uint16_t count, float 
 		return AIFW_INVALID_ARG;
 	}
 	/* Here raw data values are parsed. Required raw data values can be selected or new data can be created using different raw data values. */
-    for (uint16_t i = 0; i < modelAttribute->rawDataCount; i++) {
-    	parsedData[i] = ((float *)data)[i];
-    }
+	for (uint16_t i = 0; i < modelAttribute->rawDataCount; i++) {
+		parsedData[i] = ((float *)data)[i];
+	}
 	return AIFW_OK;
 }
 

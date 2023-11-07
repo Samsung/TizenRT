@@ -51,10 +51,10 @@ SineWaveInferenceHandler::SineWaveInferenceHandler(InferenceResultListener liste
 
 SineWaveInferenceHandler::~SineWaveInferenceHandler()
 {
-    if (mPostProcessedData) {
-        delete[] mPostProcessedData;
-        mPostProcessedData = NULL;
-    }
+	if (mPostProcessedData) {
+		delete[] mPostProcessedData;
+		mPostProcessedData = NULL;
+	}
 }
 
 AIFW_RESULT SineWaveInferenceHandler::prepare(void)
@@ -92,13 +92,13 @@ AIFW_RESULT SineWaveInferenceHandler::onInferenceFinished(uint16_t idx, void *fi
 	AIFW_RESULT ret = AIFW_OK;
 	float *result = (float *)finalResult;
 	uint16_t postProcessResultCount = mSWModel->getModelAttribute().postProcessResultCount;
-    if (!mPostProcessedData) {
-        mPostProcessedData = new float[postProcessResultCount];
-        if (!mPostProcessedData) {
-            AIFW_LOGE("post process data buffer memory allocation failed.");
-            return AIFW_NO_MEM;
-        }
-    }
+	if (!mPostProcessedData) {
+		mPostProcessedData = new float[postProcessResultCount];
+		if (!mPostProcessedData) {
+			AIFW_LOGE("post process data buffer memory allocation failed.");
+			return AIFW_NO_MEM;
+		}
+	}
 	ret = mSWModel->getResultData(mPostProcessedData, postProcessResultCount);
 	if (ret != AIFW_OK) {
 		AIFW_LOGE("get result data of model failed");

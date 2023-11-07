@@ -16,8 +16,7 @@
  *
  ****************************************************************************/
 
-#ifndef __AIFW_AIMODEL_H__
-#define __AIFW_AIMODEL_H__
+#pragma once
 
 #include <memory>
 #include "aifw/aifw.h"
@@ -146,4 +145,3 @@ private:
 
 } /* namespace aifw */
 
-#endif /* __AIFW_AIMODEL_H__ */

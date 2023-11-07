@@ -56,7 +56,6 @@ static std::shared_ptr<ModelSetInfo> gModelSetList;
 static uint16_t gModelSetListOffset = 0;
 static uint16_t gMaxModelSetCount = 0;
 
-
 static int16_t findModelSetInfoIndex(uint32_t modelCode)
 {
 	for (int i = 0; i < gModelSetListOffset; i++) {

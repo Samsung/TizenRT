@@ -23,8 +23,8 @@
  * Log levels are Error, Information and Verbose. Error is by default enabled.
  */
 
-#ifndef __AIFW_LOGS_H__
-#define __AIFW_LOGS_H__
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 
@@ -58,4 +58,3 @@ static const char *file_name = 0;
 #define AIFW_LOGV(...)
 #endif
 
-#endif /*__AIFW_LOGS_H__*/

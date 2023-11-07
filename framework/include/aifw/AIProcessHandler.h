@@ -21,8 +21,7 @@
  * @brief Interface class for data processing operations.
  */
 
-#ifndef __AIPROCESS_HANDLER_H__
-#define __AIPROCESS_HANDLER_H__
+#pragma once
 
 #include <memory>
 #include "aifw/aifw.h"
@@ -79,4 +78,3 @@ public:
 
 } /* namespace aifw */
 
-#endif /* __AIPROCESS_HANDLER_H__ */

@@ -21,8 +21,7 @@
  * @brief AIEngine implementation for Tensor Flow Micro
  */
 
-#ifndef __TFLM_H__
-#define __TFLM_H__
+#pragma once
 
 #include <memory>
 #include "aifw/aifw.h"
@@ -63,6 +62,4 @@ private:
 };
 
 } /* namespace aifw */
-
-#endif /* __TFLM_H__ */
 
