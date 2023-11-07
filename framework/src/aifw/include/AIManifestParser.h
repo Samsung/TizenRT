@@ -21,8 +21,7 @@
  * @brief This class reads data from model manifest file.
  */
 
-#ifndef __AIMANIFEST_PARSER_H__
-#define __AIMANIFEST_PARSER_H__
+#pragma once
 
 #include <memory>
 #include <json/cJSON.h>
@@ -75,6 +74,4 @@ private:
 };
 
 } /* namespace aifw */
-
-#endif /* __AIMANIFEST_PARSER_H__ */
 

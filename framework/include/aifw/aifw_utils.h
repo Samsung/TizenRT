@@ -21,8 +21,7 @@
  * @brief AI Framework utilities API
  */
 
-#ifndef __AIFW_UTILS_H__
-#define __AIFW_UTILS_H__
+#pragma once
 
 #include <stdint.h>
 #include "aifw/aifw.h"
@@ -54,4 +53,3 @@ AIFW_RESULT getMSE(float *realValues, float *predValues, int count, float *resul
  */
 AIFW_RESULT getRMSE(float *realValues, float *predValues, int count, float *result);
 
-#endif /* __AIFW_UTILS_H__ */

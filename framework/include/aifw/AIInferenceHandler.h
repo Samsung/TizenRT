@@ -20,8 +20,7 @@
  * @file AIInferenceHandler.h
  */
 
-#ifndef __AIINFERENCE_HANDLER_H__
-#define __AIINFERENCE_HANDLER_H__
+#pragma once
 
 #include <stdlib.h>
 #include "aifw/aifw.h"
@@ -96,4 +95,3 @@ private:
 
 } /* namespace aifw */
 
-#endif /* __AIINFERENCE_HANDLER_H__ */

@@ -17,6 +17,6 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_AIFW_TEST),y)
-CONFIGURED_APPS += examples/aifw_test/
+CONFIGURED_APPS += examples/aifw_test
 endif
 
