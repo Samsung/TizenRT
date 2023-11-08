@@ -59,10 +59,6 @@ AIFW_RESULT SineWaveProcessHandler::parseData(void *data, uint16_t count, float 
 
 AIFW_RESULT SineWaveProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, float *invokeInput, AIModelAttribute *modelAttribute)
 {
-	if (!buffer) {
-		AIFW_LOGE("Invalid argument - input data buffer");
-		return AIFW_INVALID_ARG;
-	}
 	if (!invokeInput) {
 		AIFW_LOGE("Invalid argument - output data buffer");
 		return AIFW_INVALID_ARG;
@@ -87,10 +83,6 @@ AIFW_RESULT SineWaveProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataB
 
 AIFW_RESULT SineWaveProcessHandler::postProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, float *resultData, AIModelAttribute *modelAttribute)
 {
-	if (!buffer) {
-		AIFW_LOGE("Invalid argument - input data buffer");
-		return AIFW_INVALID_ARG;
-	}
 	if (!resultData) {
 		AIFW_LOGE("Invalid argument - output buffer");
 		return AIFW_INVALID_ARG;
