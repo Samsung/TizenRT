@@ -415,12 +415,13 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 
 static void arm_assert(void)
 {
+#ifdef CONFIG_BOARD_ASSERT_AUTORESET
+	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
 	/* Are we in an interrupt handler or the idle task? */
 
-	if (CURRENT_REGS || (this_task())->flink == NULL)
-	{
-#if CONFIG_BOARD_RESET_ON_ASSERT >= 1
-		board_reset(CONFIG_BOARD_ASSERT_RESET_VALUE);
+	if (CURRENT_REGS || (this_task())->flink == NULL) {
 #endif
 		/* Disable interrupts on this CPU */
 		irqsave();
@@ -440,14 +441,12 @@ static void arm_assert(void)
 		up_mdelay(250);
 #endif
 		}
+#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
+	} else {
+		exit(errorcode);
 	}
-	else
-	{
-#if CONFIG_BOARD_RESET_ON_ASSERT >= 2
-		board_reset(CONFIG_BOARD_ASSERT_RESET_VALUE);
 #endif
-
-	}
+#endif /* CONFIG_BOARD_ASSERT_AUTORESET */
 }
 
 /****************************************************************************
