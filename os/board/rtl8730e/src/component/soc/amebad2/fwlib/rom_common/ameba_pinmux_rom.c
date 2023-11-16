@@ -203,7 +203,7 @@ void PAD_CMD(u8 PinName, u8 NewStatus)
   *  @retval None
   */
 HAL_ROM_TEXT_SECTION
-void Pinmux_Config(u8 PinName, u32 PinFunc)
+void _Pinmux_Config(u8 PinName, u32 PinFunc)
 {
 	u32 Temp = 0;
 

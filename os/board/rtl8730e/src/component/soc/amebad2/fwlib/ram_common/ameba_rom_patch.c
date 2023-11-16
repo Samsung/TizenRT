@@ -27,6 +27,68 @@ static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, UART_LOG_IRQ},	/* CA7 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 };
 
+#define APAD_NAME_START	_PA_20
+#define APAD_NAME_END	_PA_29
+
+extern void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate);
+void Pinmux_Config(u8 PinName, u32 PinFunc)
+{
+	if ((PinName >= APAD_NAME_START) && (PinName <= APAD_NAME_END)) {
+		RCC_PeriphClockCmd(APBPeriph_AUDIO, NULL, ENABLE);
+
+		if (PinFunc != PINMUX_FUNCTION_AUDIO) {
+			/*for audio pad switch to digital usage:*/
+			//step1: mute AMICx
+			switch (PinName) {
+			case _PA_20:
+			case _PA_21:
+				/* mute AMIC1 */
+				AUDIO_CODEC_SetMicBstChnMute(AMIC1, MICIN, MUTE);
+				break;
+			case _PA_22:
+			case _PA_23:
+				/* mute AMIC2 */
+				AUDIO_CODEC_SetMicBstChnMute(AMIC2, MICIN, MUTE);
+				break;
+			case _PA_24:
+			case _PA_25:
+				/* mute AMIC3 */
+				AUDIO_CODEC_SetMicBstChnMute(AMIC3, MICIN, MUTE);
+				break;
+			case _PA_26:
+			case _PA_27:
+				/* mute AMIC4 */
+				AUDIO_CODEC_SetMicBstChnMute(AMIC4, MICIN, MUTE);
+				break;
+			case _PA_28:
+			case _PA_29:
+				/* mute AMIC5 */
+				AUDIO_CODEC_SetMicBstChnMute(AMIC5, MICIN, MUTE);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	if (PinFunc != PINMUX_FUNCTION_AUDIO) {
+		//step2: enable digital path input
+		APAD_InputCtrl(PinName, ENABLE);
+	} else {
+		APAD_InputCtrl(PinName, DISABLE);
+	}
+
+	/*_PA_13: SWD_DATA, _PA_14: SWD_CLK*/
+	if ((PinName == _PA_13) || ((PinName == _PA_14))) {
+		Pinmux_Swdoff();
+		//RTK_LOGW(TAG, "SWD PAD P%s_%d is configured to funcID %d \n", PORT_NUM(PinName) ? "B" : "A", PIN_NUM(PinName), PinFunc);
+	}
+
+	_Pinmux_Config(PinName, PinFunc);
+
+}
+
+
 int CRYPTO_SetSecurityModeAD(HAL_CRYPTO_ADAPTER *pIE,
 							 IN const u32 cipher_type, IN const u32 auth_type,
 							 IN const void *pCipherKey, IN const u32 lenCipherKey,

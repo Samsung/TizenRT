@@ -255,7 +255,7 @@ _LONG_CALL_ void PAD_CMD(u8 PinName, u8 NewStatus);
 _LONG_CALL_ void PAD_DrvStrength(u8 PinName, u32 DrvStrength);
 _LONG_CALL_ void PAD_PullCtrl(u8 PinName, u8 PullType);
 _LONG_CALL_ void PAD_SleepPullCtrl(u8 PinName, u8 PullType);
-_LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
+_LONG_CALL_ void _Pinmux_Config(u8 PinName, u32 PinFunc);
 _LONG_CALL_ u32 Pinmux_ConfigGet(u8 PinName);
 _LONG_CALL_ void Pinmux_UartLogCtrl(u32  PinLocation, BOOL   Operation);
 _LONG_CALL_ void Pinmux_SpicCtrl(u32  PinLocation, BOOL Operation);

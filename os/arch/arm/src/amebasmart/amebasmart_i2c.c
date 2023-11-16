@@ -37,13 +37,12 @@
 #include <tinyara/semaphore.h>
 #include <tinyara/i2c.h>
 #include <tinyara/kmalloc.h>
+#include <arch/chip/irq.h>
+#include <arch/board/board.h>
 
 #include "PinNames.h"
 
-#include <arch/board/board.h>
-
 #include "up_arch.h"
-
 #include "ameba_i2c.h"
 
 /************************************************************************************
@@ -83,10 +82,6 @@
  * debug interface syslog() but does not require that any other debug
  * is enabled.
  */
-#define amebasmart_IRQ_I2C0 54
-#define amebasmart_IRQ_I2C1 87
-#define amebasmart_IRQ_I2C2 87
-
 #ifndef CONFIG_I2C_TRACE
 #define amebasmart_i2c_tracereset(p)
 #define amebasmart_i2c_tracenew(p, s)
@@ -98,8 +93,8 @@
 #define CONFIG_I2C_NTRACE 32
 #endif
 
-#define amebasmart_I2C_MASTER    1
-#define amebasmart_I2C_SLAVE     2
+#define AMEBASMART_I2C_MASTER    1
+#define AMEBASMART_I2C_SLAVE     2
 
 #define I2C_MASTER_DEVICE		1
 #define I2C_SLAVE_DEVICE		2
@@ -306,15 +301,15 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
 	//.filtscl = CONFIG_I2C0_FILTSCL,
 	//.filtsda = CONFIG_I2C0_FILTSDA,
-	.scl_pin = PA_16,
-	.sda_pin = PA_15,
+	.scl_pin = PA_10,
+	.sda_pin = PA_9,
 #ifndef CONFIG_I2C_SLAVE
-	.mode = amebasmart_I2C_MASTER,
+	.mode = AMEBASMART_I2C_MASTER,
 #else
-	.mode = amebasmart_I2C_SLAVE,
+	.mode = AMEBASMART_I2C_SLAVE,
 #endif
 #ifndef CONFIG_I2C_POLLED
-	.irq = amebasmart_IRQ_I2C0,
+	.irq = AMEBASMART_IRQ_I2C0,
 #endif
 };
 
@@ -339,12 +334,12 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c1_config = {
 	.scl_pin = PA_21,
 	.sda_pin = PA_20,
 #ifndef CONFIG_I2C_SLAVE
-	.mode = amebasmart_I2C_MASTER,
+	.mode = AMEBASMART_I2C_MASTER,
 #else
-	.mode = amebasmart_I2C_SLAVE,
+	.mode = AMEBASMART_I2C_SLAVE,
 #endif
 #ifndef CONFIG_I2C_POLLED
-	.irq = amebasmart_IRQ_I2C1,
+	.irq = AMEBASMART_IRQ_I2C1,
 #endif
 };
 
@@ -369,12 +364,12 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	.scl_pin = PA_29,
 	.sda_pin = PA_28,
 #ifndef CONFIG_I2C_SLAVE
-	.mode = amebasmart_I2C_MASTER,
+	.mode = AMEBASMART_I2C_MASTER,
 #else
-	.mode = amebasmart_I2C_SLAVE,
+	.mode = AMEBASMART_I2C_SLAVE,
 #endif
 #ifndef CONFIG_I2C_POLLED
-	.irq = amebasmart_IRQ_I2C2,
+	.irq = AMEBASMART_IRQ_I2C2,
 #endif
 };
 
@@ -1149,16 +1144,16 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 	/* Get I2C private structure */
 	if (port == 0) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c0_priv;
- 	} else if (port == 1) {
+	} else if (port == 1) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c1_priv;
- 	} else if (port == 2) {
+	} else if (port == 2) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c2_priv;
 	} else {
-	 	printf("Please select I2CO, I2C1 or I2C2 bus\n");
-	 	return NULL;
- 	}
+		printf("Please select I2CO, I2C1 or I2C2 bus\n");
+		return NULL;
+	}
 
- /* Initialize private data for the first time, increment reference count,
+/* Initialize private data for the first time, increment reference count,
 	* power-up hardware and configure GPIOs.
 	*/
 	flags = irqsave();

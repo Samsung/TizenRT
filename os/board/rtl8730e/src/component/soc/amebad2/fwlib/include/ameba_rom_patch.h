@@ -37,7 +37,10 @@
 // add your function statements here
 _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
+
 _LONG_CALL_ void LOGUART_PutChar_RAM(u8 c);
+_LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
+
 _LONG_CALL_ u32 SYSCFG_RLVersion(void);
 _LONG_CALL_ u32 SYSCFG_GetRLNum(void);
 _LONG_CALL_ VOID VectorTableAdd(VOID);

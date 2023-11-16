@@ -81,7 +81,19 @@ endif
 config AMEBASMART_I2C
 	bool "AMEBASMART_I2C"
 	default n
+
 if AMEBASMART_I2C
+
+config AMEBASMART_I2C0
+	bool "I2C_0"
+	default n
+config AMEBASMART_I2C1
+	bool "I2C_1"
+	default n
+config AMEBASMART_I2C2
+	bool "I2C_2"
+	default n
+
 config AMEBASMART_I2C_DYNTIMEO
 	bool "[AMEBASMART I2C]Use dynamic timeouts"
 	default n
@@ -117,6 +129,22 @@ config AMEBASMART_I2S
 	default n
 
 if AMEBASMART_I2S
+config AMEBASMART_I2S0
+	bool "I2S_0"
+	default n
+if AMEBASMART_I2S0
+	config AMEBASMART_I2S0_MASTER
+	bool "I2S0_MASTER"
+	default n
+endif
+config AMEBASMART_I2S1
+	bool "I2S_1"
+	default n
+if AMEBASMART_I2S1
+	config AMEBASMART_I2S1_MASTER
+	bool "I2S1_MASTER"
+	default n
+endif
 config AMEBASMART_I2S_RX
 	bool "Enable I2S RX"
 	default n
