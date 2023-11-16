@@ -157,6 +157,17 @@ enum {
 };
 typedef long rtw_security_t;
 
+enum
+{
+	WPA_AUTO_MODE,
+	WPA_ONLY_MODE,
+	WPA2_ONLY_MODE,
+	WPA3_ONLY_MODE,
+	WPA_WPA2_MIXED_MODE,
+	WPA2_WPA3_MIXED_MODE
+};
+typedef unsigned long rtw_wpa_mode;
+
 enum {
     RTW_ENCRYPTION_UNKNOWN = 0,
     RTW_ENCRYPTION_OPEN = 1,
