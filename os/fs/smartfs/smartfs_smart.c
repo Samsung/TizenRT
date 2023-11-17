@@ -1274,11 +1274,13 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 	}
 
 	*handle = (void *)fs;
-	
+
+#ifndef NXFUSE_HOST_BUILD
 	ret = smartfs_sector_recovery(fs);
 	if (ret != 0) {
 		goto error_with_semaphore;
 	}
+#endif
 
 	smartfs_semgive(fs);
 	return ret;
