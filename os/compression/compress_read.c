@@ -292,6 +292,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 		size = (long unsigned int)block_readsize;
 #endif
+		writesize = compression_header->blocksize; 
 		/* Decompress block in read_buffer to out_buffer */
 		ret = decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size);
 		if (ret == ERROR) {
