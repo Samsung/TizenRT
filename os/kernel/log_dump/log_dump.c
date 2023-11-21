@@ -185,7 +185,10 @@ int log_dump_read_wake(void)
 	}
 
 	/* wait for the completion of the partially filled block compression */
-	while (compress_last_block) ;
+	while (compress_last_block) {
+		usleep(10000);
+	}
+
 	return 0;
 }
 
@@ -363,6 +366,18 @@ static int compress_full_bufs(void)
 			}
 			continue;
 		}
+
+		irqstate_t flags = irqsave();
+		/* If kernel heap is locked we cannot allocate new buffers.
+		 * Also, we cannot perform compress operation, since the compression
+		 * code internally tries to allocate memory. So, we will just ignore
+		 * the log data until the kernel heap lock is released.
+		 */
+		if (IS_KMM_LOCKED()) {
+			irqrestore(flags);
+			return LOG_DUMP_MEM_FAIL;
+		}
+
 		size_t free_size = 0;
 		int msg_compress = false;
 		/* compress the block, add it to the nodes, reset the uncomp_buf */
@@ -371,12 +386,11 @@ static int compress_full_bufs(void)
 		comp_idx = i;
 
 		mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
+		irqrestore(flags);
 
 		/* wait for completion of the current full block compression */
 		while (compress_full_block) {
-			if (sched_lockcount()) {
-				usleep(10000);
-			}
+			usleep(10000);
 		}
 
 		if (compress_ret < 0) {
@@ -442,15 +456,6 @@ int log_dump_save(char ch)
 			}
 			if (uncomp_buf_full[uncomp_idx]) {
 				uncomp_idx = temp;
-			}
-
-			/* If kernel heap is locked we cannot allocate new buffers.
-			 * Also, we cannot perform compress operation, since the compression
-		 	 * code internally tries to allocate memory. So, we will just ignore
-			 * the log data until the kernel heap lock is released.
-		 	 */
-			if (IS_KMM_LOCKED()) {
-				return LOG_DUMP_MEM_FAIL;
 			}
 
 			/* If the current thread priority is greater than the compress thread
