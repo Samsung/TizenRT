@@ -1,9 +1,0 @@
-
-typedef long HRESULT;
-
-
-struct RPCRES_LONG {
-    HRESULT     result;
-    long        data;
-};
-

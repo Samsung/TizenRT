@@ -258,29 +258,30 @@ uart_irqhandler(
 )
 {
 	PMBED_UART_ADAPTER puart_adapter = (PMBED_UART_ADAPTER) Data;
-	u32 reg_lsr;
+	u32 reg_lsr, reg_ier;
 	u32 RegValue;
 
 	reg_lsr = UART_LineStatusGet(puart_adapter->UARTx);
+	reg_ier = puart_adapter->UARTx->IER;
 
 	/* Noise Detect INT */
-	if (reg_lsr & RUART_BIT_RXND_INT) {
+	if ((reg_lsr & RUART_BIT_RXND_INT) && (reg_ier & RUART_BIT_ERXNDI)) {
 		UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_RXNDICF);
 	}
 
 	//Monitor done INT
-	if (reg_lsr & RUART_BIT_MONITOR_DONE_INT) {
+	if ((reg_lsr & RUART_BIT_MONITOR_DONE_INT) && (reg_ier & RUART_BIT_EMDI)) {
 		UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_MDICF);
 	}
 
 	//Modem INT
-	if (reg_lsr & RUART_BIT_MODEM_INT) {
+	if ((reg_lsr & RUART_BIT_MODEM_INT) && (reg_ier & RUART_BIT_EDSSI)) {
 		UART_INT_Clear(puart_adapter->UARTx, RUART_BIT_MICF);
 	}
 
 	//tx empty INT
-	if (reg_lsr & RUART_BIT_TX_EMPTY) {
-		if (UART_GetTxFlag(puart_adapter->UartIndex)) {
+	if ((reg_lsr & RUART_BIT_TX_EMPTY) && (reg_ier & RUART_BIT_ETBEI)) {
+		if (UART_GetTxFlag(puart_adapter->UartIndex) == STATETX_INT) {
 			u32 TransCnt = UART_SendDataTO(puart_adapter->UARTx, puart_adapter->pTxBuf,
 										   puart_adapter->TxCount, 1);
 			puart_adapter->TxCount -= TransCnt;
@@ -296,7 +297,8 @@ uart_irqhandler(
 	}
 
 	//rx full & rx timeout INT
-	if ((reg_lsr & RUART_BIT_RXFIFO_INT) || (reg_lsr & RUART_BIT_TIMEOUT_INT)) {
+	if (((reg_lsr & RUART_BIT_RXFIFO_INT) && (reg_ier & RUART_BIT_ERBI)) || \
+		((reg_lsr & RUART_BIT_TIMEOUT_INT) && (reg_ier & RUART_BIT_ETOI))) {
 		if (UART_GetRxFlag(puart_adapter->UartIndex) == STATERX_INT) {
 			u32 TransCnt = 0;
 			TransCnt = UART_ReceiveDataTO(puart_adapter->UARTx, puart_adapter->pRxBuf,
@@ -322,7 +324,7 @@ uart_irqhandler(
 	}
 
 	//line status INT
-	if (reg_lsr & UART_ALL_RX_ERR) {
+	if ((reg_lsr & UART_ALL_RX_ERR) && (reg_ier & RUART_BIT_ELSI)) {
 
 		if (reg_lsr & RUART_BIT_OVR_ERR) {
 			DBG_8195A("%s: LSR over run interrupt\n", __FUNCTION__);

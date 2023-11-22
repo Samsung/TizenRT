@@ -69,6 +69,7 @@ extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 extern u32 SystemGetCpuClk(void);
 extern void SystemSetCpuClk(u8 CpuClk);
+extern u32 CPU_InInterrupt(void);
 
 /**
  * @brief Generate random seed

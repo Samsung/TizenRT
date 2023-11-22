@@ -11,7 +11,7 @@ typedef struct {
 
 ALIGNMTO(64) int ipc_done = 1;
 ALIGNMTO(64) Ftl_ParamDef ftl_para;
-ALIGNMTO(64) u8 replace_buf[64];
+ALIGNMTO(64) u8 replace_buf[128];
 
 
 #if defined (ARM_CORE_CM4)
@@ -87,15 +87,9 @@ uint32_t ftl_load_from_storage(void *buffer, uint16_t offset, uint16_t size)
 }
 #endif
 
-
 #if defined (ARM_CORE_CA32)
 _OPTIMIZE_NONE_
-void ftl_ipc_init(VOID){
-	//For future development
-}
-
-_OPTIMIZE_NONE_
-void FTL_np_request_get(VOID *Data, u32 IrqStatus, u32 ChanNum)
+void Ftl_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {
 	/* To avoid gcc warnings */
 	(void) Data;
@@ -116,42 +110,49 @@ void FTL_np_request_get(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	DCache_Invalidate(addr, CA7_CACHE_SIZE);
 	_memcpy((void *)&ftl_para, (u32 *)addr, sizeof(Ftl_ParamDef));
 	DCache_Invalidate((u32)ftl_para.addr, ftl_para.len);
-	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FTL_ACK_TRAN, (PIPC_MSG_STRUCT)&ipc_msg);
-	DCache_Invalidate((u32)ftl_para.addr, ftl_para.len);
 
 	if (ftl_para.mode) {
 		ret = ftl_save_to_storage((u32 *)ftl_para.addr, ftl_para.offset, ftl_para.len);
 		ipc_msg.msg = ret;
-		DCache_CleanInvalidate((u32)ftl_para.addr, ftl_para.len);
 		ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FTL_ACK_TRAN, (PIPC_MSG_STRUCT)&ipc_msg);
+
 	} else {
 		ret = ftl_load_from_storage((u32 *)ftl_para.addr, ftl_para.offset, ftl_para.len);
 		ipc_msg.msg = ret;
 		DCache_CleanInvalidate((u32)ftl_para.addr, ftl_para.len);
 		ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FTL_ACK_TRAN, (PIPC_MSG_STRUCT)&ipc_msg);
+
 	}
-	DCache_Invalidate((u32)ftl_para.addr, ftl_para.len);
 
 }
 
 #endif
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_all_table[] = {
+const IPC_INIT_TABLE ipc_all_table[] = {
 #if defined (ARM_CORE_CM4)
-	{IPC_USER_DATA, 	
-	FTL_ap_request_get,	
-	(VOID *) NULL, 
-	IPC_AP_TO_NP, 
-	IPC_N2A_FTL_DATA_TRAN, 
-	IPC_RX_FULL},
+	{
+		.USER_MSG_TYPE = IPC_USER_DATA,
+		.Rxfunc = FTL_ap_request_get,
+		.RxIrqData = (VOID *) NULL,
+		.Txfunc = IPC_TXHandler,
+		.TxIrqData = (VOID *) NULL,
+		.IPC_Direction = IPC_AP_TO_NP,
+		.IPC_Channel = IPC_A2N_FTL_ACK_TRAN
+	},
+
 #endif
 #if defined (ARM_CORE_CA32)
-	{IPC_USER_DATA, 	
-	FTL_np_request_get,	
-	(VOID *) NULL, 
-	IPC_NP_TO_AP, 
-	IPC_A2N_FTL_ACK_TRAN, 
-	IPC_RX_FULL},
+
+	{
+		.USER_MSG_TYPE = IPC_USER_DATA,
+		.Rxfunc = Ftl_ipc_int,
+		.RxIrqData = (VOID *) NULL,
+		.Txfunc = IPC_TXHandler,
+		.TxIrqData = (VOID *) NULL,
+		.IPC_Direction = IPC_NP_TO_AP,
+		.IPC_Channel = IPC_N2A_FTL_DATA_TRAN
+	},
+
 #endif
 };

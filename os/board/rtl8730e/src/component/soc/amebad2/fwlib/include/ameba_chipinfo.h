@@ -103,6 +103,25 @@ typedef struct {
 
 #define OTP_UUID								0x7F4
 #define OTP_LOT_NUM								0x7F8
+#define OTP_INFO								0x7FC
+
+enum OTP_Info {
+	OTP_CpuCoreNum = 0,
+	OTP_CpuClkRate = 1,
+	OTP_WIFI5GSupport = 2,
+	OTP_802Protocol = 3,
+	OTP_MemorySizeOrigin = 4,
+	OTP_RSVD0 = 5,
+};
+
+#define OTP_GET_CPU_CORENUM(x)					((u32)(((x >> 0) & 0x0000000F)))
+#define OTP_GET_CPU_CLK(x)						((u32)(((x >> 4) & 0x0000000F)))
+
+#define OTP_GET_WIFI5G_SUPPORT(x)				((u32)(((x >> 0) & 0x00000003)))
+#define OTP_GET_802PROTOCOL(x)					((u32)(((x >> 2) & 0x00000003)))
+#define OTP_GET_MEMORYSIZE_ORIGIN(x)			((u32)(((x >> 4) & 0x00000003)))
+#define OTP_GET_RSVD0(x)						((u32)(((x >> 6) & 0x00000003)))
+
 
 /**
   * @}
@@ -124,6 +143,7 @@ _LONG_CALL_ u8 ChipInfo_DDRType(void);
 _LONG_CALL_ u8 ChipInfo_MemorySize(void);
 _LONG_CALL_ u8 ChipInfo_MemoryVendor(void);
 _LONG_CALL_ u8 ChipInfo_ChipPackage(void);
+_LONG_CALL_ u8 EFUSE_Get_Info(u32 FuncID);
 
 /**
   * @}

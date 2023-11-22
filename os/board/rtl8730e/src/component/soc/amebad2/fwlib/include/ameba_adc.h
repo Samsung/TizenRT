@@ -823,6 +823,7 @@ _LONG_CALL_ u32 ADC_GetStatus(void);
 _LONG_CALL_ void ADC_SWTrigCmd(u32 NewState);
 _LONG_CALL_ void ADC_AutoCSwCmd(u32 NewState);
 _LONG_CALL_ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState);
+_LONG_CALL_ void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState);
 _LONG_CALL_ void ADC_SetDmaEnable(u32 newState);
 _LONG_CALL_ u32 ADC_RXGDMA_Init(GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData, IRQ_FUN CallbackFunc,
 								u8 *pDataBuf, u32 DataLen);

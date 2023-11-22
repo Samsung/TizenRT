@@ -28,6 +28,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "SPI";
 /** @addtogroup SPI_Exported_Functions
 *@verbatim
   *
@@ -512,7 +513,7 @@ BOOL SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			DBG_8195A("SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
+			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
 			return _FALSE;
 		}
 	} else {
@@ -611,7 +612,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			DBG_8195A("SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pRxData, Length);
+			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pRxData, Length);
 			return _FALSE;
 		}
 	} else {
@@ -730,7 +731,7 @@ void SSI_SetTxFifoLevel(SPI_TypeDef *spi_dev, u32 TxThresholdLevel)
 void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 {
 	if (SSI_Busy(spi_dev)) {
-		DBG_8195A("SSI%d is busy\n", SlaveIndex);
+		RTK_LOGW(TAG, "SSI%d is busy\n", SlaveIndex);
 		return;
 	}
 

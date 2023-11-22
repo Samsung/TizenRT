@@ -21,6 +21,7 @@
 
 #include "ameba_soc.h"
 
+
 /**
   * @brief  PLL divider set
   * @param  Sportx: sport index, 0/1/2/3
@@ -207,19 +208,20 @@ void PLL_I2S_24P576M(u32 NewState)
   *            @arg PLL_FASTER: pll clock faster than 98.304M
   *            @arg PLL_SLOWER: pll clock slower than 98.304M
   */
-void PLL_I2S_98P304M_ClkTune(u32 ppm, u32 action)
+float PLL_I2S_98P304M_ClkTune(float ppm, u32 action)
 {
 
 	u32 F0F_new;
 	assert_param(ppm <= 1000);
+	float real_ppm = 0;
 
 	PLL_BASE -> PLL_I2SPLL1_CTRL1 &= (~PLL_MASK_IPLL1_DIVN_SDM);
 	PLL_BASE -> PLL_I2SPLL1_CTRL1 |= (PLL_IPLL1_DIVN_SDM(7));
 
 	if (action == PLL_FASTER) {
-		F0F_new = 5269 + (u32)(ppm * 0.64);
+		F0F_new = 5269 + (u32)(ppm / 1.55);
 	} else if (action == PLL_SLOWER) {
-		F0F_new = 5269 - (u32)(ppm * 0.64);
+		F0F_new = 5269 - (u32)(ppm / 1.55);
 	} else {
 		F0F_new = 5269;
 	}
@@ -233,6 +235,11 @@ void PLL_I2S_98P304M_ClkTune(u32 ppm, u32 action)
 	PLL_BASE ->	PLL_I2SPLL1_CTRL1 |= (PLL_BIT_IPLL1_TRIG_FREQ);
 	PLL_BASE ->	PLL_I2SPLL1_CTRL1 &= (~PLL_BIT_IPLL1_TRIG_FREQ);
 
+	real_ppm = (double)((double)F0F_new - (double)5269) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)6 + (double)5269 /
+			   (double)8192) / (double)8);
+
+	return real_ppm;
+
 }
 
 
@@ -245,10 +252,11 @@ void PLL_I2S_98P304M_ClkTune(u32 ppm, u32 action)
   *            @arg PLL_FASTER: pll clock faster than 45.1584M
   *            @arg PLL_SLOWER: pll clock slower than 45.1584M
   */
-void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action)
+float PLL_I2S_45P158M_ClkTune(float ppm, u32 action)
 {
 
 	u32 F0F_new;
+	float real_ppm = 0;
 	assert_param(ppm <= 1000);
 
 	PLL_BASE -> PLL_I2SPLL2_CTRL1 &= (~PLL_MASK_IPLL2_DIVN_SDM);
@@ -256,9 +264,9 @@ void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action)
 
 
 	if (action == PLL_FASTER) {
-		F0F_new = 2076 + (u32)(ppm * 0.59);
+		F0F_new = 2076 + (u32)(ppm / 1.69);
 	} else if (action == PLL_SLOWER) {
-		F0F_new = 2076 - (u32)(ppm * 0.59);
+		F0F_new = 2076 - (u32)(ppm / 1.69);
 	} else {
 		F0F_new = 2076;
 	}
@@ -271,6 +279,10 @@ void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action)
 
 	PLL_BASE ->	PLL_I2SPLL2_CTRL1 |= (PLL_BIT_IPLL2_TRIG_FREQ);
 	PLL_BASE ->	PLL_I2SPLL2_CTRL1 &= (~PLL_BIT_IPLL2_TRIG_FREQ);
+
+	real_ppm = (double)((double)F0F_new - (double)2076) * (double)1000000 / (double)8192 / (double)8 / (double)((double)9 + ((double)0 + (double)2076 /
+			   (double)8192) / (double)8);
+	return real_ppm;
 
 }
 

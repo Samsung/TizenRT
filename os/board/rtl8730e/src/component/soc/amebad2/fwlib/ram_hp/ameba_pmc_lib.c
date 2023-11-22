@@ -8,6 +8,7 @@
  */
 #include "ameba_soc.h"
 
+//static const char *TAG = "PMC";
 typedef struct {
 	u32 CTRL;
 	u32 MAIR0;
@@ -138,7 +139,7 @@ VOID SOCPS_WakeFromPG_HP(VOID)
 {
 	u32 Rtemp;
 
-	//DBG_8195A("SOCPS_WakeFromPG_HP\n");
+	//RTK_LOGD(TAG, "SOCPS_WakeFromPG_HP\n");
 
 	/* Need Modify */
 	//irq_table_init(MSP_RAM_HP);

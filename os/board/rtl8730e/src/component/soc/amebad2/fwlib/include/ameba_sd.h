@@ -279,13 +279,19 @@ typedef struct {
 /** @defgroup SD_Card_Functions SD Card Functions
   * @{
   */
-_LONG_CALL_ SD_RESULT SD_Init(void);
+_LONG_CALL_ SD_RESULT SD_Init(SD_DMASemaStruct *SD_SemStruct);
 _LONG_CALL_ SD_RESULT SD_DeInit(void);
-_LONG_CALL_ SD_RESULT SD_GetCapacity(u32 *sector_count);
-_LONG_CALL_ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count);
-_LONG_CALL_ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count);
+_LONG_CALL_ SD_RESULT SD_GetCapacity(u32 *sector_count, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ SD_RESULT SD_ReadBlocks(u32 sector, u8 *data, u32 count, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ SD_RESULT SD_WriteBlocks(u32 sector, const u8 *data, u32 count, SD_DMASemaStruct *SD_SemStruct);
 _LONG_CALL_ SD_RESULT SD_Status(void);
-_LONG_CALL_ SD_RESULT SD_GetEXTCSD(u8 *pbuf);
+_LONG_CALL_ SD_RESULT SD_GetEXTCSD(u8 *pbuf, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ u32 SD_ReadBlock(uint8_t *readbuff, uint32_t BlockIdx, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ u32 SD_ReadMultiBlocks(uint8_t *readbuff, uint32_t BlockIdx, uint32_t NumberOfBlocks, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ u32 SD_WriteBlock(uint8_t *writebuff, uint32_t BlockIdx, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ u32 SD_WriteMultiBlocks(uint8_t *writebuff, uint32_t BlockIdx, uint32_t NumberOfBlocks, SD_DMASemaStruct *SD_SemStruct);
+_LONG_CALL_ u32 SD_Erase(uint32_t StartBlock, uint32_t EndBlock);
+
 /**
   * @}
   */
@@ -306,5 +312,6 @@ _LONG_CALL_ SD_RESULT SD_GetEXTCSD(u8 *pbuf);
 #define  SD				0
 #define  EMMC			1
 #define  SDIO			SD
+#define SD_SEMA_MAX_DELAY 10
 
 #endif

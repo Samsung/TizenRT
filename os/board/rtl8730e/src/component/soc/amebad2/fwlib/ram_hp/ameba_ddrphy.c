@@ -25,24 +25,36 @@
 #define DDRPHY_LOOPBACK	DISABLE
 
 #if DDR_SCAN_PARA || DDRPHY_LOOPBACK
-#define QFN228_DDR3L()				FALSE
-#define QFN144_DDR3L()				FALSE
-#define QFN144_DDR3L_BCUT()			FALSE
-#define QFN144_DDR2()				FALSE
-#define QFN144_DDR2_BCUT()			FALSE
-#define QFN100_DDR2()				FALSE
+#define ChipInfo_Get()				0xFF
+
 #define SUPPORT_DYNAMIC_POWEROFF	DISABLE
 #else
-#define QFN228_DDR3L()				(DDR_PHY_ChipInfo() == 0xE0)	/*QFN228 DDR3L QA board*/
-#define QFN144_DDR3L()				(DDR_PHY_ChipInfo() == 0x02)	/*QFN144 DDR3L QA board*/
-#define QFN144_DDR3L_BCUT()			(DDR_PHY_ChipInfo() == 0x09)	/*QFN144 DDR3L QA board*/
-#define QFN144_DDR2()				(DDR_PHY_ChipInfo() == 0x03)	/*QFN144 DDR2 QA board*/
-#define QFN144_DDR2_BCUT()			(DDR_PHY_ChipInfo() == 0x0A)	/*QFN144 DDR2 QA board*/
-#define QFN100_DDR2()				(DDR_PHY_ChipInfo() == 0x05)	/*QFN100 DDR2 QA board*/
-
 /*if cmd_ex_rd_str_num = cmd_rd_str_num-1, let cke_ph_sel-1 and cs_ph_sel-1 of CMD_ADR_PH, then cmd_ex_rd_str_num can equal to cmd_rd_str_num*/
 #define SUPPORT_DYNAMIC_POWEROFF	DISABLE//ENABLE
 #endif
+
+static const char *TAG = "DDRPHY";
+typedef struct {
+	u32 ODT_TTCP0_SET0;
+	u32 ODT_TTCN0_SET0;
+	u32 OCDP0_SET0;
+	u32 OCDN0_SET0;
+	u8 RZQ_480CODE;
+	u8 READ_CTRL_0_SET0;
+	u8 READ_CTRL_0_SET1;
+	u8 READ_CTRL_1;
+} DDRPHY_ZQ_Rx_Scan_Def;
+
+typedef struct {
+	u32 PLL_PI0;
+	u32 PLL_PI1;
+	u32 PLL_PI2;
+	u32 PLL_PI3;
+	u32 PLL_CTL1;
+	u32 AFIFO_STR_0;
+	u32 AFIFO_STR_1;
+	u32 AFIFO_STR_SEL;
+} DDRPHY_Tx_Scan_Def;
 
 /*
 static const unsigned short rl6678_pll_sel_table[7][13] = {
@@ -57,13 +69,80 @@ static const unsigned short rl6678_pll_sel_table[7][13] = {
 };
 */
 
-u8 DDR_PHY_ChipInfo(void)
-{
-	static u8 s_chipinfo_ddr = 0;
+static const DDRPHY_ZQ_Rx_Scan_Def ddrphy_zq_rx_scan[] = {
+	//ODT_TTCP0_SET0,	ODT_TTCN0_SET0,	OCDP0_SET0,		OCDN0_SET0,		RZQ_480CODE,	READ_CTRL_0_SET0,	READ_CTRL_0_SET1,	READ_CTRL_1,
+	{0x00000000,		0x00000000,		0x26262626,		0x26262626,		0xF,			0x3,				0x3,				0x3},//Default
+	{0x0E141414,		0x140E0E0E,		0x261F362E,		0x261C3029,		0xF,			0x2,				0x2,				0x3},//QFN228_DDR3L(0xE0)
+	{0x0E141414,		0x140E0E0E,		0x261F362E,		0x261C3029,		0xF,			0x2,				0x2,				0x3},//QFN144_DDR3L(0x02)
+	{0x0a0c0b0b,		0x0b0b0a0a,		0x26172721,		0x2615231e,		0x6,			0x2,				0x2,				0x4},//QFN144_DDR2(0x03)
+	{0x0a0e0c0c,		0x0c0b0a0a,		0x261e362c,		0x26162620,		0x3,			0x2,				0x2,				0x4},//QFN100_DDR2(0x05)
 
-	if (s_chipinfo_ddr == 0) {
-		s_chipinfo_ddr = ChipInfo_Get();
+	{0x0E141414,		0x140E0E0E,		0x26243c34,		0x261c3029,		0xF,			0x3,				0x3,				0x3},//QFN144_DDR3L(0x09)
+	{0x090b0a0a,		0x0a0a0909,		0x2615231e,		0x2613201b,		0x4,			0x2,				0x2,				0x4},//QFN144_DDR2(0x0A)
+	{0x0b0f0c0c,		0x0c0b0b0b,		0x26233A30,		0x26182722,		0x5,			0x2,				0x2,				0x4},//QFN100_DDR2(0x07)
+
+	{0x0e141414,		0x140e0e0e,		0x26243c34,		0x261b2f28,		0xF,			0x3,				0x3,				0x3},//QFN144_DDR3L(0x0D)
+	{0x0a0c0c0c,		0x0c0a0a0a,		0x2616251f,		0x2614221d,		0x5,			0x2,				0x2,				0x4},//QFN144_DDR2(0x0E)
+};
+
+static const DDRPHY_Tx_Scan_Def ddrphy_tx_scan[] = {
+	//PLL_PI0,		PLL_PI1,	PLL_PI2,	PLL_PI3,	PLL_CTL1,	AFIFO_STR_0,	AFIFO_STR_1,	AFIFO_STR_SEL
+	{0x00000000,	0x00080000,	0x00080808,	0x00000000,	0x20000000,	0x33333333,		0x000c0022,		0x00000000},//Default
+	{0x07060012,	0x000f0707,	0x080f0f0f,	0x00000008,	0x20000001,	0x22222222,		0x000c0012,		0x34000000},//QFN228_DDR3L(0xE0)
+	{0x0b0b0016,	0x00130b0b,	0x0e131313,	0x0000000e,	0x200003c1,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR3L(0x02)
+	{0x0e0e0018,	0x00170e0e,	0x0e171717,	0x0000000e,	0x200003c1,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR2(0x03)
+	{0x0a0a0018,	0x00130a0a,	0x0e131313,	0x0000000e,	0x200003c1,	0x22222222,		0x000c0012,		0x34000000},//QFN100_DDR2(0x05)
+
+	{0x0e0e001a,	0x00170e0e,	0x12171717,	0x00000012,	0x20000fc1,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR3L(0x09)
+	{0x0f0f0016,	0x00180f0f,	0x0e181818,	0x0000000e,	0x200003c1,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR2(0x0A)
+	{0x0f0f001b,	0x00180f0f,	0x13181818,	0x00000013,	0x20000fc1,	0x22222222,		0x000c0012,		0x34000000},//QFN100_DDR2(0x07)
+
+	{0x1110001b,	0x00191111,	0x13191919,	0x00000013,	0x20000ffd,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR3L(0x0D)
+	{0x1313001c,	0x001c1313,	0x121c1c1c,	0x00000012,	0x20000ffd,	0x22222222,		0x000c0012,		0x34000000},//QFN144_DDR2(0x0E)
+};
+
+static u8 DDR_PHY_ChipInfo(void)
+{
+	static u8 s_chipinfo_ddr = 0xFF; //0xFF means None
+
+	if (s_chipinfo_ddr != 0xFF) {
+		return s_chipinfo_ddr;
 	}
+
+	switch (ChipInfo_Get()) {
+	case 0xE0:
+		s_chipinfo_ddr = 1;
+		break;
+	case 0x02:
+		s_chipinfo_ddr = 2;
+		break;
+	case 0x03:
+		s_chipinfo_ddr = 3;
+		break;
+	case 0x05:
+		s_chipinfo_ddr = 4;
+		break;
+	case 0x09:
+		s_chipinfo_ddr = 5;
+		break;
+	case 0x0A:
+		s_chipinfo_ddr = 6;
+		break;
+	case 0x07:
+		s_chipinfo_ddr = 7;
+		break;
+	case 0x0D:
+		s_chipinfo_ddr = 8;
+		break;
+	case 0x0E:
+		s_chipinfo_ddr = 9;
+		break;
+	default:
+		RTK_LOGE(TAG, "DRAM is not Calibraion\r\n");
+		s_chipinfo_ddr = 0;
+		break;
+	}
+
 	return s_chipinfo_ddr;
 }
 
@@ -114,7 +193,7 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 
 	DDRPHY_Div_n_t = (DDR_Freq / DDRPHY_CKREF) - 3;
 	DDRPHY_Div_f_t = ((DDR_Freq * 2048) - (DDRPHY_CKREF * (DDRPHY_Div_n_t + 3)) * 2048) / DDRPHY_CKREF;
-	//DBG_8195A("DDRPHY DLL Div %d %d \n",DDRPHY_Div_n, DDRPHY_Div_f);
+	//RTK_LOGD(TAG, "DDRPHY DLL Div %d %d \n",DDRPHY_Div_n, DDRPHY_Div_f);
 
 	/* Set DDR PHY DLL divide parameters */
 	ddr_phy->DDRPHY_SSC2 = ((ddr_phy->DDRPHY_SSC2 & (~DDRPHY_MASK_DPI_F_CODE_T)) | DDRPHY_DPI_F_CODE_T(DDRPHY_Div_f_t));
@@ -127,7 +206,7 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 	ddr_phy->DDRPHY_SSC2 = ((ddr_phy->DDRPHY_SSC2 & (~DDRPHY_MASK_DPI_F_CODE)) | DDRPHY_DPI_F_CODE(DDRPHY_Div_f));
 	ddr_phy->DDRPHY_SSC3 = ((ddr_phy->DDRPHY_SSC3 & (~DDRPHY_MASK_DPI_N_CODE)) | DDRPHY_DPI_N_CODE(DDRPHY_Div_n));
 
-	//((Ncode_T * 2048 + Fcode_T ¡§C Ncode_ssc * 2048 - Fcode_ssc) * 33K * 2 ^ 11) / ((Frequency of CKREF) * 0.5)
+	//((Ncode_T * 2048 + Fcode_T Â¨C Ncode_ssc * 2048 - Fcode_ssc) * 33K * 2 ^ 11) / ((Frequency of CKREF) * 0.5)
 	u32 temp = (DDRPHY_Div_n_t * 2048 + DDRPHY_Div_f_t - DDRPHY_Div_n * 2048 - DDRPHY_Div_f) * 33 * 2048 / (DDRPHY_CKREF * 1000 / 2);
 	ddr_phy->DDRPHY_SSC1 = ((ddr_phy->DDRPHY_SSC1 & (~DDRPHY_MASK_DPI_GRAN_SET)) | DDRPHY_DPI_GRAN_SET(temp));
 #else
@@ -142,134 +221,27 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 	ddr_phy->DDRPHY_CRT_DMY = 0x1;
 #endif
 
-	if (QFN228_DDR3L()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x07060012;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x000f0707;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x080f0f0f;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x00000008;
+	u32 para_idx = DDR_PHY_ChipInfo();
+	/*PI Setting*/
+	ddr_phy->DDRPHY_PLL_PI0 = ddrphy_tx_scan[para_idx].PLL_PI0;
+	ddr_phy->DDRPHY_PLL_PI1 = ddrphy_tx_scan[para_idx].PLL_PI1;
+	ddr_phy->DDRPHY_PLL_PI2 = ddrphy_tx_scan[para_idx].PLL_PI2;
+	ddr_phy->DDRPHY_PLL_PI3 = ddrphy_tx_scan[para_idx].PLL_PI3;
 
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0x1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
+	/*output clock enable*/
+	ddr_phy->DDRPHY_PLL_CTL1 = ddrphy_tx_scan[para_idx].PLL_CTL1; //DDRPHY_DPI_OESYNC_OP_SEL(0x3c1)
+	ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
 
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
-		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
-	} else if (QFN144_DDR3L()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x0b0b0016;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00130b0b;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x0e131313;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x0000000e;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0x3c1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
-		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
-
-	} else if (QFN100_DDR2()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x0a0a0018;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00130a0a;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x0e131313;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x0000000e;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0x3c1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
+	/*TX/RX FIFO threshold setting*/
+	if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
 		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000033; // for DDR2
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
-	} else if (QFN144_DDR2()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x0e0e0018;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00170e0e;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x0e171717;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x0000000e;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0x3c1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
-		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000033; // for DDR2
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
-	} else if (QFN144_DDR2_BCUT()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x0f0f0016;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00180f0f;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x0e181818;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x0000000e;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0x3c1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
-		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000033; // for DDR2
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
-	} else if (QFN144_DDR3L_BCUT()) {
-		ddr_phy->DDRPHY_PLL_PI0 = 0x0e0e001a;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00170e0e;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x12171717;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x00000012;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = (ddr_phy->DDRPHY_PLL_CTL1 & ~DDRPHY_MASK_DPI_OESYNC_OP_SEL) | DDRPHY_DPI_OESYNC_OP_SEL(0xfc1);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x22222222;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | DDRPHY_MASK_CMD_RD_STR_NUM))
-									  | DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2);
-
-		/*TX/RX FIFO threshold setting*/
-		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x34000000;
 	} else {
-		DBG_PRINTF(MODULE_BOOT, LEVEL_ERROR, "DRAM is not Calibraion\r\n");
-		/*PI Setting*/
-		ddr_phy->DDRPHY_PLL_PI0 = 0x00000000;
-		ddr_phy->DDRPHY_PLL_PI1 = 0x00080000;
-		ddr_phy->DDRPHY_PLL_PI2 = 0x00080808;
-		ddr_phy->DDRPHY_PLL_PI3 = 0x00000000;
-
-		/*output clock enable*/
-		ddr_phy->DDRPHY_PLL_CTL1 = ddr_phy->DDRPHY_PLL_CTL1 & (~DDRPHY_MASK_DPI_OESYNC_OP_SEL);
-		ddr_phy->DDRPHY_PLL_CTL4 = ddr_phy->DDRPHY_PLL_CTL4 & (~DDRPHY_MASK_DPI_DLY_SEL); // ALL 0 or 0x10
-
-		/*TX/RX FIFO threshold setting*/
-		if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
-			ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000033;
-		} else {
-			ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
-		}
-
-		ddr_phy->DDRPHY_AFIFO_STR_0 = 0x33333333;
-		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & (~(DDRPHY_MASK_CMD_EX_RD_STR_NUM | \
-									   DDRPHY_MASK_CMD_RD_STR_NUM))) |  DDRPHY_CMD_EX_RD_STR_NUM(0x2) | \
-									  DDRPHY_CMD_RD_STR_NUM(0x2);
-		ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x00000000;
+		ddr_phy->DDRPHY_AFIFO_STR_2 = 0x00000022; // for real DDR3
 	}
+
+	ddr_phy->DDRPHY_AFIFO_STR_0 = ddrphy_tx_scan[para_idx].AFIFO_STR_0;
+	ddr_phy->DDRPHY_AFIFO_STR_1 = ddrphy_tx_scan[para_idx].AFIFO_STR_1; //DDRPHY_CMD_EX_RD_STR_NUM(0x1) | DDRPHY_CMD_RD_STR_NUM(0x2)
+	ddr_phy->DDRPHY_AFIFO_STR_SEL = ddrphy_tx_scan[para_idx].AFIFO_STR_SEL;
 
 #if DDR_SCAN_PARA
 	DDR_PHY_Scan_Result_Set();
@@ -280,7 +252,7 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 									  DDRPHY_CMD_EX_RD_STR_NUM(DDRPHY_GET_CMD_EX_RD_STR_NUM(ddr_phy->DDRPHY_AFIFO_STR_1) + 1);
 	}
 	if (DDRPHY_GET_CMD_EX_RD_STR_NUM(ddr_phy->DDRPHY_AFIFO_STR_1) != DDRPHY_GET_CMD_RD_STR_NUM(ddr_phy->DDRPHY_AFIFO_STR_1)) {
-		DBG_PRINTF(MODULE_BOOT, LEVEL_WARN, "CMD_EX_RD_STR_NUM != CMD_RD_STR_NUM\n");
+		RTK_LOGW(TAG, "CMD_EX_RD_STR_NUM != CMD_RD_STR_NUM\n");
 	}
 
 #endif
@@ -411,79 +383,25 @@ void DDR_PHY_CRT_Init(VOID)
 
 void DDR_PHY_R240_ZQ_CAL(VOID)
 {
+	u32 para_idx = DDR_PHY_ChipInfo();
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
 	/*R240 Calibration==>PAD_RZCTRL_STATUS[5:1]*/
-	if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR3L) {
-		//DDR3L use external 240ohm, no need to K R480
-	} else {
-		if (QFN100_DDR2()) {
-			ddr_phy->DDRPHY_PAD_RZCTRL_STATUS = (ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & ~DDRPHY_MASK_RZQ_480CODE) | DDRPHY_RZQ_480CODE(0x3);
-		} else if (QFN144_DDR2()) {
-			ddr_phy->DDRPHY_PAD_RZCTRL_STATUS = (ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & ~DDRPHY_MASK_RZQ_480CODE) | DDRPHY_RZQ_480CODE(0x6);
-		} else if (QFN144_DDR2_BCUT()) {
-			ddr_phy->DDRPHY_PAD_RZCTRL_STATUS = (ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & ~DDRPHY_MASK_RZQ_480CODE) | DDRPHY_RZQ_480CODE(0x4);
-		} else {
-			ddr_phy->DDRPHY_PAD_RZCTRL_STATUS = (ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & ~DDRPHY_MASK_RZQ_480CODE) | DDRPHY_RZQ_480CODE(0xF);
-		}
-	}
+	//DDR3L use external 240ohm, no need to K R480
+	ddr_phy->DDRPHY_PAD_RZCTRL_STATUS = (ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & ~DDRPHY_MASK_RZQ_480CODE) | DDRPHY_RZQ_480CODE(
+											ddrphy_zq_rx_scan[para_idx].RZQ_480CODE);
 
 	/*ZQ Calibration*/
 	/*ZQ K shall not set PAD_ZCTRL_RESULT, Because OCD/ODT will update to other register*/
-	if (QFN228_DDR3L() || QFN144_DDR3L()) {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET0 = 0x0E141414;//set3 ~ set0
-		ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;//set7 ~ set4
-		ddr_phy->DDRPHY_ODT_TTCN0_SET0 = 0x140E0E0E;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;//00 means closed by default
-		ddr_phy->DDRPHY_OCDP0_SET0 = 0x261F362E;//set3 ~ set0
-		ddr_phy->DDRPHY_OCDP1_SET0 = 0x00262626;//set7 ~ set4
-		ddr_phy->DDRPHY_OCDN0_SET0 = 0x261C3029;
-		ddr_phy->DDRPHY_OCDN1_SET0 = 0x00262626;
-	} else if (QFN100_DDR2()) {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET0 = 0x0a0e0c0c;//set3 ~ set0
-		ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;//set7 ~ set4
-		ddr_phy->DDRPHY_ODT_TTCN0_SET0 = 0x0c0b0a0a;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;//00 means closed by default
-		ddr_phy->DDRPHY_OCDP0_SET0 = 0x261e362c;//set3 ~ set0
-		ddr_phy->DDRPHY_OCDP1_SET0 = 0x26262626;//set7 ~ set4
-		ddr_phy->DDRPHY_OCDN0_SET0 = 0x26162620;
-		ddr_phy->DDRPHY_OCDN1_SET0 = 0x26262626;
-	} else if (QFN144_DDR2()) {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET0 = 0x0a0c0b0b;//set3 ~ set0
-		ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;//set7 ~ set4
-		ddr_phy->DDRPHY_ODT_TTCN0_SET0 = 0x0b0b0a0a;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;//00 means closed by default
-		ddr_phy->DDRPHY_OCDP0_SET0 = 0x26172721;//set3 ~ set0
-		ddr_phy->DDRPHY_OCDP1_SET0 = 0x26262626;//set7 ~ set4
-		ddr_phy->DDRPHY_OCDN0_SET0 = 0x2615231e;
-		ddr_phy->DDRPHY_OCDN1_SET0 = 0x26262626;
-	} else if (QFN144_DDR2_BCUT()) {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET1 = 0x090b0a0a;
-		ddr_phy->DDRPHY_ODT_TTCP1_SET1 = 0x00000000;
-		ddr_phy->DDRPHY_ODT_TTCN0_SET1 = 0x0a0a0909;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET1 = 0x00000000;
-		ddr_phy->DDRPHY_OCDP0_SET1 = 0x2615231e;
-		ddr_phy->DDRPHY_OCDP1_SET1 = 0x26262626;
-		ddr_phy->DDRPHY_OCDN0_SET1 = 0x2613201b;
-		ddr_phy->DDRPHY_OCDN1_SET1 = 0x26262626;
-	} else if (QFN144_DDR3L_BCUT()) {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET0 = 0x0E141414;//set3 ~ set0
-		ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;//set7 ~ set4
-		ddr_phy->DDRPHY_ODT_TTCN0_SET0 = 0x140E0E0E;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;//00 means closed by default
-		ddr_phy->DDRPHY_OCDP0_SET0 = 0x26243c34;//set3 ~ set0
-		ddr_phy->DDRPHY_OCDP1_SET0 = 0x26262626;//set7 ~ set4
-		ddr_phy->DDRPHY_OCDN0_SET0 = 0x261c3029;
-		ddr_phy->DDRPHY_OCDN1_SET0 = 0x26262626;
-	} else {
-		ddr_phy->DDRPHY_ODT_TTCP0_SET0 = 0x00000000;//set3 ~ set0
-		ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;//set7 ~ set4
-		ddr_phy->DDRPHY_ODT_TTCN0_SET0 = 0x00000000;
-		ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;//00 means closed by default
-		ddr_phy->DDRPHY_OCDP0_SET0 = 0x26262626;//set3 ~ set0
-		ddr_phy->DDRPHY_OCDP1_SET0 = 0x26262626;//set7 ~ set4
-		ddr_phy->DDRPHY_OCDN0_SET0 = 0x26262626;
-		ddr_phy->DDRPHY_OCDN1_SET0 = 0x26262626;
-	}
+	/*ODT_SEL set3 is the inverse of set1, OCD set7 keep closed by set to 00*/
+	ddr_phy->DDRPHY_ODT_TTCP0_SET0 = ddrphy_zq_rx_scan[para_idx].ODT_TTCP0_SET0; //set3 ~ set0
+	ddr_phy->DDRPHY_ODT_TTCP1_SET0 = 0x00000000;							  //set7 ~ set4
+	ddr_phy->DDRPHY_ODT_TTCN0_SET0 = ddrphy_zq_rx_scan[para_idx].ODT_TTCN0_SET0;
+	ddr_phy->DDRPHY_ODT_TTCN1_SET0 = 0x00000000;							  //00 means closed by default
+	ddr_phy->DDRPHY_OCDP0_SET0 = ddrphy_zq_rx_scan[para_idx].OCDP0_SET0;		  //set3 ~ set0
+	ddr_phy->DDRPHY_OCDP1_SET0 = 0x00262626;								  //set7 ~ set4
+	ddr_phy->DDRPHY_OCDN0_SET0 = ddrphy_zq_rx_scan[para_idx].OCDN0_SET0;
+	ddr_phy->DDRPHY_OCDN1_SET0 = 0x00262626;
+
 	/*toggle DDRPHY_PAD_CTRL_PROG[27](dzq_auto_up), this will trigger *_SET0 to *_SET1*/
 	ddr_phy->DDRPHY_PAD_CTRL_PROG |= DDRPHY_BIT_DZQ_AUTO_UP;
 	ddr_phy->DDRPHY_PAD_CTRL_PROG &= ~DDRPHY_BIT_DZQ_AUTO_UP;
@@ -577,23 +495,11 @@ void DDR_PHY_DELAY_TAP_SET(VOID)
 void DDR_PHY_READ_CTRL(VOID)
 {
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
-	if (QFN228_DDR3L() || QFN144_DDR3L()) {
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = 0x00000002; //byte0:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = 0x00000002; //byte1:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_1 = 0x00000003;
-	} else if (QFN100_DDR2() || QFN144_DDR2() || QFN144_DDR2_BCUT()) {
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = 0x00000002; //byte0:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = 0x00000002; //byte1:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_1 = 0x00000004;
-	} else if (QFN144_DDR3L_BCUT()) {
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = 0x00000003; //byte0:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = 0x00000003; //byte1:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_1 = 0x00000003;
-	} else {
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = 0x00000003; //byte0:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = 0x00000003; //byte1:dqs_en_dly[13:8],dqs_en[6:0]
-		ddr_phy->DDRPHY_READ_CTRL_1 = 0x00000003; //tm_rd_fifo[5:0]
-	}
+	u32 para_idx = DDR_PHY_ChipInfo();
+
+	ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = ddrphy_zq_rx_scan[para_idx].READ_CTRL_0_SET0; //byte0:dqs_en_dly[13:8],dqs_en[6:0]
+	ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = ddrphy_zq_rx_scan[para_idx].READ_CTRL_0_SET1; //byte1:dqs_en_dly[13:8],dqs_en[6:0]
+	ddr_phy->DDRPHY_READ_CTRL_1 = ddrphy_zq_rx_scan[para_idx].READ_CTRL_1; //tm_rd_fifo[5:0]
 
 	ddr_phy->DDRPHY_READ_CTRL_2_SETx[0] = 0x00000008;	//byte0:force_odt[23:22],odt_en_odd[3],odt_en_sel[2:1],odt_en_dly[0]
 	ddr_phy->DDRPHY_READ_CTRL_2_SETx[1] = 0x00000008;	//byte1:force_odt[23:22],odt_en_odd[3],odt_en_sel[2:1],odt_en_dly[0]
@@ -644,7 +550,7 @@ void DDR_PHY_WRITE_LEVELING_CAL(VOID)
 
 		/*check DQ value*/
 		if (ddr_phy->DDRPHY_DQ_PAT_IN0) {
-			DBG_8195A("WRITE_LEVELING_CAL dqs_pi = %d DQ_PAT_IN0 = %x\n", temp, ddr_phy->DDRPHY_DQ_PAT_IN0);
+			DiagPrintf("WRITE_LEVELING_CAL dqs_pi = %d DQ_PAT_IN0 = %x\n", temp, ddr_phy->DDRPHY_DQ_PAT_IN0);
 			break;
 		}
 	}
@@ -660,7 +566,8 @@ void DDR_PHY_WRITE_LEVELING_CAL(VOID)
 void DDR_PHY_READ_LEVELING(VOID)
 {
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
-	if (QFN228_DDR3L() || QFN144_DDR3L() || QFN100_DDR2() || QFN144_DDR2() || QFN144_DDR2_BCUT() || QFN144_DDR3L_BCUT()) {
+
+	if (DDR_PHY_ChipInfo()) {
 		ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[0] = 0x12121212;
 		ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[0] = 0x12121212;
 		ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[1] = 0x11111111;
@@ -729,9 +636,9 @@ void DDR_PHY_LoopBack(void)
 
 	DelayMs(25);
 	if ((ddr_phy->DDRPHY_BIST_2TO1_1 & DDRPHY_BIT_BIST_RDY) == ddr_phy->DDRPHY_BIST_2TO1_1) {
-		DBG_8195A("BIST_2TO1_1 = BIT[5], pass\n");
+		RTK_LOGI(TAG, "BIST_2TO1_1 = BIT[5], pass\n");
 	}
-	DBG_8195A("BIST_2TO1_1 is 0x%x\n", ddr_phy->DDRPHY_BIST_2TO1_1);
+	RTK_LOGI(TAG, "BIST_2TO1_1 is 0x%x\n", ddr_phy->DDRPHY_BIST_2TO1_1);
 }
 #endif
 
@@ -833,6 +740,7 @@ void DDR_PHY_AutoGating(void)
 	Rtemp &= ~(0x3c);
 	Rtemp |= DDRPHY_DPI_RW_PWROFF_MODE(0x1) | DDRPHY_DPI_CA_PWROFF_MODE(0x1);
 	ddr_phy->DDRPHY_PLL_CTL5 = Rtemp;
+	DelayUs(50);
 
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
 	Rtemp |= HSYS_BIT_PWDPAD_DQ_EN | HSYS_BIT_PI_PWROFF_EN ; //don't write 1 if user mode  HSYS_BIT_PWDPAD_DQ_EN HSYS_BIT_PI_PWROFF_EN

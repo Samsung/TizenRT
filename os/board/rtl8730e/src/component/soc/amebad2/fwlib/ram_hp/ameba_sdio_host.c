@@ -1,5 +1,5 @@
 #include "ameba_soc.h"
-
+static const char *TAG = "SDIO";
 SDIOH_InitTypeDef sdioh_init_para;
 
 /**
@@ -22,15 +22,15 @@ u32 SDIOH_Busy(void)
 			if ((psdioh->SD_TRANSFER & SDIOH_SD_MODULE_FSM_IDLE)) {
 				return HAL_OK;
 			} else {
-				DBG_PRINTF(MODULE_SDIO, LEVEL_INFO, "SD card module state machine isn't in the idle state !\r\n");
+				RTK_LOGW(TAG, "SD card module state machine isn't in the idle state !\r\n");
 				return HAL_BUSY;
 			}
 		} else {
-			DBG_PRINTF(MODULE_SDIO, LEVEL_INFO, "CMD or DATA state machine isn't in the idle state !!\r\n");
+			RTK_LOGW(TAG, "CMD or DATA state machine isn't in the idle state !!\r\n");
 			return HAL_BUSY;
 		}
 	} else {
-		DBG_PRINTF(MODULE_SDIO, LEVEL_INFO, "CMD or DAT[3:0] pin isn't in the idle state !!\r\n");
+		RTK_LOGW(TAG, "CMD or DAT[3:0] pin isn't in the idle state !!\r\n");
 		return HAL_BUSY;
 	}
 }
@@ -91,10 +91,21 @@ u32 SDIOH_WaitTxDone(u32 timeout_us)
   *           - HAL_TIMEOUT: SDIOH DMA timeout.
   *           - HAL_OK: SDIOH DMA done within a specified time.
   */
-u32 SDIOH_WaitDMADone(u32 timeout_us)
+u32 SDIOH_WaitDMADone(u32 timeout_us, SD_DMASemaStruct *SD_SemStruct)
 {
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
+	/*If scheduling has already started, wait for sema to obtain the DMA done signal.*/
+	if ((CPU_InInterrupt() == 0) && (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
 
+		SDIOH_INTConfig(SDIOH_DMA_CTL_INT_EN, ENABLE);
+
+		if (SD_SemStruct->SDWaitSem(SD_SEMA_MAX_DELAY) != pdTRUE) {
+			RTK_LOGE(TAG, " SD Get Semaphore Timeout\r\n");
+			return HAL_TIMEOUT;
+		}
+	}
+
+	/*If scheduling has already started, poll transfer status; otherwise, poll transfer and DMA_ Xfree status.*/
 	do {
 		if ((psdioh->SD_TRANSFER & SDIOH_TRANSFER_END) && (!(psdioh->DMA_CRL3 & SDIOH_DMA_XFER))) {
 			SDIOH_DMAReset();
@@ -121,6 +132,9 @@ u32 SDIOH_GetISR(void)
 
 /**
   * @brief  SDIOH interrupt configure.
+  * 		BIT[SDIO_IT] == 1 && BIT[0] == 1 -> SDIO_IT en will be set 1
+  * 		BIT[SDIO_IT] == 1 && BIT[0] == 0 -> SDIO_IT en will be set 0
+  * 		Bit0 can only be written and cannot be read, with a default read value of 0
   * @param  SDIO_IT: SDIOH interrupt source, which can be one or combination of the following values:
   * 		@arg SDIOH_DMA_CTL_INT_EN
   * 		@arg SDIOH_CARD_ERR_INT_EN
@@ -133,9 +147,10 @@ void SDIOH_INTConfig(u8 SDIO_IT, u32 newState)
 	SDIOH_TypeDef *psdioh = SDIOH_BASE;
 
 	if (newState == ENABLE) {
-		psdioh->SD_ISREN |= SDIO_IT;
+		psdioh->SD_ISREN |= (SDIO_IT | SDIOH_WRITE_DATA);
 	} else {
-		psdioh->SD_ISREN &= ~SDIO_IT;
+		/*Bit0 reads as 0*/
+		psdioh->SD_ISREN |= SDIO_IT;
 	}
 }
 

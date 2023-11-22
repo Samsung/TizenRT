@@ -179,3 +179,18 @@ u32 IsRDPenabled(void)
 	return FALSE;
 }
 
+
+/**
+  * @brief  Get CPU interrupt status.
+  * @return CPU interrupt status 0/1
+  */
+u32 CPU_InInterrupt(void)
+{
+#ifdef ARM_CORE_CA32
+	return (__get_mode() != CPSR_M_USR) && (__get_mode() != CPSR_M_SYS);
+#else
+	return __get_IPSR() != 0;
+
+#endif
+}
+

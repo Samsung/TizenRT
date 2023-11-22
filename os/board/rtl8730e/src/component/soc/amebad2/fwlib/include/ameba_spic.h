@@ -1056,14 +1056,6 @@ typedef struct {
 	u32 end_addr;
 } FlashLayoutInfo_TypeDef;
 
-extern u8 ftl_phy_page_num;
-extern u32 ftl_phy_page_start_addr;
-extern u32 VFS1_FLASH_BASE_ADDR;
-extern u32 VFS1_FLASH_SIZE;
-extern u32 VFS2_FLASH_BASE_ADDR;
-extern u32 VFS2_FLASH_SIZE;
-void flash_layout_init(void);
-
 /* MANUAL_GEN_END */
 
 #endif

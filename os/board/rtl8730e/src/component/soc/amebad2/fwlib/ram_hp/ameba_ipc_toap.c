@@ -1,6 +1,7 @@
 #include "ameba_soc.h"
 #include <stdarg.h>
 
+static const char *TAG = "IPC";
 #define LINUX_IPC_OTP_PHY_READ8		   	0
 #define LINUX_IPC_OTP_PHY_WRITE8		1
 #define LINUX_IPC_OTP_LOGI_READ_MAP		2
@@ -45,7 +46,7 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 		ipc_send_message(IPC_NP_TO_AP, IPC_N2A_OTP_TX_TRAN, (PIPC_MSG_STRUCT)&ipc_msg);
 		DCache_CleanInvalidate((u32)&ipc_msg, sizeof(IPC_MSG_STRUCT));
 
-		DBG_8195A("Invalid Parmeter !\n");
+		RTK_LOGE(TAG, "Invalid Parmeter !\n");
 		return ;
 	}
 
@@ -146,6 +147,13 @@ VOID linux_ipc_otp_instruction(VOID *Data, u32 IrqStatus, u32 ChanNum)
 }
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_linux_table[] = {
-	{IPC_USER_DATA,	linux_ipc_otp_instruction,	(VOID *) NULL,	IPC_AP_TO_NP,	IPC_A2N_OTP_RX_TRAN,	IPC_RX_FULL},
+const IPC_INIT_TABLE ipc_linux_table = {
+	.USER_MSG_TYPE = IPC_USER_DATA,
+	.Rxfunc = linux_ipc_otp_instruction,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_AP_TO_NP,
+	.IPC_Channel = IPC_A2N_OTP_RX_TRAN
 };
+

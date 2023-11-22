@@ -18,6 +18,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "OTP";
 /**
   * @brief  OTP power cut Enable or Disable.
   * @param  Newstatus :specifies the target power cut status
@@ -166,7 +167,7 @@ u32 OTP_Read8(u32 Addr, u8 *Data)
 	} else {
 		*Data = 0xff;
 		bResult = _FAIL;
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_Read8 Fail %x \n", Addr);
+		RTK_LOGE(TAG, "OTP_Read8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE, DISABLE);
@@ -224,7 +225,7 @@ static BOOL OTP_ProgramMarginRead8(u32 Addr, u8 *Data)
 	} else {
 		*Data = 0xff;
 		bResult = _FAIL;
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_Read8 Fail %x \n", Addr);
+		RTK_LOGE(TAG, "OTP_Read8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE,  DISABLE);
@@ -283,7 +284,7 @@ static u32 _OTP_Write8(u32 Addr, u8 Data)
 		bResult = _SUCCESS;
 	} else {
 		bResult = _FAIL;
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_Write8 Fail %x \n", Addr);
+		RTK_LOGW(TAG, "OTP_Write8 Fail %x \n", Addr);
 	}
 
 	OTPPowerSwitch(DISABLE, DISABLE);
@@ -310,7 +311,7 @@ u32 OTP_Write8(u32 Addr, u8 Data)
 	Target = Data;
 
 	if (OTP_ProgramMarginRead8(Addr, &Temp) == _FAIL) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "PMR Read error!\n");
+		RTK_LOGE(TAG, "PMR Read error!\n");
 		goto exit;
 	}
 
@@ -322,13 +323,13 @@ retry:
 
 	/*program*/
 	if (_OTP_Write8(Addr, Data) == _FAIL) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP program error!\n");
+		RTK_LOGE(TAG, "OTP program error!\n");
 		goto exit;
 	}
 
 	/*Read after program*/
 	if (OTP_ProgramMarginRead8(Addr, &Temp) == _FAIL)  {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "PMR2 Read error!\n");
+		RTK_LOGE(TAG, "PMR2 Read error!\n");
 		goto exit;
 	}
 
@@ -394,10 +395,10 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_WARN, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
 	}
 
-	DBG_PRINTF(MODULE_OTP, LEVEL_INFO, "OTP_PG_Packet Byte  [%x] %x \n", offset, Contant);
+	RTK_LOGI(TAG, "OTP_PG_Packet Byte  [%x] %x \n", offset, Contant);
 
 	//count the physical written num of word
 	while (Idx < LOGICAL_MAP_SECTION_LEN) {
@@ -420,7 +421,7 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 	}
 
 	if (Idx  > LOGICAL_MAP_SECTION_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_PG_Packet no enough space %x \n", Idx);
+		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \n", Idx);
 		return _FAIL;
 	}
 
@@ -450,17 +451,17 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 	/* 4byte align and size should less than 16bytes*/
 	if ((len > OTP_LPGPKT_SIZE)  || ((len & 0x03) != 0)) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_PG_Packet_Word size error :%x len:%x \n", offset, len);
+		RTK_LOGE(TAG, "OTP_PG_Packet_Word size error :%x len:%x \n", offset, len);
 		return _FAIL;
 	}
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_WARN, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
 	}
 
 	for (IdxTemp = 0; IdxTemp < len; IdxTemp++) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_INFO, "OTP_PG_Packet [%x] %x \n", IdxTemp, *(pContant + IdxTemp));
+		DiagPrintf("OTP_PG_Packet [%x] %x \n", IdxTemp, *(pContant + IdxTemp));
 	}
 
 	//count the physical written num of word
@@ -485,7 +486,7 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 
 	if (Idx + len > LOGICAL_MAP_SECTION_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "OTP_PG_Packet no enough space %x \n", Idx);
+		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \n", Idx);
 		return _FAIL;
 	}
 
@@ -517,7 +518,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 	u8 data, plen, type;
 
 	if ((addr + len) > OTP_LMAP_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "LogicalMap Read error %x+%x  exceed limit\n", addr, len);
+		RTK_LOGE(TAG, "LogicalMap Read error %x+%x  exceed limit\n", addr, len);
 		return _FAIL;
 	}
 
@@ -528,7 +529,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		OTP_Read32(OTP_Addr, &OTPData);
 
 		if (OTPData == 0xFFFFFFFF) {/* not write */
-			DBG_PRINTF(MODULE_OTP, LEVEL_INFO, "OTP_LogicalMap_Read: data end at address=%x\n", OTP_Addr);
+			RTK_LOGI(TAG, "OTP_LogicalMap_Read: data end at address=%x\n", OTP_Addr);
 			break;
 		}
 
@@ -577,7 +578,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		}
 
 		if ((OTP_Addr & 0x03) != 0) {
-			DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "alignment error %x %x \n", OTP_Addr, OTPData);
+			RTK_LOGE(TAG, "alignment error %x %x \n", OTP_Addr, OTPData);
 		}
 
 	}
@@ -608,7 +609,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 	u8 write_pkt;
 
 	if ((addr + cnts) > OTP_LMAP_LEN) {
-		DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "LogicalMap Write error %x+%x  exceed limit\n", addr, cnts);
+		RTK_LOGE(TAG, "LogicalMap Write error %x+%x  exceed limit\n", addr, cnts);
 		return _FAIL;
 	}
 
@@ -622,7 +623,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 		ret = OTP_LogicalMap_Read(newdata, base, OTP_LPGPKT_SIZE);
 
 		if (ret == _FAIL) {
-			DBG_PRINTF(MODULE_OTP, LEVEL_ERROR, "LogicalMap Read error when write @ %x \n", base);
+			RTK_LOGE(TAG, "LogicalMap Read error when write @ %x \n", base);
 			return _FAIL;
 		}
 
@@ -633,7 +634,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 				bytemap |= BIT(i);
 				wordmap |= BIT(i >> 2);
 				byte_change++;
-				DBG_PRINTF(MODULE_OTP, LEVEL_INFO, "newdata[%x]= %x\n", i, newdata[i]);
+				DiagPrintf("newdata[%x]= %x\n", i, newdata[i]);
 			}
 		}
 
@@ -682,7 +683,7 @@ next:
 		wordmap = 0;
 		byte_change = 0;
 
-		DBG_PRINTF(MODULE_OTP, LEVEL_INFO, "next write cycle Base %x cnts %x \n", base, left_cnts);
+		RTK_LOGI(TAG, "next write cycle Base %x cnts %x \n", base, left_cnts);
 	}
 
 	return ret;

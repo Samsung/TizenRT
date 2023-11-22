@@ -1627,4 +1627,3 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 
 
 /******************* (C) COPYRIGHT 2017 Realtek Semiconductor *****END OF FILE****/
-

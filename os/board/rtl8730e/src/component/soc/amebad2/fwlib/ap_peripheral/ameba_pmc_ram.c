@@ -21,6 +21,8 @@
   */
 
 #include "ameba_soc.h"
+
+static const char *TAG = "PMC";
 extern SLEEP_ParamDef sleep_param;
 
 /**
@@ -99,7 +101,7 @@ int SOCPS_AONWakeReason(void)
 void SOCPS_Sleep(void)
 {
 	DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
-	DBG_8195A("CA32 sleep\n");
+	RTK_LOGI(TAG, "CA32 sleep\n");
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_TICKLESS_INDICATION, (PIPC_MSG_STRUCT)&sleep_param);
 
 	asm volatile("wfe");
@@ -118,6 +120,16 @@ void SOCPS_LPWAP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 }
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_LPWHP_table[] = {
-	{IPC_USER_DATA, 	SOCPS_LPWAP_ipc_int,	(VOID *) NULL, IPC_LP_TO_AP, IPC_L2A_Channel1, IPC_RX_FULL},
+
+const IPC_INIT_TABLE ipc_LPWHP_table[] = {
+	{
+		.USER_MSG_TYPE = IPC_USER_DATA,
+		.Rxfunc = SOCPS_LPWAP_ipc_int,
+		.RxIrqData = (VOID *) NULL,
+		.Txfunc = IPC_TXHandler,
+		.TxIrqData = (VOID *) NULL,
+		.IPC_Direction = IPC_LP_TO_AP,
+		.IPC_Channel = IPC_L2A_Channel1
+	},
+
 };

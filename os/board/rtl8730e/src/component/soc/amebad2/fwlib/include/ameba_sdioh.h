@@ -366,6 +366,15 @@ typedef struct {
 } SDIOH_CmdTypeDef;
 
 /**
+  * @brief  SDHOST SEMA Structure Definition
+  */
+typedef struct {
+	u32(*SDSendSem)(u32 timeout);     /*!< Interface for releasing semaphores */
+	u32(*SDWaitSem)(u32 timeout);     /*!< Interface for acquiring semaphores */
+	void *Psd_sema;					  /*!< Specify semaphores */
+} SD_DMASemaStruct, *PSD_DMASemaStruct;
+
+/**
   * @}
   */
 
@@ -534,7 +543,7 @@ typedef struct {
 _LONG_CALL_ u32 SDIOH_Busy(void);
 _LONG_CALL_ u32 SDIOH_CheckTxError(u16 *status);
 _LONG_CALL_ u32 SDIOH_WaitTxDone(u32 timeout_us);
-_LONG_CALL_ u32 SDIOH_WaitDMADone(u32 timeout_us);
+_LONG_CALL_ u32 SDIOH_WaitDMADone(u32 timeout_us,  SD_DMASemaStruct *SD_SemStruct);
 _LONG_CALL_ u32 SDIOH_GetISR(void);
 _LONG_CALL_ void SDIOH_INTConfig(u8 SDIO_IT, u32 newState);
 _LONG_CALL_ void SDIOH_INTClearPendingBit(u8 SDIO_IT);
@@ -552,6 +561,7 @@ _LONG_CALL_ void SDIOH_DeInit(void);
 _LONG_CALL_ void SDIOH_DebounceCmd(u8 NewState);
 _LONG_CALL_ void SDIOH_DebounceSet(u32 debouncevalue);
 _LONG_CALL_ u32 SDIOH_DebounceGet(void);
+
 /**
 * @}
 */

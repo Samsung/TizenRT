@@ -40,7 +40,6 @@
 #define HEADER_LEN			8
 #define SUB_HEADER_LEN		24
 
-extern u32 IMG_ADDR[3][2];
 
 /* Exported constants --------------------------------------------------------*/
 

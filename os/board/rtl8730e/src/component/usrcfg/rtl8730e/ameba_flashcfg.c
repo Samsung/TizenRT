@@ -19,10 +19,6 @@
 
 #include "ameba_soc.h"
 
-void flash_init_userdef(void);
-void nand_init_userdef(void);
-void flash_layout_init(void);
-
 /**
 * @brif Indicate the flash baudrate. It can be one of the following value:
 *	0xFFFF: division ratio is 10 => SPIC clock = 1/10 nppll
@@ -46,19 +42,6 @@ const u16 Flash_Speed = 0x7FF;
 */
 const u16 Flash_ReadMode = 0xFFFF;
 
-/* ftl */
-
-u8 ftl_phy_page_num = 3;			/* The number of physical map pages, default is 3*/
-u32 ftl_phy_page_start_addr;		/* The start offset of flash pages which is allocated to FTL physical map.
-																	Users should modify it according to their own memory layout!! */
-
-u32 IMG_ADDR[3][2] = {0}; 			/* IMG Flash Physical Address use for OTA */
-
-u32 VFS1_FLASH_BASE_ADDR;
-u32 VFS1_FLASH_SIZE;
-
-u32 VFS2_FLASH_BASE_ADDR;
-u32 VFS2_FLASH_SIZE;
 /**
 * @brif Flash_AVL maintains the flash IC supported by SDK.
 *	If users want to adpot new flash, add item in the following AVL.
@@ -293,51 +276,39 @@ void nand_init_userdef(void)
 	FLASH_InitStruct->FLASH_ECC_EN_bit = NAND_CFG_ECC_ENABLE;
 }
 
-/**
- * @brief  Initialize ota image flash physical address, littlefs base, ftl base, reserved base and system data address.
- * @param none.
- * @retval none
- */
-void flash_layout_init(void)
+void flash_get_layout_info(u32 type, u32 *start, u32 *end)
 {
 	u32 i = 0;
-	u32 temp;
+	u32 tmp_type;
 	FlashLayoutInfo_TypeDef *pLayout;
 
+#ifdef CONFIG_LINUX_FW_EN
+	if (SYSCFG_BootFromNor()) {
+		pLayout = Flash_Layout_Nor_Linux;
+	} else {
+		pLayout = Flash_Layout_Nand_Linux;
+	}
+#else
 	if (SYSCFG_BootFromNor()) {
 		pLayout = Flash_Layout_Nor;
 	} else {
 		pLayout = Flash_Layout_Nand;
 	}
+#endif
 
 	while (pLayout[i].region_type != 0xFF) {
-		temp = pLayout[i].region_type;
-		if (temp == IMG_BOOT) {
-			IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_1] = pLayout[i].start_addr;
-		} else if (temp == IMG_BOOT_OTA2) {
-			IMG_ADDR[OTA_IMGID_BOOT][OTA_INDEX_2] = pLayout[i].start_addr;
-		} else if (temp == IMG_APP_OTA1) {
-			IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_1] = pLayout[i].start_addr;
-		} else if (temp == IMG_APP_OTA2) {
-			IMG_ADDR[OTA_IMGID_APP][OTA_INDEX_2] = pLayout[i].start_addr;
-		} else if (temp == IMG_APIMG_OTA1) {
-			IMG_ADDR[OTA_IMGID_APIMG][OTA_INDEX_1] = pLayout[i].start_addr;
-		} else if (temp == IMG_APIMG_OTA2) {
-			IMG_ADDR[OTA_IMGID_APIMG][OTA_INDEX_2] = pLayout[i].start_addr;
-		} else if (temp == FTL) {
-			ftl_phy_page_start_addr = pLayout[i].start_addr - SPI_FLASH_BASE;
-			ftl_phy_page_num = (pLayout[i].end_addr - pLayout[i].start_addr + 1) / PAGE_SIZE_4K;
-		} else if (temp == VFS1) {
-			VFS1_FLASH_BASE_ADDR = pLayout[i].start_addr - SPI_FLASH_BASE;
-			VFS1_FLASH_SIZE = pLayout[i].end_addr - pLayout[i].start_addr + 1;
-		} else if (temp == VFS2) {
-			VFS2_FLASH_BASE_ADDR = pLayout[i].start_addr - SPI_FLASH_BASE;
-			VFS2_FLASH_SIZE = pLayout[i].end_addr - pLayout[i].start_addr + 1;
+		tmp_type = pLayout[i].region_type;
+		if (tmp_type == type) {
+			if (start != NULL) {
+				*start = pLayout[i].start_addr;
+			}
+			if (end != NULL) {
+				*end = pLayout[i].end_addr;
+			}
+			return;
 		}
-
 		i++;
 	}
-
 }
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

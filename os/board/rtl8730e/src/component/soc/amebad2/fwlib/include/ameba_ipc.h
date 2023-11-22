@@ -1,4 +1,4 @@
-#ifndef _AMEBAD2_IPC_H_
+﻿#ifndef _AMEBAD2_IPC_H_
 #define _AMEBAD2_IPC_H_
 
 /* AUTO_GEN_START */
@@ -170,11 +170,12 @@ typedef enum {
  */
 typedef struct _IPC_INIT_TABLE_ {
 	u32 USER_MSG_TYPE;
-	void (*func)(VOID *Data, u32 IrqStatus, u32 ChanNum);
-	VOID *IrqData;
+	void (*Rxfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
+	void *RxIrqData;
+	void (*Txfunc)(void *Data, u32 IrqStatus, u32 ChanNum);
+	void *TxIrqData;
 	u32 IPC_Direction;	/* direction of ipc, this parameter is from @IPC_Direction_Mode*/
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_LP_Tx_Channel or @IPC_NP_Tx_Channel or @IPC_AP_Tx_Channel*/
-	u32 IPC_Intr_Mode;	/*Tx or Rx Intr, this parameter is from @IPC_INTR_Mode */
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
 /**
@@ -211,6 +212,15 @@ typedef struct _IPC_INIT_TABLE_ {
 									((MODE) == IPC_NP_TO_AP) || \
 									((MODE) == IPC_AP_TO_LP) || \
 									((MODE) == IPC_AP_TO_NP))
+
+#define IS_SEND_TO_NP(MODE)		(((MODE) == IPC_LP_TO_NP) || \
+								((MODE) == IPC_AP_TO_NP))
+
+#define IS_SEND_TO_AP(MODE)		(((MODE) == IPC_LP_TO_AP) || \
+								((MODE) == IPC_NP_TO_AP))
+
+#define IS_SEND_TO_LP(MODE)		(((MODE) == IPC_NP_TO_LP) || \
+								((MODE) == IPC_AP_TO_LP))
 /**
   * @}
   */
@@ -226,14 +236,36 @@ typedef struct _IPC_INIT_TABLE_ {
   * @}
   */
 
-/** @defgroup IPC_TX_CHANNEL
+/** @defgroup IPC_CHANNEL
   * @{
   */
 #define IPC_TX_CHANNEL_NUM						16
 #define IPC_TX_CHANNEL_SWITCH(x)				((u32)(((x >> 4) & 0x0000000F)))
 #define IPC_TX0_CHANNEL_NUM						8
 #define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
+#define IS_IPC_RX_CHNUM(NUM) 					((NUM) >= 16)
+#define IPC_CHANNEL_NUM 						32
 
+
+
+/**
+  * @}
+  */
+
+/** @defgroup IPC_Valid_CHNUM
+  * @{
+  */
+#define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
+/**
+  * @}
+  */
+
+
+
+/** @defgroup IPC_Valid_CPUID
+  * @{
+  */
+#define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2)
 /**
   * @}
   */
@@ -276,9 +308,9 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_N2A_WIFI_TRX_TRAN					0	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN					1	/*!<  NP -->  AP API WIFI Message Exchange */
-#define IPC_N2A_FTL_DATA_TRAN					2	/*!<  NP -->  AP FTL Message Exchange */
+//#define IPC_N2A_Channel2						2	/*!<  NP -->  AP */
 #define IPC_N2A_BT_API_TRAN						3	/*!<  NP -->  AP BT API Exchange */
-#define IPC_N2A_BT_DATA_TRAN					4	/*!<  NP -->  AP BT DATA Message Exchange */
+#define IPC_N2A_BT_DRC_TRAN						4	/*!<  NP -->  AP BT DATA Message Exchange */
 #define IPC_N2A_802154_TRAN						5
 #define IPC_N2A_OTP_TX_TRAN						6
 #define IPC_N2A_IMQ_TRX_TRAN					7	/*!<  NP -->  AP IMQ Message Exchange */
@@ -300,9 +332,9 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_A2N_WIFI_TRX_TRAN					0	/*!<  AP -->  NP WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
-#define IPC_A2N_FTL_ACK_TRAN					2	/*!<  AP -->  NP API FTL Message Exchange */
+//#define IPC_A2N_Channel2					2	/*!<  AP -->  NP */
 #define IPC_A2N_BT_API_TRAN						3	/*!<  AP -->  NP BT API Exchange */
-#define IPC_A2N_BT_DATA_TRAN					4	/*!<  AP -->  NP BT DATA Message Exchange */
+#define IPC_A2N_BT_DRC_TRAN						4	/*!<  AP -->  NP BT DATA Message Exchange */
 #define IPC_A2N_802154_TRAN						5
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
@@ -346,6 +378,7 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
 void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData);
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
 
 /**
   * @}

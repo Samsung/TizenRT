@@ -1155,4 +1155,3 @@ extern const AUDIO_DevTable AUDIO_DEV_TABLE[4];
 /* MANUAL_GEN_END */
 
 #endif
-

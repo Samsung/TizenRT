@@ -299,24 +299,8 @@ extern PRAM_START_FUNCTION BOOT_SectionInit(void);
 
 extern RAM_START_FUNCTION Img2EntryFun0; //RamWakeupFun
 
-extern u8 Boot_Log_En;
-extern u8 Boot_AP_Enbale;
-extern u8 Boot_PSRAM_APM;
-extern u8 Force_OTA1_GPIO;
-extern u32 Boot_TCM_Size;
 extern u32 OTA_Region[3][2];
 extern u32 HUK_Derive_En;
-extern MMU_ConfDef Flash_MMU_Config[];
-extern RCC_ConfDef RCC_Config[];
-extern RSIP_OTFDef RSIP_OTF_Config[];
-extern FuncPtr FwCheckCallback;
-extern FuncPtr OTASelectHook;
-extern GRST_ConfDef GRST_Config[];
-extern CACHETCM_TypeDef CACHETCM_Def[];
-extern CACHEWRR_TypeDef CACHEWRR_Def[];
-extern SocClk_Info_TypeDef SocClk_Info[];
-extern u8 Boot_MemSwr_Only;
-extern u8 Boot_Agg_En;
 
 #define DDR_AUTOGATING		ENABLE
 

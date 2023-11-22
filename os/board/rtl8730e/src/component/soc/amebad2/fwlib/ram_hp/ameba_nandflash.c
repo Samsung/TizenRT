@@ -10,12 +10,8 @@
 #include "ameba_soc.h"
 #include "ameba_nandflash.h"
 
+static const char *TAG = "NANDFLASH";
 u32 nand_l2p_table[2]; /*init to zero in __image1__*/
-#ifdef CONFIG_LINUX_FW_EN
-extern FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[];
-#else
-extern FlashLayoutInfo_TypeDef Flash_Layout_Nand[];
-#endif
 
 /*block_id shall less than 32, bacause the max region is 0x08300000 */
 u32 NAND_CHECK_IS_BAD_BLOCK(u32 block_id)
@@ -33,7 +29,7 @@ u32 NAND_CHECK_IS_BAD_BLOCK(u32 block_id)
 	NAND_Page_Read(NAND_BLOCK_ID_TO_PAGE_ADDR(block_id), NAND_PAGE_SIZE_MAIN, 4, oob);
 	if ((oob[0] != 0xFF) || (oob[1] != 0xFF)) {
 		NAND_L2P_TABLE_SET_BAD(block_id);
-		DBG_PRINTF(MODULE_BOOT, LEVEL_ERROR, "Blk 0x%x is BB!\n", block_id);
+		RTK_LOGE(TAG, "Blk 0x%x is BB!\n", block_id);
 		return TRUE;
 	}
 
@@ -58,27 +54,10 @@ u32 Nand_Get_NandAddr(u32 RegionStart, u32 HostAddr)
 
 u32 Nand_L2P_Table(u32 HostAddr)
 {
-	u32 i = 0;
-	u32 temp;
 	u32 app_phy_start_addr;
 	u32 app_phy_end_addr;
-	FlashLayoutInfo_TypeDef *pLayout;
 
-#ifdef CONFIG_LINUX_FW_EN
-	pLayout = Flash_Layout_Nand_Linux;
-#else
-	pLayout = Flash_Layout_Nand;
-#endif
-
-	while (pLayout[i].region_type != 0xFF) {
-		temp = pLayout[i].region_type;
-		if (temp == IMG_APP_OTA1) {
-			app_phy_start_addr = pLayout[i].start_addr;
-			app_phy_end_addr = pLayout[i].end_addr;
-			break;
-		}
-		i++;
-	}
+	flash_get_layout_info(IMG_APP_OTA1, &app_phy_start_addr, &app_phy_end_addr);
 
 	if (HostAddr < app_phy_start_addr) { /* KM4_BOOT */
 		return Nand_Get_NandAddr(SPI_FLASH_BASE, HostAddr);
@@ -124,8 +103,8 @@ void NandImgCopy(u8 *pData, u8 *HostAddr, size_t DataLen)
 		/*Read Data from NandAddr to NandAddr+DataLen, and put the return data into pData[pData_Offset].*/
 		u8 status = NAND_Page_Read(PageAddr, ByteAddr, ByteLen, &pData[pData_Offset]);
 		if (0 != (status & NAND_STATUS_ECC_MASK)) {
-			DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "Read Page 0x%x of Block 0x%x May Fail, status 0x%x!\n",
-					   PageAddr & NAND_BLOCK_PAGE_MASK, NAND_PAGE_ADDR_TO_BLOCK_ID(PageAddr), status);
+			RTK_LOGI(TAG, "Read Page 0x%x of Block 0x%x May Fail, status 0x%x!\n",
+					 PageAddr & NAND_BLOCK_PAGE_MASK, NAND_PAGE_ADDR_TO_BLOCK_ID(PageAddr), status);
 		}
 
 		pData_Offset = pData_Offset + ByteLen;

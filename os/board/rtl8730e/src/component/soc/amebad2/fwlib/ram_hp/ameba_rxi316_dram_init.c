@@ -18,6 +18,7 @@
 #include "ameba_soc.h"
 #include "ameba_ddr_param_defs.h"
 
+static const char *TAG = "DDR";
 #define FRQC_TEST             0
 
 //////////////////////////////////////////////////
@@ -42,7 +43,7 @@ u8 ddr_init_index(void)
 
 	while (1) {
 		// let the program stuck here
-		DBG_8195A("DDR Size is not configured\n");
+		RTK_LOGE(TAG, "DDR Size is not configured\n");
 		DelayMs(10000);
 	}
 }
@@ -261,10 +262,10 @@ void rxi316_perf_tune(struct rxi316_dram_device_info *rxi316_dram_info)
 		dram_bank_bits = 3;
 	}
 	if (colu_remap_bits != (dram_colu_bits - 2)) {
-		DBG_8195A("> [ADDR REMAP ERROR]: colu_remap_bits != dram_colu_bits!!!\n");
+		RTK_LOGE(TAG, "> [ADDR REMAP ERROR]: colu_remap_bits != dram_colu_bits!!!\n");
 	}
 	if (bank_remap_bits != dram_bank_bits) {
-		DBG_8195A("> [ADDR REMAP ERROR]: bank_remap_bits != dram_bank_bits!!!\n");
+		RTK_LOGE(TAG, "> [ADDR REMAP ERROR]: bank_remap_bits != dram_bank_bits!!!\n");
 	}
 	//printf("> colu_remap_bits     = %d\n",   colu_remap_bits);
 	//printf("> dram_colu_bits      = %d\n",   dram_colu_bits);
@@ -1073,7 +1074,7 @@ u32 ddr_size_detect(void)
 	/*the actual application size is no more than 2GB, according to spec, the PAGE size is no more than 2MB*/
 	/*the DQ is restrict to 16, so Column bit is no more than 10 bits*/
 	/*firstly we use ddr2_dq16_bus_addr_remap_info info to detect*/
-	/* now DDR2 have three density: 256Mb¡ê? 512Mb, and 1Gb*/
+	/* now DDR2 have three density: 256Mbï¿½ï¿½? 512Mb, and 1Gb*/
 
 	HAL_WRITE32(DDR_BASE, 0, 0);
 	HAL_WRITE32(DDR_BASE, 0x400, 0x400);
@@ -1081,8 +1082,8 @@ u32 ddr_size_detect(void)
 	DCache_CleanInvalidate(DDR_BASE, (0x400 + 32));
 
 	if (HAL_READ32(DDR_BASE, 0) == 0x400) {
-		DBG_8195A("DDR Density is 256Mbit\n");
-		DBG_8195A("Please open DDR2_256M_DRAM macro\n");
+		RTK_LOGW(TAG, "DDR Density is 256Mbit\n");
+		RTK_LOGW(TAG, "Please open DDR2_256M_DRAM macro\n");
 		return 1;
 	}
 
@@ -1091,20 +1092,20 @@ u32 ddr_size_detect(void)
 		DCache_CleanInvalidate(DDR_BASE, (0x2000 + 32));
 
 		if (HAL_READ32(DDR_BASE, 0) == 0x2000) {
-			DBG_8195A("DDR Density is 512Mbit\n");
-			DBG_8195A("Please open DDR2_512M_DRAM macro\n");
+			RTK_LOGW(TAG, "DDR Density is 512Mbit\n");
+			RTK_LOGW(TAG, "Please open DDR2_512M_DRAM macro\n");
 			return 1;
 		}
 		if (HAL_READ32(DDR_BASE, 0) == 0x0) {
 			HAL_WRITE32(DDR_BASE, 0x8000000, 0x8000000);
 			DCache_CleanInvalidate(DDR_BASE, (0x8000000 + 32));
 			if (HAL_READ32(DDR_BASE, 0) == 0x8000000) {
-				DBG_8195A("DDR Density is 1Gbit\n");
+				RTK_LOGI(TAG, "DDR Density is 1Gbit\n");
 				return 0;
 			}
 		}
 	}
-	DBG_8195A("DDR Density is unknown\n");
+	RTK_LOGW(TAG, "DDR Density is unknown\n");
 	return 1;
 }
 

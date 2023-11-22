@@ -704,7 +704,6 @@ _LONG_CALL_ void UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState);
 /* Other Definitions --------------------------------------------------------*/
 #define MAX_UART_INDEX			(4)
 
-extern UARTCFG_TypeDef uart_config[];
 extern const UART_DevTable UART_DEV_TABLE[MAX_UART_INDEX];
 extern const u32 APBPeriph_UARTx[MAX_UART_INDEX];
 extern const u32 APBPeriph_UARTx_CLOCK[MAX_UART_INDEX];

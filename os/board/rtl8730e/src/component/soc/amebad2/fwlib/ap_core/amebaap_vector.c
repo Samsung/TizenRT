@@ -63,5 +63,15 @@ void irq_clear_pending(IRQn_Type irqn)
 	arm_gic_clear_pending_irq(32 + irqn);
 }
 
+void irq_set_pending(IRQn_Type irqn)
+{
+	/*cat not Set-pending bits for SGIs*/
+	arm_gic_set_pending_irq(32 + irqn);
+}
+
+uint32_t irq_get_pending(IRQn_Type irqn)
+{
+	return arm_gic_irq_is_pending(32 + irqn);
+}
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

@@ -21,9 +21,6 @@
 
 #include "ameba_soc.h"
 
-extern const PMAP_TypeDef pmap_func[];
-
-
 /**
   *  @brief Config all pins to the right function and pull state based on pmap_func table.
   *  @note should set pmap_func. Function & FuncPuPd corectly based on your board.

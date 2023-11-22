@@ -1098,6 +1098,7 @@ enum CHIP_TYPE {
 //using Absolute Address plat_get_my_entrypoint in plat_helpers.S !! change carefully!!
 #define LSYS_BIT_AP_WAKE_FROM_PG		((u32)0x00000001 << 0)
 #define LSYS_BIT_AP_RUNNING				((u32)0x00000001 << 1)
+#define LSYS_BIT_AP_ENABLE				((u32)0x00000001 << 2)
 
 #define REG_LSYS_NP_STATUS_SW			0x0267
 #define LSYS_BIT_NP_RUNNING				((u32)0x00000001 << 0)

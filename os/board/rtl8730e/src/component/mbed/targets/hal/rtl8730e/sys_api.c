@@ -64,14 +64,19 @@ void sys_clear_ota_signature(void)
 	u32 Address[2];
 	u8 empty_sig[8] = {0x0};
 	int ImgID = 0;
+	u32 app_ota1_start_addr;
+	u32 app_ota2_start_addr;
+
+	flash_get_layout_info(IMG_APP_OTA1, &app_ota1_start_addr, NULL);
+	flash_get_layout_info(IMG_APP_OTA2, &app_ota2_start_addr, NULL);
 
 	otaCurIdx = ota_get_cur_index(0);
 	otaDstIdx = otaCurIdx ^ 1;
 
 	for (ImgID = 1; ImgID < MAX_IMG_NUM; ImgID++) {
 
-		Address[otaCurIdx] = IMG_ADDR[ImgID][otaCurIdx] - SPI_FLASH_BASE;
-		Address[otaDstIdx] = IMG_ADDR[ImgID][otaDstIdx] - SPI_FLASH_BASE;
+		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
+		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
 		if (ImgID == OTA_IMGID_APP) {
 			Address[otaCurIdx] = Address[otaCurIdx] + 0x1000; /* skip certificate for image2 */
@@ -106,6 +111,8 @@ void sys_recover_ota_signature(void)
 	u32 Address[2];
 	u32 sig[2] = {0x35393138, 0x31313738};
 	int ImgID = 0;
+	u32 app_ota1_start_addr;
+	u32 app_ota2_start_addr;
 
 	backup = (u8 *)malloc(0x1000);
 	if (backup == NULL) {
@@ -113,13 +120,16 @@ void sys_recover_ota_signature(void)
 		return;
 	}
 
+	flash_get_layout_info(IMG_APP_OTA1, &app_ota1_start_addr, NULL);
+	flash_get_layout_info(IMG_APP_OTA2, &app_ota2_start_addr, NULL);
+
 	otaCurIdx = ota_get_cur_index(0);
 	otaDstIdx = otaCurIdx ^ 1;
 
 	for (ImgID = 1; ImgID < MAX_IMG_NUM; ImgID++) {
 
-		Address[otaDstIdx] = IMG_ADDR[ImgID][otaDstIdx] - SPI_FLASH_BASE;
-		Address[otaCurIdx] = IMG_ADDR[ImgID][otaCurIdx] - SPI_FLASH_BASE;
+		Address[otaDstIdx] = (otaDstIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
+		Address[otaCurIdx] = (otaCurIdx == 0 ? app_ota1_start_addr : app_ota2_start_addr) - SPI_FLASH_BASE;
 
 		if (ImgID == OTA_IMGID_APP) {
 			Address[otaDstIdx] = Address[otaDstIdx] + 0x1000; /* skip certificate */

@@ -8,7 +8,19 @@
  */
 #include "ameba_soc.h"
 
+static const char *TAG = "PMC";
 u32 PMC_MemMode_BK[6];
+
+/* light-sleep: out-circut=on, out-val=keep, mem-arry=on */
+/* deep-sleep: out-circut=off, out-val=not keep, mem-arry=on, suggest to use this */
+PWRCFG_TypeDef sleep_sram_config[] = {
+//  	Module										Status
+	{REG_CTRL_HSYS_E0_FTC_ULL_0,	MEM_DS_MODE},
+	{REG_CTRL_WLK4_E0_FTC_ULL_0,	MEM_DS_MODE},
+	{REG_CTRL_BTOFFK4_E0_FTC_ULL_0,	MEM_DS_MODE},
+	{REG_CTRL_BTOFFK4_E1_FTC_ULL_0,	MEM_DS_MODE},
+	{0xFFFFFFFF,							OFF},	/* Table end */
+};
 
 /**
   * @brief  set power option for power save mode.
@@ -89,13 +101,27 @@ static void OTP_Raise_AonVol(u32 status)
 
 }
 
+void SOCPS_CLK_SwitchToLow(u32 status)
+{
+	u32 Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0);
+
+	if (status == ENABLE) {
+		// swtich ADC & GPIO int to OSC4M from lbus
+		// CTC todo, hipc done when off NP, SPIC seems no need
+		Rtemp |= LSYS_BIT_CKSL_GPIO | LSYS_BIT_CKSL_ADC;
+	} else {
+		Rtemp &= ~(LSYS_BIT_CKSL_GPIO | LSYS_BIT_CKSL_ADC);
+	}
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Rtemp);
+}
+
 SRAM_ONLY_TEXT_SECTION
 VOID SOCPS_SleepCG(VOID)
 {
 	u32 nDeviceIdOffset = PMU_MAX;
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("KM0CG \n");
+		RTK_LOGD(TAG, "KM0CG \n");
 	}
 
 	//SOCPS_Hplat_OFF();
@@ -105,7 +131,7 @@ VOID SOCPS_SleepCG(VOID)
 	if (nDeviceIdOffset != PMU_MAX) {
 		//pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 		if (ps_config.km0_tickles_debug) {
-			DBG_8195A("DBG: KM0 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: KM0 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}
@@ -113,9 +139,15 @@ VOID SOCPS_SleepCG(VOID)
 	/* switch chipen inti intr mode to wakeup system*/
 	CHIPEN_WorkMode(CHIPEN_INT_RESET_MODE);
 
+	/* switch IP clk to OSC4M, so that can wakeup system when need */
+	SOCPS_CLK_SwitchToLow(ENABLE);
+
 	OTP_Raise_AonVol(DISABLE);
 	SOCPS_SleepCG_LIB();
 	OTP_Raise_AonVol(ENABLE);
+
+	/* switch IP clk to lsbus */
+	SOCPS_CLK_SwitchToLow(DISABLE);
 
 	/* sys req pfm mode when only km0 */
 	SWR_PFM_MODE_Set(ENABLE);
@@ -124,7 +156,7 @@ VOID SOCPS_SleepCG(VOID)
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("KM0CG- %x %x\n", HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
+		RTK_LOGD(TAG, "KM0CG- %x %x\n", HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 	}
 }
 
@@ -132,13 +164,12 @@ VOID SOCPS_SleepCG(VOID)
 /* close power functions: GDMA */
 _OPTIMIZE_NONE_
 SRAM_ONLY_TEXT_SECTION
-
 VOID SOCPS_SleepPG(VOID)
 {
 	u32 nDeviceIdOffset = 0;//0
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("SOCPS_SleepPG \n");
+		RTK_LOGD(TAG, "SOCPS_SleepPG \n");
 	}
 
 	/* exec sleep hook functions */
@@ -147,7 +178,7 @@ VOID SOCPS_SleepPG(VOID)
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 
 		if (ps_config.km0_tickles_debug) {
-			DBG_8195A("DBG: KM0 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: KM0 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}
@@ -157,9 +188,15 @@ VOID SOCPS_SleepPG(VOID)
 	/* switch chipen inti intr mode to wakeup system*/
 	CHIPEN_WorkMode(CHIPEN_INT_RESET_MODE);
 
+	/* switch IP clk to OSC4M, so that can wakeup system when need */
+	SOCPS_CLK_SwitchToLow(ENABLE);
+
 	OTP_Raise_AonVol(DISABLE);
 	SOCPS_SleepPG_LIB();
 	OTP_Raise_AonVol(ENABLE);
+
+	/* switch IP clk to lsbus */
+	SOCPS_CLK_SwitchToLow(DISABLE);
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
@@ -173,7 +210,6 @@ void SOCPS_SleepInit(void)
 {
 
 	int i = 0;
-	static u32 sleep_wevent_config_val[3][2];
 	static u32 km0cg_pwrmgt_config_val;
 
 	/* shrink process time */
@@ -191,92 +227,23 @@ void SOCPS_SleepInit(void)
 	/*power management setting*/
 	km0cg_pwrmgt_config_val = HAL_READ32(PMC_BASE, SYSPMC_OPT);
 
-	for (i = 0;;) {
-		/*  Check if search to end */
-		if (km0_pwrmgt_config[i].Module == 0xFFFFFFFF) {
-			break;
-		}
-
-		if (km0_pwrmgt_config[i].Status == ON) {
-			km0cg_pwrmgt_config_val |= km0_pwrmgt_config[i].Module;
-		} else {
-			km0cg_pwrmgt_config_val &= ~km0_pwrmgt_config[i].Module;
-		}
-
-		if (km0_pwrmgt_config[i].Module == PMC_MASK_PST_SLEP_VOLT) {
-			km0cg_pwrmgt_config_val &= (~PMC_MASK_PST_SLEP_VOLT);
-			km0cg_pwrmgt_config_val |= PMC_PST_SLEP_VOLT(km0_pwrmgt_config[i].Status);
-		}
-
-		if (km0_pwrmgt_config[i].Module == PMC_MASK_PST_SLEP_XMD) {
-			km0cg_pwrmgt_config_val &= (~PMC_MASK_PST_SLEP_XMD);
-			km0cg_pwrmgt_config_val |= PMC_PST_SLEP_XMD(km0_pwrmgt_config[i].Status);
-		}
-
-		if (km0_pwrmgt_config[i].Module == PMC_MASK_PST_SLEP_FBUS) {
-			km0cg_pwrmgt_config_val &= (~PMC_MASK_PST_SLEP_FBUS);
-			km0cg_pwrmgt_config_val |= PMC_PST_SLEP_FBUS(km0_pwrmgt_config[i].Status);
-		}
-
-		i++;
+	if (ps_config.keep_OSC4M_on) {
+		km0cg_pwrmgt_config_val |= PMC_BIT_PST_SLEP_ERCK;
+	} else {
+		km0cg_pwrmgt_config_val &= ~PMC_BIT_PST_SLEP_ERCK;
 	}
+
+	if (ps_config.swr_mode_in_sleep == SWR_PWM) {
+		km0cg_pwrmgt_config_val |= PMC_BIT_PST_SLEP_EPWM;
+	} else {
+		km0cg_pwrmgt_config_val &= ~PMC_BIT_PST_SLEP_EPWM;
+	}
+
+	km0cg_pwrmgt_config_val &= (~PMC_MASK_PST_SLEP_XMD);
+	km0cg_pwrmgt_config_val |= PMC_PST_SLEP_XMD(ps_config.xtal_mode_in_sleep);
 
 	HAL_WRITE32(PMC_BASE, SYSPMC_OPT, km0cg_pwrmgt_config_val);
-	DBG_8195A("SYSPMC_OPT %x\n", HAL_READ32(PMC_BASE, SYSPMC_OPT));
-
-	/*wake event setting*/
-	for (i = 0;;) {
-		/*  Check if search to end */
-		if (sleep_wevent_config[i].Module == 0xFFFFFFFF) {
-			break;
-		}
-
-		if (sleep_wevent_config[i].Group == 1) {
-			if (sleep_wevent_config[i].Msk_Lp == ON) {
-				sleep_wevent_config_val[0][1] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[0][1] &= ~sleep_wevent_config[i].Module;
-			}
-		}
-
-		if (sleep_wevent_config[i].Group == 0) {
-			if (sleep_wevent_config[i].Msk_Lp == ON) {
-				sleep_wevent_config_val[0][0] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[0][0] &= ~sleep_wevent_config[i].Module;
-			}
-		}
-		i++;
-	}
-
-	sleep_wevent_config_val[1][0] = HAL_READ32(PMC_BASE, WAK_MASK0_NP);
-	sleep_wevent_config_val[1][1] = HAL_READ32(PMC_BASE, WAK_MASK1_NP);
-	sleep_wevent_config_val[2][0] = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
-	sleep_wevent_config_val[2][1] = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
-
-	if ((sleep_wevent_config_val[0][0] & sleep_wevent_config_val[1][0]) | \
-		(sleep_wevent_config_val[0][0] & sleep_wevent_config_val[2][0]) | \
-		(sleep_wevent_config_val[1][0] & sleep_wevent_config_val[2][0]) | \
-		(sleep_wevent_config_val[0][1] & sleep_wevent_config_val[1][1]) | \
-		(sleep_wevent_config_val[0][1] & sleep_wevent_config_val[2][1]) | \
-		(sleep_wevent_config_val[1][1] & sleep_wevent_config_val[2][1])) {
-		DBG_8195A("Warning: Wakeevent set conflict !!!\n");
-	}
-
-	if (sleep_wevent_config_val[1][0] | sleep_wevent_config_val[1][1]) {
-		sleep_wevent_config_val[0][0] |= WAKE_SRC_NP_WAKE;
-		DBG_8195A("NP wake event %x %x\n", HAL_READ32(PMC_BASE, WAK_MASK0_NP), HAL_READ32(PMC_BASE, WAK_MASK1_NP));
-	}
-
-	if (sleep_wevent_config_val[2][0] | sleep_wevent_config_val[2][1]) {
-		sleep_wevent_config_val[0][0] |= WAKE_SRC_AP_WAKE;
-		DBG_8195A("AP wake event %x %x\n", HAL_READ32(PMC_BASE, WAK_MASK0_AP), HAL_READ32(PMC_BASE, WAK_MASK1_AP));
-	}
-
-	SOCPS_SetLPWakeEvent_MSK0(sleep_wevent_config_val[0][0], ENABLE);
-	SOCPS_SetLPWakeEvent_MSK1(sleep_wevent_config_val[0][1], ENABLE);
-
-	DBG_8195A("LP wake event %x %x\n", HAL_READ32(PMC_BASE, WAK_MASK0_LP), HAL_READ32(PMC_BASE, WAK_MASK1_LP));
+	RTK_LOGI(TAG, "SYSPMC_OPT %x\n", HAL_READ32(PMC_BASE, SYSPMC_OPT));
 
 	/* hs sram option init */
 	for (i = 0;;) {
@@ -299,8 +266,8 @@ void SOCPS_SleepInit(void)
 			break;
 		}
 
-		if (sleep_wakepin_config[i].Status == ON) {
-			SOCPS_SetWakepin(sleep_wakepin_config[i].wakepin, sleep_wakepin_config[i].Polarity);
+		if (sleep_wakepin_config[i].config != DISABLE_WAKEPIN) {
+			SOCPS_SetWakepin(sleep_wakepin_config[i].wakepin, sleep_wakepin_config[i].config);
 		}
 
 		i++;
@@ -331,57 +298,12 @@ u32 SOCPS_DsleepWakeStatusGet(void)
 u32 LPWNP_INTHandler(UNUSED_WARN_DIS void *Data)
 {
 	UNUSED(Data);
-	DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "LP WAKE NP HANDLER %x %x\n",
-			   HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
+	RTK_LOGI(TAG, "LP WAKE NP HANDLER %x %x\n",
+			 HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 
 	InterruptDis(NP_WAKE_IRQ);
 	np_resume();
 	return TRUE;
-}
-
-/**
-  *  @brief set wake event.
-  *  @retval None
-  */
-void SOCPS_WakeEvent_Init(void)
-{
-	u32 i;
-	u32 sleep_wevent_config_val[2] = {0};
-
-	/*wake event setting*/
-	for (i = 0;;) {
-		/*  Check if search to end */
-		if (sleep_wevent_config[i].Module == 0xFFFFFFFF) {
-			break;
-		}
-
-		if (sleep_wevent_config[i].Group == 1) {
-			if (sleep_wevent_config[i].Msk_Np == ON) {
-				sleep_wevent_config_val[1] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[1] &= ~sleep_wevent_config[i].Module;
-			}
-		}
-
-		if (sleep_wevent_config[i].Group == 0) {
-			if (sleep_wevent_config[i].Msk_Np == ON) {
-				sleep_wevent_config_val[0] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[0] &= ~sleep_wevent_config[i].Module;
-			}
-		}
-		i++;
-	}
-
-	SOCPS_SetNPWakeEvent_MSK0(sleep_wevent_config_val[0], ENABLE);
-	SOCPS_SetNPWakeEvent_MSK1(sleep_wevent_config_val[1], ENABLE);
-	DBG_8195A("wake event: %x %x \r\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
-
-	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
-		InterruptRegister(LPWNP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI_MIDDLE);
-		/* enable when suspend KM4 */
-		//InterruptEn(NP_WAKE_IRQ, 10);
-	}
 }
 
 u32 LPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
@@ -391,8 +313,8 @@ u32 LPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
 			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) | LSYS_BIT_AP_RUNNING);
 
-	DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "LP WAKE AP HANDLER %x %x\n",
-			   HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
+	RTK_LOGI(TAG, "LP WAKE AP HANDLER %x %x\n",
+			 HAL_READ32(PMC_BASE, WAK_STATUS0), HAL_READ32(PMC_BASE, WAK_STATUS1));
 
 	InterruptDis(AP_WAKE_IRQ);
 
@@ -404,10 +326,12 @@ u32 LPWAP_INTHandler(UNUSED_WARN_DIS void *Data)
   *  @brief set wake event.
   *  @retval None
   */
-void SOCPS_AP_WakeEvent_Init(void)
+void SOCPS_WakeEvent_Init(void)
 {
 	u32 i;
-	u32 sleep_wevent_config_val[2] = {0};
+	u32 sleep_wevent_config_val[3][2] = {0};
+	u32 group = 0;
+	u32 wakebit = 0;
 
 	/*wake event setting*/
 	for (i = 0;;) {
@@ -416,62 +340,58 @@ void SOCPS_AP_WakeEvent_Init(void)
 			break;
 		}
 
-		if (sleep_wevent_config[i].Group == 1) {
-			if (sleep_wevent_config[i].Msk_Ap == ON) {
-				sleep_wevent_config_val[1] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[1] &= ~sleep_wevent_config[i].Module;
-			}
+		/* decide group */
+		if ((sleep_wevent_config[i].Module & WAKE_MASK1_CHECK) == WAKE_MASK1_CHECK) {
+			group = 1;
+			wakebit = sleep_wevent_config[i].Module & (~WAKE_MASK1_CHECK);
+		} else {
+			group = 0;
+			wakebit = sleep_wevent_config[i].Module;
 		}
 
-		if (sleep_wevent_config[i].Group == 0) {
-			if (sleep_wevent_config[i].Msk_Ap == ON) {
-				sleep_wevent_config_val[0] |= sleep_wevent_config[i].Module;
-			} else {
-				sleep_wevent_config_val[0] &= ~sleep_wevent_config[i].Module;
-			}
+		if (sleep_wevent_config[i].wakeup == WAKEUP_LP) {
+			sleep_wevent_config_val[0][group] |= wakebit;
+		}
+
+		if (sleep_wevent_config[i].wakeup == WAKEUP_NP) {
+			sleep_wevent_config_val[1][group] |= wakebit;
+		}
+
+		if (sleep_wevent_config[i].wakeup == WAKEUP_AP) {
+			sleep_wevent_config_val[2][group] |= wakebit;
 		}
 		i++;
 	}
 
-	SOCPS_SetAPWakeEvent_MSK0(sleep_wevent_config_val[0], ENABLE);
-	SOCPS_SetAPWakeEvent_MSK1(sleep_wevent_config_val[1], ENABLE);
+	SOCPS_SetNPWakeEvent_MSK0(sleep_wevent_config_val[1][0], ENABLE);
+	SOCPS_SetNPWakeEvent_MSK1(sleep_wevent_config_val[1][1], ENABLE);
+	RTK_LOGI(TAG, "NP wake event: %x %x\n", sleep_wevent_config_val[1][0], sleep_wevent_config_val[1][1]);
 
-	DBG_8195A("ap_suspend %x %x\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
-	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
+	if ((sleep_wevent_config_val[1][0] | sleep_wevent_config_val[1][1])) {
+		InterruptRegister(LPWNP_INTHandler, NP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI_MIDDLE);
+		/* enable when suspend KM4 */
+		//InterruptEn(NP_WAKE_IRQ, 10);
+
+		/* open NP wake in LP*/
+		sleep_wevent_config_val[0][0] |= WAKE_SRC_NP_WAKE;
+	}
+
+	SOCPS_SetAPWakeEvent_MSK0(sleep_wevent_config_val[2][0], ENABLE);
+	SOCPS_SetAPWakeEvent_MSK1(sleep_wevent_config_val[2][1], ENABLE);
+	RTK_LOGI(TAG, "AP wake event %x %x\n", sleep_wevent_config_val[2][0], sleep_wevent_config_val[2][1]);
+
+	if ((sleep_wevent_config_val[2][0] | sleep_wevent_config_val[2][1])) {
 		InterruptRegister(LPWAP_INTHandler, AP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI_MIDDLE);
 		//InterruptEn(AP_WAKE_IRQ, 5);
-	}
-}
 
-
-/**
-  *  @brief set deepsleep Option.
-  *  @retval None
-  */
-void SOCPS_deepsleepInit(void)
-{
-	static u32 dslp_pwrmgt_config_val;
-
-	dslp_pwrmgt_config_val = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_PMC_OPT);
-	for (int i = 0;;) {
-		/*  Check if search to end */
-		if (aon_pwrmgt_config[i].Module == 0xFFFFFFFF) {
-			break;
-		}
-
-		if (aon_pwrmgt_config[i].Status == ON) {
-			dslp_pwrmgt_config_val |= aon_pwrmgt_config[i].Module;
-		} else {
-			dslp_pwrmgt_config_val &= ~aon_pwrmgt_config[i].Module;
-		}
-
-		i++;
+		/* open AP wake in LP*/
+		sleep_wevent_config_val[0][0] |= WAKE_SRC_AP_WAKE;
 	}
 
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_PMC_OPT, dslp_pwrmgt_config_val);
+	SOCPS_SetLPWakeEvent_MSK0(sleep_wevent_config_val[0][0], ENABLE);
+	SOCPS_SetLPWakeEvent_MSK1(sleep_wevent_config_val[0][1], ENABLE);
+	RTK_LOGI(TAG, "LP wake event %x %x\n", HAL_READ32(PMC_BASE, WAK_MASK0_LP), HAL_READ32(PMC_BASE, WAK_MASK1_LP));
 
-	DBG_8195A("REG_AON_PMC_OPT 0x%x\n", HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_PMC_OPT));
 }
 
 /**

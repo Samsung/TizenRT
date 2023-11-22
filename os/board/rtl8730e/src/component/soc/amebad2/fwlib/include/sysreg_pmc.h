@@ -430,17 +430,17 @@
 * @brief
 * @{
 *****************************************************************************/
-#define WAKE_SRC_UART2                               ((u32)0x00000001 << 0)
-#define WAKE_SRC_I2C1                                ((u32)0x00000001 << 10)
-#define WAKE_SRC_I2C2                                ((u32)0x00000001 << 11)
-#define WAKE_SRC_WDG1                                ((u32)0x00000001 << 1)
-#define WAKE_SRC_WDG2                                ((u32)0x00000001 << 2)
-#define WAKE_SRC_WDG3                                ((u32)0x00000001 << 3)
-#define WAKE_SRC_WDG4                                ((u32)0x00000001 << 4)
-#define WAKE_SRC_AON_WAKEPIN                         ((u32)0x00000001 << 5)
-#define WAKE_SRC_BT_WAKE_HOST                        ((u32)0x00000001 << 6)
-#define WAKE_SRC_nFIQOUT0_OR_nIRQOUT0                ((u32)0x00000001 << 7)
-#define WAKE_SRC_nFIQOUT1_OR_nIRQOUT1                ((u32)0x00000001 << 8)
+#define WAKE_SRC_UART2                               ((u32)(3 << 30) | (0x00000001 << 0))
+#define WAKE_SRC_I2C1                                ((u32)(3 << 30) | (0x00000001 << 10))
+#define WAKE_SRC_I2C2                                ((u32)(3 << 30) | (0x00000001 << 11))
+#define WAKE_SRC_WDG1                                ((u32)(3 << 30) | (0x00000001 << 1))
+#define WAKE_SRC_WDG2                                ((u32)(3 << 30) | (0x00000001 << 2))
+#define WAKE_SRC_WDG3                                ((u32)(3 << 30) | (0x00000001 << 3))
+#define WAKE_SRC_WDG4                                ((u32)(3 << 30) | (0x00000001 << 4))
+#define WAKE_SRC_AON_WAKEPIN                         ((u32)(3 << 30) | (0x00000001 << 5))
+#define WAKE_SRC_BT_WAKE_HOST                        ((u32)(3 << 30) | (0x00000001 << 6))
+#define WAKE_SRC_nFIQOUT0_OR_nIRQOUT0                ((u32)(3 << 30) | (0x00000001 << 7))
+#define WAKE_SRC_nFIQOUT1_OR_nIRQOUT1                ((u32)(3 << 30) | (0x00000001 << 8))
 /** @} */
 
 /* AUTO_GEN_WAKE_SRC_END */
@@ -448,6 +448,7 @@
 /* MANUAL_GEN_START */
 
 //Please add your defination here
+#define WAKE_MASK1_CHECK	0xC0000000
 
 /** @defgroup PowerCut_Stable_Time_define
   * @{

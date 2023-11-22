@@ -258,8 +258,8 @@ _LONG_CALL_ u32 XTAL_ClkGet(void);
 _LONG_CALL_ void PLL_I2S_Div(int Sportx, u32 div);
 _LONG_CALL_ void PLL_I2S_98P304M(u32 NewState);
 _LONG_CALL_ void PLL_I2S_45P158M(u32 NewState);
-_LONG_CALL_ void PLL_I2S_98P304M_ClkTune(u32 ppm, u32 action);
-_LONG_CALL_ void PLL_I2S_45P158M_ClkTune(u32 ppm, u32 action);
+_LONG_CALL_ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action);
+_LONG_CALL_ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action);
 _LONG_CALL_ void PLL_NP_ClkSet(u32 PllClk);
 _LONG_CALL_ void PLL_NP(u32 NewState);
 _LONG_CALL_ void PLL_AP_ClkSet(u32 PllClk);
@@ -307,9 +307,14 @@ _LONG_CALL_ void HBUS_ClkSet(u32 Source);
   */
 
 /* Other definations --------------------------------------------------------*/
+void OSC4M_Init(void);
+void OSC4M_R_Set(u32 setbit, u32 clearbit);
+void OSC4M_VCM_Set(u32 value);
 u32 OSC4M_Calibration(u32 ppm_limit);
 u32 OSC131K_Calibration(u32 ppm_limit);
-void OSC4M_Init(void);
+void OSC131_R_Set(u32 setbit, u32 clearbit);
+u32 OSC_CalResult_Get(u8 cal_clk);
+
 void XTAL_PDCK(void);
 void XTAL_INIT(void);
 void XTAL_LPSDIG(u32 status);
@@ -322,6 +327,7 @@ void CLK_SWITCH_XTAL(u32 State);
 
 #define NPPLL_1000M		1000
 #define NPPLL_920M		920
+#define NPPLL_960M		960
 #define NPPLL_800M		800
 
 #define APPLL_800M			800

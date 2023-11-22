@@ -1,5 +1,6 @@
 #include "ameba_soc.h"
 
+static const char *TAG = "SECURE";
 #if defined(CONFIG_SSL_CLIENT_PRIVATE_IN_TZ) && (CONFIG_SSL_CLIENT_PRIVATE_IN_TZ == 1)
 
 const char *client_key_s = \
@@ -22,7 +23,7 @@ const char *client_key_s = \
 /* Internal secure function that is not available for NS functions.  */
 int internal_secure_func(void)
 {
-	DBG_8195A("Print log from secure code\n");
+	RTK_LOGI(TAG, "Print log from secure code\n");
 	return 0;
 }
 

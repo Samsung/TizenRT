@@ -17,6 +17,8 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "CLK";
+
 /**
   * @brief  32K clock Enable,
   * @param  NA
@@ -24,9 +26,7 @@
   */
 void SDM32K_Enable(void)
 {
-
 	SDM_TypeDef *SDM = SDM_DEV;
-
 	SDM->SDM_CTRL0 |= SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_TIMER_CAL_EN;
 }
 
@@ -39,7 +39,6 @@ void SDM32K_Enable(void)
   */
 void SDM32K_TimerCalEnable(u32 newstatus)
 {
-
 	SDM_TypeDef *SDM = SDM_DEV;
 	if (newstatus == ENABLE) {
 		SDM->SDM_CTRL0 |= SDM_BIT_TIMER_CAL_EN;
@@ -80,7 +79,7 @@ u32 OSC_CalResult_Get(u8 cal_clk)
 }
 
 /* setbit/clearbit is: BIT0~BIT5 defined in BIT_AON_MASK_OSC32K_RCAL_5_0 */
-VOID OSC131_R_Set(u32 setbit, u32 clearbit)
+void OSC131_R_Set(u32 setbit, u32 clearbit)
 {
 	REGU_TypeDef *regu = REGU_BASE;
 
@@ -128,7 +127,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 		}
 	}
 
-	/* Step2: Adjust R_CAL. Enter the following loop: each loop decides one bit of 4800002c[13:8]-RCAL, i.e. the first loop decides RCAL[5], the second loop decides RCAL[4] ¡­, suppose the current loop is N (N=1..6) */
+	/* Step2: Adjust R_CAL. Enter the following loop: each loop decides one bit of 4800002c[13:8]-RCAL, i.e. the first loop decides RCAL[5], the second loop decides RCAL[4] â€¦, suppose the current loop is N (N=1..6) */
 	/* Loop Step1: Set RCAL[6-N] = 0x1 */
 	/* Loop Step2: Wait some time for clock stable (this wait time decide by SW) */
 	/* Loop Step3: Enable Calibration: 0x4800_2840 = 0x8200_0000 */
@@ -165,7 +164,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 			min_delta_r &= REGU_MASK_RCAL;
 		}
 
-		//DBG_8195A("[CAL131K]:cal_n %d delta:%d \n", cal_n, delta);
+		//RTK_LOGI(TAG, "[CAL131K]:cal_n %d delta:%d \n", cal_n, delta);
 	}
 
 	/* the last one is not the best one */
@@ -191,10 +190,10 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 	}
 
 	cur_ppm = delta * 1000000 / target_40m_counter;
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "[CAL131K]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
+	RTK_LOGI(TAG, "[CAL131K]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
 
 	if (cur_ppm >= ppm_limit) {
-		DBG_8195A("[CAL131K]: !!! cal fail !!! PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
+		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
 		if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
 			assert_param(0);
 		}
@@ -204,7 +203,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 }
 
 /* bitnum is: 0~7 defined in REGU_MASK_FREQ_R_SEL */
-VOID OSC4M_R_Set(u32 setbit, u32 clearbit)
+void OSC4M_R_Set(u32 setbit, u32 clearbit)
 {
 	REGU_TypeDef *regu = REGU_BASE;
 
@@ -221,7 +220,7 @@ VOID OSC4M_R_Set(u32 setbit, u32 clearbit)
 }
 
 /* bitnum is: 0~3 defined in REGU_MASK_VCM_SEL_H/L */
-VOID OSC4M_VCM_Set(u32 value)
+void OSC4M_VCM_Set(u32 value)
 {
 	u32 temp;
 
@@ -276,7 +275,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//DBG_8195A("[CAL4M]:cal_n %d H:0x%x L:0x%x result:%d ", cal_n,REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
+		//RTK_LOGI(TAG, "[CAL4M]:cal_n %d H:0x%x L:0x%x result:%d ", cal_n,REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -294,7 +293,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			min_delta_r = regu->REGU_4MOSC0;
 			min_delta_r &= (REGU_MASK_VCM_SEL_L | REGU_MASK_VCM_SEL_H | REGU_MASK_FREQ_R_SEL);
 		}
-		//DBG_8195A("delta:%d min_delta:%d min_delta_r:0x%x \n", delta,min_delta,min_delta_r);
+		//RTK_LOGI(TAG, "delta:%d min_delta:%d min_delta_r:0x%x \n", delta,min_delta,min_delta_r);
 	}
 
 	/* the last one is not the best one */
@@ -304,7 +303,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 		temp |= min_delta_r;
 		regu->REGU_4MOSC0 = temp;
 	}
-	//DBG_8195A("[CAL4M]:hL last one: 0x%x 0x%x temp:%d \n", REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
+	//RTK_LOGI(TAG, "[CAL4M]:hL last one: 0x%x 0x%x temp:%d \n", REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
 	/* Step4: Adjust R_SEL. Enter the following loop: suppose the current loop is N (N=1..8) */
 	/* Clear 4m calibration parameter first */
 	/* Loop Step1: Set REGU_FREQ_R_SEL[8-N] = 0x1 */
@@ -324,7 +323,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//DBG_8195A("[CAL4M]:cal_n %d R:0x%x result:%d ", cal_n,REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0), temp, target_40m_counter, delta);
+		//RTK_LOGI(TAG, "[CAL4M]:cal_n %d R:0x%x result:%d ", cal_n,REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0), temp, target_40m_counter, delta);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -342,7 +341,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			min_delta_r = regu->REGU_4MOSC0;
 			min_delta_r &= REGU_MASK_FREQ_R_SEL;
 		}
-		//DBG_8195A("delta:%d \n", delta);
+		//RTK_LOGI(TAG, "delta:%d \n", delta);
 	}
 
 	/* the last one is not the best one */
@@ -357,7 +356,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//DBG_8195A("OSC4M_Calibration:cal_n %d result:%d target:%d delta:%d\n", cal_n, temp, target_40m_counter, delta);
+		//RTK_LOGI(TAG, "OSC4M_Calibration:cal_n %d result:%d target:%d delta:%d\n", cal_n, temp, target_40m_counter, delta);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -365,14 +364,14 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			delta = temp - target_40m_counter;
 		}
 	}
-	//DBG_8195A("[CAL4M]:R last one: 0x%x \n",REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0));
+	//RTK_LOGI(TAG, "[CAL4M]:R last one: 0x%x \n",REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0));
 
 cal_end:
 	cur_ppm = delta * 1000000 / target_40m_counter;
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "[CAL4M]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
+	RTK_LOGI(TAG, "[CAL4M]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
 
 	if (cur_ppm >= ppm_limit) {
-		DBG_8195A("[CAL4M]: PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
+		RTK_LOGW(TAG, "[CAL4M]: PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
 		assert_param(0);
 	}
 
@@ -411,7 +410,6 @@ void XTAL_INIT(void)
 }
 
 void XTAL_PDCK(void)
-
 {
 	XTAL_TypeDef *xtal = XTAL_BASE;
 

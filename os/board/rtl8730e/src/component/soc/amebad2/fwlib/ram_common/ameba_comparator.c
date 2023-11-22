@@ -254,19 +254,22 @@ void CMP_SwTrigCmd(u32 NewState)
   *			@arg ENABLE: Enable the Comparator timer trigger mode.
   *			@arg DISABLE: Disable the Comparator timer trigger mode.
   * @retval  None.
-  * @note  Used in Comparator Timer-Trigger Mode
+  * @note  Used in Comparator Timer-Trigger Mode, period range: 1ms ~ 131071ms.
   */
 void CMP_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 {
 	CMP_TypeDef *comparator = COMPARATOR;
 	RTIM_TimeBaseInitTypeDef TIM_InitStruct;
 
+	assert_param(IS_ADC_VALID_TIM(Tim_Idx));
+	assert_param(PeriodMs > 0 && PeriodMs < 131072); // avoid overflow
+
 	comparator->COMP_EXT_TRIG_TIMER_SEL = Tim_Idx;
 
 	if (NewState != DISABLE) {
 		RTIM_TimeBaseStructInit(&TIM_InitStruct);
 		TIM_InitStruct.TIM_Idx = Tim_Idx;
-		TIM_InitStruct.TIM_Period = (PeriodMs * 32768) / 1000 / 2; //ms to tick
+		TIM_InitStruct.TIM_Period = (PeriodMs * 32768) / 1000; //ms to tick
 
 		RTIM_TimeBaseInit(TIMx[Tim_Idx], &TIM_InitStruct, TIMx_irq[Tim_Idx], (IRQ_FUN)NULL, (u32)NULL);
 		RTIM_Cmd(TIMx[Tim_Idx], ENABLE);

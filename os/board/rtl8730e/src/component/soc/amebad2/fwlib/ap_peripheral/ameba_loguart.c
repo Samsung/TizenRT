@@ -346,4 +346,125 @@ u32 LOGUART_ClearRxFifo(LOGUART_TypeDef *UARTLOG)
 	}
 }
 
+void LOGUART_BT_SendData(u8 *InBuf, u32 Count)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+	u32 cnt = 0;
+	u32 CounterIndex = 0;
+
+	for (cnt = 0; cnt < Count; cnt++) {
+		while (1) {
+			CounterIndex++;
+
+			/* timeout value is the same with path1(km4) timeout*/
+			if (CounterIndex >= 781875) {
+				break;
+			}
+
+			if (UARTLOG->LOGUART_UART_LSR & LOGUART_BIT_TP3F_NOT_FULL) {
+				break;
+			}
+		}
+
+		UARTLOG->LOGUART_UART_THRx[2] = *InBuf++;
+	}
+}
+
+void LOGUART_Relay_StructInit(LOGUART_Relay_InitTypeDef *LOGUART_Relay_InitStruct)
+{
+	LOGUART_Relay_InitStruct->WordLen = LOGUART_WLS_8BITS;     // word length select
+	LOGUART_Relay_InitStruct->StopBit = LOGUART_STOP_BIT_1;     // 0 -> 1 stop bit, 1 -> 2 stop bit
+	LOGUART_Relay_InitStruct->Parity = DISABLE;      // parity check enable
+	LOGUART_Relay_InitStruct->ParityType = LOGUART_ODD_PARITY;
+	LOGUART_Relay_InitStruct->StickParity = DISABLE;
+	LOGUART_Relay_InitStruct->RxErReportCtrl = LOGUART_RX_EEROR_REPORT_ENABLE;
+}
+
+void LOGUART_Relay_SetFormat(LOGUART_TypeDef *UARTLOG, LOGUART_Relay_InitTypeDef *LOGUART_Relay_InitStruct)
+{
+	u32 TempFcr;
+
+	/*configure relay path: word length, stop bit, parity, parity type, stickparity*/
+	UARTLOG->LOGUART_UART_RP_LCR = ((LOGUART_Relay_InitStruct->WordLen) |
+									(LOGUART_RP_STB(LOGUART_Relay_InitStruct->StopBit)) |
+									(LOGUART_RP_PEN(LOGUART_Relay_InitStruct->Parity)) |
+									(LOGUART_RP_EPS(LOGUART_Relay_InitStruct->ParityType)) |
+									(LOGUART_RP_STKP(LOGUART_Relay_InitStruct->StickParity)));
+
+	/*enable or disable relay path error report*/
+	TempFcr = UARTLOG->LOGUART_UART_FCR;
+	TempFcr &= ~LOGUART_BIT_RP_FIFO_EN;
+	TempFcr |= LOGUART_RP_FIFO_EN(LOGUART_Relay_InitStruct->RxErReportCtrl);
+	TempFcr &= ~LOGUART_BIT_RECV_CLR; //to avoid clearing rx fifo
+
+	UARTLOG->LOGUART_UART_FCR = TempFcr;
+}
+
+void LOGUART_Relay_SetBaud(LOGUART_TypeDef *UARTLOG, u32 RPBaudRate)
+{
+	u32 RegValue;
+	u32 Ovsr;
+	u32 Ovsr_adj;
+
+	/* get baud rate parameter based on baudrate */
+	UART_BaudParaGetFull(XTAL_ClkGet(), RPBaudRate, &Ovsr, &Ovsr_adj);
+	/* Set DLAB bit to 1 to access DLL/DLM */
+	UARTLOG->LOGUART_UART_RP_LCR |= LOGUART_BIT_RP_DLAB;
+
+	/*rx baud rate configureation*/
+	RegValue = UARTLOG->LOGUART_UART_RP_LCR;
+	RegValue &= (~LOGUART_MASK_RP_RXBAUD_19_0);
+	RegValue |= LOGUART_RP_RXBAUD_19_0(Ovsr);
+	UARTLOG->LOGUART_UART_RP_LCR = RegValue;
+
+	RegValue = UARTLOG->LOGUART_UART_RP_RX_PATH_CTRL;
+	RegValue &= (~LOGUART_MASK_RP_RXBAUD_ADJ_10_0);
+	RegValue |= LOGUART_RP_RXBAUD_ADJ_10_0(Ovsr);
+	UARTLOG->LOGUART_UART_RP_RX_PATH_CTRL = RegValue;
+
+	/* clear DLAB bit */
+	UARTLOG->LOGUART_UART_RP_LCR &= ~(LOGUART_BIT_RP_DLAB);
+}
+
+u32 LOGUART_Relay_ClearRxFifo(LOGUART_TypeDef *UARTLOG)
+{
+	u32  Temp;
+	u32  WaitTime = 5;
+
+	/*write 1 to FCR[13] to clear rx fifo*/
+	u32 TempFcr;
+	TempFcr = UARTLOG->LOGUART_UART_FCR;
+	TempFcr |= LOGUART_BIT_RP_RECV_CLR;
+	TempFcr &= ~LOGUART_BIT_RECV_CLR; //to avoid clearing rx fifo
+
+	UARTLOG->LOGUART_UART_FCR = TempFcr;
+
+
+	while (WaitTime > 0) {
+		/*check Rx fifo if empty or not*/
+		Temp = UARTLOG->LOGUART_UART_LSR & LOGUART_BIT_RPF_DRDY;
+
+		if (Temp == 0) {
+			break;
+		}
+
+		WaitTime--;
+	}
+
+	if (Temp == 0) {
+		return _TRUE;
+	} else {
+		return _FALSE;
+	}
+}
+
+void LOGUART_Relay_RxCmd(LOGUART_TypeDef *UARTLOG, u32 NewState)
+{
+	if (NewState != DISABLE) {
+		UARTLOG->LOGUART_UART_RP_RX_PATH_CTRL |= LOGUART_BIT_R_RST_RP_RX_N;
+	} else {
+		UARTLOG->LOGUART_UART_RP_RX_PATH_CTRL &= ~LOGUART_BIT_R_RST_RP_RX_N;
+	}
+}
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

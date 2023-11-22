@@ -8,6 +8,7 @@
  */
 #include "ameba_soc.h"
 
+static const char *TAG = "PMC";
 typedef struct {
 	u32 CTRL;
 	u32 MAIR0;
@@ -95,7 +96,7 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode)
 	if (6 == index) {
 		return;
 	}
-	//DBG_8195A("mem module idx = %d mode = %d\n", index, mem_mode);
+	//RTK_LOGD(TAG, "mem module idx = %d mode = %d\n", index, mem_mode);
 	Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, module);
 	if (MEM_ACT_MODE == mem_mode) {
 		Rtemp &= (~(PMC_MemMode_Def[index].MEM_SD | PMC_MemMode_Def[index].MEM_DS | PMC_MemMode_Def[index].MEM_LS));
@@ -108,7 +109,7 @@ void SOCPS_SetMemMode(u32 module, u32 mem_mode)
 	}
 
 	HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, module, Rtemp);
-	//DBG_8195A("mem set %x = %x\n", module, HAL_READ32(SYSTEM_MEM_CTRL_BASE, module));
+	//RTK_LOGD(TAG, "mem set %x = %x\n", module, HAL_READ32(SYSTEM_MEM_CTRL_BASE, module));
 }
 
 /**
@@ -136,7 +137,7 @@ void SOCPS_ResMemMode(u32 module)
 		return;
 	}
 
-	//DBG_8195A("mem module resume idx = %d\n", index);
+	//RTK_LOGD(TAG, "mem module resume idx = %d\n", index);
 	Rtemp = HAL_READ32(SYSTEM_MEM_CTRL_BASE, module);
 	Rtemp &= (~(PMC_MemMode_Def[index].MEM_SD | PMC_MemMode_Def[index].MEM_DS | PMC_MemMode_Def[index].MEM_LS));
 	HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, module, Rtemp);
@@ -270,7 +271,7 @@ VOID SOCPS_WakeFromPG(VOID)
 	//km4_flash_highspeed_resume(FALSE);
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("SOCPS_WakeFromPG \n");
+		RTK_LOGD(TAG, "SOCPS_WakeFromPG \n");
 	}
 
 	/* Make PendSV, CallSV and SysTick the same priroity as the kernel. */
@@ -305,45 +306,6 @@ VOID SOCPS_WakeFromPG(VOID)
 		" svc 0					\n" /* System call to start first task. */
 		" nop					\n"
 	);
-}
-
-void LOGUART_WaitTxComplete(void)
-{
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	u32 lsr;
-
-	/* Wait for LogUart print out */
-	while (1) {
-		lsr = UARTLOG->LOGUART_UART_LSR;
-
-		if ((lsr & LOGUART_BIT_TP1F_EMPTY) && (lsr & LOGUART_BIT_TP2F_EMPTY) && (lsr & LOGUART_BIT_TP3F_EMPTY)  && \
-			(lsr & LOGUART_BIT_TP4F_EMPTY) && (!(lsr & LOGUART_BIT_RPF_DRDY)) && (lsr & LOGUART_BIT_TX_EMPTY)) {
-			break;
-		}
-
-		DelayUs(100);
-	}
-
-	/* delay at least 12 cycles of one bit time to make sure the last data is completely out of tx fifo, 1.5Mbps(xtal40M) is 12/1.5M = 8us */
-	DelayUs(8);
-}
-
-void SOCPS_OSC4M_CTRL(u8 open)
-{
-	u32 Rtemp;
-
-	if (open) {
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0);
-		Rtemp |= APBPeriph_LOGUART_CLOCK;
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0, Rtemp);
-	} else {
-
-		LOGUART_WaitTxComplete();
-
-		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0);
-		Rtemp &= ~APBPeriph_LOGUART_CLOCK;
-		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0, Rtemp);
-	}
 }
 
 /**
@@ -398,12 +360,10 @@ resume:
 
 VOID SOCPS_SleepCG_LIB(VOID)
 {
-	SOCPS_OSC4M_CTRL(DISABLE);
 	WakeEventFlag = _TRUE;
 
 	//Enable low power mode
 	SOCPS_SleepCG_RAM();
-	SOCPS_OSC4M_CTRL(ENABLE);
 }
 
 /**
@@ -471,7 +431,6 @@ VOID SOCPS_SleepPG_LIB(VOID)
 	/* backup registgers */
 	SOCPS_NVICBackup();
 	SOCPS_MPUBackup();
-	SOCPS_OSC4M_CTRL(DISABLE);
 
 	FLASH_DeepPowerDown(ENABLE);
 
@@ -517,9 +476,8 @@ VOID SOCPS_SleepPG_LIB(VOID)
 	/* soc sleep need it, or wakeup will fail */
 	FLASH_DeepPowerDown(DISABLE);
 
-	SOCPS_OSC4M_CTRL(ENABLE);
 	if (ps_config.km0_tickles_debug) {
-		DBG_8195A("SOCPS_SleepPG wakeup \n");
+		RTK_LOGD(TAG, "SOCPS_SleepPG wakeup \n");
 	}
 	/* disable boot from ps */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG);
@@ -532,8 +490,8 @@ VOID SOCPS_SleepPG_LIB(VOID)
 	IPCLP_DEV->IPC_IMR = PMC_BK.IPCbackup;
 	if (ps_config.km0_tickles_debug) {
 		Rtemp = HAL_READ32(PMC_BASE, WAK_STATUS0);
-		DBG_8195A("PG wake event %x %x\n", Rtemp,
-				  HAL_READ32(PMC_BASE, WAK_STATUS1));
+		RTK_LOGD(TAG, "PG wake event %x %x\n", Rtemp,
+				 HAL_READ32(PMC_BASE, WAK_STATUS1));
 	}
 
 	/* ReFill registers */
@@ -552,7 +510,7 @@ void SOCPS_DeepSleep_RAM(void)
 {
 	u32 Rtemp = 0;
 
-	DBG_8195A("M0DS \n");
+	RTK_LOGI(TAG, "M0DS \n");
 
 	/* Enable low power mode */
 	FLASH_DeepPowerDown(ENABLE);

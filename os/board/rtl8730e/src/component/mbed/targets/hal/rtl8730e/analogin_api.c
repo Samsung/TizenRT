@@ -76,6 +76,7 @@ void analogin_init(analogin_t *obj, PinName pin)
 		/* Initialize ADC pin */
 		Pinmux_Config(obj->adc_pin, PINMUX_FUNCTION_CAPTOUCH);
 		PAD_PullCtrl(obj->adc_pin, PullNone);
+		PAD_SleepPullCtrl(obj->adc_pin, PullNone);// avoid immediate wakeup once gated
 		/* Disable digital path input */
 		PAD_InputCtrl(obj->adc_pin, DISABLE);
 	}

@@ -369,7 +369,7 @@ static u32 ssi_dma_recv(void *Adapter, u8  *pRxData, u32 Length)
 
 static u32 spi_stop_recv(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	PGDMA_InitTypeDef GDMA_InitStruct = &ssi_adapter->SSIRxGdmaInitStruct;
 	u32 DMAStopAddr = 0;
@@ -426,7 +426,7 @@ static u32 spi_stop_recv(spi_t *obj)
   */
 void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SSI_InitTypeDef SSI_InitStruct;
 
@@ -480,7 +480,7 @@ void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel
   */
 void spi_free(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	InterruptDis(ssi_adapter->IrqNum);
@@ -535,7 +535,7 @@ void spi_free(spi_t *obj)
   */
 void spi_format(spi_t *obj, int bits, int mode, int slave)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	u32   SclkPhase;
 	u32   SclkPolarity;
@@ -615,7 +615,7 @@ void spi_format(spi_t *obj, int bits, int mode, int slave)
   */
 void spi_frequency(spi_t *obj, int hz)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	u32 IpClk;
 	u32 ClockDivider;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
@@ -638,7 +638,7 @@ void spi_frequency(spi_t *obj, int hz)
 
 void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	if (ssi_adapter->Role == SSI_MASTER) {
@@ -650,7 +650,7 @@ void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
 
 static inline void ssi_write(spi_t *obj, int value)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	while (!SSI_Writeable(ssi_adapter->spi_dev));
@@ -659,7 +659,7 @@ static inline void ssi_write(spi_t *obj, int value)
 
 static inline int ssi_read(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	while (!SSI_Readable(ssi_adapter->spi_dev));
@@ -685,7 +685,7 @@ int spi_master_write(spi_t *obj, int value)
   */
 int spi_slave_receive(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int Readable;
 	int Busy;
@@ -723,7 +723,7 @@ void spi_slave_write(spi_t *obj, int value)
   */
 int spi_busy(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	return (int)SSI_Busy(ssi_adapter->spi_dev);
@@ -736,7 +736,7 @@ int spi_busy(spi_t *obj)
   */
 void spi_flush_rx_fifo(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	u32 rx_fifo_level;
 	u32 i;
@@ -760,7 +760,7 @@ void spi_flush_rx_fifo(spi_t *obj)
   */
 int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -790,7 +790,7 @@ int32_t spi_slave_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
   */
 int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -818,7 +818,7 @@ int32_t spi_slave_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
   */
 int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 
 	int32_t ret;
@@ -858,7 +858,7 @@ int32_t spi_master_read_stream(spi_t *obj, char *rx_buffer, uint32_t length)
   */
 int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -890,7 +890,7 @@ int32_t spi_master_write_stream(spi_t *obj, char *tx_buffer, uint32_t length)
 int32_t spi_master_write_read_stream(spi_t *obj, char *tx_buffer,
 									 char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -943,7 +943,7 @@ void spi_irq_hook(spi_t *obj, spi_irq_handler handler, uint32_t id)
   */
 int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -972,7 +972,7 @@ int32_t spi_slave_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
   */
 int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -1002,7 +1002,7 @@ int32_t spi_slave_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
   */
 int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -1047,7 +1047,7 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
   */
 int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -1079,7 +1079,7 @@ int32_t spi_master_write_stream_dma(spi_t *obj, char *tx_buffer, uint32_t length
 int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
 		char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int32_t ret;
 
@@ -1115,7 +1115,7 @@ int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
   */
 int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	int ret, timeout = 0;
 	uint32_t StartCount = 0;
@@ -1173,7 +1173,7 @@ int32_t spi_slave_read_stream_dma_timeout(spi_t *obj, char *rx_buffer, uint32_t 
   */
 int32_t spi_slave_read_stream_dma_terminate(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
 	int ret;
@@ -1216,7 +1216,7 @@ EndOfDMACS:
   */
 void spi_slave_flush_fifo(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
 
 	SSI_Cmd(SPIx, DISABLE);
@@ -1235,7 +1235,7 @@ void spi_slave_flush_fifo(spi_t *obj)
   */
 int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t length, uint32_t timeout_ms)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
 	uint32_t timeout = 0;
@@ -1293,7 +1293,7 @@ int32_t spi_slave_read_stream_timeout(spi_t *obj, char *rx_buffer, uint32_t leng
   */
 int32_t spi_slave_read_stream_terminate(spi_t *obj, char *rx_buffer, uint32_t length)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
 	SPI_TypeDef *SPIx = SPI_DEV_TABLE[spi_idx].SPIx;
 
@@ -1335,7 +1335,7 @@ EndOfCS:
   */
 void spi_enable(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 
 	if (spi_idx == 1) {
 		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
@@ -1351,7 +1351,7 @@ void spi_enable(spi_t *obj)
   */
 void spi_disable(spi_t *obj)
 {
-	uint8_t  spi_idx = obj->spi_idx & 0x0F;
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
 
 	if (spi_idx == 1) {
 		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, DISABLE);

@@ -208,6 +208,32 @@ uint32_t arm_gic_get_active(void)
 	return irq;
 }
 
+int arm_gic_irq_is_pending(uint32_t irq)
+{
+	int int_grp, int_off;
+	uint32_t enabler;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	arm_gic_freq_switch();
+	enabler = sys_read32(GICD_ISPENDRn + int_grp * 4);
+	arm_gic_freq_restore();
+
+	return (enabler & (1 << int_off)) != 0;
+}
+
+void arm_gic_set_pending_irq(uint32_t irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+	arm_gic_freq_switch();
+	sys_write32((1 << int_off), (GICD_ISPENDRn + int_grp * 4));
+	arm_gic_freq_restore();
+}
+
 void arm_gic_clear_pending_irq(uint32_t irq)
 {
 	int int_grp, int_off;

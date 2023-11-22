@@ -96,12 +96,11 @@ void vPortSecondaryOff(void)
 
 void vPortSecondaryStart(void)
 {
-	debug_printf("CPU%d: on\n", (int)portGET_CORE_ID());
-
 	/* Wait until scheduler starts */
 	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_RUNNING)
 		while (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED);
 
+	debug_printf("CPU%d: on\n", (int)portGET_CORE_ID());
 #if ( configNUM_CORES > 1 )
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardwareSecondary();

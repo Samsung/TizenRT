@@ -68,7 +68,6 @@ void VAD_Set_Bit(void)
 	VAD->VAD_BUF_CTRL0 &= ~VAD_BIT_BIT_SEL;
 }
 
-
 /**
   * @brief  Initialize the ADC path of the codec to be used
   * @param  codec_index
@@ -120,7 +119,7 @@ void VAD_ADC_Codec_Init(u32 codec_index)
 /**
   * @brief  Set VAD ADC Clock to PC_VAD
   */
-void VAD_ADC_Clock_Enable(void)
+void VAD_ADC_Clock_Enable(u32 clock_sel)
 {
 	VAD_TypeDef *VAD;
 	if (TrustZone_IsSecure()) {
@@ -129,7 +128,12 @@ void VAD_ADC_Clock_Enable(void)
 		VAD = ((VAD_TypeDef *)VAD_REG_BASE);
 	}
 
-	VAD -> VAD_BUF_CTRL0 |= VAD_BIT_ADC_ANALOG_CLK_SEL;
+	if (clock_sel == CLK_FOR_PC_VAD_CODEC) {
+		VAD -> VAD_BUF_CTRL0 |= VAD_BIT_ADC_ANALOG_CLK_SEL;
+	} else {
+		VAD -> VAD_BUF_CTRL0 &= ~VAD_BIT_ADC_ANALOG_CLK_SEL;
+
+	}
 }
 
 /**

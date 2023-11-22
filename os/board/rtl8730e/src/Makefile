@@ -144,6 +144,7 @@ CFLAGS += -I$(TARGETDIR)/app/monitor/include
 CFLAGS += -I$(TARGETDIR)/swlib
 CFLAGS += -I$(TARGETDIR)/misc
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
+CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
 CFLAGS += -I$(COMPONENT_DIR)/wifi
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api

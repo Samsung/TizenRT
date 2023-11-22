@@ -19,6 +19,7 @@
   */
 #include "ameba_soc.h"
 
+static const char *TAG = "PSRAM";
 u8 APM_WR_INIT_LATENCY_SPEC[6] = {
 	APM_WR_INIT_LATENCY_3CLK,
 	APM_WR_INIT_LATENCY_4CLK,
@@ -110,9 +111,11 @@ void PSRAM_INFO_Update(void)
 			PsramInfo.Psram_Latency_Set = 10;
 			PsramInfo.Psram_CSHI = Psram_WB_CSHI166;
 		}
+		/* backup latency code for KM0 for sleep */
+		RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	}
 
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "PSRAM Ctrl CLK: %d Hz \n", PsramClk);
+	RTK_LOGI(TAG, "PSRAM Ctrl CLK: %d Hz \n", PsramClk);
 }
 
 void PSRAM_APM_DEVIC_Init(void)
@@ -322,11 +325,11 @@ void PSRAM_REG_Read(u32 addr, u32 read_len, u8 *read_data)
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
 	psram_ctrl->RX_NDF = RX_NDF(read_len);
 	psram_ctrl->TX_NDF = 0;
-	DBG_8195A("RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
+	RTK_LOGI(TAG, "RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
 
 	//set rx mode
 	psram_ctrl->CTRLR0 |= TMOD(3);
-	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	RTK_LOGI(TAG, "CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* set flash_cmd: write cmd to fifo */
 	psram_ctrl->DR[0].BYTE = 0x40;
@@ -443,7 +446,7 @@ void PSRAM_MEM_Write(u8 cmd, u32 addr, u32 write_len, u8 *write_data)
 
 	//set tx mode
 	psram_ctrl->CTRLR0 &= ~(TMOD(3));
-	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	RTK_LOGI(TAG, "CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* Set RX_NDF: frame number of receiving data. TX_NDF should be set in both transmit mode and receive mode.
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
@@ -510,11 +513,11 @@ void PSRAM_WB_REG_Read(u32 regnum, u32 read_len, u8 *read_data, u32 CR)
 		TX_NDF should be set to zero in receive mode to skip the TX_DATA phase. */
 	psram_ctrl->RX_NDF = RX_NDF(read_len);
 	psram_ctrl->TX_NDF = 0;
-	DBG_8195A("RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
+	RTK_LOGI(TAG, "RX_NDF = %p %x\n", &(psram_ctrl->RX_NDF), psram_ctrl->RX_NDF);
 
 	//set rx mode
 	psram_ctrl->CTRLR0 |= TMOD(3);
-	DBG_8195A("CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
+	RTK_LOGI(TAG, "CTRLR0 = %p %x\n", &(psram_ctrl->CTRLR0), psram_ctrl->CTRLR0);
 
 	/* set flash_cmd: write cmd to fifo */
 	psram_ctrl->DR[0].BYTE = 0xe0;
@@ -643,7 +646,7 @@ BOOL PSRAM_calibration(void)
 		windowt_size = 0;
 		windowt_start = -1;
 		windowt_end = -1;
-		//DBG_8195A("===phase %x =====\n",phase);
+		//RTK_LOGD(TAG, "===phase %x =====\n",phase);
 
 		for (caltempN = 0; caltempN < 32; caltempN++) {
 			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN | PSPHY_PRE_CAL_PHASE(phase);
@@ -662,7 +665,7 @@ BOOL PSRAM_calibration(void)
 			tempdatard[5] = HAL_READ32(PSRAM_BASE, 0x250000);
 
 			if (_memcmp(tempdatard, PSRAM_CALIB_PATTERN, 24) == 0) {
-				//DBG_8195A("ok %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
+				//RTK_LOGD(TAG, "ok %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
 				if (windowt_start < 0) {
 					windowt_start = caltempN;
 				}
@@ -678,7 +681,7 @@ BOOL PSRAM_calibration(void)
 					}
 				}
 			} else {
-				//DBG_8195A("fail %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
+				//RTK_LOGD(TAG, "fail %x %x %x %x %x %x %x\n",caltempN, tempdatard[0],tempdatard[1],tempdatard[2],tempdatard[3],tempdatard[4],tempdatard[5]);
 				if (windowt_start >= 0) {
 					if (windowt_size > window_size) {
 						window_start = windowt_start;
@@ -695,7 +698,7 @@ BOOL PSRAM_calibration(void)
 		}
 	}
 
-	DBG_8195A("CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
+	RTK_LOGI(TAG, "CalNmin = %x CalNmax = %x WindowSize = %x phase: %x \n", window_start, window_end, window_size, phase_cnt);
 
 	DCache_Enable();
 
