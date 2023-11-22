@@ -29,6 +29,10 @@ namespace aifw {
 class AIModel;
 class AIDataBufferNode;
 
+/**
+ * @class AIDataBuffer
+ * @brief This class creates a doubly linked list and provides API to perform operations on that list.
+ */
 class AIDataBuffer
 {
 public:
@@ -66,8 +70,21 @@ public:
 	 */
 	uint16_t getRowCount();
 
-	friend class AIModel;
+	/**
+	 * @brief Marks all nodes empty and sets number of filled nodes to 0 in AIDataBuffer
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clear(void);
 
+	/**
+	 * @brief Marks specific nodes empty, move them to the end of AIDataBuffer, and decrement number of filled nodes in AIDataBuffer
+	 * @param [IN] offset: Offset of row to start clearing.
+	 * @param [IN] count: Count of rows to clear.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clear(uint16_t offset, uint16_t count);
+
+	friend class AIModel;
 private:
 	/**
 	 * @brief Creates a doubly linked list with node count equal to row and node size equal to size.
@@ -91,11 +108,6 @@ private:
 	 * It clears the memory allocated to doubly linked list and resets class member variables.
 	 */
 	void deinit(void);
-
-	/**
-	 * @brief Marks all nodes empty and sets number of filled nodes to 0 in AIDataBuffer 
-	 */
-	void clear(void);
 
 	/**
 	 * @brief Writes a row into streaming buffer.

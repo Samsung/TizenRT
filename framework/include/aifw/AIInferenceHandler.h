@@ -28,6 +28,10 @@
 
 namespace aifw {
 
+/**
+ * @class AIInferenceHandler
+ * @brief Inference handler base class
+ */
 class AIInferenceHandler
 {
 public:
@@ -68,6 +72,20 @@ public:
 	 * @return: AIFW_RESULT enum object.
 	 */
 	virtual AIFW_RESULT prepare(void) = 0;
+
+	/**
+	 * @brief Clears sensor data associated with all models in model set.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	virtual AIFW_RESULT clearData(void);
+
+	/**
+	 * @brief Clears specific sensor data rows associated with all models in model set.
+	 * @param [IN] offset: Offset of row to start deletion.
+	 * @param [IN] count: Count of rows to delete.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	virtual AIFW_RESULT clearData(uint16_t offset, uint16_t count);	
 
 protected:
 	/**

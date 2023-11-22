@@ -22,6 +22,10 @@
 
 namespace aifw {
 
+/**
+ * @struct _arrayDeleter
+ * @brief Custom deleter for shared pointer
+ */
 template <typename T>
 struct _arrayDeleter {
 	void operator()(T const *p)
@@ -105,6 +109,24 @@ AIFW_RESULT AIInferenceHandler::pushData(void *data, uint16_t count)
 		finalResult = NULL;
 	}
 	return AIFW_OK;
+}
+
+AIFW_RESULT AIInferenceHandler::clearData(void)
+{
+	AIFW_RESULT res = AIFW_OK;
+	for (uint16_t idx = 0; idx < mModelIndex; idx++) {
+		res = mModels.get()[idx]->clearRawData();
+	}
+	return res;
+}
+
+AIFW_RESULT AIInferenceHandler::clearData(uint16_t offset, uint16_t count)
+{
+	AIFW_RESULT res = AIFW_OK;
+	for (uint16_t idx = 0; idx < mModelIndex; idx++) {
+		res = mModels.get()[idx]->clearRawData(offset, count);
+	}
+	return res;
 }
 
 } /* namespace aifw */

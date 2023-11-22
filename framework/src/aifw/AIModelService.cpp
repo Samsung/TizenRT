@@ -155,6 +155,24 @@ AIFW_RESULT AIModelService::prepare(void)
 	return AIFW_OK;
 }
 
+AIFW_RESULT AIModelService::clearData(void)
+{
+	if (!mServiceRunning) {
+		AIFW_LOGE("Service not running");
+		return AIFW_SERVICE_NOT_RUNNING;
+	}
+	return mInferenceHandler->clearData();
+}
+
+AIFW_RESULT AIModelService::clearData(uint16_t offset, uint16_t count)
+{
+	if (!mServiceRunning) {
+		AIFW_LOGE("Service not running");
+		return AIFW_SERVICE_NOT_RUNNING;
+	}
+	return mInferenceHandler->clearData(offset, count);
+}
+
 CollectRawDataListener AIModelService::getCollectRawDataCallback(void)
 {
 	return mCollectRawDataCallback;

@@ -29,6 +29,11 @@
 
 /* Tensorflow structure declaration */
 struct TfLiteTensor;
+
+/**
+ * @namespace tflite
+ * @brief tensor flow name space
+ */
 namespace tflite {
 struct Model;
 class MicroInterpreter;
@@ -37,6 +42,10 @@ class ErrorReporter;
 
 namespace aifw {
 
+/**
+ * @class TFLM
+ * @brief Class to perform AI operations using Tensor Flow
+ */
 class TFLM : public AIEngine
 {
 public:
