@@ -707,12 +707,12 @@ typedef struct {
   */
 _LONG_CALL_ void I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ void I2C_Cmd(I2C_TypeDef *I2Cx, u8 NewState);
-_LONG_CALL_ void I2C_ClearAllINT(I2C_TypeDef *I2Cx);
+_LONG_CALL_ u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u32 I2C_GetRawINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u32 I2C_GetINT(I2C_TypeDef *I2Cx);
 _LONG_CALL_ u8 I2C_CheckFlagState(I2C_TypeDef *I2Cx, u32 I2C_FLAG);
 _LONG_CALL_ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState);
-_LONG_CALL_ void I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
+_LONG_CALL_ u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrAddr);
 _LONG_CALL_ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk);
 _LONG_CALL_ void I2C_StructInit(I2C_InitTypeDef *I2C_InitStruct);
 _LONG_CALL_ u8 I2C_ReceiveData(I2C_TypeDef *I2Cx);
@@ -736,7 +736,7 @@ _LONG_CALL_ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u3
 _LONG_CALL_ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_ms);
 _LONG_CALL_ u32 I2C_MasterWriteInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
 _LONG_CALL_ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBuf, u32 len);
-_LONG_CALL_ void I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
+_LONG_CALL_ u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct);
 /**
   * @}
   */

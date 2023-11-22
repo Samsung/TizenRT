@@ -799,7 +799,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t eve
 }
 
 extern bool rtk_bt_pre_enable(void);
-extern void ftl_ipc_init(void);
+//extern void ftl_ipc_init(void);
 int ble_tizenrt_scatternet_main(uint8_t enable)
 {
     rtk_bt_app_conf_t bt_app_conf = {0};
@@ -817,7 +817,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 
 	if (1 == enable)
 	{
-		ftl_ipc_init();
+		//ftl_ipc_init();
         if (rtk_bt_pre_enable() == false) {
             dbg("%s fail!\r\n", __func__);
             return -1;

@@ -19,7 +19,7 @@
 
 // ----------------------------------------------------------------------
 //MediaDecoderConfig
-#if defined MEDIA_PLAYER || defined MEDIA_FI_PLAYER
+#if defined MEDIA_PLAYER || defined WIFI_AUDIO
 void *CreatePCMDec(
         const char *name, const void *callbacks,
         void *appData, void **component);

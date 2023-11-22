@@ -17,6 +17,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "CAPTOUCH";
 extern BOOL vref_init_done;
 
 /**
@@ -404,6 +405,20 @@ void CapTouch_SetPNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u16 Thresho
 }
 
 /**
+  * @brief Get Mbias current value for specified channel.
+  * @param CapTouch: which should be CAPTOUCH_DEV.
+  * @param Channel: specified channel index, which can be 0~3.
+  * @return Mbias data.
+  */
+u32 CapTouch_GetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
+{
+	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
+	assert_param(IS_CT_CHANNEL(Channel));
+
+	return CT_GET_CHx_MBIAS(CapTouch->CT_CH[Channel].CT_CHx_MBIAS_ATH);
+}
+
+/**
   * @brief  Get relative threshold of touch judgement for specified channel.
    * @param  CapTouch: which should be CAPTOUCH_DEV.
   * @param  Channel: specified channel index, which can be 0~8
@@ -517,24 +532,34 @@ void CapTouch_DbgCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState)
 
 
 /**
-  * @brief select debug channel
-  * @param  CapTouch: which should be CAPTOUCH_DEV.
-  * @param  Channel: specified channel index, which can be 0~8, channel 8 is guard sensor
+  * @brief Select debug channel.
+  * @param CapTouch: which should be CAPTOUCH_DEV.
+  * @param Channel: specified channel index, which can be 0~8, channel 8 is guard sensor.
+  * @param  NewState: can be one of the following values:
+  *		@arg ENABLE: manual channel switch.
+  *		@arg DISABLE: auto channel switch.
   * @retval none
+  * @note Manual channel switch only works when debug mode is enabled.
   */
-void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel)
+void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState)
 {
 	u32 data;
 
 	/* Check the parameters */
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
-	assert_param(IS_CT_CHANNEL(Channel));
 
 	data = CapTouch->CT_DEBUG_MODE_CTRL;
-	data &= ~(CT_MASK_CH_CTRL | CT_BIT_CH_SWITCH_CTRL);
-	data |= CT_CH_CTRL(Channel);
-	CapTouch->CT_DEBUG_MODE_CTRL = data;
 
+	if (NewState != DISABLE) {
+		assert_param(IS_CT_CHANNEL(Channel));
+
+		data &= ~(CT_MASK_CH_CTRL | CT_BIT_CH_SWITCH_CTRL);
+		data |= CT_CH_CTRL(Channel);
+	} else {
+		data |= CT_BIT_CH_SWITCH_CTRL;
+	}
+
+	CapTouch->CT_DEBUG_MODE_CTRL = data;
 }
 
 
@@ -555,7 +580,7 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
 		data = CapTouch->CT_RAW_CODE_FIFO_READ;
 
 		if (loop++ > 200000) {
-			DBG_8195A("sample timeout \n");
+			RTK_LOGI(TAG, "sample timeout \n");
 			return  0xEAEA;
 		}
 
@@ -572,33 +597,33 @@ u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch)
   */
 void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch)
 {
-	DBG_8195A("\n%08p: %08x (CT_CTC_CTRL)\n", (void const *) & (CapTouch->CT_CTC_CTRL), CapTouch->CT_CTC_CTRL);
-	DBG_8195A("%08p: %08x (CT_SCAN_PERIOD)\n", (void const *) & (CapTouch->CT_SCAN_PERIOD), CapTouch->CT_SCAN_PERIOD);
-	DBG_8195A("%08p: %08x (CT_ETC_CTRL)\n", (void const *) & (CapTouch->CT_ETC_CTRL), CapTouch->CT_ETC_CTRL);
-	DBG_8195A("%08p: %08x (CT_SNR_INF)\n", (void const *) & (CapTouch->CT_SNR_INF), CapTouch->CT_SNR_INF);
-	DBG_8195A("%08p: %08x (CT_DEBUG_MODE_CTRL)\n", (void const *) & (CapTouch->CT_DEBUG_MODE_CTRL), CapTouch->CT_DEBUG_MODE_CTRL);
-	DBG_8195A("%08p: %08x (CT_RAW_CODE_FIFO_STATUS)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_STATUS), CapTouch->CT_RAW_CODE_FIFO_STATUS);
-	DBG_8195A("%08p: %08x (CT_RAW_CODE_FIFO_READ)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_READ), CapTouch->CT_RAW_CODE_FIFO_READ);
-	DBG_8195A("%08p: %08x (CT_INTERRUPT_ENABLE)\n", (void const *) & (CapTouch->CT_INTERRUPT_ENABLE), CapTouch->CT_INTERRUPT_ENABLE);
-	DBG_8195A("%08p: %08x (CT_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS), CapTouch->CT_INTERRUPT_STATUS);
-	DBG_8195A("%08p: %08x (CT_RAW_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_RAW_INTERRUPT_STATUS), CapTouch->CT_RAW_INTERRUPT_STATUS);
-	DBG_8195A("%08p: %08x (CT_INTERRUPT_ALL_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_ALL_CLR), CapTouch->CT_INTERRUPT_ALL_CLR);
-	DBG_8195A("%08p: %08x (CT_INTERRUPT_STATUS_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS_CLR), CapTouch->CT_INTERRUPT_STATUS_CLR);
-	DBG_8195A("%08p: %08x (CT_DEBUG_SEL)\n", (void const *) & (CapTouch->CT_DEBUG_SEL), CapTouch->CT_DEBUG_SEL);
-	DBG_8195A("%08p: %08x (CT_DEBUG_PORT)\n", (void const *) & (CapTouch->CT_DEBUG_PORT), CapTouch->CT_DEBUG_PORT);
-	DBG_8195A("%08p: %08x (CT_ECO_USE0)\n", (void const *) & (CapTouch->CT_ECO_USE0), CapTouch->CT_ECO_USE0);
-	DBG_8195A("%08p: %08x (CT_ECO_USE1)\n", (void const *) & (CapTouch->CT_ECO_USE1), CapTouch->CT_ECO_USE1);
-	DBG_8195A("%08p: %08x (CT_CTC_COMP_VERSION)\n", (void const *) & (CapTouch->CT_CTC_COMP_VERSION), CapTouch->CT_CTC_COMP_VERSION);
+	RTK_LOGI(TAG, "\n%08p: %08x (CT_CTC_CTRL)\n", (void const *) & (CapTouch->CT_CTC_CTRL), CapTouch->CT_CTC_CTRL);
+	RTK_LOGI(TAG, "%08p: %08x (CT_SCAN_PERIOD)\n", (void const *) & (CapTouch->CT_SCAN_PERIOD), CapTouch->CT_SCAN_PERIOD);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ETC_CTRL)\n", (void const *) & (CapTouch->CT_ETC_CTRL), CapTouch->CT_ETC_CTRL);
+	RTK_LOGI(TAG, "%08p: %08x (CT_SNR_INF)\n", (void const *) & (CapTouch->CT_SNR_INF), CapTouch->CT_SNR_INF);
+	RTK_LOGI(TAG, "%08p: %08x (CT_DEBUG_MODE_CTRL)\n", (void const *) & (CapTouch->CT_DEBUG_MODE_CTRL), CapTouch->CT_DEBUG_MODE_CTRL);
+	RTK_LOGI(TAG, "%08p: %08x (CT_RAW_CODE_FIFO_STATUS)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_STATUS), CapTouch->CT_RAW_CODE_FIFO_STATUS);
+	RTK_LOGI(TAG, "%08p: %08x (CT_RAW_CODE_FIFO_READ)\n", (void const *) & (CapTouch->CT_RAW_CODE_FIFO_READ), CapTouch->CT_RAW_CODE_FIFO_READ);
+	RTK_LOGI(TAG, "%08p: %08x (CT_INTERRUPT_ENABLE)\n", (void const *) & (CapTouch->CT_INTERRUPT_ENABLE), CapTouch->CT_INTERRUPT_ENABLE);
+	RTK_LOGI(TAG, "%08p: %08x (CT_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS), CapTouch->CT_INTERRUPT_STATUS);
+	RTK_LOGI(TAG, "%08p: %08x (CT_RAW_INTERRUPT_STATUS)\n", (void const *) & (CapTouch->CT_RAW_INTERRUPT_STATUS), CapTouch->CT_RAW_INTERRUPT_STATUS);
+	RTK_LOGI(TAG, "%08p: %08x (CT_INTERRUPT_ALL_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_ALL_CLR), CapTouch->CT_INTERRUPT_ALL_CLR);
+	RTK_LOGI(TAG, "%08p: %08x (CT_INTERRUPT_STATUS_CLR)\n", (void const *) & (CapTouch->CT_INTERRUPT_STATUS_CLR), CapTouch->CT_INTERRUPT_STATUS_CLR);
+	RTK_LOGI(TAG, "%08p: %08x (CT_DEBUG_SEL)\n", (void const *) & (CapTouch->CT_DEBUG_SEL), CapTouch->CT_DEBUG_SEL);
+	RTK_LOGI(TAG, "%08p: %08x (CT_DEBUG_PORT)\n", (void const *) & (CapTouch->CT_DEBUG_PORT), CapTouch->CT_DEBUG_PORT);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ECO_USE0)\n", (void const *) & (CapTouch->CT_ECO_USE0), CapTouch->CT_ECO_USE0);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ECO_USE1)\n", (void const *) & (CapTouch->CT_ECO_USE1), CapTouch->CT_ECO_USE1);
+	RTK_LOGI(TAG, "%08p: %08x (CT_CTC_COMP_VERSION)\n", (void const *) & (CapTouch->CT_CTC_COMP_VERSION), CapTouch->CT_CTC_COMP_VERSION);
 
-	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_CTRL)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_CTRL), CapTouch->CT_CH[0].CT_CHx_CTRL);
-	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_NOISE_TH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_NOISE_TH), CapTouch->CT_CH[0].CT_CHx_NOISE_TH);
-	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_MBIAS_ATH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH), CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH);
-	DBG_8195A("%08p: %08x (CT_CH[0].CT_CHx_DATA_INF)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_DATA_INF), CapTouch->CT_CH[0].CT_CHx_DATA_INF);
+	RTK_LOGI(TAG, "%08p: %08x (CT_CH[0].CT_CHx_CTRL)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_CTRL), CapTouch->CT_CH[0].CT_CHx_CTRL);
+	RTK_LOGI(TAG, "%08p: %08x (CT_CH[0].CT_CHx_NOISE_TH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_NOISE_TH), CapTouch->CT_CH[0].CT_CHx_NOISE_TH);
+	RTK_LOGI(TAG, "%08p: %08x (CT_CH[0].CT_CHx_MBIAS_ATH)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH), CapTouch->CT_CH[0].CT_CHx_MBIAS_ATH);
+	RTK_LOGI(TAG, "%08p: %08x (CT_CH[0].CT_CHx_DATA_INF)\n", (void const *) & (CapTouch->CT_CH[0].CT_CHx_DATA_INF), CapTouch->CT_CH[0].CT_CHx_DATA_INF);
 
-	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG0X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPAD), CapTouch->CT_ANA_ADC_REG0X_LPAD);
-	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG1X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG1X_LPAD), CapTouch->CT_ANA_ADC_REG1X_LPAD);
-	DBG_8195A("%08p: %08x (CT_ANA_ADC_REG0X_LPSD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPSD), CapTouch->CT_ANA_ADC_REG0X_LPSD);
-	DBG_8195A("%08p: %08x (CT_ANA_ADC_TIME_SET)\n", (void const *) & (CapTouch->CT_ANA_ADC_TIME_SET), CapTouch->CT_ANA_ADC_TIME_SET);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ANA_ADC_REG0X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPAD), CapTouch->CT_ANA_ADC_REG0X_LPAD);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ANA_ADC_REG1X_LPAD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG1X_LPAD), CapTouch->CT_ANA_ADC_REG1X_LPAD);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ANA_ADC_REG0X_LPSD)\n", (void const *) & (CapTouch->CT_ANA_ADC_REG0X_LPSD), CapTouch->CT_ANA_ADC_REG0X_LPSD);
+	RTK_LOGI(TAG, "%08p: %08x (CT_ANA_ADC_TIME_SET)\n", (void const *) & (CapTouch->CT_ANA_ADC_TIME_SET), CapTouch->CT_ANA_ADC_TIME_SET);
 }
 
 /**
@@ -624,12 +649,12 @@ void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch)
 	NoiseThresN = CapTouch_GetNoiseThres(CapTouch, ch, N_NOISE_THRES);
 	AbsoThres = CapTouch_GetChAbsThres(CapTouch, ch);
 
-	DBG_8195A("\nCH[%d] ETC: ChDiffThres:%08x (%d) \n", ch, DiffThres, DiffThres);
-	DBG_8195A("CH[%d] ETC: Baseline:%08x (%d) \n", ch, Baseline, Baseline);
-	DBG_8195A("CH[%d] ETC: RawAveData:%08x (%d) Diff:%d \n", ch, AveData, AveData, AveData - Baseline);
-	DBG_8195A("CH[%d] ETC: NoiseThres P:%08x (%d) \n", ch, NoiseThresP, NoiseThresP);
-	DBG_8195A("CH[%d] ETC: NoiseThres N:%08x (%d) \n", ch, NoiseThresN, NoiseThresN);
-	DBG_8195A("CH[%d] ETC: AbsoThres:%08x (%d) \n", ch, AbsoThres, AbsoThres);
+	RTK_LOGI(TAG, "\nCH[%d] ETC: ChDiffThres:%08x (%d) \n", ch, DiffThres, DiffThres);
+	RTK_LOGI(TAG, "CH[%d] ETC: Baseline:%08x (%d) \n", ch, Baseline, Baseline);
+	RTK_LOGI(TAG, "CH[%d] ETC: RawAveData:%08x (%d) Diff:%d \n", ch, AveData, AveData, AveData - Baseline);
+	RTK_LOGI(TAG, "CH[%d] ETC: NoiseThres P:%08x (%d) \n", ch, NoiseThresP, NoiseThresP);
+	RTK_LOGI(TAG, "CH[%d] ETC: NoiseThres N:%08x (%d) \n", ch, NoiseThresN, NoiseThresN);
+	RTK_LOGI(TAG, "CH[%d] ETC: AbsoThres:%08x (%d) \n", ch, AbsoThres, AbsoThres);
 }
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

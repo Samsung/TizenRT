@@ -6,8 +6,8 @@
 #include "hal_platform.h"
 
 #define VAD_DEV ((VAD_TypeDef *)VAD_REG_BASE)
-#define PRE_READ_NUM_BLOCK 15999
-#define PRE_READ_NUM_INTERLEAVE 16000
+#define PRE_READ_NUM_BLOCK 12800
+#define LAST_SAMPLE_BYTES  2
 
 static u32 block_range[4][2] = {{0x20038000, 0x2003FFFF},
 	{0x20030000, 0x20037FFF},
@@ -19,7 +19,7 @@ static u32 block_range[4][2] = {{0x20038000, 0x2003FFFF},
   * @brief  obtain the current written address, the value of reg(0ffset 0x5c)
   * @retval return the current written address.
   */
-u32 get_current_addr()
+u32 get_current_addr(void)
 {
 	return VAD_DEV -> VAD_BUF_CTRL_W_ADDRESS;
 }
@@ -89,10 +89,10 @@ u32 get_start_addr_block(u32 addr_ref, u8 channel_index)
 
 	addr_ref = addr_ref + (block_ref - block_index) * 0x8000;
 
-	if ((addr_ref - PRE_READ_NUM_BLOCK + 1) >= block_range[block_index][0]) {
-		return (addr_ref - PRE_READ_NUM_BLOCK + 1);
+	if ((addr_ref - PRE_READ_NUM_BLOCK) >= block_range[block_index][0]) {
+		return (addr_ref - PRE_READ_NUM_BLOCK);
 	} else {
-		return (block_range[block_index][1] + 1 - (PRE_READ_NUM_BLOCK - addr_ref + block_range[block_index][0] - 1));
+		return (block_range[block_index][1] + LAST_SAMPLE_BYTES - (PRE_READ_NUM_BLOCK - addr_ref + block_range[block_index][0]));
 	}
 }
 
@@ -113,9 +113,9 @@ u32 get_data_stored_block(u32 addr1, u32 addr2)
 	addr1 = addr1 + (block_index1 - block_index2) * 0x8000;
 
 	if (addr2 >= addr1) {
-		return (addr2 - addr1 + 1);
+		return (addr2 - addr1);
 	} else {
-		return (block_range[block_index2][1] - addr1 + 1 + addr2 - block_range[block_index2][0] + 1);
+		return (block_range[block_index2][1] + LAST_SAMPLE_BYTES - addr1 + addr2 - block_range[block_index2][0]);
 	}
 }
 
@@ -123,7 +123,7 @@ u32 get_data_stored_block(u32 addr1, u32 addr2)
   * @brief  obtain the hit address, the value of reg(0ffset 0x54)
   * @retval return the hit address(the written address when a voice activity is detected).
   */
-u32 get_hit_addr()
+u32 get_hit_addr(void)
 {
 	return (VAD_DEV -> VAD_ASSERT_W_SRAM_ADDRSS);
 }
@@ -132,7 +132,7 @@ u32 get_hit_addr()
   * @brief  obtain the channel index when a VAD activity is detected in block mode
   * @retval return the channel index when a VAD activity is detected in block mode
   */
-u32 get_hit_channel()
+u32 get_hit_channel(void)
 {
 	return (VAD_GET_CH_W_VAD_ASSERT(VAD_DEV -> VAD_BUF_CTRL0));
 }
@@ -149,11 +149,14 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 {
 	u8 block_index = get_block_index(addr_start);
 
-	if ((block_range[block_index][1] - addr_start + 1) >= amount_byte) {
-		memcpy(buf, addr_start, amount_byte);
+	if ((block_range[block_index][1] - addr_start + LAST_SAMPLE_BYTES) >= amount_byte) {
+		_memcpy((void *)buf, (void *)addr_start, amount_byte);
+		DCache_CleanInvalidate((u32)buf, (u32)amount_byte);
+
 	} else {
-		memcpy(buf, addr_start, block_range[block_index][1] - addr_start + 1);
-		memcpy(buf + block_range[block_index][1] - addr_start + 1, block_range[block_index][0], amount_byte - (block_range[block_index][1] - addr_start + 1));
+		memcpy((void *)buf, (void *)addr_start, block_range[block_index][1]  + LAST_SAMPLE_BYTES - addr_start);
+		memcpy((void *)(buf + block_range[block_index][1]  + LAST_SAMPLE_BYTES - addr_start), (void *)(block_range[block_index][0]),
+			   amount_byte - (block_range[block_index][1]  + LAST_SAMPLE_BYTES - addr_start));
 	}
 }
 
@@ -168,16 +171,16 @@ void vad_data_copy_block(u32 addr_start, u32 amount_byte, u8 *buf)
 u32 get_new_addr_block(u32 addr, u32 byte_num)
 {
 	u8 block_index = get_block_index(addr);
-	if ((block_range[block_index][1] - addr + 1) >= (byte_num + 1)) {
+	if ((block_range[block_index][1] - addr + LAST_SAMPLE_BYTES) >= (byte_num)) {
 		return (addr + byte_num);
 	} else {
-		return (byte_num - (block_range[block_index][1] - addr + 1) + block_range[block_index][0]);
+		return (byte_num - (block_range[block_index][1] - addr + LAST_SAMPLE_BYTES) + block_range[block_index][0]);
 	}
 }
 
 //we only have to calculate the start address when a voice activity is detected.
 //we need a flag to indicate whether this is the first time.
-static u8 first_time_flag = 1;
+u8 first_time_flag = 1;
 
 
 static u32 addr_ref = 0;
@@ -193,12 +196,12 @@ static u32 addr_ch3 = 0;
   * @param  time_period_ms  the time period of requied audio data
             buf  memory space malloced by the user to store audio data
   */
-void get_vad_data_block(u32 time_period_ms, u8 *buf)
+void get_vad_data(u32 time_period_ms, u8 *buf)
 {
 	if (first_time_flag) {
 		addr_ref = get_hit_addr();
 		first_time_flag = 0;
-		printf("hit addr is %x\n", addr_ref);
+		//printf("hit addr is %x\n", addr_ref);
 		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH0_IN_VADBUF_EN) {
 			addr_ch0 = get_start_addr_block(addr_ref, 0);
 		}
@@ -220,302 +223,63 @@ void get_vad_data_block(u32 time_period_ms, u8 *buf)
 	}
 
 	u32 used_bytes = 0;
+	u32 block_number = 0;
 	u32 byte_num = get_byte_num(time_period_ms);
-
-	//addr_ref = get_start_addr(addr_ref, 0);
 	u32 addr_curr = get_current_addr();
 	u32 data_stored = get_data_stored_block(addr_ref, addr_curr);
 
-	printf("\r\naddr_ref %x  addr_curr %x  byte_num %x  data_stored %x\r\n", addr_ref, addr_curr, byte_num, data_stored);
+	//printf("\r\naddr_ref %x  addr_curr %x  byte_num %x  data_stored %x\r\n", addr_ref, addr_curr, byte_num, data_stored);
+	//printf("\r\naddr_ch0  %x  addr_ch1  %x  addr_ch2  %x  addr_ch3  %x\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
 
-	printf("\r\naddr_ch0  %x  addr_ch1  %x  addr_ch2  %x  addr_ch3  %x\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
-
-	if (byte_num <= data_stored) {
-
-	} else {
-		DelayMs(time_period_ms);
+	while (byte_num > data_stored) {
+		addr_curr = get_current_addr();
+		data_stored = get_data_stored_block(addr_ref, addr_curr);
 	}
+
 
 	if (addr_ch0) {
 		vad_data_copy_block(addr_ch0, byte_num, buf + used_bytes);
 		used_bytes += byte_num;
 		addr_ch0 = get_new_addr_block(addr_ch0, byte_num);
+		block_number = block_number + 1;
 	}
 
 	if (addr_ch1) {
-		vad_data_copy(addr_ch1, byte_num, buf + used_bytes);
+		vad_data_copy_block(addr_ch1, byte_num, buf + used_bytes);
 		used_bytes += byte_num;
 		addr_ch1 = get_new_addr_block(addr_ch1, byte_num);
+		block_number = block_number + 1;
 	}
 
 	if (addr_ch2) {
-		vad_data_copy(addr_ch2, byte_num, buf + used_bytes);
+		vad_data_copy_block(addr_ch2, byte_num, buf + used_bytes);
 		used_bytes += byte_num;
 		addr_ch2 = get_new_addr_block(addr_ch2, byte_num);
+		block_number = block_number + 1;
 	}
 
 	if (addr_ch3) {
-		vad_data_copy(addr_ch3, byte_num, buf + used_bytes);
+		vad_data_copy_block(addr_ch3, byte_num, buf + used_bytes);
 		used_bytes += byte_num;
 		addr_ch3 = get_new_addr_block(addr_ch3, byte_num);
+		block_number = block_number + 1;
 	}
+
+	u8 *temp_buf = malloc(used_bytes);
+	/* example:turn block0  block1  block2 into 0 1 2 0 1 2...(interleave)*/
+	u32 length = byte_num / 2;
+	u32 m = 0;
+	for (u32 j = 0; j < length ; j++) {
+		for (u32 i = 0 ; i < block_number; i++) {
+			((u16 *)temp_buf)[m] = ((u16 *)buf)[i * length + j];
+			m++;
+		}
+	}
+
+	memcpy(buf, temp_buf, used_bytes);
+	DCache_CleanInvalidate((u32)buf, (u32)used_bytes);
+	free(temp_buf);
 
 	addr_ref = get_new_addr_block(addr_ref, byte_num);
 }
 
-/**
-  * @brief  This function can only be used in interleave mode. In interleave mode, the block number written is not equal to
-            the channel number. So , we need low bound and high bound to calculate the start address
-  * @param  hit_addr  the address when voice activity is detected
-            byte_num  byte number that needs to be pushed back. This number should be calculted with the channels enabled and sram
-                      space enabled. For example, if we enable 96kB VAD sram buffer, which means block A B C will be written, and we
-                      let ch0 relates to block B and ch1 related to block A. The data layout is:
-                      G0_(ch1_low ch1_high ch0_low ch0_high) G1_(ch1_low ch1_high ch0_low ch0_high) G2_......
-                      If the hit address is G1_ch1_low. And we need go back 500ms, we need to go back around 15000*2 = 30000bytes.
-                      The specific number is 29997(which means include G1_ch1_low, exclude three other elements in G1 group).
-            low_bound:  the lower bound of enabled area
-            high_bound  the higher bound of enabled area
-  * @retval start address for copy operation
-  */
-u32 get_start_addr_interleave(u32 hit_addr, u32 byte_num, u32 low_bound, u32 high_bound)
-{
-	if ((hit_addr - byte_num + 1) >= low_bound) {
-		return (hit_addr - byte_num + 1);
-	} else {
-		printf("##high_bound is %x  low_bound is %x  byte_num is %d  hit_addr is %x\n", high_bound, low_bound, byte_num, hit_addr);
-		return (high_bound + 1 - (byte_num - (hit_addr - low_bound + 1)));
-	}
-}
-
-
-/**
-* @brief  Since memory copy operation is much faster than the audio data collection, we need to make sure we have enough data when get_data is called.
-          Suppose addr1 and addr2 are two addresses of reg(0ffset 0x5c, BUF_CTRL_W_ADDRESS) at different time point, we convert them to the same block
-          first, and then calculate how many bytes are there between these 2 addresses(addr2 is a latter address, and we assume that the there time difference
-          is less then 1s).
-* @param  addr1  written address at a former time point
-          addr2  written address at a latter time point
-          low_bound:  the lower bound of enabled area
-          high_bound  the higher bound of enabled area
-* @retval bytes number between these 2 addresses
-*/
-u32 get_data_stored_interleave(u32 addr1, u32 addr2, u32 low_bound, u32 high_bound)
-{
-
-	if (addr2 >= addr1) {
-		return (addr2 - addr1);
-	} else {
-		return (high_bound - addr1 + addr2 - low_bound);
-	}
-}
-
-/**
-  * @brief  This function can only be used in interleave mode. After each copy, we need to calculate the next
-            start address for latter copy operations. This function will first determine the block index
-            according to addr, and then get the lower and upper bound, then calculate the next start addr.
-  * @param  addr  the address of a former copy operation
-            byte_num  how many bytes should be skipped
-            low_bound:  the lower bound of enabled area
-            high_bound  the higher bound of enabled area
-  * @retval the next address for copying
-  */
-u32 get_new_addr_interleave(u32 addr, u32 byte_num, u32 low_bound, u32 high_bound)
-{
-	if ((addr + byte_num) <= high_bound) {
-		return (addr + byte_num);
-	} else {
-		return (low_bound + (byte_num - (high_bound - addr)) - 1);
-	}
-}
-
-/**
-  * @brief  copy data from the VAD buffer to some other places in block mode. Unlike block mode,
-            we need the lower bound and upeer bound to accomplish this operation.
-  * @param  addr_start  the address to start copying
-            amount_byte  how many bytes should be copied
-            buf  a bffer malloced by the user
-            low_bound:  the lower bound of enabled area
-            high_bound  the higher bound of enabled area
-  */
-void vad_data_copy_interleave(u32 addr_start, u32 byte_num, u8 *buf, u32 low_bound, u32 high_bound)
-{
-	if ((high_bound - addr_start + 1) >= byte_num) {
-		memcpy(buf, addr_start, byte_num);
-	} else {
-		memcpy(buf, addr_start, high_bound - addr_start + 1);
-		memcpy(buf + high_bound - addr_start + 1, low_bound, byte_num - (high_bound - addr_start + 1));
-	}
-}
-
-//initialized low bound and high bound
-static u32 low_bound = 0x2003FFFF;
-static u32 high_bound = 0x20020000;
-//The block of lowest priority is D(3). We need to set block_low_prio to A(0) to run latter comparisions.
-static u32 block_low_prio = 0;
-static u32 block_high_prio = 3;
-static u32 start_addr = 0;
-u32 used_channels = 0;
-
-/**
-  * @brief  This function can only be used in interleave mode. This function will fill the buf with audio data of length time_period_ms
-  * @param  time_period_ms  the time period of requied audio data
-            buf  memory space malloced by the user to store audio data
-  */
-void get_vad_data_interleave(u32 time_period_ms, u8 *buf)
-{
-	u32 hit_block = 0;
-	u32 sram_sel = 0;
-	u32 hit_addr = 0;
-	u32 hit_channel = 0;
-	u32 hit_addr_new = 0;
-	u32 data_stored = 0;
-
-	if (first_time_flag) {
-		first_time_flag = 0;
-
-		//find upper bound and lower bound
-		sram_sel = VAD_W_SRAM_ADDRESS_SEL(VAD_DEV -> VAD_BUF_CTRL0);
-
-		//in interleave mode, the higher bound is 0x2003FFFF
-		low_bound = block_range[sram_sel][0];
-		high_bound = block_range[0][1];
-
-		printf("low bound is %x  high_bound is %x\n", low_bound, high_bound);
-		hit_addr = get_hit_addr();
-		hit_channel = get_hit_channel();
-		printf("hit_addr is %x  hit_channel is %x\n", hit_addr, hit_channel);
-
-		//when a voice activity is detected, the hit channel can be ontained from register,
-		//hit_block here means the block index related to the hit channel, not the block index
-		//in which the hit address resides.
-		switch (hit_channel) {
-		case 0:
-			hit_block = VAD_GET_CODEC0_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			printf("here 0\n");
-			break;
-		case 1:
-			hit_block = VAD_GET_CODEC1_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			printf("here 1\n");
-			break;
-		case 2:
-			hit_block = VAD_GET_CODEC2_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			printf("here 2\n");
-			break;
-		case 3:
-			hit_block = VAD_GET_CODEC3_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			printf("here 3\n");
-			break;
-		default:
-			break;
-		}
-
-		//if we enable 3 channels, and relared block are A, B and C, and the enabled sram space is 96k,
-		/*
-			CH0   CH1   CH2
-			A     B     C
-		*/
-
-		//So CH2 has the lowest priority, the writtern order is CH0 CH1 CH2 CH0 CH1 CH2 ......
-		//if we change the relationship to the following way
-		/*
-			CH0   CH1   CH2
-			B     A     C
-		*/
-		//the written order now becomes CH1 CH0 CH2 CH1 CH0 CH2
-
-		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH0_IN_VADBUF_EN) {
-			if (block_low_prio < VAD_GET_CODEC0_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_low_prio = VAD_GET_CODEC0_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			if (block_high_prio > VAD_GET_CODEC0_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_high_prio = VAD_GET_CODEC0_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			used_channels++;
-		}
-
-		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH1_IN_VADBUF_EN) {
-			if (block_low_prio < VAD_GET_CODEC1_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_low_prio = VAD_GET_CODEC1_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-
-			if (block_high_prio > VAD_GET_CODEC1_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_high_prio = VAD_GET_CODEC1_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			used_channels++;
-		}
-
-		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH2_IN_VADBUF_EN) {
-			if (block_low_prio < VAD_GET_CODEC2_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_low_prio = VAD_GET_CODEC2_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			if (block_high_prio > VAD_GET_CODEC2_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_high_prio = VAD_GET_CODEC2_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			used_channels++;
-		}
-
-		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH3_IN_VADBUF_EN) {
-			if (block_low_prio < VAD_GET_CODEC3_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_low_prio = VAD_GET_CODEC3_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			if (block_high_prio > VAD_GET_CODEC3_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0)) {
-				block_high_prio = VAD_GET_CODEC3_IN_BUF_ADD_BLOCK(VAD_DEV -> VAD_BUF_CTRL0);
-			}
-			used_channels++;
-		}
-
-		printf("block_low_prio is %d\n", block_low_prio);
-		printf("block_high_prio is %d\n", block_high_prio);
-
-
-		/*
-		Consider this case: when we need to go back 500ms, so the total byte number is
-		16000*used_channels. For example, if the lowest priority block is block C(2)，we need to return 16000*(2+1) bytes.
-		If we use 3 channels, and the data layout is： (before_0 byte)(before_1 byte)(hit_0 byte)(hit_1 byte)(after_0 byte)(after_1 byte)...
-		since the formula we use is hit_0 - start_addr + 1 = total number including hit_0, excluding hit_1, after_0, after_1。
-		if block_low_prio = 3, total number = 16000*used_channels，minus the total number of a group，which means
-		-used_channels*2，and plus bytes before hit_byte_0，which means (hit_block - block_high_prio)*2, and then plus hit_byte_0
-		*/
-		u32 reverse_byte = 16000 * used_channels - used_channels * 2 + 1 + (hit_block - block_high_prio) * 2;
-		start_addr = get_start_addr_interleave(hit_addr, reverse_byte, low_bound, high_bound);
-		printf("fantuishu is %d\n", reverse_byte);
-		printf("hit_block is %d\n", hit_block);
-	}
-	printf("start_addr is %x\n", start_addr);
-	//hit_addr_new = hit_addr + block_low_prio - hit_block;
-	u32 current_addr = get_current_addr();
-	data_stored = get_data_stored_interleave(start_addr, current_addr, low_bound, high_bound);
-
-	if (data_stored >= (time_period_ms * 32 * used_channels)) {
-
-	} else {
-		DelayMs(time_period_ms);
-	}
-
-	//start copy operation
-	vad_data_copy_interleave(start_addr, time_period_ms * 32 * used_channels, buf, low_bound, high_bound);
-	//calculate the address of next copy operation
-	start_addr = get_new_addr_interleave(start_addr, time_period_ms * 32 * used_channels, low_bound, high_bound);
-	printf("next start_addr is %x\n", start_addr);
-}
-
-/**
-  * @brief  This function will fill the buf with audio data of length time_period_ms
-  * @param  time_period_ms  the time period of requied audio data
-            buf  memory space malloced by the user to store audio data
-  */
-void get_vad_data(u32 time_period_ms, u8 *buf)
-{
-	VAD_TypeDef *VAD;
-	if (TrustZone_IsSecure()) {
-		VAD = ((VAD_TypeDef *)VAD_REG_BASE_S);
-	} else {
-		VAD = ((VAD_TypeDef *)VAD_REG_BASE);
-	}
-
-	if ((VAD -> VAD_BUF_CTRL0) && VAD_BIT_W_MODE_SEL) {
-		get_vad_data_interleave(time_period_ms, buf);
-	} else {
-		get_vad_data_block(time_period_ms, buf);
-	}
-}

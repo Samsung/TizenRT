@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    rtl8721d_ipc_rom.c
+  * @file    ameba_ipc_ram.c
   * @author
   * @version V1.0.0
   * @date    2017-11-06
@@ -17,8 +17,8 @@
 
 #include "ameba_soc.h"
 
-IPC_IRQ_FUN IPC_IrqHandler[32];
-void *IPC_IrqData[32];
+IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
+void *IPC_IrqData[IPC_CHANNEL_NUM];
 
 /**
   * @brief  Enables or disables the specified IPC Channel interrupts.
@@ -75,7 +75,6 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 	/* Check the parameters */
 	assert_param(IS_IPC_DIR_MODE(IPC_Dir));
 	u32 ipc_shift = 0;
-	char *Dir[6] = {"IPC_LP_TO_NP", "IPC_LP_TO_AP", "IPC_NP_TO_LP", "IPC_NP_TO_AP", "IPC_AP_TO_LP", "IPC_AP_TO_NP"};
 
 	switch (IPC_Dir) {
 	case IPC_LP_TO_NP:
@@ -87,19 +86,12 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 	default:
 		break;
 	}
-	if (IPCx != NULL){
-		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-			DBG_8195A("IPC Dir: %s, ChNum: %d, Last Req not clean!\n", Dir[(IPC_TX_CHANNEL_SWITCH(IPC_Dir) << 1) + IPC_TX0_CHANNEL_SWITCH(IPC_Dir)], IPC_ChNum);
-			return 0;
-		} else {
-			IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
-			return 1;
-		}
-	} else {
 
-		DBG_8195A("IPCx is NULL\n");
+	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
 		return 0;
-
+	} else {
+		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+		return 1;
 	}
 }
 
@@ -136,12 +128,13 @@ u32 IPC_INTHandler(void *Data)
 	u32 i;
 	IrqStatus = IPCx->IPC_ISR;
 
-	IPCx->IPC_ISR = IrqStatus;
-
 	for (i = 0; i < 32; i++) {
 		if (IrqStatus & BIT(i)) {
 			if (IPC_IrqHandler[i] != NULL) {
 				IPC_IrqHandler[i](IPC_IrqData[i], IrqStatus, i);
+				IPCx->IPC_ISR = BIT(i);
+			} else {
+				IPCx->IPC_ISR = BIT(i);
 			}
 		}
 	}
@@ -166,7 +159,33 @@ void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VO
 
 	IPC_IrqHandler[IPC_Shiftbit] = (IPC_IRQ_FUN)IrqHandler;
 	IPC_IrqData[IPC_Shiftbit] = IrqData;
-
-	IPC_INTConfig(IPCx, IPC_Shiftbit, ENABLE);
+	if (IS_IPC_RX_CHNUM(IPC_Shiftbit)) {
+		IPC_INTConfig(IPCx, IPC_Shiftbit, ENABLE);
+	}
 }
+
+
+/**
+  * @brief  Get IPC device.
+  * @param  cpuid:
+  *			0: CPU_LP
+  *		 	1: CPU_NP
+  *			2: CPU_AP
+  * @retval IPC device
+  */
+IPC_TypeDef *IPC_GetDevById(u32 cpu_id)
+{
+	/* Check the parameters */
+	assert_param(IS_IPC_Valid_CPUID(cpu_id));
+
+	if (cpu_id == 1) {
+		return IPCAP_DEV;
+	} else if (cpu_id == 2) {
+		return IPCNP_DEV;
+	} else {
+		return IPCLP_DEV;
+
+	}
+}
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

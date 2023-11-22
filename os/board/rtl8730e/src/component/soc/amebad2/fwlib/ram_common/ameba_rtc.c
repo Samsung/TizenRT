@@ -440,6 +440,60 @@ void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
 }
 
 /**
+  * @brief  Set the RTC current time for day and year.
+  * @param  RTC_TimeDay: specifies the day to be set
+  *         RTC_TimeYear: specifies the year to be set
+  * @note   param RTC_TimeDay starts from 0
+  * @note   param RTC_TimeYear starts from 1900
+  * @retval status value:
+  *          - 1: RTC Time day and year are configured
+  *          - 0: RTC Time day and year are not configured
+  */
+u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
+{
+	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
+	u32 tmpreg = 0;
+	u32 status = 0;
+
+	/* Check the parameters */
+	assert_param(IS_RTC_TIME_DAY_THRES(RTC_TimeDay));
+	assert_param(IS_RTC_YEAR_THRES(RTC_TimeYear));
+
+	tmpreg = RTC->RTC_TR;
+	tmpreg &= ~RTC_MASK_DAY;
+	tmpreg |= RTC_DAY(RTC_TimeDay);
+
+	/* Disable the write protection for RTC registers */
+	RTC->RTC_WPR = RTC_KEY(0xCA);
+	RTC->RTC_WPR = RTC_KEY(0x53);
+
+	/* Set Initialization mode */
+	if (RTC_EnterInitMode()) {
+		/* Set the RTC_TR register */
+		RTC->RTC_TR = (u32)(tmpreg & RTC_TR_RESERVED_MASK);
+
+		/* Set the RTC_YEARR register */
+		RTC->RTC_YEAR = RTC_YEAR(RTC_TimeYear - RTC_BASE_YEAR); //starts from 1900
+
+		/* Exit Initialization mode */
+		RTC_ExitInitMode();
+
+		if (RTC_WaitForSynchro()) {
+			status = 1;
+		} else {
+			status = 0;
+		}
+	} else {
+		status = 0;
+	}
+
+	/* Enable the write protection for RTC registers */
+	RTC->RTC_WPR = RTC_KEY(0xFF);
+
+	return status;
+}
+
+/**
   * @brief  clear day over threshold pending interrupt.
   * @retval None
   */

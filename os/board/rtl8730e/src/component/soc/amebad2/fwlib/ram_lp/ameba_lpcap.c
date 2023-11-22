@@ -8,6 +8,8 @@
  */
 
 #include "ameba_soc.h"
+
+static const char *TAG = "LPCAP";
 u32 ap_sleep_timeout = 0xffffffff;
 u8 ap_sleep_type;
 u32 ap_pll_backup;
@@ -103,7 +105,7 @@ void ap_power_gate(void)
 	CA32_TypeDef *ca32 = CA32_BASE;
 
 	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_FEN) & HSYS_BIT_FEN_AP) == 0) {
-		DBG_8195A("AP PG Already\n");
+		RTK_LOGI(TAG, "AP PG Already\n");
 		return;
 	}
 
@@ -120,13 +122,13 @@ void ap_power_gate(void)
 		pmu_release_deepwakelock(PMU_AP_RUN);
 	}
 
-	DBG_8195A("CA7PG-\n");
+	RTK_LOGI(TAG, "CA7PG-\n");
 }
 
 void ap_power_on(void)
 {
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_FEN) & HSYS_BIT_FEN_AP) {
-		DBG_8195A("AP PW Already\n");
+		RTK_LOGI(TAG, "AP PW Already\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -134,7 +136,7 @@ void ap_power_on(void)
 
 	ap_power_on_ctrl();
 
-	DBG_8195A("CA7PW-\n");
+	RTK_LOGI(TAG, "CA7PW-\n");
 }
 
 void ap_clk_gate_ctrl(void)
@@ -173,7 +175,7 @@ void ap_clock_gate(void)
 	u8 wait_cnt = 10;
 	CA32_TypeDef *ca32 = CA32_BASE;
 	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) == 0) {
-		DBG_8195A("AP CG Already\n");
+		RTK_LOGI(TAG, "AP CG Already\n");
 		return;
 	}
 	/* poll CA7 clock gate, check WFI state? */
@@ -193,14 +195,14 @@ void ap_clock_gate(void)
 		pmu_release_deepwakelock(PMU_AP_RUN);
 	}
 
-	DBG_8195A("CA7CG-\n");
+	RTK_LOGI(TAG, "CA7CG-\n");
 
 }
 
 void ap_clock_on(void)
 {
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		DBG_8195A("AP CW Already\n");
+		RTK_LOGI(TAG, "AP CW Already\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -208,7 +210,7 @@ void ap_clock_on(void)
 
 	ap_clk_wake_ctrl();
 
-	DBG_8195A("CA7CW-\n");
+	RTK_LOGI(TAG, "CA7CW-\n");
 }
 
 
@@ -217,13 +219,13 @@ void ap_resume(void)
 	int cnt = 0;
 	/* check km4 state, km4 need be active when CA7 run*/
 	if (!np_status_on()) {
-		DBG_8195A("wake km4\n");
+		RTK_LOGI(TAG, "wake km4\n");
 		InterruptDis(NP_WAKE_IRQ);
 		np_resume();
 	}
 
 	if (HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKE) & HSYS_BIT_CKE_AP) {
-		DBG_8195A("already clk on\n");
+		RTK_LOGI(TAG, "already clk on\n");
 		return;
 	}
 	pmu_acquire_wakelock(PMU_AP_RUN);
@@ -259,7 +261,7 @@ u32 ap_suspend(u32 type)
 	u32 duration = 0;
 
 	if (!np_status_on()) {
-		DBG_8195A("NP is not on\n");
+		RTK_LOGI(TAG, "NP is not on\n");
 		return 0;
 	}
 
@@ -313,21 +315,30 @@ void ap_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqStat
 	case SLEEP_PG:
 		if (_SUCCESS == ap_suspend(SLEEP_PG)) {
 			pmu_set_sysactive_time(2);
+			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
 		if (_SUCCESS == ap_suspend(SLEEP_CG)) {
 			pmu_set_sysactive_time(2);
+			pmu_set_sleep_type(SLEEP_CG);
 		}
 		break;
 
 	default:
-		DBG_8195A("unknow sleep type\n");
+		RTK_LOGW(TAG, "unknow sleep type\n");
 	}
 }
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_aptickless_table[] = {
-	{IPC_USER_DATA, 	ap_tickless_ipc_int,	(VOID *) NULL, IPC_AP_TO_LP, IPC_A2L_TICKLESS_INDICATION, IPC_RX_FULL},
+const IPC_INIT_TABLE ipc_aptickless_table = {
+	.USER_MSG_TYPE = IPC_USER_DATA,
+	.Rxfunc = ap_tickless_ipc_int,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_AP_TO_LP,
+	.IPC_Channel = IPC_A2L_TICKLESS_INDICATION
+
 };
 

@@ -19,10 +19,10 @@ int SOCPS_WakePinCheck(void)
   * @brief  set REGU wakeup_pin (just on wakepin mux to 4 pads).
   * @param  PinMask: aon wakepin index
   *		This parameter can be one of the following values:
-  *		 @arg WAKUP_0 :
-  *		 @arg WAKUP_1 :
-  *		 @arg WAKUP_2 :
-  *		 @arg WAKUP_3 :
+  *		 @arg WAKEPIN_0 :PB_21
+  *		 @arg WAKEPIN_1 :PB_22
+  *		 @arg WAKEPIN_2 :PB_23
+  *		 @arg WAKEPIN_3 :PB_24
   * @param  Polarity: aon wakepin Polarity
   *		This parameter can be one of the following values:
   *		 @arg 1 : high wakeup
@@ -30,7 +30,7 @@ int SOCPS_WakePinCheck(void)
   * @note wakeup state: sleep PG & CG & deep sleep
   * @retval None
   */
-void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity)
+void SOCPS_SetWakepin(u32 PinIdx, u32 level)
 {
 	u32 Rtemp = 0;
 
@@ -39,10 +39,10 @@ void SOCPS_SetWakepin(u32 PinIdx, u32 Polarity)
 	Rtemp &= (~(AON_GPIO_WAKE_FEN(BIT(PinIdx))));
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_GPIO_CTRL, Rtemp);
 
-	/* set polarity & internal PU/PD resistence */
+	/* set level & internal PU/PD resistence */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_GPIO_CTRL);
-	Rtemp &= ~(AON_GPIO_WAKDET_POLY(BIT(PinIdx))); /* clear polarity, set to low active */
-	if (Polarity == 1) {
+	Rtemp &= ~(AON_GPIO_WAKDET_POLY(BIT(PinIdx))); /* clear level, set to low active */
+	if (level == HIGH_LEVEL_WAKEUP) {
 		Rtemp |= AON_GPIO_WAKDET_POLY(BIT(PinIdx)); /* if high active */
 	}
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_GPIO_CTRL, Rtemp);

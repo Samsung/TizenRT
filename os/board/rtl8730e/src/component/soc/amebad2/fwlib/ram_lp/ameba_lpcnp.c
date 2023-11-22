@@ -9,6 +9,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "LPCNP";
 u32 NPSleepTick = 0;
 u32 np_sleep_type;
 u32 np_sleep_timeout = 0xffffffff;
@@ -135,7 +136,7 @@ void np_set_ddr_sre(void)
 {
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 	u32 temp;
-	DBG_8195A("np_set_ddr_sre enter\n");
+	RTK_LOGI(TAG, "np_set_ddr_sre enter\n");
 
 	temp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
 	temp &= (~(HSYS_BIT_PWDPAD_DQ_EN | HSYS_BIT_PI_PWROFF_EN)); //don't write 1 if user mode
@@ -214,7 +215,7 @@ void np_set_ddr_sre(void)
 
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
 	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
-	DBG_8195A("np_set_ddr_sre exit\n");
+	RTK_LOGI(TAG, "np_set_ddr_sre exit\n");
 }
 
 void np_set_ddrphy_pll_off(void)
@@ -295,6 +296,7 @@ _OPTIMIZE_NONE_
 void np_set_psram_sleep_mode(u32 State)
 {
 	u32 Rtemp;
+	u8 mr4[2];
 
 	if (State) {
 		// close auto gating
@@ -304,13 +306,11 @@ void np_set_psram_sleep_mode(u32 State)
 
 		// 50ns will be enough, check if need when without DBG
 		DelayUs(1);
-		//DBG_8195A("psram enter half sleep mode\r\n");
-#ifdef SLOWREF
-		u32 mr4[2];
-		mr4[0] = (APM_WR_INIT_LATENCY_SPEC[PSRAM_INIT_WR_LATENCY_CLK - 3]) << 5 | BIT(3);
+		//RTK_LOGD(TAG, "psram enter half sleep mode\r\n");
+
+		mr4[0] = (APM_WR_INIT_LATENCY_SPEC[RRAM->PSRAM_LATENCY - 3]) << 5 | PSRAM_SLOW_REFRSH_ENABLE;
 		mr4[1] = mr4[0];
 		np_set_psram_cmd(0xc0, 0x4, 2, mr4);
-#endif
 
 		//u8 psram_halfsleep[2] = {0xC0, 0xC0};	// deep power down
 		u8 psram_halfsleep[2] = {0xF0, 0xF0};
@@ -319,9 +319,14 @@ void np_set_psram_sleep_mode(u32 State)
 	} else {
 		DCache_Invalidate(0x60000000, 4);
 		Rtemp = HAL_READ32(0x60000000, 0);
-		//DBG_8195A("temp: %x\r\n", Rtemp);
+		//RTK_LOGD(TAG, "temp: %x\r\n", Rtemp);
 		/* wait self refresh exit */
 		DelayUs(150);
+
+		/* disable slow refresh */
+		mr4[0] = (APM_WR_INIT_LATENCY_SPEC[RRAM->PSRAM_LATENCY - 3]) << 5;
+		mr4[1] = mr4[0];
+		np_set_psram_cmd(0xc0, 0x4, 2, mr4);
 
 		Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E4);
 		Rtemp &= ~(HSYS_MASK_PWDPAD_RESUME_VAL | HSYS_MASK_PWDPAD_IDLE_VAL);
@@ -399,7 +404,7 @@ void np_power_gate_ctrl(void)
 		/* switch to PFM mode only ddr need */
 		//switch swr_mem to PFM mode
 		if (SWR_MEM_Mode_Set(SWR_PFM)) {
-			DBG_8195A("MEM PFM fail\r\n");
+			RTK_LOGW(TAG, "MEM PFM fail\r\n");
 		}
 
 	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
@@ -566,7 +571,7 @@ void np_power_wake_ctrl(void)
 
 		//switch swr_mem to PWM mode
 		if (SWR_MEM_Mode_Set(SWR_PWM)) {
-			DBG_8195A("MEM PWM fail\r\n");
+			RTK_LOGW(TAG, "MEM PWM fail\r\n");
 		}
 
 		/* Enable HP Platform */
@@ -700,7 +705,7 @@ void np_clk_gate_ctrl(void)
 		/* switch to PFM mode only ddr need */
 		//switch swr_mem to PFM mode
 		if (SWR_MEM_Mode_Set(SWR_PFM)) {
-			DBG_8195A("MEM PFM fail\r\n");
+			RTK_LOGW(TAG, "MEM PFM fail\r\n");
 		}
 
 	} else if (rram->MEM_TYPE == Memory_Type_PSRAM) {
@@ -865,7 +870,7 @@ void np_clk_wake_ctrl(void)
 	} else if (rram->MEM_TYPE == Memory_Type_DDR) {
 		//switch swr_mem to PWM mode
 		if (SWR_MEM_Mode_Set(SWR_PWM)) {
-			DBG_8195A("MEM PWM fail\r\n");
+			RTK_LOGW(TAG, "MEM PWM fail\r\n");
 		}
 
 		/* Enable DDRPHY PWC */
@@ -928,7 +933,7 @@ void np_power_gate(void)
 	}
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4G\n");
+		RTK_LOGD(TAG, "M4G\n");
 	}
 	/* poll KM4 clock gate */
 	while (1) {
@@ -966,7 +971,7 @@ void np_power_wake(void)
 	}
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4W\n");
+		RTK_LOGD(TAG, "M4W\n");
 	}
 	pmu_acquire_wakelock(PMU_KM4_RUN);
 
@@ -982,7 +987,7 @@ void np_clock_gate(void)
 	}
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4CG\n");
+		RTK_LOGD(TAG, "M4CG\n");
 	}
 	/* poll KM4 clock gate */
 	while (1) {
@@ -996,7 +1001,7 @@ void np_clock_gate(void)
 
 
 	if (ps_config.km0_tickles_debug) {
-		DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4CG-\n");
+		RTK_LOGD(TAG, "M4CG-\n");
 	}
 
 	pmu_release_wakelock(PMU_KM4_RUN);
@@ -1030,7 +1035,7 @@ void np_clock_on(void)
 
 	/* tell KM4 wake */
 	asm volatile("sev");
-	DBG_PRINTF(MODULE_KM4, LEVEL_INFO, "M4CW-\n");
+	RTK_LOGI(TAG, "M4CW-\n");
 }
 
 u32 ap_clk_status_on(void)
@@ -1170,20 +1175,21 @@ void np_tickless_ipc_int(UNUSED_WARN_DIS VOID *Data, UNUSED_WARN_DIS u32 IrqStat
 	switch (psleep_param->sleep_type) {
 	case SLEEP_PG:
 		if (_SUCCESS == np_suspend(SLEEP_PG)) {
-
+			pmu_set_sleep_type(SLEEP_PG);
 		}
 		break;
 	case SLEEP_CG:
 		if (_SUCCESS == np_suspend(SLEEP_CG)) {
+			pmu_set_sleep_type(SLEEP_CG);
 			//pmu_set_sysactive_time(2);
 		}
 		break;
 
 	default:
-		DBG_8195A("unknow sleep type\n");
+		RTK_LOGW(TAG, "unknow sleep type\n");
 	}
 	NPSleepTick = SYSTIMER_TickGet();
-	//DBG_8195A("T:%d, tms:%d\r\n",KM4SleepTick,(((KM4SleepTick & 0xFFFF8000)/32768) * 1000 + ((KM4SleepTick & 0x7FFF) * 1000) /32768));
+	//RTK_LOGD(TAG, ("T:%d, tms:%d\r\n",KM4SleepTick,(((KM4SleepTick & 0xFFFF8000)/32768) * 1000 + ((KM4SleepTick & 0x7FFF) * 1000) /32768));
 }
 
 /**
@@ -1209,6 +1215,13 @@ uint32_t pmu_get_npsleeptime(void)
 }
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_nptickless_table[] = {
-	{IPC_USER_DATA, 	np_tickless_ipc_int,	(VOID *) NULL, IPC_NP_TO_LP, IPC_N2L_TICKLESS_INDICATION, IPC_RX_FULL},
+
+const IPC_INIT_TABLE ipc_nptickless_table = {
+	.USER_MSG_TYPE = IPC_USER_DATA,
+	.Rxfunc = np_tickless_ipc_int,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_NP_TO_LP,
+	.IPC_Channel = IPC_N2L_TICKLESS_INDICATION
 };

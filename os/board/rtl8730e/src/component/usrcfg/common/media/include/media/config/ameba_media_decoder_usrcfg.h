@@ -22,7 +22,7 @@ extern "C" {
 
 // ----------------------------------------------------------------------
 //MediaDecoderConfig
-#if defined MEDIA_PLAYER || defined MEDIA_FI_PLAYER
+#if defined MEDIA_PLAYER || defined WIFI_AUDIO
 typedef void *(*CreateOMXComponentFunc)(
 	const char *, const void *,
 	void *, void **);

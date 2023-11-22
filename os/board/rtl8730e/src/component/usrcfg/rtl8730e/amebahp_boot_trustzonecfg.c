@@ -50,7 +50,7 @@ BOOT_RAM_DATA_SECTION
 const TZ_CFG_TypeDef mpc2_config[] =					/* Security configuration for HS_SRAM */
 {
 //  Start					End						NSC
-	{0x0000D000,			0x0001F000 - 1,			0},	/* entry0: BD_RAM_NS, MSP_NS, ROM_BSS_COMMON, ROM_BSS_NS, STDLIB_HEAP_RAM_NS */
+	{0x00014000,			0x0001F000 - 1,			0},	/* entry0: BD_RAM_NS, MSP_NS, ROM_BSS_COMMON, ROM_BSS_NS, STDLIB_HEAP_RAM_NS */
 	{0x00020000,			0x00040000 - 1,			0},	/* entry1: AUDIO_BUF */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry2: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				0},	/* entry3: TODO */

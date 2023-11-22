@@ -35,8 +35,8 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PA_4,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_5,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_6,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_7,			GPIO_PuPd_KEEP,				GPIO_PuPd_DOWN},			 //
-	{_PA_8,			GPIO_PuPd_KEEP,				GPIO_PuPd_DOWN},			 //
+	{_PA_7,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PA_8,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_9,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_10,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_11,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
@@ -55,7 +55,7 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PA_24,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_25,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_26,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_27,			GPIO_PuPd_KEEP,				GPIO_PuPd_DOWN},			 //
+	{_PA_27,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_28,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_29,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_30,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //

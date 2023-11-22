@@ -62,7 +62,6 @@ CSRCS += ameba_systimer_rom.c \
 	ameba_flash_rom.c \
 	ameba_loguart_rom.c\
 	ameba_wdg.c\
-	ameba_systimer_rom.c
 
 DEPPATH += --dep-path component/soc/amebad2/fwlib/rom_common
 VPATH += :component/soc/amebad2/fwlib/rom_common

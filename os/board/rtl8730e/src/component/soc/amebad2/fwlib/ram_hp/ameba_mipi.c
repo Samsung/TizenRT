@@ -23,6 +23,8 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "MIPI";
+
 void MIPI_DPHY_Reset(MIPI_TypeDef *MIPIx)
 {
 	u32 Value32;
@@ -95,7 +97,7 @@ void MIPI_DPHY_Reset_Release(MIPI_TypeDef *MIPIx, u32 dataLane_freq, u8 lane_num
 	} else if (lane_num == 2) {
 		Value32 |= (MIPI_BIT_PLL_LANE1_ENABLE | MIPI_BIT_PLL_LANE0_ENABLE | MIPI_BIT_LANE1_EN | MIPI_BIT_LANE0_EN);
 	} else {
-		DBG_PRINTF(MODULE_LCD, LEVEL_ERROR, "MIPI not support %d lane\n", lane_num);
+		RTK_LOGE(TAG, "MIPI not support %d lane\n", lane_num);
 	}
 	MIPIx->MIPI_CLOCK_GEN = Value32;
 
@@ -110,7 +112,7 @@ void MIPI_DPHY_PLL_Set(MIPI_TypeDef *MIPIx, u32 dataLane_freq)
 	u32 freq_div, Value32;
 
 	if (dataLane_freq < 100 || dataLane_freq > 1000) {
-		DBG_PRINTF(MODULE_LCD, LEVEL_ERROR, "dataLane_freq %dM is not support\n", dataLane_freq);
+		RTK_LOGE(TAG, "dataLane_freq %dM is not support\n", dataLane_freq);
 		return;
 	} else if (dataLane_freq <= 200) { //100Mbps ~ 200Mbps
 		div_number = 4;

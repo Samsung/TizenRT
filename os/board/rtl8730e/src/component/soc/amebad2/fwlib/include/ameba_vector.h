@@ -420,11 +420,15 @@ enum NS_IRQnPriority {
   * @{
   */
 extern _LONG_CALL_ void irq_table_init(u32 StackP);
-extern  _LONG_CALL_  void irq_clear_pending(IRQn_Type irqn);
-extern _LONG_CALL_ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority);
-extern _LONG_CALL_ BOOL irq_unregister(IRQn_Type IrqNum);
 extern _LONG_CALL_ void irq_enable(IRQn_Type   IrqNum);
 extern _LONG_CALL_ void irq_disable(IRQn_Type   IrqNum);
+extern _LONG_CALL_ void irq_set_priority(IRQn_Type irqn, uint32_t priority);
+extern _LONG_CALL_ uint32_t irq_get_priority(IRQn_Type irqn);
+extern _LONG_CALL_ void irq_set_pending(IRQn_Type irqn);
+extern _LONG_CALL_ uint32_t irq_get_pending(IRQn_Type irqn);
+extern _LONG_CALL_ void irq_clear_pending(IRQn_Type irqn);
+extern _LONG_CALL_ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority);
+extern _LONG_CALL_ BOOL irq_unregister(IRQn_Type IrqNum);
 extern _LONG_CALL_ BOOL FaultPatch_register(Fault_Patch PatchFun);
 
 #ifdef ARM_CORE_CA32

@@ -65,6 +65,15 @@ extern "C" {
 int	rtw_get_random_bytes(void *dst, uint32_t size);
 
 /**
+ * @brief  This function generates random bytes. For use of mbedtls 3.x.x
+ * @param  p_rng: Unused
+ * @param  output: The pointer to the buffer to store the random bytes.
+ * @param  output_size: The size of the random bytes.
+ * @retval
+ */
+int rtw_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size);
+
+/**
  * @brief  This function gets the available heap size.
  * @return	  The value of the available heap size.
 */

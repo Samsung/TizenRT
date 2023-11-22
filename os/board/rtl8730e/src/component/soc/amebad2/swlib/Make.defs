@@ -62,7 +62,8 @@ CSRCS += diag.c \
 	strupr.c \
 	strtoul.c \
 	char2num.c \
-	strwrap.c
+	strwrap.c \
+	log.c
 
 
 

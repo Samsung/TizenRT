@@ -21,6 +21,7 @@
 
 #include "ameba_soc.h"
 
+//static const char *TAG = "SWR";
 /**
   * @brief  Enable or disable SWR_MEN.
   * @param  NewState: DISABLE/ENABLE
@@ -311,10 +312,10 @@ void SWR_PFM_MODE_Set(u32 MODE)
 	temp = regu->REGU_POWER_CTRL;
 	if (MODE) {
 		temp &= (~(REGU_BIT_SYS_PWM_REQ));
-		//DBG_8195A("set pfm req from sys\r\n");
+		//RTK_LOGD(TAG, "set pfm req from sys\r\n");
 	} else {
 		temp |= (REGU_BIT_SYS_PWM_REQ);
-		//DBG_8195A("set pwm req from sys\r\n");
+		//RTK_LOGD(TAG, "set pwm req from sys\r\n");
 
 	}
 

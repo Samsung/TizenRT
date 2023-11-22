@@ -1348,7 +1348,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 	g_PAGE_num = pagenum;
 
 	if (ftl_sem == NULL) {
-		ftl_sem = xSemaphoreCreateRecursiveMutex();
+		ftl_sem = (_sema)xSemaphoreCreateRecursiveMutex();
 	}
 
 	g_pPage = (struct Page_T *)(u32PageStartAddr);

@@ -20,8 +20,9 @@
 #include "ameba_soc.h"
 #include "ameba_ddrphy_scanpara.h"
 
+static const char *TAG = "DDRPHY";
 #if 0
-#define SCAN_PRINT DBG_8195A
+#define SCAN_PRINT DiagPrintf
 #define BSTC_DEBUG_PRINT TRUE
 #else
 #define BSTC_DEBUG_PRINT FALSE
@@ -191,7 +192,7 @@ void DDR_PHY_ZQ_SET_CAL(u32 set_num, u32 NOCD_ZPROG_val)
 
 	//wait ZQ calibration done
 	while (!(ddr_phy->DDRPHY_PAD_ZCTRL_STATUS & BIT31)) {}
-	DBG_8195A("!!!DDRPHY_PAD_ZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_STATUS);
+	RTK_LOGI(TAG,  "!!!DDRPHY_PAD_ZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_STATUS);
 	/*disable ZQ Calibration*/
 	ddr_phy->DDRPHY_PAD_CTRL_PROG &= (~DDRPHY_BIT_ZCTRL_START);
 }
@@ -204,25 +205,31 @@ void DDR_PHY_ZQ_SET_CAL(u32 set_num, u32 NOCD_ZPROG_val)
 void DDR_PHY_ZQ_Dump(void)
 {
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
-	DBG_8195A("DDRPHY_PAD_RZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
-	DBG_8195A("DDRPHY_PAD_ZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_STATUS);
-	DBG_8195A("DDRPHY_PAD_ZCTRL_RESULT = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_RESULT);
-	DBG_8195A("DDRPHY_ODT_TTCP0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCP0_SET0);
-	DBG_8195A("DDRPHY_ODT_TTCP1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCP1_SET0);
-	DBG_8195A("DDRPHY_ODT_TTCN0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCN0_SET0);
-	DBG_8195A("DDRPHY_ODT_TTCN1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCN1_SET0);
-	DBG_8195A("DDRPHY_OCDP0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDP0_SET0);
-	DBG_8195A("DDRPHY_OCDP1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDP1_SET0);
-	DBG_8195A("DDRPHY_OCDN0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDN0_SET0);
-	DBG_8195A("DDRPHY_OCDN1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDN1_SET0);
-	DBG_8195A("DDRPHY_ODT_TTCP0_SET1 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCP0_SET1);
-	DBG_8195A("DDRPHY_ODT_TTCP1_SET1 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCP1_SET1);
-	DBG_8195A("DDRPHY_ODT_TTCN0_SET1 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCN0_SET1);
-	DBG_8195A("DDRPHY_ODT_TTCN1_SET1 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCN1_SET1);
-	DBG_8195A("DDRPHY_OCDP0_SET1 = 0x%08x\n", ddr_phy->DDRPHY_OCDP0_SET1);
-	DBG_8195A("DDRPHY_OCDP1_SET1 = 0x%08x\n", ddr_phy->DDRPHY_OCDP1_SET1);
-	DBG_8195A("DDRPHY_OCDN0_SET1 = 0x%08x\n", ddr_phy->DDRPHY_OCDN0_SET1);
-	DBG_8195A("DDRPHY_OCDN1_SET1 = 0x%08x\n", ddr_phy->DDRPHY_OCDN1_SET1);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_RZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_ZCTRL_STATUS = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_STATUS);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_ZCTRL_RESULT = 0x%08x\n", ddr_phy->DDRPHY_PAD_ZCTRL_RESULT);
+
+	assert_param(ddr_phy->DDRPHY_ODT_TTCP0_SET0 == ddr_phy->DDRPHY_ODT_TTCP0_SET1);
+	assert_param(ddr_phy->DDRPHY_ODT_TTCP1_SET0 == ddr_phy->DDRPHY_ODT_TTCP1_SET1);
+	assert_param(ddr_phy->DDRPHY_ODT_TTCN0_SET0 == ddr_phy->DDRPHY_ODT_TTCN0_SET1);
+	assert_param(ddr_phy->DDRPHY_ODT_TTCN1_SET0 == ddr_phy->DDRPHY_ODT_TTCN1_SET1);
+	assert_param(ddr_phy->DDRPHY_OCDP0_SET0 == ddr_phy->DDRPHY_OCDP0_SET1);
+	assert_param(ddr_phy->DDRPHY_OCDP1_SET0 == ddr_phy->DDRPHY_OCDP1_SET1);
+	assert_param(ddr_phy->DDRPHY_OCDN0_SET0 == ddr_phy->DDRPHY_OCDN0_SET1);
+	assert_param(ddr_phy->DDRPHY_OCDN1_SET0 == ddr_phy->DDRPHY_OCDN1_SET1);
+
+	/*ODT_SEL set3 is the inverse of set1, OCD set7 keep closed by set to 00*/
+#define ODT_SEL_EXCHANGE(TTCP, TTCN)	(((TTCP) & 0x00FFFFFF) | (((TTCN) & 0x0000FF00) << 16))
+	RTK_LOGI(TAG,  "DDRPHY_ODT_TTCP0_SET0 = 0x%08x\n", ODT_SEL_EXCHANGE(ddr_phy->DDRPHY_ODT_TTCP0_SET0, ddr_phy->DDRPHY_ODT_TTCN0_SET0));
+	RTK_LOGI(TAG,  "DDRPHY_ODT_TTCP1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCP1_SET0);
+	RTK_LOGI(TAG,  "DDRPHY_ODT_TTCN0_SET0 = 0x%08x\n", ODT_SEL_EXCHANGE(ddr_phy->DDRPHY_ODT_TTCN0_SET0, ddr_phy->DDRPHY_ODT_TTCP0_SET0));
+	RTK_LOGI(TAG,  "DDRPHY_ODT_TTCN1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_ODT_TTCN1_SET0);
+	RTK_LOGI(TAG,  "DDRPHY_OCDP0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDP0_SET0);
+	RTK_LOGI(TAG,  "DDRPHY_OCDP1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDP1_SET0 & 0x00FFFFFF);
+	RTK_LOGI(TAG,  "DDRPHY_OCDN0_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDN0_SET0);
+	RTK_LOGI(TAG,  "DDRPHY_OCDN1_SET0 = 0x%08x\n", ddr_phy->DDRPHY_OCDN1_SET0 & 0x00FFFFFF);
+
+	RTK_LOGI(TAG,  "Please replace ZQ K para...\n");
 }
 
 /**
@@ -240,14 +247,14 @@ void DDR_PHY_ZQ_CAL(VOID)
 	ddr_phy->DDRPHY_PAD_CTRL_PROG = 0x0a000c99;
 	ddr_phy->DDRPHY_DPI_CTRL_1 = 0x00000003;
 #endif
-	DBG_8195A("DDR_PHY_ZQ_CAL\n");
+	RTK_LOGI(TAG,  "DDR_PHY_ZQ_CAL\n");
 	ddr_phy->DDRPHY_PAD_CTRL_PROG = ((ddr_phy->DDRPHY_PAD_CTRL_PROG & (~DDRPHY_MASK_ZCTRL_CLK_SEL)) | DDRPHY_ZCTRL_CLK_SEL(0x2));
 	if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR3L) {
 		ddr_phy->DDRPHY_PAD_CTRL_PROG |= DDRPHY_BIT_RZQ_EXT_R240; //external register
 	} else if (DDR_PHY_ChipInfo_ddrtype() == DDR_Type_DDR2) {
 		ddr_phy->DDRPHY_PAD_CTRL_PROG &= (~DDRPHY_BIT_RZQ_EXT_R240); //internal register
 	} else {
-		DBG_8195A("Confirm R240 location to RDC...\n");
+		RTK_LOGI(TAG,  "Confirm R240 location to RDC...\n");
 	}
 	ddr_phy->DDRPHY_PAD_BUS_1 &= (~DDRPHY_BIT_ZQ_POWER_DOWN);
 	ddr_phy->DDRPHY_PAD_CTRL_PROG |= DDRPHY_BIT_ZQ_CAL_CMD;
@@ -273,17 +280,17 @@ void DDR_PHY_ZQ_CAL(VOID)
 	find in line 99, enter D99~I99 to PAD_CTRL_ZPROG[5:0], A99~C99 to PAD_CTRL_ZPROG[10:8]
 	search ODT = 60，find in line 25, enter D25~I25 to PAD_CTRL_ZPROG[21:16]，A25~C25 to PAD_CTRL_ZPROG[26:24]*/
 
-	DBG_8195A("Set 0 cal\n");
+	RTK_LOGI(TAG,  "Set 0 cal\n");
 	// zq cal. SET0 for CMD, OCD = 40, ODT = 60K
 	DDR_PHY_ZQ_SET_CAL(0, 0x0014003C);
 	DDR_PHY_ZQ_Dump();
 
-	DBG_8195A("Set 1 cal\n");
+	RTK_LOGI(TAG,  "Set 1 cal\n");
 	// zq cal. SET1 for DQ, OCD = 34, ODT = 60K
 	DDR_PHY_ZQ_SET_CAL(1, 0x0014011E);
 	DDR_PHY_ZQ_Dump();
 
-	DBG_8195A("Set 2 cal\n");
+	RTK_LOGI(TAG,  "Set 2 cal\n");
 	// zq cal. SET2 for xx, OCD = 60, ODT = 60K
 	DDR_PHY_ZQ_SET_CAL(2, 0x00140028);
 	DDR_PHY_ZQ_Dump();
@@ -307,7 +314,7 @@ void DDR_PHY_R480_CAL(VOID)
 		return; //DDR3L use external 240ohm, no need to K R480
 	}
 
-	DBG_8195A("DDR_PHY_R480_CAL\n");
+	RTK_LOGI(TAG,  "DDR_PHY_R480_CAL\n");
 	ddr_phy->DDRPHY_PAD_CTRL_PROG = ((ddr_phy->DDRPHY_PAD_CTRL_PROG & (~DDRPHY_MASK_ZCTRL_CLK_SEL)) | DDRPHY_ZCTRL_CLK_SEL(0x2));
 	ddr_phy->DDRPHY_PAD_CTRL_PROG &= (~DDRPHY_BIT_RZQ_EXT_R240); //internal register
 	ddr_phy->DDRPHY_PAD_BUS_1 &= (~DDRPHY_BIT_ZQ_POWER_DOWN);
@@ -328,14 +335,14 @@ void DDR_PHY_R480_CAL(VOID)
 
 	ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
 	ddr_phy->DDRPHY_DPI_CTRL_1 |= (DDRPHY_BIT_FW_SET_WR_DLY | DDRPHY_BIT_WRITE_EN_0);
-	DBG_8195A("DDRPHY_PAD_RZCTRL_STATUS 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS), ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
-	DBG_8195A("DDRPHY_PAD_CTRL_PROG 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_CTRL_PROG), ddr_phy->DDRPHY_PAD_CTRL_PROG);
-	DBG_8195A("DDRPHY_PAD_BUS_0 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_0), ddr_phy->DDRPHY_PAD_BUS_0);
-	DBG_8195A("DDRPHY_PAD_BUS_1 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_1), ddr_phy->DDRPHY_PAD_BUS_1);
-	DBG_8195A("DDRPHY_PAD_BUS_2 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_2), ddr_phy->DDRPHY_PAD_BUS_2);
-	DBG_8195A("DDRPHY_DPI_CTRL_0 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_DPI_CTRL_0), ddr_phy->DDRPHY_DPI_CTRL_0);
-	DBG_8195A("DDRPHY_DPI_CTRL_1 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_DPI_CTRL_1), ddr_phy->DDRPHY_DPI_CTRL_1);
-	DBG_8195A("DDRPHY_ZQ_NOCD2 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_ZQ_NOCD2), ddr_phy->DDRPHY_ZQ_NOCD2);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_RZCTRL_STATUS 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS), ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_CTRL_PROG 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_CTRL_PROG), ddr_phy->DDRPHY_PAD_CTRL_PROG);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_BUS_0 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_0), ddr_phy->DDRPHY_PAD_BUS_0);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_BUS_1 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_1), ddr_phy->DDRPHY_PAD_BUS_1);
+	RTK_LOGI(TAG,  "DDRPHY_PAD_BUS_2 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_BUS_2), ddr_phy->DDRPHY_PAD_BUS_2);
+	RTK_LOGI(TAG,  "DDRPHY_DPI_CTRL_0 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_DPI_CTRL_0), ddr_phy->DDRPHY_DPI_CTRL_0);
+	RTK_LOGI(TAG,  "DDRPHY_DPI_CTRL_1 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_DPI_CTRL_1), ddr_phy->DDRPHY_DPI_CTRL_1);
+	RTK_LOGI(TAG,  "DDRPHY_ZQ_NOCD2 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_ZQ_NOCD2), ddr_phy->DDRPHY_ZQ_NOCD2);
 	DelayMs(0xC8); //wait 200ms to let setting valid
 
 	/*enable R480 Calibration*/
@@ -343,8 +350,8 @@ void DDR_PHY_R480_CAL(VOID)
 
 	//wait R480 calibration done
 	while (!(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS & DDRPHY_BIT_RZQ_CAL_DONE)) {}
-	DBG_8195A("DDRPHY_PAD_RZCTRL_STATUS 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS), ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
-	DBG_8195A("DDRPHY_GET_RZQ_480CODE: 0x%08x\n", DDRPHY_GET_RZQ_480CODE(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS));
+	RTK_LOGI(TAG,  "DDRPHY_PAD_RZCTRL_STATUS 0x%08x = 0x%08x\n", &(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS), ddr_phy->DDRPHY_PAD_RZCTRL_STATUS);
+	RTK_LOGI(TAG,  "DDRPHY_GET_RZQ_480CODE: 0x%08x\n", DDRPHY_GET_RZQ_480CODE(ddr_phy->DDRPHY_PAD_RZCTRL_STATUS));
 
 	/*disable R480 Calibration*/
 	ddr_phy->DDRPHY_PAD_CTRL_PROG &= (~DDRPHY_BIT_RZQ_CAL_EN);
@@ -469,44 +476,44 @@ void DDR_PHY_BSTC_STARK(void)
 	u32 data_buf[16];
 	struct bstc_data_b128 *bstc_data = (struct bstc_data_b128 *)data_buf;
 
-	DBG_8195A("rxi316_bstc start.\n");
+	RTK_LOGI(TAG,  "rxi316_bstc start.\n");
 
 	//********************************************************
 	//*******	   initialize bstc related ctrl 	 *********
 	//********************************************************
 	// Set Bstc Mode
 	ddrc->DDRC_CSR = (DDRC_BIT_MEM_IDLE | DDRC_BIT_TM_IDLE | DDRC_BSTC_IDLE(0));
-	DBG_8195A("CR_CSR 0x%08x = 0x%08x\n", &(ddrc->DDRC_CSR), ddrc->DDRC_CSR);
+	RTK_LOGI(TAG,  "CR_CSR 0x%08x = 0x%08x\n", &(ddrc->DDRC_CSR), ddrc->DDRC_CSR);
 
 	// Flush cmd/wd/rg/rd data sram
 	ddrc->DDRC_BCR = (DDRC_BIT_FUS_CMD | DDRC_BIT_FUS_WD | DDRC_BIT_FUS_RG | DDRC_BIT_FUS_RD);
-	DBG_8195A("CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
+	RTK_LOGI(TAG,  "CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
 
 	// Set BCR control mode
 	ddrc->DDRC_BCR = (DDRC_LOOP_CNT(LOOP_CNT) | DDRC_HW_PAT(BSTC_HW_PAT) | DDRC_CRR(BSTC_CRR) |	DDRC_AT_ERR_STOP(BSTC_AT_STOP_EN) | \
 					  DDRC_DIS_MSK(BSTC_DIS_MASK_EN) | DDRC_LOOP(BSTC_LOOP_EN) | DDRC_CMP(BSTC_CMP_EN) | DDRC_STOP(BSTC_STOP_EN));
-	DBG_8195A("CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
+	RTK_LOGI(TAG,  "CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
 
 	// Set BEXPC when single mode or reload mode
 	// (CR_LOOP=0) or (CR_LOOP=1 & CR_RELOAD=1)
 	ddrc->DDRC_BEXPC = (DDRC_RD_EXPC_CNT(BSTC_RD_EX_LVL) |	DDRC_WD_EXPC_CNT(BSTC_WD_EX_LVL) | DDRC_CMD_EXPC_CNT(BSTC_CMD_EX_LVL));
-	DBG_8195A("CR_BEXPC 0x%08x = 0x%08x\n", &(ddrc->DDRC_BEXPC), ddrc->DDRC_BEXPC);
+	RTK_LOGI(TAG,  "CR_BEXPC 0x%08x = 0x%08x\n", &(ddrc->DDRC_BEXPC), ddrc->DDRC_BEXPC);
 
 	//********************************************************
 	//*******	   initialize bstc cmd				 *********
 	//********************************************************
 	data_entry = (BSTC_WD_EX_LVL / 4);
-	DBG_8195A("===== Write BSTC CMD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Write BSTC CMD_SRAM =====\n");
 	bstc_cmd_sram_fill();
 
 #if BSTC_DEBUG_PRINT
 	//Check CMD SRAM
-	DBG_8195A("===== Read BSTC CMD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Read BSTC CMD_SRAM =====\n");
 	bstc_addr = CMD_SRAM_BASE;
 	for (loop_cnt = 0; loop_cnt < BSTC_CMD_NUM; loop_cnt++) {
-		DBG_8195A("Read CMD 0x%08x = 0x%08x\n", bstc_addr, HAL_READ32(bstc_addr, 0));
+		DiagPrintf("Read CMD 0x%08x = 0x%08x\n", bstc_addr, HAL_READ32(bstc_addr, 0));
 		if (BSTC_CMD_WIDTH_WORD > 1) {
-			DBG_8195A("Read CMD 0x%08x = 0x%08x\n", (bstc_addr + 4), HAL_READ32((bstc_addr + 4), 0));
+			DiagPrintf("Read CMD 0x%08x = 0x%08x\n", (bstc_addr + 4), HAL_READ32((bstc_addr + 4), 0));
 		}
 		bstc_addr += 0x4 * BSTC_CMD_WIDTH_WORD;
 	}
@@ -516,24 +523,24 @@ void DDR_PHY_BSTC_STARK(void)
 	//========================================================
 
 	// Write wdata sram
-	DBG_8195A("===== Write BSTC WD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Write BSTC WD_SRAM =====\n");
 	bstc_other_sram_fill(WD_SRAM_BASE);
 
 #if BSTC_DEBUG_PRINT
 	// Read wdata sram
-	DBG_8195A("===== Read BSTC WD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Read BSTC WD_SRAM =====\n");
 	bstc_addr = WD_SRAM_BASE;
 	for (loop_cnt = 0; loop_cnt < data_entry; loop_cnt++) {
 		bstc_rd_128(bstc_addr, bstc_data);
-		DBG_8195A("> BSTC_WDSRAM_ADDR = 0x%08x, BSTC_WDSRAM_DATA = 0x%x%x%x%x\n",
-				  bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
+		DiagPrintf("> BSTC_WDSRAM_ADDR = 0x%08x, BSTC_WDSRAM_DATA = 0x%x%x%x%x\n",
+				   bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
 		bstc_addr += 0x10; // push 128-bit
 	}
 #endif
 
 #if BSTC_DIS_MASK_EN
 #else
-	DBG_8195A("===== Write BSTC MSK_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Write BSTC MSK_SRAM =====\n");
 	bstc_addr = MSK_SRAM_BASE;
 	// not mask
 	for (loop_cnt = 0; loop_cnt < data_entry; loop_cnt = (loop_cnt + 1)) {
@@ -546,28 +553,28 @@ void DDR_PHY_BSTC_STARK(void)
 	}
 
 	// Read wmsk sram
-	DBG_8195A("===== Read BSTC MSK_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Read BSTC MSK_SRAM =====\n");
 	bstc_addr = MSK_SRAM_BASE;
 	for (loop_cnt = 0; loop_cnt < data_entry; loop_cnt = loop_cnt + 1) {
 
 		bstc_rd_128(bstc_addr, bstc_data);
-		DBG_8195A("> BSTC_WMSKSRAM_ADDR = 0x%08x, BSTC_WMSKSRAM_DATA = 0x%x%x%x%x\n",
-				  bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
+		DiagPrintf("> BSTC_WMSKSRAM_ADDR = 0x%08x, BSTC_WMSKSRAM_DATA = 0x%x%x%x%x\n",
+				   bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
 		bstc_addr += 0x10; // push 128-bit
 	}
 #endif
 
-	DBG_8195A("===== Write BSTC RG_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Write BSTC RG_SRAM =====\n");
 	bstc_other_sram_fill(RG_SRAM_BASE);
 #if BSTC_DEBUG_PRINT
 	// Read rg sram
-	DBG_8195A("===== Read BSTC RG_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Read BSTC RG_SRAM =====\n");
 	bstc_addr = RG_SRAM_BASE;
 	for (loop_cnt = 0; loop_cnt < data_entry; loop_cnt++) {
 		bstc_rd_128(bstc_addr, bstc_data);
 
-		DBG_8195A("> BSTC_RGSRAM_ADDR = 0x%08x, BSTC_RGSRAM_DATA = 0x%x%x%x%x\n",
-				  bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
+		DiagPrintf("> BSTC_RGSRAM_ADDR = 0x%08x, BSTC_RGSRAM_DATA = 0x%x%x%x%x\n",
+				   bstc_addr, bstc_data->data_3, bstc_data->data_2, bstc_data->data_1, bstc_data->data_0);
 		bstc_addr += 0x10; // push 128-bit
 	}
 #endif
@@ -581,36 +588,36 @@ void DDR_PHY_BSTC_STARK(void)
 	bsram1_rd_lvl = DDRC_GET_RD_CNT(ddrc->DDRC_BSRAM1);
 
 	if (bsram0_cmd_lvl != BSTC_CMD_EX_LVL) {
-		DBG_8195A("[ERR] BSTC CMD sram filled error! Expect cmd lvl = 0x%08x, Actual cmd lvl= 0x%08x\n", BSTC_CMD_EX_LVL, bsram0_cmd_lvl);
+		RTK_LOGE(TAG, "[ERR] BSTC CMD sram filled error! Expect cmd lvl = 0x%08x, Actual cmd lvl= 0x%08x\n", BSTC_CMD_EX_LVL, bsram0_cmd_lvl);
 	} else {
-		DBG_8195A("[INFO] BSTC CMD sram valid data filled correct! cmd lvl = 0x%08x\n", bsram0_cmd_lvl);
+		RTK_LOGI(TAG,  "[INFO] BSTC CMD sram valid data filled correct! cmd lvl = 0x%08x\n", bsram0_cmd_lvl);
 	}
 
 	if (bsram0_wd_lvl != BSTC_WD_EX_LVL) {
-		DBG_8195A("[ERR] BSTC WD sram filled error! Expect wd lvl = 0x%08x, Actual wd lvl= 0x%08x\n", BSTC_WD_EX_LVL, bsram0_wd_lvl);
+		RTK_LOGE(TAG, "[ERR] BSTC WD sram filled error! Expect wd lvl = 0x%08x, Actual wd lvl= 0x%08x\n", BSTC_WD_EX_LVL, bsram0_wd_lvl);
 	} else {
-		DBG_8195A("[INFO] BSTC WR sram valid data filled correct! WD lvl = 0x%08x\n", bsram0_wd_lvl);
+		RTK_LOGI(TAG,  "[INFO] BSTC WR sram valid data filled correct! WD lvl = 0x%08x\n", bsram0_wd_lvl);
 	}
 
 	if (bsram1_rg_lvl != BSTC_WD_EX_LVL) {
-		DBG_8195A("[ERR] BSTC RG sram filled error! Expect rg lvl= 0x%08x, Actual rg lvl= 0x%08x\n", BSTC_WD_EX_LVL, bsram1_rg_lvl);
+		RTK_LOGE(TAG, "[ERR] BSTC RG sram filled error! Expect rg lvl= 0x%08x, Actual rg lvl= 0x%08x\n", BSTC_WD_EX_LVL, bsram1_rg_lvl);
 	} else {
-		DBG_8195A("[INFO] BSTC RG sram valid data filled correct! RG lvl = 0x%08x\n", bsram1_rg_lvl);
+		RTK_LOGI(TAG,  "[INFO] BSTC RG sram valid data filled correct! RG lvl = 0x%08x\n", bsram1_rg_lvl);
 	}
 
 	if (bsram1_rd_lvl != 0) {
-		DBG_8195A("[ERR] BSTC RD sram has error!\n");
+		RTK_LOGE(TAG, "[ERR] BSTC RD sram has error!\n");
 	} else {
-		DBG_8195A("[INFO] BSTC RD sram correct!\n");
+		RTK_LOGI(TAG,  "[INFO] BSTC RD sram correct!\n");
 	}
 
 	//********************************************************
 	//*******		   BSTC_MODE start				 *********
 	//********************************************************
-	DBG_8195A("//===== BSTC Start =====\n");
+	RTK_LOGI(TAG,  "//===== BSTC Start =====\n");
 
 	ddrc->DDRC_CCR = DDRC_BIT_BSTC;
-	DBG_8195A("CR_CCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_CCR), ddrc->DDRC_CCR);
+	RTK_LOGI(TAG,  "CR_CCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_CCR), ddrc->DDRC_CCR);
 
 	//********************************************************
 	//*******		 Issue BSTC_MODE done			 *********
@@ -618,9 +625,9 @@ void DDR_PHY_BSTC_STARK(void)
 	// Wait BSTC_DONE
 	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
 		DelayMs(1000 * 5);
-		//DBG_8195A("//===== Force BSTC OFF =====\n");
+		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
-		DBG_8195A("CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
+		RTK_LOGI(TAG,  "CR_BCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
 	};	// wait BISC done
 
 	//********************************************************
@@ -628,15 +635,15 @@ void DDR_PHY_BSTC_STARK(void)
 	//********************************************************
 	// Read rdata sram
 #if BSTC_DEBUG_PRINT
-	DBG_8195A("===== Read BSTC RD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== Read BSTC RD_SRAM =====\n");
 	bstc_addr = RD_SRAM_BASE;
 	for (loop_cnt = 0; loop_cnt < data_entry; loop_cnt++) {
 		bstc_rd_128(bstc_addr, bstc_data);
-		DBG_8195A("> BSTC_RDSRAM_ADDR = 0x%08x, BSTC_RDSRAM_DATA = 0x%08x%x%x%x\n", bstc_addr, bstc_data->data_3, bstc_data->data_2,
-				  bstc_data->data_1, bstc_data->data_0);
+		RTK_LOGI(TAG,  "> BSTC_RDSRAM_ADDR = 0x%08x, BSTC_RDSRAM_DATA = 0x%08x%x%x%x\n", bstc_addr, bstc_data->data_3, bstc_data->data_2,
+				 bstc_data->data_1, bstc_data->data_0);
 		bstc_addr += 0x10; // push 128-bit
 	}
-	DBG_8195A("===== End of Read BSTC RD_SRAM =====\n");
+	RTK_LOGI(TAG,  "===== End of Read BSTC RD_SRAM =====\n");
 #endif
 
 	////********************************************************
@@ -645,14 +652,14 @@ void DDR_PHY_BSTC_STARK(void)
 	err_cnt = DDRC_GET_ERR_CNT(ddrc->DDRC_BST);
 
 	if (err_cnt != 0) {
-		DBG_8195A("[ERR] BSTC error, err_cnt = %d\n", err_cnt);
+		RTK_LOGE(TAG, "[ERR] BSTC error, err_cnt = %d\n", err_cnt);
 	} else {
-		DBG_8195A("[BSTC_OK] BSTC error cnt is 0!\n");
+		RTK_LOGI(TAG,  "[BSTC_OK] BSTC error cnt is 0!\n");
 	}
-	DBG_8195A("BSTC ERROR BIT: 0x%08x\n", DDRC_GET_ERR_BIT(ddrc->DDRC_BER));
+	RTK_LOGI(TAG,  "BSTC ERROR BIT: 0x%08x\n", DDRC_GET_ERR_BIT(ddrc->DDRC_BER));
 
-	DBG_8195A("rxi316_bstc done\n");
-	DBG_8195A("\n");
+	RTK_LOGI(TAG,  "rxi316_bstc done\n");
+	RTK_LOGI(TAG,  "\n");
 }
 
 void sram_sg(void)
@@ -708,32 +715,32 @@ void sram_sg(void)
 		ddrc->DDRC_BCR &= ~DDRC_BIT_FUS_CMD;
 		bstc_cmd_sram_fill();
 	} else {
-		//DBG_8195A("[INFO] BSTC CMD sram valid data filled correct!");
+		//RTK_LOGI(TAG,  "[INFO] BSTC CMD sram valid data filled correct!");
 	}
 
 	if (bsram0_wd_lvl != BSTC_WD_EX_LVL) {
-		DBG_8195A("[ERR] BSTC WR sram filled error!\n");
+		RTK_LOGE(TAG, "[ERR] BSTC WR sram filled error!\n");
 	} else {
-		//DBG_8195A("[INFO] BSTC WR sram valid data filled correct!");
+		//RTK_LOGI(TAG,  "[INFO] BSTC WR sram valid data filled correct!");
 	}
 
 	if (1/*bsram1_rg_lvl != BSTC_WD_EX_LVL*/) {//BSTC BUG Workaround
-		//DBG_8195A("=================== flush rg sram ====================");
+		//RTK_LOGI(TAG,  "=================== flush rg sram ====================");
 		ddrc->DDRC_BCR |= DDRC_BIT_FUS_RG;
 		ddrc->DDRC_BCR &= ~DDRC_BIT_FUS_RG;
-		//DBG_8195A("=================== flush rd sram ====================");
+		//RTK_LOGI(TAG,  "=================== flush rd sram ====================");
 		ddrc->DDRC_BCR |= DDRC_BIT_FUS_RD;
 		ddrc->DDRC_BCR &= ~DDRC_BIT_FUS_RD;
-		//DBG_8195A("==== ReWrite BSTC RG_SRAM ====");
+		//RTK_LOGI(TAG,  "==== ReWrite BSTC RG_SRAM ====");
 		bstc_other_sram_fill(RG_SRAM_BASE);
 	} else {
-		//DBG_8195A("[INFO] BSTC RG sram valid data filled correct!");
+		//RTK_LOGI(TAG,  "[INFO] BSTC RG sram valid data filled correct!");
 	}
 
 	if (bsram1_rd_lvl != 0) {
-		//DBG_8195A("[ERR] BSTC RD sram has error!\n");
+		//RTK_LOGE(TAG, "[ERR] BSTC RD sram has error!\n");
 	} else {
-		//DBG_8195A("[INFO] BSTC RD sram correct!\n");
+		//RTK_LOGI(TAG,  "[INFO] BSTC RD sram correct!\n");
 	}
 
 	//********************************************************
@@ -743,7 +750,7 @@ void sram_sg(void)
 	ddrc->DDRC_DRR = (ddrc->DDRC_DRR & ~(DDRC_MASK_ZQCL_INV | DDRC_BIT_REF_DIS)) | DDRC_BIT_REF_DIS;
 #endif
 
-	//DBG_8195A("//================ RXI316_BSTC Reload Start ================");
+	//RTK_LOGI(TAG,  "//================ RXI316_BSTC Reload Start ================");
 	//BSTC Start
 	ddrc->DDRC_CCR = DDRC_BIT_BSTC;
 	SCAN_PRINT("CR_CCR 0x%08x = 0x%08x\n", &(ddrc->DDRC_CCR), ddrc->DDRC_CCR);
@@ -754,7 +761,7 @@ void sram_sg(void)
 	// Wait BSTC_DONE
 	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
 		DelayMs(1000 * 2);//rw 秒數 ( sram_sg )
-		//DBG_8195A("//===== Force BSTC OFF =====\n");
+		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
 	};	// wait BISC done
 
@@ -763,8 +770,8 @@ void sram_sg(void)
 	//********************************************************
 	err_cnt = DDRC_GET_ERR_CNT(ddrc->DDRC_BST);
 	if (err_cnt != 0 || DDRC_GET_ERR_BIT(ddrc->DDRC_BER)) {
-		DBG_8195A("[ERR] BSTC error, err_cnt = %d\n", err_cnt);
-		DBG_8195A("BSTC ERROR BIT: 0x%08x\n", DDRC_GET_ERR_BIT(ddrc->DDRC_BER));
+		RTK_LOGE(TAG, "[ERR] BSTC error, err_cnt = %d\n", err_cnt);
+		RTK_LOGE(TAG, "BSTC ERROR BIT: 0x%08x\n", DDRC_GET_ERR_BIT(ddrc->DDRC_BER));
 	} else {
 		SCAN_PRINT("[BSTC_OK] BSTC error cnt is 0!\n");
 	}
@@ -788,7 +795,7 @@ static u8 DDR_PHY_Scan_param_setup_map(void)
 {
 	u8 scan_stage;
 
-	DBG_8195A("\nPlease select TX_SCAN_MAP: 0 - hold, 1 - setup\n");
+	RTK_LOGI(TAG,  "\nPlease select TX_SCAN_MAP: 0 - hold, 1 - setup\n");
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
@@ -798,7 +805,7 @@ static u8 DDR_PHY_Scan_param_setup_map(void)
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
-	DBG_8195A("Input Num is %d\n", scan_stage);
+	RTK_LOGI(TAG,  "Input Num is %d\n", scan_stage);
 
 	return scan_stage;
 }
@@ -809,13 +816,13 @@ void tx_MR_wrlvl(void)
 	DDRPHY_TypeDef *ddr_phy = DDRPHY_DEV;
 
 	int MR1_addr, dqs_pi;
-	DBG_8195A("======== MR write leveling ========\n");
-	DBG_8195A("Current PI\n");
-	DBG_8195A("CK0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL0(ddr_phy->DDRPHY_PLL_PI0));
-	DBG_8195A("DQS0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL2(ddr_phy->DDRPHY_PLL_PI0));
-	DBG_8195A("DQS1 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL3(ddr_phy->DDRPHY_PLL_PI0));
-	DBG_8195A("DQ0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL6(ddr_phy->DDRPHY_PLL_PI1));
-	DBG_8195A("DQ1 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL7(ddr_phy->DDRPHY_PLL_PI2));
+	RTK_LOGI(TAG,  "======== MR write leveling ========\n");
+	RTK_LOGI(TAG,  "Current PI\n");
+	RTK_LOGI(TAG,  "CK0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL0(ddr_phy->DDRPHY_PLL_PI0));
+	RTK_LOGI(TAG,  "DQS0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL2(ddr_phy->DDRPHY_PLL_PI0));
+	RTK_LOGI(TAG,  "DQS1 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL3(ddr_phy->DDRPHY_PLL_PI0));
+	RTK_LOGI(TAG,  "DQ0 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL6(ddr_phy->DDRPHY_PLL_PI1));
+	RTK_LOGI(TAG,  "DQ1 PI = %d\n", DDRPHY_GET_DPI_POST_PI_SEL7(ddr_phy->DDRPHY_PLL_PI2));
 
 	// fw_set_protocal_index[1:0] = 0x2, immediately
 	ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -876,12 +883,12 @@ void tx_MR_wrlvl(void)
 		ddr_phy->DDRPHY_DQ_DQS_CTRL |= DDRPHY_BIT_TRIG_DQS; // trig_dqs
 		DelayMs(500);
 
-		//DBG_8195A("CK0 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL0(ddr_phy->DDRPHY_PLL_PI0));
-		//DBG_8195A("DQS0 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL2(ddr_phy->DDRPHY_PLL_PI0));
-		//DBG_8195A("DQS1 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL3(ddr_phy->DDRPHY_PLL_PI0));
-		//DBG_8195A("DQS2 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL4(ddr_phy->DDRPHY_PLL_PI1));
-		//DBG_8195A("DQS3 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL5(ddr_phy->DDRPHY_PLL_PI1));
-		DBG_8195A("DQSPI=%02d, DQ0~31 = 0x%08x\n", dqs_pi, ddr_phy->DDRPHY_DQ_PAT_IN0); // dq_pat_in
+		//RTK_LOGI(TAG,  "CK0 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL0(ddr_phy->DDRPHY_PLL_PI0));
+		//RTK_LOGI(TAG,  "DQS0 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL2(ddr_phy->DDRPHY_PLL_PI0));
+		//RTK_LOGI(TAG,  "DQS1 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL3(ddr_phy->DDRPHY_PLL_PI0));
+		//RTK_LOGI(TAG,  "DQS2 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL4(ddr_phy->DDRPHY_PLL_PI1));
+		//RTK_LOGI(TAG,  "DQS3 PI = 0x%08x\n", DDRPHY_GET_DPI_POST_PI_SEL5(ddr_phy->DDRPHY_PLL_PI1));
+		RTK_LOGI(TAG,  "DQSPI=%02d, DQ0~31 = 0x%08x\n", dqs_pi, ddr_phy->DDRPHY_DQ_PAT_IN0); // dq_pat_in
 
 		//DelayMs(1000*1);
 	}
@@ -927,10 +934,10 @@ void tx_rw_wrlvl(void)
 
 	//hold time
 	for (pi_tmp = dqspi_init[0]; pi_tmp < dqspi_init[0] + 48; pi_tmp++) {
-		DBG_8195A(" dqspi0(hold) = %d\n", pi_tmp % 32);
-		DBG_8195A(" dqspi1(hold) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
-		DBG_8195A(" dqspi2(hold) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
-		DBG_8195A(" dqspi3(hold) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
+		RTK_LOGI(TAG,  " dqspi0(hold) = %d\n", pi_tmp % 32);
+		RTK_LOGI(TAG,  " dqspi1(hold) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
+		RTK_LOGI(TAG,  " dqspi2(hold) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
+		RTK_LOGI(TAG,  " dqspi3(hold) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
 
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL2) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp);
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL3) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1);
@@ -969,8 +976,8 @@ void tx_rw_wrlvl(void)
 			}
 		}
 
-		DBG_8195A(" dqspi_hold 0/1 = %d, %d\n", dqspi_hold[0], dqspi_hold[1]);
-		DBG_8195A(" dqspi_hold_map 0/1 = %d, %d\n", dqspi_hold_map[0], dqspi_hold_map[1]);
+		RTK_LOGI(TAG,  " dqspi_hold 0/1 = %d, %d\n", dqspi_hold[0], dqspi_hold[1]);
+		RTK_LOGI(TAG,  " dqspi_hold_map 0/1 = %d, %d\n", dqspi_hold_map[0], dqspi_hold_map[1]);
 
 		if ((dqspi_hold[0] != 0xffff) && (dqspi_hold[1] != 0xffff)) {
 			break;
@@ -980,7 +987,7 @@ void tx_rw_wrlvl(void)
 		hold_cnt++;
 	}
 
-	DBG_8195A("!!!hold shift to init!!!\n");
+	RTK_LOGI(TAG,  "!!!hold shift to init!!!\n");
 	for (i = 1; i <= hold_cnt; i++) { //hold time shift to initial
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL2) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp - i);
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL3) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1 - i);
@@ -1000,10 +1007,10 @@ void tx_rw_wrlvl(void)
 
 	//setup time
 	for (pi_tmp = dqspi_init[0] + 64; pi_tmp > dqspi_init[0] + 16; pi_tmp--) {
-		DBG_8195A(" dqspi0(setup) = %d\n", pi_tmp % 32);
-		DBG_8195A(" dqspi1(setup) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
-		DBG_8195A(" dqspi2(setup) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
-		DBG_8195A(" dqspi3(setup) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
+		DiagPrintf(" dqspi0(setup) = %d\n", pi_tmp % 32);
+		DiagPrintf(" dqspi1(setup) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
+		DiagPrintf(" dqspi2(setup) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
+		DiagPrintf(" dqspi3(setup) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
 
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL2) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp);
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL3) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1);
@@ -1042,8 +1049,8 @@ void tx_rw_wrlvl(void)
 			}
 		}
 
-		DBG_8195A(" dqspi_setup 0/1 = %d, %d\n", dqspi_setup[0], dqspi_setup[1]);
-		DBG_8195A(" dqspi_setup_map 0/1 = %d, %d\n", dqspi_setup_map[0], dqspi_setup_map[1]);
+		DiagPrintf(" dqspi_setup 0/1 = %d, %d\n", dqspi_setup[0], dqspi_setup[1]);
+		DiagPrintf(" dqspi_setup_map 0/1 = %d, %d\n", dqspi_setup_map[0], dqspi_setup_map[1]);
 
 		if ((dqspi_setup[0] != 0xffff) && (dqspi_setup[1] != 0xffff)) {
 			break;
@@ -1053,7 +1060,7 @@ void tx_rw_wrlvl(void)
 		setup_cnt++;
 	}
 
-	DBG_8195A("!!!setup shift to init!!!\n");
+	RTK_LOGI(TAG,  "!!!setup shift to init!!!\n");
 	for (i = 1; i <= setup_cnt; i++) { //setup time shift to initial
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL2) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp + i);
 		ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~DDRPHY_MASK_DPI_POST_PI_SEL3) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1 + i);
@@ -1081,11 +1088,11 @@ void tx_rw_wrlvl(void)
 		}
 	}
 
-	DBG_8195A(" dqspi_setup 0/1 = %d, %d\n", dqspi_setup[0], dqspi_setup[1]);
-	DBG_8195A(" dqspi_setup_map 0/1 = %d, %d\n", dqspi_setup_map[0], dqspi_setup_map[1]);
+	RTK_LOGI(TAG,  " dqspi_setup 0/1 = %d, %d\n", dqspi_setup[0], dqspi_setup[1]);
+	RTK_LOGI(TAG,  " dqspi_setup_map 0/1 = %d, %d\n", dqspi_setup_map[0], dqspi_setup_map[1]);
 
-	DBG_8195A(" dqspi_hold 0/1 = %d, %d\n", dqspi_hold[0], dqspi_hold[1]);
-	DBG_8195A(" dqspi_hold_map 0/1 = %d, %d\n", dqspi_hold_map[0], dqspi_hold_map[1]);
+	RTK_LOGI(TAG,  " dqspi_hold 0/1 = %d, %d\n", dqspi_hold[0], dqspi_hold[1]);
+	RTK_LOGI(TAG,  " dqspi_hold_map 0/1 = %d, %d\n", dqspi_hold_map[0], dqspi_hold_map[1]);
 	//shift = hold map - (hold map + setup map) / 2
 
 	/*
@@ -1163,18 +1170,18 @@ void tx_ckpi(void)
 
 	if (DDR_PHY_Scan_param_setup_map() != TX_SCAN_SETUP_MAP) {
 		while (cnt_hold < 64) { // scan ckpi hold time(1D)
-			DBG_8195A("===========================================================\n");
-			DBG_8195A("ckpi(hold) = %d\n", ckpi % 32);
-			DBG_8195A("CSPI0(hold) = %d\n", (ckpi - d_ck_cs0) % 32);
-			DBG_8195A("CSPI1(hold) = %d\n", (ckpi - d_ck_cs1) % 32);
-			DBG_8195A("DQSPI0(hold) = %d\n", (ckpi - d_ck_dqs0) % 32);
-			DBG_8195A("DQSPI1(hold) = %d\n", (ckpi - d_ck_dqs1) % 32);
-			DBG_8195A("DQSPI2(hold) = %d\n", (ckpi - d_ck_dqs2) % 32);
-			DBG_8195A("DQSPI3(hold) = %d\n", (ckpi - d_ck_dqs3) % 32);
-			DBG_8195A("DQPI0(hold) = %d\n", (ckpi - d_ck_dq0) % 32);
-			DBG_8195A("DQPI1(hold) = %d\n", (ckpi - d_ck_dq1) % 32);
-			DBG_8195A("DQPI2(hold) = %d\n", (ckpi - d_ck_dq2) % 32);
-			DBG_8195A("DQPI3(hold) = %d\n", (ckpi - d_ck_dq3) % 32);
+			DiagPrintf("===========================================================\n");
+			DiagPrintf("ckpi(hold) = %d\n", ckpi % 32);
+			DiagPrintf("CSPI0(hold) = %d\n", (ckpi - d_ck_cs0) % 32);
+			DiagPrintf("CSPI1(hold) = %d\n", (ckpi - d_ck_cs1) % 32);
+			DiagPrintf("DQSPI0(hold) = %d\n", (ckpi - d_ck_dqs0) % 32);
+			DiagPrintf("DQSPI1(hold) = %d\n", (ckpi - d_ck_dqs1) % 32);
+			DiagPrintf("DQSPI2(hold) = %d\n", (ckpi - d_ck_dqs2) % 32);
+			DiagPrintf("DQSPI3(hold) = %d\n", (ckpi - d_ck_dqs3) % 32);
+			DiagPrintf("DQPI0(hold) = %d\n", (ckpi - d_ck_dq0) % 32);
+			DiagPrintf("DQPI1(hold) = %d\n", (ckpi - d_ck_dq1) % 32);
+			DiagPrintf("DQPI2(hold) = %d\n", (ckpi - d_ck_dq2) % 32);
+			DiagPrintf("DQPI3(hold) = %d\n", (ckpi - d_ck_dq3) % 32);
 
 			ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL0)) | DDRPHY_DPI_POST_PI_SEL0(ckpi);
 			ddr_phy->DDRPHY_PLL_PI2 = (ddr_phy->DDRPHY_PLL_PI2 & ~DDRPHY_MASK_DPI_POST_PI_SEL10) | DDRPHY_DPI_POST_PI_SEL10(ckpi - d_ck_cs0);
@@ -1217,18 +1224,18 @@ void tx_ckpi(void)
 		}//cnt_hold
 	} else {
 		while (cnt_setup < 64) { // scan ckpi setup time
-			DBG_8195A("===========================================================\n");
-			DBG_8195A("ckpi(setup) = %d\n", ckpi % 32);
-			DBG_8195A("CSPI0(setup) = %d\n", (ckpi - d_ck_cs0) % 32);
-			DBG_8195A("CSPI1(setup) = %d\n", (ckpi - d_ck_cs1) % 32);
-			DBG_8195A("DQSPI0(setup) = %d\n", (ckpi - d_ck_dqs0) % 32);
-			DBG_8195A("DQSPI1(setup) = %d\n", (ckpi - d_ck_dqs1) % 32);
-			DBG_8195A("DQSPI2(setup) = %d\n", (ckpi - d_ck_dqs2) % 32);
-			DBG_8195A("DQSPI3(setup) = %d\n", (ckpi - d_ck_dqs3) % 32);
-			DBG_8195A("DQPI0(setup) = %d\n", (ckpi - d_ck_dq0) % 32);
-			DBG_8195A("DQPI1(setup) = %d\n", (ckpi - d_ck_dq1) % 32);
-			DBG_8195A("DQPI2(setup) = %d\n", (ckpi - d_ck_dq2) % 32);
-			DBG_8195A("DQPI3(setup) = %d\n", (ckpi - d_ck_dq3) % 32);
+			DiagPrintf("===========================================================\n");
+			DiagPrintf("ckpi(setup) = %d\n", ckpi % 32);
+			DiagPrintf("CSPI0(setup) = %d\n", (ckpi - d_ck_cs0) % 32);
+			DiagPrintf("CSPI1(setup) = %d\n", (ckpi - d_ck_cs1) % 32);
+			DiagPrintf("DQSPI0(setup) = %d\n", (ckpi - d_ck_dqs0) % 32);
+			DiagPrintf("DQSPI1(setup) = %d\n", (ckpi - d_ck_dqs1) % 32);
+			DiagPrintf("DQSPI2(setup) = %d\n", (ckpi - d_ck_dqs2) % 32);
+			DiagPrintf("DQSPI3(setup) = %d\n", (ckpi - d_ck_dqs3) % 32);
+			DiagPrintf("DQPI0(setup) = %d\n", (ckpi - d_ck_dq0) % 32);
+			DiagPrintf("DQPI1(setup) = %d\n", (ckpi - d_ck_dq1) % 32);
+			DiagPrintf("DQPI2(setup) = %d\n", (ckpi - d_ck_dq2) % 32);
+			DiagPrintf("DQPI3(setup) = %d\n", (ckpi - d_ck_dq3) % 32);
 
 			ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL0)) | DDRPHY_DPI_POST_PI_SEL0(ckpi);
 			ddr_phy->DDRPHY_PLL_PI2 = (ddr_phy->DDRPHY_PLL_PI2 & ~DDRPHY_MASK_DPI_POST_PI_SEL10) | DDRPHY_DPI_POST_PI_SEL10(ckpi - d_ck_cs0);
@@ -1275,12 +1282,12 @@ void tx_ckpi(void)
 
 	cnt = (cnt_setup - 1) + (cnt_hold - 1) + 1;//計算pass的map有多大，初始點也要算所以+1
 
-	DBG_8195A(" hold pi = %d\n", (ckpi + cnt_hold - 1) % 32);
-	DBG_8195A(" setup pi = %d\n", (ckpi - cnt_setup + 1) % 32);
+	RTK_LOGI(TAG,  " hold pi = %d\n", (ckpi + cnt_hold - 1) % 32);
+	RTK_LOGI(TAG,  " setup pi = %d\n", (ckpi - cnt_setup + 1) % 32);
 
-	DBG_8195A(" hold map = %d\n", cnt_hold - 1);
-	DBG_8195A(" setup map = %d\n", cnt_setup - 1);
-	DBG_8195A(" map size = %d\n", cnt);
+	RTK_LOGI(TAG,  " hold map = %d\n", cnt_hold - 1);
+	RTK_LOGI(TAG,  " setup map = %d\n", cnt_setup - 1);
+	RTK_LOGI(TAG,  " map size = %d\n", cnt);
 	//shift = hold map - (hold map + setup map) / 2
 }
 
@@ -1320,7 +1327,7 @@ void tx_cspi(void)// cspi
 
 	if (DDR_PHY_Scan_param_setup_map() != TX_SCAN_SETUP_MAP) {
 		while (cnt_hold < 32) { // scan cspi hold time(1D)
-			DBG_8195A("CSPI %d (hold) = %d\n", cs_sel, cspi % 32);
+			DiagPrintf("CSPI %d (hold) = %d\n", cs_sel, cspi % 32);
 			if (cs_sel == 0) {
 				ddr_phy->DDRPHY_PLL_PI2 = (ddr_phy->DDRPHY_PLL_PI2 & ~DDRPHY_MASK_DPI_POST_PI_SEL10) | DDRPHY_DPI_POST_PI_SEL10(cspi);
 			}
@@ -1341,7 +1348,7 @@ void tx_cspi(void)// cspi
 			//ddr_phy->DDRPHY_CRT_RST_CTL &= ~(DDRPHY_BIT_RST_N | DDRPHY_BIT_PTR_RST_N); //PHY RESET
 
 			if (ddr_error_bit != 0) {
-				DBG_8195A("===========================================================Read Error\n");
+				RTK_LOGE(TAG, "===========================================================Read Error\n");
 				//reset之後ckpi如果會回到初始點就不用移回去
 				cspi -= cnt_hold;//"variable" cspi shift to initial
 				break;
@@ -1352,7 +1359,7 @@ void tx_cspi(void)// cspi
 		}//cnt_hold
 	} else {
 		while (cnt_setup < 32) {
-			DBG_8195A("CSPI %d (setup) = %d\n", cs_sel, cspi % 32);
+			DiagPrintf("CSPI %d (setup) = %d\n", cs_sel, cspi % 32);
 			if (cs_sel == 0) {
 				ddr_phy->DDRPHY_PLL_PI2 = (ddr_phy->DDRPHY_PLL_PI2 & ~DDRPHY_MASK_DPI_POST_PI_SEL10) | DDRPHY_DPI_POST_PI_SEL10(cspi);
 			}
@@ -1373,7 +1380,7 @@ void tx_cspi(void)// cspi
 			//ddr_phy->DDRPHY_CRT_RST_CTL &= ~(DDRPHY_BIT_RST_N | DDRPHY_BIT_PTR_RST_N); //PHY RESET
 
 			if (ddr_error_bit != 0) {
-				DBG_8195A("===========================================================Read Error\n");
+				RTK_LOGE(TAG, "===========================================================Read Error\n");
 				//reset之後ckpi如果會回到初始點就不用移回去
 				cspi += cnt_setup;//"variable" cspi shift to initial
 				break;
@@ -1388,10 +1395,10 @@ void tx_cspi(void)// cspi
 	cnt = (cnt_setup - 1) + (cnt_hold - 1) + 1;
 	(void) cnt;/* To avoid gcc warnings */
 
-	DBG_8195A("============== setup pi = %d\n", (cspi - cnt_setup + 1) % 32);
-	DBG_8195A("============== hold pi = %d\n", (cspi + cnt_hold - 1) % 32);
-	DBG_8195A("~~~~~~~ cspi setup map = %d\n", cnt_setup - 1);
-	DBG_8195A("~~~~~~~ cspi hold map = %d\n", cnt_hold - 1);
+	RTK_LOGI(TAG,  "============== setup pi = %d\n", (cspi - cnt_setup + 1) % 32);
+	RTK_LOGI(TAG,  "============== hold pi = %d\n", (cspi + cnt_hold - 1) % 32);
+	RTK_LOGI(TAG,  "~~~~~~~ cspi setup map = %d\n", cnt_setup - 1);
+	RTK_LOGI(TAG,  "~~~~~~~ cspi hold map = %d\n", cnt_hold - 1);
 	//shift =cspi hold map - (cspi hold map + cspi setup map) / 2
 }
 
@@ -1439,9 +1446,9 @@ void tx_dqs(void)
 	} else {
 		vref_step_init = MR6_VREF + 23;
 	}
-	//DBG_8195A("MR6_VR = %d\n", MR6_VR);
-	//DBG_8195A("MR6_VREF = %d\n", MR6_VREF);
-	//DBG_8195A(" Vref init = %f\n", vref_step_init);
+	//RTK_LOGI(TAG,  "MR6_VR = %d\n", MR6_VR);
+	//RTK_LOGI(TAG,  "MR6_VREF = %d\n", MR6_VREF);
+	//RTK_LOGI(TAG,  " Vref init = %f\n", vref_step_init);
 	for (vref_up_down = 0; vref_up_down < 2; vref_up_down++) { //scan vref upward or downward
 		if (vref_up_down == 0) {
 			scan_vref_tune *= 1;
@@ -1469,7 +1476,7 @@ void tx_dqs(void)
 			} else {
 				vref[vref_step] = 60 + (vref_step - 23) * 0.65;
 			}
-			//DBG_8195A(" Vref = %f\n", vref[vref_step]);
+			//RTK_LOGI(TAG,  " Vref = %f\n", vref[vref_step]);
 
 #if SCAN_PER_SLICE == 0
 			int d_dqs0_dqs1, d_dqs0_dqs2, d_dqs0_dqs3;
@@ -1480,10 +1487,10 @@ void tx_dqs(void)
 			hold_count = 0;
 			//hold time
 			for (pi_tmp = dqspi_init[0] + 32; pi_tmp < dqspi_init[0] + 48; pi_tmp++) {
-				//DBG_8195A(" dqspi0(hold) = %d\n", pi_tmp % 32);
-				//DBG_8195A(" dqspi1(hold) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
-				//DBG_8195A(" dqspi2(hold) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
-				//DBG_8195A(" dqspi3(hold) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
+				//DiagPrintf(" dqspi0(hold) = %d\n", pi_tmp % 32);
+				//DiagPrintf(" dqspi1(hold) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
+				//DiagPrintf(" dqspi2(hold) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
+				//DiagPrintf(" dqspi3(hold) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
 
 				ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL2)) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp);
 				ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL3)) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1);
@@ -1503,8 +1510,8 @@ void tx_dqs(void)
 				//DDR_tool output format
 				//printf("%f, %d, %d, %d, %d, %d, 0x%08x\n", vref[vref_step], DQ_slice, (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32),
 				//	   ((pi_tmp - d_dqs0_dqs3) % 32), ddr_error_bit);
-				DBG_8195A("%d, %d, %d, %d, 0x%08x\n", (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32), ((pi_tmp - d_dqs0_dqs3) % 32),
-						  ddr_error_bit);
+				DiagPrintf("%d, %d, %d, %d, 0x%08x\n", (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32), ((pi_tmp - d_dqs0_dqs3) % 32),
+						   ddr_error_bit);
 
 				//check r/w result per slice
 				if (((ddr_error_bit & (0xff << (8 * 0))) != 0) && (dqspi_hold[0] == 0xff)) {
@@ -1536,10 +1543,10 @@ void tx_dqs(void)
 			setup_count = 0;
 			//setup time
 			for (pi_tmp = dqspi_init[0] + 32; pi_tmp > dqspi_init[0] + 16; pi_tmp--) {
-				//DBG_8195A(" dqspi0(setup) = %d\n", pi_tmp % 32);
-				//DBG_8195A(" dqspi1(setup) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
-				//DBG_8195A(" dqspi2(setup) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
-				//DBG_8195A(" dqspi3(setup) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
+				//DiagPrintf(" dqspi0(setup) = %d\n", pi_tmp % 32);
+				//DiagPrintf(" dqspi1(setup) = %d\n", (pi_tmp - d_dqs0_dqs1) % 32);
+				//DiagPrintf(" dqspi2(setup) = %d\n", (pi_tmp - d_dqs0_dqs2) % 32);
+				//DiagPrintf(" dqspi3(setup) = %d\n", (pi_tmp - d_dqs0_dqs3) % 32);
 
 				ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL2)) | DDRPHY_DPI_POST_PI_SEL2(pi_tmp);
 				ddr_phy->DDRPHY_PLL_PI0 = (ddr_phy->DDRPHY_PLL_PI0 & ~(DDRPHY_MASK_DPI_POST_PI_SEL3)) | DDRPHY_DPI_POST_PI_SEL3(pi_tmp - d_dqs0_dqs1);
@@ -1559,8 +1566,8 @@ void tx_dqs(void)
 				//DDR_tool output format
 				//printf("%f, %d, %d, %d, %d, %d, 0x%08x\n", vref[vref_step], DQ_slice, (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32),
 				//	   ((pi_tmp - d_dqs0_dqs3) % 32), ddr_error_bit);
-				DBG_8195A("%d, %d, %d, %d, 0x%08x\n", (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32), ((pi_tmp - d_dqs0_dqs3) % 32),
-						  ddr_error_bit);
+				DiagPrintf("%d, %d, %d, %d, 0x%08x\n", (pi_tmp % 32), ((pi_tmp - d_dqs0_dqs1) % 32), ((pi_tmp - d_dqs0_dqs2) % 32), ((pi_tmp - d_dqs0_dqs3) % 32),
+						   ddr_error_bit);
 
 				//check r/w result per slice
 				if (((ddr_error_bit & (0xff << (8 * 0))) != 0) && (dqspi_setup[0] == 0xff)) {
@@ -1590,7 +1597,7 @@ void tx_dqs(void)
 			}
 #endif
 
-			DBG_8195A("================================\n");
+			RTK_LOGI(TAG,  "================================\n");
 			dqspi2D_hold[0][vref_step] = dqspi_hold[0] % 32;
 			dqspi2D_hold[1][vref_step] = dqspi_hold[1] % 32;
 			dqspi2D_hold[2][vref_step] = dqspi_hold[2] % 32;
@@ -1599,17 +1606,17 @@ void tx_dqs(void)
 			dqspi2D_setup[1][vref_step] = dqspi_setup[1] % 32;
 			dqspi2D_setup[2][vref_step] = dqspi_setup[2] % 32;
 			dqspi2D_setup[3][vref_step] = dqspi_setup[3] % 32;
-			DBG_8195A("dqspi_hold 0 / 1 / 2 / 3 = %d, %d, %d, %d\n", dqspi2D_hold[0][vref_step], dqspi2D_hold[1][vref_step],
-					  dqspi2D_hold[2][vref_step], dqspi2D_hold[3][vref_step]);
-			DBG_8195A("dqspi_setup 0 / 1 / 2 / 3 = %d, %d, %d, %d\n", dqspi2D_setup[0][vref_step], dqspi2D_setup[1][vref_step],
-					  dqspi2D_setup[2][vref_step], dqspi2D_setup[3][vref_step]);
+			RTK_LOGI(TAG,  "dqspi_hold 0 / 1 / 2 / 3 = %d, %d, %d, %d\n", dqspi2D_hold[0][vref_step], dqspi2D_hold[1][vref_step],
+					 dqspi2D_hold[2][vref_step], dqspi2D_hold[3][vref_step]);
+			RTK_LOGI(TAG,  "dqspi_setup 0 / 1 / 2 / 3 = %d, %d, %d, %d\n", dqspi2D_setup[0][vref_step], dqspi2D_setup[1][vref_step],
+					 dqspi2D_setup[2][vref_step], dqspi2D_setup[3][vref_step]);
 #if !SCAN_VREF
-			DBG_8195A("Do not scan tx vref\n");
+			RTK_LOGI(TAG,  "Do not scan tx vref\n");
 			break;
 #endif
-			//DBG_8195A("=======================================\n");
-			//DBG_8195A("===========END OF ONE VREF STEP==========\n");
-			//DBG_8195A("=======================================\n");
+			//RTK_LOGI(TAG,  "=======================================\n");
+			//RTK_LOGI(TAG,  "===========END OF ONE VREF STEP==========\n");
+			//RTK_LOGI(TAG,  "=======================================\n");
 
 			scan_vref_cnt_loop--;
 			if (scan_vref_cnt_loop < 0) {
@@ -1671,8 +1678,8 @@ void rx_dqsen(void)
 
 	// scan dqs_en
 	for (dqsen = dqsen_init[0] ; dqsen < 12; dqsen++) {
-		DBG_8195A(" dqsen0(->) = %d\n", dqsen);
-		DBG_8195A(" dqsen1(->) = %d\n", dqsen - d_dqsen0_dqsen1);
+		DiagPrintf(" dqsen0(->) = %d\n", dqsen);
+		DiagPrintf(" dqsen1(->) = %d\n", dqsen - d_dqsen0_dqsen1);
 
 		//set dqs_en
 		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = (ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] & ~0x7F) | ((dqsen) & 0x7F);
@@ -1704,7 +1711,7 @@ void rx_dqsen(void)
 		ddr_phy->DDRPHY_DPI_CTRL_2 = (ddr_phy->DDRPHY_DPI_CTRL_2 & ~(DDRPHY_MASK_RST_3POINT_MODE)) | DDRPHY_RST_3POINT_MODE(0x0);
 
 		//printf("~~~~~ dqs_int ~~~~~~~\n");
-		DBG_8195A("dqs_int: 0x%08x, ddr_error_bit: 0x%08x\n", ddr_phy->DDRPHY_INT_STATUS_0, ddr_error_bit);
+		DiagPrintf("dqs_int: 0x%08x, ddr_error_bit: 0x%08x\n", ddr_phy->DDRPHY_INT_STATUS_0, ddr_error_bit);
 
 		ddr_phy->DDRPHY_INT_CTRL |= DDRPHY_BIT_INT_WRITE_EN_2;
 		ddr_phy->DDRPHY_INT_CTRL |= DDRPHY_BIT_FW_CLR_DQS_INT; // fw clear dqs_int
@@ -1754,7 +1761,7 @@ void rx_dqsen(void)
 	//may reset first??
 	// scan dqs_en delay
 	for (dqsen_dly = 1; dqsen_dly < 64; dqsen_dly += 1) {
-		DBG_8195A(" dqsen dly(->) = %d\n", dqsen_dly);
+		DiagPrintf(" dqsen dly(->) = %d\n", dqsen_dly);
 		ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] = (ddr_phy->DDRPHY_READ_CTRL_0_SETx[0] & ~DDRPHY_MASK_DQS_EN_DLY_SEL) | DDRPHY_DQS_EN_DLY_SEL(dqsen_dly);
 		ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] = (ddr_phy->DDRPHY_READ_CTRL_0_SETx[1] & ~DDRPHY_MASK_DQS_EN_DLY_SEL) | DDRPHY_DQS_EN_DLY_SEL(dqsen_dly);
 
@@ -1785,7 +1792,7 @@ void rx_dqsen(void)
 		ddr_phy->DDRPHY_DPI_CTRL_2 = (ddr_phy->DDRPHY_DPI_CTRL_2 & ~(DDRPHY_MASK_RST_3POINT_MODE)) | DDRPHY_RST_3POINT_MODE(0x0);
 
 
-		DBG_8195A("dqs_int: 0x%08x, ddr_error_bit: 0x%08x\n", ddr_phy->DDRPHY_INT_STATUS_0, ddr_error_bit);
+		DiagPrintf("dqs_int: 0x%08x, ddr_error_bit: 0x%08x\n", ddr_phy->DDRPHY_INT_STATUS_0, ddr_error_bit);
 
 		ddr_phy->DDRPHY_INT_CTRL |= DDRPHY_BIT_INT_WRITE_EN_2;
 		ddr_phy->DDRPHY_INT_CTRL |= DDRPHY_BIT_FW_CLR_DQS_INT; // fw clear dqs_int
@@ -1841,14 +1848,14 @@ void rx_dqsen(void)
 	//rd_delay
 	ddr_phy->DDRPHY_DPI_CTRL_1 |= DDRPHY_BIT_FW_SET_RD_DLY | DDRPHY_BIT_WRITE_EN_1;
 
-	DBG_8195A("dqsen_hold 0, 1 = %d, %d\n", dqsen_hold[0], dqsen_hold[1]);
+	RTK_LOGI(TAG,  "dqsen_hold 0, 1 = %d, %d\n", dqsen_hold[0], dqsen_hold[1]);
 #if SCAN_DELAY
-	DBG_8195A("dqsen delay 0, 1 = %d, %d\n", dqsen_delay_hold[0], dqsen_delay_hold[1]);
+	RTK_LOGI(TAG,  "dqsen delay 0, 1 = %d, %d\n", dqsen_delay_hold[0], dqsen_delay_hold[1]);
 #endif
 
 	//This is result
-	DBG_8195A("DDRPHY_READ_CTRL_0_SETx[0]: 0x%08x\n", ddr_phy->DDRPHY_READ_CTRL_0_SETx[0]);
-	DBG_8195A("DDRPHY_READ_CTRL_0_SETx[1]: 0x%08x\n", ddr_phy->DDRPHY_READ_CTRL_0_SETx[1]);
+	RTK_LOGI(TAG,  "DDRPHY_READ_CTRL_0_SETx[0]: 0x%08x\n", ddr_phy->DDRPHY_READ_CTRL_0_SETx[0]);
+	RTK_LOGI(TAG,  "DDRPHY_READ_CTRL_0_SETx[1]: 0x%08x\n", ddr_phy->DDRPHY_READ_CTRL_0_SETx[1]);
 
 	//fw_dqsen_ftun_upd = 0
 	//ddr_phy->DDRPHY_READ_CTRL_4_SETx[0] &= ~DDRPHY_BIT_FW_DQSEN_FTUN_UPD;
@@ -1940,20 +1947,20 @@ void rx_delaytap_write(int Ref_Te[])
 				Ref_Te[67]);
 
 	//This is result
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[1]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_0_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1]);
 
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[1]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_2_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1]);
 
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[0]);
-	DBG_8195A("ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[0] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[0]);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[1] = 0x%08x;\n", ddr_phy->DDRPHY_DQS_IN_DLY_3_DBI_SETx[1]);
 
 	// fw_rd_dly
 	ddr_phy->DDRPHY_DPI_CTRL_1 |= DDRPHY_BIT_FW_SET_RD_DLY | DDRPHY_BIT_WRITE_EN_1;
@@ -1987,9 +1994,9 @@ void rx_dq(void)
 	if (vref_range == 1) {
 		vref[vref_init] = vref_init + 44;
 	}
-	DBG_8195A("vref_init = %d\n", vref_init);
-	DBG_8195A("vref[] = %d\n", (int)vref[vref_init]);
-	DBG_8195A("vref_range = %d\n", vref_range);
+	RTK_LOGI(TAG,  "vref_init = %d\n", vref_init);
+	RTK_LOGI(TAG,  "vref[] = %d\n", (int)vref[vref_init]);
+	RTK_LOGI(TAG,  "vref_range = %d\n", vref_range);
 
 	//store default initial TE from hwsetting
 	// dqsp
@@ -2058,8 +2065,8 @@ void rx_dq(void)
 	PHY_REG_0x36c = REG_READ64(protocal_index, (ddr_phy->DDRPHY_CAL_MODE_CTRL); //fw_delta_force & enable cal_offline
 	*/
 #if OFFLINE_CAL_EN==0
-	DBG_8195A("~~~~~~~~ Scan Rx DQ ~~~~~~~~\n");
-	DBG_8195A("!!!!! Please add random pattern if 'dbi' function is enable !!!!!\n");
+	RTK_LOGI(TAG,  "~~~~~~~~ Scan Rx DQ ~~~~~~~~\n");
+	RTK_LOGI(TAG,  "!!!!! Please add random pattern if 'dbi' function is enable !!!!!\n");
 
 	int TE_iterate[72], TEp_setup[32], TEn_setup[32], TEp_hold[32], TEn_hold[32], TEp_dbi_setup[4], TEn_dbi_setup[4], TEp_dbi_hold[4], TEn_dbi_hold[4];
 	//int TE_read[72];//debug
@@ -2105,7 +2112,7 @@ void rx_dq(void)
 			if (vref_range == 1) {
 				vref[vref_step] = vref_step + 44;
 			}
-			//DBG_8195A(" vref(loop) = " + FloatToStr(vref[vref_step]) );
+			//DiagPrintf(" vref(loop) = " + FloatToStr(vref[vref_step]) );
 
 			SOC_DQ_VREF(vref_step); //do not support change vref range
 
@@ -2128,7 +2135,7 @@ void rx_dq(void)
 				//TE[i]=TE_init[i];
 			}
 
-			DBG_8195A("DQ P setup\n");
+			RTK_LOGI(TAG,  "DQ P setup\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //setup rising
 				//fw_set_mode: immediately
 				//REG_WRITE64_Mask2(protocal_index, (ddr_phy->DDRPHY_DPI_CTRL_0), DPI_CTRL_0_FW_SET_MODE, DPI_CTRL_0_FW_SET_MODE, 0x2);
@@ -2174,7 +2181,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//scan setup rising
@@ -2183,7 +2190,7 @@ void rx_dq(void)
 				TE[i] = TE_iterate[i];
 			}
 
-			DBG_8195A("DQ P hold\n");
+			RTK_LOGI(TAG,  "DQ P hold\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //hold rising
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2229,7 +2236,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//scan hold rising
@@ -2268,7 +2275,7 @@ void rx_dq(void)
 			ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1] = (ddr_phy->DDRPHY_DQS_IN_DLY_1_SETx[1] & ~DDRPHY_MASK_FW_RD_DLY_POS_SEL_7) | DDRPHY_FW_RD_DLY_POS_SEL_7(
 					TE_iterate[15]); //DQ15p
 
-			DBG_8195A("DQ N setup\n");
+			RTK_LOGI(TAG,  "DQ N setup\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //setup falling
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2314,7 +2321,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//scan setup falling
@@ -2323,7 +2330,7 @@ void rx_dq(void)
 				TE[i] = TE_iterate[i];
 			}
 
-			DBG_8195A("DQ N hold\n");
+			RTK_LOGI(TAG,  "DQ N hold\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //hold falling
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2368,7 +2375,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//scan hold falling
@@ -2406,7 +2413,7 @@ void rx_dq(void)
 			ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1] = (ddr_phy->DDRPHY_DQS_IN_DLY_3_SETx[1] & ~DDRPHY_MASK_FW_RD_DLY_POS_SEL_7) | DDRPHY_FW_RD_DLY_POS_SEL_7(
 					TE_iterate[47]); //DQ15p
 
-			DBG_8195A("dbi P setup\n");
+			RTK_LOGI(TAG,  "dbi P setup\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //setup rising dbi
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2447,7 +2454,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//setup rising dbi
@@ -2455,7 +2462,7 @@ void rx_dq(void)
 			TE[64] = TE_iterate[64];
 			TE[65] = TE_iterate[65];
 
-			DBG_8195A("dbi P hold\n");
+			RTK_LOGI(TAG,  "dbi P hold\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //hold rising dbi
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2496,7 +2503,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					RTK_LOGI(TAG,  "!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//hold rising dbi
@@ -2506,7 +2513,7 @@ void rx_dq(void)
 			ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1] = (ddr_phy->DDRPHY_DQS_IN_DLY_1_DBI_SETx[1] & ~DDRPHY_MASK_FW_RD_DLY_POS_SEL_8) | DDRPHY_FW_RD_DLY_POS_SEL_8(
 						TE_iterate[65]); //dbi1p
 
-			DBG_8195A("dbi N setup\n");
+			RTK_LOGI(TAG,  "dbi N setup\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //setup falling dbi
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2547,7 +2554,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					DiagPrintf("!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//setup falling dbi
@@ -2555,7 +2562,7 @@ void rx_dq(void)
 			TE[66] = TE_iterate[66];
 			TE[67] = TE_iterate[67];
 
-			DBG_8195A("dbi n hold\n");
+			RTK_LOGI(TAG,  "dbi n hold\n");
 			for (int cnt = 1; cnt <= 32; cnt++) { //hold falling dbi
 				//fw_set_mode: immediately
 				//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x2);
@@ -2597,7 +2604,7 @@ void rx_dq(void)
 					break;
 				}
 				if (cnt >= 32) {
-					DBG_8195A("!!!!!!!! TE shift FAIL !!!!!!!!\n");
+					RTK_LOGI(TAG,  "!!!!!!!! TE shift FAIL !!!!!!!!\n");
 					break;
 				}
 			}//hold falling dbi
@@ -2613,13 +2620,13 @@ void rx_dq(void)
 
 			//print result
 			/*for (int i = 0; i < DQ_BIT_NUM; i++)
-					DBG_8195A("%d, DQ%dp: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEp_setup[i]), (TEp_hold[i]), (TEp_hold[i]-TEp_setup[i]+1), ((int)((TEp_setup[i]+TEp_hold[i])/2)));
+					RTK_LOGI(TAG,  "%d, DQ%dp: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEp_setup[i]), (TEp_hold[i]), (TEp_hold[i]-TEp_setup[i]+1), ((int)((TEp_setup[i]+TEp_hold[i])/2)));
 			for (int i = 0; i < DQ_BIT_NUM; i++)
-					DBG_8195A("%d, DQ%dn: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEn_setup[i]), (TEn_hold[i]), (TEn_hold[i]-TEn_setup[i]+1), ((int)((TEn_setup[i]+TEn_hold[i])/2)));
+					RTK_LOGI(TAG,  "%d, DQ%dn: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEn_setup[i]), (TEn_hold[i]), (TEn_hold[i]-TEn_setup[i]+1), ((int)((TEn_setup[i]+TEn_hold[i])/2)));
 			for (int i = 0; i < 2; i++)
-					DBG_8195A("%d, dbi%dp: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEp_dbi_setup[i]), (TEp_dbi_hold[i]), (TEp_dbi_hold[i]-TEp_dbi_setup[i]+1), ((int)((TEp_dbi_setup[i]+TEp_dbi_hold[i])/2)));
+					RTK_LOGI(TAG,  "%d, dbi%dp: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEp_dbi_setup[i]), (TEp_dbi_hold[i]), (TEp_dbi_hold[i]-TEp_dbi_setup[i]+1), ((int)((TEp_dbi_setup[i]+TEp_dbi_hold[i])/2)));
 			for (int i = 0; i < 2; i++)
-					DBG_8195A("%d, dbi%dn: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEn_dbi_setup[i]), (TEn_dbi_hold[i]), (TEn_dbi_hold[i]-TEn_dbi_setup[i]+1), ((int)((TEn_dbi_setup[i]+TEn_dbi_hold[i])/2)));
+					RTK_LOGI(TAG,  "%d, dbi%dn: setup = %d, hold = %d, map = %d, center = %d\n", ((int)vref[vref_step]), (i), (TEn_dbi_setup[i]), (TEn_dbi_hold[i]), (TEn_dbi_hold[i]-TEn_dbi_setup[i]+1), ((int)((TEn_dbi_setup[i]+TEn_dbi_hold[i])/2)));
 			*/
 
 			// DDR tool input format
@@ -2627,33 +2634,33 @@ void rx_dq(void)
 			//ddr_error_bit = REG_READ64(protocal_index, BSP_MS_I_DRAMC_0_BASE + 0x0e8);
 			ddr_error_bit = 0;
 
-			DBG_8195A("%d, DM1, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2)),
-					  ((int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2) - TEp_dbi_setup[0] - 1), (TEp_dbi_hold[0] - (int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2) - 1),
-					  ((int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2)), ((int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2) - TEn_dbi_setup[0] - 1),
-					  (TEn_dbi_hold[0] - (int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2) - 1), ddr_error_bit);
+			RTK_LOGI(TAG,  "%d, DM1, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2)),
+					 ((int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2) - TEp_dbi_setup[0] - 1), (TEp_dbi_hold[0] - (int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2) - 1),
+					 ((int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2)), ((int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2) - TEn_dbi_setup[0] - 1),
+					 (TEn_dbi_hold[0] - (int)((TEn_dbi_setup[0] + TEn_dbi_hold[0]) / 2) - 1), ddr_error_bit);
 
 
-			DBG_8195A("%d, DM1, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2)),
-					  ((int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2) - TEp_dbi_setup[1] - 1), (TEp_dbi_hold[1] - (int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2) - 1),
-					  ((int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2)), ((int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2) - TEn_dbi_setup[1] - 1),
-					  (TEn_dbi_hold[1] - (int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2) - 1), ddr_error_bit);
+			RTK_LOGI(TAG,  "%d, DM1, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2)),
+					 ((int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2) - TEp_dbi_setup[1] - 1), (TEp_dbi_hold[1] - (int)((TEp_dbi_setup[1] + TEp_dbi_hold[1]) / 2) - 1),
+					 ((int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2)), ((int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2) - TEn_dbi_setup[1] - 1),
+					 (TEn_dbi_hold[1] - (int)((TEn_dbi_setup[1] + TEn_dbi_hold[1]) / 2) - 1), ddr_error_bit);
 
-			DBG_8195A("%d, DM2, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2)),
-					  ((int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2) - TEp_dbi_setup[2] - 1), (TEp_dbi_hold[2] - (int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2) - 1),
-					  ((int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2)), ((int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2) - TEn_dbi_setup[2] - 1),
-					  (TEn_dbi_hold[2] - (int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2) - 1), ddr_error_bit);
+			RTK_LOGI(TAG,  "%d, DM2, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2)),
+					 ((int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2) - TEp_dbi_setup[2] - 1), (TEp_dbi_hold[2] - (int)((TEp_dbi_setup[2] + TEp_dbi_hold[2]) / 2) - 1),
+					 ((int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2)), ((int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2) - TEn_dbi_setup[2] - 1),
+					 (TEn_dbi_hold[2] - (int)((TEn_dbi_setup[2] + TEn_dbi_hold[2]) / 2) - 1), ddr_error_bit);
 
-			DBG_8195A("%d, DM3, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2)),
-					  ((int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2) - TEp_dbi_setup[3] - 1), (TEp_dbi_hold[3] - (int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2) - 1),
-					  ((int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2)), ((int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2) - TEn_dbi_setup[3] - 1),
-					  (TEn_dbi_hold[3] - (int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2) - 1), ddr_error_bit);
+			RTK_LOGI(TAG,  "%d, DM3, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), ((int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2)),
+					 ((int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2) - TEp_dbi_setup[3] - 1), (TEp_dbi_hold[3] - (int)((TEp_dbi_setup[3] + TEp_dbi_hold[3]) / 2) - 1),
+					 ((int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2)), ((int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2) - TEn_dbi_setup[3] - 1),
+					 (TEn_dbi_hold[3] - (int)((TEn_dbi_setup[3] + TEn_dbi_hold[3]) / 2) - 1), ddr_error_bit);
 
 
 			for (int i = 0; i < DQ_BIT_NUM; i++)
-				DBG_8195A("%d, DQ, %d, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), (i), ((int)((TEp_setup[i] + TEp_hold[i]) / 2)),
-						  ((int)((TEp_setup[i] + TEp_hold[i]) / 2) - TEp_setup[i] - 1), (TEp_hold[i] - (int)((TEp_setup[i] + TEp_hold[i]) / 2) - 1),
-						  ((int)((TEn_setup[i] + TEn_hold[i]) / 2)), ((int)((TEn_setup[i] + TEn_hold[i]) / 2) - TEn_setup[i] - 1),
-						  (TEn_hold[i] - (int)((TEn_setup[i] + TEn_hold[i]) / 2) - 1), ddr_error_bit);
+				DiagPrintf("%d, DQ, %d, %d, %d, %d, %d, %d, %d, 0x%08x\n", ((int)vref[vref_step]), (i), ((int)((TEp_setup[i] + TEp_hold[i]) / 2)),
+						   ((int)((TEp_setup[i] + TEp_hold[i]) / 2) - TEp_setup[i] - 1), (TEp_hold[i] - (int)((TEp_setup[i] + TEp_hold[i]) / 2) - 1),
+						   ((int)((TEn_setup[i] + TEn_hold[i]) / 2)), ((int)((TEn_setup[i] + TEn_hold[i]) / 2) - TEn_setup[i] - 1),
+						   (TEn_hold[i] - (int)((TEn_setup[i] + TEn_hold[i]) / 2) - 1), ddr_error_bit);
 
 			//set TE_iterate with new TE
 			for (int i = 0; i < DQ_BIT_NUM; i++) {
@@ -2663,10 +2670,10 @@ void rx_dq(void)
 			}
 
 			for (int i = 0; i < DQ_BIT_NUM; i++) {
-				DBG_8195A("%d: [%d, %d]=>%d\n", i, TEp_setup[i], TEp_hold[i], TE_iterate[i]);
+				DiagPrintf("%d: [%d, %d]=>%d\n", i, TEp_setup[i], TEp_hold[i], TE_iterate[i]);
 			}
 			for (int i = 0; i < DQ_BIT_NUM; i++) {
-				DBG_8195A("%d: [%d, %d]=>%d\n", i + 32, TEn_setup[i], TEn_hold[i], TE_iterate[i + 32]);
+				DiagPrintf("%d: [%d, %d]=>%d\n", i + 32, TEn_setup[i], TEn_hold[i], TE_iterate[i + 32]);
 			}
 
 			TE_iterate[64] = (int)((TEp_dbi_setup[0] + TEp_dbi_hold[0]) / 2); //dbi0 p
@@ -2686,18 +2693,18 @@ void rx_dq(void)
 			cal_delta_out_left(left);
 			cal_delta_out_right(right);
 			//dbi
-			DBG_8195A("dbi0 : Te_p = "+IntToStr(TE_read[64])+", left_p =  "+IntToStr(left[64])+", right_p = "+IntToStr(right[64])+" / Te_n = "+IntToStr(TE_read[66])+", left_n =  "+IntToStr(left[66])+", right_n = "+IntToStr(right[66]) );
-			DBG_8195A("dbi1 : Te_p = "+IntToStr(TE_read[65])+", left_p =  "+IntToStr(left[65])+", right_p = "+IntToStr(right[65])+" / Te_n = "+IntToStr(TE_read[67])+", left_n =  "+IntToStr(left[67])+", right_n = "+IntToStr(right[67]) );
-			DBG_8195A("dbi2 : Te_p = "+IntToStr(TE_read[68])+", left_p =  "+IntToStr(left[68])+", right_p = "+IntToStr(right[68])+" / Te_n = "+IntToStr(TE_read[70])+", left_n =  "+IntToStr(left[70])+", right_n = "+IntToStr(right[70]) );
-			DBG_8195A("dbi3 : Te_p = "+IntToStr(TE_read[69])+", left_p =  "+IntToStr(left[69])+", right_p = "+IntToStr(right[69])+" / Te_n = "+IntToStr(TE_read[71])+", left_n =  "+IntToStr(left[71])+", right_n = "+IntToStr(right[71]) );
+			RTK_LOGI(TAG,  "dbi0 : Te_p = "+IntToStr(TE_read[64])+", left_p =  "+IntToStr(left[64])+", right_p = "+IntToStr(right[64])+" / Te_n = "+IntToStr(TE_read[66])+", left_n =  "+IntToStr(left[66])+", right_n = "+IntToStr(right[66]) );
+			RTK_LOGI(TAG,  "dbi1 : Te_p = "+IntToStr(TE_read[65])+", left_p =  "+IntToStr(left[65])+", right_p = "+IntToStr(right[65])+" / Te_n = "+IntToStr(TE_read[67])+", left_n =  "+IntToStr(left[67])+", right_n = "+IntToStr(right[67]) );
+			RTK_LOGI(TAG,  "dbi2 : Te_p = "+IntToStr(TE_read[68])+", left_p =  "+IntToStr(left[68])+", right_p = "+IntToStr(right[68])+" / Te_n = "+IntToStr(TE_read[70])+", left_n =  "+IntToStr(left[70])+", right_n = "+IntToStr(right[70]) );
+			RTK_LOGI(TAG,  "dbi3 : Te_p = "+IntToStr(TE_read[69])+", left_p =  "+IntToStr(left[69])+", right_p = "+IntToStr(right[69])+" / Te_n = "+IntToStr(TE_read[71])+", left_n =  "+IntToStr(left[71])+", right_n = "+IntToStr(right[71]) );
 			for (int i = 0; i < 32; i++)//dq
 			{
-					DBG_8195A("dq"+IntToStr(i)+" : Te_p = "+IntToStr(TE_read[i])+", left_p =  "+IntToStr(left[i])+", right_p = "+IntToStr(right[i])+" / Te_n = "+IntToStr(TE_read[i+32])+", left_n =  "+IntToStr(left[i+32])+", right_n = "+IntToStr(right[i+32]) );
-					//printf("dq%d : Te = %d, left =  %d, right = %d\n", i, rx_dq[i], left[i], right[i]);
+					DiagPrintf("dq"+IntToStr(i)+" : Te_p = "+IntToStr(TE_read[i])+", left_p =  "+IntToStr(left[i])+", right_p = "+IntToStr(right[i])+" / Te_n = "+IntToStr(TE_read[i+32])+", left_n =  "+IntToStr(left[i+32])+", right_n = "+IntToStr(right[i+32]) );
+					//DiagPrintf("dq%d : Te = %d, left =  %d, right = %d\n", i, rx_dq[i], left[i], right[i]);
 			}*/
 
 #if !SCAN_VREF
-			DBG_8195A("Do not scan tx vref\n");
+			RTK_LOGI(TAG,  "Do not scan tx vref\n");
 			break;
 #endif
 
@@ -2744,7 +2751,7 @@ void scan_rxfifo(void)
 	ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~DDRPHY_MASK_CAL_SET_MODE) | DDRPHY_CAL_SET_MODE(0x3);
 
 	for (fifo = fifo_init; fifo < 64; fifo++) { //scan tm_rd_fifo (->)
-		DBG_8195A(" tm_rd_fifo = %d\n", fifo);
+		DiagPrintf(" tm_rd_fifo = %d\n", fifo);
 		//set tm_td_fifo
 		ddr_phy->DDRPHY_READ_CTRL_1 = (ddr_phy->DDRPHY_READ_CTRL_1 & ~DDRPHY_MASK_TM_RD_FIFO) | DDRPHY_TM_RD_FIFO(fifo);
 		//fw_set_mode: immediately
@@ -2773,7 +2780,7 @@ void scan_rxfifo(void)
 	//ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~DDRPHY_MASK_CAL_SET_MODE) | DDRPHY_CAL_SET_MODE(0x3);
 
 	for (fifo = fifo_init - 1; fifo > 0; fifo--) { //scan tm_rd_fifo (<-)
-		DBG_8195A(" tm_rd_fifo = %d\n", fifo);
+		DiagPrintf(" tm_rd_fifo = %d\n", fifo);
 		//set tm_td_fifo
 		ddr_phy->DDRPHY_READ_CTRL_1 = (ddr_phy->DDRPHY_READ_CTRL_1 & ~DDRPHY_MASK_TM_RD_FIFO) | DDRPHY_TM_RD_FIFO(fifo);
 		//fw_set_mode: immediately
@@ -2801,7 +2808,7 @@ void scan_rxfifo(void)
 	}
 
 	//calculate r/w pass map，set fifo to "min+1"
-	DBG_8195A("  tm_rd_fifo = %d ~ %d\n", fifo_min, fifo_max);
+	RTK_LOGI(TAG,  "  tm_rd_fifo = %d ~ %d\n", fifo_min, fifo_max);
 
 	//set at fifo_min+1
 	ddr_phy->DDRPHY_READ_CTRL_1 = (ddr_phy->DDRPHY_READ_CTRL_1 & ~DDRPHY_MASK_TM_RD_FIFO) | DDRPHY_TM_RD_FIFO(fifo_min + 1);
@@ -2811,7 +2818,7 @@ void scan_rxfifo(void)
 	ddr_phy->DDRPHY_DPI_CTRL_1 |= DDRPHY_BIT_FW_SET_RD_DLY | DDRPHY_BIT_WRITE_EN_1;
 
 	//print final setting of fifo
-	DBG_8195A("ddr_phy->DDRPHY_READ_CTRL_1 = 0x%08x;\n", ddr_phy->DDRPHY_READ_CTRL_1);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_READ_CTRL_1 = 0x%08x;\n", ddr_phy->DDRPHY_READ_CTRL_1);
 	//fifo = DDRPHY_GET_TM_RD_FIFO(ddr_phy->DDRPHY_READ_CTRL_1);
 	//printf("fifo=%d\n", fifo);
 }//scan_rxfifo
@@ -2838,7 +2845,7 @@ u32 _tx_ck_pi_cs_shift(int d_ck_cs, int idx)
 		cmd_ex_rd_str_num = DDRPHY_GET_CMD_EX_RD_STR_NUM(ddr_phy->DDRPHY_AFIFO_STR_1);
 		cmd_ex_rd_str_num += flag;
 		if (cmd_ex_rd_str_num < 1) {
-			DBG_8195A("let all rd_str_num + 1 in AFIFO_STR_0/1/2\n");
+			RTK_LOGI(TAG,  "let all rd_str_num + 1 in AFIFO_STR_0/1/2\n");
 		}
 		ddr_phy->DDRPHY_AFIFO_STR_1 = (ddr_phy->DDRPHY_AFIFO_STR_1 & ~DDRPHY_MASK_CMD_EX_RD_STR_NUM) | DDRPHY_CMD_EX_RD_STR_NUM(cmd_ex_rd_str_num);
 		/*clk shift-1 is equal to right shift+31, but cs shift-1 just shift-1, because mck_cke_sel is set to let mck_cke = mck_cs, so we shall set bit26*/
@@ -2875,7 +2882,7 @@ u32 _tx_ck_pi_dq_shift(int d_ck_dq, int idx)
 		rd_str_num += flag;
 		if (rd_str_num < 2) {
 			//According to post-sim, TX FIFO rd_str_num should >=2 #by project
-			DBG_8195A("=====================Confirm to RDC PHY\n");
+			RTK_LOGI(TAG,  "=====================Confirm to RDC PHY\n");
 		}
 		ddr_phy->DDRPHY_AFIFO_STR_0 = (ddr_phy->DDRPHY_AFIFO_STR_0 & ~(0x7 << idx)) | ((rd_str_num & 0x7) << idx);
 	}
@@ -2999,28 +3006,28 @@ void DDR_PHY_Scan_Result_Set(void)
 	_tx_cs_pi_middle_value(0);		//Tx cs pi result
 	_tx_dqs_pi_middle_value(0, 0);	//Tx dqs pi result
 
-	DBG_8195A("ddr_phy->DDRPHY_PLL_PI0 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI0);
-	DBG_8195A("ddr_phy->DDRPHY_PLL_PI1 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI1);
-	DBG_8195A("ddr_phy->DDRPHY_PLL_PI2 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI2);
-	DBG_8195A("ddr_phy->DDRPHY_PLL_PI3 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI3);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_PLL_PI0 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI0);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_PLL_PI1 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI1);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_PLL_PI2 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI2);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_PLL_PI3 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_PI3);
 
-	DBG_8195A("ddr_phy->DDRPHY_PLL_CTL1 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_CTL1);
-	DBG_8195A("ddr_phy->DDRPHY_AFIFO_STR_0 = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_0);
-	DBG_8195A("ddr_phy->DDRPHY_AFIFO_STR_1 = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_1);
-	DBG_8195A("ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_SEL);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_PLL_CTL1 = 0x%08x;\n", ddr_phy->DDRPHY_PLL_CTL1);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_AFIFO_STR_0 = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_0);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_AFIFO_STR_1 = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_1);
+	RTK_LOGI(TAG,  "ddr_phy->DDRPHY_AFIFO_STR_SEL = 0x%08x;\n", ddr_phy->DDRPHY_AFIFO_STR_SEL);
 }
 
 static u8 DDR_PHY_Scan_param_Stage(void)
 {
 	u8 scan_stage;
 
-	DBG_8195A("\nFor ddr Calibration. Please select scan stage:\n");
-	DBG_8195A("1 - TX_MR_WRLVL\n");
-	DBG_8195A("2 - TX_CK_PI\n");
-	DBG_8195A("3 - TX_RW_WRLVL\n");
-	DBG_8195A("4 - TX_CS_PI\n");
-	DBG_8195A("5 - TX_DQS_PI\n");
-	DBG_8195A("6 - RX_SCAN\n");
+	RTK_LOGI(TAG,  "\nFor ddr Calibration. Please select scan stage:\n");
+	RTK_LOGI(TAG,  "1 - TX_MR_WRLVL(DDR3 Only)\n");
+	RTK_LOGI(TAG,  "2 - TX_CK_PI\n");
+	RTK_LOGI(TAG,  "3 - TX_RW_WRLVL\n");
+	RTK_LOGI(TAG,  "4 - TX_CS_PI\n");
+	RTK_LOGI(TAG,  "5 - TX_DQS_PI\n");
+	RTK_LOGI(TAG,  "6 - RX_SCAN\n");
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
@@ -3030,7 +3037,7 @@ static u8 DDR_PHY_Scan_param_Stage(void)
 
 	LOGUART_ClearRxFifo(LOGUART_DEV);
 	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
-	DBG_8195A("Input Num is %d\n", scan_stage);
+	RTK_LOGI(TAG,  "Input Num is %d\n", scan_stage);
 
 	return scan_stage;
 }
@@ -3042,14 +3049,14 @@ void DDR_PHY_Scan_param(void)
 	//when ddrphy init, do R480/ZQ K first
 	DDR_PHY_BSTC_STARK();
 	sram_sg();
-	DBG_8195A("sram_sg_chk: %d\n", sram_sg_chk());
+	RTK_LOGI(TAG,  "sram_sg_chk: %d\n", sram_sg_chk());
 
 	if (scan_stage == TX_MR_WRLVL) {
 		/*1. MR_wrlvl, DDR2 Not Support, DDR3 shall do this*/
 		if (DDR_PHY_ChipInfo_ddrtype() != DDR_Type_DDR2) {
 			tx_MR_wrlvl();
 		} else {
-			DBG_8195A("DDR2 Not Support MR_wrlvl\n");
+			RTK_LOGE(TAG, "DDR2 Not Support MR_wrlvl\r\n");
 		}
 	} else if (scan_stage == TX_CK_PI) {
 		/*2. ckpi, move ck/cs/dqs/dq to scan cmd signal map*/

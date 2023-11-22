@@ -28,6 +28,7 @@
 #include "cmsis.h"
 #include "mpu_config.h"
 
+static const char *TAG = "MPU";
 u8 mpu_entry_register[MPU_MAX_REGION];
 
 
@@ -127,13 +128,13 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 	assert_param(region_num < MPU_MAX_REGION);
 
 	if (pmpu_cfg->region_base & ~MPU_RBAR_BASE_Msk) {
-		DBG_8195A("MPU: region_base should be 32 bytes aligned %08x\n",
-				  pmpu_cfg->region_base);
+		RTK_LOGW(TAG, "MPU: region_base should be 32 bytes aligned %08x\n",
+				 pmpu_cfg->region_base);
 		assert_param(0);
 	}
 	if (pmpu_cfg->region_size & ~MPU_RLAR_LIMIT_Msk) {
-		DBG_8195A("MPU: region_size should be 32 bytes aligned %08x\n",
-				  pmpu_cfg->region_size);
+		RTK_LOGW(TAG, "MPU: region_size should be 32 bytes aligned %08x\n",
+				 pmpu_cfg->region_size);
 		assert_param(0);
 	}
 	region_limit = pmpu_cfg->region_base + pmpu_cfg->region_size - 1;
@@ -155,12 +156,12 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 
 	mpu_enable();
 
-	DBG_PRINTF(MODULE_MISC, LEVEL_INFO, "mpu_region_cfg: pmpu_cfg->attr_idx:%x\n",
-			   pmpu_cfg->attr_idx);
-	DBG_PRINTF(MODULE_MISC, LEVEL_INFO, "mpu_region_cfg: RNR:%x RBAR:%x RLAR:%x \n",
-			   MPU->RNR, MPU->RBAR, MPU->RLAR);
-	DBG_PRINTF(MODULE_MISC, LEVEL_INFO, "mpu_region_cfg: MAIR0:%x MAIR1:%x CTRL:%x TYPE:%x\n",
-			   MPU->MAIR0, MPU->MAIR1, MPU->CTRL, MPU->TYPE);
+	RTK_LOGD(TAG, "mpu_region_cfg: pmpu_cfg->attr_idx:%x\n",
+			 pmpu_cfg->attr_idx);
+	RTK_LOGD(TAG, "mpu_region_cfg: RNR:%x RBAR:%x RLAR:%x \n",
+			 MPU->RNR, MPU->RBAR, MPU->RLAR);
+	RTK_LOGD(TAG, "mpu_region_cfg: MAIR0:%x MAIR1:%x CTRL:%x TYPE:%x\n",
+			 MPU->MAIR0, MPU->MAIR1, MPU->CTRL, MPU->TYPE);
 
 }
 

@@ -215,6 +215,7 @@ _LONG_CALL_	void PSRAM_INFO_Update(void);
 extern u8 APM_WR_INIT_LATENCY_SPEC[6];
 
 #define PSRAM_BIT_MR0_FIX_LATENCY       ((u8)0x01 << 5)
+#define PSRAM_SLOW_REFRSH_ENABLE		((u8)0x01 << 3)		//mr4
 
 #define PSRAM_WB_IR0		0x0
 #define PSRAM_WB_IR1		0x1

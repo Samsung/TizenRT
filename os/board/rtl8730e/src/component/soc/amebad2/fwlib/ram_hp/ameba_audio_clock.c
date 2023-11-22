@@ -1,6 +1,7 @@
 #include "ameba_soc.h"
 #include "ameba_audio_clock.h"
 
+static const char *TAG = "AUDIO";
 const u32 i2s_clock_source[4] = {PLL_CLOCK_98P304M, PLL_CLOCK_24P576M, PLL_CLOCK_45P1584M, I2S_CLOCK_XTAL40M};
 const u32 mclk_div[3] = {1, 2, 4};
 
@@ -126,7 +127,7 @@ void Audio_Clock_Choose(u32 clock_sel, AUDIO_InitParams *initparams, AUDIO_Clock
 
 end:
 		if (!choose_done) {
-			DBG_8195A("can't find proper clock for the current rate:%d \n", initparams->sr);
+			RTK_LOGE(TAG, "can't find proper clock for the current rate:%d \n", initparams->sr);
 			return;
 		}
 

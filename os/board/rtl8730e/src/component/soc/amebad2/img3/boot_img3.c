@@ -2,6 +2,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "BOOT";
 #if defined ( __ICCARM__ )
 #pragma section=".ram_image3.bss"
 
@@ -19,8 +20,8 @@ void NS_ENTRY BOOT_IMG3(void)
 	__image3_bss_end__ 				= (u8 *)__section_end(".ram_image3.bss");
 #endif
 
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "BOOT_IMG3: BSS [%08x~%08x] SEC: %x \n", __image3_bss_start__, __image3_bss_end__,
-			   TrustZone_IsSecure());
+	RTK_LOGI(TAG, "BOOT_IMG3: BSS [%08x~%08x] SEC: %x \n", __image3_bss_start__, __image3_bss_end__,
+			 TrustZone_IsSecure());
 
 	/* reset img3 bss */
 	_memset((void *) __image3_bss_start__, 0, (__image3_bss_end__ - __image3_bss_start__));

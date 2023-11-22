@@ -9,6 +9,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "SWR";
 /**
 * @brif  swr calibation times.
 */
@@ -95,7 +96,7 @@ static u8 SWR_Calib_Get_Value(u8 swr_efuse_value, u32 swr_type, u8 width)
 		break;
 
 	default:
-		DBG_8195A("wrong swr calib type\n");
+		RTK_LOGE(TAG, "wrong swr calib type\n");
 		return 0;
 	}
 
@@ -142,6 +143,15 @@ void SWR_Calib_DCore(void)
 	reg_tmp |= REGU_REG_ZCDC_H(0x3);
 	regu->REGU_SWR_ON_CTRL0 = reg_tmp;
 
+	/* Bypass C-cut ZCD ECO */
+	reg_tmp = regu->REGU_SWR_DIG_ZCD;
+	reg_tmp |= BIT0;
+	regu->REGU_SWR_DIG_ZCD = reg_tmp;
+
+	reg_tmp = regu->REGU_SWR_NEW;
+	reg_tmp |= REGU_REG_SWR_ZCD_CTRL_PFM(0x1);
+	regu->REGU_SWR_NEW = reg_tmp;
+
 	/* set swr step time */
 	reg_tmp = regu->REGU_SWR_ARB_CTRL0;
 	reg_tmp &= ~(REGU_MASK_SWR_PSW_WAIT_CYC);
@@ -180,6 +190,15 @@ void SWR_Calib_MEM(void)
 	reg_tmp &= ~(SWR_MASK_REG_ZCDC_H);
 	reg_tmp |= SWR_REG_ZCDC_H(0x3);
 	SWR->SWR_ON_CTRL0 = reg_tmp;
+
+	/* Bypass C-cut ZCD ECO */
+	reg_tmp = SWR->SWR_DIG_ZCD;
+	reg_tmp |= BIT0;
+	SWR->SWR_DIG_ZCD = reg_tmp;
+
+	reg_tmp = SWR->SWR_NEW;
+	reg_tmp |= SWR_REG_SWR_ZCD_CTRL_PFM(0x1);
+	SWR->SWR_NEW = reg_tmp;
 
 	/* load VOL_SWR_MEM_PWM */
 	Swr_Calib_MEM_PWM_Times = SWR_Calib_Check(Swr_MEM_PWM);
@@ -243,6 +262,15 @@ void SWR_Calib_AUD(void)
 	reg_tmp &= ~(SWR_MASK_REG_ZCDC_H);
 	reg_tmp |= SWR_REG_ZCDC_H(0x3);
 	SWR->SWR_ON_CTRL0 = reg_tmp;
+
+	/* Bypass C-cut ZCD ECO */
+	reg_tmp = SWR->SWR_DIG_ZCD;
+	reg_tmp |= BIT0;
+	SWR->SWR_DIG_ZCD = reg_tmp;
+
+	reg_tmp = SWR->SWR_NEW;
+	reg_tmp |= SWR_REG_SWR_ZCD_CTRL_PFM(0x1);
+	SWR->SWR_NEW = reg_tmp;
 
 	/* load VOL_SWR_AUD_PWM */
 	Swr_Calib_AUD_PWM_Times = SWR_Calib_Check(Swr_AUD_PWM);

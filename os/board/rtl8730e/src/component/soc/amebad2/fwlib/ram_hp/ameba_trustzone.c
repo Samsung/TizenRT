@@ -9,7 +9,7 @@
 
 #include "ameba_soc.h"
 
-
+static const char *TAG = "TRUSTZONE";
 /**
   * @brief  Configure slave port as secure or non-secure attribute.
   * @param  PPC_PeripheralId: it can be one of the followings:
@@ -67,7 +67,7 @@ void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status)
 		BitIndex = Perip;
 		IsReg1 = FALSE;
 	} else {
-		DBG_8195A("PPC PeripID[%d] illegal !!!\n", Perip);
+		RTK_LOGW(TAG, "PPC PeripID[%d] illegal !!!\n", Perip);
 		assert_param(0);
 	}
 

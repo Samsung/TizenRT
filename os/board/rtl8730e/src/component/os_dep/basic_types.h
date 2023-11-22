@@ -63,6 +63,8 @@
 #define MAX(x, y)			(((x) > (y)) ? (x) : (y))
 #endif
 
+#define DIV_ROUND_UP(x, y)	(((x) + (y) - 1) / (y))
+
 #ifdef __GNUC__
 #define __weak                  __attribute__((weak))
 #define likely(x)               __builtin_expect ((x), 1)
@@ -219,43 +221,29 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 #define BIT(__n)       (1U<<(__n))
 #endif
 
+#define ALIGNMTO(_bound)    __attribute__ ((aligned (_bound)))
+#define SECTION(_name)      __attribute__ ((__section__(_name)))
+#define _WEAK               __attribute__ ((weak))
+#define _PACKED_            __attribute__ ((packed))
+#define __NO_INLINE         __attribute__ ((noinline))
+
 #if   defined ( __CC_ARM )                                            /* ARM Compiler 4/5 */
-#define SECTION(_name)      __attribute__ ((__section__(_name)))
-#define ALIGNMTO(_bound)    __attribute__ ((aligned (_bound)))
-#define _PACKED_            __attribute__ ((packed))
 #define _LONG_CALL_
-#define _WEAK               __attribute__ ((weak))
-#define __NO_INLINE         __attribute__ ((noinline))
 #elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)       /* ARM Compiler 6 */
-#define SECTION(_name)      __attribute__ ((__section__(_name)))
-#define ALIGNMTO(_bound)    __attribute__ ((aligned (_bound)))
-#define _PACKED_            __attribute__ ((packed))
 #define _LONG_CALL_
-#define _WEAK               __attribute__ ((weak))
-#define __NO_INLINE         __attribute__ ((noinline))
 #elif defined( __ICCARM__ )
 #define STRINGIFY(s) #s
-#define SECTION(_name) _Pragma( STRINGIFY(location=_name))
-#define ALIGNMTO(_bound) _Pragma( STRINGIFY(data_alignment=_bound))
-#define _PACKED_       __packed
 #define _LONG_CALL_
-#define _WEAK          __weak
 #define _OPTIMIZE_NONE_           _Pragma( STRINGIFY(optimize=none))
 #define UNUSED_WARN_DIS
-#define __NO_INLINE     __declspec (noinline)
 #else
-#define SECTION(_name) __attribute__ ((__section__(_name)))
-#define ALIGNMTO(_bound) __attribute__ ((aligned (_bound)))
-#define _PACKED_       __attribute__ ((packed))
 #if defined (RISC_V)
 #define _LONG_CALL_
 #else
 #define _LONG_CALL_     __attribute__ ((long_call))
 #endif
-#define _WEAK           __attribute__ ((weak))
 #define _OPTIMIZE_NONE_           __attribute__ ((optimize("O0")))
 #define UNUSED_WARN_DIS	__attribute__((unused))
-#define __NO_INLINE         __attribute__ ((noinline))
 #endif
 
 #define SWAP32(x) ((u32)(                         \
@@ -311,28 +299,16 @@ typedef	    __kernel_ssize_t	SSIZE_T;
 //
 // Read LE format data from memory
 //
-#if defined (RISC_V)
 #define ReadEF1Byte(_ptr)		EF1Byte(*((u8 *)(_ptr)))
-#define ReadEF2Byte(_ptr)		(ReadEF1Byte(_ptr) | (ReadEF1Byte((u32)(_ptr) + 1) << 8))
-#define ReadEF4Byte(_ptr)		(ReadEF2Byte(_ptr) | (ReadEF2Byte((u32)(_ptr) + 2) << 16))
-#else
-#define ReadEF1Byte(_ptr)		EF1Byte(*((u8 *)(_ptr)))
-#define ReadEF2Byte(_ptr)		EF2Byte(*((u16 *)(_ptr)))
-#define ReadEF4Byte(_ptr)		EF4Byte(*((u32 *)(_ptr)))
-#endif
+#define ReadEF2Byte(_ptr)		__UNALIGNED_UINT16_READ(_ptr)
+#define ReadEF4Byte(_ptr)		__UNALIGNED_UINT32_READ(_ptr)
 
 //
 // Write LE data to memory
 //
-#if defined (RISC_V)
 #define WriteEF1Byte(_ptr, _val)	(*((u8 *)(_ptr)))=EF1Byte(_val)
-#define WriteEF2Byte(_ptr, _val)	do {WriteEF1Byte(_ptr, _val); WriteEF1Byte(((u32)(_ptr) + 1), ((_val) >> 8));} while(0)
-#define WriteEF4Byte(_ptr, _val)	do {WriteEF2Byte(_ptr, _val); WriteEF2Byte(((u32)(_ptr) + 2), ((_val) >> 16));} while(0)
-#else
-#define WriteEF1Byte(_ptr, _val)	(*((u8 *)(_ptr)))=EF1Byte(_val)
-#define WriteEF2Byte(_ptr, _val)	(*((u16 *)(_ptr)))=EF2Byte(_val)
-#define WriteEF4Byte(_ptr, _val)	(*((u32 *)(_ptr)))=EF4Byte(_val)
-#endif
+#define WriteEF2Byte(_ptr, _val)	__UNALIGNED_UINT16_WRITE(_ptr, _val)
+#define WriteEF4Byte(_ptr, _val)	__UNALIGNED_UINT32_WRITE(_ptr, _val)
 
 //
 //	Example:
@@ -490,7 +466,7 @@ typedef unsigned char	BOOLEAN, *PBOOLEAN;
 #if defined ( __ICCARM__ )
 #define __inline__                      inline
 #define __inline                        inline
-#define __inline_definition			//In dialect C99, inline means that a function's definition is provided 
+#define __inline_definition			//In dialect C99, inline means that a function's definition is provided
 //only for inlining, and that there is another definition
 //(without inline) somewhere else in the program.
 //That means that this program is incomplete, because if

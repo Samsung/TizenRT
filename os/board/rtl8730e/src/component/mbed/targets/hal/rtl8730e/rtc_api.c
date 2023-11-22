@@ -31,7 +31,6 @@
 /* Since all the members in the group are static which will not be extracted to the doxygen doc,
   original comment has been deleted to avoid there is nothing displayed under the group. */
 
-static struct tm rtc_timeinfo;
 static int rtc_en = 0;
 static alarm_irq_handler rtc_alarm_handler;
 
@@ -95,6 +94,7 @@ static void rtc_calculate_mday(int year, int yday, int *mon, int *mday)
 	*mday = t_yday + days_in_month(t_mon, year);
 }
 
+#if 0//fix warning
 /**
   * @brief  Calculate the day of a week according to date.
   * @param  year: Actual year - 1900.
@@ -125,52 +125,7 @@ static void rtc_calculate_wday(int year, int mon, int mday, int *wday)
 
 	*wday = week;
 }
-
-/**
-  * @brief  Restore global rtc_timeinfo variable whose value is lost after system reset.
-  * @param  none
-  * @retval none
-  * @attention Make sure RESTORE bit in RTC_YEAR register has been assertted.
-  */
-static void rtc_restore_timeinfo(void)
-{
-	int days_in_year;
-
-	RTC_TimeTypeDef RTC_TimeStruct;
-	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);
-	rtc_timeinfo.tm_sec = RTC_TimeStruct.RTC_Seconds;
-	rtc_timeinfo.tm_min = RTC_TimeStruct.RTC_Minutes;
-	rtc_timeinfo.tm_hour = RTC_TimeStruct.RTC_Hours;
-	rtc_timeinfo.tm_yday = RTC_TimeStruct.RTC_Days;
-	rtc_timeinfo.tm_year = RTC_TimeStruct.RTC_Year - 1900;
-
-	days_in_year = (is_leap_year(rtc_timeinfo.tm_year) ? 366 : 365);
-	if (rtc_timeinfo.tm_yday > (days_in_year - 1)) {
-		rtc_timeinfo.tm_year ++;
-		rtc_timeinfo.tm_yday -= days_in_year;
-
-		/* over one year, update year in RTC_YEAR and days in RTC_TR */
-		RTC_TimeStruct.RTC_Days = rtc_timeinfo.tm_yday;
-		RTC_TimeStruct.RTC_Year = rtc_timeinfo.tm_year + 1900;
-		RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-	}
-
-	rtc_calculate_mday(rtc_timeinfo.tm_year, rtc_timeinfo.tm_yday, &rtc_timeinfo.tm_mon, &rtc_timeinfo.tm_mday);
-	rtc_calculate_wday(rtc_timeinfo.tm_year, rtc_timeinfo.tm_mon, rtc_timeinfo.tm_mday, &rtc_timeinfo.tm_wday);
-}
-
-/**
-  * @brief  Backup tm_year parameter in global rtc_timeinfo variable before system reset.
-  * @param  none
-  * @retval none
-  */
-void rtc_backup_timeinfo(void)
-{
-	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
-
-	/* set RTC_BIT_RESTORE bit to '1' before system reset */
-	RTC->RTC_YEAR |= 0x80000000;
-}
+#endif
 
 /**
   * @brief  Initialize the RTC device, including clock, function and RTC registers.
@@ -242,8 +197,6 @@ void rtc_write(time_t t)
 	RTC_TimeStruct.RTC_Seconds = timeinfo->tm_sec;
 	RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
 
-	/* Set rtc_timeinfo*/
-	_memcpy((void *)&rtc_timeinfo, (void *)timeinfo, sizeof(struct tm));
 }
 
 /**
@@ -256,54 +209,33 @@ time_t rtc_read(void)
 	time_t t;
 	struct tm tm_temp;
 	RTC_TimeTypeDef RTC_TimeStruct;
-	u32 delta_days = 0;
-	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
+	u32 ydays_thr = 0;
 
-	if ((0x80000000 & (RTC->RTC_YEAR)) != 0) {
-		rtc_restore_timeinfo();
-		RTC->RTC_YEAR &= (~0x80000000);
-	}
+	_memset(&tm_temp, 0x00, sizeof(struct tm));
 
-	_memcpy((void *)&tm_temp, (void *)&rtc_timeinfo, sizeof(struct tm));
-
-	/*hour, min, sec get from RTC*/
 	RTC_GetTime(RTC_Format_BIN, &RTC_TimeStruct);
+	/*hour, min, sec get from RTC*/
 	tm_temp.tm_sec = RTC_TimeStruct.RTC_Seconds;
 	tm_temp.tm_min = RTC_TimeStruct.RTC_Minutes;
 	tm_temp.tm_hour = RTC_TimeStruct.RTC_Hours;
 
-	/* calculate how many days later from last time update rtc_timeinfo */
-	delta_days = RTC_TimeStruct.RTC_Days - tm_temp.tm_yday;
+	tm_temp.tm_yday = RTC_TimeStruct.RTC_Days;
+	tm_temp.tm_year = RTC_TimeStruct.RTC_Year - RTC_BASE_YEAR; //struct tm start from 1900
 
-	/* calculate  wday, mday, yday, mon, year*/
-	tm_temp.tm_wday += delta_days;
-	if (tm_temp.tm_wday >= 7) {
-		tm_temp.tm_wday = tm_temp.tm_wday % 7;
-	}
-
-	tm_temp.tm_yday += delta_days;
-	tm_temp.tm_mday += delta_days;
-
-	while (tm_temp.tm_mday > days_in_month(tm_temp.tm_mon, tm_temp.tm_year)) {
-		tm_temp.tm_mday -= days_in_month(tm_temp.tm_mon, tm_temp.tm_year);
-		tm_temp.tm_mon++;
-
-		if (tm_temp.tm_mon >= 12) {
-			tm_temp.tm_mon -= 12;
-			tm_temp.tm_yday -= is_leap_year(tm_temp.tm_year) ? 366 : 365;
-			tm_temp.tm_year ++;
-
-			/* over one year, update days in RTC_TR */
-			RTC_TimeStruct.RTC_Days = tm_temp.tm_yday;
-			RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
-
-			/* update rtc_timeinfo */
-			_memcpy((void *)&rtc_timeinfo, (void *)&tm_temp, sizeof(struct tm));
-		}
-	}
+	rtc_calculate_mday(tm_temp.tm_year, tm_temp.tm_yday, &tm_temp.tm_mon, &tm_temp.tm_mday);
 
 	/* Convert to timestamp(seconds from 1970.1.1 00:00:00)*/
 	t = mktime(&tm_temp);
+
+	ydays_thr = (is_leap_year(RTC_TimeStruct.RTC_Year)) ? 366 : 365;
+	//	DBG_8195A("@@@%d calc%d thr%d reg%d\n", __LINE__, tm_temp.tm_year, ydays_thr, RTC_TimeStruct.RTC_Days);
+
+	if (RTC_TimeStruct.RTC_Days > (ydays_thr - 1)) {
+		RTC_TimeStruct.RTC_Days -= ydays_thr;
+		RTC_TimeStruct.RTC_Year++;
+
+		RTC_SetTime(RTC_Format_BIN, &RTC_TimeStruct);
+	}
 
 	return t;
 }

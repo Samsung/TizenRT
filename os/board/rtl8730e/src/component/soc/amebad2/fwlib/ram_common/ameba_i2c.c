@@ -51,6 +51,8 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "I2C";
+
 const I2C_DevTable I2C_DEV_TABLE[3] = {
 #ifdef ARM_CORE_CM4
 	{I2C0_DEV, I2C0_IRQ},
@@ -419,50 +421,54 @@ void I2C_INTConfig(I2C_TypeDef *I2Cx, u32 I2C_IT, u32 NewState)
   *         level goes below the I2CRXTL threshold.
   * @retval None
   */
-void I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit)
+u32 I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit)
 {
+	u32 ret;
+
 	switch (INTrBit) {
 	case I2C_BIT_R_LP_WAKE_2:
-		I2Cx->IC_CLR_ADDR_MATCH;
+		ret = I2Cx->IC_CLR_ADDR_MATCH;
 		break;
 	case I2C_BIT_R_LP_WAKE_1:
-		I2Cx->IC_CLR_ADDR_MATCH;
+		ret = I2Cx->IC_CLR_ADDR_MATCH;
 		break;
 	case I2C_BIT_R_GEN_CALL:
-		I2Cx->IC_CLR_GEN_CALL;
+		ret = I2Cx->IC_CLR_GEN_CALL;
 		break;
 	case I2C_BIT_R_START_DET:
-		I2Cx->IC_CLR_START_DET;
+		ret = I2Cx->IC_CLR_START_DET;
 		break;
 	case I2C_BIT_R_STOP_DET:
-		I2Cx->IC_CLR_STOP_DET;
+		ret = I2Cx->IC_CLR_STOP_DET;
 		break;
 	case I2C_BIT_R_ACTIVITY:
-		I2Cx->IC_CLR_ACTIVITY;
+		ret = I2Cx->IC_CLR_ACTIVITY;
 		break;
 	case I2C_BIT_R_RX_DONE:
-		I2Cx->IC_CLR_RX_DONE;
+		ret = I2Cx->IC_CLR_RX_DONE;
 		break;
 	case I2C_BIT_R_TX_ABRT:
-		I2Cx->IC_CLR_TX_ABRT;
+		ret = I2Cx->IC_CLR_TX_ABRT;
 		break;
 	case I2C_BIT_R_RD_REQ:
-		I2Cx->IC_CLR_RD_REQ;
+		ret = I2Cx->IC_CLR_RD_REQ;
 		break;
 	case I2C_BIT_R_TX_OVER:
-		I2Cx->IC_CLR_TX_OVER;
+		ret = I2Cx->IC_CLR_TX_OVER;
 		break;
 	case I2C_BIT_R_RX_OVER:
-		I2Cx->IC_CLR_RX_OVER;
+		ret = I2Cx->IC_CLR_RX_OVER;
 		break;
 	case I2C_BIT_R_RX_UNDER:
-		I2Cx->IC_CLR_RX_UNDER;
+		ret = I2Cx->IC_CLR_RX_UNDER;
 		break;
 	case I2C_BIT_R_TX_EMPTY:
 	case I2C_BIT_R_RX_FULL:
 	default:
+		ret = 0;
 		break;
 	}
+	return ret;
 }
 
 /**
@@ -470,9 +476,9 @@ void I2C_ClearINT(I2C_TypeDef *I2Cx, u32 INTrBit)
   * @param  I2Cx: where I2Cx can be I2C0_DEV, I2C1_DEV and I2C2_DEV.
   * @retval None
   */
-void I2C_ClearAllINT(I2C_TypeDef *I2Cx)
+u32 I2C_ClearAllINT(I2C_TypeDef *I2Cx)
 {
-	I2Cx->IC_CLR_INTR;
+	return I2Cx->IC_CLR_INTR;
 }
 
 /**
@@ -699,13 +705,15 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
 
+	if ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE)) {
+		I2C_ClearINT(I2Cx, I2C_BIT_R_RX_DONE);
+	}
+
 	for (cnt = 0; cnt < len; cnt++) {
 
 		while (((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RD_REQ) == 0) && ((I2Cx->IC_RAW_INTR_STAT & I2C_BIT_RX_DONE) == 0));
 
-		if (I2C_SLAVEWRITE_PATCH) {
-			I2Cx->IC_CLR_RD_REQ;
-		}
+		I2C_ClearINT(I2Cx, I2C_BIT_R_RD_REQ);
 
 		/* Check I2C TX FIFO status */
 
@@ -717,6 +725,7 @@ u32 I2C_SlaveWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		I2Cx->IC_DATA_CMD = (*pBuf++);
 	}
 	while (((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0));
+	I2C_ClearAllINT(I2Cx);
 	return 0;
 }
 
@@ -816,7 +825,7 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 		/* wait for I2C_FLAG_RFNE flag */
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0) {
 			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				DBG_8195A("TX_ABRT\n");
+				RTK_LOGE(TAG, "TX_ABRT\n");
 				I2C_ClearAllINT(I2Cx);
 				return cnt;
 			}
@@ -824,7 +833,7 @@ u32 I2C_MasterRead_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 			DelayUs(2);
 
 			if (InTimeoutCount == 0) {
-				DBG_8195A("MasterRead_TimeOut\n");
+				RTK_LOGW(TAG, "MasterRead_TimeOut\n");
 				return cnt;
 			}
 			InTimeoutCount--;
@@ -864,7 +873,7 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
 			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
-				DBG_8195A("TX_ABRT\n");
+				RTK_LOGE(TAG, "TX_ABRT\n");
 				I2C_ClearAllINT(I2Cx);
 				return cnt;
 			}
@@ -872,7 +881,7 @@ u32 I2C_MasterWrite_TimeOut(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len, u32 times)
 			DelayUs(2);
 
 			if (InTimeoutCount == 0) {
-				DBG_8195A("MasterWrite_TimeOut\n");
+				RTK_LOGW(TAG, "MasterWrite_TimeOut\n");
 				return cnt;
 			}
 			InTimeoutCount--;
@@ -917,7 +926,7 @@ s32 I2C_MasterSendNullData_TimeOut(I2C_TypeDef *I2Cx, int address, u32 timeout_m
   * @retval None
   * @note This function has been defined as weak in the SDK, and users can redefine it according to their needs.
   */
-__weak void I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct)
+__weak u32 I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct)
 {
 	I2C_TypeDef *I2Cx = I2C_SemStruct->I2Cx;
 	u32 intr_status = I2C_GetINT(I2Cx);
@@ -940,6 +949,8 @@ __weak void I2C_ISRHandle(I2C_IntModeCtrl *I2C_SemStruct)
 
 		I2C_SemStruct->I2CSendSem(FALSE);
 	}
+
+	return 0;
 }
 
 /**
@@ -1009,7 +1020,7 @@ u32 I2C_MasterReadInt(I2C_TypeDef *I2Cx, I2C_IntModeCtrl *I2C_SemStruct, u8 *pBu
 		}
 
 		/* change rx full thresh based on trigger number */
-		if (trigger_cnt <= I2Cx->IC_RX_TL) {
+		if (trigger_cnt < I2C_TRX_BUFFER_DEPTH) {
 			I2Cx->IC_RX_TL = trigger_cnt - 1;
 		} else {
 			I2Cx->IC_RX_TL = I2C_TRX_BUFFER_DEPTH - 1;

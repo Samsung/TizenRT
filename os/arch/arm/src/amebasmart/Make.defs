@@ -220,6 +220,8 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os_dep
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/tizenrt
 
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/usrcfg/rtl8730e/include
+
 CHIP_ASRCS  =
 CHIP_CSRCS = amebasmart_boot.c
 CHIP_CSRCS += amebasmart_idle.c

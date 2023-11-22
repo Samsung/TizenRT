@@ -148,6 +148,7 @@
  * @brief Interrupt Enable Register
  * @{
  **/
+#define CT_BIT_SCAN_END_INTR_EN          ((u32)0x00000001 << 21)          /*!<R/W 0h  Scan end interrupt enable */
 #define CT_BIT_GUARD_RELEASE_INTR_EN     ((u32)0x00000001 << 20)          /*!<R/W 0h  Guard sensor release enable */
 #define CT_BIT_GUARD_PRESS_INTR_EN       ((u32)0x00000001 << 19)          /*!<R/W 0h  Guard sensor press enable */
 #define CT_BIT_OVER_N_NOISE_TH_INTR_EN   ((u32)0x00000001 << 18)          /*!<R/W 0h  Negative noise threshold overflow enable */
@@ -206,6 +207,7 @@
  * @brief Interrupt Clear Register
  * @{
  **/
+#define CT_BIT_SCAN_END_CLR              ((u32)0x00000001 << 21)          /*!<R/WA0 0h  Clear scan end interrupt and related register */
 #define CT_BIT_GUARD_RELEASE_CLR         ((u32)0x00000001 << 20)          /*!<R/WA0 0h  Clear guard sensor release interrupt and related register */
 #define CT_BIT_GUARD_PRESS_CLR           ((u32)0x00000001 << 19)          /*!<R/WA0 0h  Clear guard sensor press interrupt and related register */
 #define CT_BIT_OVER_N_NOISE_TH_CLR       ((u32)0x00000001 << 18)          /*!<R/WA0 0h  Clear negative noise threshold overflow interrupt and related register */
@@ -241,9 +243,11 @@
  * @brief ECO USE0 Register
  * @{
  **/
-#define CT_MASK_ECO_USE0                 ((u32)0xFFFFFFFF << 0)          /*!<R/W 0h  For ECO use */
-#define CT_ECO_USE0(x)                   ((u32)(((x) & 0xFFFFFFFF) << 0))
-#define CT_GET_ECO_USE0(x)               ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define CT_MASK_ECO_USE0                 ((u32)0x3FFFFFFF << 2)          /*!<R/W 0h  For ECO use */
+#define CT_ECO_USE0(x)                   (((u32)((x) & 0x3FFFFFFF) << 2))
+#define CT_GET_ECO_USE0(x)               ((u32)(((x >> 2) & 0x3FFFFFFF)))
+#define CT_BIT_SCAN_END_INTR             ((u32)0x00000001 << 1)          /*!<R 0h  Scan End Interrupt Register */
+#define CT_BIT_SCAN_END                  ((u32)0x00000001 << 0)          /*!<R 0h  Scan End Raw Interrupt Register */
 /** @} */
 
 /** @defgroup CT_ECO_USE1
@@ -525,7 +529,8 @@ typedef struct {
 											CT_BIT_AFIFO_OVERFLOW_INTR_EN |\
 											CT_BIT_OVER_N_NOISE_TH_INTR_EN |\
 											CT_BIT_GUARD_PRESS_INTR_EN |\
-											CT_BIT_GUARD_RELEASE_INTR_EN)
+											CT_BIT_GUARD_RELEASE_INTR_EN |\
+											CT_BIT_SCAN_END_INTR_EN)
 
 #define IS_CT_INT_EN(IT)				(((IT) & ~CT_ALL_INT_EN) == 0)
 #define IS_CT_INT_CLR(IT)				(((IT) & ~CT_ALL_INT_EN) == 0)
@@ -602,6 +607,7 @@ void CapTouch_ChCmd(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState);
 u32 CapTouch_GetChStatus(CAPTOUCH_TypeDef *CapTouch, u32 Channel);
 void CapTouch_SetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u32 Threshold);
 void CapTouch_SetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 Mbias);
+u32 CapTouch_GetChMbias(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
 u32 CapTouch_GetChDiffThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
 u32 CapTouch_GetNoiseThres(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 type);
 u32 CapTouch_GetChBaseline(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
@@ -614,6 +620,7 @@ u32 CapTouch_GetChAveData(CAPTOUCH_TypeDef *CapTouch, u8 Channel);
   * @{
   */
 void CapTouch_DbgCmd(CAPTOUCH_TypeDef *CapTouch, u8 NewState);
+void CapTouch_DbgChannel(CAPTOUCH_TypeDef *CapTouch, u8 Channel, u8 NewState);
 void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch);
 void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch);
 u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch);

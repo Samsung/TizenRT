@@ -35,15 +35,15 @@
 typedef void (*ctc_irq_handler)(u8 ch);
 
 static const PinMap PinMap_CTC[] = {
-	{CTC_0,			0,		0},
-	{CTC_1,			1,		0},
-	{CTC_2,			2,		0},
-	{CTC_3,			3,		0},
-	{CTC_4,			4,		0},
-	{CTC_5,			5,		0},
-	{CTC_6,			6,		0},
-	{CTC_7,			7,		0},
-	{CTC_8,			8,		0},
+	{CTC_0,			0,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_1,			1,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_2,			2,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_3,			3,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_4,			4,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_5,			5,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_6,			6,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_7,			7,		PINMUX_FUNCTION_CAPTOUCH},
+	{CTC_8,			8,		PINMUX_FUNCTION_CAPTOUCH},
 	{NC,			NC,		0}
 };
 
@@ -102,7 +102,6 @@ static u32 captouch_irq_handler(void *data)
 
 }
 
-
 /**
   * @brief  Initialize the captouch device.
   * @param  obj: Captouch object defined in application software.
@@ -113,6 +112,10 @@ void captouch_init(captouch_t *obj)
 	u32 ch = 0;
 
 	CapTouch_InitTypeDef Touch_InitStruct;
+
+	/* enable ADC function */
+	RCC_PeriphClockCmd(APBPeriph_ADC, APBPeriph_ADC_CLOCK, ENABLE);
+	RCC_PeriphClockCmd(APBPeriph_CTC, APBPeriph_CTC_CLOCK, ENABLE);
 
 	/* Load HAL initial data structure default value */
 	Touch_InitStruct.CT_DebounceEn = 1;
@@ -132,7 +135,8 @@ void captouch_init(captouch_t *obj)
 
 			/* Disable digital path input */
 			PAD_InputCtrl(PinMap_CTC[ch].pin, DISABLE);
-			PAD_PullCtrl((_PA_0 + ch), GPIO_PuPd_NOPULL);
+			pinmap_pinout(PinMap_CTC[ch].pin, PinMap_CTC);
+			PAD_SleepPullCtrl(PinMap_CTC[ch].pin, GPIO_PuPd_NOPULL);
 		}
 	}
 
@@ -153,6 +157,9 @@ void captouch_init(captouch_t *obj)
   */
 void captouch_deinit(captouch_t *obj)
 {
+	/* To avoid gcc warnings */
+	(void) obj;
+
 	u32 ch = 0;
 
 	for (ch = 0; ch < CT_CHANNEL_NUM; ch++) {

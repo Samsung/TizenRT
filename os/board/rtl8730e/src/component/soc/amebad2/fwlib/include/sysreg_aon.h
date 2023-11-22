@@ -561,7 +561,8 @@ typedef struct {
 	u8 APPLL_STATE;
 	u8 MEM_TYPE;
 	u8 CHIP_INFO;
-	u8 RRAM_USER_RSVD[113];            /* Rsvd for user */
+	u8 PSRAM_LATENCY;
+	u8 RRAM_USER_RSVD[112];            /* Rsvd for user */
 
 	u8 RRAM_PCR_RSVD[128];             /* Rsvd for PCR */
 } RRAM_TypeDef;

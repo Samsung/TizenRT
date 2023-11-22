@@ -199,7 +199,7 @@
 #define GICC_CTLR_IRQBYPDISGRP1		(1 << 8)
 
 #define GICC_CTLR_BYPASS_MASK		(GICC_CTLR_FIQBYPDISGRP0 | \
-									 GICC_CTLR_IRQBYPDISGRP1 | \
+									 GICC_CTLR_IRQBYPDISGRP0 | \
 									 GICC_CTLR_FIQBYPDISGRP1 | \
 									 GICC_CTLR_IRQBYPDISGRP1)
 
@@ -342,7 +342,8 @@ void arm_gic_raise_softirq(uint32_t cpu, uint32_t irq);
  * @param irq interrupt ID
  */
 void arm_gic_clear_softirq(uint32_t irq);
-
+void arm_gic_set_pending_irq(uint32_t irq);
+int arm_gic_irq_is_pending(uint32_t irq);
 void arm_gic_clear_pending_irq(uint32_t irq);
 
 void arm_gic_freq_switch(void);

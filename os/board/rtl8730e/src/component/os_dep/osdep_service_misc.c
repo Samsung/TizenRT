@@ -34,6 +34,12 @@ int rtw_get_random_bytes(void *buf, u32 len)
 	return 0;
 }
 
+int rtw_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size)
+{
+	UNUSED(p_rng);
+	return rtw_get_random_bytes(output, output_size);
+}
+
 u32 rtw_getFreeHeapSize(void)
 {
 	return 0;

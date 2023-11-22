@@ -90,3 +90,14 @@ void SystemInit(void)
 
 	SystemCoreClockUpdate();
 }
+
+
+/**
+  * @brief  Get CPU interrupt status.
+  * @return CPU interrupt status 0/1
+  */
+u32 CPU_InInterrupt(void)
+{
+	return __get_IPSR() != 0;
+}
+

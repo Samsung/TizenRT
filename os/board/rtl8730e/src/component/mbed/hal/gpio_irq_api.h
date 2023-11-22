@@ -46,7 +46,15 @@ extern "C" {
 typedef enum {
 	IRQ_NONE,
 	IRQ_RISE,
-	IRQ_FALL
+	IRQ_FALL,
+
+	/* merge irq event from gpio_irq_event_ex */
+#if 1//((defined(CONFIG_PLATFORM_AMEBAD2)) || (defined(CONFIG_PLATFORM_AMEBADPLUS)) || defined(CONFIG_PLATFORM_AMEBALITE))
+	IRQ_LOW = 3,
+	IRQ_HIGH = 4,
+	IRQ_FALL_RISE = 5	// dual edge trigger, available for 8195B and 8710C
+#endif
+
 } gpio_irq_event;
 
 typedef void (*gpio_irq_handler)(uint32_t id, gpio_irq_event event);

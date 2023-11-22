@@ -67,6 +67,10 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	assert_param(IS_ADC_SAMPLE_CLK(ADC_InitStruct->ADC_ClkDiv));
 	assert_param(ADC_InitStruct->ADC_CvlistLen < 16);
 
+	for (i = 0; i < ADC_InitStruct->ADC_CvlistLen + 1; i++) {
+		assert_param(ADC_InitStruct->ADC_Cvlist[i] != ADC_CH8);
+	}
+
 	/* Disable ADC, clear pending interrupt, clear FIFO */
 	ADC_Cmd(DISABLE);
 
@@ -544,7 +548,7 @@ void ADC_AutoCSwCmd(u32 NewState)
   *			@arg ENABLE: Enable the ADC timer trigger mode.
   *			@arg DISABLE: Disable the ADC timer trigger mode.
   * @retval  None.
-  * @note  Used in Timer-Trigger Mode
+  * @note  Used in Timer-Trigger Mode, period range: 1ms ~ 131071ms.
   */
 void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 {
@@ -552,13 +556,46 @@ void ADC_TimerTrigCmd(u8 Tim_Idx, u32 PeriodMs, u32 NewState)
 	RTIM_TimeBaseInitTypeDef TIM_InitStruct;
 
 	assert_param(IS_ADC_VALID_TIM(Tim_Idx));
-
 	adc->ADC_EXT_TRIG_TIMER_SEL = Tim_Idx;
 
 	if (NewState != DISABLE) {
+		assert_param(PeriodMs > 0 && PeriodMs < 131072); // avoid overflow
+
 		RTIM_TimeBaseStructInit(&TIM_InitStruct);
 		TIM_InitStruct.TIM_Idx = Tim_Idx;
-		TIM_InitStruct.TIM_Period = (PeriodMs * 32768) / 1000 / 2; //ms to tick
+		TIM_InitStruct.TIM_Period = (PeriodMs * 32768) / 1000; //ms to tick
+
+		RTIM_TimeBaseInit(TIMx[Tim_Idx], &TIM_InitStruct, TIMx_irq[Tim_Idx], (IRQ_FUN)NULL, (u32)NULL);
+		RTIM_Cmd(TIMx[Tim_Idx], ENABLE);
+	} else {
+		RTIM_Cmd(TIMx[Tim_Idx], DISABLE);
+	}
+}
+
+/**
+  * @brief Initialize the trigger timer when in ADC Timer-Trigger Mode, where Tim_Cnt is timer period counter.
+  * @param Tim_Idx: The timer index would be used to make ADC module do a conversion.
+  * @param Tim_Cnt: Indicate the period counter of trigger timer, which should not be less than 8.
+  * @param NewState: can be one of the following value:
+  *			@arg ENABLE: Enable the ADC timer trigger mode.
+  *			@arg DISABLE: Disable the ADC timer trigger mode.
+  * @retval None.
+  * @note Used in Timer-Trigger Mode, Tim_Cnt range: 0x8(244us) ~ 0xFFFF_FFFF(36.4h)
+  */
+void ADC_TimerTrigCntCmd(u8 Tim_Idx, u32 Tim_Cnt, u32 NewState)
+{
+	ADC_TypeDef *adc = ADC;
+	RTIM_TimeBaseInitTypeDef TIM_InitStruct;
+
+	assert_param(IS_ADC_VALID_TIM(Tim_Idx));
+	adc->ADC_EXT_TRIG_TIMER_SEL = Tim_Idx;
+
+	if (NewState != DISABLE) {
+		assert_param(Tim_Cnt >= 8);// at lease 244us
+
+		RTIM_TimeBaseStructInit(&TIM_InitStruct);
+		TIM_InitStruct.TIM_Idx = Tim_Idx;
+		TIM_InitStruct.TIM_Period = Tim_Cnt - 1; // period = Tim_Cnt/32768(s)
 
 		RTIM_TimeBaseInit(TIMx[Tim_Idx], &TIM_InitStruct, TIMx_irq[Tim_Idx], (IRQ_FUN)NULL, (u32)NULL);
 		RTIM_Cmd(TIMx[Tim_Idx], ENABLE);

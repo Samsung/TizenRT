@@ -1,6 +1,19 @@
 #ifndef _HAL_SOCPS_H_
 #define _HAL_SOCPS_H_
 
+enum wakeup_mask {
+	WAKEUP_NULL	= 0,
+	WAKEUP_LP	= 1,
+	WAKEUP_NP	= 2,
+	WAKEUP_AP	= 3,
+};
+
+enum xtal_mode_sleep {
+	XTAL_OFF = 0,
+	XTAL_LPS = 1,
+	XTAL_Normal = 2,
+};
+
 typedef struct {
 	u32 Module;
 	u32 MEM_SD;
@@ -15,17 +28,10 @@ typedef struct {
 
 typedef struct {
 	u32 Module;
-	u8 Group;
-	u8 Msk_Lp;
-	u8 Msk_Np;
-	u8 Msk_Ap;
+	enum wakeup_mask wakeup;
 } WakeEvent_TypeDef;
 
-extern WakeEvent_TypeDef sleep_wevent_config[];
 extern PWRCFG_TypeDef sleep_sram_config[];
-extern PWRCFG_TypeDef km0_pwrmgt_config[];
-extern PWRCFG_TypeDef aon_pwrmgt_config[];
-extern PWRCFG_TypeDef dsleep_aon_wevent_config[];
 
 extern void SOCPS_SleepPG(void);
 extern void SOCPS_SleepCG(void);
@@ -57,9 +63,7 @@ extern void SOCPS_SleepPG_RAM(void);
 extern void SOCPS_DeepSleep_RAM(void);
 extern void SOCPS_LPWHP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum);
 
-extern void SOCPS_deepsleepInit(void);
 extern void SOCPS_WakeEvent_Init(void);
-extern void SOCPS_AP_WakeEvent_Init(void);
 extern void SOCPS_SetPowerCut_Time(u32 time);
 
 #endif  //_HAL_SOCPS_H_

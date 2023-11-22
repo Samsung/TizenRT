@@ -9,6 +9,7 @@
 
 #include "ameba_soc.h"
 
+static const char *TAG = "CHIPINFO";
 /**
 * @brif Memory_Info maintains the chipinfo and corresponding memory information.
 */
@@ -30,10 +31,12 @@ const MemoryInfo_TypeDef Memory_Info[] = {
 	{0x0,		0x9,			0x09,		DDR_Type_DDR3L,			DDR_Size_2G,		0},			/* 1026(QFN144) ddr3L 2G+nand 2G*/
 	{0x1,		0x9,			0x29,		DDR_Type_DDR3L,			DDR_Size_2G,		0},			/* 1027(QFN144) ddr3L 2G+nand 2G*/
 	{0x0,		0xA,			0x0A,		DDR_Type_DDR2,			DDR_Size_1G,		0},			/* 1028(QFN144) ddr2 1G+nand 1G*/
-	{0x1,		0xA,			0x2A,		DDR_Type_DDR2,			DDR_Size_1G,		0},			/* /1029(QFN144) ddr2 1G+nand 1G*/
-	{0x0,		0xB,			0x0B,		Memory_Type_PSRAM,		PSRAM_Size_64M,		Vendor_PSRAM_A},			/* 1034(QFN100) psram 64Mb+nor 128Mb*/
+	{0x1,		0xA,			0x2A,		DDR_Type_DDR2,			DDR_Size_1G,		0},			/* 1029(QFN144) ddr2 1G+nand 1G*/
+	{0x0,		0xB,			0x0B,		Memory_Type_PSRAM,		PSRAM_Size_64M, 	Vendor_PSRAM_A},			/* 1038(QFN100) psram 64Mb+nor 128Mb*/
 	{0x0,		0xC,			0x0C,		Memory_Type_PSRAM,		PSRAM_Size_64M, 	Vendor_PSRAM_A},			/* 1037(QFN144) psram 64Mb+nor 64Mb*/
-	
+	{0x0,		0xD,			0x0D,		DDR_Type_DDR3L,			DDR_Size_2G, 		0},			/* 1039(QFN144) ddr3L 2G+nand 2G*/
+	{0x0,		0xE,			0x0E,		DDR_Type_DDR2,			DDR_Size_1G, 		0},			/* 1040(QFN144) ddr2 1G+nand 1G*/
+
 	{0xFF,		0xFF,		0xFF,		Memory_Type_None,		DDR_Size_None,		Vendor_None}, /* End */
 };
 
@@ -44,7 +47,7 @@ static void ChipInfo_Invalid(void)
 {
 	while (1) {
 		// let the program stuck here
-		DBG_8195A("Invalid Chininfo! Check OTP\n");
+		RTK_LOGE(TAG, "Invalid Chininfo! Check OTP\n");
 		DelayMs(10000);
 	}
 }
@@ -72,7 +75,7 @@ u8 ChipInfo_Get(void)
 	if (Chipinfo == 0xFF) {
 		while (1) {
 			// let the program stuck here
-			DBG_8195A("Please program chipinfo in OTP !\n");
+			RTK_LOGW(TAG, "Please program chipinfo in OTP !\n");
 			DelayMs(10000);
 		}
 	}
@@ -267,7 +270,7 @@ u8 EFUSE_GetBDNum(void)
 
 /**
   * @brief get chip version
-  * @retval chip version, counting from 1(A), 2(B) ...
+  * @retval chip version, counting from 0(A), 1(B) ...
   */
 u8 EFUSE_GetChipVersion(void)
 {
@@ -316,5 +319,44 @@ void EFUSE_GetUUID(u32 *UUID)
 	UUID[0] = (ID[3] << 24) | (ID[2] << 16) | (ID[1] << 8) | ID[0];
 	UUID[1] = (LOT_num[3] << 24) | (LOT_num[2] << 16) | (LOT_num[1] << 8) | LOT_num[0];
 
+}
+
+/**
+  * @brief get chip CPU & WIFI
+  * @note retval need to be parsed
+  */
+u8 EFUSE_Get_Info(u32 FuncID)
+{
+	u8 remark_info[2];
+	u8 info;
+
+	OTP_Read8(OTP_INFO, &remark_info[0]);
+	OTP_Read8(OTP_INFO + 1, &remark_info[1]);
+
+	switch (FuncID) {
+	case OTP_CpuCoreNum:
+		info = OTP_GET_CPU_CORENUM(remark_info[0]);
+		break;
+	case OTP_CpuClkRate:
+		info = OTP_GET_CPU_CLK(remark_info[0]);
+		break;
+	case OTP_WIFI5GSupport:
+		info = OTP_GET_WIFI5G_SUPPORT(remark_info[1]);
+		break;
+	case OTP_802Protocol:
+		info = OTP_GET_802PROTOCOL(remark_info[1]);
+		break;
+	case OTP_MemorySizeOrigin:
+		info = OTP_GET_MEMORYSIZE_ORIGIN(remark_info[1]);
+		break;
+	case OTP_RSVD0:
+		info = OTP_GET_RSVD0(remark_info[1]);
+		break;
+	default:
+		info = _FAIL;
+		break;
+	}
+
+	return info;
 }
 

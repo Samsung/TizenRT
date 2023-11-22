@@ -40,11 +40,10 @@
 #include "ameba_otpc.h"
 #include "ameba_spinand.h"
 #include "ameba_rsip.h"
-#include "ameba_rom_patch.h"
 #include "ameba_chipinfo.h"
 #include "ameba_swr_calib.h"
-#include "ameba_ftl.h"
 #include "ameba_nandflash.h"
+#include "ameba_system.h"
 #if (defined(CONFIG_USB_NEW_STACK_EN) || defined(CONFIG_BUILD_USB_LIB))
 #include "ameba_usb.h"
 #endif
@@ -148,6 +147,12 @@
 #include "ameba_psphy.h"
 
 #include "ameba_rcc.h"
+#include "ameba_rom_patch.h"
+#include "ameba_usrcfg.h"
+#include "log.h"
+#ifndef ARM_CORE_CA32
+#include "ameba_v8m_crashdump.h"
+#endif
 // firmware information, located at the header of Image2
 #define FW_VERSION          (0x0100)
 #define FW_SUBVERSION       (0x0001)

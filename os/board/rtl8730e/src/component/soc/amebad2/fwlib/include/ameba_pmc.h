@@ -157,17 +157,6 @@ enum SLEEP_TYPE {
   * @{
   */
 
-/** @defgroup SOCPS_PS_Wakeup_Pin_definitions
-  * @{
-  */
-#define	WAKUP_0							((u32)0x00000000)/*!< see aon_wakepin */
-#define	WAKUP_1							((u32)0x00000001)/*!< see aon_wakepin */
-#define	WAKUP_2							((u32)0x00000002)/*!< see aon_wakepin */
-#define	WAKUP_3							((u32)0x00000003)/*!< see aon_wakepin */
-/**
-  * @}
-  */
-
 /** @defgroup MEM_Mode_definitions
   * @{
   */
@@ -209,12 +198,15 @@ enum SLEEP_TYPE {
   */
 
 typedef struct {
-	u32 km0_tickles_debug; /* open km0 tickles log, it will encrease power consumption */
-	u32 km0_pg_enable;
-	u32 km0_pll_off;
-	u32 km0_audio_vad_on;
-	u32 km0_config_psram; /* false for keep active while true for sleep mode for psram device */
-	u32 km0_sleep_withM4; /* false for M0 keep active, true for M0 sleep with M4 */
+	u8 km0_tickles_debug; /* open km0 tickles log, it will encrease power consumption */
+	u8 km0_pg_enable;
+	u8 km0_pll_off;
+	u8 km0_audio_vad_on;
+	u8 km0_config_psram; /* false for keep active while true for sleep mode for psram device */
+	u8 km0_sleep_withM4; /* false for M0 keep active, true for M0 sleep with M4 */
+	u8 keep_OSC4M_on; /* false for keep OSC4M off during sleep, true for keep OSC4M on during sleep */
+	u8 xtal_mode_in_sleep; /* set xtal mode during sleep */
+	u8 swr_mode_in_sleep;
 } PSCFG_TypeDef;
 
 extern PSCFG_TypeDef ps_config;

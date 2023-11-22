@@ -4,6 +4,8 @@
  **************************************************/
 #if defined(__GNUC__)
 #include "FreeRTOS.h"
+#include <stdarg.h>
+#include "diag.h"
 
 void *__wrap_malloc(size_t size)
 {
@@ -48,6 +50,28 @@ void *__wrap__calloc_r(void *reent, size_t xWantedCnt, size_t xWantedSize)
 {
 	(void) reent;
 	return pvPortCalloc(xWantedCnt, xWantedSize);
+}
+
+extern u32 CPU_InInterrupt(void);
+extern int vprintf(const char *fmt, va_list ap);
+int __routing_printf(const char *fmt, va_list ap)
+{
+	int ret;
+	if (CPU_InInterrupt()) {
+		ret = DiagVSprintf(NULL, fmt, ap);
+	} else {
+		ret = vprintf(fmt, ap);
+	}
+	return ret;
+}
+int __wrap_printf(const char *__restrict fmt, ...)
+{
+	int ret;
+	va_list ap;
+	va_start(ap, fmt);
+	ret = __routing_printf(fmt, ap);
+	va_end(ap);
+	return ret;
 }
 
 #endif

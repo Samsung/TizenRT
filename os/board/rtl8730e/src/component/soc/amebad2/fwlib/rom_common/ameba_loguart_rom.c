@@ -1069,5 +1069,40 @@ u32 LOGUART_RxMonitorSatusGet(LOGUART_TypeDef *UARTLOG)
 	return UARTLOG->LOGUART_UART_REG_MON_BAUD_STS;
 }
 
+/**
+  * @brief  DIAG use LOGUART init
+  * @param  InitConsol
+  *            @arg TRUE: shell_init_rom & InterruptRegister will be excute
+  *            @arg FALSE: without shell_init_rom & InterruptRegister, used for just reinit HW like resume from PG
+  * @retval none
+  */
+HAL_ROM_TEXT_SECTION _LONG_CALL_
+void LOGUART_DiagInit(BOOL InitConsol)
+{
+	LOGUART_InitTypeDef LOGUART_InitStruct;
+	u32 CPUID = SYS_CPUID();
+
+	/* Release log uart reset and clock */
+	RCC_PeriphClockCmd(APBPeriph_LOGUART, APBPeriph_LOGUART_CLOCK, ENABLE);
+
+	/* Just Support S0 */
+	Pinmux_UartLogCtrl(PINMUX_S0, ON);
+
+	LOGUART_StructInit(&LOGUART_InitStruct);
+	LOGUART_Init(&LOGUART_InitStruct);
+
+	//4 initial uart log parameters before any uartlog operation
+	if (InitConsol == _TRUE) {
+		u32 TblSize = 0;
+		void *PTable = NULL;
+
+		/* Register Log Uart Callback function */
+		InterruptRegister((IRQ_FUN) shell_uart_irq_rom, LOG_UART_IDX_FLAG[CPUID].irq_num, (u32)NULL, 3);
+		InterruptEn(LOG_UART_IDX_FLAG[CPUID].irq_num, 3);
+
+		TblSize = cmd_rom_table(&PTable);
+		shell_init_rom(TblSize, PTable);// executing boot seq.,
+	}
+}
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

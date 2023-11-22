@@ -28,8 +28,17 @@ typedef struct _IPC_MSG_STRUCT_ {
 
 
 void ipc_table_init(IPC_TypeDef *IPCx);
-void ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
+u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg);
 PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum);
+void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum);
+extern IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
+
+
+#define IPC_SEMA_TIMEOUT -2
+#define IPC_REQ_TIMEOUT -1
+#define IPC_SEND_SUCCESS 0
+#define IPC_SEND_TIMEOUT 1
+#define IPC_SEMA_MAX_DELAY			0xFFFFFFFF
 
 #endif
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

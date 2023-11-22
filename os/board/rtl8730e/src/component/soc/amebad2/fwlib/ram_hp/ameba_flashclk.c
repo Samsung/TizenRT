@@ -11,16 +11,11 @@
 
 #define FLASH_CALIBRATION_DEBUG		0
 
-static FlashInfo_TypeDef *current_IC;
+static const char *TAG = "FLASHCLK";
+static const FlashInfo_TypeDef *current_IC;
 
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
-
-extern FlashInfo_TypeDef Flash_AVL[];
-extern FlashInfo_TypeDef NAND_AVL[];
-
-extern u16 Flash_ReadMode;
-extern u16 Flash_Speed;
 
 /**
   * @brief  Set Flash Clock
@@ -258,7 +253,7 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
 		pgolden_data[1] = HAL_READ32(SPI_FLASH_BASE, 0x04);
 
 		if (FLASH_InitStruct->debug) {
-			DBG_8195A("FLASH_CalibrationNew %x:%x phase_shift:%x\n", pgolden_data[0], pgolden_data[1], shift_step);
+			RTK_LOGD(TAG, "FLASH_CalibrationNew %x:%x phase_shift:%x\n", pgolden_data[0], pgolden_data[1], shift_step);
 		}
 
 		/* compare data */
@@ -280,8 +275,8 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
 	}
 
 	if (FLASH_InitStruct->debug) {
-		DBG_8195A("FLASH_CalibrationNew LineDelay:%x\n", LineDelay);
-		DBG_8195A("FLASH_CalibrationNew window1_start:%d window1_size:%d \n", window1_start, window1_size);
+		RTK_LOGD(TAG, "FLASH_CalibrationNew LineDelay:%x\n", LineDelay);
+		RTK_LOGD(TAG, "FLASH_CalibrationNew window1_start:%d window1_size:%d \n", window1_start, window1_size);
 	}
 
 	if (window1_size > 0) {
@@ -289,7 +284,7 @@ u32 FLASH_CalibrationNew(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8
 		FLASH_InitStruct->phase_shift_idx = window1_start + window1_size / 2;
 
 		if (FLASH_InitStruct->debug) {
-			DBG_8195A("FLASH_CalibrationNew phase_shift_idx:%d \n", FLASH_InitStruct->phase_shift_idx);
+			RTK_LOGD(TAG, "FLASH_CalibrationNew phase_shift_idx:%d \n", FLASH_InitStruct->phase_shift_idx);
 		}
 	}
 
@@ -352,7 +347,7 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 		rd_data = HAL_READ32(SPI_FLASH_BASE,  0);
 
 		if (FLASH_InitStruct->debug) {
-			DBG_8195A("FLASH_Calibration %x sample_phase:%x rate:%x\n", rd_data, sample_phase, baudr);
+			RTK_LOGD(TAG, "FLASH_Calibration %x sample_phase:%x rate:%x\n", rd_data, sample_phase, baudr);
 		}
 
 		/* compare data */
@@ -371,7 +366,7 @@ u32 FLASH_Calibration(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Li
 		FLASH_InitStruct->FLASH_rd_sample_phase = sample_phase;
 
 		if (FLASH_InitStruct->debug) {
-			DBG_8195A("FLASH_Calibration sample_phase:%x rate:%x\n", sample_phase, baudr);
+			RTK_LOGD(TAG, "FLASH_Calibration sample_phase:%x rate:%x\n", sample_phase, baudr);
 		}
 	}
 
@@ -419,8 +414,8 @@ BOOL _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 		u32 window_start_temp = ((window_temp >> 16) & 0xFF);
 		u32 window_end_temp = ((window_temp >> 24) & 0xFF);
 
-		DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "calibration_result:[%d:%d:%d][%x:%x] \n", line_delay_temp, window_size_temp, flash_init_para.phase_shift_idx,
-				   window_start_temp, window_end_temp);
+		RTK_LOGD(TAG, "calibration_result:[%d:%d:%d][%x:%x] \n", line_delay_temp, window_size_temp, flash_init_para.phase_shift_idx,
+				 window_start_temp, window_end_temp);
 		BKUP_Write(BKUP_REG3, ((window_start_temp << 24) | (line_delay_temp << 16) | (window_size_temp << 8) | flash_init_para.phase_shift_idx));
 #endif
 
@@ -437,7 +432,7 @@ BOOL _flash_calibration_highspeed(u8 SpicBitMode, u8 div)
 		flash_init_para.phase_shift_idx = 0;
 	}
 	if (window_size > 0) {
-		DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "calibration_ok:[%d:%d:%d] \n", line_delay, window_size, phase_shift_idx);
+		RTK_LOGI(TAG, "calibration_ok:[%d:%d:%d] \n", line_delay, window_size, phase_shift_idx);
 
 		flash_init_para.phase_shift_idx = phase_shift_idx;
 		flash_init_para.FLASH_rd_sample_phase_cal = line_delay;
@@ -476,12 +471,12 @@ u32 flash_calibration_highspeed(u8 div)
 			NAND_Init(spic_mode);
 		}
 
-		DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "FLASH CALIB[0x%x OK]\n", div);
+		RTK_LOGI(TAG, "FLASH CALIB[0x%x OK]\n", div);
 	} else {
 		/* calibration fail, revert SPIC clock to XTAL */
 		RCC_PeriphClockSource_SPIC(BIT_LSYS_CKSL_SPIC_XTAL);
 
-		DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "FLASH CALIB[0x%x FAIL]\n", div);
+		RTK_LOGE(TAG, "FLASH CALIB[0x%x FAIL]\n", div);
 
 		Ret = _FAIL;
 	}
@@ -517,11 +512,11 @@ static u8 flash_get_option(u32 sys_data, BOOL is_speed)
 }
 
 BOOT_RAM_TEXT_SECTION
-static FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
+static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
 {
 	u32 i = 0;
 	u32 temp;
-	FlashInfo_TypeDef *pAVL;
+	const FlashInfo_TypeDef *pAVL;
 	if (SYSCFG_BootFromNor()) {
 		pAVL = Flash_AVL;
 	} else {
@@ -547,12 +542,12 @@ static void flash_get_vendor(void)
 
 	/* Read flash ID */
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, 3, flash_ID);
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
+	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
 
 	/* Get flash chip information */
 	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
 	if (current_IC == NULL) {
-		DBG_8195A("This flash type is not supported!\n");
+		RTK_LOGW(TAG, "This flash type is not supported!\n");
 		assert_param(0);
 	}
 
@@ -602,12 +597,12 @@ static void nand_get_vendor(void)
 
 	/* Read flash ID */
 	NAND_RxCmd(flash_init_para.FLASH_cmd_rd_id, 0, NULL, 2, flash_ID);
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "NAND ID: %x-%x\n", flash_ID[0], flash_ID[1]);
+	RTK_LOGI(TAG, "NAND ID: %x-%x\n", flash_ID[0], flash_ID[1]);
 
 	/* Get flash chip information */
 	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
 	if (current_IC == NULL) {
-		DBG_8195A("This flash type is not supported!\n");
+		RTK_LOGW(TAG, "This flash type is not supported!\n");
 		assert_param(0);
 	}
 
@@ -712,17 +707,17 @@ u32 flash_rx_mode_switch(u8 read_mode)
 		pdata[1] = HAL_READ32(SPI_FLASH_BASE, 0x04);
 
 		if (_memcmp(pdata, SPIC_CALIB_PATTERN, 8) == 0) {
-			DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "Flash Read %s\n", str[spic_mode]);
+			RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
 			break;
 		} else {
 			if (flash_init_para.debug) {
-				DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "Flash Read %s, FAIL\n", str[spic_mode]);
+				RTK_LOGD(TAG, "Flash Read %s, FAIL\n", str[spic_mode]);
 			}
 		}
 	}
 
 	if (i == 5) {
-		DBG_PRINTF(MODULE_BOOT, LEVEL_ERROR, "Flash Switch Read Mode FAIL\n");
+		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
 		Ret = _FAIL;
 	}
 
@@ -737,7 +732,7 @@ void flash_highspeed_setup(void)
 
 	read_mode = flash_get_option(Flash_ReadMode, _FALSE);
 	flash_speed = flash_get_option(Flash_Speed, _TRUE);
-	//DBG_8195A("flash_speed: %d\n", flash_speed);
+	//RTK_LOGD(TAG, "flash_speed: %d\n", flash_speed);
 	__asm volatile("cpsid i");
 
 	/* SPIC stay in BUSY state when there are more than 0x1_0000 cycles between two input data.

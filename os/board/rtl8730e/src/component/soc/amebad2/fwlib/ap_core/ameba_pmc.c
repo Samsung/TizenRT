@@ -10,7 +10,7 @@
 
 #define ROUND_UP(divider, divisor) (divider%divisor) ? ((divider/divisor)+1) : (divider/divisor)
 
-
+static const char *TAG = "PMC";
 typedef struct {
 	u32 intr_enable[ROUND_UP(GIC_MAX_NUM_INTR, 32)];
 	u32 intr_active[ROUND_UP(GIC_MAX_NUM_INTR, 32)];
@@ -80,7 +80,7 @@ int SOCPS_PG_Enter(unsigned long arg)
 
 	while (1) {
 		DelayMs(1000);
-		DBG_8195A("Error! Should never reach here!\n");
+		RTK_LOGE(TAG, "Error! Should never reach here!\n");
 	}
 }
 
@@ -169,7 +169,7 @@ void SOCPS_SleepPG(void)
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 
 		if (tickless_debug) {
-			DBG_8195A("DBG: CA32 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: CA32 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}
@@ -208,7 +208,7 @@ void SOCPS_SleepCG(void)
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 
 		if (tickless_debug) {
-			DBG_8195A("DBG: CA32 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: CA32 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}

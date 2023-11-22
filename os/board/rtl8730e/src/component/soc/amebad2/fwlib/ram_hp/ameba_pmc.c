@@ -7,6 +7,8 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "ameba_soc.h"
+
+static const char *TAG = "PMC";
 _OPTIMIZE_NONE_
 VOID SOCPS_SleepPG(VOID)
 {
@@ -21,7 +23,7 @@ VOID SOCPS_SleepPG(VOID)
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 
 		if (tickless_debug) {
-			DBG_8195A("DBG: KM4 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: KM4 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}
@@ -50,7 +52,7 @@ void SOCPS_SleepCG(void)
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
 
 		if (tickless_debug) {
-			DBG_8195A("DBG: KM4 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
+			RTK_LOGD(TAG, "DBG: KM4 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		}
 		return;
 	}
@@ -103,13 +105,19 @@ void SOCPS_LPWHP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	u32 type = ipc_msg_temp->msg;
 
 	if (type == FW_LPWNP_IPC) {
-		//DBG_8195A("%s: FW wakeup KM4 via IPC \n", __func__);
+		//RTK_LOGD(TAG, "%s: FW wakeup KM4 via IPC \n", __func__);
 	}
 
 }
 
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_LPWHP_table[] = {
-	{IPC_USER_DATA, 	SOCPS_LPWHP_ipc_int,	(VOID *) NULL, IPC_LP_TO_NP, IPC_L2N_WAKE_NP, IPC_RX_FULL},
+const IPC_INIT_TABLE ipc_LPWHP_table = {
+	.USER_MSG_TYPE = IPC_USER_DATA,
+	.Rxfunc = SOCPS_LPWHP_ipc_int,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_LP_TO_NP,
+	.IPC_Channel = IPC_L2N_WAKE_NP
 };
 

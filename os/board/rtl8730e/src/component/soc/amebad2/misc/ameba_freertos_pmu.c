@@ -181,13 +181,17 @@ int freertos_ready_to_sleep(void)
 	}
 
 #if defined (ARM_CORE_CM4)
-
-	if (sleep_type == SLEEP_PG) {
-		if (ap_status_on() || (HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & LSYS_BIT_AP_RUNNING)) {
-			return FALSE;
-		}
-	} else {
-		if (ap_clk_status_on() || (HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & LSYS_BIT_AP_RUNNING)) {
+	if ((HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & LSYS_BIT_AP_ENABLE)) {
+		if (!(HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & LSYS_BIT_AP_RUNNING)) {
+			if (! ap_status_on()) {
+				pmu_set_sleep_type(SLEEP_PG);
+			} else if (! ap_clk_status_on()) {
+				pmu_set_sleep_type(SLEEP_CG);
+			} else {
+				return FALSE;
+			}
+			pmu_release_wakelock(PMU_OS);
+		} else {
 			return FALSE;
 		}
 	}

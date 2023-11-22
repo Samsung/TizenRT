@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+/* remove following irq event to gpio_irq_event, to fix warning */
+#if 0//(!((defined(CONFIG_PLATFORM_AMEBAD2)) || (defined(CONFIG_PLATFORM_AMEBADPLUS)) || (defined(CONFIG_PLATFORM_AMEBALITE))))
 /** @addtogroup gpio_irq_ex_api GPIO_IRQ_EX
  *  @ingroup    hal
  *  @brief      gpio IRQ extented functions
@@ -42,6 +44,7 @@ typedef enum {
 	IRQ_HIGH = 4,
 	IRQ_FALL_RISE = 5   // dual edge trigger, available for 8195B and 8710C
 } gpio_irq_event_ex;
+#endif
 
 /**
   * @brief  Deinitializes the GPIO device interrupt mode, include mode/trigger/polarity registers.

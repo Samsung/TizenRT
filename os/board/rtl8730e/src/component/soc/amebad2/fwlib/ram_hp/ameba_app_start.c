@@ -10,6 +10,7 @@
 #include "ameba_soc.h"
 #include "ameba_system.h"
 
+static const char *TAG = "APP";
 #if defined(CONFIG_EXAMPLE_CM_BACKTRACE) && CONFIG_EXAMPLE_CM_BACKTRACE
 #include "cm_backtrace/example_cm_backtrace.h"
 #endif
@@ -25,13 +26,6 @@ SECTION(".data") u8 *__ram_nocache_start__ = 0;
 SECTION(".data") u8 *__ram_nocache_end__ = 0;
 SECTION(".data") u8 *__psram_bss_start__ = 0;
 SECTION(".data") u8 *__psram_bss_end__ = 0;
-#endif
-
-#define CONFIG_CM_BACKTRACE 1
-
-#if defined(CONFIG_CM_BACKTRACE) && CONFIG_CM_BACKTRACE
-extern void cm_backtrace_fault(uint32_t fault_handler_sp, uint32_t fault_handler_lr);
-extern void cm_backtrace_init(const char *firmware_name, const char *hardware_ver, const char *software_ver);
 #endif
 
 extern int main(void);
@@ -109,38 +103,97 @@ u32 app_mpu_nocache_init(void)
 void _init(void) {}
 #endif
 
+void app_int_memfault(void)
+{
+	__ASM volatile(
+		"MRS 		R0, MSP					\n\t"
+		"MRS 		R1, PSP					\n\t"
+		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
+		"MOV 		R3, #3					\n\t"
+		"PUSH 		{R4-R11}				\n\t"
+		"B			app_fault_handler		\n\t"
+	);
+}
+
+void app_int_busfault(void)
+{
+	__ASM volatile(
+		"MRS 		R0, MSP					\n\t"
+		"MRS 		R1, PSP					\n\t"
+		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
+		"MOV 		R3, #2					\n\t"
+		"PUSH 		{R4-R11}				\n\t"
+		"B			app_fault_handler		\n\t"
+	);
+}
+
+void app_int_usagefault(void)
+{
+	__ASM volatile(
+		"MRS 		R0, MSP					\n\t"
+		"MRS 		R1, PSP					\n\t"
+		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
+		"MOV 		R3, #1					\n\t"
+		"PUSH 		{R4-R11}				\n\t"
+		"B			app_fault_handler		\n\t"
+	);
+}
+
 void app_fault_handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint32_t fault_id)
 {
-#if defined(CONFIG_CM_BACKTRACE) && CONFIG_CM_BACKTRACE
-	UNUSED(fault_id);
+	RTK_LOGA(TAG, "Hard Fault Patch (Non-secure)\r\n");
 
-	DBG_8195A("\r\nHard Fault Patch (Non-secure)\r\n");
+	uint32_t *cstack;
 
-	u8 IsPstack = 0;
+	uint32_t *extra_regs = mstack;
+
+	uint32_t regs[17] = {0x0};
+
+	u8 is_psp = 0;
+
+	enum {
+		REG_EXCR = 0, REG_R4, REG_R5, REG_R6, REG_R7, REG_R8, REG_R9, REG_R10, REG_R11, \
+		REG_R0, REG_R1, REG_R2, REG_R3, REG_R12, REG_LR, REG_EPC, REG_xPSR, REG_END
+	};
 
 	/* EXC_RETURN.S, 1: Registers have been pushed to a Secure stack
 	                 0: Registers have been pushed to a Non-Secure stack */
-	if (lr_value & BIT_EXCRETURN_S) {				//Taken from S
-		DBG_8195A("\nException taken from Secure to Non-secure.\nSecure stack is used to store context."
-				  "It can not be dumped from non-secure side for security reason!!!\n");
 
+	/* 1 Non-Secure world cannot dump registers about exception from secure world. */
+	if (lr_value & EXC_RETURN_S) {
+		RTK_LOGA(TAG, "Exception taken from Secure to Non-secure.\nSecure stack is used to store context."
+				 "It can not be dumped from non-secure side for security reason!!!\n");
 		while (1);
-	} else {										//Taken from NS
-		if (lr_value & BIT_EXCRETURN_MODE) {		//Thread Mode
-			if (lr_value & BIT_EXCRETURN_SPSEL) {	//PSP
-				IsPstack = 1;
-			}
+		/* 2 Non-secure world hander exception from non-secure world!*/
+	} else {
+		if ((lr_value & EXC_RETURN_MODE) && (lr_value & EXC_RETURN_SPSEL)) {
+			is_psp = 1;
 		}
 	}
 
-	cm_backtrace_fault(IsPstack ? (uint32_t)pstack : (uint32_t)mstack, lr_value);
-	while (1);
-#else
-	UNUSED(mstack);
-	UNUSED(pstack);
-	UNUSED(lr_value);
-	UNUSED(fault_id);
-#endif
+	regs[REG_EXCR] = lr_value;
+	/* MSP stack
+	High addr -> |  xxx  | <--- &extra_regs[0] is mstack;
+	  ^          |  R11  | <--- extra_regs[-1]
+	  |	         |  R10  |
+	  |	         |  ...  |
+	Low addr  -> |  R4   | <--- extra_regs[-8]*/
+
+	extra_regs--; //point to R11
+	for (int i = REG_R4; i <= REG_R11; i++) {
+		regs[i] = extra_regs[-REG_R11 + i];
+	}
+
+	cstack = is_psp ? pstack : mstack;
+
+	for (int i = REG_R0; i < REG_END; i++) {
+		regs[i] = cstack[i - REG_R0];
+	}
+
+	crash_dump((uint32_t *)cstack[REG_EPC], cstack, regs);
+
+	extern void INT_HardFault_C(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint32_t fault_id);
+	INT_HardFault_C(mstack, pstack, lr_value, fault_id);
 }
 
 #if 0
@@ -169,10 +222,10 @@ static VOID dslp_wake_handler(void)
 	u32 BootReason;
 
 	BootReason = SOCPS_AONWakeReason();
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "DSLP WAKE REASON: %x \n", BootReason);
+	RTK_LOGI(TAG, "DSLP WAKE REASON: %x \n", BootReason);
 
 	if (BootReason & AON_BIT_TIM_ISR_EVT) {
-		//DBG_8195A("dslp from aontimer\n");
+		//RTK_LOGI(TAG, "dslp from aontimer\n");
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 		//SOCPS_AONTimerINT_EN_HP(ENABLE);
 		InterruptRegister((IRQ_FUN)aontimer_dslp_handler, AON_TIM_IRQ, NULL, 3);
@@ -195,29 +248,36 @@ static VOID dslp_wake_handler(void)
 void app_start(void)
 {
 	u32 BootReason;
-
-	/* enable non-secure cache */
+	/* 1. enable non-secure cache */
 	Cache_Enable(ENABLE);
 
+	/* 2. Init heap region for printf (RTK_LOGx) */
 	app_section_init();
 	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
-
+	os_heap_init();
+	/* 3. Initialize Non-secure vector table and retarget partly exception handler function. */
 	irq_table_init(MSP_RAM_HP_NS); /* NS Vector table init */
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "VTOR: %x, VTOR_NS:%x\n", SCB->VTOR, SCB_NS->VTOR);
+	/* Add redefine fault handler to vector table */
+	NewVectorTable[4] = (HAL_VECTOR_FUN)app_int_memfault;
+	NewVectorTable[5] = (HAL_VECTOR_FUN)app_int_busfault;
+	NewVectorTable[6] = (HAL_VECTOR_FUN)app_int_usagefault;
 
+	RTK_LOGI(TAG, "VTOR: %x, VTOR_NS:%x\n", SCB->VTOR, SCB_NS->VTOR);
+
+	/* 4. low power pin dont need pinmap init again after wake from dslp*/
 	pinmap_init();
 
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "KM4 APP START \n");
-
+	RTK_LOGI(TAG, "KM4 APP START \n");
+	/* 5. Confirm CPU secure state*/
 	cmse_address_info_t cmse_address_info = cmse_TT((void *)app_start);
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
-
+	RTK_LOGI(TAG, "IMG2 SECURE STATE: %d\n", cmse_address_info.flags.secure);
+	/* 6. Load secure image*/
 #if defined (CONFIG_TRUSTZONE_EN) && (CONFIG_TRUSTZONE_EN == 1U)
 	BOOT_IMG3();
 #endif
-
+	/* 7. Get Boot reason. */
 	BootReason = BOOT_Reason();
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "KM4 BOOT REASON: %x \n", BootReason);
+	RTK_LOGI(TAG, "KM4 BOOT REASON: %x \n", BootReason);
 
 	/* For reference only, users can modify the function if need */
 	/* Attention, the handler is needed to clear NVIC pending int and ip int in dslp flow */
@@ -225,10 +285,11 @@ void app_start(void)
 		//dslp_wake_handler();
 		//depends on user's request
 	}
-
+	/* 8. Update CPU clk. */
 	SystemCoreClockUpdate();
-	DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "KM4 CPU CLK: %d Hz \n", SystemCoreClock);
+	RTK_LOGI(TAG, "KM4 CPU CLK: %d Hz \n", SystemCoreClock);
 
+	/* 9. Init XTAL*/
 	XTAL_INIT();
 
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
@@ -240,34 +301,22 @@ void app_start(void)
 		OSC4M_Calibration(30000);
 		XTAL_PDCK();
 	}
-	/* configure FreeRTOS interrupt and heap region */
-	os_heap_init();
+	/* 10. configure FreeRTOS interrupt*/
 	__NVIC_SetVector(SVCall_IRQn, (u32)(VOID *)vPortSVCHandler);
 	__NVIC_SetVector(PendSV_IRQn, (u32)(VOID *)xPortPendSVHandler);
 	__NVIC_SetVector(SysTick_IRQn, (u32)(VOID *)xPortSysTickHandler);
-
-	cm_backtrace_init("target_img2", "HW v1.0", "SW v1.0");
-	FaultPatch_register(app_fault_handler);
 
 #if defined (__GNUC__)
 	extern void __libc_init_array(void);
 	/* Add This for C++ support */
 	__libc_init_array();
 #endif
-
-	// force SP align to 8 byte not 4 byte (initial SP is 4 byte align)
-	__asm(
-		"mov r0, sp\n"
-		"bic r0, r0, #7\n"
-		"mov sp, r0\n"
-	);
-
+	/*11. MPU init*/
 	mpu_init();
 	app_mpu_nocache_init();
 
-	flash_layout_init();
-
-	main(); /* project/xxxx/src/main.c */
+	/*12. Enter main*/
+	main();
 }
 
 IMAGE2_VALID_PATTEN_SECTION

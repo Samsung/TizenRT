@@ -180,6 +180,15 @@
   * @}
   */
 
+/** @defgroup VAD_ADC_ANALOG_CLK_Select
+  * @{
+  */
+#define CLK_FOR_AUDIO_CODEC ((u32)0x00000000)
+#define CLK_FOR_PC_VAD_CODEC ((u32)0x00000001)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -219,7 +228,7 @@ void VAD_Det_MV_Thre(u16 thr);
 void VAD_Det_Energy_CHK_Thre(u16 thr);
 void VAD_Det_OD_Energy_Thre(u16 thr);
 void VAD_Det_Thr_ST_Valid(u16 thr);
-void VAD_ADC_Clock_Enable(void);
+void VAD_ADC_Clock_Enable(u32 clock_sel);
 void BT_VAD_Start(void);
 void BT_VAD_SelSrc(u32 codec_index);
 void BT_VAD_SetBit(void);

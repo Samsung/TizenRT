@@ -318,10 +318,12 @@ typedef struct {
 /** @defgroup RTC_Hour_Format
   * @{
   */
-#define RTC_HourFormat_24			((u32)0x00000000)
-#define RTC_HourFormat_12			((u32)0x00000080)
-#define IS_RTC_HOUR_FORMAT(FORMAT)     (((FORMAT) == RTC_HourFormat_12) || \
-                                        ((FORMAT) == RTC_HourFormat_24))
+#define RTC_HourFormat_24					((u32)0x00000000)
+#define RTC_HourFormat_12					((u32)0x00000080)
+#define IS_RTC_HOUR_FORMAT(FORMAT)			(((FORMAT) == RTC_HourFormat_12) || \
+                                        	((FORMAT) == RTC_HourFormat_24))
+#define IS_RTC_TIME_DAY_THRES(TIME_DAYS)	((TIME_DAYS) <= 0x1FF)
+
 /**
   * @}
   */
@@ -548,6 +550,7 @@ _LONG_CALL_ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct);
 _LONG_CALL_ void RTC_TimeStructInit(RTC_TimeTypeDef *RTC_TimeStruct);
 _LONG_CALL_ u32 RTC_SetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct);
 _LONG_CALL_ void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct);
+_LONG_CALL_ u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear);
 _LONG_CALL_ void RTC_DayIntClear(void);
 _LONG_CALL_ u32 RTC_DayIntCmd(u32 NewState);
 _LONG_CALL_ u32 RTC_DayThresSet(u32 DayThres);

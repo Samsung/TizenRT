@@ -139,7 +139,7 @@ postprocess_fail:
 }
 #endif //defined(CONFIG_FTL_ENABLE) && defined(CONFIG_FTL_SECURE_KEY_ENABLED)
 
-#if CONFIG_BUILD_SECURE==1
+#if defined (CONFIG_BUILD_SECURE) && (CONFIG_BUILD_SECURE == 1)
 NS_ENTRY void data_preprocess(void *pdata, uint16_t offset, uint16_t size)
 {
 #if defined(CONFIG_FTL_ENABLE) && defined(CONFIG_FTL_SECURE_KEY_ENABLED)

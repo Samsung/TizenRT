@@ -64,7 +64,7 @@ typedef struct {
 } MPC_EntryTypeDef;
 
 typedef struct {
-	MPC_EntryTypeDef ENTRY[8]; /*!< ,	Address offset: 0x00 ~ 0x3C*/
+	MPC_EntryTypeDef MPC_Entry[8]; /*!< ,	Address offset: 0x00 ~ 0x3C*/
 	__IO u32 IDAU_CTRL;		/*!< ,	Address offset: 0x40 */
 	__IO u32 IDAU_LOCK;		/*!< ,	Address offset: 0x44 */
 } MPC_TypeDef;
@@ -153,6 +153,8 @@ typedef enum {
 
 #define SAU_ENTRYS_NUM			8
 #define MPC_ENTRYS_NUM			8
+
+#define MPC_CNT					2
 
 void BOOT_RAM_TZCfg(void);
 void TZ_ConfigSlaveSecurity(PPC_PeripheralId Perip, u32 Status);
