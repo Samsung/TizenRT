@@ -19,7 +19,6 @@
 #include "aifw/aifw_log.h"
 #include "aifw/AIDataBuffer.h"
 #include "include/AIDataBufferNode.h"
-
 #define _UNLOCK                                    \
 	{                                              \
 		int status = pthread_mutex_unlock(&mLock); \
@@ -119,13 +118,65 @@ void AIDataBuffer::clearMemory(AIDataBufferNode *ptr)
 	}
 }
 
-void AIDataBuffer::clear(void)
+AIFW_RESULT AIDataBuffer::clear(void)
 {
+	_LOCK
 	AIDataBufferNode *current = mStart;
 	while (current) {
-		current->mIsEmpty = false;
+		current->mIsEmpty = true;
+		current = current->mNext;
 	}
 	mRowCount = 0;
+	_UNLOCK
+	return AIFW_OK;
+}
+
+AIFW_RESULT AIDataBuffer::clear(uint16_t offset, uint16_t count)
+{
+	if (count == 0) {
+		AIFW_LOGE("Invalid value of param count.");
+		return AIFW_INVALID_ARG;
+	}
+	if (offset + count - 1 >= mRowCount) {
+		AIFW_LOGE("Invalid row clear request");
+		return AIFW_INVALID_ARG;
+	}
+	_LOCK
+	AIDataBufferNode *current = mStart;
+	uint16_t i = 0;
+	while (i < offset) {
+		current = current->mNext;
+		i++;
+	}
+	AIDataBufferNode *firstNode = current;
+	AIDataBufferNode *prevToFirstNode = firstNode->mPrev;
+
+	i = 0;
+	while (i < count - 1) {
+		current->mIsEmpty = true;
+		current = current->mNext;
+		i++;
+	}
+	current->mIsEmpty = true;
+	mRowCount -= count;
+	AIDataBufferNode *lastNode = current;
+	AIDataBufferNode *nextToLastNode = lastNode->mNext;
+
+	if (!nextToLastNode) {
+		_UNLOCK;
+		return AIFW_OK;
+	} else if (!prevToFirstNode) {
+		mStart = nextToLastNode;
+	} else {
+		prevToFirstNode->mNext = nextToLastNode;
+	}
+	nextToLastNode->mPrev = prevToFirstNode;
+	lastNode->mNext = NULL;
+	firstNode->mPrev = mEnd;
+	mEnd->mNext = firstNode;
+	mEnd = lastNode;
+	_UNLOCK
+	return AIFW_OK;
 }
 
 AIFW_RESULT AIDataBuffer::createList(uint16_t count, uint16_t size)
@@ -183,9 +234,13 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t row)
 		++temp;
 	}
 	memcpy(buffer, tempNode->mData, mRowSize * sizeof(float));
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer read done, values: ");
 	for (uint16_t k = 0; k < mRowSize; k++) {
-		AIFW_LOGV("value read %f", buffer[k]);
+		printf("%f,", buffer[k]);
 	}
+	printf("\n");
+#endif
 	_UNLOCK;
 	return AIFW_OK;
 }
@@ -216,9 +271,13 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t startCol, uint16_t en
 		++temp;
 	}
 	memcpy(buffer, (tempNode->mData + startCol), (endCol - startCol) * sizeof(float));
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer read done, values: ");
 	for (uint16_t k = 0; k < (endCol - startCol); k++) {
-		AIFW_LOGV("value read %f", buffer[k]);
+		printf("%f,", buffer[k]);
 	}
+	printf("\n");
+#endif
 	_UNLOCK;
 	return AIFW_OK;
 }
@@ -243,7 +302,21 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size)
 		mStart->mPrev = last;
 		mStart = last;
 	}
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer write operation, values: ");
+	for (uint16_t k = 0; k < size; k++) {
+		printf("%f,", buffer[k]);
+	}
+	printf("\n");
+#endif
 	memcpy(mStart->mData, buffer, size * sizeof(float));
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer write operation done, values: ");
+	for (uint16_t k = 0; k < size; k++) {
+		printf("%f,", mStart->mData[k]);
+	}
+	printf("\n");
+#endif
 	mStart->mIsEmpty = false;
 	if (mRowCount < mMaxRows) {
 		++mRowCount;
@@ -264,7 +337,21 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size, uint16_t offse
 		return AIFW_NOT_ENOUGH_SPACE;
 	}
 	_LOCK
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer write operation, values: ");
+	for (uint16_t k = 0; k < size; k++) {
+		printf("%f,", buffer[k]);
+	}
+	printf("\n");
+#endif
 	memcpy((mStart->mData + offset), buffer, size * sizeof(float));
+#ifdef CONFIG_AIFW_LOGD
+	printf("buffer write operation done, values: ");
+	for (uint16_t k = 0; k < size; k++) {
+		printf("%f,", mStart->mData[offset + k]);
+	}
+	printf("\n");
+#endif
 	AIFW_LOGI("resultData Written");
 	_UNLOCK
 	return AIFW_OK;

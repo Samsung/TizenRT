@@ -30,6 +30,10 @@ namespace aifw {
 
 class AIDataBuffer;
 
+/**
+ * @class AIProcessHandler
+ * @brief Interface class for data processing operations.
+ */
 class AIProcessHandler
 {
 public:

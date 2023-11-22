@@ -25,6 +25,10 @@
 
 namespace aifw {
 
+/**
+ * @class AIDataBufferNode
+ * @brief Interface class for necessary fields of an AIDataBuffer node.
+ */
 class AIDataBufferNode
 {
 public:

@@ -29,6 +29,10 @@
 
 namespace aifw {
 
+/**
+ * @class AIManifestParser
+ * @brief This class reads data from model manifest file.
+ */
 class AIManifestParser
 {
 public:

@@ -27,6 +27,10 @@ class AIEngine;
 class AIDataBuffer;
 class AIProcessHandler;
 
+/**
+ * @class AIModel
+ * @brief Class for performing operations on an AI Model.
+ */
 class AIModel
 {
 public:
@@ -95,6 +99,19 @@ public:
 	 */
 	AIFW_RESULT getRawData(float *data, uint16_t count);
 
+	/**
+	 * @brief Clears sensor data stored stored in model's buffer
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clearRawData(void);
+
+	/**
+	 * @brief Clears sensor data stored stored in model's buffer
+	 * @param [IN] offset: Offset of row to start deletion.
+	 * @param [IN] count: Count of rows to delete.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clearRawData(uint16_t offset, uint16_t count);
 private:
 	/**
 	 * @brief It constructs AIDataBuffer object and initializes it.

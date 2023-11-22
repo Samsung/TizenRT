@@ -27,6 +27,10 @@
 
 namespace aifw {
 
+/**
+ * @class AIEngine
+ * @brief Interface class for AI operations.
+ */
 class AIEngine
 {
 public:

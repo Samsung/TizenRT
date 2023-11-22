@@ -30,6 +30,10 @@
 
 namespace aifw {
 
+/**
+ * @class AIModelService
+ * @brief AIModelService class uses TizenRT software timer to invoke data request at a set interval.
+ */
 class AIModelService
 {
 public:
@@ -86,6 +90,20 @@ public:
 	 * @return: AIFW_RESULT enum object.
 	 */
 	AIFW_RESULT prepare(void);
+
+	/**
+	 * @brief Clears sensor data associated with all models in model set.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clearData(void);
+
+	/**
+	 * @brief Clears specific sensor data rows associated with all models in model set.
+	 * @param [IN] offset: Offset of row to start deletion.
+	 * @param [IN] count: Count of rows to delete.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT clearData(uint16_t offset, uint16_t count);
 
 	/**
 	 * @brief Gives raw data collection callback.

@@ -45,6 +45,12 @@ config AIFW_LOGI
 	---help---
 		Enables AIFW Information Logs
 
+config AIFW_LOGD
+	bool "AIFW Debug Logs"
+	default n
+	---help---
+		Enables AIFW Debug Logs
+
 config AIFW_LOGV
 	bool "AIFW Verbose Logs"
 	default n

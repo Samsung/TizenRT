@@ -31,6 +31,10 @@
 #include "aifw/aifw.h"
 #include "aifw/aifw_csv_reader.h"
 
+/**
+ * @struct _CSVHandle_s
+ * @brief This structure defines necessary fields of a CSV required in read operation.
+*/
 typedef struct _CSVHandle_s {
     FILE *fileHandle;                           // File Handler of CSV
     char *columnBuffer;                         // Char buffer to store one CSV column value
