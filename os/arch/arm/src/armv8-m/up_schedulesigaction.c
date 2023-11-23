@@ -191,9 +191,7 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #ifdef CONFIG_BUILD_PROTECTED
 				current_regs[REG_LR] = EXC_RETURN_PRIVTHR;
 #endif
-				if (current_regs[REG_EXC_RETURN] == EXC_RETURN_HANDLER) {
-					current_regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
-				}
+				current_regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
 
 				current_regs[REG_XPSR] = ARMV8M_XPSR_T;
 				/* And make sure that the saved context in the TCB is the same
