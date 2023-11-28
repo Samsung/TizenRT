@@ -185,6 +185,14 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	}
 #endif
 
+#if defined(CONFIG_ELF_CACHE_READ)
+	ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen);
+	if (ret != OK) {
+		berr("Failed to init cache support: %d\n", ret);
+		return ret;
+	}
+#endif
+
 	/* Read the ELF ehdr from offset 0 */
 	ret = elf_read(loadinfo, (FAR uint8_t *)&loadinfo->ehdr, sizeof(Elf32_Ehdr), 0);
 	if (ret < 0) {

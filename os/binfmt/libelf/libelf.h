@@ -176,7 +176,7 @@ int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo);
  *
  ****************************************************************************/
 
-int elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo);
+void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo);
 
 /****************************************************************************
  * Name: elf_readsym

@@ -113,6 +113,7 @@ int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
 		berr("ERROR: Failed to load string table into memory\n");
 		kmm_free((void *)loadinfo->strtab);
 		loadinfo->strtab = (uintptr_t)NULL;
+		return ret;
 	}
 
 	return ret;
@@ -136,8 +137,7 @@ int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
 
 int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 {
-	int ret = OK;
-	FAR Elf32_Shdr *strtab = &loadinfo->shdr[loadinfo->strtabidx];
+	int ret;
 
 	/* Get the file offset to the string that is the name of the symbol.  The
 	 * st_name member holds an offset into the file's symbol string table.
@@ -148,18 +148,23 @@ int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 		return -ESRCH;
 	}
 
-	if (sym->st_name >= strtab->sh_size) {
+	if (!loadinfo->strtab) {
+		ret = elf_readstrtab(loadinfo);
+
+		if (ret != OK) {
+			berr("Error reading str table\n");
+			return ret;
+		}
+	}
+
+	if (sym->st_name >= loadinfo->shdr[loadinfo->strtabidx].sh_size) {
 		berr("At end of strtab\n");
 		return -EINVAL;
 	}
 
-	if (loadinfo->strtab) {
-		loadinfo->iobuffer = (uint8_t *)(loadinfo->strtab + sym->st_name);
-	} else {
-		ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->iobuffer, loadinfo->buflen, strtab->sh_offset + sym->st_name);
-	}
+	loadinfo->iobuffer = (uint8_t *)(loadinfo->strtab + sym->st_name);
 
-	return ret;
+	return OK;
 }
 
 /****************************************************************************
@@ -208,27 +213,20 @@ int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo)
  *   loadinfo - Load state information
  *
  ****************************************************************************/
-int elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
+void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
 {
-	int ret = OK;
 	FAR Elf32_Shdr *symtab = &loadinfo->shdr[loadinfo->symtabidx];
 
 	loadinfo->symtab = (uintptr_t)kmm_malloc(symtab->sh_size);
 
 	if (!loadinfo->symtab) {
 		berr("ERROR: Failed to allocate space for sym table. Size = %u\n", symtab->sh_size);
-		return -ENOMEM;
+		return;
 	}
 
-	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->symtab, symtab->sh_size, symtab->sh_offset);
-
-	if (ret != OK) {
+	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
 		berr("ERROR: Failed to load symbol table into memory\n");
-		kmm_free((void *)loadinfo->symtab);
-		loadinfo->symtab = (uintptr_t)NULL;
 	}
-
-	return ret;
 }
 
 /****************************************************************************
