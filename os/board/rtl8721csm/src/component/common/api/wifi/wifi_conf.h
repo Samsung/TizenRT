@@ -487,6 +487,14 @@ int wifi_set_mode(rtw_mode_t mode);
 int wifi_off_fastly(void);
 
 /**
+ * @brief  Specify wpa mode for wifi connection.
+ * @param[in] wpa_mode: The desired wpa mode. It is defined as enum rtw_wpa_mode.
+ * @return  RTW_SUCCESS if setting wpa mode successful.
+ * @return  RTW_ERROR otherwise.
+ */
+int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
+
+/**
  * @brief  Set IPS/LPS mode.
  * @param[in] ips_mode: The desired IPS mode. It becomes effective when wlan enter ips.\n
  *		@ref ips_mode is inactive power save mode. Wi-Fi automatically turns RF off if it is not associated to AP. Set 1 to enable inactive power save mode.

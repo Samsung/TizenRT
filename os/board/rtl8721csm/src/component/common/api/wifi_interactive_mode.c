@@ -451,6 +451,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 		break;
 	case TRWIFI_AUTH_WPA2_PSK:
 		security_type = RTW_SECURITY_WPA2_AES_PSK;
+		if (wifi_set_wpa_mode(WPA2_ONLY_MODE) != 0) {
+			RTW_API_INFO("\n\rFailed to set wpa mode!\r\n");
+		}
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
@@ -458,6 +461,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 		break;
 	case TRWIFI_AUTH_WPA3_PSK:
 		security_type = RTW_SECURITY_WPA3_AES_PSK;
+		if (wifi_set_wpa_mode(WPA3_ONLY_MODE) != 0) {
+			RTW_API_INFO("\n\rFailed to set wpa mode!\r\n");
+		}
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
 		password_len = ap_connect_config->passphrase_length;
@@ -468,6 +474,9 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 			security_type = RTW_SECURITY_WPA_AES_PSK;
 		} else {
 			security_type = RTW_SECURITY_WPA_TKIP_PSK;
+		}
+		if (wifi_set_wpa_mode(WPA_ONLY_MODE) != 0) {
+			RTW_API_INFO("\n\rFailed to set wpa mode!\r\n");
 		}
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);

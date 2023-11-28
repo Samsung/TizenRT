@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version lib_wlan_ver_926035a0bc35ce10b07360c17449e0dafcfea290_2023/11/14-07:40:41 ==
+1.	Add feature to connect to mixed security mode AP based on security type indicated by user 
+
 == version lib_wlan_ver_86d8cdd6570df0017ad857d4c03703651fd927bf_2023/10/18-20:09:56 ==
 1.	Add report join status after wpa3 sae auth fail
 
