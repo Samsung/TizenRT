@@ -97,55 +97,24 @@ static int g_num_lib_syms;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: elf_enable_caching
- *
- * Description:
- *   Enable caching for large tables during relocation.
- *   This API is to be called only if we are not able to allocate the complete
- *   table (symtab, reltab, strtab) due to memory limitation.
- *
- *   Even if there is a failure to allocate cache, we can still try
- *   to load directly from the flash or file system. This might take
- *   too much time depending on binary size and number of relocations.
- *
- *
- ****************************************************************************/
-static inline void elf_enable_caching(FAR struct elf_loadinfo_s *loadinfo) {
-#if defined(CONFIG_ELF_CACHE_READ)
-	if (elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen) != OK) {
-		berr("Failed to init cache support\n");
-	} else {
-		loadinfo->cached_read = true;
-	}
-#endif
-}
-
-/****************************************************************************
  * Name: elf_readreltab
  *
  * Description:
  *   Read the relocation table into memory.
  *
  ****************************************************************************/
-static inline int elf_readreltab(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Shdr *relsec)
+static inline void elf_readreltab(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Shdr *relsec)
 {
-	int ret = OK;
 	loadinfo->reltab = (uintptr_t)kmm_malloc(relsec->sh_size);
 
 	if (!loadinfo->reltab) {
 		berr("ERROR: Failed to allocate space for relocation table. Size = %u\n", relsec->sh_size);
-		return -ENOMEM;
+		return;
 	}
 
-	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->reltab, relsec->sh_size, relsec->sh_offset);
-
-	if (ret != OK) {
+	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->reltab, relsec->sh_size, relsec->sh_offset) < 0) {
 		berr("ERROR: Failed to read relocation table into memory\n");
-		kmm_free((void *)loadinfo->reltab);
-		loadinfo->reltab = (uintptr_t)NULL;
 	}
-
-	return ret;
 }
 
 
@@ -201,9 +170,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 	int i;
 
 	/* Read the relocation table into memory */
-	if (!loadinfo->cached_read && elf_readreltab(loadinfo, relsec) == -ENOMEM) {
-		elf_enable_caching(loadinfo);
-	}
+	elf_readreltab(loadinfo, relsec);
 
 	/* Examine each relocation in the section.  'relsec' is the section
 	 * containing the relations.  'dstsec' is the section containing the data
@@ -411,16 +378,11 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
 	}
 
 	/* Read the symbol table into memory */
-	if (!loadinfo->cached_read && elf_readsymtab(loadinfo) == -ENOMEM) {
-		elf_enable_caching(loadinfo);
-	}
-
-
-	if (!loadinfo->cached_read && elf_readstrtab(loadinfo) == -ENOMEM) {
-		elf_enable_caching(loadinfo);
-	}
+	elf_readsymtab(loadinfo);
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
+	elf_readstrtab(loadinfo);
+
 	if (loadinfo->binp->islibrary) {
 		ret = export_library_symtab(loadinfo);
 		if (ret < 0) {

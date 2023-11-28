@@ -131,8 +131,6 @@ struct elf_loadinfo_s {
 	uint16_t buflen;			/* size of iobuffer[] */
 
 	struct binary_s *binp;			/* Back pointer to binary object */
-
-	bool cached_read;			/* Whether to use caching while loading */
 };
 
 #ifdef CONFIG_APP_BINARY_SEPARATION

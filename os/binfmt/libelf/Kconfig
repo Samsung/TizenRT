@@ -58,7 +58,7 @@ config ELF_EXCLUDE_SYMBOLS
 
 config ELF_CACHE_READ
         bool "ELF cache read support"
-        default y
+        default n
         depends on BINFMT_ENABLE
         ---help---
 		Enabling this config would increase the elf read performance by

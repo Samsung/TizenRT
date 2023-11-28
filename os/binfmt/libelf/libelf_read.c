@@ -140,7 +140,7 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 	while (readsize > 0) {
 #if defined(CONFIG_ELF_CACHE_READ)
 		/* Cache only if readsize request <= cache block size */
-		if (loadinfo->cached_read && readsize <= CONFIG_ELF_CACHE_BLOCK_SIZE) {
+		if (readsize <= CONFIG_ELF_CACHE_BLOCK_SIZE) {
 			nbytes = elf_cache_read(loadinfo->filfd, loadinfo->offset, buffer, readsize, offset - loadinfo->offset);
 		} else
 #endif

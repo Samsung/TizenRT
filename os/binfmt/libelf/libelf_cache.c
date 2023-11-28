@@ -440,11 +440,6 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen)
 {
 	int ret = OK;
 
-	if (blockcache) {
-		/* Cache has already been initialized */
-		return ret;
-	}
-
 	binfo("filfd: %d offset: %u filelen: %d\n", filfd, offset, filelen);
 
 	/* Initialize the ELF params */
@@ -485,14 +480,8 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen)
 
 		if (!blockcache[i].out_buffer) {
 			berr("Failed kmm_malloc for blockcache's out_buffer\n");
-			if (i < 2) {
-				/* We need to have minimum 2 cache blocks for caching to work */
-				elf_cache_uninit();
-				return -ENOMEM;
-			}
-			berr("Fallback to lower cache block count of %d blocks instead of %d blocks\n", i, number_blocks_caching);
-			number_blocks_caching = i;
-			break;
+			elf_cache_uninit();
+			return -ENOMEM;
 		}
 
 		blockcache[i].block_number = -1;
