@@ -1037,7 +1037,7 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.region_size = 0x400000;
 #endif
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
+	mpu_cfg.ap = MPU_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
