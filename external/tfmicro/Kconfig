@@ -10,3 +10,12 @@ config EXTERNAL_TFMICRO
 	select HAVE_CXXINITIALIZE
 	---help---
 		Enables the Tensorflow lite for Microcontroller
+
+if EXTERNAL_TFMICRO
+config TFLM_MEM_POOL_SIZE
+	int "Memory size for each model"
+	default 8192
+	---help---
+		Every model need its own memory pool. This value is used for it.
+endif #if EXTERNAL_TFMICRO
+

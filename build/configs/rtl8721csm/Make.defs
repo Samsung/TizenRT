@@ -181,6 +181,10 @@ CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
 CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
 endif
 
+ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_nn
+endif
+
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
   CXXFLAGS += -fexceptions
 else
