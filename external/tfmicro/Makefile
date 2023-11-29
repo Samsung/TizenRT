@@ -50,15 +50,38 @@ CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/testing/ -name "*.cc")
 CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/tflite_bridge/ -name "*.cc")
 
 #kernel files
+# Enable this line to enable compile of all .cc files.
+# CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/micro/kernels/ -maxdepth 1 -name "*.cc")
+
 CXXSRCS += ./tensorflow/lite/micro/kernels/activations.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/activations_common.cc
-CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected_common.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/kernel_util.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/logistic.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/logistic_common.cc
-CXXSRCS += ./tensorflow/lite/micro/kernels/softmax.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/softmax_common.cc
+
+ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+CXXFLAGS += -DCMSIS_NN
+CFLAGS += -DCMSIS_NN
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/add.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/conv.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/depthwise_conv.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/fully_connected.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/mul.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/pooling.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/softmax.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/svdf.cc
+else
+# CXXSRCS += ./tensorflow/lite/micro/kernels/add.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/conv.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/depthwise_conv.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/mul.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/pooling.cc
+CXXSRCS += ./tensorflow/lite/micro/kernels/softmax.cc
+# CXXSRCS += ./tensorflow/lite/micro/kernels/svdf.cc
+endif #if CONFIG_AMEBAD_CMSIS_NN
 
 CFLAGS += -Wno-maybe-uninitialized
 CFLAGS += -Wno-missing-field-initializers
