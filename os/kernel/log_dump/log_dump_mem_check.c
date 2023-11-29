@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,54 @@
  *
  ****************************************************************************/
 
-#ifndef __LOG_DUMP_INTERNAL_H
-#define __LOG_DUMP_INTERNAL_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-/****************************************************************************
- * Pre-Processor Definitions
- ****************************************************************************/
 
-/* Log Dump Thread information */
-#define LOG_DUMP_NAME        "log_dump"		/* Log dump thread name */
+#include "log_dump/log_dump.h"
+
+#include <tinyara/mm/mm.h>
 
 /****************************************************************************
- * Public Types
+ * Pre-processor Definitions
  ****************************************************************************/
 /****************************************************************************
- * Public Data
+ * Private Type Declarations
+ ****************************************************************************/
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+/****************************************************************************
+ * Private Functions
  ****************************************************************************/
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/* Functions contained in log_dump_save.c ***********************************/
-int log_dump_save(char ch);
+void log_dump_mem_check(size_t max_size)
+{
+	/* If kernel heap is locked, then we cannot perform any
+		* mem free opeartions. So we just return here. The mem
+		* free will be done when the kernel heap is released
+		*/
+	if (IS_KMM_LOCKED()) {
+		return;
+	}
+		
 
-/* Functions contained in log_dump_manager.c ***********************************/
-int log_dump_manager(int argc, char *argv[]);
+	if (g_comp_queue.size_of_chunks > max_size) {
+		/* remove extra chunks from start */
+		size_t extra_chunk_size = g_comp_queue.size_of_chunks - max_size;
+		int extra_chunks_count = extra_chunk_size / LOG_CHUNK_SIZE;
+		log_dump_chunk_t *next_chunk;
 
-#endif		/* __LOG_DUMP_INTERNAL_H */
+		for (int i = 0; i < extra_chunks_count; i++) {
+			next_chunk = comp_chunk_pop();
+			kmm_free(next_chunk);
+		}
+	}
+}
+

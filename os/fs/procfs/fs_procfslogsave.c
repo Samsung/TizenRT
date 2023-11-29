@@ -41,7 +41,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
-#include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
@@ -120,10 +119,6 @@ static int logsave_open(FAR struct file *filep, FAR const char *relpath, int ofl
 {
 	FAR struct logsave_file_s *attr = (struct logsave_file_s *)kmm_zalloc(sizeof(struct logsave_file_s));
 	filep->f_priv = (FAR void *)attr;
-	if (log_dump_read_wake() != OK) {
-		fdbg("ERROR: log dump read wake fail\n");
-		return ERROR;
-	}
 	fvdbg("Open '%s'\n", relpath);
 	return OK;
 }
@@ -152,7 +147,7 @@ static ssize_t logsave_read(FAR struct file *filep, FAR char *buffer, size_t buf
 
 static ssize_t logsave_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-	return log_dump_set(buffer, buflen);
+	return log_dump_set_mode(buffer, buflen);
 }
 
 /****************************************************************************

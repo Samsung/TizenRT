@@ -18,7 +18,9 @@
 
 ifeq ($(CONFIG_LOG_DUMP),y)
 
-CSRCS += log_dump.c
+CSRCS += log_dump_append.c log_dump_compress.c log_dump_initialize.c
+CSRCS += log_dump_manager.c log_dump_mem_check.c log_dump_save.c
+CSRCS += log_dump_set_mode.c log_dump_read.c
 
 DEPPATH += --dep-path log_dump
 VPATH += :log_dump

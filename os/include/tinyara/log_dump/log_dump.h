@@ -19,20 +19,21 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 /********************************************************************************
  * Definitions
  ********************************************************************************/
 
-/* Log Dump Thread information */
-#define LOG_DUMP_NAME        "log_dump"		/* Log dump thread name */
-#define LOG_DUMP_STACKSIZE   16384		/* Log dump thread stack size */
-#define LOG_DUMP_PRIORITY    100		/* Log dump thread priority */
-
 #define LOGDUMP_SAVE_START	"1"
 #define LOGDUMP_SAVE_STOP	"2"
+
+#define LOG_DUMP_OK		0	/* Used for successful return check */
+#define LOG_DUMP_OPT_FAIL	-2
+#define LOG_DUMP_FAIL	-99
 
 /********************************************************************************
  * Public Types
