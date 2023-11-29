@@ -54,6 +54,9 @@ def check_binary_size(bin_type, part_size):
 
     # Compare the partition size and its binary size
     used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
+
+    global FAIL_TO_BUILD
+
     if bin_type == "BOOTPARAM" :
         if PARTITION_SIZE == BINARY_SIZE :
             check_result = "PASS"
@@ -61,7 +64,6 @@ def check_binary_size(bin_type, part_size):
         else :
             fail_type_list.append(bin_type)
             os.remove(output_path)
-            global FAIL_TO_BUILD
             FAIL_TO_BUILD = True
             check_result = "FAIL"
             result_mark = ""
@@ -69,7 +71,6 @@ def check_binary_size(bin_type, part_size):
         if PARTITION_SIZE < int(BINARY_SIZE) :
             fail_type_list.append(bin_type)
             os.remove(output_path)
-            global FAIL_TO_BUILD
             FAIL_TO_BUILD = True
             check_result = "FAIL"
             result_mark = ""
