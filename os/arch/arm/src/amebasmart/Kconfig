@@ -76,7 +76,7 @@ config AMEBASMART_SPI0
 	default n
 config AMEBASMART_SPI1
 	bool "SPI1"
-	default n
+	default y
 
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
