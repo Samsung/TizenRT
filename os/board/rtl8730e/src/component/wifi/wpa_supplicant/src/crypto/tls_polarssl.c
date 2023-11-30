@@ -81,14 +81,22 @@ void my_debug(void *ctx, int level, const char *str)
 }
 
 #include <mbedtls/ssl.h>
+#include <mbedtls/debug.h>
+#include <mbedtls/config.h>
+
+#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03000000)
+#include <mbedtls/net_sockets.h>
+#include <ssl_misc.h>
+extern int max_buf_bio_in_size;
+extern int max_buf_bio_out_size;
+#elif (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 #include <mbedtls/net.h>
 #include <mbedtls/ssl_internal.h>
-#include <mbedtls/debug.h>
-
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 extern int max_buf_bio_in_size;
 extern int max_buf_bio_out_size;
 #else
+#include <mbedtls/net.h>
+#include <mbedtls/ssl_internal.h>
 extern int max_buf_bio_size;
 #endif
 
@@ -243,36 +251,18 @@ void buf_clear(void *ctx, int isIn)
 #endif
 }
 
-static void *my_calloc(size_t nelements, size_t elementSize)
-{
-	size_t size;
-	void *ptr = NULL;
-
-	size = nelements * elementSize;
-	ptr = pvPortMalloc(size);
-
-	if (ptr) {
-		memset(ptr, 0, size);
-	}
-
-	return ptr;
-}
-
 struct eap_tls {
 	void *ssl;
 	void *conf;
 	void *fd;
 };
 
-extern int mbedtls_platform_set_calloc_free(void *(*calloc_func)(size_t, size_t), void (*free_func)(void *));
 void *tls_init(const struct tls_config *conf)
 {
 	/* To avoid gcc warnings */
 	(void) conf;
 
 	struct eap_tls *tls_context;
-
-	mbedtls_platform_set_calloc_free(my_calloc, vPortFree);
 
 	tls_context = os_zalloc(sizeof(struct eap_tls));
 	if (tls_context == NULL) {

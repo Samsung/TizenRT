@@ -748,10 +748,10 @@ static void print_scan_result(rtw_scan_result_t *record)
 				 (record->security == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
 				 (record->security == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
 				 (record->security == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
-				 (record->security == RTW_SECURITY_WPA_WPA2_MIXED) ? "WPA/WPA2 Mixed" :
+				 (record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
 				 (record->security == RTW_SECURITY_WPA2_AES_CMAC) ? "WPA2 AES CMAC" :
-				 (record->security == RTW_SECURITY_WPA2_ENTERPRISE) ? "WPA2 802.1X" :
-				 (record->security == RTW_SECURITY_WPA_WPA2_ENTERPRISE) ? "WPA/WPA2 802.1X" :
+				 (record->security == RTW_SECURITY_WPA2_AES_ENTERPRISE) ? "WPA2 802.1X" :
+				 (record->security == RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE) ? "WPA/WPA2 802.1X" :
 				 (record->security == RTW_SECURITY_WPS_OPEN) ? "WPS Open" :
 				 (record->security == RTW_SECURITY_WPS_SECURE) ? "WPS AES" :
 				 (record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3 AES" :
@@ -927,10 +927,10 @@ static void cmd_debug(int argc, char **argv)
 								(ap_info.security_type == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
 								(ap_info.security_type == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
 								(ap_info.security_type == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
-								(ap_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED) ? "WPA/WPA2 Mixed" :
+								(ap_info.security_type == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 Mixed" :
 								(ap_info.security_type == RTW_SECURITY_WPA2_AES_CMAC) ? "WPA2 AES CMAC" :
-								(ap_info.security_type == RTW_SECURITY_WPA2_ENTERPRISE) ? "WPA2 802.1X" :
-								(ap_info.security_type == RTW_SECURITY_WPA_WPA2_ENTERPRISE) ? "WPA/WPA2 802.1X" :
+								(ap_info.security_type == RTW_SECURITY_WPA2_AES_ENTERPRISE) ? "WPA2 802.1X" :
+								(ap_info.security_type == RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE) ? "WPA/WPA2 802.1X" :
 								(ap_info.security_type == RTW_SECURITY_WPS_OPEN) ? "WPS Open" :
 								(ap_info.security_type == RTW_SECURITY_WPS_SECURE) ? "WPS AES" :
 								(ap_info.security_type == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3 AES" :

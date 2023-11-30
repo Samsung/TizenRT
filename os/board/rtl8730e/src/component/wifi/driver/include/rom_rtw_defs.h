@@ -329,14 +329,6 @@ enum VCS_TYPE {
 #define WAIT_FOR_BCN_TO_MIN		(6000)
 #define WAIT_FOR_BCN_TO_MAX		(20000)
 
-#define PMK_EXPANSION_CONST				"Pairwise key expansion"
-#define PMK_EXPANSION_CONST_SIZE		22
-#define GMK_EXPANSION_CONST				"Group key expansion"
-#define GMK_EXPANSION_CONST_SIZE		19
-#define IGTK_EXPANSION_CONST				"IGTK key expansion"
-#define RANDOM_EXPANSION_CONST			"Init Counter"
-#define RANDOM_EXPANSION_CONST_SIZE		12
-
 #define A_SHA_DIGEST_LEN		20
 #define INFO_ELEMENT_SIZE       128
 
@@ -489,6 +481,7 @@ enum rf_type {
 enum _IFACE_TYPE {
 	IFACE_PORT0, //mapping to port0 for C/D series chips
 	IFACE_PORT1, //mapping to port1 for C/D series chip
+	IFACE_PORT2,
 	MAX_IFACE_PORT,
 };
 
@@ -506,6 +499,7 @@ typedef enum _WIRELESS_MODE {
 } WIRELESS_MODE;
 
 #define _HW_MSR_STATE_NOLINK_		0x00
+#define _HW_MSR_STATE_NAN_		0x01
 #define _HW_MSR_STATE_STATION_ 		0x02
 #define _HW_MSR_STATE_AP_		0x03
 #define _HW_MSR_STATE_MONITOR_		0x04
@@ -513,6 +507,7 @@ typedef enum _WIRELESS_MODE {
 enum _hw_port {
 	HW_PORT0,
 	HW_PORT1,
+	HW_PORT2,
 };
 
 #define CHANNEL_MAX_NUMBER						14	// 14 is the max channel number

@@ -33,6 +33,10 @@
 #define _WEAK           __attribute__ ((weak))
 #endif
 
+/** @defgroup WIFI_Exported_Constants WIFI Exported Constants
+  * @{
+  */
+
 /** @defgroup WLAN_Defs
    *@{
    */
@@ -60,12 +64,20 @@
 #define SOFTAP_WLAN_INDEX	1
 #endif
 
+#ifndef NAN_WLAN_INDEX
+#define NAN_WLAN_INDEX	2
+#endif
+
 #ifndef STA_WLAN_NAME
 #define STA_WLAN_NAME	"wlan0"
 #endif
 
 #ifndef SOFTAP_WLAN_NAME
 #define SOFTAP_WLAN_NAME	"wlan1"
+#endif
+
+#ifndef NAN_WLAN_NAME
+#define NAN_WLAN_NAME	"wlan2"
 #endif
 
 #define IsSupported24G(band_type) ((band_type) & BAND_CAP_2G? _TRUE : _FALSE)
@@ -97,14 +109,19 @@
 #define is_zero_mac_addr(Addr)	((Addr[0] == 0x00) && (Addr[1] == 0x00) && (Addr[2] == 0x00) &&   \
                     (Addr[3] == 0x00) && (Addr[4] == 0x00) && (Addr[5] == 0x00))
 
+/**
+  * @}
+  */
+
+
+/** @defgroup Security_Defs
+   *@{
+   */
 #define AUTH_ALG_OPEN_SYSTEM	0x1
 #define AUTH_ALG_SHARED_KEY	0x2
 #define AUTH_ALG_SAE		0x8
 #define AUTH_ALG_LEAP		0x00000004
 
-/** @defgroup Security_Defs
-   *@{
-   */
 #define WEP_ENABLED		0x0001		/**< wep enable */
 #define TKIP_ENABLED		0x0002		/**< tkip enable */
 #define AES_ENABLED		0x0004		/**< aes enable */
@@ -116,6 +133,19 @@
 #define WPA2_SECURITY		0x00400000	/**< wpa2 */
 #define WPA3_SECURITY		0x00800000	/**< wpa3 */
 #define WPS_ENABLED		0x10000000	/**< wps  enable*/
+
+/*cipher suite from 802.11-2016 p884*/
+#define WIFI_CIPHER_SUITE_WEP_40			0x000FAC01
+#define WIFI_CIPHER_SUITE_TKIP				0x000FAC02
+#define WIFI_CIPHER_SUITE_CCMP_128		0x000FAC04
+#define WIFI_CIPHER_SUITE_WEP_104			0x000FAC05
+#define WIFI_CIPHER_SUITE_BIP_CMAC_128	0x000FAC06
+#define WIFI_CIPHER_SUITE_GCMP				0x000FAC08
+#define WIFI_CIPHER_SUITE_GCMP_256		0x000FAC09
+#define WIFI_CIPHER_SUITE_CCMP_256		0x000FAC0A
+#define WIFI_CIPHER_SUITE_BIP_GMAC_128	0x000FAC0B
+#define WIFI_CIPHER_SUITE_BIP_GMAC_256	0x000FAC0C
+#define WIFI_CIPHER_SUITE_BIP_CMAC_256	0x000FAC0D
 
 #define RTW_WPA2_MAX_PSK_LEN		(64)
 #define RTW_WPA3_MAX_PSK_LEN		(128)		/**< maxmum psk length */
@@ -131,6 +161,26 @@
 #define CONFIG_WIFI_CRITICAL_CODE_SECTION
 #endif
 
+#define RTW_SEND_AND_WAIT_ACK 				2
+#define RTW_SEND_BY_HIGH_RATE				4 // IEEE80211_OFDM_RATE_54MB
+#define RTW_NAV_BY_USER						8
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/** @defgroup WIFI_Exported_Types WIFI Exported Types
+* @{
+*/
+
+/** @addtogroup Enums
+   *@{
+   */
+
 /* struct iw_encode_ext ->alg */
 enum RTW_IW_ENC_ALG {
 	RTW_ENCODE_ALG_NONE = 0,
@@ -141,12 +191,7 @@ enum RTW_IW_ENC_ALG {
 	RTW_ENCODE_ALG_AES_CMAC //IGTK
 };
 
-/**
-  * @}wext_send_mgnt bit type
-  */
-#define RTW_SEND_AND_WAIT_ACK 				2
-#define RTW_SEND_BY_HIGH_RATE				4 // IEEE80211_OFDM_RATE_54MB
-#define RTW_NAV_BY_USER						8
+
 
 /* Modes of operation */
 enum RTK_IW_MODE {
@@ -404,28 +449,39 @@ typedef enum {
  *			AP mode support OPEN and WPA2.
  */
 typedef enum {
-	RTW_SECURITY_OPEN           = 0,                                                /**< Open security                           */
-	RTW_SECURITY_WEP_PSK        = WEP_ENABLED,                                      /**< WEP Security with open authentication   */
-	RTW_SECURITY_WEP_SHARED     = (WEP_ENABLED | SHARED_ENABLED),                   /**< WEP Security with shared authentication */
-	RTW_SECURITY_WPA_TKIP_PSK   = (WPA_SECURITY  | TKIP_ENABLED),                   /**< WPA Security with TKIP                  */
-	RTW_SECURITY_WPA_AES_PSK    = (WPA_SECURITY  | AES_ENABLED),                    /**< WPA Security with AES                   */
-	RTW_SECURITY_WPA2_AES_PSK   = (WPA2_SECURITY | AES_ENABLED),                    /**< WPA2 Security with AES                  */
-	RTW_SECURITY_WPA2_TKIP_PSK  = (WPA2_SECURITY | TKIP_ENABLED),                   /**< WPA2 Security with TKIP                 */
-	RTW_SECURITY_WPA2_MIXED_PSK = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED),     /**< WPA2 Security with AES & TKIP           */
-	RTW_SECURITY_WPA_WPA2_MIXED = (WPA_SECURITY  | WPA2_SECURITY),                  /**< WPA/WPA2 Security                       */
-	RTW_SECURITY_WPA2_AES_CMAC = (WPA2_SECURITY | AES_CMAC_ENABLED),                /**< WPA2 Security with AES and Management Frame Protection*/
-	RTW_SECURITY_WPA2_ENTERPRISE = (WPA2_SECURITY | ENTERPRISE_ENABLED),            /**< WPA2 Security with 802.1X authentication>*/
-	RTW_SECURITY_WPA_WPA2_ENTERPRISE = (WPA_SECURITY | WPA2_SECURITY | ENTERPRISE_ENABLED), /** <WPA/WPA2 Security with 802.1X authentication>*/
+	RTW_SECURITY_OPEN               = 0,                                                            /**< Open security                           */
+	RTW_SECURITY_WEP_PSK            = (WEP_ENABLED),                                                /**< WEP Security with open authentication   */
+	RTW_SECURITY_WEP_SHARED         = (WEP_ENABLED | SHARED_ENABLED),                               /**< WEP Security with shared authentication */
+	RTW_SECURITY_WPA_TKIP_PSK       = (WPA_SECURITY | TKIP_ENABLED),                                /**< WPA Security with TKIP                  */
+	RTW_SECURITY_WPA_AES_PSK        = (WPA_SECURITY | AES_ENABLED),                                 /**< WPA Security with AES                   */
+	RTW_SECURITY_WPA_MIXED_PSK      = (WPA_SECURITY | AES_ENABLED | TKIP_ENABLED),                  /**< WPA Security with AES & TKIP            */
+	RTW_SECURITY_WPA2_AES_PSK       = (WPA2_SECURITY | AES_ENABLED),                                /**< WPA2 Security with AES                  */
+	RTW_SECURITY_WPA2_TKIP_PSK      = (WPA2_SECURITY | TKIP_ENABLED),                               /**< WPA2 Security with TKIP                 */
+	RTW_SECURITY_WPA2_MIXED_PSK     = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED),                 /**< WPA2 Security with AES & TKIP           */
+	RTW_SECURITY_WPA_WPA2_TKIP_PSK  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED),                /**< WPA/WPA2 Security with TKIP             */
+	RTW_SECURITY_WPA_WPA2_AES_PSK   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED),                 /**< WPA/WPA2 Security with AES              */
+	RTW_SECURITY_WPA_WPA2_MIXED_PSK = (WPA_SECURITY  | WPA2_SECURITY | TKIP_ENABLED | AES_ENABLED), /**< WPA/WPA2 Security with AES & TKIP       */
+	RTW_SECURITY_WPA2_AES_CMAC      = (WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 Security with AES and Management Frame Protection */
 
-	RTW_SECURITY_WPS_OPEN       = WPS_ENABLED,                                      /**< WPS with open security                  */
-	RTW_SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                      /**< WPS with AES security                   */
+	RTW_SECURITY_WPA_TKIP_ENTERPRISE       = (WPA_SECURITY | TKIP_ENABLED | ENTERPRISE_ENABLED),                               /**< WPA Security with TKIP via 802.1X authentication            */
+	RTW_SECURITY_WPA_AES_ENTERPRISE        = (WPA_SECURITY | AES_ENABLED | ENTERPRISE_ENABLED),                                /**< WPA Security with AES via 802.1X authentication             */
+	RTW_SECURITY_WPA_MIXED_ENTERPRISE      = (WPA_SECURITY | AES_ENABLED | TKIP_ENABLED | ENTERPRISE_ENABLED),                 /**< WPA Security with AES & TKIP via 802.1X authentication      */
+	RTW_SECURITY_WPA2_TKIP_ENTERPRISE      = (WPA2_SECURITY | TKIP_ENABLED | ENTERPRISE_ENABLED),                              /**< WPA2 Security with TKI via 802.1X authenticationP           */
+	RTW_SECURITY_WPA2_AES_ENTERPRISE       = (WPA2_SECURITY | AES_ENABLED | ENTERPRISE_ENABLED),                               /**< WPA2 Security with AES via 802.1X authentication            */
+	RTW_SECURITY_WPA2_MIXED_ENTERPRISE     = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED | ENTERPRISE_ENABLED),                /**< WPA2 Security with AES & TKIP via 802.1X authentication     */
+	RTW_SECURITY_WPA_WPA2_TKIP_ENTERPRISE  = (WPA_SECURITY | WPA2_SECURITY | TKIP_ENABLED | ENTERPRISE_ENABLED),               /**< WPA/WPA2 Security with TKIP via 802.1X authentication       */
+	RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE   = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED | ENTERPRISE_ENABLED),                /**< WPA/WPA2 Security with AES via 802.1X authentication        */
+	RTW_SECURITY_WPA_WPA2_MIXED_ENTERPRISE = (WPA_SECURITY | WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED | ENTERPRISE_ENABLED), /**< WPA/WPA2 Security with AES & TKIP via 802.1X authentication */
 
-	RTW_SECURITY_WPA3_AES_PSK 	= (WPA3_SECURITY | AES_ENABLED),                    /**< WPA3-SAE with AES security              */
-	RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED),   /**< WPA3-SAE/WPA2 with AES security         */
+	RTW_SECURITY_WPS_OPEN        = (WPS_ENABLED),                                 /**< WPS with open security                  */
+	RTW_SECURITY_WPS_SECURE      = (WPS_ENABLED | AES_ENABLED),                   /**< WPS with AES security                   */
 
-	RTW_SECURITY_UNKNOWN        = -1,                                               /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
+	RTW_SECURITY_WPA3_AES_PSK    = (WPA3_SECURITY | AES_ENABLED),                 /**< WPA3-SAE with AES security              */
+	RTW_SECURITY_WPA2_WPA3_MIXED = (WPA2_SECURITY | WPA3_SECURITY | AES_ENABLED), /**< WPA3-SAE/WPA2 with AES security         */
+	RTW_SECURITY_WPA3_ENTERPRISE = (WPA3_SECURITY | ENTERPRISE_ENABLED),          /**< WPA3 Security via 802.1X authentication */
+	RTW_SECURITY_UNKNOWN         = -1,                                            /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
 
-	RTW_SECURITY_FORCE_32_BIT   = 0x7fffffff                                        /**< Exists only to force rtw_security_t type to 32 bits */
+	RTW_SECURITY_FORCE_32_BIT    = 0x7fffffff                                     /**< Exists only to force rtw_security_t type to 32 bits */
 } rtw_security_t;
 
 /**
@@ -457,6 +513,7 @@ enum WIFI_STATUS_CODE {
 	_STATS_UNABLE_HANDLE_STA_	= 17,
 	_STATS_RATE_FAIL_			= 18,
 	_STATS_REFUSED_TEMPORARILY_ = 30,
+	_STATS_INVALID_PMKID_		= 53,
 	_STATS_SAE_HASH_TO_ELEMENT_ = 126,
 };
 
@@ -606,7 +663,7 @@ typedef enum {
 #define	PACKET_EAPOL			3
 
 /**
-  * @brief The enumeration lists the BIT 7 HT Rate.
+  * @brief csi enable or config
   */
 typedef enum {
 	CSI_ACT_EN,    /**< enable or disable csi func */
@@ -636,13 +693,31 @@ typedef enum {
 } rtw_csi_mode;
 
 /**
-  * @brief The enumeration lists the BIT 7 HT Rate.
+  * @brief csi accuracy.
   */
 typedef enum {
 	CSI_ACCU_1BYTE = 0, /**< CSI_ACCU_1BYTE: S(8,4) */
 	CSI_ACCU_2BYTES,  /**< CSI_ACCU_2BYTE: S(16,12) */
 	CSI_ACCU_MAX
 } rtw_csi_accuracy;
+
+/**
+  * @brief csi alg_opt.
+  */
+typedef enum {
+	CSI_ALG_LS = 0,
+	CSI_ALG_SMOTHING,
+	CSI_ALG_MAX
+} rtw_csi_alg_opt;
+
+/**
+  * @brief csi ch_opt.
+  */
+typedef enum {
+	CSI_CH_LEGACY = 0, /**< legacy part(L-LTF) channel estmation result */
+	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
+	CSI_CH_MAX
+} rtw_csi_ch_opt;
 
 /**
   * @brief The enumeration lists the power status.
@@ -753,10 +828,11 @@ typedef enum {
   *			including station and AP mode.
   */
 typedef enum {
-	RTW_MODE_NONE = 0,  ///<none
-	RTW_MODE_STA,          ///<sta mode
-	RTW_MODE_AP,           ///<ap mode
-	RTW_MODE_STA_AP,   ///< ap and sta mode
+	RTW_MODE_NONE	= 0,		///<none
+	RTW_MODE_STA		= BIT0,	///<sta mode
+	RTW_MODE_AP		= BIT1,	///<ap mode
+	RTW_MODE_NAN		= BIT2,	///<nan mode
+	RTW_MODE_MAX
 } rtw_mode_t;
 
 /**
@@ -833,12 +909,28 @@ typedef enum {
 	WIFI_EVENT_WPA_WPS_FINISH,
 	WIFI_EVENT_WPA_EAPOL_START,
 	WIFI_EVENT_WPA_EAPOL_RECVD,
+	WIFI_EVENT_WPA_STA_4WAY_START,
+	WIFI_EVENT_WPA_AP_4WAY_START,
+	WIFI_EVENT_WPA_STA_4WAY_RECV,
+	WIFI_EVENT_WPA_AP_4WAY_RECV,
+	WIFI_EVENT_WPA_SET_PSK_INFO,
 
 	/* csi rx done event */
 	WIFI_EVENT_CSI_DONE,
 
+	/* flash event */
+	WIFI_EVENT_DEAUTH_INFO_FLASH,
+#if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
+	WIFI_EVENT_RFK_NOTIFY,
+	WIFI_EVENT_CHANNEL_NOT_SUPPORTED,
+#endif
 	WIFI_EVENT_MAX,
 } rtw_event_indicate_t;
+
+enum flash_operation {
+	FLASH_READ = 0,
+	FLASH_WRITE,
+};
 
 /**
   * The enumeration lists the power save status.
@@ -848,6 +940,13 @@ typedef enum {
 	LPS_PG,             ///<pg
 	LPS_LEVEL_MAX,
 } lps_level;
+
+typedef enum {
+	IPS_WIFI_OFF = 0,
+	IPS_WIFI_PG,
+	IPS_WIFI_CG,
+	IPS_LEVEL_MAX,
+} ips_level;
 
 enum gen_ie_type {
 	P2PWPS_PROBE_REQ_IE = 0,
@@ -866,6 +965,22 @@ typedef enum CUSTOM_IE_TYPE {
 	ASSOC_REQ = BIT(3),
 } rtw_custom_ie_type_t;
 #endif /* _CUSTOM_IE_TYPE_ */
+
+#ifdef CONFIG_WMMPS_STA
+enum UAPSD_MAX_SP {
+	NO_LIMIT,
+	TWO_MSDU,
+	FOUR_MSDU,
+	SIX_MSDU
+};
+#endif
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
 
 #include "rtw_ethernet.h"
 #include "rtw_80211spec_macro.h"

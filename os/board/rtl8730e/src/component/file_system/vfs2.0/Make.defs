@@ -49,9 +49,7 @@
 #
 ############################################################################
 
-CSRCS += wifi_conf_promisc.c\
-	 wifi_promisc_inic_ipc.c
-	 
-DEPPATH += --dep-path component/wifi/promisc
-VPATH += :component/wifi/promisc
+CSRCS += vfs_littlefs.c
 
+DEPPATH += --dep-path component/file_system/vfs2.0
+VPATH += :component/file_system/vfs2.0

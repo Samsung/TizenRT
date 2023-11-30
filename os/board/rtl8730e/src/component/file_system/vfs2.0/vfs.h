@@ -105,6 +105,10 @@ typedef signed int blksize_t;
 typedef signed int blkcnt_t;
 #endif
 
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+typedef int nlink_t;
+#endif
+
 struct stat {
 	dev_t     st_dev;     /* ID of device containing file */
 	ino_t     st_ino;     /* inode number */

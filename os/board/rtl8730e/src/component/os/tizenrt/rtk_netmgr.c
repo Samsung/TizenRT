@@ -505,7 +505,7 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 		}
 	}
 
-	ap_channel = 0xffff;
+	ap_channel = 0;
 
 	rtw_mutex_get(&scanlistbusy);
 	if (scan_number) {
@@ -740,9 +740,9 @@ void print_scan_result(rtw_scan_result_t *record)
 				 (record->security == RTW_SECURITY_WPA2_AES_PSK) ? "WPA2 AES" :
 				 (record->security == RTW_SECURITY_WPA2_TKIP_PSK) ? "WPA2 TKIP" :
 				 (record->security == RTW_SECURITY_WPA2_MIXED_PSK) ? "WPA2 Mixed" :
-				 (record->security == RTW_SECURITY_WPA_WPA2_MIXED) ? "WPA/WPA2 AES" :
-				 (record->security == RTW_SECURITY_WPA2_ENTERPRISE) ? "WPA2 Enterprise" :
-				 (record->security == RTW_SECURITY_WPA_WPA2_ENTERPRISE) ? "WPA/WPA2 Enterprise" :
+				 (record->security == RTW_SECURITY_WPA_WPA2_MIXED_PSK) ? "WPA/WPA2 TKIP and AES" :
+				 (record->security == RTW_SECURITY_WPA2_AES_ENTERPRISE) ? "WPA2 Enterprise" :
+				 (record->security == RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE) ? "WPA/WPA2 Enterprise" :
 #ifdef CONFIG_SAE_SUPPORT
 				 (record->security == RTW_SECURITY_WPA3_AES_PSK) ? "WPA3-SAE AES" :
 #endif
@@ -798,16 +798,16 @@ rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_
 		case RTW_SECURITY_WPA2_MIXED_PSK:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA2_PSK;
 			break;
-		case RTW_SECURITY_WPA_WPA2_MIXED:
+		case RTW_SECURITY_WPA_WPA2_MIXED_PSK:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA_AND_WPA2_PSK;
 			break;
 		case RTW_SECURITY_WPA2_AES_CMAC:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA2_PSK;
 			break;
-		case RTW_SECURITY_WPA2_ENTERPRISE:
+		case RTW_SECURITY_WPA2_AES_ENTERPRISE:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA2_PSK_ENT;
 			break;
-		case RTW_SECURITY_WPA_WPA2_ENTERPRISE:
+		case RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE:
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT;
 			break;
 		case RTW_SECURITY_WPS_OPEN:
@@ -852,16 +852,16 @@ rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_
 		case RTW_SECURITY_WPA2_MIXED_PSK:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_TKIP_AND_AES;
 			break;
-		case RTW_SECURITY_WPA_WPA2_MIXED:
+		case RTW_SECURITY_WPA_WPA2_MIXED_PSK:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_TKIP_AND_AES;
 			break;
 		case RTW_SECURITY_WPA2_AES_CMAC:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_UNKNOWN;
 			break;
-		case RTW_SECURITY_WPA2_ENTERPRISE:
+		case RTW_SECURITY_WPA2_AES_ENTERPRISE:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES_ENT;
 			break;
-		case RTW_SECURITY_WPA_WPA2_ENTERPRISE:
+		case RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE:
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_AES_ENT;
 			break;
 		case RTW_SECURITY_WPS_OPEN:

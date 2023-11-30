@@ -49,7 +49,7 @@
 #
 ############################################################################
 
-CSRCS += rtw_timer.c
+CSRCS += kv.c
 
-DEPPATH += --dep-path component/wifi/driver/core
-VPATH += :component/wifi/driver/core
+DEPPATH += --dep-path component/file_system/kv
+VPATH += :component/file_system/kv

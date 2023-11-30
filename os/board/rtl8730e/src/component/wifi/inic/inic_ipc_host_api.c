@@ -21,12 +21,14 @@
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
 #define HOST_STACK_SIZE 2048
 #else
-#define HOST_STACK_SIZE 512
+#define HOST_STACK_SIZE 1024	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
 #endif
 /* ---------------------------- Global Variables ---------------------------- */
 _sema  g_host_inic_api_task_wake_sema = NULL;
 _sema  g_host_inic_api_message_send_sema = NULL;
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 struct task_struct inic_ipc_api_host_handler;
+#endif
 
 //todo:move to non-cache data section
 inic_ipc_host_request_message g_host_ipc_api_request_info __attribute__((aligned(64)));
@@ -42,10 +44,14 @@ extern p_wlan_autoreconnect_hdl_t p_wlan_autoreconnect_hdl;
 extern void eap_autoreconnect_hdl(u8 method_id);
 #endif
 extern int (*scan_ssid_result_hdl)(char *, int, char *, void *);
-extern void (*ipc_promisc_callback)(unsigned char *, unsigned int, void *);
 extern rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *);
 extern rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *);
 extern ap_channel_switch_callback_t p_ap_channel_switch_callback;
+
+extern void (*promisc_user_callback_ptr)(void *);
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
+#endif
 /* ---------------------------- Private Functions --------------------------- */
 static void _inic_ipc_api_host_scan_user_callback_handler(inic_ipc_dev_request_message *p_ipc_msg)
 {
@@ -76,12 +82,13 @@ static void _inic_ipc_api_host_autoreconnect_handler(inic_ipc_dev_request_messag
 	char *password = (char *)p_ipc_msg->param_buf[3];
 	int password_len = (int)p_ipc_msg->param_buf[4];
 	int key_id = (int)p_ipc_msg->param_buf[5];
+	char is_wps_trigger = (int)p_ipc_msg->param_buf[6];
 
 	DCache_Invalidate((u32)ssid, ssid_len);
 	DCache_Invalidate((u32)password, password_len);
 #if CONFIG_AUTO_RECONNECT
 	if (p_wlan_autoreconnect_hdl) {
-		p_wlan_autoreconnect_hdl(security_type, ssid, ssid_len, password, password_len, key_id);
+		p_wlan_autoreconnect_hdl(security_type, ssid, ssid_len, password, password_len, key_id, is_wps_trigger);
 	}
 #endif
 }
@@ -115,18 +122,6 @@ static void _inic_ipc_api_host_wifi_event_handler(inic_ipc_dev_request_message *
 	DCache_Invalidate((u32)buf, buf_len);
 
 	wifi_indication(event, buf, buf_len, flags);
-}
-
-static void _inic_ipc_api_host_wifi_promisc_handler(inic_ipc_dev_request_message *p_ipc_msg)
-{
-	unsigned char *buf = (unsigned char *)p_ipc_msg->param_buf[0];
-	unsigned int buf_len = p_ipc_msg->param_buf[1];
-	void *user_data = (void *)p_ipc_msg->param_buf[2];
-	DCache_Invalidate((u32)buf, buf_len);
-	DCache_Invalidate((u32)user_data, sizeof(ieee80211_frame_info_t));
-	if (ipc_promisc_callback) {
-		ipc_promisc_callback(buf, buf_len, user_data);
-	}
 }
 
 static void _inic_ipc_api_host_lwip_info_handler(inic_ipc_dev_request_message *p_ipc_msg)
@@ -173,7 +168,7 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 	/* To avoid gcc warnings */
 	(void) expected_idle_time;
 	(void) param;
-	u32 try_cnt = 5000;//wait 10ms
+	u32 try_cnt = 2500;//wait 5ms
 
 	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
 
@@ -201,12 +196,26 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 		}
 	}
 	if (try_cnt == 0) {
-		DBG_ERR("wowlan update ip address fail\n");
+		/* jira: https://jira.realtek.com/browse/RSWLANQC-1036 */
+		DBG_ERR("update ip address TO, Driver busy\n");
+		g_host_ipc_api_request_info.API_ID = IPC_API_WIFI_MSG_TO;
+		DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 		return _FAIL;
 	}
 	return _SUCCESS;
 }
 
+static void _inic_ipc_api_host_promisc_user_callback_handler(inic_ipc_dev_request_message *p_ipc_msg)
+{
+	struct rx_pkt_info *ppktinfo = (struct rx_pkt_info *)p_ipc_msg->param_buf[0];
+
+	if (promisc_user_callback_ptr) {
+		/* invalidate will be safe if callback read mem only */
+		DCache_Invalidate((u32)ppktinfo, sizeof(struct rx_pkt_info));
+		DCache_Invalidate((u32)ppktinfo->buf, (u32)ppktinfo->len);
+		promisc_user_callback_ptr((void *)p_ipc_msg->param_buf[0]);
+	}
+}
 
 /* ---------------------------- Public Functions ---------------------------- */
 /**
@@ -257,14 +266,19 @@ void inic_ipc_api_host_task(void)
 		case IPC_WIFI_EVT_HDL:
 			_inic_ipc_api_host_wifi_event_handler(p_ipc_msg);
 			break;
-		case IPC_WIFI_EVT_PROMISC_CALLBACK:
-			_inic_ipc_api_host_wifi_promisc_handler(p_ipc_msg);
-			break;
 		case IPC_WIFI_EVT_GET_LWIP_INFO:
 			_inic_ipc_api_host_lwip_info_handler(p_ipc_msg);
 			break;
 		case IPC_WIFI_EVT_SET_NETIF_INFO:
 			_inic_ipc_api_host_set_netif_info_handler(p_ipc_msg);
+			break;
+		case IPC_WIFI_EVT_PROMISC_CALLBACK:
+			_inic_ipc_api_host_promisc_user_callback_handler(p_ipc_msg);
+			break;
+		case IPC_WIFI_EVT_IP_TABLE_CHK:
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+			p_ipc_msg->ret = dhcps_ip_in_table_check(p_ipc_msg->param_buf[0], p_ipc_msg->param_buf[1]);
+#endif
 			break;
 		default:
 			DBG_8195A("Host API Unknown event(%d)!\n\r", \
@@ -275,8 +289,8 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	rtw_delete_task(NULL);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	rtw_delete_task(&inic_ipc_api_host_handler);
 #endif
 }
 
@@ -316,7 +330,6 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 		rtw_memcpy(g_host_ipc_api_request_info.param_buf, param_buf, buf_len * sizeof(u32));
 	}
 	DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
-
 #ifdef IPC_DIR_MSG_TX
 	rtw_memset(&g_host_ipc_api_msg, 0, sizeof(IPC_MSG_STRUCT));
 	g_host_ipc_api_msg.msg = (u32)&g_host_ipc_api_request_info;
@@ -367,16 +380,18 @@ void inic_ipc_api_init_host(VOID)
 u64 inic_ipc_host_get_wifi_tsf(unsigned char port_id)
 {
 	u64 ret = 0;
-#ifdef CONFIG_PLATFORM_AMEBAD2
-	/* in ips, it will return 0 and will not hang, thus no need additional check*/
-	if (port_id == 0) {
-		ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x564)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x560); //REG_P0_TSFTR
-	} else if (port_id == 1) {
-		ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x56C)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x568); //REG_P1_TSFTR
+
+	if ((HAL_READ32(WIFI_REG_BASE, 0xA4) & 0x7F00) == BIT13) {
+		/* in ips flow, it will return 0 or will be hang, thus need additional check*/
+		if (port_id == 0) {
+			ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x564)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x560); //REG_P0_TSFTR
+		} else if (port_id == 1) {
+			ret = (((u64) HAL_READ32(WIFI_REG_BASE, 0x56C)) << 32) | HAL_READ32(WIFI_REG_BASE, 0x568); //REG_P1_TSFTR
+		}
+	} else {
+		ret = 0; /* !pon state */
 	}
-#else
-	UNUSED(port_id);
-#endif
+
 	return ret;
 }
 
@@ -441,7 +456,13 @@ void inic_ipc_mp_command(char *token, unsigned int cmd_len, int show_msg)
 /* ---------------------------- Global Variables ---------------------------- */
 #if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS) || defined(CONFIG_PLATFORM_RTL8720F)
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_api_host_table[] = {
-	{IPC_USER_POINT,	inic_ipc_api_host_int_hdl,	(VOID *) NULL, IPC_DIR_MSG_RX, IPC_D2H_WIFI_API_TRAN, IPC_RX_FULL},
+const IPC_INIT_TABLE ipc_api_host_table = {
+	.USER_MSG_TYPE = IPC_USER_POINT,
+	.Rxfunc = inic_ipc_api_host_int_hdl,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_DIR_MSG_RX,
+	.IPC_Channel = IPC_D2H_WIFI_API_TRAN
 };
 #endif

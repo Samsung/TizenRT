@@ -251,20 +251,80 @@ void wps_check_and_show_connection_info(void)
 
 	switch (setting.security_type) {
 	case RTW_SECURITY_OPEN:
-		printf("\n\r	SECURITY => OPEN");
+		printf("\n\r  SECURITY => OPEN");
 		break;
 	case RTW_SECURITY_WEP_PSK:
-		printf("\n\r	SECURITY => WEP");
+		printf("\n\r  SECURITY => WEP");
 		printf("\n\r KEY INDEX => %d", setting.key_idx);
 		break;
 	case RTW_SECURITY_WPA_TKIP_PSK:
-		printf("\n\r	SECURITY => TKIP");
+		printf("\n\r	SECURITY => WPA TKIP");
+		break;
+	case RTW_SECURITY_WPA_AES_PSK:
+		printf("\n\r	SECURITY => WPA AES");
+		break;
+	case RTW_SECURITY_WPA_MIXED_PSK:
+		printf("\n\r	SECURITY => WPA MIXED");
 		break;
 	case RTW_SECURITY_WPA2_AES_PSK:
-		printf("\n\r	SECURITY => AES");
+		printf("\n\r	SECURITY => WPA2 AES");
 		break;
+	case RTW_SECURITY_WPA2_TKIP_PSK:
+		printf("\n\r	SECURITY => WPA2 TKIP");
+		break;
+	case RTW_SECURITY_WPA2_MIXED_PSK:
+		printf("\n\r	SECURITY => WPA2 MIXED");
+		break;
+	case RTW_SECURITY_WPA_WPA2_TKIP_PSK:
+		printf("\n\r	SECURITY => WPA/WPA2 TKIP");
+		break;
+	case RTW_SECURITY_WPA_WPA2_AES_PSK:
+		printf("\n\r	SECURITY => WPA/WPA2 AES");
+		break;
+	case RTW_SECURITY_WPA_WPA2_MIXED_PSK:
+		printf("\n\r	SECURITY => WPA/WPA2 MIXED");
+		break;
+	case RTW_SECURITY_WPA_TKIP_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA TKIP ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA_AES_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA AES ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA_MIXED_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA MIXED ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA2_TKIP_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA2 TKIP ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA2_AES_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA2 AES ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA2_MIXED_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA2 MIXED ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA_WPA2_TKIP_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA/WPA2 TKIP ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA_WPA2_AES_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA/WPA2 AES ENTERPRISE");
+		break;
+	case RTW_SECURITY_WPA_WPA2_MIXED_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA/WPA2 MIXED ENTERPRISE");
+		break;
+
+#ifdef CONFIG_SAE_SUPPORT
+	case RTW_SECURITY_WPA3_AES_PSK:
+		printf("\n\r	SECURITY => WP3-SAE AES");
+		break;
+	case RTW_SECURITY_WPA2_WPA3_MIXED:
+		printf("\n\r	SECURITY => WPA2/WPA3-SAE AES");
+		break;
+	case RTW_SECURITY_WPA3_ENTERPRISE:
+		printf("\n\r	SECURITY => WPA3 ENTERPRISE");
+		break;
+#endif
 	default:
-		printf("\n\r	SECURITY => UNKNOWN");
+		printf("\n\r  SECURITY => UNKNOWN");
 	}
 
 	printf("\n\r	PASSWORD => %s", setting.password);
@@ -317,6 +377,7 @@ static void wps_config_wifi_setting(rtw_network_info_t *wifi, struct dev_credent
 	printf("\r\nwps_wifi.password = %s\n", wifi->password);
 	wifi->password_len = dev_cred->key_len;
 	printf("\r\nwps_wifi.password_len = %d", wifi->password_len);
+	wifi->is_wps_trigger = _TRUE;
 	//xSemaphoreGive(wps_reconnect_semaphore);
 	//printf("\r\nrelease wps_reconnect_semaphore");
 }
@@ -331,6 +392,7 @@ static int wps_connect_to_AP_by_certificate(rtw_network_info_t *wifi)
 	printf("\r\nwps_wifi.password = %s\n", wifi->password);
 	printf("\r\nssid_len = %d\n", wifi->ssid.len);
 	printf("\r\npassword_len = %d\n", wifi->password_len);
+	printf("\r\nis_wps_trigger = %d\n", wifi->is_wps_trigger);
 	while (1) {
 		ret = wifi_connect(wifi, 1);
 		if (ret == RTW_SUCCESS) {
@@ -998,7 +1060,7 @@ void wps_stop(void)
 
 int wps_judge_staion_disconnect(void)
 {
-	rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0};
+	rtw_wifi_setting_t setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
 
 	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != 0) {
 		return -1;
@@ -1015,8 +1077,16 @@ void cmd_wps(int argc, char **argv)
 {
 	int ret = -1;
 	(void) ret;
+	rtw_join_status_t join_status = RTW_JOINSTATUS_UNKNOWN;
 
 	if (wps_judge_staion_disconnect() != 0) {
+		return;
+	}
+
+	// check if STA is conencting
+	join_status = wifi_get_join_status();
+	if ((join_status > RTW_JOINSTATUS_UNKNOWN) && (join_status < RTW_JOINSTATUS_SUCCESS)) {
+		RTW_API_INFO("\nthere is ongoing wifi connect!");
 		return;
 	}
 

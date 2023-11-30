@@ -86,14 +86,13 @@ include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
 include component/wifi/Make.defs
 include component/wifi/inic/Make.defs
-include component/wifi/driver/core/Make.defs
+include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
 include component/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 include component/wifi/api/Make.defs
-include component/wifi/promisc/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
 include component/soc/amebad2/misc/Make.defs
 endif
@@ -116,6 +115,8 @@ endif
 endif
 
 include component/file_system/ftl/Make.defs
+include component/file_system/kv/Make.defs
+include component/file_system/vfs2.0/Make.defs
 
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 BOARD_SRCDIR = 	$(TOPDIR)/board
@@ -148,11 +149,11 @@ CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
 CFLAGS += -I$(COMPONENT_DIR)/wifi
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/core
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/intf
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
-CFLAGS += -I$(COMPONENT_DIR)/wifi/promisc
+CFLAGS += -I$(COMPONENT_DIR)/wifi/common
+CFLAGS += -I$(COMPONENT_DIR)/wifi/common/secure
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
@@ -160,6 +161,8 @@ CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
 CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite/rom
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
@@ -171,6 +174,10 @@ CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs/r0.14b/include
 CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
+CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
+CFLAGS += -I$(COMPONENT_DIR)/file_system/littlefs
+CFLAGS += -I$(COMPONENT_DIR)/file_system/littlefs/r2.50
+CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc

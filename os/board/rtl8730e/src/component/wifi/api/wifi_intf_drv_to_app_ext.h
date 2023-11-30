@@ -43,15 +43,11 @@
 extern "C" {
 #endif
 
-/** @defgroup WIFI_Exported_Constants WIFI Exported Constants
-  * @{
-  */
 
 
 /** @defgroup WIFI_Exported_Functions WIFI Exported Functions
   * @{
   */
-
 
 
 /** @defgroup Basic_Functions
@@ -182,11 +178,28 @@ int wifi_set_channel(unsigned char wlan_idx, u8 channel);
 int wifi_get_channel(unsigned char wlan_idx, u8 *channel);
 
 /**
+ * @brief  Set the current Media Access Control (MAC) address
+ *	(or Ethernet hardware address) of the 802.11 device.
+ * @param[in]  idx: Set STA or SoftAP mac address.
+ * @param[in]  mac: Pointer to the mac address.
+ * @param[in]  efuse: Set mac address to efuse or set to RAM.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ * @note  Set to Efuse(efuse = 1): effective after reboot.
+ * Set to RAM(efuse = 0): reboot will lose effectiveness. (RECOMMENDED)
+ */
+int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
+
+/**
  * @brief  Retrieves the current Media Access Control (MAC) address
  *	(or Ethernet hardware address) of the 802.11 device.
+ * @param[in]  idx: Get STA or SoftAP mac address. Invalid parameter while setting efuse = 1.
  * @param[in]  mac: Pointer to the struct rtw_mac_t which contain obtained mac address.
+ * @param[in]  efuse: Get mac address from efuse or get from RAM.
+ * @return  RTW_SUCCESS or RTW_ERROR
+ * @note  Get mac address inside EFUSE(efuse = 1).
+ * Get runtime mac address(efuse = 0). (RECOMMENDED)
  */
-int wifi_get_mac_address(rtw_mac_t *mac);
+int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse);
 
 /**
  * @brief  Get current Wi-Fi setting from driver.
@@ -229,144 +242,12 @@ int wifi_set_network_mode(enum wlan_mode mode);
   */
 
 /**
- * @brief  Set the chip to start or stop the promiscuous mode.
- *            For promisc mode.
- * @param[in]  enabled: enabled can be set 0, 1, 2, 3 and 4.
- * 	if enabled is zero, disable the promisc, else enable the promisc.
- * 	0) means disable the promisc.
- * 	1) means enable the promisc special for all ethernet frames.
- * 	2) means enable the promisc special for Broadcast/Multicast
- * 	   ethernet frames.
- * 	3) means enable the promisc special for all 802.11 frames.
- * 	4) means enable the promisc special for Broadcast/Multicast
- * 	   802.11 frames.
- * @param[in]  callback: the callback function which will
- * 	receive and process the network data.
- * @param[in]  len_used: specify if the the promisc data length is used.
- * 	If len_used set to 1, packet(frame data) length will be saved
- * 	and transferred to callback function.
- * @return  RTW_SUCCESS or RTW_ERROR
- * @note  This function can implement vendor specified simple configure.
- * @note  To fetch Ethernet frames, the len_used should be set to 1
- */
-int wifi_set_promisc(
-	rtw_rcr_level_t	enabled,
-	void	(*callback)(unsigned char *, unsigned int, void *),
-	unsigned char	len_used);
-
-/**
- * @brief  Let Wi-Fi enter promiscuous mode.
- *            For promisc mode.
- * @param[in]  None
+ * @brief  enable promisc mode and set promisc mode
+ * @param[in] enable: enable or disable promisc mode
+ * @param[in] para: promisc mode and callback if enable promisc mode
  * @return  None
  */
-void wifi_enter_promisc_mode(void);
-
-#if defined CONFIG_PROMISC || defined __DOXYGEN__
-
-/**
- * @brief  Initialize packet filter related data.
- *            For promisc mode.
- * @param[in]  None
- * @return  None
- */
-void wifi_init_packet_filter(void);
-
-/**
- * @brief  Add packet filter.
- *            For promisc mode.
- * @param[in]  filter_id: The filter id.
- * 	filter id can be num between 0 to 4.
- * @param[in]  patt: Point to the filter pattern.
- * @param[in]  rule: Point to the filter rule.
- * @return  0 if success, otherwise return -1.
- * @note  For now, the maximum number of filters is 5.
- */
-int wifi_add_packet_filter(
-	unsigned char					filter_id,
-	rtw_packet_filter_pattern_t		*patt,
-	rtw_packet_filter_rule_t		rule);
-
-/**
- * @brief  Enable the packet filter.
- *            For promisc mode.
- * @param[in]  filter_id: The filter id.
- * 	filter id can be num between 0 to 4.
- * @return  0 if success, otherwise return -1.
- * @note  The filter can be used only if it has been enabled.
- */
-int wifi_enable_packet_filter(unsigned char filter_id);
-
-/**
- * @brief  Disable the packet filter.
- *            For promisc mode.
- * @param[in]  filter_id: The filter id.
- * 	filter id can be num between 0 to 4.
- * @return  0 if success, otherwise return -1.
- */
-int wifi_disable_packet_filter(unsigned char filter_id);
-
-/**
- * @brief  Remove the packet filter.
- *            For promisc mode.
- * @param[in]  filter_id: The filter id.
- * 	filter id can be num between 0 to 4.
- * @return  0 if success, otherwise return -1.
- */
-int wifi_remove_packet_filter(unsigned char filter_id);
-
-/**
- * @brief: Filter out the retransmission MIMO packet in promisc mode.
- *            For promisc mode.
- * @param[in]  enable: set 1 to enable filter retransmission pkt function,
- * 	set 0 to disable this filter function.
- * @param[in]  filter_interval_ms: if 'enable' equals 0, it's useless;
- * 	if 'enable' equals 1, this value:
- * 	- indicate the time(ms) below which an adjacent pkt received
- * 	will be claimed a retransmission pkt;
- * 	- if it has the same length with the previous pkt, and driver
- * 	will drop all retransmission pkts;
- * @return 0 if success, otherwise return -1.
- * @e.g.  For example, if the packet transmission time interval is 10ms,
- * 	but driver receives two packets with the same length within 3ms
- * 	then the second packet will be dropped if configed as
- * 	wifi_retransmit_packet_filter(1,3).
- */
-int wifi_retransmit_packet_filter(u8 enable, u8 filter_interval_ms);
-
-/**
- * @brief  Only receive the packets sent by the specified
- * 	ap and phone in promisc mode.
- *    For promisc mode.
- * @param[in]  enable: set 1 to enable filter,
- * 	set 0 to disable this filter function.
- * @param[in]  ap_mac: if 'enable' equals 0, it's useless;
- * 	if 'enable' equals 1, this value is the ap's mac address.
- * @param[in]  phone_mac: if 'enable' equals 0, it's useless;
- * 	if 'enable' equals 1, this value is the phone's mac address.
- * @return  None.
- * @note  Please invoke this function as
- * 	"wifi_filter_by_ap_and_phone_mac(0,NULL,NULL)" before exiting
- * 	promisc mode if you enabled it during the promisc mode.
- */
-void wifi_filter_by_ap_and_phone_mac(
-	u8		enable,
-	void	*ap_mac,
-	void	*phone_mac);
-
-/**
- * @brief  config to report ctrl packet or not under promisc mode.
- *            For promisc mode.
- * @param[in]  enable: set 1 to enable ctrl packet report,
- * 	set 0 to disable ctrl packet report.
- * @return  0 if success, otherwise return -1.
- * @note this function can only be used under promisc mode,
- * 	i.e. between wifi_set_promisc(enable,...,...) and
- * 	wifi_set_promisc(disable,...,...)
- */
-int wifi_promisc_ctrl_packet_rpt(u8 enable);
-#endif
-
+void wifi_promisc_enable(u32 enable, promisc_para_t *para);
 
 /**
  * @brief  check whether current wifi driver is mp or not.
@@ -397,11 +278,13 @@ int wifi_set_group_id(unsigned char value);
 
 /**
  * @brief  for wpa supplicant indicate sae status.
- * @param[in]
+ * @param[in] wlan_idx:STA_WLAN_IDX or SOFTAP_WLAN_IDX.
+ * @param[in] status:sae_status which will be indicated.
+ * @param[in] mac_addr:pointer of sae peer's mac_addr .
  * @return  RTW_SUCCESS if setting is successful.
  * @return  RTW_ERROR otherwise.
  */
-int wifi_sae_status_indicate(void);
+int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
 
 /**
  * @brief  enable or disable pmk cache.
@@ -418,28 +301,7 @@ int wifi_set_pmk_cache_enable(unsigned char value);
  * @return  NULL.
  * @note  can be used to set psk related info to driver when fast connect
  */
-void wifi_psk_info_set(struct psk_info *psk_data);
 
-/**
- * @brief  Get psk related info, including ssid, passphrase, psk.
- * @param[out]  psk_data: pointer to the structure that will restore
- * 	psk related info. {ref struct psk_info}
- * @return  NULL.
- * @note  can be used to get current psk related info after connected
- * 	to AP successfully，and may write these info
- * 	to flash for fast connect next time
- */
-void wifi_psk_info_get(struct psk_info *psk_data);
-
-/**
- * @brief  Get enctryption ccmp key used by wifi(sta mode only)
- * @param[out]  UncstKey: the location where the CCMP TK(tempary key)
- *  will be stored
- * @param[out]  group_key: the location where the CCMP GTK(group key)
- *  will be stored
- * @return  RTW_SUCCESS: The result is successfully got.
- * @return  RTW_ERROR: The result is not successfully got
- */
 int wifi_get_ccmp_key(unsigned char *uncst_key, unsigned char *group_key);
 
 /**
@@ -656,7 +518,15 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
  * 	which describe related information, include the pointer of raw frame and so on.
  * @return  RTW_ERROR or RTW SUCCESS
  */
-int wifi_send_raw_frame(raw_data_desc_t *raw_data_desc);
+int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc);
+
+/**
+ * @brief  send raw frame
+ * @param[in]  raw_data_desc: the pointer of raw_data_desc_t,
+ * 	which describe related information, include the pointer of raw frame and so on.
+ * @return  RTW_ERROR or RTW SUCCESS
+ */
+int wifi_send_mgnt(raw_data_desc_t *raw_data_desc);
 
 /**
  * @brief  Control initial tx rate by different ToS value in IP header.
@@ -672,10 +542,8 @@ int wifi_set_tx_rate_by_ToS(unsigned char enable, unsigned char ToS_precedence, 
 
 /**
  * @brief  Set EDCA parameter.
- * @param[in]  AC_param: format is shown as in below ,
- * +--------------------------+-------------+-------------+
+ * @param[in]  AC_param: format is shown as:
  * |        TXOP Limit        |ECWmin/ECWmax|  ACI/AIFSN  |
- * +--------------------------+-------------+-------------+
  * 	BIT31~16 corresponding to TXOP Limit, BIT15~8 corresponding
  * 	to ECWmin/ECWmax, BIT7~0 corresponding to ACI/AIFSN.
  * @return  RTW_SUCCESS or RTW_ERROR
@@ -747,6 +615,8 @@ int wifi_wowlan_set_arp_rsp_keep_alive(int enable);
 int wifi_wowlan_set_dtimto(uint8_t dtimto_enable, uint8_t retry_inc, uint8_t ack_timeout, uint8_t dtim);
 #endif
 
+
+#if defined CONFIG_SMART_DTIM  || defined __DOXYGEN
 /**
  * @brief   smart dtim in wowlan keep alive
  *
@@ -756,10 +626,11 @@ int wifi_wowlan_set_dtimto(uint8_t dtimto_enable, uint8_t retry_inc, uint8_t ack
  * @param[in]   dtim : TBTT interval
  * @return  RTW_SUCCESS
  */
-#if defined CONFIG_SMART_DTIM  || defined __DOXYGEN
 int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t change_dtim, uint8_t dtim);
 #endif
 
+
+#if defined CONFIG_WOWLAN_PARAM || defined __DOXYGEN__
 /**
  * @brief   wowlan parameter setting
  *
@@ -770,7 +641,6 @@ int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t c
  * @param[in]   l2_keepalive_period : send period of l2 keep alive
  * @return  RTW_SUCCESS
  */
-#if defined CONFIG_WOWLAN_PARAM || defined __DOXYGEN__
 int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
 								 u8  fwdis_trypktnum,
 								 u8  pno_enable,
@@ -826,7 +696,7 @@ int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
 /**
  * @brief  set the csi parameters and enable or disable csi func(sta or softap)
  * @param[in]  act_param: A pointer to the param
- * @Example:
+ * @note:
  *    rtw_csi_action_parm_t act_param = {0};
  *    act_param.mode = 2;
  *    ...
@@ -840,7 +710,7 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param);
  * @param[in]  buf_len: buffer size for getting csi info
  * @param[in]  csi_buf: the pointer to csi data buffer
  * @param[in]  len: the size of csi raw data
- * @Example:
+ * @note:
  *    unsigned char *csi_buf = NULL;
  *    unsigned int len;
  *    csi_buf = rtw_zmalloc(buf_len);
@@ -852,9 +722,11 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 /**
  * @brief  Set PTA type when coex.
  * @param[in]  type: the PTA type(PTA_BT/PTA_WIFI/PTA_AUTO).
+ * @param[in]  role, PTA_HOST_BT / PTA_HOST_WIFI
+ * @param[in]  process, CALIBRATION_START / CALIBRATION_STOP / COMMON_ACTION
  * @return  Null.
  */
-void wifi_btcoex_set_pta(pta_type_t type);
+void wifi_btcoex_set_pta(pta_type_t type, u8 role, u8 process);
 
 /**
  * @brief  Set BTS0 or BTS1.
@@ -895,6 +767,45 @@ int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
  * @return  0:success  -1:fail.
  */
 int wifi_set_pmf_mode(u8 pmf_mode);
+
+/**
+ * @brief  wpa notify wifi driver that 4 way handshake is failed.
+ * wifi driver will do disconnect and autoreconnect.
+ * can delete this API if autoreconnect can move to up layer.
+ * @param[in]  void:
+ * @return  null.
+ */
+void wifi_wpa_sta_4way_fail_notify(void);
+
+/**
+ * @brief  for wpa to set key to driver
+ * @param[in]  rtw_crypt_info
+ * @return  null.
+ */
+void wifi_wpa_add_key(struct rtw_crypt_info *crypt);
+
+/**
+ * @brief  for wpa to set/del/flush pmksa
+ * @param[in]  pmksa_ops
+ * @return  null.
+ */
+void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops);
+
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+
+
 
 #ifdef __cplusplus
 }

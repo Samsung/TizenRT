@@ -14,6 +14,9 @@
 #if defined(CONFIG_AS_INIC_AP)
 #include "inic_ipc_api.h"
 #endif
+#include <wifi_intf_ram_to_rom.h>
+#include "wpa_lite_intf.h"
+
 /******************************************************
  *                    Constants
  ******************************************************/
@@ -32,6 +35,8 @@ internal_join_block_param_t *join_block_param = NULL;
 
 rtw_result_t (*scan_user_callback_ptr)(unsigned int, void *) = NULL;
 rtw_result_t (*scan_each_report_user_callback_ptr)(rtw_scan_result_t *, void *) = NULL;
+
+void (*promisc_user_callback_ptr)(void *) = NULL;
 
 extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
@@ -71,6 +76,46 @@ int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network
 extern void linkup_handler(rtk_reason_t *reason);
 extern void linkdown_handler(rtk_reason_t *reason);
 #endif
+static void *_my_calloc(size_t nelements, size_t elementSize)
+{
+	size_t size;
+	void *ptr = NULL;
+
+	size = nelements * elementSize;
+	ptr = rtw_zmalloc(size);
+
+	return ptr;
+}
+
+static void _my_free(void *pbuf)
+{
+	rtw_free(pbuf);
+}
+
+static int _my_random(void *p_rng, unsigned char *output, size_t output_len)
+{
+	/* To avoid gcc warnings */
+	(void) p_rng;
+
+	rtw_get_random_bytes(output, output_len);
+	return 0;
+}
+int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
+							   void (*free_func)(void *),
+							   int (*rand_func)(void *, unsigned char *, size_t))
+{
+	/* Realtek added to initialize HW crypto function pointers
+	* mbedtls RAM codes use function pointers in platform memory implementation
+	* Not use malloc/free in ssl ram map for mbedtls RAM codes
+	*/
+	p_wifi_rom_func_map = (struct _wifi_rom_func_map *)&wifi_rom_func_map;
+	p_wifi_rom_func_map->zmalloc = calloc_func;
+	p_wifi_rom_func_map->mfree = free_func;
+	p_wifi_rom_func_map->random = rand_func;
+
+	return (0);
+}
+
 //----------------------------------------------------------------------------//
 int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 {
@@ -240,8 +285,9 @@ int wifi_on(rtw_mode_t mode)
 #endif
 
 	wifi_set_user_config();
-
+	wifi_set_platform_rom_func(_my_calloc, _my_free, _my_random);
 	param_buf[0] = mode;
+
 	inic_ipc_host_init_skb();
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_ON, param_buf, 1);
 
@@ -249,6 +295,7 @@ int wifi_on(rtw_mode_t mode)
 		wifi_boot = 1;
 		init_timer_wrapper();
 		init_timer_pool();
+		rtw_psk_wpa_init(STA_WLAN_INDEX);
 
 		if (p_wifi_do_fast_connect && (mode == RTW_MODE_STA)) {
 			p_wifi_do_fast_connect();
@@ -292,7 +339,6 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	( void ) flags;
 	( void ) userdata;
 	//USER TODO
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
@@ -303,7 +349,6 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 		nvdbg("RTK_API rtk_link_event_handler send link_up\n");
 		g_link_up(&reason);
 	}
-#endif
 }
 static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* userdata)
 {
@@ -313,7 +358,6 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	( void ) flags;
 	( void ) userdata;
 	//USER TODO
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
@@ -323,7 +367,6 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
 		g_link_down(&reason);
 	}
-#endif
 }
 #endif
 
@@ -331,7 +374,7 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 {
 	int ret = 0;
 	u32 param_buf[1];
-
+	struct psk_info PSK_INFO = {0};
 	/* check if STA is running */
 	if ((wifi_user_config.concurrent_enabled == _FALSE) &&
 		(rtw_join_status > RTW_JOINSTATUS_UNKNOWN) && (rtw_join_status <= RTW_JOINSTATUS_SUCCESS)) {
@@ -348,6 +391,16 @@ int wifi_start_ap(rtw_softap_info_t *softAP_config)
 	wifi_reg_event_handler(WIFI_EVENT_STA_ASSOC, wifi_ap_sta_assoc_hdl, NULL);
 	wifi_reg_event_handler(WIFI_EVENT_STA_DISASSOC, wifi_ap_sta_disassoc_hdl, NULL);
 #endif
+
+	rtw_psk_wpa_init(SOFTAP_WLAN_INDEX);
+
+	if (softAP_config->password && softAP_config->password_len) {
+		PSK_INFO.index = SOFTAP_WLAN_INDEX;
+		PSK_INFO.security_type = softAP_config->security_type;
+		rtw_memcpy(PSK_INFO.psk_essid, softAP_config->ssid.val, softAP_config->ssid.len);
+		rtw_memcpy(PSK_INFO.psk_passphrase, softAP_config->password, softAP_config->password_len);
+		rtw_psk_set_psk_info(&PSK_INFO);
+	}
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_START_AP, param_buf, 1);
 
@@ -382,6 +435,7 @@ int wifi_stop_ap(void)
 #endif
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_STOP_AP, NULL, 0);
+	rtw_psk_wpa_deinit(SOFTAP_WLAN_INDEX);
 
 	return ret;
 }
@@ -424,6 +478,18 @@ int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block)
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SCAN_NETWROKS, param_buf, 3);
 	return ret;
+}
+
+void wifi_promisc_enable(u32 enable, promisc_para_t *para)
+{
+	u32 buf[3] = {0};
+	buf[0] = enable;
+	buf[1] = (u32)para->filter_mode;
+	if (para->callback) {
+		promisc_user_callback_ptr = para->callback;
+		buf[2] = ENABLE;
+	}
+	inic_ipc_api_host_message_send(IPC_API_WIFI_PROMISC_INIT, buf, 3);
 }
 
 #endif	//#if CONFIG_WLAN

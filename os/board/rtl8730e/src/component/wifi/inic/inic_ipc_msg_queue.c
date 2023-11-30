@@ -13,13 +13,13 @@
 
 /* internal head files */
 #include "inic_ipc_msg_queue.h"
+#ifdef CONFIG_AS_INIC_NP
+#include "wifi_intf_drv_to_upper.h"
 
-/* -------------------------------- Defines --------------------------------- */
-#ifndef CONFIG_CFG80211
-#define IPC_MSG_QUEUE_DEPTH (10)
-#else
-#define IPC_MSG_QUEUE_DEPTH (20)
+extern struct wifi_user_conf wifi_user_config;
 #endif
+/* -------------------------------- Defines --------------------------------- */
+#define IPC_MSG_QUEUE_DEPTH (20)
 #define IPC_MSG_QUEUE_WARNING_DEPTH (4)
 
 /* -------------------------------- Macros ---------------------------------- */
@@ -59,7 +59,9 @@ static inic_ipc_ex_msg_t g_inic_ipc_ex_msg = {0};
 #if defined(configNUM_CORES) && (configNUM_CORES > 1)
 static spinlock_t ipc_msg_queue_lock = {0};
 #endif
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 struct task_struct ipc_msgQ_wlan_task;
+#endif
 /* ---------------------------- Private Functions --------------------------- */
 /**
  * @brief  put the ipc message to queue.
@@ -139,20 +141,23 @@ static void inic_ipc_msg_q_task(void)
 		//xSemaphoreTake(g_ipc_msg_q_priv.msg_q_sema, 0xFFFFFFFF);
 		rtw_down_sema(&g_ipc_msg_q_priv.msg_q_sema);
 		/* get the data from tx queue. */
-		p_node = dequeue_ipc_msg_node(p_queue);
-		while (p_node) {
+		while (1) {
+			p_node = dequeue_ipc_msg_node(p_queue);
+			if (p_node == NULL) {
+				break;
+			}
 			/* haddle the message */
 			if (g_ipc_msg_q_priv.task_hdl) {
 				g_ipc_msg_q_priv.task_hdl(&(p_node->ipc_msg));
 			}
 			/* release the memory for this ipc message. */
-			p_node->is_used = 0;
 #if defined(configNUM_CORES) && (configNUM_CORES > 1)
 			u32 isr_status = portDISABLE_INTERRUPTS();
 			spin_lock(&ipc_msg_queue_lock);
 #else
 			rtw_enter_critical(NULL, NULL);
 #endif
+			p_node->is_used = 0;
 			g_ipc_msg_q_priv.queue_free++;
 #if defined(configNUM_CORES) && (configNUM_CORES > 1)
 			spin_unlock(&ipc_msg_queue_lock);
@@ -160,7 +165,6 @@ static void inic_ipc_msg_q_task(void)
 #else
 			rtw_exit_critical(NULL, NULL);
 #endif
-			p_node = dequeue_ipc_msg_node(p_queue);
 		}
 	} while (g_ipc_msg_q_priv.b_queue_working);
 	rtw_delete_task(&ipc_msgQ_wlan_task);
@@ -218,15 +222,28 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 	sint ret = FAIL;
 	int i = 0;
 
+#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+	/* this function is called in ISR, no need to mask interrupt since gic already do it*/
+	spin_lock(&ipc_msg_queue_lock);
+#else
+	_irqL irqL;
+	rtw_enter_critical(&(p_queue->lock), &irqL);
+#endif
 	/* allocate memory for message node */
 	for (i = 0; i < IPC_MSG_QUEUE_DEPTH; i++) {
 		if (g_ipc_msg_q_priv.ipc_msg_pool[i].is_used == 0) {
 			p_node = &(g_ipc_msg_q_priv.ipc_msg_pool[i]);
 			/* a node is used, the free node will decrease */
+			p_node->is_used = 1;
 			g_ipc_msg_q_priv.queue_free--;
 			break;
 		}
 	}
+#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+	spin_unlock(&ipc_msg_queue_lock);
+#else
+	rtw_exit_critical(&(p_queue->lock), &irqL);
+#endif
 
 	if (p_node == NULL) {
 		DBG_8195A("NO buffer for new nodes, waiting!\n\r");
@@ -238,7 +255,6 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 	p_node->ipc_msg.msg_addr = p_ipc_msg->msg_addr;
 	p_node->ipc_msg.msg_queue_status = p_ipc_msg->msg_queue_status;
 	p_node->ipc_msg.wlan_idx = p_ipc_msg->wlan_idx;
-	p_node->is_used = 1;
 
 	/* put the ipc message to the queue */
 	ret = enqueue_ipc_msg_node(p_node, p_queue);
@@ -299,8 +315,12 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 	/* wifi_hal_interrupt_handle(little_thread) will call rtw_enter_critical(close cpu scheduling), before call this func.
 	if another thread(single_thread) hasn't up_sema, little_thread and single_thread will deadlock */
 	/* LINUX_TODO: better method? */
-#ifdef CONFIG_CFG80211
-	save_and_cli();
+#ifdef CONFIG_AS_INIC_NP
+	if (wifi_user_config.cfg80211) {
+		save_and_cli();
+	} else {
+		rtw_down_sema(&g_ipc_msg_q_priv.msg_send_sema);
+	}
 #else
 	rtw_down_sema(&g_ipc_msg_q_priv.msg_send_sema);
 #endif
@@ -338,8 +358,12 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 	ipc_send_message(IPC_INT_CHAN_WIFI_TRX_TRAN, (PIPC_MSG_STRUCT)&g_inic_ipc_ex_msg);
 #endif /* IPC_DIR_MSG_TX */
 
-#ifdef CONFIG_CFG80211
-	restore_flags();
+#ifdef CONFIG_AS_INIC_NP
+	if (wifi_user_config.cfg80211) {
+		restore_flags();
+	} else {
+		rtw_up_sema(&g_ipc_msg_q_priv.msg_send_sema);
+	}
 #else
 	rtw_up_sema(&g_ipc_msg_q_priv.msg_send_sema);
 #endif

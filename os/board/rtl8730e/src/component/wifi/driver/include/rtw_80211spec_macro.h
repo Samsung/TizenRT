@@ -197,10 +197,12 @@
 #define RSN_HEADER_LEN 4
 #define RSN_SELECTOR_LEN 4
 #define RSNXE_MIN_LEN 3
-#define RSNXE_MAX_LEN (16)
+#define RSNXE_MAX_LEN (18)/*Draft P802.11REVmd_D5.0 p1464*/
 
 #define MAXTID	16
 #define WIRELESS_EXT		22
+
+#define WLAN_IE_LEN_FIELD	1/*byte 0 is EID, byte 1 is length*/
 
 /* Information Element IDs */
 #define WLAN_EID_SSID 0
@@ -210,6 +212,7 @@
 #define WLAN_EID_CF_PARAMS 4
 #define WLAN_EID_TIM 5
 #define WLAN_EID_IBSS_PARAMS 6
+#define WLAN_EID_COUNTRY 7
 #define WLAN_EID_CHALLENGE 16
 /* EIDs defined by IEEE 802.11h - START */
 #define WLAN_EID_PWR_CONSTRAINT 32
@@ -838,6 +841,13 @@ __inline static unsigned char *get_ta(unsigned char *pframe)
 	unsigned char 	*ta;
 	ta = GetAddr2Ptr(pframe);
 	return ta;
+}
+
+__inline static unsigned char *get_ra(unsigned char *pframe)
+{
+	unsigned char 	*ra;
+	ra = GetAddr1Ptr(pframe);
+	return ra;
 }
 
 __inline static unsigned char *get_da(unsigned char *pframe)

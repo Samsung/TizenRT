@@ -4,6 +4,8 @@
 #include "platform_stdlib.h"
 #if defined(CONFIG_AS_INIC_NP)
 #include "inic_ipc_api.h"
+#else
+#include "wpa_lite_intf.h"
 #endif
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
@@ -113,9 +115,13 @@ void init_event_callback_list(void)
 	memset(event_callback_list, 0, sizeof(event_callback_list));
 }
 
-
 void wifi_join_status_indicate(rtw_join_status_t join_status)
 {
+#ifndef CONFIG_AS_INIC_NP
+	struct deauth_info  *deauth_data, *deauth_data_pre;
+	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#endif
+
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
@@ -163,6 +169,16 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 			nvdbg("RTK_API %s send link_down\n",__func__);
 			g_link_down(&reason);
 		}
+#endif
+#ifndef CONFIG_AS_INIC_NP
+		deauth_data_pre = (struct deauth_info *)rtw_zmalloc(sizeof(struct deauth_info));
+		rtw_psk_deauth_info_flash((char *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
+		if (!rtw_memcmp(deauth_data_pre->bssid, zero_mac, 6)) {
+			deauth_data = (struct deauth_info *)rtw_zmalloc(sizeof(struct deauth_info));
+			rtw_psk_deauth_info_flash((char *)deauth_data, sizeof(struct deauth_info), FLASH_WRITE, NULL);
+			rtw_mfree((u8 *)deauth_data, 0);
+		}
+		rtw_mfree((u8 *)deauth_data_pre, 0);
 #endif
 	}
 
