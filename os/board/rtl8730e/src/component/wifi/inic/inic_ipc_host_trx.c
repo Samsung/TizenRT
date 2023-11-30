@@ -19,7 +19,6 @@
 /* internal head files */
 #include "inic_ipc_host_trx.h"
 #include "inic_ipc_msg_queue.h"
-#include "wifi_performance_monitor.h"
 #include "wifi_conf.h"
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <netdev_mgr_internal.h>
@@ -63,7 +62,9 @@ extern struct netif xnetif[NET_IF_NUM];
 /* --------------------------- Private Variables ---------------------------- */
 struct host_priv g_inic_host_priv __attribute__((aligned(64)));
 struct sk_buff *allocated_tx_skb = NULL;
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 struct task_struct inic_ipc_host_rx_task;
+#endif
 
 struct skb_data *host_skb_data;
 struct skb_info *host_skb_info;
@@ -369,9 +370,8 @@ void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg)
  * @return result.
  */
 int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
-					   int total_len)
+					   int total_len, struct skb_raw_para *raw_para)
 {
-	WIFI_MONITOR_TIMER_START(wlan_send_time);
 	struct sk_buff *skb = NULL;
 	struct skb_info *skb_info = NULL;
 	struct eth_drv_sg *psg_list;
@@ -388,20 +388,8 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	skb = &host_skb_info[used_skb_num].skb;
 	DCache_Invalidate((u32)skb_info, sizeof(struct skb_info));
 	if (skb->busy) {
-		for (i = 0; i < 2; i++) {
-			/* delay to wait skb free to resolve ping 10k fail issue. Don't delay too long, otherwise
-				the blocked tcpip thread would affect RX */
-			up_udelay(500);
-			DCache_Invalidate((u32)skb_info, sizeof(struct skb_info));
-			if (skb->busy == 0) {
-				break;
-			}
-		}
-		if (skb->busy) {
-			/*AP doesn't have enough skb right now, return ERR_BUF to inform upper layer*/
-			rtw_up_sema(&g_inic_host_priv.host_send_sema);
-			return ERR_BUF;
-		}
+		rtw_up_sema(&g_inic_host_priv.host_send_sema);
+		return ERR_BUF;
 	}
 	memset(skb, '\0', sizeof(struct sk_buff));
 	size = SKB_DATA_ALIGN(total_len + SKB_DATA_ALIGN(SKB_WLAN_TX_EXTRA_LEN));
@@ -414,15 +402,19 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	skb->no_free = 1;
 	atomic_set(&skb_data->ref, 1);
 
+	if (raw_para) {
+		skb->tx_raw.enable = TRUE;
+		skb->tx_raw.rate = raw_para->rate;
+		skb->tx_raw.retry_limit = raw_para->retry_limit;
+	}
+
 	used_skb_num++;
 	used_skb_num = used_skb_num % wifi_user_config.skb_num_ap;
 
 	psg_list = sg_list;
 	for (i = 0; i < sg_len; i++) {
 		psg_list = &sg_list[i];
-		WIFI_MONITOR_TIMER_START(wlan_send_time2);
 		rtw_memcpy(skb->tail, (void *)(psg_list->buf), psg_list->len);
-		WIFI_MONITOR_TIMER_END(wlan_send_time2, total_len);
 		skb_put(skb, psg_list->len);
 	}
 
@@ -431,11 +423,8 @@ int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	DCache_CleanInvalidate((u32)skb_info, sizeof(struct skb_info));
 #endif /* CONFIG_ENABLE_CACHE */
 
-	WIFI_MONITOR_TIMER_START(wlan_send_time3);
 	inic_ipc_host_send_skb(idx, skb);
-	WIFI_MONITOR_TIMER_END(wlan_send_time3, total_len);
 	rtw_up_sema(&g_inic_host_priv.host_send_sema);
-	WIFI_MONITOR_TIMER_END(wlan_send_time, total_len);
 
 	return ret;
 }

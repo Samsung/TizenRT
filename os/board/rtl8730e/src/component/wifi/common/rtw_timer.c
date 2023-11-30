@@ -6,7 +6,6 @@
 #include <basic_types.h>
 #include <osdep_service.h>
 #include <rtw_timer.h>
-#include <rtw_debug.h>
 
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
 
@@ -112,7 +111,7 @@ void deinit_timer_wrapper(void)
 	_list *plist;
 
 	if (timer_used_num > 0) {
-		DBG_ERR("Need to delete %d timer_entry", timer_used_num);
+		printf("Need to delete %d timer_entry.\n", timer_used_num);
 	}
 
 	unsigned int irq_flags = save_and_cli();
@@ -146,7 +145,7 @@ void timer_wrapper(_timerHandle timer_hdl)
 	restore_flags(irq_flags);
 
 	if (plist == &timer_table) {
-		DBG_ERR("Fail to find the timer_entry in timer table");
+		printf("Fail to find the timer_entry in timer table.\n");
 	} else {
 		if (timer_entry->function) {
 			timer_entry->function((void *) timer_entry->data);
@@ -205,7 +204,7 @@ exit1:
 exit2:
 #endif
 		if (timer->timer_hdl == NULL) {
-			DBG_ERR("Fail to init timer");
+			printf("Fail to init timer.\n");
 		} else {
 			unsigned int irq_flags = save_and_cli();
 			rtw_list_insert_head(&timer->list, &timer_table);
@@ -224,7 +223,7 @@ exit2:
 void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 {
 	if (timer->timer_hdl == NULL) {
-		DBG_ERR("mod_timer: the timer is not init, need init first");
+		printf("mod_timer: the timer is not init, need init first.\n");
 	} else if (rtw_timerIsTimerActive(timer->timer_hdl) == _TRUE) {
 		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
 	}
@@ -232,7 +231,7 @@ void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 	//Set Timer period
 	if (timer->timer_hdl != NULL)
 		if (rtw_timerChangePeriod(timer->timer_hdl, rtw_ms_to_systime(delay_time_ms), TIMER_MAX_DELAY) == _FAIL) {
-			DBG_ERR("Fail to set timer period");
+			printf("Fail to set timer period.\n");
 		}
 }
 
@@ -259,7 +258,7 @@ void  cancel_timer_ex(struct timer_list *timer)
 	restore_flags(irq_flags);
 
 	if (plist == &timer_table) {
-		RTW_INFO("Fail to find the timer_entry(%08p) in timer table", timer->timer_hdl);
+		printf("Fail to find the timer_entry(%08x) in timer table.\n", (unsigned int)timer->timer_hdl);
 	} else {
 		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
 	}
@@ -269,20 +268,15 @@ void  del_timer_sync(struct timer_list *timer)
 {
 	_list *plist;
 	struct timer_list *timer_entry;
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+	_timerHandle timer_hdl_to_delete;
+#endif
 
 	if (timer->timer_hdl == NULL) {
 		return;
 	}
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-	if (timer->statically_alloc) {
-		unsigned int irq_flags = save_and_cli();
-		release_timer_to_poll((unsigned char *)timer->timer_hdl, &wrapper_timerbuf_list, &timerbuf_used_num);
-		restore_flags(irq_flags);
-	} else {
-		if (timerpool_flag) {
-			timer_dynamic_num--;
-		}
-	}
+	timer_hdl_to_delete = timer->timer_hdl;
 #endif
 
 	unsigned int irq_flags = save_and_cli();
@@ -300,12 +294,25 @@ void  del_timer_sync(struct timer_list *timer)
 	restore_flags(irq_flags);
 
 	if (plist == &timer_table) {
-		DBG_ERR("Fail to find the timer_entry in timer table");
+		printf("Fail to find the timer_entry in timer table.\n");
 	} else {
 		rtw_timerDelete(timer->timer_hdl, TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;
 		timer_used_num --;
 	}
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+	if (timer->statically_alloc) {
+		while (_TRUE == rtw_timerIsTimerActive(timer_hdl_to_delete));
+		unsigned int irq_flags = save_and_cli();
+		release_timer_to_poll((unsigned char *)timer_hdl_to_delete, &wrapper_timerbuf_list, &timerbuf_used_num);
+		restore_flags(irq_flags);
+	} else {
+		if (timerpool_flag) {
+			timer_dynamic_num--;
+		}
+	}
+#endif
 }
 
 void rtw_init_timer(_timer *ptimer, void *adapter, TIMER_FUN pfunc, void *cntx, const char *name)
@@ -334,6 +341,3 @@ void rtw_del_timer(_timer *ptimer)
 {
 	del_timer_sync(ptimer);
 }
-
-
-

@@ -22,7 +22,6 @@
 #include "inic_ipc_dev_trx.h"
 #include "inic_ipc_msg_queue.h"
 #include "wifi_conf.h"
-#include "wifi_performance_monitor.h"
 
 #define CONFIG_ENABLE_CACHE
 
@@ -124,9 +123,7 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 
 		g_ipc_dev_priv.tx_bytes += skb->len;
 		g_ipc_dev_priv.tx_pkts++;
-		WIFI_MONITOR_TIMER_START(wlan_send_skb_time);
 		wifi_if_send_skb(p_ipc_msg->wlan_idx, skb);
-		WIFI_MONITOR_TIMER_END(wlan_send_skb_time, skb->len);
 		break;
 	default:
 		DBG_8195A("Device Unknown Event(%d)!\n", \
@@ -153,9 +150,7 @@ static void inic_xmit_tasklet(void)
 		/* get the data from tx queue. */
 		p_xmit_buf = inic_dequeue_xmitbuf(p_xmit_queue);
 		while (p_xmit_buf) {
-			WIFI_MONITOR_TIMER_START(xmit_handler_time);
 			inic_xmit_tasklet_handler(p_xmit_buf);
-			WIFI_MONITOR_TIMER_END(xmit_handler_time, 502);
 
 			/* release the memory for this packet. */
 			rtw_mfree((u8 *)p_xmit_buf, sizeof(struct ipc_dev_tx_buf));
@@ -267,6 +262,7 @@ void inic_ipc_dev_recv(int idx)
 	DCache_CleanInvalidate(((u32)skb_info), sizeof(struct skb_info));
 #endif /* CONFIG_ENABLE_CACHE */
 	inic_ipc_ipc_send_msg(&ipc_msg);
+
 }
 
 /**

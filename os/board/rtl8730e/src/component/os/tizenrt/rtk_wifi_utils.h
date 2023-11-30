@@ -96,7 +96,7 @@ extern int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id);
 extern int8_t cmd_wifi_off(void);
 extern int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block);
 extern int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32_t ap_channel);
-extern int wifi_get_mac_address(rtw_mac_t * mac);
+extern int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse);
 extern int wifi_is_connected_to_ap(void);
 extern int wifi_get_rssi(int *pRSSI);
 extern int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config);

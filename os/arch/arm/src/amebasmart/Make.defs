@@ -207,6 +207,7 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/inclu
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/intf
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/core
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/api
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/common
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_config
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_fast_connect
 
@@ -272,7 +273,8 @@ endif
 # Wifi
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 ifeq ($(CONFIG_ARCH_FPU),y)
-#EXTRA_LIBS += $(TOPDIR)/board/
+EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wpa_lite.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wifi_common.a
 else
 #EXTRA_LIBS += $(TOPDIR)/board/
 endif

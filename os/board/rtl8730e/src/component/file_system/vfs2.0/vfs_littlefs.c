@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "time.h"
 #include "osdep_service.h"
-#include "FreeRTOS.h"
+// #include "FreeRTOS.h"
 #include <cmsis.h>
-#include "task.h"
+// #include "task.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include "section_config.h"

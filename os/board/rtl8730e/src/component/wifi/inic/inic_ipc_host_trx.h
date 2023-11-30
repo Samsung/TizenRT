@@ -29,7 +29,6 @@ void inic_ipc_host_init_skb(void);
 void inic_ipc_host_init_priv(void);
 void inic_ipc_host_rx_handler(int idx_wlan, struct sk_buff *skb);
 void inic_ipc_host_tx_alloc_skb_rsp(inic_ipc_ex_msg_t *p_ipc_msg);
-int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
-					   int total_len);
+int inic_ipc_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, struct skb_raw_para *raw_para);
 
 #endif /* __INIC_IPC_HOST_TRX_H__ */

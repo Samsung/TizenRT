@@ -48,13 +48,6 @@
 /* For promiscuous mode */
 // #define CONFIG_PROMISC
 
-/* For STA+AP Concurrent MODE */
-/****************** configurations for concurrent mode ************************/
-//#define CONFIG_MCC_MODE
-//#define CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
-#define NET_IF_NUM	3
-/**************** configurations for concurrent mode end **********************/
-
 /* For WPS and P2P */
 #define CONFIG_WPS
 
@@ -119,16 +112,19 @@
 #if WIFI_LOGO_CERTIFICATION
 #undef WLAN_MAX_ETHFRM_LEN
 #define WLAN_MAX_ETHFRM_LEN	4000
+/* 80211 - K MBO */
+#define CONFIG_RTW_MBO
 #define CONFIG_IEEE80211K
+#ifndef CONFIG_LINUX_FW_EN
 #define CONFIG_LAYER2_ROAMING
 #endif
+#endif
 
-/* 80211 - K V R */
+/* 80211 - V R */
 #ifdef CONFIG_LAYER2_ROAMING
 #define CONFIG_RTW_WNM
 #define CONFIG_IEEE80211R
 #endif
-
 
 #define CONFIG_BEACON_PERIOD 100
 

@@ -126,7 +126,13 @@ void inic_ipc_init(void)
 /* ---------------------------- Global Variables ---------------------------- */
 #if defined(CONFIG_PLATFORM_AMEBALITE) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS) || defined(CONFIG_PLATFORM_RTL8720F)
 IPC_TABLE_DATA_SECTION
-const IPC_INIT_TABLE   ipc_dev_event_table[] = {
-	{IPC_USER_POINT,	inic_ipc_dev_event_int_hdl, (VOID *) NULL, IPC_DIR_MSG_RX, IPC_H2D_WIFI_TRX_TRAN, IPC_RX_FULL},
+const IPC_INIT_TABLE ipc_dev_event_table = {
+	.USER_MSG_TYPE = IPC_USER_POINT,
+	.Rxfunc = inic_ipc_dev_event_int_hdl,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_DIR_MSG_RX,
+	.IPC_Channel = IPC_H2D_WIFI_TRX_TRAN
 };
 #endif

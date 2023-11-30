@@ -178,7 +178,7 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 		if (softap_flag == 1) {
 			idx = 1;
 		}
-		ret = inic_ipc_host_send(idx, sg_list, sg_len, dlen);
+		ret = inic_ipc_host_send(idx, sg_list, sg_len, dlen, NULL);
 		if (ret == ERR_IF) {
 			return ret;
 		}

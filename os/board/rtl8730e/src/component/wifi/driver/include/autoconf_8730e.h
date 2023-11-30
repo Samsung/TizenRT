@@ -22,12 +22,27 @@
 #undef RTL8730E_SUPPORT
 #define RTL8730E_SUPPORT 1
 
+/* For STA+AP Concurrent MODE */
+/****************** configurations for concurrent mode ************************/
+//#define CONFIG_MCC_MODE
+//#define CONFIG_STA_MODE_SCAN_UNDER_AP_MODE
+#define NET_IF_NUM 3
+#define SUPPORT_ADAPTER_NUM	2
+/**************** configurations for concurrent mode end **********************/
+
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
 #define AP_STA_NUM	12
 /************************* Default Values of User Configure End***************************/
 
-//#define CONFIG_CFG80211
+//#define CONFIG_NAN
+#ifdef CONFIG_NAN
+#define CONFIG_TWT
+#undef SUPPORT_ADAPTER_NUM
+#define SUPPORT_ADAPTER_NUM	3
+#undef AP_STA_NUM
+#define AP_STA_NUM	6
+#endif
 
 /* Configure for bus */
 #define CONFIG_AXI_HCI
@@ -46,13 +61,7 @@
 /* PHY layer band config end */
 
 /* enable 1X code in lib_wlan as default (increase 380 bytes) */
-#ifdef CONFIG_CFG80211
-#undef CONFIG_AUTO_RECONNECT
-#define CONFIG_AUTO_RECONNECT 0
-#else
 #define CONFIG_EAP
-#endif
-
 
 /* For phydm configurations */
 #define CONFIG_FW_C2H_PKT
@@ -75,12 +84,18 @@
 
 #define NUM_STA (2 + AP_STA_NUM) /*one for bcmc, one for sta mode*/
 
+/*enable ra mechanism start*/
+#define CONFIG_WIFI_RA
+/*enable ra mechanism end*/
+/*enable dig mechanism start*/
+#define CONFIG_WIFI_DIG
+#define CONFIG_WIFI_TDMA_DIG /*for softap*/
+/*enable dig mechanism end*/
+
 /*halbb halrf config*/
 #define PHYDM_VERSION	3 /*halbb halrf*/
 #define DRV_BB_RUA_DISABLE
 #define DRV_BB_LA_MODE_DISABLE
-#define DRV_BB_TDMADIG_DISABLE
-#define DRV_BB_DIG_MCC_DISABLE
 #define DRV_BB_PWR_CTRL_DISABLE
 //#define DRV_BB_ENV_MNTR_DISABLE
 #define DRV_BB_DFS_DISABLE
@@ -105,9 +120,6 @@
 #ifdef CONFIG_80211AX_HE
 #define CONFIG_MBSSID_AX
 #endif
-/*HW AES encrypt frame with HTC will be wrong,but wifi6 logo need HTC and require high level of TP,
-so use SW AES encrypt with IPSEC.  */
-#define SW_ENCRYPT_HTC_PKT //smart only A-CUT need
 #endif
 
 /*Wifi verification*/
@@ -139,6 +151,7 @@ so use SW AES encrypt with IPSEC.  */
 #endif
 #define RTL8730E_WORK_AROUND
 
+//#define RA_RX_ACK_RSSI
 /*************************** Config for MP_MODE *******************************/
 //#define CONFIG_MP_INCLUDED
 #ifdef CONFIG_MP_INCLUDED
@@ -177,7 +190,6 @@ so use SW AES encrypt with IPSEC.  */
 #define RTW_MSG_LEVEL    RTW_MSG_WARNING
 #endif
 
-#define CONFIG_DOSCAN_IN_BUSYTRAFFIC
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8730A_H */
 

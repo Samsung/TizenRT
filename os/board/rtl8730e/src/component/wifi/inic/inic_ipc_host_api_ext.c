@@ -14,6 +14,8 @@
 #ifdef CONFIG_AS_INIC_AP
 #include "inic_ipc_api.h"
 #endif
+#include "wpa_lite_intf.h"
+#include "inic_ipc_host_trx.h"
 
 extern rtw_join_status_t rtw_join_status;
 
@@ -32,6 +34,7 @@ struct wifi_autoreconnect_param {
 	char *password;
 	int password_len;
 	int key_id;
+	char is_wps_trigger;
 };
 #endif
 /******************************************************
@@ -189,45 +192,21 @@ int wifi_scan_abort(void)
 }
 //----------------------------------------------------------------------------//
 
-void wifi_psk_info_set(struct psk_info *psk_data)
-{
-	u32 param_buf[1];
-
-	param_buf[0] = (u32)psk_data;
-	DCache_Clean((u32)psk_data, sizeof(struct psk_info));
-	inic_ipc_api_host_message_send(IPC_API_WIFI_PSK_INFO_SET, param_buf, 1);
-}
-
-void wifi_psk_info_get(struct psk_info *psk_data)
-{
-	u32 param_buf[1];
-	struct psk_info *psk_info_temp = (struct psk_info *)rtw_zmalloc(sizeof(struct psk_info));
-	if (psk_info_temp == NULL) {
-		return;
-	}
-
-	param_buf[0] = (u32)psk_info_temp;
-	DCache_CleanInvalidate((u32)psk_info_temp, sizeof(struct psk_info));
-	inic_ipc_api_host_message_send(IPC_API_WIFI_PSK_INFO_GET, param_buf, 1);
-
-	DCache_Invalidate((u32)psk_info_temp, sizeof(struct psk_info));
-	rtw_memcpy(psk_data, psk_info_temp, sizeof(struct psk_info));
-	rtw_mfree((u8 *)psk_info_temp, 0);
-}
-
-int wifi_get_mac_address(rtw_mac_t *mac)
+int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse)
 {
 	int ret = 0;
-	u32 param_buf[1];
+	u32 param_buf[3];
 
 	rtw_mac_t *mac_temp = (rtw_mac_t *)rtw_malloc(sizeof(rtw_mac_t));
 	if (mac_temp == NULL) {
 		return -1;
 	}
 
-	param_buf[0] = (u32)mac_temp;
+	param_buf[0] = idx;
+	param_buf[1] = (u32)mac_temp;
+	param_buf[2] = efuse;
 	DCache_CleanInvalidate((u32)mac_temp, sizeof(rtw_mac_t));
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_MAC_ADDR, param_buf, 1);
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_MAC_ADDR, param_buf, 3);
 
 	DCache_Invalidate((u32)mac_temp, sizeof(rtw_mac_t));
 	rtw_memcpy(mac, mac_temp, sizeof(rtw_mac_t));
@@ -333,16 +312,9 @@ int wifi_set_mfp_support(unsigned char value)
 
 int wifi_set_group_id(unsigned char value)
 {
-#ifdef CONFIG_SAE_SUPPORT
-	int ret = 0;
-	u32 param_buf[1];
+	rtw_sae_set_user_group_id(value);
 
-	param_buf[0] = (u32)value;
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SET_GROUP_ID, param_buf, 1);
-	return ret;
-#else
-	return 0;
-#endif
+	return RTW_SUCCESS;
 }
 
 int wifi_set_pmk_cache_enable(unsigned char value)
@@ -513,6 +485,12 @@ static void rtw_autoreconnect_thread(void *param)
 	connect_param.key_id = reconnect_info->key_id;
 
 	RTW_API_INFO("\n\rauto reconnect ...\n");
+
+#ifdef CONFIG_SAE_SUPPORT
+#ifdef CONFIG_WPS
+	connect_param.is_wps_trigger = reconnect_info->is_wps_trigger;
+#endif
+#endif
 	ret = wifi_connect(&connect_param, 1);
 #if CONFIG_LWIP_LAYER
 	if (ret == RTW_SUCCESS) {
@@ -550,7 +528,7 @@ static void rtw_autoreconnect_thread(void *param)
 void rtw_autoreconnect_hdl(rtw_security_t security_type,
 						   char *ssid, int ssid_len,
 						   char *password, int password_len,
-						   int key_id)
+						   int key_id, char is_wps_trigger)
 {
 	static struct wifi_autoreconnect_param param;
 	param_indicator = &param;
@@ -560,6 +538,7 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 	param.password = password;
 	param.password_len = password_len;
 	param.key_id = key_id;
+	param.is_wps_trigger = is_wps_trigger;
 
 	if (wifi_autoreconnect_task.task != 0) {
 #if CONFIG_LWIP_LAYER
@@ -708,7 +687,7 @@ void wifi_set_indicate_mgnt(int enable)
 	inic_ipc_api_host_message_send(IPC_API_WIFI_SET_IND_MGNT, param_buf, 1);
 }
 
-int wifi_send_raw_frame(raw_data_desc_t *raw_data_desc)
+int wifi_send_mgnt(raw_data_desc_t *raw_data_desc)
 {
 	int ret = 0;
 	u32 param_buf[1];
@@ -948,12 +927,14 @@ int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len)
 }
 //----------------------------------------------------------------------------//
 
-void wifi_btcoex_set_pta(pta_type_t type)
+void wifi_btcoex_set_pta(pta_type_t type, u8 role, u8 process)
 {
-	u32 param_buf[1];
+	u32 param_buf[3];
 
 	param_buf[0] = (u32)type;
-	inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_SET_PTA, param_buf, 1);
+	param_buf[1] = (u32)role;
+	param_buf[2] = (u32)process;
+	inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_SET_PTA, param_buf, 3);
 }
 
 void wifi_btcoex_set_bt_ant(u8 bt_ant)
@@ -986,19 +967,19 @@ int wifi_set_pmf_mode(u8 pmf_mode)
 
 int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param)
 {
+	int ret = 0;
+	u32 param_buf[1];
+
 	if (rfk_param == NULL) {
 		return _FAIL;
 	}
 
-	int ret = 0;
-	u32 param_buf[5];
-	param_buf[0] = (u32)rfk_param->type;
-	param_buf[1] = (u32)rfk_param->rfk_data1;
-	param_buf[2] = (u32)rfk_param->rfk_data2;
-	param_buf[3] = (u32)rfk_param->rfk_data3;
-	param_buf[4] = (u32)rfk_param->rfk_data4;
+	param_buf[0] = (u32)rfk_param;
 
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_BT_RFK, param_buf, 5);
+	DCache_Clean((u32)rfk_param, sizeof(struct bt_rfk_param));
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_BT_RFK, param_buf, 1);
+	DCache_Invalidate((u32)rfk_param, sizeof(struct bt_rfk_param));
+
 	return ret;
 }
 
@@ -1006,6 +987,68 @@ int wifi_zigbee_coex_zb_rfk(void)
 {
 	int ret = 0;
 	inic_ipc_api_host_message_send(IPC_API_WIFI_COEX_ZB_RFK, NULL, 0);
+	return ret;
+}
+
+void wifi_wpa_sta_4way_fail_notify(void)
+{
+	inic_ipc_api_host_message_send(IPC_API_WPA_4WAY_FAIL, NULL, 0);
+}
+
+void wifi_wpa_add_key(struct rtw_crypt_info *crypt)
+{
+	u32 param_buf[1] = {0};
+
+	DCache_Clean((u32)crypt, sizeof(struct rtw_crypt_info));
+	param_buf[0] = (u32)crypt;
+	inic_ipc_api_host_message_send(IPC_API_WIFI_ADD_KEY, param_buf, 1);
+}
+
+void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops)
+{
+	u32 param_buf[1] = {0};
+
+	DCache_Clean((u32)pmksa_ops, sizeof(struct rtw_pmksa_ops_t));
+	param_buf[0] = (u32)pmksa_ops;
+	inic_ipc_api_host_message_send(IPC_API_WPA_PMKSA_OPS, param_buf, 1);
+}
+
+int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
+{
+	u32 param_buf[3] = {0};
+
+	param_buf[0] = (u32)wlan_idx;
+	param_buf[1] = (u32)status;
+	param_buf[2] = (u32)mac_addr;
+
+	if (mac_addr) {
+		DCache_Clean((u32)mac_addr, 6);
+	}
+	inic_ipc_api_host_message_send(IPC_API_WIFI_SAE_STATUS, param_buf, 3);
+	return 0;
+}
+
+int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc)
+{
+	int ret;
+	int idx = 0;
+	struct skb_raw_para raw_para;
+
+	struct eth_drv_sg sg_list[2];
+	int sg_len = 0;
+
+	if (raw_frame_desc == NULL) {
+		return -1;
+	}
+
+	raw_para.rate = raw_frame_desc->tx_rate;
+	raw_para.retry_limit = raw_frame_desc->retry_limit;
+	idx = raw_frame_desc->wlan_idx;
+
+	sg_list[sg_len].buf = (unsigned int)raw_frame_desc->buf;
+	sg_list[sg_len++].len = raw_frame_desc->buf_len;
+	ret = inic_ipc_host_send(idx, sg_list, sg_len, raw_frame_desc->buf_len, &raw_para);
+
 	return ret;
 }
 

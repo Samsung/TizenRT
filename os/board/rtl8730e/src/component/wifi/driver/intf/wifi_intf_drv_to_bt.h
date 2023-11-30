@@ -21,6 +21,17 @@ extern "C" {
 #endif
 #include <rtw_autoconf.h>
 
+typedef enum pta_host_role {
+	PTA_HOST_WIFI			= 0,
+	PTA_HOST_BT				= 1
+} pta_host_role_t;
+
+typedef enum pta_process_action {
+	COMMON_ACTION			= 0,
+	CALIBRATION_START		= 1,
+	CALIBRATION_STOP		= 2
+} pta_process_action_t;
+
 typedef enum pta_type {
 	PTA_AUTO                 = 0,
 	PTA_WIFI			= 1,
@@ -31,7 +42,8 @@ typedef enum bt_rfk_type {
 	BT_RX_DCK       = 0,
 	BT_LOK             = 1,
 	BT_LOK_RES      = 2,
-	BT_DAC_DCK     = 3
+	BT_DAC_DCK     = 3,
+	BT_ADC_DCK     = 4,
 } bt_rfk_type_t;
 
 struct bt_rfk_param {
@@ -46,8 +58,8 @@ struct bt_rfk_param {
 //----- ------------------------------------------------------------------
 // BT Interface opened for upper layer
 //----- ------------------------------------------------------------------
-void rltk_bt_set_gnt_bt(pta_type_t  gnt_bt);
-void rltk_bt_set_gnt_bt_with_clk_source(pta_type_t gnt_bt);
+void rltk_bt_set_gnt_bt(pta_type_t gnt_bt, u8 role, u8 process);
+void rltk_bt_set_gnt_bt_with_clk_source(pta_type_t gnt_bt, u8 role, u8 process);
 const unsigned char *rltk_bt_get_patch_code(void);
 unsigned int rltk_bt_get_patch_code_len(void);
 void rltk_bt_pta_init(void);

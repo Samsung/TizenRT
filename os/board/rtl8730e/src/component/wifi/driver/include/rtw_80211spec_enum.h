@@ -47,6 +47,7 @@ enum WIFI_FRAME_SUBTYPE {
 	WIFI_RTS            = (BIT(7) | BIT(5) | BIT(4) | WIFI_CTRL_TYPE),
 	WIFI_CTS            = (BIT(7) | BIT(6) | WIFI_CTRL_TYPE),
 	WIFI_ACK            = (BIT(7) | BIT(6) | BIT(4) | WIFI_CTRL_TYPE),
+	WIFI_BA            	= (BIT(7) | BIT(4) | WIFI_CTRL_TYPE),
 	WIFI_CFEND          = (BIT(7) | BIT(6) | BIT(5) | WIFI_CTRL_TYPE),
 	WIFI_CFEND_CFACK    = (BIT(7) | BIT(6) | BIT(5) | BIT(4) | WIFI_CTRL_TYPE),
 	WIFI_TRIGGER        = (BIT(5) | WIFI_CTRL_TYPE),

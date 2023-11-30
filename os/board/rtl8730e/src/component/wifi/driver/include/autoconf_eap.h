@@ -22,6 +22,8 @@
 #define CONFIG_TLS  1
 #define CONFIG_PEAP 1
 #define CONFIG_TTLS 1
+#define EAP_TTLS_MSCHAPv2 1
+#define EAP_MSCHAPv2 1
 #else  /* default config */
 #define CONFIG_TLS  0
 #define CONFIG_PEAP 0

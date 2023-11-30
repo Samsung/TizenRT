@@ -34,6 +34,12 @@ struct  sk_buff_head {
 	unsigned int 		qlen;
 };
 
+struct skb_raw_para {
+	unsigned char enable;
+	unsigned char rate;
+	unsigned char retry_limit;
+};
+
 struct sk_buff {
 	/* These two members must be first. */
 	struct sk_buff		*next;		/* Next buffer in list */
@@ -50,6 +56,8 @@ struct sk_buff {
 	int 			dyalloc_flag;
 	unsigned char	busy;
 	unsigned char	no_free;
+
+	struct skb_raw_para	tx_raw;
 };
 
 struct skb_info {
@@ -76,7 +84,8 @@ struct skb_priv_t {
 	int skb_info_num;
 	int skb_info_used;
 	int skb_info_max_used;
-	int skb_fail_cnt;
+	int skb_fail_tx;
+	int skb_fail_rx;
 };
 
 extern struct skb_priv_t skbpriv;
@@ -129,7 +138,5 @@ struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int r
 void dev_kfree_skb_any(struct sk_buff *skb);
 void init_skb_pool(void);
 void deinit_skb_pool(void);
-int skb_fail_get_and_rst(void);
-void skb_fail_inc(void);
 
 #endif //__SKBUFF_H__

@@ -81,10 +81,8 @@ extern int rtw_bss_set_passphrase(unsigned char wlan_idx, __u8 *passphrase, __u1
 extern int rtw_joinbss_start_api(rtw_network_info_t *connect_param);
 extern int rtw_ap_start_api(rtw_softap_info_t *softAP_config, unsigned char value);
 extern int rtw_scan_start_api(rtw_scan_param_t *scan_param, unsigned char block);
-extern void rtw_setkey(struct rtw_crypt_info *crypt);
-#ifndef CONFIG_EAP
-extern int rtw_joinbss_find_security_type(rtw_network_info_t *connect_param);
-#endif
+extern void rtw_joinbss_by_roaming(rtw_network_info_t *connect_param);
+
 #ifdef CONFIG_WOWLAN_SD1
 extern int rtw_wowlan_ctrl(unsigned char wlan_idx, rtw_wowlan_option_t type, void *param);
 #endif
@@ -104,6 +102,15 @@ extern void _promisc_update_candi_ap_rssi_avg(signed char rssi, unsigned char cn
 extern void _promisc_issue_probersp(unsigned char *da);
 extern void _promisc_stop_tx_beacn(void);
 extern void _promisc_resume_tx_beacn(void);
+
+#ifdef CONFIG_NAN
+int nan_intfs_init(void);
+int nan_intfs_deinit(void);
+int rtw_start_nan_api(u8 master_pref, u8 band_support);
+void rtw_stop_nan_api(void);
+int rtw_add_nan_func(void *func_param, void *nan_func_pointer);
+int rtw_del_nan_func(u64 cookie);
+#endif
 
 #ifdef	__cplusplus
 }
