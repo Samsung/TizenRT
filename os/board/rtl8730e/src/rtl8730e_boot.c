@@ -132,13 +132,23 @@ void board_spi_initialize(void)
 {
 #ifdef CONFIG_SPI
 	struct spi_dev_s *spi;
+#ifdef CONFIG_AMEBASMART_SPI0
+	spi = up_spiinitialize(0);
+#ifdef CONFIG_SPI_USERIO
+	if (spi_uioregister(0, spi) < 0) {
+		lldbg("Failed to register SPI0\n");
+	}
+#endif
+#endif
+#ifdef CONFIG_AMEBASMART_SPI1
 	spi = up_spiinitialize(1);
-
 #ifdef CONFIG_SPI_USERIO
 	if (spi_uioregister(1, spi) < 0) {
 		lldbg("Failed to register SPI1\n");
 	}
 #endif
+#endif
+
 #endif
 }
 

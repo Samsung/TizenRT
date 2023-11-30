@@ -38,8 +38,6 @@
 
 #include <arch/board/board.h>
 
-#include "up_internal.h"
-#include "up_arch.h"
 
 #include "chip.h"
 
@@ -71,7 +69,7 @@
 
 #undef spierr
 #undef spiinfo
-#if defined(DEBUG_IMX_I2C)
+#if defined(CONFIG_DEBUG_SPI)
 #define spiinfo(format, ...)   printf(format, ##__VA_ARGS__)
 #define spierr(format, ...)    printf(format, ##__VA_ARGS__)
 #else
@@ -213,13 +211,13 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_object = {0},
 
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = PA_13,
-	.spi_miso = PA_14,
-	.spi_sclk = PA_15,
-	.spi_cs = PA_16,
+	.spi_mosi = PB_29,
+	.spi_miso = PB_30,
+	.spi_sclk = PB_31,
+	.spi_cs = PC_0,
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
-	.role = AMEBASMART_SPI_SLAVE,
+	.role = AMEBASMART_SPI_MASTER,
 };
 
 static const struct spi_ops_s g_spi1ops = {
