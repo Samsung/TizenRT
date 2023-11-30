@@ -71,11 +71,16 @@ config AMEBASMART_SPI
 	default n
 	
 if AMEBASMART_SPI
+config AMEBASMART_SPI0
+	bool "SPI0"
+	default n
+config AMEBASMART_SPI1
+	bool "SPI1"
+	default n
 
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
 	default y
-
 endif
 
 config AMEBASMART_I2C
