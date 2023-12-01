@@ -2,6 +2,7 @@
 
 == version 79e92a3 2023/11/10-17:32:22 ==
 1.	Sync to version 8.4d SDK
+2.	Add buffer print feature for KM4, disabled by default (Only certain logs use buffer print)
 
 == version d832a8b 2023/11/07-10:35:32 ==
 1.	enable wificsi

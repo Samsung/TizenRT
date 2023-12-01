@@ -217,6 +217,16 @@ static void _inic_ipc_api_host_promisc_user_callback_handler(inic_ipc_dev_reques
 	}
 }
 
+static void _inic_ipc_api_host_buffered_printf(inic_ipc_dev_request_message *p_ipc_msg)
+{
+	char *tmp_buffer = (char *)p_ipc_msg->param_buf[0];
+	int buf_size = (int)p_ipc_msg->param_buf[1];
+	DCache_Invalidate((u32)tmp_buffer, buf_size);
+
+	dbg("%s", tmp_buffer);
+	p_ipc_msg->ret = 0;
+}
+
 /* ---------------------------- Public Functions ---------------------------- */
 /**
  * @brief  process the ipc message.
@@ -279,6 +289,9 @@ void inic_ipc_api_host_task(void)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 			p_ipc_msg->ret = dhcps_ip_in_table_check(p_ipc_msg->param_buf[0], p_ipc_msg->param_buf[1]);
 #endif
+			break;
+		case IPC_BUFFERED_PRINTF_NP:
+			_inic_ipc_api_host_buffered_printf(p_ipc_msg);
 			break;
 		default:
 			DBG_8195A("Host API Unknown event(%d)!\n\r", \
@@ -423,6 +436,13 @@ int inic_ipc_iwpriv_command(char *cmd, unsigned int cmd_len, int show_msg)
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_IWPRIV_INFO, param_buf, 3);
 	return ret;
+}
+
+void inic_ipc_buffered_printf_set_np_enable(u8 enable)
+{
+	u32 param_buf[1];
+	param_buf[0] = (u32)enable;
+	inic_ipc_api_host_message_send(IPC_API_BUFFERED_PRINTF_SET_NP_EN, param_buf, 1);
 }
 
 #ifdef CONFIG_MP_INCLUDED
