@@ -201,6 +201,7 @@ static void get_card_path(char *card_path, uint8_t card_id, uint8_t device_id, a
 	medvdbg("card_path : %s\n", card_path);
 }
 
+/* TODO Think we can remove direct option here...*/
 static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
@@ -244,6 +245,7 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 			card[card_id].config[device_id].status = AUDIO_CARD_IDLE;
 			card[card_id].card_id = card_id;
 			card[card_id].device_id = device_id;
+			pthread_mutex_init(&(card[card_id].card_mutex), NULL);
 			found_cards++;
 			medvdbg("Found an audio card, total card : %d id : %d device : %d\n", found_cards, card_id, device_id);
 			pthread_mutex_unlock(&(card[card_id].card_mutex));
@@ -614,30 +616,28 @@ audio_manager_result_t audio_manager_init(void)
 {
 	audio_manager_result_t ret;
 	static int am_initialized = 0;
-	int card_id;
+	int found_card = 0;
 
 	if (am_initialized) {
 		return AUDIO_MANAGER_SUCCESS;
 	}
-
 	am_initialized = 1;
-
-	for (card_id = 0; card_id < CONFIG_AUDIO_MAX_INPUT_CARD_NUM; card_id++) {
-		pthread_mutex_init(&(g_audio_in_cards[card_id].card_mutex), NULL);
-	}
+	
 	ret = find_audio_card(INPUT);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("find card failed result : %d\n", ret);
-		return ret;
+		meddbg("find input card failed result : %d\n", ret);
+	} else {
+		found_card++;
 	}
-
-	for (card_id = 0; card_id < CONFIG_AUDIO_MAX_OUTPUT_CARD_NUM; card_id++) {
-		pthread_mutex_init(&(g_audio_out_cards[card_id].card_mutex), NULL);
-	}
+	
 	ret = find_audio_card(OUTPUT);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("find card failed result : %d\n", ret);
-		return ret;
+		meddbg("find output card failed result : %d\n", ret);
+	} else {
+		found_card++;
+	}
+	if (found_card == 0) {
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
 	return AUDIO_MANAGER_SUCCESS;
