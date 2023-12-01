@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version f257d93 /12/01-12:18:40==
+1.	sync bootloade with v8.4d sdk
+2.	add fault handler
+
 == version 09bfc14 /11/06-15:37:33==
 1.	add more logs for booting status, SBOOT and RDP
 2.	implement feature to verify RDP image
