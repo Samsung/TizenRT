@@ -236,10 +236,10 @@ CHIP_CSRCS += amebasmart_timer_lowerhalf.c
 CHIP_CSRCS += amebasmart_rtc_lowerhalf.c
 CHIP_CSRCS += amebasmart_rtc.c
 CHIP_CSRCS += amebasmart_watchdog_lowerhalf.c
-ifeq ($(CONFIG_I2C),y)
+ifeq ($(CONFIG_AMEBASMART_I2C),y)
 CHIP_CSRCS += amebasmart_i2c.c
 endif
-ifeq ($(CONFIG_SPI),y)
+ifeq ($(CONFIG_AMEBASMART_SPI),y)
 CHIP_CSRCS += amebasmart_spi.c
 endif
 ifeq ($(CONFIG_AMEBASMART_I2S),y)
