@@ -19,6 +19,10 @@
 
 #include "ameba_soc.h"
 
+void flash_init_userdef(void);
+void nand_init_userdef(void);
+void flash_layout_init(void);
+
 /**
 * @brif Indicate the flash baudrate. It can be one of the following value:
 *	0xFFFF: division ratio is 10 => SPIC clock = 1/10 nppll
@@ -42,6 +46,11 @@ const u16 Flash_Speed = 0x7FF;
 */
 const u16 Flash_ReadMode = 0xFFFF;
 
+/* ftl */
+
+u8 ftl_phy_page_num = 3;			/* The number of physical map pages, default is 3*/
+u32 ftl_phy_page_start_addr;		/* The start offset of flash pages which is allocated to FTL physical map.
+																	Users should modify it according to their own memory layout!! */
 /**
 * @brif Flash_AVL maintains the flash IC supported by SDK.
 *	If users want to adpot new flash, add item in the following AVL.
@@ -113,8 +122,8 @@ FlashLayoutInfo_TypeDef Flash_Layout_Nor[] = {
 	{IMG_BOOT_OTA2, 	0x08300000, 0x0833FFFF}, //Boot Manifest(4K) + KM4 Bootloader(252K) OTA
 	{IMG_APP_OTA2, 	0x08340000, 0x0851FFFF}, //Certificate(4K) + Manifest(4K) + KR4 & KM4 Application OTA2 + Manifest(4K) + RDP IMG OTA2
 	{IMG_APIMG_OTA2,	0x08520000, 0x0861FFFF}, //Manifest(4K) + AP IMG OTA2
-
-	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
+	{FTL,				0x08019000, 0x0801c000}, 
+//	{FTL,				0x08620000, 0x08622FFF}, //FTL for BT(>=12K), The start offset of flash pages which is allocated to FTL physical map.
 	{VFS1, 				0x08623000, 0x08642FFF}, //VFS region 1 (128K)
 	{USER, 				0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 	/* End */

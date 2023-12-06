@@ -1198,24 +1198,6 @@ uint16_t rtk_bt_le_gap_privacy_init(bool whitelist)
 
 	return ret;
 }
-
-uint16_t rtk_bt_le_gap_privacy_modify_resolving_list(rtk_bt_le_modify_resolv_list_t *param)
-{
-	uint16_t ret = 0;
-
-	if (!rtk_bt_is_enable()) {
-		return RTK_BT_ERR_NOT_READY;
-	}
-
-	if (param->op > RTK_BT_LE_RESOLV_LIST_OP_REMOVE || param->entry.addr_type > RTK_BT_LE_IDENT_ADDR_RAND) {
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PRIVACY_MODIFY_LIST,
-						  param, sizeof(rtk_bt_le_modify_resolv_list_t));
-
-	return ret;
-}
 #endif  /* RTK_BLE_PRIVACY_SUPPORT */
 
 uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param)

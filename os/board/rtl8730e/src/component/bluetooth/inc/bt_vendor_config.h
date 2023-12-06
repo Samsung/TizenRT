@@ -1,0 +1,109 @@
+/**
+ * @file      bt_vendor_config.h
+ * @author    ryan_wang@realsil.com.cn
+ * @brief     Bluetooth platform vendor cmd config macros definition
+ * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
+ */
+
+#ifndef __BT_VENDOR_CONFIG_H__
+#define __BT_VENDOR_CONFIG_H__
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#include <platform_opts_bt.h>
+
+/*
+ * PLATFORM_AMEBAD2 (AmebaSmart)
+ */
+#if defined(CONFIG_PLATFORM_AMEBAD2)
+#define VENDOR_CMD_SOF_EOF_CTRL_SUPPORT        1
+#if defined(VENDOR_CMD_SOF_EOF_CTRL_SUPPORT) && VENDOR_CMD_SOF_EOF_CTRL_SUPPORT
+#define VENDOR_CMD_SOF_EOF_CTRL_OPCODE         0xFC52
+#endif
+
+#define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1
+#if defined(VENDOR_CMD_READ_BT_REGISTER_SUPPORT) && VENDOR_CMD_READ_BT_REGISTER_SUPPORT
+#define VENDOR_CMD_READ_BT_REGISTER_OPCODE     0xFC61
+#endif
+
+#define VENDOR_CMD_BT_SLEEP_MODE_SUPPORT       1
+#if defined(VENDOR_CMD_BT_SLEEP_MODE_SUPPORT) && VENDOR_CMD_BT_SLEEP_MODE_SUPPORT
+#define VENDOR_CMD_BT_SLEEP_MODE_OPCODE        0xFC74
+#endif
+
+#define VENDOR_CMD_ONE_SHOT_ADV_SUPPORT        1
+#if defined(VENDOR_CMD_ONE_SHOT_ADV_SUPPORT) && VENDOR_CMD_ONE_SHOT_ADV_SUPPORT
+#define VENDOR_CMD_ONE_SHOT_ADV_OPCODE         0xFC87
+#endif
+
+#define VENDOR_CMD_SET_TX_POWER_SUPPORT        1
+#if defined(VENDOR_CMD_SET_TX_POWER_SUPPORT) && VENDOR_CMD_SET_TX_POWER_SUPPORT
+#define VENDOR_CMD_SET_TX_POWER_OPCODE         0xFD80
+#endif
+
+/*
+ * PLATFORM_AMEBALITE (AmebaLite)
+ */
+#elif defined(CONFIG_PLATFORM_AMEBALITE)
+#define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1
+#if defined(VENDOR_CMD_READ_BT_REGISTER_SUPPORT) && VENDOR_CMD_READ_BT_REGISTER_SUPPORT
+#define VENDOR_CMD_READ_BT_REGISTER_OPCODE     0xFC61
+#endif
+
+#define VENDOR_CMD_BT_SLEEP_MODE_SUPPORT       1
+#if defined(VENDOR_CMD_BT_SLEEP_MODE_SUPPORT) && VENDOR_CMD_BT_SLEEP_MODE_SUPPORT
+#define VENDOR_CMD_BT_SLEEP_MODE_OPCODE        0xFC74
+#endif
+
+#define VENDOR_CMD_ONE_SHOT_ADV_SUPPORT        1
+#if defined(VENDOR_CMD_ONE_SHOT_ADV_SUPPORT) && VENDOR_CMD_ONE_SHOT_ADV_SUPPORT
+#define VENDOR_CMD_ONE_SHOT_ADV_OPCODE         0xFC87
+#endif
+
+/*
+ * PLATFORM_8735B (AmebaPro2)
+ */
+#elif defined(CONFIG_PLATFORM_8735B)
+#define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1
+#if defined(VENDOR_CMD_READ_BT_REGISTER_SUPPORT) && VENDOR_CMD_READ_BT_REGISTER_SUPPORT
+#define VENDOR_CMD_READ_BT_REGISTER_OPCODE     0xFC61
+#endif
+
+#define VENDOR_CMD_ONE_SHOT_ADV_SUPPORT        1
+#if defined(VENDOR_CMD_ONE_SHOT_ADV_SUPPORT) && VENDOR_CMD_ONE_SHOT_ADV_SUPPORT
+#define VENDOR_CMD_ONE_SHOT_ADV_OPCODE         0xFC87
+#endif
+
+/*
+ * PLATFORM_AMEBADPLUS (AmebaDplus)
+ */
+#elif defined(CONFIG_PLATFORM_AMEBADPLUS)
+#define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1
+#if defined(VENDOR_CMD_READ_BT_REGISTER_SUPPORT) && VENDOR_CMD_READ_BT_REGISTER_SUPPORT
+#define VENDOR_CMD_READ_BT_REGISTER_OPCODE     0xFC61
+#endif
+
+/*
+ * PLATFORM_RTL8720F (AmebaLite2)
+ */
+#elif defined(CONFIG_PLATFORM_RTL8720F)
+#define VENDOR_CMD_READ_BT_REGISTER_SUPPORT    1
+#if defined(VENDOR_CMD_READ_BT_REGISTER_SUPPORT) && VENDOR_CMD_READ_BT_REGISTER_SUPPORT
+#define VENDOR_CMD_READ_BT_REGISTER_OPCODE     0xFC61
+#endif
+
+/*
+ * Error Platform
+ */
+#else
+#error Please choose a corret platform
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __BT_VENDOR_CONFIG_H__ */

@@ -39,10 +39,6 @@
 //#define USE_LOCAL_DBG_DIRECT 1
 //#define MONITOR_STATUS_INFO 1
 
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-#define FTL_LONGEST_WAIT_TIME 0xffff
-#endif
-
 #define FTL_MAGIC_PATTERN_VER01 0x635E
 #define FTL_MAGIC_PATTERN_VER02 0x777F
 
@@ -59,6 +55,9 @@
 #define RAVEN_DEBUG 1
 #endif
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define FTL_LONGEST_WAIT_TIME 0xffff
+#endif
 /////////////////////////////////////////////////////////////////
 #define LOGIC_ADDR_MAP_BIT_NUM 12
 
@@ -125,6 +124,12 @@ extern uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data);
 extern bool ftl_page_erase(struct Page_T *p);
 void ftl_mapping_table_init(void);
 uint16_t read_mapping_table(uint16_t logical_addr);
+/* FTL Secure */
+#define FTL_SECURE 1
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+/* Secure efuse key location */
+#define FTL_KEY_ADDR 0x390
+#endif
 
 /* Flash Status Bit */
 #define FLASH_STATUS_BITS 0x2c
@@ -951,6 +956,42 @@ L_retry:
 	return  ret;
 }
 
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+/* FTL Secure Save and Load API */
+uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	uint32_t ret = 0;
+	uint8_t* tmp_buff = NULL;
+
+	tmp_buff = kmm_zalloc(size);
+
+	if (tmp_buff == NULL) {
+		return 0x10;
+	}
+	
+	ret = ameba_ftl_save_to_storage(tmp_buff, pdata_tmp, offset, size);
+	if (ret != FTL_WRITE_SUCCESS) {
+		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_save_to_storage ret: %x \n", ret);
+	}
+
+	rtw_mfree(tmp_buff, size);
+	return ret;
+}
+
+uint32_t ftl_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	uint32_t ret = 0;
+
+	ret = ameba_ftl_load_from_storage(pdata_tmp, offset, size);
+	if (ret != FTL_READ_SUCCESS) {
+		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_load_from_storage ret: %x \n", ret);
+	}
+
+	return ret;
+}
+#endif
+
+
 // return 0 success
 // return !0 fail
 uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
@@ -1035,16 +1076,10 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 __WEAK uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
-	if (ftl_mutex_lock == NULL) {
-		return FTL_WRITE_ERROR_NOT_INIT;
-	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
-		return ERROR_MUTEX_GET_TIMEOUT;
-	}
-
-
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+	ret = ftl_secure_save_to_storage(pdata_tmp, offset, size);
+#endif
 	ret = ftl_save_to_storage_i(pdata_tmp, offset, size);
-
-	rtw_mutex_put(&ftl_mutex_lock);
 	return ret;
 }
 
@@ -1207,17 +1242,10 @@ L_retry:
 __WEAK uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
-	if (ftl_mutex_lock == NULL) {
-		return FTL_READ_ERROR_NOT_INIT;
-	} else if (rtw_mutex_get_timeout(&ftl_mutex_lock, 100) != 0) {
-		return ERROR_MUTEX_GET_TIMEOUT;
-	}
-
-
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+	ret = ftl_secure_load_from_storage(pdata_tmp, offset, size);
+#endif
 	ret = ftl_load_from_storage_i(pdata_tmp, offset, size);
-
-	rtw_mutex_put(&ftl_mutex_lock);
-
 	return ret;
 }
 
@@ -1339,6 +1367,16 @@ uint32_t ftl_save(void *pdata, uint16_t offset, uint16_t size)
 }
 #endif
 
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+/* Secure FTL Init */
+uint32_t ftl_secure_init(void)
+{
+	uint32_t ret = 0;
+	ret = ameba_ftl_secure_init(FTL_KEY_ADDR);
+	return ret;
+}
+#endif
+
 uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
 	rtw_mutex_init(&ftl_mutex_lock);
@@ -1348,7 +1386,12 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 	g_PAGE_num = pagenum;
 
 	if (ftl_sem == NULL) {
-		ftl_sem = (_sema)xSemaphoreCreateRecursiveMutex();
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		rtw_init_sema(&ftl_sem, 0);
+#elif
+		ftl_sem = xSemaphoreCreateRecursiveMutex();
+#endif
+
 	}
 
 	g_pPage = (struct Page_T *)(u32PageStartAddr);
@@ -1460,6 +1503,13 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 
 	ftl_recover_from_power_lost();
 	g_free_page_count = ftl_get_free_page_count();
+	
+#if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+		uint32_t ret = ftl_secure_init();
+		if (0 != ret) {
+			FTL_PRINTF(FTL_LEVEL_ERROR, "ftl_secure_init fail, ret: %d!", ret);
+		}
+#endif
 
 	return 0;
 }
@@ -1470,7 +1520,7 @@ void ftl_mapping_table_init(void)
 		//ftl_mapping_table = os_mem_zalloc((RAM_TYPE)ftl_config.ftl_mapping_table_ram_type,
 		//                                  MAPPING_TABLE_SIZE);//table is initialised as 0
 
-		ftl_mapping_table = rtw_zmalloc(MAPPING_TABLE_SIZE);
+		ftl_mapping_table = kmm_zalloc(MAPPING_TABLE_SIZE);
 	}
 
 	uint8_t pageID = g_cur_pageID;

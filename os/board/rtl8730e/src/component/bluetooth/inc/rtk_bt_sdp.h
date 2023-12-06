@@ -13,7 +13,7 @@ extern "C"
 {
 #endif
 
-#define RTK_BT_SDK_MAX_RECORD_LENGTH    100
+#define RTK_BT_SDK_MAX_RECORD_LENGTH    600
 
 /* ------------------------------- Data Types ------------------------------- */
 
@@ -123,13 +123,6 @@ typedef struct {
 } rtk_sdp_record_t;
 
 
-/* ------------------------- Functions Declaration ------------------------- */
-/**
- * @defgroup  bt_sdp_api BT SDP APIs
- * @brief     BT SDP related function APIs
- * @ingroup   BT_APIs
- * @{
- */
 
 /**
  * @fn        uint16_t rtk_sdp_record_add(void *record, uint32_t length)

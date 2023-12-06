@@ -122,6 +122,8 @@ trble_result_e rtw_ble_combo_deinit(void)
 	tizenrt_ble_srv_count = 0;
     is_server_init = false;
 
+	tizenrt_remove_service();
+
     attr_counter = 0;
     return TRBLE_SUCCESS; 
 }

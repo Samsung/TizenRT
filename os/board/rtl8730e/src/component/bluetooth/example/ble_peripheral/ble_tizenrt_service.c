@@ -402,9 +402,10 @@ void ble_tizenrt_free_srv_info(struct rtk_bt_gatt_service *srv_info)
 
 extern uint16_t server_profile_count;
 int attr_counter = 0;
+static struct rtk_bt_gatt_service *ble_tizenrt_srv_array_ptr = NULL;
 trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 {	
-	struct rtk_bt_gatt_service ble_tizenrt_srv = {0};
+    struct rtk_bt_gatt_service ble_tizenrt_srv;
     ble_tizenrt_srv.type = GATT_SERVICE_OVER_BLE;
     ble_tizenrt_srv.server_info = 0;
     ble_tizenrt_srv.user_data = NULL;
@@ -440,7 +441,10 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
                                                 ble_tizenrt_srv.attr_count * sizeof(T_ATTRIB_APPL),
                                                 ble_tizenrt_srv.start_handle);
 
-    if (RTK_BT_OK != rtk_bt_gatts_register_service(&ble_tizenrt_srv))
+	memcpy(&ble_tizenrt_srv_array_ptr[app_id], &ble_tizenrt_srv, sizeof(struct rtk_bt_gatt_service));
+	int ret = rtk_bt_gatts_register_service(&ble_tizenrt_srv_array_ptr[app_id]);
+
+    if (RTK_BT_OK != ret)
     {
         dbg("add service fail \n");
 		ble_tizenrt_free_srv_info(&ble_tizenrt_srv);
@@ -452,6 +456,11 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
     return TRBLE_SUCCESS;
 }
 
+void tizenrt_remove_service(void)
+{
+	osif_mem_free(ble_tizenrt_srv_array_ptr);
+	ble_tizenrt_srv_array_ptr = NULL;
+}
 
 bool setup_ble_srv_info(uint8_t service_index, trble_gatt_t *profile)
 {
@@ -634,6 +643,7 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
 uint16_t ble_tizenrt_srv_add(void)
 {
     parse_service_table(server_init_parm.profile, server_init_parm.profile_count);
+	ble_tizenrt_srv_array_ptr = (struct rtk_bt_gatt_service *)osif_mem_alloc(0, tizenrt_ble_srv_count * sizeof(struct rtk_bt_gatt_service));
     for (int i = 0; i < tizenrt_ble_srv_count ; i++)
     {
         tizenrt_add_service(i, TIZENRT_SRV_ID + i);

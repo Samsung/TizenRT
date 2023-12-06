@@ -129,6 +129,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_MESH_PACKET                             = 0x2A, /*!< 0x2A, Mesh Packet */
 	RTK_BT_LE_GAP_ADTYPE_MESH_BEACON                             = 0x2B, /*!< 0x2B, Mesh Beacon */
 	RTK_BT_LE_GAP_ADTYPE_RSI                             		 = 0x2E, /*!< 0x2E, RSI */
+	RTK_BT_LE_GAP_ADTYPE_BROADCAST_NAME                          = 0x30, /*!< 0x30, Broadcast Name */
 	RTK_BT_LE_GAP_ADTYPE_3D_INFO_DATA                            = 0x3D, /*!< 0x3D, 3D Information Data */
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC                   = 0xFF, /*!< 0xFF, Manufacturer Specific Data */
 } rtk_bt_le_gap_ad_type_t;
@@ -1732,6 +1733,24 @@ typedef struct {
 	rtk_bt_le_resolv_list_entry_t entry;        /*!< resolving list entry */
 	uint16_t err;         					    /*!< Error code */
 } rtk_bt_le_modify_resolv_list_ind_t;
+
+/**
+ * @enum    rtk_bt_le_resolv_list_pending_reason_t
+ * @brief   Bluetooth LE resolving list modification pending reason definition.
+ */
+typedef enum {
+	RTK_BT_LE_RESOLV_LIST_PEND_BY_ADV = 0x01,    /**< Resolving list modification is pended because device is advertising. */
+	RTK_BT_LE_RESOLV_LIST_PEND_BY_SCAN = 0x02,   /**< Resolving list modification is pended because device is scanning. */
+	RTK_BT_LE_RESOLV_LIST_PEND_BY_CONNECT = 0x04 /**< Resolving list modification is pended because device is connecting. */
+} rtk_bt_le_resolv_list_pending_reason_t;
+
+/**
+ * @struct    rtk_bt_le_resolv_list_pending_ind_t
+ * @brief     Bluetooth LE resolving list modification pending indication.
+ */
+typedef struct {
+	uint8_t reason;         					/*!< Bits combination of @ref rtk_bt_le_resolv_list_pending_reason_t */
+} rtk_bt_le_resolv_list_pending_ind_t;
 #endif
 
 #if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
@@ -2457,15 +2476,6 @@ uint16_t rtk_bt_le_gap_set_phy(rtk_bt_le_set_phy_param_t *p_phy_param);
  *            - Others: Error code
  */
 uint16_t rtk_bt_le_gap_privacy_init(bool whitelist);
-/**
- * @fn        uint16_t rtk_bt_le_gap_privacy_modify_resolving_list(rtk_bt_le_modify_resolv_list_t *param)
- * @brief     Modify resolving list.
- * @param[in] param: Operation paramters
- * @return
- *            - 0  : Succeed
- *            - Others: Error code
- */
-uint16_t rtk_bt_le_gap_privacy_modify_resolving_list(rtk_bt_le_modify_resolv_list_t *param);
 #endif
 
 /**

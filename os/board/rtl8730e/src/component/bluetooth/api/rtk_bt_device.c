@@ -129,6 +129,8 @@ uint16_t rtk_bt_disable(void)
 		printf("%s: bt has not been enabled \r\n", __func__);
 		return RTK_BT_ERR_ALREADY_DONE;
 	}
+
+	b_bt_enabled = false;
 #if defined(CONFIG_BT_AP) && CONFIG_BT_AP
 	{
 		int *ret = NULL;

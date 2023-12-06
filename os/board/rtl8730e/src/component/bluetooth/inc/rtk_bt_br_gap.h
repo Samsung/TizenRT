@@ -73,6 +73,27 @@ typedef enum
 } rtk_bt_br_inquiry_mode_t;
 
 /**
+ * @typedef   rtk_bt_br_io_cap_t
+ * @brief     Bluetooth BREDR SM IO capability type definition.
+ */
+typedef enum {
+	RTK_BR_IO_CAP_DISPALY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
+	RTK_BR_IO_CAP_DISPLAY_YES_NO   = 0x01,     /*!< 0x01 DisplayYesNo */
+	RTK_BR_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
+	RTK_BR_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
+	RTK_BR_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
+	RTK_BR_IO_CAP_MAX              = 0x05,     /*!< 0x05-0xFF Reserved for future use */
+} rtk_bt_br_io_cap_t;
+
+typedef enum
+{
+	RTK_BT_BR_GAP_RADIO_MODE_VISIBLE_CONNECTABLE  = 0x01,  /*!< Enable both inquiry scan and page scan. */
+	RTK_BT_BR_GAP_RADIO_MODE_VISIBLE              = 0x02,  /*!< Only enable inquiry scan. */
+	RTK_BT_BR_GAP_RADIO_MODE_CONNECTABLE          = 0x03,  /*!< Only enable page scan. */
+	RTK_BT_BR_GAP_RADIO_MODE_NONE_DISCOVERABLE    = 0x04,  /*!< Disable both inquiry scan and page scan. */
+} rtk_bt_br_gap_radio_mode_t;
+
+/**
  * @typedef   rtk_bt_bd_addr_t
  * @brief     Bluetooth device address type definition.
  */
@@ -96,6 +117,8 @@ typedef struct {
 	uint32_t			connected_profile;
 	uint8_t				a2dp_codec_type;
 	uint8_t				hfp_codec_type;
+	uint16_t			remote_hfp_brsf_capability;
+	bool				is_inband_ring;
 	uint8_t				streaming_fg;
 	uint16_t 			rfc_spp_frame_size;			/**< spp tx/rx mtu size */
 	uint8_t				rfc_spp_credit; 			/**< remained spp tx credit */
@@ -191,6 +214,86 @@ typedef struct
 } rtk_bt_br_inquiry_start_t;
 
 /**
+ * @struct    rtk_bt_br_sniff_mode_t
+ * @brief     BR/EDR sniff mode parameters.
+ */
+typedef struct
+{
+	uint8_t		enable;                            /*!< 0 for disable, 1 for enable */
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint16_t	min_interval;                      /*!< Min sniff interval, only even values between 0x0002 and 0xFFFE are valid */
+	uint16_t	max_interval;                      /*!< Max sniff interval, only even values between 0x0002 and 0xFFFE are valid, should be larger than min_interval */
+	uint16_t	sniff_attempt;                     /*!< Number of baseband receive slots for sniff attempt */
+	uint16_t	sniff_timeout;                     /*!< Number of baseband receive slots for sniff timeout */
+} rtk_bt_br_sniff_mode_t;
+
+/**
+ * @struct    rtk_bt_br_security_param_t
+ * @brief     Bluetooth BREDR SM security parameter type definition.
+ */
+typedef struct {
+	rtk_bt_br_io_cap_t io_cap;      /*!< IO capabilities */
+	uint8_t oob_data_flag;          /*!< OOB data flag */
+	uint8_t bond_flag;              /*!< Bonding flags */
+	uint8_t br_bond_flag;           /*!< BR general bonding support flag */
+	uint8_t mitm_flag;              /*!< MITM flag */
+	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
+	uint8_t br_sec_pair_flag;       /*!< BR secure connection pairing support flag */
+} rtk_bt_br_security_param_t;
+
+/**
+ * @struct    rtk_bt_br_acl_sniff_t
+ * @brief     indicate acl sniff mode.
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint16_t	interval;                          /*!< sniff mode interval */
+} rtk_bt_br_acl_sniff_t;
+
+/**
+ * @struct    rtk_bt_br_acl_disc_t
+ * @brief     acl disconnection event.
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint16_t	cause;                             /*!< disc cause */
+} rtk_bt_br_acl_disc_t;
+
+/**
+ * @struct    rtk_bt_br_bond_key_t
+ * @brief     bond key set.
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint8_t		link_key[16];                      /*!< link key */
+	uint8_t		key_type;                          /*!< key_type */
+} rtk_bt_br_bond_key_t;
+
+/**
+ * @struct    rtk_bt_br_bond_addr_t
+ * @brief     bond address get.
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint8_t		priority;                          /*!< priority of bonded device.Bond priority number starts at 1, rather than 0. Bond priority is descending
+                                                    with the corresponding number increasing.*/
+} rtk_bt_br_bond_addr_t;
+
+/**
+ * @struct    rtk_bt_br_bond_index_t
+ * @brief     bond index get.
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];                        /*!< address */
+	uint8_t		index;                             /*!< bond index */
+} rtk_bt_br_bond_index_t;
+
+/**
  * @struct    rtk_bt_br_inquiry_result_t
  * @brief     Bluetooth BR/EDR Inquiry Result.(Copy of T_BT_EVENT_PARAM_INQUIRY_RESULT)
  */
@@ -204,6 +307,16 @@ typedef struct
 	uint8_t		*p_eir;
 } rtk_bt_br_inquiry_result_t;
 
+/**
+ * @struct    rtk_bt_br_inquiry_result_t
+ * @brief     Bluetooth BR/EDR Inquiry Result.(Copy of T_BT_EVENT_PARAM_INQUIRY_RESULT)
+ */
+typedef struct
+{
+	uint8_t		bd_addr[6];
+	uint16_t	cause;
+	uint8_t		name[RTK_BT_GAP_DEVICE_NAME_LEN];
+} rtk_bt_br_remote_name_rsp_t;
 
 /* ------------------------------ Functions Declaration ------------------------------ */
 /**
@@ -245,7 +358,7 @@ uint16_t rtk_bt_br_gap_set_device_name(const uint8_t *name);
 
 /**
  * @fn        uint16_t rtk_bt_br_gap_set_page_param(rtk_bt_br_page_param_t *page_param)
- * @brief     Set paging parameter.
+ * @brief     Set paging parameter(Init page parameters).
  * @param[in] page_param: page parameter
  * @return    
  *            - 0  : Succeed
@@ -254,14 +367,58 @@ uint16_t rtk_bt_br_gap_set_device_name(const uint8_t *name);
 uint16_t rtk_bt_br_gap_set_page_param(rtk_bt_br_page_param_t *page_param);
 
 /**
+ * @fn        uint16_t rtk_bt_br_gap_cfg_page_param(uint8_t type, uint16_t interval, uint16_t window)
+ * @brief     Config paging parameter(after init).
+ * @param[in] type: Page scan type value to set(0 -> STAND, 1 -> INTERLACED)
+ * @param[in] interval: Page scan interval value to set.
+ * @param[in] window: Page scan window value to set.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_cfg_page_param(uint8_t type, uint16_t interval, uint16_t window);
+
+/**
  * @fn        uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_param)
- * @brief     Set inquiry parameter.
+ * @brief     Set inquiry parameter(Init inquiry parameters)
  * @param[in] inquiry_param: inquiry parameter
  * @return    
  *            - 0  : Succeed
  *            - Others: Error code
  */
 uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_param);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16_t window)
+ * @brief     Config inquiry parameter(after init).
+ * @param[in] type: Inquiry scan type value to set(0 -> STAND, 1 -> INTERLACED)
+ * @param[in] interval: Inquiry scan interval value to set.
+ * @param[in] window: Inquiry scan window value to set.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16_t window);
+
+/**
+ * @fn        uint16_t rtk_bt_br_sm_set_security_param(rtk_bt_br_security_param_t *p_sec_param)
+ * @brief     Set security paramters.
+ * @param[in] p_sec_param: Security paramters
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_sm_set_security_param(rtk_bt_br_security_param_t *p_sec_param);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_disconnect(uint8_t *bd_addr)
+ * @brief     Disconnect bt br link.
+ * @param[in] bd_addr: The Bluetooth device address
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_disconnect(uint8_t *bd_addr);
 
 /**
  * @fn        uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_param)
@@ -274,6 +431,115 @@ uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_para
 uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_param);
 
 /**
+ * @fn        uint16_t rtk_bt_br_gap_get_remote_name(uint8_t *bd_addr)
+ * @brief     get remote device name.(Return to br gap callback)
+ * @param[in] bd_addr: The Bluetooth device address
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_get_remote_name(uint8_t *bd_addr);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num)
+ * @brief     get supported max bond number.
+ * @param[in] pmax_bond_num: max bond number
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_num_get(uint8_t *pbond_num)
+ * @brief     get used bond number.
+ * @param[in] pmax_bond_num: bond number
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_num_get(uint8_t *pbond_num);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_addr_get(uint8_t priority, uint8_t *bd_addr)
+ * @brief     get bond address ().
+ * @param[in] priority: The priority of bonded device.
+ * @param[in] bd_addr   The Bluetooth device address got by priority.
+ * \note    Bond priority number starts at 1, rather than 0. Bond priority is descending
+ *          with the corresponding number increasing.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_addr_get(uint8_t priority, uint8_t *bd_addr);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_index_get(uint8_t *pindex, uint8_t *bd_addr)
+ * @brief     Get bond index from device address.
+ * @param[in] pindex: The bond index.Bond index starts at 0.
+ * @param[in] bd_addr   The Bluetooth device address got by priority.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_index_get(uint8_t *pindex, uint8_t *bd_addr);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_key_get(uint8_t *bd_addr, uint8_t *key_type, uint8_t *bond_key)
+ * @brief     Get link key with Bluetooth device address from bond storage.
+ * @param[in] bd_addr   The Bluetooth device address got by priority.
+ * @param[in] key_type   The type of the key.
+ * @param[in] bond_key   The link key.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_key_get(uint8_t *bd_addr, uint8_t *key_type, uint8_t *bond_key);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_key_set(rtk_bt_br_bond_key_t *pbond_key_t)
+ * @brief     Save link key.
+ * @param[in] pbond_key_t   bond key struct.
+ *\note    bd_addr   The Bluetooth device address got by priority.
+           key_type   The type of the key.
+           bond_key   The link key.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_key_set(rtk_bt_br_bond_key_t *pbond_key_t);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_priority_set(uint8_t *bd_addr)
+ * @brief     Adjust priority to highest in bond storage.
+ * @param[in] bd_addr   The Bluetooth device address got by priority.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_priority_set(uint8_t *bd_addr);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr)
+ * @brief     Delete bond information in bond storage.
+ * @param[in] bd_addr   The Bluetooth device address got by priority.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_bond_clear()
+ * @brief     delete bond information in bond storage
+ * @param[in] void: NUll
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_bond_clear(void);
+
+/**
  * @fn        uint16_t rtk_bt_br_gap_set_pincode(uint8_t *pin_code, uint32_t length)
  * @brief     set pincode.
  * @param[in] pin_code: pointer of pin code
@@ -283,6 +549,31 @@ uint16_t rtk_bt_br_gap_start_inquiry(rtk_bt_br_inquiry_start_t *inquiry_start_pa
  *            - Others: Error code
  */
 uint16_t rtk_bt_br_gap_set_pincode(uint8_t *pin_code, uint32_t length);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode)
+ * @brief     set radio mode(rtk_bt_br_gap_radio_mode_t). 
+ * @param[in] radio_mode: radio mode
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_set_radio_mode(uint8_t radio_mode);
+
+/**
+ * @fn        uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt, uint16_t sniff_timeout)
+ * @brief     configure sniff mode.
+ * @param[in] enable: 0 for disable, 1 for enable.
+ * @param[in] bd_addr The Bluetooth device address 
+ * @param[in] min_interval: (0 for disable)Min sniff interval, only even values between 0x0002 and 0xFFFE are valid.
+ * @param[in] max_interval: (0 for disable)Max sniff interval, only even values between 0x0002 and 0xFFFE are valid, should be larger than min_interval.
+ * @param[in] sniff_attempt: (0 for disable)Number of baseband receive slots for sniff attempt.
+ * @param[in] sniff_timeout: (0 for disable)Number of baseband receive slots for sniff timeout.
+ * @return    
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t min_interval, uint16_t max_interval, uint16_t sniff_attempt, uint16_t sniff_timeout);
 
 /**
  * @fn        uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod)

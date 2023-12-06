@@ -19,15 +19,14 @@ extern "C"
 
 #define RTK_EVT_POOL_SIZE 8
 
-#define BT_TIMEOUT_NONE             0
 #define BT_API_SYNC_TIMEOUT         3000
-#define BT_TIMEOUT_FOREVER          0xffffffffUL
 
 #define RTK_BT_API_LE_BASE          0x0
 #define RTK_BT_API_BR_BASE          0x80
 #define RTK_BT_API_COMMON_BASE      0xE0
 #define RTK_BT_API_TASK_EXIT        0xFF
 #define RTK_BT_EVENT_TASK_EXIT      0xFF
+#define RTK_BT_DRC_EVENT_TASK_EXIT  0xFE
 
 
 /* BT Protocol/Profile UUID definitions. */
@@ -147,6 +146,7 @@ typedef enum {
 	RTK_BT_PROFILE_SPP      =  BIT6,
 	RTK_BT_PROFILE_HFP      =  BIT7,
 	RTK_BT_PROFILE_MESH     =  BIT8,
+	RTK_BT_PROFILE_HID      =  BIT9,
 } rtk_bt_profile_t;
 
 /***************************************BLE group************************************/
@@ -217,6 +217,8 @@ typedef enum {
 	RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL,          /*!< LE mesh sensor client model group */
 	RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL,          /*!< LE mesh sensor server model group */
 	RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL,          /*!< LE mesh sensor setup server model group */
+	RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL,          /*!< LE mesh health client model group */
+	RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL,          /*!< LE mesh health server model group */
 	RTK_BT_LE_GP_MAX,                           /*!< Reserved */
 } rtk_bt_le_group_t;
 
@@ -253,7 +255,6 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_SET_DATA_LEN,
 	RTK_BT_LE_GAP_ACT_SET_PHY,
 	RTK_BT_LE_GAP_ACT_PRIVACY_INIT,
-	RTK_BT_LE_GAP_ACT_PRIVACY_MODIFY_LIST,
 	RTK_BT_LE_GAP_ACT_SET_SEC_PARAM,
 	RTK_BT_LE_GAP_ACT_START_SECURITY,
 	RTK_BT_LE_GAP_ACT_PAIRING_CONFIRM,
@@ -299,7 +300,7 @@ typedef enum {
  * Default event callback msg is send from stack(api task) to event task, and excuted in event task.
  * But if event is direct calling, it will be directly excuted in stack(api task). This is designed
  * for those event that will return a result and affect the stack's behaviour.
- * @note BT sync api cannot be excuted in callback case when this callback event case is direct calling.
+ * @note BT api cannot be excuted in callback case when this callback event case is direct calling.
  */
 typedef enum {
 	RTK_BT_LE_GAP_EVT_ADV_START_IND = 1,            /*!< Indicate LE adv started, with msg @ref rtk_bt_le_adv_start_ind_t */
@@ -310,7 +311,7 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_SCAN_RES_IND,                 /*!< Indicate LE scan data report, with msg @ref rtk_bt_le_scan_res_ind_t*/
 	RTK_BT_LE_GAP_EVT_SCAN_STOP_IND,                /*!< Indicate LE scan stopped, with msg @ref rtk_bt_le_scan_stop_ind_t*/
 	RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND,              /*!< Indicate LE connection parameter updated, with msg @ref rtk_bt_le_conn_update_ind_t*/
-	RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND,   /*!< Indicate LE remote device connection parameter change request, with msg @ref rtk_bt_le_remote_conn_update_req_ind_t. Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND,   /*!< Indicate LE remote device connection parameter change request, with msg @ref rtk_bt_le_remote_conn_update_req_ind_t. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND,          /*!< Indicate LE data length changed, with msg @ref rtk_bt_le_data_len_change_ind_t */
 	RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND,               /*!< Indicate LE PHY updated, with msg @ref rtk_bt_le_phy_update_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND,     /*!< Indicate LE just work pairing need to confirm, with msg @ref rtk_bt_le_auth_pair_cfm_ind_t */
@@ -327,6 +328,7 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND,      		/*!< Indicate LE periodic adv synchronization adv report, with msg @ref rtk_bt_le_pa_adv_report_ind_t*/
 	RTK_BT_LE_GAP_EVT_PAST_RECEIVED_INFO_IND,  		/*!< Indicate LE periodic adv sync transfer received info, with msg @ref rtk_bt_le_past_recv_ind_t*/
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND,       /*!< Indicate LE resolving list modified, with msg @ref rtk_bt_le_modify_resolv_list_ind_t */
+	RTK_BT_LE_GAP_EVT_RESOLV_LIST_PENDING_IND,      /*!< Indicate LE resolving list modification is pending, with msg @ref rtk_bt_le_resolv_list_pending_ind_t */
 	RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND,	        /*!< Indicate LE Tx power report, with msg @ref rtk_bt_le_txpower_ind_t */
 	RTK_BT_LE_GAP_EVT_MAX,
 } rtk_bt_le_gap_evt_t;
@@ -449,7 +451,7 @@ typedef enum {
 	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_ESTABLISHED_INFO,         /*!< comes when RTK_BT_LE_ISO_ACT_BIG_RECEIVER_CREATE_SYNC is done */
 	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_STATE_IND,         		  /*!< comes when receiver synchronization state change */
 	RTK_BT_LE_ISO_EVT_DATA_SEND_DONE,                             /*!< comes when RTK_BT_LE_ISO_ACT_ISO_DATA_SEND is done */
-	RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,						  	  /*!< comes when receive iso data. Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,						  	  /*!< comes when receive iso data. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_ISO_EVT_MAX
 } rtk_bt_le_iso_evt_code_t;
 
@@ -461,6 +463,7 @@ typedef enum {
 typedef enum {
 	RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND = 1,
 	RTK_BT_LE_AUDIO_ACT_GET_PREFER_CODEC_CFG,
+	RTK_BT_LE_AUDIO_ACT_GET_PREFER_QOS_CFG,
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_INFO,
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_PAC_RECORD,
 	RTK_BT_LE_AUDIO_ACT_PACS_GET_LC3_TABLE_MASK,
@@ -560,6 +563,7 @@ typedef enum {
 	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP_BY_GROUP,
 	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_INPUT_DES,
 	RTK_BT_LE_AUDIO_ACT_AICS_GET_SRV_DATA,
+	RTK_BT_LE_AUDIO_ACT_TMAS_READ_ROLE,
 	RTK_BT_LE_AUDIO_ACT_MAX,
 } rtk_bt_le_audio_act_t;
 
@@ -571,14 +575,14 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND = 1,
 	RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_DONE_IND,
 	RTK_BT_LE_AUDIO_EVT_BAP_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND,			/* Direct calling, BT sync api shall not be called in this event case. */
-	RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND,		/* Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BAP_START_QOS_CFG_IND,			/* Direct calling, BT api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BAP_START_METADATA_CFG_IND,		/* Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND,
 	RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND,        /* Direct calling, BT sync api shall not be called in this event case. */
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,       /* Direct calling, BT sync api shall not be called in this event case. */
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND,       /* Direct calling, BT sync api shall not be called in this event case. */
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND,      /* Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND,        /* Direct calling, BT api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,       /* Direct calling, BT api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_BROADCAST_CODE_IND,       /* Direct calling, BT api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_PREFER_BIS_SYNC_IND,      /* Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_BASS_CP_IND,
 	RTK_BT_LE_AUDIO_EVT_BASS_BRS_MODIFY_IND,
 	RTK_BT_LE_AUDIO_EVT_BASS_BA_ADD_SOURCE_IND,	
@@ -590,7 +594,7 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_ENABLE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_DISABLE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_CP_UPDATE_METADATA_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,			/* Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,			/* Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND,
 	RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND,
@@ -631,6 +635,8 @@ typedef enum {
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,
 	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND,
+	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_DISCOVERY_DONE_IND,
+	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_READ_ROLE_RESULT,
 	RTK_BT_LE_AUDIO_EVT_MAX,
 } rtk_bt_le_audio_evt_t;
 
@@ -667,6 +673,7 @@ typedef enum {
 	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR spp group */
 	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group */
 	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group */
+	RTK_BT_BR_GP_HID,                             /*!< BR/EDR hid group */
 	RTK_BT_BR_GP_MAX,
 } rtk_bt_br_group_t;
 
@@ -682,6 +689,7 @@ typedef enum {
 	RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM,
 	RTK_BT_BR_GAP_ACT_SET_INQUIRY_PARAM,
 	RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM,
+	RTK_BT_BR_GAP_ACT_SET_SEC_PARAM,
 	RTK_BT_BR_GAP_ACT_DISCONNECT,
 	RTK_BT_BR_GAP_ACT_START_INQUIRY,
 	RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME,
@@ -695,6 +703,7 @@ typedef enum {
 	RTK_BT_BR_GAP_ACT_BOND_DELETE,
 	RTK_BT_BR_GAP_ACT_SET_PINCODE,
 	RTK_BT_BR_GAP_ACT_SET_RADIO_MODE,
+	RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE,
 	RTK_BT_BR_GAP_ACT_SET_COD,
 	RTK_BT_BR_GAP_ACT_SET_SUPV_TIMEOUT,
 	RTK_BT_BR_GAP_ACT_BOND_CLEAR,
@@ -709,7 +718,9 @@ typedef enum {
 	RTK_BT_BR_GAP_INQUIRY_RESULT = 1,
 	RTK_BT_BR_GAP_REMOTE_NAME_RSP,
 	RTK_BT_BR_GAP_ACL_CONN_IND,
-	RKT_BT_BR_GAP_ACL_CONN_SUCCESS,
+	RTK_BT_BR_GAP_ACL_CONN_SUCCESS,
+	RTK_BT_BR_GAP_ACL_SNIFF,
+	RTK_BT_BR_GAP_ACL_ACTIVE,
 	RTK_BT_BR_GAP_ACL_DISCONN,
 	RTK_BT_BR_GAP_LINK_KEY_REQ,
 	RTK_BT_BR_GAP_LINK_KEY_INFO,
@@ -744,7 +755,7 @@ typedef enum {
 	RTK_BT_A2DP_EVT_STREAM_START_RSP,              /*!< A2DP stream start response */
 	RTK_BT_A2DP_EVT_STREAM_STOP,                   /*!< A2DP stream stop */
 	RTK_BT_A2DP_EVT_STREAM_CLOSE,                  /*!< A2DP stream close */
-	RTK_BT_A2DP_EVT_STREAM_DATA_IND,               /*!< A2DP stream data indication. Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_A2DP_EVT_STREAM_DATA_IND,               /*!< A2DP stream data indication. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_A2DP_EVT_STREAM_DATA_RSP,               /*!< A2DP stream data recev rsp */
 	RTK_BT_A2DP_EVT_SDP_ATTR_INFO,                 /*!< A2DP SRC get sink sdp data info */
 	RTK_BT_A2DP_EVT_MAX,
@@ -830,6 +841,29 @@ typedef enum {
 } rtk_bt_spp_evt_t;
 
 /**
+ * @typedef   rtk_bt_hid_act_t
+ * @brief     Bluetooth HID action
+ */
+typedef enum {
+	RTK_BT_HID_ACT_DESCRIPTOR_ADD = 1,
+	RTK_BT_HID_ACT_DISCONNECT,
+	RTK_BT_HID_ACT_GET_REPORT_RSP,
+	RTK_BT_HID_ACT_INPUT_DATA_SEND,
+	RTK_BT_HID_ACT_MAX,
+} rtk_bt_hid_act_t;
+
+/**
+ * @typedef   rtk_bt_hid_evt_t
+ * @brief     Bluetooth HID event indication
+ */
+typedef enum {
+	RTK_BT_HID_EVT_CONN_IND = 1,                  /*!< HID connection indication */
+	RTK_BT_HID_EVT_CONN_CMPL,                     /*!< HID connection complete indication */
+	RTK_BT_HID_EVT_DISCONN_CMPL,                  /*!< HID disconnection complete indication */
+	RTK_BT_HID_EVT_MAX,
+} rtk_bt_hid_evt_t;
+
+/**
  * @typedef   rtk_bt_sdp_act_t
  * @brief     Bluetooth SDP action
  */
@@ -884,7 +918,7 @@ typedef enum {
 	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,             /*!< HFP HF mic volumer changed indicate */
 	RTK_BT_HFP_EVT_SCO_CONN_IND,                       /*!< HFP sco connection indication */
 	RTK_BT_HFP_EVT_SCO_CONN_CMPL,                      /*!< HFP sco connection completed */
-	RTK_BT_HFP_EVT_SCO_DATA_IND,                       /*!< HFP sco data indication. Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_HFP_EVT_SCO_DATA_IND,                       /*!< HFP sco data indication. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND,                /*!< HFP sco disconnected indication */
 	RTK_BT_HFP_EVT_AG_CONN_IND,                        /*!< HFP ag conn indication */
 	RTK_BT_HFP_EVT_AG_CONN_CMPL,                       /*!< HFP ag conn complete */
@@ -934,7 +968,7 @@ typedef enum {
 	RTK_BT_GAP_EVT_ECFC_DATA_IND,		              /*!< Indicate ECFC data reception, with msg @ref rtk_bt_ecfc_data_ind_t */
 	RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND,		          /*!< Indicate ECFC connection request, with msg @ref rtk_bt_ecfc_conn_req_ind_t */
 	RTK_BT_GAP_EVT_ECFC_DISCONN_IND,		          /*!< Indicate ECFC disconnect, with msg @ref rtk_bt_ecfc_disconn_ind_t */
-	RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND,			      /*!< Indicate ECFC reconfiguration request, with msg @ref rtk_bt_ecfc_reconf_req_ind_t. Direct calling, BT sync api shall not be called in this event case. */
+	RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND,			      /*!< Indicate ECFC reconfiguration request, with msg @ref rtk_bt_ecfc_reconf_req_ind_t. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_GAP_EVT_ECFC_RECONF_RSP_IND,			      /*!< Indicate ECFC reconfiguration response, with msg @ref rtk_bt_ecfc_reconf_rsp_ind_t */
 	RTK_BT_GAP_EVT_MAX,
 } rtk_bt_gap_evt_t;
@@ -1021,7 +1055,7 @@ struct evt_ret_mem_option {
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_common BT Common APIs
- * @brief     BT Common function APIs
+ * @brief     BT common function APIs
  * @ingroup   BT_APIs
  * @{
  */

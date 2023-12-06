@@ -16,6 +16,17 @@ extern "C"
 #include <basic_types.h>
 
 /**
+ * @typedef   rtk_bt_uuid_type_t
+ * @brief     Bluetooth UUID type definition.
+ */
+typedef enum
+{
+	BT_UUID_TYPE_16,     /*!< UUID type 16-bit */
+	BT_UUID_TYPE_32,     /*!< UUID type 32-bit */
+	BT_UUID_TYPE_128,    /*!< UUID type 128-bit */
+} rtk_bt_uuid_type_t;
+
+/**
  * @struct    bt_uuid
  * @brief     A 'tentative' type definition.
  */
@@ -23,17 +34,6 @@ struct bt_uuid
 {
 	uint8_t type;        /*!< UUID type */
 };
-
-/**
- * @def       BT_UUID_INIT_16
- * @brief     Initialize a 16-bit UUID.
- * @param     value: 16-bit UUID value in host endianness.
- */
-#define BT_UUID_INIT_16(value) \
-{                              \
-	.uuid = {BT_UUID_TYPE_16}, \
-	.val = (value),            \
-}
 
 /**
  * @struct    bt_uuid_16
@@ -56,6 +56,28 @@ struct bt_uuid_128
 };
 
 /**
+ * @def       BT_UUID_INIT_16
+ * @brief     Initialize a 16-bit UUID.
+ * @param     value: 16-bit UUID value in host endianness.
+ */
+#define BT_UUID_INIT_16(value) \
+{                              \
+	.uuid = {BT_UUID_TYPE_16}, \
+	.val = (value),            \
+}
+
+/**
+ * @def       BT_UUID_INIT_128
+ * @brief     Initialize a 128-bit UUID.
+ * @param     value: 128-bit UUID array values in little-endian format.
+ */
+#define BT_UUID_INIT_128(value...) \
+{                                  \
+	.uuid = {BT_UUID_TYPE_128},    \
+	.val = {value},                \
+}
+
+/**
  * @def       CONTAINER_OF
  * @brief     Get a pointer to a container structure from an element
  * @param     ptr: pointer to a structure element
@@ -76,6 +98,15 @@ struct bt_uuid_128
  */
 #define BT_UUID_DECLARE_16(value) \
 ((struct bt_uuid *)((struct bt_uuid_16[]){BT_UUID_INIT_16(value)}))
+
+/**
+ * @def       BT_UUID_DECLARE_128
+ * @brief     Helper to declare a 128-bit UUID inline.
+ * @param     value: 128-bit UUID array values in little-endian format.
+ * @return    Pointer to a generic UUID.
+ */
+#define BT_UUID_DECLARE_128(value...) \
+((struct bt_uuid *)((struct bt_uuid_128[]){BT_UUID_INIT_128(value)}))
 
 /**
  * @def       BT_UUID_16
@@ -341,17 +372,6 @@ enum attr_perm_t
 	RTK_BT_GATT_PERM_WRITE_AUTHEN  = BIT5,	/*!< Attribute write permission with authentication. */
 	RTK_BT_GATT_PERM_PREPARE_WRITE = BIT6,	/*!< Attribute prepare write permission. */
 };
-
-/**
- * @typedef   rtk_bt_uuid_type_t
- * @brief     Bluetooth UUID type definition.
- */
-typedef enum
-{
-	BT_UUID_TYPE_16,     /*!< UUID type 16-bit */
-	BT_UUID_TYPE_32,     /*!< UUID type 32-bit */
-	BT_UUID_TYPE_128,    /*!< UUID type 128-bit */
-} rtk_bt_uuid_type_t;
 
 #ifdef __cplusplus
 }

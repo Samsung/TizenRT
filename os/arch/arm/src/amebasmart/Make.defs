@@ -259,6 +259,11 @@ ifeq ($(CONFIG_BINARY_SIGNING),y)
 #CMN_CSRCS += amebasmart_signature.c
 endif
 
+ifeq ($(CONFIG_AMEBASMART_BLE),y)
+EXTRA_LIBS += ${TOPDIR}/board/rtl8730e/src/libs/lib_btgap.a
+#endif
+endif
+
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 #CHIP_CSRCS += amebasmart_nsc.c
 
