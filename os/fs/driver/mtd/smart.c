@@ -4367,7 +4367,8 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	int ret;
 	uint16_t physsector;
 	FAR struct smart_read_write_s *req;
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+
+#if defined(CONFIG_MTD_SMART_ENABLE_CRC) && !defined(CONFIG_MTD_SMART_JOURNALING)
 #if SMART_STATUS_VERSION == 1
 	FAR struct smart_sect_header_s *header;
 #endif
@@ -4375,7 +4376,6 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 	uint32_t readaddr;
 	struct smart_sect_header_s header;
 #endif
-
 	fvdbg("Entry\n");
 	req = (FAR struct smart_read_write_s *)arg;
 	DEBUGASSERT(req->offset < dev->sectorsize);
@@ -4385,8 +4385,8 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 
 	if (req->logsector >= dev->totalsectors) {
 		fdbg("Logical sector %d too large\n", req->logsector);
-
-		return -EINVAL;
+		ret = -EINVAL;
+		goto errout;
 	}
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 	physsector = dev->sMap[req->logsector];
@@ -4395,31 +4395,28 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 #endif
 	if (physsector == 0xFFFF) {
 		fdbg("Logical sector %d not allocated\n", req->logsector);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto errout;
 	}
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
 
-	/* When CRC is enabled, we read the entire sector into RAM so we can validate the CRC.
-	 * However, if Journaling is enabled, written data is read back and verified with CRC,
-	 * so we can skip this step.
-	 */
+/* If journaling is disabled, data is not read back and verified at the time of writing itself. Hence we need to read the entire sector into RAM to validate CRC. */
+#if defined(CONFIG_MTD_SMART_ENABLE_CRC) && !defined(CONFIG_MTD_SMART_JOURNALING)
 
 	ret = MTD_BREAD(dev->mtd, physsector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
 	if (ret != dev->mtdBlksPerSector) {
 		fdbg("Error reading phys sector %d\n", physsector);
-		return -EIO;
+		ret = -EIO;
+		goto errout;
 	}
 
-#ifndef CONFIG_MTD_SMART_JOURNALING
 #if SMART_STATUS_VERSION == 1
-	/* Test if this sector has CRC enabled or not. */
 
+	/* Test if this sector has CRC enabled or not. */
 	header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 	if ((header->status & SMART_STATUS_CRC) == (CONFIG_SMARTFS_ERASEDSTATE & SMART_STATUS_CRC)) {
 		/* Format VERSION 1 supports either no CRC or 8-bit CRC.  Looks like
 		 * CRC not enabled for this sector, so skip the CRC test.
 		 */
-
 	} else
 #endif
 	{
@@ -4428,46 +4425,46 @@ static int smart_readsector(FAR struct smart_struct_s *dev, unsigned long arg)
 		ret = smart_validate_crc(dev);
 		if (ret != OK) {
 			fdbg("Error validating physical sector %d logical sector %d CRC during read\n", physsector, req->logsector);
-			return -EIO;
+			ret = -EIO;
+			goto errout;
 		}
 	}
-#endif
 	/* Copy data to the output buffer. */
-
 	memmove((FAR char *)req->buffer, &dev->rwbuffer[req->offset + sizeof(struct smart_sect_header_s)], req->count);
 	ret = req->count;
 
-#else							/* CONFIG_MTD_SMART_ENABLE_CRC */
+	/* If journaling is enabled, data is read back and verified at the time of writing itself.
+	* Hence we can skip the CRC verification here
+	*/
+#else /* defined(CONFIG_MTD_SMART_ENABLE_CRC) && !defined(CONFIG_MTD_SMART_JOURNALING) */
 
 	/* Read the sector header data to validate as a sanity check. */
-
 	ret = MTD_READ(dev->mtd, physsector * dev->mtdBlksPerSector * dev->geo.blocksize, sizeof(struct smart_sect_header_s), (FAR uint8_t *)&header);
 	if (ret != sizeof(struct smart_sect_header_s)) {
 		fvdbg("Error reading sector %d header\n", physsector);
-		return -EIO;
+		ret = -EIO;
+		goto errout;
 	}
 
 	/* Do a sanity check on the header data. */
-
-//        if (((*(FAR uint16_t *)header.logicalsector) != req->logsector) ||
 	if ((UINT8TOUINT16(header.logicalsector) != req->logsector) || (!(SECTOR_IS_COMMITTED(header)))) {
 		/* Error in sector header! How do we handle this? */
-
 		fdbg("Error in logical sector %d header, phys=%d read sector : %d expected sector : %d\n", req->logsector, physsector, UINT8TOUINT16(header.logicalsector), req->logsector);
-		return -EIO;
+		ret = -EIO;
+		goto errout;
 	}
 
 	/* Read the sector data into the buffer. */
-
 	readaddr = (uint32_t)physsector * dev->mtdBlksPerSector * dev->geo.blocksize + req->offset + sizeof(struct smart_sect_header_s);
+	ret = MTD_READ(dev->mtd, readaddr, req->count, (FAR uint8_t *) req->buffer);
 
-	ret = MTD_READ(dev->mtd, readaddr, req->count, (FAR uint8_t *)
-				   req->buffer);
 	if (ret != req->count) {
 		fdbg("Error reading phys sector %d\n", physsector);
-		return -EIO;
+		ret = -EIO;
 	}
-#endif
+#endif /* defined(CONFIG_MTD_SMART_ENABLE_CRC) && !defined(CONFIG_MTD_SMART_JOURNALING) */
+
+errout:
 	return ret;
 }
 
