@@ -156,7 +156,6 @@ static void ftl_setstatusbits(uint32_t NewState)
 {
 	flash_t flash;
 
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	if (!NewState) {	/* If to disable */
 		backup_state = flash_get_status(&flash);	/* Read State */
 		//FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] backup_state: %x \n", backup_state);
@@ -178,7 +177,6 @@ static void ftl_setstatusbits(uint32_t NewState)
 		}
 		backup_state = 0;	/* Clear backup state */
 	}
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 }
 
 uint32_t ftl_page_read(struct Page_T *p, uint32_t index)
@@ -188,13 +186,10 @@ uint32_t ftl_page_read(struct Page_T *p, uint32_t index)
 
     if (index < PAGE_element)
     {
-        device_mutex_lock(RT_DEV_LOCK_FLASH);
         if (flash_read_word(&flash, (uint32_t)&p->Data[index], &rdata))
         {
-            device_mutex_unlock(RT_DEV_LOCK_FLASH);
             return rdata;
         }
-        device_mutex_unlock(RT_DEV_LOCK_FLASH);
     }
     else
     {
@@ -210,9 +205,7 @@ void ftl_flash_write(uint32_t start_addr, uint32_t data)
 	flash_t flash;
 
 	ftl_setstatusbits(0);
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	flash_write_word(&flash, start_addr, data);
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 	ftl_setstatusbits(1);
 }
 
@@ -237,9 +230,7 @@ uint32_t ftl_page_write(struct Page_T *p, uint32_t index, uint32_t data)
     {
         ftl_flash_write((uint32_t)&p->Data[index], data);
         uint32_t rdata = 0;
-        device_mutex_lock(RT_DEV_LOCK_FLASH);
         flash_read_word(&flash, (uint32_t)&p->Data[index], &rdata);
-        device_mutex_unlock(RT_DEV_LOCK_FLASH);
         if (data != rdata)
         {
             FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl](ftl_page_write) P: %x, idx: %d, D: 0x%08x, read back: %x \n",
@@ -1204,11 +1195,15 @@ uint32_t ftl_non_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16
 
 uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 #if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
-	return ftl_secure_save_to_storage(pdata_tmp, offset, size);
+	uint32_t ret = ftl_secure_save_to_storage(pdata_tmp, offset, size);
 #else
-	return ftl_non_secure_save_to_storage(pdata_tmp, offset, size);
+	uint32_t ret = ftl_non_secure_save_to_storage(pdata_tmp, offset, size);
 #endif
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+	return ret;
+
 }
 
 // return 0 success
@@ -1383,11 +1378,14 @@ L_retry:
 
 uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
 #if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
-	return ftl_secure_load_from_storage(pdata_tmp, offset, size);
+	uint32_t ret = ftl_secure_load_from_storage(pdata_tmp, offset, size);
 #else
-	return ftl_non_secure_load_from_storage(pdata_tmp, offset, size);
+	uint32_t ret = ftl_non_secure_load_from_storage(pdata_tmp, offset, size);
 #endif
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+	return ret;
 }
 
 uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
@@ -1546,6 +1544,8 @@ uint32_t ftl_secure_init(void)
 
 uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
+    
+	device_mutex_lock(RT_DEV_LOCK_FLASH); 
     if (pagenum < 3)
     {
         pagenum = 3;
@@ -1627,6 +1627,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
         {
             g_pPage = NULL;
             FTL_PRINTF(FTL_LEVEL_ERROR, "ftl init fail");
+			device_mutex_unlock(RT_DEV_LOCK_FLASH); 
             return FTL_INIT_ERROR_ERASE_FAIL;
         }
     }
@@ -1698,6 +1699,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 		FTL_PRINTF(FTL_LEVEL_ERROR, "ftl_secure_init fail, ret: %d!", ret);
 	}
 #endif
+	device_mutex_unlock(RT_DEV_LOCK_FLASH); 
 
     return 0;
 }

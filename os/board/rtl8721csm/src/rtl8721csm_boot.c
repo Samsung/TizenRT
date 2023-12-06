@@ -309,6 +309,9 @@ void board_initialize(void)
 	shell_init_rom(0, 0);
 	//shell_init_ram();
 	ipc_table_init();
+#ifdef CONFIG_FTL_ENABLED
+	app_ftl_init();
+#endif
 	amebad_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
@@ -337,9 +340,6 @@ void board_initialize(void)
 			lldbg("Failed to register the RTC driver: %d\n", ret);
 		}
 	}
-#endif
-#ifdef CONFIG_FTL_ENABLED
-	app_ftl_init();
 #endif
 }
 #else
