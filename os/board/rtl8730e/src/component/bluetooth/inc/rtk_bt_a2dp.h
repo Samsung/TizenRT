@@ -174,6 +174,7 @@ typedef struct {
  * @brief     Bluetooth A2DP stream start indication.
  */
 typedef struct {
+	uint16_t seq_num; /*!< Media packet sequence number */
 	uint32_t length;									/*!< stream data length */
 	uint8_t  data[RTK_BT_A2DP_MAX_STREAM_DATA_LENGTH];	/*!< stream data */
 } rtk_bt_a2dp_stream_data_ind_t;

@@ -324,6 +324,28 @@ void amebasmart_memory_initialize(void)
 
 }
 
+#ifdef CONFIG_FTL_ENABLED
+extern u8 ftl_phy_page_num;
+extern u32 ftl_phy_page_start_addr;
+#include "ftl_int.h"
+extern void flash_get_layout_info(u32 type, u32 *start, u32 *end);
+
+void app_ftl_init(void)
+{
+	u32 ftl_start_addr, ftl_end_addr;
+
+	flash_get_layout_info(FTL, &ftl_start_addr, &ftl_end_addr);
+
+	ftl_phy_page_start_addr = ftl_start_addr - SPI_FLASH_BASE;
+	ftl_phy_page_num = (ftl_end_addr - ftl_start_addr +1) / PAGE_SIZE_4K;
+
+	if (SYSCFG_BootFromNor()) {
+		ftl_init(ftl_phy_page_start_addr, ftl_phy_page_num);
+	}
+}
+
+#endif
+
 /****************************************************************************
  * Name: board_initialize
  *
@@ -382,11 +404,13 @@ void board_initialize(void)
 		}
 	}
 #endif
+
+#ifdef CONFIG_FTL_ENABLED
+	app_ftl_init();
+#endif
+
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
-#endif
-#ifdef CONFIG_AMEBASMART_BLE
-	bt_ipc_api_init_host();
 #endif
 }
 #else

@@ -53,6 +53,8 @@ CSRCS += rtk_bt_le_gap.c \
 		rtk_bt_common.c \
 		rtk_bt_device.c \
 		rtk_bt_gatt.c \
+		rtk_bt_le_gap.c \
+		rtk_bt_gap.c
 
 DEPPATH += --dep-path component/bluetooth/api
 VPATH += :component/bluetooth/api

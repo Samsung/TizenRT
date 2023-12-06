@@ -61,7 +61,7 @@ struct rtk_bt_gatt_chrc
  */
 #define RTK_BT_GATT_ATTRIBUTE(_uuid, _perm, _user_data, _len, _flag) \
 	{                                                                \
-		.uuid = _uuid,                                               \
+		.uuid = (struct bt_uuid *)_uuid,                             \
 		.perm = _perm,                                               \
 		.user_data = (void*)_user_data,                              \
 		.len = _len,                                                 \
@@ -108,7 +108,7 @@ struct rtk_bt_gatt_chrc
  */
 #define RTK_BT_GATT_CHRC_INIT(_uuid, _handle, _props) \
 	{                                                 \
-		.uuid = _uuid,                                \
+		.uuid = (struct bt_uuid *)_uuid,              \
 		.value_handle = _handle,                      \
 		.properties = _props,                         \
 	}

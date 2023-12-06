@@ -730,7 +730,7 @@ typedef struct
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_gattc_normal BT GATT Client Normal APIs
- * @brief     BT GATT client related function Normal APIs
+ * @brief     BT GATT client related function normal APIs
  * @ingroup   BT_APIs
  * @{
  */

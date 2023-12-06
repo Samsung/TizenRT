@@ -140,7 +140,6 @@ void general_client_read_res_hdl(void *data)
 	rtk_bt_gattc_read_ind_t *read_res = (rtk_bt_gattc_read_ind_t *)data;
 	rtk_bt_status_t read_status = read_res->status;
 	uint16_t handle = 1;
-	ble_tizenrt_scatternet_read_results[read_res->conn_handle].status = read_status;
 	if (RTK_BT_STATUS_FAIL == read_status) {
 		printf("[APP] GATTC read failed, "
 				"profile_id: %d, conn_handle: %d, type: %d, err:0x%x\r\n",
@@ -157,14 +156,6 @@ void general_client_read_res_hdl(void *data)
 					read_res->profile_id, read_res->conn_handle,
 					read_res->type, read_status, handle);
 			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
-			
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.len = read_res->by_handle.len;
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value = (uint8_t *)osif_mem_alloc(0, read_res->by_handle.len);
-			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value){
-				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value, read_res->by_handle.value, read_res->by_handle.len);
-			} else {
-				printf("Memory allocation failed \n");
-			}
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_BY_UUID:
@@ -174,14 +165,6 @@ void general_client_read_res_hdl(void *data)
 						read_res->profile_id, read_res->conn_handle,
 						read_res->type, read_status, handle);
 			gattc_dump(read_res->by_uuid_per.len, read_res->by_uuid_per.value, (uint8_t *)"read result");
-
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.len = read_res->by_uuid_per.len;
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value = (uint8_t *)osif_mem_alloc(0, read_res->by_uuid_per.len);
-			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value){
-				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value, read_res->by_uuid_per.value, read_res->by_uuid_per.len);
-			} else {
-				printf("Memory allocation failed \n");
-			}
 			break;
 
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
@@ -191,48 +174,18 @@ void general_client_read_res_hdl(void *data)
 					read_res->profile_id, read_res->conn_handle,
 					read_res->type, read_status, read_res->by_handle.len);
 			gattc_dump(read_res->by_handle.len, read_res->by_handle.value, (uint8_t *)"read result");
-
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.len = read_res->multiple_variable_per.len;
-			ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value = (uint8_t *)osif_mem_alloc(0, read_res->multiple_variable_per.len);
-			if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value){
-				memcpy(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value, read_res->multiple_variable_per.value, read_res->multiple_variable_per.len);
-			} else {
-				printf("Memory allocation failed \n");
-			}
 			break;
 
 		default:
 			break;
 		}
-	} else if (RTK_BT_STATUS_DONE == read_status) {
-		if(osif_sem_give(ble_tizenrt_read_sem))
-		{
-			printf("recieve read result \n");
-		} else {
-			switch(read_res->type) {
-			case RTK_BT_GATT_CHAR_READ_BY_HANDLE:
-				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value)
-					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_handle.value);
-			break;
-			case RTK_BT_GATT_CHAR_READ_BY_UUID:
-				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value)
-					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].by_uuid_per.value);
-			break;
-			case RTK_BT_GATT_CHAR_READ_MULTIPLE_VARIABLE:
-				if(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value)
-					osif_mem_free(ble_tizenrt_scatternet_read_results[read_res->conn_handle].multiple_variable_per.value);
-			break;
-			default:
-				break;
-			}
-			printf("fail to give read semaphore \n");
-		}
+	} else {
+		return;
+	}
 		printf("[APP] GATTC read completed, "
 					"profile_id: %d, conn_handle: %d, type: %d\r\n",
 					read_res->profile_id, read_res->conn_handle, read_res->type);
 		APP_PRINT_SEPARATOR();
-	}
-
 }
 
 void general_client_write_res_hdl(void *data)

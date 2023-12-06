@@ -637,38 +637,38 @@ EXIT:
 
 void pmu_acquire_wakelock(uint32_t nDeviceId)
 {
-	u32 PrevStatus;
-#ifndef ARM_CORE_CA32
-	PrevStatus = ulSetInterruptMaskFromISR();
-#else
-	PrevStatus = portDISABLE_INTERRUPTS();
-#endif
-
-	wakelock |= BIT(nDeviceId);
-
-#ifndef ARM_CORE_CA32
-	vClearInterruptMaskFromISR(PrevStatus);
-#else
-	portRESTORE_INTERRUPTS(PrevStatus);
-#endif
+//	u32 PrevStatus;
+//#ifndef ARM_CORE_CA32
+//	PrevStatus = ulSetInterruptMaskFromISR();
+//#else
+//	PrevStatus = portDISABLE_INTERRUPTS();
+//#endif
+//
+//	wakelock |= BIT(nDeviceId);
+//
+//#ifndef ARM_CORE_CA32
+//	vClearInterruptMaskFromISR(PrevStatus);
+//#else
+//	portRESTORE_INTERRUPTS(PrevStatus);
+//#endif
 }
 
 void pmu_release_wakelock(uint32_t nDeviceId)
 {
-	u32 PrevStatus;
-#ifndef ARM_CORE_CA32
-	PrevStatus = ulSetInterruptMaskFromISR();
-#else
-	PrevStatus = portDISABLE_INTERRUPTS();
-#endif
-
-	wakelock &= ~BIT(nDeviceId);
-
-#ifndef ARM_CORE_CA32
-	vClearInterruptMaskFromISR(PrevStatus);
-#else
-	portRESTORE_INTERRUPTS(PrevStatus);
-#endif
+//	u32 PrevStatus;
+//#ifndef ARM_CORE_CA32
+//	PrevStatus = ulSetInterruptMaskFromISR();
+//#else
+//	PrevStatus = portDISABLE_INTERRUPTS();
+//#endif
+//
+//	wakelock &= ~BIT(nDeviceId);
+//
+//#ifndef ARM_CORE_CA32
+//	vClearInterruptMaskFromISR(PrevStatus);
+//#else
+//	portRESTORE_INTERRUPTS(PrevStatus);
+//#endif
 }
 
 uint32_t pmu_get_wakelock_status(void)

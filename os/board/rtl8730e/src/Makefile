@@ -99,9 +99,16 @@ endif
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 include component/bluetooth/api/Make.defs
-include component/bluetooth/api/ipc/Make.defs
 include component/bluetooth/os/tizenrt/Make.defs
 include component/bluetooth/example/utils/Make.defs
+include component/bluetooth/driver/platform/amebad2/hci/Make.defs
+include component/bluetooth/api/rtk_stack/Make.defs
+include component/bluetooth/rtk_stack/platform/amebad2/src/Make.defs
+include component/bluetooth/driver/hci/hci_transport/Make.defs
+include component/bluetooth/driver/hci/Make.defs
+include component/bluetooth/driver/hci/hci_process/Make.defs
+include component/bluetooth/rtk_coex/Make.defs
+
 ifeq ($(CONFIG_AMEBASMART_BLE_PERIPHERAL),y)
 include component/bluetooth/example/ble_peripheral/Make.defs
 endif
@@ -182,6 +189,19 @@ CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/profile/client
+CFLAGS += -I$(DIR_BT)/driver/inc
+CFLAGS += -I$(DIR_BT)/driver/inc/hci
+CFLAGS += -I$(DIR_BT)/driver/hci
+CFLAGS += -I$(DIR_BT)/driver/platform/amebad2/inc
+CFLAGS += -I$(DIR_BT)/api/rtk_stack
+CFLAGS += -I$(DIR_BT)/api/include/rtk_bt_common.h
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/app
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/stack
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/gap
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/platform
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/profile
+CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
+CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
 endif
 
 #CFLAGS += -DARM_CORE_CM4

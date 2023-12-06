@@ -18,7 +18,7 @@ extern "C"
 
 /**
  * @defgroup  bt_device BT Device APIs
- * @brief     BT Device function APIs
+ * @brief     BT device function APIs
  * @ingroup   BT_APIs
  * @{
  */

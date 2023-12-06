@@ -546,17 +546,6 @@ trble_result_e rtw_ble_client_disconnect_all(void)
 void *ble_tizenrt_read_sem = NULL;
 trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trble_data* out_data)
 { 
-    if(ble_tizenrt_read_sem == NULL)
-    {
-        if(!osif_sem_create(&ble_tizenrt_read_sem, 0 ,1))
-        {
-//            dbg("create sema fail! \n");
-            return TRBLE_FAIL;
-        } else {
-//            debug_print("create sema 0x%x success \n", ble_tizenrt_read_sem);
-        }
-    }
-
     if (handle == NULL || out_data == NULL || out_data->data == NULL)
     {
         return TRBLE_FAIL;
@@ -578,41 +567,12 @@ trble_result_e rtw_ble_client_operation_read(trble_operation_handle* handle, trb
     read_param.conn_handle = handle->conn_handle;
     read_param.type = RTK_BT_GATT_CHAR_READ_BY_HANDLE;
 	read_param.by_handle.handle = handle->attr_handle;
-
-    ble_read_results[handle->conn_handle].status = 0xff;
     if (RTK_BT_OK != rtk_bt_gattc_read(&read_param))
     {
 //        debug_print("read failed! \n");
         return TRBLE_FAIL;
     }
-
-    int ticks = 0;
-    while(ticks++ < 30)
-    {
-//        debug_print("ticks %d \n", ticks);
-        if(osif_sem_take(ble_tizenrt_read_sem, 1000))
-        {
-//            debug_print("take sema success \n");
-            osif_sem_delete(ble_tizenrt_read_sem);
-            ble_tizenrt_read_sem = NULL;
-            if(ble_read_results[handle->conn_handle].status == RTK_BT_STATUS_DONE)
-            {
-                out_data->length = ble_read_results[handle->conn_handle].by_handle.len;
-                memcpy(out_data->data, ble_read_results[handle->conn_handle].by_handle.value,
-                                       ble_read_results[handle->conn_handle].by_handle.len);
-                osif_mem_free(ble_read_results[handle->conn_handle].by_handle.value);
-                ble_read_results[handle->conn_handle].by_handle.value = NULL;
-//                debug_print("read success: conn_id %d attr_handle 0x%x! \n",
-//                                                            handle->conn_handle, handle->attr_handle);
-                return TRBLE_SUCCESS;
-            } else {
-//                debug_print("read fail: conn_id %d attr_handle 0x%x! \n",
-//                                                            handle->conn_handle, handle->attr_handle);
-                return TRBLE_FAIL;
-            }
-        }
-    }
-    return TRBLE_FAIL; 
+	return TRBLE_SUCCESS;
 }
 
 void *ble_tizenrt_write_sem = NULL;
