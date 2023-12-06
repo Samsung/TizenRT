@@ -50,6 +50,7 @@
 ############################################################################
 
 CSRCS += ameba_sport.c \
+	ameba_audio_clock.c \
 
 
 DEPPATH += --dep-path component/soc/amebad2/fwlib/ram_hp

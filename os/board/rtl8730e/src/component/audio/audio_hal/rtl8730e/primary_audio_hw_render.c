@@ -15,6 +15,7 @@
 #include "audio_hw_compat.h"
 #include <inttypes.h>
 
+#include "ameba_audio_hw_usrcfg.h"
 #include "ameba_audio_types.h"
 #include "ameba_audio_stream_control.h"
 #include "ameba_audio_stream_render.h"
@@ -63,7 +64,6 @@ struct PrimaryAudioHwRender {
 
 	//max value should sync with ameba audio driver's total_counter_boundary.
 	uint64_t written;
-	uint64_t written_to_driver;
 };
 
 static inline size_t PrimaryAudioHwRenderFrameSize(const struct AudioHwRender *s)
@@ -136,8 +136,12 @@ static int DoStandbyOutput(struct PrimaryAudioHwRender *out)
 {
 	if (!out->standby) {
 		out->standby = 1;
-		ameba_audio_stream_tx_stop(out->out_pcm);
-		out->written_to_driver = 0;
+		if (AUDIO_HW_AMPLIFIER_MUTE_ENABLE) {
+			ameba_audio_stream_tx_set_amp_state(false);
+		}
+
+		ameba_audio_stream_tx_standby(out->out_pcm);
+		ameba_audio_stream_buffer_flush(out->out_pcm->rbuffer);
 	}
 	return 0;
 }
@@ -171,6 +175,7 @@ static uint32_t PrimaryGetRenderBufferStatus(struct AudioHwStream *stream)
 		return 0;
 	}
 
+
 	return ameba_audio_stream_tx_get_buffer_status(out->out_pcm);
 }
 
@@ -203,8 +208,9 @@ static uint32_t PrimaryGetRenderLatency(const struct AudioHwRender *stream)
 {
 	struct PrimaryAudioHwRender *out = (struct PrimaryAudioHwRender *)stream;
 	uint64_t sport_out_frames = ameba_audio_stream_tx_sport_rendered_frames(out->out_pcm);
-	uint32_t latency_ms = (out->written_to_driver - sport_out_frames) * 1000 / out->config.rate;
-	HAL_AUDIO_VERBOSE("hal written_to_driver:%llu, sport_out_frames:%llu, latency_ms:%lu", out->written_to_driver, sport_out_frames, latency_ms);
+	uint32_t latency_ms = (ameba_audio_stream_tx_get_frames_written(out->out_pcm) - sport_out_frames) * 1000 / out->config.rate;
+	HAL_AUDIO_VERBOSE("hal written_to_driver:%llu, sport_out_frames:%llu, latency_ms:%lu", ameba_audio_stream_tx_get_frames_written(out->out_pcm), sport_out_frames,
+					  latency_ms);
 
 	uint32_t dma_buf_add_codec_latency_ms = (out->config.period_size * out->config.period_count + 36) * 1000 / out->config.rate;
 	if (latency_ms > dma_buf_add_codec_latency_ms * 2) {
@@ -226,9 +232,10 @@ static int PrimaryGetPresentationPosition(const struct AudioHwRender *stream, ui
 	if (out->out_pcm) {
 		uint64_t rendered_frames;
 		if (ameba_audio_stream_tx_get_position(out->out_pcm, &rendered_frames, timestamp) == 0) {
-			int64_t signed_frames = out->written - (out->written_to_driver - rendered_frames);
-			HAL_AUDIO_PVERBOSE("out->written:%llu, rendered_frames:%llu, signed_frames:%lld, sec:%lld, nsec:%ld", out->written, rendered_frames,
-							   signed_frames, timestamp->tv_sec, timestamp->tv_nsec);
+			int64_t signed_frames = out->written - (ameba_audio_stream_tx_get_frames_written(out->out_pcm) - rendered_frames);
+			HAL_AUDIO_VERBOSE("out->written:%llu, rendered_frames:%llu, written to driver:%llu, signed_frames:%lld, sec:%lld, nsec:%ld", out->written, rendered_frames,
+							  ameba_audio_stream_tx_get_frames_written(out->out_pcm),
+							  signed_frames, timestamp->tv_sec, timestamp->tv_nsec);
 			if (signed_frames >= 0) {
 				*frames = signed_frames;
 				HAL_AUDIO_VERBOSE("frames:%llu", *frames);
@@ -238,6 +245,35 @@ static int PrimaryGetPresentationPosition(const struct AudioHwRender *stream, ui
 		} else {
 			HAL_AUDIO_ERROR("get ts fail");
 		}
+	} else {
+		HAL_AUDIO_ERROR("%s no out_pcm", __func__);
+	}
+
+	rtw_mutex_put(&out->lock);
+
+	return ret;
+}
+
+static int PrimaryGetPresentTime(const struct AudioHwRender *stream, int64_t *now_ns, int64_t *audio_ns)
+{
+	HAL_AUDIO_VERBOSE("primaryGetPresentationPosition latency:%lu", PrimaryGetRenderLatency(stream));
+
+	struct PrimaryAudioHwRender *out = (struct PrimaryAudioHwRender *)stream;
+	int ret = -1;
+	int64_t tmp_now_ns = 0;
+	int64_t tmp_audio_ns = 0;
+
+	rtw_mutex_get(&out->lock);
+
+	if (out->out_pcm) {
+		int64_t written_to_driver_frames = ameba_audio_stream_tx_get_frames_written(out->out_pcm);
+		ret = ameba_audio_stream_tx_get_time(out->out_pcm, &tmp_now_ns, &tmp_audio_ns);
+		int64_t out_written_to_hal_ns = (int64_t)(((double)out->written / (double)PrimaryGetRenderSampleRate((const struct AudioHwStream *)stream) *
+										(double)1000000000));
+		int64_t written_to_driver_ns = (int64_t)(((double)written_to_driver_frames / (double)PrimaryGetRenderSampleRate((const struct AudioHwStream *)stream) *
+									   (double)1000000000));
+		*audio_ns = out_written_to_hal_ns - (written_to_driver_ns - tmp_audio_ns);
+		*now_ns = tmp_now_ns;
 	} else {
 		HAL_AUDIO_ERROR("%s no out_pcm", __func__);
 	}
@@ -260,9 +296,11 @@ static int PrimarySetRenderVolume(struct AudioHwRender *stream, float left,
 static int StartAudioHwRender(struct PrimaryAudioHwRender *out)
 {
 	HAL_AUDIO_VERBOSE("start output stream enter");
-
-	ameba_audio_stream_tx_start(out->out_pcm);
-
+	(void) out;
+	//ameba_audio_ctl_set_tx_mute(ameba_audio_get_ctl(), false);
+	if (AUDIO_HW_AMPLIFIER_MUTE_ENABLE) {
+		ameba_audio_stream_tx_set_amp_state(true);
+	}
 	return HAL_OSAL_OK;
 }
 
@@ -307,7 +345,6 @@ static ssize_t PrimaryRenderWrite(struct AudioHwRender *stream, const void *buff
 	//write successfully
 	if (ret >= 0) {
 		out->written += ret / frame_size;
-		out->written_to_driver += ret / frame_size;
 		//sync with ameba audio driver's total_counter_boundary max value.
 		if (out->written > UINT64_MAX) {
 			out->written = 0;
@@ -367,6 +404,7 @@ struct AudioHwRender *GetAudioHwRenderFuncs(struct AudioHwAdapter *adapter, cons
 	out->stream.common.GetParameters = PrimaryGetRenderParameters;
 	out->stream.common.GetBufferStatus = PrimaryGetRenderBufferStatus;
 	out->stream.GetPresentationPosition = PrimaryGetPresentationPosition;
+	out->stream.GetPresentTime = PrimaryGetPresentTime;
 	out->stream.GetLatency = PrimaryGetRenderLatency;
 	out->stream.SetVolume = PrimarySetRenderVolume;
 	out->stream.Write = PrimaryRenderWrite;
@@ -378,7 +416,6 @@ struct AudioHwRender *GetAudioHwRenderFuncs(struct AudioHwAdapter *adapter, cons
 	out->adap = adap;
 	out->standby = 1;
 	out->written = 0;
-	out->written_to_driver = 0;
 	out->amp_pin = -1;
 
 	AudioHwFormat format = out->stream.common.GetFormat(&out->stream.common);

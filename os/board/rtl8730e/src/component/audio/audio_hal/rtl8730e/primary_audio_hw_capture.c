@@ -248,14 +248,15 @@ static int PrimaryGetCapturePosition(const struct AudioHwCapture *stream, uint64
 	struct PrimaryAudioHwCapture *cap = (struct PrimaryAudioHwCapture *)stream;
 	int ret = -1;
 
-	rtw_mutex_get(&cap->lock);
+	//Better not add mutex, because if only do record, will always lock in read api.So this api will not work.
+	//rtw_mutex_get(&cap->lock);
 
 	if (cap->in_pcm) {
 		uint64_t captured_frames;
 		if (ameba_audio_stream_rx_get_position(cap->in_pcm, &captured_frames, timestamp) == 0) {
 			*frames = captured_frames;
 			HAL_AUDIO_VERBOSE("frames:%llu", *frames);
-			rtw_mutex_put(&cap->lock);
+			//rtw_mutex_put(&cap->lock);
 			return 0;
 		} else {
 			HAL_AUDIO_ERROR("get ts fail");
@@ -264,7 +265,27 @@ static int PrimaryGetCapturePosition(const struct AudioHwCapture *stream, uint64
 		HAL_AUDIO_ERROR("%s no in_pcm", __func__);
 	}
 
-	rtw_mutex_put(&cap->lock);
+	//rtw_mutex_put(&cap->lock);
+
+	return ret;
+}
+
+static int PrimaryGetPresentTime(const struct AudioHwCapture *stream, int64_t *now_ns, int64_t *audio_ns)
+{
+
+	struct PrimaryAudioHwCapture *cap = (struct PrimaryAudioHwCapture *)stream;
+	int ret = -1;
+
+	//Better not add mutex, because if only do record, will always lock in read api.So this api will not work.
+	//rtw_mutex_get(&cap->lock);
+
+	if (cap->in_pcm) {
+		ret = ameba_audio_stream_rx_get_time(cap->in_pcm, now_ns, audio_ns);
+	} else {
+		HAL_AUDIO_ERROR("%s no in_pcm", __func__);
+	}
+
+	//rtw_mutex_put(&cap->lock);
 
 	return ret;
 }
@@ -580,7 +601,7 @@ static int CheckInputParameters(uint32_t sample_rate, AudioHwFormat format, uint
 	case 48000:
 	case 88200:
 	case 96000:
-	case 174000:
+	case 176400:
 	case 192000:
 		break;
 	default:
@@ -657,6 +678,7 @@ struct AudioHwCapture *GetAudioHwCaptureFuncs(struct AudioHwAdapter *adapter, co
 	in->stream.common.GetParameters = PrimaryGetCaptureParameters;
 	in->stream.GetLatency = PrimaryGetCaptureLatency;
 	in->stream.GetCapturePosition = PrimaryGetCapturePosition;
+	in->stream.GetPresentTime = PrimaryGetPresentTime;
 	in->stream.Read = PrimaryCaptureRead;
 
 	in->config = stream_input_config;

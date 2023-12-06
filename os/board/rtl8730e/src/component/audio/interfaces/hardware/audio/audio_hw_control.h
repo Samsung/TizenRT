@@ -381,7 +381,7 @@ struct AudioHwControl {
 	 * @since 1.0
 	 * @version 1.0
 	 */
-	int32_t (*AdjustPLLClock)(struct AudioHwControl *control, uint32_t rate, uint32_t ppm, uint32_t action);
+	float (*AdjustPLLClock)(struct AudioHwControl *control, uint32_t rate, float ppm, uint32_t action);
 
 	/**
 	 * @brief Set Audio ADC Mute.

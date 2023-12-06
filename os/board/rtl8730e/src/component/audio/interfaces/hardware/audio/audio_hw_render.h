@@ -73,6 +73,17 @@ struct AudioHwRender {
 	int (*GetPresentationPosition)(const struct AudioHwRender *stream, uint64_t *frames, struct timespec *timestamp);
 
 	/**
+	 * @brief Get current render frames and timestamp of the current <b>AudioHwRender</b> object .
+	 *
+	 * @param stream Indicates the pointer to the audio render to operate.
+	 * @param now_ns Indicates the pointer to system time, or tsf time.
+	 * @param audio_ns Indicates the pointer to the playing audio time.
+	 * @return Returns <b>0</b> if render frames and timestamp get successfully;
+	 * returns a negative value otherwise.
+	 */
+	int (*GetPresentTime)(const struct AudioHwRender *stream, int64_t *now_ns, int64_t *audio_ns);
+
+	/**
 	 * @brief Write data to sound card for the current <b>AudioHwRender</b> object .
 	 *
 	 * @param stream Indicates the pointer to the audio render to operate.

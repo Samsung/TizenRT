@@ -47,6 +47,27 @@ Please make sure your amplifier configurations are correctly set.
     #define AUDIO_HW_AMPLIFIER_MUTE_ENABLE  0
 ```
 
+If your amplifier is not controled by GPIO, and you need to add logic in our codes to avoid amplifier noise.
+Here is the time sequence of our playback:
+
+```
+    1. when create hal's render, ameba_audio_stream_render.c's API ameba_audio_stream_tx_sport_init will be called, in which bclk clock will be generated.
+    2. when create hal's render, ameba_audio_stream_tx_codec_init will be called after ameba_audio_stream_tx_sport_init,         ameba_audio_stream_tx_codec_init->ameba_audo_stream_tx_codec_configure->ameba_audio_stream_tx_set_amp_state(true), amplifier will be enabled.
+    3. if hal is in standby mode, and user write first data, hal will exit standby and call ameba_audio_stream_tx_set_amp_state(true), amplifier will be enabled.
+    4. if hal enters standby mode, ameba_audio_stream_tx_set_amp_state(false) will be called to disable amplifer.
+    5. when destroy hal's render, first hal enters standby mode, and disable amplifier, then ameba_audio_stream_render.c's API ameba_audio_stream_tx_close will be called, and bclk clock will stop output.
+```
+
+Here are the suggestions for you to add related codes:
+
+```
+    1. set ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_MUTE_ENABLE as 1.
+    2. if you want to do some initialization work of amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_init.
+       after line:ameba_audio_stream_tx_sport_init(&rstream, config, device);
+    3. in ameba_audio_stream_control.c's ameba_audio_ctl_set_amp_state, add amplifer enable, and disable implementations.
+    4. if you want to deinit amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_close, before line:AUDIO_SP_Deinit.
+```
+
 ### I2S playback
 
 If you want to play with I2S, please change the following codes:
@@ -78,13 +99,33 @@ If you want to play with I2S, please change the following codes:
     #define AUDIO_I2S_OUT_MULTIIO_EN         0
 
     //if your external codec needs mclk from soc, and it's mclk should be mulitiplier of fs, set mulitiplier here.
-    #define AUDIO_HW_OUT_MCLK_MULITIPLIER   256
+    #define AUDIO_HW_OUT_MCLK_MULITIPLIER    256
 
     //if your external codec needs fixed mclk from soc, set it's max mclk here:
-    #define AUDIO_HW_OUT_FIXED_MCLK         20000000
+    #define AUDIO_HW_OUT_FIXED_MCLK          20000000
 
+    //attention: if you use PA13, PA14 for I2S, it may conflict with SWD, please call sys_jtag_off() to disable SWD in your application codes.
 ```
 
+For I2S, if you need to add logic in our codes to avoid amplifier noise.
+Here is the time sequence of our playback:
+
+```
+    1. when create hal's render, ameba_audio_stream_render.c's API ameba_audio_stream_tx_sport_init will be called, in which bclk clock will be generated.
+    2. if hal is in standby mode, and user write first data, hal will exit standby and call ameba_audio_stream_tx_set_amp_state(true), amplifier will be enabled.
+    3. if hal enters standby mode, ameba_audio_stream_tx_set_amp_state(false) will be called to disable amplifer.
+    4. when destroy hal's render, first hal enters standby mode, and disable amplifier, then ameba_audio_stream_render.c's API ameba_audio_stream_tx_close will be called, and bclk clock will stop output.
+```
+
+Here are the suggestions for you to add related codes:
+
+```
+    1. set ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_MUTE_ENABLE as 1.
+    2. if you want to do some initialization work of amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_init.
+       after line:ameba_audio_stream_tx_sport_init(&rstream, config, device);
+    3. in ameba_audio_stream_control.c's ameba_audio_ctl_set_amp_state, add amplifer enable, and disable implementations.
+    4. if you want to deinit amplifier, the codes can be added in ameba_audio_stream_render.c's API ameba_audio_stream_tx_close, before line:AUDIO_SP_Deinit.
+```
 ### internal record
 
 For audio record, the default setting is using amic.
@@ -105,6 +146,11 @@ If you want to use dmic, please set following configurations.
 If you want to record with I2S, please change the following codes:
 
 ```
+    //in your test code with RTAudioRecord, please set device as I2S:
+    RTAudioRecordConfig record_config;
+    ......
+    record_config.device = RTPIN_IN_I2S;
+
     component/usrcfg/rtl**/ameba_audio_hw_usrcfg.h
     //if your external codec needs mclk from soc, and it's mclk should be mulitiplier of fs, set 1 here.
     //if your external codec needs fixed mclk from soc, set 2 here.
@@ -132,5 +178,10 @@ If you want to record with I2S, please change the following codes:
 
     //if your external codec needs fixed mclk from soc, set it's max mclk here:
     #define AUDIO_HW_IN_FIXED_MCLK         20000000
+
+    //if your I2S in works in slave mode, set role as 1, otherwise set it as 0:
+    #define AUDIO_I2S_IN_ROLE              1
+
+    //attention: if you use PA13, PA14 for I2S, it may conflict with SWD, please call sys_jtag_off() to disable SWD in your application codes.
 
 ```

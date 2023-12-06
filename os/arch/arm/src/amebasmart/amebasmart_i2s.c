@@ -79,7 +79,7 @@
 
 /* Check for I2S TX support */
 #if defined(CONFIG_AMEBASMART_I2S_TX)
-#define I2S_HAVE_TX 	1
+#define I2S_HAVE_TX 1
 #endif
 
 #ifndef CONFIG_AMEBASMART_I2S_DATALEN
@@ -146,21 +146,27 @@ typedef struct {
 	i2s_bits_per_sample_t bits_per_sample; /*!< I2S bits per sample */
 
 	uint8_t channel_num;
-	uint8_t direction;
-
 } i2s_config_t;
 
-/* The state of the one I2S peripheral */
-
-struct amebasmart_i2s_s {
-	struct i2s_dev_s dev; /* Externally visible I2S interface, must the first element!! */
-
-	i2s_t i2s_object;
+/* I2S Device hardware configuration */
+struct amebasmart_i2s_config_s {
+	uint32_t i2s_mclk_pin;
 	uint32_t i2s_sclk_pin;
 	uint32_t i2s_ws_pin;
 	uint32_t i2s_sd_tx_pin;
 	uint32_t i2s_sd_rx_pin;
-	uint32_t i2s_mck_pin;
+
+	uint8_t i2s_idx;	/* I2S index*/
+	uint8_t rxenab : 1; /* True: RX transfers enabled */
+	uint8_t txenab : 1; /* True: TX transfers enabled */
+};
+
+/* The state of the one I2S peripheral */
+struct amebasmart_i2s_s {
+	struct i2s_dev_s dev; /* Externally visible I2S interface, must the first element!! */
+
+	i2s_t i2s_object;
+	const struct amebasmart_i2s_config_s *config;	/* Port configuration */
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	uint8_t i2s_tx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in TX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
@@ -168,11 +174,10 @@ struct amebasmart_i2s_s {
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	uint8_t *i2s_rx_buf;
+	//uint8_t i2s_rx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+	uint8_t* i2s_rx_buf;
 	i2s_irq_handler rx_isr_handler;
 #endif
-
-	uint8_t i2s_num; /* I2S controller register base address */
 
 	i2s_err_cb_t err_cb; /* registered error callback function */
 	void *err_cb_arg;	 /* argiment to return with err cb call */
@@ -200,8 +205,31 @@ struct amebasmart_i2s_s {
 	struct amebasmart_buffer_s *freelist_tx; /* A list a free buffer containers */
 	struct amebasmart_buffer_s containers_tx[I2S_DMA_PAGE_NUM];
 #endif
+};
 
+/* I2S device structures */
+static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
+	.i2s_mclk_pin = PB_22,
+	.i2s_sclk_pin = PB_21,
+	.i2s_ws_pin = PA_16,
+	.i2s_sd_tx_pin = PB_10,
+	.i2s_sd_rx_pin = PB_19,
 
+	.i2s_idx = I2S_NUM_2,
+	.rxenab = 0,
+	.txenab = 1,
+};
+
+static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
+	.i2s_mclk_pin = PA_15,
+	.i2s_sclk_pin = PA_14,
+	.i2s_ws_pin = PA_13,
+	.i2s_sd_tx_pin = PB_11,
+	.i2s_sd_rx_pin = PB_20,
+
+	.i2s_idx = I2S_NUM_3,
+	.rxenab = 1,
+	.txenab = 0,
 };
 
 /****************************************************************************
@@ -262,18 +290,13 @@ static void i2s_buf_tx_initialize(struct amebasmart_i2s_s *priv);
 static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits);
 
 static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate);
-
 static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits);
-
 static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
-
 static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
 static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
 static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir);
-
 static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
 static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout);
-
 static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg);
 
 /****************************************************************************
@@ -282,16 +305,10 @@ static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg
 
 static const i2s_config_t i2s_default_config = {
 
-	.sample_rate = SR_48KHZ,
+	.sample_rate = SP_48K,
 	.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
 
-	.channel_num = CH_STEREO,
-#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	.direction = I2S_DIR_TX,
-#endif
-#if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	.direction = I2S_DIR_RX,
-#endif
+	.channel_num = 2,
 };
 
 /* I2S device operations */
@@ -363,7 +380,7 @@ static void i2s_txdma_timeout(int argc, uint32_t arg)
 
 static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_buffer_s *bfcontainer)
 {
-	int ret;
+	int ret = OK;
 	int *ptx_buf;
 	int tx_size;
 
@@ -375,9 +392,6 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.act);
 
-		if (!priv->txenab) {	/* Checks tx has been enabled */
-			i2s_set_direction(&priv->i2s_object, I2S_DIR_TX);
-		}
 		priv->apb_tx = apb; /* Reference current TX apb in our I2S struct */
 							/* Start sending first page, after that the txdma callback will be called in the tx irq handler */
 		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
@@ -391,9 +405,10 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		}
 		apb->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 
+		i2s_enable(&priv->i2s_object);
 		i2s_send_page(&priv->i2s_object, (uint32_t *)ptx_buf);
 	}
-	return OK;
+	return ret;
 }
 
 static int i2s_tx_start(struct amebasmart_i2s_s *priv)
@@ -402,7 +417,7 @@ static int i2s_tx_start(struct amebasmart_i2s_s *priv)
 	int ret;
 	irqstate_t flags;
 
-	struct ap_buffer_s *apb;
+	//struct ap_buffer_s *apb;
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->tx.act)) {
@@ -702,7 +717,6 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 }
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-
 /****************************************************************************
  * Name: i2s_rxdma_callback
  *
@@ -717,17 +731,14 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
  *   None
  *
  ****************************************************************************/
-
 static void i2s_rxdma_callback(struct amebasmart_i2s_s *priv, int result)
 {
 	DEBUGASSERT(priv != NULL);
 
 	/* Cancel the watchdog timeout */
-
 	(void)wd_cancel(priv->rx.dog);
 
 	/* Then schedule completion of the transfer to occur on the worker thread */
-
 	i2s_rx_schedule(priv, result);
 }
 
@@ -783,7 +794,6 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
 
-		i2s_set_direction(&priv->i2s_object, I2S_DIR_RX);
 		i2s_recv_page(&priv->i2s_object);
 	}
 	irqrestore(flags);
@@ -823,7 +833,6 @@ static void i2s_rx_worker(void *arg)
 	 * of the rx.done queue and rx.act queue will be emptied before this worker
 	 * is started.
 	 */
-
 	i2sinfo("rx.act.head=%p rx.done.head=%p\n", priv->rx.act.head, priv->rx.done.head);
 
 	/* Process each buffer in the rx.done queue */
@@ -832,20 +841,17 @@ static void i2s_rx_worker(void *arg)
 		 * interrupts must be disabled to do this because the rx.done queue is
 		 * also modified from the interrupt level.
 		 */
-
 		flags = irqsave();
 		bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
 		irqrestore(flags);
 
 		/* Perform the RX transfer done callback */
-
 		DEBUGASSERT(bfcontainer && bfcontainer->apb && bfcontainer->callback);
 		apb = bfcontainer->apb;
 
 		/* If the DMA was successful, then update the number of valid bytes in
 		 * the audio buffer.
 		 */
-
 		if (bfcontainer->result == OK) {
 			apb->nbytes = apb->nmaxbytes;
 		}
@@ -877,20 +883,15 @@ static void i2s_rx_schedule(struct amebasmart_i2s_s *priv, int result)
 	 * both indirectly via the amebasmart_dmastop() logic and directly via the
 	 * i2s_rxdma_timeout() logic.
 	 */
-
 	/* Move first entry from the rx.act queue to the rx.done queue */
-
 	if (!sq_empty(&priv->rx.act)) {
 		/* Remove the next buffer container from the rx.act list */
-
 		bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.act);
 
 		/* Report the result of the transfer */
-
 		bfcontainer->result = result;
 
 		/* Add the completed buffer container to the tail of the rx.done queue */
-
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.done);
 	}
 
@@ -908,7 +909,6 @@ static void i2s_rx_schedule(struct amebasmart_i2s_s *priv, int result)
 	 */
 	if (work_available(&priv->rx.work)) {
 		/* Schedule the TX DMA done processing to occur on the worker thread. */
-
 		ret = work_queue(HPWORK, &priv->rx.work, i2s_rx_worker, priv, 0);
 		if (ret != 0) {
 			i2serr("ERROR: Failed to queue RX work: %d\n", ret);
@@ -932,7 +932,6 @@ static void i2s_rx_schedule(struct amebasmart_i2s_s *priv, int result)
  *   Returns the resulting bitrate
  *
  ****************************************************************************/
-
 static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 {
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -986,7 +985,6 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
  *   failed.
  *
  ****************************************************************************/
-
 static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback_t callback, void *arg, uint32_t timeout)
 {
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)dev;
@@ -1014,11 +1012,9 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	i2sinfo("RX Exclusive Enter\n");
 
 	/* Add a reference to the audio buffer */
-
 	apb_reference(apb);
 
 	/* Initialize the buffer container structure */
-
 	bfcontainer->callback = (void *)callback;
 	bfcontainer->timeout = timeout;
 	bfcontainer->arg = arg;
@@ -1031,7 +1027,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	flags = irqsave();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.pend);
 	irqrestore(flags);
-	printf("i2s_rx_start\n");
+	i2sinfo("i2s_rx_start\n");
 	/* Start transfer */
 	ret = i2s_rx_start(priv);
 
@@ -1061,9 +1057,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 	/* submit a new page for receive */
 	i2s_recv_page(obj);
 
-	int result = OK;
-
-	i2s_rxdma_callback(priv, result);
+	i2s_rxdma_callback(priv, OK);
 }
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1080,7 +1074,6 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
  *  None
  *
  ****************************************************************************/
-
 static void i2s_bufsem_rx_take(struct amebasmart_i2s_s *priv)
 {
 	int ret;
@@ -1114,7 +1107,6 @@ static void i2s_bufsem_rx_take(struct amebasmart_i2s_s *priv)
  *   That would result in a deadlock!
  *
  ****************************************************************************/
-
 static struct amebasmart_buffer_s *i2s_buf_rx_allocate(struct amebasmart_i2s_s *priv)
 {
 	struct amebasmart_buffer_s *bfcontainer;
@@ -1154,7 +1146,6 @@ static struct amebasmart_buffer_s *i2s_buf_rx_allocate(struct amebasmart_i2s_s *
  *   The caller has exclusive access to the I2S state structure
  *
  ****************************************************************************/
-
 static void i2s_buf_rx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buffer_s *bfcontainer)
 {
 	irqstate_t flags;
@@ -1187,7 +1178,6 @@ static void i2s_buf_rx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buf
  *   concurrency.
  *
  ****************************************************************************/
-
 static void i2s_buf_rx_initialize(struct amebasmart_i2s_s *priv)
 {
 	int i;
@@ -1215,7 +1205,6 @@ static void i2s_buf_rx_initialize(struct amebasmart_i2s_s *priv)
  *  None
  *
  ****************************************************************************/
-
 static void i2s_bufsem_tx_take(struct amebasmart_i2s_s *priv)
 {
 	int ret;
@@ -1249,7 +1238,6 @@ static void i2s_bufsem_tx_take(struct amebasmart_i2s_s *priv)
  *   That would result in a deadlock!
  *
  ****************************************************************************/
-
 static struct amebasmart_buffer_s *i2s_buf_tx_allocate(struct amebasmart_i2s_s *priv)
 {
 	struct amebasmart_buffer_s *bfcontainer;
@@ -1289,7 +1277,6 @@ static struct amebasmart_buffer_s *i2s_buf_tx_allocate(struct amebasmart_i2s_s *
  *   The caller has exclusive access to the I2S state structure
  *
  ****************************************************************************/
-
 static void i2s_buf_tx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buffer_s *bfcontainer)
 {
 	irqstate_t flags;
@@ -1322,7 +1309,6 @@ static void i2s_buf_tx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buf
  *   concurrency.
  *
  ****************************************************************************/
-
 static void i2s_buf_tx_initialize(struct amebasmart_i2s_s *priv)
 {
 	int i;
@@ -1351,7 +1337,6 @@ static void i2s_buf_tx_initialize(struct amebasmart_i2s_s *priv)
  *  None
  *
  ****************************************************************************/
-
 static void i2s_exclsem_take(struct amebasmart_i2s_s *priv)
 {
 	int ret;
@@ -1581,7 +1566,6 @@ static int i2s_err_cb_register(struct i2s_dev_s *dev, i2s_err_cb_t cb, void *arg
  ****************************************************************************/
 int amebasmart_i2s_isr_initialize(struct amebasmart_i2s_s *priv)
 {
-
 	/* Attach the GPIO peripheral to the allocated CPU interrupt */
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_tx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->tx_isr_handler, (uint32_t)priv);
@@ -1589,7 +1573,6 @@ int amebasmart_i2s_isr_initialize(struct amebasmart_i2s_s *priv)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	i2s_rx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->rx_isr_handler, (uint32_t)priv);
 #endif
-
 	return 0;
 }
 
@@ -1607,7 +1590,6 @@ int amebasmart_i2s_isr_initialize(struct amebasmart_i2s_s *priv)
  *   Returns the resulting bitrate
  *
  ****************************************************************************/
-
 static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 {
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)dev;
@@ -1616,31 +1598,9 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	priv->i2s_object.sampling_rate = rate;
 	priv->sample_rate = rate;
 
+	i2s_set_param(&priv->i2s_object, priv->i2s_object.channel_num, priv->i2s_object.sampling_rate, priv->i2s_object.word_length);
+
 	return priv->i2s_object.sampling_rate;
-}
-
-/****************************************************************************
- * Name: amebasmart_i2s_initpins
- *
- * Description:
- *   Set the I2S pins.
- *
- * Input Parameters:
- *   dev  - Device-specific state data
- *   	 - sclk Serial Clock
- *   	 - ws Word Select
- *   	 - sd_rx, sd_tx Serial Data rx tx
- *   	 - mck Master Clock
- *
- ****************************************************************************/
-
-static void amebasmart_i2s_initpins(struct amebasmart_i2s_s *priv)
-{
-	priv->i2s_sclk_pin = PB_21;
-	priv->i2s_ws_pin = PA_16;
-	priv->i2s_sd_tx_pin = PB_10;
-	priv->i2s_sd_rx_pin = PA_29;
-	priv->i2s_mck_pin = PB_22;
 }
 
 /****************************************************************************
@@ -1653,33 +1613,42 @@ static void amebasmart_i2s_initpins(struct amebasmart_i2s_s *priv)
  *   priv  - Device-specific private data
  *
  ****************************************************************************/
-
 static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 {
-	priv->channel_num = (&i2s_default_config)->channel_num;
-	priv->i2s_object.channel_num = (&i2s_default_config)->channel_num;
+	priv->i2s_object.i2s_idx = priv->config->i2s_idx;
+	priv->i2s_object.sampling_rate = i2s_default_config.sample_rate;
+	priv->sample_rate = priv->i2s_object.sampling_rate;
+	/* priv->i2s_object.clock = ; */
+	priv->i2s_object.channel_num = i2s_default_config.channel_num;
+	priv->channel_num = priv->i2s_object.channel_num;
 
-	priv->sample_rate = (&i2s_default_config)->sample_rate;
-	priv->i2s_object.sampling_rate = (&i2s_default_config)->sample_rate;
-
-	priv->i2s_object.direction = (&i2s_default_config)->direction;
-
-	priv->bits_per_sample = (&i2s_default_config)->bits_per_sample;
+	priv->bits_per_sample = i2s_default_config.bits_per_sample;
 	if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_16BIT)
 		priv->i2s_object.word_length = WL_16b;
 	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_24BIT)
 		priv->i2s_object.word_length = WL_24b;
 	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_32BIT)
 		priv->i2s_object.word_length = WL_32b;
+	else
+		priv->i2s_object.word_length = WL_32b;
 
+	priv->rxenab = priv->config->rxenab;
+	if (priv->config->rxenab) {
+		priv->i2s_object.channel_length = SP_RXCL_32;
+		priv->i2s_object.fifo_num = SP_RX_FIFO2;
+		priv->i2s_object.direction = SP_DIR_RX;
+		priv->i2s_object.role = SLAVE;
+		
+	}
+	priv->txenab = priv->config->txenab;
+	if (priv->config->txenab) {
+		priv->i2s_object.channel_length = SP_TXCL_32;
+		priv->i2s_object.fifo_num = SP_TX_FIFO2;
+		priv->i2s_object.direction = SP_DIR_TX;
+		priv->i2s_object.role = MASTER;
+	}
 
-	priv->i2s_object.word_length = WL_16b;
-	priv->i2s_object.sampling_rate = SR_16KHZ;
-	priv->i2s_object.channel_length = CL_32b;
-	priv->i2s_object.direction = I2S_DIR_TX;
-	priv->i2s_object.role = MASTER;
-	priv->i2s_object.fifo_num = SP_TX_FIFO2;
-	/* priv->i2s_object.mode = MULTIIO;		//disable for now*/
+	priv->i2s_object.mode = MULTIIO;
 }
 
 /****************************************************************************
@@ -1692,7 +1661,6 @@ static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
  *   priv  - Device-specific private data
  *
  ****************************************************************************/
-
 static int i2s_allocate_wd(struct amebasmart_i2s_s *priv)
 {
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1748,12 +1716,19 @@ errout:
  *   Valid i2s device structure reference on succcess; a NULL on failure
  *
  ****************************************************************************/
-
-
 struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 {
-	if (port >= I2S_NUM_MAX) {
-		i2serr("ERROR: Port number outside the allowed port number range\n");
+	struct amebasmart_i2s_config_s *hw_config_s = NULL;
+	struct amebasmart_i2s_s *priv;
+	int ret;
+
+	/* Assign HW configuration */
+	if (port == I2S_NUM_2) {
+		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s2_config;
+	} else if (port == I2S_NUM_3) {
+		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s3_config;
+	} else {
+		i2serr("Please select I2S2 or I2S3 bus\n");
 		return NULL;
 	}
 
@@ -1761,40 +1736,33 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 		return &g_i2sdevice[port]->dev;
 	}
 
-	struct amebasmart_i2s_s *priv;
-
-	int ret;
-
 	/* Allocate a new state structure for this chip select.  NOTE that there
 	 * is no protection if the same chip select is used in two different
 	 * chip select structures.
 	 */
 	priv = (struct amebasmart_i2s_s *)kmm_zalloc(sizeof(struct amebasmart_i2s_s));
-
 	if (!priv) {
 		i2serr("ERROR: Failed to allocate a chip select structure\n");
 		return NULL;
 	}
 
+	/* Config values initialization */
+	priv->config = hw_config_s;	/* Get HW configuation */
+
 	/* Get default configuration */
 	i2s_getdefaultconfig(priv);
-
-	/* Config values initialization */
-	amebasmart_i2s_initpins(priv);
 
 	/* Initialize buffering */
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	i2s_buf_rx_initialize(priv);
-	priv->rxenab = 1;
 #endif
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_buf_tx_initialize(priv);
-	priv->txenab = 1;
 #endif
 
 	/* I2s object initialization */
-	i2s_init(&priv->i2s_object, priv->i2s_sclk_pin, priv->i2s_ws_pin, priv->i2s_sd_tx_pin, priv->i2s_sd_rx_pin, priv->i2s_mck_pin);
+	i2s_init(&priv->i2s_object, hw_config_s->i2s_sclk_pin, hw_config_s->i2s_ws_pin, hw_config_s->i2s_sd_tx_pin, hw_config_s->i2s_sd_rx_pin, hw_config_s->i2s_mclk_pin);
 
 	/* Initialize buffering */
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
@@ -1824,7 +1792,7 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 		goto errout_with_alloc;
 	}
 	/* Basic settings */
-	priv->i2s_num = priv->i2s_object.i2s_idx;
+	//priv->i2s_num = priv->i2s_object.i2s_idx;
 	g_i2sdevice[port] = priv;
 
 	i2s_disable(&priv->i2s_object);

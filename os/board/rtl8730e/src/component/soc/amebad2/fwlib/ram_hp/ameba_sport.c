@@ -22,6 +22,7 @@
   */
 #include "ameba_soc.h"
 
+static const char *TAG = "SPORT";
 SP_RegTypeDef SP_RegFlag[4] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
 const AUDIO_DevTable AUDIO_DEV_TABLE[4] = {
@@ -75,11 +76,12 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 */
 BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 {
+	assert_param(IS_SP_SET_DIR(direction));
 
 	if (direction == SP_DIR_TX) {
 
 		if (SP_RegFlag[index].SP_DIR_TX_flag) {
-			DBG_8195A("SPORT TX has been registered!\n");
+			//RTK_LOGW(TAG, "SPORT TX has been registered!\n");
 			return 0;
 		} else {
 			if (SP_RegFlag[index].SP_DIR_RX_flag) {
@@ -91,7 +93,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 					if (SP_InitStruct->SP_Fix_Bclk) {
 						return 1;
 					} else {
-						DBG_8195A("SPORT RX Bclk can't be changed!\n");
+						//RTK_LOGW(TAG, "SPORT RX Bclk can't be changed!\n");
 						return 0;
 					}
 				}
@@ -104,7 +106,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 	} else {
 
 		if (SP_RegFlag[index].SP_DIR_RX_flag) {
-			DBG_8195A("SPORT RX has been registered!\n");
+			//RTK_LOGW(TAG, "SPORT RX has been registered!\n");
 			return 0;
 		} else {
 			if (SP_RegFlag[index].SP_DIR_TX_flag) {
@@ -116,7 +118,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 					if (SP_InitStruct->SP_Fix_Bclk) {
 						return 1;
 					} else {
-						DBG_8195A("SPORT TX Bclk can't be changed!\n");
+						//RTK_LOGW(TAG, "SPORT TX Bclk can't be changed!\n");
 						return 0;
 					}
 				}
@@ -149,11 +151,12 @@ void AUDIO_SP_Unregister(u32 index, u32 direction)
 
 /**
   * @brief  Reset SPORT module.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval None
   */
-void AUDIO_SP_Reset(AUDIO_SPORT_TypeDef *SPORTx)
+void AUDIO_SP_Reset(u32 index)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_CTRL0 |= SP_BIT_RESET;
 	SPORTx->SP_CTRL0 &= ~ SP_BIT_RESET;
 }
@@ -161,12 +164,13 @@ void AUDIO_SP_Reset(AUDIO_SPORT_TypeDef *SPORTx)
 
 /**
   * @brief  Get sport tx channel length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval None
 */
-u32 AUDIO_SP_GetTXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
+u32 AUDIO_SP_GetTXChnLen(u32 index)
 {
 	u32 chn_len;
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	u32 len_tx = ((SPORTx->SP_FORMAT) & SP_MASK_CH_LEN_SEL_TX) >> 24;
 
 	switch (len_tx) {
@@ -189,12 +193,13 @@ u32 AUDIO_SP_GetTXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
 
 /**
   * @brief  Get sport rx channel length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval None
 */
-u32 AUDIO_SP_GetRXChnLen(AUDIO_SPORT_TypeDef *SPORTx)
+u32 AUDIO_SP_GetRXChnLen(u32 index)
 {
 	u32 chn_len;
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	u32 len_rx = ((SPORTx->SP_FORMAT) & SP_MASK_CH_LEN_SEL_RX) >> 28;
 
 	switch (len_rx) {
@@ -485,6 +490,213 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 }
 
 /**
+* @brief Select AUDIO SPORT tx channel source.
+* @param  index: select SPORT.
+* @param  tx_chn: select tx channel,channel 0-7 corresponding to DOUT0-3.
+*		   This parameter can be one of the following values:
+*			 @arg TXCHN0
+*			 @arg TXCHN1
+*			 @arg TXCHN2
+*			 @arg TXCHN3
+*			 @arg TXCHN4
+*			 @arg TXCHN5
+*			 @arg TXCHN6
+*			 @arg TXCHN7
+* @param  fifo_chn: select fifo channel
+*		   This parameter can be one of the following values:
+*			 @arg TX_FIFO0_REG0_L
+*			 @arg TX_FIFO0_REG0_R
+*			 @arg TX_FIFO0_REG1_L
+*			 @arg TX_FIFO0_REG1_R
+*			 @arg TX_FIFO1_REG0_L
+*			 @arg TX_FIFO1_REG0_R
+*			 @arg TX_FIFO1_REG1_L
+*			 @arg TX_FIFO1_REG1_R
+*/
+void AUDIO_SP_TXCHNSrcSel(u32 index, u32 tx_chn, u32 fifo_chn)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	switch (tx_chn) {
+	case TXCHN0:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH0_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH0_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN1:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH1_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH1_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN2:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH2_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH2_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN3:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH3_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH3_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN4:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH4_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH4_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN5:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH5_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH5_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN6:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH6_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH6_DATA_SEL(fifo_chn);
+		break;
+	case TXCHN7:
+		SPORTx->SP_DIRECT_CTRL0 &= ~SP_MASK_TX_CH7_DATA_SEL;
+		SPORTx->SP_DIRECT_CTRL0 |= SP_TX_CH7_DATA_SEL(fifo_chn);
+		break;
+	default:
+		break;
+	}
+
+}
+
+/**
+  * @brief Select AUDIO SPORT rx fifo source.
+  * @param	index: select SPORT.
+  * @param	fifo_chn: select fifo channel
+  * 		 This parameter can be one of the following values:
+  * 		   @arg RX_FIFO0_REG0_L
+  * 		   @arg RX_FIFO0_REG0_R
+  * 		   @arg RX_FIFO0_REG1_L
+  * 		   @arg RX_FIFO0_REG1_R
+  * 		   @arg RX_FIFO1_REG0_L
+  * 		   @arg RX_FIFO1_REG0_R
+  * 		   @arg RX_FIFO1_REG1_L
+  * 		   @arg RX_FIFO1_REG1_R
+  * @param	rx_chn: select rx channel,channel 0-7 corresponding to DIN0-3.
+  * 		 This parameter can be one of the following values:
+  * 		   @arg RXCHN0
+  * 		   @arg RXCHN1
+  * 		   @arg RXCHN2
+  * 		   @arg RXCHN3
+  * 		   @arg RXCHN4
+  * 		   @arg RXCHN5
+  * 		   @arg RXCHN6
+  * 		   @arg RXCHN7
+  */
+void AUDIO_SP_RXFIFOSrcSel(u32 index, u32 fifo_chn, u32 rx_chn)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	switch (fifo_chn) {
+	case RX_FIFO0_REG0_L:
+		SPORTx->SP_DIRECT_CTRL3 &= ~SP_MASK_RX_FIFO_0_REG_0_L_SEL;
+		SPORTx->SP_DIRECT_CTRL3 |= SP_RX_FIFO_0_REG_0_L_SEL(rx_chn);
+		break;
+	case RX_FIFO0_REG0_R:
+		SPORTx->SP_DIRECT_CTRL3 &= ~SP_MASK_RX_FIFO_0_REG_0_R_SEL;
+		SPORTx->SP_DIRECT_CTRL3 |= SP_RX_FIFO_0_REG_0_R_SEL(rx_chn);
+		break;
+	case RX_FIFO0_REG1_L:
+		SPORTx->SP_DIRECT_CTRL3 &= ~SP_MASK_RX_FIFO_0_REG_1_L_SEL;
+		SPORTx->SP_DIRECT_CTRL3 |= SP_RX_FIFO_0_REG_1_L_SEL(rx_chn);
+		break;
+	case RX_FIFO0_REG1_R:
+		SPORTx->SP_DIRECT_CTRL3 &= ~SP_MASK_RX_FIFO_0_REG_1_R_SEL;
+		SPORTx->SP_DIRECT_CTRL3 |= SP_RX_FIFO_0_REG_1_R_SEL(rx_chn);
+		break;
+	case RX_FIFO1_REG0_L:
+		SPORTx->SP_DIRECT_CTRL4 &= ~SP_MASK_RX_FIFO_1_REG_0_L_SEL;
+		SPORTx->SP_DIRECT_CTRL4 |= SP_RX_FIFO_1_REG_0_L_SEL(rx_chn);
+		break;
+	case RX_FIFO1_REG0_R:
+		SPORTx->SP_DIRECT_CTRL4 &= ~SP_MASK_RX_FIFO_1_REG_0_R_SEL;
+		SPORTx->SP_DIRECT_CTRL4 |= SP_RX_FIFO_1_REG_0_R_SEL(rx_chn);
+		break;
+	case RX_FIFO1_REG1_L:
+		SPORTx->SP_DIRECT_CTRL4 &= ~SP_MASK_RX_FIFO_1_REG_1_L_SEL;
+		SPORTx->SP_DIRECT_CTRL4 |= SP_RX_FIFO_1_REG_1_L_SEL(rx_chn);
+		break;
+	case RX_FIFO1_REG1_R:
+		SPORTx->SP_DIRECT_CTRL4 &= ~SP_MASK_RX_FIFO_1_REG_1_R_SEL;
+		SPORTx->SP_DIRECT_CTRL4 |= SP_RX_FIFO_1_REG_1_R_SEL(rx_chn);
+		break;
+	default:
+		break;
+	}
+
+}
+
+/**
+  * @brief  Set AUDIO SPORT TX FIFO enable or disable.
+  * @param  index: sport index.
+  * @param  fifo_num: tx fifo number.
+  * @param  NewState: enable or disable.
+  * @retval None
+  */
+void AUDIO_SP_TXSetFifo(u32 index, u32 fifo_num, u32 NewState)
+{
+	assert_param(IS_SP_SEL_TX_FIFO(fifo_num));
+
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		if (fifo_num == SP_TX_FIFO2) {
+			SPORTx->SP_CTRL1 |= SP_BIT_TX_FIFO_0_REG_0_EN;
+		} else if (fifo_num == SP_TX_FIFO4) {
+			SPORTx->SP_CTRL1 |= SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN;
+		} else if (fifo_num == SP_TX_FIFO6) {
+			SPORTx->SP_CTRL1 |= (SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN);
+		} else {
+			SPORTx->SP_CTRL1 |= (SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN | SP_BIT_TX_FIFO_1_REG_1_EN);
+		}
+	} else {
+		if (fifo_num == SP_TX_FIFO2) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_TX_FIFO_0_REG_0_EN);
+		} else if (fifo_num == SP_TX_FIFO4) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN);
+		} else if (fifo_num == SP_TX_FIFO6) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN);
+		} else {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN | SP_BIT_TX_FIFO_1_REG_1_EN);
+		}
+	}
+}
+
+/**
+  * @brief  Set AUDIO SPORT RX FIFO enable or disable.
+  * @param  index: sport index.
+  * @param  fifo_num: rx fifo number.
+  * @param  NewState: enable or disable.
+  * @retval None
+  */
+void AUDIO_SP_RXSetFifo(u32 index, u32 fifo_num, u32 NewState)
+{
+	assert_param(IS_SP_SEL_RX_FIFO(fifo_num));
+
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
+	if (NewState == ENABLE) {
+		if (fifo_num == SP_RX_FIFO2) {
+			SPORTx->SP_CTRL1 |= SP_BIT_RX_FIFO_0_REG_0_EN;
+		} else if (fifo_num == SP_RX_FIFO4) {
+			SPORTx->SP_CTRL1 |= SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN;
+		} else if (fifo_num == SP_RX_FIFO6) {
+			SPORTx->SP_CTRL1 |= (SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN);
+		} else {
+			SPORTx->SP_CTRL1 |= (SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN | SP_BIT_RX_FIFO_1_REG_1_EN);
+		}
+
+	} else {
+		if (fifo_num == SP_RX_FIFO2) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_RX_FIFO_0_REG_0_EN);
+		} else if (fifo_num == SP_RX_FIFO4) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN);
+		} else if (fifo_num == SP_RX_FIFO6) {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN);
+		} else {
+			SPORTx->SP_CTRL1 &= ~(SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN | SP_BIT_RX_FIFO_1_REG_1_EN);
+		}
+	}
+}
+
+/**
   * @brief  Initializes the AUDIO SPORT registers according to the specified parameters in SP_InitStruct.
   * @param  index: 0 ~ 3.
   * @param  direction: SP_DIR_TX or SP_DIR_RX.
@@ -535,7 +747,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		assert_param(AUDIO_SP_Register(index, direction, SP_InitStruct));
 
 		/* Configure parameters: disable TX, AUDIO SPORT mode */
-		AUDIO_SP_TXStart(SPORTx, DISABLE);
+		AUDIO_SP_TXStart(index, DISABLE);
 
 		/* Configure FIFO0 parameters: data format, word length, channel number, etc */
 		SPORTx->SP_FORMAT &= ~(SP_BIT_TRX_SAME_LENGTH);
@@ -567,15 +779,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		AUDIO_SP_SetTXClkDiv(index, SP_InitStruct->SP_SelClk, SP_InitStruct->SP_SR, SP_InitStruct->SP_SelTDM, chn_len);
 
 		/* Configure TX FIFO Channel */
-		if (SP_InitStruct->SP_SelFIFO == SP_TX_FIFO2) {
-			SPORTx->SP_CTRL1 |= SP_BIT_TX_FIFO_0_REG_0_EN;
-		} else if (SP_InitStruct->SP_SelFIFO == SP_TX_FIFO4) {
-			SPORTx->SP_CTRL1 |= SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN;
-		} else if (SP_InitStruct->SP_SelFIFO == SP_TX_FIFO6) {
-			SPORTx->SP_CTRL1 |= (SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN);
-		} else if (SP_InitStruct->SP_SelFIFO == SP_TX_FIFO8) {
-			SPORTx->SP_CTRL1 |= (SP_BIT_TX_FIFO_0_REG_0_EN | SP_BIT_TX_FIFO_0_REG_1_EN | SP_BIT_TX_FIFO_1_REG_0_EN | SP_BIT_TX_FIFO_1_REG_1_EN);
-		}
+		AUDIO_SP_TXSetFifo(index, SP_InitStruct->SP_SelFIFO, ENABLE);
 
 		/* Configure SPORT parameters: TX MULTI_IO Mode*/
 		if (SP_InitStruct->SP_SetMultiIO == SP_TX_MULTIIO_EN) {
@@ -620,7 +824,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		assert_param(AUDIO_SP_Register(index, direction, SP_InitStruct));
 
 		/* Configure parameters: disable RX, AUDIO SPORT mode */
-		AUDIO_SP_RXStart(SPORTx, DISABLE);
+		AUDIO_SP_RXStart(index, DISABLE);
 
 		/* Configure FIFO0 parameters: data format, word length, channel number, etc */
 		SPORTx->SP_CTRL0 &= ~(SP_MASK_SEL_I2S_RX_CH | SP_MASK_TDM_MODE_SEL_RX);
@@ -651,15 +855,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		AUDIO_SP_SetRXClkDiv(index, SP_InitStruct->SP_SelClk, SP_InitStruct->SP_SR, SP_InitStruct->SP_SelTDM, chn_len);
 
 		/* Configure RX FIFO Channel */
-		if (SP_InitStruct->SP_SelFIFO == SP_RX_FIFO2) {
-			SPORTx->SP_CTRL1 |= SP_BIT_RX_FIFO_0_REG_0_EN;
-		} else if (SP_InitStruct->SP_SelFIFO == SP_RX_FIFO4) {
-			SPORTx->SP_CTRL1 |= SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN;
-		} else if (SP_InitStruct->SP_SelFIFO == SP_RX_FIFO6) {
-			SPORTx->SP_CTRL1 |= (SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN);
-		} else if (SP_InitStruct->SP_SelFIFO == SP_RX_FIFO8) {
-			SPORTx->SP_CTRL1 |= (SP_BIT_RX_FIFO_0_REG_0_EN | SP_BIT_RX_FIFO_0_REG_1_EN | SP_BIT_RX_FIFO_1_REG_0_EN | SP_BIT_RX_FIFO_1_REG_1_EN);
-		}
+		AUDIO_SP_RXSetFifo(index, SP_InitStruct->SP_SelFIFO, ENABLE);
 
 		/* Configure SPORT parameters:RX MULTI_IO Mode*/
 		if (SP_InitStruct->SP_SetMultiIO == SP_RX_MULTIIO_EN) {
@@ -680,13 +876,15 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 
 /**
   * @brief  Start or stop SPORT TX.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  NewState: new state of the SPORT TX.
   *         This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void AUDIO_SP_TXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
+void AUDIO_SP_TXStart(u32 index, u32 NewState)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
 	if (NewState == ENABLE) {
 		SPORTx->SP_CTRL0 &= ~ SP_BIT_TX_DISABLE;
 		SPORTx->SP_CTRL0 |= SP_BIT_START_TX;
@@ -698,13 +896,15 @@ void AUDIO_SP_TXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
 
 /**
   * @brief  Start or stop SPORT RX.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  NewState: new state of the SPORT RX.
   *         This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void AUDIO_SP_RXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
+void AUDIO_SP_RXStart(u32 index, u32 NewState)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
 	if (NewState == ENABLE) {
 		SPORTx->SP_CTRL0 &= ~ SP_BIT_RX_DISABLE;
 		SPORTx->SP_CTRL0 |= SP_BIT_START_RX;
@@ -716,13 +916,15 @@ void AUDIO_SP_RXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
 
 /**
   * @brief  SPORT and GDMA handshake on or off.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  NewState: new state of the handshake of GDMA-SPORT.
   *         This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
+void AUDIO_SP_DmaCmd(u32 index, u32 NewState)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
 	if (NewState == ENABLE) {
 		SPORTx->SP_CTRL0 &= ~ SP_BIT_DSP_CTL_MODE;
 	} else {
@@ -732,17 +934,18 @@ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState)
 
 /**
   * @brief  Set SPORT self loopback mode.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval None
   */
-void AUDIO_SP_SetSelfLPBK(AUDIO_SPORT_TypeDef *SPORTx)
+void AUDIO_SP_SetSelfLPBK(u32 index)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_CTRL0 |= SP_BIT_LOOPBACK;
 }
 
 /**
   * @brief  Set the AUDIO SPORT word length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  SP_TX_WordLen: the value of word length.
   *          This parameter can be one of the following values:
   *            @arg SP_TXWL_16: sample bit is 16 bit
@@ -752,9 +955,10 @@ void AUDIO_SP_SetSelfLPBK(AUDIO_SPORT_TypeDef *SPORTx)
   * @retval None
   */
 
-void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_TX_WordLen)
+void AUDIO_SP_SetTXWordLen(u32 index, u32 SP_TX_WordLen)
 {
 	assert_param(IS_SP_TX_WL(SP_TX_WordLen));
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	SPORTx->SP_CTRL0 &= ~(SP_MASK_DATA_LEN_SEL_TX_0);
 	SPORTx->SP_CTRL0 |= SP_DATA_LEN_SEL_TX_0(SP_TX_WordLen);
@@ -765,7 +969,7 @@ void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_TX_WordLen)
 
 /**
   * @brief  Set the AUDIO SPORT word length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  SP_RX_WordLen: the value of word length.
   *          This parameter can be one of the following values:
   *            @arg SP_RXWL_16: sample bit is 16 bit
@@ -775,9 +979,10 @@ void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_TX_WordLen)
   * @retval None
   */
 
-void AUDIO_SP_SetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_RX_WordLen)
+void AUDIO_SP_SetRXWordLen(u32 index, u32 SP_RX_WordLen)
 {
 	assert_param(IS_SP_RX_WL(SP_RX_WordLen));
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	SPORTx->SP_FORMAT &= ~(SP_MASK_DATA_LEN_SEL_RX_0);
 	SPORTx->SP_FORMAT |= SP_DATA_LEN_SEL_RX_0(SP_RX_WordLen);
@@ -788,30 +993,33 @@ void AUDIO_SP_SetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_RX_WordLen)
 
 /**
   * @brief Get AUDIO SPORT word length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval the value of word length.
   *            @arg 0: sample bit is 16 bit
   *            @arg 1: sample bit is 20 bit
   *            @arg 2: sample bit is 24 bit
   *            @arg 3: sample bit is 32 bit
   */
-u32 AUDIO_SP_GetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx)
+u32 AUDIO_SP_GetTXWordLen(u32 index)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	u32 len_TX = ((SPORTx->SP_CTRL0) & SP_MASK_DATA_LEN_SEL_TX_0) >> 12;
 	return len_TX;
 }
 
 /**
   * @brief Get AUDIO SPORT word length.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @retval the value of word length.
   *            @arg 0: sample bit is 16 bit
   *            @arg 1: sample bit is 20 bit
   *            @arg 2: sample bit is 24 bit
   *            @arg 3: sample bit is 32 bit
   */
-u32 AUDIO_SP_GetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx)
+u32 AUDIO_SP_GetRXWordLen(u32 index)
 {
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+
 	u32 len_RX = ((SPORTx->SP_FORMAT) & SP_MASK_DATA_LEN_SEL_RX_0) >> 12;
 	return len_RX;
 }
@@ -819,16 +1027,17 @@ u32 AUDIO_SP_GetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx)
 
 /**
   * @brief  Set the AUDIO SPORT channel number.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  SP_MonoStereo: mono or stereo.
   *          This parameter can be one of the following values:
   *            @arg SP_CH_STEREO: stereo channel, channel number is 0
   *            @arg SP_CH_MONO: mono channel, channel number is 1
   * @retval None
   */
-void AUDIO_SP_SetMonoStereo(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MonoStereo)
+void AUDIO_SP_SetMonoStereo(u32 index, u32 SP_MonoStereo)
 {
 	assert_param(IS_SP_CHN_NUM(SP_MonoStereo));
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (SP_MonoStereo == SP_CH_STEREO) {
 		SPORTx->SP_CTRL0 &= ~(SP_BIT_EN_I2S_MONO_TX_0);
@@ -840,16 +1049,17 @@ void AUDIO_SP_SetMonoStereo(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MonoStereo)
 
 /**
   * @brief  SPORT2 and SPORT3 can be set to master or slave mode.
-  * @param  SPORTx: pointer to the base addr of AUDIO SPORT peripheral.
+  * @param  index: select SPORT.
   * @param  SP_MasterSlave: master or slave.
   *          This parameter can be one of the following values:
   *            @arg MASTER: SPORT master mode
   *            @arg SLAVE: SPORT slave mode
   * @retval None
   */
-void AUDIO_SP_SetMasterSlave(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MasterSlave)
+void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave)
 {
 	assert_param(IS_SP_SEL_MODE(SP_MasterSlave));
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (SPORTx == AUDIO_SPORT2_DEV || SPORTx == AUDIO_SPORT3_DEV) {
 		if (SP_MasterSlave == MASTER) {
@@ -858,7 +1068,7 @@ void AUDIO_SP_SetMasterSlave(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MasterSlave)
 			SPORTx->SP_CTRL0 |= SP_BIT_SLAVE_CLK_SEL | SP_BIT_SLAVE_DATA_SEL;
 		}
 	} else {
-		DBG_8195A("Not support: Only SPORT2&3 supprot!\n");
+		//RTK_LOGE(TAG, "Not support: Only SPORT2&3 supprot!\n");
 		return;
 	}
 }
@@ -931,7 +1141,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%d\n", pTXData, Length);
+		//RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
 		return _FALSE;
 	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
@@ -944,7 +1154,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	/*	Enable GDMA for TX */
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	//DBG_8195A("TXGDMA_End\n");
+	//RTK_LOGD(TAG, "TXGDMA_End\n");
 	return _TRUE;
 }
 
@@ -1017,7 +1227,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	//DBG_8195A("RXGDMA_End\n");
+	//RTK_LOGD(TAG, "RXGDMA_End\n");
 
 	return _TRUE;
 }
@@ -1150,7 +1360,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		DBG_8195A("AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
+		//RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%lX,  Length=%lu\n", pTxData, Length);
 		return _FALSE;
 	}
 
@@ -1289,19 +1499,37 @@ void AUDIO_SP_ClearTXCounterIrq(u32 index)
 	SPORTx->SP_RX_LRCLK |= SP_BIT_CLR_TX_SPORT_RDY;
 }
 
+/**
+  * @brief  Set SPORT phase latch.
+  * @param  index: select SPORT.
+  */
+void AUDIO_SP_SetPhaseLatch(u32 index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
+}
 
 /**
-  * @brief  Get SPORT TX counter.
+  * @brief  Set SPORT tx counter value.
   * @param  index: select SPORT.
   */
 u32 AUDIO_SP_GetTXCounterVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
 	u32 tx_counter = ((SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_SPORT_COUNTER) >> 5;
 	return tx_counter;
 }
 
+/**
+  * @brief  Get SPORT tx phase value.
+  * @param  index: select SPORT.
+  */
+u32 AUDIO_SP_GetTXPhaseVal(u32 index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	u32 tx_phase = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
+	return tx_phase;
+}
 
 /**
   * @brief  Enable or disable SPORT RX counter interrupt.
@@ -1350,9 +1578,32 @@ void AUDIO_SP_ClearRXCounterIrq(u32 index)
 u32 AUDIO_SP_GetRXCounterVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
 	u32 rx_counter = ((SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_SPORT_COUNTER) >> 5;
 	return rx_counter;
+}
+
+/**
+  * @brief  Get SPORT RX phase.
+  * @param  index: select SPORT.
+  */
+u32 AUDIO_SP_GetRXPhaseVal(u32 index)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	u32 rx_phase = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
+	return rx_phase;
+}
+
+/**
+  * @brief  Set SPORT directout mode.
+  * @param  index_src: select directout source SPORT.
+  * @param  index_dir: select directout SPORT.
+  */
+void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir)
+{
+	AUDIO_SPORT_TypeDef *SPORTx_DIR = AUDIO_DEV_TABLE[index_dir].SPORTx;
+	SPORTx_DIR->SP_CTRL1 |= SP_BIT_DIRECT_MODE_EN;
+	SPORTx_DIR->SP_CTRL1 &= ~SP_MASK_DIRECT_SRC_SEL;
+	SPORTx_DIR->SP_CTRL1 |= SP_DIRECT_SRC_SEL(index_src);
 }
 
 /**
@@ -1364,13 +1615,12 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 {
 	assert_param(IS_SP_SET_DIR(direction));
 
-	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	if (direction == SP_DIR_TX) {
 		AUDIO_SP_Unregister(index, direction);
-		AUDIO_SP_TXStart(SPORTx, DISABLE);
+		AUDIO_SP_TXStart(index, DISABLE);
 	} else {
 		AUDIO_SP_Unregister(index, direction);
-		AUDIO_SP_RXStart(SPORTx, DISABLE);
+		AUDIO_SP_RXStart(index, DISABLE);
 	}
 
 }

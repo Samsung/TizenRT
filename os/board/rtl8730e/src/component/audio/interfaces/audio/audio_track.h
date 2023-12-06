@@ -310,7 +310,7 @@ rt_status_t RTAudioTrack_SetVolume(struct RTAudioTrack *track, float left, float
  * @since 1.0
  * @version 1.0
  */
-rt_status_t    RTAudioTrack_SetPlaybackRate(struct RTAudioTrack *track, RTAudioPlaybackRate rate);
+rt_status_t RTAudioTrack_SetPlaybackRate(struct RTAudioTrack *track, RTAudioPlaybackRate rate);
 
 /**
  * @brief Get speed of track.
@@ -325,7 +325,7 @@ rt_status_t    RTAudioTrack_SetPlaybackRate(struct RTAudioTrack *track, RTAudioP
  * @since 1.0
  * @version 1.0
  */
-rt_status_t    RTAudioTrack_GetPlaybackRate(struct RTAudioTrack *track, RTAudioPlaybackRate *rate);
+rt_status_t RTAudioTrack_GetPlaybackRate(struct RTAudioTrack *track, RTAudioPlaybackRate *rate);
 
 /**
  * @brief Get timestamp of track.
@@ -341,7 +341,23 @@ rt_status_t    RTAudioTrack_GetPlaybackRate(struct RTAudioTrack *track, RTAudioP
  * @since 1.0
  * @version 1.0
  */
-rt_status_t    RTAudioTrack_GetTimestamp(struct RTAudioTrack *track, RTAudioTimestamp *tstamp);
+rt_status_t RTAudioTrack_GetTimestamp(struct RTAudioTrack *track, RTAudioTimestamp *tstamp);
+
+/**
+ * @brief Get present playing PTS of track.
+ *
+ * @param track is the pointer of struct RTAudioTrack.
+ * @param now_ns the system time, or tsf time.
+ * @param audio_ns the audio playing time.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioTrack_GetPresentTime(struct RTAudioTrack *track, int64_t *now_ns, int64_t *audio_ns);
 
 /**
  * @brief Set params of track.

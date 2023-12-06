@@ -32,6 +32,7 @@ void ameba_audio_stream_rx_stop(Stream *stream);
 int  ameba_audio_stream_rx_read(Stream *stream, void *data, uint32_t bytes);
 void ameba_audio_stream_rx_close(Stream *stream);
 int  ameba_audio_stream_rx_get_position(Stream *stream, uint64_t *captured_frames, struct timespec *tstamp);
+int  ameba_audio_stream_rx_get_time(Stream *stream, int64_t *now_ns, int64_t *audio_ns);
 
 #ifdef __cplusplus
 }
