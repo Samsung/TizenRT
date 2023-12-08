@@ -6,8 +6,8 @@
 
 #include "osif.h"
 #include "hci_config.h"
-#include "hci/hci_common.h"
-#include "hci/hci_process.h"
+#include "hci_common.h"
+#include "hci_process.h"
 #include "hci_platform.h"
 #include "hci_dbg.h"
 

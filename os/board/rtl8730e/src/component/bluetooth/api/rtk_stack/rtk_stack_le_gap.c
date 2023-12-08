@@ -3793,7 +3793,7 @@ static uint16_t bt_stack_le_privacy_init(void *param)
 {
 	T_GAP_CAUSE cause;
 	uint8_t i;
-	uint16_t size;
+	uint16_t size = 0;
 	T_LE_KEY_ENTRY *p_entry;
 	uint8_t peer_addr[RTK_BD_ADDR_LEN] = {0};
 	uint8_t bond_storage_num = le_get_max_le_paired_device_num();

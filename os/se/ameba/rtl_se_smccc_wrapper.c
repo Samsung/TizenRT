@@ -394,14 +394,14 @@ int ameba_ftl_secure_init(uint32_t key_addr)
 int ameba_ftl_save_to_storage(uint8_t *tmp_buff, void *pdata, uint16_t offset, uint16_t size)
 {
 	int ret = 0;
-	ret = invoke_securetest(0x82000041, tmp_buff, pdata, offset, size);
+	ret = invoke_securetest(0x82000041, (unsigned long)tmp_buff, (unsigned long)pdata, offset, size);
 	return ret;
 }
 
 int ameba_ftl_load_from_storage(void *pdata, uint16_t offset, uint16_t size)
 {
 	int ret = 0;
-	ret = invoke_securetest(0x82000042, pdata, offset, size, 0);
+	ret = invoke_securetest(0x82000042, (unsigned long)pdata, offset, size, 0);
 	return ret;
 }
 

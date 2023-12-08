@@ -7,7 +7,9 @@
 #define UPPER_STACK_VERSION	VERSION_2021
 
 #if defined CONFIG_BT && CONFIG_BT
+#ifndef CONFIG_FTL_ENABLED
 #define CONFIG_FTL_ENABLED
+#endif
 #endif
 
 #endif // __PLATFORM_OPTS_BT_H__

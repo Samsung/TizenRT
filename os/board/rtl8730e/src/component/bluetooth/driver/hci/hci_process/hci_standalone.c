@@ -4,8 +4,8 @@
  *******************************************************************************
  */
 #include <osif.h>
-#include "hci/hci_transport.h"
-#include "hci/hci_process.h"
+#include "hci_transport.h"
+#include "hci_process.h"
 
 static void* recv_sem = NULL;
 static uint8_t* hci_buf;

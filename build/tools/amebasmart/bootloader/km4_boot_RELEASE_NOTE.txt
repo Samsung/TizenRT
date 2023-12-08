@@ -1,6 +1,6 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version f257d93 /12/01-12:18:40==
+== version f257d93 /12/12/18-14:37:40==
 1.	sync bootloade with v8.4d sdk
 2.	add fault handler
 

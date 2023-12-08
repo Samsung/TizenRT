@@ -1,0 +1,7 @@
+!./ble_mgr.a
+!./bt_mgr.a
+!./leaudio.a
+!./lib_btgap.a
+!./lib_wifi_common.a
+!./lib_wpa_lite.a
+!./sysm.a

@@ -6,7 +6,7 @@
 
 #include "osif.h"
 #include "hci_config.h"
-#include "hci/hci_common.h"
+#include "hci_common.h"
 #include "hci_uart.h"
 #include "hci_platform.h"
 #include "hci_dbg.h"

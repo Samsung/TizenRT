@@ -334,11 +334,11 @@ int fatfs_access(const char *pathname, int mode)
 
 
 
-	if (mode & R_OK) {
+	if (mode & VFS_R_OK) {
 		return 0;
 	}
 
-	if (mode & W_OK) {
+	if (mode & VFS_W_OK) {
 		if (finfo.fattrib & AM_RDO) {
 			return -1;
 		} else {
@@ -346,7 +346,7 @@ int fatfs_access(const char *pathname, int mode)
 		}
 	}
 
-	if (mode & X_OK) {
+	if (mode & VFS_X_OK) {
 		if (finfo.fattrib & AM_RDO) {
 			return -1;
 		} else {

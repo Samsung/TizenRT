@@ -6,8 +6,8 @@
 
 #include "osif.h"
 #include "hci_config.h"
-#include "hci/hci_common.h"
-#include "hci/hci_transport.h"
+#include "hci_common.h"
+#include "hci_transport.h"
 #include "hci_platform.h"
 #include "hci_dbg.h"
 #include "rtk_coex.h"

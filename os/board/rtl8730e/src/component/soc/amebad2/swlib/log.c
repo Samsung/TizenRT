@@ -23,11 +23,11 @@ static volatile uint32_t rtk_log_entry_count = 0;
 *  @return	None
 *
 ***/
-void rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array)
+void rtk_log_array_print(rtk_log_tag_t *_rtk_log_tag_array)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
 	for (uint32_t i = 0; i < index; i++) {
-		DiagPrintf("[%s] level = %d\n", rtk_log_tag_array[i].tag, rtk_log_tag_array[i].level);
+		DiagPrintf("[%s] level = %d\n", _rtk_log_tag_array[i].tag, _rtk_log_tag_array[i].level);
 	}
 }
 
