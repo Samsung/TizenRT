@@ -326,7 +326,9 @@ static inline void mpu_show_regioninfo(void)
 
 	/* save the current region before printing the information */
 	temp = getreg32(MPU_RNR);
-
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("List of MPU regions and permissions\n");
+	lldbg_noarg("===========================================================\n");
 	lldbg("********************************************************************************************\n");
 	lldbg("%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\n", "REGION_NO.", "BASE_ADDRESS", "SIZE", "STATUS", "ACCESS (P/U)", "EXECUTE");
 	lldbg("********************************************************************************************\n");

@@ -262,6 +262,6 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			return -1;
 		}
 	}
-
+	mfdbg("No heap corruption detected\n");
 	return 0;
 }
