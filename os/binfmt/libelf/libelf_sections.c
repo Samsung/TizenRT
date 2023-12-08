@@ -258,7 +258,9 @@ void elf_delete_bin_section_addr(uint8_t bin_idx)
 void elf_show_all_bin_section_addr(void)
 {
 	int bin_idx;
-
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("Loading location information\n");
+	lldbg_noarg("===========================================================\n");	
 	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
 		if (g_bin_addr_list[bin_idx].text_addr != 0) {
 			lldbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), g_bin_addr_list[bin_idx].text_addr, g_bin_addr_list[bin_idx].text_size);

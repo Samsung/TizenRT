@@ -203,10 +203,11 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
 static inline void up_registerdump(void)
 {
 	/* Are user registers available from interrupt processing? */
-
 	if (current_regs) {
 		/* Yes.. dump the interrupt registers */
-
+		lldbg_noarg("===========================================================\n");
+		lldbg_noarg("Asserted task's register dump\n");
+		lldbg_noarg("===========================================================\n");
 		lldbg("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
 			  current_regs[REG_R0], current_regs[REG_R1],
 			  current_regs[REG_R2], current_regs[REG_R3],
@@ -259,62 +260,30 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 #endif
 
 /****************************************************************************
- * Name: up_dumpstate
+ * Name: check_assert_location
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_STACKDUMP
-static void up_dumpstate(void)
+static void check_assert_location(uint32_t *sp, uint8_t *irq_num, bool *is_irq_assert)
 {
-	struct tcb_s *rtcb = this_task();
-	uint32_t sp = up_getsp();
-	uint32_t stackbase = 0;
-	uint32_t stacksize = 0;
-#if CONFIG_ARCH_INTERRUPTSTACK > 3
-	uint32_t istackbase = 0;
-	uint32_t istacksize = 0;
-#endif
-	uint32_t nestirqstkbase = 0;
-	uint32_t nestirqstksize = 0;
-	uint8_t irq_num;
-
-	/* Get the limits for each type of stack */
-
-	stackbase = (uint32_t)rtcb->adj_stack_ptr;
-	stacksize = (uint32_t)rtcb->adj_stack_size;
-#if CONFIG_ARCH_INTERRUPTSTACK > 3
-	istackbase = (uint32_t)&g_intstackbase;
-	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-#endif
-#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
-	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
-	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
-#endif
-	bool is_irq_assert = false;
-	bool is_sp_corrupt = false;
-
-	/* Check if the assert location is in user thread or IRQ handler.
-	 * If the irq_num is lesser than NVIC_IRQ_USAGEFAULT, then it is
-	 * a fault and not an irq.
-	 */
 	if (g_irq_nums[2] && (g_irq_nums[0] <= NVIC_IRQ_USAGEFAULT)) {
 		/* Assert in nested irq */
-		irq_num = 1;
-		is_irq_assert = true;
+		*irq_num = 1;
+		*is_irq_assert = true;
 		lldbg("Code asserted in nested IRQ state!\n");
 	} else if (g_irq_nums[1] && (g_irq_nums[0] > NVIC_IRQ_USAGEFAULT)) {
 		/* Assert in nested irq */
-		irq_num = 0;
-		is_irq_assert = true;
+		*irq_num = 0;
+		*is_irq_assert = true;
 		lldbg("Code asserted in nested IRQ state!\n");
 	} else if (g_irq_nums[1] && (g_irq_nums[0] <= NVIC_IRQ_USAGEFAULT)) {
 		/* Assert in irq */
-		irq_num = 1;
-		is_irq_assert = true;
+		*irq_num = 1;
+		*is_irq_assert = true;
 		lldbg("Code asserted in IRQ state!\n");
 	} else if (g_irq_nums[0] > NVIC_IRQ_USAGEFAULT) {
 		/* Assert in irq */
-		irq_num = 0;
-		is_irq_assert = true;
+		*irq_num = 0;
+		*is_irq_assert = true;
 		lldbg("Code asserted in IRQ state!\n");
 	} else {
 		/* Assert in user thread */
@@ -324,12 +293,20 @@ static void up_dumpstate(void)
 			 * it means that assert happened due to a fault. So, we want to
 			 * reset the sp to the value just before the fault happened
 			 */
-			sp = current_regs[REG_R13];
+			*sp = current_regs[REG_R13];
 		}
 	}
+}
 
-	/* Print IRQ handler details if required */
+/****************************************************************************
+ * Name: check_sp_corruption
+ ****************************************************************************/
 
+static void check_sp_corruption(uint32_t sp, uint32_t *stackbase, uint32_t *stacksize, uint32_t istackbase, uint32_t istacksize,  uint32_t nestirqstkbase, uint32_t nestirqstksize, uint8_t irq_num, bool is_irq_assert, bool *is_sp_corrupt)
+{
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("Asserted task's stack details\n");
+	lldbg_noarg("===========================================================\n");	
 	if (is_irq_assert) {
 		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
 		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_nums[irq_num]].handler);
@@ -337,36 +314,42 @@ static void up_dumpstate(void)
 		lldbg("IRQ name: %s \n", g_irqvector[g_irq_nums[irq_num]].irq_name);
 #endif
 		if ((sp <= nestirqstkbase) && (sp > (nestirqstkbase - nestirqstksize))) {
-			stackbase = nestirqstkbase;
-			stacksize = nestirqstksize;
+			*stackbase = nestirqstkbase;
+			*stacksize = nestirqstksize;
 			lldbg("Current SP is Nested IRQ SP: %08x\n", sp);
 			lldbg("Nested IRQ stack:\n");
 		} else
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 		if ((sp <= istackbase) && (sp > (istackbase - istacksize))) {
-			stackbase = istackbase;
-			stacksize = istacksize;
+			*stackbase = istackbase;
+			*stacksize = istacksize;
 			lldbg("Current SP is IRQ SP: %08x\n", sp);
 			lldbg("IRQ stack:\n");
 		} else {
-			is_sp_corrupt = true;
+			*is_sp_corrupt = true;
 		}
 #else
-		if ((sp <= stackbase) && (sp > (stackbase - stacksize))) {
+		if ((sp <= *stackbase) && (sp > (*stackbase - *stacksize))) {
 			lldbg("Current SP is User Thread SP: %08x\n", sp);
 			lldbg("User stack:\n");
 		} else {
-			is_sp_corrupt = true;
+			*is_sp_corrupt = true;
 		}
 #endif
-	} else if ((sp <= stackbase) && (sp > (stackbase - stacksize))) {
+	} else if ((sp <= *stackbase) && (sp > (*stackbase - *stacksize))) {
 		lldbg("Current SP is User Thread SP: %08x\n", sp);
 		lldbg("User stack:\n");
 	} else {
-		is_sp_corrupt = true;
+		*is_sp_corrupt = true;
 	}
+}
 
+/****************************************************************************
+ * Name: print_stack_dump
+ ****************************************************************************/
 
+static void print_stack_dump(uint32_t sp, uint32_t stackbase, uint32_t stacksize, uint32_t istackbase, uint32_t istacksize, uint32_t nestirqstkbase, uint32_t nestirqstksize,  bool is_irq_assert, bool is_sp_corrupt)
+{
 	if (is_sp_corrupt) {
 		lldbg("ERROR: Stack pointer is not within any of the allocated stack\n");
 		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
@@ -395,6 +378,61 @@ static void up_dumpstate(void)
 #endif
 		up_stackdump(sp, stackbase);
 	}
+}
+
+/****************************************************************************
+ * Name: up_dumpstate
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+static void up_dumpstate(void)
+{	
+	struct tcb_s *rtcb = this_task();
+	uint32_t sp = up_getsp();
+	uint32_t stackbase = 0;
+	uint32_t stacksize = 0;
+	uint32_t istackbase;
+	uint32_t istacksize;
+#if CONFIG_ARCH_INTERRUPTSTACK > 3
+	istackbase = 0;
+	istacksize = 0;
+#else
+	istackbase = 0xFFFFFFFF;
+	istacksize = 0xFFFFFFFF;
+#endif
+	uint32_t nestirqstkbase = 0;
+	uint32_t nestirqstksize = 0;
+	uint8_t irq_num;
+
+	/* Get the limits for each type of stack */
+
+	stackbase = (uint32_t)rtcb->adj_stack_ptr;
+	stacksize = (uint32_t)rtcb->adj_stack_size;
+#if CONFIG_ARCH_INTERRUPTSTACK > 3
+	istackbase = (uint32_t)&g_intstackbase;
+	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
+#endif
+#ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
+	nestirqstkbase = (uint32_t)&g_nestedirqstkbase;
+	nestirqstksize = (CONFIG_ARCH_NESTED_IRQ_STACK_SIZE & ~3);
+#endif
+	bool is_irq_assert = false;
+	bool is_sp_corrupt = false;
+
+	/* Check if the assert location is in user thread or IRQ handler.
+	 * If the irq_num is lesser than NVIC_IRQ_USAGEFAULT, then it is
+	 * a fault and not an irq.
+	 */
+	check_assert_location(&sp, &irq_num, &is_irq_assert);
+
+	/* Print IRQ handler details if required */
+	check_sp_corruption(sp, &stackbase, &stacksize, istackbase, istacksize, nestirqstkbase, nestirqstksize, irq_num, is_irq_assert, &is_sp_corrupt);
+
+	/* Print stack dump */
+	print_stack_dump(sp, stackbase, stacksize, istackbase, istacksize, nestirqstkbase, nestirqstksize, is_irq_assert, is_sp_corrupt);
+
+	/* Dump the asserted TCB */
+	task_show_tcbinfo(rtcb);
 
 	/* Then dump the registers (if available) */
 
@@ -420,60 +458,6 @@ static void up_dumpstate(void)
 #else
 #define up_dumpstate()
 #endif
-
-/****************************************************************************
- * Name: print_assert_detail
- ****************************************************************************/
-
-static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
-{
-#if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
-#else
-	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
-#endif
-
-	/* Print the extra arguments (if any) from ASSERT_INFO macro */
-	if (assert_info_str[0]) {
-		lldbg("%s\n", assert_info_str);
-	}
-
-#if defined(CONFIG_DEBUG_WORKQUEUE)
-#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
-	if (IS_HPWORK || IS_LPWORK) {
-		lldbg("Code asserted in workqueue!\n");
-		lldbg("Running work function is %x.\n", work_get_current());
-	}
-#endif
-#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
-
-	up_dumpstate();
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	elf_show_all_bin_section_addr();
-#endif
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
-		lldbg("Checking current app heap for corruption...\n");
-		if (mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap)) == OK) {
-			lldbg("No app heap corruption detected\n");
-		}
-	}
-#endif
-	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
-
-	/* Dump the asserted TCB */
-	lldbg("*******************************************\n");
-	lldbg("Asserted TCB Info\n");
-	lldbg("*******************************************\n");
-
-	task_show_tcbinfo(fault_tcb);
-
-#if defined(CONFIG_BOARD_CRASHDUMP)
-	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
-#endif
-}
 
 /****************************************************************************
  * Name: _up_assert
@@ -507,22 +491,68 @@ static void _up_assert(int errorcode)
 }
 
 /****************************************************************************
- * Name: recovery_assert
+ * Name: check_heap_corrupt
  ****************************************************************************/
 
-static inline void recovery_assert(uint32_t asserted_location, bool is_kmm_corruption)
+void check_heap_corrupt(struct tcb_s *fault_tcb) 
 {
-#ifdef CONFIG_BINMGR_RECOVERY
-	if (!is_kmm_corruption && IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		/* Recover user fault through binary manager */
-		binary_manager_recover_userfault();
-	} else
-#endif
-	{
-		/* treat kernel fault */
+	if (!IS_SECURE_STATE()) {
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
+			lldbg_noarg("===========================================================\n");
+			lldbg_noarg("Checking app heap for corruption\n");
+			lldbg_noarg("===========================================================\n");
+			mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap));
 
-		_up_assert(EXIT_FAILURE);
+		}
+#endif
+
+		lldbg_noarg("===========================================================\n");
+		lldbg_noarg("Checking kernel heap for corruption\n");
+		lldbg_noarg("===========================================================\n");
 	}
+	if (mm_check_heap_corruption(g_kmmheap) != OK) {
+			/* treat kernel fault */
+			_up_assert(EXIT_FAILURE);
+	} 
+}
+
+/****************************************************************************
+ * Name: print_assert_detail
+ ****************************************************************************/
+
+static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
+{
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("Assertion details\n");
+	lldbg_noarg("===========================================================\n");
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("Assertion failed at file:%s line: %d task: %s\n", filename, lineno, fault_tcb->name);
+#else
+	lldbg("Assertion failed at file:%s line: %d\n", filename, lineno);
+#endif
+	lldbg("Assert location (PC) : 0x%08x\n", asserted_location);
+	
+	/* Print the extra arguments (if any) from ASSERT_INFO macro */
+	if (assert_info_str[0]) {
+		lldbg("%s\n", assert_info_str);
+	}
+
+#if defined(CONFIG_DEBUG_WORKQUEUE)
+#if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
+	if (IS_HPWORK || IS_LPWORK) {
+		lldbg("Code asserted in workqueue!\n");
+		lldbg("Running work function is %x.\n", work_get_current());
+	}
+#endif
+#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
+
+	up_dumpstate();
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	elf_show_all_bin_section_addr();
+#endif
+
 }
 
 /****************************************************************************
@@ -562,7 +592,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	irqstate_t flags = irqsave();
 
 	struct tcb_s *fault_tcb = this_task();
-	bool is_kmm_corruption = false;
 
 	board_led_on(LED_ASSERTION);
 
@@ -586,9 +615,6 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)kernel_assert_location;
 	}
 
-	lldbg("==============================================\n");
-	lldbg("Assertion failed\n");
-	lldbg("==============================================\n");
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg("security level: %d\n", get_security_level());
 #endif
@@ -597,15 +623,31 @@ void up_assert(const uint8_t *filename, int lineno)
 	 */
 	if (!IS_SECURE_STATE()) {
 		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
-		lldbg("Checking kernel heap for corruption...\n");
 	}
-	if (mm_check_heap_corruption(g_kmmheap) != OK) {
-		is_kmm_corruption = true;
-	}
+	
+	/* Heap corruption check */
+	check_heap_corrupt(fault_tcb);
+
+	/* Closing log line */
+	lldbg_noarg("##########################################################################################################################################\n");
+
+#if defined(CONFIG_BOARD_CRASHDUMP)
+	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
+#endif
 
 	irqrestore(flags);
 
-	recovery_assert(asserted_location, is_kmm_corruption);
+#ifdef CONFIG_BINMGR_RECOVERY
+	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
+		/* Recover user fault through binary manager */
+		binary_manager_recover_userfault();
+	} else
+#endif
+	{
+		/* treat kernel fault */
+
+		_up_assert(EXIT_FAILURE);
+	}
 }
 
 
