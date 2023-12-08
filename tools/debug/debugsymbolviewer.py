@@ -38,6 +38,10 @@ g_stext_app = [0] * 10
 g_etext_app = [0] * 10
 app_name = []
 
+BIN_ADDR_FXN = 'Loading location information\n'
+stack_details = "Asserted task's stack details\n"
+register_dump = "Asserted task's register dump\n"
+
 def bytes_needed(n):
 	if n == 0:
 		return 1
@@ -49,12 +53,18 @@ def find_app_text_range(log_file):
 	global g_etext_app
 	g_stext_app = array('i', range(0, app_idx))
 	g_etext_app = array('i', range(0, app_idx))
-
+	partition_str = "==========================================================="
+	current_line = ""
 	idx = 0
 	with open(log_file) as searchfile:
 		for line in searchfile:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)	
+				continue
 			# Read the app text address and size
-			if 'elf_show_all_bin_section_addr:' in line:
+			if BIN_ADDR_FXN == current_line:
 				word = line.split(':')
 				t = word[2].split(',') # word[2] is the App Start Text address
 				w = word[1].split(' ')
@@ -212,10 +222,17 @@ def is_kernel_text_address(address):
 def print_stack(log_file):
 	stack_addr = 0x00000000
 	stack_val = 0x00000000
+	partition_str = "==========================================================="
+	current_line = ""
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
-			if 'up_registerdump:' in line:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)	
+				continue
+			if current_line == register_dump:
 				word = line.split(':')
 				# word[1] contains the register name i.e R0 or R8
 				reg = word[1].split()
@@ -236,7 +253,7 @@ def print_stack(log_file):
 				print(word[1])
 
 			# Read the stack contents of aborted stack and check for valid addresses
-			if 'up_stackdump:' in line:
+			if current_line == stack_details and 'up_stackdump' in line:
 				word = line.split(':')
 				t = word[2].split()
 				stack_addr = int(word[1], 16)
@@ -344,7 +361,6 @@ if (__name__ == '__main__'):
 	log_file = sys.argv[1]		# Log file containing crash logs
 	app_idx = int(sys.argv[2])	# Number of applications (g_app_idx)
 	addr_type = int(sys.argv[3])	# Type of address information to be printed
-
 	if debug:
 		print("Log file : " + log_file)
 		print("Number of applications : ", app_idx)
