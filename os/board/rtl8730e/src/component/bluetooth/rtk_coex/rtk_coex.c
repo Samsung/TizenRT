@@ -923,7 +923,7 @@ void bt_coex_init(void)
 	if(false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex))
 		return;
 
-	if(true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer,"bt_coex_monitor_timer",NULL,BT_COEX_MONITOR_INTERVAL,true,bt_coex_monitor_timer_handler))
+	if(true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer,"bt_coex_monitor_timer",(uint32_t)NULL,BT_COEX_MONITOR_INTERVAL,true,bt_coex_monitor_timer_handler))
 		osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
 }
 

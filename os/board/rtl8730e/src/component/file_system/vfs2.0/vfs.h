@@ -6,7 +6,7 @@ extern "C" {
 
 #include "time.h"
 
-#define PATH_MAX 4096
+#define VFS_PATH_MAX 4096
 #define MAX_FS_SIZE 4
 #define MAX_USER_SIZE 4
 
@@ -88,7 +88,7 @@ struct dirent {
 	int d_type;
 
 	/* File name */
-	char d_name[PATH_MAX + 1];
+	char d_name[VFS_PATH_MAX + 1];
 };
 typedef struct dirent dirent;
 #if __GNUC__ < 6
@@ -196,10 +196,10 @@ int vfs_user_mount(const char *prefix);
 char *find_vfs1_tag(void);
 
 /* access function */
-#define	F_OK		0	/* test for existence of file */
-#define	X_OK		0x01	/* test for execute or search permission */
-#define	W_OK		0x02	/* test for write permission */
-#define	R_OK		0x04	/* test for read permission */
+#define	VFS_F_OK		0	/* test for existence of file */
+#define	VFS_X_OK		0x01	/* test for execute or search permission */
+#define	VFS_W_OK		0x02	/* test for write permission */
+#define	VFS_R_OK		0x04	/* test for read permission */
 
 DIR *opendir(const char *name);
 struct dirent *readdir(DIR *dirp);

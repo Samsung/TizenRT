@@ -7,7 +7,7 @@
 #ifndef _HCI_TRANSPORTS_H_
 #define _HCI_TRANSPORTS_H_
 
-#include "hci/hci_common.h"
+#include "hci_common.h"
 
 typedef struct
 {

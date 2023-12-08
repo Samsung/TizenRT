@@ -334,7 +334,7 @@ static uint8_t amebad2_uart_open(void)
 	/* Disable and Enable UART Interrupt */
 	InterruptDis(HCI_UART_IRQ);
 	InterruptUnRegister(HCI_UART_IRQ);
-	InterruptRegister((IRQ_FUN)amebad2_uart_irq, HCI_UART_IRQ, NULL, HCI_UART_IRQ_PRIO);
+	InterruptRegister((IRQ_FUN)amebad2_uart_irq, HCI_UART_IRQ, (u32)NULL, HCI_UART_IRQ_PRIO);
 	InterruptEn(HCI_UART_IRQ, HCI_UART_IRQ_PRIO);
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, DISABLE);

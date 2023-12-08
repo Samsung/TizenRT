@@ -15,7 +15,7 @@ extern "C" {
 #include <rtk_bt_gattc.h>
 #include <rtk_stack_config.h>
 
-#define BT_QUEUE_PENDING_ELEMENT_MAX		10
+#define BT_QUEUE_PENDING_ELEMENT_MAX		40
 
 #define REQ_FLAG_READ_BY_UUID	(1 << 0)
 #define REQ_FLAG_ALREADY_SENT	(1 << 1)

@@ -204,12 +204,8 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/swlib
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/misc
 
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/include
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/intf
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/core
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/api
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/common
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_config
-CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/wifi_fast_connect
 
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8730e/
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/mbed/api/

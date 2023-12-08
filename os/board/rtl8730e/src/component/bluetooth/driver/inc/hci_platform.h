@@ -7,8 +7,8 @@
 #ifndef _HCI_PLATFORM_H_
 #define _HCI_PLATFORM_H_
 
-#include "hci/hci_common.h"
-#include "./hci_uart.h"
+#include "hci_common.h"
+#include "hci_uart.h"
 #include "ameba_soc.h"
 #include "wifi_conf.h"
 

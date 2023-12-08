@@ -412,6 +412,9 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
 #endif
+
+	char km0_application_rev_temp[] = "km0_application_ver_79e92a3_2023/12/18-15:12:03";
+	lldbg("KM4_version %s\n", km0_application_rev_temp);
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

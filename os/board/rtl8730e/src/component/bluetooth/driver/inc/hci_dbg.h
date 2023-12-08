@@ -7,7 +7,7 @@
 #ifndef _HCI_DBG_H_
 #define _HCI_DBG_H_
 
-#include "hci/hci_common.h"
+#include "hci_common.h"
 
 #define CFG_SW_USE_FLASH_PATCH   BIT0
 #define CFG_SW_BT_FW_LOG         BIT1

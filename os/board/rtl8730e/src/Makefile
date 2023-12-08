@@ -154,22 +154,16 @@ CFLAGS += -I$(TARGETDIR)/misc
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
 CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
-CFLAGS += -I$(COMPONENT_DIR)/wifi
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/intf
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
-CFLAGS += -I$(COMPONENT_DIR)/wifi/common
-CFLAGS += -I$(COMPONENT_DIR)/wifi/common/secure
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
 CFLAGS += -I$(DIR_OSDEP)/include
-CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite
-CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite/rom
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
@@ -177,34 +171,19 @@ CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
 CFLAGS += -I$(COMPONENT_DIR)/os_dep
 CFLAGS += -I$(TOPDIR)/net/netmgr
 # Temporary keep it, need further check whether the usb needs the filesystem
-CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs/r0.14b/include
-CFLAGS += -I$(COMPONENT_DIR)/file_system/fatfs
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
 CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
-CFLAGS += -I$(COMPONENT_DIR)/file_system/littlefs
-CFLAGS += -I$(COMPONENT_DIR)/file_system/littlefs/r2.50
-CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
 CFLAGS += -I$(DIR_BT)/profile/client
 CFLAGS += -I$(DIR_BT)/driver/inc
 CFLAGS += -I$(DIR_BT)/driver/inc/hci
-CFLAGS += -I$(DIR_BT)/driver/hci
-CFLAGS += -I$(DIR_BT)/driver/platform/amebad2/inc
 CFLAGS += -I$(DIR_BT)/api/rtk_stack
-CFLAGS += -I$(DIR_BT)/api/include/rtk_bt_common.h
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc/app
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc/stack
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/gap
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc/platform
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/profile
-CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc
 CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
 endif
-
-#CFLAGS += -DARM_CORE_CM4
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS)

@@ -111,7 +111,7 @@ int wifi_get_channel(unsigned char wlan_idx, u8 *channel)
 {
 	int ret = 0;
 	u32 param_buf[2];
-	u8 *channel_temp = (u8 *)rtw_malloc(sizeof(int));
+	u8 *channel_temp = (u8 *)rtw_zmalloc(sizeof(int));
 
 	if (channel_temp == NULL) {
 		return -1;
@@ -135,7 +135,7 @@ int wifi_get_disconn_reason_code(unsigned short *reason_code)
 {
 	int ret = 0;
 	u32 param_buf[1];
-	unsigned short *reason_code_temp = (unsigned short *)rtw_malloc(sizeof(unsigned short));
+	unsigned short *reason_code_temp = (unsigned short *)rtw_zmalloc(sizeof(unsigned short));
 
 	if (reason_code_temp == NULL) {
 		return -1;
@@ -155,13 +155,13 @@ int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf)
 	int ret = 0;
 	u32 param_buf[2];
 
-	unsigned int *AP_num_temp = (unsigned int *)rtw_malloc(sizeof(unsigned int));
+	unsigned int *AP_num_temp = (unsigned int *)rtw_zmalloc(sizeof(unsigned int));
 	if (AP_num_temp == NULL) {
 		return -1;
 	}
 	*AP_num_temp = *AP_num;
 
-	char *scan_buf_temp = (char *)rtw_malloc((*AP_num) * sizeof(rtw_scan_result_t));
+	char *scan_buf_temp = (char *)rtw_zmalloc((*AP_num) * sizeof(rtw_scan_result_t));
 	if (scan_buf_temp == NULL) {
 		rtw_free(AP_num_temp);
 		return -1;
@@ -197,7 +197,7 @@ int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse)
 	int ret = 0;
 	u32 param_buf[3];
 
-	rtw_mac_t *mac_temp = (rtw_mac_t *)rtw_malloc(sizeof(rtw_mac_t));
+	rtw_mac_t *mac_temp = (rtw_mac_t *)rtw_zmalloc(sizeof(rtw_mac_t));
 	if (mac_temp == NULL) {
 		return -1;
 	}
@@ -259,7 +259,7 @@ int wifi_get_setting(unsigned char wlan_idx, rtw_wifi_setting_t *psetting)
 	int ret = 0;
 	u32 param_buf[2];
 
-	rtw_wifi_setting_t *setting_temp = (rtw_wifi_setting_t *)rtw_malloc(sizeof(rtw_wifi_setting_t));
+	rtw_wifi_setting_t *setting_temp = (rtw_wifi_setting_t *)rtw_zmalloc(sizeof(rtw_wifi_setting_t));
 	if (setting_temp == NULL) {
 		return -1;
 	}
@@ -333,7 +333,7 @@ int wifi_get_sw_statistic(unsigned char idx, rtw_sw_statistics_t *statistic)
 	u32 param_buf[2];
 	int ret = 0;
 
-	rtw_sw_statistics_t *statistic_temp = (rtw_sw_statistics_t *)rtw_malloc(sizeof(rtw_sw_statistics_t));
+	rtw_sw_statistics_t *statistic_temp = (rtw_sw_statistics_t *)rtw_zmalloc(sizeof(rtw_sw_statistics_t));
 	if (statistic_temp == NULL) {
 		return 0;
 	}
@@ -354,7 +354,7 @@ int wifi_fetch_phy_statistic(rtw_phy_statistics_t *phy_statistic)
 	u32 param_buf[1];
 	int ret = 0;
 
-	rtw_phy_statistics_t *phy_statistic_temp = (rtw_phy_statistics_t *)rtw_malloc(sizeof(rtw_phy_statistics_t));
+	rtw_phy_statistics_t *phy_statistic_temp = (rtw_phy_statistics_t *)rtw_zmalloc(sizeof(rtw_phy_statistics_t));
 	if (phy_statistic_temp == NULL) {
 		return -1;
 	}
@@ -586,7 +586,7 @@ int wifi_get_autoreconnect(__u8 *mode)
 	int ret = 0;
 	u32 param_buf[1];
 #if CONFIG_AUTO_RECONNECT
-	__u8 *mode_temp = rtw_malloc(sizeof(__u8));
+	__u8 *mode_temp = rtw_zmalloc(sizeof(__u8));
 	if (mode_temp == NULL) {
 		return -1;
 	}
@@ -820,7 +820,7 @@ int wifi_get_auto_chl(unsigned char wlan_idx, unsigned char *channel_set, unsign
 	int ret = 0;
 	u32 param_buf[3];
 
-	unsigned char *channel_set_temp = rtw_malloc(channel_num);
+	unsigned char *channel_set_temp = rtw_zmalloc(channel_num);
 	if (channel_set_temp == NULL) {
 		return -1;
 	}
