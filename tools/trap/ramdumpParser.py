@@ -56,8 +56,12 @@ BIN_PATH = '../../build/output/bin/'
 CONFIG_PATH = '../../os/.config'
 MAKEFILE_PATH = '../../os/Make.defs'
 HEAPINFO_PATH = '../../os/include/tinyara/mm/heapinfo_internal.h'
-BIN_ADDR_FXN = 'elf_show_all_bin_section_addr'
 file_data = 'HeapInfo'
+
+assertion_details = "Assertion details\n"
+stack_details = "Asserted task's stack details\n"
+register_dump = "Asserted task's register dump\n"
+BIN_ADDR_FXN = "Loading location information\n"
 
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
@@ -157,11 +161,18 @@ class dumpParser:
 		got = 0
 		offset = 0
 		extra_str = ''
+		partition_str = "==========================================================="
+		current_line = ""
 		# Parse the contents based on tokens in log file.
 		with open(log_file) as searchfile:
 			for line in searchfile:
+				if partition_str in line:
+					line = next(searchfile)
+					current_line = line
+					line = next(searchfile)				
+					continue
 				# It's imp to get the stack size dynamically as it's diff for diff tasks
-				if 'up_dumpstate:' in line:
+				if current_line == stack_details:
 					word = re.split(r'[:]',line)
 					if word[1] == ' User stack':
 						continue
@@ -170,8 +181,7 @@ class dumpParser:
 					if debug:
 						print("stackSize :", self.stacksize)
 					continue
-				# Read the stack contents of aborted stack and Populate stack_table
-				if 'up_stackdump:' in line:
+					# Read the stack contents of aborted stack and Populate stack_table
 					word = line.split(':')
 					#print word[2]
 					t = word[2].split( )
@@ -188,7 +198,7 @@ class dumpParser:
 						i = i + 1
 					continue
 				# Read only critical ARM registers ( PC, LR , SP and FP )
-				if 'up_registerdump:' in line:
+				if  current_line == register_dump:
 					word = line.split(':')
 					if word[1] == ' R0': # Observe the space before R0
 						continue
@@ -222,32 +232,6 @@ class dumpParser:
 								# Assign LR to PC to help constructing the stack
 								pc = lr
 
-					continue
-				# In case if log file already has this data, address to symbol mapping is enough to get the call stack.
-				if 'unwind_backtrace_with_fp:' in line:
-					word = line.split(':')
-					if word[1] == ' CallTrace_Start':
-						got = 1
-						print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-						print('Call Trace:')
-						print('')
-						continue
-					if word[1] == ' CallTrace_End':
-						got = 0
-						print('')
-						print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-					if got == 1:
-#						word.line.split(':')
-						word = re.split(r'[:><\[\]]',line)
-						r = self.symbol_table_lookup(int(word[3],16))
-						if r is None:
-							symname = 'UNKNOWN'
-							offset = 0x0
-						else:
-							symname, offset = r
-
-						pstring = (extra_str + '[<{0:x}>] {1}+0x{2:x}'.format(int(word[3],16), symname, offset))
-						print(pstring)
 					continue
 		print('CALL STACK of Aborted task:')
 		print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
@@ -534,12 +518,18 @@ def find_number_of_binaries(log_file):
     global g_app_idx
     global g_stext_app
     global g_etext_app
-
+    partition_str = "==========================================================="
+    current_line = ""
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
         for line in searchfile:
+            if partition_str in line:
+                line = next(searchfile)
+                current_line = line
+                line = next(searchfile)
+                continue
             # Get the number of applications loaded
-            if BIN_ADDR_FXN in line:
+            if BIN_ADDR_FXN == current_line:
                 g_app_idx = g_app_idx + 1
 
     app_idx = 0
@@ -547,8 +537,13 @@ def find_number_of_binaries(log_file):
     g_etext_app = array('i', range(0, g_app_idx))
     with open(log_file) as searchfile:
         for line in searchfile:
+            if partition_str in line:
+                line = next(searchfile)
+                current_line = line
+                line = next(searchfile)
+                continue
             # Read the app text address and size
-            if BIN_ADDR_FXN in line:
+            if BIN_ADDR_FXN == current_line:
                word = line.split(':')
                t = word[2].split(',') # word[2] is the App Start Text address
                w = word[1].split(' ')
@@ -563,7 +558,6 @@ def find_number_of_binaries(log_file):
 
 # Function to Parse the i/p log file in case of app crashes to corresponding app display debug symbols
 def find_crash_point(log_file, elf):
-
     global g_app_idx
     global g_assertpc
     global g_stext_app
@@ -576,11 +570,18 @@ def find_crash_point(log_file, elf):
     is_kernel_crash = 0
     is_interrupt_mode = 0
     assertline = ""
-
+    partition_str = "==========================================================="
+    current_line = ""
+    closing_log_line = "##########################################################################################################################################"
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
         for line in searchfile:
-            if 'up_registerdump:' in line:
+            if partition_str in line:
+                line = next(searchfile)
+                current_line = line
+                line = next(searchfile)
+                continue
+            if current_line == register_dump:
                 word = line.split(':')
 
                 # word[1] contains the register name i.e R0 or R8
@@ -600,7 +601,7 @@ def find_crash_point(log_file, elf):
                     continue
 
             # Get the assert location PC value
-            if 'Assertion failed at file:' in line:
+            if current_line == assertion_details and "Assertion failed at file:" in line:
                 assertline = line
             if 'Assert location (PC) :' in line:
                 word = line.split(':')
@@ -611,7 +612,6 @@ def find_crash_point(log_file, elf):
     address1 = hex(lr_value)
     address2 = hex(pc_value)
     result = 0
-
     # Check for lr & pc values in application text address range
     if (pc_value != 00000000):
         for app_idx in range(g_app_idx):
@@ -846,8 +846,13 @@ def find_crash_point(log_file, elf):
     # Parse the contents based on tokens in log file.
     with open(log_file) as searchfile:
         for line in searchfile:
+            if partition_str in line:
+                line = next(searchfile)
+                current_line = line
+                line = next(searchfile)
+                continue
             # Print the current stack pointer value
-            if 'up_dumpstate: sp:' in line:
+            if current_line == stack_details and ' sp:' in line:
                 word = line.split(':')
                 # word[2] contains the current stack pointer
                 stack_curr = int(word[2], 16)
@@ -945,18 +950,18 @@ def find_crash_point(log_file, elf):
     # Parse the contents based on tokens in log file for heap corruption
         def parseCorruptHeapInfo(line):
             heap_corrupted =  False
-            while 'Heap start =' in line:
+            while line != "No more lines" and 'Heap start =' in line:
                 #Read start and end address from heap
                 heap_start_at =  line.index("Heap start = ") + len("Heap start = ")
                 start_info = line[heap_start_at:].split(' ')
                 heap_start_add = start_info[0]
                 heap_end_add = start_info[-1][:-1]             
-                line = next(searchfile)
+                line = next(searchfile, "No more lines")
                 print("Checking corruption ({} - {}) : ".format(heap_start_add,heap_end_add), end="")
 
-                #Skip unnecessary info
-                if ('#######' in line):
-                    line = next(searchfile)
+                #Skip unnecessary info	
+                if ('#######' in line) and line != closing_log_line:
+                    line = next(searchfile, "No more lines")
                 else:
                     print("Heap NOT corrupted")
 
@@ -1044,14 +1049,16 @@ def find_crash_point(log_file, elf):
 
         for line in searchfile:
             # Print the heap corruption data (if any)
-            if 'Checking kernel heap for corruption...' in line:
+            if 'Checking kernel heap for corruption' in line:
                 print("Checking kernel heap for corruption")
+                line = next(searchfile)
                 line = next(searchfile)
                 if parseCorruptHeapInfo(line) == False:
                     print("No Kernel heap corruption detected.\n")
 
-            if 'Checking current app heap for corruption...' in line:
+            if 'Checking app heap for corruption' in line:
                 print("Checking application heap for corruption")
+                line = next(searchfile)
                 line = next(searchfile)
                 if parseCorruptHeapInfo(line) == False:
                     print("No app heap corruption detected.\n")
@@ -1067,18 +1074,13 @@ def find_crash_point(log_file, elf):
         for line in searchfile:
             if 'Stack overflow error has occurred' in line:
                 print("\n!! Stack overflow error has occurred !!")
-            if 'List of all tasks in the system:' in line:
+            if 'List of all tasks in the system' in line:
                 print("\nList of all tasks in the system:\n")
                 line = next(searchfile)
                 line = next(searchfile)
-                while '*******************' not in line:
-                    start_idx = (re.search(':', line))
-                    print(line[start_idx.start() + 1:], end = "")
-                    line = next(searchfile) 
-                
-
-
-    print('----------------------------------------------------------------------------------------------------')
+                while line != "No more lines" and '==================' not in line:
+                    print(line[0:], end = "")
+                    line = next(searchfile, "No more lines")
 
 # Function to format logs and delete the timestamp (format-|xxxxxxxxx|) if it consists of timestamp at the start of each log line
 def format_log_file(log_file):
@@ -1089,15 +1091,26 @@ def format_log_file(log_file):
 	with open(log_file, "w") as f:
 		assertinlog = 0 #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
 		trunc = True # False if log line is to be retained, True otherwise
+		partition_str = "==========================================================="
+		current_line=""
+		data = iter(data)
 		for line in data:
-			if 'Assertion failed at file:' in line:
+			if partition_str in line:
+				f.write(line)
+				line = next(data)
+				f.write(line)
+				current_line = line
+				line = next(data)
+				f.write(line)
+				continue
+			if 'Assertion failed at file:' in line and current_line == assertion_details:
 				assertinlog = assertinlog + 1
 			if assertinlog == 2:
 				# Truncate logs after first crash dump (repeated assert case)
 				break
 			if assertinlog == 1:
-				# Truncate logs before first crash dum
-				if 'Assertion failed at file:' in line:
+				# Truncate logs before first crash dump
+				if 'Assertion failed at file:' in line and current_line == assertion_details:
 					trunc = False
 				if trunc:
 					# Do not write line and move to the next line
@@ -1118,8 +1131,15 @@ def format_log_file(log_file):
 	# Check for invalid format after above formatting
 	with open(log_file, "r") as f:
 		data = f.readlines()
+		partition_str = "==========================================================="
+		data = iter(data)
 		for line in data:
-			if 'Assertion failed at file:' in line:
+			if partition_str in line:
+				line = next(data)
+				current_line = line
+				line = next(data)
+				continue
+			if 'Assertion failed at file:' in line and current_line == assertion_details:
 				word = line.split()
 				if word[1] != 'Assertion':
 					for idx in range(0, len(line)):
@@ -1265,7 +1285,6 @@ def main():
 	try:
 		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
 			have_ram_kernel_text = True
-
 		# Calling the Constructor with the initial set of arguments
 		rParser = dumpParser(dump_file=dump_file,elf=elf,log_file=log_file, debug=False)
 
@@ -1286,12 +1305,11 @@ def main():
 
 		if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
 			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
-
 		# Find the point of crash in the kernel, application or common binaries
 		find_crash_point(log_file, elf)
 
 		# Get ARM arch family
-		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data):
+		if ('CONFIG_ARCH_FAMILY="armv8-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-m"' in data) or ('CONFIG_ARCH_FAMILY="armv7-a"' in data):
 			#If architecture is cortex M, then run return without further script execution
 			return None
 
