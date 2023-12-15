@@ -115,6 +115,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define PRI_USER_MAIN (SCHED_PRIORITY_DEFAULT)
+#define PRI_PREAPP (PRI_USER_MAIN + 1)
+
 /* Configuration */
 
 #if defined(CONFIG_INIT_NONE)
@@ -330,7 +333,7 @@ static inline void os_do_appstart(void)
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
 	svdbg("Starting application init task\n");
 
-	pid = task_create("appinit", SCHED_PRIORITY_DEFAULT, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
+	pid = task_create("appinit", PRI_PREAPP, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
 	if (pid < 0) {
 		svdbg("Failed to create application init thread\n");
 	}
@@ -355,7 +358,7 @@ static inline void os_do_appstart(void)
 	svdbg("Starting application main task\n");
 
 #if defined(CONFIG_USER_ENTRYPOINT)
-	pid = task_create("appmain", SCHED_PRIORITY_DEFAULT, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
+	pid = task_create("appmain", PRI_USER_MAIN, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
 #endif
 #endif // !CONFIG_APP_BINARY_SEPARATION
 
