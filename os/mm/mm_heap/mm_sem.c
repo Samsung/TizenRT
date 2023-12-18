@@ -153,7 +153,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 	} else {
 		/* Take the semaphore (perhaps waiting) */
 
-		mvdbg("PID=%d taking\n", my_pid);
+		mllvdbg("PID=%d taking\n", my_pid);
 		while (sem_wait(&heap->mm_semaphore) != 0) {
 			/* The only case that an error should occur here is if
 			 * the wait was awakened by a signal.
@@ -168,7 +168,7 @@ void mm_takesemaphore(FAR struct mm_heap_s *heap)
 		heap->mm_counts_held = 1;
 	}
 
-	mvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
+	mllvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
 }
 
 /****************************************************************************
@@ -195,12 +195,12 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
 		/* Yes, just release one count and return */
 
 		heap->mm_counts_held--;
-		mvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
+		mllvdbg("Holder=%d count=%d\n", heap->mm_holder, heap->mm_counts_held);
 	} else {
 		/* Nope, this is the last reference I have */
 
 #ifdef CONFIG_DEBUG
-		mvdbg("PID=%d giving\n", my_pid);
+		mllvdbg("PID=%d giving\n", my_pid);
 #endif
 
 		heap->mm_holder      = -1;

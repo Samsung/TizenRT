@@ -226,7 +226,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 */
 
 	if (ret) {
-		mvdbg("Allocated %p, size %u\n", ret, size);
+		mllvdbg("Allocated %p, size %u\n", ret, size);
 	}
 
 	return ret;

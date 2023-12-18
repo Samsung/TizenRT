@@ -113,7 +113,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 		mm_takesemaphore(heap);
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
-			mvdbg("region=%d node=%p size=%u preceding=%u (%c)\n", region, node, node->size,
+			mllvdbg("region=%d node=%p size=%u preceding=%u (%c)\n", region, node, node->size,
 				(node->preceding & ~MM_ALLOC_BIT), (node->preceding & MM_ALLOC_BIT) ? 'A' : 'F');
 			ASSERT(node->size);
 
@@ -131,7 +131,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 
 		mm_givesemaphore(heap);
 
-		mvdbg("region=%d node=%p heapend=%p\n", region, node, heap->mm_heapend[region]);
+		mllvdbg("region=%d node=%p heapend=%p\n", region, node, heap->mm_heapend[region]);
 		ASSERT(node == heap->mm_heapend[region]);
 		uordblks += SIZEOF_MM_ALLOCNODE;	/* account for the tail node */
 	}
