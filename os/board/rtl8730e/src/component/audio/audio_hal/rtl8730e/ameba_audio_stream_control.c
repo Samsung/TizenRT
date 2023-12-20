@@ -159,7 +159,7 @@ int32_t ameba_audio_ctl_get_tx_volume(StreamControl *control, float *left, float
 	return HAL_OSAL_OK;
 }
 
-int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted)
+int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted, bool should_zdet, bool user_set)
 {
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
@@ -168,25 +168,30 @@ int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted)
 
 	if (ameba_audio_is_audio_ip_in_use(CODEC)) {
 		if (muted) {
-			HAL_AUDIO_INFO("dac mute.");
-			AUDIO_CODEC_SetDACVolume(DAC_L, 0);
-			AUDIO_CODEC_SetDACVolume(DAC_R, 0);
-			//max time wait: 175/44100ms
-			vTaskDelay(4 / portTICK_RATE_MS);
+			if (should_zdet) {
+				AUDIO_CODEC_SetDACVolume(DAC_L, 0);
+				AUDIO_CODEC_SetDACVolume(DAC_R, 0);
+				//max time wait: 175/44100ms
+				vTaskDelay(4 / portTICK_RATE_MS);
+			}
 			AUDIO_CODEC_SetDACMute(DAC_L, MUTE);
 			AUDIO_CODEC_SetDACMute(DAC_R, MUTE);
 		} else {
-			HAL_AUDIO_INFO("dac unmute.");
 			AUDIO_CODEC_SetDACMute(DAC_L, UNMUTE);
 			AUDIO_CODEC_SetDACMute(DAC_R, UNMUTE);
 			//no need to wait, because, we set volume here, and then data render
 			//to hardware, and hardware will itself fade in.
-			AUDIO_CODEC_SetDACVolume(DAC_L, control->volume_for_dacl);
-			AUDIO_CODEC_SetDACVolume(DAC_R, control->volume_for_dacr);
+			if (should_zdet) {
+				AUDIO_CODEC_SetDACVolume(DAC_L, control->volume_for_dacl);
+				AUDIO_CODEC_SetDACVolume(DAC_R, control->volume_for_dacr);
+			}
 		}
 	}
 
-	control->tx_state = muted;
+	if (user_set) {
+		control->tx_state = muted;
+	}
+
 	return HAL_OSAL_OK;
 }
 
@@ -501,20 +506,22 @@ int32_t ameba_audio_ctl_get_mic_bst_gain(StreamControl *control, uint32_t mic_ca
 	return control->gain_for_micbst[amic_num - 1];
 }
 
-int32_t ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, uint32_t ppm, uint32_t action)
+float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, float ppm, uint32_t action)
 {
+	float tuned_ppm = 0;
+
 	if (control == NULL) {
 		HAL_AUDIO_ERROR("ops, %s fail, control null", __func__);
-		return HAL_OSAL_ERR_INVALID_OPERATION;
+		return 0;
 	}
 
 	if (rate % 8000 == 0) {
-		PLL_I2S_98P304M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_98P304M_ClkTune(ppm, action);
 	} else {
-		PLL_I2S_45P158M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_45P158M_ClkTune(ppm, action);
 	}
 
-	return HAL_OSAL_OK;
+	return tuned_ppm;
 }
 
 int32_t ameba_audio_ctl_set_adc_mute(StreamControl *control, uint32_t adc_num, bool muted)

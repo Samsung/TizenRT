@@ -27,61 +27,120 @@ static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, UART_LOG_IRQ},	/* CA7 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 };
 
-#define APAD_NAME_START	_PA_20
-#define APAD_NAME_END	_PA_29
+/**
+  *  @brief Pre-Process for Audio pad switch to digital usage
+  *  @param PinName: Pin of Audio share PAD.
+  *  @retval None
+  *  @note Special process for diffrent audio pad type:
+			MIC_PAD:		mute MICBST
+			MIC_BIAS_PAD:	power down MICBIAS
+			AOUT_PAD:		power down HPO
+  */
+static void APAD_PreProcess(u8 PinName)
+{
+	if ((PinName < APAD_NAME_START) || (PinName > APAD_NAME_END)) {
+		return;
+	}
 
-extern void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate);
+	if ((PinName >= APAD_MIC_PAD__START) && (PinName <= APAD_MIC_PAD_END)) {
+		/* keep audio MICBST be mute */
+		switch (PinName) {
+		case _PA_20:
+		case _PA_21:
+			/* mute AMIC1 */
+			AUDIO_CODEC_SetMicBstChnMute(AMIC1, MICIN, MUTE);
+			break;
+		case _PA_22:
+		case _PA_23:
+			/* mute AMIC2 */
+			AUDIO_CODEC_SetMicBstChnMute(AMIC2, MICIN, MUTE);
+			break;
+		case _PA_24:
+		case _PA_25:
+			/* mute AMIC3 */
+			AUDIO_CODEC_SetMicBstChnMute(AMIC3, MICIN, MUTE);
+			break;
+		case _PA_26:
+		case _PA_27:
+			/* mute AMIC4 */
+			AUDIO_CODEC_SetMicBstChnMute(AMIC4, MICIN, MUTE);
+			break;
+		case _PA_28:
+		case _PA_29:
+			/* mute AMIC5 */
+			AUDIO_CODEC_SetMicBstChnMute(AMIC5, MICIN, MUTE);
+			break;
+		default:
+			break;
+		}
+
+	} else if ((PinName >= APAD_MIC_BIAS_PAD_START) && (PinName <= APAD_MIC_BIAS_PAD_END)) {
+		/* keep audio MICBIAS power be power down mode */
+		AUDIO_CODEC_SetMicBiasPowerMode(POWER_DOWN);
+
+		switch (PinName) {
+		case _PA_30:
+			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC1, POWER_DOWN);
+			break;
+		case _PA_31:
+			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC2, POWER_DOWN);
+			break;
+		case _PB_0:
+			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC3, POWER_DOWN);
+			break;
+		case _PB_1:
+			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC4, POWER_DOWN);
+			break;
+		case _PB_2:
+			AUDIO_CODEC_SetMicBiasPCUTMode(AMIC5, POWER_DOWN);
+			break;
+		default:
+			break;
+		}
+
+	} else if ((PinName >= APAD_OUT_PAD_START) && (PinName <= APAD_OUT_PAD_END)) {
+		/* keep audio HPO power be power down mode */
+		switch (PinName) {
+		case _PB_3:
+		case _PB_4:
+			/* AOUT LPLN */
+			AUDIO_CODEC_SetHPOPowerMode(CHN_L, POWER_DOWN);
+			break;
+		case _PB_5:
+		case _PB_6:
+			/* AOUT RPRN */
+			AUDIO_CODEC_SetHPOPowerMode(CHN_R, POWER_DOWN);
+			break;
+		default:
+			break;
+		}
+	}
+
+}
+
 void Pinmux_Config(u8 PinName, u32 PinFunc)
 {
 	if ((PinName >= APAD_NAME_START) && (PinName <= APAD_NAME_END)) {
 		RCC_PeriphClockCmd(APBPeriph_AUDIO, NULL, ENABLE);
 
 		if (PinFunc != PINMUX_FUNCTION_AUDIO) {
-			/*for audio pad switch to digital usage:*/
-			//step1: mute AMICx
-			switch (PinName) {
-			case _PA_20:
-			case _PA_21:
-				/* mute AMIC1 */
-				AUDIO_CODEC_SetMicBstChnMute(AMIC1, MICIN, MUTE);
-				break;
-			case _PA_22:
-			case _PA_23:
-				/* mute AMIC2 */
-				AUDIO_CODEC_SetMicBstChnMute(AMIC2, MICIN, MUTE);
-				break;
-			case _PA_24:
-			case _PA_25:
-				/* mute AMIC3 */
-				AUDIO_CODEC_SetMicBstChnMute(AMIC3, MICIN, MUTE);
-				break;
-			case _PA_26:
-			case _PA_27:
-				/* mute AMIC4 */
-				AUDIO_CODEC_SetMicBstChnMute(AMIC4, MICIN, MUTE);
-				break;
-			case _PA_28:
-			case _PA_29:
-				/* mute AMIC5 */
-				AUDIO_CODEC_SetMicBstChnMute(AMIC5, MICIN, MUTE);
-				break;
-			default:
-				break;
-			}
+			/* for audio pad switch to digital usage: */
+
+			//step1: pre-process for diffrent audio pad types
+			APAD_PreProcess(PinName);
+
+			//step2: enable digital path input
+			APAD_InputCtrl(PinName, ENABLE);
+
+			//RTK_LOGW(TAG, "APAD P%s_%d is configured to funcID %lu \n", PORT_NUM(PinName) ? "B" : "A", PIN_NUM(PinName), PinFunc);
+
+		} else {
+			APAD_InputCtrl(PinName, DISABLE);
 		}
-	}
 
-	if (PinFunc != PINMUX_FUNCTION_AUDIO) {
-		//step2: enable digital path input
-		APAD_InputCtrl(PinName, ENABLE);
-	} else {
-		APAD_InputCtrl(PinName, DISABLE);
-	}
-
-	/*_PA_13: SWD_DATA, _PA_14: SWD_CLK*/
-	if ((PinName == _PA_13) || ((PinName == _PA_14))) {
+	} else if ((PinName == SWD_DATA) || ((PinName == SWD_CLK))) {
 		Pinmux_Swdoff();
-		//RTK_LOGW(TAG, "SWD PAD P%s_%d is configured to funcID %d \n", PORT_NUM(PinName) ? "B" : "A", PIN_NUM(PinName), PinFunc);
+		//RTK_LOGW(TAG, "SWD PAD P%s_%d is configured to funcID %lu \n", PORT_NUM(PinName) ? "B" : "A", PIN_NUM(PinName), PinFunc);
 	}
 
 	_Pinmux_Config(PinName, PinFunc);

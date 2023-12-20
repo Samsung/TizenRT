@@ -379,15 +379,11 @@ int32_t RTAudioControl_GetMicUsage(void);
  * @param rate sample rate of current stream
  * @param ppm ~1.55ppm per FOF step
  * @param action can be RTAUDIO_PLL_AUTO RTAUDIO_PLL_FASTER RTAUDIO_PLL_SLOWER
- * @return Returns a value listed below: \n
- * rt_status_t | Description
- * ----------------------| -----------------------
- * OSAL_OK | the operation is successful.
- * OSAL_ERR_INVALID_OPERATION | param not supported.
+ * @return Returns the ppm adjusted.
  * @since 1.0
  * @version 1.0
  */
-rt_status_t RTAudioControl_AdjustPLLClock(uint32_t rate, uint32_t ppm, uint32_t action);
+float RTAudioControl_AdjustPLLClock(uint32_t rate, float ppm, uint32_t action);
 
 /**
  * @brief Set Audio Record Mute.

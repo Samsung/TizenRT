@@ -83,10 +83,9 @@ size_t ameba_audio_stream_buffer_get_available_size(AudioBuffer *buffer)
 
 void ameba_audio_stream_buffer_flush(AudioBuffer *buffer)
 {
-	if (buffer && buffer->raw_data) {
-		HAL_AUDIO_INFO("flush audio rbuffer\n");
-		memset(buffer->raw_data, 0, buffer->capacity);
-	}
+	buffer->read_ptr = 0;
+	buffer->write_ptr = 0;
+	buffer->size_remain = 0;
 }
 
 /*write to buffer by hal*/

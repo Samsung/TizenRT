@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 struct RTAudioEqualizer;
+struct RTEffectModule;
 
 /**
  * @brief Create RTAudioEqualizer instance.
@@ -40,6 +41,20 @@ struct RTAudioEqualizer *RTAudioEqualizer_Create(void);
  * @version 1.0
  */
 void RTAudioEqualizer_Destroy(struct RTAudioEqualizer *equalizer);
+
+/**
+ * @brief Set RTEffectModule to equalizer.Only works in passthrough mode.
+ * @param module is the pointer of struct RTEffectModule.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | the operation is invalid.
+ * OSAL_ERR_INVALID_PARAM | the params are invalid.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioEqualizer_SetModule(struct RTAudioEqualizer *equalizer, struct RTEffectModule *module);
 
 /**
  * @brief Init RTAudioEqualizer.
@@ -70,6 +85,20 @@ rt_status_t RTAudioEqualizer_Init(struct RTAudioEqualizer *equalizer, int32_t pr
  * @version 1.0
  */
 rt_status_t RTAudioEqualizer_SetEnabled(struct RTAudioEqualizer *equalizer, bool enabled);
+
+/**
+ * @brief Get number of bands RTAudioEqualizer supports.
+ * @param equalizer is the pointer of struct RTAudioEqualizer.
+ * @param bands is the total bands.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | the operation is invalid.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioEqualizer_SetNumberOfBands(struct RTAudioEqualizer *equalizer, uint32_t bands);
 
 /**
  * @brief Get number of bands RTAudioEqualizer supports.
@@ -121,27 +150,31 @@ rt_status_t RTAudioEqualizer_SetBandLevel(struct RTAudioEqualizer *equalizer, ui
 int16_t RTAudioEqualizer_GetBandLevel(struct RTAudioEqualizer *equalizer, uint32_t band);
 
 /**
+ * @brief Set RTAudioEqualizer center frequency.
+ * @param equalizer is the pointer of struct RTAudioEqualizer.
+ * @param band is the band number.
+ * @param freq is the new center frequency set to band in hz.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | the operation is invalid.
+ * OSAL_ERR_INVALID_PARAM | the params are invalid.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioEqualizer_SetCenterFreq(struct RTAudioEqualizer *equalizer, uint32_t band, uint32_t freq);
+
+/**
  * @brief Get RTAudioEqualizer center frequency.
  * @param equalizer is the pointer of struct RTAudioEqualizer.
  * @param band is the band number, for example, RTAudioEqualizer total supports 5 bands, which band frequency to get?
  * The band value range is [0, BAND_TATAL_NUM).BAND_TATAL_NUM is got from RTAudioEqualizer_GetNumberOfBands.
- * @return Returns a value of center frequency.
+ * @return Returns a value of center frequency in hz.
  * @since 1.0
  * @version 1.0
  */
 int32_t RTAudioEqualizer_GetCenterFreq(struct RTAudioEqualizer *equalizer, uint32_t band);
-
-/**
- * @brief Get RTAudioEqualizer center frequency range.
- * @param equalizer is the pointer of struct RTAudioEqualizer.
- * @param band is the band number, for example, RTAudioEqualizer total supports 5 bands, which band freq range to get?
- * The band value range is [0, BAND_TATAL_NUM).BAND_TATAL_NUM is got from RTAudioEqualizer_GetNumberOfBands.
- * @return Returns a value of frequency range. The return value contains two int32_t integer, represents the range, for
- * example:[30000, 120000].
- * @since 1.0
- * @version 1.0
- */
-int32_t *RTAudioEqualizer_GetBandFreqRange(struct RTAudioEqualizer *equalizer, uint32_t band);
 
 /**
  * @brief Get RTAudioEqualizer frequency's band.
@@ -152,6 +185,32 @@ int32_t *RTAudioEqualizer_GetBandFreqRange(struct RTAudioEqualizer *equalizer, u
  * @version 1.0
  */
 int16_t RTAudioEqualizer_GetBand(struct RTAudioEqualizer *equalizer, uint32_t frequency);
+
+/**
+ * @brief Set RTAudioEqualizer Q factor.
+ * @param equalizer is the pointer of struct RTAudioEqualizer.
+ * @param band is the band number.
+ * @param qfactor is the qfactor set to band.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | the operation is invalid.
+ * OSAL_ERR_INVALID_PARAM | the params are invalid.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioEqualizer_SetQfactor(struct RTAudioEqualizer *equalizer, uint32_t band, uint32_t qfactor);
+
+/**
+ * @brief Get RTAudioEqualizer Q factor.
+ * @param equalizer is the pointer of struct RTAudioEqualizer.
+ * @param band is the band number.
+ * @return Returns qfactor of the band.
+ * @since 1.0
+ * @version 1.0
+ */
+int16_t RTAudioEqualizer_GetQfactor(struct RTAudioEqualizer *equalizer, uint32_t band);
 
 #ifdef __cplusplus
 }

@@ -4968,6 +4968,16 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_CODEC_LineOutOrHPO_Channel
+  * @{
+  */
+#define CHN_L			((u32)0x00000000)
+#define CHN_R			((u32)0x00000001)
+#define CHN_LR			((u32)0x00000002)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -5030,6 +5040,12 @@ _LONG_CALL_ void AUDIO_CODEC_SetADCZDET(u32 adc_sel, u32 type);
 _LONG_CALL_ void AUDIO_CODEC_SetADCZDETTimeOut(u32 adc_sel, u32 time_out);
 _LONG_CALL_ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
 _LONG_CALL_ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct);
+_LONG_CALL_ void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_EnableDACFifo(u32 newstate);
+_LONG_CALL_ void AUDIO_CODEC_SetDACSilenceDet(u32 channel, u32 status);
+_LONG_CALL_ void AUDIO_CODEC_SelDACSilenceLevel(u32 channel, u32 level);
+_LONG_CALL_ void AUDIO_CODEC_SetADCSilenceDet(u32 channel, u32 status);
+_LONG_CALL_ void AUDIO_CODEC_SelADCSilenceLevel(u32 channel, u32 level);
 
 /**
   * @}
