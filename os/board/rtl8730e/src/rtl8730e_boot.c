@@ -415,6 +415,10 @@ void board_initialize(void)
 
 	char km0_application_rev_temp[] = "km0_application_ver_79e92a3_2023/12/18-15:12:03";
 	lldbg("KM4_version %s\n", km0_application_rev_temp);
+
+#ifdef CONFIG_AUDIO_ALC1019
+	rtl8730e_alc1019_initialize(0);
+#endif
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

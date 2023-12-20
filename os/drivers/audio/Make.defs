@@ -76,6 +76,10 @@ ifeq ($(CONFIG_AUDIO_TAS5749),y)
 CSRCS += tas5749.c
 endif
 
+ifeq ($(CONFIG_AUDIO_ALC1019),y)
+CSRCS += alc1019.c
+endif
+
 # Include Audio driver support
 
 DEPPATH += --dep-path audio
