@@ -171,6 +171,15 @@ config CX20921_I2S_TIMEOUT
 	---help---
 		Set timeout of CX20921 I2S response in millisecond
 
+config AUDIO_ALC1019
+        bool "ALC1019 DAC audio chip"
+        default n
+        depends on AUDIO && I2S && I2C && SCHED_WORKQUEUE
+        ---help---
+                Select to enable support for the ALC1019 DAC Audio codec
+                NOTE: This driver also depends on both I2C and I2S support although
+                that dependency is not explicit here.
+
 config AUDIO_TAS5749
 	bool "TAS5749 DAC audio chip"
 	default n
