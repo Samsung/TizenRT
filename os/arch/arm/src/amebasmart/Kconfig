@@ -130,26 +130,17 @@ config AMEBASMART_I2CTIMEOTICKS
 endif
 
 config AMEBASMART_I2S
-	bool "Enable Amebasmart I2S"
+	bool "Amebasmart I2S"
 	default n
 
 if AMEBASMART_I2S
-config AMEBASMART_I2S0
-	bool "I2S_0"
+config AMEBASMART_I2S2
+	bool "I2S_2"
 	default n
-if AMEBASMART_I2S0
-	config AMEBASMART_I2S0_MASTER
-	bool "I2S0_MASTER"
+config AMEBASMART_I2S3
+	bool "I2S_3"
 	default n
-endif
-config AMEBASMART_I2S1
-	bool "I2S_1"
-	default n
-if AMEBASMART_I2S1
-	config AMEBASMART_I2S1_MASTER
-	bool "I2S1_MASTER"
-	default n
-endif
+
 config AMEBASMART_I2S_RX
 	bool "Enable I2S RX"
 	default n

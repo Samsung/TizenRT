@@ -51,8 +51,8 @@ extern "C" {
 *
 */
 typedef enum {
-	I2S_NUM_0 = 0x0,			/*!< I2S 0 */
-	//I2S_NUM_1 = 0x1,			/*!< I2S 1 */
+	I2S_NUM_2 = 0x2,			/*!< I2S 2 */
+	I2S_NUM_3 = 0x3,			/*!< I2S 3 */
 	I2S_NUM_MAX,
 } i2s_port_t;
 /**

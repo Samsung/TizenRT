@@ -59,20 +59,17 @@ static void err_cb(FAR struct i2s_dev_s *dev, FAR void *arg, int flags)
  *   work with apps/examples/i2schar.
  *
  ****************************************************************************/
-
 int i2schar_devinit(void)
 {
-	static bool initialized;
+	static bool initialized = 0;
 	struct i2s_dev_s *i2s;
 	int ret;
 
-	/* Have we already initialized? */
-
 	if (!initialized) {
+#ifdef CONFIG_AMEBASMART_I2S2
 		/* Call amebasmart_i2s_initialize() to get an instance of the I2S interface */
-
-		//Initialise I2S2
-		i2s = amebasmart_i2s_initialize(0);
+		/* Initialise I2S2 */
+		i2s = amebasmart_i2s_initialize(I2S_NUM_2);
 
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
@@ -80,7 +77,6 @@ int i2schar_devinit(void)
 		}
 
 		/* Register the I2S character driver at "/dev/i2schar0" */
-
 		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR);
 		if (ret < 0) {
 			lldbg("ERROR: i2schar_register failed: %d\n", ret);
@@ -88,13 +84,28 @@ int i2schar_devinit(void)
 		}
 
 		I2S_ERR_CB_REG(i2s, err_cb, "Error_Test_String");
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+		i2s = amebasmart_i2s_initialize(I2S_NUM_3);
 
+		if (!i2s) {
+			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
+			return -ENODEV;
+		}
+
+		/* Register the I2S character driver at "/dev/i2schar0" */
+		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR);
+		if (ret < 0) {
+			lldbg("ERROR: i2schar_register failed: %d\n", ret);
+			return ret;
+		}
+
+		I2S_ERR_CB_REG(i2s, err_cb, "Error_Test_String");
+#endif
 
 		/* Now we are initialized */
-
 		initialized = true;
 	}
-
 	return OK;
 }
 
