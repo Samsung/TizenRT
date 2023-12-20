@@ -61,7 +61,7 @@ static bool AmebaGetAmplifierMute(struct AudioHwControl *control)
 static int32_t AmebaSetPlaybackMute(struct AudioHwControl *control, bool mute)
 {
 	(void) control;
-	return ameba_audio_ctl_set_tx_mute(ameba_audio_get_ctl(), mute);
+	return ameba_audio_ctl_set_tx_mute(ameba_audio_get_ctl(), mute, true, true);
 }
 
 static bool AmebaGetPlaybackMute(struct AudioHwControl *control)
@@ -136,7 +136,7 @@ static int32_t AmebaGetMicUsage(struct AudioHwControl *control)
 	return ameba_audio_ctl_get_mic_usage(ameba_audio_get_ctl());
 }
 
-static int32_t AmebaAdjustPLLClock(struct AudioHwControl *control, uint32_t rate, uint32_t ppm, uint32_t action)
+static float AmebaAdjustPLLClock(struct AudioHwControl *control, uint32_t rate, float ppm, uint32_t action)
 {
 	(void) control;
 	return ameba_audio_ctl_pll_clock_tune(ameba_audio_get_ctl(), rate, ppm, action);

@@ -24,7 +24,7 @@
 
 #include "ameba_soc.h"
 
-u8 GDMA_Reg[MAX_GDMA_INDX + 1];
+
 static u8 GDMA_IrqNum[8] = {
 #if defined (ARM_CORE_CM4)
 
@@ -122,7 +122,7 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 	/* Check chanel is avaliable */
 	if (GDMA->ChEnReg & ChEn) {
 		/* Disable Channel */
-		DBG_PRINTF(MODULE_GDMA, LEVEL_WARN, "Channel had used; Disable Channel!!!!\n");
+		lldbg("Channel had used; Disable Channel!!!!\n");
 
 		GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
 
@@ -208,7 +208,7 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	//DBG_GDMA_INFO("Block Count %d\n", MultiBlockCount);
+	//RTK_LOGI(TAG, "Block Count %lu\n", MultiBlockCount);
 
 	CtlxLow = GDMA->CH[GDMA_ChNum].CTL_LOW;
 	CtlxUp = GDMA->CH[GDMA_ChNum].CTL_HIGH;
@@ -676,18 +676,23 @@ u32 GDMA_GetBlkSize(u8 GDMA_Index, u8 GDMA_ChNum)
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval value: _TRUE/_FALSE
   */
-__weak  BOOL
-GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum)
+static void GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 {
+	u8 IrqNum = 0;
+	u8 ValTemp = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3);
+
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
+	/* register idle channel. */
 
-	if ((GDMA_Reg[GDMA_Index] & BIT(GDMA_ChNum)) != 0) {
-		return 0;
+	ValTemp |= BIT(GDMA_ChNum);
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3, ValTemp);
+
+	if (IrqFun != NULL) {
+		IrqNum = GDMA_IrqNum[GDMA_ChNum];
+		InterruptRegister(IrqFun, IrqNum, IrqData, IrqPriority);
+		InterruptEn(IrqNum, IrqPriority);
 	}
-
-	GDMA_Reg[GDMA_Index] |= BIT(GDMA_ChNum);
-	return 1;
 }
 
 /**
@@ -696,13 +701,20 @@ GDMA_ChnlRegister(u8 GDMA_Index, u8 GDMA_ChNum)
   * @param  GDMA_ChNum: 0 ~ 7.
   * @retval   None
   */
-__weak  void
-GDMA_ChnlUnRegister(u8 GDMA_Index, u8 GDMA_ChNum)
+static void GDMA_ChnlUnRegister(u8 GDMA_Index, u8 GDMA_ChNum)
 {
+	u8 IrqNum = 0;
+	u8 ValTemp = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3);
+
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
-	GDMA_Reg[GDMA_Index] &= ~BIT(GDMA_ChNum);
+	ValTemp &= ~BIT(GDMA_ChNum);
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3, ValTemp);
+
+	IrqNum = GDMA_IrqNum[GDMA_ChNum];
+	InterruptDis(IrqNum);
+	InterruptUnRegister(IrqNum);
 }
 
 /**
@@ -717,45 +729,42 @@ __weak  u8
 GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 {
 	u32 found = 0;
-	u32 GDMA_ChNum = 0;
-	u8 IrqNum = 0;
+	u32 GDMA_ChNum = 0xFF;
+	u8 ValTemp = 0;
 
 	assert_param(IS_GDMA_Index(GDMA_Index));
 
+	/* Match idle channel. */
+	ValTemp = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3);
+
 	for (GDMA_ChNum = 0; GDMA_ChNum <= MAX_GDMA_CHNL; GDMA_ChNum++) {
-		if ((GDMA_Reg[GDMA_Index] & BIT(GDMA_ChNum)) == 0) {
+		if ((ValTemp & BIT(GDMA_ChNum)) == 0) {
 			found = 1;
 			break;
 		}
 	}
 
+	/*If idle channel is found,  register it. */
 	if (found) {
-		GDMA_ChnlRegister(GDMA_Index, GDMA_ChNum);
-		if (IrqFun != NULL) {
-
-			IrqNum = GDMA_IrqNum[GDMA_ChNum];
-			InterruptRegister(IrqFun, IrqNum, IrqData, IrqPriority);
-			InterruptEn(IrqNum, IrqPriority);
-		}
-
-		return GDMA_ChNum;
+		GDMA_ChnlRegister(GDMA_Index, GDMA_ChNum, IrqFun, IrqData, IrqPriority);
+		lldbg("\n[%s] - %d, gdma_idx = %d, gdma_chnum = %d\n",__FUNCTION__,__LINE__, GDMA_Index, GDMA_ChNum);
 	} else {
-		return 0xFF;
+		GDMA_ChNum = 0xFF;
 	}
+	return GDMA_ChNum;
 }
 
 /**
   * @brief  free a channel, this channel will not be used.
   * @param  GDMA_Index: 0.
   * @param  GDMA_ChNum: 0 ~ 7.
-  * @retval   None
+  * @retval   _TRUE/_FALSE
   */
-__weak  void
+__weak  u8
 GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 {
-	u8 IrqNum;
 	GDMA_TypeDef *GDMA = NULL;
-
+	u8 ret = _FALSE;
 	/* Check the parameters */
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
@@ -766,12 +775,10 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 		GDMA->CH[GDMA_ChNum].CFG_HIGH |= BIT_CFGX_UP_SEC_DISABLE;
 	}
 
-	IrqNum = GDMA_IrqNum[GDMA_ChNum];
-
-	InterruptDis(IrqNum);
-	InterruptUnRegister(IrqNum);
-
 	GDMA_ChnlUnRegister(GDMA_Index, GDMA_ChNum);
+
+	ret = _TRUE;
+	return ret;
 }
 
 /**

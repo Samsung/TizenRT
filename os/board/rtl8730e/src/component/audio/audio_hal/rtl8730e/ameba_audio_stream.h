@@ -63,6 +63,16 @@ enum {
 	SPORT3        = 12,
 };
 
+enum {
+	STATE_INVALID          = 0,
+	STATE_INITED           = 1,
+	STATE_XRUN             = 2,
+	STATE_XRUN_NOTIFIED    = 3,
+	STATE_STARTED          = 4,
+	STATE_STANDBY          = 5,
+	STATE_DEINITED         = 6,
+};
+
 typedef struct _GdmaCallbackData GdmaCallbackData;
 
 typedef struct _StreamConfig {
@@ -95,7 +105,11 @@ typedef struct _Stream {
 	uint32_t              sport_irq_count;
 	uint32_t              sport_compare_val;
 	uint64_t              total_counter_boundary;
+	uint64_t              start_atstamp;
+	uint64_t              total_dma_bytes;
 	bool                  extra_restart_by_user;
+	uint32_t              device;
+	int32_t               state;
 
 	// member below for channel <= 4
 	AudioBuffer          *rbuffer;

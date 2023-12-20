@@ -68,6 +68,17 @@ struct AudioHwCapture {
 	int (*GetCapturePosition)(const struct AudioHwCapture *stream, uint64_t *frames, struct timespec *timestamp);
 
 	/**
+	 * @brief Get current capture frames and timestamp of the current <b>AudioHwcapture</b> object .
+	 *
+	 * @param stream Indicates the pointer to the audio capture to operate.
+	 * @param now_ns Indicates the pointer to system time, or tsf time.
+	 * @param audio_ns Indicates the pointer to the playing audio time.
+	 * @return Returns <b>0</b> if capture frames and timestamp get successfully;
+	 * returns a negative value otherwise.
+	 */
+	int (*GetPresentTime)(const struct AudioHwCapture *stream, int64_t *now_ns, int64_t *audio_ns);
+
+	/**
 	 * @brief Get system latency of the current <b>AudioHwCapture</b> object .
 	 *
 	 * @param stream Indicates the pointer to the audio capture to operate.

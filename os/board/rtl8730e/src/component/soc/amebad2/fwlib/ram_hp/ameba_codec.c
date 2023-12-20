@@ -22,6 +22,7 @@
   */
 #include "ameba_soc.h"
 
+static const char *TAG = "CODEC";
 AUD_TypeDef *AUD;
 
 /**
@@ -623,6 +624,111 @@ void AUDIO_CODEC_SetLDOMode(u32 powermode)
 	}
 }
 
+/**
+  * @brief  Enable or disable per AD and AD fifo channel clock.
+  * @param  ad_chn: select ad channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ADCHN1
+  *			   @arg ADCHN2
+  *			   @arg ADCHN3
+  *			   @arg ADCHN4
+  *			   @arg ADCHN5
+  *			   @arg ADCHN6
+  *			   @arg ADCHN7
+  *			   @arg ADCHN8
+  * @param  newstate: enable or disable per ad channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_EnableADCFifo(u32 ad_chn, u32 newstate)
+{
+
+	u32 Tmp;
+	u32 audio_base;
+
+	if (TrustZone_IsSecure()) {
+		audio_base = AUDIO_REG_BASE_S;
+	} else {
+		audio_base = AUDIO_REG_BASE;
+	}
+
+	Tmp = HAL_READ32(audio_base, CODEC_CLOCK_CONTROL_1);
+
+	switch (ad_chn) {
+
+	case ADCHN1:
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_0_FIFO_EN;
+		} else {
+			Tmp &= ~AUD_BIT_AD_0_FIFO_EN;
+		}
+		break;
+	case ADCHN2:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_1_FIFO_EN;
+		} else {
+			Tmp &= ~(AUD_BIT_AD_1_FIFO_EN);
+		}
+		break;
+	case ADCHN3:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_2_FIFO_EN;
+		} else {
+			Tmp &= ~AUD_BIT_AD_2_FIFO_EN;
+		}
+		break;
+	case ADCHN4:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_3_FIFO_EN;
+		} else {
+			Tmp &= ~(AUD_BIT_AD_3_FIFO_EN);
+		}
+		break;
+
+	case ADCHN5:
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_4_FIFO_EN;
+		} else {
+			Tmp &= ~(AUD_BIT_AD_4_FIFO_EN);
+		}
+		break;
+	case ADCHN6:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_5_FIFO_EN;
+		} else {
+			Tmp &= ~AUD_BIT_AD_5_FIFO_EN;
+		}
+		break;
+	case ADCHN7:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_6_FIFO_EN;
+		} else {
+			Tmp &= ~(AUD_BIT_AD_6_FIFO_EN);
+		}
+		break;
+	case ADCHN8:
+
+		if (newstate == ENABLE) {
+			Tmp |= AUD_BIT_AD_7_FIFO_EN;
+		} else {
+			Tmp &= ~(AUD_BIT_AD_7_FIFO_EN);
+		}
+		break;
+	default:
+		break;
+
+	}
+
+	HAL_WRITE32(audio_base, CODEC_CLOCK_CONTROL_1, Tmp);
+}
+
 
 /**
   * @brief  Enable or disable per AD and AD fifo channel clock.
@@ -660,65 +766,65 @@ void AUDIO_CODEC_EnableADC(u32 ad_chn, u32 newstate)
 
 	case ADCHN1:
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_0_EN | AUD_BIT_AD_0_FIFO_EN;
+			Tmp |= AUD_BIT_AD_0_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_0_EN | AUD_BIT_AD_0_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_0_EN);
 		}
 		break;
 	case ADCHN2:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_1_EN | AUD_BIT_AD_1_FIFO_EN;
+			Tmp |= AUD_BIT_AD_1_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_1_EN | AUD_BIT_AD_1_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_1_EN);
 		}
 		break;
 	case ADCHN3:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_2_EN | AUD_BIT_AD_2_FIFO_EN;
+			Tmp |= AUD_BIT_AD_2_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_2_EN | AUD_BIT_AD_2_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_2_EN);
 		}
 		break;
 	case ADCHN4:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_3_EN | AUD_BIT_AD_3_FIFO_EN;
+			Tmp |= AUD_BIT_AD_3_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_3_EN | AUD_BIT_AD_3_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_3_EN);
 		}
 		break;
 
 	case ADCHN5:
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_4_EN | AUD_BIT_AD_4_FIFO_EN;
+			Tmp |= AUD_BIT_AD_4_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_4_EN | AUD_BIT_AD_4_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_4_EN);
 		}
 		break;
 	case ADCHN6:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_5_EN | AUD_BIT_AD_5_FIFO_EN;
+			Tmp |= AUD_BIT_AD_5_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_5_EN | AUD_BIT_AD_5_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_5_EN);
 		}
 		break;
 	case ADCHN7:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_6_EN | AUD_BIT_AD_6_FIFO_EN;
+			Tmp |= AUD_BIT_AD_6_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_6_EN | AUD_BIT_AD_6_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_6_EN);
 		}
 		break;
 	case ADCHN8:
 
 		if (newstate == ENABLE) {
-			Tmp |= AUD_BIT_AD_7_EN | AUD_BIT_AD_7_FIFO_EN;
+			Tmp |= AUD_BIT_AD_7_EN;
 		} else {
-			Tmp &= ~(AUD_BIT_AD_7_EN | AUD_BIT_AD_7_FIFO_EN);
+			Tmp &= ~(AUD_BIT_AD_7_EN);
 		}
 		break;
 	default:
@@ -1700,6 +1806,8 @@ void AUDIO_CODEC_SetMicBstPowerMode(u32 amic_num, u32 powermode)
 	}
 
 	if (powermode == NORMALPOWER) {
+
+		AUD->AUD_DTS_CTL &= ~AUD_BIT_LPMODE_EN;
 		if (amic_num == AMIC1) {
 			AUD->AUD_MICBST_CTL0 |= AUD_BIT_MICBST_POWL;
 			AUD->AUD_MBIAS_CTL1 &= ~(AUD_MASK_MBIAS_ISEL_MICBST_L);
@@ -1905,19 +2013,19 @@ void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate)
 		} else if (amic_sel == AMIC3) {
 			AUD->AUD_MICBST_CTL1 &= ~AUD_MASK_MICBST2_MUTE_L;
 			if (type == LINEIN) {
-				DBG_8195A("\n AMIC3 NOT SUPPORT LINEIN MODE\n");
+				//RTK_LOGE(TAG, "AMIC3 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		} else if (amic_sel == AMIC4) {
 			AUD->AUD_MICBST_CTL1 &= ~AUD_MASK_MICBST2_MUTE_R;
 			if (type == LINEIN) {
-				DBG_8195A("\n AMIC4 NOT SUPPORT LINEIN MODE\n");
+				//RTK_LOGE(TAG, "AMIC4 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		} else {
 			AUD->AUD_MICBST_CTL1 &= ~ AUD_MASK_MICBST3_MUTE;
 			if (type == LINEIN) {
-				DBG_8195A("\n AMIC5 NOT SUPPORT LINEIN MODE\n");
+				//RTK_LOGE(TAG, "AMIC5 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		}
@@ -2434,6 +2542,35 @@ void AUDIO_CODEC_SetDACSrc(u32 i2s_sel, u32 dac_l_src, u32 dac_r_src)
 
 }
 
+/**
+  * @brief  Enable or disable da fifo channel clock.
+  * @param  newstate: enable or disable da channel.
+  *			 This parameter can be one of the following values:
+  *			   @arg ENABLE
+  *			   @arg DISABLE
+  * @return  None
+  */
+void AUDIO_CODEC_EnableDACFifo(u32 newstate)
+{
+
+	u32 Tmp;
+	u32 audio_base;
+
+	if (TrustZone_IsSecure()) {
+		audio_base = AUDIO_REG_BASE_S;
+	} else {
+		audio_base = AUDIO_REG_BASE;
+	}
+
+	Tmp = HAL_READ32(audio_base, CODEC_CLOCK_CONTROL_1);
+	if (newstate == ENABLE) {
+		Tmp |= AUD_BIT_DA_FIFO_EN;
+	} else {
+		Tmp &= ~AUD_BIT_DA_FIFO_EN;
+	}
+	HAL_WRITE32(audio_base, CODEC_CLOCK_CONTROL_1, Tmp);
+
+}
 
 /**
   * @brief  Enable or disable da and da fifo channel clock.
@@ -2460,7 +2597,6 @@ void AUDIO_CODEC_EnableDAC(u32 channel, u32 newstate)
 	}
 
 	Tmp = HAL_READ32(audio_base, CODEC_CLOCK_CONTROL_1);
-	Tmp |= AUD_BIT_DA_FIFO_EN;
 
 	if (channel == DAC_L) {
 		if (newstate == ENABLE) {
@@ -2700,8 +2836,9 @@ void AUDIO_CODEC_SetDACPowerMode(u32 channel, u32 powermode)
   * @brief  Set lineout power mode.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
+  *            @arg 2: CHN_LR
   * @param  newstate: enable or disable dac power.
   *			 This parameter can be one of the following values:
   *			   @arg POWER_ON
@@ -2715,27 +2852,50 @@ void AUDIO_CODEC_SetLineOutPowerMode(u32 channel, u32 powermode)
 		AUD = AUD_SYS_BASE;
 	}
 
-	AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
-	AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
-	AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR);
-	AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL | AUD_MASK_HPO_CCSELR);
-	AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3) | AUD_HPO_CCSELR(3);
-	AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML | AUD_MASK_HPO_MR);
-	AUD->AUD_HPO_CTL |= AUD_HPO_ML(2) | AUD_HPO_MR(2);
-	AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_SEL | AUD_BIT_HPO_SER);
-	AUD->AUD_HPO_CTL |= (AUD_BIT_HPO_ENAL | AUD_BIT_HPO_ENAR);
-
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (powermode == POWER_ON) {
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3);
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML);
+			AUD->AUD_HPO_CTL |= AUD_HPO_ML(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_SEL);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAL;
 			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_L_POW;
 		} else {
 			AUD->AUD_HPO_CTL &= ~AUD_BIT_HPO_L_POW;
 		}
-	} else {
+	} else if (channel == CHN_R) {
 		if (powermode == POWER_ON) {
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPR);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELR);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELR(3);
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_MR);
+			AUD->AUD_HPO_CTL |= AUD_HPO_MR(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_SER);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAR;
 			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_R_POW;
 		} else {
 			AUD->AUD_HPO_CTL &= ~AUD_BIT_HPO_R_POW;
+		}
+	} else {
+		if (powermode == POWER_ON) {
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL | AUD_MASK_HPO_CCSELR);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3) | AUD_HPO_CCSELR(3);
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML | AUD_MASK_HPO_MR);
+			AUD->AUD_HPO_CTL |= AUD_HPO_ML(2) | AUD_HPO_MR(2);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_SEL | AUD_BIT_HPO_SER);
+			AUD->AUD_HPO_CTL |= (AUD_BIT_HPO_ENAL | AUD_BIT_HPO_ENAR);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_L_POW | AUD_BIT_HPO_R_POW;
+		} else {
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_L_POW | AUD_BIT_HPO_R_POW);
 		}
 	}
 }
@@ -2744,8 +2904,9 @@ void AUDIO_CODEC_SetLineOutPowerMode(u32 channel, u32 powermode)
   * @brief  Set HPO power mode.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
+  *            @arg 2: CHN_LR
   * @param  newstate: enable or disable dac power.
   *			 This parameter can be one of the following values:
   *			   @arg POWER_ON
@@ -2764,56 +2925,105 @@ void AUDIO_CODEC_SetHPOPowerMode(u32 channel, u32 powermode)
 		audio_base = AUDIO_REG_BASE;
 	}
 
-	/*HPO Enable Single flow*/
-	Tmp = HAL_READ32(audio_base, CODEC_AUDIO_CONTROL_1);
-	Tmp &= ~AUD_MASK_SEL_BB_CK_DEPOP;
-	Tmp |= AUD_SEL_BB_CK_DEPOP(1) | AUD_BIT_BB_CK_DEPOP_EN;
-	HAL_WRITE32(audio_base, CODEC_AUDIO_CONTROL_1, Tmp);
-
-	AUD->AUD_HPO_CTL |= AUD_BIT_HPO_SEL | AUD_BIT_HPO_SER;
-
-	AUD->AUD_ADDA_CTL &= ~(AUD_MASK_DPRAMP_CSEL);
-	AUD->AUD_ADDA_CTL |= AUD_DPRAMP_CSEL(3);
-
-	AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL | AUD_MASK_HPO_CCSELR);
-	AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3) | AUD_HPO_CCSELR(3);
-
-	AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
-	AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
-
-	AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAL | AUD_BIT_HPO_ENAR;
-
-	AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML | AUD_MASK_HPO_MR);
-	AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR | AUD_HPO_ML(2) | AUD_HPO_MR(2) | AUD_BIT_HPO_L_POW | AUD_BIT_HPO_R_POW;
-	DelayUs(10);
-	AUD->AUD_HPO_CTL |= AUD_BIT_HPO_MDPL | AUD_BIT_HPO_MDPR	| AUD_BIT_HPO_OPPDPL | AUD_BIT_HPO_OPPDPR;
-	AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_POW;
-	DelayUs(100);
-	AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_ENRAMP;
-	DelayMs(500);
-	AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_MDPL | AUD_BIT_HPO_MDPR | AUD_BIT_HPO_OPPDPL | AUD_BIT_HPO_OPPDPR);
-	DelayUs(100);
-	AUD->AUD_ADDA_CTL &= ~(AUD_BIT_DPRAMP_POW | AUD_BIT_DPRAMP_ENRAMP);
-	AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR);
-
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (powermode == POWER_DOWN) {
 			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_L_POW);
+		} else {
+			Tmp = HAL_READ32(audio_base, CODEC_AUDIO_CONTROL_1);
+			Tmp &= ~AUD_MASK_SEL_BB_CK_DEPOP;
+			Tmp |= AUD_SEL_BB_CK_DEPOP(1) | AUD_BIT_BB_CK_DEPOP_EN;
+			HAL_WRITE32(audio_base, CODEC_AUDIO_CONTROL_1, Tmp);
+
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_SEL;
+			AUD->AUD_ADDA_CTL &= ~(AUD_MASK_DPRAMP_CSEL);
+			AUD->AUD_ADDA_CTL |= AUD_DPRAMP_CSEL(3);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3);
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAL;
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENDPL | AUD_HPO_ML(2) | AUD_BIT_HPO_L_POW;
+			DelayUs(10);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_MDPL | AUD_BIT_HPO_OPPDPL;
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_POW;
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_ENRAMP;
+			DelayMs(500);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_MDPL | AUD_BIT_HPO_OPPDPL);
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL &= ~(AUD_BIT_DPRAMP_POW | AUD_BIT_DPRAMP_ENRAMP);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL);
+		}
+	} else if (channel == CHN_R) {
+		if (powermode == POWER_DOWN) {
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_R_POW);
+		} else {
+			Tmp = HAL_READ32(audio_base, CODEC_AUDIO_CONTROL_1);
+			Tmp &= ~AUD_MASK_SEL_BB_CK_DEPOP;
+			Tmp |= AUD_SEL_BB_CK_DEPOP(1) | AUD_BIT_BB_CK_DEPOP_EN;
+			HAL_WRITE32(audio_base, CODEC_AUDIO_CONTROL_1, Tmp);
+
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_SER;
+			AUD->AUD_ADDA_CTL &= ~(AUD_MASK_DPRAMP_CSEL);
+			AUD->AUD_ADDA_CTL |= AUD_DPRAMP_CSEL(3);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELR);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELR(3);
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAR;
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_MR);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENDPR | AUD_HPO_MR(2) | AUD_BIT_HPO_R_POW;
+			DelayUs(10);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_MDPR | AUD_BIT_HPO_OPPDPR;
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_POW;
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_ENRAMP;
+			DelayMs(500);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_MDPR | AUD_BIT_HPO_OPPDPR);
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL &= ~(AUD_BIT_DPRAMP_POW | AUD_BIT_DPRAMP_ENRAMP);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPR);
 		}
 	} else {
 		if (powermode == POWER_DOWN) {
-			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_R_POW);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_L_POW | AUD_BIT_HPO_R_POW);
+		} else {
+			Tmp = HAL_READ32(audio_base, CODEC_AUDIO_CONTROL_1);
+			Tmp &= ~AUD_MASK_SEL_BB_CK_DEPOP;
+			Tmp |= AUD_SEL_BB_CK_DEPOP(1) | AUD_BIT_BB_CK_DEPOP_EN;
+			HAL_WRITE32(audio_base, CODEC_AUDIO_CONTROL_1, Tmp);
+
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_SEL | AUD_BIT_HPO_SER;
+			AUD->AUD_ADDA_CTL &= ~(AUD_MASK_DPRAMP_CSEL);
+			AUD->AUD_ADDA_CTL |= AUD_DPRAMP_CSEL(3);
+			AUD->AUD_HPO_BIAS_CTL &= ~(AUD_MASK_HPO_CCSELL | AUD_MASK_HPO_CCSELR);
+			AUD->AUD_HPO_BIAS_CTL |= AUD_HPO_CCSELL(3) | AUD_HPO_CCSELR(3);
+			AUD->AUD_MBIAS_CTL0 &= ~AUD_MASK_MBIAS_ISEL_HPO;
+			AUD->AUD_MBIAS_CTL0 |= AUD_MBIAS_ISEL_HPO(2);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENAL | AUD_BIT_HPO_ENAR;
+			AUD->AUD_HPO_CTL &= ~(AUD_MASK_HPO_ML | AUD_MASK_HPO_MR);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR | AUD_HPO_ML(2) | AUD_HPO_MR(2) | AUD_BIT_HPO_L_POW | AUD_BIT_HPO_R_POW;
+			DelayUs(10);
+			AUD->AUD_HPO_CTL |= AUD_BIT_HPO_MDPL | AUD_BIT_HPO_MDPR	| AUD_BIT_HPO_OPPDPL | AUD_BIT_HPO_OPPDPR;
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_POW;
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL |= AUD_BIT_DPRAMP_ENRAMP;
+			DelayMs(500);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_MDPL | AUD_BIT_HPO_MDPR | AUD_BIT_HPO_OPPDPL | AUD_BIT_HPO_OPPDPR);
+			DelayUs(100);
+			AUD->AUD_ADDA_CTL &= ~(AUD_BIT_DPRAMP_POW | AUD_BIT_DPRAMP_ENRAMP);
+			AUD->AUD_HPO_CTL &= ~(AUD_BIT_HPO_ENDPL | AUD_BIT_HPO_ENDPR);
 		}
 	}
 }
-
 
 /**
   * @brief  Set Lineout single-end or differential mode.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
   * @param  mode:
   *			 This parameter can be one of the following values:
   *			   @arg SINGLE
@@ -2827,7 +3037,7 @@ void AUDIO_CODEC_SetLineOutMode(u32 channel, u32 mode)
 		AUD = AUD_SYS_BASE;
 	}
 
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (mode == DIFF) {
 			AUD->AUD_HPO_CTL &= ~AUD_BIT_HPO_SEL;
 		} else {
@@ -2846,8 +3056,8 @@ void AUDIO_CODEC_SetLineOutMode(u32 channel, u32 mode)
   * @brief  Set HPO single-end or differential mode.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
   * @param  mode:
   *			 This parameter can be one of the following values:
   *			   @arg SINGLE
@@ -2861,7 +3071,7 @@ void AUDIO_CODEC_SetHPOMode(u32 channel, u32 mode)
 		AUD = AUD_SYS_BASE;
 	}
 
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (mode == DIFF) {
 			AUD->AUD_HPO_CTL &= ~AUD_BIT_HPO_SEL;
 		} else {
@@ -2880,8 +3090,8 @@ void AUDIO_CODEC_SetHPOMode(u32 channel, u32 mode)
   * @brief  Set Line out mute control: dac in or analog in.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
   * @param  type: dac in or analog in.
   *			 This parameter can be one of the following values:
   *			   @arg DACIN
@@ -2900,7 +3110,7 @@ void AUDIO_CODEC_SetLineOutMute(u32 channel, u32 type, u32 newstate)
 		AUD = AUD_SYS_BASE;
 	}
 
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (newstate == UNMUTE) {
 			AUD->AUD_HPO_CTL &= ~AUD_MASK_HPO_ML;
 			AUD->AUD_HPO_CTL |= AUD_HPO_ML(type);
@@ -2923,8 +3133,8 @@ void AUDIO_CODEC_SetLineOutMute(u32 channel, u32 type, u32 newstate)
   * @brief  Set HPO mute control: dac in or analog in.
   * @param  channel: the value of dac path.
   *          This parameter can be one of the following values:
-  *            @arg 0: DAC_L
-  *            @arg 1: DAC_R
+  *            @arg 0: CHN_L
+  *            @arg 1: CHN_R
   * @param  type: dac in or analog in.
   *			 This parameter can be one of the following values:
   *			   @arg DACIN
@@ -2943,7 +3153,7 @@ void AUDIO_CODEC_SetHPOMute(u32 channel, u32 type, u32 newstate)
 		AUD = AUD_SYS_BASE;
 	}
 
-	if (channel == DAC_L) {
+	if (channel == CHN_L) {
 		if (newstate == UNMUTE) {
 			AUD->AUD_HPO_CTL &= ~AUD_MASK_HPO_ML;
 			AUD->AUD_HPO_CTL |= AUD_HPO_ML(type);
@@ -3496,6 +3706,9 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 		AUDIO_CODEC_EnableADC(ADCHN1, ENABLE);
 		AUDIO_CODEC_EnableADC(ADCHN2, ENABLE);
+
+		AUDIO_CODEC_EnableADCFifo(ADCHN1, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN2, ENABLE);
 		AUDIO_CODEC_SetADCVolume(ADC1, 0X2F);
 		AUDIO_CODEC_SetADCVolume(ADC2, 0X2F);
 		AUDIO_CODEC_SetADCHPF(ADC1, 3, ENABLE);
@@ -3508,6 +3721,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 		AUDIO_CODEC_EnableADC(ADCHN3, ENABLE);
 		AUDIO_CODEC_EnableADC(ADCHN4, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN3, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN4, ENABLE);
 		AUDIO_CODEC_SetADCVolume(ADC3, 0X2F);
 		AUDIO_CODEC_SetADCVolume(ADC4, 0X2F);
 		AUDIO_CODEC_SetADCHPF(ADC3, 3, ENABLE);
@@ -3520,6 +3735,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 		AUDIO_CODEC_EnableADC(ADCHN5, ENABLE);
 		AUDIO_CODEC_EnableADC(ADCHN6, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN5, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN6, ENABLE);
 		AUDIO_CODEC_SetADCVolume(ADC5, 0X2F);
 		AUDIO_CODEC_SetADCVolume(ADC6, 0X2F);
 		AUDIO_CODEC_SetADCHPF(ADC5, 3, ENABLE);
@@ -3532,6 +3749,8 @@ void AUDIO_CODEC_Record(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct)
 
 		AUDIO_CODEC_EnableADC(ADCHN7, ENABLE);
 		AUDIO_CODEC_EnableADC(ADCHN8, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN7, ENABLE);
+		AUDIO_CODEC_EnableADCFifo(ADCHN8, ENABLE);
 		AUDIO_CODEC_SetADCVolume(ADC7, 0X2F);
 		AUDIO_CODEC_SetADCVolume(ADC8, 0X2F);
 		AUDIO_CODEC_SetADCHPF(ADC7, 3, ENABLE);
@@ -3705,6 +3924,7 @@ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct
 	AUDIO_CODEC_SetANAClk(ENABLE);
 	AUDIO_CODEC_EnableDAC(DAC_L, ENABLE);
 	AUDIO_CODEC_EnableDAC(DAC_R, ENABLE);
+	AUDIO_CODEC_EnableDACFifo(ENABLE);
 	AUDIO_CODEC_SetDACMute(DAC_L, UNMUTE);
 	AUDIO_CODEC_SetDACMute(DAC_R, UNMUTE);
 	AUDIO_CODEC_SetDACVolume(DAC_L, 0XAF);
@@ -3723,12 +3943,11 @@ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct
 		AUDIO_CODEC_DisPAD(PAD_DACR);
 		AUDIO_CODEC_SetDACPowerMode(DAC_L, POWER_ON);
 		AUDIO_CODEC_SetDACPowerMode(DAC_R, POWER_ON);
-		AUDIO_CODEC_SetLineOutPowerMode(DAC_L, POWER_ON);
-		AUDIO_CODEC_SetLineOutPowerMode(DAC_R, POWER_ON);
-		AUDIO_CODEC_SetLineOutMode(DAC_L, DIFF);
-		AUDIO_CODEC_SetLineOutMode(DAC_R, DIFF);
-		AUDIO_CODEC_SetLineOutMute(DAC_L, DACIN, UNMUTE);
-		AUDIO_CODEC_SetLineOutMute(DAC_R, DACIN, UNMUTE);
+		AUDIO_CODEC_SetLineOutPowerMode(CHN_LR, POWER_ON);
+		AUDIO_CODEC_SetLineOutMode(CHN_L, DIFF);
+		AUDIO_CODEC_SetLineOutMode(CHN_R, DIFF);
+		AUDIO_CODEC_SetLineOutMute(CHN_L, DACIN, UNMUTE);
+		AUDIO_CODEC_SetLineOutMute(CHN_R, DACIN, UNMUTE);
 	}
 
 	if (type == APP_HPO_OUT) {
@@ -3738,12 +3957,11 @@ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct
 		AUDIO_CODEC_DisPAD(PAD_DACR);
 		AUDIO_CODEC_SetDACPowerMode(DAC_L, POWER_ON);
 		AUDIO_CODEC_SetDACPowerMode(DAC_R, POWER_ON);
-		AUDIO_CODEC_SetHPOPowerMode(DAC_L, POWER_ON);
-		AUDIO_CODEC_SetHPOPowerMode(DAC_R, POWER_ON);
-		AUDIO_CODEC_SetHPOMode(DAC_L, SINGLE);
-		AUDIO_CODEC_SetHPOMode(DAC_R, SINGLE);
-		AUDIO_CODEC_SetHPOMute(DAC_L, DACIN, UNMUTE);
-		AUDIO_CODEC_SetHPOMute(DAC_R, DACIN, UNMUTE);
+		AUDIO_CODEC_SetHPOPowerMode(CHN_LR, POWER_ON);
+		AUDIO_CODEC_SetHPOMode(CHN_L, SINGLE);
+		AUDIO_CODEC_SetHPOMode(CHN_R, SINGLE);
+		AUDIO_CODEC_SetHPOMute(CHN_L, DACIN, UNMUTE);
+		AUDIO_CODEC_SetHPOMute(CHN_R, DACIN, UNMUTE);
 	}
 
 	if (type == APP_PDM_OUT) {
@@ -3757,4 +3975,5 @@ void AUDIO_CODEC_Playback(u32 i2s_sel, u32 type, I2S_InitTypeDef *I2S_InitStruct
 		AUDIO_CODEC_SetTesttone(3, ENABLE);
 	}
 }
+
 

@@ -35,7 +35,8 @@ extern "C" {
 void ameba_audio_set_native_time(void);
 int64_t ameba_audio_get_now_ns(void);
 uint32_t ameba_audio_get_channel(uint32_t channel_count);
-uint32_t ameba_audio_get_tdm(uint32_t channel_count);
+uint32_t ameba_audio_get_sp_tdm(uint32_t channel_count);
+uint32_t ameba_audio_get_codec_tdm(uint32_t channel_count);
 uint32_t ameba_audio_get_fifo_num(uint32_t channel_count);
 uint32_t ameba_audio_stream_get_mic_idx(uint32_t mic_category);
 uint32_t ameba_audio_stream_get_adc_idx(uint32_t index);
@@ -46,6 +47,7 @@ int ameba_audio_get_codec_format(AudioHwFormat format, uint32_t direction);
 int ameba_audio_get_codec_rate(uint32_t rate);
 AUDIO_SPORT_TypeDef *ameba_audio_get_sport_addr(uint32_t index);
 uint32_t ameba_audio_get_i2s_pin_func(uint32_t index);
+uint32_t ameba_audio_get_sport_irq(uint32_t index);
 
 void ameba_audio_dump_gdma_regs(u8 GDMA_ChNum);
 void ameba_audio_dump_sport_regs(uint32_t SPORTx);

@@ -267,6 +267,22 @@ rt_status_t RTAudioRecord_SetParameters(struct RTAudioRecord *audio_record, cons
  */
 rt_status_t    RTAudioRecord_GetTimestamp(struct RTAudioRecord *audio_record, RTAudioTimestamp *tstamp);
 
+/**
+ * @brief Get present recording PTS of record.
+ *
+ * @param audio_record is the pointer of struct RTAudioRecord.
+ * @param now_ns the system time, or tsf time.
+ * @param audio_ns the audio recording time.
+ * @return Returns a value listed below: \n
+ * rt_status_t | Description
+ * ----------------------| -----------------------
+ * OSAL_OK | the operation is successful.
+ * OSAL_ERR_INVALID_OPERATION | param not supported.
+ * @since 1.0
+ * @version 1.0
+ */
+rt_status_t RTAudioRecord_GetPresentTime(struct RTAudioRecord *audio_record, int64_t *now_ns, int64_t *audio_ns);
+
 #ifdef __cplusplus
 }
 #endif

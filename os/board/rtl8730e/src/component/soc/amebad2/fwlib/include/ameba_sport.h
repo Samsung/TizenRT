@@ -1017,6 +1017,66 @@ typedef struct {
   * @}
   */
 
+/** @defgroup AUDIO_SPORT_TXChannel
+* @{
+*/
+#define TXCHN0		((u32)0x00000000)
+#define TXCHN1		((u32)0x00000001)
+#define TXCHN2		((u32)0x00000002)
+#define TXCHN3		((u32)0x00000003)
+#define TXCHN4		((u32)0x00000004)
+#define TXCHN5		((u32)0x00000005)
+#define TXCHN6		((u32)0x00000006)
+#define TXCHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_TXFIFOChannel
+* @{
+*/
+#define TX_FIFO0_REG0_L		((u32)0x00000000)
+#define TX_FIFO0_REG0_R		((u32)0x00000001)
+#define TX_FIFO0_REG1_L		((u32)0x00000002)
+#define TX_FIFO0_REG1_R		((u32)0x00000003)
+#define TX_FIFO1_REG0_L		((u32)0x00000004)
+#define TX_FIFO1_REG0_R		((u32)0x00000005)
+#define TX_FIFO1_REG1_L		((u32)0x00000006)
+#define TX_FIFO1_REG1_R		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_RXChannel
+* @{
+*/
+#define RXCHN0		((u32)0x00000000)
+#define RXCHN1		((u32)0x00000001)
+#define RXCHN2		((u32)0x00000002)
+#define RXCHN3		((u32)0x00000003)
+#define RXCHN4		((u32)0x00000004)
+#define RXCHN5		((u32)0x00000005)
+#define RXCHN6		((u32)0x00000006)
+#define RXCHN7		((u32)0x00000007)
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_RXFIFOChannel
+* @{
+*/
+#define RX_FIFO0_REG0_L		((u32)0x00000000)
+#define RX_FIFO0_REG0_R		((u32)0x00000001)
+#define RX_FIFO0_REG1_L		((u32)0x00000002)
+#define RX_FIFO0_REG1_R		((u32)0x00000003)
+#define RX_FIFO1_REG0_L		((u32)0x00000004)
+#define RX_FIFO1_REG0_R		((u32)0x00000005)
+#define RX_FIFO1_REG1_L		((u32)0x00000006)
+#define RX_FIFO1_REG1_R		((u32)0x00000007)
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -1029,14 +1089,14 @@ typedef struct {
 _LONG_CALL_ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct);
 _LONG_CALL_ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
 _LONG_CALL_ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
-_LONG_CALL_ void AUDIO_SP_TXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
-_LONG_CALL_ void AUDIO_SP_RXStart(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
-_LONG_CALL_ void AUDIO_SP_DmaCmd(AUDIO_SPORT_TypeDef *SPORTx, u32 NewState);
-_LONG_CALL_ void AUDIO_SP_SetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_Tx_WordLen);
-_LONG_CALL_ void AUDIO_SP_SetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_Rx_WordLen);
-_LONG_CALL_ u32 AUDIO_SP_GetTXWordLen(AUDIO_SPORT_TypeDef *SPORTx);
-_LONG_CALL_ u32 AUDIO_SP_GetRXWordLen(AUDIO_SPORT_TypeDef *SPORTx);
-_LONG_CALL_ void AUDIO_SP_SetMonoStereo(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MonoStereo);
+_LONG_CALL_ void AUDIO_SP_TXStart(u32 index, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_RXStart(u32 index, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_DmaCmd(u32 index, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_SetTXWordLen(u32 index, u32 SP_Tx_WordLen);
+_LONG_CALL_ void AUDIO_SP_SetRXWordLen(u32 index, u32 SP_Rx_WordLen);
+_LONG_CALL_ u32 AUDIO_SP_GetTXWordLen(u32 index);
+_LONG_CALL_ u32 AUDIO_SP_GetRXWordLen(u32 index);
+_LONG_CALL_ void AUDIO_SP_SetMonoStereo(u32 index, u32 SP_MonoStereo);
 _LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length);
 _LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
@@ -1046,10 +1106,10 @@ _LONG_CALL_ BOOL AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDe
 _LONG_CALL_ BOOL AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
 _LONG_CALL_ void AUDIO_SP_Deinit(u32 index, u32 direction);
-_LONG_CALL_ void AUDIO_SP_Reset(AUDIO_SPORT_TypeDef *SPORTx);
+_LONG_CALL_ void AUDIO_SP_Reset(u32 index);
 _LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum, u32 TX_addr,	u32 TX_length);
 _LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
-_LONG_CALL_ void AUDIO_SP_SetMasterSlave(AUDIO_SPORT_TypeDef *SPORTx, u32 SP_MasterSlave);
+_LONG_CALL_ void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave);
 _LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val);
 _LONG_CALL_ void AUDIO_SP_ClearTXCounterIrq(u32 index);
@@ -1058,7 +1118,17 @@ _LONG_CALL_ void AUDIO_SP_SetRXCounter(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_SetRXCounterCompVal(u32 index, u32 comp_val);
 _LONG_CALL_ void AUDIO_SP_ClearRXCounterIrq(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXCounterVal(u32 index);
-_LONG_CALL_ void AUDIO_SP_SetSelfLPBK(AUDIO_SPORT_TypeDef *SPORTx);
+_LONG_CALL_ void AUDIO_SP_SetSelfLPBK(u32 index);
+_LONG_CALL_ void AUDIO_SP_TXSetFifo(u32 index, u32 fifo_num, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_RXSetFifo(u32 index, u32 fifo_num, u32 NewState);
+_LONG_CALL_ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir);
+_LONG_CALL_ void AUDIO_SP_SetPhaseLatch(u32 index);
+_LONG_CALL_ u32 AUDIO_SP_GetTXPhaseVal(u32 index);
+_LONG_CALL_ u32 AUDIO_SP_GetRXPhaseVal(u32 index);
+_LONG_CALL_ void AUDIO_SP_TXCHNSrcSel(u32 index, u32 tx_chn, u32 fifo_chn);
+_LONG_CALL_ void AUDIO_SP_RXFIFOSrcSel(u32 index, u32 fifo_chn, u32 rx_chn);
+
+
 
 /**
   * @}

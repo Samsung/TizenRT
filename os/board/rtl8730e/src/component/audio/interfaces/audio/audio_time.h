@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct RTAudioTimestamp {
 	uint64_t        position;
 	OsalTimespec    time;
 } RTAudioTimestamp;

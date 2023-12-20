@@ -47,7 +47,7 @@ int32_t ameba_audio_ctl_set_amp_pin(StreamControl *control, uint32_t pin);
 int32_t ameba_audio_ctl_get_amp_pin(StreamControl *control);
 int32_t ameba_audio_ctl_set_amp_state(StreamControl *control, bool state);
 bool ameba_audio_ctl_get_amp_state(StreamControl *control);
-int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted);
+int32_t ameba_audio_ctl_set_tx_mute(StreamControl *control, bool muted, bool should_zdet, bool user_set);
 bool ameba_audio_ctl_get_tx_mute(StreamControl *control);
 int32_t ameba_audio_ctl_set_device_category(StreamControl *control, uint32_t device_category);
 int32_t ameba_audio_ctl_get_device_category(StreamControl *control);
@@ -62,7 +62,7 @@ int32_t ameba_audio_ctl_set_mic_bst_gain(StreamControl *control, uint32_t mic_ca
 int32_t ameba_audio_ctl_get_mic_bst_gain(StreamControl *control, uint32_t mic_category);
 int32_t ameba_audio_ctl_set_mic_usage(StreamControl *control, uint32_t mic_usage);
 int32_t ameba_audio_ctl_get_mic_usage(StreamControl *control);
-int32_t ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, uint32_t ppm, uint32_t action);
+float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, float ppm, uint32_t action);
 
 #ifdef __cplusplus
 }
