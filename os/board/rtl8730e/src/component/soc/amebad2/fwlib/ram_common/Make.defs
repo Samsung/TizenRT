@@ -76,9 +76,9 @@ CSRCS += ameba_i2c.c \
 	ameba_aontimer.c \
 	ameba_wakepin.c \
 	ameba_otp.c \
-	ameba_ftl.c \
 	ameba_codec.c \
-	ameba_pll.c 
+	ameba_pll.c
+	#ameba_ftl.c \
 	#ameba_mpu_ram.c \
 	#ameba_pmc_com.c \
 	#ameba_prs.c \
