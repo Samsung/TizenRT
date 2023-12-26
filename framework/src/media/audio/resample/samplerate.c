@@ -325,7 +325,7 @@ static int init_src_context(src_context_t *src, src_data_t *src_data)
 	src->new_sample_width = src_data->desired_sample_width;
 	src->old_sample_rate = src_data->origin_sample_rate;
 	src->new_sample_rate = src_data->desired_sample_rate;
-	src->in_buffer_frames = src->in_buffer_bytes / OLD_FRAMES_TO_BYTES(src, 1);
+	src->in_buffer_frames = src->in_buffer_bytes / NEW_FRAMES_TO_BYTES(src, 1);
 	src->left_frames = 0;
 	src->used_frames = 0;
 	src->fp_frac = 0;
