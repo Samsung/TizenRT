@@ -12,9 +12,9 @@ Program Header:
          filesz 0x00000020 memsz 0x00000020 flags r-x
     LOAD off    0x00020020 vaddr 0x70180020 paddr 0x70180020 align 2**16
          filesz 0x00003660 memsz 0x00003660 flags r-x
-    LOAD off    0x00030000 vaddr 0x701a0000 paddr 0x70183680 align 2**16
+    LOAD off    0x0002c000 vaddr 0x7019c000 paddr 0x70183680 align 2**16
          filesz 0x00000089 memsz 0x00000089 flags rw-
-    LOAD off    0x00000089 vaddr 0x701a0089 paddr 0x701a0089 align 2**16
+    LOAD off    0x0000c089 vaddr 0x7019c089 paddr 0x7019c089 align 2**16
          filesz 0x00000000 memsz 0x0000bf77 flags rw-
 private flags = 5000400: [Version5 EABI] [hard-float ABI]
 
@@ -28,46 +28,46 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   3 .rodata       00000680  70183000  70183000  00023000  2**3
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  4 .data         00000089  701a0000  70183680  00030000  2**4
+  4 .data         00000089  7019c000  70183680  0002c000  2**4
                   CONTENTS, ALLOC, LOAD, DATA
-  5 stacks        00001037  701a0089  701a0089  00030089  2**6
+  5 stacks        00001037  7019c089  7019c089  0002c089  2**6
                   ALLOC
-  6 .bss          00000420  701a10c0  701a10c0  00030089  2**5
+  6 .bss          00000420  7019d0c0  7019d0c0  0002c089  2**5
                   ALLOC
-  7 xlat_table    0000a000  701a2000  701a2000  00030089  2**12
+  7 xlat_table    0000a000  7019e000  7019e000  0002c089  2**12
                   ALLOC
-  8 coherent_ram  00000000  701ac000  701ac000  00031000  2**12
+  8 coherent_ram  00000000  701a8000  701a8000  0002d000  2**12
                   CONTENTS
-  9 .debug_info   0000bfbb  00000000  00000000  00031000  2**0
+  9 .debug_info   0000bfbb  00000000  00000000  0002d000  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 10 .debug_abbrev 00003739  00000000  00000000  0003cfbb  2**0
+ 10 .debug_abbrev 00003739  00000000  00000000  00038fbb  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 11 .debug_loc    00007959  00000000  00000000  000406f4  2**0
+ 11 .debug_loc    00007959  00000000  00000000  0003c6f4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_aranges 00000c10  00000000  00000000  00048050  2**3
+ 12 .debug_aranges 00000c10  00000000  00000000  00044050  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_ranges 00001018  00000000  00000000  00048c60  2**3
+ 13 .debug_ranges 00001018  00000000  00000000  00044c60  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_line   0000656b  00000000  00000000  00049c78  2**0
+ 14 .debug_line   0000656b  00000000  00000000  00045c78  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_str    00002847  00000000  00000000  000501e3  2**0
+ 15 .debug_str    0000283f  00000000  00000000  0004c1e3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .comment      0000002d  00000000  00000000  00052a2a  2**0
+ 16 .comment      0000002d  00000000  00000000  0004ea22  2**0
                   CONTENTS, READONLY
- 17 .ARM.attributes 00000035  00000000  00000000  00052a57  2**0
+ 17 .ARM.attributes 00000035  00000000  00000000  0004ea4f  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  000018a4  00000000  00000000  00052a8c  2**2
+ 18 .debug_frame  000018a4  00000000  00000000  0004ea84  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 00000000 l    d  .boot_rom	00000000 .boot_rom
 2001fe00 l    d  .boot_sram	00000000 .boot_sram
 70180020 l    d  .text	00000000 .text
 70183000 l    d  .rodata	00000000 .rodata
-701a0000 l    d  .data	00000000 .data
-701a0089 l    d  stacks	00000000 stacks
-701a10c0 l    d  .bss	00000000 .bss
-701a2000 l    d  xlat_table	00000000 xlat_table
-701ac000 l    d  coherent_ram	00000000 coherent_ram
+7019c000 l    d  .data	00000000 .data
+7019c089 l    d  stacks	00000000 stacks
+7019d0c0 l    d  .bss	00000000 .bss
+7019e000 l    d  xlat_table	00000000 xlat_table
+701a8000 l    d  coherent_ram	00000000 coherent_ram
 00000000 l    d  .debug_info	00000000 .debug_info
 00000000 l    d  .debug_abbrev	00000000 .debug_abbrev
 00000000 l    d  .debug_loc	00000000 .debug_loc
@@ -100,10 +100,10 @@ SYMBOL TABLE:
 70181ec4 l     F .text	0000001a is_valid_dev
 70181ede l     F .text	00000012 is_valid_entity
 701803bc l     F .text	00000038 free_entity.isra.0
-701a1418 l     O .bss	00000004 dev_count
-701a141c l     O .bss	00000004 entity_count
-701a1420 l     O .bss	00000010 entity_map
-701a1430 l     O .bss	00000020 entity_pool
+7019d418 l     O .bss	00000004 dev_count
+7019d41c l     O .bss	00000004 entity_count
+7019d420 l     O .bss	00000010 entity_map
+7019d430 l     O .bss	00000020 entity_pool
 00000000 l    df *ABS*	00000000 io_fip.c
 70182028 l     F .text	00000004 device_type_fip
 7018202c l     F .text	00000016 fip_file_len
@@ -113,12 +113,12 @@ SYMBOL TABLE:
 701805ac l     F .text	00000040 fip_dev_open
 701805ec l     F .text	000000ac fip_file_open
 70180698 l     F .text	00000048 fip_dev_close
-701a1450 l     O .bss	00000004 backend_dev_handle
-701a1454 l     O .bss	00000004 backend_image_spec
-701a10c0 l     O .bss	00000030 current_file
-701a1458 l     O .bss	00000008 dev_info_pool
-701a1460 l     O .bss	00000004 fip_dev_count
-701a1464 l     O .bss	00000008 state_pool
+7019d450 l     O .bss	00000004 backend_dev_handle
+7019d454 l     O .bss	00000004 backend_image_spec
+7019d0c0 l     O .bss	00000030 current_file
+7019d458 l     O .bss	00000008 dev_info_pool
+7019d460 l     O .bss	00000004 fip_dev_count
+7019d464 l     O .bss	00000008 state_pool
 701830c0 l     O .rodata	00000004 fip_dev_connector
 701830c4 l     O .rodata	00000024 fip_dev_funcs
 70183300 l     O .rodata	00000010 uuid_null
@@ -132,19 +132,19 @@ SYMBOL TABLE:
 7018074c l     F .text	0000001c memmap_block_close
 7018208c l     F .text	00000050 memmap_block_write
 701820dc l     F .text	00000054 memmap_block_read
-701a10f0 l     O .bss	00000018 current_file
+7019d0f0 l     O .bss	00000018 current_file
 701830e8 l     O .rodata	00000004 memmap_dev_connector
 701830ec l     O .rodata	00000024 memmap_dev_funcs
 70183110 l     O .rodata	00000008 memmap_dev_info
 00000000 l    df *ABS*	00000000 sheipa_io_storage.c
 70180788 l     F .text	00000030 open_fip
 701807b8 l     F .text	00000030 open_memmap
-701a146c l     O .bss	00000004 fip_dev_con
-701a1470 l     O .bss	00000004 fip_dev_handle
-701a1474 l     O .bss	00000004 memmap_dev_con
-701a1478 l     O .bss	00000004 memmap_dev_handle
-701a147c l     O .bss	00000004 sh_dev_con
-701a1480 l     O .bss	00000004 sh_dev_handle
+7019d46c l     O .bss	00000004 fip_dev_con
+7019d470 l     O .bss	00000004 fip_dev_handle
+7019d474 l     O .bss	00000004 memmap_dev_con
+7019d478 l     O .bss	00000004 memmap_dev_handle
+7019d47c l     O .bss	00000004 sh_dev_con
+7019d480 l     O .bss	00000004 sh_dev_handle
 70183353 l     O .rodata	00000010 bl2_uuid_spec
 70183363 l     O .rodata	00000010 bl31_uuid_spec
 70183373 l     O .rodata	00000010 bl32_extra1_uuid_spec
@@ -155,31 +155,31 @@ SYMBOL TABLE:
 70183120 l     O .rodata	00000114 policies
 70183234 l     O .rodata	000000b8 sh_file_spec
 00000000 l    df *ABS*	00000000 sheipa_bl1_setup.c
-701a1484 l     O .bss	00000008 bl1_tzram_layout
+7019d484 l     O .bss	00000008 bl1_tzram_layout
 00000000 l    df *ABS*	00000000 bl1_main.c
 00000000 l    df *ABS*	00000000 bl1_context_mgmt.c
-701a1108 l     O .bss	00000040 bl1_cpu_context
-701a148c l     O .bss	00000004 bl1_next_cpu_context_ptr
-701a1490 l     O .bss	00000004 bl1_next_smc_context_ptr
-701a1148 l     O .bss	00000120 bl1_smc_context
+7019d108 l     O .bss	00000040 bl1_cpu_context
+7019d48c l     O .bss	00000004 bl1_next_cpu_context_ptr
+7019d490 l     O .bss	00000004 bl1_next_smc_context_ptr
+7019d148 l     O .bss	00000120 bl1_smc_context
 00000000 l    df *ABS*	00000000 plat_bl1_common.c
-701a0040 l     O .data	00000044 bl2_img_desc.0
+7019c040 l     O .data	00000044 bl2_img_desc.0
 00000000 l    df *ABS*	00000000 context_mgmt.c
 00000000 l    df *ABS*	00000000 tf_log.c
-701a0084 l     O .data	00000004 max_log_level
+7019c084 l     O .data	00000004 max_log_level
 00000000 l    df *ABS*	00000000 multi_console.c
 00000000 l    df *ABS*	00000000 plat_log_common.c
 701832ec l     O .rodata	00000014 plat_prefix_str
 00000000 l    df *ABS*	00000000 sheipa_common.c
 70183000 l     O .rodata	00000090 plat_sheipa_mmap
 00000000 l    df *ABS*	00000000 sheipa_console_setup.c
-701a1498 l     O .bss	0000001c console
+7019d498 l     O .bss	0000001c console
 00000000 l    df *ABS*	00000000 xlat_tables_arch.c
 00000000 l    df *ABS*	00000000 xlat_tables_context.c
-701a1280 l     O .bss	00000198 tf_mmap
-701a0000 l     O .data	00000040 tf_xlat_ctx
-701a2000 l     O xlat_table	0000a000 tf_xlat_tables
-701a14c0 l     O .bss	00000020 tf_base_xlat_table
+7019d280 l     O .bss	00000198 tf_mmap
+7019c000 l     O .data	00000040 tf_xlat_ctx
+7019e000 l     O xlat_table	0000a000 tf_xlat_tables
+7019d4c0 l     O .bss	00000020 tf_base_xlat_table
 00000000 l    df *ABS*	00000000 xlat_tables_core.c
 70182556 l     F .text	0000001a xlat_clean_dcache_range
 7018261e l     F .text	0000016a xlat_tables_map_region
@@ -237,7 +237,7 @@ SYMBOL TABLE:
 70181460 l       .text	00000000 skip_mmu_on
 70181498 l       .text	00000000 skip_mmu_off
 00000000 l    df *ABS*	00000000 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl1/platform_up_stack.o
-701a00c0 l       stacks	00000000 platform_normal_stacks
+7019c0c0 l       stacks	00000000 platform_normal_stacks
 00000006 l       *ABS*	00000000 TZ_COUNT
 00000000 l    df *ABS*	00000000 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl1/cpu_helpers.o
 00000004 l       *ABS*	00000000 CPU_MIDR_SIZE
@@ -318,9 +318,9 @@ SYMBOL TABLE:
 70180c20 g     F .text	000000b0 cm_prepare_el3_exit
 701822f4 g     F .text	00000014 console_set_scope
 70181330 g     F .text	00000068 bl1_aarch32_smc_handler
-701a14c0 g       .bss	00000000 __PMF_TIMESTAMP_START__
+7019d4c0 g       .bss	00000000 __PMF_TIMESTAMP_START__
 70180d48 g     F .text	00000038 console_register
-701ac000 g       coherent_ram	00000000 __COHERENT_RAM_END__
+701a8000 g       coherent_ram	00000000 __COHERENT_RAM_END__
 70181544 g     F .text	00000034 reset_handler
 7018178c g     F .text	00000064 zeromem
 70182220  w    F .text	00000002 bl1_plat_set_ep_info
@@ -329,7 +329,7 @@ SYMBOL TABLE:
 70180a88 g     F .text	00000018 cm_get_context
 70181b9c g     F .text	0000002c console_core_getc
 701807e8 g     F .text	0000006c plat_sheipa_io_setup
-701a1268 g     O .bss	00000018 mmu_cfg_params
+7019d268 g     O .bss	00000018 mmu_cfg_params
 701827a2 g     F .text	00000002 xlat_tables_print
 70180a7c g     F .text	0000000c smc_get_next_ctx
 70181648 g     F .text	0000006c asm_assert
@@ -346,7 +346,7 @@ SYMBOL TABLE:
 70180fa0 g     F .text	00000030 init_xlat_tables
 701817f0 g     F .text	0000004c memcpy4
 701824d6 g     F .text	0000001e xlat_arch_regime_get_xn_desc
-701ac000 g       xlat_table	00000000 __BL1_RAM_END__
+701a8000 g       xlat_table	00000000 __BL1_RAM_END__
 701827ca g     F .text	00000016 memcpy
 7018178c g     F .text	00000064 zero_normalmem
 70180e3c g     F .text	00000070 sheipa_configure_mmu_svc_mon
@@ -358,12 +358,12 @@ SYMBOL TABLE:
 70180f94 g     F .text	0000000c mmap_add
 70181a9c g     F .text	00000014 plat_panic_handler
 70183658 g       .rodata	00000000 __RT_SVC_DESCS_START__
-701a10c0 g       stacks	00000000 __STACKS_END__
+7019d0c0 g       stacks	00000000 __STACKS_END__
 70182330 g     F .text	0000017c __udivmoddi4
 70181750 g     F .text	0000003c clean_dcache_range
 00000089 g       *ABS*	00000000 __DATA_SIZE__
 70181f9c g     F .text	0000002a io_size
-701a0000 g       .data	00000000 __BL1_RAM_START__
+7019c000 g       .data	00000000 __BL1_RAM_START__
 70181ef0 g     F .text	0000001e io_dev_open
 70181958 g     F .text	00000048 plat_report_data_abort
 70181534  w    F .text	0000000c plat_set_my_stack
@@ -397,20 +397,20 @@ SYMBOL TABLE:
 7018367c g       .rodata	00000000 __RODATA_END__
 701824f4 g     F .text	00000032 xlat_arch_current_el
 70182226  w    F .text	00000024 bl1_plat_handle_post_image_load
-701a0089 g       .data	00000000 __DATA_RAM_END__
+7019c089 g       .data	00000000 __DATA_RAM_END__
 70180bb4 g     F .text	0000006c cm_setup_context
 701821d0 g     F .text	00000012 semihosting_file_length
-701a14c0 g       .bss	00000000 __PMF_PERCPU_TIMESTAMP_END__
+7019d4c0 g       .bss	00000000 __PMF_PERCPU_TIMESTAMP_END__
 70183000 g       .rodata	00000000 __RODATA_START__
 70183658 g       .rodata	00000000 __CPU_OPS_START__
 701828c0 g       .text	00000000 bl1_vector_table
-701a0088 g     O .data	00000001 console_state
+7019c088 g     O .data	00000001 console_state
 70180a5c g     F .text	00000020 smc_set_next_ctx
 701827ae g     F .text	0000001c memcmp
 70182570 g     F .text	000000ae xlat_desc
 701819c0 g     F .text	0000001c plat_is_my_cpu_primary
 70180aa0 g     F .text	00000014 cm_set_next_context
-701a14e0 g       .bss	00000000 __BSS_END__
+7019d4e0 g       .bss	00000000 __BSS_END__
 7018367c g       .rodata	00000000 __CPU_OPS_END__
 70181a18 g     F .text	0000004c plat_get_my_entrypoint
 70180eac g     F .text	0000002c sheipa_console_init
@@ -420,7 +420,7 @@ SYMBOL TABLE:
 70182310 g     F .text	00000020 __ctzdi2
 70180904 g     F .text	0000004c bl1_plat_arch_setup
 7018185c g     F .text	00000008 disable_mmu_icache_secure
-701ac000 g       coherent_ram	00000000 __COHERENT_RAM_START__
+701a8000 g       coherent_ram	00000000 __COHERENT_RAM_START__
 7018367c g       .rodata	00000000 __GOT_END__
 70183658 g       .rodata	00000000 __PARSER_LIB_DESCS_END__
 701821f8 g     F .text	00000022 bl1_smc_wrapper
@@ -445,8 +445,8 @@ SYMBOL TABLE:
 701815c0 g     F .text	00000018 print_errata_status
 701821be g     F .text	00000012 semihosting_file_close
 701821e6 g     F .text	0000000e bl1_setup
-701a10c0 g       .bss	00000000 __BSS_START__
-701a0000 g       .data	00000000 __DATA_RAM_START__
+7019d0c0 g       .bss	00000000 __BSS_START__
+7019c000 g       .data	00000000 __DATA_RAM_START__
 70181004 g     F .text	000001e4 mmap_add_region_ctx
 7018230c  w    F .text	00000004 plat_try_next_boot_source
 70183658 g       .rodata	00000000 __PMF_SVC_DESCS_START__
@@ -459,12 +459,12 @@ SYMBOL TABLE:
 701803f4 g     F .text	00000024 io_register_device
 70183658 g       .rodata	00000000 __FCONF_POPULATOR_START__
 701819b0 g     F .text	00000010 plat_sheipa_calc_core_pos
-701ac000 g       coherent_ram	00000000 __COHERENT_RAM_END_UNALIGNED__
+701a8000 g       coherent_ram	00000000 __COHERENT_RAM_END_UNALIGNED__
 70181900 g     F .text	00000048 plat_report_prefetch_abort
-701a0089 g       stacks	00000000 __STACKS_START__
+7019c089 g       stacks	00000000 __STACKS_START__
 70180a1c g     F .text	00000040 bl1_smc_handler
 70182222  w    F .text	00000004 bl1_plat_handle_pre_image_load
-701a14c0 g       .bss	00000000 __PMF_TIMESTAMP_END__
+7019d4c0 g       .bss	00000000 __PMF_TIMESTAMP_END__
 701811e8 g     F .text	00000108 init_xlat_tables_ctx
 70181894 g     F .text	00000008 plat_my_core_pos
 70180768 g     F .text	00000020 register_io_dev_memmap
@@ -476,7 +476,7 @@ SYMBOL TABLE:
 701827a0 g     F .text	00000002 xlat_mmap_print
 701806e0 g     F .text	00000020 register_io_dev_fip
 70181bd4 g     F .text	00000074 enable_mmu_direct_svc_mon
-701a1494 g     O .bss	00000004 console_list
+7019d494 g     O .bss	00000004 console_list
 70180020 g     F .text	00000334 bl1_entrypoint
 70180f6c g     F .text	00000028 mmap_add_region
 70180020 g       .text	00000000 __TEXT_START__
@@ -727,11 +727,11 @@ Disassembly of section .text:
 70180360:	00001002 	.word	0x00001002
 70180364:	40000700 	.word	0x40000700
 70180368:	00808000 	.word	0x00808000
-7018036c:	701a10c0 	.word	0x701a10c0
+7018036c:	7019d0c0 	.word	0x7019d0c0
 70180370:	00000420 	.word	0x00000420
-70180374:	701ac000 	.word	0x701ac000
+70180374:	701a8000 	.word	0x701a8000
 70180378:	00000000 	.word	0x00000000
-7018037c:	701a0000 	.word	0x701a0000
+7018037c:	7019c000 	.word	0x7019c000
 70180380:	70183680 	.word	0x70183680
 70180384:	00000089 	.word	0x00000089
 
@@ -781,8 +781,8 @@ Disassembly of section .text:
 701803e6:	6013      	str	r3, [r2, #0]
 701803e8:	e7f6      	b.n	701803d8 <free_entity.isra.0+0x1c>
 701803ea:	bf00      	nop
-701803ec:	701a1420 	.word	0x701a1420
-701803f0:	701a141c 	.word	0x701a141c
+701803ec:	7019d420 	.word	0x7019d420
+701803f0:	7019d41c 	.word	0x7019d41c
 
 701803f4 <io_register_device>:
 701803f4:	b508      	push	{r3, lr}
@@ -799,7 +799,7 @@ Disassembly of section .text:
 7018040c:	f06f 000b 	mvn.w	r0, #11
 70180410:	e7fb      	b.n	7018040a <io_register_device+0x16>
 70180412:	bf00      	nop
-70180414:	701a1418 	.word	0x701a1418
+70180414:	7019d418 	.word	0x7019d418
 
 70180418 <io_open>:
 70180418:	e92d 43f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, lr}
@@ -850,9 +850,9 @@ Disassembly of section .text:
 70180486:	f8c8 7000 	str.w	r7, [r8]
 7018048a:	4628      	mov	r0, r5
 7018048c:	e8bd 83f8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, pc}
-70180490:	701a141c 	.word	0x701a141c
-70180494:	701a1420 	.word	0x701a1420
-70180498:	701a1430 	.word	0x701a1430
+70180490:	7019d41c 	.word	0x7019d41c
+70180494:	7019d420 	.word	0x7019d420
+70180498:	7019d430 	.word	0x7019d430
 
 7018049c <fip_file_close>:
 7018049c:	b510      	push	{r4, lr}
@@ -867,7 +867,7 @@ Disassembly of section .text:
 701804b2:	6060      	str	r0, [r4, #4]
 701804b4:	bd10      	pop	{r4, pc}
 701804b6:	bf00      	nop
-701804b8:	701a10c0 	.word	0x701a10c0
+701804b8:	7019d0c0 	.word	0x7019d0c0
 
 701804bc <fip_dev_init>:
 701804bc:	b570      	push	{r4, r5, r6, lr}
@@ -913,8 +913,8 @@ Disassembly of section .text:
 70180518:	e7e1      	b.n	701804de <fip_dev_init+0x22>
 7018051a:	f06f 0401 	mvn.w	r4, #1
 7018051e:	e7f8      	b.n	70180512 <fip_dev_init+0x56>
-70180520:	701a1454 	.word	0x701a1454
-70180524:	701a1450 	.word	0x701a1450
+70180520:	7019d454 	.word	0x7019d454
+70180524:	7019d450 	.word	0x7019d450
 70180528:	aa640001 	.word	0xaa640001
 
 7018052c <fip_file_read>:
@@ -969,8 +969,8 @@ Disassembly of section .text:
 7018059c:	f06f 0401 	mvn.w	r4, #1
 701805a0:	e7e9      	b.n	70180576 <fip_file_read+0x4a>
 701805a2:	bf00      	nop
-701805a4:	701a1454 	.word	0x701a1454
-701805a8:	701a1450 	.word	0x701a1450
+701805a4:	7019d454 	.word	0x7019d454
+701805a8:	7019d450 	.word	0x7019d450
 
 701805ac <fip_dev_open>:
 701805ac:	b570      	push	{r4, r5, r6, lr}
@@ -995,9 +995,9 @@ Disassembly of section .text:
 701805d4:	bd70      	pop	{r4, r5, r6, pc}
 701805d6:	f06f 000b 	mvn.w	r0, #11
 701805da:	e7fb      	b.n	701805d4 <fip_dev_open+0x28>
-701805dc:	701a1460 	.word	0x701a1460
-701805e0:	701a1464 	.word	0x701a1464
-701805e4:	701a1458 	.word	0x701a1458
+701805dc:	7019d460 	.word	0x7019d460
+701805e0:	7019d464 	.word	0x7019d464
+701805e4:	7019d458 	.word	0x7019d458
 701805e8:	701830c4 	.word	0x701830c4
 
 701805ec <fip_file_open>:
@@ -1062,9 +1062,9 @@ Disassembly of section .text:
 70180682:	6075      	str	r5, [r6, #4]
 70180684:	e7ef      	b.n	70180666 <fip_file_open+0x7a>
 70180686:	bf00      	nop
-70180688:	701a10c0 	.word	0x701a10c0
-7018068c:	701a1454 	.word	0x701a1454
-70180690:	701a1450 	.word	0x701a1450
+70180688:	7019d0c0 	.word	0x7019d0c0
+7018068c:	7019d454 	.word	0x7019d454
+70180690:	7019d450 	.word	0x7019d450
 70180694:	70183300 	.word	0x70183300
 
 70180698 <fip_dev_close>:
@@ -1093,10 +1093,10 @@ Disassembly of section .text:
 701806c8:	f06f 0001 	mvn.w	r0, #1
 701806cc:	e7fb      	b.n	701806c6 <fip_dev_close+0x2e>
 701806ce:	bf00      	nop
-701806d0:	701a1450 	.word	0x701a1450
-701806d4:	701a1454 	.word	0x701a1454
-701806d8:	701a1464 	.word	0x701a1464
-701806dc:	701a1460 	.word	0x701a1460
+701806d0:	7019d450 	.word	0x7019d450
+701806d4:	7019d454 	.word	0x7019d454
+701806d8:	7019d464 	.word	0x7019d464
+701806dc:	7019d460 	.word	0x7019d460
 
 701806e0 <register_io_dev_fip>:
 701806e0:	b510      	push	{r4, lr}
@@ -1109,7 +1109,7 @@ Disassembly of section .text:
 701806f2:	4b02      	ldr	r3, [pc, #8]	; (701806fc <register_io_dev_fip+0x1c>)
 701806f4:	6023      	str	r3, [r4, #0]
 701806f6:	bd10      	pop	{r4, pc}
-701806f8:	701a1458 	.word	0x701a1458
+701806f8:	7019d458 	.word	0x7019d458
 701806fc:	701830c0 	.word	0x701830c0
 
 70180700 <memmap_dev_open>:
@@ -1144,7 +1144,7 @@ Disassembly of section .text:
 70180740:	f06f 000b 	mvn.w	r0, #11
 70180744:	e7fb      	b.n	7018073e <memmap_block_open+0x2a>
 70180746:	bf00      	nop
-70180748:	701a10f0 	.word	0x701a10f0
+70180748:	7019d0f0 	.word	0x7019d0f0
 
 7018074c <memmap_block_close>:
 7018074c:	b510      	push	{r4, lr}
@@ -1157,7 +1157,7 @@ Disassembly of section .text:
 7018075c:	f001 e816 	blx	7018178c <zero_normalmem>
 70180760:	4620      	mov	r0, r4
 70180762:	bd10      	pop	{r4, pc}
-70180764:	701a10f0 	.word	0x701a10f0
+70180764:	7019d0f0 	.word	0x7019d0f0
 
 70180768 <register_io_dev_memmap>:
 70180768:	b510      	push	{r4, lr}
@@ -1193,7 +1193,7 @@ Disassembly of section .text:
 701807ae:	4620      	mov	r0, r4
 701807b0:	b002      	add	sp, #8
 701807b2:	bd70      	pop	{r4, r5, r6, pc}
-701807b4:	701a1470 	.word	0x701a1470
+701807b4:	7019d470 	.word	0x7019d470
 
 701807b8 <open_memmap>:
 701807b8:	b573      	push	{r0, r1, r4, r5, r6, lr}
@@ -1215,7 +1215,7 @@ Disassembly of section .text:
 701807de:	4620      	mov	r0, r4
 701807e0:	b002      	add	sp, #8
 701807e2:	bd70      	pop	{r4, r5, r6, pc}
-701807e4:	701a1478 	.word	0x701a1478
+701807e4:	7019d478 	.word	0x7019d478
 
 701807e8 <plat_sheipa_io_setup>:
 701807e8:	b538      	push	{r3, r4, r5, lr}
@@ -1253,12 +1253,12 @@ Disassembly of section .text:
 70180836:	2800      	cmp	r0, #0
 70180838:	d1dc      	bne.n	701807f4 <plat_sheipa_io_setup+0xc>
 7018083a:	bd38      	pop	{r3, r4, r5, pc}
-7018083c:	701a146c 	.word	0x701a146c
-70180840:	701a1474 	.word	0x701a1474
-70180844:	701a1470 	.word	0x701a1470
-70180848:	701a1478 	.word	0x701a1478
-7018084c:	701a147c 	.word	0x701a147c
-70180850:	701a1480 	.word	0x701a1480
+7018083c:	7019d46c 	.word	0x7019d46c
+70180840:	7019d474 	.word	0x7019d474
+70180844:	7019d470 	.word	0x7019d470
+70180848:	7019d478 	.word	0x7019d478
+7018084c:	7019d47c 	.word	0x7019d47c
+70180850:	7019d480 	.word	0x7019d480
 
 70180854 <plat_get_image_source>:
 70180854:	e92d 47f3 	stmdb	sp!, {r0, r1, r4, r5, r6, r7, r8, r9, sl, lr}
@@ -1309,12 +1309,12 @@ Disassembly of section .text:
 701808d2:	e7dd      	b.n	70180890 <plat_get_image_source+0x3c>
 701808d4:	70183234 	.word	0x70183234
 701808d8:	70183120 	.word	0x70183120
-701808dc:	701a1480 	.word	0x701a1480
+701808dc:	7019d480 	.word	0x7019d480
 
 701808e0 <bl1_plat_sec_mem_layout>:
 701808e0:	4800      	ldr	r0, [pc, #0]	; (701808e4 <bl1_plat_sec_mem_layout+0x4>)
 701808e2:	4770      	bx	lr
-701808e4:	701a1484 	.word	0x701a1484
+701808e4:	7019d484 	.word	0x7019d484
 
 701808e8 <bl1_early_platform_setup>:
 701808e8:	b508      	push	{r3, lr}
@@ -1325,8 +1325,8 @@ Disassembly of section .text:
 701808f4:	f44f 3280 	mov.w	r2, #65536	; 0x10000
 701808f8:	605a      	str	r2, [r3, #4]
 701808fa:	bd08      	pop	{r3, pc}
-701808fc:	701a1484 	.word	0x701a1484
-70180900:	701a0000 	.word	0x701a0000
+701808fc:	7019d484 	.word	0x7019d484
+70180900:	7019c000 	.word	0x7019c000
 
 70180904 <bl1_plat_arch_setup>:
 70180904:	b51f      	push	{r0, r1, r2, r3, r4, lr}
@@ -1348,10 +1348,10 @@ Disassembly of section .text:
 7018092a:	f000 fa87 	bl	70180e3c <sheipa_configure_mmu_svc_mon>
 7018092e:	b005      	add	sp, #20
 70180930:	f85d fb04 	ldr.w	pc, [sp], #4
-70180934:	701ac000 	.word	0x701ac000
-70180938:	701ac000 	.word	0x701ac000
+70180934:	701a8000 	.word	0x701a8000
+70180938:	701a8000 	.word	0x701a8000
 7018093c:	70183708 	.word	0x70183708
-70180940:	701a1484 	.word	0x701a1484
+70180940:	7019d484 	.word	0x7019d484
 70180944:	70180000 	.word	0x70180000
 70180948:	70183000 	.word	0x70183000
 7018094c:	70183000 	.word	0x70183000
@@ -1374,7 +1374,7 @@ Disassembly of section .text:
 7018096e:	2108      	movs	r1, #8
 70180970:	e8bd 4008 	ldmia.w	sp!, {r3, lr}
 70180974:	f001 bfb4 	b.w	701828e0 <__flush_dcache_range_from_thumb>
-70180978:	701a0000 	.word	0x701a0000
+70180978:	7019c000 	.word	0x7019c000
 
 7018097c <bl1_main>:
 7018097c:	b570      	push	{r4, r5, r6, lr}
@@ -1474,15 +1474,15 @@ Disassembly of section .text:
 70180a6e:	4b02      	ldr	r3, [pc, #8]	; (70180a78 <smc_set_next_ctx+0x1c>)
 70180a70:	6018      	str	r0, [r3, #0]
 70180a72:	bd08      	pop	{r3, pc}
-70180a74:	701a1148 	.word	0x701a1148
-70180a78:	701a1490 	.word	0x701a1490
+70180a74:	7019d148 	.word	0x7019d148
+70180a78:	7019d490 	.word	0x7019d490
 
 70180a7c <smc_get_next_ctx>:
 70180a7c:	4b01      	ldr	r3, [pc, #4]	; (70180a84 <smc_get_next_ctx+0x8>)
 70180a7e:	6818      	ldr	r0, [r3, #0]
 70180a80:	4770      	bx	lr
 70180a82:	bf00      	nop
-70180a84:	701a1490 	.word	0x701a1490
+70180a84:	7019d490 	.word	0x7019d490
 
 70180a88 <cm_get_context>:
 70180a88:	2801      	cmp	r0, #1
@@ -1493,7 +1493,7 @@ Disassembly of section .text:
 70180a94:	eb03 1040 	add.w	r0, r3, r0, lsl #5
 70180a98:	bd08      	pop	{r3, pc}
 70180a9a:	bf00      	nop
-70180a9c:	701a1108 	.word	0x701a1108
+70180a9c:	7019d108 	.word	0x7019d108
 
 70180aa0 <cm_set_next_context>:
 70180aa0:	b508      	push	{r3, lr}
@@ -1503,7 +1503,7 @@ Disassembly of section .text:
 70180aaa:	6018      	str	r0, [r3, #0]
 70180aac:	bd08      	pop	{r3, pc}
 70180aae:	bf00      	nop
-70180ab0:	701a148c 	.word	0x701a148c
+70180ab0:	7019d48c 	.word	0x7019d48c
 
 70180ab4 <bl1_prepare_next_image>:
 70180ab4:	e92d 43f8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, lr}
@@ -1585,14 +1585,14 @@ Disassembly of section .text:
 70180b98:	f001 bbab 	b.w	701822f2 <print_entry_point_info>
 70180b9c:	2313      	movs	r3, #19
 70180b9e:	e7a0      	b.n	70180ae2 <bl1_prepare_next_image+0x2e>
-70180ba0:	701a148c 	.word	0x701a148c
-70180ba4:	701a1490 	.word	0x701a1490
-70180ba8:	701a1108 	.word	0x701a1108
+70180ba0:	7019d48c 	.word	0x7019d48c
+70180ba4:	7019d490 	.word	0x7019d490
+70180ba8:	7019d108 	.word	0x7019d108
 
 70180bac <bl1_plat_get_image_desc>:
 70180bac:	4800      	ldr	r0, [pc, #0]	; (70180bb0 <bl1_plat_get_image_desc+0x4>)
 70180bae:	4770      	bx	lr
-70180bb0:	701a0040 	.word	0x701a0040
+70180bb0:	7019c040 	.word	0x7019c040
 
 70180bb4 <cm_setup_context>:
 70180bb4:	b570      	push	{r4, r5, r6, lr}
@@ -1722,7 +1722,7 @@ Disassembly of section .text:
 70180d18:	f001 fdb8 	bl	7018288c <putchar>
 70180d1c:	e7ef      	b.n	70180cfe <tf_log+0x2e>
 70180d1e:	bf00      	nop
-70180d20:	701a0084 	.word	0x701a0084
+70180d20:	7019c084 	.word	0x7019c084
 
 70180d24 <console_is_registered>:
 70180d24:	b508      	push	{r3, lr}
@@ -1740,7 +1740,7 @@ Disassembly of section .text:
 70180d3e:	2001      	movs	r0, #1
 70180d40:	e7f8      	b.n	70180d34 <console_is_registered+0x10>
 70180d42:	bf00      	nop
-70180d44:	701a1494 	.word	0x701a1494
+70180d44:	7019d494 	.word	0x7019d494
 
 70180d48 <console_register>:
 70180d48:	4b0a      	ldr	r3, [pc, #40]	; (70180d74 <console_register+0x2c>)
@@ -1763,9 +1763,9 @@ Disassembly of section .text:
 70180d6e:	2001      	movs	r0, #1
 70180d70:	bd10      	pop	{r4, pc}
 70180d72:	bf00      	nop
-70180d74:	701a0089 	.word	0x701a0089
-70180d78:	701a10c0 	.word	0x701a10c0
-70180d7c:	701a1494 	.word	0x701a1494
+70180d74:	7019c089 	.word	0x7019c089
+70180d78:	7019d0c0 	.word	0x7019d0c0
+70180d7c:	7019d494 	.word	0x7019d494
 
 70180d80 <console_putc>:
 70180d80:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
@@ -1806,8 +1806,8 @@ Disassembly of section .text:
 70180dca:	e7ef      	b.n	70180dac <console_putc+0x2c>
 70180dcc:	4605      	mov	r5, r0
 70180dce:	e7f3      	b.n	70180db8 <console_putc+0x38>
-70180dd0:	701a1494 	.word	0x701a1494
-70180dd4:	701a0088 	.word	0x701a0088
+70180dd0:	7019d494 	.word	0x7019d494
+70180dd4:	7019c088 	.word	0x7019c088
 
 70180dd8 <console_flush>:
 70180dd8:	4b0d      	ldr	r3, [pc, #52]	; (70180e10 <console_flush+0x38>)
@@ -1836,8 +1836,8 @@ Disassembly of section .text:
 70180e0a:	4605      	mov	r5, r0
 70180e0c:	e7fb      	b.n	70180e06 <console_flush+0x2e>
 70180e0e:	bf00      	nop
-70180e10:	701a1494 	.word	0x701a1494
-70180e14:	701a0088 	.word	0x701a0088
+70180e10:	7019d494 	.word	0x7019d494
+70180e14:	7019c088 	.word	0x7019c088
 
 70180e18 <plat_log_get_prefix>:
 70180e18:	2832      	cmp	r0, #50	; 0x32
@@ -1911,7 +1911,7 @@ Disassembly of section .text:
 70180ebe:	2103      	movs	r1, #3
 70180ec0:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
 70180ec4:	f001 ba16 	b.w	701822f4 <console_set_scope>
-70180ec8:	701a1498 	.word	0x701a1498
+70180ec8:	7019d498 	.word	0x7019d498
 70180ecc:	017d7840 	.word	0x017d7840
 70180ed0:	0016e360 	.word	0x0016e360
 70180ed4:	4200c000 	.word	0x4200c000
@@ -1985,13 +1985,13 @@ Disassembly of section .text:
 70180f88:	b007      	add	sp, #28
 70180f8a:	f85d fb04 	ldr.w	pc, [sp], #4
 70180f8e:	bf00      	nop
-70180f90:	701a0000 	.word	0x701a0000
+70180f90:	7019c000 	.word	0x7019c000
 
 70180f94 <mmap_add>:
 70180f94:	4601      	mov	r1, r0
 70180f96:	4801      	ldr	r0, [pc, #4]	; (70180f9c <mmap_add+0x8>)
 70180f98:	f001 bbf6 	b.w	70182788 <mmap_add_ctx>
-70180f9c:	701a0000 	.word	0x701a0000
+70180f9c:	7019c000 	.word	0x7019c000
 
 70180fa0 <init_xlat_tables>:
 70180fa0:	b510      	push	{r4, lr}
@@ -2012,7 +2012,7 @@ Disassembly of section .text:
 70180fc6:	2803      	cmp	r0, #3
 70180fc8:	d0f5      	beq.n	70180fb6 <init_xlat_tables+0x16>
 70180fca:	e7ee      	b.n	70180faa <init_xlat_tables+0xa>
-70180fcc:	701a0000 	.word	0x701a0000
+70180fcc:	7019c000 	.word	0x7019c000
 
 70180fd0 <enable_mmu_svc_mon>:
 70180fd0:	b51f      	push	{r0, r1, r2, r3, r4, lr}
@@ -2032,8 +2032,8 @@ Disassembly of section .text:
 70180ff2:	b004      	add	sp, #16
 70180ff4:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
 70180ff8:	f001 bc7a 	b.w	701828f0 <__enable_mmu_direct_svc_mon_from_thumb>
-70180ffc:	701a0000 	.word	0x701a0000
-70181000:	701a1268 	.word	0x701a1268
+70180ffc:	7019c000 	.word	0x7019c000
+70181000:	7019d268 	.word	0x7019d268
 
 70181004 <mmap_add_region_ctx>:
 70181004:	e92d 4ff0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}
@@ -2492,7 +2492,7 @@ Disassembly of section .text:
 70181534:	e59f0004 	ldr	r0, [pc, #4]	; 70181540 <plat_set_my_stack+0xc>
 70181538:	e1a0d000 	mov	sp, r0
 7018153c:	e12fff1e 	bx	lr
-70181540:	701a10c0 	.word	0x701a10c0
+70181540:	7019d0c0 	.word	0x7019d0c0
 
 70181544 <reset_handler>:
 70181544:	e1a0800e 	mov	r8, lr
@@ -3053,7 +3053,7 @@ Disassembly of section .text:
 70181c40:	f57ff06f 	isb	sy
 70181c44:	e12fff1e 	bx	lr
 70181c48:	7018362c 	.word	0x7018362c
-70181c4c:	701a1268 	.word	0x701a1268
+70181c4c:	7019d268 	.word	0x7019d268
 70181c50:	00080005 	.word	0x00080005
 
 70181c54 <vprintf>:
