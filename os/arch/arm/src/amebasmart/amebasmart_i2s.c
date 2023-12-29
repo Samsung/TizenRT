@@ -174,8 +174,7 @@ struct amebasmart_i2s_s {
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	//uint8_t i2s_rx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
-	uint8_t* i2s_rx_buf;
+	uint8_t i2s_rx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
 	i2s_irq_handler rx_isr_handler;
 #endif
 
@@ -191,6 +190,7 @@ struct amebasmart_i2s_s {
 	int channel_num;			/*!< Number of channels */
 	int bits_per_sample;		/*!< Bits per sample */
 	struct ap_buffer_s *apb_tx; /* Pointer to application TX audio buffer to track current TX byte count */
+	struct ap_buffer_s *apb_rx; /* Pointer to application RX audio buffer to track current RX byte count */
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	struct amebasmart_transport_s rx; /* RX transport state */
@@ -393,7 +393,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.act);
 
 		priv->apb_tx = apb; /* Reference current TX apb in our I2S struct */
-							/* Start sending first page, after that the txdma callback will be called in the tx irq handler */
+
 		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
 
 		if ((apb->nbytes - apb->curbyte) <= tx_size) {
@@ -406,11 +406,12 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		apb->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 
 		i2s_enable(&priv->i2s_object);
+		/* Start sending first page, after that the txdma callback will be called in the tx irq handler */
 		i2s_send_page(&priv->i2s_object, (uint32_t *)ptx_buf);
 	} else {
 
 		ret = -1;
-		i2serr("ERROR: bfcontainer or bfcontainer->apb is NULL\n");
+		i2serr("ERROR: TXbfcontainer or TXbfcontainer->apb is NULL\n");
 	}
 	return ret;
 }
@@ -585,6 +586,9 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	/* Support 16, 24, 32 bits */
 	DEBUGASSERT(priv && (bits == I2S_BITS_PER_SAMPLE_16BIT || bits == I2S_BITS_PER_SAMPLE_32BIT || bits == I2S_BITS_PER_SAMPLE_24BIT));
 
+	/* Unregister Port direction */
+	ameba_deinit(&priv->i2s_object);
+
 	priv->bits_per_sample = bits;
 
 	/* amebasmart 16, 24, 32, bits setting */
@@ -594,6 +598,8 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 		priv->i2s_object.word_length = WL_24b;
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
 		priv->i2s_object.word_length = WL_32b;
+	
+	i2s_set_param(&priv->i2s_object, priv->i2s_object.channel_num, priv->i2s_object.sampling_rate, priv->i2s_object.word_length);
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -686,7 +692,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 #endif
 }
 
-/*!
+/*
  * @brief Tx interrupt handler.
  *
  * @param base pointer.
@@ -770,6 +776,36 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 	return 0;
 }
 
+static int amebasmart_i2s_rx(struct amebasmart_i2s_s *priv, struct amebasmart_buffer_s *bfcontainer) {
+
+	int ret = OK;
+	int rx_size;
+
+	rx_size = I2S_DMA_PAGE_SIZE; /* Track current byte size to increment by */
+	struct ap_buffer_s *apb;
+
+	if (NULL != bfcontainer && NULL != bfcontainer->apb) {
+
+		apb = bfcontainer->apb;
+		/* Add the container to the list of active DMAs */
+		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
+
+		/* Reference current RX apb in our I2S struct */
+		priv->apb_rx = apb;
+
+		/* Start i2s RX*/
+		i2s_enable(&priv->i2s_object);
+
+		/* Start receiving first page, after that the rxdma callback will be called in the rx irq handler */
+		i2s_recv_page(&priv->i2s_object, (u8 *) &priv->apb_rx->samp[priv->apb_rx->curbyte], rx_size);
+	} else {
+
+		ret = -1;
+		i2serr("ERROR: RXbfcontainer or RXbfcontainer->apb is NULL\n");
+	}
+	return ret;
+}
+
 static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 {
 	struct amebasmart_buffer_s *bfcontainer = NULL;
@@ -797,7 +833,7 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
 
-		i2s_recv_page(&priv->i2s_object);
+		amebasmart_i2s_rx(priv, bfcontainer);
 	}
 	irqrestore(flags);
 
@@ -943,6 +979,9 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 	/* Support 16, 24, 32 bits */
 	DEBUGASSERT(priv && (bits == I2S_BITS_PER_SAMPLE_16BIT || bits == I2S_BITS_PER_SAMPLE_32BIT || bits == I2S_BITS_PER_SAMPLE_24BIT));
 
+	/* Unregister Port direction */
+	ameba_deinit(&priv->i2s_object);
+
 	priv->bits_per_sample = bits;
 
 	/* amebasmart 16, 24, 32, bits setting */
@@ -952,6 +991,8 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 		priv->i2s_object.word_length = WL_24b;
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
 		priv->i2s_object.word_length = WL_32b;
+
+	i2s_set_param(&priv->i2s_object, priv->i2s_object.channel_num, priv->i2s_object.sampling_rate, priv->i2s_object.word_length);
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -1046,8 +1087,8 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 #endif
 }
 
-/*!
- * @brief Tx interrupt handler.
+/*
+ * @brief Rx interrupt handler.
  *
  * @param base pointer.
  * @param handle Pointer to the sai_handle_t structure.
@@ -1055,12 +1096,27 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 {
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
-	i2s_t *obj = &priv->i2s_object;
+	int rx_size;
+	int result;
 
-	/* submit a new page for receive */
-	i2s_recv_page(obj);
+	i2s_release_rx_page(priv->config->i2s_idx);
+	i2s_get_free_rx_page(priv->config->i2s_idx);
 
-	i2s_rxdma_callback(priv, OK);
+	priv->apb_rx->curbyte += I2S_DMA_PAGE_SIZE;
+
+	if (priv->apb_rx->nbytes - priv->apb_rx->curbyte <= 0) {
+		int result = OK;
+		i2s_rxdma_callback(priv, result);
+	} else {
+		/* This is an assumption that nbytes has a finite length */ 
+		if (priv->apb_rx->nbytes - priv->apb_rx->curbyte <= I2S_DMA_PAGE_SIZE) {
+			/* Remaining bytes to receive */
+			rx_size = priv->apb_rx->nbytes - priv->apb_rx->curbyte;
+			i2s_recv_page(&priv->i2s_object, (u8 *) &priv->apb_rx->samp[priv->apb_rx->curbyte], rx_size);
+		} else {
+			i2s_recv_page(&priv->i2s_object, (u8 *) &priv->apb_rx->samp[priv->apb_rx->curbyte], I2S_DMA_PAGE_SIZE);
+		}
+	}
 }
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1598,6 +1654,9 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)dev;
 	DEBUGASSERT(priv && rate > 0);
 
+	/* Unregister Port direction */
+	ameba_deinit(&priv->i2s_object);
+
 	priv->i2s_object.sampling_rate = rate;
 	priv->sample_rate = rate;
 
@@ -1794,7 +1853,6 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 		goto errout_with_alloc;
 	}
 	/* Basic settings */
-	//priv->i2s_num = priv->i2s_object.i2s_idx;
 	g_i2sdevice[port] = priv;
 
 	i2s_disable(&priv->i2s_object);

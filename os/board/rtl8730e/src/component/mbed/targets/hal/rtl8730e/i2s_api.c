@@ -124,7 +124,18 @@ static uint32_t *i2s_get_ready_tx_page(uint8_t i2s_index)
 	}
 }
 
-static void i2s_release_rx_page(uint8_t i2s_index)
+u8 *i2s_get_ready_rx_page(uint8_t i2s_index)
+{
+	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_usr_cnt]);
+
+	if (prx_block->rx_gdma_own) {
+		return (u8 *)prx_block->rx_addr;
+	} else {
+		return (u8 *)prx_block->rx_addr;
+	}
+}
+
+void i2s_release_rx_page(uint8_t i2s_index)
 {
 	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_gdma_cnt]);
 
@@ -138,7 +149,7 @@ static void i2s_release_rx_page(uint8_t i2s_index)
 	}
 }
 
-static uint32_t *i2s_get_free_rx_page(uint8_t i2s_index)
+uint32_t *i2s_get_free_rx_page(uint8_t i2s_index)
 {
 	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_gdma_cnt]);
 
@@ -166,8 +177,6 @@ static void i2s_tx_isr(void *sp_data)
 	i2s_release_tx_page(i2s_index);
 	pbuf = i2s_get_ready_tx_page(i2s_index);
 	I2SUserCB[i2s_index].TxCCB(I2SUserCB[i2s_index].TxCBId, (char*)pbuf);
-
-
 }
 
 static void i2s_rx_isr(void *sp_data)
@@ -180,13 +189,8 @@ static void i2s_rx_isr(void *sp_data)
 
 	/* Clear Pending ISR */
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-	i2s_release_rx_page(i2s_index);
-
-	/* Read data */
-	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_usr_cnt]);
-	DCache_CleanInvalidate((uint32_t)prx_block->rx_addr, sp_rx_info[i2s_index].rx_page_size);
-	I2SUserCB[i2s_index].RxCCB((uint32_t)NULL, (void *)(uint32_t)prx_block->rx_addr);
-	i2s_get_free_rx_page(i2s_index);
+	
+	I2SUserCB[i2s_index].RxCCB(I2SUserCB[i2s_index].RxCBId, NULL);
 }
 
 static void i2s_pinmux_config(uint32_t pin_name, uint32_t pin_func)
@@ -321,14 +325,16 @@ void i2s_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
   */
 void i2s_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 {
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+
 	uint8_t i2s_index = obj->i2s_idx;
 	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct[i2s_index];
+
 	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
 
 	I2SUserCB[i2s_index].RxCCB = handler;
 	I2SUserCB[i2s_index].RxCBId = id;
 
-	i2s_get_free_rx_page(i2s_index);
 	AUDIO_SP_LLPRXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_rx_isr, sp_rx_info[i2s_index].rx_page_size,
 							sp_rx_info[i2s_index].rx_page_num, LliRx[i2s_index]);
 }
@@ -378,7 +384,7 @@ void i2s_set_direction(i2s_t *obj, int trx_type)
   */
 void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 {
-	uint32_t clock_mode;
+	uint32_t clock_mode = 0;
 	AUDIO_ClockParams Clock_Params;
 	AUDIO_InitParams Init_Params;
 
@@ -388,7 +394,7 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	Init_Params.chn_len = SP_CL_32;
 	Init_Params.chn_cnt = obj->channel_num;
-	Init_Params.sr = obj->sampling_rate;;
+	Init_Params.sr = obj->sampling_rate;
 	Init_Params.codec_multiplier_with_rate = 256;
 	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
 	Audio_Clock_Choose(PLL_CLK, &Init_Params, &Clock_Params);
@@ -466,6 +472,11 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 	i2s_pinmux_config(sd_tx, pin_func);
 	i2s_pinmux_config(sd_rx, pin_func);
 
+	/* Disable SWD pinmux function just for PA13/14 */
+	if (ws == _PA_13 || sck == _PA_14) {
+		HAL_WRITE32(0X42008bf8, 0X00, 0X00000000); 
+	}
+
 	i2s_set_param(obj, obj->channel_num, obj->sampling_rate, obj->word_length);
 
 
@@ -540,12 +551,15 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
   * @param  obj: I2S object defined in application software.
   * @retval none
   */
-void i2s_recv_page(i2s_t *obj)
+void i2s_recv_page(i2s_t *obj, u8 *dst, u32 length)
 {
 	uint8_t i2s_index = obj->i2s_idx;
 
 	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_usr_cnt]);
 
+	DCache_CleanInvalidate(prx_block->rx_addr, length);   //clean before read rx page
+
+	memcpy(dst, (uint32_t*)prx_block->rx_addr, length);
 	prx_block->rx_gdma_own = 1;
 	sp_rx_info[i2s_index].rx_usr_cnt++;
 	if (sp_rx_info[i2s_index].rx_usr_cnt == sp_rx_info[i2s_index].rx_page_num) {
@@ -616,5 +630,18 @@ void ameba_i2s_resume(i2s_t *obj) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct[obj->i2s_idx];
 	GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+}
+
+/**
+  * @brief  Deinitializes the I2S device, include function/interrupt/I2S registers.
+  * @param  obj: i2s object define in application software.
+  * @retval none
+  */
+void ameba_deinit(i2s_t *obj) {
+	if (obj->direction == SP_DIR_TX) {
+		AUDIO_SP_Deinit(obj->i2s_idx, SP_DIR_TX);
+	} else {
+		AUDIO_SP_Deinit(obj->i2s_idx, SP_DIR_RX);
+	}
 }
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

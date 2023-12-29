@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright(c) 2006 - 2022 Realtek Corporation. All rights reserved.
+  * Copyright(c) 2006 - 2023 Realtek Corporation. All rights reserved.
   *
   * SPDX-License-Identifier: Apache-2.0
   *
@@ -341,7 +341,7 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf);
   * @param  obj: i2s object define in application software.
   * @retval none
   */
-void i2s_recv_page(i2s_t *obj);
+void i2s_recv_page(i2s_t *obj, u8 *dst, u32 length);
 
 /**
   * @brief  Enable i2s interrupt and function.
@@ -357,6 +357,26 @@ void i2s_enable(i2s_t *obj);
   */
 void i2s_disable(i2s_t *obj);
 
+/**
+  * @brief  Pause I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void ameba_i2s_pause(i2s_t *obj);
+
+/**
+  * @brief  Resume I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void ameba_i2s_resume(i2s_t *obj);
+
+/**
+  * @brief  Deinitializes I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void ameba_deinit(i2s_t *obj);
 ///@}
 
 #if defined(CONFIG_PLATFORM_8195A) && (CONFIG_PLATFORM_8195A == 1)
