@@ -38,13 +38,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  12 .debug_line   00005e04  00000000  00000000  0002c560  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_str    000026f4  00000000  00000000  00032364  2**0
+ 13 .debug_str    00002701  00000000  00000000  00032364  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .comment      0000002d  00000000  00000000  00034a58  2**0
+ 14 .comment      0000002d  00000000  00000000  00034a65  2**0
                   CONTENTS, READONLY
- 15 .ARM.attributes 00000035  00000000  00000000  00034a85  2**0
+ 15 .ARM.attributes 00000035  00000000  00000000  00034a92  2**0
                   CONTENTS, READONLY
- 16 .debug_frame  00001560  00000000  00000000  00034abc  2**2
+ 16 .debug_frame  00001560  00000000  00000000  00034ac8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 701c0000 l    d  .text	00000000 .text
@@ -998,7 +998,7 @@ Disassembly of section .text:
 701c05f0:	b508      	push	{r3, lr}
 701c05f2:	f000 fa69 	bl	701c0ac8 <sheipa_console_init>
 701c05f6:	4b05      	ldr	r3, [pc, #20]	; (701c060c <bl2_early_platform_setup2+0x1c>)
-701c05f8:	f44f 2280 	mov.w	r2, #262144	; 0x40000
+701c05f8:	f44f 3280 	mov.w	r2, #65536	; 0x10000
 701c05fc:	4904      	ldr	r1, [pc, #16]	; (701c0610 <bl2_early_platform_setup2+0x20>)
 701c05fe:	e9c3 1200 	strd	r1, r2, [r3]
 701c0602:	e8bd 4008 	ldmia.w	sp!, {r3, lr}

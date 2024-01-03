@@ -154,9 +154,7 @@ SECTIONS
 		. = ALIGN(0x4);
 		_stext_ram = ABSOLUTE(.);
 		_stext_flash = ABSOLUTE(.);
-		*(.freertos_vectors)
 		*(.vectors)
-		*(.boot)
 		*(.timesensitive.text*)
 		*(.sramdram.only.text*)
 
@@ -279,17 +277,6 @@ SECTIONS
 		/* All data end */
 		__data_end__ = .;
 	} > CA32_BL3_DRAM_NS
-
-/*
-	.mmu_tbl (ALIGN(0x4000)) :
-	{
-		__mmu_tbl_start = .;
-		*(.mmu_tbl)
-		*(base_xlat_table)
-		*(xlat_table)
-		__mmu_tbl_end = .;
-	} > CA32_BL3_DRAM_NS
-*/
 
 	.bss (NOLOAD):
 	{
