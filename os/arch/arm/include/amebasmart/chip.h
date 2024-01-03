@@ -29,7 +29,7 @@
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
-#  define AMEBASMART_DRAM_SIZE   (6*1024*1024)   /* Size of the PSRAM for BL33 (6mb) */
+#  define AMEBASMART_DRAM_SIZE   (7*1024*1024)   /* Size of the PSRAM for BL33 (7mb) */
 // #  define AMEBASMART_L2CACHE_SIZE (1024*1024)  /* 1MB L2 Cache */
 #  define AMEBASMART_NXCPUS       2            /* Two CPUs */
 // #  define AMEBASMART_HAVE_DDR64   1            /* 64-bit DDR3 */

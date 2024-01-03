@@ -53,7 +53,7 @@
 #include <tinyara/binary_manager.h>
 #endif
 #include "common.h"
-
+#include "section_config.h"
 #define FS_PATH_MAX 15
 
 #ifdef CONFIG_FLASH_PARTITION
@@ -79,8 +79,10 @@ struct partition_data_s g_second_flash_part_data = {
 #endif
 
 #if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
+SRAMDRAM_ONLY_TEXT_SECTION
 FAR struct mtd_dev_s *mtd_initialize(void)
 {
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	FAR struct mtd_dev_s *mtd;
 #ifdef CONFIG_MTD_PROGMEM
 	mtd = progmem_initialize();
@@ -89,15 +91,19 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 		return NULL;
 	}
 #else
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	mtd = up_flashinitialize();
 	if (!mtd) {
 		printf("ERROR : up_flashinitializ failed\n");
 		return NULL;
 	}
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 #endif
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	return mtd;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, int partno, const char *types, partition_info_t *partinfo)
 {
 	int tagno = MTD_NONE;
@@ -185,12 +191,14 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 	return OK;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 static void move_to_next_part(const char **par)
 {
 		/* Move to next part information. */
 		while (*(*par)++ != ',');
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 int get_partition_num(char *part)
 {
 	int partno = 0;
@@ -210,6 +218,7 @@ int get_partition_num(char *part)
 }
 
 #ifdef CONFIG_MTD_PARTITION_NAMES
+SRAMDRAM_ONLY_TEXT_SECTION
 static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char **names, int *index, char *part_name)
 {
 	if (*(*names)) {
@@ -236,6 +245,7 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 }
 #endif
 
+SRAMDRAM_ONLY_TEXT_SECTION
 int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data, partition_info_t *partinfo)
 {
 	int ret;
@@ -332,6 +342,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *par
 	return OK;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void automount_fs_partition(partition_info_t *partinfo)
 {
 #if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS)

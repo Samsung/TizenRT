@@ -43,6 +43,7 @@
 #include "amebasmart_memorymap.h"
 #include "amebasmart_boot.h"
 #include "sctlr.h"
+#include "section_config.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -290,6 +291,7 @@ static inline void amebasmart_wdtdisable(void)
  *
  ****************************************************************************/
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void arm_boot(void)
 {
 #if defined(CONFIG_ARCH_RAMFUNCS)

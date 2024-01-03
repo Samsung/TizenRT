@@ -166,6 +166,10 @@ config AMEBASMART_BLE
 	default n
 
 if AMEBASMART_BLE
+config FTL_ENABLED
+	bool "Enable FTL"
+	default n
+
 config AMEBASMART_BLE_DEBUG
 	bool "Enable BLE Debug"
 	default n

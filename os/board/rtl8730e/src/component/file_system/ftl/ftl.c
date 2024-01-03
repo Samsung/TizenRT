@@ -19,7 +19,7 @@
 #endif
 
 #include "flash_api.h"
-
+#include "section_config.h"
 //////////////////////////////////////////////////
 
 #define FTL_PRINT_LEVEL	FTL_LEVEL_ERROR
@@ -135,6 +135,7 @@ uint16_t read_mapping_table(uint16_t logical_addr);
 #define FLASH_STATUS_BITS 0x2c
 uint32_t backup_state = 0;
 
+SRAMDRAM_ONLY_TEXT_SECTION
 static void ftl_setstatusbits(uint32_t NewState)
 {
 	flash_t flash;
@@ -157,6 +158,7 @@ static void ftl_setstatusbits(uint32_t NewState)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_flash_read(uint32_t start_addr, uint32_t len, uint32_t *data)
 {
 	uint8_t ret = 0;
@@ -177,6 +179,7 @@ uint8_t ftl_flash_read(uint32_t start_addr, uint32_t len, uint32_t *data)
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void ftl_flash_write(uint32_t start_addr, uint32_t len, uint32_t data)
 {
 #if defined(CONFIG_FTL_EN) && CONFIG_FTL_EN
@@ -193,6 +196,7 @@ void ftl_flash_write(uint32_t start_addr, uint32_t len, uint32_t data)
 #endif
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 bool ftl_flash_erase_sector(uint32_t addr)
 {
 #if defined(CONFIG_FTL_EN) && CONFIG_FTL_EN
@@ -209,6 +213,7 @@ bool ftl_flash_erase_sector(uint32_t addr)
 	return TRUE;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_page_read(struct Page_T *p, uint32_t index)
 {
 	uint32_t rdata = 0;
@@ -224,6 +229,7 @@ uint32_t ftl_page_read(struct Page_T *p, uint32_t index)
 	return rdata;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_page_write(struct Page_T *p, uint32_t index, uint32_t data)
 {
 	if (index < PAGE_element) {
@@ -246,6 +252,7 @@ uint32_t ftl_page_write(struct Page_T *p, uint32_t index, uint32_t data)
 
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_get_page_seq(struct Page_T *p)
 {
 	uint32_t tmp = ftl_page_read(p, INFO_beg_index);
@@ -255,7 +262,7 @@ uint8_t ftl_get_page_seq(struct Page_T *p)
 	return tmp;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_key_get_length(uint32_t key)
 {
 	if (flash_get_bit(key, BIT_VALID)) {
@@ -268,6 +275,7 @@ uint8_t ftl_key_get_length(uint32_t key)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_key_init(uint16_t logical_addr, uint8_t length)
 {
 	FTL_ASSERT(length == 1); // todo
@@ -284,6 +292,7 @@ uint32_t ftl_key_init(uint16_t logical_addr, uint8_t length)
 }
 
 // logical_addr is 4 bytes alignment addr
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_check_logical_addr(uint16_t logical_addr)
 {
 	if (logical_addr & 0x3) {
@@ -301,7 +310,7 @@ uint32_t ftl_check_logical_addr(uint16_t logical_addr)
 	return FTL_SUCCESS;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_page_is_valid(struct Page_T *p) // return 0 is valid
 {
 	uint32_t info = ftl_page_read(p, INFO_beg_index);
@@ -318,6 +327,7 @@ uint32_t ftl_page_is_valid(struct Page_T *p) // return 0 is valid
 }
 
 /*get invalid page count */
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_get_free_page_count(void)
 {
 	uint8_t CurPageID = g_cur_pageID;
@@ -343,7 +353,7 @@ uint8_t ftl_get_free_page_count(void)
 	return FreeCount;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_get_page_end_position(struct Page_T *p, uint16_t *pEndPos)
 {
 
@@ -361,7 +371,7 @@ uint32_t ftl_get_page_end_position(struct Page_T *p, uint16_t *pEndPos)
 
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_get_prev_page(uint8_t CurPageID, uint8_t *pPrePageID) // 0 is ok
 {
 	uint8_t result = 1;
@@ -397,7 +407,7 @@ uint8_t ftl_get_prev_page(uint8_t CurPageID, uint8_t *pPrePageID) // 0 is ok
 	return result;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_page_can_addr_drop(uint16_t logical_addr, uint8_t EndPageID)
 {
 	uint8_t found = 0;
@@ -457,6 +467,7 @@ L_retry:
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_page_get_oldest(void)
 {
 	uint8_t UsedPageCnt = g_PAGE_num - ftl_get_free_page_count();
@@ -493,8 +504,7 @@ uint8_t ftl_page_get_oldest(void)
 	return OldestPage;
 }
 
-
-
+SRAMDRAM_ONLY_TEXT_SECTION
 uint16_t   ftl_page_garbage_collect_Imp(void)
 {
 	uint16_t RecycleNum = 0;
@@ -587,6 +597,7 @@ L_retry:
 	return RecycleNum;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 {
 	uint8_t result = 0;
@@ -629,6 +640,7 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 	return result;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void ftl_garbage_collect_in_idle(void)
 {
 	if (g_pPage == NULL) {
@@ -643,6 +655,7 @@ void ftl_garbage_collect_in_idle(void)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void ftl_set_page_end_position(struct Page_T *p, uint16_t Endpos)
 {
 	uint32_t data = Endpos;
@@ -656,6 +669,7 @@ void ftl_set_page_end_position(struct Page_T *p, uint16_t Endpos)
 	ftl_page_write(p, INFO_end_index,  data);
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 bool ftl_page_erase(struct Page_T *p)
 {
 	uint32_t info = ftl_page_read(p, INFO_beg_index);
@@ -674,6 +688,7 @@ bool ftl_page_erase(struct Page_T *p)
 	return FALSE;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 bool ftl_page_format(struct Page_T *p, uint8_t sequence)
 {
 	FTL_PRINTF(FTL_LEVEL_INFO, "  ftl_page_format: %x seq: %d\n", (unsigned int)p->Data, (int)sequence);
@@ -709,7 +724,7 @@ bool ftl_page_format(struct Page_T *p, uint8_t sequence)
 	return TRUE;
 }
 
-
+SRAMDRAM_ONLY_TEXT_SECTION
 void ftl_recover_from_power_lost(void)
 {
 	//DBG_PRINT_INFO_2("ftl_recover_from_power_lost");
@@ -798,10 +813,9 @@ void ftl_recover_from_power_lost(void)
 #ifdef DBG_EN
 	ftl_ioctl(FTL_IOCTL_DEBUG, 0, 0);
 #endif
-
-
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint16_t read_mapping_table(uint16_t logical_addr)
 {
 	uint32_t bit_index = logical_addr / 4 * LOGIC_ADDR_MAP_BIT_NUM;
@@ -815,6 +829,7 @@ uint16_t read_mapping_table(uint16_t logical_addr)
 	return phy_addr;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void write_mapping_table(uint16_t logical_addr, uint8_t pageID, uint16_t cell_index)
 {
 	uint32_t bit_index = (logical_addr / 4) *
@@ -844,6 +859,7 @@ void write_mapping_table(uint16_t logical_addr, uint8_t pageID, uint16_t cell_in
 }
 
 // logical_addr is 4 bytes alignment addr
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_read(uint16_t logical_addr, uint32_t *value)
 {
 	uint32_t ret = FTL_READ_SUCCESS;
@@ -958,6 +974,7 @@ L_retry:
 
 #if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
 /* FTL Secure Save and Load API */
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	uint32_t ret = 0;
@@ -978,6 +995,7 @@ uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	uint32_t ret = 0;
@@ -994,6 +1012,7 @@ uint32_t ftl_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t
 
 // return 0 success
 // return !0 fail
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	uint8_t *pdata8 = (uint8_t *)pdata_tmp;
@@ -1073,6 +1092,7 @@ uint32_t ftl_save_to_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 __WEAK uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
@@ -1085,6 +1105,7 @@ __WEAK uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 
 // return 0 success
 // return !0 fail
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_load_from_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	if (g_pPage == NULL) {
@@ -1117,6 +1138,7 @@ uint32_t ftl_load_from_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	uint32_t ret = FTL_WRITE_SUCCESS;
@@ -1239,6 +1261,7 @@ L_retry:
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 __WEAK uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
 	u32 ret;
@@ -1249,6 +1272,7 @@ __WEAK uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
 {
 	if (g_pPage == NULL) {
@@ -1369,6 +1393,7 @@ uint32_t ftl_save(void *pdata, uint16_t offset, uint16_t size)
 
 #if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
 /* Secure FTL Init */
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_secure_init(void)
 {
 	uint32_t ret = 0;
@@ -1377,6 +1402,7 @@ uint32_t ftl_secure_init(void)
 }
 #endif
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
 	rtw_mutex_init(&ftl_mutex_lock);
@@ -1514,6 +1540,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 	return 0;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void ftl_mapping_table_init(void)
 {
 	if (NULL == ftl_mapping_table) {
@@ -1653,6 +1680,7 @@ FAKE_FLASH_MAIN(rwx)  : ORIGIN = 0x20010000, LENGTH = 256K
 #define Fake_FTL  ((Fake_FTL_T *) Fake_FTL_BASE)   // Pointer to FMC register structure
 
 // logical_addr is 4 bytes alignment addr
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_check_logical_addr(uint16_t logical_addr)
 {
 	if (logical_addr & 0x3) {
@@ -1668,6 +1696,7 @@ uint32_t ftl_check_logical_addr(uint16_t logical_addr)
 	return 0;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_init(uint8_t pagenum)
 {
 	pagenum = FAKE_PAGE_num;
@@ -1704,6 +1733,7 @@ uint32_t ftl_init(uint8_t pagenum)
 }
 
 // logical_addr is 4 bytes alignment addr
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_read(uint16_t logical_addr)
 {
 	ftl_check_logical_addr(logical_addr);
@@ -1716,6 +1746,7 @@ uint32_t ftl_read(uint16_t logical_addr)
 	return r_data;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	ftl_check_logical_addr(logical_addr);
@@ -1728,11 +1759,13 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 	return FMC_SUCCESS;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_get_error()
 {
 	return FMC_SUCCESS;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t ftl_ioctl(uint32_t cmd, uint32_t p1, uint32_t p2)
 {
 	return FMC_SUCCESS;

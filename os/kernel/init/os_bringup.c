@@ -270,7 +270,9 @@ static inline void os_do_appstart(void)
 #endif
 
 #ifdef CONFIG_SE
+	printf("[%s]ln:%d \n", __FUNCTION__, __LINE__);
 	se_initialize();
+	printf("[%s]ln:%d \n", __FUNCTION__, __LINE__);
 #endif
 
 #ifdef CONFIG_SECURITY_LEVEL

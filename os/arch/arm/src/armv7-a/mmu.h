@@ -706,6 +706,7 @@
  * 16 KB + 16 KB + 16 KB + 3 * 4 * 1 KB = 60 KB
  * 60 KB = 0xF000 ==> Round it up to 16KB boundary ==> 0x10000
  */
+
 #define PGTABLE_SIZE       0x00010000
 #else
 #define PGTABLE_SIZE       0x00004000

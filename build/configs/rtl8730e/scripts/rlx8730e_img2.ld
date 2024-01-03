@@ -132,32 +132,8 @@ SECTIONS
 	.xip_image2.text ORIGIN(CA32_IMG2_XIP):
 	{
 		__flash_text_start__ = .;
-		*lib_wifi_common.a:* (.text.*)
-		*lib_wpa_lite.a:* (.text.*)
-		*lib_btgap.a:* (.text.*)
-		*libframework.a:* (.text.*)
-		*libnet.a:* (.text.*)
-		*libkernel.a:* (.text.*)
-		*libfs.a:* (.text.*)
-		*libse.a:* (.text.*)
-		*libwque.a:* (.text.*)
-		*libdrivers.a:* (.text.*)
-		*libc.a:* (.text.*)
-		*libgcc.a:* (.text.*)
-		__flash_text_end__ = .;
-	} > CA32_IMG2_XIP
-
-	.code :
-	{
-		. = ALIGN(4096);
-		__dram_text_start__ = .;
-		. = ALIGN(0x4);
-		_stext_ram = ABSOLUTE(.);
 		_stext_flash = ABSOLUTE(.);
-
-		*(.vectors)
-		*(.timesensitive.text*)
-		*(.sramdram.only.text*)
+		_stext_ram = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
 		*(.text*)		/* .text* sections (code) */
@@ -182,20 +158,39 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 		. = ALIGN(4);
+
+		_etext_flash = ABSOLUTE(.);
+		__flash_text_end__ = .;
+	} > CA32_IMG2_XIP
+
+	.code :
+	{
+		. = ALIGN(4096);
+		__dram_text_start__ = .;
+		. = ALIGN(0x4);
+
+		*(.vectors)
+		*(.start)
+		*(.timesensitive.text*)
+		*(.sramdram.only.text*)
+
+		. = ALIGN(4096);
+		__dram_text_end__ = .;
+		_etext_ram = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
 	.ARM.extab  : 
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.ARM.exidx :
 	{
 		__exidx_start = .;
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
 		__exidx_end = .;
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.ctors :
 	{
@@ -219,7 +214,7 @@ SECTIONS
 		KEEP (*(SORT(.ctors.*)))
 		KEEP (*(.ctors))
 		__CTOR_END__ = .;
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.dtors :
 	{
@@ -230,14 +225,14 @@ SECTIONS
 		KEEP (*(SORT(.dtors.*)))
 		KEEP (*(.dtors))
 		__DTOR_END__ = .;
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.preinit_array :
 	{
 		PROVIDE_HIDDEN (__preinit_array_start = .);
 		KEEP (*(.preinit_array*))
 		PROVIDE_HIDDEN (__preinit_array_end = .);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.init_array :
 	{
@@ -248,7 +243,7 @@ SECTIONS
 		KEEP (*(.init_array*))
 		_einit = ABSOLUTE(.);
 		PROVIDE_HIDDEN (__init_array_end = .);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.fini_array :
 	{
@@ -258,10 +253,7 @@ SECTIONS
 		PROVIDE_HIDDEN (__fini_array_end = .);
 
 		. = ALIGN(4096);
-		__dram_text_end__ = .;
-		_etext_ram = ABSOLUTE(.);
-		_etext_flash = ABSOLUTE(.);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.data :
 	{

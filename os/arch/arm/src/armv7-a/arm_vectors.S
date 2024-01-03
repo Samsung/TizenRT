@@ -183,6 +183,7 @@
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 	.globl	arm_decodeirq
 	.globl	arm_vectorirq
 	.type	arm_vectorirq, %function
@@ -311,6 +312,7 @@ arm_vectorirq:
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 	.globl	arm_syscall
 	.globl	arm_vectorsvc
 	.type	arm_vectorsvc, %function
@@ -439,6 +441,7 @@ arm_vectorsvc:
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 	.globl	arm_dataabort
 	.globl	arm_vectordata
 	.type	arm_vectordata, %function
@@ -542,6 +545,7 @@ arm_vectordata:
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 	.globl	arm_prefetchabort
 	.globl	arm_vectorprefetch
 	.type	arm_vectorprefetch, %function
@@ -637,6 +641,7 @@ arm_vectorprefetch:
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 	.globl	arm_undefinedinsn
 	.globl	arm_vectorundefinsn
 	.type	arm_vectorundefinsn, %function
@@ -730,6 +735,7 @@ arm_vectorundefinsn:
  *
  ****************************************************************************/
 
+	.section 	.vectors, "ax"
 #ifdef CONFIG_ARMV7A_DECODEFIQ
 	.globl	arm_decodefiq
 #endif

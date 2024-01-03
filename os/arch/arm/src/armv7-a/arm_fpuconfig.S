@@ -77,6 +77,7 @@
  *
  ****************************************************************************/
 
+	.section	.vectors, "ax"
 	.globl	arm_fpuconfig
 	.type	arm_fpuconfig, %function
 

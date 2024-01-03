@@ -57,6 +57,17 @@
  ****************************************************************************/
 
 /* Hard-coded options */
+//add at the start of .s file
+#define write_reg_addr 0x410001e0
+
+//add at the start of .s file
+.macro write_reg addr
+        ldr r6, =\addr
+		str lr, [r6, #0]
+        @ ldr r4, [r6, #0]
+        @ adds r4, #5
+        @ str r4, [r6, #0]
+.endm
 
 #undef CPU_ALIGNMENT_TRAP
 #undef CPU_CACHE_ROUND_ROBIN
@@ -184,7 +195,7 @@
  * below.
  */
 
-	.text
+	.section	.start, "ax"
 	.global	__start
 	.type	__start, #function
 
@@ -239,7 +250,6 @@ __start:
 	orr		r0, r1, r3			/* OR MMU flags into physical address */
 	str		r0, [r5, r2, lsr #18]		/* Map using the virtual address as an index */
 #endif
-
 	/* Load information needed to map the .text region.  After the ldmia, we
 	 * will have:
 	 *
@@ -371,7 +381,9 @@ __start:
 
 	orr		r1, r5, #(TTBR0_RGN_WBWA | TTBR0_IRGN0)	/* Select cache properties */
 	mcr		CP15_TTBR0(r1)
+#ifndef CONFIG_ARCH_CORTEXA32
 	mcr		CP15_TTBR1(r1)
+#endif
 
 	/* Set the TTB control register (TTBCR) to indicate that we are using
 	 * TTBR0.  r0 still holds the value of zero.
@@ -423,7 +435,11 @@ __start:
 	 */
 
 	bic		r0, r0, #(SCTLR_A  | SCTLR_C)
+#ifndef CONFIG_ARCH_CORTEXA32
 	bic		r0, r0, #(SCTLR_SW | SCTLR_I   | SCTLR_V   | SCTLR_RR | SCTLR_HA)
+#else
+	bic		r0, r0, #(SCTLR_I  | SCTLR_V)
+#endif
 	bic		r0, r0, #(SCTLR_EE | SCTLR_TRE | SCTLR_AFE | SCTLR_TE)
 
 	/* Set bits to enable the MMU
@@ -433,7 +449,7 @@ __start:
 	 */
 
 	orr		r0, r0, #(SCTLR_M)
-#ifndef CONFIG_ARCH_CORTEXA5
+#if !defined(CONFIG_ARCH_CORTEXA5) && !defined(CONFIG_ARCH_CORTEXA32)
 	orr		r0, r0, #(SCTLR_Z)
 #endif
 
@@ -509,8 +525,7 @@ __start:
 #endif
 
 	/* Then write the configured control register */
-
-	mcr		CP15_SCTLR(r0)			/* Write control reg */
+	@ mcr		CP15_SCTLR(r0)			/* Write control reg */
 	.rept		12				/* Cortex A8 wants lots of NOPs here */
 	nop
 	.endr
@@ -661,7 +676,11 @@ __start:
 	 */
 
 	bl		arm_boot
-
+	/* Write back to SCTLR, at this stage, the memory mapping should be completed in arm_boot already */
+	mrc		CP15_SCTLR(r0)
+	orr		r0, r0, #(SCTLR_M | SCTLR_C)
+	orr		r0, r0, #(SCTLR_I)
+	mcr		CP15_SCTLR(r0)
 	/* Finally branch to the OS entry point */
 
 	mov		lr, #0				/* LR = return address (none) */

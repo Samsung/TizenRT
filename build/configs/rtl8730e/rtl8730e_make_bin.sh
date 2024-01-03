@@ -39,10 +39,10 @@ cp $BINDIR/target_img2.axf $BINDIR/target_pure_img2.axf
 
 arm-none-eabi-strip $BINDIR/target_pure_img2.axf
 
-arm-none-eabi-objcopy -j .code -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array -j .data \
+arm-none-eabi-objcopy -j .code -j .data \
 -Obinary $BINDIR/target_pure_img2.axf $BINDIR/ram_2.bin
 
-arm-none-eabi-objcopy -j .xip_image2.text \
+arm-none-eabi-objcopy -j .xip_image2.text -j .ARM.extab -j .ARM.exidx -j .ctors -j .dtors -j .preinit_array -j .init_array -j .fini_array \
 -Obinary $BINDIR/target_pure_img2.axf $BINDIR/xip_image2.bin
 
 echo "========== Image Info HEX =========="

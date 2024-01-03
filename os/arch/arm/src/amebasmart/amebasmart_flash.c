@@ -70,6 +70,7 @@
 #include "chip.h"
 #include "flash_api.h"
 #include "device_lock.h"
+#include "section_config.h"
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -114,6 +115,7 @@ static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t 
   * @param address: address of target page
   * @retval 0 : success or -1 : Failure.
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 int amebasmart_flash_erase_verify(u32 address)
 {
 	int count = 0x1000; //4k, block size
@@ -131,6 +133,7 @@ int amebasmart_flash_erase_verify(u32 address)
 /************************************************************************************
  * Name: amebasmart_erase
  ************************************************************************************/
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_erase_page(size_t page)
 {
 	uint32_t address;
@@ -154,6 +157,7 @@ static ssize_t amebasmart_erase_page(size_t page)
 	return ret;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 static int amebasmart_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
 	ssize_t result;
@@ -171,6 +175,7 @@ static int amebasmart_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 	return OK;
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_flash_write(size_t addr, const void *buf, size_t length)
 {
 	int32_t result = 0;
@@ -194,6 +199,7 @@ static ssize_t amebasmart_flash_write(size_t addr, const void *buf, size_t lengt
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
 ssize_t amebasmart_flash_read(size_t addr, void *buf, size_t length)
 {
 	int32_t result = 0;
@@ -244,6 +250,7 @@ ssize_t amebasmart_flash_read(size_t addr, void *buf, size_t length)
 /************************************************************************************
  * Name: amebasmart_bread
  ************************************************************************************/
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buffer)
 {
 	ssize_t result;
@@ -255,6 +262,7 @@ static ssize_t amebasmart_bread(FAR struct mtd_dev_s *dev, off_t startblock, siz
 /************************************************************************************
  * Name: amebasmart_bwrite
  ************************************************************************************/
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buffer)
 {
 	ssize_t result;
@@ -266,7 +274,7 @@ static ssize_t amebasmart_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, si
 /************************************************************************************
  * Name: amebasmart_read
  ************************************************************************************/
-
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
 {
 	ssize_t result;
@@ -280,6 +288,7 @@ static ssize_t amebasmart_read(FAR struct mtd_dev_s *dev, off_t offset, size_t n
  ************************************************************************************/
 
 #ifdef CONFIG_MTD_BYTE_WRITE
+SRAMDRAM_ONLY_TEXT_SECTION
 static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buffer)
 {
 	size_t addr;
@@ -294,7 +303,7 @@ static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t 
 /************************************************************************************
  * Name: amebasmart_ioctl
  ************************************************************************************/
-
+SRAMDRAM_ONLY_TEXT_SECTION
 static int amebasmart_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	int ret = -EINVAL;			/* Assume good command with bad parameters */
@@ -340,11 +349,13 @@ static int amebasmart_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long ar
  *
  ************************************************************************************/
 
+SRAMDRAM_ONLY_TEXT_SECTION
 FAR struct mtd_dev_s *up_flashinitialize(void)
 {
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	FAR struct amebasmart_dev_s *priv;
 	priv = (FAR struct amebasmart_dev_s *)kmm_zalloc(sizeof(struct amebasmart_dev_s));
-
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	if (priv) {
 		/* Initialize the allocated structure (unsupported methods were
 		 * nullified by kmm_zalloc).
@@ -362,11 +373,14 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		priv->mtd.name = "ameba_flash";
 #endif
 		u8 chip_id[4];
-		flash_read_id(NULL, chip_id, 4);
+		lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+		//flash_read_id(NULL, chip_id, 4);
+		lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 
 		printf("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
 		return (FAR struct mtd_dev_s *)priv;
 	}
+	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	return NULL;
 }
 
