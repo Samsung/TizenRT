@@ -351,11 +351,9 @@ static int amebasmart_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long ar
 
 SRAMDRAM_ONLY_TEXT_SECTION
 FAR struct mtd_dev_s *up_flashinitialize(void)
-{
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+{	
 	FAR struct amebasmart_dev_s *priv;
 	priv = (FAR struct amebasmart_dev_s *)kmm_zalloc(sizeof(struct amebasmart_dev_s));
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	if (priv) {
 		/* Initialize the allocated structure (unsupported methods were
 		 * nullified by kmm_zalloc).
@@ -373,14 +371,11 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		priv->mtd.name = "ameba_flash";
 #endif
 		u8 chip_id[4];
-		lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
-		//flash_read_id(NULL, chip_id, 4);
-		lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+		flash_read_id(NULL, chip_id, 4);
 
 		printf("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
 		return (FAR struct mtd_dev_s *)priv;
 	}
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	return NULL;
 }
 

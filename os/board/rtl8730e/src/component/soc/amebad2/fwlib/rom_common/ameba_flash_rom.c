@@ -609,8 +609,9 @@ static void FLASH_Config(FLASH_InitTypeDef *FLASH_InitStruct)
 * @retval none
 */
 HAL_ROM_TEXT_SECTION
-void FLASH_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
+__WEAK void FLASH_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
 {
+
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 Value32;
 	u32 ctrl0 = 0;
@@ -673,6 +674,7 @@ void FLASH_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
 
 	spi_flash->VALID_CMD = Value32;
 	spi_flash->CTRLR0 = ctrl0;
+
 }
 
 /**

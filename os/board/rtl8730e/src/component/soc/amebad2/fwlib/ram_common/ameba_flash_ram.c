@@ -320,11 +320,14 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
 {
+	
 	SPIC_TypeDef *spi_flash = SPIC;
+
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
 
 	/* user mode is entered after auto cmd is done, which means if SPIC BUSY=1, HW will not write Ctrl0 */
 	while (!(spi_flash->CTRLR0 & BIT_USER_MODE));
+
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
@@ -379,12 +382,13 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 		if (spi_flash->SR & BIT_RFNE) {
 			read_data[rx_num] = spi_flash->DR[0].BYTE;
 			rx_num += 1;
+	
 		}
 	}
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
 	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
-
+	
 	/* Recover */
 	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 
@@ -394,13 +398,15 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_RxCmd(u8 cmd, u32 read_len, u8 *read_data)
 {
+	
 	/* Do Tx in user mode firstly */
 	FLASH_UserMode_Enter();
-
+	
 	FLASH_RxCmd_InUserMode(cmd, read_len, read_data);
 
 	/* Exit user mode and restore SPIC to auto mode */
 	FLASH_UserMode_Exit();
+
 }
 
 /**
@@ -734,5 +740,72 @@ void FLASH_Erase(u32 EraseType, u32 Address)
 	/* Exit user mode and restore SPIC to auto mode */
 	FLASH_UserMode_Exit();
 }
+SRAMDRAM_ONLY_TEXT_SECTION
+void FLASH_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
+{
 
+	SPIC_TypeDef *spi_flash = SPIC;
+	u32 Value32;
+	u32 ctrl0 = 0;
+	u16 dclen = FLASH_InitStruct->FLASH_rd_dummy_cyle[SpicBitMode] * 2 * FLASH_InitStruct->FLASH_baud_rate;
+
+	/* Disable SPI_FLASH User Mode */
+	spi_flash->SSIENR = 0;
+
+	/* set auto read dummy cycle and line delay */
+	Value32 = spi_flash->AUTO_LENGTH & ~(MASK_RD_DUMMY_LENGTH | MASK_IN_PHYSICAL_CYC);
+	spi_flash->AUTO_LENGTH = Value32 | RD_DUMMY_LENGTH(dclen) | IN_PHYSICAL_CYC(FLASH_InitStruct->FLASH_rd_sample_phase);
+
+	/* set user read dummy cycle.
+		If DUM_EN, push one dummy byte in addr phase manually and reduce one byte in dummy phase */
+	if (FLASH_InitStruct->FLASH_dum_en) {
+		if (SpicBitMode == SpicQuadIOBitMode) {
+			dclen -= QUAD_DUM_CYCLE_NUM * 2 * FLASH_InitStruct->FLASH_baud_rate;
+		} else if (SpicBitMode == SpicDualIOBitMode) {
+			dclen -= DUAL_DUM_CYCLE_NUM * 2 * FLASH_InitStruct->FLASH_baud_rate;
+		}
+	}
+
+	Value32 = spi_flash->USER_LENGTH & ~MASK_USER_RD_DUMMY_LENGTH;
+	spi_flash->USER_LENGTH = Value32 | USER_RD_DUMMY_LENGTH(dclen);
+
+	/* clear multi channel first */
+	ctrl0 = spi_flash->CTRLR0 & ~(CMD_CH(3) | ADDR_CH(3) | DATA_CH(3));
+
+	/* clear dual & quad bit mode */
+	Value32 = spi_flash->VALID_CMD & ~(SPIC_VALID_CMD_MASK);
+
+	switch (SpicBitMode) {
+	case SpicDualOBitMode:
+		Value32 |= FLASH_InitStruct->FALSH_dual_o_valid_cmd;
+		ctrl0 |= (ADDR_CH(0) | DATA_CH(1));
+		FLASH_InitStruct->FLASH_cur_cmd = FLASH_CMD_DREAD;
+		break;
+	case SpicDualIOBitMode:
+		Value32 |= FLASH_InitStruct->FALSH_dual_io_valid_cmd;
+		ctrl0 |= (ADDR_CH(1) | DATA_CH(1));
+		FLASH_InitStruct->FLASH_cur_cmd = FLASH_CMD_2READ;
+		break;
+	case SpicQuadOBitMode:
+		Value32 |= FLASH_InitStruct->FALSH_quad_o_valid_cmd;
+		ctrl0 |= (ADDR_CH(0) | DATA_CH(2));
+		FLASH_InitStruct->FLASH_cur_cmd = FLASH_CMD_QREAD;
+		break;
+	case SpicQuadIOBitMode:
+		Value32 |= FLASH_InitStruct->FALSH_quad_io_valid_cmd;
+		ctrl0 |= (ADDR_CH(2) | DATA_CH(2));
+		FLASH_InitStruct->FLASH_cur_cmd = FLASH_CMD_4READ;
+		break;
+	default:
+		FLASH_InitStruct->FLASH_cur_cmd = FLASH_CMD_READ;
+	}
+
+	if (FLASH_InitStruct->FLASH_dum_en) {
+		Value32 |= BIT_DUM_EN;
+	}
+
+	spi_flash->VALID_CMD = Value32;
+	spi_flash->CTRLR0 = ctrl0;
+
+}
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

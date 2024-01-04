@@ -502,13 +502,13 @@ int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len)
 	assert_param(buf != NULL);
 	assert_param(len >= 3);
 
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+
 	FLASH_Write_Lock();
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+	
 	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, len, buf);
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+
 	FLASH_Write_Unlock();
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
+
 
 	return len;
 }
