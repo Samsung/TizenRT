@@ -6,10 +6,8 @@
 #define VERSION_2021		2
 #define UPPER_STACK_VERSION	VERSION_2021
 
-#if defined CONFIG_BT && CONFIG_BT
-#ifndef CONFIG_FTL_ENABLED
+#if defined CONFIG_AMEBASMART_FTL
 #define CONFIG_FTL_ENABLED
-#endif
 #endif
 
 #endif // __PLATFORM_OPTS_BT_H__
