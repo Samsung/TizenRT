@@ -1531,6 +1531,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 	g_free_page_count = ftl_get_free_page_count();
 	
 #if defined(CONFIG_AMEBASMART_TRUSTZONE) && (FTL_SECURE == 1)
+		lldbg("[%s] Start Secure FTL INIT \n", __FUNCTION__);
 		uint32_t ret = ftl_secure_init();
 		if (0 != ret) {
 			FTL_PRINTF(FTL_LEVEL_ERROR, "ftl_secure_init fail, ret: %d!", ret);

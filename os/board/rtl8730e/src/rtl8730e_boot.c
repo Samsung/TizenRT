@@ -305,21 +305,16 @@ void amebasmart_mount_partitions(void)
 	struct mtd_dev_s *mtd;
 	partition_info_t partinfo;
 
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
 	if (ret != OK) {
 		lldbg("ERROR: configure_mtd_partitions failed\n");
 		return;
 	}
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 
 #ifdef CONFIG_AUTOMOUNT
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	automount_fs_partition(&partinfo);
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 #endif
 
 #endif /* CONFIG_FLASH_PARTITION */

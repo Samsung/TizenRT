@@ -82,7 +82,6 @@ struct partition_data_s g_second_flash_part_data = {
 SRAMDRAM_ONLY_TEXT_SECTION
 FAR struct mtd_dev_s *mtd_initialize(void)
 {
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	FAR struct mtd_dev_s *mtd;
 #ifdef CONFIG_MTD_PROGMEM
 	mtd = progmem_initialize();
@@ -91,15 +90,12 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 		return NULL;
 	}
 #else
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	mtd = up_flashinitialize();
 	if (!mtd) {
 		printf("ERROR : up_flashinitializ failed\n");
 		return NULL;
 	}
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 #endif
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	return mtd;
 }
 

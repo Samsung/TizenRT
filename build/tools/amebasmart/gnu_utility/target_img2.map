@@ -175,7 +175,6 @@
 0002d1f9 A mbedtls_ecp_check_pubkey
 0002d381 A mbedtls_ecp_check_privkey
 0002d95d A mbedtls_ecp_mul
-0002da00 A __psram_heap_buffer_size__
 0002dc09 A mbedtls_ecp_check_pub_priv
 0002e9d5 A mbedtls_ecp_group_load
 0002f18d A mbedtls_md_info_from_type
@@ -245,6 +244,7 @@
 0004a98c A twiddleCoef_64
 0004ab8c A twiddleCoef_32
 0004ac8c A twiddleCoef_16
+0004b200 A __psram_heap_buffer_size__
 0a000020 T __km4_boot_text_start__
 0c000020 T __km0_flash_text_start__
 0d000020 T app_int_memfault
