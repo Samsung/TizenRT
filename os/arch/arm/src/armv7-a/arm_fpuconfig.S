@@ -52,6 +52,7 @@
  * Public Symbols
  ****************************************************************************/
 
+	.section	.vectors, "ax"
 	.globl	arm_fpuconfig
 	.file	"arm_fpuconfig.S"
 

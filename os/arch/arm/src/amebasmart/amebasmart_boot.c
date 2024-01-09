@@ -43,6 +43,7 @@
 #include "amebasmart_memorymap.h"
 #include "amebasmart_boot.h"
 #include "sctlr.h"
+#include "section_config.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -71,17 +72,17 @@ extern uint8_t _vector_end[];   /* End+1 of vector block */
 
 extern unsigned char __ram_nocache_start__[];
 extern unsigned char __ram_nocache_end__[];
-extern unsigned char __text_start__[];
-extern unsigned char __text_end__[];
+extern unsigned char __dram_text_start__[];
+extern unsigned char __dram_text_end__[];
 
 #ifndef CONFIG_ARCH_ROMPGTABLE
 static inline void amebasmart_setupmappings(void)
 {
 #if 1
 //FENG: tmp fix, set dynamic sections here. 
-  g_section_mapping[4].physbase = (uint64_t)((int)__text_start__);
-  g_section_mapping[4].virtbase = (uint64_t)((int)__text_start__);
-  g_section_mapping[4].nsections = (((size_t)__text_end__ - (size_t)__text_start__)+0x000fffff) >> 20;
+  g_section_mapping[4].physbase = (uint64_t)((int)__dram_text_start__);
+  g_section_mapping[4].virtbase = (uint64_t)((int)__dram_text_start__);
+  g_section_mapping[4].nsections = (((size_t)__dram_text_end__ - (size_t)__dram_text_start__)+0x000fffff) >> 20;
 
   g_section_mapping[5].physbase = (uint64_t)((int)__ram_nocache_start__);
   g_section_mapping[5].virtbase = (uint64_t)((int)__ram_nocache_start__);
@@ -290,6 +291,7 @@ static inline void amebasmart_wdtdisable(void)
  *
  ****************************************************************************/
 
+SRAMDRAM_ONLY_TEXT_SECTION
 void arm_boot(void)
 {
 #if defined(CONFIG_ARCH_RAMFUNCS)

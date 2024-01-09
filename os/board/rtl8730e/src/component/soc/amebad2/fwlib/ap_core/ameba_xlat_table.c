@@ -25,8 +25,8 @@ extern unsigned char __ram_nocache_start__[];
 extern unsigned char __ram_nocache_end__[];
 extern unsigned char __bss_start__[];
 extern unsigned char __bss_end__[];
-extern unsigned char __text_start__[];
-extern unsigned char __text_end__[];
+extern unsigned char __dram_text_start__[];
+extern unsigned char __dram_text_end__[];
 extern unsigned char __data_start__[];
 #endif
 
@@ -74,7 +74,7 @@ void setupMMUTable(int coreID)
 		mmap_add_region(0x20000000, 0x20000000, 0x40000000 - 0x20000000, MT_MEMORY | MT_RW | MT_NS);
 		mmap_add_region(0x40000000, 0x40000000,	0x60000000 - 0x40000000, MT_DEVICE | MT_RW | MT_NS);
 
-		mmap_add_region((uint64_t)((int)__text_start__), (uintptr_t)__text_start__, (size_t)__text_end__ - (size_t)__text_start__,  \
+		mmap_add_region((uint64_t)((int)__dram_text_start__), (uintptr_t)__dram_text_start__, (size_t)__dram_text_end__ - (size_t)__dram_text_start__,  \
 						MT_CODE | MT_NS);
 		mmap_add_region((uint64_t)((int)__ram_nocache_start__), (uintptr_t)__ram_nocache_start__, (size_t)__ram_nocache_end__ - (size_t)__ram_nocache_start__,  \
 						MT_NON_CACHEABLE | MT_RW | MT_NS);
