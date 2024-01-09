@@ -34,7 +34,7 @@
  ****************************************************************************/
 
 /* The Global Interrupt Controller (GIC) collects up to 128 interrupt
- * requests from all i.MX 6Dual/6Quad sources and provides an interface to
+ * requests from all CA32 sources and provides an interface to
  * each of the CPU cores.
  *
  * The first 32 interrupts are used for interrupts that are private to the
@@ -48,12 +48,12 @@
 
 /* Private Peripheral Interrupts (PPI) **************************************/
 
-/* Each Cortex-A9 processor has private interrupts, ID0-ID15, that can only
+/* Each Cortex-A32 processor has private interrupts, ID0-ID15, that can only
  * be triggered by software. These interrupts are aliased so that there is
- * no requirement for a requesting Cortex-A9 processor to determine its own
+ * no requirement for a requesting Cortex-A32 processor to determine its own
  * CPU ID when it deals with SGIs. The priority of an SGI depends on the
- * value set by the receiving Cortex-A9 processor in the banked SGI priority
- * registers, not the priority set by the sending Cortex-A9 processor.
+ * value set by the receiving Cortex-A32 processor in the banked SGI priority
+ * registers, not the priority set by the sending Cortex-A32 processor.
  */
 
 
@@ -173,7 +173,7 @@
 #define	AMEBASMART_IRQ_TIMER12			(AMEBASMART_IRQ_FIRST +  80)
 #define	AMEBASMART_IRQ_TIMER13			(AMEBASMART_IRQ_FIRST +  81)
 
-#define NR_IRQS                 130  /* Total number of interrupts */
+#define NR_IRQS                 (16 + 16 + 96)  /* Total number of interrupts = 16 SGI + 16 PPI + 96 SPI */
 
 /****************************************************************************
  * Public Types

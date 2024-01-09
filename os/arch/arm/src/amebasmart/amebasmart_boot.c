@@ -262,22 +262,6 @@ static void amebasmart_copyvectorblock(void)
 #endif
 
 /****************************************************************************
- * Name: amebasmart_wdtdisable
- *
- * Description:
- *
- ****************************************************************************/
-
-#ifndef CONFIG_AMEBASMART_WDT
-static inline void amebasmart_wdtdisable(void)
-{
-  /* REVISIT: WDT initialization */
-}
-#else
-#  define amebasmart_wdtdisable()
-#endif
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -351,23 +335,9 @@ void arm_boot(void)
 
   amebasmart_copyvectorblock();
 
-  /* Disable the watchdog timer */
-
-  amebasmart_wdtdisable();
-
   /* Initialize the FPU */
 
   arm_fpuconfig();
-
-  /* Perform board-specific memory initialization,  This must include
-   * initialization of board-specific memory resources (e.g., SDRAM)
-   *
-   * NOTE: We must use caution prior to this point to make sure that
-   * the logic does not access any global variables that might lie
-   * in SDRAM.
-   */
-
-  amebasmart_memory_initialize();
 
 #ifdef NEED_SDRAM_REMAPPING
   /* SDRAM was configured in a temporary state to support low-level
@@ -391,18 +361,14 @@ void arm_boot(void)
    */
 
   /* Done in os_start->os_bringup()->os_start_application()->os_do_appstart()->board_initialize()*/
-  // board_initialize();
 
-  /* Perform common, low-level chip initialization (might do nothing) */
-
-  // amebasmart_lowsetup();
+  /* Perform common, low-level chip initialization (do nothing) */
 
 #ifdef USE_EARLYSERIALINIT
   /* Perform early serial initialization if we are going to use the serial
    * driver.
    */
-
-  // amebasmart_serialinit();
+  /* Serial initialization will be done in up_initialize() */
 #endif
 
   /* Now we can enable all other CPUs.  The enabled CPUs will start execution
@@ -411,11 +377,11 @@ void arm_boot(void)
    * (see arch/arm/src/armv7-a/smp.h)
    */
 
-  //SMP pending for Tizen Confirmation//
+  /* SMP pending for TizenRT Confirmation */
   cp15_wrvbar((uint32_t)_vector_start);
   amebasmart_cpu_enable();
 
-  // TBD: Complete the rest of the step in app_start, prvSetupHardware will be done in os_start()
+  /* Complete the rest of the step in app_start, prvSetupHardware will be done in os_start() */
   app_start();
 }
 
