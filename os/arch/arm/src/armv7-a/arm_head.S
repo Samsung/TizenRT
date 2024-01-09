@@ -184,7 +184,7 @@
  * below.
  */
 
-	.text
+	.section	.start, "ax"
 	.global	__start
 	.type	__start, #function
 
@@ -239,7 +239,6 @@ __start:
 	orr		r0, r1, r3			/* OR MMU flags into physical address */
 	str		r0, [r5, r2, lsr #18]		/* Map using the virtual address as an index */
 #endif
-
 	/* Load information needed to map the .text region.  After the ldmia, we
 	 * will have:
 	 *
@@ -371,7 +370,9 @@ __start:
 
 	orr		r1, r5, #(TTBR0_RGN_WBWA | TTBR0_IRGN0)	/* Select cache properties */
 	mcr		CP15_TTBR0(r1)
+#ifndef CONFIG_ARCH_CORTEXA32
 	mcr		CP15_TTBR1(r1)
+#endif
 
 	/* Set the TTB control register (TTBCR) to indicate that we are using
 	 * TTBR0.  r0 still holds the value of zero.
@@ -397,123 +398,11 @@ __start:
 	mov		r0, #DACR_CLIENT(0)
 	mcr		CP15_DACR(r0)			/* Set domain access register */
 
-	/* Configure the system control register (see sctrl.h) */
-
-	mrc		CP15_SCTLR(r0)			/* Get control register */
-
-	/* Clear bits to reset values.  This is only necessary in situations like, for
-	 * example, we get here via a bootloader and the control register is in some
-	 * unknown state.
-	 *
-	 *   SCTLR_M    Bit 0:  Enable the MMU
-	 *   SCTLR_A    Bit 1:  Strict alignment disabled (reset value)
-	 *   SCTLR_C    Bit 2:  DCache disabled (reset value)
-	 *
-	 *   SCTLR_SW   Bit 10: SWP/SWPB not enabled (reset value)
-	 *   SCTLR_I    Bit 12: ICache disabled (reset value)
-	 *   SCTLR_V    Bit 13: Assume low vectors (reset value)
-	 *   SCTLR_RR   Bit 14: The Cortex-A5 processor only supports a fixed random
-	 *                      replacement strategy.
-	 *   SCTLR_HA   Bit 17: Not supported by A5
-	 *
-	 *   SCTLR_EE   Bit 25: 0=Little endian (reset value).
-	 *   SCTLR_TRE  Bit 28: No memory region remapping (reset value)
-	 *   SCTLR_AFE  Bit 29: Full, legacy access permissions behavior (reset value).
-	 *   SCTLR_TE   Bit 30: All exceptions handled in ARM state (reset value).
-	 */
-
-	bic		r0, r0, #(SCTLR_A  | SCTLR_C)
-	bic		r0, r0, #(SCTLR_SW | SCTLR_I   | SCTLR_V   | SCTLR_RR | SCTLR_HA)
-	bic		r0, r0, #(SCTLR_EE | SCTLR_TRE | SCTLR_AFE | SCTLR_TE)
-
-	/* Set bits to enable the MMU
-	 *
-	 *   SCTLR_M     Bit 0:  Enable the MMU
-	 *   SCTLR_Z     Bit 11: Program flow prediction control always enabled on A5
-	 */
-
-	orr		r0, r0, #(SCTLR_M)
-#ifndef CONFIG_ARCH_CORTEXA5
-	orr		r0, r0, #(SCTLR_Z)
-#endif
-
-#ifndef CONFIG_ARCH_LOWVECTORS
-	/* Position vectors to 0xffff0000 if so configured.
-	 *
-	 *   SCTLR_V    Bit 13: High vectors
-	 */
-
-	orr		r0, r0, #(SCTLR_V)
-#endif
-
-#if defined(CPU_CACHE_ROUND_ROBIN) && !defined(CONFIG_ARCH_CORTEXA5)
-	/* Round Robin cache replacement
-	 *
-	 *   SCTLR_RR   Bit 14: The Cortex-A5 processor only supports a fixed random
-	 *                      replacement strategy.
-	 */
-
-	orr		r0, r0, #(SCTLR_RR)
-#endif
-
-	/* In SMP configurations, the data cache will not be enabled until later
-	 * after SMP cache coherency has been setup.
-	 */
-
-#if !defined(CPU_DCACHE_DISABLE) && !defined(CONFIG_SMP)
-	/* Dcache enable
-	 *
-	 *   SCTLR_C    Bit 2:  DCache enable
-	 */
-
-	orr		r0, r0, #(SCTLR_C)
-#endif
-
-#ifndef CPU_ICACHE_DISABLE
-	/* Icache enable
-	 *
-	 *   SCTLR_I    Bit 12: ICache enable
-	 */
-
-	orr		r0, r0, #(SCTLR_I)
-#endif
-
-#ifdef CPU_ALIGNMENT_TRAP
-	/* Alignment abort enable
-	 *
-	 *   SCTLR_A    Bit 1:  Strict alignment enabled
-	 */
-
-	orr		r0, r0, #(SCTLR_A)
-#endif
-
-#ifdef CONFIG_ENDIAN_BIG
-	/* Big endian mode
-	 *
-	 *   SCTLR_EE       Bit 25: 1=Big endian.
-	 */
-
-	orr		r0, r0, #(SCTLR_EE)
-#endif
-
-#ifdef CPU_AFE_ENABLE
-	/* AP[0:2] Permissions model
-	 *
-	 *   SCTLR_AFE  Bit 29: Full, legacy access permissions behavior (reset value).
-	 *
-	 * When AFE=1, the page table AP[0] is used as an access flag and AP[2:1]
-	 * control.  When AFE=0, AP[2:0] control access permissions.
-	 */
-
-	orr		r0, r0, #(SCTLR_AFE)
-#endif
-
-	/* Then write the configured control register */
-
-	mcr		CP15_SCTLR(r0)			/* Write control reg */
+#ifndef CONFIG_ARCH_CORTEXA32
 	.rept		12				/* Cortex A8 wants lots of NOPs here */
 	nop
 	.endr
+#endif
 
 	/* And "jump" to .Lvstart in the newly mapped virtual address space */
 
@@ -661,6 +550,123 @@ __start:
 	 */
 
 	bl		arm_boot
+	/* Write back to SCTLR, at this stage, the memory mapping should be completed in arm_boot already */
+	/* Configure the system control register (see sctrl.h) */
+
+	mrc		CP15_SCTLR(r0)			/* Get control register */
+
+	/* Clear bits to reset values.  This is only necessary in situations like, for
+	 * example, we get here via a bootloader and the control register is in some
+	 * unknown state.
+	 *
+	 *   SCTLR_M    Bit 0:  Enable the MMU
+	 *   SCTLR_A    Bit 1:  Strict alignment disabled (reset value)
+	 *   SCTLR_C    Bit 2:  DCache disabled (reset value)
+	 *
+	 *   SCTLR_SW   Bit 10: SWP/SWPB not enabled (reset value)
+	 *   SCTLR_I    Bit 12: ICache disabled (reset value)
+	 *   SCTLR_V    Bit 13: Assume low vectors (reset value)
+	 *   SCTLR_RR   Bit 14: The Cortex-A5 processor only supports a fixed random
+	 *                      replacement strategy.
+	 *   SCTLR_HA   Bit 17: Not supported by A5
+	 *
+	 *   SCTLR_EE   Bit 25: 0=Little endian (reset value).
+	 *   SCTLR_TRE  Bit 28: No memory region remapping (reset value)
+	 *   SCTLR_AFE  Bit 29: Full, legacy access permissions behavior (reset value).
+	 *   SCTLR_TE   Bit 30: All exceptions handled in ARM state (reset value).
+	 */
+
+	bic		r0, r0, #(SCTLR_A  | SCTLR_C)
+#ifndef CONFIG_ARCH_CORTEXA32
+	bic		r0, r0, #(SCTLR_SW | SCTLR_I   | SCTLR_V   | SCTLR_RR | SCTLR_HA)
+#else
+	bic		r0, r0, #(SCTLR_I  | SCTLR_V)
+#endif
+	bic		r0, r0, #(SCTLR_EE | SCTLR_TRE | SCTLR_AFE | SCTLR_TE)
+
+	/* Set bits to enable the MMU
+	 *
+	 *   SCTLR_M     Bit 0:  Enable the MMU
+	 *   SCTLR_Z     Bit 11: Program flow prediction control always enabled on A5
+	 */
+
+	orr		r0, r0, #(SCTLR_M)
+#if !defined(CONFIG_ARCH_CORTEXA5) && !defined(CONFIG_ARCH_CORTEXA32)
+	orr		r0, r0, #(SCTLR_Z)
+#endif
+
+#ifndef CONFIG_ARCH_LOWVECTORS
+	/* Position vectors to 0xffff0000 if so configured.
+	 *
+	 *   SCTLR_V    Bit 13: High vectors
+	 */
+
+	orr		r0, r0, #(SCTLR_V)
+#endif
+
+#if defined(CPU_CACHE_ROUND_ROBIN) && !defined(CONFIG_ARCH_CORTEXA5)
+	/* Round Robin cache replacement
+	 *
+	 *   SCTLR_RR   Bit 14: The Cortex-A5 processor only supports a fixed random
+	 *                      replacement strategy.
+	 */
+
+	orr		r0, r0, #(SCTLR_RR)
+#endif
+
+	/* In SMP configurations, the data cache will not be enabled until later
+	 * after SMP cache coherency has been setup.
+	 */
+
+#if !defined(CPU_DCACHE_DISABLE) && !defined(CONFIG_SMP)
+	/* Dcache enable
+	 *
+	 *   SCTLR_C    Bit 2:  DCache enable
+	 */
+
+	orr		r0, r0, #(SCTLR_C)
+#endif
+
+#ifndef CPU_ICACHE_DISABLE
+	/* Icache enable
+	 *
+	 *   SCTLR_I    Bit 12: ICache enable
+	 */
+
+	orr		r0, r0, #(SCTLR_I)
+#endif
+
+#ifdef CPU_ALIGNMENT_TRAP
+	/* Alignment abort enable
+	 *
+	 *   SCTLR_A    Bit 1:  Strict alignment enabled
+	 */
+
+	orr		r0, r0, #(SCTLR_A)
+#endif
+
+#ifdef CONFIG_ENDIAN_BIG
+	/* Big endian mode
+	 *
+	 *   SCTLR_EE       Bit 25: 1=Big endian.
+	 */
+
+	orr		r0, r0, #(SCTLR_EE)
+#endif
+
+#ifdef CPU_AFE_ENABLE
+	/* AP[0:2] Permissions model
+	 *
+	 *   SCTLR_AFE  Bit 29: Full, legacy access permissions behavior (reset value).
+	 *
+	 * When AFE=1, the page table AP[0] is used as an access flag and AP[2:1]
+	 * control.  When AFE=0, AP[2:0] control access permissions.
+	 */
+
+	orr		r0, r0, #(SCTLR_AFE)
+#endif
+	/* Then write the configured control register */
+	mcr		CP15_SCTLR(r0)			/* Write control reg */
 
 	/* Finally branch to the OS entry point */
 

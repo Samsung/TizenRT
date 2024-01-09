@@ -180,6 +180,8 @@ segfault:
 
 #else /* CONFIG_PAGING */
 
+#include "section_config.h"
+SRAMDRAM_ONLY_TEXT_SECTION
 uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
   /* Save the saved processor context in CURRENT_REGS where it can be

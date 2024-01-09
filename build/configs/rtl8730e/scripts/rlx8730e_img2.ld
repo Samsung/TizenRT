@@ -67,9 +67,6 @@ MEMORY
 	KM4_MSP_RAM_S (rw) :                    ORIGIN = 0x30001000, LENGTH = 0x30003000 - 0x30001000	/* KM4 MSP_S RAM: 8k */
 	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = 0x30003020, LENGTH = 0x30014000 - 0x30003020	/* KM4 BOOT Loader RAM: 68k */
 	KM4_FLOADER_RAM_S (rwx) :               ORIGIN = 0x30003020, LENGTH = 0x3001B000 - 0x30003020	/* KM4 ImgTool Flash Loader RAM: 95k */
-	KM4_BD_RAM_NSC (rwx) :                  ORIGIN = 0x6015B020, LENGTH = 0x6015C000 - 0x6015B020	/* KM4 BD RAM NSC: 3k */
-	KM4_BD_RAM_ENTRY (rwx) :                ORIGIN = 0x6015C000, LENGTH = 0x60160000 - 0x6015C000	/* KM4 BD RAM ENTRY: 16k */
-	KM4_BD_RAM_S (rwx) :                    ORIGIN = 0x70160020, LENGTH = 0x70180000 - 0x70160020	/* KM4 BD RAM S: 127k */
 
 	/* KM4 Non-secure RAM */
 	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x6015B000 - 0x60000020	/* KM4 MAIN DRAM: 1387k */
@@ -113,7 +110,7 @@ MEMORY
 	CA32_BL1_SRAM_S (rwx) :                 ORIGIN = 0x3001FE00, LENGTH = 0x30020000 - 0x3001FE00	/* CA32 BL1 SRAM: 512B */
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70180020, LENGTH = 0x701A0000 - 0x70180020	/* CA32 BL1 DRAM S: 127k */
 	CA32_FIP_DRAM_NS (rwx) :                ORIGIN = 0x60400000, LENGTH = 0x60600000 - 0x60400000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
-	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60800000 - 0x60300000	/* CA32 BL3 DRAM NS: 5120k */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60923000 - 0x60300000	/* zhenbei:ToDo need to further check the size CA32 BL3 DRAM NS: 6.1MB */
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT */
 }
@@ -131,18 +128,12 @@ __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
 
 SECTIONS
 {
-	.text :
+	/* xip part */
+	.xip_image2.text ORIGIN(CA32_IMG2_XIP):
 	{
-		. = ALIGN(0x4);
-		_stext_ram = ABSOLUTE(.);
+		__flash_text_start__ = .;
 		_stext_flash = ABSOLUTE(.);
-		__text_start__ = .;
-
-		*(.freertos_vectors)
-		*(.vectors)
-		*(.boot)
-		*(.timesensitive.text*)
-		*(.sramdram.only.text*)
+		_stext_ram = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
 		*(.text*)		/* .text* sections (code) */
@@ -167,20 +158,39 @@ SECTIONS
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;
 		. = ALIGN(4);
+
+		_etext_flash = ABSOLUTE(.);
+		__flash_text_end__ = .;
+	} > CA32_IMG2_XIP
+
+	.code :
+	{
+		. = ALIGN(4096);
+		__dram_text_start__ = .;
+		. = ALIGN(0x4);
+
+		*(.vectors)
+		*(.start)
+		*(.timesensitive.text*)
+		*(.sramdram.only.text*)
+
+		. = ALIGN(4096);
+		__dram_text_end__ = .;
 		_etext_ram = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
-	.ARM.extab :
+	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
+	.ARM.extab  : 
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
-	__exidx_start = .;
 	.ARM.exidx :
 	{
+		__exidx_start = .;
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > CA32_BL3_DRAM_NS
-	__exidx_end = .;
+		__exidx_end = .;
+	} > CA32_IMG2_XIP
 
 	.ctors :
 	{
@@ -204,7 +214,7 @@ SECTIONS
 		KEEP (*(SORT(.ctors.*)))
 		KEEP (*(.ctors))
 		__CTOR_END__ = .;
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.dtors :
 	{
@@ -215,14 +225,14 @@ SECTIONS
 		KEEP (*(SORT(.dtors.*)))
 		KEEP (*(.dtors))
 		__DTOR_END__ = .;
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.preinit_array :
 	{
 		PROVIDE_HIDDEN (__preinit_array_start = .);
 		KEEP (*(.preinit_array*))
 		PROVIDE_HIDDEN (__preinit_array_end = .);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.init_array :
 	{
@@ -233,7 +243,7 @@ SECTIONS
 		KEEP (*(.init_array*))
 		_einit = ABSOLUTE(.);
 		PROVIDE_HIDDEN (__init_array_end = .);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.fini_array :
 	{
@@ -243,9 +253,7 @@ SECTIONS
 		PROVIDE_HIDDEN (__fini_array_end = .);
 
 		. = ALIGN(4096);
-		__text_end__ = .;
-		_etext_flash = ABSOLUTE(.);
-	} > CA32_BL3_DRAM_NS
+	} > CA32_IMG2_XIP
 
 	.data :
 	{
@@ -262,17 +270,6 @@ SECTIONS
 		/* All data end */
 		__data_end__ = .;
 	} > CA32_BL3_DRAM_NS
-
-/*
-	.mmu_tbl (ALIGN(0x4000)) :
-	{
-		__mmu_tbl_start = .;
-		*(.mmu_tbl)
-		*(base_xlat_table)
-		*(xlat_table)
-		__mmu_tbl_end = .;
-	} > CA32_BL3_DRAM_NS
-*/
 
 	.bss (NOLOAD):
 	{
@@ -339,4 +336,9 @@ SECTIONS
 	__PsramStackLimit = ABSOLUTE(ORIGIN(CA32_BL3_DRAM_NS) + LENGTH(CA32_BL3_DRAM_NS));
 }
 
+ASSERT(__flash_text_start__ == ORIGIN(CA32_IMG2_XIP), "__flash_text_start__ is changed.")
+ASSERT((__dram_text_start__ & 4095) == 0, "__dram_text_start__ is not 4KB aligned.")
+ASSERT((__dram_text_end__ & 4095) == 0, "__dram_text_end__ is not 4KB aligned.")
+ASSERT((__ram_nocache_start__ & 4095) == 0, "__ram_nocache_start__ is not 4KB aligned.")
+ASSERT((__ram_nocache_end__ & 4095) == 0, "__ram_nocache_end__ is not 4KB aligned.")
 __psram_heap_buffer_size__ = ORIGIN(CA32_BL3_DRAM_NS) + LENGTH(CA32_BL3_DRAM_NS) - __psram_heap_buffer_start__;

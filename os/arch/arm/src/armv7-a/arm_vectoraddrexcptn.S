@@ -80,6 +80,7 @@
  *
  ****************************************************************************/
 
+	.section	.vectors, "ax"
 	.globl	arm_vectoraddrexcptn
 	.type	arm_vectoraddrexcptn, %function
 arm_vectoraddrexcptn:
