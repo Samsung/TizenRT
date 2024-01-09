@@ -25,8 +25,8 @@
 extern "C" {
 #endif
 
-#define SECURITY_MAX_KEY_BUF          256
-#define SECURITY_MAX_CERT_BUF         2048
+#define SECURITY_MAX_KEY_BUF          4096
+#define SECURITY_MAX_CERT_BUF         4096
 #define SECURITY_MAX_SS_BUF           4096
 #define SECURITY_MAX_BUF              SECURITY_MAX_SS_BUF
 
