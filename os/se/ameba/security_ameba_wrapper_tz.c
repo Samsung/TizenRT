@@ -57,7 +57,6 @@ static int se_ameba_index_chk(uint32_t key_idx)
 int se_ameba_hal_init(hal_init_param *params)
 {
 	AWRAP_ENTER;
-	printf("Enter se_ameba_hal_init \n");
 
 	int ret = HAL_SUCCESS;
 	int count = 0;
@@ -89,12 +88,9 @@ int se_ameba_hal_init(hal_init_param *params)
 	input_data.samsung_key_addr = SAMSUNG_KEY_ADDR;
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
-	printf("zhenbei SE [%s] ln%d \n", __FUNCTION__, __LINE__);
 	ret = ameba_hal_init(params, &input_data, &ns_passin);
-	printf("zhenbei SE [%s] ln%d \n", __FUNCTION__, __LINE__);
 	up_free_secure_context();
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
-	printf("End se_ameba_hal_init \n");
 
 exit:
 	if (ret != HAL_SUCCESS) {
@@ -529,13 +525,12 @@ int se_ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 int se_ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
 	AWRAP_ENTER;
-	printf("zhenbei SE [%s] ln%d \n", __FUNCTION__, __LINE__);
+
 	int ret = HAL_SUCCESS;
 
 	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_get_factory_cert(cert_idx, cert);
-	printf("zhenbei SE [%s] ln%d \n", __FUNCTION__, __LINE__);
 	up_free_secure_context();
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
@@ -780,14 +775,11 @@ static struct sec_lowerhalf_s g_ameba_lower = {&g_ameba_ops_s, NULL};
 #ifndef LINUX
 int se_initialize(void)
 {
-	printf("Enter se_initialize \n");
 	int res = se_register(SECLINK_PATH, &g_ameba_lower);
 	if (res != 0) {
-		printf("Error se_initialize res = %d\n", res);
 		lldbg("se3\n");
 		return -1;
 	}
-	printf("End se_initialize \n");
 	return 0;
 }
 #endif

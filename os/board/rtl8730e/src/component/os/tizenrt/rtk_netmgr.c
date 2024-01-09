@@ -549,6 +549,7 @@ trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg)
 	return wuret;
 }
 
+/* ToDo: Disable the wifi_fetch_phy_statistic() API temporarily to protect data abort and hard code the rssi value as temp */
 trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi_info)
 {
 	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
@@ -561,10 +562,11 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 			} else if (g_mode == RTK_WIFI_STATION_IF) {
 				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
 					wifi_info->wifi_status = TRWIFI_CONNECTED;
-					rtw_phy_statistics_t phy_statistics;
-					if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
-						wifi_info->rssi = (int)phy_statistics.rssi;
-					}
+					// rtw_phy_statistics_t phy_statistics;
+					// if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
+					// 	wifi_info->rssi = (int)phy_statistics.rssi;
+					// }
+					wifi_info->rssi = -37;
 				} else {
 					wifi_info->wifi_status = TRWIFI_DISCONNECTED;
 				}

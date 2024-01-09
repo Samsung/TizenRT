@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 /* For Smart, need to align malloc to 64bytes (cache line size of AP) for cache operations */
-static int align = 64;
+int align = 64;
 
 void *rtw_vmalloc(u32 sz)
 {

@@ -320,9 +320,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
 {
-	
 	SPIC_TypeDef *spi_flash = SPIC;
-
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
 
 	/* user mode is entered after auto cmd is done, which means if SPIC BUSY=1, HW will not write Ctrl0 */
@@ -382,13 +380,12 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 		if (spi_flash->SR & BIT_RFNE) {
 			read_data[rx_num] = spi_flash->DR[0].BYTE;
 			rx_num += 1;
-	
 		}
 	}
 
 	/* Wait transfer complete. When complete, SSIENR.SPIC_EN are cleared by HW automatically. */
 	FLASH_WaitBusy_InUserMode(WAIT_TRANS_COMPLETE);
-	
+
 	/* Recover */
 	FLASH_SetSpiMode(&flash_init_para, flash_init_para.FLASH_cur_bitmode);
 
@@ -398,10 +395,8 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_RxCmd(u8 cmd, u32 read_len, u8 *read_data)
 {
-	
 	/* Do Tx in user mode firstly */
 	FLASH_UserMode_Enter();
-	
 	FLASH_RxCmd_InUserMode(cmd, read_len, read_data);
 
 	/* Exit user mode and restore SPIC to auto mode */

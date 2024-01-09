@@ -73,12 +73,7 @@ static unsigned long invoke_securetest(unsigned long function_id,
 									unsigned long arg2, unsigned long arg3)
 {
 	struct arm_smccc_res res;
-
-	printf("Start SMCCC arm_smccc_smc \n");
 	arm_smccc_smc(function_id, arg0, arg1, arg2, arg3, 0, 0, 0, &res);
-
-	printf("\n ==== Output SMCCC: [function_id:%x] %x %x %x %x ==== \n", function_id, res.a0, res.a1, res.a2, res.a3);
-
 	return res.a0;
 }
 
@@ -88,9 +83,7 @@ static unsigned long invoke_securetest(unsigned long function_id,
 int ameba_hal_init(hal_init_param *params, factory_struc *input_data, ns_passin_struc *ns_passin)
 {
 	int ret = 0;
-	printf("Strat SMCCC ameba_hal_init \n");
 	ret = invoke_securetest(0x82000010, (uint32_t)params, (uint32_t)input_data, (uint32_t)ns_passin, 0);
-	printf("End SMCCC ameba_hal_init \n");
 	return ret;
 }
 

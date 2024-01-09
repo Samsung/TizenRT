@@ -83,7 +83,7 @@
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
 #include "osdep_service.h"
-#include "section_config.h"
+
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -407,9 +407,7 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_FTL_ENABLED
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 	app_ftl_init();
-	lldbg("[%s] ln %d\n", __FUNCTION__, __LINE__);
 #endif
 
 #ifdef CONFIG_AMEBASMART_WIFI

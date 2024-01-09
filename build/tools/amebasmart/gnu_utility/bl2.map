@@ -116,7 +116,7 @@ Discarded input sections
                 0x0000000000000000       0x70 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
  .debug_ranges  0x0000000000000000       0x90 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
  .debug_line    0x0000000000000000      0x4f3 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
- .debug_str     0x0000000000000000      0x39b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
+ .debug_str     0x0000000000000000      0x388 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
  .debug_frame   0x0000000000000000      0x148 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt.o
  .ARM.attributes
@@ -139,7 +139,7 @@ Discarded input sections
                 0x0000000000000000       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
  .debug_ranges  0x0000000000000000       0x18 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
  .debug_line    0x0000000000000000      0x155 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
- .debug_str     0x0000000000000000      0x228 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
+ .debug_str     0x0000000000000000      0x215 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
  .debug_frame   0x0000000000000000       0x48 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_addresses.o
  .ARM.attributes
@@ -158,7 +158,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
  .debug_line    0x0000000000000000       0xd6 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
- .debug_str     0x0000000000000000      0x23f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
+ .debug_str     0x0000000000000000      0x22c ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
  .debug_frame   0x0000000000000000       0x38 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_empty_tree.o
  .ARM.attributes
@@ -253,7 +253,7 @@ Discarded input sections
                 0x0000000000000000      0x140 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
  .debug_ranges  0x0000000000000000      0x298 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
  .debug_line    0x0000000000000000      0xf6b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
- .debug_str     0x0000000000000000      0x7bc ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
+ .debug_str     0x0000000000000000      0x7a9 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
  .debug_frame   0x0000000000000000      0x4cc ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_ro.o
  .ARM.attributes
@@ -310,7 +310,7 @@ Discarded input sections
                 0x0000000000000000       0xc0 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
  .debug_ranges  0x0000000000000000      0x458 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
  .debug_line    0x0000000000000000      0xec8 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
- .debug_str     0x0000000000000000      0x78a ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
+ .debug_str     0x0000000000000000      0x777 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
  .debug_frame   0x0000000000000000      0x2d0 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_rw.o
  .ARM.attributes
@@ -333,7 +333,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
  .debug_ranges  0x0000000000000000       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
  .debug_line    0x0000000000000000       0x8a ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
- .debug_str     0x0000000000000000      0x1f8 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
+ .debug_str     0x0000000000000000      0x1e5 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_strerror.o
  .ARM.attributes
@@ -374,7 +374,7 @@ Discarded input sections
                 0x0000000000000000       0x80 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
  .debug_ranges  0x0000000000000000      0x248 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
  .debug_line    0x0000000000000000      0x81f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
- .debug_str     0x0000000000000000      0x575 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
+ .debug_str     0x0000000000000000      0x562 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
  .debug_frame   0x0000000000000000      0x188 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_sw.o
  .ARM.attributes
@@ -399,7 +399,7 @@ Discarded input sections
                 0x0000000000000000       0x40 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
  .debug_ranges  0x0000000000000000       0xa8 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
  .debug_line    0x0000000000000000      0x29d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
- .debug_str     0x0000000000000000      0x377 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
+ .debug_str     0x0000000000000000      0x364 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
  .debug_frame   0x0000000000000000       0xb4 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/fdt_wip.o
  .ARM.attributes
@@ -471,7 +471,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
  .debug_line    0x0000000000000000       0xbf ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
- .debug_str     0x0000000000000000      0x282 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
+ .debug_str     0x0000000000000000      0x26f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_common.o
  .ARM.attributes
@@ -488,7 +488,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
  .debug_line    0x0000000000000000       0xca ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
- .debug_str     0x0000000000000000      0x245 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
+ .debug_str     0x0000000000000000      0x232 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountdi2.o
  .ARM.attributes
@@ -505,7 +505,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
  .debug_line    0x0000000000000000       0xa4 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
- .debug_str     0x0000000000000000      0x237 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
+ .debug_str     0x0000000000000000      0x224 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/popcountsi2.o
  .ARM.attributes
@@ -525,7 +525,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
  .debug_line    0x0000000000000000       0xa9 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
- .debug_str     0x0000000000000000      0x24b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
+ .debug_str     0x0000000000000000      0x238 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
  .debug_frame   0x0000000000000000       0x30 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divdi3.o
  .ARM.attributes
@@ -542,7 +542,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
  .debug_line    0x0000000000000000       0x98 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
- .debug_str     0x0000000000000000      0x235 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
+ .debug_str     0x0000000000000000      0x222 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
  .debug_frame   0x0000000000000000       0x30 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/divmoddi4.o
  .ARM.attributes
@@ -559,7 +559,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
  .debug_line    0x0000000000000000       0xb5 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
- .debug_str     0x0000000000000000      0x264 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
+ .debug_str     0x0000000000000000      0x251 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
  .debug_frame   0x0000000000000000       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/lshrdi3.o
  .ARM.attributes
@@ -686,7 +686,7 @@ Discarded input sections
  .debug_abbrev  0x0000000000000000       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
  .debug_aranges
                 0x0000000000000000       0x58 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
- .debug_str     0x0000000000000000       0x7f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
+ .debug_str     0x0000000000000000       0x6c ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
  .debug_ranges  0x0000000000000000       0x50 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
  .debug_frame   0x0000000000000000       0x90 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_helpers.o
  .ARM.attributes
@@ -699,7 +699,7 @@ Discarded input sections
  .debug_abbrev  0x0000000000000000       0x14 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_ldivmod.o
  .debug_aranges
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_ldivmod.o
- .debug_str     0x0000000000000000       0x85 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_ldivmod.o
+ .debug_str     0x0000000000000000       0x72 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_ldivmod.o
  .ARM.attributes
                 0x0000000000000000       0x25 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_ldivmod.o
  .data          0x0000000000000000        0x0 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_uldivmod.o
@@ -741,7 +741,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
  .debug_line    0x0000000000000000       0x8a ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
- .debug_str     0x0000000000000000      0x16a ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
+ .debug_str     0x0000000000000000      0x157 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
  .debug_frame   0x0000000000000000       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memchr.o)
  .ARM.attributes
@@ -766,7 +766,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
  .debug_line    0x0000000000000000       0x83 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
- .debug_str     0x0000000000000000      0x167 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
+ .debug_str     0x0000000000000000      0x154 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memset.o)
  .ARM.attributes
@@ -791,7 +791,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
  .debug_line    0x0000000000000000       0xa5 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
- .debug_str     0x0000000000000000      0x16a ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
+ .debug_str     0x0000000000000000      0x157 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
  .debug_frame   0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strnlen.o)
  .ARM.attributes
@@ -807,7 +807,7 @@ Discarded input sections
                 0x0000000000000000       0x20 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
  .debug_ranges  0x0000000000000000       0x10 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
  .debug_line    0x0000000000000000       0x73 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
- .debug_str     0x0000000000000000      0x161 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
+ .debug_str     0x0000000000000000      0x14e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
  .comment       0x0000000000000000       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
  .debug_frame   0x0000000000000000       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strrchr.o)
  .ARM.attributes
@@ -1801,99 +1801,99 @@ LOAD linker stubs
  .debug_line    0x0000000000006340       0x7b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(putchar.o)
  .debug_line    0x00000000000063bb       0x7b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strlen.o)
 
-.debug_str      0x0000000000000000     0x274b
- .debug_str     0x0000000000000000      0x143 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
-                                        0x155 (size before relaxing)
- .debug_str     0x0000000000000143      0x3dc ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_semihosting.o
-                                        0x5da (size before relaxing)
- .debug_str     0x000000000000051f      0x180 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_storage.o
-                                        0x5be (size before relaxing)
- .debug_str     0x000000000000069f      0x372 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_fip.o
-                                        0x848 (size before relaxing)
- .debug_str     0x0000000000000a11      0x134 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_memmap.o
-                                        0x5f3 (size before relaxing)
- .debug_str     0x0000000000000b45      0x1f3 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/semihosting.o
-                                        0x4f7 (size before relaxing)
- .debug_str     0x0000000000000d38      0x185 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_io_storage.o
-                                        0x6b6 (size before relaxing)
- .debug_str     0x0000000000000ebd      0x3d4 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_bl2_setup.o
-                                        0x69e (size before relaxing)
- .debug_str     0x0000000000001291       0x74 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_bl2_mem_params_desc.o
-                                        0x463 (size before relaxing)
- .debug_str     0x0000000000001305      0x106 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_image_load.o
-                                        0x4a3 (size before relaxing)
- .debug_str     0x000000000000140b      0x1a3 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/desc_image_load.o
-                                        0x6ef (size before relaxing)
- .debug_str     0x00000000000015ae       0x96 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_image_load_v2.o
-                                        0x514 (size before relaxing)
- .debug_str     0x0000000000001644       0x80 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_main.o
-                                        0x3ce (size before relaxing)
- .debug_str     0x00000000000016c4       0x1d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_arch_setup.o
-                                        0x255 (size before relaxing)
- .debug_str     0x00000000000016e1       0x41 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/systimer.o
-                                        0x214 (size before relaxing)
- .debug_str     0x0000000000001722       0x8f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl_common.o
-                                        0x47d (size before relaxing)
- .debug_str     0x00000000000017b1       0x66 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/tf_log.o
-                                        0x2b9 (size before relaxing)
- .debug_str     0x0000000000001817      0x12d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/multi_console.o
-                                        0x3a3 (size before relaxing)
- .debug_str     0x0000000000001944      0x15d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_bl_common.o
-                                        0x458 (size before relaxing)
- .debug_str     0x0000000000001aa1       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_log_common.o
-                                        0x27b (size before relaxing)
- .debug_str     0x0000000000001acf       0x76 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/ctzdi2.o
-                                        0x240 (size before relaxing)
- .debug_str     0x0000000000001b45       0x63 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/udivmoddi4.o
-                                        0x26a (size before relaxing)
- .debug_str     0x0000000000001ba8       0xa8 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_common.o
-                                        0x36b (size before relaxing)
- .debug_str     0x0000000000001c50       0x50 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_console_setup.o
-                                        0x2de (size before relaxing)
- .debug_str     0x0000000000001ca0      0x286 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_arch.o
-                                        0x541 (size before relaxing)
- .debug_str     0x0000000000001f26      0x199 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_context.o
-                                        0x547 (size before relaxing)
- .debug_str     0x00000000000020bf      0x2aa ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_core.o
-                                        0x723 (size before relaxing)
- .debug_str     0x0000000000002369      0x11e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_utils.o
-                                        0x580 (size before relaxing)
- .debug_str     0x0000000000002487       0x39 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/semihosting_call.o
-                                         0x83 (size before relaxing)
- .debug_str     0x00000000000024c0       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_up_stack.o
-                                         0x80 (size before relaxing)
- .debug_str     0x00000000000024e8       0x27 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/spinlock.o
-                                         0x7f (size before relaxing)
- .debug_str     0x000000000000250f       0x1d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_entrypoint.o
-                                         0x75 (size before relaxing)
- .debug_str     0x000000000000252c       0x17 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/debug.o
-                                         0x6f (size before relaxing)
- .debug_str     0x0000000000002543       0x1c ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/cache_helpers.o
-                                         0x74 (size before relaxing)
- .debug_str     0x000000000000255f       0x1b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/misc_helpers.o
+.debug_str      0x0000000000000000     0x2738
+ .debug_str     0x0000000000000000      0x130 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
+                                        0x142 (size before relaxing)
+ .debug_str     0x0000000000000130      0x3dc ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_semihosting.o
+                                        0x5c7 (size before relaxing)
+ .debug_str     0x000000000000050c      0x180 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_storage.o
+                                        0x5ab (size before relaxing)
+ .debug_str     0x000000000000068c      0x372 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_fip.o
+                                        0x835 (size before relaxing)
+ .debug_str     0x00000000000009fe      0x134 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/io_memmap.o
+                                        0x5e0 (size before relaxing)
+ .debug_str     0x0000000000000b32      0x1f3 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/semihosting.o
+                                        0x4e4 (size before relaxing)
+ .debug_str     0x0000000000000d25      0x185 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_io_storage.o
+                                        0x6a3 (size before relaxing)
+ .debug_str     0x0000000000000eaa      0x3d4 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_bl2_setup.o
+                                        0x68b (size before relaxing)
+ .debug_str     0x000000000000127e       0x74 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_bl2_mem_params_desc.o
+                                        0x450 (size before relaxing)
+ .debug_str     0x00000000000012f2      0x106 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_image_load.o
+                                        0x490 (size before relaxing)
+ .debug_str     0x00000000000013f8      0x1a3 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/desc_image_load.o
+                                        0x6dc (size before relaxing)
+ .debug_str     0x000000000000159b       0x96 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_image_load_v2.o
+                                        0x501 (size before relaxing)
+ .debug_str     0x0000000000001631       0x80 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_main.o
+                                        0x3bb (size before relaxing)
+ .debug_str     0x00000000000016b1       0x1d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_arch_setup.o
+                                        0x242 (size before relaxing)
+ .debug_str     0x00000000000016ce       0x41 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/systimer.o
+                                        0x201 (size before relaxing)
+ .debug_str     0x000000000000170f       0x8f ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl_common.o
+                                        0x46a (size before relaxing)
+ .debug_str     0x000000000000179e       0x66 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/tf_log.o
+                                        0x2a6 (size before relaxing)
+ .debug_str     0x0000000000001804      0x12d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/multi_console.o
+                                        0x390 (size before relaxing)
+ .debug_str     0x0000000000001931      0x15d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_bl_common.o
+                                        0x445 (size before relaxing)
+ .debug_str     0x0000000000001a8e       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_log_common.o
+                                        0x268 (size before relaxing)
+ .debug_str     0x0000000000001abc       0x76 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/ctzdi2.o
+                                        0x22d (size before relaxing)
+ .debug_str     0x0000000000001b32       0x63 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/udivmoddi4.o
+                                        0x257 (size before relaxing)
+ .debug_str     0x0000000000001b95       0xa8 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_common.o
+                                        0x358 (size before relaxing)
+ .debug_str     0x0000000000001c3d       0x50 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_console_setup.o
+                                        0x2cb (size before relaxing)
+ .debug_str     0x0000000000001c8d      0x286 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_arch.o
+                                        0x52e (size before relaxing)
+ .debug_str     0x0000000000001f13      0x199 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_context.o
+                                        0x534 (size before relaxing)
+ .debug_str     0x00000000000020ac      0x2aa ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_core.o
+                                        0x710 (size before relaxing)
+ .debug_str     0x0000000000002356      0x11e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/xlat_tables_utils.o
+                                        0x56d (size before relaxing)
+ .debug_str     0x0000000000002474       0x39 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/semihosting_call.o
+                                         0x70 (size before relaxing)
+ .debug_str     0x00000000000024ad       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/platform_up_stack.o
+                                         0x6d (size before relaxing)
+ .debug_str     0x00000000000024d5       0x27 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/spinlock.o
+                                         0x6c (size before relaxing)
+ .debug_str     0x00000000000024fc       0x1d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/bl2_entrypoint.o
+                                         0x62 (size before relaxing)
+ .debug_str     0x0000000000002519       0x17 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/debug.o
+                                         0x5c (size before relaxing)
+ .debug_str     0x0000000000002530       0x1c ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/cache_helpers.o
+                                         0x61 (size before relaxing)
+ .debug_str     0x000000000000254c       0x1b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/misc_helpers.o
+                                         0x60 (size before relaxing)
+ .debug_str     0x0000000000002567       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_uldivmod.o
                                          0x73 (size before relaxing)
- .debug_str     0x000000000000257a       0x2e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/aeabi_uldivmod.o
-                                         0x86 (size before relaxing)
- .debug_str     0x00000000000025a8       0x2b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_helpers.o
-                                         0x83 (size before relaxing)
- .debug_str     0x00000000000025d3       0x2d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_console.o
-                                         0x85 (size before relaxing)
- .debug_str     0x0000000000002600       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/enable_mmu.o
-                                         0x80 (size before relaxing)
- .debug_str     0x0000000000002628       0x25 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(assert.o)
-                                        0x26e (size before relaxing)
- .debug_str     0x000000000000264d       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memcmp.o)
-                                        0x16a (size before relaxing)
- .debug_str     0x000000000000265f       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memcpy.o)
-                                        0x161 (size before relaxing)
- .debug_str     0x0000000000002671       0x13 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memmove.o)
-                                        0x16a (size before relaxing)
- .debug_str     0x0000000000002684       0xa2 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(printf.o)
-                                        0x30b (size before relaxing)
- .debug_str     0x0000000000002726       0x13 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(putchar.o)
-                                        0x1d7 (size before relaxing)
- .debug_str     0x0000000000002739       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strlen.o)
-                                        0x168 (size before relaxing)
+ .debug_str     0x0000000000002595       0x2b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/plat_helpers.o
+                                         0x70 (size before relaxing)
+ .debug_str     0x00000000000025c0       0x2d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/sheipa_console.o
+                                         0x72 (size before relaxing)
+ .debug_str     0x00000000000025ed       0x28 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/enable_mmu.o
+                                         0x6d (size before relaxing)
+ .debug_str     0x0000000000002615       0x25 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(assert.o)
+                                        0x25b (size before relaxing)
+ .debug_str     0x000000000000263a       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memcmp.o)
+                                        0x157 (size before relaxing)
+ .debug_str     0x000000000000264c       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memcpy.o)
+                                        0x14e (size before relaxing)
+ .debug_str     0x000000000000265e       0x13 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(memmove.o)
+                                        0x157 (size before relaxing)
+ .debug_str     0x0000000000002671       0xa2 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(printf.o)
+                                        0x2f8 (size before relaxing)
+ .debug_str     0x0000000000002713       0x13 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(putchar.o)
+                                        0x1c4 (size before relaxing)
+ .debug_str     0x0000000000002726       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/lib/libc.a(strlen.o)
+                                        0x155 (size before relaxing)
 
 .comment        0x0000000000000000       0x2d
  .comment       0x0000000000000000       0x2d ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
