@@ -319,11 +319,6 @@ void amebasmart_mount_partitions(void)
 #endif /* CONFIG_FLASH_PARTITION */
 }
 
-void amebasmart_memory_initialize(void)
-{
-
-}
-
 #ifdef CONFIG_FTL_ENABLED
 extern u8 ftl_phy_page_num;
 extern u32 ftl_phy_page_start_addr;
