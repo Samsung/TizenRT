@@ -95,36 +95,6 @@ void amebasmart_cpu_enable(void);
 #  define amebasmart_cpu_enable()
 #endif
 
-/****************************************************************************
- * Name: amebasmart_memory_initialize
- *
- * Description:
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void amebasmart_memory_initialize(void);
-
-/****************************************************************************
- * Name: amebasmart_board_initialize
- *
- * Description:
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-// void amebasmart_board_initialize(void);
-
 #undef EXTERN
 #if defined(__cplusplus)
 }

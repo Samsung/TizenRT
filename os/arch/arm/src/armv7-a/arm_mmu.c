@@ -494,7 +494,7 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 }
 
 /****************************************************************************
- * Name: mmu_map_app_region
+ * Name: mmu_dump_app_pgtbl
  *
  * Description:
  * Print the L1 and L2 page table entries corresponding to the application.

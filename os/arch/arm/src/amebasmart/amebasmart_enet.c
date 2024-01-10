@@ -206,25 +206,24 @@ void arm_netinitialize(void)
 {
 #ifdef CONFIG_AMEBASMART_WIFI
 	int alloc_size;
-	//struct netdev *dev = NULL;
 
 	alloc_size = sizeof(struct netdev);
 
 	ameba_nm_dev_wlan0 = amebasmart_register_dev(alloc_size);
 	if (ameba_nm_dev_wlan0 == NULL) {
-		rtw_printf("Failed to register amebalite netdev\n");
+		rtw_printf("Failed to register amebasmart netdev\n");
 	}
 #ifdef RTK_CONCURRENT_MODE
 	ameba_nm_dev_wlan1 = amebasmart_register_dev(alloc_size);
 	if (ameba_nm_dev_wlan1 == NULL) {
-		rtw_printf("Failed to register amebalite netdev\n");
+		rtw_printf("Failed to register amebasmart netdev\n");
 	}
 #endif
 #endif
 #if defined(CONFIG_AMEBASMART_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);
 	if (ameba_bm_dev_ble0 == NULL) {
-		rtw_printf("Failed to register amebad netdev\n");
+		rtw_printf("Failed to register amebasmart netdev\n");
 	}
 #endif
 }
