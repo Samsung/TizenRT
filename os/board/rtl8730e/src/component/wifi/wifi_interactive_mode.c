@@ -371,6 +371,7 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 		semaphore = NULL;
 		break;
 	case TRWIFI_AUTH_WPA3_PSK:
+	case TRWIFI_AUTH_WPA2_AND_WPA3_PSK:
 		security_type = RTW_SECURITY_WPA3_AES_PSK;
 		password = ap_connect_config->passphrase;
 		ssid_len = strlen((const char *)ssid);
