@@ -149,8 +149,8 @@ typedef struct {
 	u16 Window; 		/*!< WDG parameter specifies window protection of WDG
 								This parameter must be set to a value in the 0-65535 range */
 
-	u16 Timeout; 	/*!< WDG parameter specifies WDG timeout count in units of ms
-								This parameter must be set to a value in the 1-65535 range */
+	u32 Timeout; 	/*!< WDG parameter specifies WDG timeout count in units of ms
+								This parameter must be set to a value in the 1-188318 range */
 
 	u16 EICNT; 	/*!< WDG parameter specifies WDG early interrupt trigger threshold
 								This parameter must be set to a value in the 1-65535 range */

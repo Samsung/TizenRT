@@ -65,7 +65,7 @@ void WDG_StructInit(WDG_InitTypeDef *WDG_InitStruct)
   * @retval None
   */
 __weak HAL_ROM_TEXT_SECTION
-void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct)
+__WEAK void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct)
 {
 	u32 prescaler = 0;
 
