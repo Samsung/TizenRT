@@ -128,6 +128,24 @@ __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
 
 SECTIONS
 {
+	.code :
+	{
+		. = ALIGN(4096);
+		__dram_text_start__ = .;
+		. = ALIGN(0x4);
+
+		*(.vectors)
+		*(.start)
+		*(.timesensitive.text*)
+		*(.sramdram.only.text*)		
+		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
+		*arm_mmu.o (.text*)
+
+		. = ALIGN(4096);
+		__dram_text_end__ = .;
+		_etext_ram = ABSOLUTE(.);
+	} > CA32_BL3_DRAM_NS
+
 	/* xip part */
 	.xip_image2.text ORIGIN(CA32_IMG2_XIP):
 	{
@@ -162,22 +180,6 @@ SECTIONS
 		_etext_flash = ABSOLUTE(.);
 		__flash_text_end__ = .;
 	} > CA32_IMG2_XIP
-
-	.code :
-	{
-		. = ALIGN(4096);
-		__dram_text_start__ = .;
-		. = ALIGN(0x4);
-
-		*(.vectors)
-		*(.start)
-		*(.timesensitive.text*)
-		*(.sramdram.only.text*)
-
-		. = ALIGN(4096);
-		__dram_text_end__ = .;
-		_etext_ram = ABSOLUTE(.);
-	} > CA32_BL3_DRAM_NS
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
 	.ARM.extab  : 
