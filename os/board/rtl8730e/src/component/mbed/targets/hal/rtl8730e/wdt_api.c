@@ -48,6 +48,42 @@ IRQn_Type WdgIrqNum = WDG4_IRQ;
   * @{
   */
 
+
+
+void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct)
+{
+	u32 prescaler = 0;
+
+	assert_param(IS_WDG_ALL_PERIPH(WDG));
+
+	if (IS_IWDG_PERIPH(WDG)) {
+		prescaler = 0x63;
+	} else {
+		prescaler = 0x5D;
+
+	}
+
+	WDG_Wait_Busy(WDG);
+
+	/*Enable Register access*/
+	WDG->WDG_MKEYR = WDG_ACCESS_EN;
+
+	if (WDG_InitStruct->EIMOD) {
+		WDG->WDG_CR = WDG_BIT_EIE | WDG_EICNT(WDG_InitStruct->EICNT);
+	} else {
+		WDG->WDG_CR = 0;
+	}
+
+	u16 time = WDG_InitStruct->Timeout/1000*348;
+
+	WDG->WDG_RLR = WDG_PRER(prescaler) | WDG_RELOAD(time);
+	WDG->WDG_WINR = WDG_InitStruct->Window;
+
+	/*Disable Register access*/
+	WDG->WDG_MKEYR = 0xFFFF;
+
+}
+
 /**
  * @brief  Initialize the watchdog, including time and early interrupt settings.
  * @param  timeout_ms: Timeout value of watchdog timer in units of ms.
