@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 8bc7310 2024/01/16-11:53:35 ==
+1.	Reduce PSRAM layout in KM4 to 1024k
+
+
 == version 79e92a3 2023/12/18-1‏‎5:12:03 ==
 1.	Fix mix log in km4
 
