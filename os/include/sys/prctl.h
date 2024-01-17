@@ -96,6 +96,14 @@
  *
  *      char myname[CONFIG_TASK_NAME_SIZE];
  *      prctl(PR_GET_NAME_BYPID, myname, 0);
+ *
+ *  PR_GET_TGTASK
+ *    Return the main task id in the own group through arg2 (int *).
+ *    If parent-child relationship is not supported, the ID of its own
+ *    task/thread is returned. As an example:
+ *
+ *      int ppid;
+ *      prctl(PR_GET_TGTASK, &ppid);
  */
 
 /**
@@ -125,7 +133,8 @@ enum prctl_type_e {
 	PR_REBOOT_REASON_WRITE,
 	PR_REBOOT_REASON_CLEAR,
 	PR_SET_SECURITY_LEVEL,
-	PR_GET_SECURITY_LEVEL
+	PR_GET_SECURITY_LEVEL,
+	PR_GET_TGTASK
 };
 
 /****************************************************************************

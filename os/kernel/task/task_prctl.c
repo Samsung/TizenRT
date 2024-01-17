@@ -407,6 +407,31 @@ int prctl(int option, ...)
 		return ret;
 	}
 #endif
+	case PR_GET_TGTASK:
+	{
+		int *ppid = va_arg(ap, int *);
+#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
+		FAR struct tcb_s *tcb = this_task();
+		if (!tcb) {
+			sdbg("Invalied tcb");
+			err = ESRCH;
+			goto errout;
+		}
+		/* Get ID of the main task in the group */
+		FAR struct task_group_s *group = tcb->group;
+		if (!group) {
+			sdbg("Invalied group");
+			err = ESRCH;
+			goto errout;
+		}
+		*ppid = group->tg_task;
+#else
+		/* Not Support parent-child relationship */
+		*ppid = getpid();
+#endif
+		svdbg("Task group id = %d\n", *ppid);
+		return OK;
+	}
 	default:
 		sdbg("Unrecognized option: %d\n", option);
 		err = EINVAL;
