@@ -227,9 +227,7 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
 {
 	int ret;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	int i;
-#endif
 
 	mlldbg("Heap: start=%p size=%u\n", heapstart, heapsize);
 
@@ -254,6 +252,12 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	/* Initialize the node array */
 
 	memset(heap->mm_nodelist, 0, sizeof(struct mm_freenode_s) * (MM_NNODES + 1));
+
+	/* Initialize delay list to NULL for all cpus */
+
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		heap->mm_delaylist[i] = NULL;
+	}
 
 	/* Initialize the malloc semaphore to one (to support one-at-
 	 * a-time access to private data sets).
