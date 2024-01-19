@@ -33,70 +33,75 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define POWER_THEAD_SIZE					2048
-#define POWER_THEAD_PRIORITY					255
-#define PM_DAEMON_INTERVAL					15
-#define PM_LOCK(x)						power_set_int(PM_LOCK_PATH, x)
-#define PM_UNLOCK(x)						power_set_int(PM_UNLOCK_PATH, x)
+#define POWER_THREAD_SIZE				2048
+#define POWER_THREAD_PRIORITY				255
+#define PM_DAEMON_SLEEP_INTERVAL			5000000	//Microseconds
+#define PM_WAKEUP_TIMER_DURATION			5000000	//Microseconds
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static int power_write_buf(char *file, char *buf)
-{
-	int fd;
-	int r;
-	int ret = 0;
 
-	fd = open(file, O_WRONLY);
-	if (fd == -1)
-		return -ENOENT;
-
-	r = write(fd, buf, strlen(buf));
-	if (r < 0)
-		ret = -EIO;
-
-	close(fd);
-
-	return ret;
-}
-
-int power_set_int(char *fname, int val)
-{
-	char buf[8];
-	int ret = 0;
-
-	snprintf(buf, sizeof(buf), "%d", val);
-
-	if (power_write_buf(fname, buf) != 0)
-		ret = -EIO;
-
-	return ret;
-}
-
+/* PM_UNLOCK request is always accompanied by a timer interval duration in microseconds.
+ * A timer interrupt is scheduled to wake up the board after this duration.
+ * Replace the timer interval duration with 0 to avoid the use of the timer interrupt.
+ */
 static pthread_addr_t power_daemon()
 {
-	char *state = "sleep";
+	int ret = 0;
+	int fd_lock, fd_unlock;
 
 	/* Release PM lock after bootup*/
-	PM_UNLOCK(PM_NORMAL);
+	fd_unlock = open(PM_UNLOCK_PATH, O_WRONLY);
+	if (fd_unlock < 0) {
+		printf("Failed to open PM_UNLOCK file, ret: %d\n", fd_unlock);
+		return NULL;
+	}
+	fd_lock = open(PM_LOCK_PATH, O_WRONLY);
+	if (fd_lock < 0) {
+		printf("Failed to open PM_LOCK file, ret: %d\n", fd_lock);
+		close(fd_unlock);
+		return NULL;
+	}
+
+	ret = write(fd_unlock, NULL, PM_WAKEUP_TIMER_DURATION);
+	if (ret < 0) {
+		printf("Failed to unlock PM state transition, ret: %d\n", ret);
+		goto errout_with_fd;
+	}
 	printf("Boot completed ..Unlocked PM!!\n");
 
 	do {
-		/* TODO: Apply logic to detect activity timeout */
-
+		printf("Locking PM state, transition not expected during APP sleep\n");
 		/* Apply PM lock to prevent sleep*/
-		PM_LOCK(PM_STANDBY);
-		/* We choose 15s duration to trigger sleep */
-		sleep(PM_DAEMON_INTERVAL);
+		ret = write(fd_lock, NULL, 0);
+		if (ret < 0) {
+			printf("Failed to lock PM state transition, ret: %d\n", ret);
+			goto errout_with_fd;
+		}
 
+		/* Trigger APP sleep, but we do not expect PM state transition */
+		sleep(PM_DAEMON_SLEEP_INTERVAL);
+		printf("1st APP sleep complete\n\n");
+
+		printf("Unlocking PM state, transition expected during APP sleep\n");
 		/* Release PM lock for sleep */
-		PM_UNLOCK(PM_STANDBY);
+		ret = write(fd_unlock, NULL, PM_WAKEUP_TIMER_DURATION);
+		if (ret < 0) {
+			printf("Failed to unlock PM state transition, ret: %d\n", ret);
+			goto errout_with_fd;
+		}
 
-		/* Trigger sleep */
-		power_write_buf(PM_SLEEP_PATH, state);
+		/* Trigger APP sleep, this time we expect PM state transition */
+		sleep(PM_DAEMON_SLEEP_INTERVAL);
+		printf("2nd APP sleep complete\n\n");
+
+		printf("##########################################################\n\n");
 	} while (1);
 
+errout_with_fd:
+	close(fd_unlock);
+	close(fd_lock);
 	return NULL;
 }
 
@@ -119,13 +124,13 @@ static pthread_t create_power_thread(void)
 		return -ret;
 	}
 
-	ret = pthread_attr_setstacksize(&attr, POWER_THEAD_SIZE);
+	ret = pthread_attr_setstacksize(&attr, POWER_THREAD_SIZE);
 	if (ret != 0) {
 		fprintf(stderr, "failed to set stack size(%d)\n", ret);
 		return -ret;
 	}
 
-	sparam.sched_priority = POWER_THEAD_PRIORITY;
+	sparam.sched_priority = POWER_THREAD_PRIORITY;
 	ret = pthread_attr_setschedparam(&attr, &sparam);
 	if (ret != 0) {
 		fprintf(stderr, "failed to set sched param(%d)\n", ret);
@@ -155,7 +160,7 @@ int power_main(int argc, char *argv[])
 {
 	pthread_t tid;
 
-	printf("Power Daemon!!\n");
+	printf("Power Daemon Start!!\n");
 	/* Create Power Thread */
 	tid = create_power_thread();
 	if (tid < 0) {
