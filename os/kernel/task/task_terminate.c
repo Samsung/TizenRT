@@ -231,7 +231,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	/* Remove the task from the task list */
 
 	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
-	dtcb->task_state = TSTATE_TASK_INVALID;
 #ifdef CONFIG_TASK_MONITOR
 	/* Unregister this pid from task monitor */
 	task_monitor_unregester_list(pid);
@@ -264,6 +263,13 @@ int task_terminate(pid_t pid, bool nonblocking)
 	 */
 
 	task_exithook(dtcb, EXIT_SUCCESS, nonblocking);
+
+	/* Clean up in the above exithook function is dependent upon the task
+	 * state during the exit (task can be blocked on mq and a differnt task
+	 * could have killed it). As a result, we need to retain the task_state
+	 * in tcb until exithook is done
+	 */
+	dtcb->task_state = TSTATE_TASK_INVALID;
 
 	trace_end(TTRACE_TAG_TASK);
 
