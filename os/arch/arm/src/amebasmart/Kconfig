@@ -83,6 +83,10 @@ config AMEBASMART_SPI_EXCHANGE
 	default y
 endif
 
+config AMEBASMART_MIPI
+	bool "AMEBASMART_MIPI"
+	default n
+	
 config AMEBASMART_I2C
 	bool "AMEBASMART_I2C"
 	default n
