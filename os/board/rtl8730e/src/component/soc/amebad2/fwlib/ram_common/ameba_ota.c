@@ -312,14 +312,13 @@ int OTA_UserImageSignatureCheck(uint32_t input_addr)
 
 }
 
-static int BOOT_OTA_AP (u32 addr)
+static int BOOT_OTA_AP (u32 addr, Certificate_TypeDef *Cert )
 {
 	u8 Cnt;
 	SubImgInfo_TypeDef SubImgInfo;
 	Manifest_TypeDef Manifest;
-	Certificate_TypeDef Cert;
 	
-	char *APLabel[] = {"AP BL1 SRAM", "AP BL1 DRAM", "AP FIP"};
+	char *APLabel[] = {"AP XIP IMG", "AP BL1 SRAM", "AP BL1 DRAM", "AP FIP"};
 	u32 PhyAddr = (u32) addr;
 	BOOT_ImgCopy_OTA((void *)&Manifest, (void *)PhyAddr, sizeof(Manifest_TypeDef));
 	Cnt = sizeof(APLabel) / sizeof(char *);
@@ -425,8 +424,8 @@ int OTA_KernelImageSignatureCheck(uint32_t input_addr)
 	
 		return FALSE;
 	}
-	BOOT_OTA_AP(PhyAddr);
-	
+	BOOT_OTA_AP(PhyAddr, &Cert);
+
 	return TRUE;
 }
 
