@@ -51,7 +51,20 @@
 
 CSRCS += ameba_sport.c \
 	ameba_audio_clock.c \
-	ameba_system.c
+	ameba_system.c \
+
+ifeq ($(CONFIG_AMEBASMART_MIPI),y)
+CSRCS += ameba_mipi.c \
+	ameba_lcdc.c \
+	
+endif
+
+ifeq ($(CONFIG_EXAMPLES_AMEBA_MIPI),y)
+CSRCS += ameba_mipi_show.c\
+
+endif
+
+
 
 
 DEPPATH += --dep-path component/soc/amebad2/fwlib/ram_hp
