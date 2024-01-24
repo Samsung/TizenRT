@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_AMEBA_MIPI
+	bool "AMEBA_MIPI example"
+	default n
+	select AMEBASMART_MIPI
+	---help---
+		Enable AMEBA_MIPI Example
+
+config USER_ENTRYPOINT
+	string
+	default "ameba_mipi" if ENTRY_AMEBA_MIPI
