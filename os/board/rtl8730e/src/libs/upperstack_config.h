@@ -5,7 +5,7 @@
 #ifndef _UPPERSTACK_CONFIG_H_
 #define _UPPERSTACK_CONFIG_H_
 
-#define F_BT_BREDR_SUPPORT                  1       /* support BT Legacy */
+#define F_BT_BREDR_SUPPORT                  0       /* support BT Legacy */
 
 #define F_BT_LE_SUPPORT                     1       /* support BT Low Energy */
 
