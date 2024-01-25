@@ -29,6 +29,8 @@
 #define GIC_MAX_NUM_INTR		(32+96)
 #define IPI_IRQ					0
 #define IPI_CPUHP_IRQ			1
+#define IPI_FLASHPG_IRQ			2
+
 #define MAX_IRQ_NESTING_DEPTH	16
 
 #ifndef _ASMLANGUAGE
@@ -40,8 +42,12 @@ typedef struct InterruptTable {
 	void *pvContext;
 } InterruptTable_t;
 
+extern volatile uint32_t ulFlashPG_Flag;
+
 void smp_init(void);
 void vPortSecondaryOff(void);
+void vPortGateOtherCore(void);
+void vPortWakeOtherCore(void);
 
 #endif /* !_ASMLANGUAGE */
 

@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+==version bc054672f3 2024/01/22-17:52:16==
+1.	support CA32 XIP
+
 == version f257d93 /12/12/18-14:37:40==
 1.	sync bootloade with v8.4d sdk
 2.	add fault handler

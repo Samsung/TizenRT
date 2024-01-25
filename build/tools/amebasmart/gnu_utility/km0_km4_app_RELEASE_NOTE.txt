@@ -1,8 +1,17 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 40b3dee 2024/01/26-17:14:28 ==
+1.	Reduce PSRAM layout in KM4 to 92k
+2.	Place KM4 in XIP
+
+== version 929fa1a 2024/01/23-18:49:58 ==
+1.	Fix cache coherency issue in KM4
+
+== version 0ad408a 2024/01/23-18:41:11 ==
+1.	Add prevention of double access to flash from KM4 and CA32
+
 == version 8bc7310 2024/01/16-11:53:35 ==
 1.	Reduce PSRAM layout in KM4 to 1024k
-
 
 == version 79e92a3 2023/12/18-1‏‎5:12:03 ==
 1.	Fix mix log in km4

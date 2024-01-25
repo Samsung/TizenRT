@@ -73,8 +73,9 @@ static unsigned long invoke_securetest(unsigned long function_id,
 									unsigned long arg2, unsigned long arg3)
 {
 	struct arm_smccc_res res;
-
+	FLASH_Write_Lock();
 	arm_smccc_smc(function_id, arg0, arg1, arg2, arg3, 0, 0, 0, &res);
+	FLASH_Write_Unlock();
 
 	//printf("\n ==== Output SMCCC: [function_id:%x] %x %x %x %x ==== \n", function_id, res.a0, res.a1, res.a2, res.a3);
 

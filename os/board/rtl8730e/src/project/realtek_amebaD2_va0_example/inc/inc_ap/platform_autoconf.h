@@ -2,8 +2,11 @@
 /*
  * < CONFIG BOOT OPTION
  */
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+#define  CONFIG_XIP_FLASH 1
+#else
 #undef  CONFIG_XIP_FLASH
-
+#endif
 /*
  * < CONFIG SOC PS
  */

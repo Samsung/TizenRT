@@ -28,6 +28,7 @@
  *		  unsigned long a6, unsigned long a7, struct arm_smccc_res *res,
  *		  struct arm_smccc_quirk *quirk)
  */
+	.section	.vectors, "ax"
 	.globl __arm_smccc_smc
 	.type __arm_smccc_smc, %function
 __arm_smccc_smc:
