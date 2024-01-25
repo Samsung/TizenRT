@@ -65,17 +65,35 @@ void rtk_core1_power_off(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, val);
 }
 
+void vPortGateOtherCore(void)
+{
+#if (CONFIG_SMP_NCPUS > 1)
+	ulFlashPG_Flag = 1;
+
+	UBaseType_t ulCoreID = portGET_CORE_ID();
+	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
+	arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
+
+	CA32_TypeDef *ca32 = CA32_BASE;
+	while (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+#endif
+}
+
+void vPortWakeOtherCore(void)
+{
+	ulFlashPG_Flag = 0;
+	__SEV();
+}
 
 void vPortSecondaryOff(void)
 {
+#if (CONFIG_SMP_NCPUS > 1)
 	int state;
 	int count = 10;
-#if ( configNUM_CORES > 1 )
 
 	/* Notify secondary core to migrate task to primary core and enter wfi*/
 	pmu_set_secondary_cpu_state(1, CPU1_HOTPLUG);
 	arm_gic_raise_softirq(1, 1);
-#endif
 	//add a delay to wait cpu1 enter wfi.
 	DelayUs(100);
 
@@ -92,6 +110,7 @@ void vPortSecondaryOff(void)
 	} while (count--);
 
 	debug_printf("Secondary core power off fail: %d\n", state);
+#endif
 }
 
 void vPortSecondaryStart(void)
@@ -101,7 +120,7 @@ void vPortSecondaryStart(void)
 		while (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED);
 
 	debug_printf("CPU%d: on\n", (int)portGET_CORE_ID());
-#if ( configNUM_CORES > 1 )
+#if ( CONFIG_SMP_NCPUS > 1 )
 	/* Configure the hardware ready to run the demo. */
 	prvSetupHardwareSecondary();
 
@@ -124,9 +143,9 @@ void smp_init(void)
 	BaseType_t xCoreID;
 	BaseType_t err;
 
+#if (CONFIG_SMP_NCPUS > 1)
 	debug_printf("smp: Bringing up secondary CPUs ...\n");
 
-#if ( configNUM_CORES > 1 )
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_RTLSIM) {//RTL sim shall not use delayus before core1 ready
 		/* power on core1 to avoid km4 not open it */
 		rtk_core1_power_on();
@@ -137,7 +156,7 @@ void smp_init(void)
 	rtk_core1_power_off();
 #endif
 
-	for (xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++) {
+	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
 		if (xCoreID == portGET_CORE_ID()) {
 			pmu_set_secondary_cpu_state(xCoreID, CPU1_RUNNING);
 			continue;

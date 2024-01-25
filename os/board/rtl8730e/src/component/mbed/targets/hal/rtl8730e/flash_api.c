@@ -64,7 +64,6 @@ void flash_write_protect(flash_t *obj, u32 protect)
   * @note  Please refer to the flash datasheet for more info about status register,
   *        as well as block protected area and related control bits.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_set_status(flash_t *obj, u32 data)
 {
 	/* To avoid gcc warnings */
@@ -99,7 +98,6 @@ int flash_set_status(flash_t *obj, u32 data)
   * @retval none
   * @note Make sure the operation is appropriate and remember to reset status register2 to 0 if flash chip has status register2.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 void flash_reset_status(flash_t *obj)
 {
 	flash_set_status(obj, 0);
@@ -111,7 +109,6 @@ void flash_reset_status(flash_t *obj)
   * @param  obj: Flash object defined in application software.
   * @return The value of status register1.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_get_status(flash_t *obj)
 {
 	/* To avoid gcc warnings */
@@ -133,7 +130,6 @@ int flash_get_status(flash_t *obj)
   * @retval none
   * @note LSB 12bits will be masked.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 void flash_erase_sector(flash_t *obj, u32 address)
 {
 	/* To avoid gcc warnings */
@@ -152,7 +148,6 @@ void flash_erase_sector(flash_t *obj, u32 address)
   * @retval none
   * @note LSB 16bits will be masked.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 void flash_erase_block(flash_t *obj, u32 address)
 {
 	/* To avoid gcc warnings */
@@ -169,7 +164,6 @@ void flash_erase_block(flash_t *obj, u32 address)
   * @param  obj: Flash object defined in application software.
   * @retval none
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 void flash_erase_chip(flash_t *obj)
 {
 	/* To avoid gcc warnings */
@@ -191,7 +185,6 @@ void flash_erase_chip(flash_t *obj)
   * @retval Others: Error.
   * @note It is ok to read under auto mode due to flash cache.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_read_word(flash_t *obj, u32 address, u32 *data)
 {
 	/* To avoid gcc warnings */
@@ -243,7 +236,6 @@ int  flash_read_word(flash_t *obj, u32 address, u32 *data)
   * @retval Others: Error.
   * @note User mode write used.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_write_word(flash_t *obj, u32 address, u32 data)
 {
 	/* To avoid gcc warnings */
@@ -283,7 +275,6 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
   * @retval Others: Error.
   * @note It is ok to read under auto mode due to flash cache.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
 {
 	/* To avoid gcc warnings */
@@ -370,7 +361,6 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
   * @retval 1: Success.
   * @retval Others: Error.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
 {
 	/* To avoid gcc warnings */
@@ -416,7 +406,6 @@ int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
   * @retval Others: Error.
   * @note  It is the same with function flash_stream_write().
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_burst_write(flash_t *obj, u32 address, u32 Length, u8 *data)
 {
 	flash_stream_write(obj, address, Length, data);
@@ -434,7 +423,6 @@ int flash_burst_write(flash_t *obj, u32 address, u32 Length, u8 *data)
   * @retval Others: Error.
   * @note It is the same with function flash_stream_read().
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_burst_read(flash_t *obj, u32 address, u32 Length, u8 *data)
 {
 	flash_stream_read(obj, address, Length, data);
@@ -452,7 +440,6 @@ int  flash_burst_read(flash_t *obj, u32 address, u32 Length, u8 *data)
   * @attention Only for Micron 128MB flash.
   * @note Please refer to the flash datasheet for more info about memory mapping.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_set_extend_addr(flash_t *obj, u32 data)
 {
 	/* To avoid gcc warnings */
@@ -474,7 +461,6 @@ int flash_set_extend_addr(flash_t *obj, u32 data)
   * @attention Only for Micron 128MB flash.
   * @note Please refer to the flash datasheet for more info about memory mapping.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_get_extend_addr(flash_t *obj)
 {
 	/* To avoid gcc warnings */
@@ -495,7 +481,6 @@ int flash_get_extend_addr(flash_t *obj)
   * @param  len: Length of the flash ID to read.
   * @return Length of the flash ID.
   */
-SRAMDRAM_ONLY_TEXT_SECTION
 int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len)
 {
 	/* To avoid gcc warnings */

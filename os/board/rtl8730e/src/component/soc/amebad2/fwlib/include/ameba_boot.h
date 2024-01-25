@@ -56,6 +56,8 @@ extern u8 __ipc_table_end__[];
 
 extern u8 __bdram_heap_buffer_start__[];
 extern u8 __bdram_heap_buffer_size__[];
+extern u8 __sram_heap_extend_start__[];
+extern u8 __sram_heap_extend_size__[];
 #endif
 extern u8 __rom_bss_start__[];
 extern u8 __rom_bss_end__[];

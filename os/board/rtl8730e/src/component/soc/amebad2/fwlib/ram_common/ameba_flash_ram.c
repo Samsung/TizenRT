@@ -24,6 +24,52 @@ void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
 void FLASH_UserMode_Enter(void);
 void FLASH_UserMode_Exit(void);
 
+#define FLASH_GATE_USE_CKE	DISABLE
+
+#ifdef ARM_CORE_CM4
+SRAMDRAM_ONLY_TEXT_SECTION
+void FLASH_Write_IPC_Int(VOID *Data, u32 IrqStatus, u32 ChanNum)
+{
+	/* To avoid gcc warnings */
+	(void) Data;
+	(void) IrqStatus;
+	(void) ChanNum;
+
+	__disable_irq();
+
+	PIPC_MSG_STRUCT ipc_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ);
+	u8 *pflag = (u8 *)ipc_msg->msg;
+	/* Sent Flag to let ca32 know */
+	pflag[0] = 1;
+	DCache_Clean((u32)pflag, sizeof(pflag));
+
+	/* Wait ca32 program done */
+	while (1) {
+		DCache_Invalidate((u32)pflag, sizeof(pflag));
+		if (pflag[0] == 0) {
+			break;
+		}
+	}
+
+	__enable_irq();
+}
+
+IPC_TABLE_DATA_SECTION
+const IPC_INIT_TABLE ipc_flashpg_table[] = {
+	{
+		.USER_MSG_TYPE = IPC_USER_DATA,
+		.Rxfunc = FLASH_Write_IPC_Int,
+		.RxIrqData = (VOID *) NULL,
+		.Txfunc = IPC_TXHandler,
+		.TxIrqData = (VOID *) NULL,
+		.IPC_Direction = IPC_AP_TO_NP,
+		.IPC_Channel = IPC_A2N_FLASHPG_REQ
+	}
+};
+#endif
+
+ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
+
 /**
   * @brief  This function is used to lock CPU when write or erase flash under XIP.
   * @note
@@ -33,16 +79,39 @@ void FLASH_UserMode_Exit(void);
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
-#ifdef ARM_CORE_CA32
-	if (SYSCFG_CUT_VERSION_A == SYSCFG_RLVersion()) {
-		arm_gic_freq_switch();
-	}
-#endif
-
 	/* disable irq */
 	PrevIrqStatus = save_and_cli();
-}
 
+	/* Add This Code For XIP when ca32 Program Flah */
+#if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
+#if (CONFIG_SMP_NCPUS > 1)
+	/*1. Close Core1 to avoid Core1 XIP */
+	vPortGateOtherCore();
+#endif
+#if FLASH_GATE_USE_CKE
+	/*2. Disable KM4 clock */
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0, HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0) & ~APBPeriph_NP_CLOCK);
+#else
+	/*2. Sent IPC to KM4 */
+	IPC_MSG_STRUCT ipc_msg_temp;
+	memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
+	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+
+	ipc_msg_temp.msg_type = IPC_USER_POINT;
+	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
+	ipc_msg_temp.msg_len = 1;
+	ipc_msg_temp.rsvd = 0; /* for coverity init issue */
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+
+	while (1) {
+		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+		if (Flash_Sync_Flag[0]) {
+			break;
+		}
+	}
+#endif
+#endif
+}
 /**
   * @brief  This function is used to unlock CPU after write or erase flash under XIP.
   * @note
@@ -52,14 +121,23 @@ void FLASH_Write_Lock(void)
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Unlock(void)
 {
+#if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
+	/*1. Let KM4 Go */
+#if FLASH_GATE_USE_CKE
+	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0, HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKE_GRP0) | APBPeriph_NP_CLOCK);
+#else
+	Flash_Sync_Flag[0] = 0;
+	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+#endif
+
+#if (CONFIG_SMP_NCPUS > 1)
+	/*2. Wakeup Core1 */
+	vPortWakeOtherCore();
+#endif
+#endif
+
 	/* restore irq */
 	restore_flags(PrevIrqStatus);
-
-#ifdef ARM_CORE_CA32
-	if (SYSCFG_CUT_VERSION_A == SYSCFG_RLVersion()) {
-		arm_gic_freq_restore();
-	}
-#endif
 }
 
 /**

@@ -84,15 +84,19 @@ void vDisableIPIInterrupt(void)
 
 void vConfigureIPIInterrupt(void)
 {
-	vRegisterIRQHandler(IPI_IRQ, (ISRCallback_t)FreeRTOS_IPI_Handler, 0);
+	vRegisterIRQHandler(IPI_IRQ, (ISRCallback_t)FreeRTOS_IPI_Handler, NULL);
 
 	arm_gic_irq_set_priority(IPI_IRQ, INT_PRI_MIDDLE, IRQ_TYPE_LEVEL);
 	arm_gic_irq_enable(IPI_IRQ);
 
-	vRegisterIRQHandler(IPI_CPUHP_IRQ, (ISRCallback_t)FreeRTOS_IPI_CPUHP_Handler, 0);
+	vRegisterIRQHandler(IPI_CPUHP_IRQ, (ISRCallback_t)FreeRTOS_IPI_CPUHP_Handler, NULL);
 
 	arm_gic_irq_set_priority(IPI_CPUHP_IRQ, INT_PRI_MIDDLE, IRQ_TYPE_LEVEL);
 	arm_gic_irq_enable(IPI_CPUHP_IRQ);
+
+	vRegisterIRQHandler(IPI_FLASHPG_IRQ, (ISRCallback_t)FreeRTOS_IPI_FLASHPG_Handler, NULL);
+	arm_gic_irq_set_priority(IPI_FLASHPG_IRQ, INT_PRI_MIDDLE, IRQ_TYPE_LEVEL);
+	arm_gic_irq_enable(IPI_FLASHPG_IRQ);
 }
 
 void vClearIPIInterrupt(void)

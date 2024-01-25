@@ -69,11 +69,12 @@ MEMORY
 	KM4_FLOADER_RAM_S (rwx) :               ORIGIN = 0x30003020, LENGTH = 0x3001B000 - 0x30003020	/* KM4 ImgTool Flash Loader RAM: 95k */
 
 	/* KM4 Non-secure RAM */
-	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60100020 - 0x60000020	/* KM4 MAIN DRAM: 1MB*/
+	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60017000 - 0x60000020	/* KM4 MAIN DRAM: 92KB */
 	KM4_MSP_RAM_NS (rw) :                   ORIGIN = 0x2001B000, LENGTH = 0x2001C000 - 0x2001B000	/* KM4  MSP_NS RAM: 4k */
 	KM4_ROMBSS_RAM_COM (rw) :               ORIGIN = 0x2001C000, LENGTH = 0x2001D000 - 0x2001C000	/* KM4  ROM BSS COMMON(S & NS both used) RAM: 4k */
 	KM4_ROMBSS_RAM_NS (rw) :                ORIGIN = 0x2001D000, LENGTH = 0x2001E000 - 0x2001D000	/* KM4 ROM BSS NS RAM: 4k */
 	KM4_STDLIB_HEAP_RAM_NS (rw) :           ORIGIN = 0x2001E000, LENGTH = 0x2001F000 - 0x2001E000	/* KM4 ROM STDLIB HEAP: 4k */
+	KM4_SRAM_HEAP_EXT (rw) :                ORIGIN = 0x20020000, LENGTH = 0x20040000 - 0x20020000	/* KM4 SRAM HEAP EXT: 128k */
 
 	/* KM4 Non-secure RAM for XIP only */
 	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20014020, LENGTH = 0x2001B000 - 0x20014020	/* KM4 MAIN SRAM: 28k */
@@ -109,7 +110,7 @@ MEMORY
 	CA32_BL1_SRAM_S (rwx) :                 ORIGIN = 0x3001FE00, LENGTH = 0x30020000 - 0x3001FE00	/* CA32 BL1 SRAM: 512B */
 	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70180020, LENGTH = 0x701A0000 - 0x70180020	/* CA32 BL1 DRAM S: 127k */
 	CA32_FIP_DRAM_NS (rwx) :                ORIGIN = 0x60400000, LENGTH = 0x60600000 - 0x60400000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
-	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60900000 - 0x60300000	/* CA32 BL3 DRAM NS: 6MB */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60A00000 - 0x60300000	/* CA32 BL3 DRAM NS: 7MB */
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT */
 }
@@ -127,23 +128,6 @@ __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
 
 SECTIONS
 {
-	.code :
-	{
-		. = ALIGN(4096);
-		__dram_text_start__ = .;
-		. = ALIGN(0x4);
-
-		*(.vectors)
-		*(.start)
-		*(.timesensitive.text*)
-		*(.sramdram.only.text*)		
-		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
-		*arm_mmu.o (.text*)
-
-		. = ALIGN(4096);
-		__dram_text_end__ = .;
-		_etext_ram = ABSOLUTE(.);
-	} > CA32_BL3_DRAM_NS
 
 	/* xip part */
 	.xip_image2.text ORIGIN(CA32_IMG2_XIP):
@@ -153,11 +137,11 @@ SECTIONS
 		_stext_ram = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
-		*(.text*)		/* .text* sections (code) */
-		*(.rodata)		/* .rodata sections (constants, strings, etc.) */
-		*(.rodata*)		/* .rodata* sections (constants, strings, etc.) */
-		*(.glue_7)		/* glue arm to thumb code */
-		*(.glue_7t)		/* glue thumb to arm code */
+		EXCLUDE_FILE (*arm_mmu.o)*(.text*)      /* .text* sections (code) */
+		*(.rodata)      /* .rodata sections (constants, strings, etc.) */
+		*(.rodata*)     /* .rodata* sections (constants, strings, etc.) */
+		*(.glue_7)      /* glue arm to thumb code */
+		*(.glue_7t)     /* glue thumb to arm code */
 		*(.vfp11_veneer)
 		*(.eh_frame)
 		KEEP (*(.init))
@@ -179,6 +163,24 @@ SECTIONS
 		_etext_flash = ABSOLUTE(.);
 		__flash_text_end__ = .;
 	} > CA32_IMG2_XIP
+
+	.code :
+	{
+		. = ALIGN(4096);
+		__dram_text_start__ = .;
+		. = ALIGN(0x4);
+
+		*(.vectors)
+		*(.start)
+		*(.timesensitive.text*)
+		*(.sramdram.only.text*)     
+		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
+		*arm_mmu.o (.text*)
+
+		. = ALIGN(4096);
+		__dram_text_end__ = .;
+		_etext_ram = ABSOLUTE(.);
+	} > CA32_BL3_DRAM_NS
 
 	/* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
 	.ARM.extab  : 

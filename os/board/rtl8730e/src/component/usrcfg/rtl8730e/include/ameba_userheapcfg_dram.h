@@ -42,8 +42,11 @@
 #if (defined ARM_CORE_CM4)
 //The flow heap size shall great than 300K defined in configTOTAL_HEAP_SIZE
 
-//#define SRAM_HEAP0_START				__bdram_heap_buffer_start__
-//#define SRAM_HEAP0_SIZE				__bdram_heap_buffer_size__
+#define SRAM_HEAP0_START				__bdram_heap_buffer_start__
+#define SRAM_HEAP0_SIZE				__bdram_heap_buffer_size__
+
+#define SRAM_HEAP1_START				__sram_heap_extend_start__
+#define SRAM_HEAP1_SIZE				__sram_heap_extend_size__
 
 #define PSRAM_HEAP0_START				__psram_heap_buffer_start__
 #define PSRAM_HEAP0_SIZE				__psram_heap_buffer_size__
