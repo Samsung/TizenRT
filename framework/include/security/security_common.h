@@ -25,8 +25,8 @@
 extern "C" {
 #endif
 
-#define SECURITY_MAX_KEY_BUF          4096
-#define SECURITY_MAX_CERT_BUF         4096
+#define SECURITY_MAX_KEY_BUF          (4064) // (Physical MAX slot size) - (head & tail size) (4096 - 32)
+#define SECURITY_MAX_CERT_BUF         (4064) 
 #define SECURITY_MAX_SS_BUF           4096
 #define SECURITY_MAX_BUF              SECURITY_MAX_SS_BUF
 
