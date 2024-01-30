@@ -54,7 +54,6 @@ volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
  */
 
 uint64_t g_irqstack_alloc[INTSTACK_ALLOC >> 3];
-uint64_t g_fiqstack_alloc[INTSTACK_ALLOC >> 3];
 
 /* These are arrays that point to the top of each interrupt stack */
 
@@ -72,6 +71,10 @@ uintptr_t g_irqstack_top[CONFIG_SMP_NCPUS] =
 #endif
 };
 
+#if defined(CONFIG_ARMV7A_DECODEFIQ)
+
+uint64_t g_fiqstack_alloc[INTSTACK_ALLOC >> 3];
+
 uintptr_t g_fiqstack_top[CONFIG_SMP_NCPUS] =
 {
   (uintptr_t)g_fiqstack_alloc + INTSTACK_SIZE,
@@ -85,6 +88,8 @@ uintptr_t g_fiqstack_top[CONFIG_SMP_NCPUS] =
   (uintptr_t)g_fiqstack_alloc + 4 * INTSTACK_SIZE
 #endif
 };
+
+#endif
 
 #endif
 
