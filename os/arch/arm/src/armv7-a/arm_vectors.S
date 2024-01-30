@@ -99,7 +99,7 @@
  *
  ****************************************************************************/
 
-#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7 && defined(CONFIG_ARMV7A_DECODEFIQ)
 	.macro	setfiqstack, tmp1, tmp2
 	ldr		sp, .Lfiqstacktop		/* SP = FIQ stack top */
 	.endm
@@ -832,7 +832,7 @@ arm_vectorfiq:
 	add		r14, r14, #(4*7)		/* (FIQ) r14=address of r15 storage */
 	ldmia		r14, {r15}^			/* Return */
 
-#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+#if !defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7 && defined(CONFIG_ARMV7A_DECODEFIQ)
 .Lfiqstacktop:
 	.word	g_fiqstacktop
 #endif
@@ -865,6 +865,7 @@ g_intstackbase:
  *  Name: g_fiqstackalloc/g_fiqstacktop
  ****************************************************************************/
 
+#if defined(CONFIG_ARMV7A_DECODEFIQ)
 	.globl	g_fiqstackalloc
 	.type	g_fiqstackalloc, object
 	.globl	g_fiqstacktop
@@ -875,6 +876,7 @@ g_fiqstackalloc:
 g_fiqstacktop:
 	.size	g_fiqstacktop, 0
 	.size	g_fiqstackalloc, (CONFIG_ARCH_INTERRUPTSTACK & ~7)
+#endif
 
 #endif /* !CONFIG_SMP && CONFIG_ARCH_INTERRUPTSTACK > 7 */
 	.end
