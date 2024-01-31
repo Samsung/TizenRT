@@ -221,6 +221,9 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/usrcfg/rtl8730e/i
 
 CHIP_ASRCS  =
 CHIP_CSRCS = amebasmart_boot.c
+ifeq ($(CONFIG_PM), y)
+CHIP_CSRCS += amebasmart_pmhelpers.c
+endif
 CHIP_CSRCS += amebasmart_idle.c
 CHIP_CSRCS += amebasmart_irq.c
 CHIP_CSRCS += amebasmart_cpuboot.c
@@ -253,6 +256,10 @@ CMN_CSRCS += amebasmart_reboot_reason.c
 endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
 #CMN_CSRCS += amebasmart_signature.c
+endif
+ifeq ($(CONFIG_PM),y)
+CMN_CSRCS += psci.c amebasmart_pmc.c
+CMN_ASRCS += a32_pm.S
 endif
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)

@@ -572,4 +572,39 @@ int arm_gic_irq_trigger(int irq, bool edge)
   return -EINVAL;
 }
 
+#ifdef CONFIG_PM
+int up_irq_is_pending(int irq)
+{
+	int int_grp, int_off;
+	uint32_t enabler;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	enabler = getreg32(GIC_ICDISPR(int_grp << 5));
+
+	return (enabler & (1 << int_off)) != 0;
+}
+
+void up_set_pending_irq(int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	putreg32((1 << int_off), GIC_ICDISPR(int_grp << 5));
+}
+
+void up_clear_pending_irq(int irq)
+{
+	int int_grp, int_off;
+
+	int_grp = irq / 32;
+	int_off = irq % 32;
+
+	putreg32((1 << int_off), GIC_ICDICPR(int_grp << 5));
+}
+#endif
+
 #endif /* CONFIG_ARMV7A_HAVE_GICv2 */
