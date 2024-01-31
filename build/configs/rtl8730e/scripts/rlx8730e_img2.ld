@@ -172,6 +172,7 @@ SECTIONS
 
 		*(.vectors)
 		*(.start)
+		*(.ps_boot)
 		*(.timesensitive.text*)
 		*(.sramdram.only.text*)     
 		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
