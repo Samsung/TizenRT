@@ -84,7 +84,15 @@ int up_timerisr(int irq, uint32_t *regs)
 
     last_cycle = arm_arch_timer_compare();
 
-    delta_ticks = 1;
+#ifdef CONFIG_PM
+	  if (arm_arch_timer_count() < last_cycle) {
+		  return -1;
+	  } else {
+		  delta_ticks = (uint32_t)((arm_arch_timer_count() - last_cycle) / SYSTICK_RELOAD) + 1;
+	  }
+#else
+	  delta_ticks = 1;
+#endif
 
     arm_arch_timer_set_compare(last_cycle + delta_ticks * SYSTICK_RELOAD);
     return 0;
@@ -105,13 +113,8 @@ int up_timerisr(int irq, uint32_t *regs)
 
 void up_timer_initialize(void)
 {
-  // uint32_t regval;
-  // uint32_t cr;
-
   /* Disable GPT interrupts at the GIC */
   up_disable_irq(ARM_ARCH_TIMER_IRQ);
-  /* Configure as a (rising) edge-triggered interrupt */
-  // arm_gic_irq_trigger(ARM_ARCH_TIMER_IRQ, true);
 
   /* Attach the timer interrupt vector */
   irq_attach(ARM_ARCH_TIMER_IRQ, (xcpt_t)up_timerisr, NULL);
@@ -123,4 +126,14 @@ void up_timer_initialize(void)
   /* And enable the timer interrupt at the GIC */
   up_prioritize_irq(ARM_ARCH_TIMER_IRQ, 224);
   up_enable_irq(ARM_ARCH_TIMER_IRQ);
+}
+
+void up_timer_disable(void)
+{
+  arm_arch_timer_enable(0);
+}
+
+void up_timer_enable(void)
+{
+  arm_arch_timer_enable(1);
 }

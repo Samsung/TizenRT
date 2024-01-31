@@ -46,6 +46,13 @@
 #  define SUPPRESS_CONSOLE_CONFIG 1
 #endif
 
+/* For power save */
+extern void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time);
+extern void tizenrt_post_sleep_processing(uint32_t *expected_idle_time);
+
+#define configPRE_SLEEP_PROCESSING( x )         		( tizenrt_pre_sleep_processing((uint32_t *)&x) )
+#define configPOST_SLEEP_PROCESSING( x )        		( tizenrt_post_sleep_processing((uint32_t *)&x) )
+
 /* Is there a serial console?  It could be on UART1-5 */
 
 #if defined(CONFIG_UART1_SERIAL_CONSOLE) && defined(CONFIG_RTL8730E_UART1)
