@@ -9,7 +9,8 @@
 
 #ifndef configNUM_CORES
 #define configNUM_CORES			1
-#define portGET_CORE_ID()			0
+/* Link to TizenRT code */
+#define portGET_CORE_ID()			up_cpu_index()
 #endif
 
 #if 1 //Justin: temporary solution for enter critical code for tizenRT

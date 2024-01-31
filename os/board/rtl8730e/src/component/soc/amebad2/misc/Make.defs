@@ -50,7 +50,7 @@
 ############################################################################
 
 CSRCS += ameba_wlan_init.c \
-		 ameba_freertos_pmu.c \
+		 ameba_tizenrt_pmu.c \
 
 
 

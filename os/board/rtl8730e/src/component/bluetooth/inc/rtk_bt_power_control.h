@@ -44,7 +44,11 @@ void rtk_bt_disable_power_save(void);
 * @param[in] p_resume_callback: Callback invoked after system waking from power save mode.
 * @return    None
 */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 void rtk_bt_power_save_init(rtk_bt_ps_callback p_suspend_callback, rtk_bt_ps_callback p_resume_callback);
+#else 
+void rtk_bt_power_save_init(void);
+#endif
 
 /**
 * @brief     BT power save deinit.

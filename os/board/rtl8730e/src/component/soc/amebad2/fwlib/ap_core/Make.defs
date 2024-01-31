@@ -51,7 +51,7 @@
 
 CSRCS += ameba_app_start.c \
 	cstub.c \
-	arm_gic.c \
+#	arm_gic.c \
 #	system_sheipa.c \
 #	amebaap_vector.c \
 #	traps.c \

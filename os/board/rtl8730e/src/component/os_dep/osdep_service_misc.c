@@ -191,3 +191,19 @@ void irq_disable(IRQn_Type IrqNum)
 	}
 	up_disable_irq(IrqNum + AMEBASMART_IRQ_FIRST);
 }
+
+void irq_clear_pending(IRQn_Type IrqNum)
+{
+	up_clear_pending_irq(IrqNum + AMEBASMART_IRQ_FIRST);
+}
+
+void irq_set_pending(IRQn_Type IrqNum)
+{
+	/*cannot Set-pending bits for SGIs*/
+	up_set_pending_irq(IrqNum + AMEBASMART_IRQ_FIRST);
+}
+
+uint32_t irq_get_pending(IRQn_Type IrqNum)
+{
+	return up_irq_is_pending(IrqNum + AMEBASMART_IRQ_FIRST);
+}
