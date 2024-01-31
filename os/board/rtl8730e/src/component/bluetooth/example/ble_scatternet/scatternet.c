@@ -868,9 +868,15 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, 
                                                     (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gattc_app_callback));
         BT_APP_PROCESS(general_client_add());
+#if (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
+		rtk_bt_power_save_init();
+#endif
 	}
 	else if (0 == enable)
     {
+#if (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
+		rtk_bt_power_save_deinit();
+#endif
 		BT_APP_PROCESS(general_client_delete());
 
         /* no need to unreg callback here, it is done in rtk_bt_disable */
