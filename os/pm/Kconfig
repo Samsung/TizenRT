@@ -82,6 +82,12 @@ config PM_MEMORY
 
 		Setting CONFIG_PM_MEMORY=1 disables all smoothing.
 
+config PM_DVFS
+	bool "Dynamic Voltage Frequency Scaling"
+	default n
+	---help---
+		Enables option to use DVFS to save power with AI_Dual chipset.
+
 config PM_COEFN
 	int "PM coefficient"
 	default 1

@@ -115,7 +115,11 @@ static void pm_timer(int domain)
 	if (pdom->state < PM_SLEEP && !pdom->stay[pdom->state] && pmtick[pdom->state]) {
 		int delay = pmtick[pdom->state] + pdom->btime - clock_systimer();
 		int left  = wd_gettime(pdom->wdog);
-
+		if (delay <= 0) {
+			/* TODO: Revisit this implementation if we face negative delay value here */
+			pmdbg("Delay value is negative! Delay = %d, Pdom->btime = %8lld\n", delay, pdom->btime);
+			delay = 1;
+		}
 		if (!WDOG_ISACTIVE(pdom->wdog) || abs(delay - left) > PM_TIMER_GAP) {
 			wd_start(pdom->wdog, delay, (wdentry_t)pm_timer_cb, 0);
 		}
@@ -262,8 +266,9 @@ static inline void pm_changeall(int domain, enum pm_state_e newstate)
 
 int pm_changestate(int domain_indx, enum pm_state_e newstate)
 {
+	FAR struct pm_domain_s *pdom = &g_pmglobals.domain[domain_indx];
 	irqstate_t flags;
-	int ret;
+	int ret = -1;
 
 	DEBUGASSERT(domain_indx >= 0 && domain_indx < CONFIG_PM_NDOMAINS);
 
@@ -276,32 +281,29 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 	flags = enter_critical_section();
 
 	/* First, prepare the drivers for the state change.  In this phase,
-	 * drivers may refuse the state state change.
+	 * drivers may refuse the state change.
 	 */
-
-	ret = pm_prepall(domain_indx, newstate);
-	if (ret != OK) {
-		/* One or more drivers is not ready for this state change.  Revert to
-		 * the preceding state.
-		 */
-
-		newstate = g_pmglobals.domain[domain_indx].state;
-		(void)pm_prepall(domain_indx, newstate);
-	}
-
-	/* All drivers have agreed to the state change (or, one or more have
-	 * disagreed and the state has been reverted).  Set the new state.
-	 */
-
-	pm_changeall(domain_indx, newstate);
 	if (newstate != PM_RESTORE) {
-		g_pmglobals.domain[domain_indx].state = newstate;
+		ret = pm_prepall(domain_indx, newstate);
+		if (ret != OK) {
+			/* One or more drivers is not ready for this state change.  Revert to
+			* the preceding state.
+			*/
 
-		/* Start PM timer to decrease PM state */
+			pdom->recommended = pdom->state;
+			pdom->btime = clock_systimer();
+			goto EXIT;
+		}
+		/* All drivers have agreed to the state change (or, one or more have
+		* disagreed and the state has been reverted).  Set the new state.
+		*/
+		pm_changeall(domain_indx, newstate);
+		pdom->state = newstate;
 
-		pm_timer(domain_indx);
 	}
-
+EXIT:
+	/* Start PM timer to decrease PM state */
+	pm_timer(domain_indx);
 	/* Restore the interrupt state */
 
 	leave_critical_section(flags);
@@ -324,6 +326,7 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 
 enum pm_state_e pm_querystate(int domain)
 {
+	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
 	return g_pmglobals.domain[domain].state;
 }
 

@@ -297,6 +297,11 @@ enum pm_state_e {
 	PM_COUNT,
 };
 
+struct pm_wakeup_timer_s {
+	bool use_timer;
+	uint32_t timer_interval;
+};
+
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -610,6 +615,25 @@ int pm_changestate(int domain, enum pm_state_e newstate);
  ****************************************************************************/
 
 enum pm_state_e pm_querystate(int domain);
+
+/****************************************************************************
+ * Name: pm_dvfs
+ *
+ * Description:
+ *   This internal function is called to reduce the frequency of operation
+ *   of the secondary AP core of AI_Dual chipset.
+ *
+ * Input Parameters:
+ *   div_lvl - voltage frequency scaling level
+ *
+ * Returned Value:
+ *   None.
+ *
+ * Assumptions:
+ *   Incorrect frequency scaling level given as input will lead to an assert.
+ *
+ ****************************************************************************/
+void pm_dvfs(int div_lvl);
 
 #undef EXTERN
 #ifdef __cplusplus
