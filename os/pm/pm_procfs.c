@@ -116,6 +116,9 @@ struct power_procfs_entry_s {
 	uint8_t type;
 };
 
+/* Added to record timer countdown interrupt */
+struct timer_s g_timer_wakeup = { 0, 0 };
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -142,7 +145,14 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 #endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+#ifdef CONFIG_ARCH_CORTEXA32
+static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t timer_interval);
+#else
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+#endif
+#ifdef CONFIG_ARCH_CORTEXA32
+static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl);
+#endif
 #ifdef CONFIG_PM_ENTER_SLEEP
 static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 #endif
@@ -161,6 +171,9 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
 	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
 	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
+#ifdef CONFIG_ARCH_CORTEXA32
+	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
+#endif
 #ifdef CONFIG_PM_ENTER_SLEEP
 	{"enter_sleep", NULL, enter_sleep_write, DTYPE_FILE},
 #endif
@@ -447,43 +460,117 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 }
 
 /****************************************************************************
- * Name: power_lock_write
+* 	Name: power_lock_write
+*   
+* 	Description:
+*	Lock a desired state by increasing the counter of the state.
+*
+* 	Input Parameters:
+*   filep             - File path of the power domain
+*   buffer            - Desired state to be unlocked
+*   buflen (NOT USED) - Length of the buffer
+*
+* 	Returned Value:
+*   0 (OK) means the state lock was successful.
+*	1 (Failed) means the input state was incorrect.
  ****************************************************************************/
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
-	int state = atoi(buffer);
+	(void)buffer;
+	(void)buflen;
 
-	if (state >= PM_NORMAL && state < PM_SLEEP) {
-		pm_stay(0, state);
-		fvdbg("power locked!\n");
-	} else {
-		fdbg("ERROR: Invalid state passed \n");
-	}
+	/* Always lock PM_NORMAL state, check again whether this implementation
+	is enough to handle, if not, consider below methods...
+	1a. PM_ACTIVITY is invoked in some of the driver, if application utlized it, it should draw state back to PM_NORMAL
+	1b. If 1a cannot cover all condition, add one more syscall api, as a bridge for application to call pm_activity
+	2a. Else, we can consider to lock/unlock for all state other than PM_SLEEP, ie. fetch state: pm_querystate(PM_IDLE_DOMAIN)
+	2b. Need to verify if the transition is going to happen, but lock state appears suddenly, what will happen?
+	*/
+	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+	fvdbg("State locked!\n");
 
-	return buflen;
+	return OK;
 }
 
 /****************************************************************************
- * Name: power_unlock_write
+* 	Name: power_unlock_write
+*   
+* 	Description:
+*	Unlock a desired state by decreasing the counter of the state. A timer 
+*	interval can be provided to setup the timer interrupt. If there is some
+*	other interrupt appear before the interval ends, the system will also
+*	wakeup.
+*
+* 	Input Parameters:
+*   filep          - File path of the power domain
+*   buffer         - Desired state to be unlocked
+*   timer_interval - Timer interval for the timer interrupt
+*
+* 	Returned Value:
+*   0 (OK) means the state unlock was successful.
+*	1 (Failed) means the input state was incorrect.
  ****************************************************************************/
+#ifdef CONFIG_ARCH_CORTEXA32
+static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t timer_interval)
+#else
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+#endif
 {
-	int state = atoi(buffer);
+	(void)buffer;
 
-	if (state >= PM_NORMAL && state < PM_SLEEP) {
-		pm_relax(0, state);
-		fvdbg("power unlocked!\n");
-	} else {
-		fdbg("ERROR: Invalid state passed \n");
+	pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
+	fvdbg("State unlocked!\n");
+#ifdef CONFIG_ARCH_CORTEXA32
+	if (timer_interval > 0) {
+		g_timer_wakeup.use_timer = 1;
+		g_timer_wakeup.timer_interval = timer_interval;
 	}
-
+	else {
+		g_timer_wakeup.use_timer = 0;
+		g_timer_wakeup.timer_interval = 0;	
+	}
+	return OK;
+#else
 	return buflen;
+#endif
 }
+
+/****************************************************************************
+* 	Name: power_tunefreq_write
+*   
+* 	Description:
+*	Change the operating frequency of the AP core, for saving up power
+*	consumption under active mode.
+*
+* 	Input Parameters:
+*   filep            - File path of the power domain
+*   buffer(NOT USED) - Desired state to be unlocked
+*   div_lvl          - Level selection for operating frequency
+*
+* 	Returned Value:
+*   0 (OK) means the change of operating frequency was successful
+ ****************************************************************************/
+#ifdef CONFIG_ARCH_CORTEXA32
+static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl)
+{
+	/* Buffer string need not to be considered, just div level is enough */
+	/*
+	   Only affect active mode power consumption
+	   0 -> 1.2GHz
+	   1 -> 600MHz
+	   2 -> 400Mhz
+	   3 -> 300Mhz
+	 */
+	(void)buffer;
+	pm_dvfs(div_lvl);
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Name: enter_sleep_write
  ****************************************************************************/
- #ifdef CONFIG_PM_ENTER_SLEEP
+#ifdef CONFIG_PM_ENTER_SLEEP
 static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	int len;

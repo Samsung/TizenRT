@@ -35,6 +35,10 @@ ifeq ($(CONFIG_PM_TEST),y)
 CSRCS += pm_test.c
 endif
 
+ifeq ($(CONFIG_PM_DVFS),y)
+CSRCS += pm_dvfs.c
+endif
+
 DEPPATH = --dep-path .
 VPATH = .
 
