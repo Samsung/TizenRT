@@ -410,12 +410,19 @@ void board_initialize(void)
 #endif
 
 	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_40b3dee_2024/01/26-7:14:28";
+	char km0_application_rev_temp[] = "km0_application_ver_ad855c0_2024/02/01-13:58:48";
 	lldbg("KM4_version %s\n", km0_application_rev_temp);
 
 #ifdef CONFIG_AUDIO_ALC1019
 	rtl8730e_alc1019_initialize(0);
 #endif
+	IPC_MSG_STRUCT ipc_msg_loguart;
+
+	ipc_msg_loguart.msg_type = IPC_USER_POINT;
+	ipc_msg_loguart.msg = 0;
+	ipc_msg_loguart.msg_len = 1;
+	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
+	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
