@@ -1,5 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version ad855c0 2024/02/01-13:58:48 ==
+1.	Release Loguart interrupt for AP core
+
+== version 7c8bfe5 2024/01/29-09:51:46 ==
+1.	Remove customization for LP Loguart
+
 == version 40b3dee 2024/01/26-17:14:28 ==
 1.	Reduce PSRAM layout in KM4 to 92k
 2.	Place KM4 in XIP
