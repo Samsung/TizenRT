@@ -324,7 +324,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
 //#define IPC_A2L_Channel1						1
 #define IPC_A2L_UARTBRIDGE						2
-//#define IPC_A2L_Channel3						3
+#define IPC_A2L_DISLOGUART						3
 //#define IPC_A2L_Channel4						4
 //#define IPC_A2L_Channel5						5
 //#define IPC_A2L_Channel6						6
