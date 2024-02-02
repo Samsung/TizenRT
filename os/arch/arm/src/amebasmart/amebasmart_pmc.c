@@ -58,6 +58,8 @@
 #include <task.h>
 #include "freertos_pmu.h"
 #endif
+/* Include header for DVFS implementation */
+#include <tinyara/pm/pm.h>
 #include "ameba_soc.h"
 #include "sys_io.h"
 #include "gic.h"
@@ -281,7 +283,8 @@ void SOCPS_SleepCG(void)
 	//pmu_acquire_wakelock(PMU_OS);
 }
 
-void up_set_dvfs(u32 val)
+#ifdef CONFIG_PM_DVFS
+void up_set_dvfs(int div_lvl)
 {
 	/* Please refer to sysreg_hsys.h */
 	// AP_CLK_DIV1		0
@@ -292,6 +295,7 @@ void up_set_dvfs(u32 val)
 	/* Div clock speed by input val */
 	reg_div = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKSL);
 	reg_div &= ~HSYS_MASK_CKD_AP;
-	reg_div |= HSYS_CKD_AP(val);
+	reg_div |= HSYS_CKD_AP(div_lvl);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKSL, reg_div);
 }
+#endif
