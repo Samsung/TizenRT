@@ -1521,6 +1521,10 @@ void ftl_mapping_table_init(void)
 		//                                  MAPPING_TABLE_SIZE);//table is initialised as 0
 
 		ftl_mapping_table = kmm_zalloc(MAPPING_TABLE_SIZE);
+		if (!ftl_mapping_table) {
+			FTL_PRINTF(FTL_LEVEL_ERROR, "[ftl] init malloc failed! func: %s, line: %d", __FUNCTION__, __LINE__);
+			return;
+		}
 	}
 
 	uint8_t pageID = g_cur_pageID;

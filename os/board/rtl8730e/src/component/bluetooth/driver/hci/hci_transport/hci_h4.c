@@ -86,9 +86,6 @@ static uint16_t h4_recv_data(uint8_t *buf, uint16_t len)
         }
     }
 
-    /* if read_len is not equal len, mean ERROR! */
-    if (read_len != len)
-        HCI_ERR("\n\rH4 Read FAILED! EXIT H4 RX Thread!");
     return read_len;
 }
 

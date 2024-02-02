@@ -1004,6 +1004,7 @@ typedef enum {
 	RTK_BT_EVT_CB_OK = 0,
 	RTK_BT_EVT_CB_ACCEPT = 1,
 	RTK_BT_EVT_CB_REJECT = 2,
+	RTK_BT_EVT_CB_FAIL = 3,
 } rtk_bt_evt_cb_ret_t;
 
 /**

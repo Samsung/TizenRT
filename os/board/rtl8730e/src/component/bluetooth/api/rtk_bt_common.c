@@ -1327,16 +1327,16 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len)
 
 	switch (addr->type) {
 	case RTK_BT_LE_ADDR_TYPE_PUBLIC:
-		strcpy(type, "public");
+		strncpy(type, "public", 7);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RANDOM:
-		strcpy(type, "random");
+		strncpy(type, "random", 7);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC:
-		strcpy(type, "public-id");
+		strncpy(type, "public-id", 10);
 		break;
 	case RTK_BT_LE_ADDR_TYPE_RPA_RANDOM:
-		strcpy(type, "random-id");
+		strncpy(type, "random-id", 10);
 		break;
 	default:
 		snprintf(type, sizeof(type), "0x%02x", addr->type);
@@ -1360,21 +1360,21 @@ void rtk_bt_addr_to_str(uint8_t addr_type, uint8_t *paddr, char *str, uint32_t l
 	char str_type[20] = {0};
 	memset(str, 0, len);
 
-	switch (addr_type & 0xF) {
+	switch (addr_type) {
 	case RTK_BT_ADDR_LE_PUBLIC:
-		strcpy(str_type + strlen(str_type), "le public");
+		strncpy(str_type + strlen(str_type), "le public", 10);
 		break;
 	case RTK_BT_ADDR_LE_RANDOM:
-		strcpy(str_type + strlen(str_type), "le random");
+		strncpy(str_type + strlen(str_type), "le random", 10);
 		break;
 	case RTK_BT_ADDR_LE_RPA_PUBLIC:
-		strcpy(str_type + strlen(str_type), "le public-id");
+		strncpy(str_type + strlen(str_type), "le public-id", 13);
 		break;
 	case RTK_BT_ADDR_LE_RPA_RANDOM:
-		strcpy(str_type + strlen(str_type), "le random-id");
+		strncpy(str_type + strlen(str_type), "le random-id", 13);
 		break;
 	case RTK_BT_ADDR_CLASSIC:
-		strcpy(str_type + strlen(str_type), "classic");
+		strncpy(str_type + strlen(str_type), "classic", 8);
 		break;
 	default:
 		snprintf(str_type, sizeof(str_type), "0x%02x", addr_type);
@@ -1442,12 +1442,14 @@ uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint3
 	uint8_t ret = 0;
 	rtk_bt_evt_cb_t cb_func = NULL;
 
-	if (group < RTK_BT_API_BR_BASE) {
+	if (group >= RTK_BT_API_LE_BASE && group < RTK_BT_LE_GP_MAX) {
 		cb_func = rtk_bt_le_evt_cb_tbl[group - RTK_BT_API_LE_BASE];
-	} else if (group < RTK_BT_API_COMMON_BASE) {
+	} else if (group >= RTK_BT_API_BR_BASE && group < RTK_BT_BR_GP_MAX) {
 		cb_func = rtk_bt_br_evt_cb_tbl[group - RTK_BT_API_BR_BASE];
-	} else { /* if (group >= RTK_BT_API_COMMON_BASE) */
+	} else if (group >= RTK_BT_API_COMMON_BASE && group < RTK_BT_COMMON_GP_MAX) {
 		cb_func = rtk_bt_evt_cb_tbl[group - RTK_BT_API_COMMON_BASE];
+	} else {
+		return RTK_BT_EVT_CB_FAIL;
 	}
 
 	if (cb_func) {
