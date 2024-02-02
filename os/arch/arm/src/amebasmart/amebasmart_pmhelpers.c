@@ -51,7 +51,7 @@
 #include "timer_api.h"
 
 gtimer_t g_timer1;
-extern struct timer_s g_timer_wakeup;
+extern struct pm_wakeup_timer_s g_timer_wakeup;
 
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
