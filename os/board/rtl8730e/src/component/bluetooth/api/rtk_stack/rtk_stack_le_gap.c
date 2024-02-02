@@ -528,9 +528,9 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 
 	case GAP_MSG_LE_READ_RSSI: {
 		p_cmd = bt_stack_pending_cmd_search(type);
-		rtk_bt_le_read_rssi_param_t *read_rssi =
-			(rtk_bt_le_read_rssi_param_t *)p_cmd->param;
 		if (p_cmd) {
+			rtk_bt_le_read_rssi_param_t *read_rssi =
+				(rtk_bt_le_read_rssi_param_t *)p_cmd->param;
 			bt_stack_pending_cmd_delete(p_cmd);
 			p_cmd->ret = p_data->p_le_read_rssi_rsp->cause;
 			*read_rssi->p_rssi = p_data->p_le_read_rssi_rsp->rssi;
@@ -3804,6 +3804,9 @@ static uint16_t bt_stack_le_privacy_init(void *param)
 	if (privacy_table == NULL) {
 		size = bond_storage_num * sizeof(T_LE_PRIVACY_ENTRY);
 		privacy_table = osif_mem_alloc(RAM_TYPE_DATA_ON, size);
+		if (!privacy_table) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
 		le_privacy_register_cb(privacy_msg_callback);
 	}
 

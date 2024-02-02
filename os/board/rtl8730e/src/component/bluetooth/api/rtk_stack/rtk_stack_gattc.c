@@ -687,7 +687,12 @@ static rtk_bt_gattc_req_t *bt_stack_gattc_create_req(rtk_bt_gattc_req_type_t typ
 
 static void bt_stack_gattc_free_req(rtk_bt_gattc_req_t *p_req)
 {
-	if (p_req && p_req->user_data) {
+	if (NULL == p_req) {
+		printf("Error: gattc free req is NULL\r\n");
+		return;
+	}
+
+	if (p_req->user_data) {
 		osif_mem_free(p_req->user_data);
 	}
 	osif_mem_free(p_req);
@@ -951,6 +956,9 @@ static uint16_t bt_stack_gattc_send_cccd(rtk_bt_gattc_req_t *p_req)
 		record = (rtk_bt_gattc_cccd_record_t *)osif_mem_alloc(
 							RAM_TYPE_DATA_ON,
 							sizeof(rtk_bt_gattc_cccd_record_t));
+		if (!record) {
+			return RTK_BT_ERR_NO_MEMORY;
+		}
 		memset(record, 0, sizeof(rtk_bt_gattc_cccd_record_t));
 		bt_stack_gattc_add_cccd_record(p_req->conn_id, record);
 		record->profile_id = p_req->update_cccd_param.profile_id;
@@ -1553,6 +1561,7 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 	rtk_bt_gatt_queue_t *p_queue = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_write_ind_t *p_write_ind = NULL;
+	rtk_bt_gattc_req_type_t req_type = 0;
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	if (type == GATT_WRITE_TYPE_REQ) {
@@ -1590,9 +1599,11 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 	rtk_bt_evt_indicate(p_evt, NULL);
 
 end:
+	req_type = p_req->req_type;
 	bt_stack_gattc_free_req(p_req);
-	if (p_req->req_type != BT_STACK_GATTC_WRITE_CMD)
+	if (req_type != BT_STACK_GATTC_WRITE_CMD) {
 		bt_stack_gattc_handle_pending_req(conn_id);
+	}
 }
 
 static void bt_stack_gattc_disconnect_cb(uint8_t conn_id)
@@ -1950,6 +1961,10 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 			p_read_ind->multiple_variable_per.value = (uint8_t *)osif_mem_alloc(
 						RAM_TYPE_DATA_ON,
 						p_read_ind->multiple_variable_per.len);
+			if (NULL == p_read_ind->multiple_variable_per.value) {
+				ret = APP_RESULT_REJECT;
+				goto end;
+			}
 			memcpy(p_read_ind->multiple_variable_per.value,
 				   read_mul_data->p_read_tbl[i].p_data, p_read_ind->multiple_variable_per.len);
 			p_evt->user_data = p_read_ind->multiple_variable_per.value;
