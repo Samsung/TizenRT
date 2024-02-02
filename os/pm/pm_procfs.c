@@ -117,7 +117,7 @@ struct power_procfs_entry_s {
 };
 
 /* Added to record timer countdown interrupt */
-struct timer_s g_timer_wakeup = { 0, 0 };
+struct pm_wakeup_timer_s g_timer_wakeup = { 0, 0 };
 
 /****************************************************************************
  * Private Function Prototypes
