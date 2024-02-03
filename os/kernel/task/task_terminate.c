@@ -166,12 +166,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 #endif
 	int ret = OK;
 
-	/* Make sure the task does not become ready-to-run while we are futzing with
-	 * its TCB by locking ourselves as the executing task.
-	 */
-
-	flags = enter_critical_section();
-
 	/* Find for the TCB associated with matching PID */
 
 	dtcb = sched_gettcb(pid);
@@ -181,6 +175,12 @@ int task_terminate(pid_t pid, bool nonblocking)
 		goto errout_with_lock;
 	}
 
+	/* Make sure the task does not become ready-to-run while we are futzing with
+	 * its TCB by locking ourselves as the executing task.
+	 */
+
+	flags = enter_critical_section();
+
 	/* Verify our internal sanity */
 
 #ifdef CONFIG_SMP
@@ -189,26 +189,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	DEBUGASSERT(dtcb->task_state != TSTATE_TASK_RUNNING &&
 	            dtcb->task_state < NUM_TASK_STATES);
 #endif
-
-#if defined(CONFIG_APP_BINARY_SEPARATION) 
-	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
-	if (IS_BINARY_MAINTASK(dtcb)) {
-#if defined(CONFIG_ARM_MPU)
-		if (up_mpu_check_active(&dtcb->mpu_regs[0])) {
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_disable_region(&dtcb->mpu_regs[i]);
-			}
-#else
-			up_mpu_disable_region(&dtcb->mpu_regs[0]);
-#endif
-		}
-#elif defined(CONFIG_ARCH_USE_MMU)
-		mmu_clear_app_pgtbl(dtcb->app_id);
-#endif
-	}
-#endif
-
 
 #ifdef CONFIG_SMP
 	/* In the SMP case, the thread may be running on another CPU.  If that is
@@ -231,13 +211,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	/* Remove the task from the task list */
 
 	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
-#ifdef CONFIG_TASK_MONITOR
-	/* Unregister this pid from task monitor */
-	task_monitor_unregester_list(pid);
-#endif
-#ifdef CONFIG_PREFERENCE
-	preference_clear_callbacks(pid);
-#endif
 
 	/* At this point, the TCB should no longer be accessible to the system */
 
@@ -251,6 +224,35 @@ int task_terminate(pid_t pid, bool nonblocking)
 #endif
 
 	leave_critical_section(flags);
+
+#if defined(CONFIG_APP_BINARY_SEPARATION)
+	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
+	if (IS_BINARY_MAINTASK(dtcb)) {
+#if defined(CONFIG_ARM_MPU)
+		if (up_mpu_check_active(&dtcb->mpu_regs[0])) {
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_disable_region(&dtcb->mpu_regs[i]);
+			}
+#else
+			up_mpu_disable_region(&dtcb->mpu_regs[0]);
+#endif
+		}
+#elif defined(CONFIG_ARCH_USE_MMU)
+		mmu_clear_app_pgtbl(dtcb->app_id);
+#endif
+	}
+#endif
+
+
+#ifdef CONFIG_TASK_MONITOR
+	/* Unregister this pid from task monitor */
+	task_monitor_unregester_list(pid);
+#endif
+#ifdef CONFIG_PREFERENCE
+	preference_clear_callbacks(pid);
+#endif
+
 	/* Perform common task termination logic (flushing streams, calling
 	 * functions registered by at_exit/on_exit, etc.).  We need to do
 	 * this as early as possible so that higher level clean-up logic
