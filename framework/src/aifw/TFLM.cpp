@@ -39,7 +39,12 @@ namespace aifw {
 tflite::AllOpsResolver g_Resolver;
 tflite::MicroProfiler g_Profiler;
 TFLM::TFLM() :
-	mModel(NULL), mBuf(NULL), mInterpreter(NULL), mErrorReporter(NULL), mInput(NULL), mOutput(NULL), mModelInputSize(0), mModelOutputSize(0)
+	mModel(NULL), mBuf(NULL), mInterpreter(NULL), mErrorReporter(NULL),
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+	mInput(NULL), mOutput(NULL), mModelInputSize(0), mModelOutputSize(0)
+#else
+	mInputList(NULL), mOutputList(NULL), mInputSizeList(NULL), mOutputSizeList(NULL)
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 {
 	this->mTensorArenaSize = AIFW_TFLM_POOL_SIZE;
 	AIFW_LOGV("Tensor Arena size: %d", this->mTensorArenaSize);
@@ -50,6 +55,27 @@ TFLM::TFLM() :
 	this->mTensorArena = tensorArena;
 }
 
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+void TFLM::clearMemory(void) {
+	if (this->mInputList) {
+		delete[] mInputList;
+		mInputList = NULL;
+	}
+	if (this->mOutputList) {
+		delete[] mOutputList;
+		mOutputList = NULL;
+	}
+	if (this->mInputSizeList) {
+		delete[] this->mInputSizeList;
+		this->mInputSizeList = NULL;
+	}
+	if (this->mOutputSizeList) {
+		delete[] this->mOutputSizeList;
+		this->mOutputSizeList = NULL;
+	}
+}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
+
 TFLM::~TFLM()
 {
 	AIFW_LOGE(":DEINIT:");
@@ -59,10 +85,81 @@ TFLM::~TFLM()
 	}
 	mErrorReporter.reset();
 	mInterpreter.reset();
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+	clearMemory();
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 }
+
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+AIFW_RESULT TFLM::allocateMemory(void)
+{
+	uint16_t *input_dims_size;
+	uint16_t *output_dims_size;
+	this->mInputSetCount = this->mInterpreter->inputs_size();
+	this->mInputList = new TfLiteTensor *[this->mInputSetCount];
+	if (!this->mInputList) {
+		AIFW_LOGE("Memory Allocation failed - model input buffer");
+		goto mem_alloc_error;
+	}
+	this->mOutputSetCount = this->mInterpreter->outputs_size();
+	this->mOutputList = new TfLiteTensor *[this->mOutputSetCount];
+	if (!this->mOutputList) {
+		AIFW_LOGE("Memory Allocation failed - model output buffer");
+		goto mem_alloc_error;
+	}
+	input_dims_size = new uint16_t[this->mInputSetCount];
+	if (!input_dims_size) {
+		AIFW_LOGE("Internal Memory Allocation failed.");
+		goto mem_alloc_error;
+	}
+	output_dims_size = new uint16_t[this->mOutputSetCount];
+	if (!output_dims_size) {
+		AIFW_LOGE("Internal Memory Allocation failed.");
+		goto mem_alloc_error;
+	}
+	this->mInputSizeList = new uint16_t[this->mInputSetCount];
+	if (!this->mInputSizeList) {
+		AIFW_LOGE("Internal Memory Allocation failed.");
+		goto mem_alloc_error;
+	}
+	this->mOutputSizeList = new uint16_t[this->mOutputSetCount];
+	if (!this->mOutputSizeList) {
+		AIFW_LOGE("Internal Memory Allocation failed.");
+		goto mem_alloc_error;
+	}
+	for (uint16_t i = 0; i < this->mInputSetCount; i++) {
+		this->mInputList[i] = this->mInterpreter->input(i);
+		input_dims_size[i] = this->mInputList[i]->dims->size;
+		this->mInputSizeList[i] = 1;
+		AIFW_LOGV("inputset %d: ", i);
+		for (uint16_t j = 0; j < input_dims_size[i]; j++) {
+			AIFW_LOGV("InputDims[%d] value: %d", j, this->mInputList[i]->dims->data[j]);
+			this->mInputSizeList[i] *= this->mInputList[i]->dims->data[j];
+		}
+		AIFW_LOGV("mInputSizeList[%d] =  %d\n", i, mInputSizeList[i]);
+	}
+	for (uint16_t i = 0; i < this->mOutputSetCount; i++) {
+		this->mOutputList[i] = this->mInterpreter->output(i);
+		output_dims_size[i] = this->mOutputList[i]->dims->size;
+		this->mOutputSizeList[i] = 1;
+		AIFW_LOGV("outputset %d: ", i);
+		for (uint16_t j = 0; j < output_dims_size[i]; j++) {
+			AIFW_LOGV("OutputDims[%d] value: %d", j, this->mOutputList[i]->dims->data[j]);
+			this->mOutputSizeList[i] *= this->mOutputList[i]->dims->data[j];
+		}
+		AIFW_LOGV("mOutputSizeList[%d] =  %d\n", i, mOutputSizeList[i]);
+	}
+	return AIFW_OK;
+
+mem_alloc_error:
+	clearMemory();
+	return AIFW_NO_MEM;
+}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
 AIFW_RESULT TFLM::_loadModel(void)
 {
+	AIFW_RESULT res;
 	mErrorReporter = std::make_shared<tflite::MicroErrorReporter>();
 	this->mInterpreter = std::make_shared<tflite::MicroInterpreter>(
 		this->mModel,
@@ -79,6 +176,7 @@ AIFW_RESULT TFLM::_loadModel(void)
 		return AIFW_ERROR;
 	}
 	AIFW_LOGV("AllocateTensors success.");
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	this->mInput = this->mInterpreter->input(0);
 	this->mOutput = this->mInterpreter->output(0);
 
@@ -107,6 +205,12 @@ AIFW_RESULT TFLM::_loadModel(void)
 		this->mModelOutputSize *= this->mOutput->dims->data[i];
 	}
 	AIFW_LOGV("mModelInputSize = %d mModelOutputSize = %d", mModelInputSize, mModelOutputSize);
+#else
+	res = allocateMemory();
+	if (res != AIFW_OK) {
+		return res;
+	}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 	AIFW_LOGV("Model loaded successfully.");
 	return AIFW_OK;
 }
@@ -161,6 +265,17 @@ AIFW_RESULT TFLM::loadModel(const unsigned char *model)
 	return _loadModel();
 }
 
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+void TFLM::getModelDimensions(uint16_t *inputSetCount, uint16_t **inputSizeList, uint16_t *outputSetCount, uint16_t **outputSizeList)
+{
+	*inputSetCount = this->mInputSetCount;
+	*inputSizeList = this->mInputSizeList;
+	*outputSetCount = this->mOutputSetCount;
+	*outputSizeList = this->mOutputSizeList;
+}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
+
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 /* Run inference : with input data "features" and return output data ptr(Use output dimension to parse it) */
 void *TFLM::invoke(void *inputData)
 {
@@ -176,6 +291,44 @@ void *TFLM::invoke(void *inputData)
 	}
 	return this->mOutput->data.data;
 }
-
+#else
+/* Run inference : with input data "features", store output data in outputData parameter and return AIFW_OK on success */
+AIFW_RESULT TFLM::invoke(void *inputData, void *outputData)
+{
+	float **value = (float **)(inputData);
+	for (uint16_t i = 0; i < this->mInputSetCount; i++) {
+		for (uint16_t j = 0; j < this->mInputSizeList[i]; j++) {
+			this->mInputList[i]->data.f[j] = value[i][j];
+		}
+	}
+#ifdef CONFIG_AIFW_LOGD
+	struct timespec start;
+	struct timespec end;
+	double diff_time = 0;
+	double x_ns;
+	double y_ns;
+	clock_gettime(CLOCK_REALTIME, &start);
+#endif
+	TfLiteStatus invokeStatus = this->mInterpreter->Invoke();
+#ifdef CONFIG_AIFW_LOGD
+	clock_gettime(CLOCK_REALTIME, &end);
+	x_ns = (double)start.tv_sec * 1000000000 + (double)start.tv_nsec;
+	y_ns = (double)end.tv_sec * 1000000000 + (double)end.tv_nsec;
+	diff_time += (double)y_ns - (double)x_ns;
+	diff_time = diff_time/1000;
+	AIFW_LOGE("latency = (%f) us", diff_time);
+#endif
+	if (invokeStatus != kTfLiteOk) {
+		this->mErrorReporter->Report("Invoke failed");
+		AIFW_LOGE("Invoke failed");
+		return AIFW_ERROR;
+	}
+	float **outputRef = (float **)(outputData);
+	for (uint16_t i = 0; i < this->mOutputSetCount; i++) {
+		outputRef[i] = (float *)this->mOutputList[i]->data.data;
+	}
+	return AIFW_OK;
+}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 } /* namespace aifw */
 

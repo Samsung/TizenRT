@@ -153,8 +153,18 @@ private:
 	AIModelAttribute mModelAttribute;
 	std::shared_ptr<AIDataBuffer> mBuffer;
 	std::shared_ptr<AIEngine> mAIEngine;
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	float *mInvokeInput;
 	float *mInvokeOutput;
+#else
+	float **mInvokeInput;
+	float **mInvokeOutput;
+	uint16_t *mInputSizeList;
+	uint16_t *mOutputSizeList;
+	uint16_t mInputSetCount;
+	uint16_t mOutputSetCount;
+
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 	float *mParsedData;
 	float *mPostProcessedData;
 	std::shared_ptr<AIProcessHandler> mDataProcessor;

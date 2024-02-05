@@ -57,6 +57,7 @@ public:
 	 */
 	virtual AIFW_RESULT parseData(void *data, uint16_t count, float *parsedData, AIModelAttribute *modelAttribute) = 0;
 
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	/**
 	 * @brief Performs preprocessing on data stored in AIDataBuffer before it is sent for invoke. Preprocessed data will not be updated on AIDataBuffer.
 	 * @param [in] buffer: Pointer of AIDataBuffer. One row of AIDataBuffer includes parsed raw data and model invoke output. However, latest row only includes parsed raw data at this point of time.
@@ -66,6 +67,18 @@ public:
 	 * 			On failure, a negative value is returned.
 	 */
 	virtual AIFW_RESULT preProcessData(std::shared_ptr<AIDataBuffer> buffer, float *invokeInput, AIModelAttribute *modelAttribute) = 0;
+#else
+	 /**
+	 * @brief Performs preprocessing on data stored in AIDataBuffer before it is sent for invoke. Preprocessed data will not be updated on AIDataBuffer.
+	 * @param [in] buffer: Pointer of AIDataBuffer. One row of AIDataBuffer includes parsed raw data and model invoke output. However, latest row only includes parsed raw data at this point of time.
+	 * @param [in] countInputSets : Number of inputs to model
+	 * @param [out] invokeInput: Pointer of buffer to store preprocessed data. This buffer is later sent for invoke by AIFW.
+	 * @param [in] modelAttribute: Contains AIModelAttribute value of current AI Model.
+	 * @return: AIFW_RESULT enum object. On success, AIFW_OK is returned.
+	 * 			On failure, a negative value is returned.
+	 */
+	virtual AIFW_RESULT preProcessData(std::shared_ptr<AIDataBuffer> buffer, uint16_t countInputSets, float **invokeInput, AIModelAttribute *modelAttribute) = 0;
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
 	/**
 	 * @brief Performs postprocessing on data stored in AIDataBuffer after invoke. Postprocessed data will not be updated on AIDataBuffer.
