@@ -55,12 +55,32 @@ public:
 	 */
 	virtual AIFW_RESULT loadModel(const unsigned char *model) = 0;
 
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	/**
 	 * @brief Run the inference with the given inputData.
 	 * @param [in] inputData: Input data for model invoke.
 	 * @return: Void * pointer to output result data.
 	 */
 	virtual void *invoke(void *inputData) = 0;
+#else
+	/**
+	 * @brief Run the inference with the given inputData.
+	 * @param [in] inputData: Input data for model invoke.
+	 * @param [out] outputData: Pointer to Output Data for storing output of invoke.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	virtual AIFW_RESULT invoke(void *inputData, void *outputData) = 0;
+
+	/**
+	 * @brief Pass model dimensions to AIModel to allocate memory.
+	 * @param [in] inputSetCount: Number of Input sets for model invoke.
+	 * @param [in] mInputSizeList: Input size array for model invoke.
+	 * @param [in] outputSetCount: Number of Output sets for model invoke.
+	 * @param [in] mOutputSizeList: Output size array for model invoke.
+	 * @return: Void
+	 */
+	virtual void getModelDimensions(uint16_t *inputSetCount, uint16_t **inputSizeList,  uint16_t *outputSetCount, uint16_t **outputSizeList) = 0;
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 };
 
 } /* namespace aifw */
