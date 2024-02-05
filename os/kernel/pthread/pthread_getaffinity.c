@@ -71,7 +71,7 @@ int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *c
 	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) && \
 			cpuset != NULL);
 
-	sinfo("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
+	svdbg("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
 			(int)thread, cpusetsize, (uintmax_t)*cpuset);
 
 	/* Let sched_getaffinity do all of the work */

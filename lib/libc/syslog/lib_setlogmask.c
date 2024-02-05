@@ -108,17 +108,19 @@ uint8_t g_syslog_mask = LOG_ALL;
 int setlogmask(int mask)
 {
 	uint8_t oldmask;
-	irqstate_t flags;
 
 	/* These operations must be exclusive with respect to other threads as well
 	 * as interrupts.
 	 */
-
-	flags = enter_critical_section();
+#ifdef __KERNEL__
+	irqstate_t flags = enter_critical_section();
+#endif
 
 	oldmask = g_syslog_mask;
 	g_syslog_mask = (uint8_t)mask;
 
+#ifdef __KERNEL__
 	leave_critical_section(flags);
+#endif
 	return oldmask;
 }
