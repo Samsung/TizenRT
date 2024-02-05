@@ -91,12 +91,10 @@ uintptr_t STUB_sched_setparam(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_sched_setscheduler(int nbr, uintptr_t parm1, uintptr_t parm2,
 								  uintptr_t parm3);
 
-//PORTNOTE: STUBS yet to be added proprerly
-//Does syscall.csv take care of this automatically?
 #ifdef CONFIG_SMP
-uintptr_t STUB_sched_getaffinity();
-uintptr_t STUB_sched_getcpu();
-uintptr_t STUB_sched_setaffinity();
+int STUB_sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask);
+int STUB_sched_getcpu(void);
+int STUB_sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask);
 #endif
 
 uintptr_t STUB_sched_unlock(int nbr);
@@ -301,11 +299,9 @@ uintptr_t STUB_pthread_setschedprio(int nbr, uintptr_t parm1,
 uintptr_t STUB_pthread_setspecific(int nbr, uintptr_t parm1,
 								   uintptr_t parm2);
 
-//PORTNOTE: STUBS yet to be added properly
-//Does syscall.csv take care of this automatically?
 #ifdef CONFIG_SMP
-uintptr_t STUB_pthread_setaffinity_np();
-uintptr_t STUB_pthread_getaffinity_np();
+int STUB_pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, FAR const cpu_set_t *cpuset);
+int STUB_pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset);
 #endif
 
 uintptr_t STUB_pthread_cond_timedwait(int nbr, uintptr_t parm1,

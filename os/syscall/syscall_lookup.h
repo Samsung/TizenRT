@@ -76,9 +76,9 @@ SYSCALL_LOOKUP(sched_yield,               0, STUB_sched_yield)
 SYSCALL_LOOKUP(set_errno,                 1, STUB_set_errno)
 
 #ifdef CONFIG_SMP
-SYSCALL_LOOKUP(sched_getaffinity,         3)
-SYSCALL_LOOKUP(sched_getcpu,              0)
-SYSCALL_LOOKUP(sched_setaffinity,         3)
+SYSCALL_LOOKUP(sched_getaffinity,         3, STUB_sched_getaffinity)
+SYSCALL_LOOKUP(sched_getcpu,              0, STUB_sched_getcpu)
+SYSCALL_LOOKUP(sched_setaffinity,         3, STUB_sched_setaffinity)
 #endif
 
 /* Semaphores */
@@ -297,8 +297,8 @@ SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
 SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_pthread_setschedparam)
 SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_pthread_setschedprio)
 #ifdef CONFIG_SMP
-SYSCALL_LOOKUP(pthread_setaffinity_np,  3)
-SYSCALL_LOOKUP(pthread_getaffinity_np,  3)
+SYSCALL_LOOKUP(pthread_setaffinity_np,  3, STUB_pthread_setaffinity_np)
+SYSCALL_LOOKUP(pthread_getaffinity_np,  3, STUB_pthread_getaffinity_np)
 #endif
 SYSCALL_LOOKUP(pthread_setspecific,     2, STUB_pthread_setspecific)
 #  ifndef CONFIG_DISABLE_SIGNAL

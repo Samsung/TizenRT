@@ -306,8 +306,8 @@ SECTIONS
 		KEEP(*(.stack))
 		KEEP(*(.bdsram.data))
 		_snoinit = ABSOLUTE(.);
-        *(.noinit*)
-        _enoinit = ABSOLUTE(.);
+       		*(.noinit*)
+	        _enoinit = ABSOLUTE(.);
 		_sidle_stack = ABSOLUTE(.);
 		/* For TizenRT to locate idle thread stack */
 		_ebss = ABSOLUTE(.);
