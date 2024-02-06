@@ -104,7 +104,12 @@ struct amebasmart_spidev_s {
 	int8_t nbits;               /* Width of word in bits */
 	uint8_t mode;               /* Mode 0,1,2,3 */
 	int role;
+#ifdef CONFIG_SPI_CS
 	gpio_t gpio_cs0;
+	gpio_t gpio_cs1;
+#else
+	gpio_t gpio_cs0;
+#endif
 };
 
 enum amebasmart_delay_e {
@@ -613,11 +618,36 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 void amebasmart_spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+#ifdef CONFIG_SPI_CS
+	if (selected == 1) {
+		if (devid == 0){ 
+			//Select cs0, unselect cs1
+			//lldbg("selected cs0\n");
+			gpio_write(&priv->gpio_cs0, 0);
+			gpio_write(&priv->gpio_cs1, 1);
+		} else {
+			//Select cs1, unselect cs0
+			gpio_write(&priv->gpio_cs1, 0);
+			gpio_write(&priv->gpio_cs0, 1);
+		}
+	} else {
+		if (devid == 0) {
+			//Unselect cs0
+			//lldbg("unselect cs0\n");
+			gpio_write(&priv->gpio_cs0, 1);
+		} else {
+			//Unselect cs1
+			gpio_write(&priv->gpio_cs1, 1);
+		}
+	}
+#else
+	//Select single slave cs0
 	if (selected == 1) {
 		gpio_write(&priv->gpio_cs0, 0);
-	} else {
+	}else{
 		gpio_write(&priv->gpio_cs0, 1);
 	}
+#endif
 	return;
 }
 
@@ -1075,10 +1105,57 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv)
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
 
+
+#ifdef CONFIG_SPI_CS
+
+	if (priv->spi_idx == 0)
+	{
+	/* SPI0 */
+	//PC0 as SPI0_CS_0
 	gpio_init(&priv->gpio_cs0, priv->spi_cs);
 	gpio_write(&priv->gpio_cs0, 1);
 	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
 	gpio_mode(&priv->gpio_cs0, PullNone);
+
+	//PB_3 as SPI0_CS_1
+	gpio_init(&priv->gpio_cs1, PB_3);
+	gpio_write(&priv->gpio_cs1, 1);
+	gpio_dir(&priv->gpio_cs1, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs1, PullNone);
+	} else 
+	{
+	/* SPI1 */
+	//PB_26 as SPI1_CS_0
+	gpio_init(&priv->gpio_cs0, priv->spi_cs);
+	gpio_write(&priv->gpio_cs0, 1);
+	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs0, PullNone);
+
+	//PB_3 as SPI1_CS_1
+	gpio_init(&priv->gpio_cs1, PB_3);
+	gpio_write(&priv->gpio_cs1, 1);
+	gpio_dir(&priv->gpio_cs1, PIN_OUTPUT);
+	gpio_mode(&priv->gpio_cs1, PullNone);
+	}
+
+#else
+
+	if (priv->spi_idx == 0)
+	{
+		gpio_init(&priv->gpio_cs0, priv->spi_cs);
+		gpio_write(&priv->gpio_cs0, 1);
+		gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+		gpio_mode(&priv->gpio_cs0, PullNone);
+	} else 
+	{
+		/* SPI1 */
+		gpio_init(&priv->gpio_cs0, priv->spi_cs);
+		gpio_write(&priv->gpio_cs0, 1);
+		gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
+		gpio_mode(&priv->gpio_cs0, PullNone);
+	}
+#endif
+
 }
 
 /************************************************************************************
