@@ -190,19 +190,19 @@ static const uint8_t g_power_statescount = sizeof(g_power_states) / sizeof(g_pow
  */
 
 const struct procfs_operations power_procfsoperations = {
-	power_open,					/* open */
+	power_open,				/* open */
 	power_close,				/* close */
-	power_read,					/* read */
-	power_write,					/* write */
+	power_read,				/* read */
+	power_write,				/* write */
 
-	power_dup,					/* dup */
+	power_dup,				/* dup */
 
 	power_opendir,				/* opendir */
 	power_closedir,				/* closedir */
 	power_readdir,				/* readdir */
 	power_rewinddir,			/* rewinddir */
 
-	power_stat					/* stat */
+	power_stat				/* stat */
 };
 
 /****************************************************************************
@@ -298,6 +298,7 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 /****************************************************************************
  * Name: power_states_read
  ****************************************************************************/
+
 static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
@@ -328,6 +329,7 @@ static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t
 /****************************************************************************
  * Name: power_curstate_read
  ****************************************************************************/
+
 static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
@@ -359,6 +361,7 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 /****************************************************************************
  * Name: power_metrics_read
  ****************************************************************************/
+
 static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
@@ -414,6 +417,7 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 /****************************************************************************
  * Name: power_devices_read
  ****************************************************************************/
+
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
@@ -450,20 +454,19 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 }
 
 /****************************************************************************
-* 	Name: power_lock_write
-*   
-* 	Description:
-*	Lock a desired state by increasing the counter of the state.
-*
-* 	Input Parameters:
-*   filep             - File path of the power domain
-*   buffer            - Desired state to be unlocked
-*   buflen (NOT USED) - Length of the buffer
-*
-* 	Returned Value:
-*   0 (OK) means the state lock was successful.
-*	1 (Failed) means the input state was incorrect.
+ * Name: power_lock_write
+ *
+ * Description: Lock PM in PM_NORMAL state by invoking pm_stay().
+ *
+ * Input Parameters:
+ *   filep             - File path of the power domain
+ *   buffer            - Not used
+ *   buflen            - Not used
+ *
+ * Returned Value:
+ *  (OK) means the state lock was successful.
  ****************************************************************************/
+
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	(void)buffer;
@@ -483,23 +486,23 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 }
 
 /****************************************************************************
-* 	Name: power_unlock_write
-*   
-* 	Description:
-*	Unlock a desired state by decreasing the counter of the state. A timer 
-*	interval can be provided to setup the timer interrupt. If there is some
-*	other interrupt appear before the interval ends, the system will also
-*	wakeup.
-*
-* 	Input Parameters:
-*   filep          - File path of the power domain
-*   buffer         - Desired state to be unlocked
-*   buflen         - Timer interval for the timer interrupt
-*
-* 	Returned Value:
-*   0 (OK) means the state unlock was successful.
-*	1 (Failed) means the input state was incorrect.
+ * Name: power_unlock_write
+ *
+ * Description:
+ *  Unlock PM from PM_NORMAL state by invoking pm_relax(). A timer
+ *  interval can be provided to setup the timer interrupt. If another
+ *  interrupt occurs during this interval, the system will still
+ *  wake up.
+ *
+ * Input Parameters:
+ *   filep          - File path of the power domain
+ *   buffer         - Not used
+ *   buflen         - Use of timer interrupt and its duration
+ *
+ * Returned Value:
+ *  0 (OK) means the state unlock was successful.
  ****************************************************************************/
+
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	(void)buffer;
@@ -518,25 +521,25 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
 
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
-* 	Name: power_tunefreq_write
-*   
-* 	Description:
-*	Change the operating frequency of the core to save power
-*	consumption in active mode.
-*
-* 	Input Parameters:
-*   filep            - File path of the power domain
-*   buffer(NOT USED) - Desired state to be unlocked
-*   div_lvl          - Level selection for operating frequency
-*
-* 	Returned Value:
-*   0 (OK) means the change of operating frequency was successful
+ * Name: power_tunefreq_write
+ *
+ * Description:
+ *  Change the operating frequency of the core to save power
+ *  consumption during active mode.
+ *
+ * Input Parameters:
+ *   filep            - File path of the power domain
+ *   buffer           - Not used
+ *   div_lvl          - Level selection for operating frequency
+ *
+ * Returned Value:
+ *   0 (OK) means the change of operating frequency was successful
  ****************************************************************************/
+
 static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl)
 {
 	/* Buffer string need not to be considered, just div level is enough */
-	/*
-	   Only affect active mode power consumption
+	/* Available frequencies for changing mode of power consumption
 	   0 -> 1.2GHz
 	   1 -> 600MHz
 	   2 -> 400Mhz
@@ -666,6 +669,7 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
 
 	return ret;
 }
+
 /****************************************************************************
  * Name: power_dup
  *
@@ -673,6 +677,7 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
  *   Duplicate open file data in the new file structure.
  *
  ****************************************************************************/
+
 static int power_dup(FAR const struct file *oldp, FAR struct file *newp)
 {
 	FAR struct power_file_s *oldfile;
@@ -710,6 +715,7 @@ static int power_dup(FAR const struct file *oldp, FAR struct file *newp)
  *   Open a directory for read access
  *
  ****************************************************************************/
+
 static int power_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 {
 	FAR struct power_dir_s *powerdir;
