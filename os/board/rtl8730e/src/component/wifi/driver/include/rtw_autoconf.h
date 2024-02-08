@@ -35,7 +35,7 @@
 
 /* no IOT chip supports 80M now, so close it in common */
 #define NOT_SUPPORT_80M
-#define CONFIG_AUTO_RECONNECT 1
+#define CONFIG_AUTO_RECONNECT 0
 
 /* For WPA3 */
 #define CONFIG_IEEE80211W
