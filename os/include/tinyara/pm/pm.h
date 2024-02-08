@@ -244,6 +244,13 @@
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
 
+#define PM_LOCK_PATH					"/proc/power/domains/0/pm_lock"
+#define PM_UNLOCK_PATH					"/proc/power/domains/0/pm_unlock"
+#define PM_SLEEP_PATH					"/proc/power/domains/0/enter_sleep"
+#ifdef CONFIG_PM_DVFS
+#define PM_TUNEFREQ_PATH				"/proc/power/domains/0/pm_tunefreq"
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
