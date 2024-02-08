@@ -33,15 +33,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define PM_LOCK_PATH						"/proc/power/domains/0/pm_lock"
-#define PM_UNLOCK_PATH					"/proc/power/domains/0/pm_unlock"
-#define PM_SLEEP_PATH						"/proc/power/domains/0/enter_sleep"
-
-#define POWER_THEAD_SIZE				2048
-#define POWER_THEAD_PRIORITY		255
-#define PM_DAEMON_INTERVAL			15
-#define PM_LOCK(x)								power_set_int(PM_LOCK_PATH, x)
-#define PM_UNLOCK(x)							power_set_int(PM_UNLOCK_PATH, x)
+#define POWER_THEAD_SIZE					2048
+#define POWER_THEAD_PRIORITY					255
+#define PM_DAEMON_INTERVAL					15
+#define PM_LOCK(x)						power_set_int(PM_LOCK_PATH, x)
+#define PM_UNLOCK(x)						power_set_int(PM_UNLOCK_PATH, x)
 
 /****************************************************************************
  * Private Functions
