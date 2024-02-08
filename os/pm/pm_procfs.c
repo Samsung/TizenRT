@@ -145,16 +145,9 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 #endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-#ifdef CONFIG_ARCH_CORTEXA32
-static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t timer_interval);
-#else
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-#endif
-#ifdef CONFIG_ARCH_CORTEXA32
+#ifdef CONFIG_PM_DVFS
 static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl);
-#endif
-#ifdef CONFIG_PM_ENTER_SLEEP
-static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 #endif
 /****************************************************************************
  * Private Data
@@ -171,11 +164,8 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
 	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
 	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
-#ifdef CONFIG_ARCH_CORTEXA32
+#ifdef CONFIG_PM_DVFS
 	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
-#endif
-#ifdef CONFIG_PM_ENTER_SLEEP
-	{"enter_sleep", NULL, enter_sleep_write, DTYPE_FILE},
 #endif
 };
 
@@ -504,43 +494,35 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 * 	Input Parameters:
 *   filep          - File path of the power domain
 *   buffer         - Desired state to be unlocked
-*   timer_interval - Timer interval for the timer interrupt
+*   buflen         - Timer interval for the timer interrupt
 *
 * 	Returned Value:
 *   0 (OK) means the state unlock was successful.
 *	1 (Failed) means the input state was incorrect.
  ****************************************************************************/
-#ifdef CONFIG_ARCH_CORTEXA32
-static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t timer_interval)
-#else
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
-#endif
 {
 	(void)buffer;
 
 	pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
 	fvdbg("State unlocked!\n");
-#ifdef CONFIG_ARCH_CORTEXA32
-	if (timer_interval > 0) {
+	if (buflen > 0) {
 		g_timer_wakeup.use_timer = 1;
-		g_timer_wakeup.timer_interval = timer_interval;
-	}
-	else {
+		g_timer_wakeup.timer_interval = buflen;
+	} else {
 		g_timer_wakeup.use_timer = 0;
 		g_timer_wakeup.timer_interval = 0;	
 	}
 	return OK;
-#else
-	return buflen;
-#endif
 }
 
+#ifdef CONFIG_PM_DVFS
 /****************************************************************************
 * 	Name: power_tunefreq_write
 *   
 * 	Description:
-*	Change the operating frequency of the AP core, for saving up power
-*	consumption under active mode.
+*	Change the operating frequency of the core to save power
+*	consumption in active mode.
 *
 * 	Input Parameters:
 *   filep            - File path of the power domain
@@ -550,7 +532,6 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
 * 	Returned Value:
 *   0 (OK) means the change of operating frequency was successful
  ****************************************************************************/
-#ifdef CONFIG_ARCH_CORTEXA32
 static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl)
 {
 	/* Buffer string need not to be considered, just div level is enough */
@@ -567,31 +548,6 @@ static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffe
 }
 #endif
 
-/****************************************************************************
- * Name: enter_sleep_write
- ****************************************************************************/
-#ifdef CONFIG_PM_ENTER_SLEEP
-static size_t enter_sleep_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
-{
-	int len;
-	int ret;
-	char *p;
-
-	p = memchr(buffer, '\n', buflen);
-	len = p ? p - buffer : buflen;
-
-	if (len == 5 && !strncmp(buffer, "sleep", len)) {
-		ret = up_pmsleep();
-		if (ret == -EAGAIN) {
-			fdbg("ERROR: PM state locked, try later:%d\n", ret);
-		} else if (ret < 0) {
-			fdbg("ERROR: Some of the drivers refused the state change:%d\n", ret);
-		}
-	}
-
-	return buflen;
-}
-#endif
 /****************************************************************************
  * Name: power_open
  ****************************************************************************/
