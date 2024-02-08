@@ -160,8 +160,8 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 	} else {
 		if (ipc_Semaphore[IPC_ChNum] == NULL) {
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_init_sema(ipc_Semaphore[IPC_ChNum], 0);
-			rtw_down_timeout_sema(ipc_Semaphore[IPC_ChNum], 1); //test with 1ms, freertos is using 1 tick
+			rtw_init_sema(&ipc_Semaphore[IPC_ChNum], 0);
+			rtw_down_timeout_sema(&ipc_Semaphore[IPC_ChNum], 1); //test with 1ms, freertos is using 1 tick
 #else
 			vSemaphoreCreateBinary(ipc_Semaphore[IPC_ChNum]);
 			xSemaphoreTake(ipc_Semaphore[IPC_ChNum], 1 / portTICK_RATE_MS);
@@ -171,7 +171,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		if (rtw_down_timeout_sema(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != 1) {
+		if (rtw_down_timeout_sema(&ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != 1) {
 #else
 		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
 #endif
@@ -239,9 +239,11 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 		break;
 	}
 
-	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-		if (IPC_wait_idle(IPCx, IPC_ChNum + ipc_shift)) {
-			return IPC_SEND_TIMEOUT;
+	if (IPCx != NULL) {
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
+			if (IPC_wait_idle(IPCx, IPC_ChNum + ipc_shift)) {
+				return IPC_SEND_TIMEOUT;
+			}
 		}
 	}
 
@@ -249,7 +251,10 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 		memcpy(&IPC_MSG[msg_idx], IPC_Msg, sizeof(IPC_MSG_STRUCT));
 		DCache_Clean((u32)&IPC_MSG[msg_idx], sizeof(IPC_MSG_STRUCT));
 	}
-	IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+
+	if (IPCx != NULL) {
+		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+	}
 
 	return IPC_SEND_SUCCESS;
 }
