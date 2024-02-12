@@ -303,9 +303,15 @@ enum pm_state_e {
 	PM_COUNT,
 };
 
-struct pm_wakeup_timer_s {
-	bool use_timer;
-	uint32_t timer_interval;
+enum pm_timer_type_e {
+	PM_WAKEUP_TIMER = 1,
+	PM_LOCK_TIMER = 2,
+	/* Scope for future expansion, up to 8 timer types can be supported */
+};
+
+struct pm_timer_s {
+	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
+	uint32_t timer_interval;	/* The interval for whichever timer is to be used */
 };
 
 /* This structure contain pointers callback functions in the driver.  These
@@ -522,6 +528,25 @@ void pm_stay(int domain, enum pm_state_e state);
  ****************************************************************************/
 
 void pm_relax(int domain, enum pm_state_e state);
+
+/****************************************************************************
+ * Name: pm_set_timer
+ *
+ * Description:
+ *   This function is called to set a timed callback to an intended function.
+ *   It may be used to invoke pm_relax() after a fixed time duration of
+ *   locking using pm_stay().
+ *
+ * Input Parameters:
+ *   timer_type - the type of the timer which determines the callback
+ *   timer_interval - duration of the timer
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void pm_set_timer(int timer_type, size_t timer_interval);
 
 /****************************************************************************
  * Name: pm_staycount
