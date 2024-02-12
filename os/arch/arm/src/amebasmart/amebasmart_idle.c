@@ -92,7 +92,7 @@ static void up_idlepm(void)
 				   the secondary core state before going to sleep
 				*/
 #ifndef CONFIG_SMP
-				ap_timer_helper();
+				up_set_pm_timer();
 #endif
 				if (up_cpu_index() == 0) {
 					/* mask sys tick interrupt*/
@@ -124,7 +124,7 @@ static void up_idlepm(void)
 
 							/* For SMP case, timer should be set after confirming secondary core enter hotplug mode */
 							if (pmu_get_secondary_cpu_state(1) == CPU1_HOTPLUG) {
-								ap_timer_helper();
+								up_set_pm_timer();
 							}
 							/* CG flow */
 						} else {

@@ -117,7 +117,7 @@ struct power_procfs_entry_s {
 };
 
 /* Added to record timer countdown interrupt */
-struct pm_wakeup_timer_s g_timer_wakeup = { 0, 0 };
+struct pm_timer_s g_pm_timer = { 0, 0 };
 
 /****************************************************************************
  * Private Function Prototypes
@@ -461,7 +461,7 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
  * Input Parameters:
  *   filep             - File path of the power domain
  *   buffer            - Not used
- *   buflen            - Not used
+ *   buflen            - Use of timer interrupt and its duration
  *
  * Returned Value:
  *  (OK) means the state lock was successful.
@@ -470,7 +470,6 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	(void)buffer;
-	(void)buflen;
 
 	/* Always lock PM_NORMAL state, check again whether this implementation
 	is enough to handle, if not, consider below methods...
@@ -481,7 +480,11 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 	*/
 	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
 	fvdbg("State locked!\n");
-
+	if (buflen > 0) {
+		pm_set_timer(PM_LOCK_TIMER, buflen);
+	} else {
+		g_pm_timer.timer_type = 0;
+	}
 	return OK;
 }
 
@@ -510,11 +513,9 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
 	pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
 	fvdbg("State unlocked!\n");
 	if (buflen > 0) {
-		g_timer_wakeup.use_timer = 1;
-		g_timer_wakeup.timer_interval = buflen;
+		pm_set_timer(PM_WAKEUP_TIMER, buflen);
 	} else {
-		g_timer_wakeup.use_timer = 0;
-		g_timer_wakeup.timer_interval = 0;	
+		g_pm_timer.timer_type = 0;
 	}
 	return OK;
 }

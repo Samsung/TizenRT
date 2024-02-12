@@ -51,7 +51,7 @@
 #include "timer_api.h"
 
 gtimer_t g_timer1;
-extern struct pm_wakeup_timer_s g_timer_wakeup;
+extern struct pm_timer_s g_pm_timer;
 
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
@@ -115,19 +115,35 @@ int SOCPS_AONWakeReason(void)
 
 void pg_timer_int_handler(void *Data)
 {
-	pmvdbg("Timer wakeup interrupt handler!!\n");
+	pmvdbg("PM Timer interrupt handler!!\n");
+	switch (g_pm_timer.timer_type) {
+		case PM_LOCK_TIMER:
+			pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
+			break;
+		case PM_WAKEUP_TIMER:
+			pm_activity(PM_IDLE_DOMAIN, 9);
+			break;
+		default:
+			pmdbg("Timer callback triggered without setting timer, Unexpected Error!!!\n");
+			break;
+	}
 	// Reset the global struct
-    g_timer_wakeup.use_timer = 0;
-    g_timer_wakeup.timer_interval = 0;
+	g_pm_timer.timer_type = 0;
+	g_pm_timer.timer_interval = 0;
 	// Switch status back to normal mode after wake up from interrupt
-	pm_activity(PM_IDLE_DOMAIN, 9);
 }
 
-void ap_timer_helper(void) {
+void up_set_pm_timer(void) {
 	// Check whether timer interrupt need to be set
-	if (g_timer_wakeup.use_timer) {
-		gtimer_init(&g_timer1, TIMER1);
-		gtimer_start_one_shout(&g_timer1, g_timer_wakeup.timer_interval, (void *)pg_timer_int_handler, NULL);
+	if (g_pm_timer.timer_type) {
+		/* Open timer device, initialize and start timer if required
+		 * OR
+		 * Call unified timer setting BSP API
+		 */
+		//TODO: This is pending
+
+		//gtimer_init(&g_timer1, TIMER1);
+		//gtimer_start_one_shout(&g_timer1, g_pm_timer.timer_interval, (void *)pg_timer_int_handler, NULL);
 	}
 }
 
