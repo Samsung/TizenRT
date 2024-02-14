@@ -84,7 +84,7 @@ void FLASH_Write_Lock(void)
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
-#if (CONFIG_SMP_NCPUS > 1)
+#if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
 	/*1. Close Core1 to avoid Core1 XIP */
 	vPortGateOtherCore();
 #endif
@@ -130,7 +130,7 @@ void FLASH_Write_Unlock(void)
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 #endif
 
-#if (CONFIG_SMP_NCPUS > 1)
+#if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
 	/*2. Wakeup Core1 */
 	vPortWakeOtherCore();
 #endif

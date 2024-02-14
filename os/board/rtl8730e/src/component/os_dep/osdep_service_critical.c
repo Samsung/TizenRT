@@ -7,10 +7,12 @@
 #include <osdep_service.h>
 #include <stdio.h>
 
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 #ifndef configNUM_CORES
 #define configNUM_CORES			1
 /* Link to TizenRT code */
 #define portGET_CORE_ID()			up_cpu_index()
+#endif
 #endif
 
 #if 1 //Justin: temporary solution for enter critical code for tizenRT
