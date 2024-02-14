@@ -119,6 +119,7 @@ config ARCH_CHIP_AMEBASMART
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARCH_HAVE_HEAPCHECK if DEBUG
 	select PM_DVFS if PM
+	select CPU_GATING if SMP
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).
 
@@ -273,6 +274,7 @@ config ARCH_CORTEXA32
 	select ARCH_HAVE_RESET
 	select ARCH_HAVE_MMU
 	select ARCH_USE_MMU
+	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_THREAD_LOCAL
 	select ARCH_ARMV7A_FAMILY
 
