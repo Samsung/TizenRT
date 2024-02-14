@@ -309,6 +309,13 @@ config SMP
 
 if SMP
 
+config CPU_GATING
+	bool "CPU Gating"
+	default n
+	---help---
+		This will register an additional Software Generated Interrupt (SGI) 
+		for CPU Gating when undergo flash operation.
+
 config SMP_NCPUS
 	int "Number of CPUs"
 	default 4

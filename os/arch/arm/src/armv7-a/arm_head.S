@@ -618,7 +618,7 @@ __start:
 	 * after SMP cache coherency has been setup.
 	 */
 
-#if !defined(CPU_DCACHE_DISABLE) && !defined(CONFIG_SMP)
+#if !defined(CPU_DCACHE_DISABLE)
 	/* Dcache enable
 	 *
 	 *   SCTLR_C    Bit 2:  DCache enable
@@ -666,7 +666,9 @@ __start:
 	orr		r0, r0, #(SCTLR_AFE)
 #endif
 	/* Then write the configured control register */
+	dsb
 	mcr		CP15_SCTLR(r0)			/* Write control reg */
+	isb
 
 	/* Finally branch to the OS entry point */
 

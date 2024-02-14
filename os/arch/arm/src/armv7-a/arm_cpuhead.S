@@ -106,6 +106,7 @@
 
 #if CONFIG_SMP_NCPUS > 1
 	.global	__cpu1_start
+	.section	.cpu1start, "ax"
 	.type	__cpu1_start, #function
 
 __cpu1_start:
@@ -192,7 +193,7 @@ __cpu3_start:
  *   R5 = CPU number
  *
  ****************************************************************************/
-
+	.section	.cpu1start, "ax"
 	.type	.Lcpu_start, #function
 
 .Lcpu_start:
@@ -308,7 +309,7 @@ __cpu3_start:
 	 */
 
 	orr		r0, r0, #(SCTLR_M)
-#ifndef CONFIG_ARCH_CORTEXA5
+#if !defined(CONFIG_ARCH_CORTEXA5) && !defined(CONFIG_ARCH_CORTEXA32)
 	orr		r0, r0, #(SCTLR_Z)
 #endif
 
@@ -384,8 +385,9 @@ __cpu3_start:
 #endif
 
 	/* Then write the configured control register */
-
+	dsb
 	mcr		CP15_SCTLR(r0)			/* Write control reg */
+	isb
 	.rept		12				/* Cortex A8 wants lots of NOPs here */
 	nop
 	.endr

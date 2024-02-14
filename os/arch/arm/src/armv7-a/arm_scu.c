@@ -162,6 +162,7 @@ void arm_enable_smp(int cpu)
 
   if (cpu == 0)
     {
+#ifndef CONFIG_ARCH_CORTEXA32
       /* Invalidate the SCU duplicate tags for all processors */
 
       putreg32((SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU0_SHIFT) |
@@ -169,21 +170,22 @@ void arm_enable_smp(int cpu)
                (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU2_SHIFT) |
                (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU3_SHIFT),
                SCU_INVALIDATE);
-
+#endif
       /* Invalidate CPUn L1 data cache so that is will we be reloaded from
        * coherent L2.
        */
-
-      cp15_invalidate_dcache_all();
       ARM_DSB();
+      ARM_ISB();
+      cp15_invalidate_dcache_all();
 
       /* Invalidate the L2C-310 -- Missing logic. */
 
       /* Enable the SCU */
-
+#ifndef CONFIG_ARCH_CORTEXA32
       regval  = getreg32(SCU_CTRL);
       regval |= SCU_CTRL_ENABLE;
       putreg32(regval, SCU_CTRL);
+#endif
     }
 
   /* Actions for other CPUs */
@@ -193,10 +195,16 @@ void arm_enable_smp(int cpu)
       /* Invalidate CPUn L1 data cache so that is will we be reloaded from
        * coherent L2.
        */
-
-      cp15_invalidate_dcache_all();
       ARM_DSB();
-
+      ARM_ISB();
+      cp15_invalidate_dcache_all();
+#ifdef CONFIG_ARCH_CORTEXA32
+      regval  = arm_get_sctlr();
+      regval |= SCTLR_C;
+      ARM_DSB();
+      arm_set_sctlr(regval);
+      ARM_ISB();
+#endif
       /* Wait for the SCU to be enabled by the primary processor -- should
        * not be necessary.
        */
@@ -211,7 +219,7 @@ void arm_enable_smp(int cpu)
    *
    *   FW  - Cache and TLB maintenance broadcast.
    */
-
+#ifndef CONFIG_ARCH_CORTEXA32
   regval  = arm_get_actlr();
   regval |= ACTLR_SMP;
 #ifdef CONFIG_ARCH_CORTEXA9
@@ -222,4 +230,5 @@ void arm_enable_smp(int cpu)
   regval  = arm_get_sctlr();
   regval |= SCTLR_C;
   arm_set_sctlr(regval);
+#endif
 }
