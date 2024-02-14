@@ -35,7 +35,7 @@
  ****************************************************************************/
 #define POWER_THREAD_SIZE				2048
 #define POWER_THREAD_PRIORITY				255
-#define PM_DAEMON_SLEEP_INTERVAL			5000000	//Microseconds
+#define PM_DAEMON_SLEEP_INTERVAL			5	//Seconds
 #define PM_WAKEUP_TIMER_DURATION			5000000	//Microseconds
 
 /****************************************************************************
