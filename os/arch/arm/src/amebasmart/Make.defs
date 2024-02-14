@@ -191,7 +191,7 @@ ifeq ($(CONFIG_ARCH_FPU),y)
 endif
 
 ifeq ($(CONFIG_SMP),y)
-  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c
+  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c arm_cpuflash.c
   CMN_CSRCS += arm_scu.c
 endif
 
@@ -251,6 +251,9 @@ ifeq ($(CONFIG_BOARDCTL_RESET),y)
 CHIP_CSRCS += amebasmart_systemreset.c
 endif
 
+# Interface used by both power save and SMP
+CMN_CSRCS += psci.c
+
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CMN_CSRCS += amebasmart_reboot_reason.c
 endif
@@ -258,7 +261,7 @@ ifeq ($(CONFIG_BINARY_SIGNING),y)
 #CMN_CSRCS += amebasmart_signature.c
 endif
 ifeq ($(CONFIG_PM),y)
-CMN_CSRCS += psci.c amebasmart_pmc.c
+CMN_CSRCS += amebasmart_pmc.c
 CMN_ASRCS += a32_pm.S
 endif
 
@@ -269,6 +272,10 @@ endif
 
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 #CHIP_CSRCS += amebasmart_nsc.c
+
+ifeq ($(CONFIG_SMP),y)
+CHIP_CSRCS += amebasmart_smp.c
+endif
 
 # trustzone library
 ifeq ($(CONFIG_ARCH_FPU),y)
