@@ -173,6 +173,7 @@ SECTIONS
 		*(.vectors)
 		*(.start)
 		*(.ps_boot)
+		*(.cpu1start)
 		*(.timesensitive.text*)
 		*(.sramdram.only.text*)     
 		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
@@ -304,6 +305,9 @@ SECTIONS
 		__StackLimit = .;
 		KEEP(*(.stack))
 		KEEP(*(.bdsram.data))
+		_snoinit = ABSOLUTE(.);
+        *(.noinit*)
+        _enoinit = ABSOLUTE(.);
 		_sidle_stack = ABSOLUTE(.);
 		/* For TizenRT to locate idle thread stack */
 		_ebss = ABSOLUTE(.);
