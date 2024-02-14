@@ -19,7 +19,7 @@ static uint32_t sysactive_timeout_flag = 0;
 
 #ifdef CONFIG_SMP
 /* cpu hotplug flag for each core */
-volatile u32 cpuhp_flag[configNUM_CORES];
+volatile u32 cpuhp_flag[CONFIG_SMP_NCPUS];
 #endif
 
 u32 tickless_debug = 0;
@@ -209,6 +209,7 @@ int tizenrt_ready_to_sleep(void)
 		return FALSE;
 	}
 #endif
+	return TRUE;
 }
 
 /*
@@ -456,6 +457,7 @@ void pmu_tickless_debug(u32 NewStatus)
 	}
 }
 
+// TODO: For hotplug mode
 #ifdef CONFIG_SMP
 void pmu_set_secondary_cpu_state(uint32_t CoreID, uint32_t NewStatus)
 {
@@ -467,18 +469,27 @@ uint32_t pmu_get_secondary_cpu_state(uint32_t CoreID)
 	return cpuhp_flag[CoreID];
 }
 
-int pmu_secondary_cpu_state_is_running(uint32_t CoreID)
+bool pmu_secondary_cpu_state_is_running(uint32_t CoreID)
 {
-	return (cpuhp_flag[CoreID] == CPU1_RUNNING);
+	if (cpuhp_flag[CoreID] == CPU1_RUNNING) 
+		return 1;
+	else 
+		return 0;
 }
 
-int pmu_secondary_cpu_state_is_hotplug(uint32_t CoreID)
+bool pmu_secondary_cpu_state_is_hotplug(uint32_t CoreID)
 {
-	return (cpuhp_flag[CoreID] == CPU1_HOTPLUG);
+	if (cpuhp_flag[CoreID] == CPU1_HOTPLUG) 
+		return 1;
+	else 
+		return 0;
 }
 
-int pmu_secondary_cpu_state_is_wake(uint32_t CoreID)
+bool pmu_secondary_cpu_state_is_wake(uint32_t CoreID)
 {
-	return (cpuhp_flag[CoreID] == CPU1_WAKE_FROM_PG);
+	if (cpuhp_flag[CoreID] == CPU1_WAKE_FROM_PG) 
+		return 1;
+	else 
+		return 0;
 }
 #endif

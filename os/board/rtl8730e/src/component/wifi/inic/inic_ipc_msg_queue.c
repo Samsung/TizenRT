@@ -56,7 +56,8 @@ inic_ipc_ex_msg_t g_inic_ipc_ex_msg __attribute__((aligned(64)));
 #else
 static inic_ipc_ex_msg_t g_inic_ipc_ex_msg = {0};
 #endif
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+/* FreeRTOS: #if defined(configNUM_CORES) && (configNUM_CORES > 1)*/
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 static spinlock_t ipc_msg_queue_lock = {0};
 #endif
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
@@ -72,7 +73,7 @@ struct task_struct ipc_msgQ_wlan_task;
  */
 static sint enqueue_ipc_msg_node(struct ipc_msg_node *p_node, _queue *p_queue)
 {
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	/* this function is called in ISR, no need to mask interrupt since gic already do it*/
 	spin_lock(&ipc_msg_queue_lock);
 #else
@@ -81,7 +82,7 @@ static sint enqueue_ipc_msg_node(struct ipc_msg_node *p_node, _queue *p_queue)
 #endif
 	/* put the ipc message to the tail of the queue */
 	rtw_list_insert_tail(&(p_node->list), get_list_head(p_queue));
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
 #else
 	rtw_exit_critical(&(p_queue->lock), &irqL);
@@ -99,8 +100,12 @@ static struct ipc_msg_node *dequeue_ipc_msg_node(_queue *p_queue)
 	struct ipc_msg_node *p_node;
 	_list *plist, *phead;
 
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	u32 isr_status = irqsave();
+#else
 	u32 isr_status = portDISABLE_INTERRUPTS();
+#endif
 	spin_lock(&ipc_msg_queue_lock);
 #else
 	_irqL irqL;
@@ -116,9 +121,13 @@ static struct ipc_msg_node *dequeue_ipc_msg_node(_queue *p_queue)
 		rtw_list_delete(&(p_node->list));
 	}
 
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqrestore(isr_status);
+#else
 	portRESTORE_INTERRUPTS(isr_status);
+#endif
 #else
 	rtw_exit_critical(&(p_queue->lock), &irqL);
 #endif
@@ -151,17 +160,25 @@ static void inic_ipc_msg_q_task(void)
 				g_ipc_msg_q_priv.task_hdl(&(p_node->ipc_msg));
 			}
 			/* release the memory for this ipc message. */
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			u32 isr_status = irqsave();
+#else
 			u32 isr_status = portDISABLE_INTERRUPTS();
+#endif
 			spin_lock(&ipc_msg_queue_lock);
 #else
 			rtw_enter_critical(NULL, NULL);
 #endif
 			p_node->is_used = 0;
 			g_ipc_msg_q_priv.queue_free++;
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 			spin_unlock(&ipc_msg_queue_lock);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			irqrestore(isr_status);
+#else
 			portRESTORE_INTERRUPTS(isr_status);
+#endif
 #else
 			rtw_exit_critical(NULL, NULL);
 #endif
@@ -222,7 +239,7 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 	sint ret = FAIL;
 	int i = 0;
 
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	/* this function is called in ISR, no need to mask interrupt since gic already do it*/
 	spin_lock(&ipc_msg_queue_lock);
 #else
@@ -239,7 +256,7 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 			break;
 		}
 	}
-#if defined(configNUM_CORES) && (configNUM_CORES > 1)
+#if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
 #else
 	rtw_exit_critical(&(p_queue->lock), &irqL);

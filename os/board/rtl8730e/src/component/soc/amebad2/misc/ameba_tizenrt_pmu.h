@@ -97,9 +97,9 @@ uint32_t pmu_get_deepwakelock_status(void);
 #ifdef ARM_CORE_CA32
 void pmu_set_secondary_cpu_state(uint32_t CoreID, uint32_t NewStatus);
 uint32_t pmu_get_secondary_cpu_state(uint32_t CoreID);
-int pmu_secondary_cpu_state_is_running(uint32_t CoreID);
-int pmu_secondary_cpu_state_is_hotplug(uint32_t CoreID);
-int pmu_secondary_cpu_state_is_wake(uint32_t CoreID);
+bool pmu_secondary_cpu_state_is_running(uint32_t CoreID);
+bool pmu_secondary_cpu_state_is_hotplug(uint32_t CoreID);
+bool pmu_secondary_cpu_state_is_wake(uint32_t CoreID);
 #endif
 
 extern u32 tickless_debug;
