@@ -174,8 +174,9 @@ static void inic_ipc_host_rx_tasklet(void)
 			inic_ipc_ipc_send_msg(&ipc_msg);
 		}
 	} while (1);
-
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	rtw_delete_task(&inic_ipc_host_rx_task);
+#endif
 }
 
 /**

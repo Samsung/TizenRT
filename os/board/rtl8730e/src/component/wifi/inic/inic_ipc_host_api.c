@@ -302,7 +302,7 @@ void inic_ipc_api_host_task(void)
 		p_ipc_msg->EVENT_ID = 0;
 		DCache_Clean((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 	} while (1);
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	rtw_delete_task(&inic_ipc_api_host_handler);
 #endif
 }
