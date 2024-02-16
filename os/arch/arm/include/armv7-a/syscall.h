@@ -89,27 +89,15 @@
 
 #ifdef CONFIG_BUILD_PROTECTED
 
-#ifdef CONFIG_ARMV7A_TRUSTZONE
-#if CONFIG_SYS_RESERVED != 11
-#error "CONFIG_SYS_RESERVED must have the value 11"
-#endif
-#else
 #if CONFIG_SYS_RESERVED != 8
 #error "CONFIG_SYS_RESERVED must have the value 8"
 #endif
-#endif //CONFIG_ARMV7A_TRUSTZONE
 
 #else //CONFIG_BUILD_PROTECTED
 
-#ifdef CONFIG_ARMV7A_TRUSTZONE
-#if CONFIG_SYS_RESERVED != 7
-#error "CONFIG_SYS_RESERVED must have the value 7"
-#endif
-#else
 #if CONFIG_SYS_RESERVED != 4
 #error "CONFIG_SYS_RESERVED must have the value 4"
 #endif
-#endif //CONFIG_ARMV7A_TRUSTZONE
 
 #endif //CONFIG_BUILD_PROTECTED
 
@@ -178,76 +166,7 @@
 
 #define SYS_signal_handler_return (7)
 
-#ifdef CONFIG_ARMV7A_TRUSTZONE
-/* SYS call 3:
- *
- * void SecureContext_Init(void);
- */
-
-#define SYS_init_securecontext        (8)
-
-/* SYS call 4:
- *
- * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
- */
-
-#define SYS_allocate_securecontext        (9)
-
-/* SYS call 5:
- *
- * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
- */
-
-#define SYS_free_securecontext        (10)
 #endif					/* CONFIG_BUILD_PROTECTED */
-#else
-#ifdef CONFIG_ARMV7A_TRUSTZONE
-/* SYS call 3:
- *
- * void SecureContext_Init(void);
- */
-
-#define SYS_init_securecontext        (4)
-
-/* SYS call 4:
- *
- * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
- */
-
-#define SYS_allocate_securecontext        (5)
-
-/* SYS call 5:
- *
- * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
- */
-
-#define SYS_free_securecontext        (6)
-#endif
-
-#endif
-#else
-#ifdef CONFIG_ARMV7A_TRUSTZONE
-/* SYS call 3:
- *
- * void SecureContext_Init(void);
- */
-
-#define SYS_init_securecontext        (3)
-
-/* SYS call 4:
- *
- * SecureContextHandle_t SecureContext_AllocateContext(uint32_t ulR0);
- */
-
-#define SYS_allocate_securecontext        (4)
-
-/* SYS call 5:
- *
- * void SecureContext_FreeContext( ( SecureContextHandle_t ) ulR0 );
- */
-
-#define SYS_free_securecontext        (5)
-#endif
 #endif					/* CONFIG_LIB_SYSCALL */
 
 /* The SYS_signal_handler_return is executed here... its value is not always
