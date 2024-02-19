@@ -65,7 +65,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  amebalite_timerisr
+ * Function:  up_timerisr
  *
  * Description:
  *   The timer ISR will perform a variety of services for various portions
