@@ -24,6 +24,30 @@
 #pragma once
 
 #include "aifw/aifw.h"
+//#define AIFW_PRINT_INFERENCE_TIME /* Default disabled */
+#ifdef AIFW_PRINT_INFERENCE_TIME
+#include <time.h>
+#define AIFW_START_TIMER					\
+	struct timespec start;              			\
+	struct timespec end;					\
+	double diff_time = 0;                   		\
+	double x_ns;                            		\
+	double y_ns;                            		\
+	clock_gettime(CLOCK_REALTIME, &start);
+
+#define AIFW_END_TIMER										\
+{										 		\
+	clock_gettime(CLOCK_REALTIME, &end);          				 		\
+	x_ns = (double)start.tv_sec * 1000000000 + (double)start.tv_nsec;		    	\
+	y_ns = (double)end.tv_sec * 1000000000 + (double)end.tv_nsec;       			\
+	diff_time += (double)y_ns - (double)x_ns;                           			\
+	diff_time = diff_time/1000;                                         			\
+	printf("latency = (%f) us", diff_time);							\
+}
+#else
+#define AIFW_START_TIMER
+#define AIFW_END_TIMER
+#endif
 
 namespace aifw {
 

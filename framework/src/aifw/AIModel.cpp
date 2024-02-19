@@ -340,7 +340,7 @@ AIFW_RESULT AIModel::invoke(void)
 			AIFW_LOGE("preProcessData failed, error: %d", res);
 			return res;
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Input\n");
 		for (uint16_t i = 0; i < mInputSetCount; i++) {
 			printf("inputset [%d]: ", i);
@@ -361,7 +361,7 @@ AIFW_RESULT AIModel::invoke(void)
 				mInvokeOutput[i][j] = invokeResult[i][j];
 			}
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output\n");
 		for (uint16_t i = 0; i < mOutputSetCount; i++) {
 			printf("outputset [%d]: ", i);
@@ -396,7 +396,7 @@ AIFW_RESULT AIModel::invoke(void)
 				return res;
 			}
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Input\n");
 		for (uint16_t i = 0; i < mInputSetCount; i++) {
 			printf("inputset [%d]: ", i);
@@ -417,7 +417,7 @@ AIFW_RESULT AIModel::invoke(void)
 				mInvokeOutput[i][j] = invokeResult[i][j];
 			}
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output\n");
 		for (uint16_t i = 0; i < mOutputSetCount; i++) {
 			printf("outputset [%d]: ", i);
@@ -455,8 +455,8 @@ AIFW_RESULT AIModel::invoke(void)
 			AIFW_LOGE("preProcessData failed, error: %d", res);
 			return res;
 		}
-#ifdef CONFIG_AIFW_LOGD
-		printf("invokeInput: ");
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeInputCount; i++) {
 			printf("%f,", mInvokeInput[i]);
 		}
@@ -471,7 +471,7 @@ AIFW_RESULT AIModel::invoke(void)
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			mInvokeOutput[i] = invokeResult[i];
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			printf("%f,", mInvokeOutput[i]);
@@ -496,8 +496,8 @@ AIFW_RESULT AIModel::invoke(void)
 			AIFW_LOGE("Reading Data from the buffer failed, error: %d", res);
 			return res;
 		}
-#ifdef CONFIG_AIFW_LOGD
-		printf("invokeInput: ");
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeInputCount; i++) {
 			printf("%f,", mInvokeInput[i]);
 		}
@@ -512,7 +512,7 @@ AIFW_RESULT AIModel::invoke(void)
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			mInvokeOutput[i] = invokeResult[i];
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			printf("%f,", mInvokeOutput[i]);
