@@ -1069,6 +1069,52 @@ def find_crash_point(log_file, elf):
     # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
     os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
 
+    # Convert task state number to corresponding task state message
+    config_smp = False
+    config_disable_signals = False
+    config_disable_mqueue = False
+    config_paging = False
+    with open("../../os/.config") as configfile:
+        for line in configfile:
+            if "CONFIG_SMP=y" in line:
+                config_smp = True
+            elif "CONFIG_DISABLE_SIGNALS=y" in line:
+                config_disable_signals = True
+            elif "CONFIG_DISABLE_MQUEUE=y" in line:
+                config_disable_mqueue = True
+            elif "CONFIG_PAGING=y" in line:
+                config_paging = True
+    state_no = 0
+    task_state = dict()
+    task_state[str(state_no)] = " Invalid"
+    state_no+=1
+    task_state[str(state_no)] = " Pending preemption unlock"
+    state_no+=1
+    task_state[str(state_no)] = " Wait to scheduling (Ready)"
+    state_no+=1
+    if config_smp:
+        task_state[str(state_no)] = " Assigned to CPU (Ready)"
+        state_no+=1
+    task_state[str(state_no)] = " Running"
+    state_no+=1
+    task_state[str(state_no)] = " Inactive"
+    state_no+=1
+    task_state[str(state_no)] = " Wait Semaphore"
+    state_no+=1
+    task_state[str(state_no)] = " Wait FIN"
+    state_no+=1
+    if not config_disable_signals:
+        task_state[str(state_no)] = " Wait Signal"
+        state_no+=1
+    if not config_disable_mqueue:
+        task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
+        state_no+=1
+        task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
+        state_no+=1
+    if config_paging:
+        task_state[str(state_no)] = " Wait Page Fill"
+        state_no+=1
+
     #Parse content of file for displaying tasks
     with open(log_file) as searchfile:
         for line in searchfile:
@@ -1078,7 +1124,17 @@ def find_crash_point(log_file, elf):
                 print("\nList of all tasks in the system:\n")
                 line = next(searchfile)
                 line = next(searchfile)
+                print(line[0:], end = "")
+                line = next(searchfile)
                 while line != "No more lines" and '==================' not in line:
+                    if '----------------------------' in line:
+                        print(line[0:], end = "")
+                        line = next(searchfile, "No more lines")
+                        continue				
+                    current_line = line.replace("|", " ").replace("/", " ").replace("\n", " ").split(" ")
+                    current_line = list(filter(None, current_line))
+                    state = current_line[len(current_line) - 1]
+                    line = line.replace("         " + state, task_state[state])
                     print(line[0:], end = "")
                     line = next(searchfile, "No more lines")
 
