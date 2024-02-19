@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 9cfc095 2024/02/19-10:07:39 ==
+1.	Update flash PMC code
+
 == version ad855c0 2024/02/01-13:58:48 ==
 1.	Release Loguart interrupt for AP core
 
