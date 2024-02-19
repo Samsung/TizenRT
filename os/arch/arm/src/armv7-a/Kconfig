@@ -153,6 +153,12 @@ config ARMV7A_TOOLCHAIN_GNU_OABI
 
 endchoice # Toolchain Selection
 
+config ARMV7A_TARGET2_PREL
+	bool "R_ARM_TARGET2 is PC relative"
+	depends on ELF
+	---help---
+		Perform a PC relative relocation for relocation type R_ARM_TARGET2
+
 config ARMV7A_OABI_TOOLCHAIN
 	bool "OABI (vs EABI)"
 	default n

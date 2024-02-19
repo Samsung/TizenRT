@@ -35,7 +35,14 @@ APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
 
 SRCS += $(USERSPACE).c
 
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+SRCS += $(TOPDIR)/../apps/platform/gnu/gnu_unwind_find_exidx.c
+endif
+endif
+
 OBJS = $(SRCS:.c=$(OBJEXT))
+CPPOBJS = $(patsubst %.cpp,%$(OBJEXT),$(filter %.cpp,$(CXXSRCS)))
 
 prebuild:
 	$(call DELFILE, $(USERSPACE)$(OBJEXT))
@@ -47,13 +54,16 @@ $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
 	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
 
-$(BIN): $(OBJS)
+$(CPPOBJS): %$(OBJEXT): %.cpp
+	$(call COMPILEXX, $<, $@)
+
+$(BIN): $(OBJS) $(CPPOBJS)
 	@echo "LD: $<"
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-	$(Q) $(LD) $(LDELFFLAGS) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) --end-group
-	$(Q) $(NM) -u $(BIN) | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
+	$(Q) $(LD) $(LDELFENTRY) $(LDELFFLAGS) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+	$(Q) $(NM) -u $(BIN) | awk -F"[Uw] " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
 else
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) $(LIBSUPXX) --end-group
+	$(Q) $(LD) $(LDELFENTRY) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBSUPXX) $(LDLIBS) --end-group
 endif
 
 clean:
