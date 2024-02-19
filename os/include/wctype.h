@@ -92,6 +92,11 @@
  * character mappings.
  */
 
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#endif
+
 typedef int wctrans_t;
 
 /****************************************************************************
@@ -124,4 +129,7 @@ wint_t towupper(wint_t);
 wctrans_t wctrans(FAR const char *);
 wctype_t wctype(FAR const char *);
 
+#if defined(__cplusplus)
+}
+#endif
 #endif							/* INCLUDE_WTYPE_H */

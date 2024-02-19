@@ -272,7 +272,7 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 {
-#ifdef CONFIG_CXX_EXCEPTION
+#ifdef CONFIG_LIBCXX_EXCEPTION
 	int exidx;
 #endif
 	int ret;
@@ -324,12 +324,10 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 	}
 #endif
 
-#ifdef CONFIG_CXX_EXCEPTION
+#ifdef CONFIG_LIBCXX_EXCEPTION
 	exidx = elf_findsection(loadinfo, CONFIG_ELF_EXIDX_SECTNAME);
 	if (exidx < 0) {
 		binfo("elf_findsection: Exception Index section not found: %d\n", exidx);
-	} else {
-		up_init_exidx(loadinfo->shdr[exidx].sh_addr, loadinfo->shdr[exidx].sh_size);
 	}
 #endif
 
