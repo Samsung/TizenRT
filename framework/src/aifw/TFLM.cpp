@@ -78,7 +78,7 @@ void TFLM::clearMemory(void) {
 
 TFLM::~TFLM()
 {
-	AIFW_LOGE(":DEINIT:");
+	AIFW_LOGV(":DEINIT:");
 	if (mBuf) {
 		free(mBuf);
 		mBuf = NULL;
@@ -283,7 +283,9 @@ void *TFLM::invoke(void *inputData)
 	for (int i = 0; i < this->mModelInputSize; i++) {
 		this->mInput->data.f[i] = value[i];
 	}
+	AIFW_START_TIMER
 	TfLiteStatus invokeStatus = this->mInterpreter->Invoke();
+	AIFW_END_TIMER
 	if (invokeStatus != kTfLiteOk) {
 		this->mErrorReporter->Report("Invoke failed");
 		AIFW_LOGE("Invoke failed");
@@ -301,23 +303,9 @@ AIFW_RESULT TFLM::invoke(void *inputData, void *outputData)
 			this->mInputList[i]->data.f[j] = value[i][j];
 		}
 	}
-#ifdef CONFIG_AIFW_LOGD
-	struct timespec start;
-	struct timespec end;
-	double diff_time = 0;
-	double x_ns;
-	double y_ns;
-	clock_gettime(CLOCK_REALTIME, &start);
-#endif
+	AIFW_START_TIMER
 	TfLiteStatus invokeStatus = this->mInterpreter->Invoke();
-#ifdef CONFIG_AIFW_LOGD
-	clock_gettime(CLOCK_REALTIME, &end);
-	x_ns = (double)start.tv_sec * 1000000000 + (double)start.tv_nsec;
-	y_ns = (double)end.tv_sec * 1000000000 + (double)end.tv_nsec;
-	diff_time += (double)y_ns - (double)x_ns;
-	diff_time = diff_time/1000;
-	AIFW_LOGE("latency = (%f) us", diff_time);
-#endif
+	AIFW_END_TIMER
 	if (invokeStatus != kTfLiteOk) {
 		this->mErrorReporter->Report("Invoke failed");
 		AIFW_LOGE("Invoke failed");
