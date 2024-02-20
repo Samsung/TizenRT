@@ -926,6 +926,20 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 		break;
+		case TIOCTXSTATE: {
+			uint16_t *status = (uint16_t *)((uintptr_t)arg);
+
+			*status = TIOCS_NONE;
+			if ((dev->xmit.head == dev->xmit.tail) && uart_txempty(dev)) {
+				*status |= TIOCS_EMPTY;
+			}
+
+			if (uart_txready(dev)) {
+				*status |= TIOCS_READY;
+			}
+
+		}
+		break;
 #endif							/* CONFIG_SERIAL_TERMIOS */
 		}
 	}
