@@ -378,7 +378,7 @@ void i2s_set_direction(i2s_t *obj, int trx_type)
   */
 void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 {
-	uint32_t clock_mode;
+	uint32_t clock_mode = 0;
 	AUDIO_ClockParams Clock_Params;
 	AUDIO_InitParams Init_Params;
 

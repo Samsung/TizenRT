@@ -2013,19 +2013,19 @@ void AUDIO_CODEC_SetMicBstChnMute(u32 amic_sel, u32 type, u32 newstate)
 		} else if (amic_sel == AMIC3) {
 			AUD->AUD_MICBST_CTL1 &= ~AUD_MASK_MICBST2_MUTE_L;
 			if (type == LINEIN) {
-				//RTK_LOGE(TAG, "AMIC3 NOT SUPPORT LINEIN MODE\n");
+				RTK_LOGE(TAG, "AMIC3 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		} else if (amic_sel == AMIC4) {
 			AUD->AUD_MICBST_CTL1 &= ~AUD_MASK_MICBST2_MUTE_R;
 			if (type == LINEIN) {
-				//RTK_LOGE(TAG, "AMIC4 NOT SUPPORT LINEIN MODE\n");
+				RTK_LOGE(TAG, "AMIC4 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		} else {
 			AUD->AUD_MICBST_CTL1 &= ~ AUD_MASK_MICBST3_MUTE;
 			if (type == LINEIN) {
-				//RTK_LOGE(TAG, "AMIC5 NOT SUPPORT LINEIN MODE\n");
+				RTK_LOGE(TAG, "AMIC5 NOT SUPPORT LINEIN MODE\n");
 				return;
 			}
 		}
