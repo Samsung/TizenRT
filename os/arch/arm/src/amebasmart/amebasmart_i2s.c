@@ -116,8 +116,8 @@
 
 #define OVER_SAMPLE_RATE (384U)
 
-#define I2S_DMA_PAGE_SIZE 1024 /* 4 ~ 16384, set to a factor of APB size */
-#define I2S_DMA_PAGE_NUM 4	   /* Vaild number is 2~4 */
+#define I2S_DMA_PAGE_SIZE 2048	/* 4 ~ 16384, set to a factor of APB size */
+#define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
 
 struct amebasmart_buffer_s {
 	struct amebasmart_buffer_s *flink; /* Supports a singly linked list */

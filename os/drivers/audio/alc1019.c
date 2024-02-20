@@ -47,8 +47,12 @@
 #define ALC1019_I2S_TIMEOUT_MS 200
 
 /* Default configuration values */
+
+/*
+ * It's good to match the buffer size with i2s DMA page size
+ */
 #ifndef CONFIG_ALC1019_BUFFER_SIZE
-#define CONFIG_ALC1019_BUFFER_SIZE       4096
+#define CONFIG_ALC1019_BUFFER_SIZE       2048
 #endif
 
 #ifndef CONFIG_ALC1019_NUM_BUFFERS
