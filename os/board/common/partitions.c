@@ -158,6 +158,18 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, i
 		smart_initialize(minor, mtd_part, partref);
 		partinfo->smartfs_partno = partno;
 		mtd_setpartitiontagno(mtd_part, MTD_FS);
+#ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+		char fs_devname[FS_PATH_MAX];
+		snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", minor, partno);
+		int ret = mksmartfs(fs_devname, false);
+		if (ret != OK) {
+			printf("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
+			/* TODO: What to do if mksmartfs fails
+			 * 	 It is not required to halt the bootup
+			 */
+		}
+#endif
+/* TODO: Support for Multiple Root Directory mounts */
 	}
 #endif
 #ifdef CONFIG_MTD_FTL
@@ -343,22 +355,13 @@ void automount_fs_partition(partition_info_t *partinfo)
 		return;
 	}
 #ifdef CONFIG_AUTOMOUNT_USERFS
-	/* Initialize and mount user partition (if we have) */
+	/* Mount the userfs partition, if there is one */
 	snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(fs_devname, 1, false);
-#else
-	ret = mksmartfs(fs_devname, false);
-#endif
+	ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
 	if (ret != OK) {
-		printf("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
+		printf("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 	} else {
-		ret = mount(fs_devname, "/mnt", "smartfs", 0, NULL);
-		if (ret != OK) {
-			printf("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
-		} else {
-			printf("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
-		}
+		printf("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
 	}
 #endif
 
