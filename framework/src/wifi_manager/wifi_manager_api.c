@@ -59,6 +59,9 @@
 	} while (0)
 #define TAG "[WM]"
 
+static int valid_ch_list[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165};
+static int valid_ch_list_size = sizeof(valid_ch_list)/sizeof(valid_ch_list[0]);
+
 static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn, wifi_manager_mode_e *mode)
 {
 	*conn = STATUS_UNKNOWN;
@@ -191,8 +194,17 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	int i = 0;
+	int ch_valid = 0;
 	if (config) {
-		if (config->channel > WIFIMGR_2G_CHANNEL_MAX) {
+		for (i = 0; i < valid_ch_list_size; i++){
+			if (config->channel == valid_ch_list[i]){
+				ch_valid = 1;
+				break;
+			}
+		}
+
+		if (ch_valid == 0) {
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 			NET_LOGE(TAG, "invalid channel range %d\n", config->channel);
 			return WIFI_MANAGER_INVALID_ARGS;
