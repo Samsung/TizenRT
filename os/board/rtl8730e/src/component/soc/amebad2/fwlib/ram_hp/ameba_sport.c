@@ -81,7 +81,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 	if (direction == SP_DIR_TX) {
 
 		if (SP_RegFlag[index].SP_DIR_TX_flag) {
-			//RTK_LOGW(TAG, "SPORT TX has been registered!\n");
+			RTK_LOGW(TAG, "SPORT TX has been registered!\n");
 			return 0;
 		} else {
 			if (SP_RegFlag[index].SP_DIR_RX_flag) {
@@ -93,7 +93,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 					if (SP_InitStruct->SP_Fix_Bclk) {
 						return 1;
 					} else {
-						//RTK_LOGW(TAG, "SPORT RX Bclk can't be changed!\n");
+						RTK_LOGW(TAG, "SPORT RX Bclk can't be changed!\n");
 						return 0;
 					}
 				}
@@ -106,7 +106,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 	} else {
 
 		if (SP_RegFlag[index].SP_DIR_RX_flag) {
-			//RTK_LOGW(TAG, "SPORT RX has been registered!\n");
+			RTK_LOGW(TAG, "SPORT RX has been registered!\n");
 			return 0;
 		} else {
 			if (SP_RegFlag[index].SP_DIR_TX_flag) {
@@ -118,7 +118,7 @@ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 					if (SP_InitStruct->SP_Fix_Bclk) {
 						return 1;
 					} else {
-						//RTK_LOGW(TAG, "SPORT TX Bclk can't be changed!\n");
+						RTK_LOGW(TAG, "SPORT TX Bclk can't be changed!\n");
 						return 0;
 					}
 				}

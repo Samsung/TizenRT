@@ -121,7 +121,7 @@ static void APAD_PreProcess(u8 PinName)
 void Pinmux_Config(u8 PinName, u32 PinFunc)
 {
 	if ((PinName >= APAD_NAME_START) && (PinName <= APAD_NAME_END)) {
-		RCC_PeriphClockCmd(APBPeriph_AUDIO, NULL, ENABLE);
+		RCC_PeriphClockCmd(APBPeriph_AUDIO, 0, ENABLE);
 
 		if (PinFunc != PINMUX_FUNCTION_AUDIO) {
 			/* for audio pad switch to digital usage: */
