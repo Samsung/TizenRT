@@ -43,8 +43,6 @@
  *   will send to the I2S driver before any have completed.
  * CONFIG_ALC1019_MSG_PRIO - Priority of messages sent to the ALC1019 worker
  *   thread.
- * CONFIG_ALC1019_BUFFER_SIZE - Preferred buffer size
- * CONFIG_ALC1019_NUM_BUFFERS - Preferred number of buffers
  * CONFIG_ALC1019_WORKER_STACKSIZE - Stack size to use when creating the
  *   ALC1019 worker thread.
  */
@@ -83,14 +81,6 @@
 
 #ifndef CONFIG_ALC1019_MSG_PRIO
 #define CONFIG_ALC1019_MSG_PRIO          1
-#endif
-
-#ifndef CONFIG_ALC1019_BUFFER_SIZE
-#define CONFIG_ALC1019_BUFFER_SIZE       8192
-#endif
-
-#ifndef CONFIG_ALC1019_NUM_BUFFERS
-#define CONFIG_ALC1019_NUM_BUFFERS       4
 #endif
 
 #ifndef CONFIG_ALC1019_WORKER_STACKSIZE
