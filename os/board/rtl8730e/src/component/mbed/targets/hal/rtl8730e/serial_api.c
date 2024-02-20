@@ -80,7 +80,7 @@ static int current_baudrate;
 static uint32_t serial_dma_en[UART_NUM] = {0, 0, 0, 0};
 #endif
 
-MBED_UART_ADAPTER uart_adapter[MAX_UART_INDEX + 1];
+MBED_UART_ADAPTER **uart_adapter;
 
 #ifdef CONFIG_MBED_ENABLED
 int stdio_uart_inited = 0;
@@ -457,7 +457,17 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	DBG_PRINTF(MODULE_UART, LEVEL_INFO, "uart idx: %x\n", uart_idx);
 	serial_enable(obj);
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	if (uart_adapter == NULL) {
+		uart_adapter = (MBED_UART_ADAPTER**)kmm_malloc(sizeof(MBED_UART_ADAPTER*) * (MAX_UART_INDEX + 1));
+		/* Set all adapter pointers to NULL */
+		for (int index = 0; index < MAX_UART_INDEX + 1; index++) {
+			uart_adapter[obj->uart_idx] = NULL;
+		}
+	}
+	DEBUGASSERT(uart_adapter);
+	uart_adapter[obj->uart_idx] = (MBED_UART_ADAPTER*)kmm_malloc(sizeof(MBED_UART_ADAPTER));
+	DEBUGASSERT(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 
 	puart_adapter->UartIndex = uart_idx;
 	puart_adapter->UARTx = UART_DEV_TABLE[uart_idx].UARTx;
@@ -498,7 +508,7 @@ void serial_pin_init(PinName tx, PinName rx)
   */
 void serial_free(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	UART_DeInit(puart_adapter->UARTx);
 
@@ -524,6 +534,17 @@ void serial_free(serial_t *obj)
 #endif
 	// TODO: recovery Pin Mux
 
+	kmm_free(uart_adapter[obj->uart_idx]);
+	uart_adapter[obj->uart_idx] = NULL;
+	int check = 0;
+	/* Checks that all adapters are empty before freeing the uart_adapter*/
+	for (int index = 0; index < MAX_UART_INDEX + 1; index++) {
+		if (uart_adapter[obj->uart_idx] != NULL)
+			check++;
+	}
+	if (check == 0)
+		kmm_free(uart_adapter);
+	uart_adapter = NULL;
 }
 
 /**
@@ -536,7 +557,7 @@ void serial_free(serial_t *obj)
 void serial_baud(serial_t *obj, int baudrate)
 {
 	current_baudrate = baudrate;
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
 	UART_SetBaud(puart_adapter->UARTx, baudrate);
@@ -564,7 +585,7 @@ void serial_baud(serial_t *obj, int baudrate)
 
 void serial_change_clcksrc(serial_t *obj, int baudrate, bool high_low)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	if (high_low) {
 		RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
@@ -596,7 +617,7 @@ void serial_change_clcksrc(serial_t *obj, int baudrate, bool high_low)
   */
 void serial_format(serial_t *obj, int data_bits, SerialParity parity, int stop_bits)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
 
 	UART_RxCmd(puart_adapter->UARTx, DISABLE);
@@ -650,7 +671,7 @@ void serial_irq_handler(serial_t *obj, uart_irq_handler handler, uint32_t id)
 	PMBED_UART_ADAPTER puart_adapter;
 	u8 uart_idx;
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 
 	uart_idx = puart_adapter->UartIndex;
 
@@ -674,7 +695,7 @@ void serial_irq_set(serial_t *obj, SerialIrq irq, uint32_t enable)
 	PMBED_UART_ADAPTER puart_adapter;
 	u8 uart_idx;
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 	uart_idx = puart_adapter->UartIndex;
 
 	if (enable) {
@@ -722,7 +743,7 @@ void serial_control_loopback(serial_t *obj, bool enable)
   */
 int serial_getc(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	u8 RxByte = 0;
 
 	while (!serial_readable(obj));
@@ -740,7 +761,7 @@ int serial_getc(serial_t *obj)
   */
 void serial_putc(serial_t *obj, int c)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	while (!serial_writable(obj));
 	UART_CharPut(puart_adapter->UARTx, (c & 0xFF));
@@ -760,7 +781,7 @@ void serial_putc(serial_t *obj, int c)
   */
 int serial_readable(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	if (UART_Readable(puart_adapter->UARTx)) {
 		return 1;
@@ -778,7 +799,7 @@ int serial_readable(serial_t *obj)
   */
 int serial_writable(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	if (UART_Writable(puart_adapter->UARTx)) {
 		return 1;
@@ -796,7 +817,7 @@ void serial_clear(serial_t *obj)
 {
 	PMBED_UART_ADAPTER puart_adapter;
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 
 	UART_ClearRxFifo(puart_adapter->UARTx);
 }
@@ -818,7 +839,7 @@ void serial_pinout_tx(PinName tx)
   */
 void serial_break_set(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	UART_BreakCtl(puart_adapter->UARTx, 1);
 }
@@ -830,7 +851,7 @@ void serial_break_set(serial_t *obj)
   */
 void serial_break_clear(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 
 	UART_BreakCtl(puart_adapter->UARTx, 0);
 }
@@ -847,7 +868,7 @@ void serial_send_comp_handler(serial_t *obj, void *handler, uint32_t id)
 {
 	PMBED_UART_ADAPTER puart_adapter;
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 	puart_adapter->TxCompCallback = (UARTCB_FUN)handler;
 	puart_adapter->TxCompCbPara = (void *)id;
 }
@@ -864,7 +885,7 @@ void serial_recv_comp_handler(serial_t *obj, void *handler, uint32_t id)
 {
 	PMBED_UART_ADAPTER puart_adapter;
 
-	puart_adapter = &(uart_adapter[obj->uart_idx]);
+	puart_adapter = uart_adapter[obj->uart_idx];
 	puart_adapter->RxCompCallback = (UARTCB_FUN)handler;
 	puart_adapter->RxCompCbPara = (void *)id;
 }
@@ -881,7 +902,7 @@ void serial_recv_comp_handler(serial_t *obj, void *handler, uint32_t id)
   */
 int32_t serial_recv_stream(serial_t *obj, char *prxbuf, uint32_t len)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	int ret = HAL_OK;
 	u32 TransCnt = 0;
 
@@ -927,7 +948,7 @@ int32_t serial_recv_stream(serial_t *obj, char *prxbuf, uint32_t len)
   */
 int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	int ret = 0;
 	int cnt = 16;
 
@@ -974,7 +995,7 @@ int32_t serial_send_stream(serial_t *obj, char *ptxbuf, uint32_t len)
   */
 int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	HAL_Status ret = HAL_OK;
 	u32 ret1;
 
@@ -1032,7 +1053,7 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
   */
 int32_t serial_send_stream_dma(serial_t *obj, char *ptxbuf, uint32_t len)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	int32_t ret = HAL_OK;
 	u32 ret1;
 
@@ -1077,7 +1098,7 @@ int32_t serial_send_stream_dma(serial_t *obj, char *ptxbuf, uint32_t len)
   */
 int32_t serial_send_stream_abort(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	int ret = 0;
 
 	if (!UART_GetTxFlag(puart_adapter->UartIndex)) {
@@ -1126,7 +1147,7 @@ int32_t serial_send_stream_abort(serial_t *obj)
   */
 int32_t serial_recv_stream_abort(serial_t *obj)
 {
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	int ret = 0;
 
 	if (!UART_GetRxFlag(puart_adapter->UartIndex)) {
@@ -1352,7 +1373,7 @@ int32_t serial_recv_stream_timeout(serial_t *obj,
 								   void *force_cs)
 {
 	UART_TypeDef *UARTx = UART_DEV_TABLE[obj->uart_idx].UARTx;
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	u32 TransCnt = 0;
 	void (*task_yield)(void);
 	uint32_t startcount = SYSTIMER_TickGet();
@@ -1431,7 +1452,7 @@ int32_t serial_recv_stream_dma_timeout(serial_t *obj,
 	(void) force_cs;
 	(void) len;
 
-	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	PMBED_UART_ADAPTER puart_adapter = uart_adapter[obj->uart_idx];
 	HAL_Status ret = HAL_OK;
 	u32 ret1;
 	u32 timeout_count;

@@ -86,8 +86,8 @@ static SP_GDMA_STRUCT SPGdmaStruct[I2S_NUM_MAX];
 static SP_TX_INFO sp_tx_info[I2S_NUM_MAX];
 static SP_RX_INFO sp_rx_info[I2S_NUM_MAX];
 static I2S_USER_CB I2SUserCB[I2S_NUM_MAX]; /* Pointer to I2S User Callback */
-static struct GDMA_CH_LLI LliTx[I2S_NUM_MAX][SP_MAX_DMA_PAGE_NUM];
-static struct GDMA_CH_LLI LliRx[I2S_NUM_MAX][SP_MAX_DMA_PAGE_NUM];
+static struct GDMA_CH_LLI **LliTx = NULL;
+static struct GDMA_CH_LLI **LliRx = NULL;
 
 /**
   * @}
@@ -241,6 +241,17 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 		sp_tx_info[i2s_idx].tx_page_size = page_size;
 		sp_tx_info[i2s_idx].tx_page_num = page_num;
 
+		if (LliTx == NULL) {
+			LliTx = (struct GDMA_CH_LLI **)kmm_malloc(sizeof(struct GDMA_CH_LLI*) * I2S_NUM_MAX);
+			DEBUGASSERT(LliTx);
+			/* Set all adapter pointers to NULL */
+			for (int index = 0; index < I2S_NUM_MAX; index++) {
+				LliTx[index] = NULL;
+			}
+		}
+		LliTx[i2s_idx] = (struct GDMA_CH_LLI *)kmm_malloc(sizeof(struct GDMA_CH_LLI) * SP_MAX_DMA_PAGE_NUM);
+		DEBUGASSERT(LliTx[i2s_idx]);
+
 		for (j = 0; j < page_num + 1; j++) {
 
 			if (j == 0) {
@@ -274,6 +285,18 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 
 		sp_rx_info[i2s_idx].rx_page_size = page_size;
 		sp_rx_info[i2s_idx].rx_page_num = page_num;
+
+		if (LliRx == NULL) {
+			LliRx = (struct GDMA_CH_LLI **)kmm_malloc(sizeof(struct GDMA_CH_LLI*) * I2S_NUM_MAX);
+			DEBUGASSERT(LliRx);
+			/* Set all adapter pointers to NULL */
+			for (int index = 0; index < I2S_NUM_MAX; index++) {
+				LliRx[index] = NULL;
+			}
+		}
+
+		LliRx[i2s_idx] = (struct GDMA_CH_LLI *)kmm_malloc(sizeof(struct GDMA_CH_LLI) * SP_MAX_DMA_PAGE_NUM);
+		DEBUGASSERT(LliRx[i2s_idx]);
 
 		for (j = 0; j < page_num; j++) {
 			LliRx[i2s_idx][j].LliEle.Darx = (uint32_t)rx_buf + j * page_size;
@@ -408,6 +431,13 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 		PLL_I2S_Div(obj->i2s_idx, Clock_Params.PLL_DIV);
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
+
+	default:
+		PLL_I2S_98P304M(ENABLE);
+		RCC_PeriphClockSource_SPORT(obj->i2s_idx, CKSL_I2S_PLL98M);
+		PLL_I2S_Div(obj->i2s_idx, Clock_Params.PLL_DIV);
+		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
+		break;
 	}
 
 	/* Sport Init */
@@ -492,6 +522,37 @@ void i2s_deinit(i2s_t *obj)
 		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, DISABLE);
 	} else {
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, DISABLE);
+	}
+
+	if (obj->direction == SP_DIR_TX) {
+		
+		kmm_free(LliTx[obj->i2s_idx]);
+		LliTx[obj->i2s_idx] = NULL;
+		/* Check that all adaptors have been freed */
+		int check = 0;
+		for (int count = 0; count < 4; count++) {
+			if (LliTx[obj->i2s_idx] != NULL)
+				check++;
+		}
+		if (check == 0) {
+			kmm_free(LliTx);
+			LliTx = NULL;
+		}
+	
+	} else {
+	
+		kmm_free(LliRx[obj->i2s_idx]);
+		LliRx[obj->i2s_idx] = NULL;
+
+		int check = 0;
+		for (int count = 0; count < 4; count++) {
+			if (LliRx[obj->i2s_idx] != NULL)
+				check++;
+		}
+		if (check == 0) {
+			kmm_free(LliRx);
+			LliRx = NULL;
+		}
 	}
 }
 
