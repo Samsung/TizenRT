@@ -2133,20 +2133,19 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 	struct smartfs_chain_header_s *chainheader;
 
 	while (buflen > 0) {
-		/* We will fill up the current sector. Write data to
-		 * the current sector first.
-		 */
+		/* Write data to the current sector as long as there is more space available.*/
 		fvdbg("Datalen : %d, sector : %d, offset : %d\nFilepos : %d, bytes written : %d, buflen : %d\n", sf->entry.datalen, sf->currsector, sf->curroffset, sf->filepos, byteswritten, buflen);
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
-		if (readwrite.count > buflen) {
-			readwrite.count = buflen;
+		if (readwrite.count > 0) {
+			if (readwrite.count > buflen) {
+				readwrite.count = buflen;
+			}
+
+			memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
+			sf->bflags |= SMARTFS_BFLAG_DIRTY;
 		}
-
-		memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], readwrite.count);
-		sf->bflags |= SMARTFS_BFLAG_DIRTY;
-
 #else                                                   /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 		smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset, fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
 		if (readwrite.count > buflen) {
@@ -2172,22 +2171,27 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 		buflen -= readwrite.count;
 		byteswritten += readwrite.count;
 
-		/* Test if we wrote a full sector of data */
+		/* Test if we wrote a full sector of data and more data is pending to be written.
+		 * If more data is not pending, the last modified sector will be synced during close-time
+		 * or if another write request is issued.
+		 * */
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 		if (sf->curroffset == fs->fs_llformat.availbytes && buflen) {
 
-			/* First get a new chained sector */
+			/* First get a new chained sector, we chain the next sector beforehand since
+			 * we know more data is yet to be written and adding the chain later will require
+			 * a sector re-allocation */
 			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
 			if (ret < 0) {
 				fdbg("Error allocating new sector, ret : %d\n", ret);
 				return ret;
 			}
 
-			/* Copy the new sector to the old one and chain it */
+			/* Copy the newly allocated sector number to the header of the current one and chain it */
 			chainheader = (struct smartfs_chain_header_s *)sf->buffer;
 			*((uint16_t *)chainheader->nextsector) = (uint16_t)ret;
 
-			/* Now sync the file to write this sector out */
+			/* Now sync the file to write this sector out to flash*/
 			ret = smartfs_sync_internal(fs, sf);
 			if (ret != OK) {
 				return ret;
@@ -2201,6 +2205,9 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 				fdbg("Error - duplicate logical sector %d\n", sf->currsector);
 			}
 
+			/* Dirty the sector buffer flags because the new sector has been added to chain
+			 * but not physically synced to the hardware yet
+			 */
 			sf->bflags = SMARTFS_BFLAG_DIRTY;
 			sf->currsector = SMARTFS_NEXTSECTOR(chainheader);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
@@ -2210,22 +2217,19 @@ ssize_t smartfs_append_data(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs
 #else                                                   /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 		if (sf->curroffset == fs->fs_llformat.availbytes) {
 
-			/* Sync the file to write this sector out */
 			ret = smartfs_sync_internal(fs, sf);
 			if (ret != OK) {
 				return ret;
 			}
 
-			/* Allocate a new sector if needed */
+			/* Allocate a new sector only if needed */
 			if (buflen > 0) {
-				/* Allocate a new sector */
 				ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
 				if (ret < 0) {
 					fdbg("Error allocating new sector, ret : %d\n", ret);
 					return ret;
 				}
 
-				/* Copy the new sector to the old one and chain it */
 				chainheader = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 				*((uint16_t *)chainheader->nextsector) = (uint16_t)ret;
 
