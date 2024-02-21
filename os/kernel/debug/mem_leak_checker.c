@@ -103,7 +103,7 @@ static bool search_hash(unsigned long value)
 
 	cur = hash_table[key];
 	while (cur != NULL) {
-		if ((unsigned long)cur->node == value && (unsigned long)cur->node != (value + (unsigned long)SIZEOF_MM_ALLOCNODE)) {
+		if ((unsigned long)cur->node == value) {
 			if (cur->node->reserved == MEM_USED) {
 				return false;
 			}
