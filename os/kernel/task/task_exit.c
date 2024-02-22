@@ -106,6 +106,12 @@ static void prepare_exit(struct tcb_s *tcb)
 	 * breaks the critical section.
 	 */
 	exit_tcb->lockcount++;
+#ifdef CONFIG_SMP
+	/* Make sure that the system knows about the locked state */
+
+	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+			&g_cpu_schedlock);
+#endif
 	mm_is_sem_available(exit_tcb);
 }
 
@@ -224,6 +230,11 @@ int task_exit(void)
 #endif
 
 	ret = task_terminate(dtcb->pid, true);
+
+#ifdef CONFIG_SMP
+	spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+				&g_cpu_schedlock);
+#endif
 
 #ifdef CONFIG_SMP
 	rtcb->irqcount--;
