@@ -179,6 +179,7 @@ int up_cpu_paused(int cpu)
    * will be made when the interrupt returns.
    */
 
+  up_restoretask(tcb);
   arm_restorestate(tcb->xcp.regs);
   spin_unlock(&g_cpu_wait[cpu]);
 
