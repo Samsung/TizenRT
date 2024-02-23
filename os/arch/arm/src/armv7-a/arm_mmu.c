@@ -506,21 +506,21 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 void mmu_dump_app_pgtbl(void)
 {
 	struct tcb_s *rtcb = sched_self();
+	uint32_t *l1tbl = mmu_l1_pgtable();
+
+	lldbg_noarg("L1 page table base addr = 0x%08x appid = %d\n", l1tbl, rtcb->app_id);
+
 	if (rtcb->app_id < 1) {
 		return;
 	}
-
-	uint32_t *l1tbl = mmu_l1_pgtable();
-
-	lldbg_noarg("L1 page table base addr = 0x%08x\n", l1tbl);
 
 	lldbg_noarg("=====================================================================\n");
 	lldbg_noarg("ENTRY      TYPE    OUT             ACCESS\n");
 	lldbg_noarg("ADDR               ADDR                  \n");
 	lldbg_noarg("=====================================================================\n");
 	for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
-		if ((l1tbl[i] & PMD_SECT_AP1) && 	// Only print user areas.
-				(l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT) {
+		if ((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT && 
+				(l1tbl[i] & PMD_SECT_AP1)) {  	// Only print user areas.
 			lldbg_noarg("0x%08x SECT    0x%08x      %s-%s\n", 
 					&l1tbl[i], 
 					l1tbl[i] & PMD_SECT_PADDR_MASK, 
