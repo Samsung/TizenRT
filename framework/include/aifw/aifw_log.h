@@ -58,3 +58,8 @@ static const char *file_name = 0;
 #define AIFW_LOGV(...)
 #endif
 
+#ifdef CONFIG_AIFW_LOGD
+#define AIFW_LOGD(...) PRINT_LOG("\033[33mD", TAG, __VA_ARGS__)
+#else
+#define AIFW_LOGD(...)
+#endif
