@@ -291,12 +291,9 @@ void arm_boot(void)
 
   amebasmart_setupmappings();
 
-  /* Make sure that all other CPUs are in the disabled state.  This is a
-   * formality because the other CPUs are actually running then we have
-   * probably already crashed.
-   */
-
-  amebasmart_cpu_disable();
+  /* Secondary core is already in disabled state during cold boot, no need
+     to do any operation here
+  */
 
 #ifdef CONFIG_SMP
   /* Enable SMP cache coherency for CPU0 */
