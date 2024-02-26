@@ -33,6 +33,18 @@
 #define READ_BUFFER_SIZE	1024	/* user configurable read size */
 
 /****************************************************************************
+ * Private functions
+ * **************************************************************************/
+
+static void show_usage(void)
+{
+	printf("\nUsage: log_dump [N]\n");
+	printf("Fetches the last N nodes of log dump\n");
+	printf("\n  N    The number of nodes to be fetched from the last (newly saved), N > 0\n");
+	printf("       If N is not provided then we fetch all the saved nodes\n");
+}
+
+/****************************************************************************
  * log_dump_main
  ****************************************************************************/
 
@@ -42,37 +54,58 @@ int main(int argc, FAR char *argv[])
 int log_dump_main(int argc, char *argv[])
 #endif
 {
+	if (argc > 2) {
+		show_usage();
+		goto errout;
+	}
+
 	int ret = 1;
 	char buf[READ_BUFFER_SIZE];
 	int fd = OPEN_LOGDUMP();
 
 	if (fd < 0) {
-		printf("Please ensure that procfs is mounted\n");
-		return -1;
+		printf("log_dump_main : Please ensure that procfs is mounted\n");
+		goto errout;
 	}
 
 	/* Log dump starts automatically from boot up.
 	 * To test start, intentionally add to stop. */
 	if (STOP_LOGDUMP_SAVE(fd) < 0) {
-		printf("Failed to stop log dump, errno %d\n", get_errno());
+		printf("log_dump_main : Failed to stop log dump, errno %d\n", get_errno());
 		goto errout;
 	}
 
-	printf("This Log Should NOT be saved!!!\n");
+	if (argc == 2) {
+		int N = strtol(argv[1], NULL, 10);
+		if (N < 1) {
+			show_usage();
+			goto errout;
+		}
+		/* This is similar to a file seek command. So when N is given
+		 * we move the start of the reading pointer to the Nth block
+		 * from the end. If N is not provided, we don't change the
+		 * reading pointer so we fetch all the saved blocks */
+		if (LOG_DUMP_SEEK(fd, N)) {
+			printf("log_dump_main : Failed to set the number of blocks to be fetched, errno : %d\n", get_errno());
+			goto errout;
+		}
+	}
+
+	printf("log_dump_main : This Log Should NOT be saved!!!\n");
 	sleep(1);
 
-	printf("\n*********************   LOG DUMP START  *********************\n");
+	printf("log_dump_main : \n*********************   LOG DUMP START  *********************\n");
 
 	if (START_LOGDUMP_SAVE(fd) < 0)	{
-		printf("Failed to start log dump, errno %d\n", get_errno());
+		printf("log_dump_main : Failed to start log dump, errno %d\n", get_errno());
 		goto errout;
 	}
 
-	printf("This Log Should be saved!!!\n");
+	printf("log_dump_main : This Log Should be saved!!!\n");
 	sleep(1);
 
 	if (STOP_LOGDUMP_SAVE(fd) < 0) {
-		printf("Failed to stop log dump, errno %d\n", get_errno());
+		printf("log_dump_main : Failed to stop log dump, errno %d\n", get_errno());
 		goto errout;
 	}
 
@@ -83,7 +116,7 @@ int log_dump_main(int argc, char *argv[])
 		}
 	}
 
-        printf("\n*********************   LOG DUMP END  ***********************\n");
+        printf("log_dump_main : \n*********************   LOG DUMP END  ***********************\n");
 
 	CLOSE_LOGDUMP(fd);
 

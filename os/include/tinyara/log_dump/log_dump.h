@@ -31,8 +31,9 @@
 #define LOG_DUMP_STACKSIZE   16384		/* Log dump thread stack size */
 #define LOG_DUMP_PRIORITY    100		/* Log dump thread priority */
 
-#define LOGDUMP_SAVE_START	"1"
-#define LOGDUMP_SAVE_STOP	"2"
+#define LOGDUMP_SAVE_START	"a"
+#define LOGDUMP_SAVE_STOP	"b"
+#define LOGDUMP_OFFSET		"c"
 
 /********************************************************************************
  * Public Types
@@ -41,8 +42,9 @@
  * Public Functions
  ********************************************************************************/
 
-#define OPEN_LOGDUMP()			open("/proc/logsave", O_RDWR)
-#define START_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1)
-#define STOP_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1)
-#define READ_LOGDUMP(fd, buf, bufsize)	read(fd, buf, bufsize)
-#define CLOSE_LOGDUMP(fd)		close(fd)
+#define OPEN_LOGDUMP()				open("/proc/logsave", O_RDWR)
+#define START_LOGDUMP_SAVE(fd)			write(fd, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1)
+#define STOP_LOGDUMP_SAVE(fd)			write(fd, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1)
+#define LOG_DUMP_SEEK(fd, num)			write(fd, LOGDUMP_OFFSET, num)
+#define READ_LOGDUMP(fd, buf, bufsize)		read(fd, buf, bufsize)
+#define CLOSE_LOGDUMP(fd)			close(fd)
