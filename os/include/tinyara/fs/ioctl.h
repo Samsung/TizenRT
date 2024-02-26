@@ -101,7 +101,8 @@
 #define _IOTBUSBASE     (0x2600)	/* iotbus ioctl commands */
 #define _FBIOCBASE      (0x2700)	/* Frame buffer character driver ioctl commands */
 #define _CPULOADBASE    (0x2800)	/* cpuload ioctl commands */
-#define _COMPBASE       (0x2900)	/* compress ioctl commands */
+#define _THERMALBASE	(0x2900)	/* thermal camera control ioctl commands */
+#define _COMPBASE       (0x2a00)	/* compress ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
