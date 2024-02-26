@@ -403,12 +403,6 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 		break;
 
 	case PLL_CLOCK_98P304M:
-		PLL_I2S_98P304M(ENABLE);
-		RCC_PeriphClockSource_SPORT(obj->i2s_idx, CKSL_I2S_PLL98M);
-		PLL_I2S_Div(obj->i2s_idx, Clock_Params.PLL_DIV);
-		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
-		break;
-
 	default:
 		PLL_I2S_98P304M(ENABLE);
 		RCC_PeriphClockSource_SPORT(obj->i2s_idx, CKSL_I2S_PLL98M);
