@@ -487,656 +487,656 @@ class dumpParser:
 		self.find_stackframe_using_framepointer(frame)
 
 def format_output(res, string):
-     r = res.split('\n')
-     print('\t- symbol addr {0}       : {1}'.format(string, r[0]))
-     print('\t- function name {0}     : {1}'.format(string, r[1]))
-     print('\t- file {0}              : {1}'.format(string, r[2]))
+	r = res.split('\n')
+	print('\t- symbol addr {0}       : {1}'.format(string, r[0]))
+	print('\t- function name {0}     : {1}'.format(string, r[1]))
+	print('\t- file {0}              : {1}'.format(string, r[2]))
 
 def print_crash_type(string):
-    global crash_type_assert
-    if 'up_memfault' in string:
-        print('\n2. Crash type               : memory fault')
-    elif 'up_busfault' in string:
-        print('\n2. Crash type               : bus fault')
-    elif 'up_usagefault' in string:
-        print('\n2. Crash type               : usage fault')
-    elif 'up_hardfault' in string:
-        print('\n2. Crash type               : hard fault')
-    elif 'Assertion failed at file' in string:
-        crash_type_assert = True
-        print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
-    else:
-        print('\n2. Crash type               : etc')
-    if (crash_type_assert == True):
-        print('\n3. Crash point\n\t- ', string)
-    else:
-        print('   Crash log\n\t-', string)
+	global crash_type_assert
+	if 'up_memfault' in string:
+		print('\n2. Crash type               : memory fault')
+	elif 'up_busfault' in string:
+		print('\n2. Crash type               : bus fault')
+	elif 'up_usagefault' in string:
+		print('\n2. Crash type               : usage fault')
+	elif 'up_hardfault' in string:
+		print('\n2. Crash type               : hard fault')
+	elif 'Assertion failed at file' in string:
+		crash_type_assert = True
+		print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
+	else:
+		print('\n2. Crash type               : etc')
+	if (crash_type_assert == True):
+		print('\n3. Crash point\n\t- ', string)
+	else:
+		print('   Crash log\n\t-', string)
 
 # Function to get the number of application binaries, names, text address and sizes
 def find_number_of_binaries(log_file):
 
-    global g_app_idx
-    global g_stext_app
-    global g_etext_app
-    partition_str = "==========================================================="
-    current_line = ""
-    # Parse the contents based on tokens in log file.
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if partition_str in line:
-                line = next(searchfile)
-                current_line = line
-                line = next(searchfile)
-                continue
-            # Get the number of applications loaded
-            if BIN_ADDR_FXN == current_line:
-                g_app_idx = g_app_idx + 1
+	global g_app_idx
+	global g_stext_app
+	global g_etext_app
+	partition_str = "==========================================================="
+	current_line = ""
+	# Parse the contents based on tokens in log file.
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)
+				continue
+			# Get the number of applications loaded
+			if BIN_ADDR_FXN == current_line:
+				g_app_idx = g_app_idx + 1
 
-    app_idx = 0
-    g_stext_app = array('i', range(0, g_app_idx))
-    g_etext_app = array('i', range(0, g_app_idx))
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if partition_str in line:
-                line = next(searchfile)
-                current_line = line
-                line = next(searchfile)
-                continue
-            # Read the app text address and size
-            if BIN_ADDR_FXN == current_line:
-               word = line.split(':')
-               t = word[2].split(',') # word[2] is the App Start Text address
-               w = word[1].split(' ')
-               # w[1] denotes string '[<app_name>]'
-               start_idx = int(w[1].find('[')) + 1
-               end_idx = int(w[1].find(']'))
-               app_name.append(w[1][start_idx:end_idx])
-               g_stext_app[app_idx] = int(t[0], 16)
-               g_etext_app[app_idx] = g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
-               app_idx = app_idx + 1
+	app_idx = 0
+	g_stext_app = array('i', range(0, g_app_idx))
+	g_etext_app = array('i', range(0, g_app_idx))
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)
+				continue
+			# Read the app text address and size
+			if BIN_ADDR_FXN == current_line:
+				word = line.split(':')
+				t = word[2].split(',') # word[2] is the App Start Text address
+				w = word[1].split(' ')
+				# w[1] denotes string '[<app_name>]'
+				start_idx = int(w[1].find('[')) + 1
+				end_idx = int(w[1].find(']'))
+				app_name.append(w[1][start_idx:end_idx])
+				g_stext_app[app_idx] = int(t[0], 16)
+				g_etext_app[app_idx] = g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
+				app_idx = app_idx + 1
 
 
 # Function to Parse the i/p log file in case of app crashes to corresponding app display debug symbols
 def find_crash_point(log_file, elf):
-    global g_app_idx
-    global g_assertpc
-    global g_stext_app
-    global g_etext_app
-    global crash_type_assert
-    app_idx = 0
-    pc_value = 0
-    lr_value = 0
-    is_app_crash = 0
-    is_kernel_crash = 0
-    is_interrupt_mode = 0
-    assertline = ""
-    partition_str = "==========================================================="
-    current_line = ""
-    closing_log_line = "##########################################################################################################################################"
-    # Parse the contents based on tokens in log file.
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if partition_str in line:
-                line = next(searchfile)
-                current_line = line
-                line = next(searchfile)
-                continue
-            if current_line == register_dump:
-                word = line.split(':')
+	global g_app_idx
+	global g_assertpc
+	global g_stext_app
+	global g_etext_app
+	global crash_type_assert
+	app_idx = 0
+	pc_value = 0
+	lr_value = 0
+	is_app_crash = 0
+	is_kernel_crash = 0
+	is_interrupt_mode = 0
+	assertline = ""
+	partition_str = "==========================================================="
+	current_line = ""
+	closing_log_line = "##########################################################################################################################################"
+	# Parse the contents based on tokens in log file.
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)
+				continue
+			if current_line == register_dump:
+				word = line.split(':')
 
-                # word[1] contains the register name i.e R0 or R8
-                reg = word[1].split()
+				# word[1] contains the register name i.e R0 or R8
+				reg = word[1].split()
 
-                if reg[0] == 'R8':
-                    t = word[2].split( )
+				if reg[0] == 'R8':
+					t = word[2].split( )
 
-                    # Check for corruption of PC value in logs
-                    if (len(word[2].split( )) != 8):
-                        print('\nAssert logs are corrupted, and we are not able to determine the value of PC.\n')
-                        continue
+					# Check for corruption of PC value in logs
+					if (len(word[2].split( )) != 8):
+						print('\nAssert logs are corrupted, and we are not able to determine the value of PC.\n')
+						continue
 
-                    # Last subword of word[2] contains the PC value
-                    pc_value = int(t[-1],16)
-                    lr_value = int(t[-2],16)
-                    continue
+					# Last subword of word[2] contains the PC value
+					pc_value = int(t[-1],16)
+					lr_value = int(t[-2],16)
+					continue
 
-            # Get the assert location PC value
-            if current_line == assertion_details and "Assertion failed at file:" in line:
-                assertline = line
-            if 'Assert location (PC) :' in line:
-                word = line.split(':')
-                #word[2] contains the g_assertpc value
-                g_assertpc = int(word[2].strip(),16)
+			# Get the assert location PC value
+			if current_line == assertion_details and "Assertion failed at file:" in line:
+				assertline = line
+			if 'Assert location (PC) :' in line:
+				word = line.split(':')
+				#word[2] contains the g_assertpc value
+				g_assertpc = int(word[2].strip(),16)
 
-    print('-----------------------------------------------------------------------------------------')
-    address1 = hex(lr_value)
-    address2 = hex(pc_value)
-    result = 0
-    # Check for lr & pc values in application text address range
-    if (pc_value != 00000000):
-        for app_idx in range(g_app_idx):
-            os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
-            if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
-                addr = lr_value - int(hex(g_stext_app[app_idx]), 16)
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
-                result = f.read()
-                if '??' not in result and '$d' not in result:
-                    is_app_crash = 1
-                    print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                    print_crash_type(assertline)
-                    if (crash_type_assert == False):
-                        print('3. Crash point (PC or LR)')
-                        print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-                        format_output(result, "")
-            if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
-                addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
-                result = f.read()
-                if '??' not in result and '$d' not in result:
-                    if (not is_app_crash):
-                        print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                        print_crash_type(assertline)
-                        if (crash_type_assert == False):
-                            print('3. Crash point (PC or LR)')
-                    is_app_crash = 1
-                    if (crash_type_assert == False):
-                        print('\n\t[ Current location (PC) of assert ]')
-                        format_output(result, "")
-                if ((addr - 4) > 0x0):
-                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
-                    result1 = f.read()
-                    if '??' not in result1 and '$d' not in result1:
-                        if (crash_type_assert == False):
-                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                            format_output(result1, "of (pc - 4)")
-                if ((addr - 8) > 0x0):
-                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
-                    result2 = f.read()
-                    if '??' not in result2 and '$d' not in result2:
-                        if (crash_type_assert == False):
-                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                            format_output(result2, "of (pc - 8)")
+	print('-----------------------------------------------------------------------------------------')
+	address1 = hex(lr_value)
+	address2 = hex(pc_value)
+	result = 0
+	# Check for lr & pc values in application text address range
+	if (pc_value != 00000000):
+		for app_idx in range(g_app_idx):
+			os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
+			if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
+				addr = lr_value - int(hex(g_stext_app[app_idx]), 16)
+				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
+				result = f.read()
+				if '??' not in result and '$d' not in result:
+					is_app_crash = 1
+					print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+					print_crash_type(assertline)
+					if (crash_type_assert == False):
+						print('3. Crash point (PC or LR)')
+						print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+						format_output(result, "")
+			if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
+				addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
+				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
+				result = f.read()
+				if '??' not in result and '$d' not in result:
+					if (not is_app_crash):
+						print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+						print_crash_type(assertline)
+						if (crash_type_assert == False):
+							print('3. Crash point (PC or LR)')
+					is_app_crash = 1
+					if (crash_type_assert == False):
+						print('\n\t[ Current location (PC) of assert ]')
+						format_output(result, "")
+				if ((addr - 4) > 0x0):
+					f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+					result1 = f.read()
+					if '??' not in result1 and '$d' not in result1:
+						if (crash_type_assert == False):
+							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+							format_output(result1, "of (pc - 4)")
+				if ((addr - 8) > 0x0):
+					f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+					result2 = f.read()
+					if '??' not in result2 and '$d' not in result2:
+						if (crash_type_assert == False):
+							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+							format_output(result2, "of (pc - 8)")
 
-    # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
-    else:
-        address1 = hex(g_assertpc)
-        for app_idx in range(g_app_idx):
-            os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
-            if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
-                addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
-                f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
-                result = f.read()
-                if '??' not in result and '$d' not in result:
-                    is_app_crash = 1
-                    print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
-                    print_crash_type(assertline)
-                    if (crash_type_assert == False):
-                        print('3. Crash point (PC or LR)')
-                        print('\n\t[ Current location (PC) of assert ]')
-                        format_output(result, "")
-                if ((addr - 4) > 0x0):
-                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
-                    result1 = f.read()
-                    if '??' not in result1 and '$d' not in result1:
-                        if (crash_type_assert == False):
-                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                            format_output(result1, "of (pc - 4)")
-                if ((addr - 8) > 0x0):
-                    f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
-                    result2 = f.read()
-                    if '??' not in result2 and '$d' not in result2:
-                        if (crash_type_assert == False):
-                            print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                            format_output(result2, "of (pc - 8)")
+	# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
+	else:
+		address1 = hex(g_assertpc)
+		for app_idx in range(g_app_idx):
+			os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
+			if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
+				addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
+				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
+				result = f.read()
+				if '??' not in result and '$d' not in result:
+					is_app_crash = 1
+					print('\n1. Crash Binary           : {0}'.format(app_name[app_idx]))
+					print_crash_type(assertline)
+					if (crash_type_assert == False):
+						print('3. Crash point (PC or LR)')
+						print('\n\t[ Current location (PC) of assert ]')
+						format_output(result, "")
+				if ((addr - 4) > 0x0):
+					f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 4))
+					result1 = f.read()
+					if '??' not in result1 and '$d' not in result1:
+						if (crash_type_assert == False):
+							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+							format_output(result1, "of (pc - 4)")
+				if ((addr - 8) > 0x0):
+					f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr - 8))
+					result2 = f.read()
+					if '??' not in result2 and '$d' not in result2:
+						if (crash_type_assert == False):
+							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+							format_output(result2, "of (pc - 8)")
 
-    # Check for lr & pc values in kernel text address range
-    if (not is_app_crash) and (pc_value != 00000000):
-        address1 = hex(lr_value)
-        if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
-            # If yes, print the crash point using addr2line
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(lr_value))
-            result = f.read()
-            if '??' not in result and '$d' not in result:
-                is_kernel_crash = 1
-                print('1. Crash Binary             : kernel')
-                print_crash_type(assertline)
-                if (crash_type_assert == False):
-                    print('3. Crash point (PC or LR)')
-                    print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-                    format_output(result, "")
-        if (address2 >= hex(g_stext_flash) and address2 < hex(g_etext_flash)) or (address2 >= hex(g_stext_ram) and address2 < hex(g_etext_ram)):
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value))
-            result = f.read()
-            if '??' not in result and '$d' not in result:
-                if (not is_kernel_crash):
-                    print('1. Crash Binary             : kernel')
-                    print_crash_type(assertline)
-                    if (crash_type_assert == False):
-                        print('3. Crash point (PC or LR)')
-                is_kernel_crash = 1
-                if (crash_type_assert == False):
-                    print('\n\t[ Current location (PC) of assert ]')
-                    format_output(result, "")
-            if ((pc_value - 4) > 0x0):
-                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
-                result1 = f.read()
-                if '??' not in result1 and '$d' not in result1:
-                    if (crash_type_assert == False):
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result1, "of (pc - 4)")
-            if ((pc_value - 8) > 0x0):
-                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
-                result2 = f.read()
-                if '??' not in result2 and '$d' not in result2:
-                    if (crash_type_assert == False):
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result2, "of (pc - 8)")
+	# Check for lr & pc values in kernel text address range
+	if (not is_app_crash) and (pc_value != 00000000):
+		address1 = hex(lr_value)
+		if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
+			# If yes, print the crash point using addr2line
+			f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(lr_value))
+			result = f.read()
+			if '??' not in result and '$d' not in result:
+				is_kernel_crash = 1
+				print('1. Crash Binary             : kernel')
+				print_crash_type(assertline)
+				if (crash_type_assert == False):
+					print('3. Crash point (PC or LR)')
+					print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
+					format_output(result, "")
+		if (address2 >= hex(g_stext_flash) and address2 < hex(g_etext_flash)) or (address2 >= hex(g_stext_ram) and address2 < hex(g_etext_ram)):
+			f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value))
+			result = f.read()
+			if '??' not in result and '$d' not in result:
+				if (not is_kernel_crash):
+					print('1. Crash Binary             : kernel')
+					print_crash_type(assertline)
+					if (crash_type_assert == False):
+						print('3. Crash point (PC or LR)')
+				is_kernel_crash = 1
+				if (crash_type_assert == False):
+					print('\n\t[ Current location (PC) of assert ]')
+					format_output(result, "")
+			if ((pc_value - 4) > 0x0):
+				f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 4))
+				result1 = f.read()
+				if '??' not in result1 and '$d' not in result1:
+					if (crash_type_assert == False):
+						print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+						format_output(result1, "of (pc - 4)")
+			if ((pc_value - 8) > 0x0):
+				f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(pc_value - 8))
+				result2 = f.read()
+				if '??' not in result2 and '$d' not in result2:
+					if (crash_type_assert == False):
+						print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+						format_output(result2, "of (pc - 8)")
 
-    # Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
-    if (pc_value == 00000000 and g_assertpc):
-        address1 = hex(g_assertpc)
-        if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
-            # If yes, print the crash point using addr2line
-            f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc))
-            result = f.read()
-            if '??' not in result and '$d' not in result:
-                is_kernel_crash = 1
-                print('1. Crash Binary             : kernel')
-                print_crash_type(assertline)
-                if (crash_type_assert == False):
-                    print('3. Crash point (PC or LR)')
-                    print('\n\t[ Current location (PC) of assert ]')
-                    format_output(result, "")
-            if ((g_assertpc - 4) > 0x0):
-                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
-                result1 = f.read()
-                if '??' not in result1 and '$d' not in result1:
-                    if (crash_type_assert == False):
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result1, "of (pc - 4)")
-            if ((g_assertpc - 8) > 0x0):
-                f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
-                result2 = f.read()
-                if '??' not in result2 and '$d' not in result2:
-                    if (crash_type_assert == False):
-                        print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-                        format_output(result2, "of (pc - 8)")
+	# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
+	if (pc_value == 00000000 and g_assertpc):
+		address1 = hex(g_assertpc)
+		if (address1 >= hex(g_stext_flash) and address1 < hex(g_etext_flash)) or (address1 >= hex(g_stext_ram) and address1 < hex(g_etext_ram)):
+			# If yes, print the crash point using addr2line
+			f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc))
+			result = f.read()
+			if '??' not in result and '$d' not in result:
+				is_kernel_crash = 1
+				print('1. Crash Binary             : kernel')
+				print_crash_type(assertline)
+				if (crash_type_assert == False):
+					print('3. Crash point (PC or LR)')
+					print('\n\t[ Current location (PC) of assert ]')
+					format_output(result, "")
+			if ((g_assertpc - 4) > 0x0):
+				f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 4))
+				result1 = f.read()
+				if '??' not in result1 and '$d' not in result1:
+					if (crash_type_assert == False):
+						print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+						format_output(result1, "of (pc - 4)")
+			if ((g_assertpc - 8) > 0x0):
+				f = os.popen('arm-none-eabi-addr2line -a -f -e' + elf + ' ' + hex(g_assertpc - 8))
+				result2 = f.read()
+				if '??' not in result2 and '$d' not in result2:
+					if (crash_type_assert == False):
+						print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
+						format_output(result2, "of (pc - 8)")
 
-    if (not is_app_crash) and (not is_kernel_crash):
-        print('1. Crash Binary             : NA')
-        print_crash_type(assertline)
-        if (crash_type_assert == False):
-            print('3. Crash point (PC or LR)')
-            # Parse the contents based on tokens in log file.
-            with open(log_file) as searchfile:
-                for line in searchfile:
-                    # If PC value is invalid, show invalid PC
-                    if 'PC value might be invalid' in line:
-                        print('\tPC value might be invalid.')
-            print('\t-  PC & LR values not in any text range! No probable crash point detected.')
+	if (not is_app_crash) and (not is_kernel_crash):
+		print('1. Crash Binary             : NA')
+		print_crash_type(assertline)
+		if (crash_type_assert == False):
+			print('3. Crash point (PC or LR)')
+			# Parse the contents based on tokens in log file.
+			with open(log_file) as searchfile:
+				for line in searchfile:
+					# If PC value is invalid, show invalid PC
+					if 'PC value might be invalid' in line:
+						print('\tPC value might be invalid.')
+			print('\t-  PC & LR values not in any text range! No probable crash point detected.')
 
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if 'ERROR: Stack pointer is not within any of the allocated stack' in line:
-                word = line.split(':')
-                print('\n\t-', word[1], ':', word[2])
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if 'ERROR: Stack pointer is not within any of the allocated stack' in line:
+				word = line.split(':')
+				print('\n\t-', word[1], ':', word[2])
 
-    print('\n4. Code asserted in:')
+	print('\n4. Code asserted in:')
 
-    # Parse the contents based on tokens in log file to determine point of assertion in details
-    with open(log_file) as searchfile:
-        found_type = 0
-        for line in searchfile:
-            if 'Code asserted in nested IRQ state!' in line:
-                found_type = 1
-                print('\n\t- Code asserted in Nested IRQ state.')
-                break
-            elif 'Code asserted in IRQ state!' in line:
-                found_type = 1
-                print('\n\t- Code asserted in IRQ state.')
-                break
-            elif 'Running work function is' in line:
-                found_type = 1
-                print('\n\t- Code asserted in workqueue.')
-                break
-        if (found_type == 0):
-                print('\n\t- Code asserted in normal thread.')
+	# Parse the contents based on tokens in log file to determine point of assertion in details
+	with open(log_file) as searchfile:
+		found_type = 0
+		for line in searchfile:
+			if 'Code asserted in nested IRQ state!' in line:
+				found_type = 1
+				print('\n\t- Code asserted in Nested IRQ state.')
+				break
+			elif 'Code asserted in IRQ state!' in line:
+				found_type = 1
+				print('\n\t- Code asserted in IRQ state.')
+				break
+			elif 'Running work function is' in line:
+				found_type = 1
+				print('\n\t- Code asserted in workqueue.')
+				break
+		if (found_type == 0):
+				print('\n\t- Code asserted in normal thread.')
 
-    # Parse the contents based on tokens in log file for assert during interrupt context
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            # Print the interrupt data during crash (if crashed during interrupt context)
-            if 'IRQ num:' in line:
-                word = line.split(' ')
-                # Last word[-1] contains the interrupt number
-                irq_num = word[-1]
-                print('\n\t- Interrupt number\t\t:',irq_num)
-            if 'Code asserted in IRQ state!' in line:
-                is_interrupt_mode = 1
-                # It displays the interrupt handler information corresponding to the Interrupt
-                # The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
-                print("\n5. Assertion Data during interrupt mode:\n")
-                print('- Interrupt handler at addr\t\tSymbol_name')
-                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if 'Nested IRQ stack:' in line:
-                is_interrupt_mode = 2
-                print("- IRQ Stack information:\n")
-            if (is_interrupt_mode >= 2 and is_interrupt_mode < 9):
-                is_interrupt_mode = is_interrupt_mode + 1
-                print("\033[F", line)
+	# Parse the contents based on tokens in log file for assert during interrupt context
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			# Print the interrupt data during crash (if crashed during interrupt context)
+			if 'IRQ num:' in line:
+				word = line.split(' ')
+				# Last word[-1] contains the interrupt number
+				irq_num = word[-1]
+				print('\n\t- Interrupt number\t\t:',irq_num)
+			if 'Code asserted in IRQ state!' in line:
+				is_interrupt_mode = 1
+				# It displays the interrupt handler information corresponding to the Interrupt
+				# The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
+				print("\n5. Assertion Data during interrupt mode:\n")
+				print('- Interrupt handler at addr\t\tSymbol_name')
+				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if 'Nested IRQ stack:' in line:
+				is_interrupt_mode = 2
+				print("- IRQ Stack information:\n")
+			if (is_interrupt_mode >= 2 and is_interrupt_mode < 9):
+				is_interrupt_mode = is_interrupt_mode + 1
+				print("\033[F", line)
 
-    if (is_interrupt_mode):
-        print('\n6. Call stack of last run thread')
-    else:
-        print('\n5. Call stack of last run thread')
+	if (is_interrupt_mode):
+		print('\n6. Call stack of last run thread')
+	else:
+		print('\n5. Call stack of last run thread')
 
-    # Parse the contents based on tokens in log file for memory allocation failure data
-    with open(log_file) as searchfile:
-        mm_fail = 0
-        for line in searchfile:
-            # Print the mm allocation failure data during crash (if crashed during mm allocation)
-            if ('mm_manage_alloc_fail:' in line) and (mm_fail == 0):
-                print('\nMemory allocation failure logs are as below:')
-                mm_fail = 1
-            if (mm_fail == 1):
-                print(line)
+	# Parse the contents based on tokens in log file for memory allocation failure data
+	with open(log_file) as searchfile:
+		mm_fail = 0
+		for line in searchfile:
+			# Print the mm allocation failure data during crash (if crashed during mm allocation)
+			if ('mm_manage_alloc_fail:' in line) and (mm_fail == 0):
+				print('\nMemory allocation failure logs are as below:')
+				mm_fail = 1
+			if (mm_fail == 1):
+				print(line)
 
-    # Parse the contents based on tokens in log file.
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if partition_str in line:
-                line = next(searchfile)
-                current_line = line
-                line = next(searchfile)
-                continue
-            # Print the current stack pointer value
-            if current_line == stack_details and ' sp:' in line:
-                word = line.split(':')
-                # word[2] contains the current stack pointer
-                stack_curr = int(word[2], 16)
-                print("\n\t- Current stack pointer:\t\t", hex(stack_curr))
-            # Print the current running work function
-            if 'Running work function is' in line:
-                word = line.split(' ')
-                # Last word[-1] contains the current running work function
-                wf = word[-1]
-                curr_worker = int(wf[:-2], 16)
-                print("\t- Current running work function is:\t", hex(curr_worker))
-                # It displays the symbol corresponding to the current running work function
-                # The last argument to debugsymbolviewer specifies whether or not to check for current running work function (3)
-                print('\nCurrent running work function\t\tFile_name')
-                os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3")
+	# Parse the contents based on tokens in log file.
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if partition_str in line:
+				line = next(searchfile)
+				current_line = line
+				line = next(searchfile)
+				continue
+			# Print the current stack pointer value
+			if current_line == stack_details and ' sp:' in line:
+				word = line.split(':')
+				# word[2] contains the current stack pointer
+				stack_curr = int(word[2], 16)
+				print("\n\t- Current stack pointer:\t\t", hex(stack_curr))
+			# Print the current running work function
+			if 'Running work function is' in line:
+				word = line.split(' ')
+				# Last word[-1] contains the current running work function
+				wf = word[-1]
+				curr_worker = int(wf[:-2], 16)
+				print("\t- Current running work function is:\t", hex(curr_worker))
+				# It displays the symbol corresponding to the current running work function
+				# The last argument to debugsymbolviewer specifies whether or not to check for current running work function (3)
+				print('\nCurrent running work function\t\tFile_name')
+				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3")
 
-    # It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
-    print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
-    os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
+	# It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
+	print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
 
-    print('\nh. Heap Region information:\n')
+	print('\nh. Heap Region information:\n')
 
-    with open(log_file) as searchfile:
-        heap_corr = 0
-        for line in searchfile:
-            # Check if there is heap corruption or not
-            if 'Heap corruption detected' in line:
-                    heap_corr = 1
-        if (heap_corr == 1):
-            print('\t!!!! HEAP CORRUPTION DETECTED !!!!\n\n')
-        else:
-            print('\t!!!! NO HEAP CORRUPTION DETECTED !!!!\n\n')
+	with open(log_file) as searchfile:
+		heap_corr = 0
+		for line in searchfile:
+			# Check if there is heap corruption or not
+			if 'Heap corruption detected' in line:
+					heap_corr = 1
+		if (heap_corr == 1):
+			print('\t!!!! HEAP CORRUPTION DETECTED !!!!\n\n')
+		else:
+			print('\t!!!! NO HEAP CORRUPTION DETECTED !!!!\n\n')
 
-    class heap_node:
-        def __init__(self, node_info):
-            #Split node data using "," and parse info
-            node_info = node_info.split(",")
-            addr_at = node_info[0].index("addr =") + len("addr =")
-            type_at = node_info[1].index("type =") + len("type =")
-            size_at = node_info[2].index("size =") + len("size =")
-            prec_add_at = node_info[3].index("preceding size =") + len("preceding size =")
+	class heap_node:
+		def __init__(self, node_info):
+			#Split node data using "," and parse info
+			node_info = node_info.split(",")
+			addr_at = node_info[0].index("addr =") + len("addr =")
+			type_at = node_info[1].index("type =") + len("type =")
+			size_at = node_info[2].index("size =") + len("size =")
+			prec_add_at = node_info[3].index("preceding size =") + len("preceding size =")
 
-            owner_pid_info = node_info[4].split("(")
-            owner_pid_at = owner_pid_info[0].index("owner pid =") + len("owner pid =")
-            isStack = 'X'
-            sind = owner_pid_info[1].find('stack')
-            pid_str = '('+str(owner_pid_info[1])
-            if (sind !=-1):
-                isStack ='O'
-                pid_str = '('+str(owner_pid_info[1][0:sind])+')'
-            
-            alloca_at = node_info[5].index("allocated by code at addr = ")+len("allocated by code at addr = ")
+			owner_pid_info = node_info[4].split("(")
+			owner_pid_at = owner_pid_info[0].index("owner pid =") + len("owner pid =")
+			isStack = 'X'
+			sind = owner_pid_info[1].find('stack')
+			pid_str = '('+str(owner_pid_info[1])
+			if (sind !=-1):
+				isStack ='O'
+				pid_str = '('+str(owner_pid_info[1][0:sind])+')'
+			
+			alloca_at = node_info[5].index("allocated by code at addr = ")+len("allocated by code at addr = ")
 
-            self.addr = node_info[0][addr_at:].replace(" ","")
+			self.addr = node_info[0][addr_at:].replace(" ","")
 
-            self.isAllocated = "O"
-            if node_info[1][type_at:].replace(" ","") == "F" or node_info[1][type_at:].replace(" ","") == "f":
-                self.isAllocated = "X"
+			self.isAllocated = "O"
+			if node_info[1][type_at:].replace(" ","") == "F" or node_info[1][type_at:].replace(" ","") == "f":
+				self.isAllocated = "X"
 
-            self.size = node_info[2][size_at:].replace(" ","")
-            self.preceding_size = node_info[3][prec_add_at:].replace(" ","")
-            
-            self.ownerpid = str(abs(int(owner_pid_info[0][owner_pid_at:].replace(" ",""))))+" "+pid_str            
-            self.stacknode = isStack
-            self.allocAt =  node_info[5][alloca_at:].replace(" ","")
+			self.size = node_info[2][size_at:].replace(" ","")
+			self.preceding_size = node_info[3][prec_add_at:].replace(" ","")
+			
+			self.ownerpid = str(abs(int(owner_pid_info[0][owner_pid_at:].replace(" ",""))))+" "+pid_str            
+			self.stacknode = isStack
+			self.allocAt =  node_info[5][alloca_at:].replace(" ","")
 
-            isKernel = True
-            addrcmd = ""
-            address = int(self.allocAt, 16)
+			isKernel = True
+			addrcmd = ""
+			address = int(self.allocAt, 16)
 
-            for app_idx in range(g_app_idx):
-                #check if address falls in app
-                if (address >= int(hex(g_stext_app[app_idx]),16) and address < int(hex(g_etext_app[app_idx]),16)):
-                    isKernel = False
-                    addr = address - int(hex(g_stext_app[app_idx]), 16)
-                    addrcmd = 'arm-none-eabi-addr2line -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr) 
+			for app_idx in range(g_app_idx):
+				#check if address falls in app
+				if (address >= int(hex(g_stext_app[app_idx]),16) and address < int(hex(g_etext_app[app_idx]),16)):
+					isKernel = False
+					addr = address - int(hex(g_stext_app[app_idx]), 16)
+					addrcmd = 'arm-none-eabi-addr2line -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr) 
 
-            #if address is in kernel
-            if isKernel == True:
-                addrcmd = "arm-none-eabi-addr2line -e {file} {trans_address}".format(file= elf,trans_address=hex(address))
-            
+			#if address is in kernel
+			if isKernel == True:
+				addrcmd = "arm-none-eabi-addr2line -e {file} {trans_address}".format(file= elf,trans_address=hex(address))
+			
 
-            self.filename = os.popen(addrcmd).read()
+			self.filename = os.popen(addrcmd).read()
 
-        def print_info(self):
-            print("\tAddress        : ", self.addr)
-            print("\tAllocated node : ", self.isAllocated)
-            print("\tSize           : ", self.size)
-            print("\tPreceding size : ", self.preceding_size)
-            print("\tOwner pid      : ", self.ownerpid)
-            print("\tStack node     : ", self.stacknode)
-            print("\tAllocated by   : ", self.allocAt + " (" + self.filename[ :-1] +")")
+		def print_info(self):
+			print("\tAddress        : ", self.addr)
+			print("\tAllocated node : ", self.isAllocated)
+			print("\tSize           : ", self.size)
+			print("\tPreceding size : ", self.preceding_size)
+			print("\tOwner pid      : ", self.ownerpid)
+			print("\tStack node     : ", self.stacknode)
+			print("\tAllocated by   : ", self.allocAt + " (" + self.filename[ :-1] +")")
 
-    with open(log_file) as searchfile:
-    # Parse the contents based on tokens in log file for heap corruption
-        def parseCorruptHeapInfo(line):
-            heap_corrupted =  False
-            while line != "No more lines" and 'Heap start =' in line:
-                #Read start and end address from heap
-                heap_start_at =  line.index("Heap start = ") + len("Heap start = ")
-                start_info = line[heap_start_at:].split(' ')
-                heap_start_add = start_info[0]
-                heap_end_add = start_info[-1][:-1]             
-                line = next(searchfile, "No more lines")
-                print("Checking corruption ({} - {}) : ".format(heap_start_add,heap_end_add), end="")
+	with open(log_file) as searchfile:
+	# Parse the contents based on tokens in log file for heap corruption
+		def parseCorruptHeapInfo(line):
+			heap_corrupted =  False
+			while line != "No more lines" and 'Heap start =' in line:
+				#Read start and end address from heap
+				heap_start_at =  line.index("Heap start = ") + len("Heap start = ")
+				start_info = line[heap_start_at:].split(' ')
+				heap_start_add = start_info[0]
+				heap_end_add = start_info[-1][:-1]             
+				line = next(searchfile, "No more lines")
+				print("Checking corruption ({} - {}) : ".format(heap_start_add,heap_end_add), end="")
 
-                #Skip unnecessary info	
-                if ('#######' in line) and line != closing_log_line:
-                    line = next(searchfile, "No more lines")
-                else:
-                    print("Heap NOT corrupted")
+				#Skip unnecessary info	
+				if ('#######' in line) and line != closing_log_line:
+					line = next(searchfile, "No more lines")
+				else:
+					print("Heap NOT corrupted")
 
-                #Check if heap is corrupted
-                if 'Heap corruption detected in mm_heapstart node' in line:
-                    heap_corrupted = True
-                    print("Heap corruption detected in heap start node")
-                    while 'HEAP START NODE' not in line:
-                        line = next(searchfile)
-                    node_info = ""
-                    while ('HEAP START NODE' in line):
-                        node_info+= line[:-1] + ","
-                        line =next(searchfile)
-                    print("  Heap Start Node : ")
-                    start_heap_node = heap_node(node_info)
-                    start_heap_node.print_info()
-                    
-                elif 'Heap corruption detected.' in line:
-                    heap_corrupted = True
-                    print("Heap corrupted")
-                    line = next(searchfile)
+				#Check if heap is corrupted
+				if 'Heap corruption detected in mm_heapstart node' in line:
+					heap_corrupted = True
+					print("Heap corruption detected in heap start node")
+					while 'HEAP START NODE' not in line:
+						line = next(searchfile)
+					node_info = ""
+					while ('HEAP START NODE' in line):
+						node_info+= line[:-1] + ","
+						line =next(searchfile)
+					print("  Heap Start Node : ")
+					start_heap_node = heap_node(node_info)
+					start_heap_node.print_info()
+					
+				elif 'Heap corruption detected.' in line:
+					heap_corrupted = True
+					print("Heap corrupted")
+					line = next(searchfile)
 
-                    while 'Forward traversal of heap' in line:
-                        line = next(searchfile)
-                        if ('==========' in line):
-                            line =next(searchfile)
+					while 'Forward traversal of heap' in line:
+						line = next(searchfile)
+						if ('==========' in line):
+							line =next(searchfile)
 
-                            #Parse previous, current and next node
-                            node_info = ""
-                            while ('PREV NODE' in line):
-                                node_info+= line[:-1] + ","
-                                line =next(searchfile)
-                            print("  Previous Node : ")
-                            prev_heap_node = heap_node(node_info)
-                            prev_heap_node.print_info()
+							#Parse previous, current and next node
+							node_info = ""
+							while ('PREV NODE' in line):
+								node_info+= line[:-1] + ","
+								line =next(searchfile)
+							print("  Previous Node : ")
+							prev_heap_node = heap_node(node_info)
+							prev_heap_node.print_info()
 
-                            node_info = ""
-                            while ('CORRUPT NODE' in line):
-                                node_info+= line[:-1] + ","
-                                line =next(searchfile)
-                            curr_heap_node = heap_node(node_info)
+							node_info = ""
+							while ('CORRUPT NODE' in line):
+								node_info+= line[:-1] + ","
+								line =next(searchfile)
+							curr_heap_node = heap_node(node_info)
 
-                            while 'CORRUPT NODE' not in line and 'HEAP END NODE'  not in line:
-                                line = next(searchfile)
+							while 'CORRUPT NODE' not in line and 'HEAP END NODE'  not in line:
+								line = next(searchfile)
 
-                            if 'CORRUPT NODE' not in line:
-                                print(" Corrupt Node : ")
-                                curr_heap_node.print_info()
+							if 'CORRUPT NODE' not in line:
+								print(" Corrupt Node : ")
+								curr_heap_node.print_info()
 
-                            if ('CORRUPT NODE' in line):
-                                node_info = ""
-                                while ('CORRUPT NODE' in line):
-                                    node_info+= line[:-1] + ","
-                                    line =next(searchfile)
-                                curr_heap_node_2 = heap_node(node_info)
+							if ('CORRUPT NODE' in line):
+								node_info = ""
+								while ('CORRUPT NODE' in line):
+									node_info+= line[:-1] + ","
+									line =next(searchfile)
+								curr_heap_node_2 = heap_node(node_info)
 
-                                if(curr_heap_node.addr != curr_heap_node_2.addr):
-                                    print(" Corrupt Node 1 : ")
-                                    curr_heap_node.print_info()
-                                    print(" Corrupt Node 2: ")
-                                    curr_heap_node_2.print_info()
-                                else:
-                                    print(" Corrupt Node : ")
-                                    curr_heap_node.print_info()
+								if(curr_heap_node.addr != curr_heap_node_2.addr):
+									print(" Corrupt Node 1 : ")
+									curr_heap_node.print_info()
+									print(" Corrupt Node 2: ")
+									curr_heap_node_2.print_info()
+								else:
+									print(" Corrupt Node : ")
+									curr_heap_node.print_info()
 
-                                node_info = ""
-                                while ('PREV NODE' in line):
-                                    node_info+= line[:-1] + ","
-                                    line =next(searchfile)
-                                print("  Next Node : ")
-                                next_heap_node = heap_node(node_info)								
-                                next_heap_node.print_info()
+								node_info = ""
+								while ('PREV NODE' in line):
+									node_info+= line[:-1] + ","
+									line =next(searchfile)
+								print("  Next Node : ")
+								next_heap_node = heap_node(node_info)								
+								next_heap_node.print_info()
 
-                            elif ('HEAP END NODE' in line):
-                                node_info = ""
-                                while ('HEAP END NODE' in line):
-                                    node_info+= line[:-1] + ","
-                                    line =next(searchfile)
-                                print("  Next Node : ")
-                                next_heap_node = heap_node(node_info)								
-                                next_heap_node.print_info()
-                    print()
-            return heap_corrupted
+							elif ('HEAP END NODE' in line):
+								node_info = ""
+								while ('HEAP END NODE' in line):
+									node_info+= line[:-1] + ","
+									line =next(searchfile)
+								print("  Next Node : ")
+								next_heap_node = heap_node(node_info)								
+								next_heap_node.print_info()
+					print()
+			return heap_corrupted
 
 
-        for line in searchfile:
-            # Print the heap corruption data (if any)
-            if 'Checking kernel heap for corruption' in line:
-                print("Checking kernel heap for corruption")
-                line = next(searchfile)
-                line = next(searchfile)
-                if parseCorruptHeapInfo(line) == False:
-                    print("No Kernel heap corruption detected.\n")
+		for line in searchfile:
+			# Print the heap corruption data (if any)
+			if 'Checking kernel heap for corruption' in line:
+				print("Checking kernel heap for corruption")
+				line = next(searchfile)
+				line = next(searchfile)
+				if parseCorruptHeapInfo(line) == False:
+					print("No Kernel heap corruption detected.\n")
 
-            if 'Checking app heap for corruption' in line:
-                print("Checking application heap for corruption")
-                line = next(searchfile)
-                line = next(searchfile)
-                if parseCorruptHeapInfo(line) == False:
-                    print("No app heap corruption detected.\n")
+			if 'Checking app heap for corruption' in line:
+				print("Checking application heap for corruption")
+				line = next(searchfile)
+				line = next(searchfile)
+				if parseCorruptHeapInfo(line) == False:
+					print("No app heap corruption detected.\n")
 
-    print('\nx. Miscellaneous information:')
+	print('\nx. Miscellaneous information:')
 
-    # It displays the debug symbols corresponding to all the wrong sp addresses (if any)
-    # The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
-    os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
+	# It displays the debug symbols corresponding to all the wrong sp addresses (if any)
+	# The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
+	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
 
-    # Convert task state number to corresponding task state message
-    config_smp = False
-    config_disable_signals = False
-    config_disable_mqueue = False
-    config_paging = False
-    with open("../../os/.config") as configfile:
-        for line in configfile:
-            if "CONFIG_SMP=y" in line:
-                config_smp = True
-            elif "CONFIG_DISABLE_SIGNALS=y" in line:
-                config_disable_signals = True
-            elif "CONFIG_DISABLE_MQUEUE=y" in line:
-                config_disable_mqueue = True
-            elif "CONFIG_PAGING=y" in line:
-                config_paging = True
-    state_no = 0
-    task_state = dict()
-    task_state[str(state_no)] = " Invalid"
-    state_no+=1
-    task_state[str(state_no)] = " Pending preemption unlock"
-    state_no+=1
-    task_state[str(state_no)] = " Wait to scheduling (Ready)"
-    state_no+=1
-    if config_smp:
-        task_state[str(state_no)] = " Assigned to CPU (Ready)"
-        state_no+=1
-    task_state[str(state_no)] = " Running"
-    state_no+=1
-    task_state[str(state_no)] = " Inactive"
-    state_no+=1
-    task_state[str(state_no)] = " Wait Semaphore"
-    state_no+=1
-    task_state[str(state_no)] = " Wait FIN"
-    state_no+=1
-    if not config_disable_signals:
-        task_state[str(state_no)] = " Wait Signal"
-        state_no+=1
-    if not config_disable_mqueue:
-        task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
-        state_no+=1
-        task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
-        state_no+=1
-    if config_paging:
-        task_state[str(state_no)] = " Wait Page Fill"
-        state_no+=1
+	# Convert task state number to corresponding task state message
+	config_smp = False
+	config_disable_signals = False
+	config_disable_mqueue = False
+	config_paging = False
+	with open("../../os/.config") as configfile:
+		for line in configfile:
+			if "CONFIG_SMP=y" in line:
+				config_smp = True
+			elif "CONFIG_DISABLE_SIGNALS=y" in line:
+				config_disable_signals = True
+			elif "CONFIG_DISABLE_MQUEUE=y" in line:
+				config_disable_mqueue = True
+			elif "CONFIG_PAGING=y" in line:
+				config_paging = True
+	state_no = 0
+	task_state = dict()
+	task_state[str(state_no)] = " Invalid"
+	state_no+=1
+	task_state[str(state_no)] = " Pending preemption unlock"
+	state_no+=1
+	task_state[str(state_no)] = " Wait to scheduling (Ready)"
+	state_no+=1
+	if config_smp:
+		task_state[str(state_no)] = " Assigned to CPU (Ready)"
+		state_no+=1
+	task_state[str(state_no)] = " Running"
+	state_no+=1
+	task_state[str(state_no)] = " Inactive"
+	state_no+=1
+	task_state[str(state_no)] = " Wait Semaphore"
+	state_no+=1
+	task_state[str(state_no)] = " Wait FIN"
+	state_no+=1
+	if not config_disable_signals:
+		task_state[str(state_no)] = " Wait Signal"
+		state_no+=1
+	if not config_disable_mqueue:
+		task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
+		state_no+=1
+		task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
+		state_no+=1
+	if config_paging:
+		task_state[str(state_no)] = " Wait Page Fill"
+		state_no+=1
 
-    #Parse content of file for displaying tasks
-    with open(log_file) as searchfile:
-        for line in searchfile:
-            if 'Stack overflow error has occurred' in line:
-                print("\n!! Stack overflow error has occurred !!")
-            if 'List of all tasks in the system' in line:
-                print("\nList of all tasks in the system:\n")
-                line = next(searchfile)
-                line = next(searchfile)
-                print(line[0:], end = "")
-                line = next(searchfile)
-                while line != "No more lines" and '==================' not in line:
-                    if '----------------------------' in line:
-                        print(line[0:], end = "")
-                        line = next(searchfile, "No more lines")
-                        continue				
-                    current_line = line.replace("|", " ").replace("/", " ").replace("\n", " ").split(" ")
-                    current_line = list(filter(None, current_line))
-                    state = current_line[len(current_line) - 1]
-                    line = line.replace("         " + state, task_state[state])
-                    print(line[0:], end = "")
-                    line = next(searchfile, "No more lines")
+	#Parse content of file for displaying tasks
+	with open(log_file) as searchfile:
+		for line in searchfile:
+			if 'Stack overflow error has occurred' in line:
+				print("\n!! Stack overflow error has occurred !!")
+			if 'List of all tasks in the system' in line:
+				print("\nList of all tasks in the system:\n")
+				line = next(searchfile)
+				line = next(searchfile)
+				print(line[0:], end = "")
+				line = next(searchfile)
+				while line != "No more lines" and '==================' not in line:
+					if '----------------------------' in line:
+						print(line[0:], end = "")
+						line = next(searchfile, "No more lines")
+						continue				
+					current_line = line.replace("|", " ").replace("/", " ").replace("\n", " ").split(" ")
+					current_line = list(filter(None, current_line))
+					state = current_line[len(current_line) - 1]
+					line = line.replace("         " + state, task_state[state])
+					print(line[0:], end = "")
+					line = next(searchfile, "No more lines")
 
 # Function to format logs and delete the timestamp (format-|xxxxxxxxx|) if it consists of timestamp at the start of each log line
 def format_log_file(log_file):
