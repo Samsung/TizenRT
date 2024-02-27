@@ -4308,8 +4308,11 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 
 		/* Since we performed a relocation, do garbage collection to
 		 * ensure we don't fill up our flash with released blocks.
+		 * Check if the number of free sectors is less than a certain threshold.
 		 */
-		smart_garbagecollect(dev);
+		if (dev->freesectors < ((dev->availSectPerBlk * dev->neraseblocks) >> 4)) {
+			smart_garbagecollect(dev);
+		}
 	} else {				/* needsrelocate */
 
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
@@ -4609,13 +4612,16 @@ static int smart_allocsector(FAR struct smart_struct_s *dev, unsigned long reque
 		return -EIO;
 	}
 
-	/* Check if we need to do garbage collection.  We have to
-	 * ensure we keep enough reserved free sectors to perform garbage
-	 * collection as it involves moving sectors from blocks with
-	 * released sectors into blocks with free sectors, then
-	 * erasing the vacated block. */
+	/* Check if we need to do garbage collection. We have to ensure that we
+	 * keep enough reserved free sectors to perform garbage collection as it
+	 * involves moving active sectors from blocks with more released sectors
+	 * to blocks with more free sectors and then erasing the vacated block.
+	 * Check if the number of free sectors is less tha a certain threshold.
+	 */
+	if (dev->freesectors < ((dev->availSectPerBlk * dev->neraseblocks) >> 4)) {
+		smart_garbagecollect(dev);
+	}
 
-	smart_garbagecollect(dev);
 	/* Find a free physical sector. */
 
 	physicalsector = smart_findfreephyssector(dev, FALSE);
