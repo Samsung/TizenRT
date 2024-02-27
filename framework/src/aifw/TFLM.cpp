@@ -224,18 +224,18 @@ AIFW_RESULT TFLM::loadModel(const char *file)
 		return AIFW_ERROR_FILE_ACCESS;
 	}
 	fseek(fp, 0, SEEK_END);
-	long size = ftell(fp);
+	int size = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 	if (size < 0) {
 		fclose(fp);
-		AIFW_LOGE("File %s size read as %ld is invalid, errno %d", file, size, errno);
+		AIFW_LOGE("File %s size read as %d is invalid, errno %d", file, size, errno);
 		return AIFW_ERROR_FILE_ACCESS;
 	}
-	AIFW_LOGV("Model File Size: %ld", size);
+	AIFW_LOGV("Model File Size: %d", size);
 	this->mBuf = (char *)malloc(size);
 	if (!this->mBuf) {
 		fclose(fp);
-		AIFW_LOGE("Memory not enough to allocate %ld", size);
+		AIFW_LOGE("Memory not enough to allocate %d", size);
 		return AIFW_NO_MEM;
 	}
 	fread(this->mBuf, 1, size, fp);
