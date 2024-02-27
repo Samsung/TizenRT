@@ -39,6 +39,12 @@ CFLAGS += -DTF_LITE_DISABLE_X86_NEON
 
 TFMICRO_SRC_DIR = ./tensorflow/lite
 
+CXXFLAGS += -g
+CFLAGS   += -g
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+
 CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/schema/ -name "*.cc")
 CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/core/ -name "*.cc")
 CXXSRCS += $(shell find $(TFMICRO_SRC_DIR)/kernels/ -name "*.cc")

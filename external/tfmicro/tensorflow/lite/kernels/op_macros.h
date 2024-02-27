@@ -29,7 +29,7 @@ inline void AbortImpl() {
 #define TFLITE_ABORT AbortImpl();
 #endif
 
-#if defined(NDEBUG)
+#if defined(TF_LITE_NDEBUG)
 #define TFLITE_ASSERT_FALSE (static_cast<void>(0))
 #else
 #define TFLITE_ASSERT_FALSE TFLITE_ABORT

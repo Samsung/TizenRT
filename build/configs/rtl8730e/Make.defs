@@ -177,6 +177,11 @@ else
   CXXFLAGS += -fno-exceptions
 endif
 
+ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
+CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
+CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
+endif
+
 ##########################################################################################################################################
 #CFLAGS += -O2 -g 
 #CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
