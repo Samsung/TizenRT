@@ -27,6 +27,12 @@ APPNAME    = hello_tfmicro
 FUNCNAME   = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
+ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
+	CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
+	CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
+	CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+endif
+
 # Hello, Tensorflow Lite Micro! C++ Example
 ASRCS		=
 CSRCS		=

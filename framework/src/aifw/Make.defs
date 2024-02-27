@@ -20,7 +20,7 @@ ifeq ($(CONFIG_AIFW), y)
 
 ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
 CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
-CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/flatbuffers/include
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
 CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
 CXXSRCS += TFLM.cpp
 endif

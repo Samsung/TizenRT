@@ -174,11 +174,8 @@ endif
 endif
 
 ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
-CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
-CFLAGS   += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
-CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
-CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
-CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
+CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 endif
 
 ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
