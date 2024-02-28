@@ -200,7 +200,7 @@
 #endif
 
 #ifndef CONFIG_PM_IDLEENTER_COUNT
-#define CONFIG_PM_IDLEENTER_COUNT     30	/* Thirty IDLE slices to enter
+#define CONFIG_PM_IDLEENTER_COUNT     20	/* 20 IDLE slices to enter
 											 * IDLE mode from normal
 											 */
 #endif
@@ -218,7 +218,7 @@
 #endif
 
 #ifndef CONFIG_PM_STANDBYENTER_COUNT
-#define CONFIG_PM_STANDBYENTER_COUNT  50	/* Fifty IDLE slices to enter
+#define CONFIG_PM_STANDBYENTER_COUNT  20	/* 20 IDLE slices to enter
 											 * STANDBY mode from IDLE
 											 */
 #endif
@@ -236,7 +236,7 @@
 #endif
 
 #ifndef CONFIG_PM_SLEEPENTER_COUNT
-#define CONFIG_PM_SLEEPENTER_COUNT    70	/* 70 IDLE slices to enter SLEEP
+#define CONFIG_PM_SLEEPENTER_COUNT    20	/* 20 IDLE slices to enter SLEEP
 											 * mode from STANDBY
 											 */
 #endif
