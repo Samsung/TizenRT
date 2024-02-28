@@ -382,7 +382,7 @@ void board_initialize(void)
 #ifdef CONFIG_TIMER
 	int i;
 	char path[CONFIG_PATH_MAX];
-	for (i = 0; i < GTIMER_MAX; i++) {
+	for (i = 1; i < GTIMER_MAX; i++) {
 		snprintf(path, sizeof(path), "/dev/timer%d", i);
 		amebasmart_timer_initialize(path, i);
 	}
