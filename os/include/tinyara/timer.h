@@ -63,6 +63,9 @@
 #include <tinyara/fs/ioctl.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 
 #ifdef CONFIG_TIMER
 
@@ -137,7 +140,9 @@
 
  enum timer_mode_e {
 	MODE_ALARM = 0x01,
-	MODE_FREERUN = 0x02
+	MODE_FREERUN = 0x02,
+	MODE_ONESHOT = 0x03,
+	MODE_PERIODICAL = 0x04,
 };
 
 /* This is the type of the argument passed to the TCIOC_RESOLUTION ioctl 
@@ -177,8 +182,11 @@ struct timer_status_s {
 /* This is the type of the argument passed to the TCIOC_NOTIFICATION ioctl */
 
 struct timer_notify_s {
-	FAR void *arg;   /* An argument to pass with the signal */
-	pid_t     pid;   /* The ID of the task/thread to receive the signal */
+	FAR void *arg;   			/* An argument to pass with the signal */
+	pid_t     pid;   			/* The ID of the task/thread to receive the signal */
+#ifdef CONFIG_PM
+	pm_timer_type_t timer_type; /* The timer type of the task/thread to receive the signal */
+#endif
 };
 
 /* This structure provides the "lower-half" driver operations available to
@@ -331,6 +339,26 @@ void timer_unregister(FAR void *handle);
 
 #ifdef __KERNEL__
 int timer_setcallback(FAR void *handle, tccb_t callback, FAR void *arg);
+#endif
+
+/****************************************************************************
+ * Name: timer_int_handler
+ *
+ * Description:
+ *   This function will be invoke from timer_notifier() to handle PM related control.
+ *   With this handler, we will know what to do for each timer type when the timer expires.
+ *
+ * Input parameters:
+ *   next_interval_us  - This can tune the timer interval for periodic timer
+ *   timer_type        - Timer type to decide what to operation need to be handled
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_PM
+void timer_int_handler(uint32_t *next_interval_us, pm_timer_type_t timer_type);
 #endif
 
 /****************************************************************************

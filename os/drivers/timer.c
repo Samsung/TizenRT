@@ -87,6 +87,9 @@
 struct timer_upperhalf_s {
 	uint8_t   crefs; /* The number of times the device has been opened */
 	pid_t     pid;   /* The ID of the task/thread to receive the signal */
+#ifdef CONFIG_PM
+	pm_timer_type_t  timer_type; /* The timer type of the task/thread to receive the signal */
+#endif
 	FAR void *arg;   /* An argument to pass with the signal */
 	FAR char *path;  /* Registration path */
 
@@ -148,7 +151,15 @@ static bool timer_notifier(FAR uint32_t *next_interval_us, FAR void *arg)
 	DEBUGASSERT(upper != NULL);
 
 	/* Send notification to the waiter.. */
+	/* Do we still need to notify caller here, if fin_wait is not invoked? */
 	fin_notify(upper->pid, (int)upper->arg);
+
+	/* In timer_ioctl(TCIOC_NOTIFICATION), the callback registered is timer_notifier (this API)
+	   there is no invoke for PM related control API, need to have another step to fulfil this
+	*/
+#ifdef CONFIG_PM
+	timer_int_handler(next_interval_us, upper->timer_type);
+#endif
 
 	return true;
 }
@@ -368,6 +379,9 @@ static int timer_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if (notify != NULL) {
 			upper->pid   = notify->pid;
 			upper->arg   = notify->arg;
+#ifdef CONFIG_PM
+			upper->timer_type = notify->timer_type;
+#endif
 
 			ret = timer_setcallback((FAR void *)upper,
 					timer_notifier, upper);
