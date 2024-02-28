@@ -63,28 +63,30 @@
  ****************************************************************************/
 
 /* AmebaSmart Physical (unmapped) Memory Map *************************************/
-/*|                       		| Memory Range            	| Definition in Translation Table   |
-*|----------------------|-------------------------|------------------------------------------------|
-*|Boot ROM				| 0x00000000 - 0x00100000-1 | Cacheable, write-back, write-allocate, RO, EXECUTE  	|
-*|Flash					| 0x08000000 - 0x10000000-1 | Cacheable, write-back, write-allocate, RO, EXECUTE		|
-*|SRAM					| 0x20000000 - 0x40000000-1 | Cacheable, write-back, write-allocate, RW, XN			|
-*|Memory mapped device	| 0x40000000 - 0x60000000-1 | Device Memory									|
-*|NS code				| __text_start__ - __text_end__ | Cacheable, write-back, write-allocate, RO, EXECUTE	|
-*|Non-cache memory		| __ram_nocache_start__ - __ram_nocache_end__ | Non-cacheable, RW				|
-*|Other DRAM			| 0x60000000 - 0x80000000-1 | Cacheable, write-back, write-allocate, RW, XN			|
-*|Memory mapped device	| 0x80000000 - 0xFFFFFFFF   | Device Memory										|
+/*|                     | Memory Range            	                  | Definition in Translation Table                   |
+*|----------------------|-------------------------                    |------------------------------------------------   |
+*|Boot ROM				      | 0x00000000 - 0x00100000-1                   | Cacheable, write-back, write-allocate, RO, EXECUTE|
+*|Flash					        | 0x08000000 - 0x10000000-1                   | Cacheable, write-back, write-allocate, RO, EXECUTE|
+*|SRAM					        | 0x20000000 - 0x40000000-1                   | Cacheable, write-back, write-allocate, RW, XN			|
+*|Memory mapped device	| 0x40000000 - 0x60000000-1                   | Device Memory									                    |
+*|NS code				        | __text_start__ - __text_end__               | Cacheable, write-back, write-allocate, RO, EXECUTE|
+*|Non-cache memory		  | __ram_nocache_start__ - __ram_nocache_end__ | Non-cacheable, RW				                          |
+*|Other DRAM			      | 0x60000000 - 0x80000000-1                   | Cacheable, write-back, write-allocate, RW, XN			|
+*|Memory mapped device	| 0x80000000 - 0xFFFFFFFF                     | Device Memory										                  |
 *
 ******************************************************************************/
 /* AmebaSmart System PSECTIONS */
 
 #define AMEBASMART_ROMCP_PSECTION       0x00000000  /* 0x00000000 - 0x00100000  1MB Boot ROM */
-#define AMEBASMART_FLASH_PSECTION       0x08000000  /* 0x08000000 - 0x10000000  128MB Flash */
-#define AMEBASMART_SRAM_PSECTION        0x20000000  /* 0x20000000 - 0x30000000  256MB NS SRAM */
-#define AMEBASMART_MMAP_DEV0_PSECTION   0x40000000  /* 0x40000000 - 0x50000000  256MB NS Memory mapped device */
-//#define AMEBASMART_NS_PSECTION          (uint64_t)((int)__text_start__)  /* __text_start__ - __text_end__  MB NS code */
-//#define AMEBASMART_NON_CACHE_PSECTION   (uint64_t)((int)__ram_nocache_start__)  /* __ram_nocache_start__ - __ram_nocache_end__  MB Non-cache code */
-#define AMEBASMART_DRAM_PSECTION        0x60000000  /* 0x60000000 - 0x70000000  256MB NS Other DRAM */
-#define AMEBASMART_MMAP_DEV1_PSECTION   0x80000000  /* 0x80000000 - 0xFFFFFFFF  2048MB Memory mapped device */
+#define AMEBASMART_FLASH_PSECTION       0x08000000  /* 0x08000000 - 0x10000000  128MB Flash  */
+#define AMEBASMART_SRAM_PSECTION        0X20000000  /* 0X20000000 - 0X23FFFFFF  64MB SRAM*/
+/* Currently there is no non-cache memory region, no need to map for it */
+/* NS code is covered by PSRAM section */
+#define AMEBASMART_MMAP_DEV0_PSECTION   0x40000000  /* 0x40000000 - 0x440FFFFF  65MB NS Memory mapped device */
+#define AMEBASMART_DRAM_PSECTION        0x60000000  /* 0x60000000 - 0x60100000  10MB Other DRAM */
+#define AMEBASMART_DBG_REG_PSECTION     0x80000000  /* 0x80000000 - 0x8003FFFF  256KB Internal debug registers */
+#define AMEBASMART_GIC_REG_PSECTION     0xA0000000  /* 0xA0000000 - 0xA0107FFF  1MB debug registers + 32KB GIC */
+#define AMEBASMART_SYS_DEV_PSECTION     0xE0000000  /* 0xE0000000 - 0xE0FFFFFF  16MB System PPB Device*/
 
 /* Sizes of memory regions in bytes.
  *
@@ -92,15 +94,15 @@
  * region.  The implemented sizes of the EBI CS0-3 and DDRCS regions
  * are not known apriori and must be specified with configuration settings.
  */
-
-#define AMEBASMART_ROMCP_SECSIZE          (1024*1024) /* 0x00000000 - 0x00100000  1MB Boot ROM */
-#define AMEBASMART_FLASH_SECSIZE          MKULONG(128*1024*1024) /* 0x08000000 - 0x10000000  128MB Flash */
-#define AMEBASMART_SRAM_SECSIZE           MKULONG(256*1024*1024) /* 0x20000000 - 0x40000000  256MB SRAM */
-#define AMEBASMART_MMAP_DEV0_SECSIZE      MKULONG(256*1024*1024) /* 0x40000000 - 0x60000000  256MB Memory mapped device */
-//#define AMEBASMART_NS_SECSIZE             (size_t)__text_end__ - (size_t)__text_start__ /* __text_start__ - __text_end__  MB NS code */
-//#define AMEBASMART_NON_CACHE_SECSIZE      (size_t)__ram_nocache_end__ - (size_t)__ram_nocache_start__ /* __ram_nocache_start__ - __ram_nocache_end__  MB Non-cache code */
-#define AMEBASMART_DRAM_SECSIZE           MKULONG(256*1024*1024)  /* 0x60000000 - 0x80000000  256MB Other DRAM */
-#define AMEBASMART_MMAP_DEV1_SECSIZE      MKULONG(2048*1024*1024) /* 0x80000000 - 0xFFFFFFFF  2048MB Memory mapped device */
+/* Cover only the mandatory memory regions, to ensure the TLB cache invalidation time cost falls in an acceptable range */
+#define AMEBASMART_ROMCP_SECSIZE          0x00100000  /* 0x00000000 - 0x00100000  1MB Boot ROM */
+#define AMEBASMART_FLASH_SECSIZE          0x08000000  /* 0x08000000 - 0x10000000  128MB Flash  */
+#define AMEBASMART_SRAM_SECSIZE           0x04000000  /* 0X20000000 - 0X23FFFFFF  64MB SRAM */
+#define AMEBASMART_MMAP_DEV0_SECSIZE      0x04100000  /* 0x40000000 - 0x440FFFFF  65MB NS Memory mapped device */
+#define AMEBASMART_DRAM_SECSIZE           0x00A00000  /* 0x60000000 - 0x60A00000  10MB Other DRAM */
+#define AMEBASMART_DBG_REG_SECSIZE        0x00100000  /* 0x80000000 - 0x8003FFFF  256KB Internal debug registers */
+#define AMEBASMART_GIC_REG_SECSIZE        0x00200000  /* 0xA0000000 - 0xA0107FFF  1MB debug registers + 32KB GIC */
+#define AMEBASMART_SYS_DEV_SECSIZE        0x01000000  /* 0xE0000000 - 0xE0FFFFFF  16MB System PPB Device*/
 
 /* Convert size in bytes to number of sections (in Mb). */
 
@@ -118,10 +120,10 @@
 #define AMEBASMART_FLASH_NSECTIONS      _NSECTIONS(AMEBASMART_FLASH_SECSIZE)
 #define AMEBASMART_SRAM_NSECTIONS       _NSECTIONS(AMEBASMART_SRAM_SECSIZE)
 #define AMEBASMART_MMAP_DEV0_NSECTIONS  _NSECTIONS(AMEBASMART_MMAP_DEV0_SECSIZE)
-//#define AMEBASMART_NS_NSECTIONS         _NSECTIONS(AMEBASMART_NS_SECSIZE)
-//#define AMEBASMART_NON_CACHE_NSECTIONS  _NSECTIONS(AMEBASMART_NON_CACHE_SECSIZE)
 #define AMEBASMART_DRAM_NSECTIONS       _NSECTIONS(AMEBASMART_DRAM_SECSIZE)
-#define AMEBASMART_MMAP_DEV1_NSECTIONS  _NSECTIONS(AMEBASMART_MMAP_DEV1_SECSIZE)
+#define AMEBASMART_DBG_REG_NSECTIONS    _NSECTIONS(AMEBASMART_DBG_REG_SECSIZE)
+#define AMEBASMART_GIC_REG_NSECTIONS    _NSECTIONS(AMEBASMART_GIC_REG_SECSIZE)
+#define AMEBASMART_SYS_DEV_NSECTIONS    _NSECTIONS(AMEBASMART_SYS_DEV_SECSIZE)
 
 /* Section MMU Flags
  *
@@ -133,10 +135,10 @@
 #define AMEBASMART_FLASH_MMUFLAGS       MMU_MEMFLAGS
 #define AMEBASMART_SRAM_MMUFLAGS        MMU_MEMFLAGS
 #define AMEBASMART_MMAP_DEV0_MMUFLAGS   MMU_IOFLAGS
-#define AMEBASMART_NS_MMUFLAGS          MMU_MEMFLAGS
-#define AMEBASMART_NON_CACHE_MMUFLAGS   MMU_MEMFLAGS
 #define AMEBASMART_DRAM_MMUFLAGS        MMU_MEMFLAGS
-#define AMEBASMART_MMAP_DEV1_MMUFLAGS   MMU_IOFLAGS
+#define AMEBASMART_DBG_REG_MMUFLAGS     MMU_IOFLAGS
+#define AMEBASMART_GIC_REG_MMUFLAGS     MMU_IOFLAGS
+#define AMEBASMART_SYS_DEV_MMUFLAGS     MMU_IOFLAGS
 
 /* AmebaSmart Virtual (mapped) Memory Map.  These are the mappings that will
  * be created if the page table lies in RAM.  If the platform has another,
@@ -148,26 +150,20 @@
 
 /* The default mappings are a simple 1-to-1 mapping */
 
-#  define AMEBASMART_ROMCP_VSECTION     AMEBASMART_ROMCP_PSECTION       /*  1MB Boot ROM  */
-#  define AMEBASMART_FLASH_VSECTION     AMEBASMART_FLASH_PSECTION       /*  128MB Flash  */
-#  define AMEBASMART_SRAM_VSECTION      AMEBASMART_SRAM_PSECTION        /*  512MB SRAM  */
-#  define AMEBASMART_MMAP_DEV0_VSECTION AMEBASMART_MMAP_DEV0_PSECTION   /*  512MB Memory mapped device  */
-//#  define AMEBASMART_NS_VSECTION        AMEBASMART_NS_PSECTION          /*  MB NS code  */
-//#  define AMEBASMART_NON_CACHE_VSECTION AMEBASMART_NON_CACHE_PSECTION   /*  MB Non-cache code  */
-#  define AMEBASMART_DRAM_VSECTION      AMEBASMART_DRAM_PSECTION        /*  512MB Other DRAM  */
-#  define AMEBASMART_MMAP_DEV1_VSECTION AMEBASMART_MMAP_DEV1_PSECTION   /*  2048MB Memory mapped device  */
+#  define AMEBASMART_ROMCP_VSECTION     AMEBASMART_ROMCP_PSECTION
+#  define AMEBASMART_FLASH_VSECTION     AMEBASMART_FLASH_PSECTION
+#  define AMEBASMART_SRAM_VSECTION      AMEBASMART_SRAM_PSECTION
+#  define AMEBASMART_MMAP_DEV0_VSECTION AMEBASMART_MMAP_DEV0_PSECTION
+#  define AMEBASMART_DRAM_VSECTION      AMEBASMART_DRAM_PSECTION
+#  define AMEBASMART_DBG_REG_VSECTION   AMEBASMART_DBG_REG_PSECTION
+#  define AMEBASMART_GIC_REG_VSECTION   AMEBASMART_GIC_REG_PSECTION
+#  define AMEBASMART_SYS_DEV_VSECTION   AMEBASMART_SYS_DEV_PSECTION
 #endif /* CONFIG_ARCH_ROMPGTABLE */
 
-/////////////// Temporary Added, Need to modify ///////////////
-/////////////// L2CC_PL310 is an external cache controller for A9 processor, not specified in A32
-/////////////// defined a temporary address to prevent compile error for l2cc_pl310.h
 #define AMEBASMART_DRAM_OFFSET         0x00300000
-#define AMEBASMART_GIC_OFFSET          0x20100000  /* A0100000-A0107FFF  32 KB GIC register */
-#define AMEBASMART_GIC_PBASE           (AMEBASMART_MMAP_DEV1_PSECTION + AMEBASMART_GIC_OFFSET)
-#define AMEBASMART_GIC_VBASE           (AMEBASMART_MMAP_DEV1_VSECTION + AMEBASMART_GIC_OFFSET)
-// #define AMEBASMART_PL310_OFFSET        0x20140000  /* Not used */
-// #define AMEBASMART_PL310_PBASE         (AMEBASMART_MMAP_DEV1_PSECTION + AMEBASMART_PL310_OFFSET)  /* Not used */
-// #define AMEBASMART_PL310_VBASE         (AMEBASMART_MMAP_DEV1_VSECTION + AMEBASMART_PL310_OFFSET)  /* Not used */
+#define AMEBASMART_GIC_OFFSET          0x00100000  /* A0100000-A0107FFF  32 KB GIC register */
+#define AMEBASMART_GIC_PBASE           (AMEBASMART_GIC_REG_PSECTION + AMEBASMART_GIC_OFFSET)
+#define AMEBASMART_GIC_VBASE           (AMEBASMART_GIC_REG_VSECTION + AMEBASMART_GIC_OFFSET)
 #define AMEBASMART_DRAM_PBASE          (AMEBASMART_DRAM_PSECTION + AMEBASMART_DRAM_OFFSET) // Starting base from PSRAM for BL33 (0x60300000)
 #define AMEBASMART_DRAM_VBASE          (AMEBASMART_DRAM_VSECTION + AMEBASMART_DRAM_OFFSET) // Starting base from PSRAM for BL33 (0x60300000)
 
