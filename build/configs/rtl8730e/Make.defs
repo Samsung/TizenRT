@@ -171,6 +171,14 @@ endif
   CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
 endif
 
+ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
+CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
+CFLAGS   += -DTF_LITE_STATIC_MEMORY -DNDEBUG -g
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party
+CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
+endif
+
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
   CXXFLAGS += -fexceptions
 else
