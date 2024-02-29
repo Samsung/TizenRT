@@ -83,7 +83,7 @@ static u8 usbh_cdc_acm_attach(usb_host_t *host)
 	usbh_set_interface(host, interface);
 
 	/* Get Communication Interface */
-	comm_if_desc = usbh_get_interface_descriptor(host, interface);
+	comm_if_desc = usbh_get_interface_descriptor(host, interface, 0);
 	if (comm_if_desc == NULL) {
 		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_ERROR, "Fail to get the interface descriptor for Communication Interface Class.");
 		return status;
@@ -120,7 +120,7 @@ static u8 usbh_cdc_acm_attach(usb_host_t *host)
 		return status;
 	}
 
-	data_if_desc = usbh_get_interface_descriptor(host, interface);
+	data_if_desc = usbh_get_interface_descriptor(host, interface, 0);
 	if (data_if_desc == NULL) {
 		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_ERROR, "Fail to get the interface descriptor for Data Interface Class.");
 		return status;
@@ -372,16 +372,12 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 	case CDC_ACM_TRANSFER_STATE_TX_BUSY:
 		urb_state = usbh_get_urb_state(host, cdc->data_if.bulk_out_pipe);
 		if (urb_state == USBH_URB_DONE) {
-			if (cdc->tx_len > cdc->data_if.bulk_out_packet_size) {
+			if (cdc->tx_len >= cdc->data_if.bulk_out_packet_size) {
 				cdc->tx_len -= cdc->data_if.bulk_out_packet_size;
 				cdc->tx_buf += cdc->data_if.bulk_out_packet_size;
-			} else {
-				cdc->tx_len = 0U;
-			}
-
-			if (cdc->tx_len > 0U) {
 				cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_TX;
 			} else {
+				cdc->tx_len = 0U;
 				cdc->data_tx_state = CDC_ACM_TRANSFER_STATE_IDLE;
 				if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
 					cdc->cb->transmit(urb_state);

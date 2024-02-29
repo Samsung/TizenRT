@@ -83,6 +83,10 @@ config AMEBASMART_SPI_EXCHANGE
 	default y
 endif
 
+config AMEBASMART_USBHOST
+	bool "AMEBASMART_USBHOST"
+	default n
+
 config AMEBASMART_MIPI
 	bool "AMEBASMART_MIPI"
 	default n
