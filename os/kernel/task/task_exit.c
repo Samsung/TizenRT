@@ -105,14 +105,26 @@ static void prepare_exit(struct tcb_s *tcb)
 	 * head of readytorun, then the thread of task_exit function re-enters and
 	 * breaks the critical section.
 	 */
-	exit_tcb->lockcount++;
 #ifdef CONFIG_SMP
 	/* Make sure that the system knows about the locked state */
 
 	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
 			&g_cpu_schedlock);
 #endif
+	exit_tcb->lockcount++;
+	
 	mm_is_sem_available(exit_tcb);
+
+	exit_tcb->lockcount--;
+
+#ifdef CONFIG_SMP
+	if (exit_tcb->lockcount == 0) {
+		/* Make sure that the system knows about the unlocked state */
+
+		spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+				&g_cpu_schedlock);
+	}
+#endif
 }
 
 /****************************************************************************
@@ -230,11 +242,6 @@ int task_exit(void)
 #endif
 
 	ret = task_terminate(dtcb->pid, true);
-
-#ifdef CONFIG_SMP
-	spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
-				&g_cpu_schedlock);
-#endif
 
 #ifdef CONFIG_SMP
 	rtcb->irqcount--;
