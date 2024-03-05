@@ -1911,10 +1911,9 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 		readaddress = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
 
-		/* Read the whole sector for this sector. */
-
-		ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (uint8_t *)dev->rwbuffer);
-		if (ret != dev->mtdBlksPerSector) {
+		/* Read the header for this sector. */
+		ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (uint8_t *)dev->rwbuffer);
+		if (ret != sizeof(struct smart_sect_header_s)) {
 			fdbg("Error reading physical sector %d.\n", sector);
 			goto err_out;
 		}
@@ -2171,7 +2170,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 #endif
 			}
 
-#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+#if defined(CONFIG_MTD_SMART_ENABLE_CRC) && !defined(CONFIG_MTD_SMART_JOURNALING)
 			/* Check CRC of the winner sector just in case */
 
 			ret = MTD_BREAD(dev->mtd, winner * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
@@ -2258,10 +2257,10 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 	/* Validate the sector is valid ... may be an unformatted device. */
 
 	if (sector != 0xFFFF) {
-		/* Read the sector data. */
-
-		ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (uint8_t *)dev->rwbuffer);
-		if (ret != dev->mtdBlksPerSector) {
+		/* Read the sector data from start to offset of SMART_WEAR_LEVEL_FORMAT_SIG. */
+		readaddress = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
+		ret = MTD_READ(dev->mtd, readaddress, SMART_WEAR_LEVEL_FORMAT_SIG + 1, (uint8_t *)dev->rwbuffer);
+		if (ret != SMART_WEAR_LEVEL_FORMAT_SIG + 1) {
 			fdbg("Error reading physical sector %d.\n", sector);
 			goto err_out;
 		}
