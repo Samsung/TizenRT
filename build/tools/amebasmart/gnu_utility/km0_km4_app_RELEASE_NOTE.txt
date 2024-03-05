@@ -1,5 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e432783 2024/03/05-17:15:35 ==
+1.	Change KM4 version info to be obtained from KM4 image
+2.	KM4 version info will be printed in CA32 using _inic_ipc_api_host_buffered_printf
+3.	Version info will be printed during boot up
+
 == version 9cfc095 2024/02/19-10:07:39 ==
 1.	Update flash PMC code
 
