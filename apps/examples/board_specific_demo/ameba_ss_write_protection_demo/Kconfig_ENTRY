@@ -1,3 +1,3 @@
 config ENTRY_SSTORAGE
-	bool "Secure Storage example"
+	bool "Secure Storage Write Protecion example"
 	depends on EXAMPLES_SSTORAGE

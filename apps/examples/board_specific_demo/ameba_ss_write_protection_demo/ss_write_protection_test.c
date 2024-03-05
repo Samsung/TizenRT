@@ -23,11 +23,13 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <security/security_common.h>
 #include <security/security_api.h>
+#include <security/security_ss.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
-#include <security/security_ss.h>
+#include <tinyara/fs/mtd.h>
 #define TAG_LENGTH		16
 #define DATA_LENGTH		4
 #define HEAD_LENGTH		4
@@ -40,7 +42,6 @@
 	SLOT_INDEX : slot index to save the DATA, valid range 0 ~ 31\n	\
 	DATA : value to be saved in byte\n");
 
-extern int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_display);
 static char rwbuf[MAX_SS_SIZE];
 
 #ifdef CONFIG_AMEBAD_TRUSTZONE
@@ -58,6 +59,99 @@ static uint32_t SLOT1_START_ADDR = 0x2F000;
 #endif
 static uint32_t SLOT_SIZE = 0x1000;
 static uint32_t SLOT_AREA_OFFEST = 0x23000;
+
+#ifdef CONFIG_MTD_BYTE_WRITE
+static int flash_write(uint32_t slot_index, uint32_t len, uint8_t *data)
+{
+	uint32_t address;
+	if (slot_index == 0) {
+		address = SLOT0_START_ADDR;
+	} else {
+		address = SLOT1_START_ADDR + (SLOT_SIZE * (slot_index - 1));
+	}
+
+	int ret = -1;
+	FAR uint8_t *buffer;
+	FAR struct mtd_dev_s *dev_mtd = NULL;
+
+	if (address == 0 || len <= 0) {
+		printf("Invalid arguments, offset 0x%x, write size %d\n", address, len);
+		return -1;
+	}
+
+	dev_mtd = up_flashinitialize();
+	if (!dev_mtd) {
+		printf("up_flashinitialize Failed\n");
+		return -1;
+	}
+
+	buffer = (uint8_t *)malloc(MAX_SS_SIZE);
+	if (!buffer) {
+		printf("Failed to allocate buffer %d\n", MAX_SS_SIZE);
+		return -1;
+	}
+	memset(buffer, data, len);
+
+	if (dev_mtd->write != NULL) {
+		ret = MTD_WRITE(dev_mtd, address, len, buffer);
+	}
+
+	if (ret <= 0) {
+		printf("Write Failed : %d\n", ret);
+		free(buffer);
+		return -1;
+	} else {
+		printf("Write Success\n");
+		printf("Length of written data : %d\n\n", ret);
+	}
+	
+	free(buffer);
+	
+	return 0;
+}
+#endif
+
+static int flash_read(uint32_t slot_index)
+{
+	uint32_t address;
+	/* The Secure Storage Slot Flash Address , 156 = HEADER 4 + TEST_DATA_LENGTH 4 + DATA LENGTH + TAG 16 + FOOTER 4 , 1 = en_display*/
+	uint32_t length = HEAD_LENGTH + DATA_LENGTH + TEST_DATA_LENGTH + TAG_LENGTH + HEAD_LENGTH;
+	
+	if (slot_index == 0) {
+		address = SLOT0_START_ADDR;
+	} else {
+		address = SLOT1_START_ADDR + (SLOT_SIZE * (slot_index - 1));
+	}
+
+	printf("Read Raw data from Slot: %d, Area A\n", slot_index);
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
+		printf("rtl_ss_flash_read() Failed, %d\n", __LINE__);
+		return -1;
+	}
+
+	sleep(1);
+	address += SLOT_AREA_OFFEST;
+	printf("\nRead Raw data from Slot: %d, Area B\n", slot_index);
+	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
+		printf("rtl_ss_flash_read() Failed, %d\n", __LINE__);
+		return -1;
+	}
+
+	return 0;
+}
+
+static void print_ss_data(security_data *data)
+{
+	printf("data.length: %d\n", TEST_DATA_LENGTH);
+	char *ptr = (char *)data->data;
+	printf("data.data:\n");
+	for (int i = 0; i < data->length; i++) {
+		printf("%02x ", *(ptr + i));
+		if (!((i + 1) % 16)) {
+			printf("\n");
+		}
+	}
+}
 
 /****************************************************************************
  * secure_storage_main
@@ -105,8 +199,8 @@ int sstorage_main(int argc, char *argv[])
 	printf("Start Security init!!\n");
 	res = security_init(&hnd);
 	if (res != SECURITY_OK) {
-		printf("security_init() Fail\n, %d", __LINE__);
-		sleep(1);
+		printf("security_init() Failed\n, %d", __LINE__);
+		return 0;
 	}
 	printf("Security init complete\n");
 	sleep(1);
@@ -120,45 +214,23 @@ int sstorage_main(int argc, char *argv[])
 	printf("ss_read_secure_storage() Slot: %d\n\n", slot_index);
 	res = ss_read_secure_storage(hnd, ss_path, 0, &data);
 	if (res != SECURITY_OK) {
-		printf("ss_read_secure_storage() Fail, %d, res = %d\n", __LINE__, res);
-	} else {
-		printf("data.length: %d\n", data.length);
-		ptr = (char *)data.data;
-		printf("data.data:\n");
-		for (i = 0; i < data.length; i++) {
-			printf("%02x ", *(ptr + i));
-			if (!((i + 1) % 16)) {
-				printf("\n");
-			}
+		printf("ss_read_secure_storage() Failed, %d, res = %d\n", __LINE__, res);
+		if (res == SECURITY_ERROR) {
+			printf("Slot %d is empty\n", slot_index);
 		}
-	}
-	//Free the read buffer space allocated by the ss_read_secure_storage() function
-	free(data.data);
-
-	sleep(1);
-	printf("\nStart Flash Raw data read!!\n");
-	/* The Secure Storage Slot Flash Address , 156 = HEADER 4 + TEST_DATA_LENGTH 4 + DATA LENGTH + TAG 16 + FOOTER 4 , 1 = en_display*/
-	length = HEAD_LENGTH + DATA_LENGTH + TEST_DATA_LENGTH + TAG_LENGTH + HEAD_LENGTH;
-	if (slot_index == 0) {
-		address = SLOT0_START_ADDR;
 	} else {
-		address = SLOT1_START_ADDR + (SLOT_SIZE * (slot_index - 1));
+		print_ss_data(&data);
 	}
-
-	printf("Read Raw data from Slot: %d, Area A\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
-		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
-	}
-
 	sleep(1);
-	address += SLOT_AREA_OFFEST;
-	printf("\nRead Raw data from Slot: %d, Area B\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
-		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
-	}
 
+	printf("\nStart Flash Raw data read!!\n");
+	if (flash_read(slot_index) < 0){
+		printf("flash_read() Failed\n");
+		goto exit;
+	}
 	printf("Read complete\n");
 	sleep(1);
+
 
 	printf("\nStart Secure Storage write!!\n");
 	/* Populate the buffer with the user-given data */
@@ -169,57 +241,57 @@ int sstorage_main(int argc, char *argv[])
 	/* Write TEST_DATA_LENGTH bytes from buffer to the desired slot of the SS */
 	res = ss_write_secure_storage(hnd, ss_path, 0, &data);
 	if (res != SECURITY_OK) {
-		printf("ss_write_secure_storage() Fail, %d, res = %d\n", __LINE__, res);
+		printf("ss_write_secure_storage() Failed, %d, res = %d\n", __LINE__, res);
+		goto exit;
 	}
 	printf("Write Complete\n");
 	sleep(1);
 
-	printf("\nStart Secure Storage read!!\n");
+	printf("\nStart Secure Storage read after ss_write_secure_storage()!!\n");
 	printf("ss_read_secure_storage() Slot: %d\n\n", slot_index);
 	res = ss_read_secure_storage(hnd, ss_path, 0, &data);
 	if (res != SECURITY_OK) {
-		printf("ss_read_secure_storage() Fail, %d, res = %d\n", __LINE__, res);
-	} else {
-		printf("data.length: %d\n", TEST_DATA_LENGTH);
-		ptr = (char *)data.data;
-		printf("data.data:\n");
-		for (i = 0; i < data.length; i++) {
-			printf("%02x ", *(ptr + i));
-			if (!((i + 1) % 16)) {
-				printf("\n");
-			}
-		}
+		printf("ss_read_secure_storage() Failed, %d, res = %d\n", __LINE__, res);
+		goto exit;
 	}
-
+	print_ss_data(&data);
 	sleep(1);
+
 	printf("\nStart Flash Raw data read!!\n");
-	/* The Secure Storage Slot Flash Address , 156 = HEADER 4 + TEST_DATA_LENGTH 4 + DATA LENGTH + TAG 16 + FOOTER 4 , 1 = en_display*/
-	length = HEAD_LENGTH + DATA_LENGTH + TEST_DATA_LENGTH + TAG_LENGTH + HEAD_LENGTH;
-	if (slot_index == 0) {
-		address = SLOT0_START_ADDR;
-	} else {
-		address = SLOT1_START_ADDR + (SLOT_SIZE * (slot_index - 1));
+	if (flash_read(slot_index) < 0){
+		printf("flash_read() Failed\n");
+		goto exit;
 	}
-
-	printf("Read Raw data from Slot: %d, Area A\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
-		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
-	}
-
+	printf("Read complete\n");
 	sleep(1);
-	address += SLOT_AREA_OFFEST;
-	printf("\nRead Raw data from Slot: %d, Area B\n", slot_index);
-	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
-		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
+
+#ifdef CONFIG_MTD_BYTE_WRITE
+	/* Write data to Secure Storage flash directly */
+	printf("\nStart Flash Raw data write!!\n");
+
+	printf("Write Raw data in Slot: %d, Area A\n", slot_index);
+	printf("Data will be written in SS if write protection is disabled.\n");
+	if (flash_write(address, length, (uint8_t *)rwbuf) < 0) {
+		printf("flash_write Failed. %d\n", __LINE__);
+		goto exit;
 	}
 
+	printf("Read Raw data after flash write\n");
+	if (flash_read(slot_index) < 0){
+		printf("flash_read() Failed\n");
+		goto exit;
+	}
 	printf("Read Complete\n");
-
-	free(data.data);
-
-	printf("Start Security deinit!!\n");
-	(void)security_deinit(hnd);
-
+#else
+	/* Flash write is not supported if disable MTD_BYTE_WRITE */
+	printf("Cannot write data to secure storage directly\n");
+	printf("Please enable MTD_BYTE_WRITE\n");
+#endif // CONFIG_MTD_BYTE_WRITE
 	printf("Ended SE Secure Storage testing!!\n");
+
+exit:
+	free(data.data);
+	security_deinit(hnd);
+
 	return 0;
 }
