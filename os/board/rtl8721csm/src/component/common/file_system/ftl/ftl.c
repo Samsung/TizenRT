@@ -145,11 +145,7 @@ uint32_t backup_state = 0;
 
 static void ftl_ns_setstatusbits(uint32_t NewState)
 {
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
-	FLASH_Write_Lock();
-	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);
-	FLASH_Write_Unlock();
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+	/* Dummy APIs, do nothing */
 }
 
 static void ftl_setstatusbits(uint32_t NewState)
@@ -214,9 +210,7 @@ bool ftl_flash_erase_sector(uint32_t addr)
 	flash_t flash;
 
 	ftl_setstatusbits(0);
-	device_mutex_lock(RT_DEV_LOCK_FLASH);
 	flash_erase_sector(&flash, addr);
-	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 	ftl_setstatusbits(1);
 
 	return TRUE;
@@ -1544,7 +1538,6 @@ uint32_t ftl_secure_init(void)
 
 uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
-    
 	device_mutex_lock(RT_DEV_LOCK_FLASH); 
     if (pagenum < 3)
     {
@@ -1692,6 +1685,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 
     ftl_recover_from_power_lost();
     g_free_page_count = ftl_get_free_page_count();
+    device_mutex_unlock(RT_DEV_LOCK_FLASH); 
 
 #if defined(CONFIG_AMEBAD_TRUSTZONE) && (FTL_SECURE == 1)
 	uint32_t ret = ftl_secure_init();
@@ -1699,7 +1693,6 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 		FTL_PRINTF(FTL_LEVEL_ERROR, "ftl_secure_init fail, ret: %d!", ret);
 	}
 #endif
-	device_mutex_unlock(RT_DEV_LOCK_FLASH); 
 
     return 0;
 }
