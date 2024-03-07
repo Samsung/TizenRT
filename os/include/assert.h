@@ -63,6 +63,15 @@
 #ifndef __INCLUDE_ASSERT_H
 #define __INCLUDE_ASSERT_H
 
+#ifdef NXFUSE_HOST_BUILD
+#define FAR
+#define DEBUGASSERT(x)
+#define ASSERT(x) DEBUGASSERT(x)
+#define OK    0
+#define ERROR 1
+
+int get_errno(void);
+#else
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -265,6 +274,8 @@ void dump_all_stack(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif							/* NXFUSE_HOST_BUILD */
 
 #endif							/* __INCLUDE_ASSERT_H */
 

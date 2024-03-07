@@ -46,6 +46,7 @@ ln -sf $SMARTFSDIR/../driver/mtd/smart.c $SMARTFS_TMPDIR/smart.c
 ln -svf $BASE_DIR/lib/libc/queue $SRCDIR/
 
 #Header Files
+ln -sf $BASE_INCLUDE_DIR/assert.h $DEST_INLCUDE_DIR/assert.h
 ln -sf $BASE_INCLUDE_DIR/crc16.h $DEST_INLCUDE_DIR/crc16.h
 ln -sf $BASE_INCLUDE_DIR/crc32.h $DEST_INLCUDE_DIR/crc32.h
 ln -sf $BASE_INCLUDE_DIR/crc8.h $DEST_INLCUDE_DIR/crc8.h
@@ -78,6 +79,7 @@ make -C $NXFUSE_TOOL_PATH || exit 1
 #Waiting for make to complete
 #After build done, remove the copied source & header files
 rm -rf $SRCDIR/lib_crc*
+rm -rf $DEST_INLCUDE_DIR/assert.h
 rm -rf $DEST_INLCUDE_DIR/crc16.h
 rm -rf $DEST_INLCUDE_DIR/crc32.h
 rm -rf $DEST_INLCUDE_DIR/crc8.h
