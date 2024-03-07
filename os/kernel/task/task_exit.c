@@ -196,6 +196,14 @@ int task_exit(void)
 
 	(void)sched_removereadytorun(dtcb);
 
+	/* If there are any pending tasks, then add them to the ready-to-run
+	 * task list now
+	 */
+
+	if (g_pendingtasks.head) {
+		(void)sched_mergepending();
+	}
+
 #ifdef CONFIG_SMP
 	rtcb = current_task(cpu);
 #else
@@ -248,14 +256,6 @@ int task_exit(void)
 #endif
 
 	rtcb->task_state = TSTATE_TASK_RUNNING;
-
-	/* If there are any pending tasks, then add them to the ready-to-run
-	 * task list now
-	 */
-
-	if (g_pendingtasks.head) {
-		(void)sched_mergepending();
-	}
 
 	/* We can't use sched_unlock() to decrement the lock count because the
 	 * sched_mergepending() call above might have changed the task at the
