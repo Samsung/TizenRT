@@ -245,7 +245,7 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
             {
                 debug_print("Profile callback \n");
                 trble_server_cb_t pfunc = profile->cb;
-                pfunc(profile->type, profile->conn_id, profile->att_handle, profile->arg);
+                pfunc(profile->type, profile->conn_id, profile->att_handle, profile->arg, 0 , 0);
             } else {
                 debug_print("NULL profile callback \n");
             }
@@ -1910,7 +1910,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                 if (p_cha_info->cb)
                 {
                     trble_server_cb_t p_func = p_cha_info->cb;
-                    p_func(TRBLE_ATTR_CB_CCCD, p_tizenrt_cb_data->conn_id, p_cha_info->abs_handle, p_tizenrt_cb_data->val);
+                    p_func(TRBLE_ATTR_CB_CCCD, p_tizenrt_cb_data->conn_id, p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                 }
                 break;
             }
@@ -1926,7 +1926,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                 {
                     trble_server_cb_t p_func = p_cha_info->cb;
                     p_func(TRBLE_ATTR_CB_READING, p_tizenrt_cb_data->conn_id,
-                                                            p_cha_info->abs_handle, p_cha_info->arg);
+                                                            p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                 } else {
                     debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                 }
@@ -1953,7 +1953,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                         {
                             trble_server_cb_t p_func = p_cha_info->cb;
                             p_func(TRBLE_ATTR_CB_WRITING, p_tizenrt_cb_data->conn_id,
-                                                                    p_cha_info->abs_handle, p_cha_info->arg);
+                                                                    p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                         } else {
                             debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                         }
@@ -1966,7 +1966,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
                         {
                             trble_server_cb_t p_func = p_cha_info->cb;
                             p_func(TRBLE_ATTR_CB_WRITING_NO_RSP, p_tizenrt_cb_data->conn_id,
-                                                                    p_cha_info->abs_handle, p_cha_info->arg);
+                                                                    p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                         } else {
                             debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                         }
