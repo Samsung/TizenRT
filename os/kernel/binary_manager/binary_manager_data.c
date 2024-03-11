@@ -335,8 +335,8 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || g_bin_count >= USER_BIN_COUNT || part_offset < 0) {
-		bmdbg("Invalid user partition : num %d, size %d, registered user count: %u\n", part_num, part_size, g_bin_count);
+	if (part_num < 0 || part_size <= 0 || part_offset < 0) {
+		bmdbg("Invalid user partition : num %d, size %d, offset : %d\n", part_num, part_size, part_offset);
 		return;
 	}
 
@@ -351,13 +351,17 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 			return;
 		}
 	}
-
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (!strncmp(name, BM_CMNLIB_NAME, sizeof(BM_CMNLIB_NAME))) {
 		bin_idx = BM_CMNLIB_IDX;
 	} else
 #endif
 	{
+		/* Check whether new binary can be registered */
+		if (g_bin_count >= USER_BIN_COUNT) {
+			bmdbg("The maximum number of user binaries exceeded. registered user count: %u\n", g_bin_count);
+			return;
+		}
 		bin_idx = ++g_bin_count;
 	}
 
@@ -373,7 +377,6 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX - 1);
 	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(bin_idx));
-
 	bmvdbg("[USER%d : 1] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0), BIN_PARTADDR(bin_idx, 0));
 }
 
