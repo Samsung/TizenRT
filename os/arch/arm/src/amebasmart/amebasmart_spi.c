@@ -100,11 +100,16 @@ struct amebasmart_spidev_s {
 	PinName spi_mosi;
 	PinName spi_miso;
 	PinName spi_sclk;
-	PinName spi_cs;
+	PinName spi_cs0;
 	int8_t nbits;               /* Width of word in bits */
 	uint8_t mode;               /* Mode 0,1,2,3 */
 	int role;
+	int8_t multi_cs:1;
 	gpio_t gpio_cs0;
+#ifdef CONFIG_SPI_CS
+	gpio_t gpio_cs1;
+	PinName spi_cs1;
+#endif
 };
 
 enum amebasmart_delay_e {
@@ -160,7 +165,7 @@ static void amebasmart_spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuff
 
 /* Initialization */
 
-static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv);
+static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, uint8_t multi_cs);
 
 /************************************************************************************
  * Private Data
@@ -211,10 +216,13 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_object = {0},
 
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = PB_29,
-	.spi_miso = PB_30,
-	.spi_sclk = PB_31,
-	.spi_cs = PC_0,
+	.spi_mosi = PB_4,
+	.spi_miso = PB_3,
+	.spi_sclk = PB_6,
+	.spi_cs0 = PB_5,
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
+	.spi_cs1 = PB_31,
+#endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER,
@@ -268,7 +276,10 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.spi_mosi = PB_28,
 	.spi_miso = PB_27,
 	.spi_sclk = PB_25,
-	.spi_cs = PB_26,
+	.spi_cs0 = PB_26,
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
+	.spi_cs1 = PB_29,
+#endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER
@@ -613,6 +624,32 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 void amebasmart_spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+#ifdef CONFIG_SPI_CS
+	if (priv->multi_cs)
+	{
+		if (selected == 1) {
+			if (devid == 0){ 
+				//Select cs0, unselect cs1
+				gpio_write(&priv->gpio_cs0, 0);
+				gpio_write(&priv->gpio_cs1, 1);
+			} else {
+				//Select cs1, unselect cs0
+				gpio_write(&priv->gpio_cs0, 1);
+				gpio_write(&priv->gpio_cs1, 0);
+
+			}
+		} else {
+			if (devid == 0) {
+				//Unselect cs0
+				gpio_write(&priv->gpio_cs0, 1);
+			} else {
+				//Unselect cs1
+				gpio_write(&priv->gpio_cs1, 1);
+			}
+		}
+		return;
+	}
+#endif
 	if (selected == 1) {
 		gpio_write(&priv->gpio_cs0, 0);
 	} else {
@@ -1064,21 +1101,33 @@ void amebasmart_spi_clock_disable(uint32_t base)
  *
  ************************************************************************************/
 
-static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv)
+static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint8_t multi_cs)
 {
 
 	DEBUGASSERT(priv);
 	DEBUGASSERT(&priv->spi_object);
 
 	priv->spi_object.spi_idx = priv->spi_idx;
-	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs);
+	priv->multi_cs = multi_cs;
+
+	lldbg("priv->multi_cs = %d\n");
+	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
 
-	gpio_init(&priv->gpio_cs0, priv->spi_cs);
-	gpio_write(&priv->gpio_cs0, 1);
+	gpio_init(&priv->gpio_cs0, priv->spi_cs0);
 	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
 	gpio_mode(&priv->gpio_cs0, PullNone);
+	gpio_write(&priv->gpio_cs0, 1);
+#ifdef CONFIG_SPI_CS
+	if (priv->multi_cs)
+	{
+		gpio_init(&priv->gpio_cs1, priv->spi_cs1);
+		gpio_dir(&priv->gpio_cs1, PIN_OUTPUT);
+		gpio_mode(&priv->gpio_cs1, PullNone);
+		gpio_write(&priv->gpio_cs1, 1);
+	}
+#endif
 }
 
 /************************************************************************************
@@ -1111,8 +1160,12 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		priv = &g_spi0dev;
 
 		/* Only configure if the bus is not already configured */
-
-		amebasmart_spi_bus_initialize(priv);
+		/* Checks for Multislaves feature */
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
+		amebasmart_spi_bus_initialize(priv, 1);
+#else
+		amebasmart_spi_bus_initialize(priv, 0);
+#endif
 
 	} else if (bus == 1) {
 		/* Select SPI1 */
@@ -1121,7 +1174,11 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 
 		/* Only configure if the bus is not already configured */
 
-		amebasmart_spi_bus_initialize(priv);
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
+		amebasmart_spi_bus_initialize(priv, 1);
+#else
+		amebasmart_spi_bus_initialize(priv, 0);
+#endif
 
 	} else {
 		spierr("ERROR: Unsupported SPI bus: %d\n", bus);
@@ -1160,8 +1217,12 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		priv = &g_spi0dev;
 
 		/* Only configure if the bus is not already configured */
-
-		amebasmart_spi_bus_initialize(priv);
+		/* Checks for Multislaves feature */
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
+		amebasmart_spi_bus_initialize(priv, 1);
+#else
+		amebasmart_spi_bus_initialize(priv, 0);
+#endif
 	}
 	else if (port == 1) {
 		/* Select SPI1 */
@@ -1169,8 +1230,11 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		priv = &g_spi1dev;
 
 		/* Only configure if the bus is not already configured */
-
-		amebasmart_spi_bus_initialize(priv);
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
+		amebasmart_spi_bus_initialize(priv, 1);
+#else
+		amebasmart_spi_bus_initialize(priv, 0);
+#endif
 	} else
 	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", port);
