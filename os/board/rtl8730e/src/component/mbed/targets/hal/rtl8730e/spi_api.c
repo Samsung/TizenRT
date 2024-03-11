@@ -441,17 +441,14 @@ void spi_init(spi_t *obj, PinName mosi, PinName miso, PinName sclk, PinName ssel
 
 	if (spi_idx == 1) {
 		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
-		Pinmux_Config(mosi, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(miso, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(sclk, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(ssel, PINMUX_FUNCTION_SPI);
+
 	} else {
 		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
-		Pinmux_Config(mosi, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(miso, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(sclk, PINMUX_FUNCTION_SPI);
-		Pinmux_Config(ssel, PINMUX_FUNCTION_SPI);
 	}
+	Pinmux_Config(mosi, PINMUX_FUNCTION_SPI);
+	Pinmux_Config(miso, PINMUX_FUNCTION_SPI);
+	Pinmux_Config(sclk, PINMUX_FUNCTION_SPI);
+	Pinmux_Config(ssel, PINMUX_FUNCTION_SPI);
 
 	SSI_StructInit(&SSI_InitStruct);
 	SSI_Init(ssi_adapter->spi_dev, &SSI_InitStruct);
@@ -488,31 +485,26 @@ void spi_free(spi_t *obj)
 
 	SSI_INTConfig(ssi_adapter->spi_dev, (SPI_BIT_RXFIM | SPI_BIT_RXOIM | SPI_BIT_RXUIM), DISABLE);
 
+	PGDMA_InitTypeDef GDMA_InitStruct;
+	/* RX case */
 	if (ssi_adapter->dma_en & SPI_DMA_RX_EN) {
-		PGDMA_InitTypeDef GDMA_InitStruct = &ssi_adapter->SSIRxGdmaInitStruct;
+		GDMA_InitStruct = &ssi_adapter->SSIRxGdmaInitStruct;
 
 		/* Set SSI DMA Disable */
 		SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_RDMAE);
-
-		/* Clear Pending ISR */
-		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	}
-
-	if (ssi_adapter->dma_en & SPI_DMA_TX_EN) {
-		PGDMA_InitTypeDef GDMA_InitStruct = &ssi_adapter->SSITxGdmaInitStruct;
+	/* TX case */
+	else {
+		GDMA_InitStruct = &ssi_adapter->SSITxGdmaInitStruct;
 
 		/* Set SSI DMA Disable */
 		SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_TDMAE);
-
-		/* Clear Pending ISR */
-		GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-		GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
-		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	}
+	/* Clear Pending ISR */
+	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	GDMA_ChCleanAutoReload(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, CLEAN_RELOAD_SRC_DST);
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	obj->state = 0;
 
