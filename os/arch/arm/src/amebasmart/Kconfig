@@ -77,10 +77,24 @@ config AMEBASMART_SPI0
 config AMEBASMART_SPI1
 	bool "SPI1"
 	default n
-
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
 	default y
+config SPI_CS
+	bool "SPI Multi-slaves"
+	default n
+if AMEBASMART_SPI0
+config AMEBASMART_SPI0_CS
+	bool "SPI0 Multi-slaves CS pins"
+	default n
+	depends on SPI_CS
+endif
+if AMEBASMART_SPI1
+config AMEBASMART_SPI1_CS
+	bool "SPI1 Multi-slaves CS pins"
+	default n
+	depends on SPI_CS
+endif
 endif
 
 config AMEBASMART_MIPI
