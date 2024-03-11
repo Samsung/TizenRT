@@ -190,6 +190,26 @@ inline int i2c_stop(i2c_t *obj)
 }
 
 /**
+  * @brief  Setup for I2C structure.
+  * @param  obj: I2C object defined in application software.
+  * @param  address: Slave address which will be transmitted.
+  * @retval none
+  */
+void i2c_prepare(i2c_t *obj, int address)
+{
+	/* Deinit I2C first */
+	i2c_reset(obj);
+
+	/* Load the user defined I2C target slave address */
+	i2c_target_addr[obj->i2c_idx] = address;
+	I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
+
+	/* Init I2C now */
+	I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
+	I2C_Cmd(obj->I2Cx, ENABLE);	
+}
+
+/**
   * @brief  I2C master read in poll mode.
   * @param  obj: I2C object defined in application software.
   * @param  address: Slave address which will be transmitted.
@@ -206,16 +226,7 @@ int i2c_read_timeout(i2c_t *obj, int address, char *data, int length, int stop, 
 	(void) stop;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
-		/* Deinit I2C first */
-		i2c_reset(obj);
-
-		/* Load the user defined I2C target slave address */
-		i2c_target_addr[obj->i2c_idx] = address;
-		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-		/* Init I2C now */
-		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-		I2C_Cmd(obj->I2Cx, ENABLE);
+		i2c_prepare(obj, address);
 	}
 
 	return (I2C_MasterRead_TimeOut(obj->I2Cx, (unsigned char *)data, length, timeout_ms));
@@ -240,16 +251,7 @@ int i2c_write_timeout(i2c_t *obj, int address, char *data, int length, int stop,
 	(void) stop;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
-		/* Deinit I2C first */
-		i2c_reset(obj);
-
-		/* Load the user defined I2C target slave address */
-		i2c_target_addr[obj->i2c_idx] = address;
-		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-		/* Init I2C now */
-		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-		I2C_Cmd(obj->I2Cx, ENABLE);
+		i2c_prepare(obj, address);
 	}
 
 	if (!length) {
@@ -274,16 +276,7 @@ int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 	(void) stop;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
-		/* Deinit I2C first */
-		i2c_reset(obj);
-
-		/* Load the user defined I2C target slave address */
-		i2c_target_addr[obj->i2c_idx] = address;
-		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-		/* Init I2C now */
-		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-		I2C_Cmd(obj->I2Cx, ENABLE);
+		i2c_prepare(obj, address);
 	}
 
 	if (!master_addr_retry) {
@@ -293,16 +286,7 @@ int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 			/* Wait for i2c enter trap state from trap_stop state*/
 			DelayUs(100);
 
-			/* Deinit I2C first */
-			i2c_reset(obj);
-
-			/* Load the user defined I2C target slave address */
-			i2c_target_addr[obj->i2c_idx] = address;
-			I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-			/* Init I2C now */
-			I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-			I2C_Cmd(obj->I2Cx, ENABLE);
+			i2c_prepare(obj, address);
 		}
 	}
 
@@ -321,16 +305,7 @@ int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 int rtk_i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 {
 	if (i2c_target_addr[obj->i2c_idx] != address) {
-		/* Deinit I2C first */
-		i2c_reset(obj);
-
-		/* Load the user defined I2C target slave address */
-		i2c_target_addr[obj->i2c_idx] = address;
-		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-		/* Init I2C now */
-		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-		I2C_Cmd(obj->I2Cx, ENABLE);
+		i2c_prepare(obj, address);
 	}
 
 	if ((!restart_enable) | (1 == stop)) {
@@ -356,16 +331,7 @@ int i2c_repeatread(i2c_t *obj, int address, uint8_t *pWriteBuf, int Writelen, ui
 	u8 cnt = 0;
 
 	if (i2c_target_addr[obj->i2c_idx] != address) {
-		/* Deinit I2C first */
-		i2c_reset(obj);
-
-		/* Load the user defined I2C target slave address */
-		i2c_target_addr[obj->i2c_idx] = address;
-		I2CInitDat[obj->i2c_idx].I2CAckAddr = address;
-
-		/* Init I2C now */
-		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
-		I2C_Cmd(obj->I2Cx, ENABLE);
+		i2c_prepare(obj, address);
 	}
 
 	/* write in the DR register the data to be sent */
