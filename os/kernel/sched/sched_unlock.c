@@ -125,9 +125,14 @@ int sched_unlock(void)
 		int cpu = this_cpu();
 
 		/* Decrement the preemption lock counter */
-
 		if (rtcb->lockcount > 0) {
+			DEBUGASSERT(g_cpu_schedlock == SP_LOCKED && \
+					(g_cpu_lockset & (1 << cpu)) != 0);
+
 			rtcb->lockcount--;
+		} else {
+			DEBUGASSERT(g_cpu_schedlock == SP_UNLOCKED && \
+					(g_cpu_lockset & (1 << cpu)) == 0);
 		}
 
 		/* Check if the lock counter has decremented to zero.  If so,
@@ -136,15 +141,11 @@ int sched_unlock(void)
 
 		if (rtcb->lockcount <= 0) {
 			/* Set the lock count to zero */
-
 			rtcb->lockcount = 0;
 
 			/* The lockcount has decremented to zero and we need to perform
 			 * release our hold on the lock.
 			 */
-
-			DEBUGASSERT(g_cpu_schedlock == SP_LOCKED && \
-					(g_cpu_lockset & (1 << cpu)) != 0);
 
 			spin_clrbit(&g_cpu_lockset, cpu, &g_cpu_locksetlock, \
 					&g_cpu_schedlock);
