@@ -61,7 +61,7 @@ CXXSRCS += ./tensorflow/lite/micro/kernels/logistic.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/logistic_common.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/softmax_common.cc
 
-ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+ifneq (, $(filter y, $(CONFIG_AMEBAD_CMSIS_NN) $(CONFIG_AMEBASMART_CMSIS_NN)))
 CXXFLAGS += -DCMSIS_NN
 CFLAGS += -DCMSIS_NN
 # CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/add.cc
