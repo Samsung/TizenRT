@@ -244,6 +244,9 @@
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
 
+/* Defines default sleep duration */
+#define DEFAULT_PM_SLEEP_DURATION    10000000 /* 10 sec in microsecond*/
+
 #define PM_LOCK_PATH					"/proc/power/domains/0/pm_lock"
 #define PM_UNLOCK_PATH					"/proc/power/domains/0/pm_unlock"
 #ifdef CONFIG_PM_DVFS
@@ -304,6 +307,7 @@ enum pm_state_e {
 };
 
 enum pm_timer_type_e {
+	PM_NO_TIMER = 0,
 	PM_WAKEUP_TIMER = 1,
 	PM_LOCK_TIMER = 2,
 	/* Scope for future expansion, up to 8 timer types can be supported */
@@ -312,6 +316,7 @@ enum pm_timer_type_e {
 struct pm_timer_s {
 	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
 	uint32_t timer_interval;	/* The interval for whichever timer is to be used */
+	clock_t last_wifi_alive_send_time;       /* Time tick of the last wifi keep alive signal sent time */
 };
 
 /* This structure contain pointers callback functions in the driver.  These
@@ -547,6 +552,24 @@ void pm_relax(int domain, enum pm_state_e state);
  ****************************************************************************/
 
 void pm_set_timer(int timer_type, size_t timer_interval);
+
+/****************************************************************************
+ * Name: pm_adjust_sleep_duration
+ *
+ * Description:
+ *   This function is called just before sleep to calculate exact required
+ *   sleep duration "if needed". This function is used to timely wake up board
+ *   so that we can sent the next wifi keep alive signal.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void pm_adjust_sleep_duration(void);
 
 /****************************************************************************
  * Name: pm_staycount

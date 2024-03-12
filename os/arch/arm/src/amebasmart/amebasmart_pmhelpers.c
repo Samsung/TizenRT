@@ -130,7 +130,7 @@ void pg_timer_int_handler(void *Data)
 			break;
 	}
 	// Reset the global struct
-	g_pm_timer.timer_type = 0;
+	g_pm_timer.timer_type = PM_NO_TIMER;
 	g_pm_timer.timer_interval = 0;
 }
 

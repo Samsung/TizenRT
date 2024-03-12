@@ -299,6 +299,13 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 		*/
 		pm_changeall(domain_indx, newstate);
 		pdom->state = newstate;
+		
+		/* Adjusting the sleep duration, so that system can revert to NORMAL
+		*  state when next Wifi keep alive signal is required to be sent. 
+		*/
+		if (newstate == PM_SLEEP) {
+			pm_adjust_sleep_duration();
+		}
 
 	}
 EXIT:

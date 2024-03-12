@@ -74,6 +74,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
 #include <tinyara/fs/dirent.h>
+#include <tinyara/clock.h>
 
 #include <tinyara/pm/pm.h>
 
@@ -117,7 +118,7 @@ struct power_procfs_entry_s {
 };
 
 /* Added to record timer countdown interrupt */
-struct pm_timer_s g_pm_timer = { 0, 0 };
+struct pm_timer_s g_pm_timer = { 0, 0, 0};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -146,6 +147,9 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static size_t power_get_last_wifi_alive_send_time(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static size_t power_get_current_time(FAR struct file *filep, FAR char *buffer, size_t buflen);
 #ifdef CONFIG_PM_DVFS
 static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl);
 #endif
@@ -164,6 +168,9 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
 	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
 	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
+	{"pm_set_next_wakeup_interval", NULL, power_set_next_wakeup_interval, DTYPE_FILE},
+	{"pm_get_last_wifi_alive_send_time", power_get_last_wakeup_time, NULL, DTYPE_FILE},
+	{"pm_get_current_time", power_get_current_time, NULL, DTYPE_FILE},
 #ifdef CONFIG_PM_DVFS
 	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
 #endif
@@ -483,7 +490,7 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 	if (buflen > 0) {
 		pm_set_timer(PM_LOCK_TIMER, buflen);
 	} else {
-		g_pm_timer.timer_type = 0;
+		g_pm_timer.timer_type = PM_NO_TIMER;
 	}
 	return OK;
 }
@@ -515,9 +522,95 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
 	if (buflen > 0) {
 		pm_set_timer(PM_WAKEUP_TIMER, buflen);
 	} else {
-		g_pm_timer.timer_type = 0;
+		g_pm_timer.timer_type = PM_NO_TIMER;
 	}
 	return OK;
+}
+
+/****************************************************************************
+ * Name: power_set_next_wakeup_interval
+ *
+ * Description:
+ *  Sets timer interval for next sleep cycle after sending of wifi keep 
+ *  alive signal from UART. It also stores the current time tick 
+ *  in g_pm_timer.last_wifi_alive_send_time that will be used to calculate the 
+ *  duration of required sleep later just before sleep. If another
+ *  interrupt occurs during this interval, the system will still
+ *  wake up.
+ *  Also we dont want to do pm_set_timer to PM_WAKEUP_TIMER if the
+ *  system is already in PM_LOCK_TIMER state. If system is in 
+ *  PM_LOCK_TIMER state, then power_unlock_write can only change that state.
+ *
+ * Input Parameters:
+ *   filep          - File path of the power domain
+ *   buffer         - Not used
+ *   buflen         - Use of timer interrupt and its duration
+ *
+ * Returned Value:
+ *  0 (OK) means the state unlock was successful.
+ ****************************************************************************/
+ 
+static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+{
+	(void)buffer;
+
+	g_pm_timer.last_wifi_alive_send_time = clock_systimer();
+	if (g_pm_timer.timer_type == PM_NO_TIMER && buflen > 0) {
+		pm_set_timer(PM_WAKEUP_TIMER, buflen);
+	}	
+	return OK;
+}
+
+/****************************************************************************
+ * Name: power_get_last_wifi_alive_send_time
+ *
+ * Description:
+ *   apps can use this method to get the last wifi alive sent time tick. This
+ *   can be used to find difference between current and last wifi alive
+ *   send time and then do necessary functionalities.
+ *
+ * Input Parameters:
+ *   filep          - File path of the power domain
+ *   buffer         - Not used
+ *   buflen         - Not used
+ *
+ * Returned Value:
+ *  Time tick value of the last wakeup time.
+ ****************************************************************************/
+
+static size_t power_get_last_wifi_alive_send_time(FAR struct file *filep, FAR char *buffer, size_t buflen)
+{
+	(void)buffer;
+	(void)buflen;
+
+	size_t ret = 0;
+	ret = g_pm_timer.last_wifi_alive_send_time;
+	return ret;
+}
+
+/****************************************************************************
+ * Name: power_get_current_time
+ *
+ * Description:
+ *   apps can use this method to get the current time tick.
+ *
+ * Input Parameters:
+ *   filep          - File path of the power domain
+ *   buffer         - Not used
+ *   buflen         - Not used
+ *
+ * Returned Value:
+ *  Time tick value of current time
+ ****************************************************************************/
+
+static size_t power_get_current_time(FAR struct file *filep, FAR char *buffer, size_t buflen)
+{
+	(void)buffer;
+	(void)buflen;
+
+	size_t ret = 0;
+	ret = clock_systimer();
+	return ret;
 }
 
 #ifdef CONFIG_PM_DVFS
@@ -875,3 +968,4 @@ static int power_stat(const char *relpath, struct stat *buf)
 }
 #endif							/* !CONFIG_DISABLE_MOUNTPOINT && CONFIG_FS_PROCFS */
 #endif							/* CONFIG_PM && !CONFIG_FS_PROCFS_EXCLUDE_POWER */
+
