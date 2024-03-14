@@ -114,7 +114,6 @@
 /**************************************************************************
 * Private Variables
 **************************************************************************/
-
 static mqd_t g_send_mqfd;
 static mqd_t g_recv_mqfd;
 static mqd_t g_timedsend_mqfd;
@@ -596,6 +595,9 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	status = pthread_attr_setschedparam(&attr, &sparam);
 	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
 
+#ifdef CONFIG_SMP
+	CPU_SET(0, &(attr.affinity));
+#endif
 	status = pthread_create(&receiver, &attr, receiver_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", status, OK);
 
@@ -611,6 +613,9 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	status = pthread_attr_setschedparam(&attr, &sparam);
 	TC_ASSERT_EQ("pthread_attr_setschedparam", status, OK);
 
+#ifdef CONFIG_SMP
+	CPU_SET(0, &(attr.affinity));
+#endif
 	status = pthread_create(&sender, &attr, sender_thread, NULL);
 	TC_ASSERT_EQ("pthread_create", status, OK);
 
@@ -944,6 +949,14 @@ errout:
  ****************************************************************************/
 int mqueue_main(void)
 {
+#ifdef CONFIG_SMP
+	cpu_set_t old_affinity, new_affinity;
+	CPU_ZERO(&old_affinity);
+	CPU_SET(0, &new_affinity);
+	sched_getaffinity(getpid(), sizeof(cpu_set_t), &old_affinity);
+	sched_setaffinity(getpid(), sizeof(cpu_set_t), &new_affinity);
+#endif
+
 	tc_mqueue_mq_open_close_send_receive();
 	tc_mqueue_mq_notify();
 	tc_mqueue_mq_timedsend_timedreceive();
@@ -953,5 +966,8 @@ int mqueue_main(void)
 	tc_mqueue_mq_getattr();
 	tc_mqueue_mq_setattr();
 
+#ifdef CONFIG_SMP
+	sched_setaffinity(getpid(), sizeof(cpu_set_t), &old_affinity);
+#endif
 	return 0;
 }
