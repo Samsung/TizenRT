@@ -108,11 +108,15 @@ static void prepare_exit(struct tcb_s *tcb)
 #ifdef CONFIG_SMP
 	/* Make sure that the system knows about the locked state */
 
-	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+	cpu_set_t lock = g_cpu_lockset;
+	lock &= (1 << this_cpu());
+	if (!lock) {
+		spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
 			&g_cpu_schedlock);
+	}
 #endif
 	exit_tcb->lockcount++;
-	
+
 	mm_is_sem_available(exit_tcb);
 
 	exit_tcb->lockcount--;
@@ -121,8 +125,10 @@ static void prepare_exit(struct tcb_s *tcb)
 	if (exit_tcb->lockcount == 0) {
 		/* Make sure that the system knows about the unlocked state */
 
-		spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+		if (!lock) {
+			spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
 				&g_cpu_schedlock);
+		}
 	}
 #endif
 }
@@ -205,7 +211,7 @@ int task_exit(void)
 	}
 
 #ifdef CONFIG_SMP
-	rtcb = current_task(cpu);
+	rtcb = current_task(this_cpu());
 #else
 	rtcb = this_task();
 #endif
@@ -266,6 +272,7 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount--;
+
 
 #ifdef CONFIG_SMP
 	if (rtcb->lockcount == 0) {
