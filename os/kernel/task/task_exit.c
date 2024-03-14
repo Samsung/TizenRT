@@ -106,23 +106,37 @@ static void prepare_exit(struct tcb_s *tcb)
 	 * breaks the critical section.
 	 */
 #ifdef CONFIG_SMP
-	/* Make sure that the system knows about the locked state */
+	if (exit_tcb->lockcount == 0) {
+		/* We don't have the scheduler locked.  But logic running on a
+		 * different CPU may have the scheduler locked.  It is not
+		 * possible for some other task on this CPU to have the scheduler
+		 * locked (or we would not be executing!).
+		 */
 
-	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
-			&g_cpu_schedlock);
+		spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock,
+				&g_cpu_schedlock);
+	} else {
+		/* If this thread already has the scheduler locked, then
+		 * g_cpu_schedlock() should indicate that the scheduler is locked
+		 * and g_cpu_lockset should include the bit setting for this CPU.
+		 */
+
+		DEBUGASSERT(g_cpu_schedlock == SP_LOCKED && \
+				(g_cpu_lockset & (1 << this_cpu())) != 0);
+	}
+
 #endif
 	exit_tcb->lockcount++;
-	
+
 	mm_is_sem_available(exit_tcb);
 
 	exit_tcb->lockcount--;
 
 #ifdef CONFIG_SMP
-	if (exit_tcb->lockcount == 0) {
-		/* Make sure that the system knows about the unlocked state */
-
+	if (exit_tcb->lockcount <= 0) {
 		spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
-				&g_cpu_schedlock);
+					&g_cpu_schedlock);
+		exit_tcb->lockcount = 0;
 	}
 #endif
 }
@@ -205,7 +219,7 @@ int task_exit(void)
 	}
 
 #ifdef CONFIG_SMP
-	rtcb = current_task(cpu);
+	rtcb = current_task(this_cpu());
 #else
 	rtcb = this_task();
 #endif
@@ -266,6 +280,7 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount--;
+
 
 #ifdef CONFIG_SMP
 	if (rtcb->lockcount == 0) {
