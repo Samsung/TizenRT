@@ -216,7 +216,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
-
+		DEBUGASSERT_MM_FREE_NODE(heap, node);
 		REMOVE_NODE_FROM_LIST(node);
 
 		/* Check if there is free space at the beginning of the aligned chunk */
