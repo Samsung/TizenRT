@@ -390,6 +390,13 @@
 #define _SPIIOCVALID(c)   (_IOC_TYPE(c) == _SPIBASE)
 #define _SPIIOC(nr)       _IOC(_SPIBASE, nr)
 
+/* LCD character driver ioctl definitions ***********************************/
+/* (see nuttx/include/lcd/slcd_codec.h */
+
+#define _LCDIOCVALID(c)   (_IOC_TYPE(c)==_SLCDIOCBASE)
+#define _LCDIOC(nr)       _IOC(_SLCDIOCBASE,nr)
+
+
 /* boardctl() command definitions *******************************************/
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)
 #define _BOARDIOC(nr)      _IOC(_BOARDBASE, nr)

@@ -88,6 +88,7 @@ struct lcd_planeinfo_s {
 	/* LCD Data Transfer ******************************************************/
 	/* This method can be used to write a partial raster line to the LCD:
 	 *
+	 *  dev     - LCD interface to write to
 	 *  row     - Starting row to write to (range: 0 <= row < yres)
 	 *  col     - Starting column to write to (range: 0 <= col <= xres-npixels)
 	 *  buffer  - The buffer containing the run to be written to the LCD
@@ -95,7 +96,7 @@ struct lcd_planeinfo_s {
 	 *            (range: 0 < npixels <= xres-col)
 	 */
 
-	int (*putrun)(fb_coord_t row, fb_coord_t col, FAR const uint8_t *buffer,
+	int (*putrun)(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col, FAR const uint8_t *buffer,
 				  size_t npixels);
 
 	/* This method can be used to read a partial raster line from the LCD:
@@ -107,23 +108,64 @@ struct lcd_planeinfo_s {
 	 *            (range: 0 < npixels <= xres-col)
 	 */
 
-	int (*getrun)(fb_coord_t row, fb_coord_t col, FAR uint8_t *buffer,
+	int (*getrun)(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col, FAR uint8_t *buffer,
 				  size_t npixels);
 
-	/* Plane color characteristics ********************************************/
 
-	/* This is working memory allocated by the LCD driver for each LCD device
-	 * and for each color plane.  This memory will hold one raster line of data.
-	 * The size of the allocated run buffer must therefore be at least
-	 * (bpp * xres / 8).  Actual alignment of the buffer must conform to the
-	 * bitwidth of the underlying pixel type.
+	/* This method can be used to write a rectangular area to the LCD:
 	 *
-	 * If there are multiple planes, they may share the same working buffer
-	 * because different planes will not be operate on concurrently.  However,
-	 * if there are multiple LCD devices, they must each have unique run buffers.
+	 *  dev       - LCD interface to write to
+	 *  row_start - Starting row to write to (range: 0 <= row < yres)
+	 *  row_end   - Ending row to write to (range: row_start <= row < yres)
+	 *  col_start - Starting column to write to (range: 0 <= col <= xres)
+	 *  col_end   - Ending column to write to
+	 *              (range: col_start <= col_end < xres)
+	 *  buffer    - The buffer containing the area to be written to the LCD
+	 *  stride    - Length of a line in bytes. This parameter may be necessary
+	 *              to allow the LCD driver to calculate the offset for partial
+	 *              writes when the buffer needs to be splited for row-by-row
+	 *              writing.
+	 *
+	 * NOTE: this operation may not be supported by the device, in which case
+	 * the callback pointer will be NULL. In that case, putrun() should be
+	 * used.
 	 */
 
+	int (*putarea)(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR const uint8_t *buffer, fb_coord_t stride);
+
+	/* This method can be used to read a rectangular area from the LCD:
+	 *
+	 *  dev       - LCD interface to read from
+	 *  row_start - Starting row to read from (range: 0 <= row < yres)
+	 *  row_end   - Ending row to read from (range: row_start <= row < yres)
+	 *  col_start - Starting column to read from (range: 0 <= col <= xres)
+	 *  col_end   - Ending column to read from
+	 *              (range: col_start <= col_end < xres)
+	 *  buffer    - The buffer where the data will be written
+	 *  stride    - Length of a line in bytes.
+	 *
+	 * NOTE: this operation may not be supported by the device, in which case
+	 * the callback pointer will be NULL. In that case, getrun() should be
+	 * used.
+	 */
+
+	int (*getarea)(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR uint8_t *buffer, fb_coord_t stride);
+
+
+        /* Plane color characteristics ********************************************/
+
+        /* This is working memory allocated by the LCD driver for each LCD device
+         * and for each color plane.  This memory will hold one raster line of data.
+         * The size of the allocated run buffer must therefore be at least
+         * (bpp * xres / 8).  Actual alignment of the buffer must conform to the
+         * bitwidth of the underlying pixel type.
+         *
+         * If there are multiple planes, they may share the same working buffer
+         * because different planes will not be operate on concurrently.  However,
+         * if there are multiple LCD devices, they must each have unique run buffers.
+         */
 	uint8_t *buffer;
+
 
 	/* This is the number of bits in one pixel.  This may be one of {1, 2, 4,
 	 * 8, 16, 24, or 32} unless support for one or more of those resolutions
@@ -196,13 +238,15 @@ struct lcd_dev_s {
 	/* Set LCD panel contrast (0-CONFIG_LCD_MAXCONTRAST) */
 
 	int (*setcontrast)(struct lcd_dev_s *dev, unsigned int contrast);
-};
 
-struct dsi_ops_s {
-	uint8_t (*config)(void);
-	void (*enable)(void);
-	void (*disable)(void);
-	void (*refresh)(void);
+	/* Initialize LCD */
+
+	int (*init)(struct lcd_dev_s *dev);
+
+	/* Set LCD orientation(PORTRAIT/LANDSCAPE) */
+
+	int (*setorientation)(struct lcd_dev_s *dev, unsigned int orientation);
+
 };
 
 /****************************************************************************
