@@ -376,6 +376,11 @@ void board_initialize(void)
 	board_i2c_initialize();
 	board_spi_initialize();
 	board_i2s_initialize();
+
+#ifdef CONFIG_LCD_ST7789
+	rtl8730_st7789_initialize();
+#endif
+
 #ifdef CONFIG_WATCHDOG
 	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
