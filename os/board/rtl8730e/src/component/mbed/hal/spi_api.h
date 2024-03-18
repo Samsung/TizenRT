@@ -107,12 +107,19 @@ void spi_format(spi_t *obj, int bits, int mode, int slave);
 void spi_frequency(spi_t *obj, int hz);
 
 /**
-  * @brief  Master send one frame use SPI.
+  * @brief  Master send one frame use SPI and return receive.
   * @param  obj: spi master object define in application software.
   * @param  value: the data to transmit.
   * @retval : data received from slave
   */
-int  spi_master_write(spi_t *obj, int value);
+int  spi_master_exchange(spi_t *obj, int value);
+
+/**
+  * @brief  Master send one frame use SPI and ignores read.
+  * @param  obj: spi master object define in application software.
+  * @param  value: the data to transmit.
+  */
+void  spi_master_write(spi_t *obj, int value);
 
 /**
   * @brief  Get slave readable && busy state.

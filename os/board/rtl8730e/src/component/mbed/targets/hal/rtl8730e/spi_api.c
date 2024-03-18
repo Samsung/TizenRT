@@ -672,12 +672,21 @@ static inline int ssi_read(spi_t *obj)
   * @param  value: Data to be transmitted.
   * @return Data received from slave SPI.
   */
-int spi_master_write(spi_t *obj, int value)
+int spi_master_exchange(spi_t *obj, int value)
 {
 	ssi_write(obj, value);
 	return ssi_read(obj);
 }
 
+/**
+  * @brief  Master send one frame use SPI and ignores read.
+  * @param  obj: SPI master object defined in application software.
+  * @param  value: Data to be transmitted.
+  */
+void spi_master_write(spi_t *obj, int value)
+{
+	ssi_write(obj, value);
+}
 /**
   * @brief  Get readable state and busy state of slave SPI.
   * @param  obj: SPI slave object defined in application software.

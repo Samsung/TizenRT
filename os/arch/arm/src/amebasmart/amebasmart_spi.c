@@ -858,7 +858,8 @@ static uint16_t amebasmart_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 
 	if (priv->role == AMEBASMART_SPI_MASTER) {
 
-		ret = spi_master_write(&priv->spi_object, wd);
+		spi_master_write(&priv->spi_object, wd);
+
 	} else if (priv->role == AMEBASMART_SPI_SLAVE) {
 
 		spi_slave_write(&priv->spi_object, wd);
@@ -930,7 +931,7 @@ static void amebasmart_spi_exchange_nodma(FAR struct spi_dev_s *dev,
 
 			/* Exchange one word */
 
-			word = amebasmart_spi_send(dev, word);
+			word = spi_master_exchange(&priv->spi_object, word);
 
 			/* Is there a buffer to receive the return value? */
 
@@ -955,8 +956,7 @@ static void amebasmart_spi_exchange_nodma(FAR struct spi_dev_s *dev,
 			}
 
 			/* Exchange one word */
-
-			word = (uint8_t)amebasmart_spi_send(dev, (uint16_t) word);
+			word = (uint8_t) spi_master_exchange(&priv->spi_object, (uint16_t) word);
 
 			/* Is there a buffer to receive the return value? */
 
