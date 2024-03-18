@@ -22,14 +22,22 @@ static _mutex device_mutex[RT_DEV_LOCK_MAX];
 static void device_mutex_init(RT_DEV_LOCK_E device)
 {
 	if (!DEVICE_MUTEX_IS_INIT(device)) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		irqstate_t flags = enter_critical_section();
+#else
 		_lock lock;
 		_irqL irqL;
 		rtw_enter_critical(&lock, &irqL);
+#endif
 		if (!DEVICE_MUTEX_IS_INIT(device)) {
 			rtw_mutex_init(&device_mutex[device]);
 			DEVICE_MUTEX_SET_INIT(device);
 		}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		leave_critical_section(flags);
+#else
 		rtw_exit_critical(&lock, &irqL);
+#endif
 	}
 }
 
@@ -37,14 +45,22 @@ static void device_mutex_init(RT_DEV_LOCK_E device)
 void device_mutex_free(RT_DEV_LOCK_E device)
 {
 	if (DEVICE_MUTEX_IS_INIT(device)) {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		irqstate_t flags = enter_critical_section();
+#else
 		_lock lock;
 		_irqL irqL;
 		rtw_enter_critical(&lock, &irqL);
+#endif
 		if (DEVICE_MUTEX_IS_INIT(device)) {
 			rtw_mutex_free(&device_mutex[device]);
 			DEVICE_MUTEX_CLR_INIT(device);
 		}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		leave_critical_section(flags);
+#else
 		rtw_exit_critical(&lock, &irqL);
+#endif
 	}
 }
 

@@ -80,7 +80,8 @@ SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
 	/* disable irq */
-	PrevIrqStatus = save_and_cli();
+	/* We do not need to acquire lock for this core, as the other core will enter gating */
+	PrevIrqStatus = irqsave();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
@@ -137,7 +138,7 @@ void FLASH_Write_Unlock(void)
 #endif
 
 	/* restore irq */
-	restore_flags(PrevIrqStatus);
+	irqrestore(PrevIrqStatus);
 }
 
 /**
