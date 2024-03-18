@@ -1,0 +1,14 @@
+#
+#For a description of the syntax of this configuration file,
+#see kconfig-language at https:	//www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_LCD
+	bool "LCD example"
+	default n
+	---help---
+		Enable LCD Example
+
+config USER_ENTRYPOINT
+	string
+	default "lcd_test" if ENTRY_LCD

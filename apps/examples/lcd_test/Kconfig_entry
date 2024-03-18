@@ -1,0 +1,3 @@
+config ENTRY_LCD
+	bool "LCD example"
+	depends on EXAMPLES_LCD
