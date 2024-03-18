@@ -348,7 +348,7 @@ static void amebasmart_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t c
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
 	DEBUGASSERT(priv);
 	if (priv) {
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 
 		/* Save the new callback */
 		priv->callback = callback;
@@ -363,7 +363,7 @@ static void amebasmart_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t c
 			priv->obj.hid = 0;
 		}
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 }
 
