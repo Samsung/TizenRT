@@ -87,6 +87,7 @@
 ifeq ($(CONFIG_LCD),y)
 
 # Support for the generic LCD framebufer front-end
+CSRCS += lcd_dev.c
 
 ifeq ($(CONFIG_LCD_FRAMEBUFFER),y)
   CSRCS += lcd_framebuffer.c
@@ -98,9 +99,11 @@ ifeq ($(CONFIG_LCD_ILI9341),y)
   CSRCS += ili9341.c
 endif
 
-endif # CONFIG_LCD
+ifeq ($(CONFIG_LCD_ST7789),y)
+  CSRCS += st7789.c
+endif
 
-# Include LCD driver build support (the nested if-then-else implements an OR)
+endif # CONFIG_LCD
 
 ifeq ($(CONFIG_LCD),y)
   DEPPATH += --dep-path lcd
