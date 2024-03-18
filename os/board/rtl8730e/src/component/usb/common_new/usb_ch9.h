@@ -22,6 +22,13 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* USB speed */
+#define USB_SPEED_HIGH                                 0
+#define USB_SPEED_HIGH_IN_FULL                         1
+#define USB_SPEED_LOW                                  2
+#define USB_SPEED_FULL                                 3
+
+/* USB descriptor length */
 #define USB_LEN_DEV_QUALIFIER_DESC                     0x0AU
 #define USB_LEN_DEV_DESC                               0x12U
 #define USB_LEN_CFG_DESC                               0x09U
@@ -89,6 +96,8 @@
 #define USB_DESC_INTERFACE_POWER                       ((USB_DESC_TYPE_INTERFACE_POWER << 8) & 0xFF00U)
 
 /* Configuration descriptor offset */
+#define USB_CFG_DESC_OFFSET_TYPE                       1U
+#define USB_CFG_DESC_OFFSET_TOTAL_LEN                  2U
 #define USB_CFG_DESC_OFFSET_ATTR                       7U
 #define USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED      BIT(6)
 #define USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP     BIT(5)
@@ -108,17 +117,6 @@
 
 /* bmAttributes D1..0 Transfer type */
 #define USB_EP_XFER_TYPE_MASK                          0x03U
-
-/* USB speed */
-#define USB_SPEED_HIGH                                 0
-#define USB_SPEED_HIGH_IN_FULL                         1
-#define USB_SPEED_LOW                                  2
-#define USB_SPEED_FULL                                 3
-
-/* USB mode */
-#define USB_OTG_MODE_DEVICE                            0
-#define USB_OTG_MODE_HOST                              1
-#define USB_OTG_MODE_DRD                               2
 
 /* Exported types ------------------------------------------------------------*/
 

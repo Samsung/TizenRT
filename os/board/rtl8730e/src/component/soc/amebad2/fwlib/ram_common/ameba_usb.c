@@ -16,7 +16,8 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "ameba_soc.h"
-
+#include "ameba_usb.h"
+#include "log.h"
 static const char *TAG = "USB";
 /* Private defines -----------------------------------------------------------*/
 
@@ -28,7 +29,6 @@ static const char *TAG = "USB";
 
 /* Private variables ---------------------------------------------------------*/
 
-USB_DATA_SECTION
 static const usb_cal_data_t usb_cut_a_cal_data[] = {
 	{0x00, 0xE0, 0x9D},
 	{0x00, 0xE1, 0x19},
@@ -44,7 +44,6 @@ static const usb_cal_data_t usb_cut_a_cal_data[] = {
 	{0xFF, 0x00, 0x00}
 };
 
-USB_DATA_SECTION
 static const usb_cal_data_t usb_cut_b_cal_data[] = {
 	{0x00, 0xE0, 0x9D},
 	{0x00, 0xE1, 0x19},

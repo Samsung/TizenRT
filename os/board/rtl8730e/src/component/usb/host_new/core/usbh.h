@@ -20,7 +20,6 @@
 
 #include "usb_ch9.h"
 #include "usb_os.h"
-#include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -118,7 +117,10 @@ typedef struct {
 	u8  iConfiguration;									/* Index of string descriptor describing this configuration */
 	u8  bmAttributes;									/* D7 Bus Powered , D6 Self Powered, D5 Remote Wakeup , D4..0 Reserved (0)*/
 	u8  bMaxPower;										/* Maximum power consumption */
-	usbh_if_desc_t if_desc[USBH_MAX_INTERFACES_NUM];	/* Interface descriptors */
+	usbh_if_desc_t if_desc[USBH_MAX_INTERFACES_NUM];	/* Interface descriptors save all interfaces infor in this struct
+							   								the interface is index by bInterfaceNumber & bAlternateSetting
+							   								:bInterfaceNumber define the main interface Id
+							   								:bAlternateSetting define the alternate setting Id.*/
 } usbh_cfg_desc_t;
 
 /* USB setup request */
@@ -218,7 +220,7 @@ u8 usbh_reactivate_pipe(usb_host_t *host, u8 pipe_num);
 /* Interface operations */
 u8 usbh_get_interface(usb_host_t *host, u8 class_code, u8 sub_class_code, u8 protocol); /* 0xFF means interface not found */
 u8 usbh_set_interface(usb_host_t *host, u8 if_num);
-usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num);
+usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num, u8 alt_num);
 
 
 /* Get raw configuration descriptor data */
@@ -248,6 +250,10 @@ u8 usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u8 usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u8 usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
+
+/* Usbh CTS test operations */
+u8 usbh_enter_suspend(u8 suspend);
+u8 usbh_port_test_ctrl(u8 type);
 
 #endif /* USBD_H */
 

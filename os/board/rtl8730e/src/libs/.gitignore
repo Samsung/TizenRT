@@ -5,3 +5,4 @@
 !./lib_wifi_common.a
 !./lib_wpa_lite.a
 !./sysm.a
+!./lib_usbh_new.a
