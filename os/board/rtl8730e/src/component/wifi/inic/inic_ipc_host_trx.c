@@ -78,11 +78,19 @@ struct skb_info *host_skb_info;
  */
 static sint inic_enqueue_recvbuf(struct host_recv_buf *precvbuf, _queue *queue)
 {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
+#else
 	_irqL irqL;
 
 	rtw_enter_critical(&queue->lock, &irqL);
+#endif
 	rtw_list_insert_tail(&precvbuf->list, get_list_head(queue));
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
+#else
 	rtw_exit_critical(&queue->lock, &irqL);
+#endif
 
 	return _SUCCESS;
 }
@@ -94,11 +102,16 @@ static sint inic_enqueue_recvbuf(struct host_recv_buf *precvbuf, _queue *queue)
  */
 static struct host_recv_buf *inic_dequeue_recvbuf(_queue *queue)
 {
-	_irqL irqL;
 	struct host_recv_buf *precvbuf;
 	_list *plist, *phead;
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
+#else
+	_irqL irqL;
+
 	rtw_enter_critical(&queue->lock, &irqL);
+#endif
 
 	if (rtw_queue_empty(queue) == _TRUE) {
 		precvbuf = NULL;
@@ -109,7 +122,11 @@ static struct host_recv_buf *inic_dequeue_recvbuf(_queue *queue)
 		rtw_list_delete(&precvbuf->list);
 	}
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
+#else
 	rtw_exit_critical(&queue->lock, &irqL);
+#endif
 
 	return precvbuf;
 }

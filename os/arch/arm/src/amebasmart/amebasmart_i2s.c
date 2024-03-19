@@ -435,14 +435,14 @@ static int i2s_tx_start(struct amebasmart_i2s_s *priv)
 		return OK;
 	}
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Remove the pending TX transfer at the head of the TX pending queue. */
 	bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
 
 	/* Start first transfer */
 	amebasmart_i2s_tx(priv, bfcontainer);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Start a watchdog to catch DMA timeouts */
 	if (bfcontainer->timeout > 0) {
@@ -488,9 +488,9 @@ static void i2s_tx_worker(void *arg)
 		 * also modified from the interrupt level.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.done);
-		irqrestore(flags);
+		leave_critical_section(flags);
 		/* Perform the TX transfer done callback */
 
 		DEBUGASSERT(bfcontainer && bfcontainer->callback);
@@ -668,9 +668,9 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 	bfcontainer->apb = apb;
 	bfcontainer->result = -EBUSY;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.pend);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	ret = i2s_tx_start(priv);
 
@@ -788,7 +788,7 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 		return OK;
 	}
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* Remove the pending RX transfer at the head of the RX pending queue. */
 	bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.pend);
 
@@ -799,7 +799,7 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 
 		i2s_recv_page(&priv->i2s_object);
 	}
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Start a watchdog to catch DMA timeouts */
 	if (bfcontainer->timeout > 0) {
@@ -844,9 +844,9 @@ static void i2s_rx_worker(void *arg)
 		 * interrupts must be disabled to do this because the rx.done queue is
 		 * also modified from the interrupt level.
 		 */
-		flags = irqsave();
+		flags = enter_critical_section();
 		bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* Perform the RX transfer done callback */
 		DEBUGASSERT(bfcontainer && bfcontainer->apb && bfcontainer->callback);
@@ -1027,9 +1027,9 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	/* Prepare DMA microcode */
 	i2s_rxdma_prep(priv, bfcontainer);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.pend);
-	irqrestore(flags);
+	leave_critical_section(flags);
 	i2sinfo("i2s_rx_start\n");
 	/* Start transfer */
 	ret = i2s_rx_start(priv);
@@ -1121,13 +1121,13 @@ static struct amebasmart_buffer_s *i2s_buf_rx_allocate(struct amebasmart_i2s_s *
 	i2s_bufsem_rx_take(priv);
 
 	/* Get the buffer from the head of the free list */
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer = priv->freelist_rx;
 	ASSERT(bfcontainer);
 
 	/* Unlink the buffer from the freelist */
 	priv->freelist_rx = bfcontainer->flink;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return bfcontainer;
 }
@@ -1154,10 +1154,10 @@ static void i2s_buf_rx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buf
 	irqstate_t flags;
 
 	/* Put the buffer container back on the free list */
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer->flink = priv->freelist_rx;
 	priv->freelist_rx = bfcontainer;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Wake up any threads waiting for a buffer container */
 	i2s_bufsem_rx_give(priv);
@@ -1252,13 +1252,13 @@ static struct amebasmart_buffer_s *i2s_buf_tx_allocate(struct amebasmart_i2s_s *
 	i2s_bufsem_tx_take(priv);
 
 	/* Get the buffer from the head of the free list */
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer = priv->freelist_tx;
 	ASSERT(bfcontainer);
 
 	/* Unlink the buffer from the freelist */
 	priv->freelist_tx = bfcontainer->flink;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return bfcontainer;
 }
@@ -1285,10 +1285,10 @@ static void i2s_buf_tx_free(struct amebasmart_i2s_s *priv, struct amebasmart_buf
 	irqstate_t flags;
 
 	/* Put the buffer container back on the free list */
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer->flink = priv->freelist_tx;
 	priv->freelist_tx = bfcontainer;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Wake up any threads waiting for a buffer container */
 	i2s_bufsem_tx_give(priv);
@@ -1469,25 +1469,25 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX) {
 		i2s_disable(&priv->i2s_object);
 		while (sq_peek(&priv->tx.pend) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->tx.act) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.act);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->tx.done) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.done);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 	}
@@ -1497,25 +1497,25 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX) {
 		i2s_disable(&priv->i2s_object);
 		while (sq_peek(&priv->rx.pend) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.pend);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->rx.act) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.act);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->rx.done) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 	}

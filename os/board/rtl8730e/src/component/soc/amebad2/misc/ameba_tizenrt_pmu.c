@@ -302,9 +302,9 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 #else
-	irqstate_t flags  = irqsave();
+	irqstate_t flags  = enter_critical_section();
 	g_system_timer += (u64)ms_passed; /*  update kernel tick */
-	irqrestore(flags);
+	leave_critical_section(flags);
 #endif
 
 	sysactive_timeout_flag = 0;
