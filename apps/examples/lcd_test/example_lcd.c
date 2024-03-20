@@ -124,12 +124,7 @@ static void test_put_area(void)
 	yres = vinfo.yres;
 	printf("xres : %d, yres:%d\n", xres, yres);
 	close(fd);
-
-	#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
-		putarea(0, yres - 1, 0, xres - 1, RED);
-	#else
-		putarea(0, xres - 1, 0, yres - 1, RED);
-	#endif
+	putarea(0, yres - 1, 0, xres - 1, RED);
 	/* fill square with side  = OFFSET */
 	putarea(0, OFFSET, 0, OFFSET, WHITE);
 }
@@ -179,11 +174,7 @@ static void test_clear(void)
 	xres = vinfo.xres;
 	yres = vinfo.yres;
 	close(fd);
-	#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
-		putarea(0, yres - 1, 0, xres - 1, BLACK);
-	#else
-		putarea(0, xres - 1, 0, yres - 1, BLACK);
-	#endif
+	putarea(0, yres - 1, 0, xres - 1, BLACK);
 }
 
 static void test_init(void)
@@ -218,8 +209,12 @@ static void test_orientation(void)
 	test_put_run();
 
 	sleep(1);
-	/* resolution should be swapped now as orientation is changed*/
-	putarea(0, xres - 1, 0, yres - 1, RED);
+	/* resolution should be swapped now as orientation is changed */
+	#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
+		putarea(0, xres - 1, 0, yres - 1, RED);
+	#else
+		putarea(0, yres - 1, 0, xres - 1, RED);
+	#endif
 	/* fill square with side  = OFFSET */
 	putarea(0, OFFSET, 0, OFFSET, WHITE);
 
