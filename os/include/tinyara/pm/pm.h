@@ -306,8 +306,10 @@ enum pm_state_e {
 enum pm_timer_type_e {
 	PM_WAKEUP_TIMER = 1,
 	PM_LOCK_TIMER = 2,
+	PM_PERIODICAL_TIMER = 3,
 	/* Scope for future expansion, up to 8 timer types can be supported */
 };
+typedef enum pm_timer_type_e pm_timer_type_t;
 
 struct pm_timer_s {
 	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */

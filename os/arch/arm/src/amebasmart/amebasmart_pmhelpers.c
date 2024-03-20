@@ -41,6 +41,8 @@
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <fcntl.h>
+#include <tinyara/timer.h>
 
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
@@ -113,10 +115,12 @@ int SOCPS_AONWakeReason(void)
 	return reason;
 }
 
-void pg_timer_int_handler(void *Data)
+/* Follow the callback structure in os/include/tinyara/timer.h */
+/* Update next_interval_us will only benefit timer with periodical mode */
+void timer_int_handler(uint32_t *next_interval_us, pm_timer_type_t timer_type)
 {
 	pmvdbg("PM Timer interrupt handler!!\n");
-	switch (g_pm_timer.timer_type) {
+	switch (timer_type) {
 		case PM_LOCK_TIMER:
 			// Relax the lock on the PM state transitions after the timer interrupt
 			pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
@@ -125,20 +129,53 @@ void pg_timer_int_handler(void *Data)
 			// Switch status back to normal mode after wake up from interrupt
 			pm_activity(PM_IDLE_DOMAIN, 9);
 			break;
+		case PM_PERIODICAL_TIMER:
+			/* Anything else to do ? */
+			break;
 		default:
 			pmdbg("Timer callback triggered without setting timer, Unexpected Error!!!\n");
 			break;
 	}
 	// Reset the global struct
-	g_pm_timer.timer_type = 0;
+	g_pm_timer.timer_type &= ~(timer_type);
 	g_pm_timer.timer_interval = 0;
 }
 
-void up_set_pm_timer(void) {
+void up_set_pm_timer(int pm_timer_type) {
 	// Check whether timer interrupt need to be set
-	if (g_pm_timer.timer_type) {
-		gtimer_init(&g_timer1, TIMER1);
-		gtimer_start_one_shout(&g_timer1, g_pm_timer.timer_interval, (void *)pg_timer_int_handler, NULL);
+	struct timer_notify_s notify;
+	notify.arg   = NULL;
+	notify.pid   = (pid_t)getpid();
+	notify.timer_type = pm_timer_type;
+	int fd = 0;
+	switch (pm_timer_type) {
+		case PM_WAKEUP_TIMER:
+			fd = open("/dev/timer1", O_RDONLY);
+			ioctl(fd, TCIOC_SETMODE, MODE_ONESHOT);
+			break;
+		case PM_LOCK_TIMER:
+			fd = open("/dev/timer2", O_RDONLY);
+			ioctl(fd, TCIOC_SETMODE, MODE_ONESHOT);
+			break;
+		case PM_PERIODICAL_TIMER:
+			fd = open("/dev/timer3", O_RDONLY);
+			ioctl(fd, TCIOC_SETMODE, MODE_PERIODICAL);
+			break;
+		default:
+			pmdbg("Invalid input for timer type!\n");
+			return;
+	}
+	/* Set timeout value */
+	ioctl(fd, TCIOC_SETTIMEOUT, g_pm_timer.timer_interval);
+	/* Set callback structure */
+	if (ioctl(fd, TCIOC_NOTIFICATION, (unsigned long)((uintptr_t)&notify)) < 0) {
+		fprintf(stderr, "ERROR: Failed to set the timer handler: %d\n", errno);
+		return;
+	}
+	/* Fire the timer */
+	if (ioctl(fd, TCIOC_START, 0) < 0) {
+		fprintf(stderr, "ERROR: Failed to start the timer: %d\n", errno);
+		return;
 	}
 	return;
 }

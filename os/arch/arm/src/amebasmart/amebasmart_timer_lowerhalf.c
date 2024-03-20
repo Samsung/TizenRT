@@ -83,6 +83,7 @@ struct amebasmart_gpt_lowerhalf_s {
 	uint32_t gpt_timeout;
 	bool freerunmode;			/* True: Free Run Mode. False: Alarm Mode */
 	uint32_t num_of_4294967ms_elapse;	/* Used to calculate total time elapse in Free Run Mode */
+	bool is_periodical;
 };
 
 /****************************************************************************
@@ -105,10 +106,6 @@ static const struct timer_ops_s g_timer_ops = {
 	.settimeout = amebasmart_gpt_settimeout,
 	.setcallback = amebasmart_gpt_setcallback,
 	.ioctl = amebasmart_gpt_ioctl,
-};
-
-static struct amebasmart_gpt_lowerhalf_s g_gpt0_lowerhalf = {
-	.ops = &g_timer_ops,
 };
 
 static struct amebasmart_gpt_lowerhalf_s g_gpt1_lowerhalf = {
@@ -149,13 +146,21 @@ static void amebasmart_gpt_handler(uint32_t data)
 	if (priv->freerunmode) {	/* Free Run Mode */
 		priv->num_of_4294967ms_elapse++;
 	} else {					/* Alarm Mode */
-		if (priv->callback(&next_interval_us, priv->arg)) {
-			if (next_interval_us > 0) {
-				priv->gpt_timeout = next_interval_us;
-				gtimer_reload(&priv->obj, priv->gpt_timeout);
+		/* If it is periodical, execute callback directly */
+		if (priv->is_periodical) {
+			if (priv->callback(&next_interval_us, priv->arg)) {
+				if (next_interval_us > 0) {
+					priv->gpt_timeout = next_interval_us;
+					gtimer_reload(&priv->obj, priv->gpt_timeout);
+				}
+			} else {
+				amebasmart_gpt_stop((struct timer_lowerhalf_s *)priv);
 			}
+		/* If it is one-shot, stop the timer first (because in amebasmart_gpt_start, all timer is fired with periodical mode)
+		   after that execute callback */
 		} else {
-			amebasmart_gpt_stop((struct timer_lowerhalf_s *)priv);
+			gtimer_stop(&priv->obj);
+			priv->callback(&next_interval_us, priv->arg);
 		}
 	}
 }
@@ -408,8 +413,14 @@ static int amebasmart_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsign
 			priv->freerunmode = true;
 			priv->num_of_4294967ms_elapse = 0;
 			ret = OK;
-		} else if ((timer_mode_t)arg == MODE_ALARM) {
+		} else {
 			priv->freerunmode = false;
+			/* ALARM mode set as one-shot */
+			if ((timer_mode_t)arg == MODE_ONESHOT || (timer_mode_t)arg == MODE_ALARM) {
+				priv->is_periodical = false;
+			} else if ((timer_mode_t)arg == MODE_PERIODICAL) {
+				priv->is_periodical = true;
+			}
 			ret = OK;
 		}
 		break;
@@ -440,21 +451,18 @@ int amebasmart_timer_initialize(const char *devpath, int timer)
 	struct amebasmart_gpt_lowerhalf_s *priv = NULL;
 
 	switch (timer) {
-	case TIMER0:
-		priv = &g_gpt0_lowerhalf;
-		priv->obj.timer_id = TIMER0;
-		break;
-
+	/* TIMER0 is reserved for LP core */
+	/* TIMER1: Reserved for wakeup one-shot timer */
 	case TIMER1:
 		priv = &g_gpt1_lowerhalf;
 		priv->obj.timer_id = TIMER1;
 		break;
-
+	/* TIMER2: Reserved for BT hold state timer */
 	case TIMER2:
 		priv = &g_gpt2_lowerhalf;
 		priv->obj.timer_id = TIMER2;
 		break;
-
+	/* TIMER3: Reserved for multi-purpose periodical timer */
 	case TIMER3:
 		priv = &g_gpt3_lowerhalf;
 		priv->obj.timer_id = TIMER3;

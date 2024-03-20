@@ -146,6 +146,9 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+#ifdef CONFIG_TIMER
+static size_t power_timer_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+#endif
 #ifdef CONFIG_PM_DVFS
 static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl);
 #endif
@@ -164,6 +167,9 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
 	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
 	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
+#ifdef CONFIG_TIMER
+	{"pm_timer", NULL, power_timer_write, DTYPE_FILE},
+#endif
 #ifdef CONFIG_PM_DVFS
 	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
 #endif
@@ -470,6 +476,7 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	(void)buffer;
+	(void)buflen;
 
 	/* Always lock PM_NORMAL state, check again whether this implementation
 	is enough to handle, if not, consider below methods...
@@ -480,11 +487,7 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 	*/
 	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
 	fvdbg("State locked!\n");
-	if (buflen > 0) {
-		pm_set_timer(PM_LOCK_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = 0;
-	}
+
 	return OK;
 }
 
@@ -492,15 +495,12 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
  * Name: power_unlock_write
  *
  * Description:
- *  Unlock PM from PM_NORMAL state by invoking pm_relax(). A timer
- *  interval can be provided to setup the timer interrupt. If another
- *  interrupt occurs during this interval, the system will still
- *  wake up.
+ *  Unlock PM from PM_NORMAL state by invoking pm_relax().
  *
  * Input Parameters:
  *   filep          - File path of the power domain
  *   buffer         - Not used
- *   buflen         - Use of timer interrupt and its duration
+ *   buflen         - Not used
  *
  * Returned Value:
  *  0 (OK) means the state unlock was successful.
@@ -509,16 +509,45 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	(void)buffer;
+	(void)buflen;
 
 	pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
 	fvdbg("State unlocked!\n");
+
+	return OK;
+}
+
+#ifdef CONFIG_TIMER
+/****************************************************************************
+ * Name: power_timer_write
+ *
+ * Description:
+ *  A timer interval can be provided to setup the timer interrupt. If another
+ *  interrupt occurs during this interval, the system will still
+ *  wake up.
+ *
+ * Input Parameters:
+ *   filep          - File path of the power domain
+ *   buffer         - Use to decide timer type
+ *   buflen         - Use of timer interrupt and its duration
+ *
+ * Returned Value:
+ *  0 (OK) means the state unlock was successful.
+ ****************************************************************************/
+static size_t power_timer_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+{
+	int timer_type = atoi(buffer);
+
 	if (buflen > 0) {
-		pm_set_timer(PM_WAKEUP_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = 0;
+		pm_set_timer(timer_type, buflen);
+		fvdbg("PM timer set successfully!\n");
+	}
+	else {
+		fvdbg("Failed to set PM timer!\n");
 	}
 	return OK;
 }
+#endif
 
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
