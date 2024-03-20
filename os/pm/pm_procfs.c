@@ -169,7 +169,7 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
 	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
 	{"pm_set_next_wakeup_interval", NULL, power_set_next_wakeup_interval, DTYPE_FILE},
-	{"pm_get_last_wifi_alive_send_time", power_get_last_wakeup_time, NULL, DTYPE_FILE},
+	{"pm_get_last_wifi_alive_send_time", power_get_last_wifi_alive_send_time, NULL, DTYPE_FILE},
 	{"pm_get_current_time", power_get_current_time, NULL, DTYPE_FILE},
 #ifdef CONFIG_PM_DVFS
 	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
