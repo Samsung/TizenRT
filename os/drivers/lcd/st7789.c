@@ -121,6 +121,14 @@
 #define CONFIG_LCD_ST7789_YRES 320
 #endif
 
+#if !defined(CONFIG_LCD_ST7789_YOFFSET)
+#define CONFIG_LCD_ST7789_YOFFSET 0
+#endif
+
+#if !defined(CONFIG_LCD_ST7789_XOFFSET)
+#define CONFIG_LCD_ST7789_XOFFSET 0
+#endif
+
 #define ST7789_LUT_SIZE    CONFIG_LCD_ST7789_YRES
 
 #if defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE)
@@ -128,11 +136,16 @@
 #define ST7789_YRES       CONFIG_LCD_ST7789_XRES
 #define ST7789_XOFFSET    CONFIG_LCD_ST7789_YOFFSET
 #define ST7789_YOFFSET    CONFIG_LCD_ST7789_XOFFSET
-#else
+#elif defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
 #define ST7789_XRES       CONFIG_LCD_ST7789_XRES
 #define ST7789_YRES       CONFIG_LCD_ST7789_YRES
 #define ST7789_XOFFSET    0
 #define ST7789_YOFFSET    0
+#else
+#define ST7789_XRES       CONFIG_LCD_ST7789_YRES
+#define ST7789_YRES       CONFIG_LCD_ST7789_XRES
+#define ST7789_XOFFSET    CONFIG_LCD_ST7789_YOFFSET
+#define ST7789_YOFFSET    CONFIG_LCD_ST7789_XOFFSET
 #endif
 
 /* Color depth and format */
@@ -782,11 +795,7 @@ static int st7789_init(FAR struct lcd_dev_s *dev)
 		st7789_setorientation(priv, LCD_LANDSCAPE);
 	#endif
 	lcd_lock(priv->spi);
-	#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
-		st7789_fill_frame(priv, 0xFFFF, 0, 0, ST7789_XRES, ST7789_YRES);
-	#else
-		st7789_fill_frame(priv, 0xFFFF, 0, 0, ST7789_YRES, ST7789_XRES);
-	#endif
+	st7789_fill_frame(priv, 0xFFFF, 0, 0, ST7789_XRES, ST7789_YRES);
 	lcd_unlock(priv->spi);
 	return OK;
 }
