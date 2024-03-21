@@ -1499,6 +1499,9 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 	}
 
 errout_with_semaphore:
+	if (entry.name != NULL) {
+		kmm_free(entry.name);
+	}
 	smartfs_semgive(fs);
 	return ret;
 }
