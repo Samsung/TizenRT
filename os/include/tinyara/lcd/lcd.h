@@ -99,8 +99,10 @@ struct lcd_planeinfo_s {
 	int (*putrun)(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col, FAR const uint8_t *buffer,
 				  size_t npixels);
 
+
 	/* This method can be used to read a partial raster line from the LCD:
 	 *
+	 *  dev     - LCD interface to write to
 	 *  row     - Starting row to read from (range: 0 <= row < yres)
 	 *  col     - Starting column to read read (range: 0 <= col <= xres-npixels)
 	 *  buffer  - The buffer in which to return the run read from the LCD
