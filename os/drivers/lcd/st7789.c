@@ -783,17 +783,17 @@ static int st7789_init(FAR struct lcd_dev_s *dev)
 	st7789_sendcmd(priv, ST7789_DISPON);
 	lcd_unlock(priv->spi);
 
-	#if defined(CONFIG_LCD_PORTRAIT)
-		st7789_setorientation(priv, LCD_PORTRAIT);
-	#elif defined(CONFIG_LCD_LANDSCAPE)
-		st7789_setorientation(priv, LCD_LANDSCAPE);
-	#elif defined(CONFIG_LCD_RLANDSCAPE)
-		st7789_setorientation(priv, LCD_RLANDSCAPE);
-	#elif defined(CONFIG_LCD_RPORTRAIT)
-		st7789_setorientation(priv, LCD_RPORTRAIT);
-	#else
-		st7789_setorientation(priv, LCD_LANDSCAPE);
-	#endif
+#if defined(CONFIG_LCD_PORTRAIT)
+	st7789_setorientation(priv, LCD_PORTRAIT);
+#elif defined(CONFIG_LCD_LANDSCAPE)
+	st7789_setorientation(priv, LCD_LANDSCAPE);
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+	st7789_setorientation(priv, LCD_RLANDSCAPE);
+#elif defined(CONFIG_LCD_RPORTRAIT)
+	st7789_setorientation(priv, LCD_RPORTRAIT);
+#else
+	st7789_setorientation(priv, LCD_LANDSCAPE);
+#endif
 	lcd_lock(priv->spi);
 	st7789_fill_frame(priv, 0xFFFF, 0, 0, ST7789_XRES, ST7789_YRES);
 	lcd_unlock(priv->spi);
@@ -910,6 +910,17 @@ FAR struct lcd_dev_s *st7789_lcdinitialize(FAR struct spi_dev_s *spi, struct st7
 	st7789_init_cmd(priv);
 	lcd_unlock(priv->spi);
 
+#if defined(CONFIG_LCD_PORTRAIT)
+	st7789_setorientation(priv, LCD_PORTRAIT);
+#elif defined(CONFIG_LCD_LANDSCAPE)
+	st7789_setorientation(priv, LCD_LANDSCAPE);
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+	st7789_setorientation(priv, LCD_RLANDSCAPE);
+#elif defined(CONFIG_LCD_RPORTRAIT)
+	st7789_setorientation(priv, LCD_RPORTRAIT);
+#else
+	st7789_setorientation(priv, LCD_LANDSCAPE);
+#endif
 	return &priv->dev;
 }
 
