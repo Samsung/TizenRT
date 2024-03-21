@@ -261,10 +261,6 @@ void pm_adjust_sleep_duration(void)
 	*  variable stores the last time tick when wifi keep alive signal was sent. Now before sleep, 
 	*  it will calculate how much time has passed after that signal sent and accordingly it will 
 	*  set duration of sleep. So that board can wake up when it is requried to send signal again.
-	* 
-	*  Also, somehow we are unable to send wifi alive signal in this iteration ( because of other priority task
-	*  or very less time for wifi send action). Then also we need to wakeup the board , so that
-	*  system will send wifi alive signal in next iteration. 
 	*/
 	   
 	if (g_pm_timer.timer_type == PM_WAKEUP_TIMER && g_pm_timer.last_wifi_alive_send_time > 0) {
@@ -272,9 +268,7 @@ void pm_adjust_sleep_duration(void)
 		if (elapsed_time_after_last_wakeup < g_pm_timer.timer_interval) {
 			g_pm_timer.timer_interval -= elapsed_time_after_last_wakeup;
 		}
-	} else if (g_pm_timer.timer_type == PM_NO_TIMER) {
-		pm_set_timer(PM_WAKEUP_TIMER, DEFAULT_PM_SLEEP_DURATION);
-	}
+	} 
 }
 
 /****************************************************************************
@@ -310,8 +304,9 @@ void pm_relax(int domain, enum pm_state_e state)
 
 	flags = enter_critical_section();
 	DEBUGASSERT(state < PM_COUNT);
-	DEBUGASSERT(pdom->stay[state] > 0);
-	pdom->stay[state]--;
+	if (pdom->stay[state] > 0) {
+		pdom->stay[state]--;
+	}
 	leave_critical_section(flags);
 }
 

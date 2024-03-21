@@ -124,6 +124,7 @@ void pg_timer_int_handler(void *Data)
 		case PM_WAKEUP_TIMER:
 			// Switch status back to normal mode after wake up from interrupt
 			pm_activity(PM_IDLE_DOMAIN, 9);
+			pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
 			break;
 		default:
 			pmdbg("Timer callback triggered without setting timer, Unexpected Error!!!\n");

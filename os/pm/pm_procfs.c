@@ -540,6 +540,11 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
  *  Also we dont want to do pm_set_timer to PM_WAKEUP_TIMER if the
  *  system is already in PM_LOCK_TIMER state. If system is in 
  *  PM_LOCK_TIMER state, then power_unlock_write can only change that state.
+ * 
+ *  We also need to do pm_relax() here becuase when board wakes up after
+ *  Wake up timer expires, it will lock the pm normal state and wait for
+ *  wifi keep alive signal to be sent. After sending wifi signal, we need
+ *  to relax it here.
  *
  * Input Parameters:
  *   filep          - File path of the power domain
@@ -555,8 +560,11 @@ static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const c
 	(void)buffer;
 
 	g_pm_timer.last_wifi_alive_send_time = clock_systimer();
-	if (g_pm_timer.timer_type == PM_NO_TIMER && buflen > 0) {
-		pm_set_timer(PM_WAKEUP_TIMER, buflen);
+	if (g_pm_timer.timer_type == PM_NO_TIMER) {
+		pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
+		if (buflen > 0) {
+			pm_set_timer(PM_WAKEUP_TIMER, buflen);
+		}
 	}	
 	return OK;
 }
