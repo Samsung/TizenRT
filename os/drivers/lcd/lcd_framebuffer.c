@@ -301,7 +301,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 		* memory.
 		*/
 
-		ret = pinfo->putrun(row, startx, run, width);
+		ret = pinfo->putrun(priv->lcd, row, startx, run, width);
 		if (ret < 0) {
 			return ret;
 		}
