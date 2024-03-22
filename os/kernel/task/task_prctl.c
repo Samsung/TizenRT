@@ -430,6 +430,7 @@ int prctl(int option, ...)
 		*ppid = getpid();
 #endif
 		svdbg("Task group id = %d\n", *ppid);
+		va_end(ap);
 		return OK;
 	}
 	default:
