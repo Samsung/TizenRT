@@ -202,7 +202,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 		 */
 
 		task_state = TSTATE_TASK_ASSIGNED;
-		cpu = btcb->cpu;
+		/* CPU already decided previously under same condition */
 	} else {
 		/* Otherwise, it will be ready-to-run, but not not yet running */
 		task_state = TSTATE_TASK_READYTORUN;

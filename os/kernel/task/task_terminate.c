@@ -281,7 +281,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	
 
 errout_with_lock:
-	leave_critical_section(flags);
 	return ret;
 	
 }

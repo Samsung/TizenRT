@@ -80,11 +80,6 @@ int sched_pause_cpu(FAR struct tcb_s *tcb)
 	/* Check the CPU that the task is running on */
 
 	DEBUGASSERT(cpu != this_cpu() && (unsigned int)cpu < CONFIG_SMP_NCPUS);
-	if (cpu == this_cpu()) {
-		/* We can't pause ourself */
-
-		return -EACCES;
-	}
 
 	/* Pause the CPU that the task is running on */
 
