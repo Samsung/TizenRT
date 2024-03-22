@@ -33,8 +33,16 @@ typedef struct {
 	void (*info_printf)(const char *);
 } nsfunc_ops_s;
 
-/* Flash Status Bit */
+/* Flash Status Bit Protect Lower 512KB */
+#ifdef CONFIG_AMEBAD_TRUSTZONE
 #define FLASH_STATUS_BITS 0x2c
+#endif
+#ifdef CONFIG_AMEBALITE_TRUSTZONE
+#define FLASH_STATUS_BITS 0x2c
+#endif
+#ifdef CONFIG_AMEBASMART_TRUSTZONE
+#define FLASH_STATUS_BITS 0x28
+#endif
 
 nsfunc_ops_s ns_func;
 
