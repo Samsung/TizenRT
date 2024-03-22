@@ -283,6 +283,7 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
 {
 	/* To avoid gcc warnings */
 	(void) obj;
+	/* REVISIT: Read should not need to do write lock/unlock theoretically */
 	FLASH_Write_Lock();
 	assert_param(data != NULL);
 

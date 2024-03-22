@@ -270,6 +270,7 @@ static ssize_t amebasmart_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, si
 static ssize_t amebasmart_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer)
 {
 	ssize_t result;
+	DEBUGASSERT(nbytes > 0);
 	result = amebasmart_flash_read(CONFIG_AMEBASMART_FLASH_BASE + offset, buffer, nbytes);
 	return result < 0 ? result : nbytes;
 }
@@ -284,6 +285,7 @@ static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t 
 {
 	size_t addr;
 	ssize_t result;
+	DEBUGASSERT(nbytes > 0);
 	addr = CONFIG_AMEBASMART_FLASH_BASE + offset;
 	result = amebasmart_flash_write(addr, buffer, nbytes);
 	return result < 0 ? result : nbytes;
