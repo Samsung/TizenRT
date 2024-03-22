@@ -78,22 +78,25 @@ static inline int mm_heapinfo_stop_watchdog(void)
 
 	if (ioctl(fd, WDIOC_GETSTATUS, (unsigned long)&wd_status) != OK) {
 		mfdbg("Fail to get watchdog state, errno %d\n", get_errno());
+		close(fd);
 		return ERROR;
 	}
 
 	if (!(wd_status.flags & WDFLAGS_ACTIVE)) {
 		/* watchdog is not running */
+		close(fd);
 		return OK;
 	}
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	/* watchdog can be stopped only when CONFIG_MM_ASSERT_ON_FAIL is enabled */
 	if (ioctl(fd, WDIOC_STOP, 0) == OK) {
+		close(fd);
 		return OK;
 	}
 	mfdbg("Fail to stop watchdog, errno %d\n", get_errno());
 #endif
-
+	close(fd);
 	return ERROR;
 }
 #else
