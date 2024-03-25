@@ -25,9 +25,10 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define SECLINK_PATH "/dev/seclink"
+
 #define ECP_KEY_INDEX (32)
 #define RSA_KEY_INDEX (32)
-#define KEY_INDEX_INVALID (0xff)
 
 #define MBEDTLS_MAX_ECP_KEY_SIZE_ALT       (68)
 #define MBEDTLS_MAX_BUF_SIZE_ALT           (4096)
@@ -74,6 +75,9 @@
 /* cert type */
 #define CERT_DER      0x01
 #define CERT_PEM      0x02
+
+#define MBEDTLS_ERR_ECP_HW_ACCEL_FAILED                   -0x4B80  /**< ECP hardware accelerator failed. */
+#define MBEDTLS_ERR_RSA_HW_ACCEL_FAILED                   -0x4580  /**< RSA hardware accelerator failed. */
 
 // ======================================
 // Structure

@@ -1,27 +1,10 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file version.h
  *
  * \brief Run-time version information
  */
 /*
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
+ *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -35,38 +18,16 @@
  *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
- *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 /*
- * This set of compile-time defines and run-time variables can be used to
- * determine the version number of the mbed TLS library used.
+ * This set of run-time variables can be used to determine the version number of
+ * the Mbed TLS library used. Compile-time version defines for the same can be
+ * found in build_info.h
  */
 #ifndef MBEDTLS_VERSION_H
 #define MBEDTLS_VERSION_H
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
-
-/**
- * The version number x.y.z is split into three parts.
- * Major, Minor, Patchlevel
- */
-#define MBEDTLS_VERSION_MAJOR  2
-#define MBEDTLS_VERSION_MINOR  7
-#define MBEDTLS_VERSION_PATCH  8
-
-/**
- * The single version number has the following structure:
- *    MMNNPP00
- *    Major version | Minor version | Patch version
- */
-#define MBEDTLS_VERSION_NUMBER         0x02070800
-#define MBEDTLS_VERSION_STRING         "2.7.8"
-#define MBEDTLS_VERSION_STRING_FULL    "mbed TLS 2.7.8"
+#include "mbedtls/build_info.h"
 
 #if defined(MBEDTLS_VERSION_C)
 
@@ -80,7 +41,7 @@ extern "C" {
  * \return          The constructed version number in the format
  *                  MMNNPP00 (Major, Minor, Patch).
  */
-unsigned int mbedtls_version_get_number( void );
+unsigned int mbedtls_version_get_number(void);
 
 /**
  * Get the version string ("x.y.z").
@@ -88,7 +49,7 @@ unsigned int mbedtls_version_get_number( void );
  * \param string    The string that will receive the value.
  *                  (Should be at least 9 bytes in size)
  */
-void mbedtls_version_get_string( char *string );
+void mbedtls_version_get_string(char *string);
 
 /**
  * Get the full version string ("mbed TLS x.y.z").
@@ -99,7 +60,7 @@ void mbedtls_version_get_string( char *string );
  *                  (So the buffer should be at least 18 bytes to receive this
  *                  version string).
  */
-void mbedtls_version_get_string_full( char *string );
+void mbedtls_version_get_string_full(char *string);
 
 /**
  * \brief           Check if support for a feature was compiled into this
@@ -109,7 +70,7 @@ void mbedtls_version_get_string_full( char *string );
  *
  * \note            only checks against defines in the sections "System
  *                  support", "mbed TLS modules" and "mbed TLS feature
- *                  support" in config.h
+ *                  support" in mbedtls_config.h
  *
  * \param feature   The string for the define to check (e.g. "MBEDTLS_AES_C")
  *
@@ -118,7 +79,7 @@ void mbedtls_version_get_string_full( char *string );
  *                  -2 if support for feature checking as a whole was not
  *                  compiled in.
  */
-int mbedtls_version_check_feature( const char *feature );
+int mbedtls_version_check_feature(const char *feature);
 
 #ifdef __cplusplus
 }
