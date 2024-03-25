@@ -84,7 +84,9 @@ void mm_add_app_heap_list(struct mm_heap_s *heap, char *app_name)
 
 	node->is_active = true;
 	node->heap = heap;
-	strncpy(node->app_name, app_name, BIN_NAME_MAX);
+
+	strncpy(node->app_name, app_name, BIN_NAME_MAX - 1);
+	node->app_name[BIN_NAME_MAX - 1] = '\0';
 
 	/* Add the new heap node to the head of the list*/
 	dq_addfirst((dq_entry_t *)node, &app_heap_q);
