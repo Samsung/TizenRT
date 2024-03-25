@@ -317,6 +317,15 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 		} else {
 			/* logs reached memory limit, reuse the head and free extra logs */
 			struct log_dump_chunk_s *node = (struct log_dump_chunk_s *)sq_remfirst(&log_dump_chunks);
+
+			if (node == NULL) {
+				/* this will not be reached as we set the minimum number nodes in
+				 * the worst case to be atleast one, added this to fix svace issue
+				 */
+				lldbg("no log dump nodes in the list\n");
+				return LOG_DUMP_MEM_FAIL;
+			}
+
 			compress_curbytes = 1;
 			compress_rdptr = 0;	/* reset the read pointer as head is modified */
 			node->arr[0] = ch;
