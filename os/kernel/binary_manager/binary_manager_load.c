@@ -712,7 +712,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	int ret;
 	uint8_t loader_priority;
 	main_t loader_func;
-	char data_str[1];
+	char data_str[2];
 	char *loading_data[LOADER_ARGC + 1];
 
 	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
