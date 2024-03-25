@@ -160,20 +160,18 @@ int task_terminate(pid_t pid, bool nonblocking)
 	FAR struct tcb_s *dtcb;
 	FAR dq_queue_t *tasklist;
 	irqstate_t flags;
-	trace_begin(TTRACE_TAG_TASK, "task_terminate");
 #ifdef CONFIG_SMP
 	int cpu;
 #endif
-	int ret = OK;
-
 	/* Find for the TCB associated with matching PID */
 
 	dtcb = sched_gettcb(pid);
 	if (!dtcb) {
 		/* This PID does not correspond to any known task */
-		ret = -ESRCH;
-		goto errout_with_lock;
+		return -ESRCH;
 	}
+
+	trace_begin(TTRACE_TAG_TASK, "task_terminate");
 
 	/* Make sure the task does not become ready-to-run while we are futzing with
 	 * its TCB by locking ourselves as the executing task.
@@ -278,12 +276,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	/* Deallocate its TCB */
 
 	return sched_releasetcb(dtcb, dtcb->flags & TCB_FLAG_TTYPE_MASK);
-	
-
-errout_with_lock:
-	leave_critical_section(flags);
-	return ret;
-	
 }
 
 /****************************************************************************
