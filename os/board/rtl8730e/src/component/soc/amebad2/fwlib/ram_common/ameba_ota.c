@@ -312,7 +312,7 @@ int OTA_UserImageSignatureCheck(uint32_t input_addr)
 
 }
 
-static int BOOT_OTA_AP (u32 addr, Certificate_TypeDef Cert)
+static int BOOT_OTA_AP (u32 addr, Certificate_TypeDef *Cert)
 {
 	u8 Cnt;
 	SubImgInfo_TypeDef SubImgInfo;
@@ -326,7 +326,7 @@ static int BOOT_OTA_AP (u32 addr, Certificate_TypeDef Cert)
 	
 	if (BOOT_LoadSubImage_OTA(&SubImgInfo, PhyAddr, Cnt, APLabel, TRUE) == TRUE) {
 				/* AP ECC verify if need */
-		if (Kernel_SignatureCheck_OTA(&Manifest, &SubImgInfo, Cnt, &Cert, KEYID_AP) == FALSE){
+		if (Kernel_SignatureCheck_OTA(&Manifest, &SubImgInfo, Cnt, Cert, KEYID_AP) == FALSE){
 			return FALSE;
 		}
 	} else {
@@ -424,7 +424,7 @@ int OTA_KernelImageSignatureCheck(uint32_t input_addr)
 	
 		return FALSE;
 	}
-	BOOT_OTA_AP(PhyAddr, Cert);
+	BOOT_OTA_AP(PhyAddr, &Cert);
 
 	return TRUE;
 }

@@ -1599,11 +1599,14 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 	rtk_bt_evt_indicate(p_evt, NULL);
 
 end:
-	req_type = p_req->req_type;
-	bt_stack_gattc_free_req(p_req);
-	if (req_type != BT_STACK_GATTC_WRITE_CMD) {
-		bt_stack_gattc_handle_pending_req(conn_id);
+	if (p_req != NULL) {
+		req_type = p_req->req_type;
+		bt_stack_gattc_free_req(p_req);
+		if (req_type != BT_STACK_GATTC_WRITE_CMD) {
+			bt_stack_gattc_handle_pending_req(conn_id);
+		}
 	}
+
 }
 
 static void bt_stack_gattc_disconnect_cb(uint8_t conn_id)
