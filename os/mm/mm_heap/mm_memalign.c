@@ -146,7 +146,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
-	DEBUGVERIFY(mm_takesemaphore(heap));
+	DEBUGASSERT(mm_takesemaphore(heap));
 
 	/* Get the location in the node list to start the search
 	 * by converting the request size into a nodelist index.

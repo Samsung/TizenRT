@@ -236,6 +236,6 @@ void mm_is_sem_available(void *address)
 		mdbg("Invalid Heap address given, Fail to check sem availability.\n");
 		return;
 	}
-	DEBUGVERIFY(mm_takesemaphore(heap));
+	DEBUGASSERT(mm_takesemaphore(heap));
 	mm_givesemaphore(heap);
 }

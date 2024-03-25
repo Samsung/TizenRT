@@ -156,7 +156,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 		if (!abort_mode && !up_interrupt_context()) 
 #endif
 		{
-			DEBUGVERIFY(mm_takesemaphore(heap));
+			DEBUGASSERT(mm_takesemaphore(heap));
 		}
 
 		mfdbg("Heap start = 0x%08x end = 0x%08x\n", heap->mm_heapstart[region], heap->mm_heapend[region]);

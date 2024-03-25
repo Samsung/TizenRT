@@ -110,7 +110,7 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 		 * Retake the semaphore for each region to reduce latencies
 		 */
 
-		DEBUGVERIFY(mm_takesemaphore(heap));
+		DEBUGASSERT(mm_takesemaphore(heap));
 
 		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			mvdbg("region=%d node=%p size=%u preceding=%u (%c)\n", region, node, node->size,

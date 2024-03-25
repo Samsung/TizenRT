@@ -148,7 +148,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
-	DEBUGVERIFY(mm_takesemaphore(heap));
+	DEBUGASSERT(mm_takesemaphore(heap));
 
 	/* Check if this is a request to reduce the size of the allocation. */
 
