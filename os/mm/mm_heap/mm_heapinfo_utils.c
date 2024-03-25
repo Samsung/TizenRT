@@ -144,7 +144,7 @@ void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr)
 	heap = mm_get_heap(address);
 	if (heap) {
 		node = (struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
-		DEBUGVERIFY(mm_takesemaphore(heap));
+		DEBUGASSERT(mm_takesemaphore(heap));
 		heapinfo_update_node(node, caller_retaddr);
 		mm_givesemaphore(heap);
 	} else {
@@ -260,7 +260,7 @@ void heapinfo_dump_heap(struct mm_heap_s *heap)
 		if (!abort_mode && !up_interrupt_context())
 #endif
 		{
-			DEBUGVERIFY(mm_takesemaphore(heap));
+			DEBUGASSERT(mm_takesemaphore(heap));
 		}
 
 		mm_dump_heap_region((uint32_t)(heap->mm_heapstart[region]), (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE);

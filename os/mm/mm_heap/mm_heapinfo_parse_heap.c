@@ -128,7 +128,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		/* Visit each node in the region
 		 * Retake the semaphore for each region to reduce latencies
 		 */
-		DEBUGVERIFY(mm_takesemaphore(heap));
+		DEBUGASSERT(mm_takesemaphore(heap));
 
 		if (mode != HEAPINFO_SIMPLE) {
 			heap_dbg("****************************************************************\n");
