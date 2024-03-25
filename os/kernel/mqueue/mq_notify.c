@@ -155,8 +155,8 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 	if (!mqdes) {
 		/* No.. return EBADF */
 
-		errval = EBADF;
-		goto errout;
+		set_errno(EBADF);
+		return ERROR;
 	}
 
 	/* Get a pointer to the message queue */
