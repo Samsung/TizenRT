@@ -27,6 +27,93 @@
   */
 
 #include "ameba_soc.h"
+#include "rtl8721d_vector.h"
+
+static u8 GDMA_IrqNum[3][6] = {
+    {    /* KM0 GDMA IRQ */
+        GDMA0_CHANNEL0_IRQ_LP,
+        GDMA0_CHANNEL1_IRQ_LP, 
+        GDMA0_CHANNEL2_IRQ_LP,
+        GDMA0_CHANNEL3_IRQ_LP, 
+    },
+    {    /* KM4 GDMA IRQ */
+        GDMA0_CHANNEL0_IRQ,
+        GDMA0_CHANNEL1_IRQ, 
+        GDMA0_CHANNEL2_IRQ,
+        GDMA0_CHANNEL3_IRQ, 
+        GDMA0_CHANNEL4_IRQ,
+        GDMA0_CHANNEL5_IRQ,
+    },
+    {    /* KM4 GDMA IRQS */
+        GDMA0_CHANNEL0_IRQ_S,
+        GDMA0_CHANNEL1_IRQ_S, 
+        GDMA0_CHANNEL2_IRQ_S,
+        GDMA0_CHANNEL3_IRQ_S, 
+        GDMA0_CHANNEL4_IRQ_S,
+        GDMA0_CHANNEL5_IRQ_S,
+    },
+};
+
+extern u8 GDMA_Reg[MAX_GDMA_INDX+1];
+
+/**
+  * @brief  Allocate a free GDMA channel and register its callback function  
+  * @param  GDMA_Index: GDMA index: 0.
+  * @param  IrqFun: GDMA IRQ callback function.
+  * @param  IrqData: GDMA IRQ callback data.
+  * @param  IrqPriority: GDMA priority.
+  * @retval GDMA channel number
+  */
+u8 GDMA_ChnlAlloc_patch(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
+
+{
+
+	u32 found = 0;
+
+	u32 GDMA_ChNum = 0;
+
+	u8 IrqNum = 0;
+
+	u8 CpuId = IPCM0_DEV->IPCx_CPUID;
+ 
+	if (TrustZone_IsSecure()) {
+
+		CpuId = 2;
+
+	}
+ 
+	assert_param(IS_GDMA_Index(GDMA_Index));
+
+	for (GDMA_ChNum = 0; GDMA_ChNum <= MAX_GDMA_CHNL; GDMA_ChNum++) {
+
+		if ((GDMA_Reg[GDMA_Index] & BIT(GDMA_ChNum)) == 0) {			
+
+			found = 1;
+
+			break;
+
+		}
+
+	}
+ 
+	if (found) {
+
+		GDMA_ChnlRegister(GDMA_Index, GDMA_ChNum);
+
+		IrqNum = GDMA_IrqNum[CpuId][GDMA_ChNum];
+ 
+		InterruptRegister(IrqFun, IrqNum, IrqData, IrqPriority);
+		InterruptEn(IrqNum, IrqPriority);
+
+		return GDMA_ChNum;
+
+	} else {
+
+		return 0xFF;
+
+	}		
+
+}
 
 /** @addtogroup SPI_Exported_Functions
 *@verbatim
@@ -481,7 +568,7 @@ BOOL SSI_TXGDMA_Init(
 
 	DCache_CleanInvalidate((u32) pTxData, Length);
 
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 12);//ACUT is 0x10, BCUT is 12
+	GdmaChnl = GDMA_ChnlAlloc_patch(0, CallbackFunc, (u32)CallbackData, 12);//ACUT is 0x10, BCUT is 12
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return _FALSE;
@@ -581,7 +668,7 @@ SSI_RXGDMA_Init(
 
 	DCache_CleanInvalidate((u32) pRxData, Length);
 
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, 12);//ACUT is 0x10, BCUT is 12
+	GdmaChnl = GDMA_ChnlAlloc_patch(0, CallbackFunc, (u32)CallbackData, 12);//ACUT is 0x10, BCUT is 12
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return _FALSE;

@@ -47,6 +47,7 @@
 #include "mbed/targets/hal/rtl8721d/PinNames.h"
 #include "mbed/hal/spi_api.h"
 #include "mbed/hal/gpio_api.h"
+#include "mbed/hal_ext/spi_ex_api.h"
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -54,13 +55,8 @@
 /* Configuration ********************************************************************/
 
 /* SPI interrupts */
-
 #ifdef CONFIG_AMEBAD_SPI_INTERRUPTS
 #error "Interrupt driven SPI not yet supported"
-#endif
-
-#if defined(CONFIG_AMEBAD_SPI_DMA)
-#error "DMA mode is not yet supported"
 #endif
 
 /* Can't have both interrupt driven SPI and SPI DMA */
@@ -97,6 +93,10 @@ struct amebad_spidev_s {
 	uint32_t actual;            /* Actual clock frequency */
 
 	spi_t spi_object;
+#ifdef CONFIG_AMEBAD_SPI_DMA
+	sem_t rxsem;				/* Wait for RX DMA to complete */
+	sem_t txsem;				/* Wait for TX DMA to complete */
+#endif
 #ifdef CONFIG_SPI_CS
 	gpio_t gpio_cs0;
 	gpio_t gpio_cs1;
@@ -623,6 +623,74 @@ void amebad_spi0select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool sel
 }
 
 /************************************************************************************
+ * Name: spi_dmatrxcallback
+ *
+ * Description:
+ *   Callback function for SPI DMA TxRx which enters when SPI DMA complete
+ *
+ * Returned Value: None
+ *
+ *
+ ************************************************************************************/
+#ifdef CONFIG_AMEBAD_SPI_DMA
+static void spi_dmatrxcallback(void *pdata, SpiIrq event)
+{
+	FAR struct amebad_spidev_s *priv = (FAR struct amebad_spidev_s *)pdata;
+	switch(event){
+		case SpiRxIrq:
+			(void)sem_post(&priv->rxsem);
+			break;
+		case SpiTxIrq:
+			(void)sem_post(&priv->txsem);
+			break;
+		default:
+			spierr("ERROR: unknown interrput evnent!\n");
+	}
+}
+#endif
+
+#ifdef CONFIG_AMEBAD_SPI_DMA
+static void spi_dmarxwait(FAR struct amebad_spidev_s *priv)
+{
+	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
+	 * must not really have completed???
+	 */
+
+	while (sem_wait(&priv->rxsem) != 0) {
+		/* The only case that an error should occur here is if the wait was awakened
+		 * by a signal.
+		 */
+
+		ASSERT(errno == EINTR);
+	}
+}
+#endif
+
+/************************************************************************************
+ * Name: spi_dmatxwait
+ *
+ * Description:
+ *   Wait for DMA to complete.
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBAD_SPI_DMA
+static void spi_dmatxwait(FAR struct amebad_spidev_s *priv)
+{
+	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
+	 * must not really have completed???
+	 */
+
+	while (sem_wait(&priv->txsem) != 0) {
+		/* The only case that an error should occur here is if the wait was awakened
+		 * by a signal.
+		 */
+
+		ASSERT(errno == EINTR);
+	}
+}
+#endif
+/************************************************************************************
  * Name: amebad_spi0status
  *
  * Description:
@@ -909,7 +977,7 @@ static uint16_t amebad_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
 {
 	FAR struct amebad_spidev_s *priv = (FAR struct amebad_spidev_s *)dev;
 
-	uint16_t ret;
+	uint16_t ret = 0;
 	DEBUGASSERT(priv);
 
 	if (priv->role == AMEBAD_SPI_MASTER) {
@@ -950,24 +1018,41 @@ static uint16_t amebad_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
  *
  ************************************************************************************/
 
-#if !defined(CONFIG_AMEBAD_SPI_DMA) || defined(CONFIG_AMEBAD_DMACAPABLE)
-#if !defined(CONFIG_AMEBAD_SPI_DMA)
 static void amebad_spi_exchange(FAR struct spi_dev_s *dev,
 				FAR const void *txbuffer, FAR void *rxbuffer,
 				size_t nwords)
-#else
-static void amebad_spi_exchange_nodma(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer,
-				FAR void *rxbuffer, size_t nwords)
-#endif
 {
 	FAR struct amebad_spidev_s *priv = (FAR struct amebad_spidev_s *)dev;
 	DEBUGASSERT(priv);
 
 	spiinfo("txbuffer=%p rxbuffer=%p nwords=%d\n", txbuffer, rxbuffer, nwords);
+#ifdef CONFIG_AMEBAD_SPI_DMA
+	int mode_16bit = 1;
 
+	spi_irq_hook(&priv->spi_object, (spi_irq_handler)spi_dmatrxcallback, (uint32_t)priv);
+
+	/* Checks for 16 bit mode */
+	if (amebad_spi_9to16bitmode(priv)) {
+		mode_16bit++;
+	}
+
+	if (txbuffer && rxbuffer) {
+		spi_master_write_read_stream_dma(&priv->spi_object,(char*) txbuffer, (char*)rxbuffer, (uint32_t)nwords * mode_16bit);
+		spi_dmarxwait(priv);
+		spi_dmatxwait(priv);
+	} else if (txbuffer) {
+		spi_master_write_stream_dma(&priv->spi_object, (char*)txbuffer, (uint32_t)nwords * mode_16bit);
+		spi_dmatxwait(priv);
+	} else if (rxbuffer) {
+		spi_master_read_stream_dma(&priv->spi_object, (char*)rxbuffer, (uint32_t)nwords * mode_16bit);
+		spi_dmarxwait(priv);
+	} else {
+		spierr("ERROR: SPI DMA buffer error!\n");
+	}
+
+	return;
+#else
 	/* 8- or 16-bit mode? */
-
 	if (amebad_spi_9to16bitmode(priv)) {
 		/* 16-bit mode */
 
@@ -1021,8 +1106,8 @@ static void amebad_spi_exchange_nodma(FAR struct spi_dev_s *dev,
 			}
 		}
 	}
+#endif
 }
-#endif /* !CONFIG_AMEBAD_SPI_DMA || CONFIG_AMEBAD_DMACAPABLE */
 
 /****************************************************************************
  * Name: amebad_spi_sndblock
@@ -1154,6 +1239,11 @@ static void amebad_spi_bus_initialize(struct amebad_spidev_s *priv)
 	gpio_write(&priv->gpio_cs0, 1);
 	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
 	gpio_mode(&priv->gpio_cs0, PullNone);
+#endif
+
+#ifdef CONFIG_AMEBAD_SPI_DMA
+	sem_init(&priv->rxsem, 0, 0);
+	sem_init(&priv->txsem, 0, 0);
 #endif
 }
 

@@ -117,6 +117,10 @@ config AMEBAD_SPI_EXCHANGE
 	bool "Enable AMEBAD SPI EXCHANGE"
 	default y
 
+config AMEBAD_SPI_DMA
+	bool "Enable AMEBAD SPI DMA"
+	default n
+	
 config AMEBAD_SPI_CMDDATA
 	bool "Enable AMEBAD SPI CMDDATA"
 	default y
