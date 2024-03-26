@@ -65,6 +65,12 @@
 #ifdef CONFIG_PM
 
 /****************************************************************************
+ * External Definitons
+ ****************************************************************************/
+
+extern struct pm_timer_s g_pm_timer;
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -154,6 +160,13 @@ enum pm_state_e pm_checkstate(int domain)
 			pdom->recommended = index;
 			break;
 		}
+	}
+
+	/* Consider if Wifi keep alive sending is required or not */
+
+	if (g_pm_timer.is_wifi_send_required) {
+		pdom->recommended = PM_NORMAL;
+		pmdbg("Board will stay at NORMAL until WIFI keep alive signal is sent\n");
 	}
 
 	leave_critical_section(flags);

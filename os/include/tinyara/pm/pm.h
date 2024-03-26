@@ -316,6 +316,7 @@ enum pm_timer_type_e {
 struct pm_timer_s {
 	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
 	uint32_t timer_interval;	/* The interval for whichever timer is to be used */
+	bool is_wifi_send_required;              /* boolean to check if wifi keep alive send is required */
 	clock_t last_wifi_alive_send_time;       /* Time tick of the last wifi keep alive signal sent time */
 };
 

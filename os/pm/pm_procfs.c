@@ -118,7 +118,7 @@ struct power_procfs_entry_s {
 };
 
 /* Added to record timer countdown interrupt */
-struct pm_timer_s g_pm_timer = { 0, 0, 0};
+struct pm_timer_s g_pm_timer = { 0, 0, false, 0};
 
 /****************************************************************************
  * Private Function Prototypes
@@ -540,6 +540,8 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
  *  Also we dont want to do pm_set_timer to PM_WAKEUP_TIMER if the
  *  system is already in PM_LOCK_TIMER state. If system is in 
  *  PM_LOCK_TIMER state, then power_unlock_write can only change that state.
+ * 
+ *  It sets is_wifi_send_required to false, so that board can now go to sleep.
  *
  * Input Parameters:
  *   filep          - File path of the power domain
@@ -555,6 +557,7 @@ static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const c
 	(void)buffer;
 
 	g_pm_timer.last_wifi_alive_send_time = clock_systimer();
+	g_pm_timer.is_wifi_send_required = false;
 	if (g_pm_timer.timer_type == PM_NO_TIMER && buflen > 0) {
 		pm_set_timer(PM_WAKEUP_TIMER, buflen);
 	}	
