@@ -81,7 +81,13 @@ config AMEBASMART_SPI1
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
 	default y
+config AMEBASMART_SPI_DMA
+	bool "SPI DMA"
+	default n
+	---help---
+		Use DMA to improve SPI transfer performance.  Cannot be used with CONFIG_AMEBASMART_SPI_INTERRUPT.
 endif
+
 
 config AMEBASMART_MIPI
 	bool "AMEBASMART_MIPI"
