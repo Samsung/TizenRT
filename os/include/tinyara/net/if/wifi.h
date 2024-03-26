@@ -216,6 +216,13 @@ typedef struct {
 	unsigned int ssid_length;                         /**<  Service Set Identification Length     */
 } trwifi_scan_config_s;
 
+#define SCAN_SSID_CNT (6)
+
+typedef struct {
+	trwifi_scan_config_s scan_ap_config[SCAN_SSID_CNT];
+	unsigned int scan_ap_config_count;                         /**<  the count of SSID to scan  */
+} trwifi_scan_multi_configs_s;
+
 typedef struct {
 	unsigned int channel;								   /**<	 soft ap wifi channel				*/
 	char ssid[TRWIFI_SSID_LEN + 1];						/**<  Service Set Identification		 */
@@ -337,6 +344,32 @@ typedef trwifi_result_e (*trwifi_deinit)(struct netdev *dev);
  *
  */
 typedef trwifi_result_e (*trwifi_scan_ap)(struct netdev *dev, trwifi_scan_config_s *config);
+
+/**
+ * @brief   Scan access points with multiple access point information
+ *
+ * @param[in]   dev     : struct netdev registered by netdev_register()
+ * @param[in]   configs : multiple access point information to scan.
+ *
+ * @function_type  asynchronous call : Send event by trwifi_post_event()
+ * @event  LWNL_EVT_SCAN_DONE    : scan success
+ * @event  LWNL_EVT_SCAN_FAILED  : scan fail
+ *
+ * @description If the call is successful, then it must generate
+ *              events(LWNL_EVT_SCAN_DONE or LWNL_EVT_SCAN_FAILED).
+ *              If the call fails then it shouldn't generate events.
+ *
+ * @return TRWIFI_SUCCESS      : success (should generate an event.)
+ * @return TRWIFI_FAIL         : fail (shouldn't generate an event.)
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ *
+ * @note   A driver must generate event if it return success.
+ *         A driver can check whether access point information is set by config count in configs.
+ *         If scan_ap_config_count is 0 then access point information isn't set.
+ *         For other detailed settings including SCAN type, refer to the contents of trwifi_scan_ap().
+ *
+ */
+typedef trwifi_result_e (*trwifi_scan_multi_aps)(struct netdev *dev, trwifi_scan_multi_configs_s *configs);
 
 /**
  * @brief   Connect to an access point
@@ -519,6 +552,7 @@ struct trwifi_ops {
 	trwifi_stop_softap stop_softap;
 	trwifi_set_autoconnect set_autoconnect;
 	trwifi_drv_ioctl drv_ioctl;
+	trwifi_scan_multi_aps scan_multi_aps;
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
