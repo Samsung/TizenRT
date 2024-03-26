@@ -275,6 +275,7 @@ void pm_adjust_sleep_duration(void)
 	} else if (g_pm_timer.timer_type == PM_NO_TIMER) {
 		pm_set_timer(PM_WAKEUP_TIMER, DEFAULT_PM_SLEEP_DURATION);
 	}
+	g_pm_timer.is_wifi_send_required = true;
 }
 
 /****************************************************************************
