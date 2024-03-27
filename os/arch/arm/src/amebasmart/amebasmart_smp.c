@@ -179,6 +179,7 @@ void smp_init(void)
 	rtk_core1_power_off();
 #endif
 
+#if ( CONFIG_SMP_NCPUS > 1 )
 	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
 		if (xCoreID == up_cpu_index()) {
 			// pmu_set_secondary_cpu_state(xCoreID, CPU1_RUNNING);
@@ -190,5 +191,6 @@ void smp_init(void)
 			printf("CPU%d: failed to boot: %d\n", (int)xCoreID, (int)err);
 		}
 	}
+#endif
 
 }
