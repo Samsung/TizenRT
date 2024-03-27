@@ -489,8 +489,6 @@ static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, s
 	fvdbg("State locked!\n");
 	if (buflen > 0) {
 		pm_set_timer(PM_LOCK_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = PM_NO_TIMER;
 	}
 	return OK;
 }
@@ -521,8 +519,6 @@ static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer,
 	fvdbg("State unlocked!\n");
 	if (buflen > 0) {
 		pm_set_timer(PM_WAKEUP_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = PM_NO_TIMER;
 	}
 	return OK;
 }
