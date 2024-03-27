@@ -103,6 +103,7 @@
 #define _CPULOADBASE    (0x2800)	/* cpuload ioctl commands */
 #define _THERMALBASE	(0x2900)	/* thermal camera control ioctl commands */
 #define _COMPBASE       (0x2a00)	/* compress ioctl commands */
+#define _PMBASE         (0x2b00)    	/* pm ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
@@ -450,6 +451,17 @@
 #define COMPIOC_GET_COMP_TYPE      _COMPIOC(0x0002)
 #define COMPIOC_GET_COMP_NAME      _COMPIOC(0x0003)
 #define COMPIOC_DECOMPRESS	   _COMPIOC(0x0004)
+
+/* Pm driver ioctl definitions *****************************/
+#define _PMIOCVALID(c)      (_IOC_TYPE(c) == _PMBASE)
+#define _PMIOC(nr)          _IOC(_PMBASE, nr)
+
+#define PMIOC_LOCK               _PMIOC(0x0001)
+#define PMIOC_UNLOCK             _PMIOC(0x0002)
+#define PMIOC_WAKEUP_TIMER       _PMIOC(0x0003)
+#define PMIOC_SET_WIFI_WAKEUP    _PMIOC(0x0004)
+#define PMIOC_TIMETICK           _PMIOC(0x0005)
+#define PMIOC_TUNEFREQ           _PMIOC(0x0006)
 
 /* Cpuload driver ioctl definitions ************************/
 

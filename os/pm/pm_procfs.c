@@ -117,9 +117,6 @@ struct power_procfs_entry_s {
 	uint8_t type;
 };
 
-/* Added to record timer countdown interrupt */
-struct pm_timer_s g_pm_timer = { 0, 0, 0};
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -145,14 +142,7 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 #endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-static size_t power_get_last_wifi_alive_send_time(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_get_current_time(FAR struct file *filep, FAR char *buffer, size_t buflen);
-#ifdef CONFIG_PM_DVFS
-static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl);
-#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -166,14 +156,6 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"metrics", power_metrics_read, NULL, DTYPE_FILE},
 #endif
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
-	{"pm_lock", NULL, power_lock_write, DTYPE_FILE},
-	{"pm_unlock", NULL, power_unlock_write, DTYPE_FILE},
-	{"pm_set_next_wakeup_interval", NULL, power_set_next_wakeup_interval, DTYPE_FILE},
-	{"pm_get_last_wifi_alive_send_time", power_get_last_wifi_alive_send_time, NULL, DTYPE_FILE},
-	{"pm_get_current_time", power_get_current_time, NULL, DTYPE_FILE},
-#ifdef CONFIG_PM_DVFS
-	{"pm_tunefreq", NULL, power_tunefreq_write, DTYPE_FILE},
-#endif
 };
 
 static const uint8_t g_power_direntrycount = sizeof(g_power_direntry) / sizeof(struct power_procfs_entry_s);
@@ -459,191 +441,6 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 
 	return totalsize;
 }
-
-/****************************************************************************
- * Name: power_lock_write
- *
- * Description: Lock PM in PM_NORMAL state by invoking pm_stay().
- *
- * Input Parameters:
- *   filep             - File path of the power domain
- *   buffer            - Not used
- *   buflen            - Use of timer interrupt and its duration
- *
- * Returned Value:
- *  (OK) means the state lock was successful.
- ****************************************************************************/
-
-static size_t power_lock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
-{
-	(void)buffer;
-
-	/* Always lock PM_NORMAL state, check again whether this implementation
-	is enough to handle, if not, consider below methods...
-	1a. PM_ACTIVITY is invoked in some of the driver, if application utlized it, it should draw state back to PM_NORMAL
-	1b. If 1a cannot cover all condition, add one more syscall api, as a bridge for application to call pm_activity
-	2a. Else, we can consider to lock/unlock for all state other than PM_SLEEP, ie. fetch state: pm_querystate(PM_IDLE_DOMAIN)
-	2b. Need to verify if the transition is going to happen, but lock state appears suddenly, what will happen?
-	*/
-	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
-	fvdbg("State locked!\n");
-	if (buflen > 0) {
-		pm_set_timer(PM_LOCK_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = PM_NO_TIMER;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: power_unlock_write
- *
- * Description:
- *  Unlock PM from PM_NORMAL state by invoking pm_relax(). A timer
- *  interval can be provided to setup the timer interrupt. If another
- *  interrupt occurs during this interval, the system will still
- *  wake up.
- *
- * Input Parameters:
- *   filep          - File path of the power domain
- *   buffer         - Not used
- *   buflen         - Use of timer interrupt and its duration
- *
- * Returned Value:
- *  0 (OK) means the state unlock was successful.
- ****************************************************************************/
-
-static size_t power_unlock_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
-{
-	(void)buffer;
-
-	pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
-	fvdbg("State unlocked!\n");
-	if (buflen > 0) {
-		pm_set_timer(PM_WAKEUP_TIMER, buflen);
-	} else {
-		g_pm_timer.timer_type = PM_NO_TIMER;
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: power_set_next_wakeup_interval
- *
- * Description:
- *  Sets timer interval for next sleep cycle after sending of wifi keep 
- *  alive signal from UART. It also stores the current time tick 
- *  in g_pm_timer.last_wifi_alive_send_time that will be used to calculate the 
- *  duration of required sleep later just before sleep. If another
- *  interrupt occurs during this interval, the system will still
- *  wake up.
- *  Also we dont want to do pm_set_timer to PM_WAKEUP_TIMER if the
- *  system is already in PM_LOCK_TIMER state. If system is in 
- *  PM_LOCK_TIMER state, then power_unlock_write can only change that state.
- *
- * Input Parameters:
- *   filep          - File path of the power domain
- *   buffer         - Not used
- *   buflen         - Use of timer interrupt and its duration
- *
- * Returned Value:
- *  0 (OK) means the state unlock was successful.
- ****************************************************************************/
- 
-static size_t power_set_next_wakeup_interval(FAR struct file *filep, FAR const char *buffer, size_t buflen)
-{
-	(void)buffer;
-
-	g_pm_timer.last_wifi_alive_send_time = clock_systimer();
-	if (g_pm_timer.timer_type == PM_NO_TIMER && buflen > 0) {
-		pm_set_timer(PM_WAKEUP_TIMER, buflen);
-	}	
-	return OK;
-}
-
-/****************************************************************************
- * Name: power_get_last_wifi_alive_send_time
- *
- * Description:
- *   apps can use this method to get the last wifi alive sent time tick. This
- *   can be used to find difference between current and last wifi alive
- *   send time and then do necessary functionalities.
- *
- * Input Parameters:
- *   filep          - File path of the power domain
- *   buffer         - Not used
- *   buflen         - Not used
- *
- * Returned Value:
- *  Time tick value of the last wakeup time.
- ****************************************************************************/
-
-static size_t power_get_last_wifi_alive_send_time(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	(void)buffer;
-	(void)buflen;
-
-	size_t ret = 0;
-	ret = g_pm_timer.last_wifi_alive_send_time;
-	return ret;
-}
-
-/****************************************************************************
- * Name: power_get_current_time
- *
- * Description:
- *   apps can use this method to get the current time tick.
- *
- * Input Parameters:
- *   filep          - File path of the power domain
- *   buffer         - Not used
- *   buflen         - Not used
- *
- * Returned Value:
- *  Time tick value of current time
- ****************************************************************************/
-
-static size_t power_get_current_time(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	(void)buffer;
-	(void)buflen;
-
-	size_t ret = 0;
-	ret = clock_systimer();
-	return ret;
-}
-
-#ifdef CONFIG_PM_DVFS
-/****************************************************************************
- * Name: power_tunefreq_write
- *
- * Description:
- *  Change the operating frequency of the core to save power
- *  consumption during active mode.
- *
- * Input Parameters:
- *   filep            - File path of the power domain
- *   buffer           - Not used
- *   div_lvl          - Level selection for operating frequency
- *
- * Returned Value:
- *   0 (OK) means the change of operating frequency was successful
- ****************************************************************************/
-
-static size_t power_tunefreq_write(FAR struct file *filep, FAR const char *buffer, size_t div_lvl)
-{
-	/* Buffer string need not to be considered, just div level is enough */
-	/* Available frequencies for changing mode of power consumption
-	   0 -> 1.2GHz
-	   1 -> 600MHz
-	   2 -> 400Mhz
-	   3 -> 300Mhz
-	 */
-	(void)buffer;
-	pm_dvfs(div_lvl);
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Name: power_open

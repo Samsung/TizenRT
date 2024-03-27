@@ -247,12 +247,6 @@
 /* Defines default sleep duration */
 #define DEFAULT_PM_SLEEP_DURATION    10000000 /* 10 sec in microsecond*/
 
-#define PM_LOCK_PATH					"/proc/power/domains/0/pm_lock"
-#define PM_UNLOCK_PATH					"/proc/power/domains/0/pm_unlock"
-#ifdef CONFIG_PM_DVFS
-#define PM_TUNEFREQ_PATH				"/proc/power/domains/0/pm_tunefreq"
-#endif
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -715,6 +709,8 @@ void pm_dvfs(int div_lvl);
  ****************************************************************************/
 void up_set_dvfs(int div_lvl);
 #endif
+
+void pm_driver_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus
