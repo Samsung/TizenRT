@@ -17,7 +17,7 @@
 
 #include "ameba_soc.h"
 
-uint32_t PrevIrqStatus;
+static uint32_t PrevIrqStatus;
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
