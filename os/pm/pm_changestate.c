@@ -110,6 +110,10 @@ static void pm_timer(int domain)
 
 	if (!pdom->wdog) {
 		pdom->wdog = wd_create();
+		if (!pdom->wdog) {
+			pmdbg("Fail to create wdog\n");
+			return;
+		}
 	}
 
 	if (pdom->state < PM_SLEEP && !pdom->stay[pdom->state] && pmtick[pdom->state]) {
