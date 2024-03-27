@@ -146,7 +146,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
             {
             	trble_server_cb_t p_func = p_cha_info->cb;
                 p_func(TRBLE_ATTR_CB_READING, p_read_ind->conn_handle,
-                                                        p_cha_info->abs_handle, p_cha_info->arg);
+                                                        p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
             } else {
                 debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle);
             }
@@ -182,7 +182,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
                     {
                         trble_server_cb_t p_func = p_cha_info->cb;
                         p_func(TRBLE_ATTR_CB_WRITING, p_write_ind->conn_handle,
-                                                                p_cha_info->abs_handle, p_cha_info->arg);
+                                                                p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                     } else {
                         debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                     }
@@ -195,7 +195,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
                     {
                         trble_server_cb_t p_func = p_cha_info->cb;
                         p_func(TRBLE_ATTR_CB_WRITING_NO_RSP, p_write_ind->conn_handle,
-                                                                p_cha_info->abs_handle, p_cha_info->arg);
+                                                                p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                     } else {
                         debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                     }

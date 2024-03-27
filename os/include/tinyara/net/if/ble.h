@@ -248,10 +248,11 @@ typedef enum {
 	TRBLE_ATTR_CB_WRITING,
 	TRBLE_ATTR_CB_READING,
 	TRBLE_ATTR_CB_WRITING_NO_RSP,
-	TRBLE_ATTR_CB_CCCD
+	TRBLE_ATTR_CB_CCCD,
+	TRBLE_ATTR_CB_INDICATE
 } trble_attr_cb_type_e;
 
-typedef void (*trble_server_cb_t)(trble_attr_cb_type_e type, trble_conn_handle con_handle, trble_attr_handle handle, void *arg);
+typedef void (*trble_server_cb_t)(trble_attr_cb_type_e type, trble_conn_handle con_handle, trble_attr_handle handle, void *arg, uint16_t result, uint16_t pending);
 
 typedef enum {
 	TRBLE_ATTR_PROP_NONE = 0x00,

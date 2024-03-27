@@ -26,7 +26,7 @@
 #include <profile_server.h>
 #endif
 
-static rtk_bt_gatts_app_priv_t *g_rtk_bt_gatts_priv = NULL;
+rtk_bt_gatts_app_priv_t *g_rtk_bt_gatts_priv = NULL;
 
 static struct rtk_bt_gatt_service *bt_stack_gatts_find_service_node_by_server_id(T_SERVER_ID server_id);
 static T_APP_RESULT bt_stack_gatts_attr_read_cb(

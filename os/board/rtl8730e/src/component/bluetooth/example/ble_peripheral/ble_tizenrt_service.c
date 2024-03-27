@@ -8,6 +8,7 @@
 #include <ble_tizenrt_service.h>
 #include <rtk_bt_def.h>
 #include <rtk_bt_att_defs.h>
+#include <rtk_stack_gatt.h> 
 
 #define BLE_TIZENRT_READ_MAX_LEN     20
 
@@ -20,6 +21,7 @@ TIZENERT_SRV_CNT tizenrt_ble_srv_count = 0;
 TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7] = {0};
 
 extern trble_server_init_config server_init_parm;
+extern rtk_bt_gatts_app_priv_t *g_rtk_bt_gatts_priv;
 
 bool ble_tizenrt_set_server_reject(trble_attr_handle abs_handle, uint8_t app_errorcode)
 {
@@ -93,14 +95,42 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 	    }
 
     case RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND:
-	    {
-	        rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t*)p_data;
-	        if (RTK_BT_OK == p_ind_ind->err_code)
-	            dbg("[APP] BLE tizenrt indication succeed!\r\n");
-	        else
-	            dbg("[APP] BLE tizenrt indication failed, local error: %d\r\n", p_ind_ind->err_code);
-	        break;
-	    }
+		{ 
+			rtk_bt_gatts_ntf_and_ind_ind_t *p_ind_ind = (rtk_bt_gatts_ntf_and_ind_ind_t*)p_data; 
+			uint16_t srv_index = p_ind_ind->app_id - TIZENRT_SRV_ID; 
+			TIZENERT_CHA_INFO *p_cha_info = NULL; 
+ 
+			for(i = 0; i < TIZENRT_MAX_ATTR_NUM; i++){ 
+				if(p_ind_ind->index == tizenrt_ble_srv_database[srv_index].chrc_info[i].index){ 
+					p_cha_info = &tizenrt_ble_srv_database[srv_index].chrc_info[i]; 
+				} 
+			} 
+ 
+			if (p_cha_info == NULL){ 
+				dbg("[APP] p_cha_info is null\r\n"); 
+				break; 
+			} 
+			 
+			rtk_bt_gatt_queue_t *queue;
+			uint8_t conn_id; 
+			rtk_bt_le_gap_get_conn_id(p_ind_ind->conn_handle, &conn_id); 
+			queue = &g_rtk_bt_gatts_priv->indicate_queue[conn_id];
+ 
+			if (p_cha_info->cb) 
+			{
+				p_cha_info->cb(TRBLE_ATTR_CB_INDICATE, p_ind_ind->conn_handle, 
+														p_cha_info->abs_handle, p_cha_info->arg, p_ind_ind->err_code, queue->pending_ele_num); 
+ 
+			} else { 
+				debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle); 
+			} 
+ 
+			if (RTK_BT_OK == p_ind_ind->err_code) 
+				dbg("[APP] BLE tizenrt indication succeed!\r\n"); 
+			else 
+				dbg("[APP] BLE tizenrt indication failed, local error: %d\r\n", p_ind_ind->err_code); 
+			break; 
+		} 
 
 	case RTK_BT_GATTS_EVT_READ_IND:
 		{
@@ -153,7 +183,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
             {
             	trble_server_cb_t p_func = p_cha_info->cb;
                 p_func(TRBLE_ATTR_CB_READING, p_read_ind->conn_handle,
-                                                        p_cha_info->abs_handle, p_cha_info->arg);
+                                                        p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
             } else {
                 debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle);
             }
@@ -198,7 +228,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
                     {
                         trble_server_cb_t p_func = p_cha_info->cb;
                         p_func(TRBLE_ATTR_CB_WRITING, p_write_ind->conn_handle,
-                                                                p_cha_info->abs_handle, p_cha_info->arg);
+                                                                p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                     } else {
                         debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                     }
@@ -211,7 +241,7 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
                     {
                         trble_server_cb_t p_func = p_cha_info->cb;
                         p_func(TRBLE_ATTR_CB_WRITING_NO_RSP, p_write_ind->conn_handle,
-                                                                p_cha_info->abs_handle, p_cha_info->arg);
+                                                                p_cha_info->abs_handle, p_cha_info->arg, 0, 0);
                     } else {
                         debug_print("NULL write callback abs_handle 0x%x \n", p_cha_info->abs_handle);
                     }

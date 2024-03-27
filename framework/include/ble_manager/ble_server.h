@@ -45,6 +45,7 @@ typedef enum {
 	BLE_SERVER_ATTR_CB_READING,
 	BLE_SERVER_ATTR_CB_WRITING_NO_RSP,
 	BLE_SERVER_ATTR_CB_CCCD,
+	BLE_SERVER_ATTR_CB_INDICATE,
 } ble_server_attr_cb_type_e;
 
 typedef enum {

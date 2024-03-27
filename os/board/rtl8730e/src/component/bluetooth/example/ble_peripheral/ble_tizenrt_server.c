@@ -580,9 +580,6 @@ trble_result_e rtw_ble_server_start_adv(void)
 				debug_print("get conn info fail \n");
 				return TRBLE_FAIL;
 			}
-
-            if(conn_info.role == RTK_BT_LE_ROLE_SLAVE)
-                return TRBLE_FAIL;
         }
     }
 
