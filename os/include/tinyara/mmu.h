@@ -51,7 +51,7 @@
  * Public Function Prototypes
  ********************************************************************************/
 #ifdef CONFIG_APP_BINARY_SEPARATION
-uint32_t *mmu_get_os_l1_pgtbl();
+uint32_t *mmu_get_os_l1_pgtbl(void);
 uint32_t *mmu_allocate_app_l1_pgtbl(int app_id);
 uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2_idx);
 void mmu_update_app_l1_pgtbl_ospgtbl(uint32_t *app_l1_pgtbl);
