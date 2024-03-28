@@ -540,7 +540,10 @@ bool rtw_ble_server_conn_is_active(trble_conn_handle con_handle)
     T_GAP_CONN_INFO conn_info;
     if (le_get_conn_info(con_handle, &conn_info))
     {
-        return true;
+        if (conn_info.conn_state == GAP_CONN_STATE_CONNECTED && conn_info.role == GAP_LINK_ROLE_SLAVE)
+        {
+            return true;
+        }
     }
     return false;
 }
