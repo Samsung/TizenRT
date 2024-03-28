@@ -110,17 +110,15 @@ void dma_memcpy(gdma_t *dma_obj, void *dst, void *src, uint32_t len)
 
 	DBG_PRINTF(MODULE_GDMA, LEVEL_INFO, "%s: ==> Src=0x%x Dst=0x%x Len=%d\r\n", __FUNCTION__, src, dst, len);
 
+	GDMA_InitStruct.GDMA_SrcMsize = MsizeEight;
+	GDMA_InitStruct.GDMA_DstMsize = MsizeEight;
 	if ((((u32)src & 0x03) == 0) &&	(((u32)dst & 0x03) == 0) && ((len & 0x03) == 0)) {
 		/* 4-bytes aligned, move 4 bytes each transfer */
-		GDMA_InitStruct.GDMA_SrcMsize   = MsizeEight;
 		GDMA_InitStruct.GDMA_SrcDataWidth = TrWidthFourBytes;
-		GDMA_InitStruct.GDMA_DstMsize = MsizeEight;
 		GDMA_InitStruct.GDMA_DstDataWidth = TrWidthFourBytes;
 		GDMA_InitStruct.GDMA_BlockSize = len >> 2;
 	} else {
-		GDMA_InitStruct.GDMA_SrcMsize   = MsizeEight;
 		GDMA_InitStruct.GDMA_SrcDataWidth = TrWidthOneByte;
-		GDMA_InitStruct.GDMA_DstMsize = MsizeEight;
 		GDMA_InitStruct.GDMA_DstDataWidth = TrWidthOneByte;
 		GDMA_InitStruct.GDMA_BlockSize = len;
 	}
