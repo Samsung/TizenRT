@@ -141,6 +141,7 @@ int up_cpu_idlestack(int cpu, struct tcb_s *tcb, size_t stack_size)
   tcb->adj_stack_size  = SMP_STACK_SIZE;
   tcb->stack_alloc_ptr = (void *)stack_alloc;
   tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
+  tcb->adj_stack_ptr = (void *)(stack_alloc + SMP_STACK_SIZE - 4);
 #endif
 
   return OK;

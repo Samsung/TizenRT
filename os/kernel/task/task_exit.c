@@ -105,14 +105,32 @@ static void prepare_exit(struct tcb_s *tcb)
 	 * head of readytorun, then the thread of task_exit function re-enters and
 	 * breaks the critical section.
 	 */
-	exit_tcb->lockcount++;
 #ifdef CONFIG_SMP
 	/* Make sure that the system knows about the locked state */
 
-	spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+	cpu_set_t lock = g_cpu_lockset;
+	lock &= (1 << this_cpu());
+	if (!lock) {
+		spin_setbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
 			&g_cpu_schedlock);
+	}
 #endif
+	exit_tcb->lockcount++;
+
 	mm_is_sem_available(exit_tcb);
+
+	exit_tcb->lockcount--;
+
+#ifdef CONFIG_SMP
+	if (exit_tcb->lockcount == 0) {
+		/* Make sure that the system knows about the unlocked state */
+
+		if (!lock) {
+			spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
+				&g_cpu_schedlock);
+		}
+	}
+#endif
 }
 
 /****************************************************************************
@@ -184,8 +202,16 @@ int task_exit(void)
 
 	(void)sched_removereadytorun(dtcb);
 
+	/* If there are any pending tasks, then add them to the ready-to-run
+	 * task list now
+	 */
+
+	if (g_pendingtasks.head) {
+		(void)sched_mergepending();
+	}
+
 #ifdef CONFIG_SMP
-	rtcb = current_task(cpu);
+	rtcb = current_task(this_cpu());
 #else
 	rtcb = this_task();
 #endif
@@ -232,23 +258,10 @@ int task_exit(void)
 	ret = task_terminate(dtcb->pid, true);
 
 #ifdef CONFIG_SMP
-	spin_clrbit(&g_cpu_lockset, this_cpu(), &g_cpu_locksetlock, \
-				&g_cpu_schedlock);
-#endif
-
-#ifdef CONFIG_SMP
 	rtcb->irqcount--;
 #endif
 
 	rtcb->task_state = TSTATE_TASK_RUNNING;
-
-	/* If there are any pending tasks, then add them to the ready-to-run
-	 * task list now
-	 */
-
-	if (g_pendingtasks.head) {
-		(void)sched_mergepending();
-	}
 
 	/* We can't use sched_unlock() to decrement the lock count because the
 	 * sched_mergepending() call above might have changed the task at the
@@ -259,6 +272,7 @@ int task_exit(void)
 	 */
 
 	rtcb->lockcount--;
+
 
 #ifdef CONFIG_SMP
 	if (rtcb->lockcount == 0) {

@@ -150,6 +150,8 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 	int errval;
 	irqstate_t flags;
 	
+	flags = enter_critical_section();
+
 	/* Was a valid message queue descriptor provided? */
 
 	if (!mqdes) {
@@ -161,7 +163,6 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 
 	/* Get a pointer to the message queue */
 
-	flags = enter_critical_section();
 	msgq = mqdes->msgq;
 
 	/* Get the current process ID */
