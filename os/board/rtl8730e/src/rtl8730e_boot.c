@@ -414,10 +414,6 @@ void board_initialize(void)
 	wlan_initialize();
 #endif
 
-	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_9cfc095_2024/02/19-10:07:39";
-	lldbg("KM4_version %s\n", km0_application_rev_temp);
-
 #ifdef CONFIG_AUDIO_ALC1019
 	rtl8730e_alc1019_initialize(0);
 #endif

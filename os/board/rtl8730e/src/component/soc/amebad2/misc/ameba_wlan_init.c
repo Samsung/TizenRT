@@ -49,6 +49,7 @@ void wlan_initialize(void)
 {
 	inic_ipc_init_host();
 	inic_ipc_api_init_host();
+	inic_ipc_buffered_printf_set_np_enable(ENABLE);
 
 #ifndef CONFIG_MP_INCLUDED
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
