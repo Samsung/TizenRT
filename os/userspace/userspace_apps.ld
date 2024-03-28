@@ -128,6 +128,18 @@ SECTIONS
       _edtors = . ;
     }
 
+  .ARM.extab :
+    {
+      *(.ARM.extab*)
+    }
+
+  .ARM.exidx :
+    {
+      __exidx_start = . ;
+      *(.ARM.exidx*)
+      __exidx_end = . ;
+    }
+
   .bss :
     {
       _sbss = . ;

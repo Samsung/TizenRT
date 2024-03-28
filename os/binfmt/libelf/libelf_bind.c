@@ -310,7 +310,13 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 			}
 		}
 
-		if (ELF32_ST_BIND(psym->st_info) == STB_GLOBAL) {
+		if (ELF32_ST_BIND(psym->st_info) == STB_GLOBAL 
+#ifdef CONFIG_LIBCXX_EXCEPTION
+		/* we need to also export weak symbols in the case of exceptions
+		 * TODO check if we need these for normal cpp case */
+				|| ELF32_ST_BIND(psym->st_info) == STB_WEAK
+#endif	
+				) {
 			ret = elf_symname(loadinfo, psym);
 			if (ret < 0) {
 				berr("SHN_UNDEF: Failed to get symbol name: %d\n", ret);

@@ -110,24 +110,4 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 int up_relocateadd(FAR const Elf32_Rela *rel, FAR const Elf32_Sym *sym, uintptr_t addr);
 #endif
 
-/****************************************************************************
- * Name: up_init_exidx
- *
- * Description:
- *   Initialize the exception index section.
- *
- * Input Parameters:
- *   address - The exception index section address.
- *   size    - The exception index section size.
- *
- * Returned Value:
- *   Zero (OK) if the initialization was successful. Otherwise, a negated errno
- *   value indicating the cause of the failure.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_CXX_EXCEPTION
-int up_init_exidx(Elf32_Addr address, Elf32_Word size);
-#endif
-
 #endif							/* __INCLUDE_TINYARA_ELF_H */

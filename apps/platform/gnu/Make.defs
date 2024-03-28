@@ -56,6 +56,10 @@ ifeq ($(CONFIG_HAVE_CXXINITIALIZE),y)
 CSRCS += gnu_cxxinitialize.c
 endif
 
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+CSRCS += gnu_unwind_find_exidx.c
+endif
+
 # Add the gnu/ sub-directory to the build
 
 VPATH += :gnu
