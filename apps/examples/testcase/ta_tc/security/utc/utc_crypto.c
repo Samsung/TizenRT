@@ -24,6 +24,8 @@
 #include "tc_common.h"
 #include "utc_security.h"
 
+#define ITER_COUNT		10
+
 static security_rsa_mode g_rsa_mode_table[] = {
 	RSASSA_PKCS1_V1_5,
 	RSASSA_PKCS1_PSS_MGF1,
@@ -55,32 +57,68 @@ static security_aes_mode g_aes_mode_table[] = {
 static security_handle g_hnd = NULL;
 
 /**
- * @testcase         utc_crypto_aes_encryption_p
- * @brief            encrypt AES
- * @scenario         encrypt AES
+ * @testcase         utc_crypto_aes_encryption_input_iv_p
+ * @brief            encrypt AES with user input IV
+ * @scenario         encrypt AES with user input IV
  * @apicovered       crypto_aes_encryption
- * @precondition     none
+ * @precondition     AES key should be set in Secure Storage
  * @postcondition    none
  */
-static void utc_crypto_aes_encryption_p(void)
+static void utc_crypto_aes_encryption_input_iv_p(void)
 {
-	int i = 0;
-	unsigned char iv[] = "temp_iv_value";
-	unsigned int iv_len = strlen((const char*)iv) + 1;
+	unsigned char iv[] = { 0x1a, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x70, 0x81, 
+							0x92, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8, 0x00 };
 
-	unsigned char plain_text[] = "plain text";
-	unsigned int plain_text_len = strlen((const char*)plain_text) + 1;
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
 
-	security_data plain = {plain_text, plain_text_len};
+	security_data plain = {plain_text, sizeof(plain_text)};
 	security_data enc = {NULL, 0};
 
-	for (; i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
-		security_aes_mode mode = g_aes_mode_table[i];
-		security_aes_param param = {mode, iv, iv_len};
-		security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
-												   &plain, &enc);
-		TC_ASSERT_EQ("crypto_aes_encryption", res, SECURITY_OK);
-		TC_SUCCESS_RESULT();
+	for (int aes_mode = 0; aes_mode < sizeof(g_aes_mode_table) / sizeof(security_aes_mode); aes_mode++) {
+		/* Check whether hang occurs during repeated encrypt function */
+		for (int iter = 0; iter < ITER_COUNT; iter++) {
+			security_aes_mode mode = g_aes_mode_table[aes_mode];
+			security_aes_param param = {mode, iv, sizeof(iv)};
+
+			security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
+													&plain, &enc);
+			TC_ASSERT_EQ("crypto_aes_encryption_p", res, SECURITY_OK);
+			TC_SUCCESS_RESULT();
+		}
+	}
+}
+
+/**
+ * @testcase         utc_crypto_aes_encryption_iv_null_p
+ * @brief            encrypt AES with IV in secure storage (If user input IV is null, it uses pre-set IV in secure storage)
+ * @scenario         encrypt AES without user input IV
+ * @apicovered       crypto_aes_encryption
+ * @precondition     AES key and IV should be set in Secure Storage
+ * @postcondition    none
+ */
+static void utc_crypto_aes_encryption_iv_null_p(void)
+{
+	unsigned char *iv = NULL; 
+	unsigned int iv_len = 0;
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	security_data plain = {plain_text, sizeof(plain_text)};
+	security_data enc = {NULL, 0};
+
+	for (int aes_mode = 0; aes_mode < sizeof(g_aes_mode_table) / sizeof(security_aes_mode); aes_mode++) {	
+		/* Check whether hang occurs during repeated encrypt function */
+		for (int iter = 0; iter < ITER_COUNT; iter++) {
+			security_aes_mode mode = g_aes_mode_table[aes_mode];
+			security_aes_param param = {mode, iv, iv_len};
+
+			security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
+													&plain, &enc);
+			TC_ASSERT_EQ("utc_crypto_aes_encryption_iv_null_p", res, SECURITY_OK);
+			TC_SUCCESS_RESULT();
+		}
 	}
 }
 
@@ -208,32 +246,68 @@ static void utc_crypto_aes_encryption_output_n(void)
 }
 
 /**
- * @testcase         utc_crypto_aes_decryption_p
- * @brief            decrypt AES
- * @scenario         decrypt AES
+ * @testcase         utc_crypto_aes_decryption_input_iv_p
+ * @brief            decrypt AES with IV user input IV
+ * @scenario         decrypt AES with IV user input IV
  * @apicovered       crypto_aes_decryption
- * @precondition     none
+ * @precondition     AES key should be set in Secure Storage
  * @postcondition    none
  */
-static void utc_crypto_aes_decryption_p(void)
+static void utc_crypto_aes_decryption_input_iv_p(void)
 {
-	int i = 0;
-	unsigned char iv[] = "temp_iv_value";
-	unsigned int iv_len = strlen((const char*)iv) + 1;
+	unsigned char iv[] = { 0x1a, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x70, 0x81, 
+							0x92, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8, 0x00 };
 
-	unsigned char enc_text[] = "plain text";
-	unsigned int enc_text_len = strlen((const char*)enc_text) + 1;
+	unsigned char enc_text[] = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 
+									0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a };
 
-	security_data enc = {enc_text, enc_text_len};
+	security_data enc = {enc_text, sizeof(enc_text)};
 	security_data dec = {NULL, 0};
 
-	for (; i < sizeof(g_aes_mode_table)/sizeof(security_aes_mode); i++) {
-		security_aes_mode mode = g_aes_mode_table[i];
-		security_aes_param param = {mode, iv, iv_len};
-		security_error res = crypto_aes_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
+	for (int aes_mode = 0; aes_mode < sizeof(g_aes_mode_table) / sizeof(security_aes_mode); aes_mode++) {
+		/* Check whether hang occurs during repeated decrypt function */
+		for (int iter = 0; iter < ITER_COUNT; iter++) {
+			security_aes_mode mode = g_aes_mode_table[aes_mode];
+			security_aes_param param = {mode, iv, sizeof(iv)};
+
+			security_error res = crypto_aes_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
 												   &enc, &dec);
-		TC_ASSERT_EQ("crypto_aes_decryption", res, SECURITY_OK);
-		TC_SUCCESS_RESULT();
+			TC_ASSERT_EQ("crypto_aes_decryption_p", res, SECURITY_OK);
+			TC_SUCCESS_RESULT();
+		}
+	}
+}
+
+/**
+ * @testcase         utc_crypto_aes_decryption_iv_null_p
+ * @brief            decrypt AES with IV in secure storage (If user input IV is null, it uses pre-set IV in secure storage)
+ * @scenario         decrypt AES without user input IV 
+ * @apicovered       crypto_aes_decryption
+ * @precondition     AES key and IV should be set in Secure Storage
+ * @postcondition    none
+ */
+static void utc_crypto_aes_decryption_iv_null_p(void)
+{
+	unsigned char *iv = NULL;
+	unsigned int iv_len = 0;
+
+	unsigned char enc_text[] = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 
+									0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	for (int aes_mode = 0; aes_mode < sizeof(g_aes_mode_table) / sizeof(security_aes_mode); aes_mode++) {
+		/* Check whether hang occurs during repeated decrypt function */
+		for (int iter = 0; iter < ITER_COUNT; iter++) {
+			security_aes_mode mode = g_aes_mode_table[aes_mode];
+			security_aes_param param = {mode, iv, iv_len};
+
+			security_error res = crypto_aes_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
+												   &enc, &dec);
+			TC_ASSERT_EQ("utc_crypto_aes_encryption_iv_null_p", res, SECURITY_OK);
+			TC_SUCCESS_RESULT();
+		}
 	}
 }
 
@@ -692,17 +766,17 @@ void utc_crypto_main(void)
 	}
 
 	/*  AES */
-	utc_crypto_aes_encryption_p();
+	utc_crypto_aes_encryption_input_iv_p();
+	utc_crypto_aes_encryption_iv_null_p();
 	utc_crypto_aes_encryption_hnd_n();
 	utc_crypto_aes_encryption_param_n();
-//	utc_crypto_aes_encryption_param2_n();
 	utc_crypto_aes_encryption_key_n();
 	utc_crypto_aes_encryption_input_n();
 	utc_crypto_aes_encryption_output_n();
-	utc_crypto_aes_decryption_p();
+	utc_crypto_aes_decryption_input_iv_p();
+	utc_crypto_aes_decryption_iv_null_p();
 	utc_crypto_aes_decryption_hnd_n();
 	utc_crypto_aes_decryption_param_n();
-//	utc_crypto_aes_decryption_param2_n();
 	utc_crypto_aes_decryption_key_n();
 	utc_crypto_aes_decryption_input_n();
 	utc_crypto_aes_decryption_output_n();
