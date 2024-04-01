@@ -65,7 +65,7 @@ static security_handle g_hnd = NULL;
 static void utc_crypto_aes_encryption_p(void)
 {
 	int i = 0;
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 
 	unsigned char plain_text[] = "plain text";
@@ -94,7 +94,7 @@ static void utc_crypto_aes_encryption_p(void)
  */
 static void utc_crypto_aes_encryption_hnd_n(void)
 {
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -126,7 +126,7 @@ static void utc_crypto_aes_encryption_param_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_UNKNOWN, iv, iv_len};
 	security_error res = crypto_aes_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
@@ -151,7 +151,7 @@ static void utc_crypto_aes_encryption_key_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -173,7 +173,7 @@ static void utc_crypto_aes_encryption_input_n(void)
 {
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -196,7 +196,7 @@ static void utc_crypto_aes_encryption_output_n(void)
 {
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -218,7 +218,7 @@ static void utc_crypto_aes_encryption_output_n(void)
 static void utc_crypto_aes_decryption_p(void)
 {
 	int i = 0;
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 
 	unsigned char enc_text[] = "plain text";
@@ -247,7 +247,7 @@ static void utc_crypto_aes_decryption_p(void)
  */
 static void utc_crypto_aes_decryption_hnd_n(void)
 {
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -279,7 +279,7 @@ static void utc_crypto_aes_decryption_param_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_UNKNOWN, iv, iv_len};
 
@@ -305,7 +305,7 @@ static void utc_crypto_aes_decryption_key_n(void)
 	security_data plain = {enc_text, enc_text_len};
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -327,7 +327,7 @@ static void utc_crypto_aes_decryption_input_n(void)
 {
 	security_data enc = {NULL, 0};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
@@ -352,7 +352,7 @@ static void utc_crypto_aes_decryption_output_n(void)
 	unsigned int enc_text_len = strlen((const char*)enc_text) + 1;
 	security_data plain = {enc_text, enc_text_len};
 
-	unsigned char iv[] = "tamp_iv_value";
+	unsigned char iv[] = "temp_iv_value";
 	unsigned int iv_len = strlen((const char*)iv) + 1;
 	security_aes_param param = {AES_ECB_NOPAD, iv, iv_len};
 
