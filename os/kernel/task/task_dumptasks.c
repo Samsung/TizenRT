@@ -128,7 +128,7 @@ static void task_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 	lldbg_noarg(TASKDUMP_FORMAT, TASKDUMP_VALUE);
 
 #ifdef CONFIG_STACK_COLORATION
-	if (used_stack_size == tcb->adj_stack_size) {
+	if (used_stack_size >= tcb->adj_stack_size) {
 		lldbg_noarg("  !!! PID (%d) STACK OVERFLOW !!! \n", tcb->pid);
 	}
 #endif
