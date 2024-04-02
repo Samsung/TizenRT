@@ -241,6 +241,15 @@
 											 */
 #endif
 
+/* PM timer Definitions *************************************************/
+/* Flag bits for the flags field of struct pm_wakeup_timer_s */
+
+#define PM_STATIC      (1 << 0)	        /* Bit 0: pm timer is statically allocated */
+#define PM_ALLOCED      (1 << 1)	/* Bit 1: pm timer is allocated at run time */
+
+#define PM_ISALLOCED(w)  (((w)->flags & PM_ALLOCED) != 0)
+#define PM_ISSTATIC(w)   (((w)->flags & PM_STATIC) != 0)
+
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
 
@@ -316,10 +325,18 @@ struct pm_arg_s {
 typedef struct pm_arg_s pm_arg_t;
 
 struct pm_timer_s {
-	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
-	uint32_t timer_interval;	/* The interval for whichever timer is to be used */
-	clock_t last_wifi_alive_send_time;       /* Time tick of the last wifi keep alive signal sent time */
+	uint8_t timer_type;		                 /* Bits here are set according to the timer that is to be used */
+	uint32_t timer_interval;	             /* The interval for whichever timer is to be used */
 };
+
+struct pm_wakeup_timer_s {	
+	struct pm_wakeup_timer_s *next;   /* pointer to next timer in the linked list */
+	int pid;                          /* id of process that created pm timer */
+	uint8_t flags;                    /* See pm timer definations above*/
+	int delay;		          /* refers to time of sleep expected */
+};
+
+typedef struct pm_wakeup_timer_s pm_wakeup_timer_t;
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -556,22 +573,62 @@ void pm_relax(int domain, enum pm_state_e state);
 void pm_set_timer(int timer_type, size_t timer_interval);
 
 /****************************************************************************
- * Name: pm_adjust_sleep_duration
+ * Name: pm_set_wakeup_timer
  *
  * Description:
- *   This function is called just before sleep to calculate exact required
- *   sleep duration "if needed". This function is used to timely wake up board
- *   so that we can sent the next wifi keep alive signal.
- *
+ *   This function is called just before sleep to start the required PM wake up
+ *   timer. It will start the first timer from the g_pmTimer_activeList with the
+ *   required delay.(delay should be positive)
+ * 
  * Input Parameters:
  *   None
  *
  * Returned Value:
- *   None.
+ *   0 - system can go to sleep
+ *   -1 - system should not go to sleep
  *
  ****************************************************************************/
 
-void pm_adjust_sleep_duration(void);
+int pm_set_wakeup_timer(void);
+
+/****************************************************************************
+ * Name: pm_timer_update
+ *
+ * Description:
+ *   This function decreases the delay of head pm timer in the 
+ *   g_pmTimer_activeList by given ticks. If the delay becomes 0,
+ *   It expires the pm timer.
+ *
+ * Input Parameters:
+ *   Ticks to decrease
+ *
+ * Returned Value:
+ *   None.
+ * 
+ * Assumption: This should be also implemented for CONFIG_SCHED_TICKLESS and
+ * CONFIG_SCHED_TICKSUPRESS.
+ *
+ ****************************************************************************/
+
+void pm_timer_update(int ticks);
+
+/************************************************************************
+ * Name: pm_timer_add
+ *
+ * Description:
+ *   This function adds a wakeup timer in the g_pmTimer_activeList. So that it will be
+ *   invoked just before sleep when needed. 
+ * 
+ * Parameters:
+ *   timer_interval - expected board sleep duration
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_timer_add(unsigned int timer_interval);
 
 /****************************************************************************
  * Name: pm_staycount

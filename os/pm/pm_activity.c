@@ -239,45 +239,6 @@ void pm_set_timer(int pm_timer_type, size_t timer_interval)
 }
 
 /****************************************************************************
- * Name: pm_adjust_sleep_duration
- *
- * Description:
- *   This function is called just before sleep to calculate exact required
- *   sleep duration "if needed". This function is used to timely wake up board
- *   so that we can sent the next wifi keep alive signal.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void pm_adjust_sleep_duration(void)
-{
-	/* This part calculates the new time interval of sleep just before sleep. This part is added
-	*  for correct functioning of sending of wifi keep alive signal. Basically, last_wifi_alive_send_time
-	*  variable stores the last time tick when wifi keep alive signal was sent. Now before sleep, 
-	*  it will calculate how much time has passed after that signal sent and accordingly it will 
-	*  set duration of sleep. So that board can wake up when it is requried to send signal again.
-	* 
-	*  Also, somehow we are unable to send wifi alive signal in this iteration ( because of other priority task
-	*  or very less time for wifi send action). Then also we need to wakeup the board , so that
-	*  system will send wifi alive signal in next iteration. 
-	*/
-	   
-	if (g_pm_timer.timer_type == PM_WAKEUP_TIMER && g_pm_timer.last_wifi_alive_send_time > 0) {
-		uint32_t elapsed_time_after_last_wakeup = (clock_systimer() - g_pm_timer.last_wifi_alive_send_time) * 1000;
-		if (elapsed_time_after_last_wakeup < g_pm_timer.timer_interval) {
-			g_pm_timer.timer_interval -= elapsed_time_after_last_wakeup;
-		}
-	} else if (g_pm_timer.timer_type == PM_NO_TIMER) {
-		pm_set_timer(PM_WAKEUP_TIMER, DEFAULT_PM_SLEEP_DURATION);
-	}
-}
-
-/****************************************************************************
  * Name: pm_relax
  *
  * Description:

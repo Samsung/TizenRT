@@ -31,7 +31,6 @@
 #include <tinyara/config.h>
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
-#include <fcntl.h>
 #endif
 
 
@@ -294,20 +293,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
-            int ret;
-            int fd = open("/proc/power/domains/0/pm_lock", O_WRONLY);
-            if (fd < 0) {
-                    pmdbg("Failed to open Procfs entry to lock PM state transition, fd: %d\n", fd);
-            } else {
-		    /* We lock PM in PM_NORMAL state for 10 minutes to allow comfortable onboarding */
-                    ret = write(fd, NULL, 600000000);
-                    if (ret < 0) {
-                            pmdbg("Failed to write via procfs to lock PM, ret:  %d\n", ret);
-                    } else {
-                            pmvdbg("PM state transition is locked\n");
-                    }
-                    close(fd);
-            }
+            /* Set PM lock timer for 10 minutes */
+            pm_set_timer(PM_LOCK_TIMER, 600000000);
 #endif
             role = conn_ind->role ? "slave" : "master";
             dbg("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n", 

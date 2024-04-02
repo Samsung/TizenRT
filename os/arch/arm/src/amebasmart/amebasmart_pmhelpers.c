@@ -134,7 +134,7 @@ void pg_timer_int_handler(void *Data)
 	g_pm_timer.timer_interval = 0;
 }
 
-void up_set_pm_timer(void) {
+void  up_set_pm_timer(void) {
 	// Check whether timer interrupt need to be set
 	if (g_pm_timer.timer_type) {
 		gtimer_init(&g_timer1, TIMER1);

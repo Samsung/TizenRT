@@ -46,6 +46,8 @@ endif
 DEPPATH = --dep-path .
 VPATH = .
 
+include pm_timer/Make.defs
+
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

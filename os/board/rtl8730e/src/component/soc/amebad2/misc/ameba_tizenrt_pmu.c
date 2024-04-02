@@ -313,6 +313,9 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 	if (tizenrt_sleep_handler) {
 		tizenrt_sleep_handler(ms_passed); /*  update kernel tick */
 	}
+	/* Check for the boundary case , in pm_timer_update(int ticks)
+	 * but we pass unsigned int to it */
+	pm_timer_update(ms_passed);
 #endif
 #endif
 
