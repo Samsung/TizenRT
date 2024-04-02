@@ -314,10 +314,27 @@ enum pm_timer_type_e {
 };
 
 struct pm_timer_s {
-	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
-	uint32_t timer_interval;	/* The interval for whichever timer is to be used */
-	clock_t last_wifi_alive_send_time;       /* Time tick of the last wifi keep alive signal sent time */
+	uint8_t timer_type;		                 /* Bits here are set according to the timer that is to be used */
+	uint32_t timer_interval;	             /* The interval for whichever timer is to be used */
 };
+
+enum pm_timer_status_e {
+	FREE = 0,
+	INACTIVE,
+	ACTIVE,
+	RUNNING,
+};
+
+struct pm_wakeup_timer_s {	
+	struct pm_wakeup_timer_s *next;   /* pointer to next timer in the linked list */
+	int id;                           /* id to get access to the timer */
+	unsigned int expire_timetick;     /* timetick to know when is the timer supposed to expire */
+	uint8_t status;                   /* can be FREE, INACTIVE, ACTIVE, RUNNING */
+	bool is_periodic;                 /* to check if its supposed to be periodic */
+	bool is_pm_lock;                  /* to check if pm lock is applied for this specific timer */
+};
+
+typedef FAR struct pm_wakeup_timer_s pm_wakeup_timer_t;
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -554,13 +571,14 @@ void pm_relax(int domain, enum pm_state_e state);
 void pm_set_timer(int timer_type, size_t timer_interval);
 
 /****************************************************************************
- * Name: pm_adjust_sleep_duration
+ * Name: pm_timer_process
  *
  * Description:
- *   This function is called just before sleep to calculate exact required
- *   sleep duration "if needed". This function is used to timely wake up board
- *   so that we can sent the next wifi keep alive signal.
- *
+ *   This function is called just before sleep to start the required PM wake up
+ *   timer. It will remove the timers from the g_pmTimer_activeList that have 
+ *   expire time lower than current time and start the timer with the expire time
+ *   that is nearest in future to the current time.
+ * 
  * Input Parameters:
  *   None
  *
@@ -569,7 +587,118 @@ void pm_set_timer(int timer_type, size_t timer_interval);
  *
  ****************************************************************************/
 
-void pm_adjust_sleep_duration(void);
+void pm_timer_process(void);
+
+/****************************************************************************
+ * Name: pm_timer_callback
+ *
+ * Description:
+ *   This function is called after the wake up timer expires and system wakes up.
+ *   This functon will remove the timer from the g_pmTimer_activeList becuase it just
+ *   got expired. 
+ *   If the timer was periodic, it will also lock the pm transition untill the app that
+ *   had set the timer, execute its function.
+ * 
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void pm_timer_callback(void);
+
+/****************************************************************************
+ * Name: pm_timer_initialize
+ *
+ * Description:
+ *   This function will initialize a static array of pm wakeup timers that will be
+ *   used in the g_pmTimer_activeList. 
+ *  
+ *   This function should be called when OS starts.
+ * 
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void pm_timer_initialize(void);
+
+/************************************************************************
+ * Name: pm_timer_create
+ *
+ * Description:
+ *   This function creates a pm timer structure for the user requested and
+ *   initializes the timer fields and returns the id.
+ *
+ * Parameters:
+ *   is_periodic - if the timer should be periodic
+ *
+ * Return Value:
+ *   id of the timer
+ *
+ ************************************************************************/
+
+int pm_timer_create(bool is_periodic);
+
+/************************************************************************
+ * Name: pm_timer_set
+ *
+ * Description:
+ *   This function adds a wakeup timer in the g_pmTimer_activeList. So that it will be
+ *   invoked just before sleep when needed. It also removes the wakeup timer if
+ *   its already present in the list.
+ *
+ * Parameters:
+ *   id - id of the timer
+ *   timer_interval - expected board sleep duration
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_timer_set(int id, unsigned int timer_interval);
+
+/************************************************************************
+ * Name: pm_timer_stop
+ *
+ * Description:
+ *   This function removes a timer from the linked list
+ *
+ * Parameters:
+ *   id - id of the timer
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_timer_stop(int id);
+
+/************************************************************************
+ * Name: pm_timer_delete
+ *
+ * Description:
+ *   This function removes a wakeup timer from list if present and
+ *   also fress the timer for other apps to use.
+ *
+ * Parameters:
+ *   id - id of the timer
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_timer_delete(int id);
 
 /****************************************************************************
  * Name: pm_staycount

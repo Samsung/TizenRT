@@ -64,6 +64,7 @@
 #include <tinyara/irq.h>
 
 #include "pm.h"
+#include "pm_timer/pm_timer.h"
 
 #ifdef CONFIG_PM
 
@@ -239,12 +240,12 @@ void pm_set_timer(int pm_timer_type, size_t timer_interval)
 }
 
 /****************************************************************************
- * Name: pm_adjust_sleep_duration
+ * Name: pm_timer_process
  *
  * Description:
- *   This function is called just before sleep to calculate exact required
- *   sleep duration "if needed". This function is used to timely wake up board
- *   so that we can sent the next wifi keep alive signal.
+ *   This function decides which pm wakeup timer to be set just before sleep.
+ *   It finds the wakeup timer with nearest future expiration time and sets it.
+ *   When the board goes to sleep , it starts the timer and sleeps.
  *
  * Input Parameters:
  *   None
@@ -254,26 +255,95 @@ void pm_set_timer(int pm_timer_type, size_t timer_interval)
  *
  ****************************************************************************/
 
-void pm_adjust_sleep_duration(void)
+void pm_timer_process(void)
 {
-	/* This part calculates the new time interval of sleep just before sleep. This part is added
-	*  for correct functioning of sending of wifi keep alive signal. Basically, last_wifi_alive_send_time
-	*  variable stores the last time tick when wifi keep alive signal was sent. Now before sleep, 
-	*  it will calculate how much time has passed after that signal sent and accordingly it will 
-	*  set duration of sleep. So that board can wake up when it is requried to send signal again.
-	* 
-	*  Also, somehow we are unable to send wifi alive signal in this iteration ( because of other priority task
-	*  or very less time for wifi send action). Then also we need to wakeup the board , so that
-	*  system will send wifi alive signal in next iteration. 
-	*/
-	   
-	if (g_pm_timer.timer_type == PM_WAKEUP_TIMER && g_pm_timer.last_wifi_alive_send_time > 0) {
-		uint32_t elapsed_time_after_last_wakeup = (clock_systimer() - g_pm_timer.last_wifi_alive_send_time) * 1000;
-		if (elapsed_time_after_last_wakeup < g_pm_timer.timer_interval) {
-			g_pm_timer.timer_interval -= elapsed_time_after_last_wakeup;
-		}
-	} else if (g_pm_timer.timer_type == PM_NO_TIMER) {
-		pm_set_timer(PM_WAKEUP_TIMER, DEFAULT_PM_SLEEP_DURATION);
+	pmdbg("pm_timer_process: inside pm_timer_process\n");
+
+	/* if no timer present , do we need to wake up board ??? */
+	if (g_pmTimer_activeList.head == NULL) {
+		pmdbg("pm_timer_process: the g_pmTimer_activeList list is empty!!!\n");
+		return;
+	}
+
+	pm_wakeup_timer_t *curr;
+    	pm_wakeup_timer_t *prev;
+    	prev = curr = (pm_wakeup_timer_t *)g_pmTimer_activeList.head;
+
+	unsigned int now = clock_systimer();
+
+	/* Remove the wakeup timers that are already expired. 
+	 * There will be two cases here:
+	 * 1. We remove it after app completes it timer work and just before setting another timer.
+	 *    this case is fine.
+	 * 2. We remove it before app completes it timer work and now pm lock will not happen
+	 *    for the app to do its timer work ??? should we apply pm lock here ?? .
+	 * */
+	while (curr->expire_timetick < now && curr->next) {
+		prev = curr;
+		curr = curr->next;
+		pm_timer_stop(prev->id);
+		pmdbg("pm_timer_process: removed timer with id %d from the list \n", prev->id);
+	}
+
+	if (curr->expire_timetick > now) {
+		pmdbg("pm_timer_process: setting timer with id %d\n", curr->id);
+		pmdbg("pm_timer_process: Board will wake up after %d millisecond\n", (curr->expire_timetick - now));
+		pm_set_timer(PM_WAKEUP_TIMER, (curr->expire_timetick - now) * 1000);
+
+		/* There can be multiple wakeup timers with RUNNING state. 
+		 * Need to handle that. This will usually happen when before expiration of
+		 * timer1, we get some uart interrupt and we add timer2 with lower expiration time
+		 * than timer1. Now just before sleep, we will start timer2. So we have timer1 and
+		 * timer2 with state RUNNING but actually timer2 is running. */
+		curr->status = RUNNING;
+	} 
+	/* Case where every timer expire time is less than current time. 
+	 * No need to start any timer, But do we need to wake up after a fixed timer? */
+	else {
+		pmdbg("pm_timer_process: every timer expire time is less than current time, last timer id is %d\n", curr->id);
+		pm_timer_stop(curr->id);
+	}
+
+}
+
+/****************************************************************************
+ * Name: pm_timer_callback
+ *
+ * Description:
+ *   This function runs after any of the wakeup timers expire . 
+ *   It will be used to remove the latest running wakeup timer from the 
+ *   g_pmTimer_activeList.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void pm_timer_callback(void)
+{
+	pmdbg("pm_timer_callback: inside pm_timer_callback!!!\n");
+
+	/* Check to see if the list is empty which should not be the case */
+	if (g_pmTimer_activeList.head == NULL) {
+		pmdbg("pm_timer_callback: the linked list is empty!!!\n");
+		return;
+	}
+	pm_wakeup_timer_t *head;
+    	head = (pm_wakeup_timer_t *)g_pmTimer_activeList.head;
+
+	/* Removing the first timer from the list because that is the one we started
+	 * before sleep. */
+	sq_remfirst(&g_pmTimer_activeList);
+	head->status = INACTIVE;
+
+	/* Making sure to lock pm until the app completes its timer related work */
+	if (head->is_periodic) {
+		pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+		head->is_pm_lock = true;
+		pmdbg("pm_timer_callback: setting pm lock for timer with id %d\n", head->id);
 	}
 }
 

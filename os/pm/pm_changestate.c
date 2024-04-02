@@ -304,7 +304,8 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 		*  state when next Wifi keep alive signal is required to be sent. 
 		*/
 		if (newstate == PM_SLEEP) {
-			pm_adjust_sleep_duration();
+			/* Set the required wakeup timer from the g_pmTimer_activeList */
+			pm_timer_process();
 		}
 
 	}

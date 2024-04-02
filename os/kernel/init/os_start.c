@@ -830,6 +830,7 @@ void os_start(void)
 #ifdef CONFIG_PM
 	/* We cannot enter low power state until boot complete */
 	pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+	pm_timer_initialize();
 #endif
 
 #ifdef CONFIG_DEBUG_MM_WARN
