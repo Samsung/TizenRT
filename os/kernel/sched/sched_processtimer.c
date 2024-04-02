@@ -284,6 +284,9 @@ void sched_process_timer(void)
 	irqstate_t flags = enter_critical_section();
 #endif
 	wd_timer();
+#ifdef CONFIG_PM
+	pm_timer_update(1);
+#endif
 #ifdef CONFIG_SMP
 	leave_critical_section(flags);
 #endif

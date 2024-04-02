@@ -63,6 +63,7 @@
 #include "pm_test.h"
 #include "pm.h"
 #include "pm_metrics.h"
+#include "pm_timer/pm_timer.h"
 
 #ifdef CONFIG_PM
 
@@ -79,6 +80,29 @@
  */
 
 struct pm_global_s g_pmglobals;
+
+/* The g_pmTimer_freeList is a singly linked list of pm timers available
+ * to the system */
+
+sq_queue_t g_pmTimer_freeList;
+
+/* The g_pmTimer_activeList data structure is a singly linked list ordered by
+ * pm wakeup timer expiration time.
+ */
+
+sq_queue_t g_pmTimer_activeList;
+
+/* This is the number of free, pre-allocated pm wakeup timer structures in the
+ * g_pmTimer_freeList. 
+ */
+
+uint16_t g_pmTimer_nfree;
+
+/* g_pm_list is a list of pre-allocated pm wakeup timers. The number of pm timers
+ * in the list is a configuration item.
+ */
+
+pm_wakeup_timer_t g_pmTimer_pool[CONFIG_PM_MAX_WAKEUP_TIMER];
 
 /****************************************************************************
  * Public Functions
@@ -143,6 +167,20 @@ void pm_initialize(void)
 		sq_addlast((&initnode->entry), &g_pmglobals.domain->history);
 #endif
 	}
+
+	/* Initialize pm timer list */
+	sq_init(&g_pmTimer_freeList);
+	sq_init(&g_pmTimer_activeList);
+
+	/* The g_pmTimer_freeList must be initiated */
+	pm_wakeup_timer_t *timer = g_pmTimer_pool;
+	for (int i = 0; i < CONFIG_PM_MAX_WAKEUP_TIMER; i++) {
+			sq_addlast((pm_wakeup_timer_t *)timer++, &g_pmTimer_freeList);
+	}
+
+	/* All pm timers are free */
+	g_pmTimer_nfree = CONFIG_PM_MAX_WAKEUP_TIMER;
+
 	pmtest_init();
 }
 #endif							/* CONFIG_PM */
