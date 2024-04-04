@@ -29,28 +29,38 @@
 int preference_init(void)
 {
 	int ret;
+	int errval;
 
 	/* Make preference directory */
 	ret = mkdir(PREF_PATH, 0777);
-	if (ret < 0 && errno != EEXIST) {
-		prefdbg("mkdir fail, %d\n", errno);
-		return PREFERENCE_IO_ERROR;
+	if (ret < 0) {
+		errval = get_errno();
+		if (errval != EEXIST) {
+			prefdbg("mkdir fail, %d\n", errval);
+			return PREFERENCE_IO_ERROR;
+		}
 	}
 #if CONFIG_TASK_NAME_SIZE > 0
 
 	/* Make private preference directory */
 	ret = mkdir(PREF_PRIVATE_PATH, 0777);
-	if (ret < 0 && errno != EEXIST) {
-		prefdbg("mkdir fail, %d\n", errno);
-		return PREFERENCE_IO_ERROR;
+	if (ret < 0) {
+		errval = get_errno();
+		if (errval != EEXIST) {
+			prefdbg("mkdir fail, %d\n", errval);
+			return PREFERENCE_IO_ERROR;
+		}
 	}
 #endif
 
 	/* Make shared preference directory */
 	ret = mkdir(PREF_SHARED_PATH, 0777);
-	if (ret < 0 && errno != EEXIST) {
-		prefdbg("mkdir fail, %d\n", errno);
-		return PREFERENCE_IO_ERROR;
+	if (ret < 0) {
+		errval = get_errno();
+		if (errval != EEXIST) {
+			prefdbg("mkdir fail, %d\n", errval);
+			return PREFERENCE_IO_ERROR;
+		}
 	}
 
 	return OK;

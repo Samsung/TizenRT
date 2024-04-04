@@ -46,7 +46,7 @@ void preference_signal_cb(int signo)
 	snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, getpid());
 	mqfd = mq_open(q_name, O_RDONLY, 0666);
 	if (mqfd == (mqd_t)ERROR) {
-		prefdbg("Failed to open mq, errno %d\n", errno);
+		prefdbg("Failed to open mq, errno %d\n", get_errno());
 		return;
 	}
 
@@ -60,7 +60,7 @@ void preference_signal_cb(int signo)
 			/* Execute callback function */
 			data.cb_func(data.key, data.cb_data);
 		} else {
-			prefdbg("receive ERROR, ret %d errno %d\n", nbytes, errno);
+			prefdbg("receive ERROR, ret %d errno %d\n", nbytes, get_errno());
 		}
 	}
 	mq_close(mqfd);

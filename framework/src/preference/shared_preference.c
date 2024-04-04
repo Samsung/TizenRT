@@ -300,7 +300,7 @@ int preference_shared_set_changed_cb(const char *key, preference_changed_cb call
 	
 	ret = sigaction(SIG_PREFERENCE, &act, NULL);
 	if (ret == (int)SIG_ERR) {
-		prefdbg("sigaction fail, errno %d", errno);
+		prefdbg("sigaction fail, errno %d", get_errno());
 		return PREFERENCE_OPERATION_FAIL;
 	}
 
