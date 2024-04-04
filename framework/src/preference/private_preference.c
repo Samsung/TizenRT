@@ -295,7 +295,7 @@ int preference_set_changed_cb(const char *key, preference_changed_cb callback, v
 	
 	ret = sigaction(SIG_PREFERENCE, &act, NULL);
 	if (ret != OK) {
-		prefdbg("sigaction fail, errno %d", errno);
+		prefdbg("sigaction fail, errno %d", get_errno());
 		return PREFERENCE_OPERATION_FAIL;
 	}
 
