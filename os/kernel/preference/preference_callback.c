@@ -87,36 +87,42 @@ void preference_send_cb_msg(int type, const char *key)
 	attr.mq_flags = 0;
 
 	list = preference_get_key_cb_list(type, key);
-	if (list != NULL) {
-		node = (key_cb_node_t *)sq_peek(&list->cb_list);
-		while (node) {
-			/* Create message queue to receive notification messages */
-			data.key = key;
-			data.cb_func = node->cb_func;
-			data.cb_data = node->cb_data;
-			snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, node->pid);
-			send_mq = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
-			if (send_mq == (mqd_t)ERROR) {
-				prefdbg("Failed to open mq '%s', errno %d\n", q_name, errno);
-				return;
-			}
-			
-			/* Send callback message */
-			ret = mq_send(send_mq, (char *)&data, sizeof(preference_callback_t), 50);
-			mq_close(send_mq);
-			if (ret == OK) {
-				ret = kill(node->pid, SIG_PREFERENCE);
-				if (ret != OK) {
-					prefdbg("Failed to send signal, pid %d errno %d\n", node->pid, errno);
-					goto errout_with_unlink;
-				}
-			} else {
-				bmdbg("Failed to send mq %s\n", q_name);
+	if (!list) {
+		/* No registered callbacks for 'key' */
+		return;
+	}
+
+	/* Traverse through the list of callbacks */
+	node = (key_cb_node_t *)sq_peek(&list->cb_list);
+	while (node) {
+		/* Create message queue to receive notification messages */
+		data.key = key;
+		data.cb_func = node->cb_func;
+		data.cb_data = node->cb_data;
+		snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, node->pid);
+		send_mq = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
+		if (send_mq == (mqd_t)ERROR) {
+			prefdbg("Failed to open mq '%s', errno %d\n", q_name, errno);
+			return;
+		}
+
+		/* Send callback message */
+		ret = mq_send(send_mq, (char *)&data, sizeof(preference_callback_t), 50);
+		mq_close(send_mq);
+		if (ret == OK) {
+			ret = kill(node->pid, SIG_PREFERENCE);
+			if (ret != OK) {
+				prefdbg("Failed to send signal, pid %d errno %d\n", node->pid, errno);
 				goto errout_with_unlink;
 			}
-			node = (key_cb_node_t *)sq_next(node);
+		} else {
+			prefdbg("Failed to send mq %s, errno %d\n", q_name, errno);
+			goto errout_with_unlink;
 		}
+		node = (key_cb_node_t *)sq_next(node);
 	}
+	/* Successfully completed processing all callbacks */
+	return;
 
 errout_with_unlink:
 	mq_unlink(q_name);
