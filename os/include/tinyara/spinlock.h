@@ -81,6 +81,8 @@ typedef uint8_t spinlock_t;
 #  define __SP_UNLOCK_FUNCTION 1
 #endif
 
+#  define spin_is_locked(l) (*(l) == SP_LOCKED)
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
