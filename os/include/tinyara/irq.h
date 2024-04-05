@@ -150,6 +150,27 @@ void leave_critical_section(irqstate_t flags);
 #  define leave_critical_section(f) irqrestore(f)
 #endif
 
+
+/****************************************************************************
+ * Name: restore_critical_section
+ *
+ * Description:
+ *   Restore the critical_section
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+void restore_critical_section(void);
+#else
+#  define restore_critical_section()
+#endif
+
 /**
  * @cond
  * @internal
