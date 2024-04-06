@@ -42,22 +42,24 @@
 
 extern int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_display);
 static char rwbuf[MAX_SS_SIZE];
+static uint32_t SLOT_SIZE = 0x1000;
 
 #ifdef CONFIG_AMEBAD_TRUSTZONE
 static uint32_t SLOT0_START_ADDR = 0x1a000;
 static uint32_t SLOT1_START_ADDR = 0x1d000;
+static uint32_t SLOT_AREA_OFFEST = 0x23000;
 #endif
 #ifdef CONFIG_AMEBALITE_TRUSTZONE
 static uint32_t SLOT0_START_ADDR = 0x24000;
 static uint32_t SLOT1_START_ADDR = 0x27000;
+static uint32_t SLOT_AREA_OFFEST = 0x23000;
 #endif
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
-/* ToDo: Temporary set need changes based flash addr */
 static uint32_t SLOT0_START_ADDR = 0x2C000;
 static uint32_t SLOT1_START_ADDR = 0x2F000;
+static uint32_t SLOT_AREA_OFFEST = 0x2A000;
 #endif
-static uint32_t SLOT_SIZE = 0x1000;
-static uint32_t SLOT_AREA_OFFEST = 0x23000;
+
 
 /****************************************************************************
  * secure_storage_main

@@ -58,16 +58,19 @@
 
 /* Secure Storage Base Address, After Bootloader before Kernel */
 /* Fix Address, should not be changed, once change previous data will be lost */
+/* Secure efuse key location */
 #ifdef CONFIG_AMEBAD_TRUSTZONE
 #define SS_BASE_ADDRESS 0xA000
+#define SAMSUNG_KEY_ADDR 0x150
 #endif
 #ifdef CONFIG_AMEBALITE_TRUSTZONE
 #define SS_BASE_ADDRESS 0x14000
+#define SAMSUNG_KEY_ADDR 0x390
 #endif
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
 #define SS_BASE_ADDRESS 0x1C000
+#define SAMSUNG_KEY_ADDR 0x390
 #endif
-
 
 /* 8 Slots for Cert, 8 Slots for Key, 1 Slot is 4KB */
 #define SE_FACTORY_KEY_SIZE 0x8000
@@ -90,17 +93,6 @@
 
 /* Flash Sector Size */
 #define SECTOR_SIZE 4096
-
-/* Secure efuse key location */
-#ifdef CONFIG_AMEBAD_TRUSTZONE
-#define SAMSUNG_KEY_ADDR 0x150
-#endif
-#ifdef CONFIG_AMEBALITE_TRUSTZONE
-#define SAMSUNG_KEY_ADDR 0x390
-#endif
-#ifdef CONFIG_AMEBASMART_TRUSTZONE
-#define SAMSUNG_KEY_ADDR 0x390
-#endif
 
 /* Non-Secure Data buff, 8K (2 Sector + Tag) */
 #define NS_BUF_LEN ((SECTOR_SIZE * 2) + 32)
