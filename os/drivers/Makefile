@@ -138,6 +138,10 @@ endif
 ifeq ($(CONFIG_RTC),y)
   CSRCS += rtc.c
 endif
+
+ifeq ($(CONFIG_VIRTKEY),y)
+  CSRCS += virtkey.c
+endif
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

@@ -271,6 +271,10 @@ void up_initialize(void)
 #if defined(CONFIG_DEV_ZERO)
 	devzero_register();			/* Standard /dev/zero */
 #endif
+	
+#if defined(CONFIG_VIRTKEY)
+	virtkey_register();			/* Virtual key driver */
+#endif
 
 #endif							/* CONFIG_NFILE_DESCRIPTORS */
 
