@@ -25,16 +25,7 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/mtd.h>
 
-#if defined(CONFIG_FLASH_PARTITION) || defined(CONFIG_SECOND_FLASH_PARTITION)
-struct partition_data_s {
-	char *types;
-	char *sizes;
-	int minor;
-#ifdef CONFIG_MTD_PARTITION_NAMES
-	char *names;
-#endif
-};
-
+#ifdef CONFIG_FLASH_PARTITION
 struct partition_info_s {
 	int smartfs_partno;
 	int romfs_partno;
@@ -43,15 +34,7 @@ struct partition_info_s {
 };
 typedef struct partition_info_s partition_info_t;
 
-#ifdef CONFIG_FLASH_PARTITION
-extern struct partition_data_s g_flash_part_data;
-#endif
-
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-extern struct partition_data_s g_second_flash_part_data;
-#endif
-
-int configure_mtd_partitions(struct mtd_dev_s *mtd, struct partition_data_s *part_data, partition_info_t *partinfo);
+int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t *partinfo);
 FAR struct mtd_dev_s *mtd_initialize(void);
 void automount_fs_partition(partition_info_t *partinfo);
 int get_partition_num(char *part);
