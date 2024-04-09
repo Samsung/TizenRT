@@ -289,6 +289,25 @@ config W25_SLOWREAD
 	bool "W25 Slow Read"
 	default n
 
+choice
+	prompt "Size of Erase"
+	default W25_SECTOR_ERASE_32K
+	---help---
+		Select the level of CRC protection implemented in the SMART MTD layer.
+		Smaller CRC selection uses less overhead per logical sectors, but also has
+		a higher probability of not detecting multiple bit errors.  Devices with
+		larger logical sector sizes should use a larger CRC.
+
+config W25_SECTOR_ERASE_4K
+	bool "Block Erase (4KB)"
+
+config W25_SECTOR_ERASE_32K
+	bool "Block Erase(32KB)"
+	
+config W25_SECTOR_ERASE_64K
+	bool "Block Erase(64KB)"
+endchoice
+
 endif # MTD_W25
 
 config MTD_JEDEC

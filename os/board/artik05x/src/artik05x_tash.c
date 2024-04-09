@@ -179,7 +179,7 @@ int board_app_initialize(void)
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
+	ret = configure_mtd_partitions(mtd, 0, &partinfo);
 	if (ret != OK) {
 		lldbg("ERROR: configure_mtd_partitions failed.\n");
 		return ERROR;

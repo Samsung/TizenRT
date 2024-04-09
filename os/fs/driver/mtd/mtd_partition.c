@@ -234,7 +234,6 @@ static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	off_t eoffset;
 
 	DEBUGASSERT(priv);
-
 	/* Make sure that erase would not extend past the end of the partition */
 
 	if (!part_blockcheck(priv, (startblock + nblocks - 1) * priv->blkpererase)) {
@@ -249,8 +248,8 @@ static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	 */
 
 	eoffset = priv->firstblock / priv->blkpererase;
+	fvdbg("startblock : %d nblocks : %d\n", eoffset + startblock, nblocks);
 	DEBUGASSERT(eoffset * priv->blkpererase == priv->firstblock);
-
 	return priv->parent->erase(priv->parent, startblock + eoffset, nblocks);
 }
 
@@ -265,6 +264,8 @@ static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 static ssize_t part_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf)
 {
 	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)dev;
+	fvdbg("startblock : %d nblocks : %d\n", (startblock + priv->firstblock) / priv->blkpererase, nblocks);
+
 
 	DEBUGASSERT(priv && (buf || nblocks == 0));
 
@@ -293,7 +294,7 @@ static ssize_t part_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nb
 static ssize_t part_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf)
 {
 	FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)dev;
-
+	fvdbg("startblock : %d nblocks : %d\n", (startblock + priv->firstblock) / priv->blkpererase, nblocks);
 	DEBUGASSERT(priv && (buf || nblocks == 0));
 
 	/* Make sure that write would not extend past the end of the partition */
@@ -772,7 +773,6 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock,
 	part->blkpererase = blkpererase;
 	part->partno = partno;
 	part->tagno = MTD_NONE;
-
 #ifdef CONFIG_MTD_PARTITION_NAMES
 	strncpy(part->name, "(noname)", MTD_PARTNAME_LEN);
 #endif
