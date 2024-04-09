@@ -54,6 +54,11 @@ config DEV_ZERO
 	default n
 	depends on NFILE_DESCRIPTORS != 0
 
+config VIRTKEY
+	bool "Enable virtual key driver"
+	default n
+	depends on NFILE_DESCRIPTORS != 0
+
 menuconfig DRVR_WRITEBUFFER
 	bool "Enable write buffer support"
 	depends on SCHED_WORKQUEUE
