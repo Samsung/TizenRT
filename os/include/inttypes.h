@@ -75,6 +75,8 @@
 
 #include <stdint.h>
 
+#include <arch/inttypes.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -241,47 +243,7 @@ intmax_t wcstoimax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
  */
 uintmax_t wcstoumax(FAR const wchar_t *nptr, FAR wchar_t **endptr, int base);
 
-#if defined(__WORDSIZE) && __WORDSIZE == 64
-#define __PRI64_PREFIX  "l"
-#define __PRIPTR_PREFIX "l"
-#else
-#define __PRI64_PREFIX  "ll"
-#define __PRIPTR_PREFIX
-#endif
 
-# define PRIdPTR	__PRIPTR_PREFIX "d"
-# define PRIiPTR	__PRIPTR_PREFIX "i"
-# define PRIoPTR	__PRIPTR_PREFIX "o"
-# define PRIuPTR	__PRIPTR_PREFIX "u"
-# define PRIxPTR	__PRIPTR_PREFIX "x"
-# define PRIXPTR	__PRIPTR_PREFIX "X"
-
-#define PRId64   __PRI64_PREFIX "d"
-
-#define PRIu8       "u"
-#define PRIu16      "u"
-#define PRIu32      "u"
-#define PRIu64      __PRI64_PREFIX "u"
-
-#define PRIx8       "x"
-#define PRIx16      "x"
-#define PRIx32      "x"
-#define PRIx64      __PRI64_PREFIX "x"
-
-#define PRIi8       "i"
-#define PRIi16      "i"
-#define PRIi32      "i"
-#define PRIi64      __PRI64_PREFIX "i"
-
-#define SCNu8       "hhu"
-#define SCNu16      "hu"
-#define SCNu32      "u"
-#define SCNu64      __PRI64_PREFIX "u"
-
-#define SCNi8       "hhi"
-#define SCNi16      "hi"
-#define SCNi32      "i"
-#define SCNi64      __PRI64_PREFIX "i"
 /**
  * @endcond
  */
