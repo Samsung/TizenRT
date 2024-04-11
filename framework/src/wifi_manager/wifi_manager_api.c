@@ -210,6 +210,26 @@ wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
+wifi_manager_result_e wifi_manager_scan_multi_aps(wifi_manager_scan_multi_configs_s *configs)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (configs) {
+		for (int i = 0; configs->scan_ap_config_count; i++) {
+			wifi_manager_scan_config_s *config = &configs->ap_configs[i];
+			if (config->ssid_length > WIFIMGR_SSID_LEN) {
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+				return WIFI_MANAGER_INVALID_ARGS;
+			}
+			if (config->ssid_length == 0 && config->channel == 0) {
+				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+				return WIFI_MANAGER_INVALID_ARGS;
+			}
+		}
+	}
+	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN_MULTI_APS, WIFI_MANAGER_FAIL, (void *)configs, NULL};
+	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+}
+
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
