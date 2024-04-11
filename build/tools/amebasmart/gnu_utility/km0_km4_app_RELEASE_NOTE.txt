@@ -3,6 +3,11 @@
 == version 9060401 2024/04/08-12:19:55 ==
 1.  Change coex code flow to fix tx hang issue, which caused "mgnt frame drop" logs
 
+== version 7e51f4b 2024/04/01-11:51:21 ==
+1.	Support ch_opt configuration, allow user to choose between legacy/non-legacy for wifi csi
+2.	Fix num_sub_carrier in csi header mismatch with actual csi len
+3.	Fix unexpected csi report with ch_opt=1
+
 == version 9cfc095 2024/02/19-10:07:39 ==
 1.	Update flash PMC code
 
