@@ -60,10 +60,11 @@ int wificsi_main(int argc, char *argv[])
 	unsigned int csi_seq_num;
 	unsigned int timestamp;
 	act_param.group_num = 0;
-	act_param.mode = 2;  /* currently only supported */
+	act_param.mode = 0;  /* 0: rx normal 2:rx respon */
 	act_param.accuracy = 0;
 	act_param.trig_period = 200;  /* ms */
-	act_param.data_rate = 0xC;  /* ofdm 6 mpbs*/
+	act_param.data_rate = 0x80;  /* ofdm 6 mpbs*/
+	act_param.ch_opt = 1; //0: legacy 1: non-legacy
 //	act_param.mac_addr = {0x00, 0xe0, 0x4c, 0x81, 0x92, 0xbb};
 	char ipv4_address[4];
 	char ipv4_buf[16];
@@ -81,10 +82,11 @@ int wificsi_main(int argc, char *argv[])
 	 * should use semaphore to wait wifi event happen
 	 * the following example shows that we wait for wifi csi ready
 	*/
+	
 	sem_init(&wc_ready_sema, 0, 0);
 
 	/* register wifi event callback function */
-	wifi_reg_event_handler(14, example_wifi_csi_report_cb, NULL);
+	wifi_reg_event_handler(21, example_wifi_csi_report_cb, NULL);
 
 	/* csi cfg and csi en */
 	act_param.act = 1;  /* csi cfg */
@@ -102,8 +104,10 @@ int wificsi_main(int argc, char *argv[])
 				act_param.act = 0;  /* csi dis */
 				act_param.enable = 0;
 				wifi_csi_config(&act_param);
+				
 				break;
 			}
+			
 			wifi_csi_report(csi_data_len, csi_buf, &len);
 			/*do something for handing csi info*/
 			timestamp = (int)(csi_buf[18] << 24) | (int)(csi_buf[17] << 16) | (int)(csi_buf[16] << 8) | (int)csi_buf[15];
@@ -121,7 +125,7 @@ int wificsi_main(int argc, char *argv[])
 
 
 	/* unregister wifi event callback function */
-	wifi_unreg_event_handler(14, example_wifi_csi_report_cb);
+	wifi_unreg_event_handler(21, example_wifi_csi_report_cb);
 
 	sem_destroy(&wc_ready_sema);
 
