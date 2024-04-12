@@ -396,6 +396,10 @@
 #define _LCDIOCVALID(c)   (_IOC_TYPE(c)==_SLCDIOCBASE)
 #define _LCDIOC(nr)       _IOC(_SLCDIOCBASE,nr)
 
+#define _MIPIDSIBASE    (0x3900) /* Mipidsi device ioctl commands */
+
+#define _MIPIDSIIOC(nr)        _IOC(_MIPIDSIBASE,nr)
+#define _MIPIDSIIOCVALID(c)    (_IOC_TYPE(c)==_MIPIDSIBASE)
 
 /* boardctl() command definitions *******************************************/
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)

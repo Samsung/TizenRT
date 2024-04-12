@@ -270,6 +270,7 @@ EXTRA_LIBS += ${TOPDIR}/board/rtl8730e/src/libs/lib_btgap.a
 #endif
 endif
 
+CHIP_CSRCS += amebasmart_mipi.c
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 #CHIP_CSRCS += amebasmart_nsc.c
 
