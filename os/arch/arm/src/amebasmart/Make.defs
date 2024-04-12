@@ -294,3 +294,7 @@ else
 #EXTRA_LIBS += $(TOPDIR)/board/
 endif
 endif
+
+ifeq ($(CONFIG_AMEBASMART_CMSIS_NN),y)
+EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_cmsis_nn.a
+endif
