@@ -80,6 +80,11 @@ config AMEBASMART_SPI1
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
 	default y
+config AMEBASMART_SPI_DMA
+	bool "SPI DMA"
+	default n
+	---help---
+		Use DMA to improve SPI transfer performance.
 config SPI_CS
 	bool "SPI Multi-slaves"
 	default n
@@ -96,6 +101,7 @@ config AMEBASMART_SPI1_CS
 	depends on SPI_CS
 endif
 endif
+
 
 config AMEBASMART_MIPI
 	bool "AMEBASMART_MIPI"
