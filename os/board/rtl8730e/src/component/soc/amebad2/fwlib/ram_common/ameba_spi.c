@@ -532,7 +532,7 @@ BOOL SSI_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
 	}
 
-	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 4096);
+	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 65535);
 
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)pTxData;
 
@@ -630,7 +630,7 @@ SSI_RXGDMA_Init(
 		}
 	}
 
-	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 4096);
+	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 65535);
 
 	GDMA_InitStruct->GDMA_DstAddr = (u32)pRxData;
 

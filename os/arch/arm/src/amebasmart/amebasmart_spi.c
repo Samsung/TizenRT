@@ -44,6 +44,7 @@
 #include "amebasmart_spi.h"
 #include "PinNames.h"
 #include "spi_api.h"
+#include "spi_ex_api.h"
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -57,9 +58,7 @@
 #error "Interrupt driven SPI not yet supported"
 #endif
 
-#if defined(CONFIG_AMEBASMART_SPI_DMA)
-#error "DMA mode is not yet supported"
-#endif
+
 
 /* Can't have both interrupt driven SPI and SPI DMA */
 
@@ -80,7 +79,7 @@
 
 #define AMEBASMART_SPI_MASTER	0
 #define AMEBASMART_SPI_SLAVE	1
-
+#define SPI_DMA_MAX_BUFFER_SIZE 65535
 /************************************************************************************
  * Private Types
  ************************************************************************************/
@@ -95,6 +94,10 @@ struct amebasmart_spidev_s {
 	uint32_t frequency;         /* Requested clock frequency */
 	uint32_t actual;            /* Actual clock frequency */
 
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+	sem_t rxsem;				/* Wait for RX DMA to complete */
+	sem_t txsem;				/* Wait for TX DMA to complete */
+#endif
 	spi_t spi_object;
 	uint32_t spi_idx;
 	PinName spi_mosi;
@@ -139,6 +142,16 @@ static inline void amebasmart_spi_master_set_delay_scaler(FAR struct
 					amebasmart_spidev_s *priv,
 					uint32_t scaler,
 					enum amebasmart_delay_e type);
+
+/* DMA support*/
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static void spi_dmarxwait(FAR struct amebasmart_spidev_s *priv);
+static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv);
+static inline void spi_dmarxwakeup(FAR struct amebasmart_spidev_s *priv);
+static inline void spi_dmatxwakeup(FAR struct amebasmart_spidev_s *priv);
+static void spi_dmamastercallback(FAR struct amebasmart_spidev_s *priv, SpiIrq event);
+static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv);
+#endif
 
 /* SPI methods */
 
@@ -468,6 +481,130 @@ static inline bool amebasmart_spi_9to16bitmode(FAR struct amebasmart_spidev_s *p
 	if (priv->nbits < 9) return false;
 	else return true;
 }
+
+/************************************************************************************
+ * Name: spi_dmarxwait
+ *
+ * Description:
+ *   Wait for DMA to complete.
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static void spi_dmarxwait(FAR struct amebasmart_spidev_s *priv)
+{
+	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
+	 * must not really have completed???
+	 */
+	while (sem_wait(&priv->rxsem) != 0) {
+		/* The only case that an error should occur here is if the wait was awakened
+		 * by a signal.
+		 */
+		ASSERT(errno == EINTR);
+	}
+}
+#endif
+
+/************************************************************************************
+ * Name: spi_dmatxwait
+ *
+ * Description:
+ *   Wait for DMA to complete.
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
+{
+	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
+	 * must not really have completed???
+	 */
+	while (sem_wait(&priv->txsem) != 0 ) {
+		/* The only case that an error should occur here is if the wait was awakened
+		 * by a signal.
+		 */
+		ASSERT(errno == EINTR);
+	}
+	/*DMA triggers irq when all data has transferred from memory to SPI fifo, it is around 0.5ms earlier than SPI transfer all data in FIFO out
+	 *compensate by adding 0.5ms delay to ensure that all data in fifo are transferred out before manually pull up CS pin by GPIO*/
+	DelayUs(500); 
+}
+#endif
+
+/************************************************************************************
+ * Name: spi_dmarxwakeup
+ *
+ * Description:
+ *   Signal that DMA is complete
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static inline void spi_dmarxwakeup(FAR struct amebasmart_spidev_s *priv)
+{
+	(void)sem_post(&priv->rxsem);
+}
+#endif
+
+/************************************************************************************
+ * Name: spi_dmatxwakeup
+ *
+ * Description:
+ *   Signal that DMA is complete
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static inline void spi_dmatxwakeup(FAR struct amebasmart_spidev_s *priv)
+{
+	(void)sem_post(&priv->txsem);
+}
+#endif
+
+/************************************************************************************
+ * Name: spi_dmamastercallback
+ *
+ * Description:
+ *   Called when the RX DMA completes
+ * 	 Called when the TX DMA completes
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static void spi_dmamastercallback(FAR struct amebasmart_spidev_s *priv, SpiIrq event)
+{
+
+	switch(event){
+		case SpiRxIrq:
+			spi_dmarxwakeup(priv);
+			break;
+		case SpiTxIrq:
+			spi_dmatxwakeup(priv);
+			break;
+		default:
+			DBG_8195A("unknown interrput event!\n");
+	}
+}
+#endif
+
+
+
+/************************************************************************************
+ * Name: spi_hookmastercallback
+ *
+ * Description:
+ *   Register the master DMA callback
+ *
+ ************************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv)
+{
+	spi_irq_hook(&priv->spi_object, (spi_irq_handler) spi_dmamastercallback, (uint32_t)priv);
+}
+#endif
+
+
 
 /************************************************************************************
  * Name: amebasmart_spi_modifyreg
@@ -931,16 +1068,12 @@ static uint16_t amebasmart_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
  *
  ************************************************************************************/
 
-#if !defined(CONFIG_AMEBASMART_SPI_DMA) || defined(CONFIG_AMEBASMART_DMACAPABLE)
-#if !defined(CONFIG_AMEBASMART_SPI_DMA)
+
+
+
 static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 				FAR const void *txbuffer, FAR void *rxbuffer,
 				size_t nwords)
-#else
-static void amebasmart_spi_exchange_nodma(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer,
-				FAR void *rxbuffer, size_t nwords)
-#endif
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
 	DEBUGASSERT(priv);
@@ -948,7 +1081,7 @@ static void amebasmart_spi_exchange_nodma(FAR struct spi_dev_s *dev,
 	spiinfo("txbuffer=%p rxbuffer=%p nwords=%d\n", txbuffer, rxbuffer, nwords);
 
 	/* 8- or 16-bit mode? */
-
+#if !defined(CONFIG_AMEBASMART_SPI_DMA)
 	if (amebasmart_spi_9to16bitmode(priv)) {
 		/* 16-bit mode */
 
@@ -1002,8 +1135,78 @@ static void amebasmart_spi_exchange_nodma(FAR struct spi_dev_s *dev,
 			}
 		}
 	}
+#else
+/*************************************************************************
+ * Name: spi_exchange (with DMA)
+ *
+ * Description:
+ *   Exchange a block of data on SPI using DMA
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   txbuffer - A pointer to the buffer of data to be sent
+ *   rxbuffer - A pointer to a buffer in which to receive data
+ *   nwords   - the length of data to be exchanged in units of words.
+ *              The wordsize is determined by the number of bits-per-word
+ *              selected for the SPI interface.  If nbits <= 8, the data is
+ *              packed into uint8_t's; if nbits >8, the data is packed into uint16_t's
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+	int mode_16bit = 1;
+	spi_hookmastercallback(priv);
+	if (amebasmart_spi_9to16bitmode(priv)) {
+		/* 16-bit mode */
+		mode_16bit++;
+	}
+	DEBUGASSERT((nwords * mode_16bit) <= SPI_DMA_MAX_BUFFER_SIZE);
+	if (txbuffer && rxbuffer) {
+		uint8_t *rxbuff_aligned = NULL;
+		rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+		if(rxbuff_aligned == NULL) {
+			return;
+		}
+		uint8_t *txbuff_aligned =  NULL;
+		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+		if(txbuff_aligned == NULL) {
+			rtw_mfree(rxbuff_aligned, 0);
+			return;
+		}
+		memcpy(txbuff_aligned, txbuffer, nwords * mode_16bit);
+		spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)nwords * mode_16bit);
+		spi_dmarxwait(priv);
+		spi_dmatxwait(priv);
+		memcpy(rxbuffer, rxbuff_aligned, nwords * mode_16bit);
+		rtw_mfree(rxbuff_aligned, 0);
+		rtw_mfree(txbuff_aligned, 0);
+	} else if (txbuffer) {
+		uint8_t *txbuff_aligned =  NULL;
+		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+		if(txbuff_aligned == NULL) {
+			return;
+		}
+        memcpy(txbuff_aligned, txbuffer, nwords * mode_16bit);
+		spi_master_write_stream_dma(&priv->spi_object, (char *) txbuff_aligned, (uint32_t)nwords * mode_16bit);
+		spi_dmatxwait(priv);
+		rtw_mfree(txbuff_aligned, 0);
+	} else if (rxbuffer) {
+		uint8_t *rxbuff_aligned = NULL;
+		rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+		if(rxbuff_aligned == NULL) {
+			return;
+		}
+		spi_flush_rx_fifo(&priv->spi_object);
+		spi_master_read_stream_dma(&priv->spi_object, (char *) rxbuff_aligned, (uint32_t)nwords * mode_16bit);
+		spi_dmarxwait(priv);
+		memcpy(rxbuffer, rxbuff_aligned, nwords * mode_16bit);
+		rtw_mfree(rxbuff_aligned, 0);
+	}
+
+#endif							/* CONFIG_AMEBASMART_SPI_DMA */
 }
-#endif /* !CONFIG_AMEBASMART_SPI_DMA || CONFIG_AMEBASMART_DMACAPABLE */
 
 /****************************************************************************
  * Name: amebasmart_spi_sndblock
@@ -1114,7 +1317,10 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
-
+#ifdef CONFIG_AMEBASMART_SPI_DMA
+	sem_init(&priv->rxsem, 0, 0);
+	sem_init(&priv->txsem, 0, 0);
+#endif
 	gpio_init(&priv->gpio_cs0, priv->spi_cs0);
 	gpio_dir(&priv->gpio_cs0, PIN_OUTPUT);
 	gpio_mode(&priv->gpio_cs0, PullNone);
