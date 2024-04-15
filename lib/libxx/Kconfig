@@ -61,6 +61,12 @@ if LIBCXX
 config LIBCXX_EXCEPTION
 	bool "Enable Exception Suppport"
 	default y
+	---help---
+		Enable exception support in libc++.
+
+		NOTE: C++ exception support requires toolchain version 10.3.1. If you
+		are enabling C++ exception then use docker image version 2.0.0. Use
+		menuconfig (Build Setup -> Docker Image Version) to set CONFIG_DOCKER_VERSION=2.0.0
 
 config LIBCXX_IOSTREAM_BUFSIZE
 	int "IO Stream Buffer Size"
