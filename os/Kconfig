@@ -39,6 +39,20 @@ config DEFAULT_SMALL
 		have already been selected in your configuration file.  This applies
 		only to new settings that require a default value.
 
+config DOCKER_VERSION
+	string "Docker Image Version"
+	default "1.5.8"
+	---help---
+		This config indicates docker image version. We have developed distinct
+		version of docker images tailored to each toolchain required by different
+		chipset's configs. This approach streamlines development by providing
+		specific environments that align with the chipset's configs.
+
+		NOTE: C++ exception support requires toolchain version 10.3.1. If you are
+		enabling C++ exception then use docker image version 2.0.0.
+
+		Possible Versions: Please check https://hub.docker.com/r/tizenrt/tizenrt
+
 choice
 	prompt "Build Host Platform"
 	default HOST_LINUX

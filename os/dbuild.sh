@@ -51,7 +51,15 @@ fi
 # check docker image and pull docker image
 function GET_SPECIFIC_DOCKER_IMAGE()
 {
+
+	unset CONFIG_DOCKER_VERSION
 	# check existing docker image for specified version
+	if [  -f ${CONFIGFILE} ]; then
+		source ${CONFIGFILE}
+		if [ -n "$CONFIG_DOCKER_VERSION" ]; then
+			DOCKER_VERSION=${CONFIG_DOCKER_VERSION}
+		fi
+	fi
 	echo "Check Docker Image"
 	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
 	for im in ${DOCKER_IMAGES}; do
@@ -450,7 +458,7 @@ function SELECT_DL
 function CONFIGURE()
 {
 	${OSDIR}/tools/configure.sh $1 || exit 1
-	STATUS=CONFIGURED
+	UPDATE_STATUS
 }
 
 function DOWNLOAD()
@@ -474,6 +482,8 @@ function UPDATE_STATUS()
 			STATUS=CONFIGURED
 		fi
 	fi
+	GET_SPECIFIC_DOCKER_IMAGE
+	echo "Docker Image Version : ${DOCKER_IMAGE}:${DOCKER_VERSION}"
 }
 
 function BUILD()
@@ -520,10 +530,6 @@ function MENU()
 		esac
 	done
 }
-
-
-GET_SPECIFIC_DOCKER_IMAGE
-echo "Docker Image Version : ${DOCKER_IMAGE}:${DOCKER_VERSION}"
 
 UPDATE_STATUS
 if [ -z "$1" ]; then
