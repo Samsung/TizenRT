@@ -747,7 +747,6 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 	/*If idle channel is found,  register it. */
 	if (found) {
 		GDMA_ChnlRegister(GDMA_Index, GDMA_ChNum, IrqFun, IrqData, IrqPriority);
-		lldbg("\n[%s] - %d, gdma_idx = %d, gdma_chnum = %d\n",__FUNCTION__,__LINE__, GDMA_Index, GDMA_ChNum);
 	} else {
 		GDMA_ChNum = 0xFF;
 	}
