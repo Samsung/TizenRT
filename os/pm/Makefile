@@ -39,6 +39,10 @@ ifeq ($(CONFIG_PM_DVFS),y)
 CSRCS += pm_dvfs.c
 endif
 
+ifeq ($(CONFIG_PM_TICKSUPPRESS),y)
+CSRCS += pm_wakehandler.c
+endif
+
 DEPPATH = --dep-path .
 VPATH = .
 
