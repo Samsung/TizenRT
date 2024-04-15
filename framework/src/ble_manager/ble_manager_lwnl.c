@@ -493,6 +493,37 @@ trble_result_e ble_drv_stop_adv()
 	return res;
 }
 
+trble_result_e ble_drv_one_shot_adv_init()
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV_INIT}, 0, NULL, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_one_shot_adv_deinit()
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV_DEINIT}, 0, NULL, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_one_shot_adv(trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)data_adv, (void *)data_scan_rsp, (void *)type} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_set_device_name(uint8_t* name)
 {
 	trble_result_e res = TRBLE_SUCCESS;

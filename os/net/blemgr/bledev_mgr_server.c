@@ -38,7 +38,12 @@ static void ble_server_mtu_update_null_cb(trble_conn_handle con_handle, uint16_t
 	return;
 }
 
-static void ble_server_null_cb(trble_attr_cb_type_e type, trble_conn_handle linkindex, trble_attr_handle handle, void *arg)
+static void ble_server_oneshot_adv_cb(uint16_t adv_result)
+{
+	return;
+}
+
+static void ble_server_null_cb(trble_attr_cb_type_e type, trble_conn_handle linkindex, trble_attr_handle handle, void *arg, uint16_t result, uint16_t pending)
 {
 	return;
 }
@@ -78,6 +83,7 @@ static trble_server_init_config g_server_null_config = {
 	ble_server_connected_null_cb,
 	ble_server_disconnected_null_cb,
 	ble_server_mtu_update_null_cb,
+	ble_server_oneshot_adv_cb,
 	true,
 	gatt_null_profile,
 	sizeof(gatt_null_profile) / sizeof(trble_gatt_t)

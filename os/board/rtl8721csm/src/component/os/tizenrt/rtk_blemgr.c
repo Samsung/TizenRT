@@ -103,6 +103,9 @@ trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interv
 trble_result_e trble_netmgr_set_adv_txpower(struct bledev *dev, uint16_t txpower);
 trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
+trble_result_e trble_netmgr_one_shot_adv_init(struct bledev *dev);
+trble_result_e trble_netmgr_one_shot_adv_deinit(struct bledev *dev);
+trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
 
 struct trble_ops g_trble_drv_ops = {
 	// Common
@@ -157,6 +160,9 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_set_adv_txpower,
 	trble_netmgr_start_adv,
 	trble_netmgr_stop_adv,
+	trble_netmgr_one_shot_adv_init,
+	trble_netmgr_one_shot_adv_deinit,
+	trble_netmgr_one_shot_adv,
 };
 
 extern int rltk_coex_set_ble_scan_duty(uint8_t duty);
@@ -482,3 +488,19 @@ trble_result_e trble_netmgr_start_adv(struct bledev *dev)
 {
 	return rtw_ble_server_start_adv();
 }
+
+trble_result_e trble_netmgr_one_shot_adv_init(struct bledev *dev)
+{
+	return rtw_ble_server_one_shot_adv_init();
+}
+
+trble_result_e trble_netmgr_one_shot_adv_deinit(struct bledev *dev)
+{
+	return rtw_ble_server_one_shot_adv_deinit();
+}
+
+trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type)
+{
+	return rtw_ble_server_one_shot_adv(data_adv->data, data_adv->length, data_scan_rsp->data, data_scan_rsp->length, type);
+}
+
