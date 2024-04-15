@@ -954,10 +954,6 @@ config STM32L4_SRAM3_HEAP
 if PM
 comment "PM Support"
 
-config ARCH_HAVE_TICKSUPPRESS
-	bool
-	default n
-
 config ARCH_SUPPORT_ENTER_SLEEP
 	bool
 	default n

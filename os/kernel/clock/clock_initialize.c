@@ -339,4 +339,11 @@ void clock_timer(void)
 
 	g_system_timer++;
 }
+
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+void clock_timer_nohz(clock_t ticks)
+{
+	g_system_timer += ticks;
+}
+#endif
 #endif

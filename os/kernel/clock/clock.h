@@ -105,6 +105,9 @@ extern struct timespec   g_basetime;
 void weak_function clock_initialize(void);
 #ifndef CONFIG_SCHED_TICKLESS
 void weak_function clock_timer(void);
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+void clock_timer_nohz(clock_t ticks);
+#endif
 #endif
 
 int clock_abstime2ticks(clockid_t clockid, FAR const struct timespec *abstime, FAR int *ticks);

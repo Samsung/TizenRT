@@ -2142,6 +2142,24 @@ int up_rtc_settime(FAR const struct timespec *tp);
 #endif
 
 /****************************************************************************
+ * Name: up_register_wakehandler
+ *
+ * Description:
+ *   This function registers a handler for systick compensation when the core wakes up
+ *   from sleep mode.
+ *
+ * Input Parameters:
+ *   handler - A pointer to a function for systick compensation on the core wakeup.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+#ifdef CONFIG_PM_TICKSUPPRESS
+void up_register_wakehandler(void (*handler)(clock_t));
+#endif
+
+/****************************************************************************
  * Name: up_set_dvfs
  *
  * Description:

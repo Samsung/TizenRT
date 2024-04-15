@@ -268,5 +268,16 @@ config PM_SLEEPENTER_COUNT
 
 		Default: Fifty IDLE slices to enter SLEEP mode from STANDBY
 
+config PM_TICKSUPPRESS
+	bool "Support PM Tick Suppression"
+	default n
+	select SCHED_TICKSUPPRESS
+	depends on !SCHED_TICKLESS && ARCH_HAVE_TICKSUPPRESS
+	---help---
+		Periodic tick interrupts can be suppressed to keep the CPU idle for a longer period
+		of time. Tick suppression requires that missed ticks while the core is in an idle state
+		be compensated for when the core becomes active. To enable this configuration to
+		suppress ticks, the pm_wake() API must be called when the core wakes up.
+
 endif # PM
 
