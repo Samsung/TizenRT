@@ -696,28 +696,6 @@ enum pm_state_e pm_querystate(int domain);
 void pm_dvfs(int div_lvl);
 #endif
 
-#ifdef CONFIG_PM_DVFS
-/****************************************************************************
- * Name: up_set_dvfs
- *
- * Description:
- *   BSP operation called from wrapper API pm_dvfs() to reduce the clock 
- *   frequency of CPU core. It can be applied on some scenario which when low
- *	 loading activity is expected, we can invoke this API to wind down
- *   CPU cores with high operating frequency, to enhance the effectiveness
- *	 for power saving.
- *
- * Input Parameters:
- *   div_lvl - voltage frequency scaling level
- *
- * Returned Value:
- *   None.
- *
- *
- ****************************************************************************/
-void up_set_dvfs(int div_lvl);
-#endif
-
 void pm_driver_register(void);
 
 #undef EXTERN

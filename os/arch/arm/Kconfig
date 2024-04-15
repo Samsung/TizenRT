@@ -118,7 +118,7 @@ config ARCH_CHIP_AMEBASMART
 	select ARCH_HAVE_ADDRENV
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARCH_HAVE_HEAPCHECK if DEBUG
-	select PM_DVFS if PM
+	select ARCH_HAVE_DVFS
 	select CPU_GATING if SMP
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).
