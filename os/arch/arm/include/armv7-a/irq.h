@@ -337,11 +337,6 @@ struct xcptcontext
  ****************************************************************************/
 
 #ifndef __ASSEMBLY__
-#ifdef CONFIG_SMP
-void restore_critical_section(void);
-#else
-#  define restore_critical_section()
-#endif
 /* Name: irqsave, irqrestore, and friends.
  *
  * NOTE: This function should never be called from application code and,
@@ -441,6 +436,13 @@ extern "C"
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+#ifndef __ASSEMBLY__
+#ifdef CONFIG_SMP
+void restore_critical_section(void);
+#else
+#  define restore_critical_section()
+#endif
+#endif
 
 EXTERN volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
 #define CURRENT_REGS (g_current_regs[up_cpu_index()])
