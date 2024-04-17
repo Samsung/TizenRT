@@ -234,6 +234,49 @@ static void test_orientation(void)
 	close(fd);
 }
 
+#ifdef CONFIG_LCD_ST7701
+static void test_color_st7701(void)
+{
+	int fd = 0;
+	int p = 0;
+	char port[20] = { '\0' };
+
+	sprintf(port, LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
+		return -1;
+	}
+	struct fb_videoinfo_s vinfo;
+	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+	xres = vinfo.xres;
+	yres = vinfo.yres;
+	printf("xres : %d, yres:%d\n", xres, yres);
+	close(fd);
+
+	int c = 0, a = 0;
+	while(true){
+		a++;
+		if(c >= 3) break;
+		switch (a){
+			case 1:
+				putarea(1, xres - 1, 1, yres - 1, RED);
+				break;
+			case 2:
+				putarea(1, xres - 1, 1, yres - 1, WHITE);
+				break;
+			case 3:
+				putarea(1, xres - 1, 1, yres - 1, BLACK);
+				a = 0;
+				c++;
+				break;
+		}
+		sleep(2);
+	}
+	return;
+}
+#endif
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -244,6 +287,10 @@ int lcd_test_main(int argc, char *argv[])
 	int count = 0;
 	test_init();
 	sleep(1);
+
+#ifdef CONFIG_LCD_ST7701
+	test_color_st7701();
+#else
 	while (count < 5) {
 		test_clear();
 		sleep(1);
@@ -257,4 +304,5 @@ int lcd_test_main(int argc, char *argv[])
 		sleep(1);
 		count++;
 	}
+#endif
 }
