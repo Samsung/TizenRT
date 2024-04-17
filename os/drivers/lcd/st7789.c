@@ -907,15 +907,9 @@ FAR struct lcd_dev_s *st7789_lcdinitialize(FAR struct spi_dev_s *spi, struct st7
 	priv->spi = spi;
 	priv->config = config;
 
-	priv->config->reset();
 	priv->config->backlight(1);
 
-	lcd_lock(priv->spi);
-	st7789_init_cmd(priv);
-	lcd_unlock(priv->spi);
-
-	st7789_setorientation(&priv->dev, ST7789_DEFAULT_ORIENTATION);
-
+	st7789_init(&priv->dev);
 	return &priv->dev;
 }
 
