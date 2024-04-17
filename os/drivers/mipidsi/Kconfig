@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig MIPI_DSI
+	bool "Dsi Driver Support"
+	default n
+	---help---
+		Enables building of a dsi generic driver.
+
+if MIPI_DSI
+
+config MIPI_DSI_DRIVER
+	bool "MIPI DSI Character Driver"
+	default n
+
+endif
+
