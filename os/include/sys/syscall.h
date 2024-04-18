@@ -484,11 +484,12 @@
 #define SYS_recvfrom                   (__SYS_network + 8)
 #define SYS_recvmsg                    (__SYS_network + 9)
 #define SYS_send                       (__SYS_network + 10)
-#define SYS_sendto                     (__SYS_network + 11)
-#define SYS_setsockopt                 (__SYS_network + 12)
-#define SYS_shutdown                   (__SYS_network + 13)
-#define SYS_socket                     (__SYS_network + 14)
-#define __SYS_prctl                    (__SYS_network + 15)
+#define SYS_sendmsg                    (__SYS_network + 11)
+#define SYS_sendto                     (__SYS_network + 12)
+#define SYS_setsockopt                 (__SYS_network + 13)
+#define SYS_shutdown                   (__SYS_network + 14)
+#define SYS_socket                     (__SYS_network + 15)
+#define __SYS_prctl                    (__SYS_network + 16)
 #else
 #define __SYS_prctl                    __SYS_network
 #endif
