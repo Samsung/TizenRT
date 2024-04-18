@@ -362,6 +362,18 @@ int getsockname(int sockfd, FAR struct sockaddr *addr, FAR socklen_t *addrlen);
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen);
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
+
+/**
+* @brief  send the message to the peer socket
+*
+* @details @b #include <sys/socket.h>\n
+* POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+* @param[in] sockfd the file descriptor associated with the socket.
+* @param[in] msg the transmission message.
+* @param[in] flags the type of message transmission.
+* @return On success, 0 is returned. On failure, -1 is returned.
+* @since TizenRT v4.1
+*/
 ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
 
 #undef EXTERN
