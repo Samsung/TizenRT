@@ -133,7 +133,8 @@ static void st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_tab
 			break;
 		case REGFLAG_END_OF_TABLE:
 			lldbg("LPTX CMD Send Done\n");
-			mipi_dsi_detach(device);
+			msg.type = MIPI_DSI_END_OF_TRANSMISSION;
+			mipi_dsi_transfer(device, &msg);
 			return;
 		default:
 			cmd_addr = table[send_cmd_idx_s].para_list;

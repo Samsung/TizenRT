@@ -51,8 +51,8 @@
 #endif
 #define mipierr(format, ...)   printf(format, ##__VA_ARGS__)
 
-u32 vo_freq;
-u32 send_cmd_done = 0;
+static u32 vo_freq;
+static u32 send_cmd_done = 0;
 
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
@@ -67,14 +67,14 @@ struct mipi_irq {
 };
 
 /* Helpers */
-static void set_clock();
-static void check_freq(struct lcd_data *data);
-static void mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv);
-static void register_interrupt();
-static bool is_transfer_completed(void);
+static void amebasmart_set_clock(void);
+static void ameabsmart_check_freq(struct lcd_data *data);
+static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv);
+static void ameabsmart_register_interrupt(void);
+static bool ameabsmart_is_transfer_completed(void);
 
 /* MIPI methods */
-static void mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, u8 *para_list);
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list);
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
@@ -110,7 +110,7 @@ static struct amebasmart_mipi_dsi_host_s g_dsi_host = {
 
 /***********Helpers ***********/
 
-static void MIPI_InitStruct_Config_helper(FAR struct mipi_dsi_host *dsi_host)
+static void amebasmart_mipi_fill_buffer(FAR struct mipi_dsi_host *dsi_host)
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	u32 vtotal, htotal_bits, bit_per_pixel, overhead_cycles, overhead_bits, total_bits;
@@ -163,25 +163,25 @@ static void MIPI_InitStruct_Config_helper(FAR struct mipi_dsi_host *dsi_host)
 	//lldbg(MODULE_BOOT, LEVEL_INFO, "DataLaneFreq: %d, LineTime: %d\n", MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LineTime);
 }
 
-static void mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv)
+static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv)
 {
-	check_freq(&(priv->dsi_host.config));
-	set_clock();
+	ameabsmart_check_freq(&(priv->dsi_host.config));
+	amebasmart_set_clock();
 
 	MIPI_StructInit(priv->MIPI_InitStruct);
-	MIPI_InitStruct_Config_helper(&(priv->dsi_host));
+	amebasmart_mipi_fill_buffer(&(priv->dsi_host));
 	MIPI_Init(priv->MIPIx, priv->MIPI_InitStruct);
 
 	MIPI_DSI_TO1_Set(priv->MIPIx, DISABLE, 0);
 	MIPI_DSI_TO2_Set(priv->MIPIx, ENABLE, 0x7FFFFFFF);
 	MIPI_DSI_TO3_Set(priv->MIPIx, DISABLE, 0);
 
-	register_interrupt();
+	ameabsmart_register_interrupt();
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 	MIPI_DSI_init(priv->MIPIx, priv->MIPI_InitStruct);
 }
 
-static void mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, u8 *para_list)
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
 {
 	u32 word0, word1, addr, idx;
 	u8 cmd_addr[128];
@@ -212,7 +212,7 @@ static void mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, u8 *pa
 	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, payload_len, 0);
 }
 
-static void mipidsi_isr(void)
+static void amebasmart_mipidsi_isr(void)
 {
 	MIPI_TypeDef *MIPIx = MIPI;
 	u32 reg_val, reg_val2, reg_dphy_err;
@@ -253,7 +253,7 @@ static void mipidsi_isr(void)
 	}
 }
 
-static void check_freq(struct lcd_data *data)
+static void ameabsmart_check_freq(struct lcd_data *data)
 {
 	u32 totaly = MIPI_DSI_VSA + MIPI_DSI_VBP + MIPI_DSI_VFP + data->XPixels;
 	u32 totalx = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_DSI_HFP + data->YPixels;
@@ -262,7 +262,7 @@ static void check_freq(struct lcd_data *data)
 	assert_param(vo_freq < 67);
 }
 
-static void set_clock()
+static void amebasmart_set_clock(void)
 {
 	u32 PLLDiv = PLL_GET_NPLL_DIVN_SDM(PLL_BASE->PLL_NPPLL_CTRL1) + 2;
 	u32 PLL_CLK = XTAL_ClkGet() * PLLDiv;
@@ -275,15 +275,15 @@ static void set_clock()
 
 }
 
-static void register_interrupt()
+static void ameabsmart_register_interrupt(void)
 {
 	InterruptDis(mipi_irq_info.irq_num);
 	InterruptUnRegister(mipi_irq_info.irq_num);
-	InterruptRegister((IRQ_FUN) mipidsi_isr, mipi_irq_info.irq_num, (u32) mipi_irq_info.irq_data, mipi_irq_info.irq_priority);
+	InterruptRegister((IRQ_FUN) amebasmart_mipidsi_isr, mipi_irq_info.irq_num, (u32) mipi_irq_info.irq_data, mipi_irq_info.irq_priority);
 	InterruptEn(mipi_irq_info.irq_num, mipi_irq_info.irq_priority);
 }
 
-static bool is_transfer_completed(void)
+static bool ameabsmart_is_transfer_completed(void)
 {
 	if (send_cmd_done == 1) {
 		return true;
@@ -298,7 +298,6 @@ void mipidsi_mode_switch(bool do_enable){
 	else{
 		MIPI_DSI_Mode_Switch(MIPI, DISABLE);
 	}
-	return;
 }
 
 /************************************************************************************
@@ -311,7 +310,6 @@ static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct
 
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device)
 {
-	MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
 	return 0;
 }
 
@@ -319,6 +317,12 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
+
+	if(msg->type == MIPI_DSI_END_OF_TRANSMISSION){
+		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
+		return OK;
+	}
+	
 	int ret = mipi_dsi_create_packet(&packet, msg);
 	if (ret != OK) {
 		return ret;
@@ -326,26 +330,26 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	send_cmd_done = 0;
 	if (mipi_dsi_packet_format_is_short(msg->type)) {
 		if (packet.header[1] == 0) {
-			mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL);
 		} else {
-			mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1);
 		}
 	} else {
-		mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload);
+		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload);
 	}
 
-	while (!is_transfer_completed()) {
+	while (!ameabsmart_is_transfer_completed()) {
 		usleep(1000);
 	}
 	return OK;
 }
 
-struct mipi_dsi_host *mipi_dsi_host_initialize(struct lcd_data *config)
+struct mipi_dsi_host *ameabsmart_mipi_dsi_host_initialize(struct lcd_data *config)
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = NULL;
 	priv = &g_dsi_host;
 	priv->dsi_host.config = *config;
-	mipi_init_helper(priv);
+	amebasmart_mipi_init_helper(priv);
 	mipi_dsi_host_register(&priv->dsi_host);
 	return (struct mipi_dsi_host *)priv;
 }

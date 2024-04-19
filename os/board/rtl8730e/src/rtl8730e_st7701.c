@@ -35,7 +35,7 @@ static void rtl8730_st7701_lcd_layer_enable(int layer, bool enable);
 static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x1, u32 y1, u32 x2, u32 y2);
 static void rtl8730_st7701_enable_lcdc(void);
 FAR void mipidsi_mode_switch(bool do_enable);
-FAR struct mipi_dsi_host *mipi_dsi_host_initialize(struct lcd_data *config);
+FAR struct mipi_dsi_host *ameabsmart_mipi_dsi_host_initialize(struct lcd_data *config);
 FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *host, FAR const char *name, int channel);
 FAR struct lcd_dev_s *st7701_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct st7701_config_s *config);
 
@@ -96,7 +96,6 @@ static void rtl8730_st7701_lcd_init(void)
 
 	LCDC_LineINTPosConfig(pLCDC, YRES * 4 / 5);
 	LCDC_INTConfig(pLCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
-	return;
 }
 
 static void rtl8730_st7701_gpio_reset(void)
@@ -107,19 +106,16 @@ static void rtl8730_st7701_gpio_reset(void)
 static void rtl8730_st7701_cache_invalidate(u32 *buffer, int size)
 {
 	DCache_CleanInvalidate((u32) buffer, size);
-	return;
 }
 
 static void rtl8730_st7701_lcd_reload(void)
 {
 	LCDC_TrigerSHWReload(pLCDC);
-	return;
 }
 
 static void rtl8730_st7701_lcd_enable(void)
 {
 	rtl8730_st7701_enable_lcdc();
-	return;
 }
 
 static void rtl8730_st7701_lcd_layer_enable(int layer, bool enable)
@@ -129,7 +125,6 @@ static void rtl8730_st7701_lcd_layer_enable(int layer, bool enable)
 	} else {
 		lcdc_init_struct.layerx[layer].LCDC_LayerEn = DISABLE;
 	}
-	return;
 }
 
 static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x1, u32 y1, u32 x2, u32 y2)
@@ -145,7 +140,6 @@ static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x1, u32 y1, u32 
 	*/
 	LCDC_LayerConfig(pLCDC, 0, &lcdc_init_struct.layerx[0]);
 	LCDC_TrigerSHWReload(pLCDC);
-	return;
 }
 
 static void rtl8730e_st7701_reset_pin(u8 Newstatus)
@@ -170,12 +164,10 @@ static void rtl8730e_st7701_reset_pin(u8 Newstatus)
 
 static void rtl8730_st7701_enable_lcdc(void)
 {
-	/*enable the LCDC */
 	LCDC_Cmd(pLCDC, ENABLE);
 	while (!LCDC_CheckLCDCReady(pLCDC)) ;
 
 	mipidsi_mode_switch(true);
-	return;
 }
 
 void rtl8730_st7701_initialize(void)
@@ -184,7 +176,7 @@ void rtl8730_st7701_initialize(void)
 	config.XPixels = XRES;
 	config.YPixels = YRES;
 
-	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)mipi_dsi_host_initialize(&config);
+	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)ameabsmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);
 	struct lcd_dev_s *dev = (struct lcd_dev_s *)st7701_lcdinitialize(dsi_device, &g_rtl8730_st7701_config_s);
 	LcdcInitValues(config);
@@ -192,9 +184,9 @@ void rtl8730_st7701_initialize(void)
 
 	if (lcddev_register(dev) < 0) {
 		lldbg("ERROR: LCD driver register fail\n");
-	} else {
-		lldbg("LCD driver register success\n");
+		return;
 	}
+	lldbg("LCD driver register success\n");
 	rtl8730_st7701_enable_lcdc();
 	
 	rtl8730e_st7701_reset_pin(1);
@@ -203,6 +195,4 @@ void rtl8730_st7701_initialize(void)
 	DelayMs(10);
 	rtl8730e_st7701_reset_pin(1);
 	DelayMs(120);
-
-	return;
 }
