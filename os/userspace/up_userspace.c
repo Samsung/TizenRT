@@ -42,6 +42,25 @@
 #include <tinyara/init.h>
 #include <tinyara/arch.h>
 
+#if CONFIG_XIP_ELF
+extern void * _stext_flash;
+extern void * _sbss;
+extern void * _ebss;
+extern void * _sdata;
+extern void * _edata;
+extern void * _sdata_app;
+extern void * _sapp_heap;
+extern void * _eapp_heap;
+extern void * _my_entry;
+extern void * _sctors;
+extern void * _ectors;
+extern void * _eapp_flash;
+extern void * _sapp_ram;
+extern void * _eapp_ram;
+
+extern int main(int argc, char **argv);
+#endif
+
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
 
 /****************************************************************************
@@ -62,6 +81,24 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.signal_handler = up_signal_handler,
 #endif
 
+#if CONFIG_XIP_ELF
+	.text_start = &_stext_flash,
+	.bss_start = &_sbss,
+	.bss_end = &_ebss,
+	.data_start_in_ram = &_sdata,
+	.data_end_in_ram = &_edata,
+	.data_start_in_flash = &_sdata_app,
+	.heap_start = &_sapp_heap,
+	.heap_end = &_eapp_heap,
+	.sctors = &_sctors,
+        .ectors = &_ectors,
+	.flash_end = &_eapp_flash,
+	.ram_start = &_sapp_ram,
+	.ram_end = &_eapp_ram,
+#ifndef __COMMON_BINARY__
+	.entry = main,
+#endif
+#endif
 };
 
 /****************************************************************************

@@ -28,13 +28,25 @@ config BINFMT_LOADABLE
 	---help---
 		Automatically selected if a loadable binary format is selected.
 
+choice ELF_FORMAT
+	prompt "ELF format, relocatable ELF or XIP ELF"
+	default ELF
+
 config ELF
 	bool "Enable the ELF Binary Format"
-	default n
 	select BINFMT_LOADABLE
 	select LIBC_ARCH_ELF
 	---help---
 		Enable support for the ELF binary format.  Default: n
+
+config XIP_ELF
+	bool "Enable the XIP ELF Binary Format"
+	select BINFMT_LOADABLE
+	---help---
+		Enable support for the XIP ELF binary format. Default: n
+
+endchoice
+
 
 if ELF
 source binfmt/libelf/Kconfig
@@ -63,7 +75,7 @@ endif
 config BINFMT_CONSTRUCTORS
 	bool "C++ Static Constructor Support"
 	default n
-	depends on HAVE_CXX && SCHED_STARTHOOK && ELF
+	depends on HAVE_CXX && SCHED_STARTHOOK && (ELF || XIP_ELF)
 	---help---
 		Build in support for C++ constructors in loaded modules.  Currently
 		only support for ELF binary formats.
@@ -78,8 +90,9 @@ config SYMTAB_ORDEREDBYNAME
 		slow, linear searches are supported.
 
 config OPTIMIZE_APP_RELOAD_TIME
-        bool "Optimizations for application reload time"
-        default y
+	bool "Optimizations for application reload time"
+	depends on ELF
+	default y
         ---help---
 		If this option is enabled, the app reload time is optimized by maintaining a backup
 		of the data section in the apps RO region. During reload time, the ELF file is not

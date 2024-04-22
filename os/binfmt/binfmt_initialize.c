@@ -106,6 +106,13 @@ void binfmt_initialize(void)
 	}
 #endif
 
+#ifdef CONFIG_XIP_ELF
+	ret = xipelf_initialize();
+	if (ret < 0) {
+		berr("ERROR: xipelf_initialize failed: %d\n", ret);
+	}
+#endif
+
 	UNUSED(ret);
 }
 

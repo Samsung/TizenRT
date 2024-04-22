@@ -151,7 +151,7 @@ def make_kernel_binary_header():
 #
 # User binary header information on APP_BINARY_SEPARTION
 #
-# total header size is 41bytes.
+# total header size is 41bytes (CONFIG_ELF) or 44bytes (CONFIG_XIP_ELF).
 # +-----------------------------------------------------------------
 # | Header size | Binary type | Binary priority | Loading priority |
 # |   (2bytes)  |   (1byte)   |     (1byte)     |      (1bytes)    |
@@ -160,10 +160,10 @@ def make_kernel_binary_header():
 # | Binary size |  Binary name | Binary version | Binary ram size | Binary stack size |
 # |  (4bytes)   |   (16bytes)  |    (4bytes)    |    (4bytes)     |     (4bytes)      |
 # -------------------------------------------------------------------------------------
-# -----------------+
-# | Kernel Version |
-# |  (4bytes)      |
-# -----------------+
+# -----------------------------------------------------+
+# | Kernel Version | Padding (Only for CONFIG_XIP_ELF) |
+# |  (4bytes)      |          (3bytes)                 |
+# -----------------------------------------------------+
 #
 # parameter information :
 #
@@ -203,6 +203,12 @@ def make_user_binary_header():
     SIZE_OF_KERNELVER = 4
 
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINTYPE + SIZE_OF_MAINPRIORITY + SIZE_OF_LOADINGPRIORITY + SIZE_OF_BINSIZE + SIZE_OF_BINNAME + SIZE_OF_BINVER + SIZE_OF_BINRAMSIZE + SIZE_OF_MAINSTACKSIZE + SIZE_OF_KERNELVER
+
+    xip_elf = util.get_value_from_file(cfg_path, "CONFIG_XIP_ELF=").replace('"','').replace('\n','')
+    if xip_elf != 'None' :
+        #add padding so the linker script start address aligns with 32bit/4byte
+        SIZE_OF_PADDING = 3
+        header_size = header_size + SIZE_OF_PADDING
 
     # Loading priority
     LOADING_LOW = 1
@@ -288,6 +294,9 @@ def make_user_binary_header():
         fp.write(struct.pack('I', binary_ram_size))
         fp.write(struct.pack('I', int(main_stack_size)))
         fp.write(struct.pack('I', int(kernel_ver)))
+        if xip_elf != 'None' :
+            #add padding so the linker script start address aligns with 32bit/4byte
+            fp.write(struct.pack('BBB', 0, 0, 0))
         fp.write(data)
 
         fp.close()
@@ -297,11 +306,11 @@ def make_user_binary_header():
 #
 # Common binary header information :
 #
-# total header size is 10 bytes.
-# +---------------------------------------------+
-# | Header size | Binary Version |  Binary Size |
-# |   (2bytes)  |    (4bytes)    |   (4bytes)   |
-# +---------------------------------------------+
+# total header size is 10 bytes (CONFIG_ELF) or 12 bytes (CONFIG_XIP_ELF).
+# +---------------------------------------------------------------------------------+
+# | Header size | Binary Version |  Binary Size | Padding (Only for CONFIG_XIP_ELF) |
+# |   (2bytes)  |    (4bytes)    |   (4bytes)   |           (2bytes)                |
+# +---------------------------------------------------------------------------------+
 #
 # parameter information :
 #
@@ -330,6 +339,12 @@ def make_common_binary_header():
         print("        Please check CONFIG_COMMON_BINARY_VERSION with 'YYMMDD' format in (101, 991231)")
         sys.exit(1)
 
+    xip_elf = util.get_value_from_file(cfg_path, "CONFIG_XIP_ELF=").replace('"','').replace('\n','')
+    if xip_elf != 'None' :
+        #add padding so the linker script start address aligns with 32bit/4byte
+        SIZE_OF_PADDING = 2
+        header_size = header_size + SIZE_OF_PADDING
+
     with open(file_path, 'rb') as fp:
         # binary data copy to 'data'
         data = fp.read()
@@ -342,6 +357,10 @@ def make_common_binary_header():
         fp.write(struct.pack('H', header_size))
         fp.write(struct.pack('I', int(bin_ver)))
         fp.write(struct.pack('I', file_size))
+        xip_elf = util.get_value_from_file(cfg_path, "CONFIG_XIP_ELF=").replace('"','').replace('\n','')
+        if xip_elf != 'None' :
+            #add padding so the linker script start address aligns with 32bit/4byte
+            fp.write(struct.pack('H', 0))
         fp.write(data)
 
 ############################################################################

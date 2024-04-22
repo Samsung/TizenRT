@@ -149,6 +149,9 @@ struct user_binary_header_s {
 	uint32_t bin_ramsize;
 	uint32_t bin_stacksize;
 	uint32_t kernel_ver;
+#ifdef CONFIG_XIP_ELF
+	char padding[3];
+#endif
 } __attribute__((__packed__));
 typedef struct user_binary_header_s user_binary_header_t;
 
@@ -166,6 +169,9 @@ struct common_binary_header_s {
 	uint16_t header_size;
 	uint32_t version;
 	uint32_t bin_size;
+#ifdef CONFIG_XIP_ELF
+	uint16_t padding;
+#endif
 } __attribute__((__packed__));
 typedef struct common_binary_header_s common_binary_header_t;
 

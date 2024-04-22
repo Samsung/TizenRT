@@ -85,6 +85,7 @@ SUBDIRS =
 DEPPATH = --dep-path .
 
 include libelf$(DELIM)Make.defs
+include libxipelf$(DELIM)Make.defs
 include libbuiltin$(DELIM)Make.defs
 
 BINFMT_AOBJS = $(BINFMT_ASRCS:.S=$(OBJEXT))
