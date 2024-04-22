@@ -448,9 +448,18 @@ pass1deps: pass1dep $(USERLIBS)
 
 pass1: pass1deps
 ifeq ($(CONFIG_BUILD_2PASS),y)
+ifeq ($(CONFIG_ELF),y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+ifeq ($(CONFIG_ELF),y)
 	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+else
+	$(Q) $(TOPDIR)/tools/mkldscript.py
+	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+endif
 endif
 endif
 
@@ -497,6 +506,7 @@ endif
 
 # Prepare the app binary according to TizenRT requirement
 # Strip debug symbols, Compress and add binary header
+ifeq ($(CONFIG_ELF),y)
 define PREPARE_APP
 	$(Q) echo "Preparing final $(OUTBIN_DIR)/$1 binary"
 	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1_dbg
@@ -506,6 +516,20 @@ define PREPARE_APP
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$1
 	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/user
 endef
+endif
+
+ifeq ($(CONFIG_XIP_ELF),y)
+define PREPARE_APP
+        $(Q) echo "Preparing final $(OUTBIN_DIR)/$1 binary"
+        $(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1_dbg
+        $(Q) $(call STRIP_DBG,$1)
+        $(Q) arm-none-eabi-objcopy -O binary $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/$1.bin
+        $(Q) cp $(OUTBIN_DIR)/$1.bin $(OUTBIN_DIR)/$1
+        $(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$1 $2 $3 $1 $4 $5 $6 $7 $8
+        $(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$1
+        $(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/user
+endef
+endif
 
 post:
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)

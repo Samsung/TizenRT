@@ -87,6 +87,8 @@ void binfmt_setup_app_pgtable(struct binary_s *binp)
 
 	// Get the start and end address of the memory region.
 	// Map the region to the page tables.
+#ifdef CONFIG_ELF
+
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
 	mmu_map_app_region(binp->binary_idx, l1tbl, binp->sections[BIN_TEXT], binp->sizes[BIN_TEXT], true, true);
@@ -98,6 +100,15 @@ void binfmt_setup_app_pgtable(struct binary_s *binp)
 	/* Complete RAM partition will be configured as RW region */
 	mmu_map_app_region(binp->binary_idx, l1tbl, binp->ramstart, binp->ramsize, false, true);
 #endif
+
+#else // ELF
+
+	/* map entire flash region of app as rw */
+	mmu_map_app_region(binp->binary_idx, l1tbl, binp->flash_region_start, binp->flash_region_end - binp->flash_region_start, true, true);
+	
+	/* map entire RAM region of app as rx */
+	mmu_map_app_region(binp->binary_idx, l1tbl, binp->ram_region_start, binp->ram_region_end - binp->ram_region_start, false, true);
+#endif // ELF
 
 }
 
