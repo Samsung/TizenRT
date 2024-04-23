@@ -86,6 +86,7 @@
 
 #include <tinyara/config.h>
 #include <queue.h>
+#include <semaphore.h>
 
 #ifdef CONFIG_PM
 
@@ -241,20 +242,8 @@
 											 */
 #endif
 
-/* PM timer Definitions *************************************************/
-/* Flag bits for the flags field of struct pm_wakeup_timer_s */
-
-#define PM_STATIC      (1 << 0)	        /* Bit 0: pm timer is statically allocated */
-#define PM_ALLOCED      (1 << 1)	/* Bit 1: pm timer is allocated at run time */
-
-#define PM_ISALLOCED(w)  (((w)->flags & PM_ALLOCED) != 0)
-#define PM_ISSTATIC(w)   (((w)->flags & PM_STATIC) != 0)
-
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
-
-/* Defines default sleep duration */
-#define DEFAULT_PM_SLEEP_DURATION    10000000 /* 10 sec in microsecond*/
 
 /****************************************************************************
  * Public Types
@@ -324,16 +313,13 @@ struct pm_arg_s {
 
 typedef struct pm_arg_s pm_arg_t;
 
-struct pm_timer_s {
-	uint8_t timer_type;		                 /* Bits here are set according to the timer that is to be used */
-	uint32_t timer_interval;	             /* The interval for whichever timer is to be used */
-};
-
 struct pm_wakeup_timer_s {	
 	struct pm_wakeup_timer_s *next;   /* pointer to next timer in the linked list */
 	int pid;                          /* id of process that created pm timer */
 	uint8_t flags;                    /* See pm timer definations above*/
 	int delay;		          /* refers to time of sleep expected */
+	void (*callback)(struct pm_wakeup_timer_s *timer);           /* function to be executed when timer expires*/
+	sem_t pm_sem;             /* argument for callback function after timer expires*/
 };
 
 typedef struct pm_wakeup_timer_s pm_wakeup_timer_t;
@@ -554,25 +540,6 @@ void pm_stay(int domain, enum pm_state_e state);
 void pm_relax(int domain, enum pm_state_e state);
 
 /****************************************************************************
- * Name: pm_set_timer
- *
- * Description:
- *   This function is called to set a timed callback to an intended function.
- *   It may be used to invoke pm_relax() after a fixed time duration of
- *   locking using pm_stay().
- *
- * Input Parameters:
- *   timer_type - the type of the timer which determines the callback
- *   timer_interval - duration of the timer
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void pm_set_timer(int timer_type, size_t timer_interval);
-
-/****************************************************************************
  * Name: pm_set_wakeup_timer
  *
  * Description:
@@ -620,6 +587,28 @@ void pm_timer_update(int ticks);
  *   invoked just before sleep when needed. 
  * 
  * Parameters:
+ *   struct pm_wakeup_timer_s pointer
+ *
+ * Return Value:
+ *   None
+ *
+ ************************************************************************/
+
+void pm_timer_add(pm_wakeup_timer_t *timer);
+
+/************************************************************************
+ * Name: pm_sleep
+ *
+ * Description:
+ *   This function allows the board to sleep for given time interval.
+ *   When this function is called, it is expected that board will sleep for 
+ *   given duration of time. But for some cases board might not go 
+ *   to sleep instantly if :
+ * 	 1. system is in pm lock (pm state transition is locked)
+ *      2. Other threads(other than idle) are running
+ *      3. NORMAL to SLEEP state threshold time is large
+ * 
+ * Parameters:
  *   timer_interval - expected board sleep duration
  *
  * Return Value:
@@ -628,7 +617,7 @@ void pm_timer_update(int ticks);
  *
  ************************************************************************/
 
-int pm_timer_add(unsigned int timer_interval);
+int pm_sleep(int timer_interval);
 
 /****************************************************************************
  * Name: pm_staycount

@@ -71,8 +71,6 @@
  * External Definitons
  ****************************************************************************/
 
-extern struct pm_timer_s g_pm_timer;
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -206,36 +204,6 @@ void pm_stay(int domain, enum pm_state_e state)
 	DEBUGASSERT(pdom->stay[state] < UINT16_MAX);
 	pdom->stay[state]++;
 	leave_critical_section(flags);
-}
-
-/****************************************************************************
- * Name: pm_set_timer
- *
- * Description:
- *   This function is called to set a timed callback to an intended function.
- *   It may be used to invoke pm_relax() after a fixed time duration of
- *   locking using pm_stay().
- *
- * Input Parameters:
- *   timer_type - the type of the timer which determines the callback
- *   timer_interval - duration of the timer
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void pm_set_timer(int pm_timer_type, size_t timer_interval)
-{
-	/* Set the global variables to trigger the appropriate timer */
-	g_pm_timer.timer_type = pm_timer_type;
-	g_pm_timer.timer_interval = timer_interval;
-
-	/* Wakeup timer will be triggered at the time of sleep, otherwise trigger now. */
-	if (pm_timer_type != PM_WAKEUP_TIMER) {
-		up_set_pm_timer();
-	}
-	return;
 }
 
 /****************************************************************************

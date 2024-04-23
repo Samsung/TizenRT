@@ -97,30 +97,24 @@ void pm_timer_delete(pm_wakeup_timer_t *timer)
 
         DEBUGASSERT(timer);
 
-        /* Check if this needs to be atomic */
-        state = enter_critical_section();
-
         if (PM_ISSTATIC(timer)) {
+                /* Check if this needs to be atomic */
+                state = enter_critical_section();
+
                 /* Put the pm timer back on the free list */
                 sq_addlast((FAR sq_entry_t *)timer, &g_pmTimer_freeList);
                 g_pmTimer_nfree++;
-                DEBUGASSERT(g_pmTimer_nfree <= CONFIG_PM_MAX_WAKEUP_TIMER);
+                DEBUGASSERT(g_pmTimer_nfree <= CONFIG_PM_MAX_STATIC_TIMER);
                 leave_critical_section(state);
 
         } else if (PM_ISALLOCED(timer)) {
                 /* Free the dynamically allocated timer 
-                * If the timer was released from an interrupt handler, 
-                * sched_kfree() will defer the actual deallocation of the
-                * memory until a more appropriate time. 
-                * 
                 * We don't need interrupts disabled to do this */
-                leave_critical_section(state);
-                sched_kfree(timer);	
+                kmm_free(timer);	
 
         } else {
                 /* This should not be the case because a pm timer 
                 * is either statically allocated or dynamically */
                 pmdbg("This should not be any case\n");
-                leave_critical_section(state);
         }
 }

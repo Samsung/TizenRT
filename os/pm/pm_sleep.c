@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************
- * pm/pm_timer/pm_timer.h
+ * pm/pm_sleep.c
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,110 +47,88 @@
  *
  ************************************************************************/
 
-#ifndef __PM_TIMER_H
-#define __PM_TIMER_H
-
 /************************************************************************
  * Included Files
  ************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <assert.h>
-#include <debug.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <queue.h>
-
-#define PM_TIMER_FAIL     -1
-#define PM_TIMER_SUCCESS   0
+#include <tinyara/pm/pm.h>
+#include <tinyara/irq.h>
+#include <pm_timer/pm_timer.h>
 
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
 
 /************************************************************************
- * Public Type Declarations
+ * Private Type Declarations
  ************************************************************************/
 
 /************************************************************************
- * Public Variables
- ************************************************************************/
-
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-/* PM timer Definitions *************************************************/
-/* Flag bits for the flags field of struct pm_wakeup_timer_s */
-
-#define PM_STATIC      (1 << 0)	        /* Bit 0: pm timer is statically allocated */
-#define PM_ALLOCED      (1 << 1)	/* Bit 1: pm timer is allocated at run time */
-
-#define PM_ISALLOCED(w)  (((w)->flags & PM_ALLOCED) != 0)
-#define PM_ISSTATIC(w)   (((w)->flags & PM_STATIC) != 0)
-
-/* The g_pmTimer_freeList is a singly linked list of pm timers available
- * to the system */
-
-extern sq_queue_t g_pmTimer_freeList;
-
-/* The g_pmTimer_activeList data structure is a singly linked list ordered by
- * pm wakeup timer expiration time.
- */
-
-extern sq_queue_t g_pmTimer_activeList;
-
-/* This is the number of free, pre-allocated pm wakeup timer structures in the
- * g_pmTimer_freeList. 
- */
-
-extern uint16_t g_pmTimer_nfree;
-
-/************************************************************************
- * Public Function Prototypes
+ * Private Variables
  ************************************************************************/
 
 /************************************************************************
- * Name: pm_timer_create
- *
- * Description:
- *   This function creates a pm timer structure for the user requested and
- *   initializes the timer fields and returns the id.
- *
- * Parameters:
- *   is_periodic - if the timer should be periodic
- *
- * Return Value:
- *   id of the timer
- *
+ * Public Functions
  ************************************************************************/
 
-pm_wakeup_timer_t *pm_timer_create();
-
-/************************************************************************
- * Name: pm_timer_delete
- *
- * Description:
- *   This function deletes a pm timer. It either returns it to the 
- *   g_pmTimer_freeList or frees it if it was created dynamically.
- *
- * Parameters:
- *   pm timer to be deleted
- *
- * Return Value:
- *   None
- *
- ************************************************************************/
-
-void pm_timer_delete(pm_wakeup_timer_t *timer) ;
-
-#undef EXTERN
-#ifdef __cplusplus
+static void pm_timer_callback(pm_wakeup_timer_t* timer)
+{
+        /* As the timer is expired, give back the semaphore to unlock the thread */
+	sem_post(&timer->pm_sem);	
 }
-#endif
 
-#endif							/* __PM_TIMER_H */
+/************************************************************************
+ * Name: pm_sleep
+ *
+ * Description:
+ *   This function allows the board to sleep for given time interval.
+ *   When this function is called, it is expected that board will sleep for 
+ *   given duration of time. But for some cases board might not go 
+ *   to sleep instantly if :
+ * 	1. system is in pm lock (pm state transition is locked)
+ *      2. Other threads(other than idle) are running
+ *      3. NORMAL to SLEEP state threshold time is large
+ * 
+ * Parameters:
+ *   timer_interval - expected board sleep duration
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_sleep(int timer_interval)
+{
+        pm_wakeup_timer_t *timer = pm_timer_create();
+        irqstate_t state;
+        if (timer == NULL) {
+                pmdbg("Unable to create pm timer\n");
+                return PM_TIMER_FAIL;
+        }
+
+        /* initialize the timer's semaphore. It will be used to lock the
+         * thread before sleep and unlock after expire */
+        sem_init(&timer->pm_sem, 0, 0);
+
+        timer->callback = pm_timer_callback;
+
+        /* Now add the timer in the list 
+         * Adding a wakeup timer in the linked list should be atomic.
+         * Otherwise there is a chance of wrong ordering of the list.*/
+        state = enter_critical_section();
+
+        /* Add the timer in the g_pmTimer_activeList */
+        timer->delay = timer_interval;
+        pm_timer_add(timer);
+
+        leave_critical_section(state);
+
+        /* sem_wait untill the timer expires */      
+        sem_wait(&timer->pm_sem);
+
+        /* When the semaphore is freed, make the pm timer free */
+	pm_timer_delete(timer);
+
+        return PM_TIMER_SUCCESS;
+}

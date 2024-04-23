@@ -102,7 +102,7 @@ uint16_t g_pmTimer_nfree;
  * in the list is a configuration item.
  */
 
-pm_wakeup_timer_t g_pmTimer_pool[CONFIG_PM_MAX_WAKEUP_TIMER];
+pm_wakeup_timer_t g_pmTimer_pool[CONFIG_PM_MAX_STATIC_TIMER];
 
 /****************************************************************************
  * Public Functions
@@ -139,8 +139,8 @@ void pm_initialize(void)
 		pdom->btime = clock_systimer();
 
 #ifdef CONFIG_PM_TICKSUPPRESS
-	/* Registers a handler to be called when the core wakes up */
-	up_register_wakehandler(pm_wakehandler);
+		/* Registers a handler to be called when the core wakes up */
+		up_register_wakehandler(pm_wakehandler);
 #endif
 
 #ifdef CONFIG_PM_METRICS
@@ -174,12 +174,12 @@ void pm_initialize(void)
 
 	/* The g_pmTimer_freeList must be initiated */
 	pm_wakeup_timer_t *timer = g_pmTimer_pool;
-	for (int i = 0; i < CONFIG_PM_MAX_WAKEUP_TIMER; i++) {
-			sq_addlast((pm_wakeup_timer_t *)timer++, &g_pmTimer_freeList);
+	for (int i = 0; i < CONFIG_PM_MAX_STATIC_TIMER; i++) {
+		sq_addlast((pm_wakeup_timer_t *)timer++, &g_pmTimer_freeList);
 	}
 
 	/* All pm timers are free */
-	g_pmTimer_nfree = CONFIG_PM_MAX_WAKEUP_TIMER;
+	g_pmTimer_nfree = CONFIG_PM_MAX_STATIC_TIMER;
 
 	pmtest_init();
 }

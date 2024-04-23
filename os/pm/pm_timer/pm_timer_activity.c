@@ -52,6 +52,7 @@
  ************************************************************************/
 
 #include <tinyara/pm/pm.h>
+#include <time.h>
 #include "pm_timer.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -83,8 +84,8 @@ void pm_timer_expire(void)
 		/* Remove the pm timer from active list */
         	sq_remfirst(&g_pmTimer_activeList);
 
-		/* Make the pm timer free */
-		pm_timer_delete(head);
+		/* Call the callback api of the timer */
+		(*(head->callback))(head);
 	}
 }
 
@@ -128,10 +129,16 @@ int pm_set_wakeup_timer(void)
 		curr = curr->next;
 	}
 
-	if (curr->delay > 0) {
-		pmdbg("Setting timer and Board will wake up after %d millisecond\n", curr->delay);
-		pm_set_timer(PM_WAKEUP_TIMER, curr->delay * 1000);
-	} 
+	/* CONFIG_PM_MIN_SLEEP_TIME is the minimum time 
+	 * below which system should not go to sleep. 
+	 * Note that this value should be in millisecond */
+	if (curr->delay > CONFIG_PM_MIN_SLEEP_TIME) {
+		pmvdbg("Setting timer and Board will wake up after %d millisecond\n", curr->delay);
+		/* Converting ticks to nanoseconds */
+		up_set_pm_timer((curr->delay * 1000000) / CLOCKS_PER_SEC);
+	} else {
+		return PM_TIMER_FAIL;
+	}
 	
 	return PM_TIMER_SUCCESS;
 }

@@ -45,7 +45,7 @@ config PM_METRICS_DURATION
 
 endif
 
-config PM_MAX_WAKEUP_TIMER
+config PM_MAX_STATIC_TIMER
 	int "PM maximum no. of wakeup timers"
 	default 10
 	---help---
@@ -287,6 +287,15 @@ config PM_TICKSUPPRESS
 		of time. Tick suppression requires that missed ticks while the core is in an idle state
 		be compensated for when the core becomes active. To enable this configuration to
 		suppress ticks, the pm_wake() API must be called when the core wakes up.
+
+config PM_MIN_SLEEP_TIME
+	int "PM MIN SLEEP enter time"
+	default 0
+	---help---
+		This value is the minimum duration of system sleep. System should not go to sleep
+		if the app request it to sleep below this value. Because then it might not be very
+		power efficient. 
+		Also Note that, this value is in millisecond.
 
 endif # PM
 
