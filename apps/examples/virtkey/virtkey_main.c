@@ -50,7 +50,8 @@ static void virtkey_send(void)
 	int fd = open("/dev/virtkey", O_WRONLY);
 
 	if (fd < 0) {
-		printf("Failed to open fd, errno : %d\n", errno);
+		printf("Failed to open /dev/virtkey, errno : %d\n", get_errno());
+		return NULL;
 	}
 
 	struct key_event key;
@@ -91,15 +92,15 @@ static void virtkey_send(void)
 static void virtkey_receive(void)
 {
 	/* read first 10 events */
-
 	char c;
-        int ret;
+	int ret;
 
-        int fd = open("/dev/virtkey", O_RDONLY);
+	int fd = open("/dev/virtkey", O_RDONLY);
 
-        if (fd < 0) {
-                printf("Failed to open fd, errno : %d\n", errno);
-        }
+	if (fd < 0) {
+		printf("Failed to open /dev/virtkey, errno : %d\n", get_errno());
+		return NULL;
+	}
 
 	struct pollfd fds[1];
 	fds[0].fd = fd;
@@ -136,21 +137,23 @@ int main(int argc, FAR char *argv[])
 int virtkey_main(int argc, char *argv[])
 #endif
 {
-	pid_t send, recv;
+	pid_t send;
+	pid_t recv;
 
 	send = task_create("vkeysend", SCHED_PRIORITY_DEFAULT, 1024, virtkey_send, NULL);
 
 	if (send < 0) {
-		printf("failed to create sender\n");
+		printf("failed to create sender, error : %d\n", get_errno());
 		return 0;
 	}
 
 	recv = task_create("vkeyrcv", SCHED_PRIORITY_DEFAULT, 1024, virtkey_receive, NULL);
 
 	if (recv < 0) {
-                printf("failed to create receiver\n");
-                return 0;
-        }
+		printf("failed to create receiver, error : %d\n", get_errno());
+		task_delete(send);
+		return 0;
+	}
 
 	return 0;
 }
