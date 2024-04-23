@@ -83,6 +83,11 @@ AIFW_RESULT AIModelService::stop(void)
 		AIFW_LOGV("Service already stopped.");
 		return AIFW_OK;
 	}
+	AIFW_RESULT ret = clearData();
+	if (ret != AIFW_OK) {
+		AIFW_LOGE("Failed to clear data. ret: %d", ret);
+		return ret;
+	}
 	if (mInterval == 0) {
 		mServiceRunning = false;
 		return AIFW_OK;
