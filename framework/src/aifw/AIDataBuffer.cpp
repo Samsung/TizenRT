@@ -139,6 +139,7 @@ AIFW_RESULT AIDataBuffer::clear(void)
 	AIDataBufferNode *current = mStart;
 	while (current) {
 		current->mIsEmpty = true;
+		memset(current->mData, '\0', mRowSize * sizeof(float));
 		current = current->mNext;
 	}
 	mRowCount = 0;
@@ -169,10 +170,12 @@ AIFW_RESULT AIDataBuffer::clear(uint16_t offset, uint16_t count)
 	i = 0;
 	while (i < count - 1) {
 		current->mIsEmpty = true;
+		memset(current->mData, '\0', mRowSize * sizeof(float));
 		current = current->mNext;
 		i++;
 	}
 	current->mIsEmpty = true;
+	memset(current->mData, '\0', mRowSize * sizeof(float));
 	mRowCount -= count;
 	AIDataBufferNode *lastNode = current;
 	AIDataBufferNode *nextToLastNode = lastNode->mNext;
