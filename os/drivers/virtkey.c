@@ -34,18 +34,20 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#ifdef CONFIG_VIRTKEY_QUEUE_LEN
+#define MAX_LEN CONFIG_VIRTKEY_QUEUE_LEN
+#else
 #define MAX_LEN 1024
-
+#endif
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 struct virtkey_dev_s {
 	sem_t datasem;
 	char *events;
-	uint8_t size;
-	uint8_t head;
-	uint8_t tail;
+	uint16_t size;
+	uint16_t head;
+	uint16_t tail;
 #ifndef CONFIG_DISABLE_POLL
 	sem_t pollsem;
 	struct pollfd *fds[CONFIG_SERIAL_NPOLLWAITERS];
@@ -156,6 +158,7 @@ static ssize_t virtkey_write(FAR struct file *filep, FAR const char *buffer, siz
 		ret = 0;
 	} else {
 		if (len > (MAX_LEN - priv->size)) {
+			virtkey_givesem(&priv->datasem);
 			return 0;
 		}
 		for (int i = 0; i < len; i++) {
@@ -295,7 +298,7 @@ void virtkey_register(void)
 {
 	struct virtkey_dev_s *priv = &g_virtkey_priv;
 	
-	priv->events = (char *) malloc(MAX_LEN);
+	priv->events = (char *)kmm_malloc(MAX_LEN);
 
 	if (priv->events == NULL) {
 		dbg("failed to register virtkey driver\n");
