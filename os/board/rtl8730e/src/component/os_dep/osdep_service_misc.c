@@ -157,7 +157,8 @@ BOOL irq_register(IRQ_FUN IrqFun, IRQn_Type IrqNum, u32 Data, u32 Priority)
 	if (IrqNum == WL_DMA_IRQ || IrqNum == WL_PROTOCOL_IRQ) {
 		Priority = 4;
 	}
-	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32) IrqFun | 0x1);
+	/* For cortex-A, both ARM and THUMB mode is supported, no need to toggle the last bit to 1 here */
+	TizenUserIrqFunTable[IrqNum] = (IRQ_FUN)((u32) IrqFun);
 	irq_attach(IrqNum + AMEBASMART_IRQ_FIRST, (xcpt_t)wrapper_IrqFun, (void *)Data);
 	up_prioritize_irq(IrqNum + AMEBASMART_IRQ_FIRST, Priority);	// Use the API in arm_gicv2.c
 	return _TRUE;

@@ -48,45 +48,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
-CSRCS += ameba_ota.c
-endif
 
-CSRCS += ameba_i2c.c \
-	ameba_rtc.c \
-	ameba_uart.c \
-	ameba_tim.c \
-	ameba_adc.c \
-	ameba_comparator.c \
-	ameba_flash_ram.c \
-	ameba_ipc_api.c \
-	ameba_captouch.c \
-	ameba_gdma_memcpy.c \
-	ameba_bor.c \
-	ameba_gdma_ram.c \
-	ameba_ipc_ram.c \
-	ameba_ledc.c \
-	ameba_thermal.c \
-	ameba_reset.c \
-	ameba_clk.c \
-	ameba_chipinfo.c \
-	ameba_swr_calib.c \
-	ameba_spi.c \
-	ameba_rom_patch.c \
-	ameba_aontimer.c \
-	ameba_wakepin.c \
-	ameba_otp.c \
-	ameba_codec.c \
-	ameba_pll.c \
-	ameba_usb.c
-	#ameba_ftl.c \
-	#ameba_mpu_ram.c \
-	#ameba_pmc_com.c \
-	#ameba_prs.c \
-	#ameba_sport.c \
-	#ameba_vad.c \
-	#ameba_psram.c \
+CSRCS += usbh_cdc_acm.c \
 
-DEPPATH += --dep-path component/soc/amebad2/fwlib/ram_common
-VPATH += :component/soc/amebad2/fwlib/ram_common
-
+DEPPATH += --dep-path component/usb/host_new/cdc_acm
+VPATH += :component/usb/host_new/cdc_acm
