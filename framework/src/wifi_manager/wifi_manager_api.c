@@ -214,7 +214,7 @@ wifi_manager_result_e wifi_manager_scan_multi_aps(wifi_manager_scan_multi_config
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
 	if (configs) {
-		for (int i = 0; configs->scan_ap_config_count; i++) {
+		for (int i = 0; i < configs->scan_ap_config_count; i++) {
 			wifi_manager_scan_config_s *config = &configs->ap_configs[i];
 			if (config->ssid_length > WIFIMGR_SSID_LEN) {
 				WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);

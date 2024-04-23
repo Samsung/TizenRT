@@ -331,6 +331,7 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 
 	trwifi_scan_multi_configs_s uconf = {0};
 	memset(&uconf, 0, sizeof(trwifi_scan_multi_configs_s));
+	uconf.scan_ap_config_count = configs->scan_ap_config_count;
 	for (int i = 0; i < configs->scan_ap_config_count; i++) {
 		wifi_manager_scan_config_s *config = &configs->ap_configs[i];
 		if (config->ssid_length > 0) {
@@ -344,29 +345,6 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_multi_aps((void *)&uconf), TAG,
 							 "request scan multi aps is fail");
-	return WIFI_MANAGER_SUCCESS;
-}
-
-wifi_manager_result_e _wifimgr_scan_muli_aps(wifi_manager_scan_config_s *config)
-{
-	if (!config) {
-		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), TAG,
-								 "request scan to wifi utils is fail");
-		return WIFI_MANAGER_SUCCESS;
-	}
-
-	trwifi_scan_config_s uconf = {0, {0,}, 0};
-	memset(&uconf, 0, sizeof(trwifi_scan_config_s));
-	if (config->ssid_length > 0) {
-		strncpy(uconf.ssid, config->ssid, config->ssid_length + 1);
-		uconf.ssid_length = config->ssid_length;
-	}
-	if (config->channel != 0) {
-		uconf.channel = config->channel;
-	}
-
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_multi_aps((void *)&uconf), TAG,
-							 "request scan is fail");
 	return WIFI_MANAGER_SUCCESS;
 }
 
