@@ -52,7 +52,7 @@
 
 # PM timer
  
-CSRCS += pm_timer_create.c pm_timer_add.c
+CSRCS += pm_timer_create.c pm_timer_add.c 
 CSRCS += pm_timer_activity.c pm_timer_delete.c
 
 # Add the pm timer directory to the build

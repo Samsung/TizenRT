@@ -52,9 +52,6 @@
  ************************************************************************/
 
 #include <tinyara/pm/pm.h>
-#include <tinyara/clock.h>
-#include <tinyara/irq.h>
-
 #include "pm_timer.h"
 
 /************************************************************************
@@ -85,32 +82,15 @@
  *   invoked just before sleep when needed. 
  * 
  * Parameters:
- *   timer_interval - expected board sleep duration
+ *   pm_wakeup_timer_s pointer
  *
  * Return Value:
- *   0 - success
- *   -1 - error
- *
+ *   None
+ * 
  ************************************************************************/
 
-int pm_timer_add(unsigned int timer_interval)
+void pm_timer_add(pm_wakeup_timer_t *timer)
 {
-        pm_wakeup_timer_t *timer = pm_timer_create();
-        if (timer == NULL) {
-                pmdbg("Unable to create pm timer\n");
-                return PM_TIMER_FAIL;
-        }
-
-        irqstate_t state;
-
-        /* Now add the timer in the list 
-         * Adding a wakeup timer in the linked list should be atomic.
-         * Otherwise there is a chance of wrong ordering of the list.*/
-        state = enter_critical_section();
-        
-        /* updating the delay of the wakeup timer */
-        timer->delay = timer_interval;
-
         /* Case where there are no timers in the list */
 
         if (g_pmTimer_activeList.head == NULL) {
@@ -161,9 +141,6 @@ int pm_timer_add(unsigned int timer_interval)
                 }
         }
 
-        leave_critical_section(state);
-        
-        return PM_TIMER_SUCCESS;
 }
 
 

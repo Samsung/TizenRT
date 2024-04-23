@@ -51,7 +51,6 @@
 #include "timer_api.h"
 
 gtimer_t g_timer1;
-extern struct pm_timer_s g_pm_timer;
 
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
@@ -116,29 +115,15 @@ int SOCPS_AONWakeReason(void)
 void pg_timer_int_handler(void *Data)
 {
 	pmvdbg("PM Timer interrupt handler!!\n");
-	switch (g_pm_timer.timer_type) {
-		case PM_LOCK_TIMER:
-			// Relax the lock on the PM state transitions after the timer interrupt
-			pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
-			break;
-		case PM_WAKEUP_TIMER:
-			// Switch status back to normal mode after wake up from interrupt
-			pm_activity(PM_IDLE_DOMAIN, 9);
-			break;
-		default:
-			pmdbg("Timer callback triggered without setting timer, Unexpected Error!!!\n");
-			break;
-	}
-	// Reset the global struct
-	g_pm_timer.timer_type = PM_NO_TIMER;
-	g_pm_timer.timer_interval = 0;
+	// Switch status back to normal mode after wake up from interrupt
+	pm_activity(PM_IDLE_DOMAIN, 9);	
 }
 
-void  up_set_pm_timer(void) {
+void up_set_pm_timer(unsigned int timer_interval) {
 	// Check whether timer interrupt need to be set
-	if (g_pm_timer.timer_type) {
+	if (timer_interval > 0) {
 		gtimer_init(&g_timer1, TIMER1);
-		gtimer_start_one_shout(&g_timer1, g_pm_timer.timer_interval, (void *)pg_timer_int_handler, NULL);
+		gtimer_start_one_shout(&g_timer1, timer_interval, (void *)pg_timer_int_handler, NULL);
 	}
 	return;
 }
