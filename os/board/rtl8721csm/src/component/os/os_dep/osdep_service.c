@@ -156,6 +156,17 @@ u8* _rtw_zmalloc(u32 sz)
 	return NULL;
 }
 
+u8* _rtw_zmalloc_32aligned(u32 sz)
+{
+	if(osdep_service.rtw_zmalloc_32aligned) {
+		u8 *pbuf = osdep_service.rtw_zmalloc_32aligned(sz);
+		return pbuf;
+	} else
+		OSDEP_DBG("Not implement osdep service: rtw_zmalloc_32aligned");	
+
+	return NULL;
+}
+
 u8* _rtw_calloc(u32 nelements, u32 elementSize)
 {
 	u32 sz = nelements*elementSize;
@@ -404,6 +415,23 @@ u8* rtw_malloc(u32 sz)
 u8* rtw_zmalloc(u32 sz)
 {
 	u8 *pbuf = _rtw_zmalloc(sz);
+#if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
+	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
+#else
+	add_mem_usage(NULL, pbuf, sz, NULL, MEM_MONITOR_FLAG_WIFI_DRV);
+#endif
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+        if (pbuf)
+        {
+            DEBUG_SET_CALLER_ADDR(pbuf);
+        }
+#endif
+	return pbuf;
+}
+
+u8* rtw_zmalloc_32aligned(u32 sz)
+{
+	u8 *pbuf = _rtw_zmalloc_32aligned(sz);
 #if CONFIG_MEM_MONITOR & MEM_MONITOR_LEAK
 	add_mem_usage(&mem_table, pbuf, sz, &mem_used_num, MEM_MONITOR_FLAG_WIFI_DRV);
 #else
