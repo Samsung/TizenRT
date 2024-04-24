@@ -78,6 +78,7 @@
 #define AMEBAD_SPI_MASTER	0
 #define AMEBAD_SPI_SLAVE	1
 
+#define DMA_BUFFERSIZE		4096
 /************************************************************************************
  * Private Types
  ************************************************************************************/
@@ -1028,31 +1029,100 @@ static void amebad_spi_exchange(FAR struct spi_dev_s *dev,
 	spiinfo("txbuffer=%p rxbuffer=%p nwords=%d\n", txbuffer, rxbuffer, nwords);
 #ifdef CONFIG_AMEBAD_SPI_DMA
 	int mode_16bit = 1;
-
+	uint32_t len = 0;
+	uint32_t initial_len = 0;
+	uint32_t len_txrx = 0;
 	spi_irq_hook(&priv->spi_object, (spi_irq_handler)spi_dmatrxcallback, (uint32_t)priv);
-
+	
 	/* Checks for 16 bit mode */
 	if (amebad_spi_9to16bitmode(priv)) {
 		mode_16bit++;
 	}
+	len = (uint32_t)nwords * mode_16bit;
+	initial_len = len;
+	uint8_t *txbuf;
+	uint8_t *rxbuf;
+	if (txbuffer && len > DMA_BUFFERSIZE) {
+		txbuf = (uint8_t *)rtw_zmalloc_32aligned(DMA_BUFFERSIZE);
+	}else{
+		txbuf = (uint8_t *)rtw_zmalloc_32aligned(len);
+	}
 
-	if (txbuffer && rxbuffer) {
-		spi_master_write_read_stream_dma(&priv->spi_object,(char*) txbuffer, (char*)rxbuffer, (uint32_t)nwords * mode_16bit);
-		spi_dmarxwait(priv);
-		spi_dmatxwait(priv);
-	} else if (txbuffer) {
-		spi_master_write_stream_dma(&priv->spi_object, (char*)txbuffer, (uint32_t)nwords * mode_16bit);
-		spi_dmatxwait(priv);
-	} else if (rxbuffer) {
-		spi_master_read_stream_dma(&priv->spi_object, (char*)rxbuffer, (uint32_t)nwords * mode_16bit);
-		spi_dmarxwait(priv);
+	if (txbuf == NULL) {
+		spierr("ERROR: Memory allocation failed\n");
+		return;
+	}
+
+	if (len > DMA_BUFFERSIZE) {
+		rxbuf = (uint8_t *)rtw_zmalloc_32aligned(DMA_BUFFERSIZE);
+	}else {
+		rxbuf = (uint8_t *)rtw_zmalloc_32aligned(len);
+	}
+
+	if (rxbuf == NULL) {
+		spierr("ERROR: Memory allocation failed\n");
+		if (initial_len > DMA_BUFFERSIZE) {
+			rtw_mfree(rxbuf, DMA_BUFFERSIZE);
+		} else {
+			rtw_mfree(rxbuf, initial_len);
+		}
+		return;
+	}
+
+	/* len > DMA_BUFFERSIZE */
+	while (len > 0) {
+		
+		if (len >  DMA_BUFFERSIZE) {
+			len_txrx = DMA_BUFFERSIZE;
+		} else {
+			len_txrx = len;
+		}
+
+		if (txbuffer && rxbuffer) {
+			memcpy(txbuf, txbuffer, len_txrx);
+			spi_master_write_read_stream_dma(&priv->spi_object,(char*) txbuf, (char*)rxbuf, len_txrx);
+			spi_dmarxwait(priv);
+			spi_dmatxwait(priv);
+			memcpy(rxbuffer, rxbuf, len_txrx);
+		} else if (txbuffer) {
+			memcpy(txbuf, txbuffer, len_txrx);
+			spi_master_write_read_stream_dma(&priv->spi_object,(char*) txbuf, (char*)rxbuf, len_txrx);
+			spi_dmatxwait(priv);
+			spi_dmarxwait(priv);
+		} else if (rxbuffer) {
+			spi_master_read_stream_dma(&priv->spi_object, (char*)rxbuf, len_txrx);
+			spi_dmarxwait(priv);
+			memcpy(rxbuffer, rxbuf, len_txrx);
+		} else {
+			spierr("ERROR: SPI DMA buffer error!\n");
+		}
+
+		len = len - len_txrx;
+		if (txbuffer) {
+			txbuffer = txbuffer + len_txrx;
+		}
+		if (rxbuffer) {
+			rxbuffer = rxbuffer + len_txrx;
+		}
+	}
+
+	if(txbuf) {
+		if (initial_len > DMA_BUFFERSIZE) {
+			rtw_mfree(txbuf, DMA_BUFFERSIZE);
+		} else {
+			rtw_mfree(txbuf, initial_len);
+		}
+	}
+
+	if(initial_len > DMA_BUFFERSIZE) {
+		rtw_mfree(rxbuf, DMA_BUFFERSIZE);
 	} else {
-		spierr("ERROR: SPI DMA buffer error!\n");
+		rtw_mfree(rxbuf, initial_len);
 	}
 
 	return;
 #else
-	/* 8- or 16-bit mode? */
+		/* 8- or 16-bit mode? */
 	if (amebad_spi_9to16bitmode(priv)) {
 		/* 16-bit mode */
 
