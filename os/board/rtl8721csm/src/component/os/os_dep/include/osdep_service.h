@@ -303,6 +303,7 @@ void	_rtw_vmfree(u8 *pbuf, u32 sz);
 u8*	_rtw_zmalloc(u32 sz);
 u8*	_rtw_malloc(u32 sz);
 u8* _rtw_calloc(u32 nelements, u32 elmentSize);
+u8*	_rtw_zmalloc_32aligned(u32 sz);
 void	_rtw_mfree(u8 *pbuf, u32 sz);
 #ifdef CONFIG_MEM_MONITOR
 
@@ -338,6 +339,14 @@ void	rtw_vmfree(u8 *pbuf, u32 sz);
 u8*	rtw_zmalloc(u32 sz);
 
 /**
+ * @brief  This function allocates the memory 
+ *		   and the values of the memory are setted to 0.
+ * @param[in] sz: The size of memory to be allocated.
+ * @return	  The pointer to the beginning of the memory
+ */
+u8*	rtw_zmalloc_32aligned(u32 sz);
+
+/**
  * @brief  This function allocates the memory.
  * @param[in] sz: The size of memory to be allocated.
  * @return	  The pointer to the beginning of the memory
@@ -364,6 +373,7 @@ void	rtw_mfree(u8 *pbuf, u32 sz);
 #define	rtw_zvmalloc		_rtw_zvmalloc
 #define	rtw_vmfree  		_rtw_vmfree
 #define	rtw_zmalloc 		_rtw_zmalloc
+#define	rtw_zmalloc_32aligned 		_rtw_zmalloc_32aligned
 #define	rtw_malloc  		_rtw_malloc
 #define rtw_calloc			_rtw_calloc
 #define	rtw_mfree   		_rtw_mfree
@@ -1433,6 +1443,7 @@ struct osdep_service_ops {
 	u8 (*rtw_get_scheduler_state)(void);
 	void (*rtw_create_secure_context)(u32 secure_stack_size);
 	void* (*rtw_get_current_TaskHandle)(void);
+	u8* (*rtw_zmalloc_32aligned)(u32 sz);
 };
 
 #ifdef __cplusplus
