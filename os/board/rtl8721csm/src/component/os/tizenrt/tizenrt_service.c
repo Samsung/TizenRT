@@ -29,6 +29,9 @@
 #define USE_PTHREAD_MUTEX 0		//todo
 #endif
 
+#define ALIGN 32
+#define ALIGN_MASK 0x001f
+
 /******************************************************************************
  *                    Misc Function
  ******************************************************************************/
@@ -136,7 +139,19 @@ u8 *_tizenrt_malloc(u32 sz)
 
 u8 *_tizenrt_zmalloc(u32 sz)
 {
-	return kmm_zalloc(sz);
+	void *pbuf = NULL;
+
+	if ((sz & ALIGN_MASK) != 0x00) {
+		sz += (ALIGN - (sz & ALIGN_MASK));
+	}
+	pbuf = kmm_memalign(ALIGN, sz);
+	if (pbuf){
+		memset(pbuf, 0, sz);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		DEBUG_SET_CALLER_ADDR(pbuf);
+#endif
+	}
+	return pbuf;
 }
 
 void _tizenrt_mfree(u8 *pbuf, u32 sz)
