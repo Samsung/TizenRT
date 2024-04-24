@@ -92,26 +92,30 @@ int set_security_level(void)
 	output.data = (char *)kmm_malloc(output.data_len);
 
 	if (output.data == NULL) {
+		dbg("Alloc fail. Security level is high\n");
 		return SECURITY_LEVEL_ALLOC_FAILED;
 	}
 
 	hal_ret = se->ops->read_storage(SS_SLOT_INDEX_SECURITY_LEVEL, &output);
 	if (hal_ret != HAL_SUCCESS) {
 		kmm_free(output.data);
+		dbg("Not set. Security level is high\n");
 		return SECURITY_LEVEL_READ_FAILED;
 	}
 
 	int result = atoi(output.data);
 	if (result == HIGH_SECURITY_LEVEL) {
 		security_level = 1;
+		dbg("HIGH\n");
 	} else if (result == LOW_SECURITY_LEVEL) {
 		security_level = 0;
+		dbg("LOW\n");
 	} else {
 		kmm_free(output.data);
+		dbg("Wrong value!! Using sec_level command to set\n");
 		return SECURITY_LEVEL_INVALID_VALUE;
 	}
 
-	printf("[set_security_level] security_level : %d\n", security_level);
 	kmm_free(output.data);
 
 	return SECURITY_LEVEL_OK;

@@ -274,10 +274,7 @@ static inline void os_do_appstart(void)
 #endif
 
 #ifdef CONFIG_SECURITY_LEVEL
-	int ret = set_security_level();
-	if (ret != SECURITY_LEVEL_OK) {
-		dbg("[set_security_level] error ret : %d\n", ret);
-	}
+	set_security_level();
 #endif
 
 #ifdef CONFIG_IOTDEV
