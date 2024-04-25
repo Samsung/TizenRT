@@ -260,13 +260,13 @@ static void test_color_st7701(void)
 		if(c >= 3) break;
 		switch (a){
 			case 1:
-				putarea(1, xres - 1, 1, yres - 1, RED);
+				putarea(1, xres, 1, yres, RED);
 				break;
 			case 2:
-				putarea(1, xres - 1, 1, yres - 1, WHITE);
+				putarea(1, xres, 1, yres, WHITE);
 				break;
 			case 3:
-				putarea(1, xres - 1, 1, yres - 1, BLACK);
+				putarea(1, xres, 1, yres, BLACK);
 				a = 0;
 				c++;
 				break;

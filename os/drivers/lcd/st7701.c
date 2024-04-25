@@ -132,7 +132,7 @@ static void st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_tab
 			usleep(table[send_cmd_idx_s].count * 1000);
 			break;
 		case REGFLAG_END_OF_TABLE:
-			lldbg("LPTX CMD Send Done\n");
+			printf("LPTX CMD Send Done\n");
 			msg.type = MIPI_DSI_END_OF_TRANSMISSION;
 			mipi_dsi_transfer(device, &msg);
 			return;

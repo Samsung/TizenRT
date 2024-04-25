@@ -53,6 +53,7 @@
 
 static u32 vo_freq;
 static u32 send_cmd_done = 0;
+static u32 UnderFlowCnt = 0;
 
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
@@ -60,10 +61,10 @@ struct amebasmart_mipi_dsi_host_s {
 	MIPI_InitTypeDef *MIPI_InitStruct;
 };
 
-struct mipi_irq {
-	u32 irq_num;
-	u32 irq_data;
-	u32 irq_priority;
+struct irq {
+	u32 num;
+	u32 data;
+	u32 priority;
 };
 
 /* Helpers */
@@ -86,10 +87,10 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv);
  * Private Data
  ************************************************************************************/
 /*initialize the MIPI IRQ info*/
-struct mipi_irq mipi_irq_info = {
-	.irq_num = MIPI_DSI_IRQ,
-	.irq_data = (u32) MIPI,
-	.irq_priority = INT_PRI_MIDDLE,
+struct irq mipi_irq_info = {
+	.num = MIPI_DSI_IRQ,
+	.data = (u32) MIPI,
+	.priority = INT_PRI_MIDDLE,
 };
 
 static const struct mipi_dsi_host_ops g_dsi_ops = {
@@ -151,16 +152,15 @@ static void amebasmart_mipi_fill_buffer(FAR struct mipi_dsi_host *dsi_host)
 	priv->MIPI_InitStruct->MIPI_BllpLen = priv->MIPI_InitStruct->MIPI_LineTime / 2;
 
 	if (MIPI_DSI_HSA + MIPI_DSI_HBP + dsi_host->config.XPixels + MIPI_DSI_HFP < (512 + MIPI_DSI_RTNI * 16)) {
-		//lldbg(MODULE_BOOT, LEVEL_ERROR, "!!ERROR!!, LCM NOT SUPPORT\n");
+		dbg("!!ERROR!!, LCM NOT SUPPORT\n");
 	}
 	if (priv->MIPI_InitStruct->MIPI_LineTime * priv->MIPI_InitStruct->MIPI_LaneNum < total_bits / 8) {
-		//lldbg(MODULE_BOOT, LEVEL_ERROR, "!!ERROR!!, LINE TIME TOO SHORT!\n");
+		dbg("!!ERROR!!, LINE TIME TOO SHORT!\n");
 	}
 	if (priv->MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24 >= vo_freq) {
-		//lldbg(MODULE_BOOT, LEVEL_ERROR, "%x %x\n", MIPI_InitStruct->MIPI_VideDataLaneFreq * 2 / 24, vo_freq);
-		//lldbg(MODULE_BOOT, LEVEL_ERROR, "!!ERROR!!, VO CLK too slow!\n");
+		dbg("!!ERROR!!, VO CLK too slow!\n");
 	}
-	//lldbg(MODULE_BOOT, LEVEL_INFO, "DataLaneFreq: %d, LineTime: %d\n", MIPI_InitStruct->MIPI_VideDataLaneFreq, MIPI_InitStruct->MIPI_LineTime);
+	dbg("DataLaneFreq: %d, LineTime: %d\n", priv->MIPI_InitStruct->MIPI_VideDataLaneFreq, priv->MIPI_InitStruct->MIPI_LineTime);
 }
 
 static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv)
@@ -214,7 +214,7 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 
 static void amebasmart_mipidsi_isr(void)
 {
-	MIPI_TypeDef *MIPIx = MIPI;
+	MIPI_TypeDef *MIPIx = g_dsi_host.MIPIx;
 	u32 reg_val, reg_val2, reg_dphy_err;
 
 	reg_val = MIPI_DSI_INTS_Get(MIPIx);
@@ -238,27 +238,27 @@ static void amebasmart_mipidsi_isr(void)
 		}
 
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
-			lldbg("LPTX Still Error\n");
+			dbg("LPTX Still Error\n");
 			MIPI_DSI_INT_Config(MIPIx, ENABLE, DISABLE, FALSE);
 		}
 		reg_val &= ~MIPI_BIT_ERROR;
 	}
 
 	if (reg_val) {
-		lldbg("LPTX Error Occur: 0x%x\n", reg_val);
+		dbg("LPTX Error Occur: 0x%x\n", reg_val);
 	}
 
 	if (reg_val2) {
-		lldbg("error occured #\n");
+		dbg("error occured #\n");
 	}
 }
 
 static void ameabsmart_check_freq(struct lcd_data *data)
 {
-	u32 totaly = MIPI_DSI_VSA + MIPI_DSI_VBP + MIPI_DSI_VFP + data->XPixels;
-	u32 totalx = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_DSI_HFP + data->YPixels;
+	u32 totaly = MIPI_DSI_VSA + MIPI_DSI_VBP + MIPI_DSI_VFP + data->YPixels;
+	u32 totalx = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_DSI_HFP + data->XPixels;
 	vo_freq = totaly * totalx * MIPI_FRAME_RATE / Mhz + 4;
-	lldbg("vo_freq: %d\n", vo_freq);
+	dbg("vo_freq: %d\n", vo_freq);
 	assert_param(vo_freq < 67);
 }
 
@@ -277,10 +277,10 @@ static void amebasmart_set_clock(void)
 
 static void ameabsmart_register_interrupt(void)
 {
-	InterruptDis(mipi_irq_info.irq_num);
-	InterruptUnRegister(mipi_irq_info.irq_num);
-	InterruptRegister((IRQ_FUN) amebasmart_mipidsi_isr, mipi_irq_info.irq_num, (u32) mipi_irq_info.irq_data, mipi_irq_info.irq_priority);
-	InterruptEn(mipi_irq_info.irq_num, mipi_irq_info.irq_priority);
+	InterruptDis(mipi_irq_info.num);
+	InterruptUnRegister(mipi_irq_info.num);
+	InterruptRegister((IRQ_FUN) amebasmart_mipidsi_isr, mipi_irq_info.num, (u32) mipi_irq_info.data, mipi_irq_info.priority);
+	InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
 }
 
 static bool ameabsmart_is_transfer_completed(void)
@@ -293,11 +293,15 @@ static bool ameabsmart_is_transfer_completed(void)
 
 void mipidsi_mode_switch(bool do_enable){
 	if(do_enable){
-		MIPI_DSI_Mode_Switch(MIPI, ENABLE);
+		MIPI_DSI_Mode_Switch(g_dsi_host.MIPIx, ENABLE);
 	}
 	else{
-		MIPI_DSI_Mode_Switch(MIPI, DISABLE);
+		MIPI_DSI_Mode_Switch(g_dsi_host.MIPIx, DISABLE);
 	}
+}
+
+void mipidsi_acpu_reg_clear(void){
+	MIPI_DSI_INTS_ACPU_Clr(g_dsi_host.MIPIx, MIPI_DSI_INTS_ACPU_Get(g_dsi_host.MIPIx));
 }
 
 /************************************************************************************

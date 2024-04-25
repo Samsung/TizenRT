@@ -21,7 +21,7 @@ ifeq ($(CONFIG_MIPI_DSI),y)
 CSRCS += mipi_dsi_device.c mipi_dsi_host.c mipi_dsi_packet.c mipi_dsi_device_driver.c mipi_dsi_host_driver.c
 
 ifeq ($(CONFIG_MIPI_DSI_DRIVER),y)
-	#CSRCS += panel_st7701.c
+	CSRCS += mipi_dsi_device_driver.c mipi_dsi_host_driver.c
 endif
 
 DEPPATH += --dep-path mipidsi
