@@ -142,7 +142,7 @@ void board_spi_initialize(void)
 #endif
 #endif
 
-#if defined(CONFIG_AMEBASMART_SPI1) &&  !defined(CONFIG_SECOND_FLASH_PARTITION)
+#if defined(CONFIG_AMEBASMART_SPI1) && !defined(CONFIG_SECOND_FLASH_PARTITION)
 	spi = up_spiinitialize(1);
 #ifdef CONFIG_SPI_USERIO
 	if (spi_uioregister(1, spi) < 0) {
@@ -150,7 +150,9 @@ void board_spi_initialize(void)
 	}
 #endif
 #endif
-
+#ifdef CONFIG_PM
+	spi_pminitialize();
+#endif
 #endif /* CONFIG_SPI */
 }
 
