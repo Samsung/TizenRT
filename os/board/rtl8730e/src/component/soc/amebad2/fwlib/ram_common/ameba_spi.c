@@ -739,6 +739,25 @@ void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 }
 
 /**
+  * @brief  Detemines whether SPIx transmit FIFO is empty
+  * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
+  * @retval Transmit FIFO is empty or not:
+  *        - 1: Empty
+  *        - 0: Not Empty
+  */
+
+bool SSI_Empty(SPI_TypeDef *spi_dev)
+{
+	bool status = 0;
+	u32 value = 0;
+
+	value = SSI_GetStatus(spi_dev);
+	status = (((value & SPI_BIT_TFE) != 0) ? 1 : 0);
+
+	return status;
+}
+
+/**
   * @brief  Detemines whether SPIx transmit FIFO is full or not
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @retval Transmit FIFO is full or not:

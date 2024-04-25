@@ -650,6 +650,14 @@ static inline void ssi_write(spi_t *obj, int value)
 	SSI_WriteData(ssi_adapter->spi_dev, value);
 }
 
+bool ssi_check_fifo(spi_t *obj)
+{
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
+	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
+
+	return (SSI_Empty(ssi_adapter->spi_dev));
+}
+
 static inline int ssi_read(spi_t *obj)
 {
 	uint8_t  spi_idx = obj->spi_idx & 0x01;
