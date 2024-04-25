@@ -1134,11 +1134,15 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	
 	dev->njournalPerBlk = dev->erasesize / log_size;
 
-	/* Now reduce number of eraseblock */
-	dev->neraseblocks -= dev->njournaleraseblocks;
-
 	/* Now get total journal entries of both of 2 area */
 	dev->njournalentries = dev->njournalPerBlk * dev->njournaleraseblocks;
+	if (dev->njournalentries > 65534) {
+		dev->njournaleraseblocks = 65534 / dev->njournalPerBlk;
+		dev->njournalentries = dev->njournalPerBlk * dev->njournaleraseblocks;
+	}
+
+	/* Now reduce number of eraseblock */
+	dev->neraseblocks -= dev->njournaleraseblocks;
 
 #endif
 
@@ -1764,7 +1768,7 @@ static int smart_set_wear_level(FAR struct smart_struct_s *dev, uint16_t block, 
 	/* Get the bit map for this wear level from the static map array. */
 
 	if (level > 15) {
-		dbg("Fatal Design Error!  Wear level > 15, block=%d\n", block);
+		dbg("Fatal Design Error!  Wear level > 15, block=%d level : %d\n", block, level);
 
 		/* This is a design flaw, but we still allow processing, otherwise we
 		 * will corrupt the volume.  It's better to have a few blocks that are
@@ -2831,7 +2835,6 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 	}
 
 	/* Erase the MTD device. */
-
 	ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
 	if (ret < 0) {
 		return ret;
@@ -2977,6 +2980,9 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 		snprintf(dev->rwbuffer, 18, "/dev/smart%dd%d", dev->minor, x);
 		unregister_blockdriver(dev->rwbuffer);
 	}
+#endif
+#ifdef CONFIG_MTD_SMART_JOURNALING
+	dev->journal_seq = 0;
 #endif
 
 	return OK;
@@ -3727,8 +3733,8 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 		/* Calculate the number of bytes to write to this sector. */
 
 		towrite = remaining;
-		if (towrite > dev->sectorsize - SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s)) {
-			towrite = dev->sectorsize - SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s);
+		if (towrite > dev->sectorsize - (SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s))) {
+			towrite = dev->sectorsize - (SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s));
 		}
 
 		/* Setup the sector write request (we are our own client). */
@@ -3752,7 +3758,13 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 			/* Data doesn't fit in a single sector.  Use the reserved sectors. */
 
 			sector++;
-			if (sector >= SMART_FIRST_DIR_SECTOR) {
+			if (sector == SMART_FIRST_DIR_SECTOR) {
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+				sector = SMART_FIRST_ALLOC_SECTOR - 1;
+#else
+				sector = SMART_FIRST_DIR_SECTOR + 1;
+#endif
+			} else if(sector == SMART_FIRST_ALLOC_SECTOR) {
 				/* Error, wear status bit too large! */
 				fdbg("Invalid geometry - wear level status too large\n");
 				ret = -EINVAL;
@@ -3782,6 +3794,7 @@ static int smart_write_wearstatus(struct smart_struct_s *dev)
 static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 {
 	uint16_t sector;
+	uint16_t physsector;
 	uint16_t remaining, toread;
 	struct smart_read_write_s req;
 	int ret;
@@ -3830,8 +3843,8 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 		/* Calculate number of bytes to read from this sector. */
 
 		toread = remaining;
-		if (toread > dev->sectorsize - SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s)) {
-			toread = dev->sectorsize - SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s);
+		if (toread > dev->sectorsize - (SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s))) {
+			toread = dev->sectorsize - (SMARTFS_FMT_WEAR_POS + sizeof(struct smart_sect_header_s));
 		}
 
 		/* Setup the sector read request (we are our own client). */
@@ -3841,8 +3854,23 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 		req.count = toread;
 		req.buffer = &dev->wearstatus[(dev->neraseblocks >> SMART_WEAR_BIT_DIVIDE) - remaining];
 
-		/* Read the sector. */
+		/* Validate wear status sector has been allocated */
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+		physsector = dev->sMap[req.logsector];
+#else
+		physsector = smart_cache_lookup(dev, req.logsector);
+#endif
+		if ((sector != 0) && (physsector == 0xffff)) {
+			/* This logical sector does not exist yet.  We must allocate it */
+			ret = smart_allocsector(dev, sector);
+			if (ret != sector) {
+				fdbg("ERROR: Unable to allocate wear level status sector %d\n", sector);
+				return -EINVAL;
+			}
+			smart_writesector(dev, (unsigned long)&req);
+		}
 
+		/* Read the sector. */
 		ret = smart_readsector(dev, (unsigned long)&req);
 		if (ret != toread) {
 			return ret;
@@ -3853,11 +3881,15 @@ static inline int smart_read_wearstatus(FAR struct smart_struct_s *dev)
 		remaining -= toread;
 		if (remaining) {
 			/* Data doesn't fit in a single sector.  Use the reserved sectors. */
-
 			sector++;
-			if (sector >= SMART_FIRST_DIR_SECTOR) {
+			if (sector == SMART_FIRST_DIR_SECTOR) {
+#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+				sector = SMART_FIRST_ALLOC_SECTOR - 1;
+#else
+				sector = SMART_FIRST_DIR_SECTOR + 1;
+#endif
+			} else if(sector == SMART_FIRST_ALLOC_SECTOR) {
 				/* Error, wear status bit too large! */
-
 				fdbg("Invalid geometry - wear level status too large\n");
 				ret = -EINVAL;
 				return ret;
@@ -3907,7 +3939,7 @@ static int smart_write_alloc_sector(FAR struct smart_struct_s *dev, uint16_t log
 
 	header->seq = 0;
 
-	sectsize = dev->sectorsize >> 7;
+	sectsize = (CONFIG_MTD_SMART_SECTOR_SIZE >> 9) << 2;
 
 #if CONFIG_SMARTFS_ERASEDSTATE == 0xFF
 	header->status = ~(SMART_STATUS_COMMITTED | SMART_STATUS_SIZEBITS | SMART_STATUS_VERBITS) | SMART_STATUS_VERSION | sectsize;
@@ -4268,6 +4300,7 @@ static int smart_writesector(FAR struct smart_struct_s *dev, unsigned long arg)
 		byte = header->status | SMART_STATUS_RELEASED | SMART_STATUS_COMMITTED;
 #endif
 		offset = mtdblock * dev->geo.blocksize + offsetof(struct smart_sect_header_s, status);
+
 		ret = smart_bytewrite(dev, offset, 1, &byte);
 		if (ret != 1) {
 			fdbg("Error committing physical sector %d\n", physsector);
@@ -4893,7 +4926,6 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 	case BIOC_BULKERASE:
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
-
 		fdbg("Format Finished\n");
 		sleep(1);
 		goto ok_out;
@@ -4922,14 +4954,20 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		goto ok_out;
 
 	case BIOC_FIBMAP:
-
-		if ((uint16_t)arg >= dev->totalsectors) {
+		sector = (uint16_t)arg;
+		if (sector >= dev->totalsectors) {
 			return -EINVAL;
 		}
+
+		/* TODO Below should consider multi root mount point */
+		if (sector > SMART_FIRST_DIR_SECTOR && sector < SMART_FIRST_ALLOC_SECTOR) {
+			return 0xFFFF;
+		}
+
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		ret = (int)dev->sMap[(uint16_t)arg];
+		ret = (int)dev->sMap[sector];
 #else
-		ret = (int)smart_cache_lookup(dev, (uint16_t)arg);
+		ret = (int)smart_cache_lookup(dev, sector);
 #endif
 		goto ok_out;
 
@@ -5174,7 +5212,7 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 	journal_log_t buf;
 	crc_t crc;
 	size_t log_size = sizeof(journal_log_t);
-		
+
 	log->psector[0] = (uint8_t)(psector & 0x00FF);
 	log->psector[1] = (uint8_t)(psector >> 8);
 	
@@ -5188,7 +5226,6 @@ static int smart_journal_checkin(FAR struct smart_struct_s *dev, journal_log_t *
 	crc = smart_calc_journal_crc(log);
 	log->crc16[0] = (uint8_t)(crc & 0x00FF);
 	log->crc16[1] = (uint8_t)(crc >> 8);
-	
 #ifdef CONFIG_DEBUG_FS_INFO
 	fvdbg("Checkin Now Print Checkin Data \n");
 	smart_journal_print_log(dev, log);
@@ -5305,7 +5342,7 @@ static int smart_journal_process_transaction(FAR struct smart_struct_s *dev, jou
 		/* Validate the CRC of the read-back data. */
 		ret = smart_validate_crc(dev);
 		if (ret != OK) {
-			fdbg("crc error : psector : %d logsector : %d mtd_header.crc : %d\n", \
+			fdbg("crc error : psector : %d logical : %d mtd_header.crc : %d\n", \
 				psector, UINT8TOUINT16(log->mtd_header.logicalsector), UINT8TOUINT16(log->mtd_header.crc16));
 			return -EIO;
 		}
@@ -5657,7 +5694,7 @@ static int smart_journal_scan(FAR struct smart_struct_s *dev, bool print_dump)
 				last_checkout_seq = dev->journal_seq;
 			}
 			dev->block_map[block]++;
-		} 
+		}
 	}
 	
 	if (print_dump) {

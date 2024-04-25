@@ -61,5 +61,15 @@ endif #AIFW_LOGS
 
 endmenu
 
+menu "AIFW Multiple input output Support"
+
+config AIFW_MULTI_INOUT_SUPPORT
+	bool "AIFW Multiple input output Support"
+	default n
+	---help---
+		Enables AIFW Multiple Input Output Support
+
+endmenu
+
 endif #if AIFW
 

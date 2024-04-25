@@ -70,6 +70,7 @@ void AIModel::clearModelAttribute(void)
 AIModel::~AIModel()
 {
 	clearModelAttribute();
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	if (mInvokeInput) {
 		delete[] mInvokeInput;
 		mInvokeInput = NULL;
@@ -79,6 +80,29 @@ AIModel::~AIModel()
 		delete[] mInvokeOutput;
 		mInvokeOutput = NULL;
 	}
+#else
+	if (mInvokeInput) {
+		for (uint16_t i = 0; i < mInputSetCount; i++) {
+			if (mInvokeInput[i]) {
+				delete[] mInvokeInput[i];
+				mInvokeInput[i] = NULL;
+			}
+		}
+		delete[] mInvokeInput;
+		mInvokeInput = NULL;
+	}
+
+	if (mInvokeOutput) {
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			if (mInvokeOutput[i]) {
+				delete[] mInvokeOutput[i];
+				mInvokeOutput[i] = NULL;
+			}
+		}
+		delete[] mInvokeOutput;
+		mInvokeOutput = NULL;
+	}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
 	if (mParsedData) {
 		delete[] mParsedData;
@@ -114,6 +138,7 @@ AIFW_RESULT AIModel::createDataBuffer(void)
 
 AIFW_RESULT AIModel::allocateMemory(void)
 {
+#ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	mInvokeOutput = new float[mModelAttribute.invokeOutputCount];
 	if (!mInvokeOutput) {
 		AIFW_LOGE("Memory Allocation failed - model output buffer");
@@ -124,7 +149,25 @@ AIFW_RESULT AIModel::allocateMemory(void)
 		AIFW_LOGE("Memory Allocation failed - model input buffer");
 		return AIFW_NO_MEM;
 	}
-
+#else
+	mAIEngine->getModelDimensions(&mInputSetCount, &mInputSizeList, &mOutputSetCount, &mOutputSizeList);
+	mInvokeOutput = new float *[mOutputSetCount];
+	for (uint16_t i = 0; i < mOutputSetCount; i++) {
+		mInvokeOutput[i] = new float[mOutputSizeList[i]];
+		if (!mInvokeOutput[i]) {
+			AIFW_LOGE("Memory Allocation failed - model output buffer");
+			return AIFW_NO_MEM;
+		}
+	}
+	mInvokeInput = new float *[mInputSetCount];
+	for (uint16_t i = 0; i < mInputSetCount; i++) {
+		mInvokeInput[i] = new float[mInputSizeList[i]];
+		if (!mInvokeInput[i]) {
+			AIFW_LOGE("Memory Allocation failed - model input buffer");
+			return AIFW_NO_MEM;
+		}
+	}
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 	if (mDataProcessor) {
 		mParsedData = new float[mModelAttribute.rawDataCount];
 		if (!mParsedData) {
@@ -220,11 +263,6 @@ AIFW_RESULT AIModel::loadModel(const char *scriptPath)
 		return res;
 	}
 	AIFW_LOGV("json file parsed, filename: %s", scriptPath);
-	res = allocateMemory();
-	if (res != AIFW_OK) {
-		AIFW_LOGE("Internal memory allocation failed, error: %d", res);
-		return res;
-	}
 	const char *file = mModelAttribute.modelPath;
 	if (strlen(file) > 0) {
 		res = mAIEngine->loadModel(file);
@@ -233,6 +271,11 @@ AIFW_RESULT AIModel::loadModel(const char *scriptPath)
 			return res;
 		}
 		AIFW_LOGV("model load done, model file: %s", file);
+		res = allocateMemory();
+		if (res != AIFW_OK) {
+			AIFW_LOGE("Internal memory allocation failed, error: %d", res);
+			return res;
+		}
 		res = createDataBuffer();
 		if (res != AIFW_OK) {
 			AIFW_LOGE("data buffer creation failed, error: %d", res);
@@ -257,17 +300,17 @@ AIFW_RESULT AIModel::loadModel(const AIModelAttribute &modelAttribute)
 		AIFW_LOGE("Array model is NULL.");
 		return AIFW_INVALID_ATTRIBUTE;
 	}
-	res = allocateMemory();
-	if (res != AIFW_OK) {
-		AIFW_LOGE("Internal memory allocation failed, error: %d", res);
-		return res;
-	}
 	res = mAIEngine->loadModel(mModelAttribute.model);
 	if (res != AIFW_OK) {
 		AIFW_LOGE("Load model failed, error %d", res);
 		return res;
 	}
 	AIFW_LOGV("Model load done");
+	res = allocateMemory();
+	if (res != AIFW_OK) {
+		AIFW_LOGE("Internal memory allocation failed, error: %d", res);
+		return res;
+	}
 	res = createDataBuffer();
 	if (res != AIFW_OK) {
 		AIFW_LOGE("data buffer creation failed, error %d", res);
@@ -277,6 +320,126 @@ AIFW_RESULT AIModel::loadModel(const AIModelAttribute &modelAttribute)
 	return res;
 }
 
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+AIFW_RESULT AIModel::invoke(void)
+{
+	AIFW_RESULT res;
+	int outputOffset = 0; /* to write 2d output in 1d buffer. */
+	float **invokeResult = new float *[mOutputSetCount];
+	for (uint16_t i = 0; i < mInputSetCount; i++) {
+		memset(mInvokeInput[i], '\0', mInputSizeList[i] * sizeof(float));
+	}
+	for (uint16_t i = 0; i < mOutputSetCount; i++) {
+		memset(mInvokeOutput[i], '\0', mOutputSizeList[i] * sizeof(float));
+	}
+	if (mDataProcessor) {
+		AIFW_LOGV("data processor is set");
+		memset(mPostProcessedData, '\0', mModelAttribute.postProcessResultCount * sizeof(float));
+		res = mDataProcessor->preProcessData(mBuffer, mInputSetCount, mInvokeInput, &mModelAttribute);
+		if (res != AIFW_OK) {
+			AIFW_LOGE("preProcessData failed, error: %d", res);
+			return res;
+		}
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input\n");
+		for (uint16_t i = 0; i < mInputSetCount; i++) {
+			printf("inputset [%d]: ", i);
+			for (uint16_t j = 0; j < mInputSizeList[i]; j++) {
+				printf("%f,", mInvokeInput[i][j]);
+			}
+			printf("\n");
+		}
+#endif
+		res = mAIEngine->invoke(mInvokeInput, invokeResult);
+		if (res != AIFW_OK) {
+			AIFW_LOGE("Engine Invoke failed.");
+			return AIFW_ERROR;
+		}
+		AIFW_LOGV("invoke completed fine");
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			for (uint16_t j = 0; j < mOutputSizeList[i]; j++) {
+				mInvokeOutput[i][j] = invokeResult[i][j];
+			}
+		}
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Output\n");
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			printf("outputset [%d]: ", i);
+			for (uint16_t j = 0; j < mOutputSizeList[i]; j++) {
+				printf("%f,", mInvokeOutput[i][j]);
+			}
+			printf("\n");
+		}
+#endif
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			res = mBuffer->writeData(mInvokeOutput[i], mOutputSizeList[i], mModelAttribute.rawDataCount + outputOffset);
+			outputOffset += mOutputSizeList[i];
+			if (res != AIFW_OK) {
+				AIFW_LOGE("model output data write to buffer failed, error: %d", res);
+				return res;
+			}
+		}
+		res = mDataProcessor->postProcessData(mBuffer, mPostProcessedData, &mModelAttribute);
+		if (res < AIFW_OK) {
+			AIFW_LOGE("data post processing failed, error: %d", res);
+		}
+		AIFW_LOGV("pre-process, invoke and post-process completed OK");
+		return res;
+	} else {
+		AIFW_LOGV("No data processor case");
+		int inputOffset = 0;  /* to read 2d input from 1d buffer. */
+		for (uint16_t i = 0; i < mInputSetCount; i++) {
+			res = mBuffer->readData(mInvokeInput[i], inputOffset, inputOffset+mInputSizeList[i], 0);
+			inputOffset += mInputSizeList[i];
+			if (res != AIFW_OK) {
+				AIFW_LOGE("Reading Data from the buffer failed, error: %d", res);
+				return res;
+			}
+		}
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input\n");
+		for (uint16_t i = 0; i < mInputSetCount; i++) {
+			printf("inputset [%d]: ", i);
+			for (uint16_t j = 0; j < mInputSizeList[i]; j++) {
+				printf("%f,", mInvokeInput[i][j]);
+			}
+			printf("\n");
+		}
+#endif
+		res = mAIEngine->invoke(mInvokeInput, invokeResult);
+		if (res != AIFW_OK) {
+			AIFW_LOGE("Engine Invoke failed.");
+			return AIFW_ERROR;
+		}
+		AIFW_LOGV("invoke completed fine");
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			for (uint16_t j = 0; j < mOutputSizeList[i]; j++) {
+				mInvokeOutput[i][j] = invokeResult[i][j];
+			}
+		}
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Output\n");
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			printf("outputset [%d]: ", i);
+			for (uint16_t j = 0; j < mOutputSizeList[i]; j++) {
+				printf("%f,", mInvokeOutput[i][j]);
+			}
+			printf("\n");
+		}
+#endif
+		for (uint16_t i = 0; i < mOutputSetCount; i++) {
+			res = mBuffer->writeData(mInvokeOutput[i], mOutputSizeList[i], mModelAttribute.invokeInputCount + outputOffset);
+			outputOffset += mOutputSizeList[i];
+			if (res != AIFW_OK) {
+				AIFW_LOGE("Writing invoke result to the buffer failed, error: %d", res);
+				return res;
+			}
+		}
+		AIFW_LOGV("read data, invoke and write data completed OK");
+		return res;
+	}
+}
+#else
 AIFW_RESULT AIModel::invoke(void)
 {
 	AIFW_RESULT res;
@@ -292,8 +455,8 @@ AIFW_RESULT AIModel::invoke(void)
 			AIFW_LOGE("preProcessData failed, error: %d", res);
 			return res;
 		}
-#ifdef CONFIG_AIFW_LOGD
-		printf("invokeInput: ");
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeInputCount; i++) {
 			printf("%f,", mInvokeInput[i]);
 		}
@@ -308,7 +471,7 @@ AIFW_RESULT AIModel::invoke(void)
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			mInvokeOutput[i] = invokeResult[i];
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			printf("%f,", mInvokeOutput[i]);
@@ -333,8 +496,8 @@ AIFW_RESULT AIModel::invoke(void)
 			AIFW_LOGE("Reading Data from the buffer failed, error: %d", res);
 			return res;
 		}
-#ifdef CONFIG_AIFW_LOGD
-		printf("invokeInput: ");
+#ifdef CONFIG_AIFW_LOGV
+		printf("invoke Input: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeInputCount; i++) {
 			printf("%f,", mInvokeInput[i]);
 		}
@@ -349,7 +512,7 @@ AIFW_RESULT AIModel::invoke(void)
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			mInvokeOutput[i] = invokeResult[i];
 		}
-#ifdef CONFIG_AIFW_LOGD
+#ifdef CONFIG_AIFW_LOGV
 		printf("invoke Output: ");
 		for (uint16_t i = 0; i < mModelAttribute.invokeOutputCount; i++) {
 			printf("%f,", mInvokeOutput[i]);
@@ -365,6 +528,7 @@ AIFW_RESULT AIModel::invoke(void)
 		return res;
 	}
 }
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
 AIFW_RESULT AIModel::pushData(void *data, uint16_t count)
 {
@@ -455,7 +619,15 @@ AIFW_RESULT AIModel::getResultData(float *data, uint16_t count)
 		memcpy(data, mPostProcessedData, mModelAttribute.postProcessResultCount * sizeof(float));
 		return AIFW_OK;
 	}
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+	int outputOffset = 0;
+	for (uint16_t i = 0; i < mOutputSetCount; i++) {
+		memcpy(data+outputOffset, mInvokeOutput[i], mOutputSizeList[i] * sizeof(float));
+		outputOffset += mOutputSizeList[i];
+	}
+#else
 	memcpy(data, mInvokeOutput, mModelAttribute.postProcessResultCount * sizeof(float));
+#endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 	return AIFW_OK;
 }
 

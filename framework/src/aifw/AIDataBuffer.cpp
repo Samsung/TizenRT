@@ -37,6 +37,21 @@
 	}
 //ToDo: LOCK and UNLOCK usage in all functions needs to be reviewed again after AI Framework multi-thread architecture is finalized.
 
+#ifdef CONFIG_AIFW_LOGV
+#define DUMP_BUFFER(message, count, values_array, offset) { 	\
+	printf(message);                                     	\
+	for (uint16_t k = 0; k < count; k++) {               	\
+		if (k % 15 == 0) {                           	\
+			printf("\n");                        	\
+		}                                            	\
+		printf("%f,", values_array[offset + k]);     	\
+	}                                                    	\
+	printf("\n");                                        	\
+}
+#else
+#define DUMP_BUFFER(message, count, values_array, offset)
+#endif
+
 namespace aifw {
 
 AIDataBuffer::AIDataBuffer() :
@@ -124,6 +139,7 @@ AIFW_RESULT AIDataBuffer::clear(void)
 	AIDataBufferNode *current = mStart;
 	while (current) {
 		current->mIsEmpty = true;
+		memset(current->mData, '\0', mRowSize * sizeof(float));
 		current = current->mNext;
 	}
 	mRowCount = 0;
@@ -138,7 +154,7 @@ AIFW_RESULT AIDataBuffer::clear(uint16_t offset, uint16_t count)
 		return AIFW_INVALID_ARG;
 	}
 	if (offset + count - 1 >= mRowCount) {
-		AIFW_LOGE("Invalid row clear request");
+		AIFW_LOGE("Invalid row: %d, row count %d", (offset + count - 1), mRowCount);
 		return AIFW_INVALID_ARG;
 	}
 	_LOCK
@@ -154,10 +170,12 @@ AIFW_RESULT AIDataBuffer::clear(uint16_t offset, uint16_t count)
 	i = 0;
 	while (i < count - 1) {
 		current->mIsEmpty = true;
+		memset(current->mData, '\0', mRowSize * sizeof(float));
 		current = current->mNext;
 		i++;
 	}
 	current->mIsEmpty = true;
+	memset(current->mData, '\0', mRowSize * sizeof(float));
 	mRowCount -= count;
 	AIDataBufferNode *lastNode = current;
 	AIDataBufferNode *nextToLastNode = lastNode->mNext;
@@ -223,7 +241,7 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t row)
 		return AIFW_INVALID_ARG;
 	}
 	if (row >= mRowCount) {
-		AIFW_LOGE("Invalid argument - row index");
+		AIFW_LOGE("Invalid argument - row index %d row count %d", row, mRowCount);
 		return AIFW_INVALID_ARG;
 	}
 	_LOCK
@@ -234,13 +252,7 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t row)
 		++temp;
 	}
 	memcpy(buffer, tempNode->mData, mRowSize * sizeof(float));
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer read done, values: ");
-	for (uint16_t k = 0; k < mRowSize; k++) {
-		printf("%f,", buffer[k]);
-	}
-	printf("\n");
-#endif
+	DUMP_BUFFER("buffer read done, values: ", mRowSize, buffer, 0)
 	_UNLOCK;
 	return AIFW_OK;
 }
@@ -252,7 +264,7 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t startCol, uint16_t en
 		return AIFW_INVALID_ARG;
 	}
 	if (row >= mRowCount) {
-		AIFW_LOGE("Invalid argument - row index");
+		AIFW_LOGE("Invalid argument - row index %d row count %d", row, mRowCount);
 		return AIFW_INVALID_ARG;
 	}
 	if (startCol > endCol) {
@@ -271,13 +283,7 @@ AIFW_RESULT AIDataBuffer::readData(float *buffer, uint16_t startCol, uint16_t en
 		++temp;
 	}
 	memcpy(buffer, (tempNode->mData + startCol), (endCol - startCol) * sizeof(float));
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer read done, values: ");
-	for (uint16_t k = 0; k < (endCol - startCol); k++) {
-		printf("%f,", buffer[k]);
-	}
-	printf("\n");
-#endif
+	DUMP_BUFFER("buffer read done, values: ", endCol - startCol, buffer, 0)
 	_UNLOCK;
 	return AIFW_OK;
 }
@@ -289,9 +295,10 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size)
 		return AIFW_INVALID_ARG;
 	}
 	if (size > mRowSize) {
-		AIFW_LOGE("Size of given buffer is greater than required buffer size");
+		AIFW_LOGE("Size: %d passed > row size: %d", size, mRowSize);
 		return AIFW_NOT_ENOUGH_SPACE;
 	}
+	DUMP_BUFFER("buffer write operation, values: ", size, buffer, 0)
 	_LOCK
 	if (mStart != mEnd) {
 		AIDataBufferNode *last = mEnd;
@@ -302,21 +309,8 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size)
 		mStart->mPrev = last;
 		mStart = last;
 	}
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer write operation, values: ");
-	for (uint16_t k = 0; k < size; k++) {
-		printf("%f,", buffer[k]);
-	}
-	printf("\n");
-#endif
 	memcpy(mStart->mData, buffer, size * sizeof(float));
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer write operation done, values: ");
-	for (uint16_t k = 0; k < size; k++) {
-		printf("%f,", mStart->mData[k]);
-	}
-	printf("\n");
-#endif
+	DUMP_BUFFER("buffer write operation done, values: ", size, mStart->mData, 0)
 	mStart->mIsEmpty = false;
 	if (mRowCount < mMaxRows) {
 		++mRowCount;
@@ -333,25 +327,13 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size, uint16_t offse
 		return AIFW_INVALID_ARG;
 	}
 	if (size > (mRowSize - offset)) {
-		AIFW_LOGE("Size of given buffer is greater than required buffer size");
+		AIFW_LOGE("Size: %d passed > available size: %d", size, (mRowSize - offset));
 		return AIFW_NOT_ENOUGH_SPACE;
 	}
+	DUMP_BUFFER("buffer write operation, values: ", size, buffer, 0)
 	_LOCK
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer write operation, values: ");
-	for (uint16_t k = 0; k < size; k++) {
-		printf("%f,", buffer[k]);
-	}
-	printf("\n");
-#endif
 	memcpy((mStart->mData + offset), buffer, size * sizeof(float));
-#ifdef CONFIG_AIFW_LOGD
-	printf("buffer write operation done, values: ");
-	for (uint16_t k = 0; k < size; k++) {
-		printf("%f,", mStart->mData[offset + k]);
-	}
-	printf("\n");
-#endif
+	DUMP_BUFFER("buffer write operation done, values: ", size, mStart->mData, offset)
 	AIFW_LOGI("resultData Written");
 	_UNLOCK
 	return AIFW_OK;
@@ -360,7 +342,7 @@ AIFW_RESULT AIDataBuffer::writeData(float *buffer, uint16_t size, uint16_t offse
 AIFW_RESULT AIDataBuffer::deleteData(uint16_t row)
 {
 	if (row >= mRowCount) {
-		AIFW_LOGE("Invalid argument - row index");
+		AIFW_LOGE("Invalid argument - row index %d row count %d", row, mRowCount);
 		return AIFW_INVALID_ARG;
 	}
 	_LOCK

@@ -142,7 +142,8 @@ void board_spi_initialize(void)
 	}
 #endif
 #endif
-#ifdef CONFIG_AMEBASMART_SPI1
+
+#if defined(CONFIG_AMEBASMART_SPI1) &&  !defined(CONFIG_SECOND_FLASH_PARTITION)
 	spi = up_spiinitialize(1);
 #ifdef CONFIG_SPI_USERIO
 	if (spi_uioregister(1, spi) < 0) {
@@ -151,7 +152,7 @@ void board_spi_initialize(void)
 #endif
 #endif
 
-#endif
+#endif /* CONFIG_SPI */
 }
 
 void board_i2c_initialize(void)
@@ -301,16 +302,15 @@ void board_gpio_initialize(void)
 
 void amebasmart_mount_partitions(void)
 {
-#ifdef CONFIG_FLASH_PARTITION
 	int ret;
 	struct mtd_dev_s *mtd;
 	partition_info_t partinfo;
 
 	mtd = (FAR struct mtd_dev_s *)mtd_initialize();
 	/* Configure mtd partitions */
-	ret = configure_mtd_partitions(mtd, &g_flash_part_data, &partinfo);
+	ret = configure_mtd_partitions(mtd, 0, &partinfo);
 	if (ret != OK) {
-		lldbg("ERROR: configure_mtd_partitions failed\n");
+		lldbg("ERROR: configure_mtd_partitions for primary flash failed\n");
 		return;
 	}
 
@@ -318,7 +318,32 @@ void amebasmart_mount_partitions(void)
 	automount_fs_partition(&partinfo);
 #endif
 
-#endif /* CONFIG_FLASH_PARTITION */
+#ifdef CONFIG_SECOND_FLASH_PARTITION
+	struct spi_dev_s *spi = up_spiinitialize(1);
+
+#ifdef CONFIG_MTD_JEDEC
+	mtd = jedec_initialize(spi);
+	if (mtd == NULL) {
+		lldbg("Jedec Init failed\n");
+		return;
+	}
+
+#elif defined(CONFIG_MTD_W25)
+	mtd = w25_initialize(spi);
+	if (mtd == NULL) {
+		lldbg("w25 Init failed\n");
+		return;
+	}
+#endif
+	ret = configure_mtd_partitions(mtd, 1, &partinfo);
+	if (ret != OK) {
+		lldbg("ERROR: configure_mtd_partitions for secondary flash failed\n");
+		return;
+	}
+#ifdef CONFIG_AUTOMOUNT
+	automount_fs_partition(&partinfo);
+#endif
+#endif /* end of CONFIG_SECOND_FLASH_PARTITION */
 }
 
 #ifdef CONFIG_FTL_ENABLED
