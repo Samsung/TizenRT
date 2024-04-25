@@ -34,7 +34,9 @@
 #include <stdbool.h>
 #include <queue.h>
 #include <debug.h>
+#include <assert.h>
 
+#include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 
@@ -62,6 +64,11 @@
 #define LOG_DUMP_COMPRESS_NODESZ	5	/* use 4 char to store compressed node size */
 
 #define LOG_CHUNK_SIZE			sizeof(struct log_dump_chunk_s)
+
+#define LOG_DUMP_COMP_CHECK_RETRY_USEC		10000	/* 10ms */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+#define LOG_DUMP_COMP_CHECK_RETRY_CNT 		(CONFIG_LOG_DUMP_HANG_CHECK_SEC * USEC_PER_SEC / LOG_DUMP_COMP_CHECK_RETRY_USEC)
+#endif
 
 static bool is_started_to_save;
 
@@ -186,8 +193,18 @@ int log_dump_read_wake(void)
 	}
 
 	/* wait for the completion of the partially filled block compression */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+	int hang_check_count = 0;
+#endif
 	while (compress_last_block) {
-		usleep(10000);
+		usleep(LOG_DUMP_COMP_CHECK_RETRY_USEC);
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+		hang_check_count++;
+		if (hang_check_count > LOG_DUMP_COMP_CHECK_RETRY_CNT) {
+			ldplldbg("Compression failed for %d seconds, The device hang is suspected.\n", CONFIG_LOG_DUMP_HANG_CHECK_SEC);
+			DEBUGPANIC();
+		}
+#endif
 	}
 
 	return 0;
@@ -399,8 +416,18 @@ static int compress_full_bufs(void)
 		irqrestore(flags);
 
 		/* wait for completion of the current full block compression */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+		int hang_check_count = 0;
+#endif
 		while (compress_full_block) {
-			usleep(10000);
+			usleep(LOG_DUMP_COMP_CHECK_RETRY_USEC);
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+			hang_check_count++;
+			if (hang_check_count > LOG_DUMP_COMP_CHECK_RETRY_CNT) {
+				ldplldbg("Compression failed for %d seconds, The device hang is suspected.\n", CONFIG_LOG_DUMP_HANG_CHECK_SEC);
+				DEBUGPANIC();
+			}
+#endif
 		}
 
 		if (compress_ret < 0) {
