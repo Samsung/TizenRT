@@ -67,7 +67,9 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/serial/serial.h>
+#ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
+#endif
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #include <termios.h>
@@ -1252,6 +1254,7 @@ static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
 		case PM_NORMAL:
 			pmu_unregister_sleep_callback(PMU_LOGUART_DEVICE);
 			pmu_unregister_sleep_callback(PMU_UART1_DEVICE);
+			break;
 		case PM_IDLE:
 		case PM_STANDBY:
 			break;
