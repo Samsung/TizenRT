@@ -8,7 +8,6 @@ config MEDIA
 	default n
 	depends on AUDIO
 	select HAVE_CXX
-	select HAVE_CXXINITIALIZE
 	---help---
 		Enables overall support for Media library.
 

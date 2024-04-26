@@ -7,7 +7,6 @@ config EXTERNAL_TFMICRO
 	bool "Tensorflow Lite for Microcontroller"
 	default n
 	select HAVE_CXX
-	select HAVE_CXXINITIALIZE
 	---help---
 		Enables the Tensorflow lite for Microcontroller
 
