@@ -221,6 +221,38 @@ config DEBUG_LIB_INFO
 
 endif #DEBUG_LIB
 
+config DEBUG_LOGDUMP
+	bool "logdump Debug Feature"
+	default n
+	depends on LOG_DUMP
+	---help---
+		Enable logdump debug feature.
+
+if DEBUG_LOGDUMP
+
+config DEBUG_LOGDUMP_ERROR
+	bool "logdump Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable logdump error debug SYSLOG output.
+
+config DEBUG_LOGDUMP_WARN
+	bool "logdump Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable logdump warning debug SYSLOG output.
+
+config DEBUG_LOGDUMP_INFO
+	bool "logdump Informational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable logdump informational debug SYSLOG output.
+
+endif #DEBUG_LOGDUMP
+
 config DEBUG_MM
 	bool "Memory Manager Debug Feature"
 	default n
