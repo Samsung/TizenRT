@@ -476,6 +476,30 @@ int get_errno(void);
 #define lllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_LOGDUMP_ERROR
+#define ldpdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define ldplldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define ldpdbg(...)
+#define ldplldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_WARN
+#define ldpwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define ldpllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define ldpwdbg(...)
+#define ldpllwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_INFO
+#define ldpvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define ldpllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define ldpvdbg(...)
+#define ldpllvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_MM_ERROR
 #define mdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define mlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1299,6 +1323,30 @@ int get_errno(void);
 #else
 #define lvdbg       (void)
 #define lllvdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_ERROR
+#define ldpdbg      dbg
+#define ldplldbg    lldbg
+#else
+#define ldpdbg      (void)
+#define ldplldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_WARN
+#define ldpwdbg     wdbg
+#define ldpllwdbg   llwdbg
+#else
+#define ldpwdbg     (void)
+#define ldpllwdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_INFO
+#define ldpvdbg     vdbg
+#define ldpllvdbg   llvdbg
+#else
+#define ldpvdbg     (void)
+#define ldpllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_MM_ERROR
