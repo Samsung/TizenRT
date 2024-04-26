@@ -527,7 +527,7 @@ static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
 	}
 	/*DMA triggers irq when all data has transferred from memory to SPI fifo, it is around 0.5ms earlier than SPI transfer all data in FIFO out
 	 *compensate by adding 0.5ms delay to ensure that all data in fifo are transferred out before manually pull up CS pin by GPIO*/
-	DelayUs(500); 
+
 }
 #endif
 
@@ -1157,54 +1157,64 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
  ************************************************************************************/
 
 	int mode_16bit = 1;
+	uint32_t remain_data_len = 0;
+	uint32_t send_data_len = 0;
 	spi_hookmastercallback(priv);
 	if (amebasmart_spi_9to16bitmode(priv)) {
 		/* 16-bit mode */
 		mode_16bit++;
 	}
-	DEBUGASSERT((nwords * mode_16bit) <= SPI_DMA_MAX_BUFFER_SIZE);
-	if (txbuffer && rxbuffer) {
-		uint8_t *rxbuff_aligned = NULL;
-		rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
-		if(rxbuff_aligned == NULL) {
-			return;
-		}
-		uint8_t *txbuff_aligned =  NULL;
+	remain_data_len = nwords * mode_16bit;
+	uint8_t *rxbuff_aligned = NULL;
+	uint8_t *txbuff_aligned =  NULL;
+	rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+	if(rxbuff_aligned == NULL) {
+		lldbg("rxbuff_aligned malloc failed\n");
+		return;
+	}
+	if (txbuffer) {
 		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
 		if(txbuff_aligned == NULL) {
 			rtw_mfree(rxbuff_aligned, 0);
+			lldbg("txbuff_aligned malloc failed\n");
 			return;
 		}
-		memcpy(txbuff_aligned, txbuffer, nwords * mode_16bit);
-		spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)nwords * mode_16bit);
-		spi_dmarxwait(priv);
-		spi_dmatxwait(priv);
-		memcpy(rxbuffer, rxbuff_aligned, nwords * mode_16bit);
-		rtw_mfree(rxbuff_aligned, 0);
-		rtw_mfree(txbuff_aligned, 0);
-	} else if (txbuffer) {
-		uint8_t *txbuff_aligned =  NULL;
-		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
-		if(txbuff_aligned == NULL) {
-			return;
-		}
-        memcpy(txbuff_aligned, txbuffer, nwords * mode_16bit);
-		spi_master_write_stream_dma(&priv->spi_object, (char *) txbuff_aligned, (uint32_t)nwords * mode_16bit);
-		spi_dmatxwait(priv);
-		rtw_mfree(txbuff_aligned, 0);
-	} else if (rxbuffer) {
-		uint8_t *rxbuff_aligned = NULL;
-		rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
-		if(rxbuff_aligned == NULL) {
-			return;
-		}
-		spi_flush_rx_fifo(&priv->spi_object);
-		spi_master_read_stream_dma(&priv->spi_object, (char *) rxbuff_aligned, (uint32_t)nwords * mode_16bit);
-		spi_dmarxwait(priv);
-		memcpy(rxbuffer, rxbuff_aligned, nwords * mode_16bit);
-		rtw_mfree(rxbuff_aligned, 0);
 	}
-
+	while (remain_data_len > 0) {
+		if (remain_data_len >= SPI_DMA_MAX_BUFFER_SIZE) {
+			send_data_len = SPI_DMA_MAX_BUFFER_SIZE;
+		} else {
+			send_data_len = remain_data_len;
+		}
+		if (txbuffer && rxbuffer) {
+			memcpy(txbuff_aligned, txbuffer, send_data_len);
+			spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)send_data_len);
+			spi_dmarxwait(priv);
+			spi_dmatxwait(priv);
+			memcpy(rxbuffer, rxbuff_aligned, send_data_len);
+		} else if (txbuffer) {
+			memcpy(txbuff_aligned, txbuffer, send_data_len);
+			spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)send_data_len);
+			spi_dmatxwait(priv);
+			spi_dmarxwait(priv);
+		} else if (rxbuffer) {
+			spi_flush_rx_fifo(&priv->spi_object);
+			spi_master_read_stream_dma(&priv->spi_object, (char *) rxbuff_aligned, (uint32_t)send_data_len);
+			spi_dmarxwait(priv);
+			memcpy(rxbuffer, rxbuff_aligned, send_data_len);
+		}
+		remain_data_len -= send_data_len;
+		if (txbuffer) {
+			txbuffer += send_data_len;
+		}
+		if (rxbuffer) {
+			rxbuffer += send_data_len;
+		}
+	}
+	if (txbuff_aligned) {
+		rtw_mfree(txbuff_aligned, 0);
+	}
+	rtw_mfree(rxbuff_aligned, 0);
 #endif							/* CONFIG_AMEBASMART_SPI_DMA */
 }
 
