@@ -6,7 +6,7 @@
 config EXAMPLES_MEDIASTREAMER
 	bool "MediaStreamer example"
 	default n
-	depends on HAVE_CXX && HAVE_CXXINITIALIZE && MEDIA && MEDIA_PLAYER && MEDIA_RECORDER
+	depends on HAVE_CXX && MEDIA && MEDIA_PLAYER && MEDIA_RECORDER
 	select WIFI_MANAGER
 	---help---
 		Enable the MediaStreamer example

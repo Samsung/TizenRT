@@ -6,7 +6,7 @@
 config EXAMPLES_AVS_TEST
 	bool "AVS Device SDK test example"
 	default n
-	depends on HAVE_CXXINITIALIZE
+	depends on HAVE_CXX
 	---help---
 		Enable the AVS Device SDK test example
 

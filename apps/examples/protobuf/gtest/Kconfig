@@ -6,7 +6,7 @@
 config EXAMPLES_PROTOBUF_GTEST
 	bool "Protocol Buffers gtest"
 	default n
-	depends on HAVE_CXXINITIALIZE && LIBCXX && PROTOBUF && GMOCK
+	depends on LIBCXX && PROTOBUF && GMOCK
 	---help---
 		Enable the Protocol Buffers gtest
 

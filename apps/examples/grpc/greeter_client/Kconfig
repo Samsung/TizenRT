@@ -7,7 +7,7 @@ config EXAMPLES_GREETER_CLIENT
 	bool "grpc client example"
 	default n
 	depends on GRPC
-	depends on HAVE_CXXINITIALIZE
+	depends on HAVE_CXX
 	---help---
 		Enable the grpc client example
 

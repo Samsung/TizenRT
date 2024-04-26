@@ -7,7 +7,7 @@ config EXAMPLES_ROUTE_CLIENT
 	bool "route client example"
 	default n
 	depends on GRPC
-	depends on HAVE_CXXINITIALIZE
+	depends on HAVE_CXX
 	---help---
 		Enable the grpc client example
 

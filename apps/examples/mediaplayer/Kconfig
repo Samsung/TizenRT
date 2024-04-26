@@ -6,7 +6,7 @@
 config EXAMPLES_MEDIAPLAYER
 	bool "MediaPlayer example"
 	default n
-	depends on HAVE_CXX && HAVE_CXXINITIALIZE && MEDIA
+	depends on HAVE_CXX && MEDIA
 	---help---
 		Enable the MediaPlayer example
 
