@@ -1,5 +1,14 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 756ad947 2024/04/30-17:54:41 ==
+1.	Toggle LOGUART clck src
+
+== version 2d0f1be032 2024/04/29-09:52:12 ==
+1.	Change optimization flags from "-O2" to "-Os"
+2.	Adjust the PSRAM Layout
+	- CA32 ATF address adjusted: 0x7001_7000 - 0x7010_0000; 932KB
+	- CA32 BL33 address adjusted: 0x6010_0000 - 0x6080_0000; 7M
+
 == version 2b31f82 2024/04/09-18:45:06 ==
 1.	Enable LOGUART as wakeup src
 
