@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 2b31f82 2024/04/09-18:45:06 ==
+1.	Enable LOGUART as wakeup src
+
 == version 9060401 2024/04/08-12:19:55 ==
 1.  Change coex code flow to fix tx hang issue, which caused "mgnt frame drop" logs
 
