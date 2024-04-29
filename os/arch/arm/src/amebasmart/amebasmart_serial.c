@@ -840,9 +840,6 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
-#if (CONFIG_UART4_BAUD != 1500000)
-#error "Error Amebasmart UART4 works with fixed baud rate: 1,500,000. Please set it to 1500000 in the menuconfig"
-#endif
 	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
 		irq_disable(RTL8730E_UART_LOG_IRQ-32);
 		irq_unregister(RTL8730E_UART_LOG_IRQ-32);
@@ -1179,8 +1176,12 @@ static uint32_t rtk_loguart_suspend(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
-	rtl8730e_log_up_shutdown(&CONSOLE_DEV);
-	rtl8730e_log_up_detach(&CONSOLE_DEV);
+
+	/* Pre process is done in LP core */
+	/* Reference code:
+	* 	RCC_PeriphClockSource_LOGUART(UARTLOG_CLK_OSC_LP);
+	*	LOGUART_LPBaudSet(LOGUART_DEV, 115200, 2000000);
+	*/
 	return 1;
 }
 
@@ -1188,9 +1189,12 @@ static uint32_t rtk_loguart_resume(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
-	rtl8730e_log_up_attach(&CONSOLE_DEV);
-	rtl8730e_log_up_txint(&CONSOLE_DEV, g_uart4priv.txint_enable);
-	rtl8730e_log_up_rxint(&CONSOLE_DEV, g_uart4priv.rxint_enable);
+
+	/* Post process is done in LP core */
+	/* Reference code:
+	*	RCC_PeriphClockSource_LOGUART(UARTLOG_CLK_XTAL_40M);
+	*	LOGUART_SetBaud(LOGUART_DEV, 115200);
+	*/
 	return 1;
 }
 
