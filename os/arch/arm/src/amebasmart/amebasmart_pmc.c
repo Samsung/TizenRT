@@ -217,13 +217,9 @@ void SOCPS_SleepPG(void)
 	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
 	if (nDeviceIdOffset != PMU_MAX) {
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
-
-		if (tickless_debug) {
-			DBG_8195A("DBG: CA32 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
-		}
+		pmdbg("DBG: CA32 Sleep PG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		return;
 	}
-	pmvdbg("pg-s\n");
 
 	//save gic registers
 	SOCPS_Save_GIC();
@@ -235,7 +231,6 @@ void SOCPS_SleepPG(void)
 
 	//restore gic registers
 	SOCPS_Restore_GIC();
-	pmvdbg("pg-w\n");
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
@@ -256,15 +251,11 @@ void SOCPS_SleepCG(void)
 	nDeviceIdOffset = pmu_exec_sleep_hook_funs();
 	if (nDeviceIdOffset != PMU_MAX) {
 		pmu_exec_wakeup_hook_funs(nDeviceIdOffset);
-
-		if (tickless_debug) {
-			DBG_8195A("DBG: CA32 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
-		}
+		pmdbg("DBG: CA32 Sleep CG blocked because Dev %x  busy\n", nDeviceIdOffset);
 		return;
 	}
 
 	sleep_param.sleep_type = SLEEP_CG;
-	pmvdbg("cg-s\n");
 	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
 			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
 
@@ -276,7 +267,6 @@ void SOCPS_SleepCG(void)
 	//asm volatile("wfi");
 
 	//while ((HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (LSYS_BIT_AP_RUNNING)) == 0);
-	pmvdbg("cg-w\n");
 
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
