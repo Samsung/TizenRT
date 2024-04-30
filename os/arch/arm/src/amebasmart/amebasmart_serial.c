@@ -543,11 +543,6 @@ static u32 uart_index_get(PinName tx)
 	}
 	return -1;
 }
-static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
-	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 52125, UART_LOG_IRQ},	/* CM0 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-	{0, LOGUART_BIT_TP1F_NOT_FULL, LOGUART_BIT_TP1F_EMPTY, 781875, UART_LOG_IRQ},		/* CM4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, UART_LOG_IRQ},	/* CA7 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-};
 
 /****************************************************************************
  * Name: up_shutdown
@@ -819,8 +814,9 @@ static bool rtl8730e_log_up_txempty(struct uart_dev_s *dev)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].empty);
+	// LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+	// return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].empty);
+	return 1;
 }
 
 
@@ -1177,6 +1173,7 @@ static uint32_t rtk_loguart_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
+	LOGUART_Suspend();
 	/* Pre process is done in LP core */
 	/* Reference code:
 	* 	RCC_PeriphClockSource_LOGUART(UARTLOG_CLK_OSC_LP);
@@ -1335,7 +1332,7 @@ static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, int domain,
 			}
 #endif
 #ifdef CONFIG_RTL8730E_UART4
-			/* No need to check anything here */
+			/* Check for LOGUART TX status before AP is suspended */
 #endif
 			break;
 		default:
