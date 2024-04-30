@@ -467,4 +467,21 @@ void LOGUART_Relay_RxCmd(LOGUART_TypeDef *UARTLOG, u32 NewState)
 	}
 }
 
+void LOGUART_SetIMR(u32 SetValue)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+
+	UARTLOG->LOGUART_UART_IER = SetValue;
+}
+
+#ifdef CONFIG_PM
+void LOGUART_Suspend(void)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+
+	LOGUART_WaitTxComplete();
+	LOGUART_ClearRxFifo(UARTLOG);
+}
+#endif
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
