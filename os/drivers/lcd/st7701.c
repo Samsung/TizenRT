@@ -204,6 +204,11 @@ static int st7701_putrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t c
 static int st7701_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR const uint8_t *buffer, fb_coord_t stride)
 {
 	FAR struct st7701_dev_s *priv = (FAR struct st7701_dev_s *)dev;
+	//coordinate shift from (0,0) -> (1,1) and (XRES-1,YRES-1) -> (XRES,YRES)
+	row_start += 1;
+	row_end += 1;
+	col_start += 1;
+	col_end += 1;
 	priv->config->lcd_put_area(buffer, row_start, col_start, row_end, col_end);
 	return OK;
 }

@@ -53,7 +53,6 @@
 
 static u32 vo_freq;
 static u32 send_cmd_done = 0;
-static u32 UnderFlowCnt = 0;
 
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
@@ -79,9 +78,6 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
-
-/* Initialization */
-static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv);
 
 /************************************************************************************
  * Private Data

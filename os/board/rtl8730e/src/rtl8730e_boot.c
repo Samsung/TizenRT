@@ -84,7 +84,6 @@
 #include "ameba_soc.h"
 #include "osdep_service.h"
 #include "platform_opts_bt.h"
-#include "rtl8730e_st7701.c"
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/

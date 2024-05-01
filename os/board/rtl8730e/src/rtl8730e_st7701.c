@@ -29,6 +29,7 @@
 #define MIPI_GPIO_RESET_PIN _PA_14
 #define PIN_LOW 0
 #define PIN_HIGH 1
+#define LCD_LAYER 0
 
 static void rtl8730_st7701_lcd_init(void);
 static void rtl8730_st7701_gpio_reset(void);
@@ -62,7 +63,7 @@ struct irq {
 
 LCDC_TypeDef *pLCDC = LCDC;
 LCDC_InitTypeDef lcdc_init_struct;
-u32 UnderFlowCnt = 0;
+static u32 UnderFlowCnt = 0;
 
 struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
@@ -90,7 +91,7 @@ static void LcdcInitValues(struct lcd_data config)
 
 static void rtl8730_st7701_lcd_init(void)
 {
-	rtl8730_st7701_lcd_layer_enable(0, true);
+	rtl8730_st7701_lcd_layer_enable(LCD_LAYER, true);
 	rtl8730_st7701_lcd_layer_enable(1, false);
 	rtl8730_st7701_lcd_layer_enable(2, false);
 
@@ -130,15 +131,21 @@ static void rtl8730_st7701_lcd_layer_enable(int layer, bool enable)
 
 static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end)
 {
-	lcdc_init_struct.layerx[0].LCDC_LayerImgBaseAddr = (u32) lcd_img_buffer;
-#ifdef ENABLE_ST7701_SIZE_CHANGE
-	lcdc_init_struct.layerx[0].LCDC_LayerHorizontalStart = x_start;
-	lcdc_init_struct.layerx[0].LCDC_LayerHorizontalStop = x_end;
-	lcdc_init_struct.layerx[0].LCDC_LayerVerticalStart = y_start;
-	lcdc_init_struct.layerx[0].LCDC_LayerVerticalStop = y_end;
+	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerImgBaseAddr = (u32) lcd_img_buffer;
+#ifdef ENABLE_ST7701_CHANGE_WINDOW_SIZE
+	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerHorizontalStart = x_start;
+	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerHorizontalStop = x_end;
+	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerVerticalStart = y_start;
+	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerVerticalStop = y_end;
 #endif
-	LCDC_LayerConfig(pLCDC, 0, &lcdc_init_struct.layerx[0]);
+	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
 	LCDC_TrigerSHWReload(pLCDC);
+#ifndef ENABLE_ST7701_CHANGE_WINDOW_SIZE
+	(void) x_start;
+	(void) y_start;
+	(void) x_end;
+	(void) y_end;
+#endif
 }
 
 static void rtl8730e_st7701_reset_pin(u8 Newstatus)
@@ -169,11 +176,11 @@ static void rtl8730_st7701_enable_lcdc(void)
 
 void rtl8730e_mipidsi_underflowreset(void)
 {
-	u32 reg_val2 = MIPI_DSI_INTS_ACPU_Get(mipi_irq_info.data);
+	u32 reg_val2 = MIPI_DSI_INTS_ACPU_Get((MIPI_TypeDef *) mipi_irq_info.data);
 
 	if (reg_val2) {
 		UnderFlowCnt = 0;
-		MIPI_DSI_INT_Config(mipi_irq_info.data, DISABLE, DISABLE, DISABLE);
+		MIPI_DSI_INT_Config((MIPI_TypeDef *) mipi_irq_info.data, DISABLE, DISABLE, DISABLE);
 		mipidsi_acpu_reg_clear();
 
 		/*Disable the LCDC*/

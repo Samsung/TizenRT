@@ -64,7 +64,7 @@
 
 struct mipi_dsi_device_driver_s {
 	FAR struct mipi_dsi_device *dsi_dev;
-	pthread_mutex_t lock;		/* Mutual exclusion */
+	sem_t sem;
 };
 
 /****************************************************************************
@@ -127,9 +127,7 @@ static int dsi_dev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	priv = inode->i_private;
 	DEBUGASSERT(priv);
 
-	/* Get exclusive access to the DSI device driver state structure */
-
-	ret = pthread_mutex_lock(&priv->lock);
+	ret = sem_wait(&priv->sem);
 	if (ret < 0) {
 		return ret;
 	}
@@ -177,7 +175,7 @@ static int dsi_dev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	}
 
-	phtread_mutex_unlock(&priv->lock);
+	sem_post(&priv->sem);
 	return ret;
 }
 
@@ -214,19 +212,19 @@ int mipi_dsi_device_driver_register(FAR struct mipi_dsi_device *device)
 
 	priv = kmm_zalloc(sizeof(struct mipi_dsi_device_driver_s));
 	if (priv == NULL) {
-		verr("mipi dsi device driver register failed, no memory.\n");
+		dbg("ERROR: mipi dsi device driver register failed, no memory.\n");
 		return -ENOMEM;
 	}
 
 	priv->dsi_dev = device;
-	pthread_mutex_init(&priv->lock, NULL);
+	sem_init(&priv->sem, 0, 1);
 
 	host = device->host;
 	snprintf(devpath, sizeof(devpath), MIPI_DSI_DEVNAME_FMT, host->bus, device->channel, device->name);
 
 	ret = register_driver(devpath, &g_dsi_dev_fops, 0666, priv);
 	if (ret < 0) {
-		pthread_mutex_destroy(&priv->lock);
+		sem_destroy(&priv->sem);
 		kmm_free(priv);
 	}
 

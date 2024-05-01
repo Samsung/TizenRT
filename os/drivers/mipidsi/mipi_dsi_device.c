@@ -69,6 +69,17 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static int mipi_dsi_fill_tx_buff(FAR struct mipi_dsi_device *device, uint8_t *tx, u32 type){
+	struct mipi_dsi_msg msg;
+	msg.channel = device->channel;
+	msg.tx_buf = tx;
+	msg.tx_len = sizeof(tx);
+	msg.flags = 0;
+	msg.type = type;
+	
+	int ret = mipi_dsi_transfer(device, &msg);
+	return ret < 0 ? ret : 0;
+}
 
 /****************************************************************************
  * Public Functions
@@ -166,20 +177,11 @@ int mipi_dsi_detach(FAR struct mipi_dsi_device *device)
 
 int mipi_dsi_shutdown_peripheral(FAR struct mipi_dsi_device *device)
 {
-	struct mipi_dsi_msg msg;
 	uint8_t tx[2] = {
 		0,
 		0
 	};
-
-	msg.channel = device->channel;
-	msg.type = MIPI_DSI_SHUTDOWN_PERIPHERAL;
-	msg.tx_buf = tx;
-	msg.tx_len = sizeof(tx);
-	msg.flags = 0;
-
-	int ret = mipi_dsi_transfer(device, &msg);
-	return ret < 0 ? ret : 0;
+	return mipi_dsi_fill_tx_buff(device, tx, MIPI_DSI_SHUTDOWN_PERIPHERAL);
 }
 
 /****************************************************************************
@@ -198,21 +200,11 @@ int mipi_dsi_shutdown_peripheral(FAR struct mipi_dsi_device *device)
 
 int mipi_dsi_turn_on_peripheral(FAR struct mipi_dsi_device *device)
 {
-	int ret;
-	struct mipi_dsi_msg msg;
 	uint8_t tx[2] = {
 		0,
 		0
 	};
-
-	msg.channel = device->channel;
-	msg.type = MIPI_DSI_TURN_ON_PERIPHERAL;
-	msg.tx_buf = tx;
-	msg.tx_len = sizeof(tx);
-	msg.flags = 0;
-
-	ret = mipi_dsi_transfer(device, &msg);
-	return ret < 0 ? ret : 0;
+	return mipi_dsi_fill_tx_buff(device, tx, MIPI_DSI_TURN_ON_PERIPHERAL);
 }
 
 /****************************************************************************
@@ -233,21 +225,11 @@ int mipi_dsi_turn_on_peripheral(FAR struct mipi_dsi_device *device)
 
 int mipi_dsi_set_maximum_return_packet_size(FAR struct mipi_dsi_device *device, uint16_t value)
 {
-	int ret;
-	struct mipi_dsi_msg msg;
 	uint8_t tx[2] = {
 		value & 0xff,
 		value >> 8
 	};
-
-	msg.channel = device->channel;
-	msg.type = MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE;
-	msg.tx_len = sizeof(tx);
-	msg.tx_buf = tx;
-	msg.flags = 0;
-
-	ret = mipi_dsi_transfer(device, &msg);
-	return ret < 0 ? ret : 0;
+	return mipi_dsi_fill_tx_buff(device, tx, MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE);
 }
 
 /****************************************************************************
@@ -269,23 +251,11 @@ int mipi_dsi_set_maximum_return_packet_size(FAR struct mipi_dsi_device *device, 
 
 int mipi_dsi_compression_mode(FAR struct mipi_dsi_device *device, bool enable)
 {
-	/* Note: Needs updating for non-default PPS or algorithm */
-
-	int ret;
-	struct mipi_dsi_msg msg;
 	uint8_t tx[2] = {
 		enable & 0xff,
 		0
 	};
-
-	msg.channel = device->channel;
-	msg.type = MIPI_DSI_COMPRESSION_MODE;
-	msg.tx_len = sizeof(tx);
-	msg.tx_buf = tx;
-	msg.flags = 0;
-
-	ret = mipi_dsi_transfer(device, &msg);
-	return ret < 0 ? ret : 0;
+	return mipi_dsi_fill_tx_buff(device, tx, MIPI_DSI_COMPRESSION_MODE);
 }
 
 /****************************************************************************
@@ -967,14 +937,14 @@ FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *h
 		dev->host = host;
 		dev->channel = channel;
 		snprintf(dev->name, sizeof(dev->name), "%s", name);
-		/*#ifdef CONFIG_MIPI_DSI_DRIVER
+		#ifdef CONFIG_MIPI_DSI_DRIVER
 		      ret = mipi_dsi_device_driver_register(dev);
 		      if (ret < 0)
 		        {
 		          kmm_free(dev);
 		          dev = NULL;
 		        }
-		#endif // CONFIG_MIPI_DSI_DRIVER*/
+		#endif
 	}
 
 	return dev;
