@@ -59,6 +59,15 @@ config VIRTKEY
 	default n
 	depends on NFILE_DESCRIPTORS != 0
 
+if VIRTKEY
+config VIRTKEY_QUEUE_LEN
+	int "Virtual key event queue length"
+	default 1024
+	---help---
+		Use this to specify length of event queue for virtual keyboard driver,
+		Event generator will write to the queue and receiver will read from it.
+endif
+
 menuconfig DRVR_WRITEBUFFER
 	bool "Enable write buffer support"
 	depends on SCHED_WORKQUEUE
