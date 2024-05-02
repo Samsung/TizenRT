@@ -71,7 +71,6 @@ static void amebasmart_set_clock(void);
 static void amebasmart_check_freq(struct lcd_data *data);
 static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv);
 static void amebasmart_register_interrupt(void);
-static bool amebasmart_is_transfer_completed(void);
 
 /* MIPI methods */
 static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list);
@@ -277,14 +276,6 @@ static void amebasmart_register_interrupt(void)
 	InterruptUnRegister(mipi_irq_info.num);
 	InterruptRegister((IRQ_FUN) amebasmart_mipidsi_isr, mipi_irq_info.num, (u32) mipi_irq_info.data, mipi_irq_info.priority);
 	InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
-}
-
-static bool amebasmart_is_transfer_completed(void)
-{
-	if (send_cmd_done == 1) {
-		return true;
-	}
-	return false;
 }
 
 void mipidsi_mode_switch(bool do_enable){
