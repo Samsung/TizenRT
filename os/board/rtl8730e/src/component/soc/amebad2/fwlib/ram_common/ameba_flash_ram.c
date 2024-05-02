@@ -16,8 +16,10 @@
   */
 
 #include "ameba_soc.h"
+#include "barriers.h"
 
-uint32_t PrevIrqStatus;
+FLASH_InitTypeDef flash_init_para;
+static uint32_t PrevIrqStatus;
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
@@ -399,6 +401,10 @@ SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
+
+	ARM_DSB();
+	ARM_ISB();
+	FLASH_WaitBusy_InUserMode(WAIT_SPIC_BUSY);
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
 
 	/* user mode is entered after auto cmd is done, which means if SPIC BUSY=1, HW will not write Ctrl0 */
@@ -410,6 +416,9 @@ void FLASH_UserMode_Exit(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 	spi_flash->CTRLR0 &= ~BIT_USER_MODE;
+
+	while (spi_flash->CTRLR0 & BIT_USER_MODE);
+	ARM_ISB();
 }
 
 /**
