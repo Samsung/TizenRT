@@ -247,12 +247,6 @@
 /* Defines default sleep duration */
 #define DEFAULT_PM_SLEEP_DURATION    10000000 /* 10 sec in microsecond*/
 
-#define PM_LOCK_PATH					"/proc/power/domains/0/pm_lock"
-#define PM_UNLOCK_PATH					"/proc/power/domains/0/pm_unlock"
-#ifdef CONFIG_PM_DVFS
-#define PM_TUNEFREQ_PATH				"/proc/power/domains/0/pm_tunefreq"
-#endif
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -312,6 +306,14 @@ enum pm_timer_type_e {
 	PM_LOCK_TIMER = 2,
 	/* Scope for future expansion, up to 8 timer types can be supported */
 };
+
+/* This structure is used to send data to pm driver from app side */
+struct pm_arg_s {
+	enum pm_domain_e domain;
+	enum pm_state_e state;
+};
+
+typedef struct pm_arg_s pm_arg_t;
 
 struct pm_timer_s {
 	uint8_t timer_type;		/* Bits here are set according to the timer that is to be used */
@@ -715,6 +717,8 @@ void pm_dvfs(int div_lvl);
  ****************************************************************************/
 void up_set_dvfs(int div_lvl);
 #endif
+
+void pm_driver_register(void);
 
 #undef EXTERN
 #ifdef __cplusplus
