@@ -41,7 +41,7 @@ static void rtl8730_st7701_enable_lcdc(void);
 static void rtl8730e_st7701_register_lcdc_isr(void);
 FAR void mipidsi_mode_switch(bool do_enable);
 FAR void mipidsi_acpu_reg_clear(void);
-FAR struct mipi_dsi_host *ameabsmart_mipi_dsi_host_initialize(struct lcd_data *config);
+FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config);
 FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *host, FAR const char *name, int channel);
 FAR struct lcd_dev_s *st7701_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct st7701_config_s *config);
 
@@ -96,7 +96,7 @@ static void rtl8730_st7701_lcd_init(void)
 	rtl8730_st7701_lcd_layer_enable(2, false);
 
 	LCDC_Init(pLCDC, &lcdc_init_struct);
-	LCDC_DMAModeConfig(pLCDC, LCDC_LAYER_BURSTSIZE_4X64BYTES);
+	LCDC_DMAModeConfig(pLCDC, LCDC_LAYER_BURSTSIZE_1X64BYTES);
 	LCDC_DMADebugConfig(pLCDC, LCDC_DMA_OUT_DISABLE, 0);
 
 	rtl8730e_st7701_register_lcdc_isr();
@@ -228,7 +228,7 @@ void rtl8730_st7701_initialize(void)
 	config.XPixels = XRES;
 	config.YPixels = YRES;
 
-	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)ameabsmart_mipi_dsi_host_initialize(&config);
+	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)amebasmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);
 	struct lcd_dev_s *dev = (struct lcd_dev_s *)st7701_lcdinitialize(dsi_device, &g_rtl8730_st7701_config_s);
 	LcdcInitValues(config);

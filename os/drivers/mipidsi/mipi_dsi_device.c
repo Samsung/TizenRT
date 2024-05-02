@@ -937,14 +937,14 @@ FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *h
 		dev->host = host;
 		dev->channel = channel;
 		snprintf(dev->name, sizeof(dev->name), "%s", name);
-		#ifdef CONFIG_MIPI_DSI_DRIVER
+#ifdef CONFIG_MIPI_DSI_DRIVER
 		      ret = mipi_dsi_device_driver_register(dev);
 		      if (ret < 0)
 		        {
 		          kmm_free(dev);
 		          dev = NULL;
 		        }
-		#endif
+#endif
 	}
 
 	return dev;
