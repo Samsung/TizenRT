@@ -87,6 +87,9 @@
 #ifdef CONFIG_COMPRESSION
 #include <tinyara/compression.h>
 #endif
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
@@ -308,6 +311,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_COMPRESSION
 	compress_register();
+#endif
+
+#ifdef CONFIG_PM
+	pm_driver_register();
 #endif
 
 #ifdef CONFIG_PRODCONFIG
