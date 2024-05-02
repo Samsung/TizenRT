@@ -22,8 +22,6 @@ static uint32_t sysactive_timeout_flag = 0;
 volatile u32 cpuhp_flag[CONFIG_SMP_NCPUS];
 #endif
 
-u32 tickless_debug = 0;
-
 /* ++++++++ TizenRT macro implementation ++++++++ */
 
 /* psm dd hook info */
@@ -282,13 +280,13 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 	IPCM0_DEV->IPCx_USR[IPC_INT_CHAN_SHELL_SWITCH] = 0x00000000;
 	InterruptDis(UART_LOG_IRQ);
 #endif
-	pmvdbg("\nTick before sleep LP: %d\n", tick_before_sleep);
+
 	if (sleep_type == SLEEP_CG) {
 		SOCPS_SleepCG();
 	} else {
 		SOCPS_SleepPG();
 	}
-	pmvdbg("\nTick after sleep LP: %d\n", SYSTIMER_TickGet());
+
 	/*  update kernel tick by calculating passed tick from gtimer */
 	/*  get current gtimer timestamp */
 	tick_passed = SYSTIMER_GetPassTick(tick_before_sleep);
@@ -302,9 +300,9 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 #else
-	irqstate_t flags  = irqsave();
+	irqstate_t flags  = enter_critical_section();
 	g_system_timer += (u64)ms_passed; /*  update kernel tick */
-	irqrestore(flags);
+	leave_critical_section(flags);
 #endif
 
 	sysactive_timeout_flag = 0;
@@ -313,9 +311,7 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 	pmu_set_sysactive_time(2);
 #endif
 
-	if (tickless_debug) {
-		pmvdbg("ap sleeped:[%d] ms\n", ms_passed);
-	}
+	pmvdbg("ap sleeped:[%d] ms\n", ms_passed);
 }
 
 CONFIG_FW_CRITICAL_CODE_SECTION
@@ -445,16 +441,6 @@ void pmu_release_deepwakelock(uint32_t nDeviceId)
 uint32_t pmu_get_deepwakelock_status(void)
 {
 	return deepwakelock;
-}
-
-
-void pmu_tickless_debug(u32 NewStatus)
-{
-	if (NewStatus == ENABLE) {
-		tickless_debug = 1;
-	} else {
-		tickless_debug = 0;
-	}
 }
 
 // TODO: For hotplug mode

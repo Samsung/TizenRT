@@ -108,9 +108,9 @@ MEMORY
 
 	/* CA32 RAM */
 	CA32_BL1_SRAM_S (rwx) :                 ORIGIN = 0x3001FE00, LENGTH = 0x30020000 - 0x3001FE00	/* CA32 BL1 SRAM: 512B */
-	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70180020, LENGTH = 0x701A0000 - 0x70180020	/* CA32 BL1 DRAM S: 127k */
-	CA32_FIP_DRAM_NS (rwx) :                ORIGIN = 0x60400000, LENGTH = 0x60600000 - 0x60400000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
-	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60300000, LENGTH = 0x60A00000 - 0x60300000	/* CA32 BL3 DRAM NS: 7MB */
+	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70017020, LENGTH = 0x70037000 - 0x70017020	/* CA32 BL1 DRAM S: 127k */
+	CA32_FIP_DRAM_NS (rwx) :                ORIGIN = 0x60200000, LENGTH = 0x60400000 - 0x60200000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
+	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60100000, LENGTH = 0x60800000 - 0x60100000	/* CA32 BL3 DRAM NS: 7MB */
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT */
 }
@@ -312,11 +312,6 @@ SECTIONS
 		/* For TizenRT to locate idle thread stack */
 		_ebss = ABSOLUTE(.);
 		. = . + 1024;
-		. = ALIGN(4096);
-		__ram_nocache_start__ = .;
-		KEEP(*(.ncsram.data))
-		. = ALIGN(4096);
-		__ram_nocache_end__ = .;
 	} > CA32_BL3_DRAM_NS
 
 	/* put in the end of psram part */
@@ -347,6 +342,4 @@ SECTIONS
 ASSERT(__flash_text_start__ == ORIGIN(CA32_IMG2_XIP), "__flash_text_start__ is changed.")
 ASSERT((__dram_text_start__ & 4095) == 0, "__dram_text_start__ is not 4KB aligned.")
 ASSERT((__dram_text_end__ & 4095) == 0, "__dram_text_end__ is not 4KB aligned.")
-ASSERT((__ram_nocache_start__ & 4095) == 0, "__ram_nocache_start__ is not 4KB aligned.")
-ASSERT((__ram_nocache_end__ & 4095) == 0, "__ram_nocache_end__ is not 4KB aligned.")
 __psram_heap_buffer_size__ = ORIGIN(CA32_BL3_DRAM_NS) + LENGTH(CA32_BL3_DRAM_NS) - __psram_heap_buffer_start__;

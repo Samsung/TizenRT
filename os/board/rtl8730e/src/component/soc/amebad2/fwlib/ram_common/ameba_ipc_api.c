@@ -17,12 +17,13 @@
   */
 
 #include "ameba_soc.h"
+#include "osdep_service.h"
 
 static const char *TAG = "IPC";
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 SemaphoreHandle_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 #else
-void *ipc_Semaphore[IPC_TX_CHANNEL_NUM];
+_sema ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 #endif
 
 #if defined ( __ICCARM__ )
@@ -129,7 +130,7 @@ void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
 
 	if (ipc_Semaphore[ChanNum] != NULL) {
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_up_sema_from_isr(ipc_Semaphore[ChanNum]);
+		rtw_up_sema_from_isr(&(ipc_Semaphore[ChanNum]));
 #else
 		xSemaphoreGiveFromISR(ipc_Semaphore[ChanNum], &taskWoken);
 		portEND_SWITCHING_ISR(taskWoken);
@@ -145,9 +146,7 @@ void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
   */
 u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 {
-	u32 timeout;
-
-	timeout = 10000000;
+	u32 timeout = 10000000;
 
 	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
 		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
@@ -160,8 +159,8 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 	} else {
 		if (ipc_Semaphore[IPC_ChNum] == NULL) {
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_init_sema(&ipc_Semaphore[IPC_ChNum], 0);
-			rtw_down_timeout_sema(&ipc_Semaphore[IPC_ChNum], 1); //test with 1ms, freertos is using 1 tick
+			rtw_init_sema(&(ipc_Semaphore[IPC_ChNum]), 0);
+			rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), 1); //test with 1ms, freertos is using 1 tick
 #else
 			vSemaphoreCreateBinary(ipc_Semaphore[IPC_ChNum]);
 			xSemaphoreTake(ipc_Semaphore[IPC_ChNum], 1 / portTICK_RATE_MS);
@@ -171,7 +170,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		if (rtw_down_timeout_sema(&ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != 1) {
+		if (rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), IPC_SEMA_MAX_DELAY) != 1) {
 #else
 		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
 #endif

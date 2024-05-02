@@ -1093,4 +1093,17 @@ config LOG_DUMP_NUMBUFS
 	int "Number of buffers to reserve for log dump"
 	default 2
 
+config LOG_DUMP_DEBUG_DETECT_HANG
+	bool "Debug feature to detect hangs in log dump"
+	default n
+
+if LOG_DUMP_DEBUG_DETECT_HANG
+config LOG_DUMP_HANG_CHECK_SEC
+	int "Time in seconds to check for hangs by log_dump"
+	default 150
+	---help---
+	In order to check whether a device hang has occurred, it must be the
+	time that can be noticed before the h/w watchdog reboots or before 
+	an assert occurs due to a device hang.
+endif # LOG_DUMP_DEBUG_DETECT_HANG
 endif # LOG_DUMP

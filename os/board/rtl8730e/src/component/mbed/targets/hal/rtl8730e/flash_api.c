@@ -130,6 +130,7 @@ int flash_get_status(flash_t *obj)
   * @retval none
   * @note LSB 12bits will be masked.
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 void flash_erase_sector(flash_t *obj, u32 address)
 {
 	/* To avoid gcc warnings */
@@ -279,12 +280,11 @@ int  flash_write_word(flash_t *obj, u32 address, u32 data)
   * @retval Others: Error.
   * @note It is ok to read under auto mode due to flash cache.
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
 {
 	/* To avoid gcc warnings */
 	(void) obj;
-	FLASH_Write_Lock();
-	assert_param(data != NULL);
 
 	u32 offset_to_align;
 	u32 i;
@@ -355,7 +355,7 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
 	}
 #endif
 #endif
-	FLASH_Write_Unlock();
+
 	return 1;
 }
 
@@ -369,6 +369,7 @@ int  flash_stream_read(flash_t *obj, u32 address, u32 len, u8 *data)
   * @retval 1: Success.
   * @retval Others: Error.
   */
+SRAMDRAM_ONLY_TEXT_SECTION
 int  flash_stream_write(flash_t *obj, u32 address, u32 len, u8 *data)
 {
 	/* To avoid gcc warnings */

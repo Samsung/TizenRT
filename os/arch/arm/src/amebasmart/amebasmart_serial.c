@@ -543,11 +543,6 @@ static u32 uart_index_get(PinName tx)
 	}
 	return -1;
 }
-static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
-	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 52125, UART_LOG_IRQ},	/* CM0 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-	{0, LOGUART_BIT_TP1F_NOT_FULL, LOGUART_BIT_TP1F_EMPTY, 781875, UART_LOG_IRQ},		/* CM4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-	{3, LOGUART_BIT_TP4F_NOT_FULL, LOGUART_BIT_TP4F_EMPTY, 3127500, UART_LOG_IRQ},	/* CA7 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
-};
 
 /****************************************************************************
  * Name: up_shutdown
@@ -819,8 +814,9 @@ static bool rtl8730e_log_up_txempty(struct uart_dev_s *dev)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].empty);
+	// LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+	// return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].empty);
+	return 1;
 }
 
 
@@ -840,9 +836,6 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
-#if (CONFIG_UART4_BAUD != 1500000)
-#error "Error Amebasmart UART4 works with fixed baud rate: 1,500,000. Please set it to 1500000 in the menuconfig"
-#endif
 	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
 		irq_disable(RTL8730E_UART_LOG_IRQ-32);
 		irq_unregister(RTL8730E_UART_LOG_IRQ-32);
@@ -1179,8 +1172,13 @@ static uint32_t rtk_loguart_suspend(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
-	rtl8730e_log_up_shutdown(&CONSOLE_DEV);
-	rtl8730e_log_up_detach(&CONSOLE_DEV);
+
+	LOGUART_Suspend();
+	/* Pre process is done in LP core */
+	/* Reference code:
+	* 	RCC_PeriphClockSource_LOGUART(UARTLOG_CLK_OSC_LP);
+	*	LOGUART_LPBaudSet(LOGUART_DEV, 115200, 2000000);
+	*/
 	return 1;
 }
 
@@ -1188,9 +1186,12 @@ static uint32_t rtk_loguart_resume(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
-	rtl8730e_log_up_attach(&CONSOLE_DEV);
-	rtl8730e_log_up_txint(&CONSOLE_DEV, g_uart4priv.txint_enable);
-	rtl8730e_log_up_rxint(&CONSOLE_DEV, g_uart4priv.rxint_enable);
+
+	/* Post process is done in LP core */
+	/* Reference code:
+	*	RCC_PeriphClockSource_LOGUART(UARTLOG_CLK_XTAL_40M);
+	*	LOGUART_SetBaud(LOGUART_DEV, 115200);
+	*/
 	return 1;
 }
 
@@ -1331,7 +1332,7 @@ static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, int domain,
 			}
 #endif
 #ifdef CONFIG_RTL8730E_UART4
-			/* No need to check anything here */
+			/* Check for LOGUART TX status before AP is suspended */
 #endif
 			break;
 		default:

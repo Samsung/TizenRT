@@ -36,9 +36,6 @@ u32 SPIC_CALIB_PATTERN[2] = {
 	0xFC66CC3F,
 };
 
-HAL_ROM_BSS_SECTION
-FLASH_InitTypeDef flash_init_para;
-
 /**
 * @brief  This function is used to switch between User mode and Auto mode.
 * @param  enable: This parameter can be: ENABLE or DISABLE.

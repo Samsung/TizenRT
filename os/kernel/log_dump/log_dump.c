@@ -33,7 +33,10 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <queue.h>
+#include <debug.h>
+#include <assert.h>
 
+#include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 
@@ -61,6 +64,11 @@
 #define LOG_DUMP_COMPRESS_NODESZ	5	/* use 4 char to store compressed node size */
 
 #define LOG_CHUNK_SIZE			sizeof(struct log_dump_chunk_s)
+
+#define LOG_DUMP_COMP_CHECK_RETRY_USEC		10000	/* 10ms */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+#define LOG_DUMP_COMP_CHECK_RETRY_CNT 		(CONFIG_LOG_DUMP_HANG_CHECK_SEC * USEC_PER_SEC / LOG_DUMP_COMP_CHECK_RETRY_USEC)
+#endif
 
 static bool is_started_to_save;
 
@@ -125,7 +133,7 @@ int log_dump_init(void)
 	struct log_dump_chunk_s *node = (struct log_dump_chunk_s *)kmm_malloc(LOG_CHUNK_SIZE);
 
 	if (node == NULL) {
-		lldbg("memory allocation failure\n");
+		ldpdbg("memory allocation failure\n");
 		return LOG_DUMP_MEM_FAIL;
 	}
 
@@ -135,13 +143,13 @@ int log_dump_init(void)
 	 */
 	out_buf = allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (out_buf == NULL) {
-		lldbg("memory allocation failure\n");
+		ldpdbg("memory allocation failure\n");
 		goto exit_with_node;
 	}
 
 	last_comp_block = allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (last_comp_block == NULL) {
-		lldbg("memory allocation failure\n");
+		ldpdbg("memory allocation failure\n");
 		goto exit_with_outbuf;
 	}
 
@@ -180,13 +188,23 @@ int log_dump_read_wake(void)
 	int msg_compress = true;
 	ret = mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
 	if (ret < 0) {
-		lldbg("failed mq_send ret = %d\n", ret);
+		ldpdbg("failed mq_send ret = %d\n", ret);
 		return ERROR;
 	}
 
 	/* wait for the completion of the partially filled block compression */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+	int hang_check_count = 0;
+#endif
 	while (compress_last_block) {
-		usleep(10000);
+		usleep(LOG_DUMP_COMP_CHECK_RETRY_USEC);
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+		hang_check_count++;
+		if (hang_check_count > LOG_DUMP_COMP_CHECK_RETRY_CNT) {
+			ldplldbg("Compression failed for %d seconds, The device hang is suspected.\n", CONFIG_LOG_DUMP_HANG_CHECK_SEC);
+			DEBUGPANIC();
+		}
+#endif
 	}
 
 	return 0;
@@ -198,7 +216,7 @@ int log_dump_compress_lastblock(void)
 	read_node = (struct log_dump_chunk_s *)sq_peek(&log_dump_chunks);	/* reset the read node to head */
 
 	if (read_node == NULL) {
-		lldbg("empty read node\n");
+		ldpdbg("empty read node\n");
 		return LOG_DUMP_MEM_FAIL;
 	}
 
@@ -213,7 +231,7 @@ int log_dump_compress_lastblock(void)
 	compress_ret = compress_block(&last_comp_block[4], &last_comp_block_size, uncomp_buf[uncomp_idx], uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
-		lldbg("Fail to compress compress_ret = %d\n", compress_ret);
+		ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
 		return -compress_ret;
 	}
 
@@ -322,7 +340,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 				/* this will not be reached as we set the minimum number nodes in
 				 * the worst case to be atleast one, added this to fix svace issue
 				 */
-				lldbg("no log dump nodes in the list\n");
+				ldpdbg("no log dump nodes in the list\n");
 				return LOG_DUMP_MEM_FAIL;
 			}
 
@@ -398,12 +416,22 @@ static int compress_full_bufs(void)
 		irqrestore(flags);
 
 		/* wait for completion of the current full block compression */
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+		int hang_check_count = 0;
+#endif
 		while (compress_full_block) {
-			usleep(10000);
+			usleep(LOG_DUMP_COMP_CHECK_RETRY_USEC);
+#ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG
+			hang_check_count++;
+			if (hang_check_count > LOG_DUMP_COMP_CHECK_RETRY_CNT) {
+				ldplldbg("Compression failed for %d seconds, The device hang is suspected.\n", CONFIG_LOG_DUMP_HANG_CHECK_SEC);
+				DEBUGPANIC();
+			}
+#endif
 		}
 
 		if (compress_ret < 0) {
-			lldbg("Fail to compress ret = %d\n", compress_ret);
+			ldpdbg("Fail to compress ret = %d\n", compress_ret);
 			return compress_ret;
 		}
 		snprintf(comp_size, LOG_DUMP_COMPRESS_NODESZ, "%04d", writesize);
@@ -531,12 +559,12 @@ int log_dump(int argc, char *argv[])
 	/* Create log dump message queue */
 	mq_fd = mq_open(LOG_DUMP_MSGQ, O_RDWR | O_CREAT, 0666, &attr);
 	if (mq_fd == (mqd_t)ERROR) {
-		lldbg("Fail to open mq, errno %d. EXIT!\n", errno);
+		ldpdbg("Fail to open mq, errno %d. EXIT!\n", errno);
 		return 0;
 	}
 
 	if (log_dump_init() != LOG_DUMP_OK) {
-		lldbg("Fail to init log dump\n");
+		ldpdbg("Fail to init log dump\n");
 		mq_close(mq_fd);
 		return 0;
 	}
@@ -558,7 +586,7 @@ int log_dump(int argc, char *argv[])
 			writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
 			compress_ret = compress_block(out_buf, &writesize, uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
 			if (compress_ret != LOG_DUMP_OK) {
-				lldbg("Fail to compress compress_ret = %d\n", compress_ret);
+				ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
 			}
 			compress_full_block = false;
 		}

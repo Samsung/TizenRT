@@ -579,26 +579,23 @@ static inline void amebad_spi_master_set_delays(FAR struct amebad_spidev_s *priv
 static int amebad_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 {
 	FAR struct amebad_spidev_s *priv = (FAR struct amebad_spidev_s *)dev;
-	int ret;
 
 	if (lock) {
 		/* Take the semaphore (perhaps waiting) */
 
-		do {
-			ret = sem_wait(&priv->exclsem);
+		/* The only case that an error should occur here is if the wait was
+		 * awakened by a signal.
+		 */
 
-			/* The only case that an error should occur here is if the wait was
-			 * awakened by a signal.
-			 */
+		while (sem_wait(&priv->exclsem) != 0) {
+			DEBUGASSERT(errno == EINTR);
+                }
 
-			DEBUGASSERT(ret == OK || errno == EINTR);
-		} while (errno == EINTR);
 	} else {
 		(void)sem_post(&priv->exclsem);
-		ret = OK;
 	}
 
-	return ret;
+	return OK;
 }
 
 /************************************************************************************
