@@ -26,6 +26,7 @@ typedef void	            *_lock;
 typedef unsigned long		_irqL;
 
 /*************************** SchedulerControl *******************************/
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 /**
  * @brief  This function marks the start of a critical code region.
  * 		   Preemptive context switches cannot occur when in a critical region.
@@ -36,7 +37,8 @@ typedef unsigned long		_irqL;
  * so must be used with care!
  */
 void	rtw_enter_critical(_lock *plock, _irqL *pirqL);
-
+#endif
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 /**
  * @brief  This function marks end of a critical code region. Preemptive context
  * switches cannot occur when in a critical region.
@@ -47,6 +49,7 @@ void	rtw_enter_critical(_lock *plock, _irqL *pirqL);
  * so must be used with care!
  */
 void	rtw_exit_critical(_lock *plock, _irqL *pirqL);
+#endif
 
 /**
  * @brief  This function obtains a spin lock semaphore.
@@ -130,7 +133,4 @@ void	rtw_spin_unlock(_lock *plock);
 #ifdef __cplusplus
 }
 #endif
-// void save_and_cli(void);
-// void restore_flags(void);
-// void cli(void);
 #endif
