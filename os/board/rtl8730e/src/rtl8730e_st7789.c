@@ -25,6 +25,7 @@
 #include "objects.h"
 #include "PinNames.h"
 #include "gpio_api.h"
+#include "pwmout_api.h"
 
 #ifndef CONFIG_LCD_ST7789_SPI_PORT
 #define CONFIG_LCD_ST7789_SPI_PORT 1
@@ -34,14 +35,26 @@
 #define GPIO_PIN_BACKLIGHT 	PA_9
 #define GPIO_PIN_CMDDATA 	PA_10
 
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct rtl8730e_st7789_info_s {
+        struct st7789_config_s lcd_config;
+        pwmout_t pwm_led;
+};
+
+
 static int rtl8730_st7789_gpio_reset(void);
 static int rtl8730_st7789_gpio_cmddata(uint8_t cmd);
-static int rtl8730_st7789_gpio_backlight(uint8_t level);
+static int rtl8730_st7789_control_backlight(uint8_t level);
 
-struct st7789_config_s g_rtl8730_config_dev_s = {
-	.reset = rtl8730_st7789_gpio_reset,
-	.cmddata = rtl8730_st7789_gpio_cmddata,
-	.backlight = rtl8730_st7789_gpio_backlight,
+struct rtl8730e_st7789_info_s g_rtl8730_config_dev_s = {
+	.lcd_config = {
+		.reset = rtl8730_st7789_gpio_reset,
+		.cmddata = rtl8730_st7789_gpio_cmddata,
+		.backlight = rtl8730_st7789_control_backlight,
+	},
 };
 
 static int rtl8730_st7789_gpio_reset(void)
@@ -61,16 +74,16 @@ static int rtl8730_st7789_gpio_cmddata(uint8_t cmd)	// cmd - 0, data - 1
 	return OK;
 }
 
-static int rtl8730_st7789_gpio_backlight(uint8_t level)	//on - 1, off - 0
+static int rtl8730_st7789_control_backlight(uint8_t level)	// range  0~100 percentage of brightness level
 {
-	GPIO_WriteBit(GPIO_PIN_BACKLIGHT, level);
+	float pwm_level = level/100.0;
+	pwmout_write(&g_rtl8730_config_dev_s.pwm_led, pwm_level);
 	return OK;
 }
 
 static void gpio_pins_init(void)
 {
 	GPIO_InitTypeDef ResetPin;
-	GPIO_InitTypeDef RSPin;
 	GPIO_InitTypeDef CmdPin;
 
 	Pinmux_Swdoff();
@@ -81,17 +94,14 @@ static void gpio_pins_init(void)
 	ResetPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&ResetPin);
 
-	Pinmux_Config(GPIO_PIN_BACKLIGHT, PINMUX_FUNCTION_GPIO);
-	RSPin.GPIO_Pin = GPIO_PIN_BACKLIGHT;
-	RSPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	RSPin.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&RSPin);
-
 	Pinmux_Config(GPIO_PIN_CMDDATA, PINMUX_FUNCTION_GPIO);
 	CmdPin.GPIO_Pin = GPIO_PIN_CMDDATA;
 	CmdPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	CmdPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&CmdPin);
+
+	pwmout_init(&g_rtl8730_config_dev_s.pwm_led, GPIO_PIN_BACKLIGHT);
+
 }
 
 void rtl8730_st7789_initialize(void)
@@ -99,7 +109,7 @@ void rtl8730_st7789_initialize(void)
 	gpio_pins_init();
 
 	FAR struct spi_dev_s *spi = up_spiinitialize(CONFIG_LCD_ST7789_SPI_PORT);
-	struct lcd_dev_s *dev = st7789_lcdinitialize(spi, &g_rtl8730_config_dev_s);
+	struct lcd_dev_s *dev = st7789_lcdinitialize(spi, &g_rtl8730_config_dev_s.lcd_config);
 	if (lcddev_register(dev) < 0) {
 		lcddbg("ERROR: LCD driver register fail\n");
 	} else {
