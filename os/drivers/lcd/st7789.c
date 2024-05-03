@@ -92,7 +92,7 @@
 /* Check power setting */
 
 #if !defined(CONFIG_LCD_MAXPOWER) || CONFIG_LCD_MAXPOWER < 1
-#define CONFIG_LCD_MAXPOWER 1
+#define CONFIG_LCD_MAXPOWER 100
 #endif
 
 #if CONFIG_LCD_MAXPOWER > 255
@@ -768,6 +768,7 @@ static int st7789_setpower(FAR struct lcd_dev_s *dev, int power)
 	/* Set new power level */
 	lcd_lock(priv->spi);
 	if (power > 0) {
+		priv->config->backlight(power);
 		st7789_sendcmd(priv, ST7789_DISPON);
 		priv->power = power;
 	} else {
@@ -907,7 +908,7 @@ FAR struct lcd_dev_s *st7789_lcdinitialize(FAR struct spi_dev_s *spi, struct st7
 	priv->spi = spi;
 	priv->config = config;
 
-	priv->config->backlight(1);
+	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 
 	st7789_init(&priv->dev);
 	return &priv->dev;
