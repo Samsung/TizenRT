@@ -8,7 +8,6 @@ config MEM_LEAK_CHECKER
 	default n
 	depends on DEBUG_MM_HEAPINFO
 	select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
-	select OPTIMIZE_APP_RELOAD_TIME if APP_BINARY_SEPARATION
 	---help---
 		Enable support for Memory Leak Checker. This requires arch/arm/src/<chip>/memory_region.h to work for the selected board.
 

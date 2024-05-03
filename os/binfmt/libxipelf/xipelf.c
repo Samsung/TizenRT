@@ -102,12 +102,19 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		*bss = 0x00;
 	}
 
+	binp->sections[BIN_BSS] = uspace.bss_start;
+	binp->sizes[BIN_BSS] = uspace.bss_end - uspace.bss_start;
+
 	/* copy the data... */
 	uint8_t *orig_data = uspace.data_start_in_flash;
 	for (uint8_t *data = uspace.data_start_in_ram; data < uspace.data_end_in_ram; data++) {
 		*data = *orig_data;
 		orig_data++;
 	}
+	
+	binp->sections[BIN_DATA] = uspace.data_start_in_ram;
+	binp->sizes[BIN_DATA] = uspace.data_end_in_ram - uspace.data_start_in_ram;
+
 	/* all the required setup is done, lets just populate them in binp structure */
 
 	/* Allocate Heap... */
@@ -213,19 +220,14 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		g_bin_addr_list[bin_idx].text_size = bin->sizes[BIN_TEXT];
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		binfo("[%s] text_addr : %x\n", bin->bin_name, g_bin_addr_list[bin_idx].text_addr);
-#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_MEM_LEAK_CHECKER)
-		g_bin_addr_list[bin_idx].rodata_addr = bin->sections[BIN_RO];
+#if defined(CONFIG_MEM_LEAK_CHECKER)
 		g_bin_addr_list[bin_idx].data_addr = bin->sections[BIN_DATA];
 		g_bin_addr_list[bin_idx].bss_addr = bin->sections[BIN_BSS];
-#ifdef CONFIG_MEM_LEAK_CHECKER
-		g_bin_addr_list[bin_idx].rodata_size = bin->sizes[BIN_RO];
 		g_bin_addr_list[bin_idx].data_size = bin->sizes[BIN_DATA];
 		g_bin_addr_list[bin_idx].bss_size = bin->sizes[BIN_BSS];
 #endif
-		binfo("   rodata_addr : %x\n", g_bin_addr_list[bin_idx].rodata_addr);
 		binfo("   data_addr   : %x\n", g_bin_addr_list[bin_idx].data_addr);
 		binfo("   bss_addr    : %x\n", g_bin_addr_list[bin_idx].bss_addr);
-#endif
 #endif
 	} else {
 		berr("ERROR : Failed to save bin section addresses\n");
