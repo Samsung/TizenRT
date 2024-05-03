@@ -257,6 +257,13 @@ config COMMON_BINARY_NAME
 	---help---
 		Filename of the common binary file.
 
+config COMMON_BIN_STATIC_RAMSIZE
+	int "Common Binary static RAM size for data and bss"
+	default 524288
+	depends on XIP_ELF
+	---help---
+		Common Binary static RAM size for data and bss
+
 endif # SUPPORT_COMMON_BINARY
 
 if ARCH_USE_MMU
