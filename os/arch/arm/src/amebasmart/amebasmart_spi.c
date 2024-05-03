@@ -1390,7 +1390,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 {
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 	
 	if (bus == 0) {
 		/* Select SPI0 */
@@ -1424,7 +1424,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		return NULL;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return (FAR struct spi_dev_s *)priv;
 }
@@ -1605,7 +1605,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 {
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 
 	if (port == 0) {
 		/* Select SPI0 */
@@ -1638,7 +1638,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		return NULL;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return (FAR struct spi_dev_s *)priv;
 }
