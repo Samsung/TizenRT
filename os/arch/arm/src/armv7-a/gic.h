@@ -842,7 +842,7 @@ int arm_pause_handler(int irq, void *context, void *arg);
 #endif
 
 /****************************************************************************
- * Name: arm_pause_handler
+ * Name: arm_gating_handler
  *
  * Description:
  *   This is the handler for SGI3.  It performs the following operations:
@@ -862,7 +862,7 @@ int arm_pause_handler(int irq, void *context, void *arg);
  ****************************************************************************/
 
 #if (defined(CONFIG_SMP) && defined(CONFIG_CPU_GATING))
-int arm_flash_handler(int irq, void *context, void *arg);
+int arm_gating_handler(int irq, void *context, void *arg);
 #endif
 
 /****************************************************************************

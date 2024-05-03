@@ -127,7 +127,7 @@ void arm_gic0_initialize(void)
   DEBUGVERIFY(irq_attach(GIC_IRQ_SGI1, arm_start_handler, NULL));
   DEBUGVERIFY(irq_attach(GIC_IRQ_SGI2, arm_pause_handler, NULL));
 #ifdef CONFIG_CPU_GATING
-  DEBUGVERIFY(irq_attach(GIC_IRQ_SGI3, arm_flash_handler, NULL));
+  DEBUGVERIFY(irq_attach(GIC_IRQ_SGI3, arm_gating_handler, NULL));
 #endif
 #endif
 
