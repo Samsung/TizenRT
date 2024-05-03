@@ -87,6 +87,9 @@
 #define DTYPE_BLK       0x04
 #define DTYPE_DIRECTORY 0x08
 
+#define DT_DIR          DTYPE_DIRECTORY
+#define DT_REG          DTYPE_FILE
+
 #define DIRENT_ISFILE(dtype)      (((dtype) & DTYPE_FILE) != 0)
 #define DIRENT_ISCHR(dtype)       (((dtype) & DTYPE_CHR) != 0)
 #define DIRENT_ISBLK(dtype)       (((dtype) & DTYPE_BLK) != 0)
