@@ -168,7 +168,7 @@ else ifeq ($(CONFIG_CXX_VERSION_14),y)
 else
   CXXFLAGS += -std=c++11
 endif
-  CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
+  CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__  -DCONFIG_WCHAR_BUILTIN
 endif
 
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
@@ -246,13 +246,21 @@ ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 CELFFLAGS = $(CFLAGS) -mlong-calls # --target1-abs
 CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
 
-LDELFFLAGS = -r -e main
+LDELFFLAGS = -r 
+LDELFENTRY = -e main
 
 ifeq ($(WINTOOL),y)
 	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps.ld}"
 else
 	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps.ld
 endif
+endif
+
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+#this symbol __gnu_Unwind_Find_exidx should be present in all the cpp binaries (apps, common)
+#as it is used to decide which exception table. Also, --force-group-allocation flag is required
+#to not generate additional sections with group flag, as we dont support loading such sections.
+LDELFFLAGS += --require-defined __gnu_Unwind_Find_exidx --force-group-allocation
 endif
 
 LDFLAGS += --gc-sections
