@@ -36,6 +36,12 @@
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <tinyara/reboot_reason.h>
 #endif
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+#endif
 #include "tash_internal.h"
 
 /****************************************************************************
@@ -538,6 +544,10 @@ int tash_execute_cmd(char **args, int argc)
 {
 	int cmd_idx;
 	int cmd_found = 0;
+#ifdef CONFIG_PM
+	int pmdrv_fd;
+	int pm_suspended;
+#endif
 
 	/* lock mutex */
 	pthread_mutex_lock(&tash_cmds_info.tmutex);
@@ -550,7 +560,30 @@ int tash_execute_cmd(char **args, int argc)
 
 			if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_SYNC) {
 				/* function call to execute SYNC command */
+#ifdef CONFIG_PM
+				pm_arg_t pm_arg = {PM_IDLE_DOMAIN, PM_NORMAL};
+				pmdrv_fd = open("/dev/pm", O_WRONLY);
+				if (pmdrv_fd < 0) {
+					shdbg("open /dev/pm failed(%d), \n", get_errno());
+				} else {
+					pm_suspended = ioctl(pmdrv_fd, PMIOC_SUSPEND, &pm_arg);
+					if (pm_suspended != OK) {
+						shdbg("pm_suspend failed(%d)\n", get_errno());
+					}
+				}
+#endif
 				(*tash_cmds_info.cmd[cmd_idx].cb) (argc, args);
+#ifdef CONFIG_PM
+				if (pmdrv_fd > 0) {
+					if (pm_suspended == OK) {
+						/* pm_resume should only be called when the pm_suspend is executed correctly. */
+						if (ioctl(pmdrv_fd, PMIOC_RESUME, &pm_arg) != OK) {
+							shdbg("pm_resume failed(%d)\n", get_errno());
+						}
+					}
+					close(pmdrv_fd);
+				}
+#endif
 			} else if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_ASYNC) {
 				/* launch a task to execute ASYNC command */
 				if (tash_launch_cmdtask(tash_cmds_info.cmd[cmd_idx].cb, argc, args)) {
