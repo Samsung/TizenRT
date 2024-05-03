@@ -220,6 +220,11 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 		TRWIFI_CALL(res, dev, drv_ioctl, (dev, (trwifi_msg_s *)data));
 	}
 	break;
+	case LWNL_REQ_WIFI_SCAN_MULTI_APS:
+	{
+		TRWIFI_CALL(res, dev, scan_multi_aps, (dev, (trwifi_scan_multi_configs_s *)data));
+	}
+	break;
 	default:
 		break;
 	}

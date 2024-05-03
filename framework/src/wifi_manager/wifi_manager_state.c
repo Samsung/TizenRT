@@ -106,6 +106,7 @@ static wifi_manager_result_e _wifimgr_disconnect_ap(void);
 static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config);
 static wifi_manager_result_e _wifimgr_stop_softap(void);
 static wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config);
+static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_configs_s *configs);
 
 /* functions managing a state machine*/
 #undef WIFIMGR_STATE_TABLE
@@ -320,6 +321,33 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config)
 	return WIFI_MANAGER_SUCCESS;
 }
 
+static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_configs_s *configs)
+{
+	if (!configs) {
+		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_multi_aps(NULL), TAG,
+								 "request scan multi aps to wifi utils is fail");
+		return WIFI_MANAGER_SUCCESS;
+	}
+
+	trwifi_scan_multi_configs_s uconf = {0};
+	memset(&uconf, 0, sizeof(trwifi_scan_multi_configs_s));
+	uconf.scan_ap_config_count = configs->scan_ap_config_count;
+	for (int i = 0; i < configs->scan_ap_config_count; i++) {
+		wifi_manager_scan_config_s *config = &configs->ap_configs[i];
+		if (config->ssid_length > 0) {
+			strncpy(uconf.scan_ap_config[i].ssid, config->ssid, config->ssid_length + 1);
+			uconf.scan_ap_config[i].ssid_length = config->ssid_length;
+		}
+		if (config->channel != 0) {
+			uconf.scan_ap_config[i].channel = config->channel;
+		}
+	}
+
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_multi_aps((void *)&uconf), TAG,
+							 "request scan multi aps is fail");
+	return WIFI_MANAGER_SUCCESS;
+}
+
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {
 	wifimgr_evt_e evt = msg->event;
@@ -367,6 +395,10 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_scan_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_STORE_PREV_STATE;
+		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_CMD_SCAN_MULTI_APS) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else {
@@ -484,6 +516,10 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_scan_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_CMD_SCAN_MULTI_APS) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_STORE_PREV_STATE;
+		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 	} else if (msg->event == WIFIMGR_CMD_CONNECT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_ALREADY_CONNECTED;
@@ -503,6 +539,10 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_scan_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_STORE_PREV_STATE;
+		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_CMD_SCAN_MULTI_APS) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
 #ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
