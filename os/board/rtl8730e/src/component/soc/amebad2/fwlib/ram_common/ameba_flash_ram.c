@@ -20,6 +20,9 @@
 
 FLASH_InitTypeDef flash_init_para;
 static uint32_t PrevIrqStatus;
+#ifdef CONFIG_CPU_GATING
+extern volatile uint32_t ulFlashPG_Flag;
+#endif
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
@@ -81,14 +84,20 @@ ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
+retry_gating:
 	/* disable irq */
-	PrevIrqStatus = save_and_cli();
+	/* We do not need to acquire lock for this core, as the other core will enter gating */
+	PrevIrqStatus = irqsave();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
 #if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
 	/*1. Close Core1 to avoid Core1 XIP */
-	vPortGateOtherCore();
+	if (!vPortGateOtherCore()) {
+		/* Restore irq here due to pending pause request */
+		irqrestore(PrevIrqStatus);
+		goto retry_gating;
+	}
 #endif
 #if FLASH_GATE_USE_CKE
 	/*2. Disable KM4 clock */
@@ -139,7 +148,7 @@ void FLASH_Write_Unlock(void)
 #endif
 
 	/* restore irq */
-	restore_flags(PrevIrqStatus);
+	irqrestore(PrevIrqStatus);
 }
 
 /**
@@ -402,6 +411,13 @@ void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 
+#ifdef CONFIG_CPU_GATING
+	long ulCoreID = up_cpu_index();
+	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
+	CA32_TypeDef *ca32 = CA32_BASE;
+
+	while ((ulFlashPG_Flag != 2) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+#endif
 	ARM_DSB();
 	ARM_ISB();
 	FLASH_WaitBusy_InUserMode(WAIT_SPIC_BUSY);

@@ -13,7 +13,9 @@
 #endif
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
+#ifdef CONFIG_CPU_GATING
 extern volatile uint32_t ulFlashPG_Flag;
+#endif
 extern void __cpu1_start(void);
 #else
 extern void _boot(void);
@@ -71,23 +73,41 @@ void rtk_core1_power_off(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, val);
 }
 
-void vPortGateOtherCore(void)
+bool vPortGateOtherCore(void)
 {
 #if ( defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1 )
-	ulFlashPG_Flag = 1;
-	ARM_DSB();
-	ARM_ISB();
-
 	BaseType_t ulCoreID = up_cpu_index();
 	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
-#else
-	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << ulCoreID));
-#endif
-
 	CA32_TypeDef *ca32 = CA32_BASE;
-	while (CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+	/* ulFlashPG_Flag should be checked here, it should only exists under 3 states:
+	0: No flash operation / Just completed a flash operation
+	1: A gating request has been sent out to another core, further checking shall be done at the while condition below
+	2: The target core is already in gating state, proceed for flash operation
+	*/
+	if (!ulFlashPG_Flag) {
+		ulFlashPG_Flag = 1;
+		ARM_DSB();
+
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+		arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
+#else
+		arm_cpu_sgi(GIC_IRQ_SGI3, (1 << ulCoreID));
+#endif
+	}
+  /* We already initiated a gating request previously, skip sending duplicated request */
+  /* Before gating the other CPU, we have to check for pending pause request, as the target core
+   * might have entered spinlock to wait for current core to pause itself. And currently
+   * we are in a interrupt disabled status here, thus we should exit and handle
+   * pause request first, before we proceed to gate another cpu for executing
+   * flash operation
+   */
+	while ((ulFlashPG_Flag == 1) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)) {
+		/* If there is a pause request, we should handle it first */
+		if (up_cpu_pausereq(up_cpu_index())) {
+			return false;
+		}
+	}
+	return true;
 #endif
 }
 
@@ -95,7 +115,6 @@ void vPortWakeOtherCore(void)
 {
 	ulFlashPG_Flag = 0;
 	ARM_DSB();
-	ARM_ISB();
 	__asm__ __volatile__ ("sev" : : : "memory");
 }
 

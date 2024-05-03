@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_cpuflash.c
+ * arch/arm/src/armv7-a/arm_cpugating.c
  ****************************************************************************/
 
 /****************************************************************************
@@ -39,37 +39,12 @@
 #include "sched/sched.h"
 #include "section_config.h"
 #include "sheipa.h"
+#include "barriers.h"
 
-#ifdef CONFIG_SMP
+#ifdef CONFIG_CPU_GATING
 volatile uint32_t ulFlashPG_Flag = 0;
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-#define portCPU_IRQ_DISABLE()										\
-	__asm volatile ( "CPSID i" ::: "memory" );						\
-	__asm volatile ( "DSB" );										\
-	__asm volatile ( "ISB" );
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-uint32_t ulPortInterruptLock(void)
-{
-	uint32_t key;
-
-	__asm volatile (	"mrs	%0, cpsr	\n": "=r" (key) :: "memory");
-	portCPU_IRQ_DISABLE();
-
-	return key;
-}
-/*-----------------------------------------------------------*/
-
-void ulPortInterruptUnLock(uint32_t key)
-{
-	__asm volatile (	"msr	cpsr_c, %0	\n" :: "r" (key) : "memory");
-}
-
-/****************************************************************************
- * Name: arm_flash_handler
+ * Name: arm_gating_handler
  *
  * Description:
  *   This is the handler for SGI3.  This handler simply send the another core
@@ -83,13 +58,16 @@ void ulPortInterruptUnLock(uint32_t key)
  *
  ****************************************************************************/
 SRAMDRAM_ONLY_TEXT_SECTION
-int arm_flash_handler(int irq, void *context, void *arg)
+int arm_gating_handler(int irq, void *context, void *arg)
 {
-	uint32_t PrevIrqStatus = ulPortInterruptLock();
+	uint32_t PrevIrqStatus = irqsave();
+	ulFlashPG_Flag++;
+	ARM_DSB();
+	ARM_ISB();
 	while(ulFlashPG_Flag) {
 		__asm__ __volatile__ ("wfe" : : : "memory");
 	}
-	ulPortInterruptUnLock(PrevIrqStatus);
+	irqrestore(PrevIrqStatus);
 
 	return OK;
 }
