@@ -79,26 +79,42 @@ str2 = "\n   usram (rwx)      : ORIGIN = "
 
 ram_end = int(CONFIG_RAM_SIZE) + int(CONFIG_RAM_START, 16)
 
+if ram_end % 4096 != 0 :
+    print("RAM end should be 4KB aligned")
+    sys.exit(1)
+
 ram_offset = ram_end
 ram_size = 0
 
 CONFIG_APP1_BIN_DYN_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_DYN_RAMSIZE=").rstrip('\n')
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
     CONFIG_APP2_BIN_DYN_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_DYN_RAMSIZE=").rstrip('\n')
-CONFIG_COMMON_BIN_DYN_RAMSIZE="1048576"
+CONFIG_COMMON_BIN_STATIC_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_COMMON_BIN_STATIC_RAMSIZE=").rstrip('\n')
 
-ram_offset = ram_offset - int(CONFIG_COMMON_BIN_DYN_RAMSIZE)
-common_ram_size = (int(CONFIG_COMMON_BIN_DYN_RAMSIZE) - 64 * 1024) #remove the pg table size at the end, will have to generalize it later
+ram_offset = ram_offset - int(CONFIG_COMMON_BIN_STATIC_RAMSIZE)
+if ram_offset % 4096 != 0 :
+    print("!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print("CONFIG_COMMON_BIN_STATIC_RAMSIZE should be aligned to 4KB")
+    sys.exit(1)
+
+common_ram_size = (int(CONFIG_COMMON_BIN_STATIC_RAMSIZE) - 64 * 1024) #remove the pg table size at the end, will have to generalize it later
 common_ram_str = hex(ram_offset) + str1 + hex(common_ram_size) + "\n}\n"
 
 ram_offset = ram_offset - int(CONFIG_APP1_BIN_DYN_RAMSIZE)
+if ram_offset % 4096 != 0 :
+    print("!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print("CONFIG_APP1_BIN_DYN_RAMSIZE should be aligned to 4KB")
+    sys.exit(1)
+
 app1_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP1_BIN_DYN_RAMSIZE)) + "\n}\n"
 
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
     ram_offset = ram_offset - int(CONFIG_APP2_BIN_DYN_RAMSIZE)
     app2_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP2_BIN_DYN_RAMSIZE)) + "\n}\n"
-
-# common at the end of the region
+    if ram_offset % 4096 != 0 :
+        print("!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("CONFIG_APP2_BIN_DYN_RAMSIZE should be aligned to 4KB")
+        sys.exit(1)
 
 CONFIG_USER_SIGN_PREPEND_SIZE = util.get_value_from_file(cfg_file, "CONFIG_USER_SIGN_PREPEND_SIZE=").rstrip('\n')
 
@@ -132,6 +148,16 @@ for name in NAME_LIST :
     else:
         PART_IDX = PART_IDX + 1
         continue
+
+    if name == 'app1' or name == 'app2' or name == 'common' :
+        if offset % 4096 != 0 :
+            print("!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("flash start [" + hex(offset) + "] of " + name + " should be aligned to 4KB")
+            sys.exit(1)
+        if part_size % 4096 != 0 :
+            print("!!!!!!!!!!!!!!!!!!!!!! ERROR !!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("flash partition size [" + str(part_size) + "] of " + name + " should be aligned to 4KB")
+            sys.exit(1)
 
     offset = offset + part_size
     PART_IDX = PART_IDX + 1
