@@ -15,50 +15,17 @@
 #endif
 #endif
 
-#if 1 //Justin: temporary solution for enter critical code for tizenRT
-static irqstate_t initial_tizen_flags, up_tizen_flag;
-static int flagcnt = 0;
-#endif
-
-#if 1 //Justin: temporary solution for enter critical code for tizenRT
-void save_and_cli_temp(void);
-void restore_flags_temp(void);
-void save_and_cli_temp()
-{
-	if(flagcnt){
-		up_tizen_flag = irqsave();
-	}else{
-		initial_tizen_flags = irqsave();
-	}
-	flagcnt++;
-}
-
-void restore_flags_temp()
-{
-	flagcnt--;
-	if(flagcnt){
-		irqrestore(up_tizen_flag);
-	}else{
-		irqrestore(initial_tizen_flags);
-	}
-}
-#endif
-
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 void rtw_enter_critical(_lock *plock, _irqL *pirqL)
 {
 	/* To avoid gcc warnings */
 	(void) pirqL;
 	(void) plock;
 
-	if (rtw_in_interrupt()) {
-		DBG_INFO("\n");
-	} else {
-#if 1 //temporary solution for enter critical code for tizenRT
-		save_and_cli_temp();
-#else 
-	//printf("\n"); //suppress meaningless printout
-#endif
-	}
+	/* In TizenRT kernel, enter_critical_section will handle entering critical zone 
+	In single core cases: enter_critical_section behaves as irqsave
+	In multi core cases: enter_critical_section adds spinlock mechanism among cores
+	*/
 }
 
 void rtw_exit_critical(_lock *plock, _irqL *pirqL)
@@ -67,16 +34,12 @@ void rtw_exit_critical(_lock *plock, _irqL *pirqL)
 	(void) pirqL;
 	(void) plock;
 
-	if (rtw_in_interrupt()) {
-		DBG_INFO("\n");
-	} else {
-#if 1 //temporary solution for enter critical code for tizenRT
-		restore_flags_temp();
-#else 
-	//printf("\n"); //suppress meaningless printout
-#endif
-	}
+	/* In TizenRT kernel, leave_critical_section will handle exiting critical zone 
+	In single core cases: leave_critical_section behaves as irqsave
+	In multi core cases: leave_critical_section adds spinlock mechanism among cores
+	*/
 }
+#endif
 
 void rtw_enter_critical_bh(_lock *plock, _irqL *pirqL)
 {
@@ -167,16 +130,15 @@ void rtw_spin_unlock(_lock *plock)
 
 unsigned int save_and_cli(void)
 {
-	return irqsave();
+	return enter_critical_section();
 }
 
 void restore_flags(unsigned int flag)
 {
-	irqrestore(flag);
+	leave_critical_section(flag);
 }
 
+/* For definition in rtw_skbuff.h->ASSERT(0) */
 void cli()
 {
 }
-
-

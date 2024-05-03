@@ -77,15 +77,23 @@ static sint enqueue_ipc_msg_node(struct ipc_msg_node *p_node, _queue *p_queue)
 	/* this function is called in ISR, no need to mask interrupt since gic already do it*/
 	spin_lock(&ipc_msg_queue_lock);
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
+#else
 	_irqL irqL;
 	rtw_enter_critical(&(p_queue->lock), &irqL);
+#endif
 #endif
 	/* put the ipc message to the tail of the queue */
 	rtw_list_insert_tail(&(p_node->list), get_list_head(p_queue));
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
+#else
 	rtw_exit_critical(&(p_queue->lock), &irqL);
+#endif
 #endif
 	return _SUCCESS;
 }
@@ -101,15 +109,16 @@ static struct ipc_msg_node *dequeue_ipc_msg_node(_queue *p_queue)
 	_list *plist, *phead;
 
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-	u32 isr_status = irqsave();
-#else
-	u32 isr_status = portDISABLE_INTERRUPTS();
-#endif
+	/* We just need to prevent from being interrupted here, so use irqsave instead of enter_critical_section */
+	irqstate_t flags = irqsave();
 	spin_lock(&ipc_msg_queue_lock);
+#else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
 #else
 	_irqL irqL;
 	rtw_enter_critical(&(p_queue->lock), &irqL);
+#endif
 #endif
 
 	if (rtw_queue_empty(p_queue) == _TRUE) {
@@ -123,13 +132,13 @@ static struct ipc_msg_node *dequeue_ipc_msg_node(_queue *p_queue)
 
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-	irqrestore(isr_status);
+	irqrestore(flags);
 #else
-	portRESTORE_INTERRUPTS(isr_status);
-#endif
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
 #else
 	rtw_exit_critical(&(p_queue->lock), &irqL);
+#endif
 #endif
 
 	return p_node;
@@ -161,26 +170,27 @@ static void inic_ipc_msg_q_task(void)
 			}
 			/* release the memory for this ipc message. */
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-			u32 isr_status = irqsave();
-#else
-			u32 isr_status = portDISABLE_INTERRUPTS();
-#endif
+			/* We just need to prevent from being interrupted here, so use irqsave instead of enter_critical_section */
+			irqstate_t flags = irqsave();
 			spin_lock(&ipc_msg_queue_lock);
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			irqstate_t flags = enter_critical_section();
+#else
 			rtw_enter_critical(NULL, NULL);
+#endif
 #endif
 			p_node->is_used = 0;
 			g_ipc_msg_q_priv.queue_free++;
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 			spin_unlock(&ipc_msg_queue_lock);
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-			irqrestore(isr_status);
+			irqrestore(flags);
 #else
-			portRESTORE_INTERRUPTS(isr_status);
-#endif
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			leave_critical_section(flags);
 #else
 			rtw_exit_critical(NULL, NULL);
+#endif
 #endif
 		}
 	} while (g_ipc_msg_q_priv.b_queue_working);
@@ -243,8 +253,12 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 	/* this function is called in ISR, no need to mask interrupt since gic already do it*/
 	spin_lock(&ipc_msg_queue_lock);
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
+#else
 	_irqL irqL;
 	rtw_enter_critical(&(p_queue->lock), &irqL);
+#endif
 #endif
 	/* allocate memory for message node */
 	for (i = 0; i < IPC_MSG_QUEUE_DEPTH; i++) {
@@ -259,9 +273,12 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 #if defined(CONFIG_SMP_NCPUS) && (CONFIG_SMP_NCPUS > 1)
 	spin_unlock(&ipc_msg_queue_lock);
 #else
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
+#else
 	rtw_exit_critical(&(p_queue->lock), &irqL);
 #endif
-
+#endif
 	if (p_node == NULL) {
 		DBG_8195A("NO buffer for new nodes, waiting!\n\r");
 		goto func_out;
