@@ -45,7 +45,7 @@
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_environ_setenv_p(void)
+static void itc_environ_setenv_pos(void)
 {
 	char *buffer = "";
 	char *result;
@@ -74,7 +74,7 @@ static void itc_environ_setenv_p(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_environ_getenv_n(void)
+static void itc_environ_getenv_neg(void)
 {
 	int exec_index;
 	char var_buf[BUFF_LEN];
@@ -103,8 +103,8 @@ static void itc_environ_getenv_n(void)
 
 int itc_environ_main(void)
 {
-	itc_environ_setenv_p();
-	itc_environ_getenv_n();
+	itc_environ_setenv_pos();
+	itc_environ_getenv_neg();
 
 	return 0;
 }
