@@ -470,7 +470,7 @@ static inline int amebasmart_i2c_sem_waitdone(FAR struct amebasmart_i2c_priv_s *
 	irqstate_t flags;
 	int ret;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Enable I2C interrupts */
 	up_enable_irq(priv->config->irq);
@@ -533,7 +533,7 @@ static inline int amebasmart_i2c_sem_waitdone(FAR struct amebasmart_i2c_priv_s *
 
 	up_disable_irq(priv->config->irq);
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 	return ret;
 }
 #else
@@ -1156,14 +1156,14 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 /* Initialize private data for the first time, increment reference count,
 	* power-up hardware and configure GPIOs.
 	*/
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	if ((volatile int)priv->refs++ == 0) {
 		amebasmart_i2c_sem_init(priv);
 		amebasmart_i2c_init(priv);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return (struct i2c_dev_s *)priv;
 }
@@ -1189,14 +1189,14 @@ int up_i2cuninitialize(FAR struct i2c_dev_s *dev)
 		return ERROR;
 	}
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	if (--priv->refs > 0) {
 		irqrestore(flags);
 		return OK;
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Disable power and other HW resource (GPIO's) */
 
