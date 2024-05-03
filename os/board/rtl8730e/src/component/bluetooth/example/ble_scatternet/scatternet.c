@@ -295,7 +295,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
             int ret;
-            int fd = open(PM_LOCK_PATH, O_WRONLY);
+            int fd = open("/proc/power/domains/0/pm_lock", O_WRONLY);
             if (fd < 0) {
                     pmdbg("Failed to open Procfs entry to lock PM state transition, fd: %d\n", fd);
             } else {
