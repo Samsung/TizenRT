@@ -132,20 +132,19 @@ static void rtl8730_st7701_lcd_layer_enable(int layer, bool enable)
 static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end)
 {
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerImgBaseAddr = (u32) lcd_img_buffer;
-#ifdef ENABLE_ST7701_CHANGE_WINDOW_SIZE
+#ifdef CONFIG_ENABLE_ST7701_CHANGE_WINDOW_SIZE
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerHorizontalStart = x_start;
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerHorizontalStop = x_end;
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerVerticalStart = y_start;
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerVerticalStop = y_end;
-#endif
-	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
-	LCDC_TrigerSHWReload(pLCDC);
-#ifndef ENABLE_ST7701_CHANGE_WINDOW_SIZE
+#else
 	(void) x_start;
 	(void) y_start;
 	(void) x_end;
 	(void) y_end;
 #endif
+	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
+	LCDC_TrigerSHWReload(pLCDC);
 }
 
 static void rtl8730e_st7701_reset_pin(u8 Newstatus)

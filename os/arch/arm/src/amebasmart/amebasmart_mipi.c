@@ -173,7 +173,6 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 
 	amebasmart_register_interrupt();
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
-	MIPI_DSI_init(priv->MIPIx, priv->MIPI_InitStruct);
 }
 
 static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
@@ -329,14 +328,8 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	} else {
 		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload);
 	}
-	while(true){
-		if(send_cmd_done == 1){
-			break;
-		}
-		count++;
-		if(count >=20){
-			dbg("Error: amebasmart mipi send cmd timeout\n");
-		}
+	while(send_cmd_done != 1){
+		DelayMs(1);
 	}
 	return OK;
 }

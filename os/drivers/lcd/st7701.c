@@ -117,13 +117,13 @@ static lcm_setting_table_t ST7701S_init_cmd_g[] = {	/* DCS Write Long */
 	{REGFLAG_END_OF_TABLE, 0x00, {}},
 };
 
-static void st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_table_t *table)
+static int st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_table_t *table)
 {
 	static u8 send_cmd_idx_s = 0;
 	u32 payload_len;
 	u8 cmd;
 	u8 *cmd_addr;
-
+	int transfer_status = 0;
 	struct mipi_dsi_msg msg;
 	while (1) {
 		cmd = table[send_cmd_idx_s].cmd;
@@ -132,10 +132,8 @@ static void st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_tab
 			usleep(table[send_cmd_idx_s].count * 1000);
 			break;
 		case REGFLAG_END_OF_TABLE:
-			printf("LPTX CMD Send Done\n");
 			msg.type = MIPI_DSI_END_OF_TRANSMISSION;
-			mipi_dsi_transfer(device, &msg);
-			return;
+			return mipi_dsi_transfer(device, &msg);
 		default:
 			cmd_addr = table[send_cmd_idx_s].para_list;
 			payload_len = table[send_cmd_idx_s].count;
@@ -150,7 +148,10 @@ static void st7701_send_init_cmd(struct mipi_dsi_device *device, lcm_setting_tab
 			msg.tx_buf = cmd_addr;
 			msg.tx_len = payload_len;
 			msg.flags = 0;
-			mipi_dsi_transfer(device, &msg);
+			transfer_status = mipi_dsi_transfer(device, &msg);
+			if(transfer_status != OK){
+				return transfer_status;
+			}
 		}
 
 		send_cmd_idx_s++;
@@ -357,6 +358,11 @@ FAR struct lcd_dev_s *st7701_lcdinitialize(FAR struct mipi_dsi_device *dsi, stru
 	priv->dev.init = st7701_init;
 	priv->dsi_dev = dsi;
 	priv->config = config;
-	st7701_send_init_cmd(priv->dsi_dev, ST7701S_init_cmd_g);
+	if(st7701_send_init_cmd(priv->dsi_dev, ST7701S_init_cmd_g) == OK){
+		printf("LCD Init sequence completed\n");
+	}
+	else{
+		printf("ERROR: LCD Init sequence failed\n");
+	}
 	return &priv->dev;
 }
