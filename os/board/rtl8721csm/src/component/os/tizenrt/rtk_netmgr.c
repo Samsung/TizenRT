@@ -78,6 +78,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_stop_softap,		/* stop_softap */
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
+	NULL,	/* scan_multi_ap */
 };
 
 static trwifi_scan_list_s *g_scan_list;

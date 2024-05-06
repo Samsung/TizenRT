@@ -223,7 +223,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 	memset(&wifi, 0, sizeof(wifi));
 
 	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
-	scan_param.ssid = ssid;
+	scan_param.ssid[0].ssid = ssid;
 	scanned_ap_num = wifi_scan_networks(&scan_param, 1);
 
 	if (scanned_ap_num <= 0) {
