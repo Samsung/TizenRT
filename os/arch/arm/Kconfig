@@ -118,7 +118,8 @@ config ARCH_CHIP_AMEBASMART
 	select ARCH_HAVE_ADDRENV
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARCH_HAVE_HEAPCHECK if DEBUG
-	select PM_DVFS if PM
+	select ARCH_HAVE_DVFS
+	select ARCH_HAVE_TICKSUPPRESS
 	select CPU_GATING if SMP
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).
@@ -404,6 +405,10 @@ config ARCH_ROMPGTABLE
 	depends on ARCH_USE_MMU
 	---help---
 		Support a fixed memory mapping use a (read-only) page table in ROM/FLASH.
+
+config ARCH_HAVE_TICKSUPPRESS
+	bool
+	default n
 
 config DEBUG_HARDFAULT
 	bool "Verbose Hard-Fault Debug"

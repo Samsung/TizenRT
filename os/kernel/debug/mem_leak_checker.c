@@ -52,46 +52,64 @@ struct alloc_node_info_s {
 	struct alloc_node_info_s *next;
 };
 
-static struct alloc_node_info_s *hash_table[HASH_SIZE];
-static struct alloc_node_info_s node_info[MAX_ALLOC_COUNT];
-static struct mem_leak_checker_info_s leak_checker;
-static int checkerpid;
+static struct alloc_node_info_s **g_hash_table;
+static struct alloc_node_info_s *g_node_info;
 
-#ifdef CONFIG_MM_KERNEL_HEAP
-extern struct mm_heap_s g_kmmheap[CONFIG_KMM_NHEAPS];
-#endif
-
-static void hash_init(void)
+static int hash_init(void)
 {
 	int index;
-	for (index = 0; index < HASH_SIZE; ++index) {
-		hash_table[index] = NULL;
+
+	g_hash_table = (struct alloc_node_info_s **)malloc(sizeof(struct alloc_node_info_s *) * HASH_SIZE);
+	if (!g_hash_table) {
+		return ERROR;
 	}
+
+	g_node_info = (struct alloc_node_info_s*)malloc(sizeof(struct alloc_node_info_s) * MAX_ALLOC_COUNT);
+	if (!g_node_info) {
+		free(g_hash_table);
+		return ERROR;
+	}
+
+	for (index = 0; index < HASH_SIZE; ++index) {
+		g_hash_table[index] = NULL;
+	}
+
+	return OK;
+}
+
+static void hash_deinit(void)
+{
+	free(g_hash_table);
+	free(g_node_info);
+	g_hash_table = NULL;
+	g_node_info = NULL;
 }
 
 static void add_hash(int index)
 {
 	long key;
 	struct alloc_node_info_s *cur;
-	key = (long)node_info[index].node % HASH_SIZE;
-	if (hash_table[key] == NULL) {
-		hash_table[key] = &node_info[index];
+
+	key = (long)g_node_info[index].node % HASH_SIZE;
+	if (g_hash_table[key] == NULL) {
+		g_hash_table[key] = &g_node_info[index];
 		return;
 	}
 
-	cur = hash_table[key];
+	cur = g_hash_table[key];
 	while (cur->next) {
 		cur = cur->next;
 	}
-	cur->next = &node_info[index];
+	cur->next = &g_node_info[index];
 }
 
 static bool search_hash(unsigned long value)
 {
 	long key = value % HASH_SIZE;
-	struct alloc_node_info_s *cur = hash_table[key];
+	struct alloc_node_info_s *cur = g_hash_table[key];
+
 	while (cur != NULL) {
-		if ((unsigned long)cur->node == value && (unsigned long)cur->node != (value + (unsigned long)SIZEOF_MM_ALLOCNODE)) {
+		if ((unsigned long)cur->node == value) {
 			if (cur->node->reserved == MEM_USED) {
 				return false;
 			}
@@ -106,7 +124,7 @@ static bool search_hash(unsigned long value)
 	return false;
 }
 
-static int get_node_cnt(void)
+static int get_node_cnt(struct mm_heap_s *heap)
 {
 	volatile struct mm_allocnode_s *node;
 	mmsize_t node_size;
@@ -123,14 +141,14 @@ static int get_node_cnt(void)
 	/* Visit each region */
 
 #if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < leak_checker.regions; region++)
+	for (region = 0; region < heap->mm_nregions; region++)
 #endif
 	{
 		node_size = SIZEOF_MM_ALLOCNODE;
-		for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
-			if (node == leak_checker.heap_start[region]) {
+			if (node == heap->mm_heapstart[region]) {
 				continue;
 			}
 			/* Check broken link */
@@ -148,13 +166,13 @@ static int get_node_cnt(void)
 	return ret;
 }
 
-static void fill_hash_table(int *leak_cnt, int *broken_cnt)
+static void fill_hash_table(struct mm_heap_s *heap, int *leak_cnt, int *broken_cnt)
 {
 	volatile struct mm_allocnode_s *node;
 	mmsize_t node_size;
 	node_size = SIZEOF_MM_ALLOCNODE;
 
-	mm_takesemaphore((struct mm_heap_s *)leak_checker.heap);
+	mm_takesemaphore(heap);
 
 #if CONFIG_KMM_REGIONS > 1
 	int region;
@@ -165,14 +183,14 @@ static void fill_hash_table(int *leak_cnt, int *broken_cnt)
 	/* Visit each region */
 
 #if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < leak_checker.regions; region++)
+	for (region = 0; region < heap->mm_nregions; region++)
 #endif
 	{
 		node_size = SIZEOF_MM_ALLOCNODE;
-		for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
-			if (node == leak_checker.heap_start[region]) {
+			if (node == heap->mm_heapstart[region]) {
 				continue;
 			}
 
@@ -183,50 +201,46 @@ static void fill_hash_table(int *leak_cnt, int *broken_cnt)
 				continue;
 			}
 			node_size = node->size;
-			if ((unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)node_info || 
-					(unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)hash_table) {
+			if ((unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)g_node_info || 
+					(unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)g_hash_table) {
 				continue;
 			}
 			/* Check if the node corresponds to an allocated memory chunk */
 			if ((node->preceding & MM_ALLOC_BIT) != 0) {
-				node_info[*leak_cnt].node = node;
-				node_info[*leak_cnt].next = NULL;
+				g_node_info[*leak_cnt].node = node;
+				g_node_info[*leak_cnt].next = NULL;
 				node->reserved = MEM_LEAK;
 				add_hash(*leak_cnt);
 				(*leak_cnt)++;
 			}
 		}
 	}
-	mm_givesemaphore((struct mm_heap_s *)leak_checker.heap);
+	mm_givesemaphore(heap);
 }
 
 static void search_addr(void *start_addr, void *end_addr, int *leak_cnt)
 {
 	/* This function traverse the memory from start_addr to end_addr for comparing the address based on hash table. */
 	void *leak_chk;
+
 	/* Not to access over its region, subtract 0x04 from the end of the address. */
 	for (leak_chk = start_addr; leak_chk < end_addr - MEM_ACCESS_UNIT; leak_chk++) {
-		if (leak_chk == (void *)&node_info) {
-			/* Skip to check hash table */
-			leak_chk += (sizeof(struct alloc_node_info_s) * MAX_ALLOC_COUNT);
-			leak_chk--;
-			continue;
-		}
 		if (search_hash(*(unsigned long volatile *)leak_chk - (unsigned long)SIZEOF_MM_ALLOCNODE)) {
 			(*leak_cnt)--;
 		}
 	}
 }
 
-static void heap_check(int *leak_cnt)
+static void heap_check(struct mm_heap_s *heap, int checker_pid, int *leak_cnt)
 {
 	void *leak_chk;
 	struct mm_allocnode_s *visit_node;
 	void *exclude_top;
 	void *exclude_bottom;
 
-	exclude_top = leak_checker.stack_top;
-	exclude_bottom = leak_checker.stack_bottom;
+	struct tcb_s *ctcb = sched_gettcb(checker_pid);
+	exclude_top = ctcb->adj_stack_ptr;
+	exclude_bottom = ctcb->adj_stack_ptr - ctcb->adj_stack_size;
 
 #if CONFIG_KMM_REGIONS > 1
 	int region;
@@ -237,11 +251,14 @@ static void heap_check(int *leak_cnt)
 	/* Visit each region */
 
 #if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < leak_checker.regions; region++)
+	for (region = 0; region < heap->mm_nregions; region++)
 #endif
 	{
-		for (visit_node = leak_checker.heap_start[region]; visit_node < leak_checker.heap_end[region]; visit_node = (struct mm_allocnode_s *)((char *)visit_node + visit_node->size)) {
+		for (visit_node = heap->mm_heapstart[region]; visit_node < heap->mm_heapend[region]; visit_node = (struct mm_allocnode_s *)((char *)visit_node + visit_node->size)) {
 			if ((visit_node->preceding & MM_ALLOC_BIT) != 0) {
+				if ((void *)((char *)visit_node + SIZEOF_MM_ALLOCNODE) == (void *)g_node_info) {
+					continue;
+				}
 				for (leak_chk = (void *)visit_node; leak_chk < (void *)(((char *)visit_node) + visit_node->size); leak_chk++) {
 					if ((leak_chk >= exclude_bottom && leak_chk <= exclude_top)) {
 						continue;
@@ -255,10 +272,11 @@ static void heap_check(int *leak_cnt)
 	}
 }
 
-static void init_mem_leak_checker(int checker_pid, char *bin_name);
+static struct mm_heap_s * init_mem_leak_checker(int checker_pid, char *bin_name);
 
-static void ram_check(char *bin_name, int *leak_cnt, uint32_t *bin_text_addr)
+static void ram_check(struct mm_heap_s *heap, int checker_pid, char *bin_name, int *leak_cnt)
 {
+	struct mm_heap_s *kheap;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin_addr_info_t *info;
 	int bin_idx;
@@ -266,8 +284,6 @@ static void ram_check(char *bin_name, int *leak_cnt, uint32_t *bin_text_addr)
 	info = (bin_addr_info_t *)get_bin_addr_list();
 	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
 		if (strncmp(BIN_NAME(bin_idx), bin_name, strlen(bin_name)) == 0) {
-			/* For calculating the owner from binary, save the text section address. */
-			*bin_text_addr = info[bin_idx].text_addr;
 			break;
 		}
 	}
@@ -291,18 +307,16 @@ static void ram_check(char *bin_name, int *leak_cnt, uint32_t *bin_text_addr)
 		search_addr((void *)info[bin_idx].data_addr, (void *)(info[bin_idx].data_addr + info[bin_idx].data_size), leak_cnt);
 		search_addr((void *)info[bin_idx].bss_addr, (void *)(info[bin_idx].bss_addr + info[bin_idx].bss_size), leak_cnt);
 		/* search the kernel heap first */
-		init_mem_leak_checker(checkerpid, "kernel");
-		heap_check(leak_cnt);
-		/* reset to app heap */
-		init_mem_leak_checker(checkerpid, bin_name);
+		kheap = kmm_get_baseheap();
+		heap_check(kheap, checker_pid, leak_cnt);
 	}
 #endif
 
 	/* Visit heap region */
-	heap_check(leak_cnt);
+	heap_check(heap, checker_pid, leak_cnt);
 }
 
-static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bin_text_addr)
+static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 {
 	volatile struct mm_allocnode_s *node;
 	uint32_t owner_addr;	
@@ -311,7 +325,7 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 		printf("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
 		printf("---------------------------------------------------\n");
 
-		mm_takesemaphore((struct mm_heap_s *)leak_checker.heap);
+		mm_takesemaphore(heap);
 
 #if CONFIG_KMM_REGIONS > 1
 		int region;
@@ -322,10 +336,10 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 		/* Visit each region */
 
 #if CONFIG_KMM_REGIONS > 1
-		for (region = 0; region < leak_checker.regions; region++)
+		for (region = 0; region < heap->mm_nregions; region++)
 #endif
 		{
-			for (node = leak_checker.heap_start[region]; node < leak_checker.heap_end[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+			for (node = heap->mm_heapstart[region]; node <  heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 				ASSERT(node->size);
 				if (node->reserved == MEM_LEAK) {
 					/* alloc_call_addr can be from kernel, app or common binary.
@@ -347,7 +361,7 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 			}
 		}
 
-		mm_givesemaphore((struct mm_heap_s *)leak_checker.heap);
+		mm_givesemaphore(heap);
 
 		printf("*** %d LEAKS, %d BROKENS.\n", leak_cnt, broken_cnt);
 	} else {
@@ -355,56 +369,51 @@ static void print_info(char *bin_name, int leak_cnt, int broken_cnt, uint32_t bi
 	}
 }
 
-static void init_mem_leak_checker(int checker_pid, char *bin_name)
-{
-	struct tcb_s *checker_tcb = sched_gettcb(checker_pid);
-	struct mm_heap_s *heap;
-
-	/* stack information is for leak checker task. */
-	leak_checker.stack_top = checker_tcb->adj_stack_ptr;
-	leak_checker.stack_bottom = leak_checker.stack_top - checker_tcb->adj_stack_size;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	if (strncmp(bin_name, "kernel", strlen("kernel") + 1) == 0) {
-		heap = g_kmmheap;
-	} else {
-		heap = mm_get_app_heap_with_name(bin_name);
-	}
-#else
-	heap = umm_get_heap(leak_checker.stack_top);
-#endif
-	/* Set the target heap information */
-	leak_checker.heap = heap;
-	leak_checker.heap_start = heap->mm_heapstart;
-	leak_checker.heap_end = heap->mm_heapend;
-#if CONFIG_KMM_REGIONS > 1
-	leak_checker.regions = heap->mm_nregions;
-#endif
-}
-
 int run_mem_leak_checker(int checker_pid, char *bin_name)
 {
 	int leak_cnt = 0;
 	int node_cnt = 0;
 	int broken_cnt = 0;
-	uint32_t bin_text_addr = (uint32_t)NULL;
-	checkerpid = checker_pid;
+	struct mm_heap_s *heap = NULL;
 
-	init_mem_leak_checker(checker_pid, bin_name);
+	if (strncmp(bin_name, "kernel", strlen("kernel") + 1) == 0) {
+		heap = kmm_get_baseheap();
+	} 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	else {
+		heap = mm_get_app_heap_with_name(bin_name);
+	}
+#endif
 
-	node_cnt = get_node_cnt();
+	if (!heap) {
+		printf("Can't found heap, bin name: %s", bin_name);
+		return ERROR;
+	}
+
+	node_cnt = get_node_cnt(heap);
 	if (MAX_ALLOC_COUNT < node_cnt) {
 		printf("Available buffer size (%d) is small.\nPlease increase CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT value more than %d.\n", MAX_ALLOC_COUNT, node_cnt);
 		return ERROR;
 	}
 
-	hash_init();
-	fill_hash_table(&leak_cnt, &broken_cnt);
+	if (g_hash_table || g_node_info) {
+		printf("mem_leak_checker is already running.\n");
+		return ERROR;
+	}
+
+	if (hash_init() != OK) {
+		printf("hash table memory alloc is failed.\n");
+		return ERROR;
+	}
+
+	fill_hash_table(heap, &leak_cnt, &broken_cnt);
 
 	/* Visit RAM region */
-	ram_check(bin_name, &leak_cnt, &bin_text_addr);
+	ram_check(heap, checker_pid, bin_name, &leak_cnt);
 
-	print_info(bin_name, leak_cnt, broken_cnt, bin_text_addr);
+	print_info(heap, leak_cnt, broken_cnt);
 
+	hash_deinit();
 	return OK;
 }
 

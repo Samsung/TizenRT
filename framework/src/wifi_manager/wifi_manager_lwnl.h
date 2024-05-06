@@ -28,3 +28,4 @@ trwifi_result_e wifi_utils_start_sta(void);
 trwifi_result_e wifi_utils_stop_softap(void);
 trwifi_result_e wifi_utils_set_autoconnect(uint8_t check);
 trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg);
+trwifi_result_e wifi_utils_scan_multi_aps(void *arg);

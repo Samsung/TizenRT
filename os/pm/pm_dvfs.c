@@ -80,7 +80,7 @@
  *
  * Description:
  *   This internal function is called to reduce the frequency of operation
- *   of the secondary AP core of AI_Dual chipset.
+ *   of the core
  *
  * Input Parameters:
  *   div_lvl - voltage frequency scaling level

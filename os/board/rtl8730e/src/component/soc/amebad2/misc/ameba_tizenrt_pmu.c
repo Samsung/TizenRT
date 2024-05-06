@@ -254,6 +254,15 @@ VOID pg_aontimer_int(u32 Data)
 }
 #endif
 
+
+#ifdef CONFIG_PM_TICKSUPPRESS
+static void (*tizenrt_sleep_handler)(clock_t);
+void up_register_wakehandler(void (*handler)(clock_t))
+{
+	tizenrt_sleep_handler = handler;
+}
+#endif
+
 void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 {
 	uint32_t tick_before_sleep;
@@ -300,9 +309,11 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 #else
-	irqstate_t flags  = enter_critical_section();
-	g_system_timer += (u64)ms_passed; /*  update kernel tick */
-	leave_critical_section(flags);
+#ifdef CONFIG_PM_TICKSUPPRESS
+	if (tizenrt_sleep_handler) {
+		tizenrt_sleep_handler(ms_passed); /*  update kernel tick */
+	}
+#endif
 #endif
 
 	sysactive_timeout_flag = 0;

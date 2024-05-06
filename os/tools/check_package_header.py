@@ -28,10 +28,20 @@ import os
 import string
 import sys
 import zlib
+import config_util as util
+
+cfg_path = os.path.dirname(__file__) + '/../.config'
 
 KERNEL_HEADER_SIZE = 12
-COMMON_HEADER_SIZE = 10
-APP_HEADER_SIZE = 41
+
+xip_elf = util.get_value_from_file(cfg_path, "CONFIG_XIP_ELF=").replace('"','').replace('\n','')
+if xip_elf == 'None' :
+    COMMON_HEADER_SIZE = 10
+    APP_HEADER_SIZE = 41
+else :
+    COMMON_HEADER_SIZE = 12
+    APP_HEADER_SIZE = 44
+
 SIGNING_SIZE = 32
 CHECKSUM_SIZE = 4
 

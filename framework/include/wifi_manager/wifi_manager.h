@@ -38,11 +38,12 @@ extern "C" {
 #endif
 
 /* Length defines */
-#define WIFIMGR_MACADDR_LEN        6
-#define WIFIMGR_MACADDR_STR_LEN    17
-#define WIFIMGR_SSID_LEN           32
-#define WIFIMGR_2G_CHANNEL_MAX     14
-#define WIFIMGR_PASSPHRASE_LEN     64
+#define WIFIMGR_MACADDR_LEN          6
+#define WIFIMGR_MACADDR_STR_LEN      17
+#define WIFIMGR_SSID_LEN             32
+#define WIFIMGR_2G_CHANNEL_MAX       14
+#define WIFIMGR_PASSPHRASE_LEN       64
+#define WIFIMGR_SPECIFIC_SCAN_AP_CNT 6
 /**
  * @brief <b> wifi MAC/PHY standard types
  */
@@ -240,6 +241,11 @@ typedef struct {
 	unsigned int ssid_length;                         /**<  Service Set Identification Length     */
 } wifi_manager_scan_config_s;
 
+typedef struct {
+	wifi_manager_scan_config_s ap_configs[WIFIMGR_SPECIFIC_SCAN_AP_CNT];    /**< The AP configurations to scan */
+	unsigned int scan_ap_config_count;                                    /**< The count of AP to scan       */
+} wifi_manager_scan_multi_configs_s;
+
 /**
  * @brief Specify Wi-Fi Manager internal stats information
  */
@@ -404,6 +410,17 @@ wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config);
  * @deprecated TizenRT v3.1
  */
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config);
+
+/**
+ * @brief Scan nearby access points
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] configs Required a number of scan configurations with its count, See wifi_manager_scan_ap for more details.
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @API type: asynchronous
+ * @callback: scan_ap_done
+ * @since TizenRT v4.1
+ */
+wifi_manager_result_e wifi_manager_scan_multi_aps(wifi_manager_scan_multi_configs_s *configs);
 
 /**
  * @brief Save the AP configuration at persistent storage

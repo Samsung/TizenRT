@@ -242,6 +242,28 @@ EXTERN struct pm_global_s g_pmglobals;
 
 void pm_update(int domain, int16_t accum);
 
+/****************************************************************************
+ * Name: pm_wakehandler
+ *
+ * Description:
+ *   This function is called when the core wakes up. The operations are that
+ *   should be reflected in the kernel immediately after the core wakes up.
+ *	 This behavior is only for the IDLE domain.
+ *
+ * Input parameters:
+ *   missing_tick - Missed ticks while the core was sleeping.
+ *
+ * Returned value:
+ *   None
+ *
+ * Assumptions:
+ *   This function may be called from an interrupt handler.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_PM_TICKSUPPRESS
+void pm_wakehandler(clock_t missing_tick);
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }

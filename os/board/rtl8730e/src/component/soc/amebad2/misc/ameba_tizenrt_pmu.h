@@ -22,6 +22,7 @@ typedef enum {
 	PMU_DEV_USER_BASE	= 16, /*number 16 ~ 31 is reserved for customer use*/
 	PMU_BT_DEVICE	= 17,
 	PMU_VAD_DEVICE	= 18,
+	PMU_SPI_DEVICE   = 19,
 
 	PMU_MAX				= 31
 } PMU_DEVICE;

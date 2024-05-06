@@ -47,6 +47,7 @@ $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
 	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
 
+ifeq ($(CONFIG_ELF),y)
 $(BIN): $(OBJS)
 	@echo "LD: $<"
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
@@ -54,6 +55,12 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(NM) -u $(BIN) | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
 else
 	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LDLIBS) $(LIBSUPXX) --end-group
+endif
+endif
+
+ifeq ($(CONFIG_XIP_ELF),y)
+$(BIN): $(OBJS)
+	$(Q) $(LD) -T $(USER_BIN_DIR)/$@_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld -e main -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) $(LIBSUPXX) --end-group -R $(USER_BIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
 endif
 
 clean:

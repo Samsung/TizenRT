@@ -140,6 +140,13 @@ struct binary_s {
 	FAR uint32_t sections[BIN_MAX];		/* Allocated sections */
 	FAR size_t sizes[BIN_MAX];		/* Size of sections */
 
+#ifdef CONFIG_XIP_ELF
+	FAR uint32_t flash_region_start;	/* Flash partition start */
+	FAR uint32_t flash_region_end;		/* Flash partition end */
+	FAR uint32_t ram_region_start;		/* RAM region start for app */
+	FAR uint32_t ram_region_end;		/* RAM region end for app */
+#endif
+
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	FAR binfmt_ctor_t *ctors;		/* Pointer to a list of constructors */
 	FAR binfmt_dtor_t *dtors;		/* Pointer to a list of destructors */
