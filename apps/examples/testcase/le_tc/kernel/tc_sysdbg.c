@@ -40,7 +40,7 @@
  * Postconditions       :none
  * @return              :void
  */
-static void tc_debug_sysdbg_test(void)
+static void tc_debug_sysdbg_test_pos(void)
 {
 	int ret;
 	char buffer[BUFLEN];
@@ -78,7 +78,7 @@ static void tc_debug_sysdbg_test(void)
 
 int debug_main(void)
 {
-	tc_debug_sysdbg_test();
+	tc_debug_sysdbg_test_pos();
 
 	return 0;
 }

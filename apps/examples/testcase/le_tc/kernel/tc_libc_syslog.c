@@ -46,7 +46,7 @@ char g_syslogmsg[MAX_SYSLOG_MSG + 1];
  * Postconditions       :none
  * @return              :void
  */
-static void tc_libc_syslog_setlogmask(void)
+static void tc_libc_syslog_setlogmask_pos(void)
 {
 	int oldmask, newmask, mask_chk;
 	setlogmask(LOG_ALL);
@@ -81,7 +81,7 @@ static void tc_libc_syslog_setlogmask(void)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_libc_syslog_syslog(void)
+static void tc_libc_syslog_syslog_pos(void)
 {
 	int ret_chk;
 	int i;
@@ -122,7 +122,7 @@ static int vsyslogFunc(int priority, FAR const char *msg, ...)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_libc_syslog_vsyslog(void)
+static void tc_libc_syslog_vsyslog_pos(void)
 {
 	int ret_chk;
 	int i;
@@ -148,7 +148,7 @@ static void tc_libc_syslog_vsyslog(void)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_libc_syslog_lowsyslog(void)
+static void tc_libc_syslog_lowsyslog_pos(void)
 {
 	int ret_chk;
 	int i;
@@ -189,7 +189,7 @@ static int lowvsyslogFunc(int priority, FAR const char *msg, ...)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_libc_syslog_lowvsyslog(void)
+static void tc_libc_syslog_lowvsyslog_pos(void)
 {
 	int ret_chk;
 	int i;
@@ -213,13 +213,13 @@ static void tc_libc_syslog_lowvsyslog(void)
 
 int libc_syslog_main(void)
 {
-	tc_libc_syslog_setlogmask();
-	tc_libc_syslog_syslog();
-	tc_libc_syslog_vsyslog();
+	tc_libc_syslog_setlogmask_pos();
+	tc_libc_syslog_syslog_pos();
+	tc_libc_syslog_vsyslog_pos();
 #ifndef CONFIG_BUILD_PROTECTED
 #if defined(CONFIG_ARCH_LOWPUTC) || defined(CONFIG_SYSLOG)
-	tc_libc_syslog_lowsyslog();
-	tc_libc_syslog_lowvsyslog();
+	tc_libc_syslog_lowsyslog_pos();
+	tc_libc_syslog_lowvsyslog_pos();
 #endif
 #endif
 	return 0;

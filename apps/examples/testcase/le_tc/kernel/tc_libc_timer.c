@@ -54,7 +54,7 @@
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_clock_calendar2utc(void)
+static void tc_libc_timer_clock_calendar2utc_pos(void)
 {
 	int time1;
 	int time2;
@@ -87,7 +87,7 @@ static void tc_libc_timer_clock_calendar2utc(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_gmtime_r(void)
+static void tc_libc_timer_gmtime_r_pos(void)
 {
 	time_t test_time;
 	int today;
@@ -125,7 +125,7 @@ static void tc_libc_timer_gmtime_r(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_gmtime(void)
+static void tc_libc_timer_gmtime_pos(void)
 {
 	int ret_chk = 0;
 	struct tm *st_rettime = NULL;
@@ -172,7 +172,7 @@ static void tc_libc_timer_gmtime(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_clock_isleapyear(void)
+static void tc_libc_timer_clock_isleapyear_pos(void)
 {
 	int ret_chk = ERROR;
 	int year;
@@ -182,6 +182,14 @@ static void tc_libc_timer_clock_isleapyear(void)
 	year = ISLEAPYEAR;
 	ret_chk = clock_isleapyear(year);
 	TC_ASSERT_EQ("clock_isleapyear", ret_chk, 1);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_timer_clock_isleapyear_neg(void)
+{
+	int ret_chk = ERROR;
+	int year;
 
 	/*Entered year is not a leap year */
 
@@ -204,7 +212,7 @@ static void tc_libc_timer_clock_isleapyear(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_localtime(void)
+static void tc_libc_timer_localtime_pos(void)
 {
 	time_t test_time;
 	struct tm *st_rettime = NULL;
@@ -234,7 +242,7 @@ static void tc_libc_timer_localtime(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_localtime_r(void)
+static void tc_libc_timer_localtime_r_pos(void)
 {
 	struct tm *st_rettime = NULL;
 	struct tm st_time;
@@ -270,7 +278,7 @@ static void tc_libc_timer_localtime_r(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_mktime(void)
+static void tc_libc_timer_mktime_pos(void)
 {
 	time_t cur_day;
 	time_t after_5days;
@@ -309,7 +317,7 @@ static void tc_libc_timer_mktime(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_strftime(void)
+static void tc_libc_timer_strftime_pos(void)
 {
 	struct tm st_time;
 	char buffer[BUFF_SIZE];
@@ -450,7 +458,7 @@ static void tc_libc_timer_strftime(void)
 * Postconditions  :none
 * @return         :void
 */
-static void tc_libc_timer_strptime(void)
+static void tc_libc_timer_strptime_pos(void)
 {
 	struct tm sp_tm;
 	struct tm sf_tm;
@@ -687,7 +695,7 @@ static void tc_libc_timer_strptime(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_time(void)
+static void tc_libc_timer_time_pos(void)
 {
 	time_t get_time = 0;
 	time_t ret_time = 0;
@@ -716,7 +724,7 @@ static void tc_libc_timer_time(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_timer_clock_daysbeforemonth(void)
+static void tc_libc_timer_clock_daysbeforemonth_pos(void)
 {
 	int prev_month;
 	int cur_month;
@@ -757,7 +765,7 @@ static void tc_libc_timer_clock_daysbeforemonth(void)
 *						 If the processor time used is not available or its value cannot
 *						 be represented, the function returns the value (clock_t) -1.
 */
-static void tc_libc_timer_clock(void)
+static void tc_libc_timer_clock_pos(void)
 {
 	clock_t ret_time = ERROR;
 
@@ -768,7 +776,7 @@ static void tc_libc_timer_clock(void)
 }
 
 #ifdef CONFIG_LIBM
-static void tc_libc_timer_difftime(void)
+static void tc_libc_timer_difftime_pos(void)
 {
 	time_t t0;
 	time_t t1;
@@ -801,21 +809,22 @@ static void tc_libc_timer_difftime(void)
 
 int libc_timer_main(void)
 {
-	tc_libc_timer_clock();
-	tc_libc_timer_clock_calendar2utc();
-	tc_libc_timer_clock_daysbeforemonth();
-	tc_libc_timer_clock_isleapyear();
+	tc_libc_timer_clock_pos();
+	tc_libc_timer_clock_calendar2utc_pos();
+	tc_libc_timer_clock_daysbeforemonth_pos();
+	tc_libc_timer_clock_isleapyear_pos();
+	tc_libc_timer_clock_isleapyear_neg();
 #ifdef CONFIG_LIBM
-	tc_libc_timer_difftime();
+	tc_libc_timer_difftime_pos();
 #endif
-	tc_libc_timer_gmtime();
-	tc_libc_timer_gmtime_r();
-	tc_libc_timer_localtime();
-	tc_libc_timer_localtime_r();
-	tc_libc_timer_mktime();
-	tc_libc_timer_strftime();
-	tc_libc_timer_strptime();
-	tc_libc_timer_time();
+	tc_libc_timer_gmtime_pos();
+	tc_libc_timer_gmtime_r_pos();
+	tc_libc_timer_localtime_pos();
+	tc_libc_timer_localtime_r_pos();
+	tc_libc_timer_mktime_pos();
+	tc_libc_timer_strftime_pos();
+	tc_libc_timer_strptime_pos();
+	tc_libc_timer_time_pos();
 
 	return 0;
 }

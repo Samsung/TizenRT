@@ -38,7 +38,7 @@
  * Postconditions       :none
  * @return              :void
  */
-static void tc_errno_set_get_errno(void)
+static void tc_errno_set_get_errno_pos(void)
 {
 	int ret_chk = 0;
 	int errcode;
@@ -76,7 +76,7 @@ static void tc_errno_set_get_errno(void)
 
 int errno_main(void)
 {
-	tc_errno_set_get_errno();
+	tc_errno_set_get_errno_pos();
 
 	return 0;
 }

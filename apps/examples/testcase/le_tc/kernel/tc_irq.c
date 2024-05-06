@@ -41,7 +41,7 @@
  * @return              :void
  */
 
-static void tc_irq_fin_wait(void)
+static void tc_irq_fin_wait_pos(void)
 {
 	struct timer_notify_s notify;
 	notify.arg   = NULL;
@@ -77,7 +77,7 @@ static void tc_irq_fin_wait(void)
 
 int irq_main(void)
 {
-	tc_irq_fin_wait();
+	tc_irq_fin_wait_pos();
 
 	return 0;
 }

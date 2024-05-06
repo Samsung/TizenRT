@@ -205,7 +205,7 @@ static int test_task_entry(int argc, char *argv[])
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_task_create(void)
+static void tc_task_task_create_pos(void)
 {
 	int pid;
 	const char *task_param[2] = { TEST_STRING, NULL };
@@ -226,6 +226,22 @@ static void tc_task_task_create(void)
 	TC_SUCCESS_RESULT();
 }
 
+
+static void tc_task_task_create_invalid_priority_neg(void)
+{
+	int pid;
+	const char *task_param[2] = { TEST_STRING, NULL };
+	g_callback = ERROR;
+
+	/* Inavlid priority value check */
+
+	pid = task_create("tc_task_create", SCHED_PRIORITY_MIN - 1, 1024, create_task, (char * const *)task_param);
+	TC_ASSERT_EQ("task_create", pid, ERROR);
+	TC_ASSERT_EQ("task_create", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
 /**
 * @fn                   :tc_task_task_delete
 * @brief                :Delete a task
@@ -235,7 +251,7 @@ static void tc_task_task_create(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_task_delete(void)
+static void tc_task_task_delete_pos(void)
 {
 	int pid;
 	int ret_chk;
@@ -260,7 +276,7 @@ static void tc_task_task_delete(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_task_restart(void)
+static void tc_task_task_restart_pos(void)
 {
 	int pid;
 	int ret_chk;
@@ -295,6 +311,27 @@ static void tc_task_task_restart(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_task_task_restart_null_pid_neg(void)
+{
+	int pid;
+	int ret_chk;
+
+	/* Check for NULL pid parameter  */
+
+	pid = task_create("tc_task_re", SCHED_PRIORITY_MAX - 1, 1024, restart_task, (char * const *)NULL);
+	TC_ASSERT_GT("task_create", pid, 0);
+
+	g_callback = 0;
+	ret_chk = task_restart(0);
+	TC_ASSERT_EQ("task_restart", ret_chk, ERROR);
+	TC_ASSERT_EQ("task_restart", errno, ENOSYS);
+	TC_ASSERT_EQ("task_restart", g_callback, 0);
+	g_callback = 0;
+
+
+	TC_SUCCESS_RESULT();
+}
+
 /**
 * @fn                   :tc_task_exit
 * @brief                :exit function will terminate the task
@@ -305,7 +342,7 @@ static void tc_task_task_restart(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_exit(void)
+static void tc_task_exit_pos(void)
 {
 	int pid;
 	g_callback = ERROR;
@@ -325,7 +362,7 @@ static void tc_task_exit(void)
 * Postconditions        :none
 * @return               :return SUCCESS on success
 */
-static void tc_task_atexit(void)
+static void tc_task_atexit_pos(void)
 {
 	int pid;
 	g_callback = ERROR;
@@ -348,7 +385,7 @@ static void tc_task_atexit(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_on_exit(void)
+static void tc_task_on_exit_pos(void)
 {
 	int pid;
 	g_callback = ERROR;
@@ -371,10 +408,9 @@ static void tc_task_on_exit(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_prctl(void)
+
+static void tc_task_prctl_invalid_option_neg(void)
 {
-	const char *setname = "a Test program";
-	char getname[CONFIG_TASK_NAME_SIZE + 1];
 	char oldname[CONFIG_TASK_NAME_SIZE + 1];
 	int ret_chk;
 	pid_t mypid = getpid();
@@ -385,11 +421,30 @@ static void tc_task_prctl(void)
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), EINVAL);
 
+	
+	TC_SUCCESS_RESULT();
+}
+static void tc_task_prctl_invalid_process_neg(void)
+{
+	char oldname[CONFIG_TASK_NAME_SIZE + 1];
+	int ret_chk;
+	pid_t mypid = getpid();
+
 	/* no such process case */
 
 	ret_chk = prctl(PR_GET_NAME_BYPID, oldname, PID_INVALID);
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), ESRCH);
+
+	
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_task_prctl_null_name_neg(void)
+{
+	int ret_chk;
+	pid_t mypid = getpid();
 
 	/* no name case */
 
@@ -397,6 +452,19 @@ static void tc_task_prctl(void)
 	TC_ASSERT_EQ("prctl", ret_chk, ERROR);
 	TC_ASSERT_EQ("prctl", get_errno(), EFAULT);
 
+	
+	TC_SUCCESS_RESULT();
+}
+
+
+
+static void tc_task_prctl_set_get_taskname_pos(void)
+{
+	const char *setname = "a Test program";
+	char getname[CONFIG_TASK_NAME_SIZE + 1];
+	char oldname[CONFIG_TASK_NAME_SIZE + 1];
+	int ret_chk;
+	pid_t mypid = getpid();
 	/* save taskname */
 
 	ret_chk = prctl(PR_GET_NAME_BYPID, oldname, mypid);
@@ -454,7 +522,7 @@ static void tc_task_prctl(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_getpid(void)
+static void tc_task_getpid_pos(void)
 {
 	int pid;
 	g_callback = ERROR;
@@ -503,7 +571,7 @@ static int parent_task(int argc, char *argv[])
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_task_reparent(void)
+static void tc_task_task_reparent_pos(void)
 {
 	int pid;
 
@@ -528,7 +596,7 @@ static void tc_task_task_reparent(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_task_task_init(void)
+static void tc_task_task_init_pos(void)
 {
 	int ret = 0;
 
@@ -554,21 +622,26 @@ static void tc_task_task_init(void)
 int task_main(void)
 {
 #ifdef CONFIG_SCHED_ATEXIT
-	tc_task_atexit();
+	tc_task_atexit_pos();
 #endif
-	tc_task_exit();
-	tc_task_getpid();
+	tc_task_exit_pos();
+	tc_task_getpid_pos();
 #ifdef CONFIG_SCHED_ONEXIT
-	tc_task_on_exit();
+	tc_task_on_exit_pos();
 #endif
-	tc_task_prctl();
-	tc_task_task_create();
-	tc_task_task_delete();
-	tc_task_task_restart();
+	tc_task_prctl_set_get_taskname_pos();
+	tc_task_prctl_invalid_option_neg();
+	tc_task_prctl_invalid_process_neg();
+	tc_task_prctl_null_name_neg();
+	tc_task_task_create_pos();
+	tc_task_task_create_invalid_priority_neg();
+	tc_task_task_delete_pos();
+	tc_task_task_restart_pos();
+	tc_task_task_restart_null_pid_neg();
 #ifdef CONFIG_SCHED_HAVE_PARENT
-	tc_task_task_reparent();
+	tc_task_task_reparent_pos();
 #endif
-	tc_task_task_init();
+	tc_task_task_init_pos();
 
 	return 0;
 }

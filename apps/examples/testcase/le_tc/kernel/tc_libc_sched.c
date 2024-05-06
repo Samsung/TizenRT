@@ -41,18 +41,27 @@
 * Postconditions        :NA
 * @return               :void
 */
-static void tc_libc_sched_sched_get_priority_max(void)
+static void tc_libc_sched_sched_get_priority_max_pos(void)
 {
 	int ret_chk;
-
-	ret_chk = sched_get_priority_max(SCHED_ERROR);
-	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, ERROR);
 
 	ret_chk = sched_get_priority_max(SCHED_FIFO);
 	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, SCHED_PRIORITY_MAX);
 
 	ret_chk = sched_get_priority_max(SCHED_RR);
 	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, SCHED_PRIORITY_MAX);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_sched_sched_get_priority_max_sch_error_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = sched_get_priority_max(SCHED_ERROR);
+	TC_ASSERT_EQ("sched_get_priority_max", ret_chk, ERROR);
+
+	
 
 	TC_SUCCESS_RESULT();
 }
@@ -66,7 +75,7 @@ static void tc_libc_sched_sched_get_priority_max(void)
 * Postconditions        :NA
 * @return               :void
 */
-static void tc_libc_sched_sched_get_priority_min(void)
+static void tc_libc_sched_sched_get_priority_min_pos(void)
 {
 	int ret_chk;
 
@@ -82,6 +91,17 @@ static void tc_libc_sched_sched_get_priority_min(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_libc_sched_sched_get_priority_min_invalid_sched_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = sched_get_priority_min(SCHED_ERROR);
+	TC_ASSERT_EQ("sched_get_priority_min", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 /**
  * @fn                   :tc_libc_sched_task_setcanceltype
  * @brief                :This tc tests tc_libc_sched_task_setcanceltype()
@@ -96,7 +116,7 @@ static void tc_libc_sched_sched_get_priority_min(void)
  * @return               :void
  */
 #ifndef CONFIG_CANCELLATION_POINTS
-static void tc_libc_sched_task_setcanceltype(void)
+static void tc_libc_sched_task_setcanceltype_pos(void)
 {
 	int type;
 	int oldtype;
@@ -116,10 +136,12 @@ static void tc_libc_sched_task_setcanceltype(void)
 
 int libc_sched_main(void)
 {
-	tc_libc_sched_sched_get_priority_max();
-	tc_libc_sched_sched_get_priority_min();
+	tc_libc_sched_sched_get_priority_max_pos();
+	tc_libc_sched_sched_get_priority_max_sch_error_neg();
+	tc_libc_sched_sched_get_priority_min_pos();
+	tc_libc_sched_sched_get_priority_min_invalid_sched_neg();
 #ifndef CONFIG_CANCELLATION_POINTS
-	tc_libc_sched_task_setcanceltype();
+	tc_libc_sched_task_setcanceltype_pos();
 #endif
 	return 0;
 }

@@ -45,7 +45,7 @@
 * @failcase             :When setenv function returns non zero value or getenv return different value which was set or unsetenv function returns non zero value.
 * @Preconditions        :NA
 */
-static void tc_environ_setenv_getenv_unsetenv(void)
+static void tc_environ_setenv_getenv_unsetenv_pos(void)
 {
 	int ret_chk = ERROR;
 	const char *psz_name = "abc";
@@ -56,8 +56,6 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	ret_chk = setenv(psz_name, psz_value, 1);
 	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, OK, clearenv());
 
-	psz_getvalue = getenv(NULL);
-	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
 
 	psz_getvalue = getenv(psz_name);
 	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
@@ -75,23 +73,11 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
 	TC_ASSERT_NEQ_CLEANUP("getenv", strcmp(psz_getvalue, psz_value), 0, clearenv());
 
-	/* random value, getenv should fail */
-
-	psz_getvalue = getenv("arv");
-	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
-
 	/* random value, unsetenv should not fail */
 
 	ret_chk = unsetenv(pusz_name);
 	TC_ASSERT_EQ("unsetenv", ret_chk, OK);
 
-	/* getvalue should be null */
-
-	psz_getvalue = getenv("arv");
-	TC_ASSERT_EQ("getenv", psz_getvalue, NULL);
-
-	ret_chk = setenv(NULL, psz_value, 0);
-	TC_ASSERT_EQ("setenv", ret_chk, ERROR);
 
 	ret_chk = setenv(psz_name, NULL, 1);
 	TC_ASSERT_EQ("setenv", ret_chk, OK);
@@ -100,6 +86,44 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 	TC_ASSERT_EQ("setenv", ret_chk, OK);
 
 	clearenv();
+	TC_SUCCESS_RESULT();
+}
+static void tc_environ_getenv_neg(void)
+{
+	char *psz_getvalue = NULL;
+
+	/* random value, getenv should fail */
+
+	psz_getvalue = getenv("arv");
+	TC_ASSERT_EQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
+	
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_environ_setenv_name_null_neg(void)
+{
+	int ret_chk = ERROR;
+	const char *psz_value = "test";
+	char *psz_getvalue = NULL;
+	
+	/*setting var name NULL should fail*/
+	ret_chk = setenv(NULL, psz_value, 0);
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, ERROR, clearenv());
+
+	clearenv();
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_environ_setenv_empty_name_neg(void)
+{
+	int ret_chk = ERROR;
+	const char *psz_value = "pqr";
+
+	/*setting var empty string should fail*/
+	ret_chk = setenv('\0', psz_value, 1);
+	TC_ASSERT_EQ_CLEANUP("setenv", ret_chk, ERROR, clearenv());
+
+
 	TC_SUCCESS_RESULT();
 }
 
@@ -113,7 +137,7 @@ static void tc_environ_setenv_getenv_unsetenv(void)
 * @failcase             :When setenv function returns non zero value or clearenv function returns non zero value.
 * @Preconditions        :setenv
 */
-static void tc_environ_clearenv(void)
+static void tc_environ_clearenv_pos(void)
 {
 	int ret_chk = ERROR;
 	const char *psz_name = "abc";
@@ -143,7 +167,7 @@ static void tc_environ_clearenv(void)
 * @failcase             :When putenv function returns non zero value.
 * @Preconditions        :NA
 */
-static void tc_environ_putenv(void)
+static void tc_environ_putenv_pos(void)
 {
 	int ret_chk;
 	char *psz_getvalue = NULL;
@@ -165,6 +189,14 @@ static void tc_environ_putenv(void)
 	TC_ASSERT_NEQ_CLEANUP("getenv", psz_getvalue, NULL, clearenv());
 	TC_ASSERT_EQ_CLEANUP("getenv", strcmp(psz_getvalue, "D:"), 0, clearenv());
 
+	clearenv();
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_environ_putenv_neg(void)
+{
+	int ret_chk;
+
 	ret_chk = putenv(NULL);
 	TC_ASSERT_EQ("putenv", ret_chk, ERROR);
 
@@ -182,7 +214,7 @@ static void tc_environ_putenv(void)
 * @failcase             :some variables are not matched.
 * @Preconditions        :NA
 */
-static void tc_environ_get_environ_ptr(void)
+static void tc_environ_get_environ_ptr_pos(void)
 {
 	char env_arr[ENV_TEST_MAX_NUM][ENV_TEST_LEN * 2];
 	size_t env_size;
@@ -228,10 +260,14 @@ static void tc_environ_get_environ_ptr(void)
 
 int environ_main(void)
 {
-	tc_environ_setenv_getenv_unsetenv();
-	tc_environ_clearenv();
-	tc_environ_putenv();
-	tc_environ_get_environ_ptr();
+	tc_environ_setenv_getenv_unsetenv_pos();
+    tc_environ_getenv_neg();
+	tc_environ_setenv_name_null_neg();
+    tc_environ_setenv_empty_name_neg();
+	tc_environ_clearenv_pos();
+	tc_environ_putenv_pos();
+	tc_environ_putenv_neg();
+	tc_environ_get_environ_ptr_pos();
 
 	return 0;
 }

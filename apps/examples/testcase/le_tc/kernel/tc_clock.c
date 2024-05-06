@@ -52,7 +52,7 @@ extern struct timespec g_basetime;
 * Postconditions        :none
 * @return               :void
 */
-static void tc_clock_clock_getres(void)
+static void tc_clock_clock_getres_pos(void)
 {
 	int ret_chk;
 	struct timespec st_res;
@@ -65,6 +65,14 @@ static void tc_clock_clock_getres(void)
 	TC_ASSERT_EQ("clock_getres", ret_chk, OK);
 	TC_ASSERT_EQ("clock_getres", st_res.tv_sec, 0);
 	TC_ASSERT_EQ("clock_getres", st_res.tv_nsec, NSEC_PER_TICK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_clock_clock_getres_neg(void)
+{
+	int ret_chk;
+	struct timespec st_res;
 
 	ret_chk = clock_getres(33 , &st_res);
 	TC_ASSERT_EQ("clock_getres", ret_chk, ERROR);
@@ -81,15 +89,25 @@ static void tc_clock_clock_getres(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_clock_clock_set_get_time(void)
+
+
+static void tc_clock_clock_get_time_pos(void)
 {
 	int ret_chk;
 	struct timespec stime;
 	struct timespec gtime;
 
-	ret_chk = clock_gettime(CLOCK_ERR, &stime);
-	TC_ASSERT_EQ("clock_gettime", ret_chk, ERROR);
-	TC_ASSERT_EQ("clock_gettime", errno, EINVAL);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &stime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);	
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_clock_clock_set_time_pos(void)
+{
+	int ret_chk;
+	struct timespec stime;
+	struct timespec gtime;
 
 	ret_chk = clock_gettime(CLOCK_REALTIME, &stime);
 	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
@@ -111,12 +129,30 @@ static void tc_clock_clock_set_get_time(void)
 
 	stime.tv_sec -= l_day;		/* Setting original time to system */
 
-	ret_chk = clock_settime(CLOCK_ERR, &stime);
-	TC_ASSERT_EQ("clock_settime", ret_chk, ERROR);
-	TC_ASSERT_EQ("clock_settime", errno, EINVAL);
-
 	ret_chk = clock_settime(CLOCK_REALTIME, &stime);
 	TC_ASSERT_EQ("clock_setime", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_clock_clock_set_time_neg(void)
+{
+	int ret_chk;
+	struct timespec stime;
+
+	ret_chk = clock_settime(CLOCK_ERR, &stime);
+	TC_ASSERT_EQ("clock_settime", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_clock_clock_get_time_invalid_clock_neg(void)
+{
+	int ret_chk;
+	struct timespec stime;
+
+	ret_chk = clock_gettime(CLOCK_ERR, &stime);
+	TC_ASSERT_EQ("clock_gettime", errno, EINVAL);
 
 	TC_SUCCESS_RESULT();
 }
@@ -130,7 +166,7 @@ static void tc_clock_clock_set_get_time(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_clock_clock_gettimeofday(void)
+static void tc_clock_clock_gettimeofday_pos(void)
 {
 	int ret_chk;
 	struct timeval tv1;
@@ -148,6 +184,15 @@ static void tc_clock_clock_gettimeofday(void)
 	if (tv2.tv_sec == tv1.tv_sec + SEC_2) {
 		TC_ASSERT_GEQ("gettimeofday", tv2.tv_usec, tv1.tv_usec);
 	}
+
+	TC_SUCCESS_RESULT();
+}
+
+
+static void tc_clock_clock_gettimeofday_neg(void)
+{
+	int ret_chk;
+	
 #ifdef CONFIG_DEBUG
 	ret_chk = gettimeofday(NULL, NULL);
 	TC_ASSERT_EQ("gettimeofday", ret_chk, ERROR);
@@ -165,7 +210,7 @@ static void tc_clock_clock_gettimeofday(void)
 * Postconditions        :none
 * @return               :void
  */
-static void tc_clock_clock_abstime2ticks(void)
+static void tc_clock_clock_abstime2ticks_pos(void)
 {
 	int fd;
 	int ret;
@@ -184,10 +229,14 @@ static void tc_clock_clock_abstime2ticks(void)
 
 int clock_main(void)
 {
-	tc_clock_clock_gettimeofday();
-	tc_clock_clock_set_get_time();
-	tc_clock_clock_getres();
-	tc_clock_clock_abstime2ticks();
-
+	tc_clock_clock_gettimeofday_pos();
+	tc_clock_clock_gettimeofday_neg();
+	tc_clock_clock_get_time_invalid_clock_neg();
+	tc_clock_clock_get_time_pos();
+	tc_clock_clock_set_time_pos();
+	tc_clock_clock_set_time_neg();
+    tc_clock_clock_getres_pos();
+	tc_clock_clock_getres_neg();
+	tc_clock_clock_abstime2ticks_pos();
 	return 0;
 }

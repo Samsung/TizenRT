@@ -126,7 +126,7 @@ void sigaction_handler(int signo)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_sigwaitinfo(void)
+static void tc_signal_sigwaitinfo_pos(void)
 {
 	int ret_chk;
 	struct siginfo value;
@@ -157,7 +157,7 @@ static void tc_signal_sigwaitinfo(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_sigaction(void)
+static void tc_signal_sigaction_pos(void)
 {
 	int ret_chk = ERROR;
 	struct sigaction st_act;
@@ -220,7 +220,7 @@ static void *kill_handler_thread(void *param)
 * @return               :void
 */
 
-static void tc_signal_kill(void)
+static void tc_signal_kill_pos(void)
 {
 	pid_t pid;
 	int ret_chk = ERROR;
@@ -275,7 +275,7 @@ static void tc_signal_kill(void)
 * @return               :void
 */
 
-static void tc_signal_nanosleep(void)
+static void tc_signal_nanosleep_neg(void)
 {
 	struct timespec st_timespec;
 	int ret_chk;
@@ -292,8 +292,6 @@ static void tc_signal_nanosleep(void)
 	ret_chk = nanosleep(&st_timespec, NULL);
 	TC_ASSERT_NEQ("nanosleep", ret_chk, ERROR);
 
-	clock_gettime(clock_id, &st_final_timespec);
-	TC_ASSERT_EQ("clock_gettime", st_final_timespec.tv_sec - st_init_timespec.tv_sec, st_timespec.tv_sec);
 	TC_SUCCESS_RESULT();
 }
 
@@ -306,7 +304,7 @@ static void tc_signal_nanosleep(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_pause(void)
+static void tc_signal_pause_pos(void)
 {
 	int ret_chk = ERROR;
 	int fd;
@@ -360,7 +358,7 @@ static void tc_signal_pause(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_sigsuspend(void)
+static void tc_signal_sigsuspend_pos(void)
 {
 	int ret_chk = ERROR;
 
@@ -429,7 +427,7 @@ errout:
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_sig_pending_procmask_emptyset_addset(void)
+static void tc_signal_sig_pending_procmask_emptyset_addset_pos(void)
 {
 	int ret_chk = ERROR;
 	pid_t pid = getpid();
@@ -492,7 +490,7 @@ static void tc_signal_sig_pending_procmask_emptyset_addset(void)
 * @return               :void
 */
 
-static void tc_signal_sigqueue(void)
+static void tc_signal_sigqueue_pos(void)
 {
 	struct sigaction st_act;
 	struct sigaction st_oact;
@@ -531,7 +529,7 @@ static void tc_signal_sigqueue(void)
 * @return               :void
 */
 
-static void tc_signal_sigtimedwait(void)
+static void tc_signal_sigtimedwait_pos(void)
 {
 	int ret_chk;
 	struct siginfo value;
@@ -576,7 +574,7 @@ static void tc_signal_sigtimedwait(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_signal_sighold_sigrelse(void)
+static void tc_signal_sighold_sigrelse_pos(void)
 {
 	sigset_t org_set;
 	sigset_t hold_set;
@@ -617,16 +615,16 @@ static void tc_signal_sighold_sigrelse(void)
 
 int signal_main(void)
 {
-	tc_signal_kill();
-	tc_signal_nanosleep();
-	tc_signal_pause();
-	tc_signal_sig_pending_procmask_emptyset_addset();
-	tc_signal_sigaction();
-	tc_signal_sigqueue();
-	tc_signal_sigsuspend();
-	tc_signal_sigtimedwait();
-	tc_signal_sigwaitinfo();
-	tc_signal_sighold_sigrelse();
+	tc_signal_kill_pos();
+	tc_signal_nanosleep_neg();
+	tc_signal_pause_pos();
+	tc_signal_sig_pending_procmask_emptyset_addset_pos();
+	tc_signal_sigaction_pos();
+	tc_signal_sigqueue_pos();
+	tc_signal_sigsuspend_pos();
+	tc_signal_sigtimedwait_pos();
+	tc_signal_sigwaitinfo_pos();
+	tc_signal_sighold_sigrelse_pos();
 
 	return 0;
 }

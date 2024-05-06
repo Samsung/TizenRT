@@ -35,7 +35,7 @@
 * Preconditions         :Creation of timer_id(timer_create)
 * Postconditions        :none
 */
-static void itc_timer_set_time_n_after_delete(void)
+static void itc_timer_set_time_after_delete_neg(void)
 {
 	int ret_chk = ERROR;
 	clockid_t clockid = CLOCK_REALTIME;
@@ -72,7 +72,7 @@ static void itc_timer_set_time_n_after_delete(void)
 * Preconditions         :Creation of timer_id(timer_create)
 * Postconditions        :none
 */
-static void itc_timer_get_time_n_after_delete(void)
+static void itc_timer_get_time_after_delete_neg(void)
 {
 	int ret_chk = ERROR;
 	clockid_t clockid = CLOCK_REALTIME;
@@ -111,8 +111,8 @@ static void itc_timer_get_time_n_after_delete(void)
 
 int itc_timer_main(void)
 {
-	itc_timer_set_time_n_after_delete();
-	itc_timer_get_time_n_after_delete();
+	itc_timer_set_time_after_delete_neg();
+	itc_timer_get_time_after_delete_neg();
 
 	return 0;
 }

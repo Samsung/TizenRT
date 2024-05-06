@@ -50,7 +50,7 @@
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigemptyset(void)
+static void tc_libc_signal_sigemptyset_pos(void)
 {
 	int ret_chk;
 	sigset_t sigset = ALL_SIGNAL_SET;
@@ -71,7 +71,7 @@ static void tc_libc_signal_sigemptyset(void)
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigfillset(void)
+static void tc_libc_signal_sigfillset_pos(void)
 {
 	int ret_chk;
 	sigset_t sigset = NULL_SIGNAL_SET;
@@ -95,7 +95,20 @@ static void tc_libc_signal_sigfillset(void)
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigaddset(void)
+static void tc_libc_signal_sigaddset_pos(void)
+{
+	int ret_chk;
+	sigset_t sigset = NULL_SIGNAL_SET;
+	sigset_t sigset_expected = NULL_SIGNAL_SET | SIGNO2SET(SIG1);
+
+	ret_chk = sigaddset(&sigset, SIG1);
+	TC_ASSERT_EQ("sigaddset", ret_chk, OK);
+	TC_ASSERT_EQ("sigaddset", sigset, sigset_expected);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_signal_sigaddset_neg(void)
 {
 	int ret_chk;
 	sigset_t sigset = NULL_SIGNAL_SET;
@@ -104,12 +117,9 @@ static void tc_libc_signal_sigaddset(void)
 	ret_chk = sigaddset(&sigset, MAX_SIGNO + 1);
 	TC_ASSERT_EQ("sigaddset", ret_chk, ERROR);
 
-	ret_chk = sigaddset(&sigset, SIG1);
-	TC_ASSERT_EQ("sigaddset", ret_chk, OK);
-	TC_ASSERT_EQ("sigaddset", sigset, sigset_expected);
-
 	TC_SUCCESS_RESULT();
 }
+
 
 /**
 * @fn                   :tc_libc_signal_sigdelset
@@ -121,7 +131,20 @@ static void tc_libc_signal_sigaddset(void)
 * Preconditions         :none
 * @return               :void
 */
-static void tc_libc_signal_sigdelset(void)
+static void tc_libc_signal_sigdelset_pos(void)
+{
+	int ret_chk;
+	sigset_t sigset = ALL_SIGNAL_SET;
+	sigset_t sigset_expected = ALL_SIGNAL_SET & (~(SIGNO2SET(SIG1)));
+
+	ret_chk = sigdelset(&sigset, SIG1);
+	TC_ASSERT_EQ("sigdelset", ret_chk, OK);
+	TC_ASSERT_EQ("sigdelset", sigset, sigset_expected);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_signal_sigdelset_neg(void)
 {
 	int ret_chk;
 	sigset_t sigset = ALL_SIGNAL_SET;
@@ -130,12 +153,9 @@ static void tc_libc_signal_sigdelset(void)
 	ret_chk = sigdelset(&sigset, MAX_SIGNO + 1);
 	TC_ASSERT_EQ("sigdelset", ret_chk, ERROR);
 
-	ret_chk = sigdelset(&sigset, SIG1);
-	TC_ASSERT_EQ("sigdelset", ret_chk, OK);
-	TC_ASSERT_EQ("sigdelset", sigset, sigset_expected);
-
 	TC_SUCCESS_RESULT();
 }
+
 
 /**
 * @fn                   :tc_libc_signal_sigismember
@@ -149,13 +169,10 @@ static void tc_libc_signal_sigdelset(void)
 * @return               :void
 */
 
-static void tc_libc_signal_sigismember(void)
+static void tc_libc_signal_sigismember_pos(void)
 {
 	int ret_chk;
 	sigset_t sigset = NULL_SIGNAL_SET | SIGNO2SET(SIG1);
-
-	ret_chk = sigismember(&sigset, MAX_SIGNO + 1);
-	TC_ASSERT_EQ("sigismember", ret_chk, ERROR);
 
 	ret_chk = sigismember(&sigset, SIG1);
 	TC_ASSERT_EQ("sigismember", ret_chk, true);
@@ -165,6 +182,19 @@ static void tc_libc_signal_sigismember(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
+static void tc_libc_signal_sigismember_neg(void)
+{
+	int ret_chk;
+	sigset_t sigset = NULL_SIGNAL_SET | SIGNO2SET(SIG1);
+
+	ret_chk = sigismember(&sigset, MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigismember", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
 
 /**
 * @fn                   :tc_libc_signal_sigignore
@@ -177,12 +207,9 @@ static void tc_libc_signal_sigismember(void)
 * @return               :void
 */
 
-static void tc_libc_signal_sigignore(void)
+static void tc_libc_signal_sigignore_pos(void)
 {
 	int ret_chk;
-
-	ret_chk = sigignore(MAX_SIGNO + 1);
-	TC_ASSERT_EQ("sigignore", ret_chk, ERROR);
 
 	ret_chk = sigignore(SIG1);
 	TC_ASSERT_EQ("sigignore", ret_chk, OK);
@@ -192,6 +219,17 @@ static void tc_libc_signal_sigignore(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+static void tc_libc_signal_sigignore_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = sigignore(MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigignore", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 /**
@@ -206,16 +244,13 @@ static void tc_libc_signal_sigignore(void)
 * @return               :void
 */
 
-static void tc_libc_signal_sigpause(void)
+static void tc_libc_signal_sigpause_pos(void)
 {
 	int ret_chk;
 	timer_t timer_id;
 	clockid_t clockid = 0; /*CLOCK_REALTIME*/
 	struct sigevent st_sigevent;
 	struct itimerspec st_timer_spec_val;
-
-	ret_chk = sigpause(MAX_SIGNO + 1);
-	TC_ASSERT_EQ("sigpause", ret_chk, ERROR);
 
 	/* Set and enable alarm */
 	st_sigevent.sigev_notify = 1; /*SIGEV_SIGNAL*/
@@ -242,6 +277,17 @@ static void tc_libc_signal_sigpause(void)
 	timer_delete(timer_id);
 	TC_SUCCESS_RESULT();
 }
+
+
+static void tc_libc_signal_sigpause_neg(void)
+{
+	int ret_chk;
+	ret_chk = sigpause(MAX_SIGNO + 1);
+	TC_ASSERT_EQ("sigpause", ret_chk, ERROR);
+
+	
+	TC_SUCCESS_RESULT();
+}
 #endif
 
 /**
@@ -255,18 +301,25 @@ static void tc_libc_signal_sigpause(void)
 * @return               :void
 */
 
-static void tc_libc_signal_sigset(void)
+static void tc_libc_signal_sigset_pos(void)
 {
 	int ret_chk;
-
-	ret_chk = (int)sigset(MAX_SIGNO + 1, SIG_DFL);
-	TC_ASSERT_EQ("sigset", ret_chk, ERROR);
 
 	ret_chk = (int)sigset(SIG1, SIG_DFL);
 	TC_ASSERT_EQ("sigset", ret_chk, OK);
 
 	ret_chk = (int)sigset(SIG2, SIG_IGN);
 	TC_ASSERT_EQ("sigset", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_signal_sigset_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = (int)sigset(MAX_SIGNO + 1, SIG_DFL);
+	TC_ASSERT_EQ("sigset", ret_chk, ERROR);
 
 	TC_SUCCESS_RESULT();
 }
@@ -282,12 +335,9 @@ static void tc_libc_signal_sigset(void)
 * @return               :void
 */
 
-static void tc_libc_signal_signal(void)
+static void tc_libc_signal_signal_pos(void)
 {
 	int ret_chk;
-
-	ret_chk = (int)signal(MAX_SIGNO + 1, SIG_DFL);
-	TC_ASSERT_EQ("signal", ret_chk, ERROR);
 
 	ret_chk = (int)signal(SIG1, SIG_DFL);
 	TC_ASSERT_EQ("signal", ret_chk, OK);
@@ -297,6 +347,18 @@ static void tc_libc_signal_signal(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
+static void tc_libc_signal_signal_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = (int)signal(MAX_SIGNO + 1, SIG_DFL);
+	TC_ASSERT_EQ("signal", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
 
 /**
 * @fn                   :tc_libc_signal_raise
@@ -309,12 +371,9 @@ static void tc_libc_signal_signal(void)
 * @return               :void
 */
 
-static void tc_libc_signal_raise(void)
+static void tc_libc_signal_raise_pos(void)
 {
 	int ret_chk;
-
-	ret_chk = raise(MAX_SIGNO + 1);
-	TC_ASSERT_EQ("raise", ret_chk, ERROR);
 
 	ret_chk = raise(SIG1);
 	TC_ASSERT_EQ("raise", ret_chk, OK);
@@ -324,6 +383,19 @@ static void tc_libc_signal_raise(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
+static void tc_libc_signal_raise_neg(void)
+{
+	int ret_chk;
+
+	ret_chk = raise(MAX_SIGNO + 1);
+	TC_ASSERT_EQ("raise", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 
 /**
 * @fn                   :tc_libc_signal_psignal
@@ -337,7 +409,7 @@ static void tc_libc_signal_raise(void)
 * @return               :void
 */
 
-static void tc_libc_signal_psignal(void)
+static void tc_libc_signal_psignal_neg(void)
 {
 	siginfo_t siginfo;
 	siginfo.si_signo = SIG1;
@@ -384,7 +456,7 @@ static int sigwait_sender(int argc, FAR char *arvg[])
 	return kill(atoi(arvg[argc - 1]), SIG3);
 }
 
-static void tc_libc_signal_sigwait(void)
+static void tc_libc_signal_sigwait_pos(void)
 {
 	int recv_pid;
 	int snd_pid;
@@ -427,20 +499,28 @@ static void tc_libc_signal_sigwait(void)
 
 int libc_signal_main(void)
 {
-	tc_libc_signal_psignal();
-	tc_libc_signal_raise();
-	tc_libc_signal_sigaddset();
-	tc_libc_signal_sigdelset();
-	tc_libc_signal_sigemptyset();
-	tc_libc_signal_sigfillset();
-	tc_libc_signal_sigignore();
-	tc_libc_signal_sigismember();
-	tc_libc_signal_signal();
+	tc_libc_signal_psignal_neg();
+	tc_libc_signal_raise_pos();
+	tc_libc_signal_raise_neg();
+	tc_libc_signal_sigaddset_pos();
+	tc_libc_signal_sigaddset_neg();
+	tc_libc_signal_sigdelset_pos();
+	tc_libc_signal_sigdelset_neg();
+	tc_libc_signal_sigemptyset_pos();
+	tc_libc_signal_sigfillset_pos();
+	tc_libc_signal_sigignore_pos();
+	tc_libc_signal_sigismember_pos();
+	tc_libc_signal_sigismember_neg();
+	tc_libc_signal_signal_pos();
+	tc_libc_signal_signal_neg();
+
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
-	tc_libc_signal_sigpause();
+	tc_libc_signal_sigpause_pos();
+	tc_libc_signal_sigpause_neg();
 #endif
-	tc_libc_signal_sigset();
-	tc_libc_signal_sigwait();
+	tc_libc_signal_sigset_pos();
+	tc_libc_signal_sigset_neg();
+	tc_libc_signal_sigwait_pos();
 
 	return 0;
 }

@@ -46,10 +46,37 @@
  * Postconditions        :NA
  * @return               :total_pass on success.
  */
-static void tc_libc_semaphore_sem_init(void)
+static void tc_libc_semaphore_sem_init_pos(void)
 {
 	sem_t sem;
 	unsigned int value = SEM_VALUE;
+	int ret_chk;
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	uint8_t sem_flag;
+#endif
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	TC_ASSERT_EQ("sem_init", sem.semcount, value);
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	sem_flag = FLAGS_INITIALIZED;
+	sem_flag &= ~(PRIOINHERIT_FLAGS_DISABLE);
+	TC_ASSERT_EQ("sem_init", sem.flags, sem_flag);
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	TC_ASSERT_EQ("sem_init", sem.hhead, NULL);
+#else
+	TC_ASSERT_EQ("sem_init", sem.holder.htcb, NULL);
+	TC_ASSERT_EQ("sem_init", sem.holder.counts, 0);
+#endif
+#endif
+
+	TC_SUCCESS_RESULT();
+	return;
+}
+
+static void tc_libc_semaphore_sem_init_null_sem_neg(void)
+{
+	sem_t sem;
 	int ret_chk;
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	uint8_t sem_flag;
@@ -59,13 +86,34 @@ static void tc_libc_semaphore_sem_init(void)
 	TC_ASSERT_EQ("sem_init", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_init", get_errno(), EINVAL);
 
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	sem_flag = FLAGS_INITIALIZED;
+	sem_flag &= ~(PRIOINHERIT_FLAGS_DISABLE);
+	TC_ASSERT_EQ("sem_init", sem.flags, sem_flag);
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	TC_ASSERT_EQ("sem_init", sem.hhead, NULL);
+#else
+	TC_ASSERT_EQ("sem_init", sem.holder.htcb, NULL);
+	TC_ASSERT_EQ("sem_init", sem.holder.counts, 0);
+#endif
+#endif
+
+	TC_SUCCESS_RESULT();
+	return;
+}
+
+static void tc_libc_semaphore_sem_init_invalid_semvalue_neg(void)
+{
+	sem_t sem;
+	int ret_chk;
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	uint8_t sem_flag;
+#endif
+
 	ret_chk = sem_init(&sem, PSHARED, SEM_VALUE_MAX + 1);
 	TC_ASSERT_EQ("sem_init", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_init", get_errno(), EINVAL);
-
-	ret_chk = sem_init(&sem, PSHARED, value);
-	TC_ASSERT_EQ("sem_init", ret_chk, OK);
-	TC_ASSERT_EQ("sem_init", sem.semcount, value);
+	
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	sem_flag = FLAGS_INITIALIZED;
 	sem_flag &= ~(PRIOINHERIT_FLAGS_DISABLE);
@@ -93,7 +141,25 @@ static void tc_libc_semaphore_sem_init(void)
  * Postconditions        :NA
  * @return               :total_pass on success.
  */
-static void tc_libc_semaphore_sem_getvalue(void)
+static void tc_libc_semaphore_sem_getvalue_pos(void)
+{
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int sval;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_getvalue(&sem, &sval);
+	TC_ASSERT_EQ("sem_getvalue", ret_chk, OK);
+	TC_ASSERT_EQ("sem_getvalue", sval, value);
+
+	TC_SUCCESS_RESULT();
+	return;
+}
+
+static void tc_libc_semaphore_sem_getvalue_null_sempointer_neg(void)
 {
 	sem_t sem;
 	unsigned int value = SEM_VALUE;
@@ -106,15 +172,24 @@ static void tc_libc_semaphore_sem_getvalue(void)
 	ret_chk = sem_getvalue(NULL, &sval);
 	TC_ASSERT_EQ("sem_getvalue", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_getvalue", get_errno(), EINVAL);
+	TC_SUCCESS_RESULT();
+	return;
+}
+
+
+static void tc_libc_semaphore_sem_getvalue_null_sval_neg(void)
+{
+	sem_t sem;
+	unsigned int value = SEM_VALUE;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, value);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
 	ret_chk = sem_getvalue(&sem, NULL);
 	TC_ASSERT_EQ("sem_getvalue", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_getvalue", get_errno(), EINVAL);
-
-	ret_chk = sem_getvalue(&sem, &sval);
-	TC_ASSERT_EQ("sem_getvalue", ret_chk, OK);
-	TC_ASSERT_EQ("sem_getvalue", sval, value);
-
+	
 	TC_SUCCESS_RESULT();
 	return;
 }
@@ -128,7 +203,7 @@ static void tc_libc_semaphore_sem_getvalue(void)
  * Postconditions        :NA
  * @return               :total_pass on success.
  */
-static void tc_libc_semaphore_sem_getprotocol(void)
+static void tc_libc_semaphore_sem_getprotocol_pos(void)
 {
 	sem_t sem;
 	unsigned int value = SEM_VALUE;
@@ -151,9 +226,13 @@ static void tc_libc_semaphore_sem_getprotocol(void)
 
 int libc_semaphore_main(void)
 {
-	tc_libc_semaphore_sem_getvalue();
-	tc_libc_semaphore_sem_getprotocol();
-	tc_libc_semaphore_sem_init();
+	tc_libc_semaphore_sem_getvalue_pos();
+	tc_libc_semaphore_sem_getvalue_null_sempointer_neg();
+	tc_libc_semaphore_sem_getvalue_null_sval_neg();
+	tc_libc_semaphore_sem_getprotocol_pos();
+	tc_libc_semaphore_sem_init_pos();
+	tc_libc_semaphore_sem_init_null_sem_neg();
+	tc_libc_semaphore_sem_init_invalid_semvalue_neg();
 
 	return 0;
 }

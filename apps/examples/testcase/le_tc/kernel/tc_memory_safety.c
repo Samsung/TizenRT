@@ -268,7 +268,7 @@ static void *infiniteloop(void *arg)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_memory_safety_with_mqueue(void)
+static void tc_memory_safety_with_mqueue_pos(void)
 {
 	pthread_t sender;
 	pthread_t receiver;
@@ -404,6 +404,6 @@ static void tc_memory_safety_with_mqueue(void)
  ****************************************************************************/
 int memory_safety_main(void)
 {
-	tc_memory_safety_with_mqueue();
+	tc_memory_safety_with_mqueue_pos();
 	return 0;
 }

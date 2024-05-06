@@ -38,7 +38,7 @@
  * @return                       :void
  */
 
-static void tc_group_group_add_find_remove_child(void)
+static void tc_group_group_add_find_remove_child_pos(void)
 {
 	int fd;
 	int ret_chk;
@@ -57,7 +57,7 @@ static void tc_group_group_add_find_remove_child(void)
  * Preconditions                 :Callback (sched_self) should return valid tcb_s*
  * @return                       :void
  */
-static void tc_group_group_alloc_free_child(void)
+static void tc_group_group_alloc_free_child_pos(void)
 {
 	int fd;
 	int ret_chk;
@@ -77,7 +77,7 @@ static void tc_group_group_alloc_free_child(void)
  * @return                       :void
  */
 
-static void tc_group_group_exit_child(void)
+static void tc_group_group_exit_child_pos(void)
 {
 	int fd;
 	int ret_chk;
@@ -96,7 +96,7 @@ static void tc_group_group_exit_child(void)
  * Preconditions                 :Callback (sched_self) should return valid tcb_s*
  * @return                       :void
  */
-static void tc_group_group_removechildren(void)
+static void tc_group_group_removechildren_pos(void)
 {
 	int fd;
 	int ret_chk;
@@ -114,10 +114,10 @@ static void tc_group_group_removechildren(void)
 
 int group_main(void)
 {
-	tc_group_group_add_find_remove_child();
-	tc_group_group_alloc_free_child();
-	tc_group_group_exit_child();
-	tc_group_group_removechildren();
+	tc_group_group_add_find_remove_child_pos();
+	tc_group_group_alloc_free_child_pos();
+	tc_group_group_exit_child_pos();
+	tc_group_group_removechildren_pos();
 
 	return 0;
 }

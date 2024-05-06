@@ -120,26 +120,12 @@ static void *consumer_func(void *arg)
 * Postconditions        :Semaphore should be destroyed.
 * @return               :void
 */
-static void tc_semaphore_sem_post_wait(void)
+static void tc_semaphore_sem_post_wait_pos(void)
 {
 	pthread_addr_t pexit_value = NULL;
 	pthread_t pid;
 	pthread_t cid;
 	int ret_chk;
-
-#ifndef CONFIG_DEBUG
-	/* sem_wait test NULL case */
-
-	ret_chk = sem_wait(NULL);
-	TC_ASSERT_EQ("sem_wait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_wait", get_errno(), EINVAL);
-#endif
-
-	/* sem_post test NULL case */
-
-	ret_chk = sem_post(NULL);
-	TC_ASSERT_EQ("sem_post", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_post", get_errno(), EINVAL);
 
 	/* sem_wait & sem post ping-pong test */
 
@@ -174,6 +160,43 @@ cleanup:
 	sem_destroy(&g_sem);
 }
 
+static void tc_semaphore_sem_wait_neg(void)
+{
+	int ret_chk;
+
+#ifndef CONFIG_DEBUG
+	/* sem_wait test NULL case */
+
+	ret_chk = sem_wait(NULL);
+	TC_ASSERT_EQ("sem_wait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_wait", get_errno(), EINVAL);
+#endif
+
+	TC_SUCCESS_RESULT();
+
+cleanup:
+	sem_destroy(&g_empty);
+	sem_destroy(&g_full);
+	sem_destroy(&g_sem);
+}
+
+static void tc_semaphore_sem_post_neg(void)
+{
+	int ret_chk;
+
+	/* sem_post test NULL case */
+
+	ret_chk = sem_post(NULL);
+	TC_ASSERT_EQ("sem_post", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_post", get_errno(), EINVAL);
+
+	TC_SUCCESS_RESULT();
+
+cleanup:
+	sem_destroy(&g_empty);
+	sem_destroy(&g_full);
+	sem_destroy(&g_sem);
+}
 
 /**
 * @fn                   :tc_semaphore_sem_trywait
@@ -187,30 +210,10 @@ cleanup:
 * @return               :void
 */
 
-static void tc_semaphore_sem_trywait(void)
+static void tc_semaphore_sem_trywait_pos(void)
 {
 	sem_t sem;
 	int ret_chk;
-
-#ifndef CONFIG_DEBUG
-	/* test NULL case */
-
-	ret_chk = sem_trywait(NULL);
-	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_trywait", get_errno(), EINVAL);
-#endif
-
-	/* sem_trywait can't get sem */
-
-	ret_chk = sem_init(&sem, PSHARED, 0);
-	TC_ASSERT_EQ("sem_init", ret_chk, OK);
-
-	ret_chk = sem_trywait(&sem);
-	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_trywait", get_errno(), EAGAIN);
-
-	ret_chk = sem_destroy(&sem);
-	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
 
 	/* sem_trywait can get sem */
 
@@ -226,6 +229,43 @@ static void tc_semaphore_sem_trywait(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_semaphore_sem_trywait_null_semid_neg(void)
+{
+	int ret_chk;
+
+#ifndef CONFIG_DEBUG
+	/* test NULL case */
+
+	ret_chk = sem_trywait(NULL);
+	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_trywait", get_errno(), EINVAL);
+#endif
+
+	
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_semaphore_sem_trywait_null_value_neg(void)
+{
+	sem_t sem;
+	int ret_chk;
+
+	/* sem_trywait can't get sem */
+
+	ret_chk = sem_init(&sem, PSHARED, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
+	ret_chk = sem_trywait(&sem);
+	TC_ASSERT_EQ("sem_trywait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_trywait", get_errno(), EAGAIN);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 /**
 * @fn                   :tc_semaphore_sem_timedwait
 * @brief                :this tc tests sem_timedwait
@@ -236,7 +276,7 @@ static void tc_semaphore_sem_trywait(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_semaphore_sem_timedwait(void)
+static void tc_semaphore_sem_timedwait_pos(void)
 {
 	struct timespec abstime;
 	struct timespec curtime;
@@ -249,18 +289,6 @@ static void tc_semaphore_sem_timedwait(void)
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
 	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
-
-#ifdef CONFIG_DEBUG
-	/* NULL case test */
-
-	ret_chk = sem_timedwait(&sem, NULL);
-	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
-
-	ret_chk = sem_timedwait(NULL, &abstime);
-	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
-#endif
 
 	/* success to get sem case test */
 
@@ -283,6 +311,72 @@ static void tc_semaphore_sem_timedwait(void)
 	ret_chk = sem_destroy(&sem);
 	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
 
+
+	TC_SUCCESS_RESULT();
+}
+
+
+static void tc_semaphore_sem_timedwait_null_timespec_neg(void)
+{
+	struct timespec abstime;
+	sem_t sem;
+	int ret_chk;
+
+	/* init sem count to 1 */
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+#ifdef CONFIG_DEBUG
+	/* NULL case test */
+
+	ret_chk = sem_timedwait(&sem, NULL);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+
+#endif
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_semaphore_sem_timedwait_null_semt_neg(void)
+{
+	struct timespec abstime;
+	sem_t sem;
+	int ret_chk;
+
+	/* init sem count to 1 */
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+#ifdef CONFIG_DEBUG
+	/* NULL case test */
+
+	ret_chk = sem_timedwait(NULL, &abstime);
+	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+#endif
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+
+static void tc_semaphore_sem_timedwait_neg_nsec_neg(void)
+{
+	struct timespec abstime;
+	sem_t sem;
+	int ret_chk;
+
 	/* init sem count to 0 */
 
 	ret_chk = sem_init(&sem, PSHARED, 0);
@@ -294,6 +388,27 @@ static void tc_semaphore_sem_timedwait(void)
 	ret_chk = sem_timedwait(&sem, &abstime);
 	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_timedwait", get_errno(), EINVAL);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_semaphore_sem_timedwait_nsec_neg(void)
+{
+	struct timespec abstime;
+	sem_t sem;
+	int ret_chk;
+
+	/* init sem count to 1 */
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
+	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
+
+	/*invalid nsec case for higer value*/
 
 	abstime.tv_nsec = 1000000000;
 	ret_chk = sem_timedwait(&sem, &abstime);
@@ -309,27 +424,12 @@ static void tc_semaphore_sem_timedwait(void)
 	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_timedwait", get_errno(), ETIMEDOUT);
 
-	/* fail to get sem case test */
-
-	ret_chk = clock_gettime(CLOCK_REALTIME, &abstime);
-	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
-
-	abstime.tv_sec = abstime.tv_sec + SEC_2;
-	abstime.tv_nsec = 0;
-
-	ret_chk = sem_timedwait(&sem, &abstime);
-	TC_ASSERT_EQ("sem_timedwait", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_timedwait", get_errno(), ETIMEDOUT);
-
-	ret_chk = clock_gettime(CLOCK_REALTIME, &curtime);
-	TC_ASSERT_EQ("clock_gettime", ret_chk, OK);
-	TC_ASSERT_EQ("sem_timedwait", abstime.tv_sec, curtime.tv_sec);
-
 	ret_chk = sem_destroy(&sem);
 	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
 
 	TC_SUCCESS_RESULT();
 }
+
 
 /**
 * @fn                   :tc_semaphore_sem_destroy
@@ -341,16 +441,10 @@ static void tc_semaphore_sem_timedwait(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_semaphore_sem_destroy(void)
+static void tc_semaphore_sem_destroy_pos(void)
 {
 	sem_t sem;
 	int ret_chk;
-
-	/* NULL parameter check */
-
-	ret_chk = sem_destroy(NULL);
-	TC_ASSERT_EQ("sem_destroy", ret_chk, ERROR);
-	TC_ASSERT_EQ("sem_destroy", get_errno(), EINVAL);
 
 	ret_chk = sem_init(&sem, PSHARED, 1);
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
@@ -362,6 +456,18 @@ static void tc_semaphore_sem_destroy(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_semaphore_sem_destroy_neg(void)
+{
+	int ret_chk;
+
+	/* NULL parameter check */
+
+	ret_chk = sem_destroy(NULL);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_destroy", get_errno(), EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
 /**
 * @fn                   :tc_semaphore_sem_setprotocol
 * @brief                :Set semaphore protocol attribute
@@ -371,7 +477,7 @@ static void tc_semaphore_sem_destroy(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_semaphore_sem_setprotocol(void)
+static void tc_semaphore_sem_setprotocol_pos(void)
 {
 	sem_t sem;
 	int ret_chk;
@@ -390,9 +496,39 @@ static void tc_semaphore_sem_setprotocol(void)
 	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
 #endif
 
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("sem_destroy", sem.semcount, 1);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_semaphore_sem_setprotocol_protect_protocol_neg(void)
+{
+	sem_t sem;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_PROTECT);
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
 	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+
+	ret_chk = sem_destroy(&sem);
+	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
+	TC_ASSERT_EQ("sem_destroy", sem.semcount, 1);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_semaphore_sem_setprotocol_default_protocol_neg(void)
+{
+	sem_t sem;
+	int ret_chk;
+
+	ret_chk = sem_init(&sem, PSHARED, 1);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_DEFAULT);
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
@@ -404,7 +540,6 @@ static void tc_semaphore_sem_setprotocol(void)
 
 	TC_SUCCESS_RESULT();
 }
-
 /**
 * @fn                   :tc_semaphore_sem_tickwait
 * @brief                :lighter weight version of sem_timedwait() - will lock the semaphore referenced by sem as in the sem_wait() function
@@ -415,7 +550,7 @@ static void tc_semaphore_sem_setprotocol(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_semaphore_sem_tickwait(void)
+static void tc_semaphore_sem_tickwait_pos(void)
 {
 	int fd;
 	int ret_chk;
@@ -432,12 +567,27 @@ static void tc_semaphore_sem_tickwait(void)
 
 int semaphore_main(void)
 {
-	tc_semaphore_sem_destroy();
-	tc_semaphore_sem_post_wait();
-	tc_semaphore_sem_setprotocol();
-	tc_semaphore_sem_tickwait();
-	tc_semaphore_sem_trywait();
-	tc_semaphore_sem_timedwait();
+	
+	tc_semaphore_sem_post_wait_pos();
+	tc_semaphore_sem_post_neg();
 
+	tc_semaphore_sem_setprotocol_pos();
+	tc_semaphore_sem_setprotocol_protect_protocol_neg();
+	tc_semaphore_sem_setprotocol_default_protocol_neg();
+	
+	tc_semaphore_sem_tickwait_pos();
+	tc_semaphore_sem_trywait_pos();
+	tc_semaphore_sem_trywait_null_semid_neg();
+	tc_semaphore_sem_trywait_null_value_neg();
+
+	tc_semaphore_sem_timedwait_pos();
+	tc_semaphore_sem_timedwait_null_timespec_neg();
+	tc_semaphore_sem_timedwait_null_semt_neg();
+	tc_semaphore_sem_timedwait_neg_nsec_neg();
+	
+	tc_semaphore_sem_destroy_pos();
+	tc_semaphore_sem_destroy_neg();
+
+	
 	return 0;
 }

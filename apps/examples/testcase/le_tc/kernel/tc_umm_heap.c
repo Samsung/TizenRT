@@ -69,7 +69,7 @@ static void mem_deallocate_func(int *mem_arr[], int dealloc_size)
 * @Preconditions        :NA
 */
 
-static void tc_umm_heap_malloc_free(void)
+static void tc_umm_heap_malloc_free_pos(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int n_alloc;
@@ -135,7 +135,7 @@ static void tc_umm_heap_malloc_free(void)
 * @failcase             :When calloc function returns null memory.
 * @Preconditions        :NA
 */
-static void tc_umm_heap_calloc(void)
+static void tc_umm_heap_calloc_pos(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int n_alloc;
@@ -189,7 +189,7 @@ static void tc_umm_heap_calloc(void)
 * @failcase             :When realloc function returns null memory.
 * @Preconditions        :malloc
 */
-static void tc_umm_heap_realloc(void)
+static void tc_umm_heap_realloc_pos(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int *prev_mem = NULL;
@@ -320,7 +320,7 @@ static void tc_umm_heap_realloc(void)
 * @failcase             :When memalign function returns null memory.
 * @Preconditions        :NA
 */
-static void tc_umm_heap_memalign(void)
+static void tc_umm_heap_memalign_pos(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int n_alloc;
@@ -374,7 +374,7 @@ static void tc_umm_heap_memalign(void)
 * @failcase             :When malloc function returns null memory or mallinfo gives null information.
 * @Preconditions        :malloc
 */
-static void tc_umm_heap_mallinfo(void)
+static void tc_umm_heap_mallinfo_pos(void)
 {
 	int *mem_ptr = NULL;
 	int n_test_iter;
@@ -422,7 +422,7 @@ static void tc_umm_heap_mallinfo(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_umm_heap_zalloc(void)
+static void tc_umm_heap_zalloc_pos(void)
 {
 	int *mem_ptr[ALLOC_FREE_TIMES] = { NULL };
 	int n_alloc;
@@ -472,7 +472,7 @@ static void tc_umm_heap_zalloc(void)
 	TC_SUCCESS_RESULT();
 }
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-static void tc_umm_heap_get_heap_free_size(void)
+static void tc_umm_heap_get_heap_free_size_pos(void)
 {
 	size_t free_size = umm_get_heap_free_size();
 	struct mallinfo info;
@@ -487,7 +487,7 @@ static void tc_umm_heap_get_heap_free_size(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_umm_heap_get_largest_freenode_size(void)
+static void tc_umm_heap_get_largest_freenode_size_pos(void)
 {
 	size_t largest_size = umm_get_largest_freenode_size();
 	struct mallinfo info;
@@ -506,15 +506,15 @@ static int umm_test(int argc, char *argv[])
 {
 	sched_lock();  // To prevent other thread allocation mixing in mallinfo
 
-	tc_umm_heap_malloc_free();
-	tc_umm_heap_calloc();
-	tc_umm_heap_realloc();
-	tc_umm_heap_memalign();
-	tc_umm_heap_mallinfo();
-	tc_umm_heap_zalloc();
+	tc_umm_heap_malloc_free_pos();
+	tc_umm_heap_calloc_pos();
+	tc_umm_heap_realloc_pos();
+	tc_umm_heap_memalign_pos();
+	tc_umm_heap_mallinfo_pos();
+	tc_umm_heap_zalloc_pos();
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	tc_umm_heap_get_heap_free_size();
-	tc_umm_heap_get_largest_freenode_size();
+	tc_umm_heap_get_heap_free_size_pos();
+	tc_umm_heap_get_largest_freenode_size_pos();
 #endif
 
 	sched_unlock();

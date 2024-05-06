@@ -79,7 +79,7 @@ static int compare(const void *a, const void *b)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_abs_labs_llabs(void)
+static void tc_libc_stdlib_abs_labs_llabs_pos(void)
 {
 	int val;
 	int ret_chk;
@@ -137,7 +137,7 @@ static void tc_libc_stdlib_abs_labs_llabs(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_itoa(void)
+static void tc_libc_stdlib_itoa_pos(void)
 {
 	/* ITOA_VAL = 12 */
 
@@ -175,7 +175,7 @@ static void tc_libc_stdlib_itoa(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_qsort(void)
+static void tc_libc_stdlib_qsort_pos(void)
 {
 	/* qsort checks that the number of data is greater than 7 or not.
 	  So tc checks with 7 data and 40 data for magic numbers.  */
@@ -228,7 +228,7 @@ static void tc_libc_stdlib_qsort(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_rand(void)
+static void tc_libc_stdlib_rand_pos(void)
 {
 	int ret_chk = ERROR;
 
@@ -256,7 +256,7 @@ static void tc_libc_stdlib_rand(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_random(void)
+static void tc_libc_stdlib_random_pos(void)
 {
 	long int ret_chk = ERROR;
 
@@ -285,7 +285,7 @@ static void tc_libc_stdlib_random(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_strtol(void)
+static void tc_libc_stdlib_strtol_pos(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "+2001 60c0c0 -1101110100110100100000 0x6fffff";
@@ -324,7 +324,7 @@ static void tc_libc_stdlib_strtol(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_strtoll(void)
+static void tc_libc_stdlib_strtoll_pos(void)
 {
 	char str_llnum[] = "+1856892505 17b00a12b -01100011010110000010001101100 0x6fffff";
 	char *end_ptr;
@@ -363,7 +363,7 @@ static void tc_libc_stdlib_strtoll(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_strtoul(void)
+static void tc_libc_stdlib_strtoul_pos(void)
 {
 	char str_ulnum[] = "201 0x60 1100 0x6f";
 	char *end_ptr;
@@ -401,7 +401,7 @@ static void tc_libc_stdlib_strtoul(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_strtoull(void)
+static void tc_libc_stdlib_strtoull_pos(void)
 {
 	char str_ullnum[] = "250068492 7b06af00 1100011011110101010001100000 0x6fffff";
 	char *end_ptr;
@@ -439,7 +439,7 @@ static void tc_libc_stdlib_strtoull(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_strtod(void)
+static void tc_libc_stdlib_strtod_pos(void)
 {
 	char *pos = NULL;
 	double ret_chk = 0;
@@ -484,7 +484,7 @@ static void tc_libc_stdlib_strtod(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_atoi(void)
+static void tc_libc_stdlib_atoi_pos(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "2016";
@@ -505,7 +505,7 @@ static void tc_libc_stdlib_atoi(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_atol(void)
+static void tc_libc_stdlib_atol_pos(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "20162015";
@@ -526,7 +526,7 @@ static void tc_libc_stdlib_atol(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_atoll(void)
+static void tc_libc_stdlib_atoll_pos(void)
 {
 	/* random string used for conversion */
 	char str_lnum[] = "201620152014";
@@ -547,7 +547,7 @@ static void tc_libc_stdlib_atoll(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_srand(void)
+static void tc_libc_stdlib_srand_pos(void)
 {
 	unsigned int test_num = 1234;
 	int first_result[3];
@@ -580,7 +580,7 @@ static void tc_libc_stdlib_srand(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_srandom(void)
+static void tc_libc_stdlib_srandom_pos(void)
 {
 	unsigned int test_num = 1234;
 	int first_result[3];
@@ -613,7 +613,7 @@ static void tc_libc_stdlib_srandom(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_atof(void)
+static void tc_libc_stdlib_atof_pos(void)
 {
 	char target[100] = "1234.56abcd";
 	double ret_chk = 0;
@@ -633,7 +633,7 @@ static void tc_libc_stdlib_atof(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_bsearch(void)
+static void tc_libc_stdlib_bsearch_pos(void)
 {
 	/* bsearch can find the result when data is ordered. So now using ordered data. */
 	int test_data[BSEARCH_ARRSIZE] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -653,6 +653,22 @@ static void tc_libc_stdlib_bsearch(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_libc_stdlib_bsearch_invalid_key_neg(void)
+{
+	/* bsearch can find the result when data is ordered. So now using ordered data. */
+	int test_data[BSEARCH_ARRSIZE] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	int key;
+	int *search_result;
+
+	/* check with invalid key */
+	key = 11;
+	search_result = (int *)bsearch(&key, test_data, BSEARCH_ARRSIZE, sizeof(test_data[0]), compare);
+	TC_ASSERT_EQ("bsearch", search_result, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 /**
  * @fn                   :tc_libc_stdlib_abort
  * @brief                :Cause abnormal process termination
@@ -662,7 +678,7 @@ static void tc_libc_stdlib_bsearch(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_abort(void)
+static void tc_libc_stdlib_abort_pos(void)
 {
 	pthread_t th_id;
 	int ret_chk;
@@ -685,7 +701,7 @@ static void tc_libc_stdlib_abort(void)
  * Postconditions        :None
  * @return               :void
  */
-static void tc_libc_stdlib_div(void)
+static void tc_libc_stdlib_div_pos(void)
 {
 	int num = 2147483647;
 	int denom = 28672;
@@ -715,25 +731,26 @@ static void tc_libc_stdlib_div(void)
  ****************************************************************************/
 int libc_stdlib_main(void)
 {
-	tc_libc_stdlib_abort();
-	tc_libc_stdlib_abs_labs_llabs();
-	tc_libc_stdlib_atof();
-	tc_libc_stdlib_atoi();
-	tc_libc_stdlib_atol();
-	tc_libc_stdlib_atoll();
-	tc_libc_stdlib_bsearch();
-	tc_libc_stdlib_div();
-	tc_libc_stdlib_itoa();
-	tc_libc_stdlib_qsort();
-	tc_libc_stdlib_rand();
-	tc_libc_stdlib_random();
-	tc_libc_stdlib_strtol();
-	tc_libc_stdlib_strtoll();
-	tc_libc_stdlib_strtoull();
-	tc_libc_stdlib_strtoul();
-	tc_libc_stdlib_strtod();
-	tc_libc_stdlib_srand();
-	tc_libc_stdlib_srandom();
+	tc_libc_stdlib_abort_pos();
+	tc_libc_stdlib_abs_labs_llabs_pos();
+	tc_libc_stdlib_atof_pos();
+	tc_libc_stdlib_atoi_pos();
+	tc_libc_stdlib_atol_pos();
+	tc_libc_stdlib_atoll_pos();
+	tc_libc_stdlib_bsearch_pos();
+	tc_libc_stdlib_bsearch_invalid_key_neg();
+	tc_libc_stdlib_div_pos();
+	tc_libc_stdlib_itoa_pos();
+	tc_libc_stdlib_qsort_pos();
+	tc_libc_stdlib_rand_pos();
+	tc_libc_stdlib_random_pos();
+	tc_libc_stdlib_strtol_pos();
+	tc_libc_stdlib_strtoll_pos();
+	tc_libc_stdlib_strtoull_pos();
+	tc_libc_stdlib_strtoul_pos();
+	tc_libc_stdlib_strtod_pos();
+	tc_libc_stdlib_srand_pos();
+	tc_libc_stdlib_srandom_pos();
 
 	return 0;
 }

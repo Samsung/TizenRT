@@ -92,7 +92,7 @@ static void thread_cleanup(pthread_t* array, int thread_cnt)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_sched_setget_scheduler_param_p_all_priority(void)
+static void itc_sched_setget_scheduler_param_all_priority_pos(void)
 {
 	int ret_chk = ERROR;
 	struct sched_param st_setparam;
@@ -148,7 +148,7 @@ static void itc_sched_setget_scheduler_param_p_all_priority(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_sched_self_p(void)
+static void itc_sched_self_pos(void)
 {
 	pthread_t thread_id[THREAD_CNT];
 	int ret_chk;
@@ -171,8 +171,8 @@ static void itc_sched_self_p(void)
 
 int itc_sched_main(void)
 {
-	itc_sched_setget_scheduler_param_p_all_priority();
-	itc_sched_self_p();
+	itc_sched_setget_scheduler_param_all_priority_pos();
+	itc_sched_self_pos();
 
 	return 0;
 }

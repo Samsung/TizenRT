@@ -41,7 +41,7 @@
  * @Preconditions        :NA
  * @Postconditions       :NA
  */
-static void itc_libc_semaphore_getprotocol_n_no_sem_init(void)
+static void itc_libc_semaphore_getprotocol_no_sem_init_neg(void)
 {
 	sem_t sem;
 	int protocol;
@@ -62,6 +62,6 @@ static void itc_libc_semaphore_getprotocol_n_no_sem_init(void)
 
 int itc_libc_semaphore_main(void)
 {
-	itc_libc_semaphore_getprotocol_n_no_sem_init();
+	itc_libc_semaphore_getprotocol_no_sem_init_neg();
 	return 0;
 }

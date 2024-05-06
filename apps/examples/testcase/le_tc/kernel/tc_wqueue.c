@@ -68,7 +68,7 @@ static void wq_test3(void *arg)
 * Public Functions
 **************************************************************************/
 #if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-static void tc_wqueue_work_queue_cancel(void)
+static void tc_wqueue_work_queue_cancel_pos(void)
 {
 	int result;
 	struct work_s *test_work1;
@@ -114,7 +114,7 @@ cleanup:
 int wqueue_main(void)
 {
 #if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-	tc_wqueue_work_queue_cancel();
+	tc_wqueue_work_queue_cancel_pos();
 #endif
 	return 0;
 }

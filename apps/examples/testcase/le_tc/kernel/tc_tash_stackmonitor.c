@@ -47,7 +47,7 @@ static void *stkmon_thread(void *arg)
 	return NULL;
 }
 
-static int tc_tash_stackmonitor(int argc, char *args[])
+static int tc_tash_stackmonitor_pos(int argc, char *args[])
 {
 	int ret = ERROR;
 	pthread_t tc_thread;
@@ -77,7 +77,7 @@ static int tc_tash_stackmonitor(int argc, char *args[])
 
 int tash_stackmonitor_main(void)
 {
-	tash_cmd_install("tc-stkmon", tc_tash_stackmonitor, TASH_EXECMD_SYNC);
+	tash_cmd_install("tc-stkmon", tc_tash_stackmonitor_pos, TASH_EXECMD_SYNC);
 
 	return 0;
 }

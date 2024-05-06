@@ -85,7 +85,7 @@ static void *pipe_rx_func(void *arg)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_access(void)
+static void tc_libc_unistd_access_pos(void)
 {
 	int ret_chk;
 	char path[BUFFSIZE + 1];
@@ -110,7 +110,7 @@ static void tc_libc_unistd_access(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_chdir_getcwd(void)
+static void tc_libc_unistd_chdir_getcwd_pos(void)
 {
 
 	char *cwd;
@@ -124,18 +124,64 @@ static void tc_libc_unistd_chdir_getcwd(void)
 	cwd = getcwd(buff, BUFFSIZE);
 	TC_ASSERT_EQ("getcwd", strcmp(directory, cwd), 0);
 
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_unistd_chdir_getcwd_invalid_strlen_neg(void)
+{
+	char *cwd;
+	char buff[BUFFSIZE];
+	char *directory = "/dev";
+	int ret_chk;
+
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, OK);
+
 	/* Failure case: size less than strlen(buff) or invalid size */
 	cwd = getcwd(buff, 1);
 	TC_ASSERT_EQ("getcwd", cwd, NULL);
 
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_unistd_chdir_getcwd_pwd_neg(void)
+{
+	char *cwd;
+	char buff[BUFFSIZE];
+	char *directory = "/dev";
+	int ret_chk;
+
+	ret_chk = chdir(directory);
+	TC_ASSERT_EQ("chdir", ret_chk, OK);
+	
 	/* Failure case: when "PWD" is not defined*/
 	unsetenv("PWD");
 	cwd = getcwd(buff, BUFFSIZE);
 	TC_ASSERT_NEQ("getcwd", strcmp(directory, cwd), 0);
 
+	TC_SUCCESS_RESULT();
+}
+
+
+static void tc_libc_unistd_chdir_null_directory_neg(void)
+{
+
+	char *directory = "/dev";
+	int ret_chk;
+	
 	directory = NULL;
 	ret_chk = chdir(directory);
 	TC_ASSERT_EQ("chdir", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_unistd_chdir_invalid_directory_neg(void)
+{
+
+	char *directory = "/dev";
+	int ret_chk;
 
 	/* Failure case: path is not a directory */
 	directory = "NOTDIR";
@@ -144,6 +190,7 @@ static void tc_libc_unistd_chdir_getcwd(void)
 
 	TC_SUCCESS_RESULT();
 }
+
 #endif
 
 /**
@@ -156,7 +203,7 @@ static void tc_libc_unistd_chdir_getcwd(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_getopt(void)
+static void tc_libc_unistd_getopt_pos(void)
 {
 	int flag_a = 0;
 	int flag_b = 0;
@@ -198,6 +245,82 @@ static void tc_libc_unistd_getopt(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_libc_unistd_getopt_null_optstring_neg(void)
+{
+	int flag_a = 0;
+	int flag_b = 0;
+	int ret = -1;
+	int argc = ARG_COUNT;
+	char *sz_argv[] = { "arg0", "-a2", "-b", "-c", "-a", "-:" };
+	char **arg;
+	int *opt;
+	int *idx;
+
+	optind = -1;
+	while ((ret = getopt(argc, sz_argv, ":a:b")) != ERROR)
+		switch (ret) {
+		case 'a':
+			flag_a = 1;
+			arg = getoptargp();
+			vdbg("getoptargp: optarg = %s\n", *arg);
+			break;
+		case 'b':
+			flag_b = 1;
+			idx = getoptindp();
+			vdbg("getoptindp: optind = %d\n", *idx);
+			break;
+		default:
+			opt = getoptoptp();
+			vdbg("getoptoptp: optopt = %c\n", *opt);
+			break;
+		}
+
+	ret = getopt(argc, sz_argv, NULL);
+	TC_ASSERT_EQ("getopt", ret, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_libc_unistd_getopt_neg(void)
+{
+	int flag_a = 0;
+	int flag_b = 0;
+	int ret = -1;
+	int argc = ARG_COUNT;
+	char *sz_argv[] = { "arg0", "-a2", "-b", "-c", "-a", "-:" };
+	char **arg;
+	int *opt;
+	int *idx;
+
+	optind = -1;
+	while ((ret = getopt(argc, sz_argv, ":a:b")) != ERROR)
+		switch (ret) {
+		case 'a':
+			flag_a = 1;
+			arg = getoptargp();
+			vdbg("getoptargp: optarg = %s\n", *arg);
+			break;
+		case 'b':
+			flag_b = 1;
+			idx = getoptindp();
+			vdbg("getoptindp: optind = %d\n", *idx);
+			break;
+		default:
+			opt = getoptoptp();
+			vdbg("getoptoptp: optopt = %c\n", *opt);
+			break;
+		}
+	TC_ASSERT_EQ("getopt", flag_a, 1);
+	TC_ASSERT_EQ("getopt", flag_b, 1);
+
+	sz_argv[1] = "a";
+	ret = getopt(argc, sz_argv, ":a:b");
+	TC_ASSERT_EQ("getopt", ret, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 #ifndef CONFIG_DISABLE_SIGNALS
 /**
 * @fn                   :tc_libc_unistd_sleep
@@ -209,7 +332,7 @@ static void tc_libc_unistd_getopt(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_sleep(void)
+static void tc_libc_unistd_sleep_pos(void)
 {
 	int ret_chk;
 	struct timespec st_init_time;
@@ -235,7 +358,7 @@ static void tc_libc_unistd_sleep(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_usleep(void)
+static void tc_libc_unistd_usleep_pos(void)
 {
 	int ret_chk;
 	struct timespec st_init_time;
@@ -262,7 +385,7 @@ static void tc_libc_unistd_usleep(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_libc_unistd_pipe(void)
+static void tc_libc_unistd_pipe_pos(void)
 {
 	int ret_chk;
 	pthread_t th_id[2];
@@ -301,16 +424,22 @@ cleanup_pipe:
 int libc_unistd_main(void)
 {
 #ifndef CONFIG_DISABLE_ENVIRON
-	tc_libc_unistd_access();
-	tc_libc_unistd_chdir_getcwd();
+	tc_libc_unistd_access_pos();
+	tc_libc_unistd_chdir_getcwd_pos();
+	tc_libc_unistd_chdir_getcwd_pwd_neg();
+	tc_libc_unistd_chdir_invalid_directory_neg();
+	tc_libc_unistd_chdir_null_directory_neg();
+	tc_libc_unistd_chdir_getcwd_invalid_strlen_neg();
 #endif
-	tc_libc_unistd_getopt();
+	tc_libc_unistd_getopt_pos();
+	tc_libc_unistd_getopt_neg();
+	tc_libc_unistd_getopt_null_optstring_neg();
 #ifdef CONFIG_PIPES
-	tc_libc_unistd_pipe();
+	tc_libc_unistd_pipe_pos();
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
-	tc_libc_unistd_sleep();
-	tc_libc_unistd_usleep();
+	tc_libc_unistd_sleep_pos();
+	tc_libc_unistd_usleep_pos();
 #endif
 
 	return 0;

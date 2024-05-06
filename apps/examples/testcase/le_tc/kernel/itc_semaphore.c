@@ -38,7 +38,7 @@
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_semaphore_sem_init_destroy_p_multitime(void)
+static void itc_semaphore_sem_init_destroy_multitime_pos(void)
 {
 	sem_t sem;
 	int ret_chk;
@@ -62,7 +62,7 @@ static void itc_semaphore_sem_init_destroy_p_multitime(void)
 
 int itc_semaphore_main(void)
 {
-	itc_semaphore_sem_init_destroy_p_multitime();
+	itc_semaphore_sem_init_destroy_multitime_pos();
 
 	return 0;
 }
