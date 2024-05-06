@@ -57,6 +57,7 @@ static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config_s *config);
+trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_multi_configs_s *config);
 trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg);
 trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg);
 trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi_info);
@@ -79,6 +80,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_stop_softap,		/* stop_softap */
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
+	wifi_netmgr_utils_scan_multi_ap,	/* scan_multi_ap */
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -453,7 +455,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 
 		if(config->ssid_length > 0 || (ch_valid)) {
 			/* Scan with SSID, or Scan with SSID And Channel */
-			scan_param.ssid = (char *)config->ssid;
+			scan_param.ssid[0].ssid = (char *)config->ssid;
 			if(config->ssid_length > 0 && config->channel == 0) {
 				printf("[ATWs]: _AT_WLAN_SCAN_WITH_SSID_ [%s]\n\r", (char *)config->ssid);
 			}
@@ -479,6 +481,91 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	if (channel_list) {
 		free(channel_list);
 	}
+	return TRWIFI_SUCCESS;
+}
+
+trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_multi_configs_s *config)
+{
+	g_scan_num = 0;
+	g_scan_list = NULL;
+	char *channel_list = NULL;
+	int i,j = 0;
+	char ch_valid, scan_all_ch = 0;
+	rtw_scan_param_t scan_param = {0};
+
+	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	scan_param.scan_user_callback = app_scan_result_handler;
+
+	if (config) {
+		if (config->scan_ap_config_count > SSID_SCAN_NUM) {
+			RTW_API_INFO("ERROR: SSID count exceeded, maximum allowed:%d given:%d\n\r",SSID_SCAN_NUM,config->scan_ap_config_count);
+			TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+			return TRWIFI_INVALID_ARGS;
+		}
+		for (i = 0; i < config->scan_ap_config_count; i++) {
+			/* Scan all channels if any channel in scan config is set to 0 */
+			if (config->scan_ap_config[i].channel == 0) {
+				scan_all_ch = 1;
+				/* Skip checking of channel validity if scanning all channels */
+				break;
+			}
+			ch_valid = 0;
+			/* Check that channels provided for each AP are valid */
+			for (j = 0; j < valid_ch_list_size; j++) {
+				if (config->scan_ap_config[i].channel == valid_ch_list[j]) {
+					ch_valid = 1;
+					break;
+				}
+			}
+			if (!ch_valid) {
+				RTW_API_INFO("ERROR: Invalid channel for AP %s, given channel %d\n\r",(char *)config->scan_ap_config[i].ssid, config->scan_ap_config[i].channel);
+				TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+				return TRWIFI_INVALID_ARGS;
+			}
+		}
+
+		if (scan_all_ch) {
+			scan_param.channel_list_num = 0;
+		}
+		else {
+			channel_list = (char *)malloc(config->scan_ap_config_count);
+			if (!channel_list) {
+				RTW_API_INFO("ERROR: Can't malloc memory for channel list\n\r");
+				TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+				return TRWIFI_FAIL;
+			}
+			scan_param.channel_list = (unsigned char *)channel_list;
+			scan_param.channel_list_num = config->scan_ap_config_count;
+		}
+
+		/* Prepare scan param */
+		for (i = 0; i < config->scan_ap_config_count; i++) {
+			scan_param.ssid[i].ssid = (char *)config->scan_ap_config[i].ssid;
+			/* Prepare list of channels to scan if not scanning all channels */
+			if (!scan_all_ch) {
+				*(channel_list + i) = (u8)config->scan_ap_config[i].channel;
+			}
+		}
+		/* Uncomment RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
+		// scan_param.options = RTW_SCAN_ALL;
+		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
+			if (channel_list) {
+				free(channel_list);
+			}
+			TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+			return TRWIFI_FAIL;
+		}
+		if (channel_list) {
+			free(channel_list);
+		}
+	} else {
+		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
+			RTW_API_INFO("[RTK] [ERR] WiFi scan fail\n");
+			TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+			return TRWIFI_FAIL;
+		}
+	}
+	nvdbg("[RTK] WIFi Scan success\n");
 	return TRWIFI_SUCCESS;
 }
 

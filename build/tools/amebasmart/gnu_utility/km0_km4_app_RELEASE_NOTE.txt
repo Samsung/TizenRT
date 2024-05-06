@@ -1,4 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
+
+== version fc13915b 2024/05/27-19:24:11 ==
+1.	Add support for scanning up to 6 specific APs
+	- If the channel of any of the APs to scan is set to 0, scan will be on all valid channels
+2.	Add scan option to support scanning specific APs and report other APs responding to NULL probe req
+
 == version 4443689 2024/05/24-16:08:04 ==
 1.	Fix km4 crash when running wificsi example
 

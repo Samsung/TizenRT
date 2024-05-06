@@ -35,6 +35,8 @@
 #define AP_STA_NUM	12
 /************************* Default Values of User Configure End***************************/
 
+/* Upper limit of multiple SSID scan */
+#define SSID_SCAN_NUM 6
 //#define CONFIG_NAN
 #ifdef CONFIG_NAN
 #define CONFIG_TWT

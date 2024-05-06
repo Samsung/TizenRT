@@ -444,25 +444,29 @@ int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block)
 {
 	assert_param(scan_param);
 	int ret = 0;
-	u32 param_buf[3];
+	u32 param_buf[2];
 
 	/* lock 2s to forbid suspend under scan */
 	rtw_wakelock_timeout(2 * 1000);
 	scan_user_callback_ptr = scan_param->scan_user_callback;
 	scan_each_report_user_callback_ptr = scan_param->scan_report_each_mode_user_callback;
 
-	if (scan_param->ssid) {
+	/* Customization for TizenRT to support scanning multiple APs*/
+	for (int i = 0; i < SSID_SCAN_NUM; i++) {
+		if (scan_param->ssid[i].ssid) {
+			scan_param->ssid[i].len = strlen(scan_param->ssid[i].ssid);
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 		/* for TizenRT, ensure the entire ssid array is cleaned when ssid is empty */
-		if (strlen(scan_param->ssid) == 0) {
-			DCache_Clean((u32)scan_param->ssid, (TRWIFI_PASSPHRASE_LEN + 1));
-		}
-		else {
-			DCache_Clean((u32)scan_param->ssid, strlen(scan_param->ssid));
-		}
+			if (scan_param->ssid[i].len == 0) {
+				DCache_Clean((u32)scan_param->ssid[i].ssid, (TRWIFI_SSID_LEN + 1));
+			}
+			else {
+				DCache_Clean((u32)scan_param->ssid[i].ssid, scan_param->ssid[i].len);
+			}
 #else
-		DCache_Clean((u32)scan_param->ssid, strlen(scan_param->ssid));
+			DCache_Clean((u32)scan_param->ssid[i].ssid, scan_param->ssid[i].len);
 #endif
+		}
 	}
 	if (scan_param->channel_list) {
 		DCache_Clean((u32)scan_param->channel_list, scan_param->channel_list_num);
@@ -470,11 +474,6 @@ int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block)
 	DCache_Clean((u32)scan_param, sizeof(rtw_scan_param_t));
 	param_buf[0] = (u32)scan_param;
 	param_buf[1] = block;
-	if (scan_param->ssid) {
-		param_buf[2] = strlen(scan_param->ssid);
-	} else {
-		param_buf[2] = 0;
-	}
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_SCAN_NETWROKS, param_buf, 3);
 	return ret;

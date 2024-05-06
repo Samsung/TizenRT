@@ -297,6 +297,14 @@ typedef struct {
 	unsigned char val[33]; /**< SSID name (AP name)  */
 } rtw_ssid_t;
 
+/**
+  * @brief  The structure is used to describe the SSID for scanning.
+  */
+typedef struct {
+	char len;     /**< SSID length */
+	char *ssid; /**< SSID name (AP name)  */
+} rtw_scan_ssid_t;
+
 typedef int (*wifi_do_fast_connect_ptr)(void);
 typedef int (*write_fast_connect_info_ptr)(unsigned int data1, unsigned int data2);
 typedef void (*ap_channel_switch_callback_t)(unsigned char channel, rtw_channel_switch_res_t ret);
@@ -535,7 +543,7 @@ typedef rtw_result_t (*scan_report_each_mode_user_callback_t)(rtw_scan_result_t 
   */
 typedef struct {
 	rtw_scan_option_t						options;
-	char									*ssid;
+	rtw_scan_ssid_t							ssid[SSID_SCAN_NUM];
 	unsigned char							*channel_list;
 	unsigned char							channel_list_num;
 	rtw_channel_scan_time_t 				chan_scan_time;

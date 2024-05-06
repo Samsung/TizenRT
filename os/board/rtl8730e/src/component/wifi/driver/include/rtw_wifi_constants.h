@@ -780,7 +780,8 @@ typedef enum {
 	RTW_SCAN_ACTIVE              	= 0x01,     /**< active scan */
 	RTW_SCAN_PASSIVE             	= 0x02,    /**< passive scan*/
 	RTW_SCAN_NO_HIDDEN_SSID	= 0x04, /**< Filter hidden ssid APs*/
-	RTW_SCAN_REPORT_EACH	= 0x08    /**< report each */
+	RTW_SCAN_REPORT_EACH	= 0x08,    /**< report each */
+	RTW_SCAN_ALL			= 0x10	/**< Scan specific AP and also report other APs responding to NULL probe req */
 } rtw_scan_option_t;
 
 /**
