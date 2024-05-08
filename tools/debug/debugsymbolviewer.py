@@ -22,7 +22,6 @@ from array import *
 import os
 import sys
 
-bin_path = '../../build/output/bin/'	# Output bin path
 ksymbol_lookup_table = []		# Lookup table created from contents of system map file for kernel symbols
 asymbol_lookup_table = [[]] * 10	# Lookup table created from contents of appX map files for application symbols
 debug = False				# Variable to print debug logs
@@ -220,6 +219,7 @@ def is_kernel_text_address(address):
 
 # Function to Parse the input log file (which contains stackdump during assert) and to print stack values
 def print_stack(log_file):
+	global xip_enabled
 	stack_addr = 0x00000000
 	stack_val = 0x00000000
 	partition_str = "==========================================================="
@@ -274,7 +274,8 @@ def print_stack(log_file):
 					is_app_symbol = is_app_text_address(hex(stack_val))	# app index in case of application symbol
 					if (is_app_symbol):
 						#If yes, print it's corresponding symbol
-						stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+						if not xip_enabled:
+							stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
 						print_symbol(stack_addr, stack_val, is_app_symbol)
 
 
@@ -282,6 +283,7 @@ def print_stack(log_file):
 def print_wrong_sp(log_file):
 	stack_addr = 0x00000000
 	format_print = True
+	global xip_enabled
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
@@ -316,7 +318,8 @@ def print_wrong_sp(log_file):
 							print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
 							format_print = False
 						#If yes, print it's corresponding symbol
-						stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+						if not xip_enabled:
+							stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
 						print_symbol(stack_addr, stack_val, is_app_symbol)
 
 # Function to Parse the input log file (which contains heap corruption data) and to print owner of corrupted node
@@ -361,11 +364,23 @@ if (__name__ == '__main__'):
 	log_file = sys.argv[1]		# Log file containing crash logs
 	app_idx = int(sys.argv[2])	# Number of applications (g_app_idx)
 	addr_type = int(sys.argv[3])	# Type of address information to be printed
+	bin_path = sys.argv[4]      # Output bin path
+	CONFIG_PATH = sys.argv[5]   # .config file path
+	global xip_enabled
 	if debug:
 		print("Log file : " + log_file)
 		print("Number of applications : ", app_idx)
 		print("Address type : ", addr_type)
+	
+	# Read config information
+	fd = open(CONFIG_PATH, 'r')
+	data = fd.read()
+	fd.close()
 
+	if 'CONFIG_XIP_ELF=y' in data:
+		xip_enabled = True
+	else:
+		xip_enabled = False
 	find_kernel_text_range(bin_path + "System.map")
 	if (app_idx > 0):
 		find_app_text_range(log_file)
