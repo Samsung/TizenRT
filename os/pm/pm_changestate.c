@@ -301,7 +301,7 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 		pdom->state = newstate;
 		
 		if (newstate == PM_SLEEP) {
-			/* Set the required wakeup timer from the g_pmTimer_activeList */
+			/* Set the required wakeup timer from the g_pm_timer_activelist */
 			ret = pm_set_wakeup_timer();
 		}
 

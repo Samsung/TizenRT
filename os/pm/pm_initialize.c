@@ -81,28 +81,28 @@
 
 struct pm_global_s g_pmglobals;
 
-/* The g_pmTimer_freeList is a singly linked list of pm timers available
+/* The g_pm_timer_freelist is a singly linked list of pm timers available
  * to the system */
 
-sq_queue_t g_pmTimer_freeList;
+sq_queue_t g_pm_timer_freelist;
 
-/* The g_pmTimer_activeList data structure is a singly linked list ordered by
+/* The g_pm_timer_activelist data structure is a singly linked list ordered by
  * pm wakeup timer expiration time.
  */
 
-sq_queue_t g_pmTimer_activeList;
+sq_queue_t g_pm_timer_activelist;
 
 /* This is the number of free, pre-allocated pm wakeup timer structures in the
- * g_pmTimer_freeList. 
+ * g_pm_timer_freelist. 
  */
 
-uint16_t g_pmTimer_nfree;
+uint16_t g_pm_timer_nfree;
 
 /* g_pm_list is a list of pre-allocated pm wakeup timers. The number of pm timers
  * in the list is a configuration item.
  */
 
-pm_wakeup_timer_t g_pmTimer_pool[CONFIG_PM_MAX_STATIC_TIMER];
+pm_timer_t g_pm_timer_pool[CONFIG_PM_MAX_STATIC_TIMER];
 
 /****************************************************************************
  * Public Functions
@@ -169,17 +169,17 @@ void pm_initialize(void)
 	}
 
 	/* Initialize pm timer list */
-	sq_init(&g_pmTimer_freeList);
-	sq_init(&g_pmTimer_activeList);
+	sq_init(&g_pm_timer_freelist);
+	sq_init(&g_pm_timer_activelist);
 
-	/* The g_pmTimer_freeList must be initiated */
-	pm_wakeup_timer_t *timer = g_pmTimer_pool;
+	/* The g_pm_timer_freelist must be initiated */
+	pm_timer_t *timer = g_pm_timer_pool;
 	for (int i = 0; i < CONFIG_PM_MAX_STATIC_TIMER; i++) {
-		sq_addlast((pm_wakeup_timer_t *)timer++, &g_pmTimer_freeList);
+		sq_addlast((pm_timer_t *)timer++, &g_pm_timer_freelist);
 	}
 
 	/* All pm timers are free */
-	g_pmTimer_nfree = CONFIG_PM_MAX_STATIC_TIMER;
+	g_pm_timer_nfree = CONFIG_PM_MAX_STATIC_TIMER;
 
 	pmtest_init();
 }

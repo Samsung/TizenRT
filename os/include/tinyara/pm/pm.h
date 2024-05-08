@@ -305,24 +305,24 @@ enum pm_timer_type_e {
 	/* Scope for future expansion, up to 8 timer types can be supported */
 };
 
-/* This structure is used to send data to pm driver from app side */
-struct pm_arg_s {
-	enum pm_domain_e domain;
-	enum pm_state_e state;
+/* This structure is used to send data to pm driver from app side for timedSuspend */
+struct pm_suspend_arg_s {
+	enum pm_state_e state;            /* state to be suspended */
+	unsigned int timer_interval;      /* duration to be suspended */
 };
 
-typedef struct pm_arg_s pm_arg_t;
+typedef struct pm_suspend_arg_s pm_suspend_arg_t;
 
-struct pm_wakeup_timer_s {	
-	struct pm_wakeup_timer_s *next;   /* pointer to next timer in the linked list */
-	int pid;                          /* id of process that created pm timer */
-	uint8_t flags;                    /* See pm timer definations above*/
-	int delay;		          /* refers to time of sleep expected */
-	void (*callback)(struct pm_wakeup_timer_s *timer);           /* function to be executed when timer expires*/
-	sem_t pm_sem;             /* argument for callback function after timer expires*/
+struct pm_timer_s {	
+	struct pm_timer_s *next;   			/* pointer to next timer in the linked list */
+	int pid;                          		/* id of process that created pm timer */
+	uint8_t flags;                    		/* See pm timer definations above*/
+	int delay;		          		/* refers to time of sleep expected */
+	void (*callback)(struct pm_timer_s *timer);     /* function to be executed when timer expires*/
+	sem_t pm_sem;             			/* argument for callback function after timer expires*/
 };
 
-typedef struct pm_wakeup_timer_s pm_wakeup_timer_t;
+typedef struct pm_timer_s pm_timer_t;
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -544,7 +544,7 @@ void pm_relax(int domain, enum pm_state_e state);
  *
  * Description:
  *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pmTimer_activeList with the
+ *   timer. It will start the first timer from the g_pm_timer_activelist with the
  *   required delay.(delay should be positive)
  * 
  * Input Parameters:
@@ -563,7 +563,7 @@ int pm_set_wakeup_timer(void);
  *
  * Description:
  *   This function decreases the delay of head pm timer in the 
- *   g_pmTimer_activeList by given ticks. If the delay becomes 0,
+ *   g_pm_timer_activelist by given ticks. If the delay becomes 0,
  *   It expires the pm timer.
  *
  * Input Parameters:
@@ -583,21 +583,21 @@ void pm_timer_update(int ticks);
  * Name: pm_timer_add
  *
  * Description:
- *   This function adds a wakeup timer in the g_pmTimer_activeList. So that it will be
+ *   This function adds a wakeup timer in the g_pm_timer_activelist. So that it will be
  *   invoked just before sleep when needed. 
  * 
  * Parameters:
- *   struct pm_wakeup_timer_s pointer
+ *   struct pm_timer_s pointer
  *
  * Return Value:
  *   None
  *
  ************************************************************************/
 
-void pm_timer_add(pm_wakeup_timer_t *timer);
+void pm_timer_add(pm_timer_t *timer);
 
 /************************************************************************
- * Name: pm_sleep
+ * Name: pm_msleep
  *
  * Description:
  *   This function allows the board to sleep for given time interval.
@@ -609,7 +609,7 @@ void pm_timer_add(pm_wakeup_timer_t *timer);
  *      3. NORMAL to SLEEP state threshold time is large
  * 
  * Parameters:
- *   timer_interval - expected board sleep duration
+ *   timer_interval - expected board sleep duration (in milliseconds)
  *
  * Return Value:
  *   0 - success
@@ -617,7 +617,25 @@ void pm_timer_add(pm_wakeup_timer_t *timer);
  *
  ************************************************************************/
 
-int pm_sleep(int timer_interval);
+int pm_msleep(int timer_interval);
+
+/************************************************************************
+ * Name: pm_timedstay
+ *
+ * Description:
+ *   This function locks PM transition for a specific duration.  
+ * 
+ * Parameters:
+ *   state - state to be suspended
+ *   timer_interval - expected lock duration in millisecond
+ *
+ * Return Value:
+ *   0 - success
+ *   -1 - error
+ *
+ ************************************************************************/
+
+int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
 
 /****************************************************************************
  * Name: pm_staycount

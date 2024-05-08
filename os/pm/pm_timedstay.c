@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************
- * pm/pm_timer/pm_timer_add.c
+ * pm/pm_timedstay.c
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,7 +52,10 @@
  ************************************************************************/
 
 #include <tinyara/pm/pm.h>
-#include "pm_timer.h"
+#include <tinyara/wdog.h>
+#include <tinyara/sched.h>
+
+#include <pm_timer/pm_timer.h>
 
 /************************************************************************
  * Pre-processor Definitions
@@ -63,87 +66,70 @@
  ************************************************************************/
 
 /************************************************************************
- * Public Variables
+ * Private Variables
  ************************************************************************/
+
+/* This array maps the pid to their respective wdog timer. 
+ * Assumption: when a thread does a timed lock , only the same thread 
+ * can unlock the "timed lock" before it expire */
+static WDOG_ID pid_timer_map[CONFIG_MAX_TASKS];
 
 /************************************************************************
  * Private Functions
  ************************************************************************/
+
+static void timer_timeout(int argc, uint32_t state, uint32_t pid)
+{
+	/* PM transition will be relaxed here */
+	if (pid_timer_map[pid] != NULL) {
+		pm_relax(PM_IDLE_DOMAIN, (enum pm_state_e)state);
+		wd_delete(pid_timer_map[pid]);
+        	pid_timer_map[pid] = NULL;
+	}
+}
 
 /************************************************************************
  * Public Functions
  ************************************************************************/
 
 /************************************************************************
- * Name: pm_timer_add
+ * Name: pm_timedstay
  *
  * Description:
- *   This function adds a wakeup timer in the g_pm_timer_activelist. So that it will be
- *   invoked just before sleep when needed. 
+ *   This function locks PM state transition for a specific duration.  
  * 
  * Parameters:
- *   pm_wakeup_timer_s pointer
+ *   state - state to be suspended
+ *   timer_interval - expected lock duration in millisecond
  *
  * Return Value:
- *   None
- * 
+ *   0 - success
+ *   -1 - error
+ *
  ************************************************************************/
 
-void pm_timer_add(pm_timer_t *timer)
+int pm_timedstay(enum pm_state_e state, unsigned int timer_interval)
 {
-        /* Case where there are no timers in the list */
+	int pid = PIDHASH(getpid());
 
-        if (g_pm_timer_activelist.head == NULL) {
-                sq_addlast((FAR sq_entry_t *)timer, &g_pm_timer_activelist);
-        }
-        
-        /* We should add the timer in the sorted position of delay time */
+	/* Check if there is already a wdog lock timer running for 
+	 * the process */
+	if (pid_timer_map[pid] != NULL) {
+		pmdbg("There is already a lock timer running for this process\n");
+		return PM_TIMER_FAIL;
+	}
 
-         else {
-                pm_timer_t *curr;
-                pm_timer_t *prev;
-                pm_timer_t *next;
-                prev = curr = (pm_timer_t *)g_pm_timer_activelist.head;
-                unsigned int now = 0;
+	WDOG_ID wdog = wd_create();
+	pid_timer_map[pid] = wdog;
 
-                /* Advance to positive time */
-                while ((now += curr->delay) < 0 && curr->next) {
-                        prev = curr;
-                        curr = curr->next;
-                }
+	/* Lock the pm transition and Start the wdog timer */
+	pm_stay(PM_IDLE_DOMAIN, state);
+	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, (uint32_t)state, (uint32_t)pid);
+	pmvdbg("PM is locked for pid %d and timer started for %d milisecond\n", pid, timer_interval);
 
-                /* Advance past shorter delays */
-                while (now <= timer->delay && curr->next) {
-                        prev = curr;
-                        curr = curr->next;
-                        now += curr->delay;
-                }
+	if (ret != PM_TIMER_SUCCESS) {
+		return PM_TIMER_FAIL;
+	}
 
-                /* timer should be added before the curr */
-                if (timer->delay < now) {
-                        
-                        timer->delay -= (now - curr->delay);
-                        curr->delay -= timer->delay;
-                        if (curr == (pm_timer_t *)g_pm_timer_activelist.head) {
-                                sq_addfirst((FAR sq_entry_t *)timer, &g_pm_timer_activelist);
-                        } else {
-                                sq_addafter((FAR sq_entry_t *)prev, (FAR sq_entry_t *)timer, &g_pm_timer_activelist);
-                        }  
-
-                /* timer expire time is greater than every other timer. 
-                 * timer should be added to the end of the linked list*/
-                } else {
-                        timer->delay -= now;
-                        if (!curr->next) {
-                                sq_addlast((FAR sq_entry_t *)timer, &g_pm_timer_activelist);
-                        } else {
-                                next = curr->next;
-				next->delay -= timer->delay;
-                                sq_addafter((FAR sq_entry_t *)curr, (FAR sq_entry_t *)timer, &g_pm_timer_activelist);
-                        }
-                }
-        }
-
+	return ret;
 }
-
-

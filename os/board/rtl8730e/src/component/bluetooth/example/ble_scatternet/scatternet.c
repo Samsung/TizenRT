@@ -293,8 +293,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
-            /* Set PM lock timer for 10 minutes */
-            pm_set_timer(PM_LOCK_TIMER, 600000000);
+            /* Set PM suspend timer for 10 minutes */
+            if (pm_timedstay(PM_NORMAL, 600000000) != 0) {
+                pmdbg("Unable to perform PM suspend for 10 minutes\n");
+            }
 #endif
             role = conn_ind->role ? "slave" : "master";
             dbg("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n", 
