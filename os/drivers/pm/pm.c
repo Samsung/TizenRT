@@ -23,7 +23,6 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/pm/pm.h>
-#include <time.h>
 
 #include <errno.h>
 #include <debug.h>
@@ -74,6 +73,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_SUSPEND - for locking a specific PM state  
  *   PMIOC_RESUME - for unlocking a specific PM state
  *   PMIOC_SLEEP - to make board sleep for given time
+ *   PMIOC_TIMEDSUSPEND - to suspend a pm state for given time duration
  *   PMIOC_TUNEFREQ - for changing the operating frequency of the core to save power
  * 
  * Arguments:
@@ -107,11 +107,16 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	case PMIOC_SLEEP:
 		if (arg > 0) {
-			/* Converting from milliseconds to ticks */
-			arg = ((arg * CLOCKS_PER_SEC) /  1000);
-			ret = pm_sleep((int)arg);
+			ret = pm_msleep((int)arg);
 		} else {
 			pmvdbg("Please input positive timer interval\n");
+		}
+		break;
+	case PMIOC_TIMEDSUSPEND:
+		if ((pm_suspend_arg_t *)arg == NULL) {
+			pmvdbg("Please input correct arguments\n");
+		} else {
+			ret = pm_timedstay(((pm_suspend_arg_t *)arg)->state, ((pm_suspend_arg_t *)arg)->timer_interval);
 		}
 		break;
 #ifdef CONFIG_PM_DVFS

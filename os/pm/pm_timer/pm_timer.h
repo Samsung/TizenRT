@@ -93,22 +93,22 @@ extern "C" {
 #define PM_ISALLOCED(w)  (((w)->flags & PM_ALLOCED) != 0)
 #define PM_ISSTATIC(w)   (((w)->flags & PM_STATIC) != 0)
 
-/* The g_pmTimer_freeList is a singly linked list of pm timers available
+/* The g_pm_timer_freelist is a singly linked list of pm timers available
  * to the system */
 
-extern sq_queue_t g_pmTimer_freeList;
+extern sq_queue_t g_pm_timer_freelist;
 
-/* The g_pmTimer_activeList data structure is a singly linked list ordered by
+/* The g_pm_timer_activelist data structure is a singly linked list ordered by
  * pm wakeup timer expiration time.
  */
 
-extern sq_queue_t g_pmTimer_activeList;
+extern sq_queue_t g_pm_timer_activelist;
 
 /* This is the number of free, pre-allocated pm wakeup timer structures in the
- * g_pmTimer_freeList. 
+ * g_pm_timer_freelist. 
  */
 
-extern uint16_t g_pmTimer_nfree;
+extern uint16_t g_pm_timer_nfree;
 
 /************************************************************************
  * Public Function Prototypes
@@ -129,14 +129,14 @@ extern uint16_t g_pmTimer_nfree;
  *
  ************************************************************************/
 
-pm_wakeup_timer_t *pm_timer_create();
+pm_timer_t *pm_timer_create();
 
 /************************************************************************
  * Name: pm_timer_delete
  *
  * Description:
  *   This function deletes a pm timer. It either returns it to the 
- *   g_pmTimer_freeList or frees it if it was created dynamically.
+ *   g_pm_timer_freelist or frees it if it was created dynamically.
  *
  * Parameters:
  *   pm timer to be deleted
@@ -146,7 +146,7 @@ pm_wakeup_timer_t *pm_timer_create();
  *
  ************************************************************************/
 
-void pm_timer_delete(pm_wakeup_timer_t *timer) ;
+void pm_timer_delete(pm_timer_t *timer) ;
 
 #undef EXTERN
 #ifdef __cplusplus

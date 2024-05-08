@@ -54,6 +54,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
 #include <pm_timer/pm_timer.h>
+#include <time.h>
 
 /************************************************************************
  * Pre-processor Definitions
@@ -71,14 +72,14 @@
  * Public Functions
  ************************************************************************/
 
-static void pm_timer_callback(pm_wakeup_timer_t* timer)
+static void pm_timer_callback(pm_timer_t* timer)
 {
         /* As the timer is expired, give back the semaphore to unlock the thread */
 	sem_post(&timer->pm_sem);	
 }
 
 /************************************************************************
- * Name: pm_sleep
+ * Name: pm_msleep
  *
  * Description:
  *   This function allows the board to sleep for given time interval.
@@ -90,7 +91,7 @@ static void pm_timer_callback(pm_wakeup_timer_t* timer)
  *      3. NORMAL to SLEEP state threshold time is large
  * 
  * Parameters:
- *   timer_interval - expected board sleep duration
+ *   timer_interval - expected board sleep duration (in millisecond)
  *
  * Return Value:
  *   0 - success
@@ -98,9 +99,12 @@ static void pm_timer_callback(pm_wakeup_timer_t* timer)
  *
  ************************************************************************/
 
-int pm_sleep(int timer_interval)
+int pm_msleep(int timer_interval)
 {
-        pm_wakeup_timer_t *timer = pm_timer_create();
+        /* Converting from milliseconds to ticks */
+	timer_interval = ((timer_interval * CLOCKS_PER_SEC) /  1000);
+
+        pm_timer_t *timer = pm_timer_create();
         irqstate_t state;
         if (timer == NULL) {
                 pmdbg("Unable to create pm timer\n");
@@ -118,7 +122,7 @@ int pm_sleep(int timer_interval)
          * Otherwise there is a chance of wrong ordering of the list.*/
         state = enter_critical_section();
 
-        /* Add the timer in the g_pmTimer_activeList */
+        /* Add the timer in the g_pm_timer_activelist */
         timer->delay = timer_interval;
         pm_timer_add(timer);
 

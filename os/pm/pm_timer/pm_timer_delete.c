@@ -81,7 +81,7 @@
  *
  * Description:
  *   This function deletes a pm timer. It either returns it to the 
- *   g_pmTimer_freeList or frees it if it was created dynamically.
+ *   g_pm_timer_freelist or frees it if it was created dynamically.
  *
  * Parameters:
  *   pm timer to be deleted
@@ -91,7 +91,7 @@
  *
  ************************************************************************/
 
-void pm_timer_delete(pm_wakeup_timer_t *timer) 
+void pm_timer_delete(pm_timer_t *timer) 
 {
         irqstate_t state;
 
@@ -102,9 +102,9 @@ void pm_timer_delete(pm_wakeup_timer_t *timer)
                 state = enter_critical_section();
 
                 /* Put the pm timer back on the free list */
-                sq_addlast((FAR sq_entry_t *)timer, &g_pmTimer_freeList);
-                g_pmTimer_nfree++;
-                DEBUGASSERT(g_pmTimer_nfree <= CONFIG_PM_MAX_STATIC_TIMER);
+                sq_addlast((FAR sq_entry_t *)timer, &g_pm_timer_freelist);
+                g_pm_timer_nfree++;
+                DEBUGASSERT(g_pm_timer_nfree <= CONFIG_PM_MAX_STATIC_TIMER);
                 leave_critical_section(state);
 
         } else if (PM_ISALLOCED(timer)) {

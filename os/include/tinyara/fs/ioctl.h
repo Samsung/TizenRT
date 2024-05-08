@@ -459,8 +459,9 @@
 #define PMIOC_SUSPEND            _PMIOC(0x0001)
 #define PMIOC_RESUME             _PMIOC(0x0002)
 #define PMIOC_SLEEP              _PMIOC(0x0003)
+#define PMIOC_TIMEDSUSPEND       _PMIOC(0x0004)
 #ifdef CONFIG_PM_DVFS
-#define PMIOC_TUNEFREQ           _PMIOC(0x0004)
+#define PMIOC_TUNEFREQ           _PMIOC(0x0005)
 #endif
 
 /* Cpuload driver ioctl definitions ************************/

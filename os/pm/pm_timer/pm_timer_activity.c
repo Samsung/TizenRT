@@ -53,6 +53,7 @@
 
 #include <tinyara/pm/pm.h>
 #include <time.h>
+#include <tinyara/clock.h>
 #include "pm_timer.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -73,16 +74,16 @@
  * Private Functions
  ************************************************************************/
 
-void pm_timer_expire(void) 
+static void pm_timer_expire(void) 
 {
-	pm_wakeup_timer_t *head;
+	pm_timer_t *head;
 
-	while (g_pmTimer_activeList.head && ((pm_wakeup_timer_t *)g_pmTimer_activeList.head)->delay <= 0) {
+	while (g_pm_timer_activelist.head && ((pm_timer_t *)g_pm_timer_activelist.head)->delay <= 0) {
 		
-    		head = (pm_wakeup_timer_t *)g_pmTimer_activeList.head;
+    		head = (pm_timer_t *)g_pm_timer_activelist.head;
 
 		/* Remove the pm timer from active list */
-        	sq_remfirst(&g_pmTimer_activeList);
+        	sq_remfirst(&g_pm_timer_activelist);
 
 		/* Call the callback api of the timer */
 		(*(head->callback))(head);
@@ -98,7 +99,7 @@ void pm_timer_expire(void)
  *
  * Description:
  *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pmTimer_activeList with the
+ *   timer. It will start the first timer from the g_pm_timer_activelist with the
  *   required delay.(delay should be positive)
  * 
  * Input Parameters:
@@ -113,14 +114,14 @@ void pm_timer_expire(void)
 int pm_set_wakeup_timer(void)
 {
 	/* if no timer present , do we need to wake up board ??? */
-	if (g_pmTimer_activeList.head == NULL) {
-		pmdbg("the g_pmTimer_activeList list is empty!!!\n");
+	if (g_pm_timer_activelist.head == NULL) {
+		pmdbg("the g_pm_timer_activelist list is empty!!!\n");
 		return PM_TIMER_SUCCESS;
 	}
 
-	pm_wakeup_timer_t *curr;
-    	pm_wakeup_timer_t *prev;
-    	prev = curr = (pm_wakeup_timer_t *)g_pmTimer_activeList.head;
+	pm_timer_t *curr;
+    	pm_timer_t *prev;
+    	prev = curr = (pm_timer_t *)g_pm_timer_activelist.head;
 
 	/* Remove the wakeup timers that are already expired. 
 	 * Although this must have already handled by pm_timer_update() */
@@ -135,7 +136,7 @@ int pm_set_wakeup_timer(void)
 	if (curr->delay > CONFIG_PM_MIN_SLEEP_TIME) {
 		pmvdbg("Setting timer and Board will wake up after %d millisecond\n", curr->delay);
 		/* Converting ticks to nanoseconds */
-		up_set_pm_timer((curr->delay * 1000000) / CLOCKS_PER_SEC);
+		up_set_pm_timer(TICK2USEC(curr->delay));
 	} else {
 		return PM_TIMER_FAIL;
 	}
@@ -148,7 +149,7 @@ int pm_set_wakeup_timer(void)
  *
  * Description:
  *   This function decreases the delay of head pm timer in the 
- *   g_pmTimer_activeList by given ticks. If the delay becomes 0,
+ *   g_pm_timer_activelist by given ticks. If the delay becomes 0,
  *   It expires the pm timer.
  *
  * Input Parameters:
@@ -164,14 +165,14 @@ int pm_set_wakeup_timer(void)
 
 void pm_timer_update(int ticks)
 {
-	pm_wakeup_timer_t *timer;
+	pm_timer_t *timer;
 	int decr;
 
 	/* Check if there are any active pm timers to process */
-	while (g_pmTimer_activeList.head && ticks > 0) {
+	while (g_pm_timer_activelist.head && ticks > 0) {
 
 		/* Get the pm timer at the head of the list */
-		timer = (pm_wakeup_timer_t *)g_pmTimer_activeList.head;
+		timer = (pm_timer_t *)g_pm_timer_activelist.head;
 
 		decr = MIN(timer->delay, ticks);
 		timer->delay -= decr;

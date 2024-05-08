@@ -90,35 +90,35 @@
  *
  ************************************************************************/
 
-pm_wakeup_timer_t *pm_timer_create()
+pm_timer_t *pm_timer_create()
 {
-        pm_wakeup_timer_t *timer;
+        pm_timer_t *timer;
         irqstate_t state;
 
         /* If we have pre-allocated timer available then use that */
-        if (g_pmTimer_nfree > 0) {
+        if (g_pm_timer_nfree > 0) {
                 /* Creating a timer should be atomic */
                 state = enter_critical_section();
 
                 /* Remove the pm timer from the free list and decrement the 
                  * count of free pm timers */
-                timer = (pm_wakeup_timer_t *)sq_remfirst(&g_pmTimer_freeList);
+                timer = (pm_timer_t *)sq_remfirst(&g_pm_timer_freelist);
 
                 if (timer) {
-                        DEBUGASSERT(g_pmTimer_nfree > 0);
-                        g_pmTimer_nfree--;
+                        DEBUGASSERT(g_pm_timer_nfree > 0);
+                        g_pm_timer_nfree--;
                         timer->next = NULL;
                         timer->pid = getpid();
                         timer->flags = PM_STATIC;
                         pmvdbg("pid of the timer is %d\n", timer->pid);
                 } else {
-                        /* if timer is NULL, g_pmTimer_nfree must be zero, else assert */
-                        DEBUGASSERT(g_pmTimer_nfree == 0);
+                        /* if timer is NULL, g_pm_timer_nfree must be zero, else assert */
+                        DEBUGASSERT(g_pm_timer_nfree == 0);
                 }
                 leave_critical_section(state);
         } else {
                 
-                timer = (pm_wakeup_timer_t *)kmm_malloc(sizeof(pm_wakeup_timer_t));
+                timer = (pm_timer_t *)kmm_malloc(sizeof(pm_timer_t));
 
                 if (timer) {
                         timer->next = NULL;
