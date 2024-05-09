@@ -178,6 +178,9 @@ function concatenate_binary_with_signing()
 copy_bootloader;
 if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
 	concatenate_binary_with_signing;
+
+	# Binary Signing is not support in public, so copy the non-signing binary
+	concatenate_binary_without_signing;
 else
 	concatenate_binary_without_signing;
 fi
