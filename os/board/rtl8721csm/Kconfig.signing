@@ -1,0 +1,6 @@
+config USER_SIGN_PREPEND_SIZE
+	int "Prepended user binary signing size"
+	default 32
+	depends on APP_BINARY_SEPARATION && BINARY_SIGNING
+	---help---
+		This is a size of prepended binary signing data.
