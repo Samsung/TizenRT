@@ -29,6 +29,9 @@
 #define USER_SIGN_PREPEND_SIZE     0
 #endif
 
+#define SIGNATURE_VAILD      0
+#define SIGNATURE_INVALID     1
+
 int up_verify_kernelsignature(uint32_t address);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION

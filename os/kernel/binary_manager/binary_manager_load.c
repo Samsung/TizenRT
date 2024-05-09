@@ -202,7 +202,7 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_BINARY_SIGNING
 			/* Check signature */
 			ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
-			if (ret == OK) {
+			if (ret == SIGNATURE_VAILD) {
 				bmdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 			} else {
 				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
