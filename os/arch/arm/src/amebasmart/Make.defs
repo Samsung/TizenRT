@@ -258,7 +258,7 @@ ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CMN_CSRCS += amebasmart_reboot_reason.c
 endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
-#CMN_CSRCS += amebasmart_signature.c
+CMN_CSRCS += amebasmart_signature.c
 endif
 ifeq ($(CONFIG_PM),y)
 CMN_CSRCS += amebasmart_pmc.c
