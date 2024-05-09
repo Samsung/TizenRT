@@ -138,8 +138,8 @@ function concatenate_binary_with_signing()
 	source ${CONFIG}
 
 	#signing
-	# echo "========== Binary SIGNING =========="
-	# bash $BUILDDIR/configs/rtl8730e/rtl8730e_signing.sh kernel
+	echo "========== Binary SIGNING =========="
+	bash $BUILDDIR/configs/rtl8730e/rtl8730e_signing.sh kernel
 }
 
 #*****************************************************************************#
@@ -203,10 +203,13 @@ function remove_large_binary_temp()
 copy_bootloader;
 copy_flashloader;
 copy_km0_km4_image;
- if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
-	 concatenate_binary_with_signing;
- else
-	 concatenate_binary_without_signing;
- fi
- remove_large_binary_temp;
+if [ "${CONFIG_BINARY_SIGNING}" == "y" ];then
+	concatenate_binary_with_signing;
+
+	# Binary Signing is not support in public, so copy the non-signing binary
+	concatenate_binary_without_signing;
+else
+	concatenate_binary_without_signing;
+fi
+remove_large_binary_temp;
  
