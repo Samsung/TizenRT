@@ -184,7 +184,7 @@ int binary_manager_check_kernel_update(void)
 #ifdef CONFIG_BINARY_SIGNING
 	/* Check signature */
 	ret = up_verify_kernelsignature(kernel_info.part_info[inactive_partidx].address);
-	if (ret == OK) {
+	if (ret == SIGNATURE_VAILD) {
 		bmvdbg("Kernel Signature Checking Success\n");
 	} else {
 		bmdbg("Invalid Kernel Signature, address : 0x%x\n", kernel_info.part_info[inactive_partidx].address);
@@ -522,7 +522,7 @@ int binary_manager_check_user_update(int bin_idx)
 #ifdef CONFIG_BINARY_SIGNING
 	/* Check signature */
 	ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, part_idx));
-	if (ret == OK) {
+	if (ret == SIGNATURE_VAILD) {
 		bmvdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 	} else {
 		bmdbg("Invalid Signature, name : %s, address : 0x%x\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));

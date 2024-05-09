@@ -20,17 +20,17 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <sys/types.h>
+#include <tinyara/signature.h>
 #include <stdint.h>
 
 int up_verify_kernelsignature(uint32_t address)
 {
-	return OK;
+	return SIGNATURE_VAILD;
 }
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 int up_verify_usersignature(uint32_t address)
 {
-	return OK;
+	return SIGNATURE_VAILD;
 }
 #endif
