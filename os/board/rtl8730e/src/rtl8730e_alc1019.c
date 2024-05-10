@@ -43,7 +43,12 @@ extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port);
  * Pre-processor Definitions
  ****************************************************************************/
 /* i2c config */
+#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+#define ALC1019_I2C_PORT		2
+#else
 #define ALC1019_I2C_PORT		1
+#endif
+
 #define ALC1019_I2C_FREQ		100000
 #define ALC1019_I2C_ADDRLEN		7
 
