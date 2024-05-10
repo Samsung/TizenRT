@@ -31,9 +31,13 @@
 #define CONFIG_LCD_ST7789_SPI_PORT 1
 #endif
 
+#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+#error "ERROR, Not supported this revision"
+#else
 #define GPIO_PIN_RESET 		PB_11
 #define GPIO_PIN_BACKLIGHT 	PA_9
 #define GPIO_PIN_CMDDATA 	PA_10
+#endif
 
 /****************************************************************************
  * Private Types

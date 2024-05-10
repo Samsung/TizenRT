@@ -390,8 +390,14 @@ static struct rtl8730e_up_dev_s g_uart1priv = {
 #endif
 	.baud = CONFIG_UART1_BAUD,
 	.irq = RTL8730E_UART1_IRQ,
+
+#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+	.tx = PA_10,
+	.rx = PA_9,
+#else
 	.tx = PA_5,
 	.rx = PA_4,
+#endif
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
