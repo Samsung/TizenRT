@@ -36,6 +36,13 @@ config BOARD_FLASH_16M
 
 endchoice
 
+config RTL8730E_BOARD_REVISION
+	int "Select target board revision"
+	default 0
+	---help---
+		Select the board revision.
+		The pins of the peripherals may differ depending on this
+
 config FLASH_SIZE
     int
     default 8388608 if BOARD_FLASH_8M
