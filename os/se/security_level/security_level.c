@@ -106,10 +106,10 @@ int set_security_level(void)
 
 	int result = atoi(output.data);
 	if (result == HIGH_SECURITY_LEVEL) {
-		security_level = 1;
+		security_level = HIGH_SECURITY_LEVEL;
 		dbg("HIGH\n");
 	} else if (result == LOW_SECURITY_LEVEL) {
-		security_level = 0;
+		security_level = LOW_SECURITY_LEVEL;
 		dbg("LOW\n");
 	} else {
 		kmm_free(output.data);
