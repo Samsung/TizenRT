@@ -26,8 +26,8 @@
 /********************************************************************************
  * Pre-processor Definitions
  ********************************************************************************/
-#define HIGH_SECURITY_LEVEL     1
-#define LOW_SECURITY_LEVEL      0
+#define HIGH_SECURITY_LEVEL     1    /* Cannot see secure information logs */
+#define LOW_SECURITY_LEVEL      0    /* Can see all secure information logs */
 
 /********************************************************************************
  * Global Type Declarations
