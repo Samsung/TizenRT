@@ -39,7 +39,7 @@
   * @brief  Table elements express the pin to PWM channel number, they are:
   *           {pinName, km4_pin2chan}
   */
-const u32 pin2chan[20][2] = {
+const u32 pin2chan[22][2] = {
 	{PA_7,	0},
 	{PA_9,	1},
 	{PA_10,	2},
@@ -51,6 +51,8 @@ const u32 pin2chan[20][2] = {
 	{PA_4,	3},
 	{PA_5,	4},
 	{PA_6,	5},
+	{PB_10,	3},
+	{PB_11,	4},
 	{PB_14,	0},
 	{PB_15,	1},
 	{PB_16,	2},
@@ -82,7 +84,7 @@ RTIM_TypeDef *PWM_TIM = TIM8;
 u32 pwmout_pin2chan(PinName pin)
 {
 	int i = 0;
-	for (; i < 20; i++) {
+	for (; i < 22; i++) {
 		if (pin2chan[i][0] == pin) {
 			return (pin2chan[i][1]);
 		}
