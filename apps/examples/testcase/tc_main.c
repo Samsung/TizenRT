@@ -69,6 +69,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_NETWORK
 #define TC_NETWORK_STACK  2048
 #endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PM
+#define TC_PM_STACK   4096
+#endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC
 #define TC_PREFERENCE_STACK  2048
 #endif
@@ -103,6 +106,7 @@ extern int tc_drivers_main(int argc, char *argv[]);
 extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
 extern int tc_network_main(int argc, char *argv[]);
+extern int tc_pm_main(int argc, char *argv[]);
 extern int tc_ttrace_main(int argc, char *argv[]);
 extern int tc_tcp_tls_main(int agrc, char *agrv[]);
 
@@ -191,6 +195,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_NETWORK
 	{"network_tc", tc_network_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PM
+	{"pm_tc", tc_pm_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC
 	{"preference_utc", utc_preference_main, TASH_EXECMD_ASYNC},
@@ -392,6 +399,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("nettc", SCHED_PRIORITY_DEFAULT, TC_NETWORK_STACK, tc_network_main, argv);
 	if (pid < 0) {
 		printf("Network tc is not started, err = %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_EXAMPLES_TESTCASE_PM
+	pid = task_create("pmtc", SCHED_PRIORITY_DEFAULT, TC_PM_STACK, tc_pm_main, argv);
+	if (pid < 0) {
+		printf("PM tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC

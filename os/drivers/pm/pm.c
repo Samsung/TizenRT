@@ -82,7 +82,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_SUSPEND, arg is an enum representing PM DOMAIN
  *   for PMIOC_RESUME, arg is an enum representing PM DOMAIN
  *   for PMIOC_SLEEP, arg should be an int.(user should input time in millisecond)
- *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t 
+ *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t (timer_interval should be in millisecond)
  *   for PMIOC_TUNEFREQ, arg should be an int type.
  *
  * Description:

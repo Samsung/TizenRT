@@ -141,6 +141,7 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 #endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static size_t power_suspendcount_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 
 /****************************************************************************
  * Private Data
@@ -155,6 +156,7 @@ static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"metrics", power_metrics_read, NULL, DTYPE_FILE},
 #endif
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
+	{"pm_suspendcount", power_suspendcount_read, NULL, DTYPE_FILE},
 };
 
 static const uint8_t g_power_direntrycount = sizeof(g_power_direntry) / sizeof(struct power_procfs_entry_s);
@@ -234,6 +236,7 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 	}
 
 	str = NULL;
+	strtoul(relpath, &str, 10);
 
 	if (!str) {
 		fdbg("ERROR: Invalid path \"%s\"\n", relpath);
@@ -568,6 +571,21 @@ static int power_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newp->f_priv = (FAR void *)newfile;
 	return OK;
+}
+
+/****************************************************************************
+ * Name: power_suspendcount_read
+ *
+ * Description:
+ *   read suspend count of a domain
+ *
+ ****************************************************************************/
+
+static size_t power_suspendcount_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
+{
+	(void)buffer;
+
+	return pm_suspendcount((enum pm_domain_e)buflen);
 }
 
 /****************************************************************************

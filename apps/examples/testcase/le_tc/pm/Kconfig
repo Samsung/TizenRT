@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_PM
+	bool "PM TestCase Example"
+	default n
+	---help---
+		Enable the PM TestCase Example
