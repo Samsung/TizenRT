@@ -116,7 +116,7 @@ static void up_idlepm(void)
 							if (pmu_get_secondary_cpu_state(1) == CPU1_RUNNING) {
 								/* CPU1 may in WFI idle state. Wake it up to enter hotplug itself */
 								up_irq_enable();
-								arm_gic_raise_softirq(1, 0);
+								//arm_gic_raise_softirq(1, 0);
 								arm_arch_timer_int_mask(0);
 								DelayUs(100);
 								goto EXIT;
