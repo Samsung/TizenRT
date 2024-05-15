@@ -407,6 +407,9 @@ void board_initialize(void)
 #ifdef CONFIG_LCD_ST7789
 	rtl8730_st7789_initialize();
 #endif
+#ifdef CONFIG_LCD_ST7701
+	rtl8730_st7701_initialize();
+#endif
 
 #ifdef CONFIG_WATCHDOG
 	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
