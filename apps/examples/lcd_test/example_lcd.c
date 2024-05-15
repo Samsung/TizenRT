@@ -116,7 +116,7 @@ static void test_put_area(void)
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return -1;
+		return;
 	}
 	struct fb_videoinfo_s vinfo;
 	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
@@ -140,7 +140,7 @@ static void test_put_run(void)
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return -1;
+		return;
 	}
 	struct lcddev_run_s run;
 	run.planeno = 0;
@@ -149,8 +149,8 @@ static void test_put_run(void)
 	run.npixels = NOPIXELS;
 
 	uint8_t spi_data[2 * NOPIXELS + 1];
-	run.data = &spi_data;
-	for (i = 0; i <= (NOPIXELS * 2); i += 2) {
+	run.data = spi_data;
+	for (i = 0; i < (NOPIXELS * 2); i += 2) {
 		spi_data[i + 1] = WHITE & 0X00FF;
 		spi_data[i] = (WHITE & 0xFF00) >> 8;
 	}
@@ -167,7 +167,7 @@ static void test_clear(void)
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return -1;
+		return;
 	}
 	struct fb_videoinfo_s vinfo;
 	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
@@ -187,7 +187,7 @@ static void test_init(void)
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return -1;
+		return;
 	}
 	ioctl(fd, LCDDEVIO_INIT, &ret);
 	close(fd);
@@ -202,7 +202,7 @@ static void test_orientation(void)
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return -1;
+		return;
 	}
 	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
 
@@ -210,27 +210,27 @@ static void test_orientation(void)
 
 	sleep(1);
 	/* resolution should be swapped now as orientation is changed */
-	#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
-		putarea(0, xres - 1, 0, yres - 1, RED);
-	#else
-		putarea(0, yres - 1, 0, xres - 1, RED);
-	#endif
+#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
+	putarea(0, xres - 1, 0, yres - 1, RED);
+#else
+	putarea(0, yres - 1, 0, xres - 1, RED);
+#endif
 	/* fill square with side  = OFFSET */
 	putarea(0, OFFSET, 0, OFFSET, WHITE);
 
 	sleep(1);
 	/* resetting original orientation - the one defined in config */
-	#if defined(CONFIG_LCD_PORTRAIT)
-		ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_PORTRAIT);
-	#elif defined(CONFIG_LCD_LANDSCAPE)
-		ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
-	#elif defined(CONFIG_LCD_RLANDSCAPE)
-		ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
-	#elif defined(CONFIG_LCD_RPORTRAIT)
-		ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RPORTRAIT);
-	#else
-		ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
-	#endif
+#if defined(CONFIG_LCD_PORTRAIT)
+	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_PORTRAIT);
+#elif defined(CONFIG_LCD_LANDSCAPE)
+	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
+#elif defined(CONFIG_LCD_RPORTRAIT)
+	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RPORTRAIT);
+#else
+	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
+#endif
 	close(fd);
 }
 
