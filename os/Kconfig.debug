@@ -1159,6 +1159,37 @@ config DEBUG_WLAN_API_INFO
 
 endif #DEBUG_WLAN
 
+config DEBUG_MIPI
+	bool "MIPI Debug Feature"
+	default n
+	---help---
+		Enable MIPI debug feature.
+
+if DEBUG_MIPI
+
+config CONFIG_DEBUG_MIPI_ERROR
+	bool "MIPI DSI Error Output"
+	default y
+	depends on DEBUG_ERROR
+	---help---
+		Enables DEBUG Error level debug output for MIPI DSI driver.
+
+config CONFIG_DEBUG_MIPI_WARN
+	bool "MIPI DSI Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enables DEBUG warning level debug output for MIPI DSI driver.
+
+config CONFIG_DEBUG_MIPI_INFO
+	bool "MIPI DSI Info Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enables DEBUG info level debug output for MIPI DSI driver.
+
+endif #DEBUG_MIPI
+
 comment "System Debug Options"
 
 config DEBUG_SYSTEM

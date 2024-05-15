@@ -1020,6 +1020,30 @@ int get_errno(void);
 #define vdllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_MIPI_ERROR
+#define mipidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define mipilldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define mipidbg(...)
+#define mipilldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_WARN
+#define mipiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define mipillwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define mipiwdbg(...)
+#define mipillwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_INFO
+#define mipivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define mipillvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define mipivdbg(...)
+#define mipillvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_SENSORS_ERROR
 #define sndbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define snlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1765,6 +1789,30 @@ int get_errno(void);
 #else
 #define vdvdbg     (void)
 #define vdllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_ERROR
+#define mipidbg dbg
+#define mipilldbg lldbg
+#else
+#define mipidbg(...)
+#define mipilldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_WARN
+#define mipiwdbg wdbg
+#define mipillwdbg llwdbg
+#else
+#define mipiwdbg(...)
+#define mipillwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_INFO
+#define mipivdbg vdbg
+#define mipillvdbg llvdbg
+#else
+#define mipivdbg(...)
+#define mipillvdbg(...)
 #endif
 
 #ifdef CONFIG_DEBUG_SENSORS_ERROR
