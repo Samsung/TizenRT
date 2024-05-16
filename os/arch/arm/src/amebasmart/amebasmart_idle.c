@@ -77,12 +77,23 @@ static void up_idlepm(void)
 			oldstate = newstate;
 		}
 		/* MCU-specific power management logic */
+		/* TODO: When LCD is integrated, some of the state operation might require revision
+		   PM_IDLE: We will expect LCD to go through background light dimming
+		   PM_STANDBY: LCD shut down, single core might be able to handle remaining tasks
+		   			   Then, we can do vPortSecondaryOff() for SMP case (ie. shutdown secondary core)
+		*/
 		switch (newstate) {
 			case PM_NORMAL:
+				/* In PM_NORMAL, we have nothing to do, set core to WFE */
+				__asm(" WFE");
 				break;
 			case PM_IDLE:
+				/* In PM_IDLE, we have nothing to do, set core to WFE */
+				__asm(" WFE");
 				break;
 			case PM_STANDBY:
+				/* In PM_STANDBY, we have nothing to do, set core to WFE */
+				__asm(" WFE");
 				break;
 			case PM_SLEEP:
 				/* TODO: When enabling SMP, PM state coherency should be verified for 
@@ -193,6 +204,14 @@ REJECTED:
 			default:
 				break;
 		}
+	} else {
+		/* If a state is locked, we will not be able to do state transition
+		But idle thread might still have chance to be doing judgement under some
+		conditions (ie. context switched to idle loop), thus if there is no
+		state transition happening, we invoke WFE for the core to rest (ie. a kind of HW sleep),
+		to prevent from unecessary power consumption
+		*/
+		__asm(" WFE");
 	}
 }
 #else
