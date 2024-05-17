@@ -113,22 +113,22 @@ static void amebasmart_mipi_fill_buffer(FAR struct mipi_dsi_host *dsi_host)
 		bit_per_pixel = 24;
 		break;
 	}
-	priv->MIPI_InitStruct->MIPI_LaneNum = 2;
-	priv->MIPI_InitStruct->MIPI_FrameRate = MIPI_FRAME_RATE;
-	priv->MIPI_InitStruct->MIPI_HSA = MIPI_DSI_HSA * bit_per_pixel / 8;	//- 10; /* here the unit is pixel but not us */
+	priv->MIPI_InitStruct->MIPI_LaneNum = dsi_host->config.lcd_lane_num;
+	priv->MIPI_InitStruct->MIPI_FrameRate = dsi_host->config.mipi_frame_rate;
+	priv->MIPI_InitStruct->MIPI_HSA = dsi_host->config.mipi_dsi_HSA * bit_per_pixel / 8;	//- 10; /* here the unit is pixel but not us */
 	if (priv->MIPI_InitStruct->MIPI_VideoModeInterface == MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_PULSES) {
-		priv->MIPI_InitStruct->MIPI_HBP = MIPI_DSI_HBP * bit_per_pixel / 8;	//- 10;
+		priv->MIPI_InitStruct->MIPI_HBP = dsi_host->config.mipi_dsi_HBP* bit_per_pixel / 8;	//- 10;
 	} else {
-		priv->MIPI_InitStruct->MIPI_HBP = (MIPI_DSI_HSA + MIPI_DSI_HBP) * bit_per_pixel / 8;	//-10 ;
+		priv->MIPI_InitStruct->MIPI_HBP = (dsi_host->config.mipi_dsi_HSA + dsi_host->config.mipi_dsi_HBP) * bit_per_pixel / 8;	//-10 ;
 	}
 	priv->MIPI_InitStruct->MIPI_HACT = dsi_host->config.XPixels;
-	priv->MIPI_InitStruct->MIPI_HFP = MIPI_DSI_HFP * bit_per_pixel / 8;	//-12;
-	priv->MIPI_InitStruct->MIPI_VSA = MIPI_DSI_VSA;
-	priv->MIPI_InitStruct->MIPI_VBP = MIPI_DSI_VBP;
+	priv->MIPI_InitStruct->MIPI_HFP = dsi_host->config.mipi_dsi_HFP * bit_per_pixel / 8;	//-12;
+	priv->MIPI_InitStruct->MIPI_VSA = dsi_host->config.mipi_dsi_VSA;
+	priv->MIPI_InitStruct->MIPI_VBP = dsi_host->config.mipi_dsi_VBP;
 	priv->MIPI_InitStruct->MIPI_VACT = dsi_host->config.YPixels;
-	priv->MIPI_InitStruct->MIPI_VFP = MIPI_DSI_VFP;
+	priv->MIPI_InitStruct->MIPI_VFP = dsi_host->config.mipi_dsi_VFP;
 	vtotal = priv->MIPI_InitStruct->MIPI_VSA + priv->MIPI_InitStruct->MIPI_VBP + priv->MIPI_InitStruct->MIPI_VACT + priv->MIPI_InitStruct->MIPI_VFP;
-	htotal_bits = (MIPI_DSI_HSA + MIPI_DSI_HBP + priv->MIPI_InitStruct->MIPI_HACT + MIPI_DSI_HFP) * bit_per_pixel;
+	htotal_bits = (dsi_host->config.mipi_dsi_HSA + dsi_host->config.mipi_dsi_HBP + priv->MIPI_InitStruct->MIPI_HACT + dsi_host->config.mipi_dsi_HFP) * bit_per_pixel;
 	overhead_cycles = T_LPX + T_HS_PREP + T_HS_ZERO + T_HS_TRAIL + T_HS_EXIT;
 	overhead_bits = overhead_cycles * priv->MIPI_InitStruct->MIPI_LaneNum * 8;
 	total_bits = htotal_bits + overhead_bits;
@@ -136,7 +136,7 @@ static void amebasmart_mipi_fill_buffer(FAR struct mipi_dsi_host *dsi_host)
 	priv->MIPI_InitStruct->MIPI_LineTime = (priv->MIPI_InitStruct->MIPI_VideDataLaneFreq * Mhz) / 8 / priv->MIPI_InitStruct->MIPI_FrameRate / vtotal;
 	priv->MIPI_InitStruct->MIPI_BllpLen = priv->MIPI_InitStruct->MIPI_LineTime / 2;
 
-	if (MIPI_DSI_HSA + MIPI_DSI_HBP + dsi_host->config.XPixels + MIPI_DSI_HFP < (512 + MIPI_DSI_RTNI * 16)) {
+	if (dsi_host->config.mipi_dsi_HSA + dsi_host->config.mipi_dsi_HBP + dsi_host->config.XPixels + dsi_host->config.mipi_dsi_HFP < (512 + dsi_host->config.mipi_dsi_RTNI * 16)) {
 		mipidbg("!!ERROR!!, LCM NOT SUPPORT\n");
 	}
 	if (priv->MIPI_InitStruct->MIPI_LineTime * priv->MIPI_InitStruct->MIPI_LaneNum < total_bits / 8) {
@@ -239,9 +239,9 @@ static void amebasmart_mipidsi_isr(void)
 
 static void amebasmart_check_freq(struct lcd_data *data)
 {
-	u32 totaly = MIPI_DSI_VSA + MIPI_DSI_VBP + MIPI_DSI_VFP + data->YPixels;
-	u32 totalx = MIPI_DSI_HSA + MIPI_DSI_HBP + MIPI_DSI_HFP + data->XPixels;
-	vo_freq = totaly * totalx * MIPI_FRAME_RATE / Mhz + 4;
+	u32 totaly = data->mipi_dsi_VSA+ data->mipi_dsi_VBP + data->mipi_dsi_VFP+ data->YPixels;
+	u32 totalx = data->mipi_dsi_HSA+ data->mipi_dsi_HBP+ data->mipi_dsi_HFP+ data->XPixels;
+	vo_freq = totaly * totalx * data->mipi_frame_rate / Mhz + 4;
 	mipivdbg("vo_freq: %d\n", vo_freq);
 	assert_param(vo_freq < 67);
 }

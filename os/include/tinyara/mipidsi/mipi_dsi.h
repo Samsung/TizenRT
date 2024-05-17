@@ -198,6 +198,15 @@ struct mipi_dsi_host_ops
 struct lcd_data{
 	int XPixels;
 	int YPixels;
+	int mipi_frame_rate;
+	int mipi_dsi_RTNI;
+	int mipi_dsi_HSA;
+	int mipi_dsi_HBP;
+	int mipi_dsi_HFP;
+	int mipi_dsi_VSA;
+	int mipi_dsi_VBP;
+	int mipi_dsi_VFP;
+	int lcd_lane_num;
 };
 /* Dsi host structure */
 struct mipi_dsi_host
@@ -869,7 +878,8 @@ int mipi_dsi_dcs_set_tear_scanline(FAR struct mipi_dsi_device *device,
  *
  ****************************************************************************/
 
-int mipi_dsi_dcs_set_display_brightness(FAR struct mipi_dsi_device *device, uint16_t brightness);
+int mipi_dsi_dcs_set_display_brightness(FAR struct mipi_dsi_device *device,
+                                        uint16_t brightness);
 
 /****************************************************************************
  * Name: mipi_dsi_dcs_get_display_brightness
@@ -886,7 +896,8 @@ int mipi_dsi_dcs_set_display_brightness(FAR struct mipi_dsi_device *device, uint
  *
  ****************************************************************************/
 
-int mipi_dsi_dcs_get_display_brightness(FAR struct mipi_dsi_device *device, FAR uint16_t *brightness);
+int mipi_dsi_dcs_get_display_brightness(FAR struct mipi_dsi_device *device,
+                                        FAR uint16_t *brightness);
 
 #undef EXTERN
 #ifdef __cplusplus

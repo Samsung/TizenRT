@@ -32,6 +32,16 @@
 
 #define XRES 480
 #define YRES 800
+#define MIPI_DSI_RTNI		2	//4
+#define MIPI_DSI_HSA		4
+#define MIPI_DSI_HFP		30
+#define MIPI_DSI_VSA		5
+#define MIPI_DSI_VBP		20
+#define MIPI_DSI_VFP		15
+#define MIPI_FRAME_RATE		60
+#define LCD_LANE_NUM		2
+
+
 /*
     480*800*4 = 1.47MB
     1024*768*4 = 3M

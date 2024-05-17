@@ -51,16 +51,6 @@
 #define T_HS_ZERO	10
 #define FONT_WIDTH  8
 #define FONT_HEIGHT 16
-#define MIPI_DSI_RTNI		2	//4
-#define MIPI_DSI_HSA		4
-#define MIPI_DSI_HBP		30
-#define MIPI_DSI_HFP		30
-
-#define MIPI_DSI_VSA		5
-#define MIPI_DSI_VBP		20
-#define MIPI_DSI_VFP		15
-
-#define MIPI_FRAME_RATE		60
 
 /* DSI Processor-to-Peripheral transaction types */
 #define MIPI_DSI_VSYNC_START                          0x01

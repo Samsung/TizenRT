@@ -228,6 +228,14 @@ void rtl8730_st7701_initialize(void)
 	struct lcd_data config;
 	config.XPixels = XRES;
 	config.YPixels = YRES;
+	config.mipi_frame_rate = MIPI_FRAME_RATE;
+	config.mipi_dsi_HFP = MIPI_DSI_HFP;
+	config.mipi_dsi_HSA = MIPI_DSI_HSA;
+	config.mipi_dsi_RTNI = MIPI_DSI_RTNI;
+	config.mipi_dsi_VBP = MIPI_DSI_VBP;
+	config.mipi_dsi_VFP = MIPI_DSI_VFP;
+	config.mipi_dsi_VSA = MIPI_DSI_VSA;
+	config.lcd_lane_num = LCD_LANE_NUM;
 
 	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)amebasmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);

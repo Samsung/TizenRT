@@ -47,7 +47,7 @@ static struct st7701_dev_s g_lcdcdev;
 typedef struct lcm_setting_table {
 	u8 cmd;
 	u8 count;
-	u8 para_list[128];
+	u8 para_list[16];
 } lcm_setting_table_t;
 
 static const lcm_setting_table_t ST7701S_init_cmd_g[] = {	/* DCS Write Long */
