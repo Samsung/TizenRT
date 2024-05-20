@@ -59,3 +59,12 @@ endif
 ifeq ($(CONFIG_LCD_ST7789), y)
 CSRCS += rtl8730e_st7789.c
 endif
+
+ifeq ($(CONFIG_LCD_ST7785), y)
+CSRCS += rtl8730e_mipi_lcdc.c
+endif
+
+ifeq ($(CONFIG_LCD_ST7701), y)
+CSRCS += rtl8730e_mipi_lcdc.c
+endif
+

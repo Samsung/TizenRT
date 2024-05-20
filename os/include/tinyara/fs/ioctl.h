@@ -105,6 +105,7 @@
 #define _COMPBASE       (0x2a00)	/* compress ioctl commands */
 #define _PMBASE         (0x2b00)    	/* pm ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
+#define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 
 
 
@@ -397,6 +398,8 @@
 #define _LCDIOCVALID(c)   (_IOC_TYPE(c)==_SLCDIOCBASE)
 #define _LCDIOC(nr)       _IOC(_SLCDIOCBASE,nr)
 
+#define _MIPIDSIIOC(nr)        _IOC(_MIPIDSIBASE,nr)
+#define _MIPIDSIIOCVALID(c)    (_IOC_TYPE(c)==_MIPIDSIBASE)
 
 /* boardctl() command definitions *******************************************/
 #define _BOARDIOCVALID(c)  (_IOC_TYPE(c) == _BOARDBASE)

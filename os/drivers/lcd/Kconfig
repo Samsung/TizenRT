@@ -94,7 +94,7 @@ config LCD_MAXCONTRAST
 
 config LCD_MAXPOWER
 	int "LCD maximum power"
-	default 1
+	default 100
 	range 1 255
 	---help---
 		Maximum value of LCD power setting.  This normally equates to brightness:
@@ -107,9 +107,74 @@ config LCD_MAXPOWER
 comment "Graphic LCD Devices"
 
 choice
+	prompt "Choose LCD"
+	default LCD_ST7789
+	---help---
+		LCD ST7789 is 2.8 inch with SPI
+		LCD ST7785 is 2.8 inch with MIPI
+		LCD ST7701 is 3.9 inch with MIPI
+
+config LCD_ST7701
+	bool "ST7701 LCD Driver"
+	---help---
+		Enable LCD Driver, ST7701 with mipi.
+
+config LCD_ST7785
+	bool "ST7785 LCD Driver"
+	---help---
+		Enable LCD Driver, ST7785 with mipi.
+
+config LCD_ST7789
+	bool "ST7789 LCD Driver"
+	---help---
+		Enable LCD Driver, ST7789 with spi.
+endchoice
+
+config LCD_XRES
+	int "LCD X Resolution"
+	default 480 if LCD_ST7701
+	default 240 if LCD_ST7785 || LCD_ST7789
+	---help---
+		Specifies the X resolution of the LCD.
+
+config LCD_YRES
+	int "LCD Y Resolution"
+	default 800 if LCD_ST7701
+	default 320 if LCD_ST7785 || LCD_ST7789
+	---help---
+		Specifies the Y resolution of the LCD.
+
+if LCD_ST7789
+config LCD_ST7789_BPP
+	int "Bit Per Pixel (12 or 16)"
+	default 16
+
+config LCD_ST7789_SPIMODE
+	int "SPI Mode"
+	default 0
+
+config LCD_ST7789_FREQUENCY
+	int "SPI Frequency"
+	default 48000000
+
+config LCD_ST7789_SPI_PORT
+	int "SPI Port"
+	default 1
+
+config LCD_ST7789_3WIRE
+	bool "3WIRE or 4WIRE SPI"
+	default n
+	---help---
+		Enable means use 3 wire. Disable means using 4 wire. In 3 wire Communication, 9bit will be used in which 9th bit will indicate
+		command or data mode for transfer.
+		In 4 wire communication, 8 bit will be used and command or data mode will be set using
+		gpio pin set/reset option
+
+endif
+
+choice
 	prompt "LCD Orientation"
 	default LCD_LANDSCAPE
-	depends on LCD
 	---help---
 		Some LCD drivers may support displays in different orientations.
 		If the LCD driver supports this capability, than these are configuration
@@ -144,53 +209,6 @@ config LCD_RLANDSCAPE
 		tall (LCD_LANDSCAPE is the other).
 
 endchoice
-
-config LCD_ST7789
-        bool "ST7789 LCD Driver"
-        default n
-        ---help---
-                LCD Driver, ST7789.
-
-                Required LCD driver settings:
-                LCD_MAXPOWER should be 1:  0=off, 1=on
-
-config LCD_ST7789_XRES
-        int "ST7789 X Resolution"
-        default 240
-        ---help---
-                Specifies the X resolution of the LCD.
-
-config LCD_ST7789_YRES
-        int "ST7789 Y Resolution"
-        default 320
-        ---help---
-                Specifies the Y resolution of the LCD.
-
-config LCD_ST7789_BPP
-        int "Bit Per Pixel (12 or 16)"
-        default 16
-
-config LCD_ST7789_SPIMODE
-        int "SPI Mode"
-        default 0
-
-config LCD_ST7789_FREQUENCY
-        int "SPI Frequency"
-        default 48000000
-
-config LCD_ST7789_SPI_PORT
-        int "SPI Port"
-        default 1
-
-config LCD_ST7789_3WIRE
-	bool "3WIRE or 4WIRE SPI"
-	default n
-	depends on LCD_ST7789
-	---help---
-		Enable means use 3 wire. Disable means using 4 wire. In 3 wire Communication, 9bit will be used in which 9th bit will indicate
-		command or data mode for transfer.
-		In 4 wire communication, 8 bit will be used and command or data mode will be set using
-		gpio pin set/reset option
 
 config LCD_ILI9341
 	bool "ILI9341 LCD Single Chip Driver"

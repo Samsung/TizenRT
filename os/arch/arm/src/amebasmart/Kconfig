@@ -67,6 +67,10 @@ config RTL8730E_SERIAL_FIFO
 	bool "UART SERIAL FIFO"
 	default n
 
+config AMEBASMART_MIPI
+        bool "AMEBASMART_MIPI"
+        default n
+
 config AMEBASMART_SPI
 	bool "AMEBASMART_SPI"
 	default n
