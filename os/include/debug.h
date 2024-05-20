@@ -989,6 +989,30 @@ int get_errno(void);
 #define lcdllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_MIPI_ERROR
+#define mipidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define mipilldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define mipidbg(...)
+#define mipilldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_WARN
+#define mipiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define mipillwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define mipiwdbg(...)
+#define mipillwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_INFO
+#define mipivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define mipillvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define mipivdbg(...)
+#define mipillvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_LWNL80211_ERROR
 #define nldbg(format, ...)      dbg(format, ##__VA_ARGS__)
 #define nllldbg(format, ...)    lldbg(format, ##__VA_ARGS__)

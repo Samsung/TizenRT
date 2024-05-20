@@ -103,6 +103,14 @@ ifeq ($(CONFIG_LCD_ST7789),y)
   CSRCS += st7789.c
 endif
 
+ifeq ($(CONFIG_LCD_ST7785),y)
+  CSRCS += mipi_lcd.c
+endif
+
+ifeq ($(CONFIG_LCD_ST7701),y)
+  CSRCS += mipi_lcd.c
+endif
+
 endif # CONFIG_LCD
 
 ifeq ($(CONFIG_LCD),y)

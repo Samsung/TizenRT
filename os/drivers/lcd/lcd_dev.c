@@ -310,8 +310,8 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	default: {
-			printf("ERROR: Unsupported IOCTL command: %d\n", cmd);
-			ret = -ENOSYS;
+		lcddbg("ERROR: Unsupported IOCTL command: %d\n", cmd);
+		ret = -ENOSYS;
 	}
 	break;
 	}
