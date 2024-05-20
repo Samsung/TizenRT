@@ -121,6 +121,9 @@ typedef enum {
 	LWNL_REQ_BLE_SET_ADV_TXPOWER,
 	LWNL_REQ_BLE_START_ADV,
 	LWNL_REQ_BLE_STOP_ADV,
+	LWNL_REQ_BLE_ONE_SHOT_ADV_INIT,
+	LWNL_REQ_BLE_ONE_SHOT_ADV_DEINIT,
+	LWNL_REQ_BLE_ONE_SHOT_ADV,
 	LWNL_REQ_BLE_UNKNOWN
 } lwnl_req_ble;
 
@@ -301,11 +304,13 @@ typedef enum {
 typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 typedef void (*trble_server_disconnected_t)(trble_conn_handle con_handle, uint16_t cause);
 typedef void (*trble_server_mtu_update_t)(trble_conn_handle con_handle,  uint16_t mtu_size);
+typedef void (*trble_server_oneshot_adv_t)(uint16_t adv_ret);
 
 typedef struct {
 	trble_server_connected_t connected_cb;
 	trble_server_disconnected_t disconnected_cb;
 	trble_server_mtu_update_t mtu_update_cb;
+	trble_server_oneshot_adv_t oneshot_adv_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed;
@@ -374,9 +379,12 @@ typedef trble_result_e (*trble_set_adv_data)(struct bledev *dev, trble_data *dat
 typedef trble_result_e (*trble_set_adv_resp)(struct bledev *dev, trble_data *data);
 typedef trble_result_e (*trble_set_adv_type)(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 typedef trble_result_e (*trble_set_adv_interval)(struct bledev *dev, uint16_t interval);
-typedef trble_result_e (*trble_set_adv_txpower)(struct bledev *dev, uint8_t txpower);
+typedef trble_result_e (*trble_set_adv_txpower)(struct bledev *dev, uint16_t txpower);
 typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
+typedef trble_result_e (*trble_one_shot_adv_init)(struct bledev *dev);
+typedef trble_result_e (*trble_one_shot_adv_deinit)(struct bledev *dev);
+typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
 
 struct trble_ops {
 	/* Common */
@@ -432,6 +440,9 @@ struct trble_ops {
 	trble_set_adv_txpower set_adv_txpower;
 	trble_start_adv start_adv;
 	trble_stop_adv stop_adv;
+	trble_one_shot_adv_init one_shot_adv_init;
+	trble_one_shot_adv_deinit one_shot_adv_deinit;
+	trble_one_shot_adv one_shot_adv;
 };
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len);

@@ -70,10 +70,17 @@ static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
 static uint8_t ble_filter[] = { 0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 };
 
 static uint8_t g_adv_raw[] = { 
-	0x02, 0x01, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18 
+	0x02, 0x01, 0x04, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x17
+};
+	
+static uint8_t g_adv_raw_2[] = { 
+	0x02, 0x02, 0x05, 0x03, 0x19, 0x80, 0x01, 0x05, 0x03, 0x12, 0x18, 0x0f, 0x18
 };
 static uint8_t g_adv_resp[] = {
-	0x11, 0x09, 'T', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
+	0x11, 0x08, '1', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
+};
+static uint8_t g_adv_resp_2[] = {
+	0x11, 0x09, '2', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
 };
 
 static void ble_device_scanned_cb_for_test(ble_scanned_device *scanned_device)
@@ -212,6 +219,12 @@ static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_si
 	return;
 }
 
+static void ble_server_oneshot_adv_cb(uint16_t adv_result)
+{
+	printf("result : %d\n", adv_result);
+	return;
+}
+
 static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
@@ -275,6 +288,7 @@ static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
+	ble_server_oneshot_adv_cb,
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
 
@@ -810,6 +824,47 @@ int ble_rmc_main(int argc, char *argv[])
 		if (val == 0) {
 			RMC_LOG(RMC_CLIENT_TAG, "Connect Success [ID : %d]\n", ctx_count);
 			ctx_list[ctx_count++] = ctx;
+		}
+	}
+
+	if (strncmp(argv[1], "advon", 6) == 0) {
+		ret = ble_server_one_shot_adv_init();
+	}
+
+	if (strncmp(argv[1], "advoff", 7) == 0) {
+		ret = ble_server_one_shot_adv_deinit();
+	}
+
+	if (strncmp(argv[1], "adv", 4) == 0) {
+		
+		int ret = 0xff;
+		ble_data adv_data_1[1] = { 0x99, };
+		ble_data scan_rsp_data_1[1] = { 0x98, };
+		uint8_t type1 = 0;
+		uint8_t type2 = 3;
+		int counter = 0;
+		while(1){
+			counter++;
+			if (counter == 100)
+				break;
+
+			usleep(80000);
+			adv_data_1->data = g_adv_raw;
+			adv_data_1->length = sizeof(g_adv_raw);
+
+			scan_rsp_data_1->data = g_adv_resp;
+			scan_rsp_data_1->length = sizeof(g_adv_resp);
+
+			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type1);
+
+			usleep(20000);
+			adv_data_1->data = g_adv_raw_2;
+			adv_data_1->length = sizeof(g_adv_raw_2);
+			
+			scan_rsp_data_1->data = g_adv_resp_2;
+			scan_rsp_data_1->length = sizeof(g_adv_resp_2);
+			
+			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type2);
 		}
 	}
 

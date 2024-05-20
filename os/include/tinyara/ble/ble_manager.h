@@ -86,3 +86,6 @@ trble_result_e ble_drv_set_adv_interval(uint16_t interval);
 trble_result_e ble_drv_set_adv_txpower(uint8_t txpower);
 trble_result_e ble_drv_start_adv(void);
 trble_result_e ble_drv_stop_adv(void);
+trble_result_e ble_drv_one_shot_adv_init(void);
+trble_result_e ble_drv_one_shot_adv_deinit(void);
+trble_result_e ble_drv_one_shot_adv(trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type);

@@ -395,7 +395,7 @@ trble_result_e rtw_ble_server_set_device_name(uint8_t* name)
     return TRBLE_SUCCESS;
 }
 
-void rtw_ble_server_adv_into_idle(void)
+trble_result_e rtw_ble_server_adv_into_idle(void)
 {
     uint8_t max_count = 0;
     T_GAP_DEV_STATE new_state;
@@ -481,6 +481,7 @@ void rtw_ble_server_adv_into_idle(void)
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
 
     debug_print("ADV STATE : IDLE \n");
+    return TRBLE_SUCCESS;
 }
 
 /* Set Advertisement Data API */
@@ -710,6 +711,24 @@ trble_result_e rtw_ble_server_stop_adv(void)
             le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_one_shot_adv_init(void)
+{
+    ble_tizenrt_legacy_adv_concurrent_init();
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_one_shot_adv_deinit(void)
+{
+    ble_tizenrt_legacy_adv_concurrent_deinit();
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_one_shot_adv(uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
+{
+    ble_tizenrt_legacy_adv_concurrent_send_adv_id(data_adv, length_adv, data_scan_rsp, length_scan_rsp, type);
     return TRBLE_SUCCESS;
 }
 

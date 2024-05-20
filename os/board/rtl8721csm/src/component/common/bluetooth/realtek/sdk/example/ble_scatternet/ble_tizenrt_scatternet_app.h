@@ -61,6 +61,9 @@ void ble_tizenrt_scatternet_app_handle_io_msg(T_IO_MSG io_msg);
   * @param[in] p_cb_data point to callback data @ref T_LE_CB_DATA.
   * @retval result @ref T_APP_RESULT
   */
+
+void app_vendor_callback(uint8_t cb_type, void *p_cb_data);
+
 T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb_data);
 
 /**

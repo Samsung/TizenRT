@@ -188,7 +188,7 @@ void ble_tizenrt_scatternet_app_le_gap_init(void)
 	le_set_gap_param(GAP_PARAM_DEFAULT_TX_PHYS_PREFER, sizeof(tx_phys_prefer), &tx_phys_prefer);
 	le_set_gap_param(GAP_PARAM_DEFAULT_RX_PHYS_PREFER, sizeof(rx_phys_prefer), &rx_phys_prefer);
 #endif
-
+	vendor_cmd_init(app_vendor_callback);
 }
 
 /**

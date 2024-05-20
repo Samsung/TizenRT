@@ -74,7 +74,7 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     ble_app_link_table_size = BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS;
     memset(ble_tizenrt_bond_req_info, 0, sizeof(BLE_TIZENRT_BOND_REQ));
     ble_read_results = ble_tizenrt_scatternet_read_results;
-    ble_app_link_table = ble_tizenrt_scatternet_app_link_table;
+    ble_app_link_table = (BLE_TIZENRT_APP_LINK *)ble_tizenrt_scatternet_app_link_table;
     ble_tizenrt_client_send_msg = ble_tizenrt_scatternet_send_msg;
     ble_tizenrt_server_send_msg = ble_tizenrt_scatternet_send_msg;
 
@@ -99,6 +99,7 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     server_init_parm.profile = init_server->profile;
     server_init_parm.connected_cb = init_server->connected_cb;
     server_init_parm.mtu_update_cb = init_server->mtu_update_cb;
+    server_init_parm.oneshot_adv_cb = init_server->oneshot_adv_cb;
     server_init_parm.is_secured_connect_allowed = init_server->is_secured_connect_allowed;
 
     ble_tizenrt_scatternet_app_init();

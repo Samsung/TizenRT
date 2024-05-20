@@ -987,6 +987,28 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_start_adv();
 	} break;
 
+	case BLE_CMD_ONE_SHOT_ADV_INIT: {
+		BLE_STATE_CHECK;
+
+		ret = ble_drv_one_shot_adv_init();
+	} break;
+
+	case BLE_CMD_ONE_SHOT_ADV_DEINIT: {
+		BLE_STATE_CHECK;
+
+		ret = ble_drv_one_shot_adv_deinit();
+	} break;
+
+	case BLE_CMD_ONE_SHOT_ADV: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_data *data_adv = (trble_data *)param->param[0];
+		trble_data *data_scan_rsp = (trble_data *)param->param[1];
+		uint8_t *type = (uint8_t *)param->param[2];
+
+		ret = ble_drv_one_shot_adv(data_adv, data_scan_rsp, type);
+	} break;
+
 	case BLE_CMD_STOP_ADV: {
 		BLE_STATE_CHECK;
 

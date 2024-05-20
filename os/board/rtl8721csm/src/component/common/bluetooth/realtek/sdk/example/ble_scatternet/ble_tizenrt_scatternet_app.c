@@ -39,6 +39,8 @@
 #include "os_msg.h"
 #include "os_mem.h"
 #include "os_sync.h"
+#include "vendor_cmd_bt.h"
+
 
 extern trble_server_init_config server_init_parm;
 extern trble_client_init_config *client_init_parm;
@@ -61,6 +63,22 @@ T_GAP_DEV_STATE ble_tizenrt_scatternet_gap_dev_state = {0, 0, 0, 0, 0};         
 BLE_TIZENRT_SCATTERNET_APP_LINK ble_tizenrt_scatternet_app_link_table[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
 T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCATTERNET_APP_MAX_LINKS] = {0};
 
+void *ble_tizenrt_scatternet_adv_concurrent_task_handle = NULL;
+void *ble_tizenrt_scatternet_adv_concurrent_queue_handle = NULL;
+void *ble_tizenrt_adv_concurrent_sem = NULL;
+#define BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_PRIORITY   5
+#define BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_STACK_SIZE 256 * 8
+
+typedef struct
+{
+    uint8_t adv_type;
+    uint8_t adv_data[31];
+    uint8_t adv_data_size;
+    uint8_t scan_rsp_data[31];
+    uint8_t scan_rsp_data_size;
+} BLE_TIZENRT_LEGACY_ADV_INFO;
+
+BLE_TIZENRT_LEGACY_ADV_INFO adv_info_0;
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -68,6 +86,12 @@ T_TIZENRT_CLIENT_READ_RESULT ble_tizenrt_scatternet_read_results[BLE_TIZENRT_SCA
 void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     switch (callback_msg.type) {
+        case BLE_TIZENRT_CALLBACK_TYPE_ONESHOT_ADV:
+        {
+            uint16_t *adv_ret = callback_msg.u.buf;
+            server_init_parm.oneshot_adv_cb(*adv_ret);
+        }
+        break;
         case BLE_TIZENRT_BONDED_MSG:
         {
             debug_print("Handle bond msg \n");
@@ -81,8 +105,8 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                 debug_print("Bonded parameter is NULL \n");
             } 
         }
-		    break;
-                
+		break;
+		
 		case BLE_TIZENRT_CONNECTED_MSG:
 		{
             debug_print("Handle connected_dev msg \n");
@@ -562,7 +586,6 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
             T_TIZENRT_CONN_UPDATE_PARAM *param = pdata;
             if(param)
             {
-                int ret;
                 uint16_t conn_id = (uint16_t)param->conn_id;
                 u16 conn_interval_min = param->min_conn_interval;
                 u16 conn_interval_max = param->max_conn_interval;
@@ -1202,6 +1225,42 @@ uint8_t ble_tizenrt_scatternet_parse_scanned_devname(T_LE_SCAN_INFO *scan_info, 
     }
     return 0;
 }
+
+void app_vendor_callback(uint8_t cb_type, void *p_cb_data)
+{
+    T_GAP_VENDOR_CB_DATA cb_data;
+    memcpy(&cb_data, p_cb_data, sizeof(T_GAP_VENDOR_CB_DATA));
+    switch (cb_type)
+    {
+        case GAP_MSG_VENDOR_CMD_RSP:
+        switch(cb_data.p_gap_vendor_cmd_rsp->command)
+        {
+            case HCI_LE_VENDOR_EXTENSION_FEATURE2:
+            {
+                if (cb_data.p_gap_vendor_cmd_rsp->cause != 0)
+                {
+                    printf("One shot adv resp: cause 0x%x\r\n", cb_data.p_gap_vendor_cmd_rsp->cause);
+                }
+                uint16_t *adv_result = os_mem_alloc(0, sizeof(uint16_t));
+                *adv_result = cb_data.p_gap_vendor_cmd_rsp->cause;
+                if (ble_tizenrt_adv_concurrent_sem != NULL)
+                {
+                    if (os_sem_give(ble_tizenrt_adv_concurrent_sem) == false)
+                    {
+                        printf("os_sem_give ble_tizenrt_adv_concurrent_sem fail!\r\n");
+                    }
+                }
+                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_ONESHOT_ADV, adv_result) == false)
+                {
+                    os_mem_free(adv_result);
+                    debug_print("callback msg send fail \n");
+                }
+            }
+        }
+    }
+    return;
+}
+
 /**
   * @brief Callback for gap le to notify app
   * @param[in] cb_type callback msy type @ref GAP_LE_MSG_Types.
@@ -1217,6 +1276,30 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
 
     switch (cb_type)
     {
+    case GAP_MSG_LE_ADV_UPDATE_PARAM:
+        if (p_data->p_le_adv_update_param_rsp->cause == 0)
+        {
+            if(GAP_CAUSE_SUCCESS != le_vendor_one_shot_adv())
+            {
+                if (ble_tizenrt_adv_concurrent_sem != NULL)
+                {
+                    if (os_sem_give(ble_tizenrt_adv_concurrent_sem) == false)
+                    {
+                        printf("os_sem_give ble_tizenrt_adv_concurrent_sem fail!\r\n");
+                    }
+                }
+            }
+        } else {
+            printf("GAP_MSG_LE_ADV_UPDATE_PARAM: cause 0x%x\r\n", p_data->p_le_adv_update_param_rsp->cause);
+            if (ble_tizenrt_adv_concurrent_sem != NULL)
+            {
+                if (os_sem_give(ble_tizenrt_adv_concurrent_sem) == false)
+                {
+                    printf("os_sem_give ble_tizenrt_adv_concurrent_sem fail!\r\n");
+                }
+            }
+        }
+    break;
     case GAP_MSG_LE_SCAN_INFO:
         APP_PRINT_INFO5("GAP_MSG_LE_SCAN_INFO:adv_type 0x%x, bd_addr %s, remote_addr_type %d, rssi %d, data_len %d",
                         p_data->p_le_scan_info->adv_type,
@@ -1247,7 +1330,7 @@ T_APP_RESULT ble_tizenrt_scatternet_app_gap_callback(uint8_t cb_type, void *p_cb
             scanned_device->rssi = p_data->p_le_scan_info->rssi;
             scanned_device->addr.type = p_data->p_le_scan_info->remote_addr_type;
             memcpy(scanned_device->addr.mac, p_data->p_le_scan_info->bd_addr, GAP_BD_ADDR_LEN);
-            if(scanned_device->adv_type == GAP_ADV_EVT_TYPE_SCAN_RSP)
+            if(scanned_device->adv_type == TRBLE_ADV_TYPE_SCAN_RSP)
             {
                 scanned_device->resp_data_length = p_data->p_le_scan_info->data_len;
                 memcpy(scanned_device->resp_data, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
@@ -1983,6 +2066,75 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
         }
     }
     return app_result;
+}
+
+void ble_tizenrt_legacy_adv_concurrent_send_adv_id(uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
+{
+    uint8_t adv_id = 0;
+    adv_info_0.adv_data_size = length_adv;
+    memcpy(adv_info_0.adv_data, data_adv, length_adv);
+    memcpy(adv_info_0.scan_rsp_data, data_scan_rsp, length_scan_rsp);
+    adv_info_0.scan_rsp_data_size = length_scan_rsp;
+    adv_info_0.adv_type = *type;
+    if (ble_tizenrt_scatternet_adv_concurrent_queue_handle != NULL)
+    {
+        if (os_msg_send(ble_tizenrt_scatternet_adv_concurrent_queue_handle, &adv_id, 0) == false)
+        {
+            printf("os_msg_send ble_tizenrt_scatternet_adv_concurrent_queue_handle fail!\r\n");
+        }
+    } else
+    {
+        printf("ble_tizenrt_scatternet_adv_concurrent_queue_handle is NULL!\r\n");
+    }
+}
+
+void ble_tizenrt_legacy_adv_concurrent_task(void *p_param)
+{
+    uint8_t adv_id = 0;
+    BLE_TIZENRT_LEGACY_ADV_INFO adv_info;
+    while (1)
+    {
+        if (os_msg_recv(ble_tizenrt_scatternet_adv_concurrent_queue_handle, &adv_id, 0xFFFFFFFF) == true)
+        {
+            memcpy(&adv_info, &adv_info_0, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
+            le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(uint8_t), (void *)&adv_info.adv_type);
+            le_adv_set_param(GAP_PARAM_ADV_DATA, adv_info.adv_data_size, (void *)adv_info.adv_data);
+            le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, adv_info.scan_rsp_data_size, (void *)adv_info.scan_rsp_data);
+            le_adv_update_param();
+        }
+        if (os_sem_take(ble_tizenrt_adv_concurrent_sem, 0xFFFFFFFF) == false)
+        {
+            printf("os_sem_take ble_tizenrt_adv_concurrent_sem fail!\r\n");
+        }
+    }
+}
+
+void ble_tizenrt_legacy_adv_concurrent_init(void)
+{
+    os_sem_create(&ble_tizenrt_adv_concurrent_sem, 0, 1);
+    os_msg_queue_create(&ble_tizenrt_scatternet_adv_concurrent_queue_handle, 0x20, sizeof(uint8_t));
+    os_task_create(&ble_tizenrt_scatternet_adv_concurrent_task_handle, "ble_tizenrt_legacy_adv_concurrent", ble_tizenrt_legacy_adv_concurrent_task,
+                        0, BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_STACK_SIZE, BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_PRIORITY);
+}
+
+void ble_tizenrt_legacy_adv_concurrent_deinit(void)
+{
+    if (ble_tizenrt_scatternet_adv_concurrent_queue_handle)
+    {
+        os_msg_queue_delete(ble_tizenrt_scatternet_adv_concurrent_queue_handle);
+        ble_tizenrt_scatternet_adv_concurrent_queue_handle = NULL;
+    }
+    if (ble_tizenrt_scatternet_adv_concurrent_task_handle)
+    {
+        os_task_delete(ble_tizenrt_scatternet_adv_concurrent_task_handle);
+        ble_tizenrt_scatternet_adv_concurrent_task_handle = NULL;
+    }
+    if (ble_tizenrt_adv_concurrent_sem)
+    {
+        os_sem_delete(ble_tizenrt_adv_concurrent_sem);
+        ble_tizenrt_adv_concurrent_sem = NULL;
+    }
+    memset(&adv_info_0, 0, sizeof(adv_info_0));
 }
 /** @} */ /* End of group GCS_CLIIENT_CALLBACK */
 /** @} */ /* End of group CENTRAL_CLIENT_APP */

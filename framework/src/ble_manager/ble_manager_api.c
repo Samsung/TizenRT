@@ -444,6 +444,30 @@ ble_result_e ble_server_start_adv(void)
 
 	RETURN_RESULT(res, msg);
 }
+ble_result_e ble_server_one_shot_adv_init(void)
+{
+	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV_INIT, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_one_shot_adv_deinit(void)
+{
+	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV_DEINIT, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_one_shot_adv(ble_data *data_adv, ble_data *data_scan_rsp, uint8_t type)
+{
+	blemgr_msg_params param = { 3, {(void *)data_adv, (void *)data_scan_rsp, (void *)&type}};
+	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
 
 ble_result_e ble_server_stop_adv(void)
 {
