@@ -44,8 +44,10 @@
 uint32_t hci_cfg_sw_val = 0xFF;    // Open BT Trace log & FW log use 0xDD
 uint8_t bt_ant_switch = ANT_S1;      // Select BT RF Patch
 
+#ifndef CONFIG_SECOND_FLASH_PARTITION 
 extern const unsigned char rtlbt_fw[];
 extern unsigned int rtlbt_fw_len;
+#endif
 extern const unsigned char rtlbt_mp_fw[];
 extern unsigned int rtlbt_mp_fw_len;
 
@@ -921,6 +923,11 @@ static uint32_t hci_platform_parse_patch(uint8_t *p_buf, HCI_PATCH_NODE *p_patch
 	return fw_len;
 }
 
+#ifdef CONFIG_SECOND_FLASH_PARTITION
+extern uint8_t *rtlbt_fw_ptr;
+extern uint32_t rtlbt_fw_size;
+#endif
+
 static uint8_t hci_platform_get_patch_info(void)
 {
 	const uint8_t patch_sig_v1[]    = {0x52, 0x65, 0x61, 0x6C, 0x74, 0x65, 0x63, 0x68};	//V1 signature: Realtech
@@ -934,8 +941,14 @@ static uint8_t hci_platform_get_patch_info(void)
 
 	if (CHECK_CFG_SW(CFG_SW_USE_FLASH_PATCH)) {
 #if defined(CONFIG_BT_EXCLUDE_MP_FUNCTION) && CONFIG_BT_EXCLUDE_MP_FUNCTION
+#ifndef CONFIG_SECOND_FLASH_PARTITION
 		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
 		patch_info->patch_len = rtlbt_fw_len;
+#else
+		/* Assign back to BT structure */
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw_ptr;
+		patch_info->patch_len = rtlbt_fw_size;
+#endif
 #else
 		if (hci_platform_check_mp()) {
 			patch_info->patch_buf = (uint8_t *)(void *)rtlbt_mp_fw;
