@@ -41,7 +41,6 @@
 #define MIPI_DSI_VFP		15
 #define MIPI_FRAME_RATE		60
 #define LCD_LANE_NUM		2
-
 /*
     480*800*4 = 1.47MB
     1024*768*4 = 3M

@@ -143,6 +143,7 @@ static void rtl8730_st7701_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_s
 	(void)x_end;
 	(void)y_end;
 #endif
+	rtl8730_st7701_cache_invalidate((u32)lcd_img_buffer, LCDC_IMG_BUF_SIZE);
 	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
 	LCDC_TrigerSHWReload(pLCDC);
 }
