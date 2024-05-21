@@ -113,6 +113,8 @@ MEMORY
 	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60100000, LENGTH = 0x60800000 - 0x60100000	/* CA32 BL3 DRAM NS: 7MB */
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
 	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT */
+
+	CA32_FLASH_EXT (r) :                    ORIGIN = 0x09000000, LENGTH = 0x09020000 - 0x09000000	/* 128KB of external flash */
 }
 
 __rom_stdlib_text_start__ = ORIGIN(KM4_IROM_STDLIB_NS);
@@ -125,6 +127,8 @@ __ca32_flash_text_start__ = ORIGIN(CA32_IMG2_XIP);
 __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
 __ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
+
+__flash_ext_data_start__ = ORIGIN(CA32_FLASH_EXT);
 
 SECTIONS
 {
