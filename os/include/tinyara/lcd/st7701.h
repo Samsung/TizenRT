@@ -42,6 +42,10 @@
 #define MIPI_FRAME_RATE		60
 #define LCD_LANE_NUM		2
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a40d5f4be2378ce5458f282885fa66c18d4ff53f
 /*
     480*800*4 = 1.47MB
     1024*768*4 = 3M
