@@ -56,6 +56,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <tinyara/mm/mm.h>
 
 #include "lib_internal.h"
 
@@ -118,6 +119,9 @@ int asprintf(FAR char **ptr, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	ret = vasprintf(ptr, fmt, ap);
+	if (*ptr) {
+		DEBUG_SET_CALLER_ADDR(*ptr);
+	}
 	va_end(ap);
 
 	return ret;

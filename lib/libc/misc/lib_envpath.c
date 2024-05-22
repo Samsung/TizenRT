@@ -65,6 +65,7 @@
 #include <assert.h>
 
 #include <tinyara/envpath.h>
+#include <tinyara/mm/mm.h>
 
 #include "libc.h"
 
@@ -138,7 +139,7 @@ ENVPATH_HANDLE envpath_init(FAR const char *name)
 		printf("Allocate a container failed\n");
 		return (ENVPATH_HANDLE) NULL;
 	}
-
+	DEBUG_SET_CALLER_ADDR(envpath);
 	/* Populate the container */
 
 	strcpy(envpath->path, path);

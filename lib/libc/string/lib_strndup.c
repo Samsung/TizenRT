@@ -55,6 +55,7 @@
  ************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/mm/mm.h>
 
 #include <string.h>
 
@@ -95,7 +96,7 @@ FAR char *strndup(FAR const char *s, size_t size)
 			/* Copy the string into the allocated memory and add a NUL
 			 * terminator in any case.
 			 */
-
+			DEBUG_SET_CALLER_ADDR(news);
 			memcpy(news, s, allocsize);
 			news[allocsize] = '\0';
 		}

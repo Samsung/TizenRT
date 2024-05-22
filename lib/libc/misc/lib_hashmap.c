@@ -97,6 +97,7 @@ struct hashmap_s *hashmap_create(int startsize)
 	if (hm == NULL) {
 		return NULL;
 	}
+	DEBUG_SET_CALLER_ADDR(hm);
 
 	if (!startsize) {
 		startsize = TABLE_STARTSIZE;
@@ -185,6 +186,7 @@ unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
 
 		keyset = (unsigned long *)lib_malloc(sizeof(unsigned long) * hash->count);
 		if (keyset != NULL) {
+			DEBUG_SET_CALLER_ADDR(keyset);
 			for (i = 0; i < hash->size; i++) {
 				if (hash->table[i].flags & ACTIVE) {
 					keyset[idx++] = hash->table[i].key;

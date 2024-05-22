@@ -55,6 +55,7 @@
  ************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/mm/mm.h>
 
 #include <string.h>
 
@@ -71,6 +72,7 @@ FAR char *strdup(const char *s)
 		size_t len = strlen(s) + 1;
 		news = (FAR char *)lib_malloc(len);
 		if (news) {
+			DEBUG_SET_CALLER_ADDR(news);
 			strncpy(news, s, len);
 		}
 	}
