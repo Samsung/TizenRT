@@ -58,6 +58,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <tinyara/mm/mm.h>
 
 #include "lib_internal.h"
 
@@ -162,6 +163,7 @@ int vasprintf(FAR char **ptr, const char *fmt, va_list ap)
 	if (!buf) {
 		return ERROR;
 	}
+	DEBUG_SET_CALLER_ADDR(buf);
 
 	/* Initialize a memory stream to write into the allocated buffer.  The
 	 * memory stream will reserve one byte at the end of the buffer for the

@@ -55,6 +55,7 @@
 //***************************************************************************
 
 #include <tinyara/config.h>
+#include <tinyara/mm/mm.h>
 #include <cstddef>
 #include <debug.h>
 
@@ -111,6 +112,8 @@ void *operator new(unsigned int nbytes)
     // we cannot throw an exception!  We are bad.
 
     dbg("Failed to allocate\n");
+  } else {
+    DEBUG_SET_CALLER_ADDR(alloc);
   }
 #endif
 
