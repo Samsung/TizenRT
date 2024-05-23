@@ -88,6 +88,7 @@ trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trbl
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count);
 trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+trble_result_e trble_netmgr_indicate_queue_count(struct bledev *dev, trble_conn_handle *con_handle, uint8_t *count);
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 trble_result_e trble_netmgr_attr_reject(struct bledev *dev, trble_attr_handle attr_handle, uint8_t app_errorcode);
@@ -140,6 +141,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
 	trble_netmgr_charact_indicate,
+	trble_netmgr_indicate_queue_count,
 	trble_netmgr_attr_set_data,
 	trble_netmgr_attr_get_data,
 	trble_netmgr_attr_reject,
@@ -375,6 +377,11 @@ trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle
 trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data)
 {
 	return rtw_ble_server_charact_indicate(attr_handle, con_handle, data->data, data->length);
+}
+
+trble_result_e trble_netmgr_indicate_queue_count(struct bledev *dev, trble_conn_handle *con_handle, uint8_t *count)
+{
+	return rtw_ble_server_indicate_queue_cnt(con_handle, count);
 }
 
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)
