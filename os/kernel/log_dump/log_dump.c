@@ -264,6 +264,7 @@ static void log_dump_mem_check(size_t max_size)
 		for (int i = 0; i < extra_chunks_count; i++) {
 			next_chunk = (struct log_dump_chunk_s *)sq_remfirst(&log_dump_chunks);
 			compress_rdptr = 0;	/* reset the read pointer as the head is removed */
+			log_dump_size -= LOG_CHUNK_SIZE;
 			kmm_free(next_chunk);
 		}
 	}
