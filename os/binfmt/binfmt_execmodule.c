@@ -127,9 +127,10 @@ static void exec_ctors(FAR void *arg)
 	if (g_lib_binp->run_library_ctors) {
 		ctor = g_lib_binp->ctors;
 		for (i = 0; i < g_lib_binp->nctors; i++) {
-			binfo("Calling ctor %d at %p\n", i, (FAR void *)ctor);
-
+			lldbg("address of ctor array : %p\n", ctor);
+			lldbg("Calling ctor %d at %p\n", i, *ctor);
 			(*ctor)();
+			lldbg("Done Calling ctor %d at %p\n", i, (FAR void *)ctor);
 			ctor++;
 		}
 		/* unset the flag so that common binary constructors are executed only once */
