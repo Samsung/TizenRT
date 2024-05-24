@@ -301,8 +301,13 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
 	//.filtscl = CONFIG_I2C0_FILTSCL,
 	//.filtsda = CONFIG_I2C0_FILTSDA,
+#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+	.scl_pin = PB_30,
+	.sda_pin = PB_29,
+#else
 	.scl_pin = PA_10,
 	.sda_pin = PA_9,
+#endif
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -331,8 +336,13 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c1_config = {
 	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
 	//.filtscl = CONFIG_I2C1_FILTSCL,
 	//.filtsda = CONFIG_I2C1_FILTSDA,
+#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+	.scl_pin = PA_4,
+	.sda_pin = PA_3,
+#else
 	.scl_pin = PA_21,
 	.sda_pin = PA_20,
+#endif
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
