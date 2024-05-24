@@ -160,6 +160,7 @@ void FLASH_Write_Unlock(void)
 *		Only work in OneBitMode.
 * @retval none
 */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data)
 {
@@ -169,6 +170,7 @@ void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  FLASH_SetStatus used to set register status. FLASH_WriteEn & FLASH_WaitBusy, and lock CPU when set
@@ -178,6 +180,7 @@ void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data)
   * @param    Status: pointer to byte array to be sent
   * @retval     none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status)
 {
@@ -187,6 +190,7 @@ void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  FLASH_SetStatusBits set or clear status bits., used to set protect bit or quad enable bit, and lock CPU when set
@@ -194,6 +198,7 @@ void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status)
   * @param    NewState: ENABLE/DISABLE
   * @retval none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
 {
@@ -203,6 +208,7 @@ void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  This function is used to write data to flash in OneBitMode and User Mode, and lock CPU when write.
@@ -215,6 +221,7 @@ void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState)
   *		- for compatibility with amebaz, which has 16-byte TX FIFO is 16 byte and max len is 16-cmdlen = 12 byte
   * @retval none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
 {
@@ -225,6 +232,7 @@ void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  This function is used to erase flash, and lock CPU when erase.
@@ -236,6 +244,7 @@ void FLASH_TxData12BXIP(u32 StartAddr, u8 DataPhaseLen, u8 *pData)
   * 		the address in will be erased.
   * @retval none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_EraseXIP(u32 EraseType, u32 Address)
 {
@@ -252,6 +261,7 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  This function is used to write data to flash in OneBitMode and User Mode, and lock CPU when write.
@@ -263,6 +273,7 @@ void FLASH_EraseXIP(u32 EraseType, u32 Address)
   *		- should use FLASH_SW_CS_Control to protect flash write
   * @retval none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 {
@@ -273,6 +284,7 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 
 	FLASH_Write_Unlock();
 }
+#endif
 
 /**
   * @brief  Read a stream of data from specified address
@@ -283,6 +295,7 @@ void FLASH_TxData256BXIP(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
   * @retval   status: Success:1 or Failure: Others.
   * @note auto mode is ok, because we have flash cache
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 int  FLASH_ReadStream(u32 address, u32 len, u8 *pbuf)
 {
@@ -292,6 +305,7 @@ int  FLASH_ReadStream(u32 address, u32 len, u8 *pbuf)
 
 	return 1;
 }
+#endif
 
 /**
   * @brief  Write a stream of data to specified address
@@ -338,6 +352,7 @@ int  FLASH_WriteStream(u32 address, u32 len, u8 *pbuf)
   * @param  Protection:  if disable interrupt when switch clock:
   * @retval   None
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_ClockSwitch(u32 Source, u32 Protection)
 {
@@ -405,6 +420,7 @@ void FLASH_ClockSwitch(u32 Source, u32 Protection)
 	}
 #endif
 }
+#endif
 
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
@@ -719,6 +735,7 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
   * @param    Status: pointer to byte array to be sent
   * @retval     none
   */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_SetStatus(u8 Cmd, u32 Len, u8 *Status)
 {
@@ -732,6 +749,7 @@ void FLASH_SetStatus(u8 Cmd, u32 Len, u8 *Status)
 	/* Exit user mode and restore SPIC to auto mode */
 	FLASH_UserMode_Exit();
 }
+#endif
 
 /**
   * @brief  FLASH_SetStatusBits set or clear status bits., used to set protect bit or quad enable bit
