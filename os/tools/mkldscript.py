@@ -37,7 +37,13 @@ CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BI
 CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
 CONFIG_USE_BP = util.get_value_from_file(cfg_file, "CONFIG_USE_BP=").rstrip('\n')
 CONFIG_NUM_APPS = util.get_value_from_file(cfg_file, "CONFIG_NUM_APPS=").rstrip('\n')
-CONFIG_FLASH_START_ADDR = util.get_value_from_file(cfg_file, "CONFIG_FLASH_START_ADDR=").rstrip('\n')
+# Get flash virtual remapped address instead of physical address
+# CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
+
+# Hardcoded as of now. REASON: Kernel TRPK might include more than one binary information, the exact starting address
+# of loadable apps binary has to be shifted accordingly (ie. Minus the offset here), to make sure XIP_ELF is working fine 
+# TODO: Dynamically get the offset from Kernel TRPK binary file
+CONFIG_FLASH_VSTART_LOADABLE = "0x0DF96000"
 
 if PARTITION_SIZE_LIST == 'None' :
     sys.exit(0)
@@ -47,7 +53,7 @@ SIZE_LIST = PARTITION_SIZE_LIST.split(",")
 
 ld_scripts = [[], []] # two list to also include OTA partitions
 
-offset = int(CONFIG_FLASH_START_ADDR, 16)
+offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
 
 for i in range(int(CONFIG_NUM_APPS) + 1) :
     start = "/* Auto-generated ld script */\nMEMORY\n"
@@ -106,6 +112,9 @@ for name in NAME_LIST :
         ld_scripts[ota_index][0] = ld_scripts[ota_index][0] + common_start + str1 + common_size + str2 + common_ram_str
         with open(output_folder + "common_" + str(ota_index) + ".ld", "w") as ld :
             ld.write(ld_scripts[ota_index][0])
+    else:
+        PART_IDX = PART_IDX + 1
+        continue
 
     offset = offset + part_size
     PART_IDX = PART_IDX + 1
