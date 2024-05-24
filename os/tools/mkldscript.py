@@ -37,7 +37,8 @@ CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BI
 CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
 CONFIG_USE_BP = util.get_value_from_file(cfg_file, "CONFIG_USE_BP=").rstrip('\n')
 CONFIG_NUM_APPS = util.get_value_from_file(cfg_file, "CONFIG_NUM_APPS=").rstrip('\n')
-CONFIG_FLASH_START_ADDR = util.get_value_from_file(cfg_file, "CONFIG_FLASH_START_ADDR=").rstrip('\n')
+#CONFIG_FLASH_START_ADDR = util.get_value_from_file(cfg_file, "CONFIG_FLASH_START_ADDR=").rstrip('\n')
+CONFIG_FLASH_START_ADDR = "0x0E000000"
 
 if PARTITION_SIZE_LIST == 'None' :
     sys.exit(0)
@@ -106,6 +107,9 @@ for name in NAME_LIST :
         ld_scripts[ota_index][0] = ld_scripts[ota_index][0] + common_start + str1 + common_size + str2 + common_ram_str
         with open(output_folder + "common_" + str(ota_index) + ".ld", "w") as ld :
             ld.write(ld_scripts[ota_index][0])
+    else :
+        PART_IDX = PART_IDX + 1
+        continue
 
     offset = offset + part_size
     PART_IDX = PART_IDX + 1
