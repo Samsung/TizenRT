@@ -20,6 +20,15 @@ config FLASH_START_ADDR
         A start address of flash (in hex).
         This is fixed value, so user doesn't need to change it.
 
+config FLASH_VSTART_LOADABLE
+    hex
+    default 0xe000000
+    depends on XIP_ELF
+    help
+        A start virtual address of flash (in hex). This macro
+        will be used to do address remapping for loadable running on XIP.
+        This is fixed value, so user doesn't need to change it.
+
 choice
     prompt "Board Flash Size"
     default BOARD_FLASH_16M
