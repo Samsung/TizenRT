@@ -327,6 +327,13 @@ SECTIONS
 		_psram_heap_start = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
+	.bluetooth_trace.text :
+	{
+		__btrace_start__ = .;
+		*(.BTTRACE)
+		__btrace_end__ = .;
+	} > BTRACE
+
 	.ARM.attributes 0 : { KEEP (*(.ARM.attributes)) KEEP (*(.gnu.attributes)) }
 
     /* Initialize the stack at the end of the memory block. */
