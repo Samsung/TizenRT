@@ -20,6 +20,21 @@ config FLASH_START_ADDR
         A start address of flash (in hex).
         This is fixed value, so user doesn't need to change it.
 
+config TRPK_CONTAINS_MULTIPLE_BINARY
+    bool
+    default n
+    depends on XIP_ELF
+    help
+        This macro is to differentiate whether the kernel trpk contains
+        more than 1 binary. If yes, we have to recalculate the offset
+        according to the binary that is running on Tizen Lite, to make
+        sure the loadable_apps for XIP_ELF is placed to the correct
+        virtual flash address (ie. Only Loadable_apps with running on
+        XIP is needed, because the core has to know where to execute
+        from the correct remapped address)
+        This macro is not needed for flat configs, due to the kernel 
+        binaries remapping will be handled by the bootloader.
+
 config FLASH_VSTART_LOADABLE
     hex
     default 0xe000000

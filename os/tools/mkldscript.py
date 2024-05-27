@@ -28,6 +28,23 @@ tool_folder = os_folder + '/tools'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin/'
 
+CONFIG_ARCH_BOARD = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").rstrip('\n')
+CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY = util.get_value_from_file(cfg_file, "CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY=").rstrip('\n')
+# Get flash virtual remapped address instead of physical address
+CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
+
+# Dynamically get the offset from Kernel TRPK binary file
+# Chip specific should implement the logic for offset calculation according to trpk file content
+offset = 0
+if CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY == "y":
+    if CONFIG_ARCH_BOARD[1:-1] == "rtl8730e":
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../build/tools/amebasmart/gnu_utility')))
+        from loadable_xip_elf import get_offset
+        offset_shift = get_offset()
+        offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16) - int(offset_shift, 16)
+else:
+    offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
+
 PART_IDX = 0
 
 PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=").rstrip('\n').strip('"').rstrip(',')
@@ -37,13 +54,6 @@ CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BI
 CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
 CONFIG_USE_BP = util.get_value_from_file(cfg_file, "CONFIG_USE_BP=").rstrip('\n')
 CONFIG_NUM_APPS = util.get_value_from_file(cfg_file, "CONFIG_NUM_APPS=").rstrip('\n')
-# Get flash virtual remapped address instead of physical address
-# CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
-
-# Hardcoded as of now. REASON: Kernel TRPK might include more than one binary information, the exact starting address
-# of loadable apps binary has to be shifted accordingly (ie. Minus the offset here), to make sure XIP_ELF is working fine 
-# TODO: Dynamically get the offset from Kernel TRPK binary file
-CONFIG_FLASH_VSTART_LOADABLE = "0x0DF96000"
 
 if PARTITION_SIZE_LIST == 'None' :
     sys.exit(0)
@@ -52,8 +62,6 @@ NAME_LIST = PARTITION_NAME_LIST.split(",")
 SIZE_LIST = PARTITION_SIZE_LIST.split(",")
 
 ld_scripts = [[], []] # two list to also include OTA partitions
-
-offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
 
 for i in range(int(CONFIG_NUM_APPS) + 1) :
     start = "/* Auto-generated ld script */\nMEMORY\n"
