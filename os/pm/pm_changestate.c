@@ -71,62 +71,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define PM_TIMER_GAP        (TIME_SLICE_TICKS * 2)
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static void pm_timer_cb(int argc, wdparm_t arg1, ...)
-{
-	/* Do nothing here, cause we only need TIMER ISR to wake up PM,
-	 * for deceasing PM state.
-	 */
-}
-
-/****************************************************************************
- * Name: pm_timer
- *
- * Description:
- *   This internal function is called to start one timer to decrease power
- *   state level.
- *
- * Input Parameters:
- *   domain - The PM domain associated with the accumulator
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-static void pm_timer(int domain)
-{
-	FAR struct pm_domain_s *pdom = &g_pmglobals.domain[domain];
-	static const int pmtick[3] = {
-		TIME_SLICE_TICKS * CONFIG_PM_IDLEENTER_COUNT,
-		TIME_SLICE_TICKS * CONFIG_PM_STANDBYENTER_COUNT,
-		TIME_SLICE_TICKS * CONFIG_PM_SLEEPENTER_COUNT
-	};
-
-	if (!pdom->wdog) {
-		pdom->wdog = wd_create();
-	}
-
-	if (pdom->state < PM_SLEEP && !pdom->stay[pdom->state] && pmtick[pdom->state]) {
-		int delay = pmtick[pdom->state] + pdom->btime - clock_systimer();
-		int left  = wd_gettime(pdom->wdog);
-		if (delay <= 0) {
-			/* TODO: Revisit this implementation if we face negative delay value here */
-			pmdbg("Delay value is negative! Delay = %d, Pdom->btime = %8lld\n", delay, pdom->btime);
-			delay = 1;
-		}
-		if (!WDOG_ISACTIVE(pdom->wdog) || abs(delay - left) > PM_TIMER_GAP) {
-			wd_start(pdom->wdog, delay, (wdentry_t)pm_timer_cb, 0);
-		}
-	} else {
-		wd_cancel(pdom->wdog);
-	}
-}
 
 /****************************************************************************
  * Name: pm_prepall
@@ -307,10 +254,7 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 
 	}
 EXIT:
-	/* Start PM timer to decrease PM state */
-	pm_timer(domain_indx);
 	/* Restore the interrupt state */
-
 	leave_critical_section(flags);
 	return ret;
 }
