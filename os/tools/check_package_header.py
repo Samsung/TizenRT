@@ -42,7 +42,12 @@ else :
     COMMON_HEADER_SIZE = 12
     APP_HEADER_SIZE = 44
 
-SIGNING_SIZE = int(util.get_value_from_file(cfg_path, "CONFIG_USER_SIGN_PREPEND_SIZE=").rstrip('\n'))
+SIGNING_SIZE = util.get_value_from_file(cfg_path, "CONFIG_USER_SIGN_PREPEND_SIZE=").rstrip('\n')
+if SIGNING_SIZE == 'None' :
+    SIGNING_SIZE = 0
+else :
+    SIGNING_SIZE = int(SIGNING_SIZE)
+
 CHECKSUM_SIZE = 4
 
 LOADING_LOW = 1
