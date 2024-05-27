@@ -104,7 +104,7 @@ void pm_timer_add(pm_timer_t *timer)
                 pm_timer_t *prev;
                 pm_timer_t *next;
                 prev = curr = (pm_timer_t *)g_pm_timer_activelist.head;
-                unsigned int now = 0;
+                int now = 0;
 
                 /* Advance to positive time */
                 while ((now += curr->delay) < 0 && curr->next) {
