@@ -68,6 +68,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		if (rpos != offset) {
 			int errval = get_errno();
 			berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
+			close(filfd);
 			return -errval;
 		}
 
@@ -79,10 +80,12 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 			if (nbytes != -EINTR) {
 				berr("Read from offset %lu failed: %d\n", (unsigned long)offset, (int)nbytes);
+				close(filfd);
 				return nbytes;
 			}
 		} else if (nbytes == 0) {
 			berr("Unexpected end of file\n");
+			close(filfd);
 			return -ENODATA;
 		} else {
 			readsize -= nbytes;
@@ -90,6 +93,8 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 			offset += nbytes;
 		}
 	}
+
+	close(filfd);
 
 	binp->sections[BIN_TEXT] = uspace.text_start;
 	binp->flash_region_start = uspace.text_start - uspace_offset + 4;
