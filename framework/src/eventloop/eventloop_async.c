@@ -121,7 +121,7 @@ static void eventloop_func_handle_remove(thread_safe_func_t *func_handle)
 
 static int eventloop_thread_safe_cb_list_node_init(int list_idx, thread_safe_func_t *func_handle)
 {
-	if (list_idx < 0 || list_idx > CONFIG_MAX_TASKS || func_handle == NULL) {
+	if (list_idx < 0 || list_idx >= CONFIG_MAX_TASKS || func_handle == NULL) {
 		eldbg("Invalid Parameter!\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
@@ -139,7 +139,7 @@ static int eventloop_thread_safe_cb_list_node_init(int list_idx, thread_safe_fun
 
 static void eventloop_thread_safe_cb_list_node_deinit(int list_idx)
 {
-	if (list_idx < 0 || list_idx > CONFIG_MAX_TASKS) {
+	if (list_idx < 0 || list_idx >= CONFIG_MAX_TASKS) {
 		eldbg("Invalid Parameter!\n");
 		return;
 	}
@@ -200,7 +200,7 @@ void eventloop_unregister_thread_safe_cb(el_async_t *handle)
 
 static void eventloop_thread_safe_cb_add(thread_safe_cb_t *thread_safe_cb, int list_idx)
 {
-	if (list_idx < 0 || list_idx > CONFIG_MAX_TASKS || thread_safe_cb == NULL) {
+	if (list_idx < 0 || list_idx >= CONFIG_MAX_TASKS || thread_safe_cb == NULL) {
 		eldbg("Invalid Parameter!\n");
 		return;
 	}
