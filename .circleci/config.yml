@@ -26,7 +26,7 @@ aliases:
 jobs:
   checkout_code:
     machine: 
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - checkout
@@ -37,7 +37,7 @@ jobs:
             
   artik055s/audio:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -47,7 +47,7 @@ jobs:
 
   artik053/tc:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -57,7 +57,7 @@ jobs:
 
   qemu/build_test:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -67,7 +67,7 @@ jobs:
 
   esp_wrover_kit/hello_with_tash:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -77,7 +77,7 @@ jobs:
 
   imxrt1020-evk/loadable_elf_apps:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -87,7 +87,7 @@ jobs:
 
   rtl8721csm/hello:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -97,7 +97,7 @@ jobs:
 
   rtl8721csm/loadable_apps:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -107,7 +107,7 @@ jobs:
 
   rtl8720e/hello:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -117,7 +117,7 @@ jobs:
 
   rtl8720e/loadable_apps:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -127,7 +127,7 @@ jobs:
 
   rtl8730e/flat_apps:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -137,7 +137,7 @@ jobs:
 
   rtl8730e/loadable_apps:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
@@ -147,7 +147,7 @@ jobs:
 
   rtl8730e/flat_dev:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default
     working_directory: ~/TizenRT
     steps:
       - attach_workspace:
