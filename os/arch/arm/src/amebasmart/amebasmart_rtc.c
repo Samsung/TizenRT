@@ -118,8 +118,8 @@ int up_rtc_gettime(FAR struct timespec *tp)
 {
 	time_t timer;
 	int ret;
-	timer = rtc_read();
-
+	timer = rtk_rtc_read();
+	
 	ret = gmtime_r(&timer, tp);
 	if (ret == 0) {
 		return -EOVERFLOW;
@@ -150,7 +150,7 @@ int up_rtc_gettime(FAR struct timespec *tp)
 
 time_t up_rtc_time(void)
 {
-	return rtc_read();
+		return rtk_rtc_read();
 }
 
 /************************************************************************************
@@ -171,11 +171,11 @@ time_t up_rtc_time(void)
 int up_rtc_settime(FAR const struct timespec *ts)
 {
 	if (ts) {
-		rtc_write(ts->tv_sec);
+		rtk_rtc_write(ts->tv_sec);
 
 		return OK;
 	} else {
-		return ERROR;
+				return ERROR;
 	}
 }
 
@@ -202,7 +202,7 @@ int up_rtc_initialize(void)
 {
 #ifdef CONFIG_RTC_DRIVER
 	/* Perform RTC initialization */
-
+	
 	rtc_init();
 #endif
 
