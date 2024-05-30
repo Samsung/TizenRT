@@ -180,6 +180,27 @@ cleanup:
 	sem_destroy(&g_sem);
 }
 
+static void tc_semaphore_sem_wait_nsem_neg(void)
+{
+	int ret_chk;
+	//static sem_t g_sem = -1;
+
+#ifndef CONFIG_DEBUG
+	/* sem_wait test NULL case */
+
+	ret_chk = sem_wait(-1);
+	TC_ASSERT_EQ("sem_wait", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_wait", get_errno(), EINVAL);
+#endif
+
+	TC_SUCCESS_RESULT();
+
+cleanup:
+	sem_destroy(&g_empty);
+	sem_destroy(&g_full);
+	sem_destroy(&g_sem);
+}
+
 static void tc_semaphore_sem_post_neg(void)
 {
 	int ret_chk;
@@ -197,6 +218,7 @@ cleanup:
 	sem_destroy(&g_full);
 	sem_destroy(&g_sem);
 }
+
 
 /**
 * @fn                   :tc_semaphore_sem_trywait
@@ -540,6 +562,8 @@ static void tc_semaphore_sem_setprotocol_default_protocol_neg(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
 /**
 * @fn                   :tc_semaphore_sem_tickwait
 * @brief                :lighter weight version of sem_timedwait() - will lock the semaphore referenced by sem as in the sem_wait() function
@@ -570,6 +594,7 @@ int semaphore_main(void)
 	
 	tc_semaphore_sem_post_wait_pos();
 	tc_semaphore_sem_post_neg();
+	tc_semaphore_sem_wait_neg();
 
 	tc_semaphore_sem_setprotocol_pos();
 	tc_semaphore_sem_setprotocol_protect_protocol_neg();

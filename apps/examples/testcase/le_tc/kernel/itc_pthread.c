@@ -175,7 +175,7 @@ static void *task_thread(void *param)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_pthread_pthread_kill_n_rekill(void)
+static void itc_pthread_pthread_kill_rekill_neg(void)
 {
 	int ret_chk;
 	pthread_t thread;
@@ -208,7 +208,7 @@ static void itc_pthread_pthread_kill_n_rekill(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_pthread_pthread_cond_init_destroy_n(void)
+static void itc_pthread_pthread_cond_init_destroy_neg(void)
 {
 	int ret_chk;
 	pthread_condattr_t attr;
@@ -242,7 +242,7 @@ static void itc_pthread_pthread_cond_init_destroy_n(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_pthread_setgetname_np_p_reset_name(void)
+static void itc_pthread_setgetname_np_reset_name_pos(void)
 {
 	int ret_chk;
 	int exec_index;
@@ -280,7 +280,7 @@ static void itc_pthread_setgetname_np_p_reset_name(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_pthread_equal_pthread_self_p(void)
+static void itc_pthread_equal_pthread_self_pos(void)
 {
 	int ret_chk;
 
@@ -304,7 +304,7 @@ static void itc_pthread_equal_pthread_self_p(void)
 * Preconditions         :none
 * Postconditions        :none
 */
-static void itc_pthread_mutex_init_destroy_p_multitime(void)
+static void itc_pthread_mutex_init_destroy_multitime_pos(void)
 {
 	pthread_mutexattr_t attr;
 	int ret_chk;
@@ -342,7 +342,7 @@ static void itc_pthread_mutex_init_destroy_p_multitime(void)
 * Preconditions         :pthread_key_create
 * Postconditions        :none
 */
-static void itc_pthread_key_create_set_get_delete_specific_p_multitime(void)
+static void itc_pthread_key_create_set_get_delete_specific_multitime_pos(void)
 {
 	int ret_chk;
 	g_flag = false;
@@ -363,11 +363,11 @@ static void itc_pthread_key_create_set_get_delete_specific_p_multitime(void)
 
 int itc_pthread_main(void)
 {
-	itc_pthread_pthread_kill_n_rekill();
-	itc_pthread_pthread_cond_init_destroy_n();
-	itc_pthread_setgetname_np_p_reset_name();
-	itc_pthread_equal_pthread_self_p();
-	itc_pthread_mutex_init_destroy_p_multitime();
-	itc_pthread_key_create_set_get_delete_specific_p_multitime();
+	itc_pthread_pthread_kill_rekill_neg();
+	itc_pthread_pthread_cond_init_destroy_neg();
+	itc_pthread_setgetname_np_reset_name_pos();
+	itc_pthread_equal_pthread_self_pos();
+	itc_pthread_mutex_init_destroy_multitime_pos();
+	itc_pthread_key_create_set_get_delete_specific_multitime_pos();
 	return 0;
 }

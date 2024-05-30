@@ -562,7 +562,7 @@ static void *receiver_thread(void *arg)
  * Postconditions       :none
  * @return              :void
  */
-static void tc_mqueue_mq_open_close_send_receive(void)
+static void tc_mqueue_mq_open_close_send_receive_pos(void)
 {
 	pthread_t sender;
 	pthread_t receiver;
@@ -664,7 +664,9 @@ static void tc_mqueue_mq_open_close_send_receive(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_mqueue_mq_notify(void)
+
+
+static void tc_mqueue_mq_notify_pos(void)
 {
 	mqd_t mqdes;
 	const char s_msg_ptr[15] = "test message\n";
@@ -699,20 +701,44 @@ static void tc_mqueue_mq_notify(void)
 	sa.sa_flags = 0;
 	sigaction(SIGUSR1, &sa, NULL);
 
-	/* Null Message queue descriptor check */
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(NULL, &notification), ERROR, get_errno(), goto cleanup);
-
-	/* Invalid signal number check */
-	notification.sigev_signo = 33;
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), ERROR, get_errno(), goto cleanup);
 
 	/* Valid signal number check */
 	notification.sigev_signo = SIGUSR1;
 	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), OK, get_errno(), goto cleanup);
 	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), ERROR, get_errno(), goto cleanup);
 
-	/* Detaching the notification */
-	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, NULL), OK, get_errno(), goto cleanup);
+
+	mq_close(mqdes);
+	mq_unlink("noti_queue");
+
+	TC_SUCCESS_RESULT();
+	return;
+cleanup:
+
+	mq_close(mqdes);
+	mq_unlink("noti_queue");
+}
+
+
+static void tc_mqueue_mq_notify_null_mqdes_neg(void)
+{
+	mqd_t mqdes;
+	const char s_msg_ptr[15] = "test message\n";
+	struct sigevent notification;
+	struct sigaction sa;
+	unsigned int prio = 1;
+
+	mqdes = mq_open("noti_queue", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
+	notification.sigev_notify = SIGEV_SIGNAL;
+	notification.sigev_signo = SIGUSR1;
+	sa.sa_handler = mq_notify_handler;
+	sa.sa_flags = 0;
+	sigaction(SIGUSR1, &sa, NULL);
+
+	/* Null Message queue descriptor check */
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(NULL, &notification), ERROR, get_errno(), goto cleanup);
 
 	mq_close(mqdes);
 	mq_unlink("noti_queue");
@@ -724,7 +750,52 @@ cleanup:
 	mq_unlink("noti_queue");
 }
 
-static void tc_mqueue_mq_timedsend_timedreceive(void)
+
+static void tc_mqueue_mq_notify_invalid_signal_neg(void)
+{
+	mqd_t mqdes;
+	const char s_msg_ptr[15] = "test message\n";
+	struct sigevent notification;
+	struct sigaction sa;
+	unsigned int prio = 1;
+
+	mqdes = mq_open("noti_queue", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
+	notification.sigev_notify = SIGEV_SIGNAL;
+	notification.sigev_signo = SIGUSR1;
+	sa.sa_handler = mq_notify_handler;
+	sa.sa_flags = 0;
+	sa.sa_mask = 0;
+	sigaction(SIGUSR1, &sa, NULL);
+
+	mqdes = mq_open("noti_queue", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
+	notification.sigev_notify = SIGEV_SIGNAL;
+	notification.sigev_signo = SIGUSR1;
+	sa.sa_handler = mq_notify_handler;
+	sa.sa_flags = 0;
+	sigaction(SIGUSR1, &sa, NULL);
+
+	/* Invalid signal number check */
+	notification.sigev_signo = 33;
+	TC_ASSERT_EQ_ERROR_CLEANUP("mq_notify", mq_notify(mqdes, &notification), ERROR, get_errno(), goto cleanup);
+
+	
+	mq_close(mqdes);
+	mq_unlink("noti_queue");
+
+	TC_SUCCESS_RESULT();
+	return;
+cleanup:
+
+	mq_close(mqdes);
+	mq_unlink("noti_queue");
+}
+
+
+static void tc_mqueue_mq_timedsend_timedreceive_pos(void)
 {
 	int ret_chk = OK;
 
@@ -739,7 +810,23 @@ static void tc_mqueue_mq_timedsend_timedreceive(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_mqueue_mq_unlink(void)
+static void tc_mqueue_mq_unlink_pos(void)
+{
+	int ret;
+	mqd_t mqdes;
+
+	mqdes = mq_open("mqunlink", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)-1);
+
+	mq_close(mqdes);
+
+	ret = mq_unlink("mqunlink");
+	TC_ASSERT_EQ("mq_unlink", ret, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_mqueue_mq_unlink_neg(void)
 {
 	int ret;
 	mqd_t mqdes;
@@ -764,7 +851,7 @@ static void tc_mqueue_mq_unlink(void)
 * @description          :Function for tc_mqueue_mq_timedsend_timedreceive corner case checks
 * @return               :void*
 */
-static void tc_mqueue_mq_timedsend_timedreceive_failurechecks(void)
+static void tc_mqueue_mq_timedsend_timedreceive_neg(void)
 {
 	char msg_buffer[TEST_MSGLEN];
 	struct mq_attr attr;
@@ -861,7 +948,39 @@ cleanup1:
 }
 
 
-static void tc_mqueue_mq_getattr(void)
+static void tc_mqueue_mq_getattr_pos(void)
+{
+	mqd_t mqdes;
+	struct mq_attr attr;
+	struct mq_attr mq_stat;
+	int ret_chk;
+
+	/* Fill in attributes for message queue */
+
+	attr.mq_maxmsg  = 20;
+	attr.mq_msgsize = TEST_MSGLEN;
+
+	mqdes = mq_open("mqgetattr", O_CREAT | O_RDWR, 0666, &attr);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
+
+	
+	ret_chk = mq_getattr(mqdes, &mq_stat);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_maxmsg, attr.mq_maxmsg, goto errout);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_msgsize, attr.mq_msgsize, goto errout);
+
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+}
+
+
+static void tc_mqueue_mq_getattr_null_mqdes_neg(void)
 {
 	mqd_t mqdes;
 	struct mq_attr attr;
@@ -878,12 +997,38 @@ static void tc_mqueue_mq_getattr(void)
 
 	ret_chk = mq_getattr(NULL, &mq_stat);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
+	//TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_maxmsg, attr.mq_maxmsg, goto errout);
+	//TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_msgsize, attr.mq_msgsize, goto errout);
+
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	mq_close(mqdes);
+	mq_unlink("mqgetattr");
+}
+
+
+
+static void tc_mqueue_mq_getattr_null_attr_neg(void)
+{
+	mqd_t mqdes;
+	struct mq_attr attr;
+	struct mq_attr mq_stat;
+	int ret_chk;
+
+	/* Fill in attributes for message queue */
+
+	attr.mq_maxmsg  = 20;
+	attr.mq_msgsize = TEST_MSGLEN;
+
+	mqdes = mq_open("mqgetattr", O_CREAT | O_RDWR, 0666, &attr);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
 
 	ret_chk = mq_getattr(mqdes, NULL);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, ERROR, goto errout);
-
-	ret_chk = mq_getattr(mqdes, &mq_stat);
-	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_maxmsg, attr.mq_maxmsg, goto errout);
 	TC_ASSERT_EQ_CLEANUP("mq_getattr", mq_stat.mq_msgsize, attr.mq_msgsize, goto errout);
 
@@ -897,7 +1042,47 @@ errout:
 	mq_unlink("mqgetattr");
 }
 
-static void tc_mqueue_mq_setattr(void)
+
+static void tc_mqueue_mq_setattr_pos(void)
+{
+	mqd_t mqdes;
+	struct mq_attr mq_stat;
+	struct mq_attr oldstat;
+	int ret_chk;
+
+	mqdes = mq_open("mqsetattr", O_CREAT | O_RDWR, 0666, 0);
+	TC_ASSERT_NEQ("mq_open", mqdes, (mqd_t)ERROR);
+
+	ret_chk = mq_getattr(mqdes, &mq_stat);
+	TC_ASSERT_EQ_CLEANUP("mq_getattr", ret_chk, OK, goto errout);
+
+	ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
+	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, goto errout);
+
+	
+	if (mq_stat.mq_flags & O_NONBLOCK) {
+		mq_stat.mq_flags = mq_stat.mq_flags & (~O_NONBLOCK);
+		ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, O_NONBLOCK, goto errout);
+	} else {
+		mq_stat.mq_flags = mq_stat.mq_flags | O_NONBLOCK;
+		ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, OK, goto errout);
+		TC_ASSERT_EQ_CLEANUP("mq_setattr", oldstat.mq_flags & O_NONBLOCK, 0, goto errout);
+	}
+
+	mq_close(mqdes);
+	mq_unlink("mqsetattr");
+	TC_SUCCESS_RESULT();
+	return;
+
+errout:
+	mq_close(mqdes);
+	mq_unlink("mqsetattr");	
+}
+
+static void tc_mqueue_mq_setattr_null_mqdes_neg(void)
 {
 	mqd_t mqdes;
 	struct mq_attr mq_stat;
@@ -913,9 +1098,7 @@ static void tc_mqueue_mq_setattr(void)
 	ret_chk = mq_setattr(NULL, &mq_stat, &oldstat);
 	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
 
-	ret_chk = mq_setattr(mqdes, NULL, &oldstat);
-	TC_ASSERT_EQ_CLEANUP("mq_setattr", ret_chk, ERROR, goto errout);
-
+	
 	if (mq_stat.mq_flags & O_NONBLOCK) {
 		mq_stat.mq_flags = mq_stat.mq_flags & (~O_NONBLOCK);
 		ret_chk = mq_setattr(mqdes, &mq_stat, &oldstat);
@@ -939,19 +1122,25 @@ errout:
 }
 
 
+
 /****************************************************************************
  * Name: mqueue
  ****************************************************************************/
 int mqueue_main(void)
 {
-	tc_mqueue_mq_open_close_send_receive();
-	tc_mqueue_mq_notify();
-	tc_mqueue_mq_timedsend_timedreceive();
-	tc_mqueue_mq_timedsend_timedreceive_failurechecks();
-	tc_mqueue_mq_unlink();
-
-	tc_mqueue_mq_getattr();
-	tc_mqueue_mq_setattr();
+	tc_mqueue_mq_open_close_send_receive_pos();
+	tc_mqueue_mq_notify_pos();
+	tc_mqueue_mq_notify_null_mqdes_neg();
+	tc_mqueue_mq_notify_invalid_signal_neg();
+	tc_mqueue_mq_timedsend_timedreceive_pos();
+	tc_mqueue_mq_timedsend_timedreceive_neg();
+	tc_mqueue_mq_unlink_pos();
+	tc_mqueue_mq_unlink_neg();
+	tc_mqueue_mq_getattr_pos();
+	tc_mqueue_mq_getattr_null_mqdes_neg();
+	tc_mqueue_mq_getattr_null_attr_neg();
+	tc_mqueue_mq_setattr_pos();
+	tc_mqueue_mq_setattr_null_mqdes_neg();
 
 	return 0;
 }

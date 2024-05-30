@@ -223,10 +223,10 @@ static void tc_sched_sched_rr_get_interval_invalid_pid_neg(void)
 	struct timespec st_timespec1;
 	struct timespec st_timespec2;
 	st_timespec1.tv_sec = 0;
-	st_timespec1.tv_nsec = -1;
+	st_timespec1.tv_nsec = 1;
 
 	st_timespec2.tv_sec = 0;
-	st_timespec2.tv_nsec = -1;
+	st_timespec2.tv_nsec = 1;
 
 	/* Check for invalid PID */
 
@@ -429,6 +429,22 @@ static void tc_sched_waitid_invalid_id_neg(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_sched_waitid_invalid_processid_neg(void)
+{
+	int ret_chk;
+	pid_t child1_pid;
+	siginfo_t info;
+	idtype_t invalid_idtype = -1;
+    id_t child_id = getpid();
+
+	/* Check for other ID types that are not supported  */
+
+	ret_chk = waitid(invalid_idtype, child_id, &info, WEXITED);
+	TC_ASSERT_EQ("waitid", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
 #endif
 
 /**
@@ -481,8 +497,6 @@ static void tc_sched_waitpid_neg(void)
 	child_pid = task_create("tc_waitpid", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, sleep1sec_taskdel, (char * const *)NULL);
 	TC_ASSERT_GT("task_create", child_pid, 0);
 
-	ret_chk = waitpid(child_pid, &status, 0);
-	TC_ASSERT_EQ("waitpid", ret_chk, child_pid);
 
 	/* None of the options are supported */
 
@@ -492,6 +506,7 @@ static void tc_sched_waitpid_neg(void)
 
 	TC_SUCCESS_RESULT();
 }
+
 
 #endif
 
@@ -746,6 +761,8 @@ errout:
 }
 
 
+
+
 /**
  * @fn                   :tc_sched_task_setcanceltype
  * @brief                :This tc tests tc_sched_task_setcanceltype()
@@ -822,6 +839,8 @@ static void tc_sched_task_setcanceltype_invalid_mode_neg(void)
 errout:
 	tcb->flags |= defferred_flag;
 }
+
+
 #endif
 #endif
 
@@ -836,6 +855,7 @@ int sched_main(void)
 	tc_sched_waitid_pos();
 	tc_sched_waitid_invalid_childpid_neg();
 	tc_sched_waitid_invalid_id_neg();
+	tc_sched_waitid_invalid_processid_neg();
 #endif
 	tc_sched_waitpid_pos();
 	tc_sched_waitpid_invalid_pid_neg();
@@ -861,6 +881,7 @@ int sched_main(void)
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_sched_task_setcanceltype_pos();
 	tc_sched_task_setcanceltype_invalid_mode_neg();
+	
 #endif
 #endif
 

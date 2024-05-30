@@ -193,7 +193,7 @@ static void tc_environ_putenv_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_environ_putenv_neg(void)
+static void tc_environ_putenv_null_neg(void)
 {
 	int ret_chk;
 
@@ -266,7 +266,7 @@ int environ_main(void)
     tc_environ_setenv_empty_name_neg();
 	tc_environ_clearenv_pos();
 	tc_environ_putenv_pos();
-	tc_environ_putenv_neg();
+	tc_environ_putenv_null_neg();
 	tc_environ_get_environ_ptr_pos();
 
 	return 0;

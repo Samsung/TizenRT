@@ -192,6 +192,65 @@ static void tc_signal_sigaction_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_signal_sigaction_neg_signal_neg(void)
+{
+	int ret_chk = ERROR;
+	struct sigaction st_act;
+	struct sigaction st_oact;
+	int fd;
+	fd = tc_get_drvfd();
+	FAR sigactq_t *sigact_before;
+	FAR sigactq_t *sigact_after;
+
+	ret_chk = sigaction(-1, &st_act, &st_oact);
+	TC_ASSERT_EQ("sigaction", ret_chk,ERROR);
+
+	/* make sure action is not changed */
+	sigact_after = (FAR sigactq_t *)ioctl(fd, TESTIOC_GET_SIG_FINDACTION_ADD, SIGINT);
+	TC_ASSERT_EQ("sig_findaction", sigact_after, NULL);
+	TC_ASSERT_EQ("sig_findaction", sigact_before, sigact_after);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_signal_sigaction_invalid_signals_neg(void)
+{
+	int ret_chk = ERROR;
+	struct sigaction st_act;
+	struct sigaction st_oact;
+	FAR sigactq_t *sigact_before;
+	FAR sigactq_t *sigact_after;
+	int fd;
+	fd = tc_get_drvfd();
+
+	ret_chk = sigaction(33, &st_act, &st_oact);
+	TC_ASSERT_EQ("sigaction", ret_chk,ERROR);
+
+	/* make sure action is not changed */
+	sigact_after = (FAR sigactq_t *)ioctl(fd, TESTIOC_GET_SIG_FINDACTION_ADD, SIGINT);
+	TC_ASSERT_EQ("sig_findaction", sigact_after, NULL);
+	TC_ASSERT_EQ("sig_findaction", sigact_before, sigact_after);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_signal_sigaction_null_action_neg(void)
+{
+	int ret_chk = ERROR;
+	struct sigaction *st_act = NULL;
+	struct sigaction st_oact;
+	int fd;
+	fd = tc_get_drvfd();
+
+	ret_chk = sigaction(SIGINT, st_act, &st_oact);
+	TC_ASSERT_EQ("sigaction", ret_chk, 0);
+
+
+	TC_SUCCESS_RESULT();
+}
+
+
+
 static int kill_handler_task(int argc, char *argv[])
 {
 	/* This task will be finished because of kill signal from main task. */
@@ -264,6 +323,47 @@ static void tc_signal_kill_pos(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+static void tc_signal_kill_invalid_pid_neg(void)
+{
+	pid_t pid = -1;
+	int ret_chk = ERROR;
+	
+	ret_chk = kill(pid, SIGTERM);
+	sleep(SEC_1);
+	TC_ASSERT_EQ("kill", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_signal_kill_invalid_signal_neg(void)
+{
+	pid_t pid ;
+	int ret_chk = ERROR;
+	pid = getpid();
+
+	if (pid != 0) {
+		ret_chk = kill(pid, SIGHUP);
+		sleep(SEC_1);
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
+		ret_chk = kill(pid, SIGINT);
+		sleep(SEC_1);
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+
+		ret_chk = kill(pid, SIGQUIT);
+		sleep(SEC_1);
+		TC_ASSERT_NEQ("kill", ret_chk, ERROR);
+	}
+
+	
+	ret_chk = kill(pid, 9999);
+	sleep(SEC_1);
+	TC_ASSERT_EQ("kill", ret_chk, ERROR);
+
+	TC_SUCCESS_RESULT();
+}
+
 
 /**
 * @fn                   :tc_signal_nanosleep
@@ -416,6 +516,8 @@ errout:
 	return;
 }
 
+
+
 /**
 * @fn                   :tc_signal_sig_pending_procmask_emptyset_addset
 * @brief                :Change the signal mask for the calling thread and retrieve the\
@@ -517,6 +619,28 @@ static void tc_signal_sigqueue_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_signal_sigqueue_neg(void)
+{
+	struct sigaction st_act;
+	struct sigaction st_oact;
+	g_sig_handle = false;
+
+	st_act.sa_sigaction = sigint_handler;
+	sigemptyset(&st_act.sa_mask);
+	/*information transfer switch */
+	st_act.sa_flags = SA_SIGINFO;
+	TC_ASSERT_NEQ("sigaction", sigaction(SIGINT, &st_act, &st_oact), ERROR);
+
+	sleep(SEC_2);
+
+	union sigval mysigval;
+	mysigval.sival_int = VAL_100;
+	pid_t invalid_pid = -1;
+	TC_ASSERT_NEQ("sigqueue", sigqueue(invalid_pid, SIGINT, mysigval), OK);
+
+	TC_SUCCESS_RESULT();
+}
+
 /**
 * @fn                   :tc_signal_sigtimedwait
 * @brief                :Create a task and  suspends execution of the calling thread until one of the\
@@ -566,6 +690,21 @@ static void tc_signal_sigtimedwait_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_signal_sigtimedwait_neg(void)
+{
+	int ret_chk;
+	struct siginfo value;
+	sigset_t sigset;
+	sigset_t oldset;
+
+    ret_chk = sigtimedwait(&sigset, &value, NULL);
+	TC_ASSERT_EQ("sigtimedwait", ret_chk, ERROR);
+	TC_ASSERT_EQ_CLEANUP("sigtimedwait", ret_chk, ERROR, sigprocmask(SIG_SETMASK, &oldset, NULL));
+
+
+	TC_SUCCESS_RESULT();
+}
+     
 /**
 * @fn                   :tc_signal_sighold_sigrelse
 * @brief                :set and unset a specific signal
@@ -616,15 +755,23 @@ static void tc_signal_sighold_sigrelse_pos(void)
 int signal_main(void)
 {
 	tc_signal_kill_pos();
+	tc_signal_kill_invalid_pid_neg();
+	tc_signal_kill_invalid_signal_neg();
 	tc_signal_nanosleep_neg();
 	tc_signal_pause_pos();
 	tc_signal_sig_pending_procmask_emptyset_addset_pos();
 	tc_signal_sigaction_pos();
+	tc_signal_sigaction_neg_signal_neg();
+	tc_signal_sigaction_invalid_signals_neg();
+	tc_signal_sigaction_null_action_neg();
 	tc_signal_sigqueue_pos();
+	tc_signal_sigqueue_neg();
 	tc_signal_sigsuspend_pos();
 	tc_signal_sigtimedwait_pos();
 	tc_signal_sigwaitinfo_pos();
 	tc_signal_sighold_sigrelse_pos();
+	tc_signal_sigtimedwait_neg();
+	
 
 	return 0;
 }

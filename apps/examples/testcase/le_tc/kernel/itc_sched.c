@@ -140,6 +140,35 @@ static void itc_sched_setget_scheduler_param_all_priority_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void itc_sched_set_scheduler_invalid_pid_neg(void)
+{
+	int ret_chk = ERROR;
+	pid_t pid = -1;
+	struct sched_param st_setparam;
+	int policy = SCHED_FIFO;
+
+	
+	ret_chk = sched_setscheduler(pid, policy, &st_setparam);
+	TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ESRCH);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void itc_sched_set_scheduler_invalid_policy_neg(void)
+{
+	int ret_chk = ERROR;
+	struct sched_param *st_setparam = NULL;
+	int policy = -1;
+
+	
+	ret_chk = sched_setscheduler(getpid(), policy, st_setparam);
+	TC_ASSERT_NEQ("sched_setscheduler", ret_chk, ESRCH);
+
+	TC_SUCCESS_RESULT();
+}
+
+
+
 /**
 * @fn                   :itc_sched_self_p
 * @brief                :Return current thread tcb
@@ -172,6 +201,8 @@ static void itc_sched_self_pos(void)
 int itc_sched_main(void)
 {
 	itc_sched_setget_scheduler_param_all_priority_pos();
+	itc_sched_set_scheduler_invalid_policy_neg();
+	itc_sched_set_scheduler_invalid_pid_neg();
 	itc_sched_self_pos();
 
 	return 0;

@@ -72,6 +72,44 @@ static void tc_debug_sysdbg_test_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_debug_sysdbg_test_neg(void)
+{
+	int ret;
+	char buffer[BUFLEN];
+	char *ret_chk;
+
+	int fd = open(SYSDBG_PATH, O_WRONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret_chk=strncpy(NULL, "enable_monitor", 14);
+	
+	TC_ASSERT_EQ_CLEANUP("strncpy", ret_chk, NULL, close(fd));
+
+	
+	close(fd);
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_debug_sysdbg_test_buffer_overrun_neg(void)
+{
+	int ret;
+	char buffer[BUFLEN];
+	char *ret_chk;
+
+	int fd = open(SYSDBG_PATH, O_WRONLY);
+	TC_ASSERT_GEQ("open", fd, 0);
+
+	ret_chk=strncpy(buffer, "enable_monitor", 40);
+	
+	TC_ASSERT_EQ_CLEANUP("strncpy", ret_chk, NULL, close(fd));
+
+	
+	close(fd);
+	TC_SUCCESS_RESULT();
+}
+
+
+
 /****************************************************************************
  * Name: debug_main
  ****************************************************************************/
@@ -79,6 +117,8 @@ static void tc_debug_sysdbg_test_pos(void)
 int debug_main(void)
 {
 	tc_debug_sysdbg_test_pos();
+	tc_debug_sysdbg_test_neg();
+	tc_debug_sysdbg_test_buffer_overrun_neg();
 
 	return 0;
 }

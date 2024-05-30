@@ -267,6 +267,7 @@ static void tc_task_task_delete_pos(void)
 	TC_SUCCESS_RESULT();
 }
 
+
 /**
 * @fn                   :tc_task_task_restart
 * @brief                :Restart a task

@@ -574,7 +574,7 @@ static void *thread_mutex_lock_exit_without_unlock(void *param)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_barrier_init_destroy_wait(void)
+static void tc_pthread_pthread_barrier_init_destroy_wait_pos(void)
 {
 	int ret_chk;
 	int ithread = PTHREAD_CNT;
@@ -632,7 +632,24 @@ static int infinite_sleep(int argc, char *argv[])
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_create_exit_join(void)
+static void tc_pthread_pthread_create_exit_join_pos(void)
+{
+	int ret_chk;
+	pthread_t pthread;
+	int task_pid;
+	void *p_value = 0;
+
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+
+	ret_chk = pthread_join(pthread, &p_value);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_exit", p_value, (void *)EDEADLK);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_create_exit_join_neg(void)
 {
 	int ret_chk;
 	pthread_t pthread;
@@ -648,12 +665,39 @@ static void tc_pthread_pthread_create_exit_join(void)
 
 	/* Wait to release the above pthread resource */
 	sleep(1);
-
+	
 	ret_chk = pthread_join(pthread, NULL);
 	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
 
-	ret_chk = pthread_join(INVALID_PID, NULL);
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_create_exit_join_invalid_pid_neg(void)
+{
+	int ret_chk;
+	pthread_t pthread;
+	int task_pid;
+	void *p_value = 0;
+
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+	
+
+	ret_chk = pthread_join(-1, NULL);
 	TC_ASSERT_EQ("pthread_join", ret_chk, ESRCH);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_create_exit_join_invalid_task_neg(void)
+{
+	int ret_chk;
+	pthread_t pthread;
+	int task_pid;
+	void *p_value = 0;
+
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 
 	task_pid = task_create("inval_test_task", 100, 1024, infinite_sleep, NULL);
 	TC_ASSERT_GT("task_create", task_pid, 0);
@@ -665,6 +709,8 @@ static void tc_pthread_pthread_create_exit_join(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
 
 /**
 * @fn                   :tc_pthread_pthread_tryjoin_np
@@ -678,7 +724,7 @@ static void tc_pthread_pthread_create_exit_join(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_tryjoin_np(void)
+static void tc_pthread_pthread_tryjoin_np_pos(void)
 {
 	int ret_chk;
 	pthread_t pid;
@@ -726,7 +772,7 @@ static void tc_pthread_pthread_tryjoin_np(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_kill(void)
+static void tc_pthread_pthread_kill_pos(void)
 {
 	int ret_chk;
 	g_bpthreadcallback = false;
@@ -756,7 +802,7 @@ static void tc_pthread_pthread_kill(void)
 * Postconditions        :pthread_cond_destroy
 * @return               :void
 */
-static void tc_pthread_pthread_cond_broadcast(void)
+static void tc_pthread_pthread_cond_broadcast_pos(void)
 {
 	int ret_chk;
 	int ipthread_id = 0;
@@ -829,7 +875,7 @@ cleanup_cond:
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_cond_init_destroy(void)
+static void tc_pthread_pthread_cond_init_destroy_pos(void)
 {
 	int ret_chk;
 	pthread_condattr_t attr;
@@ -870,7 +916,7 @@ static void tc_pthread_pthread_cond_init_destroy(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_set_get_schedparam(void)
+static void tc_pthread_pthread_set_get_schedparam_pos(void)
 {
 	int ret_chk;
 	struct sched_param st_setparam;
@@ -915,7 +961,7 @@ static void tc_pthread_pthread_set_get_schedparam(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
+static void tc_pthread_pthread_key_create_delete_set_getspecific_pos(void)
 {
 	int ret_chk;
 	g_bpthreadcallback = false;
@@ -945,7 +991,7 @@ static void tc_pthread_pthread_key_create_delete_set_getspecific(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_cancel_setcancelstate(void)
+static void tc_pthread_pthread_cancel_setcancelstate_pos(void)
 {
 	int ret_chk;
 	g_bpthreadcallback = false;
@@ -976,7 +1022,7 @@ static void tc_pthread_pthread_cancel_setcancelstate(void)
 * Postconditions        :none
 * @return               :void
  */
-static void tc_pthread_pthread_timed_wait(void)
+static void tc_pthread_pthread_timed_wait_pos(void)
 {
 	int ret_chk;
 	pthread_t waiter;
@@ -1032,7 +1078,7 @@ static void tc_pthread_pthread_timed_wait(void)
 * Postconditions        :pthread_mutex_destroy
 * @return               :void
 */
-static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
+static void tc_pthread_pthread_mutex_lock_unlock_trylock_pos(void)
 {
 	int ret_chk;
 	pthread_mutexattr_t attr;
@@ -1099,6 +1145,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 	TC_SUCCESS_RESULT();
 }
 
+
 /**
 * @fn                   :tc_pthread_pthread_mutex_init
 * @brief                :this tc test pthread_mutex_init
@@ -1110,7 +1157,7 @@ static void tc_pthread_pthread_mutex_lock_unlock_trylock(void)
 * @return               :void
 */
 
-static void tc_pthread_pthread_mutex_init(void)
+static void tc_pthread_pthread_mutex_init_neg(void)
 {
 	pthread_mutexattr_t attr;
 	pthread_mutex_t mutex;
@@ -1118,9 +1165,6 @@ static void tc_pthread_pthread_mutex_init(void)
 
 	ret_chk = pthread_mutexattr_init(&attr);
 	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
-
-	ret_chk = pthread_mutex_init(NULL, &attr);
-	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, EINVAL);
 
 	ret_chk = pthread_mutex_init(&mutex, &attr);
 	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
@@ -1133,6 +1177,22 @@ static void tc_pthread_pthread_mutex_init(void)
 	TC_ASSERT_EQ("pthread_mutex_init", mutex.type, attr.type);
 	TC_ASSERT_EQ("pthread_mutex_init", mutex.nlocks, 0);
 #endif
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_mutex_init_null_mutex_neg(void)
+{
+	pthread_mutexattr_t attr;
+	pthread_mutex_t mutex;
+	int ret_chk;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutex_init(NULL, &attr);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, EINVAL);
+
 
 	TC_SUCCESS_RESULT();
 }
@@ -1150,7 +1210,7 @@ static void tc_pthread_pthread_mutex_init(void)
 * @return               :void
 */
 
-static void tc_pthread_pthread_mutex_destroy(void)
+static void tc_pthread_pthread_mutex_destroy_pos(void)
 {
 	pthread_mutexattr_t attr;
 	pthread_t pid;
@@ -1161,24 +1221,6 @@ static void tc_pthread_pthread_mutex_destroy(void)
 
 	ret_chk = pthread_mutex_init(&g_mutex, &attr);
 	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
-
-#ifndef CONFIG_DEBUG
-	/* test NULL case. ASSERT will rise when debug is enabled */
-
-	ret_chk = pthread_mutex_destroy(NULL);
-	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EINVAL);
-#endif
-
-	/* try pthread_mutex_destroy while mutex is used */
-
-	ret_chk = pthread_mutex_lock(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
-
-	ret_chk = pthread_mutex_destroy(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EBUSY);
-
-	ret_chk = pthread_mutex_unlock(&g_mutex);
-	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
 
 	/* try ptherad_mutex_destroy when dead thread hold mutex */
 
@@ -1200,6 +1242,51 @@ static void tc_pthread_pthread_mutex_destroy(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_pthread_pthread_mutex_destroy_mutex_busy_neg(void)
+{
+	pthread_mutexattr_t attr;
+	pthread_t pid;
+	int ret_chk;
+
+	ret_chk = pthread_mutexattr_init(&attr);
+	TC_ASSERT_EQ("pthread_mutexattr_init", ret_chk, OK);
+
+	ret_chk = pthread_mutex_init(&g_mutex, &attr);
+	TC_ASSERT_EQ("pthread_mutex_init", ret_chk, OK);
+
+	/* try pthread_mutex_destroy while mutex is used */
+
+	ret_chk = pthread_mutex_lock(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_lock", ret_chk, OK);
+
+	ret_chk = pthread_mutex_destroy(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EBUSY);
+
+	ret_chk = pthread_mutex_unlock(&g_mutex);
+	TC_ASSERT_EQ("pthread_mutex_unlock", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+
+
+static void tc_pthread_pthread_mutex_destroy_null_mutex_neg(void)
+{
+	pthread_mutexattr_t attr;
+	pthread_t pid;
+	int ret_chk;
+
+
+#ifndef CONFIG_DEBUG
+	/* test NULL case. ASSERT will rise when debug is enabled */
+
+	ret_chk = pthread_mutex_destroy(NULL);
+	TC_ASSERT_EQ("pthread_mutex_destroy", ret_chk, EINVAL);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+
 /**
 * @fn                   :tc_pthread_pthread_once
 * @brief                :pthread_once() function performs one time initialization based on a specific once_control variable.\
@@ -1211,7 +1298,30 @@ static void tc_pthread_pthread_mutex_destroy(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_once(void)
+static void tc_pthread_pthread_once_pos(void)
+{
+	int ret_chk;
+
+	/* Initialize g_once */
+
+	g_once = PTHREAD_ONCE_INIT;
+
+	/* g_bpthreadcallback will be toggled only once */
+
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, true);
+
+	g_bpthreadcallback = false;
+	ret_chk = pthread_once(&g_once, &run_once);
+	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
+
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_once_null_opaque_neg(void)
 {
 	int ret_chk;
 
@@ -1226,21 +1336,22 @@ static void tc_pthread_pthread_once(void)
 	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
 	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
 
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_once_null_callback_neg(void)
+{
+	int ret_chk;
+
+	/* Initialize g_once */
+
+	g_once = PTHREAD_ONCE_INIT;
+
+	/* Test NULL case */
+
 	g_bpthreadcallback = false;
 	ret_chk = pthread_once(&g_once, NULL);
 	TC_ASSERT_EQ("pthread_once", ret_chk, EINVAL);
-	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
-
-	/* g_bpthreadcallback will be toggled only once */
-
-	g_bpthreadcallback = false;
-	ret_chk = pthread_once(&g_once, &run_once);
-	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
-	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, true);
-
-	g_bpthreadcallback = false;
-	ret_chk = pthread_once(&g_once, &run_once);
-	TC_ASSERT_EQ("pthread_once", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_once", g_bpthreadcallback, false);
 
 	TC_SUCCESS_RESULT();
@@ -1258,7 +1369,7 @@ static void tc_pthread_pthread_once(void)
 * @return               :void
 */
 
-static void tc_pthread_pthread_yield(void)
+static void tc_pthread_pthread_yield_pos(void)
 {
 	int ret_chk = 0;
 	g_bpthreadcallback = false;
@@ -1296,7 +1407,7 @@ static void tc_pthread_pthread_yield(void)
 * Postconditions        :none
 * @return               :void
 */
-static void tc_pthread_pthread_cond_signal_wait(void)
+static void tc_pthread_pthread_cond_signal_wait_pos(void)
 {
 	pthread_t pthread_waiter;
 	int ret_chk = ERROR;
@@ -1425,7 +1536,41 @@ static void tc_pthread_pthread_sigmask(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_pthread_pthread_self(void)
+
+static void tc_pthread_pthread_sigmask_invalid_signal_neg(void)
+{
+	int ret_chk;
+	pid_t pid = getpid();
+
+	sigset_t st_newmask;
+	sigset_t st_oldmask;
+	sigset_t st_pendmask;
+	struct timespec st_timespec;
+	struct sigaction st_act;
+	struct sigaction st_oact;
+
+	g_sig_handle = false;
+
+	st_timespec.tv_sec = SEC_5;
+	st_timespec.tv_nsec = 0;
+
+	memset(&st_act, 0, sizeof(st_act));
+	st_act.sa_handler = sigmask_handler;
+
+	ret_chk = sigaction(SIGQUIT, &st_act, &st_oact);
+	TC_ASSERT_EQ("signaction", ret_chk, OK);
+
+	sigemptyset(&st_newmask);
+	sigaddset(&st_newmask, SIGQUIT);
+
+	ret_chk = pthread_sigmask(NOSIG, &st_newmask, &st_oldmask);
+	TC_ASSERT_EQ("pthread_sigmask", ret_chk, EINVAL);
+
+	
+	TC_SUCCESS_RESULT();
+}
+
+static void tc_pthread_pthread_self_pos(void)
 {
 	int ret_chk;
 	pthread_t tcb_pid;
@@ -1439,7 +1584,7 @@ static void tc_pthread_pthread_self(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_pthread_pthread_equal(void)
+static void tc_pthread_pthread_equal_neg(void)
 {
 	int ret_chk;
 	pthread_t first_th;
@@ -1461,7 +1606,8 @@ static void tc_pthread_pthread_equal(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_pthread_pthread_setschedprio(void)
+
+static void tc_pthread_pthread_setschedprio_pos(void)
 {
 	int ret_chk;
 	pthread_t set_th;
@@ -1481,7 +1627,28 @@ static void tc_pthread_pthread_setschedprio(void)
 	TC_SUCCESS_RESULT();
 }
 
-static void tc_pthread_pthread_setgetname_np(void)
+static void tc_pthread_pthread_setschedprio_invalid_prio_neg(void)
+{
+	int ret_chk;
+	pthread_t set_th;
+	uint8_t set_prio = -1;
+
+	ret_chk = pthread_create(&set_th, NULL, setschedprio_test_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
+	/* change set_th PID's priority to set_prio */
+	ret_chk = pthread_setschedprio(set_th, SCHED_PRIORITY_MAX+1);
+	TC_ASSERT_EQ_CLEANUP("pthread_setschedprio", ret_chk, ERROR, pthread_detach(set_th));
+
+	ret_chk = pthread_join(set_th, NULL);
+	TC_ASSERT_EQ_CLEANUP("pthread_join", ret_chk, OK, pthread_detach(set_th));
+	TC_ASSERT_EQ("pthread_setschedprio", check_prio, set_prio);
+
+	TC_SUCCESS_RESULT();
+}
+
+
+static void tc_pthread_pthread_setgetname_np_pos(void)
 {
 	int ret_chk;
 	pthread_t name_th;
@@ -1507,6 +1674,30 @@ static void tc_pthread_pthread_setgetname_np(void)
 	TC_SUCCESS_RESULT();
 }
 
+
+static void tc_pthread_pthread_setgetname_np_null_name_neg(void)
+{
+	int ret_chk;
+	pthread_t name_th;
+	char *thread_name = "NameThread";
+	char get_name[32];
+
+	ret_chk = pthread_create(&name_th, NULL, infinite_loop_thread, NULL);
+	TC_ASSERT_EQ("pthread_create", ret_chk, OK);
+
+	ret_chk = pthread_setname_np(name_th,NULL);
+	TC_ASSERT_EQ("pthread_setname_np", ret_chk, ERROR);
+
+	ret_chk = pthread_cancel(name_th);
+	TC_ASSERT_EQ("pthread_cancel", ret_chk, OK);
+
+	ret_chk = pthread_join(name_th, NULL);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+
+	TC_SUCCESS_RESULT();
+}
+
+
 /**
 * @fn                   :tc_pthread_pthread_setcanceltype
 * @brief                :This tc tests pthread_setcanceltype()
@@ -1520,7 +1711,7 @@ static void tc_pthread_pthread_setgetname_np(void)
 * @return               :void
 */
 #ifdef CONFIG_CANCELLATION_POINTS
-static void tc_pthread_pthread_setcanceltype(void)
+static void tc_pthread_pthread_setcanceltype_pos(void)
 {
 	int type;
 	int oldtype;
@@ -1529,6 +1720,15 @@ static void tc_pthread_pthread_setcanceltype(void)
 	type = PTHREAD_CANCEL_ASYNCHRONOUS;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
 	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
+
+	
+	TC_SUCCESS_RESULT();
+}
+static void tc_pthread_pthread_setcanceltype_invalid_type_neg(void)
+{
+	int type;
+	int oldtype;
+	int ret_chk;
 
 	type = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
@@ -1566,7 +1766,7 @@ static void *test_mutex_consistent(void *param)
 * @Postconditions       :none
 * @return               :void
 */
-static void tc_pthread_pthread_mutex_consistent(void)
+static void tc_pthread_pthread_mutex_consistent_pos(void)
 {
 	int ret;
 	void *status;
@@ -1611,35 +1811,44 @@ static void tc_pthread_pthread_mutex_consistent(void)
 
 int pthread_main(void)
 {
-	tc_pthread_pthread_barrier_init_destroy_wait();
-	tc_pthread_pthread_create_exit_join();
-	tc_pthread_pthread_tryjoin_np();
-	tc_pthread_pthread_kill();
-	tc_pthread_pthread_cond_broadcast();
-	tc_pthread_pthread_cond_init_destroy();
-	tc_pthread_pthread_set_get_schedparam();
+	tc_pthread_pthread_barrier_init_destroy_wait_pos();
+	tc_pthread_pthread_create_exit_join_pos();
+	tc_pthread_pthread_create_exit_join_neg();
+	tc_pthread_pthread_create_exit_join_invalid_pid_neg();
+	tc_pthread_pthread_create_exit_join_invalid_task_neg();
+	tc_pthread_pthread_tryjoin_np_pos();
+	tc_pthread_pthread_kill_pos();
+	tc_pthread_pthread_cond_broadcast_pos();
+	tc_pthread_pthread_cond_init_destroy_pos();
+	tc_pthread_pthread_set_get_schedparam_pos();
 #if CONFIG_NPTHREAD_KEYS > 0
-	tc_pthread_pthread_key_create_delete_set_getspecific();
+	tc_pthread_pthread_key_create_delete_set_getspecific_pos();
 #endif
-	tc_pthread_pthread_cancel_setcancelstate();
-	tc_pthread_pthread_setschedprio();
-	tc_pthread_pthread_timed_wait();
-	tc_pthread_pthread_mutex_init();
-	tc_pthread_pthread_mutex_destroy();
-	tc_pthread_pthread_mutex_lock_unlock_trylock();
+	tc_pthread_pthread_cancel_setcancelstate_pos();
+	tc_pthread_pthread_setschedprio_pos();
+	tc_pthread_pthread_timed_wait_pos();
+	tc_pthread_pthread_mutex_init_neg();
+	tc_pthread_pthread_mutex_destroy_pos();
+	tc_pthread_pthread_mutex_destroy_mutex_busy_neg();
+	tc_pthread_pthread_mutex_lock_unlock_trylock_pos();
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 	tc_pthread_pthread_mutex_consistent();
 #endif
-	tc_pthread_pthread_once();
-	tc_pthread_pthread_yield();
-	tc_pthread_pthread_cond_signal_wait();
+	tc_pthread_pthread_once_pos();
+	tc_pthread_pthread_once_null_callback_neg();
+	tc_pthread_pthread_once_null_opaque_neg();
+	tc_pthread_pthread_yield_pos();
+	tc_pthread_pthread_cond_signal_wait_pos();
 	tc_pthread_pthread_detach();
 	tc_pthread_pthread_sigmask();
-	tc_pthread_pthread_self();
-	tc_pthread_pthread_equal();
-	tc_pthread_pthread_setgetname_np();
+	tc_pthread_pthread_sigmask_invalid_signal_neg();
+	tc_pthread_pthread_self_pos();
+	tc_pthread_pthread_equal_neg();
+	tc_pthread_pthread_setgetname_np_pos();
+	tc_pthread_pthread_setgetname_np_null_name_neg();
 #ifdef CONFIG_CANCELLATION_POINTS
-	tc_pthread_pthread_setcanceltype();
+	tc_pthread_pthread_setcanceltype_pos();
+	tc_pthread_pthread_setcanceltype_invalid_type_neg();
 #endif
 
 	return 0;

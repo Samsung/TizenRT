@@ -33,7 +33,7 @@
 
 const long double l_day = 86400;
 extern struct timespec g_basetime;
-
+#define CLOCK_NEG -1
 #define CLOCK_ERR 2
 #define SEC_PER_MIN ((time_t)60)
 #define SEC_PER_HOUR ((time_t)60 * SEC_PER_MIN)
@@ -146,6 +146,17 @@ static void tc_clock_clock_set_time_neg(void)
 	TC_SUCCESS_RESULT();
 }
 
+static void tc_clock_clock_set_time_nclock_neg(void)
+{
+	int ret_chk;
+	struct timespec stime;
+
+	ret_chk = clock_settime(CLOCK_NEG, &stime);
+	TC_ASSERT_EQ("clock_settime", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
 static void tc_clock_clock_get_time_invalid_clock_neg(void)
 {
 	int ret_chk;
@@ -156,6 +167,8 @@ static void tc_clock_clock_get_time_invalid_clock_neg(void)
 
 	TC_SUCCESS_RESULT();
 }
+
+
 
 /**
 * @fn                   :tc_clock_clock_gettimeofday
@@ -234,6 +247,7 @@ int clock_main(void)
 	tc_clock_clock_get_time_invalid_clock_neg();
 	tc_clock_clock_get_time_pos();
 	tc_clock_clock_set_time_pos();
+	tc_clock_clock_set_time_nclock_neg();
 	tc_clock_clock_set_time_neg();
     tc_clock_clock_getres_pos();
 	tc_clock_clock_getres_neg();
