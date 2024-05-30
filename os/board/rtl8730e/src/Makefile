@@ -74,7 +74,6 @@ CSRCS += boardctl.c
 endif
 
 include Make.defs
-include component/soc/amebad2/app/monitor/rom/Make.defs
 include component/soc/amebad2/fwlib/ram_common/Make.defs
 include component/soc/amebad2/fwlib/ap_peripheral/Make.defs
 include component/soc/amebad2/fwlib/ap_core/Make.defs

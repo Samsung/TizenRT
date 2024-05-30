@@ -397,7 +397,9 @@ void board_initialize(void)
 	ipc_table_init(IPCAP_DEV);
 
 	/* init console */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
+#endif
 	amebasmart_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
