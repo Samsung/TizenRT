@@ -47,6 +47,10 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		offset += sizeof(user_binary_header_t);
 	}
 
+#ifdef CONFIG_BINARY_SIGNING
+	offset += CONFIG_USER_SIGN_PREPEND_SIZE;
+#endif
+
 	uspace_offset = offset;
 
 	int filfd = open(binp->filename, O_RDONLY);

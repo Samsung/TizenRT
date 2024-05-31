@@ -98,25 +98,32 @@ app2_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP2_BIN_DYN_RAMSIZE)) + 
 
 # common at the end of the region
 
+CONFIG_USER_SIGN_PREPEND_SIZE = util.get_value_from_file(cfg_file, "CONFIG_USER_SIGN_PREPEND_SIZE=").rstrip('\n')
+
+if CONFIG_USER_SIGN_PREPEND_SIZE == 'None' :
+    signing_offset = 0
+else :
+    signing_offset = int(CONFIG_USER_SIGN_PREPEND_SIZE)
+
 for name in NAME_LIST :
     part_size = int(SIZE_LIST[PART_IDX]) * 1024
     if name == "kernel" :
         ota_index = (ota_index + 1) % 2
     elif name == "app1" :
-        app1_start = hex(offset + 0x30)
-        app1_size = hex(part_size - 0x30)
+        app1_start = hex(offset + 0x30 + signing_offset)
+        app1_size = hex(part_size - 0x30 - signing_offset)
         ld_scripts[ota_index][1] = ld_scripts[ota_index][1] + app1_start + str1 + app1_size + str2 + app1_ram_str
         with open(output_folder + "app1_" + str(ota_index) + ".ld", "w") as ld :
             ld.write(ld_scripts[ota_index][1])
     elif name == "app2" :
-        app2_start = hex(offset + 0x30)
-        app2_size = hex(part_size - 0x30)
+        app2_start = hex(offset + 0x30 + signing_offset)
+        app2_size = hex(part_size - 0x30 - signing_offset)
         ld_scripts[ota_index][2] = ld_scripts[ota_index][2] + app2_start + str1 + app2_size + str2 + app2_ram_str
         with open(output_folder + "app2_" + str(ota_index) + ".ld", "w") as ld :
             ld.write(ld_scripts[ota_index][2])
     elif name == "common" :
-        common_start = hex(offset + 0x10)
-        common_size = hex(part_size - 0x10)
+        common_start = hex(offset + 0x10 + signing_offset)
+        common_size = hex(part_size - 0x10 - signing_offset)
         ld_scripts[ota_index][0] = ld_scripts[ota_index][0] + common_start + str1 + common_size + str2 + common_ram_str
         with open(output_folder + "common_" + str(ota_index) + ".ld", "w") as ld :
             ld.write(ld_scripts[ota_index][0])
