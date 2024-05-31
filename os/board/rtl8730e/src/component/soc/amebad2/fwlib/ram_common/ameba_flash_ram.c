@@ -84,7 +84,9 @@ ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
+#if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
 retry_gating:
+#endif
 	/* disable irq */
 	/* We do not need to acquire lock for this core, as the other core will enter gating */
 	PrevIrqStatus = irqsave();

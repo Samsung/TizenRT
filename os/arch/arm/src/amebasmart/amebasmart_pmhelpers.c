@@ -123,7 +123,8 @@ void up_set_pm_timer(unsigned int timer_interval) {
 	// Check whether timer interrupt need to be set
 	if (timer_interval > 0) {
 		gtimer_init(&g_timer1, TIMER1);
-		gtimer_start_one_shout(&g_timer1, timer_interval, (void *)pg_timer_int_handler, NULL);
+		/* Pass in timer obj to avoid compile warning, the last argument will not be used in the callback handler */
+		gtimer_start_one_shout(&g_timer1, timer_interval, (void *)pg_timer_int_handler, (uint32_t)&g_timer1);
 	}
 	return;
 }
