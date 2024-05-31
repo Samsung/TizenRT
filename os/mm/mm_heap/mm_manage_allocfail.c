@@ -120,7 +120,7 @@ static inline int mm_heapinfo_stop_watchdog(void)
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, uint32_t caller)
+void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller)
 #else
 void mm_ioctl_alloc_fail(size_t size)
 #endif
@@ -128,7 +128,7 @@ void mm_ioctl_alloc_fail(size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	struct mm_alloc_fail_s arg = {size, caller};
 #else
-	struct mm_alloc_fail_s arg = {size, 0};
+	struct mm_alloc_fail_s arg = {size};
 #endif
 	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
 	if (mmfd < 0) {
@@ -145,7 +145,7 @@ void mm_ioctl_alloc_fail(size_t size)
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type, uint32_t caller)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type, mmaddress_t caller)
 #else
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
 #endif
