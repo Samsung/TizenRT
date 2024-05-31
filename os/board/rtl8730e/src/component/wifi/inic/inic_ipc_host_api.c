@@ -76,13 +76,17 @@ static void _inic_ipc_api_host_scan_each_report_callback_handler(inic_ipc_dev_re
 
 static void _inic_ipc_api_host_autoreconnect_handler(inic_ipc_dev_request_message *p_ipc_msg)
 {
+#if CONFIG_AUTO_RECONNECT
 	rtw_security_t security_type = (rtw_security_t)p_ipc_msg->param_buf[0];
+#endif
 	char *ssid = (char *)p_ipc_msg->param_buf[1];
 	int ssid_len = (int)p_ipc_msg->param_buf[2];
 	char *password = (char *)p_ipc_msg->param_buf[3];
 	int password_len = (int)p_ipc_msg->param_buf[4];
+#if CONFIG_AUTO_RECONNECT
 	int key_id = (int)p_ipc_msg->param_buf[5];
 	char is_wps_trigger = (int)p_ipc_msg->param_buf[6];
+#endif
 
 	DCache_Invalidate((u32)ssid, ssid_len);
 	DCache_Invalidate((u32)password, password_len);

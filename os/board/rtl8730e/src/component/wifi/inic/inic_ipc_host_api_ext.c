@@ -565,9 +565,9 @@ void rtw_autoreconnect_hdl(rtw_security_t security_type,
 
 int wifi_config_autoreconnect(__u8 mode)
 {
+#if CONFIG_AUTO_RECONNECT
 	int ret = -1;
 	u32 param_buf[1];
-#if CONFIG_AUTO_RECONNECT
 	if (mode == RTW_AUTORECONNECT_DISABLE) {
 		p_wlan_autoreconnect_hdl = NULL;
 	} else {
@@ -576,16 +576,18 @@ int wifi_config_autoreconnect(__u8 mode)
 
 	param_buf[0] = mode;
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_CONFIG_AUTORECONNECT, param_buf, 1);
-#endif
 	return ret;
-
+#else
+	return 0;
+#endif
 }
 
 int wifi_get_autoreconnect(__u8 *mode)
 {
+#if CONFIG_AUTO_RECONNECT
 	int ret = 0;
 	u32 param_buf[1];
-#if CONFIG_AUTO_RECONNECT
+
 	__u8 *mode_temp = rtw_zmalloc(sizeof(__u8));
 	if (mode_temp == NULL) {
 		return -1;

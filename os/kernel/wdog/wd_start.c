@@ -466,7 +466,6 @@ void wd_timer(void)
 #ifdef CONFIG_SCHED_TICKSUPPRESS
 void wd_timer_nohz(int ticks)
 {
-	int ret;
 	FAR struct wdog_s *wdog;
 	int decr;
 
@@ -491,6 +490,5 @@ void wd_timer_nohz(int ticks)
 		wd_expiration();
 	}
 
-	return ret;
 }
 #endif
