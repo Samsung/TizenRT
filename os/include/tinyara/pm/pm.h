@@ -438,7 +438,7 @@ int pm_sleep(int milliseconds);
  * 
  * Parameters:
  *   domain_id - domain ID to be suspended
- *   timer_interval - expected lock duration in millisecond
+ *   milliseconds - expected lock duration in millisecond
  *
  * Return Value:
  *   0 - success
@@ -446,7 +446,7 @@ int pm_sleep(int milliseconds);
  *
  ************************************************************************/
 
-int pm_timedsuspend(int domain_id, unsigned int timer_interval);
+int pm_timedsuspend(int domain_id, unsigned int milliseconds);
 
 /****************************************************************************
  * Name: pm_suspendcount
