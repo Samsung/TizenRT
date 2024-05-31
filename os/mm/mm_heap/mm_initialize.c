@@ -167,14 +167,14 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	heap->mm_heapstart[IDX]->preceding = MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* fill magic number 0xDEAD as malloc info for head node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], 0xDEAD);
+	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], (mmaddress_t)0xDEAD);
 #endif
 
 	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
 	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
 	node->preceding = SIZEOF_MM_ALLOCNODE;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_update_node((FAR struct mm_allocnode_s *)node, 0xDEADDEAD);
+	heapinfo_update_node((FAR struct mm_allocnode_s *)node, (mmaddress_t)0xDEADDEAD);
 #endif
 
 	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
@@ -182,7 +182,7 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], 0xDEADDEAD);
+	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], (mmaddress_t)0xDEADDEAD);
 #endif
 
 #undef IDX

@@ -79,8 +79,11 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-static void *kheap_malloc(size_t size, size_t caller_retaddr)
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+static void *kheap_malloc(size_t size, mmaddress_t caller_retaddr)
+#else
+static void *kheap_malloc(size_t size)
+#endif
 {
 	int heap_idx;
 	void *ret;
@@ -131,7 +134,7 @@ void *kmm_malloc_at(int heap_index, size_t size)
 	void *ret;
 	struct mm_heap_s *kheap;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t caller_retaddr = 0;
+	mmaddress_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
@@ -176,13 +179,18 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 FAR void *kmm_malloc(size_t size)
 {
-	size_t caller_retaddr = 0;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+	mmaddress_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	if (size == 0) {
 		return NULL;
 	}
-	return kheap_malloc(size, caller_retaddr);
+
+	return kheap_malloc(size
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+				, caller_retaddr
+#endif
+				);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

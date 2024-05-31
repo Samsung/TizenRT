@@ -266,7 +266,7 @@ typedef size_t mmsize_t;
 /* typedef is used for defining size of address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-typedef size_t mmaddress_t;             /* 32 bit address space */
+typedef void *mmaddress_t;             /* 32 bit address space */
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
@@ -373,7 +373,9 @@ extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 
 struct mm_alloc_fail_s {
 	uint32_t size;
-	uint32_t caller;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	mmaddress_t caller;
+#endif
 };
 
 /* This describes one heap (possibly with multiple regions) */
@@ -770,7 +772,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 /* Function to manage the memory allocation failure case. */
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, uint32_t caller);
+void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller);
 #define mm_manage_alloc_fail(h, b, e, s, t, c) 	do { \
 							(void)h; \
 							(void)b; \
@@ -791,7 +793,7 @@ void mm_ioctl_alloc_fail(size_t size);
 #else
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		, uint32_t caller
+		, mmaddress_t caller
 #endif
 		);
 #endif
