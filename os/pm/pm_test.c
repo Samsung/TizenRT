@@ -36,14 +36,14 @@ struct pm_callback_s pmtest_cbarray[PMTEST_DEVICES];
 
 /* Local functions */
 
-void pmtest_dev_notify(struct pm_callback_s *cb, int domain, enum pm_state_e state)
+void pmtest_dev_notify(struct pm_callback_s *cb, enum pm_state_e state)
 {
-	pmvdbg("Recevied notify call for %s device in %d domain for %d state \n", cb->name, domain, state);
+	pmvdbg("Recevied notify call for %s device for %d state \n", cb->name, state);
 }
 
-int pmtest_dev_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e state)
+int pmtest_dev_prepare(struct pm_callback_s *cb, enum pm_state_e state)
 {
-	pmvdbg("Recevied prepare call for %s device in %d domain for %d state \n", cb->name, domain, state);
+	pmvdbg("Recevied prepare call for %s device for %d state \n", cb->name, state);
 	return OK;
 }
 
@@ -64,10 +64,10 @@ static int pmtest_kthread(int argc, char *argv[])
 
 	while (elapsed_time.tv_sec <= (start_time.tv_sec + PMTEST_DURATION_IN_SECS)) {
 		sleep(PMTEST_THREAD_SLEEP_TIME);
-		pm_changestate(PMTEST_DOMAIN, s);
+		pm_changestate(s);
 		pm_dumpstates();
 #ifdef CONFIG_PM_METRICS
-		pm_get_domainmetrics(0, &m);
+		pm_get_domainmetrics(&m);
 		pmvdbg("Normal:%d Idle:%d standby:%d sleep:%d \n", m.normal, m.idle, m.standby, m.sleep);
 #endif
 		clock_gettime(CLOCK_REALTIME, &elapsed_time);

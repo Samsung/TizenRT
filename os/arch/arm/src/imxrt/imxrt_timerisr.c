@@ -107,8 +107,8 @@
 static int imxrt_timerisr(int irq, uint32_t *regs, void *arg);
 
 #ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, int dowmin, enum pm_state_e pmstate);
-static int up_pm_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
 #endif
 
 /****************************************************************************
@@ -166,7 +166,7 @@ static int imxrt_timerisr(int irq, uint32_t *regs, void *arg)
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
+static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
 {
 	switch (pmstate) {
 	case (PM_NORMAL): {

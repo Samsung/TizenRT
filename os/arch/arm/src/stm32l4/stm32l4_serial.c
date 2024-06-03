@@ -331,9 +331,9 @@ static void stm32l4serial_dmarxcallback(DMA_HANDLE handle, uint8_t status,
 #ifdef CONFIG_PM
 static void stm32l4serial_setsuspend(struct uart_dev_s *dev, bool suspend);
 static void stm32l4serial_pm_setsuspend(bool suspend);
-static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb,
                                    enum pm_state_e pmstate);
-static int  stm32l4serial_pmprepare(FAR struct pm_callback_s *cb, int domain,
+static int  stm32l4serial_pmprepare(FAR struct pm_callback_s *cb,
                                     enum pm_state_e pmstate);
 #endif
 
@@ -2680,7 +2680,7 @@ static void stm32l4serial_dmarxcallback(DMA_HANDLE handle, uint8_t status,
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb,
                                    enum pm_state_e pmstate)
 {
   struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
@@ -2760,7 +2760,7 @@ static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static int stm32l4serial_pmprepare(FAR struct pm_callback_s *cb, int domain,
+static int stm32l4serial_pmprepare(FAR struct pm_callback_s *cb,
                                    enum pm_state_e pmstate)
 {
   int n;

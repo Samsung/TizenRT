@@ -182,9 +182,9 @@ static void amebasmart_spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuff
 
 /* For Power Save */
 #ifdef CONFIG_PM
-static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
-static int  amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb, int domain,
+static int  amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
 #endif
 
@@ -1497,7 +1497,7 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
  *
  ****************************************************************************/
 #ifdef CONFIG_PM
-static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb,
                                    enum pm_state_e pmstate)
 {
 	switch (pmstate)
@@ -1556,7 +1556,7 @@ static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb, int domain,
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static int amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
+static int amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb, enum pm_state_e pmstate)
 {
 	switch (pmstate)
 	{

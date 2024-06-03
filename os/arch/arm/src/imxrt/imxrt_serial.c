@@ -400,8 +400,8 @@ static bool imxrt_txready(struct uart_dev_s *dev);
 static bool imxrt_txempty(struct uart_dev_s *dev);
 
 #ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, int dowmin, enum pm_state_e pmstate);
-static int up_pm_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
 #endif
 
 /****************************************************************************
@@ -1335,7 +1335,7 @@ static bool imxrt_txempty(struct uart_dev_s *dev)
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static void up_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
+static void up_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate)
 {
 	switch (pmstate) {
 	case (PM_NORMAL): {
@@ -1404,7 +1404,7 @@ static void up_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e p
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static int up_pm_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
+static int up_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate)
 {
 	/* Logic to prepare for a reduced power state goes here. */
 

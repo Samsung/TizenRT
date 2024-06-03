@@ -178,7 +178,7 @@ static int stm32_1wire_exchange(FAR struct onewire_dev_s *dev, bool reset,
 static int stm32_1wire_writebit(FAR struct onewire_dev_s *dev, const uint8_t *bit);
 static int stm32_1wire_readbit(FAR struct onewire_dev_s *dev, uint8_t *bit);
 #ifdef CONFIG_PM
-static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb,
                                   enum pm_state_e pmstate);
 #endif
 
@@ -1145,7 +1145,7 @@ static int stm32_1wire_readbit(FAR struct onewire_dev_s *dev, uint8_t *bit)
  ************************************************************************************/
 
 #ifdef CONFIG_PM
-static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb,
                                   enum pm_state_e pmstate)
 {
   struct stm32_1wire_priv_s *priv =

@@ -109,7 +109,7 @@ static void up_idlepm(void)
 
 	/* Decide, which power saving level can be obtained */
 
-	newstate = pm_checkstate(STM32_PM_IDLE_DOMAIN);
+	newstate = pm_checkstate();
 
 	/* Check for state changes */
 
@@ -122,11 +122,11 @@ static void up_idlepm(void)
 
 		/* Then force the global state change */
 
-		ret = pm_changestate(STM32_PM_IDLE_DOMAIN, newstate);
+		ret = pm_changestate(newstate);
 		if (ret < 0) {
 			/* The new state change failed, revert to the preceding state */
 
-			(void)pm_changestate(STM32_PM_IDLE_DOMAIN, oldstate);
+			(void)pm_changestate(oldstate);
 		} else {
 			/* Save the new state */
 

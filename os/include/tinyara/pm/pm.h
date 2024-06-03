@@ -88,6 +88,22 @@
 #include <queue.h>
 #include <semaphore.h>
 
+#if !defined(CONFIG_PM_NDOMAINS)
+#define CONFIG_PM_NDOMAINS 31
+#endif
+
+/* This enumeration provides all power management domains */
+enum pm_domain_e {
+	PM_IDLE_DOMAIN 	= 0,
+	PM_LCD_DOMAIN 	= 1,
+	PM_UART_DOMAIN 	= 2,
+	PM_WIFI_DOMAIN 	= 3,
+	PM_BLE_DOMAIN 	= 4,
+	PM_TASH_DOMAIN 	= 14,
+	PM_APP_DOMAIN 	= 15,
+	PM_NDOMAINS 	= CONFIG_PM_NDOMAINS,
+};
+
 #ifdef CONFIG_PM
 
 /****************************************************************************
@@ -248,12 +264,6 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
- 
-/* This enumeration provides all power management domains */
-enum pm_domain_e {
-	PM_IDLE_DOMAIN = 0,
-	PM_NDOMAINS = CONFIG_PM_NDOMAINS,
-};
 
 /* This enumeration provides all power management states.  Receipt of the
  * state indication is the state transition event.
@@ -363,7 +373,7 @@ struct pm_callback_s {
 	 *
 	 **************************************************************************/
 
-	int (*prepare)(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+	int (*prepare)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
 
 	/**************************************************************************
 	 * Name: notify
@@ -388,7 +398,7 @@ struct pm_callback_s {
 	 *
 	 **************************************************************************/
 
-	void (*notify)(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
+	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
 };
 
 /****************************************************************************
@@ -615,7 +625,6 @@ int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
  *   This function is called to get current stay count.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
  *   state - The state want to relax.
  *
  * Returned Value:
@@ -626,7 +635,7 @@ int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(int domain, enum pm_state_e state);
+uint32_t pm_staycount(enum pm_state_e state);
 
 /****************************************************************************
  * Name: pm_checkstate
@@ -659,7 +668,7 @@ uint32_t pm_staycount(int domain, enum pm_state_e state);
  *
  ****************************************************************************/
 
-enum pm_state_e pm_checkstate(int domain);
+enum pm_state_e pm_checkstate(void);
 
 /****************************************************************************
  * Name: pm_changestate
@@ -670,7 +679,6 @@ enum pm_state_e pm_checkstate(int domain);
  *   drivers that have registered for power management event callbacks.
  *
  * Input Parameters:
- *   domain - Identifies the domain of the new PM state
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
@@ -689,7 +697,7 @@ enum pm_state_e pm_checkstate(int domain);
  *
  ****************************************************************************/
 
-int pm_changestate(int domain, enum pm_state_e newstate);
+int pm_changestate(enum pm_state_e newstate);
 
 /****************************************************************************
  * Name: pm_querystate
@@ -698,14 +706,13 @@ int pm_changestate(int domain, enum pm_state_e newstate);
  *   This function returns the current power management state.
  *
  * Input Parameters:
- *   domain - The PM domain to check
  *
  * Returned Value:
  *   The current power management state.
  *
  ****************************************************************************/
 
-enum pm_state_e pm_querystate(int domain);
+enum pm_state_e pm_querystate(void);
 
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
@@ -755,9 +762,9 @@ void pm_driver_register(void);
 #define pm_unregister(cb)		(0)
 #define pm_stay(domain,state)
 #define pm_relax(domain,state)
-#define pm_checkstate(domain)		(0)
-#define pm_changestate(domain, state)	(0)
-#define pm_querystate(domain)        (0)
+#define pm_checkstate()		(0)
+#define pm_changestate(state)	(0)
+#define pm_querystate()        (0)
 
 #endif							/* CONFIG_PM */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */

@@ -28,7 +28,7 @@ void pm_dumpstates(void)
 	sq_entry_t *node = NULL;
 	struct pm_statechange_s *sc = NULL;
 
-	sq_queue_t *q = &g_pmglobals.domain[0].history;
+	sq_queue_t *q = &g_pmglobals.history;
 
 	pmvdbg("#########################################################\n");
 

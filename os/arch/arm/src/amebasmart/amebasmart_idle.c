@@ -56,7 +56,7 @@ static void up_idlepm(void)
 	int ret;
 
 	/* Decide, which power saving level can be obtained */
-	newstate = pm_checkstate(PM_IDLE_DOMAIN);
+	newstate = pm_checkstate();
 
 	/* Check if new attainable state is different from current state */
 	if (newstate != oldstate)
@@ -66,7 +66,7 @@ static void up_idlepm(void)
 	  	pmvdbg("newstate= %d oldstate=%d\n", newstate, oldstate);
 
 		/* Then force the global state change */
-		ret = pm_changestate(PM_IDLE_DOMAIN, newstate);
+		ret = pm_changestate(newstate);
 		if (ret < 0) {
 			/* The new state change failed, revert to the preceding state */
 			pmdbg("State change failed! Current state = %d, newstate = %d\n", oldstate, newstate);

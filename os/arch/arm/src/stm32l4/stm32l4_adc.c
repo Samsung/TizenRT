@@ -271,7 +271,7 @@ static int adc_setoffset(FAR struct stm32_dev_s *priv, uint8_t ch, uint8_t i,
 static void adc_startconv(FAR struct stm32_dev_s *priv, bool enable);
 
 #ifdef CONFIG_PM
-static int adc_pm_prepare(struct pm_callback_s *cb, int domain,
+static int adc_pm_prepare(struct pm_callback_s *cb,
                           enum pm_state_e state);
 #endif
 
@@ -1018,7 +1018,7 @@ static int adc_timinit(FAR struct stm32_dev_s *priv)
  *
  ****************************************************************************/
 #ifdef CONFIG_PM
-static int adc_pm_prepare(struct pm_callback_s *cb, int domain,
+static int adc_pm_prepare(struct pm_callback_s *cb,
                           enum pm_state_e state)
 {
   FAR struct stm32_dev_s *priv =

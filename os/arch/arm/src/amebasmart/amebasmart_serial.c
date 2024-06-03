@@ -265,9 +265,9 @@ static bool rtl8730e_up_txready(struct uart_dev_s *dev);
 static bool rtl8730e_up_txempty(struct uart_dev_s *dev);
 
 #ifdef CONFIG_PM
-static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
-static int  amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, int domain,
+static int  amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
 #endif
 
@@ -1237,7 +1237,7 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb,
                                    enum pm_state_e pmstate)
 {
 	switch (pmstate)
@@ -1295,7 +1295,7 @@ static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
+static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, enum pm_state_e pmstate)
 {
 	switch (pmstate)
 	{
