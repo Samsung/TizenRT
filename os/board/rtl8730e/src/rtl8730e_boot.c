@@ -225,7 +225,7 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-
+				{PA_23, PIN_INPUT, PullNone},
 		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
 		Loguart pins
 		*/
@@ -298,6 +298,9 @@ void board_gpio_initialize(void)
 		lower = amebasmart_gpio_lowerhalf(pins[i].pinname, pins[i].pinmode, pins[i].pinpull);
 		gpio_register(pins[i].pinname, lower);
 	}
+#ifdef CONFIG_PM
+	gpio_pminitialize();
+#endif
 #endif
 }
 
@@ -465,7 +468,7 @@ void board_initialize(void)
 #endif
 
 	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_d08ed534_2024/05/31-17:08:16";
+	char km0_application_rev_temp[] = "km0_application_ver_2eb067f_2024/05/08-12:24:28";
 	lldbg("KM4_version %s\n", km0_application_rev_temp);
 
 #ifdef CONFIG_AUDIO_ALC1019

@@ -137,7 +137,6 @@ void SOCPS_LPWAP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	UNUSED(IrqStatus);
 	UNUSED(ChanNum);
 
-	pmvdbg("IPC wakeup interrupt handler!!\n");
 	pm_activity(PM_IDLE_DOMAIN, 9);
 	ipc_get_message(IPC_LP_TO_AP, IPC_L2A_Channel1);
 
