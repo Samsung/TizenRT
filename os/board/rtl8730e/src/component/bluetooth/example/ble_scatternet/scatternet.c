@@ -294,7 +294,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
             /* Set PM suspend timer for 10 minutes */
-            if (pm_timedstay(PM_NORMAL, 600000000) != 0) {
+            if (pm_timedsuspend(PM_BLE_DOMAIN, 600000000) != 0) {
                 pmdbg("Unable to perform PM suspend for 10 minutes\n");
             }
 #endif
