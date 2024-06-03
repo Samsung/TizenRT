@@ -535,9 +535,9 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 	/* Output a header before the first entry */
 	if (filep->f_pos == 0) {
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		total = snprintf(buffer, buflen, " %-*s  Start    Size   Tag", MTD_PARTNAME_LEN, "Name");
+		total = snprintf(buffer, buflen, " %-*s  Start    Size   Num   Tag", MTD_PARTNAME_LEN, "Name");
 #else
-		total = snprintf(buffer, buflen, "  Start    Size   Tag");
+		total = snprintf(buffer, buflen, "  Start    Size   Num   Tag");
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
@@ -567,9 +567,9 @@ static ssize_t part_procfs_read(FAR struct file *filep, FAR char *buffer, size_t
 
 		/* Copy data from the next known partition */
 #ifdef CONFIG_MTD_PARTITION_NAMES
-		ret = snprintf(&buffer[total], buflen - total, "%15s %7d %7d %4d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->tagno);
+		ret = snprintf(&buffer[total], buflen - total, "%15s %7d %7d %4d %4d", attr->nextpart->name, attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->partno, attr->nextpart->tagno);
 #else
-		ret = snprintf(&buffer[total], buflen - total, "%7d %7d %4d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->tagno);
+		ret = snprintf(&buffer[total], buflen - total, "%7d %7d %4d %4d", attr->nextpart->firstblock / blkpererase, attr->nextpart->neraseblocks, attr->nextpart->partno, attr->nextpart->tagno);
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MTD
