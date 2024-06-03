@@ -197,11 +197,6 @@
 #define CHAR_TIMEOUT 6540
 #define TX_FIFO_MAX 16
 
-/* Power management definitions */
-#if defined(CONFIG_PM) && !defined(CONFIG_RTL8730E_PM_SERIAL_ACTIVITY)
-#define CONFIG_RTL8730E_PM_SERIAL_ACTIVITY  10
-#endif
-
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -583,11 +578,6 @@ static void rtl8730e_log_up_shutdown(struct uart_dev_s *dev)
 
 static int rtl8730e_log_uart_irq(void *Data)
 {
-	/* Report serial activity to the power management logic */
-#if defined(CONFIG_PM) && CONFIG_RTL8730E_PM_SERIAL_ACTIVITY > 0
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_RTL8730E_PM_SERIAL_ACTIVITY);
-#endif
-
 	uart_recvchars(&CONSOLE_DEV);
 	return 0;
 }
@@ -921,11 +911,6 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 {
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
-
-	/* Report serial activity to the power management logic */
-#if defined(CONFIG_PM) && CONFIG_RTL8730E_PM_SERIAL_ACTIVITY > 0
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_RTL8730E_PM_SERIAL_ACTIVITY);
-#endif
 
 	if (event == RxIrq) {
 		uart_recvchars(dev);

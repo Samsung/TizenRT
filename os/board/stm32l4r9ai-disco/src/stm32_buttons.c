@@ -54,10 +54,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef CONFIG_PM_BUTTON_ACTIVITY
-#  define CONFIG_PM_BUTTON_ACTIVITY 10
-#endif
-
 #define PM_IDLE_DOMAIN  0 /* Revisit */
 
 /****************************************************************************
@@ -175,16 +171,6 @@ static void button_pm_notify(struct pm_callback_s *cb, int domain,
 #ifdef CONFIG_ARCH_IRQBUTTONS
 static int button_handler(int irq, FAR void *context, FAR void *arg)
 {
-#ifdef CONFIG_PM
-  /* At this point the MCU should have already awakened.  The state
-   * change will be handled in the IDLE loop when the system is re-awakened
-   * The button interrupt handler should be totally ignorant of the PM
-   * activities and should report button activity as if nothing
-   * special happened.
-   */
-
-  pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_BUTTON_ACTIVITY);
-#endif
   return OK;
 }
 #endif /* CONFIG_ARCH_IRQBUTTONS */
@@ -277,17 +263,6 @@ uint8_t board_buttons(void)
           ret |= (1 << i);
         }
     }
-
-#ifdef CONFIG_PM
-  /* if the user pressed any buttons, notify power management system we are
-   * active
-   */
-
-  if (0 != ret)
-    {
-      pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_BUTTON_ACTIVITY);
-    }
-#endif
 
   return ret;
 }

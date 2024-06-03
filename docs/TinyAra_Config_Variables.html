@@ -811,7 +811,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_IMXRT_EDMA_EMLIM">1.2.182.6 <code>CONFIG_IMXRT_EDMA_EMLIM</code>: Minor Loop Mapping</a></li>
 <li><a href="#CONFIG_IMXRT_EDMA_EDBG">1.2.182.7 <code>CONFIG_IMXRT_EDMA_EDBG</code>: Enable Debug</a></li>
 </ul>
-<li><a href="#CONFIG_IMXRT_PM_SERIAL_ACTIVITY">1.2.183 <code>CONFIG_IMXRT_PM_SERIAL_ACTIVITY</code>: PM serial activity</a></li>
 <li><a name="menu_43_toc"><a href="#menu_43">1.2.184 Menu: RTC Configuration</a></a></li>
 <a href="#menu_43_toc" onclick="toggle('toggle_42', this)">Expand</a>
 <ul id="toggle_42"  style="display:none">
@@ -1034,7 +1033,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_STM32F429I_DISCO_RAMMTD_MINOR">1.3.68 <code>CONFIG_STM32F429I_DISCO_RAMMTD_MINOR</code>: Minor number for RAM /dev/smart entry</a></li>
 <li><a href="#CONFIG_STM32F429I_DISCO_RAMMTD_SIZE">1.3.69 <code>CONFIG_STM32F429I_DISCO_RAMMTD_SIZE</code>: Size in KB of the RAM device to create</a></li>
 <li><a href="#CONFIG_PM_BUTTONS">1.3.70 <code>CONFIG_PM_BUTTONS</code>: PM Button support</a></li>
-<li><a href="#CONFIG_PM_BUTTON_ACTIVITY">1.3.71 <code>CONFIG_PM_BUTTON_ACTIVITY</code>: Button PM activity weight</a></li>
 <li><a href="#CONFIG_PM_ALARM_SEC">1.3.72 <code>CONFIG_PM_ALARM_SEC</code>: PM_STANDBY delay (seconds)</a></li>
 <li><a href="#CONFIG_PM_ALARM_NSEC">1.3.73 <code>CONFIG_PM_ALARM_NSEC</code>: PM_STANDBY delay (nanoseconds)</a></li>
 <li><a href="#CONFIG_PM_SLEEP_WAKEUP">1.3.74 <code>CONFIG_PM_SLEEP_WAKEUP</code>: PM_SLEEP wake-up alarm</a></li>
@@ -13878,7 +13876,6 @@ expected, however.
 <p>
   When in debug mode, the DMA stalls the start of a new channel. Executing  channels are allowed to complete. Channel execution resumes when the  system exits debug mode or the EDBG bit is cleared</p>
 </ul>
-<h3><a name="CONFIG_IMXRT_PM_SERIAL_ACTIVITY">1.2.183 <code>CONFIG_IMXRT_PM_SERIAL_ACTIVITY</code>: PM serial activity</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>
@@ -16629,7 +16626,6 @@ int up_prioritize_irq(int irq, int priority)
 <p>
   Enable PM button EXTI interrupts to support PM testing</p>
 </ul>
-<h3><a name="CONFIG_PM_BUTTON_ACTIVITY">1.3.71 <code>CONFIG_PM_BUTTON_ACTIVITY</code>: Button PM activity weight</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>

@@ -210,8 +210,7 @@
 #endif
 
 /* Power management definitions */
-#if defined(CONFIG_PM) && !defined(CONFIG_PM_SERIAL_ACTIVITY)
-#define CONFIG_PM_SERIAL_ACTIVITY	10
+#if defined(CONFIG_PM)
 #define PM_IDLE_DOMAIN				0	/* Revisit */
 #endif
 
@@ -280,11 +279,6 @@ static int up_interrupt(int irq, void *context, void *arg)
 {
 	uart_dev_t *dev = (uart_dev_t *)arg;
 	uint32_t uintp = uart_getreg32(dev->priv, S5J_UART_UINTP_OFFSET);
-
-#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
-	/* Report serial activity to the power management logic */
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
-#endif
 
 	if (uintp & UART_UINTP_TXD) {
 		uart_xmitchars(dev);

@@ -74,7 +74,6 @@
 #endif
 
 #define PM_IDLE_DOMAIN 0 /* Revisit */
-#define STM32L4_EXT_JOYKEY_ACTIVITY			4
 
 #ifdef CONFIG_SCHED_TICKSUPPRESS
 #ifndef CONFIG_STM32L4_RTC
@@ -128,7 +127,6 @@ void up_extiisr(int irq, uint32_t *regs)
 {
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
   up_lowputc('i');
-  pm_activity(PM_IDLE_DOMAIN, STM32L4_EXT_JOYKEY_ACTIVITY);
 }
 
 void set_exti_button(void)

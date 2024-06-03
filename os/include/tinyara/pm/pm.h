@@ -464,35 +464,6 @@ int pm_register(FAR struct pm_callback_s *callbacks);
 int pm_unregister(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
- * Name: pm_activity
- *
- * Description:
- *   This function is called by a device driver to indicate that it is
- *   performing meaningful activities (non-idle).  This increment an activity
- *   count and/or will restart a idle timer and prevent entering reduced
- *   power states.
- *
- * Input Parameters:
- *   domain - The domain of the PM activity
- *   priority - Activity priority, range 0-9.  Larger values correspond to
- *     higher priorities.  Higher priority activity can prevent the system
- *     from entering reduced power states for a longer period of time.
- *
- *     As an example, a button press might be higher priority activity because
- *     it means that the user is actively interacting with the device.
- *
- * Returned Value:
- *   None.
- *
- * Assumptions:
- *   This function may be called from an interrupt handler (this is the ONLY
- *   PM function that may be called from an interrupt handler!).
- *
- ****************************************************************************/
-
-void pm_activity(int domain, int priority);
-
-/****************************************************************************
  * Name: pm_stay
  *
  * Description:
@@ -782,7 +753,6 @@ void pm_driver_register(void);
 #define pm_initialize()
 #define pm_register(cb)			(0)
 #define pm_unregister(cb)		(0)
-#define pm_activity(domain,prio)
 #define pm_stay(domain,state)
 #define pm_relax(domain,state)
 #define pm_checkstate(domain)		(0)

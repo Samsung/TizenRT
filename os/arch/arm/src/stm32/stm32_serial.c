@@ -248,12 +248,6 @@
 
 #endif
 
-/* Power management definitions */
-
-#if defined(CONFIG_PM) && !defined(CONFIG_PM_SERIAL_ACTIVITY)
-#define CONFIG_PM_SERIAL_ACTIVITY 10
-#endif
-
 #ifdef USE_SERIALDRIVER
 #ifdef HAVE_UART
 
@@ -1679,12 +1673,6 @@ static int up_interrupt_common(struct up_dev_s *priv)
 {
 	int passes;
 	bool handled;
-
-	/* Report serial activity to the power management logic */
-
-#if defined(CONFIG_PM) && CONFIG_PM_SERIAL_ACTIVITY > 0
-	pm_activity(STM32_PM_IDLE_DOMAIN, CONFIG_PM_SERIAL_ACTIVITY);
-#endif
 
 	/* Loop until there are no characters to be transferred or,
 	 * until we have been looping for a long time.
