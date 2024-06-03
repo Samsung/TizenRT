@@ -52,6 +52,9 @@
 
 CSRCS += wd_initialize.c wd_create.c wd_start.c wd_cancel.c wd_delete.c
 CSRCS += wd_gettime.c wd_recover.c
+ifeq ($(CONFIG_SCHED_WAKEUPSOURCE),y)
+CSRCS += wd_setwakeupsource.c wd_getwakeupdelay.c
+endif
 
 # Include wdog build support
 

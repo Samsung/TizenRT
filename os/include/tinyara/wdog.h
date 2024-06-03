@@ -90,18 +90,22 @@
 #define WDOGF_ACTIVE       (1 << 0)	/* Bit 0: 1=Watchdog is actively timing */
 #define WDOGF_ALLOCED      (1 << 1)	/* Bit 1: 0=Pre-allocated, 1=Allocated */
 #define WDOGF_STATIC       (1 << 2)	/* Bit 2: 0=[Pre-]allocated, 1=Static */
+#define WDOGF_WAKEUP       (1 << 3)	/* Bit 3: 1=Watchdog is registered as a power management wakeup source */
 
 #define WDOG_SETACTIVE(w)  do { (w)->flags |= WDOGF_ACTIVE; } while (0)
 #define WDOG_SETALLOCED(w) do { (w)->flags |= WDOGF_ALLOCED; } while (0)
 #define WDOG_SETSTATIC(w)  do { (w)->flags |= WDOGF_STATIC; } while (0)
+#define WDOG_SETWAKEUP(w)  do { (w)->flags |= WDOGF_WAKEUP; } while (0)
 
 #define WDOG_CLRACTIVE(w)  do { (w)->flags &= ~WDOGF_ACTIVE; } while (0)
 #define WDOG_CLRALLOCED(w) do { (w)->flags &= ~WDOGF_ALLOCED; } while (0)
 #define WDOG_CLRSTATIC(w)  do { (w)->flags &= ~WDOGF_STATIC; } while (0)
+#define WDOG_CLRWAKEUP(w)  do { (w)->flags &= ~WDOGF_WAKEUP; } while (0)
 
 #define WDOG_ISACTIVE(w)   (((w)->flags & WDOGF_ACTIVE) != 0)
 #define WDOG_ISALLOCED(w)  (((w)->flags & WDOGF_ALLOCED) != 0)
 #define WDOG_ISSTATIC(w)   (((w)->flags & WDOGF_STATIC) != 0)
+#define WDOG_ISWAKEUP(w)   (((w)->flags & WDOGF_WAKEUP) != 0)
 
 /* Initialization of statically allocated timers ****************************/
 
@@ -179,6 +183,10 @@ int wd_delete(WDOG_ID wdog);
 int wd_start(WDOG_ID wdog, int delay, wdentry_t wdentry, int argc, ...);
 int wd_cancel(WDOG_ID wdog);
 int wd_gettime(WDOG_ID wdog);
+#ifdef CONFIG_SCHED_WAKEUPSOURCE
+int wd_setwakeupsource(WDOG_ID wdog);
+clock_t wd_getwakeupdelay(void);
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus
