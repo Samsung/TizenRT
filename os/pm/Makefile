@@ -21,7 +21,7 @@
 ASRCS =
 
 CSRCS += pm_activity.c pm_changestate.c pm_checkstate.c pm_initialize.c pm_sleep.c
-CSRCS += pm_register.c pm_unregister.c pm_procfs.c pm_timedstay.c
+CSRCS += pm_register.c pm_unregister.c pm_procfs.c pm_timedsuspend.c
 
 ifeq ($(CONFIG_PM_METRICS),y)
 CSRCS += pm_metrics.c

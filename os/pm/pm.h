@@ -183,10 +183,6 @@ struct pm_global_s {
 
 	clock_t btime;
 
-	/* The power state lock count */
-
-	uint16_t stay[PM_COUNT];
-
 	/* Timer to decrease state */
 
 	WDOG_ID wdog;

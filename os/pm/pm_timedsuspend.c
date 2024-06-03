@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************
- * pm/pm_timedstay.c
+ * pm/pm_timedsuspend.c
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -78,11 +78,11 @@ static WDOG_ID pid_timer_map[CONFIG_MAX_TASKS];
  * Private Functions
  ************************************************************************/
 
-static void timer_timeout(int argc, uint32_t state, uint32_t pid)
+static void timer_timeout(int argc, uint32_t domain, uint32_t pid)
 {
 	/* PM transition will be relaxed here */
 	if (pid_timer_map[pid] != NULL) {
-		pm_relax(PM_IDLE_DOMAIN, (enum pm_state_e)state);
+		pm_resume(domain);
 		wd_delete(pid_timer_map[pid]);
         	pid_timer_map[pid] = NULL;
 	}
@@ -93,13 +93,13 @@ static void timer_timeout(int argc, uint32_t state, uint32_t pid)
  ************************************************************************/
 
 /************************************************************************
- * Name: pm_timedstay
+ * Name: pm_timedsuspend
  *
  * Description:
  *   This function locks PM state transition for a specific duration.  
  * 
  * Parameters:
- *   state - state to be suspended
+ *   domain - state to be suspended
  *   timer_interval - expected lock duration in millisecond
  *
  * Return Value:
@@ -108,7 +108,7 @@ static void timer_timeout(int argc, uint32_t state, uint32_t pid)
  *
  ************************************************************************/
 
-int pm_timedstay(enum pm_state_e state, unsigned int timer_interval)
+int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval)
 {
 	int pid = PIDHASH(getpid());
 
@@ -123,8 +123,8 @@ int pm_timedstay(enum pm_state_e state, unsigned int timer_interval)
 	pid_timer_map[pid] = wdog;
 
 	/* Lock the pm transition and Start the wdog timer */
-	pm_stay(PM_IDLE_DOMAIN, state);
-	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, (uint32_t)state, (uint32_t)pid);
+	pm_suspend(domain);
+	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, (uint32_t)domain, (uint32_t)pid);
 	pmvdbg("PM is locked for pid %d and timer started for %d milisecond\n", pid, timer_interval);
 
 	if (ret != PM_TIMER_SUCCESS) {

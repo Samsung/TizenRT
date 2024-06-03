@@ -317,7 +317,7 @@ enum pm_timer_type_e {
 
 /* This structure is used to send data to pm driver from app side for timedSuspend */
 struct pm_suspend_arg_s {
-	enum pm_state_e state;            /* state to be suspended */
+	enum pm_domain_e domain;          /* domain to be suspended */
 	unsigned int timer_interval;      /* duration to be suspended */
 };
 
@@ -474,7 +474,7 @@ int pm_register(FAR struct pm_callback_s *callbacks);
 int pm_unregister(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
- * Name: pm_stay
+ * Name: pm_suspend
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
@@ -483,22 +483,22 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  * Input Parameters:
  *   domain - The domain of the PM activity
- *   state - The state want to stay.
  *
  *     As an example, media player might stay in normal state during playback.
  *
  * Returned Value:
- *   None.
+ *   0 - On Success
+ *  -1 - On Error
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
  *
  ****************************************************************************/
 
-void pm_stay(int domain, enum pm_state_e state);
+int pm_suspend(enum pm_domain_e domain);
 
 /****************************************************************************
- * Name: pm_relax
+ * Name: pm_resume
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
@@ -506,19 +506,19 @@ void pm_stay(int domain, enum pm_state_e state);
  *
  * Input Parameters:
  *   domain - The domain of the PM activity
- *   state - The state want to relax.
  *
  *     As an example, media player might relax power level after playback.
  *
  * Returned Value:
- *   None.
+ *   0 - On Success
+ *  -1 - On Error
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
  *
  ****************************************************************************/
 
-void pm_relax(int domain, enum pm_state_e state);
+int pm_resume(enum pm_domain_e domain);
 
 /****************************************************************************
  * Name: pm_set_wakeup_timer
@@ -578,7 +578,7 @@ void pm_timer_update(int ticks);
 void pm_timer_add(pm_timer_t *timer);
 
 /************************************************************************
- * Name: pm_msleep
+ * Name: pm_sleep
  *
  * Description:
  *   This function allows the board to sleep for given time interval.
@@ -590,7 +590,7 @@ void pm_timer_add(pm_timer_t *timer);
  *      3. NORMAL to SLEEP state threshold time is large
  * 
  * Parameters:
- *   timer_interval - expected board sleep duration (in milliseconds)
+ *   milliseconds - expected board sleep duration (in milliseconds)
  *
  * Return Value:
  *   0 - success
@@ -598,16 +598,16 @@ void pm_timer_add(pm_timer_t *timer);
  *
  ************************************************************************/
 
-int pm_msleep(int timer_interval);
+int pm_sleep(int milliseconds);
 
 /************************************************************************
- * Name: pm_timedstay
+ * Name: pm_timedsuspend
  *
  * Description:
  *   This function locks PM transition for a specific duration.  
  * 
  * Parameters:
- *   state - state to be suspended
+ *   domain - domain to be suspended
  *   timer_interval - expected lock duration in millisecond
  *
  * Return Value:
@@ -616,7 +616,7 @@ int pm_msleep(int timer_interval);
  *
  ************************************************************************/
 
-int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
+int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
 
 /****************************************************************************
  * Name: pm_staycount
@@ -625,7 +625,7 @@ int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
  *   This function is called to get current stay count.
  *
  * Input Parameters:
- *   state - The state want to relax.
+ *   domain - The domain of the PM activity
  *
  * Returned Value:
  *   Current pm stay count
@@ -635,7 +635,7 @@ int pm_timedstay(enum pm_state_e state, unsigned int timer_interval);
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(enum pm_state_e state);
+uint32_t pm_staycount(enum pm_domain_e domain);
 
 /****************************************************************************
  * Name: pm_checkstate
@@ -760,8 +760,8 @@ void pm_driver_register(void);
 #define pm_initialize()
 #define pm_register(cb)			(0)
 #define pm_unregister(cb)		(0)
-#define pm_stay(domain,state)
-#define pm_relax(domain,state)
+#define pm_suspend(domain)
+#define pm_resume(domain)
 #define pm_checkstate()		(0)
 #define pm_changestate(state)	(0)
 #define pm_querystate()        (0)

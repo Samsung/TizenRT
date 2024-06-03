@@ -62,6 +62,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
+#include <errno.h>
 
 #include "pm.h"
 
@@ -76,7 +77,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_stay
+ * Name: pm_suspend
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
@@ -85,7 +86,6 @@
  *
  * Input Parameters:
  *   domain - The domain of the PM activity
- *   state - The state want to stay.
  *
  *     As an example, media player might stay in normal state during playback.
  *
@@ -97,23 +97,30 @@
  *
  ****************************************************************************/
 
-void pm_stay(int domain, enum pm_state_e state)
+int pm_suspend(enum pm_domain_e domain)
 {
 	irqstate_t flags;
-
-	/* Get a convenience pointer to minimize all of the indexing */
-
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
+	int ret = OK;
 
 	flags = enter_critical_section();
-	DEBUGASSERT(state < PM_COUNT);
-	DEBUGASSERT(g_pmglobals.stay[state] < UINT16_MAX);
-	g_pmglobals.stay[state]++;
+	if (domain < 0 || domain >= CONFIG_PM_NDOMAINS) {
+		ret = ERROR;
+		set_errno(EINVAL);
+		goto errout;
+	}
+	if (g_pmglobals.suspend_count[domain] >= UINT16_MAX) {
+		ret = ERROR;
+		set_errno(ERANGE);
+		goto errout;
+	}
+	g_pmglobals.suspend_count[domain]++;
+errout:
 	leave_critical_section(flags);
+	return ret;
 }
 
 /****************************************************************************
- * Name: pm_relax
+ * Name: pm_resume
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
@@ -121,7 +128,6 @@ void pm_stay(int domain, enum pm_state_e state)
  *
  * Input Parameters:
  *   domain - The domain of the PM activity
- *   state - The state want to relax.
  *
  *     As an example, media player might relax power level after playback.
  *
@@ -133,19 +139,26 @@ void pm_stay(int domain, enum pm_state_e state)
  *
  ****************************************************************************/
 
-void pm_relax(int domain, enum pm_state_e state)
+int pm_resume(enum pm_domain_e domain)
 {
 	irqstate_t flags;
-
-	/* Get a convenience pointer to minimize all of the indexing */
-
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
+	int ret = OK;
 
 	flags = enter_critical_section();
-	DEBUGASSERT(state < PM_COUNT);
-	DEBUGASSERT(g_pmglobals.stay[state] > 0);
-	g_pmglobals.stay[state]--;
+	if (domain < 0 || domain >= CONFIG_PM_NDOMAINS) {
+		ret = ERROR;
+		set_errno(EINVAL);
+		goto errout;
+	}
+	if (g_pmglobals.suspend_count[domain] <= 0) {
+		ret = ERROR;
+		set_errno(ERANGE);
+		goto errout;
+	}
+	g_pmglobals.suspend_count[domain]--;
+errout:
 	leave_critical_section(flags);
+	return ret;
 }
 
 /****************************************************************************
@@ -156,7 +169,6 @@ void pm_relax(int domain, enum pm_state_e state)
  *
  * Input Parameters:
  *   domain - The domain of the PM activity
- *   state - The state want to relax.
  *
  * Returned Value:
  *   Current pm stay count
@@ -166,11 +178,13 @@ void pm_relax(int domain, enum pm_state_e state)
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(enum pm_state_e state)
+uint32_t pm_staycount(enum pm_domain_e domain)
 {
 	/* Get a convenience pointer to minimize all of the indexing */
 
-	return g_pmglobals.stay[state];
+	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
+
+	return g_pmglobals.suspend_count[domain];
 }
 
 

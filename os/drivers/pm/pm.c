@@ -79,8 +79,8 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  * Arguments:
  *   filep is ioctl fd, cmd is required command, arg is required argument for
  *   the command. 
- *   for PMIOC_SUSPEND, arg is an enum representing PM STATE
- *   for PMIOC_RESUME, arg is an enum representing PM STATE
+ *   for PMIOC_SUSPEND, arg is an enum representing PM DOMAIN
+ *   for PMIOC_RESUME, arg is an enum representing PM DOMAIN
  *   for PMIOC_SLEEP, arg should be an int.(user should input time in millisecond)
  *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t 
  *   for PMIOC_TUNEFREQ, arg should be an int type.
@@ -96,18 +96,16 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
     	case PMIOC_SUSPEND:
-	        pm_stay(PM_IDLE_DOMAIN, (enum pm_state_e)arg);
+	        ret = pm_suspend((enum pm_domain_e)arg);
 		pmvdbg("State locked!\n");
-		ret = OK;
         	break;
         case PMIOC_RESUME:
-		pm_relax(PM_IDLE_DOMAIN, (enum pm_state_e)arg);
+		ret = pm_resume((enum pm_domain_e)arg);
 		pmvdbg("State unlocked!\n");
-		ret = OK;
 		break;
 	case PMIOC_SLEEP:
 		if (arg > 0) {
-			ret = pm_msleep((int)arg);
+			ret = pm_sleep((int)arg);
 		} else {
 			pmvdbg("Please input positive timer interval\n");
 		}
@@ -116,7 +114,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((pm_suspend_arg_t *)arg == NULL) {
 			pmvdbg("Please input correct arguments\n");
 		} else {
-			ret = pm_timedstay(((pm_suspend_arg_t *)arg)->state, ((pm_suspend_arg_t *)arg)->timer_interval);
+			ret = pm_timedsuspend(((pm_suspend_arg_t *)arg)->domain, ((pm_suspend_arg_t *)arg)->timer_interval);
 		}
 		break;
 #ifdef CONFIG_PM_DVFS
