@@ -1,6 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 2abe3aa 2024/05/07-17:37:13 ==
+== version d08ed534e7 2024/05/31-17:08:07 ==
+1.	Add feature in fault handler to indicate KM4 fault
+
+== version 9b0416c0fb 2024/05/27-17:44:51 ==
 1.	Fix wakeup from PG hang problem
 
 == version 2d0f1be032 2024/04/29-09:51:17 ==
