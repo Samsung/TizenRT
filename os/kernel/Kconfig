@@ -105,6 +105,20 @@ config SCHED_TICKSUPPRESS
 		platform specific interfaces that must be provided as
 		defined in include/tinyara/arch.h
 
+if SCHED_TICKSUPPRESS
+
+config SCHED_WAKEUPSOURCE
+	bool "Support wake-up source for ticksuppress kernel"
+	default n
+	---help---
+		In the tick suppression and the CPU is in idle, the CPU can be waken up
+		by a specific watchdog. When this config is enabled, we can specify the wdog
+		to use as a wakeup source. To wake up the CPU with the specified wdog,
+		need to register the expiration time of the wdog with the hw timer and wake up
+		the CPU with the hw timer interrupt.
+
+endif
+
 config USEC_PER_TICK
 	int "System timer tick period (microseconds)"
 	default 10000 if !SCHED_TICKLESS
