@@ -233,3 +233,13 @@ config AMEBASMART_CMSIS_NN
 	default n
 
 endmenu
+
+menu "Realtek RTL8730E KM4/KM0 Status Check Timer"
+
+config AMEBASMART_NP_LP_CHECK_INTERVAL
+	int "Timer Interval (Microseconds)"
+	default 5000000
+	---help---
+		Interval for hardware timer to check KM4/KM0 status
+
+endmenu
