@@ -75,9 +75,13 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 	boot_reason = BKUP_Read(BKUP_REG1);
 
 	if ((boot_reason != REBOOT_REASON_INITIALIZED) && (boot_reason != 0)) {
+		if (BKUP_Read(BKUP_REG2) == 0x1) {
+			BKUP_Write(BKUP_REG2, 0);
+			boot_reason = REBOOT_SYSTEM_NP_LP_FAULT;
+		}
 		return boot_reason;
 	} else {
-		/* Read AmebaD Boot Reason, WDT and HW reset supported */
+		/* Read AmebaSmart Boot Reason, WDT and HW reset supported */
 		boot_reason = BOOT_Reason();
 
 		/* HW reset */
