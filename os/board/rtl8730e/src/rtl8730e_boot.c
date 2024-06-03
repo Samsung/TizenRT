@@ -383,6 +383,20 @@ void app_ftl_init(void)
  ****************************************************************************/
 
 #ifdef CONFIG_BOARD_INITIALIZE
+
+static gtimer_t g_timer_np_lp;
+
+static void np_lp_status_timer_hdl(void)
+{
+	ASSERT(BKUP_Read(BKUP_REG2) != 0x1);
+}
+
+static void init_np_lp_status_timer(void)
+{
+	gtimer_init(&g_timer_np_lp, TIMER2);
+	gtimer_start_periodical(&g_timer_np_lp, CONFIG_AMEBASMART_NP_LP_CHECK_INTERVAL, (void *)np_lp_status_timer_hdl, (uint32_t)&g_timer_np_lp);
+}
+
 void board_initialize(void)
 {
 
@@ -439,12 +453,14 @@ void board_initialize(void)
 	app_ftl_init();
 #endif
 
+	/* Start timer to check KM4/KM0 status */
+	init_np_lp_status_timer();
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
 #endif
 
 	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_fc13915b_2024/05/27-19:24:11";
+	char km0_application_rev_temp[] = "km0_application_ver_d08ed534_2024/05/31-17:08:16";
 	lldbg("KM4_version %s\n", km0_application_rev_temp);
 
 #ifdef CONFIG_AUDIO_ALC1019
