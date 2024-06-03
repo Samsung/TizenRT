@@ -460,8 +460,11 @@ void pm_timer_add(pm_timer_t *timer);
  *   -1 - error
  *
  ************************************************************************/
-
+#ifdef CONFIG_PM_TIMEDWAKEUP
 int pm_sleep(int milliseconds);
+#else
+#define pm_sleep(milliseconds) (0)
+#endif
 
 /************************************************************************
  * Name: pm_timedsuspend

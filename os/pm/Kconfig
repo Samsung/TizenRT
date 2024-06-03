@@ -75,6 +75,16 @@ config PM_TICKSUPPRESS
 		be compensated for when the core becomes active. To enable this configuration to
 		suppress ticks, the pm_wake() API must be called when the core wakes up.
 
+if PM_TICKSUPPRESS
+
+config PM_TIMEDWAKEUP
+	bool "Support PM Timed Wake-up"
+	default n
+	select SCHED_WAKEUPSOURCE
+	---help---
+
+if PM_TIMEDWAKEUP
+
 config PM_MIN_SLEEP_TIME
 	int "PM MIN SLEEP enter time"
 	default 0
@@ -84,5 +94,7 @@ config PM_MIN_SLEEP_TIME
 		power efficient. 
 		Also Note that, this value is in millisecond.
 
+endif # PM_TIMEDWAKEUP
+endif # PM_TICKSUPPRESS
 endif # PM
 
