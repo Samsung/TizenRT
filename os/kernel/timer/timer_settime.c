@@ -324,6 +324,14 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 
 	(void)wd_cancel(timer->pt_wdog);
 
+#ifdef CONFIG_SCHED_WAKEUPSOURCE
+	if (flags & TIMER_WAKEUPSOURCE) {
+		if (wd_setwakeupsource(timer->pt_wdog) != OK) {
+			return ERROR;
+		}
+	}
+#endif
+
 	/* If the it_value member of value is zero, the timer will not be re-armed */
 
 	if (value->it_value.tv_sec <= 0 && value->it_value.tv_nsec <= 0) {
