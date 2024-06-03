@@ -99,18 +99,16 @@
 
 void pm_stay(int domain, enum pm_state_e state)
 {
-	FAR struct pm_domain_s *pdom;
 	irqstate_t flags;
 
 	/* Get a convenience pointer to minimize all of the indexing */
 
 	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-	pdom = &g_pmglobals.domain[domain];
 
 	flags = enter_critical_section();
 	DEBUGASSERT(state < PM_COUNT);
-	DEBUGASSERT(pdom->stay[state] < UINT16_MAX);
-	pdom->stay[state]++;
+	DEBUGASSERT(g_pmglobals.stay[state] < UINT16_MAX);
+	g_pmglobals.stay[state]++;
 	leave_critical_section(flags);
 }
 
@@ -137,18 +135,16 @@ void pm_stay(int domain, enum pm_state_e state)
 
 void pm_relax(int domain, enum pm_state_e state)
 {
-	FAR struct pm_domain_s *pdom;
 	irqstate_t flags;
 
 	/* Get a convenience pointer to minimize all of the indexing */
 
 	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-	pdom = &g_pmglobals.domain[domain];
 
 	flags = enter_critical_section();
 	DEBUGASSERT(state < PM_COUNT);
-	DEBUGASSERT(pdom->stay[state] > 0);
-	pdom->stay[state]--;
+	DEBUGASSERT(g_pmglobals.stay[state] > 0);
+	g_pmglobals.stay[state]--;
 	leave_critical_section(flags);
 }
 
@@ -170,16 +166,11 @@ void pm_relax(int domain, enum pm_state_e state)
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(int domain, enum pm_state_e state)
+uint32_t pm_staycount(enum pm_state_e state)
 {
-	FAR struct pm_domain_s *pdom;
-
 	/* Get a convenience pointer to minimize all of the indexing */
 
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-	pdom = &g_pmglobals.domain[domain];
-
-	return pdom->stay[state];
+	return g_pmglobals.stay[state];
 }
 
 

@@ -92,24 +92,17 @@
  *   is completed.
  *
  * Input Parameters:
- *   domain - the PM domain to check
  *
  * Returned Value:
  *   The recommended power management state.
  *
  ****************************************************************************/
 
-enum pm_state_e pm_checkstate(int domain)
+enum pm_state_e pm_checkstate(void)
 {
-	FAR struct pm_domain_s *pdom;
 	clock_t now;
 	irqstate_t flags;
 	int index;
-
-	/* Get a convenience pointer to minimize all of the indexing */
-
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-	pdom = &g_pmglobals.domain[domain];
 
 	/* Check for the end of the current time slice.  This must be performed
 	 * with interrupts disabled so that it does not conflict with the similar
@@ -117,6 +110,7 @@ enum pm_state_e pm_checkstate(int domain)
 	 */
 
 	flags = enter_critical_section();
+	g_pmglobals.recommended = PM_STANDBY;
 
 	/* Check the elapsed time.  In periods of low activity, time slicing is
 	 * controlled by IDLE loop polling; in periods of higher activity, time
@@ -127,29 +121,32 @@ enum pm_state_e pm_checkstate(int domain)
 	 */
 
 	now = clock_systimer();
-	if (now - pdom->stime >= TIME_SLICE_TICKS) {
-		int16_t accum;
+	if (now - g_pmglobals.stime >= TIME_SLICE_TICKS) {
 
-		/* Sample the count, reset the time and count, and assess the PM
-		 * state.  This is an atomic operation because interrupts are
-		 * still disabled.
+		/* Reset the time and recommended board to sleep.
+		 * This is an atomic operation because interrupts are still disabled.
 		 */
 
-		pdom->stime = now;
-		pdom->recommended = PM_SLEEP;
+		g_pmglobals.stime = now;
+		g_pmglobals.recommended = PM_SLEEP;
+
 	}
 
-	/* Consider the possible power state lock here */
-
-	for (index = 0; index < pdom->recommended; index++) {
-		if (pdom->stay[index] != 0) {
-			pdom->recommended = index;
-			break;
+	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
+	if (g_pmglobals.suspend_count[PM_IDLE_DOMAIN] || g_pmglobals.suspend_count[PM_LCD_DOMAIN]) {
+		g_pmglobals.recommended = PM_NORMAL;
+	} else {
+		/* Consider the possible power state lock here */
+		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
+			if (g_pmglobals.suspend_count[index] != 0) {
+				g_pmglobals.recommended = PM_STANDBY;
+				break;
+			}
 		}
 	}
 
 	leave_critical_section(flags);
-	return pdom->recommended;
+	return g_pmglobals.recommended;
 }
 
 #endif							/* CONFIG_PM */

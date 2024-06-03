@@ -89,17 +89,17 @@ static void up_idlepm(void)
 	int ret;
 
 	/* Decide, which power saving level can be obtained */
-	newstate = pm_checkstate(PM_IDLE_DOMAIN);
+	newstate = pm_checkstate();
 
 	/* Check for state changes */
 	if (newstate != oldstate) {
 		flags = irqsave();
 
 		/* Then force the global state change */
-		ret = pm_changestate(PM_IDLE_DOMAIN, newstate);
+		ret = pm_changestate(newstate);
 		if (ret < 0) {
 			/* The new state change failed, revert to the preceding state */
-			pm_changestate(PM_IDLE_DOMAIN, oldstate);
+			pm_changestate(oldstate);
 		} else {
 			/* Save the new state */
 			oldstate = newstate;

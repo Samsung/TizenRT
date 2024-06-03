@@ -61,7 +61,7 @@ void pm_prune_history(sq_queue_t *q)
 	}
 }
 
-void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
+void pm_get_domainmetrics(struct pm_time_in_each_s *mtrics)
 {
 	pm_lock();
 	sq_entry_t *curnode = NULL;
@@ -80,7 +80,7 @@ void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics)
 	time_t ref_time = cur_time - CONFIG_PM_METRICS_DURATION;
 
 	pmvdbg(" curtime  %d &&&&& reftime %d\n", cur_time, ref_time);
-	sq_queue_t *q = &g_pmglobals.domain[indx].history;
+	sq_queue_t *q = &g_pmglobals.history;
 	pm_prune_history(q);
 
 	for (curnode = q->head; curnode != NULL; curnode = curnode->flink) {

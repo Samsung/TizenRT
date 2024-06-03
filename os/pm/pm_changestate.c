@@ -96,12 +96,12 @@
  *
  ****************************************************************************/
 
-static int pm_prepall(int domain, enum pm_state_e newstate)
+static int pm_prepall(enum pm_state_e newstate)
 {
 	FAR dq_entry_t *entry;
 	int ret = OK;
 
-	if (newstate <= g_pmglobals.domain[domain].state) {
+	if (newstate <= g_pmglobals.state) {
 		/* Visit each registered callback structure in normal order. */
 
 		for (entry = dq_peek(&g_pmglobals.registry); entry && ret == OK; entry = dq_next(entry)) {
@@ -110,7 +110,7 @@ static int pm_prepall(int domain, enum pm_state_e newstate)
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 			if (cb->prepare) {
 				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, domain, newstate);
+				ret = cb->prepare(cb, newstate);
 			}
 		}
 	} else {
@@ -122,7 +122,7 @@ static int pm_prepall(int domain, enum pm_state_e newstate)
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 			if (cb->prepare) {
 				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, domain, newstate);
+				ret = cb->prepare(cb, newstate);
 			}
 		}
 	}
@@ -149,10 +149,10 @@ static int pm_prepall(int domain, enum pm_state_e newstate)
  *
  ****************************************************************************/
 
-static inline void pm_changeall(int domain, enum pm_state_e newstate)
+static inline void pm_changeall(enum pm_state_e newstate)
 {
 	FAR dq_entry_t *entry;
-	if (newstate <= g_pmglobals.domain[domain].state) {
+	if (newstate <= g_pmglobals.state) {
 		/* Visit each registered callback structure in normal order. */
 
 		for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
@@ -161,7 +161,7 @@ static inline void pm_changeall(int domain, enum pm_state_e newstate)
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 			if (cb->notify) {
 				/* Yes.. notify the driver */
-				cb->notify(cb, domain, newstate);
+				cb->notify(cb, newstate);
 			}
 		}
 	} else {
@@ -173,7 +173,7 @@ static inline void pm_changeall(int domain, enum pm_state_e newstate)
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 			if (cb->notify) {
 				/* Yes.. notify the driver */
-				cb->notify(cb, domain, newstate);
+				cb->notify(cb, newstate);
 			}
 		}
 	}
@@ -192,7 +192,6 @@ static inline void pm_changeall(int domain, enum pm_state_e newstate)
  *   drivers that have registered for power management event callbacks.
  *
  * Input Parameters:
- *   domain - Identifies the domain of the new PM state
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
@@ -211,13 +210,10 @@ static inline void pm_changeall(int domain, enum pm_state_e newstate)
  *
  ****************************************************************************/
 
-int pm_changestate(int domain_indx, enum pm_state_e newstate)
+int pm_changestate(enum pm_state_e newstate)
 {
-	FAR struct pm_domain_s *pdom = &g_pmglobals.domain[domain_indx];
 	irqstate_t flags;
 	int ret = -1;
-
-	DEBUGASSERT(domain_indx >= 0 && domain_indx < CONFIG_PM_NDOMAINS);
 
 	/* Disable interrupts throught this operation... changing driver states
 	 * could cause additional driver activity that might interfere with the
@@ -231,21 +227,21 @@ int pm_changestate(int domain_indx, enum pm_state_e newstate)
 	 * drivers may refuse the state change.
 	 */
 	if (newstate != PM_RESTORE) {
-		ret = pm_prepall(domain_indx, newstate);
+		ret = pm_prepall(newstate);
 		if (ret != OK) {
 			/* One or more drivers is not ready for this state change.  Revert to
 			* the preceding state.
 			*/
 
-			pdom->recommended = pdom->state;
-			pdom->btime = clock_systimer();
+			g_pmglobals.recommended = g_pmglobals.state;
+			g_pmglobals.btime = clock_systimer();
 			goto EXIT;
 		}
 		/* All drivers have agreed to the state change (or, one or more have
 		* disagreed and the state has been reverted).  Set the new state.
 		*/
-		pm_changeall(domain_indx, newstate);
-		pdom->state = newstate;
+		pm_changeall(newstate);
+		g_pmglobals.state = newstate;
 		
 		if (newstate == PM_SLEEP) {
 			/* Set the required wakeup timer from the g_pm_timer_activelist */
@@ -266,17 +262,15 @@ EXIT:
  *   This function returns the current power management state.
  *
  * Input Parameters:
- *   domain - The PM domain to check
  *
  * Returned Value:
  *   The current power management state.
  *
  ****************************************************************************/
 
-enum pm_state_e pm_querystate(int domain)
+enum pm_state_e pm_querystate(void)
 {
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-	return g_pmglobals.domain[domain].state;
+	return g_pmglobals.state;
 }
 
 #endif							/* CONFIG_PM */

@@ -118,14 +118,31 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-/* This describes the activity and state for one domain */
 
-struct pm_domain_s {
+/* This structure encapsulates all of the global data used by the PM module */
+
+struct pm_global_s {
+	/* This semaphore manages mutually exclusive access to the power management
+	 * registry.  It must be initialized to the value 1.
+	 */
+
+	sem_t regsem;
+
+	/* registry is a doubly-linked list of registered power management
+	 * callback structures.  To ensure mutually exclusive access, this list
+	 * must be locked by calling pm_lock() before it is accessed.
+	 */
+
+	dq_queue_t registry;
+
+	/* The power state lock count */
+
+	uint16_t suspend_count[CONFIG_PM_NDOMAINS];
+
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
-	 * recommended - The recommended state based on the PM algorithm in
-	 *               function pm_update().
-	 * mndex       - The index to the next slot in the memory[] array to use.
+	 * recommended - The recommended state based on the PM algorithm.
+	 * mndx       - The index to the next slot in the memory[] array to use.
 	 * mcnt        - A tiny counter used only at start up.  The actual
 	 *               algorithm cannot be applied until CONFIG_PM_MEMORY
 	 *               samples have been collected.
@@ -137,7 +154,6 @@ struct pm_domain_s {
 	uint8_t mcnt;
 
 	/* accum - The accumulated counts in this time interval
-	 * thrcnt - The number of below threshold counts seen.
 	 */
 
 	int16_t accum;
@@ -174,27 +190,6 @@ struct pm_domain_s {
 	/* Timer to decrease state */
 
 	WDOG_ID wdog;
-};
-
-/* This structure encapsulates all of the global data used by the PM module */
-
-struct pm_global_s {
-	/* This semaphore manages mutually exclusive access to the power management
-	 * registry.  It must be initialized to the value 1.
-	 */
-
-	sem_t regsem;
-
-	/* registry is a doubly-linked list of registered power management
-	 * callback structures.  To ensure mutually exclusive access, this list
-	 * must be locked by calling pm_lock() before it is accessed.
-	 */
-
-	dq_queue_t registry;
-
-	/* The activity/state information for each PM domain */
-
-	struct pm_domain_s domain[CONFIG_PM_NDOMAINS];
 };
 
 /****************************************************************************

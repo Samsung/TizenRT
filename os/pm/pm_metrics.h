@@ -39,7 +39,7 @@ struct pm_time_in_each_s {
 #ifdef CONFIG_PM_METRICS
 extern struct pm_global_s g_pmglobals;
 
-void pm_get_domainmetrics(int indx, struct pm_time_in_each_s *mtrics);
+void pm_get_domainmetrics(struct pm_time_in_each_s *mtrics);
 void pm_prune_history(sq_queue_t *q);
 #endif
 

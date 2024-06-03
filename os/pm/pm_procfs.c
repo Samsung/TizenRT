@@ -100,7 +100,6 @@
 struct power_dir_s {
 	struct procfs_dir_priv_s base;	/* Base directory private data */
 	uint8_t direntry;
-	int domain;					/* Domain of registered device driver for PM */
 };
 
 /* This structure describes one open "file" */
@@ -211,7 +210,6 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 {
 	uint16_t len;
 	FAR char *str;
-	int domain;
 	int i;
 
 	/* Skip the "power/domains" portion of relpath. We accept it only now */
@@ -236,7 +234,6 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 	}
 
 	str = NULL;
-	domain = strtoul(relpath, &str, 10);
 
 	if (!str) {
 		fdbg("ERROR: Invalid path \"%s\"\n", relpath);
@@ -244,15 +241,6 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 	}
 
 	len = str - relpath;
-
-	/* A valid domain would be in the range of 0-(CONFIG_PM_NDOMAINS-1) */
-	if (domain < 0 || domain >= CONFIG_PM_NDOMAINS) {
-		fdbg("ERROR: Invalid domain %ld\n", domain);
-		return -ENOENT;
-	}
-
-	/* Save the domain and skip it in the relpath */
-	dir->domain = domain;
 
 	relpath += len;
 
@@ -322,23 +310,13 @@ static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t
 static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
-	FAR struct pm_domain_s *pdom;
 	size_t copysize;
-	int domain;
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
 	copysize = 0;
 
 	if (priv->offset == 0) {
-		domain = priv->dir.domain;
-
-		if (domain >= 0 && domain < CONFIG_PM_NDOMAINS) {
-			pdom = &g_pmglobals.domain[domain];
-
-			if (pdom != NULL) {
-				copysize = snprintf(buffer, buflen, "%s", g_power_states[pdom->state]);
-			}
-		}
+		copysize = snprintf(buffer, buflen, "%s", g_power_states[g_pmglobals.state]);
 		/* Indicate we have already provided all the data */
 		priv->offset = 0xFF;
 	}
@@ -357,7 +335,6 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 	struct pm_time_in_each_s mtrics;
 	size_t copysize;
 	size_t totalsize;
-	int domain;
 	int index;
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
@@ -367,35 +344,33 @@ static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_
 	totalsize = 0;
 
 	if (priv->offset == 0) {
-		domain = priv->dir.domain;
 
-		if (domain >= 0 && domain < CONFIG_PM_NDOMAINS) {
-			pm_get_domainmetrics(domain, &mtrics);
+		pm_get_domainmetrics(&mtrics);
 
-			/* Time in NORMAL state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.normal);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
+		/* Time in NORMAL state */
+		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.normal);
+		buflen -= copysize;
+		buffer += copysize;
+		totalsize += copysize;
 
-			/* Time in IDLE state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.idle);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
+		/* Time in IDLE state */
+		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.idle);
+		buflen -= copysize;
+		buffer += copysize;
+		totalsize += copysize;
 
-			/* Time in STANDBY state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.standby);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
+		/* Time in STANDBY state */
+		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.standby);
+		buflen -= copysize;
+		buffer += copysize;
+		totalsize += copysize;
 
-			/* Time in SLEEP state */
-			copysize = snprintf(buffer, buflen, " Time in %s : %d", g_power_states[index], mtrics.sleep);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-		}
+		/* Time in SLEEP state */
+		copysize = snprintf(buffer, buflen, " Time in %s : %d", g_power_states[index], mtrics.sleep);
+		buflen -= copysize;
+		buffer += copysize;
+		totalsize += copysize;
+
 		/* Indicate we have already provided all the data */
 		priv->offset = 0xFF;
 	}
@@ -414,25 +389,21 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 	FAR dq_entry_t *entry;
 	size_t copysize;
 	size_t totalsize;
-	int domain;
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
 	copysize = 0;
 	totalsize = 0;
 
 	if (priv->offset == 0) {
-		domain = priv->dir.domain;
 
-		if (domain >= 0 && domain < CONFIG_PM_NDOMAINS) {
-			entry = dq_peek(&g_pmglobals.registry);
-			while (entry) {
-				callback = (FAR struct pm_callback_s *)entry;
-				copysize = snprintf(buffer, buflen, "%s ", callback->name);
-				buflen -= copysize;
-				buffer += copysize;
-				totalsize += copysize;
-				entry = sq_next(entry);
-			}
+		entry = dq_peek(&g_pmglobals.registry);
+		while (entry) {
+			callback = (FAR struct pm_callback_s *)entry;
+			copysize = snprintf(buffer, buflen, "%s ", callback->name);
+			buflen -= copysize;
+			buffer += copysize;
+			totalsize += copysize;
+			entry = sq_next(entry);
 		}
 
 		/* Indicate we have already provided all the data */

@@ -511,7 +511,7 @@ static int stm32l4_i2c_transfer(FAR struct i2c_master_s *dev,
 static int stm32l4_i2c_reset(FAR struct i2c_master_s *dev);
 #endif
 #ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
                                   enum pm_state_e pmstate);
 #endif
 
@@ -2841,7 +2841,7 @@ out:
  ************************************************************************************/
 
 #ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb, int domain,
+static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
                                   enum pm_state_e pmstate)
 {
   struct stm32l4_i2c_priv_s *priv =

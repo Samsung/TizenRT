@@ -21,9 +21,9 @@
 /* Power management definitions */
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
-static void amebasmart_ble_pmnotify(FAR struct pm_callback_s *cb, int domain,
+static void amebasmart_ble_pmnotify(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
-static int  amebasmart_ble_pmprepare(FAR struct pm_callback_s *cb, int domain,
+static int  amebasmart_ble_pmprepare(FAR struct pm_callback_s *cb,
 										enum pm_state_e pmstate);
 #endif
 
@@ -152,7 +152,7 @@ static struct
  *
  ****************************************************************************/
 #ifdef CONFIG_PM
-static void amebasmart_ble_pmnotify(struct pm_callback_s *cb, int domain,
+static void amebasmart_ble_pmnotify(struct pm_callback_s *cb,
 				enum pm_state_e pmstate)
 {
 	switch (pmstate) {
@@ -206,7 +206,7 @@ static void amebasmart_ble_pmnotify(struct pm_callback_s *cb, int domain,
  ****************************************************************************/
 #ifdef CONFIG_PM
 extern uint8_t ble_client_connect_is_running;
-static int amebasmart_ble_pmprepare(struct pm_callback_s *cb, int domain,
+static int amebasmart_ble_pmprepare(struct pm_callback_s *cb,
 		enum pm_state_e pmstate)
 {
 	switch (pmstate) {
