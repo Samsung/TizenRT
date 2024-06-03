@@ -231,6 +231,13 @@ void gpio_deinit(gpio_t *obj)
 {
 	GPIO_DeInit(obj->pin);
 }
+
+#ifdef CONFIG_PM
+void gpio_toggle_clck(bool is_lsapb)
+{
+  (is_lsapb == 1) ? RCC_PeriphClockSource_GPIO(CKSL_GPIO_LS_APB) : RCC_PeriphClockSource_GPIO(CKSL_GPIO_32K);
+}
+#endif
 /**
   * @}
   */

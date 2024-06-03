@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 2eb067f 2024/05/08-12:24:28 ==
+1. Enable GPIO channel A as wakeup interrupt src
+2. Add wakeup src information
+
 == version d08ed534 2024/05/31-17:08:16 ==
 1.	Add feature in fault handler to indicate KM4/KM0 fault
 

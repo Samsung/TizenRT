@@ -296,6 +296,10 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 		SOCPS_SleepPG();
 	}
 
+	/* When we reach back here, LP core might be still printing information 
+	Thus, we should add wait LOGUART TX complete, before AP core start printing logs */
+	LOGUART_WaitTxComplete();
+
 	/*  update kernel tick by calculating passed tick from gtimer */
 	/*  get current gtimer timestamp */
 	tick_passed = SYSTIMER_GetPassTick(tick_before_sleep);
@@ -311,7 +315,7 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 #else
 #ifdef CONFIG_PM_TICKSUPPRESS
 	if (tizenrt_sleep_handler) {
-		tizenrt_sleep_handler(ms_passed); /*  update kernel tick */
+		tizenrt_sleep_handler((u64)ms_passed); /*  update kernel tick */
 	}
 #endif
 #endif

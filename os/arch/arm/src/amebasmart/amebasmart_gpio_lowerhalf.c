@@ -72,6 +72,10 @@
 #include "gpio_irq_ex_api.h"
 #include <tinyara/kmalloc.h>
 
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -221,6 +225,26 @@ static const struct gpio_ops_s amebasmart_gpio_ops = {
 	.enable = amebasmart_gpio_enable,
 };
 
+#ifdef CONFIG_PM
+static uint32_t rtk_gpio_suspend(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	gpio_toggle_clck(0);
+	return 1;
+}
+
+static uint32_t rtk_gpio_resume(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	gpio_toggle_clck(1);
+	return 1;
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -262,3 +286,11 @@ FAR struct gpio_lowerhalf_s *amebasmart_gpio_lowerhalf(u32 pinname, u32 pinmode,
 	lower->ops = &amebasmart_gpio_ops;
 	return (struct gpio_lowerhalf_s *)lower;
 }
+
+#ifdef CONFIG_PM
+void gpio_pminitialize(void)
+{
+	/* Register to receive power management callbacks */
+	pmu_register_sleep_callback(PMU_GPIO_DEVICE, (PSM_HOOK_FUN)rtk_gpio_suspend, NULL, (PSM_HOOK_FUN)rtk_gpio_resume, NULL);
+}
+#endif

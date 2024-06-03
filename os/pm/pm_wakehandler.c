@@ -55,7 +55,7 @@ void pm_wakehandler(clock_t missing_tick)
 {
 	irqstate_t flags  = enter_critical_section();
 
-	pmllvdbg("missing_tick: %d\n", missing_tick);
+	pmllvdbg("missing_tick: %llu\n", missing_tick);
 
 	if (missing_tick > 0) {
 		clock_timer_nohz((clock_t)missing_tick);
