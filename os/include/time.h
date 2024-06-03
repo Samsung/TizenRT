@@ -119,7 +119,8 @@
 
 /* This is a flag that may be passed to the timer_settime() function */
 
-#define TIMER_ABSTIME      1
+#define TIMER_ABSTIME       (1 << 0)
+#define TIMER_WAKEUPSOURCE  (1 << 1)
 
 #ifndef CONFIG_LIBC_LOCALTIME
 /* Local time is the same as gmtime in this implementation */
