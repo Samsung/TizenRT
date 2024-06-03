@@ -218,31 +218,6 @@ EXTERN struct pm_global_s g_pmglobals;
  ************************************************************************************/
 
 /****************************************************************************
- * Name: pm_update
- *
- * Description:
- *   This internal function is called at the end of a time slice in order to
- *   update driver activity metrics and recommended states.
- *
- * Input Parameters:
- *   domain - The domain associated with the accumulator.
- *   accum - The value of the activity accumulator at the end of the time
- *     slice.
- *
- * Returned Value:
- *   None.
- *
- * Assumptions:
- *   This function may be called from a driver, perhaps even at the interrupt
- *   level.  It may also be called from the IDLE loop at the lowest possible
- *   priority level.  To reconcile these various conditions, all work is
- *   performed on the worker thread at a user-selectable priority.
- *
- ****************************************************************************/
-
-void pm_update(int domain, int16_t accum);
-
-/****************************************************************************
  * Name: pm_wakehandler
  *
  * Description:

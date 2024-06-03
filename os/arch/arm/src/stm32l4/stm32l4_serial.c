@@ -177,9 +177,6 @@
 
 /* Power management definitions */
 
-#if defined(CONFIG_PM) && !defined(CONFIG_STM32L4_PM_SERIAL_ACTIVITY)
-#  define CONFIG_STM32L4_PM_SERIAL_ACTIVITY  10
-#endif
 #if defined(CONFIG_PM)
 #  define PM_IDLE_DOMAIN             0 /* Revisit */
 #endif
@@ -1653,12 +1650,6 @@ static int up_interrupt(int irq, FAR void *context, FAR void *arg)
   bool handled;
 
   DEBUGASSERT(priv != NULL);
-
-  /* Report serial activity to the power management logic */
-
-#if defined(CONFIG_PM) && CONFIG_STM32L4_PM_SERIAL_ACTIVITY > 0
-  pm_activity(PM_IDLE_DOMAIN, CONFIG_STM32L4_PM_SERIAL_ACTIVITY);
-#endif
 
   /* Loop until there are no characters to be transferred or,
    * until we have been looping for a long time.

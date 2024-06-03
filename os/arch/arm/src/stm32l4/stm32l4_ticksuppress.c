@@ -66,8 +66,6 @@ static uint8_t g_tick_mode;		/* timer-tick mode  */
 clock_t next_intval;			/* next delay interval  */
 static TIM_HandleTypeDef htim2;		/* TIM handle  */
 
-
-#define STM32L4_TICKLESS_IDLE_ACTIVITY		5
 #define TIM2_PRESCALER				2
 
 /****************************************************************************
@@ -102,8 +100,6 @@ int stm32l4_tim2_handler(int irq, uint32_t *regs)
 
 	/* Clear interrupt pending */
 	__HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
-
-	pm_activity(0, STM32L4_TICKLESS_IDLE_ACTIVITY);
 
 	elapsed = next_intval;
 	next_intval = 0;

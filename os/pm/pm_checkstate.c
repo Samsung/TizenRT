@@ -135,16 +135,8 @@ enum pm_state_e pm_checkstate(int domain)
 		 * still disabled.
 		 */
 
-		accum       = pdom->accum;
 		pdom->stime = now;
-		pdom->accum = 0;
-
-		/* Reassessing the PM state may require some computation.  However,
-		 * the work will actually be performed on a worker thread at a user-
-		 * controlled priority.
-		 */
-
-		(void)pm_update(domain, accum);
+		pdom->recommended = PM_SLEEP;
 	}
 
 	/* Consider the possible power state lock here */

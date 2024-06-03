@@ -19,10 +19,6 @@
 #include "wifi_conf.h"
 
 /* Power management definitions */
-#if defined(CONFIG_PM) && !defined(CONFIG_RTL8730E_PM_BT_ACTIVITY)
-#define CONFIG_RTL8730E_PM_BT_ACTIVITY  10
-#endif
-
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
 static void amebasmart_ble_pmnotify(FAR struct pm_callback_s *cb, int domain,
@@ -42,11 +38,6 @@ static void bt_power_suspend_callback(void)
 static void bt_power_resume_callback(void)
 {
 	pmvdbg("[BT_PS] BT is wake now\r\n");
-
-	/* Report BT activity to the power management logic */
-#if defined(CONFIG_PM) && CONFIG_RTL8730E_PM_BT_ACTIVITY > 0
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_RTL8730E_PM_BT_ACTIVITY);
-#endif
 }
 
 extern int wifi_set_ips_internal(u8 enable);

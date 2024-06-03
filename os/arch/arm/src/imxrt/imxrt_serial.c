@@ -332,10 +332,6 @@
 
 /* Power management definitions */
 
-#if defined(CONFIG_PM) && !defined(CONFIG_IMXRT_PM_SERIAL_ACTIVITY)
-#define CONFIG_IMXRT_PM_SERIAL_ACTIVITY 10
-#endif
-
 #if defined(CONFIG_PM)
 #define PM_IDLE_DOMAIN      0	/* Revisit */
 #endif
@@ -933,12 +929,6 @@ static int imxrt_interrupt(int irq, void *context, FAR void *arg)
 
 	DEBUGASSERT(dev != NULL && dev->priv != NULL);
 	priv = (struct imxrt_uart_s *)dev->priv;
-
-#if defined(CONFIG_PM) && CONFIG_IMXRT_PM_SERIAL_ACTIVITY > 0
-	/* Report serial activity to the power management logic */
-
-	pm_activity(PM_IDLE_DOMAIN, CONFIG_IMXRT_PM_SERIAL_ACTIVITY);
-#endif
 
 	/* Loop until there are no characters to be transferred or,
 	 * until we have been looping for a long time.
