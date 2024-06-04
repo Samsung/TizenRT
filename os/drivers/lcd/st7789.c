@@ -80,7 +80,7 @@
 /* SPI frequency */
 
 #ifndef CONFIG_LCD_ST7789_FREQUENCY
-#define CONFIG_LCD_ST7789_FREQUENCY 48000000
+#define CONFIG_LCD_ST7789_FREQUENCY 50000000
 #endif
 
 /* Check contrast selection */
