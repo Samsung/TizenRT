@@ -548,37 +548,6 @@ static void st7789_rdram(FAR struct st7789_dev_s *dev, FAR uint8_t *buff, size_t
 }
 
 /****************************************************************************
- * Name: st7789_fill_frame
- *
- * Description:
- *   fill color within rectangle coordinates
- *
- ****************************************************************************/
-
-static void st7789_fill_frame(FAR struct st7789_dev_s *dev, uint16_t color, int sx, int sy, int ex, int ey)
-{
-	size_t i;
-	st7789_setarea(dev, sx, sy, ex, ey);
-	st7789_sendcmd(dev, ST7789_RAMWR);
-	SPI_SELECT(dev->spi, SPIDEV_DISPLAY, true);
-#ifdef CONFIG_LCD_ST7789_3WIRE
-	for (i = 0; i < (ex - sx + 1) * (ey - sy + 1); i++) {
-		SPI_SEND(dev->spi, LCD_ST7789_DATA_PREFIX | (color & 0xff));
-		SPI_SEND(dev->spi, LCD_ST7789_DATA_PREFIX | (color & 0xff00) >> 8);
-	}
-#else
-	dev->config->cmddata(1);
-	uint8_t spi_data[2];
-	spi_data[1] = color & 0X00FF;
-	spi_data[0] = (color & 0xFF00) >> 8;
-	for (i = 0; i < (ex - sx + 1) * (ey - sy + 1); i++) {
-		SPI_SNDBLOCK(dev->spi, spi_data, 2);
-	}
-#endif
-	SPI_SELECT(dev->spi, SPIDEV_DISPLAY, false);
-}
-
-/****************************************************************************
  * Name:  st7789_init_cmd
  *
  * Description:
@@ -799,9 +768,6 @@ static int st7789_init(FAR struct lcd_dev_s *dev)
 
 	st7789_setorientation(dev, ST7789_DEFAULT_ORIENTATION);
 
-	lcd_lock(priv->spi);
-	st7789_fill_frame(priv, 0xFFFF, 0, 0, ST7789_XRES, ST7789_YRES);
-	lcd_unlock(priv->spi);
 	return OK;
 }
 
