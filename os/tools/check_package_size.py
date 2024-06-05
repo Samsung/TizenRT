@@ -32,6 +32,19 @@ build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
 output_file_name = output_folder + '/tinyara_binarysize.txt'
 
+INTERNAL_FLASH = 0
+EXTERNAL_FLASH = 1
+
+CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
+CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
+
+INTERNAL_PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
+INTERNAL_PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
+
+CONFIG_SECOND_FLASH_PARTITION = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PARTITION=").rstrip('\n')
+SECOND_PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_NAME=")
+SECOND_PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_SIZE=")
+
 FAIL_TO_BUILD = False
 WARNING_RATIO = 95
 
@@ -41,7 +54,9 @@ def number_with_comma_align(number):
 def number_with_comma(number):
     return ("{:,}".format(number))
 
-def check_binary_size(bin_type, part_size):
+def validate_binary_size(bin_type, part_size):
+    outfile = open(output_file_name, 'w')
+
     # Read the binary name from .bininfo
     bin_name = util.get_binname_from_bininfo(bin_type)
     if bin_name == 'None' :
@@ -51,35 +66,26 @@ def check_binary_size(bin_type, part_size):
     # Get the partition and binary size
     BINARY_SIZE=os.path.getsize(output_path)
     PARTITION_SIZE = part_size
+    used_ratio = 0
+
+    # Calculate the used ratio
+    if PARTITION_SIZE != 0 :
+        used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
 
     # Compare the partition size and its binary size
-    used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
-
-    global FAIL_TO_BUILD
-
-    if bin_type == "BOOTPARAM" :
-        if PARTITION_SIZE == BINARY_SIZE :
-            check_result = "PASS"
-            result_mark = ":heavy_check_mark:"
-        else :
-            fail_type_list.append(bin_type)
-            os.remove(output_path)
-            FAIL_TO_BUILD = True
-            check_result = "FAIL"
-            result_mark = ""
+    if PARTITION_SIZE < int(BINARY_SIZE) :
+        fail_type_list.append(bin_type)
+        os.remove(output_path)
+        global FAIL_TO_BUILD
+        FAIL_TO_BUILD = True
+        check_result = "FAIL"
+        result_mark = ""
+    elif used_ratio > WARNING_RATIO :
+        check_result = "WARNING"
+        result_mark = ":warning:"
     else :
-        if PARTITION_SIZE < int(BINARY_SIZE) :
-            fail_type_list.append(bin_type)
-            os.remove(output_path)
-            FAIL_TO_BUILD = True
-            check_result = "FAIL"
-            result_mark = ""
-        elif used_ratio > WARNING_RATIO :
-            check_result = "WARNING"
-            result_mark = ":warning:"
-        else :
-            check_result = "PASS"
-            result_mark = ":heavy_check_mark:"
+        check_result = "PASS"
+        result_mark = ":heavy_check_mark:"
 
     # Print each information
     print(" {:10}".format(bin_type) + " " + number_with_comma_align(BINARY_SIZE) + " bytes   " +
@@ -87,99 +93,36 @@ def check_binary_size(bin_type, part_size):
     # File print each information
     outfile.write(bin_type + " | " + number_with_comma(BINARY_SIZE) + " bytes | " +
         number_with_comma(PARTITION_SIZE) + " bytes | " + str(used_ratio)+"%" + " | " + result_mark + check_result + "\n")
+    outfile.close()
 
-def check_binary_header(bin_type):
-    # Read the binary name from .bininfo
-    bin_name = util.get_binname_from_bininfo(bin_type)
-    if bin_name == 'None' :
-        return
-    output_path = build_folder + '/output/bin/' + bin_name
+def check_part_size(flash_type, bin_type):
+    if flash_type == INTERNAL_FLASH :
+        PARTITION_NAME_LIST = INTERNAL_PARTITION_NAME_LIST
+        PARTITION_SIZE_LIST = INTERNAL_PARTITION_SIZE_LIST
+    else :
+        PARTITION_NAME_LIST = SECOND_PARTITION_NAME_LIST
+        PARTITION_SIZE_LIST = SECOND_PARTITION_SIZE_LIST
 
-    # Run script for checking binary header
-    os.system('python ' + tool_folder + '/check_package.py ' + output_path)
+    if PARTITION_SIZE_LIST == 'None' :
+        sys.exit(0)
 
-PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
-PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
+    NAME_LIST = PARTITION_NAME_LIST.replace('"','').split(",")
+    SIZE_LIST = PARTITION_SIZE_LIST.replace('"','').split(",")
 
-CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
-CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
-CONFIG_USE_BP = util.get_value_from_file(cfg_file, "CONFIG_USE_BP=").rstrip('\n')
+    PART_IDX = 0
 
-if PARTITION_SIZE_LIST == 'None' :
-    sys.exit(0)
+    for name in NAME_LIST :
+        if (name.lower() == bin_type.lower()) or (bin_type == "KERNEL" and name.lower() == "os") :
+            return int(SIZE_LIST[PART_IDX]) * 1024
+        PART_IDX += 1
+    return 0
 
-NAME_LIST = PARTITION_NAME_LIST.replace('"','').split(",")
-SIZE_LIST = PARTITION_SIZE_LIST.replace('"','').split(",")
+def check_binary_size(bin_name):
+    part_size = check_part_size(INTERNAL_FLASH, bin_name)
+    if part_size == 0 and CONFIG_SECOND_FLASH_PARTITION == "y" :
+        part_size = check_part_size(EXTERNAL_FLASH, bin_name)
 
-# Find Partition Index
-PART_IDX = -1
-KERNEL_IDX = 0
-COMMON_IDX = 0
-APP1_IDX = 0
-APP2_IDX = 0
-BP_IDX = -1
-
-FLASH_SIZE = 0
-for part in SIZE_LIST :
-    if part.isdigit() == True :
-        FLASH_SIZE += int(part) * 1024
-
-KERNEL_PART_TMP_SIZE = FLASH_SIZE
-COMMON_PART_TMP_SIZE = FLASH_SIZE
-APP1_PART_TMP_SIZE = FLASH_SIZE
-APP2_PART_TMP_SIZE = FLASH_SIZE
-BP_PART_TMP_SIZE = FLASH_SIZE
-
-for name in NAME_LIST :
-    PART_IDX += 1
-    if name == "kernel" or name == "os" :
-        if KERNEL_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
-            KERNEL_PART_TMP_SIZE = (int(SIZE_LIST[PART_IDX]) * 1024)
-            KERNEL_IDX = PART_IDX
-        continue
-    elif name == "app1" :
-        if APP1_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
-            APP1_PART_TMP_SIZE = int(SIZE_LIST[PART_IDX]) * 1024
-            APP1_IDX = PART_IDX
-        continue
-    elif name == "app2" :
-        if APP2_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
-            APP2_PART_TMP_SIZE = int(SIZE_LIST[PART_IDX]) * 1024
-            APP2_IDX = PART_IDX
-        continue
-    elif name == "common" :
-        if COMMON_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
-            COMMON_PART_TMP_SIZE = int(SIZE_LIST[PART_IDX]) * 1024
-            COMMON_IDX = PART_IDX
-        continue
-    elif name == "bootparam" :
-        if BP_PART_TMP_SIZE > (int(SIZE_LIST[PART_IDX]) * 1024) :
-            BP_PART_TMP_SIZE = int(SIZE_LIST[PART_IDX]) * 1024
-            BP_IDX = PART_IDX
-        continue
-
-KERNEL_PARTITION_SIZE = int(SIZE_LIST[KERNEL_IDX]) * 1024
-COMMON_PARTITION_SIZE = int(SIZE_LIST[COMMON_IDX]) * 1024
-APP1_PARTITION_SIZE = int(SIZE_LIST[APP1_IDX]) * 1024
-APP2_PARTITION_SIZE = int(SIZE_LIST[APP2_IDX]) * 1024
-
-SIZE_OF_BP_PARTITION = 8192
-
-# Check a partition size and offset of boot parameters
-if CONFIG_USE_BP == "y" :
-    if BP_IDX == -1:
-        print("FAIL!! No bootparam partition.")
-        print("It should be located at the end of flash with 8K.")
-        sys.exit(1)
-    elif BP_IDX != PART_IDX - 1:
-        print("FAIL!! bootparam partition is NOT located at the end of flash.")
-        print("It should be located at the end of flash with 8K.")
-        sys.exit(1)
-    elif int(SIZE_LIST[BP_IDX]) * 1024 != SIZE_OF_BP_PARTITION:
-        print("FAIL!! Bootparam partition size is NOT 8K.")
-        print("It should be located at the end of flash with 8K.")
-        sys.exit(1)
-    BP_PARTITION_SIZE = int(SIZE_LIST[BP_IDX]) * 1024
+    validate_binary_size(bin_name, part_size)
 
 # Check if the binary size is smaller than its partition size
 print("\n========== Size Verification of built Binaries ==========")
@@ -190,26 +133,16 @@ outfile = open(output_file_name, 'w')
 outfile.write("========== Size Verification of built Binaries ==========\n")
 outfile.write("Type | Binary Size | Partition Size | used(%) | result\n")
 outfile.write("-- | -- | -- | -- | --\n")
+outfile.close()
 
 fail_type_list = []
-
-# Check Kernel binary size
-check_binary_size("KERNEL", KERNEL_PARTITION_SIZE)
-
-# Check Common binary and App binaries size
+check_binary_size("KERNEL")
 if CONFIG_APP_BINARY_SEPARATION == "y" :
-    if APP1_IDX != 0 :
-        check_binary_size("APP1", APP1_PARTITION_SIZE)
-    if APP2_IDX != 0 :
-        check_binary_size("APP2", APP2_PARTITION_SIZE)
+    check_binary_size("APP1")
+    check_binary_size("APP2")
     if CONFIG_SUPPORT_COMMON_BINARY == "y" :
-        check_binary_size("COMMON", COMMON_PARTITION_SIZE)
+        check_binary_size("COMMON")
 
-# Check Boot parameter size
-if CONFIG_USE_BP == "y" :
-    check_binary_size("BOOTPARAM", BP_PARTITION_SIZE)
-
-outfile.close()
 if FAIL_TO_BUILD == True :
     # Stop to build, because there is mismatched size problem.
     print("!!!!!!!! ERROR !!!!!!!")
