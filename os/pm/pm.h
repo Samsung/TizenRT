@@ -70,11 +70,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
-
-#ifndef CONFIG_SCHED_WORKQUEUE
-#warning "Worker thread support is required (CONFIG_SCHED_WORKQUEUE)"
-#endif
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 #define pm_alloc(num, size) kmm_calloc(num, size)
@@ -142,34 +137,10 @@ struct pm_global_s {
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
 	 * recommended - The recommended state based on the PM algorithm.
-	 * mndx       - The index to the next slot in the memory[] array to use.
-	 * mcnt        - A tiny counter used only at start up.  The actual
-	 *               algorithm cannot be applied until CONFIG_PM_MEMORY
-	 *               samples have been collected.
 	 */
 
 	uint8_t state;
 	uint8_t recommended;
-	uint8_t mndx;
-	uint8_t mcnt;
-
-	/* accum - The accumulated counts in this time interval
-	 */
-
-	int16_t accum;
-
-	/* This is the averaging "memory."  The averaging algorithm is simply:
-	 * Y = (An*X + SUM(Ai*Yi))/SUM(Aj), where i = 1..n-1 and j= 1..n, n is the
-	 * length of the "memory", Ai is the weight applied to each value, and X is
-	 * the current activity.
-	 *
-	 * CONFIG_PM_MEMORY provides the memory for the algorithm.  Default: 2
-	 * CONFIG_PM_COEFn provides weight for each sample.  Default: 1
-	 */
-
-#if CONFIG_PM_MEMORY > 1
-	int16_t memory[CONFIG_PM_MEMORY - 1];
-#endif
 
 	/* History of state changes */
 #ifdef CONFIG_PM_METRICS
@@ -207,6 +178,24 @@ EXTERN struct pm_global_s g_pmglobals;
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
+
+/****************************************************************************
+ * Name: pm_set_wakeup_timer
+ *
+ * Description:
+ *   This function is called just before sleep to start the required PM wake up
+ *   timer. It will start the first timer from the g_pm_timer_activelist with the
+ *   required delay.(delay should be positive)
+ * 
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   0 - system can go to sleep
+ *   -1 - system should not go to sleep
+ *
+ ****************************************************************************/
+int pm_set_wakeup_timer(void);
 
 /****************************************************************************
  * Name: pm_wakehandler
