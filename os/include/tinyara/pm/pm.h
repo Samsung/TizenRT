@@ -619,7 +619,7 @@ int pm_sleep(int milliseconds);
 int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
 
 /****************************************************************************
- * Name: pm_staycount
+ * Name: pm_suspendcount
  *
  * Description:
  *   This function is called to get current stay count.
@@ -635,7 +635,7 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(enum pm_domain_e domain);
+uint16_t pm_suspendcount(enum pm_domain_e domain);
 
 /****************************************************************************
  * Name: pm_checkstate
