@@ -27,14 +27,6 @@ ifeq ($(CONFIG_PM_METRICS),y)
 CSRCS += pm_metrics.c
 endif
 
-ifeq ($(CONFIG_DEBUG_PM),y)
-CSRCS += pm_debug.c
-endif
-
-ifeq ($(CONFIG_PM_TEST),y)
-CSRCS += pm_test.c
-endif
-
 ifeq ($(CONFIG_PM_DVFS),y)
 CSRCS += pm_dvfs.c
 endif
