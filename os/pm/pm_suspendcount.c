@@ -80,7 +80,7 @@
  *   This function is called to get current stay count.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
+ *   domain_id - The domain ID of the PM activity
  *
  * Returned Value:
  *   Current pm stay count
@@ -90,13 +90,13 @@
  *
  ****************************************************************************/
 
-uint16_t pm_suspendcount(enum pm_domain_e domain)
+uint16_t pm_suspendcount(int domain_id)
 {
 	/* Get a convenience pointer to minimize all of the indexing */
 
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
+	DEBUGASSERT(domain_id >= 0 && domain_id < CONFIG_PM_NDOMAINS);
 
-	return g_pmglobals.suspend_count[domain];
+	return g_pmglobals.suspend_count[domain_id];
 }
 
 

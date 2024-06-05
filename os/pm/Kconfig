@@ -41,7 +41,7 @@ config PM_SLICEMS
 
 config PM_NDOMAINS
 	int "Number of PM activity domains"
-	default 1
+	default 32
 	---help---
 		Defines the number of "domains" that activity may be monitored on.
 		For example, you may want to separately manage the power from the
@@ -87,5 +87,13 @@ config PM_MIN_SLEEP_TIME
 
 endif # PM_TIMEDWAKEUP
 endif # PM_TICKSUPPRESS
+
+config PM_DOMAIN_NAME_SIZE
+	int "PM_DOMAIN_NAME_SIZE enter size"
+	default 32
+	---help---
+		This value represents maxinmum domain string size. The domain string should be less than
+		this size.
+
 endif # PM
 

@@ -88,21 +88,20 @@
 #include <queue.h>
 #include <semaphore.h>
 
-#if !defined(CONFIG_PM_NDOMAINS)
-#define CONFIG_PM_NDOMAINS 31
-#endif
-
-/* This enumeration provides all power management domains */
-enum pm_domain_e {
-	PM_IDLE_DOMAIN 	= 0,
-	PM_LCD_DOMAIN 	= 1,
-	PM_UART_DOMAIN 	= 2,
-	PM_WIFI_DOMAIN 	= 3,
-	PM_BLE_DOMAIN 	= 4,
-	PM_TASH_DOMAIN 	= 14,
-	PM_APP_DOMAIN 	= 15,
-	PM_NDOMAINS 	= CONFIG_PM_NDOMAINS,
+/* This structure is used to send data to pm driver from app side for timedSuspend */
+struct pm_suspend_arg_s {
+	int domain_id;                    /* domain ID to be suspended */
+	unsigned int timer_interval;      /* duration to be suspended */
 };
+
+typedef struct pm_suspend_arg_s pm_suspend_arg_t;
+
+struct pm_domain_arg_s {
+	int domain_id;               /* the domain ID after registering domain */
+	char *domain_name;           /* the name of domain that need to be register */
+};
+
+typedef struct pm_domain_arg_s pm_domain_arg_t;
 
 #ifdef CONFIG_PM
 
@@ -117,8 +116,11 @@ enum pm_domain_e {
  */
 
 #ifndef CONFIG_PM_NDOMAINS
-#define CONFIG_PM_NDOMAINS 1
+#define CONFIG_PM_NDOMAINS 32
 #endif
+
+#define PM_IDLE_DOMAIN 0
+#define PM_LCD_DOMAIN  1
 
 #if CONFIG_PM_NDOMAINS < 1
 #error CONFIG_PM_NDOMAINS invalid
@@ -197,13 +199,6 @@ enum pm_state_e {
 	PM_COUNT,
 };
 
-/* This structure is used to send data to pm driver from app side for timedSuspend */
-struct pm_suspend_arg_s {
-	enum pm_domain_e domain;          /* domain to be suspended */
-	unsigned int timer_interval;      /* duration to be suspended */
-};
-
-typedef struct pm_suspend_arg_s pm_suspend_arg_t;
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -345,6 +340,24 @@ int pm_register(FAR struct pm_callback_s *callbacks);
 int pm_unregister(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
+ * Name: pm_domain_register
+ *
+ * Description:
+ *   This function is called by a device driver in order to register domain inside PM.
+ *
+ * Input parameters:
+ *   domain - the string domain need to be registered in PM.
+ * 
+ * Returned value:
+ *    non-negative integer   : ID of domain
+ *    ERROR (-1)             : On Error
+ *
+ *
+ ****************************************************************************/
+
+int pm_domain_register(char *domain);
+
+/****************************************************************************
  * Name: pm_suspend
  *
  * Description:
@@ -353,7 +366,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *   last the specified level.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
+ *   domain_id - The domain ID of the PM activity
  *
  *     As an example, media player might stay in normal state during playback.
  *
@@ -366,7 +379,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-int pm_suspend(enum pm_domain_e domain);
+int pm_suspend(int domain_id);
 
 /****************************************************************************
  * Name: pm_resume
@@ -376,7 +389,7 @@ int pm_suspend(enum pm_domain_e domain);
  *   idle now, could relax the previous requested power level.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
+ *   domain_id - The domain ID of the PM activity
  *
  *     As an example, media player might relax power level after playback.
  *
@@ -389,7 +402,7 @@ int pm_suspend(enum pm_domain_e domain);
  *
  ****************************************************************************/
 
-int pm_resume(enum pm_domain_e domain);
+int pm_resume(int domain_id);
 
 /************************************************************************
  * Name: pm_sleep
@@ -424,7 +437,7 @@ int pm_sleep(int milliseconds);
  *   This function locks PM transition for a specific duration.  
  * 
  * Parameters:
- *   domain - domain to be suspended
+ *   domain_id - domain ID to be suspended
  *   timer_interval - expected lock duration in millisecond
  *
  * Return Value:
@@ -433,7 +446,7 @@ int pm_sleep(int milliseconds);
  *
  ************************************************************************/
 
-int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
+int pm_timedsuspend(int domain_id, unsigned int timer_interval);
 
 /****************************************************************************
  * Name: pm_suspendcount
@@ -442,7 +455,7 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
  *   This function is called to get current stay count.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
+ *   domain_id - The domain ID of the PM activity
  *
  * Returned Value:
  *   Current pm stay count
@@ -452,7 +465,7 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval);
  *
  ****************************************************************************/
 
-uint16_t pm_suspendcount(enum pm_domain_e domain);
+uint16_t pm_suspendcount(int domain_id);
 
 /****************************************************************************
  * Name: pm_checkstate
@@ -575,13 +588,13 @@ void pm_driver_register(void);
  */
 
 #define pm_initialize()
-#define pm_register(cb)			(0)
-#define pm_unregister(cb)		(0)
-#define pm_suspend(domain)
-#define pm_resume(domain)
-#define pm_checkstate()		(0)
-#define pm_changestate(state)	(0)
-#define pm_querystate()        (0)
+#define pm_register(cb)         (0)
+#define pm_unregister(cb)       (0)
+#define pm_suspend(domain_id)   (0)
+#define pm_resume(domain_id)    (0)
+#define pm_checkstate()         (0)
+#define pm_changestate(state)   (0)
+#define pm_querystate()         (0)
 
 #endif							/* CONFIG_PM */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */

@@ -83,6 +83,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_RESUME, arg is an enum representing PM DOMAIN
  *   for PMIOC_SLEEP, arg should be an int.(user should input time in millisecond)
  *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t 
+ *   for PMIOC_DOMAIN_REGISTER, arg should be a pointer to pm_domain_arg_t
  *   for PMIOC_TUNEFREQ, arg should be an int type.
  *
  * Description:
@@ -96,11 +97,11 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
     	case PMIOC_SUSPEND:
-	        ret = pm_suspend((enum pm_domain_e)arg);
+	        ret = pm_suspend((int)arg);
 		pmvdbg("State locked!\n");
         	break;
         case PMIOC_RESUME:
-		ret = pm_resume((enum pm_domain_e)arg);
+		ret = pm_resume((int)arg);
 		pmvdbg("State unlocked!\n");
 		break;
 	case PMIOC_SLEEP:
@@ -114,7 +115,18 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((pm_suspend_arg_t *)arg == NULL) {
 			pmvdbg("Please input correct arguments\n");
 		} else {
-			ret = pm_timedsuspend(((pm_suspend_arg_t *)arg)->domain, ((pm_suspend_arg_t *)arg)->timer_interval);
+			ret = pm_timedsuspend(((pm_suspend_arg_t *)arg)->domain_id, ((pm_suspend_arg_t *)arg)->timer_interval);
+		}
+		break;
+	case PMIOC_DOMAIN_REGISTER:
+		if ((pm_domain_arg_t *)arg == NULL) {
+			set_errno(EINVAL);
+			pmdbg("Please input correct arguments\n");
+		} else {
+			((pm_domain_arg_t *)arg)->domain_id = pm_domain_register(((pm_domain_arg_t *)arg)->domain_name);
+			if (((pm_domain_arg_t *)arg)->domain_id >= 0) {
+				ret = OK;
+			}
 		}
 		break;
 #ifdef CONFIG_PM_DVFS
