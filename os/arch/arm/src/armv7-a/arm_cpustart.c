@@ -65,27 +65,24 @@
  * Name: arm_registerdump
  ****************************************************************************/
 
-#if 0 /* Was useful in solving some startup problems */
+#if 0							/* Was useful in solving some startup problems */
 static inline void arm_registerdump(struct tcb_s *tcb)
 {
-  int regndx;
+	int regndx;
 
-  _info("CPU%d:\n", up_cpu_index());
+	_info("CPU%d:\n", up_cpu_index());
 
-  /* Dump the startup registers */
+	/* Dump the startup registers */
 
-  for (regndx = REG_R0; regndx <= REG_R15; regndx += 8)
-    {
-      uint32_t *ptr = (uint32_t *)&tcb->xcp.regs[regndx];
-      _info("R%d: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-            regndx, ptr[0], ptr[1], ptr[2], ptr[3],
-            ptr[4], ptr[5], ptr[6], ptr[7]);
-    }
+	for (regndx = REG_R0; regndx <= REG_R15; regndx += 8) {
+		uint32_t *ptr = (uint32_t *)&tcb->xcp.regs[regndx];
+		_info("R%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", regndx, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+	}
 
-  _info("CPSR: %08x\n", tcb->xcp.regs[REG_CPSR]);
+	_info("CPSR: %08x\n", tcb->xcp.regs[REG_CPSR]);
 }
 #else
-# define arm_registerdump(tcb)
+#define arm_registerdump(tcb)
 #endif
 
 /****************************************************************************
@@ -110,31 +107,31 @@ static inline void arm_registerdump(struct tcb_s *tcb)
 
 int arm_start_handler(int irq, void *context, void *arg)
 {
-  struct tcb_s *tcb = this_task();
+	struct tcb_s *tcb = this_task();
 
-  svdbg("CPU%d Started\n", this_cpu());
+	svdbg("CPU%d Started\n", this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify that this CPU has started */
+	/* Notify that this CPU has started */
 
-  sched_note_cpu_started(tcb);
+	sched_note_cpu_started(tcb);
 #endif
 
-  /* Reset scheduler parameters */
+	/* Reset scheduler parameters */
 
-  sched_resume_scheduler(tcb);
+	sched_resume_scheduler(tcb);
 
-  /* Dump registers so that we can see what is going to happen on return */
+	/* Dump registers so that we can see what is going to happen on return */
 
-  arm_registerdump(tcb);
+	arm_registerdump(tcb);
 
-  /* Then switch contexts. This instantiates the exception context of the
-   * tcb at the head of the assigned task list.  In this case, this should
-   * be the CPUs NULL task.
-   */
+	/* Then switch contexts. This instantiates the exception context of the
+	 * tcb at the head of the assigned task list.  In this case, this should
+	 * be the CPUs NULL task.
+	 */
 
-  arm_restorestate(tcb->xcp.regs);
-  return OK;
+	arm_restorestate(tcb->xcp.regs);
+	return OK;
 }
 
 /****************************************************************************
@@ -166,14 +163,14 @@ int arm_start_handler(int irq, void *context, void *arg)
 
 int up_cpu_start(int cpu)
 {
-  svdbg("Starting CPU%d\n", cpu);
+	svdbg("Starting CPU%d\n", cpu);
 
-  DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify of the start event */
+	/* Notify of the start event */
 
-  sched_note_cpu_start(this_task(), cpu);
+	sched_note_cpu_start(this_task(), cpu);
 #endif
 
 #ifdef CONFIG_CPU_HOTPLUG
@@ -182,7 +179,7 @@ int up_cpu_start(int cpu)
 
   /* Execute SGI1 */
 
-  return arm_cpu_sgi(GIC_IRQ_SGI1, (1 << cpu));
+	return arm_cpu_sgi(GIC_IRQ_SGI1, (1 << cpu));
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */

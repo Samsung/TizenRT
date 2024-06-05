@@ -134,9 +134,9 @@ int up_use_stack(struct tcb_s *tcb, void *stack, size_t stack_size)
 	 */
 
 #ifdef CONFIG_ARCH_ARMV7A_FAMILY
-	top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_size;
+	top_of_stack = (uint32_t) tcb->stack_alloc_ptr + stack_size;
 #else
-	top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_size - 4;
+	top_of_stack = (uint32_t) tcb->stack_alloc_ptr + stack_size - 4;
 #endif
 
 	/* The ARM stack must be aligned; 4 byte alignment for OABI and 8-byte
@@ -153,15 +153,15 @@ int up_use_stack(struct tcb_s *tcb, void *stack, size_t stack_size)
 	 */
 
 #ifdef CONFIG_ARCH_ARMV7A_FAMILY
-	size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr;
+	size_of_stack = top_of_stack - (uint32_t) tcb->stack_alloc_ptr;
 #else
-	size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
+	size_of_stack = top_of_stack - (uint32_t) tcb->stack_alloc_ptr + 4;
 #endif
 
 	/* Save the adjusted stack values in the struct tcb_s */
 
-	tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
-	tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
+	tcb->adj_stack_ptr = (uint32_t *) top_of_stack;
+	tcb->stack_base_ptr = tcb->stack_alloc_ptr;
 	tcb->adj_stack_size = size_of_stack;
 
 #ifdef CONFIG_STACK_COLORATION

@@ -109,7 +109,7 @@ void noreturn_function up_pthread_start(pthread_startroutine_t entrypt, pthread_
 {
 	/* Let sys_call2() do all of the work */
 
-	sys_call2(SYS_pthread_start, (uintptr_t)entrypt, (uintptr_t)arg);
+	sys_call2(SYS_pthread_start, (uintptr_t) entrypt, (uintptr_t) arg);
 }
 
 #endif							/* (CONFIG_BUILD_PROTECTED || CONFIG_BUILD_KERNEL) && !CONFIG_DISABLE_PTHREAD */

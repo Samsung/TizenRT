@@ -57,8 +57,7 @@
 #ifndef __ASSEMBLY__
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C"
-{
+extern "C" {
 #else
 #define EXTERN extern
 #endif
@@ -83,7 +82,7 @@ extern "C"
  *
  ****************************************************************************/
 
-#if 0 /* Prototyped in up_internal.h */
+#if 0							/* Prototyped in up_internal.h */
 void arm_l2ccinitialize(void);
 #endif
 
@@ -239,22 +238,22 @@ void l2cc_flush(uint32_t startaddr, uint32_t endaddr);
 #ifdef __cplusplus
 }
 #endif
-#endif /* __ASSEMBLY__ */
+#endif							/* __ASSEMBLY__ */
 
-#else /* CONFIG_ARCH_L2CACHE */
-  /* Provide simple definitions to concentrate the inline conditional
-   * compilation in one place.
-   */
+#else							/* CONFIG_ARCH_L2CACHE */
+/* Provide simple definitions to concentrate the inline conditional
+ * compilation in one place.
+ */
 
-#  define l2cc_enable()
-#  define l2cc_disable()
-#  define l2cc_sync()
-#  define l2cc_invalidate_all()
-#  define l2cc_invalidate(s,e)
-#  define l2cc_clean_all()
-#  define l2cc_clean(s,e)
-#  define l2cc_flush_all()
-#  define l2cc_flush(s,e)
+#define l2cc_enable()
+#define l2cc_disable()
+#define l2cc_sync()
+#define l2cc_invalidate_all()
+#define l2cc_invalidate(s,e)
+#define l2cc_clean_all()
+#define l2cc_clean(s,e)
+#define l2cc_flush_all()
+#define l2cc_flush(s,e)
 
-#endif /* CONFIG_ARCH_L2CACHE */
-#endif /* __ARCH_ARM_SRC_ARMV7_A_L2CC_H */
+#endif							/* CONFIG_ARCH_L2CACHE */
+#endif							/* __ARCH_ARM_SRC_ARMV7_A_L2CC_H */

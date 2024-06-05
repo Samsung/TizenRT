@@ -85,7 +85,7 @@ void up_schedyield(void)
 
 		/* Remove the TCB from the ready-to-run list */
 
-		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
+		dq_rem((FAR dq_entry_t *) rtcb, (FAR dq_queue_t *)&g_readytorun);
 
 		/* Add the task in the correct location in the prioritized
 		 * g_readytorun task list
@@ -125,7 +125,7 @@ void up_schedyield(void)
 			 * Just copy the current_regs into the OLD rtcb.
 			 */
 
-               arm_savestate(rtcb->xcp.regs);
+			arm_savestate(rtcb->xcp.regs);
 
 			/* Restore ntcb data for context switching */
 
@@ -133,7 +133,7 @@ void up_schedyield(void)
 
 			/* Then switch contexts */
 
-              //sched_resume_scheduler(rtcb);
+			//sched_resume_scheduler(rtcb);
 			arm_restorestate(ntcb->xcp.regs);
 		}
 		/* No, then we will need to perform the user context switch */

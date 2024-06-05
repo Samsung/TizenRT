@@ -84,18 +84,18 @@
 bool up_interrupt_context(void)
 {
 #ifdef CONFIG_SMP
-  	irqstate_t flags = irqsave();
+	irqstate_t flags = irqsave();
 #endif
 
 #ifdef CONFIG_ARCH_ARMV7A_FAMILY
-  	bool ret = CURRENT_REGS != NULL;
+	bool ret = CURRENT_REGS != NULL;
 #else
-  	bool ret = current_regs != NULL;
+	bool ret = current_regs != NULL;
 #endif
 
 #ifdef CONFIG_SMP
-  	irqrestore(flags);
+	irqrestore(flags);
 #endif
 
-  	return ret;
+	return ret;
 }

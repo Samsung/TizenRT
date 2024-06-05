@@ -87,9 +87,9 @@
 /* Alignment value for stack allocation when mpu stack overflow protection is enabled */
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 #ifdef CONFIG_ARMV8M_MPU
-#define STACK_PROTECTION_MPU_ALIGNMENT (32)	/* Fixed alignment size of 32 bytes as per ARMv8-M spec*/
-#else /* CONFIG_ARMV7M_MPU */
-#define STACK_PROTECTION_MPU_ALIGNMENT CONFIG_MPU_STACK_GUARD_SIZE /* In ARMv7-M, MPU requires alignment to region size */
+#define STACK_PROTECTION_MPU_ALIGNMENT (32)	/* Fixed alignment size of 32 bytes as per ARMv8-M spec */
+#else							/* CONFIG_ARMV7M_MPU */
+#define STACK_PROTECTION_MPU_ALIGNMENT CONFIG_MPU_STACK_GUARD_SIZE	/* In ARMv7-M, MPU requires alignment to region size */
 #endif
 #endif
 
@@ -193,9 +193,9 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 			/* Use the user-space allocator if this is a task or pthread */
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 			stack_alloc_size = stack_alloc_size + CONFIG_MPU_STACK_GUARD_SIZE;
-			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
+			tcb->stack_alloc_ptr = (uint32_t *) kumm_memalign(STACK_PROTECTION_MPU_ALIGNMENT, stack_alloc_size);
 #else
-			tcb->stack_alloc_ptr = (uint32_t *)kumm_memalign(STACK_ALIGNMENT, stack_size);
+			tcb->stack_alloc_ptr = (uint32_t *) kumm_memalign(STACK_ALIGNMENT, stack_size);
 #endif
 		}
 
@@ -221,14 +221,14 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * the stack.
 		 * Items on the stack are referenced as positive word offsets from sp.
 		 */
-		top_of_stack = (uintptr_t)tcb->stack_alloc_ptr + stack_alloc_size;
+		top_of_stack = (uintptr_t) tcb->stack_alloc_ptr + stack_alloc_size;
 #else
 		/* The ARM uses a push-down stack:  the stack grows toward lower
 		 * addresses in memory.  The stack pointer register, points to
 		 * the lowest, valid work address (the "top" of the stack).  Items
 		 * on the stack are referenced as positive word offsets from sp.
 		 */
-		top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_alloc_size - 4;
+		top_of_stack = (uint32_t) tcb->stack_alloc_ptr + stack_alloc_size - 4;
 #endif
 
 		/* The ARM stack must be aligned; 4 byte alignment for OABI and
@@ -244,16 +244,16 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * The size need not be aligned.
 		 */
 #ifdef CONFIG_ARCH_ARMV7A_FAMILY
-		size_of_stack = top_of_stack - (uintptr_t)tcb->stack_alloc_ptr;
+		size_of_stack = top_of_stack - (uintptr_t) tcb->stack_alloc_ptr;
 #else
-		size_of_stack = top_of_stack - (uint32_t)tcb->stack_alloc_ptr + 4;
+		size_of_stack = top_of_stack - (uint32_t) tcb->stack_alloc_ptr + 4;
 #endif
 
 		/* Adjust stack size after guard_size calculation */
 		size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
-		
+
 		/* Save the adjusted stack values in the struct tcb_s */
-		tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
+		tcb->adj_stack_ptr = (uint32_t *) top_of_stack;
 		tcb->stack_base_ptr = tcb->stack_alloc_ptr;
 		tcb->adj_stack_size = size_of_stack;
 
@@ -269,8 +269,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
 		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1,
-			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
+		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1, (uint32_t) tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
 #endif
 
 		return OK;
@@ -290,12 +289,12 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #ifdef CONFIG_STACK_COLORATION
 void up_stack_color(FAR void *stackbase, void *stackend)
 {
-	stackbase = (void *)STACK_ALIGN_UP((uintptr_t)stackbase);
-	stackend = (void *)STACK_ALIGN_DOWN((uintptr_t)stackend);
+	stackbase = (void *)STACK_ALIGN_UP((uintptr_t) stackbase);
+	stackend = (void *)STACK_ALIGN_DOWN((uintptr_t) stackend);
 
 	/* Take extra care that we do not write outsize the stack boundaries */
-	uint32_t *stkptr = (uint32_t *)stackbase;
-	size_t nwords = ((uintptr_t)stackend - (uintptr_t)stackbase) >> 2;
+	uint32_t *stkptr = (uint32_t *) stackbase;
+	size_t nwords = ((uintptr_t) stackend - (uintptr_t) stackbase) >> 2;
 
 	/* Set the entire stack to the coloration value */
 
