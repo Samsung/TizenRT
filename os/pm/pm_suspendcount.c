@@ -74,7 +74,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_staycount
+ * Name: pm_suspendcount
  *
  * Description:
  *   This function is called to get current stay count.
@@ -90,7 +90,7 @@
  *
  ****************************************************************************/
 
-uint32_t pm_staycount(enum pm_domain_e domain)
+uint16_t pm_suspendcount(enum pm_domain_e domain)
 {
 	/* Get a convenience pointer to minimize all of the indexing */
 
@@ -98,4 +98,6 @@ uint32_t pm_staycount(enum pm_domain_e domain)
 
 	return g_pmglobals.suspend_count[domain];
 }
+
+
 #endif							/* CONFIG_PM */

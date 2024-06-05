@@ -92,7 +92,7 @@ int up_pmsleep(void)
 
   flags = irqsave();
   sched_lock();
-  if (pm_staycount(PM_IDLE_DOMAIN)) {
+  if (pm_suspendcount(PM_IDLE_DOMAIN)) {
     ret = -EAGAIN;
     goto errout_lock;
   }
