@@ -57,10 +57,8 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-#include <assert.h>
 
 #include <tinyara/pm/pm.h>
-#include <tinyara/clock.h>
 #include <tinyara/irq.h>
 #include <errno.h>
 
@@ -118,74 +116,4 @@ errout:
 	leave_critical_section(flags);
 	return ret;
 }
-
-/****************************************************************************
- * Name: pm_resume
- *
- * Description:
- *   This function is called by a device driver to indicate that it is
- *   idle now, could relax the previous requested power level.
- *
- * Input Parameters:
- *   domain - The domain of the PM activity
- *
- *     As an example, media player might relax power level after playback.
- *
- * Returned Value:
- *   None.
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
- *
- ****************************************************************************/
-
-int pm_resume(enum pm_domain_e domain)
-{
-	irqstate_t flags;
-	int ret = OK;
-
-	flags = enter_critical_section();
-	if (domain < 0 || domain >= CONFIG_PM_NDOMAINS) {
-		ret = ERROR;
-		set_errno(EINVAL);
-		goto errout;
-	}
-	if (g_pmglobals.suspend_count[domain] <= 0) {
-		ret = ERROR;
-		set_errno(ERANGE);
-		goto errout;
-	}
-	g_pmglobals.suspend_count[domain]--;
-errout:
-	leave_critical_section(flags);
-	return ret;
-}
-
-/****************************************************************************
- * Name: pm_staycount
- *
- * Description:
- *   This function is called to get current stay count.
- *
- * Input Parameters:
- *   domain - The domain of the PM activity
- *
- * Returned Value:
- *   Current pm stay count
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
- *
- ****************************************************************************/
-
-uint32_t pm_staycount(enum pm_domain_e domain)
-{
-	/* Get a convenience pointer to minimize all of the indexing */
-
-	DEBUGASSERT(domain >= 0 && domain < CONFIG_PM_NDOMAINS);
-
-	return g_pmglobals.suspend_count[domain];
-}
-
-
 #endif							/* CONFIG_PM */
