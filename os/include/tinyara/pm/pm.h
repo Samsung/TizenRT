@@ -146,117 +146,6 @@ enum pm_domain_e {
 #error CONFIG_PM_SLICEMS invalid
 #endif
 
-/* The averaging algorithm is simply: Y = (An*X + SUM(Ai*Yi))/SUM(Aj), where
- * i = 1..n-1 and j= 1..n, n is the length of the "memory", Ai is the
- * weight applied to each value, and X is the current activity.  These weights
- * may be negative and a limited to the range of int16_t.
- *
- * CONFIG_PM_MEMORY provides the memory for the algorithm.  Default: 2
- * CONFIG_PM_COEFn provides weight for each sample.  Default: 1
- *
- * Setting CONFIG_PM_MEMORY=1 disables all smoothing.
- */
-
-#ifndef CONFIG_PM_MEMORY
-#define CONFIG_PM_MEMORY 2
-#endif
-
-#if CONFIG_PM_MEMORY < 1
-#error "CONFIG_PM_MEMORY must be >= 1"
-#endif
-
-#ifndef CONFIG_PM_COEFN
-#define CONFIG_PM_COEFN 1
-#endif
-
-#if CONFIG_PM_MEMORY > 1 && !defined(CONFIG_PM_COEF1)
-#define CONFIG_PM_COEF1 1
-#endif
-
-#if CONFIG_PM_MEMORY > 2 && !defined(CONFIG_PM_COEF2)
-#define CONFIG_PM_COEF2 1
-#endif
-
-#if CONFIG_PM_MEMORY > 3 && !defined(CONFIG_PM_COEF3)
-#define CONFIG_PM_COEF3 1
-#endif
-
-#if CONFIG_PM_MEMORY > 4 && !defined(CONFIG_PM_COEF4)
-#define CONFIG_PM_COEF4 1
-#endif
-
-#if CONFIG_PM_MEMORY > 5 && !defined(CONFIG_PM_COEF5)
-#define CONFIG_PM_COEF5 1
-#endif
-
-#if CONFIG_PM_MEMORY > 6
-#warning "This logic needs to be extended"
-#endif
-
-/* State changes then occur when the weight activity account crosses
- * threshold values for certain periods of time (time slice count).
- *
- * CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
- * CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
- *
- * Resuming to normal state, on the other hand, is usually immediate and
- * controlled by wakeup conditions established by the platform.  The PM
- * module only recommends reduced power states.
- */
-
-#ifndef CONFIG_PM_IDLEENTER_THRESH
-#define CONFIG_PM_IDLEENTER_THRESH    1	/* <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_IDLEEXIT_THRESH
-#define CONFIG_PM_IDLEEXIT_THRESH     2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_IDLEENTER_THRESH >= CONFIG_PM_IDLEEXIT_THRESH
-#error "Must have CONFIG_PM_IDLEENTER_THRESH < CONFIG_PM_IDLEEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_IDLEENTER_COUNT
-#define CONFIG_PM_IDLEENTER_COUNT     20	/* 20 IDLE slices to enter
-											 * IDLE mode from normal
-											 */
-#endif
-
-#ifndef CONFIG_PM_STANDBYENTER_THRESH
-#define CONFIG_PM_STANDBYENTER_THRESH 1	/*  <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_STANDBYEXIT_THRESH
-#define CONFIG_PM_STANDBYEXIT_THRESH  2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_STANDBYENTER_THRESH >= CONFIG_PM_STANDBYEXIT_THRESH
-#error "Must have CONFIG_PM_STANDBYENTER_THRESH < CONFIG_PM_STANDBYEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_STANDBYENTER_COUNT
-#define CONFIG_PM_STANDBYENTER_COUNT  20	/* 20 IDLE slices to enter
-											 * STANDBY mode from IDLE
-											 */
-#endif
-
-#ifndef CONFIG_PM_SLEEPENTER_THRESH
-#define CONFIG_PM_SLEEPENTER_THRESH   1	/*  <=1: Essentially no activity */
-#endif
-
-#ifndef CONFIG_PM_SLEEPEXIT_THRESH
-#define CONFIG_PM_SLEEPEXIT_THRESH    2	/* >=2: Active */
-#endif
-
-#if CONFIG_PM_SLEEPENTER_THRESH >= CONFIG_PM_SLEEPEXIT_THRESH
-#error "Must have CONFIG_PM_SLEEPENTER_THRESH < CONFIG_PM_SLEEPEXIT_THRESH"
-#endif
-
-#ifndef CONFIG_PM_SLEEPENTER_COUNT
-#define CONFIG_PM_SLEEPENTER_COUNT    20	/* 20 IDLE slices to enter SLEEP
-											 * mode from STANDBY
-											 */
-#endif
 
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
@@ -306,13 +195,6 @@ enum pm_state_e {
 								 * PM_SLEEP may be following by PM_NORMAL
 								 */
 	PM_COUNT,
-};
-
-enum pm_timer_type_e {
-	PM_NO_TIMER = 0,
-	PM_WAKEUP_TIMER = 1,
-	PM_LOCK_TIMER = 2,
-	/* Scope for future expansion, up to 8 timer types can be supported */
 };
 
 /* This structure is used to send data to pm driver from app side for timedSuspend */
@@ -519,25 +401,6 @@ int pm_suspend(enum pm_domain_e domain);
  ****************************************************************************/
 
 int pm_resume(enum pm_domain_e domain);
-
-/****************************************************************************
- * Name: pm_set_wakeup_timer
- *
- * Description:
- *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pm_timer_activelist with the
- *   required delay.(delay should be positive)
- * 
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   0 - system can go to sleep
- *   -1 - system should not go to sleep
- *
- ****************************************************************************/
-
-int pm_set_wakeup_timer(void);
 
 /****************************************************************************
  * Name: pm_timer_update
