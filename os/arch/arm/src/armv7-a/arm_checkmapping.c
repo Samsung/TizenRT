@@ -88,25 +88,25 @@
 
 bool arm_checkmapping(struct tcb_s *tcb)
 {
-  uintptr_t vaddr;
-  uint32_t *pte;
+	uintptr_t vaddr;
+	uint32_t *pte;
 
-  /* Since interrupts are disabled, we don't need to anything special. */
+	/* Since interrupts are disabled, we don't need to anything special. */
 
-  DEBUGASSERT(tcb);
+	DEBUGASSERT(tcb);
 
-  /* Get the virtual address that caused the fault */
+	/* Get the virtual address that caused the fault */
 
-  vaddr = tcb->xcp.far;
-  DEBUGASSERT(vaddr >= PG_PAGED_VBASE && vaddr < PG_PAGED_VEND);
+	vaddr = tcb->xcp.far;
+	DEBUGASSERT(vaddr >= PG_PAGED_VBASE && vaddr < PG_PAGED_VEND);
 
-  /* Get the PTE associated with this virtual address */
+	/* Get the PTE associated with this virtual address */
 
-  pte = arm_va2pte(vaddr);
+	pte = arm_va2pte(vaddr);
 
-  /* Return true if this virtual address is mapped. */
+	/* Return true if this virtual address is mapped. */
 
-  return (*pte != 0);
+	return (*pte != 0);
 }
 
-#endif /* CONFIG_PAGING */
+#endif							/* CONFIG_PAGING */

@@ -141,12 +141,11 @@ extern int g_irq_num;
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
+char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = { '\0', };
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
 
 /****************************************************************************
  * Private Functions
@@ -175,11 +174,10 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
 		stack += 4;
 	}
 	lldbg_noarg("\n");
-	
-	for (; stack < stack_base; stack += 32) { // Print remaining stack values from 9th value to end
-		ptr = (uint32_t *)stack;
-		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			 stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+
+	for (; stack < stack_base; stack += 32) {	// Print remaining stack values from 9th value to end
+		ptr = (uint32_t *) stack;
+		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
 	}
 }
 
@@ -194,28 +192,22 @@ static void arm_registerdump(volatile uint32_t *regs)
 		lldbg_noarg("===========================================================\n");
 		lldbg_noarg("Asserted task's register dump\n");
 		lldbg_noarg("===========================================================\n");
-		lldbg("R0: %08x %08x %08x %08x",
-		regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3]);
+		lldbg("R0: %08x %08x %08x %08x", regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3]);
 #ifdef CONFIG_ARM_THUMB
-		lldbg_noarg(" %08x %08x %08x %08x\n",
-		regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-		lldbg("R8: %08x %08x %08x %08x",
-		regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11]);
+		lldbg_noarg(" %08x %08x %08x %08x\n", regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
+		lldbg("R8: %08x %08x %08x %08x", regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11]);
 #else
 		lldbg_noarg(" %08x %08x %08x %08x\n",
 		regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
 		lldbg("R8: %08x %08x %08x %08x",
 		regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11]);
 #endif
-		lldbg_noarg(" %08x %08x %08x %08x\n",
-		regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
+		lldbg_noarg(" %08x %08x %08x %08x\n", regs[REG_R12], regs[REG_R13], regs[REG_R14], regs[REG_R15]);
 
 #if defined(REG_BASEPRI)
-		lldbg("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n",
-		regs[REG_XPSR], regs[REG_BASEPRI], getcontrol());
+		lldbg("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n", regs[REG_XPSR], regs[REG_BASEPRI], getcontrol());
 #elif defined(REG_PRIMASK)
-		lldbg("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n",
-		regs[REG_XPSR], regs[REG_PRIMASK], getcontrol());
+		lldbg("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n", regs[REG_XPSR], regs[REG_PRIMASK], getcontrol());
 #elif defined(REG_CPSR)
 		lldbg("CPSR: %08x\n", regs[REG_CPSR]);
 #endif
@@ -333,10 +325,8 @@ static void print_stack_dump(uint32_t sp, uint32_t stackbase, uint32_t stacksize
 		} else {
 			lldbg("ERROR: USR stack = 0x%08x - 0x%08x\n", stackbase - stacksize + 1, stackbase);
 		}
-		
-		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		sp, *((uint32_t *)sp + 0), *((uint32_t *)sp + 1), *((uint32_t *)sp + 2), ((uint32_t *)sp + 3),
-		*((uint32_t *)sp + 4), ((uint32_t *)sp + 5), ((uint32_t *)sp + 6), ((uint32_t *)sp + 7));
+
+		lldbg("Wrong Stack pointer %08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", sp, *((uint32_t *) sp + 0), *((uint32_t *) sp + 1), *((uint32_t *) sp + 2), ((uint32_t *) sp + 3), *((uint32_t *) sp + 4), ((uint32_t *) sp + 5), ((uint32_t *) sp + 6), ((uint32_t *) sp + 7));
 		if (is_irq_assert) {
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 			lldbg("IRQ stack dump:\n");
@@ -385,8 +375,7 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 #endif
 		if (CURRENT_REGS) {
 			fault_tcb->xcp.regs = (uint32_t *)CURRENT_REGS;
-		}
-		else {
+		} else {
 			up_saveusercontext(fault_tcb->xcp.regs);
 		}
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -410,7 +399,7 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	 * a fault and not an irq.
 	 */
 	check_assert_location(&sp, &is_irq_assert);
-	
+
 	/*Print IRQ handler details if required */
 	check_sp_corruption(sp, &stackbase, &stacksize, istackbase, istacksize, is_irq_assert, &is_sp_corrupt);
 
@@ -435,7 +424,7 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 #endif
 
 }
-#endif /* CONFIG_ARCH_STACKDUMP */
+#endif							/* CONFIG_ARCH_STACKDUMP */
 
 /****************************************************************************
  * Name: arm_assert
@@ -459,13 +448,13 @@ static void arm_assert(void)
 		spin_trylock(&g_cpu_irqlock);
 #endif
 
-		for (; ; ) {
+		for (;;) {
 #ifdef CONFIG_ARCH_LEDS
-		/* FLASH LEDs a 2Hz */
-		board_autoled_on(LED_PANIC);
-		up_mdelay(250);
-		board_autoled_off(LED_PANIC);
-		up_mdelay(250);
+			/* FLASH LEDs a 2Hz */
+			board_autoled_on(LED_PANIC);
+			up_mdelay(250);
+			board_autoled_off(LED_PANIC);
+			up_mdelay(250);
 #endif
 		}
 #ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
@@ -473,14 +462,14 @@ static void arm_assert(void)
 		exit(errorcode);
 	}
 #endif
-#endif /* CONFIG_BOARD_ASSERT_AUTORESET */
+#endif							/* CONFIG_BOARD_ASSERT_AUTORESET */
 }
 
 /****************************************************************************
  * Name: check_heap_corrupt
  ****************************************************************************/
 
-void check_heap_corrupt(struct tcb_s *fault_tcb) 
+void check_heap_corrupt(struct tcb_s *fault_tcb)
 {
 	if (!IS_SECURE_STATE()) {
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -498,9 +487,9 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 		lldbg_noarg("===========================================================\n");
 	}
 	if (mm_check_heap_corruption(g_kmmheap) != OK) {
-			/* treat kernel fault */
-			arm_assert();
-	} 
+		/* treat kernel fault */
+		arm_assert();
+	}
 }
 
 /****************************************************************************
@@ -526,9 +515,9 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 		lldbg_noarg("Running work function is %x.\n", work_get_current());
 	}
 #endif
-#endif /* defined(CONFIG_DEBUG_WORKQUEUE) */
+#endif							/* defined(CONFIG_DEBUG_WORKQUEUE) */
 	up_dumpstate(fault_tcb, asserted_location);
-	
+
 	/* Dump the state of all tasks (if available) */
 	task_show_alivetask_list();
 

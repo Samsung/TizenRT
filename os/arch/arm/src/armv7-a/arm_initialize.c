@@ -62,21 +62,18 @@
 static inline void arm_color_intstack(void)
 {
 #ifdef CONFIG_SMP
-  uint32_t *ptr = (uint32_t *)arm_intstack_alloc();
+	uint32_t *ptr = (uint32_t *)arm_intstack_alloc();
 #else
-  uint32_t *ptr = (uint32_t *)&g_intstackalloc;
+	uint32_t *ptr = (uint32_t *)&g_intstackalloc;
 #endif
-  ssize_t size;
+	ssize_t size;
 
-  for (size = ((CONFIG_ARCH_INTERRUPTSTACK & ~3) * CONFIG_SMP_NCPUS);
-       size > 0;
-       size -= sizeof(uint32_t))
-    {
-      *ptr++ = INTSTACK_COLOR;
-    }
+	for (size = ((CONFIG_ARCH_INTERRUPTSTACK & ~3) * CONFIG_SMP_NCPUS); size > 0; size -= sizeof(uint32_t)) {
+		*ptr++ = INTSTACK_COLOR;
+	}
 }
 #else
-#  define arm_color_intstack()
+#define arm_color_intstack()
 #endif
 
 /****************************************************************************
@@ -107,35 +104,35 @@ void up_initialize(void)
 	lldbg("[Reboot Reason] : %d\n", up_reboot_reason_read());
 #endif
 
-  /* Colorize the interrupt stack */
+	/* Colorize the interrupt stack */
 
-  arm_color_intstack();
+	arm_color_intstack();
 
 	/* Initialize the interrupt subsystem */
 
 	up_irqinitialize();
 
 #ifdef CONFIG_PM
-  /* Initialize the power management subsystem.  This MCU-specific function
-   * must be called *very* early in the initialization sequence *before* any
-   * other device drivers are initialized (since they may attempt to register
-   * with the power management subsystem).
-   */
+	/* Initialize the power management subsystem.  This MCU-specific function
+	 * must be called *very* early in the initialization sequence *before* any
+	 * other device drivers are initialized (since they may attempt to register
+	 * with the power management subsystem).
+	 */
 
-  arm_pminitialize();
+	arm_pminitialize();
 #endif
 
 #ifdef CONFIG_ARCH_DMA
-  /* Initialize the DMA subsystem if the weak function arm_dma_initialize has
-   * been brought into the build
-   */
+	/* Initialize the DMA subsystem if the weak function arm_dma_initialize has
+	 * been brought into the build
+	 */
 
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS
-  if (arm_dma_initialize)
+	if (arm_dma_initialize)
 #endif
-    {
-      arm_dma_initialize();
-    }
+	{
+		arm_dma_initialize();
+	}
 #endif
 
 #if !defined(CONFIG_SUPPRESS_INTERRUPTS) && !defined(CONFIG_SUPPRESS_TIMER_INTS) && \
@@ -169,19 +166,19 @@ void up_initialize(void)
 #endif
 
 #if defined(CONFIG_BLUETOOTH) && defined(CONFIG_BLUETOOTH_NULL)
-	btnull_register();    /* bluetooth bt_null */
+	btnull_register();			/* bluetooth bt_null */
 #endif
 
 #ifdef CONFIG_DEV_URANDOM
-	devurandom_register();			/* /dev/urandom */
+	devurandom_register();		/* /dev/urandom */
 #endif
 
 #if defined(CONFIG_DEV_ZERO)
 	devzero_register();			/* Standard /dev/zero */
 #endif
-	
+
 #if defined(CONFIG_VIRTKEY)
-        virtkey_register();			/* virtual key driver */
+	virtkey_register();			/* virtual key driver */
 #endif
 
 #endif							/* CONFIG_NFILE_DESCRIPTORS */
@@ -189,7 +186,7 @@ void up_initialize(void)
 	/* Initialize the serial device driver */
 
 #ifdef USE_SERIALDRIVER
-  up_serialinit();
+	up_serialinit();
 #endif
 
 	/* Initialize the console device driver (if it is other than the standard
@@ -204,20 +201,20 @@ void up_initialize(void)
 	ramlog_consoleinit();
 #endif
 
-  /* Initialize the network */
+	/* Initialize the network */
 
-  arm_netinitialize();
+	arm_netinitialize();
 
 #if defined(CONFIG_USBDEV) || defined(CONFIG_USBHOST)
-  /* Initialize USB -- device and/or host */
+	/* Initialize USB -- device and/or host */
 
-  arm_usbinitialize();
+	arm_usbinitialize();
 #endif
 
-  /* Initialize the L2 cache if present and selected */
+	/* Initialize the L2 cache if present and selected */
 #ifdef CONFIG_ARMV7A_HAVE_L2CC
-  arm_l2ccinitialize();
+	arm_l2ccinitialize();
 #endif
 
-  board_autoled_on(LED_IRQSENABLED);
+	board_autoled_on(LED_IRQSENABLED);
 }

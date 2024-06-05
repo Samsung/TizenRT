@@ -85,7 +85,7 @@
 
 #ifndef CONFIG_SYS_RESERVED
 #error "CONFIG_SYS_RESERVED must be defined to have the value"
-#endif //CONFIG_SYS_RESERVED
+#endif							//CONFIG_SYS_RESERVED
 
 #ifdef CONFIG_BUILD_PROTECTED
 
@@ -93,15 +93,15 @@
 #error "CONFIG_SYS_RESERVED must have the value 8"
 #endif
 
-#else //CONFIG_BUILD_PROTECTED
+#else							//CONFIG_BUILD_PROTECTED
 
 #if CONFIG_SYS_RESERVED != 4
 #error "CONFIG_SYS_RESERVED must have the value 4"
 #endif
 
-#endif //CONFIG_BUILD_PROTECTED
+#endif							//CONFIG_BUILD_PROTECTED
 
-#endif //CONFIG_LIB_SYSCALL
+#endif							//CONFIG_LIB_SYSCALL
 
 /* ARM System calls ***********************************************************/
 
@@ -166,8 +166,8 @@
 
 #define SYS_signal_handler_return (7)
 
-#endif					/* CONFIG_BUILD_PROTECTED */
-#endif					/* CONFIG_LIB_SYSCALL */
+#endif							/* CONFIG_BUILD_PROTECTED */
+#endif							/* CONFIG_LIB_SYSCALL */
 
 /* The SYS_signal_handler_return is executed here... its value is not always
  * available in this context and so is assumed to be 7.
@@ -259,7 +259,6 @@ static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1, uintptr_t p
 		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3)
 		: "memory", "r14"
 	);
-
 	return reg0;
 }
 
@@ -280,7 +279,6 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1, uintptr_t p
 		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4)
 		: "memory", "r14"
 	);
-
 	return reg0;
 }
 
@@ -325,7 +323,6 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1, uintptr_t p
 		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4), "r"(reg5), "r"(reg6)
 		: "memory", "r14"
 	);
-
 	return reg0;
 }
 #endif

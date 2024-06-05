@@ -133,8 +133,7 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 
 	if ((void *)&_sdata <= (void *)KREGION_END && stack_end >= (void *)KREGION_END) {
 		lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
-		lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
-				KREGION_START, KREGION_END, &_sdata, stack_end);
+		lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n", KREGION_START, KREGION_END, &_sdata, stack_end);
 		PANIC();
 	} else if (stack_end >= (void *)KREGION_START && stack_end < (void *)KREGION_END) {
 		*heap_start = stack_end;
@@ -171,8 +170,7 @@ void up_add_kregion(void)
 		void *kregionx_end = (void *)(((uint32_t)kregionx_start[region_cnt]) + kregionx_size[region_cnt]);
 		if ((void *)&_sdata <= (void *)kregionx_end && stack_end >= (void *)kregionx_end) {
 			lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
-			lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
-					kregionx_start[region_cnt], kregionx_end, &_sdata, stack_end);
+			lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n", kregionx_start[region_cnt], kregionx_end, &_sdata, stack_end);
 			PANIC();
 		} else if (stack_end >= (void *)kregionx_start[region_cnt] && stack_end < (void *)kregionx_end) {
 			heap_start = stack_end;

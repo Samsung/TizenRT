@@ -50,7 +50,7 @@ bool is_kernel_text_space(void *addr)
 #ifdef CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT
 		|| (addr >= (void *)&_stext_ram && addr <= (void *)&_etext_ram)
 #endif
-	) {
+	   ) {
 		return true;
 	}
 	return false;

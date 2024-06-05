@@ -117,7 +117,7 @@
 /* Configuration */
 
 #if (CONFIG_ARCH_STACK_VBASE & SECTION_MASK) != 0
-#  error CONFIG_ARCH_STACK_VBASE not aligned to section boundary
+#error CONFIG_ARCH_STACK_VBASE not aligned to section boundary
 #endif
 
 /****************************************************************************
@@ -145,34 +145,31 @@
 
 int up_addrenv_ustackalloc(struct tcb_s *tcb, size_t stacksize)
 {
-  int ret;
+	int ret;
 
-  binfo("tcb=%p stacksize=%lu\n", tcb, (unsigned long)stacksize);
+	binfo("tcb=%p stacksize=%lu\n", tcb, (unsigned long)stacksize);
 
-  DEBUGASSERT(tcb);
+	DEBUGASSERT(tcb);
 
-  /* Initialize the address environment list to all zeroes */
+	/* Initialize the address environment list to all zeroes */
 
-  memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
+	memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
 
-  /* Back the allocation up with physical pages and set up the level 2
-   * mapping (which of course does nothing until the L2 page table is hooked
-   * into the L1 page table).
-   */
+	/* Back the allocation up with physical pages and set up the level 2
+	 * mapping (which of course does nothing until the L2 page table is hooked
+	 * into the L1 page table).
+	 */
 
-  /* Allocate .text space pages */
+	/* Allocate .text space pages */
 
-  ret = arm_addrenv_create_region(tcb->xcp.ustack, ARCH_STACK_NSECTS,
-                                  CONFIG_ARCH_STACK_VBASE, stacksize,
-                                  MMU_L2_UDATAFLAGS);
-  if (ret < 0)
-    {
-      berr("ERROR: Failed to create stack region: %d\n", ret);
-      up_addrenv_ustackfree(tcb);
-      return ret;
-    }
+	ret = arm_addrenv_create_region(tcb->xcp.ustack, ARCH_STACK_NSECTS, CONFIG_ARCH_STACK_VBASE, stacksize, MMU_L2_UDATAFLAGS);
+	if (ret < 0) {
+		berr("ERROR: Failed to create stack region: %d\n", ret);
+		up_addrenv_ustackfree(tcb);
+		return ret;
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -194,16 +191,15 @@ int up_addrenv_ustackalloc(struct tcb_s *tcb, size_t stacksize)
 
 int up_addrenv_ustackfree(struct tcb_s *tcb)
 {
-  binfo("tcb=%p\n", tcb);
-  DEBUGASSERT(tcb);
+	binfo("tcb=%p\n", tcb);
+	DEBUGASSERT(tcb);
 
-  /* Destroy the stack region */
+	/* Destroy the stack region */
 
-  arm_addrenv_destroy_region(tcb->xcp.ustack, ARCH_STACK_NSECTS,
-                             CONFIG_ARCH_STACK_VBASE, false);
+	arm_addrenv_destroy_region(tcb->xcp.ustack, ARCH_STACK_NSECTS, CONFIG_ARCH_STACK_VBASE, false);
 
-  memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
-  return OK;
+	memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
+	return OK;
 }
 
 /****************************************************************************
@@ -225,13 +221,13 @@ int up_addrenv_ustackfree(struct tcb_s *tcb)
 
 int up_addrenv_vustack(const struct tcb_s *tcb, void **vstack)
 {
-  binfo("Return=%p\n", (void *)CONFIG_ARCH_STACK_VBASE);
+	binfo("Return=%p\n", (void *)CONFIG_ARCH_STACK_VBASE);
 
-  /* Not much to do in this case */
+	/* Not much to do in this case */
 
-  DEBUGASSERT(tcb);
-  *vstack = (void *)CONFIG_ARCH_STACK_VBASE;
-  return OK;
+	DEBUGASSERT(tcb);
+	*vstack = (void *)CONFIG_ARCH_STACK_VBASE;
+	return OK;
 }
 
 /****************************************************************************
@@ -255,30 +251,24 @@ int up_addrenv_vustack(const struct tcb_s *tcb, void **vstack)
 
 int up_addrenv_ustackselect(const struct tcb_s *tcb)
 {
-  uintptr_t vaddr;
-  uintptr_t paddr;
-  int i;
+	uintptr_t vaddr;
+	uintptr_t paddr;
+	int i;
 
-  DEBUGASSERT(tcb);
+	DEBUGASSERT(tcb);
 
-  for (vaddr = CONFIG_ARCH_STACK_VBASE, i = 0;
-       i < ARCH_TEXT_NSECTS;
-       vaddr += ARCH_STACK_NSECTS, i++)
-    {
-      /* Set (or clear) the new page table entry */
+	for (vaddr = CONFIG_ARCH_STACK_VBASE, i = 0; i < ARCH_TEXT_NSECTS; vaddr += ARCH_STACK_NSECTS, i++) {
+		/* Set (or clear) the new page table entry */
 
-      paddr = (uintptr_t)tcb->xcp.ustack[i];
-      if (paddr)
-        {
-          mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
-        }
-      else
-        {
-          mmu_l1_clrentry(vaddr);
-        }
-    }
+		paddr = (uintptr_t) tcb->xcp.ustack[i];
+		if (paddr) {
+			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
+		} else {
+			mmu_l1_clrentry(vaddr);
+		}
+	}
 
-  return OK;
+	return OK;
 }
 
-#endif /* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_STACK_DYNAMIC */
+#endif							/* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_STACK_DYNAMIC */

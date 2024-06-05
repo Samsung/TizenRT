@@ -63,17 +63,16 @@
 
 static inline uint32_t arm_get_sctlr(void)
 {
-  uint32_t sctlr;
+	uint32_t sctlr;
 
-  __asm__ __volatile__
-  (
-    "\tmrc   p15, 0, %0, c1, c0, 0\n"  /* Read SCTLR */
-    : "=r"(sctlr)
-    :
-    :
-  );
+	__asm__ __volatile__(
+		"\tmrc   p15, 0, %0, c1, c0, 0\n" /* Read SCTLR */
+		: "=r"(sctlr)
+		:
+		:
+	);
 
-  return sctlr;
+	return sctlr;
 }
 
 /****************************************************************************
@@ -86,13 +85,12 @@ static inline uint32_t arm_get_sctlr(void)
 
 static inline void arm_set_sctlr(uint32_t sctlr)
 {
-  __asm__ __volatile__
-  (
-    "\tmcr  p15, 0, %0, c1, c0, 0\n" /* Write SCTLR */
-    :
-    : "r"(sctlr)
-    :
-  );
+	__asm__ __volatile__(
+		"\tmcr  p15, 0, %0, c1, c0, 0\n" /* Write SCTLR */
+		:
+		: "r"(sctlr)
+		:
+	);
 }
 
 /****************************************************************************
@@ -105,17 +103,16 @@ static inline void arm_set_sctlr(uint32_t sctlr)
 
 static inline uint32_t arm_get_actlr(void)
 {
-  uint32_t actlr;
+	uint32_t actlr;
 
-  __asm__ __volatile__
-  (
-    "\tmrc  p15, 0, %0, c1, c0, 1\n"  /* Read ACTLR */
-    : "=r"(actlr)
-    :
-    :
-  );
+	__asm__ __volatile__(
+		"\tmrc  p15, 0, %0, c1, c0, 1\n"  /* Read ACTLR */
+		: "=r"(actlr)
+		:
+		:
+	);
 
-  return actlr;
+	return actlr;
 }
 
 /****************************************************************************
@@ -128,13 +125,12 @@ static inline uint32_t arm_get_actlr(void)
 
 static inline void arm_set_actlr(uint32_t actlr)
 {
-  __asm__ __volatile__
-  (
-    "\tmcr p15, 0, %0, c1, c0, 1\n" /* Write ACTLR */
-    :
-    : "r"(actlr)
-    :
-  );
+	__asm__ __volatile__(
+		"\tmcr p15, 0, %0, c1, c0, 1\n" /* Write ACTLR */
+		:
+		: "r"(actlr)
+		:
+  	);
 }
 
 /****************************************************************************
@@ -156,79 +152,73 @@ static inline void arm_set_actlr(uint32_t actlr)
 
 void arm_enable_smp(int cpu)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Handle actions unique to CPU0 which comes up first */
+	/* Handle actions unique to CPU0 which comes up first */
 
-  if (cpu == 0)
-    {
+	if (cpu == 0) {
 #ifndef CONFIG_ARCH_CORTEXA32
-      /* Invalidate the SCU duplicate tags for all processors */
+		/* Invalidate the SCU duplicate tags for all processors */
 
-      putreg32((SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU0_SHIFT) |
-               (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU1_SHIFT) |
-               (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU2_SHIFT) |
-               (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU3_SHIFT),
-               SCU_INVALIDATE);
+		putreg32((SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU0_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU1_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU2_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU3_SHIFT), SCU_INVALIDATE);
 #endif
-      /* Invalidate CPUn L1 data cache so that is will we be reloaded from
-       * coherent L2.
-       */
-      ARM_DSB();
-      ARM_ISB();
-      cp15_invalidate_dcache_all();
+		/* Invalidate CPUn L1 data cache so that is will we be reloaded from
+		 * coherent L2.
+		 */
+		ARM_DSB();
+		ARM_ISB();
+		cp15_invalidate_dcache_all();
 
-      /* Invalidate the L2C-310 -- Missing logic. */
+		/* Invalidate the L2C-310 -- Missing logic. */
 
-      /* Enable the SCU */
+		/* Enable the SCU */
 #ifndef CONFIG_ARCH_CORTEXA32
-      regval  = getreg32(SCU_CTRL);
-      regval |= SCU_CTRL_ENABLE;
-      putreg32(regval, SCU_CTRL);
+		regval = getreg32(SCU_CTRL);
+		regval |= SCU_CTRL_ENABLE;
+		putreg32(regval, SCU_CTRL);
 #endif
-    }
+	}
 
-  /* Actions for other CPUs */
+	/* Actions for other CPUs */
 
-  else
-    {
-      /* Invalidate CPUn L1 data cache so that is will we be reloaded from
-       * coherent L2.
-       */
-      ARM_DSB();
-      ARM_ISB();
-      cp15_invalidate_dcache_all();
+	else {
+		/* Invalidate CPUn L1 data cache so that is will we be reloaded from
+		 * coherent L2.
+		 */
+		ARM_DSB();
+		ARM_ISB();
+		cp15_invalidate_dcache_all();
 #ifdef CONFIG_ARCH_CORTEXA32
-      regval  = arm_get_sctlr();
-      regval |= SCTLR_C;
-      ARM_DSB();
-      arm_set_sctlr(regval);
-      ARM_ISB();
+		regval = arm_get_sctlr();
+		regval |= SCTLR_C;
+		ARM_DSB();
+		arm_set_sctlr(regval);
+		ARM_ISB();
 #endif
-      /* Wait for the SCU to be enabled by the primary processor -- should
-       * not be necessary.
-       */
-    }
+		/* Wait for the SCU to be enabled by the primary processor -- should
+		 * not be necessary.
+		 */
+	}
 
-  /* Enable the data cache, set the SMP mode with ACTLR.SMP=1.
-   *
-   *   SMP - Sgnals if the Cortex-A9 processor is taking part in coherency
-   *         or not.
-   *
-   * Cortex-A9 also needs  ACTLR.FW=1
-   *
-   *   FW  - Cache and TLB maintenance broadcast.
-   */
+	/* Enable the data cache, set the SMP mode with ACTLR.SMP=1.
+	 *
+	 *   SMP - Sgnals if the Cortex-A9 processor is taking part in coherency
+	 *         or not.
+	 *
+	 * Cortex-A9 also needs  ACTLR.FW=1
+	 *
+	 *   FW  - Cache and TLB maintenance broadcast.
+	 */
 #ifndef CONFIG_ARCH_CORTEXA32
-  regval  = arm_get_actlr();
-  regval |= ACTLR_SMP;
+	regval = arm_get_actlr();
+	regval |= ACTLR_SMP;
 #ifdef CONFIG_ARCH_CORTEXA9
-  regval |= ACTLR_FW;
+	regval |= ACTLR_FW;
 #endif
-  arm_set_actlr(regval);
+	arm_set_actlr(regval);
 
-  regval  = arm_get_sctlr();
-  regval |= SCTLR_C;
-  arm_set_sctlr(regval);
+	regval = arm_get_sctlr();
+	regval |= SCTLR_C;
+	arm_set_sctlr(regval);
 #endif
 }

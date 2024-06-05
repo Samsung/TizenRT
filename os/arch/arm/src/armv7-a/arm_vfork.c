@@ -106,149 +106,130 @@
 
 pid_t up_vfork(const struct vfork_s *context)
 {
-  struct tcb_s *parent = this_task();
-  struct task_tcb_s *child;
-  uint32_t newsp;
-  uint32_t newfp;
-  uint32_t newtop;
-  uint32_t stacktop;
-  uint32_t stackutil;
+	struct tcb_s *parent = this_task();
+	struct task_tcb_s *child;
+	uint32_t newsp;
+	uint32_t newfp;
+	uint32_t newtop;
+	uint32_t stacktop;
+	uint32_t stackutil;
 
-  svdbg("vfork context [%p]:\n", context);
-  svdbg("  r4:%08" PRIx32 " r5:%08" PRIx32
-        " r6:%08" PRIx32 " r7:%08" PRIx32 "\n",
-        context->r4, context->r5, context->r6, context->r7);
-  svdbg("  r8:%08" PRIx32 " r9:%08" PRIx32 " r10:%08" PRIx32 "\n",
-        context->r8, context->r9, context->r10);
-  svdbg("  fp:%08" PRIx32 " sp:%08" PRIx32 " lr:%08" PRIx32 "\n",
-        context->fp, context->sp, context->lr);
+	svdbg("vfork context [%p]:\n", context);
+	svdbg("  r4:%08" PRIx32 " r5:%08" PRIx32 " r6:%08" PRIx32 " r7:%08" PRIx32 "\n", context->r4, context->r5, context->r6, context->r7);
+	svdbg("  r8:%08" PRIx32 " r9:%08" PRIx32 " r10:%08" PRIx32 "\n", context->r8, context->r9, context->r10);
+	svdbg("  fp:%08" PRIx32 " sp:%08" PRIx32 " lr:%08" PRIx32 "\n", context->fp, context->sp, context->lr);
 
-  /* Allocate and initialize a TCB for the child task. */
+	/* Allocate and initialize a TCB for the child task. */
 
-  child = task_vforksetup((start_t)(context->lr & ~1));
-  if (!child)
-    {
-      sdbg("ERROR: task_vforksetup failed\n");
-      return (pid_t)ERROR;
-    }
+	child = task_vforksetup((start_t)(context->lr & ~1));
+	if (!child) {
+		sdbg("ERROR: task_vforksetup failed\n");
+		return (pid_t)ERROR;
+	}
 
-  svdbg("TCBs: Parent=%p Child=%p\n", parent, child);
+	svdbg("TCBs: Parent=%p Child=%p\n", parent, child);
 
-  /* How much of the parent's stack was utilized?  The ARM uses
-   * a push-down stack so that the current stack pointer should
-   * be lower than the initial, adjusted stack pointer.  The
-   * stack usage should be the difference between those two.
-   */
+	/* How much of the parent's stack was utilized?  The ARM uses
+	 * a push-down stack so that the current stack pointer should
+	 * be lower than the initial, adjusted stack pointer.  The
+	 * stack usage should be the difference between those two.
+	 */
 
-  stacktop = (uint32_t)parent->stack_base_ptr +
-                       parent->adj_stack_size;
-  DEBUGASSERT(stacktop > context->sp);
-  stackutil = stacktop - context->sp;
+	stacktop = (uint32_t)parent->stack_base_ptr + parent->adj_stack_size;
+	DEBUGASSERT(stacktop > context->sp);
+	stackutil = stacktop - context->sp;
 
-  svdbg("Parent: stackutil:%" PRIu32 "\n", stackutil);
+	svdbg("Parent: stackutil:%" PRIu32 "\n", stackutil);
 
-  /* Make some feeble effort to preserve the stack contents.  This is
-   * feeble because the stack surely contains invalid pointers and other
-   * content that will not work in the child context.  However, if the
-   * user follows all of the caveats of vfork() usage, even this feeble
-   * effort is overkill.
-   */
+	/* Make some feeble effort to preserve the stack contents.  This is
+	 * feeble because the stack surely contains invalid pointers and other
+	 * content that will not work in the child context.  However, if the
+	 * user follows all of the caveats of vfork() usage, even this feeble
+	 * effort is overkill.
+	 */
 
-  newtop = (uint32_t)child->cmn.stack_base_ptr +
-                     child->cmn.adj_stack_size;
+	newtop = (uint32_t)child->cmn.stack_base_ptr + child->cmn.adj_stack_size;
 
-  newsp = newtop - stackutil;
+	newsp = newtop - stackutil;
 
-  /* Move the register context to newtop. */
+	/* Move the register context to newtop. */
 
-  memcpy((void *)(newsp - XCPTCONTEXT_SIZE),
-         child->cmn.xcp.regs, XCPTCONTEXT_SIZE);
+	memcpy((void *)(newsp - XCPTCONTEXT_SIZE), child->cmn.xcp.regs, XCPTCONTEXT_SIZE);
 
-  child->cmn.xcp.regs = (void *)(newsp - XCPTCONTEXT_SIZE);
+	child->cmn.xcp.regs = (void *)(newsp - XCPTCONTEXT_SIZE);
 
-  memcpy((void *)newsp, (const void *)context->sp, stackutil);
+	memcpy((void *)newsp, (const void *)context->sp, stackutil);
 
-  /* Was there a frame pointer in place before? */
+	/* Was there a frame pointer in place before? */
 
-  if (context->fp >= context->sp && context->fp < stacktop)
-    {
-      uint32_t frameutil = stacktop - context->fp;
-      newfp = newtop - frameutil;
-    }
-  else
-    {
-      newfp = context->fp;
-    }
+	if (context->fp >= context->sp && context->fp < stacktop) {
+		uint32_t frameutil = stacktop - context->fp;
+		newfp = newtop - frameutil;
+	} else {
+		newfp = context->fp;
+	}
 
-  svdbg("Old stack top:%08" PRIx32 " SP:%08" PRIx32 " FP:%08" PRIx32 "\n",
-        stacktop, context->sp, context->fp);
-  svdbg("New stack top:%08" PRIx32 " SP:%08" PRIx32 " FP:%08" PRIx32 "\n",
-        newtop, newsp, newfp);
+	svdbg("Old stack top:%08" PRIx32 " SP:%08" PRIx32 " FP:%08" PRIx32 "\n", stacktop, context->sp, context->fp);
+	svdbg("New stack top:%08" PRIx32 " SP:%08" PRIx32 " FP:%08" PRIx32 "\n", newtop, newsp, newfp);
 
-  /* Update the stack pointer, frame pointer, and volatile registers.  When
-   * the child TCB was initialized, all of the values were set to zero.
-   * up_initial_state() altered a few values, but the return value in R0
-   * should be cleared to zero, providing the indication to the newly started
-   * child thread.
-   */
+	/* Update the stack pointer, frame pointer, and volatile registers.  When
+	 * the child TCB was initialized, all of the values were set to zero.
+	 * up_initial_state() altered a few values, but the return value in R0
+	 * should be cleared to zero, providing the indication to the newly started
+	 * child thread.
+	 */
 
-  child->cmn.xcp.regs[REG_R4]  = context->r4;  /* Volatile register r4 */
-  child->cmn.xcp.regs[REG_R5]  = context->r5;  /* Volatile register r5 */
-  child->cmn.xcp.regs[REG_R6]  = context->r6;  /* Volatile register r6 */
-  child->cmn.xcp.regs[REG_R7]  = context->r7;  /* Volatile register r7 */
-  child->cmn.xcp.regs[REG_R8]  = context->r8;  /* Volatile register r8 */
-  child->cmn.xcp.regs[REG_R9]  = context->r9;  /* Volatile register r9 */
-  child->cmn.xcp.regs[REG_R10] = context->r10; /* Volatile register r10 */
-  child->cmn.xcp.regs[REG_FP]  = newfp;        /* Frame pointer */
-  child->cmn.xcp.regs[REG_SP]  = newsp;        /* Stack pointer */
+	child->cmn.xcp.regs[REG_R4] = context->r4;	/* Volatile register r4 */
+	child->cmn.xcp.regs[REG_R5] = context->r5;	/* Volatile register r5 */
+	child->cmn.xcp.regs[REG_R6] = context->r6;	/* Volatile register r6 */
+	child->cmn.xcp.regs[REG_R7] = context->r7;	/* Volatile register r7 */
+	child->cmn.xcp.regs[REG_R8] = context->r8;	/* Volatile register r8 */
+	child->cmn.xcp.regs[REG_R9] = context->r9;	/* Volatile register r9 */
+	child->cmn.xcp.regs[REG_R10] = context->r10;	/* Volatile register r10 */
+	child->cmn.xcp.regs[REG_FP] = newfp;	/* Frame pointer */
+	child->cmn.xcp.regs[REG_SP] = newsp;	/* Stack pointer */
 
 #ifdef CONFIG_LIB_SYSCALL
-  /* If we got here via a syscall, then we are going to have to setup some
-   * syscall return information as well.
-   */
+	/* If we got here via a syscall, then we are going to have to setup some
+	 * syscall return information as well.
+	 */
 
-  if (parent->xcp.nsyscalls > 0)
-    {
-      int index;
-      for (index = 0; index < parent->xcp.nsyscalls; index++)
-        {
-          child->cmn.xcp.syscall[index].sysreturn =
-            parent->xcp.syscall[index].sysreturn;
+	if (parent->xcp.nsyscalls > 0) {
+		int index;
+		for (index = 0; index < parent->xcp.nsyscalls; index++) {
+			child->cmn.xcp.syscall[index].sysreturn = parent->xcp.syscall[index].sysreturn;
 
-          /* REVISIT:  This logic is *not* common. */
+			/* REVISIT:  This logic is *not* common. */
 
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
-#  ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_BUILD_PROTECTED
 
-          child->cmn.xcp.syscall[index].cpsr =
-            parent->xcp.syscall[index].cpsr;
+			child->cmn.xcp.syscall[index].cpsr = parent->xcp.syscall[index].cpsr;
 
-#  endif
+#endif
 
 #elif defined(CONFIG_ARCH_ARMV7R)
-#  ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_BUILD_PROTECTED
 
-          child->cmn.xcp.syscall[index].cpsr =
-            parent->xcp.syscall[index].cpsr;
+			child->cmn.xcp.syscall[index].cpsr = parent->xcp.syscall[index].cpsr;
 
-#  endif
+#endif
 #elif defined(CONFIG_ARCH_ARMV6M) || defined(CONFIG_ARCH_ARMV7M) || \
       defined(CONFIG_ARCH_ARMV8M)
 
-          child->cmn.xcp.syscall[index].excreturn =
-            parent->xcp.syscall[index].excreturn;
+			child->cmn.xcp.syscall[index].excreturn = parent->xcp.syscall[index].excreturn;
 #else
-#  error Missing logic
+#error Missing logic
 #endif
-        }
+		}
 
-      child->cmn.xcp.nsyscalls = parent->xcp.nsyscalls;
-    }
+		child->cmn.xcp.nsyscalls = parent->xcp.nsyscalls;
+	}
 #endif
 
-  /* And, finally, start the child task.  On a failure, nxtask_start_vfork()
-   * will discard the TCB by calling nxtask_abort_vfork().
-   */
+	/* And, finally, start the child task.  On a failure, nxtask_start_vfork()
+	 * will discard the TCB by calling nxtask_abort_vfork().
+	 */
 
-  return task_vforkstart(child);
+	return task_vforkstart(child);
 }

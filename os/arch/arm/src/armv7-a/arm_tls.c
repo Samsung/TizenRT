@@ -62,11 +62,9 @@
 
 int up_tls_size(void)
 {
-  /* Extra 8 bytes (2 pointer) according to GCC */
+	/* Extra 8 bytes (2 pointer) according to GCC */
 
-  return sizeof(struct tls_info_s) +
-         sizeof(void *) * 2 +
-         sizeof(uint32_t) * (_END_TBSS - _START_TDATA);
+	return sizeof(struct tls_info_s) + sizeof(void *) * 2 + sizeof(uint32_t) * (_END_TBSS - _START_TDATA);
 }
 
 /****************************************************************************
@@ -82,15 +80,15 @@ int up_tls_size(void)
 
 void up_tls_initialize(struct tls_info_s *info)
 {
-  uint8_t *tls_data = (uint8_t *)(info + 1);
+	uint8_t *tls_data = (uint8_t *)(info + 1);
 
-  uint32_t tdata_len = sizeof(uint32_t) * (_END_TDATA - _START_TDATA);
-  uint32_t tbss_len = sizeof(uint32_t) * (_END_TBSS - _START_TBSS);
+	uint32_t tdata_len = sizeof(uint32_t) * (_END_TDATA - _START_TDATA);
+	uint32_t tbss_len = sizeof(uint32_t) * (_END_TBSS - _START_TBSS);
 
-  tls_data += sizeof(void *) * 2;
+	tls_data += sizeof(void *) * 2;
 
-  memcpy(tls_data, _START_TDATA, tdata_len);
-  memset(tls_data + tdata_len, 0, tbss_len);
+	memcpy(tls_data, _START_TDATA, tdata_len);
+	memset(tls_data + tdata_len, 0, tbss_len);
 }
 
 /****************************************************************************
@@ -103,5 +101,5 @@ void up_tls_initialize(struct tls_info_s *info)
 
 void *__aeabi_read_tp(void)
 {
-  return (void *)(tls_get_info() + 1);
+	return (void *)(tls_get_info() + 1);
 }

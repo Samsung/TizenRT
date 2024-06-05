@@ -63,35 +63,28 @@
 #ifdef CONFIG_MM_KASAN
 __attribute__((no_sanitize_address))
 #endif
-static int backtrace(uintptr_t *base, uintptr_t *limit,
-                     uintptr_t *fp, uintptr_t *pc,
-                     void **buffer, int size, int *skip)
+static int backtrace(uintptr_t *base, uintptr_t *limit, uintptr_t *fp, uintptr_t *pc, void **buffer, int size, int *skip)
 {
-  int i = 0;
+	int i = 0;
 
-  if (pc)
-    {
-      i++;
-      if ((*skip)-- <= 0)
-        {
-          *buffer++ = pc;
-        }
-    }
+	if (pc) {
+		i++;
+		if ((*skip)-- <= 0) {
+			*buffer++ = pc;
+		}
+	}
 
-  for (; i < size; fp = (uintptr_t *)*(fp - 1), i++)
-    {
-      if (fp > limit || fp < base || *fp == 0)
-        {
-          break;
-        }
+	for (; i < size; fp = (uintptr_t *) * (fp - 1), i++) {
+		if (fp > limit || fp < base || *fp == 0) {
+			break;
+		}
 
-      if ((*skip)-- <= 0)
-        {
-          *buffer++ = (void *)*fp;
-        }
-    }
+		if ((*skip)-- <= 0) {
+			*buffer++ = (void *)*fp;
+		}
+	}
 
-  return i;
+	return i;
 }
 
 /****************************************************************************
@@ -126,71 +119,45 @@ static int backtrace(uintptr_t *base, uintptr_t *limit,
 #ifdef CONFIG_MM_KASAN
 __attribute__((no_sanitize_address))
 #endif
-int up_backtrace(struct tcb_s *tcb,
-                 void **buffer, int size, int skip)
+int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip)
 {
-  struct tcb_s *rtcb = this_task();
+	struct tcb_s *rtcb = this_task();
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
-  void *istacklimit;
+	void *istacklimit;
 #endif
-  irqstate_t flags;
-  int ret;
+	irqstate_t flags;
+	int ret;
 
-  if (size <= 0 || !buffer)
-    {
-      return 0;
-    }
+	if (size <= 0 || !buffer) {
+		return 0;
+	}
 
-  if (tcb == NULL || tcb == rtcb)
-    {
-      if (up_interrupt_context())
-        {
+	if (tcb == NULL || tcb == rtcb) {
+		if (up_interrupt_context()) {
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
-#  ifdef CONFIG_SMP
-          istacklimit = arm_intstack_top();
-#  else
-          istacklimit = &g_intstackbase;
-#  endif /* CONFIG_SMP */
-          ret = backtrace(istacklimit - (CONFIG_ARCH_INTERRUPTSTACK & ~7),
-                          istacklimit,
-                          (void *)__builtin_frame_address(0),
-                          NULL, buffer, size, &skip);
+#ifdef CONFIG_SMP
+			istacklimit = arm_intstack_top();
 #else
-          ret = backtrace(rtcb->stack_base_ptr,
-                          rtcb->stack_base_ptr + rtcb->adj_stack_size,
-                          (void *)__builtin_frame_address(0),
-                          NULL, buffer, size, &skip);
-#endif /* CONFIG_ARCH_INTERRUPTSTACK > 7 */
-          if (ret < size)
-            {
-              ret += backtrace(rtcb->stack_base_ptr,
-                               rtcb->stack_base_ptr + rtcb->adj_stack_size,
-                               (void *)CURRENT_REGS[REG_FP],
-                               (void *)CURRENT_REGS[REG_PC],
-                               &buffer[ret], size - ret, &skip);
-            }
-        }
-      else
-        {
-          ret = backtrace(rtcb->stack_base_ptr,
-                          rtcb->stack_base_ptr + rtcb->adj_stack_size,
-                          (void *)__builtin_frame_address(0),
-                          NULL, buffer, size, &skip);
-        }
-    }
-  else
-    {
-      flags = enter_critical_section();
+			istacklimit = &g_intstackbase;
+#endif							/* CONFIG_SMP */
+			ret = backtrace(istacklimit - (CONFIG_ARCH_INTERRUPTSTACK & ~7), istacklimit, (void *)__builtin_frame_address(0), NULL, buffer, size, &skip);
+#else
+			ret = backtrace(rtcb->stack_base_ptr, rtcb->stack_base_ptr + rtcb->adj_stack_size, (void *)__builtin_frame_address(0), NULL, buffer, size, &skip);
+#endif							/* CONFIG_ARCH_INTERRUPTSTACK > 7 */
+			if (ret < size) {
+				ret += backtrace(rtcb->stack_base_ptr, rtcb->stack_base_ptr + rtcb->adj_stack_size, (void *)CURRENT_REGS[REG_FP], (void *)CURRENT_REGS[REG_PC], &buffer[ret], size - ret, &skip);
+			}
+		} else {
+			ret = backtrace(rtcb->stack_base_ptr, rtcb->stack_base_ptr + rtcb->adj_stack_size, (void *)__builtin_frame_address(0), NULL, buffer, size, &skip);
+		}
+	} else {
+		flags = enter_critical_section();
 
-      ret = backtrace(tcb->stack_base_ptr,
-                      tcb->stack_base_ptr + tcb->adj_stack_size,
-                      (void *)tcb->xcp.regs[REG_FP],
-                      (void *)tcb->xcp.regs[REG_PC],
-                      buffer, size, &skip);
+		ret = backtrace(tcb->stack_base_ptr, tcb->stack_base_ptr + tcb->adj_stack_size, (void *)tcb->xcp.regs[REG_FP], (void *)tcb->xcp.regs[REG_PC], buffer, size, &skip);
 
-      leave_critical_section(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  return ret;
+	return ret;
 }
-#endif /* CONFIG_FRAME_POINTER && !CONFIG_ARM_THUMB */
+#endif							/* CONFIG_FRAME_POINTER && !CONFIG_ARM_THUMB */

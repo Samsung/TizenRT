@@ -64,8 +64,8 @@
 
 int up_putc(int ch)
 {
-  smh_call(SEMI_SYSLOG_WRITEC, &ch);
-  return ch;
+	smh_call(SEMI_SYSLOG_WRITEC, &ch);
+	return ch;
 }
 
 /****************************************************************************
@@ -78,16 +78,12 @@ int up_putc(int ch)
 
 void up_nputs(const char *str, size_t len)
 {
-  if (len == ~((size_t)0))
-    {
-      smh_call(SEMI_SYSLOG_WRITE0, (char *)str);
-    }
-  else
-    {
-      while (len-- > 0)
-        {
-          up_putc(*str++);
-        }
-    }
+	if (len == ~((size_t)0)) {
+		smh_call(SEMI_SYSLOG_WRITE0, (char *)str);
+	} else {
+		while (len-- > 0) {
+			up_putc(*str++);
+		}
+	}
 }
 #endif

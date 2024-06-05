@@ -53,8 +53,8 @@
 #include "tinyara/config.h"
 
 #ifndef __ASSEMBLY__
-#  include <sys/types.h>
-#  include <stdint.h>
+#include <sys/types.h>
+#include <stdint.h>
 #endif
 
 #include "mpcore.h"
@@ -70,83 +70,83 @@
 
 /* 1x32 bit field per register */
 
-#define GIC_INDEX1(n)              (n)                       /* 1 field per word */
-#define GIC_OFFSET1(n)             (GIC_INDEX1(n) << 2)      /* 32-bit word offset */
-#define GIC_SHIFT1(n)              (0)                       /* No shift */
-#define GIC_MASK1(n)               (0xffffffff)              /* Whole word */
+#define GIC_INDEX1(n)              (n)	/* 1 field per word */
+#define GIC_OFFSET1(n)             (GIC_INDEX1(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT1(n)              (0)	/* No shift */
+#define GIC_MASK1(n)               (0xffffffff)	/* Whole word */
 
 /* 2x16 bit field per register */
 
-#define GIC_INDEX2(n)              (n >> 1)                  /* 2 fields per word */
-#define GIC_OFFSET2(n)             (GIC_INDEX2(n) << 2)      /* 32-bit word offset */
-#define GIC_SHIFT2(n)              (((n) & 1) << 4)          /* Shift 16-bits per field */
-#define GIC_MASK2(n)               (0xffff << GIC_SHIFT2(n)) /* 16-bit mask */
+#define GIC_INDEX2(n)              (n >> 1)	/* 2 fields per word */
+#define GIC_OFFSET2(n)             (GIC_INDEX2(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT2(n)              (((n) & 1) << 4)	/* Shift 16-bits per field */
+#define GIC_MASK2(n)               (0xffff << GIC_SHIFT2(n))	/* 16-bit mask */
 
 /* 4x8 bit field per register */
 
-#define GIC_INDEX4(n)              (n >> 2)                  /* 4 fields per word */
-#define GIC_OFFSET4(n)             (GIC_INDEX4(n) << 2)      /* 32-bit word offset */
-#define GIC_SHIFT4(n)              (((n) & 3) << 3)          /* Shift 8-bits per field */
-#define GIC_MASK4(n)               (0xff << GIC_SHIFT4(n))   /* 8-bit mask */
+#define GIC_INDEX4(n)              (n >> 2)	/* 4 fields per word */
+#define GIC_OFFSET4(n)             (GIC_INDEX4(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT4(n)              (((n) & 3) << 3)	/* Shift 8-bits per field */
+#define GIC_MASK4(n)               (0xff << GIC_SHIFT4(n))	/* 8-bit mask */
 
 /* 8x4 bit field per register */
 
-#define GIC_INDEX8(n)              (n >> 3)                  /* 8 fields per word */
-#define GIC_OFFSET8(n)             (GIC_INDEX8(n) << 2)      /* 32-bit word offset */
-#define GIC_SHIFT8(n)              (((n) & 7) << 2)          /* Shift 4-bits per field */
-#define GIC_MASK8(n)               (15 << GIC_SHIFT8(n))     /* 4-bit mask */
+#define GIC_INDEX8(n)              (n >> 3)	/* 8 fields per word */
+#define GIC_OFFSET8(n)             (GIC_INDEX8(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT8(n)              (((n) & 7) << 2)	/* Shift 4-bits per field */
+#define GIC_MASK8(n)               (15 << GIC_SHIFT8(n))	/* 4-bit mask */
 
 /* 16x2 bit field per register */
 
-#define GIC_INDEX16(n)             (n >> 4)                  /* 16 fields per word */
-#define GIC_OFFSET16(n)            (GIC_INDEX16(n) << 2)     /* 32-bit word offset */
-#define GIC_SHIFT16(n)             (((n) & 15) << 1)         /* Shift 2-bits per field */
-#define GIC_MASK16(n)              (3 << GIC_SHIFT16(n))     /* 2-bit mask */
+#define GIC_INDEX16(n)             (n >> 4)	/* 16 fields per word */
+#define GIC_OFFSET16(n)            (GIC_INDEX16(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT16(n)             (((n) & 15) << 1)	/* Shift 2-bits per field */
+#define GIC_MASK16(n)              (3 << GIC_SHIFT16(n))	/* 2-bit mask */
 
 /* 32x1 bit field per register */
 
-#define GIC_INDEX32(n)             (n >> 5)                  /* 32 fields per word */
-#define GIC_OFFSET32(n)            (GIC_INDEX32(n) << 2)     /* 32-bit word offset */
-#define GIC_SHIFT32(n)             ((n) & 31)                /* Shift 1-bit per field */
-#define GIC_MASK32(n)              (1 << GIC_SHIFT32(n))     /* 1-bit mask */
+#define GIC_INDEX32(n)             (n >> 5)	/* 32 fields per word */
+#define GIC_OFFSET32(n)            (GIC_INDEX32(n) << 2)	/* 32-bit word offset */
+#define GIC_SHIFT32(n)             ((n) & 31)	/* Shift 1-bit per field */
+#define GIC_MASK32(n)              (1 << GIC_SHIFT32(n))	/* 1-bit mask */
 
 /* GIC Register Offsets *****************************************************/
 
 /* CPU Interface registers */
 
-#define GIC_ICCICR_OFFSET          0x0000    /* CPU Interface Control Register */
-#define GIC_ICCPMR_OFFSET          0x0004    /* Interrupt Priority Mask Register */
-#define GIC_ICCBPR_OFFSET          0x0008    /* Binary point Register */
-#define GIC_ICCIAR_OFFSET          0x000c    /* Interrupt Acknowledge */
-#define GIC_ICCEOIR_OFFSET         0x0010    /* End of interrupt */
-#define GIC_ICCRPR_OFFSET          0x0014    /* Running interrupt */
-#define GIC_ICCHPIR_OFFSET         0x0018    /* Highest pending interrupt */
-#define GIC_ICCABPR_OFFSET         0x001c    /* Aliased Non-secure Binary Point Register */
-#define GIC_ICCAIAR_OFFSET         0x0020    /* Aliased Interrupt Acknowledge Register */
-#define GIC_ICCAEOIR_OFFSET        0x0024    /* Aliased End of Interrupt Register */
-#define GIC_ICCAHPIR_OFFSET        0x0028    /* Aliased Highest Priority Pending Interrupt Register */
-                                             /* 0x002c-0x003c: Reserved */
-                                             /* 0x0040-0x00cf: Implementation defined */
-#define GIC_ICCAPR1_OFFSET         0x00d0    /* Active Priorities Register 1 */
-#define GIC_ICCAPR2_OFFSET         0x00d4    /* Active Priorities Register 2 */
-#define GIC_ICCAPR3_OFFSET         0x00d8    /* Active Priorities Register 3 */
-#define GIC_ICCAPR4_OFFSET         0x00dc    /* Active Priorities Register 4 */
-#define GIC_ICCNSAPR1_OFFSET       0x00e0    /* Non-secure Active Priorities Register 1 */
-#define GIC_ICCNSAPR2_OFFSET       0x00e4    /* Non-secure Active Priorities Register 2 */
-#define GIC_ICCNSAPR3_OFFSET       0x00e8    /* Non-secure Active Priorities Register 3 */
-#define GIC_ICCNSAPR4_OFFSET       0x00ec    /* Non-secure Active Priorities Register 4 */
-                                             /* 0x00ed-0x00f8: Reserved */
-#define GIC_ICCIDR_OFFSET          0x00fc    /* CPU Interface Implementer ID Register */
-#define GIC_ICCDIR_OFFSET          0x1000    /* Deactivate Interrupt Register */
+#define GIC_ICCICR_OFFSET          0x0000	/* CPU Interface Control Register */
+#define GIC_ICCPMR_OFFSET          0x0004	/* Interrupt Priority Mask Register */
+#define GIC_ICCBPR_OFFSET          0x0008	/* Binary point Register */
+#define GIC_ICCIAR_OFFSET          0x000c	/* Interrupt Acknowledge */
+#define GIC_ICCEOIR_OFFSET         0x0010	/* End of interrupt */
+#define GIC_ICCRPR_OFFSET          0x0014	/* Running interrupt */
+#define GIC_ICCHPIR_OFFSET         0x0018	/* Highest pending interrupt */
+#define GIC_ICCABPR_OFFSET         0x001c	/* Aliased Non-secure Binary Point Register */
+#define GIC_ICCAIAR_OFFSET         0x0020	/* Aliased Interrupt Acknowledge Register */
+#define GIC_ICCAEOIR_OFFSET        0x0024	/* Aliased End of Interrupt Register */
+#define GIC_ICCAHPIR_OFFSET        0x0028	/* Aliased Highest Priority Pending Interrupt Register */
+/* 0x002c-0x003c: Reserved */
+/* 0x0040-0x00cf: Implementation defined */
+#define GIC_ICCAPR1_OFFSET         0x00d0	/* Active Priorities Register 1 */
+#define GIC_ICCAPR2_OFFSET         0x00d4	/* Active Priorities Register 2 */
+#define GIC_ICCAPR3_OFFSET         0x00d8	/* Active Priorities Register 3 */
+#define GIC_ICCAPR4_OFFSET         0x00dc	/* Active Priorities Register 4 */
+#define GIC_ICCNSAPR1_OFFSET       0x00e0	/* Non-secure Active Priorities Register 1 */
+#define GIC_ICCNSAPR2_OFFSET       0x00e4	/* Non-secure Active Priorities Register 2 */
+#define GIC_ICCNSAPR3_OFFSET       0x00e8	/* Non-secure Active Priorities Register 3 */
+#define GIC_ICCNSAPR4_OFFSET       0x00ec	/* Non-secure Active Priorities Register 4 */
+/* 0x00ed-0x00f8: Reserved */
+#define GIC_ICCIDR_OFFSET          0x00fc	/* CPU Interface Implementer ID Register */
+#define GIC_ICCDIR_OFFSET          0x1000	/* Deactivate Interrupt Register */
 
 /* Distributor Registers */
 
-#define GIC_ICDDCR_OFFSET          0x0000    /* Distributor Control Register */
-#define GIC_ICDICTR_OFFSET         0x0004    /* Interrupt Controller Type Register */
-#define GIC_ICDIIDR_OFFSET         0x0008    /* Distributor Implementer ID Register */
-                                             /* 0x000c-0x001c: Reserved */
-                                             /* 0x0020-0x003c: Implementation defined */
-                                             /* 0x0040-0x007c: Reserved */
+#define GIC_ICDDCR_OFFSET          0x0000	/* Distributor Control Register */
+#define GIC_ICDICTR_OFFSET         0x0004	/* Interrupt Controller Type Register */
+#define GIC_ICDIIDR_OFFSET         0x0008	/* Distributor Implementer ID Register */
+/* 0x000c-0x001c: Reserved */
+/* 0x0020-0x003c: Implementation defined */
+/* 0x0040-0x007c: Reserved */
 
 /* Interrupt Security Registers: 0x0080-0x009c */
 
@@ -198,7 +198,7 @@
 
 /* SPI Status Registers: 0x0d04-0x0d1c */
 
-#define GIC_ICDPPISR_OFFSET        0x0d00    /* PPI Status Register */
+#define GIC_ICDPPISR_OFFSET        0x0d00	/* PPI Status Register */
 #define GIC_ICDSPISR_OFFSET(n)     (0x0d00 + GIC_OFFSET32(n))
 
 /* 0x0d80-0x0dfc: Reserved */
@@ -209,7 +209,7 @@
 
 /* Software Generated Interrupt Register: 0x0f00 */
 
-#define GIC_ICDSGIR_OFFSET         0x0f00    /* Software Generated Interrupt Register */
+#define GIC_ICDSGIR_OFFSET         0x0f00	/* Software Generated Interrupt Register */
 
 /* 0x0f0c-0x0f0c: Reserved */
 
@@ -297,47 +297,47 @@
 
 /* CPU Interface Control Register -- without security extensions */
 
-#define GIC_ICCICR_ENABLE          (1 << 0)  /* Bit 0:  Enable the CPU interface for this GIC */
-                                             /* Bits 1-31: Reserved */
+#define GIC_ICCICR_ENABLE          (1 << 0)	/* Bit 0:  Enable the CPU interface for this GIC */
+/* Bits 1-31: Reserved */
 
 /* CPU Interface Control Register -- with security extensions,
  * non-secure copy
  */
 
-#define GIC_ICCICRU_ENABLEGRP1     (1 << 0)  /* Bit 0:  Enable Group 1 interrupts for the CPU */
-                                             /* Bits 1-4: Reserved */
-#define GIC_ICCICRU_FIQBYPDISGRP1  (1 << 5)  /* Bit 5:  FIQ disabled for CPU Group 1*/
-#define GIC_ICCICRU_IRQBYPDISGRP1  (1 << 6)  /* Bit 6:  IRQ disabled for CPU Group 1*/
-                                             /* Bits 7-8: Reserved */
-#define GIC_ICCICRU_EOIMODENS      (1 << 9)  /* Bit 9:  Control EIOIR access (non-secure) */
-                                             /* Bits 10-31: Reserved */
+#define GIC_ICCICRU_ENABLEGRP1     (1 << 0)	/* Bit 0:  Enable Group 1 interrupts for the CPU */
+/* Bits 1-4: Reserved */
+#define GIC_ICCICRU_FIQBYPDISGRP1  (1 << 5)	/* Bit 5:  FIQ disabled for CPU Group 1 */
+#define GIC_ICCICRU_IRQBYPDISGRP1  (1 << 6)	/* Bit 6:  IRQ disabled for CPU Group 1 */
+/* Bits 7-8: Reserved */
+#define GIC_ICCICRU_EOIMODENS      (1 << 9)	/* Bit 9:  Control EIOIR access (non-secure) */
+/* Bits 10-31: Reserved */
 
 /* CPU Interface Control Register -- with security extensions,
  * secure copy
  */
 
-#define GIC_ICCICRS_ENABLEGRP0     (1 << 0)  /* Bit 0:  Enable Group 0 interrupts for the CPU */
-#define GIC_ICCICRS_ENABLEGRP1     (1 << 1)  /* Bit 1:  Enable Group 1 interrupts for the CPU */
-#define GIC_ICCICRS_ACKTCTL        (1 << 2)  /* Bit 2:  Group 1 interrupt activation control */
-#define GIC_ICCICRS_FIQEN          (1 << 3)  /* Bit 3:  Signal Group 0 via FIQ */
-#define GIC_ICCICRS_CBPR           (1 << 4)  /* Bit 4:  Control Group 0/1 Pre-emption */
-#define GIC_ICCICRS_FIQBYPDISGRP0  (1 << 5)  /* Bit 5:  FIQ disabled for CPU Group 0 */
-#define GIC_ICCICRS_IRQBYPDISGRP0  (1 << 6)  /* Bit 6:  IRQ disabled for CPU Group 0 */
-#define GIC_ICCICRS_FIQBYPDISGRP1  (1 << 7)  /* Bit 5:  FIQ disabled for CPU Group 1 */
-#define GIC_ICCICRS_IRQBYPDISGRP1  (1 << 8)  /* Bit 6:  IRQ disabled for CPU Group 1 */
-#define GIC_ICCICRS_EOIMODES       (1 << 9)  /* Bit 6:  Control EIOIR access (secure) */
-#define GIC_ICCICRS_EOIMODENS      (1 << 10) /* Bit 10: Control EIOIR access (non-secure) */
-                                             /* Bits 11-31: Reserved */
+#define GIC_ICCICRS_ENABLEGRP0     (1 << 0)	/* Bit 0:  Enable Group 0 interrupts for the CPU */
+#define GIC_ICCICRS_ENABLEGRP1     (1 << 1)	/* Bit 1:  Enable Group 1 interrupts for the CPU */
+#define GIC_ICCICRS_ACKTCTL        (1 << 2)	/* Bit 2:  Group 1 interrupt activation control */
+#define GIC_ICCICRS_FIQEN          (1 << 3)	/* Bit 3:  Signal Group 0 via FIQ */
+#define GIC_ICCICRS_CBPR           (1 << 4)	/* Bit 4:  Control Group 0/1 Pre-emption */
+#define GIC_ICCICRS_FIQBYPDISGRP0  (1 << 5)	/* Bit 5:  FIQ disabled for CPU Group 0 */
+#define GIC_ICCICRS_IRQBYPDISGRP0  (1 << 6)	/* Bit 6:  IRQ disabled for CPU Group 0 */
+#define GIC_ICCICRS_FIQBYPDISGRP1  (1 << 7)	/* Bit 5:  FIQ disabled for CPU Group 1 */
+#define GIC_ICCICRS_IRQBYPDISGRP1  (1 << 8)	/* Bit 6:  IRQ disabled for CPU Group 1 */
+#define GIC_ICCICRS_EOIMODES       (1 << 9)	/* Bit 6:  Control EIOIR access (secure) */
+#define GIC_ICCICRS_EOIMODENS      (1 << 10)	/* Bit 10: Control EIOIR access (non-secure) */
+/* Bits 11-31: Reserved */
 
 /* Interrupt Priority Mask Register.  Priority values are 8-bit unsigned
  * binary. A GIC supports a minimum of 16 and a maximum of 256 priority
  * levels.  As a result, PMR settings make sense.
  */
 
-#define GIC_ICCPMR_SHIFT           (0)       /* Bits 0-7: Priority mask */
+#define GIC_ICCPMR_SHIFT           (0)	/* Bits 0-7: Priority mask */
 #define GIC_ICCPMR_MASK            (0xff << GIC_ICCPMR_SHIFT)
-#  define GIC_ICCPMR_VALUE(n)      ((uint32_t)(n) << GIC_ICCPMR_SHIFT)
-                                             /* Bits 8-31: Reserved */
+#define GIC_ICCPMR_VALUE(n)      ((uint32_t)(n) << GIC_ICCPMR_SHIFT)
+/* Bits 8-31: Reserved */
 
 /* Binary point Register and Aliased Non-secure Binary Point Register.
  * Priority values are 8-bit unsigned binary. A GIC supports a minimum of
@@ -345,62 +345,62 @@
  * point settings make sense.
  */
 
-#define GIC_ICCBPR_SHIFT           (0)       /* Bits 0-2: Binary point */
+#define GIC_ICCBPR_SHIFT           (0)	/* Bits 0-2: Binary point */
 #define GIC_ICCBPR_MASK            (7 << GIC_ICCBPR_SHIFT)
-#  define GIC_ICCBPR_1_7           (0 << GIC_ICCBPR_SHIFT) /* Priority bits [7:1] compared for pre-emption */
-#  define GIC_ICCBPR_2_7           (1 << GIC_ICCBPR_SHIFT) /* Priority bits [7:2] compared for pre-emption */
-#  define GIC_ICCBPR_3_7           (2 << GIC_ICCBPR_SHIFT) /* Priority bits [7:2] compared for pre-emption */
-#  define GIC_ICCBPR_4_7           (3 << GIC_ICCBPR_SHIFT) /* Priority bits [7:2] compared for pre-emption */
-#  define GIC_ICCBPR_5_7           (4 << GIC_ICCBPR_SHIFT) /* Priority bits [7:5] compared for pre-emption */
-#  define GIC_ICCBPR_6_7           (5 << GIC_ICCBPR_SHIFT) /* Priority bits [7:6] compared for pre-emption */
-#  define GIC_ICCBPR_7_7           (6 << GIC_ICCBPR_SHIFT) /* Priority bit [7] compared for pre-emption */
-#  define GIC_ICCBPR_NOPREMPT      (7 << GIC_ICCBPR_SHIFT) /* No pre-emption is performed */
+#define GIC_ICCBPR_1_7           (0 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:1] compared for pre-emption */
+#define GIC_ICCBPR_2_7           (1 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:2] compared for pre-emption */
+#define GIC_ICCBPR_3_7           (2 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:2] compared for pre-emption */
+#define GIC_ICCBPR_4_7           (3 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:2] compared for pre-emption */
+#define GIC_ICCBPR_5_7           (4 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:5] compared for pre-emption */
+#define GIC_ICCBPR_6_7           (5 << GIC_ICCBPR_SHIFT)	/* Priority bits [7:6] compared for pre-emption */
+#define GIC_ICCBPR_7_7           (6 << GIC_ICCBPR_SHIFT)	/* Priority bit [7] compared for pre-emption */
+#define GIC_ICCBPR_NOPREMPT      (7 << GIC_ICCBPR_SHIFT)	/* No pre-emption is performed */
 
-                                             /* Bits 3-31: Reserved */
+/* Bits 3-31: Reserved */
 
 /* Interrupt Acknowledge Register */
 
-#define GIC_ICCIAR_INTID_SHIFT     (0)       /* Bits 0-9: Interrupt ID */
+#define GIC_ICCIAR_INTID_SHIFT     (0)	/* Bits 0-9: Interrupt ID */
 #define GIC_ICCIAR_INTID_MASK      (0x3ff << GIC_ICCIAR_INTID_SHIFT)
-#  define GIC_ICCIAR_INTID(n)      ((uint32_t)(n) << GIC_ICCIAR_INTID_SHIFT)
-#define GIC_ICCIAR_CPUSRC_SHIFT    (10)      /* Bits 10-12: CPU source ID */
+#define GIC_ICCIAR_INTID(n)      ((uint32_t)(n) << GIC_ICCIAR_INTID_SHIFT)
+#define GIC_ICCIAR_CPUSRC_SHIFT    (10)	/* Bits 10-12: CPU source ID */
 #define GIC_ICCIAR_CPUSRC_MASK     (7 << GIC_ICCIAR_CPUSRC_SHIFT)
-#  define GIC_ICCIAR_CPUSRC(n)     ((uint32_t)(n) << GIC_ICCIAR_CPUSRC_SHIFT)
+#define GIC_ICCIAR_CPUSRC(n)     ((uint32_t)(n) << GIC_ICCIAR_CPUSRC_SHIFT)
 
-                                             /* Bits 13-31: Reserved */
+/* Bits 13-31: Reserved */
 
 /* End of Interrupt Register */
 
 #define GIC_ICCEOIR_SPURIOUS       (0x3ff)
 
-#define GIC_ICCEOIR_INTID_SHIFT    (0)       /* Bits 0-9: Interrupt ID */
+#define GIC_ICCEOIR_INTID_SHIFT    (0)	/* Bits 0-9: Interrupt ID */
 #define GIC_ICCEOIR_INTID_MASK     (0x3ff << GIC_ICCEOIR_INTID_SHIFT)
-#  define GIC_ICCEOIR_INTID(n)     ((uint32_t)(n) << GIC_ICCEOIR_INTID_SHIFT)
-#define GIC_ICCEOIR_CPUSRC_SHIFT   (10)      /* Bits 10-12: CPU source ID */
+#define GIC_ICCEOIR_INTID(n)     ((uint32_t)(n) << GIC_ICCEOIR_INTID_SHIFT)
+#define GIC_ICCEOIR_CPUSRC_SHIFT   (10)	/* Bits 10-12: CPU source ID */
 #define GIC_ICCEOIR_CPUSRC_MASK    (7 << GIC_ICCEOIR_CPUSRC_SHIFT)
-#  define GIC_ICCEOIR_CPUSRC(n)    ((uint32_t)(n) << GIC_ICCEOIR_CPUSRC_SHIFT)
+#define GIC_ICCEOIR_CPUSRC(n)    ((uint32_t)(n) << GIC_ICCEOIR_CPUSRC_SHIFT)
 
-                                             /* Bits 13-31: Reserved */
+/* Bits 13-31: Reserved */
 
 /* Running Interrupt Register */
 
-                                             /* Bits 0-3: Reserved */
-#define GIC_ICCRPR_PRIO_SHIFT      (4)       /* Bits 4-7: Priority mask */
+/* Bits 0-3: Reserved */
+#define GIC_ICCRPR_PRIO_SHIFT      (4)	/* Bits 4-7: Priority mask */
 #define GIC_ICCRPR_PRIO_MASK       (15 << GIC_ICCRPR_PRIO_SHIFT)
-#  define GIC_ICCRPR_PRIO_VALUE(n) ((uint32_t)(n) << GIC_ICCRPR_PRIO_SHIFT)
+#define GIC_ICCRPR_PRIO_VALUE(n) ((uint32_t)(n) << GIC_ICCRPR_PRIO_SHIFT)
 
-                                             /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Highest Pending Interrupt Register */
 
-#define GIC_ICCHPIR_INTID_SHIFT    (0)       /* Bits 0-9: Interrupt ID */
+#define GIC_ICCHPIR_INTID_SHIFT    (0)	/* Bits 0-9: Interrupt ID */
 #define GIC_ICCHPIR_INTID_MASK     (0x3ff << GIC_ICCHPIR_INTID_SHIFT)
-#  define GIC_ICCHPIR_INTID(n)     ((uint32_t)(n) << GIC_ICCHPIR_INTID_SHIFT)
-#define GIC_ICCHPIR_CPUSRC_SHIFT   (10)      /* Bits 10-12: CPU source ID */
+#define GIC_ICCHPIR_INTID(n)     ((uint32_t)(n) << GIC_ICCHPIR_INTID_SHIFT)
+#define GIC_ICCHPIR_CPUSRC_SHIFT   (10)	/* Bits 10-12: CPU source ID */
 #define GIC_ICCHPIR_CPUSRC_MASK    (7 << GIC_ICCHPIR_CPUSRC_SHIFT)
-#  define GIC_ICCHPIR_CPUSRC(n)    ((uint32_t)(n) << GIC_ICCHPIR_CPUSRC_SHIFT)
+#define GIC_ICCHPIR_CPUSRC(n)    ((uint32_t)(n) << GIC_ICCHPIR_CPUSRC_SHIFT)
 
-                                             /* Bits 13-31: Reserved */
+/* Bits 13-31: Reserved */
 
 /* Aliased Interrupt Acknowledge Register */
 #define GIC_ICCAIAR_
@@ -437,13 +437,13 @@
 
 /* CPU Interface Implementer ID Register */
 
-#define GIC_ICCIDR_IMPL_SHIFT      (0)       /* Bits 0-11:  Implementer */
+#define GIC_ICCIDR_IMPL_SHIFT      (0)	/* Bits 0-11:  Implementer */
 #define GIC_ICCIDR_IMPL_MASK       (0xfff << GIC_ICCIDR_IMPL_SHIFT)
-#define GIC_ICCIDR_REVISION_SHIFT  (12)      /* Bits 12-15: Revision number */
+#define GIC_ICCIDR_REVISION_SHIFT  (12)	/* Bits 12-15: Revision number */
 #define GIC_ICCIDR_REVISION_MASK   (15 << GIC_ICCIDR_REVISION_SHIFT)
-#define GIC_ICCIDR_ARCHNO_SHIFT    (16)      /* Bits 16-19: Architecture number */
+#define GIC_ICCIDR_ARCHNO_SHIFT    (16)	/* Bits 16-19: Architecture number */
 #define GIC_ICCIDR_ARCHNO_MASK     (15 << GIC_ICCIDR_ARCHNO_SHIFT)
-#define GIC_ICCIDR_PARTNO_SHIFT    (20)      /* Bits 20-31: Part number */
+#define GIC_ICCIDR_PARTNO_SHIFT    (20)	/* Bits 20-31: Part number */
 #define GIC_ICCIDR_PARTNO_MASK     (0xfff << GIC_ICCIDR_PARTNO_SHIFT)
 
 /* Deactivate Interrupt Register */
@@ -453,34 +453,34 @@
 
 /* Distributor Control Register -- without security extensions */
 
-#define GIC_ICDDCR_ENABLE          (1 << 0)  /* Bit 0: Enable forwarding of interrupts */
-                                             /* Bits 1-31: Reserved */
+#define GIC_ICDDCR_ENABLE          (1 << 0)	/* Bit 0: Enable forwarding of interrupts */
+/* Bits 1-31: Reserved */
 
 /* Distributor Control Register -- with security extensions */
 
-#define GIC_ICDDCR_ENABLEGRP0      (1 << 0)  /* Bit 0: Enable forwarding of Group 0 interrupts */
-#define GIC_ICDDCR_ENABLEGRP1      (1 << 1)  /* Bit 1: Enable forwarding of Group 1 interrupts */
-                                             /* Bits 2-31: Reserved */
+#define GIC_ICDDCR_ENABLEGRP0      (1 << 0)	/* Bit 0: Enable forwarding of Group 0 interrupts */
+#define GIC_ICDDCR_ENABLEGRP1      (1 << 1)	/* Bit 1: Enable forwarding of Group 1 interrupts */
+/* Bits 2-31: Reserved */
 
 /* Interrupt Controller Type Register */
 
-#define GIC_ICDICTR_ITLINES_SHIFT  (0)       /* Bits 0-4: It lines number */
+#define GIC_ICDICTR_ITLINES_SHIFT  (0)	/* Bits 0-4: It lines number */
 #define GIC_ICDICTR_ITLINES_MASK   (0x1f << GIC_ICDICTR_ITLINES_SHIFT)
-#define GIC_ICDICTR_CPUNO_SHIFT    (5)       /* Bits 5-7: CPU number */
+#define GIC_ICDICTR_CPUNO_SHIFT    (5)	/* Bits 5-7: CPU number */
 #define GIC_ICDICTR_CPUNO_MASK     (7 << GIC_ICDICTR_CPUNO_SHIFT)
-                                             /* Bits 8-9: Reserved */
-#define GIC_ICDICTR_SECEXTNS       (1 << 10) /* Bit 10: Number of security domains */
-#define GIC_ICDICTR_LSPI_SHIFT     (11)      /* Bits 11-15: Number of Lockable Shared Peripheral Interrupts */
+/* Bits 8-9: Reserved */
+#define GIC_ICDICTR_SECEXTNS       (1 << 10)	/* Bit 10: Number of security domains */
+#define GIC_ICDICTR_LSPI_SHIFT     (11)	/* Bits 11-15: Number of Lockable Shared Peripheral Interrupts */
 #define GIC_ICDICTR_LSPI_MASK      (0x1f << GIC_ICDICTR_LSPI_SHIFT)
-                                             /* Bits 16-31: Reserved */
+/* Bits 16-31: Reserved */
 
 /* Distributor Implementer ID Register */
 
-#define GIC_ICDIIDR_IMPL_SHIFT      (0)      /* Bits 0-11: Implementer */
+#define GIC_ICDIIDR_IMPL_SHIFT      (0)	/* Bits 0-11: Implementer */
 #define GIC_ICDIIDR_IMPL_MASK       (0xfff << GIC_ICDIIDR_IMPL_SHIFT)
-#define GIC_ICDIIDR_REVISION_SHIFT  (12)     /* Bits 12-23: Revision number */
+#define GIC_ICDIIDR_REVISION_SHIFT  (12)	/* Bits 12-23: Revision number */
 #define GIC_ICDIIDR_REVISION_MASK   (0xfff << GIC_ICDIIDR_REVISION_SHIFT)
-#define GIC_ICDIIDR_VERSION_SHIFT   (24)     /* Bits 24-31: Iimplementer version */
+#define GIC_ICDIIDR_VERSION_SHIFT   (24)	/* Bits 24-31: Iimplementer version */
 #define GIC_ICDIIDR_VERSION_MASK    (0xff << GIC_ICDIIDR_VERSION_SHIFT)
 
 /* Interrupt Security Registers: 0x0080-0x009c */
@@ -525,7 +525,7 @@
 
 #define GIC_ICDIPR_ID_SHIFT(n)     GIC_SHIFT4(n)
 #define GIC_ICDIPR_ID_MASK(n)      GIC_MASK4(n)
-#  define GIC_ICDIPR_ID(n,p)       ((uint32_t)(p) << GIC_SHIFT4(n))
+#define GIC_ICDIPR_ID(n,p)       ((uint32_t)(p) << GIC_SHIFT4(n))
 
 /* Interrupt Processor Target Registers */
 
@@ -536,28 +536,28 @@
 
 #define GIC_ICDIPTR_ID_SHIFT(n)    GIC_SHIFT4(n)
 #define GIC_ICDIPTR_ID_MASK(n)     GIC_MASK4(n)
-#  define GIC_ICDIPTR_ID(n,t)      ((uint32_t)(t) <<GIC_SHIFT4(n))
+#define GIC_ICDIPTR_ID(n,t)      ((uint32_t)(t) <<GIC_SHIFT4(n))
 
 /* Interrupt Configuration Register */
 
-#define INT_ICDICFR_NN             0         /* Bit n: 0= N-N Model */
-#define INT_ICDICFR_1N             1         /* Bit n: 1= 1-N Model */
-#define INT_ICDICFR_LEVEL          0         /* Bit n+1: 0=Level sensitive */
-#define INT_ICDICFR_EDGE           2         /* Bit n+2: 1=Edge sensitive */
+#define INT_ICDICFR_NN             0	/* Bit n: 0= N-N Model */
+#define INT_ICDICFR_1N             1	/* Bit n: 1= 1-N Model */
+#define INT_ICDICFR_LEVEL          0	/* Bit n+1: 0=Level sensitive */
+#define INT_ICDICFR_EDGE           2	/* Bit n+2: 1=Edge sensitive */
 
 #define GIC_ICDICFR_ID_SHIFT(n)    GIC_SHIFT16(n)
 #define GIC_ICDICFR_ID_MASK(n)     GIC_MASK16(n)
-#  define GIC_ICDICFR_ID(n,c)      ((uint32_t)(c) << GIC_SHIFT16(n))
+#define GIC_ICDICFR_ID(n,c)      ((uint32_t)(c) << GIC_SHIFT16(n))
 
 /* PPI Status Register */
 
-#define GIC_ICDPPISR_PPI(n)        (1 << ((n) + 11)) /* Bits 11-15:  PPI(n) status, n=0-4 */
+#define GIC_ICDPPISR_PPI(n)        (1 << ((n) + 11))	/* Bits 11-15:  PPI(n) status, n=0-4 */
 
-#  define GIC_ICDPPISR_GTM         (1 << 11) /* Bit 11:  PPI[0], Global Timer */
-#  define GIC_ICDPPISR_NFIQ        (1 << 12) /* Bit 12:  PPI[1], FIQ, active low */
-#  define GIC_ICDPPISR_PTM         (1 << 13) /* Bit 13:  PPI[2], Private Timer */
-#  define GIC_ICDPPISR_PWDT        (1 << 14) /* Bit 14:  PPI[3], Private Watchdog */
-#  define GIC_ICDPPISR_NIRQ        (1 << 15) /* Bit 15:  PPI[3], IRQ, active low */
+#define GIC_ICDPPISR_GTM         (1 << 11)	/* Bit 11:  PPI[0], Global Timer */
+#define GIC_ICDPPISR_NFIQ        (1 << 12)	/* Bit 12:  PPI[1], FIQ, active low */
+#define GIC_ICDPPISR_PTM         (1 << 13)	/* Bit 13:  PPI[2], Private Timer */
+#define GIC_ICDPPISR_PWDT        (1 << 14)	/* Bit 14:  PPI[3], Private Watchdog */
+#define GIC_ICDPPISR_NIRQ        (1 << 15)	/* Bit 15:  PPI[3], IRQ, active low */
 
 /* SPI Status Registers */
 
@@ -569,19 +569,19 @@
 
 /* Software Generated Interrupt Register */
 
-#define GIC_ICDSGIR_INTID_SHIFT       (0)    /* Bits 0-9: Interrupt ID */
+#define GIC_ICDSGIR_INTID_SHIFT       (0)	/* Bits 0-9: Interrupt ID */
 #define GIC_ICDSGIR_INTID_MASK        (0x3ff << GIC_ICDSGIR_INTID_SHIFT)
-#  define GIC_ICDSGIR_INTID(n)        ((uint32_t)(n) << GIC_ICDSGIR_INTID_SHIFT)
-                                             /* Bits 10-15: Reserved */
-#define GIC_ICDSGIR_CPUTARGET_SHIFT   (16)   /* Bits 16-23: CPU target */
+#define GIC_ICDSGIR_INTID(n)        ((uint32_t)(n) << GIC_ICDSGIR_INTID_SHIFT)
+/* Bits 10-15: Reserved */
+#define GIC_ICDSGIR_CPUTARGET_SHIFT   (16)	/* Bits 16-23: CPU target */
 #define GIC_ICDSGIR_CPUTARGET_MASK    (0xff << GIC_ICDSGIR_CPUTARGET_SHIFT)
-#  define GIC_ICDSGIR_CPUTARGET(n)    ((uint32_t)(n) << GIC_ICDSGIR_CPUTARGET_SHIFT)
-                                             /* Bits 26-31: Reserved */
-#define GIC_ICDSGIR_TGTFILTER_SHIFT   (24)   /* Bits 24-25: Target filter */
+#define GIC_ICDSGIR_CPUTARGET(n)    ((uint32_t)(n) << GIC_ICDSGIR_CPUTARGET_SHIFT)
+/* Bits 26-31: Reserved */
+#define GIC_ICDSGIR_TGTFILTER_SHIFT   (24)	/* Bits 24-25: Target filter */
 #define GIC_ICDSGIR_TGTFILTER_MASK    (3 << GIC_ICDSGIR_TGTFILTER_SHIFT)
-#  define GIC_ICDSGIR_TGTFILTER_LIST  (0 << GIC_ICDSGIR_TGTFILTER_SHIFT) /* Interrupt sent to CPUs CPU target list */
-#  define GIC_ICDSGIR_TGTFILTER_OTHER (1 << GIC_ICDSGIR_TGTFILTER_SHIFT) /* Interrupt is sent to all but requesting CPU */
-#  define GIC_ICDSGIR_TGTFILTER_THIS  (2 << GIC_ICDSGIR_TGTFILTER_SHIFT) /* Interrupt is sent to requesting CPU only */
+#define GIC_ICDSGIR_TGTFILTER_LIST  (0 << GIC_ICDSGIR_TGTFILTER_SHIFT)	/* Interrupt sent to CPUs CPU target list */
+#define GIC_ICDSGIR_TGTFILTER_OTHER (1 << GIC_ICDSGIR_TGTFILTER_SHIFT)	/* Interrupt is sent to all but requesting CPU */
+#define GIC_ICDSGIR_TGTFILTER_THIS  (2 << GIC_ICDSGIR_TGTFILTER_SHIFT)	/* Interrupt is sent to requesting CPU only */
 
 /* SGI Clear-Pending Registers */
 #define GIC_ICDSCPR_
@@ -618,32 +618,32 @@
  * task management.
  */
 
-#define GIC_IRQ_SGI0              0  /* Software Generated Interrupt (SGI) 0 */
-#define GIC_IRQ_SGI1              1  /* Software Generated Interrupt (SGI) 1 */
-#define GIC_IRQ_SGI2              2  /* Software Generated Interrupt (SGI) 2 */
-#define GIC_IRQ_SGI3              3  /* Software Generated Interrupt (SGI) 3 */
-#define GIC_IRQ_SGI4              4  /* Software Generated Interrupt (SGI) 4 */
-#define GIC_IRQ_SGI5              5  /* Software Generated Interrupt (SGI) 5 */
-#define GIC_IRQ_SGI6              6  /* Software Generated Interrupt (SGI) 6 */
-#define GIC_IRQ_SGI7              7  /* Software Generated Interrupt (SGI) 7 */
-#define GIC_IRQ_SGI8              8  /* Software Generated Interrupt (SGI) 8 */
-#define GIC_IRQ_SGI9              9  /* Software Generated Interrupt (SGI) 9 */
-#define GIC_IRQ_SGI10            10  /* Software Generated Interrupt (SGI) 10 */
-#define GIC_IRQ_SGI11            11  /* Software Generated Interrupt (SGI) 11 */
-#define GIC_IRQ_SGI12            12  /* Software Generated Interrupt (SGI) 12 */
-#define GIC_IRQ_SGI13            13  /* Software Generated Interrupt (SGI) 13 */
-#define GIC_IRQ_SGI14            14  /* Software Generated Interrupt (SGI) 14 */
-#define GIC_IRQ_SGI15            15  /* Software Generated Interrupt (SGI) 15 */
+#define GIC_IRQ_SGI0              0	/* Software Generated Interrupt (SGI) 0 */
+#define GIC_IRQ_SGI1              1	/* Software Generated Interrupt (SGI) 1 */
+#define GIC_IRQ_SGI2              2	/* Software Generated Interrupt (SGI) 2 */
+#define GIC_IRQ_SGI3              3	/* Software Generated Interrupt (SGI) 3 */
+#define GIC_IRQ_SGI4              4	/* Software Generated Interrupt (SGI) 4 */
+#define GIC_IRQ_SGI5              5	/* Software Generated Interrupt (SGI) 5 */
+#define GIC_IRQ_SGI6              6	/* Software Generated Interrupt (SGI) 6 */
+#define GIC_IRQ_SGI7              7	/* Software Generated Interrupt (SGI) 7 */
+#define GIC_IRQ_SGI8              8	/* Software Generated Interrupt (SGI) 8 */
+#define GIC_IRQ_SGI9              9	/* Software Generated Interrupt (SGI) 9 */
+#define GIC_IRQ_SGI10            10	/* Software Generated Interrupt (SGI) 10 */
+#define GIC_IRQ_SGI11            11	/* Software Generated Interrupt (SGI) 11 */
+#define GIC_IRQ_SGI12            12	/* Software Generated Interrupt (SGI) 12 */
+#define GIC_IRQ_SGI13            13	/* Software Generated Interrupt (SGI) 13 */
+#define GIC_IRQ_SGI14            14	/* Software Generated Interrupt (SGI) 14 */
+#define GIC_IRQ_SGI15            15	/* Software Generated Interrupt (SGI) 15 */
 
-#define GIC_IRQ_GTM              27  /* Global Timer (GTM) PPI(0) */
-#define GIC_IRQ_FIQ              28  /* Fast Interrupt Request (nFIQ) PPI(1) */
-#define GIC_IRQ_PTM              29  /* Private Timer (PTM) PPI(2) */
-#define GIC_IRQ_WDT              30  /* Watchdog Timer (WDT) PPI(3) */
-#define GIC_IRQ_IRQ              31  /* Interrupt Request (nIRQ) PPI(4) */
+#define GIC_IRQ_GTM              27	/* Global Timer (GTM) PPI(0) */
+#define GIC_IRQ_FIQ              28	/* Fast Interrupt Request (nFIQ) PPI(1) */
+#define GIC_IRQ_PTM              29	/* Private Timer (PTM) PPI(2) */
+#define GIC_IRQ_WDT              30	/* Watchdog Timer (WDT) PPI(3) */
+#define GIC_IRQ_IRQ              31	/* Interrupt Request (nIRQ) PPI(4) */
 
 /* Shared Peripheral Interrupts (SPI) follow */
 
-#define GIC_IRQ_SPI              32  /* First SPI interrupt ID */
+#define GIC_IRQ_SPI              32	/* First SPI interrupt ID */
 
 /****************************************************************************
  * Inline Functions
@@ -668,14 +668,14 @@
 
 static inline unsigned int arm_gic_nlines(void)
 {
-  uint32_t regval;
-  uint32_t field;
+	uint32_t regval;
+	uint32_t field;
 
-  /* Get the number of interrupt lines. */
+	/* Get the number of interrupt lines. */
 
-  regval = getreg32(GIC_ICDICTR);
-  field  = (regval & GIC_ICDICTR_ITLINES_MASK) >> GIC_ICDICTR_ITLINES_SHIFT;
-  return (field + 1) << 5;
+	regval = getreg32(GIC_ICDICTR);
+	field = (regval & GIC_ICDICTR_ITLINES_MASK) >> GIC_ICDICTR_ITLINES_SHIFT;
+	return (field + 1) << 5;
 }
 
 /****************************************************************************
@@ -700,18 +700,16 @@ static inline unsigned int arm_gic_nlines(void)
 
 static inline int arm_cpu_sgi(int sgi, unsigned int cpuset)
 {
-  uint32_t regval;
+	uint32_t regval;
 
 #ifdef CONFIG_SMP
-  regval = GIC_ICDSGIR_INTID(sgi) |  GIC_ICDSGIR_CPUTARGET(cpuset) |
-           GIC_ICDSGIR_TGTFILTER_LIST;
+	regval = GIC_ICDSGIR_INTID(sgi) | GIC_ICDSGIR_CPUTARGET(cpuset) | GIC_ICDSGIR_TGTFILTER_LIST;
 #else
-  regval = GIC_ICDSGIR_INTID(sgi) |  GIC_ICDSGIR_CPUTARGET(0) |
-           GIC_ICDSGIR_TGTFILTER_THIS;
+	regval = GIC_ICDSGIR_INTID(sgi) | GIC_ICDSGIR_CPUTARGET(0) | GIC_ICDSGIR_TGTFILTER_THIS;
 #endif
 
-  putreg32(regval, GIC_ICDSGIR);
-  return OK;
+	putreg32(regval, GIC_ICDSGIR);
+	return OK;
 }
 
 /****************************************************************************
@@ -719,11 +717,10 @@ static inline int arm_cpu_sgi(int sgi, unsigned int cpuset)
  ****************************************************************************/
 
 #ifdef __cplusplus
-#  define EXTERN extern "C"
-extern "C"
-{
+#define EXTERN extern "C"
+extern "C" {
 #else
-#  define EXTERN extern
+#define EXTERN extern
 #endif
 
 /****************************************************************************
@@ -910,14 +907,14 @@ int arm_hotplug_handler(int irq, void *context, void *arg);
 #ifdef CONFIG_DEBUG_IRQ_INFO
 void arm_gic_dump(const char *msg, bool all, int irq);
 #else
-#  define arm_gic_dump(m,a,i)
+#define arm_gic_dump(m,a,i)
 #endif
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
-#endif /* __ASSEMBLY__ */
+#endif							/* __ASSEMBLY__ */
 
-#endif /* CONFIG_ARMV7A_HAVE_GICv2 */
-#endif /* __ARCH_ARM_SRC_ARMV7_A_GIC_H */
+#endif							/* CONFIG_ARMV7A_HAVE_GICv2 */
+#endif							/* __ARCH_ARM_SRC_ARMV7_A_GIC_H */

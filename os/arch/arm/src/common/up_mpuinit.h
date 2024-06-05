@@ -54,10 +54,10 @@
  *   resources.
  *
  ****************************************************************************/
-#ifdef CONFIG_ARM_MPU  
+#ifdef CONFIG_ARM_MPU
 void up_mpuinitialize(void);
 #else
 #define up_mpuinitialize()
 #endif
 
-#endif /* __ARCH_ARM_SRC_UP_MPUINIT_H */
+#endif							/* __ARCH_ARM_SRC_UP_MPUINIT_H */
