@@ -110,21 +110,21 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
 
 	/* Reset its timeslice.  This is only meaningful for round
-	* robin tasks but it doesn't here to do it for everything
-	*/
+	 * robin tasks but it doesn't here to do it for everything
+	 */
 
 #if CONFIG_RR_INTERVAL > 0
 	tcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 #endif
 
 	/* Add the task in the correct location in the prioritized
-	* g_readytorun task list
-	*/
+	 * g_readytorun task list
+	 */
 
 	if (sched_addprioritized(tcb, (FAR dq_queue_t *)&g_readytorun)) {
-		/* The new btcb was added at the head of the ready-to-run list.	It
-		* is now to new active task!
-		*/
+		/* The new btcb was added at the head of the ready-to-run list. It
+		 * is now to new active task!
+		 */
 
 		ASSERT(tcb->flink != NULL);
 		tcb->task_state = TSTATE_TASK_RUNNING;
@@ -137,8 +137,8 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 	}
 
 	/*
-	* Are we in an interrupt handler?
-	*/
+	 * Are we in an interrupt handler?
+	 */
 	if (CURRENT_REGS) {
 
 		/* Restore the exception context of the rtcb at the (new) head
@@ -153,7 +153,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 
 		/* Then switch contexts */
 
-          arm_restorestate(rtcb->xcp.regs);
+		arm_restorestate(rtcb->xcp.regs);
 	}
 
 	/* No, then we will need to perform the user context switch */

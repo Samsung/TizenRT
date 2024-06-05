@@ -70,97 +70,93 @@
 #ifndef CONFIG_DISABLE_SIGNALS
 void arm_sigdeliver(void)
 {
-  struct tcb_s *rtcb = this_task();
-  uint32_t *regs = rtcb->xcp.saved_regs;
+	struct tcb_s *rtcb = this_task();
+	uint32_t *regs = rtcb->xcp.saved_regs;
 
 #ifdef CONFIG_SMP
-  /* In the SMP case, we must terminate the critical section while the signal
-   * handler executes, but we also need to restore the irqcount when the
-   * we resume the main thread of the task.
-   */
+	/* In the SMP case, we must terminate the critical section while the signal
+	 * handler executes, but we also need to restore the irqcount when the
+	 * we resume the main thread of the task.
+	 */
 
-  int16_t saved_irqcount;
+	int16_t saved_irqcount;
 #endif
 
-  board_autoled_on(LED_SIGNAL);
+	board_autoled_on(LED_SIGNAL);
 
-  svdbg("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n",
-        rtcb, rtcb->xcp.sigdeliver, rtcb->sigpendactionq.head);
-  DEBUGASSERT(rtcb->xcp.sigdeliver != NULL);
+	svdbg("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n", rtcb, rtcb->xcp.sigdeliver, rtcb->sigpendactionq.head);
+	DEBUGASSERT(rtcb->xcp.sigdeliver != NULL);
 
 #ifdef CONFIG_SMP
-  /* In the SMP case, up_schedule_sigaction(0) will have incremented
-   * 'irqcount' in order to force us into a critical section.  Save the
-   * pre-incremented irqcount.
-   */
+	/* In the SMP case, up_schedule_sigaction(0) will have incremented
+	 * 'irqcount' in order to force us into a critical section.  Save the
+	 * pre-incremented irqcount.
+	 */
 
-  saved_irqcount = rtcb->irqcount - 1;
-  DEBUGASSERT(saved_irqcount >= 0);
+	saved_irqcount = rtcb->irqcount - 1;
+	DEBUGASSERT(saved_irqcount >= 0);
 
-  /* Now we need call leave_critical_section() repeatedly to get the irqcount
-   * to zero, freeing all global spinlocks that enforce the critical section.
-   */
+	/* Now we need call leave_critical_section() repeatedly to get the irqcount
+	 * to zero, freeing all global spinlocks that enforce the critical section.
+	 */
 
-  do
-    {
-      leave_critical_section(regs[REG_CPSR]);
-    }
-  while (rtcb->irqcount > 0);
-#endif /* CONFIG_SMP */
+	do {
+		leave_critical_section(regs[REG_CPSR]);
+	} while (rtcb->irqcount > 0);
+#endif							/* CONFIG_SMP */
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
-  /* Then make sure that interrupts are enabled.  Signal handlers must always
-   * run with interrupts enabled.
-   */
+	/* Then make sure that interrupts are enabled.  Signal handlers must always
+	 * run with interrupts enabled.
+	 */
 
-  up_irq_enable();
+	up_irq_enable();
 #endif
 
-  /* Deliver the signal */
+	/* Deliver the signal */
 
-  ((sig_deliver_t)rtcb->xcp.sigdeliver)(rtcb);
+	((sig_deliver_t)rtcb->xcp.sigdeliver)(rtcb);
 
-  /* Output any debug messages BEFORE restoring errno (because they may
-   * alter errno), then disable interrupts again and restore the original
-   * errno that is needed by the user logic (it is probably EINTR).
-   *
-   * I would prefer that all interrupts are disabled when
-   * arm_fullcontextrestore() is called, but that may not be necessary.
-   */
+	/* Output any debug messages BEFORE restoring errno (because they may
+	 * alter errno), then disable interrupts again and restore the original
+	 * errno that is needed by the user logic (it is probably EINTR).
+	 *
+	 * I would prefer that all interrupts are disabled when
+	 * arm_fullcontextrestore() is called, but that may not be necessary.
+	 */
 
-  svdbg("Resuming\n");
+	svdbg("Resuming\n");
 
 #ifdef CONFIG_SMP
-  /* Restore the saved 'irqcount' and recover the critical section
-   * spinlocks.
-   */
+	/* Restore the saved 'irqcount' and recover the critical section
+	 * spinlocks.
+	 */
 
-  DEBUGASSERT(rtcb->irqcount == 0);
-  while (rtcb->irqcount < saved_irqcount)
-    {
-      enter_critical_section();
-    }
+	DEBUGASSERT(rtcb->irqcount == 0);
+	while (rtcb->irqcount < saved_irqcount) {
+		enter_critical_section();
+	}
 #endif
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
-  irqsave();
+	irqsave();
 #endif
 
-  /* Modify the saved return state with the actual saved values in the
-   * TCB.  This depends on the fact that nested signal handling is
-   * not supported.  Therefore, these values will persist throughout the
-   * signal handling action.
-   *
-   * Keeping this data in the TCB resolves a security problem in protected
-   * and kernel mode:  The regs[] array is visible on the user stack and
-   * could be modified by a hostile program.
-   */
+	/* Modify the saved return state with the actual saved values in the
+	 * TCB.  This depends on the fact that nested signal handling is
+	 * not supported.  Therefore, these values will persist throughout the
+	 * signal handling action.
+	 *
+	 * Keeping this data in the TCB resolves a security problem in protected
+	 * and kernel mode:  The regs[] array is visible on the user stack and
+	 * could be modified by a hostile program.
+	 */
 
-  rtcb->xcp.sigdeliver = NULL;  /* Allows next handler to be scheduled */
+	rtcb->xcp.sigdeliver = NULL;	/* Allows next handler to be scheduled */
 
-  /* Then restore the correct state for this thread of execution. */
+	/* Then restore the correct state for this thread of execution. */
 
-  board_autoled_off(LED_SIGNAL);
-  arm_fullcontextrestore(regs);
+	board_autoled_off(LED_SIGNAL);
+	arm_fullcontextrestore(regs);
 }
 #endif

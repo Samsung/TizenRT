@@ -174,4 +174,4 @@ void up_mpuinitialize(void)
 	mpu_control(true, false, true);
 }
 
-#endif // CONFIG_ARM_MPU
+#endif							// CONFIG_ARM_MPU

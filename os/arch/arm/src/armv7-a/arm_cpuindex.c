@@ -76,13 +76,13 @@
 
 int up_cpu_index(void)
 {
-  /* Read the Multiprocessor Affinity Register (MPIDR) */
+	/* Read the Multiprocessor Affinity Register (MPIDR) */
 
-  uint32_t mpidr = cp15_rdmpidr();
+	uint32_t mpidr = cp15_rdmpidr();
 
-  /* And return the CPU ID field */
+	/* And return the CPU ID field */
 
-  return (mpidr & MPIDR_CPUID_MASK) >> MPIDR_CPUID_SHIFT;
+	return (mpidr & MPIDR_CPUID_MASK) >> MPIDR_CPUID_SHIFT;
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */

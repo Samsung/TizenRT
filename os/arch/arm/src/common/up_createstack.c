@@ -87,9 +87,9 @@
 /* Alignment value for stack allocation when mpu stack overflow protection is enabled */
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 #ifdef CONFIG_ARMV8M_MPU
-#define STACK_PROTECTION_MPU_ALIGNMENT (32)	/* Fixed alignment size of 32 bytes as per ARMv8-M spec*/
-#else /* CONFIG_ARMV7M_MPU */
-#define STACK_PROTECTION_MPU_ALIGNMENT CONFIG_MPU_STACK_GUARD_SIZE /* In ARMv7-M, MPU requires alignment to region size */
+#define STACK_PROTECTION_MPU_ALIGNMENT (32)	/* Fixed alignment size of 32 bytes as per ARMv8-M spec */
+#else							/* CONFIG_ARMV7M_MPU */
+#define STACK_PROTECTION_MPU_ALIGNMENT CONFIG_MPU_STACK_GUARD_SIZE	/* In ARMv7-M, MPU requires alignment to region size */
 #endif
 #endif
 
@@ -228,7 +228,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 		 * the lowest, valid work address (the "top" of the stack).  Items
 		 * on the stack are referenced as positive word offsets from sp.
 		 */
-		top_of_stack = (uint32_t)tcb->stack_alloc_ptr + stack_alloc_size - 4;
+		top_of_stack = (uint32_t) tcb->stack_alloc_ptr + stack_alloc_size - 4;
 #endif
 
 		/* The ARM stack must be aligned; 4 byte alignment for OABI and
@@ -251,7 +251,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 
 		/* Adjust stack size after guard_size calculation */
 		size_of_stack = size_of_stack - CONFIG_MPU_STACK_GUARD_SIZE;
-		
+
 		/* Save the adjusted stack values in the struct tcb_s */
 		tcb->adj_stack_ptr = (uint32_t *)top_of_stack;
 		tcb->stack_base_ptr = tcb->stack_alloc_ptr;
@@ -269,8 +269,7 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		uint8_t nregion = mpu_get_nregion_info(MPU_REGION_STACKOVF);
 		/* The smallest size that can be programmed for an MPU region is 32 bytes */
-		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1,
-			(uint32_t)tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
+		mpu_get_register_config_value(&tcb->stack_mpu_regs[0], nregion - 1, (uint32_t) tcb->stack_alloc_ptr, CONFIG_MPU_STACK_GUARD_SIZE, true, false);
 #endif
 
 		return OK;

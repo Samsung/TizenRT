@@ -83,9 +83,8 @@ void up_restoretask(struct tcb_s *tcb)
 #endif
 
 #ifdef CONFIG_ARCH_USE_MMU
-		if (tcb->app_id && tcb->pgtbl != mmu_l1_pgtable())
-		{
-			cp15_wrttb((uint32_t)tcb->pgtbl | TTBR0_RGN_WBWA | TTBR0_IRGN0);
+		if (tcb->app_id && tcb->pgtbl != mmu_l1_pgtable()) {
+			cp15_wrttb((uint32_t) tcb->pgtbl | TTBR0_RGN_WBWA | TTBR0_IRGN0);
 			cp15_invalidate_tlbs();
 		}
 #endif
@@ -98,7 +97,6 @@ void up_restoretask(struct tcb_s *tcb)
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}
 		}
-
 #endif
 
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION

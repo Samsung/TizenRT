@@ -66,7 +66,6 @@
 #include <stdint.h>
 #endif
 
-
 /****************************************************************************
  * Inline functions
  ****************************************************************************/
@@ -220,25 +219,25 @@
 /* Toolchain dependent, linker defined section addresses */
 
 #if defined(__ICCARM__)
-#  define _START_TEXT  __sfb(".text")
-#  define _END_TEXT    __sfe(".text")
-#  define _START_BSS   __sfb(".bss")
-#  define _END_BSS     __sfe(".bss")
-#  define _DATA_INIT   __sfb(".data_init")
-#  define _START_DATA  __sfb(".data")
-#  define _END_DATA    __sfe(".data")
+#define _START_TEXT  __sfb(".text")
+#define _END_TEXT    __sfe(".text")
+#define _START_BSS   __sfb(".bss")
+#define _END_BSS     __sfe(".bss")
+#define _DATA_INIT   __sfb(".data_init")
+#define _START_DATA  __sfb(".data")
+#define _END_DATA    __sfe(".data")
 #else
-#  define _START_TEXT  &_stext
-#  define _END_TEXT    &_etext
-#  define _START_BSS   &_sbss
-#  define _END_BSS     &_ebss
-#  define _DATA_INIT   &_eronly
-#  define _START_DATA  &_sdata
-#  define _END_DATA    &_edata
-#  define _START_TDATA &_stdata
-#  define _END_TDATA   &_etdata
-#  define _START_TBSS  &_stbss
-#  define _END_TBSS    &_etbss
+#define _START_TEXT  &_stext
+#define _END_TEXT    &_etext
+#define _START_BSS   &_sbss
+#define _END_BSS     &_ebss
+#define _DATA_INIT   &_eronly
+#define _START_DATA  &_sdata
+#define _END_DATA    &_edata
+#define _START_TDATA &_stdata
+#define _END_TDATA   &_etdata
+#define _START_TBSS  &_stbss
+#define _END_TBSS    &_etbss
 #endif
 
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
@@ -325,20 +324,20 @@ EXTERN uint32_t g_dabtstackbase;	/* Initial top of data abort stack */
  *    of _data.  like:  uint32_t *pdata = &_sdata;
  */
 
-EXTERN uint32_t _stext_flash;			/* Start of .text in Flash region */
-EXTERN uint32_t _etext_flash;			/* End_1 of .text + .rodata in Flash region */
+EXTERN uint32_t _stext_flash;	/* Start of .text in Flash region */
+EXTERN uint32_t _etext_flash;	/* End_1 of .text + .rodata in Flash region */
 #ifdef CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT
-EXTERN uint32_t _stext_ram;			/* Start of .text in RAM region */
-EXTERN uint32_t _etext_ram;			/* End of .text in RAM region */
+EXTERN uint32_t _stext_ram;		/* Start of .text in RAM region */
+EXTERN uint32_t _etext_ram;		/* End of .text in RAM region */
 #endif
 EXTERN const uint32_t _eronly;	/* End+1 of read only section (.text + .rodata) */
 EXTERN uint32_t _sdata;			/* Start of .data */
 EXTERN uint32_t _edata;			/* End+1 of .data */
 EXTERN uint32_t _sbss;			/* Start of .bss */
 EXTERN uint32_t _ebss;			/* End+1 of .bss */
-EXTERN uint32_t _sidle_stack;		/* Start of idle stack */
-EXTERN uint32_t _sint_heap;	/* Start of heap in internal RAM region */
-EXTERN uint32_t _sext_heap;	/* Start of heap in external RAM region */
+EXTERN uint32_t _sidle_stack;	/* Start of idle stack */
+EXTERN uint32_t _sint_heap;		/* Start of heap in internal RAM region */
+EXTERN uint32_t _sext_heap;		/* Start of heap in external RAM region */
 
 /* Sometimes, functions must be executed from RAM.  In this case, the following
  * macro may be used (with GCC!) to specify a function that will execute from
@@ -418,29 +417,29 @@ uintptr_t arm_intstack_top(void);
 #ifdef CONFIG_PAGING
 void arm_pginitialize(void);
 uint32_t *arm_va2pte(uintptr_t vaddr);
-#else /* CONFIG_PAGING */
-# define arm_pginitialize()
-#endif /* CONFIG_PAGING */
+#else							/* CONFIG_PAGING */
+#define arm_pginitialize()
+#endif							/* CONFIG_PAGING */
 
 #ifdef CONFIG_ARCH_FPU
 void arm_fpuconfig(void);
 #else
-#  define arm_fpuconfig()
+#define arm_fpuconfig()
 #endif
 
 #ifdef CONFIG_ARCH_L2CACHE
 void arm_l2ccinitialize(void);
 #else
-#  define arm_l2ccinitialize()
+#define arm_l2ccinitialize()
 #endif
 
 #if defined(CONFIG_NET) && !defined(CONFIG_NETDEV_LATEINIT)
 void arm_netinitialize(void);
 #else
-# define arm_netinitialize()
+#define arm_netinitialize()
 #endif
 
-#else 
+#else
 
 /* Low level initialization provided by board-level logic ******************/
 
@@ -587,7 +586,7 @@ void up_l2ccinitialize(void);
 #define up_l2ccinitialize()
 #endif
 
-#endif	// CONFIG_ARCH_ARMV7A_FAMILY
+#endif							// CONFIG_ARCH_ARMV7A_FAMILY
 
 /* System timer *************************************************************/
 
@@ -658,7 +657,7 @@ void up_rnginitialize(void);
 #ifdef CONFIG_STACK_COLORATION
 void up_stack_color(FAR void *stackbase, void *stackend);
 void go_os_start(void *pv, unsigned int nbytes)
-	__attribute__ ((naked, no_instrument_function, noreturn));
+__attribute__((naked, no_instrument_function, noreturn));
 #endif
 
 /* Clock ********************************************************************/

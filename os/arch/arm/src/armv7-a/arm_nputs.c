@@ -58,8 +58,7 @@
 
 void up_nputs(const char *str, size_t len)
 {
-  while (*str && len-- > 0)
-    {
-      up_putc(*str++);
-    }
+	while (*str && len-- > 0) {
+		up_putc(*str++);
+	}
 }

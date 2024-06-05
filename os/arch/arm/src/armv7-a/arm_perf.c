@@ -77,28 +77,28 @@ static uint32_t g_cpu_freq;
 
 void up_perf_init(void *arg)
 {
-  g_cpu_freq = (uint32_t)(uintptr_t)arg;
+	g_cpu_freq = (uint32_t)(uintptr_t) arg;
 
-  cp15_pmu_uer(PMUER_UME);
-  cp15_pmu_pmcr(PMCR_E);
-  cp15_pmu_cesr(PMCESR_CCES);
+	cp15_pmu_uer(PMUER_UME);
+	cp15_pmu_pmcr(PMCR_E);
+	cp15_pmu_cesr(PMCESR_CCES);
 }
 
 uint32_t up_perf_getfreq(void)
 {
-  return g_cpu_freq;
+	return g_cpu_freq;
 }
 
 uint32_t up_perf_gettime(void)
 {
-  return cp15_pmu_rdccr();
+	return cp15_pmu_rdccr();
 }
 
 void up_perf_convert(uint32_t elapsed, struct timespec *ts)
 {
-  uint32_t left;
+	uint32_t left;
 
-  ts->tv_sec  = elapsed / g_cpu_freq;
-  left        = elapsed - ts->tv_sec * g_cpu_freq;
-  ts->tv_nsec = NSEC_PER_SEC * (uint64_t)left / g_cpu_freq;
+	ts->tv_sec = elapsed / g_cpu_freq;
+	left = elapsed - ts->tv_sec * g_cpu_freq;
+	ts->tv_nsec = NSEC_PER_SEC * (uint64_t)left / g_cpu_freq;
 }
