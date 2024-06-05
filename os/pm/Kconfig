@@ -14,10 +14,6 @@ menuconfig PM
 
 if PM
 
-config PM_TEST
-	bool "Power Management Functionality Test"
-	default n
-
 config PM_ENTER_SLEEP
 	bool "Support to enter Sleep State from Normal State"
 	default y

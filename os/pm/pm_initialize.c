@@ -60,7 +60,6 @@
 #include <debug.h>
 #include <tinyara/pm/pm.h>
 #include <time.h>
-#include "pm_test.h"
 #include "pm.h"
 #include "pm_metrics.h"
 #include "pm_timer/pm_timer.h"
@@ -175,6 +174,5 @@ void pm_initialize(void)
 	/* All pm timers are free */
 	g_pm_timer_nfree = CONFIG_PM_MAX_STATIC_TIMER;
 
-	pmtest_init();
 }
 #endif							/* CONFIG_PM */
