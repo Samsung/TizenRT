@@ -172,7 +172,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 {
     char le_addr[30] = {0};
     char *role;
-
+#ifdef CONFIG_PM
+    int domain;
+#endif
     switch (evt_code) {
     case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
         rtk_bt_le_adv_start_ind_t *adv_start_ind = (rtk_bt_le_adv_start_ind_t *)param;
@@ -293,8 +295,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
+            /* Register PM_BLE_DOMAIN */
+            domain = pm_domain_register("BLE");
+            if (domain < 0) {
+                pmdbg("Unable to register PM_BLE_DOMAIN\n");
             /* Set PM suspend timer for 10 minutes */
-            if (pm_timedsuspend(PM_BLE_DOMAIN, 600000000) != 0) {
+            } else if (pm_timedsuspend(domain, 600000000) != 0) {
                 pmdbg("Unable to perform PM suspend for 10 minutes\n");
             }
 #endif

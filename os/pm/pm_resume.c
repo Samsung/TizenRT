@@ -80,7 +80,7 @@
  *   idle now, could relax the previous requested power level.
  *
  * Input Parameters:
- *   domain - The domain of the PM activity
+ *   domain_id - The domain ID of the PM activity
  *
  *     As an example, media player might relax power level after playback.
  *
@@ -92,23 +92,23 @@
  *
  ****************************************************************************/
 
-int pm_resume(enum pm_domain_e domain)
+int pm_resume(int domain_id)
 {
 	irqstate_t flags;
 	int ret = OK;
 
 	flags = enter_critical_section();
-	if (domain < 0 || domain >= CONFIG_PM_NDOMAINS) {
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
 		ret = ERROR;
 		set_errno(EINVAL);
 		goto errout;
 	}
-	if (g_pmglobals.suspend_count[domain] <= 0) {
+	if (g_pmglobals.suspend_count[domain_id] <= 0) {
 		ret = ERROR;
 		set_errno(ERANGE);
 		goto errout;
 	}
-	g_pmglobals.suspend_count[domain]--;
+	g_pmglobals.suspend_count[domain_id]--;
 errout:
 	leave_critical_section(flags);
 	return ret;

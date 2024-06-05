@@ -77,11 +77,11 @@ static WDOG_ID pid_timer_map[CONFIG_MAX_TASKS];
  * Private Functions
  ************************************************************************/
 
-static void timer_timeout(int argc, uint32_t domain, uint32_t pid)
+static void timer_timeout(int argc, int domain_id, uint32_t pid)
 {
 	/* PM transition will be relaxed here */
 	if (pid_timer_map[pid] != NULL) {
-		pm_resume(domain);
+		pm_resume(domain_id);
 		wd_delete(pid_timer_map[pid]);
         	pid_timer_map[pid] = NULL;
 	}
@@ -107,7 +107,7 @@ static void timer_timeout(int argc, uint32_t domain, uint32_t pid)
  *
  ************************************************************************/
 
-int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval)
+int pm_timedsuspend(int domain_id, unsigned int timer_interval)
 {
 	int pid = PIDHASH(getpid());
 
@@ -122,8 +122,8 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval)
 	pid_timer_map[pid] = wdog;
 
 	/* Lock the pm transition and Start the wdog timer */
-	pm_suspend(domain);
-	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, (uint32_t)domain, (uint32_t)pid);
+	pm_suspend(domain_id);
+	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)pid);
 	pmvdbg("PM is locked for pid %d and timer started for %d milisecond\n", pid, timer_interval);
 	if (ret != OK) {
 		return ERROR;
