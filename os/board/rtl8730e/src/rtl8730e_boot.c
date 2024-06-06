@@ -468,7 +468,7 @@ void board_initialize(void)
 #endif
 
 	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_2eb067f_2024/05/08-12:24:28";
+	char km0_application_rev_temp[] = "km0_application_ver_280ecfe2_2024/06/06-17:25:45";
 	lldbg("KM4_version %s\n", km0_application_rev_temp);
 
 #ifdef CONFIG_AUDIO_ALC1019
