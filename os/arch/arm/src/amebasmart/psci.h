@@ -102,7 +102,7 @@
 
 uint32_t psci_get_version(void);
 int psci_cpu_suspend(uint32_t state, unsigned long entry_point);
-int psci_cpu_off(uint32_t state);
+int psci_cpu_off(void);
 int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
 int psci_affinity_info(unsigned long target_affinity, unsigned long lowest_affinity_level);
 

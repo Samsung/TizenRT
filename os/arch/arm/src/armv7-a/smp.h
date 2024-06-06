@@ -79,6 +79,12 @@ extern uint32_t g_cpu3_idlestack[SMP_STACK_WORDS];
 #endif /* CONFIG_SMP_NCPUS > 2 */
 #endif /* CONFIG_SMP_NCPUS > 1 */
 
+typedef enum {
+	CPU_RUNNING = 0, /* CPU is in task scheduer or boot from reset */
+	CPU_HOTPLUG = 1, /* CPU is offline */
+	CPU_WAKE_FROM_SLEEP = 2, /* CPU just wake from sleep but not in task scheduler */
+} cpu_state_t;
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

@@ -129,6 +129,9 @@ void arm_gic0_initialize(void)
 #ifdef CONFIG_CPU_GATING
   DEBUGVERIFY(irq_attach(GIC_IRQ_SGI3, arm_gating_handler, NULL));
 #endif
+#ifdef CONFIG_CPU_HOTPLUG
+  DEBUGVERIFY(irq_attach(GIC_IRQ_SGI4, arm_hotplug_handler, NULL));
+#endif
 #endif
 
   arm_gic_dump("Exit arm_gic0_initialize", true, 0);

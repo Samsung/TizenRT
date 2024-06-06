@@ -91,11 +91,11 @@ int psci_cpu_suspend(uint32_t state, unsigned long entry_point)
 	return invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_SUSPEND), state, entry_point, 0, 0);
 }
 
-int psci_cpu_off(uint32_t state)
+int psci_cpu_off(void)
 {
 	int err;
 
-	err = invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, state, 0, 0, 0);
+	err = invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, 0, 0, 0, 0);
 	return psci_to_linux_errno(err);
 }
 

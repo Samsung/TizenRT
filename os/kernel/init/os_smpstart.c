@@ -79,8 +79,10 @@ void os_idle_trampoline(void)
 
 	for (; ; ) {
 		/* Perform any processor-specific idle state operations */
-
-		up_idle();
+		/* Let primary core control the PM idle loop, other 
+		   cores may stay at WFE and wait for signal from primary core
+		*/
+		SP_WFE();
 	}
 }
 
