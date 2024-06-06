@@ -7,20 +7,11 @@ uint32_t missing_tick = 0;
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
 #endif
 static uint32_t sleepwakelock_timeout     = 0;
-static u32 system_can_yield = 1; /* default is can */
 static uint32_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */
-static uint32_t max_sleep_time = 0; /* if user want wakeup peridically, can set this timer*/
 SLEEP_ParamDef sleep_param ALIGNMTO(32); /* cacheline aligned for lp & np */
 
-static uint32_t deepwakelock     = DEFAULT_DEEP_WAKELOCK;
-static uint32_t deepwakelock_timeout     = 0;
 static uint32_t sysactive_timeout_temp = 0;
 static uint32_t sysactive_timeout_flag = 0;
-
-#ifdef CONFIG_SMP
-/* cpu hotplug flag for each core */
-volatile u32 cpuhp_flag[CONFIG_SMP_NCPUS];
-#endif
 
 /* ++++++++ TizenRT macro implementation ++++++++ */
 
@@ -135,13 +126,6 @@ void pmu_unregister_sleep_callback(u32 nDeviceId)
 	_memset(pPsmDdHookInfo, 0x00, sizeof(PSM_DD_HOOK_INFO));
 }
 
-
-/* can not yield CPU under suspend/resume process */
-uint32_t pmu_yield_os_check(void)
-{
-	return system_can_yield;
-}
-
 #if defined (ARM_CORE_CM4)
 u32 ap_clk_status_on(void)
 {
@@ -210,51 +194,6 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-/*
- *  It is called in tizenrt pre_sleep_processing.
- *
- *  @return  true  : System is ready to check conditions that if it can enter dsleep.
- *           false : System can't enter deep sleep.
- **/
-CONFIG_FW_CRITICAL_CODE_SECTION
-int tizenrt_ready_to_dsleep(void)
-{
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	u32 current_tick = xTaskGetTickCount();
-#else
-	u32 current_tick = TICK2MSEC(clock_systimer());
-#endif
-
-	/* timeout */
-	if (current_tick < deepwakelock_timeout) {
-		return FALSE;
-	}
-
-	if (deepwakelock == 0) {
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-/*
- *  It is called when tizenrt is going to sleep.
- *  At this moment, all sleep conditons are satisfied. All tizenrt' sleep pre-processing are done.
- *
- *  @param  expected_idle_time : The time that TizenRT expect to sleep.
- *                               If we set this value to 0 then TizenRT will do nothing in its sleep function.
- **/
-#if 0 //for longrun test
-VOID pg_aontimer_int(u32 Data)
-{
-	DBG_8195A("pg Hp aontimer handler 1\n", SOCPS_AONWakeReason());
-	SOCPS_AONTimerClearINT();
-	DBG_8195A("pg Hp aontimer handler 2\n", SOCPS_AONWakeReason());
-	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, DISABLE);
-}
-#endif
-
-
 #ifdef CONFIG_PM_TICKSUPPRESS
 static void (*tizenrt_sleep_handler)(clock_t);
 void up_register_wakehandler(void (*handler)(clock_t))
@@ -268,15 +207,6 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
 	volatile uint32_t ms_passed = 0;
-
-	if (tizenrt_ready_to_dsleep()) {
-		sleep_param.sleep_time = 0;// do not wake on system schedule tick
-		sleep_param.dlps_enable = ENABLE;
-	} else {
-		sleep_param.sleep_time = max_sleep_time;//*expected_idle_time;
-		max_sleep_time = 0;
-		sleep_param.dlps_enable = DISABLE;
-	}
 
 	sleep_param.sleep_type = sleep_type;
 
@@ -421,76 +351,3 @@ uint32_t pmu_get_sleep_type(void)
 {
 	return sleep_type;
 }
-
-void pmu_set_max_sleep_time(uint32_t timer_ms)
-{
-	max_sleep_time = timer_ms;
-}
-
-void pmu_set_dsleep_active_time(uint32_t TimeOutMs)
-{
-	u32 timeout = 0;
-
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	timeout = xTaskGetTickCount() + TimeOutMs;
-#else
-	timeout = TICK2MSEC(clock_systimer()) + TimeOutMs;
-#endif
-	//DBG_8195A("pmu_set_dsleep_active_time: %d %d\n", timeout, deepwakelock_timeout);
-
-	if (timeout > deepwakelock_timeout) {
-		deepwakelock_timeout = timeout;
-	}
-}
-
-void pmu_acquire_deepwakelock(uint32_t nDeviceId)
-{
-	deepwakelock |= BIT(nDeviceId);
-}
-
-void pmu_release_deepwakelock(uint32_t nDeviceId)
-{
-	deepwakelock &= ~BIT(nDeviceId);
-}
-
-uint32_t pmu_get_deepwakelock_status(void)
-{
-	return deepwakelock;
-}
-
-// TODO: For hotplug mode
-#ifdef CONFIG_SMP
-void pmu_set_secondary_cpu_state(uint32_t CoreID, uint32_t NewStatus)
-{
-	cpuhp_flag[CoreID] = NewStatus;
-}
-
-uint32_t pmu_get_secondary_cpu_state(uint32_t CoreID)
-{
-	return cpuhp_flag[CoreID];
-}
-
-bool pmu_secondary_cpu_state_is_running(uint32_t CoreID)
-{
-	if (cpuhp_flag[CoreID] == CPU1_RUNNING) 
-		return 1;
-	else 
-		return 0;
-}
-
-bool pmu_secondary_cpu_state_is_hotplug(uint32_t CoreID)
-{
-	if (cpuhp_flag[CoreID] == CPU1_HOTPLUG) 
-		return 1;
-	else 
-		return 0;
-}
-
-bool pmu_secondary_cpu_state_is_wake(uint32_t CoreID)
-{
-	if (cpuhp_flag[CoreID] == CPU1_WAKE_FROM_PG) 
-		return 1;
-	else 
-		return 0;
-}
-#endif

@@ -141,7 +141,7 @@ SECTIONS
 		_stext_ram = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
-		EXCLUDE_FILE (*arm_mmu.o)*(.text*)      /* .text* sections (code) */
+		EXCLUDE_FILE (*arm_mmu.o arm_cpugating.o)*(.text*)      /* .text* sections (code) */
 		*(.rodata)      /* .rodata sections (constants, strings, etc.) */
 		*(.rodata*)     /* .rodata* sections (constants, strings, etc.) */
 		*(.glue_7)      /* glue arm to thumb code */
@@ -182,6 +182,7 @@ SECTIONS
 		*(.sramdram.only.text*)     
 		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
 		*arm_mmu.o (.text*)
+		*arm_cpugating.o (.text*)
 
 		. = ALIGN(4096);
 		__dram_text_end__ = .;

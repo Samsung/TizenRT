@@ -316,6 +316,14 @@ config CPU_GATING
 		This will register an additional Software Generated Interrupt (SGI) 
 		for CPU Gating when undergo flash operation.
 
+config CPU_HOTPLUG
+	bool "CPU Hotplug"
+	default n
+	depends on PM
+	---help---
+		This will register an additional Software Generated Interrupt (SGI) 
+		for CPU Hotplug when system goes low power mode (ie. Power Gating)
+
 config SMP_NCPUS
 	int "Number of CPUs"
 	default 4
