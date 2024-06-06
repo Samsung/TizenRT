@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 280ecfe2 2024/06/06-17:25:45 ==
+1. Fix KM4 crash when initializing/deinitializing softap repeatedly
+
 == version 2eb067f 2024/05/08-12:24:28 ==
 1. Enable GPIO channel A as wakeup interrupt src
 2. Add wakeup src information
