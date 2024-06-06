@@ -37,8 +37,6 @@
 #include "cp15_cacheops.h"
 #include "gic.h"
 #include "sched/sched.h"
-#include "section_config.h"
-#include "sheipa.h"
 #include "barriers.h"
 
 #ifdef CONFIG_CPU_GATING
@@ -57,7 +55,6 @@ volatile uint32_t ulFlashPG_Flag = 0;
  *   Zero on success; a negated errno value on failure.
  *
  ****************************************************************************/
-SRAMDRAM_ONLY_TEXT_SECTION
 int arm_gating_handler(int irq, void *context, void *arg)
 {
 	uint32_t PrevIrqStatus = irqsave();
@@ -72,4 +69,4 @@ int arm_gating_handler(int irq, void *context, void *arg)
 	return OK;
 }
 
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_CPU_GATING */

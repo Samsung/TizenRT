@@ -191,8 +191,16 @@ ifeq ($(CONFIG_ARCH_FPU),y)
 endif
 
 ifeq ($(CONFIG_SMP),y)
-  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c arm_cpugating.c
+  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c
   CMN_CSRCS += arm_scu.c
+endif
+
+ifeq ($(CONFIG_CPU_GATING),y)
+  CMN_CSRCS += arm_cpugating.c
+endif
+
+ifeq ($(CONFIG_CPU_HOTPLUG),y)
+  CMN_CSRCS += arm_cpuhotplug.c
 endif
 
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
