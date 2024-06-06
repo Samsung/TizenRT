@@ -7,6 +7,9 @@
 #include "sheipa.h"
 #include "ameba_soc.h"
 #include "barriers.h"
+#include "smp.h"
+
+#define SECONDARY_CORE_ID     1
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 #include "task.h"
@@ -124,14 +127,14 @@ void vPortSecondaryOff(void)
 	int count = 10;
 #if ( CONFIG_SMP_NCPUS > 1 )
 
+#ifdef CONFIG_CPU_HOTPLUG
 	/* Notify secondary core to migrate task to primary core and enter wfi*/
-	// pmu_set_secondary_cpu_state(1, CPU1_HOTPLUG);
+	up_set_secondary_cpu_state(1, CPU_HOTPLUG);
+#endif
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	arm_gic_raise_softirq(1, 1);
 #else
-	/* TODO: SGI4 for Task Migration 
 	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << 1));
-	*/
 #endif
 #endif
 	//add a delay to wait cpu1 enter wfi.
@@ -148,51 +151,17 @@ void vPortSecondaryOff(void)
 		DelayUs(50);
 	} while (count--);
 
-	// printf("Secondary core power off fail: %d\n", state);
+	dbg("Secondary core power off fail: %d\n", state);
 }
-
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-void vPortSecondaryStart(void)
-{
-	printf("CPU%d: on\n", (int)portGET_CORE_ID());
-
-	/* Wait until scheduler starts */
-	if (pmu_get_secondary_cpu_state(portGET_CORE_ID()) == CPU1_RUNNING)
-		while (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED);
-
-#if ( configNUM_CORES > 1 )
-	/* Configure the hardware ready to run the demo. */
-	prvSetupHardwareSecondary();
-
-	/* Enable ipi for yield core */
-	configSETUP_IPI_INTERRUPT();
-#endif
-	/* Start the timer that generates the tick ISR. */
-	configSETUP_TICK_INTERRUPT();
-
-	/* Secondary core is up, set cpu state to CPU1_RUNNING */
-	pmu_set_secondary_cpu_state(1, CPU1_RUNNING);
-
-	/* Start the first task executing. */
-	vPortRestoreTaskContext();
-}
-#endif
-/*-----------------------------------------------------------*/
 
 void smp_init(void)
 {
 	BaseType_t xCoreID;
 	BaseType_t err;
 
-	// lldbg("smp: Bringing up secondary CPUs ...\n");
-	// DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "smp: Bringing up secondary CPUs ...\n");
-
 #if ( CONFIG_SMP_NCPUS > 1 )
-	// if (SYSCFG_CHIPType_Get() != CHIP_TYPE_RTLSIM) {//RTL sim shall not use delayus before core1 ready
-		/* power on core1 to avoid km4 not open it */
 	rtk_core1_power_on();
 	DelayUs(50);
-	// }
 #else
 	/* power off core1 to avoid km4 has already open it */
 	rtk_core1_power_off();
@@ -201,15 +170,26 @@ void smp_init(void)
 #if ( CONFIG_SMP_NCPUS > 1 )
 	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
 		if (xCoreID == up_cpu_index()) {
-			// pmu_set_secondary_cpu_state(xCoreID, CPU1_RUNNING);
+#ifdef CONFIG_CPU_HOTPLUG
+			up_set_secondary_cpu_state(xCoreID, CPU_RUNNING);
+#endif
 			continue;
 		}
-
 		err = psci_cpu_on(xCoreID, (unsigned long)__cpu1_start);
-		if (err < 0) {
-			printf("CPU%d: failed to boot: %d\n", (int)xCoreID, (int)err);
-		}
+		/* If we failed to boot secondary core here, it will be very likely
+		issue is coming from ATF/kernel flow, and that operation is irreversible
+		(ie. There is no way we can restore the secondary core to come
+		back to Tizen Lite, thus we should trigger a crash here to check)
+		*/
+		DEBUGASSERT(err >= 0);
 	}
 #endif
-
+	/* We should check whether it is a warm boot here
+	   If yes, we should send SGI1 to secondary core
+	 */
+#ifdef CONFIG_CPU_HOTPLUG
+	if (up_get_secondary_cpu_state(SECONDARY_CORE_ID) == CPU_WAKE_FROM_SLEEP) {
+		os_smp_start();
+	}
+#endif
 }

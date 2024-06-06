@@ -53,6 +53,7 @@
 #include "cp15_cacheops.h"
 #include "gic.h"
 #include "sched/sched.h"
+#include "smp.h"
 
 #ifdef CONFIG_SMP
 
@@ -173,6 +174,10 @@ int up_cpu_start(int cpu)
   /* Notify of the start event */
 
   sched_note_cpu_start(this_task(), cpu);
+#endif
+
+#ifdef CONFIG_CPU_HOTPLUG
+  up_set_secondary_cpu_state(cpu, CPU_RUNNING);
 #endif
 
   /* Execute SGI1 */

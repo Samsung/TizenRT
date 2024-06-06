@@ -861,9 +861,35 @@ int arm_pause_handler(int irq, void *context, void *arg);
  *
  ****************************************************************************/
 
-#if (defined(CONFIG_SMP) && defined(CONFIG_CPU_GATING))
+#ifdef CONFIG_CPU_GATING
 int arm_gating_handler(int irq, void *context, void *arg);
 #endif
+
+/****************************************************************************
+ * Name: arm_hotplug_handler
+ *
+ * Description:
+ *   This is the handler for SGI4.  It performs the following operations:
+ *
+ *   1. It saves the current task state at the head of the current assigned
+ *      task list.
+ *   2. CPU goes to low power state (ie. CPU Shutdown)
+ *   3. CPU returns from low power, restoring the state of the new task at the
+ *      head of the ready to run list. (ie. We assume the SGI to be triggered
+ *      by the primary core)
+ *
+ * Input Parameters:
+ *   Standard interrupt handling
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_CPU_HOTPLUG
+int arm_hotplug_handler(int irq, void *context, void *arg);
+#endif
+
 
 /****************************************************************************
  * Name: arm_gic_dump
