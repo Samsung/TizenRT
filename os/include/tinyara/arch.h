@@ -2181,6 +2181,28 @@ void up_set_dvfs(int div_lvl);
 #endif
 
 /****************************************************************************
+ * Name: up_set_pm_timer
+ *
+ * Description:
+ *   This function starts the hw timer registered as a wakeup source
+ *   for power management. If the board is asleep at the expiration time
+ *   of the set timer, the board is awakened by the hw timer interrupt.
+ *
+ *   NOTE: This timer is automatically canceled when the board wakes up
+ *   for other wakeup source, even if the time is not expired.
+ *
+ * Input Parameters:
+ *   interval_us - time to wake up in microseconds.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_PM_TIMEDWAKEUP
+void up_set_pm_timer(unsigned int interval_us);
+#endif
+
+/****************************************************************************
  * Board-specific button interfaces exported by the board-specific logic
  ****************************************************************************/
 
