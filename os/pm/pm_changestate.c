@@ -245,9 +245,6 @@ int pm_changestate(enum pm_state_e newstate)
 
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		if (newstate == PM_SLEEP) {
-			/* Set the required wakeup timer from the g_pm_timer_activelist */
-			ret = pm_set_wakeup_timer();
-
 			clock_t delay = wd_getwakeupdelay();
 			if (delay > CONFIG_PM_MIN_SLEEP_TIME) {
 				pmvdbg("Setting timer and Board will wake up after %d millisecond\n", delay);
