@@ -60,9 +60,6 @@ void pm_wakehandler(clock_t missing_tick)
 	if (missing_tick > 0) {
 		clock_timer_nohz((clock_t)missing_tick);
 		wd_timer_nohz(missing_tick > INT_MAX ? INT_MAX : (int)missing_tick);
-		/* Check for the boundary case , in pm_timer_update(int ticks)
-	 	* but we pass unsigned int to it */
-		pm_timer_update(missing_tick);
 	}
 
 	/* After wakeup change PM State to STANDBY */

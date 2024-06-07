@@ -27,15 +27,6 @@ config PM_METRICS_DURATION
 	default 60
 endif
 
-config PM_MAX_STATIC_TIMER
-	int "PM maximum no. of wakeup timers"
-	default 10
-	---help---
-		Defines the maximum number of wakeup timers that will be
-		statically allocated during OS start. This timers will be
-		used run multiple timers to wake up the system and do required
-		tasks.
-
 config PM_SLICEMS
 	int "PM time slice (msec)"
 	default 100

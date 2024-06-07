@@ -54,8 +54,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
-
-#include <pm_timer/pm_timer.h>
+#include <errno.h>
 
 /************************************************************************
  * Pre-processor Definitions
@@ -116,7 +115,7 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval)
 	 * the process */
 	if (pid_timer_map[pid] != NULL) {
 		pmdbg("There is already a lock timer running for this process\n");
-		return PM_TIMER_FAIL;
+		return ERROR;
 	}
 
 	WDOG_ID wdog = wd_create();
@@ -126,9 +125,8 @@ int pm_timedsuspend(enum pm_domain_e domain, unsigned int timer_interval)
 	pm_suspend(domain);
 	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, (uint32_t)domain, (uint32_t)pid);
 	pmvdbg("PM is locked for pid %d and timer started for %d milisecond\n", pid, timer_interval);
-
-	if (ret != PM_TIMER_SUCCESS) {
-		return PM_TIMER_FAIL;
+	if (ret != OK) {
+		return ERROR;
 	}
 
 	return ret;

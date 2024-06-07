@@ -44,10 +44,6 @@ endif
 DEPPATH = --dep-path .
 VPATH = .
 
-ifeq ($(CONFIG_PM_TIMEDWAKEUP),y)
-include pm_timer/Make.defs
-endif
-
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

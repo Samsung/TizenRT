@@ -205,17 +205,6 @@ struct pm_suspend_arg_s {
 
 typedef struct pm_suspend_arg_s pm_suspend_arg_t;
 
-struct pm_timer_s {	
-	struct pm_timer_s *next;   			/* pointer to next timer in the linked list */
-	int pid;                          		/* id of process that created pm timer */
-	uint8_t flags;                    		/* See pm timer definations above*/
-	int delay;		          		/* refers to time of sleep expected */
-	void (*callback)(struct pm_timer_s *timer);     /* function to be executed when timer expires*/
-	sem_t pm_sem;             			/* argument for callback function after timer expires*/
-};
-
-typedef struct pm_timer_s pm_timer_t;
-
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -401,44 +390,6 @@ int pm_suspend(enum pm_domain_e domain);
  ****************************************************************************/
 
 int pm_resume(enum pm_domain_e domain);
-
-/****************************************************************************
- * Name: pm_timer_update
- *
- * Description:
- *   This function decreases the delay of head pm timer in the 
- *   g_pm_timer_activelist by given ticks. If the delay becomes 0,
- *   It expires the pm timer.
- *
- * Input Parameters:
- *   Ticks to decrease
- *
- * Returned Value:
- *   None.
- * 
- * Assumption: This should be also implemented for CONFIG_SCHED_TICKLESS and
- * CONFIG_SCHED_TICKSUPRESS.
- *
- ****************************************************************************/
-
-void pm_timer_update(int ticks);
-
-/************************************************************************
- * Name: pm_timer_add
- *
- * Description:
- *   This function adds a wakeup timer in the g_pm_timer_activelist. So that it will be
- *   invoked just before sleep when needed. 
- * 
- * Parameters:
- *   struct pm_timer_s pointer
- *
- * Return Value:
- *   None
- *
- ************************************************************************/
-
-void pm_timer_add(pm_timer_t *timer);
 
 /************************************************************************
  * Name: pm_sleep
