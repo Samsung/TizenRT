@@ -574,7 +574,7 @@ void i2s_enable(i2s_t *obj)
   * @param  obj: I2S object defined in application software.
   * @retval none
   */
-void i2s_disable(i2s_t *obj)
+void i2s_disable(i2s_t *obj, bool is_suspend)
 {
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct[obj->i2s_idx];
 
@@ -587,6 +587,10 @@ void i2s_disable(i2s_t *obj)
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
+		if (is_suspend) {
+			GDMA_ChnlFree(SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+		}
 	} else {
 
 		GDMA_ClearINT(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);

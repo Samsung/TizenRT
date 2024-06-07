@@ -1163,6 +1163,10 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 		return NULL;
 	}
 
+	/* If I2C has been initialized, return directly */
+	if (priv->i2c_object != NULL) {
+		return (struct i2c_dev_s *)priv;
+	}
 /* Initialize private data for the first time, increment reference count,
 	* power-up hardware and configure GPIOs.
 	*/
@@ -1236,3 +1240,50 @@ int up_i2creset(FAR struct i2c_dev_s *dev)
 	return 0;
 }
 #endif							/* CONFIG_I2C_RESET */
+
+/****************************************************************************
+ * Name: rtk_i2c_suspend/resume
+ *
+ * Description:
+ *   Suspend or resume i2c peripherals for/from sleep modes.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_PM
+static uint32_t rtk_i2c_suspend(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	/* Need to destroy semaphore and release i2c object to prevent memory leak */
+#ifdef CONFIG_AMEBASMART_I2C1
+	up_i2cuninitialize((struct i2c_dev_s *)&amebasmart_i2c1_priv);
+#endif
+#ifdef CONFIG_AMEBASMART_I2C2
+	up_i2cuninitialize((struct i2c_dev_s *)&amebasmart_i2c2_priv);
+#endif
+	return 1;
+}
+
+static uint32_t rtk_i2c_resume(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+	/* For PG Sleep, I2C 1/2 HW will be lost power, thus a reinitialization is required here 
+	I2C0 is under SYSON block, so it will not require to be reinitialized*/
+#ifdef CONFIG_AMEBASMART_I2C1
+	(void) up_i2cinitialize(1);
+#endif
+#ifdef CONFIG_AMEBASMART_I2C2
+	(void) up_i2cinitialize(2);
+#endif
+	return 1;
+}
+#endif
+
+#ifdef CONFIG_PM
+void i2c_pminitialize(void)
+{
+	pmu_register_sleep_callback(PMU_I2C_DEVICE, (PSM_HOOK_FUN)rtk_i2c_suspend, NULL, (PSM_HOOK_FUN)rtk_i2c_resume, NULL);
+}
+#endif

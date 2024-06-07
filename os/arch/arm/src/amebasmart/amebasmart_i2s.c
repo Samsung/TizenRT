@@ -41,6 +41,9 @@
 #include <tinyara/wqueue.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
+#ifdef CONFIG_AUDIO_ALC1019
+#include <tinyara/audio/alc1019.h>
+#endif
 
 #include "irq/irq.h"
 
@@ -1467,7 +1470,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
-		i2s_disable(&priv->i2s_object);
+		i2s_disable(&priv->i2s_object, 0);
 		while (sq_peek(&priv->tx.pend) != NULL) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
@@ -1495,7 +1498,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
-		i2s_disable(&priv->i2s_object);
+		i2s_disable(&priv->i2s_object, 0);
 		while (sq_peek(&priv->rx.pend) != NULL) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.pend);
@@ -1706,19 +1709,20 @@ errout:
  ****************************************************************************/
 
 /****************************************************************************
- * Name:
+ * Name: amebasmart_i2s_initialize
  *
  * Description:
  *   Initialize the selected i2s port
  *
  * Input Parameter:
- *   none
+ *   port      - Decide which I2S port to be initialized
+ *   is_reinit - Decide whether the system wakeup from sleep and require reinit
  *
  * Returned Value:
  *   Valid i2s device structure reference on succcess; a NULL on failure
  *
  ****************************************************************************/
-struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
+struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 {
 	struct amebasmart_i2s_config_s *hw_config_s = NULL;
 	struct amebasmart_i2s_s *priv;
@@ -1734,18 +1738,24 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 		return NULL;
 	}
 
-	if (g_i2sdevice[port] != NULL) {
-		return &g_i2sdevice[port]->dev;
-	}
+	if (!is_reinit) {
+		if (g_i2sdevice[port] != NULL) {
+			return &g_i2sdevice[port]->dev;
+		}
 
-	/* Allocate a new state structure for this chip select.  NOTE that there
-	 * is no protection if the same chip select is used in two different
-	 * chip select structures.
-	 */
-	priv = (struct amebasmart_i2s_s *)kmm_zalloc(sizeof(struct amebasmart_i2s_s));
-	if (!priv) {
-		i2serr("ERROR: Failed to allocate a chip select structure\n");
-		return NULL;
+		/* Allocate a new state structure for this chip select.  NOTE that there
+		* is no protection if the same chip select is used in two different
+		* chip select structures.
+		*/
+		priv = (struct amebasmart_i2s_s *)kmm_zalloc(sizeof(struct amebasmart_i2s_s));
+		if (!priv) {
+			i2serr("ERROR: Failed to allocate a chip select structure\n");
+			return NULL;
+		}
+	} else {
+		/* The I2S structure should exist after system wakeup */
+		priv = g_i2sdevice[port];
+		DEBUGASSERT(priv);
 	}
 
 	/* Config values initialization */
@@ -1795,9 +1805,11 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 	}
 	/* Basic settings */
 	//priv->i2s_num = priv->i2s_object.i2s_idx;
-	g_i2sdevice[port] = priv;
+	if (!is_reinit) {
+		g_i2sdevice[port] = priv;
+	}
 
-	i2s_disable(&priv->i2s_object);
+	i2s_disable(&priv->i2s_object, 0);
 	/* Success exit */
 	return &priv->dev;
 
@@ -1809,3 +1821,63 @@ errout_with_alloc:
 }
 #endif /* I2S_HAVE_RX || I2S_HAVE_TX */
 #endif /* CONFIG_AUDIO */
+
+#ifdef CONFIG_PM
+static void amebasmart_i2s_suspend(uint16_t port)
+{
+	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
+
+	i2s_disable(&priv->i2s_object, 1);
+	sem_destroy(&priv->exclsem);
+#if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
+	if (priv->rx.dog) {
+		wd_delete(priv->rx.dog);
+		priv->rx.dog = NULL;
+	}
+#endif
+#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
+	if (priv->tx.dog) {
+		wd_delete(priv->tx.dog);
+		priv->tx.dog = NULL;
+	}
+#endif
+}
+
+static uint32_t rtk_i2s_suspend(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+	/* Nothing to do here */
+#ifdef CONFIG_AMEBASMART_I2S2
+	amebasmart_i2s_suspend(I2S_NUM_2);
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+	amebasmart_i2s_suspend(I2S_NUM_3);
+#endif
+
+	return 1;
+}
+
+static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	/* For PG Sleep, I2S HW will be lost power, thus a reinitialization is required here */
+#ifdef CONFIG_AMEBASMART_I2S2
+	(void)amebasmart_i2s_initialize(I2S_NUM_2, I2S_REINIT);
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+	(void)amebasmart_i2s_initialize(I2S_NUM_3, I2S_REINIT);
+#endif
+
+	return 1;
+}
+#endif
+
+#ifdef CONFIG_PM
+void i2s_pminitialize(void)
+{
+	pmu_register_sleep_callback(PMU_I2S_DEVICE, (PSM_HOOK_FUN)rtk_i2s_suspend, NULL, (PSM_HOOK_FUN)rtk_i2s_resume, NULL);
+}
+#endif
