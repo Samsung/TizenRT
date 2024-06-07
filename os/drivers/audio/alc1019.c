@@ -99,7 +99,7 @@ static int alc1019_writereg_3byte(FAR struct alc1019_dev_s *priv, uint8_t regadd
 
         ret = i2c_write(dev, alc1019_i2c_config, (uint8_t *)reg, 3);
         if (ret < 0) {
-                auddbg("Error, cannot write reg %x\n", regaddr);
+			auddbg("Error, cannot write reg 0x%x/0x%x/0x%x\n", regaddr_h, regaddr_l, regval);
         }
         return ret;
 }
@@ -1045,7 +1045,7 @@ FAR struct audio_lowerhalf_s *alc1019_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	 * default state.
 	 */
 
-	/*reconfigure the ALC1019 hardwaqre */
+	/*reconfigure the ALC1019 hardware */
 	alc1019_reset_config(priv);
 	alc1019_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
 

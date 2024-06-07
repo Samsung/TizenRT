@@ -2,30 +2,16 @@
 #define _FREERTOS_PMU_8721D_H_
 
 typedef enum {
-	PMU_OS					= 0,
-	PMU_WLAN_DEVICE		= 1,
-	PMU_LOGUART_DEVICE	= 2,
-	PMU_KM4_RUN			= 3,
-
-	PMU_UART0_DEVICE		= 4,
-	PMU_UART1_DEVICE		= 5,
-	PMU_I2C0_DEVICE		= 6,
-	PMU_TOUCH_DEVICE		= 7,
-	PMU_USOC_DEVICE		= 8,
-	PMU_DONGLE_DEVICE	= 9,
-	PMU_RTC_DEVICE		= 10,
-	PMU_CONSOL_DEVICE	= 11,
-	PMU_ADC_DEVICE	= 12,
-	PMU_WAKWLOCK_TIMEOUT = 13,
-	PMU_AP_RUN	= 14,
-	PMU_PSRAM_DEVICE	= 15,
-	PMU_DEV_USER_BASE	= 16, /*number 16 ~ 31 is reserved for customer use*/
-	PMU_BT_DEVICE	= 17,
-	PMU_VAD_DEVICE	= 18,
-	PMU_SPI_DEVICE   = 19,
-	PMU_GPIO_DEVICE  = 20,
-
-	PMU_MAX				= 31
+	PMU_OS                  = 0,
+	PMU_WLAN_DEVICE         = 1,
+	PMU_LOGUART_DEVICE      = 2,
+	PMU_UART1_DEVICE        = 3,
+	PMU_BT_DEVICE           = 4,
+	PMU_SPI_DEVICE          = 5,
+	PMU_I2C_DEVICE          = 6,
+	PMU_I2S_DEVICE          = 7,
+	PMU_GPIO_DEVICE         = 8,
+	PMU_MAX,
 } PMU_DEVICE;
 
 enum CPU1_STATE {

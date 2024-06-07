@@ -1500,24 +1500,9 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
 static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb, int domain,
                                    enum pm_state_e pmstate)
 {
-	switch (pmstate)
-	{
-		/* Nothing need to be done for pre/post sleep for SPI 
-		   If using SPI as wakeup interrupt, NP core can only go for CG sleep
-		*/
-		case PM_NORMAL:
-			pmu_unregister_sleep_callback(PMU_SPI_DEVICE);
-			break;
-		case PM_IDLE:
-		case PM_STANDBY:
-			break;
-		case PM_SLEEP:
-			pmu_register_sleep_callback(PMU_SPI_DEVICE, (PSM_HOOK_FUN)rtk_spi_suspend, NULL, (PSM_HOOK_FUN)rtk_spi_resume, NULL);
-			break;
-		default:
-			break;
-	}
-
+	/* Nothing need to be done for pre/post sleep for SPI 
+	   If using SPI as wakeup interrupt, NP core can only go for CG sleep
+	*/
 	return;
 }
 #endif
@@ -1558,29 +1543,20 @@ static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb, int domain,
 #ifdef CONFIG_PM
 static int amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
 {
-	switch (pmstate)
-	{
-		case PM_NORMAL:
-		case PM_IDLE:
-		case PM_STANDBY:
-			break;
-		case PM_SLEEP:
-			/* Check SPI FIFO status */
-			/* SPI0 */
+	if (pmstate == PM_SLEEP) {
+		/* Check SPI FIFO status */
+		/* SPI0 */
 #if defined(CONFIG_AMEBASMART_SPI0)
-			if (spi_busy(&g_spi0dev.spi_object) && !(ssi_check_fifo(&g_spi0dev.spi_object))) {
-				return ERROR;
-			}
+		if (spi_busy(&g_spi0dev.spi_object) && !(ssi_check_fifo(&g_spi0dev.spi_object))) {
+			return ERROR;
+		}
 #endif
 #if defined(CONFIG_AMEBASMART_SPI1)
-			/* SPI1 */
-			if (spi_busy(&g_spi1dev.spi_object) && !(ssi_check_fifo(&g_spi1dev.spi_object))) {
-				return ERROR;
-			}
+		/* SPI1 */
+		if (spi_busy(&g_spi1dev.spi_object) && !(ssi_check_fifo(&g_spi1dev.spi_object))) {
+			return ERROR;
+		}
 #endif
-			break;
-		default:
-			break;
 	}
 
 	return OK;
@@ -1649,6 +1625,7 @@ void spi_pminitialize(void)
 	int ret;
 	/* Register to receive power management callbacks */
 	ret = pm_register(&g_spipm.pm_cb);
+	pmu_register_sleep_callback(PMU_SPI_DEVICE, (PSM_HOOK_FUN)rtk_spi_suspend, NULL, (PSM_HOOK_FUN)rtk_spi_resume, NULL);
 	DEBUGASSERT(ret == OK);
 	UNUSED(ret);
 }

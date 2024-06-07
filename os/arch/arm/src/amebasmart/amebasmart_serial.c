@@ -1255,23 +1255,7 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
                                    enum pm_state_e pmstate)
 {
-	switch (pmstate)
-	{
-		case PM_NORMAL:
-			pmu_unregister_sleep_callback(PMU_LOGUART_DEVICE);
-			pmu_unregister_sleep_callback(PMU_UART1_DEVICE);
-			break;
-		case PM_IDLE:
-		case PM_STANDBY:
-			break;
-		case PM_SLEEP:
-			pmu_register_sleep_callback(PMU_LOGUART_DEVICE, (PSM_HOOK_FUN)rtk_loguart_suspend, NULL, (PSM_HOOK_FUN)rtk_loguart_resume, NULL);
-			pmu_register_sleep_callback(PMU_UART1_DEVICE, (PSM_HOOK_FUN)rtk_uart_suspend, NULL, (PSM_HOOK_FUN)rtk_uart_resume, NULL);
-			break;
-		default:
-			break;
-	}
-
+	/* Nothing to do here */
 	return;
 }
 #endif
@@ -1312,40 +1296,25 @@ static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb, int domain,
 #ifdef CONFIG_PM
 static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate)
 {
-	switch (pmstate)
-	{
-		case PM_NORMAL:
-		case PM_IDLE:
-		case PM_STANDBY:
-			break;
-
-		case PM_SLEEP:
-			/* UART0_DEV: hp uart0
-			 * UART1_DEV: hp uart1
-			 * UART2_DEV: hp uart2
-			 * UART3_DEV: hp uart3_bt
-			 * LOGUART_DEV: KM0 log uart */
+	if (pmstate == PM_SLEEP) {
 #ifdef CONFIG_RTL8730E_UART0
-			if ((g_uart0priv.txint_enable) && (!serial_writable(sdrv[0]))) {		/* If Tx init enable and FIFO not empty */
-					return ERROR;
-			}
+		if ((g_uart0priv.txint_enable) && (!serial_writable(sdrv[0]))) {		/* If Tx init enable and FIFO not empty */
+				return ERROR;
+		}
 #endif
 #ifdef CONFIG_RTL8730E_UART1
-			if ((g_uart1priv.txint_enable) && (!serial_writable(sdrv[1]))) {		/* If Tx init enable and FIFO not empty */
-					return ERROR;
-			}
+		if ((g_uart1priv.txint_enable) && (!serial_writable(sdrv[1]))) {		/* If Tx init enable and FIFO not empty */
+				return ERROR;
+		}
 #endif
 #ifdef CONFIG_RTL8730E_UART2
-			if ((g_uart2priv.txint_enable) && (!serial_writable(sdrv[2]))) {		/* If Tx init enable and FIFO not empty */
-					return ERROR;
-			}
+		if ((g_uart2priv.txint_enable) && (!serial_writable(sdrv[2]))) {		/* If Tx init enable and FIFO not empty */
+				return ERROR;
+		}
 #endif
 #ifdef CONFIG_RTL8730E_UART4
-			/* Check for LOGUART TX status before AP is suspended */
+		/* Check for LOGUART TX status before AP is suspended */
 #endif
-			break;
-		default:
-			break;
 	}
 
 	return OK;
@@ -1399,6 +1368,8 @@ void up_serialinit(void)
 #ifdef CONFIG_PM
 	/* Register to receive power management callbacks */
 	ret = pm_register(&g_serialpm.pm_cb);
+	pmu_register_sleep_callback(PMU_LOGUART_DEVICE, (PSM_HOOK_FUN)rtk_loguart_suspend, NULL, (PSM_HOOK_FUN)rtk_loguart_resume, NULL);
+	pmu_register_sleep_callback(PMU_UART1_DEVICE, (PSM_HOOK_FUN)rtk_uart_suspend, NULL, (PSM_HOOK_FUN)rtk_uart_resume, NULL);
 	DEBUGASSERT(ret == OK);
 	UNUSED(ret);
 #endif
