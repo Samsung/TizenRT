@@ -355,7 +355,7 @@ void i2s_enable(i2s_t *obj);
   * @param  obj: i2s object define in application software.
   * @retval none
   */
-void i2s_disable(i2s_t *obj);
+void i2s_disable(i2s_t *obj, bool is_suspend);
 
 ///@}
 
