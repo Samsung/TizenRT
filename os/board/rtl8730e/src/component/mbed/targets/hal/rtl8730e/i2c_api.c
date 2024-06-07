@@ -85,11 +85,6 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 {
 	uint32_t i2c_idx = i2c_index_get(sda);
 
-	//ConfigDebugErr &= (~(_DBG_I2C_|_DBG_GDMA_));
-	//ConfigDebugInfo&= (~(_DBG_I2C_|_DBG_GDMA_));
-
-	DBG_8195A("i2c_idx:%x\n", i2c_idx);
-
 	obj->i2c_idx = i2c_idx;
 	obj->I2Cx = I2C_DEV_TABLE[i2c_idx].I2Cx;
 

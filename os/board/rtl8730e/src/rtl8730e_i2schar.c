@@ -35,8 +35,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR
-#define CONFIG_AMEBASMART_I2SCHAR_MINOR 0
+#ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_2
+#define CONFIG_AMEBASMART_I2SCHAR_MINOR_2 2
+#endif
+
+#ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_3
+#define CONFIG_AMEBASMART_I2SCHAR_MINOR_3 3
 #endif
 /*****************************************************************************
  * Private Functions
@@ -66,18 +70,19 @@ int i2schar_devinit(void)
 	int ret;
 
 	if (!initialized) {
-#ifdef CONFIG_AMEBASMART_I2S2
+		/* If ALC1019 is enabled, we should reserve I2S 2 for it */
+#if defined(CONFIG_AMEBASMART_I2S2) && !defined(CONFIG_AUDIO_ALC1019)
 		/* Call amebasmart_i2s_initialize() to get an instance of the I2S interface */
 		/* Initialise I2S2 */
-		i2s = amebasmart_i2s_initialize(I2S_NUM_2);
+		i2s = amebasmart_i2s_initialize(I2S_NUM_2, I2S_INIT);
 
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
 			return -ENODEV;
 		}
 
-		/* Register the I2S character driver at "/dev/i2schar0" */
-		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR);
+		/* Register the I2S character driver at "/dev/i2schar2" */
+		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_2);
 		if (ret < 0) {
 			lldbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
@@ -86,15 +91,15 @@ int i2schar_devinit(void)
 		I2S_ERR_CB_REG(i2s, err_cb, "Error_Test_String");
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
-		i2s = amebasmart_i2s_initialize(I2S_NUM_3);
+		i2s = amebasmart_i2s_initialize(I2S_NUM_3, I2S_INIT);
 
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
 			return -ENODEV;
 		}
 
-		/* Register the I2S character driver at "/dev/i2schar0" */
-		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR);
+		/* Register the I2S character driver at "/dev/i2schar3" */
+		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_3);
 		if (ret < 0) {
 			lldbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
