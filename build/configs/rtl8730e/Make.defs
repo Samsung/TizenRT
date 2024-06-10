@@ -177,6 +177,13 @@ else
   CXXFLAGS += -fno-exceptions
 endif
 
+ifeq ($(CONFIG_EXTERNAL_CMSIS_NN),y)
+CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebasmart/cmsis_nn
+CMSIS_NN_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
+CMSIS_NN_LIB = lib_cmsis_nn
+LINK_CMSIS_NN_LIB = -l_cmsis_nn
+endif
+
 ifeq ($(CONFIG_EXTERNAL_TFMICRO),y)
 CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG

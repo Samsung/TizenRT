@@ -178,8 +178,29 @@ CXXFLAGS += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 endif
 
-ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+ifeq ($(CONFIG_EXTERNAL_CMSIS_DSP),y)
+CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_dsp
+CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_dsp/dsp
+CMSIS_DSP_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
+ifeq ($(CONFIG_ARCH_FPU),y)
+CMSIS_DSP_LIB = lib_cmsis_dsp_fpu
+LINK_CMSIS_DSP_LIB = -l_cmsis_dsp_fpu
+else
+CMSIS_DSP_LIB = lib_cmsis_dsp
+LINK_CMSIS_DSP_LIB = -l_cmsis_dsp
+endif
+endif
+
+ifeq ($(CONFIG_EXTERNAL_CMSIS_NN),y)
 CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_nn
+CMSIS_NN_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
+ifeq ($(CONFIG_ARCH_FPU),y)
+CMSIS_NN_LIB = lib_cmsis_nn_fpu
+LINK_CMSIS_NN_LIB = -l_cmsis_nn_fpu
+else
+CMSIS_NN_LIB = lib_cmsis_nn
+LINK_CMSIS_NN_LIB = -l_cmsis_nn
+endif
 endif
 
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)

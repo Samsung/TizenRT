@@ -6,7 +6,7 @@
 config EXAMPLES_CMSIS_NN
 	bool "CMSIS NN example"
 	default n
-	depends on AMEBAD_CMSIS_NN || AMEBASMART_CMSIS_NN
+	depends on EXTERNAL_CMSIS_NN
 	---help---
 		Enable the CMSIS NN example
 

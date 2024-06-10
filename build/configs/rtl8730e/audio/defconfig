@@ -1338,6 +1338,7 @@ CONFIG_STRESS_TOOL=y
 # CONFIG_OPENSSL_WRAPPER is not set
 # CONFIG_STDK_IOT_CORE is not set
 # CONFIG_EXTERNAL_TFMICRO is not set
+# CONFIG_EXTERNAL_CMSIS_NN is not set
 
 #
 # Binary Loader
@@ -1357,6 +1358,7 @@ CONFIG_STRESS_TOOL=y
 # Application entry point list
 #
 # CONFIG_ENTRY_MANUAL is not set
+# CONFIG_ENTRY_CMSIS_NN is not set
 # CONFIG_ENTRY_SSTORAGE is not set
 # CONFIG_ENTRY_CXXTEST is not set
 # CONFIG_ENTRY_HELLO is not set
@@ -1381,6 +1383,7 @@ CONFIG_EXAMPLES_BLE_RMC=y
 #
 # Board Specific Demos
 #
+# CONFIG_EXAMPLES_CMSIS_NN is not set
 # CONFIG_EXAMPLES_AMEBA_MIPI is not set
 CONFIG_EXAMPLES_SSTORAGE=y
 # CONFIG_EXAMPLES_WIFICSI is not set

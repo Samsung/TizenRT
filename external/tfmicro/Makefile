@@ -67,7 +67,7 @@ CXXSRCS += ./tensorflow/lite/micro/kernels/logistic.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/logistic_common.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/softmax_common.cc
 
-ifeq ($(CONFIG_AMEBAD_CMSIS_NN),y)
+ifeq ($(CONFIG_EXTERNAL_CMSIS_NN),y)
 CXXFLAGS += -DCMSIS_NN
 CFLAGS += -DCMSIS_NN
 # CXXSRCS += ./tensorflow/lite/micro/kernels/cmsis_nn/add.cc
@@ -87,7 +87,7 @@ CXXSRCS += ./tensorflow/lite/micro/kernels/fully_connected.cc
 # CXXSRCS += ./tensorflow/lite/micro/kernels/pooling.cc
 CXXSRCS += ./tensorflow/lite/micro/kernels/softmax.cc
 # CXXSRCS += ./tensorflow/lite/micro/kernels/svdf.cc
-endif #if CONFIG_AMEBAD_CMSIS_NN
+endif #if EXTERNAL_CMSIS_NN
 
 CFLAGS += -Wno-maybe-uninitialized
 CFLAGS += -Wno-missing-field-initializers

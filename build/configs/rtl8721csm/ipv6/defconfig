@@ -1160,6 +1160,8 @@ CONFIG_STRESS_TOOL=y
 # CONFIG_LIBSODIUM is not set
 # CONFIG_OPENSSL_WRAPPER is not set
 # CONFIG_STDK_IOT_CORE is not set
+# CONFIG_EXTERNAL_CMSIS_DSP is not set
+# CONFIG_EXTERNAL_CMSIS_NN is not set
 
 #
 # Binary Loader
@@ -1178,6 +1180,8 @@ CONFIG_STRESS_TOOL=y
 # Application entry point list
 #
 # CONFIG_ENTRY_MANUAL is not set
+# CONFIG_ENTRY_CMSIS_DSP is not set
+# CONFIG_ENTRY_CMSIS_NN is not set
 CONFIG_ENTRY_HELLO=y
 # CONFIG_ENTRY_TAHI is not set
 # CONFIG_ENTRY_WIFIMANAGER_TEST is not set
@@ -1205,6 +1209,12 @@ CONFIG_EXAMPLES_HELLO=y
 # CONFIG_EXAMPLES_LWNL_SAMPLE is not set
 # CONFIG_EXAMPLES_MEMORY_FRAGMENTATION_TEST is not set
 # CONFIG_EXAMPLES_NETTEST is not set
+
+#
+# Board Specific Demos
+#
+# CONFIG_EXAMPLES_CMSIS_DSP is not set
+# CONFIG_EXAMPLES_CMSIS_NN is not set
 
 #
 # Performance
