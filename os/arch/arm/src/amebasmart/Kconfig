@@ -230,14 +230,6 @@ config AMEBASMART_TRUSTZONE
 
 endmenu
 
-menu "Realtek RTL8730E CMSIS_NN Support"
-
-config AMEBASMART_CMSIS_NN
-	bool "Enable Amebasmart CMSIS_NN"
-	default n
-
-endmenu
-
 menu "Realtek RTL8730E KM4/KM0 Status Check Timer"
 
 config AMEBASMART_NP_LP_CHECK_INTERVAL
