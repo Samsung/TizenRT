@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXTERNAL_CMSIS_NN
+	bool "CMSIS NN library"
+	default n
+	---help---
+		Enables the CMSIS_NN library.
+

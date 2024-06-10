@@ -1,0 +1,24 @@
+
+/* Release Note */
+
+[rtl8721csm]
+FPU:		lib_cmsis_nn_fpu_ver_9ae07bf98a4fc96c41e131d6be3933a5e4795acc_2023/05/08-12:48:05
+Non-FPU:	lib_cmsis_nn_ver_9ae07bf98a4fc96c41e131d6be3933a5e4795acc_2023/05/08-12:29:05
+
+[rtl8730e]
+FPU:		lib_cmsis_nn_ver_756ad9478dd3aa0139a43842e2df0c6568f482a4_2024/05/21-11:38:19
+
+
+
+CMSIS Core Header Files
+https://github.com/ARM-software/CMSIS_5/tree/dde5bac01b1b0b5ef528989a3139ce10bb1b054d/CMSIS/Core/Include
+
+CMSIS-NN Version
+https://github.com/ARM-software/CMSIS-NN/tree/e98ee09a03dd12d4b3eac6f7efa25d3ad62a24b9
+
+CMSIS-NN Header Files
+https://github.com/ARM-software/CMSIS-NN/tree/e98ee09a03dd12d4b3eac6f7efa25d3ad62a24b9/Include
+
+CMSIS-NN Test Case
+https://github.com/ARM-software/CMSIS-NN/tree/e98ee09a03dd12d4b3eac6f7efa25d3ad62a24b9/Tests/UnitTest
+
