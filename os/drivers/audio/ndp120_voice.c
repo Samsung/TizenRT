@@ -456,10 +456,8 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 
 	audvdbg("ndp120_enqueuebuffer: apbadr = 0x%x\n", apb);
 
-	/* Need to fix later */
+	/* TODO pendq should be handled by ndp120_api.c later. worker & interrupt logic need to be implemented there */
 	if (!priv->running) {
-		apb_reference(apb);
-
 		/* Add the new buffer to the tail of pending audio buffers */
 		ndp120_takesem(&priv->devsem);
 		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
