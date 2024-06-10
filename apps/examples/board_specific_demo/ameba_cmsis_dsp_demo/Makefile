@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2024 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/board_specific_demo/ameba_cmsis_nn_demo/Makefile
+# apps/examples/board_specific_demo/ameba_cmsis_dsp_demo/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -54,17 +54,17 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# CMSIS NN built-in application info
+# CMSIS DSP built-in application info
 
-APPNAME = cmsis_nn
+APPNAME = cmsis_dsp
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# CMSIS NN Example
+# CMSIS DSP Example
 
 ASRCS =
 CSRCS =
-MAINSRC = example_cmsis_nn.c $(wildcard ./*/*.c)
+MAINSRC = example_cmsis_dsp.c $(wildcard ./*/*.c)
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -93,8 +93,8 @@ else
   INSTALL_DIR = $(BIN_DIR)
 endif
 
-CONFIG_EXAMPLES_CMSIS_NN_PROGNAME ?= cmsis_nn$(EXEEXT)
-PROGNAME = $(CONFIG_EXAMPLES_CMSIS_NN_PROGNAME)
+CONFIG_EXAMPLES_CMSIS_DSP_PROGNAME ?= cmsis_dsp$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_CMSIS_DSP_PROGNAME)
 
 ROOTDEPPATH = --dep-path .
 
@@ -128,7 +128,7 @@ install:
 
 endif
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_CMSIS_NN),yy)
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_CMSIS_DSP),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 

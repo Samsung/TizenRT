@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CMSIS_DSP
+	bool "CMSIS DSP example"
+	default n
+	depends on EXTERNAL_CMSIS_DSP
+	---help---
+		Enable the CMSIS DSP example
+
+config USER_ENTRYPOINT
+	string
+	default "cmsis_dsp" if ENTRY_CMSIS_DSP
