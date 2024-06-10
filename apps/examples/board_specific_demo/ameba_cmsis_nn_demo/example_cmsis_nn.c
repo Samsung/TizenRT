@@ -28,7 +28,8 @@
  * cmsis_nn_main
  ****************************************************************************/
 
-static void verification_cmsis_nn_thread(void* param) {
+static void verification_cmsis_nn_thread(void* param)
+{
     printf("\r\n ========== Start Verification CMSIS_NN ========== \r\n");
 
     printf("\n-----TEST CASE : test_arm_avgpool_s8-----\n");
