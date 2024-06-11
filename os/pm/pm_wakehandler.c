@@ -62,8 +62,9 @@ void pm_wakehandler(clock_t missing_tick)
 		wd_timer_nohz(missing_tick > INT_MAX ? INT_MAX : (int)missing_tick);
 	}
 
-	/* After wakeup change PM State to STANDBY */
+	/* After wakeup change PM State to STANDBY and reset the time slice */
 	pm_changestate(PM_STANDBY);
+	g_pmglobals.stime = clock_systimer();
 
 	leave_critical_section(flags);
 }

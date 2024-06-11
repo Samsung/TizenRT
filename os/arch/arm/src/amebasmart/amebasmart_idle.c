@@ -48,7 +48,6 @@
  ****************************************************************************/
 
 #ifdef CONFIG_PM
-static enum pm_state_e oldstate = PM_NORMAL;
 static void up_idlepm(void)
 {
 	uint32_t xModifiableIdleTime = 0;
@@ -58,52 +57,44 @@ static void up_idlepm(void)
 
 	/* Decide, which power saving level can be obtained */
 	newstate = pm_checkstate();
+	/* Perform board-specific, state-dependent logic here */
+	pmvdbg("newstate= %d\n", newstate);
 
-	/* Check if new attainable state is different from current state */
-	if (newstate != oldstate)
-	{
-		/* Perform board-specific, state-dependent logic here */
-	  	pmvdbg("newstate= %d oldstate=%d\n", newstate, oldstate);
-
-		/* Then force the global state change */
-		ret = pm_changestate(newstate);
-		if (ret < 0) {
-			/* The new state change failed, revert to the preceding state */
-			pmdbg("State change failed! Current state = %d, newstate = %d\n", oldstate, newstate);
-			/* Old state need not to be updated, since the state change is rejected */
-			goto REJECTED;
-		} else {
-			/* Save the new state */
-			oldstate = newstate;
-		}
-		/* MCU-specific power management logic */
-		/* TODO: When LCD is integrated, some of the state operation might require revision
-		   PM_IDLE: We will expect LCD to go through background light dimming
-		   PM_STANDBY: LCD shut down, single core might be able to handle remaining tasks
-		*/
-		/* Consider to perform DVFS in different PM state, if the average power consumption
-		   is still not up to satisfactory */
-		switch (newstate) {
-			case PM_NORMAL:
-				/* In PM_NORMAL, we have nothing to do, set core to WFE */
-				__asm(" WFE");
-				break;
-			case PM_IDLE:
-				/* In PM_IDLE, we have nothing to do, set core to WFE */
-				__asm(" WFE");
-				break;
-			case PM_STANDBY:
-				/* In PM_STANDBY, we have nothing to do, set core to WFE */
-				__asm(" WFE");
-				break;
-			case PM_SLEEP:
-				/* TODO: When enabling SMP, PM state coherency should be verified for 
-				   primary and secondary cores. Each of the cores has it's own idle task,
-				   need to make sure both cores handle their responsibilities correctly,
-				   EG: Secondary core should be in hotplug mode, primary core should check
-				   the secondary core state before going to sleep
-				*/
-				if (up_cpu_index() == 0) {
+	/* Then force the global state change */
+	ret = pm_changestate(newstate);
+	if (ret < 0) {
+		/* The new state change failed */
+		pmdbg("State change failed! newstate = %d\n", newstate);
+		return;
+	}
+	/* MCU-specific power management logic */
+	/* TODO: When LCD is integrated, some of the state operation might require revision
+		PM_IDLE: We will expect LCD to go through background light dimming
+		PM_STANDBY: LCD shut down, single core might be able to handle remaining tasks
+	*/
+	/* Consider to perform DVFS in different PM state, if the average power consumption
+		is still not up to satisfactory */
+	switch (newstate) {
+		case PM_NORMAL:
+			/* In PM_NORMAL, we have nothing to do, set core to WFE */
+			__asm(" WFE");
+			break;
+		case PM_IDLE:
+			/* In PM_IDLE, we have nothing to do, set core to WFE */
+			__asm(" WFE");
+			break;
+		case PM_STANDBY:
+			/* In PM_STANDBY, we have nothing to do, set core to WFE */
+			__asm(" WFE");
+			break;
+		case PM_SLEEP:
+			/* TODO: When enabling SMP, PM state coherency should be verified for 
+				primary and secondary cores. Each of the cores has it's own idle task,
+				need to make sure both cores handle their responsibilities correctly,
+				EG: Secondary core should be in hotplug mode, primary core should check
+				the secondary core state before going to sleep
+			*/
+			if (up_cpu_index() == 0) {
 #ifdef CONFIG_SMP
 /* For CPU_RUNNING case 
 CPU_RUNNING:
@@ -112,14 +103,14 @@ nicely before the next cycle of core 0 reaches
 */
 RESLEEP_1:
 #endif
-					/* mask sys tick interrupt*/
-					arm_arch_timer_int_mask(1);
-					up_timer_disable();
-					flags = irqsave();
-					/* TODO: If there is an interrupt happening here, what do we expect to happen?
-					   If it is one of the wakeup sources, it will recognized but will not be serviced
-					   If it is not one of the wakeup sources, it will not be recognized at all
-					*/
+				/* mask sys tick interrupt*/
+				arm_arch_timer_int_mask(1);
+				up_timer_disable();
+				flags = irqsave();
+				/* TODO: If there is an interrupt happening here, what do we expect to happen?
+					If it is one of the wakeup sources, it will recognized but will not be serviced
+					If it is not one of the wakeup sources, it will not be recognized at all
+				*/
 #ifdef CONFIG_SMP
 /* For CPU_WAKE_FROM_SLEEP case 
 CPU_WAKE_FROM_SLEEP:
@@ -129,76 +120,62 @@ But in case that happens, we have to introduce some strategy to handle that
 */
 RESLEEP_2:
 #endif
-					if (tizenrt_ready_to_sleep()) {
+				if (tizenrt_ready_to_sleep()) {
 #ifdef CONFIG_SMP
-						/*PG flow */
-						if (pmu_get_sleep_type() == SLEEP_PG) {
-							/* CPU1 is in task schedular, tell CPU1 to enter hotplug */
-							if (up_get_secondary_cpu_state(1) == CPU_RUNNING) {
-								/* CPU1 may in WFI idle state. Wake it up to enter hotplug itself */
-								up_irq_enable();
-								arm_cpu_sgi(GIC_IRQ_SGI4, (1 << 1));
-								arm_arch_timer_int_mask(0);
-								up_timer_enable();
-								DelayUs(100);
-								goto RESLEEP_1;
-							}
-							/* CPU1 just come back from pg, so can't sleep here */
-							if (up_get_secondary_cpu_state(1) == CPU_WAKE_FROM_SLEEP) {
-								pmdbg("Secondary core just woke from PG sleep!\n");
-								goto RESLEEP_2;
-							}
-							/* CG flow */
-						} else {
-							if (!check_wfi_state(1)) {
-								goto EXIT;
-							}
-						}
-#endif
-						/* Interrupt source will wake cpu up, just leave expected idle time as 0
-						Enter sleep mode for AP */
-						configPRE_SLEEP_PROCESSING(xModifiableIdleTime);
-						/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
-						trigger an timer interrupt */
-						if (pmu_get_sleep_type() == SLEEP_PG) {
+					/*PG flow */
+					if (pmu_get_sleep_type() == SLEEP_PG) {
+						/* CPU1 is in task schedular, tell CPU1 to enter hotplug */
+						if (up_get_secondary_cpu_state(1) == CPU_RUNNING) {
+							/* CPU1 may in WFI idle state. Wake it up to enter hotplug itself */
+							up_irq_enable();
+							arm_cpu_sgi(GIC_IRQ_SGI4, (1 << 1));
+							arm_arch_timer_int_mask(0);
 							up_timer_enable();
-							arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
+							DelayUs(100);
+							goto RESLEEP_1;
 						}
-						arm_arch_timer_int_mask(0);
-						configPOST_SLEEP_PROCESSING(xModifiableIdleTime);
+						/* CPU1 just come back from pg, so can't sleep here */
+						if (up_get_secondary_cpu_state(1) == CPU_WAKE_FROM_SLEEP) {
+							pmdbg("Secondary core just woke from PG sleep!\n");
+							goto RESLEEP_2;
+						}
+						/* CG flow */
+					} else {
+						if (!check_wfi_state(1)) {
+							goto EXIT;
+						}
 					}
-					else {
-						/* power saving when idle*/
-						arm_arch_timer_int_mask(0);
-						__asm(" DSB");
-						__asm(" WFI");
-						__asm(" ISB");
+#endif
+					/* Interrupt source will wake cpu up, just leave expected idle time as 0
+					Enter sleep mode for AP */
+					configPRE_SLEEP_PROCESSING(xModifiableIdleTime);
+					/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
+					trigger an timer interrupt */
+					if (pmu_get_sleep_type() == SLEEP_PG) {
+						up_timer_enable();
+						arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
 					}
+					arm_arch_timer_int_mask(0);
+					configPOST_SLEEP_PROCESSING(xModifiableIdleTime);
+				}
+				else {
+					/* power saving when idle*/
+					arm_arch_timer_int_mask(0);
+					__asm(" DSB");
+					__asm(" WFI");
+					__asm(" ISB");
+				}
 #ifdef CONFIG_SMP
 EXIT:
 #endif				
-					/* Re-enable interrupts and sys tick*/
-					up_irq_enable();
-				}
-				/* Note: Wakeup from sleep, change the state back to PM_NORMAL 
-				   At this point, we do not need to do anything, as the
-				   wakeup callback handler will invoke pm_activity()
-				*/
-
-/* If state transition is rejected, exit directly*/
-REJECTED:
-				break;
-			default:
-				break;
-		}
-	} else {
-		/* If a state is locked, we will not be able to do state transition
-		But idle thread might still have chance to be doing judgement under some
-		conditions (ie. context switched to idle loop), thus if there is no
-		state transition happening, we invoke WFE for the core to rest (ie. a kind of HW sleep),
-		to prevent from unecessary power consumption
-		*/
-		__asm(" WFE");
+				/* Re-enable interrupts and sys tick*/
+				up_irq_enable();
+			}
+			/* Note: Wakeup from sleep. At this point, we do not need to do anything,
+			as the wakeup callback handle PM State Transition*/
+			break;
+		default:
+			break;
 	}
 }
 #else
