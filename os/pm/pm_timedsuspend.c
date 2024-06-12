@@ -55,6 +55,7 @@
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
 #include <errno.h>
+#include "pm.h"
 
 /************************************************************************
  * Pre-processor Definitions
@@ -77,14 +78,15 @@ static WDOG_ID pid_timer_map[CONFIG_MAX_TASKS];
  * Private Functions
  ************************************************************************/
 
-static void timer_timeout(int argc, int domain_id, uint32_t pid)
+static void timer_timeout(int argc, int domain_id, uint32_t hash_pid)
 {
-	/* PM transition will be relaxed here */
-	if (pid_timer_map[pid] != NULL) {
-		pm_resume(domain_id);
-		wd_delete(pid_timer_map[pid]);
-        	pid_timer_map[pid] = NULL;
+	DEBUGASSERT(pid_timer_map[hash_pid] != NULL);
+	/* PM transition will be resume here */
+	if (pm_resume(domain_id) != OK) {
+		pmlldbg("Unable to resume domain: %s\n", pm_domain_map[domain_id]);
 	}
+	(void)wd_delete(pid_timer_map[hash_pid]);
+	pid_timer_map[hash_pid] = NULL;
 }
 
 /************************************************************************
@@ -98,7 +100,7 @@ static void timer_timeout(int argc, int domain_id, uint32_t pid)
  *   This function locks PM state transition for a specific duration.  
  * 
  * Parameters:
- *   domain - state to be suspended
+ *   domain_id - ID of domain to be suspended
  *   timer_interval - expected lock duration in millisecond
  *
  * Return Value:
@@ -109,25 +111,45 @@ static void timer_timeout(int argc, int domain_id, uint32_t pid)
 
 int pm_timedsuspend(int domain_id, unsigned int timer_interval)
 {
-	int pid = PIDHASH(getpid());
+	int hash_pid = PIDHASH(getpid());
+
+	if (domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id]==NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* Check if there is already a wdog lock timer running for 
 	 * the process */
-	if (pid_timer_map[pid] != NULL) {
-		pmdbg("There is already a lock timer running for this process\n");
+	if (pid_timer_map[hash_pid] != NULL) {
+		pmdbg("There is already a lock timer running for this process pid %d with domain %s\n", getpid(), pm_domain_map[domain_id]);
 		return ERROR;
 	}
-
+	/* Create WDog timer before suspending PM state transition */
 	WDOG_ID wdog = wd_create();
-	pid_timer_map[pid] = wdog;
-
-	/* Lock the pm transition and Start the wdog timer */
-	pm_suspend(domain_id);
-	int ret = wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)pid);
-	pmvdbg("PM is locked for pid %d and timer started for %d milisecond\n", pid, timer_interval);
-	if (ret != OK) {
+	if (wdog == NULL) {
+		pmdbg("Unable to create WDog Timer, error = %d\n", get_errno());
+		set_errno(EAGAIN);
 		return ERROR;
 	}
-
-	return ret;
+	pid_timer_map[hash_pid] = wdog;
+	/* Lock the pm transition and start the wdog timer */
+	if (pm_suspend(domain_id) != OK) {
+		pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id]);
+		goto errout;
+		
+	}
+	if (wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)hash_pid) != OK) {
+		pmvdbg("Error starting Wdog timer\n");
+		if (pm_resume(domain_id) != OK) {
+			pmdbg("Unable to resume domain: %s\n", pm_domain_map[domain_id]);
+		}
+		set_errno(EAGAIN);
+		goto errout;
+	}
+	pmvdbg("PM is locked for pid %d and timer started for %d milliseconds\n", getpid(), timer_interval);
+	return OK;
+errout:
+	pid_timer_map[hash_pid] = NULL;
+	(void)wd_delete(pid_timer_map[hash_pid]);
+	return ERROR;
 }
