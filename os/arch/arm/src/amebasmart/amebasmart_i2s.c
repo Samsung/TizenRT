@@ -168,7 +168,7 @@ struct amebasmart_i2s_config_s {
 struct amebasmart_i2s_s {
 	struct i2s_dev_s dev; /* Externally visible I2S interface, must the first element!! */
 
-	i2s_t i2s_object;
+	i2s_t *i2s_object;
 	const struct amebasmart_i2s_config_s *config;	/* Port configuration */
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
@@ -397,7 +397,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 
 		priv->apb_tx = apb; /* Reference current TX apb in our I2S struct */
 							/* Start sending first page, after that the txdma callback will be called in the tx irq handler */
-		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
+		ptx_buf = i2s_get_tx_page(priv->i2s_object);
 
 		if ((apb->nbytes - apb->curbyte) <= tx_size) {
 			tx_size = apb->nbytes - apb->curbyte;
@@ -408,8 +408,8 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		}
 		apb->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 
-		i2s_enable(&priv->i2s_object);
-		i2s_send_page(&priv->i2s_object, (uint32_t *)ptx_buf);
+		i2s_enable(priv->i2s_object);
+		i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
 	} else {
 
 		ret = -1;
@@ -592,11 +592,11 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 
 	/* amebasmart 16, 24, 32, bits setting */
 	if (bits == I2S_BITS_PER_SAMPLE_16BIT)
-		priv->i2s_object.word_length = WL_16b;
+		priv->i2s_object->word_length = WL_16b;
 	else if (bits == I2S_BITS_PER_SAMPLE_24BIT)
-		priv->i2s_object.word_length = WL_24b;
+		priv->i2s_object->word_length = WL_24b;
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
-		priv->i2s_object.word_length = WL_32b;
+		priv->i2s_object->word_length = WL_32b;
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -708,7 +708,7 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 		i2s_txdma_callback(priv, result);
 	} else {
 		int *ptx_buf;
-		ptx_buf = i2s_get_tx_page(&priv->i2s_object);
+		ptx_buf = i2s_get_tx_page(priv->i2s_object);
 
 		if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) <= tx_size) {
 			tx_size = priv->apb_tx->nbytes - priv->apb_tx->curbyte;
@@ -718,7 +718,7 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 			memcpy((void *)ptx_buf, (void *)&priv->apb_tx->samp[priv->apb_tx->curbyte], I2S_DMA_PAGE_SIZE);
 		}
 		priv->apb_tx->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
-		i2s_send_page(&priv->i2s_object, (uint32_t *)ptx_buf);
+		i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
 	}
 }
 
@@ -768,7 +768,7 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 	apb->curbyte = 0;
 
 	priv->i2s_rx_buf = apb->samp;
-	i2s_set_dma_buffer(&priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
+	i2s_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE);
 
 	return 0;
 }
@@ -800,7 +800,7 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
 
-		i2s_recv_page(&priv->i2s_object);
+		i2s_recv_page(priv->i2s_object);
 	}
 	leave_critical_section(flags);
 
@@ -950,11 +950,11 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 
 	/* amebasmart 16, 24, 32, bits setting */
 	if (bits == I2S_BITS_PER_SAMPLE_16BIT)
-		priv->i2s_object.word_length = WL_16b;
+		priv->i2s_object->word_length = WL_16b;
 	else if (bits == I2S_BITS_PER_SAMPLE_24BIT)
-		priv->i2s_object.word_length = WL_24b;
+		priv->i2s_object->word_length = WL_24b;
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
-		priv->i2s_object.word_length = WL_32b;
+		priv->i2s_object->word_length = WL_32b;
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
@@ -1058,7 +1058,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 {
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
-	i2s_t *obj = &priv->i2s_object;
+	i2s_t *obj = priv->i2s_object;
 
 	/* submit a new page for receive */
 	i2s_recv_page(obj);
@@ -1378,13 +1378,13 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX && priv->txenab) {
-		ameba_i2s_pause(&priv->i2s_object);
+		ameba_i2s_pause(priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX && priv->rxenab) {
-		ameba_i2s_pause(&priv->i2s_object);
+		ameba_i2s_pause(priv->i2s_object);
 	}
 #endif
 
@@ -1412,13 +1412,13 @@ static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX && priv->txenab) {
-		ameba_i2s_resume(&priv->i2s_object);
+		ameba_i2s_resume(priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX && priv->rxenab) {
-		ameba_i2s_resume(&priv->i2s_object);
+		ameba_i2s_resume(priv->i2s_object);
 	}
 #endif
 
@@ -1446,13 +1446,13 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
-		ameba_i2s_pause(&priv->i2s_object);
+		ameba_i2s_pause(priv->i2s_object);
 	}
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
-		ameba_i2s_pause(&priv->i2s_object);
+		ameba_i2s_pause(priv->i2s_object);
 	}
 #endif
 
@@ -1470,7 +1470,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
-		i2s_disable(&priv->i2s_object, 0);
+		i2s_disable(priv->i2s_object, 0);
 		while (sq_peek(&priv->tx.pend) != NULL) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
@@ -1498,7 +1498,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (dir == I2S_RX) {
-		i2s_disable(&priv->i2s_object, 0);
+		i2s_disable(priv->i2s_object, 0);
 		while (sq_peek(&priv->rx.pend) != NULL) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.pend);
@@ -1574,10 +1574,10 @@ int amebasmart_i2s_isr_initialize(struct amebasmart_i2s_s *priv)
 {
 	/* Attach the GPIO peripheral to the allocated CPU interrupt */
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	i2s_tx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->tx_isr_handler, (uint32_t)priv);
+	i2s_tx_irq_handler(priv->i2s_object, (i2s_irq_handler)priv->tx_isr_handler, (uint32_t)priv);
 #endif
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	i2s_rx_irq_handler(&priv->i2s_object, (i2s_irq_handler)priv->rx_isr_handler, (uint32_t)priv);
+	i2s_rx_irq_handler(priv->i2s_object, (i2s_irq_handler)priv->rx_isr_handler, (uint32_t)priv);
 #endif
 	return 0;
 }
@@ -1601,12 +1601,12 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)dev;
 	DEBUGASSERT(priv && rate > 0);
 
-	priv->i2s_object.sampling_rate = rate;
+	priv->i2s_object->sampling_rate = rate;
 	priv->sample_rate = rate;
 
-	i2s_set_param(&priv->i2s_object, priv->i2s_object.channel_num, priv->i2s_object.sampling_rate, priv->i2s_object.word_length);
+	i2s_set_param(priv->i2s_object, priv->i2s_object->channel_num, priv->i2s_object->sampling_rate, priv->i2s_object->word_length);
 
-	return priv->i2s_object.sampling_rate;
+	return priv->i2s_object->sampling_rate;
 }
 
 /****************************************************************************
@@ -1621,39 +1621,39 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
  ****************************************************************************/
 static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 {
-	priv->i2s_object.i2s_idx = priv->config->i2s_idx;
-	priv->i2s_object.sampling_rate = i2s_default_config.sample_rate;
-	priv->sample_rate = priv->i2s_object.sampling_rate;
-	/* priv->i2s_object.clock = ; */
-	priv->i2s_object.channel_num = i2s_default_config.channel_num;
-	priv->channel_num = priv->i2s_object.channel_num;
+	priv->i2s_object->i2s_idx = priv->config->i2s_idx;
+	priv->i2s_object->sampling_rate = i2s_default_config.sample_rate;
+	priv->sample_rate = priv->i2s_object->sampling_rate;
+	/* priv->i2s_object->clock = ; */
+	priv->i2s_object->channel_num = i2s_default_config.channel_num;
+	priv->channel_num = priv->i2s_object->channel_num;
 
 	priv->bits_per_sample = i2s_default_config.bits_per_sample;
 	if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_16BIT)
-		priv->i2s_object.word_length = WL_16b;
+		priv->i2s_object->word_length = WL_16b;
 	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_24BIT)
-		priv->i2s_object.word_length = WL_24b;
+		priv->i2s_object->word_length = WL_24b;
 	else if (priv->bits_per_sample == I2S_BITS_PER_SAMPLE_32BIT)
-		priv->i2s_object.word_length = WL_32b;
+		priv->i2s_object->word_length = WL_32b;
 	else
-		priv->i2s_object.word_length = WL_32b;
+		priv->i2s_object->word_length = WL_32b;
 
 	priv->rxenab = priv->config->rxenab;
 	if (priv->config->rxenab) {
-		priv->i2s_object.channel_length = SP_RXCL_32;
-		priv->i2s_object.fifo_num = SP_RX_FIFO2;
-		priv->i2s_object.direction = SP_DIR_RX;
-		priv->i2s_object.role = MASTER;
+		priv->i2s_object->channel_length = SP_RXCL_32;
+		priv->i2s_object->fifo_num = SP_RX_FIFO2;
+		priv->i2s_object->direction = SP_DIR_RX;
+		priv->i2s_object->role = MASTER;
 	}
 	priv->txenab = priv->config->txenab;
 	if (priv->config->txenab) {
-		priv->i2s_object.channel_length = SP_TXCL_32;
-		priv->i2s_object.fifo_num = SP_TX_FIFO2;
-		priv->i2s_object.direction = SP_DIR_TX;
-		priv->i2s_object.role = MASTER;
+		priv->i2s_object->channel_length = SP_TXCL_32;
+		priv->i2s_object->fifo_num = SP_TX_FIFO2;
+		priv->i2s_object->direction = SP_DIR_TX;
+		priv->i2s_object->role = MASTER;
 	}
 
-	priv->i2s_object.mode = MULTIIO;
+	priv->i2s_object->mode = MULTIIO;
 }
 
 /****************************************************************************
@@ -1758,6 +1758,8 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 		DEBUGASSERT(priv);
 	}
 
+	priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
+	DEBUGASSERT(priv->i2s_object);
 	/* Config values initialization */
 	priv->config = hw_config_s;	/* Get HW configuation */
 
@@ -1774,11 +1776,11 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 #endif
 
 	/* I2s object initialization */
-	i2s_init(&priv->i2s_object, hw_config_s->i2s_sclk_pin, hw_config_s->i2s_ws_pin, hw_config_s->i2s_sd_tx_pin, hw_config_s->i2s_sd_rx_pin, hw_config_s->i2s_mclk_pin);
+	i2s_init(priv->i2s_object, hw_config_s->i2s_sclk_pin, hw_config_s->i2s_ws_pin, hw_config_s->i2s_sd_tx_pin, hw_config_s->i2s_sd_rx_pin, hw_config_s->i2s_mclk_pin);
 
 	/* Initialize buffering */
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
-	i2s_set_dma_buffer(&priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
+	i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
 #endif
 
 	/* configures IRQ */
@@ -1804,12 +1806,11 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 		goto errout_with_alloc;
 	}
 	/* Basic settings */
-	//priv->i2s_num = priv->i2s_object.i2s_idx;
+	//priv->i2s_num = priv->i2s_object->i2s_idx;
 	if (!is_reinit) {
 		g_i2sdevice[port] = priv;
 	}
 
-	i2s_disable(&priv->i2s_object, 0);
 	/* Success exit */
 	return &priv->dev;
 
@@ -1827,8 +1828,11 @@ static void amebasmart_i2s_suspend(uint16_t port)
 {
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
 
-	i2s_disable(&priv->i2s_object, 1);
+	i2s_disable(priv->i2s_object, 1);
+	kmm_free(priv->i2s_object);
+	priv->i2s_object = NULL;
 	sem_destroy(&priv->exclsem);
+	sem_destroy(&priv->bufsem_tx);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (priv->rx.dog) {
 		wd_delete(priv->rx.dog);
