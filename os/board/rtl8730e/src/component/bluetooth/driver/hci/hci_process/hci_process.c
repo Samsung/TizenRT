@@ -11,10 +11,6 @@
 #include "hci_platform.h"
 #include "hci_dbg.h"
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-#include <tinyara/spi/spi.h>
-#include "spi_api.h"
-#endif
 
 #define USE_HCI_H4 1
 #ifdef USE_HCI_H4
@@ -25,14 +21,6 @@
     #define RESERVE_LEN 0
 #endif
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-/* Corresponds to LD external flash starting address */
-#define EXT_FLASH_BASE_ADDRESS   			0x09000000
-#define HCI_PATCH_ADDR_OFFSET				0x0
-#define EXTERNAL_FLASH_READ_CMD_SIZE		5
-/* For getting total binary size and addr */
-#define EXTERNAL_FLASH_BINARY_HEADER_SIZE	16
-#endif
 
 #ifdef hci_platform_START_RF_CALIBRATION
 static uint8_t hci_process_start_rf_calibration(uint16_t opcode)
@@ -185,57 +173,6 @@ static uint8_t hci_process_reset_baudrate(uint16_t opcode)
 }
 #endif
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-uint8_t *rtlbt_fw_ptr = NULL;
-uint32_t rtlbt_fw_size = 0;
-
-static void external_flash_read_stream(struct spi_dev_s *spi, char *rx_buffer, uint32_t length, uint32_t offset)
-{
-    char cmd[EXTERNAL_FLASH_READ_CMD_SIZE] = {0};
-    /* transmit read cmd */
-    cmd[0] = 0x13;
-    cmd[1] = (offset >> 24) & 0xFF;
-    cmd[2] = (offset >> 16) & 0xFF;
-    cmd[3] = (offset >> 8) & 0xFF;
-	cmd[4] = offset & 0xFF;
-
-    SPI_EXCHANGE(spi, (char *)cmd, (char *)rx_buffer, length + EXTERNAL_FLASH_READ_CMD_SIZE);
-    memmove(rx_buffer, rx_buffer + EXTERNAL_FLASH_READ_CMD_SIZE, length);
-}
-
-static void hci_platform_get_btfw_patch(void)
-{
-    /* SPI Initialize */		
-    struct spi_dev_s *spi;
-    spi = up_spiinitialize(1);
-    SPI_LOCK(spi, true);
-    SPI_SETBITS(spi, 8);
-    SPI_SETFREQUENCY(spi, 1000000);
-    uint8_t *rtlbt_fw_hdr_ptr = NULL;
-    uint32_t rtlbt_fw_addr = 0;
-
-    /* SPI Read size*/
-    rtlbt_fw_hdr_ptr = osif_mem_alloc(RAM_TYPE_DATA_ON, EXTERNAL_FLASH_BINARY_HEADER_SIZE);
-    SPI_SELECT(spi, 1, true);
-    external_flash_read_stream(spi, (char *)rtlbt_fw_hdr_ptr, EXTERNAL_FLASH_BINARY_HEADER_SIZE, HCI_PATCH_ADDR_OFFSET);
-    SPI_SELECT(spi, 1, false);
-    rtlbt_fw_addr = (rtlbt_fw_hdr_ptr[12]) | (rtlbt_fw_hdr_ptr[13] << 8) | (rtlbt_fw_hdr_ptr[14] << 16) | (rtlbt_fw_hdr_ptr[15] << 24);
-    rtlbt_fw_size = (rtlbt_fw_hdr_ptr[8]) | (rtlbt_fw_hdr_ptr[9] << 8) | (rtlbt_fw_hdr_ptr[10] << 16) | (rtlbt_fw_hdr_ptr[11] << 24);
-    /* Below condition is minimal requirement to meet */
-    DEBUGASSERT(rtlbt_fw_size > 0 && (rtlbt_fw_addr >= EXT_FLASH_BASE_ADDRESS && rtlbt_fw_addr != 0xFFFFFFFF));
-	if (rtlbt_fw_hdr_ptr) {
-		osif_mem_free(rtlbt_fw_hdr_ptr);
-	}
-    /* SPI Read Data back */
-    rtlbt_fw_ptr = osif_mem_alloc(RAM_TYPE_DATA_ON, rtlbt_fw_size);
-    SPI_SELECT(spi, 1, true);
-    /* The binary header size is 32bytes, so we need to add back the offset */
-    external_flash_read_stream(spi, (char *)rtlbt_fw_ptr, rtlbt_fw_size, rtlbt_fw_addr - (EXT_FLASH_BASE_ADDRESS + HCI_PATCH_ADDR_OFFSET) + 32);
-    SPI_SELECT(spi, 1, false);
-    SPI_LOCK(spi, false);
-}
-#endif
-
 #ifdef hci_platform_DOWNLOAD_PATCH
 static uint8_t hci_process_download_patch(uint16_t opcode)
 {
@@ -247,10 +184,6 @@ static uint8_t hci_process_download_patch(uint16_t opcode)
     ret = hci_platform_dl_patch_init();
     if (HCI_SUCCESS != ret)
         goto dl_patch_done;
-
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-    hci_platform_get_btfw_patch();
-#endif
 
     while (1)
     {
@@ -279,14 +212,6 @@ static uint8_t hci_process_download_patch(uint16_t opcode)
 
 dl_patch_done:
     hci_platform_dl_patch_done();
-
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-    /* After patch download complete, free the fw patch space */
-	if (rtlbt_fw_ptr) {
-		osif_mem_free(rtlbt_fw_ptr);
-		rtlbt_fw_ptr = NULL;
-	}
-#endif
 
     return ret;
 }
