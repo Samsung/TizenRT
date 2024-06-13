@@ -81,13 +81,19 @@ typedef struct {
 	uint8_t                i2s_idx;
 } SP_GDMA_STRUCT;
 
-static SP_InitTypeDef SP_InitStruct[I2S_NUM_MAX];
-static SP_GDMA_STRUCT SPGdmaStruct[I2S_NUM_MAX];
-static SP_TX_INFO sp_tx_info[I2S_NUM_MAX];
-static SP_RX_INFO sp_rx_info[I2S_NUM_MAX];
-static I2S_USER_CB I2SUserCB[I2S_NUM_MAX]; /* Pointer to I2S User Callback */
-static struct GDMA_CH_LLI LliTx[I2S_NUM_MAX][SP_MAX_DMA_PAGE_NUM];
-static struct GDMA_CH_LLI LliRx[I2S_NUM_MAX][SP_MAX_DMA_PAGE_NUM];
+static SP_InitTypeDef SP_InitStruct;
+static SP_GDMA_STRUCT SPGdmaStruct;
+#ifdef CONFIG_AMEBASMART_I2S_TX
+static SP_TX_INFO sp_tx_info;
+static struct GDMA_CH_LLI LliTx[SP_MAX_DMA_PAGE_NUM];
+#endif
+#ifdef CONFIG_AMEBASMART_I2S_RX
+static SP_RX_INFO sp_rx_info;
+static struct GDMA_CH_LLI LliRx[SP_MAX_DMA_PAGE_NUM];
+#endif
+#ifdef CONFIG_AMEBASMART_I2S
+static I2S_USER_CB I2SUserCB; /* Pointer to I2S User Callback */
+#endif
 
 /**
   * @}
@@ -96,61 +102,65 @@ static struct GDMA_CH_LLI LliRx[I2S_NUM_MAX][SP_MAX_DMA_PAGE_NUM];
 /** @defgroup MBED_I2S_Exported_Functions MBED_I2S Exported Functions
   * @{
   */
-
+#ifdef CONFIG_AMEBASMART_I2S_TX
 static void i2s_release_tx_page(uint8_t i2s_index)
 {
-	pTX_BLOCK ptx_block = &(sp_tx_info[i2s_index].tx_block[sp_tx_info[i2s_index].tx_gdma_cnt]);
+	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_gdma_cnt]);
 
-	if (sp_tx_info[i2s_index].tx_empty_flag) {
+	if (sp_tx_info.tx_empty_flag) {
 	} else {
 		ptx_block->tx_gdma_own = 0;
-		sp_tx_info[i2s_index].tx_gdma_cnt++;
-		if (sp_tx_info[i2s_index].tx_gdma_cnt == sp_tx_info[i2s_index].tx_page_num) {
-			sp_tx_info[i2s_index].tx_gdma_cnt = 0;
+		sp_tx_info.tx_gdma_cnt++;
+		if (sp_tx_info.tx_gdma_cnt == sp_tx_info.tx_page_num) {
+			sp_tx_info.tx_gdma_cnt = 0;
 		}
 	}
 }
 
 static uint32_t *i2s_get_ready_tx_page(uint8_t i2s_index)
 {
-	pTX_BLOCK ptx_block = &(sp_tx_info[i2s_index].tx_block[sp_tx_info[i2s_index].tx_gdma_cnt]);
+	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_gdma_cnt]);
 
 	if (ptx_block->tx_gdma_own) {
-		sp_tx_info[i2s_index].tx_empty_flag = 0;
+		sp_tx_info.tx_empty_flag = 0;
 		return (uint32_t *)ptx_block->tx_addr;
 	} else {
-		sp_tx_info[i2s_index].tx_empty_flag = 1;
-		return (uint32_t *)sp_tx_info[i2s_index].tx_zero_block.tx_addr;	//for audio buffer empty case
+		sp_tx_info.tx_empty_flag = 1;
+		return (uint32_t *)sp_tx_info.tx_zero_block.tx_addr;	//for audio buffer empty case
 	}
 }
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2S_RX
 static void i2s_release_rx_page(uint8_t i2s_index)
 {
-	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_gdma_cnt]);
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_gdma_cnt]);
 
-	if (sp_rx_info[i2s_index].rx_full_flag) {
+	if (sp_rx_info.rx_full_flag) {
 	} else {
 		prx_block->rx_gdma_own = 0;
-		sp_rx_info[i2s_index].rx_gdma_cnt++;
-		if (sp_rx_info[i2s_index].rx_gdma_cnt == sp_rx_info[i2s_index].rx_page_num) {
-			sp_rx_info[i2s_index].rx_gdma_cnt = 0;
+		sp_rx_info.rx_gdma_cnt++;
+		if (sp_rx_info.rx_gdma_cnt == sp_rx_info.rx_page_num) {
+			sp_rx_info.rx_gdma_cnt = 0;
 		}
 	}
 }
 
 static uint32_t *i2s_get_free_rx_page(uint8_t i2s_index)
 {
-	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_gdma_cnt]);
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_gdma_cnt]);
 
 	if (prx_block->rx_gdma_own) {
-		sp_rx_info[i2s_index].rx_full_flag = 0;
+		sp_rx_info.rx_full_flag = 0;
 		return (uint32_t *)prx_block->rx_addr;
 	} else {
-		sp_rx_info[i2s_index].rx_full_flag = 1;
-		return (uint32_t *)sp_rx_info[i2s_index].rx_full_block.rx_addr;	//for audio buffer full case
+		sp_rx_info.rx_full_flag = 1;
+		return (uint32_t *)sp_rx_info.rx_full_block.rx_addr;	//for audio buffer full case
 	}
 }
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2S_TX
 static void i2s_tx_isr(void *sp_data)
 {
 	u32 *pbuf;
@@ -165,11 +175,13 @@ static void i2s_tx_isr(void *sp_data)
 
 	i2s_release_tx_page(i2s_index);
 	pbuf = i2s_get_ready_tx_page(i2s_index);
-	I2SUserCB[i2s_index].TxCCB(I2SUserCB[i2s_index].TxCBId, (char*)pbuf);
+	I2SUserCB.TxCCB(I2SUserCB.TxCBId, (char*)pbuf);
 
 
 }
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2S_RX
 static void i2s_rx_isr(void *sp_data)
 {
 	SP_GDMA_STRUCT *gs = sp_data;
@@ -183,20 +195,12 @@ static void i2s_rx_isr(void *sp_data)
 	i2s_release_rx_page(i2s_index);
 
 	/* Read data */
-	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_usr_cnt]);
-	DCache_CleanInvalidate((uint32_t)prx_block->rx_addr, sp_rx_info[i2s_index].rx_page_size);
-	I2SUserCB[i2s_index].RxCCB((uint32_t)NULL, (void *)(uint32_t)prx_block->rx_addr);
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
+	DCache_CleanInvalidate((uint32_t)prx_block->rx_addr, sp_rx_info.rx_page_size);
+	I2SUserCB.RxCCB((uint32_t)NULL, (void *)(uint32_t)prx_block->rx_addr);
 	i2s_get_free_rx_page(i2s_index);
 }
-
-static void i2s_pinmux_config(uint32_t pin_name, uint32_t pin_func)
-{
-	if (pin_name != _PNC) {
-		Pinmux_Config(pin_name, pin_func);
-	} else {
-		return;
-	}
-}
+#endif
 
 /**
   * @brief  Set page number, page size and page address.
@@ -212,7 +216,6 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 {
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
 
-	uint8_t i2s_idx = obj->i2s_idx;
 	uint32_t i, j;
 
 	if ((page_num < 2) || (page_num > 8) || (page_size < 8)) {
@@ -220,70 +223,74 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 				   __FUNCTION__, page_num, page_size);
 		return;
 	}
-
+#ifdef CONFIG_AMEBASMART_I2S_TX
 	if (obj->direction == I2S_DIR_TX) {
 
-		sp_tx_info[i2s_idx].tx_gdma_cnt = 0;
-		sp_tx_info[i2s_idx].tx_usr_cnt = 0;
-		sp_tx_info[i2s_idx].tx_empty_flag = 0;
+		sp_tx_info.tx_gdma_cnt = 0;
+		sp_tx_info.tx_usr_cnt = 0;
+		sp_tx_info.tx_empty_flag = 0;
 
 		for (i = 0; i < page_num; i++) {
-			sp_tx_info[i2s_idx].tx_block[i].tx_gdma_own = 0;
-			sp_tx_info[i2s_idx].tx_block[i].tx_addr = (uint32_t)tx_buf + i * page_size;
+			sp_tx_info.tx_block[i].tx_gdma_own = 0;
+			sp_tx_info.tx_block[i].tx_addr = (uint32_t)tx_buf + i * page_size;
 		}
 
-		sp_tx_info[i2s_idx].tx_zero_block.tx_addr = (uint32_t)tx_buf + page_num * page_size;
+		sp_tx_info.tx_zero_block.tx_addr = (uint32_t)tx_buf + page_num * page_size;
 
 		for (i = 0; i < page_size; i++) {
-			((uint8_t *)(sp_tx_info[i2s_idx].tx_zero_block.tx_addr))[i] = 0;
+			((uint8_t *)(sp_tx_info.tx_zero_block.tx_addr))[i] = 0;
 		}
 
-		sp_tx_info[i2s_idx].tx_page_size = page_size;
-		sp_tx_info[i2s_idx].tx_page_num = page_num;
+		sp_tx_info.tx_page_size = page_size;
+		sp_tx_info.tx_page_num = page_num;
 
 		for (j = 0; j < page_num + 1; j++) {
 
 			if (j == 0) {
-				LliTx[i2s_idx][j].LliEle.Sarx = (uint32_t)tx_buf + (page_num) * page_size;
+				LliTx[j].LliEle.Sarx = (uint32_t)tx_buf + (page_num) * page_size;
 			} else {
-				LliTx[i2s_idx][j].LliEle.Sarx = (uint32_t)tx_buf + (j - 1) * page_size;
+				LliTx[j].LliEle.Sarx = (uint32_t)tx_buf + (j - 1) * page_size;
 			}
 
 			if (j == page_num) {
-				LliTx[i2s_idx][j].pNextLli = &LliTx[i2s_idx][1];
+				LliTx[j].pNextLli = &LliTx[1];
 			} else {
-				LliTx[i2s_idx][j].pNextLli = &LliTx[i2s_idx][j + 1];
+				LliTx[j].pNextLli = &LliTx[j + 1];
 			}
 
 		}
-	} else {
-		sp_rx_info[i2s_idx].rx_gdma_cnt = 0;
-		sp_rx_info[i2s_idx].rx_usr_cnt = 0;
-		sp_rx_info[i2s_idx].rx_full_flag = 0;
+	}
+#endif
+#ifdef CONFIG_AMEBASMART_I2S_RX
+	else {
+		sp_rx_info.rx_gdma_cnt = 0;
+		sp_rx_info.rx_usr_cnt = 0;
+		sp_rx_info.rx_full_flag = 0;
 
 		for (i = 0; i < page_num; i++) {
-			sp_rx_info[i2s_idx].rx_block[i].rx_gdma_own = 1;
-			sp_rx_info[i2s_idx].rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
+			sp_rx_info.rx_block[i].rx_gdma_own = 1;
+			sp_rx_info.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
 		}
 
-		sp_rx_info[i2s_idx].rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
+		sp_rx_info.rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
 
 		for (i = 0; i < page_size; i++) {
-			((uint8_t *)(sp_rx_info[i2s_idx].rx_full_block.rx_addr))[i] = 0;
+			((uint8_t *)(sp_rx_info.rx_full_block.rx_addr))[i] = 0;
 		}
 
-		sp_rx_info[i2s_idx].rx_page_size = page_size;
-		sp_rx_info[i2s_idx].rx_page_num = page_num;
+		sp_rx_info.rx_page_size = page_size;
+		sp_rx_info.rx_page_num = page_num;
 
 		for (j = 0; j < page_num; j++) {
-			LliRx[i2s_idx][j].LliEle.Darx = (uint32_t)rx_buf + j * page_size;
+			LliRx[j].LliEle.Darx = (uint32_t)rx_buf + j * page_size;
 			if (j == page_num - 1) {
-				LliRx[i2s_idx][j].pNextLli = &LliRx[i2s_idx][0];
+				LliRx[j].pNextLli = &LliRx[0];
 			} else {
-				LliRx[i2s_idx][j].pNextLli = &LliRx[i2s_idx][j + 1];
+				LliRx[j].pNextLli = &LliRx[j + 1];
 			}
 		}
 	}
+#endif
 }
 
 
@@ -294,23 +301,25 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
   * @param  id: TX interrupt callback parameter.
   * @retval none
   */
+#ifdef CONFIG_AMEBASMART_I2S_TX
 void i2s_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 {
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
 	
 	uint8_t i2s_index = obj->i2s_idx;
-	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct[i2s_index];
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
 
 	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
 
-	I2SUserCB[i2s_index].TxCCB = handler;
-	I2SUserCB[i2s_index].TxCBId = id;
+	I2SUserCB.TxCCB = handler;
+	I2SUserCB.TxCBId = id;
 
 	i2s_get_ready_tx_page(i2s_index);
-	AUDIO_SP_LLPTXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tx_isr, sp_tx_info[i2s_index].tx_page_size,
-							sp_tx_info[i2s_index].tx_page_num + 1, LliTx[i2s_index]);
+	AUDIO_SP_LLPTXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tx_isr, sp_tx_info.tx_page_size,
+							sp_tx_info.tx_page_num + 1, LliTx);
 	
 }
+#endif
 
 /**
   * @brief  Register RX interrupt handler.
@@ -319,19 +328,21 @@ void i2s_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
   * @param  id: RX interrupt callback parameter.
   * @retval none
   */
+#ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 {
 	uint8_t i2s_index = obj->i2s_idx;
-	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct[i2s_index];
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
 	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
 
-	I2SUserCB[i2s_index].RxCCB = handler;
-	I2SUserCB[i2s_index].RxCBId = id;
+	I2SUserCB.RxCCB = handler;
+	I2SUserCB.RxCBId = id;
 
 	i2s_get_free_rx_page(i2s_index);
-	AUDIO_SP_LLPRXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_rx_isr, sp_rx_info[i2s_index].rx_page_size,
-							sp_rx_info[i2s_index].rx_page_num, LliRx[i2s_index]);
+	AUDIO_SP_LLPRXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_rx_isr, sp_rx_info.rx_page_size,
+							sp_rx_info.rx_page_num, LliRx);
 }
+#endif
 
 /**
   * @brief  Set I2S data transfer direction.
@@ -345,7 +356,7 @@ void i2s_set_direction(i2s_t *obj, int trx_type)
 {
 	obj->direction = trx_type;
 
-	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &(SP_InitStruct[obj->i2s_idx]));
+	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
 }
 
 /**
@@ -402,6 +413,13 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 		clock_mode = PLL_CLOCK_24P576M / Clock_Params.PLL_DIV;
 		break;
 
+	case PLL_CLOCK_45P1584M:
+		PLL_I2S_45P158M(ENABLE);
+		RCC_PeriphClockSource_SPORT(obj->i2s_idx, CKSL_I2S_PLL45M);
+		PLL_I2S_Div(obj->i2s_idx, Clock_Params.PLL_DIV);
+		clock_mode = PLL_CLOCK_45P1584M / Clock_Params.PLL_DIV;
+		break;
+
 	case PLL_CLOCK_98P304M:
 	default:
 		PLL_I2S_98P304M(ENABLE);
@@ -413,14 +431,14 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	/* Sport Init */
 	AUDIO_SP_Reset(obj->i2s_idx);
-	AUDIO_SP_StructInit(&SP_InitStruct[obj->i2s_idx]);
+	AUDIO_SP_StructInit(&SP_InitStruct);
 
-	SP_InitStruct[obj->i2s_idx].SP_SelFIFO = obj->fifo_num;
-	SP_InitStruct[obj->i2s_idx].SP_SelChLen = obj->channel_length;
-	SP_InitStruct[obj->i2s_idx].SP_SetMultiIO = obj->mode;
-	SP_InitStruct[obj->i2s_idx].SP_SR = obj->sampling_rate;
-	SP_InitStruct[obj->i2s_idx].SP_SelClk = clock_mode;
-	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &(SP_InitStruct[obj->i2s_idx]));
+	SP_InitStruct.SP_SelFIFO = obj->fifo_num;
+	SP_InitStruct.SP_SelChLen = obj->channel_length;
+	SP_InitStruct.SP_SetMultiIO = obj->mode;
+	SP_InitStruct.SP_SR = obj->sampling_rate;
+	SP_InitStruct.SP_SelClk = clock_mode;
+	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
 
 	if (obj->direction == SP_DIR_TX) {
@@ -461,11 +479,11 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
 	}
 
-	i2s_pinmux_config(mck, pin_func);
-	i2s_pinmux_config(sck, pin_func);
-	i2s_pinmux_config(ws, pin_func);
-	i2s_pinmux_config(sd_tx, pin_func);
-	i2s_pinmux_config(sd_rx, pin_func);
+	Pinmux_Config(mck, pin_func);
+	Pinmux_Config(sck, pin_func);
+	Pinmux_Config(ws, pin_func);
+	Pinmux_Config(sd_tx, pin_func);
+	Pinmux_Config(sd_rx, pin_func);
 
 	i2s_set_param(obj, obj->channel_num, obj->sampling_rate, obj->word_length);
 
@@ -501,11 +519,10 @@ void i2s_deinit(i2s_t *obj)
   * @param  obj: I2S object defined in application software.
   * @return Address of current tx page if it is owned by CPU or NULL if it is owned by I2S.
   */
+#ifdef CONFIG_AMEBASMART_I2S_TX
 int *i2s_get_tx_page(i2s_t *obj)
 {
-	uint8_t i2s_index = obj->i2s_idx;
-
-	pTX_BLOCK ptx_block = &(sp_tx_info[i2s_index].tx_block[sp_tx_info[i2s_index].tx_usr_cnt]);
+	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_usr_cnt]);
 
 	if (ptx_block->tx_gdma_own) {
 		return NULL;
@@ -523,36 +540,37 @@ int *i2s_get_tx_page(i2s_t *obj)
   */
 void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
 {
-	uint8_t i2s_index = obj->i2s_idx;
+	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_usr_cnt]);
 
-	pTX_BLOCK ptx_block = &(sp_tx_info[i2s_index].tx_block[sp_tx_info[i2s_index].tx_usr_cnt]);
-
-	memcpy((void *)ptx_block->tx_addr, pbuf, sp_tx_info[i2s_index].tx_page_size);
-	DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info[i2s_index].tx_page_size);
+	memcpy((void *)ptx_block->tx_addr, pbuf, sp_tx_info.tx_page_size);
+	DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
 	ptx_block->tx_gdma_own = 1;
-	sp_tx_info[i2s_index].tx_usr_cnt++;
-	if (sp_tx_info[i2s_index].tx_usr_cnt == sp_tx_info[i2s_index].tx_page_num) {
-		sp_tx_info[i2s_index].tx_usr_cnt = 0;
+	sp_tx_info.tx_usr_cnt++;
+	if (sp_tx_info.tx_usr_cnt == sp_tx_info.tx_page_num) {
+		sp_tx_info.tx_usr_cnt = 0;
 	}
 }
+#endif
 
 /**
   * @brief  Set current rx page owned by I2S.
   * @param  obj: I2S object defined in application software.
   * @retval none
   */
+#ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_recv_page(i2s_t *obj)
 {
 	uint8_t i2s_index = obj->i2s_idx;
 
-	pRX_BLOCK prx_block = &(sp_rx_info[i2s_index].rx_block[sp_rx_info[i2s_index].rx_usr_cnt]);
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 
 	prx_block->rx_gdma_own = 1;
-	sp_rx_info[i2s_index].rx_usr_cnt++;
-	if (sp_rx_info[i2s_index].rx_usr_cnt == sp_rx_info[i2s_index].rx_page_num) {
-		sp_rx_info[i2s_index].rx_usr_cnt = 0;
+	sp_rx_info.rx_usr_cnt++;
+	if (sp_rx_info.rx_usr_cnt == sp_rx_info.rx_page_num) {
+		sp_rx_info.rx_usr_cnt = 0;
 	}
 }
+#endif
 
 /**
   * @brief  Enable I2S interrupt and function.
@@ -576,7 +594,7 @@ void i2s_enable(i2s_t *obj)
   */
 void i2s_disable(i2s_t *obj, bool is_suspend)
 {
-	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct[obj->i2s_idx];
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -588,7 +606,7 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
 		if (is_suspend) {
-			GDMA_ChnlFree(SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+			GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
 			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 		}
 	} else {
@@ -608,8 +626,12 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
   */
 void ameba_i2s_pause(i2s_t *obj) {
 
-	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct[obj->i2s_idx];
-	GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+	if (obj->direction == I2S_DIR_TX) {
+		GDMA_Suspend(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+	} else {
+		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+	}
 }
 
 /**
@@ -619,7 +641,11 @@ void ameba_i2s_pause(i2s_t *obj) {
   */
 void ameba_i2s_resume(i2s_t *obj) {
 
-	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct[obj->i2s_idx];
-	GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+	if (obj->direction == I2S_DIR_TX) {
+		GDMA_Resume(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+	} else {
+		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+	}
 }
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

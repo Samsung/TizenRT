@@ -1206,7 +1206,7 @@ int up_i2cuninitialize(FAR struct i2c_dev_s *dev)
 	flags = enter_critical_section();
 
 	if (--priv->refs > 0) {
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return OK;
 	}
 

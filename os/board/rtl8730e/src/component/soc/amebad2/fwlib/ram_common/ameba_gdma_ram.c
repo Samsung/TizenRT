@@ -122,10 +122,7 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 	/* Check chanel is avaliable */
 	if (GDMA->ChEnReg & ChEn) {
 		/* Disable Channel */
-		lldbg("Channel had used; Disable Channel!!!!\n");
-
 		GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
-
 	}
 
 	/* Check if there are the pending isr; TFR, Block, Src Tran, Dst Tran, Error */

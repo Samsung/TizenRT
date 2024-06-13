@@ -478,7 +478,6 @@ static int alc1019_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 static int alc1019_shutdown(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct alc1019_dev_s *priv = (FAR struct alc1019_dev_s *)dev;
-	struct alc1019_lower_s *lower = priv->lower;
 
 	DEBUGASSERT(priv);
 
@@ -786,8 +785,6 @@ static int alc1019_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 
 	case AUDIOIOC_PREPARE: {
 		audvdbg("AUDIOIOC_PREPARE: alc1019 prepare\n");
-		uint8_t regval;
-		struct alc1019_lower_s *lower = priv->lower;
 
 		/* Take semaphore */
 		alc1019_takesem(&priv->devsem);
@@ -920,7 +917,7 @@ static int alc1019_release(FAR struct audio_lowerhalf_s *dev)
 	return OK;
 }
 
-/* Reset and reconfigure the ALC1019 hardwaqre */
+/* Reset and reconfigure the ALC1019 hardware */
 /****************************************************************************
  * Name: alc1019_reset_config
  *
@@ -948,7 +945,7 @@ static void alc1019_reset_config(FAR struct alc1019_dev_s *priv)
 	/* Software reset.	This puts all ALC1019 registers back in their
 	 * default state.
 	 */
-	int res = alc1019_exec_i2c_script(priv, codec_initial_script, sizeof(codec_initial_script) / sizeof(t_codec_init_script_entry));
+	(void)alc1019_exec_i2c_script(priv, codec_initial_script, sizeof(codec_initial_script) / sizeof(t_codec_init_script_entry));
 	
 	/*
 	 * TODO : once setting i2s sample rate and data width is fixed by realtek, will uncomment the code,
@@ -1016,7 +1013,6 @@ FAR struct audio_lowerhalf_s *alc1019_initialize(FAR struct i2c_dev_s *i2c, FAR 
 {
 
 	FAR struct alc1019_dev_s *priv;
-	uint8_t regval;
 	/* Sanity check */
 	DEBUGASSERT(i2c && lower && i2s);
 

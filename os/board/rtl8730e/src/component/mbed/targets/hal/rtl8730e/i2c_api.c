@@ -95,10 +95,14 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 	I2C_StructInit(&I2CInitDat[obj->i2c_idx]);
 
 	/* Assign I2C Pin Mux */
-	I2CInitDat[obj->i2c_idx].I2CMaster     = I2C_MASTER_MODE;
-	I2CInitDat[obj->i2c_idx].I2CSpdMod     = I2C_SS_MODE;
-	I2CInitDat[obj->i2c_idx].I2CClk        = 100;
+	/* The Below has been done the same in I2C_StructInit, if need customize, uncomment it and change */
+	// I2CInitDat[obj->i2c_idx].I2CMaster     = I2C_MASTER_MODE;
+	// I2CInitDat[obj->i2c_idx].I2CSpdMod     = I2C_SS_MODE;
+	// I2CInitDat[obj->i2c_idx].I2CClk        = 100;
 	I2CInitDat[obj->i2c_idx].I2CAckAddr    = 0;
+
+	/* We should clear the target slave address, so that the I2Cx target address will be updated accordingly */
+	i2c_target_addr[obj->i2c_idx]          = 0;
 
 	/* Init I2C now */
 	if (I2CInitDat[obj->i2c_idx].I2CIdx == 0) {
