@@ -109,6 +109,7 @@ u32 MIPI_VACT_g = LCDC_TEST_IMG_BUF_Y;
 u32 UnderFlowCnt = 0;
 u32 vo_freq;
 u32 LCDC_Show_Idx;
+u8 LCDC_Show_NextFrame = 0;
 
 /*initialize the MIPI IRQ info*/
 MIPI_IRQInfo MipiIrqInfo = {
@@ -716,6 +717,11 @@ u32 LCDCRgbHvIsr(void *Data)
 		LCDC_ClearINT(LCDCx, LCDC_BIT_LCD_LIN_INTS);
 	}
 
+	if (IntId & LCDC_BIT_LCD_FRD_INTS) {
+		LCDC_ClearINT(LCDCx, LCDC_BIT_LCD_FRD_INTS);
+		LCDC_Show_NextFrame = 1;
+	}
+
 	if (IntId & LCDC_BIT_DMA_UN_INTS) {
 		LCDC_ClearINT(LCDCx, LCDC_BIT_DMA_UN_INTS);
 		UnderFlowCnt++;
@@ -760,7 +766,7 @@ void LcdcRgbDisplayTest(void)
 	/*line number*/
 	LCDC_LineINTPosConfig(LCDC, MIPI_VACT_g * 4 / 5);
 	/*enbale LCDC interrupt*/
-	LCDC_INTConfig(LCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
+	LCDC_INTConfig(LCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_LCD_FRD_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
 
 	LcdcEnable();
 
@@ -837,10 +843,12 @@ void LcdcRgbDisplayChk(void)
 			break;
 			break;
 		}
-
+		LCDC_Show_NextFrame = 0;
 		LCDC_TrigerSHWReload(LCDC);
 		//vTaskDelay(1000);
-		rtw_mdelay_os(10000);
+		while( !LCDC_Show_NextFrame ) {
+			rtw_mdelay_os(1);
+		}
 	}
 DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "[%s]ln%d\n", __FUNCTION__, __LINE__);
 }

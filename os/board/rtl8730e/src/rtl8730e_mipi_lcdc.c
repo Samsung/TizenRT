@@ -82,6 +82,7 @@ struct irq {
 LCDC_TypeDef *pLCDC = LCDC;
 LCDC_InitTypeDef lcdc_init_struct;
 static u32 UnderFlowCnt = 0;
+static u8 lcdc_nextframe = 0;
 
 struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
@@ -119,7 +120,7 @@ static void rtl8730_lcd_init(void)
 	LCDC_DMADebugConfig(pLCDC, LCDC_DMA_OUT_DISABLE, 0);
 	rtl8730_register_lcdc_isr();
 	LCDC_LineINTPosConfig(pLCDC, LCD_YRES * 4 / 5);
-	LCDC_INTConfig(pLCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
+	LCDC_INTConfig(pLCDC, LCDC_BIT_LCD_LIN_INTEN | LCDC_BIT_LCD_FRD_INTEN | LCDC_BIT_DMA_UN_INTEN, ENABLE);
 }
 
 static void rtl8730_gpio_reset(void)
@@ -166,7 +167,13 @@ static void rtl8730_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u
 #endif
 	DCache_CleanInvalidate((u32)lcd_img_buffer, LCDC_IMG_BUF_SIZE);
 	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
+
+	lcdc_nextframe = 0;
 	LCDC_TrigerSHWReload(pLCDC);
+
+	while (!lcdc_nextframe) {
+		DelayMs(1);
+	}
 }
 
 static void rtl8730_gpio_init(void)
@@ -228,8 +235,9 @@ u32 rtl8730_hv_isr(void *Data)
 	}
 
 	if (IntId & LCDC_BIT_LCD_FRD_INTS) {
-                LCDC_ClearINT(pLCDC, LCDC_BIT_LCD_FRD_INTS);
-        }
+		LCDC_ClearINT(pLCDC, LCDC_BIT_LCD_FRD_INTS);
+		lcdc_nextframe = 1;
+	}
 
 	if (IntId & LCDC_BIT_DMA_UN_INTS) {
 		LCDC_ClearINT(pLCDC, LCDC_BIT_DMA_UN_INTS);
