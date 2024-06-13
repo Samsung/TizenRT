@@ -105,7 +105,6 @@ static int flash_read(unsigned long addr, int size, flash_t flash)
 
 	long long total_duration_ms = 0;
 
-	int total_duration_s = 0;
 	if (addr == 0 || size <= 0) {
 		printf("Invalid arguments, offset 0x%x, read size %d\n", addr, size);
 		return ERROR;
@@ -119,10 +118,10 @@ static int flash_read(unsigned long addr, int size, flash_t flash)
 		}
 
 	}
+#ifdef CONFIG_SECOND_FLASH_PARTITION
 
 	else if (flash == FLASH_EXT) {
 		printf("Received Flash Read cmd for external flash offset 0x%x, read size %d\n", addr, size);
-#ifdef CONFIG_SECOND_FLASH_PARTITION
 		struct spi_dev_s *spi = up_spiinitialize(1);
 
 #ifdef CONFIG_MTD_JEDEC
@@ -139,8 +138,8 @@ static int flash_read(unsigned long addr, int size, flash_t flash)
 		}
 		printf("w25_initialize: done for secondary flash \n");
 #endif
-#endif
 	}
+#endif
 	/* Get the geometry of the FLASH device */
 	ret = dev_mtd->ioctl(dev_mtd, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t) & geo));
 	if (ret < 0) {
@@ -192,7 +191,7 @@ static int flash_read(unsigned long addr, int size, flash_t flash)
 	return OK;
 }
 
-static fill_buffer(FAR uint8_t *buff)
+static void fill_buffer(FAR uint8_t *buff)
 {
 	for (int i = 0; i < BUF_SIZE; i++) {
 		buff[i] = i;
@@ -220,9 +219,8 @@ static int flash_write(unsigned long addr, int size, flash_t flash)
 			return ERROR;
 		}
 	}
-
-	else if (flash == FLASH_EXT) {
 #ifdef CONFIG_SECOND_FLASH_PARTITION
+	else if (flash == FLASH_EXT) {
 		struct spi_dev_s *spi = up_spiinitialize(1);
 
 #ifdef CONFIG_MTD_JEDEC
@@ -238,8 +236,9 @@ static int flash_write(unsigned long addr, int size, flash_t flash)
 			return ERROR;
 		}
 #endif
-#endif
 	}
+#endif
+
 	buffer = (uint8_t *)malloc(BUF_SIZE);
 	if (!buffer) {
 		printf("Failed to allocate buffer %d\n", BUF_SIZE);
@@ -295,9 +294,8 @@ static int flash_erase(unsigned long addr, int size, flash_t flash)
 			return ERROR;
 		}
 	}
-
-	else if (flash == FLASH_EXT) {
 #ifdef CONFIG_SECOND_FLASH_PARTITION
+	else if (flash == FLASH_EXT) {
 		struct spi_dev_s *spi = up_spiinitialize(1);
 
 #ifdef CONFIG_MTD_JEDEC
@@ -313,9 +311,8 @@ static int flash_erase(unsigned long addr, int size, flash_t flash)
 			return ERROR;
 		}
 #endif
-#endif
 	}
-
+#endif
 	/* Get the geometry of the FLASH device */
 	ret = dev_mtd->ioctl(dev_mtd, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t) & geo));
 	if (ret < 0) {
@@ -368,34 +365,37 @@ int flash_test_main(int argc, char *argv[])
 	int size;
 	flash_t flash_type;
 
-	if (argc == 5 && !strncmp(argv[1], READ_CMD, sizeof(READ_CMD) + 1)) {
+	if (argc == 5) {
 		offset = strtoul(argv[2], NULL, 16);
 		size = (int)atoi(argv[3]);
 		flash_type = (flash_t) atoi(argv[4]);
 
-		/* Read an address in flash by size */
-		return flash_read(offset, size, flash_type);
-	} else if (argc == 5 && !strncmp(argv[1], WRITE_CMD, sizeof(WRITE_CMD) + 1)) {
-		offset = strtoul(argv[2], NULL, 16);
-		size = (int)atoi(argv[3]);
-		flash_type = (flash_t) atoi(argv[4]);
-		/* Write an address in flash by size */
-		return flash_write(offset, size, flash_type);
-	} else if (argc == 5 && !strncmp(argv[1], ERASE_CMD, sizeof(ERASE_CMD) + 1)) {
-		offset = strtoul(argv[2], NULL, 16);
-		size = (int)atoi(argv[3]);
-		flash_type = (flash_t) atoi(argv[4]);
-		/* Write an address in flash by size */
-		return flash_erase(offset, size, flash_type);
+#if !defined(CONFIG_SECOND_FLASH_PARTITION)
+		if (flash_type == FLASH_EXT) {
+			printf("\nERROR: Enable External Flash related configs to perform the test.\n");
+			return ERROR;
+		}
+#endif
+
+		if (!strncmp(argv[1], READ_CMD, sizeof(READ_CMD) + 1)) {
+			/* Read an address in flash by size */
+			return flash_read(offset, size, flash_type);
+		} else if (!strncmp(argv[1], WRITE_CMD, sizeof(WRITE_CMD) + 1)) {
+			/* Write an address in flash by size */
+			return flash_write(offset, size, flash_type);
+		} else if (!strncmp(argv[1], ERASE_CMD, sizeof(ERASE_CMD) + 1)) {
+			/* Erase an address in flash by size */
+			return flash_erase(offset, size, flash_type);
+		}
+	} else {
+		printf("Usage: flash_test read <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
+		printf("Usage: flash_test write <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
+		printf("Usage: flash_test erase <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
+
+		printf("Read flash by 'size' from 'flash base address + offset'\n");
+		printf(" * Flash base address is board-specific \n");
+		printf(" * Make sure to give the sector aligned address for the Flash erase \n");
 	}
-
-	printf("Usage: flash_test read <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
-	printf("Usage: flash_test write <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
-	printf("Usage: flash_test erase <offset> <size(bytes)> <Flash_type>(0: Internal, 1: External)\n");
-
-	printf("Read flash by 'size' from 'flash base address + offset'\n");
-	printf(" * Flash base address is board-specific \n");
-	printf(" * Make sure to give the sector aligned address for the Flash erase \n");
 
 	return ERROR;
 }
