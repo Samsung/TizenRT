@@ -96,21 +96,27 @@ int pm_resume(int domain_id)
 {
 	irqstate_t flags;
 	int ret = OK;
-
-	flags = enter_critical_section();
+	int index = -1;
 	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
 		ret = ERROR;
 		set_errno(EINVAL);
 		goto errout;
 	}
+	flags = enter_critical_section();
 	if (g_pmglobals.suspend_count[domain_id] <= 0) {
 		ret = ERROR;
 		set_errno(ERANGE);
 		goto errout;
 	}
 	g_pmglobals.suspend_count[domain_id]--;
+	/* Start the PM State Change Timer */
+	if (g_pmglobals.suspend_count[domain_id] == 0) {
+		if (domain_id == PM_LCD_DOMAIN || domain_id == PM_IDLE_DOMAIN || g_pmglobals.state == PM_STANDBY) {
+			pm_timer_resume();
+		}
+	}
 errout:
 	leave_critical_section(flags);
 	return ret;
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

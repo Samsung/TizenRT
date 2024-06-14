@@ -27,7 +27,6 @@
 #include <tinyara/irq.h>
 
 #ifdef CONFIG_PM
-#include <tinyara/pm/pm.h>
 #include "amebasmart_config.h"
 #include "arch_timer.h"
 #include "ameba_soc.h"
@@ -159,7 +158,6 @@ EXIT:
  *   power management operations might be performed.
  *
  ****************************************************************************/
-
 void up_idle(void)
 {
 #if defined(CONFIG_SUPPRESS_INTERRUPTS) || defined(CONFIG_SUPPRESS_TIMER_INTS)
@@ -176,6 +174,7 @@ void up_idle(void)
 }
 
 #ifdef CONFIG_PM
+
 void arm_pminitialize(void)
 {
 	/* Then initialize the TinyAra power management subsystem properly */

@@ -99,21 +99,27 @@ int pm_suspend(int domain_id)
 {
 	irqstate_t flags;
 	int ret = OK;
-
-	flags = enter_critical_section();
 	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
 		ret = ERROR;
 		set_errno(EINVAL);
 		goto errout;
 	}
+	flags = enter_critical_section();
 	if (g_pmglobals.suspend_count[domain_id] >= UINT16_MAX) {
 		ret = ERROR;
 		set_errno(ERANGE);
 		goto errout;
 	}
 	g_pmglobals.suspend_count[domain_id]++;
+	if (domain_id == PM_LCD_DOMAIN || domain_id == PM_IDLE_DOMAIN) {
+		if (pm_changestate(PM_NORMAL) != OK) {
+			ret = ERROR;
+			pmdbg("Unable to change state to PM_NORMAL\n");
+			goto errout;
+		}
+	}
 errout:
 	leave_critical_section(flags);
 	return ret;
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

@@ -22,6 +22,7 @@
 
 #include <tinyara/config.h>
 #include <debug.h>
+#include <tinyara/arch.h>
 
 #include <arch/irq.h>
 #include <arch/limits.h>
@@ -68,5 +69,7 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 	pm_changestate(PM_STANDBY);
 	g_pmglobals.stime = clock_systimer();
 
+	/* Start the timer and disable board sleep */
+	pm_timer_resume();
 	leave_critical_section(flags);
 }
