@@ -350,7 +350,7 @@ uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
 	 * page table is for kernel. Also, we reserve CONFIG_NUM_L2_PER_APP L2 page tables for each app.
 	 */
 	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) + 
-			(app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
+			((CONFIG_NUM_APPS - app_id) * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
 	return addr;
 }
 

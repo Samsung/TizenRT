@@ -22,7 +22,7 @@ config FLASH_START_ADDR
 
 config TRPK_CONTAINS_MULTIPLE_BINARY
     bool
-    default n
+    default y
     depends on XIP_ELF
     help
         This macro is to differentiate whether the kernel trpk contains

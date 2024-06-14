@@ -68,7 +68,7 @@ endif
 #########################################
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 
-BIN = $(CONFIG_APP2_BIN_NAME)
+BIN = $(CONFIG_APP1_BIN_NAME)
 
 include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
 

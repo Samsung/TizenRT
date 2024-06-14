@@ -76,7 +76,7 @@ if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
     app2_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_NAME=").replace('"', '').rstrip("\n")
     app2_trpk_name = util.get_binname_from_bininfo("APP2")
-    if app1_bin_name != app1_trpk_name :
+    if app2_bin_name != app2_trpk_name :
         shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
 
 # Convert common binary to name stored in .bininfo
