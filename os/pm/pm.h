@@ -174,11 +174,10 @@ extern "C" {
 /* All PM global data: */
 
 EXTERN struct pm_global_s g_pmglobals;
-
+EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
-
 /****************************************************************************
  * Name: pm_set_wakeup_timer
  *
