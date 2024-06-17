@@ -30,12 +30,12 @@
 #ifdef CONFIG_PM
 
 /************************************************************************
- * Private Variables
+ * Public Variables
  ************************************************************************/
 
 /* This array maps the integer domain to its respective string domain */
 
-static char *pm_domain_map[CONFIG_PM_NDOMAINS];
+char *pm_domain_map[CONFIG_PM_NDOMAINS];
 
 /****************************************************************************
  * Public Functions
