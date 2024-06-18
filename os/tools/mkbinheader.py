@@ -365,6 +365,62 @@ def make_common_binary_header():
 
 ############################################################################
 #
+# Resource binary header information :
+#
+# The total size is 4096 bytes but CRC value (4 bytes) will be prepended later.
+# So now it makes header with (4096 - 4) bytes.
+# +---------------------------------------------------------------------------------+
+# | Header size | Binary Version |  Binary Size |              Padding              |
+# |   (2bytes)  |    (4bytes)    |   (4bytes)   |         (4096 - 14 bytes)         |
+# +---------------------------------------------------------------------------------+
+#
+# parameter information :
+#
+# argv[1] is file path of binary file.
+# argv[2] is binary type.
+#
+###########################################################################
+def make_resource_binary_header():
+
+    SIZE_OF_TOTAL = 4096
+    SIZE_OF_HEADERSIZE = 2
+    SIZE_OF_BINVER = 4
+    SIZE_OF_BINSIZE = 4
+
+    # Calculate binary header size
+    header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE
+
+    remain_size = SIZE_OF_TOTAL - header_size - 4
+
+    # Get binary version
+    bin_ver = util.get_value_from_file(cfg_path, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').replace('\n','')
+    if bin_ver == 'None' :
+        print("Error : Not Found config for resource binary version, CONFIG_RESOURCE_BINARY_VERSION")
+        sys.exit(1)
+    bin_ver = int(bin_ver)
+    if bin_ver < 101 or bin_ver > 991231 :
+        print("Error : Invalid Resource Binary Version, ",bin_ver,".")
+        print("        Please check CONFIG_RESOURCE_BINARY_VERSION with 'YYMMDD' format in (101, 991231)")
+        sys.exit(1)
+
+    with open(file_path, 'rb') as fp:
+        # binary data copy to 'data'
+        data = fp.read()
+        file_size = fp.tell()
+        fp.close()
+
+        fp = open(file_path, 'wb')
+
+        # Generate binary with header data
+        fp.write(struct.pack('H', header_size))
+        fp.write(struct.pack('I', int(bin_ver)))
+        fp.write(struct.pack('I', file_size))
+        # Add padding for total size 4 Kbytes
+        fp.write(b'\xff' * remain_size)
+        fp.write(data)
+
+############################################################################
+#
 # Generate headers for binary types
 #
 ############################################################################
@@ -381,6 +437,8 @@ elif binary_type == 'user' :
     make_user_binary_header()
 elif binary_type == 'common' :
     make_common_binary_header()
+elif binary_type == 'resource' :
+    make_resource_binary_header()
 else : # Not supported.
     print("Error : Not supported Binary Type")
     sys.exit(1)

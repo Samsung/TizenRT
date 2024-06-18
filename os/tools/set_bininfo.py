@@ -39,8 +39,8 @@ def save_bininfo(bin_name) :
             f.write('APP2_BIN_NAME=' + bin_name + '\n')
         elif ("common" in bin_name) :
             f.write('COMMON_BIN_NAME=' + bin_name + '\n')
-        elif ("bootparam" in bin_name) :
-            f.write('BOOTPARAM_BIN_NAME=' + bin_name + '\n')
+        elif ("resource" in bin_name) :
+            f.write('RESOURCE_BIN_NAME=' + bin_name + '\n')
         else :
             f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
 
@@ -84,6 +84,8 @@ if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True
     COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
     save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
 
-# Set the boot parameter bin name as "bootparam.bin"
-if util.check_config_existence(cfg_file, 'CONFIG_USE_BP') == True :
-    save_bininfo('bootparam' + '.' + BP_EXT_NAME)
+# Set the resource bin name as "resource_[board]_[version]"
+if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
+    RESOURCE_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').rstrip('\n')
+    RESOURCE_BIN_NAME = 'resource_' + BOARD_TYPE + '_' + RESOURCE_BIN_VER
+    save_bininfo(RESOURCE_BIN_NAME + '.' + TARGET_EXT_NAME)

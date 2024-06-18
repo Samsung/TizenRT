@@ -46,10 +46,14 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 # | Checksum | BP Version | BP Format Version | Active Idx | First Address | Second Address |
 # | (4bytes) |  (4bytes)  |      (4bytes)     |   (1byte)  |    (4bytes)   |    (4bytes)    |
 # +------------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------------------------------------+
-# | App Count | App1 Name  | App1 Active Idx | App2 Name  | App2 Active Idx |     App# ...   |         Reserved         |
-# |  (1byte)  | (16 bytes) |   (1 bytes)     | (16 bytes) |    (1 bytes)    |  (## bytes)    |(4Kbytes - (21 + @)bytes) |
-# ----------------------------------------------------------------------------------------------------------------------+
+# --------------------------------------------------------------------------------------------
+# | App Count | App1 Name  | App1 Active Idx | App2 Name  | App2 Active Idx |     App# ...   |
+# |  (1byte)  | (16 bytes) |   (1 bytes)     | (16 bytes) |    (1 bytes)    |  (## bytes)    |
+# --------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------+
+# | Resource Active Idx |                 Reserved                  |
+# |       (1 byte)      |        (4Kbytes - (23 + @)bytes)          |
+# ------------------------------------------------------------------+
 #  * The "Checksum" is crc32 value for data from "BP Version" to "Second Address".
 #  * The "BP Version" is a version to check the latest of boot parameters.
 #  * The "BP Format Version" is a version to manage the format of boot parameters.
@@ -62,6 +66,10 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 #    - All user app have 2 partitions.
 #    - If the value is 0, "First partition" will be loaded or is loaded.
 #    - If the value is 1, "Second partition" will be loaded or is loaded.
+#  * The "Resource Active Idx" is a index indicating which partition to use for resource.
+#    - All resource have 2 partitions.
+#    - If the value is 0, "First partition" will be mounted.
+#    - If the value is 1, "Second partition" will be mounted.
 #
 ###########################################################################################
 
@@ -131,13 +139,16 @@ def make_bootparam():
     else:
         user_file_list = []
 
-    app_data_size = 0
+    total_app_data_size = 0
     user_app_count = len(user_file_list)
     if user_app_count > 0:
         SIZE_OF_BINCOUNT = 1
         SIZE_OF_BINNAME = 16
         SIZE_OF_BINIDX = 1
-        app_data_size = SIZE_OF_BINCOUNT + (user_app_count * (SIZE_OF_BINNAME + SIZE_OF_BINIDX))
+        TOTAL_APP_COUNT = int(util.get_value_from_file(config_file_path, "CONFIG_NUM_APPS=")) + 1
+
+        total_app_data_size = SIZE_OF_BINCOUNT + TOTAL_APP_COUNT * (SIZE_OF_BINNAME + SIZE_OF_BINIDX)
+        remain_app_data_size = (TOTAL_APP_COUNT - user_app_count) * (SIZE_OF_BINNAME + SIZE_OF_BINIDX)
 
         with open(bootparam_file_path, 'a') as fp:
             # User Data
@@ -145,10 +156,18 @@ def make_bootparam():
             for user_file in user_file_list:
                     fp.write('{:{}{}.{}}'.format(user_file, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
                     fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
+            fp.write(b'\xff' * remain_app_data_size)
+
+    # Resource Data
+    resource_data_size = 0
+    if (util.check_config_existence(config_file_path, "CONFIG_RESOURCE_FS")) :
+        resource_data_size = 1
+        with open(bootparam_file_path, 'a') as fp:
+                fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
 
     # Fill remaining space with '0xff'
     with open(bootparam_file_path, 'a') as fp:
-        remain_size = SIZE_OF_BPx - (kernel_data_size + app_data_size)
+        remain_size = SIZE_OF_BPx - (kernel_data_size + total_app_data_size + resource_data_size)
         fp.write(b'\xff' * remain_size)
 
     # Add checksum for BP1

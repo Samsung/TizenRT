@@ -86,6 +86,12 @@ if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True
     if common_bin_name != common_trpk_name :
         shutil.copyfile(output_folder + '/' + common_bin_name, output_folder + '/' + common_trpk_name)
 
+# Convert resource binary to name stored in .bininfo
+if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
+    resource_bin_name = "resourcefs.img"
+    resource_trpk_name = util.get_binname_from_bininfo("RESOURCE")
+    if resource_bin_name != resource_trpk_name :
+        shutil.copyfile(output_folder + '/' + resource_bin_name, output_folder + '/' + resource_trpk_name)
 
 ############################################################################
 # Convert kernel binary format to hex or srec

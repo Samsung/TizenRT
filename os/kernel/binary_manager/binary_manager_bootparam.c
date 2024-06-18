@@ -298,6 +298,24 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		}
 	}
 
+#ifdef CONFIG_RESOURCE_FS
+	if (BM_CHECK_GROUP(type, BINARY_RESOURCE)) {
+		/* Update bootparam if new resource binary exists */
+		ret = binary_manager_check_resource_update();
+		if (ret == BINMGR_OK) {
+			/* Update index for inactive partition */
+			update_bp_data.resource_active_idx ^= 1;
+		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+			bmdbg("No resource binary to update\n");
+			is_all_updatable = false;
+			response_msg.data.result[BINARY_RESOURCE] = BINMGR_ALREADY_UPDATED;
+		} else {
+			bmdbg("Fail to check resource update, %d\n", ret);
+			goto send_response;
+		}
+	}
+#endif
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	need_update = false;
 

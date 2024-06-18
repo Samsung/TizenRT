@@ -69,9 +69,6 @@ extern struct binary_s *g_lib_binp;
 #define BINARY_COMP_TYPE "[Un-compressed Binary]"
 #endif
 
-/* Partition Name - first partition : "A", second partition : "B" */
-#define GET_PARTNAME(part_idx)  ((part_idx == 0) ? "A" : "B")
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -488,6 +485,13 @@ static int loadingall_thread(int argc, char *argv[])
 		return BINMGR_OPERATION_FAIL;
 	}
 
+#ifdef CONFIG_RESOURCE_FS
+	ret = binary_manager_mount_resource();
+	if (ret != OK) {
+		bmdbg("ERROR: resourcefs mount failed\n");
+	}
+#endif
+
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	ret = binary_manager_load(BM_CMNLIB_IDX);
 	if (ret < 0) {
@@ -497,7 +501,6 @@ static int loadingall_thread(int argc, char *argv[])
 
 	load_cnt = 0;
 	bin_count = binary_manager_get_ucount();
-
 
 	/* Load the binaries with high priority directly */
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
@@ -580,6 +583,13 @@ static int reloading_thread(int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_RESOURCE_FS
+	ret = binary_manager_unmount_resource();
+	if (ret != OK) {
+		return BINMGR_OPERATION_FAIL;
+	}
+#endif
+
 	/* Deinitialize modules in kernel */
 	binary_manager_deinit_modules();
 
@@ -635,6 +645,13 @@ static int update_thread(int argc, char *argv[])
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	/* Finally, Unload common library */
 	ret = binary_manager_terminate_binary(BM_CMNLIB_IDX);
+	if (ret != OK) {
+		return BINMGR_OPERATION_FAIL;
+	}
+#endif
+
+#ifdef CONFIG_RESOURCE_FS
+	ret = binary_manager_unmount_resource();
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}

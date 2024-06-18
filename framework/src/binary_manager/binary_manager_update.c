@@ -54,6 +54,9 @@ binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_res
 	&& !BM_CHECK_GROUP(type, BINARY_COMMON)
 #endif
 #endif
+#ifdef CONFIG_RESOURCE_FS
+	&& !BM_CHECK_GROUP(type, BINARY_RESOURCE)
+#endif
 	) {
 		bmdbg("Invalid parameter %u\n", type);
 		return BINMGR_INVALID_PARAM;
