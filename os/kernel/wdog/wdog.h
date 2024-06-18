@@ -160,7 +160,7 @@ unsigned int wd_timer(int ticks);
 void wd_timer(void);
 #endif
 #ifdef CONFIG_SCHED_TICKSUPPRESS
-void wd_timer_nohz(int ticks);
+void wd_timer_nohz(clock_t ticks);
 #endif
 /****************************************************************************
  * Name: wd_recover

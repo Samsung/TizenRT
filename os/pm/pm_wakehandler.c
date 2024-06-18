@@ -60,8 +60,8 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 	pmllvdbg("missing_tick: %llu\n", missing_tick);
 
 	if (missing_tick > 0) {
-		clock_timer_nohz((clock_t)missing_tick);
-		wd_timer_nohz(missing_tick > INT_MAX ? INT_MAX : (int)missing_tick);
+		clock_timer_nohz(missing_tick);
+		wd_timer_nohz(missing_tick);
 	}
 
 	/* After wakeup change PM State to STANDBY and reset the time slice */
