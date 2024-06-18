@@ -57,17 +57,11 @@ echo "Making romfs.img..."
 
 FSTOOL_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 # When location of this script is changed, only OS_PATH should be changed together!!!
-OS_PATH=${FSTOOL_PATH}/../../os
-BIN_PATH=${OS_PATH}/../build/output/bin
-CONTENTS_PATH=${FSTOOL_PATH}/contents-romfs
-ROMFS_IMG=${BIN_PATH}/romfs.img
+
+CONTENTS_PATH=$1
+ROMFS_IMG=$2
 
 # Sanity checks
-
-if [ ! -d "${CONTENTS_PATH}" ]; then
-  echo "ERROR: Directory ${CONTENTS_PATH} does not exist"
-  exit 1
-fi
 
 genromfs -h 1>/dev/null 2>&1 || { \
   echo "Host executable genromfs not available in PATH"; \
@@ -75,9 +69,15 @@ genromfs -h 1>/dev/null 2>&1 || { \
   exit 1; \
 }
 
-# Now we are ready to make the ROMFS image
+if [ ! -d "${CONTENTS_PATH}" ]; then
+  # If directory doesn't exist, it doesn't create ROMFS image without error return
 
-genromfs -f ${ROMFS_IMG} -d ${CONTENTS_PATH} -x .gitignore -V "TinyAraROMVol" || { echo "genromfs failed" ; exit 1 ; }
+  echo "Directory ${CONTENTS_PATH} does not exist"
+else
+  # Now we are ready to make the ROMFS image
 
-# And, finally, create the header file
-echo "${ROMFS_IMG} was made."
+  genromfs -f ${ROMFS_IMG} -d ${CONTENTS_PATH} -x .gitignore -x README.txt -V "TinyAraROMVol" || { echo "genromfs failed" ; exit 1 ; }
+
+  # And, finally, create the header file
+  echo "${ROMFS_IMG} was made."
+fi

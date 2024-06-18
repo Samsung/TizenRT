@@ -26,6 +26,22 @@ config FS_WRITABLE
 	bool
 	default y
 
+config RESOURCE_FS
+	bool "Support Resource fs"
+	select FS_ROMFS
+	default y
+
+if RESOURCE_FS
+config RESOURCE_BINARY_VERSION
+	string "Resource binary version (YYMMDD)"
+	default 240421
+	---help---
+		This config indicates resource binary version which has a "YYMMDD" format.
+		It is included in resource binary header and used to check the latest binary.
+		So it should be set to a higher value than versions of old binaries if you want to make the binary the latest version.
+
+endif
+
 source fs/aio/Kconfig
 source fs/semaphore/Kconfig
 source fs/mqueue/Kconfig

@@ -148,6 +148,10 @@ elif "app" in target :
     print("\tStack Size        : " + str(stk_size[0]))
     print("\tKernel Version    : " + str(kernel_ver[0]))
 
+elif "resource" in target :
+	print("=== Resource Package Header Information ===")
+	sys.exit(1)
+
 else :
     print("!!!Not Supported Package. Please Check the package!!!")
     VERIFY_SUCCESS = False

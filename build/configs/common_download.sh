@@ -113,6 +113,7 @@ function get_executable_name()
 		loadparam) echo "$1";;
 		common) echo "${COMMON_BIN_NAME}";;
 		zoneinfo) echo "zoneinfo.img";;
+		resource) echo "${RESOURCE_BIN_NAME}";;
 		rom) echo "romfs.img";;
 		bootparam)
 			if [[ ! -n "${BOOTPARAM}" ]];then
