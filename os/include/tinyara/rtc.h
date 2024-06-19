@@ -219,6 +219,21 @@ struct rtc_time {
 	int tm_isdst; /* Non-0 if daylight savings time is in effect (unused) */
 };
 
+/*
+ * Below initializer can be used to convert regular date-time to rtc date-time. The input range is as follows,
+ *
+ * entry | range
+ * -------------- 
+ * year  | (>= 1900)
+ * month | (1-12)
+ * day   | (1-31)
+ * hour  | (0-23)
+ * min   | (0-59)
+ * sec   | (0-60)
+ *
+ */
+#define RTC_TIME_INITIALIZER(year, month, day, hour, min, sec) {sec, min, hour, day, month - 1, year - TM_YEAR_BASE, 0, 0, 0}
+
 #ifdef CONFIG_RTC_ALARM
 /* Structure used with the RTC_RD_ALARM IOCTL command and with
  * rdalarm() method.
