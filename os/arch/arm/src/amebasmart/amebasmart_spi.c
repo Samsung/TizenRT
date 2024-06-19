@@ -97,6 +97,7 @@ struct amebasmart_spidev_s {
 	sem_t exclsem;              /* Held while chip is selected for mutual exclusion */
 	uint32_t frequency;         /* Requested clock frequency */
 	uint32_t actual;            /* Actual clock frequency */
+	int refs;                    /* Reference count */
 
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_t rxsem;				/* Wait for RX DMA to complete */
@@ -239,7 +240,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 */
 
 	.spi_object = {0},
-
+	.refs = 0,
 	.spi_idx = MBED_SPI0,
 	.spi_mosi = PB_4,
 	.spi_miso = PB_3,
@@ -296,7 +297,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
 */
 
 	.spi_object = {0},
-
+	.refs = 0,
 	.spi_idx = MBED_SPI1,
 	.spi_mosi = PB_28,
 	.spi_miso = PB_27,
@@ -1445,6 +1446,7 @@ static uint32_t rtk_spi_suspend(uint32_t expected_idle_time, void *param)
 	/* Is there anything need to be done here? Unregister something...? */
 #ifdef CONFIG_AMEBASMART_SPI0
 	sem_destroy(&g_spi0dev.exclsem);
+	g_spi0dev.refs--;
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_destroy(&g_spi0dev.txsem);
 	sem_destroy(&g_spi0dev.rxsem);
@@ -1452,6 +1454,7 @@ static uint32_t rtk_spi_suspend(uint32_t expected_idle_time, void *param)
 #endif
 #ifdef CONFIG_AMEBASMART_SPI1
 	sem_destroy(&g_spi1dev.exclsem);
+	g_spi1dev.refs--;
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_destroy(&g_spi1dev.txsem);
 	sem_destroy(&g_spi1dev.rxsem);
@@ -1588,6 +1591,10 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		priv = &g_spi0dev;
 
+		if (priv->refs > 0) {
+			dbg("SPI port%d has been initialized before!\n", port);
+			return (FAR struct spi_dev_s *)priv;
+		}
 		/* Only configure if the bus is not already configured */
 		/* Checks for Multislaves feature */
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
@@ -1601,6 +1608,10 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		priv = &g_spi1dev;
 
+		if (priv->refs > 0) {
+			dbg("SPI port%d has been initialized before!\n", port);
+			return (FAR struct spi_dev_s *)priv;
+		}
 		/* Only configure if the bus is not already configured */
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
 		amebasmart_spi_bus_initialize(priv, 1);
@@ -1614,6 +1625,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		return NULL;
 	}
 
+	priv->refs++;
 	leave_critical_section(flags);
 
 	return (FAR struct spi_dev_s *)priv;
