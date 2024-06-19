@@ -212,6 +212,9 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
+#ifdef CONFIG_PM_METRICS
+static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
+#endif
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -609,6 +612,26 @@ enum pm_state_e pm_querystate(void);
 void pm_dvfs(int div_lvl);
 #else
 #define pm_dvfs(div_lvl)	(0)
+#endif
+
+#ifdef CONFIG_PM_METRICS
+/****************************************************************************
+ * Name: pm_metrics
+ *
+ * Description:
+ *   This internal function is called to analyze the PM suspend and sleep behaviour.
+ *   It gathers the pm metrics statistics for provided time (in msec) to provide the
+ *   domain specific pm suspend information.
+ *
+ * Input Parameters:
+ *   milliseconds - the monitoring duration in milliseconds
+ *
+ * Returned Value:
+ *   OK (0)     - On Success
+ *   ERROR (-1) - On Error
+ *
+ ****************************************************************************/
+int pm_metrics(int milliseconds);
 #endif
 
 /****************************************************************************
