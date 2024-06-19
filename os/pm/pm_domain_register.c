@@ -59,6 +59,7 @@ char *pm_domain_map[CONFIG_PM_NDOMAINS];
 
 int pm_domain_register(char *domain) {
 	int index;
+	irqstate_t flags;
 	int length = strlen(domain);
 
 	/* If domain string length is greater than max allowed then return error */
@@ -69,25 +70,35 @@ int pm_domain_register(char *domain) {
 	}
 	/* Iterate over each domain ID and check if given domain is in our domain map or not */
 	for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
+		flags = enter_critical_section();
 		/* If we have unused domain ID then use it to register given domain */
 		if (pm_domain_map[index] == NULL) {
 			pm_domain_map[index] = (char *)pm_alloc(length, sizeof(char));
 			if (!pm_domain_map[index]) {
 				set_errno(ENOMEM);
 				pmdbg("Unable to allocate memory from heap\n");
+				leave_critical_section(flags);
 				return ERROR;
 			}
 			strncpy(pm_domain_map[index], domain, length + 1);
-			return index;
+#ifdef CONFIG_PM_METRICS
+			/* For newly registered domain initialize its pm metrics*/
+			pm_metrics_update_domain(index);
+#endif
+			goto EXIT;
 		/* If domain of same length and characters is in our map , then return the corresponding domain ID */
 		} else if ((length == strlen(pm_domain_map[index])) && (strncmp(pm_domain_map[index], domain, length) == 0)) {
-			return index;
+			goto EXIT;
 		}
+		leave_critical_section(flags);
 	}
 	/* No more space available in map, so return ERROR (-1) */
 	set_errno(ENOMEM);
 	pmdbg("No space left to register new domain\n");
 	return ERROR;
+EXIT:
+	leave_critical_section(flags);
+	return index;
 }
 
 #endif							/* CONFIG_PM */
