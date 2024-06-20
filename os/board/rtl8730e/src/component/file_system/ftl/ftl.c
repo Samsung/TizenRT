@@ -132,7 +132,7 @@ uint16_t read_mapping_table(uint16_t logical_addr);
 #endif
 
 /* Flash Status Bit */
-#define FLASH_STATUS_BITS 0x28 //Protect Lower 512KB
+#define FLASH_STATUS_BITS CONFIG_FLASH_STATUS_BITS
 uint32_t backup_state = 0;
 
 static void ftl_setstatusbits(uint32_t NewState)

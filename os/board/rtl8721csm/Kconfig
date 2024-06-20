@@ -29,6 +29,13 @@ config FLASH_SIZE
         A size of flash (in bytes).
         This is fixed value, so user doesn't need to change it.
 
+config FLASH_STATUS_BITS
+	hex
+	default 0x2c
+	---help---
+		Setting this value according to the IC package's Flash Model.
+		To protect the lower 512KB of the flash memory.
+
 menu "SPI Flash driver"
 
 config AMEBAD_FLASH_BASE

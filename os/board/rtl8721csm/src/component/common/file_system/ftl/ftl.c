@@ -139,7 +139,7 @@ typedef struct {
 #endif
 
 /* Flash Status Bit */
-#define FLASH_STATUS_BITS 0x2c
+#define FLASH_STATUS_BITS CONFIG_FLASH_STATUS_BITS
 uint32_t backup_state = 0;
 //uint32_t cur_state = 0;
 
