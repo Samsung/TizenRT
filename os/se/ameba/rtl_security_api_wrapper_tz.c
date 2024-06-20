@@ -22,6 +22,9 @@
 #include "flash_api.h"
 #include "device_lock.h"
 
+/* Flash Status Bit to protect lower 512KB */
+#define FLASH_STATUS_BITS CONFIG_FLASH_STATUS_BITS
+
 typedef struct {
 	void (*flash_erase)(uint32_t);
 	int (*flash_read)(uint32_t, uint32_t, uint8_t *);
@@ -33,21 +36,10 @@ typedef struct {
 	void (*info_printf)(const char *);
 } nsfunc_ops_s;
 
-/* Flash Status Bit Protect Lower 512KB */
-#ifdef CONFIG_AMEBAD_TRUSTZONE
-#define FLASH_STATUS_BITS 0x2c
-#endif
-#ifdef CONFIG_AMEBALITE_TRUSTZONE
-#define FLASH_STATUS_BITS 0x2c
-#endif
-#ifdef CONFIG_AMEBASMART_TRUSTZONE
-#define FLASH_STATUS_BITS 0x28
-#endif
-
 nsfunc_ops_s ns_func;
 
 /* Helper Function */
-static void ns_flash_erase(uint32_t address)
+void ns_flash_erase(uint32_t address)
 {
 	flash_t flash;
 
@@ -95,6 +87,28 @@ int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_disp
 	}
 
 	return ret;
+}
+
+/**
+  * @brief  Verify the Flash Protection Bit is enabled.
+  * @param  none
+  * @return Result.
+  * @retval 1: Flash Protection Bit is enabled.
+  * @retval 0: Flash Protection Bit is disabled.
+  */
+int rtl_verify_flash_protect(void)
+{
+	flash_t flash;
+	unsigned char status_register;
+
+	status_register = 0xFF & flash_get_status(&flash);
+	printf("Status Register: 0x%02x\n", status_register);
+
+	if ((status_register & FLASH_STATUS_BITS) == FLASH_STATUS_BITS) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 static void ns_setstatusbits(u32 NewState)
