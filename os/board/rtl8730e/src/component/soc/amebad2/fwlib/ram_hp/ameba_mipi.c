@@ -553,7 +553,7 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 {
 	MIPI_InitStruct->MIPI_VideoNCmdMode = FALSE;
 	MIPI_InitStruct->MIPI_VideoDataFormat  = MIPI_VIDEO_DATA_FORMAT_RGB888;
-	MIPI_InitStruct->MIPI_VideoModeInterface = MIPI_VIDEO_NON_BURST_MODE_WITH_SYNC_PULSES;
+	MIPI_InitStruct->MIPI_VideoModeInterface = MIPI_VIDEO_BURST_MODE;
 
 	MIPI_InitStruct->MIPI_TxCrcCalculationEn = ENABLE;
 	MIPI_InitStruct->MIPI_RxEccChkEn = ENABLE;
