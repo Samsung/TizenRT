@@ -963,7 +963,7 @@ static uint8_t* hci_platform_get_btfw_patch(uint32_t *rtlbt_fw_size)
     uint32_t rtlbt_fw_addr = 0;
 
     /* SPI Read size*/
-    rtlbt_fw_hdr_ptr = osif_mem_alloc(RAM_TYPE_DATA_ON, EXTERNAL_FLASH_BINARY_HEADER_SIZE);
+    rtlbt_fw_hdr_ptr = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, EXTERNAL_FLASH_BINARY_HEADER_SIZE, 64);
     SPI_SELECT(spi, 1, true);
     external_flash_read_stream(spi, (char *)rtlbt_fw_hdr_ptr, EXTERNAL_FLASH_BINARY_HEADER_SIZE, HCI_PATCH_ADDR_OFFSET);
     SPI_SELECT(spi, 1, false);
@@ -979,7 +979,7 @@ static uint8_t* hci_platform_get_btfw_patch(uint32_t *rtlbt_fw_size)
     	osif_mem_free(rtlbt_fw_hdr_ptr);
     }
     /* SPI Read Data back */
-    rtlbt_fw_ptr = osif_mem_alloc(RAM_TYPE_DATA_ON, *rtlbt_fw_size);
+    rtlbt_fw_ptr = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, *rtlbt_fw_size, 64);
     SPI_SELECT(spi, 1, true);
     /* The binary header size is 32bytes, so we need to add back the offset */
     external_flash_read_stream(spi, (char *)rtlbt_fw_ptr, *rtlbt_fw_size, rtlbt_fw_addr - (EXT_FLASH_BASE_ADDRESS + HCI_PATCH_ADDR_OFFSET) + 32);
