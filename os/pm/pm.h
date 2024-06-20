@@ -142,10 +142,6 @@ struct pm_global_s {
 	uint8_t state;
 	uint8_t recommended;
 
-	/* History of state changes */
-#ifdef CONFIG_PM_METRICS
-	sq_queue_t history;
-#endif
 	/* stime - The time (in ticks) at the start of the current time slice */
 
 	clock_t stime;

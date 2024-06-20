@@ -79,9 +79,6 @@
 #include <tinyara/pm/pm.h>
 
 #include "pm.h"
-#ifdef CONFIG_PM_METRICS
-#include "pm_metrics.h"
-#endif
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #if defined(CONFIG_PM) && !defined(CONFIG_FS_PROCFS_EXCLUDE_POWER)
@@ -137,9 +134,6 @@ static int power_stat(const char *relpath, FAR struct stat *buf);
 
 static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-#ifdef CONFIG_PM_METRICS
-static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-#endif
 static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 
 /****************************************************************************
@@ -151,9 +145,6 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"states", power_states_read, NULL, DTYPE_FILE},
 	{"curstate", power_curstate_read, NULL, DTYPE_FILE},
-#ifdef CONFIG_PM_METRICS
-	{"metrics", power_metrics_read, NULL, DTYPE_FILE},
-#endif
 	{"devices", power_devices_read, NULL, DTYPE_FILE},
 };
 
@@ -323,60 +314,6 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 
 	return copysize;
 }
-
-#ifdef CONFIG_PM_METRICS
-/****************************************************************************
- * Name: power_metrics_read
- ****************************************************************************/
-
-static size_t power_metrics_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	FAR struct power_file_s *priv;
-	struct pm_time_in_each_s mtrics;
-	size_t copysize;
-	size_t totalsize;
-	int index;
-
-	priv = (FAR struct power_file_s *)filep->f_priv;
-
-	index = 0;
-	copysize = 0;
-	totalsize = 0;
-
-	if (priv->offset == 0) {
-
-		pm_get_domainmetrics(&mtrics);
-
-		/* Time in NORMAL state */
-		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.normal);
-		buflen -= copysize;
-		buffer += copysize;
-		totalsize += copysize;
-
-		/* Time in IDLE state */
-		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.idle);
-		buflen -= copysize;
-		buffer += copysize;
-		totalsize += copysize;
-
-		/* Time in STANDBY state */
-		copysize = snprintf(buffer, buflen, " Time in %s : %d\n", g_power_states[index++], mtrics.standby);
-		buflen -= copysize;
-		buffer += copysize;
-		totalsize += copysize;
-
-		/* Time in SLEEP state */
-		copysize = snprintf(buffer, buflen, " Time in %s : %d", g_power_states[index], mtrics.sleep);
-		buflen -= copysize;
-		buffer += copysize;
-		totalsize += copysize;
-
-		/* Indicate we have already provided all the data */
-		priv->offset = 0xFF;
-	}
-	return totalsize;
-}
-#endif
 
 /****************************************************************************
  * Name: power_devices_read
