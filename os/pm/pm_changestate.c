@@ -62,7 +62,6 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
 
-#include "pm_metrics.h"
 #include "pm.h"
 
 #ifdef CONFIG_PM
