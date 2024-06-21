@@ -149,6 +149,11 @@ typedef enum {
 	HAL_KEY_UNKNOWN,
 } hal_key_type;
 
+typedef enum {
+	HAL_GCM_AES,
+	HAL_GCM_UNKNOWN,
+} hal_gcm_type;
+
 typedef struct _hal_init_param {
 	uint32_t i2c_port;
 	uint32_t gpio;
@@ -206,6 +211,18 @@ typedef struct _hal_ss_info {
 	struct _hal_ss_info *next;
 } hal_ss_info;
 
+typedef struct _hal_gcm_param {
+	hal_gcm_type cipher;
+	unsigned char *iv;
+	unsigned int iv_len;
+	/* Additional Authentication Data to generate tag */
+	unsigned char *aad; 
+	unsigned int aad_len;
+	/* Authenentication Tag (This value is overwritten by the encryption function) */
+	unsigned char *tag; 
+	unsigned int tag_len;
+} hal_gcm_param;
+
 #define HAL_AES_PARAM_INITIALIZER                        \
 	{                                                    \
 		HAL_AES_UNKNOWN, NULL, 0, NULL, NULL, NULL, NULL \
@@ -243,6 +260,14 @@ typedef struct _hal_ss_info {
 	}
 #define HAL_INIT_ECDH(ecdh) \
 	hal_ecdh_data ecdh = HAL_ECDH_INITIALIZER
+
+#define HAL_GCM_PARAM_INITIALIZER                         \
+	{                                                     \
+		HAL_GCM_UNKNOWN, NULL, 0, NULL, 0, NULL, 0 \
+	}
+
+#define HAL_INIT_GCM_PARAM(param) \
+	hal_gcm_param param = HAL_GCM_PARAM_INITIALIZER
 
 /**
  * Common
@@ -534,6 +559,57 @@ typedef int (*hal_rsa_encrypt)(_IN_ hal_data *dec_data, _IN_ hal_rsa_mode *mode,
  */
 typedef int (*hal_rsa_decrypt)(_IN_ hal_data *enc_data, _IN_ hal_rsa_mode *mode, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
 
+/*
+ * @brief   Encrypt data with GCM
+ *
+ * @param   dec_data    The plaintext block.
+ * @param   gcm_param   GCM parameters
+ * @param   key_idx     The key index to encrypt plaintext.
+ * @param   enc_data    The output (ciphertext) block.
+ *
+ * @return  HAL_SUCCESS on success
+ *
+ * @note    The plaintext is assigned to dec_data.data and dec_data.data_len.
+ *          priv and priv_len are not used to dec_data.
+ *          The ciphertext should be assigned to enc_data.data and it's length to
+ *          enc_data.data_len. priv and priv_len are not used to enc_data.
+ *
+ *          AAD should be assigned to aad and aad_len.
+ *          Tag and tag_len is not need to set.
+ *
+ *          GCM only supports AES cipher type.
+ *
+ *          hal_gcm_param before/after encryption
+ *           - before: cipher, iv, iv_len, aad, aad_len is set.
+ *           - after: tag and tag_len are updated.
+ */
+typedef int (*hal_gcm_encrypt)(_IN_ hal_data *dec_data, _IN_ hal_gcm_param *gcm_param, _IN_ uint32_t key_idx, _OUT_ hal_data *enc_data);
+
+/*
+ * @brief   Encrypt data with GCM
+ *
+ * @param   dec_data    The plaintext block.
+ * @param   gcm_param   GCM parameters
+ * @param   key_idx     The key index to encrypt plaintext.
+ * @param   enc_data    The output (ciphertext) block.
+ *
+ * @return  HAL_SUCCESS on success
+ *
+ * @note    The plaintext is assigned to dec_data.data and dec_data.data_len.
+ *          priv and priv_len are not used to dec_data.
+ *          The ciphertext should be assigned to enc_data.data and it's length to
+ *          enc_data.data_len. priv and priv_len are not used to enc_data.
+ *          AAD should be assigned to aad and aad_len.
+ *          Tag and tag_len is set by hal_gcm_encrypt.
+ *
+ *          GCM only supports AES cipher type.
+ *
+ *          hal_gcm_param before/after decryption
+ *           - before: cipher, iv, iv_len, aad, aad_len, tag, tag_len is set.
+ *           - after: hal_gcm_param update is not required.
+ */
+typedef int (*hal_gcm_decrypt)(_IN_ hal_data *enc_data, _IN_ hal_gcm_param *gcm_param, _IN_ uint32_t key_idx, _OUT_ hal_data *dec_data);
+
 /**
  * Secure Storage
  */
@@ -587,6 +663,8 @@ struct sec_ops_s {
 	hal_aes_decrypt aes_decrypt;
 	hal_rsa_encrypt rsa_encrypt;
 	hal_rsa_decrypt rsa_decrypt;
+	hal_gcm_encrypt gcm_encrypt;
+	hal_gcm_decrypt gcm_decrypt;
 	hal_write_storage write_storage;
 	hal_read_storage read_storage;
 	hal_delete_storage delete_storage;
