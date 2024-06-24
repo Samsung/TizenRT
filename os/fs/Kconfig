@@ -29,7 +29,7 @@ config FS_WRITABLE
 config RESOURCE_FS
 	bool "Support Resource fs"
 	select FS_ROMFS
-	default y
+	default n
 
 if RESOURCE_FS
 config RESOURCE_BINARY_VERSION
