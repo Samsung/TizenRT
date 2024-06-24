@@ -42,6 +42,7 @@
  *
  * Input parameters:
  *   missing_tick - Missed ticks while the core was sleeping.
+ *   wakeup_src   - The source of board wakeup.
  *
  * Returned value:
  *   None
@@ -51,10 +52,11 @@
  *
  ****************************************************************************/
 
-void pm_wakehandler(clock_t missing_tick)
+void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 {
-	irqstate_t flags  = enter_critical_section();
+	irqstate_t flags = enter_critical_section();
 
+	pmllvdbg("wakeup source code = %d\n", wakeup_src);
 	pmllvdbg("missing_tick: %llu\n", missing_tick);
 
 	if (missing_tick > 0) {

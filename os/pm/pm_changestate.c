@@ -213,7 +213,7 @@ static inline void pm_changeall(enum pm_state_e newstate)
 int pm_changestate(enum pm_state_e newstate)
 {
 	irqstate_t flags;
-	int ret = -1;
+	int ret = OK;
 
 	/* Disable interrupts throught this operation... changing driver states
 	 * could cause additional driver activity that might interfere with the
@@ -226,7 +226,7 @@ int pm_changestate(enum pm_state_e newstate)
 	/* First, prepare the drivers for the state change.  In this phase,
 	 * drivers may refuse the state change.
 	 */
-	if (newstate != PM_RESTORE) {
+	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
 		ret = pm_prepall(newstate);
 		if (ret != OK) {
 			/* One or more drivers is not ready for this state change.  Revert to
@@ -242,17 +242,6 @@ int pm_changestate(enum pm_state_e newstate)
 		*/
 		pm_changeall(newstate);
 		g_pmglobals.state = newstate;
-
-#ifdef CONFIG_PM_TIMEDWAKEUP
-		if (newstate == PM_SLEEP) {
-			clock_t delay = wd_getwakeupdelay();
-			if (delay > CONFIG_PM_MIN_SLEEP_TIME) {
-				pmvdbg("Setting timer and Board will wake up after %d millisecond\n", delay);
-				up_set_pm_timer(TICK2USEC(delay));
-			}
-		}
-#endif
-
 	}
 EXIT:
 	/* Restore the interrupt state */

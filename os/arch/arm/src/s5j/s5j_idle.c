@@ -73,69 +73,37 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: up_idlepm
- *
- * Description:
- *   Perform IDLE state power management.
- *
- ****************************************************************************/
-#ifdef CONFIG_PM
-static void up_idlepm(void)
-{
-	static enum pm_state_e oldstate = PM_NORMAL;
-	enum pm_state_e newstate;
-	irqstate_t flags;
-	int ret;
-
-	/* Decide, which power saving level can be obtained */
-	newstate = pm_checkstate();
-
-	/* Check for state changes */
-	if (newstate != oldstate) {
-		flags = irqsave();
-
-		/* Then force the global state change */
-		ret = pm_changestate(newstate);
-		if (ret < 0) {
-			/* The new state change failed, revert to the preceding state */
-			pm_changestate(oldstate);
-		} else {
-			/* Save the new state */
-			oldstate = newstate;
-		}
-
-		/* MCU-specific power management logic */
-		switch (newstate) {
-		case PM_NORMAL:
-			s5j_pmnormal();
-			break;
-
-		case PM_IDLE:
-			break;
-
-		case PM_STANDBY:
-			s5j_pmstop();
-			break;
-
-		case PM_SLEEP:
-			s5j_pmstandby();
-			break;
-
-		default:
-			break;
-		}
-
-		irqrestore(flags);
-	}
-}
-#else
-#define up_idlepm()
-#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_pm_board_sleep
+ *
+ * Description:
+ *   Perform IDLE state power management.
+ *
+ * Input Parameters:
+ *   handler - The handler function that must be called after each board wakeup.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
+{
+	irqstate_t flags;
+	flags = irqsave();
+	/* MCU-specific power management logic */
+	s5j_pmstandby();
+	irqrestore(flags);
+}
+#else
+#define up_pm_board_sleep(handler)
+#endif
 
 /****************************************************************************
  * Name: up_idle
@@ -158,10 +126,7 @@ void up_idle(void)
 	 */
 	sched_process_timer();
 #else
-	/* Perform IDLE mode power management */
-	up_idlepm();
-
-	/* Sleep until an interrupt occurs to save power. */
+	/* set core to WFI */
 	asm("WFI");
 #endif
 }
