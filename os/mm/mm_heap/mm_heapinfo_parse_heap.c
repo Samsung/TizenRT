@@ -59,6 +59,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <syslog.h>
+#ifdef CONFIG_WATCHDOG
+#include <tinyara/watchdog.h>
+#include <fcntl.h>
+#include <errno.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -66,6 +71,28 @@
 #define HEAPINFO_INT INT16_MAX
 #define HEAPINFO_NONSCHED (INT16_MAX - 1)
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+#ifdef CONFIG_WATCHDOG
+static inline int check_watchdog_state(int wd_fd, bool *is_watchdog_running)
+{
+	struct watchdog_status_s wd_status;
+	if (wd_fd < 0) {
+		mfdbg("Fail to open %s, errno %d\n", CONFIG_WATCHDOG_DEVPATH, get_errno());
+		return ERROR;
+	}
+
+	if (ioctl(wd_fd, WDIOC_GETSTATUS, (unsigned long)&wd_status) != OK) {
+		mfdbg("Fail to get watchdog state, errno %d\n", get_errno());
+		return ERROR;
+	}
+
+	*is_watchdog_running = wd_status.flags & WDFLAGS_ACTIVE;
+
+	return OK;
+}
+#endif
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -109,6 +136,24 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 #endif
 
 	ASSERT(mm_check_heap_corruption(heap) == OK);
+
+#ifdef CONFIG_WATCHDOG
+	bool is_watchdog_running;
+	int wd_fd = open(CONFIG_WATCHDOG_DEVPATH, O_RDONLY);
+
+	if (check_watchdog_state(wd_fd, &is_watchdog_running) != OK) {
+		close(wd_fd);
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+		/* Anyway, it will reboot after printing the heap usage log.
+		 * Print as many logs as possible even if fail watchdog keepalive. */
+		is_watchdog_running = false;
+		mfdbg("WARNING: It might reboot by watchdog during the printing heap usage log.\n");
+#else
+		mfdbg("It doesn't print the heap usage dump to prevent watchdog reboot.\n");
+		return;
+#endif
+	}
+#endif
 
 	/* initialize the heap, stack and nonsched resource */
 	nonsched_resource = 0;
@@ -182,6 +227,24 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 					heap_dbg("0x%x | %8d |   %c    |            |       |\n", node, node->size, 'F');
 				}
 			}
+#ifdef CONFIG_WATCHDOG
+			/* Keep watchdog alive */
+			if (is_watchdog_running) {
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+				/* Anyway, it will reboot after printing the heap usage log.
+		 		 * Print as many logs as possible even if fail watchdog keepalive. */
+				(void)ioctl(wd_fd, WDIOC_KEEPALIVE, 0);
+#else
+				if (ioctl(wd_fd, WDIOC_KEEPALIVE, 0) != OK) {
+					mfdbg("Fail to watchdog keepalive, errno %d\n", get_errno());
+					mfdbg("It stops printing heap usage, to prevent watchdog reboot.\n");
+					mm_givesemaphore(heap);
+					close(wd_fd);
+					return;
+				}
+#endif
+			}
+#endif
 		}
 
 		if (mode != HEAPINFO_SIMPLE) {
@@ -250,7 +313,11 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 			}
 		}
 	}
-
+#ifdef CONFIG_WATCHDOG
+	if (is_watchdog_running) {
+		close(wd_fd);
+	}
+#endif
 	return;
 }
 #endif
