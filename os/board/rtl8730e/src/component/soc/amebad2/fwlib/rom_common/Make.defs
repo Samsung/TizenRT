@@ -50,7 +50,6 @@
 ############################################################################
 
 CSRCS += ameba_systimer_rom.c \
-	ameba_assert_rom.c \
 	ameba_syscfg_rom.c \
 	ameba_backup_reg.c \
 	ameba_tim_rom.c \

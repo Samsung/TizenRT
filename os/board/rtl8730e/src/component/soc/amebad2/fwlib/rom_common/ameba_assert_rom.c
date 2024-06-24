@@ -11,7 +11,7 @@
 __weak HAL_ROM_TEXT_SECTION
 void io_assert_failed(uint8_t *file, uint32_t line)
 {
-	DBG_8195A("io driver parameters error! file_name: %s, line: %d", file, line);
+	dbg("io driver parameters error! file_name: %s, line: %d", file, line);
 
-	for (;;);
+	ASSERT(0);
 }
