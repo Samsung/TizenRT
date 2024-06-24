@@ -663,11 +663,11 @@ struct sec_ops_s {
 	hal_aes_decrypt aes_decrypt;
 	hal_rsa_encrypt rsa_encrypt;
 	hal_rsa_decrypt rsa_decrypt;
-	hal_gcm_encrypt gcm_encrypt;
-	hal_gcm_decrypt gcm_decrypt;
 	hal_write_storage write_storage;
 	hal_read_storage read_storage;
 	hal_delete_storage delete_storage;
+	hal_gcm_encrypt gcm_encrypt;
+	hal_gcm_decrypt gcm_decrypt;
 };
 
 int se_initialize(void);
