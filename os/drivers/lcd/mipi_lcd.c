@@ -144,6 +144,69 @@ static int lcd_putrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col,
 	return OK;
 }
 
+static int lcd_setarea(fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end)
+{
+	int transfer_status = 0;
+	struct mipi_dsi_msg msg_row, msg_col, msg;
+	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
+
+	priv->config->lcd_mode_switch(false);
+
+	u8 cmd_addr_0[1] = {0x00};
+	msg.channel = 0x29;
+	msg.type = MIPI_DSI_DCS_SHORT_WRITE_0_PARAM;
+	msg.tx_buf = cmd_addr_0;
+	msg.tx_len = 0;
+	msg.flags = 0;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg); 
+
+	u8 cmd_row_addr[8] = {0x00, row_start>>8, 0x00, row_start, 0x00, row_end>>8, 0x00, row_end};
+	printf("cmd row addr, %4x, %4x, %4x, %4x %4x %4x %4x %4x\n\n", cmd_row_addr[0], cmd_row_addr[1], cmd_row_addr[2], cmd_row_addr[3], cmd_row_addr[4], cmd_row_addr[5], cmd_row_addr[6], cmd_row_addr[7]);
+	msg_row.channel = 0x2B;
+	msg_row.type = MIPI_DSI_DCS_LONG_WRITE;
+	msg_row.tx_buf = cmd_row_addr;
+	msg_row.tx_len = 8;
+	msg_row.flags = 0;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg_row);
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent \n", msg_row.channel);
+		return transfer_status;
+	}
+
+	u8 cmd_addr_1[1] = {0x00};
+	msg.channel = 0x29;
+	msg.type = MIPI_DSI_DCS_SHORT_WRITE_0_PARAM;
+	msg.tx_buf = cmd_addr_1;
+	msg.tx_len = 0;
+	msg.flags = 0;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg); 
+	
+
+	u8 cmd_col_addr[8] = {0x00, col_start>>8, 0x00, col_start, 0x00, col_end>>8, 0x00, col_end};
+	printf("cmd col addr, %4x, %4x, %4x, %4x %4x %4x %4x %4x\n\n", cmd_col_addr[0], cmd_col_addr[1], cmd_col_addr[2], cmd_col_addr[3], cmd_col_addr[4], cmd_col_addr[5], cmd_col_addr[6], cmd_col_addr[7]);
+	msg_col.channel = 0x2A;
+	msg_col.type = MIPI_DSI_DCS_LONG_WRITE;
+	msg_col.tx_buf = cmd_col_addr;
+	msg_col.tx_len = 8;
+	msg_col.flags = 0;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg_col);
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent \n", msg_col.channel);
+		return transfer_status;
+	}
+
+	u8 cmd_addr_2[1] = {0x00};
+	msg_col.channel = 0x2C;
+	msg_col.type = MIPI_DSI_DCS_SHORT_WRITE_0_PARAM;
+	msg_col.tx_buf = cmd_addr_2;
+	msg_col.tx_len = 0;
+	msg_col.flags = 0;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg_col); 
+	
+	priv->config->lcd_mode_switch(true);
+	return transfer_status;
+}
+
 /****************************************************************************
  * Name:  lcd_putarea
  *
@@ -163,16 +226,18 @@ static int lcd_putrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col,
  *               writing.
  *
  ****************************************************************************/
-
+int count = 0;
 static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR const uint8_t *buffer, fb_coord_t stride)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+	lcd_setarea(row_start, row_end, col_start, col_end);
 	//coordinate shift from (0,0) -> (1,1) and (XRES-1,YRES-1) -> (XRES,YRES)
 	row_start += 1;
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
 	priv->config->lcd_put_area(buffer, row_start, col_start, row_end, col_end);
+
 	return OK;
 }
 
@@ -346,6 +411,5 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-
 	return &priv->dev;
 }

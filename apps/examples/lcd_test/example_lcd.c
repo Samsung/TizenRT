@@ -79,6 +79,7 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 	int p = 0;
 	size_t len;
 	len = xres * yres * 2 + 1;
+	//len = (x2 - x1) * (y2 - y1) * 2 + 1;               //try this for correct partial area geometry update 
 	uint8_t *lcd_data = (uint8_t *)malloc(len);
 	if (lcd_data == NULL) {
 		printf("malloc failed for lcd data : %d\n", len);
@@ -97,7 +98,7 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 	area.col_start = y1;
 	area.col_end = y2;
 	area.stride = 2 * xres;
-	for (int i = 0; i < xres * yres * 2; i += 2) {
+	for (int i = 0; i < len; i += 2) {
 		lcd_data[i] = (color & 0xFF00) >> 8;
 		lcd_data[i + 1] = color & 0x00FF;
 	}
@@ -184,13 +185,13 @@ static void test_put_area_pattern(void)
 	close(fd);
 	putarea(0, yres - 1, 0, xres - 1, BLUE);
 	sleep(3);
-	putarea(0, yres - 1, 0, xres - 1, GREEN);
+	putarea(0x32, 0x50, 0x32, 0x50, GREEN);
 	sleep(3);
 	putarea(0, yres - 1, 0, xres - 1, RED);
 	sleep(3);
 	putarea(0, yres - 1, 0, xres - 1, BLACK);
 	sleep(3);
-	putarea(0, yres - 1, 0, xres - 1, WHITE);
+	putarea(0x10, 0x50, 0x10, 0x50, WHITE);
 	sleep(3);
 }
 
