@@ -215,7 +215,7 @@ int pm_set_wakeup_timer(void);
  *
  ****************************************************************************/
 #ifdef CONFIG_PM_TICKSUPPRESS
-void pm_wakehandler(clock_t missing_tick);
+void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 #endif
 
 #undef EXTERN

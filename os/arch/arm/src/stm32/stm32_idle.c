@@ -92,78 +92,35 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_idlepm
+ * Public Functions
+ ****************************************************************************/
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_pm_board_sleep
  *
  * Description:
  *   Perform IDLE state power management.
  *
+ * Input Parameters:
+ *   handler - The handler function that must be called after each board wakeup.
+ *
+ * Returned Value:
+ *   None.
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static void up_idlepm(void)
+void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
-	static enum pm_state_e oldstate = PM_NORMAL;
-	enum pm_state_e newstate;
 	irqstate_t flags;
-	int ret;
-
-	/* Decide, which power saving level can be obtained */
-
-	newstate = pm_checkstate();
-
-	/* Check for state changes */
-
-	if (newstate != oldstate) {
-		flags = irqsave();
-
-		/* Perform board-specific, state-dependent logic here */
-
-		sllvdbg("newstate= %d oldstate=%d\n", newstate, oldstate);
-
-		/* Then force the global state change */
-
-		ret = pm_changestate(newstate);
-		if (ret < 0) {
-			/* The new state change failed, revert to the preceding state */
-
-			(void)pm_changestate(oldstate);
-		} else {
-			/* Save the new state */
-
-			oldstate = newstate;
-		}
-
-		/* MCU-specific power management logic */
-
-		switch (newstate) {
-		case PM_NORMAL:
-			break;
-
-		case PM_IDLE:
-			break;
-
-		case PM_STANDBY:
-			stm32_pmstop(true);
-			break;
-
-		case PM_SLEEP:
-			(void)stm32_pmstandby();
-			break;
-
-		default:
-			break;
-		}
-
-		irqrestore(flags);
-	}
+	flags = irqsave();
+	/* MCU-specific power management logic */
+	(void)stm32_pmstandby();
+	irqrestore(flags);
 }
 #else
-#define up_idlepm()
+#define up_pm_board_sleep(handler)
 #endif
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: up_idle
@@ -187,14 +144,7 @@ void up_idle(void)
 
 	sched_process_timer();
 #else
-
-	/* Perform IDLE mode power management */
-
-	up_idlepm();
-
-	/* Sleep until an interrupt occurs to save power.
-	 *
-	 * NOTE:  There is an STM32F107 errata that is fixed by the following
+	/* NOTE:  There is an STM32F107 errata that is fixed by the following
 	 * workaround:
 	 *
 	 * "2.17.11 Ethernet DMA not working after WFI/WFE instruction
@@ -213,7 +163,7 @@ void up_idle(void)
 	 * general solution:  Enabling DMA1/2 clocking in stm32f10xx_rcc.c if the
 	 * STM32107 Ethernet peripheral is enabled.
 	 */
-
+	/* set core to WFI */
 #if !defined(CONFIG_STM32_CONNECTIVITYLINE) || !defined(CONFIG_STM32_ETHMAC)
 #if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32_DISABLE_IDLE_SLEEP_DURING_DEBUG))
 	BEGIN_IDLE();

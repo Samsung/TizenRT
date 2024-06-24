@@ -117,6 +117,10 @@ errout_lock:
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
 void up_extiisr(int irq, uint32_t *regs)
 {
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
@@ -139,135 +143,39 @@ void set_exti_button(void)
   (void)irq_attach(STM32L4_IRQ_EXTI1510, (xcpt_t)up_extiisr, NULL);
 }
 
+#ifdef CONFIG_PM
 /****************************************************************************
- * Name: up_idlepm
+ * Name: up_pm_board_sleep
  *
  * Description:
  *   Perform IDLE state power management.
  *
+ * Input Parameters:
+ *   handler - The handler function that must be called after each board wakeup.
+ *
+ * Returned Value:
+ *   None.
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static void up_idlepm(void)
+void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
-  static enum pm_state_e oldstate = PM_NORMAL;
-  enum pm_state_e newstate;
-  irqstate_t flags;
-  int ret;
-#ifdef CONFIG_STM32L4_RTC
-  long ns1, ns2;
-  clock_t time_intval;
-  struct tm tp1, tp2;
-#endif
+	irqstate_t flags;
+	flags = irqsave();
+	/* MCU-specific power management logic */
+	/* Set EXTI interrupt */
+	set_exti_button();
 
-  /* Decide, which power saving level can be obtained */
+	(void)stm32l4_pmstop2();
 
-  newstate = pm_checkstate();
-
-  /* Check for state changes */
-
-  if (newstate != oldstate)
-    {
-      flags = irqsave();
-
-      /* Perform board-specific, state-dependent logic here */
-
-      printf("newstate= %d oldstate=%d\n", newstate, oldstate);
-
-      /* Then force the global state change */
-
-      ret = pm_changestate(newstate);
-      if (ret < 0)
-        {
-          /* The new state change failed, revert to the preceding state */
-
-          (void)pm_changestate(oldstate);
-        }
-      else
-        {
-          /* Save the new state */
-
-          oldstate = newstate;
-        }
-
-      /* MCU-specific power management logic */
-
-      switch (newstate)
-        {
-        case PM_NORMAL:
-          break;
-
-        case PM_IDLE:
-          break;
-
-        case PM_STANDBY:
-#ifdef CONFIG_SCHED_TICKSUPPRESS
-#ifdef CONFIG_STM32L4_RTC
-          /* Note RTC time before sleep */
-          stm32l4_rtc_getdatetime_with_subseconds(&tp1, &ns1);
-#endif
-          /* Disable tick interrupts */
-          supress_ticks();
-          /* Set waketime interrupt for tickless idle  */
-          set_waketime_interrupt();
-          /* Enter sleep mode */
-          stm32l4_pmsleep(false);
-#ifdef CONFIG_STM32L4_RTC
-          /* Read RTC time after wakeup */
-          stm32l4_rtc_getdatetime_with_subseconds(&tp2, &ns2);
-          time_intval = SEC2TICK(mktime(&tp2) - mktime(&tp1)) + NSEC2TICK(ns2 - ns1);
-          /* Update ticks */
-          g_system_timer +=  time_intval;
-          uwTick += TICK2MSEC(time_intval);
-          /* Execute waketime interrupt */
-          execute_waketime_interrupt(time_intval);
-#endif
-          /* Enable tick interrupts */
-          enable_ticks();
-
-          /* We dont want state change directly
-           * it is the resposibility of the scheduled
-           * event to inform the PM Core about the
-           * pm activity based on its requirement */
-          //oldstate = PM_IDLE;	/* Re visit */
-#else
-          stm32l4_pmsleep(false);
-#endif		/* CONFIG_SCHED_TICKSUPPRESS */
-
-          break;
-
-        case PM_SLEEP:
-          /* Set EXTI interrupt */
-          set_exti_button();
-
-          (void)stm32l4_pmstop2();
-
-          /* Re configure clocks */
-          stm32l4_clockenable();
-
-          ret = pm_changestate(PM_NORMAL);
-          if (ret < 0)
-            {
-              oldstate = PM_NORMAL;
-            }
-
-          printf("Wakeup from STOP2!!\n");
-          break;
-
-        default:
-          break;
-        }
-
-      irqrestore(flags);
-    }
+	/* Re configure clocks */
+	stm32l4_clockenable();
+	printf("Wakeup from STOP2!!\n");
+	irqrestore(flags);
 }
 #else
-#  define up_idlepm()
+#define up_pm_board_sleep(handler)
 #endif
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: up_idle
@@ -291,13 +199,7 @@ void up_idle(void)
 
   nxsched_process_timer();
 #else
-
-  /* Perform IDLE mode power management */
-
-  up_idlepm();
-
-  /* Sleep until an interrupt occurs to save power. */
-
+	/* set core to WFI */
 #if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))
   BEGIN_IDLE();
   asm("WFI");
