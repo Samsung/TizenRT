@@ -474,11 +474,8 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
 #endif
-
-	/* RTK ToDo: move the KM4 version print to the KM4 part */
-	char km0_application_rev_temp[] = "km0_application_ver_280ecfe2_2024/06/06-17:25:45";
-	lldbg("KM4_version %s\n", km0_application_rev_temp);
-
+	/* Enable IPC buffered print */
+	inic_ipc_buffered_printf_set_np_enable(1);
 #ifdef CONFIG_AUDIO_ALC1019
 	rtl8730e_alc1019_initialize(0);
 #endif
