@@ -120,6 +120,9 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 		system_exception_location = regs[REG_R14];
 	}
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	if (!IS_SECURE_STATE()) {
 		print_usagefault_detail(regs, cfsr);
 	}
