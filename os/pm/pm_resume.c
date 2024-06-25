@@ -98,9 +98,8 @@ int pm_resume(int domain_id)
 	int ret = OK;
 
 	flags = enter_critical_section();
-	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
-		ret = ERROR;
-		set_errno(EINVAL);
+	ret = pm_check_domain(domain_id);
+	if (ret != OK) {
 		goto errout;
 	}
 	if (g_pmglobals.suspend_count[domain_id] <= 0) {

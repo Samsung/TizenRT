@@ -42,6 +42,31 @@ char *pm_domain_map[CONFIG_PM_NDOMAINS];
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: pm_check_domain
+ *
+ * Description:
+ *   This function is called inside PM internal APIs to check whether the
+ *   domain is valid or not.
+ * 
+ * Input Parameters:
+ *   domain_id - ID of domain
+ *
+ * Returned Value:
+ *   0 - If domain is valid
+ *  -1 - If domain is not valid
+ *
+ ****************************************************************************/
+int pm_check_domain(int domain_id)
+{
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
+		set_errno(EINVAL);
+		pmdbg("Invalid Domain: %d\n", domain_id);
+		return ERROR;
+	}
+	return OK;
+}
+
+/****************************************************************************
  * Name: pm_domain_register
  *
  * Description:
@@ -73,7 +98,7 @@ int pm_domain_register(char *domain) {
 		flags = enter_critical_section();
 		/* If we have unused domain ID then use it to register given domain */
 		if (pm_domain_map[index] == NULL) {
-			pm_domain_map[index] = (char *)pm_alloc(length, sizeof(char));
+			pm_domain_map[index] = (char *)kmm_malloc(length * sizeof(char));
 			if (!pm_domain_map[index]) {
 				set_errno(ENOMEM);
 				pmdbg("Unable to allocate memory from heap\n");
@@ -86,8 +111,8 @@ int pm_domain_register(char *domain) {
 			pm_metrics_update_domain(index);
 #endif
 			goto EXIT;
-		/* If domain of same length and characters is in our map , then return the corresponding domain ID */
-		} else if ((length == strlen(pm_domain_map[index])) && (strncmp(pm_domain_map[index], domain, length) == 0)) {
+		/* If domain is already registered then return registered domain ID */
+		} else if (strncmp(pm_domain_map[index], domain, length + 1) == 0) {
 			goto EXIT;
 		}
 		leave_critical_section(flags);
