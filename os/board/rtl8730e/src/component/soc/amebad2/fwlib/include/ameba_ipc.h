@@ -308,7 +308,7 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_N2A_WIFI_TRX_TRAN					0	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN					1	/*!<  NP -->  AP API WIFI Message Exchange */
-//#define IPC_N2A_Channel2						2	/*!<  NP -->  AP */
+#define IPC_N2A_NP_LOG_CHN						2	/*!<  NP -->  AP Send NP log to AP */
 #define IPC_N2A_BT_API_TRAN						3	/*!<  NP -->  AP BT API Exchange */
 #define IPC_N2A_BT_DRC_TRAN						4	/*!<  NP -->  AP BT DATA Message Exchange */
 #define IPC_N2A_802154_TRAN						5
