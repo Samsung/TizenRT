@@ -221,16 +221,6 @@ static void _inic_ipc_api_host_promisc_user_callback_handler(inic_ipc_dev_reques
 	}
 }
 
-static void _inic_ipc_api_host_buffered_printf(inic_ipc_dev_request_message *p_ipc_msg)
-{
-	char *tmp_buffer = (char *)p_ipc_msg->param_buf[0];
-	int buf_size = (int)p_ipc_msg->param_buf[1];
-	DCache_Invalidate((u32)tmp_buffer, buf_size);
-
-	dbg("%s", tmp_buffer);
-	p_ipc_msg->ret = 0;
-}
-
 /* ---------------------------- Public Functions ---------------------------- */
 /**
  * @brief  process the ipc message.
@@ -294,9 +284,6 @@ void inic_ipc_api_host_task(void)
 			p_ipc_msg->ret = dhcps_ip_in_table_check(p_ipc_msg->param_buf[0], p_ipc_msg->param_buf[1]);
 #endif
 			break;
-		case IPC_BUFFERED_PRINTF_NP:
-			_inic_ipc_api_host_buffered_printf(p_ipc_msg);
-			break;
 		default:
 			DBG_8195A("Host API Unknown event(%d)!\n\r", \
 					  p_ipc_msg->EVENT_ID);
@@ -327,6 +314,26 @@ void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 
 	/* wakeup task */
 	rtw_up_sema_from_isr(&g_host_inic_api_task_wake_sema);
+}
+
+static void inic_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
+{
+	/* To avoid gcc warnings */
+	(void) Data;
+	(void) IrqStatus;
+	(void) ChanNum;
+
+	PIPC_MSG_STRUCT ipc_recv_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_NP_LOG_CHN);
+	char *tmp_buffer = (char *)ipc_recv_msg->msg;
+	DCache_Invalidate((u32)tmp_buffer, ipc_recv_msg->msg_len);
+	
+	/* Print out buffer */
+	lldbg_noarg("%s",tmp_buffer);
+
+	/* Indicate logs have been printed */
+	u8 *print_flag = (u8*)ipc_recv_msg->rsvd;
+	print_flag[0] = 1;
+	DCache_Clean((u32)print_flag, sizeof(print_flag));
 }
 
 /**
@@ -488,5 +495,16 @@ const IPC_INIT_TABLE ipc_api_host_table = {
 	.TxIrqData = (VOID *) NULL,
 	.IPC_Direction = IPC_DIR_MSG_RX,
 	.IPC_Channel = IPC_D2H_WIFI_API_TRAN
+};
+
+IPC_TABLE_DATA_SECTION
+const IPC_INIT_TABLE ipc_print_table = {
+	.USER_MSG_TYPE = IPC_USER_POINT,
+	.Rxfunc = inic_ipc_print_int_hdl,
+	.RxIrqData = (VOID *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (VOID *) NULL,
+	.IPC_Direction = IPC_DIR_MSG_RX,
+	.IPC_Channel = IPC_N2A_NP_LOG_CHN
 };
 #endif
