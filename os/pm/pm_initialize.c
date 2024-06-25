@@ -127,7 +127,7 @@ void pm_initialize(void)
 
 	/* Create an initial state change node with NORMAL state and bootup time */
 
-	initnode = (struct pm_statechange_s *)pm_alloc(1, sizeof(struct pm_statechange_s));
+	initnode = (struct pm_statechange_s *)kmm_malloc(sizeof(struct pm_statechange_s));
 
 	initnode->state = PM_NORMAL;
 	initnode->timestamp = cur_time.tv_sec;

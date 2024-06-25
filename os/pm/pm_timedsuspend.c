@@ -114,7 +114,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 {
 	int hash_pid = PIDHASH(getpid());
 
-	if (domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id]==NULL) {
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
 		set_errno(EINVAL);
 		return ERROR;
 	}

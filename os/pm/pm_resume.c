@@ -98,7 +98,7 @@ int pm_resume(int domain_id)
 	int ret = OK;
 
 	flags = enter_critical_section();
-	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
 		ret = ERROR;
 		set_errno(EINVAL);
 		goto errout;
