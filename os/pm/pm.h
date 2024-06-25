@@ -175,6 +175,23 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
  * Public Function Prototypes
  ************************************************************************************/
 /****************************************************************************
+ * Name: pm_check_domain
+ *
+ * Description:
+ *   This function is called inside PM internal APIs to check whether the
+ *   domain is valid or not.
+ * 
+ * Input Parameters:
+ *   domain_id - ID of domain
+ *
+ * Returned Value:
+ *   0 - If domain is valid
+ *  -1 - If domain is not valid
+ *
+ ****************************************************************************/
+int pm_check_domain(int domain_id);
+
+/****************************************************************************
  * Name: pm_set_wakeup_timer
  *
  * Description:

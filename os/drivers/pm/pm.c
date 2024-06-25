@@ -121,7 +121,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	case PMIOC_DOMAIN_REGISTER:
 		if ((pm_domain_arg_t *)arg == NULL) {
-			set_errno(EINVAL);
+			ret = -EINVAL;
 			pmdbg("Please input correct arguments\n");
 		} else {
 			((pm_domain_arg_t *)arg)->domain_id = pm_domain_register(((pm_domain_arg_t *)arg)->domain_name);
@@ -149,7 +149,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
- * Name: pm_register
+ * Name: pm_driver_register
  *
  * Description:
  *   Register pm driver path, PM_DRVPATH
