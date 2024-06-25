@@ -784,7 +784,6 @@ _LONG_CALL_ void I2C_WakeUp(I2C_TypeDef *I2Cx);
 #define I2C_HS_MIN_SCL_LTIME_400    388     //the unit is ns, with bus loading = 400pf, Maximum supported speed=1.7M
 
 extern const I2C_DevTable I2C_DEV_TABLE[3];
-extern u32 I2C_SLAVEWRITE_PATCH;
 extern u32 IC_FS_SCL_HCNT_TRIM;
 extern u32 IC_FS_SCL_LCNT_TRIM;
 #define I2C_EARLY_RX_DONE 			-1
