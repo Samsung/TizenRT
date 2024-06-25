@@ -75,110 +75,6 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_prepall
- *
- * Description:
- *   Prepare every driver for the state change.
- *
- * Input Parameters:
- *   domain - Identifies the domain of the new PM state
- *   newstate - Identifies the new PM state
- *
- * Returned Value:
- *   0 (OK) means that the callback function for all registered drivers
- *   returned OK (meaning that they accept the state change).  Non-zero
- *   means that one of the drivers refused the state change.  In this case,
- *   the system will revert to the preceding state.
- *
- * Assumptions:
- *   Interrupts are disabled.
- *
- ****************************************************************************/
-
-static int pm_prepall(enum pm_state_e newstate)
-{
-	FAR dq_entry_t *entry;
-	int ret = OK;
-
-	if (newstate <= g_pmglobals.state) {
-		/* Visit each registered callback structure in normal order. */
-
-		for (entry = dq_peek(&g_pmglobals.registry); entry && ret == OK; entry = dq_next(entry)) {
-			/* Is the prepare callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->prepare) {
-				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, newstate);
-			}
-		}
-	} else {
-		/* Visit each registered callback structure in reverse order. */
-
-		for (entry = dq_tail(&g_pmglobals.registry); entry && ret == OK; entry = dq_prev(entry)) {
-			/* Is the prepare callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->prepare) {
-				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, newstate);
-			}
-		}
-	}
-
-	return ret;
-}
-
-/****************************************************************************
- * Name: pm_changeall
- *
- * Description:
- *   domain - Identifies the domain of the new PM state
- *   Inform all drivers of the state change.
- *
- * Input Parameters:
- *   domain - Identifies the domain of the new PM state
- *   newstate - Identifies the new PM state
- *
- * Returned Value:
- *   None
- *
- * Assumptions:
- *   Interrupts are disabled.
- *
- ****************************************************************************/
-
-static inline void pm_changeall(enum pm_state_e newstate)
-{
-	FAR dq_entry_t *entry;
-	if (newstate <= g_pmglobals.state) {
-		/* Visit each registered callback structure in normal order. */
-
-		for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
-			/* Is the notification callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->notify) {
-				/* Yes.. notify the driver */
-				cb->notify(cb, newstate);
-			}
-		}
-	} else {
-		/* Visit each registered callback structure in reverse order. */
-
-		for (entry = dq_tail(&g_pmglobals.registry); entry; entry = dq_prev(entry)) {
-			/* Is the notification callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->notify) {
-				/* Yes.. notify the driver */
-				cb->notify(cb, newstate);
-			}
-		}
-	}
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -186,22 +82,16 @@ static inline void pm_changeall(enum pm_state_e newstate)
  * Name: pm_changestate
  *
  * Description:
- *   This function is used by platform-specific power management logic.  It
- *   will announce the power management power management state change to all
- *   drivers that have registered for power management event callbacks.
+ *   This function is used by platform-specific power management logic.  
  *
  * Input Parameters:
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
- *   0 (OK) means that the callback function for all registered drivers
- *   returned OK (meaning that they accept the state change).  Non-zero
- *   means that one of the drivers refused the state change.  In this case,
- *   the system will revert to the preceding state.
+ *   None
  *
  * Assumptions:
- *   It is assumed that interrupts are disabled when this function is
- *   called.  This function is probably called from the IDLE loop... the
+ *   This function is probably called from the IDLE loop... the
  *   lowest priority task in the system.  Changing driver power management
  *   states may result in renewed system activity and, as a result, can
  *   suspend the IDLE thread before it completes the entire state change
@@ -209,46 +99,15 @@ static inline void pm_changeall(enum pm_state_e newstate)
  *
  ****************************************************************************/
 
-int pm_changestate(enum pm_state_e newstate)
+void pm_changestate(enum pm_state_e newstate)
 {
-	irqstate_t flags;
-	int ret = OK;
-
-	/* Disable interrupts throught this operation... changing driver states
-	 * could cause additional driver activity that might interfere with the
-	 * state change.  When the state change is complete, interrupts will be
-	 * re-enabled.
-	 */
-
-	flags = enter_critical_section();
-
-	/* First, prepare the drivers for the state change.  In this phase,
-	 * drivers may refuse the state change.
-	 */
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
-		ret = pm_prepall(newstate);
-		if (ret != OK) {
-			/* One or more drivers is not ready for this state change.  Revert to
-			* the preceding state.
-			*/
-
-			g_pmglobals.recommended = g_pmglobals.state;
-			g_pmglobals.btime = clock_systimer();
-			goto EXIT;
-		}
-		/* All drivers have agreed to the state change (or, one or more have
-		* disagreed and the state has been reverted).  Set the new state.
-		*/
-		pm_changeall(newstate);
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_changestate();
 #endif
 		g_pmglobals.state = newstate;
+		g_pmglobals.stime = clock_systimer();
 	}
-EXIT:
-	/* Restore the interrupt state */
-	leave_critical_section(flags);
-	return ret;
 }
 
 /****************************************************************************

@@ -109,6 +109,5 @@ void pm_initialize(void)
 	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
 
 	g_pmglobals.stime = clock_systimer();
-	g_pmglobals.btime = clock_systimer();
 }
 #endif							/* CONFIG_PM */

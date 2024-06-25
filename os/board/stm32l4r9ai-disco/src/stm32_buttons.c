@@ -60,15 +60,6 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-/* Button Power Management */
-
-#ifdef CONFIG_PM
-static void button_pm_notify(struct pm_callback_s *cb,
-                             enum pm_state_e pmstate);
-static int button_pm_prepare(struct pm_callback_s *cb,
-                             enum pm_state_e pmstate);
-#endif
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -86,70 +77,9 @@ static const uint32_t g_buttons[NUM_BUTTONS] =
   GPIO_BTN_UP
 };
 
-#ifdef CONFIG_PM
-static struct pm_callback_s g_buttonscb =
-{
-  .notify  = button_pm_notify,
-  .prepare = button_pm_prepare,
-};
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: button_pm_notify
- *
- * Description:
- *   Notify the driver of new power state. This callback is called after
- *   all drivers have had the opportunity to prepare for the new power state.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static void button_pm_notify(struct pm_callback_s *cb,
-                             enum pm_state_e pmstate)
-{
-  switch (pmstate)
-    {
-      case(PM_NORMAL):
-        {
-          /* Restore normal buttons operation */
-          //XXX turn on any GPIO
-        }
-        break;
-
-      case(PM_IDLE):
-        {
-          /* Entering IDLE mode - buttons */
-          //XXX turn on any GPIO
-        }
-        break;
-
-      case(PM_STANDBY):
-        {
-          /* Entering STANDBY mode - Logic for PM_STANDBY goes here */
-          //XXX turn off any GPIO
-        }
-        break;
-
-      case(PM_SLEEP):
-        {
-          /* Entering SLEEP mode - Logic for PM_SLEEP goes here */
-          //XXX turn off any GPIO
-        }
-        break;
-
-      default:
-        {
-          /* Should not get here */
-
-        }
-        break;
-    }
-}
-#endif
 
 /****************************************************************************
  * Name: button_handler
@@ -174,30 +104,6 @@ static int button_handler(int irq, FAR void *context, FAR void *arg)
   return OK;
 }
 #endif /* CONFIG_ARCH_IRQBUTTONS */
-#endif
-
-/****************************************************************************
- * Name: button_pm_prepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a warning
- *   that the system is about to enter into a new power state. The driver
- *   should begin whatever operations that may be required to enter power
- *   state. The driver may abort the state change mode by returning a
- *   non-zero value from the callback function.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static int button_pm_prepare(struct pm_callback_s *cb,
-                             enum pm_state_e pmstate)
-{
-  /* No preparation to change power modes is required by the Buttons driver.
-   * We always accept the state change by returning OK.
-   */
-
-  return OK;
-}
 #endif
 
 /****************************************************************************

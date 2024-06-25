@@ -213,18 +213,6 @@ void stm32_disablefsmc(void);
 #endif
 
 /****************************************************************************************************
- * Name: stm32_ledpminitialize
- *
- * Description:
- *   Enable logic to use the LEDs on the STM32F429Discovery to support power management testing
- *
- ****************************************************************************************************/
-
-#ifdef CONFIG_PM
-void stm32_ledpminitialize(void);
-#endif
-
-/****************************************************************************************************
  * Name: stm32_pmbuttons
  *
  * Description:

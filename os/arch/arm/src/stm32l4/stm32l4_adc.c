@@ -203,10 +203,6 @@ struct stm32_dev_s
   uint32_t freq;        /* The desired frequency of conversions */
 #endif
 
-#ifdef CONFIG_PM
-  struct pm_callback_s pm_callback;
-#endif
-
 #ifdef ADC_HAVE_DMA
   DMA_HANDLE dma;       /* Allocated DMA channel */
 
@@ -270,11 +266,6 @@ static int adc_setoffset(FAR struct stm32_dev_s *priv, uint8_t ch, uint8_t i,
 
 static void adc_startconv(FAR struct stm32_dev_s *priv, bool enable);
 
-#ifdef CONFIG_PM
-static int adc_pm_prepare(struct pm_callback_s *cb,
-                          enum pm_state_e state);
-#endif
-
 /* ADC Interrupt Handler */
 
 static int adc_interrupt(FAR struct adc_dev_s *dev, uint32_t regval);
@@ -334,12 +325,6 @@ static struct stm32_dev_s g_adcpriv1 =
 #ifdef ADC1_HAVE_DFSDM
   .hasdfsdm    = true,
 #endif
-#ifdef CONFIG_PM
-  .pm_callback =
-    {
-      .prepare = adc_pm_prepare,
-    }
-#endif
 };
 
 static struct adc_dev_s g_adcdev1 =
@@ -372,12 +357,6 @@ static struct stm32_dev_s g_adcpriv2 =
 #ifdef ADC2_HAVE_DFSDM
   .hasdfsdm    = true,
 #endif
-#ifdef CONFIG_PM
-  .pm_callback =
-    {
-      .prepare = adc_pm_prepare,
-    }
-#endif
 };
 
 static struct adc_dev_s g_adcdev2 =
@@ -409,12 +388,6 @@ static struct stm32_dev_s g_adcpriv3 =
 #endif
 #ifdef ADC3_HAVE_DFSDM
   .hasdfsdm    = true,
-#endif
-#ifdef CONFIG_PM
-  .pm_callback =
-    {
-      .prepare = adc_pm_prepare,
-    }
 #endif
 };
 
@@ -1004,32 +977,6 @@ static int adc_timinit(FAR struct stm32_dev_s *priv)
   adc_timstart(priv, true);
 
   tim_dumpregs(priv, "After starting timers");
-
-  return OK;
-}
-#endif
-
-/****************************************************************************
- * Name: adc_pm_prepare
- *
- * Description:
- *   Called by power management framework when it wants to enter low power
- *   states. Check if ADC is in progress and if so prevent from entering STOP.
- *
- ****************************************************************************/
-#ifdef CONFIG_PM
-static int adc_pm_prepare(struct pm_callback_s *cb,
-                          enum pm_state_e state)
-{
-  FAR struct stm32_dev_s *priv =
-      container_of(cb, struct stm32_dev_s, pm_callback);
-  uint32_t regval;
-
-  regval = adc_getreg(priv, STM32L4_ADC_CR_OFFSET);
-  if ((state >= PM_IDLE) && (regval & ADC_CR_ADSTART))
-    {
-      return -EBUSY;
-    }
 
   return OK;
 }
@@ -2023,14 +1970,6 @@ struct adc_dev_s *stm32l4_adc_initialize(int intf, FAR const uint8_t *chanlist,
 
   priv->cchannels = cchannels;
   memcpy(priv->chanlist, chanlist, cchannels);
-
-#ifdef CONFIG_PM
-  if (pm_register(&priv->pm_callback) != OK)
-    {
-      aerr("Power management registration failed\n");
-      return NULL;
-    }
-#endif
 
   return dev;
 }

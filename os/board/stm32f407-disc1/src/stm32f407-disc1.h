@@ -414,19 +414,6 @@ void stm32_disablefsmc(void);
 #endif
 
 /****************************************************************************
- * Name: stm32_led_pminitialize
- *
- * Description:
- *   Enable logic to use the LEDs on the STM32F4Discovery to support power
- *   management testing
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-void stm32_led_pminitialize(void);
-#endif
-
-/****************************************************************************
  * Name: stm32_pm_buttons
  *
  * Description:

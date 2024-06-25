@@ -447,10 +447,6 @@ struct stm32l4_i2c_priv_s
 #endif
 
   uint32_t status;             /* End of transfer SR2|SR1 status */
-
-#ifdef CONFIG_PM
-  struct pm_callback_s pm_cb;  /* PM callbacks */
-#endif
 };
 
 /* I2C Device, Instance */
@@ -510,10 +506,6 @@ static int stm32l4_i2c_transfer(FAR struct i2c_master_s *dev,
 #ifdef CONFIG_I2C_RESET
 static int stm32l4_i2c_reset(FAR struct i2c_master_s *dev);
 #endif
-#ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate);
-#endif
 
 /************************************************************************************
  * Private Data
@@ -545,9 +537,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c1_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
-#endif
 };
 #endif
 
@@ -577,9 +566,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c2_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
-#endif
 };
 #endif
 
@@ -609,9 +595,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c3_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
-#endif
 };
 #endif
 
@@ -641,9 +624,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c4_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
-#endif
 };
 #endif
 
@@ -2812,81 +2792,6 @@ out:
 #endif /* CONFIG_I2C_RESET */
 
 /************************************************************************************
- * Name: stm32l4_i2c_pm_prepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a
- *   warning that the system is about to enter into a new power state.  The
- *   driver should begin whatever operations that may be required to enter
- *   power state.  The driver may abort the state change mode by returning
- *   a non-zero value from the callback function.
- *
- * Input Parameters:
- *   cb      - Returned to the driver.  The driver version of the callback
- *             structure may include additional, driver-specific state
- *             data at the end of the structure.
- *   domain  - Identifies the activity domain of the state change
- *   pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   0 (OK) means the event was successfully processed and that the driver
- *   is prepared for the PM state change.  Non-zero means that the driver
- *   is not prepared to perform the tasks needed achieve this power setting
- *   and will cause the state change to be aborted.  NOTE:  The prepare
- *   method will also be recalled when reverting from lower back to higher
- *   power consumption modes (say because another driver refused a lower
- *   power state change).  Drivers are not permitted to return non-zero
- *   values when reverting back to higher power consumption modes!
- *
- ************************************************************************************/
-
-#ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate)
-{
-  struct stm32l4_i2c_priv_s *priv =
-      (struct stm32l4_i2c_priv_s *)((char *)cb -
-                                    offsetof(struct stm32l4_i2c_priv_s, pm_cb));
-  int sval;
-
-  /* Logic to prepare for a reduced power state goes here. */
-
-  switch (pmstate)
-    {
-    case PM_NORMAL:
-    case PM_IDLE:
-      break;
-
-    case PM_STANDBY:
-    case PM_SLEEP:
-      /* Check if exclusive lock for I2C bus is held. */
-
-      if (nxsem_getvalue(&priv->sem_excl, &sval) < 0)
-        {
-          DEBUGASSERT(false);
-          return -EINVAL;
-        }
-
-      if (sval <= 0)
-        {
-          /* Exclusive lock is held, do not allow entry to deeper PM states. */
-
-          return -EBUSY;
-        }
-
-      break;
-
-    default:
-      /* Should not get here */
-
-      break;
-    }
-
-  return OK;
-}
-#endif
-
-/************************************************************************************
  * Public Functions
  ************************************************************************************/
 
@@ -2957,14 +2862,6 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
     {
       stm32l4_i2c_sem_init((struct i2c_master_s *)inst);
       stm32l4_i2c_init(priv);
-
-#ifdef CONFIG_PM
-      /* Register to receive power management callbacks */
-
-      ret = pm_register(&priv->pm_cb);
-      DEBUGASSERT(ret == OK);
-      UNUSED(ret);
-#endif
     }
 
   irqrestore(irqs);
