@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e19a8c7a 2024/06/25-14:58:47 ==
+1. Add wakeup reason for PM profiling
+
 == version 280ecfe2 2024/06/06-17:25:45 ==
 1. Fix KM4 crash when initializing/deinitializing softap repeatedly
 

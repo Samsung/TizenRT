@@ -1,5 +1,8 @@
 #include "platform_autoconf.h"
 #include "ameba_soc.h"
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 
 uint32_t missing_tick = 0;
 
@@ -194,15 +197,8 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-#ifdef CONFIG_PM_TICKSUPPRESS
-static void (*tizenrt_sleep_handler)(clock_t);
-void up_register_wakehandler(void (*handler)(clock_t))
-{
-	tizenrt_sleep_handler = handler;
-}
-#endif
-
-void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
+#ifdef CONFIG_PM
+void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
@@ -240,12 +236,14 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
+	u16 wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_090);
+
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 #else
 #ifdef CONFIG_PM_TICKSUPPRESS
-	if (tizenrt_sleep_handler) {
-		tizenrt_sleep_handler((u64)ms_passed); /*  update kernel tick */
+	if (handler) {
+		handler((clock_t)ms_passed, (pm_wakeup_reason_code_t)wakeup_reason); /*  update kernel tick */
 	}
 #endif
 #endif
@@ -255,8 +253,6 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time)
 #ifndef CONFIG_CLINTWOOD
 	pmu_set_sysactive_time(2);
 #endif
-
-	pmvdbg("ap sleeped:[%d] ms\n", ms_passed);
 }
 
 CONFIG_FW_CRITICAL_CODE_SECTION
@@ -275,6 +271,7 @@ void tizenrt_post_sleep_processing(uint32_t *expected_idle_time)
 #endif
 
 }
+#endif
 
 u32 check_wfi_state(u8 core_id)
 {
