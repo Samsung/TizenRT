@@ -331,10 +331,6 @@ static void stm32l4serial_dmarxcallback(DMA_HANDLE handle, uint8_t status,
 #ifdef CONFIG_PM
 static void stm32l4serial_setsuspend(struct uart_dev_s *dev, bool suspend);
 static void stm32l4serial_pm_setsuspend(bool suspend);
-static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb,
-                                   enum pm_state_e pmstate);
-static int  stm32l4serial_pmprepare(FAR struct pm_callback_s *cb,
-                                    enum pm_state_e pmstate);
 #endif
 
 /****************************************************************************
@@ -758,20 +754,6 @@ FAR static struct stm32l4_serial_s * const g_uart_devs[STM32L4_NUSART + STM32L4_
   [4] = &g_uart5priv,
 #endif
 };
-
-#ifdef CONFIG_PM
-static struct
-{
-  struct pm_callback_s pm_cb;
-  bool serial_suspended;
-} g_serialpm =
-  {
-    .pm_cb.name = "serial",
-    .pm_cb.notify  = stm32l4serial_pmnotify,
-    .pm_cb.prepare = stm32l4serial_pmprepare,
-    .serial_suspended = false
-  };
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -2657,177 +2639,6 @@ static void stm32l4serial_dmarxcallback(DMA_HANDLE handle, uint8_t status,
 }
 #endif
 
-/****************************************************************************
- * Name: stm32l4serial_pmnotify
- *
- * Description:
- *   Notify the driver of new power state. This callback is  called after
- *   all drivers have had the opportunity to prepare for the new power state.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   None - The driver already agreed to transition to the low power
- *   consumption state when when it returned OK to the prepare() call.
- *
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static void stm32l4serial_pmnotify(FAR struct pm_callback_s *cb,
-                                   enum pm_state_e pmstate)
-{
-  struct stm32l4_serial_s *priv = g_uart_devs[CONSOLE_UART - 1];
-  switch (pmstate)
-    {
-      case PM_NORMAL:
-        {
-          stm32l4serial_pm_setsuspend(false);
-          HAL_NVIC_SetPriority(priv->irq - STM32L4_IRQ_FIRST, 0xf, 0x0);
-        }
-        break;
-
-      case PM_IDLE:
-        {
-          stm32l4serial_pm_setsuspend(false);
-        }
-        break;
-
-      case PM_STANDBY:
-        {
-          /* TODO: Alternative configuration and logic for enabling serial in
-           *       Stop 1 mode with HSI16 missing. Current logic allows
-           *       suspending serial peripherals for Stop 0/1/2 when serial
-           *       Rx/Tx buffers are empty (checked in pmprepare).
-           */
-
-          stm32l4serial_pm_setsuspend(false);
-          HAL_NVIC_SetPriority(priv->irq - STM32L4_IRQ_FIRST, 0x7, 0x0);
-        }
-        break;
-
-      case PM_SLEEP:
-        {
-          stm32l4serial_pm_setsuspend(true);
-        }
-        break;
-
-      default:
-        /* Should not get here */
-
-        break;
-    }
-}
-#endif
-
-/****************************************************************************
- * Name: stm32l4serial_pmprepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a warning
- *   that the system is about to enter into a new power state. The driver
- *   should begin whatever operations that may be required to enter power
- *   state. The driver may abort the state change mode by returning a
- *   non-zero value from the callback function.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   Zero - (OK) means the event was successfully processed and that the
- *          driver is prepared for the PM state change.
- *
- *   Non-zero - means that the driver is not prepared to perform the tasks
- *              needed achieve this power setting and will cause the state
- *              change to be aborted. NOTE: The prepare() method will also
- *              be called when reverting from lower back to higher power
- *              consumption modes (say because another driver refused a
- *              lower power state change). Drivers are not permitted to
- *              return non-zero values when reverting back to higher power
- *              consumption modes!
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static int stm32l4serial_pmprepare(FAR struct pm_callback_s *cb,
-                                   enum pm_state_e pmstate)
-{
-  int n;
-
-  /* Logic to prepare for a reduced power state goes here. */
-
-  switch (pmstate)
-    {
-    case PM_NORMAL:
-    case PM_IDLE:
-      break;
-
-    case PM_STANDBY:
-    case PM_SLEEP:
-
-#ifdef SERIAL_HAVE_DMA
-      /* Flush Rx DMA buffers before checking state of serial device
-       * buffers.
-       */
-
-      stm32l4_serial_dma_poll();
-#endif
-
-      /* Check if any of the active ports have data pending on Tx/Rx
-       * buffers.
-       */
-
-      for (n = 0; n < STM32L4_NUSART + STM32L4_NUART; n++)
-        {
-          struct stm32l4_serial_s *priv = g_uart_devs[n];
-
-          if (!priv || !priv->initialized)
-            {
-              /* Not active, skip. */
-
-              continue;
-            }
-
-          if (priv->suspended)
-            {
-              /* Port already suspended, skip. */
-
-              continue;
-            }
-
-          /* Check if port has data pending (Rx & Tx). */
-
-          if (priv->dev.xmit.head != priv->dev.xmit.tail)
-            {
-              return ERROR;
-            }
-          if (priv->dev.recv.head != priv->dev.recv.tail)
-            {
-              return ERROR;
-            }
-        }
-      break;
-
-    default:
-      /* Should not get here */
-      break;
-    }
-
-  return OK;
-}
-#endif
-
 #endif /* HAVE_UART */
 #endif /* USE_SERIALDRIVER */
 
@@ -2889,14 +2700,6 @@ void up_serialinit(void)
   unsigned minor = 0;
 #ifdef CONFIG_PM
   int ret;
-#endif
-
-  /* Register to receive power management callbacks */
-
-#ifdef CONFIG_PM
-  ret = pm_register(&g_serialpm.pm_cb);
-  DEBUGASSERT(ret == OK);
-  UNUSED(ret);
 #endif
 
   /* Register the console */
