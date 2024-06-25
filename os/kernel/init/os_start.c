@@ -590,6 +590,7 @@ void os_start(void)
 
 		hashndx  = PIDHASH(i);
 		g_pidhash[hashndx].tcb = &g_idletcb[i].cmn;
+		g_pidhash[hashndx].pid = g_idletcb[i].cmn.pid;
 		/* Allocate the IDLE group */
 #ifdef HAVE_TASK_GROUP
 
