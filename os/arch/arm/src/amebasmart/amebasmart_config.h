@@ -26,6 +26,9 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -47,11 +50,13 @@
 #endif
 
 /* For power save */
-extern void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time);
+#ifdef CONFIG_PM
+extern void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(clock_t, pm_wakeup_reason_code_t));
 extern void tizenrt_post_sleep_processing(uint32_t *expected_idle_time);
 
-#define configPRE_SLEEP_PROCESSING( x )         		( tizenrt_pre_sleep_processing((uint32_t *)&x) )
+#define configPRE_SLEEP_PROCESSING( x, y )         		( tizenrt_pre_sleep_processing((uint32_t *)&x, y) )
 #define configPOST_SLEEP_PROCESSING( x )        		( tizenrt_post_sleep_processing((uint32_t *)&x) )
+#endif
 
 /* Is there a serial console?  It could be on UART1-5 */
 

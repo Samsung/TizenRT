@@ -119,7 +119,7 @@ RESLEEP_2:
 #endif
 			/* Interrupt source will wake cpu up, just leave expected idle time as 0
 			Enter sleep mode for AP */
-			configPRE_SLEEP_PROCESSING(xModifiableIdleTime);
+			configPRE_SLEEP_PROCESSING(xModifiableIdleTime, handler);
 			/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
 			trigger an timer interrupt */
 			if (pmu_get_sleep_type() == SLEEP_PG) {

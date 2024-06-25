@@ -1,6 +1,9 @@
 #ifndef _TIZENRT_PMU_8730E_H_
 #define _TIZENRT_PMU_8730E_H_
 
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 typedef enum {
 	PMU_OS                  = 0,
 	PMU_WLAN_DEVICE         = 1,
@@ -56,8 +59,10 @@ void pmu_unregister_sleep_callback(u32 nDeviceId);
 
 int tizenrt_ready_to_sleep(void);
 int tizenrt_ready_to_dsleep(void);
-void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time);
+#ifdef CONFIG_PM
+void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(clock_t, pm_wakeup_reason_code_t));
 void tizenrt_post_sleep_processing(uint32_t *expected_idle_time);
+#endif
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 void pmu_acquire_wakelock(uint32_t nDeviceId);
