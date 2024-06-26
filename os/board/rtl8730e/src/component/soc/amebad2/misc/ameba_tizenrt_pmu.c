@@ -196,7 +196,7 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(clock_t, pm_wakeup_reason_code_t))
+void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 {
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
@@ -240,8 +240,8 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(
 	vTaskStepTick(ms_passed); /*  update kernel tick */
 #else
 #ifdef CONFIG_PM_TICKSUPPRESS
-	if (handler) {
-		handler((clock_t)ms_passed, (pm_wakeup_reason_code_t)wakeup_reason); /*  update kernel tick */
+	if (wakeuphandler) {
+		wakeuphandler((clock_t)ms_passed, (pm_wakeup_reason_code_t)wakeup_reason); /*  update kernel tick */
 	}
 #endif
 #endif
