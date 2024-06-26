@@ -180,7 +180,6 @@ endif
 
 ifeq ($(CONFIG_EXTERNAL_CMSIS_DSP),y)
 CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_dsp
-CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_dsp/dsp
 CMSIS_DSP_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
 ifeq ($(CONFIG_ARCH_FPU),y)
 CMSIS_DSP_LIB = lib_cmsis_dsp_fpu
