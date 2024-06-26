@@ -216,7 +216,7 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 {
 	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
 
-	uint32_t i, j;
+	__attribute__((unused)) uint32_t i, j;
 
 	if ((page_num < 2) || (page_num > 8) || (page_size < 8)) {
 		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: PageNum(%d) valid value is 2~8; PageSize(%d must > 8)\r\n", \

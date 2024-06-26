@@ -158,7 +158,7 @@ static void elf_dumploadinfo(FAR struct elf_loadinfo_s *loadinfo)
 
 	if (loadinfo->shdr && loadinfo->ehdr.e_shnum > 0) {
 		for (i = 0; i < loadinfo->ehdr.e_shnum; i++) {
-			FAR Elf32_Shdr *shdr = &loadinfo->shdr[i];
+			__attribute__((unused)) FAR Elf32_Shdr *shdr = &loadinfo->shdr[i];
 			binfo("Sections %d:\n", i);
 			binfo("  sh_name:      %08x\n", shdr->sh_name);
 			binfo("  sh_type:      %08x\n", shdr->sh_type);
@@ -247,15 +247,15 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	}
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	binp->sections[BIN_CTOR] = loadinfo.ctors;
-	binp->sections[BIN_DTOR] = loadinfo.dtors;
+	binp->sections[BIN_CTOR] = (uint32_t)loadinfo.ctors;
+	binp->sections[BIN_DTOR] = (uint32_t)loadinfo.dtors;
 #endif
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	/* Save information about constructors and destructors. */
 
 	binp->ctors = loadinfo.ctors;
-	binp->nctors = loadinfo.nctors;
+	binp->nctors = (uint32_t)loadinfo.nctors;
 
 	binp->dtors = loadinfo.dtors;
 	binp->ndtors = loadinfo.ndtors;

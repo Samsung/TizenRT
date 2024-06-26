@@ -182,7 +182,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	/* heapinfo_parse_heap() operations can print logs for more than 3 minutes,
 	 * which can be rebooted by watchdog. So try to stop the watchdog. */
 
-	int ret = mm_heapinfo_stop_watchdog();
+	__attribute__((unused)) int ret = mm_heapinfo_stop_watchdog();
 
 #ifndef CONFIG_MM_ASSERT_ON_FAIL
 	/* If CONFIG_MM_ASSERT_ON_FAIL is enabled, will be rebooted anyway, So even if

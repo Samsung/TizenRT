@@ -60,7 +60,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
                 return ret;
         }
 
-	char * buffer = &uspace;
+	char * buffer = (char *)&uspace;
 
 	size_t readsize = sizeof(struct userspace_s);
 
@@ -100,39 +100,39 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	close(filfd);
 
-	binp->sections[BIN_TEXT] = uspace.text_start;
-	binp->flash_region_start = uspace.text_start - uspace_offset + 4;
-	binp->flash_region_end = uspace.flash_end;
-	binp->ram_region_start = uspace.ram_start;
-	binp->ram_region_end = uspace.ram_end;
+	binp->sections[BIN_TEXT] = (uint32_t)uspace.text_start;
+	binp->flash_region_start = (uint32_t)uspace.text_start - uspace_offset + 4;
+	binp->flash_region_end = (uint32_t)uspace.flash_end;
+	binp->ram_region_start = (uint32_t)uspace.ram_start;
+	binp->ram_region_end = (uint32_t)uspace.ram_end;
 
 	/* zero out the bss... */
-	for (uint8_t *bss = uspace.bss_start; bss < uspace.bss_end; bss++) {
+	for (uint8_t *bss = uspace.bss_start; bss < (uint8_t *)uspace.bss_end; bss++) {
 		*bss = 0x00;
 	}
 
-	binp->sections[BIN_BSS] = uspace.bss_start;
+	binp->sections[BIN_BSS] = (uint32_t)uspace.bss_start;
 	binp->sizes[BIN_BSS] = uspace.bss_end - uspace.bss_start;
 
 	/* copy the data... */
 	uint8_t *orig_data = uspace.data_start_in_flash;
-	for (uint8_t *data = uspace.data_start_in_ram; data < uspace.data_end_in_ram; data++) {
+	for (uint8_t *data = uspace.data_start_in_ram; data < (uint8_t *)uspace.data_end_in_ram; data++) {
 		*data = *orig_data;
 		orig_data++;
 	}
 	
-	binp->sections[BIN_DATA] = uspace.data_start_in_ram;
+	binp->sections[BIN_DATA] = (uint32_t)uspace.data_start_in_ram;
 	binp->sizes[BIN_DATA] = uspace.data_end_in_ram - uspace.data_start_in_ram;
 
 	/* all the required setup is done, lets just populate them in binp structure */
 
 	/* Allocate Heap... */
-	binp->sections[BIN_HEAP] = uspace.heap_start;
+	binp->sections[BIN_HEAP] = (uint32_t)uspace.heap_start;
 	binp->sizes[BIN_HEAP] = uspace.heap_end - uspace.heap_start - sizeof(struct mm_heap_s);
 
-	binp->sections[BIN_DATA] = uspace.data_start_in_ram;
+	binp->sections[BIN_DATA] = (uint32_t)uspace.data_start_in_ram;
 
-	binp->entrypt = uspace.entry;
+	binp->entrypt = (main_t)uspace.entry;
 
 	binp->ctors = (binfmt_ctor_t *) uspace.sctors;
 
@@ -187,7 +187,7 @@ typedef struct bin_addr_info_s bin_addr_info_t;
 static bin_addr_info_t g_bin_addr_list[CONFIG_NUM_APPS + 1];
 #endif
 
-bin_addr_info_t *get_bin_addr_list()
+bin_addr_info_t *get_bin_addr_list(void)
 {
 	return g_bin_addr_list;
 }

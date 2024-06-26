@@ -141,13 +141,13 @@ int log_dump_init(void)
 	 * device is shut down or restarted. So these buffers MUST NEVER
 	 * BE FREED. 
 	 */
-	out_buf = allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
+	out_buf = (unsigned char *)allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (out_buf == NULL) {
 		ldpdbg("memory allocation failure\n");
 		goto exit_with_node;
 	}
 
-	last_comp_block = allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
+	last_comp_block = (unsigned char *)allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (last_comp_block == NULL) {
 		ldpdbg("memory allocation failure\n");
 		goto exit_with_outbuf;
@@ -228,7 +228,7 @@ int log_dump_compress_lastblock(void)
 
 	last_comp_block_size = CONFIG_LOG_DUMP_CHUNK_SIZE;
 
-	compress_ret = compress_block(&last_comp_block[4], &last_comp_block_size, uncomp_buf[uncomp_idx], uncomp_curbytes);
+	compress_ret = compress_block(&last_comp_block[4], (long unsigned int *)&last_comp_block_size,  (unsigned char *)uncomp_buf[uncomp_idx], uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
 		ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
@@ -579,7 +579,7 @@ int log_dump(int argc, char *argv[])
 		} else {
 			/* compress the completely filled block */
 			writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
-			compress_ret = compress_block(out_buf, &writesize, uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
+			compress_ret = compress_block(out_buf,  (long unsigned int *)&writesize,  (unsigned char *)uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
 			if (compress_ret != LOG_DUMP_OK) {
 				ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
 			}
