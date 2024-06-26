@@ -43,7 +43,7 @@ struct _tizenrt_timer_entry {
 };
 
 static _list _tizenrt_timer_table;
-static u8 _tizenrt_timer_table_init = 0;
+//static u8 _tizenrt_timer_table_init = 0;
 static _mutex _tizenrt_timer_mutex = NULL;
 
 unsigned int save_and_cli(void)
@@ -1223,7 +1223,7 @@ void vTaskDelay(int ms)
 
 int rtw_printf(const char *format,...)
 {
-	va_list ap;
+	__attribute__ ((unused)) va_list ap;
 	int ret = 0;
 #ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
 	va_start(ap, format);
