@@ -121,6 +121,12 @@ function get_executable_name()
 			else
 				echo "${BOOTPARAM}.bin"
 			fi;;
+		external)
+			if [[ ! -n "${EXTERNAL}" ]];then
+				echo "No Binary Match"
+			else
+				echo "${EXTERNAL}.bin"
+			fi;;
 		userfs) echo "${CONFIG_ARCH_BOARD}_smartfs.bin";;
 		sssfw|wlanfw) echo "$1.bin";;
 		*) echo "No Binary Match"
