@@ -361,9 +361,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 		priv->dev->getplaneinfo(priv->dev, 0, &priv->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
 		return register_driver(devname, &g_lcddev_fops, 0666, priv);
-	}
-	else
-	{
+	} else {
 		sem_destroy(&priv->sem);
 		kmm_free(priv);
 		return -ENOSYS;

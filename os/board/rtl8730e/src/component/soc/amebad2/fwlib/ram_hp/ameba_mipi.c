@@ -562,6 +562,8 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 	MIPI_InitStruct->MIPI_EotpEn = DISABLE;
 	MIPI_InitStruct->MIPI_BTADis = DISABLE;
 
+	/* Below initialization scope will be covered in porting layer */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	MIPI_InitStruct->MIPI_LaneNum = 2;
 	MIPI_InitStruct->MIPI_FrameRate = 60;
 
@@ -581,6 +583,7 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 
 	MIPI_InitStruct->MIPI_LineTime = 1250 * 3 / MIPI_InitStruct->MIPI_LaneNum;
 	MIPI_InitStruct->MIPI_BllpLen = MIPI_InitStruct->MIPI_LineTime / 2;
+#endif
 
 }
 

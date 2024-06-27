@@ -280,10 +280,10 @@ static int lcd_init(FAR struct lcd_dev_s *dev)
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	priv->config->reset();
 	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
-                lcdvdbg("LCD Init sequence completed\n");
-        } else {
-                lcddbg("ERROR: LCD Init sequence failed\n");
-        }
+		lcdvdbg("LCD Init sequence completed\n");
+	} else {
+		lcddbg("ERROR: LCD Init sequence failed\n");
+	}
 	priv->config->init();
 	priv->config->lcd_enable();
 	return OK;
