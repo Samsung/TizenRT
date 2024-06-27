@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 #include <stdlib.h>
 
 #include "../TestData/depthwise_kernel_3x3/test_data.h"

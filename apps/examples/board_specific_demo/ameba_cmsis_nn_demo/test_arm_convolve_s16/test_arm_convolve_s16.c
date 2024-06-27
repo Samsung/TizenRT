@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/int16xint8/test_data.h"
 #include "../TestData/int16xint8_dilation_1/test_data.h"

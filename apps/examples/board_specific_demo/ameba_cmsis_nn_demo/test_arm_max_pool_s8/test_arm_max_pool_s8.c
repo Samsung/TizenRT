@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/maxpooling/test_data.h"
 #include "../TestData/maxpooling_1/test_data.h"
