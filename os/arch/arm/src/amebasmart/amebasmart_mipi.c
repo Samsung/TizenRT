@@ -41,6 +41,10 @@
 #include "chip.h"
 #include "PinNames.h"
 
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
+
 static u32 vo_freq;
 static u32 send_cmd_done = 0;
 
@@ -296,7 +300,6 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
-	int count = 0;
 
 	if(msg->type == MIPI_DSI_END_OF_TRANSMISSION){
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
@@ -322,6 +325,31 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	return OK;
 }
 
+#ifdef CONFIG_PM
+static uint32_t rtk_mipi_suspend(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	/* Check anything is needed? */
+	return 1;
+}
+
+static uint32_t rtk_mipi_resume(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	FAR struct amebasmart_mipi_dsi_host_s *priv = &g_dsi_host;
+	/* For MIPI */
+	amebasmart_mipi_init_helper(priv);
+	/* For LCDC */
+	rtl8730e_lcdc_pm();
+
+	return 1;
+}
+#endif
+
 struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config)
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = NULL;
@@ -329,5 +357,10 @@ struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *confi
 	priv->dsi_host.config = *config;
 	amebasmart_mipi_init_helper(priv);
 	mipi_dsi_host_register(&priv->dsi_host);
+#ifdef CONFIG_PM
+	(void)pm_domain_register("MIPI");
+	pmu_register_sleep_callback(PMU_MIPI_DEVICE, (PSM_HOOK_FUN)rtk_mipi_suspend, NULL, (PSM_HOOK_FUN)rtk_mipi_resume, NULL);
+#endif
+
 	return (struct mipi_dsi_host *)priv;
 }
