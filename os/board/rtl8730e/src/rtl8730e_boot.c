@@ -436,7 +436,7 @@ void board_initialize(void)
 #endif
 
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701)
-        rtl8730_lcdc_initialize();
+	rtl8730e_lcdc_initialize();
 #endif
 
 
