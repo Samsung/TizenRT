@@ -52,6 +52,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/rtc.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -67,9 +68,14 @@
 #define COLINDEX 10
 #define ROWINDEX 10
 #define NOPIXELS 200
-
 static int xres;
 static int yres;
+
+#ifdef CONFIG_EXAMPLE_LCD_FPS_TEST
+#define EXAMPLE_LCD_FPS_TEST CONFIG_EXAMPLE_LCD_FPS_TEST
+#else
+#define EXAMPLE_LCD_FPS_TEST 5000
+#endif
 
 static void putarea(int x1, int x2, int y1, int y2, int color)
 {
@@ -204,7 +210,6 @@ static unsigned short generate_color_code(int red, int green, int blue)
 	unsigned short colorCode = (red << 11) | (green << 5) | blue;
 	return colorCode;
 }
-
 static void test_bit_map(void)
 {
 	int fd = 0;
@@ -254,13 +259,114 @@ static void test_bit_map(void)
 	free(lcd_data);
 }
 
+static void test_fps(void)
+{
+	int fd_rtc = 0;
+	int fd_lcd = 0;
+	int p = 0;
+	char port[20] = { '\0' };
+	size_t len;
+
+	fd_rtc = open("/dev/rtc0", O_RDWR);
+	if (fd_rtc < 0) {
+		printf("ERROR: LCD FPS test, Fail to open rtc.\n");
+		return;
+	}
+
+	len = xres * yres * 2 + 1;
+	uint8_t *lcd_data_red = (uint8_t *)malloc(len);
+	if (lcd_data_red == NULL) {
+		printf("FPS TEST, malloc failed for lcd data red : %d\n", len);
+		close(fd_rtc);
+		return;
+	}
+
+	uint8_t *lcd_data_blue = (uint8_t *)malloc(len);
+	if (lcd_data_blue == NULL) {
+		printf("FPS TEST, malloc failed for lcd data blue: %d\n", len);
+		free(lcd_data_red);
+		close(fd_rtc);
+		return;
+	}
+	for (int i = 0; i < len - 1; i += 2) {
+		lcd_data_red[i] = (RED & 0xFF00) >> 8;
+		lcd_data_red[i + 1] = RED & 0x00FF;
+		lcd_data_blue[i] = (BLUE & 0xFF00) >> 8;
+		lcd_data_blue[i + 1] = BLUE & 0x00FF;
+	}
+
+	struct lcddev_area_s area_red;
+	struct lcddev_area_s area_blue;
+	area_red.planeno = 0;
+	area_red.row_start = 0;
+	area_red.row_end = yres - 1;
+	area_red.col_start = 0;
+	area_red.col_end = xres - 1;
+	area_red.stride = 2 * xres;
+	area_red.data = lcd_data_red;
+	area_blue.planeno = 0;
+	area_blue.row_start = 0;
+	area_blue.row_end = yres - 1;
+	area_blue.col_start = 0;
+	area_blue.col_end = xres - 1;
+	area_blue.stride = 2 * xres;
+	area_blue.data = lcd_data_blue;
+
+	sprintf(port, LCD_DEV_PATH, p);
+	fd_lcd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd_lcd < 0) {
+		printf("ERROR: FPS TEST, Failed to open lcd port : %s error:%d\n", port, fd_lcd);
+		free(lcd_data_red);
+		free(lcd_data_blue);
+		close(fd_rtc);
+		return;
+	}
+
+	struct rtc_time start_time = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
+	struct rtc_time end_time;
+
+	bool is_red = true;
+	//Start Test
+	ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&start_time);
+	for (int itr = 0; itr < EXAMPLE_LCD_FPS_TEST; itr++) {
+		if (is_red) {
+			ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_red);
+			is_red = false;
+		} else {
+			ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_blue);
+			is_red = true;
+		}
+	}
+	ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&end_time);
+	//End test
+	
+	close(fd_rtc);
+	close(fd_lcd);
+	free(lcd_data_red);
+	free(lcd_data_blue);
+
+	time_t start;
+	time_t end;
+	start = mktime((FAR struct tm *)&start_time);
+	end = mktime((FAR struct tm *)&end_time);
+
+	int time_elapsed = difftime(end, start);
+	if (time_elapsed != 0) {
+		float fps = EXAMPLE_LCD_FPS_TEST / time_elapsed;
+		printf("FPS Test: %d frames executed in %d sec, FPS: %.2f\n", EXAMPLE_LCD_FPS_TEST, time_elapsed, fps);
+		return;
+	} else {
+		printf("FPS calculation failed! Please increase the number of frames execution using CONFIG_EXAMPLE_LCD_FPS_TEST!\n");
+	}
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int lcd_test_main(int argc, char *argv[])
 #endif
 {
-	printf("=== LCD demo ===");
+	printf("=== LCD demo ===\n");
 	int count = 0;
 	int fd = 0;
 	int p = 0;
@@ -281,5 +387,6 @@ int lcd_test_main(int argc, char *argv[])
 		count++;
 		printf("count :%d\n", count);
 	}
+	test_fps();
 	return 0;
 }
