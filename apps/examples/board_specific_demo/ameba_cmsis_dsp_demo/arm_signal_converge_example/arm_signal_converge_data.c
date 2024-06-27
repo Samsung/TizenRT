@@ -38,7 +38,7 @@
 * POSSIBILITY OF SUCH DAMAGE.  
 * -------------------------------------------------------------------- */
 
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
+#include <cmsis_dsp/Include/arm_math.h>
 
 /* ----------------------------------------------------------------------
 ** Test input data for Floating point LMS Norm FIR filter

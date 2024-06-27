@@ -122,8 +122,8 @@
 ** Include Files
 ** ------------------------------------------------------------------- */
 
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
-#include "math_helper.h"
+#include <cmsis_dsp/Include/arm_math.h>
+#include "../math_helper.h"
 
 #define SEMIHOSTING
 
