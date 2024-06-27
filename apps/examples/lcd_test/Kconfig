@@ -9,6 +9,14 @@ config EXAMPLES_LCD
 	---help---
 		Enable LCD Example
 
+if EXAMPLES_LCD
+config EXAMPLE_LCD_FPS_TEST
+	int "The Number of Frames Execution"
+	default 5000
+	---help---
+		Enter number of frames to execute to test FPS
+endif
+
 config USER_ENTRYPOINT
 	string
 	default "lcd_test" if ENTRY_LCD
