@@ -64,7 +64,7 @@ extern "C" {
 #include <protocols/libcoap/coap_time.h>
 
 #ifdef WITH_MBEDTLS
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 #include "mbedtls/easy_tls.h"
 #define COAP_CIPHERSUIT "TLS-PSK-WITH-AES-128-CBC-SHA"
 #endif

@@ -40,8 +40,8 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/pkcs12.h"
-#include "mbedtls/ssl_internal.h"
-#include "mbedtls/net.h"
+#include "mbedtls/ssl_misc.h"
+#include "mbedtls/net_sockets.h"
 #ifdef __WITH_DTLS__
 #include "mbedtls/timing.h"
 #include "mbedtls/ssl_cookie.h"
@@ -235,7 +235,7 @@ if (0 != (ret) && MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY != (int) (ret) &&           
 {                                                                                                  \
     OIC_LOG_V(ERROR, NET_SSL_TAG, "%s: -0x%x", (str), -(ret));                                     \
     if ((int) MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE != (int) (ret) &&                                \
-        (int) MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO != (int) (ret))                                  \
+        (int) MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE != (int) (ret))                                  \
     {                                                                                              \
         mbedtls_ssl_send_alert_message(&(peer)->ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL, (msg));        \
     }                                                                                              \
@@ -244,7 +244,7 @@ if (0 != (ret) && MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY != (int) (ret) &&           
     {                                                                                              \
         oc_mutex_unlock(g_sslContextMutex);                                                        \
     }                                                                                              \
-    if ((int) MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO != (int)(ret))                                   \
+    if ((int) MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE != (int)(ret))                                   \
     {                                                                                              \
         SSL_RES((peer), CA_DTLS_AUTHENTICATION_FAILURE);                                           \
     }                                                                                              \
@@ -708,7 +708,7 @@ CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
                                       CASslEkcbProtocol_t protocol, CASslEkcbRole_t role)
 {
     OIC_LOG_V(DEBUG, NET_SSL_TAG, "In %s", __func__);
-    mbedtls_ssl_config* sslConf = NULL;
+    mbedtls_ssl_context* sslConf = NULL;
     static CASslEkcbProtocol_t protocolCtx = CA_SSL_EKCB_TLS;
 
     if (CA_SSL_EKCB_TLS != protocol && CA_SSL_EKCB_DTLS != protocol)
@@ -763,12 +763,12 @@ CAResult_t CASetSslExportKeysCallback(SslExportKeysCallback_t exportKeysCb,
 
     if (NULL == exportKeysCb)
     {
-        mbedtls_ssl_conf_export_keys_cb(sslConf, NULL, NULL);
+        mbedtls_ssl_set_export_keys_cb(sslConf, NULL, NULL);
         OIC_LOG(DEBUG, NET_SSL_TAG, "Export key callback unregistered.");
     }
     else
     {
-        mbedtls_ssl_conf_export_keys_cb(sslConf, CASslExportKeysHandler, (void*)(&protocolCtx));
+        mbedtls_ssl_set_export_keys_cb(sslConf, CASslExportKeysHandler, (void*)(&protocolCtx));
         OIC_LOG(DEBUG, NET_SSL_TAG, "Export key callback registered.");
     }
     oc_mutex_unlock(g_sslContextMutex);
@@ -944,7 +944,7 @@ static int InitPKIX(CATransportAdapter_t adapter)
     {
         OIC_LOG(ERROR, NET_SSL_TAG, "g_setupPkContextCallback is NULL");
         ret =  mbedtls_pk_parse_key(&g_caSslContext->pkey, g_pkiInfo.key.data, g_pkiInfo.key.len,
-                                                                                   NULL, 0);
+                                                                                   NULL, 0, mbedtls_ctr_drbg_random, &g_caSslContext->rnd);
     }
     else
     {
