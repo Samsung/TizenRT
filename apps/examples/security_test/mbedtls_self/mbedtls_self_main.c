@@ -30,21 +30,17 @@
 #include "wifi_manager/wifi_manager.h"
 
 #include "mbedtls/entropy.h"
-#include "mbedtls/entropy_poll.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/ccm.h"
 #include "mbedtls/cmac.h"
-#include "mbedtls/md2.h"
-#include "mbedtls/md4.h"
 #include "mbedtls/md5.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "mbedtls/arc4.h"
 #include "mbedtls/des.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/camellia.h"
@@ -52,11 +48,15 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/rsa.h"
 #include "mbedtls/x509.h"
-#include "mbedtls/xtea.h"
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecjpake.h"
 #include "mbedtls/timing.h"
+#include "mbedtls/poly1305.h"
+#include "mbedtls/chacha20.h"
+#include "mbedtls/chachapoly.h"
+#include "mbedtls/nist_kw.h"
+#include "mbedtls/aria.h"
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
@@ -334,9 +334,6 @@ const selftest_t selftests[] = {
 #if defined(MBEDTLS_RSA_C)
 	{"rsa", mbedtls_rsa_self_test},
 #endif
-#if defined(MBEDTLS_X509_USE_C)
-	{"x509", mbedtls_x509_self_test},
-#endif
 #if defined(MBEDTLS_XTEA_C)
 	{"xtea", mbedtls_xtea_self_test},
 #endif
@@ -364,13 +361,24 @@ const selftest_t selftests[] = {
 #if defined(MBEDTLS_PKCS5_C)
 	{"pkcs5", mbedtls_pkcs5_self_test},
 #endif
-	/* slower test after the faster ones */
-#if defined(MBEDTLS_TIMING_C)
-	{"timing", mbedtls_timing_self_test},
-#endif
 	/* heap test comes last */
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 	{"memory_buffer_alloc", mbedtls_memory_buffer_alloc_free_and_self_test},
+#endif
+#if defined(MBEDTLS_POLY1305_C)
+	{"poly1305", mbedtls_poly1305_self_test},
+#endif
+#if defined(MBEDTLS_CHACHA20_C)
+	{"chacha20", mbedtls_chacha20_self_test},
+#endif
+#if defined(MBEDTLS_CHACHAPOLY_C)
+	{"chachapoly", mbedtls_chachapoly_self_test},
+#endif
+#if defined(MBEDTLS_NIST_KW_C) && defined(MBEDTLS_AES_C)
+	{"nist_kw", mbedtls_nist_kw_self_test},
+#endif
+#if defined(MBEDTLS_ARIA_C)
+	{"aria", mbedtls_aria_self_test},
 #endif
 	{NULL, NULL}
 };

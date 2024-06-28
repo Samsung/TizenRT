@@ -66,7 +66,7 @@
 #include <netutils/netlib.h>
 #include <protocols/webserver/http_server.h>
 #include <protocols/webserver/http_keyvalue_list.h>
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 
 #define MAX_DATA_SIZE 50
 #define MAX_BUF_SIZE 100

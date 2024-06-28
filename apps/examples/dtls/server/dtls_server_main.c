@@ -51,8 +51,7 @@
 	!defined(MBEDTLS_SSL_COOKIE_C) || !defined(MBEDTLS_NET_C) ||		\
 	!defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) ||		\
 	!defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_RSA_C) ||	\
-	!defined(MBEDTLS_CERTS_C) || !defined(MBEDTLS_PEM_PARSE_C) ||		\
-	!defined(MBEDTLS_TIMING_C)
+	!defined(MBEDTLS_TIMING_C) || !defined(MBEDTLS_PEM_PARSE_C)
 
 int dtls_server_main(int argc, char **argv)
 {
@@ -60,7 +59,7 @@ int dtls_server_main(int argc, char **argv)
 	printf("MBEDTLS_SSL_COOKIE_C and/or MBEDTLS_NET_C and/or\n");
 	printf("MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C and/or\n");
 	printf("MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_RSA_C and/or\n");
-	printf("MBEDTLS_CERTS_C and/or MBEDTLS_PEM_PARSE_C and/or\n");
+	printf("MBEDTLS_PEM_PARSE_C and/or\n");
 	printf("MBEDTLS_TIMING_C not defined.\n");
 	return 0;
 }
@@ -70,11 +69,11 @@ int dtls_server_main(int argc, char **argv)
 #define mbedtls_fprintf    fprintf
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_cookie.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/timing.h"
@@ -182,7 +181,7 @@ int dtls_server_cb(void *args)
 		goto exit;
 	}
 
-	ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_srv_key_rsa, mbedtls_test_srv_key_rsa_len, NULL, 0);
+	ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)mbedtls_test_srv_key_rsa, mbedtls_test_srv_key_rsa_len, NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg);
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
