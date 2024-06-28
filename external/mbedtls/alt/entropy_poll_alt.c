@@ -20,16 +20,12 @@
 #include <tinyara/security_hal.h>
 #include <tinyara/seclink.h>
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include "mbedtls/build_info.h"
 
 #if defined(MBEDTLS_ENTROPY_C)
 
 #include "mbedtls/entropy.h"
-#include "mbedtls/entropy_poll.h"
+#include "entropy_poll.h"
 
 #include "mbedtls/alt/common.h"
 
@@ -46,10 +42,13 @@ static int mbedtls_generate_random_alt(unsigned char *data, unsigned int len)
 	}
 
 	ret = sl_generate_random(shnd, len, &random);
-	sl_deinit(shnd);
 	if (ret != SECLINK_OK) {
+		sl_deinit(shnd);
 		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
 	}
+
+	sl_deinit(shnd);
+
 	return HAL_SUCCESS;
 }
 

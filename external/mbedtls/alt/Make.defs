@@ -23,6 +23,7 @@ entropy_poll_alt.c \
 pk_wrap_alt.c \
 alt_utils.c \
 aes_alt.c
+CFLAGS += -I$(TOPDIR)/../external/mbedtls/
 
 DEPPATH	+= --dep-path alt
 VPATH   += :alt
