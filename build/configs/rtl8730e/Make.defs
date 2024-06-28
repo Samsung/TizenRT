@@ -291,3 +291,7 @@ endef
 define DOWNLOAD
   $(TOPDIR)/../build/configs/common_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
 endef
+
+define EXTERNAL_DOWNLOAD
+  $(TOPDIR)/../build/configs/external_download.sh $(1) $(2) $(3) $(4) $(5) $(6)
+endef

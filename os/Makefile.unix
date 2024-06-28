@@ -643,6 +643,9 @@ download:
 	else \
 		$(call DOWNLOAD, port ${port} $(DOWNLOAD_ARGS)) ; \
 	fi
+ifeq ($(CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH),y)
+	$(Q) $(call EXTERNAL_DOWNLOAD, $(DOWNLOAD_ARGS))
+endif
 
 ota_img:
 	$(Q) $(call OTA_IMG)
