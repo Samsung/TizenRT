@@ -100,7 +100,7 @@ static int compress_curbytes = 0;	/* number of bytes in the current chunk that w
 static int compress_rdptr = 0;		/* current pointer for compressed data read */
 static size_t log_dump_size = 0;
 static struct log_dump_chunk_s *read_node;
-static signed char uncomp_buf[CONFIG_LOG_DUMP_NUMBUFS][CONFIG_LOG_DUMP_CHUNK_SIZE];	/* initial uncompressed log dump data */
+static unsigned char uncomp_buf[CONFIG_LOG_DUMP_NUMBUFS][CONFIG_LOG_DUMP_CHUNK_SIZE];	/* initial uncompressed log dump data */
 static bool uncomp_buf_full[CONFIG_LOG_DUMP_NUMBUFS];
 static int uncomp_idx = 0;
 static int comp_idx = 0;

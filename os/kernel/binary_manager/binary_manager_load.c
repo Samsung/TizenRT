@@ -605,8 +605,10 @@ static int reloading_thread(int argc, char *argv[])
 static int update_thread(int argc, char *argv[])
 {
 	int ret;
-	__attribute__((unused)) int bin_idx;
-	__attribute__((unused)) uint32_t bin_count = binary_manager_get_ucount();
+#ifndef CONFIG_BINMGR_RELOAD_REBOOT 	
+    int bin_idx;
+	uint32_t bin_count = binary_manager_get_ucount();
+#endif
 
 	/* Check whether there is binary for update.
 	 * If kernel binary to update exists, board will be rebooted.

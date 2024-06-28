@@ -358,7 +358,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	sem_init(&priv->sem, 0, 1);
 	if (priv->dev->getplaneinfo) {
-		priv->dev->getplaneinfo((struct lcd_planeinfo_s)priv->dev, 0, &priv->planeinfo);	//plane no is taken 0 here
+		priv->dev->getplaneinfo(priv->dev, 0, &priv->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
 		return register_driver(devname, &g_lcddev_fops, 0666, priv);
 	}

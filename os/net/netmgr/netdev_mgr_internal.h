@@ -44,7 +44,6 @@ struct nic_config {
 	int is_default;
 	int loopback;
 	struct nic_io_ops io_ops;
-	struct ifaddrs *addrs;
 };
 
 struct netdev_ops {
