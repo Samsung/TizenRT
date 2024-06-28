@@ -30,6 +30,9 @@ LAST_IMAGE=0
 function pre_download()
 {
 	source ${TOP_PATH}/os/.bininfo
+	if [ -f ${IMG_TOOL_PATH}/setting.txt ]; then
+		rm -rf ${IMG_TOOL_PATH}/setting.txt
+	fi
 	cp -p ${BIN_PATH}/${BL1}.bin ${IMG_TOOL_PATH}/${BL1}.bin 
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
 	if [ "${CONFIG_APP_BINARY_SEPARATION}" == "y" ]; then
@@ -63,12 +66,6 @@ function pre_download()
 		cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
 	fi
 
-	echo ""
-	echo "=========================="
-	echo "Checking flash size(PASS)"
-	echo "=========================="
-	#board_check $TTYDEV
-
 	for partidx in ${!parts[@]}; do
 		if [[ "${parts[$partidx]}" == "reserved" ]];then
 			continue
@@ -81,12 +78,17 @@ function pre_download()
 		if [[ "${parts[$partidx]}" == "ss" ]];then
 			continue
 		fi
-
-		#echo "${parts[$partidx]}  offset ${a} size ${b}KB"
 	done
-	LAST_IMAGE=${EXTERNAL}.bin
-	#echo "$LAST_IMAGE"
+	LAST_IMAGE=${BOOTPARAM}.bin	
 
+	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
+		source ${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
+		if test -f "${BIN_PATH}/${EXTERNAL}.bin"; then
+			cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
+		fi
+		LAST_IMAGE=${RESOURCE_BIN_NAME}
+	fi
+	
 	touch "${IMG_TOOL_PATH}/setting.txt"
 }
 
@@ -103,15 +105,15 @@ function board_download()
 
 		if [[ $TTYDEV == *"ACM"* ]]; then
 			#echo "USB download"
-			echo "Save info to setting.txt"
+			#echo "Save info to setting.txt"
 			echo "$3" >> setting.txt
 			echo "$2" >> setting.txt
 			if [ "$3" == "$LAST_IMAGE" ]; then
 				echo ""
-				echo "=========================="
-				echo "Start USB download"
+				echo "==================================="
+				echo "Start USB download in Flash"
 				echo $(date)
-				echo "=========================="
+				echo "==================================="
 				./upload_image_tool_linux "download" $1
 				echo "Complete USB download"
 				echo $(date)
@@ -193,6 +195,9 @@ function post_download()
 	fi
 	if test -f "${BOOTPARAM}.bin"; then
 		[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin
+	fi
+	if test -f "${RESOURCE_BIN_NAME}"; then
+		[ -e ${RESOURCE_BIN_NAME} ] && rm ${RESOURCE_BIN_NAME}
 	fi
 	if test -f "${EXTERNAL}.bin"; then
 		[ -e ${EXTERNAL}.bin ] && rm ${EXTERNAL}.bin
