@@ -80,7 +80,7 @@ int http_tls_init(struct http_server_t *server, struct ssl_config_t *ssl_config)
 		}
 
 		/* 2-2 Setup device key */
-		if ((result = mbedtls_pk_parse_key(&(server->tls_pkey), (const unsigned char *)ssl_config->private_key, ssl_config->private_key_len, NULL, 0)) != 0) {
+		if ((result = mbedtls_pk_parse_key(&(server->tls_pkey), (const unsigned char *)ssl_config->private_key, ssl_config->private_key_len, NULL, 0, mbedtls_ctr_drbg_random, &(server->tls_ctr_drbg))) != 0) {
 			HTTP_LOGE("Error: srv_key parse fail, returned -%4x\n", -result);
 			return HTTP_ERROR;
 		}

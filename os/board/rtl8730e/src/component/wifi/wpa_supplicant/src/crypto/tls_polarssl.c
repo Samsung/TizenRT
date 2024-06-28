@@ -86,7 +86,7 @@ void my_debug(void *ctx, int level, const char *str)
 
 #if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03000000)
 #include <mbedtls/net_sockets.h>
-#include <ssl_misc.h>
+#include <mbedtls/ssl_misc.h>
 extern int max_buf_bio_in_size;
 extern int max_buf_bio_out_size;
 #elif (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))

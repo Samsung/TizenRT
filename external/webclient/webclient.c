@@ -536,7 +536,8 @@ int webclient_tls_init(struct http_client_tls_t *client, struct http_client_ssl_
 
 		if ((result = mbedtls_pk_parse_key(&(client->tls_pkey),
 										   (const unsigned char *)ssl_config->private_key,
-										   ssl_config->private_key_len, NULL, 0)) != 0) {
+										   ssl_config->private_key_len, NULL, 0, 
+										   mbedtls_ctr_drbg_random, &(client->tls_ctr_drbg))) != 0) {
 			printf("Error: cli_key parse fail, returned -%4x\n", -result);
 			goto TLS_INIT_EXIT;
 		}

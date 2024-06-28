@@ -38,7 +38,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/pkcs12.h"
-#include "mbedtls/ssl_internal.h"
+#include "mbedtls/ssl_misc.h"
 #include "mbedtls/x509_csr.h"
 
 #ifndef NDEBUG
