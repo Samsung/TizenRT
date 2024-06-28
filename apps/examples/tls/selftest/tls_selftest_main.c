@@ -50,14 +50,11 @@
 #include "mbedtls/dhm.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/ccm.h"
-#include "mbedtls/md2.h"
-#include "mbedtls/md4.h"
 #include "mbedtls/md5.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "mbedtls/arc4.h"
 #include "mbedtls/des.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/camellia.h"
@@ -65,10 +62,14 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/rsa.h"
 #include "mbedtls/x509.h"
-#include "mbedtls/xtea.h"
 #include "mbedtls/pkcs5.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/timing.h"
+#include "mbedtls/poly1305.h"
+#include "mbedtls/chacha20.h"
+#include "mbedtls/chachapoly.h"
+#include "mbedtls/nist_kw.h"
+#include "mbedtls/aria.h"
 
 #define mbedtls_printf     printf
 /*
@@ -155,9 +156,6 @@ pthread_addr_t tls_selftest_cb(void *args)
 #if defined(MBEDTLS_RSA_C)
 	DO_TLS_TEST(mbedtls_rsa_self_test, v);
 #endif
-#if defined(MBEDTLS_X509_USE_C)
-	DO_TLS_TEST(mbedtls_x509_self_test, v);
-#endif
 #if defined(MBEDTLS_XTEA_C)
 	DO_TLS_TEST(mbedtls_xtea_self_test, v);
 #endif
@@ -176,7 +174,21 @@ pthread_addr_t tls_selftest_cb(void *args)
 #if defined(MBEDTLS_DHM_C)
 	DO_TLS_TEST(mbedtls_dhm_self_test, v);
 #endif
-
+#if defined(MBEDTLS_POLY1305_C)
+	DO_TLS_TEST(mbedtls_poly1305_self_test, v);
+#endif
+#if defined(MBEDTLS_CHACHA20_C)
+	DO_TLS_TEST(mbedtls_chacha20_self_test, v);
+#endif
+#if defined(MBEDTLS_CHACHAPOLY_C)
+	DO_TLS_TEST(mbedtls_chachapoly_self_test, v);
+#endif
+#if defined(MBEDTLS_NIST_KW_C) && defined(MBEDTLS_AES_C)
+	DO_TLS_TEST(mbedtls_nist_kw_self_test, v);
+#endif
+#if defined(MBEDTLS_ARIA_C)
+	DO_TLS_TEST(mbedtls_aria_self_test, v);
+#endif
 /*
  * Without HW entropy, there is no strong entropy source and
  * it will make failure the selftest.

@@ -29,7 +29,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 
 #define TAG "[CT_TLS_CLIENT]"
 #define DEBUG_LEVEL 0

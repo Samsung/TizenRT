@@ -49,15 +49,14 @@
 #if !defined(MBEDTLS_SSL_CLI_C) || !defined(MBEDTLS_SSL_PROTO_DTLS) ||	\
 	!defined(MBEDTLS_NET_C) || !defined(MBEDTLS_TIMING_C) ||			\
 	!defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) ||		\
-	!defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_RSA_C) ||	\
-	!defined(MBEDTLS_CERTS_C)
+	!defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_RSA_C)
 int dtls_client_main(int argc, char **argv)
 {
 	printf("MBEDTLS_SSL_CLI_C and/or MBEDTLS_SSL_PROTO_DTLS and/or\n");
 	printf("MBEDTLS_NET_C and/or MBEDTLS_TIMING_C and/or\n");
 	printf("MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C and/or\n");
 	printf("MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_RSA_C and/or\n");
-	printf("MBEDTLS_CERTS_C and/or MBEDTLS_PEM_PARSE_C not defined.\n");
+	printf("MBEDTLS_PEM_PARSE_C not defined.\n");
 	return 0;
 }
 #else
@@ -65,13 +64,13 @@ int dtls_client_main(int argc, char **argv)
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
 
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 #include "mbedtls/timing.h"
 
 #define SERVER_PORT "4433"
