@@ -329,12 +329,13 @@ CONFIG_ARCH_BOARD_HAVE_FLASH=y
 #
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
-CONFIG_FLASH_PART_SIZE="60,40,12,400,1844,384,4808,1844,384,4808,512,1280,8,120,"
-CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,bin,bin,kernel,bin,bin,smartfs,ftl,bootparam,external,"
-CONFIG_FLASH_PART_NAME="bl1,reserved,ftl,ss,kernel,app1,common,kernel,app1,common,userfs,reserved,bootparam,external,"
+CONFIG_FLASH_PART_SIZE="60,40,12,400,1844,5404,684,1844,5404,684,8,"
+CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,bin,bin,kernel,bin,bin,bootparam,"
+CONFIG_FLASH_PART_NAME="bl1,reserved,ftl,ss,kernel,app1,common,kernel,app1,common,bootparam,"
 CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY=y
 CONFIG_FLASH_VSTART_LOADABLE=0xe000000
 CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH=y
+CONFIG_EXTERNAL_FLASH_START_ADDR=0x9000000
 
 #
 # Second Flash Partition Options
@@ -343,7 +344,7 @@ CONFIG_SECOND_FLASH_PARTITION=y
 CONFIG_SECOND_FLASH_MINOR=1
 CONFIG_SECOND_FLASH_PART_SIZE="128,14656,14656,2048,1280,"
 CONFIG_SECOND_FLASH_PART_TYPE="none,resource,resource,smartfs,ftl,"
-CONFIG_SECOND_FLASH_PART_NAME="reserved,resource,resource,userfs,reserved,"
+CONFIG_SECOND_FLASH_PART_NAME="ext_data,resource,resource,userfs,reserved,"
 CONFIG_AUTOMOUNT=y
 CONFIG_AUTOMOUNT_USERFS=y
 # CONFIG_BOARD_USBDEV_SERIALSTR is not set
