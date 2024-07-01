@@ -156,6 +156,9 @@ static void rtl8730e_lcd_layer_enable(int layer, bool enable)
 
 static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end)
 {
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_MIPI_DRV, 1);
+#endif
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerImgBaseAddr = (u32) lcd_img_buffer;
 #if defined(CONFIG_ENABLE_LCD_CHANGE_WINDOW_SIZE)
 	lcdc_init_struct.layerx[LCD_LAYER].LCDC_LayerHorizontalStart = y_start;
@@ -171,6 +174,9 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 	while (!lcdc_nextframe) {
 		DelayMs(1);
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
 }
 
 static void rtl8730e_gpio_init(void)

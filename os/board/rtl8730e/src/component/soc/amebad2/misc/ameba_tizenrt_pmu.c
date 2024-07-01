@@ -2,7 +2,6 @@
 #include "ameba_soc.h"
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
-#endif
 
 uint32_t missing_tick = 0;
 
@@ -197,7 +196,6 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-#ifdef CONFIG_PM
 void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
 	uint32_t tick_before_sleep;
@@ -271,7 +269,6 @@ void tizenrt_post_sleep_processing(uint32_t *expected_idle_time)
 #endif
 
 }
-#endif
 
 u32 check_wfi_state(u8 core_id)
 {
@@ -348,3 +345,4 @@ uint32_t pmu_get_sleep_type(void)
 {
 	return sleep_type;
 }
+#endif	/* CONFIG_PM */

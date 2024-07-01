@@ -264,13 +264,6 @@ static void rtl8730e_up_txint(struct uart_dev_s *dev, bool enable);
 static bool rtl8730e_up_txready(struct uart_dev_s *dev);
 static bool rtl8730e_up_txempty(struct uart_dev_s *dev);
 
-#ifdef CONFIG_PM
-static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb,
-										enum pm_state_e pmstate);
-static int  amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb,
-										enum pm_state_e pmstate);
-#endif
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -513,18 +506,6 @@ static uart_dev_t g_uart4port = {
 	.ops = &log_g_uart_ops,
 	.priv = &g_uart4priv,
 };
-#endif
-
-#ifdef CONFIG_PM
-static struct
-{
-	struct pm_callback_s pm_cb;
-} g_serialpm =
-	{
-		.pm_cb.name = "rtl8730e_serial",
-		.pm_cb.notify  = amebasmart_serial_pmnotify,
-		.pm_cb.prepare = amebasmart_serial_pmprepare,
-	};
 #endif
 
 /****************************************************************************
@@ -912,6 +893,9 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_UART_DRV, 1);
+#endif
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}
@@ -920,6 +904,9 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 		uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_UART_DRV, 0);
+#endif
 }
 static int rtl8730e_up_attach(struct uart_dev_s *dev)
 {
@@ -1213,99 +1200,6 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 }
 #endif
 
-
-/****************************************************************************
- * Name: amebasmart_serial_pmnotify
- *
- * Description:
- *   Notify the driver of new power state. This callback is  called after
- *   all drivers have had the opportunity to prepare for the new power state.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   None - The driver already agreed to transition to the low power
- *   consumption state when when it returned OK to the prepare() call.
- *
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static void amebasmart_serial_pmnotify(FAR struct pm_callback_s *cb,
-                                   enum pm_state_e pmstate)
-{
-	/* Nothing to do here */
-	return;
-}
-#endif
-
-/****************************************************************************
- * Name: amebasmart_serial_pmprepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a warning
- *   that the system is about to enter into a new power state. The driver
- *   should begin whatever operations that may be required to enter power
- *   state. The driver may abort the state change mode by returning a
- *   non-zero value from the callback function.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   Zero - (OK) means the event was successfully processed and that the
- *          driver is prepared for the PM state change.
- *
- *   Non-zero - means that the driver is not prepared to perform the tasks
- *              needed achieve this power setting and will cause the state
- *              change to be aborted. NOTE: The prepare() method will also
- *              be called when reverting from lower back to higher power
- *              consumption modes (say because another driver refused a
- *              lower power state change). Drivers are not permitted to
- *              return non-zero values when reverting back to higher power
- *              consumption modes!
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, enum pm_state_e pmstate)
-{
-	if (pmstate == PM_SLEEP) {
-#ifdef CONFIG_RTL8730E_UART0
-		if ((g_uart0priv.txint_enable) && (!serial_writable(sdrv[0]))) {		/* If Tx init enable and FIFO not empty */
-				return ERROR;
-		}
-#endif
-#ifdef CONFIG_RTL8730E_UART1
-		if ((g_uart1priv.txint_enable) && (!serial_writable(sdrv[1]))) {		/* If Tx init enable and FIFO not empty */
-				return ERROR;
-		}
-#endif
-#ifdef CONFIG_RTL8730E_UART2
-		if ((g_uart2priv.txint_enable) && (!serial_writable(sdrv[2]))) {		/* If Tx init enable and FIFO not empty */
-				return ERROR;
-		}
-#endif
-#ifdef CONFIG_RTL8730E_UART4
-		/* Check for LOGUART TX status before AP is suspended */
-#endif
-	}
-
-	return OK;
-}
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1322,9 +1216,6 @@ static int amebasmart_serial_pmprepare(FAR struct pm_callback_s *cb, enum pm_sta
 
 void up_serialinit(void)
 {
-#ifdef CONFIG_PM
-	int ret;
-#endif
 #ifdef CONSOLE_DEV
 	CONSOLE_DEV.isconsole = true;
 	rtl8730e_up_setup(&CONSOLE_DEV);
@@ -1351,12 +1242,10 @@ void up_serialinit(void)
 #endif
 
 #ifdef CONFIG_PM
-	/* Register to receive power management callbacks */
-	ret = pm_register(&g_serialpm.pm_cb);
+	/* Domain registration for operation control */
+	bsp_pm_domain_register("UART", BSP_UART_DRV);
 	pmu_register_sleep_callback(PMU_LOGUART_DEVICE, (PSM_HOOK_FUN)rtk_loguart_suspend, NULL, (PSM_HOOK_FUN)rtk_loguart_resume, NULL);
 	pmu_register_sleep_callback(PMU_UART1_DEVICE, (PSM_HOOK_FUN)rtk_uart_suspend, NULL, (PSM_HOOK_FUN)rtk_uart_resume, NULL);
-	DEBUGASSERT(ret == OK);
-	UNUSED(ret);
 #endif
 }
 

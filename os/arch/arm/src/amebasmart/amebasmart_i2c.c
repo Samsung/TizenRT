@@ -1024,10 +1024,16 @@ static int amebasmart_i2c_process(FAR struct i2c_dev_s *dev, FAR struct i2c_msg_
 	priv->msgv = msgs;
 	priv->msgc = count;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2C_DRV, 1);
+#endif
 	int ret = 0;
 	ret = amebasmart_i2c_sem_waitdone(priv);
 
 	amebasmart_i2c_sem_post(priv);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2C_DRV, 0);
+#endif
 	return ret;
 
 }
@@ -1284,6 +1290,7 @@ static uint32_t rtk_i2c_resume(uint32_t expected_idle_time, void *param)
 #ifdef CONFIG_PM
 void i2c_pminitialize(void)
 {
+	bsp_pm_domain_register("I2C", BSP_I2C_DRV);
 	pmu_register_sleep_callback(PMU_I2C_DEVICE, (PSM_HOOK_FUN)rtk_i2c_suspend, NULL, (PSM_HOOK_FUN)rtk_i2c_resume, NULL);
 }
 #endif
