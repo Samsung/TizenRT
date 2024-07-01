@@ -20,17 +20,15 @@ menuconfig PM_METRICS
 	---help---
 		Power management's metrics
 
-config PM_SLICEMS
-	int "PM time slice (msec)"
+config PM_MIN_WAKEUP_TIME
+	int "Minimum Wakeup Time (in msec)"
 	default 100
 	---help---
-		The power management module collects activity counts in time slices.
-		At the end of the time slice, the count accumulated during that
-		interval is applied to an averaging algorithm to determine the
-		activity level.
-
-		CONFIG_PM_SLICEMS provides the duration of that time slice in
-		milliseconds.  Default: 100 Milliseconds
+		The power management module make board sleep & wakeup. After board wakeup,
+		it is required to perform post sleep processing and restore the CPU state.
+		During CPU restoration the board should not sleep again, for that we keep
+		board waking up for minimum CONFIG_PM_MIN_WAKEUP_TIME time (in msec). It's value should
+		be greater than 0.
 
 config PM_NDOMAINS
 	int "Number of PM activity domains"
@@ -57,7 +55,7 @@ config PM_TICKSUPPRESS
 		Periodic tick interrupts can be suppressed to keep the CPU idle for a longer period
 		of time. Tick suppression requires that missed ticks while the core is in an idle state
 		be compensated for when the core becomes active. To enable this configuration to
-		suppress ticks, the pm_wake() API must be called when the core wakes up.
+		suppress ticks, the pm_wakehandler() API must be called when the core wakes up.
 
 if PM_TICKSUPPRESS
 
@@ -66,6 +64,8 @@ config PM_TIMEDWAKEUP
 	default n
 	select SCHED_WAKEUPSOURCE
 	---help---
+		This config allow application to set power management wakeup timer. The wakeup timer wakes up
+		the board after specified time has been passed using hardware timer interrupt.
 
 if PM_TIMEDWAKEUP
 
@@ -82,11 +82,12 @@ endif # PM_TIMEDWAKEUP
 endif # PM_TICKSUPPRESS
 
 config PM_DOMAIN_NAME_SIZE
-	int "PM_DOMAIN_NAME_SIZE enter size"
+	int "Maximum Length of Domain String"
 	default 32
 	---help---
 		This value represents maxinmum domain string size. The domain string should be less than
-		this size.
+		this size. This config is intended to reduce unwanted memory consumption cause of long 
+		domain string.
 
 endif # PM
 

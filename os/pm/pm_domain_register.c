@@ -74,15 +74,15 @@ int pm_check_domain(int domain_id)
  *
  * Input parameters:
  *   domain - the string domain need to be registered in PM.
- * 
+ *
  * Returned value:
  *    non-negative integer   : ID of domain
  *    ERROR (-1)             : On Error
  *
- *
  ****************************************************************************/
 
-int pm_domain_register(char *domain) {
+int pm_domain_register(char *domain)
+{
 	int index;
 	irqstate_t flags;
 	int length = strlen(domain);
@@ -126,4 +126,4 @@ EXIT:
 	return index;
 }
 
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */
