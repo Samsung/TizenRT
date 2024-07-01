@@ -298,6 +298,9 @@ static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct
 
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg)
 {
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_MIPI_DRV, 1);
+#endif
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
 
@@ -322,6 +325,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	while(send_cmd_done != 1) {
 		DelayMs(1);
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
 	return OK;
 }
 
@@ -358,7 +364,7 @@ struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *confi
 	amebasmart_mipi_init_helper(priv);
 	mipi_dsi_host_register(&priv->dsi_host);
 #ifdef CONFIG_PM
-	(void)pm_domain_register("MIPI");
+	bsp_pm_domain_register("MIPI", BSP_MIPI_DRV);
 	pmu_register_sleep_callback(PMU_MIPI_DEVICE, (PSM_HOOK_FUN)rtk_mipi_suspend, NULL, (PSM_HOOK_FUN)rtk_mipi_resume, NULL);
 #endif
 

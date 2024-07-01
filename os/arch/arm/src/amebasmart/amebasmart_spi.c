@@ -181,14 +181,6 @@ static void amebasmart_spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuff
 				size_t nwords);
 #endif
 
-/* For Power Save */
-#ifdef CONFIG_PM
-static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb,
-										enum pm_state_e pmstate);
-static int  amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb,
-										enum pm_state_e pmstate);
-#endif
-
 /* Initialization */
 
 static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, uint8_t multi_cs);
@@ -310,18 +302,6 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER
 };
-
-#ifdef CONFIG_PM
-static struct
-{
-	struct pm_callback_s pm_cb;
-} g_spipm =
-	{
-		.pm_cb.name = "rtl8730e_spi",
-		.pm_cb.notify  = amebasmart_spi_pmnotify,
-		.pm_cb.prepare = amebasmart_spi_pmprepare,
-	};
-#endif
 
 /************************************************************************************
  * Private Functions
@@ -746,8 +726,13 @@ static inline void amebasmart_spi_master_set_delays(FAR struct amebasmart_spidev
 static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
-
+	/* When a lock is invoked, means that we are going to do some SPI operation,
+	   thus we should decide to suspend/resume SPI domain here
+	*/
 	if (lock) {
+#ifdef CONFIG_PM
+		bsp_pm_domain_control(BSP_SPI_DRV, 1);
+#endif
 		/* Take the semaphore (perhaps waiting) */
 
 		/* The only case that an error should occur here is if the wait was
@@ -760,6 +745,9 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 
 	} else {
 		(void)sem_post(&priv->exclsem);
+#ifdef CONFIG_PM
+		bsp_pm_domain_control(BSP_SPI_DRV, 0);
+#endif
 	}
 
 	return OK;
@@ -1478,94 +1466,6 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
 }
 #endif
 
-/****************************************************************************
- * Name: amebasmart_spi_pmnotify
- *
- * Description:
- *   Notify the driver of new power state. This callback is  called after
- *   all drivers have had the opportunity to prepare for the new power state.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   None - The driver already agreed to transition to the low power
- *   consumption state when when it returned OK to the prepare() call.
- *
- *
- ****************************************************************************/
-#ifdef CONFIG_PM
-static void amebasmart_spi_pmnotify(FAR struct pm_callback_s *cb,
-                                   enum pm_state_e pmstate)
-{
-	/* Nothing need to be done for pre/post sleep for SPI 
-	   If using SPI as wakeup interrupt, NP core can only go for CG sleep
-	*/
-	return;
-}
-#endif
-
-/****************************************************************************
- * Name: amebasmart_spi_pmprepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a warning
- *   that the system is about to enter into a new power state. The driver
- *   should begin whatever operations that may be required to enter power
- *   state. The driver may abort the state change mode by returning a
- *   non-zero value from the callback function.
- *
- * Input Parameters:
- *
- *    cb - Returned to the driver. The driver version of the callback
- *         structure may include additional, driver-specific state data at
- *         the end of the structure.
- *
- *    pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   Zero - (OK) means the event was successfully processed and that the
- *          driver is prepared for the PM state change.
- *
- *   Non-zero - means that the driver is not prepared to perform the tasks
- *              needed achieve this power setting and will cause the state
- *              change to be aborted. NOTE: The prepare() method will also
- *              be called when reverting from lower back to higher power
- *              consumption modes (say because another driver refused a
- *              lower power state change). Drivers are not permitted to
- *              return non-zero values when reverting back to higher power
- *              consumption modes!
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-static int amebasmart_spi_pmprepare(FAR struct pm_callback_s *cb, enum pm_state_e pmstate)
-{
-	if (pmstate == PM_SLEEP) {
-		/* Check SPI FIFO status */
-		/* SPI0 */
-#if defined(CONFIG_AMEBASMART_SPI0)
-		if (spi_busy(&g_spi0dev.spi_object) && !(ssi_check_fifo(&g_spi0dev.spi_object))) {
-			return ERROR;
-		}
-#endif
-#if defined(CONFIG_AMEBASMART_SPI1)
-		/* SPI1 */
-		if (spi_busy(&g_spi1dev.spi_object) && !(ssi_check_fifo(&g_spi1dev.spi_object))) {
-			return ERROR;
-		}
-#endif
-	}
-
-	return OK;
-}
-#endif
-
 /************************************************************************************
  * Name: up_spiinitialize
  *
@@ -1634,11 +1534,8 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 #ifdef CONFIG_PM
 void spi_pminitialize(void)
 {
-	int ret;
-	/* Register to receive power management callbacks */
-	ret = pm_register(&g_spipm.pm_cb);
+	/* Domain registration for operation control */
+	bsp_pm_domain_register("SPI", BSP_SPI_DRV);
 	pmu_register_sleep_callback(PMU_SPI_DEVICE, (PSM_HOOK_FUN)rtk_spi_suspend, NULL, (PSM_HOOK_FUN)rtk_spi_resume, NULL);
-	DEBUGASSERT(ret == OK);
-	UNUSED(ret);
 }
 #endif
