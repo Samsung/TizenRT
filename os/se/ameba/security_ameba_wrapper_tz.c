@@ -741,6 +741,56 @@ int se_ameba_hal_delete_storage(uint32_t ss_idx)
 	return ret;
 }
 
+#ifdef CONFIG_HW_GCM_ENC
+int se_ameba_hal_gcm_encrypt(hal_data *dec_data, hal_gcm_param *gcm_param, uint32_t key_idx, hal_data *enc_data)
+{
+	AWRAP_ENTER;
+	int ret = HAL_SUCCESS;
+	inout_struc in_output;
+
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
+	}
+
+	in_output.input_data = dec_data;
+	in_output.output_data = enc_data;
+
+	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
+	ret = ameba_hal_gcm_encrypt(&in_output, gcm_param, key_idx);
+	up_free_secure_context();
+
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+	}
+	return ret;
+}
+
+int se_ameba_hal_gcm_decrypt(hal_data *enc_data, hal_gcm_param *gcm_param, uint32_t key_idx, hal_data *dec_data)
+{
+	AWRAP_ENTER;
+	int ret = HAL_SUCCESS;
+	inout_struc in_output;
+
+	ret = se_ameba_index_chk(key_idx);
+	if (HAL_SUCCESS != ret) {
+		return ret;
+	}
+
+	in_output.input_data = enc_data;
+	in_output.output_data = dec_data;
+
+	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
+	ret = ameba_hal_gcm_decrypt(&in_output, gcm_param, key_idx);
+	up_free_secure_context();
+
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+	}
+	return ret;
+}
+#endif
+
 static struct sec_ops_s g_ameba_ops_s = {
 	se_ameba_hal_init,
 	se_ameba_hal_deinit,
@@ -773,6 +823,10 @@ static struct sec_ops_s g_ameba_ops_s = {
 	se_ameba_hal_write_storage,
 	se_ameba_hal_read_storage,
 	se_ameba_hal_delete_storage,
+#ifdef CONFIG_HW_GCM_ENC
+	se_ameba_hal_gcm_encrypt,
+	se_ameba_hal_gcm_decrypt,
+#endif
 };
 
 static struct sec_lowerhalf_s g_ameba_lower = {&g_ameba_ops_s, NULL};
