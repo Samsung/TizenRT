@@ -77,16 +77,21 @@
 #define pm_alloc(num, size) calloc(num, size)
 #endif
 
-/* Convert the time slice interval into system clock ticks.
- *
- * CONFIG_PM_SLICEMS provides the duration of one time slice in milliseconds.
- * CLOCKS_PER_SEC provides the number of timer ticks in one second.
- *
- * slice ticks = (CONFIG_PM_SLICEMS msec / 1000 msec/sec) /
- *               (CLOCKS_PER_SEC ticks/sec)
+
+/* CONFIG_PM_MIN_WAKEUP_TIME. The power management module make board sleep & wakeup. After board wakeup,
+	it is required to perform post sleep processing and restore the CPU state.
+	During CPU restoration the board should not sleep again, for that we keep
+	board waking up for minimum CONFIG_PM_MIN_WAKEUP_TIME time (in msec). It's value should
+	be greater than 0.
  */
 
-#define TIME_SLICE_TICKS ((CONFIG_PM_SLICEMS * CLOCKS_PER_SEC) /  1000)
+#ifndef CONFIG_PM_MIN_WAKEUP_TIME
+#define CONFIG_PM_MIN_WAKEUP_TIME  100	/* Default is 100 msec */
+#endif
+
+#if CONFIG_PM_MIN_WAKEUP_TIME < 1
+#error CONFIG_PM_MIN_WAKEUP_TIME invalid
+#endif
 
 /* Function-like macros *****************************************************/
 /****************************************************************************

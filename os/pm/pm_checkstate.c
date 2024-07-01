@@ -74,9 +74,8 @@
  * Description:
  *   This function is called from the MCU-specific IDLE loop to monitor the
  *   the power management conditions.  This function returns the "recommended"
- *   power management state based on the PM configuration and activity
- *   reported in the last sampling periods.  The power management state is
- *   not automatically changed, however.  The IDLE loop must call
+ *   power management state based on the PM configuration.  The power management
+ *   state is not automatically changed, however.  The IDLE loop must call
  *   pm_changestate() in order to make the state change.
  *
  *   These two steps are separated because the plaform-specific IDLE loop may
@@ -104,24 +103,13 @@ enum pm_state_e pm_checkstate(void)
 	irqstate_t flags;
 	int index;
 
-	/* Check for the end of the current time slice.  This must be performed
-	 * with interrupts disabled so that it does not conflict with the similar
-	 * logic in pm_activity().
-	 */
-
 	flags = enter_critical_section();
 	g_pmglobals.recommended = PM_STANDBY;
 
-	/* Check the elapsed time.  In periods of low activity, time slicing is
-	 * controlled by IDLE loop polling; in periods of higher activity, time
-	 * slicing is controlled by driver activity.  In either case, the duration
-	 * of the time slice is only approximate; during times of heavy activity,
-	 * time slices may be become longer and the activity level may be over-
-	 * estimated.
-	 */
+	/* Board should remain wakeup for minimunu CONFIG_PM_MIN_WAKEUP_TIME */
 
 	now = clock_systimer();
-	if (now - g_pmglobals.stime >= TIME_SLICE_TICKS) {
+	if (now - g_pmglobals.stime >= MSEC2TICK(CONFIG_PM_MIN_WAKEUP_TIME)) {
 
 		/* Reset the time and recommended board to sleep.
 		 * This is an atomic operation because interrupts are still disabled.
@@ -129,7 +117,6 @@ enum pm_state_e pm_checkstate(void)
 
 		g_pmglobals.stime = now;
 		g_pmglobals.recommended = PM_SLEEP;
-
 	}
 
 	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
@@ -149,4 +136,4 @@ enum pm_state_e pm_checkstate(void)
 	return g_pmglobals.recommended;
 }
 
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

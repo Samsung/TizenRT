@@ -102,8 +102,8 @@ void pm_idle(void)
 		/* set wakeup timer */
 		delay = wd_getwakeupdelay();
 		if (delay > 0) {
-			if (delay < CONFIG_PM_MIN_SLEEP_TIME) {
-				pmvdbg("Minimum sleep time should be %d\n", CONFIG_PM_MIN_SLEEP_TIME);
+			if (delay < MSEC2TICK(CONFIG_PM_MIN_SLEEP_TIME)) {
+				pmvdbg("Minimum sleep time should be %dms\n", CONFIG_PM_MIN_SLEEP_TIME);
 				goto EXIT;
 			} else {
 				pmvdbg("Setting timer and board will wake up after %d millisecond\n", delay);

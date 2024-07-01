@@ -131,23 +131,6 @@ typedef struct pm_domain_arg_s pm_domain_arg_t;
  * own, custom idle loop to support board-specific IDLE time power management
  */
 
-/* CONFIG_PM_SLICEMS.  The power management module collects activity counts
- * in time slices.  At the end of the time slice, the count accumulated
- * during that interval is applied to an averaging algorithm to determine
- * the activity level.
- *
- * CONFIG_PM_SLICEMS provides the duration of that time slice in
- * milliseconds.  Default: 100 Milliseconds
- */
-
-#ifndef CONFIG_PM_SLICEMS
-#define CONFIG_PM_SLICEMS  100	/* Default is 100 msec */
-#endif
-
-#if CONFIG_PM_SLICEMS < 1
-#error CONFIG_PM_SLICEMS invalid
-#endif
-
 
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
