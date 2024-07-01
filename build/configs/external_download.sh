@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ###########################################################################
 #
-# Copyright 2021 Samsung Electronics All Rights Reserved.
+# Copyright 2024 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-# common_download.sh
+# external_download.sh
 
 CURDIR=$(readlink -f "$0")
 CUR_PATH=$(dirname "$CURDIR")
@@ -32,7 +32,7 @@ source ${CONFIG}
 SMARTFS_BIN_PATH=${BIN_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
-BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
+BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_external.sh
 
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
@@ -94,39 +94,8 @@ function sanity_check()
 function get_executable_name()
 {
 	case $1 in
-		bl1)
-			if [[ ! -n "${BL1}" ]];then
-				echo "No Binary Match"
-			else
-				echo "${BL1}.bin"
-			fi;;
-		bl2)
-			if [[ ! -n "${BL2}" ]];then
-				echo "No Binary Match"
-			else
-				echo "${BL2}.bin"
-			fi;;
-		kernel|os) echo "${KERNEL_BIN_NAME}";;
-		ota) echo "${OTA}.bin";;
-		app1) echo "${APP1_BIN_NAME}";;
-		app2) echo "${APP2_BIN_NAME}";;
-		loadparam) echo "$1";;
-		common) echo "${COMMON_BIN_NAME}";;
-		zoneinfo) echo "zoneinfo.img";;
+		rtk_ext) echo "rtk_ext_flash_data.bin";; 
 		resource) echo "${RESOURCE_BIN_NAME}";;
-		rom) echo "romfs.img";;
-		bootparam)
-			if [[ ! -n "${BOOTPARAM}" ]];then
-				echo "No Binary Match"
-			else
-				echo "${BOOTPARAM}.bin"
-			fi;;
-		external)
-			if [[ ! -n "${EXTERNAL}" ]];then
-				echo "No Binary Match"
-			else
-				echo "${EXTERNAL}.bin"
-			fi;;
 		userfs) echo "${CONFIG_ARCH_BOARD}_smartfs.bin";;
 		sssfw|wlanfw) echo "$1.bin";;
 		*) echo "No Binary Match"
@@ -191,11 +160,11 @@ function get_configured_partitions()
 {
 	local configured_parts
 	# Read Partitions
-	if [[ -z ${CONFIG_FLASH_PART_NAME} ]];then
+	if [[ -z ${CONFIG_SECOND_FLASH_PART_NAME} ]];then
 
 		configured_parts=`grep -A 2 'config FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
 	else
-		configured_parts=${CONFIG_FLASH_PART_NAME}
+		configured_parts=${CONFIG_SECOND_FLASH_PART_NAME}
 	fi
 
 	echo $configured_parts
@@ -206,11 +175,11 @@ function get_partition_sizes()
 {
 	local sizes_str
 	#Read Partition Sizes
-	if [[ -z ${CONFIG_FLASH_PART_SIZE} ]]
+	if [[ -z ${CONFIG_SECOND_FLASH_PART_SIZE} ]]
 	then
 		sizes_str=`grep -A 2 'config FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
 	else
-		sizes_str=${CONFIG_FLASH_PART_SIZE}
+		sizes_str=${CONFIG_SECOND_FLASH_PART_SIZE}
 	fi
 
 	echo $sizes_str
@@ -254,11 +223,7 @@ download_specific_partition()
 download_all()
 {
 	echo "Starting Download..."
-	found_kernel=false
-	found_app1=false
-	found_app2=false
-	found_common=false
-
+	found_resource=false
 	for partidx in ${!parts[@]}; do
 
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
@@ -267,42 +232,12 @@ download_all()
 			fi
 		fi
 
-		if [[ "${parts[$partidx]}" == "kernel" ]];then
-			if [[ $found_kernel == true ]];then
+		if [[ "${parts[$partidx]}" == "resource" ]];then
+			if [[ $found_resource == true ]];then
 				continue
 			fi
-			found_kernel=true
+			found_resource=true
 		fi
-
-		if [[ "${parts[$partidx]}" == "app1" ]];then
-			if [[ $found_app1 == true ]];then
-				continue
-			fi
-			found_app1=true
-		fi
-
-		if [[ "${parts[$partidx]}" == "app2" ]];then
-			if [[ $found_app2 == true ]];then
-				continue
-			fi
-			found_app2=true
-		fi
-
-		if [[ "${parts[$partidx]}" == "common" ]];then
-			if [[ $found_common == true ]];then
-				continue
-			fi
-			found_common=true
-		fi
-
-		if [[ "${parts[$partidx]}" == "ftl" ]];then
-			continue
-		fi
-
-		if [[ "${parts[$partidx]}" == "config" ]];then
-			continue
-		fi
-
 		exe_name=$(get_executable_name ${parts[$partidx]})
 		if [[ "No Binary Match" = "${exe_name}" ]];then
 			continue
@@ -410,7 +345,7 @@ IFS=',' read -ra sizes <<< "$sizes"
 
 #Calculate Flash Offset
 num=${#sizes[@]}
-offsets[0]=`printf "0x%X" ${CONFIG_FLASH_START_ADDR}`
+offsets[0]=`printf "0x%X" ${CONFIG_EXTERNAL_FLASH_START_ADDR}`
 
 for (( i=1; i<=$num-1; i++ ))
 do
