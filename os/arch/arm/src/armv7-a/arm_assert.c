@@ -380,13 +380,13 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	}
 #endif
 	/* Get the limits for each type of stack */
-	stackbase = (uint32_t) fault_tcb->adj_stack_ptr;
-	stacksize = (uint32_t) fault_tcb->adj_stack_size;
+	stackbase = (uint32_t)fault_tcb->adj_stack_ptr;
+	stacksize = (uint32_t)fault_tcb->adj_stack_size;
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 #ifdef CONFIG_SMP
-	istackbase = (uint32_t) arm_intstack_alloc(),
+	istackbase = (uint32_t)arm_intstack_alloc(),
 #else
-	istackbase = (uint32_t) & g_intstackbase,
+	istackbase = (uint32_t)&g_intstackbase,
 #endif
 	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~7);
 #endif
@@ -558,10 +558,10 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t) system_exception_location;
 		system_exception_location = 0x0;	/* reset */
 	} else if (user_assert_location) {
-		asserted_location = (uint32_t) user_assert_location;
+		asserted_location = (uint32_t)user_assert_location;
 		user_assert_location = 0x0;
 	} else {
-		asserted_location = (uint32_t) kernel_assert_location;
+		asserted_location = (uint32_t)kernel_assert_location;
 	}
 
 	irqstate_t flags = irqsave();
@@ -583,7 +583,7 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	lldbg_noarg("Perform Crashdump\n");
-	board_crashdump(up_getsp(), fault_tcb, (uint8_t *) filename, lineno);
+	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
 	lldbg_noarg("\n");
 #endif
 

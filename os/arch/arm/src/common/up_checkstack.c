@@ -129,7 +129,7 @@ static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 	if (mark + 16 > nwords) {
 		int i, j;
 
-		ptr = (FAR uint32_t *) start;
+		ptr = (FAR uint32_t *)start;
 		for (i = 0; i < size; i += 4 * 64) {
 			for (j = 0; j < 64; j++) {
 				int ch;
@@ -174,11 +174,8 @@ static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 
 size_t up_check_tcbstack(FAR struct tcb_s *tcb)
 {
-<<<<<<< HEAD
+
 	return do_stackcheck((uintptr_t)tcb->stack_base_ptr, (uintptr_t)tcb->adj_stack_ptr);
-=======
-	return do_stackcheck((uintptr_t) tcb->stack_alloc_ptr, (uintptr_t) tcb->adj_stack_ptr);
->>>>>>> 8792caad2 (Resole Indentation Issue)
 }
 
 ssize_t up_check_tcbstack_remain(FAR struct tcb_s *tcb)
@@ -204,7 +201,7 @@ ssize_t up_check_stack_remain(void)
 #ifdef CONFIG_ARCH_NESTED_IRQ_STACK_SIZE
 size_t up_check_nestirqstack(void)
 {
-	return do_stackcheck((uintptr_t) & g_nestedirqstkalloc, (uintptr_t) & g_nestedirqstkbase);
+	return do_stackcheck((uintptr_t)&g_nestedirqstkalloc, (uintptr_t)&g_nestedirqstkbase);
 }
 
 size_t up_check_nestirqstack_remain(void)
@@ -219,7 +216,7 @@ size_t up_check_intstack(void)
 #ifdef CONFIG_SMP
 	return do_stackcheck((uintptr_t) arm_intstack_alloc(), (uintptr_t) arm_intstack_top());
 #else
-	return do_stackcheck((uintptr_t) & g_intstackalloc, (uintptr_t) & g_intstackbase);
+	return do_stackcheck((uintptr_t)&g_intstackalloc, (uintptr_t)&g_intstackbase);
 #endif
 }
 

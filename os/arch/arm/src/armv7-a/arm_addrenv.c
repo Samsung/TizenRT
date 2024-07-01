@@ -199,7 +199,7 @@ static int up_addrenv_initdata(uintptr_t l2table)
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 	/* Get the virtual address corresponding to the physical page address */
 
-	virtptr = (uint32_t *) arm_pgvaddr(paddr);
+	virtptr = (uint32_t *)arm_pgvaddr(paddr);
 #else
 	/* Temporarily map the page into the virtual address space */
 
@@ -488,7 +488,7 @@ int up_addrenv_vheap(const group_addrenv_t *addrenv, void **vheap)
 ssize_t up_addrenv_heapsize(const group_addrenv_t *addrenv)
 {
 	DEBUGASSERT(addrenv);
-	return (ssize_t) addrenv->heapsize;
+	return (ssize_t)addrenv->heapsize;
 }
 #endif
 

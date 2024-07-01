@@ -99,7 +99,7 @@ uintptr_t arm_physpgaddr(uintptr_t vaddr)
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 			/* Get the virtual address of the base of level 2 page table */
 
-			l2table = (uint32_t *) arm_pgvaddr(paddr);
+			l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
 			/* Temporarily map the page into the virtual address space */
 
@@ -120,7 +120,7 @@ uintptr_t arm_physpgaddr(uintptr_t vaddr)
 				 * containing the mapping of the virtual address.
 				 */
 
-				paddr = ((uintptr_t) l2table[index] & PTE_SMALL_PADDR_MASK);
+				paddr = ((uintptr_t)l2table[index] & PTE_SMALL_PADDR_MASK);
 
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
 				/* Restore the scratch section L1 page table entry */

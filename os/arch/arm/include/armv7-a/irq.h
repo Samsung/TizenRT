@@ -356,8 +356,13 @@ static inline irqstate_t irqstate(void)
 {
 	unsigned int cpsr;
 
-	__asm__ __volatile__("\tmrs    %0, cpsr\n":"=r"(cpsr)
-						 ::"memory");
+  __asm__ __volatile__
+    (
+      "\tmrs    %0, cpsr\n"
+      : "=r" (cpsr)
+      :
+      : "memory"
+    );
 
 	return cpsr;
 }
@@ -368,12 +373,17 @@ static inline irqstate_t irqsave(void)
 {
 	unsigned int cpsr;
 
-	__asm__ __volatile__("\tmrs    %0, cpsr\n" "\tcpsid  i\n"
+  __asm__ __volatile__
+    (
+      "\tmrs    %0, cpsr\n"
+      "\tcpsid  i\n"
 #if defined(CONFIG_ARMV7A_DECODEFIQ)
-						 "\tcpsid  f\n"
+      "\tcpsid  f\n"
 #endif
-						 :"=r"(cpsr)
-						 ::"memory");
+      : "=r" (cpsr)
+      :
+      : "memory"
+    );
 
 	return cpsr;
 }
@@ -383,13 +393,18 @@ static inline irqstate_t irqsave(void)
 static inline irqstate_t up_irq_enable(void)
 {
 	unsigned int cpsr;
-
-	__asm__ __volatile__("\tmrs    %0, cpsr\n" "\tcpsie  i\n"
+	
+  __asm__ __volatile__
+    (
+      "\tmrs    %0, cpsr\n"
+      "\tcpsie  i\n"
 #if defined(CONFIG_ARMV7A_DECODEFIQ)
-						 "\tcpsie  f\n"
+      "\tcpsie  f\n"
 #endif
-						 :"=r"(cpsr)
-						 ::"memory");
+      : "=r" (cpsr)
+      :
+      : "memory"
+    );
 
 	return cpsr;
 }

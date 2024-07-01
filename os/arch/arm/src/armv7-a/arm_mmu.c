@@ -301,7 +301,7 @@ void mmu_invalidate_region(uint32_t vstart, size_t size)
  ****************************************************************************/
 uint32_t *mmu_get_os_l1_pgtbl(void)
 {
-	return (uint32_t *) PGTABLE_BASE_VADDR;
+	return (uint32_t *)PGTABLE_BASE_VADDR;
 }
 
 /****************************************************************************
@@ -468,7 +468,7 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 				}
 
 				// Update L2 page table address in L1 page table.
-				val = (uint32_t) l2_pgtbl & PMD_PTE_PADDR_MASK;
+				val = (uint32_t)l2_pgtbl & PMD_PTE_PADDR_MASK;
 				val |= MMU_L1_PGTABFLAGS;
 				l1_pgtbl[idx] = val;
 			}

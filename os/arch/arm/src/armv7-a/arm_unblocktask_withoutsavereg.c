@@ -107,7 +107,7 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 	struct tcb_s *rtcb;
 
 	/* Remove the task from the blocked task list */
-	dq_rem((FAR dq_entry_t *) tcb, (dq_queue_t *) g_tasklisttable[tcb->task_state].list);
+	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
 
 	/* Reset its timeslice.  This is only meaningful for round
 	 * robin tasks but it doesn't here to do it for everything

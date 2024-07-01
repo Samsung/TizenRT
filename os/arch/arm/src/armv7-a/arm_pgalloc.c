@@ -89,7 +89,7 @@ static uintptr_t alloc_pgtable(void)
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 		/* Get the virtual address corresponding to the physical page address */
 
-		l2table = (uint32_t *) arm_pgvaddr(paddr);
+		l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
 		/* Temporarily map the page into the virtual address space */
 
@@ -257,7 +257,7 @@ uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages)
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 		/* Get the virtual address corresponding to the physical page address */
 
-		l2table = (uint32_t *) arm_pgvaddr(paddr);
+		l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
 		/* Temporarily map the level 2 page table into the "scratch" virtual
 		 * address space

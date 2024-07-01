@@ -195,9 +195,13 @@ static inline uintptr_t sys_call0(unsigned int nbr)
 {
 	register long reg0 __asm__("r0") = (long)(nbr);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0)
-						 :"memory", "r14");
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0)
+		: "memory", "r14"
+	);
 
 	return reg0;
 }
@@ -209,9 +213,13 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 	register long reg0 __asm__("r0") = (long)(nbr);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1)
-						 :"memory", "r14");
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1)
+		: "memory", "r14"
+	);
 
 	return reg0;
 }
@@ -224,9 +232,13 @@ static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1, uintptr_t p
 	register long reg2 __asm__("r2") = (long)(parm2);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2)
-						 :"memory", "r14");
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2)
+		: "memory", "r14"
+	);
 
 	return reg0;
 }
@@ -240,10 +252,13 @@ static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1, uintptr_t p
 	register long reg2 __asm__("r2") = (long)(parm2);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3)
-						 :"memory", "r14");
-
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3)
+		: "memory", "r14"
+	);
 	return reg0;
 }
 
@@ -257,10 +272,13 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1, uintptr_t p
 	register long reg2 __asm__("r2") = (long)(parm2);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4)
-						 :"memory", "r14");
-
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4)
+		: "memory", "r14"
+	);
 	return reg0;
 }
 
@@ -275,9 +293,13 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1, uintptr_t p
 	register long reg2 __asm__("r2") = (long)(parm2);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4), "r"(reg5)
-						 :"memory", "r14");
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4), "r"(reg5)
+		: "memory", "r14"
+	);
 
 	return reg0;
 }
@@ -294,10 +316,13 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1, uintptr_t p
 	register long reg2 __asm__("r2") = (long)(parm2);
 	register long reg1 __asm__("r1") = (long)(parm1);
 
-	__asm__ __volatile__("svc %1":"=r"(reg0)
-						 :"i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4), "r"(reg5), "r"(reg6)
-						 :"memory", "r14");
-
+	__asm__ __volatile__
+	(
+		"svc %1"
+		: "=r"(reg0)
+		: "i"(SYS_syscall), "r"(reg0), "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg4), "r"(reg5), "r"(reg6)
+		: "memory", "r14"
+	);
 	return reg0;
 }
 #endif

@@ -132,7 +132,7 @@ static void up_calibratedelay(void)
 static inline void up_color_intstack(void)
 {
 #ifdef CONFIG_SMP
-	uint32_t *ptr = (uint32_t *) arm_intstack_alloc();
+	uint32_t *ptr = (uint32_t *)arm_intstack_alloc();
 #else
 	uint32_t *ptr = (uint32_t *)&g_intstackalloc;
 #endif

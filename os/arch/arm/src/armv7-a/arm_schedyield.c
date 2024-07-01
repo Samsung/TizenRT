@@ -85,7 +85,7 @@ void up_schedyield(void)
 
 		/* Remove the TCB from the ready-to-run list */
 
-		dq_rem((FAR dq_entry_t *) rtcb, (FAR dq_queue_t *)&g_readytorun);
+		dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
 
 		/* Add the task in the correct location in the prioritized
 		 * g_readytorun task list

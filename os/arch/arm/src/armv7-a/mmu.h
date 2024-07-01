@@ -36,10 +36,10 @@
  ****************************************************************************/
 
 /* References:
- *  "Cortex-A5™ MPCore, Technical Reference Manual", Revision: r0p1,
- *   Copyright © 2010 ARM. All rights reserved. ARM DDI 0434B (ID101810)
- *  "ARM® Architecture Reference Manual, ARMv7-A and ARMv7-R edition",
- *   Copyright © 1996-1998, 2000, 2004-2012 ARM.
+ *  "Cortex-A5ï¿½ MPCore, Technical Reference Manual", Revision: r0p1,
+ *   Copyright ï¿½ 2010 ARM. All rights reserved. ARM DDI 0434B (ID101810)
+ *  "ARMï¿½ Architecture Reference Manual, ARMv7-A and ARMv7-R edition",
+ *   Copyright ï¿½ 1996-1998, 2000, 2004-2012 ARM.
  *   All rights reserved. ARM DDI 0406C.b (ID072512)
  */
 
@@ -77,7 +77,7 @@
 
 /* MMU CP15 Register Bit Definitions ****************************************/
 
-/* Reference: Cortex-A5™ MPCore
+/* Reference: Cortex-A5ï¿½ MPCore
  * Paragraph 6.7, "MMU software accessible registers."
  */
 
@@ -1221,7 +1221,15 @@ struct section_mapping_s {
 	    ****************************************************************************/
 	   static inline void cp15_disable_mmu(void)
 {
-	__asm__ __volatile__("\tmrc p15, 0, r0, c1, c0, 0\n" "\tbic r0, r0, #1\n" "\tmcr p15, 0, r0, c1, c0, 0\n":::"r0", "memory");
+  __asm__ __volatile__
+    (
+      "\tmrc p15, 0, r0, c1, c0, 0\n"
+      "\tbic r0, r0, #1\n"
+      "\tmcr p15, 0, r0, c1, c0, 0\n"
+      :
+      :
+      : "r0", "memory"
+    );
 }
 
 /****************************************************************************
@@ -1243,15 +1251,22 @@ struct section_mapping_s {
 
 static inline void cp15_invalidate_tlbs(void)
 {
-	__asm__ __volatile__("\tdsb\n"
+  __asm__ __volatile__
+    (
+      "\tdsb\n"
 #ifdef CONFIG_ARM_HAVE_MPCORE
-						 "\tmcr p15, 0, r0, c8, c3, 0\n"	/* TLBIALLIS */
-						 "\tmcr p15, 0, r0, c7, c1, 6\n"	/* BPIALLIS */
+      "\tmcr p15, 0, r0, c8, c3, 0\n" /* TLBIALLIS */
+      "\tmcr p15, 0, r0, c7, c1, 6\n" /* BPIALLIS */
 #else
-						 "\tmcr p15, 0, r0, c8, c7, 0\n"	/* TLBIALL */
-						 "\tmcr p15, 0, r0, c7, c5, 6\n"	/* BPIALL */
+      "\tmcr p15, 0, r0, c8, c7, 0\n" /* TLBIALL */
+      "\tmcr p15, 0, r0, c7, c5, 6\n" /* BPIALL */
 #endif
-						 "\tdsb\n" "\tisb\n":::"r0", "memory");
+      "\tdsb\n"
+      "\tisb\n"
+      :
+      :
+      : "r0", "memory"
+    );
 }
 
 /****************************************************************************
@@ -1267,16 +1282,22 @@ static inline void cp15_invalidate_tlbs(void)
 
 static inline void cp15_invalidate_tlb_bymva(uint32_t vaddr)
 {
-	__asm__ __volatile__("\tdsb\n"
+  __asm__ __volatile__
+    (
+      "\tdsb\n"
 #ifdef CONFIG_ARM_HAVE_MPCORE
-						 "\tmcr p15, 0, %0, c8, c3, 3\n"	/* TLBIMVAAIS */
-						 "\tmcr p15, 0, r0, c7, c1, 6\n"	/* BPIALLIS */
+      "\tmcr p15, 0, %0, c8, c3, 3\n" /* TLBIMVAAIS */
+      "\tmcr p15, 0, r0, c7, c1, 6\n" /* BPIALLIS */
 #else
-						 "\tmcr p15, 0, %0, c8, c7, 1\n"	/* TLBIMVA */
-						 "\tmcr p15, 0, r0, c7, c5, 6\n"	/* BPIALL */
+      "\tmcr p15, 0, %0, c8, c7, 1\n" /* TLBIMVA */
+      "\tmcr p15, 0, r0, c7, c5, 6\n" /* BPIALL */
 #endif
-						 "\tdsb\n" "\tisb\n"::"r"(vaddr)
-						 :"r1", "memory");
+      "\tdsb\n"
+      "\tisb\n"
+      :
+      : "r" (vaddr)
+      : "r1", "memory"
+    );
 }
 
 /****************************************************************************
@@ -1292,8 +1313,21 @@ static inline void cp15_invalidate_tlb_bymva(uint32_t vaddr)
 
 static inline void cp15_wrdacr(unsigned int dacr)
 {
-	__asm__ __volatile__("\tmcr p15, 0, %0, c3, c0, 0\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n"::"r"(dacr)
-						 :"memory");
+  __asm__ __volatile__
+    (
+      "\tmcr p15, 0, %0, c3, c0, 0\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      :
+      : "r" (dacr)
+      : "memory"
+    );
 }
 
 /****************************************************************************
@@ -1313,8 +1347,23 @@ static inline void cp15_wrdacr(unsigned int dacr)
 
 static inline void cp15_wrttb(unsigned int ttb)
 {
-	__asm__ __volatile__("\tmcr p15, 0, %0, c2, c0, 0\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tnop\n" "\tmov r1, #0\n" "\tmcr p15, 0, r1, c2, c0, 2\n"::"r"(ttb)
-						 :"r1", "memory");
+  __asm__ __volatile__
+      (
+      "\tmcr p15, 0, %0, c2, c0, 0\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tnop\n"
+      "\tmov r1, #0\n"
+      "\tmcr p15, 0, r1, c2, c0, 2\n"
+      :
+      : "r" (ttb)
+      : "r1", "memory"
+    );
 }
 
 /****************************************************************************
@@ -1336,15 +1385,25 @@ static inline uint32_t *mmu_l1_pgtable(void)
 	uint32_t ttbr0;
 	uint32_t pgtable;
 
-	__asm__ __volatile__("\tmrc p15, 0, %0, c2, c0, 0\n":"=r"(ttbr0)
-						 ::);
+	__asm__ __volatile__
+		(
+			"\tmrc p15, 0, %0, c2, c0, 0\n"
+			: "=r" (ttbr0)
+			:
+			:
+		);
 
 	pgtable = ttbr0 & TTBR0_BASE_MASK(0);
 	return (uint32_t *)(pgtable - PGTABLE_BASE_PADDR + PGTABLE_BASE_VADDR);
 #elif defined(CONFIG_APP_BINARY_SEPARATION)
 	uint32_t ttbr0;
-	__asm__ __volatile__("\tmrc p15, 0, %0, c2, c0, 0\n":"=r"(ttbr0)
-						 ::);
+	__asm__ __volatile__
+		(
+			"\tmrc p15, 0, %0, c2, c0, 0\n"
+			: "=r" (ttbr0)
+			:
+			:
+		);
 
 	ttbr0 &= TTBR0_BASE_MASK(0);
 	return (uint32_t *) ttbr0;

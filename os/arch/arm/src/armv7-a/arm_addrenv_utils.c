@@ -123,7 +123,7 @@ int arm_addrenv_create_region(uintptr_t **list, unsigned int listlen, uintptr_t 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 		/* Get the virtual address corresponding to the physical page address */
 
-		l2table = (uint32_t *) arm_pgvaddr(paddr);
+		l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
 		/* Temporarily map the page into the virtual address space */
 

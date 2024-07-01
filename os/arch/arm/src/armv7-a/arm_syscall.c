@@ -237,7 +237,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 		 * set will determine the restored context.
 		 */
 
-		CURRENT_REGS = (uint32_t *) regs[REG_R1];
+		CURRENT_REGS = (uint32_t *)regs[REG_R1];
 		DEBUGASSERT(CURRENT_REGS);
 
 		/* Restore rtcb data for context switching */
@@ -264,8 +264,8 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 	case SYS_switch_context: {
 		DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
-		*(uint32_t **) regs[REG_R1] = regs;
-		CURRENT_REGS = (uint32_t *) regs[REG_R2];
+		*(uint32_t **)regs[REG_R1] = regs;
+		CURRENT_REGS = (uint32_t *)regs[REG_R2];
 
 		/* Restore rtcb data for context switching */
 		up_restoretask(rtcb);
@@ -502,7 +502,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 		if (rtcb->xcp.kstack != NULL) {
 			DEBUGASSERT(rtcb->xcp.kstkptr != NULL && (uint32_t) rtcb->xcp.ustkptr == regs[REG_SP]);
 
-			regs[REG_SP] = (uint32_t) rtcb->xcp.kstkptr;
+			regs[REG_SP] = (uint32_t)rtcb->xcp.kstkptr;
 			rtcb->xcp.kstkptr = NULL;
 		}
 #endif

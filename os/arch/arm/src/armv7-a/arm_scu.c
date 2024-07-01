@@ -65,9 +65,13 @@ static inline uint32_t arm_get_sctlr(void)
 {
 	uint32_t sctlr;
 
-	__asm__ __volatile__("\tmrc   p15, 0, %0, c1, c0, 0\n"	/* Read SCTLR */
-						 :"=r"(sctlr)
-						 ::);
+	__asm__ __volatile__
+	(
+		"\tmrc   p15, 0, %0, c1, c0, 0\n" /* Read SCTLR */
+		: "=r"(sctlr)
+		:
+		:
+	);
 
 	return sctlr;
 }
@@ -82,9 +86,13 @@ static inline uint32_t arm_get_sctlr(void)
 
 static inline void arm_set_sctlr(uint32_t sctlr)
 {
-	__asm__ __volatile__("\tmcr  p15, 0, %0, c1, c0, 0\n"	/* Write SCTLR */
-						 ::"r"(sctlr)
-						 :);
+	__asm__ __volatile__
+	(
+		"\tmcr  p15, 0, %0, c1, c0, 0\n" /* Write SCTLR */
+		:
+		: "r"(sctlr)
+		:
+	);
 }
 
 /****************************************************************************
@@ -99,9 +107,13 @@ static inline uint32_t arm_get_actlr(void)
 {
 	uint32_t actlr;
 
-	__asm__ __volatile__("\tmrc  p15, 0, %0, c1, c0, 1\n"	/* Read ACTLR */
-						 :"=r"(actlr)
-						 ::);
+	__asm__ __volatile__
+	(
+		"\tmrc  p15, 0, %0, c1, c0, 1\n"  /* Read ACTLR */
+		: "=r"(actlr)
+		:
+		:
+	);
 
 	return actlr;
 }
@@ -116,9 +128,13 @@ static inline uint32_t arm_get_actlr(void)
 
 static inline void arm_set_actlr(uint32_t actlr)
 {
-	__asm__ __volatile__("\tmcr p15, 0, %0, c1, c0, 1\n"	/* Write ACTLR */
-						 ::"r"(actlr)
-						 :);
+	__asm__ __volatile__
+  	(
+		"\tmcr p15, 0, %0, c1, c0, 1\n" /* Write ACTLR */
+		:
+		: "r"(actlr)
+		:
+  	);
 }
 
 /****************************************************************************

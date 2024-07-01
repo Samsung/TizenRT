@@ -86,18 +86,21 @@ int main(int argc, char *argv[]);
 static void sig_trampoline(void) naked_function;
 static void sig_trampoline(void)
 {
-	__asm__ __volatile__(" push {lr}\n"	/* Save LR on the stack */
-						 " mov  ip, r0\n"	/* IP=sighand */
-						 " mov  r0, r1\n"	/* R0=signo */
-						 " mov  r1, r2\n"	/* R1=info */
-						 " mov  r2, r3\n"	/* R2=ucontext */
-						 " blx  ip\n"	/* Call the signal handler */
-						 " pop  {r2}\n"	/* Recover LR in R2 */
-						 " mov  lr, r2\n"	/* Restore LR */
-						 " mov  r0, %0\n"	/* SYS_signal_handler_return */
-						 " svc %1\n"	/* Return from the SYSCALL */
-						 ::"i"(SYS_signal_handler_return), "i"(SYS_syscall)
-						);
+  __asm__ __volatile__
+  (
+    " push {lr}\n"       /* Save LR on the stack */
+    " mov  ip, r0\n"     /* IP=sighand */
+    " mov  r0, r1\n"     /* R0=signo */
+    " mov  r1, r2\n"     /* R1=info */
+    " mov  r2, r3\n"     /* R2=ucontext */
+    " blx  ip\n"         /* Call the signal handler */
+    " pop  {r2}\n"       /* Recover LR in R2 */
+    " mov  lr, r2\n"     /* Restore LR */
+    " mov  r0, %0\n"     /* SYS_signal_handler_return */
+    " svc %1\n"          /* Return from the SYSCALL */
+    ::"i"(SYS_signal_handler_return),
+      "i"(SYS_syscall)
+  );
 }
 
 /****************************************************************************
@@ -132,7 +135,7 @@ void _start(int argc, char *argv[])
 	 * that is visible to the RTOS.
 	 */
 
-	ARCH_DATA_RESERVE->ar_sigtramp = (addrenv_sigtramp_t) sig_trampoline;
+	ARCH_DATA_RESERVE->ar_sigtramp = (addrenv_sigtramp_t)sig_trampoline;
 
 	/* Call C++ constructors */
 
