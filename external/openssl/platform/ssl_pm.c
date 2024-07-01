@@ -35,12 +35,12 @@
 
 /* mbedtls include */
 #include "mbedtls/platform.h"
-#include "mbedtls/net.h"
+#include "mbedtls/net_sockets.h"
 //#include "mbedtls/debug.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 
 #define X509_INFO_STRING_LENGTH 3072
 #define OPENSSL_READ_BUFFER_LENGTH_MIN 2048

@@ -49,6 +49,9 @@ function pre_download()
 	if test -f "${BIN_PATH}/${COMMON_BIN_NAME}"; then
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
+	if test -f "${BIN_PATH}/${RESOURCE_BIN_NAME}"; then
+		cp -p ${BIN_PATH}/${RESOURCE_BIN_NAME} ${IMG_TOOL_PATH}/${RESOURCE_BIN_NAME}
+	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		cp -p ${SMARTFS_BIN_PATH} ${IMG_TOOL_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 	fi
@@ -140,6 +143,9 @@ function post_download()
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
 		[ -e ${CONFIG_ARCH_BOARD}_smartfs.bin ] && rm ${CONFIG_ARCH_BOARD}_smartfs.bin
+	fi
+	if test -f "${RESOURCE_BIN_PATH}"; then
+		[ -e  ] && rm ${RESOURCE_BIN_PATH}
 	fi
 	if test -f "${BOOTPARAM}.bin"; then
 		[ -e ${BOOTPARAM}.bin ] && rm ${BOOTPARAM}.bin

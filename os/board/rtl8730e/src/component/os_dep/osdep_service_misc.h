@@ -17,19 +17,21 @@
 #ifndef __OSDEP_SERVICE_MISC_H_
 #define __OSDEP_SERVICE_MISC_H_
 
-// #define printk				printf
-// #define DBG_ERR(fmt, args...)		printf("\n\r[%s] " fmt, __FUNCTION__, ## args)
-
-// #define HALT()				do { cli(); for(;;);} while(0)
-#undef ASSERT
-#define ASSERT(x)			do { \
+#define RTK_HALT()   \
+	do {         \
+		cli();   \
+		for (;;) \
+			;    \
+	} while (0)
+#undef RTK_ASSERT
+#define RTK_ASSERT(x)			do { \
 						if((x) == 0){\
 							printf("\n\rAssert(" #x ") failed on line %d in file %s\n", __LINE__, __FILE__); \
-						HALT();}\
+						RTK_HALT();}\
 					} while(0)
 
-#undef DBG_ASSERT
-#define DBG_ASSERT(x, msg)		do { \
+#undef RTK_DBG_ASSERT
+#define RTK_DBG_ASSERT(x, msg)		do { \
 						if((x) == 0) \
 							printf("\n\r%s, Assert(" #x ") failed on line %d in file %s", msg, __LINE__, __FILE__); \
 					} while(0)

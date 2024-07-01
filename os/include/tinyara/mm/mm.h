@@ -459,7 +459,19 @@ extern uint32_t _sdata;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1];
 extern uint32_t g_cur_app;
+
+#if (CONFIG_NUM_APPS == 1)
+/* When a single app is present then the app id will always be 1.
+ * When we are allocating memory from user side, then we are sure that
+ * the allocation has to be done from this single app heap only. All
+ * kernel side allocations will be done by the kernel MM and its already
+ * handled above. So, we are hardcoding value of 1 here to use app 1
+ * heap for all user allocations.
+ */
+#define BASE_HEAP (g_app_heap_table[1])
+#else
 #define BASE_HEAP (g_app_heap_table[g_cur_app])
+#endif
 
 #else
 #define BASE_HEAP ((struct mm_heap_s *)_sdata)

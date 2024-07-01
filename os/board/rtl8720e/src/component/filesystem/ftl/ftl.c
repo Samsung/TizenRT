@@ -123,7 +123,7 @@ void ftl_mapping_table_init(void);
 uint16_t read_mapping_table(uint16_t logical_addr);
 
 /* Flash Status Bit */
-#define FLASH_STATUS_BITS 0x2c
+#define FLASH_STATUS_BITS CONFIG_FLASH_STATUS_BITS
 uint32_t backup_state = 0;
 
 static void ftl_setstatusbits(uint32_t NewState)

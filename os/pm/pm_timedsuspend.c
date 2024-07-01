@@ -51,6 +51,7 @@
  * Included Files
  ************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
@@ -101,7 +102,7 @@ static void timer_timeout(int argc, int domain_id, uint32_t hash_pid)
  * 
  * Parameters:
  *   domain_id - ID of domain to be suspended
- *   timer_interval - expected lock duration in millisecond
+ *   milliseconds - expected lock duration in millisecond
  *
  * Return Value:
  *   0 - success
@@ -109,7 +110,7 @@ static void timer_timeout(int argc, int domain_id, uint32_t hash_pid)
  *
  ************************************************************************/
 
-int pm_timedsuspend(int domain_id, unsigned int timer_interval)
+int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 {
 	int hash_pid = PIDHASH(getpid());
 
@@ -138,7 +139,7 @@ int pm_timedsuspend(int domain_id, unsigned int timer_interval)
 		goto errout;
 		
 	}
-	if (wd_start(wdog, timer_interval, (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)hash_pid) != OK) {
+	if (wd_start(wdog, MSEC2TICK(milliseconds), (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)hash_pid) != OK) {
 		pmvdbg("Error starting Wdog timer\n");
 		if (pm_resume(domain_id) != OK) {
 			pmdbg("Unable to resume domain: %s\n", pm_domain_map[domain_id]);
@@ -146,7 +147,7 @@ int pm_timedsuspend(int domain_id, unsigned int timer_interval)
 		set_errno(EAGAIN);
 		goto errout;
 	}
-	pmvdbg("PM is locked for pid %d and timer started for %d milliseconds\n", getpid(), timer_interval);
+	pmvdbg("PM is locked for pid %d and timer started for %d milliseconds\n", getpid(), milliseconds);
 	return OK;
 errout:
 	pid_timer_map[hash_pid] = NULL;

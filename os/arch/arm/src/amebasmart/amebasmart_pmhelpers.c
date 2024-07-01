@@ -50,7 +50,8 @@
 #include "osdep_service.h"
 #include "timer_api.h"
 
-gtimer_t g_timer1;
+static gtimer_t g_timer1;
+static int g_bsp_domain_id[BSP_DOMAIN_MAX];
 
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
@@ -112,19 +113,41 @@ int SOCPS_AONWakeReason(void)
 	return reason;
 }
 
-void pg_timer_int_handler(void *Data)
+void up_set_pm_timer(unsigned int interval_us) 
 {
-	pmvdbg("PM Timer interrupt handler!!\n");
-}
-
-void up_set_pm_timer(unsigned int interval_us) {
 	// Check whether timer interrupt need to be set
 	if (interval_us > 0) {
 		gtimer_init(&g_timer1, TIMER1);
 		/* Pass in timer obj to avoid compile warning, the last argument will not be used in the callback handler */
-		gtimer_start_one_shout(&g_timer1, interval_us, (void *)pg_timer_int_handler, (uint32_t)&g_timer1);
+		gtimer_start_one_shout(&g_timer1, interval_us, NULL, (uint32_t)&g_timer1);
 	}
 	return;
+}
+
+void bsp_pm_domain_register(char *domain_name, int bsp_drv_id)
+{
+	int domain_id = pm_domain_register(domain_name);
+	if (domain_id < 0) {
+		pmdbg("Unable to register %s DOMAIN\n", domain_name);
+	} else {
+		g_bsp_domain_id[bsp_drv_id] = domain_id;
+	}
+}
+
+void bsp_pm_domain_control(int bsp_drv_id, bool is_suspend)
+{
+	/* Retrive the domain id from the bsp driver id */
+	int domain_id = g_bsp_domain_id[bsp_drv_id];
+	if (is_suspend) {
+		/* Check BSP_DRV_DOMAIN enum for more info */
+		if (pm_suspend(domain_id) != OK) {
+			pmdbg("Unable to suspend bsp_drv_id: %d!\n", bsp_drv_id);
+		}
+	} else {
+		if (pm_resume(domain_id) != OK) {
+			pmdbg("Unable to resume bsp_drv_id: %d!\n", bsp_drv_id);
+		}
+	}
 }
 
 /* Interrupt callback from wifi-keepalive, which LP received designated packet*/

@@ -259,29 +259,6 @@ void cli(void);
 #define DBG_TRACE(fmt, args...)
 #define DBG_INFO(fmt, args...)
 #endif
-#define HALT()   \
-	do {         \
-		cli();   \
-		for (;;) \
-			;    \
-	} while (0)
-#undef ASSERT
-#define ASSERT(x)                                                              \
-	do {                                                                       \
-		if ((x) == 0) {                                                        \
-			nvdbg("\n\rAssert(" #x ") failed on line %d in file %s", __LINE__, \
-				  __FILE__);                                                   \
-			HALT();                                                            \
-		}                                                                      \
-	} while (0)
-
-#undef DBG_ASSERT
-#define DBG_ASSERT(x, msg)                                                    \
-	do {                                                                      \
-		if ((x) == 0)                                                         \
-			nvdbg("\n\r%s, Assert(" #x ") failed on line %d in file %s", msg, \
-				  __LINE__, __FILE__);                                        \
-	} while (0)
 
 //----- ------------------------------------------------------------------
 // Atomic Operation

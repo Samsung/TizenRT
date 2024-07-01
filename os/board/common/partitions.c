@@ -54,7 +54,21 @@
 #endif
 #include "common.h"
 
-#define FS_PATH_MAX 15
+#define FS_PATH_MAX 16
+
+#ifdef CONFIG_AUTOMOUNT_USERFS
+#ifdef CONFIG_USERFS_MNTPT
+#define USERFS_MNTPT           CONFIG_USERFS_MNTPT
+#else
+#define USERFS_MNTPT           "/mnt"
+#endif
+
+#ifdef CONFIG_USERFS_EXT_MNTPT
+#define USERFS_EXT_MNTPT       CONFIG_USERFS_EXT_MNTPT
+#else
+#define USERFS_EXT_MNTPT       "/ext"
+#endif
+#endif /* CONFIG_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_FLASH_PARTITION
 
@@ -155,7 +169,13 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		save_timezone_partno = true;
 	}
 #endif
-#endif /* CONFIG_MTD_FTL */
+#ifdef CONFIG_RESOURCE_FS
+	else if (!strncmp(types, "resource,", 9)) {
+		do_ftlinit = true;
+		tagno = MTD_FTL;
+	}
+#endif
+#endif
 
 #ifdef CONFIG_MTD_CONFIG
 	else if (!strncmp(types, "config,", 7)) {
@@ -251,6 +271,33 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 }
 #endif
 
+#ifdef CONFIG_RESOURCE_FS
+static int make_resource_mtd_partition(struct mtd_dev_s *mtd, off_t partoffset, off_t nblocks, uint16_t partno)
+{
+	int ret;
+	char fs_devname[FS_PATH_MAX];
+	FAR struct mtd_dev_s *mtd_part;
+	uint16_t resource_partno;
+
+	/* Set part num to avoid duplication */
+	resource_partno = partno + RESOURCE_DEVNUM_OFFSET;
+
+	mtd_part = mtd_partition(mtd, partoffset, nblocks, resource_partno);
+
+	if (!mtd_part) {
+		printf("ERROR: failed to create partition.\n");
+		return ERROR;
+	}
+
+	if (ftl_initialize(resource_partno, mtd_part)) {
+		printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+		return ERROR;
+	}
+
+	return OK;
+}
+#endif
+
 int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t *partinfo)
 {
 	int ret;
@@ -275,7 +322,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		return ERROR;
 #endif
 	}
-	g_partno = 0;
+
 	if (!mtd || !part_data.types || !part_data.sizes || !partinfo) {
 		printf("ERROR: Invalid partition data is NULL\n");
 		return ERROR;
@@ -291,6 +338,11 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		printf("ERROR: mtd->ioctl failed\n");
 		return ERROR;
 	}
+
+	/* Initialize partinfo data */
+	partinfo->smartfs_partno = -1;
+	partinfo->romfs_partno = -1;
+	partinfo->timezone_partno = -1;
 
 	partoffset = 0;
 	types = part_data.types;
@@ -335,12 +387,29 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 #endif
 		}
 #endif
+#ifdef CONFIG_RESOURCE_FS
+		if (!strncmp(types, "resource,", 9)) {
+			int nblocks = geo.erasesize / geo.blocksize;
+			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
+			ret = make_resource_mtd_partition(mtd, partoffset + (geo.erasesize / 1024), partsize / geo.blocksize - nblocks, g_partno);
+			if (ret != OK) {
+				printf("ERROR: fail to make resource mtd part.\n");
+			}
+		}
+#endif
 #ifdef CONFIG_MTD_PARTITION_NAMES
 		configure_partition_name(mtd_part, (const char **)&names, &index, part_name);
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
+#ifdef CONFIG_BINARY_MANAGER
+#ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!strncmp(types, "bin,", 4)) {
 			binary_manager_register_upart(part_name, g_partno, partsize, partoffset * geo.blocksize);
 		}
+#endif
+#ifdef CONFIG_RESOURCE_FS
+		if (!strncmp(types, "resource,", 9)) {
+			binary_manager_register_respart(g_partno, partsize, partoffset * geo.blocksize);
+		}
+#endif
 #endif
 #endif
 		partoffset += partsize / geo.blocksize;
@@ -349,7 +418,6 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		move_to_next_part((const char **)&types);
 		g_partno++;
 	}
-
 	return OK;
 }
 
@@ -365,47 +433,53 @@ void automount_fs_partition(partition_info_t *partinfo)
 	}
 #ifdef CONFIG_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
-	snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
-#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
-	ret = mksmartfs(fs_devname, 1, false);
-#else
-	ret = mksmartfs(fs_devname, false);
-#endif
-	if (ret != OK) {
-		printf("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
-	} else {
-		char *mountpath;
-		if (partinfo->minor == 0) {
-			mountpath = "/mnt";
-		} else {
-			mountpath = "/ext";
-		}
-		ret = mount(fs_devname, mountpath, "smartfs", 0, NULL);
+	if (partinfo->smartfs_partno != -1) {
+		snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
+	#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
+		ret = mksmartfs(fs_devname, 1, false);
+	#else
+		ret = mksmartfs(fs_devname, false);
+	#endif
 		if (ret != OK) {
-			printf("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+			printf("ERROR: mksmartfs on %s failed errno : %d\n", fs_devname, errno);
 		} else {
-			printf("%s is mounted successfully @ %s \n", fs_devname, mountpath);
+			char *mountpath;
+			if (partinfo->minor == 0) {
+				mountpath = USERFS_MNTPT;
+			} else {
+				mountpath = USERFS_EXT_MNTPT;
+			}
+			ret = mount(fs_devname, mountpath, "smartfs", 0, NULL);
+			if (ret != OK) {
+				printf("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+			} else {
+				printf("%s is mounted successfully @ %s \n", fs_devname, mountpath);
+			}
 		}
 	}
 #endif
 
 #ifdef CONFIG_AUTOMOUNT_ROMFS
-	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->romfs_partno);
-	ret = mount(fs_devname, "/rom", "romfs", 0, NULL);
-	if (ret != OK) {
-		printf("ERROR: mounting '%s'(ROMFS) failed, errno %d\n", fs_devname, get_errno());
-	} else {
-		printf("%s is mounted successfully @ %s \n", fs_devname, "/rom");
+	if (partinfo->romfs_partno != -1) {
+		snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->romfs_partno);
+		ret = mount(fs_devname, "/rom", "romfs", 0, NULL);
+		if (ret != OK) {
+			printf("ERROR: mounting '%s'(ROMFS) failed, errno %d\n", fs_devname, get_errno());
+		} else {
+			printf("%s is mounted successfully @ %s \n", fs_devname, "/rom");
+		}
 	}
 #endif /* CONFIG_AUTOMOUNT_ROMFS */
 
 #ifdef CONFIG_LIBC_ZONEINFO_ROMFS
-	snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->timezone_partno);
-	ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
-	if (ret != OK) {
-		printf("ROMFS ERROR: timezone mount failed, errno %d\n", get_errno());
-	} else {
-		printf("%s is mounted successfully @ %s \n", fs_devname, CONFIG_LIBC_TZDIR);
+	if (partinfo->romfs_partno != -1) {
+		snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->timezone_partno);
+		ret = mount(fs_devname, CONFIG_LIBC_TZDIR, "romfs", MS_RDONLY, NULL);
+		if (ret != OK) {
+			printf("ROMFS ERROR: timezone mount failed, errno %d\n", get_errno());
+		} else {
+			printf("%s is mounted successfully @ %s \n", fs_devname, CONFIG_LIBC_TZDIR);
+		}
 	}
 #endif	/* CONFIG_LIBC_ZONEINFO_ROMFS */
 #endif /* CONFIG_AUTOMOUNT_USERFS, CONFIG_AUTOMOUNT_ROMFS, CONFIG_LIBC_ZONEINFO_ROMFS */

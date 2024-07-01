@@ -99,6 +99,9 @@
 #endif
 #define BINMGR_LOADING_TRYCNT      2
 
+/* Partition Name - first partition : "A", second partition : "B" */
+#define GET_PARTNAME(part_idx)  ((part_idx == 0) ? "A" : "B")
+
 /* Loading thread cmd types */
 enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
@@ -164,6 +167,16 @@ struct binmgr_kinfo_s {
 };
 typedef struct binmgr_kinfo_s binmgr_kinfo_t;
 
+/* Resource binary data type in resource table */
+struct binmgr_resinfo_s {
+	bool is_mounted;
+	uint8_t inuse_idx;
+	uint32_t part_count;
+	part_info_t part_info[RESOURCE_BIN_COUNT];
+	uint32_t version;
+};
+typedef struct binmgr_resinfo_s binmgr_resinfo_t;
+
 /* User bootparam data */
 struct binmgr_userbp_s {
 	char name[BIN_NAME_MAX];
@@ -182,6 +195,7 @@ struct binmgr_bpdata_s {
 	uint8_t app_count;
 	binmgr_userbp_t app_data[CONFIG_NUM_APPS + 1];
 #endif
+	uint8_t resource_active_idx;
 } __attribute__((__packed__));
 typedef struct binmgr_bpdata_s binmgr_bpdata_t;
 
@@ -285,6 +299,12 @@ int binary_manager_get_inactive_path(int requester_pid, char *bin_name);
 void binary_manager_update_bootparam(int requester_pid, uint8_t type);
 void binary_manager_reset_board(int reboot_reason);
 int binary_manager_update_kernel_binary(void);
+#ifdef CONFIG_RESOURCE_FS
+binmgr_resinfo_t *binary_manager_get_resdata(void);
+bool binary_manager_scan_resource(void);
+int binary_manager_unmount_resource(void);
+int binary_manager_check_resource_update(void);
+#endif
 
 /****************************************************************************
  * Binary Manager Main Thread

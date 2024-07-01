@@ -19,7 +19,10 @@
 
 import os
 import sys
+import string
 
+os_folder = os.path.dirname(__file__) + '/../../../../os'
+cfg_file = os_folder + '/.config'
 dirpath = os.path.dirname(__file__)
 
 def text_to_binary(input_file, output_file):
@@ -32,8 +35,18 @@ def text_to_binary(input_file, output_file):
             # Write binary data to the output file
             outfile.write(binary_data)
 
-if __name__ == "__main__":
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../os/tools')))
+import config_util as util
+CONFIG_SECOND_FLASH_PARTITION = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PARTITION=").rstrip('\n')
+if CONFIG_SECOND_FLASH_PARTITION == "y":
     input_file = dirpath + "/rtk_data_binary.txt"
     output_file = dirpath + "/rtk_ext_flash_data.bin"
 
     text_to_binary(input_file, output_file)
+    # Ext flash valid
+    print("1")
+else:
+    # Ext flash invalid
+    print("0")
+# Return value back to bash
+sys.exit(0)

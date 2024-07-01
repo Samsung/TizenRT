@@ -24,6 +24,7 @@
 #include <stress_tool/st_perf.h>
 #include "mbedtls/config.h"
 #include "mbedtls/aes.h"
+#include "mbedtls/error.h"
 #include "sl_test.h"
 #include "sl_test_usage.h"
 
@@ -271,7 +272,7 @@ static int mbedtls_seclink_aes_self_test(int verbose)
 		 * there is an alternative underlying implementation i.e. when
 		 * MBEDTLS_AES_ALT is defined.
 		 */
-		if (ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192) {
+		if (ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192) {
 			printf("skipped\n");
 			continue;
 		} else if (ret != 0) {
@@ -326,7 +327,7 @@ static int mbedtls_seclink_aes_self_test(int verbose)
 				 * there is an alternative underlying implementation i.e. when
 				 * MBEDTLS_AES_ALT is defined.
 				 */
-		if (ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192) {
+		if (ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192) {
 			printf("skipped\n");
 			continue;
 		} else if (ret != 0) {
@@ -383,7 +384,7 @@ static int mbedtls_seclink_aes_self_test(int verbose)
 				 * there is an alternative underlying implementation i.e. when
 				 * MBEDTLS_AES_ALT is defined.
 				 */
-		if (ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192) {
+		if (ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192) {
 			printf("skipped\n");
 			continue;
 		} else if (ret != 0) {

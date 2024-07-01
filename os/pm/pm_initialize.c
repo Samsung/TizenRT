@@ -113,11 +113,6 @@ void pm_initialize(void)
 	g_pmglobals.stime = clock_systimer();
 	g_pmglobals.btime = clock_systimer();
 
-#ifdef CONFIG_PM_TICKSUPPRESS
-	/* Registers a handler to be called when the core wakes up */
-	up_register_wakehandler(pm_wakehandler);
-#endif
-
 #ifdef CONFIG_PM_METRICS
 	struct timespec cur_time;
 

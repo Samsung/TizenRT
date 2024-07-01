@@ -42,7 +42,7 @@
 #include <tinyara/init.h>
 #include <tinyara/arch.h>
 
-#if CONFIG_XIP_ELF
+#ifdef CONFIG_XIP_ELF
 extern void * _stext_flash;
 extern void * _sbss;
 extern void * _ebss;
@@ -81,7 +81,7 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.signal_handler = up_signal_handler,
 #endif
 
-#if CONFIG_XIP_ELF
+#ifdef CONFIG_XIP_ELF
 	.text_start = &_stext_flash,
 	.bss_start = &_sbss,
 	.bss_end = &_ebss,

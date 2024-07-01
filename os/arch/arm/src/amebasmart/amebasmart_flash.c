@@ -70,6 +70,9 @@
 #include "chip.h"
 #include "flash_api.h"
 #include "device_lock.h"
+#ifdef CONFIG_PM
+#include "tinyara/pm/pm.h"
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -369,6 +372,9 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 		lldbg("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
 		return (FAR struct mtd_dev_s *)priv;
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_register("FLASH", BSP_FLASH_DRV);
+#endif
 	return NULL;
 }
 

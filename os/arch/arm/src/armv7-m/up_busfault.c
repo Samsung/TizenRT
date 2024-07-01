@@ -125,6 +125,9 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t bfar = getreg32(NVIC_BFAULT_ADDR);
 	system_exception_location = regs[REG_R15];
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	if (!IS_SECURE_STATE()) {
 		print_busfault_detail(regs, cfsr, bfar);
 	}

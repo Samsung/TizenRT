@@ -387,6 +387,9 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 	int *ptx_buf;
 	int tx_size;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2S_DRV, 1);
+#endif
 	tx_size = I2S_DMA_PAGE_SIZE; /* Track current byte size to increment by */
 	struct ap_buffer_s *apb;
 	if (NULL != bfcontainer && NULL != bfcontainer->apb) {
@@ -415,6 +418,9 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 		ret = -1;
 		i2serr("ERROR: bfcontainer or bfcontainer->apb is NULL\n");
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2S_DRV, 0);
+#endif
 	return ret;
 }
 
@@ -702,6 +708,9 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
 	int tx_size;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2S_DRV, 1);
+#endif
 	tx_size = I2S_DMA_PAGE_SIZE;							   /* Track current byte size to increment by */
 	if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) <= 0) { /* Condition to stop sending if all data in the buffer has been sent */
 		int result = OK;
@@ -720,6 +729,9 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 		priv->apb_tx->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 		i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2S_DRV, 0);
+#endif
 }
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1882,6 +1894,7 @@ static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
 #ifdef CONFIG_PM
 void i2s_pminitialize(void)
 {
+	bsp_pm_domain_register("I2S", BSP_I2S_DRV);
 	pmu_register_sleep_callback(PMU_I2S_DEVICE, (PSM_HOOK_FUN)rtk_i2s_suspend, NULL, (PSM_HOOK_FUN)rtk_i2s_resume, NULL);
 }
 #endif

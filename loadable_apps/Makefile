@@ -67,9 +67,13 @@ $(1)_$(2):
 endef
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),context)))
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),all)))
+ifeq ($(CONFIG_XIP_ELF),y)
+$(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),undefsym)))
+endif
 $(foreach BDIR, $(BUILDIRS), $(eval $(call DIR_template,$(BDIR),preconfig)))
 $(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),clean)))
 $(foreach CDIR, $(BUILDIRS), $(eval $(call DIR_template,$(CDIR),distclean)))
+
 
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),install)))
@@ -86,6 +90,10 @@ all: build
 endif # CONFIG_APP_BINARY_SEPARATION
 
 build: $(foreach BDIR, $(CONFIGURED), $(BDIR)_all)
+
+ifeq ($(CONFIG_XIP_ELF),y)
+undefsym: $(foreach BDIR, $(CONFIGURED), $(BDIR)_undefsym)
+endif
 
 context: $(foreach BDIR, $(CONFIGURED), $(BDIR)_context)
 

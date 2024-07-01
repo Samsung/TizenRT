@@ -256,7 +256,7 @@ void eap_autoreconnect_hdl(u8 method_id)
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>
-#include <mbedtls/ssl_internal.h>
+#include <mbedtls/ssl_misc.h>
 
 #if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 int max_buf_bio_in_size = MBEDTLS_SSL_IN_BUFFER_LEN;

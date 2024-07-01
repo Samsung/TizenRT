@@ -121,8 +121,7 @@ void watchdog_start(void)
  */
 void watchdog_stop(void)
 {
-	DBG_8195A("Ameba-D2 not support watchdog_stop function!\n");
-	assert_param(0);
+	dbg("Ameba-D2 not support watchdog_stop function!\n");
 }
 
 /**

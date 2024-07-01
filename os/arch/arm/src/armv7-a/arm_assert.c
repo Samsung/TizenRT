@@ -542,6 +542,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	ARCH_GET_RET_ADDRESS(kernel_assert_location)
 	struct tcb_s *fault_tcb = this_task();
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	board_autoled_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON

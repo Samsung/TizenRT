@@ -50,7 +50,7 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/pkcs12.h"
-#include "mbedtls/ssl_internal.h"
+#include "mbedtls/ssl_misc.h"
 
 #define TAG  "OIC_SVR_DB_EDITOR"
 

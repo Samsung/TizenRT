@@ -590,6 +590,7 @@ void os_start(void)
 
 		hashndx  = PIDHASH(i);
 		g_pidhash[hashndx].tcb = &g_idletcb[i].cmn;
+		g_pidhash[hashndx].pid = g_idletcb[i].cmn.pid;
 		/* Allocate the IDLE group */
 #ifdef HAVE_TASK_GROUP
 
@@ -870,8 +871,11 @@ void os_start(void)
 		sched_garbagecollection();
 #endif
 
+#ifdef CONFIG_PM
+		/* Perform PM idle operation to save power */
+		pm_idle();
+#endif
 		/* Perform any processor-specific idle state operations */
-
 		up_idle();
 	}
 }

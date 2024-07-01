@@ -31,10 +31,6 @@
 #define REGFLAG_DELAY                       0xFC
 #define REGFLAG_END_OF_TABLE                0xFD        // END OF REGISTERS MARKER
 
-#define LCDC_IMG_BUF_OFFSET             (10 << 20) /*offset is 10M In DDR */
-#define LCDC_IMG_BUF_OFFSET1            (13 << 20) /*offset is 13M In DDR */
-#define LCDC_IMG_BUF_OFFSET2            (16 << 20) /*offset is 16M In DDR */
-#define LCDC_IMG_BUF_OFFSET3            (19 << 20) /*offset is 19M In DDR */
 #define LCDC_IMG_BUF_ALIGNED64B(x)      (((x) & ~0x3F) + 0x40)/*Start Addr shall aligned to 64Byte*/
 
 #if defined(CONFIG_LCD_ST7785)

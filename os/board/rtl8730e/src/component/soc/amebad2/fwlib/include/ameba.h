@@ -207,9 +207,12 @@ typedef enum  _HAL_Status {
   *         that failed. If expr is true, it returns no value.
   * @retval None
   */
-#define assert_param(expr) ((expr) ? (void)0 : io_assert_failed((uint8_t *)__FUNCTION__, __LINE__))
+/* Remap assert to call Tizen Lite assert for additional crash information */
+#define assert_param(expr) { if (!(expr)) up_assert((const uint8_t *)__FILE__, (int)__LINE__); }
 /* Exported functions ------------------------------------------------------- */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 void io_assert_failed(uint8_t *file, uint32_t line);
+#endif
 #else
 #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */

@@ -37,6 +37,7 @@ EXTERNAL_FLASH = 1
 
 CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
 CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
+CONFIG_RESOURCE_FS = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_FS=").rstrip('\n')
 
 INTERNAL_PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
 INTERNAL_PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
@@ -67,6 +68,10 @@ def validate_binary_size(bin_type, part_size):
     BINARY_SIZE=os.path.getsize(output_path)
     PARTITION_SIZE = part_size
     used_ratio = 0
+
+    # Calculate the used ratio
+    if PARTITION_SIZE != 0 :
+        used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
 
     # Calculate the used ratio
     if PARTITION_SIZE != 0 :
@@ -142,6 +147,8 @@ if CONFIG_APP_BINARY_SEPARATION == "y" :
     check_binary_size("APP2")
     if CONFIG_SUPPORT_COMMON_BINARY == "y" :
         check_binary_size("COMMON")
+if CONFIG_RESOURCE_FS == "y" :
+    check_binary_size("RESOURCE")
 
 if FAIL_TO_BUILD == True :
     # Stop to build, because there is mismatched size problem.

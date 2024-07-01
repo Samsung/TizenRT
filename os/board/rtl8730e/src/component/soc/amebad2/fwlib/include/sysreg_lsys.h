@@ -1065,6 +1065,7 @@
 #define REG_LSYS_SYSRST_MSK1                         0x02D4
 #define REG_LSYS_SYSRST_MSK2                         0x02D8
 #define REG_LSYS_BOUNDARY_CHK                        0x02F0
+/* REG_LSYS_DUMMY_090 is assigned to record wakeup reason */
 #define REG_LSYS_DUMMY_090                           0x02F4
 #define REG_LSYS_DUMMY_094                           0x02F8
 #define REG_LSYS_DUMMY_098                           0x02FC

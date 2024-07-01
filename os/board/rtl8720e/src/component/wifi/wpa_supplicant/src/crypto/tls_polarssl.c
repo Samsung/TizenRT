@@ -81,8 +81,8 @@ void my_debug(void *ctx, int level, const char *str)
 }
 
 #include <mbedtls/ssl.h>
-#include <mbedtls/net.h>
-#include <mbedtls/ssl_internal.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl_misc.h>
 #include <mbedtls/debug.h>
 
 #if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))

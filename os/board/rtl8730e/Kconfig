@@ -22,7 +22,7 @@ config FLASH_START_ADDR
 
 config TRPK_CONTAINS_MULTIPLE_BINARY
     bool
-    default n
+    default y
     depends on XIP_ELF
     help
         This macro is to differentiate whether the kernel trpk contains
@@ -74,6 +74,13 @@ config FLASH_SIZE
     help
         A size of flash (in bytes).
         This is fixed value, so user doesn't need to change it.
+
+config FLASH_STATUS_BITS
+	hex
+	default 0x28
+	---help---
+		Setting this value according to the IC package's Flash Model.
+		To protect the lower 512KB of the flash memory.
 
 menu "SPI Flash driver"
 

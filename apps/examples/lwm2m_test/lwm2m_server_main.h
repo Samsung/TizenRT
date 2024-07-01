@@ -80,7 +80,7 @@
 #include <tinyara/ascii.h>
 
 #ifdef WITH_MBEDTLS
-#include "mbedtls/certs.h"
+#include "mbedtls/test/certs.h"
 #include "mbedtls/easy_tls.h"
 #endif
 

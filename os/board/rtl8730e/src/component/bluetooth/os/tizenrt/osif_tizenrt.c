@@ -7,6 +7,9 @@
 #include <osdep_service.h>
 #include "../kernel/mqueue/mqueue.h"
 
+#define OSIF_ALIGN 64
+#define OSIF_ALIGN_MASK 0x003f
+
 /****************************************************************************/
 /* Check if in task context (true), or isr context (false)                  */
 /****************************************************************************/
@@ -636,10 +639,14 @@ void *osif_mem_alloc(RAM_TYPE ram_type, size_t size)
 /****************************************************************************/
 void *osif_mem_aligned_alloc(RAM_TYPE ram_type, size_t size, uint8_t alignment)
 {
+	if ((size & OSIF_ALIGN_MASK) != 0x00) {
+		size += (OSIF_ALIGN - (size & OSIF_ALIGN_MASK));
+	}
 	u8 *pbuf = kmm_memalign(alignment, size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	if (pbuf)
 	{
+		memset(pbuf, 0, size);
 		DEBUG_SET_CALLER_ADDR(pbuf);
 	}
 #endif

@@ -137,6 +137,13 @@ int binary_manager(int argc, char *argv[])
 		goto errout_with_nobinary;
 	}
 
+#ifdef CONFIG_RESOURCE_FS
+	if (binary_manager_mount_resource() != OK) {
+		bmdbg("Fail to mount resource\n");
+		goto errout_with_nobinary;
+	}
+#endif
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	if (binary_manager_get_ucount() <= 0) {
 		is_found_ubin = false;

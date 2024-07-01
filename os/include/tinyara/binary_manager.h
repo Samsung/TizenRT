@@ -59,8 +59,15 @@
 #endif
 #define KERNEL_BIN_COUNT                 2
 
-#define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
+#define RESOURCE_DEVNUM_OFFSET           30
+#define RESOURCE_HEADER_SIZE             4096
+#define RESOURCE_BIN_COUNT               2
 
+#ifdef CONFIG_RESOURCE_FS
+#define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT + RESOURCE_BIN_COUNT)
+#else
+#define BINARY_COUNT                     (USER_BIN_COUNT + KERNEL_BIN_COUNT)
+#endif
 /* Kernel version has "YYMMDD" format */
 #define KERNEL_BIN_VER_MIN               101      /* YYMMDD : 000101 */
 #define KERNEL_BIN_VER_MAX               991231   /* YYMMDD : 991231 */
@@ -68,12 +75,13 @@
 /* The lenght of user or kernel partition path */
 #define BINARY_PATH_LEN                  16
 
-/* Binary Type : Kernel, Common, User app */
+/* Binary Type : Kernel, Common, User app, Resource */
 enum binary_type_e {
 	BINARY_KERNEL = 0,
 	BINARY_COMMON = 1,
 	BINARY_USERAPP = 2,
-	BINARY_TYPE_MAX = 3,
+	BINARY_RESOURCE = 3,
+	BINARY_TYPE_MAX = 4,
 };
 
 /* Macros for binary grouping used for request to set bootparam */
@@ -174,6 +182,14 @@ struct common_binary_header_s {
 #endif
 } __attribute__((__packed__));
 typedef struct common_binary_header_s common_binary_header_t;
+
+struct resource_binary_header_s {
+	uint32_t crc_hash;
+	uint16_t header_size;
+	uint32_t version;
+	uint32_t bin_size;
+} __attribute__((__packed__));
+typedef struct resource_binary_header_s resource_binary_header_t;
 
 /* The structure of binary update information for kernel or user binaries */
 struct binary_setbp_result_s {
@@ -280,6 +296,8 @@ typedef struct binmgr_getinfo_all_response_s binmgr_getinfo_all_response_t;
 void binary_manager_register_kpart(int part_num, int part_size, int part_offset);
 void binary_manager_register_bppart(int part_num, int part_size);
 void binary_manager_register_upart(char *name, int part_num, int part_size, int part_offset);
+void binary_manager_register_respart(int part_num, int part_size, int part_offset);
+int binary_manager_mount_resource(void);
 void binary_manager_deinit_modules(void);
 
 #ifdef __cplusplus
