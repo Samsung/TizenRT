@@ -2627,7 +2627,7 @@ function toggle(id, link) {
 <li><a href="#CONFIG_PM_DEVNAME_LEN">1.13.4 <code>CONFIG_PM_DEVNAME_LEN</code>: Registered device name length</a></li>
 <li><a href="#CONFIG_PM_METRICS">1.13.5 <code>CONFIG_PM_METRICS</code>: Power management (PM) metrics</a></li>
 <li><a href="#CONFIG_PM_METRICS_DURATION">1.13.6 <code>CONFIG_PM_METRICS_DURATION</code>: History Duration (secs)</a></li>
-<li><a href="#CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></li>
+<li><a href="#CONFIG_PM_MIN_WAKEUP_TICKS">1.13.7 <code>CONFIG_PM_MIN_WAKEUP_TICKS</code>: PM time slice (msec)</a></li>
 <li><a href="#CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></li>
 <li><a href="#CONFIG_PM_MEMORY">1.13.9 <code>CONFIG_PM_MEMORY</code>: PM memory (msec)</a></li>
 <li><a href="#CONFIG_PM_COEFN">1.13.10 <code>CONFIG_PM_COEFN</code>: PM coefficient</a></li>
@@ -33062,7 +33062,7 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
 </li>
   <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
 </ul>
-<h3><a name="CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></h3>
+<h3><a name="CONFIG_PM_MIN_WAKEUP_TICKS">1.13.7 <code>CONFIG_PM_MIN_WAKEUP_TICKS</code>: PM time slice (msec)</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
   <li>
@@ -33073,7 +33073,7 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
 <p>
   The power management module collects activity counts in time slices.  At the end of the time slice, the count accumulated during that  interval is applied to an averaging algorithm to determine the  activity level.</p>
 <p>
-  CONFIG_PM_SLICEMS provides the duration of that time slice in  milliseconds.  Default: 100 Milliseconds</p>
+  CONFIG_PM_MIN_WAKEUP_TICKS provides the duration of that time slice in  milliseconds.  Default: 100 Milliseconds</p>
 </ul>
 <h3><a name="CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></h3>
 <ul>
