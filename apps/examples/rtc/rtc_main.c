@@ -86,7 +86,9 @@ static void *rtc_test(void *arg)
 {
 	int ret;
 	int fd;
-	struct rtc_time prev_time;
+
+	/* populate prev_time to epoch (01-01-1970) in order reset RTC as it provides number of seconds passed starting from epoch */
+	struct rtc_time prev_time = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
 	struct rtc_time next_time;
 	struct tm prev_tm;
 	struct tm next_tm;
@@ -100,7 +102,6 @@ static void *rtc_test(void *arg)
 	 * You can check and compare the time which is from Serial Log Tool like Teraterm and the printed log from line 140.
 	 */
 
-	memset(&prev_time, 0, sizeof(struct rtc_time));
 	memset(&next_time, 0, sizeof(struct rtc_time));
 	memset(&prev_tm, 0, sizeof(struct tm));
 	memset(&next_tm, 0, sizeof(struct tm));

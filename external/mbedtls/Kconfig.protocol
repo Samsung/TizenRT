@@ -22,7 +22,7 @@ config TLS_HAVE_NO_TIME_DATE
 		The time needs to be correct (not necesarily very accurate, but at least
 		* the date should be correct). This is used to verify the validity period of
 		* X.509 certificates.
-
+		
 if TLS_WITH_HW_ACCEL
 
 menu "HW Options"
@@ -72,7 +72,7 @@ config TLS_HW_ECDSA_VERIFICATION
 		 . Brainpool 256
 
 config TLS_HW_RSA_ENC
-	bool "Use H/W rsa encryption decryption"
+	bool "Use H/W rsa encryption"
 	depends on HW_RSA_ENC
 	default n
 	---help---

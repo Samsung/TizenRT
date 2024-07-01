@@ -457,7 +457,12 @@ ifeq ($(CONFIG_ELF),y)
 else
 	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
+ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+else
 	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+endif
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 endif
@@ -476,7 +481,7 @@ ifeq ($(CONFIG_RAW_BINARY),y)
 	$(Q) $(OBJCOPY) $(OBJCOPYARGS) -O binary $(BIN) $(BIN).bin
 endif
 
-# Verify app binary to make sure there are no undefined symbols
+# Verify app binary to make sure there are no undefined symbols and to check the l2 pages per app are sufficient enough
 define VERIFY_APP
 	$(Q) echo "Verify $(OUTBIN_DIR)/$1"
 	$(Q) if [ "`nm -u $(OUTBIN_DIR)/$1 | wc -l`" != "0" ]; then \
@@ -485,6 +490,7 @@ define VERIFY_APP
 		rm $(OUTBIN_DIR)/$1; \
 		exit 1; \
 	fi
+	$(Q) $(if $(CONFIG_ARCH_USE_MMU), $(TOPDIR)/tools/mkverifyappsize.py $(OUTBIN_DIR)/$1 $2,)
 endef
 
 # Strip debug symbols from binary if CONFIG_ELF_EXCLUDE_SYMBOLS is enabled
@@ -536,10 +542,10 @@ ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 	$(Q) mkdir -p $(OUTBIN_DIR)/user
 ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_APP1_INFO),y)
-	$(Q) $(call VERIFY_APP,$(CONFIG_APP1_BIN_NAME)) #When common binary is used, undefined symbols of app
+	$(Q) $(call VERIFY_APP,$(CONFIG_APP1_BIN_NAME),$(CONFIG_APP1_BIN_DYN_RAMSIZE)) #When common binary is used, undefined symbols of app
 endif
 ifeq ($(CONFIG_APP2_INFO),y)
-	$(Q) $(call VERIFY_APP,$(CONFIG_APP2_BIN_NAME)) #will be defined in common binary. So dont perform "verify" for apps
+	$(Q) $(call VERIFY_APP,$(CONFIG_APP2_BIN_NAME),$(CONFIG_APP2_BIN_DYN_RAMSIZE)) #will be defined in common binary. So dont perform "verify" for apps
 endif
 endif 
 ifeq ($(CONFIG_APP1_INFO),y)
@@ -549,12 +555,17 @@ ifeq ($(CONFIG_APP2_INFO),y)
 	$(Q) $(call PREPARE_APP,$(CONFIG_APP2_BIN_NAME),"user",$(CONFIG_APP2_BIN_TYPE),$(CONFIG_APP2_BIN_VER),$(CONFIG_APP2_BIN_DYN_RAMSIZE),$(CONFIG_APP2_MAIN_STACKSIZE),$(CONFIG_APP2_MAIN_PRIORITY),$(CONFIG_APP2_BIN_LOADING_PRIORITY))
 endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
-	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME))
+	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME), 0)
 	$(Q) $(call PREPARE_APP,$(CONFIG_COMMON_BINARY_NAME),"common",$(CONFIG_COMMON_BINARY_VERSION))
 endif
 ifeq ($(CONFIG_BINARY_SIGNING),y)
 	$(Q) $(call MAKE_USER_SIGNING)
 endif
+endif
+ifeq ($(CONFIG_RESOURCE_FS),y)
+	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource ../build/output/bin/resourcefs.img
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
 endif
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
@@ -789,7 +800,7 @@ endif
 
 romfs:
 ifeq ($(CONFIG_FS_ROMFS),y)
-	$(Q) ../tools/fs/mkromfsimg.sh
+	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../tools/fs/contents-romfs ../build/output/bin/romfs.img
 endif
 
 # tools/compression/mkcompresstool.sh

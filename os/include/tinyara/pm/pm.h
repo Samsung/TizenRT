@@ -199,6 +199,18 @@ enum pm_state_e {
 	PM_COUNT,
 };
 
+/* This enumeration provides all power management related wakeup source code. */
+
+typedef enum {
+	PM_WAKEUP_UNKNOWN,       /* Unknown Wakeup Source*/
+	PM_WAKEUP_BLE,           /* BLE Interrupts */
+	PM_WAKEUP_WIFI,          /* Wifi Interrupts */
+	PM_WAKEUP_UART_CONSOLE,  /* UART Console Interrupts */
+	PM_WAKEUP_UART_TTYS2,    /* UART TTYS2 Interrupts */
+	PM_WAKEUP_GPIO,          /* GPIO Interrupts */
+	PM_WAKEUP_HW_TIMER,      /* Timer Expiration */
+	PM_WAKEUP_SRC_COUNT,
+} pm_wakeup_reason_code_t;
 
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
@@ -358,6 +370,24 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
 int pm_domain_register(char *domain);
 
 /****************************************************************************
+ * Name: pm_idle
+ *
+ * Description:
+ *   This function is called by IDLE thread to make board sleep. This function
+ *   also allow to set wake up timer & handler and do all the PM pre processing
+ *   required before going to sleep.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void pm_idle(void);
+
+/****************************************************************************
  * Name: pm_suspend
  *
  * Description:
@@ -438,7 +468,7 @@ int pm_sleep(int milliseconds);
  * 
  * Parameters:
  *   domain_id - domain ID to be suspended
- *   timer_interval - expected lock duration in millisecond
+ *   milliseconds - expected lock duration in millisecond
  *
  * Return Value:
  *   0 - success
@@ -446,7 +476,7 @@ int pm_sleep(int milliseconds);
  *
  ************************************************************************/
 
-int pm_timedsuspend(int domain_id, unsigned int timer_interval);
+int pm_timedsuspend(int domain_id, unsigned int milliseconds);
 
 /****************************************************************************
  * Name: pm_suspendcount

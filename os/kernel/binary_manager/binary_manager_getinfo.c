@@ -120,6 +120,9 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	int bin_idx;
 	uint32_t bin_count;
 #endif
+#ifdef CONFIG_RESOURCE_FS
+	binmgr_resinfo_t *resinfo;
+#endif
 	binmgr_kinfo_t *kerinfo;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_getinfo_response_t response_msg;
@@ -144,6 +147,19 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 		}
 		response_msg.result = BINMGR_OK;
 	}
+#ifdef CONFIG_RESOURCE_FS
+	if (!strncmp("resource", bin_name, BIN_NAME_MAX)) {
+		resinfo = binary_manager_get_resdata();
+		strncpy(response_msg.data.name, "resource", BIN_NAME_MAX);
+		response_msg.data.version = resinfo->version;
+		if (resinfo->part_count > 1) {
+			response_msg.data.available_size = resinfo->part_info[resinfo->inuse_idx ^ 1].size;
+		} else {
+			response_msg.data.available_size = -1;
+		}
+		response_msg.result = BINMGR_OK;
+	}
+#endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	else {
 		bin_count = binary_manager_get_ucount();
@@ -173,6 +189,9 @@ void binary_manager_get_info_all(int requester_pid)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int bin_idx;	
 	uint32_t bin_count;
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	binmgr_resinfo_t *resinfo;
 #endif
 	int result_idx;
 	char q_name[BIN_PRIVMQ_LEN];
@@ -215,6 +234,18 @@ void binary_manager_get_info_all(int requester_pid)
 		result_idx++;
 	}
 #endif
+#ifdef CONFIG_RESOURCE_FS
+	/* Get kernel data */
+	resinfo = binary_manager_get_resdata();
+	strncpy(response_msg.data.bin_info[result_idx].name, "resource", BIN_NAME_MAX);
+	response_msg.data.bin_info[result_idx].version = resinfo->version;
+	if (resinfo->part_count > 1) {
+		response_msg.data.bin_info[result_idx].available_size = resinfo->part_info[resinfo->inuse_idx ^ 1].size;
+	} else {
+		response_msg.data.bin_info[result_idx].available_size = -1;
+	}
+	result_idx++;
+#endif
 	if (response_msg.result == BINMGR_OK) {
 		response_msg.data.bin_count = result_idx;
 	}
@@ -226,6 +257,9 @@ static int binary_manager_get_path(int requester_pid, char *bin_name, bool inact
 {
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int bin_idx;
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	binmgr_resinfo_t *resinfo;
 #endif
 	binmgr_kinfo_t *kerinfo;
 	char q_name[BIN_PRIVMQ_LEN];
@@ -248,7 +282,18 @@ static int binary_manager_get_path(int requester_pid, char *bin_name, bool inact
 		}
 		goto send_result;
 	}
-
+#ifdef CONFIG_RESOURCE_FS
+	if (!strncmp("resource", bin_name, BIN_NAME_MAX)) {
+		resinfo = binary_manager_get_resdata();
+		if (resinfo->part_count > 1) {
+			response_msg.result = BINMGR_OK;
+			snprintf(response_msg.binpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resinfo->part_info[resinfo->inuse_idx ^ inactive].devnum);
+		} else {
+			response_msg.result = BINMGR_NOT_FOUND;
+		}
+		goto send_result;
+	}
+#endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin_idx = binary_manager_get_index_with_name(bin_name);
 	if (bin_idx < 0) {

@@ -29,7 +29,7 @@
 #include <string.h>
 #include "mbedtls/aes.h"
 #if defined(MBEDTLS_PADLOCK_C)
-#include "mbedtls/padlock.h"
+#include "padlock.h"
 #endif
 #if defined(MBEDTLS_AESNI_C)
 #include "mbedtls/aesni.h"

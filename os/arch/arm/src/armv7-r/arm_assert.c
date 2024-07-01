@@ -960,6 +960,9 @@ void up_assert(const uint8_t *filename, int lineno)
 #endif
 	abort_mode = true;
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	lldbg("==============================================\n");
 	lldbg("Assertion failed\n");
 	lldbg("==============================================\n");

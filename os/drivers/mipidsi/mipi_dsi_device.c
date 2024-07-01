@@ -575,12 +575,12 @@ int mipi_dsi_dcs_get_pixel_format(FAR struct mipi_dsi_device *device, FAR uint8_
 	int ret;
 
 	ret = mipi_dsi_dcs_read(device, MIPI_DCS_GET_PIXEL_FORMAT, format, sizeof(*format));
-	if (ret <= 0) {
-		if (ret == 0) {
-			ret = -ENODATA;
-		}
-
+	if (ret < 0) {
 		return ret;
+	} else if (ret == 0) {
+		ret = -ENODATA;
+	} else {
+		return OK;
 	}
 
 	return OK;

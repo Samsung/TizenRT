@@ -76,7 +76,7 @@ if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
     app2_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_NAME=").replace('"', '').rstrip("\n")
     app2_trpk_name = util.get_binname_from_bininfo("APP2")
-    if app1_bin_name != app1_trpk_name :
+    if app2_bin_name != app2_trpk_name :
         shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
 
 # Convert common binary to name stored in .bininfo
@@ -86,6 +86,12 @@ if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True
     if common_bin_name != common_trpk_name :
         shutil.copyfile(output_folder + '/' + common_bin_name, output_folder + '/' + common_trpk_name)
 
+# Convert resource binary to name stored in .bininfo
+if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
+    resource_bin_name = "resourcefs.img"
+    resource_trpk_name = util.get_binname_from_bininfo("RESOURCE")
+    if resource_bin_name != resource_trpk_name :
+        shutil.copyfile(output_folder + '/' + resource_bin_name, output_folder + '/' + resource_trpk_name)
 
 ############################################################################
 # Convert kernel binary format to hex or srec

@@ -395,9 +395,9 @@ int eap_cert_setup(ssl_context *ssl)
 #include <mbedtls/config.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>
-#include <mbedtls/ssl_internal.h>
+#include <mbedtls/ssl_misc.h>
 
-int max_buf_bio_size = MBEDTLS_SSL_BUFFER_LEN;
+int max_buf_bio_size = MBEDTLS_SSL_IN_BUFFER_LEN;
 
 struct eap_tls{
 	void *ssl;

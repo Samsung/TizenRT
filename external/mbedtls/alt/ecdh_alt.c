@@ -15,6 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
 /*
  *  Elliptic curve Diffie-Hellman
  *
@@ -35,6 +36,7 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
+
 /*
  * References:
  *
@@ -47,12 +49,7 @@
 #include <stdlib.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
-
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include "mbedtls/build_info.h"
 
 #if defined(MBEDTLS_ECDH_C)
 

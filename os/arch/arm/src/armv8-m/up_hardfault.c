@@ -200,6 +200,9 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	}
 #endif
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	if (!IS_SECURE_STATE()) {
 		print_hardfault_detail(irq, regs);
 	}

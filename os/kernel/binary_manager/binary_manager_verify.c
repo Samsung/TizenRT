@@ -69,8 +69,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 			return ERROR;
 		}
 		bmvdbg("User binary header : %u %u %u %u %s %u %u %u\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver);
-	} else {
-		/* Verify header data */
+	} else if (type == BINARY_COMMON) {
 		common_binary_header_t *header_data = (common_binary_header_t *)header_input;
 		if (header_data->header_size == 0 || header_data->bin_size == 0 ||\
 			header_data->version < BM_VERSION_DATE_MIN || header_data->version > BM_VERSION_DATE_MAX) {
@@ -78,6 +77,14 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 			return ERROR;
 		}
 		bmvdbg("Common binary header : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
+	} else {
+		resource_binary_header_t *header_data = (resource_binary_header_t *)header_input;
+		if (header_data->header_size == 0 || header_data->bin_size == 0 ||\
+			header_data->version < BM_VERSION_DATE_MIN || header_data->version > BM_VERSION_DATE_MAX) {
+			bmdbg("Invalid resource header data : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
+			return ERROR;
+		}
+		bmvdbg("Resource binary header : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
 	}
 
 	return OK;
@@ -109,13 +116,15 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		bmdbg("Invalid parameter, type %d\n", type);
 		return BINMGR_INVALID_PARAM;
 	}
-	
+
 	if (type == BINARY_KERNEL) {
 		header_size = sizeof(kernel_binary_header_t);
 	} else if (type == BINARY_USERAPP) {
 		header_size = sizeof(user_binary_header_t);
 	} else if (type == BINARY_COMMON) {
 		header_size = sizeof(common_binary_header_t);
+	} else if (type == BINARY_RESOURCE) {
+		header_size = sizeof(resource_binary_header_t);
 	}
 
 	memset(header_data, 0, header_size);
@@ -128,7 +137,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	}
 
 #ifdef CONFIG_BINARY_SIGNING
-	if (type != BINARY_KERNEL) {
+	if (type == BINARY_USERAPP || type == BINARY_COMMON) {
 		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
 		if (ret < 0) {
 			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
@@ -166,6 +175,10 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			crc_bufsize = CMNLIB_CRC_BUFSIZE;
 			bin_size = ((common_binary_header_t *)header_data)->bin_size;
 			crc_hash = ((common_binary_header_t *)header_data)->crc_hash;
+		} else if (type == BINARY_RESOURCE) {
+			crc_bufsize = ((resource_binary_header_t *)header_data)->bin_size;
+			bin_size = RESOURCE_HEADER_SIZE - header_size + ((resource_binary_header_t *)header_data)->bin_size;
+			crc_hash = ((resource_binary_header_t *)header_data)->crc_hash;
 		}
 		size_t max_bufsize = kmm_get_largest_freenode_size() / 2;
 		crc_bufsize = crc_bufsize < max_bufsize ? crc_bufsize : max_bufsize;

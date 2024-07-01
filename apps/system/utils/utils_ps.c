@@ -72,6 +72,9 @@ static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
 	"READY   ",
+#ifdef CONFIG_SMP
+	"ASSIGNED",		
+#endif
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
@@ -81,7 +84,10 @@ static const char *utils_statenames[] = {
 #endif
 #ifndef CONFIG_DISABLE_MQUEUE
 	"MQNEMPTY",
-	"MQNFULL "
+	"MQNFULL ",
+#endif
+#ifdef CONFIG_PAGING
+	"WAITPAGEFILL "
 #endif
 };
 

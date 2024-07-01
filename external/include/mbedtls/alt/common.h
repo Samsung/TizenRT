@@ -25,6 +25,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 #define ECP_KEY_INDEX (32)
 #define RSA_KEY_INDEX (32)
 #define KEY_INDEX_INVALID (0xff)
@@ -74,6 +75,10 @@
 /* cert type */
 #define CERT_DER      0x01
 #define CERT_PEM      0x02
+
+#define MBEDTLS_ERR_ECP_HW_ACCEL_FAILED                   -0x4B80  /**< ECP hardware accelerator failed. */
+#define MBEDTLS_ERR_RSA_HW_ACCEL_FAILED                   -0x4580  /**< RSA hardware accelerator failed. */
+#define MBEDTLS_ERR_AES_HW_ACCEL_FAILED                   -0x0025  /**< AES hardware accelerator failed. */
 
 // ======================================
 // Structure

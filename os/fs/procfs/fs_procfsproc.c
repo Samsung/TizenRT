@@ -385,7 +385,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	curr_heap = -1;
 	peak_heap = -1;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	if (tcb->pid == 0) {
+	if (tcb->pid < CONFIG_SMP_NCPUS) {
 		/* Idle task normally uses heap with index 0. */
 		heap = kmm_get_heap_with_index(0);
 	} else {

@@ -73,24 +73,31 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_idlepm
+ * Public Functions
+ ****************************************************************************/
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_pm_board_sleep
  *
  * Description:
  *   Perform IDLE state power management.
  *
+ * Input Parameters:
+ *   handler - The handler function that must be called after each board wakeup.
+ *
+ * Returned Value:
+ *   None.
+ *
  ****************************************************************************/
-#ifdef CONFIG_PM
-static void up_idlepm(void)
+
+void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
 
 }
 #else
-#  define up_idlepm()
+#define up_pm_board_sleep(handler)
 #endif
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: up_idle
@@ -112,10 +119,7 @@ void up_idle(void)
    */
 
     sched_process_timer();
-#else
 
-    /* Perform IDLE mode power management */
-    up_idlepm();
 #endif    
 }
 

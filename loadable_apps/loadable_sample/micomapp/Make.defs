@@ -15,5 +15,6 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-
+ifeq ($(shell expr $(CONFIG_NUM_APPS) '>' 1), 1)
 CONFIGURED += loadable_sample/micomapp
+endif

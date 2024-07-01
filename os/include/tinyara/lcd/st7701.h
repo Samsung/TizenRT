@@ -42,14 +42,7 @@
 #define MIPI_LANE_NUMBER        2
 
 #define LCDC_IMG_BUF_SIZE               LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
-/*#define INIT_CMD_SIZE 16
 
-typedef struct lcm_setting_table {
-        u8 cmd;
-        u16 count;
-        u8 para_list[INIT_CMD_SIZE];
-} lcm_setting_table_t;
-*/
 static const lcm_setting_table_t lcd_init_cmd_g[] = {   /* DCS Write Long */
         /* ST7701S Reset Sequence */
         /* LCD_Nreset (1); Delayms (1); */

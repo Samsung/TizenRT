@@ -120,6 +120,9 @@
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 #include <tinyara/tz_context.h>
 #endif
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 
 #include <arch/arch.h>
 /****************************************************************************
@@ -2141,23 +2144,22 @@ int up_rtc_getdatetime(FAR struct tm *tp);
 int up_rtc_settime(FAR const struct timespec *tp);
 #endif
 
+#ifdef CONFIG_PM
 /****************************************************************************
- * Name: up_register_wakehandler
+ * Name: up_pm_board_sleep
  *
  * Description:
- *   This function registers a handler for systick compensation when the core wakes up
- *   from sleep mode.
+ *   Perform IDLE state power management.
  *
  * Input Parameters:
- *   handler - A pointer to a function for systick compensation on the core wakeup.
+ *   handler - The handler function that must be called after each board wakeup.
  *
  * Returned Value:
- *   None
+ *   None.
  *
  ****************************************************************************/
-#ifdef CONFIG_PM_TICKSUPPRESS
-void up_register_wakehandler(void (*handler)(clock_t));
-#endif
+
+void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t));
 
 /****************************************************************************
  * Name: up_set_dvfs
@@ -2201,6 +2203,8 @@ void up_set_dvfs(int div_lvl);
 #ifdef CONFIG_PM_TIMEDWAKEUP
 void up_set_pm_timer(unsigned int interval_us);
 #endif
+
+#endif /* CONFIG_PM */
 
 /****************************************************************************
  * Board-specific button interfaces exported by the board-specific logic

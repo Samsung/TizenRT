@@ -295,13 +295,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
-            /* Register PM_BLE_DOMAIN */
+            /* Register PM_BLE_DOMAIN and Perform 10 minutes timedsuspend */
             domain = pm_domain_register("BLE");
             if (domain < 0) {
-                pmdbg("Unable to register PM_BLE_DOMAIN\n");
-            /* Set PM suspend timer for 10 minutes */
-            } else if (pm_timedsuspend(domain, 600000000) != 0) {
-                pmdbg("Unable to perform PM suspend for 10 minutes\n");
+                pmdbg("Unable to register BLE DOMAIN\n");
+            } else if (pm_timedsuspend(domain, 600000) != 0) {
+                pmdbg("Unable to perform PM suspend for 10 minutes for ble domain\n");
             }
 #endif
             role = conn_ind->role ? "slave" : "master";

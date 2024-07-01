@@ -551,8 +551,8 @@ struct wpabuf * tls_connection_decrypt(void *tls_ctx,
 #elif CONFIG_USE_MBEDTLS /* CONFIG_USE_POLARSSL */
 
 #include <mbedtls/ssl.h>
-#include <mbedtls/net.h>
-#include <mbedtls/ssl_internal.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl_misc.h>
 #include <mbedtls/debug.h>
 
 struct buf_BIO *conn_buf_out, *conn_buf_in;

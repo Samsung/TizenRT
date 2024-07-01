@@ -533,6 +533,9 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	irqstate_t flags = irqsave();
 
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
 	struct tcb_s *fault_tcb = this_task();
 	bool is_kmm_corruption = false;
 

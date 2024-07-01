@@ -63,6 +63,10 @@ stack_details = "Asserted task's stack details\n"
 register_dump = "Asserted task's register dump\n"
 BIN_ADDR_FXN = "Loading location information\n"
 
+
+# Variable to check CONFIG_XIP_ELF enabled
+xip_enabled = False
+
 # Top level class to parse the dump and assert logs parsing feature
 class dumpParser:
 
@@ -563,6 +567,7 @@ def find_crash_point(log_file, elf):
 	global g_stext_app
 	global g_etext_app
 	global crash_type_assert
+	global xip_enabled
 	app_idx = 0
 	pc_value = 0
 	lr_value = 0
@@ -617,7 +622,10 @@ def find_crash_point(log_file, elf):
 		for app_idx in range(g_app_idx):
 			os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
 			if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
-				addr = lr_value - int(hex(g_stext_app[app_idx]), 16)
+				if xip_enabled:
+					addr = lr_value
+				else:
+					addr = lr_value - int(hex(g_stext_app[app_idx]), 16)
 				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
 				result = f.read()
 				if '??' not in result and '$d' not in result:
@@ -629,7 +637,10 @@ def find_crash_point(log_file, elf):
 						print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
 						format_output(result, "")
 			if (address2 >= hex(g_stext_app[app_idx]) and address2 < hex(g_etext_app[app_idx])):
-				addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
+				if xip_enabled:
+					addr = pc_value
+				else:
+					addr = pc_value - int(hex(g_stext_app[app_idx]), 16)
 				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
 				result = f.read()
 				if '??' not in result and '$d' not in result:
@@ -663,7 +674,10 @@ def find_crash_point(log_file, elf):
 		for app_idx in range(g_app_idx):
 			os.system("nm --defined-only -l --numeric-sort " + BIN_PATH + app_name[app_idx] + "_dbg > " + BIN_PATH + app_name[app_idx] + ".map")
 			if (address1 >= hex(g_stext_app[app_idx]) and address1 < hex(g_etext_app[app_idx])):
-				addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
+				if xip_enabled:
+					addr = g_assertpc
+				else:
+					addr = g_assertpc - int(hex(g_stext_app[app_idx]), 16)
 				f = os.popen('arm-none-eabi-addr2line -a -f -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr))
 				result = f.read()
 				if '??' not in result and '$d' not in result:
@@ -817,7 +831,7 @@ def find_crash_point(log_file, elf):
 				# The last argument to debugsymbolviewer specifies whether or not to check for interrupt handler address (4)
 				print("\n5. Assertion Data during interrupt mode:\n")
 				print('- Interrupt handler at addr\t\tSymbol_name')
-				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4")
+				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 4 " + BIN_PATH + " " + CONFIG_PATH)
 	with open(log_file) as searchfile:
 		for line in searchfile:
 			if 'Nested IRQ stack:' in line:
@@ -867,11 +881,11 @@ def find_crash_point(log_file, elf):
 				# It displays the symbol corresponding to the current running work function
 				# The last argument to debugsymbolviewer specifies whether or not to check for current running work function (3)
 				print('\nCurrent running work function\t\tFile_name')
-				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3")
+				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3 " + BIN_PATH + " " + CONFIG_PATH)
 
 	# It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
 	print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
-	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0")
+	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0 " + BIN_PATH + " " + CONFIG_PATH)
 
 	print('\nh. Heap Region information:\n')
 
@@ -927,7 +941,10 @@ def find_crash_point(log_file, elf):
 				#check if address falls in app
 				if (address >= int(hex(g_stext_app[app_idx]),16) and address < int(hex(g_etext_app[app_idx]),16)):
 					isKernel = False
-					addr = address - int(hex(g_stext_app[app_idx]), 16)
+					if xip_enabled:
+						addr = address
+					else:
+						addr = address - int(hex(g_stext_app[app_idx]), 16)
 					addrcmd = 'arm-none-eabi-addr2line -e ' + BIN_PATH + app_name[app_idx] + '_dbg ' + hex(addr) 
 
 			#if address is in kernel
@@ -1067,14 +1084,14 @@ def find_crash_point(log_file, elf):
 
 	# It displays the debug symbols corresponding to all the wrong sp addresses (if any)
 	# The last argument to debugsymbolviewer specifies whether or not to check for wrong stack pointer addresses (1)
-	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1")
+	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 1 " + BIN_PATH + " " + CONFIG_PATH)
 
 	# Convert task state number to corresponding task state message
 	config_smp = False
 	config_disable_signals = False
 	config_disable_mqueue = False
 	config_paging = False
-	with open("../../os/.config") as configfile:
+	with open(CONFIG_PATH) as configfile:
 		for line in configfile:
 			if "CONFIG_SMP=y" in line:
 				config_smp = True
@@ -1260,6 +1277,7 @@ def main():
 	programCounter = 0
 	stackSize = 0
 	have_ram_kernel_text = False
+	global xip_enabled
 
 	try:
             opts, args = GetOpt(sys.argv[1:],'r:t:b:c:e:h', ['dump_file=','log_file=','bin_path=','config_path=','elf_path=','help'])
@@ -1339,6 +1357,10 @@ def main():
 	fd.close()
 
 	try:
+		# check if CONFIG_XIP_ELF is enabled
+		if 'CONFIG_XIP_ELF=y' in data:
+			xip_enabled = True
+
 		if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
 			have_ram_kernel_text = True
 		# Calling the Constructor with the initial set of arguments

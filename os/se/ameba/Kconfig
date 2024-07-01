@@ -44,6 +44,13 @@ config HW_AES_ENC
 	---help---
 		Encrypts a data based on hardware.
 
+config HW_GCM_ENC
+	bool "HW GCM encryption decryption"
+	default n
+	---help---
+		Encrypts a data with GCM based on hardware.
+		Support crypto algorithm: AES
+
 config HW_SE_STORAGE
 	bool "Secure Storage Support"
 	default n

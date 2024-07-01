@@ -83,7 +83,8 @@ ram_offset = ram_end
 ram_size = 0
 
 CONFIG_APP1_BIN_DYN_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_DYN_RAMSIZE=").rstrip('\n')
-CONFIG_APP2_BIN_DYN_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_DYN_RAMSIZE=").rstrip('\n')
+if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
+    CONFIG_APP2_BIN_DYN_RAMSIZE=util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_DYN_RAMSIZE=").rstrip('\n')
 CONFIG_COMMON_BIN_DYN_RAMSIZE="1048576"
 
 ram_offset = ram_offset - int(CONFIG_COMMON_BIN_DYN_RAMSIZE)
@@ -93,8 +94,9 @@ common_ram_str = hex(ram_offset) + str1 + hex(common_ram_size) + "\n}\n"
 ram_offset = ram_offset - int(CONFIG_APP1_BIN_DYN_RAMSIZE)
 app1_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP1_BIN_DYN_RAMSIZE)) + "\n}\n"
 
-ram_offset = ram_offset - int(CONFIG_APP2_BIN_DYN_RAMSIZE)
-app2_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP2_BIN_DYN_RAMSIZE)) + "\n}\n"
+if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
+    ram_offset = ram_offset - int(CONFIG_APP2_BIN_DYN_RAMSIZE)
+    app2_ram_str = hex(ram_offset) + str1 + hex(int(CONFIG_APP2_BIN_DYN_RAMSIZE)) + "\n}\n"
 
 # common at the end of the region
 

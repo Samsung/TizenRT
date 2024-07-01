@@ -48,6 +48,16 @@ config XIP_ELF
 endchoice
 
 
+if XIP_ELF
+
+config XIP_ELF_WARCHIVE
+	bool "Use Whole Archieve option to include full libraries"
+	default n
+	---help---
+		Use --whole-archieve flag for including full libraries
+
+endif
+
 if ELF
 source binfmt/libelf/Kconfig
 endif
