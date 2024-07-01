@@ -393,7 +393,9 @@ void inic_ipc_api_init_host(VOID)
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
 
 	/*for updating ip address before sleep*/
+#ifdef CONFIG_PM
 	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)_inic_ipc_ip_addr_update_in_wowlan, NULL, NULL, NULL);
+#endif
 
 	/* Initialize the event task */
 	if (rtw_create_task(&inic_ipc_api_host_handler, (const char *const)"inic_ipc_api_host_task", HOST_STACK_SIZE, (0 + CONFIG_INIC_IPC_HOST_API_PRIO), (void*)inic_ipc_api_host_task, NULL) != 1) {
