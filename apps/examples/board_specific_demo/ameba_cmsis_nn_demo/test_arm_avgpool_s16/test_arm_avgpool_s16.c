@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/avgpooling_int16/test_data.h"
 #include "../TestData/avgpooling_int16_1/test_data.h"

@@ -1461,6 +1461,7 @@ CONFIG_CA_BUNDLE="/rom/curl-certificates.crt"
 # CONFIG_ERROR_REPORT is not set
 # CONFIG_GMOCK is not set
 CONFIG_ENABLE_IOTIVITY=y
+# CONFIG_EXTERNAL_CMSIS_DSP is not set
 # CONFIG_EXTERNAL_CMSIS_NN is not set
 
 #
@@ -1529,6 +1530,7 @@ CONFIG_COMPRESSION_BLOCK_SIZE=16384
 # Application entry point list
 #
 # CONFIG_ENTRY_MANUAL is not set
+# CONFIG_ENTRY_CMSIS_DSP is not set
 # CONFIG_ENTRY_CMSIS_NN is not set
 CONFIG_ENTRY_HELLO=y
 CONFIG_USER_ENTRYPOINT="hello_main"
@@ -1546,6 +1548,7 @@ CONFIG_BUILTIN_APPS=y
 #
 # Board Specific Demos
 #
+# CONFIG_EXAMPLES_CMSIS_DSP is not set
 # CONFIG_EXAMPLES_CMSIS_NN is not set
 # CONFIG_EXAMPLES_AMEBA_MIPI is not set
 # CONFIG_EXAMPLES_SSTORAGE is not set

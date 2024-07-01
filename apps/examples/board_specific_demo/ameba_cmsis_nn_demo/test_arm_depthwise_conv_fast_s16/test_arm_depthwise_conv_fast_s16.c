@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/dw_int16xint8_fast/test_data.h"
 #include "../TestData/dw_int16xint8_fast_multiple_batches_uneven_buffers/test_data.h"

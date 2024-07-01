@@ -94,8 +94,8 @@
   */
 
 
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
-#include <arch/chip/cmsis_dsp/Include/arm_const_structs.h>
+#include <cmsis_dsp/Include/arm_math.h>
+#include <cmsis_dsp/Include/arm_const_structs.h>
 
 #define SEMIHOSTING
 
