@@ -271,6 +271,7 @@ int lcd_test_main(int argc, char *argv[])
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
+	test_init();
 	while (count < 5) {
 		test_put_area_pattern();
 		test_bit_map();

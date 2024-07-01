@@ -278,14 +278,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 static int lcd_init(FAR struct lcd_dev_s *dev)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-	priv->config->reset();
-	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
-		lcdvdbg("LCD Init sequence completed\n");
-	} else {
-		lcddbg("ERROR: LCD Init sequence failed\n");
-	}
-	priv->config->init();
-	priv->config->lcd_enable();
+	priv->config->lcd_free_buffer();
 	return OK;
 }
 
@@ -345,7 +338,6 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 
 	return &priv->dev;
 }
