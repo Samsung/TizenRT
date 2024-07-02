@@ -89,7 +89,7 @@ static u8 lcdc_nextframe = 0;
 struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
 	.data = (u32) LCDC,
-	.priority = INT_PRI_MIDDLE,
+	.priority = INT_PRI_HIGH,
 };
 
 extern struct irq mipi_irq_info;
