@@ -228,12 +228,6 @@ int pm_changestate(enum pm_state_e newstate)
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
 		ret = pm_prepall(newstate);
 		if (ret != OK) {
-			/* One or more drivers is not ready for this state change.  Revert to
-			 * the preceding state.
-			 */
-
-			g_pmglobals.recommended = g_pmglobals.state;
-			g_pmglobals.btime = clock_systimer();
 			goto EXIT;
 		}
 		/* All drivers have agreed to the state change (or, one or more have
@@ -249,24 +243,6 @@ EXIT:
 	/* Restore the interrupt state */
 	leave_critical_section(flags);
 	return ret;
-}
-
-/****************************************************************************
- * Name: pm_querystate
- *
- * Description:
- *   This function returns the current power management state.
- *
- * Input Parameters:
- *
- * Returned Value:
- *   The current power management state.
- *
- ****************************************************************************/
-
-enum pm_state_e pm_querystate(void)
-{
-	return g_pmglobals.state;
 }
 
 #endif /* CONFIG_PM */
