@@ -74,8 +74,8 @@
 
 void up_invalidate_dcache(uintptr_t start, uintptr_t end)
 {
-  cp15_invalidate_dcache(start, end);
-  l2cc_invalidate(start, end);
+	cp15_invalidate_dcache(start, end);
+	l2cc_invalidate(start, end);
 }
 
 /****************************************************************************
@@ -98,12 +98,12 @@ void up_invalidate_dcache(uintptr_t start, uintptr_t end)
 void up_invalidate_dcache_all(void)
 {
 #ifdef CONFIG_ARCH_L2CACHE
-  irqstate_t flags = enter_critical_section();
-  cp15_invalidate_dcache_all();
-  l2cc_invalidate_all();
-  leave_critical_section(flags);
+	irqstate_t flags = enter_critical_section();
+	cp15_invalidate_dcache_all();
+	l2cc_invalidate_all();
+	leave_critical_section(flags);
 #else
-  cp15_invalidate_dcache_all();
+	cp15_invalidate_dcache_all();
 #endif
 }
 
@@ -124,7 +124,7 @@ void up_invalidate_dcache_all(void)
 
 void up_invalidate_icache_all(void)
 {
-  cp15_invalidate_icache();
+	cp15_invalidate_icache();
 }
 
 /****************************************************************************
@@ -150,16 +150,13 @@ void up_invalidate_icache_all(void)
 
 void up_clean_dcache(uintptr_t start, uintptr_t end)
 {
-  if (cp15_cache_size() < (end - start))
-    {
-      cp15_clean_dcache(start, end);
-    }
-  else
-    {
-      cp15_clean_dcache_all();
-    }
+	if (cp15_cache_size() < (end - start)) {
+		cp15_clean_dcache(start, end);
+	} else {
+		cp15_clean_dcache_all();
+	}
 
-  l2cc_clean(start, end);
+	l2cc_clean(start, end);
 }
 
 /****************************************************************************
@@ -187,8 +184,8 @@ void up_clean_dcache(uintptr_t start, uintptr_t end)
 
 void up_clean_dcache_all(void)
 {
-  cp15_clean_dcache_all();
-  l2cc_clean_all();
+	cp15_clean_dcache_all();
+	l2cc_clean_all();
 }
 
 /****************************************************************************
@@ -214,16 +211,13 @@ void up_clean_dcache_all(void)
 
 void up_flush_dcache(uintptr_t start, uintptr_t end)
 {
-  if (cp15_cache_size() < (end - start))
-    {
-      cp15_flush_dcache(start, end);
-    }
-  else
-    {
-      cp15_flush_dcache_all();
-    }
+	if (cp15_cache_size() < (end - start)) {
+		cp15_flush_dcache(start, end);
+	} else {
+		cp15_flush_dcache_all();
+	}
 
-  l2cc_flush(start, end);
+	l2cc_flush(start, end);
 }
 
 /****************************************************************************
@@ -250,8 +244,8 @@ void up_flush_dcache(uintptr_t start, uintptr_t end)
 
 void up_flush_dcache_all(void)
 {
-  cp15_flush_dcache_all();
-  l2cc_flush_all();
+	cp15_flush_dcache_all();
+	l2cc_flush_all();
 }
 
 /****************************************************************************
@@ -270,7 +264,7 @@ void up_flush_dcache_all(void)
 
 void up_enable_icache(void)
 {
-  cp15_enable_icache();
+	cp15_enable_icache();
 }
 
 /****************************************************************************
@@ -289,7 +283,7 @@ void up_enable_icache(void)
 
 void up_disable_icache(void)
 {
-  cp15_disable_icache();
+	cp15_disable_icache();
 }
 
 /****************************************************************************
@@ -308,8 +302,8 @@ void up_disable_icache(void)
 
 void up_enable_dcache(void)
 {
-  cp15_enable_dcache();
-  l2cc_enable();
+	cp15_enable_dcache();
+	l2cc_enable();
 }
 
 /****************************************************************************
@@ -328,8 +322,8 @@ void up_enable_dcache(void)
 
 void up_disable_dcache(void)
 {
-  cp15_disable_dcache();
-  l2cc_disable();
+	cp15_disable_dcache();
+	l2cc_disable();
 }
 
 /****************************************************************************
@@ -352,16 +346,15 @@ void up_disable_dcache(void)
 
 void up_coherent_dcache(uintptr_t addr, size_t len)
 {
-  if (len > 0)
-    {
-      /* Perform the operation on the L1 cache */
+	if (len > 0) {
+		/* Perform the operation on the L1 cache */
 
-      cp15_coherent_dcache(addr, addr + len);
+		cp15_coherent_dcache(addr, addr + len);
 
 #ifdef CONFIG_ARCH_L2CACHE
-      /* If we have an L2 cache, then there more things that need to done */
+		/* If we have an L2 cache, then there more things that need to done */
 
-#  warning This is insufficient
+#warning This is insufficient
 #endif
-    }
+	}
 }

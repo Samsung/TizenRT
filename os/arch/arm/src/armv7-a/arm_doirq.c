@@ -58,7 +58,7 @@
  * Public Functions
  ****************************************************************************/
 
-int g_irq_num = -1; /* Array to store the last three interrupt numbers */
+int g_irq_num = -1;				/* Array to store the last three interrupt numbers */
 /****************************************************************************
  * Name: arm_doirq
  *
@@ -73,32 +73,32 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 	/* Store the interrupt number for reference during assert */
 	g_irq_num = irq;
 
-  board_autoled_on(LED_INIRQ);
+	board_autoled_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
-  PANIC();
+	PANIC();
 #else
-  /* Nested interrupts are not supported */
+	/* Nested interrupts are not supported */
 
-  DEBUGASSERT(CURRENT_REGS == NULL);
+	DEBUGASSERT(CURRENT_REGS == NULL);
 
-  /* Current regs non-zero indicates that we are processing an interrupt;
-   * CURRENT_REGS is also used to manage interrupt level context switches.
-   */
+	/* Current regs non-zero indicates that we are processing an interrupt;
+	 * CURRENT_REGS is also used to manage interrupt level context switches.
+	 */
 
-  CURRENT_REGS = regs;
+	CURRENT_REGS = regs;
 
-  /* Deliver the IRQ */
+	/* Deliver the IRQ */
 
-  irq_dispatch(irq, regs);
+	irq_dispatch(irq, regs);
 
   if (regs != CURRENT_REGS)
     {
 #ifdef CONFIG_ARCH_ADDRENV
-  /* Check for a context switch.  If a context switch occurred, then
-   * CURRENT_REGS will have a different value than it did on entry.  If an
-   * interrupt level context switch has occurred, then establish the correct
-   * address environment before returning from the interrupt.
-   */
+	/* Check for a context switch.  If a context switch occurred, then
+	 * CURRENT_REGS will have a different value than it did on entry.  If an
+	 * interrupt level context switch has occurred, then establish the correct
+	 * address environment before returning from the interrupt.
+	 */
 
       /* Make sure that the address environment for the previously
        * running task is closed down gracefully (data caches dump,
@@ -122,6 +122,6 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 	/* Reset the interrupt number values */
 	g_irq_num = -1;
 
-  board_autoled_off(LED_INIRQ);
-  return regs;
+	board_autoled_off(LED_INIRQ);
+	return regs;
 }

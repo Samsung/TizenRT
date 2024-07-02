@@ -149,7 +149,7 @@ pid_t up_vfork(const struct vfork_s *context)
 	child = task_vforksetup((start_t)(context->lr & ~1));
 	if (!child) {
 		sdbg("ERROR: task_vforksetup failed\n");
-		return (pid_t)ERROR;
+		return (pid_t) ERROR;
 	}
 
 	svdbg("TCBs: Parent=%p Child=%p\n", parent, child);
@@ -167,9 +167,8 @@ pid_t up_vfork(const struct vfork_s *context)
 	if (ret != OK) {
 		sdbg("ERROR: up_create_stack failed: %d\n", ret);
 		task_vforkabort(child, -ret);
-		return (pid_t)ERROR;
+		return (pid_t) ERROR;
 	}
-
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Exclude a stack node from heap usages of current thread.
 	 * This will be shown separately as stack usages.
@@ -185,8 +184,8 @@ pid_t up_vfork(const struct vfork_s *context)
 	 * stack usage should be the difference between those two.
 	 */
 
-	DEBUGASSERT((uint32_t)parent->adj_stack_ptr > context->sp);
-	stackutil = (uint32_t)parent->adj_stack_ptr - context->sp;
+	DEBUGASSERT((uint32_t) parent->adj_stack_ptr > context->sp);
+	stackutil = (uint32_t) parent->adj_stack_ptr - context->sp;
 
 	svdbg("Parent: stacksize:%d stackutil:%d\n", stacksize, stackutil);
 
@@ -197,14 +196,14 @@ pid_t up_vfork(const struct vfork_s *context)
 	 * effort is overkill.
 	 */
 
-	newsp = (uint32_t)child->cmn.adj_stack_ptr - stackutil;
+	newsp = (uint32_t) child->cmn.adj_stack_ptr - stackutil;
 	memcpy((void *)newsp, (const void *)context->sp, stackutil);
 
 	/* Was there a frame pointer in place before? */
 
-	if (context->fp <= (uint32_t)parent->adj_stack_ptr && context->fp >= (uint32_t)parent->adj_stack_ptr - stacksize) {
-		uint32_t frameutil = (uint32_t)parent->adj_stack_ptr - context->fp;
-		newfp = (uint32_t)child->cmn.adj_stack_ptr - frameutil;
+	if (context->fp <= (uint32_t) parent->adj_stack_ptr && context->fp >= (uint32_t) parent->adj_stack_ptr - stacksize) {
+		uint32_t frameutil = (uint32_t) parent->adj_stack_ptr - context->fp;
+		newfp = (uint32_t) child->cmn.adj_stack_ptr - frameutil;
 	} else {
 		newfp = context->fp;
 	}

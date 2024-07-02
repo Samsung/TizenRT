@@ -167,12 +167,37 @@ int up_cpu_paused_save(void)
 
 int up_cpu_paused(int cpu)
 {
+<<<<<<< HEAD
   /* Release the g_cpu_paused spinlock to synchronize with the
    * requesting CPU.
    */
+=======
+	struct tcb_s *tcb = this_task();
 
-  spin_unlock(&g_cpu_paused[cpu]);
+	/* Update scheduler parameters */
 
+	//sched_suspend_scheduler(tcb);
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+	/* Notify that we are paused */
+
+	sched_note_cpu_paused(tcb);
+#endif
+
+	/* Save the current context at CURRENT_REGS into the TCB at the head
+	 * of the assigned task list for this CPU.
+	 */
+
+	arm_savestate(tcb->xcp.regs);
+
+	/* Release the g_cpu_paused spinlock to synchronize with the
+	 * requesting CPU.
+	 */
+>>>>>>> 8792caad2 (Resole Indentation Issue)
+
+	spin_unlock(&g_cpu_paused[cpu]);
+
+<<<<<<< HEAD
   /* Ensure the CPU has been resumed to avoid causing a deadlock */
 
   spin_lock(&g_cpu_resumed[cpu]);
@@ -180,9 +205,15 @@ int up_cpu_paused(int cpu)
   /* Wait for the spinlock to be released.  The requesting CPU will release
    * the spinlock when the CPU is resumed.
    */
+=======
+	/* Wait for the spinlock to be released.  The requesting CPU will release
+	 * the spinlock when the CPU is resumed.
+	 */
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 
-  spin_lock(&g_cpu_wait[cpu]);
+	spin_lock(&g_cpu_wait[cpu]);
 
+<<<<<<< HEAD
   spin_unlock(&g_cpu_wait[cpu]);
   spin_unlock(&g_cpu_resumed[cpu]);
 
@@ -208,25 +239,38 @@ int up_cpu_paused(int cpu)
 int up_cpu_paused_restore(void)
 {
   struct tcb_s *tcb = this_task();
+=======
+	/* This CPU has been resumed. Restore the exception context of the TCB at
+	 * the (new) head of the assigned task list.
+	 */
+
+	tcb = this_task();
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify that we have resumed */
+	/* Notify that we have resumed */
 
-  sched_note_cpu_resumed(tcb);
+	sched_note_cpu_resumed(tcb);
 #endif
 
-  /* Reset scheduler parameters */
+	/* Reset scheduler parameters */
 
-  sched_resume_scheduler(tcb);
+	sched_resume_scheduler(tcb);
 
-  /* Then switch contexts.  Any necessary address environment changes
-   * will be made when the interrupt returns.
-   */
+	/* Then switch contexts.  Any necessary address environment changes
+	 * will be made when the interrupt returns.
+	 */
 
+<<<<<<< HEAD
   up_restoretask(tcb);
   arm_restorestate(tcb->xcp.regs);
+=======
+	up_restoretask(tcb);
+	arm_restorestate(tcb->xcp.regs);
+	spin_unlock(&g_cpu_wait[cpu]);
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -251,33 +295,32 @@ int up_cpu_paused_restore(void)
 
 int arm_pause_handler(int irq, void *context, void *arg)
 {
-  int cpu = this_cpu();
+	int cpu = this_cpu();
 
-  /* Check for false alarms.  Such false could occur as a consequence of
-   * some deadlock breaking logic that might have already serviced the SG2
-   * interrupt by calling up_cpu_paused().  If the pause event has already
-   * been processed then g_cpu_paused[cpu] will not be locked.
-   */
+	/* Check for false alarms.  Such false could occur as a consequence of
+	 * some deadlock breaking logic that might have already serviced the SG2
+	 * interrupt by calling up_cpu_paused().  If the pause event has already
+	 * been processed then g_cpu_paused[cpu] will not be locked.
+	 */
 
-  if (up_cpu_pausereq(cpu))
-    {
-      /* NOTE: The following enter_critical_section() will call
-       * up_cpu_paused() to process a pause request to break a deadlock
-       * because the caller held a critical section. Once up_cpu_paused()
-       * finished, the caller will proceed and release the g_cpu_irqlock.
-       * Then this CPU will acquire g_cpu_irqlock in the function.
-       */
+	if (up_cpu_pausereq(cpu)) {
+		/* NOTE: The following enter_critical_section() will call
+		 * up_cpu_paused() to process a pause request to break a deadlock
+		 * because the caller held a critical section. Once up_cpu_paused()
+		 * finished, the caller will proceed and release the g_cpu_irqlock.
+		 * Then this CPU will acquire g_cpu_irqlock in the function.
+		 */
 
-      irqstate_t flags = enter_critical_section();
+		irqstate_t flags = enter_critical_section();
 
-      /* NOTE: the pause request should not exist here */
+		/* NOTE: the pause request should not exist here */
 
-      DEBUGVERIFY(!up_cpu_pausereq(cpu));
+		DEBUGVERIFY(!up_cpu_pausereq(cpu));
 
-      leave_critical_section(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -302,30 +345,41 @@ int arm_pause_handler(int irq, void *context, void *arg)
 
 int up_cpu_pause(int cpu)
 {
+<<<<<<< HEAD
   DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+=======
+	int ret;
+
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify of the pause event */
+	/* Notify of the pause event */
 
-  sched_note_cpu_pause(this_task(), cpu);
+	sched_note_cpu_pause(this_task(), cpu);
 #endif
 
-  /* Take the both spinlocks.  The g_cpu_wait spinlock will prevent the SGI2
-   * handler from returning until up_cpu_resume() is called; g_cpu_paused
-   * is a handshake that will prefent this function from returning until
-   * the CPU is actually paused.
-   * Note that we might spin before getting g_cpu_wait, this just means that
-   * the other CPU still hasn't finished responding to the previous resume
-   * request.
-   */
+	/* Take the both spinlocks.  The g_cpu_wait spinlock will prevent the SGI2
+	 * handler from returning until up_cpu_resume() is called; g_cpu_paused
+	 * is a handshake that will prefent this function from returning until
+	 * the CPU is actually paused.
+	 * Note that we might spin before getting g_cpu_wait, this just means that
+	 * the other CPU still hasn't finished responding to the previous resume
+	 * request.
+	 */
 
+<<<<<<< HEAD
   DEBUGASSERT(!spin_is_locked(&g_cpu_paused[cpu]));
+=======
+	DEBUGASSERT(!spin_islocked(&g_cpu_paused[cpu]));
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 
-  spin_lock(&g_cpu_wait[cpu]);
-  spin_lock(&g_cpu_paused[cpu]);
+	spin_lock(&g_cpu_wait[cpu]);
+	spin_lock(&g_cpu_paused[cpu]);
 
-  /* Execute SGI2 */
+	/* Execute SGI2 */
 
+<<<<<<< HEAD
   arm_cpu_sgi(GIC_IRQ_SGI2, (1 << cpu));
 
   /* Wait for the other CPU to unlock g_cpu_paused meaning that
@@ -334,13 +388,33 @@ int up_cpu_pause(int cpu)
 
   spin_lock(&g_cpu_paused[cpu]);
   spin_unlock(&g_cpu_paused[cpu]);
+=======
+	ret = arm_cpu_sgi(GIC_IRQ_SGI2, (1 << cpu));
+	if (ret < 0) {
+		/* What happened?  Unlock the g_cpu_wait spinlock */
 
-  /* On successful return g_cpu_wait will be locked, the other CPU will be
-   * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
-   * called.  g_cpu_paused will be unlocked in any case.
-   */
+		spin_unlock(&g_cpu_wait[cpu]);
+	} else {
+		/* Wait for the other CPU to unlock g_cpu_paused meaning that
+		 * it is fully paused and ready for up_cpu_resume();
+		 */
 
+		spin_lock(&g_cpu_paused[cpu]);
+	}
+
+	spin_unlock(&g_cpu_paused[cpu]);
+>>>>>>> 8792caad2 (Resole Indentation Issue)
+
+	/* On successful return g_cpu_wait will be locked, the other CPU will be
+	 * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
+	 * called.  g_cpu_paused will be unlocked in any case.
+	 */
+
+<<<<<<< HEAD
   return OK;
+=======
+	return ret;
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 }
 
 /****************************************************************************
@@ -364,19 +438,20 @@ int up_cpu_pause(int cpu)
 
 int up_cpu_resume(int cpu)
 {
-  DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify of the resume event */
+	/* Notify of the resume event */
 
-  sched_note_cpu_resume(this_task(), cpu);
+	sched_note_cpu_resume(this_task(), cpu);
 #endif
 
-  /* Release the spinlock.  Releasing the spinlock will cause the SGI2
-   * handler on 'cpu' to continue and return from interrupt to the newly
-   * established thread.
-   */
+	/* Release the spinlock.  Releasing the spinlock will cause the SGI2
+	 * handler on 'cpu' to continue and return from interrupt to the newly
+	 * established thread.
+	 */
 
+<<<<<<< HEAD
   DEBUGASSERT(spin_is_locked(&g_cpu_wait[cpu]) &&
               !spin_is_locked(&g_cpu_paused[cpu]));
 
@@ -389,6 +464,12 @@ int up_cpu_resume(int cpu)
   spin_unlock(&g_cpu_resumed[cpu]);
 
   return OK;
+=======
+	DEBUGASSERT(spin_islocked(&g_cpu_wait[cpu]) && !spin_islocked(&g_cpu_paused[cpu]));
+
+	spin_unlock(&g_cpu_wait[cpu]);
+	return OK;
+>>>>>>> 8792caad2 (Resole Indentation Issue)
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */

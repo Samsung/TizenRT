@@ -43,6 +43,35 @@
 volatile uint32_t ulFlashPG_Flag = 0;
 /****************************************************************************
  * Name: arm_gating_handler
+=======
+ * Private Functions
+ ****************************************************************************/
+#define portCPU_IRQ_DISABLE()										\
+	__asm volatile ( "CPSID i" ::: "memory" );						\
+	__asm volatile ( "DSB" );										\
+	__asm volatile ( "ISB" );
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+uint32_t ulPortInterruptLock(void)
+{
+	uint32_t key;
+
+	__asm volatile("mrs	%0, cpsr	\n":"=r"(key)::"memory");
+	portCPU_IRQ_DISABLE();
+
+	return key;
+}
+
+/*-----------------------------------------------------------*/
+
+void ulPortInterruptUnLock(uint32_t key)
+{
+	__asm volatile("msr	cpsr_c, %0	\n"::"r"(key):"memory");
+}
+
+/****************************************************************************
+ * Name: arm_flash_handler
  *
  * Description:
  *   This is the handler for SGI3.  This handler simply send the another core
@@ -55,6 +84,7 @@ volatile uint32_t ulFlashPG_Flag = 0;
  *   Zero on success; a negated errno value on failure.
  *
  ****************************************************************************/
+<<<<<<< HEAD:os/arch/arm/src/armv7-a/arm_cpugating.c
 int arm_gating_handler(int irq, void *context, void *arg)
 {
 	uint32_t PrevIrqStatus = irqsave();
@@ -63,10 +93,21 @@ int arm_gating_handler(int irq, void *context, void *arg)
 	ARM_ISB();
 	while(ulFlashPG_Flag) {
 		__asm__ __volatile__ ("wfe" : : : "memory");
+=======
+SRAMDRAM_ONLY_TEXT_SECTION int arm_flash_handler(int irq, void *context, void *arg)
+{
+	uint32_t PrevIrqStatus = ulPortInterruptLock();
+	while (ulFlashPG_Flag) {
+		__asm__ __volatile__("wfe":::"memory");
+>>>>>>> 8792caad2 (Resole Indentation Issue):os/arch/arm/src/armv7-a/arm_cpuflash.c
 	}
 	irqrestore(PrevIrqStatus);
 
 	return OK;
 }
 
+<<<<<<< HEAD:os/arch/arm/src/armv7-a/arm_cpugating.c
 #endif /* CONFIG_CPU_GATING */
+=======
+#endif							/* CONFIG_SMP */
+>>>>>>> 8792caad2 (Resole Indentation Issue):os/arch/arm/src/armv7-a/arm_cpuflash.c

@@ -113,7 +113,7 @@ static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 	 * that does not have the magic value is the high water mark.
 	 */
 
-	for (ptr = (FAR uint32_t *)start, mark = (size >> 2); *ptr == STACK_COLOR && mark > 0; ptr++, mark--) ;
+	for (ptr = (FAR uint32_t *) start, mark = (size >> 2); *ptr == STACK_COLOR && mark > 0; ptr++, mark--) ;
 
 	/* If the stack is completely used, then this might mean that the stack
 	 * overflowed from above (meaning that the stack is too small), or may
@@ -174,12 +174,13 @@ static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 
 size_t up_check_tcbstack(FAR struct tcb_s *tcb)
 {
+
 	return do_stackcheck((uintptr_t)tcb->stack_base_ptr, (uintptr_t)tcb->adj_stack_ptr);
 }
 
 ssize_t up_check_tcbstack_remain(FAR struct tcb_s *tcb)
 {
-	return (ssize_t)tcb->adj_stack_size - (ssize_t)up_check_tcbstack(tcb);
+	return (ssize_t) tcb->adj_stack_size - (ssize_t) up_check_tcbstack(tcb);
 }
 
 size_t up_check_stack(void)
@@ -213,7 +214,7 @@ size_t up_check_nestirqstack_remain(void)
 size_t up_check_intstack(void)
 {
 #ifdef CONFIG_SMP
-	return do_stackcheck((uintptr_t)arm_intstack_alloc(), (uintptr_t)arm_intstack_top());
+	return do_stackcheck((uintptr_t) arm_intstack_alloc(), (uintptr_t) arm_intstack_top());
 #else
 	return do_stackcheck((uintptr_t)&g_intstackalloc, (uintptr_t)&g_intstackbase);
 #endif

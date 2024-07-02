@@ -129,27 +129,27 @@ static void sig_trampoline(void)
 
 void _start(int argc, char *argv[])
 {
-  int ret;
+	int ret;
 
-  /* Initialize the reserved area at the beginning of the .bss/.data region
-   * that is visible to the RTOS.
-   */
+	/* Initialize the reserved area at the beginning of the .bss/.data region
+	 * that is visible to the RTOS.
+	 */
 
-  ARCH_DATA_RESERVE->ar_sigtramp = (addrenv_sigtramp_t)sig_trampoline;
+	ARCH_DATA_RESERVE->ar_sigtramp = (addrenv_sigtramp_t)sig_trampoline;
 
-  /* Call C++ constructors */
+	/* Call C++ constructors */
 
-  /* Setup so that C++ destructors called on task exit */
+	/* Setup so that C++ destructors called on task exit */
 
-  /* REVISIT: Missing logic */
+	/* REVISIT: Missing logic */
 
-  /* Call the main() entry point passing argc and argv. */
+	/* Call the main() entry point passing argc and argv. */
 
-  ret = main(argc, argv);
+	ret = main(argc, argv);
 
-  /* Call exit() if/when the main() returns */
+	/* Call exit() if/when the main() returns */
 
-  exit(ret);
+	exit(ret);
 }
 
-#endif /* CONFIG_BUILD_KERNEL */
+#endif							/* CONFIG_BUILD_KERNEL */
