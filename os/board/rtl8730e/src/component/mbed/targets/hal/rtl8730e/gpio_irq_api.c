@@ -64,14 +64,14 @@ int gpio_irq_init(gpio_irq_t *obj, PinName pin, gpio_irq_handler handler, uint32
 	GPIO_Init(&GPIO_InitStruct);
 
 	if (port_num == GPIO_PORT_A) {
-		InterruptRegister(GPIO_INTHandler, GPIOA_IRQ, (u32)GPIOA_BASE, 5);
-		InterruptEn(GPIOA_IRQ, 5);
+		InterruptRegister(GPIO_INTHandler, GPIOA_IRQ, (u32)GPIOA_BASE, INT_PRI_MIDDLE);
+		InterruptEn(GPIOA_IRQ, INT_PRI_MIDDLE);
 	} else if (port_num == GPIO_PORT_B) {
-		InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, 5);
-		InterruptEn(GPIOB_IRQ, 5);
+		InterruptRegister(GPIO_INTHandler, GPIOB_IRQ, (u32)GPIOB_BASE, INT_PRI_MIDDLE);
+		InterruptEn(GPIOB_IRQ, INT_PRI_MIDDLE);
 	} else if (port_num == GPIO_PORT_C) {
-		InterruptRegister(GPIO_INTHandler, GPIOC_IRQ, (u32)GPIOC_BASE, 5);
-		InterruptEn(GPIOC_IRQ, 5);
+		InterruptRegister(GPIO_INTHandler, GPIOC_IRQ, (u32)GPIOC_BASE, INT_PRI_MIDDLE);
+		InterruptEn(GPIOC_IRQ, INT_PRI_MIDDLE);
 	}
 
 	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, (VOID *) handler, (VOID *) id);
