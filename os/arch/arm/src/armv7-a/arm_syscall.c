@@ -311,7 +311,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 		DEBUGASSERT(index >= 0);
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
 		if (index < 0 || index >= CONFIG_SYS_NNEST) {
-			return INDEX_ERROR;
+			svcerr("ERROR: Bad SYS call: 0x%x\n", regs[REG_R0]);
 		}
 
 		/* Setup to return to the saved SYSCALL return address in
@@ -558,7 +558,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 		DEBUGASSERT(index < CONFIG_SYS_NNEST);
 		if (index >= CONFIG_SYS_NNEST) {
-			return INDEX_ERROR;
+			svcerr("ERROR: Bad SYS call: 0x%x\n", regs[REG_R0]);
 		}
 
 		if (cmd == SYS_up_assert) {
