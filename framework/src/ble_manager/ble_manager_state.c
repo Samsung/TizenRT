@@ -877,6 +877,16 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_charact_indicate(attr_handle, con_handle, data);
 	} break;
 
+	case BLE_CMD_GET_INDICATE_PENDING_CNT: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		trble_conn_handle *conn_handle = (trble_conn_handle *)param->param[0];
+		uint8_t *indicate_count = (uint8_t *)param->param[1];
+
+		ret = ble_drv_get_indicate_pending_cnt(conn_handle, indicate_count);
+	} break;
+
 	case BLE_CMD_ATTR_SET_DATA: {
 		BLE_STATE_CHECK;
 

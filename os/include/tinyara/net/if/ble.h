@@ -105,6 +105,7 @@ typedef enum {
 	LWNL_REQ_BLE_GET_PROFILE_COUNT,
 	LWNL_REQ_BLE_CHARACT_NOTI,
 	LWNL_REQ_BLE_CHARACT_INDI,
+	LWNL_REQ_BLE_GET_INDICATE_PENDING_CNT,
 	LWNL_REQ_BLE_ATTR_SET_DATA,
 	LWNL_REQ_BLE_ATTR_GET_DATA,
 	LWNL_REQ_BLE_ATTR_REJECT,
@@ -365,6 +366,7 @@ typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *
 typedef trble_result_e (*trble_charact_notify)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 // API for sending a characteristic value indicate to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 typedef trble_result_e (*trble_charact_indicate)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+typedef trble_result_e (*trble_get_indicate_queue_cnt)(struct bledev *dev, trble_conn_handle *con_handle, uint8_t *count);
 typedef trble_result_e (*trble_attr_set_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 typedef trble_result_e (*trble_attr_get_data)(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data);
 // reject attribute request in callback function and return error code
@@ -424,6 +426,7 @@ struct trble_ops {
 	trble_get_profile_count get_profile_count;
 	trble_charact_notify charact_noti;
 	trble_charact_indicate charact_indi;
+	trble_get_indicate_queue_cnt get_indi_queue_cnt;
 	trble_attr_set_data attr_set_data;
 	trble_attr_get_data attr_get_data;
 	trble_attr_reject attr_reject;

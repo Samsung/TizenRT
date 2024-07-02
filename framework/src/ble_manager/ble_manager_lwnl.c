@@ -347,6 +347,17 @@ trble_result_e ble_drv_charact_indicate(trble_attr_handle attr_handle, trble_con
 	return res;
 }
 
+trble_result_e ble_drv_get_indicate_pending_cnt(trble_conn_handle *conn_handle, uint8_t *indicate_count)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)conn_handle, (void *)indicate_count} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_GET_INDICATE_PENDING_CNT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_attr_set_data(trble_attr_handle attr_handle, trble_data *data)
 {
 	trble_result_e res = TRBLE_SUCCESS;

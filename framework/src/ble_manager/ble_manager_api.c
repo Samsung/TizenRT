@@ -343,6 +343,19 @@ ble_result_e ble_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_h
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_server_get_indicate_pending_count(ble_conn_handle con_handle, uint8_t *count)
+{
+	if (count == NULL)
+	{
+		return BLE_MANAGER_INVALID_ARGS;
+	}
+	blemgr_msg_params param = { 2, {(void *)&con_handle, (void *)count} };
+	blemgr_msg_s msg = {BLE_CMD_GET_INDICATE_PENDING_CNT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data)
 {
 	blemgr_msg_params param = { 2, {(void *)&attr_handle, (void *)data} };
