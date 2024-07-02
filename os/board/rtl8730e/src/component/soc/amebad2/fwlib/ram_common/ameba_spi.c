@@ -473,7 +473,7 @@ BOOL SSI_TXGDMA_Init(
 
 	DCache_CleanInvalidate((u32) pTxData, Length);
 
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
+	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_HIGH);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return _FALSE;

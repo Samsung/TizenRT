@@ -144,8 +144,8 @@ void watchdog_refresh(void)
 void watchdog_irq_init(wdt_irq_handler handler, uint32_t id)
 {
 	WDG_ClearINT(WDGDev, WDG_BIT_EIC);
-	InterruptRegister((IRQ_FUN)handler, WdgIrqNum, (u32)id, 3);
-	InterruptEn(WdgIrqNum, 3);
+	InterruptRegister((IRQ_FUN)handler, WdgIrqNum, (u32)id, INT_PRI_HIGH);
+	InterruptEn(WdgIrqNum, INT_PRI_HIGH);
 	WDG_INTConfig(WDGDev, WDG_BIT_EIE, ENABLE);
 }
 /**

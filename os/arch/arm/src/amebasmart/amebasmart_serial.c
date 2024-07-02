@@ -565,8 +565,8 @@ static int rtl8730e_log_uart_irq(void *Data)
 
 static int rtl8730e_log_up_attach(struct uart_dev_s *dev)
 {
-	InterruptRegister((IRQ_FUN)rtl8730e_log_uart_irq, RTL8730E_UART_LOG_IRQ-32, (int)NULL, 4);
-	InterruptEn(RTL8730E_UART_LOG_IRQ-32, 4);
+	InterruptRegister((IRQ_FUN)rtl8730e_log_uart_irq, RTL8730E_UART_LOG_IRQ-32, (int)NULL, INT_PRI_MIDDLE);
+	InterruptEn(RTL8730E_UART_LOG_IRQ-32, INT_PRI_MIDDLE);
 	return 0;
 }
 
@@ -818,8 +818,8 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 	if (uart_index_get(priv->tx) == 4)	{//Loguart cannot be stopped
 		irq_disable(RTL8730E_UART_LOG_IRQ-32);
 		irq_unregister(RTL8730E_UART_LOG_IRQ-32);
-		InterruptRegister((IRQ_FUN)rtl8730e_log_uart_irq, RTL8730E_UART_LOG_IRQ-32, (int)NULL, 4);
-		InterruptEn(RTL8730E_UART_LOG_IRQ-32, 4);
+		InterruptRegister((IRQ_FUN)rtl8730e_log_uart_irq, RTL8730E_UART_LOG_IRQ-32, (int)NULL, INT_PRI_MIDDLE);
+		InterruptEn(RTL8730E_UART_LOG_IRQ-32, INT_PRI_MIDDLE);
 	} else {
 		sdrv[uart_index_get(priv->tx)]->uart_idx = uart_index_get(priv->tx);
 		serial_init((serial_t *) sdrv[uart_index_get(priv->tx)], priv->tx, priv->rx);

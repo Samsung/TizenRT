@@ -471,8 +471,8 @@ void serial_init(serial_t *obj, PinName tx, PinName rx)
 	UART_StructInit(&puart_adapter->UART_InitStruct);
 	UART_Init(puart_adapter->UARTx, &puart_adapter->UART_InitStruct);
 
-	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, 5);
-	InterruptEn(puart_adapter->IrqNum, 5);
+	InterruptRegister((IRQ_FUN)uart_irqhandler, puart_adapter->IrqNum, (u32)puart_adapter, INT_PRI_MIDDLE);
+	InterruptEn(puart_adapter->IrqNum, INT_PRI_MIDDLE);
 
 #ifdef CONFIG_MBED_ENABLED
 	// For stdio management

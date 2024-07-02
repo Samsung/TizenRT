@@ -123,8 +123,8 @@ void RTIM_TimeBaseInit(RTIM_TypeDef *TIM, RTIM_TimeBaseInitTypeDef *TIM_InitStru
 
 	/* Initial TimerIRQHandle */
 	if (UserCB) {
-		InterruptRegister(UserCB, IrqNum, UserCBData, 3);
-		InterruptEn(IrqNum, 3);
+		InterruptRegister(UserCB, IrqNum, UserCBData, INT_PRI_HIGH);
+		InterruptEn(IrqNum, INT_PRI_HIGH);
 	}
 
 	/* Generate an update event */
