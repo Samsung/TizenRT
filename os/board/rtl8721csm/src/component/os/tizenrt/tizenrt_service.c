@@ -43,7 +43,7 @@ struct _tizenrt_timer_entry {
 };
 
 static _list _tizenrt_timer_table;
-//static u8 _tizenrt_timer_table_init = 0;
+static u8 _tizenrt_timer_table_init = 0;
 static _mutex _tizenrt_timer_mutex = NULL;
 
 unsigned int save_and_cli(void)
