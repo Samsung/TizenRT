@@ -99,5 +99,4 @@ uint16_t pm_suspendcount(int domain_id)
 	return g_pmglobals.suspend_count[domain_id];
 }
 
-
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

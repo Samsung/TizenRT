@@ -86,7 +86,7 @@
  */
 
 #ifndef CONFIG_PM_MIN_WAKEUP_TIME
-#define CONFIG_PM_MIN_WAKEUP_TIME  100	/* Default is 100 msec */
+#define CONFIG_PM_MIN_WAKEUP_TIME 100 /* Default is 100 msec */
 #endif
 
 #if CONFIG_PM_MIN_WAKEUP_TIME < 1
@@ -103,7 +103,7 @@
  *
  ****************************************************************************/
 
-#define pm_lock()	sem_wait(&g_pmglobals.regsem);
+#define pm_lock() sem_wait(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Name: pm_unlock
@@ -113,7 +113,7 @@
  *
  ****************************************************************************/
 
-#define pm_unlock()	sem_post(&g_pmglobals.regsem);
+#define pm_unlock() sem_post(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Public Types
@@ -203,7 +203,7 @@ int pm_check_domain(int domain_id);
  *   This function is called just before sleep to start the required PM wake up
  *   timer. It will start the first timer from the g_pm_timer_activelist with the
  *   required delay.(delay should be positive)
- * 
+ *
  * Input Parameters:
  *   None
  *
@@ -345,5 +345,5 @@ void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t
 }
 #endif
 
-#endif							/* CONFIG_PM */
-#endif							/* #define __DRIVERS_POWER_PM_H */
+#endif /* CONFIG_PM */
+#endif /* #define __DRIVERS_POWER_PM_H */

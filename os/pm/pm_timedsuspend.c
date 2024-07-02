@@ -95,8 +95,8 @@ static void timer_timeout(int argc, int domain_id)
  * Name: pm_timedsuspend
  *
  * Description:
- *   This function locks PM state transition for a specific duration.  
- * 
+ *   This function locks PM state transition for a specific duration.
+ *
  * Parameters:
  *   domain_id - ID of domain to be suspended
  *   milliseconds - expected lock duration in millisecond

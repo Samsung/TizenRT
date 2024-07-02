@@ -77,7 +77,6 @@
 
 struct pm_global_s g_pmglobals;
 
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -111,4 +110,4 @@ void pm_initialize(void)
 	g_pmglobals.stime = clock_systimer();
 	g_pmglobals.btime = clock_systimer();
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */
