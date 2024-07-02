@@ -226,10 +226,6 @@ endif
 ifeq ($(CONFIG_PM),y)
 CHIP_CSRCS += stm32l4_pmsleep.c stm32l4_pmstandby.c
 CHIP_CSRCS += stm32l4_pmstop.c
-
-ifneq ($(CONFIG_ARCH_CUSTOM_PMINIT),y)
-CHIP_CSRCS += stm32l4_pminitialize.c
-endif
 endif
 
 CFLAGS += -I$(ARCH_SRCDIR)/chip/hal

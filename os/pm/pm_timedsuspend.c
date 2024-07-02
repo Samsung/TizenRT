@@ -70,8 +70,8 @@
  * Private Variables
  ************************************************************************/
 
-/* This array maps the pid to their respective wdog timer. 
- * Assumption: when a thread does a timed lock , only the same thread 
+/* This array maps the pid to their respective wdog timer.
+ * Assumption: when a thread does a timed lock , only the same thread
  * can unlock the "timed lock" before it expire */
 static WDOG_ID pid_timer_map[CONFIG_MAX_TASKS];
 
@@ -98,8 +98,8 @@ static void timer_timeout(int argc, int domain_id, uint32_t hash_pid)
  * Name: pm_timedsuspend
  *
  * Description:
- *   This function locks PM state transition for a specific duration.  
- * 
+ *   This function locks PM state transition for a specific duration.
+ *
  * Parameters:
  *   domain_id - ID of domain to be suspended
  *   milliseconds - expected lock duration in millisecond
@@ -114,12 +114,12 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 {
 	int hash_pid = PIDHASH(getpid());
 
-	if (domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id]==NULL) {
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
 
-	/* Check if there is already a wdog lock timer running for 
+	/* Check if there is already a wdog lock timer running for
 	 * the process */
 	if (pid_timer_map[hash_pid] != NULL) {
 		pmdbg("There is already a lock timer running for this process pid %d with domain %s\n", getpid(), pm_domain_map[domain_id]);
@@ -137,7 +137,6 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	if (pm_suspend(domain_id) != OK) {
 		pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id]);
 		goto errout;
-		
 	}
 	if (wd_start(wdog, MSEC2TICK(milliseconds), (wdentry_t)timer_timeout, 2, domain_id, (uint32_t)hash_pid) != OK) {
 		pmvdbg("Error starting Wdog timer\n");

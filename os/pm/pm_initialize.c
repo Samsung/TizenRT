@@ -79,7 +79,6 @@
 
 struct pm_global_s g_pmglobals;
 
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -111,7 +110,6 @@ void pm_initialize(void)
 	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
 
 	g_pmglobals.stime = clock_systimer();
-	g_pmglobals.btime = clock_systimer();
 
 #ifdef CONFIG_PM_METRICS
 	struct timespec cur_time;
@@ -127,7 +125,7 @@ void pm_initialize(void)
 
 	/* Create an initial state change node with NORMAL state and bootup time */
 
-	initnode = (struct pm_statechange_s *)pm_alloc(1, sizeof(struct pm_statechange_s));
+	initnode = (struct pm_statechange_s *)kmm_malloc(sizeof(struct pm_statechange_s));
 
 	initnode->state = PM_NORMAL;
 	initnode->timestamp = cur_time.tv_sec;
@@ -136,6 +134,5 @@ void pm_initialize(void)
 
 	sq_addlast((&initnode->entry), &g_pmglobals.history);
 #endif
-
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

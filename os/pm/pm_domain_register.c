@@ -49,15 +49,15 @@ char *pm_domain_map[CONFIG_PM_NDOMAINS];
  *
  * Input parameters:
  *   domain - the string domain need to be registered in PM.
- * 
+ *
  * Returned value:
  *    non-negative integer   : ID of domain
  *    ERROR (-1)             : On Error
  *
- *
  ****************************************************************************/
 
-int pm_domain_register(char *domain) {
+int pm_domain_register(char *domain)
+{
 	int index;
 	int length = strlen(domain);
 
@@ -71,7 +71,7 @@ int pm_domain_register(char *domain) {
 	for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
 		/* If we have unused domain ID then use it to register given domain */
 		if (pm_domain_map[index] == NULL) {
-			pm_domain_map[index] = (char *)pm_alloc(length, sizeof(char));
+			pm_domain_map[index] = (char *)kmm_malloc(length * sizeof(char));
 			if (!pm_domain_map[index]) {
 				set_errno(ENOMEM);
 				pmdbg("Unable to allocate memory from heap\n");
@@ -79,7 +79,7 @@ int pm_domain_register(char *domain) {
 			}
 			strncpy(pm_domain_map[index], domain, length + 1);
 			return index;
-		/* If domain of same length and characters is in our map , then return the corresponding domain ID */
+			/* If domain of same length and characters is in our map , then return the corresponding domain ID */
 		} else if ((length == strlen(pm_domain_map[index])) && (strncmp(pm_domain_map[index], domain, length) == 0)) {
 			return index;
 		}
@@ -90,4 +90,4 @@ int pm_domain_register(char *domain) {
 	return ERROR;
 }
 
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

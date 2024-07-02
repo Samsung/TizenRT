@@ -546,7 +546,10 @@ int tash_execute_cmd(char **args, int argc)
 	int cmd_found = 0;
 #ifdef CONFIG_PM
 	int pmdrv_fd;
-	int pm_suspended;
+	pm_domain_arg_t pm_domain_arg;
+	bool pm_suspended = false;
+
+	pm_domain_arg.domain_name = "TASH";
 #endif
 
 	/* lock mutex */
@@ -565,21 +568,24 @@ int tash_execute_cmd(char **args, int argc)
 				if (pmdrv_fd < 0) {
 					shdbg("open /dev/pm failed(%d), \n", get_errno());
 				} else {
-					pm_suspended = ioctl(pmdrv_fd, PMIOC_SUSPEND, PM_NORMAL);
-					if (pm_suspended != OK) {
+					if (ioctl(pmdrv_fd, PMIOC_DOMAIN_REGISTER, &pm_domain_arg) != OK) {
+						shdbg("pm_domain_register failed(%d)\n", get_errno());
+					} else if (ioctl(pmdrv_fd, PMIOC_SUSPEND, pm_domain_arg.domain_id) != OK) {
 						shdbg("pm_suspend failed(%d)\n", get_errno());
+					} else {
+						pm_suspended = true;
 					}
 				}
 #endif
 				(*tash_cmds_info.cmd[cmd_idx].cb) (argc, args);
 #ifdef CONFIG_PM
-				if (pmdrv_fd > 0) {
-					if (pm_suspended == OK) {
-						/* pm_resume should only be called when the pm_suspend is executed correctly. */
-						if (ioctl(pmdrv_fd, PMIOC_RESUME, PM_NORMAL) != OK) {
-							shdbg("pm_resume failed(%d)\n", get_errno());
-						}
+				if (pm_suspended) {
+					/* pm_resume should only be called when the pm_suspend is executed correctly. */
+					if (ioctl(pmdrv_fd, PMIOC_RESUME, pm_domain_arg.domain_id) != OK) {
+						shdbg("pm_resume failed(%d)\n", get_errno());
 					}
+				}
+				if (pmdrv_fd >= 0) {
 					close(pmdrv_fd);
 				}
 #endif

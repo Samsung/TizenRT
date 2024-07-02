@@ -94,7 +94,11 @@ void pm_idle(void)
 		}
 	}
 #endif
+#ifdef CONFIG_PM_TICKSUPPRESS
 	up_pm_board_sleep(pm_wakehandler);
+#else
+	up_pm_board_sleep(NULL);
+#endif
 EXIT:
 	leave_critical_section(flags);
 }

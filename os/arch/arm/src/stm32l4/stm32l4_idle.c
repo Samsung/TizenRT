@@ -92,20 +92,9 @@ int up_pmsleep(void)
 
   flags = irqsave();
   sched_lock();
-  if (pm_suspendcount(PM_IDLE_DOMAIN)) {
-    ret = -EAGAIN;
-    goto errout_lock;
-  }
-  ret = pm_changestate(PM_SLEEP);
-  if (ret < 0) {
-    goto errout;
-  }
   set_exti_button();
   (void)stm32l4_pmstop2();
-
   stm32l4_clockenable();
-errout:
-  pm_changestate(PM_NORMAL);
 errout_lock:
   sched_unlock();
   irqrestore(flags);
@@ -151,14 +140,14 @@ void set_exti_button(void)
  *   Perform IDLE state power management.
  *
  * Input Parameters:
- *   handler - The handler function that must be called after each board wakeup.
+ *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
  *
  * Returned Value:
  *   None.
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
+void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 {
 	irqstate_t flags;
 	flags = irqsave();
@@ -174,7 +163,7 @@ void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 	irqrestore(flags);
 }
 #else
-#define up_pm_board_sleep(handler)
+#define up_pm_board_sleep(wakeuphandler)
 #endif
 
 /****************************************************************************
