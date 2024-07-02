@@ -144,16 +144,7 @@ static void stm32_idlepm(void)
 
 		/* Force the global state change */
 
-		ret = pm_changestate(newstate);
-		if (ret < 0) {
-			/* The new state change failed, revert to the preceding state */
-
-			(void)pm_changestate(oldstate);
-
-			/* No state change... */
-
-			goto errout;
-		}
+		pm_changestate(newstate);
 
 		/* Then perform board-specific, state-dependent logic here */
 

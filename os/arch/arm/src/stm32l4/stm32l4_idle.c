@@ -96,10 +96,8 @@ int up_pmsleep(void)
     ret = -EAGAIN;
     goto errout_lock;
   }
-  ret = pm_changestate(PM_SLEEP);
-  if (ret < 0) {
-    goto errout;
-  }
+  pm_changestate(PM_SLEEP);
+
   set_exti_button();
   (void)stm32l4_pmstop2();
 
