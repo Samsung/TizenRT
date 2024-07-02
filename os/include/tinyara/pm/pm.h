@@ -531,6 +531,22 @@ uint16_t pm_suspendcount(int domain_id);
 enum pm_state_e pm_checkstate(void);
 
 /****************************************************************************
+ * Name: pm_getnextstate
+ *
+ * Description:
+ *   This function check the curresnt state of PM. Based on current state it
+ *   gives the next low power state.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   The next power management state.
+ *
+ ****************************************************************************/
+
+enum pm_state_e pm_getnextstate(void);
+
+/****************************************************************************
  * Name: pm_changestate
  *
  * Description:

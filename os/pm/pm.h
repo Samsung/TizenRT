@@ -110,6 +110,29 @@
 
 #define pm_unlock()	sem_post(&g_pmglobals.regsem);
 
+#ifdef CONFIG_LCD
+/****************************************************************************
+ * Name: pm_lcd_thread_lock
+ *
+ * Descripton:
+ *   Lock the power management registry.  NOTE: This function may return
+ *   an error if a signal is received while what (errno == EINTR).
+ *
+ ****************************************************************************/
+
+#define pm_lcd_thread_lock()	sem_wait(&g_pmglobals.lcd_sem);
+
+/****************************************************************************
+ * Name: pm_lcd_thread_unlock
+ *
+ * Descripton:
+ *   Unlock the power management registry.
+ *
+ ****************************************************************************/
+
+#define pm_lcd_thread_unlock()	sem_post(&g_pmglobals.lcd_sem);
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -122,6 +145,14 @@ struct pm_global_s {
 	 */
 
 	sem_t regsem;
+
+#ifdef CONFIG_LCD
+	/* This semaphore manages mutually exclusive access to the power management
+	 * LCD Thread. It must be initialized to the value 0.
+	 */
+
+	sem_t lcd_sem;
+#endif
 
 	/* registry is a doubly-linked list of registered power management
 	 * callback structures.  To ensure mutually exclusive access, this list
@@ -216,6 +247,71 @@ int pm_set_wakeup_timer(void);
  ****************************************************************************/
 #ifdef CONFIG_PM_TICKSUPPRESS
 void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+#endif
+
+/****************************************************************************
+ * Name: pm_timer_init
+ *
+ * Description:
+ *   It initializes the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ * 	 -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_timer_init(void);
+
+/****************************************************************************
+ * Name: pm_timer_suspend
+ *
+ * Description:
+ *   It stops the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ * 	 -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_timer_suspend(void);
+
+/****************************************************************************
+ * Name: pm_timer_resume
+ *
+ * Description:
+ *   It starts the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ * 	 -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_timer_resume(void);
+
+/****************************************************************************
+ * Name: pm_lcd_thread
+ *
+ * Description:
+ *   This function creates and activates a kernel thread which controls the 
+ *   LCD backlight power and returns its system-assigned ID.
+ *
+ * Return Value:
+ *   Returns the non-zero process ID of the kernel thread on success
+ *   ERROR on failure. The errno will be set to indicate the nature of the error.
+ * 
+ ****************************************************************************/
+
+#ifdef CONFIG_LCD
+int pm_lcd_thread(void);
 #endif
 
 #undef EXTERN

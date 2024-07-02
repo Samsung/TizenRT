@@ -61,6 +61,10 @@
 #include <debug.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
+#include <tinyara/arch.h>
+#include <tinyara/lcd/lcd_dev.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 #include "pm_metrics.h"
 #include "pm.h"
@@ -214,6 +218,8 @@ int pm_changestate(enum pm_state_e newstate)
 {
 	irqstate_t flags;
 	int ret = OK;
+	int fd = -1;
+	unsigned long power = 0;
 
 	/* Disable interrupts throught this operation... changing driver states
 	 * could cause additional driver activity that might interfere with the
@@ -227,6 +233,7 @@ int pm_changestate(enum pm_state_e newstate)
 	 * drivers may refuse the state change.
 	 */
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
+
 		ret = pm_prepall(newstate);
 		if (ret != OK) {
 			/* One or more drivers is not ready for this state change.  Revert to
@@ -242,6 +249,9 @@ int pm_changestate(enum pm_state_e newstate)
 		*/
 		pm_changeall(newstate);
 		g_pmglobals.state = newstate;
+#ifdef CONFIG_LCD
+		pm_lcd_thread_unlock();
+#endif
 	}
 EXIT:
 	/* Restore the interrupt state */
