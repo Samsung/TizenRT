@@ -180,7 +180,7 @@ void pm_metrics_update_resume(int domain_id)
 void pm_metrics_update_idle(void)
 {
 	int index;
-	if (g_pm_metrics_running && (g_pmglobals.recommended != PM_SLEEP)) {
+	if (g_pm_metrics_running) {
 		g_pm_metrics->total_try_ticks++;
 		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
 			if (g_pmglobals.suspend_count[index] != 0) {
