@@ -50,13 +50,9 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_PM),y)
-
 CSRCS += pm.c
 
 # Include PM driver build support
 
 DEPPATH += --dep-path pm
 VPATH += :pm
-
-endif

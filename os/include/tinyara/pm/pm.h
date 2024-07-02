@@ -87,6 +87,7 @@
 #include <tinyara/config.h>
 #include <queue.h>
 #include <semaphore.h>
+#include <tinyara/clock.h>
 
 /* This structure is used to send data to pm driver from app side for timedSuspend */
 struct pm_suspend_arg_s {
@@ -103,7 +104,6 @@ struct pm_domain_arg_s {
 
 typedef struct pm_domain_arg_s pm_domain_arg_t;
 
-#ifdef CONFIG_PM
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -295,6 +295,17 @@ extern "C" {
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: pm_driver_register
+ *
+ * Description:
+ *   Register pm driver path,  "/dev/pm"
+ *
+ ****************************************************************************/
+void pm_driver_register(void);
+
+#ifdef CONFIG_PM
 /****************************************************************************
  * Name: pm_initialize
  *
@@ -457,7 +468,7 @@ int pm_resume(int domain_id);
 #ifdef CONFIG_PM_TIMEDWAKEUP
 int pm_sleep(int milliseconds);
 #else
-#define pm_sleep(milliseconds) (0)
+#define pm_sleep(milliseconds) usleep(milliseconds * USEC_PER_MSEC)
 #endif
 
 /************************************************************************
@@ -596,16 +607,9 @@ enum pm_state_e pm_querystate(void);
  *
  ****************************************************************************/
 void pm_dvfs(int div_lvl);
+#else
+#define pm_dvfs(div_lvl)	(0)
 #endif
-
-void pm_driver_register(void);
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-
-#endif							/* __ASSEMBLY__ */
 
 /****************************************************************************
  * Stubs
@@ -620,11 +624,22 @@ void pm_driver_register(void);
 #define pm_initialize()
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
+#define pm_domain_register(domain)	(0)
+#define pm_idle()
 #define pm_suspend(domain_id)   (0)
 #define pm_resume(domain_id)    (0)
+#define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
+#define pm_timedsuspend(domain_id, milliseconds)	(0)
 #define pm_checkstate()         (0)
 #define pm_changestate(state)   (0)
 #define pm_querystate()         (0)
 
 #endif							/* CONFIG_PM */
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif							/* __ASSEMBLY__ */
 #endif							/* __INCLUDE_TINYARA_POWER_PM_H */
