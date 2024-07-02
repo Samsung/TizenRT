@@ -37,6 +37,12 @@
 #define PIN_HIGH 1
 #define LCD_LAYER 0
 
+#define INITCOLOR 0x0000	//black color for intial screen
+
+#if !defined(CONFIG_LCD_MAXPOWER)
+#define CONFIG_LCD_MAXPOWER 100
+#endif
+
 #if defined(CONFIG_LCD_ST7785)
 #define GPIO_PIN_BACKLIGHT      PB_11
 #define MIPI_GPIO_RESET_PIN 	PA_15
@@ -57,6 +63,7 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 static void rtl8730e_enable_lcdc(void);
 static void rtl8730e_register_lcdc_isr(void);
 static void rtl8730e_control_backlight(u8 level);
+static void rtl8730e_free_lcdbuffer(void);
 FAR void mipidsi_mode_switch(bool do_enable);
 FAR void mipidsi_acpu_reg_clear(void);
 FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config);
@@ -72,6 +79,7 @@ struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
 		.lcd_layer_enable = rtl8730e_lcd_layer_enable,
 		.lcd_put_area = rtl8730e_lcd_put_area,
 		.backlight = rtl8730e_control_backlight,
+		.lcd_free_buffer = rtl8730e_free_lcdbuffer,
 	},
 };
 
@@ -85,6 +93,7 @@ LCDC_TypeDef *pLCDC = LCDC;
 LCDC_InitTypeDef lcdc_init_struct;
 static u32 UnderFlowCnt = 0;
 static u8 lcdc_nextframe = 0;
+static uint8_t *lcd_data = NULL;
 
 struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
@@ -204,6 +213,31 @@ static void rtl8730e_control_backlight(uint8_t level)
 #endif
 }
 
+static void rtl8730e_lcd_init_screen(int xres, int yres)
+{
+	int len = xres * yres * 2;
+	lcd_data = malloc(len);
+	if (lcd_data == NULL) {
+		lcddbg("malloc failed for lcd data : %d\n", len);
+		rtl8730e_control_backlight(CONFIG_LCD_MAXPOWER);
+		return;
+	}
+	for (int i = 0; i < len; i += 2) {
+		lcd_data[i] = (INITCOLOR & 0xFF00) >> 8;
+		lcd_data[i + 1] = INITCOLOR & 0x00FF;
+	}
+	rtl8730e_lcd_put_area(lcd_data, 0, 0, xres, yres);
+	rtl8730e_control_backlight(CONFIG_LCD_MAXPOWER);
+}
+
+static void rtl8730e_free_lcdbuffer(void)
+{
+	if (lcd_data != NULL) {
+		free(lcd_data);
+		lcd_data = NULL;
+	}
+}
+
 static void rtl8730e_enable_lcdc(void)
 {
 	LCDC_Cmd(pLCDC, ENABLE);
@@ -292,6 +326,7 @@ void rtl8730e_lcdc_initialize(void)
 		lcddbg("ERROR: LCD driver register fail\n");
 		return;
 	}
+	rtl8730e_lcd_init_screen(config.XPixels, config.YPixels);
 	lcdvdbg("LCD driver register success\n");
 }
 
