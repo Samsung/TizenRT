@@ -25,26 +25,26 @@
 #include "pm.h"
 
 struct pm_metric_domain_s {
-	clock_t stime[CONFIG_PM_NDOMAINS];                           /* Last suspended time stamp of domain */
-	uint32_t blocking_board_sleep_ticks[CONFIG_PM_NDOMAINS];     /* Tick time of the suspended domain inside idle thread that prevent board sleep */
-	uint32_t suspend_ticks[CONFIG_PM_NDOMAINS];                  /* Time (in ticks) domain suspended */
+	clock_t stime[CONFIG_PM_NDOMAINS];						 /* Last suspended time stamp of domain */
+	uint32_t blocking_board_sleep_ticks[CONFIG_PM_NDOMAINS]; /* Tick time of the suspended domain inside idle thread that prevent board sleep */
+	uint32_t suspend_ticks[CONFIG_PM_NDOMAINS];				 /* Time (in ticks) domain suspended */
 };
 
 typedef struct pm_metric_domain_s pm_metric_domain_t;
 
 struct pm_metric_state_s {
-	clock_t stime;                                               /* Last PM change state time stamp */
-	uint32_t state_accum_ticks[PM_COUNT];                        /* PM State Time (in ticks)*/
+	clock_t stime;						  /* Last PM change state time stamp */
+	uint32_t state_accum_ticks[PM_COUNT]; /* PM State Time (in ticks)*/
 };
 
 typedef struct pm_metric_state_s pm_metric_state_t;
 
 struct pm_metric_s {
-	pm_metric_domain_t domain_metrics;                          /* The domain metrics */
-	pm_metric_state_t state_metrics;                            /* The power management state metrics */
-	uint32_t board_sleep_ticks;                                 /* The amount of time (in ticks) board was in sleep */
-	uint32_t wakeup_src_counts[PM_WAKEUP_SRC_COUNT];            /* It counts the frequency of wakeup sources */
-	uint32_t total_try_ticks;                                   /* Total duration of time pm tries to make board sleep */
+	pm_metric_domain_t domain_metrics;				 /* The domain metrics */
+	pm_metric_state_t state_metrics;				 /* The power management state metrics */
+	uint32_t board_sleep_ticks;						 /* The amount of time (in ticks) board was in sleep */
+	uint32_t wakeup_src_counts[PM_WAKEUP_SRC_COUNT]; /* It counts the frequency of wakeup sources */
+	uint32_t total_try_ticks;						 /* Total duration of time pm tries to make board sleep */
 };
 
 typedef struct pm_metric_s pm_metric_t;
@@ -64,9 +64,9 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("              DOMAIN              | TOTAL PM SUSPEND TIME [3] | TOTAL SLEEP BLOCKING TIME [4] \n");
 	pmdbg("----------------------------------|---------------------------|-------------------------------\n");
 	for (index = 0; index < n_domains; index++) {
-		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),\
-		((double)g_pm_metrics->domain_metrics.suspend_ticks[index]) * 100.0 / total_time, g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index],\
-		((double)g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
+		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
+			  ((double)g_pm_metrics->domain_metrics.suspend_ticks[index]) * 100.0 / total_time, g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index],
+			  ((double)g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
 	}
 	pmdbg("\n");
 	pmdbg("*[3] = total time pm domain was suspended.\n");
@@ -84,15 +84,15 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("\n");
 	pmdbg(" BOARD STATE | PM STATE |          TIME          \n");
 	pmdbg("-------------|----------|------------------------\n");
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "WAKEUP", "NORMAL", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[0]),\
-		((double)g_pm_metrics->state_metrics.state_accum_ticks[0]) * 100.0 / total_time);
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "IDLE", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[1]),\
-		((double)g_pm_metrics->state_metrics.state_accum_ticks[1]) * 100.0 / total_time);
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "STANDBY", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[2]),\
-		((double)g_pm_metrics->state_metrics.state_accum_ticks[2]) * 100.0 / total_time);
+	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "WAKEUP", "NORMAL", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[0]),
+		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[0]) * 100.0 / total_time);
+	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "IDLE", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[1]),
+		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[1]) * 100.0 / total_time);
+	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "STANDBY", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[2]),
+		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[2]) * 100.0 / total_time);
 	pmdbg("-------------|----------|------------------------\n");
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", "SLEEP", TICK2MSEC(g_pm_metrics->board_sleep_ticks),\
-	((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
+	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", "SLEEP", TICK2MSEC(g_pm_metrics->board_sleep_ticks),
+		  ((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
 }
 /************************************************************************************
  * Public Functions
@@ -148,7 +148,7 @@ void pm_metrics_update_suspend(int domain_id)
  * Description:
  *   This function is called inside pm_resume. Before resuming domain, it counts
  *   amount of time (in ticks) the given domain was suspended.
- * 
+ *
  * Input parameters:
  *   domain_id - the ID of domain registered with PM.
  *
@@ -169,7 +169,7 @@ void pm_metrics_update_resume(int domain_id)
  * Description:
  *   This function is called inside pm_idle. It counts the frequency of domain, which
  *   make board unable to go into sleep during idle cpu time.
- * 
+ *
  * Input parameters:
  *   None
  *
@@ -196,7 +196,7 @@ void pm_metrics_update_idle(void)
  * Description:
  *   This function is called inside pm_changestate. Before changing state, it counts
  *   amount of time (in ticks) was in that state.
- * 
+ *
  * Input parameters:
  *   None
  *
@@ -221,7 +221,7 @@ void pm_metrics_update_changestate(void)
  *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
  *   sources, which are waking up the board. It also checks the amount of time board
  *   was in sleep.
- * 
+ *
  * Input parameters:
  *   missing_tick - the amount of time the board was in sleep.
  *   wakeup_src   - the wakeup reason code.

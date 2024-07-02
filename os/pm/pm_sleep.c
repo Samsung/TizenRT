@@ -76,7 +76,7 @@
 static void pm_timer_callback(int argc, uint32_t sem)
 {
 	/* As the timer is expired, give back the semaphore to unlock the thread */
-	sem_post((sem_t*)sem);
+	sem_post((sem_t *)sem);
 }
 
 /************************************************************************
@@ -84,13 +84,13 @@ static void pm_timer_callback(int argc, uint32_t sem)
  *
  * Description:
  *   This function allows the board to sleep for given time interval.
- *   When this function is called, it is expected that board will sleep for 
- *   given duration of time. But for some cases board might not go 
+ *   When this function is called, it is expected that board will sleep for
+ *   given duration of time. But for some cases board might not go
  *   to sleep instantly if :
  * 	1. system is in pm lock (pm state transition is locked)
  *      2. Other threads(other than idle) are running
  *      3. NORMAL to SLEEP state threshold time is large
- * 
+ *
  * Parameters:
  *   milliseconds - expected board sleep duration
  *

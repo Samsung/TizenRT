@@ -118,4 +118,4 @@ errout:
 	leave_critical_section(flags);
 	return ret;
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

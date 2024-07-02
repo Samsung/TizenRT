@@ -95,21 +95,21 @@
  */
 
 struct power_dir_s {
-	struct procfs_dir_priv_s base;	/* Base directory private data */
+	struct procfs_dir_priv_s base; /* Base directory private data */
 	uint8_t direntry;
 };
 
 /* This structure describes one open "file" */
 struct power_file_s {
-	struct procfs_file_s base;	/* Base open file structure */
-	struct power_dir_s dir;		/* Reference to item being accessed */
+	struct procfs_file_s base;     /* Base open file structure */
+	struct power_dir_s dir;	       /* Reference to item being accessed */
 	uint16_t offset;
 };
 
 struct power_procfs_entry_s {
-	const char *name;			/* Name of the directory entry */
-	size_t(*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
-	size_t(*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+	const char *name;              /* Name of the directory entry */
+	size_t (*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
+	size_t (*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 	uint8_t type;
 };
 
@@ -169,19 +169,19 @@ static const uint8_t g_power_statescount = sizeof(g_power_states) / sizeof(g_pow
  */
 
 const struct procfs_operations power_procfsoperations = {
-	power_open,				/* open */
-	power_close,				/* close */
-	power_read,				/* read */
-	power_write,				/* write */
+	power_open,	     /* open */
+	power_close,     /* close */
+	power_read,	     /* read */
+	power_write,     /* write */
 
-	power_dup,				/* dup */
+	power_dup,       /* dup */
 
-	power_opendir,				/* opendir */
-	power_closedir,				/* closedir */
-	power_readdir,				/* readdir */
-	power_rewinddir,			/* rewinddir */
+	power_opendir,	 /* opendir */
+	power_closedir,	 /* closedir */
+	power_readdir,	 /* readdir */
+	power_rewinddir, /* rewinddir */
 
-	power_stat				/* stat */
+	power_stat       /* stat */
 };
 
 /****************************************************************************
@@ -671,6 +671,5 @@ static int power_stat(const char *relpath, struct stat *buf)
 
 	return ret;
 }
-#endif							/* !CONFIG_DISABLE_MOUNTPOINT && CONFIG_FS_PROCFS */
-#endif							/* CONFIG_PM && !CONFIG_FS_PROCFS_EXCLUDE_POWER */
-
+#endif /* !CONFIG_DISABLE_MOUNTPOINT && CONFIG_FS_PROCFS */
+#endif /* CONFIG_PM && !CONFIG_FS_PROCFS_EXCLUDE_POWER */
