@@ -108,6 +108,9 @@ int pm_resume(int domain_id)
 		set_errno(ERANGE);
 		goto errout;
 	}
+#ifdef CONFIG_PM_METRICS
+	pm_metrics_update_resume(domain_id);
+#endif
 	g_pmglobals.suspend_count[domain_id]--;
 errout:
 	leave_critical_section(flags);

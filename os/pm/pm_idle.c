@@ -96,6 +96,9 @@ void pm_idle(void)
 #endif
 	up_pm_board_sleep(pm_wakehandler);
 EXIT:
+#ifdef CONFIG_PM_METRICS
+	pm_metrics_update_idle();
+#endif
 	leave_critical_section(flags);
 }
 

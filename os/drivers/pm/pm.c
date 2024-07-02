@@ -84,6 +84,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_SLEEP, arg should be an int.(user should input time in millisecond)
  *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t 
  *   for PMIOC_DOMAIN_REGISTER, arg should be a pointer to pm_domain_arg_t
+ *   for PMIOC_METRICS, arg should be an int type.
  *   for PMIOC_TUNEFREQ, arg should be an int type.
  *
  * Description:
@@ -129,6 +130,11 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 		break;
+#ifdef CONFIG_PM_METRICS
+	case PMIOC_METRICS:
+		ret = pm_metrics((int)arg);
+		break;
+#endif
 #ifdef CONFIG_PM_DVFS
         case PMIOC_TUNEFREQ:
         	pm_dvfs(arg);

@@ -142,10 +142,6 @@ struct pm_global_s {
 	uint8_t state;
 	uint8_t recommended;
 
-	/* History of state changes */
-#ifdef CONFIG_PM_METRICS
-	sq_queue_t history;
-#endif
 	/* stime - The time (in ticks) at the start of the current time slice */
 
 	clock_t stime;
@@ -216,6 +212,110 @@ int pm_set_wakeup_timer(void);
  ****************************************************************************/
 #ifdef CONFIG_PM_TICKSUPPRESS
 void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+#endif
+
+#ifdef CONFIG_PM_METRICS
+/****************************************************************************
+ * Name: pm_metrics_update_domain
+ *
+ * Description:
+ *   This function is called when new domain got registered during pm_monitoring
+ *   or during pm_metrics initialization. It initialize the PM Metrics for given
+ *   domain.
+ *
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_domain(int domain_id);
+
+/****************************************************************************
+ * Name: pm_metrics_update_suspend
+ *
+ * Description:
+ *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
+ *   suspended domain.
+ *
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_suspend(int domain_id);
+
+/****************************************************************************
+ * Name: pm_metrics_update_resume
+ *
+ * Description:
+ *   This function is called inside pm_resume. Before resuming domain, it counts
+ *   amount of time (in ticks) the given domain was suspended.
+ * 
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_resume(int domain_id);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_changestate
+ *
+ * Description:
+ *   This function is called inside pm_changestate. Before changing state, it counts
+ *   amount of time (in ticks) was in that state.
+ * 
+ * Input parameters:
+ *   None
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_changestate(void);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_idle
+ *
+ * Description:
+ *   This function is called inside pm_idle. It counts the frequency of domain, which
+ *   make board unable to go into sleep during idle cpu time.
+ * 
+ * Input parameters:
+ *   None
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_idle(void);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_wakehandler
+ *
+ * Description:
+ *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
+ *   sources, which are waking up the board. It also checks the amount of time board
+ *   was in sleep.
+ * 
+ * Input parameters:
+ *   missing_tick - the amount of time the board was in sleep.
+ *   wakeup_src   - the wakeup reason code.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 #endif
 
 #undef EXTERN

@@ -55,7 +55,9 @@
 void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 {
 	irqstate_t flags = enter_critical_section();
-
+#ifdef CONFIG_PM_METRICS
+	pm_metrics_update_wakehandler(missing_tick, wakeup_src);
+#endif
 	pmllvdbg("wakeup source code = %d\n", wakeup_src);
 	pmllvdbg("missing_tick: %llu\n", missing_tick);
 
@@ -67,6 +69,5 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 	/* After wakeup change PM State to STANDBY and reset the time slice */
 	pm_changestate(PM_STANDBY);
 	g_pmglobals.stime = clock_systimer();
-
 	leave_critical_section(flags);
 }

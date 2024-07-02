@@ -18,14 +18,7 @@ menuconfig PM_METRICS
 	bool "Power management (PM) metrics"
 	default n
 	---help---
-		Power management's metrics for CONFIG_PM_METRICS_DURATION
-
-if PM_METRICS
-
-config PM_METRICS_DURATION
-	int "History Duration (secs)"
-	default 60
-endif
+		Power management's metrics
 
 config PM_SLICEMS
 	int "PM time slice (msec)"

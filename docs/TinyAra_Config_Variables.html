@@ -2626,7 +2626,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_PM_TEST">1.13.3 <code>CONFIG_PM_TEST</code>: Power Management Functionality Test</a></li>
 <li><a href="#CONFIG_PM_DEVNAME_LEN">1.13.4 <code>CONFIG_PM_DEVNAME_LEN</code>: Registered device name length</a></li>
 <li><a href="#CONFIG_PM_METRICS">1.13.5 <code>CONFIG_PM_METRICS</code>: Power management (PM) metrics</a></li>
-<li><a href="#CONFIG_PM_METRICS_DURATION">1.13.6 <code>CONFIG_PM_METRICS_DURATION</code>: History Duration (secs)</a></li>
 <li><a href="#CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></li>
 <li><a href="#CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></li>
 <li><a href="#CONFIG_PM_MEMORY">1.13.9 <code>CONFIG_PM_MEMORY</code>: PM memory (msec)</a></li>
@@ -33049,19 +33048,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   </li>
   <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
   <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  Power management&apos;s metrics for CONFIG_PM_METRICS_DURATION</p>
-</ul>
-<h3><a name="CONFIG_PM_METRICS_DURATION">1.13.6 <code>CONFIG_PM_METRICS_DURATION</code>: History Duration (secs)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 60
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a>, <a href="#CONFIG_PM_METRICS"><code>CONFIG_PM_METRICS</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-</ul>
 <h3><a name="CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
