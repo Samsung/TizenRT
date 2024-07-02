@@ -115,16 +115,6 @@ void up_initialize(void)
 
 	up_irqinitialize();
 
-#ifdef CONFIG_PM
-  /* Initialize the power management subsystem.  This MCU-specific function
-   * must be called *very* early in the initialization sequence *before* any
-   * other device drivers are initialized (since they may attempt to register
-   * with the power management subsystem).
-   */
-
-  arm_pminitialize();
-#endif
-
 #ifdef CONFIG_ARCH_DMA
   /* Initialize the DMA subsystem if the weak function arm_dma_initialize has
    * been brought into the build

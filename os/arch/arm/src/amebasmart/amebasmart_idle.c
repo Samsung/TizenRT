@@ -174,11 +174,3 @@ void up_idle(void)
 
 #endif
 }
-
-#ifdef CONFIG_PM
-void arm_pminitialize(void)
-{
-	/* Then initialize the TinyAra power management subsystem properly */
-	pm_initialize();
-}
-#endif

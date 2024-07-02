@@ -142,16 +142,6 @@ void up_initialize(void)
 
 	xtensa_irq_initialize();
 
-#ifdef CONFIG_PM
-	/* Initialize the power management subsystem.  This MCU-specific function
-	 * must be called *very* early in the initialization sequence *before* any
-	 * other device drivers are initialized (since they may attempt to register
-	 * with the power management subsystem).
-	 */
-
-	up_pminitialize();
-#endif
-
 #ifdef CONFIG_ARCH_DMA
 	/* Initialize the DMA subsystem if the weak function xtensa_dma_initialize
 	 * has been brought into the build
