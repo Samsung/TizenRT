@@ -58,7 +58,6 @@ void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 {
 	uint32_t xModifiableIdleTime = 0;
 	irqstate_t flags;
-	int ret;
 	/* TODO: When enabling SMP, PM state coherency should be verified for 
 		primary and secondary cores. Each of the cores has it's own idle task,
 		need to make sure both cores handle their responsibilities correctly,
@@ -66,57 +65,11 @@ void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 		the secondary core state before going to sleep
 	*/
 	if (up_cpu_index() == 0) {
-#ifdef CONFIG_SMP
-/* For CPU_RUNNING case 
-CPU_RUNNING:
-Send SGI for core 1 to do task migration and shut down, we will expect that to be handled
-nicely before the next cycle of core 0 reaches
-*/
-RESLEEP_1:
-#endif
 		/* mask sys tick interrupt*/
 		arm_arch_timer_int_mask(1);
 		up_timer_disable();
 		flags = irqsave();
-		/* TODO: If there is an interrupt happening here, what do we expect to happen?
-			If it is one of the wakeup sources, it will recognized but will not be serviced
-			If it is not one of the wakeup sources, it will not be recognized at all
-		*/
-#ifdef CONFIG_SMP
-/* For CPU_WAKE_FROM_SLEEP case 
-CPU_WAKE_FROM_SLEEP:
-Theoretically, we will not expect PM state to drop to sleep again in such short time span
-(ie. The time interval between core0 trigger core 1 to wakeup)
-But in case that happens, we have to introduce some strategy to handle that
-*/
-RESLEEP_2:
-#endif
 		if (tizenrt_ready_to_sleep()) {
-#ifdef CONFIG_SMP
-			/*PG flow */
-			if (pmu_get_sleep_type() == SLEEP_PG) {
-				/* CPU1 is in task schedular, tell CPU1 to enter hotplug */
-				if (up_get_secondary_cpu_state(1) == CPU_RUNNING) {
-					/* CPU1 may in WFI idle state. Wake it up to enter hotplug itself */
-					up_irq_enable();
-					arm_cpu_sgi(GIC_IRQ_SGI4, (1 << 1));
-					arm_arch_timer_int_mask(0);
-					up_timer_enable();
-					DelayUs(100);
-					goto RESLEEP_1;
-				}
-				/* CPU1 just come back from pg, so can't sleep here */
-				if (up_get_secondary_cpu_state(1) == CPU_WAKE_FROM_SLEEP) {
-					pmdbg("Secondary core just woke from PG sleep!\n");
-					goto RESLEEP_2;
-				}
-				/* CG flow */
-			} else {
-				if (!check_wfi_state(1)) {
-					goto EXIT;
-				}
-			}
-#endif
 			/* Interrupt source will wake cpu up, just leave expected idle time as 0
 			Enter sleep mode for AP */
 			configPRE_SLEEP_PROCESSING(xModifiableIdleTime, handler);
@@ -128,17 +81,7 @@ RESLEEP_2:
 			}
 			arm_arch_timer_int_mask(0);
 			configPOST_SLEEP_PROCESSING(xModifiableIdleTime);
-		}
-		else {
-			/* power saving when idle*/
-			arm_arch_timer_int_mask(0);
-			__asm(" DSB");
-			__asm(" WFI");
-			__asm(" ISB");
-		}
-#ifdef CONFIG_SMP
-EXIT:
-#endif				
+		} 	
 		/* Re-enable interrupts and sys tick*/
 		up_irq_enable();
 	}

@@ -1984,7 +1984,7 @@ int up_cpu_paused(int cpu);
  *   state of the task at the head of the g_assignedtasks[cpu] list, and
  *   resume normal tasking.
  *
- *   This function is called after up_cpu_pause in order ot resume operation
+ *   This function is called after up_cpu_pause in order to resume operation
  *   of the CPU after modifying its g_assignedtasks[cpu] list.
  *
  * Input Parameters:
@@ -2000,6 +2000,46 @@ int up_cpu_paused(int cpu);
  ****************************************************************************/
 
 int up_cpu_resume(int cpu);
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_cpu_hotplug
+ *
+ * Description:
+ *   Send signal for target CPU to enter hotplug mode.
+ *
+ *   This function is called after up_cpu_pause in order to ensure
+ *   the target CPU enter hotplug when executing idle thread
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being hotplug.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_pause() must have
+ *   previously been called within the same critical section. This
+ *   function should only be called by primary core which conducts PM logic.
+ *
+ ****************************************************************************/
+void up_cpu_hotplug(int cpu);
+#endif /* CONFIG_PM */
+
+/****************************************************************************
+ * Name: up_cpu_gating
+ *
+ * Description:
+ *   Send signal for target CPU to enter gating.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being gated.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void up_cpu_gating(int cpu);
 #endif /* CONFIG_SMP */
 
 /****************************************************************************
