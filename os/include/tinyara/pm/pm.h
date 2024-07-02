@@ -553,21 +553,6 @@ enum pm_state_e pm_checkstate(void);
 
 int pm_changestate(enum pm_state_e newstate);
 
-/****************************************************************************
- * Name: pm_querystate
- *
- * Description:
- *   This function returns the current power management state.
- *
- * Input Parameters:
- *
- * Returned Value:
- *   The current power management state.
- *
- ****************************************************************************/
-
-enum pm_state_e pm_querystate(void);
-
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
  * Name: pm_dvfs
@@ -615,7 +600,6 @@ void pm_dvfs(int div_lvl);
 #define pm_timedsuspend(domain_id, milliseconds)	(0)
 #define pm_checkstate()         (0)
 #define pm_changestate(state)   (0)
-#define pm_querystate()         (0)
 
 #endif							/* CONFIG_PM */
 

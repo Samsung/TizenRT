@@ -140,11 +140,9 @@ struct pm_global_s {
 
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
-	 * recommended - The recommended state based on the PM algorithm.
 	 */
 
 	uint8_t state;
-	uint8_t recommended;
 
 	/* History of state changes */
 #ifdef CONFIG_PM_METRICS
@@ -153,10 +151,6 @@ struct pm_global_s {
 	/* stime - The time (in ticks) at the start of the current time slice */
 
 	clock_t stime;
-
-	/* btime - The time (in ticks) at the start of the current state */
-
-	clock_t btime;
 
 	/* Timer to decrease state */
 
@@ -182,23 +176,6 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
-/****************************************************************************
- * Name: pm_set_wakeup_timer
- *
- * Description:
- *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pm_timer_activelist with the
- *   required delay.(delay should be positive)
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   0 - system can go to sleep
- *   -1 - system should not go to sleep
- *
- ****************************************************************************/
-int pm_set_wakeup_timer(void);
 
 /****************************************************************************
  * Name: pm_wakehandler
