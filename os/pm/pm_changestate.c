@@ -230,16 +230,16 @@ int pm_changestate(enum pm_state_e newstate)
 		ret = pm_prepall(newstate);
 		if (ret != OK) {
 			/* One or more drivers is not ready for this state change.  Revert to
-			* the preceding state.
-			*/
+			 * the preceding state.
+			 */
 
 			g_pmglobals.recommended = g_pmglobals.state;
 			g_pmglobals.btime = clock_systimer();
 			goto EXIT;
 		}
 		/* All drivers have agreed to the state change (or, one or more have
-		* disagreed and the state has been reverted).  Set the new state.
-		*/
+		 * disagreed and the state has been reverted).  Set the new state.
+		 */
 		pm_changeall(newstate);
 		g_pmglobals.state = newstate;
 	}
@@ -267,4 +267,4 @@ enum pm_state_e pm_querystate(void)
 	return g_pmglobals.state;
 }
 
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

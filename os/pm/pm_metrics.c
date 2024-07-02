@@ -30,7 +30,6 @@ time_t time_diff(time_t time1, time_t time2)
 	} else {
 		return time2 - time1;
 	}
-
 }
 
 void pm_prune_history(sq_queue_t *q)

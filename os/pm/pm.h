@@ -77,7 +77,6 @@
 #define pm_alloc(num, size) calloc(num, size)
 #endif
 
-
 /* CONFIG_PM_MIN_WAKEUP_TICKS. The power management module make board sleep & wakeup. After board wakeup,
 	it is required to perform post sleep processing and restore the CPU state.
 	During CPU restoration the board should not sleep again, for that we keep
@@ -86,7 +85,7 @@
  */
 
 #ifndef CONFIG_PM_MIN_WAKEUP_TICKS
-#define CONFIG_PM_MIN_WAKEUP_TICKS  100	/* Default is 100 ticks */
+#define CONFIG_PM_MIN_WAKEUP_TICKS 100 /* Default is 100 ticks */
 #endif
 
 #if CONFIG_PM_MIN_WAKEUP_TICKS < 1
@@ -103,7 +102,7 @@
  *
  ****************************************************************************/
 
-#define pm_lock()	sem_wait(&g_pmglobals.regsem);
+#define pm_lock() sem_wait(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Name: pm_unlock
@@ -113,7 +112,7 @@
  *
  ****************************************************************************/
 
-#define pm_unlock()	sem_post(&g_pmglobals.regsem);
+#define pm_unlock() sem_post(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Public Types
@@ -190,7 +189,7 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
  *   This function is called just before sleep to start the required PM wake up
  *   timer. It will start the first timer from the g_pm_timer_activelist with the
  *   required delay.(delay should be positive)
- * 
+ *
  * Input Parameters:
  *   None
  *
@@ -228,5 +227,5 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 }
 #endif
 
-#endif							/* CONFIG_PM */
-#endif							/* #define __DRIVERS_POWER_PM_H */
+#endif /* CONFIG_PM */
+#endif /* #define __DRIVERS_POWER_PM_H */

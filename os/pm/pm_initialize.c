@@ -79,7 +79,6 @@
 
 struct pm_global_s g_pmglobals;
 
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -136,6 +135,5 @@ void pm_initialize(void)
 
 	sq_addlast((&initnode->entry), &g_pmglobals.history);
 #endif
-
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */
