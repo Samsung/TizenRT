@@ -310,9 +310,7 @@ static inline void os_do_appstart(void)
 	compress_register();
 #endif
 
-#ifdef CONFIG_PM
 	pm_driver_register();
-#endif
 
 #ifdef CONFIG_PRODCONFIG
 	prodconfig_register();
