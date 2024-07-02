@@ -191,7 +191,7 @@ static wifi_manager_result_e _wt_connect(void *arg)
 	return res;
 }
 
-static void _wt_disconnect()
+static void _wt_disconnect(void)
 {
 	WT_ENTER;
 	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;

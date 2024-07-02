@@ -1223,7 +1223,7 @@ void vTaskDelay(int ms)
 
 int rtw_printf(const char *format,...)
 {
-	va_list ap;
+	__attribute__ ((unused)) va_list ap;
 	int ret = 0;
 #ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
 	va_start(ap, format);
