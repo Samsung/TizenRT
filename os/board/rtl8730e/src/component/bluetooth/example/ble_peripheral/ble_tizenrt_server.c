@@ -399,6 +399,18 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     return conn_handle;
 }
 
+trble_result_e rtw_ble_server_set_device_name(uint8_t* name)
+{
+    if(RTK_BT_OK == rtk_bt_le_gap_set_device_name(name))
+    {
+        debug_print("Set device name success \n");
+    } else {
+        debug_print("Set device name fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
 trble_result_e rtw_ble_server_adv_into_idle(void)
 {
     rtk_bt_le_gap_dev_state_t new_state;
