@@ -243,6 +243,11 @@ int pm_changestate(enum pm_state_e newstate)
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_changestate();
 #endif
+#ifdef CONFIG_LCD
+	if ((g_pmglobals.state != PM_STANDBY || newstate != PM_SLEEP) && (g_pmglobals.state != PM_SLEEP || newstate != PM_STANDBY)) {
+		(void)pm_lcd_change_backlight();
+	} 
+#endif
 		g_pmglobals.state = newstate;
 	}
 EXIT:

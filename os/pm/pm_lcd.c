@@ -15,18 +15,21 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <queue.h>
 #include <assert.h>
+#include <time.h>
+#include <debug.h>
 #include <tinyara/pm/pm.h>
-#include <tinyara/clock.h>
 #include <tinyara/irq.h>
-#include <tinyara/arch.h>
-
+#include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/wqueue.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include "pm.h"
 
 #ifdef CONFIG_PM
@@ -35,75 +38,63 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define LCD_DEVPATH "/dev/lcd0"
+
 /****************************************************************************
- * Private Variables
+ * Private Variable
  ****************************************************************************/
 
-static clock_t stime;
+static struct work_s pm_lcd_worker;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static int pm_lcd_get_power(void)
+{
+	int power = 0;
+	if (g_pmglobals.state == PM_NORMAL) {
+		power = CONFIG_LCD_NORMAL_POWER;
+	} else if (g_pmglobals.state == PM_IDLE) {
+		power = CONFIG_LCD_IDLE_POWER;
+	}
+	return power;
+}
 
+static void pm_lcd_set_power(void *arg)
+{
+	int fd;
+	/* Change LCD Power */
+	fd = open(LCD_DEVPATH, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		pmdbg("Unable to open LCD Driver\n");
+		return;
+	}
+	if (ioctl(fd, LCDDEVIO_SETPOWER, pm_lcd_get_power()) != OK) {
+		pmdbg("Unable to change LCD Power\n");
+	}
+	close(fd);
+}
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_idle
+ * Name: pm_lcd_change_backlight
  *
  * Description:
- *   This function is called by IDLE thread to make board sleep. This function
- *   also allow to set wake up timer & handler and do all the PM pre processing
- *   required before going to sleep.
+ *   It create work queue to change LCD backlight. Since we can't change LCD
+ *   Backlight in ISR, we need work-queue to facilitate it.
  *
- * Input Parameters:
+ * Input parameters:
  *   None
  *
  * Returned Value:
- *   None
+ *   Zero on success, a negative errno on failure
  *
  ****************************************************************************/
-
-void pm_idle(void)
+int pm_lcd_change_backlight(void)
 {
-	irqstate_t flags;
-	clock_t now;
-#ifdef CONFIG_PM_TIMEDWAKEUP
-	clock_t delay;
-#endif
-	flags = enter_critical_section();
-	now = clock_systimer();
-	/* We need to check and change PM state transition only if one tick time has been passed,
-	 * because state transition only happens when CPU receive TICK INTERRUPT. So checking pm state
-	 * multiple times within one tick is waste of CPU clocks and we should avoid it.
-	 */
-	if ((now - stime) >= 1) {
-		stime = now;
-#ifdef CONFIG_PM_METRICS
-		pm_metrics_update_idle();
-#endif
-		/* If current state is not good to go sleep then do core power saving*/
-		if (g_pmglobals.state != PM_SLEEP) {
-			goto EXIT;
-		}
-#ifdef CONFIG_PM_TIMEDWAKEUP
-		/* set wakeup timer */
-		delay = wd_getwakeupdelay();
-		if (delay > 0) {
-			if (delay < CONFIG_PM_MIN_SLEEP_TIME) {
-				pmvdbg("Minimum sleep time should be %d\n", CONFIG_PM_MIN_SLEEP_TIME);
-				goto EXIT;
-			} else {
-				pmvdbg("Setting timer and board will wake up after %d millisecond\n", delay);
-				up_set_pm_timer(TICK2USEC(delay));
-			}
-		}
-#endif
-		up_pm_board_sleep(pm_wakehandler);
-	}
-EXIT:
-	leave_critical_section(flags);
+	return work_queue(HPWORK, &pm_lcd_worker, pm_lcd_set_power, (void *)0, 0);
 }
 
 #endif /* CONFIG_PM */

@@ -100,51 +100,28 @@
 
 enum pm_state_e pm_checkstate(void)
 {
-	clock_t now;
 	irqstate_t flags;
 	int index;
-
-	/* Check for the end of the current time slice.  This must be performed
-	 * with interrupts disabled so that it does not conflict with the similar
-	 * logic in pm_activity().
-	 */
-
 	flags = enter_critical_section();
 	g_pmglobals.recommended = PM_STANDBY;
-
-	/* Check the elapsed time.  In periods of low activity, time slicing is
-	 * controlled by IDLE loop polling; in periods of higher activity, time
-	 * slicing is controlled by driver activity.  In either case, the duration
-	 * of the time slice is only approximate; during times of heavy activity,
-	 * time slices may be become longer and the activity level may be over-
-	 * estimated.
-	 */
-
-	now = clock_systimer();
-	if (now - g_pmglobals.stime >= TIME_SLICE_TICKS) {
-
-		/* Reset the time and recommended board to sleep.
-		 * This is an atomic operation because interrupts are still disabled.
-		 */
-
-		g_pmglobals.stime = now;
-		g_pmglobals.recommended = PM_SLEEP;
-
-	}
-
 	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
 	if (g_pmglobals.suspend_count[PM_IDLE_DOMAIN] || g_pmglobals.suspend_count[PM_LCD_DOMAIN]) {
 		g_pmglobals.recommended = PM_NORMAL;
+	} else if (g_pmglobals.state == PM_NORMAL) {
+		g_pmglobals.recommended = PM_IDLE;
+	} else if (g_pmglobals.state == PM_IDLE) {
+		g_pmglobals.recommended = PM_STANDBY;
 	} else {
 		/* Consider the possible power state lock here */
 		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
 			if (g_pmglobals.suspend_count[index] != 0) {
 				g_pmglobals.recommended = PM_STANDBY;
-				break;
+				goto EXIT;
 			}
 		}
+		g_pmglobals.recommended = PM_SLEEP;
 	}
-
+EXIT:
 	leave_critical_section(flags);
 	return g_pmglobals.recommended;
 }
