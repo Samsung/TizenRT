@@ -70,12 +70,14 @@ static reboot_reason_code_t reboot_reason;
 static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 {
 	u32 boot_reason = 0;
+	u32 boot_reason_reg2 = 0;
 
 	/* Read the same backup register for the boot reason */
 	boot_reason = BKUP_Read(BKUP_REG1);
+	boot_reason_reg2 = BKUP_Read(BKUP_REG2);
 
 	if ((boot_reason != REBOOT_REASON_INITIALIZED) && (boot_reason != 0)) {
-		if (BKUP_Read(BKUP_REG2) == 0x1) {
+		if (boot_reason_reg2 == 0x1) {
 			BKUP_Write(BKUP_REG2, 0);
 			boot_reason = REBOOT_SYSTEM_NP_LP_FAULT;
 		}
@@ -89,9 +91,24 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 			return REBOOT_SYSTEM_HW_RESET;
 		}
 
-		/* KM4 or KM0 WDT reset */
-		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG3) || (boot_reason & AON_BIT_RSTF_WDG2) || (boot_reason & AON_BIT_RSTF_WDG1) || (boot_reason & AON_BIT_RSTF_IWDG) ) {
-			return REBOOT_SYSTEM_WATCHDOG;
+		/* CA32:WDG4 or KM4:WDG2 or KM0:IWDG NonSecure WDG reset */
+		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG2) || (boot_reason & AON_BIT_RSTF_IWDG)) {
+			/* CA32 Secure ATF doesn't have OS, no implementation for CA32 Secure Watchdog WDG3
+			 * When CA32 occurred Secure Fault, it will rely on CA32 NonSecure WDG4 to Reset
+			 * BKUP_REG2 is use to distinguish whether the fault originated from the CA32 S or NS */
+
+			 /* CA32:WDG3 Secure WDG reset */
+			if (boot_reason_reg2 & AON_BIT_RSTF_WDG3) {
+				return REBOOT_SYSTEM_TZWD_RESET;
+			}
+			else {
+				return REBOOT_SYSTEM_WATCHDOG;
+			}
+		}
+
+		/* KM4:WDG1 Secure WDG reset */
+		else if (boot_reason & AON_BIT_RSTF_WDG1) {
+			return REBOOT_SYSTEM_TZWD_RESET;
 		}
 
 		/* KM4 deep sleep handled by KM0 (KM4 sleep + KM0 tickless, KM4 deep sleep + KM0 deep sleep AON) */
@@ -99,7 +116,7 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 			return REBOOT_SYSTEM_DSLP_RESET;
 		}
 
-		/* KM4 or KM0 System reset */
+		/* CA32:AP or KM4:NP or KM0:LP System reset */
 		else if ((boot_reason & AON_BIT_RSTF_APSYS) || (boot_reason & AON_BIT_RSTF_NPSYS) || (boot_reason & AON_BIT_RSTF_LPSYS)) {
 			return REBOOT_SYSTEM_SYS_RESET_CORE;
 		}
