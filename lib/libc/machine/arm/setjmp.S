@@ -60,11 +60,6 @@
 /****************************************************************************
  * Public Symbols
  ****************************************************************************/
-#ifdef CONFIG_ARCH_FPU
-	.cpu	cortex-r4
-#else
-	.cpu	cortex-r4f
-#endif
 
 	.syntax	unified
 	.file	"setjmp.S"
