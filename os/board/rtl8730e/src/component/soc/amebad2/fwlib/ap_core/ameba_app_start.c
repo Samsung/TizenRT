@@ -111,7 +111,7 @@ void app_start(void)
 	RTK_LOG_MASK(LEVEL_ERROR, 0xFFFFFFFF);
 
 	os_heap_init();
-
+	pinmap_init();
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 #if defined (__GNUC__)
 	extern void __libc_init_array(void);

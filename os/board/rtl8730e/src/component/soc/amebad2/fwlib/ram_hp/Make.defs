@@ -52,6 +52,7 @@
 CSRCS += ameba_sport.c \
 	ameba_audio_clock.c \
 	ameba_system.c \
+	ameba_pinmap.c \
 
 ifeq ($(CONFIG_AMEBASMART_MIPI),y)
 CSRCS += ameba_mipi.c \
