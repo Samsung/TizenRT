@@ -36,7 +36,7 @@ modes = (
 	("CallStackLog",4),
 )
 
-g_elfpath = "../../build/output/bin/tinyara"
+g_elfpath = "../../../build/output/bin/tinyara"
 file_data = 'HeapInfo'
 
 class PathFrame(Frame):
