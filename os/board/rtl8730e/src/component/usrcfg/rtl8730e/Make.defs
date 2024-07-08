@@ -52,7 +52,8 @@
 CSRCS += ameba_intfcfg.c \
 	 ameba_sleepcfg.c \
 	 ameba_wificfg.c \
-	 ameba_flashcfg.c 
+	 ameba_flashcfg.c \
+	 ameba_pinmapcfg.c \
 	 #ameba_wifi_power_table_usrcfg.c
 
 DEPPATH += --dep-path component/usrcfg/rtl8730e/

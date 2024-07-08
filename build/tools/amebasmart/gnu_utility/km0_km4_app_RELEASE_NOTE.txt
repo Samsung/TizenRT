@@ -1,4 +1,6 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
+== version 53c14e1b91_2024/07/08-14:18:57 ==
+1. Move pinmap_init from KM4 to AP to avoid timing issue
 
 == version 070536098d 2024/06/26-15:34:07 ==
 1. Fix KM4 crash when stopping wifi csi
