@@ -144,7 +144,7 @@ typedef struct jedec_geometry_info_s jedec_geometry_t;
 /* Update this list for new spi based flash */
 jedec_geometry_t g_jedec_device_info_list[] = {
 	{0xA1, 0x28, 0x16, "Fudan", "4MB", 16, 64, 8, 16384, 12},
-	{0xA1, 0x28, 0x19, "Fudan", "32MB", 16, 512, 8, 131072, 12},
+	{0xA1, 0x40, 0x19, "Fudan", "32MB", 16, 512, 8, 131072, 12},
 	{0xEF, 0x40, 0x16, "Winbond", "4MB", 16, 64, 8, 16384, 12},
 	{0xEF, 0x40, 0x17, "Winbond", "8MB", 16, 128, 8, 32768, 12},
 	{0xEF, 0x40, 0x19, "Winbond", "32MB", 16, 512, 8, 131072, 12},
