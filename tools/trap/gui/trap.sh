@@ -20,7 +20,7 @@
 # Description : RAM and USerfs extraction util
 
 # Output PATH
-BUILD_BIN_PATH=../../build/output/bin
+BUILD_BIN_PATH=../../../build/output/bin
 
 # Compile trap application
 gcc trap_utils.c trap.c -o trap

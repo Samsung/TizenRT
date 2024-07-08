@@ -24,7 +24,7 @@
  ****************************************************************************/
 
 #include "trap.h"
-#include "../../os/include/tinyara/config.h"
+#include "../../../os/include/tinyara/config.h"
 
 /****************************************************************************
  * Pre-processor Definitions
