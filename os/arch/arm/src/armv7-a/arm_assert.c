@@ -512,7 +512,7 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Assertion details\n");
 	lldbg_noarg("===========================================================\n");
-	lldbg("Assertion Failed CPU%d at file: %s line %d task: %s pid: %d\n", up_cpu_index(), filename, lineno, LOG_TASK_NAME, fault_tcb->pid);
+	lldbg("Assertion failed CPU%d at file: %s line %d task: %s pid: %d\n", up_cpu_index(), filename, lineno, LOG_TASK_NAME, fault_tcb->pid);
 	/* Print the extra arguments (if any) from ASSERT_INFO macro */
 	if (assert_info_str[0]) {
 		lldbg("%s\n", assert_info_str);
