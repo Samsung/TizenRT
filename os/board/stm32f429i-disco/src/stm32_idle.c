@@ -104,154 +104,42 @@
  * Private Data
  ****************************************************************************/
 
-#if defined(CONFIG_PM) && defined(CONFIG_RTC_ALARM)
-static void stm32_alarmcb(void);
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: stm32_idlepm
+ * Public Functions
+ ****************************************************************************/
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: up_pm_board_sleep
  *
  * Description:
  *   Perform IDLE state power management.
  *
+ * Input Parameters:
+ *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
+ *
+ * Returned Value:
+ *   None.
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static void stm32_idlepm(void)
+void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 {
-#ifdef CONFIG_RTC_ALARM
-	struct timespec alarmtime;
-#endif
-	static enum pm_state_e oldstate = PM_NORMAL;
-	enum pm_state_e newstate;
 	irqstate_t flags;
-	int ret;
-
-	/* Decide, which power saving level can be obtained */
-
-	newstate = pm_checkstate();
-
-	/* Check for state changes */
-
-	if (newstate != oldstate) {
-		sllvdbg("newstate= %d oldstate=%d\n", newstate, oldstate);
-
-		flags = irqsave();
-
-		/* Force the global state change */
-
-		ret = pm_changestate(newstate);
-		if (ret < 0) {
-			/* The new state change failed, revert to the preceding state */
-
-			(void)pm_changestate(oldstate);
-
-			/* No state change... */
-
-			goto errout;
-		}
-
-		/* Then perform board-specific, state-dependent logic here */
-
-		switch (newstate) {
-		case PM_NORMAL: {
-		}
-		break;
-
-		case PM_IDLE: {
-		}
-		break;
-
-		case PM_STANDBY: {
-#ifdef CONFIG_RTC_ALARM
-			/* Disable RTC Alarm interrupt */
-
-#warning "missing logic"
-
-			/* Configure the RTC alarm to Auto Wake the system */
-
-#warning "missing logic"
-
-			/* The tv_nsec value must not exceed 1,000,000,000. That
-			 * would be an invalid time.
-			 */
-
-#warning "missing logic"
-
-			/* Set the alarm */
-
-#warning "missing logic"
-#endif
-			/* Call the STM32 stop mode */
-
-			stm32_pmstop(true);
-
-			/* We have been re-awakened by some even:  A button press?
-			 * An alarm?  Cancel any pending alarm and resume the normal
-			 * operation.
-			 */
-
-#ifdef CONFIG_RTC_ALARM
-#warning "missing logic"
-#endif
-			/* Resume normal operation */
-
-			pm_changestate(PM_NORMAL);
-			newstate = PM_NORMAL;
-		}
-		break;
-
-		case PM_SLEEP: {
-			/* We should not return from standby mode.  The only way out
-			 * of standby is via the reset path.
-			 */
-
-			(void)stm32_pmstandby();
-		}
-		break;
-
-		default:
-			break;
-		}
-
-		/* Save the new state */
-
-		oldstate = newstate;
-
-errout:
-		irqrestore(flags);
-	}
+	flags = irqsave();
+	/* We should not return from standby mode.  The only way out
+	 * of standby is via the reset path.
+	 */
+	(void)stm32_pmstandby();
+	irqrestore(flags);
 }
 #else
 #define stm32_idlepm()
 #endif
-
-/************************************************************************************
- * Name: stm32_alarmcb
- *
- * Description:
- *    RTC alarm service routine
- *
- ************************************************************************************/
-
-#if defined(CONFIG_PM) && defined(CONFIG_RTC_ALARM)
-static void stm32_alarmcb(void)
-{
-	/* This alarm occurs because there wasn't any EXTI interrupt during the
-	 * PM_STANDBY period. So just go to sleep.
-	 */
-
-	pm_changestate(PM_SLEEP);
-}
-#endif
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Name: up_idle

@@ -92,20 +92,9 @@ int up_pmsleep(void)
 
   flags = irqsave();
   sched_lock();
-  if (pm_suspendcount(PM_IDLE_DOMAIN)) {
-    ret = -EAGAIN;
-    goto errout_lock;
-  }
-  ret = pm_changestate(PM_SLEEP);
-  if (ret < 0) {
-    goto errout;
-  }
   set_exti_button();
   (void)stm32l4_pmstop2();
-
   stm32l4_clockenable();
-errout:
-  pm_changestate(PM_NORMAL);
 errout_lock:
   sched_unlock();
   irqrestore(flags);

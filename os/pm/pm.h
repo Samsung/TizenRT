@@ -191,6 +191,68 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
 int pm_check_domain(int domain_id);
 
 /****************************************************************************
+ * Name: pm_checkstate
+ *
+ * Description:
+ *   This function is called from the MCU-specific IDLE loop to monitor the
+ *   the power management conditions.  This function returns the "recommended"
+ *   power management state based on the PM configuration and activity
+ *   reported in the last sampling periods.  The power management state is
+ *   not automatically changed, however.  The IDLE loop must call
+ *   pm_changestate() in order to make the state change.
+ *
+ *   These two steps are separated because the platform-specific IDLE loop may
+ *   have additional situational information that is not available to the
+ *   the PM sub-system.  For example, the IDLE loop may know that the
+ *   battery charge level is very low and may force lower power states
+ *   even if there is activity.
+ *
+ *   NOTE: That these two steps are separated in time and, hence, the IDLE
+ *   loop could be suspended for a long period of time between calling
+ *   pm_checkstate() and pm_changestate().  The IDLE loop may need to make
+ *   these calls atomic by either disabling interrupts until the state change
+ *   is completed.
+ *
+ * Input Parameters:
+ *   domain - The PM domain to check
+ *
+ * Returned Value:
+ *   The recommended power management state.
+ *
+ ****************************************************************************/
+
+enum pm_state_e pm_checkstate(void);
+
+/****************************************************************************
+ * Name: pm_changestate
+ *
+ * Description:
+ *   This function is used to platform-specific power management logic.  It
+ *   will announce the power management power management state change to all
+ *   drivers that have registered for power management event callbacks.
+ *
+ * Input Parameters:
+ *   newstate - Identifies the new PM state
+ *
+ * Returned Value:
+ *   0 (OK) means that the callback function for all registered drivers
+ *   returned OK (meaning that they accept the state change).  Non-zero
+ *   means that one of the drivers refused the state change.  In this case,
+ *   the system will revert to the preceding state.
+ *
+ * Assumptions:
+ *   It is assumed that interrupts are disabled when this function is
+ *   called.  This function is probably called from the IDLE loop... the
+ *   lowest priority task in the system.  Changing driver power management
+ *   states may result in renewed system activity and, as a result, can
+ *   suspend the IDLE thread before it completes the entire state change
+ *   unless interrupts are disabled throughout the state change.
+ *
+ ****************************************************************************/
+
+int pm_changestate(enum pm_state_e newstate);
+
+/****************************************************************************
  * Name: pm_wakehandler
  *
  * Description:
