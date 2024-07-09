@@ -469,14 +469,6 @@ void up_switchcontext(uint32_t *saveregs, uint32_t *restoreregs);
 
 void up_sigdeliver(void);
 
-/* Power management *********************************************************/
-
-#ifdef CONFIG_PM
-void up_pminitialize(void);
-#else
-#define up_pminitialize()
-#endif
-
 #if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33) || defined(CONFIG_ARCH_CORTEXM55)
 void up_systemreset(void) noreturn_function;
 #endif
