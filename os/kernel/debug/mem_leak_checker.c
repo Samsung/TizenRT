@@ -276,9 +276,10 @@ static struct mm_heap_s * init_mem_leak_checker(int checker_pid, char *bin_name)
 
 static void ram_check(struct mm_heap_s *heap, int checker_pid, char *bin_name, int *leak_cnt)
 {
-	struct mm_heap_s *kheap;
+	
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin_addr_info_t *info;
+	struct mm_heap_s *kheap;
 	int bin_idx;
 
 	info = (bin_addr_info_t *)get_bin_addr_list();
@@ -346,7 +347,7 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 					* based on the text addresses printed, user needs to check the
 					* corresponding binaries accordingly
 					*/
-					owner_addr = node->alloc_call_addr;
+					owner_addr = (uint32_t)node->alloc_call_addr;
 					pid_t pid = node->pid;
 					if (pid < 0) {
 						/* For stack allocated node, pid is negative value.

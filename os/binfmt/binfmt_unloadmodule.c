@@ -135,6 +135,7 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
+	int section_idx;
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
@@ -180,7 +181,7 @@ int unload_module(FAR struct binary_s *binp)
 			/* Each loading section is allocated respectively.
 			 * They need to be freed each.
 			 */
-			int section_idx;
+			
 			for (section_idx = 0; section_idx < BIN_MAX; section_idx++) {
 				if (binp->sections[section_idx]) {
 					binfo("Freeing sections[%d]: %p\n", section_idx, binp->sections[section_idx]);
@@ -189,15 +190,15 @@ int unload_module(FAR struct binary_s *binp)
 			}
 
 #endif
-			for (int section_idx = 0; section_idx < BIN_MAX; section_idx++) {
-				binp->sections[section_idx] = NULL;
+			for (section_idx = 0; section_idx < BIN_MAX; section_idx++) {
+				binp->sections[section_idx] = 0;
 			}
 		}
 #else
 		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
 		binfo("Freeing : %p\n", binp->sections[0]);
 		kmm_free((FAR void *)binp->sections[0]);
-		binp->sections[0] = NULL;
+		binp->sections[0] = 0;
 #endif
 
 		binfmt_arch_deinit_mem_protect(binp);
