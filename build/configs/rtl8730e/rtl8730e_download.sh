@@ -26,12 +26,25 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 APP_NUM=0
 LAST_IMAGE=0
+LAST_PARTITION=0
+USB_DOWNLOAD=0
 
 function pre_download()
 {
+	if [[ $TTYDEV == *"USB"* ]]; then
+		USB_DOWNLOAD=0
+	elif [[ $TTYDEV == *"ACM"* ]]; then
+		USB_DOWNLOAD=1
+	else
+		echo "Port name $TTYDEV not valid"
+		exit 1
+	fi
 	source ${TOP_PATH}/os/.bininfo
-	if [ -f ${IMG_TOOL_PATH}/setting.txt ]; then
-		rm -rf ${IMG_TOOL_PATH}/setting.txt
+	if [ -f ${IMG_TOOL_PATH}/USB_download_setting.txt ]; then
+		rm -rf ${IMG_TOOL_PATH}/USB_download_setting.txt
+	fi
+	if [ -f ${IMG_TOOL_PATH}/USB_erase_setting.txt ]; then
+		rm -rf ${IMG_TOOL_PATH}/USB_erase_setting.txt
 	fi
 	cp -p ${BIN_PATH}/${BL1}.bin ${IMG_TOOL_PATH}/${BL1}.bin 
 	cp -p ${BIN_PATH}/${KERNEL_BIN_NAME} ${IMG_TOOL_PATH}/${KERNEL_BIN_NAME}
@@ -78,6 +91,7 @@ function pre_download()
 		if [[ "${parts[$partidx]}" == "ss" ]];then
 			continue
 		fi
+		LAST_PARTITION=${parts[$partidx]}
 	done
 	LAST_IMAGE=${BOOTPARAM}.bin	
 
@@ -88,8 +102,10 @@ function pre_download()
 		fi
 		LAST_IMAGE=${RESOURCE_BIN_NAME}
 	fi
-	
-	touch "${IMG_TOOL_PATH}/setting.txt"
+	if [ "$USB_DOWNLOAD" -eq "1" ]; then
+		touch "${IMG_TOOL_PATH}/USB_download_setting.txt"
+		touch "${IMG_TOOL_PATH}/USB_erase_setting.txt"
+	fi
 }
 
 function board_download()
@@ -98,25 +114,22 @@ function board_download()
 	if [ ! -f ${IMG_TOOL_PATH}/$3 ];then
 		echo "$3 not present"
 	else
-		if [[ $TTYDEV == *"USB"* ]]; then
+		if [ "$USB_DOWNLOAD" -eq "0" ]; then
 			#echo "UART download"
 			./upload_image_tool_linux "download" $1 1 $2 $3
 		fi
-
-		if [[ $TTYDEV == *"ACM"* ]]; then
+		if [ "$USB_DOWNLOAD" -eq "1" ]; then
 			#echo "USB download"
-			#echo "Save info to setting.txt"
-			echo "$3" >> setting.txt
-			echo "$2" >> setting.txt
+			#echo "Save info to USB_download_setting.txt"
+			echo "$3" >> USB_download_setting.txt
+			echo "$2" >> USB_download_setting.txt
 			if [ "$3" == "$LAST_IMAGE" ]; then
 				echo ""
 				echo "==================================="
 				echo "Start USB download in Flash"
-				echo $(date)
 				echo "==================================="
 				./upload_image_tool_linux "download" $1
 				echo "Complete USB download"
-				echo $(date)
 			fi
 		fi
 	fi
@@ -125,50 +138,24 @@ function board_download()
 function board_erase()
 {
 	cd ${IMG_TOOL_PATH}
-	./upload_image_tool_linux "erase" $1 1 $2 $3
-}
-
-function board_check()
-{
-	cd ${IMG_TOOL_PATH}
-	./upload_image_tool_linux "check" $1
-	flashsz=$?
-	echo "Flash size is ${flashsz} MB"
-
-	for partidx in ${!parts[@]}; do
-		if [[ "${parts[$partidx]}" == "reserved" ]];then
-			continue
+	if [ "$USB_DOWNLOAD" -eq "0" ]; then
+		#echo "UART erase"
+		./upload_image_tool_linux "erase" $1 1 $2 $3
+	fi
+	if [ "$USB_DOWNLOAD" -eq "1" ]; then
+		#echo "USB erase"
+		#echo "Save info to USB_erase_setting.txt"
+		echo "$2" >> USB_erase_setting.txt
+		echo "$3" >> USB_erase_setting.txt
+		if [ "$4" == "$LAST_PARTITION" ]; then
+			echo ""
+			echo "==================================="
+			echo "Start USB erase in Flash"
+			echo "==================================="
+			./upload_image_tool_linux "erase" $1
+			echo "Complete USB erase"
 		fi
-
-		if [[ "${parts[$partidx]}" == "ftl" ]];then
-			continue
-		fi
-
-		if [[ "${parts[$partidx]}" == "ss" ]];then
-			continue
-		fi
-
-		#echo "${parts[$partidx]}  offset ${a} size ${b}KB"
-		MBtoB=$((1024 * 1024))
-		FLASHEND=$((flashsz * MBtoB))
-		#echo "flash end address ${FLASHEND}"
-		KBtoB=1024
-		IMAGESIZE_B=$((${sizes[partidx]} * KBtoB))
-		IMAGEEND=$((${offsets[$partidx]} + $IMAGESIZE_B))
-		#echo "image end address ${IMAGEEND}"
-
-		VIRTUALOFFSET=134217728
-		if [ $((${IMAGEEND} - $VIRTUALOFFSET)) -gt $FLASHEND ]
-		then
-			echo "ERROR: Flash size ${flashsz} MB is smaller than the end address at ${parts[$partidx]}"
-			exit 1
-		else
-			continue
-		fi
-	done
-
-	echo "flash check pass"
-	echo ""
+	fi
 }
 
 function post_download()
@@ -202,7 +189,10 @@ function post_download()
 	if test -f "${EXTERNAL}.bin"; then
 		[ -e ${EXTERNAL}.bin ] && rm ${EXTERNAL}.bin
 	fi
-	rm "${IMG_TOOL_PATH}/setting.txt"
+	if [ "$USB_DOWNLOAD" -eq "1" ]; then
+		rm "${IMG_TOOL_PATH}/USB_download_setting.txt"
+		rm "${IMG_TOOL_PATH}/USB_erase_setting.txt"
+	fi
 }
 
 
