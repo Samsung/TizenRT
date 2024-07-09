@@ -144,7 +144,7 @@ void up_schedyield(void)
 
 			save_task_scheduling_status(ntcb);
 #endif
-			arm_switchcontext(rtcb->xcp.regs, ntcb->xcp.regs);
+			arm_switchcontext((uint32_t **) rtcb->xcp.regs, ntcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the
 			 * head of the ready-to-run list.  It does not 'return' in the

@@ -91,7 +91,7 @@ void up_initial_state(struct tcb_s *tcb)
        * water marks.
        */
 
-      up_stack_color(tcb->stack_alloc_ptr, up_getsp());
+      up_stack_color(tcb->stack_alloc_ptr, (void *)up_getsp());
 #endif /* CONFIG_STACK_COLORATION */
 
       return;
