@@ -100,7 +100,7 @@ static int compress_curbytes = 0;	/* number of bytes in the current chunk that w
 static int compress_rdptr = 0;		/* current pointer for compressed data read */
 static size_t log_dump_size = 0;
 static struct log_dump_chunk_s *read_node;
-static signed char uncomp_buf[CONFIG_LOG_DUMP_NUMBUFS][CONFIG_LOG_DUMP_CHUNK_SIZE];	/* initial uncompressed log dump data */
+static unsigned char uncomp_buf[CONFIG_LOG_DUMP_NUMBUFS][CONFIG_LOG_DUMP_CHUNK_SIZE];	/* initial uncompressed log dump data */
 static bool uncomp_buf_full[CONFIG_LOG_DUMP_NUMBUFS];
 static int uncomp_idx = 0;
 static int comp_idx = 0;
@@ -228,7 +228,7 @@ int log_dump_compress_lastblock(void)
 
 	last_comp_block_size = CONFIG_LOG_DUMP_CHUNK_SIZE;
 
-	compress_ret = compress_block(&last_comp_block[4], &last_comp_block_size, uncomp_buf[uncomp_idx], uncomp_curbytes);
+	compress_ret = compress_block(&last_comp_block[4],&last_comp_block_size,  (unsigned char *)uncomp_buf[uncomp_idx], uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
 		ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
@@ -579,7 +579,7 @@ int log_dump(int argc, char *argv[])
 		} else {
 			/* compress the completely filled block */
 			writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
-			compress_ret = compress_block(out_buf, &writesize, uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
+			compress_ret = compress_block(out_buf,  (long unsigned int *)&writesize,  (unsigned char *)uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
 			if (compress_ret != LOG_DUMP_OK) {
 				ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
 			}

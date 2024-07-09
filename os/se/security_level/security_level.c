@@ -83,7 +83,7 @@ static int security_level = HIGH_SECURITY_LEVEL;
  ****************************************************************************/
 int set_security_level(void)
 {
-	struct sec_lowerhalf_s *se = se_get_device();
+	struct sec_lowerhalf_s *se = (struct sec_lowerhalf_s *)se_get_device();
 	hal_data output;
 	hal_result_e hal_ret;
 

@@ -137,7 +137,9 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 
 FAR void *realloc(FAR void *oldmem, size_t size)
 {
-	int prev_heap_idx;
+#ifndef CONFIG_APP_BINARY_SEPARATION
+	int prev_heap_idx ;
+#endif
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller_retaddr = 0;

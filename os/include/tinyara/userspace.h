@@ -106,7 +106,7 @@ struct userspace_s {
 	void * flash_end;
 	void * ram_start;
 	void * ram_end;
-	void (*entry)(int argc, char **argv);
+	main_t entry;
 #endif
 };
 
