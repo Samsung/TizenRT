@@ -187,7 +187,7 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
   /* Save the saved processor context in CURRENT_REGS where it can be
    * accessed for register dumps and possibly context switching.
    */
-  uint32_t *saved_state = CURRENT_REGS;
+  uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = regs;
   system_exception_location = regs[REG_R15];
   /* Crash -- possibly showing diagnostic debug information. */
@@ -200,7 +200,7 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 #endif
   
   PANIC();
-  regs = CURRENT_REGS;
+  regs = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = saved_state;
   return regs; /* To keep the compiler happy */
 }

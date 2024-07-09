@@ -70,7 +70,7 @@ extern uint32_t system_exception_location;
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
   _alert("Undefined instruction at 0x%x\n", regs[REG_PC]);
-  uint32_t *saved_state = CURRENT_REGS;
+  uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = regs;
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -78,7 +78,7 @@ uint32_t *arm_undefinedinsn(uint32_t *regs)
 #endif
   system_exception_location = regs[REG_R15];
   PANIC();
-  regs = CURRENT_REGS;
+  regs = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = saved_state;
   return regs; /* To keep the compiler happy */
 }
