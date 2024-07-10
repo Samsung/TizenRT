@@ -102,40 +102,47 @@ static void pm_timer_callback(int argc, uint32_t sem)
 
 int pm_sleep(int milliseconds)
 {
-	int ret;
-	WDOG_ID wdog;
 	sem_t pm_sem;
-
+	irqstate_t flags;
+	int ret = ERROR;
+	/* TODO - Since PM & Kernel are separate, we should not use tcb inside pm.
+	 * We need to remove tcb in future.
+	 */
+	FAR struct tcb_s *rtcb = this_task();
 	/* initialize the timer's semaphore. It will be used to lock the
 	 * thread before sleep and unlock after expire */
 	sem_init(&pm_sem, 0, 0);
-
-	wdog = wd_create();
-	if (!wdog) {
+	flags = enter_critical_section();
+	DEBUGASSERT(rtcb->waitdog == NULL);
+	/* Create wakeup timer */
+	rtcb->waitdog = wd_create();
+	if (!rtcb->waitdog) {
 		set_errno(EAGAIN);
-		return ERROR;
+		pmdbg("Error creating wdog timer\n");
+		goto errout;
 	}
-
-	if (wd_setwakeupsource(wdog) != OK) {
-		wd_delete(wdog);
-		return ERROR;
+	/* set this timer as wakeup source */
+	if (wd_setwakeupsource(rtcb->waitdog) != OK) {
+		pmdbg("Error setting wakeup flag to wdog timer\n");
+		wd_delete(rtcb->waitdog);
+		goto errout;
 	}
-
-	ret = wd_start(wdog, MSEC2TICK(milliseconds), (wdentry_t)pm_timer_callback, 1, (uint32_t)&pm_sem);
+	/* before going into sleep start the wakeup timer */
+	ret = wd_start(rtcb->waitdog, MSEC2TICK(milliseconds), (wdentry_t)pm_timer_callback, 1, (uint32_t)&pm_sem);
 	if (ret != OK) {
 		pmdbg("pm_sleep: wd_start failed\n");
-		wd_delete(wdog);
-		return ERROR;
+		wd_delete(rtcb->waitdog);
+		goto errout;
 	}
-
 	/* sem_wait untill the timer expires */
 	do {
 		ret = sem_wait(&pm_sem);
 		DEBUGASSERT(ret == 0 || errno == EINTR);
 	} while (ret < 0);
-
 	/* When the semaphore is freed, make the pm timer free */
-	wd_delete(wdog);
-
-    return OK;
+	wd_delete(rtcb->waitdog);
+errout:
+	rtcb->waitdog = NULL;
+	leave_critical_section(flags);
+	return ret;
 }
