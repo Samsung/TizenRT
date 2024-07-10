@@ -100,9 +100,12 @@
 
 /* This is the total number of clock tick counts.  Essentially the
  * 'denominator' for all CPU load calculations.
+ * Note that for smp case, we are using a 2d array to store total ticks 
+ * for each cpu.
  */
 
-static volatile uint32_t g_cpuload_total[SCHED_NCPULOAD];
+
+static volatile uint32_t g_cpuload_total[CONFIG_SMP_NCPUS][SCHED_NCPULOAD];
 static volatile uint32_t g_cpuload_timeconstant[SCHED_NCPULOAD] = {
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 	CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT,
@@ -192,8 +195,10 @@ void sched_clear_cpuload(pid_t pid)
 	 * defunct thread to zero.
 	 */
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		g_cpuload_total[cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpuload_idx];
-		g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			g_cpuload_total[cpu][cpuload_idx] -= g_pidhash[hash_ndx].ticks[cpu][cpuload_idx];
+			g_pidhash[hash_ndx].ticks[cpu][cpuload_idx] = 0;
+		}
 	}
 	leave_critical_section(flags);
 }
@@ -223,6 +228,7 @@ static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
 	int hash_index = PIDHASH(rtcb->pid);
 
 	if (g_cpusnap_arr) {
+		/* Need to take different cpu into account */
 		g_cpusnap_arr[g_cpusnap_head] = rtcb->pid;
 		if (++g_cpusnap_head >= g_cpusnap_arr_size) {
 			g_cpusnap_head = 0;
@@ -230,14 +236,13 @@ static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
 	}
 
 	/* Increment the count on the currently executing thread */
-
-	g_pidhash[hash_index].ticks[cpuload_idx]++;
-
 	/* Increment tick count.  NOTE that the count is increment once for each
 	 * CPU on each sample interval.
 	 */
 
-	g_cpuload_total[cpuload_idx]++;
+	/* increment for each cpu, make extra space for more cpus */
+	g_pidhash[hash_index].ticks[cpu][cpuload_idx]++;
+	g_cpuload_total[cpu][cpuload_idx]++;
 }
 
 #ifndef CONFIG_SCHED_CPULOAD_EXTCLK
@@ -261,7 +266,7 @@ static inline void sched_cpu_process_cpuload(int cpu, int cpuload_idx)
 
 void weak_function sched_process_cpuload(void)
 {
-	int i;
+	int cpu;
 	int cpuload_idx;
 	irqstate_t flags;
 
@@ -279,28 +284,28 @@ void weak_function sched_process_cpuload(void)
 	 */
 
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-		for (i = 0; i < CONFIG_SMP_NCPUS; i++)
+		for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++)
 		{
-			sched_cpu_process_cpuload(i, cpuload_idx);
-		}
-		/* Increment tick count.  If the accumulated tick value exceed a time
-		 * constant, then shift the accumulators.
-		 */
+			sched_cpu_process_cpuload(cpu, cpuload_idx);
+	
+			/* Increment tick count.  If the accumulated tick value exceed a time
+			* constant, then shift the accumulators.
+			*/
+			if (g_cpuload_total[cpu][cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
+				uint32_t total = 0;
 
-		if (g_cpuload_total[cpuload_idx] > (g_cpuload_timeconstant[cpuload_idx] * CPULOAD_TICKSPERSEC)) {
-			uint32_t total = 0;
+				/* Divide the tick count for every task by two and recalculate the
+				* total.
+				*/
+				for (int j = 0; j < CONFIG_MAX_TASKS; j++) {
+					g_pidhash[j].ticks[cpu][cpuload_idx] >>= 1;
+					total += g_pidhash[j].ticks[cpu][cpuload_idx];
+				}
 
-			/* Divide the tick count for every task by two and recalculate the
-			 * total.
-			 */
-			for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-				g_pidhash[i].ticks[cpuload_idx] >>= 1;
-				total += g_pidhash[i].ticks[cpuload_idx];
+				/* Save the new total. */
+
+				g_cpuload_total[cpu][cpuload_idx] = total;
 			}
-
-			/* Save the new total. */
-
-			g_cpuload_total[cpuload_idx] = total;
 		}
 	}
 
@@ -356,8 +361,10 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload)
 	 */
 
 	if (g_pidhash[hash_index].tcb && g_pidhash[hash_index].pid == pid) {
-		cpuload->total = g_cpuload_total[index];
-		cpuload->active = g_pidhash[hash_index].ticks[index];
+		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			cpuload->total[cpu] = g_cpuload_total[cpu][index];
+			cpuload->active[cpu] = g_pidhash[hash_index].ticks[cpu][index];
+		}
 		ret = OK;
 	}
 

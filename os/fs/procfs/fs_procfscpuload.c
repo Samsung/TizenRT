@@ -242,6 +242,8 @@ static ssize_t cpuload_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		struct cpuload_s cpuload;
 		uint32_t intpart;
 		uint32_t fracpart;
+		uint32_t total_cpuload = 0;
+		uint32_t total_active = 0;
 
 		/* Sample the counts for the IDLE thread.  clock_cpuload should only
 		 * fail if the PID is not valid.  This, however, should never happen
@@ -253,15 +255,19 @@ static ssize_t cpuload_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
 
 			DEBUGVERIFY(clock_cpuload(0, cpuload_idx, &cpuload));
+			for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+				total_cpuload += cpuload.total[cpu];
+				total_active += cpuload.active[cpu];
+			}
 
 			/* On the simulator, you may hit cpuload.total == 0, but probably never on
 			 * real hardware.
 			 */
 
-			if (cpuload.total > 0) {
+			if (total_cpuload > 0) {
 				uint32_t tmp;
 
-				tmp = 1000 - (1000 * cpuload.active) / cpuload.total;
+				tmp = 1000 - (1000 * total_active) / total_cpuload;
 				intpart = tmp / 10;
 				fracpart = tmp - 10 * intpart;
 			} else {

@@ -200,8 +200,8 @@
 
 #ifdef CONFIG_SCHED_CPULOAD
 struct cpuload_s {
-	volatile uint32_t total;	/* Total number of clock ticks */
-	volatile uint32_t active;	/* Number of ticks while this thread was active */
+	volatile uint32_t total[CONFIG_SMP_NCPUS];   /* Total number of clock ticks per cpu */
+	volatile uint32_t active[CONFIG_SMP_NCPUS];  /* Number of ticks while this thread was active on the specific cpu */
 };
 
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
