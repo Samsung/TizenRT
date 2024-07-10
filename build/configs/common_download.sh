@@ -31,6 +31,19 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 SMARTFS_BIN_PATH=${BIN_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 
+for device in $(ls /dev/ttyACM* | sort -V); do
+	if [ -c "$device" ]; then
+		DEFAULT_PORT=$device
+	fi
+done
+
+if [ -z ${DEFAULT_PORT} ]; then
+	for device in $(ls /dev/ttyUSB* | sort -V); do
+		if [ -c "$device" ]; then
+			DEFAULT_PORT=$device
+		fi
+	done
+fi
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
 
@@ -58,7 +71,7 @@ WARNING="\n Port $PORT is selected\n\n
 	############################################\n"
 
 
-TTYDEV="/dev/${PORT}"
+TTYDEV="${PORT}"
 
 ##Utility function for sanity check##
 function sanity_check()
