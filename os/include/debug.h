@@ -612,9 +612,11 @@ int get_errno(void);
 #endif
 
 #ifdef CONFIG_DEBUG_PM_ERROR
-#define pmdbg(format, ...)    dbg(format, ##__VA_ARGS__)
-#define pmlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#define pmdbg_noarg(format, ...)   dbg_noarg(format, ##__VA_ARGS__)
+#define pmdbg(format, ...)         dbg(format, ##__VA_ARGS__)
+#define pmlldbg(format, ...)       lldbg(format, ##__VA_ARGS__)
 #else
+#define pmdbg_noarg(...)
 #define pmdbg(...)
 #define pmlldbg(...)
 #endif

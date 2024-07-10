@@ -513,6 +513,22 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds);
 
 int pm_suspendcount(int domain_id);
 
+/****************************************************************************
+ * Name: pm_recover
+ *
+ * Description:
+ *   This function is called from task_recover() when a task is deleted via
+ *   task_delete() or via pthread_cancel(). It does pm cleanup.
+ *
+ * Inputs:
+ *   tcb - The TCB of the terminated task or thread
+ *
+ * Return Value:
+ *   None.
+ *
+ ****************************************************************************/
+void pm_recover(FAR struct tcb_s *tcb);
+
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
  * Name: pm_dvfs
@@ -580,6 +596,7 @@ int pm_metrics(int milliseconds);
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
 #define pm_timedsuspend(domain_id, milliseconds)	(0)
 #define pm_suspendcount(domain_id)   (0)
+#define pm_recover(tcb)         (0)
 
 #endif							/* CONFIG_PM */
 
