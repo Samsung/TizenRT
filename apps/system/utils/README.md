@@ -126,7 +126,11 @@ Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 ```
 
 ## cpuload
-This command shows cpuload information per thread periodically. This has arguments which configure the printing information and cpuload daemon.
+This command shows cpuload information per thread periodically. 
+If there are more than one cpu cores in the system, it shows cpuload of thread in each core.
+Also It shows non-zero cpuload only.
+This has arguments which configure the printing information and cpuload daemon.
+
 ```bash
 TASH>>cpuload --help
 
@@ -140,26 +144,18 @@ Options:
  -i PRINT_INTERVAL     Show cpuload values every PRINT_INTERVAL(s)
  -n ITERATION_COUNT    Iterate showing cpuload values ITERATION_COUNT times
 
-TASH>> cpuload
-Started CPU monitor with interval 5.
-PID | Pri |    2s |
+TASH>>cpuload
+
 --------------------------------------------------
-  0 |   0 |  99.1 | Idle Task
-  1 | 224 |   0.0 | hpwork
-  2 | 113 |   0.0 | lpwork
-  3 | 120 |   0.0 | EHCI Monitor
-  4 | 110 |   0.0 | LWIP_TCP/IP
-  5 | 250 |   0.0 | binary_manager
-  7 | 220 |   0.0 | /dev/mtdblock2
-  8 | 221 |   0.0 | msg_receiver
-  9 | 221 |   0.0 | multi_recv_nonblock
- 10 | 221 |   0.0 | multi_recv_block1
- 11 | 221 |   0.0 | multi_recv_block2
- 12 | 180 |   0.0 | /dev/mtdblock4
- 13 | 100 |   0.0 | uwork
- 14 | 125 |   0.9 | tash
- 15 | 100 |   0.0 | CPULoadMonitor
+Started CPU monitor with interval 5 sec.
+TASH>>Non-Zero CPU utilization trend (updated every 5s)
+PID | Pri |  CPU0 |  CPU1 |  Avg  |
 --------------------------------------------------
+  0 |   0 |  99.9 |   0.0 |  48.5 | CPU0 IDLE
+  1 |   0 |   0.0 |  99.9 |  51.4 | CPU1 IDLE
+ 20 | 100 |   0.1 |   0.0 |   0.1 | CPULoadMonitor
+--------------------------------------------------
+
 
 TASH>> cpuload -s 10
 CPU monitor will started after 10s with interval 5.
@@ -183,6 +179,16 @@ PID | Pri |  Snap ticks  |
  * Snapshot interval : 10s (1000 ticks)
 --------------------------------------------------
 ```
+### How is the cpuload calculated
+We define a timeconstant (CONFIG_SCHED_CPULOAD_TIMECONSTANT), to keep a limit on total cpuload.
+We store "total ticks" and "ticks respective to a thread for specific core" after every systick interrupt.
+thread_n load on cpu_i = (thread_n ticks in cpu_i) / (total ticks in cpu_i)
+average thread_n load = (Sum of thread_n load in each cpu) / (Number of cpus)
+
+Note: Suppose timeconstant is 2 second. Then after every 2 second, we divide the number of ticks
+      on each thread_n load by 2 and also on each cpu_n load by 2. After this the process continues
+      until the next 2 seconds.
+
 ### How to Enable
 Enable *CONFIG_ENABLE_CPULOAD* to use this command on menuconfig as shown below:
 ```

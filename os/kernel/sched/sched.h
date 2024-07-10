@@ -137,7 +137,8 @@ struct pidhash_s {
 	FAR struct tcb_s *tcb;		/* TCB assigned to this PID */
 	pid_t pid;					/* The full PID value */
 #ifdef CONFIG_SCHED_CPULOAD
-	uint32_t ticks[SCHED_NCPULOAD];				/* Number of ticks on this thread */
+	uint32_t ticks[CONFIG_SMP_NCPUS][SCHED_NCPULOAD];     /* Number of ticks of thread in specific cpu */
+
 #endif
 };
 

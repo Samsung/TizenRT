@@ -109,6 +109,27 @@ static void cpuload_stop(void)
 	}
 }
 
+/* This function checks if the load of a thread is
+ * non zero or not. Basically, after calculating the load,
+ * we store the load info in the form of a string as follows:
+ * <cpu0_load>-<cpu1_load>-<avg_load> (for 2 core case)
+ * So for zero load case, we check if avg_load is 0.0 or not.
+ * Note: we compare with "-0.0" because if avg_load is 90.0, then
+ * also we will get true if we compare with 0.0 */
+static bool has_cpuload(char *load_info)
+{
+#ifdef CONFIG_SMP
+	int len = strlen(load_info);
+	if (strcmp(&load_info[len - 4], "-0.0") == 0) {
+#else
+	if (strcmp(load_info, "0.0") == 0) {
+#endif
+		return false;
+	}
+
+	return true;
+}
+
 static void cpuload_print_pid_value(char *buf, void *arg)
 {
 	int i;
@@ -123,6 +144,14 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
 	}
 
+#ifdef CONFIG_SCHED_MULTI_CPULOAD
+	if (!(has_cpuload(stat_info[PROC_STAT_CPULOAD_SHORT]) || has_cpuload(stat_info[PROC_STAT_CPULOAD_MID]) || has_cpuload(stat_info[PROC_STAT_CPULOAD_LONG]))) {
+#else 
+	if (!has_cpuload(stat_info[PROC_STAT_CPULOAD])) {
+#endif
+		return;
+	}
+	
 	printf("%3s | %3s |", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY]);
 	if (cpuload_mode == CPULOAD_SNAPSHOT) {
 		pid = atoi(stat_info[PROC_STAT_PID]);
@@ -136,14 +165,35 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 		printf(" %3d(%4.1f) |", cpuload_pidhash[pid_hash].count, load_ratio);
 	} else {
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
-		printf(" %5s | %5s | %5s |", stat_info[PROC_STAT_CPULOAD_SHORT], stat_info[PROC_STAT_CPULOAD_MID], stat_info[PROC_STAT_CPULOAD_LONG]);
+		for (i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++) {
+#ifdef CONFIG_SMP
+			char * avgload[CONFIG_SMP_NCPUS + 1];
+			avgload[0] = stat_info[i];
+			for (int j = 0; j < CONFIG_SMP_NCPUS + 1; j++) {
+				avgload[j] = strtok_r(avgload[j], "-", &avgload[j + 1]);
+				printf(" %5s |", avgload[j]);
+			}
+#else
+			printf(" %5s |", stat_info[i]);
+#endif
+		}
+#else
+#ifdef CONFIG_SMP
+		char * avgload[CONFIG_SMP_NCPUS + 1];
+		avgload[0] = stat_info[PROC_STAT_CPULOAD];
+		for (i = 0; i < CONFIG_SMP_NCPUS + 1; i++) {
+			avgload[i] = strtok_r(avgload[i], "-", &avgload[i + 1]);
+			printf(" %5s |", avgload[i]);
+		}
 #else
 		printf(" %5s |", stat_info[PROC_STAT_CPULOAD]);
+#endif
 #endif
 	}
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" %s", stat_info[PROC_STAT_NAME]);
 #endif
+	printf("\n");
 }
 
 static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
@@ -159,19 +209,34 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 		printf("Failed to read %s\n", filepath);
 		return ERROR;
 	}
-	printf("\n");
 	return OK;
 }
 
 static void cpuload_print_normal(void)
 {
 	/* Print titles */
-	printf("PID | Pri |");
+	printf("\n--------------------------------------------------\n");
+	printf("Non-Zero CPU utilization trend (updated every %ds)\n", cpuload_interval);
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
-	printf("%5ds | %4ds | %4ds |", CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT, CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID, CONFIG_SCHED_CPULOAD_TIMECONSTANT_LONG);
-#else
-	printf("%5ds |", CONFIG_SCHED_CPULOAD_TIMECONSTANT);
+	printf("Multi cpuload mode is enabled with time constants %ds, %ds, %ds (used to average out cpuload after every time constants)\n", CONFIG_SCHED_CPULOAD_TIMECONSTANT_SHORT, CONFIG_SCHED_CPULOAD_TIMECONSTANT_MID, CONFIG_SCHED_CPULOAD_TIMECONSTANT_LONG);
 #endif
+	printf("PID | Pri |");
+
+#ifdef CONFIG_SCHED_MULTI_CPULOAD
+	for (int i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++) {
+#endif
+#ifdef CONFIG_SMP
+		for (int j = 0; j < CONFIG_SMP_NCPUS; j++) {
+			printf("  CPU%d |", j);
+		}
+#endif
+#ifndef CONFIG_SCHED_MULTI_CPULOAD
+		printf("  Avg  |");
+#else
+		printf("  Avg%d |", i - PROC_STAT_CPULOAD_SHORT + 1);
+	}
+#endif
+
 	printf("\n--------------------------------------------------\n");
 
 	/* Print cpuload for each task */
@@ -325,9 +390,9 @@ static int cpuload_start(void)
 	pthread_setname_np(cpuloadmon, "CPULoadMonitor");
 
 	if (cpuload_mode == CPULOAD_SNAPSHOT) {
-		printf("CPU monitor will started after %ds with interval %d.\n", cpuload_snapintval, cpuload_interval);
+		printf("CPU monitor will be started after %ds with interval %d sec.\n", cpuload_snapintval, cpuload_interval);
 	} else {
-		printf("Started CPU monitor with interval %d.\n", cpuload_interval);
+		printf("Started CPU monitor with interval %d sec.\n", cpuload_interval);
 	}
 
 	return OK;

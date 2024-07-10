@@ -245,7 +245,12 @@ static void getentropy(FAR blake2s_state *S)
 	tmp <<= 27;
 #ifdef CONFIG_SCHED_CPULOAD
 	clock_cpuload(getpid(), 0, &load);
-	tmp += load.total ^ ROTL_32(load.active, 23);
+	uint32 total = 0, active = 0;
+	for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		total += load.total[cpu];
+		active += load.active[cpu];
+	}
+	tmp += total ^ ROTL_32(active, 23);
 #endif
 	add_sw_randomness(tmp);
 
