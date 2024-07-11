@@ -20,7 +20,7 @@
 #include <semaphore.h>
 #include <ble_manager/ble_manager.h>
 
-#define BLE_MANAGER_MAX_PARAM 3
+#define BLE_MANAGER_MAX_PARAM 4
 
 struct blemgr_msg {
 	blemgr_req_e event;
