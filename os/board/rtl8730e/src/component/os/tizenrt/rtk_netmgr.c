@@ -66,6 +66,7 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t check);
 trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg);
+trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan);
 void print_scan_result(rtw_scan_result_t *record);
 
 struct trwifi_ops g_trwifi_drv_ops = {
@@ -81,6 +82,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
 	wifi_netmgr_utils_scan_multi_ap,	/* scan_multi_ap */
+	wifi_netmgr_utils_set_chplan,		/* set_chplan */
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -792,6 +794,24 @@ trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 		}
 	}
 	return TRWIFI_NOT_SUPPORTED;
+}
+
+trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan)
+{
+	trwifi_result_e wuret = TRWIFI_FAIL;
+	if ((wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) || (g_mode == RTK_WIFI_SOFT_AP_IF)){
+		RTW_API_INFO("[RTK] Failed to set channel plan, disconnect from AP or stop SoftAP before setting\n");
+		return wuret;
+	}
+
+	int ret = wifi_set_chplan(chplan);
+	if (ret == RTK_STATUS_SUCCESS) {
+		wuret = TRWIFI_SUCCESS;
+		RTW_API_INFO("[RTK] Successfully set channel plan to %x\n", chplan);
+	} else {
+		RTW_API_INFO("[RTK] Failed to set channel plan, invalid channel plan %x\n", chplan);
+	}
+	return wuret;
 }
 
 void print_scan_result(rtw_scan_result_t *record)
