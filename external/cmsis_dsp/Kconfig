@@ -2,13 +2,10 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
-if ARCH_CHIP_AMEBAD
 
 config EXTERNAL_CMSIS_DSP
 	bool "CMSIS DSP library"
 	default n
 	---help---
 		Enables the CMSIS_DSP library.
-
-endif # ARCH_CHIP_AMEBAD
 
