@@ -38,7 +38,7 @@
 * POSSIBILITY OF SUCH DAMAGE.  
  * -------------------------------------------------------------------- */
 
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
+#include <cmsis_dsp/Include/arm_math.h>
 
 float32_t testRefOutput_f32_graphic[320] = {
 

@@ -81,7 +81,7 @@
 
 /** \example arm_class_marks_example_f32.c
   */
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
+#include <cmsis_dsp/Include/arm_math.h>
 
 #define SEMIHOSTING
 
