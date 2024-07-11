@@ -135,14 +135,7 @@ static void rtl8730e_gpio_reset(void)
 
 static void rtl8730e_lcd_mode_switch(bool flag)
 {
-	if (flag == false) {
-		mipidsi_mode_switch(false);
-		MIPI_DSI_INT_Config(MIPI, DISABLE, ENABLE, FALSE);
-		DelayMs(20);
-	} else {
-		MIPI_DSI_INT_Config(MIPI, DISABLE, DISABLE, FALSE);
-		mipidsi_mode_switch(true);
-	}
+	(flag == 1) ? mipidsi_mode_switch(true) : mipidsi_mode_switch(false);
 }
 
 static void rtl8730e_lcd_layer_enable(int layer, bool enable)
@@ -207,7 +200,7 @@ static void rtl8730e_control_backlight(uint8_t level)
 static void rtl8730e_enable_lcdc(void)
 {
 	LCDC_Cmd(pLCDC, ENABLE);
-	while (!LCDC_CheckLCDCReady(pLCDC)) ;
+	while (!LCDC_CheckLCDCReady(pLCDC));
 	mipidsi_mode_switch(true);
 }
 
