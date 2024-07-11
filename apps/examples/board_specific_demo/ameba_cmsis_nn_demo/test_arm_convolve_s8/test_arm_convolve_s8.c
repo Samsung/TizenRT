@@ -18,7 +18,7 @@
 
 #include <stdlib.h>
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/basic/test_data.h"
 #include "../TestData/conv_1_x_n_1/test_data.h"
