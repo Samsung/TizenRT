@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/mul_s16/test_data.h"
 #include "../TestData/mul_s16_spill/test_data.h"

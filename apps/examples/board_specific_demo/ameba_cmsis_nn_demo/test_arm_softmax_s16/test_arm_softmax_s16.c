@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../Common/Softmax/exp_lut_data.h"
 #include "../Common/Softmax/one_by_one_lut_data.h"
