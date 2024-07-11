@@ -59,6 +59,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
+#include <tinyara/pm/pm.h>
 
 #include "semaphore/semaphore.h"
 #include "wdog/wdog.h"
@@ -114,6 +115,8 @@
 
 void task_recover(FAR struct tcb_s *tcb)
 {
+	/* This task is being deleted. Do PM cleanup for this thread */
+	pm_recover(tcb);
 	/* The task is being deleted.  Cancel in pending timeout events. */
 
 	wd_recover(tcb);

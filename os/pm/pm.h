@@ -315,7 +315,40 @@ void pm_metrics_update_idle(void);
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+void pm_metrics_update_wakehandler(uint32_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+
+/****************************************************************************
+ * Name: pm_metrics_update_sleep
+ *
+ * Description:
+ *   This function is called inside pm_sleep's callback. It counts the frequency of
+ *   thread which wakeup the board. It also checks the minimum amount of time board
+ *   was in sleep because of given thread.
+ * 
+ * Input parameters:
+ *   pid - the ID of thread
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_sleep(pid_t pid);
+
+/****************************************************************************
+ * Name: pm_metrics_update_recover
+ *
+ * Description:
+ *   This function is called inside pm_recover. It resets the wakeup_counts and 
+ *   sleep_ticks of given thread for consistent PM Metrics result.
+ * 
+ * Input parameters:
+ *   pid - the ID of thread
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_recover(pid_t pid);
 #endif
 
 #undef EXTERN

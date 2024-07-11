@@ -73,8 +73,11 @@
  * Public Functions
  ************************************************************************/
 
-static void pm_timer_callback(int argc, uint32_t sem)
+static void pm_timer_callback(int argc, uint32_t sem, uint32_t pid)
 {
+#ifdef CONFIG_PM_METRICS
+	pm_metrics_update_sleep((pid_t)pid);
+#endif
 	/* As the timer is expired, give back the semaphore to unlock the thread */
 	sem_post((sem_t*)sem);
 }
@@ -121,7 +124,7 @@ int pm_sleep(int milliseconds)
 		return ERROR;
 	}
 
-	ret = wd_start(wdog, MSEC2TICK(milliseconds), (wdentry_t)pm_timer_callback, 1, (uint32_t)&pm_sem);
+	ret = wd_start(wdog, MSEC2TICK(milliseconds), (wdentry_t)pm_timer_callback, 2, (uint32_t)&pm_sem, (uint32_t)getpid());
 	if (ret != OK) {
 		pmdbg("pm_sleep: wd_start failed\n");
 		wd_delete(wdog);

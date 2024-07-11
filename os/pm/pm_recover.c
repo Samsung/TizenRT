@@ -15,59 +15,40 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <debug.h>
-
-#include <arch/irq.h>
-#include <arch/limits.h>
+#include <tinyara/pm/pm.h>
 
 #include "pm.h"
+
+#ifdef CONFIG_PM
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_wakehandler
+ * Name: pm_recover
  *
  * Description:
- *   This function is called when the core wakes up. The operations are that
- *   should be reflected in the kernel immediately after the core wakes up.
- *	 This behavior is only for the IDLE domain.
+ *   This function is called from task_recover() when a task is deleted via
+ *   task_delete() or via pthread_cancel(). It does pm cleanup.
  *
- * Input parameters:
- *   missing_tick - Missed ticks while the core was sleeping.
- *   wakeup_src   - The source of board wakeup.
+ * Inputs:
+ *   tcb - The TCB of the terminated task or thread
  *
- * Returned value:
- *   None
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
+ * Return Value:
+ *   None.
  *
  ****************************************************************************/
-
-void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
+void pm_recover(FAR struct tcb_s *tcb)
 {
-	irqstate_t flags = enter_critical_section();
 #ifdef CONFIG_PM_METRICS
-	pm_metrics_update_wakehandler((uint32_t)missing_tick, wakeup_src);
+    pm_metrics_update_recover(tcb->pid);
 #endif
-	pmllvdbg("wakeup source code = %d\n", wakeup_src);
-	pmllvdbg("missing_tick: %llu\n", missing_tick);
-
-	if (missing_tick > 0) {
-		clock_timer_nohz(missing_tick);
-		wd_timer_nohz(missing_tick);
-	}
-
-	/* After wakeup change PM State to STANDBY and reset the time slice */
-	pm_changestate(PM_STANDBY);
-	g_pmglobals.stime = clock_systimer();
-	leave_critical_section(flags);
 }
+
+#endif /* CONFIG_PM */

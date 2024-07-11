@@ -24,6 +24,7 @@ CSRCS += pm_changestate.c pm_checkstate.c pm_initialize.c pm_idle.c
 CSRCS += pm_register.c pm_domain_register.c pm_unregister.c pm_procfs.c
 CSRCS += pm_suspend.c pm_resume.c pm_timedsuspend.c
 CSRCS += pm_suspendcount.c
+CSRCS += pm_recover.c
 
 ifeq ($(CONFIG_PM_TIMEDWAKEUP),y)
 CSRCS += pm_sleep.c

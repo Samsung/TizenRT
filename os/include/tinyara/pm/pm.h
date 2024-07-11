@@ -588,6 +588,22 @@ int pm_changestate(enum pm_state_e newstate);
 
 enum pm_state_e pm_querystate(void);
 
+/****************************************************************************
+ * Name: pm_recover
+ *
+ * Description:
+ *   This function is called from task_recover() when a task is deleted via
+ *   task_delete() or via pthread_cancel(). It does pm cleanup.
+ *
+ * Inputs:
+ *   tcb - The TCB of the terminated task or thread
+ *
+ * Return Value:
+ *   None.
+ *
+ ****************************************************************************/
+void pm_recover(FAR struct tcb_s *tcb);
+
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
  * Name: pm_dvfs
@@ -656,6 +672,7 @@ int pm_metrics(int milliseconds);
 #define pm_checkstate()         (0)
 #define pm_changestate(state)   (0)
 #define pm_querystate()         (0)
+#define pm_recover(tcb)         (0)
 
 #endif							/* CONFIG_PM */
 
