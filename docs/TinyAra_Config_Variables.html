@@ -2621,7 +2621,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_PM">1.13.1 <code>CONFIG_PM</code>: Power management (PM) driver interfaces</a></li>
 <li><a href="#CONFIG_DEBUG_PM">1.13.2 <code>CONFIG_DEBUG_PM</code>: Power Management Debug Features</a></li>
 <li><a href="#CONFIG_PM_METRICS">1.13.5 <code>CONFIG_PM_METRICS</code>: Power management (PM) metrics</a></li>
-<li><a href="#CONFIG_PM_MIN_WAKEUP_TIME">1.13.7 <code>CONFIG_PM_MIN_WAKEUP_TIME</code>: PM time slice (msec)</a></li>
 <li><a href="#CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></li>
 </ul>
 <li><a name="menu_138_toc"><a href="#menu_138">1.14 Menu: Debug Options</a></a></li>
@@ -32970,19 +32969,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   </li>
   <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
   <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<h3><a name="CONFIG_PM_MIN_WAKEUP_TIME">1.13.7 <code>CONFIG_PM_MIN_WAKEUP_TIME</code>: PM time slice (msec)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 100
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  The power management module collects activity counts in time slices.  At the end of the time slice, the count accumulated during that  interval is applied to an averaging algorithm to determine the  activity level.</p>
-<p>
-  CONFIG_PM_MIN_WAKEUP_TIME provides the duration of that time slice in  milliseconds.  Default: 100 Milliseconds</p>
-</ul>
 <h3><a name="CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
