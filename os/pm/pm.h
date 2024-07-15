@@ -77,22 +77,6 @@
 #define pm_alloc(num, size) calloc(num, size)
 #endif
 
-
-/* CONFIG_PM_MIN_WAKEUP_TIME. The power management module make board sleep & wakeup. After board wakeup,
-	it is required to perform post sleep processing and restore the CPU state.
-	During CPU restoration the board should not sleep again, for that we keep
-	board waking up for minimum CONFIG_PM_MIN_WAKEUP_TIME time (in msec). It's value should
-	be greater than 0.
- */
-
-#ifndef CONFIG_PM_MIN_WAKEUP_TIME
-#define CONFIG_PM_MIN_WAKEUP_TIME 100 /* Default is 100 msec */
-#endif
-
-#if CONFIG_PM_MIN_WAKEUP_TIME < 1
-#error CONFIG_PM_MIN_WAKEUP_TIME invalid
-#endif
-
 /* Function-like macros *****************************************************/
 /****************************************************************************
  * Name: pm_lock
@@ -144,10 +128,6 @@ struct pm_global_s {
 	 */
 
 	uint8_t state;
-
-	/* stime - The time (in ticks) at the start of the current time slice */
-
-	clock_t stime;
 
 	/* Timer to decrease state */
 
