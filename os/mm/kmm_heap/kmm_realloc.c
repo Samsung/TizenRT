@@ -144,21 +144,30 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	mmaddress_t caller_retaddr = 0;
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
-	struct mm_heap_s *kheap_origin = mm_get_heap(oldmem);
+	struct mm_heap_s *kheap_origin;
 	struct mm_heap_s *kheap_new;
 
-	if (newsize == 0) {
-		mm_free(kheap_origin, oldmem);
-		return NULL;
-	}
+	if (oldmem) {
+		kheap_origin = mm_get_heap(oldmem);
+
+		/* The oldmem given by first argument is not a dynamically
+		 * allocated address. This will cause ASSERT like Linux.
+		 */
+		ASSERT(kheap_origin);
+
+		if (newsize == 0) {
+			mm_free(kheap_origin, oldmem);
+			return NULL;
+		}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
+		ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 #else
-	ret = mm_realloc(kheap_origin, oldmem, newsize);
+		ret = mm_realloc(kheap_origin, oldmem, newsize);
 #endif
-	if (ret != NULL) {
-		return ret;
+		if (ret != NULL) {
+			return ret;
+		}
 	}
 
 	/* Try to mm_malloc to another heap. */
