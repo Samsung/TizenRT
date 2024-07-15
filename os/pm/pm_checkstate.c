@@ -99,31 +99,20 @@
 
 enum pm_state_e pm_checkstate(void)
 {
-	clock_t now;
 	irqstate_t flags;
 	int index;
 	enum pm_state_e newstate;
 
 	flags = enter_critical_section();
-	newstate = PM_STANDBY;
-
-	/* Board should remain wakeup for minimunu CONFIG_PM_MIN_WAKEUP_TIME */
-
-	now = clock_systimer();
-	if (now - g_pmglobals.stime >= MSEC2TICK(CONFIG_PM_MIN_WAKEUP_TIME)) {
-
-		/* Reset the time and recommended board to sleep.
-		 * This is an atomic operation because interrupts are still disabled.
-		 */
-
-		g_pmglobals.stime = now;
+	newstate = g_pmglobals.state + 1;
+	if (newstate > PM_SLEEP) {
 		newstate = PM_SLEEP;
 	}
 
 	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
 	if (g_pmglobals.suspend_count[PM_IDLE_DOMAIN] || g_pmglobals.suspend_count[PM_LCD_DOMAIN]) {
 		newstate = PM_NORMAL;
-	} else {
+	} else if (newstate == PM_SLEEP) {
 		/* Consider the possible power state lock here */
 		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
 			if (g_pmglobals.suspend_count[index] != 0) {

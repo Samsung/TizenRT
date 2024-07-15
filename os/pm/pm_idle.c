@@ -83,8 +83,6 @@ void pm_idle(void)
 		stime = now;
 		/* Decide, which power saving level can be obtained */
 		newstate = pm_checkstate();
-		/* Perform state-dependent logic here */
-		pmvdbg("newstate= %d\n", newstate);
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_idle();
 #endif
@@ -102,8 +100,8 @@ void pm_idle(void)
 		/* set wakeup timer */
 		delay = wd_getwakeupdelay();
 		if (delay > 0) {
-			if (delay < MSEC2TICK(CONFIG_PM_MIN_SLEEP_TIME)) {
-				pmvdbg("Minimum sleep time should be %dms\n", CONFIG_PM_MIN_SLEEP_TIME);
+			if (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS)) {
+				pmvdbg("Wdog Timer Delay: %dms is less than SLEEP_ENTRY_WAIT: %dms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
 				goto EXIT;
 			} else {
 				pmvdbg("Setting timer and board will wake up after %d millisecond\n", delay);
@@ -111,11 +109,8 @@ void pm_idle(void)
 			}
 		}
 #endif
-#ifdef CONFIG_PM_TICKSUPPRESS
-	up_pm_board_sleep(pm_wakehandler);
-#else
-	up_pm_board_sleep(NULL);
-#endif
+		up_pm_board_sleep(pm_wakehandler);
+		stime = clock_systimer();
 	}
 EXIT:
 	leave_critical_section(flags);
