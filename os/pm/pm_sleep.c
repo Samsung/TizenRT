@@ -55,8 +55,8 @@
 #include <tinyara/irq.h>
 #include <tinyara/wdog.h>
 #include <tinyara/clock.h>
+#include <tinyara/sched.h>
 #include <errno.h>
-
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
@@ -108,7 +108,7 @@ int pm_sleep(int milliseconds)
 	/* TODO - Since PM & Kernel are separate, we should not use tcb inside pm.
 	 * We need to remove tcb in future.
 	 */
-	FAR struct tcb_s *rtcb = this_task();
+	FAR struct tcb_s *rtcb = sched_self();
 	/* initialize the timer's semaphore. It will be used to lock the
 	 * thread before sleep and unlock after expire */
 	sem_init(&pm_sem, 0, 0);
