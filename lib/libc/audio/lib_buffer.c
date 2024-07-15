@@ -149,6 +149,7 @@ int apb_alloc(FAR struct audio_buf_desc_s *bufdesc)
 		ret = -ENOMEM;
 	} else {
 		/* Populate the buffer contents */
+		DEBUG_SET_CALLER_ADDR(*bufdesc->u.ppBuffer);
 
 		memset(apb, 0, bufsize);
 		apb->i.channels = 1;
