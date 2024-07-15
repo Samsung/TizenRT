@@ -89,15 +89,13 @@ void pm_idle(void)
 		pm_metrics_update_idle();
 #endif
 		/* Then force the global state change */
-		if (pm_changestate(newstate) < 0) {
-			/* The new state change failed */
-			pmdbg("State change failed! newstate = %d\n", newstate);
-			goto EXIT;
-		}
+		pm_changestate(newstate);
+
 		/* If current state is not good to go sleep then do core power saving*/
 		if (g_pmglobals.state != PM_SLEEP) {
 			goto EXIT;
 		}
+		
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		/* set wakeup timer */
 		delay = wd_getwakeupdelay();

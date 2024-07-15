@@ -149,7 +149,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
- * Name: pm_register
+ * Name: pm_driver_register
  *
  * Description:
  *   Register pm driver path, PM_DRVPATH

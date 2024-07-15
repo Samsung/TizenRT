@@ -123,13 +123,6 @@ struct pm_global_s {
 
 	sem_t regsem;
 
-	/* registry is a doubly-linked list of registered power management
-	 * callback structures.  To ensure mutually exclusive access, this list
-	 * must be locked by calling pm_lock() before it is accessed.
-	 */
-
-	dq_queue_t registry;
-
 	/* The power state lock count */
 
 	uint16_t suspend_count[CONFIG_PM_NDOMAINS];
@@ -145,10 +138,6 @@ struct pm_global_s {
 	/* stime - The time (in ticks) at the start of the current time slice */
 
 	clock_t stime;
-
-	/* btime - The time (in ticks) at the start of the current state */
-
-	clock_t btime;
 
 	/* Timer to decrease state */
 
@@ -174,23 +163,6 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
-/****************************************************************************
- * Name: pm_set_wakeup_timer
- *
- * Description:
- *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pm_timer_activelist with the
- *   required delay.(delay should be positive)
- * 
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   0 - system can go to sleep
- *   -1 - system should not go to sleep
- *
- ****************************************************************************/
-int pm_set_wakeup_timer(void);
 
 /****************************************************************************
  * Name: pm_wakehandler

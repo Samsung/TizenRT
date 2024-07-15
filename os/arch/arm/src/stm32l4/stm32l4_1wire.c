@@ -131,9 +131,6 @@ struct stm32_1wire_priv_s
   uint8_t *byte;                  /* Current byte */
   uint8_t  bit;                   /* Current bit */
   volatile int result;            /* Exchange result */
-#ifdef CONFIG_PM
-  struct pm_callback_s pm_cb;     /* PM callbacks */
-#endif
 };
 
 /* 1-Wire device, Instance */
@@ -177,10 +174,6 @@ static int stm32_1wire_exchange(FAR struct onewire_dev_s *dev, bool reset,
                                 uint8_t *rxbuffer, int rxbuflen);
 static int stm32_1wire_writebit(FAR struct onewire_dev_s *dev, const uint8_t *bit);
 static int stm32_1wire_readbit(FAR struct onewire_dev_s *dev, uint8_t *bit);
-#ifdef CONFIG_PM
-static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate);
-#endif
 
 /****************************************************************************
  * Private Data
@@ -203,9 +196,6 @@ static struct stm32_1wire_priv_s stm32_1wire1_priv =
   .config     = &stm32_1wire1_config,
   .refs       = 0,
   .msgs       = NULL,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32_1wire_pm_prepare,
-#endif
 };
 
 #endif
@@ -225,9 +215,6 @@ static struct stm32_1wire_priv_s stm32_1wire2_priv =
   .config   = &stm32_1wire2_config,
   .refs     = 0,
   .msgs     = NULL,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32_1wire_pm_prepare,
-#endif
 };
 
 #endif
@@ -247,9 +234,6 @@ static struct stm32_1wire_priv_s stm32_1wire3_priv =
   .config   = &stm32_1wire3_config,
   .refs     = 0,
   .msgs     = NULL,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32_1wire_pm_prepare,
-#endif
 };
 
 #endif
@@ -269,9 +253,6 @@ static struct stm32_1wire_priv_s stm32_1wire4_priv =
   .config   = &stm32_1wire4_config,
   .refs     = 0,
   .msgs     = NULL,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32_1wire_pm_prepare,
-#endif
 };
 
 #endif
@@ -291,9 +272,6 @@ static struct stm32_1wire_priv_s stm32_1wire5_priv =
   .config   = &stm32_1wire5_config,
   .refs     = 0,
   .msgs     = NULL,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32_1wire_pm_prepare,
-#endif
 };
 
 #endif
@@ -1115,81 +1093,6 @@ static int stm32_1wire_readbit(FAR struct onewire_dev_s *dev, uint8_t *bit)
   return stm32_1wire_process(priv, msgs, 1);
 }
 
-/************************************************************************************
- * Name: stm32_1wire_pm_prepare
- *
- * Description:
- *   Request the driver to prepare for a new power state. This is a
- *   warning that the system is about to enter into a new power state.  The
- *   driver should begin whatever operations that may be required to enter
- *   power state.  The driver may abort the state change mode by returning
- *   a non-zero value from the callback function.
- *
- * Input Parameters:
- *   cb      - Returned to the driver.  The driver version of the callback
- *             structure may include additional, driver-specific state
- *             data at the end of the structure.
- *   domain  - Identifies the activity domain of the state change
- *   pmstate - Identifies the new PM state
- *
- * Returned Value:
- *   0 (OK) means the event was successfully processed and that the driver
- *   is prepared for the PM state change.  Non-zero means that the driver
- *   is not prepared to perform the tasks needed achieve this power setting
- *   and will cause the state change to be aborted.  NOTE:  The prepare
- *   method will also be recalled when reverting from lower back to higher
- *   power consumption modes (say because another driver refused a lower
- *   power state change).  Drivers are not permitted to return non-zero
- *   values when reverting back to higher power consumption modes!
- *
- ************************************************************************************/
-
-#ifdef CONFIG_PM
-static int stm32_1wire_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate)
-{
-  struct stm32_1wire_priv_s *priv =
-      (struct stm32_1wire_priv_s *)((char *)cb -
-                                      offsetof(struct stm32_1wire_priv_s, pm_cb));
-  int sval;
-
-  /* Logic to prepare for a reduced power state goes here. */
-
-  switch (pmstate)
-    {
-    case PM_NORMAL:
-    case PM_IDLE:
-      break;
-
-    case PM_STANDBY:
-    case PM_SLEEP:
-      /* Check if exclusive lock for 1-Wire bus is held. */
-
-      if (nxsem_getvalue(&priv->sem_excl, &sval) < 0)
-        {
-          DEBUGASSERT(false);
-          return -EINVAL;
-        }
-
-      if (sval <= 0)
-        {
-          /* Exclusive lock is held, do not allow entry to deeper PM states. */
-
-          return -EBUSY;
-        }
-
-      break;
-
-    default:
-      /* Should not get here */
-
-      break;
-    }
-
-  return OK;
-}
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1281,14 +1184,6 @@ FAR struct onewire_dev_s *stm32l4_1wireinitialize(int port)
     {
       stm32_1wire_sem_init(priv);
       stm32_1wire_init(priv);
-
-#ifdef CONFIG_PM
-      /* Register to receive power management callbacks */
-
-      ret = pm_register(&priv->pm_cb);
-      DEBUGASSERT(ret == OK);
-      UNUSED(ret);
-#endif
     }
 
   irqrestore(irqs);

@@ -148,10 +148,6 @@ typedef struct pm_domain_arg_s pm_domain_arg_t;
 #error CONFIG_PM_SLICEMS invalid
 #endif
 
-
-/* Defines max length of device driver name for PM callback. */
-#define MAX_PM_CALLBACK_NAME    32
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -215,72 +211,6 @@ typedef enum {
 #ifdef CONFIG_PM_METRICS
 static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
 #endif
-/* This structure contain pointers callback functions in the driver.  These
- * callback functions can be used to provide power management information
- * to the driver.
- */
-
-struct pm_callback_s {
-	struct dq_entry_s entry;   /* Supports a doubly linked list */
-
-	char name[MAX_PM_CALLBACK_NAME];	/* Name of driver which register callback */
-
-	/**************************************************************************
-	 * Name: prepare
-	 *
-	 * Description:
-	 *   Request the driver to prepare for a new power state. This is a
-	 *   warning that the system is about to enter into a new power state.  The
-	 *   driver should begin whatever operations that may be required to enter
-	 *   power state.  The driver may abort the state change mode by returning
-	 *   a non-zero value from the callback function
-	 *
-	 * Input Parameters:
-	 *   cb      - Returned to the driver.  The driver version of the callback
-	 *             structure may include additional, driver-specific state
-	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
-	 *
-	 * Returned Value:
-	 *   0 (OK) means the event was successfully processed and that the driver
-	 *   is prepared for the PM state change.  Non-zero means that the driver
-	 *   is not prepared to perform the tasks needed achieve this power setting
-	 *   and will cause the state change to be aborted.  NOTE:  The prepare
-	 *   method will also be recalled when reverting from lower back to higher
-	 *   power consumption modes (say because another driver refused a lower
-	 *   power state change).  Drivers are not permitted to return non-zero
-	 *   values when reverting back to higher power consumption modes!
-	 *
-	 **************************************************************************/
-
-	int (*prepare)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
-
-	/**************************************************************************
-	 * Name: notify
-	 *
-	 * Description:
-	 *   Notify the driver of new power state.  This callback is called after
-	 *   all drivers have had the opportunity to prepare for the new power
-	 *   state.
-	 *
-	 * Input Parameters:
-	 *   cb      - Returned to the driver.  The driver version of the callback
-	 *             structure may include additional, driver-specific state
-	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
-	 *
-	 * Returned Value:
-	 *   None.  The driver already agreed to transition to the low power
-	 *   consumption state when when it returned OK to the prepare() call.
-	 *   At that time it should have made all preprations necessary to enter
-	 *   the new state.  Now the driver must make the state transition.
-	 *
-	 **************************************************************************/
-
-	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
-};
 
 /****************************************************************************
  * Public Data
@@ -328,42 +258,6 @@ void pm_driver_register(void);
  ****************************************************************************/
 
 void pm_initialize(void);
-
-/****************************************************************************
- * Name: pm_register
- *
- * Description:
- *   This function is called by a device driver in order to register to
- *   receive power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_register(FAR struct pm_callback_s *callbacks);
-
-/****************************************************************************
- * Name: pm_unregister
- *
- * Description:
- *   This function is called by a device driver in order to unregister
- *   previously registered power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_unregister(FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
  * Name: pm_domain_register
@@ -548,18 +442,13 @@ enum pm_state_e pm_checkstate(void);
  * Name: pm_changestate
  *
  * Description:
- *   This function is used to platform-specific power management logic.  It
- *   will announce the power management power management state change to all
- *   drivers that have registered for power management event callbacks.
+ *   This function is used to platform-specific power management logic. 
  *
  * Input Parameters:
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
- *   0 (OK) means that the callback function for all registered drivers
- *   returned OK (meaning that they accept the state change).  Non-zero
- *   means that one of the drivers refused the state change.  In this case,
- *   the system will revert to the preceding state.
+ *   None
  *
  * Assumptions:
  *   It is assumed that interrupts are disabled when this function is
@@ -571,7 +460,7 @@ enum pm_state_e pm_checkstate(void);
  *
  ****************************************************************************/
 
-int pm_changestate(enum pm_state_e newstate);
+void pm_changestate(enum pm_state_e newstate);
 
 /****************************************************************************
  * Name: pm_querystate
@@ -645,17 +534,15 @@ int pm_metrics(int milliseconds);
  */
 
 #define pm_initialize()
-#define pm_register(cb)         (0)
-#define pm_unregister(cb)       (0)
-#define pm_domain_register(domain)	(0)
 #define pm_idle()
-#define pm_suspend(domain_id)   (0)
-#define pm_resume(domain_id)    (0)
-#define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
-#define pm_timedsuspend(domain_id, milliseconds)	(0)
-#define pm_checkstate()         (0)
-#define pm_changestate(state)   (0)
-#define pm_querystate()         (0)
+#define pm_changestate(state)
+#define pm_domain_register(domain)		   (0)
+#define pm_suspend(domain_id)   		   (0)	
+#define pm_resume(domain_id)    		   (0)
+#define pm_sleep(milliseconds)			   usleep(milliseconds * USEC_PER_MSEC)
+#define pm_timedsuspend(domain_id, milliseconds)   (0)
+#define pm_checkstate()                 	   (0)   
+#define pm_querystate()         		   (0)
 
 #endif							/* CONFIG_PM */
 

@@ -134,7 +134,6 @@ static int power_stat(const char *relpath, FAR struct stat *buf);
 
 static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 
 /****************************************************************************
  * Private Data
@@ -145,7 +144,6 @@ static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_
 static const struct power_procfs_entry_s g_power_direntry[] = {
 	{"states", power_states_read, NULL, DTYPE_FILE},
 	{"curstate", power_curstate_read, NULL, DTYPE_FILE},
-	{"devices", power_devices_read, NULL, DTYPE_FILE},
 };
 
 static const uint8_t g_power_direntrycount = sizeof(g_power_direntry) / sizeof(struct power_procfs_entry_s);
@@ -313,41 +311,6 @@ static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size
 	}
 
 	return copysize;
-}
-
-/****************************************************************************
- * Name: power_devices_read
- ****************************************************************************/
-
-static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	FAR struct power_file_s *priv;
-	FAR struct pm_callback_s *callback;
-	FAR dq_entry_t *entry;
-	size_t copysize;
-	size_t totalsize;
-
-	priv = (FAR struct power_file_s *)filep->f_priv;
-	copysize = 0;
-	totalsize = 0;
-
-	if (priv->offset == 0) {
-
-		entry = dq_peek(&g_pmglobals.registry);
-		while (entry) {
-			callback = (FAR struct pm_callback_s *)entry;
-			copysize = snprintf(buffer, buflen, "%s ", callback->name);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-			entry = sq_next(entry);
-		}
-
-		/* Indicate we have already provided all the data */
-		priv->offset = 0xFF;
-	}
-
-	return totalsize;
 }
 
 /****************************************************************************
