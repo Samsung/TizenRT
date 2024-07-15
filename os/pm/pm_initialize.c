@@ -107,6 +107,8 @@ void pm_initialize(void)
 	/* Register Special Domains, which are specific to Kernel*/
 	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
 	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
+	/* Initialize the PM Process for state transition */
+	DEBUGASSERT(pm_process_init() == OK);
 
 	g_pmglobals.stime = clock_systimer();
 	g_pmglobals.btime = clock_systimer();

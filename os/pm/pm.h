@@ -187,7 +187,7 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
  *
  * Returned Value:
  *   0 - system can go to sleep
- *   -1 - system should not go to sleep
+ *  -1 - system should not go to sleep
  *
  ****************************************************************************/
 int pm_set_wakeup_timer(void);
@@ -316,6 +316,71 @@ void pm_metrics_update_idle(void);
  *
  ****************************************************************************/
 void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+/****************************************************************************
+ * Name: pm_process_init
+ *
+ * Description:
+ *   It initializes the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ *  -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_process_init(void);
+
+/****************************************************************************
+ * Name: pm_process_suspend
+ *
+ * Description:
+ *   It stops the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ *  -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_process_suspend(void);
+
+/****************************************************************************
+ * Name: pm_process_resume
+ *
+ * Description:
+ *   It starts the pm state transition timer.
+ *
+ * Input Parameters:
+ *
+ * Returned Value:
+ *   0 (OK), if able to start timer
+ *  -1 (ERROR), on error.
+ *
+ ****************************************************************************/
+
+int pm_process_resume(void);
+
+#ifdef CONFIG_LCD
+/****************************************************************************
+ * Name: pm_lcd_change_backlight
+ *
+ * Description:
+ *   It create work queue to change LCD backlight. Since we can't change LCD
+ *   Backlight in ISR, we need work-queue to facilitate it.
+ *
+ * Input parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Zero on success, a negative errno on failure
+ *
+ ****************************************************************************/
+int pm_lcd_change_backlight(void);
+#endif
 #endif
 
 #undef EXTERN

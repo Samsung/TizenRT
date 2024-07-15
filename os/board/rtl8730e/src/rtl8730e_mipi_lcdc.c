@@ -300,6 +300,5 @@ void rtl8730e_lcdc_pm(void)
 {
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
-	rtl8730e_control_backlight(CONFIG_LCD_MAXPOWER);
 }
 #endif

@@ -96,13 +96,12 @@ int pm_resume(int domain_id)
 {
 	irqstate_t flags;
 	int ret = OK;
-
-	flags = enter_critical_section();
 	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
 		ret = ERROR;
 		set_errno(EINVAL);
 		goto errout;
 	}
+	flags = enter_critical_section();
 	if (g_pmglobals.suspend_count[domain_id] <= 0) {
 		ret = ERROR;
 		set_errno(ERANGE);
@@ -112,8 +111,10 @@ int pm_resume(int domain_id)
 	pm_metrics_update_resume(domain_id);
 #endif
 	g_pmglobals.suspend_count[domain_id]--;
+	/* Start the PM State Change Process */
+	(void)pm_process_resume();
 errout:
 	leave_critical_section(flags);
 	return ret;
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */
