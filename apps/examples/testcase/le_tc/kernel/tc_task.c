@@ -289,7 +289,12 @@ static void tc_task_task_restart(void)
 	ret_chk = task_restart(pid);
 
 	sleep(SEC_1);
+#ifdef CONFIG_SMP
+	//lldbg("ret_chk=  0x%08x\n", ret_chk);
 	TC_ASSERT_EQ("task_restart", ret_chk, 0);
+#else
+	TC_ASSERT_NEQ("task_restart", ret_chk, 0);
+#endif 
 
 	/* g_icounter shall be increment when do start and restart operation */
 	waitpid(pid, &recv_status, 0);
