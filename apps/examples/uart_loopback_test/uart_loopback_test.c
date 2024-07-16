@@ -26,6 +26,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
+#ifndef CONFIG_DISABLE_POLL
+#include <poll.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 /****************************************************************************
@@ -36,6 +39,8 @@
 #endif
 
 #define UART_DEV_PATH		"/dev/ttyS%d"
+
+#define UART_POLL_TIMEOUT_MS	10000
 
 #define TEST_STR		"1234567890abcdefghijklmnopqrstuvwxyz"
 #define TEST_STR_LEN	37
@@ -85,6 +90,21 @@ static int uart_rx_loop(void)
 	remain_size = TEST_STR_LEN;
 
 	while (0 < remain_size) {
+#ifndef CONFIG_DISABLE_POLL
+		struct pollfd fds[1];
+		fds[0].fd = fd;
+		fds[0].events = POLLIN;
+		if (poll(fds, 1, UART_POLL_TIMEOUT_MS) < 0) {
+			printf("Fail to poll\n");
+			close(fd);
+			return -1;
+		}
+		if (!(fds[0].revents & POLLIN)) {
+			printf("UART LOOPBACK TEST: FAILED (Timeout)\n");
+			close(fd);
+			return -1;
+		}
+#endif
 		ret_size = read(fd, (void *)read_ptr, remain_size);
 		remain_size -= ret_size;
 		read_ptr += ret_size;
