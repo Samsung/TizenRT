@@ -508,6 +508,8 @@ typedef struct {
 	u32 Tx_HandshakeInterface;
 	u32 Rx_HandshakeInterface;
 	IRQn_Type IrqNum;
+	u8 tx_channel_allocated;
+	u8 rx_channel_allocated;
 } SPI_DevTable;
 
 /**
@@ -684,7 +686,7 @@ _LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);
 
 /* Other Definitions --------------------------------------------------------*/
 
-extern const SPI_DevTable SPI_DEV_TABLE[2];
+extern SPI_DevTable SPI_DEV_TABLE[2];
 
 /* MANUAL_GEN_END */
 

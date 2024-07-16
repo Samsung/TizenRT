@@ -57,10 +57,10 @@ typedef struct {
 	/* mbed var */
 	u32 dma_en;
 
-	bool is_readwrite;
+	u32 is_readwrite;
 } HAL_SSI_ADAPTOR, *PHAL_SSI_ADAPTOR;
 
-HAL_SSI_ADAPTOR ssi_adapter_g[2];
+static HAL_SSI_ADAPTOR ssi_adapter_g[2];
 
 /**
   * @}
@@ -276,8 +276,8 @@ static u32 ssi_dma_tx_irq(void *Data)
 	}
 
 	SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_TDMAE);
-
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	/* we should only free the channel during spi_free */
+	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	ssi_adapter->dma_en &= ~SPI_DMA_TX_EN;
 
@@ -306,8 +306,8 @@ static u32 ssi_dma_rx_irq(void *Data)
 	if (NULL != ssi_adapter->RxCompCallback) {
 		ssi_adapter->RxCompCallback(ssi_adapter->RxCompCbPara);
 	}
-
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	/* we should only free the channel during spi_free */
+	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	ssi_adapter->dma_en &= ~SPI_DMA_RX_EN;
 
