@@ -1,0 +1,25 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_UART_LOOPBACK
+	bool "UART loopback test application"
+	default n
+	---help---
+		Enable UART loopback test application
+
+config USER_ENTRYPOINT
+	string
+	default "uart_loopback_main" if ENTRY_UART_LOOPBACK
+
+if EXAMPLES_UART_LOOPBACK
+
+config EXAMPLES_UART_LOOPBACK_PORT
+	int "UART loopback tty port "
+	default 2
+	---help---
+		The EXAMPLES_UART_LOOPBACK_PORT sets test UART ttyS* port
+		The default port is ttyS2
+
+endif #EXAMPLES_UART_LOOPBACK

@@ -1,0 +1,3 @@
+config ENTRY_UART_LOOPBACK
+	bool "uart loop back example"
+	depends on EXAMPLES_UART_LOOPBACK
