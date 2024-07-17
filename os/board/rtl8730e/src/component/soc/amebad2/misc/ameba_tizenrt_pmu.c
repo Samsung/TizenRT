@@ -3,7 +3,7 @@
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
 
-uint32_t missing_tick = 0;
+static uint32_t missing_tick = 0;
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
@@ -18,7 +18,7 @@ static uint32_t sysactive_timeout_flag = 0;
 /* ++++++++ TizenRT macro implementation ++++++++ */
 
 /* psm dd hook info */
-PSM_DD_HOOK_INFO gPsmDdHookInfo[PMU_MAX];
+static PSM_DD_HOOK_INFO gPsmDdHookInfo[PMU_MAX];
 
 u32 pmu_exec_sleep_hook_funs(void)
 {
@@ -196,7 +196,7 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 {
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
@@ -204,15 +204,8 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphan
 
 	sleep_param.sleep_type = sleep_type;
 
-	*expected_idle_time = 0;
-
 	/*  Store gtimer timestamp before sleep */
 	tick_before_sleep = SYSTIMER_TickGet();
-	sysactive_timeout_flag = 1;
-#ifdef AMEBAD2_TODO
-	IPCM0_DEV->IPCx_USR[IPC_INT_CHAN_SHELL_SWITCH] = 0x00000000;
-	InterruptDis(UART_LOG_IRQ);
-#endif
 
 	if (sleep_type == SLEEP_CG) {
 		SOCPS_SleepCG();
@@ -245,29 +238,6 @@ void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphan
 	}
 #endif
 #endif
-
-	sysactive_timeout_flag = 0;
-
-#ifndef CONFIG_CLINTWOOD
-	pmu_set_sysactive_time(2);
-#endif
-}
-
-CONFIG_FW_CRITICAL_CODE_SECTION
-void tizenrt_post_sleep_processing(uint32_t *expected_idle_time)
-{
-#ifndef CONFIG_ARCH_CORTEXA32
-#ifndef configSYSTICK_CLOCK_HZ
-	*expected_idle_time = 1 + (SysTick->VAL / (configCPU_CLOCK_HZ / configTICK_RATE_HZ));
-#else
-	*expected_idle_time = 1 + (SysTick->VAL / (configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ));
-#endif
-#else
-	UNUSED(expected_idle_time);
-#ifdef AMEBAD2_TODO
-#endif
-#endif
-
 }
 
 u32 check_wfi_state(u8 core_id)
