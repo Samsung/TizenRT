@@ -51,11 +51,8 @@
 
 /* For power save */
 #ifdef CONFIG_PM
-extern void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
-extern void tizenrt_post_sleep_processing(uint32_t *expected_idle_time);
-
-#define configPRE_SLEEP_PROCESSING( x, y )         		( tizenrt_pre_sleep_processing((uint32_t *)&x, y) )
-#define configPOST_SLEEP_PROCESSING( x )        		( tizenrt_post_sleep_processing((uint32_t *)&x) )
+extern void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
+#define config_SLEEP_PROCESSING( x )         		(tizenrt_sleep_processing( x ))
 #endif
 
 /* Is there a serial console?  It could be on UART1-5 */
