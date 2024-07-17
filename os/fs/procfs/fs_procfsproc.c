@@ -409,11 +409,24 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #else
 	ppid = -1;
 #endif
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d ", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
+#ifdef CONFIG_SMP
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
+#else
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
+#endif
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
 #ifdef CONFIG_SCHED_CPULOAD
+	buffer += copysize;
+	remaining -= copysize;
+	if (totalsize >= buflen) {
+		return totalsize;
+	}
+	linesize = snprintf(procfile->line, STATUS_LINELEN, " ");
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
+	totalsize += copysize;
+
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
 		/* Get cpuload measurement data */
 		(void)clock_cpuload(procfile->pid, cpuload_idx, &cpuload);
