@@ -98,12 +98,19 @@ static const char *utils_ttypenames[4] = {
 	"--?--  "
 };
 
+#ifdef CONFIG_SMP
+static uint32_t cpu;
+#endif
+
 static void ps_print_values(char *buf, void *arg)
 {
 	int i;
 	int flags;
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
+#ifdef CONFIG_SMP
+	int cpu_idx;
+#endif
 
 	stat_info[0] = buf;
 
@@ -121,10 +128,17 @@ static void ps_print_values(char *buf, void *arg)
 		return;
 	}
 
-	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
+#ifdef CONFIG_SMP
+	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
+	if (cpu_idx != cpu && cpu != CONFIG_SMP_NCPUS) {
+		return;
+	}
+#endif
+	
+	printf("%5s | %4s | %4s | %7s | %c%c | %8s | %3s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
 		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
-		utils_statenames[state]);
+		utils_statenames[state], stat_info[PROC_STAT_CPU]);
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
@@ -172,17 +186,56 @@ int utils_ps(int argc, char **args)
 
 #endif
 
+#ifdef CONFIG_SMP
+	int opt;
+	cpu = CONFIG_SMP_NCPUS;
+        if (argc > 1) {
+                /*
+                 * -c [cpu idx] : only display processes running on given cpu
+                 *
+                 * For example,
+                 *  TASH >> ps -c 1
+                 */
+                while ((opt = getopt(argc, args, "c:")) != ERROR) {
+                        switch (opt) {
+                        case 'c':
+                                cpu = atoi(optarg);
+                                if (cpu < 0 || cpu >= CONFIG_SMP_NCPUS) {
+					printf("Invalid input for -c option\n");
+                                        goto out;
+                                }
+                                break;
+
+			default:
+				printf("Invalid input options\n");
+				goto out;
+			}
+		}
+	}
+#endif
+
 	printf("\n");
 #if (CONFIG_TASK_NAME_SIZE > 0)
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
-	printf("------|------|------|---------|----|----------|----------\n");
+#ifdef CONFIG_SMP
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
 #else
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  \n");
-	printf("------|------|------|---------|----|----------\n");
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
+#endif
+	printf("------|------|------|---------|----|----------|-----|----\n");
+#else
+#ifdef CONFIG_SMP
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU \n");
+#else
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS \n");
+#endif
+	printf("------|------|------|---------|----|----------|-----\n");
 #endif
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
 
+#ifdef CONFIG_SMP
+out:
+#endif
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {
 		/* Detach mounted Procfs */
