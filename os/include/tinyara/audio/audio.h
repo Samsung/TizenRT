@@ -297,6 +297,7 @@
 #define AUDIO_SD_KEYWORD_DETECT     0x0002
 #define AUDIO_SD_NS                 0x0004
 #define AUDIO_SD_CLEAR              0x0008
+#define AUDIO_SD_LOCAL              0x0010
 
 /* Audio Operation Callback Reasons ***************************************************/
 
@@ -310,6 +311,8 @@
 #define AUDIO_CALLBACK_KEYWORD      0x04
 #define AUDIO_CALLBACK_ENDPOINT     0x05
 #define AUDIO_CALLBACK_NS           0x06
+#define AUDIO_CALLBACK_LOCAL        0x07
+#define AUDIO_CALLBACK_SPD          0x08 /* SPD always work with EPD, so we do not define it in PU controls */
 
 /* Audio Pipeline Buffer (AP Buffer) flags **********************************/
 
@@ -339,6 +342,15 @@
 #define AUDIO_MSG_XRUN		        9
 #define AUDIO_MSG_EPD              10
 #define AUDIO_MSG_KD               11
+#define AUDIO_MSG_LOCAL0           12
+#define AUDIO_MSG_LOCAL1           13
+#define AUDIO_MSG_LOCAL2           14
+#define AUDIO_MSG_LOCAL3           15
+#define AUDIO_MSG_LOCAL4           16
+#define AUDIO_MSG_LOCAL5           17
+#define AUDIO_MSG_LOCAL6           18
+#define AUDIO_MSG_LOCAL7           19
+#define AUDIO_MSG_SPD              20
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */
