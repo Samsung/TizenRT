@@ -233,7 +233,7 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-				{PA_23, PIN_INPUT, PullNone},
+				{PA_23, PIN_INPUT, PullDown},
 		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
 		Loguart pins
 		*/

@@ -231,7 +231,22 @@ static uint32_t rtk_gpio_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
+	/* For external pdm audio usage */
+#ifdef CONFIG_AUDIO_ALC1019
+#ifdef CONFIG_AMEBASMART_I2S2
+	gpio_t gpio_i2s2bclk;
+	gpio_init(&gpio_i2s2bclk, PB_21);
+	gpio_dir(&gpio_i2s2bclk, PIN_INPUT);
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+	gpio_t gpio_i2s3bclk;
+	gpio_init(&gpio_i2s3bclk, PA_14);
+	gpio_dir(&gpio_i2s3bclk, PIN_INPUT);
+#endif
+#endif /* CONFIG_AUDIO_ALC1019 */
+
 	gpio_toggle_clck(0);
+
 	return 1;
 }
 
