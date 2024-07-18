@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version ec01d12ebe_2024/07/16-10:10:49 ==
+1.	Remove download blocking in all case
+
 == version d08ed534e7 2024/05/31-17:08:07 ==
 1.	Add feature in fault handler to indicate KM4 fault
 
