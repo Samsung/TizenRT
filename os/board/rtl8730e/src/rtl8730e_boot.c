@@ -118,7 +118,13 @@ int up_check_prodswd(void)
 }
 int up_check_proddownload(void)
 {
-	return up_check_prod();
+	u8 hw_download, sw_download;
+	OTP_Read8(SEC_CFG2, &hw_download);
+	OTP_Read8(0x369, &sw_download);
+	if ((hw_download & 1) && (sw_download & 0x08)) {
+		return OK;
+	}
+	return ERROR;
 }
 #endif
 
