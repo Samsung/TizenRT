@@ -1066,20 +1066,18 @@ uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 {
 	uint32_t ret = 0;
 	uint8_t* tmp_buff = NULL;
-
+	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
 	tmp_buff = rtw_zmalloc(size);
 	if (tmp_buff == NULL) {
 		return 0x10;
 	}
-
-	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
 	ret = ameba_ftl_save_to_storage(tmp_buff, pdata_tmp, offset, size);
-	up_free_secure_context();
 	if (ret != FTL_WRITE_SUCCESS) {
 		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_save_to_storage ret: %x \n", ret);
 	}
 
 	rtw_mfree(tmp_buff, size);
+	up_free_secure_context();
 	return ret;
 }
 
