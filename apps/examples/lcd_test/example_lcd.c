@@ -388,5 +388,6 @@ int lcd_test_main(int argc, char *argv[])
 		printf("count :%d\n", count);
 	}
 	test_fps();
+	close(fd);
 	return 0;
 }
