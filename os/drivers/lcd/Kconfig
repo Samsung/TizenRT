@@ -113,11 +113,17 @@ choice
 		LCD ST7789 is 2.8 inch with SPI
 		LCD ST7785 is 2.8 inch with MIPI
 		LCD ST7701 is 3.9 inch with MIPI
+		LCD ST7701SN is 4.3 inch with MIPI
 
 config LCD_ST7701
 	bool "ST7701 LCD Driver"
 	---help---
 		Enable LCD Driver, ST7701 with mipi.
+
+config LCD_ST7701SN
+	bool "ST7701SN LCD Driver"
+	---help---
+		Enable LCD Driver, ST7701SN with mipi.
 
 config LCD_ST7785
 	bool "ST7785 LCD Driver"

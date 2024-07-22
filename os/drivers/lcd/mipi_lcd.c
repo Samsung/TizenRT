@@ -23,6 +23,8 @@
 #include <tinyara/lcd/st7785.h>
 #elif defined(CONFIG_LCD_ST7701)
 #include <tinyara/lcd/st7701.h>
+#elif defined(CONFIG_LCD_ST7701SN)
+#include <tinyara/lcd/st7701sn.h>
 #endif
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
