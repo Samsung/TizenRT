@@ -884,7 +884,7 @@ def find_crash_point(log_file, elf):
 				os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 3 " + BIN_PATH + " " + CONFIG_PATH)
 
 	# It displays the debug symbols corresponding to all the addresses in the kernel and application text address range
-	print('\nStack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+	print('\nStack_address\t Symbol_address\t Symbol_location  Symbol_name\t\tFile_name')
 	os.system("python3 ../debug/debugsymbolviewer.py " + log_file + " " + str(g_app_idx) + " 0 " + BIN_PATH + " " + CONFIG_PATH)
 
 	print('\nh. Heap Region information:\n')
