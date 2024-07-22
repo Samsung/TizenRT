@@ -70,6 +70,8 @@
 #include "task/task.h"
 #endif
 
+#include <tinyara/common_logs/common_logs.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -126,7 +128,7 @@ int task_activate(FAR struct tcb_s *tcb)
 
 	ret = sig_sethandler(tcb, SIGKILL, &act);
 	if (ret != OK) {
-		sdbg("Fail to set SIGKILL handler for activating tcb.\n");
+		sdbg("%s sig_sethandler for SIGKILL\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

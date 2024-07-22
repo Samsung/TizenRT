@@ -80,6 +80,8 @@
 #include "binary_manager/binary_manager.h"
 #endif
 
+#include <tinyara/common_logs/common_logs.h>
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -150,7 +152,7 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	tcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
 	if (!tcb) {
-		sdbg("ERROR: Failed to allocate TCB\n");
+		sdbg("%s TCB\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		errcode = ENOMEM;
 		goto errout;
 	}
@@ -295,7 +297,7 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
 
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
-		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
+		sdbg("%s priority, should be > %d, < %d\n", clog_message_str[CMN_LOG_INVALID_VAL], BM_PRIORITY_MIN, BM_PRIORITY_MAX);
 		return EPERM;
 	}
 #endif

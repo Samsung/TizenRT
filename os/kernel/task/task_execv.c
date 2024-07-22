@@ -67,6 +67,8 @@
 #include <tinyara/binfmt/symtab.h>
 #include <tinyara/binfmt/binfmt.h>
 
+#include <tinyara/common_logs/common_logs.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -151,7 +153,7 @@ int execv(FAR const char *path, FAR char *const argv[])
 
 	ret = exec(path, (FAR char *const *)argv, symtab, nsymbols);
 	if (ret < 0) {
-		sdbg("exec failed: %d\n", errno);
+		sdbg("%s exec:%d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 		return ERROR;
 	}
 
