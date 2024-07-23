@@ -84,6 +84,8 @@
 #include "binary_manager/binary_manager.h"
 #endif
 
+#include <tinyara/common_logs/common_logs.h>
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -280,7 +282,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < attr->priority && attr->priority < BM_PRIORITY_MAX + 1) {
-		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
+		sdbg("%s priority %d, should be > %d, < %d\n", clog_message_str[CMN_LOG_INVALID_VAL], attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
 		return EPERM;
 	}
 #endif
@@ -289,7 +291,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 	ptcb = (FAR struct pthread_tcb_s *)kmm_zalloc(sizeof(struct pthread_tcb_s));
 	if (!ptcb) {
-		sdbg("ERROR: Failed to allocate TCB\n");
+		sdbg("%s TCB\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return ENOMEM;
 	}
 #ifdef HAVE_TASK_GROUP
@@ -318,7 +320,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 	pjoin = (FAR struct join_s *)kmm_zalloc(sizeof(struct join_s));
 	if (!pjoin) {
-		sdbg("ERROR: Failed to allocate join\n");
+		sdbg("%s join\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		errcode = ENOMEM;
 		goto errout_with_tcb;
 	}

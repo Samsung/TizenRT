@@ -66,6 +66,8 @@
 #include "group/group.h"
 #include "pthread/pthread.h"
 
+#include <tinyara/common_logs/common_logs.h>
+
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
@@ -233,7 +235,7 @@ int pthread_completejoin(pid_t pid, FAR void *exit_value)
 	(void)pthread_sem_take(&group->tg_joinsem, false);
 	pjoin = pthread_findjoininfo(group, pid);
 	if (!pjoin) {
-		sdbg("Could not find join info, pid=%d\n", pid);
+		sdbg("%s findjoininfo, pid=%d\n", clog_message_str[CMN_LOG_FAILED_OP], pid);
 		(void)pthread_sem_give(&group->tg_joinsem);
 		return ERROR;
 	} else {
