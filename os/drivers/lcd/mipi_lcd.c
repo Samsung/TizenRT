@@ -36,6 +36,11 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
+typedef enum {
+	COMMAND,
+	VIDEO,
+} LCD_MODE;
+
 struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
 
@@ -48,34 +53,29 @@ struct mipi_lcd_dev_s {
 	int fb_alloc_count;
 	uint8_t power;
 	struct mipi_lcd_config_s *config;
+	LCD_MODE mode;
 };
 
 static struct mipi_lcd_dev_s g_lcdcdev;
 
-static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
+static int send_cmd(struct mipi_lcd_dev_s *priv, bool display_on)
 {
-	int transfer_status = OK;
-	u8 cmd = command.cmd;
-	u8 *cmd_addr = command.para_list;
-	u32 payload_len = command.count;
-	struct mipi_dsi_msg msg;
-	msg.channel = cmd;
-	if (payload_len == 0) {
-		msg.type = MIPI_DSI_DCS_SHORT_WRITE_0_PARAM;
-	} else if (payload_len == 1) {
-		msg.type = MIPI_DSI_DCS_SHORT_WRITE_1_PARAM;
-	} else {
-		msg.type = MIPI_DSI_DCS_LONG_WRITE;
-	}
-	msg.tx_buf = cmd_addr;
-	msg.tx_len = payload_len;
-	msg.flags = 0;
 	priv->config->lcd_mode_switch(false);
+	int transfer_status = OK;
+	struct mipi_dsi_msg msg;
+	if (display_on) {
+		msg.channel = 0x29;
+	} else {
+		msg.channel = 0x28;
+	}
+	msg.type = MIPI_DSI_DCS_LONG_WRITE;
+	msg.tx_len = 0;
+	msg.flags = 0;
 	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
-	priv->config->lcd_mode_switch(true);
 	if (transfer_status != OK) {
 		lcddbg("Command %x not sent \n", cmd);
 	}
+	priv->config->lcd_mode_switch(true);
 	return transfer_status;
 }
 
@@ -167,11 +167,10 @@ static int lcd_putrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col,
 static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR const uint8_t *buffer, fb_coord_t stride)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-	//coordinate shift from (0,0) -> (1,1) and (XRES-1,YRES-1) -> (XRES,YRES)
-	row_start += 1;
-	row_end += 1;
-	col_start += 1;
-	col_end += 1;
+	if (priv->mode == COMMAND) {
+		send_cmd(priv, true);
+		priv->mode = VIDEO;
+	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 	return OK;
 }
@@ -256,11 +255,9 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		return -1;
 	}
 	if (power == 0) {
-		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
-		send_cmd(priv, display_off_cmd);
+		send_cmd(priv, false);
 	} else {
-		lcm_setting_table_t display_on_cmd = {0x29, 0, {0x00}};
-		send_cmd(priv, display_on_cmd);
+		send_cmd(priv, true);
 	}
 	priv->config->backlight(power);
 	priv->power = power;
@@ -340,12 +337,13 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dev.init = lcd_init;
 	priv->dsi_dev = dsi;
 	priv->config = config;
+	priv->mode = COMMAND;
 	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
 		lcdvdbg("LCD Init sequence completed\n");
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 
+	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 	return &priv->dev;
 }

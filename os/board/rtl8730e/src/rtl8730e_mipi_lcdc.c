@@ -208,7 +208,6 @@ static void rtl8730e_enable_lcdc(void)
 {
 	LCDC_Cmd(pLCDC, ENABLE);
 	while (!LCDC_CheckLCDCReady(pLCDC)) ;
-	mipidsi_mode_switch(true);
 }
 
 void rtl8730e_mipidsi_underflowreset(void)
