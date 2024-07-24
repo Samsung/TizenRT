@@ -447,7 +447,7 @@ config ARCH_DABORTSTACK
 
 choice
 	prompt "Stack Protection feature options"
-	default STACK_OVERFLOW_PROTECTION_DISABLE
+	default SW_STACK_OVERFLOW_DETECTION
 
 config REG_STACK_OVERFLOW_PROTECTION
 	bool "REG Stack Overflow Protection"
@@ -465,6 +465,14 @@ config MPU_STACK_OVERFLOW_PROTECTION
 		Enables stack overflow protection.
 		It protects each task's stack overflow outside its max allocated stack memory.
 		This is applicable to user mode tasks created in protected build.
+
+config SW_STACK_OVERFLOW_DETECTION
+	bool "Minimal Software based Stack Overflow Detection"
+	depends on STACK_COLORATION
+	---help---
+		If the hardware does not provide means for stack overflow protection, then 
+		we can fall back to this option. It checks for stack overflow during each context
+		switch and stops execution if any process stack has overflowed.
 
 config STACK_OVERFLOW_PROTECTION_DISABLE
 	bool "Stack Overflow Protection Disable"

@@ -241,14 +241,6 @@
 #  define _END_TBSS    &_etbss
 #endif
 
-/* This is the value used to mark the stack for subsequent stack monitoring
- * logic.
- */
-
-#define STACK_COLOR    0xdeadbeef
-#define INTSTACK_COLOR 0xdeadbeef
-#define HEAP_COLOR     'h'
-
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
 #define CURRENT_REGS (g_current_regs[up_cpu_index()])
 

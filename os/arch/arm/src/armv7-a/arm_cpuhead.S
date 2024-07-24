@@ -51,6 +51,8 @@
 #include "chip.h"
 #include "up_internal.h"
 
+#include <tinyara/arch.h>
+
 #ifdef CONFIG_SMP
 
 	.file	"arm_cpuhead.S"
