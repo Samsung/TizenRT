@@ -144,8 +144,11 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	default:
 		pmvdbg("Invalid command passed!\n");
 		break;
-        }
-        return ret;
+	}
+	if (ret == ERROR) {
+		ret = -get_errno();
+	}
+	return ret;
 }
 
 /****************************************************************************
