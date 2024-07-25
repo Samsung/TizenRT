@@ -350,8 +350,8 @@ void i2s_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
   * @brief  Set I2S data transfer direction.
   * @param  obj: I2S object defined in application software.
   * @param  trx_type: Transfer direction. This parameter can be one of the following values:
-  *   @arg I2S_DIR_RX: Rx receive direction.
-  *   @arg I2S_DIR_TX: Tx transmission direction.
+  * @arg I2S_DIR_RX: Rx receive direction.
+  * @arg I2S_DIR_TX: Tx transmission direction.
   * @retval none
   */
 void i2s_set_direction(i2s_t *obj, int trx_type)
@@ -362,42 +362,15 @@ void i2s_set_direction(i2s_t *obj, int trx_type)
 }
 
 /**
-  * @brief  Set I2S channel number, sample rate and word length.
+  * @brief  Set I2S clock select
   * @param  obj: I2S object defined in application software.
-  * @param  channel_num: This parameter can be one of the following values:
-  *   @arg CH_STEREO: Stereo channel.
-  *   @arg CH_MONO: Mono channel.
-  * @param  rate: This parameter can be one of the following values:
-  *   @arg SR_8KHZ: Sample rate is 8kHz.
-  *   @arg SR_12KHZ: Sample rate is 12kHz.
-  *   @arg SR_16KHZ: Sample rate is 16kHz.
-  *   @arg SR_24KHZ: Sample rate is 24kHz.
-  *   @arg SR_32KHZ: Sample rate is 32kHz.
-  *   @arg SR_48KHZ: Sample rate is 48kHz.
-  *   @arg SR_64KHZ: Sample rate is 64kHz.
-  *   @arg SR_96KHZ: Sample rate is 96kHz.
-  *   @arg SR_192KHZ: Sample rate is 192kHz.
-  *   @arg SR_384KHZ: Sample rate is 384kHz.
-  *   @arg SR_11p025KHZ: Sample rate is 11.025kHz.
-  *   @arg SR_22p05KHZ: Sample rate is 22.05kHz.
-  *   @arg SR_44p1KHZ: Sample rate is 44.1kHz.
-  *   @arg SR_88p2KHZ: Sample rate is 88.2kHz.
-  *   @arg SR_176p4KHZ: Sample rate is 176.4kHz.
-  * @param  word_len: This parameter can be one of the following values:
-  *   @arg WL_16b: Sample bit is 16 bit.
-  *   @arg WL_24b: Sample bit is 24 bit.
-  *   @arg WL_32b: Sample bit is 32 bit.
-  * @retval none
+  * @retval clock_mode： Clock mode
   */
-void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
+static uint32_t i2s_clock_select(i2s_t *obj)
 {
 	uint32_t clock_mode = 0;
 	AUDIO_ClockParams Clock_Params;
 	AUDIO_InitParams Init_Params;
-
-	obj->channel_num = channel_num;
-	obj->sampling_rate = rate;
-	obj->word_length = word_len;
 
 	Init_Params.chn_len = SP_CL_32;
 	Init_Params.chn_cnt = obj->channel_num;
@@ -430,6 +403,49 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
 	}
+	return clock_mode;
+}
+
+/**
+  * @brief  Set I2S channel number, sample rate and word length.
+  * @param  obj: I2S object defined in application software.
+  * @param  channel_num: This parameter can be one of the following values:
+  * @arg CH_STEREO: Stereo channel.
+  * @arg CH_MONO: Mono channel.
+  * @param  rate: This parameter can be one of the following values:
+  * @arg SR_8KHZ: Sample rate is 8kHz.
+  * @arg SR_12KHZ: Sample rate is 12kHz.
+  * @arg SR_16KHZ: Sample rate is 16kHz.
+  * @arg SR_24KHZ: Sample rate is 24kHz.
+  * @arg SR_32KHZ: Sample rate is 32kHz.
+  * @arg SR_48KHZ: Sample rate is 48kHz.
+  * @arg SR_64KHZ: Sample rate is 64kHz.
+  * @arg SR_96KHZ: Sample rate is 96kHz.
+  * @arg SR_192KHZ: Sample rate is 192kHz.
+  * @arg SR_384KHZ: Sample rate is 384kHz.
+  * @arg SR_11p025KHZ: Sample rate is 11.025kHz.
+  * @arg SR_22p05KHZ: Sample rate is 22.05kHz.
+  * @arg SR_44p1KHZ: Sample rate is 44.1kHz.
+  * @arg SR_88p2KHZ: Sample rate is 88.2kHz.
+  * @arg SR_176p4KHZ: Sample rate is 176.4kHz.
+  * @param  word_len: This parameter can be one of the following values:
+  * @arg WL_16b: Sample bit is 16 bit.
+  * @arg WL_24b: Sample bit is 24 bit.
+  * @arg WL_32b: Sample bit is 32 bit.
+  * @retval none
+  */
+void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
+{
+	uint32_t clock_mode = 0;
+
+	obj->channel_num = channel_num;
+	obj->sampling_rate = rate;
+	obj->word_length = word_len;
+	clock_mode = i2s_clock_select(obj);
+
+	/* Sport Deinit */
+	AUDIO_SP_Unregister(obj->i2s_idx, obj->direction);
+	AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 
 	/* Sport Init */
 	AUDIO_SP_Reset(obj->i2s_idx);
@@ -437,9 +453,11 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	SP_InitStruct.SP_SelFIFO = obj->fifo_num;
 	SP_InitStruct.SP_SelChLen = obj->channel_length;
+	SP_InitStruct.SP_SelWordLen = obj->word_length;
 	SP_InitStruct.SP_SetMultiIO = obj->mode;
 	SP_InitStruct.SP_SR = obj->sampling_rate;
 	SP_InitStruct.SP_SelClk = clock_mode;
+
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
 
@@ -451,7 +469,6 @@ void i2s_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 		AUDIO_SP_RXFIFOSrcSel(obj->i2s_idx, RX_FIFO0_REG0_R, RXCHN7);
 	}
 }
-
 
 /**
   * @brief  Initialize the I2S device, including clock, function, interrupt and I2S registers.
@@ -499,21 +516,19 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
   */
 void i2s_deinit(i2s_t *obj)
 {
-	switch (obj->clock) {
-	case PLL_CLOCK_24P576M:
-		PLL_I2S_24P576M(DISABLE);
-		break;
-
-	case PLL_CLOCK_98P304M:
-		PLL_I2S_98P304M(DISABLE);
-		break;
-	}
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
 	if (obj->i2s_idx == I2S2) {
 		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, DISABLE);
 	} else {
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, DISABLE);
 	}
+
+	GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+	GDMA_Cmd(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum, DISABLE);
+	GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+	AUDIO_SP_Unregister(obj->i2s_idx, obj->direction);
+	AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 }
 
 /**
