@@ -239,7 +239,7 @@ void SOCPS_SleepPG(void)
 #if ( CONFIG_SMP_NCPUS > 1 )
 #ifdef CONFIG_CPU_HOTPLUG
 	/* Now init core1 */
-	up_set_secondary_cpu_state(1, CPU_WAKE_FROM_SLEEP);
+	up_set_cpu_state(1, CPU_WAKE_FROM_SLEEP);
 #endif
 	smp_init();
 #endif
