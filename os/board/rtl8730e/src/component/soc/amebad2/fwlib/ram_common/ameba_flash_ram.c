@@ -20,9 +20,6 @@
 
 FLASH_InitTypeDef flash_init_para;
 static uint32_t PrevIrqStatus;
-#ifdef CONFIG_CPU_GATING
-extern volatile uint32_t ulFlashPG_Flag;
-#endif
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
@@ -434,7 +431,7 @@ void FLASH_UserMode_Enter(void)
 	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
 	CA32_TypeDef *ca32 = CA32_BASE;
 
-	while ((ulFlashPG_Flag != 2) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+	while ((up_get_gating_flag_status(ulCoreID) != 2) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
 #endif
 	ARM_DSB();
 	ARM_ISB();
