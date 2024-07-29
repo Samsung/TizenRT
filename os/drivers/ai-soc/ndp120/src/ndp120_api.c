@@ -914,9 +914,9 @@ int ndp120_init(struct ndp120_dev_s *dev)
 	/* File names */
 	int s;
 
-	const char *mcu_package = "/mnt/ndp120/mcu_fw_120.synpkg";
-	const char *dsp_package = "/mnt/ndp120/dsp_firmware_full_ff_id49.synpkg";
-    const char *neural_package = "/mnt/ndp120/hi_bixby_model568uav18.synpkg";
+	const char *mcu_package = "/mnt/kernel/audio/mcu_fw";
+	const char *dsp_package = "/mnt/kernel/audio/dsp_fw";
+	const char *neural_package = "/mnt/kernel/audio/kd_local";
 
 	const unsigned int AUDIO_TANK_MS =
 		AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
