@@ -66,7 +66,6 @@ CXXSRCS += PESPacket.cpp PESParser.cpp TSPacket.cpp
 CXXSRCS += ParseManager.cpp
 CXXSRCS += TSDemuxer.cpp
 endif
-
 ifeq ($(CONFIG_ENABLE_CURL), y)
 CXXSRCS += HttpStream.cpp
 endif
@@ -92,13 +91,21 @@ endif
 ifeq ($(CONFIG_MEDIA_VOICE_SPEECH_DETECTOR), y)
 DEPPATH += --dep-path src/media/voice
 VPATH += :src/media/voice
-CXXSRCS += \
-	SpeechDetector.cpp \
-	SoftwareKeywordDetector.cpp \
-	HardwareKeywordDetector.cpp \
-	SoftwareEndPointDetector.cpp \
-	HardwareEndPointDetector.cpp
-CXXFLAGS += -I$(TOPDIR)/../external/swepd
+CXXSRCS += SpeechDetector.cpp
+CXXSRCS += SpeechDetectorListenerWorker.cpp
+CXXSRCS += SpeechDetectorWorker.cpp
+ifeq ($(CONFIG_MEDIA_SOFTWARE_KD), y)
+CXXSRCS += SoftwareKeywordDetector.cpp
+endif
+ifeq ($(CONFIG_MEDIA_HARDWARE_KD), y)
+CXXSRCS += HardwareKeywordDetector.cpp
+endif
+ifeq ($(CONFIG_MEDIA_SOFTWARE_EPD), y)
+CXXSRCS += SoftwareEndPointDetector.cpp
+endif
+ifeq ($(CONFIG_MEDIA_HARDWARE_EPD), y)
+CXXSRCS += HardwareEndPointDetector.cpp
+endif
 endif
 
 DEPPATH += --dep-path src/media

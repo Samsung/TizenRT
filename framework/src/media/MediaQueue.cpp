@@ -43,4 +43,11 @@ bool MediaQueue::isEmpty()
 	std::unique_lock<std::mutex> lock(mQueueMtx);
 	return mQueueData.empty();
 }
+
+void MediaQueue::clearQueue(void)
+{
+	std::unique_lock<std::mutex> lock(mQueueMtx);
+   	std::queue<std::function<void()>> empty;
+   	std::swap(mQueueData, empty);
+}
 } // namespace media

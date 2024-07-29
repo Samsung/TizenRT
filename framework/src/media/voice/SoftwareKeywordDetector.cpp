@@ -30,9 +30,28 @@ void SoftwareKeywordDetector::deinit()
 	
 }
 
-bool SoftwareKeywordDetector::startKeywordDetect(int timeout)
+bool SoftwareKeywordDetector::startKeywordDetect(void)
 {
 	return true;
+}
+
+bool SoftwareKeywordDetector::stopKeywordDetect(void)
+{
+	return false;	
+}
+
+void SoftwareKeywordDetector::detectKeyword(void)
+{
+}
+
+bool SoftwareKeywordDetector::isKeywordDetectStarted(void)
+{
+	return mKeywordDetectStarted;
+}
+
+void SoftwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener speechResultCallback)
+{
+	mSpeechResultCallback = speechResultCallback;
 }
 
 } // namespace voice

@@ -1,6 +1,6 @@
 /* ****************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2024 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,40 @@
  *
  ******************************************************************/
 
-#ifndef __MEDIA_QUEUE_H
-#define __MEDIA_QUEUE_H
+#ifndef __MEDIA_SPEECHDETECTORWORKER_H
+#define __MEDIA_SPEECHDETECTORWORKER_H
 
+#include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
 #include <atomic>
-#include <iostream>
 #include <functional>
+#include <iostream>
+#include <fstream>
+
+#include <tinyalsa/tinyalsa.h>
+#include "../MediaWorker.h"
+#include "KeywordDetector.h"
+
+using namespace std;
 
 namespace media {
-class MediaQueue
+namespace voice {
+class SpeechDetectorWorker : public MediaWorker
 {
 public:
-	MediaQueue();
-	~MediaQueue();
-	template <typename _Callable, typename... _Args>
-	void enQueue(_Callable &&__f, _Args &&... __args) {
-		std::unique_lock<std::mutex> lock(mQueueMtx);
-		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
-		mQueueData.push(func);
-		mQueueCv.notify_one();
-	}
-	std::function<void()> deQueue();
-	bool isEmpty();
-	void clearQueue(void);
+	static SpeechDetectorWorker& getWorker();
+	void setKeywordDetector(std::shared_ptr<KeywordDetector> keywordDetector);
 
 private:
-	std::queue<std::function<void()>> mQueueData;
-	std::condition_variable mQueueCv;
-	std::mutex mQueueMtx;
+	SpeechDetectorWorker();
+	virtual ~SpeechDetectorWorker();
+	bool processLoop() override;
+
+	std::shared_ptr<KeywordDetector> mKeywordDetector;
 };
+} // namespace voice
 } // namespace media
 
 #endif

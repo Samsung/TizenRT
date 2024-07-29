@@ -20,22 +20,19 @@
 
 #include <tinyara/config.h>
 
-#ifndef CONFIG_VOICE_SOFTWARE_EPD
-#error "To use S/W EPD, Please enable the External/Software EndPoint Detector(Fixed Float) Support."
-#endif
-
 #ifndef CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE
 #define CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE 256
 #endif
 
 #include <functional>
-#include <semaphore.h>
 
 #include <media/MediaRecorder.h>
 
 #include "EndPointDetector.h"
-#include <speex/speex_preprocess.h>
 
+#include "aifw/AIInferenceHandler.h"
+#include "aifw/AIModelService.h"
+#include "../StreamBuffer.h"
 namespace media {
 namespace voice {
 
@@ -46,13 +43,30 @@ public:
 	~SoftwareEndPointDetector();
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
-	bool startEndPointDetect(int timeout) override;
-	bool detectEndPoint(short *sample, int numSample) override;
+	bool startEndPointDetect(void) override;
+	bool stopEndPointDetect(void) override;
+	bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) override;
 	bool waitEndPoint(int timeout) override;
+	void registerEPDResultListener(EPDResultListener epdResultCallback) override;
+	static void epd_inferenceResultListener(AIFW_RESULT res, void *values, uint16_t count);
 
 private:
-	SpeexPreprocessState *mState;
-	sem_t mSem;
+	std::shared_ptr<aifw::AIInferenceHandler> mAIInferenceHandler;
+	std::shared_ptr<aifw::AIModelService> mAIModelService;
+	std::shared_ptr<media::stream::StreamBuffer> mAudioDataBuffer;
+	unsigned char *mPCMData;
+	/**
+	 * @brief Size of mAudioBuffer in bytes. Size is calculated based on the number of bytes required for inference &
+	 * the number of bytes coming from the recorder in detectEndPoint() API.
+	*/
+	int16_t mAudioBufferSize;
+	/**
+	 * @brief Number of bytes required for inference.
+	*/
+	uint16_t mInferenceInputSize;
+	static EPDResultListener mEPDResultCallback;
+
+	uint16_t getAudioBufferSize(void);
 };
 
 } // namespace voice
