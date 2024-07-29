@@ -351,6 +351,14 @@ config SMP_NCPUS
 		SMP configuration.  However, running the SMP logic in a single CPU
 		configuration is useful during certain testing.
 
+config AMP
+	bool "Asymmmetric Multi Processing (AMP)"
+	default n
+	---help---
+		AMP supports dedicating one or more processing units to particular tasks.
+		When AMP is enabled, all tasks will run on CPU0. The user can then change
+		the affinity of any of the tasks to run on other CPU cores.
+
 endif # SMP
 
 config RR_INTERVAL
