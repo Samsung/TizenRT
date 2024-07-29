@@ -484,6 +484,13 @@ void board_initialize(void)
 #ifdef CONFIG_AUDIO_ALC1019
 	rtl8730e_alc1019_initialize(0);
 #endif
+
+#ifdef CONFIG_AUDIO_NDP120
+	if (rtl8730e_ndp120_initialize(0) != 0) {
+		lldbg("NDP120 initialization failed\n");
+	}
+ #endif
+
 	IPC_MSG_STRUCT ipc_msg_loguart;
 
 	ipc_msg_loguart.msg_type = IPC_USER_POINT;

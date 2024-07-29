@@ -282,6 +282,10 @@ if DRIVERS_VIDEO
 source drivers/video/Kconfig
 endif # DRIVERS_VIDEO
 
+menu "AI SoC devices"
+source drivers/ai-soc/Kconfig
+endmenu
+
 source drivers/lcd/Kconfig
 
 menuconfig BCH

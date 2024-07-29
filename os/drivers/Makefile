@@ -72,6 +72,7 @@ endif
 
 include analog$(DELIM)Make.defs
 include audio$(DELIM)Make.defs
+include ai-soc$(DELIM)Make.defs
 include bch$(DELIM)Make.defs
 include bluetooth$(DELIM)Make.defs
 include compression$(DELIM)Make.defs
@@ -171,6 +172,18 @@ $(BIN): $(OBJS)
 	$(Q) touch $@
 
 depend: .depend
+
+ifeq ($(CONFIG_NDP120),y)
+context:
+	$(eval DEST_DIR = $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/ndp120)
+	@if [ -e $(DEST_DIR) ]; then \
+		rm -rf $(DEST_DIR); \
+		echo "Deleted ndp120 folder from fs"; \
+	fi
+	@mkdir -p $(DEST_DIR)
+	@cp $(TOPDIR)/drivers/ai-soc/ndp120/binaries/* $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/ndp120
+	@echo "NPD120 f/w files copied for generating fs image"
+endif
 
 clean:
 	$(call DELFILE, $(BIN))
