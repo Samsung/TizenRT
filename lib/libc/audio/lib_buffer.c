@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/mm/mm.h>
 
 #include <sys/types.h>
 #include <stdint.h>
