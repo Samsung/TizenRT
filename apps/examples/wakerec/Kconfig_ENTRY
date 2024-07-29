@@ -1,0 +1,3 @@
+config ENTRY_WAKEREC
+	bool "wakeup, record and playback test example"
+	depends on EXAMPLES_WAKEREC

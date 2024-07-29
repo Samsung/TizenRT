@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_WAKEREC
+	bool "wakeup, record and playback test code"
+	default n
+	depends on HAVE_CXX
+	---help---
+		Enable bixby wakeup test code
+
+config USER_ENTRYPOINT
+	string
+	default "wakerec_main" if ENTRY_WAKEREC
