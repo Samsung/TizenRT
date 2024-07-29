@@ -115,7 +115,7 @@ extern const uint32_t g_idle_topstack;
 /* This is the set of all CPUs */
 
 #define SCHED_ALL_CPUS		((1 << CONFIG_SMP_NCPUS) - 1)
-
+#define SCHED_ITH_CPU(i)	(1 << (i))
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
@@ -480,8 +480,11 @@ void os_start(void)
 		                          TCB_FLAG_CPU_LOCKED);
 		g_idletcb[i].cmn.cpu = i;
 
-		/* Set the affinity mask to allow the thread to run on all CPUs.  No,
-		 * this IDLE thread can only run on its assigned CPU.  That is
+#ifdef CONFIG_AMP
+		g_idletcb[i].cmn.affinity = SCHED_ITH_CPU(i);
+#else
+		/* Set the affinity mask to allow the thread to run on all CPUs.
+		 * However, this IDLE thread can only run on its assigned CPU.  That is
 		 * enforced by the TCB_FLAG_CPU_LOCKED which overrides the affinity
 		 * mask.  This is essential because all tasks inherit the affinity
 		 * mask from their parent and, ultimately, the parent of all tasks is
@@ -489,6 +492,8 @@ void os_start(void)
 		 */
 
 		g_idletcb[i].cmn.affinity = SCHED_ALL_CPUS;
+#endif
+
 #else
 		g_idletcb[i].cmn.flags = (TCB_FLAG_TTYPE_KERNEL |
 		                          TCB_FLAG_NONCANCELABLE);
