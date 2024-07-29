@@ -2742,6 +2742,99 @@ static void tc_libc_math_log10l(void)
 }
 
 /**
+ * @fn                   :tc_libc_math_lrint
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in integer format
+ * API's covered         :lrint
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_lrint(void)
+{
+	const double in_val[] = { 0, -0, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5, INFINITY, -INFINITY, NAN };
+	const long int sol_val[] = { 0, -0, 1073741824, -1073741820, 2147483646, -2147483642, NAN, NAN, NAN };
+	long int ret_val[SIZE(sol_val, long int)];
+	int lrint_idx;
+	long int compute_val;
+
+	for (lrint_idx = 0; lrint_idx < SIZE(sol_val, long int); lrint_idx++) {
+		ret_val[lrint_idx] = lrint(in_val[lrint_idx]);
+		compute_val = fabs(sol_val[lrint_idx] - ret_val[lrint_idx]);
+
+		if ((isnan(sol_val[lrint_idx]) ^ (isnan(ret_val[lrint_idx])))) {
+			compute_val = ONE;
+		}
+
+		TC_ASSERT_LEQ("lrint", compute_val, FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_lrintf
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in integer format
+ * API's covered         :lrintf
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_lrintf(void)
+{
+	const float in_val[] = { 0, -0, 543678.76543, -8374655.5654, 1048574.45, -1048573.5, INFINITY, -INFINITY, NAN };
+	const long int sol_val[] = { 0, -0, 543679, -8374655, 1048574, -1048573, NAN, NAN, NAN };
+	long int ret_val[SIZE(sol_val, long int)];
+	int lrintf_idx;
+	long int compute_val;
+
+	for (lrintf_idx = 0; lrintf_idx < SIZE(sol_val, long int); lrintf_idx++) {
+		ret_val[lrintf_idx] = lrintf(in_val[lrintf_idx]);
+		compute_val = fabsf(sol_val[lrintf_idx] - ret_val[lrintf_idx]);
+
+		if ((isnan(sol_val[lrintf_idx]) ^ (isnan(ret_val[lrintf_idx])))) {
+			compute_val = ONE;
+		}
+
+		TC_ASSERT_LEQ("lrintf", compute_val, FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_libc_math_lrintl
+ * @brief                :Returns the rounded integer value
+ * @Scenario             :round their argument to an integer value in integer format
+ * API's covered         :lrintl
+ * Preconditions         :None
+ * Postconditions        :None
+ * @return               :void
+ */
+static void tc_libc_math_lrintl(void)
+{
+	const long double in_val[] = { 0, -0, VAL1, -VAL1, 1073741823.5, -1073741820.5, 2147483645.5, -2147483642.5, INFINITY, -INFINITY, NAN };
+	const long int sol_val[] = { 0, -0, NAN, NAN, 1073741824, -1073741820, 2147483646, -2147483642, NAN, NAN, NAN };
+	long int ret_val[SIZE(sol_val, long int)];
+	int lrintl_idx;
+	long int compute_val;
+
+	for (lrintl_idx = 0; lrintl_idx < SIZE(sol_val, long int); lrintl_idx++) {
+		ret_val[lrintl_idx] = lrintl(in_val[lrintl_idx]);
+		compute_val = fabsl(sol_val[lrintl_idx] - ret_val[lrintl_idx]);
+
+		if ((isnan(sol_val[lrintl_idx]) ^ (isnan(ret_val[lrintl_idx])))) {
+			compute_val = ONE;
+		}
+
+		TC_ASSERT_LEQ("lrintl", compute_val, FLT_EPSILON);
+	}
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
  * @fn                   :tc_libc_math_nextafter
  * @brief                :Returns the next representable floating-point value following argument1 in the direction of argument2
  * @Scenario             :Returns the next representable floating-point value following argument1 in the direction of argument2
@@ -4370,6 +4463,9 @@ int libc_math_main(void)
 	tc_libc_math_log10();
 	tc_libc_math_log10f();
 	tc_libc_math_log10l();
+	tc_libc_math_lrint();
+	tc_libc_math_lrintf();
+	tc_libc_math_lrintl();
 	tc_libc_math_nextafter();
 	tc_libc_math_nextafterf();
 	tc_libc_math_nextafterl();
