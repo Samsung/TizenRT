@@ -41,6 +41,7 @@ public:
 	}
 	std::function<void()> deQueue();
 	bool isAlive();
+	void clearQueue(void);
 
 protected:
 	long mStacksize;

@@ -135,6 +135,11 @@ bool InputHandler::processWorker()
 			return false;
 		}
 
+		if (readLen > size) {
+			meddbg("WARNING!! it read more larger than available space!! readLen : %d size : %d\n", readLen, size);
+			readLen = size;
+		}
+
 		ssize_t writeLen = writeToStreamBuffer(buf, (size_t)readLen);
 		delete[] buf;
 		if (writeLen <= 0) {

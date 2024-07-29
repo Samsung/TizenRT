@@ -99,8 +99,6 @@ ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 bool OutputHandler::stop()
 {
 	medvdbg("OutputHandler::stop()\n");
-	flush();
-
 	return StreamHandler::stop();
 }
 
@@ -164,7 +162,7 @@ bool OutputHandler::processWorker()
 void OutputHandler::sleepWorker()
 {
 	size_t spaces = mBufferWriter->sizeOfSpace();
-	if (spaces > 0) {
+	if (spaces > 0 && !mIsFlushing) {
 		StreamHandler::sleepWorker();
 	}
 }

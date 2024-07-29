@@ -8,6 +8,7 @@ config MEDIA
 	default n
 	depends on AUDIO
 	select HAVE_CXX
+	select HAVE_CXXINITIALIZE if BUILD_FLAT
 	---help---
 		Enables overall support for Media library.
 
@@ -129,9 +130,49 @@ endif #MEDIA_RECORDER
 config MEDIA_VOICE_SPEECH_DETECTOR
 	bool "Support Media/Voice Speech Detector"
 	default n
-	select VOICE_SOFTWARE_EPD
 	---help---
 		Enable Media/Voice Speech Detector functions
+
+if MEDIA_VOICE_SPEECH_DETECTOR
+menu "Speech Detector Options"
+
+config SPEECH_DETECTOR_LISTENER_STACKSIZE
+	bool "Speech Detector Listener thread stack size"
+	default 4096
+	---help---
+
+config SPEECH_DETECTOR_STACKSIZE
+	bool "Speech Detector thread stack size"
+	default 4096
+	---help---
+
+config MEDIA_SOFTWARE_EPD
+	bool "Support End point detect based on software"
+	default y
+	select AIFW
+	---help---
+		Enable Software End point detect
+
+config MEDIA_HARDWARE_EPD
+	bool "Support End point detect based on hardware"
+	default n
+	---help---
+		Enable Hardware End point detect
+
+config MEDIA_SOFTWARE_KD
+	bool "Support Keyword Detect based on software"
+	default n
+	---help---
+		Enable Software Keyword Detect
+
+config MEDIA_HARDWARE_KD
+	bool "Support Keyword Detect based on hardware"
+	default y
+	---help---
+		Enable hardware Keyword Detect
+
+endmenu
+endif #MEDIA_VOICE_SPEECH_DETECTOR
 
 config AUDIO_RESAMPLER_BUFSIZE
 	int "Audio Resampler Buffer size"

@@ -32,6 +32,8 @@
 #include <functional>
 #include <memory>
 
+#include <media/voice/SpeechDetectorListenerInterface.h>
+
 namespace media {
 namespace voice {
 
@@ -86,11 +88,10 @@ public:
 	/**
 	 * @brief Start Detecting Keyword
 	 * @details @b #include <media/voice/SpeechDetector.h>
-	 * param[in] timeout Keyword detect timout in second
 	 * @return Return success if Keyword is detected
 	 * @since TizenRT v2.0
 	 */
-	virtual bool startKeywordDetect(int timeout) = 0;
+	virtual bool startKeywordDetect(void) = 0;
 	/**
 	 * @brief Start Detecting EndPoint
 	 * @details @b #include <media/voice/SpeechDetector.h>
@@ -100,15 +101,19 @@ public:
 	 */
 	virtual bool startEndPointDetect(int timeout) = 0;
 
+	virtual bool startEndPointDetect(void) = 0;
+
 	/**
 	 * @brief Detect EndPoint
 	 * @details @b #include <media/voice/SpeechDetector.h>
 	 * param[in] sample Audio sample vector
-	 * param[in] numSample the number of samples
+	 * param[in] size Size of buffer
 	 * @return Return success if EndPoint is detected
 	 * @since TizenRT v2.1 PRE
 	 */
-	virtual bool detectEndPoint(short *sample, int numSample) = 0;
+	virtual bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) = 0;
+
+	virtual bool detectEndPoint(void) = 0;
 
 	/**
 	 * @brief Wait EndPoint
@@ -118,6 +123,15 @@ public:
 	 * @since TizenRT v2.1 PRE
 	 */
 	virtual bool waitEndPoint(int timeout) = 0;
+
+	virtual bool stopKeywordDetect(void) = 0;
+
+	virtual void addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) = 0;
+
+	virtual bool removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) = 0;
+
+	virtual bool stopEndPointDetect(void) = 0;
+
 protected:
 	SpeechDetector() = default;
 };

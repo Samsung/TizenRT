@@ -31,6 +31,7 @@ PESParser::PESParser()
 	: mPacketStartCodePrefix(0)
 	, mStreamId(0)
 	, mPacketLength(0)
+	, mPESHeaderDataLength(0)
 {
 }
 
@@ -121,4 +122,5 @@ void PESParser::reset(void)
 	mPacketStartCodePrefix = 0;
 	mStreamId = 0;
 	mPacketLength = 0;
+	mPESHeaderDataLength = 0;
 }

@@ -108,6 +108,11 @@ bool HardwareEndPointDetector::startEndPointDetect(int timeout)
 					ret = true;
 					break;
 				}
+				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_SPD) {
+					medvdbg("#### SPD DETECTED!! ####\n");
+					ret = true;
+					break;
+				}				
 			} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
 				meddbg("Error: device doesn't support it!!!\n");
 				break;
@@ -131,6 +136,11 @@ bool HardwareEndPointDetector::startEndPointDetect(int timeout)
 					ret = true;
 					break;
 				}
+				if (msgId == AUDIO_DEVICE_SPEECH_DETECT_SPD) {
+					medvdbg("#### SPD DETECTED!! ####\n");
+					ret = true;
+					break;
+				}
 			} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
 				meddbg("Error: device doesn't support it!!!\n");
 				break;
@@ -146,13 +156,23 @@ bool HardwareEndPointDetector::startEndPointDetect(int timeout)
 	return ret;
 }
 
-bool HardwareEndPointDetector::detectEndPoint(short *sample, int numSample)
+bool HardwareEndPointDetector::stopEndPointDetect(void)
+{
+	return false;
+}
+
+bool HardwareEndPointDetector::detectEndPoint(void)
 {
 	audio_manager_result_t result;
 	uint16_t msgId;
 
 	result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
-	if (result == AUDIO_MANAGER_SUCCESS && msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD) {
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: get_device_process_handler_message(%d, %d) failed!\n", mSdCard, mSdDevice);
+		return false;
+	}
+	/* TODO For SPD, we need to check how we handle sem here... */
+	if (msgId == AUDIO_DEVICE_SPEECH_DETECT_EPD || msgId == AUDIO_DEVICE_SPEECH_DETECT_SPD) {
 		int semVal;
 		medvdbg("#### EPD DETECTED!! ####\n");
 		if ((sem_getvalue(&mSem, &semVal) == OK) && (semVal < 0)) {
@@ -190,6 +210,11 @@ bool HardwareEndPointDetector::waitEndPoint(int timeout)
 		return false;
 	}
 	return ret == 0 ? true : false;
+}
+
+void HardwareEndPointDetector::registerEPDResultListener(EPDResultListener epdResultCallback)
+{
+	mEPDResultCallback = epdResultCallback;
 }
 
 } // namespace voice

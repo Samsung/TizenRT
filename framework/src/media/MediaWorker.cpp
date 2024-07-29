@@ -97,7 +97,12 @@ void *MediaWorker::mediaLooper(void *arg)
 	medvdbg("MediaWorker : mediaLooper\n");
 
 	while (worker->mIsRunning) {
-		while (worker->processLoop() && worker->mWorkerQueue.isEmpty());
+		while (worker->processLoop()) {
+			if (!(worker->mWorkerQueue.isEmpty())) {
+				break;
+			}
+			pthread_yield();
+		}
 
 		std::function<void()> run = worker->deQueue();
 		medvdbg("MediaWorker : deQueue\n");
@@ -112,5 +117,10 @@ bool MediaWorker::isAlive()
 {
 	std::unique_lock<std::mutex> lock(mRefMtx);
 	return mRefCnt == 0 ? false : true;
+}
+
+void MediaWorker::clearQueue(void)
+{
+	mWorkerQueue.clearQueue();
 }
 } // namespace media
