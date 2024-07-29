@@ -30,7 +30,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* System Function Command Table 1 */
-
 #define MIPI_DSI_RTNI           2
 #define MIPI_DSI_HSA            4
 #define MIPI_DSI_HBP            30
@@ -41,26 +40,10 @@
 #define MIPI_LCD_LIMIT		500
 #define MIPI_FRAME_RATE         60
 #define MIPI_LANE_NUMBER        2
-
-#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
+/* Support for screen rotation is not present in hardware. LCD will work in portrait mode only. */
 #define LCD_XRES CONFIG_LCD_XRES
 #define LCD_YRES CONFIG_LCD_YRES
-#else
-#define LCD_XRES CONFIG_LCD_YRES
-#define LCD_YRES CONFIG_LCD_XRES
-#endif
-
-#if defined(CONFIG_LCD_PORTRAIT)
-#define LCD_ORIENTATION 0x00
-#elif defined(CONFIG_LCD_RPORTRAIT)
-#define LCD_ORIENTATION 0xc0
-#elif defined(CONFIG_LCD_RLANDSCAPE)
-#define LCD_ORIENTATION 0xa0
-#else
-#define LCD_ORIENTATION 0xb0
-#endif
-
-#define LCDC_IMG_BUF_SIZE               LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
+#define LCDC_IMG_BUF_SIZE	LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 
 static const lcm_setting_table_t lcd_init_cmd_g[] = {
 	{0x11, 0, {0x00}},				/* Sleep out */
