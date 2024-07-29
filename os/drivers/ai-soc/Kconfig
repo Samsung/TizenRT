@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+
+config NDP120
+	bool "NDP120 AI soc support"
+	default n
+	depends on SPI
+	---help---
+		Select to enable support for the NDP120 AI soc

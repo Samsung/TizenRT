@@ -180,6 +180,13 @@ config AUDIO_ALC1019
                 NOTE: This driver also depends on both I2C and I2S support although
                 that dependency is not explicit here.
 
+config AUDIO_NDP120
+	bool "NDP120 audio rx support"
+	default n
+	depends on NDP120 && AUDIO && SPI
+	---help---
+		Select to enable support for the NDP120 attached mic
+
 config AUDIO_TAS5749
 	bool "TAS5749 DAC audio chip"
 	default n
