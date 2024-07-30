@@ -44,6 +44,12 @@ if [ -z ${DEFAULT_PORT} ]; then
 		fi
 	done
 fi
+
+if [ -z ${DEFAULT_PORT} ]; then
+	echo "No Port is available"
+	exit
+fi
+
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
 

@@ -28,4 +28,4 @@ BL2="bl2"
 KERNEL="tinyara_head"
 OTA="ota"
 
-DEFAULT_PORT=ttyUSB1
+DEFAULT_PORT=/dev/ttyUSB1

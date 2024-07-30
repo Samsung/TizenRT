@@ -19,7 +19,7 @@
 
 BOARD="RTL8721CSM"
 
-DEFAULT_PORT="ttyUSB1"
+DEFAULT_PORT="/dev/ttyUSB1"
 
 BL1="km0_boot_all"
 BL2="km4_boot_all"
