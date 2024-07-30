@@ -499,7 +499,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	pending = pcm_frames_to_bytes(pcm, frame_count);
 
 	while (pending > 0) {
-		nbytes = pending > pcm_frames_to_bytes(pcm, pcm->buffer_size) ? pcm_frames_to_bytes(pcm, pcm->buffer_size) : pending;
+		nbytes = pending > pcm->buffer_size ? pcm->buffer_size : pending;
 		if (pcm->buf_idx < pcm->buffer_cnt) {
 			/* If we have empty buffers, fill them first */
 			memcpy(pcm->pBuffers[pcm->buf_idx]->samp, (char *)data + offset, nbytes);
@@ -583,7 +583,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 
 	pending = pcm_frames_to_bytes(pcm, frame_count);
 
-	bufdesc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
+	bufdesc.numbytes = pcm->buffer_size;
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	bufdesc.session = pcm->session;
@@ -909,7 +909,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		buf_desc.session = pcm->session;
 #endif
-		buf_desc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
+		buf_desc.numbytes = pcm->buffer_size;
 		buf_desc.u.ppBuffer = &pcm->pBuffers[x];
 
 		ret = ioctl(pcm->fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&buf_desc);
@@ -1067,7 +1067,7 @@ int pcm_start(struct pcm *pcm)
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
+		bufdesc.numbytes = pcm->buffer_size;
 		for (pcm->buf_idx = 0; pcm->buf_idx < pcm->buffer_cnt; pcm->buf_idx++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_idx];
 			bufdesc.u.pBuffer->nbytes = 0;

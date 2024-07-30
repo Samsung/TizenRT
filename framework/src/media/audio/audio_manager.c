@@ -1264,7 +1264,7 @@ unsigned int get_output_frame_count(void)
 		return 0;
 	}
 
-	return pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm);
+	return get_user_output_bytes_to_frame(pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm));
 }
 
 unsigned int get_card_output_frames_to_byte(unsigned int frames)
