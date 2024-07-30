@@ -31,25 +31,18 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 SMARTFS_BIN_PATH=${BIN_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 
-for device in $(ls /dev/ttyACM* | sort -V); do
-	if [ -c "$device" ]; then
-		DEFAULT_PORT=$device
-	fi
-done
-
-if [ -z ${DEFAULT_PORT} ]; then
-	for device in $(ls /dev/ttyUSB* | sort -V); do
-		if [ -c "$device" ]; then
-			DEFAULT_PORT=$device
-		fi
-	done
-fi
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
 
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
 source ${OS_PATH}/.bininfo
+
+if [ -c "/dev/$DEFAULT_PORT" ]; then
+	DEFAULT_PORT=$DEFAULT_PORT
+elif [ -c "/dev/$DEFAULT_PORT2" ]; then
+	DEFAULT_PORT=$DEFAULT_PORT2
+fi
 
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
 
@@ -62,6 +55,10 @@ else
 	PORT=${DEFAULT_PORT}
 fi
 
+if ! [ -c "/dev/$PORT" ]; then
+	echo "$PORT is not available"
+	exit
+fi
 WARNING="\n Port $PORT is selected\n\n
 	############################################\n
 	WARNINGS:\n
@@ -71,7 +68,7 @@ WARNING="\n Port $PORT is selected\n\n
 	############################################\n"
 
 
-TTYDEV="${PORT}"
+TTYDEV="/dev/${PORT}"
 
 ##Utility function for sanity check##
 function sanity_check()
@@ -244,21 +241,23 @@ download_specific_partition()
 	fi
 
 	# Get a filename and Download a file
-	echo ""
-	echo "============================="
-	if [[ $1 == "ota" || $1 == "OTA" ]];then
-		echo "Downloading Kernel OTA binary"
-	else
-		echo "Downloading ${parts[$partidx]} binary"
+	if [[ $TTYDEV == *"USB"* ]]; then
+		echo ""
+		echo "============================="
+		if [[ $1 == "ota" || $1 == "OTA" ]];then
+			echo "Downloading Kernel OTA binary"
+		else
+			echo "Downloading ${parts[$partidx]} binary"
+		fi
+		echo "============================="
 	fi
-	echo "============================="
-
+	
 	exe_name=$(get_executable_name ${parts[$partidx]})
 	if [[ "No Binary Match" = "${exe_name}" ]];then
 		echo "No corresponding binary for the partition ${parts[$partidx]}"
 		echo "Download $exe_name FAILED!"
 	else
-		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]}
+		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} $TARGET
 		echo ""
 		echo "Download $exe_name COMPLETE!"
 	fi
@@ -332,7 +331,7 @@ download_all()
 			echo "Downloading ${parts[$partidx]} binary"
 			echo "=========================="
 		fi
-		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]}
+		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} "ALL"
 	done
 	echo ""
 	echo "Download COMPLETE!"
@@ -350,13 +349,15 @@ erase()
 			if [[ "${parts[$partidx]}" == "ss" ]];then
 				continue
 			else
-				echo ""
-				echo "=========================="
-				echo "Erasing ${parts[$partidx]} partition"
-				echo "=========================="
+				if [[ $TTYDEV == *"USB"* ]]; then
+					echo ""
+					echo "=========================="
+					echo "Erasing ${parts[$partidx]} partition"
+					echo "=========================="
+				fi
 			fi
 
-			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]}
+			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 		done
 	else
 		found_kernel=false
@@ -394,11 +395,13 @@ erase()
 				break
 			fi
 
-			echo ""
-			echo "=========================="
-			echo "Erasing ${parts[$partidx]} partition"
-			echo "=========================="
-			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]}
+			if [[ $TTYDEV == *"USB"* ]]; then
+				echo ""
+				echo "=========================="
+				echo "Erasing ${parts[$partidx]} partition"
+				echo "=========================="
+			fi
+			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 		done
 	fi
 	echo ""
