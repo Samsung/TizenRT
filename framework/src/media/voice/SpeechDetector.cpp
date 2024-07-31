@@ -382,6 +382,8 @@ bool SpeechDetectorImpl::stopEndPointDetect(void)
 	}
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
 	sdw.clearQueue();
+	SpeechDetectorListenerWorker &sdlw = SpeechDetectorListenerWorker::getWorker();
+	sdlw.clearQueue();
 	bool result = mEndPointDetector->stopEndPointDetect();
 	if (!result) {
 		meddbg("Speech detector stop EPD failed");
