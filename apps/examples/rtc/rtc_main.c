@@ -63,12 +63,19 @@
 #include <time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <tinyara/rtc.h>
 
 #define TEST_TIME 300	/* 300 secs */
 #define TEST_STACKSIZE 4096
 
 bool rtctest_started;
+
+#ifdef CONFIG_RTC_ALARM
+static struct rtc_time g_alarm_time[CONFIG_RTC_NALARMS];
+static bool g_alarm_received[CONFIG_RTC_NALARMS];
+#endif
 
 static void rtc_test_stop(void)
 {
@@ -154,6 +161,228 @@ static void *rtc_test(void *arg)
 	return NULL;
 }
 
+#ifdef CONFIG_RTC_ALARM
+/****************************************************************************
+ * Name: alarm_handler
+ ****************************************************************************/
+
+static void alarm_handler(int signo, FAR siginfo_t *info, FAR void *ucontext)
+{
+	int ret;
+	int fd;
+	int secs;
+	int almndx;
+	FAR struct rtc_time alarm_recieve_time;
+
+	fd = open(CONFIG_EXAMPLES_RTC_ALARM_DEVPATH, O_WRONLY);
+	if (fd < 0) {
+		fprintf(stderr, "ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_RTC_ALARM_DEVPATH, errno);
+		return;
+	}
+	almndx = info->si_value.sival_int;
+	if (almndx >= 0 && almndx < CONFIG_RTC_NALARMS) {
+		ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&alarm_recieve_time);
+		if (ret < 0) {
+			fprintf(stderr, "ERROR: RTC_RD_TIME ioctl failed: %d\n", errno);
+			close(fd);
+			return;
+		}
+		close(fd);
+		secs = (alarm_recieve_time.tm_min - g_alarm_time[almndx].tm_min) * 60 + (alarm_recieve_time.tm_sec - g_alarm_time[almndx].tm_sec);
+		printf("Alarm %d received after %d seconds\n", almndx, secs);
+		g_alarm_received[almndx] = false;
+	}
+}
+
+/****************************************************************************
+ * Name: show_usage
+ ****************************************************************************/
+
+static void show_usage(FAR const char *progname)
+{
+	fprintf(stderr, "\nUsage:  rtc\n");
+	fprintf(stderr, "\tor: rtc stop\n");
+	fprintf(stderr, "\t\tStart, or Stop rtc accuracy test\n");
+	fprintf(stderr, "\tor %s alarm [-r seconds] [-a minutes seconds] [-c]\n", progname);
+	fprintf(stderr, "\t\tset, or cancel rtc alarm\n");
+	fprintf(stderr, "Where:\n");
+	fprintf(stderr, "\t-a <minutes> <seconds> \n");
+	fprintf(stderr, "\t\tset alarm by absolute time in minutes and seconds (default alarm id: 0)\n");
+	fprintf(stderr, "\t-r <seconds> \n");
+	fprintf(stderr, "\t\tset alarm by relative time. The number of seconds until the alarm expires (default alarm id: 0).\n");
+	fprintf(stderr, "\t-c\n\t\tCancel previously set alarm\n");
+	fprintf(stderr, "\t\t");
+}
+
+int rtc_alarm_main(int argc, char *argv[])
+{
+	int seconds = 0;
+	int mins = 0;
+	bool badarg = false;
+	bool cancelmode = false;
+	bool relset = false;
+	int alarmid = 0;
+	int fd;
+	int ret;
+	FAR struct rtc_time time;
+	FAR struct sigaction act;
+	FAR struct rtc_setalarm_s setalarm;
+	FAR	struct rtc_setrelative_s setrel;
+	sigset_t set;
+
+	if (!strncmp(argv[2], "-a", strlen("-a") + 1) || !strncmp(argv[2], "-r", strlen("-r") + 1) || !strncmp(argv[2], "-c", strlen("-c") + 1)) {
+		switch (argv[2][1]) {
+			case 'a':
+				/* -a: Select alarm id, if alarm is set, then it is
+				 * done by absolute time (RTC_SET_ALARM ioctl call).
+				 */
+				break;
+			case 'r':
+				/* -r: Select alarm id, if alarm is set,then it is
+				 *  done by relative time (RTC_SET_RELATIVE ioctl call).
+				 */
+				relset = true;
+				break;
+			case 'c':
+				cancelmode = true;
+				break;
+			default:
+				/* fall through */
+				badarg = true;
+		}
+	}
+
+	if (optind >= argc) {
+		badarg = true;
+	}
+	if (badarg) {
+		show_usage(argv[0]);
+		return EXIT_FAILURE;
+	}
+
+	if (!cancelmode) {
+		/* Get the number of seconds until the alarm expiration */
+		if(relset) {
+			seconds = strtoul(argv[3], NULL, 10);
+			if (seconds < 1) {
+				fprintf(stderr, "ERROR: Invalid number of seconds: %lu\n", seconds);
+				show_usage(argv[0]);
+				return EXIT_FAILURE;
+			}
+		}
+		else {
+			mins = strtoul(argv[3], NULL, 10);
+			seconds = strtoul(argv[4], NULL, 10);
+		}
+	}
+
+	/* Open the RTC driver */
+
+	printf("Opening %s\n", CONFIG_EXAMPLES_RTC_ALARM_DEVPATH);
+
+	fd = open(CONFIG_EXAMPLES_RTC_ALARM_DEVPATH, O_RDWR);
+	if (fd < 0) {
+		fprintf(stderr, "ERROR: Failed to open %s: %d\n", CONFIG_EXAMPLES_RTC_ALARM_DEVPATH, errno);
+		return EXIT_FAILURE;
+	}
+
+	if (cancelmode) {
+		ret = ioctl(fd, RTC_CANCEL_ALARM, (unsigned long)alarmid);
+		if (ret < 0) {
+			fprintf(stderr, "ERROR: RTC_CANCEL_ALARM ioctl failed: %d\n", errno);
+			close(fd);
+			return EXIT_FAILURE;
+		}
+
+		printf("Alarm %d has been canceled\n", alarmid);
+	}
+	else { /*!cancelmode */
+
+		sigemptyset(&set);
+		sigaddset(&set, CONFIG_EXAMPLES_RTC_ALARM_SIGNO);
+		ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
+		if (ret != OK) {
+			fprintf(stderr, "ERROR: sigprocmask failed: %d\n", errno);
+			return EXIT_FAILURE;
+		}
+
+		act.sa_sigaction = alarm_handler;
+		act.sa_flags = SA_SIGINFO;
+		sigfillset(&act.sa_mask);
+		sigdelset(&act.sa_mask, CONFIG_EXAMPLES_RTC_ALARM_SIGNO);
+		ret = sigaction(CONFIG_EXAMPLES_RTC_ALARM_SIGNO, &act, NULL);
+		if (ret < 0) {
+			fprintf(stderr, "ERROR: sigaction failed: %d\n", errno);
+		}
+
+		if (relset) {
+			/* Set the alarm */
+
+			setrel.id = alarmid;
+			setrel.pid = 0;
+			setrel.reltime = (time_t)seconds;
+			setrel.signo = CONFIG_EXAMPLES_RTC_ALARM_SIGNO;
+			setrel.sigvalue.sival_int = alarmid;
+			ret = ioctl(fd, RTC_SET_RELATIVE, (unsigned long)((uintptr_t)&setrel));
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: RTC_SET_RELATIVE ioctl failed: %d\n", errno);
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&g_alarm_time[setalarm.id]);
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: RTC_RD_TIME ioctl failed: %d\n", errno);
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			printf("Alarm %d set in %lu seconds\n", alarmid, seconds);
+			sleep(seconds + 1);
+		}
+		else {
+
+			/* Set the alarm */
+
+			setalarm.id = alarmid;
+			setalarm.pid = 0;
+
+			ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&time);
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: RTC_RD_TIME ioctl failed: %d\n", errno);
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			if(mins * 60 + seconds < time.tm_min * 60 + time.tm_sec) {
+				printf( "ERROR: Please Enter proper time which is more than current time\n");
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			setalarm.time.tm_sec = seconds;
+			setalarm.time.tm_min = mins;
+			setalarm.signo = CONFIG_EXAMPLES_RTC_ALARM_SIGNO;
+			setalarm.sigvalue.sival_int = alarmid;
+
+			ret = ioctl(fd, RTC_SET_ALARM, (unsigned long)((uintptr_t)&setalarm));
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: RTC_SET_ALARM ioctl failed: %d\n", errno);
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&g_alarm_time[setalarm.id]);
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: RTC_RD_TIME ioctl failed: %d\n", errno);
+				close(fd);
+				return EXIT_FAILURE;
+			}
+			printf("Alarm %d set in %lu seconds\n", alarmid, (mins * 60 + seconds) - (time.tm_min * 60 + time.tm_sec));
+			sleep((mins * 60 + seconds) - (time.tm_min * 60 + time.tm_sec) + 1);
+		}
+	}
+
+	close(fd);
+	return EXIT_SUCCESS;
+}
+#endif
+
 /****************************************************************************
  * rtc_main
  ****************************************************************************/
@@ -173,10 +402,13 @@ int rtc_main(int argc, char *argv[])
 			/* stop the rtc accuracy test */
 			rtc_test_stop();
 			return OK;
+#ifdef CONFIG_RTC_ALARM
+		} else if(!strncmp(argv[1], "alarm", strlen("alarm") + 1)) {
+			rtc_alarm_main(argc, argv);
+			return OK;
+#endif
 		} else {
-			printf("\nUsage: rtc\n");
-			printf("   or: rtc stop\n");
-			printf("Start, or Stop rtc accuracy daemon\n");
+			show_usage(argv[0]);
 			return ERROR;
 		}
 	}

@@ -11,6 +11,47 @@ config EXAMPLES_RTC
 	---help---
 		Enable the RTC Accuracy Test
 
+if EXAMPLES_RTC
+
+config EXAMPLES_RTC_ALARM
+	bool "RTC alarm driver example"
+	default n
+	depends on RTC
+	depends on RTC_IOCTL
+	depends on RTC_ALARM
+	---help---
+		Enable the RTC driver alarm test
+
+endif # EXAMPLES_RTC
+
+
+if EXAMPLES_RTC_ALARM
+
+config EXAMPLES_RTC_ALARM_PROGNAME
+	string "Program name"
+	default "rtc_alarm"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config EXAMPLES_RTC_ALARM_PRIORITY
+	int "Alarm task priority"
+	default 100
+
+config EXAMPLES_RTC_ALARM_STACKSIZE
+	int "Alarm stack size"
+	default 2048
+
+config EXAMPLES_RTC_ALARM_DEVPATH
+	string "RTC device path"
+	default "/dev/rtc0"
+
+config EXAMPLES_RTC_ALARM_SIGNO
+	int "Alarm signal"
+	default 1
+
+endif # EXAMPLES_RTC_ALARM
+
 config USER_ENTRYPOINT
 	string
 	default "rtc_main" if ENTRY_RTC
