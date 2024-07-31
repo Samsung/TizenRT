@@ -160,14 +160,14 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	mBufSize = get_user_output_frames_to_byte(get_output_frame_count());
+	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
 	}
 
-	medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
+	meddbg("MediaPlayer mBuffer size : %d\n", mBufSize);
 
 	mBuffer = new unsigned char[mBufSize];
 	if (!mBuffer) {
