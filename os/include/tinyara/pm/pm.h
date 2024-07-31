@@ -181,6 +181,7 @@ enum pm_state_e {
 								 */
 	PM_COUNT,
 };
+static const char *pm_state_name[PM_COUNT] = {"PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP"};
 
 /* This enumeration provides all power management related wakeup source code. */
 
