@@ -481,8 +481,17 @@ void board_initialize(void)
 #endif
 	/* Enable IPC buffered print */
 	inic_ipc_buffered_printf_set_np_enable(1);
+
 #ifdef CONFIG_AUDIO_ALC1019
-	rtl8730e_alc1019_initialize(0);
+	if (rtl8730e_alc1019_initialize(0) != 0) {
+		lldbg("ALC1019 initialization failed\n");
+	}
+#endif
+
+#ifdef CONFIG_AUDIO_SYU645B
+	if (rtl8730e_syu645b_initialize(0) != 0) {
+		lldbg("syu645b initialization failed\n");
+	}
 #endif
 
 #ifdef CONFIG_AUDIO_NDP120
