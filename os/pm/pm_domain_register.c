@@ -106,6 +106,7 @@ int pm_domain_register(char *domain)
 				return ERROR;
 			}
 			strncpy(pm_domain_map[index], domain, length + 1);
+			g_pmglobals.ndomains++;
 #ifdef CONFIG_PM_METRICS
 			/* For newly registered domain initialize its pm metrics*/
 			pm_metrics_update_domain(index);
