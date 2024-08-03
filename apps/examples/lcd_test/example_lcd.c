@@ -52,12 +52,17 @@
 
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/input/touchscreen.h>
 #include <tinyara/rtc.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#ifndef CONFIG_DISABLE_POLL
+#include <poll.h>
+#endif
 
 #define LCD_DEV_PATH "/dev/lcd%d"
+#define LCD_TOUCH_PATH "/dev/input%d"
 #define RED   0xF800
 #define WHITE 0xFFFF
 #define BLACK 0x0000
@@ -360,6 +365,46 @@ static void test_fps(void)
 	}
 }
 
+static void touch_test(void)
+{
+	/* read first 10 events */
+	char c;
+	int ret;
+
+	int fd = open("/dev/input0", O_RDONLY);
+	printf("in touch test\n");
+	if (fd < 0) {
+		printf("Failed to open /dev/input0, errno : %d\n", get_errno());
+		return NULL;
+	}
+
+	struct pollfd fds[1];
+	fds[0].fd = fd;
+	fds[0].events = POLLIN;
+
+	struct touch_sample_s buf;
+	for (int i = 0; i < 10; i++) {
+
+		while (true) {
+			//printf("pollllll.............................\n");
+			poll(fds, 1, -1);
+			if (fds[0].revents & POLLIN) {
+				break;
+			}
+		}	
+		/* since we are the only reader, no need to check failure case
+		 * as we are garunteed that there is data to read by POLLIN */
+		ret = read(fd, &buf, sizeof(struct touch_sample_s));
+		if (ret != - 1) {
+			printf("\n coordinates x : %d y : %d\n", buf.point[0].x, buf.point[0].y);
+		}
+	}
+
+	close(fd);
+
+	return 0;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -371,6 +416,11 @@ int lcd_test_main(int argc, char *argv[])
 	int fd = 0;
 	int p = 0;
 	char port[20] = { '\0' };
+	pid_t touch = task_create("touch", SCHED_PRIORITY_DEFAULT, 8096, touch_test, NULL);
+
+	if (touch < 0) {
+		printf("failed to create touch reader, error : %d\n", get_errno());
+	}
 	sprintf(port, LCD_DEV_PATH, p);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
@@ -382,12 +432,13 @@ int lcd_test_main(int argc, char *argv[])
 		test_bit_map();
 		sleep(3);
 		ioctl(fd, LCDDEVIO_SETPOWER, 0);
-		sleep(15);
+		sleep(1);
 		ioctl(fd, LCDDEVIO_SETPOWER, 100);
 		count++;
 		printf("count :%d\n", count);
 	}
 	test_fps();
 	close(fd);
+	task_delete(touch);
 	return 0;
 }

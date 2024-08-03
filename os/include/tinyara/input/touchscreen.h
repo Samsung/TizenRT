@@ -68,8 +68,9 @@
 
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/i2c.h>
 
-#ifdef CONFIG_INPUT
+//#ifdef CONFIG_INPUT
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -154,9 +155,17 @@ struct touch_point_s {
  * a touch from first contact until the end of the contact.
  */
 
+typedef CODE void (*touch_handler_t)(FAR void *arg);
+
 struct touch_sample_s {
 	int npoints;                   /* The number of touch points in point[] */
 	struct touch_point_s point[1]; /* Actual dimension is npoints */
+};
+
+struct lcd_touch_config {
+	struct i2c_config_s i2c_config;
+	CODE int (*attach)(touch_handler_t handler, FAR char *arg);
+	CODE void (*irq_enable)(bool enable);
 };
 #define SIZEOF_TOUCH_SAMPLE_S(n) (sizeof(struct touch_sample_s) + ((n) - 1) * sizeof(struct touch_point_s))
 
@@ -176,6 +185,6 @@ extern "C" {
 }
 #endif
 
-#endif /* CONFIG_INPUT */
+//#endif /* CONFIG_INPUT */
 #endif /* __INCLUDE_TINYARA_INPUT_TOUCHSCREEN_H */
 
