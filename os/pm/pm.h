@@ -132,6 +132,9 @@ struct pm_global_s {
 	/* Timer to decrease state */
 
 	WDOG_ID wdog;
+
+	/* Indicates Board is Ready to State Change */
+	bool ready_to_state_change;
 };
 
 /****************************************************************************

@@ -292,6 +292,25 @@ extern "C" {
 void pm_driver_register(void);
 
 #ifdef CONFIG_PM
+
+/****************************************************************************
+ * Name: pm_start
+ *
+ * Description:
+ *   This function is called by the application thread to start the Power
+ *   Management system. This fucntion sets the ready_to_state_change flag which
+ *   enables pm to transition between low and high power states.
+ *
+ * Input parameters:
+ *   None.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+
+void pm_start(void);
+
 /****************************************************************************
  * Name: pm_initialize
  *
@@ -550,6 +569,7 @@ int pm_metrics(int milliseconds);
  * avoid so much conditional compilation in driver code when PM is disabled:
  */
 
+#define pm_start()              (0)
 #define pm_initialize()
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)

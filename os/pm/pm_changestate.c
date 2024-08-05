@@ -221,6 +221,10 @@ int pm_changestate(enum pm_state_e newstate)
 	 */
 
 	flags = enter_critical_section();
+	/* State change only if PM is ready to state change */
+	if (!g_pmglobals.ready_to_state_change) {
+		goto EXIT;
+	}
 
 	/* First, prepare the drivers for the state change.  In this phase,
 	 * drivers may refuse the state change.
