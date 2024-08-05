@@ -3046,6 +3046,13 @@ void DDR_PHY_Scan_param(void)
 {
 	u8 scan_stage = DDR_PHY_Scan_param_Stage();
 
+	if ((HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_AIP_CTRL1) & LSYS_BIT_BG_ON_USB2) == 0) {
+		/* ZQK will use ref current controlled by LSYS_BIT_BG_ON_USB2 */
+		assert_param(0);
+	}
+
+	RTK_LOGI(TAG,  "ChipInfo_Get:[%08x]\n", ChipInfo_Get());
+
 	//when ddrphy init, do R480/ZQ K first
 	DDR_PHY_BSTC_STARK();
 	sram_sg();

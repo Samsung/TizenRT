@@ -54,7 +54,12 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
+ifeq ($(CONFIG_RTL8730E_BOARD_REVISION), 7)
+LDSCRIPT = rlx8730e_img2_ddr.ld
+else
 LDSCRIPT = rlx8730e_img2.ld
+endif
+
 
 ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)

@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a52222ac01_2024/08/07-10:57:21 ==
+1.	Adjust layout for RTL8730EAH-VH6-CG NOR Flash 32MB + DDR2 64MB
+	- CA32_BL3_DRAM_NS address adjusted: 0x64000000 - 0x60100000; 63MB
+
 == version ec01d12ebe_2024/07/16-10:10:49 ==
 1.	Remove download blocking in all case
 
