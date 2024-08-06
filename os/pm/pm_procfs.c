@@ -106,13 +106,6 @@ struct power_file_s {
 	uint16_t offset;
 };
 
-struct power_procfs_entry_s {
-	const char *name;              /* Name of the directory entry */
-	size_t (*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
-	size_t (*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-	uint8_t type;
-};
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -132,32 +125,10 @@ static int power_rewinddir(FAR struct fs_dirent_s *dir);
 
 static int power_stat(const char *relpath, FAR struct stat *buf);
 
-static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#define POWER_SUBDIRPATH_DOMAINS "power/domains"
-
-static const struct power_procfs_entry_s g_power_direntry[] = {
-	{"states", power_states_read, NULL, DTYPE_FILE},
-	{"curstate", power_curstate_read, NULL, DTYPE_FILE},
-	{"devices", power_devices_read, NULL, DTYPE_FILE},
-};
-
-static const uint8_t g_power_direntrycount = sizeof(g_power_direntry) / sizeof(struct power_procfs_entry_s);
-
-static const char *g_power_states[] = {
-	"NORMAL",
-	"IDLE",
-	"STANDBY",
-	"SLEEP",
-};
-
-static const uint8_t g_power_statescount = sizeof(g_power_states) / sizeof(g_power_states[0]);
 
 /****************************************************************************
  * Public Data
@@ -261,93 +232,6 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 	}
 
 	return -ENOENT;
-}
-
-/****************************************************************************
- * Name: power_states_read
- ****************************************************************************/
-
-static size_t power_states_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	FAR struct power_file_s *priv;
-	size_t copysize;
-	size_t totalsize;
-	int i;
-
-	priv = (FAR struct power_file_s *)filep->f_priv;
-
-	totalsize = 0;
-
-	if (priv->offset == 0) {
-		/* PM does not support states for specific domain now. It will be updated. */
-		for (i = 0; i < g_power_statescount; i++) {
-			copysize = snprintf(buffer, buflen, "%s ", g_power_states[i]);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-		}
-
-		/* Indicate we have already provided all the data */
-		priv->offset = 0xFF;
-	}
-
-	return totalsize;
-}
-
-/****************************************************************************
- * Name: power_curstate_read
- ****************************************************************************/
-
-static size_t power_curstate_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	FAR struct power_file_s *priv;
-	size_t copysize;
-
-	priv = (FAR struct power_file_s *)filep->f_priv;
-	copysize = 0;
-
-	if (priv->offset == 0) {
-		copysize = snprintf(buffer, buflen, "%s", g_power_states[g_pmglobals.state]);
-		/* Indicate we have already provided all the data */
-		priv->offset = 0xFF;
-	}
-
-	return copysize;
-}
-
-/****************************************************************************
- * Name: power_devices_read
- ****************************************************************************/
-
-static size_t power_devices_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	FAR struct power_file_s *priv;
-	FAR struct pm_callback_s *callback;
-	FAR dq_entry_t *entry;
-	size_t copysize;
-	size_t totalsize;
-
-	priv = (FAR struct power_file_s *)filep->f_priv;
-	copysize = 0;
-	totalsize = 0;
-
-	if (priv->offset == 0) {
-
-		entry = dq_peek(&g_pmglobals.registry);
-		while (entry) {
-			callback = (FAR struct pm_callback_s *)entry;
-			copysize = snprintf(buffer, buflen, "%s ", callback->name);
-			buflen -= copysize;
-			buffer += copysize;
-			totalsize += copysize;
-			entry = sq_next(entry);
-		}
-
-		/* Indicate we have already provided all the data */
-		priv->offset = 0xFF;
-	}
-
-	return totalsize;
 }
 
 /****************************************************************************
@@ -456,10 +340,6 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
 	/* Perform the read based on the directory entry */
 
 	ret = 0;
-
-	if (priv->dir.base.level == 3 && priv->dir.direntry < g_power_direntrycount) {
-		ret = g_power_direntry[priv->dir.direntry].write(filep, buffer, buflen);
-	}
 
 	/* Update the file offset */
 	if (ret > 0) {
