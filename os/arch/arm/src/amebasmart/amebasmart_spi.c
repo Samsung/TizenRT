@@ -1181,14 +1181,14 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 	uint8_t *txbuff_aligned =  NULL;
 	rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
 	if(rxbuff_aligned == NULL) {
-		lldbg("rxbuff_aligned malloc failed\n");
+		dbg_noarg("SPI RX malloc failed\n");
 		return;
 	}
 	if (txbuffer) {
 		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
 		if(txbuff_aligned == NULL) {
 			rtw_mfree(rxbuff_aligned, 0);
-			lldbg("txbuff_aligned malloc failed\n");
+			dbg_noarg("SPI TX malloc failed\n");
 			return;
 		}
 	}

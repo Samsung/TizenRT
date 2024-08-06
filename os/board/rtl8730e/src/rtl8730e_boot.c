@@ -328,8 +328,8 @@ void amebasmart_mount_partitions(void)
 	/* Configure mtd partitions */
 	ret = configure_mtd_partitions(mtd, 0, &partinfo);
 	if (ret != OK) {
-		lldbg("ERROR: configure_mtd_partitions for primary flash failed\n");
-		return;
+		ret = __LINE__;
+		goto errout;
 	}
 
 #ifdef CONFIG_AUTOMOUNT
@@ -342,26 +342,31 @@ void amebasmart_mount_partitions(void)
 #ifdef CONFIG_MTD_JEDEC
 	mtd = jedec_initialize(spi);
 	if (mtd == NULL) {
-		lldbg("Jedec Init failed\n");
-		return;
+		ret = __LINE__;
+		goto errout;
 	}
 
 #elif defined(CONFIG_MTD_W25)
 	mtd = w25_initialize(spi);
 	if (mtd == NULL) {
-		lldbg("w25 Init failed\n");
-		return;
+		ret = __LINE__;
+		goto errout;
 	}
 #endif
 	ret = configure_mtd_partitions(mtd, 1, &partinfo);
 	if (ret != OK) {
-		lldbg("ERROR: configure_mtd_partitions for secondary flash failed\n");
-		return;
+		ret = __LINE__;
+		goto errout;
 	}
 #ifdef CONFIG_AUTOMOUNT
 	automount_fs_partition(&partinfo);
 #endif
-#endif /* end of CONFIG_SECOND_FLASH_PARTITION */
+#endif /* CONFIG_SECOND_FLASH_PARTITION */
+errout:
+	if (ret != OK) {
+		lldbg("Mounting failed, check line: %d\n", ret);
+		return;
+	}
 }
 
 #ifdef CONFIG_FTL_ENABLED

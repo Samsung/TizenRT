@@ -416,6 +416,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	int i = 0;
 	int ch_valid = 0;
 	rtw_scan_param_t scan_param = {0};
+	int ret = TRWIFI_SUCCESS;
 
 	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler; //print_ssid_scan_result
@@ -432,8 +433,10 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 			/* If Channel Information is given by User */
 			channel_list = (char *)malloc(1); //only do 1 channel instead of multiple channels for now
 			if (!channel_list) {
-				printf("[ATWs]ERROR: Can't malloc memory for channel list\n\r");
-				return TRWIFI_FAIL;
+				// printf("[ATWs]ERROR: Can't malloc memory for channel list\n\r");
+				// return TRWIFI_FAIL;
+				ret = __LINE__;
+				goto errout;
 			}
 			//parse command channel list
 			for (i = 0; i < 1 ; i++) { //This loop should be scalable when multiple channels are required by customer
@@ -447,11 +450,11 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 				/* Scan with channel Only */
 				rtw_memset(config->ssid, 0, sizeof(config->ssid));
 				config->ssid_length = 0;
-				printf("[ATWs]: _AT_WLAN_SCAN_WITH_CHANNEL_ [%d]\n\r", scan_param.channel_list[0]);
+				vdbg("WIFI Scan channel: %d\n\r", scan_param.channel_list[0]);
 			}
 			else {
 				/* Scan with SSID and channel */
-				printf("[ATWs]: _AT_WLAN_SCAN_WITH_SSID_AND_CHANNEL [%d], [%s]\n\r", scan_param.channel_list[0], (char *)config->ssid);
+				vdbg("WIFI Scan channel: %d, SSID: %s\n\r", scan_param.channel_list[0], (char *)config->ssid);
 			}
 		}
 
@@ -459,23 +462,27 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 			/* Scan with SSID, or Scan with SSID And Channel */
 			scan_param.ssid[0].ssid = (char *)config->ssid;
 			if(config->ssid_length > 0 && config->channel == 0) {
-				printf("[ATWs]: _AT_WLAN_SCAN_WITH_SSID_ [%s]\n\r", (char *)config->ssid);
+				nvdbg("WIFI Scan SSID: %s\n\r", (char *)config->ssid);
 			}
 		} else {
-			RTW_API_INFO("Invalid channel range\n");
-			return TRWIFI_FAIL;
+			// RTW_API_INFO("Invalid channel range\n");
+			// return TRWIFI_FAIL;
+			ret = __LINE__;
+			goto errout;
 		}
 
 		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
 			if (channel_list) {
 				free(channel_list);
 			}
-			return TRWIFI_FAIL;
+			ret = __LINE__;
+			goto errout;
 		}
 	} else {
 		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
 			//ndbg("[RTK] [ERR] WiFi scan fail(%d)\n", ret);
-			return TRWIFI_FAIL;
+			ret = __LINE__;
+			goto errout;
 		}
 	}
 
@@ -483,7 +490,12 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	if (channel_list) {
 		free(channel_list);
 	}
-	return TRWIFI_SUCCESS;
+errout:
+	if (ret != TRWIFI_SUCCESS) {
+		dbg("WIFI scan failed, check line: %d\n", ret);
+		ret = TRWIFI_FAIL;
+	}
+	return ret;
 }
 
 trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_multi_configs_s *config)
@@ -585,12 +597,14 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		if (wifi_netmgr_utils_deinit(dev)) {
 			ndbg("[RTK] Failed to stop AP mode\n");
-			return TRWIFI_FAIL;
+			ret = __LINE__;
+			goto errout;
 		}
 		vTaskDelay(20);
 		if (wifi_netmgr_utils_init(dev) < 0) {
 			ndbg("\n\rERROR: Wifi on failed!");
-			return TRWIFI_FAIL;
+			ret = __LINE__;
+			goto errout;
 		}
 	}
 
@@ -614,13 +628,18 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 	ret = cmd_wifi_connect(ap_connect_config, arg, ap_channel);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] WiFiNetworkJoin failed: %d, %s\n", ret, ap_connect_config->ssid);
-		return wuret;
+		ret = __LINE__;
+		goto errout;
 	} else {
 		wuret = TRWIFI_SUCCESS;
 		nvdbg("[RTK] Successfully joined the network: %s(%d)\n", ap_connect_config->ssid,
 			  ap_connect_config->ssid_length);
 	}
 
+errout:
+	if (wuret != TRWIFI_SUCCESS) {
+		dbg("WIFI connect AP failed, check line: %d\n", ret);		
+	}
 	return wuret;
 }
 

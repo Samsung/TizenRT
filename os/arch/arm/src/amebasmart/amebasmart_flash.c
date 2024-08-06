@@ -162,6 +162,9 @@ static int amebasmart_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 	ssize_t result;
 	startblock += AMEBASMART_START_SECOTR;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 1);
+#endif
 	/* Erase the specified blocks and return status (OK or a negated errno) */
 	while (nblocks > 0) {
 		result = amebasmart_erase_page(startblock);
@@ -171,6 +174,9 @@ static int amebasmart_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 		startblock++;
 		nblocks--;
 	}
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 0);
+#endif
 	return OK;
 }
 
@@ -274,7 +280,13 @@ static ssize_t amebasmart_read(FAR struct mtd_dev_s *dev, off_t offset, size_t n
 {
 	ssize_t result;
 	DEBUGASSERT(nbytes > 0);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 1);
+#endif
 	result = amebasmart_flash_read(CONFIG_AMEBASMART_FLASH_BASE + offset, buffer, nbytes);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 0);
+#endif
 	return result < 0 ? result : nbytes;
 }
 
@@ -289,8 +301,14 @@ static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t 
 	size_t addr;
 	ssize_t result;
 	DEBUGASSERT(nbytes > 0);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 1);
+#endif
 	addr = CONFIG_AMEBASMART_FLASH_BASE + offset;
 	result = amebasmart_flash_write(addr, buffer, nbytes);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_FLASH_DRV, 0);
+#endif
 	return result < 0 ? result : nbytes;
 }
 #endif
@@ -366,10 +384,10 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 #ifdef CONFIG_MTD_REGISTRATION
 		priv->mtd.name = "ameba_flash";
 #endif
-		u8 chip_id[4];
-		flash_read_id(NULL, chip_id, 4);
 
-		lldbg("Manufacturer : %u memory type : %u capacity : %u\n", chip_id[0], chip_id[1], chip_id[2]);
+/* For flash information, it will be printed during KM4 booting phase 
+   For example: [FLASHCLK-I] Flash ID: ef-40-18
+*/
 		return (FAR struct mtd_dev_s *)priv;
 	}
 #ifdef CONFIG_PM
