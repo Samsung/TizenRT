@@ -45,12 +45,13 @@
 /* cpu hotplug flag for each core */
 static volatile cpu_state_t g_cpuhp_flag[CONFIG_SMP_NCPUS];
 
-void up_set_secondary_cpu_state(uint32_t CoreID, cpu_state_t NewStatus)
+void up_set_cpu_state(uint32_t CoreID, cpu_state_t NewStatus)
 {
 	g_cpuhp_flag[CoreID] = NewStatus;
+	ARM_DSB();
 }
 
-cpu_state_t up_get_secondary_cpu_state(uint32_t CoreID)
+cpu_state_t up_get_cpu_state(uint32_t CoreID)
 {
 	return g_cpuhp_flag[CoreID];
 }
@@ -85,8 +86,8 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	*/
 
 	/* Set secondary core to hotplug state */
-	up_set_secondary_cpu_state(this_cpu(), CPU_HOTPLUG);
-
+	int cpu = this_cpu();
+	up_set_cpu_state(cpu, CPU_HOTPLUG);
 	/* Save the tcb state */
 	struct tcb_s *rtcb = this_task();
 	arm_savestate(rtcb->xcp.regs);
@@ -102,6 +103,35 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	/* Shut down the secondary core */
    	(void)psci_cpu_off(); 
 	return OK;
+}
+
+/****************************************************************************
+ * Name: up_cpu_hotplug
+ *
+ * Description:
+ *   Send signal for target CPU to enter hotplug mode.
+ *
+ *   This function is called after up_cpu_pause in order to ensure
+ *   the target CPU enter hotplug when executing idle thread
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being hotplug.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *   Called from within a critical section; up_cpu_pause() must have
+ *   previously been called within the same critical section. This
+ *   function should only be called by primary core which conducts PM logic.
+ *
+ ****************************************************************************/
+void up_cpu_hotplug(int cpu)
+{
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+	/* Fire SGI for cpu to enter hotplug */
+	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));
 }
 
 #endif /* CONFIG_CPU_HOTPLUG */

@@ -177,7 +177,7 @@ int up_cpu_start(int cpu)
 #endif
 
 #ifdef CONFIG_CPU_HOTPLUG
-  up_set_secondary_cpu_state(cpu, CPU_RUNNING);
+  up_set_cpu_state(cpu, CPU_RUNNING);
 #endif
 
   /* Execute SGI1 */

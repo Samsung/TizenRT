@@ -847,10 +847,10 @@ int arm_pause_handler(int irq, void *context, void *arg);
  * Description:
  *   This is the handler for SGI3.  It performs the following operations:
  *
- *   1. Gate the other core when one of the core need to undergo flash
+ *   1. Gate the other core when one of the core need to undergo certain specific
  *      operation, by disabling interrupts and send core to WFE(wait for event) 
  *      mode
- *   2. After flash operation done, restore the interrupts and invoke 
+ *   2. After certain specific operation done, restore the interrupts and invoke 
  *      SEV(send event) to the gated core
  *
  * Input Parameters:

@@ -40,7 +40,22 @@
 #include "barriers.h"
 
 #ifdef CONFIG_CPU_GATING
-volatile uint32_t ulFlashPG_Flag = 0;
+static volatile uint32_t g_cpugating_flag[CONFIG_SMP_NCPUS];
+
+void up_set_gating_flag_status(uint32_t CoreID, uint32_t val)
+{
+	g_cpugating_flag[CoreID] = val;
+	ARM_DSB();
+	/* Flag already reach 0 */
+	if (!g_cpugating_flag[CoreID]) {
+		SP_SEV();
+	}
+}
+
+uint32_t up_get_gating_flag_status(uint32_t CoreID)
+{
+	return g_cpugating_flag[CoreID];
+}
 /****************************************************************************
  * Name: arm_gating_handler
  *
@@ -57,16 +72,38 @@ volatile uint32_t ulFlashPG_Flag = 0;
  ****************************************************************************/
 int arm_gating_handler(int irq, void *context, void *arg)
 {
+	int cpu = this_cpu();
 	uint32_t PrevIrqStatus = irqsave();
-	ulFlashPG_Flag++;
+	g_cpugating_flag[cpu]++;
 	ARM_DSB();
 	ARM_ISB();
-	while(ulFlashPG_Flag) {
-		__asm__ __volatile__ ("wfe" : : : "memory");
+	while (g_cpugating_flag[cpu]) {
+		SP_WFE();
 	}
 	irqrestore(PrevIrqStatus);
 
 	return OK;
+}
+
+/****************************************************************************
+ * Name: up_cpu_gating
+ *
+ * Description:
+ *   Send signal for target CPU to enter gating.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being gated.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void up_cpu_gating(int cpu)
+{
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+	/* Fire SGI for cpu to enter gating */
+	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
 }
 
 #endif /* CONFIG_CPU_GATING */

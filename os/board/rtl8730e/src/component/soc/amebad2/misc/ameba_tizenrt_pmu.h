@@ -71,8 +71,7 @@ void pmu_unregister_sleep_callback(u32 nDeviceId);
 
 int tizenrt_ready_to_sleep(void);
 int tizenrt_ready_to_dsleep(void);
-void tizenrt_pre_sleep_processing(uint32_t *expected_idle_time, void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
-void tizenrt_post_sleep_processing(uint32_t *expected_idle_time);
+void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 void pmu_acquire_wakelock(uint32_t nDeviceId);

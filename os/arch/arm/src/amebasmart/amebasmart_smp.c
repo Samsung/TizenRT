@@ -16,9 +16,6 @@
 #endif
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-#ifdef CONFIG_CPU_GATING
-extern volatile uint32_t ulFlashPG_Flag;
-#endif
 extern void __cpu1_start(void);
 #else
 extern void _boot(void);
@@ -82,20 +79,15 @@ bool vPortGateOtherCore(void)
 	BaseType_t ulCoreID = up_cpu_index();
 	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
 	CA32_TypeDef *ca32 = CA32_BASE;
-	/* ulFlashPG_Flag should be checked here, it should only exists under 3 states:
+	/* Gating Flag should be checked here, it should only exists under 3 states:
 	0: No flash operation / Just completed a flash operation
 	1: A gating request has been sent out to another core, further checking shall be done at the while condition below
 	2: The target core is already in gating state, proceed for flash operation
 	*/
-	if (!ulFlashPG_Flag) {
-		ulFlashPG_Flag = 1;
-		ARM_DSB();
+	if (!up_get_gating_flag_status(ulCoreID)) {
+		up_set_gating_flag_status(ulCoreID, 1);
 
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-		arm_gic_raise_softirq(ulCoreID, IPI_FLASHPG_IRQ);
-#else
-		arm_cpu_sgi(GIC_IRQ_SGI3, (1 << ulCoreID));
-#endif
+		up_cpu_gating(ulCoreID);
 	}
   /* We already initiated a gating request previously, skip sending duplicated request */
   /* Before gating the other CPU, we have to check for pending pause request, as the target core
@@ -104,7 +96,7 @@ bool vPortGateOtherCore(void)
    * pause request first, before we proceed to gate another cpu for executing
    * flash operation
    */
-	while ((ulFlashPG_Flag == 1) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)) {
+	while ((up_get_gating_flag_status(ulCoreID) == 1) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)) {
 		/* If there is a pause request, we should handle it first */
 		if (up_cpu_pausereq(up_cpu_index())) {
 			return false;
@@ -116,9 +108,9 @@ bool vPortGateOtherCore(void)
 
 void vPortWakeOtherCore(void)
 {
-	ulFlashPG_Flag = 0;
-	ARM_DSB();
-	__asm__ __volatile__ ("sev" : : : "memory");
+	BaseType_t ulCoreID = up_cpu_index();
+	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
+	up_set_gating_flag_status(ulCoreID, 0);
 }
 
 void vPortSecondaryOff(void)
@@ -129,7 +121,7 @@ void vPortSecondaryOff(void)
 
 #ifdef CONFIG_CPU_HOTPLUG
 	/* Notify secondary core to migrate task to primary core and enter wfi*/
-	up_set_secondary_cpu_state(1, CPU_HOTPLUG);
+	up_set_cpu_state(1, CPU_HOTPLUG);
 #endif
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	arm_gic_raise_softirq(1, 1);
@@ -171,7 +163,7 @@ void smp_init(void)
 	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
 		if (xCoreID == up_cpu_index()) {
 #ifdef CONFIG_CPU_HOTPLUG
-			up_set_secondary_cpu_state(xCoreID, CPU_RUNNING);
+			up_set_cpu_state(xCoreID, CPU_RUNNING);
 #endif
 			continue;
 		}
@@ -188,7 +180,7 @@ void smp_init(void)
 	   If yes, we should send SGI1 to secondary core
 	 */
 #ifdef CONFIG_CPU_HOTPLUG
-	if (up_get_secondary_cpu_state(SECONDARY_CORE_ID) == CPU_WAKE_FROM_SLEEP) {
+	if (up_get_cpu_state(SECONDARY_CORE_ID) == CPU_WAKE_FROM_SLEEP) {
 		os_smp_start();
 	}
 #endif
