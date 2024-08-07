@@ -31,6 +31,8 @@
 #include <tinyara/net/netlog.h>
 
 #define WU_INTF_NAME "wlan0"
+//abhishek : TODO: Check : Initial change for NAT
+#define WU1_INTF_NAME "wlan1"
 #define TAG "[WM]"
 
 static inline int _send_msg(lwnl_msg *msg)
@@ -57,6 +59,14 @@ trwifi_result_e wifi_utils_init(void)
 	if (_send_msg(&msg) < 0) {
 		return TRWIFI_FAIL;
 	}
+//abhishek : TODO: Check : Initial change for NAT
+#if 1
+	trwifi_result_e res1 = TRWIFI_SUCCESS;
+	lwnl_msg msg1 = {WU1_INTF_NAME, {LWNL_REQ_WIFI_INIT}, 0, NULL, (void *)&res1};
+	if (_send_msg(&msg1) < 0) {
+		return TRWIFI_FAIL;
+	}
+#endif
 	return res;
 }
 
