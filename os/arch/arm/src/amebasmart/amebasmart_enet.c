@@ -69,7 +69,7 @@
 #include "wifi_intf_drv_to_app_basic.h"
 
 //for concurrent mode, not supported now
-//#define RTK_CONCURRENT_MODE
+#define RTK_CONCURRENT_MODE
 #ifdef CONFIG_AMEBASMART_WIFI
 
 struct netdev *ameba_nm_dev_wlan0 = NULL;
