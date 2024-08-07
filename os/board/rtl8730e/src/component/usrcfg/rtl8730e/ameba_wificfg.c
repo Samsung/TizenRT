@@ -18,7 +18,7 @@ _WEAK void wifi_set_user_config(void)
 	rtw_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config */
-	wifi_user_config.concurrent_enabled = (u8)_FALSE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
+	wifi_user_config.concurrent_enabled = (u8)_TRUE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5; /* in sec*/
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
