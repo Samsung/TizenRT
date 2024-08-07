@@ -31,27 +31,19 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 SMARTFS_BIN_PATH=${BIN_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 
-for device in $(ls /dev/ttyACM* | sort -V); do
-	if [ -c "$device" ]; then
-		DEFAULT_PORT=$device
-	fi
-done
-
-if [ -z ${DEFAULT_PORT} ]; then
-	for device in $(ls /dev/ttyUSB* | sort -V); do
-		if [ -c "$device" ]; then
-			DEFAULT_PORT=$device
-		fi
-	done
-fi
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
-
 source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
 source ${OS_PATH}/.bininfo
 
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
+
+if [ -c "/dev/$DEFAULT_PORT1" ]; then
+	DEFAULT_PORT=$DEFAULT_PORT1
+elif [ -c "/dev/$DEFAULT_PORT2" ]; then
+	DEFAULT_PORT=$DEFAULT_PORT2
+fi
 
 ## For manual port selection set any argument to port={port required}, eg. make download port=ttyUSB2 ALL or make download all port=ttyUSB3
 
@@ -71,7 +63,7 @@ WARNING="\n Port $PORT is selected\n\n
 	############################################\n"
 
 
-TTYDEV="${PORT}"
+TTYDEV="/dev/${PORT}"
 
 ##Utility function for sanity check##
 function sanity_check()
