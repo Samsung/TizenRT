@@ -24,7 +24,7 @@ static const char *TAG = "DDR";
 //////////////////////////////////////////////////
 // ROUND_UP function
 //////////////////////////////////////////////////
-#define ROUND_UP(divider, divisor) (divider%divisor) ? ((divider/divisor)+1) : (divider/divisor)
+#define ROUND_UP(divider, divisor) (((divider)%(divisor)) ? (((divider)/(divisor))+1) : ((divider)/(divisor)))
 
 u8 ddr_init_index(void)
 {
@@ -96,6 +96,7 @@ void rxi316_perf_tune(struct rxi316_dram_device_info *rxi316_dram_info)
 	uint32_t cr_rank_remap;
 	uint32_t cr_ch_remap;
 	uint32_t cr_bg0_remap, cr_bg1_remap;
+	uint32_t cr_pageopen;
 
 	if (rxi316_dram_info-> dev-> dq_width == DQ_32) {
 		dq_bfo = 2;
@@ -367,8 +368,13 @@ void rxi316_perf_tune(struct rxi316_dram_device_info *rxi316_dram_info)
 						 DDRC_LPR_RMW_RUN_LEN(rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_lpr_rmw_run_len));
 
 	// ----> cr_cbctl1 setting
+	if ((rxi316_dram_info-> dev-> device_type) == DDR_3) {
+		cr_pageopen = 1;
+	} else {
+		cr_pageopen = rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_pageopen;
+	}
 	ddrc->DDRC_CBCTL1 = (DDRC_DIS_WMG(rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_dis_wmg)           |
-						 DDRC_PAGEOPEN(rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_pageopen)          |
+						 DDRC_PAGEOPEN(cr_pageopen)          |
 						 DDRC_W_HAZ_EXP_CTRL(rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_wmg_num_threshold) |
 						 DDRC_LPW_RMW_RUN_LEN(rxi316_dram_info-> dramc_info-> slot_starve_reg -> cr_lpw_rmw_run_len) |
 						 DDRC_PAGE_HIT_THR_WR(4) | DDRC_PAGE_HIT_THR_WR_EN(1));
@@ -716,15 +722,7 @@ gp_reg_config:
 	} else { // LPDDR_1
 		mrinfo_nwr = ROUND_UP(rxi316_dram_info-> timing-> twr_ps, pctl_period);
 	}
-
-	// RTP setting
-	if ((rxi316_dram_info-> dev-> device_type) == LPDDR_1) { // RTP settig
-		mrinfo_rtp = (dram_bstlen / 2) / dfi_rate;
-	} else if ((rxi316_dram_info-> dev-> device_type) == DDR_2) { // RTP settig
-		mrinfo_rtp = ROUND_UP(((((dram_bstlen / 2) - 2) / dfi_rate) + (rxi316_dram_info->timing->trtp_ps)), pctl_period);
-	} else { // DDR3
-		mrinfo_rtp = ROUND_UP(rxi316_dram_info->timing->trtp_ps, pctl_period);
-	}
+	mrinfo_rtp = ROUND_UP(rxi316_dram_info->timing->trtp_ps, pctl_period);
 
 	ddrc->DDRC_MR_INFO = (DDRC_WR_LAT(mrinfo_wr_lat) | DDRC_RD_LAT(mrinfo_rd_lat) | DDRC_ADD_LAT(mrinfo_add_lat) | \
 						  DDRC_T_DQSCK_MAX(mrinfo_dqsck_max) | DDRC_NWR(mrinfo_nwr) | DDRC_RTP(mrinfo_rtp));
@@ -745,6 +743,15 @@ gp_reg_config:
 	twr_tck  = ROUND_UP(rxi316_dram_info->timing->twr_ps, pctl_period);
 	trp_tck  = ROUND_UP(rxi316_dram_info->timing->trp_ps, pctl_period);
 	trtp_tck = ROUND_UP(rxi316_dram_info->timing->trtp_ps, pctl_period);
+
+	// RTP setting
+	if ((rxi316_dram_info-> dev-> device_type) == LPDDR_1) { // RTP settig
+		trtp_tck = (dram_bstlen / 2) / dfi_rate;
+	} else if ((rxi316_dram_info-> dev-> device_type) == DDR_2) { // RTP settig
+		trtp_tck = ((dram_bstlen / 2) - 2) / dfi_rate + ROUND_UP(rxi316_dram_info->timing->trtp_ps, pctl_period);
+	} else { // DDR3
+		trtp_tck = ROUND_UP(rxi316_dram_info->timing->trtp_ps, pctl_period);
+	}
 
 #if DDR_AUTOGATING
 	// for enable cts fifo, which will increase latency between phy and controller
@@ -911,11 +918,11 @@ gp_reg_config:
 	//ddrc->DDRC_IOCR |= DDRC_DYN_SRE(1);
 
 	if (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
-		ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
+
 		// start to init
 		/* ddrc drive cke here --> low */
 		ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
-
+		ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 		// enable PWDPAN15N when phy and controller ready
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | LSYS_BIT_PWDPAD15N_DQ | LSYS_BIT_PWDPAD15N_CA));
 
@@ -1037,10 +1044,20 @@ void rxi316_DynSre_init(u32 IdleCnt, u32 state)
 {
 	DDRC_TypeDef *ddrc = DDRC_DEV;
 
+	if (SYSCFG_RLVersion() < 3) {
+		if (DDR_Type_DDR2 == DDR_PHY_ChipInfo_ddrtype()) {
+			IdleCnt = 0;	/* Keep DDR2 Active to fix srex issue */
+		}
+	} else {
+		/* CR_DPERF0[15:0].DIW < CR_DRR[23:8].tREF - 0x46 atfer D-Cut */
+		/* If CR_DIW is too large, RXI316_DDRC will not be able to enter DYN_SRE.*/
+		assert_param(IdleCnt < DDRC_GET_TREF(ddrc->DDRC_DRR) - 0x46);
+	}
+
 	if (state == ENABLE) {
 		ddrc->DDRC_DPERF0 &= (~DDRC_MASK_DIW);
-
-		ddrc->DDRC_DPERF0 |= DDRC_DIW(IdleCnt);
+		/* CR_DIW[0] = 0 to Enable ECO Function */
+		ddrc->DDRC_DPERF0 |= DDRC_DIW(IdleCnt & ~BIT0);
 		ddrc->DDRC_IOCR |= DDRC_BIT_DYN_SRE;
 
 	} else {
@@ -1128,3 +1145,4 @@ void ddr_init(void)
 	/* Frontend init */
 	rxi316_ftend_init();
 }
+

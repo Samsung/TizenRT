@@ -21,16 +21,17 @@
 #include "ameba_ddrphy_scanpara.h"
 #define DDRPHY_CKREF 40
 
-#define DDRPHY_SSC_EN	DISABLE
 #define DDRPHY_LOOPBACK	DISABLE
 
 #if DDR_SCAN_PARA || DDRPHY_LOOPBACK
 #define ChipInfo_Get()				0xFF
 
 #define SUPPORT_DYNAMIC_POWEROFF	DISABLE
+#define DDRPHY_SSC_EN			DISABLE
 #else
 /*if cmd_ex_rd_str_num = cmd_rd_str_num-1, let cke_ph_sel-1 and cs_ph_sel-1 of CMD_ADR_PH, then cmd_ex_rd_str_num can equal to cmd_rd_str_num*/
 #define SUPPORT_DYNAMIC_POWEROFF	DISABLE//ENABLE
+#define DDRPHY_SSC_EN			ENABLE
 #endif
 
 static const char *TAG = "DDRPHY";
@@ -200,7 +201,8 @@ void DDR_PHY_DLL_CLK_DIV(u32 DDR_Freq)
 	ddr_phy->DDRPHY_SSC3 = ((ddr_phy->DDRPHY_SSC3 & (~DDRPHY_MASK_DPI_N_CODE_T)) | DDRPHY_DPI_N_CODE_T(DDRPHY_Div_n_t));
 
 #if DDRPHY_SSC_EN
-	DDR_Freq = DDR_Freq * 99 / 100;
+	/* SSC=99% will let WIFI CH64(5310~5330) no spur, but degree 1.xDB */
+	DDR_Freq = DDR_Freq * 101 / 100;
 	DDRPHY_Div_n = (DDR_Freq / DDRPHY_CKREF) - 3;
 	DDRPHY_Div_f = ((DDR_Freq * 2048) - (DDRPHY_CKREF * (DDRPHY_Div_n + 3)) * 2048) / DDRPHY_CKREF;
 	ddr_phy->DDRPHY_SSC2 = ((ddr_phy->DDRPHY_SSC2 & (~DDRPHY_MASK_DPI_F_CODE)) | DDRPHY_DPI_F_CODE(DDRPHY_Div_f));
@@ -340,8 +342,8 @@ void DDR_PHY_CRT_Init(VOID)
 
 	/*PLL and DPI enable*/
 	ddr_phy->DDRPHY_CRT_RST_CTL &= (~DDRPHY_BIT_PTR_RST_N);	//PLL and DPI enable (ptr_rst_n = 0x0)
-	DelayUs(5);
 	ddr_phy->DDRPHY_CRT_RST_CTL |= DDRPHY_BIT_RST_N;	//PLL and DPI enable (rst_n = 0x1)
+	DelayUs(5);
 	ddr_phy->DDRPHY_CRT_RST_CTL |= DDRPHY_BIT_PTR_RST_N;	//PLL and DPI enable (ptr_rst_n = 0x0)
 
 	/*SSC NFCODE fetch*/

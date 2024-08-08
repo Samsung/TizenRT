@@ -274,13 +274,15 @@ void BOOT_DDR_Init(void)
 	/*DDRPHY Calibration Offline*/
 	DDR_PHY_CAL();
 
+	/* The DIW switch dynamically method is the same as before. Setting 0 means off.*/
+	//DDRC_DEV->DDRC_DPERF0 = (DDRC_DEV->DDRC_DPERF0 & ~DDRC_MASK_DIW) | DDRC_DIW(diw);
 #if DDR_AUTOGATING
 	DDR_PHY_AutoGating();
 
 #ifdef CONFIG_LINUX_FW_EN
 	rxi316_DynSre_init(0xFFFF, ENABLE);		//for linux lcdc, set the max count
 #else
-	rxi316_DynSre_init(0x1FF, ENABLE);
+	rxi316_DynSre_init(0x700, ENABLE);
 #endif
 #endif
 }
@@ -811,7 +813,7 @@ void BOOT_Image1(void)
 				DelayMs(5000);
 			}
 		}
-		DBG_PRINTF(MODULE_BOOT, LEVEL_INFO, "Init DDR\r\n");
+		RTK_LOGI(MODULE_BOOT, LEVEL_INFO, "Init DDR\r\n");
 		BOOT_DDR_Init();
 		BOOT_DDR_LCDC_HPR();
 	}
