@@ -38,6 +38,12 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
+#ifdef CONFIG_LCD_ST7701SN
+#define NUM_OF_LCD_BUFFER	(2)
+uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };
+int lcd_buffer_index = 0;
+#endif
+
 struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
 
@@ -174,7 +180,24 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
+#ifdef CONFIG_LCD_ST7701SN
+	int src_buffer_index = 0;
+	int dest_buffer_index = 0;
+	uint8_t *lcd_rotate_buffer = buffer;
+	for (int src_row = 0; src_row < CONFIG_LCD_YRES; src_row++) {
+		for (int src_col = CONFIG_LCD_XRES - 1; src_col >= 0 ; src_col--) {
+			lcd_rotate_buffer = lcd_buffer[lcd_buffer_index];
+			src_buffer_index = ((CONFIG_LCD_XRES * src_col) + src_row) * 2;
+			lcd_rotate_buffer[dest_buffer_index] = buffer[src_buffer_index];
+			lcd_rotate_buffer[dest_buffer_index + 1] = buffer[src_buffer_index + 1];
+			dest_buffer_index += 2;
+		}
+	}
+	lcd_buffer_index = (lcd_buffer_index == 0) ? 1 : 0;
+	priv->config->lcd_put_area((u8 *)lcd_rotate_buffer, row_start, col_start, row_end, col_end);
+#else
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
+#endif
 	return OK;
 }
 
@@ -348,6 +371,17 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-
+#ifdef CONFIG_LCD_ST7701SN
+	for (int itr = 0; itr < NUM_OF_LCD_BUFFER; itr++) {
+		lcd_buffer[itr] = (uint8_t *)malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
+		if (!lcd_buffer[itr]) {
+			lcddbg("ERROR: LCD rotate buffer memory allocation failed\n");
+			for (int itr2 = 0; itr2 < itr; itr2++) {
+				free(lcd_buffer[itr2]);
+			}
+			break;
+		}
+	}
+#endif
 	return &priv->dev;
 }
