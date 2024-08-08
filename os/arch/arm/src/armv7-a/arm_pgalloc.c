@@ -70,57 +70,53 @@
 
 static uintptr_t alloc_pgtable(void)
 {
-  irqstate_t flags;
-  uintptr_t paddr;
-  uint32_t *l2table;
+	irqstate_t flags;
+	uintptr_t paddr;
+	uint32_t *l2table;
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-  uint32_t l1save;
+	uint32_t l1save;
 #endif
 
-  /* Allocate one physical page for the L2 page table */
+	/* Allocate one physical page for the L2 page table */
 
-  paddr = mm_pgalloc(1);
-  binfo("a new l2 page table (paddr=%x)\n", paddr);
-  if (paddr)
-    {
-      DEBUGASSERT(MM_ISALIGNED(paddr));
+	paddr = mm_pgalloc(1);
+	binfo("a new l2 page table (paddr=%x)\n", paddr);
+	if (paddr) {
+		DEBUGASSERT(MM_ISALIGNED(paddr));
 
-      flags = enter_critical_section();
+		flags = enter_critical_section();
 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
-      /* Get the virtual address corresponding to the physical page address */
+		/* Get the virtual address corresponding to the physical page address */
 
-      l2table = (uint32_t *)arm_pgvaddr(paddr);
+		l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
-      /* Temporarily map the page into the virtual address space */
+		/* Temporarily map the page into the virtual address space */
 
-      l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-      mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE,
-                      MMU_MEMFLAGS);
-      l2table = (uint32_t *)(ARCH_SCRATCH_VBASE |
-                                 (paddr & SECTION_MASK));
+		l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+		mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+		l2table = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
 #endif
 
-      /* Initialize the page table */
+		/* Initialize the page table */
 
-      memset(l2table, 0, MM_PGSIZE);
+		memset(l2table, 0, MM_PGSIZE);
 
-      /* Make sure that the initialized L2 table is flushed to physical
-       * memory.
-       */
+		/* Make sure that the initialized L2 table is flushed to physical
+		 * memory.
+		 */
 
-      up_flush_dcache((uintptr_t)l2table,
-                      (uintptr_t)l2table + MM_PGSIZE);
+		up_flush_dcache((uintptr_t)l2table, (uintptr_t)l2table + MM_PGSIZE);
 
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-      /* Restore the scratch section page table entry */
+		/* Restore the scratch section page table entry */
 
-      mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+		mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 #endif
-      leave_critical_section(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  return paddr;
+	return paddr;
 }
 
 /****************************************************************************
@@ -134,48 +130,45 @@ static uintptr_t alloc_pgtable(void)
 
 static int get_pgtable(group_addrenv_t *addrenv, uintptr_t vaddr)
 {
-  uint32_t l1entry;
-  uintptr_t paddr;
-  unsigned int hpoffset;
-  unsigned int hpndx;
+	uint32_t l1entry;
+	uintptr_t paddr;
+	unsigned int hpoffset;
+	unsigned int hpndx;
 
-  /* The current implementation only supports extending the user heap
-   * region as part of the implementation of user sbrk().
-   */
+	/* The current implementation only supports extending the user heap
+	 * region as part of the implementation of user sbrk().
+	 */
 
-  DEBUGASSERT(vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND);
+	DEBUGASSERT(vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND);
 
-  /* Get the current level 1 entry corresponding to this vaddr */
+	/* Get the current level 1 entry corresponding to this vaddr */
 
-  hpoffset = vaddr - CONFIG_ARCH_HEAP_VBASE;
-  if (hpoffset >= ARCH_HEAP_SIZE)
-    {
-      return 0;
-    }
+	hpoffset = vaddr - CONFIG_ARCH_HEAP_VBASE;
+	if (hpoffset >= ARCH_HEAP_SIZE) {
+		return 0;
+	}
 
-  hpndx   = hpoffset >> 20;
-  l1entry = (uintptr_t)addrenv->heap[hpndx];
-  if (l1entry == 0)
-    {
-      /* No page table has been allocated... allocate one now */
+	hpndx = hpoffset >> 20;
+	l1entry = (uintptr_t) addrenv->heap[hpndx];
+	if (l1entry == 0) {
+		/* No page table has been allocated... allocate one now */
 
-      paddr = alloc_pgtable();
-      if (paddr != 0)
-        {
-          /* Set the new level 1 page table entry in the address
-           * environment.
-           */
+		paddr = alloc_pgtable();
+		if (paddr != 0) {
+			/* Set the new level 1 page table entry in the address
+			 * environment.
+			 */
 
-          l1entry = paddr | MMU_L1_PGTABFLAGS;
-          addrenv->heap[hpndx] = (uintptr_t *)l1entry;
+			l1entry = paddr | MMU_L1_PGTABFLAGS;
+			addrenv->heap[hpndx] = (uintptr_t *)l1entry;
 
-          /* And instantiate the modified environment */
+			/* And instantiate the modified environment */
 
-          up_addrenv_select(addrenv, NULL);
-        }
-    }
+			up_addrenv_select(addrenv, NULL);
+		}
+	}
 
-  return l1entry & PMD_PTE_PADDR_MASK;
+	return l1entry & PMD_PTE_PADDR_MASK;
 }
 
 /****************************************************************************
@@ -217,111 +210,104 @@ static int get_pgtable(group_addrenv_t *addrenv, uintptr_t vaddr)
 
 uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages)
 {
-  struct tcb_s *tcb = sched_self();
-  struct task_group_s *group;
-  uint32_t *l2table;
-  irqstate_t flags;
-  uintptr_t paddr;
+	struct tcb_s *tcb = sched_self();
+	struct task_group_s *group;
+	uint32_t *l2table;
+	irqstate_t flags;
+	uintptr_t paddr;
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-  uint32_t l1save;
+	uint32_t l1save;
 #endif
-  unsigned int index;
+	unsigned int index;
 
-  binfo("tcb->pid=%d tcb->group=%p\n", tcb->pid, tcb->group);
-  binfo("brkaddr=%x npages=%d\n", brkaddr, npages);
-  DEBUGASSERT(tcb && tcb->group);
-  group = tcb->group;
+	binfo("tcb->pid=%d tcb->group=%p\n", tcb->pid, tcb->group);
+	binfo("brkaddr=%x npages=%d\n", brkaddr, npages);
+	DEBUGASSERT(tcb && tcb->group);
+	group = tcb->group;
 
-  /* The current implementation only supports extending the user heap
-   * region as part of the implementation of user sbrk().  This function
-   * needs to be expanded to also handle (1) extending the user stack
-   * space and (2) extending the kernel memory regions as well.
-   */
+	/* The current implementation only supports extending the user heap
+	 * region as part of the implementation of user sbrk().  This function
+	 * needs to be expanded to also handle (1) extending the user stack
+	 * space and (2) extending the kernel memory regions as well.
+	 */
 
-  DEBUGASSERT((group->tg_flags & GROUP_FLAG_ADDRENV) != 0);
+	DEBUGASSERT((group->tg_flags & GROUP_FLAG_ADDRENV) != 0);
 
-  /* brkaddr = 0 means that no heap has yet been allocated */
+	/* brkaddr = 0 means that no heap has yet been allocated */
 
-  if (brkaddr == 0)
-    {
-      brkaddr = CONFIG_ARCH_HEAP_VBASE;
-    }
+	if (brkaddr == 0) {
+		brkaddr = CONFIG_ARCH_HEAP_VBASE;
+	}
 
-  DEBUGASSERT(brkaddr >= CONFIG_ARCH_HEAP_VBASE && brkaddr < ARCH_HEAP_VEND);
-  DEBUGASSERT(MM_ISALIGNED(brkaddr));
+	DEBUGASSERT(brkaddr >= CONFIG_ARCH_HEAP_VBASE && brkaddr < ARCH_HEAP_VEND);
+	DEBUGASSERT(MM_ISALIGNED(brkaddr));
 
-  for (; npages > 0; npages--)
-    {
-      /* Get the physical address of the level 2 page table */
+	for (; npages > 0; npages--) {
+		/* Get the physical address of the level 2 page table */
 
-      paddr = get_pgtable(&group->tg_addrenv, brkaddr);
-      binfo("l2 page table (paddr=%x)\n", paddr);
-      binfo("brkaddr=%x\n", brkaddr);
-      if (paddr == 0)
-        {
-          return 0;
-        }
+		paddr = get_pgtable(&group->tg_addrenv, brkaddr);
+		binfo("l2 page table (paddr=%x)\n", paddr);
+		binfo("brkaddr=%x\n", brkaddr);
+		if (paddr == 0) {
+			return 0;
+		}
 
-      flags = enter_critical_section();
+		flags = enter_critical_section();
 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
-      /* Get the virtual address corresponding to the physical page address */
+		/* Get the virtual address corresponding to the physical page address */
 
-      l2table = (uint32_t *)arm_pgvaddr(paddr);
+		l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
-      /* Temporarily map the level 2 page table into the "scratch" virtual
-       * address space
-       */
+		/* Temporarily map the level 2 page table into the "scratch" virtual
+		 * address space
+		 */
 
-      l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-      mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE,
-                      MMU_MEMFLAGS);
-      l2table = (uint32_t *)(ARCH_SCRATCH_VBASE |
-                                 (paddr & SECTION_MASK));
+		l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+		mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+		l2table = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
 #endif
 
-      /* Back up L2 entry with physical memory */
+		/* Back up L2 entry with physical memory */
 
-      paddr = mm_pgalloc(1);
-      binfo("a new page (paddr=%x)\n", paddr);
-      if (paddr == 0)
-        {
+		paddr = mm_pgalloc(1);
+		binfo("a new page (paddr=%x)\n", paddr);
+		if (paddr == 0) {
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-          mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+			mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 #endif
-          leave_critical_section(flags);
-          return 0;
-        }
+			leave_critical_section(flags);
+			return 0;
+		}
 
-      /* The table divides a 1Mb address space up into 256 entries, each
-       * corresponding to 4Kb of address space.  The page table index is
-       * related to the offset from the beginning of 1Mb region.
-       */
+		/* The table divides a 1Mb address space up into 256 entries, each
+		 * corresponding to 4Kb of address space.  The page table index is
+		 * related to the offset from the beginning of 1Mb region.
+		 */
 
-      index = (brkaddr & 0x000ff000) >> 12;
+		index = (brkaddr & 0x000ff000) >> 12;
 
-      /* Map the .text region virtual address to this physical address */
+		/* Map the .text region virtual address to this physical address */
 
-      DEBUGASSERT(l2table[index] == 0);
-      l2table[index] = paddr | MMU_L2_UDATAFLAGS;
-      brkaddr += MM_PGSIZE;
+		DEBUGASSERT(l2table[index] == 0);
+		l2table[index] = paddr | MMU_L2_UDATAFLAGS;
+		brkaddr += MM_PGSIZE;
 
-      /* Make sure that the modified L2 table is flushed to physical
-       * memory.
-       */
+		/* Make sure that the modified L2 table is flushed to physical
+		 * memory.
+		 */
 
-      up_flush_dcache((uintptr_t)&l2table[index],
-                      (uintptr_t)&l2table[index] + sizeof(uint32_t));
+		up_flush_dcache((uintptr_t)&l2table[index], (uintptr_t)&l2table[index] + sizeof(uint32_t));
 
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-      /* Restore the scratch L1 page table entry */
+		/* Restore the scratch L1 page table entry */
 
-      mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+		mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 #endif
-      leave_critical_section(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  return brkaddr;
+	return brkaddr;
 }
 
-#endif /* CONFIG_BUILD_KERNEL */
+#endif							/* CONFIG_BUILD_KERNEL */

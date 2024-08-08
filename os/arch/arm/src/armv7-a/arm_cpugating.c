@@ -43,6 +43,35 @@
 volatile uint32_t ulFlashPG_Flag = 0;
 /****************************************************************************
  * Name: arm_gating_handler
+=======
+ * Private Functions
+ ****************************************************************************/
+#define portCPU_IRQ_DISABLE()										\
+	__asm volatile ( "CPSID i" ::: "memory" );						\
+	__asm volatile ( "DSB" );										\
+	__asm volatile ( "ISB" );
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+uint32_t ulPortInterruptLock(void)
+{
+	uint32_t key;
+
+	__asm volatile("mrs	%0, cpsr	\n":"=r"(key)::"memory");
+	portCPU_IRQ_DISABLE();
+
+	return key;
+}
+
+/*-----------------------------------------------------------*/
+
+void ulPortInterruptUnLock(uint32_t key)
+{
+	__asm volatile("msr	cpsr_c, %0	\n"::"r"(key):"memory");
+}
+
+/****************************************************************************
+ * Name: arm_flash_handler
  *
  * Description:
  *   This is the handler for SGI3.  This handler simply send the another core

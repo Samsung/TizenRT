@@ -174,6 +174,7 @@ static size_t do_stackcheck(uintptr_t start, uintptr_t end)
 
 size_t up_check_tcbstack(FAR struct tcb_s *tcb)
 {
+
 	return do_stackcheck((uintptr_t)tcb->stack_base_ptr, (uintptr_t)tcb->adj_stack_ptr);
 }
 

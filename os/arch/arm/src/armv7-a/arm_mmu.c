@@ -108,22 +108,22 @@ static void mmu_set_flags(uint32_t *val, bool ro, bool exec, uint8_t isL1)
 #ifndef CONFIG_ARCH_ROMPGTABLE
 void mmu_l1_setentry(uint32_t paddr, uint32_t vaddr, uint32_t mmuflags)
 {
-  uint32_t *l1table = mmu_l1_pgtable();
-  uint32_t  index   = vaddr >> 20;
+	uint32_t *l1table = mmu_l1_pgtable();
+	uint32_t index = vaddr >> 20;
 
-  /* Save the page table entry */
+	/* Save the page table entry */
 
-  l1table[index] = (paddr | mmuflags);
+	l1table[index] = (paddr | mmuflags);
 
-  /* Flush the data cache entry.  Make sure that the modified contents
-   * of the page table are flushed into physical memory.
-   */
+	/* Flush the data cache entry.  Make sure that the modified contents
+	 * of the page table are flushed into physical memory.
+	 */
 
-  cp15_clean_dcache_bymva((uint32_t)&l1table[index]);
+	cp15_clean_dcache_bymva((uint32_t)&l1table[index]);
 
-  /* Invalidate the TLB cache associated with virtual address range */
+	/* Invalidate the TLB cache associated with virtual address range */
 
-  mmu_invalidate_region(vaddr, SECTION_SIZE);
+	mmu_invalidate_region(vaddr, SECTION_SIZE);
 }
 #endif
 
@@ -143,22 +143,22 @@ void mmu_l1_setentry(uint32_t paddr, uint32_t vaddr, uint32_t mmuflags)
 #if !defined(CONFIG_ARCH_ROMPGTABLE) && defined(CONFIG_ARCH_ADDRENV)
 void mmu_l1_restore(uintptr_t vaddr, uint32_t l1entry)
 {
-  uint32_t *l1table = mmu_l1_pgtable();
-  uint32_t  index   = vaddr >> 20;
+	uint32_t *l1table = mmu_l1_pgtable();
+	uint32_t index = vaddr >> 20;
 
-  /* Set the encoded page table entry */
+	/* Set the encoded page table entry */
 
-  l1table[index] = l1entry;
+	l1table[index] = l1entry;
 
-  /* Flush the data cache entry.  Make sure that the modified contents
-   * of the page table are flushed into physical memory.
-   */
+	/* Flush the data cache entry.  Make sure that the modified contents
+	 * of the page table are flushed into physical memory.
+	 */
 
-  cp15_clean_dcache_bymva((uint32_t)&l1table[index]);
+	cp15_clean_dcache_bymva((uint32_t)&l1table[index]);
 
-  /* Invalidate the TLB cache associated with virtual address range */
+	/* Invalidate the TLB cache associated with virtual address range */
 
-  mmu_invalidate_region(vaddr & PMD_PTE_PADDR_MASK, SECTION_SIZE);
+	mmu_invalidate_region(vaddr & PMD_PTE_PADDR_MASK, SECTION_SIZE);
 }
 #endif
 
@@ -180,32 +180,31 @@ void mmu_l1_restore(uintptr_t vaddr, uint32_t l1entry)
  ****************************************************************************/
 
 #ifndef CONFIG_ARCH_ROMPGTABLE
-void mmu_l2_setentry(uint32_t l2vaddr, uint32_t paddr, uint32_t vaddr,
-                     uint32_t mmuflags)
+void mmu_l2_setentry(uint32_t l2vaddr, uint32_t paddr, uint32_t vaddr, uint32_t mmuflags)
 {
-  uint32_t *l2table  = (uint32_t *)l2vaddr;
-  uint32_t  index;
+	uint32_t *l2table = (uint32_t *)l2vaddr;
+	uint32_t index;
 
-  /* The table divides a 1Mb address space up into 256 entries, each
-   * corresponding to 4Kb of address space.  The page table index is
-   * related to the offset from the beginning of 1Mb region.
-   */
+	/* The table divides a 1Mb address space up into 256 entries, each
+	 * corresponding to 4Kb of address space.  The page table index is
+	 * related to the offset from the beginning of 1Mb region.
+	 */
 
-  index = (vaddr & 0x000ff000) >> 12;
+	index = (vaddr & 0x000ff000) >> 12;
 
-  /* Save the table entry */
+	/* Save the table entry */
 
-  l2table[index] = (paddr | mmuflags);
+	l2table[index] = (paddr | mmuflags);
 
-  /* Flush the data cache entry.  Make sure that the modified contents
-   * of the page table are flushed into physical memory.
-   */
+	/* Flush the data cache entry.  Make sure that the modified contents
+	 * of the page table are flushed into physical memory.
+	 */
 
-  cp15_clean_dcache_bymva((uint32_t)&l2table[index]);
+	cp15_clean_dcache_bymva((uint32_t)&l2table[index]);
 
-  /* Invalidate the TLB cache associated with virtual address range */
+	/* Invalidate the TLB cache associated with virtual address range */
 
-  cp15_invalidate_tlb_bymva(vaddr);
+	cp15_invalidate_tlb_bymva(vaddr);
 }
 #endif
 
@@ -224,19 +223,18 @@ void mmu_l2_setentry(uint32_t l2vaddr, uint32_t paddr, uint32_t vaddr,
 #ifndef CONFIG_ARCH_ROMPGTABLE
 void mmu_l1_map_region(const struct section_mapping_s *mapping)
 {
-  uint32_t paddr    = mapping->physbase;
-  uint32_t vaddr    = mapping->virtbase;
-  uint32_t mmuflags = mapping->mmuflags;
-  int i;
+	uint32_t paddr = mapping->physbase;
+	uint32_t vaddr = mapping->virtbase;
+	uint32_t mmuflags = mapping->mmuflags;
+	int i;
 
-  /* Loop, writing each mapping into the L1 page table */
+	/* Loop, writing each mapping into the L1 page table */
 
-  for (i = 0; i < mapping->nsections; i++)
-    {
-      mmu_l1_setentry(paddr, vaddr, mmuflags);
-      paddr += SECTION_SIZE;
-      vaddr += SECTION_SIZE;
-    }
+	for (i = 0; i < mapping->nsections; i++) {
+		mmu_l1_setentry(paddr, vaddr, mmuflags);
+		paddr += SECTION_SIZE;
+		vaddr += SECTION_SIZE;
+	}
 }
 #endif
 
@@ -254,15 +252,13 @@ void mmu_l1_map_region(const struct section_mapping_s *mapping)
  ****************************************************************************/
 
 #ifndef CONFIG_ARCH_ROMPGTABLE
-void mmu_l1_map_regions(const struct section_mapping_s *mappings,
-                        size_t count)
+void mmu_l1_map_regions(const struct section_mapping_s *mappings, size_t count)
 {
-  size_t i;
+	size_t i;
 
-  for (i = 0; i < count; i++)
-    {
-      mmu_l1_map_region(&mappings[i]);
-    }
+	for (i = 0; i < count; i++) {
+		mmu_l1_map_region(&mappings[i]);
+	}
 }
 #endif
 
@@ -281,16 +277,15 @@ void mmu_l1_map_regions(const struct section_mapping_s *mappings,
 #ifndef CONFIG_ARCH_ROMPGTABLE
 void mmu_invalidate_region(uint32_t vstart, size_t size)
 {
-  uint32_t vaddr = vstart & 0xfffff000;
-  uint32_t vend  = vstart + size;
+	uint32_t vaddr = vstart & 0xfffff000;
+	uint32_t vend = vstart + size;
 
-  /* Loop, invalidating regions */
+	/* Loop, invalidating regions */
 
-  while (vaddr < vend)
-    {
-      cp15_invalidate_tlb_bymva(vaddr);
-      vaddr += 4096;
-    }
+	while (vaddr < vend) {
+		cp15_invalidate_tlb_bymva(vaddr);
+		vaddr += 4096;
+	}
 }
 #endif
 
@@ -366,7 +361,7 @@ uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
  * Allocate L2 page table for app.
  * Copy entries from kernel to app L2 table.
  * Update the L2 page table address in L1 table.
- * 
+ *
  * Input Parameters:
  * app_pgtbl: Pointer to L1 page table of app
  *
@@ -394,15 +389,14 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 	uint32_t *addr;
 
 	// Clear L2 page tables
-	addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) +
-                       (app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE));
+	addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) + (app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE));
 	memset(addr, 0, CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE);
-	
+
 	if (app_id == 0) {
 		// Reset the L2 page entries in L1 page table
-		addr = (uint32_t *)PGTABLE_BASE_VADDR;
+		addr = (uint32_t *) PGTABLE_BASE_VADDR;
 		for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
-			if((addr[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
+			if ((addr[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
 				addr[i] = addr[i - 1] & PMD_SECT_PADDR_MASK;
 				addr[i] += SECTION_SIZE;
 				addr[i] |= MMU_MEMFLAGS;
@@ -429,7 +423,7 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
  * - In this case, update the corresponding section in the l1 page table.
  * - Otherwise, create an L2 page table and update it with default entries.
  * - Later, update the access permissions in the L2 page table for the given memory region.
- * - Update the L2 page table address in L1 page table. 
+ * - Update the L2 page table address in L1 page table.
  *
  * Input Parameters:
  * app_id :	Id of the app being updated.
@@ -459,31 +453,30 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 
 			// Advance the memory region address.
 			start += SECTION_SIZE;
-		} else {	// Check if this address can be mapped to a small page.
+		} else {				// Check if this address can be mapped to a small page.
 
 			// Check if L2 page table is not created.
 			idx = (start & 0xfff00000) >> 20;
 			uint32_t *l2_pgtbl = (uint32_t *)(l1_pgtbl[idx] & PMD_PTE_PADDR_MASK);
-			
+
 			if ((l1_pgtbl[idx] & PMD_TYPE_MASK) != PMD_TYPE_PTE) {
 				// Yes. Allocate L2 page table for app.
 				l2_pgtbl = mmu_allocate_app_l2_pgtbl(app_id, l2_idx++);
 
 				// Fill the newly allocated l2 page table with default kernel page entries
 				uint32_t l2_start = start & PMD_SECT_PADDR_MASK;
-                                for (int i = 0; i < L2_PGTBL_NENTRIES; i++) {
-                                        l2_pgtbl[i] = l2_start | MMU_L2_MEMFLAGS;
-                                        l2_start += SMALL_PAGE_SIZE;
-                                }
+				for (int i = 0; i < L2_PGTBL_NENTRIES; i++) {
+					l2_pgtbl[i] = l2_start | MMU_L2_MEMFLAGS;
+					l2_start += SMALL_PAGE_SIZE;
+				}
 
 				// Update L2 page table address in L1 page table.
 				val = (uint32_t)l2_pgtbl & PMD_PTE_PADDR_MASK;
 				val |= MMU_L1_PGTABFLAGS;
 				l1_pgtbl[idx] = val;
 			}
-
 			// Update the L2 page table entry.
-  			idx = (start & 0x000ff000) >> 12;
+			idx = (start & 0x000ff000) >> 12;
 			val = start & PTE_SMALL_PADDR_MASK;
 			mmu_set_flags(&val, ro, exec, false);
 			l2_pgtbl[idx] = val;
@@ -521,28 +514,19 @@ void mmu_dump_app_pgtbl(void)
 	lldbg_noarg("ADDR               ADDR                  \n");
 	lldbg_noarg("=====================================================================\n");
 	for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
-		if ((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT && 
-				(l1tbl[i] & PMD_SECT_AP1)) {  	// Only print user areas.
-			lldbg_noarg("0x%08x SECT    0x%08x      %s-%s\n", 
-					&l1tbl[i], 
-					l1tbl[i] & PMD_SECT_PADDR_MASK, 
-					(l1tbl[i] & PMD_SECT_AP2) ? "RO" : "RW", 
-					(l1tbl[i] & PMD_SECT_XN) ? "XN" : "X");
-		} else if((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
-			lldbg_noarg("0x%08x L1PTE   0x%08x\n", &l1tbl[i], l1tbl[i] & PMD_PTE_PADDR_MASK); 
+		if ((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_SECT && (l1tbl[i] & PMD_SECT_AP1)) {	// Only print user areas.
+			lldbg_noarg("0x%08x SECT    0x%08x      %s-%s\n", &l1tbl[i], l1tbl[i] & PMD_SECT_PADDR_MASK, (l1tbl[i] & PMD_SECT_AP2) ? "RO" : "RW", (l1tbl[i] & PMD_SECT_XN) ? "XN" : "X");
+		} else if ((l1tbl[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
+			lldbg_noarg("0x%08x L1PTE   0x%08x\n", &l1tbl[i], l1tbl[i] & PMD_PTE_PADDR_MASK);
 			uint32_t *l2tbl = (uint32_t *)(l1tbl[i] & PMD_PTE_PADDR_MASK);
 			for (int j = 0; j < L2_PGTBL_NENTRIES; j++) {
-				if ((l2tbl[j] & PTE_AP1) && 	// Only print user areas.
-						((l2tbl[j] & PTE_TYPE_MASK) != PTE_TYPE_FAULT)) {
-					lldbg_noarg("0x%08x PAGE    0x%08x      %s-%s\n", 
-						&l2tbl[j], 
-						l2tbl[j] & PTE_SMALL_PADDR_MASK, 
-						(l2tbl[j] & PTE_AP2) ? "RO" : "RW",
-						(l2tbl[j] & PTE_SMALL_XN) ? "XN" : "X");
+				if ((l2tbl[j] & PTE_AP1) &&	// Only print user areas.
+					((l2tbl[j] & PTE_TYPE_MASK) != PTE_TYPE_FAULT)) {
+					lldbg_noarg("0x%08x PAGE    0x%08x      %s-%s\n", &l2tbl[j], l2tbl[j] & PTE_SMALL_PADDR_MASK, (l2tbl[j] & PTE_AP2) ? "RO" : "RW", (l2tbl[j] & PTE_SMALL_XN) ? "XN" : "X");
 				}
 			}
 		}
 	}
 	lldbg_noarg("=====================================================================\n");
 }
-#endif // CONFIG_APP_BINARY_SEPARATION
+#endif							// CONFIG_APP_BINARY_SEPARATION

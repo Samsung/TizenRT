@@ -125,7 +125,7 @@ void up_schedyield(void)
 			 * Just copy the current_regs into the OLD rtcb.
 			 */
 
-               arm_savestate(rtcb->xcp.regs);
+			arm_savestate(rtcb->xcp.regs);
 
 			/* Restore ntcb data for context switching */
 
@@ -133,7 +133,7 @@ void up_schedyield(void)
 
 			/* Then switch contexts */
 
-              //sched_resume_scheduler(rtcb);
+			//sched_resume_scheduler(rtcb);
 			arm_restorestate(ntcb->xcp.regs);
 		}
 		/* No, then we will need to perform the user context switch */

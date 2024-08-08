@@ -56,8 +56,8 @@
 #endif
 
 #ifdef CONFIG_PAGING
-#  include <tinyara/page.h>
-#  include "arm.h"
+#include <tinyara/page.h>
+#include "arm.h"
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
@@ -97,92 +97,88 @@ uint32_t system_exception_location;
 #ifdef CONFIG_PAGING
 uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
-  struct tcb_s *tcb = this_task();
-  uint32_t *savestate;
+	struct tcb_s *tcb = this_task();
+	uint32_t *savestate;
 
-  /* Save the saved processor context in CURRENT_REGS where it can be
-   * accessed for register dumps and possibly context switching.
-   */
+	/* Save the saved processor context in CURRENT_REGS where it can be
+	 * accessed for register dumps and possibly context switching.
+	 */
 
-  savestate    = (uint32_t *)CURRENT_REGS;
-  CURRENT_REGS = regs;
+	savestate = (uint32_t *) CURRENT_REGS;
+	CURRENT_REGS = regs;
 
-  /* In the NuttX on-demand paging implementation, only the read-only, .text
-   * section is paged.  However, the ARM compiler generated PC-relative data
-   * fetches from within the .text sections.  Also, it is customary to locate
-   * read-only data (.rodata) within the same section as .text so that it
-   * does not require copying to RAM. Misses in either of these case should
-   * cause a data abort.
-   *
-   * We are only interested in data aborts due to page translations faults.
-   * Sections should already be in place and permissions should already be
-   * be set correctly (to read-only) so any other data abort reason is a
-   * fatal error.
-   */
+	/* In the NuttX on-demand paging implementation, only the read-only, .text
+	 * section is paged.  However, the ARM compiler generated PC-relative data
+	 * fetches from within the .text sections.  Also, it is customary to locate
+	 * read-only data (.rodata) within the same section as .text so that it
+	 * does not require copying to RAM. Misses in either of these case should
+	 * cause a data abort.
+	 *
+	 * We are only interested in data aborts due to page translations faults.
+	 * Sections should already be in place and permissions should already be
+	 * be set correctly (to read-only) so any other data abort reason is a
+	 * fatal error.
+	 */
 
-  pginfo("DFSR: %08x DFAR: %08x\n", dfsr, dfar);
-  if ((dfsr & FSR_MASK) != FSR_PAGE)
-    {
-      goto segfault;
-    }
+	pginfo("DFSR: %08x DFAR: %08x\n", dfsr, dfar);
+	if ((dfsr & FSR_MASK) != FSR_PAGE) {
+		goto segfault;
+	}
 
-  /* Check the (virtual) address of data that caused the data abort. When
-   * the exception occurred, this address was provided in the DFAR register.
-   * (It has not yet been saved in the register context save area).
-   */
+	/* Check the (virtual) address of data that caused the data abort. When
+	 * the exception occurred, this address was provided in the DFAR register.
+	 * (It has not yet been saved in the register context save area).
+	 */
 
-  pginfo("VBASE: %08x VEND: %08x\n", PG_PAGED_VBASE, PG_PAGED_VEND);
-  if (dfar < PG_PAGED_VBASE || dfar >= PG_PAGED_VEND)
-    {
-      goto segfault;
-    }
+	pginfo("VBASE: %08x VEND: %08x\n", PG_PAGED_VBASE, PG_PAGED_VEND);
+	if (dfar < PG_PAGED_VBASE || dfar >= PG_PAGED_VEND) {
+		goto segfault;
+	}
 
-  /* Save the offending data address as the fault address in the TCB of
-   * the currently task.  This fault address is also used by the prefetch
-   * abort handling; this will allow common paging logic for both
-   * prefetch and data aborts.
-   */
+	/* Save the offending data address as the fault address in the TCB of
+	 * the currently task.  This fault address is also used by the prefetch
+	 * abort handling; this will allow common paging logic for both
+	 * prefetch and data aborts.
+	 */
 
-  tcb->xcp.dfar = regs[REG_R15];
+	tcb->xcp.dfar = regs[REG_R15];
 
-  /* Call pg_miss() to schedule the page fill.  A consequences of this
-   * call are:
-   *
-   * (1) The currently executing task will be blocked and saved on
-   *     on the g_waitingforfill task list.
-   * (2) An interrupt-level context switch will occur so that when
-   *     this function returns, it will return to a different task,
-   *     most likely the page fill worker thread.
-   * (3) The page fill worker task has been signalled and should
-   *     execute immediately when we return from this exception.
-   */
+	/* Call pg_miss() to schedule the page fill.  A consequences of this
+	 * call are:
+	 *
+	 * (1) The currently executing task will be blocked and saved on
+	 *     on the g_waitingforfill task list.
+	 * (2) An interrupt-level context switch will occur so that when
+	 *     this function returns, it will return to a different task,
+	 *     most likely the page fill worker thread.
+	 * (3) The page fill worker task has been signalled and should
+	 *     execute immediately when we return from this exception.
+	 */
 
-  pg_miss();
+	pg_miss();
 
-  /* Restore the previous value of CURRENT_REGS.  NULL would indicate that
-   * we are no longer in an interrupt handler.  It will be non-NULL if we
-   * are returning from a nested interrupt.
-   */
+	/* Restore the previous value of CURRENT_REGS.  NULL would indicate that
+	 * we are no longer in an interrupt handler.  It will be non-NULL if we
+	 * are returning from a nested interrupt.
+	 */
 
-  CURRENT_REGS = savestate;
-  return regs;
+	CURRENT_REGS = savestate;
+	return regs;
 
 segfault:
-  _alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n",
-        regs[REG_PC], dfar, dfsr);
+	_alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
 #endif
-  PANIC();
-  return regs; /* To keep the compiler happy */
+	PANIC();
+	return regs;				/* To keep the compiler happy */
 }
 
-#else /* CONFIG_PAGING */
+#else							/* CONFIG_PAGING */
 
 #include "section_config.h"
-SRAMDRAM_ONLY_TEXT_SECTION
-uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
+SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
   /* Save the saved processor context in CURRENT_REGS where it can be
    * accessed for register dumps and possibly context switching.
@@ -191,9 +187,7 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
   CURRENT_REGS = regs;
   system_exception_location = regs[REG_R15];
   /* Crash -- possibly showing diagnostic debug information. */
-
-  _alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n",
-        regs[REG_PC], dfar, dfsr);
+	_alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
@@ -205,4 +199,4 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
   return regs; /* To keep the compiler happy */
 }
 
-#endif /* CONFIG_PAGING */
+#endif							/* CONFIG_PAGING */

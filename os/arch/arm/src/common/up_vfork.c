@@ -169,7 +169,6 @@ pid_t up_vfork(const struct vfork_s *context)
 		task_vforkabort(child, -ret);
 		return (pid_t)ERROR;
 	}
-
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Exclude a stack node from heap usages of current thread.
 	 * This will be shown separately as stack usages.

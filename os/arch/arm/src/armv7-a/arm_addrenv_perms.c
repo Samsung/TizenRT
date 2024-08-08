@@ -67,15 +67,14 @@
  *
  ****************************************************************************/
 
-int up_addrenv_mprot(group_addrenv_t *addrenv, uintptr_t addr, size_t len,
-                     int prot)
+int up_addrenv_mprot(group_addrenv_t *addrenv, uintptr_t addr, size_t len, int prot)
 {
-  /* Nothing needs to be done */
+	/* Nothing needs to be done */
 
-  UNUSED(addrenv);
-  UNUSED(addr);
-  UNUSED(len);
-  UNUSED(prot);
+	UNUSED(addrenv);
+	UNUSED(addr);
+	UNUSED(len);
+	UNUSED(prot);
 
-  return OK;
+	return OK;
 }

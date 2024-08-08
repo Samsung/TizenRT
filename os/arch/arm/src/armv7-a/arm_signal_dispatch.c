@@ -82,13 +82,11 @@
  ****************************************************************************/
 
 #ifndef CONFIG_DISABLE_SIGNALS
-void up_signal_dispatch(_sa_sigaction_t sighand, int signo,
-                        siginfo_t *info, void *ucontext)
+void up_signal_dispatch(_sa_sigaction_t sighand, int signo, siginfo_t *info, void *ucontext)
 {
-  /* Let sys_call4() do all of the work */
+	/* Let sys_call4() do all of the work */
 
-  sys_call4(SYS_signal_handler, (uintptr_t)sighand, (uintptr_t)signo,
-            (uintptr_t)info, (uintptr_t)ucontext);
+	sys_call4(SYS_signal_handler, (uintptr_t) sighand, (uintptr_t) signo, (uintptr_t) info, (uintptr_t) ucontext);
 }
 #endif
-#endif /* !CONFIG_BUILD_FLAT && __KERNEL__ */
+#endif							/* !CONFIG_BUILD_FLAT && __KERNEL__ */

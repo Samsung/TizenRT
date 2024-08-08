@@ -60,19 +60,18 @@
 
 uintptr_t arm_virtpgaddr(uintptr_t paddr)
 {
-  /* REVISIT: Not implemented correctly.  The reverse lookup from physical
-   * to virtual.  This will return a kernel accessible virtual address, but
-   * not an address usable by the user code.
-   *
-   * The correct solutions is complex and, perhaps, will never be needed.
-   */
+	/* REVISIT: Not implemented correctly.  The reverse lookup from physical
+	 * to virtual.  This will return a kernel accessible virtual address, but
+	 * not an address usable by the user code.
+	 *
+	 * The correct solutions is complex and, perhaps, will never be needed.
+	 */
 
-  if (paddr >= CONFIG_ARCH_PGPOOL_PBASE && paddr < CONFIG_ARCH_PGPOOL_PEND)
-    {
-      return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
-    }
+	if (paddr >= CONFIG_ARCH_PGPOOL_PBASE && paddr < CONFIG_ARCH_PGPOOL_PEND) {
+		return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
+	}
 
-  return 0;
+	return 0;
 }
 
-#endif /* CONFIG_MM_PGALLOC && CONFIG_ARCH_PGPOOL_MAPPING */
+#endif							/* CONFIG_MM_PGALLOC && CONFIG_ARCH_PGPOOL_MAPPING */

@@ -77,9 +77,9 @@
 #if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
 static inline uintptr_t arm_tmpmap(uintptr_t paddr, uint32_t *l1save)
 {
-  *l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-  mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-  return ((uintptr_t)ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+	*l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+	mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+	return ((uintptr_t)ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
 }
 #endif
 
@@ -95,7 +95,7 @@ static inline uintptr_t arm_tmpmap(uintptr_t paddr, uint32_t *l1save)
 #if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
 static inline void arm_tmprestore(uint32_t l1save)
 {
-  mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+	mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 }
 #endif
 
@@ -112,10 +112,9 @@ static inline void arm_tmprestore(uint32_t l1save)
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
 static inline uintptr_t arm_pgvaddr(uintptr_t paddr)
 {
-  DEBUGASSERT(paddr >= CONFIG_ARCH_PGPOOL_PBASE &&
-              paddr < CONFIG_ARCH_PGPOOL_PEND);
+	DEBUGASSERT(paddr >= CONFIG_ARCH_PGPOOL_PBASE && paddr < CONFIG_ARCH_PGPOOL_PEND);
 
-  return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
+	return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
 }
 #endif
 
@@ -130,20 +129,18 @@ static inline uintptr_t arm_pgvaddr(uintptr_t paddr)
 
 static inline bool arm_uservaddr(uintptr_t vaddr)
 {
-  /* Check if this address is within the range of the virtualized .bss/.data,
-   * heap, or stack regions.
-   */
+	/* Check if this address is within the range of the virtualized .bss/.data,
+	 * heap, or stack regions.
+	 */
 
-  return ((vaddr >= CONFIG_ARCH_TEXT_VBASE && vaddr < ARCH_TEXT_VEND) ||
-          (vaddr >= CONFIG_ARCH_DATA_VBASE && vaddr < ARCH_DATA_VEND) ||
-          (vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND)
+	return ((vaddr >= CONFIG_ARCH_TEXT_VBASE && vaddr < ARCH_TEXT_VEND) || (vaddr >= CONFIG_ARCH_DATA_VBASE && vaddr < ARCH_DATA_VEND) || (vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND)
 #ifdef CONFIG_ARCH_STACK_DYNAMIC
-       || (vaddr >= CONFIG_ARCH_STACK_VBASE && vaddr < ARCH_STACK_VEND)
+			|| (vaddr >= CONFIG_ARCH_STACK_VBASE && vaddr < ARCH_STACK_VEND)
 #endif
 #ifdef CONFIG_MM_SHM
-       || (vaddr >= CONFIG_ARCH_SHM_VBASE && vaddr < ARCH_SHM_VEND)
+			|| (vaddr >= CONFIG_ARCH_SHM_VBASE && vaddr < ARCH_SHM_VEND)
 #endif
-      );
+		   );
 }
 
 /****************************************************************************
@@ -155,21 +152,20 @@ static inline bool arm_uservaddr(uintptr_t vaddr)
  *
  ****************************************************************************/
 
-static inline void set_l2_entry(uint32_t *l2table, uintptr_t paddr,
-                                uintptr_t vaddr, uint32_t mmuflags)
+static inline void set_l2_entry(uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr, uint32_t mmuflags)
 {
-  uint32_t index;
+	uint32_t index;
 
-  /* The table divides a 1Mb address space up into 256 entries, each
-   * corresponding to 4Kb of address space.  The page table index is
-   * related to the offset from the beginning of 1Mb region.
-   */
+	/* The table divides a 1Mb address space up into 256 entries, each
+	 * corresponding to 4Kb of address space.  The page table index is
+	 * related to the offset from the beginning of 1Mb region.
+	 */
 
-  index = (vaddr & 0x000ff000) >> 12;
+	index = (vaddr & 0x000ff000) >> 12;
 
-  /* Save the level 2 page table entry */
+	/* Save the level 2 page table entry */
 
-  l2table[index] = (paddr | mmuflags);
+	l2table[index] = (paddr | mmuflags);
 }
 
 /****************************************************************************
@@ -182,18 +178,18 @@ static inline void set_l2_entry(uint32_t *l2table, uintptr_t paddr,
 
 static inline void clr_l2_entry(uint32_t *l2table, uintptr_t vaddr)
 {
-  uint32_t index;
+	uint32_t index;
 
-  /* The table divides a 1Mb address space up into 256 entries, each
-   * corresponding to 4Kb of address space.  The page table index is
-   * related to the offset from the beginning of 1Mb region.
-   */
+	/* The table divides a 1Mb address space up into 256 entries, each
+	 * corresponding to 4Kb of address space.  The page table index is
+	 * related to the offset from the beginning of 1Mb region.
+	 */
 
-  index = (vaddr & 0x000ff000) >> 12;
+	index = (vaddr & 0x000ff000) >> 12;
 
-  /* Save the level 2 page table entry */
+	/* Save the level 2 page table entry */
 
-  l2table[index] = 0;
+	l2table[index] = 0;
 }
 
 /****************************************************************************
@@ -207,18 +203,18 @@ static inline void clr_l2_entry(uint32_t *l2table, uintptr_t vaddr)
 
 static inline uintptr_t get_l2_entry(uint32_t *l2table, uintptr_t vaddr)
 {
-  uint32_t index;
+	uint32_t index;
 
-  /* The table divides a 1Mb address space up into 256 entries, each
-   * corresponding to 4Kb of address space.  The page table index is
-   * related to the offset from the beginning of 1Mb region.
-   */
+	/* The table divides a 1Mb address space up into 256 entries, each
+	 * corresponding to 4Kb of address space.  The page table index is
+	 * related to the offset from the beginning of 1Mb region.
+	 */
 
-  index = (vaddr & 0x000ff000) >> 12;
+	index = (vaddr & 0x000ff000) >> 12;
 
-  /* Return the level 2 page table entry */
+	/* Return the level 2 page table entry */
 
-  return l2table[index];
+	return l2table[index];
 }
 
 /****************************************************************************
@@ -249,5 +245,5 @@ uintptr_t arm_physpgaddr(uintptr_t vaddr);
 uintptr_t arm_virtpgaddr(uintptr_t paddr);
 #endif
 
-#endif /* CONFIG_MM_PGALLOC */
-#endif /* __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H */
+#endif							/* CONFIG_MM_PGALLOC */
+#endif							/* __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H */

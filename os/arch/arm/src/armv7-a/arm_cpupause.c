@@ -171,7 +171,7 @@ int up_cpu_paused(int cpu)
    * requesting CPU.
    */
 
-  spin_unlock(&g_cpu_paused[cpu]);
+	spin_unlock(&g_cpu_paused[cpu]);
 
   /* Ensure the CPU has been resumed to avoid causing a deadlock */
 
@@ -180,8 +180,7 @@ int up_cpu_paused(int cpu)
   /* Wait for the spinlock to be released.  The requesting CPU will release
    * the spinlock when the CPU is resumed.
    */
-
-  spin_lock(&g_cpu_wait[cpu]);
+	spin_lock(&g_cpu_wait[cpu]);
 
   spin_unlock(&g_cpu_wait[cpu]);
   spin_unlock(&g_cpu_resumed[cpu]);
@@ -210,23 +209,23 @@ int up_cpu_paused_restore(void)
   struct tcb_s *tcb = this_task();
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify that we have resumed */
+	/* Notify that we have resumed */
 
-  sched_note_cpu_resumed(tcb);
+	sched_note_cpu_resumed(tcb);
 #endif
 
-  /* Reset scheduler parameters */
+	/* Reset scheduler parameters */
 
-  sched_resume_scheduler(tcb);
+	sched_resume_scheduler(tcb);
 
-  /* Then switch contexts.  Any necessary address environment changes
-   * will be made when the interrupt returns.
-   */
+	/* Then switch contexts.  Any necessary address environment changes
+	 * will be made when the interrupt returns.
+	 */
 
   up_restoretask(tcb);
   arm_restorestate(tcb->xcp.regs);
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -251,33 +250,32 @@ int up_cpu_paused_restore(void)
 
 int arm_pause_handler(int irq, void *context, void *arg)
 {
-  int cpu = this_cpu();
+	int cpu = this_cpu();
 
-  /* Check for false alarms.  Such false could occur as a consequence of
-   * some deadlock breaking logic that might have already serviced the SG2
-   * interrupt by calling up_cpu_paused().  If the pause event has already
-   * been processed then g_cpu_paused[cpu] will not be locked.
-   */
+	/* Check for false alarms.  Such false could occur as a consequence of
+	 * some deadlock breaking logic that might have already serviced the SG2
+	 * interrupt by calling up_cpu_paused().  If the pause event has already
+	 * been processed then g_cpu_paused[cpu] will not be locked.
+	 */
 
-  if (up_cpu_pausereq(cpu))
-    {
-      /* NOTE: The following enter_critical_section() will call
-       * up_cpu_paused() to process a pause request to break a deadlock
-       * because the caller held a critical section. Once up_cpu_paused()
-       * finished, the caller will proceed and release the g_cpu_irqlock.
-       * Then this CPU will acquire g_cpu_irqlock in the function.
-       */
+	if (up_cpu_pausereq(cpu)) {
+		/* NOTE: The following enter_critical_section() will call
+		 * up_cpu_paused() to process a pause request to break a deadlock
+		 * because the caller held a critical section. Once up_cpu_paused()
+		 * finished, the caller will proceed and release the g_cpu_irqlock.
+		 * Then this CPU will acquire g_cpu_irqlock in the function.
+		 */
 
-      irqstate_t flags = enter_critical_section();
+		irqstate_t flags = enter_critical_section();
 
-      /* NOTE: the pause request should not exist here */
+		/* NOTE: the pause request should not exist here */
 
-      DEBUGVERIFY(!up_cpu_pausereq(cpu));
+		DEBUGVERIFY(!up_cpu_pausereq(cpu));
 
-      leave_critical_section(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -305,26 +303,26 @@ int up_cpu_pause(int cpu)
   DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify of the pause event */
+	/* Notify of the pause event */
 
-  sched_note_cpu_pause(this_task(), cpu);
+	sched_note_cpu_pause(this_task(), cpu);
 #endif
 
-  /* Take the both spinlocks.  The g_cpu_wait spinlock will prevent the SGI2
-   * handler from returning until up_cpu_resume() is called; g_cpu_paused
-   * is a handshake that will prefent this function from returning until
-   * the CPU is actually paused.
-   * Note that we might spin before getting g_cpu_wait, this just means that
-   * the other CPU still hasn't finished responding to the previous resume
-   * request.
-   */
+	/* Take the both spinlocks.  The g_cpu_wait spinlock will prevent the SGI2
+	 * handler from returning until up_cpu_resume() is called; g_cpu_paused
+	 * is a handshake that will prefent this function from returning until
+	 * the CPU is actually paused.
+	 * Note that we might spin before getting g_cpu_wait, this just means that
+	 * the other CPU still hasn't finished responding to the previous resume
+	 * request.
+	 */
 
   DEBUGASSERT(!spin_is_locked(&g_cpu_paused[cpu]));
 
-  spin_lock(&g_cpu_wait[cpu]);
-  spin_lock(&g_cpu_paused[cpu]);
+	spin_lock(&g_cpu_wait[cpu]);
+	spin_lock(&g_cpu_paused[cpu]);
 
-  /* Execute SGI2 */
+	/* Execute SGI2 */
 
   arm_cpu_sgi(GIC_IRQ_SGI2, (1 << cpu));
 
@@ -335,10 +333,10 @@ int up_cpu_pause(int cpu)
   spin_lock(&g_cpu_paused[cpu]);
   spin_unlock(&g_cpu_paused[cpu]);
 
-  /* On successful return g_cpu_wait will be locked, the other CPU will be
-   * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
-   * called.  g_cpu_paused will be unlocked in any case.
-   */
+	/* On successful return g_cpu_wait will be locked, the other CPU will be
+	 * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
+	 * called.  g_cpu_paused will be unlocked in any case.
+	 */
 
   return OK;
 }
@@ -364,18 +362,18 @@ int up_cpu_pause(int cpu)
 
 int up_cpu_resume(int cpu)
 {
-  DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  /* Notify of the resume event */
+	/* Notify of the resume event */
 
-  sched_note_cpu_resume(this_task(), cpu);
+	sched_note_cpu_resume(this_task(), cpu);
 #endif
 
-  /* Release the spinlock.  Releasing the spinlock will cause the SGI2
-   * handler on 'cpu' to continue and return from interrupt to the newly
-   * established thread.
-   */
+	/* Release the spinlock.  Releasing the spinlock will cause the SGI2
+	 * handler on 'cpu' to continue and return from interrupt to the newly
+	 * established thread.
+	 */
 
   DEBUGASSERT(spin_is_locked(&g_cpu_wait[cpu]) &&
               !spin_is_locked(&g_cpu_paused[cpu]));
@@ -391,4 +389,4 @@ int up_cpu_resume(int cpu)
   return OK;
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */

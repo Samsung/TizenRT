@@ -85,14 +85,14 @@
 static inline uint16_t getreg16(unsigned int addr)
 {
 	uint16_t retval;
-	__asm__ __volatile__("\tldrh %0, [%1]\n\t" : "=r"(retval) : "r"(addr));
+	__asm__ __volatile__("\tldrh %0, [%1]\n\t":"=r"(retval):"r"(addr));
 	return retval;
 }
 
 /* define putreg16(v,a)       (*(volatile uint16_t *)(a) = (v)) */
 static inline void putreg16(uint16_t val, unsigned int addr)
 {
-	__asm__ __volatile__("\tstrh %0, [%1]\n\t" : : "r"(val), "r"(addr));
+	__asm__ __volatile__("\tstrh %0, [%1]\n\t"::"r"(val), "r"(addr));
 }
 
 /****************************************************************************

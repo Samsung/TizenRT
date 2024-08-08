@@ -60,5 +60,5 @@
 
 void arm_switchcontext(uint32_t **saveregs, uint32_t *restoreregs)
 {
-  sys_call2(SYS_switch_context, (uintptr_t)saveregs, (uintptr_t)restoreregs);
+	sys_call2(SYS_switch_context, (uintptr_t)saveregs, (uintptr_t)restoreregs);
 }

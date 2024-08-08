@@ -148,20 +148,19 @@
 
 int up_addrenv_kstackalloc(struct tcb_s *tcb)
 {
-  binfo("tcb=%p stacksize=%u\n", tcb, ARCH_KERNEL_STACKSIZE);
+	binfo("tcb=%p stacksize=%u\n", tcb, ARCH_KERNEL_STACKSIZE);
 
-  DEBUGASSERT(tcb && tcb->xcp.kstack == 0);
+	DEBUGASSERT(tcb && tcb->xcp.kstack == 0);
 
-  /* Allocate the kernel stack */
+	/* Allocate the kernel stack */
 
-  tcb->xcp.kstack = (uint32_t *)kmm_memalign(8, ARCH_KERNEL_STACKSIZE);
-  if (!tcb->xcp.kstack)
-    {
-      berr("ERROR: Failed to allocate the kernel stack\n");
-      return -ENOMEM;
-    }
+	tcb->xcp.kstack = (uint32_t *)kmm_memalign(8, ARCH_KERNEL_STACKSIZE);
+	if (!tcb->xcp.kstack) {
+		berr("ERROR: Failed to allocate the kernel stack\n");
+		return -ENOMEM;
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -181,20 +180,19 @@ int up_addrenv_kstackalloc(struct tcb_s *tcb)
 
 int up_addrenv_kstackfree(struct tcb_s *tcb)
 {
-  binfo("tcb=%p\n", tcb);
-  DEBUGASSERT(tcb);
+	binfo("tcb=%p\n", tcb);
+	DEBUGASSERT(tcb);
 
-  /* Does the exiting thread have a kernel stack? */
+	/* Does the exiting thread have a kernel stack? */
 
-  if (tcb->xcp.kstack)
-    {
-      /* Yes.. Free the kernel stack */
+	if (tcb->xcp.kstack) {
+		/* Yes.. Free the kernel stack */
 
-      kmm_free(tcb->xcp.kstack);
-      tcb->xcp.kstack = NULL;
-    }
+		kmm_free(tcb->xcp.kstack);
+		tcb->xcp.kstack = NULL;
+	}
 
-  return OK;
+	return OK;
 }
 
-#endif /* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_KERNEL_STACK */
+#endif							/* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_KERNEL_STACK */

@@ -60,7 +60,7 @@
  ****************************************************************************/
 
 #if CONFIG_PAGING_NPPAGED < 256
-typedef uint8_t  pgndx_t;
+typedef uint8_t pgndx_t;
 #elif CONFIG_PAGING_NPPAGED < 65536
 typedef uint16_t pgndx_t;
 #else
@@ -68,7 +68,7 @@ typedef uint32_t pgndx_t;
 #endif
 
 #if PG_POOL_MAXL1NDX < 256
-typedef uint8_t  l1ndx_t;
+typedef uint8_t l1ndx_t;
 #elif PG_POOL_MAXL1NDX < 65536
 typedef uint16_t l1ndx_t;
 #else
@@ -161,79 +161,77 @@ static bool g_pgwrap;
 
 int arm_allocpage(struct tcb_s *tcb, void **vpage)
 {
-  uintptr_t vaddr;
-  uintptr_t paddr;
-  uint32_t *pte;
-  unsigned int pgndx;
+	uintptr_t vaddr;
+	uintptr_t paddr;
+	uint32_t *pte;
+	unsigned int pgndx;
 
-  /* Since interrupts are disabled, we don't need to anything special. */
+	/* Since interrupts are disabled, we don't need to anything special. */
 
-  DEBUGASSERT(tcb && vpage);
+	DEBUGASSERT(tcb && vpage);
 
-  /* Get the virtual address that caused the fault */
+	/* Get the virtual address that caused the fault */
 
-  vaddr = tcb->xcp.far;
-  DEBUGASSERT(vaddr >= PG_PAGED_VBASE && vaddr < PG_PAGED_VEND);
+	vaddr = tcb->xcp.far;
+	DEBUGASSERT(vaddr >= PG_PAGED_VBASE && vaddr < PG_PAGED_VEND);
 
-  /* Allocate page memory to back up the mapping.  Start by getting the
-   * index of the next page that we are going to allocate.
-   */
+	/* Allocate page memory to back up the mapping.  Start by getting the
+	 * index of the next page that we are going to allocate.
+	 */
 
-  pgndx = g_pgndx++;
-  if (g_pgndx >= CONFIG_PAGING)
-    {
-      g_pgndx  = 0;
-      g_pgwrap = true;
-    }
+	pgndx = g_pgndx++;
+	if (g_pgndx >= CONFIG_PAGING) {
+		g_pgndx = 0;
+		g_pgwrap = true;
+	}
 
-  /* Was this physical page previously mapped? If so, then we need to un-map
-   * it.
-   */
+	/* Was this physical page previously mapped? If so, then we need to un-map
+	 * it.
+	 */
 
-  if (g_pgwrap)
-    {
-      /* Yes.. Get a pointer to the L2 entry corresponding to the previous
-       * mapping -- then zero it!
-       */
+	if (g_pgwrap) {
+		/* Yes.. Get a pointer to the L2 entry corresponding to the previous
+		 * mapping -- then zero it!
+		 */
 
-       uintptr_t oldvaddr = PG_POOL_NDX2VA(g_ptemap[pgndx]);
-       pte = arm_va2pte(oldvaddr);
-      *pte = 0;
+		uintptr_t oldvaddr = PG_POOL_NDX2VA(g_ptemap[pgndx]);
+		pte = arm_va2pte(oldvaddr);
+		*pte = 0;
 
-      /* Invalidate the instruction TLB corresponding to the virtual
-       * address
-       */
+		/* Invalidate the instruction TLB corresponding to the virtual
+		 * address
+		 */
 
-      tlb_inst_invalidate_single(oldvaddr);
+		tlb_inst_invalidate_single(oldvaddr);
 
-      /* I do not believe that it is necessary to flush the I-Cache in this
-       * case:  The I-Cache uses a virtual address index and, hence, since
-       * the NuttX address space is flat, the cached instruction value should
-       * be correct even if the page mapping is no longer in place.
-       */
-    }
+		/* I do not believe that it is necessary to flush the I-Cache in this
+		 * case:  The I-Cache uses a virtual address index and, hence, since
+		 * the NuttX address space is flat, the cached instruction value should
+		 * be correct even if the page mapping is no longer in place.
+		 */
+	}
 
-  /* Then convert the index to a (physical) page address. */
+	/* Then convert the index to a (physical) page address. */
 
-  paddr = PG_POOL_PGPADDR(pgndx);
+	paddr = PG_POOL_PGPADDR(pgndx);
 
-  /* Now setup up the new mapping.  Get a pointer to the L2 entry
-   * corresponding to the new mapping.  Then set it map to the newly
-   * allocated page address.  The initial mapping is read/write but
-   * non-cached (MMU_L2_ALLOCFLAGS).
-   */
+	/* Now setup up the new mapping.  Get a pointer to the L2 entry
+	 * corresponding to the new mapping.  Then set it map to the newly
+	 * allocated page address.  The initial mapping is read/write but
+	 * non-cached (MMU_L2_ALLOCFLAGS).
+	 */
 
-  pte = arm_va2pte(vaddr);
-  *pte = (paddr | MMU_L2_ALLOCFLAGS);
+	pte = arm_va2pte(vaddr);
+	*pte = (paddr | MMU_L2_ALLOCFLAGS);
 
-  /* And save the new L1 index */
+	/* And save the new L1 index */
 
-  g_ptemap[pgndx] = PG_POOL_VA2L2NDX(vaddr);
+	g_ptemap[pgndx] = PG_POOL_VA2L2NDX(vaddr);
 
-  /* Finally, return the virtual address of allocated page */
+	/* Finally, return the virtual address of allocated page */
 
-  *vpage = (void *)(vaddr & ~PAGEMASK);
-  return OK;
+	*vpage = (void *)(vaddr & ~PAGEMASK);
+	return OK;
 }
 
-#endif /* CONFIG_PAGING */
+#endif							/* CONFIG_PAGING */

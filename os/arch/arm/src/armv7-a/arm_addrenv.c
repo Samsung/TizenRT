@@ -136,15 +136,15 @@
 /* Configuration */
 
 #if (CONFIG_ARCH_TEXT_VBASE & SECTION_MASK) != 0
-#  error CONFIG_ARCH_TEXT_VBASE not aligned to section boundary
+#error CONFIG_ARCH_TEXT_VBASE not aligned to section boundary
 #endif
 
 #if (CONFIG_ARCH_DATA_VBASE & SECTION_MASK) != 0
-#  error CONFIG_ARCH_DATA_VBASE not aligned to section boundary
+#error CONFIG_ARCH_DATA_VBASE not aligned to section boundary
 #endif
 
 #if (CONFIG_ARCH_HEAP_VBASE & SECTION_MASK) != 0
-#  error CONFIG_ARCH_HEAP_VBASE not aligned to section boundary
+#error CONFIG_ARCH_HEAP_VBASE not aligned to section boundary
 #endif
 
 /****************************************************************************
@@ -163,73 +163,70 @@
 #ifdef CONFIG_BUILD_KERNEL
 static int up_addrenv_initdata(uintptr_t l2table)
 {
-  irqstate_t flags;
-  uint32_t *virtptr;
-  uintptr_t paddr;
+	irqstate_t flags;
+	uint32_t *virtptr;
+	uintptr_t paddr;
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-  uint32_t l1save;
+	uint32_t l1save;
 #endif
 
-  DEBUGASSERT(l2table);
-  flags = enter_critical_section();
+	DEBUGASSERT(l2table);
+	flags = enter_critical_section();
 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
-  /* Get the virtual address corresponding to the physical page table
-   * address
-   */
+	/* Get the virtual address corresponding to the physical page table
+	 * address
+	 */
 
-  virtptr = (uint32_t *)arm_pgvaddr(l2table);
+	virtptr = (uint32_t *) arm_pgvaddr(l2table);
 #else
-  /* Temporarily map the page into the virtual address space */
+	/* Temporarily map the page into the virtual address space */
 
-  l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-  mmu_l1_setentry(l2table & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-  virtptr = (uint32_t *)(ARCH_SCRATCH_VBASE | (l2table & SECTION_MASK));
+	l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+	mmu_l1_setentry(l2table & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+	virtptr = (uint32_t *)(ARCH_SCRATCH_VBASE | (l2table & SECTION_MASK));
 #endif
 
-  /* Invalidate D-Cache so that we read from the physical memory */
+	/* Invalidate D-Cache so that we read from the physical memory */
 
-  up_invalidate_dcache((uintptr_t)virtptr,
-                       (uintptr_t)virtptr + sizeof(uint32_t));
+	up_invalidate_dcache((uintptr_t) virtptr, (uintptr_t) virtptr + sizeof(uint32_t));
 
-  /* Get the physical address of the first page of .bss/.data */
+	/* Get the physical address of the first page of .bss/.data */
 
-  paddr = (uintptr_t)(*virtptr) & PTE_SMALL_PADDR_MASK;
-  DEBUGASSERT(paddr);
+	paddr = (uintptr_t)(*virtptr) & PTE_SMALL_PADDR_MASK;
+	DEBUGASSERT(paddr);
 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
-  /* Get the virtual address corresponding to the physical page address */
+	/* Get the virtual address corresponding to the physical page address */
 
-  virtptr = (uint32_t *)arm_pgvaddr(paddr);
+	virtptr = (uint32_t *)arm_pgvaddr(paddr);
 #else
-  /* Temporarily map the page into the virtual address space */
+	/* Temporarily map the page into the virtual address space */
 
-  mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-  virtptr = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
+	mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+	virtptr = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
 #endif
 
-  /* Finally, after of all of that, we can initialize the tiny region at
-   * the beginning of .bss/.data by setting it to zero.
-   */
+	/* Finally, after of all of that, we can initialize the tiny region at
+	 * the beginning of .bss/.data by setting it to zero.
+	 */
 
-  binfo("*** clear .bss/data (virtptr=%p, size=%d)\n",
-        virtptr, ARCH_DATA_RESERVE_SIZE);
-  memset(virtptr, 0, ARCH_DATA_RESERVE_SIZE);
+	binfo("*** clear .bss/data (virtptr=%p, size=%d)\n", virtptr, ARCH_DATA_RESERVE_SIZE);
+	memset(virtptr, 0, ARCH_DATA_RESERVE_SIZE);
 
-  /* Make sure that the initialized data is flushed to physical memory. */
+	/* Make sure that the initialized data is flushed to physical memory. */
 
-  up_flush_dcache((uintptr_t)virtptr,
-                  (uintptr_t)virtptr + ARCH_DATA_RESERVE_SIZE);
+	up_flush_dcache((uintptr_t) virtptr, (uintptr_t) virtptr + ARCH_DATA_RESERVE_SIZE);
 
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-  /* Restore the scratch section L1 page table entry */
+	/* Restore the scratch section L1 page table entry */
 
-  mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+	mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 #endif
-  leave_critical_section(flags);
-  return OK;
+	leave_critical_section(flags);
+	return OK;
 }
-#endif /* CONFIG_BUILD_KERNEL */
+#endif							/* CONFIG_BUILD_KERNEL */
 
 /****************************************************************************
  * Public Functions
@@ -262,92 +259,75 @@ static int up_addrenv_initdata(uintptr_t l2table)
  *
  ****************************************************************************/
 
-int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
-                      group_addrenv_t *addrenv)
+int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize, group_addrenv_t *addrenv)
 {
-  int ret;
+	int ret;
 
-  binfo("addrenv=%p textsize=%lu datasize=%lu heapsize=%lu\n",
-        addrenv,
-        (unsigned long)textsize,
-        (unsigned long)datasize,
-        (unsigned long)heapsize);
+	binfo("addrenv=%p textsize=%lu datasize=%lu heapsize=%lu\n", addrenv, (unsigned long)textsize, (unsigned long)datasize, (unsigned long)heapsize);
 
-  DEBUGASSERT(addrenv);
+	DEBUGASSERT(addrenv);
 
-  /* Initialize the address environment structure to all zeroes */
+	/* Initialize the address environment structure to all zeroes */
 
-  memset(addrenv, 0, sizeof(group_addrenv_t));
+	memset(addrenv, 0, sizeof(group_addrenv_t));
 
-  /* Back the allocation up with physical pages and set up the level 2
-   * mapping (which of course does nothing until the L2 page table is hooked
-   * into the L1 page table).
-   */
+	/* Back the allocation up with physical pages and set up the level 2
+	 * mapping (which of course does nothing until the L2 page table is hooked
+	 * into the L1 page table).
+	 */
 
-  /* Allocate .text space pages */
+	/* Allocate .text space pages */
 
-  ret = arm_addrenv_create_region(addrenv->text, ARCH_TEXT_NSECTS,
-                                  CONFIG_ARCH_TEXT_VBASE, textsize,
-                                  MMU_L2_UTEXTFLAGS);
-  if (ret < 0)
-    {
-      berr("ERROR: Failed to create .text region: %d\n", ret);
-      goto errout;
-    }
+	ret = arm_addrenv_create_region(addrenv->text, ARCH_TEXT_NSECTS, CONFIG_ARCH_TEXT_VBASE, textsize, MMU_L2_UTEXTFLAGS);
+	if (ret < 0) {
+		berr("ERROR: Failed to create .text region: %d\n", ret);
+		goto errout;
+	}
 
-  /* Allocate .bss/.data space pages.  NOTE that a configurable offset is
-   * added to the allocated size.  This is matched by the offset that is
-   * used when reporting the virtual data address in up_addrenv_vdata().
-   */
+	/* Allocate .bss/.data space pages.  NOTE that a configurable offset is
+	 * added to the allocated size.  This is matched by the offset that is
+	 * used when reporting the virtual data address in up_addrenv_vdata().
+	 */
 
-  ret = arm_addrenv_create_region(addrenv->data, ARCH_DATA_NSECTS,
-                                  CONFIG_ARCH_DATA_VBASE,
-                                  datasize + ARCH_DATA_RESERVE_SIZE,
-                                  MMU_L2_UDATAFLAGS);
-  if (ret < 0)
-    {
-      berr("ERROR: Failed to create .bss/.data region: %d\n", ret);
-      goto errout;
-    }
+	ret = arm_addrenv_create_region(addrenv->data, ARCH_DATA_NSECTS, CONFIG_ARCH_DATA_VBASE, datasize + ARCH_DATA_RESERVE_SIZE, MMU_L2_UDATAFLAGS);
+	if (ret < 0) {
+		berr("ERROR: Failed to create .bss/.data region: %d\n", ret);
+		goto errout;
+	}
 
 #ifdef CONFIG_BUILD_KERNEL
-  /* Initialize the shared data are at the beginning of the .bss/.data
-   * region.
-   */
+	/* Initialize the shared data are at the beginning of the .bss/.data
+	 * region.
+	 */
 
-  ret = up_addrenv_initdata((uintptr_t)addrenv->data[0] &
-                            PMD_PTE_PADDR_MASK);
-  if (ret < 0)
-    {
-      berr("ERROR: Failed to initialize .bss/.data region: %d\n", ret);
-      goto errout;
-    }
+	ret = up_addrenv_initdata((uintptr_t) addrenv->data[0] & PMD_PTE_PADDR_MASK);
+	if (ret < 0) {
+		berr("ERROR: Failed to initialize .bss/.data region: %d\n", ret);
+		goto errout;
+	}
 #endif
 
 #ifdef CONFIG_BUILD_KERNEL
-  /* Allocate heap space pages */
+	/* Allocate heap space pages */
 
-  ret = arm_addrenv_create_region(addrenv->heap, ARCH_HEAP_NSECTS,
-                                  CONFIG_ARCH_HEAP_VBASE, heapsize,
-                                  MMU_L2_UDATAFLAGS);
-  if (ret < 0)
-    {
-      berr("ERROR: Failed to create heap region: %d\n", ret);
-      goto errout;
-    }
+	ret = arm_addrenv_create_region(addrenv->heap, ARCH_HEAP_NSECTS, CONFIG_ARCH_HEAP_VBASE, heapsize, MMU_L2_UDATAFLAGS);
+	if (ret < 0) {
+		berr("ERROR: Failed to create heap region: %d\n", ret);
+		goto errout;
+	}
 
-  /* Save the initial heap size allocated.  This will be needed when
-   * the heap data structures are initialized.
-   */
+	/* Save the initial heap size allocated.  This will be needed when
+	 * the heap data structures are initialized.
+	 */
 
-  addrenv->heapsize = (size_t)ret << MM_PGSHIFT;
-  binfo("addrenv->heapsize=%d\n", addrenv->heapsize);
+	addrenv->heapsize = (size_t)ret << MM_PGSHIFT;
+	binfo("addrenv->heapsize=%d\n", addrenv->heapsize);
 #endif
-  return OK;
+	return OK;
 
 errout:
-  up_addrenv_destroy(addrenv);
-  return ret;
+	up_addrenv_destroy(addrenv);
+	return ret;
 }
 
 /****************************************************************************
@@ -368,36 +348,32 @@ errout:
 
 int up_addrenv_destroy(group_addrenv_t *addrenv)
 {
-  binfo("addrenv=%p\n", addrenv);
-  DEBUGASSERT(addrenv);
+	binfo("addrenv=%p\n", addrenv);
+	DEBUGASSERT(addrenv);
 
-  /* Destroy the .text region */
+	/* Destroy the .text region */
 
-  arm_addrenv_destroy_region(addrenv->text, ARCH_TEXT_NSECTS,
-                             CONFIG_ARCH_TEXT_VBASE, false);
+	arm_addrenv_destroy_region(addrenv->text, ARCH_TEXT_NSECTS, CONFIG_ARCH_TEXT_VBASE, false);
 
-  /* Destroy the .bss/.data region */
+	/* Destroy the .bss/.data region */
 
-  arm_addrenv_destroy_region(addrenv->data, ARCH_DATA_NSECTS,
-                             CONFIG_ARCH_DATA_VBASE, false);
+	arm_addrenv_destroy_region(addrenv->data, ARCH_DATA_NSECTS, CONFIG_ARCH_DATA_VBASE, false);
 
 #ifdef CONFIG_BUILD_KERNEL
-  /* Destroy the heap region */
+	/* Destroy the heap region */
 
-  arm_addrenv_destroy_region(addrenv->heap, ARCH_HEAP_NSECTS,
-                             CONFIG_ARCH_HEAP_VBASE, false);
+	arm_addrenv_destroy_region(addrenv->heap, ARCH_HEAP_NSECTS, CONFIG_ARCH_HEAP_VBASE, false);
 #ifdef CONFIG_MM_SHM
-  /* Destroy the shared memory region (without freeing the physical page
-   * data).
-   */
+	/* Destroy the shared memory region (without freeing the physical page
+	 * data).
+	 */
 
-  arm_addrenv_destroy_region(addrenv->heap, ARCH_SHM_NSECTS,
-                             CONFIG_ARCH_SHM_VBASE, true);
+	arm_addrenv_destroy_region(addrenv->heap, ARCH_SHM_NSECTS, CONFIG_ARCH_SHM_VBASE, true);
 #endif
 #endif
 
-  memset(addrenv, 0, sizeof(group_addrenv_t));
-  return OK;
+	memset(addrenv, 0, sizeof(group_addrenv_t));
+	return OK;
 }
 
 /****************************************************************************
@@ -420,13 +396,13 @@ int up_addrenv_destroy(group_addrenv_t *addrenv)
 
 int up_addrenv_vtext(group_addrenv_t *addrenv, void **vtext)
 {
-  binfo("return=%p\n", (void *)CONFIG_ARCH_TEXT_VBASE);
+	binfo("return=%p\n", (void *)CONFIG_ARCH_TEXT_VBASE);
 
-  /* Not much to do in this case */
+	/* Not much to do in this case */
 
-  DEBUGASSERT(addrenv && vtext);
-  *vtext = (void *)CONFIG_ARCH_TEXT_VBASE;
-  return OK;
+	DEBUGASSERT(addrenv && vtext);
+	*vtext = (void *)CONFIG_ARCH_TEXT_VBASE;
+	return OK;
 }
 
 /****************************************************************************
@@ -451,17 +427,15 @@ int up_addrenv_vtext(group_addrenv_t *addrenv, void **vtext)
  *
  ****************************************************************************/
 
-int up_addrenv_vdata(group_addrenv_t *addrenv, uintptr_t textsize,
-                     void **vdata)
+int up_addrenv_vdata(group_addrenv_t *addrenv, uintptr_t textsize, void **vdata)
 {
-  binfo("return=%p\n",
-        (void *)(CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE));
+	binfo("return=%p\n", (void *)(CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE));
 
-  /* Not much to do in this case */
+	/* Not much to do in this case */
 
-  DEBUGASSERT(addrenv && vdata);
-  *vdata = (void *)(CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE);
-  return OK;
+	DEBUGASSERT(addrenv && vdata);
+	*vdata = (void *)(CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE);
+	return OK;
 }
 
 /****************************************************************************
@@ -485,9 +459,9 @@ int up_addrenv_vdata(group_addrenv_t *addrenv, uintptr_t textsize,
 #ifdef CONFIG_BUILD_KERNEL
 int up_addrenv_vheap(const group_addrenv_t *addrenv, void **vheap)
 {
-  DEBUGASSERT(addrenv && vheap);
-  *vheap = (void *)CONFIG_ARCH_HEAP_VBASE;
-  return OK;
+	DEBUGASSERT(addrenv && vheap);
+	*vheap = (void *)CONFIG_ARCH_HEAP_VBASE;
+	return OK;
 }
 #endif
 
@@ -513,8 +487,8 @@ int up_addrenv_vheap(const group_addrenv_t *addrenv, void **vheap)
 #ifdef CONFIG_BUILD_KERNEL
 ssize_t up_addrenv_heapsize(const group_addrenv_t *addrenv)
 {
-  DEBUGASSERT(addrenv);
-  return (ssize_t)addrenv->heapsize;
+	DEBUGASSERT(addrenv);
+	return (ssize_t)addrenv->heapsize;
 }
 #endif
 
@@ -543,124 +517,95 @@ ssize_t up_addrenv_heapsize(const group_addrenv_t *addrenv)
  *
  ****************************************************************************/
 
-int up_addrenv_select(const group_addrenv_t *addrenv,
-                      save_addrenv_t *oldenv)
+int up_addrenv_select(const group_addrenv_t *addrenv, save_addrenv_t *oldenv)
 {
-  uintptr_t vaddr;
-  uintptr_t paddr;
-  int i;
+	uintptr_t vaddr;
+	uintptr_t paddr;
+	int i;
 
-  binfo("addrenv=%p oldenv=%p\n", addrenv, oldenv);
-  DEBUGASSERT(addrenv);
+	binfo("addrenv=%p oldenv=%p\n", addrenv, oldenv);
+	DEBUGASSERT(addrenv);
 
-  for (vaddr = CONFIG_ARCH_TEXT_VBASE, i = 0;
-       i < ARCH_TEXT_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Save the old L1 page table entry */
+	for (vaddr = CONFIG_ARCH_TEXT_VBASE, i = 0; i < ARCH_TEXT_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Save the old L1 page table entry */
 
-      if (oldenv)
-        {
-          oldenv->text[i] = mmu_l1_getentry(vaddr);
-        }
+		if (oldenv) {
+			oldenv->text[i] = mmu_l1_getentry(vaddr);
+		}
 
-      /* Set (or clear) the new page table entry */
+		/* Set (or clear) the new page table entry */
 
-      paddr = (uintptr_t)addrenv->text[i];
-      if (paddr)
-        {
-          binfo("text: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
-          mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
-        }
-      else
-        {
-          binfo("text: clear l1 (vaddr=%x)\n", vaddr);
-          mmu_l1_clrentry(vaddr);
-        }
-    }
+		paddr = (uintptr_t) addrenv->text[i];
+		if (paddr) {
+			binfo("text: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
+			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
+		} else {
+			binfo("text: clear l1 (vaddr=%x)\n", vaddr);
+			mmu_l1_clrentry(vaddr);
+		}
+	}
 
-  for (vaddr = CONFIG_ARCH_DATA_VBASE, i = 0;
-       i < ARCH_DATA_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Save the old L1 page table entry */
+	for (vaddr = CONFIG_ARCH_DATA_VBASE, i = 0; i < ARCH_DATA_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Save the old L1 page table entry */
 
-      if (oldenv)
-        {
-          oldenv->data[i] = mmu_l1_getentry(vaddr);
-        }
+		if (oldenv) {
+			oldenv->data[i] = mmu_l1_getentry(vaddr);
+		}
 
-      /* Set (or clear) the new page table entry */
+		/* Set (or clear) the new page table entry */
 
-      paddr = (uintptr_t)addrenv->data[i];
-      if (paddr)
-        {
-          binfo("data: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
-          mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
-        }
-      else
-        {
-          binfo("data: clear l1 (vaddr=%x)\n", vaddr);
-          mmu_l1_clrentry(vaddr);
-        }
-    }
+		paddr = (uintptr_t) addrenv->data[i];
+		if (paddr) {
+			binfo("data: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
+			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
+		} else {
+			binfo("data: clear l1 (vaddr=%x)\n", vaddr);
+			mmu_l1_clrentry(vaddr);
+		}
+	}
 
 #ifdef CONFIG_BUILD_KERNEL
-  for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0;
-       i < ARCH_HEAP_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Save the old L1 page table entry */
+	for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0; i < ARCH_HEAP_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Save the old L1 page table entry */
 
-      if (oldenv)
-        {
-          oldenv->heap[i] = mmu_l1_getentry(vaddr);
-        }
+		if (oldenv) {
+			oldenv->heap[i] = mmu_l1_getentry(vaddr);
+		}
 
-      /* Set (or clear) the new page table entry */
+		/* Set (or clear) the new page table entry */
 
-      paddr = (uintptr_t)addrenv->heap[i];
-      if (paddr)
-        {
-          binfo("heap: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
-          mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
-        }
-      else
-        {
-          binfo("data: clear l1 (vaddr=%x)\n", vaddr);
-          mmu_l1_clrentry(vaddr);
-        }
-    }
+		paddr = (uintptr_t) addrenv->heap[i];
+		if (paddr) {
+			binfo("heap: set l1 entry (paddr=%x vaddr=%x)\n", paddr, vaddr);
+			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
+		} else {
+			binfo("data: clear l1 (vaddr=%x)\n", vaddr);
+			mmu_l1_clrentry(vaddr);
+		}
+	}
 
 #ifdef CONFIG_MM_SHM
-  for (vaddr = CONFIG_ARCH_SHM_VBASE, i = 0;
-       i < ARCH_SHM_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Save the old L1 page table entry */
+	for (vaddr = CONFIG_ARCH_SHM_VBASE, i = 0; i < ARCH_SHM_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Save the old L1 page table entry */
 
-      if (oldenv)
-        {
-          oldenv->shm[i] = mmu_l1_getentry(vaddr);
-        }
+		if (oldenv) {
+			oldenv->shm[i] = mmu_l1_getentry(vaddr);
+		}
 
-      /* Set (or clear) the new page table entry */
+		/* Set (or clear) the new page table entry */
 
-      paddr = (uintptr_t)addrenv->shm[i];
-      if (paddr)
-        {
-          mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
-        }
-      else
-        {
-          mmu_l1_clrentry(vaddr);
-        }
-    }
+		paddr = (uintptr_t) addrenv->shm[i];
+		if (paddr) {
+			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
+		} else {
+			mmu_l1_clrentry(vaddr);
+		}
+	}
 
 #endif
 #endif
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -682,54 +627,42 @@ int up_addrenv_select(const group_addrenv_t *addrenv,
 
 int up_addrenv_restore(const save_addrenv_t *oldenv)
 {
-  uintptr_t vaddr;
-  int i;
+	uintptr_t vaddr;
+	int i;
 
-  binfo("oldenv=%p\n", oldenv);
-  DEBUGASSERT(oldenv);
+	binfo("oldenv=%p\n", oldenv);
+	DEBUGASSERT(oldenv);
 
-  for (vaddr = CONFIG_ARCH_TEXT_VBASE, i = 0;
-       i < ARCH_TEXT_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Restore the L1 page table entry */
+	for (vaddr = CONFIG_ARCH_TEXT_VBASE, i = 0; i < ARCH_TEXT_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Restore the L1 page table entry */
 
-      mmu_l1_restore(vaddr, oldenv->text[i]);
-    }
+		mmu_l1_restore(vaddr, oldenv->text[i]);
+	}
 
-  for (vaddr = CONFIG_ARCH_DATA_VBASE, i = 0;
-       i < ARCH_DATA_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Restore the L1 page table entry */
+	for (vaddr = CONFIG_ARCH_DATA_VBASE, i = 0; i < ARCH_DATA_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Restore the L1 page table entry */
 
-      mmu_l1_restore(vaddr, oldenv->data[i]);
-    }
+		mmu_l1_restore(vaddr, oldenv->data[i]);
+	}
 
 #ifdef CONFIG_BUILD_KERNEL
-  for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0;
-       i < ARCH_HEAP_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Restore the L1 page table entry */
+	for (vaddr = CONFIG_ARCH_HEAP_VBASE, i = 0; i < ARCH_HEAP_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Restore the L1 page table entry */
 
-      mmu_l1_restore(vaddr, oldenv->heap[i]);
-    }
+		mmu_l1_restore(vaddr, oldenv->heap[i]);
+	}
 
 #ifdef CONFIG_MM_SHM
-  for (vaddr = CONFIG_ARCH_SHM_VBASE, i = 0;
-       i < ARCH_SHM_NSECTS;
-       vaddr += SECTION_SIZE, i++)
-    {
-      /* Restore the L1 page table entry */
+	for (vaddr = CONFIG_ARCH_SHM_VBASE, i = 0; i < ARCH_SHM_NSECTS; vaddr += SECTION_SIZE, i++) {
+		/* Restore the L1 page table entry */
 
-      mmu_l1_restore(vaddr, oldenv->shm[i]);
-    }
+		mmu_l1_restore(vaddr, oldenv->shm[i]);
+	}
 
 #endif
 #endif
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -750,35 +683,30 @@ int up_addrenv_restore(const save_addrenv_t *oldenv)
 
 int up_addrenv_coherent(const group_addrenv_t *addrenv)
 {
-  DEBUGASSERT(addrenv);
+	DEBUGASSERT(addrenv);
 
-  /* Invalidate I-Cache */
+	/* Invalidate I-Cache */
 
-  cp15_invalidate_icache();
+	cp15_invalidate_icache();
 
-  /* Clean D-Cache in each region.
-   * REVISIT:  Cause crashes when trying to clean unmapped memory.  In order
-   * for this to work, we need to know the exact size of each region (as we
-   * do now for the heap region).
-   */
+	/* Clean D-Cache in each region.
+	 * REVISIT:  Cause crashes when trying to clean unmapped memory.  In order
+	 * for this to work, we need to know the exact size of each region (as we
+	 * do now for the heap region).
+	 */
 
 #warning REVISIT... causes crashes
 #if 0
-  up_clean_dcache(CONFIG_ARCH_TEXT_VBASE,
-                  CONFIG_ARCH_TEXT_VBASE +
-                  CONFIG_ARCH_TEXT_NPAGES * MM_PGSIZE - 1);
+	up_clean_dcache(CONFIG_ARCH_TEXT_VBASE, CONFIG_ARCH_TEXT_VBASE + CONFIG_ARCH_TEXT_NPAGES * MM_PGSIZE - 1);
 
-  up_clean_dcache(CONFIG_ARCH_DATA_VBASE,
-                  CONFIG_ARCH_DATA_VBASE +
-                  CONFIG_ARCH_DATA_NPAGES * MM_PGSIZE - 1);
+	up_clean_dcache(CONFIG_ARCH_DATA_VBASE, CONFIG_ARCH_DATA_VBASE + CONFIG_ARCH_DATA_NPAGES * MM_PGSIZE - 1);
 #endif
 
 #ifdef CONFIG_BUILD_KERNEL
-  up_clean_dcache(CONFIG_ARCH_HEAP_VBASE,
-                  CONFIG_ARCH_HEAP_VBASE + addrenv->heapsize);
+	up_clean_dcache(CONFIG_ARCH_HEAP_VBASE, CONFIG_ARCH_HEAP_VBASE + addrenv->heapsize);
 #endif
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -798,16 +726,15 @@ int up_addrenv_coherent(const group_addrenv_t *addrenv)
  *
  ****************************************************************************/
 
-int up_addrenv_clone(const group_addrenv_t *src,
-                     group_addrenv_t *dest)
+int up_addrenv_clone(const group_addrenv_t *src, group_addrenv_t *dest)
 {
-  binfo("src=%p dest=%p\n", src, dest);
-  DEBUGASSERT(src && dest);
+	binfo("src=%p dest=%p\n", src, dest);
+	DEBUGASSERT(src && dest);
 
-  /* Just copy the address environment from the source to the destination */
+	/* Just copy the address environment from the source to the destination */
 
-  memcpy(dest, src, sizeof(group_addrenv_t));
-  return OK;
+	memcpy(dest, src, sizeof(group_addrenv_t));
+	return OK;
 }
 
 /****************************************************************************
@@ -833,11 +760,11 @@ int up_addrenv_clone(const group_addrenv_t *src,
 
 int up_addrenv_attach(struct task_group_s *group, struct tcb_s *tcb)
 {
-  binfo("group=%p tcb=%p\n", group, tcb);
+	binfo("group=%p tcb=%p\n", group, tcb);
 
-  /* Nothing needs to be done in this implementation */
+	/* Nothing needs to be done in this implementation */
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -866,11 +793,11 @@ int up_addrenv_attach(struct task_group_s *group, struct tcb_s *tcb)
 
 int up_addrenv_detach(struct task_group_s *group, struct tcb_s *tcb)
 {
-  binfo("group=%p tcb=%p\n", group, tcb);
+	binfo("group=%p tcb=%p\n", group, tcb);
 
-  /* Nothing needs to be done in this implementation */
+	/* Nothing needs to be done in this implementation */
 
-  return OK;
+	return OK;
 }
 
-#endif /* CONFIG_ARCH_ADDRENV */
+#endif							/* CONFIG_ARCH_ADDRENV */

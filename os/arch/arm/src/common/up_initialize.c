@@ -132,7 +132,7 @@ static void up_calibratedelay(void)
 static inline void up_color_intstack(void)
 {
 #ifdef CONFIG_SMP
-  uint32_t *ptr = (uint32_t *)arm_intstack_alloc();
+	uint32_t *ptr = (uint32_t *)arm_intstack_alloc();
 #else
 	uint32_t *ptr = (uint32_t *)&g_intstackalloc;
 #endif
@@ -251,17 +251,17 @@ void up_initialize(void)
 #endif
 
 #if defined(CONFIG_BLUETOOTH) && defined(CONFIG_BLUETOOTH_NULL)
-	btnull_register();    /* bluetooth bt_null */
+	btnull_register();			/* bluetooth bt_null */
 #endif
 
 #ifdef CONFIG_DEV_URANDOM
-	devurandom_register();			/* /dev/urandom */
+	devurandom_register();		/* /dev/urandom */
 #endif
 
 #if defined(CONFIG_DEV_ZERO)
 	devzero_register();			/* Standard /dev/zero */
 #endif
-	
+
 #if defined(CONFIG_VIRTKEY)
 	virtkey_register();			/* Virtual key driver */
 #endif

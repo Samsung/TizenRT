@@ -71,82 +71,75 @@
 
 uintptr_t arm_physpgaddr(uintptr_t vaddr)
 {
-  uint32_t *l2table;
-  uintptr_t paddr;
-  uint32_t l1entry;
+	uint32_t *l2table;
+	uintptr_t paddr;
+	uint32_t l1entry;
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-  uint32_t l1save;
+	uint32_t l1save;
 #endif
-  int index;
+	int index;
 
-  /* Check if this address is within the range of one of the virtualized user
-   * address regions.
-   */
+	/* Check if this address is within the range of one of the virtualized user
+	 * address regions.
+	 */
 
-  if (arm_uservaddr(vaddr))
-    {
-      /* Yes.. Get Level 1 page table entry corresponding to this virtual
-       * address.
-       */
+	if (arm_uservaddr(vaddr)) {
+		/* Yes.. Get Level 1 page table entry corresponding to this virtual
+		 * address.
+		 */
 
-      l1entry = mmu_l1_getentry(vaddr);
-      if ((l1entry & PMD_TYPE_MASK) == PMD_TYPE_PTE)
-        {
-          /* Get the physical address of the level 2 page table from the
-           * level 1 page table entry.
-           */
+		l1entry = mmu_l1_getentry(vaddr);
+		if ((l1entry & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
+			/* Get the physical address of the level 2 page table from the
+			 * level 1 page table entry.
+			 */
 
-          paddr = ((uintptr_t)l1entry & PMD_PTE_PADDR_MASK);
+			paddr = ((uintptr_t)l1entry & PMD_PTE_PADDR_MASK);
 
 #ifdef CONFIG_ARCH_PGPOOL_MAPPING
-          /* Get the virtual address of the base of level 2 page table */
+			/* Get the virtual address of the base of level 2 page table */
 
-          l2table = (uint32_t *)arm_pgvaddr(paddr);
+			l2table = (uint32_t *)arm_pgvaddr(paddr);
 #else
-          /* Temporarily map the page into the virtual address space */
+			/* Temporarily map the page into the virtual address space */
 
-          l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-          mmu_l1_setentry(paddr & ~SECTION_MASK,
-                          ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-          l2table = (uint32_t *)(ARCH_SCRATCH_VBASE |
-                                    (paddr & SECTION_MASK));
+			l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
+			mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
+			l2table = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
 #endif
-          if (l2table)
-            {
-              /* Invalidate D-Cache line containing this virtual address so
-               * that we re-read from physical memory
-               */
+			if (l2table) {
+				/* Invalidate D-Cache line containing this virtual address so
+				 * that we re-read from physical memory
+				 */
 
-              index = (vaddr & SECTION_MASK) >> MM_PGSHIFT;
-              up_invalidate_dcache((uintptr_t)&l2table[index],
-                                   (uintptr_t)&l2table[index] +
-                                    sizeof(uint32_t));
+				index = (vaddr & SECTION_MASK) >> MM_PGSHIFT;
+				up_invalidate_dcache((uintptr_t)&l2table[index], (uintptr_t)&l2table[index] + sizeof(uint32_t));
 
-              /* Get the Level 2 page table entry corresponding to this
-               * virtual address.  Extract the physical address of the page
-               * containing the mapping of the virtual address.
-               */
+				/* Get the Level 2 page table entry corresponding to this
+				 * virtual address.  Extract the physical address of the page
+				 * containing the mapping of the virtual address.
+				 */
 
-              paddr = ((uintptr_t)l2table[index] & PTE_SMALL_PADDR_MASK);
+				paddr = ((uintptr_t)l2table[index] & PTE_SMALL_PADDR_MASK);
 
 #ifndef CONFIG_ARCH_PGPOOL_MAPPING
-              /* Restore the scratch section L1 page table entry */
+				/* Restore the scratch section L1 page table entry */
 
-              mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
+				mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
 #endif
 
-              /* Add the correct offset and return the physical address
-               * corresponding to the virtual address.
-               */
+				/* Add the correct offset and return the physical address
+				 * corresponding to the virtual address.
+				 */
 
-              return paddr + (vaddr & MM_PGMASK);
-            }
-        }
-    }
+				return paddr + (vaddr & MM_PGMASK);
+			}
+		}
+	}
 
-  /* No mapping available */
+	/* No mapping available */
 
-  return 0;
+	return 0;
 }
 
-#endif /* CONFIG_MM_PGALLOC */
+#endif							/* CONFIG_MM_PGALLOC */

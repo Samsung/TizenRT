@@ -65,16 +65,14 @@
  ****************************************************************************/
 
 #if CONFIG_SMP_NCPUS > 1
-static const uint32_t *g_cpu_stackalloc[CONFIG_SMP_NCPUS] =
-{
-    0
-  , g_cpu1_idlestack
+static const uint32_t *g_cpu_stackalloc[CONFIG_SMP_NCPUS] = {
+	0, g_cpu1_idlestack
 #if CONFIG_SMP_NCPUS > 2
-  , g_cpu2_idlestack
+	, g_cpu2_idlestack
 #if CONFIG_SMP_NCPUS > 3
-  , g_cpu3_idlestack
-#endif /* CONFIG_SMP_NCPUS > 3 */
-#endif /* CONFIG_SMP_NCPUS > 2 */
+	, g_cpu3_idlestack
+#endif							/* CONFIG_SMP_NCPUS > 3 */
+#endif							/* CONFIG_SMP_NCPUS > 2 */
 };
 #endif
 
@@ -128,23 +126,22 @@ static const uint32_t *g_cpu_stackalloc[CONFIG_SMP_NCPUS] =
 int up_cpu_idlestack(int cpu, struct tcb_s *tcb, size_t stack_size)
 {
 #if CONFIG_SMP_NCPUS > 1
-  uintptr_t stack_alloc;
+	uintptr_t stack_alloc;
 
-  DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && tcb != NULL &&
-              stack_size <= SMP_STACK_SIZE);
+	DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && tcb != NULL && stack_size <= SMP_STACK_SIZE);
 
-  /* Get the top of the stack */
+	/* Get the top of the stack */
 
-  stack_alloc          = (uintptr_t)g_cpu_stackalloc[cpu];
-  DEBUGASSERT(stack_alloc != 0 && STACK_ISALIGNED(stack_alloc));
+	stack_alloc = (uintptr_t)g_cpu_stackalloc[cpu];
+	DEBUGASSERT(stack_alloc != 0 && STACK_ISALIGNED(stack_alloc));
 
-  tcb->adj_stack_size  = SMP_STACK_SIZE;
-  tcb->stack_alloc_ptr = (void *)stack_alloc;
-  tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
-  tcb->adj_stack_ptr = (void *)(stack_alloc + SMP_STACK_SIZE - 4);
+	tcb->adj_stack_size = SMP_STACK_SIZE;
+	tcb->stack_alloc_ptr = (void *)stack_alloc;
+	tcb->stack_base_ptr = tcb->stack_alloc_ptr;
+	tcb->adj_stack_ptr = (void *)(stack_alloc + SMP_STACK_SIZE - 4);
 #endif
 
-  return OK;
+	return OK;
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */
