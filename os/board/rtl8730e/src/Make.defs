@@ -71,3 +71,7 @@ endif
 ifeq ($(CONFIG_LCD_ST7701SN), y)
 CSRCS += rtl8730e_mipi_lcdc.c
 endif
+
+ifeq ($(CONFIG_INPUT_IST415),y)
+CSRCS += rtl8730e_ist415.c
+endif
