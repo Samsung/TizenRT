@@ -1,29 +1,45 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721dhp_audio.c
-  * @author
-  * @version V1.0.0
-  * @date    2017-12-13
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the Audio codec peripheral:
-  *           - SPORT Initialization
-  *           - SPORT parameters management
-  *           - Data transfers configuration
-  *           - GDMA configuration
-  *
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2017, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_soc.h"
 
 static const char *TAG = "SPORT";
-SP_RegTypeDef SP_RegFlag[4] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup AUDIO
+* @brief AUDIO driver modules
+* @{
+*/
+
+/** @defgroup AUDIO_SPORT
+* @brief AUDIO_SPORT driver modules
+* @{
+*/
+
+/* Exported constants ------------------------------------------------------------*/
+/** @defgroup AUDIO_SPORT_Exported_Constants AUDIO_SPORT Exported Constants
+* @{
+*/
+
+/** @defgroup AUDIO_SPORT_Flag
+* @{
+*/
+
+SP_RegTypeDef SP_RegFlag[4] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+
+/**
+  * @}
+  */
+
+/** @defgroup AUDIO_SPORT_Device
+* @{
+*/
 
 const AUDIO_DevTable AUDIO_DEV_TABLE[4] = {
 	{
@@ -45,10 +61,21 @@ const AUDIO_DevTable AUDIO_DEV_TABLE[4] = {
 };
 
 /**
-  * @brief  Fills each SP_StructInit member with its default value.
-  * @param  SP_StructInit: pointer to an SP_StructInit structure which will be initialized.
-  * @retval None
+  * @}
   */
+
+/** @} */
+
+/* Exported functions ------------------------------------------------------------*/
+/** @defgroup AUDIO_SPORT_Exported_Functions AUDIO_SPORT Exported Functions
+* @{
+*/
+
+/**
+* @brief  Fills each SP_StructInit member with its default value.
+* @param  SP_StructInit: pointer to an SP_StructInit structure which will be initialized.
+* @retval None
+*/
 void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 {
 	SP_InitStruct->SP_SelDataFormat = SP_DF_I2S;
@@ -158,14 +185,18 @@ void AUDIO_SP_Reset(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 	SPORTx->SP_CTRL0 |= SP_BIT_RESET;
-	SPORTx->SP_CTRL0 &= ~ SP_BIT_RESET;
+	SPORTx->SP_CTRL0 &= ~SP_BIT_RESET;
 }
 
 
 /**
   * @brief  Get sport tx channel length.
   * @param  index: select SPORT.
-  * @retval None
+  * @retval the value of tx channel length.
+  *            @arg 16: tx channel length is 16 bit
+  *            @arg 20: tx channel length is 20 bit
+  *            @arg 24: tx channel length is 24 bit
+  *            @arg 32: tx channel length is 32 bit
 */
 u32 AUDIO_SP_GetTXChnLen(u32 index)
 {
@@ -194,7 +225,11 @@ u32 AUDIO_SP_GetTXChnLen(u32 index)
 /**
   * @brief  Get sport rx channel length.
   * @param  index: select SPORT.
-  * @retval None
+  * @retval the value of rx channel length.
+  *            @arg 16: rx channel length is 16 bit
+  *            @arg 20: rx channel length is 20 bit
+  *            @arg 24: rx channel length is 24 bit
+  *            @arg 32: rx channel length is 32 bit
 */
 u32 AUDIO_SP_GetRXChnLen(u32 index)
 {
@@ -362,31 +397,31 @@ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	}
 
 
-	Tmp = SPORTx->SP_SR_TX_BCLK ;
+	Tmp = SPORTx->SP_TX_BCLK;
 	Tmp &= ~(SP_MASK_TX_MI | SP_MASK_TX_NI | SP_BIT_TX_MI_NI_UPDATE);
 	Tmp |= (SP_TX_MI(MI) | SP_TX_NI(NI) | SP_BIT_TX_MI_NI_UPDATE);
-	SPORTx->SP_SR_TX_BCLK  = Tmp;
+	SPORTx->SP_TX_BCLK = Tmp;
 
 	if (tdm == SP_TX_NOTDM) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
 		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else if (tdm == SP_TX_TDM4) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
 		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 2 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else if (tdm == SP_TX_TDM6) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
 		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 3 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_TX_BCLK_DIV_RATIO);
 		Tmp |= SP_TX_BCLK_DIV_RATIO(bclk_div * 4 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	}
 
 }
@@ -446,10 +481,10 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 		}
 	}
 
-	Tmp = SPORTx->SP_RX_BCLK ;
+	Tmp = SPORTx->SP_RX_BCLK;
 	Tmp &= ~(SP_MASK_RX_MI | SP_MASK_RX_NI | SP_BIT_RX_MI_NI_UPDATE);
 	Tmp |= (SP_RX_MI(MI) | SP_RX_NI(NI) | SP_BIT_RX_MI_NI_UPDATE);
-	SPORTx->SP_RX_BCLK  = Tmp;
+	SPORTx->SP_RX_BCLK = Tmp;
 
 	switch (chn_len) {
 	case SP_CL_16:
@@ -467,25 +502,25 @@ void AUDIO_SP_SetRXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	}
 
 	if (tdm == SP_RX_NOTDM) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
 		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else if (tdm == SP_RX_TDM4) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
 		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 2 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else if (tdm == SP_TX_TDM6) {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
 		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 3 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	} else {
-		Tmp = SPORTx->SP_TX_LRCLK ;
+		Tmp = SPORTx->SP_TX_LRCLK;
 		Tmp &= ~(SP_MASK_RX_BCLK_DIV_RATIO);
 		Tmp |= SP_RX_BCLK_DIV_RATIO(bclk_div * 4 - 1);
-		SPORTx->SP_TX_LRCLK  = Tmp;
+		SPORTx->SP_TX_LRCLK = Tmp;
 	}
 }
 
@@ -716,6 +751,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_REG_MUX |= SP_MASK_REG_MUX;
 	}
 
+	/* Enable MCLK */
+	AUDIO_SP_SetMclk(index, ENABLE);
+
 	if (direction == SP_DIR_TX) {
 
 		/* Check the parameters*/
@@ -756,8 +794,8 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 							 | (SP_SEL_I2S_TX_CH(SP_InitStruct->SP_SelCh)));
 
 		if (SP_InitStruct->SP_SelI2SMonoStereo == SP_CH_STEREO) {
-			SPORTx->SP_CTRL0 &= ~ SP_BIT_EN_I2S_MONO_TX_0;
-			SPORTx->SP_DIRECT_CTRL1 &= ~ SP_BIT_EN_I2S_MONO_TX_1;
+			SPORTx->SP_CTRL0 &= ~SP_BIT_EN_I2S_MONO_TX_0;
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_EN_I2S_MONO_TX_1;
 		} else {
 			SPORTx->SP_CTRL0 |= (SP_BIT_EN_I2S_MONO_TX_0);
 			SPORTx->SP_DIRECT_CTRL1 |= (SP_BIT_EN_I2S_MONO_TX_1);
@@ -765,7 +803,7 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 
 		/* Configure parameters:Channel Length, data format*/
 		SPORTx->SP_FORMAT &= ~(SP_MASK_CH_LEN_SEL_TX | SP_BIT_TRX_SAME_CH_LEN | SP_BIT_TRX_SAME_CH);
-		SPORTx->SP_FORMAT |= (SP_CH_LEN_SEL_TX(SP_InitStruct->SP_SelChLen)) ;
+		SPORTx->SP_FORMAT |= (SP_CH_LEN_SEL_TX(SP_InitStruct->SP_SelChLen));
 
 		/* Configure FIFO1 parameters*/
 		SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_TX_1);
@@ -831,8 +869,8 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		SPORTx->SP_CTRL0 |= (SP_SEL_I2S_RX_CH(SP_InitStruct->SP_SelCh));
 
 		if (SP_InitStruct->SP_SelI2SMonoStereo == SP_CH_STEREO) {
-			SPORTx->SP_FORMAT &= ~ SP_BIT_EN_I2S_MONO_RX_0;
-			SPORTx->SP_DIRECT_CTRL1 &= ~ SP_BIT_EN_I2S_MONO_RX_1;
+			SPORTx->SP_FORMAT &= ~SP_BIT_EN_I2S_MONO_RX_0;
+			SPORTx->SP_DIRECT_CTRL1 &= ~SP_BIT_EN_I2S_MONO_RX_1;
 		} else {
 			SPORTx->SP_FORMAT |= (SP_BIT_EN_I2S_MONO_RX_0);
 			SPORTx->SP_DIRECT_CTRL1 |= (SP_BIT_EN_I2S_MONO_RX_1);
@@ -843,6 +881,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 							   SP_BIT_TRX_SAME_CH_LEN | SP_BIT_TRX_SAME_CH | SP_BIT_TRX_SAME_LENGTH);
 		SPORTx->SP_FORMAT |= ((SP_CH_LEN_SEL_RX(SP_InitStruct->SP_SelChLen)) | (SP_DATA_FORMAT_SEL_RX(SP_InitStruct->SP_SelDataFormat))
 							  | (SP_DATA_LEN_SEL_RX_0(SP_InitStruct->SP_SelWordLen)));
+
+		SPORTx->SP_CTRL0 &= ~SP_MASK_DATA_FORMAT_SEL_TX;
+		SPORTx->SP_CTRL0 |= SP_DATA_FORMAT_SEL_TX(SP_InitStruct->SP_SelDataFormat);
 
 		/* Configure FIFO1 parameters*/
 		SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_RX_1);
@@ -872,6 +913,9 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 
 	}
 
+	/*enable fs phase diver64*/
+	SPORTx->SP_RX_COUNTER1 |= SP_BIT_FS_PHASE_EN_D64;
+
 }
 
 /**
@@ -886,11 +930,11 @@ void AUDIO_SP_TXStart(u32 index, u32 NewState)
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (NewState == ENABLE) {
-		SPORTx->SP_CTRL0 &= ~ SP_BIT_TX_DISABLE;
+		SPORTx->SP_CTRL0 &= ~SP_BIT_TX_DISABLE;
 		SPORTx->SP_CTRL0 |= SP_BIT_START_TX;
 	} else {
 		SPORTx->SP_CTRL0 |= SP_BIT_TX_DISABLE;
-		SPORTx->SP_CTRL0 &= ~ SP_BIT_START_TX;
+		SPORTx->SP_CTRL0 &= ~SP_BIT_START_TX;
 	}
 }
 
@@ -906,11 +950,11 @@ void AUDIO_SP_RXStart(u32 index, u32 NewState)
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (NewState == ENABLE) {
-		SPORTx->SP_CTRL0 &= ~ SP_BIT_RX_DISABLE;
+		SPORTx->SP_CTRL0 &= ~SP_BIT_RX_DISABLE;
 		SPORTx->SP_CTRL0 |= SP_BIT_START_RX;
 	} else {
 		SPORTx->SP_CTRL0 |= SP_BIT_RX_DISABLE;
-		SPORTx->SP_CTRL0 &= ~ SP_BIT_START_RX;
+		SPORTx->SP_CTRL0 &= ~SP_BIT_START_RX;
 	}
 }
 
@@ -926,7 +970,7 @@ void AUDIO_SP_DmaCmd(u32 index, u32 NewState)
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
 
 	if (NewState == ENABLE) {
-		SPORTx->SP_CTRL0 &= ~ SP_BIT_DSP_CTL_MODE;
+		SPORTx->SP_CTRL0 &= ~SP_BIT_DSP_CTL_MODE;
 	} else {
 		SPORTx->SP_CTRL0 |= SP_BIT_DSP_CTL_MODE;
 	}
@@ -964,7 +1008,7 @@ void AUDIO_SP_SetTXWordLen(u32 index, u32 SP_TX_WordLen)
 	SPORTx->SP_CTRL0 |= SP_DATA_LEN_SEL_TX_0(SP_TX_WordLen);
 
 	SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_TX_1);
-	SPORTx->SP_DIRECT_CTRL1 |=  SP_DATA_LEN_SEL_TX_1(SP_TX_WordLen);
+	SPORTx->SP_DIRECT_CTRL1 |= SP_DATA_LEN_SEL_TX_1(SP_TX_WordLen);
 }
 
 /**
@@ -988,7 +1032,7 @@ void AUDIO_SP_SetRXWordLen(u32 index, u32 SP_RX_WordLen)
 	SPORTx->SP_FORMAT |= SP_DATA_LEN_SEL_RX_0(SP_RX_WordLen);
 
 	SPORTx->SP_DIRECT_CTRL1 &= ~(SP_MASK_DATA_LEN_SEL_RX_1);
-	SPORTx->SP_DIRECT_CTRL1 |=  SP_DATA_LEN_SEL_RX_1(SP_RX_WordLen);
+	SPORTx->SP_DIRECT_CTRL1 |= SP_DATA_LEN_SEL_RX_1(SP_RX_WordLen);
 }
 
 /**
@@ -1068,7 +1112,7 @@ void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave)
 			SPORTx->SP_CTRL0 |= SP_BIT_SLAVE_CLK_SEL | SP_BIT_SLAVE_DATA_SEL;
 		}
 	} else {
-		//RTK_LOGE(TAG, "Not support: Only SPORT2&3 supprot!\n");
+		RTK_LOGE(TAG, "Not support: Only SPORT2&3 supprot!\n");
 		return;
 	}
 }
@@ -1123,7 +1167,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_DstMsize  = MsizeFour;
+	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstInc = NoChange;
 	GDMA_InitStruct->GDMA_SrcInc = IncType;
@@ -1132,16 +1176,16 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	/*	24bits or 16bits mode */
 	if (((Length & 0x03) == 0) && (((u32)(pTXData) & 0x03) == 0)) {
 		/*	4-bytes aligned, move 4 bytes each transfer */
-		GDMA_InitStruct->GDMA_SrcMsize	 = MsizeFour;
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
 	} else if (((Length & 0x01) == 0) && (((u32)(pTXData) & 0x01) == 0)) {
 		/*	2-bytes aligned, move 2 bytes each transfer */
-		GDMA_InitStruct->GDMA_SrcMsize	 = MsizeEight;
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		//RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
+		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
 		return _FALSE;
 	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
@@ -1351,16 +1395,16 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 	/*  24bits or 16bits mode */
 	if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
 		/*  4-bytes aligned, move 4 bytes each transfer */
-		GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
 	} else if (((Length & 0x01) == 0) && (((u32)(pTxData) & 0x01) == 0)) {
 		/*  2-bytes aligned, move 2 bytes each transfer */
-		GDMA_InitStruct->GDMA_SrcMsize   = MsizeEight;
+		GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
-		//RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%lX,  Length=%lu\n", pTxData, Length);
+		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%lX,  Length=%lu\n", pTxData, Length);
 		return _FALSE;
 	}
 
@@ -1512,6 +1556,7 @@ void AUDIO_SP_SetPhaseLatch(u32 index)
 /**
   * @brief  Set SPORT tx counter value.
   * @param  index: select SPORT.
+  * @retval the value of tx counter value.
   */
 u32 AUDIO_SP_GetTXCounterVal(u32 index)
 {
@@ -1521,13 +1566,16 @@ u32 AUDIO_SP_GetTXCounterVal(u32 index)
 }
 
 /**
-  * @brief  Get SPORT tx phase value.
+  * @brief  Get SPORT tx phase value:only available when SPORT channel length is 32bit.
   * @param  index: select SPORT.
+  * @retval the value of tx phase value.
   */
 u32 AUDIO_SP_GetTXPhaseVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	u32 tx_phase = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
+	u32 tx_phase1 = (SPORTx->SP_DSP_COUNTER) & SP_MASK_TX_FS_PHASE_RPT;
+	u32 tx_phase2 = ((SPORTx->SP_RX_LRCLK) & SP_BIT_TX_FS_PHASE_RPT_B5) >> 27;
+	u32 tx_phase = tx_phase1 + tx_phase2 * 32;
 	return tx_phase;
 }
 
@@ -1574,6 +1622,7 @@ void AUDIO_SP_ClearRXCounterIrq(u32 index)
 /**
   * @brief  Get SPORT RX counter.
   * @param  index: select SPORT.
+  * @retval the value of rx counter value.
   */
 u32 AUDIO_SP_GetRXCounterVal(u32 index)
 {
@@ -1583,13 +1632,16 @@ u32 AUDIO_SP_GetRXCounterVal(u32 index)
 }
 
 /**
-  * @brief  Get SPORT RX phase.
+  * @brief  Get SPORT RX phase:only available when SPORT channel length is 32bit.
   * @param  index: select SPORT.
+  * @retval the value of rx phase value.
   */
 u32 AUDIO_SP_GetRXPhaseVal(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	u32 rx_phase = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
+	u32 rx_phase1 = (SPORTx->SP_RX_COUNTER2) & SP_MASK_RX_FS_PHASE_RPT;
+	u32 rx_phase2 = ((SPORTx->SP_RX_COUNTER1) & SP_BIT_RX_FS_PHASE_RPT_B5) >> 27;
+	u32 rx_phase = rx_phase1 + rx_phase2 * 32;
 	return rx_phase;
 }
 
@@ -1604,6 +1656,91 @@ void AUDIO_SP_SetDirectOutMode(u32 index_src, u32 index_dir)
 	SPORTx_DIR->SP_CTRL1 |= SP_BIT_DIRECT_MODE_EN;
 	SPORTx_DIR->SP_CTRL1 &= ~SP_MASK_DIRECT_SRC_SEL;
 	SPORTx_DIR->SP_CTRL1 |= SP_DIRECT_SRC_SEL(index_src);
+}
+
+/**
+  * @brief  Select source SPORT of directout SPORT.
+  * @param  index_src: select directout source SPORT.
+  * @param  index_dir: select directout SPORT.
+  */
+void AUDIO_SP_SelDirectOutSource(u32 index_src, u32 index_dir)
+{
+	u32 Tmp0;
+	u32 Tmp1;
+	u32 Tmp2;
+
+	AUDIO_SPORT_TypeDef *SPORTx_DIR = AUDIO_DEV_TABLE[index_dir].SPORTx;
+
+	Tmp0 = SPORTx_DIR->SP_DIRECT_CTRL0;
+	Tmp0 &= ~(SP_MASK_TX_CH0_DATA_SEL | SP_MASK_TX_CH1_DATA_SEL | SP_MASK_TX_CH2_DATA_SEL | SP_MASK_TX_CH3_DATA_SEL | SP_MASK_TX_CH4_DATA_SEL
+			  | SP_MASK_TX_CH5_DATA_SEL | SP_MASK_TX_CH6_DATA_SEL | SP_MASK_TX_CH7_DATA_SEL);
+	Tmp0 |= (SP_TX_CH0_DATA_SEL(8) | SP_TX_CH1_DATA_SEL(8) | SP_TX_CH2_DATA_SEL(8) | SP_TX_CH3_DATA_SEL(8) | SP_TX_CH4_DATA_SEL(
+				 8) | SP_TX_CH5_DATA_SEL(8) | SP_TX_CH6_DATA_SEL(8) | SP_TX_CH7_DATA_SEL(8));
+	SPORTx_DIR->SP_DIRECT_CTRL0 = Tmp0;
+
+	Tmp1 = SPORTx_DIR->SP_DIRECT_CTRL1;
+	Tmp2 = SPORTx_DIR->SP_DIRECT_CTRL2;
+
+	Tmp1 |= SP_BIT_DIRECT_REG_0_EN | SP_BIT_DIRECT_REG_1_EN | SP_BIT_DIRECT_REG_2_EN | SP_BIT_DIRECT_REG_3_EN;
+	Tmp2 |= SP_BIT_DIRECT_REG_4_EN | SP_BIT_DIRECT_REG_5_EN | SP_BIT_DIRECT_REG_6_EN | SP_BIT_DIRECT_REG_7_EN;
+
+	Tmp1 &= ~(SP_MASK_DIRECT_REG_0_SEL | SP_MASK_DIRECT_REG_1_SEL | SP_MASK_DIRECT_REG_2_SEL | SP_MASK_DIRECT_REG_3_SEL);
+	Tmp2 &= ~(SP_MASK_DIRECT_REG_4_SEL | SP_MASK_DIRECT_REG_5_SEL | SP_MASK_DIRECT_REG_6_SEL | SP_MASK_DIRECT_REG_7_SEL);
+
+	switch (index_src) {
+	case 0:
+		Tmp1 |= SP_DIRECT_REG_0_SEL(0) | SP_DIRECT_REG_1_SEL(1) | SP_DIRECT_REG_2_SEL(2) | SP_DIRECT_REG_3_SEL(3);
+		Tmp2 |= SP_DIRECT_REG_4_SEL(4) | SP_DIRECT_REG_5_SEL(5) | SP_DIRECT_REG_6_SEL(6) | SP_DIRECT_REG_7_SEL(7);
+		break;
+
+	case 1:
+		if (index_dir == 0) {
+			Tmp1 |= SP_DIRECT_REG_0_SEL(0) | SP_DIRECT_REG_1_SEL(1) | SP_DIRECT_REG_2_SEL(2) | SP_DIRECT_REG_3_SEL(3);
+			Tmp2 |= SP_DIRECT_REG_4_SEL(4) | SP_DIRECT_REG_5_SEL(5) | SP_DIRECT_REG_6_SEL(6) | SP_DIRECT_REG_7_SEL(7);
+		} else {
+			Tmp1 |= SP_DIRECT_REG_0_SEL(8) | SP_DIRECT_REG_1_SEL(9) | SP_DIRECT_REG_2_SEL(0xa) | SP_DIRECT_REG_3_SEL(0xb);
+			Tmp2 |= SP_DIRECT_REG_4_SEL(0xc) | SP_DIRECT_REG_5_SEL(0xd) | SP_DIRECT_REG_6_SEL(0xe) | SP_DIRECT_REG_7_SEL(0xf);
+		}
+		break;
+
+	case 2:
+		if (index_dir == 3) {
+			Tmp1 |= SP_DIRECT_REG_0_SEL(0x10) | SP_DIRECT_REG_1_SEL(0x11) | SP_DIRECT_REG_2_SEL(0x12) | SP_DIRECT_REG_3_SEL(0x13);
+			Tmp2 |= SP_DIRECT_REG_4_SEL(0x14) | SP_DIRECT_REG_5_SEL(0x15) | SP_DIRECT_REG_6_SEL(0x16) | SP_DIRECT_REG_7_SEL(0x17);
+		} else {
+			Tmp1 |= SP_DIRECT_REG_0_SEL(8) | SP_DIRECT_REG_1_SEL(9) | SP_DIRECT_REG_2_SEL(0xa) | SP_DIRECT_REG_3_SEL(0xb);
+			Tmp2 |= SP_DIRECT_REG_4_SEL(0xc) | SP_DIRECT_REG_5_SEL(0xd) | SP_DIRECT_REG_6_SEL(0xe) | SP_DIRECT_REG_7_SEL(0xf);
+		}
+		break;
+
+	case 3:
+		Tmp1 |= SP_DIRECT_REG_0_SEL(0x10) | SP_DIRECT_REG_1_SEL(0x11) | SP_DIRECT_REG_2_SEL(0x12) | SP_DIRECT_REG_3_SEL(0x13);
+		Tmp2 |= SP_DIRECT_REG_4_SEL(0x14) | SP_DIRECT_REG_5_SEL(0x15) | SP_DIRECT_REG_6_SEL(0x16) | SP_DIRECT_REG_7_SEL(0x17);
+		break;
+
+	default:
+		RTK_LOGS(TAG, "please check sport number!!!\n");
+		return;
+	}
+
+	SPORTx_DIR->SP_DIRECT_CTRL1 = Tmp1;
+	SPORTx_DIR->SP_DIRECT_CTRL2 = Tmp2;
+
+}
+
+/**
+  * @brief  Set SPORT WIFI TSFT phase latch mode.
+  * @param  index: select SPORT.
+  * @param  state: enable or disable.
+  */
+void AUDIO_SP_SetTSFTPhaseLatch(u32 index, u32 state)
+{
+	AUDIO_SPORT_TypeDef *SPORTx_DIR = AUDIO_DEV_TABLE[index].SPORTx;
+	if (state == ENABLE) {
+		SPORTx_DIR->SP_RX_LRCLK |= SP_BIT_EN_TSFT_TRIG_LATCH;
+	} else {
+		SPORTx_DIR->SP_RX_LRCLK &= ~SP_BIT_EN_TSFT_TRIG_LATCH;
+	}
 }
 
 /**
@@ -1625,5 +1762,12 @@ void AUDIO_SP_Deinit(u32 index, u32 direction)
 
 }
 
+/**
+  * @}
+  */
 
-/******************* (C) COPYRIGHT 2017 Realtek Semiconductor *****END OF FILE****/
+/** @} */
+
+/** @} */
+
+/** @} */
