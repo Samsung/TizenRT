@@ -383,7 +383,7 @@ static void touch_test(void)
 	fds[0].events = POLLIN;
 
 	struct touch_sample_s buf;
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 100; i++) {
 
 		while (true) {
 			//printf("pollllll.............................\n");
@@ -396,7 +396,16 @@ static void touch_test(void)
 		 * as we are garunteed that there is data to read by POLLIN */
 		ret = read(fd, &buf, sizeof(struct touch_sample_s));
 		if (ret != - 1) {
-			printf("\n coordinates x : %d y : %d\n", buf.point[0].x, buf.point[0].y);
+			printf("\n coordinates id: %d, x : %d y : %d touch type: %d\n", buf.point[0].id, buf.point[0].x, buf.point[0].y, buf.point[0].flags);
+			if (buf.point[0].flags == TOUCH_DOWN) {
+				printf("touch press event \n");
+			}
+			else if (buf.point[0].flags == TOUCH_MOVE) {
+				printf("touch hold/move event \n");
+			}
+			else if (buf.point[0].flags == TOUCH_UP) {
+				printf("touch release event \n");
+			}
 		}
 	}
 

@@ -45,7 +45,7 @@
 
 #define CONFIG_INPUT_NPOLLWAITERS 10
 
-#define TOUCH_THRESHOLD 100
+#define TOUCH_THRESHOLD 0
 #define EVENT_PACKET_SIZE 16
 /****************************************************************************
  * Private Types
@@ -132,7 +132,6 @@ static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
 		i2c_read(i2c, &config, (uint8_t *)event, EVENT_PACKET_SIZE);
 		u8 le  = event[7] & 0x1F;
 		u8 eid = event[0] & 0x3;
-		//printf("eid %d\n", eid);
 		if (eid == EID_COORD) {
 			p_evt_coord = (struct ts_event_coordinate *) event;
 			coord.id = p_evt_coord->tid - 1;
@@ -148,13 +147,26 @@ static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
   			data.point[0].id = coord.id;
   			data.point[0].x  = coord.x;
   			data.point[0].y  = coord.y;
+			switch (coord.status) {
+				case 1:
+					data.point[0].flags = TOUCH_DOWN;
+					break;
+				case 2:
+					data.point[0].flags = TOUCH_MOVE;
+					break;
+				case 3:
+					data.point[0].flags = TOUCH_UP;
+					break;
+			}
 			memcpy(buf, &data, sizeof(data));
 			printf("corrdinates are id %d status %d type %d x : %d y : %d\n", coord.id, coord.status, coord.type, coord.x, coord.y);
 			return 1;
 		} else if (eid == EID_STATUS) {
 			/** TO DO **/	
 		}
+		
 	}
+
 	return -1;
 }
 
@@ -277,15 +289,18 @@ static ssize_t ist415_read(FAR struct file *filep, FAR char *buffer,
   outlen = sizeof(struct touch_sample_s);
   if (priv->int_pending)
     {
-      ret = ist415_get_touch_data(priv, buffer);
+	    flags = enter_critical_section();
+	     priv->int_pending = false;
+  	    leave_critical_section(flags);
+	    ret = ist415_get_touch_data(priv, buffer);
     }
 //printf("not pending \n");
   /* Clear pending flag with critical section */
-  priv->lower->irq_enable(false);
-  flags = enter_critical_section();
+  //priv->lower->irq_enable(false);
+  /*flags = enter_critical_section();
   priv->int_pending = false;
-  priv->lower->irq_enable(true);
-  leave_critical_section(flags);
+  //priv->lower->irq_enable(true);
+  leave_critical_section(flags);*/
 
   /* Release semaphore and allow next read */
 
@@ -399,7 +414,7 @@ static void touch_interrupt(int d)
 	FAR struct ist415_dev_s *priv = &g_ist415_priv;
 	irqstate_t state = enter_critical_section();
 
-	static clock_t prev = 0; 
+	/*static clock_t prev = 0; 
         clock_t now = clock();
 	//lldbg("now %f , prev %f\n", (float)now/CLOCKS_PER_SEC, (float)prev/CLOCKS_PER_SEC);
 	clock_t diff = now - prev;
@@ -415,7 +430,11 @@ static void touch_interrupt(int d)
 	{
 		prev = now;
 		leave_critical_section(state);
-	}
+	}*/
+	lldbg("Touch interruptttttt...\n");
+	priv->int_pending = true;
+	leave_critical_section(state);
+        ist415_pollnotify(priv, POLLIN);
 	priv->lower->irq_enable(true);
 }
 
