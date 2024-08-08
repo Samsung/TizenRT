@@ -119,9 +119,17 @@ trwifi_result_e wifi_utils_disconnect_ap(void *arg)
 trwifi_result_e wifi_utils_start_softap(trwifi_softap_config_s *softap_config)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
+//abhishek : TODO: Check : Initial change for NAT
+#if 0
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STARTSOFTAP},
 					sizeof(trwifi_softap_config_s),
 					(void *)softap_config, (void *)&res};
+#else
+// To start Softap on wlan1 instead of wlan0
+	lwnl_msg msg = {WU1_INTF_NAME, {LWNL_REQ_WIFI_STARTSOFTAP},
+				sizeof(trwifi_softap_config_s),
+				(void *)softap_config, (void *)&res};
+#endif
 	if (_send_msg(&msg) < 0) {
 		return TRWIFI_FAIL;
 	}
@@ -141,7 +149,13 @@ trwifi_result_e wifi_utils_start_sta(void)
 trwifi_result_e wifi_utils_stop_softap(void)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
+//abhishek : TODO: Check : Initial change for NAT
+#if 0
 	lwnl_msg msg = {WU_INTF_NAME, {LWNL_REQ_WIFI_STOPSOFTAP}, 0, NULL, (void *)&res};
+#else
+// To stop Softap on wlan1 instead of wlan0
+	lwnl_msg msg = {WU1_INTF_NAME, {LWNL_REQ_WIFI_STOPSOFTAP}, 0, NULL, (void *)&res};
+#endif
 	if (_send_msg(&msg) < 0) {
 		return TRWIFI_FAIL;
 	}
