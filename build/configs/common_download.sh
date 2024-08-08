@@ -43,7 +43,15 @@ if [ -z ${DEFAULT_PORT} ]; then
 			DEFAULT_PORT=$device
 		fi
 	done
+	if [ -n ${DEFAULT_PORT} ]; then
+		if [ -n ${CONFIG_ARCH_BOARD_RTL8730E} ]; then
+			highest_number=$(echo "$DEFAULT_PORT" | grep -o '[0-9]\+')
+			desired_number=$((highest_number - 2))
+			DEFAULT_PORT="/dev/ttyUSB${desired_number}"
+		fi
+	fi
 fi
+
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
 
