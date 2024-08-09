@@ -483,6 +483,16 @@ void dump_stack(void)
 }
 #endif						/* End of CONFIG_FRAME_POINTER */
 
+void dump_stack(void)
+{
+	return;
+}
+
+void dump_all_stack(void)
+{
+	return;
+}
+
 struct arm_mode_regs_s {
 	/* ARM provides 37 General purpos registers as below */
 	uint32_t r0;

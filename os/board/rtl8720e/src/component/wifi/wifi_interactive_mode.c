@@ -593,11 +593,11 @@ int8_t cmd_wifi_disconnect(void)
 	}
 }
 
-
 void cmd_wifi_info(int argc, char **argv)
 {
 	int i = 0;
 	u8 wlan_idx[2] = {0, 1};
+	FAR struct netdev *dev;
 	rtw_sw_statistics_t sw_stats;
 
 	rtw_wifi_setting_t setting;

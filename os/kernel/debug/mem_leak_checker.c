@@ -346,7 +346,7 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 					* based on the text addresses printed, user needs to check the
 					* corresponding binaries accordingly
 					*/
-					owner_addr = node->alloc_call_addr;
+					owner_addr = (uint32_t)node->alloc_call_addr;
 					pid_t pid = node->pid;
 					if (pid < 0) {
 						/* For stack allocated node, pid is negative value.

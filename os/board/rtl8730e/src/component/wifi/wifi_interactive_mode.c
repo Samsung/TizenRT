@@ -35,6 +35,7 @@
 #include <tinyara/net/if/wifi.h>
 #include <netutils/netlib.h>
 #include <net/if.h>
+#include <tinyara/netmgr/netdev_mgr.h>
 
 #define vTaskDelay(t) usleep(t*1000)
 
@@ -595,6 +596,7 @@ int8_t cmd_wifi_disconnect(void)
 void cmd_wifi_info(int argc, char **argv)
 {
 	int i = 0;
+	u8 *ifname[2] = {WLAN0_NAME, WLAN1_NAME};
 	u8 wlan_idx[NET_IF_NUM];// Declared the array size as follow the NET_IF_NUM
 	rtw_sw_statistics_t sw_stats;
 	rtw_wifi_setting_t setting;
@@ -877,13 +879,15 @@ static void cmd_exit(int argc, char **argv)
 }
 
 static void cmd_debug(int argc, char **argv)
-{
+{	
+	//int idx = (int)p_ipc_msg->param_buf[0];
+	u8 efuse = 1;
 	if (strncmp(argv[1], "ready_trx", strlen("ready_trx")) == 0) {
 		nvdbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
 	} else if (strncmp(argv[1], "is_up", strlen("is_up")) == 0) {
 		nvdbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
 	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
-		nvdbg("\r\n%d", wifi_set_mac_address(argv[2]));
+		nvdbg("\r\n%d", wifi_set_mac_address(argc,argv[2],efuse));
 	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {
 		// rtw_mac_t *mac;
 		// wifi_get_mac_address(mac);

@@ -30,6 +30,7 @@
 #include "lwip/ip_addr.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/tcpip.h"
+#include "netdev_mgr.h"
 
 #define vTaskDelay(t) usleep(t)
 
