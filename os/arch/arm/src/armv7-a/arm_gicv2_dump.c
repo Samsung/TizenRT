@@ -308,16 +308,16 @@ void arm_gic_dump(const char *msg, bool all, int irq)
   arm_gic_dump_distributor(all, irq, nlines);
 }
 
-void dump_all_stack(void)
-{
-		/* ToDo: implement as per the armv7-m architecture */
-	return;
-}
+// void dump_all_stack(void)
+// {
+// 		/* ToDo: implement as per the armv7-m architecture */
+// 	return;
+// }
 
-void dump_stack(void)
-{
-		/* ToDo: implement as per the armv7-m architecture */
-	return;
-}
+// void dump_stack(void)
+// {
+// 		/* ToDo: implement as per the armv7-m architecture */
+// 	return;
+// }
 
 #endif /* CONFIG_ARMV7A_HAVE_GICv2 && CONFIG_DEBUG_IRQ_INFO */
