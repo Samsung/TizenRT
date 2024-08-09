@@ -23,8 +23,18 @@
 #include <tinyara/time.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include "tc_internal.h"
+#include <tinyara/sched.h>
+
+#ifdef CONFIG_RTC_ALARM
+#define SIG 1
+#define PRIORITY 100
+#define STACKSIZE 1024
+#define RTC_ALARM_ID 0
+static bool alarm_received[CONFIG_RTC_NALARMS];
+#endif
 
 /**
 * @fn                   :tc_driver_rtc_open_close
@@ -139,16 +149,124 @@ static void tc_driver_rtc_ioctl(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+* @fn                   :tc_driver_rtc_alarm_ioctl
+* @brief                :Test the rtc alarm driver ioctl
+* @scenario             :Test the rtc alarm driver ioctl
+* API's covered         :ioctl's set alarm, set relative, cancel alarm
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+#ifdef CONFIG_RTC_ALARM
+
+/****************************************************************************
+ * Name: alarm_handler
+ ****************************************************************************/
+
+static void alarm_handler(int signo, FAR siginfo_t *info, FAR void *ucontext)
+{
+	int almndx = info->si_value.sival_int;
+	if (almndx >= 0 && almndx < CONFIG_RTC_NALARMS) {
+		alarm_received[almndx] = true;
+	}
+}
+
+static void tc_driver_rtc_alarm_ioctl(void)
+{
+	int fd = 0;
+	int ret = 0;
+	int seconds = 2;
+	FAR struct sigaction act;
+	FAR struct rtc_setalarm_s setalarm;
+	FAR	struct rtc_setrelative_s setrel;
+	sigset_t set;
+
+	fd = open("/dev/rtc0", O_RDWR);
+	TC_ASSERT_GT("rtc_open", fd, 0);
+
+	sigemptyset(&set);
+	sigaddset(&set, SIG);
+
+	ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
+	TC_ASSERT_EQ("sigprocmask", ret, OK);
+	act.sa_sigaction = alarm_handler;
+	act.sa_flags = SA_SIGINFO;
+	sigfillset(&act.sa_mask);
+	sigdelset(&act.sa_mask, SIG);
+	ret = sigaction(SIG, &act, NULL);
+	TC_ASSERT_EQ("signaction", ret, OK);
+
+	setrel.id = RTC_ALARM_ID;
+	setrel.pid = 0;
+	setrel.reltime = (time_t)seconds;
+	setrel.signo = SIG;
+	setrel.sigvalue.sival_int = RTC_ALARM_ID;
+
+	ret = ioctl(fd, RTC_SET_RELATIVE, (unsigned long)((uintptr_t)&setrel));
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+	sleep(seconds + 1);
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", alarm_received[setrel.sigvalue.sival_int], true, close(fd));
+
+	alarm_received[setrel.sigvalue.sival_int] = false;
+	ret = ioctl(fd, RTC_SET_RELATIVE, (unsigned long)((uintptr_t)&setrel));
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+
+	ret = ioctl(fd, RTC_CANCEL_ALARM, (unsigned long)RTC_ALARM_ID);
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+	sleep(seconds + 1);
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", alarm_received[setrel.sigvalue.sival_int], false, close(fd));
+
+	setalarm.id = RTC_ALARM_ID;
+	setalarm.pid = 0;
+	setalarm.signo = SIG;
+	setalarm.sigvalue.sival_int = RTC_ALARM_ID;
+
+	ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&setalarm.time);
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+
+	if (setalarm.time.tm_sec + seconds >= 60) {
+		setalarm.time.tm_sec = (setalarm.time.tm_sec + seconds) % 60;
+		setalarm.time.tm_min += 1;
+	} else {
+		setalarm.time.tm_sec += (int)seconds;
+	}
+
+	ret = ioctl(fd, RTC_SET_ALARM, (unsigned long)((uintptr_t)&setalarm));
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+	sleep(seconds + 1);
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", alarm_received[setalarm.sigvalue.sival_int], true, close(fd));
+	alarm_received[setrel.sigvalue.sival_int] = false;
+
+	ret = ioctl(fd, RTC_SET_ALARM, (unsigned long)((uintptr_t)&setalarm));
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+
+	ret = ioctl(fd, RTC_CANCEL_ALARM, (unsigned long)RTC_ALARM_ID);
+	TC_ASSERT_GEQ_CLEANUP("rtc_ioctl", ret, 0, close(fd));
+	sleep(seconds + 1);
+	TC_ASSERT_EQ_CLEANUP("rtc_ioctl", alarm_received[setalarm.sigvalue.sival_int], false, close(fd));
+
+	ret = close(fd);
+	TC_ASSERT_EQ("rtc_close", ret, OK);
+
+	TC_SUCCESS_RESULT();
+
+}
+#endif
+
 /****************************************************************************
  * Name: rtc driver test
  ****************************************************************************/
-void rtc_main(void)
+void rtc_driver_main(void)
 {
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 	tc_driver_rtc_open_close();
 #endif
 	tc_driver_rtc_read_write();
 	tc_driver_rtc_ioctl();
+#ifdef CONFIG_RTC_ALARM
+	tc_driver_rtc_alarm_ioctl();
+#endif
 
 	return;
 }

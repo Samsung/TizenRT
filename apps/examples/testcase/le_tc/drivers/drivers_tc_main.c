@@ -43,7 +43,7 @@ int tc_drivers_main(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_TC_DRIVERS_RTC
-	rtc_main();
+	rtc_driver_main();
 #endif
 
 #ifdef CONFIG_TC_DRIVERS_PWM
