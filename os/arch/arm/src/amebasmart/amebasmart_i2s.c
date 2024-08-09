@@ -1663,7 +1663,12 @@ static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 	}
 	priv->txenab = priv->config->txenab;
 	if (priv->config->txenab) {
+#if defined(CONFIG_AUDIO_NDP120)
+		/* use channel length pof 16bits to give 1.536MHz I2S_BCLK which is shared with PDM clock */
+		priv->i2s_object->channel_length = SP_TXCL_16;
+#else
 		priv->i2s_object->channel_length = SP_TXCL_32;
+#endif
 		priv->i2s_object->fifo_num = SP_TX_FIFO2;
 		priv->i2s_object->direction = SP_DIR_TX;
 		priv->i2s_object->role = MASTER;

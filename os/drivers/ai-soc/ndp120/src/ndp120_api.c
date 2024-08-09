@@ -77,6 +77,10 @@
 /* currently the max size of tank is limited to ~580ms  */
 #define AUDIO_BEFORE_MATCH_MS	(1500)
 
+/* when defined, the let the NDP use an external PDM clock */
+#define USE_EXTERNAL_PDM_CLOCK
+#define EXTERNAL_PDM_CLOCK_PDM_RATE 1536000
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -601,6 +605,27 @@ static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_i
 		goto errout_configure_audio;
 	}
 
+#if defined(USE_EXTERNAL_PDM_CLOCK)
+	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
+	memset(&pdm_config, 0, sizeof(pdm_config));
+	pdm_config.interface = 0;
+	pdm_config.clk = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_ON;
+	pdm_config.sample_rate = 16000;
+	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_EXTERNAL;
+	pdm_config.mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_STEREO;
+	pdm_config.pdm_rate = EXTERNAL_PDM_CLOCK_PDM_RATE;
+	
+	pdm_config.set = SYNTIANT_NDP120_CONFIG_SET_PDM_CLK
+					| SYNTIANT_NDP120_CONFIG_SET_PDM_MODE
+					| SYNTIANT_NDP120_CONFIG_SET_PDM_CLK_MODE
+					| SYNTIANT_NDP120_CONFIG_SET_PDM_PDM_RATE
+					| SYNTIANT_NDP120_CONFIG_SET_PDM_SAMPLE_RATE;
+	s = syntiant_ndp120_config_pdm(ndp, &pdm_config);
+	if (check_status("config pdm clock on", s)) {
+		goto errout_configure_audio;
+	}
+	printf("NDP120 is configured for external clock\n");
+#else
 	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
 	memset(&pdm_config, 0, sizeof(pdm_config));
 	pdm_config.interface = 0;
@@ -618,6 +643,7 @@ static int configure_audio(struct syntiant_ndp_device_s *ndp, unsigned int pdm_i
 	if (check_status("config pdm clock on", s)) {
 		goto errout_configure_audio;
 	}
+#endif
 
 	/*
 	 * get the current audio frame size which is governed by the audio
@@ -907,6 +933,14 @@ void ndp120_show_debug(void)
 	printf("NDP120 current flowset id: %d\n", flowset_id);
 
 	printf("KD Enabled: %d\n",_ndp_debug_handle->kd_enabled);
+
+	uint32_t data;
+	syntiant_ndp120_read(ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(0), &data);
+	printf("NDP120_CHIP_CONFIG_AUDCTRL(0) = 0x%08X\n", data);
+
+	syntiant_ndp120_read(ndp, 1, NDP120_DSP_CONFIG_PDMCFG_A(0), &data);
+	printf("NDP120_DSP_CONFIG_PDMCFG_A(0) = 0x%08X\n", data);
+
 }
 
 int ndp120_init(struct ndp120_dev_s *dev)
@@ -927,6 +961,7 @@ int ndp120_init(struct ndp120_dev_s *dev)
 
 	/*const unsigned int DMIC_768KHZ_PDM_IN_SHIFT = 13;*/  /* currently unused */
 	const unsigned int DMIC_768KHZ_PDM_IN_SHIFT_FF = 8;
+	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 3;
 
 	/* save handle so we can use it from debug routine later, e.g. from other util/shell */
 	_ndp_debug_handle = dev;
@@ -969,7 +1004,11 @@ int ndp120_init(struct ndp120_dev_s *dev)
 	attach_algo_config_area(dev->ndp);
 	add_dsp_flow_rules(dev->ndp);
 
+#if defined(USE_EXTERNAL_PDM_CLOCK)	
+	s = configure_audio(dev->ndp, DMIC_1536KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes);
+#else
 	s = configure_audio(dev->ndp, DMIC_768KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS, &audio_frame_bytes);
+#endif
 	if (s) {
 		auddbg("audio configure failed\n");
 		goto errout_ndp120_init;

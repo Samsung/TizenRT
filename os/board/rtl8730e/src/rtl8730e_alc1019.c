@@ -62,6 +62,10 @@ extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_re
 /*other pin config */
 #define ALC1019_GPIO_RESET_PIN		PA_22
 
+#if defined(CONFIG_AUDIO_NDP120)
+#define ALC1019_GPIO_DMIC_EN        PA_25
+#endif
+
 #define ALC1019_AVAILABLE_MINOR_MIN	0
 #define ALC1019_AVAILABLE_MINOR_MAX	25
 
@@ -211,6 +215,13 @@ int rtl8730e_alc1019_initialize(int minor)
 			goto errout_with_pcm;
 		}
 
+#if defined(CONFIG_AUDIO_NDP120)
+		auddbg("Enable DMIC\n");
+		gpio_t gpio_dmic_en;
+		gpio_init(&gpio_dmic_en, ALC1019_GPIO_DMIC_EN);
+		gpio_dir(&gpio_dmic_en, PIN_OUTPUT);
+		gpio_mode(&gpio_dmic_en, PullUp);
+#endif
 		/* Now we are initialized */
 
 		initialized = true;
