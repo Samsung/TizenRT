@@ -84,6 +84,10 @@ ifeq ($(CONFIG_AUDIO_NDP120),y)
 CSRCS += ndp120_voice.c
 endif
 
+ifeq ($(CONFIG_AUDIO_SYU645B),y)
+CSRCS += syu645b.c
+endif
+
 # Include Audio driver support
 
 DEPPATH += --dep-path audio

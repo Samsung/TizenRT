@@ -56,6 +56,10 @@ ifeq ($(CONFIG_AUDIO_ALC1019),y)
 CSRCS += rtl8730e_alc1019.c
 endif
 
+ifeq ($(CONFIG_AUDIO_SYU645B),y)
+CSRCS += rtl8730e_syu645b.c
+endif
+
 ifeq ($(CONFIG_LCD_ST7789), y)
 CSRCS += rtl8730e_st7789.c
 endif

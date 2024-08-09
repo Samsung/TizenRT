@@ -187,6 +187,13 @@ config AUDIO_NDP120
 	---help---
 		Select to enable support for the NDP120 attached mic
 
+config AUDIO_SYU645B
+        bool "SYU645B DAC audio chip"
+        default n
+        depends on AUDIO && I2S && I2C && SCHED_WORKQUEUE
+        ---help---
+                Select to enable support for the SYU645B DAC Audio codec
+
 config AUDIO_TAS5749
 	bool "TAS5749 DAC audio chip"
 	default n
