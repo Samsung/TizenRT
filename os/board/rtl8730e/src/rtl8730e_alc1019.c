@@ -217,12 +217,11 @@ int rtl8730e_alc1019_initialize(int minor)
 
 #if defined(CONFIG_AUDIO_NDP120)
 		auddbg("Enable DMIC\n");
-        gpio_t gpio_dmic_en;
-        gpio_init(&gpio_dmic_en, ALC1019_GPIO_DMIC_EN);
+		gpio_t gpio_dmic_en;
+		gpio_init(&gpio_dmic_en, ALC1019_GPIO_DMIC_EN);
 		gpio_dir(&gpio_dmic_en, PIN_OUTPUT);
 		gpio_mode(&gpio_dmic_en, PullUp);
 #endif
-        
 		/* Now we are initialized */
 
 		initialized = true;
