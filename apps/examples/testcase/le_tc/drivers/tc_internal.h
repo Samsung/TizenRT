@@ -37,7 +37,7 @@ void dev_zero_main(void);
 #endif
 
 #ifdef CONFIG_TC_DRIVERS_RTC
-void rtc_main(void);
+void rtc_driver_main(void);
 #endif
 
 #ifdef CONFIG_TC_DRIVERS_PWM
