@@ -1,7 +1,7 @@
 SECTIONS
 {
 
-  .text :
+  .text ORIGIN(uflash) :
     {
       _stext_flash = . ;
       /* Place holder to keep the heap object at the top
