@@ -21,16 +21,23 @@
 #include <functional>
 
 #include <media/voice/SpeechDetector.h>
+#include "../audio/audio_manager.h"
 
 namespace media {
 namespace voice {
+
+typedef void (*SpeechResultListener)(audio_device_process_unit_subtype_e event);
 
 class KeywordDetector
 {
 public:
 	virtual bool init(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinit() = 0;
-	virtual bool startKeywordDetect(int timeout) = 0;
+	virtual bool startKeywordDetect(void) = 0;
+	virtual bool stopKeywordDetect(void) = 0;
+	virtual void detectKeyword(void) = 0;
+	virtual bool isKeywordDetectStarted(void) = 0;
+	virtual void registerKeywordResultCallback(SpeechResultListener speechResultCallback) = 0;
 };
 
 } // namespace voice

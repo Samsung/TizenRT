@@ -5,6 +5,10 @@
 FPU:		lib_cmsis_dsp_fpu_ver_d0a33c54f28aba45af705bd8b7a1a063c856d39f_2024/06/10-16:11:39
 Non-FPU:	lib_cmsis_dsp_ver_d0a33c54f28aba45af705bd8b7a1a063c856d39f_2024/06/10-16:13:41
 
+[rtl8730e]
+FPU:		lib_cmsis_dsp_ver_423dc65b0840243f3c8827087bf5669fdc99a4ef_2024/06/25-19:16:30
+
+
 GitHub CMSIS-DSP Release Info
 https://github.com/ARM-software/CMSIS-DSP/releases
 

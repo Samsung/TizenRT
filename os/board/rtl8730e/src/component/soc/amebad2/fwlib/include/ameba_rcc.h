@@ -149,8 +149,8 @@
 /** @defgroup I2S_Clock_Source_define
   * @{
   */
-#define CKSL_I2S_PLL98M				0x00
 #define CKSL_I2S_PLL45M				0x01
+#define CKSL_I2S_PLL98M				0x02
 #define CKSL_I2S_PLL24M				0x03
 #define CKSL_I2S_XTAL40M			0x04
 /**

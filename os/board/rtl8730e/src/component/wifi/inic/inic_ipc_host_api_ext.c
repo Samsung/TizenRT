@@ -129,6 +129,16 @@ int wifi_get_channel(unsigned char wlan_idx, u8 *channel)
 	return ret;
 }
 
+int wifi_set_chplan(u8 chplan)
+{
+	int ret = 0;
+	u32 param_buf[1];
+	param_buf[0] = (u32)chplan;
+
+	ret = inic_ipc_api_host_message_send(INIC_API_WIFI_SET_CHPLAN, param_buf, 1);
+	return ret;
+}
+
 //----------------------------------------------------------------------------//
 
 int wifi_get_disconn_reason_code(unsigned short *reason_code)

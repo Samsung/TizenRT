@@ -241,14 +241,6 @@
 #  define _END_TBSS    &_etbss
 #endif
 
-/* This is the value used to mark the stack for subsequent stack monitoring
- * logic.
- */
-
-#define STACK_COLOR    0xdeadbeef
-#define INTSTACK_COLOR 0xdeadbeef
-#define HEAP_COLOR     'h'
-
 #if defined(CONFIG_ARCH_ARMV7A_FAMILY)
 #define CURRENT_REGS (g_current_regs[up_cpu_index()])
 
@@ -468,14 +460,6 @@ void up_switchcontext(uint32_t *saveregs, uint32_t *restoreregs);
 /* Signal handling **********************************************************/
 
 void up_sigdeliver(void);
-
-/* Power management *********************************************************/
-
-#ifdef CONFIG_PM
-void up_pminitialize(void);
-#else
-#define up_pminitialize()
-#endif
 
 #if defined(CONFIG_ARCH_CORTEXM0) || defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7) || defined(CONFIG_ARCH_CORTEXM33) || defined(CONFIG_ARCH_CORTEXM55)
 void up_systemreset(void) noreturn_function;

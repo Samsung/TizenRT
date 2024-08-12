@@ -61,8 +61,6 @@
 #include <tinyara/pm/pm.h>
 #include <time.h>
 #include "pm.h"
-#include "pm_metrics.h"
-
 #ifdef CONFIG_PM
 
 /****************************************************************************
@@ -78,7 +76,6 @@
  */
 
 struct pm_global_s g_pmglobals;
-
 
 /****************************************************************************
  * Public Functions
@@ -109,33 +106,5 @@ void pm_initialize(void)
 	/* Register Special Domains, which are specific to Kernel*/
 	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
 	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
-
-	g_pmglobals.stime = clock_systimer();
-	g_pmglobals.btime = clock_systimer();
-
-#ifdef CONFIG_PM_METRICS
-	struct timespec cur_time;
-
-	/* Get current time */
-	clock_gettime(CLOCK_REALTIME, &cur_time);
-
-	struct pm_statechange_s *initnode = NULL;
-
-	/* Initialize the domain's state history queue */
-
-	sq_init(&g_pmglobals.history);
-
-	/* Create an initial state change node with NORMAL state and bootup time */
-
-	initnode = (struct pm_statechange_s *)pm_alloc(1, sizeof(struct pm_statechange_s));
-
-	initnode->state = PM_NORMAL;
-	initnode->timestamp = cur_time.tv_sec;
-
-	/* Add the initial state change node to the head of the history queue */
-
-	sq_addlast((&initnode->entry), &g_pmglobals.history);
-#endif
-
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

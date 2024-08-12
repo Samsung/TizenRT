@@ -80,6 +80,10 @@ ifeq ($(CONFIG_AUDIO_ALC1019),y)
 CSRCS += alc1019.c
 endif
 
+ifeq ($(CONFIG_AUDIO_NDP120),y)
+CSRCS += ndp120_voice.c
+endif
+
 # Include Audio driver support
 
 DEPPATH += --dep-path audio

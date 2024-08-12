@@ -259,6 +259,7 @@ static ssize_t _source_read_at(rbstream_p fp, ssize_t offset, void *data, size_t
 	return rbs_read(data, 1, size, fp);
 }
 
+#ifdef CONFIG_CODEC_MP3
 // Resync to next valid MP3 frame in the file.
 static bool mp3_resync(rbstream_p fp, uint32_t match_header, ssize_t *inout_pos, uint32_t *out_header)
 {
@@ -468,7 +469,9 @@ bool mp3_check_type(rbstream_p rbsp)
 
 	return result;
 }
+#endif /* CONFIG_CODEC_MP3 */
 
+#ifdef CONFIG_CODEC_AAC
 // Resync to next valid MP3 frame in the file.
 static bool aac_resync(rbstream_p fp, ssize_t *inout_pos)
 {
@@ -623,6 +626,7 @@ bool aac_check_type(rbstream_p rbsp)
 
 	return result;
 }
+#endif /* CONFIG_CODEC_AAC */
 
 #ifdef CONFIG_CODEC_LIBOPUS
 // Resync to next valid Opus frame in the file.
@@ -771,18 +775,20 @@ bool opus_check_type(rbstream_p rbsp)
 
 	return result;
 }
-#endif
+#endif /* CONFIG_CODEC_LIBOPUS */
 
 int _get_audio_type(rbstream_p rbsp)
 {
+#ifdef CONFIG_CODEC_MP3
 	if (mp3_check_type(rbsp)) {
 		return AUDIO_TYPE_MP3;
 	}
-
+#endif
+#ifdef CONFIG_CODEC_AAC
 	if (aac_check_type(rbsp)) {
 		return AUDIO_TYPE_AAC;
 	}
-
+#endif
 	if (wav_check_type(rbsp)) {
 		return AUDIO_TYPE_WAVE;
 	}
@@ -802,16 +808,18 @@ bool _get_frame(audio_decoder_p decoder)
 	assert(priv != NULL);
 
 	switch (decoder->audio_type) {
+#ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) decoder->dec_ext;
 		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
 	}
-
+#endif
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC: {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) decoder->dec_ext;
 		return aac_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
 	}
-
+#endif
 	case AUDIO_TYPE_WAVE: {
 		wav_dec_external_t *wav_ext = (wav_dec_external_t *) decoder->dec_ext;
 		wav_ext->inputBufferCurrentLength = wav_ext->inputBufferMaxLength;
@@ -834,18 +842,20 @@ bool _get_frame(audio_decoder_p decoder)
 int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 {
 	switch (decoder->audio_type) {
+#ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3: {
 		int ret = mp3_init(decoder, dec_ext);
 		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
-
+#endif
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC: {
 		int ret = aac_init(decoder, dec_ext);
 		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
 		break;
 	}
-
+#endif
 	case AUDIO_TYPE_WAVE: {
 		int ret = wav_init(decoder, dec_ext);
 		RETURN_VAL_IF_FAIL((ret == AUDIO_DECODER_OK), ret);
@@ -871,6 +881,7 @@ int _init_decoder(audio_decoder_p decoder, void *dec_ext)
 int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 {
 	switch (decoder->audio_type) {
+#ifdef CONFIG_CODEC_MP3		
 	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal tmp_ext = *((tPVMP3DecoderExternal *) decoder->dec_ext);
 		tPVMP3DecoderExternal *mp3_ext = &tmp_ext;
@@ -887,7 +898,8 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 		pcm->samplerate = mp3_ext->samplingRate;
 		break;
 	}
-
+#endif
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC: {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) decoder->dec_ext;
 
@@ -904,7 +916,7 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 		pcm->samplerate = aac_ext->samplingRate;
 		break;
 	}
-
+#endif
 	case AUDIO_TYPE_WAVE: {
 		priv_data_p priv = (priv_data_p)decoder->priv_data;
 		wav_dec_external_p wav_ext = (wav_dec_external_p)decoder->dec_ext;
@@ -950,8 +962,12 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 bool audio_decoder_check_audio_type(int audio_type)
 {
 	switch (audio_type) {
+#ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3:
+#endif
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC:
+#endif
 	case AUDIO_TYPE_WAVE:
 		return true;
 

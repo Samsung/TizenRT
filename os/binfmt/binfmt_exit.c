@@ -139,7 +139,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 		mm_remove_app_heap_list(bin->uheap);
 		/* Free the RAM partition into which this app was loaded */
 		kmm_free((void *)bin->ramstart);
-		bin->ramstart = NULL;
+		bin->ramstart = 0;
 		kmm_free(bin);
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	}

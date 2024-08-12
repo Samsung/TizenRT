@@ -86,7 +86,19 @@ enum audio_device_process_unit_subtype_e {
 	/* For Stream In */
 	AUDIO_DEVICE_SPEECH_DETECT_NONE = 0,
 	AUDIO_DEVICE_SPEECH_DETECT_EPD = 1,
-	AUDIO_DEVICE_SPEECH_DETECT_KD = 2
+	AUDIO_DEVICE_SPEECH_DETECT_SPD = 2,
+	AUDIO_DEVICE_SPEECH_DETECT_KD = 3,
+	/* For PU Control only */
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL = 4,
+	/* All these value need to be aligned with value in product app */
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL0 = 5,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL1 = 6,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL2 = 7,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL3 = 8,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL4 = 9,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL5 = 10,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL6 = 11,
+	AUDIO_DEVICE_SPEECH_DETECT_LOCAL7 = 12
 };
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
@@ -367,6 +379,28 @@ unsigned int get_user_output_frames_to_byte(unsigned int frames);
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_output_card_buffer_size
+ *
+ * Description:
+ *   Get byte size of record buffer of actual output card.
+ *
+ * Return Value:
+ *   On success, the number of bytes in buffer size of output card. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_output_card_buffer_size(void);
+
+/****************************************************************************
+ * Name: get_input_card_buffer_size
+ *
+ * Description:
+ *   Get byte size of record buffer of actual input card.
+ *
+ * Return Value:
+ *   On success, the number of bytes in buffer size of input card. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_input_card_buffer_size(void);
 
 /****************************************************************************
  * Name: get_max_audio_volume

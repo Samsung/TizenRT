@@ -35,8 +35,10 @@ public:
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
 	bool startEndPointDetect(int timeout) override;
-	bool detectEndPoint(short *sample, int numSample) override;
+	bool stopEndPointDetect(void) override;
+	bool detectEndPoint(void) override;
 	bool waitEndPoint(int timeout) override;
+	void registerEPDResultListener(EPDResultListener epdResultCallback) override;
 
 private:
 	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
@@ -46,6 +48,7 @@ private:
 	int mSdCard;
 	int mSdDevice;
 	sem_t mSem;
+	EPDResultListener mEPDResultCallback;
 };
 
 } // namespace voice

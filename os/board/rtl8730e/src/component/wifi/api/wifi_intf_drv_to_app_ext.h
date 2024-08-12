@@ -397,6 +397,14 @@ u64 wifi_get_tsf(unsigned char port_id);
 int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 
 /**
+ * @brief  set the channel plan
+ * @param[in]  chplan: the domain code of the channel plan to set
+ * @return  RTW_SUCCESS if channel plan set is valid, RTW_ERROR if channel plan is invalid
+ * @note  the channel plan can only be set if it is valid. this function should only be used while disconnected or when softAP is not running
+ */
+int wifi_set_chplan(u8 chplan);
+
+/**
  * @brief  initialize mac address filter list
  * @return  RTW_SUCCESS or RTW_ERROR.
  */

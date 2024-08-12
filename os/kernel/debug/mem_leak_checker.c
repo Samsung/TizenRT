@@ -276,9 +276,10 @@ static struct mm_heap_s * init_mem_leak_checker(int checker_pid, char *bin_name)
 
 static void ram_check(struct mm_heap_s *heap, int checker_pid, char *bin_name, int *leak_cnt)
 {
-	struct mm_heap_s *kheap;
+	
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin_addr_info_t *info;
+	struct mm_heap_s *kheap;
 	int bin_idx;
 
 	info = (bin_addr_info_t *)get_bin_addr_list();

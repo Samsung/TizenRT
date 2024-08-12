@@ -113,6 +113,7 @@
 
 #include <tinyara/config.h>
 
+#ifndef __ASSEMBLY__
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -125,14 +126,23 @@
 #endif
 
 #include <arch/arch.h>
+#endif
 /****************************************************************************
  * Pre-processor definitions
  ****************************************************************************/
 
+/* This is the value used to mark the stack for subsequent stack monitoring
+ * logic.
+ */
+
+#define STACK_COLOR    0xdeadbeef
+#define INTSTACK_COLOR 0xdeadbeef
+#define HEAP_COLOR     'h'
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-
+#ifndef __ASSEMBLY__
 typedef CODE void (*sig_deliver_t)(FAR struct tcb_s *tcb);
 typedef CODE void (*phy_enable_t)(bool enable);
 
@@ -2152,14 +2162,14 @@ int up_rtc_settime(FAR const struct timespec *tp);
  *   Perform IDLE state power management.
  *
  * Input Parameters:
- *   handler - The handler function that must be called after each board wakeup.
+ *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
  *
  * Returned Value:
  *   None.
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t));
+void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
 
 /****************************************************************************
  * Name: up_set_dvfs
@@ -2450,4 +2460,5 @@ bool is_kernel_space(void *addr);
 }
 #endif
 
+#endif		/* __ASSEMBLY__ */
 #endif							/* __INCLUDE_ARCH_H */

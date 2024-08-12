@@ -84,6 +84,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_SLEEP, arg should be an int.(user should input time in millisecond)
  *   for PMIOC_TIMEDSUSPEND, arg should be a pointer to pm_suspend_arg_t 
  *   for PMIOC_DOMAIN_REGISTER, arg should be a pointer to pm_domain_arg_t
+ *   for PMIOC_METRICS, arg should be an int type.
  *   for PMIOC_TUNEFREQ, arg should be an int type.
  *
  * Description:
@@ -120,7 +121,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 	case PMIOC_DOMAIN_REGISTER:
 		if ((pm_domain_arg_t *)arg == NULL) {
-			set_errno(EINVAL);
+			ret = -EINVAL;
 			pmdbg("Please input correct arguments\n");
 		} else {
 			((pm_domain_arg_t *)arg)->domain_id = pm_domain_register(((pm_domain_arg_t *)arg)->domain_name);
@@ -129,6 +130,11 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 		break;
+#ifdef CONFIG_PM_METRICS
+	case PMIOC_METRICS:
+		ret = pm_metrics((int)arg);
+		break;
+#endif
 #ifdef CONFIG_PM_DVFS
         case PMIOC_TUNEFREQ:
         	pm_dvfs(arg);
@@ -138,12 +144,15 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	default:
 		pmvdbg("Invalid command passed!\n");
 		break;
-        }
-        return ret;
+	}
+	if (ret == ERROR) {
+		ret = -get_errno();
+	}
+	return ret;
 }
 
 /****************************************************************************
- * Name: pm_register
+ * Name: pm_driver_register
  *
  * Description:
  *   Register pm driver path, PM_DRVPATH

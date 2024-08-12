@@ -56,9 +56,11 @@ typedef struct {
 
 	/* mbed var */
 	u32 dma_en;
+
+	u32 is_readwrite;
 } HAL_SSI_ADAPTOR, *PHAL_SSI_ADAPTOR;
 
-HAL_SSI_ADAPTOR ssi_adapter_g[2];
+static HAL_SSI_ADAPTOR ssi_adapter_g[2];
 
 /**
   * @}
@@ -269,13 +271,13 @@ static u32 ssi_dma_tx_irq(void *Data)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 
 	/*  Call user TX complete callback */
-	if (NULL != ssi_adapter->TxCompCallback) {
+	if (NULL != ssi_adapter->TxCompCallback && ssi_adapter->is_readwrite) {
 		ssi_adapter->TxCompCallback(ssi_adapter->TxCompCbPara);
 	}
 
 	SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_TDMAE);
-
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	/* we should only free the channel during spi_free */
+	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	ssi_adapter->dma_en &= ~SPI_DMA_TX_EN;
 
@@ -304,8 +306,8 @@ static u32 ssi_dma_rx_irq(void *Data)
 	if (NULL != ssi_adapter->RxCompCallback) {
 		ssi_adapter->RxCompCallback(ssi_adapter->RxCompCbPara);
 	}
-
-	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	/* we should only free the channel during spi_free */
+	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
 	ssi_adapter->dma_en &= ~SPI_DMA_RX_EN;
 
@@ -1023,6 +1025,7 @@ int32_t spi_master_read_stream_dma(spi_t *obj, char *rx_buffer, uint32_t length)
 #ifdef USE_DMA_WRITE_MASTER_READ
 	// TX DMA is on already, so use DMA to TX data
 	// Make the GDMA to use the rx_buffer too
+	ssi_adapter->is_readwrite = 0;
 
 	ret = ssi_dma_send(ssi_adapter, (u8 *) rx_buffer, length);
 	if (ret != _TRUE) {
@@ -1097,6 +1100,7 @@ int32_t spi_master_write_read_stream_dma(spi_t *obj, char *tx_buffer,
 	}
 
 	obj->state |= SPI_STATE_TX_BUSY;
+	ssi_adapter->is_readwrite = 1;
 	ret = ssi_dma_send(ssi_adapter, (u8 *) tx_buffer, length);
 	if (ret != _TRUE) {
 		obj->state &= ~SPI_STATE_TX_BUSY;

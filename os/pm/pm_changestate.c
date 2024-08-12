@@ -62,7 +62,6 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
 
-#include "pm_metrics.h"
 #include "pm.h"
 
 #ifdef CONFIG_PM
@@ -229,18 +228,15 @@ int pm_changestate(enum pm_state_e newstate)
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
 		ret = pm_prepall(newstate);
 		if (ret != OK) {
-			/* One or more drivers is not ready for this state change.  Revert to
-			* the preceding state.
-			*/
-
-			g_pmglobals.recommended = g_pmglobals.state;
-			g_pmglobals.btime = clock_systimer();
 			goto EXIT;
 		}
 		/* All drivers have agreed to the state change (or, one or more have
-		* disagreed and the state has been reverted).  Set the new state.
-		*/
+		 * disagreed and the state has been reverted).  Set the new state.
+		 */
 		pm_changeall(newstate);
+#ifdef CONFIG_PM_METRICS
+		pm_metrics_update_changestate();
+#endif
 		g_pmglobals.state = newstate;
 	}
 EXIT:
@@ -249,22 +245,4 @@ EXIT:
 	return ret;
 }
 
-/****************************************************************************
- * Name: pm_querystate
- *
- * Description:
- *   This function returns the current power management state.
- *
- * Input Parameters:
- *
- * Returned Value:
- *   The current power management state.
- *
- ****************************************************************************/
-
-enum pm_state_e pm_querystate(void)
-{
-	return g_pmglobals.state;
-}
-
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

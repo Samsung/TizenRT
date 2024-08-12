@@ -102,8 +102,8 @@
 /** \example arm_convolution_example_f32.c
   */
 
-#include <arch/chip/cmsis_dsp/Include/arm_math.h>
-#include "math_helper.h"
+#include <cmsis_dsp/Include/arm_math.h>
+#include "../math_helper.h"
 
 #define SEMIHOSTING
 

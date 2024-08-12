@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -241,11 +240,11 @@ static audio_manager_result_t find_audio_card(audio_io_direction_t direct)
 		}
 
 		if (type == type_chr) {
+			pthread_mutex_init(&(card[card_id].card_mutex), NULL);
 			pthread_mutex_lock(&(card[card_id].card_mutex));
 			card[card_id].config[device_id].status = AUDIO_CARD_IDLE;
 			card[card_id].card_id = card_id;
 			card[card_id].device_id = device_id;
-			pthread_mutex_init(&(card[card_id].card_mutex), NULL);
 			found_cards++;
 			medvdbg("Found an audio card, total card : %d id : %d device : %d\n", found_cards, card_id, device_id);
 			pthread_mutex_unlock(&(card[card_id].card_mutex));
@@ -617,7 +616,7 @@ audio_manager_result_t audio_manager_init(void)
 	audio_manager_result_t ret;
 	static int am_initialized = 0;
 	int found_card = 0;
-
+	
 	if (am_initialized) {
 		return AUDIO_MANAGER_SUCCESS;
 	}
@@ -1216,7 +1215,7 @@ unsigned int get_input_frame_count(void)
 		return 0;
 	}
 
-	return pcm_get_buffer_size(g_audio_in_cards[g_actual_audio_in_card_id].pcm);
+	return get_user_input_bytes_to_frame(pcm_get_buffer_size(g_audio_in_cards[g_actual_audio_in_card_id].pcm));
 }
 
 unsigned int get_card_input_frames_to_byte(unsigned int frames)
@@ -1305,6 +1304,48 @@ unsigned int get_user_output_bytes_to_frame(unsigned int bytes)
 	return frame_size;
 }
 
+unsigned int get_card_buffer_size(audio_io_direction_t direct)
+{
+	audio_card_info_t *card;
+	struct ap_buffer_info_s buf_info;
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	int fd;
+	if (direct == INPUT) {
+		if ((g_actual_audio_in_card_id < 0)) {
+			return 0;
+		}
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	} else {
+		if ((g_actual_audio_out_card_id < 0)) {
+			return 0;
+		}
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	}
+	get_card_path(path, card->card_id, card->device_id, direct);
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		return 0;
+	}
+	if (ioctl(fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
+		/* Driver doesn't reveal buffer size, so return default value we defined here */
+		meddbg("ioctl failed. errno : %d\n", errno);
+		buf_info.buffer_size = AUDIO_STREAM_VOICE_RECOGNITION_PERIOD_SIZE * (pcm_format_to_bits((enum pcm_format) PCM_FORMAT_S16_LE) >> 3);
+	}
+	close(fd);
+	return buf_info.buffer_size;
+}
+
+unsigned int get_input_card_buffer_size(void)
+{
+	return get_card_buffer_size(INPUT);
+}
+
+unsigned int get_output_card_buffer_size(void)
+{
+	return get_card_buffer_size(OUTPUT);	
+}
+
 audio_manager_result_t get_max_audio_volume(uint8_t *volume)
 {
 	// ToDo: Add logics to consider 'decibel'.
@@ -1388,7 +1429,9 @@ uint8_t get_subprocess_type_audio_param_value(device_process_subtype_t type)
 	case AUDIO_DEVICE_SPEECH_DETECT_EPD:
 		return AUDIO_SD_ENDPOINT_DETECT;
 	case AUDIO_DEVICE_SPEECH_DETECT_KD:
-		return AUDIO_SD_KEYWORD_DETECT;
+		return AUDIO_SD_KEYWORD_DETECT; 
+	case AUDIO_DEVICE_SPEECH_DETECT_LOCAL:
+		return AUDIO_SD_LOCAL;
 	default:
 		return AUDIO_PU_UNDEF;
 	}
@@ -1721,15 +1764,42 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
 	size = mq_timedreceive(card->config[device_id].process_handler, (FAR char *)&msg, sizeof(msg), &prio, &st_time);
 
 	if (size != sizeof(msg)) {
-		meddbg("wrong message id : %ld\n", msg.msgId);
+		medvdbg("wrong message id : %ld\n", msg.msgId);
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	} else {
 		switch (msg.msgId) {
 		case AUDIO_MSG_EPD:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_EPD;
 			break;
+		case AUDIO_MSG_SPD:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_SPD;
+			break;
 		case AUDIO_MSG_KD:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_KD;
+			break;
+		case AUDIO_MSG_LOCAL0:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL0;
+			break;
+		case AUDIO_MSG_LOCAL1:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL1;
+			break;
+		case AUDIO_MSG_LOCAL2:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL2;
+			break;
+		case AUDIO_MSG_LOCAL3:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL3;
+			break;
+		case AUDIO_MSG_LOCAL4:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL4;
+			break;
+		case AUDIO_MSG_LOCAL5:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL5;
+			break;
+		case AUDIO_MSG_LOCAL6:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL6;
+			break;
+		case AUDIO_MSG_LOCAL7:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL7;
 			break;
 		default:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_NONE;

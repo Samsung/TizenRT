@@ -18,26 +18,7 @@ menuconfig PM_METRICS
 	bool "Power management (PM) metrics"
 	default n
 	---help---
-		Power management's metrics for CONFIG_PM_METRICS_DURATION
-
-if PM_METRICS
-
-config PM_METRICS_DURATION
-	int "History Duration (secs)"
-	default 60
-endif
-
-config PM_SLICEMS
-	int "PM time slice (msec)"
-	default 100
-	---help---
-		The power management module collects activity counts in time slices.
-		At the end of the time slice, the count accumulated during that
-		interval is applied to an averaging algorithm to determine the
-		activity level.
-
-		CONFIG_PM_SLICEMS provides the duration of that time slice in
-		milliseconds.  Default: 100 Milliseconds
+		Power management's metrics
 
 config PM_NDOMAINS
 	int "Number of PM activity domains"
@@ -64,7 +45,7 @@ config PM_TICKSUPPRESS
 		Periodic tick interrupts can be suppressed to keep the CPU idle for a longer period
 		of time. Tick suppression requires that missed ticks while the core is in an idle state
 		be compensated for when the core becomes active. To enable this configuration to
-		suppress ticks, the pm_wake() API must be called when the core wakes up.
+		suppress ticks, the pm_wakehandler() API must be called when the core wakes up.
 
 if PM_TICKSUPPRESS
 
@@ -73,14 +54,16 @@ config PM_TIMEDWAKEUP
 	default n
 	select SCHED_WAKEUPSOURCE
 	---help---
+		This config allow application to set power management wakeup timer. The wakeup timer wakes up
+		the board after specified time has been passed using hardware timer interrupt.
 
 if PM_TIMEDWAKEUP
 
-config PM_MIN_SLEEP_TIME
-	int "PM MIN SLEEP enter time"
-	default 0
+config PM_SLEEP_ENTRY_WAIT_MS
+	int "Sleep Entry Wait Threshold (in msec)"
+	default 10
 	---help---
-		This value is the minimum duration of system sleep. System should not go to sleep
+		This value represents the system sleep wait threshold. System should not go to sleep
 		if the app request it to sleep below this value. Because then it might not be very
 		power efficient. 
 		Also Note that, this value is in millisecond.
@@ -89,11 +72,12 @@ endif # PM_TIMEDWAKEUP
 endif # PM_TICKSUPPRESS
 
 config PM_DOMAIN_NAME_SIZE
-	int "PM_DOMAIN_NAME_SIZE enter size"
+	int "Maximum Length of Domain String"
 	default 32
 	---help---
 		This value represents maxinmum domain string size. The domain string should be less than
-		this size.
+		this size. This config is intended to reduce unwanted memory consumption cause of long 
+		domain string.
 
 endif # PM
 

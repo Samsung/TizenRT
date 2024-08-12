@@ -424,6 +424,24 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, charact_indi, (dev, attr_handle, con_handle, buf));
 	}
 	break;
+	case LWNL_REQ_BLE_GET_INDICATE_PENDING_CNT:
+	{
+		trble_conn_handle *con_handle = NULL;
+		uint8_t *indicate_count = NULL;
+		
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		con_handle = (trble_conn_handle *)param.param[0];
+		indicate_count = (uint8_t *)param.param[1];
+
+		TRBLE_DRV_CALL(ret, dev, get_indi_queue_cnt, (dev, con_handle, indicate_count));
+	}
+	break;
 	case LWNL_REQ_BLE_ATTR_SET_DATA:
 	{
 		trble_attr_handle attr_handle = 0;

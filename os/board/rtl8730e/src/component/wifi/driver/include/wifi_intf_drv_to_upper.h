@@ -67,7 +67,6 @@ void wifi_if2_deinit(void);
 int wifi_if1_open(void);
 int wifi_if2_open(void);
 void wifi_stop_bss_network(void);
-u8 wifi_set_chplan(u8 chplan);
 int wifi_get_chplan(u8 *chplan);
 int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 							   void (*free_func)(void *),

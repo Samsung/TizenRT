@@ -318,13 +318,17 @@ config MTD_JEDEC
                 Build support for generic MTD for jedec flash driver
 
 if MTD_JEDEC
-config JEDEC_SPI_MODE
+config JEDEC_SPIMODE
 	int "SPI Mode"
 	default 0
 
 config JEDEC_SPI_FREQUENCY
 	int "SPI Frequency"
 	default 20000000
+
+config JEDEC_SLOWREAD
+	bool "JEDEC Slow Read"
+	default n
 endif
 
 endif # MTD

@@ -103,4 +103,16 @@ int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsi
  ****************************************************************************/
 int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int *size);
 
+/****************************************************************************
+ * Name: allocate compress buffer
+ *
+ * Description:
+ *   allocates given number of memory to a buffer 
+ *
+ * Returned Value:
+ *   unsigned char * buffer 
+ ****************************************************************************/
+unsigned char *allocate_compress_buffer(int offset, unsigned int size);
+
+
 #endif						/* __INCLUDE_COMPRESSION_H */

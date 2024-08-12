@@ -15,6 +15,7 @@
 #include <mem_types.h>
 #include <bt_utils.h>
 #include <rtk_service_config.h>
+#include <rtk_stack_gatt.h>
 #include <gap_msg.h>
 #include <ble_tizenrt_service.h>
 
@@ -311,6 +312,26 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
 	   return TRBLE_SUCCESS;
 }
 
+extern rtk_bt_gatts_app_priv_t *g_rtk_bt_gatts_priv;
+trble_result_e rtw_ble_server_indicate_queue_cnt(trble_conn_handle *con_handle, uint8_t *indication_count)
+{
+	uint8_t con_id;
+	rtk_bt_le_gap_get_conn_id(*con_handle, &con_id); 
+	rtk_bt_gatt_queue_t *queue;
+	queue = &g_rtk_bt_gatts_priv->indicate_queue[con_id];
+	*indication_count = queue->pending_ele_num;
+	
+	/* The number of element in pending queue should be limited, otherwise
+		the notification of high frequnce will use up memory */
+	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX)
+	{
+		printf("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
+		return TRBLE_BUSY;
+	}
+
+	return TRBLE_SUCCESS;
+}
+
 trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_errorcode)
 {
     if (is_server_init != true)
@@ -376,6 +397,18 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
     } 
 	
     return conn_handle;
+}
+
+trble_result_e rtw_ble_server_set_device_name(uint8_t* name)
+{
+    if(RTK_BT_OK == rtk_bt_le_gap_set_device_name(name))
+    {
+        debug_print("Set device name success \n");
+    } else {
+        debug_print("Set device name fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_server_adv_into_idle(void)

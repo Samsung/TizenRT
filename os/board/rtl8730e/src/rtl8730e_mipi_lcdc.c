@@ -23,6 +23,8 @@
 #include <tinyara/lcd/st7785.h>
 #elif defined(CONFIG_LCD_ST7701)
 #include <tinyara/lcd/st7701.h>
+#elif defined(CONFIG_LCD_ST7701SN)
+#include <tinyara/lcd/st7701sn.h>
 #endif
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/lcd/lcd_dev.h>
@@ -37,7 +39,7 @@
 #define PIN_HIGH 1
 #define LCD_LAYER 0
 
-#if defined(CONFIG_LCD_ST7785)
+#if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 #define GPIO_PIN_BACKLIGHT      PB_11
 #define MIPI_GPIO_RESET_PIN 	PA_15
 #elif defined(CONFIG_LCD_ST7701)
@@ -89,7 +91,7 @@ static u8 lcdc_nextframe = 0;
 struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
 	.data = (u32) LCDC,
-	.priority = INT_PRI_MIDDLE,
+	.priority = INT_PRI_HIGH,
 };
 
 extern struct irq mipi_irq_info;
@@ -189,7 +191,7 @@ static void rtl8730e_gpio_init(void)
 	ResetPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	ResetPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&ResetPin);
-#if defined(CONFIG_LCD_ST7785)
+#if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 	pwmout_init(&g_rtl8730e_config_dev_s.pwm_led, GPIO_PIN_BACKLIGHT);
 	lcdvdbg("initial pwm read %f\n", pwmout_read(&g_rtl8730e_config_dev_s.pwm_led));
 #endif
@@ -199,7 +201,7 @@ static void rtl8730e_control_backlight(uint8_t level)
 {
 	float pwm_level = level/100.0;
 	lcdvdbg("level :%d , pwm level:%f\n", level, pwm_level);
-#if defined(CONFIG_LCD_ST7785)
+#if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
 #endif
 }

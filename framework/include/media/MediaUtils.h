@@ -130,6 +130,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
  * @endcond
  */
 unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...);
+#ifdef CONFIG_CODEC_MP3
 /**
  * @cond
  * @internal
@@ -140,6 +141,8 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
  * @endcond
  */
 bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength);
+#endif /* CONFIG_CODEC_MP3 */
+#ifdef CONFIG_CODEC_AAC
 /**
  * @cond
  * @internal
@@ -150,6 +153,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
  * @endcond
  */
 bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength);
+#endif /* CONFIG_CODEC_AAC */
 /**
  * @cond
  * @internal

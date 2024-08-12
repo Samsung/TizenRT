@@ -65,3 +65,8 @@ include ${TOPDIR}/../lib/libc/machine/arm/armv7-m/Make.defs
 else ifeq ($(CONFIG_ARCH_ARMV7A_FAMILY),y)   # ARMV7A
 include ${TOPDIR}/../lib/libc/machine/arm/armv7-a/Make.defs
 endif
+
+ASRCS += setjmp.S
+
+DEPPATH += --dep-path machine/arm
+VPATH += :machine/arm

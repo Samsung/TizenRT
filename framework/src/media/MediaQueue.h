@@ -41,6 +41,7 @@ public:
 	}
 	std::function<void()> deQueue();
 	bool isEmpty();
+	void clearQueue(void);
 
 private:
 	std::queue<std::function<void()>> mQueueData;

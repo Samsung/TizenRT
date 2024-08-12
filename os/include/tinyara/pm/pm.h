@@ -131,23 +131,6 @@ typedef struct pm_domain_arg_s pm_domain_arg_t;
  * own, custom idle loop to support board-specific IDLE time power management
  */
 
-/* CONFIG_PM_SLICEMS.  The power management module collects activity counts
- * in time slices.  At the end of the time slice, the count accumulated
- * during that interval is applied to an averaging algorithm to determine
- * the activity level.
- *
- * CONFIG_PM_SLICEMS provides the duration of that time slice in
- * milliseconds.  Default: 100 Milliseconds
- */
-
-#ifndef CONFIG_PM_SLICEMS
-#define CONFIG_PM_SLICEMS  100	/* Default is 100 msec */
-#endif
-
-#if CONFIG_PM_SLICEMS < 1
-#error CONFIG_PM_SLICEMS invalid
-#endif
-
 
 /* Defines max length of device driver name for PM callback. */
 #define MAX_PM_CALLBACK_NAME    32
@@ -212,6 +195,9 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
+#ifdef CONFIG_PM_METRICS
+static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
+#endif
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -508,83 +494,6 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds);
 
 uint16_t pm_suspendcount(int domain_id);
 
-/****************************************************************************
- * Name: pm_checkstate
- *
- * Description:
- *   This function is called from the MCU-specific IDLE loop to monitor the
- *   the power management conditions.  This function returns the "recommended"
- *   power management state based on the PM configuration and activity
- *   reported in the last sampling periods.  The power management state is
- *   not automatically changed, however.  The IDLE loop must call
- *   pm_changestate() in order to make the state change.
- *
- *   These two steps are separated because the platform-specific IDLE loop may
- *   have additional situational information that is not available to the
- *   the PM sub-system.  For example, the IDLE loop may know that the
- *   battery charge level is very low and may force lower power states
- *   even if there is activity.
- *
- *   NOTE: That these two steps are separated in time and, hence, the IDLE
- *   loop could be suspended for a long period of time between calling
- *   pm_checkstate() and pm_changestate().  The IDLE loop may need to make
- *   these calls atomic by either disabling interrupts until the state change
- *   is completed.
- *
- * Input Parameters:
- *   domain - The PM domain to check
- *
- * Returned Value:
- *   The recommended power management state.
- *
- ****************************************************************************/
-
-enum pm_state_e pm_checkstate(void);
-
-/****************************************************************************
- * Name: pm_changestate
- *
- * Description:
- *   This function is used to platform-specific power management logic.  It
- *   will announce the power management power management state change to all
- *   drivers that have registered for power management event callbacks.
- *
- * Input Parameters:
- *   newstate - Identifies the new PM state
- *
- * Returned Value:
- *   0 (OK) means that the callback function for all registered drivers
- *   returned OK (meaning that they accept the state change).  Non-zero
- *   means that one of the drivers refused the state change.  In this case,
- *   the system will revert to the preceding state.
- *
- * Assumptions:
- *   It is assumed that interrupts are disabled when this function is
- *   called.  This function is probably called from the IDLE loop... the
- *   lowest priority task in the system.  Changing driver power management
- *   states may result in renewed system activity and, as a result, can
- *   suspend the IDLE thread before it completes the entire state change
- *   unless interrupts are disabled throughout the state change.
- *
- ****************************************************************************/
-
-int pm_changestate(enum pm_state_e newstate);
-
-/****************************************************************************
- * Name: pm_querystate
- *
- * Description:
- *   This function returns the current power management state.
- *
- * Input Parameters:
- *
- * Returned Value:
- *   The current power management state.
- *
- ****************************************************************************/
-
-enum pm_state_e pm_querystate(void);
-
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
  * Name: pm_dvfs
@@ -611,6 +520,26 @@ void pm_dvfs(int div_lvl);
 #define pm_dvfs(div_lvl)	(0)
 #endif
 
+#ifdef CONFIG_PM_METRICS
+/****************************************************************************
+ * Name: pm_metrics
+ *
+ * Description:
+ *   This internal function is called to analyze the PM suspend and sleep behaviour.
+ *   It gathers the pm metrics statistics for provided time (in msec) to provide the
+ *   domain specific pm suspend information.
+ *
+ * Input Parameters:
+ *   milliseconds - the monitoring duration in milliseconds
+ *
+ * Returned Value:
+ *   OK (0)     - On Success
+ *   ERROR (-1) - On Error
+ *
+ ****************************************************************************/
+int pm_metrics(int milliseconds);
+#endif
+
 /****************************************************************************
  * Stubs
  ****************************************************************************/
@@ -630,9 +559,6 @@ void pm_dvfs(int div_lvl);
 #define pm_resume(domain_id)    (0)
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
 #define pm_timedsuspend(domain_id, milliseconds)	(0)
-#define pm_checkstate()         (0)
-#define pm_changestate(state)   (0)
-#define pm_querystate()         (0)
 
 #endif							/* CONFIG_PM */
 

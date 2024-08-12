@@ -21,6 +21,7 @@ from math import log
 from array import *
 import os
 import sys
+import subprocess
 
 ksymbol_lookup_table = []		# Lookup table created from contents of system map file for kernel symbols
 asymbol_lookup_table = [[]] * 10	# Lookup table created from contents of appX map files for application symbols
@@ -36,6 +37,7 @@ flash_text_end_addr = 0x00000000
 g_stext_app = [0] * 10
 g_etext_app = [0] * 10
 app_name = []
+bin_path = []      # Output bin path
 
 BIN_ADDR_FXN = 'Loading location information\n'
 stack_details = "Asserted task's stack details\n"
@@ -181,9 +183,23 @@ def print_symbol(stack_addr, search_addr, is_app_symbol):
 				break
 			else:
 				if (is_app_symbol):
-					print("{:8}\t {:8}\t app{}    \t  {}".format(hex(stack_addr), hex(addr), is_app_symbol, asymbol_lookup_table[is_app_symbol][mid - 1][1]))
+					pos = (asymbol_lookup_table[is_app_symbol][mid - 1][1]).find('\t')
+					sname = (asymbol_lookup_table[is_app_symbol][mid - 1][1])[:pos]
+					fname = subprocess.getoutput("arm-none-eabi-addr2line -e " + bin_path + app_name[is_app_symbol - 1] + "_dbg " + hex(search_addr))
+					if ":?" in fname:
+						print('Symbol not found for address: {0}'.format(hex(search_addr)))
+						return
+					else:
+						print("{:8}\t {:8}\t {} binary    {:20}  {}".format(hex(stack_addr), hex(search_addr), app_name[is_app_symbol - 1], sname, fname))
 				else:
-					print("{:8}\t {:8}\t kernel  \t  {}".format(hex(stack_addr), hex(addr), ksymbol_lookup_table[mid - 1][1]))
+					pos = (ksymbol_lookup_table[mid - 1][1]).find('\t')
+					sname = (ksymbol_lookup_table[mid - 1][1])[:pos]
+					fname = subprocess.getoutput("arm-none-eabi-addr2line -e " + bin_path + "tinyara.axf " + hex(search_addr))
+					if ":?" in fname:
+						print('Symbol not found for address: {0}'.format(hex(search_addr)))
+						return
+					else:
+					    print("{:8}\t {:8}\t kernel binary    {:20}  {}".format(hex(stack_addr), hex(search_addr), sname, fname))
 				break
 
 		if (search_addr < addr):
@@ -385,9 +401,10 @@ if (__name__ == '__main__'):
 	if (app_idx > 0):
 		find_app_text_range(log_file)
 
-	setup_symbol_table(bin_path + "System.map", 0)
+	os.system("nm --defined-only -n -C " + bin_path + "tinyara.axf > " + bin_path + "Kernel.map")
+	setup_symbol_table(bin_path + "Kernel.map", 0)
 	for idx in range(app_idx):
-		os.system("nm --defined-only -l --numeric-sort " + bin_path + app_name[idx] + "_dbg > " + bin_path + app_name[idx] + ".map")
+		os.system("nm --defined-only -n -C " + bin_path + app_name[idx] + "_dbg > " + bin_path + app_name[idx] + ".map")
 		setup_symbol_table(bin_path + app_name[idx] + ".map", idx + 1)
 
         # The addr_type specifies the type of addresses to be printed

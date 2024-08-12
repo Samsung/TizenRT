@@ -64,7 +64,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 
 ASRCS =
 CSRCS =
-MAINSRC = example_cmsis_dsp.c $(wildcard ./*/*.c)
+MAINSRC = example_cmsis_dsp.c math_helper.c $(wildcard ./*/*.c)
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))

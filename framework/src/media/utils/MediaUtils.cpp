@@ -698,7 +698,7 @@ audio_type_t getAudioTypeFromPath(std::string datapath)
 	} else if ((extension.compare("flac") == 0)) {
 		medvdbg("audio type : flac\n");
 		return AUDIO_TYPE_FLAC;
-	} else if ((extension.compare("") == 0) || (extension.compare("pcm") == 0) || (extension.compare("raw") == 0)) {
+	} else if ((extension.compare("pcm") == 0) || (extension.compare("raw") == 0)) {
 		medvdbg("audio type : pcm\n");
 		return AUDIO_TYPE_PCM;
 	} else if (extension.compare(AUDIO_EXT_TYPE_WAV) == 0) {
@@ -738,7 +738,7 @@ audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
 
 	return audioType;
 }
-
+#ifdef CONFIG_CODEC_MP3
 bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength)
 {
 /**
@@ -837,7 +837,8 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 	}
 	return true;
 }
-
+#endif /* CONFIG_CODEC_MP3 */
+#ifdef CONFIG_CODEC_AAC
 bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, unsigned int *frameLength)
 {
 /**
@@ -852,7 +853,7 @@ bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 *...
 *H - Channel Mode
 *...
-*M - frame length, header length (ProtectionAbsent == 1 ? 7 : 9) + size(AACFrame)
+*M -ï¿½frame length, header length (ProtectionAbsent == 1 ? 7 : 9) + size(AACFrame)
 *...
 */
 	unsigned char bit;
@@ -944,7 +945,7 @@ bool aac_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 	}
 	return true;
 }
-
+#endif /* CONFIG_CODEC_AAC */
 bool wave_header_parsing(const unsigned char *header, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 /**
@@ -1003,6 +1004,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 	int ret;
 
 	switch (audioType) {
+#ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3:
 		isHeader = false;
 		while (fread(tag, sizeof(unsigned char), 2, fp) == 2) {
@@ -1051,6 +1053,8 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 			return false;
 		}
 		break;
+#endif /* CONFIG_CODEC_MP3 */
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC:
 		isHeader = false;
 		while (fread(tag, sizeof(unsigned char), 1, fp) > 0) {
@@ -1081,6 +1085,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 			return false;
 		}
 		break;
+#endif /* CONFIG_CODEC_AAC */
 	case AUDIO_TYPE_WAVE:
 		header = (unsigned char *)malloc(sizeof(unsigned char) * (WAVE_HEADER_LENGTH + 1));
 		if (header == NULL) {
@@ -1138,6 +1143,7 @@ bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize,
 	unsigned int frameLength;
 	unsigned int counter = 0;
 	switch (audioType) {
+#ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3:
 		for (headPoint = 0; headPoint + MP3_HEADER_LENGTH <= bufferSize ; headPoint++) {
 			/* 11 bits for MP3 Sync Word(the beginning of the frame) */
@@ -1162,6 +1168,8 @@ bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize,
 		}
 		medvdbg("no header\n");
 		return false;
+#endif /* CONFIG_CODEC_MP3 */
+#ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC:
 		for (headPoint = 0; headPoint + AAC_HEADER_LENGTH <= bufferSize; headPoint++) {
 			/* 12 bits for ADTS Sync Word(the beginning of the frame) */
@@ -1186,6 +1194,7 @@ bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize,
 		}
 		medvdbg("no header\n");
 		return false;
+#endif /* CONFIG_CODEC_AAC */
 	case AUDIO_TYPE_WAVE:
 		if (WAVE_HEADER_LENGTH <= bufferSize) {
 			if (!wave_header_parsing(buffer, channel, sampleRate, pcmFormat)) {

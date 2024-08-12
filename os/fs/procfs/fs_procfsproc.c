@@ -371,6 +371,8 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	int cpuload_idx;
 	double load_value;
 	struct cpuload_s cpuload;
+	uint32_t total_cpuload = 0;
+	uint32_t total_active = 0;
 #endif
 
 	remaining = buflen;
@@ -407,27 +409,52 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #else
 	ppid = -1;
 #endif
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d ", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
 #ifdef CONFIG_SCHED_CPULOAD
 	for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
+		/* Get cpuload measurement data */
+		(void)clock_cpuload(procfile->pid, cpuload_idx, &cpuload);
+
+		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			
+			if (cpuload.total[cpu] > 0) {
+				load_value = (double)(100 * cpuload.active[cpu]) / (double)cpuload.total[cpu];
+				total_cpuload += cpuload.total[cpu];
+				total_active += cpuload.active[cpu];
+			} else {
+				load_value = 0.0f;
+			}
+			
+#ifdef CONFIG_SMP
+			buffer += copysize;
+			remaining -= copysize;
+			if (totalsize >= buflen) {
+				return totalsize;
+			}
+
+			linesize = snprintf(procfile->line, STATUS_LINELEN, "%.1f-", load_value);
+			copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
+			totalsize += copysize;
+#endif
+
+		}
+
+		if (total_cpuload > 0) {
+			load_value = (double)(100 * total_active) / (double)total_cpuload;
+		} else {
+			load_value = 0.0f;
+		}
+
 		buffer += copysize;
 		remaining -= copysize;
 		if (totalsize >= buflen) {
 			return totalsize;
 		}
 
-		/* Get cpuload measurement data */
-		(void)clock_cpuload(procfile->pid, cpuload_idx, &cpuload);
-		if (cpuload.total > 0) {
-			load_value = (double)(100 * cpuload.active) / (double)cpuload.total;
-		} else {
-			load_value = 0.0f;
-		}
-
-		linesize = snprintf(procfile->line, STATUS_LINELEN, " %.1f", load_value);
+		linesize = snprintf(procfile->line, STATUS_LINELEN, "%.1f ", load_value);
 		copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
 		totalsize += copysize;
 	}
@@ -654,6 +681,8 @@ static ssize_t proc_entry_loadavg(FAR struct proc_file_s *procfile, FAR struct t
 	size_t copysize;
 	size_t totalsize;
 	int cpuload_idx;
+	uint32_t total_cpuload = 0;
+	uint32_t total_active = 0;
 
 	/* Sample the counts for the thread.  clock_cpuload should only fail if
 	 * the PID is not valid.  This could happen if the thread exited sometime
@@ -666,14 +695,18 @@ static ssize_t proc_entry_loadavg(FAR struct proc_file_s *procfile, FAR struct t
 
 		(void)clock_cpuload(procfile->pid, cpuload_idx, &cpuload);
 
+		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+			total_cpuload += cpuload.total[cpu];
+			total_active += cpuload.active[cpu];
+		}
+
 		/* On the simulator, you may hit cpuload.total == 0, but probably never on
 		 * real hardware.
 		 */
 
-		if (cpuload.total > 0) {
+		if (total_cpuload > 0) {
 			uint32_t tmp;
-
-			tmp = (1000 * cpuload.active) / cpuload.total;
+			tmp = (1000 * total_active) / total_cpuload;
 			intpart = tmp / 10;
 			fracpart = tmp - 10 * intpart;
 		} else {

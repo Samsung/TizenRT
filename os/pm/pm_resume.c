@@ -98,9 +98,8 @@ int pm_resume(int domain_id)
 	int ret = OK;
 
 	flags = enter_critical_section();
-	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS) {
-		ret = ERROR;
-		set_errno(EINVAL);
+	ret = pm_check_domain(domain_id);
+	if (ret != OK) {
 		goto errout;
 	}
 	if (g_pmglobals.suspend_count[domain_id] <= 0) {
@@ -108,9 +107,12 @@ int pm_resume(int domain_id)
 		set_errno(ERANGE);
 		goto errout;
 	}
+#ifdef CONFIG_PM_METRICS
+	pm_metrics_update_resume(domain_id);
+#endif
 	g_pmglobals.suspend_count[domain_id]--;
 errout:
 	leave_critical_section(flags);
 	return ret;
 }
-#endif							/* CONFIG_PM */
+#endif /* CONFIG_PM */

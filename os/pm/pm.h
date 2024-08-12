@@ -77,17 +77,6 @@
 #define pm_alloc(num, size) calloc(num, size)
 #endif
 
-/* Convert the time slice interval into system clock ticks.
- *
- * CONFIG_PM_SLICEMS provides the duration of one time slice in milliseconds.
- * CLOCKS_PER_SEC provides the number of timer ticks in one second.
- *
- * slice ticks = (CONFIG_PM_SLICEMS msec / 1000 msec/sec) /
- *               (CLOCKS_PER_SEC ticks/sec)
- */
-
-#define TIME_SLICE_TICKS ((CONFIG_PM_SLICEMS * CLOCKS_PER_SEC) /  1000)
-
 /* Function-like macros *****************************************************/
 /****************************************************************************
  * Name: pm_lock
@@ -98,7 +87,7 @@
  *
  ****************************************************************************/
 
-#define pm_lock()	sem_wait(&g_pmglobals.regsem);
+#define pm_lock() sem_wait(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Name: pm_unlock
@@ -108,7 +97,7 @@
  *
  ****************************************************************************/
 
-#define pm_unlock()	sem_post(&g_pmglobals.regsem);
+#define pm_unlock() sem_post(&g_pmglobals.regsem);
 
 /****************************************************************************
  * Public Types
@@ -136,23 +125,9 @@ struct pm_global_s {
 
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
-	 * recommended - The recommended state based on the PM algorithm.
 	 */
 
 	uint8_t state;
-	uint8_t recommended;
-
-	/* History of state changes */
-#ifdef CONFIG_PM_METRICS
-	sq_queue_t history;
-#endif
-	/* stime - The time (in ticks) at the start of the current time slice */
-
-	clock_t stime;
-
-	/* btime - The time (in ticks) at the start of the current state */
-
-	clock_t btime;
 
 	/* Timer to decrease state */
 
@@ -179,22 +154,83 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
  * Public Function Prototypes
  ************************************************************************************/
 /****************************************************************************
- * Name: pm_set_wakeup_timer
+ * Name: pm_check_domain
  *
  * Description:
- *   This function is called just before sleep to start the required PM wake up
- *   timer. It will start the first timer from the g_pm_timer_activelist with the
- *   required delay.(delay should be positive)
+ *   This function is called inside PM internal APIs to check whether the
+ *   domain is valid or not.
  * 
  * Input Parameters:
- *   None
+ *   domain_id - ID of domain
  *
  * Returned Value:
- *   0 - system can go to sleep
- *   -1 - system should not go to sleep
+ *   0 - If domain is valid
+ *  -1 - If domain is not valid
  *
  ****************************************************************************/
-int pm_set_wakeup_timer(void);
+int pm_check_domain(int domain_id);
+
+/****************************************************************************
+ * Name: pm_checkstate
+ *
+ * Description:
+ *   This function is called from the MCU-specific IDLE loop to monitor the
+ *   the power management conditions.  This function returns the "recommended"
+ *   power management state based on the PM configuration and activity
+ *   reported in the last sampling periods.  The power management state is
+ *   not automatically changed, however.  The IDLE loop must call
+ *   pm_changestate() in order to make the state change.
+ *
+ *   These two steps are separated because the platform-specific IDLE loop may
+ *   have additional situational information that is not available to the
+ *   the PM sub-system.  For example, the IDLE loop may know that the
+ *   battery charge level is very low and may force lower power states
+ *   even if there is activity.
+ *
+ *   NOTE: That these two steps are separated in time and, hence, the IDLE
+ *   loop could be suspended for a long period of time between calling
+ *   pm_checkstate() and pm_changestate().  The IDLE loop may need to make
+ *   these calls atomic by either disabling interrupts until the state change
+ *   is completed.
+ *
+ * Input Parameters:
+ *   domain - The PM domain to check
+ *
+ * Returned Value:
+ *   The recommended power management state.
+ *
+ ****************************************************************************/
+
+enum pm_state_e pm_checkstate(void);
+
+/****************************************************************************
+ * Name: pm_changestate
+ *
+ * Description:
+ *   This function is used to platform-specific power management logic.  It
+ *   will announce the power management power management state change to all
+ *   drivers that have registered for power management event callbacks.
+ *
+ * Input Parameters:
+ *   newstate - Identifies the new PM state
+ *
+ * Returned Value:
+ *   0 (OK) means that the callback function for all registered drivers
+ *   returned OK (meaning that they accept the state change).  Non-zero
+ *   means that one of the drivers refused the state change.  In this case,
+ *   the system will revert to the preceding state.
+ *
+ * Assumptions:
+ *   It is assumed that interrupts are disabled when this function is
+ *   called.  This function is probably called from the IDLE loop... the
+ *   lowest priority task in the system.  Changing driver power management
+ *   states may result in renewed system activity and, as a result, can
+ *   suspend the IDLE thread before it completes the entire state change
+ *   unless interrupts are disabled throughout the state change.
+ *
+ ****************************************************************************/
+
+int pm_changestate(enum pm_state_e newstate);
 
 /****************************************************************************
  * Name: pm_wakehandler
@@ -218,10 +254,114 @@ int pm_set_wakeup_timer(void);
 void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 #endif
 
+#ifdef CONFIG_PM_METRICS
+/****************************************************************************
+ * Name: pm_metrics_update_domain
+ *
+ * Description:
+ *   This function is called when new domain got registered during pm_monitoring
+ *   or during pm_metrics initialization. It initialize the PM Metrics for given
+ *   domain.
+ *
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_domain(int domain_id);
+
+/****************************************************************************
+ * Name: pm_metrics_update_suspend
+ *
+ * Description:
+ *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
+ *   suspended domain.
+ *
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_suspend(int domain_id);
+
+/****************************************************************************
+ * Name: pm_metrics_update_resume
+ *
+ * Description:
+ *   This function is called inside pm_resume. Before resuming domain, it counts
+ *   amount of time (in ticks) the given domain was suspended.
+ * 
+ * Input parameters:
+ *   domain_id - the ID of domain registered with PM.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_resume(int domain_id);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_changestate
+ *
+ * Description:
+ *   This function is called inside pm_changestate. Before changing state, it counts
+ *   amount of time (in ticks) was in that state.
+ * 
+ * Input parameters:
+ *   None
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_changestate(void);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_idle
+ *
+ * Description:
+ *   This function is called inside pm_idle. It counts the frequency of domain, which
+ *   make board unable to go into sleep during idle cpu time.
+ * 
+ * Input parameters:
+ *   None
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_idle(void);
+
+
+/****************************************************************************
+ * Name: pm_metrics_update_wakehandler
+ *
+ * Description:
+ *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
+ *   sources, which are waking up the board. It also checks the amount of time board
+ *   was in sleep.
+ * 
+ * Input parameters:
+ *   missing_tick - the amount of time the board was in sleep.
+ *   wakeup_src   - the wakeup reason code.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* CONFIG_PM */
-#endif							/* #define __DRIVERS_POWER_PM_H */
+#endif /* CONFIG_PM */
+#endif /* #define __DRIVERS_POWER_PM_H */

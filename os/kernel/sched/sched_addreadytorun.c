@@ -60,6 +60,8 @@
 #include <queue.h>
 #include <assert.h>
 
+#include <tinyara/arch.h>
+
 #include "sched/sched.h"
 
 /****************************************************************************
@@ -121,6 +123,16 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	FAR struct tcb_s *rtcb = this_task();
 	bool ret;
 
+#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
+	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
+		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
+#if CONFIG_TASK_NAME_SIZE > 0
+		dbg_noarg("(%s) ", rtcb->name);
+#endif
+		dbg_noarg("###################\n");
+		PANIC();
+	}
+#endif
 	/* Check if pre-emption is disabled for the current running task and if
 	 * the new ready-to-run task would cause the current running task to be
 	 * pre-empted.
@@ -162,13 +174,23 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 
 bool sched_addreadytorun(FAR struct tcb_s *btcb)
 {
-	FAR struct tcb_s *rtcb;
+	FAR struct tcb_s *rtcb = this_task();
 	FAR dq_queue_t *tasklist;
 	bool switched;
 	bool doswitch;
 	int task_state;
 	int cpu;
 
+#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
+	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
+		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
+#if CONFIG_TASK_NAME_SIZE > 0
+		dbg_noarg("(%s) ", rtcb->name);
+#endif
+		dbg_noarg("###################\n");
+		PANIC();
+	}
+#endif
 	/* Check if the blocked TCB is locked to this CPU */
 
 	if ((btcb->flags & TCB_FLAG_CPU_LOCKED) != 0) {

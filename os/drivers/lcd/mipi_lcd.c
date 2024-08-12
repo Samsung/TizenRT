@@ -23,6 +23,8 @@
 #include <tinyara/lcd/st7785.h>
 #elif defined(CONFIG_LCD_ST7701)
 #include <tinyara/lcd/st7701.h>
+#elif defined(CONFIG_LCD_ST7701SN)
+#include <tinyara/lcd/st7701sn.h>
 #endif
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
@@ -172,7 +174,7 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
-	priv->config->lcd_put_area(buffer, row_start, col_start, row_end, col_end);
+	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 	return OK;
 }
 
@@ -227,10 +229,10 @@ static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s
 static int lcd_getplaneinfo(FAR struct lcd_dev_s *dev, unsigned int planeno, FAR struct lcd_planeinfo_s *pinfo)
 {
 	DEBUGASSERT(dev && pinfo && planeno == 0);
-	pinfo->putrun = &lcd_putrun;	/* Put a run into LCD memory */
-	pinfo->putarea = &lcd_putarea;	/* Put an area into LCD */
+	pinfo->putrun = (struct lcd_planeinfo_s *)&lcd_putrun;	/* Put a run into LCD memory */
+	pinfo->putarea = (struct lcd_planeinfo_s *)&lcd_putarea;	/* Put an area into LCD */
 #ifndef CONFIG_LCD_NOGETRUN
-	pinfo->getrun = &lcd_getrun;	/* Get a run from LCD memory */
+	pinfo->getrun = (struct lcd_planeinfo_s *)&lcd_getrun;	/* Get a run from LCD memory */
 #endif
 	return OK;
 }
@@ -333,7 +335,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
 	priv->dev.getplaneinfo = lcd_getplaneinfo;
 	priv->dev.getvideoinfo = lcd_getvideoinfo;
-	priv->dev.getpower = lcd_getpower;
+	priv->dev.getpower = (struct mipi_lcd_dev_s *)lcd_getpower;
 	priv->dev.setpower = lcd_setpower;
 	priv->dev.getcontrast = lcd_getcontrast;
 	priv->dev.setcontrast = lcd_setcontrast;

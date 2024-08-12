@@ -604,6 +604,8 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
 		priv->i2s_object->word_length = WL_32b;
 
+	i2s_set_param(priv->i2s_object, priv->i2s_object->channel_num, priv->i2s_object->sampling_rate, priv->i2s_object->word_length);
+
 	return priv->bits_per_sample * priv->sample_rate;
 #endif
 
@@ -967,6 +969,8 @@ static uint32_t i2s_rxdatawidth(struct i2s_dev_s *dev, int bits)
 		priv->i2s_object->word_length = WL_24b;
 	else if (bits == I2S_BITS_PER_SAMPLE_32BIT)
 		priv->i2s_object->word_length = WL_32b;
+
+	i2s_set_param(priv->i2s_object, priv->i2s_object->channel_num, priv->i2s_object->sampling_rate, priv->i2s_object->word_length);
 
 	return priv->bits_per_sample * priv->sample_rate;
 #endif

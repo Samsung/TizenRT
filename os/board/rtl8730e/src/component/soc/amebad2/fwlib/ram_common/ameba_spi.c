@@ -69,9 +69,9 @@ static const char *TAG = "SPI";
   */
 
 
-const SPI_DevTable SPI_DEV_TABLE[2] = {
-	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ},
-	{SPI1_DEV, GDMA_HANDSHAKE_INTERFACE_SPI1_TX, GDMA_HANDSHAKE_INTERFACE_SPI1_RX, SPI1_IRQ},
+SPI_DevTable SPI_DEV_TABLE[2] = {
+	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ, MAX_GDMA_CHNL + 1, MAX_GDMA_CHNL + 1},
+	{SPI1_DEV, GDMA_HANDSHAKE_INTERFACE_SPI1_TX, GDMA_HANDSHAKE_INTERFACE_SPI1_RX, SPI1_IRQ, MAX_GDMA_CHNL + 1, MAX_GDMA_CHNL + 1},
 };
 
 /**
@@ -472,12 +472,15 @@ BOOL SSI_TXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 
 	DCache_CleanInvalidate((u32) pTxData, Length);
-
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
-	if (GdmaChnl == 0xFF) {
-		// No Available DMA channel
-		return _FALSE;
+	if (SPI_DEV_TABLE[Index].tx_channel_allocated > MAX_GDMA_CHNL) {
+		GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
+		if (GdmaChnl == 0xFF) {
+			// No Available DMA channel
+			return _FALSE;
+		}
+		SPI_DEV_TABLE[Index].tx_channel_allocated = GdmaChnl;
 	}
+	GdmaChnl = SPI_DEV_TABLE[Index].tx_channel_allocated;
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 
@@ -572,12 +575,16 @@ SSI_RXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 
 	DCache_CleanInvalidate((u32) pRxData, Length);
-
-	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
-	if (GdmaChnl == 0xFF) {
+	if (SPI_DEV_TABLE[Index].rx_channel_allocated > MAX_GDMA_CHNL) {
+		GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
+		if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return _FALSE;
+		}
+		SPI_DEV_TABLE[Index].rx_channel_allocated = GdmaChnl;
 	}
+	GdmaChnl = SPI_DEV_TABLE[Index].rx_channel_allocated;
+
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 

@@ -84,7 +84,6 @@
 */
 
 #include <tinyara/config.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -333,14 +332,17 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	}
 
 	/* Gain buffer size and count through the ioctl */
-	buf_info.buffer_size = config->period_size;
-	buf_info.nbuffers = config->period_count;
 	if (ioctl(pcm->fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
 		/* Driver doesn't report it's buffer size.  Use our default. */
-		buf_info.buffer_size = CONFIG_AUDIO_BUFSIZE;
-		buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
+		if (config->period_size == 0 || config->period_count == 0) {
+			buf_info.buffer_size = CONFIG_AUDIO_BUFSIZE;
+			buf_info.nbuffers = CONFIG_AUDIO_NUM_BUFFERS;
+		} else {
+			buf_info.buffer_size = config->period_size * (pcm_format_to_bits(pcm->config.format) >> 3);
+			buf_info.nbuffers = config->period_count;
+		}
 	}
-	pcm->config.period_size = buf_info.buffer_size;
+	pcm->config.period_size = buf_info.buffer_size / (pcm_format_to_bits(pcm->config.format) >> 3);
 	pcm->config.period_count = buf_info.nbuffers;
 	pcm->buffer_size = buf_info.buffer_size;
 	pcm->buffer_cnt = buf_info.nbuffers;

@@ -1409,7 +1409,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 
 	} else {
 		spierr("ERROR: Unsupported SPI bus: %d\n", bus);
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return NULL;
 	}
 
@@ -1493,6 +1493,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		if (priv->refs > 0) {
 			dbg("SPI port%d has been initialized before!\n", port);
+			leave_critical_section(flags);
 			return (FAR struct spi_dev_s *)priv;
 		}
 		/* Only configure if the bus is not already configured */
@@ -1510,6 +1511,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		if (priv->refs > 0) {
 			dbg("SPI port%d has been initialized before!\n", port);
+			leave_critical_section(flags);
 			return (FAR struct spi_dev_s *)priv;
 		}
 		/* Only configure if the bus is not already configured */
@@ -1521,7 +1523,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 	} else
 	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", port);
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return NULL;
 	}
 

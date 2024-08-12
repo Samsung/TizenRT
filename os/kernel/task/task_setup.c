@@ -173,7 +173,9 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 #ifdef CONFIG_SCHED_CPULOAD
 			int cpuload_idx;
 			for (cpuload_idx = 0; cpuload_idx < SCHED_NCPULOAD; cpuload_idx++) {
-				g_pidhash[hash_ndx].ticks[cpuload_idx] = 0;
+				for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+					g_pidhash[hash_ndx].ticks[cpu][cpuload_idx] = 0;
+				}
 			}
 #endif
 			tcb->pid = next_pid;

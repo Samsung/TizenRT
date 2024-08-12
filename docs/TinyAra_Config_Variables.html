@@ -1035,9 +1035,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_PM_BUTTONS">1.3.70 <code>CONFIG_PM_BUTTONS</code>: PM Button support</a></li>
 <li><a href="#CONFIG_PM_ALARM_SEC">1.3.72 <code>CONFIG_PM_ALARM_SEC</code>: PM_STANDBY delay (seconds)</a></li>
 <li><a href="#CONFIG_PM_ALARM_NSEC">1.3.73 <code>CONFIG_PM_ALARM_NSEC</code>: PM_STANDBY delay (nanoseconds)</a></li>
-<li><a href="#CONFIG_PM_SLEEP_WAKEUP">1.3.74 <code>CONFIG_PM_SLEEP_WAKEUP</code>: PM_SLEEP wake-up alarm</a></li>
-<li><a href="#CONFIG_PM_SLEEP_WAKEUP_SEC">1.3.75 <code>CONFIG_PM_SLEEP_WAKEUP_SEC</code>: PM_SLEEP delay (seconds)</a></li>
-<li><a href="#CONFIG_PM_SLEEP_WAKEUP_NSEC">1.3.76 <code>CONFIG_PM_SLEEP_WAKEUP_NSEC</code>: PM_SLEEP delay (nanoseconds)</a></li>
 <li><a href="#CONFIG_STM32F429I_DISCO_ILI9341">1.3.77 <code>CONFIG_STM32F429I_DISCO_ILI9341</code>: LCD driver for ILI9341 Liquid Crystal Display Controller</a></li>
 <li><a href="#CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY">1.3.78 <code>CONFIG_STM32F429I_DISCO_ILI9341_SPIFREQUENCY</code>: SPI frequency</a></li>
 <li><a href="#CONFIG_STM32F429I_DISCO_ILI9341_SPIBITS16">1.3.79 <code>CONFIG_STM32F429I_DISCO_ILI9341_SPIBITS16</code>: Enable 16 bit pixel read/write</a></li>
@@ -2623,28 +2620,8 @@ function toggle(id, link) {
 <ul id="toggle_136"  style="display:none">
 <li><a href="#CONFIG_PM">1.13.1 <code>CONFIG_PM</code>: Power management (PM) driver interfaces</a></li>
 <li><a href="#CONFIG_DEBUG_PM">1.13.2 <code>CONFIG_DEBUG_PM</code>: Power Management Debug Features</a></li>
-<li><a href="#CONFIG_PM_TEST">1.13.3 <code>CONFIG_PM_TEST</code>: Power Management Functionality Test</a></li>
-<li><a href="#CONFIG_PM_DEVNAME_LEN">1.13.4 <code>CONFIG_PM_DEVNAME_LEN</code>: Registered device name length</a></li>
 <li><a href="#CONFIG_PM_METRICS">1.13.5 <code>CONFIG_PM_METRICS</code>: Power management (PM) metrics</a></li>
-<li><a href="#CONFIG_PM_METRICS_DURATION">1.13.6 <code>CONFIG_PM_METRICS_DURATION</code>: History Duration (secs)</a></li>
-<li><a href="#CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></li>
 <li><a href="#CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></li>
-<li><a href="#CONFIG_PM_MEMORY">1.13.9 <code>CONFIG_PM_MEMORY</code>: PM memory (msec)</a></li>
-<li><a href="#CONFIG_PM_COEFN">1.13.10 <code>CONFIG_PM_COEFN</code>: PM coefficient</a></li>
-<li><a href="#CONFIG_PM_COEF1">1.13.11 <code>CONFIG_PM_COEF1</code>: PM coefficient 1</a></li>
-<li><a href="#CONFIG_PM_COEF2">1.13.12 <code>CONFIG_PM_COEF2</code>: PM coefficient 2</a></li>
-<li><a href="#CONFIG_PM_COEF3">1.13.13 <code>CONFIG_PM_COEF3</code>: PM coefficient 3</a></li>
-<li><a href="#CONFIG_PM_COEF4">1.13.14 <code>CONFIG_PM_COEF4</code>: PM coefficient 4</a></li>
-<li><a href="#CONFIG_PM_COEF5">1.13.15 <code>CONFIG_PM_COEF5</code>: PM coefficient 5</a></li>
-<li><a href="#CONFIG_PM_IDLEENTER_THRESH">1.13.16 <code>CONFIG_PM_IDLEENTER_THRESH</code>: PM IDLE enter threshold</a></li>
-<li><a href="#CONFIG_PM_IDLEEXIT_THRESH">1.13.17 <code>CONFIG_PM_IDLEEXIT_THRESH</code>: PM IDLE exit threshold</a></li>
-<li><a href="#CONFIG_PM_IDLEENTER_COUNT">1.13.18 <code>CONFIG_PM_IDLEENTER_COUNT</code>: PM IDLE enter count</a></li>
-<li><a href="#CONFIG_PM_STANDBYENTER_THRESH">1.13.19 <code>CONFIG_PM_STANDBYENTER_THRESH</code>: PM STANDBY enter threshold</a></li>
-<li><a href="#CONFIG_PM_STANDBYEXIT_THRESH">1.13.20 <code>CONFIG_PM_STANDBYEXIT_THRESH</code>: PM STANDBY exit threshold</a></li>
-<li><a href="#CONFIG_PM_STANDBYENTER_COUNT">1.13.21 <code>CONFIG_PM_STANDBYENTER_COUNT</code>: PM STANDBY enter count</a></li>
-<li><a href="#CONFIG_PM_SLEEPENTER_THRESH">1.13.22 <code>CONFIG_PM_SLEEPENTER_THRESH</code>: PM SLEEP enter threshold</a></li>
-<li><a href="#CONFIG_PM_SLEEPEXIT_THRESH">1.13.23 <code>CONFIG_PM_SLEEPEXIT_THRESH</code>: PM SLEEP exit threshold</a></li>
-<li><a href="#CONFIG_PM_SLEEPENTER_COUNT">1.13.24 <code>CONFIG_PM_SLEEPENTER_COUNT</code>: PM SLEEP enter count</a></li>
 </ul>
 <li><a name="menu_138_toc"><a href="#menu_138">1.14 Menu: Debug Options</a></a></li>
 <a href="#menu_138_toc" onclick="toggle('toggle_137', this)">Expand</a>
@@ -16663,45 +16640,6 @@ int up_prioritize_irq(int irq, int priority)
   <li><i>Kconfig file</i>: <code>./board/stm32f429i-disco/Kconfig</code>
 <p>
   Number of additional nanoseconds to wait in PM_STANDBY before going to PM_STANDBY mode.</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEP_WAKEUP">1.3.74 <code>CONFIG_PM_SLEEP_WAKEUP</code>: PM_SLEEP wake-up alarm</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>, <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>
-, <a href="#CONFIG_PM"><code>CONFIG_PM</code></a> &amp;&amp; <a href="#CONFIG_RTC_ALARM"><code>CONFIG_RTC_ALARM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./board/stm32f429i-disco/Kconfig</code>
-<p>
-  Wake-up of PM_SLEEP mode after a delay and resume normal operation.</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEP_WAKEUP_SEC">1.3.75 <code>CONFIG_PM_SLEEP_WAKEUP_SEC</code>: PM_SLEEP delay (seconds)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 10
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>, <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>
-, <a href="#CONFIG_PM"><code>CONFIG_PM</code></a> &amp;&amp; <a href="#CONFIG_RTC_ALARM"><code>CONFIG_RTC_ALARM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./board/stm32f429i-disco/Kconfig</code>
-<p>
-  Number of seconds to wait in PM_SLEEP before going to PM_STANDBY mode.</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEP_WAKEUP_NSEC">1.3.76 <code>CONFIG_PM_SLEEP_WAKEUP_NSEC</code>: PM_SLEEP delay (nanoseconds)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 0
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>, <a href="#CONFIG_ARCH_BOARD_STM32F429I_DISCO"><code>CONFIG_ARCH_BOARD_STM32F429I_DISCO</code></a>
-, <a href="#CONFIG_PM"><code>CONFIG_PM</code></a> &amp;&amp; <a href="#CONFIG_RTC_ALARM"><code>CONFIG_RTC_ALARM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./board/stm32f429i-disco/Kconfig</code>
-<p>
-  Number of additional nanoseconds to wait in PM_SLEEP before going to PM_STANDBY mode.</p>
 </ul>
 <h3><a name="CONFIG_STM32F429I_DISCO_ILI9341">1.3.77 <code>CONFIG_STM32F429I_DISCO_ILI9341</code>: LCD driver for ILI9341 Liquid Crystal Display Controller</a></h3>
 <ul>
@@ -33023,24 +32961,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
   <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
 </ul>
-<h3><a name="CONFIG_PM_TEST">1.13.3 <code>CONFIG_PM_TEST</code>: Power Management Functionality Test</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_PM_DEVNAME_LEN">1.13.4 <code>CONFIG_PM_DEVNAME_LEN</code>: Registered device name length</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 32
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-</ul>
 <h3><a name="CONFIG_PM_METRICS">1.13.5 <code>CONFIG_PM_METRICS</code>: Power management (PM) metrics</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
@@ -33049,32 +32969,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   </li>
   <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
   <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  Power management&apos;s metrics for CONFIG_PM_METRICS_DURATION</p>
-</ul>
-<h3><a name="CONFIG_PM_METRICS_DURATION">1.13.6 <code>CONFIG_PM_METRICS_DURATION</code>: History Duration (secs)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 60
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a>, <a href="#CONFIG_PM_METRICS"><code>CONFIG_PM_METRICS</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_PM_SLICEMS">1.13.7 <code>CONFIG_PM_SLICEMS</code>: PM time slice (msec)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 100
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  The power management module collects activity counts in time slices.  At the end of the time slice, the count accumulated during that  interval is applied to an averaging algorithm to determine the  activity level.</p>
-<p>
-  CONFIG_PM_SLICEMS provides the duration of that time slice in  milliseconds.  Default: 100 Milliseconds</p>
-</ul>
 <h3><a name="CONFIG_PM_NDOMAINS">1.13.8 <code>CONFIG_PM_NDOMAINS</code>: Number of PM activity domains</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
@@ -33086,294 +32980,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
 <p>
   Defines the number of &quot;domains&quot; that activity may be monitored on.  For example, you may want to separately manage the power from the  Network domain, shutting down the network when it is not be used,  from the UI domain, shutting down the UI when it is not in use.</p>
 </ul>
-<h3><a name="CONFIG_PM_MEMORY">1.13.9 <code>CONFIG_PM_MEMORY</code>: PM memory (msec)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 2
-  </li>
-  <li><i>Range</i>:
- 1 - 6</li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  The averaging algorithm is simply: Y = (An*X + SUM(Ai*Yi))/SUM(Aj),  where i = 1..n-1 and j= 1..n, n is the length of the &quot;memory&quot;,  Ai is the weight applied to each value, and X is the current  activity.  These weights may be negative and a limited to the  range of int16_t.</p>
-<p>
-  <ul><pre>
-CONFIG_PM_MEMORY provides the memory for the algorithm.  Default: 2
-CONFIG_PM_COEFn provides weight for each sample.  Default: 1
-</pre></ul>
-</p>
-<p>
-  Setting CONFIG_PM_MEMORY=1 disables all smoothing.</p>
-</ul>
-<h3><a name="CONFIG_PM_COEFN">1.13.10 <code>CONFIG_PM_COEFN</code>: PM coefficient</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY.</p>
-</ul>
-<h3><a name="CONFIG_PM_COEF1">1.13.11 <code>CONFIG_PM_COEF1</code>: PM coefficient 1</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY.</p>
-</ul>
-<h3><a name="CONFIG_PM_COEF2">1.13.12 <code>CONFIG_PM_COEF2</code>: PM coefficient 2</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY</p>
-<p>
-  Ignored if CONFIG_PM_MEMORY &lt;= 2</p>
-</ul>
-<h3><a name="CONFIG_PM_COEF3">1.13.13 <code>CONFIG_PM_COEF3</code>: PM coefficient 3</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY</p>
-<p>
-  <ul><pre>
-Ignored if CONFIG_PM_MEMORY &lt;= 3
-</pre></ul>
-</p>
-</ul>
-<h3><a name="CONFIG_PM_COEF4">1.13.14 <code>CONFIG_PM_COEF4</code>: PM coefficient 4</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY</p>
-<p>
-  Ignored if CONFIG_PM_MEMORY &lt;= 4</p>
-</ul>
-<h3><a name="CONFIG_PM_COEF5">1.13.15 <code>CONFIG_PM_COEF5</code>: PM coefficient 5</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  See help associated with CONFIG_PM_MEMORY</p>
-<p>
-  Ignored if CONFIG_PM_MEMORY &lt;= 5</p>
-</ul>
-<h3><a name="CONFIG_PM_IDLEENTER_THRESH">1.13.16 <code>CONFIG_PM_IDLEENTER_THRESH</code>: PM IDLE enter threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &lt;=1: Essentially no activity</p>
-</ul>
-<h3><a name="CONFIG_PM_IDLEEXIT_THRESH">1.13.17 <code>CONFIG_PM_IDLEEXIT_THRESH</code>: PM IDLE exit threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 2
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &gt;=2: Active</p>
-</ul>
-<h3><a name="CONFIG_PM_IDLEENTER_COUNT">1.13.18 <code>CONFIG_PM_IDLEENTER_COUNT</code>: PM IDLE enter count</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 30
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: Thirty IDLE slices to enter IDLE mode from normal</p>
-</ul>
-<h3><a name="CONFIG_PM_STANDBYENTER_THRESH">1.13.19 <code>CONFIG_PM_STANDBYENTER_THRESH</code>: PM STANDBY enter threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &lt;=1: Essentially no activity</p>
-</ul>
-<h3><a name="CONFIG_PM_STANDBYEXIT_THRESH">1.13.20 <code>CONFIG_PM_STANDBYEXIT_THRESH</code>: PM STANDBY exit threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 2
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &gt;=2: Active</p>
-</ul>
-<h3><a name="CONFIG_PM_STANDBYENTER_COUNT">1.13.21 <code>CONFIG_PM_STANDBYENTER_COUNT</code>: PM STANDBY enter count</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 50
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: Fifty IDLE slices to enter STANDBY mode from IDLE</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEPENTER_THRESH">1.13.22 <code>CONFIG_PM_SLEEPENTER_THRESH</code>: PM SLEEP enter threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &lt;=1: Essentially no activity</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEPEXIT_THRESH">1.13.23 <code>CONFIG_PM_SLEEPEXIT_THRESH</code>: PM SLEEP exit threshold</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 2
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: &gt;=2: Active</p>
-</ul>
-<h3><a name="CONFIG_PM_SLEEPENTER_COUNT">1.13.24 <code>CONFIG_PM_SLEEPENTER_COUNT</code>: PM SLEEP enter count</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 70
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PM"><code>CONFIG_PM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./pm/Kconfig</code>
-<p>
-  State changes then occur when the weight activity account crosses  threshold values for certain periods of time (time slice count).</p>
-<p>
-  <ul><pre>
-CONFIG_PM_xxxENTER_THRESH is the threshold value for entering state xxx.
-CONFIG_PM_xxxENTER_COUNT is the count for entering state xxx.
-</pre></ul>
-</p>
-<p>
-  Resuming to normal state, on the other hand, is usually immediate and  controlled by wakeup conditions established by the platform.  The PM</p>
-<p>
-  Default: Fifty IDLE slices to enter SLEEP mode from STANDBY</p>
-</ul>
-
 <h1><a name="menu_138">1.14 Menu: Debug Options</a></h1>
 <ul>
   <li><i>Kconfig file</i>: <code>./Kconfig</code>

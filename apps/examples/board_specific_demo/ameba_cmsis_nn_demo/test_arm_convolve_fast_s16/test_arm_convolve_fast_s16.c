@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 
-#include <arch/chip/cmsis_nn/arm_nnfunctions.h>
+#include <cmsis_nn/arm_nnfunctions.h>
 
 #include "../TestData/int16xint8/config_data.h"
 #include "../TestData/requantize_s64/config_data.h"

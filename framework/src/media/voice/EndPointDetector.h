@@ -21,18 +21,51 @@
 #include <functional>
 
 #include <media/voice/SpeechDetector.h>
+#include "../audio/audio_manager.h"
 
 namespace media {
 namespace voice {
+
+typedef void (*EPDResultListener)(audio_device_process_unit_subtype_e event);
+
+enum EPD_STATE{
+	EPD_STATE_IDLE = 0,
+	EPD_STATE_IN_PROGRESS = 1,
+	EPD_STATE_STOP = 2
+};
 
 class EndPointDetector
 {
 public:
 	virtual bool init(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinit() = 0;
-	virtual bool startEndPointDetect(int timeout) = 0;
-	virtual bool detectEndPoint(short *sample, int numSample) = 0;
+	virtual bool startEndPointDetect(int timeout)
+	{
+		return false;
+	}
+
+	virtual bool startEndPointDetect(void)
+	{
+		return false;
+	}
+	virtual bool stopEndPointDetect(void) = 0;
+	virtual bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size)
+	{
+		return false;
+	}
+	virtual bool detectEndPoint(void)
+	{
+		return false;
+	}
 	virtual bool waitEndPoint(int timeout) = 0;
+	virtual void registerEPDResultListener(EPDResultListener epdResultCallback) = 0;
+	virtual EPD_STATE getEPDState(void)
+	{
+		return mEPDState;
+	}
+
+protected:
+	volatile EPD_STATE mEPDState;
 };
 
 } // namespace voice

@@ -31,7 +31,11 @@ public:
 	HardwareKeywordDetector(int normal_card, int normal_device, int sd_card, int sd_device);
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
-	bool startKeywordDetect(int timeout) override;
+	bool startKeywordDetect(void) override;
+	bool stopKeywordDetect(void) override;
+	void detectKeyword(void) override;
+	bool isKeywordDetectStarted(void) override;
+	void registerKeywordResultCallback(SpeechResultListener speechResultCallback) override;
 
 private:
 	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
@@ -40,6 +44,8 @@ private:
 	/* AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR card, device id */
 	int mSdCard;
 	int mSdDevice;
+	SpeechResultListener mSpeechResultCallback;
+	bool mKeywordDetectStarted;
 };
 
 } // namespace voice

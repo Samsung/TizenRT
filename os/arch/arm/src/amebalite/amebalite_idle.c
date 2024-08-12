@@ -99,14 +99,14 @@
  *   Perform IDLE state power management.
  *
  * Input Parameters:
- *   handler - The handler function that must be called after each board wakeup.
+ *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
  *
  * Returned Value:
  *   None.
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
+void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 {
 	irqstate_t flags;
 	flags = irqsave();
@@ -114,7 +114,7 @@ void up_pm_board_sleep(void (*handler)(clock_t, pm_wakeup_reason_code_t))
 	irqrestore(flags);
 }
 #else
-#define up_pm_board_sleep(handler)
+#define up_pm_board_sleep(wakeuphandler)
 #endif
 /****************************************************************************
  * Name: up_idle

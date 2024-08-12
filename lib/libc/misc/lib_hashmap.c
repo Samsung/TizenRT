@@ -106,6 +106,9 @@ struct hashmap_s *hashmap_create(int startsize)
 	}
 
 	hm->table = (h_entry_t *)lib_calloc(sizeof(h_entry_t), startsize);
+	if (!hm->table) {
+		DEBUG_SET_CALLER_ADDR(hm->table);
+	}
 	hm->size = startsize;
 	hm->count = 0;
 

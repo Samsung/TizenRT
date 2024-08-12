@@ -200,7 +200,7 @@ static pthread_addr_t barrier_thread(pthread_addr_t parameter)
 	return NULL;
 }
 
-static void set_affinity()
+static void set_affinity(void)
 {
 	cpu_set_t cpu_set;
 
@@ -218,9 +218,13 @@ static void set_affinity()
 static int normal_task(int argc, char *argv[])
 {	
 	int threadno  = getpid() - g_pid_start;
-	int ret;
   
+#ifdef CONFIG_AMP
+	/* If AMP is enabled, then we will set the affinity of each thread / task
+	 * to run on a different cpu.
+	 */
 	set_affinity();
+#endif
 
 	printf("Thread[%d]: Started\n",  threadno);
 	show_cpu("Thread", threadno);
@@ -230,7 +234,7 @@ static int normal_task(int argc, char *argv[])
 		hog_time("Thread", threadno);
 		fflush(stdout);
 	}
-	return NULL;
+	return 0;
 }
 
 /****************************************************************************
@@ -296,7 +300,25 @@ int smp_main_prthread(int argc, FAR char *argv[])
 	}
 
 
+#ifdef CONFIG_AMP
+	/* If AMP is enabled, then we will set the affinity of each thread / task
+	 * to run on a different cpu.
+	 */
+	printf("Running SMP test with AMP configuration\n");
+	uint32_t core_id = 0;
+#endif
+
 	for (i = 0; i < CONFIG_TESTING_SMP_NBARRIER_THREADS; i++) {
+
+#ifdef CONFIG_AMP
+		CPU_ZERO(&attr.affinity);
+		CPU_SET(core_id, &attr.affinity);
+		core_id++;
+		if (core_id == CONFIG_SMP_NCPUS) {
+			core_id = 0;
+		}
+#endif
+
 		ret = pthread_create(&threadid[i], &attr, barrier_thread, 
 				(pthread_addr_t)((uintptr_t)i + 1));
 		if (ret != 0) {
@@ -392,7 +414,6 @@ int smp_main_task(int argc, FAR char *argv[])
 	  	printf("Deleted task %d\n", i);
 	}
 	  
-errout:
 	fflush(stdout);
 	show_cpu_conditional("  Main", 0);
 	return errcode;
@@ -405,4 +426,5 @@ int smp_main(int argc, FAR char *argv[])
 #else
 	smp_main_task(argc, argv);
 #endif
+	return 0;
 }

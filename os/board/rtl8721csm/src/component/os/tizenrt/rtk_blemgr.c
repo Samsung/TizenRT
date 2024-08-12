@@ -144,6 +144,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
 	trble_netmgr_charact_indicate,
+	NULL,
 	trble_netmgr_attr_set_data,
 	trble_netmgr_attr_get_data,
 	trble_netmgr_attr_reject,

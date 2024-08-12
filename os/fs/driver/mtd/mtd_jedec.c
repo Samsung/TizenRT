@@ -73,8 +73,8 @@
  * Pre-processor Definitions
  ************************************************************************************/
 
-#ifndef CONFIG_JEDEC_SPI_MODE
-#define CONFIG_JEDEC_SPI_MODE	SPIDEV_MODE0
+#ifndef CONFIG_JEDEC_SPIMODE
+#define CONFIG_JEDEC_SPIMODE	SPIDEV_MODE0
 #endif
 
 #ifndef CONFIG_JEDEC_SPI_FREQUENCY
@@ -82,20 +82,26 @@
 #endif
 
 /* Instructions */
-/*      Command        Value	   N Description             Addr Dummy Data   */
-#define JEDEC_WREN      0x06	/* 1 Write Enable              0   0     0     */
-#define JEDEC_WRDI      0x04	/* 1 Write Disable             0   0     0     */
-#define JEDEC_RDID      0x9f	/* 1 Read Identification       0   0     1-3   */
-#define JEDEC_RDSR      0x05	/* 1 Read Status Register      0   0     >=1   */
-#define JEDEC_WRSR      0x01	/* 1 Write Status Register     0   0     1     */
-#define JEDEC_READ      0x03	/* 1 Read Data Bytes           3   0     >=1   */
-#define JEDEC_FAST_READ 0x0b	/* 1 Higher speed read         3   1     >=1   */
-#define JEDEC_PP        0x02	/* 1 Page Program              3   0     1-256 */
-#define JEDEC_SE        0xd8	/* 1 Sector Erase              3   0     0     */
-#define JEDEC_BE        0xc7	/* 1 Bulk Erase                0   0     0     */
-#define JEDEC_DP        0xb9	/* 2 Deep power down           0   0     0     */
-#define JEDEC_RES       0xab	/* 2 Read Electronic Signature 0   3     >=1   */
-#define JEDEC_SSE       0x20	/* 3 Sub-Sector Erase          0   0     0     */
+/*      Command             Value	   N Description             Addr Dummy Data   */
+#define JEDEC_WREN           0x06	/* 1 Write Enable              0   0     0     */
+#define JEDEC_WRDI           0x04	/* 1 Write Disable             0   0     0     */
+#define JEDEC_RDID           0x9f	/* 1 Read Identification       0   0     1-3   */
+#define JEDEC_RDSR           0x05	/* 1 Read Status Register      0   0     >=1   */
+#define JEDEC_WRSR           0x01	/* 1 Write Status Register     0   0     1     */
+#define JEDEC_READ           0x03	/* 1 Read Data Bytes           3   0     >=1   */
+#define JEDEC_READ4BYTE      0x13	/* 1 Read Data Bytes           4   0     >=1   */
+#define JEDEC_FAST_READ      0x0b	/* 1 Higher speed read         3   1     >=1   */
+#define JEDEC_FAST_READ4BYTE 0x0C	/* 1 Higher speed read         4   1     >=1   */
+#define JEDEC_PP             0x02	/* 1 Page Program              3   0     1-256 */
+#define JEDEC_PP4BYTE        0x12	/* 1 Page Program              4   0     1-256 */
+#define JEDEC_SE             0xd8	/* 1 Sector Erase              3   0     0     */
+#define JEDEC_SE4BYTE        0xdc	/* 1 Sector Erase              4   0     0     */
+#define JEDEC_BE             0xc7	/* 1 Bulk Erase                0   0     0     */
+#define JEDEC_DP             0xb9	/* 2 Deep power down           0   0     0     */
+#define JEDEC_RES            0xab	/* 2 Read Electronic Signature 0   3     >=1   */
+#define JEDEC_SSE            0x20	/* 3 Sub-Sector Erase          3   0     0     */
+#define JEDEC_SSE4BYTE       0x21   /* 3 Sub-Sector Erase          4   0     0     */
+#define JEDEC_ADDR4BYTE      0xb7   /* 3 4-byte Address mode       0   0     0     */
 
 /* Status register bit definitions */
 #define JEDEC_SR_WIP            (1 << 0)	/* Bit 0: Write in progress bit */
@@ -138,10 +144,14 @@ typedef struct jedec_geometry_info_s jedec_geometry_t;
 /* Update this list for new spi based flash */
 jedec_geometry_t g_jedec_device_info_list[] = {
 	{0xA1, 0x28, 0x16, "Fudan", "4MB", 16, 64, 8, 16384, 12},
+	{0xA1, 0x40, 0x19, "Fudan", "32MB", 16, 512, 8, 131072, 12},
 	{0xEF, 0x40, 0x16, "Winbond", "4MB", 16, 64, 8, 16384, 12},
 	{0xEF, 0x40, 0x17, "Winbond", "8MB", 16, 128, 8, 32768, 12},
+	{0xEF, 0x40, 0x19, "Winbond", "32MB", 16, 512, 8, 131072, 12},
+	{0xEF, 0x40, 0x20, "Winbond", "64MB", 16, 1024, 8, 262144, 12},
 	{0x9D, 0x60, 0x16, "ISSI", "4MB", 16, 64, 8, 16384, 12},
 	{0x20, 0x40, 0x16, "XMC", "4MB", 16, 64, 8, 16384, 12},
+	{0x0b, 0x40, 0x19, "XTX", "32MB", 16, 512, 8, 131072, 12},
 };
 
 /* This type represents the state of the MTD device.  The struct mtd_dev_s
@@ -153,6 +163,7 @@ struct jedec_dev_s {
 	struct mtd_dev_s mtd;		/* MTD interface */
 	FAR struct spi_dev_s *dev;	/* Saved SPI interface instance */
 	jedec_geometry_t geo;
+	uint8_t addr_len;            /* Address length(3 or 4bytes) */
 };
 
 
@@ -242,7 +253,7 @@ static void jedec_lock(FAR struct spi_dev_s *dev)
 	 * state.
 	 */
 
-	SPI_SETMODE(dev, CONFIG_JEDEC_SPI_MODE);
+	SPI_SETMODE(dev, CONFIG_JEDEC_SPIMODE);
 	SPI_SETBITS(dev, 8);
 	(void)SPI_SETFREQUENCY(dev, CONFIG_JEDEC_SPI_FREQUENCY);
 }
@@ -271,6 +282,8 @@ static inline int jedec_readid(struct jedec_dev_s *priv)
 	/* Lock the SPI bus, configure the bus, and select this FLASH part. */
 
 	jedec_lock(priv->dev);
+	jedec_waitwritecomplete(priv);
+
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
 
 	/* Send the "Read ID (RDID)" command and read the first three ID bytes */
@@ -291,9 +304,70 @@ static inline int jedec_readid(struct jedec_dev_s *priv)
 		fdbg("can't find such kind of driver\n");
 		return -ENODEV;
 	}
+	
+	if (capacity >= 0x19) {
+		priv->addr_len = 4;
+	}
 
 	return OK;
 }
+
+/************************************************************************************
+ * Name: jedec_unprotect
+ ************************************************************************************/
+
+static void jedec_unprotect(FAR struct jedec_dev_s *priv)
+{
+	/* Lock and configure the SPI bus */
+
+	jedec_lock(priv->dev);
+
+	/* Wait for any preceding write or erase operation to complete. */
+
+	(void)jedec_waitwritecomplete(priv);
+
+	/* Send "Write enable (WREN)" */
+
+	jedec_writeenable(priv);
+
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
+
+	/* Send "Write enable status (EWSR)" */
+
+	SPI_SEND(priv->dev, JEDEC_WRSR);
+
+	/* Following by the new status value */
+
+	SPI_SEND(priv->dev, 0);
+	SPI_SEND(priv->dev, 0);
+
+	/* Deselect the FLASH and unlock the bus */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+	jedec_unlock(priv->dev);
+}
+
+/************************************************************************************
+ * Name: jedec_set_4byte_addr_mode
+ ************************************************************************************/
+
+static void jedec_set_4byte_addr_mode(FAR struct jedec_dev_s *priv)
+{
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
+
+	/* Send "set 4byte address (JEDEC_ADDR4BYTE)" command */
+
+	(void)SPI_SEND(priv->dev, JEDEC_ADDR4BYTE);
+
+	/* Deselect the FLASH */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+}
+
 
 /************************************************************************************
  * Name: jedec_waitwritecomplete
@@ -329,7 +403,7 @@ static void jedec_waitwritecomplete(struct jedec_dev_s *priv)
 
 		if ((status & JEDEC_SR_WIP) != 0) {
 			jedec_unlock(priv->dev);
-			usleep(1000);
+//			usleep(1000);
 			jedec_lock(priv->dev);
 		}
 	} while ((status & JEDEC_SR_WIP) != 0);
@@ -355,6 +429,25 @@ static void jedec_writeenable(struct jedec_dev_s *priv)
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
 	fvdbg("Enabled\n");
+}
+
+/************************************************************************************
+ * Name:  w25_wrdi
+ ************************************************************************************/
+
+static inline void jedec_wrdi(struct jedec_dev_s *priv)
+{
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
+
+	/* Send "Write Disable (WRDI)" command */
+
+	(void)SPI_SEND(priv->dev, JEDEC_WRDI);
+
+	/* Deselect the FLASH */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
 }
 
 /************************************************************************************
@@ -399,7 +492,9 @@ static void jedec_sectorerase(struct jedec_dev_s *priv, off_t sector, uint8_t ty
 	 * parts, the sector number is completely contained in the first byte
 	 * and the values used in the following two bytes don't really matter.
 	 */
-
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	}
 	(void)SPI_SEND(priv->dev, (offset >> 16) & 0xff);
 	(void)SPI_SEND(priv->dev, (offset >> 8) & 0xff);
 	(void)SPI_SEND(priv->dev, offset & 0xff);
@@ -472,8 +567,12 @@ static inline void jedec_pagewrite(struct jedec_dev_s *priv, FAR const uint8_t *
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
 
 	/* Send "Page Program (PP)" command */
-
-	(void)SPI_SEND(priv->dev, JEDEC_PP);
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_PP4BYTE);		
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_PP);
+	}
 
 	/* Send the page offset high byte first. */
 
@@ -488,6 +587,8 @@ static inline void jedec_pagewrite(struct jedec_dev_s *priv, FAR const uint8_t *
 	/* Deselect the FLASH: Chip Select high */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+
+	jedec_wrdi(priv);
 	fvdbg("Written\n");
 }
 
@@ -518,7 +619,12 @@ static inline void jedec_bytewrite(struct jedec_dev_s *priv, FAR const uint8_t *
 
 	/* Send "Page Program (PP)" command */
 
-	(void)SPI_SEND(priv->dev, JEDEC_PP);
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_PP4BYTE);		
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_PP);
+	}
 
 	/* Send the page offset high byte first. */
 
@@ -572,14 +678,31 @@ static int jedec_is_erased(FAR struct jedec_dev_s *priv, off_t block)
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
 
 	/* Send "Read from Memory" instruction */
-
-	(void)SPI_SEND(priv->dev, JEDEC_READ);
-
+#ifdef CONFIG_JEDEC_SLOWREAD
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_READ4BYTE);		
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_READ);
+	}
+#else
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_FAST_READ4BYTE); 	
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_FAST_READ);
+	}
+#endif
 	/* Send the page offset high byte first. */
 
 	(void)SPI_SEND(priv->dev, (offset >> 16) & 0xff);
 	(void)SPI_SEND(priv->dev, (offset >> 8) & 0xff);
 	(void)SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Send a dummy byte */
+#ifndef CONFIG_JEDEC_SLOWREAD
+		(void)SPI_SEND(priv->dev, JEDEC_DUMMY);
+#endif
 
 	/* Then read all of the requested bytes */
 	
@@ -632,18 +755,22 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 			/* If we are on a sector boundary and have at least a full sector
 			 * of blocks left to erase, then we can do a full sector erase.
 			 */
-
 			if (startblock == sectorboundry && blocksleft >= blkper) {
-				/* Do a full sector erase */
-
-				jedec_sectorerase(priv, startblock, JEDEC_SE);
+				if (priv->addr_len == 4) {
+					jedec_sectorerase(priv, startblock, JEDEC_SE4BYTE);
+				} else {
+					jedec_sectorerase(priv, startblock, JEDEC_SE);
+				}
 				startblock += blkper;
 				blocksleft -= blkper;
 				continue;
 			} else {
 				/* Just do a sub-sector erase */
-
-				jedec_sectorerase(priv, startblock, JEDEC_SSE);
+				if (priv->addr_len == 4) {
+					jedec_sectorerase(priv, startblock, JEDEC_SSE4BYTE);
+				} else {
+					jedec_sectorerase(priv, startblock, JEDEC_SSE);
+				}
 				
 				/* TODO we verify erased state only for sub-sector erase for now, let's think about more good idea */
 				ret = jedec_is_erased(priv, startblock);
@@ -739,19 +866,38 @@ static ssize_t jedec_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes
 
 	jedec_waitwritecomplete(priv);
 
+	jedec_wrdi(priv);
+
 	/* Select this FLASH part */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
 
 	/* Send "Read from Memory" instruction */
-
-	(void)SPI_SEND(priv->dev, JEDEC_READ);
+#ifdef CONFIG_JEDEC_SLOWREAD
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_READ4BYTE); 	
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_READ);
+	}
+#else
+	if (priv->addr_len == 4) {
+		(void)SPI_SEND(priv->dev, JEDEC_FAST_READ4BYTE);	
+		(void)SPI_SEND(priv->dev, (offset >> 24) & 0xff);
+	} else {
+		(void)SPI_SEND(priv->dev, JEDEC_FAST_READ);
+	}
+#endif
 
 	/* Send the page offset high byte first. */
-
 	(void)SPI_SEND(priv->dev, (offset >> 16) & 0xff);
 	(void)SPI_SEND(priv->dev, (offset >> 8) & 0xff);
 	(void)SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Send a dummy byte */
+#ifndef CONFIG_JEDEC_SLOWREAD
+	(void)SPI_SEND(priv->dev, JEDEC_DUMMY);
+#endif
 
 	/* Then read all of the requested bytes */
 
@@ -864,7 +1010,6 @@ static int jedec_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 				geo->erasesize = (1 << priv->geo.sectorshift);
 				geo->neraseblocks = priv->geo.nsectors;
 			}
-
 			ret = OK;
 
 			fvdbg("blocksize: %d erasesize: %d neraseblocks: %d\n", geo->blocksize, geo->erasesize, geo->neraseblocks);
@@ -874,7 +1019,6 @@ static int jedec_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 
 	case MTDIOC_BULKERASE: {
 		/* Erase the entire device */
-
 		jedec_lock(priv->dev);
 		ret = jedec_bulkerase(priv);
 		jedec_waitwritecomplete(priv);
@@ -935,6 +1079,8 @@ FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev)
 #endif
 		priv->mtd.ioctl = jedec_ioctl;
 		priv->dev = dev;
+		/* Under 23MB of flash, we will use 24bit address mode */
+		priv->addr_len = 3;
 
 		/* Deselect the FLASH */
 
@@ -945,10 +1091,14 @@ FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev)
 		ret = jedec_readid(priv);
 		if (ret != OK) {
 			/* Unrecognized! Discard all of that work we just did and return NULL */
-
 			fdbg("Unrecognized\n");
 			kmm_free(priv);
-			priv = NULL;
+			return NULL;
+		}
+		jedec_unprotect(priv);
+		/* For 32MBit of flash, we will use 4byte address mode */
+		if (priv->addr_len == 4) {
+			jedec_set_4byte_addr_mode(priv);
 		}
 	}
 

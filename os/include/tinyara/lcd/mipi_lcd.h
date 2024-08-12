@@ -35,7 +35,7 @@
 
 #if defined(CONFIG_LCD_ST7785)
 #define INIT_CMD_SIZE 28
-#elif defined(CONFIG_LCD_ST7701)
+#elif defined(CONFIG_LCD_ST7701) || defined(CONFIG_LCD_ST7701SN)
 #define INIT_CMD_SIZE 16
 #else
 #define INIT_CMD_SIZE 28

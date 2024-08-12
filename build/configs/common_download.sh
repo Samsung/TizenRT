@@ -31,6 +31,19 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 SMARTFS_BIN_PATH=${BIN_PATH}/${CONFIG_ARCH_BOARD}_smartfs.bin
 
+for device in $(ls /dev/ttyACM* | sort -V); do
+	if [ -c "$device" ]; then
+		DEFAULT_PORT=$device
+	fi
+done
+
+if [ -z ${DEFAULT_PORT} ]; then
+	for device in $(ls /dev/ttyUSB* | sort -V); do
+		if [ -c "$device" ]; then
+			DEFAULT_PORT=$device
+		fi
+	done
+fi
 BOARD_CONFIG=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
 BOARD_SPECIFIC_SCRIPT=${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/${CONFIG_ARCH_BOARD}_download.sh
 
@@ -58,7 +71,7 @@ WARNING="\n Port $PORT is selected\n\n
 	############################################\n"
 
 
-TTYDEV="/dev/${PORT}"
+TTYDEV="${PORT}"
 
 ##Utility function for sanity check##
 function sanity_check()
@@ -113,7 +126,10 @@ function get_executable_name()
 		loadparam) echo "$1";;
 		common) echo "${COMMON_BIN_NAME}";;
 		zoneinfo) echo "zoneinfo.img";;
+		ext_data) echo "${EXTERNAL}.bin";; 
 		resource) echo "${RESOURCE_BIN_NAME}";;
+		userfs) echo "${CONFIG_ARCH_BOARD}_smartfs.bin";;
+		sssfw|wlanfw) echo "$1.bin";;
 		rom) echo "romfs.img";;
 		bootparam)
 			if [[ ! -n "${BOOTPARAM}" ]];then
@@ -121,8 +137,6 @@ function get_executable_name()
 			else
 				echo "${BOOTPARAM}.bin"
 			fi;;
-		userfs) echo "${CONFIG_ARCH_BOARD}_smartfs.bin";;
-		sssfw|wlanfw) echo "$1.bin";;
 		*) echo "No Binary Match"
 		exit 1
 	esac
@@ -191,7 +205,10 @@ function get_configured_partitions()
 	else
 		configured_parts=${CONFIG_FLASH_PART_NAME}
 	fi
-
+	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
+		configured_parts+=${CONFIG_SECOND_FLASH_PART_NAME}
+	fi
+	
 	echo $configured_parts
 }
 
@@ -206,7 +223,9 @@ function get_partition_sizes()
 	else
 		sizes_str=${CONFIG_FLASH_PART_SIZE}
 	fi
-
+	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
+		sizes_str+=${CONFIG_SECOND_FLASH_PART_SIZE}
+	fi
 	echo $sizes_str
 }
 
@@ -252,7 +271,8 @@ download_all()
 	found_app1=false
 	found_app2=false
 	found_common=false
-
+	found_resource=false
+	
 	for partidx in ${!parts[@]}; do
 
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
@@ -296,17 +316,22 @@ download_all()
 		if [[ "${parts[$partidx]}" == "config" ]];then
 			continue
 		fi
-
+		if [[ "${parts[$partidx]}" == "resource" ]];then
+			if [[ $found_resource == true ]];then
+				continue
+			fi
+			found_resource=true
+		fi
 		exe_name=$(get_executable_name ${parts[$partidx]})
 		if [[ "No Binary Match" = "${exe_name}" ]];then
 			continue
 		fi
-
-		echo ""
-		echo "=========================="
-		echo "Downloading ${parts[$partidx]} binary"
-		echo "=========================="
-
+		if [[ $TTYDEV == *"USB"* ]]; then
+			echo ""
+			echo "=========================="
+			echo "Downloading ${parts[$partidx]} binary"
+			echo "=========================="
+		fi
 		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]}
 	done
 	echo ""
