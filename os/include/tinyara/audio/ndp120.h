@@ -41,10 +41,6 @@
 #define CONFIG_NDP120_MSG_PRIO          1
 #endif
 
-#ifndef CONFIG_NDP120_BUFFER_SIZE
-#define CONFIG_NDP120_BUFFER_SIZE       (1*768)
-#endif
-
 #ifndef CONFIG_NDP120_NUM_BUFFERS
 #define CONFIG_NDP120_NUM_BUFFERS       4
 #endif
