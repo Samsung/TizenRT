@@ -467,8 +467,8 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 	}
 
 	sq_entry_t *tmp;
-	apb->nbytes = CONFIG_NDP120_BUFFER_SIZE;
-	ndp120_extract_audio(priv, apb->samp, CONFIG_NDP120_BUFFER_SIZE);
+
+	int ret = ndp120_extract_audio(priv, apb);
 	
 	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
 		if (tmp == (sq_entry_t *)apb) {
@@ -477,7 +477,7 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 			break;
 		}
 	}
-	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, 0);
+	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, ret);
 	
 	return 0;
 }
@@ -539,7 +539,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 
-		bufinfo->buffer_size = CONFIG_NDP120_BUFFER_SIZE;
+		bufinfo->buffer_size = priv->sample_size;
 		bufinfo->nbuffers = CONFIG_NDP120_NUM_BUFFERS;
 		
 		audvdbg("buffer_size : %d nbuffers : %d\n",

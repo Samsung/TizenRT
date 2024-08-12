@@ -72,6 +72,8 @@ struct ndp120_dev_s {
 	sem_t mailbox_signal; /* this sem will signal from IRQ [to mbwait] upon mailbox msg */
 	bool ndp_interrupts_enabled; /* used by mbwait to determine whether wait for sem or poll */
 	char *labels_per_network[MAX_NNETWORKS][MAX_LABELS];
+	uint32_t sample_size;
+	uint32_t sample_size_orig_annot;
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */
