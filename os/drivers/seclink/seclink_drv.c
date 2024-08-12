@@ -159,7 +159,7 @@ int seclink_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  ****************************************************************************/
 int se_register(const char *path, struct sec_lowerhalf_s *lower)
 {
-	vdbg("Registering %s\n", path);
+	dbg("Registering %s\n", path);
 
 	if (!lower) {
 		return -1;
