@@ -143,7 +143,7 @@ function TRAP_MENU()
 				return
 			fi
 
-			echo "Enter the crash log file name: (ex: testlogs)"
+			echo "Enter the crash log file name relative to os folder: (ex: ../tools/trap/testlogs)"
 			read LOG_FILE
 			if [ ! -f ${LOG_FILE} ]; then
 				echo "$LOG_FILE: No such file, try again"
@@ -304,15 +304,15 @@ function TOOLCHAIN()
 
 function TRAP_RUN()
 {
-	TRAPCMD="ramdumpParser.py -t /root/tizenrt/os/$2"
+	TRAPCMD="trap.py -t /root/tizenrt/os/$2"
 
 	if [ ! -z "$3" ]; then
 		# Append the binary path
-		TRAPCMD+=" -b ../../os/"$3
+		TRAPCMD+=" -b ../../../os/"$3
 	fi
 	if [ ! -z "$4" ]; then
 		# Append the config path
-		TRAPCMD+=" -c ../../os/"$4
+		TRAPCMD+=" -c ../../../os/"$4
 	fi
 
 	OUTPUTFILE+="trap"
@@ -328,7 +328,7 @@ function TRAP_RUN()
 	echo "Executing: $TRAPCMD" | tee $OUTPUTFILE
 	echo "" >> $OUTPUTFILE
 	# execute TRAP script
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} python3.7 $TRAPCMD | tee -a $OUTPUTFILE
+	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -it -w /root/tizenrt/tools/trap/cli --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} python3.7 $TRAPCMD | tee -a $OUTPUTFILE
 
 	echo ">> Output is stored in $OUTPUTFILE"
 }
