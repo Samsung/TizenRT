@@ -664,5 +664,10 @@ AIFW_RESULT AIModel::clearRawData(uint16_t offset, uint16_t count)
 	}
 }
 
+AIFW_RESULT AIModel::resetInferenceState(void)
+{
+	return mAIEngine->resetInferenceState();
+}
+
 } /* namespace aifw */
 

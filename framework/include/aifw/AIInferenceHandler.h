@@ -87,6 +87,12 @@ public:
 	 */
 	virtual AIFW_RESULT clearData(uint16_t offset, uint16_t count);	
 
+	/**
+	 * @brief: Reset the model state.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	virtual AIFW_RESULT resetInferenceState(void);
+
 protected:
 	/**
 	 * @brief Performs operations on post processed(or invoke output) results of attached models in the model set.

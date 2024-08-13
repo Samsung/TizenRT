@@ -90,6 +90,16 @@ TFLM::~TFLM()
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 }
 
+AIFW_RESULT TFLM::resetInferenceState(void)
+{
+	TfLiteStatus res = this->mInterpreter->Reset();
+	if (res != kTfLiteOk) {
+		AIFW_LOGE("Failed to reset model state. ret: %d", res);
+		return AIFW_ERROR;
+	}
+	return AIFW_OK;
+}
+
 #ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 AIFW_RESULT TFLM::allocateMemory(void)
 {
