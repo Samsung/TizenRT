@@ -165,6 +165,7 @@ private:
 #else
 	float **mInvokeInput;
 	float **mInvokeOutput;
+	float **mInvokeResult;
 	uint16_t *mInputSizeList;
 	uint16_t *mOutputSizeList;
 	uint16_t mInputSetCount;
