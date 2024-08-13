@@ -86,6 +86,7 @@ static int cpuload_snapintval;
 static pid_t *cpuload_snaparr;
 static int cpuload_snaparr_size;
 struct cpuload_pidhash_s cpuload_pidhash[CONFIG_MAX_TASKS + 1];
+static unsigned int cpu;
 
 /* The last index is for dead threads */
 #define CPULOAD_INACTIVE_IDX CONFIG_MAX_TASKS
@@ -116,18 +117,30 @@ static void cpuload_stop(void)
  * So for zero load case, we check if avg_load is 0.0 or not.
  * Note: we compare with "-0.0" because if avg_load is 90.0, then
  * also we will get true if we compare with 0.0 */
+
 static bool has_cpuload(char *load_info)
 {
 #ifdef CONFIG_SMP
 	int len = strlen(load_info);
-	if (strcmp(&load_info[len - 4], "-0.0") == 0) {
-#else
-	if (strcmp(load_info, "0.0") == 0) {
-#endif
-		return false;
-	}
 
-	return true;
+	if (cpu == CONFIG_SMP_NCPUS) {
+		/* This is the case when user has not specified cpu idx. 
+		 * In this case we check the avg value. If avg is zero, then
+		 * all cpu load values will be zero and hence we return false.
+		 */
+		return (strncmp(&load_info[len - 4], "-0.0", 4) != 0);
+	} else if (cpu == 0) {
+		return (strncmp(load_info, "0.0", 3) != 0);
+	} else {
+		char *str = load_info;
+		for (int i = 1; i < CONFIG_SMP_NCPUS && i <= cpu; i++) {
+			str = strchr(str, '-') + 1;
+		}
+		return (strncmp(str, "0.0", 3) != 0);
+	}
+#else 
+	return (strncmp(load_info, "0.0", 3) != 0);
+#endif
 }
 
 static void cpuload_print_pid_value(char *buf, void *arg)
@@ -151,7 +164,7 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 #endif
 		return;
 	}
-	
+
 	printf("%3s | %3s |", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY]);
 	if (cpuload_mode == CPULOAD_SNAPSHOT) {
 		pid = atoi(stat_info[PROC_STAT_PID]);
@@ -169,9 +182,11 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 #ifdef CONFIG_SMP
 			char * avgload[CONFIG_SMP_NCPUS + 1];
 			avgload[0] = stat_info[i];
-			for (int j = 0; j < CONFIG_SMP_NCPUS + 1; j++) {
+			for (int j = 0; j < CONFIG_SMP_NCPUS; j++) {
 				avgload[j] = strtok_r(avgload[j], "-", &avgload[j + 1]);
-				printf(" %5s |", avgload[j]);
+				if (cpu >= CONFIG_SMP_NCPUS || cpu == j) {
+					printf(" %5s |", avgload[j]);
+				}
 			}
 #else
 			printf(" %5s |", stat_info[i]);
@@ -181,9 +196,11 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 #ifdef CONFIG_SMP
 		char * avgload[CONFIG_SMP_NCPUS + 1];
 		avgload[0] = stat_info[PROC_STAT_CPULOAD];
-		for (i = 0; i < CONFIG_SMP_NCPUS + 1; i++) {
+		for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
 			avgload[i] = strtok_r(avgload[i], "-", &avgload[i + 1]);
-			printf(" %5s |", avgload[i]);
+			if (cpu >= CONFIG_SMP_NCPUS || cpu == i) {
+				printf(" %5s |", avgload[i]);
+			}
 		}
 #else
 		printf(" %5s |", stat_info[PROC_STAT_CPULOAD]);
@@ -223,19 +240,17 @@ static void cpuload_print_normal(void)
 	printf("PID | Pri |");
 
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
-	for (int i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++) {
+	for (int i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++)
 #endif
+	{
 #ifdef CONFIG_SMP
 		for (int j = 0; j < CONFIG_SMP_NCPUS; j++) {
-			printf("  CPU%d |", j);
+			if (cpu >= CONFIG_SMP_NCPUS || cpu == j) {
+				printf("  CPU%d |", j);
+			}
 		}
 #endif
-#ifndef CONFIG_SCHED_MULTI_CPULOAD
-		printf("  Avg  |");
-#else
-		printf("  Avg%d |", i - PROC_STAT_CPULOAD_SHORT + 1);
 	}
-#endif
 
 	printf("\n--------------------------------------------------\n");
 
@@ -411,7 +426,7 @@ errout_with_free:
 
 static void cpuload_show_usage(void)
 {
-	printf("\nUsage: cpuload [-s <snapshot interval(s)>] [-i <print interval(s)>] [-n <iterations>]\n");
+	printf("\nUsage: cpuload [-s <snapshot interval(s)>] [-i <print interval(s)>] [-n <iterations>] [-c <cpu idx>]\n");
 	printf("    Or, cpuload stop\n");
 	printf("Start/Stop CPU load monitor daemon\n");
 }
@@ -445,6 +460,7 @@ int utils_cpuload(int argc, char **args)
 	cpuload_mode = CPULOAD_NORMAL;
 	cpuload_interval = CONFIG_CPULOADMONITOR_INTERVAL;
 	cpuload_count = CPULOADMON_RUNNING_FOREVER;
+	cpu = CONFIG_SMP_NCPUS;
 
 	if (argc > 1) {
 		/*
@@ -456,13 +472,13 @@ int utils_cpuload(int argc, char **args)
 		 *  TASH >> cpuload -s 60 -i 10
 		 *  CPU monitor starts with snapshot mode and shows measured values every 10 seconds.
 		 */
-		while ((opt = getopt(argc, args, "s:i:n:")) != ERROR) {
+		while ((opt = getopt(argc, args, "s:i:n:c:")) != ERROR) {
 			switch (opt) {
 			case 's':
 				/* set snapshot interval */
 				cpuload_snapintval = atoi(optarg);
 				if (cpuload_snapintval <= 0 || cpuload_snapintval == LONG_MAX) {
-					printf("Invalid input");
+					printf("Invalid input for -s option");
 					goto show_usage;
 				}
 				cpuload_mode = CPULOAD_SNAPSHOT;
@@ -471,7 +487,7 @@ int utils_cpuload(int argc, char **args)
 				/* set interval for showing measured data */
 				value = atoi(optarg);
 				if (value <= 0 || value == LONG_MAX) {
-					printf("Invalid input");
+					printf("Invalid input for -i option");
 					goto show_usage;
 				}
 				cpuload_interval = value;
@@ -480,10 +496,19 @@ int utils_cpuload(int argc, char **args)
 				/* set count of iterations */
 				value = atoi(optarg);
 				if (value <= 0 || value == LONG_MAX) {
-					printf("Invalid input");
+					printf("Invalid input for -n option");
 					goto show_usage;
 				}
 				cpuload_count = value;
+				break;
+			case 'c':
+				/* set count of iterations */
+				value = atoi(optarg);
+				if (value < 0 || value >= CONFIG_SMP_NCPUS) {
+					printf("Invalid input for -c option");
+					goto show_usage;
+				}
+				cpu = value;
 				break;
 			default:
 				printf("Invalid input");
