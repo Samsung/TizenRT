@@ -1,19 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    ameba_rom_patch.c
-  * @author
-  * @version V1.0.0
-  * @date    2022-05-31
-  * @brief   This file contains all the patch functions for rom code.
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _AMEBA_ROM_PATCH_H_
 #define _AMEBA_ROM_PATCH_H_
@@ -36,13 +25,14 @@
 
 // add your function statements here
 _LONG_CALL_ void LOGUART_PutChar_RAM(u8 c);
-_LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);
 _LONG_CALL_ void Pinmux_Config(u8 PinName, u32 PinFunc);
+_LONG_CALL_ void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct);
+_LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef *GPIO_InitStruct);
 _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 _LONG_CALL_ u32 SYSCFG_RLVersion(void);
 _LONG_CALL_ u32 SYSCFG_GetRLNum(void);
-_LONG_CALL_ VOID VectorTableAdd(VOID);
+_LONG_CALL_ void VectorTableAdd(void);
 
 #ifdef ARM_CORE_CM4
 #include "amebahp_secure_boot.h"
@@ -82,5 +72,3 @@ int rtl_crypto_hmac_sha2_final_A(OUT u8 *pDigest, hw_sha_context *ctx);
   */
 
 #endif /* _AMEBA_ROM_PATCH_H_ */
-/******************* (C) COPYRIGHT 2022 Realtek Semiconductor *****END OF FILE****/
-
