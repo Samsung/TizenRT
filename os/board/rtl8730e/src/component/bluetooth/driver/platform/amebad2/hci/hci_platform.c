@@ -17,7 +17,11 @@
 #include "spi_api.h"
 
 /* Corresponds to LD external flash starting address */
-#define EXT_FLASH_BASE_ADDRESS   			0x09000000
+#if CONFIG_RTL8730E_BOARD_REVISION >= 7
+#define EXT_FLASH_BASE_ADDRESS				0x0A000000
+#else
+#define EXT_FLASH_BASE_ADDRESS				0x09000000
+#endif
 #define HCI_PATCH_ADDR_OFFSET				0x0
 #define EXTERNAL_FLASH_READ_CMD_SIZE		5
 /* For getting total binary size and addr */
