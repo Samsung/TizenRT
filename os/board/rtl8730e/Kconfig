@@ -46,7 +46,7 @@ config FLASH_VSTART_LOADABLE
 
 choice
     prompt "Board Flash Size"
-    default BOARD_FLASH_16M
+    default BOARD_FLASH_32M
 
 config BOARD_FLASH_8M
     bool "8 Mbyte"
@@ -57,6 +57,11 @@ config BOARD_FLASH_16M
     bool "16 Mbyte"
     help
         Board with flash 16Mbyte size
+
+config BOARD_FLASH_32M
+    bool "32 Mbyte"
+    help
+        Board with flash 32Mbyte size
 
 endchoice
 
@@ -71,6 +76,7 @@ config FLASH_SIZE
     int
     default 8388608 if BOARD_FLASH_8M
     default 16777216 if BOARD_FLASH_16M
+    default 33554432 if BOARD_FLASH_32M
     help
         A size of flash (in bytes).
         This is fixed value, so user doesn't need to change it.
@@ -95,6 +101,7 @@ config AMEBASMART_FLASH_CAPACITY
     hex
     default 0x800000 if BOARD_FLASH_8M
     default 0x1000000 if BOARD_FLASH_16M
+    default 0x2000000 if BOARD_FLASH_32M
     help
         Setting this vaule to configure flash size  for user filesystem,
         such as smartfs, romfs.
