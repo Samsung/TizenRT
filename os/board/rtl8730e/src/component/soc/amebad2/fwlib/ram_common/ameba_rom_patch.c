@@ -14,13 +14,13 @@
   * Copyright(c) 2022, Realtek Semiconductor Corporation. All rights reserved.
   ******************************************************************************
   */
-
 #include "ameba_soc.h"
 
 #ifndef MIN
 #define MIN(x, y)			(((x) < (y)) ? (x) : (y))
 #endif
 
+static const char *TAG = "ROMPATCH";
 static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 52125, UART_LOG_IRQ},	/* CM0 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
 	{0, LOGUART_BIT_TP1F_NOT_FULL, LOGUART_BIT_TP1F_EMPTY, 781875, UART_LOG_IRQ},		/* CM4 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
@@ -121,7 +121,7 @@ static void APAD_PreProcess(u8 PinName)
 void Pinmux_Config(u8 PinName, u32 PinFunc)
 {
 	if ((PinName >= APAD_NAME_START) && (PinName <= APAD_NAME_END)) {
-		RCC_PeriphClockCmd(APBPeriph_AUDIO, 0, ENABLE);
+		RCC_PeriphClockCmd(APBPeriph_AUDIO, APBPeriph_CLOCK_NULL, ENABLE);
 
 		if (PinFunc != PINMUX_FUNCTION_AUDIO) {
 			/* for audio pad switch to digital usage: */
@@ -147,6 +147,33 @@ void Pinmux_Config(u8 PinName, u32 PinFunc)
 
 }
 
+void GPIO_Init(GPIO_InitTypeDef *GPIO_InitStruct)
+{
+	/* open gpio function and clock */
+	//RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
+
+	assert_param(GPIO_InitStruct->GPIO_Mode <= GPIO_Mode_INT);
+
+	/* GPIO Pad shouddown control: Turn on the corresponding GPIO Pad and pinmux to GPIO */
+	Pinmux_Config(GPIO_InitStruct->GPIO_Pin, PINMUX_FUNCTION_GPIO);
+
+	if (GPIO_InitStruct->GPIO_Mode == GPIO_Mode_INT) {
+		GPIO_Direction(GPIO_InitStruct->GPIO_Pin, GPIO_Mode_IN);
+		PAD_PullCtrl(GPIO_InitStruct->GPIO_Pin, GPIO_InitStruct->GPIO_PuPd);
+
+		GPIO_INTMode(GPIO_InitStruct->GPIO_Pin, ENABLE, GPIO_InitStruct->GPIO_ITTrigger,
+					 GPIO_InitStruct->GPIO_ITPolarity, GPIO_InitStruct->GPIO_ITDebounce);
+	} else {
+		GPIO_INTMode(GPIO_InitStruct->GPIO_Pin, DISABLE, 0, 0, 0);
+
+		if (GPIO_InitStruct->GPIO_Mode == GPIO_Mode_OUT) {
+			GPIO_Direction(GPIO_InitStruct->GPIO_Pin, GPIO_Mode_OUT);
+		} else if (GPIO_InitStruct->GPIO_Mode == GPIO_Mode_IN) {
+			GPIO_Direction(GPIO_InitStruct->GPIO_Pin, GPIO_Mode_IN);
+			PAD_PullCtrl(GPIO_InitStruct->GPIO_Pin, GPIO_InitStruct->GPIO_PuPd);
+		}
+	}
+}
 
 int CRYPTO_SetSecurityModeAD(HAL_CRYPTO_ADAPTER *pIE,
 							 IN const u32 cipher_type, IN const u32 auth_type,
@@ -410,6 +437,80 @@ void LOGUART_PutChar_RAM(u8 c)
 		}
 	}
 	UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = c;
+}
+
+/**
+  * @brief Initialize the UARTx peripheral according to the specified
+  *        parameters in the UART_InitStruct.
+  * @param UARTx: where x can be 0/1/2/3.
+  * @param UART_InitStruct: pointer to a UART_InitTypeDef structure that contains
+  *        the configuration information for the specified UART peripheral.
+  * @retval None
+  */
+void UART_Init(UART_TypeDef *UARTx, UART_InitTypeDef *UART_InitStruct)
+{
+	u32 TempFcr;
+	u32 TempRxPath;
+
+	/*check the parameters*/
+	assert_param(IS_UART_RXFIFO_LEVEL(UART_InitStruct->RxFifoTrigLevel));
+	assert_param(IS_UART_RX_ERROR_REPORT(UART_InitStruct->RxErReportCtrl));
+
+	/*disable rx path*/
+	UARTx->RX_PATH_CTRL &= ~RUART_BIT_R_RST_NEWRX_N;
+
+	/*clear rx fifo */
+	UART_ClearRxFifo(UARTx);
+
+	/*clear tx fifo */
+	UART_ClearTxFifo(UARTx);
+
+	/* Disable all interrupts */
+	UARTx->IER = 0x00;
+
+	/* Clean Rx break signal interrupt status at initial stage.*/
+	UARTx->SCR |= RUART_BIT_SCRATCH_7;
+
+	/*get the FCR register value*/
+	TempFcr = UARTx->FCR;
+
+	/*clear the rx fifo level and rx error report feild ( FCR[7:6] & FCR[0])*/
+	TempFcr &= ~(RUART_BIT_FIFO_EN | RUART_MASK_RECVTRG);
+
+	/*set the rx fifo trigger level*/
+	TempFcr |= UART_InitStruct->RxFifoTrigLevel;
+
+	/*enable or disable rx error report*/
+	TempFcr |= UART_InitStruct->RxErReportCtrl;
+
+	UARTx->FCR = TempFcr;
+
+	/* Configure FlowControl */
+	if (UART_InitStruct->FlowControl == ENABLE) {
+		UARTx->MCR |= RUART_MCL_FLOW_ENABLE;
+	} else {
+		UARTx->MCR &= ~ RUART_MCL_FLOW_ENABLE;
+	}
+
+	/*configure word length, stop bit, parity, parity type, stickparity*/
+	UARTx->LCR = ((UART_InitStruct->WordLen) |
+				  (UART_InitStruct->StopBit << 2) |
+				  (UART_InitStruct->Parity << 3) |
+				  (UART_InitStruct->ParityType << 4) |
+				  (UART_InitStruct->StickParity << 5));
+
+	/* disable or enable the UART DMA mode */
+	if (UART_InitStruct->DmaModeCtrl != DISABLE) {
+		UARTx->FCR |= RUART_BIT_DMA_MODE;
+	} else {
+		UARTx->FCR &= (~ RUART_BIT_DMA_MODE);
+	}
+
+	/*configure rx timeout counter*/
+	TempRxPath = UARTx->RX_PATH_CTRL;
+	TempRxPath &= ~(RUART_MASK_R_RXTO_THRS);
+	TempRxPath |= (UART_InitStruct->RxTimeOutCnt << 16);
+	UARTx->RX_PATH_CTRL = TempRxPath;
 }
 
 /**
@@ -901,7 +1002,7 @@ u8 NAND_Page_Write(u32 PageAddr, u32 ByteAddr, u32 ByteLen, u8 *pData)
 void irq_set_priority(IRQn_Type irqn, uint32_t priority)
 {
 	if (priority > MAX_IRQ_PRIORITY_VALUE) {
-		DBG_8195A("irq[%d] priority %d shall <= %d\n", irqn, priority, MAX_IRQ_PRIORITY_VALUE);
+		RTK_LOGW(TAG, "irq[%lx] priority %lu shall <= %d\n", irqn, priority, MAX_IRQ_PRIORITY_VALUE);
 		assert_param(0);
 	}
 	__NVIC_SetPriority(irqn, priority);
@@ -1015,19 +1116,19 @@ VOID INT_Entry_Patch(u32 IntIndex)
 }
 
 
-VOID
-INT_I2C1(VOID)
+void
+INT_I2C1(void)
 {
 	INT_Entry_Patch(I2C1_IRQ);
 }
 
-VOID
-INT_I2C2(VOID)
+void
+INT_I2C2(void)
 {
 	INT_Entry_Patch(I2C2_IRQ);
 }
 
-VOID VectorTableAdd(VOID)
+void VectorTableAdd(void)
 {
 	extern HAL_VECTOR_FUN NewVectorTable[MAX_VECTOR_TABLE_NUM];
 
