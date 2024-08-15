@@ -110,6 +110,7 @@ trble_result_e trble_netmgr_create_multi_adv(struct bledev *dev, uint8_t adv_eve
 													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_delete_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_set_multi_adv_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
+trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
 trble_result_e trble_netmgr_start_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handle);
 #endif
@@ -175,6 +176,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_create_multi_adv,
 	trble_netmgr_delete_multi_adv,
 	trble_netmgr_set_multi_adv_data,
+	trble_netmgr_set_multi_resp_data,
 	trble_netmgr_start_multi_adv,
 	trble_netmgr_stop_multi_adv,
 #endif
@@ -512,6 +514,11 @@ trble_result_e trble_netmgr_delete_multi_adv(struct bledev *dev, uint8_t adv_han
 trble_result_e trble_netmgr_set_multi_adv_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len)
 {
 	return rtw_ble_server_set_multi_adv_data(adv_handle, pdata, len);
+}
+
+trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len)
+{
+	return rtw_ble_server_set_multi_resp_data(adv_handle, pdata, len);
 }
 
 trble_result_e trble_netmgr_start_multi_adv(struct bledev *dev, uint8_t adv_handle)

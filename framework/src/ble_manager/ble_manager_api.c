@@ -526,6 +526,15 @@ ble_result_e ble_server_set_multi_adv_data(uint8_t adv_handle, uint16_t adv_data
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_server_set_multi_resp_data(uint8_t adv_handle, uint16_t adv_data_len, uint8_t *adv_data)
+{
+	blemgr_msg_params param = { 3, {(void *)&adv_handle, (void *)&adv_data_len, (void *)adv_data}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_RESP_DATA, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_start_multi_adv(uint8_t adv_handle)
 {
 	blemgr_msg_s msg = {BLE_CMD_START_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&adv_handle), NULL};

@@ -753,6 +753,16 @@ trble_result_e rtw_ble_server_set_multi_adv_data(uint8_t adv_handle, uint8_t *pd
 	}
 }
 
+trble_result_e rtw_ble_server_set_multi_resp_data(uint8_t adv_handle, uint8_t *pdata, uint16_t len)
+{
+	uint16_t ret = rtk_bt_le_gap_set_ext_scan_rsp_data(adv_handle, pdata, len);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+
 trble_result_e rtw_ble_server_start_multi_adv(uint8_t adv_handle)
 {
 	uint16_t duration = 0; 

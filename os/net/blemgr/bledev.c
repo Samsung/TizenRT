@@ -721,6 +721,20 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, set_multi_adv_data, (dev, adv_handle, adv_data, adv_data_len));
 	}
 	break;
+	case LWNL_REQ_BLE_SET_MULTI_RESP_DATA:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		uint8_t adv_handle = *(uint8_t *)param.param[0];
+		uint16_t adv_data_len = *(uint8_t *)param.param[1];
+		uint8_t *adv_data = (uint8_t *)param.param[2];
+		TRBLE_DRV_CALL(ret, dev, set_multi_resp_data, (dev, adv_handle, adv_data, adv_data_len));
+	}
+	break;
 	case LWNL_REQ_BLE_START_MULTI_ADV:
 	{
 		uint8_t adv_handle = 0;

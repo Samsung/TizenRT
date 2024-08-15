@@ -579,6 +579,17 @@ trble_result_e ble_drv_set_multi_adv_data(uint8_t adv_handle, uint8_t adv_data_l
 	return res;
 }
 
+trble_result_e ble_drv_set_multi_resp_data(uint8_t adv_handle, uint8_t adv_data_len, uint8_t *ext_adv_data)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&adv_handle,(void *)&adv_data_len, (void *)ext_adv_data}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_MULTI_RESP_DATA}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_start_multi_adv(uint8_t adv_handle)
 {
 	trble_result_e res = TRBLE_SUCCESS;
