@@ -406,4 +406,18 @@ int ameba_ftl_load_from_storage(void *pdata, uint16_t offset, uint16_t size)
 	return ret;
 }
 
+/* GCM */
+int ameba_hal_gcm_encrypt(inout_struc *in_output, hal_gcm_param *gcm_param, uint32_t key_idx)
+{
+	int ret = 0;
+	ret = invoke_securetest(0x82000043, (uint32_t)in_output, (uint32_t)gcm_param, key_idx, 0);
+	return ret;
+}
+
+int ameba_hal_gcm_decrypt(inout_struc *in_output, hal_gcm_param *gcm_param, uint32_t key_idx)
+{
+	int ret = 0;
+	ret = invoke_securetest(0x82000044, (uint32_t)in_output, (uint32_t)gcm_param, key_idx, 0);
+	return ret;
+}
 
