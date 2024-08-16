@@ -1,19 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    ameba_clk.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware rom patch functions to manage clk
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
@@ -91,12 +80,8 @@ void OSC131_R_Set(u32 setbit, u32 clearbit)
 		regu->REGU_32KOSC &= ~REGU_RCAL(clearbit);
 	}
 
-	/* It takes 1ms to stable, a cut: 2ms */
-	if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-		DelayMs(2);
-	} else {
-		DelayMs(1);
-	}
+	/* It takes 1ms to stable */
+	DelayMs(1);
 }
 
 /**
@@ -164,7 +149,7 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 			min_delta_r &= REGU_MASK_RCAL;
 		}
 
-		//RTK_LOGI(TAG, "[CAL131K]:cal_n %d delta:%d \n", cal_n, delta);
+		//RTK_LOGI(TAG, "[CAL131K]:cal_n %lu delta:%lu \n", cal_n, delta);
 	}
 
 	/* the last one is not the best one */
@@ -172,12 +157,8 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 		regu->REGU_32KOSC &= ~REGU_MASK_RCAL;
 		regu->REGU_32KOSC |= min_delta_r;
 
-		/* It takes 1ms to stable , a cut:2ms*/
-		if (SYSCFG_RLVersion() == SYSCFG_CUT_VERSION_A) {
-			DelayMs(2);
-		} else {
-			DelayMs(1);
-		}
+		/* It takes 1ms to stable */
+		DelayMs(1);
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(AON128K_CAL_CLK);
@@ -190,13 +171,11 @@ u32 OSC131K_Calibration(u32 ppm_limit)
 	}
 
 	cur_ppm = delta * 1000000 / target_40m_counter;
-	RTK_LOGI(TAG, "[CAL131K]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
+	RTK_LOGI(TAG, "[CAL131K]: delta:%lu target:%lu PPM: %lu PPM_Limit:%lu \n", delta, target_40m_counter, cur_ppm, ppm_limit);
 
 	if (cur_ppm >= ppm_limit) {
-		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
-		if (SYSCFG_RLVersion() != SYSCFG_CUT_VERSION_A) {
-			assert_param(0);
-		}
+		RTK_LOGE(TAG, "[CAL131K]: !!! cal fail !!! PPM: %lu PPM_Limit:%lu \n", cur_ppm, ppm_limit);
+		assert_param(0);
 	}
 
 	return TRUE;
@@ -275,7 +254,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//RTK_LOGI(TAG, "[CAL4M]:cal_n %d H:0x%x L:0x%x result:%d ", cal_n,REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
+		//RTK_LOGI(TAG, "[CAL4M]:cal_n %lu H:0x%lx L:0x%lx result:%lu ", cal_n,REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -293,7 +272,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			min_delta_r = regu->REGU_4MOSC0;
 			min_delta_r &= (REGU_MASK_VCM_SEL_L | REGU_MASK_VCM_SEL_H | REGU_MASK_FREQ_R_SEL);
 		}
-		//RTK_LOGI(TAG, "delta:%d min_delta:%d min_delta_r:0x%x \n", delta,min_delta,min_delta_r);
+		//RTK_LOGI(TAG, "delta:%lu min_delta:%lu min_delta_r:0x%lx \n", delta,min_delta,min_delta_r);
 	}
 
 	/* the last one is not the best one */
@@ -303,7 +282,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 		temp |= min_delta_r;
 		regu->REGU_4MOSC0 = temp;
 	}
-	//RTK_LOGI(TAG, "[CAL4M]:hL last one: 0x%x 0x%x temp:%d \n", REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
+	//RTK_LOGI(TAG, "[CAL4M]:hL last one: 0x%lx 0x%lx temp:%lu \n", REGU_GET_VCM_SEL_H(regu->REGU_4MOSC0),REGU_GET_VCM_SEL_L(regu->REGU_4MOSC0),temp);
 	/* Step4: Adjust R_SEL. Enter the following loop: suppose the current loop is N (N=1..8) */
 	/* Clear 4m calibration parameter first */
 	/* Loop Step1: Set REGU_FREQ_R_SEL[8-N] = 0x1 */
@@ -323,7 +302,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//RTK_LOGI(TAG, "[CAL4M]:cal_n %d R:0x%x result:%d ", cal_n,REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0), temp, target_40m_counter, delta);
+		//RTK_LOGI(TAG, "[CAL4M]:cal_n %lu R:0x%lx result:%lu ", cal_n,REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0), temp, target_40m_counter, delta);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -341,7 +320,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			min_delta_r = regu->REGU_4MOSC0;
 			min_delta_r &= REGU_MASK_FREQ_R_SEL;
 		}
-		//RTK_LOGI(TAG, "delta:%d \n", delta);
+		//RTK_LOGI(TAG, "delta:%lu \n", delta);
 	}
 
 	/* the last one is not the best one */
@@ -356,7 +335,7 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 
 		/* read calibration result */
 		temp = OSC_CalResult_Get(OSC4M_CAL_CLK);
-		//RTK_LOGI(TAG, "OSC4M_Calibration:cal_n %d result:%d target:%d delta:%d\n", cal_n, temp, target_40m_counter, delta);
+		//RTK_LOGI(TAG, "OSC4M_Calibration:cal_n %lu result:%lu target:%lu delta:%lu\n", cal_n, temp, target_40m_counter, delta);
 
 		if (temp < target_40m_counter) {
 			delta = target_40m_counter - temp;
@@ -364,14 +343,14 @@ u32 OSC4M_Calibration(u32 ppm_limit)
 			delta = temp - target_40m_counter;
 		}
 	}
-	//RTK_LOGI(TAG, "[CAL4M]:R last one: 0x%x \n",REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0));
+	//RTK_LOGI(TAG, "[CAL4M]:R last one: 0x%lx \n",REGU_GET_FREQ_R_SEL(regu->REGU_4MOSC0));
 
 cal_end:
 	cur_ppm = delta * 1000000 / target_40m_counter;
-	RTK_LOGI(TAG, "[CAL4M]: delta:%d target:%d PPM: %d PPM_Limit:%d \n", delta, target_40m_counter, cur_ppm, ppm_limit);
+	RTK_LOGI(TAG, "[CAL4M]: delta:%lu target:%lu PPM: %lu PPM_Limit:%lu \n", delta, target_40m_counter, cur_ppm, ppm_limit);
 
 	if (cur_ppm >= ppm_limit) {
-		RTK_LOGW(TAG, "[CAL4M]: PPM: %d PPM_Limit:%d \n", cur_ppm, ppm_limit);
+		RTK_LOGW(TAG, "[CAL4M]: PPM: %lu PPM_Limit:%lu \n", cur_ppm, ppm_limit);
 		assert_param(0);
 	}
 
@@ -455,5 +434,3 @@ void CLK_SWITCH_XTAL(u32 State)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Temp);
 	RBSS_UDELAY_CLK = CPU_ClkGet() / 1000000;
 }
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

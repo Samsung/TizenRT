@@ -26,7 +26,7 @@ CONFIG=${OS_PATH}/.config
 source ${CONFIG}
 APP_NUM=0
 LAST_IMAGE=0
-LAST_PARTITION=0
+LAST_OFFSET=0
 USB_DOWNLOAD=0
 
 function pre_download()
@@ -91,9 +91,9 @@ function pre_download()
 		if [[ "${parts[$partidx]}" == "ss" ]];then
 			continue
 		fi
-		LAST_PARTITION=${parts[$partidx]}
+		LAST_OFFSET=${offsets[$partidx]}
 	done
-	LAST_IMAGE=${BOOTPARAM}.bin	
+	LAST_IMAGE=${BOOTPARAM}.bin
 
 	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
 		source ${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
@@ -101,6 +101,7 @@ function pre_download()
 			cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
 		fi
 		LAST_IMAGE=${RESOURCE_BIN_NAME}
+
 	fi
 	if [ "$USB_DOWNLOAD" -eq "1" ]; then
 		touch "${IMG_TOOL_PATH}/USB_download_setting.txt"
@@ -123,13 +124,31 @@ function board_download()
 			#echo "Save info to USB_download_setting.txt"
 			echo "$3" >> USB_download_setting.txt
 			echo "$2" >> USB_download_setting.txt
-			if [ "$3" == "$LAST_IMAGE" ]; then
+			if [ "$6" == "ALL" ] && [ "$3" == "$LAST_IMAGE" ]; then
 				echo ""
 				echo "==================================="
-				echo "Start USB download in Flash"
+				echo "Start USB full download in Flash"
 				echo "==================================="
-				./upload_image_tool_linux "download" $1
+				./upload_image_tool_linux "download" $1 "ALL"
 				echo "Complete USB download"
+			elif [ "$6" == "KERNEL" ]; then
+				return;
+			elif [ "$6" == "bootparam" ]; then
+				echo ""
+				echo "========================================="
+				echo "Start USB download to kernel partition"
+				echo "========================================="
+				./upload_image_tool_linux "download" $1 "ALL"
+				echo "Complete USB download"
+			elif [ "$6" != "ALL" ]; then
+				echo ""
+				echo "========================================="
+				echo "Start USB download to $5 partition"
+				echo "========================================="
+				./upload_image_tool_linux "download" $1 $2 $3
+				echo "Complete USB download"
+			else
+				return;
 			fi
 		fi
 	fi
@@ -147,13 +166,22 @@ function board_erase()
 		#echo "Save info to USB_erase_setting.txt"
 		echo "$2" >> USB_erase_setting.txt
 		echo "$3" >> USB_erase_setting.txt
-		if [ "$4" == "$LAST_PARTITION" ]; then
+		if [ "$5" == "ALL" ] && [ "$2" == "$LAST_OFFSET" ]; then
 			echo ""
 			echo "==================================="
-			echo "Start USB erase in Flash"
+			echo "Start USB full erase in Flash"
 			echo "==================================="
-			./upload_image_tool_linux "erase" $1
+			./upload_image_tool_linux "erase" $1 "ALL"
 			echo "Complete USB erase"
+		elif [ "$5" != "ALL" ]; then
+			echo ""
+			echo "==================================="
+			echo "Start USB $4 erase in Flash"
+			echo "==================================="
+			./upload_image_tool_linux "erase" $1 $2 $3
+			echo "Complete USB download"
+		else
+			return;
 		fi
 	fi
 }

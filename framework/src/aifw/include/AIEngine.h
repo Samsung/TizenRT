@@ -105,6 +105,12 @@ public:
 	 */
 	virtual void getModelDimensions(uint16_t *inputSetCount, uint16_t **inputSizeList,  uint16_t *outputSetCount, uint16_t **outputSizeList) = 0;
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
+
+	/**
+	 * @brief: Reset the model state.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	virtual AIFW_RESULT resetInferenceState(void) = 0;
 };
 
 } /* namespace aifw */

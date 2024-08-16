@@ -112,6 +112,12 @@ public:
 	 * @return: AIFW_RESULT enum object.
 	 */
 	AIFW_RESULT clearRawData(uint16_t offset, uint16_t count);
+
+	/**
+	 * @brief: Reset the model state.
+	 * @return: AIFW_RESULT enum object.
+	 */
+	AIFW_RESULT resetInferenceState(void);
 private:
 	/**
 	 * @brief It constructs AIDataBuffer object and initializes it.
@@ -159,6 +165,7 @@ private:
 #else
 	float **mInvokeInput;
 	float **mInvokeOutput;
+	float **mInvokeResult;
 	uint16_t *mInputSizeList;
 	uint16_t *mOutputSizeList;
 	uint16_t mInputSetCount;

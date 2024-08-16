@@ -28,7 +28,10 @@
 namespace aifw {
 
 AIModel::AIModel(void) :
-	mBuffer(nullptr), mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(nullptr)
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+	mInvokeResult(NULL), mInputSizeList(NULL), mOutputSizeList(NULL), mInputSetCount(0), mOutputSetCount(0),
+#endif
+	mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(nullptr), mBuffer(nullptr)	
 {
 	memset(&mModelAttribute, '\0', sizeof(AIModelAttribute));
 	mAIEngine = std::make_shared<TFLM>();
@@ -38,7 +41,10 @@ AIModel::AIModel(void) :
 }
 
 AIModel::AIModel(std::shared_ptr<AIProcessHandler> dataProcessor) :
-	mBuffer(nullptr), mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(dataProcessor)
+#ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
+	mInvokeResult(NULL), mInputSizeList(NULL), mOutputSizeList(NULL), mInputSetCount(0), mOutputSetCount(0),
+#endif
+	mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(dataProcessor), mBuffer(nullptr)
 {
 	memset(&mModelAttribute, '\0', sizeof(AIModelAttribute));
 	mAIEngine = std::make_shared<TFLM>();
@@ -102,6 +108,10 @@ AIModel::~AIModel()
 		delete[] mInvokeOutput;
 		mInvokeOutput = NULL;
 	}
+	if(mInvokeResult) {
+		delete[] mInvokeResult;
+		mInvokeResult = NULL;
+	}
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
 	if (mParsedData) {
@@ -151,7 +161,17 @@ AIFW_RESULT AIModel::allocateMemory(void)
 	}
 #else
 	mAIEngine->getModelDimensions(&mInputSetCount, &mInputSizeList, &mOutputSetCount, &mOutputSizeList);
+	AIFW_LOGD("Model dimensions extracted");
+	mInvokeResult = new float *[mOutputSetCount];
+	if (!mInvokeResult) {
+		AIFW_LOGE("Memory Allocation failed - inference result buffer");
+		return AIFW_NO_MEM;
+	}
 	mInvokeOutput = new float *[mOutputSetCount];
+	if (!mInvokeOutput) {
+		AIFW_LOGE("Memory Allocation failed - model output buffer");
+		return AIFW_NO_MEM;
+	}
 	for (uint16_t i = 0; i < mOutputSetCount; i++) {
 		mInvokeOutput[i] = new float[mOutputSizeList[i]];
 		if (!mInvokeOutput[i]) {
@@ -159,7 +179,12 @@ AIFW_RESULT AIModel::allocateMemory(void)
 			return AIFW_NO_MEM;
 		}
 	}
+	AIFW_LOGD("model output memory allocated");
 	mInvokeInput = new float *[mInputSetCount];
+	if (!mInvokeInput) {
+		AIFW_LOGE("Memory Allocation failed - model input buffer");
+		return AIFW_NO_MEM;
+	}
 	for (uint16_t i = 0; i < mInputSetCount; i++) {
 		mInvokeInput[i] = new float[mInputSizeList[i]];
 		if (!mInvokeInput[i]) {
@@ -167,6 +192,7 @@ AIFW_RESULT AIModel::allocateMemory(void)
 			return AIFW_NO_MEM;
 		}
 	}
+	AIFW_LOGD("model input memory allocated");
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 	if (mDataProcessor) {
 		mParsedData = new float[mModelAttribute.rawDataCount];
@@ -174,11 +200,13 @@ AIFW_RESULT AIModel::allocateMemory(void)
 			AIFW_LOGE("Memory Allocation failed of parsed data");
 			return AIFW_NO_MEM;
 		}
+		AIFW_LOGD("Memory allocation for data parse done");
 		mPostProcessedData = new float[mModelAttribute.postProcessResultCount];
 		if (!mPostProcessedData) {
 			AIFW_LOGE("Memory Allocation failed of result data");
 			return AIFW_NO_MEM;
 		}
+		AIFW_LOGD("Memory allocation for post processing done");
 	}
 	return AIFW_OK;
 }
@@ -276,7 +304,9 @@ AIFW_RESULT AIModel::loadModel(const char *scriptPath)
 			AIFW_LOGE("Internal memory allocation failed, error: %d", res);
 			return res;
 		}
+		AIFW_LOGD("memory allocation for model done");
 		res = createDataBuffer();
+		AIFW_LOGD("AI FW data buffer created");
 		if (res != AIFW_OK) {
 			AIFW_LOGE("data buffer creation failed, error: %d", res);
 		}
@@ -662,6 +692,11 @@ AIFW_RESULT AIModel::clearRawData(uint16_t offset, uint16_t count)
 		AIFW_LOGE("Buffer clear operation cannot be done");
 		return AIFW_ERROR;
 	}
+}
+
+AIFW_RESULT AIModel::resetInferenceState(void)
+{
+	return mAIEngine->resetInferenceState();
 }
 
 } /* namespace aifw */

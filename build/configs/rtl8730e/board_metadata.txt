@@ -19,6 +19,9 @@
 
 BOARD="RTL8730E"
 
+DEFAULT_PORT="ttyACM0"
+DEFAULT_PORT2="ttyUSB1"
+
 BL1="km4_boot_all"
 KERNEL="km0_km4_ap_image_all"
 OTA="km0_km4_ap_image_all"

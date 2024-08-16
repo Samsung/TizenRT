@@ -67,29 +67,40 @@ cd $TIZENRT_BASEDIR/tools/trap/
 First copy the entire crash logs to a file in tools/trap/`<log_file>`  
 The crash log format should be something like below:
 ```
-print_assert_detail: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: app2
-up_dumpstate: sp:     1002cd0c
-up_dumpstate: IRQ stack:
-up_dumpstate:   base: 1002cea0
-up_dumpstate:   size: 00000400
-up_dumpstate:   used: 00000278
-up_stackdump: 1002cd00: xxxxxxxx xxxxxxxx xxxxxxxx 0000000b 0000000e ffffffbc 01000213 1002cdf8
+===========================================================
+Assertion details
+===========================================================
+print_assert_detail: Assertion failed CPU1 at file: armv7-a/arm_dataabort.c line 202 task: hello pid: 20
+print_assert_detail: Assert location (PC) : 0x0e16fe34
+check_assert_location: Code asserted in normal thread!
+===========================================================
+Asserted task's stack details
+===========================================================
+check_sp_corruption: Current SP is User Thread SP: 6060ad70
+check_sp_corruption: User stack:
+print_stack_dump:   base: 6060ad90
+print_stack_dump:   size: 00001ff0
+print_stack_dump:   used: 000002b4
+up_stackdump: 6060ad60: xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 60608d90 0e16ba09 60608d90 0e0197bb
+up_stackdump: 6060ad80: 00000000 00000000 00000000 00000000 00002010 d475dd55 552756de 000f5260
 .
 .
 .
-mpu_show_regioninfo:        7            2200DC0          12C500               1               1               1
-mpu_show_regioninfo: *****************************************************************************
-recovery_assert: Checking kernel heap for corruption...
-recovery_assert: No kernel heap corruption detected
-print_assert_detail: Checking current app heap for corruption...
-print_assert_detail: No app heap corruption detected
-elf_show_all_bin_section_addr: [common] Text Addr : 0x2100020, Text Size : 672480
-elf_show_all_bin_section_addr: [app] Text Addr : 0x232d2c0, Text Size : 179616
-up_assert: Assert location (PC) : 0x02100025
+===========================================================
+Checking app heap for corruption
+===========================================================
+mm_check_heap_corruption: Heap start = 0x60600a30 end = 0x606ffff0
+mm_check_heap_corruption: No heap corruption detected
+===========================================================
+Checking kernel heap for corruption
+===========================================================
+mm_check_heap_corruption: Heap start = 0x60119000 end = 0x603ffff0
+mm_check_heap_corruption: No heap corruption detected
+##########################################################################################################################################
 ```
 3. In the scenario where log file format is not supported, you will see a prompt as below:
 ```
-test@VirtualBox ~/tizenRTGH/tools/trap (master) $sudo python3 ramdumpParser.py -t logs
+test@VirtualBox ~/tizenRTGH/tools/trap (master) $sudo python3 trap.py -t logs
 
 	- Below log format is not supported in TRAP
 		-|19:27:38.36| up_assert: Assertion failed at file:armv8-m/up_memfault.c line: 156 task: main_task
@@ -102,77 +113,93 @@ test@VirtualBox ~/tizenRTGH/tools/trap (master) $sudo python3 ramdumpParser.py -
 Modify the log file to a supported format as shown in point 2.
 
 4. Run Ramdump Parser Script and see the Output  
-    $ python3 ramdumpParser.py -t `<Log file path>`
+    $ python3 trap.py -t `<Log file path>`
 
 ex)
-$ python3 ramdumpParser.py -t ./log_file
+$ python3 trap.py -t ./log_file
 
 Example Call Stack Output for App crash is as follows:
 ```
-test@VirtualBox ~/tizenRTGH/tools/trap (master) $python3 ramdumpParser.py -t wificrash
+ubuntu@ubuntu:~/TizenRT/tools/trap$ python3 trap.py -t ./crash_app
 
 
 *************************************************************
 dump_file                   : None
-log_file                    : wificrash
+log_file                    : ./crash_app
 Number of binaries          : 3 [kernel + apps]
 "kernel" elf_file           : ../../build/output/bin/tinyara.axf
-"app1" elf_file             : ../../build/output/bin/app1_dbg 
-"app2" elf_file             : ../../build/output/bin/app2_dbg 
+"app1" elf_file             : ../../build/output/bin/common_dbg 
+"app2" elf_file             : ../../build/output/bin/app1_dbg 
 *************************************************************
 
 -----------------------------------------------------------------------------------------
 
-1. Crash Binary           : app2
+1. Crash Binary             : app1
 
-2. Crash point (PC or LR)
+2. Crash type               : code assertion by code ASSERT or PANIC
 
-	[ Caller - return address (LR) - of the function which has caused the crash ]
-	- symbol addr        : 0x0000166d
-	- function name      : task_startup
-	- file               : /root/tizenrt/lib/libc/sched/task_startup.c:123
+3. Crash point
+	- Assertion failed CPU0 at file: armv7-a/arm_dataabort.c line 202 task: app1 pid: 15
 
-	[ Current location (PC) of assert ]
-	- symbol addr        : 0x00000c52
-	- function name      : main
-	- file               : /root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:67
 
-	[ Exact crash point might be -4 or -8 bytes from the PC ]
-	- symbol addr of (pc - 4)       : 0x00000c4e
-	- function name of (pc - 4)     : __aeabi_d2uiz
-	- file of (pc - 4)              : lib_rawoutstream.c:?
-	- symbol addr of (pc - 8)       : 0x00000c4a
-	- function name of (pc - 8)     : __aeabi_d2uiz
-	- file of (pc - 8)              : lib_rawoutstream.c:?
+4. Code asserted in:
 
-3. Call stack of last run thread using Stack dump
+	- Code asserted in normal thread.
 
-	- Current stack pointer:	 0x21812f8
+5. Call stack of last run thread
 
 Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
-0x2181308	 0xe0060b8	 kernel  	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
-0x2181310	 0xe00681c	 kernel  	  lowoutstream_putc	/root/tizenrt/lib/libc/stdio/lib_lowoutstream.c:76
-0x2181314	 0xe005eb4	 kernel  	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
-0x2181340	 0xe0085b0	 kernel  	  up_memfault	/root/tizenrt/os/arch/arm/src/armv8-m/up_memfault.c:117
-0x2181360	 0x100123b4	 kernel  	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
-0x2181368	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x2181378	 0x10012094	 kernel  	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
-0x2181384	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x21813c0	 0x1655  	 app2    	  task_startup	/root/tizenrt/os/include/tinyara/userspace.h:127
-0x21813c4	 0xc51   	 app2    	  main	/root/tizenrt/loadable_apps/loadable_sample/wifiapp/wifiapp.c:57
-0x21813d0	 0xe001c2c	 kernel  	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
+ User stack
+0x60602a38	 0xe1645b1	 app1    	  task_startup	/root/tizenrt/os/include/tinyara/userspace.h:145
+0x60602a40	 0xe01976d	 kernel  	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
+0x60602a58	 0xe018e6d	 kernel  	  group_zalloc	/root/tizenrt/os/include/tinyara/kmalloc.h:166
 
-4. Miscellaneous information:
------------------------------------------------------------------------------------------
+h. Heap Region information:
+
+	!!!! NO HEAP CORRUPTION DETECTED !!!!
+
+
+Checking application heap for corruption
+Checking corruption (0x60600a30 - 0x606ffff0) : Heap NOT corrupted
+No app heap corruption detected.
+
+Checking kernel heap for corruption
+Checking corruption (0x60119000 - 0x603ffff0) : Heap NOT corrupted
+No Kernel heap corruption detected.
+
+
+x. Miscellaneous information:
+
+List of all tasks in the system:
+
+1                          NAME |   PID |  PRI |    USED / TOTAL STACK | STACK ALLOC ADDR | TCB ADDR | TASK STATE
+-------------------------------------------------------------------------------------------------------------------
+                     CPU0 IDLE |     0 |    0 |     748 /    1024 |       0x60118c00 | 0x60105314 |  Assigned to CPU (Ready)
+                     CPU1 IDLE |     1 |    0 |     656 /    1024 |       0x60118800 | 0x60105418 |  Assigned to CPU (Ready)
+                        hpwork |     2 |  201 |     452 /    2032 |       0x60122530 | 0x60121ac0 |  Wait Signal
+                        lpwork |     3 |   50 |     452 /    4080 |       0x601237b0 | 0x60122d40 |  Wait Signal
+               inic_msg_q_task |     5 |  107 |     444 /    4048 |       0x60131910 | 0x60130ea0 |  Wait Semaphore
+          inic_host_rx_tasklet |     6 |  104 |     500 /    4048 |       0x60133410 | 0x601329a0 |  Wait Semaphore
+        inic_ipc_api_host_task |     7 |  103 |     460 /    8136 |       0x60134ed0 | 0x60134460 |  Wait Semaphore
+                   LWIP_TCP/IP |     9 |  105 |     508 /    4072 |       0x6013b880 | 0x6013ae10 |  Wait Semaphore
+          netmgr_event_handler |    10 |  100 |     388 /    2016 |       0x6013d300 | 0x6013c890 |  Wait Semaphore
+                      log_dump |    11 |  200 |     548 /   16360 |       0x6013e650 | 0x6013dbe0 |  Wait MQ Receive (MQ Empty)
+                binary_manager |    12 |  203 |     728 /    8168 |       0x60146200 | 0x60142660 |  Wait MQ Receive (MQ Empty)
+                     bm_loader |    14 |   90 |     848 /    4072 |       0x601375a0 | 0x60125350 |  Running
+                          app1 |    15 |  180 |     804 /    8168 |       0x60600a50 | 0x601257d0 |  Running
+-------------------------------------------------------------------------------------------------------------------
 ```
 ex)
-$ python3 ramdumpParser.py -t ./logs
+$ python3 trap.py -t ./logs
 
 Example Call Stack Output for Kernel crash is as follows:
 ```
+ubuntu@ubuntu:~/TizenRT/tools/trap$ python3 trap.py -t ./crash_kernel
+
+
 *************************************************************
 dump_file                   : None
-log_file                    : kernelassert
+log_file                    : ./crash_kernel
 Number of binary            : 1 [kernel]
 "kernel" elf_file           : ../../build/output/bin/tinyara.axf
 *************************************************************
@@ -180,111 +207,142 @@ Number of binary            : 1 [kernel]
 -----------------------------------------------------------------------------------------
 1. Crash Binary             : kernel
 
-2. Crash point (PC or LR)
+2. Crash type               : code assertion by code ASSERT or PANIC
 
-	[ Caller - return address (LR) - of the function which has caused the crash ]
-	- symbol addr        : 0x0e001c1b
-	- function name      : setbasepri
-	- file               : /root/tizenrt/os/include/arch/armv8-m/irq.h:247
+3. Crash point
+	- Assertion failed CPU0 at file: armv7-a/arm_dataabort.c line 202 task: CPU0 IDLE pid: 0
 
-	[ Current location (PC) of assert ]
-	- symbol addr        : 0x10010f5e
-	- function name      : os_start
-	- file               : /root/tizenrt/os/kernel/init/os_start.c:609
 
-	[ Exact crash point might be -4 or -8 bytes from the PC ]
-	- symbol addr of (pc - 4)       : 0x10010f5a
-	- function name of (pc - 4)     : os_start
-	- file of (pc - 4)              : /root/tizenrt/os/kernel/init/os_start.c:609
-	- symbol addr of (pc - 8)       : 0x10010f56
-	- function name of (pc - 8)     : os_start
-	- file of (pc - 8)              : /root/tizenrt/os/kernel/init/os_start.c:607 (discriminator 1)
+4. Code asserted in:
 
-3. Call stack of last run thread using Stack dump
+	- Code asserted in normal thread.
 
-	- Current stack pointer:	 0x10004f20
+5. Call stack of last run thread
 
 Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
-0x10004f30	 0xe0060b8	 kernel  	  lowvsyslog	/root/tizenrt/os/include/syslog.h:263
-0x10004f38	 0xe0067bc	 kernel  	  __ultoa_invert	/root/tizenrt/lib/libc/stdio/lib_ultoa_invert.c:64
-0x10004f3c	 0xe005eb4	 kernel  	  lib_noflush	/root/tizenrt/os/include/tinyara/streams.h:605
-0x10004f68	 0xe008750	 kernel  	  up_usagefault	/root/tizenrt/os/arch/arm/src/armv8-m/up_usagefault.c:84
-0x10004f78	 0x100123b4	 kernel  	  up_doirq	/root/tizenrt/os/arch/arm/src/armv8-m/up_doirq.c:91
-0x10004f90	 0x10012094	 kernel  	  exception_common	/root/tizenrt/os/arch/arm/src/armv8-m/up_exception.S:156
-0x10004fd4	 0x10012670	 kernel  	  up_unblock_task	/root/tizenrt/os/include/tinyara/arch.h:472
-0x10004fd8	 0xe001bcc	 kernel  	  task_activate	/root/tizenrt/os/include/sched.h:141
-0x10004fdc	 0x10010db8	 kernel  	  os_start	/root/tizenrt/os/include/tinyara/init.h:89
+ User stack
+0x60118f58	 0xe026931	 kernel  	  up_stack_frame	/root/tizenrt/os/include/tinyara/arch.h:375
+0x60118f68	 0xe019711	 kernel  	  task_activate	/root/tizenrt/os/include/sched.h:253
+0x60118f70	 0xe0198fd	 kernel  	  thread_termination_handler	/root/tizenrt/os/kernel/task/task_terminate.c:297
+0x60118f88	 0xe0192c1	 kernel  	  thread_create	/root/tizenrt/os/kernel/task/task_create.c:133
+0x60118fb0	 0xe0193d9	 kernel  	  kernel_thread	/root/tizenrt/os/include/tinyara/kthread.h:98
+0x60118fb4	 0xe0271cd	 kernel  	  SOCPS_LPWAP_ipc_int	/root/tizenrt/os/arch/arm/src/chip/amebasmart_pmhelpers.c:154
+0x60118fc0	 0xe0271f9	 kernel  	  bsp_pm_domain_register	/root/tizenrt/os/arch/arm/src/chip/amebasmart_pmhelpers.c:127
+0x60118fd8	 0xe018891	 kernel  	  os_bringup	/root/tizenrt/os/kernel/init/os_bringup.c:475
+0x60118fe8	 0xe018525	 kernel  	  os_start	/root/tizenrt/os/include/tinyara/init.h:134
 
-4. Miscellaneous information:
------------------------------------------------------------------------------------------
+h. Heap Region information:
+
+	!!!! NO HEAP CORRUPTION DETECTED !!!!
+
+
+Checking kernel heap for corruption
+Checking corruption (0x60119000 - 0x603ffff0) : Heap NOT corrupted
+No Kernel heap corruption detected.
+
+
+x. Miscellaneous information:
+
+List of all tasks in the system:
+
+                    NAME |   PID |  PRI |    USED / TOTAL STACK | STACK ALLOC ADDR | TCB ADDR | TASK STATE
+-------------------------------------------------------------------------------------------------------------------
+               CPU0 IDLE |     0 |    0 |     892 /    1024 |       0x60118c00 | 0x60105314 |  Running
+               CPU1 IDLE |     1 |    0 |     656 /    1024 |       0x60118800 | 0x60105418 |  Running
+                  hpwork |     2 |  201 |     328 /    2032 |       0x60122530 | 0x60121ac0 |  Invalid
+-------------------------------------------------------------------------------------------------------------------
 ```
 ex)
-python3 ramdumpParser.py -t ./logfile
+python3 trap.py -t ./logfile
 
 Example Call Stack Output for Common Binary crash is as follows:
 ```
+ubuntu@ubuntu:~/TizenRT/tools/trap$ python3 trap.py -t ./crash3
+
+
 *************************************************************
 dump_file                   : None
-log_file                    : ./log_file
+log_file                    : ./crash3
 Number of binaries          : 3 [kernel + apps]
 "kernel" elf_file           : ../../build/output/bin/tinyara.axf
 "app1" elf_file             : ../../build/output/bin/common_dbg 
-"app2" elf_file             : ../../build/output/bin/app_dbg 
+"app2" elf_file             : ../../build/output/bin/app1_dbg 
 *************************************************************
 
 -----------------------------------------------------------------------------------------
 
-1. Crash Binary           : common
+1. Crash Binary             : common
 
-2. Crash point (PC or LR)
+2. Crash type               : code assertion by code ASSERT or PANIC
 
-	[ Current location (PC) of assert ]
-	- symbol addr        : 0x0003d7b3
-	- function name      : sched_get_priority_max
-	- file               : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:110
+3. Crash point
+	- Assertion failed CPU1 at file: hello_main.c line 72 task: hello pid: 20
 
-	[ Exact crash point might be -4 or -8 bytes from the PC ]
-	- symbol addr of (pc - 4)       : 0x0003d7af
-	- function name of (pc - 4)     : sched_get_priority_max
-	- file of (pc - 4)              : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:109
-	- symbol addr of (pc - 8)       : 0x0003d7ab
-	- function name of (pc - 8)     : sched_get_priority_max
-	- file of (pc - 8)              : /root/product/.tizenrt/lib/libc/sched/sched_getprioritymax.c:109
 
-3. Call stack of last run thread using Stack dump
+4. Code asserted in:
 
-	- Current stack pointer:	 0x220cf38
+	- Code asserted in normal thread.
+
+5. Call stack of last run thread
 
 Stack_address	 Symbol_address	 Symbol location  Symbol_name		File_name
-0x220cf38	 0xe009fa0	 kernel  	  up_assert	/root/product/.tizenrt/os/include/assert.h:211
-0x220cf50	 0xe009904	 kernel  	  LOGUART_PutChar_RAM	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:382
-0x220cf58	 0xe009904	 kernel  	  LOGUART_PutChar_RAM	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:382
-0x220cf5c	 0x3d7a5 	 app1    	  sched_get_priority_max	/root/product/.tizenrt/os/include/sched.h:292
-0x220cf88	 0xe03be70	 kernel  	  STUB_up_assert	/root/product/.tizenrt/os/syscall/stubs/STUB_up_assert.c:7
-0x220cf90	 0x10012954	 kernel  	  dispatch_syscall	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_svcall.c:150
-0x220cfa0	 0x3d7a5 	 app1    	  sched_get_priority_max	/root/product/.tizenrt/os/include/sched.h:292
-0x220cfa8	 0x170   	 app2    	  coap_option_def
-0x220d35c	 0xe0189dc	 kernel  	  serial_putc	/root/product/.tizenrt/os/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d/serial_api.c:729
-0x220d36c	 0xe0099c0	 kernel  	  rtl8721d_up_txready	/root/product/.tizenrt/os/arch/arm/src/chip/amebad_serial.c:678
-0x220d374	 0xe0134d8	 kernel  	  uart_xmitchars	/root/product/.tizenrt/os/include/tinyara/serial/serial.h:362
-0x220d38c	 0xe01844c	 kernel  	  uart_irqhandler	/root/product/.tizenrt/os/board/rtl8721csm/src/component/common/mbed/targets/hal/rtl8721d/serial_api.c:295
-0x220d3a4	 0x10011710	 kernel  	  wrapper_IrqFun	/root/product/.tizenrt/os/board/rtl8721csm/src/component/os/tizenrt/tizenrt_service.c:1010
-0x220d3b0	 0x1001297c	 kernel  	  up_svcall	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_svcall.c:183
-0x220d3dc	 0x10012894	 kernel  	  exception_common	/root/product/.tizenrt/os/arch/arm/src/armv8-m/up_exception.S:157
-0x220d404	 0x41    	 app2    	  __aeabi_dadd
-0x220d420	 0x3df95 	 app1    	  pthread_startup	/root/product/.tizenrt/os/include/tinyara/userspace.h:147
-0x220d424	 0x41    	 app2    	  __aeabi_dadd
-0x220d430	 0xe074d0c	 kernel  	  pthread_start	/root/product/.tizenrt/os/kernel/pthread/pthread_create.c:188
+ User stack
+0x6060acf8	 0xe17c44c	 app1    	  builtin_list
+0x6060ad18	 0xe16fd8d	 app1    	  utils_readfile	/root/tizenrt/apps/system/utils/utils_proc.c:96
+0x6060ad34	 0xe01f551	 kernel  	  STUB_up_assert	/root/tizenrt/os/syscall/stubs/STUB_up_assert.c:7
+0x6060ad38	 0xe17c44c	 app1    	  builtin_list
+0x6060ad3c	 0xe001395	 kernel  	  dispatch_syscall	/root/tizenrt/os/arch/arm/src/armv7-a/arm_syscall.c:148
+0x6060ad40	 0xe16fd8d	 app1    	  utils_readfile	/root/tizenrt/apps/system/utils/utils_proc.c:96
+0x6060ad4c	 0xe16fe29	 app1    	  vulnerable_function	/root/tizenrt/apps/examples/hello/hello_main.c:66
+0x6060ad50	 0xe16fe29	 app1    	  vulnerable_function	/root/tizenrt/apps/examples/hello/hello_main.c:66
+0x6060ad58	 0xe16b9f1	 app1    	  task_startup	/root/tizenrt/os/include/tinyara/userspace.h:145
+0x6060ad60	 0xe01976d	 kernel  	  task_start	/root/tizenrt/os/kernel/task/task_start.c:133
 
-4. Miscellaneous information:
------------------------------------------------------------------------------------------
+h. Heap Region information:
+
+	!!!! NO HEAP CORRUPTION DETECTED !!!!
+
+
+Checking application heap for corruption
+Checking corruption (0x60600a30 - 0x606ffff0) : Heap NOT corrupted
+No app heap corruption detected.
+
+Checking kernel heap for corruption
+Checking corruption (0x60119000 - 0x603ffff0) : Heap NOT corrupted
+No Kernel heap corruption detected.
+
+
+x. Miscellaneous information:
+
+List of all tasks in the system:
+
+             NAME |   PID |  PRI |    USED / TOTAL STACK | STACK ALLOC ADDR | TCB ADDR | TASK STATE
+-------------------------------------------------------------------------------------------------------------------
+        CPU0 IDLE |     0 |    0 |     748 /    1024 |       0x60118c00 | 0x60105314 |  Running
+        CPU1 IDLE |     1 |    0 |     656 /    1024 |       0x60118800 | 0x60105418 |  Assigned to CPU (Ready)
+           hpwork |     2 |  201 |     452 /    2032 |       0x60122530 | 0x60121ac0 |  Wait Signal
+           lpwork |     3 |   50 |     452 /    4080 |       0x601237b0 | 0x60122d40 |  Wait Signal
+  inic_msg_q_task |     5 |  107 |     444 /    4048 |       0x60131910 | 0x60130ea0 |  Wait Semaphore
+inic_host_rx_tasklet |     6 |  104 |     500 /    4048 |       0x60133410 | 0x601329a0 |  Wait Semaphore
+inic_ipc_api_host_task |     7 |  103 |     460 /    8136 |       0x60134ed0 | 0x60134460 |  Wait Semaphore
+      LWIP_TCP/IP |     9 |  105 |     508 /    4072 |       0x6013b880 | 0x6013ae10 |  Wait Semaphore
+netmgr_event_handler |    10 |  100 |     388 /    2016 |       0x6013d300 | 0x6013c890 |  Wait Semaphore
+         log_dump |    11 |  200 |     668 /   16360 |       0x6013e650 | 0x6013dbe0 |  Wait MQ Receive (MQ Empty)
+   binary_manager |    12 |  203 |     728 /    8168 |       0x601431b0 | 0x60142660 |  Wait MQ Receive (MQ Empty)
+             app1 |    15 |  180 |     780 /    8168 |       0x60600a50 | 0x601257a0 |  Wait Signal
+            uwork |    16 |  100 |     472 /    2032 |       0x606046b0 | 0x601258c0 |  Wait Signal
+             tash |    17 |  125 |     676 /    4080 |       0x60605150 | 0x60124f00 |  Wait Semaphore
+ wifi msg handler |    18 |  100 |     572 /    4064 |       0x60606880 | 0x60125020 |  Wait Semaphore
+  ble msg handler |    19 |  100 |     572 /    4072 |       0x60607ad0 | 0x60125140 |  Wait Semaphore
+            hello |    20 |  100 |     472 /    8176 |       0x60608d70 | 0x60125370 |  Running
+-------------------------------------------------------------------------------------------------------------------
 ```
 
 #### To display Debug Symbols/Crash point using binary other than default build binary
 1. Run Ramdump Parser Script and see the Output  
-    $ python3 ramdumpParser.py -t `<Log file path>` -b `<binary folder path>` -c `<configuration file path>`
+    $ python3 trap.py -t `<Log file path>` -b `<binary folder path>` -c `<configuration file path>`
 ```
-vidisha@vidisha:~/tizenRT/tools/trap(trap)$ sudo python3 ramdumpParser.py -t logs -b ../../os/vidisha/bin/ -c ../../os/cfile
+vidisha@vidisha:~/tizenRT/tools/trap(trap)$ sudo python3 trap.py -t logs -b ../../os/vidisha/bin/ -c ../../os/cfile
 
 
 *************************************************************
@@ -327,11 +385,11 @@ cd $TIZENRT_BASEDIR/tools/trap/
 4. [Optional] Copy crash logs if any  
     First copy the crash logs to a file in tools/trap/`<log_file>`
 5. Run Ramdump Parser Script and see the Output  
-    $ python3 ramdumpParser.py -t `<Log file path>` -r `<Ramdump file path>`
+    $ python3 trap.py -t `<Log file path>` -r `<Ramdump file path>`
 
     ex)
-    $ python3 ramdumpParser.py -t ./log_file -r ../../ramdump_0x02023800_0x02110000.bin OR
-    $ python3 ramdumpParser.py -r ../../ramdump_0x02023800_0x02110000.bin
+    $ python3 trap.py -t ./log_file -r ../../ramdump_0x02023800_0x02110000.bin OR
+    $ python3 trap.py -r ../../ramdump_0x02023800_0x02110000.bin
 
 Example Call Stack Output for Kernel crash is as follows:
 ```

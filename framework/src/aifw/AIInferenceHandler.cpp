@@ -129,5 +129,18 @@ AIFW_RESULT AIInferenceHandler::clearData(uint16_t offset, uint16_t count)
 	return res;
 }
 
+AIFW_RESULT AIInferenceHandler::resetInferenceState(void)
+{
+	AIFW_RESULT res = AIFW_OK;
+	for (uint16_t idx = 0; idx < mModelIndex; idx++) {
+		res = mModels.get()[idx]->resetInferenceState();
+		if (res != AIFW_OK) {
+			AIFW_LOGE("reset state of model %d failed.", idx);
+			return res;
+		}
+	}
+	return res;
+}
+
 } /* namespace aifw */
 
