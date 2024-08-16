@@ -53,6 +53,10 @@
 #define NDP120_SPI_CS			0
 #define NDP120_SPI_MODE			SPIDEV_MODE0
 
+#if CONFIG_RTL8730E_BOARD_REVISION >= 6
+#define NDP120_GPIO_DMIC_EN		PA_25
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -152,6 +156,13 @@ int rtl8730e_ndp120_initialize(int minor)
 	 */
 
 	if (!initialized) {
+
+#if CONFIG_RTL8730E_BOARD_REVISION >= 6
+		gpio_t gpio_dmic_en;
+		gpio_init(&gpio_dmic_en, NDP120_GPIO_DMIC_EN);
+		gpio_dir(&gpio_dmic_en, PIN_OUTPUT);
+		gpio_mode(&gpio_dmic_en, PullUp);
+#endif
 
 		g_ndp120info.lower.attach = rtl8730e_ndp120_irq_attach;
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
