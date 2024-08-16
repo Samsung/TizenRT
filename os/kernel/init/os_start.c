@@ -825,6 +825,11 @@ void os_start(void)
 
 	DEBUGVERIFY(os_smp_start());
 
+	dbg("All SMP cores started!!\n");
+#ifdef CONFIG_AMP
+	dbg("AMP configuration is enabled. Default Affinity of all tasks will be set to core 0!!!\n");
+#endif
+
 #endif /* CONFIG_SMP */
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
