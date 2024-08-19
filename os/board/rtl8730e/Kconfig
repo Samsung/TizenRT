@@ -44,6 +44,16 @@ config FLASH_VSTART_LOADABLE
         will be used to do address remapping for loadable running on XIP.
         This is fixed value, so user doesn't need to change it.
 
+if SECOND_FLASH_PARTITION && RESOURCE_FS
+config RTK_DATA_BINARY_TO_EXT_FLASH
+    bool "RTK data binary migrate to external flash"
+    default n
+    help
+        This macro will decide whether to move some data (eg. BT FW patch)
+        out to external flash. By enabling this macro will help to free out space for
+        internal flash, due to executable code can only be supported by internal flash.
+endif
+
 choice
     prompt "Board Flash Size"
     default BOARD_FLASH_32M
