@@ -63,7 +63,8 @@ typedef enum WiFi_InterFace_ID {
 	RTK_WIFI_NONE,					// default
 	RTK_WIFI_STATION_IF,			// Station mode (turns on wpa_supplicant)
 	RTK_WIFI_SOFT_AP_IF,			// Soft AP mode (turns on hostapd)
-	RTK_WIFI_P2P_IF					// P2P mode (turns on wpa_supplicant)
+	RTK_WIFI_P2P_IF,					// P2P mode (turns on wpa_supplicant)
+  RTK_WIFI_AP_STA_IF
 } WiFi_InterFace_ID_t;
 
 typedef struct rtk_reason {

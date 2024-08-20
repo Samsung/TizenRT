@@ -159,7 +159,7 @@ static void inic_ipc_host_rx_tasklet(void)
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 			/* TizenRT gets netif from netdev */
 			/* Currently TizenRT only uses idx 0 */
-			// index = precvbuf->idx_wlan;
+			index = precvbuf->idx_wlan;
 
 			struct netdev *dev_tmp = NULL;
 			dev_tmp = (struct netdev *)rtk_get_netdev(index);

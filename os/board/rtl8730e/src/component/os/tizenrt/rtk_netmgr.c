@@ -348,10 +348,10 @@ static int rtk_drv_callback_handler(int type)
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
+	ndbg("\n[RTK] Init netmgr with dev %s\n",dev->ifname);
 
+	int ret = RTK_STATUS_SUCCESS;
 	if (g_mode == RTK_WIFI_NONE) {
-		int ret = RTK_STATUS_SUCCESS;
-
 		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 
 		if (ret != RTK_STATUS_SUCCESS) {
@@ -361,19 +361,33 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 			nvdbg("[RTK] Link callback handles: registered\n");
 		}
 
-		ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
+			ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 
-		if (ret != RTK_STATUS_SUCCESS) {
-			ndbg("[RTK] Failed to start STA mode\n");
-			return wuret;
-		}
-		g_mode = RTK_WIFI_STATION_IF;
-		/*extern const char lib_wlan_rev[];
-		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
-		wuret = TRWIFI_SUCCESS;
-		softap_flag = 0;
+			if (ret != RTK_STATUS_SUCCESS) {
+				ndbg("[RTK] Failed to start STA mode\n");
+				return wuret;
+			}
+			g_mode = RTK_WIFI_STATION_IF;
+			/*extern const char lib_wlan_rev[];
+			RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
+			wuret = TRWIFI_SUCCESS;
+			softap_flag = 0;
+
 		rtw_mutex_init(&scanlistbusy);
-	} else {
+	} else if(rtw_memcmp(dev->ifname,"wlan1",5)){
+				ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
+				if (ret != RTK_STATUS_SUCCESS) {
+					ndbg("[RTK] Failed to start softap mode\n");
+					return wuret;
+				}
+				g_mode = RTK_WIFI_AP_STA_IF;
+				/*extern const char lib_wlan_rev[];
+				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
+				wuret = TRWIFI_SUCCESS;
+				softap_flag = 1;
+			}
+	
+	else{
 		ndbg("Already %d\n", g_mode);
 	}
 	return wuret;
@@ -737,6 +751,8 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
+
+	ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
 	return wuret;
 }
 

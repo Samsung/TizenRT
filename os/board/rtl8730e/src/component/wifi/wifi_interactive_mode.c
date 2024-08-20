@@ -705,7 +705,14 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 }
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
-{
+{	if (interface_id>1){
+		lldbg("start concurrent");
+		wifi_on(3);
+		nvdbg("\r\n===============>>Finish wifi_on for concurrent!!\r\n");
+	return RTK_STATUS_SUCCESS;
+	}
+
+	lldbg("start sta");
 	wifi_on(RTW_MODE_STA);
 
 	rtw_wifi_setting_t setting;
