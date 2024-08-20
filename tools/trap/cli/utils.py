@@ -85,11 +85,11 @@ def print_symbol(stack_addr, search_addr, is_app_symbol, bin_path, app_name):
 				if (is_app_symbol):
 									loc = asymbol_lookup_table[is_app_symbol][mid - 1][1]
 									filen = loc.split('	')
-									print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
+									print("\t  {:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
 				else:
 									loc = ksymbol_lookup_table[mid - 1][1]
 									filen = loc.split('	')
-									print("{:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
+									print("\t  {:8}\t\t\t\t{}".format(hex(search_addr), filen[-1]))
 				break
 			else:
 				if (is_app_symbol):
@@ -124,18 +124,18 @@ def print_symbol(stack_addr, search_addr, is_app_symbol, bin_path, app_name):
 			print('Symbol not found for address: {0} in map file'.format(hex(search_addr)))
 
 # Function to Parse the input log file (which contains heap corruption data) and to print owner of corrupted node
-def print_heap_corruption_data(log_file):
+def print_heap_corruption_data(log_file, bin_path, app_name):
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
 			if 'allocated by code at addr' in line:
 							word = line.split(' ')
 							node = int(word[-1], 16)
-							print_symbol(0x00000000, node, 0)
-							print_symbol(0x00000000, node, 1)
+							print_symbol(0x00000000, node, 0, bin_path, app_name)
+							print_symbol(0x00000000, node, 1, bin_path, app_name)
 
 # Function to Parse the input log file (which contains current running work function) and to print its owner
-def print_running_work_function(log_file):
+def print_running_work_function(log_file, bin_path, app_name):
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
@@ -143,19 +143,19 @@ def print_running_work_function(log_file):
 							word = line.split(' ')
 							wf = word[-1]
 							node = int(wf[:-2], 16)
-							print_symbol(0x00000000, node, 0)
-							print_symbol(0x00000000, node, 1)
+							print_symbol(0x00000000, node, 0, bin_path, app_name)
+							print_symbol(0x00000000, node, 1, bin_path, app_name)
 
 # Function to Parse the input log file (which contains interrupt handler data) and to print its owner
-def print_interrupt_handler_data(log_file):
+def print_interrupt_handler_data(log_file, bin_path, app_name):
 	# Parse the contents based on tokens in log file.
 	with open(log_file) as searchfile:
 		for line in searchfile:
 			if 'IRQ handler' in line:
 							word = line.split(' ')
 							node = int(word[-1], 16)
-							print_symbol(0x00000000, node, 0)
-							print_symbol(0x00000000, node, 1)
+							print_symbol(0x00000000, node, 0, bin_path, app_name)
+							print_symbol(0x00000000, node, 1, bin_path, app_name)
 
 # Function to return the address of a Symbol from mapping table
 def get_address_of_symbol(symbol, debug=False):
