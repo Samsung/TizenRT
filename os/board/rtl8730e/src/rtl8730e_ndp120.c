@@ -53,6 +53,8 @@
 #define NDP120_SPI_CS			0
 #define NDP120_SPI_MODE			SPIDEV_MODE0
 
+#define GPIO_DMIC_EN			PA_25
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -141,9 +143,15 @@ int rtl8730e_ndp120_initialize(int minor)
 	static bool initialized = false;
 	char devname[12];
 	int ret;
+	gpio_t gpio_dmic_en;
 
 	audvdbg("minor %d\n", minor);
 	DEBUGASSERT(minor >= NDP120_AVAILABLE_MINOR_MIN && minor <= NDP120_AVAILABLE_MINOR_MAX);
+
+	auddbg("Enable DMIC\n");
+	gpio_init(&gpio_dmic_en, GPIO_DMIC_EN);
+	gpio_dir(&gpio_dmic_en, PIN_OUTPUT);
+	gpio_mode(&gpio_dmic_en, PullUp);
 
 	/* Have we already initialized?  Since we never uninitialize we must prevent
 	 * multiple initializations.  This is necessary, for example, when the
