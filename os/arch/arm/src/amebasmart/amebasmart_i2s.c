@@ -1663,7 +1663,29 @@ static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 	}
 	priv->txenab = priv->config->txenab;
 	if (priv->config->txenab) {
+#ifdef CONFIG_AMEBASMART_I2S_TXCL
+		switch (CONFIG_AMEBASMART_I2S_TXCL) {
+			case 8:
+				priv->i2s_object->channel_length = SP_TXCL_8;
+				break;
+			case 16:
+				priv->i2s_object->channel_length = SP_TXCL_16;
+				break;
+			case 20:
+				priv->i2s_object->channel_length = SP_TXCL_20;
+				break;
+			case 24:
+				priv->i2s_object->channel_length = SP_TXCL_24;
+				break;
+			case 32:
+				priv->i2s_object->channel_length = SP_TXCL_32;
+				break;
+			default:
+				break;
+		}
+#else
 		priv->i2s_object->channel_length = SP_TXCL_32;
+#endif
 		priv->i2s_object->fifo_num = SP_TX_FIFO2;
 		priv->i2s_object->direction = SP_DIR_TX;
 		priv->i2s_object->role = MASTER;

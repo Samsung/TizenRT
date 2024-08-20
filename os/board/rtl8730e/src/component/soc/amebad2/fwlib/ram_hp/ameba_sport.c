@@ -80,7 +80,29 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 {
 	SP_InitStruct->SP_SelDataFormat = SP_DF_I2S;
 	SP_InitStruct->SP_SelWordLen = SP_TXWL_16;
+#ifdef CONFIG_AMEBASMART_I2S_TXCL
+	switch (CONFIG_AMEBASMART_I2S_TXCL) {
+		case 8:
+			SP_InitStruct->SP_SelChLen = SP_TXCL_8;
+			break;
+		case 16:
+			SP_InitStruct->SP_SelChLen = SP_TXCL_16;
+			break;
+		case 20:
+			SP_InitStruct->SP_SelChLen = SP_TXCL_20;
+			break;
+		case 24:
+			SP_InitStruct->SP_SelChLen = SP_TXCL_24;
+			break;
+		case 32:
+			SP_InitStruct->SP_SelChLen = SP_TXCL_32;
+			break;
+		default:
+			break;
+	}
+#else
 	SP_InitStruct->SP_SelChLen = SP_TXCL_32;
+#endif
 	SP_InitStruct->SP_SelCh = SP_TX_CH_LR;
 	SP_InitStruct->SP_SR = SP_48K;
 	SP_InitStruct->SP_SelTDM = SP_TX_NOTDM;
