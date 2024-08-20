@@ -62,7 +62,6 @@ extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_re
 /*other pin config */
 #define ALC1019_GPIO_RESET_PIN		PA_22
 
-
 #define ALC1019_AVAILABLE_MINOR_MIN	0
 #define ALC1019_AVAILABLE_MINOR_MAX	25
 
