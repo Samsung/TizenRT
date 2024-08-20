@@ -217,7 +217,7 @@ class logParser:
 						if (self.crash_type_assert == False):
 							print('3. Crash point (PC or LR)')
 							print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-							format_output(result, "")
+							self.format_output(result, "")
 				if (address2 >= hex(self.g_stext_app[app_idx]) and address2 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = pc_value
@@ -234,21 +234,21 @@ class logParser:
 						is_app_crash = 1
 						if (self.crash_type_assert == False):
 							print('\n\t[ Current location (PC) of assert ]')
-							format_output(result, "")
+							self.format_output(result, "")
 					if ((addr - 4) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 4))
 						result1 = f.read()
 						if '??' not in result1 and '$d' not in result1:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								format_output(result1, "of (pc - 4)")
+								self.format_output(result1, "of (pc - 4)")
 					if ((addr - 8) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 8))
 						result2 = f.read()
 						if '??' not in result2 and '$d' not in result2:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								format_output(result2, "of (pc - 8)")
+								self.format_output(result2, "of (pc - 8)")
 
 		# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
 		else:
@@ -269,21 +269,21 @@ class logParser:
 						if (self.crash_type_assert == False):
 							print('3. Crash point (PC or LR)')
 							print('\n\t[ Current location (PC) of assert ]')
-							format_output(result, "")
+							self.format_output(result, "")
 					if ((addr - 4) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 4))
 						result1 = f.read()
 						if '??' not in result1 and '$d' not in result1:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								format_output(result1, "of (pc - 4)")
+								self.format_output(result1, "of (pc - 4)")
 					if ((addr - 8) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 8))
 						result2 = f.read()
 						if '??' not in result2 and '$d' not in result2:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								format_output(result2, "of (pc - 8)")
+								self.format_output(result2, "of (pc - 8)")
 
 		# Check for lr & pc values in kernel text address range
 		if (not is_app_crash) and (pc_value != 00000000):
@@ -299,7 +299,7 @@ class logParser:
 					if (self.crash_type_assert == False):
 						print('3. Crash point (PC or LR)')
 						print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-						format_output(result, "")
+						self.format_output(result, "")
 			if (address2 >= hex(self.g_stext_flash) and address2 < hex(self.g_etext_flash)) or (address2 >= hex(self.g_stext_ram) and address2 < hex(self.g_etext_ram)):
 				f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value))
 				result = f.read()
@@ -312,21 +312,21 @@ class logParser:
 					is_kernel_crash = 1
 					if (self.crash_type_assert == False):
 						print('\n\t[ Current location (PC) of assert ]')
-						format_output(result, "")
+						self.format_output(result, "")
 				if ((pc_value - 4) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value - 4))
 					result1 = f.read()
 					if '??' not in result1 and '$d' not in result1:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							format_output(result1, "of (pc - 4)")
+							self.format_output(result1, "of (pc - 4)")
 				if ((pc_value - 8) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value - 8))
 					result2 = f.read()
 					if '??' not in result2 and '$d' not in result2:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							format_output(result2, "of (pc - 8)")
+							self.format_output(result2, "of (pc - 8)")
 
 		# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
 		if (pc_value == 00000000 and self.g_assertpc):
@@ -342,21 +342,21 @@ class logParser:
 					if (self.crash_type_assert == False):
 						print('3. Crash point (PC or LR)')
 						print('\n\t[ Current location (PC) of assert ]')
-						format_output(result, "")
+						self.format_output(result, "")
 				if ((self.g_assertpc - 4) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(self.g_assertpc - 4))
 					result1 = f.read()
 					if '??' not in result1 and '$d' not in result1:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							format_output(result1, "of (pc - 4)")
+							self.format_output(result1, "of (pc - 4)")
 				if ((self.g_assertpc - 8) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(self.g_assertpc - 8))
 					result2 = f.read()
 					if '??' not in result2 and '$d' not in result2:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							format_output(result2, "of (pc - 8)")
+							self.format_output(result2, "of (pc - 8)")
 
 		if (not is_app_crash) and (not is_kernel_crash):
 			print('1. Crash Binary             : NA')
@@ -411,13 +411,13 @@ class logParser:
 					word = line.split(' ')
 					# Last word[-1] contains the interrupt number
 					irq_num = word[-1]
-					print('\n\t- Interrupt number\t\t:',irq_num)
+					print('\n\t- Interrupt number\t\t\t:',irq_num)
 				if 'Code asserted in IRQ state!' in line:
 					is_interrupt_mode = 1
 					# It displays the interrupt handler information corresponding to the Interrupt
 					print("\n5. Assertion Data during interrupt mode:\n")
-					print('- Interrupt handler at addr\t\tSymbol_name')
-					utils.print_interrupt_handler_data(self.log_file)
+					print('\t- Interrupt handler at addr\t\tSymbol_name')
+					utils.print_interrupt_handler_data(self.log_file, self.bin_path, self.app_name)
 
 		with open(self.log_file) as searchfile:
 			for line in searchfile:
@@ -467,7 +467,7 @@ class logParser:
 					print("\t- Current running work function is:\t", hex(curr_worker))
 					# It displays the symbol corresponding to the current running work function
 					print('\nCurrent running work function\t\tFile_name')
-					utils.print_running_work_function(self.log_file)
+					utils.print_running_work_function(self.log_file, self.bin_path, self.app_name)
 
 	# API to Parse the call stack from input log file and to print stack values
 	def parse_call_stack(self):
