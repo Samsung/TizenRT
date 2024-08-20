@@ -174,10 +174,11 @@ static FAR struct tcb_s *sched_nexttcb(FAR struct tcb_s *tcb)
 int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 {
 	FAR struct tcb_s *rtcb = this_task();
+	FAR struct tcb_s *ntcb;
 	tstate_t task_state;
 	irqstate_t saved_state;
+	
 #ifdef CONFIG_SMP
-	FAR struct tcb_s *ntcb;
 	int cpu;
 #endif
 
@@ -211,14 +212,35 @@ int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority)
 
 #ifdef CONFIG_SMP
 		ntcb = sched_nexttcb(tcb);
-		if (sched_priority <= ntcb->sched_priority)
 #else
-		if (sched_priority <= tcb->flink->sched_priority)
+		ntcb = tcb->flink;
 #endif
-		{
-			/* A context switch will occur. */
+		if (sched_priority <= ntcb->sched_priority) {
+			if (rtcb->lockcount > 0) {
+				/* Move all tasks with the higher priority from the ready-to-run
+				* list to the pending list.
+				*/
+				do {
+					bool check = sched_removereadytorun(ntcb);
+					DEBUGASSERT(check == false);
+					UNUSED(check);
 
-			up_reprioritize_rtr(tcb, (uint8_t)sched_priority);
+					sched_addprioritized(ntcb, (FAR dq_queue_t *)&g_pendingtasks);
+					ntcb->task_state = TSTATE_TASK_PENDING;
+
+#ifdef CONFIG_SMP
+					ntcb = sched_nexttcb(tcb);
+#else
+					ntcb = tcb->flink;
+#endif
+				} while (sched_priority < ntcb->sched_priority);
+
+				/* Change the task priority */
+				tcb->sched_priority = (uint8_t)sched_priority;
+
+			} else {
+				up_reprioritize_rtr(tcb, (uint8_t)sched_priority);
+			}
 		}
 
 		/* Otherwise, we can just change priority since it has no effect */
