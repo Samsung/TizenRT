@@ -202,8 +202,19 @@ function get_configured_partitions()
 	else
 		configured_parts=${CONFIG_FLASH_PART_NAME}
 	fi
-	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
-		configured_parts+=${CONFIG_SECOND_FLASH_PART_NAME}
+	
+	echo $configured_parts
+}
+
+function get_configured_second_partitions()
+{
+	local configured_parts
+	# Read Partitions
+	if [[ -z ${CONFIG_SECOND_FLASH_PART_NAME} ]];then
+
+		configured_parts=`grep -A 2 'config SECOND_FLASH_PART_NAME' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+	else
+		configured_parts=${CONFIG_SECOND_FLASH_PART_NAME}
 	fi
 	
 	echo $configured_parts
@@ -220,9 +231,21 @@ function get_partition_sizes()
 	else
 		sizes_str=${CONFIG_FLASH_PART_SIZE}
 	fi
-	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
-		sizes_str+=${CONFIG_SECOND_FLASH_PART_SIZE}
+	
+	echo $sizes_str
+}
+
+function get_partition_second_sizes()
+{
+	local sizes_str
+	#Read Partition Sizes
+	if [[ -z ${CONFIG_SECOND_FLASH_PART_SIZE} ]]
+	then
+		sizes_str=`grep -A 2 'config SECOND_FLASH_PART_SIZE' ${PARTITION_KCONFIG} | sed -n 's/\tdefault "\(.*\)".*/\1/p'`
+	else
+		sizes_str=${CONFIG_SECOND_FLASH_PART_SIZE}
 	fi
+	
 	echo $sizes_str
 }
 
@@ -425,20 +448,41 @@ done
 sanity_check;
 
 parts=$(get_configured_partitions)
-IFS=',' read -ra parts <<< "$parts"
+IFS=',' read -ra partfirst <<< "$parts"
 
 sizes=$(get_partition_sizes)
-IFS=',' read -ra sizes <<< "$sizes"
+IFS=',' read -ra sizefirst <<< "$sizes"
 
 #Calculate Flash Offset
-num=${#sizes[@]}
+num=${#sizefirst[@]}
 offsets[0]=`printf "0x%X" ${CONFIG_FLASH_START_ADDR}`
 
 for (( i=1; i<=$num-1; i++ ))
 do
-	val=$((sizes[$i-1] * 1024))
+	val=$((sizefirst[$i-1] * 1024))
 	offsets[$i]=`printf "0x%X" $((offsets[$i-1] + ${val}))`
 done
+
+if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
+	parts=$(get_configured_second_partitions)
+	IFS=',' read -ra partsecond <<< "$parts"
+
+	sizes=$(get_partition_second_sizes)
+	IFS=',' read -ra sizesecond <<< "$sizes"
+
+	#Calculate Flash Offset
+	num1=${#sizesecond[@]}
+	offsets[$num]=`printf "0x%X" ${CONFIG_SECOND_FLASH_START_ADDR}`
+
+	for (( i=1; i<=$num1-1; i++ ))
+	do
+		val=$((sizesecond[$i-1] * 1024))
+		offsets[$num+$i]=`printf "0x%X" $((offsets[$num+$i-1] + ${val}))`
+	done
+fi
+
+parts=("${partfirst[@]}" "${partsecond[@]}")
+sizes=("${sizefirst[@]}" "${sizesecond[@]}")
 
 #Dump Info
 echo ""
