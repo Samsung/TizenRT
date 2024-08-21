@@ -204,7 +204,7 @@ static void arm_registerdump(volatile uint32_t *regs)
 #else
 		lldbg_noarg(" %08x %08x %08x %08x\n",
 		regs[REG_R4], regs[REG_R5], regs[REG_R6], regs[REG_R7]);
-		lldbg("R8: %08x %08x %08x	%08x",
+		lldbg("R8: %08x %08x %08x %08x",
 		regs[REG_R8], regs[REG_R9], regs[REG_R10], regs[REG_R11]);
 #endif
 		lldbg_noarg(" %08x %08x %08x %08x\n",
@@ -262,9 +262,9 @@ static void check_assert_location(uint32_t *sp, bool *is_irq_assert)
 		*is_irq_assert = true;
 		lldbg("Code asserted in IRQ state!\n");
 		lldbg("IRQ num: %d\n", g_irq_num);
-		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_num].handler);
+		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO
-		lldbg("IRQ name: %s \n", g_irqvector[g_irq_num].irq_name);
+		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num].irq_name);
 #endif
 	} else {
 		/* Assert in user thread */
@@ -287,7 +287,7 @@ static void check_sp_corruption(uint32_t sp, uint32_t *stackbase, uint32_t *stac
 {
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Asserted task's stack details\n");
-	lldbg_noarg("===========================================================\n");	
+	lldbg_noarg("===========================================================\n");
 	if (is_irq_assert) {
 		/* Assert in irq */
 #if CONFIG_ARCH_INTERRUPTSTACK > 7

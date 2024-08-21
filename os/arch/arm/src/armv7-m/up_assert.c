@@ -316,9 +316,9 @@ static void up_dumpstate(void)
 
 	if (is_irq_assert) {
 		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
-		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_nums[irq_num]].handler);
+		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_nums[irq_num]].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO
-		lldbg("IRQ name: %s \n", g_irqvector[g_irq_nums[irq_num]].irq_name);
+		lldbg("IRQ name: %s\n", g_irqvector[g_irq_nums[irq_num]].irq_name);
 #endif
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 		if ((sp <= istackbase) && (sp > (istackbase - istacksize))) {
