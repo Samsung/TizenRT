@@ -306,12 +306,12 @@ static void check_sp_corruption(uint32_t sp, uint32_t *stackbase, uint32_t *stac
 {
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Asserted task's stack details\n");
-	lldbg_noarg("===========================================================\n");	
+	lldbg_noarg("===========================================================\n");
 	if (is_irq_assert) {
 		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
-		lldbg("IRQ handler: %08x \n", g_irqvector[g_irq_nums[irq_num]].handler);
+		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_nums[irq_num]].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO
-		lldbg("IRQ name: %s \n", g_irqvector[g_irq_nums[irq_num]].irq_name);
+		lldbg("IRQ name: %s\n", g_irqvector[g_irq_nums[irq_num]].irq_name);
 #endif
 		if ((sp <= nestirqstkbase) && (sp > (nestirqstkbase - nestirqstksize))) {
 			*stackbase = nestirqstkbase;
