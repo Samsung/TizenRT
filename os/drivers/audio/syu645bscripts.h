@@ -73,7 +73,8 @@ t_codec_init_script_entry codec_initial_script[] = {
 	{ 0x13, {0x06,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x14, {0x06,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x1E, {0x05,}, 30, SYU645B_REG_D_2BYTE},
-	{ 0x07, {0xFF,}, 30, SYU645B_REG_D_2BYTE},
+	/* setting to default volume */
+	{ 0x07, {SYU645B_HW_VOL_DEF,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x08, {0xBD,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x09, {0xBD,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x1F, {0x03,}, 30, SYU645B_REG_D_2BYTE},

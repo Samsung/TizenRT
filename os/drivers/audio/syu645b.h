@@ -62,11 +62,12 @@
  * TODO : tune the volume by adjusting the step size, max vol and so on
  */
 
-#define SYU645B_HW_VOL_MAX		255
-#define SYU645B_HW_VOL_STEP		7
+#define SYU645B_HW_VOL_MAX	    255
 
-/* SYU645B_HW_VOL_DEF = (SYU645B_HW_VOL_MAX - (SYU645B_SPK_VOL_MAX - SYU645B_SPK_VOL_DEF) * SYU645B_HW_VOL_STEP) */
-#define SYU645B_HW_VOL_DEF		234
+/* SYU645B_HW_VOL_DEF = SYU645B_HW_VOL_MIN_BOUND +  SYU645B_HW_VOL_SLOPE * SYU645B_SPK_VOL_DEF */
+#define SYU645B_HW_VOL_DEF	    214
+#define SYU645B_HW_VOL_MIN_BOUND    130       /* refers to the minimum hardware volume audible */
+#define SYU645B_HW_VOL_SLOPE        (SYU645B_HW_VOL_MAX - SYU645B_HW_VOL_MIN_BOUND) / SYU645B_SPK_VOL_MAX
 
 /* Commonly defined and redefined macros */
 

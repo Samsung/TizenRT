@@ -44,7 +44,7 @@
 #include "syu645b.h"
 #include "syu645bscripts.h"
 
-#define SYU645B_I2S_TIMEOUT_MS 90
+#define SYU645B_I2S_TIMEOUT_MS 200
 
 /* Default configuration values */
 
@@ -173,7 +173,8 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 			if (priv->volume == 0) {
 				codec_set_master_volume_script[0].val[0] = 0;
 			} else {
-				codec_set_master_volume_script[0].val[0] = SYU645B_HW_VOL_MAX - (SYU645B_SPK_VOL_MAX - priv->volume) * SYU645B_HW_VOL_STEP;
+				/* Linear approximation is done to convert media volume to hardware volume */
+				codec_set_master_volume_script[0].val[0] = SYU645B_HW_VOL_MIN_BOUND + SYU645B_HW_VOL_SLOPE * priv->volume;
 			}
 			syu645b_exec_i2c_script(priv, codec_set_master_volume_script, sizeof(codec_set_master_volume_script) / sizeof(t_codec_init_script_entry));
 		}
@@ -781,8 +782,6 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 
 		/* Pause i2s channel */
 		I2S_PAUSE(priv->i2s, I2S_TX);
-
-		syu645b_exec_i2c_script(priv, codec_initial_script, sizeof(codec_initial_script) / sizeof(t_codec_init_script_entry));
 		
 		/* Resume I2S */
 		I2S_RESUME(priv->i2s, I2S_TX);
