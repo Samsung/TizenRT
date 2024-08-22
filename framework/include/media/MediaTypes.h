@@ -31,6 +31,7 @@
 
 #include <tinyalsa/tinyalsa.h>
 
+#define ID3_HEADER_LENGTH         10
 #define AAC_HEADER_LENGTH         7
 #define MP3_HEADER_LENGTH         4
 #define WAVE_HEADER_LENGTH        44
