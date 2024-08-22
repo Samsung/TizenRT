@@ -115,6 +115,8 @@ typedef struct pm_domain_arg_s pm_domain_arg_t;
  * from the UI domain, shutting down the UI when it is not in use.
  */
 
+#define PM_DRVPATH "/dev/pm"
+
 #ifndef CONFIG_PM_NDOMAINS
 #define CONFIG_PM_NDOMAINS 32
 #endif
