@@ -673,6 +673,33 @@ errout:
 #endif
 #endif
 
+
+/**
+* @fn                   :tc_sched_set_get_affinity
+* @brief                :set and get cpu affinity for a task
+* @scenario             :check if the cpu affinity is properly set
+* API's covered         :sched_setaffinity, sched_getaffinity
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+
+static void tc_sched_set_get_affinity(void)
+{
+	cpu_set_t affinity = 1 << 0;	/* Set affinity to core zero */
+#ifdef CONFIG_SMP
+	TC_ASSERT_EQ("sched_setaffinity", sched_setaffinity(0, sizeof(cpu_set_t), &affinity), OK);
+	affinity = 0;
+	TC_ASSERT_EQ("sched_getaffinity", sched_getaffinity(0, sizeof(cpu_set_t), &affinity), OK);
+	TC_ASSERT_EQ("sched_getaffinity", affinity, (1 << 0));
+#else
+	TC_ASSERT_EQ("sched_setaffinity", sched_setaffinity(0, sizeof(cpu_set_t), &affinity), -EINVAL);
+	TC_ASSERT_EQ("sched_getaffinity", sched_getaffinity(0, sizeof(cpu_set_t), &affinity), 0);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: sched
  ****************************************************************************/
@@ -701,6 +728,7 @@ int sched_main(void)
 	tc_sched_task_setcanceltype();
 #endif
 #endif
+	tc_sched_set_get_affinity();
 
 	return 0;
 }

@@ -1605,6 +1605,51 @@ static void tc_pthread_pthread_mutex_consistent(void)
 
 #endif
 
+/**
+* @fn                   :tc_pthread_set_get_affinity
+* @brief                :creates a new thread with a specified attributes and \
+*                        assigns affinity to it
+* @Scenario             :verifies set and get affinity for pthread
+* API's covered         :pthread_create, pthread_setaffinity_np, pthread_getaffinity_np
+* Preconditions         :none
+* Postconditions        :none
+* @return               :void
+*/
+static void tc_pthread_set_get_affinity(void)
+{
+	int ret_chk;
+	pthread_t pthread;
+	void *p_value = 0;
+	pthread_attr_t attr;
+	cpu_set_t affinity = 1 << 0;	/* Set affinity to core zero */
+	
+	ret_chk = pthread_attr_init(&attr);
+	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
+	attr.affinity = affinity;
+
+#ifdef CONFIG_SMP
+	ret_chk = pthread_create(&pthread, &attr, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_setaffinity_np", pthread_setaffinity_np(pthread, sizeof(attr.affinity), &affinity), OK);
+	affinity = 0;
+	TC_ASSERT_EQ("pthread_getaffinity_np", pthread_getaffinity_np(pthread, sizeof(attr.affinity), &affinity), OK);
+	TC_ASSERT_EQ("pthread_getaffinity_np", affinity, (1 << 0));
+	ret_chk = pthread_join(pthread, &p_value);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+#else
+	ret_chk = pthread_create(&pthread, &attr, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, EINVAL);
+	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+	TC_ASSERT_EQ("pthread_setaffinity_np", pthread_setaffinity_np(pthread, sizeof(attr.affinity), &affinity), EINVAL);
+	TC_ASSERT_EQ("pthread_getaffinity_np", pthread_getaffinity_np(pthread, sizeof(attr.affinity), &affinity), 0);
+	ret_chk = pthread_join(pthread, &p_value);
+	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
+#endif
+
+	TC_SUCCESS_RESULT();
+}
+
 /****************************************************************************
  * Name: pthread_main
  ****************************************************************************/
@@ -1641,6 +1686,7 @@ int pthread_main(void)
 #ifdef CONFIG_CANCELLATION_POINTS
 	tc_pthread_pthread_setcanceltype();
 #endif
+	tc_pthread_set_get_affinity();
 
 	return 0;
 }
