@@ -55,6 +55,10 @@ enum tash_input_state_e {
 #define TASH_PROMPT           "TASH>>"
 #endif							/* CONFIG_TASH */
 
+#ifdef CONFIG_PM
+#define TASH_PM_TIMEDSUSPEND_TIME_IN_MS 5000
+#endif
+
 static int tash_running = FALSE;
 
 #if TASH_MAX_STORE > 0
@@ -156,7 +160,10 @@ char *tash_read_input_line(int fd)
 				shdbg("TASH: can not read uart\n");
 				return buffer;
 			}
-
+#ifdef CONFIG_PM
+			/* Ensure board does not go to sleep for TASH_PM_TIMEDSUSPEND_TIME_IN_MS*/
+			tash_pm_timedsuspend(TASH_PM_TIMEDSUSPEND_TIME_IN_MS);
+#endif
 			for (char_idx = 0; char_idx < nbytes; char_idx++) {
 
 				if ((CURR_CHAR == ASCII_BS) || (CURR_CHAR == ASCII_DEL)) {
@@ -341,6 +348,10 @@ static int tash_main(int argc, char *argv[])
 
 	tash_running = TRUE;
 
+#ifdef CONFIG_PM
+	/* Open PM Driver to perform pm operations inside tash_read_input_line */
+	tash_pm_open_driver();
+#endif
 	do {
 		nbytes = write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT));
 		if (nbytes <= 0) {
@@ -380,6 +391,9 @@ int tash_start(void)
 void tash_stop(void)
 {
 	tash_running = FALSE;
+#ifdef CONFIG_PM
+	tash_pm_close_driver();
+#endif
 }
 #endif							/* CONFIG_TASH */
 

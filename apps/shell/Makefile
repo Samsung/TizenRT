@@ -26,6 +26,9 @@ STACKSIZE = 2048
 
 ASRCS =
 CSRCS = tash_command.c tash_init.c
+ifeq ($(CONFIG_PM),y)
+CSRCS += tash_pm.c
+endif
 ifeq ($(CONFIG_TASH_SCRIPT),y)
 CSRCS += tash_script.c
 endif
