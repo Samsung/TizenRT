@@ -564,9 +564,9 @@ int tash_execute_cmd(char **args, int argc)
 			if (tash_cmds_info.cmd[cmd_idx].exec_type == TASH_EXECMD_SYNC) {
 				/* function call to execute SYNC command */
 #ifdef CONFIG_PM
-				pmdrv_fd = open("/dev/pm", O_WRONLY);
+				pmdrv_fd = open(PM_DRVPATH, O_WRONLY);
 				if (pmdrv_fd < 0) {
-					shdbg("open /dev/pm failed(%d), \n", get_errno());
+					shdbg("open %s failed(%d), \n", PM_DRVPATH, get_errno());
 				} else {
 					if (ioctl(pmdrv_fd, PMIOC_DOMAIN_REGISTER, &pm_domain_arg) != OK) {
 						shdbg("pm_domain_register failed(%d)\n", get_errno());

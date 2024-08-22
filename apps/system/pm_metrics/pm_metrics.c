@@ -59,9 +59,9 @@ int pm_metrics_main(int argc, char *argv[])
 		printf("'%s' is not a valid argument\n", argv[1]);
 		goto usage;
 	}
-	int fd = open("/dev/pm", O_RDONLY);
+	int fd = open(PM_DRVPATH, O_RDONLY);
 	if (fd < 0) {
-		printf("Cannot open /dev/pm file with fd = %d\n", fd);
+		printf("Cannot open %s file with fd = %d\n", PM_DRVPATH, fd);
 		return ERROR;
 	}
 
