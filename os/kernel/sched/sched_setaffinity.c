@@ -69,9 +69,11 @@
 
 int sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask)
 {
+#ifdef CONFIG_SMP
   FAR struct tcb_s *tcb;
   irqstate_t flags;
   int ret = OK;
+
 
   DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
 
@@ -141,4 +143,7 @@ errout_with_csection:
 
 errout:
   return ret;
+#else 
+  return -EINVAL;
+#endif
 }

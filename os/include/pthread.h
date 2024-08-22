@@ -481,14 +481,12 @@ int pthread_setschedparam(pthread_t thread, int policy, FAR const struct sched_p
  */
 int pthread_setschedprio(pthread_t thread, int prio);
 
-#ifdef CONFIG_SMP
 /* Thread affinity */
 
 int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
                            FAR const cpu_set_t *cpuset);
 int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize,
                            FAR cpu_set_t *cpuset);
-#endif
 
 /* Thread-specific Data Interfaces */
 /**

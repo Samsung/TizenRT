@@ -91,9 +91,9 @@ uintptr_t STUB_sched_setparam(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_sched_setscheduler(int nbr, uintptr_t parm1, uintptr_t parm2,
 								  uintptr_t parm3);
 
-#ifdef CONFIG_SMP
 int STUB_sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask);
 int STUB_sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask);
+#ifdef CONFIG_SMP
 int STUB_sched_getcpu(void);
 #endif
 
@@ -293,10 +293,8 @@ uintptr_t STUB_pthread_mutex_trylock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_unlock(int nbr, uintptr_t parm1);
 uintptr_t STUB_pthread_mutex_consistent(int nbr, uintptr_t parm1);
 
-#ifdef CONFIG_SMP
 int STUB_pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, FAR const cpu_set_t *cpuset);
 int STUB_pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset);
-#endif
 
 uintptr_t STUB_pthread_setschedparam(int nbr, uintptr_t parm1,
 									 uintptr_t parm2, uintptr_t parm3);

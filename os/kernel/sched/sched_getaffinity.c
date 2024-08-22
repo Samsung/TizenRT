@@ -64,6 +64,7 @@
 
 int sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask)
 {
+#ifdef CONFIG_SMP
   FAR struct tcb_s *tcb;
   int ret;
 
@@ -95,4 +96,8 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask)
 
   sched_unlock();
   return ret;
+#else
+  /* In the absence of SMP, all tasks will always run on core 0 */
+  return 0;
+#endif
 }
