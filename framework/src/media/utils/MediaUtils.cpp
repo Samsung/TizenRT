@@ -1007,6 +1007,19 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 #ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3:
 		isHeader = false;
+		/* https://id3.org/d3v2.3.0 check id3v3 tag in file */
+		unsigned char id3Header[ID3_HEADER_LENGTH];
+		ret = fread(id3Header, sizeof(unsigned char), ID3_HEADER_LENGTH, fp);
+		if (strncasecmp((const char *)id3Header, "ID3", 3) == 0) {
+			medvdbg("string id3v2 tag found\n");
+			/* todo: check for extended header and parse title, artist etc details */
+			fseek(fp, 128, SEEK_SET);
+			break;
+		} else {
+			medvdbg("string id3v2 tag not found\n");
+			fseek(fp, 0, SEEK_SET);
+			break;
+		}
 		while (fread(tag, sizeof(unsigned char), 2, fp) == 2) {
 			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
 			if ((tag[0] == 0xFF) && ((tag[1] & 0xF0) == 0xF0)) {
