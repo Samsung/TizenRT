@@ -36,8 +36,6 @@
 
 #include "pthread/pthread.h"
 
-#ifdef CONFIG_SMP
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -84,5 +82,3 @@ int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *c
 
 	return ret;
 }
-
-#endif /* CONFIG_SMP */
