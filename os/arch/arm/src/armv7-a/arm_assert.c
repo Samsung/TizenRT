@@ -477,6 +477,22 @@ static void arm_assert(void)
 }
 
 /****************************************************************************
+ * Name: dump_stack : dumps the stack of current thread
+ ****************************************************************************/
+void dump_stack(void)
+{
+	/* ToDo: implement as per the armv7-a architecture */
+}
+
+/****************************************************************************
+ * Name: dump_all_stack : dumps the stack of current thread
+ ****************************************************************************/
+void dump_all_stack(void)
+{
+	/* ToDo: implement as per the armv7-a architecture */
+}
+
+/****************************************************************************
  * Name: check_heap_corrupt
  ****************************************************************************/
 

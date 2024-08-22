@@ -604,7 +604,7 @@ void cmd_wifi_info(int argc, char **argv)
 
 	for (i = 0; i < NET_IF_NUM; i++) {
 		if (wifi_is_running(i)) {
-			nvdbg("\n\r\nWIFI %s Status: Running", ifname[i]);
+			nvdbg("\n\r\nWIFI idx %d Status: Running", i);
 			nvdbg("\n\r==============================");
 
 			rltk_wlan_statistic(i, &sw_stats);
