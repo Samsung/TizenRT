@@ -91,6 +91,12 @@ extern int tash_sleep(int argc, char **args);
 #ifdef CONFIG_TASH_USLEEP
 extern int tash_usleep(int argc, char **args);
 #endif
+#ifdef CONFIG_PM
+void tash_pm_open_driver(void);
+void tash_pm_close_driver(void);
+int tash_pm_get_domain_id(void);
+void tash_pm_timedsuspend(uint32_t milliseconds);
+#endif
 #endif
 
 #endif							/* __APPS_SHELL_TASH_INTERNAL_H */
