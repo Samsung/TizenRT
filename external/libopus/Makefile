@@ -74,12 +74,12 @@ CSRCS += analysis.c \
 	 opus_multistream_decoder.c \
 	 opus_multistream_encoder.c
 
-CFLAGS := -DNULL=0 -DSOCKLEN_T=socklen_t -DLOCALE_NOT_USED \
+ADD_CFLAGS := -DNULL=0 -DSOCKLEN_T=socklen_t -DLOCALE_NOT_USED \
           -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 \
           -Drestrict='' -D__EMX__ -DOPUS_BUILD \
     	  -DHAVE_LRINT -DHAVE_LRINTF -O1 -fno-math-errno
-CFLAGS += -DFIXED_POINT -DDISABLE_FLOAT_API
-CFLAGS += -DVAR_ARRAYS
+ADD_CFLAGS += -DFIXED_POINT -DDISABLE_FLOAT_API
+ADD_CFLAGS += -DUSE_SHAREDPTR
 
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/include
@@ -87,12 +87,15 @@ CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/celt
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk
 CFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk/fixed
 
-CXXFLAGS = $(CFLAGS)
-CXXFLAGS += -Wno-shadow -Wno-pedantic
-CXXFLAGS += -pipe -std=c++11
-CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
-CXXFLAGS += -ffunction-sections -fdata-sections
-CXXFLAGS += -DCMAKE_EXE_LINKER_FLAGS='-static-libstdc++'
+CXXFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus
+CXXFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/include
+CXXFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/celt
+CXXFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk
+CXXFLAGS += -I$(TOPDIR)/$(EXTDIR)/libopus/silk/fixed
+
+CFLAGS += $(ADD_CFLAGS)
+
+CXXFLAGS += $(ADD_CFLAGS)
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
