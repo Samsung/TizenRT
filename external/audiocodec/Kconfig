@@ -16,3 +16,18 @@ config AUDIO_CODEC_RINGBUFFER_SIZE
 	depends on AUDIO_CODEC
 	---help---
 		Ring buffer size that used for decoding MP3/AAC
+
+config CODEC_AAC
+	bool "Support AAC decoding"
+	default n
+	depends on AUDIO_CODEC
+	---help---
+		Enable AAC decoding
+
+config CODEC_MP3
+	bool "Support MP3 decoding"
+	default n
+	depends on AUDIO_CODEC
+	---help---
+		Enable MP3 decoding
+

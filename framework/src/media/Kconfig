@@ -209,16 +209,3 @@ config HANDLER_STREAM_BUFFER_THRESHOLD
 
 endif #MEDIA
 
-config AUDIO_CODEC
-	bool "Software Audio Codec Support"
-	default n
-	depends on AUDIO
-	---help---
-		Enable software audio codec functions
-
-config AUDIO_CODEC_RINGBUFFER_SIZE
-	int "Audio Decoder Ringbuffer Size"
-	default 16384
-	depends on AUDIO_CODEC
-	---help---
-		Ring buffer size that used for decoding MP3/AAC
