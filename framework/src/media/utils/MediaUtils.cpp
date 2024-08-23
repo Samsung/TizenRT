@@ -83,6 +83,8 @@ namespace utils {
 				| ((header[7] & 0x7f) << 14) \
 				| ((header[8] & 0x7f) << 7) \
 				| ((header[9] & 0x7f)) )
+// MP3 ID3v2 footer length
+#define MP3_ID3V2_FOOTER_LENGTH 10
 
 // Frame size = frame samples * (1 / sample rate) * bitrate / 8 + padding
 //            = frame samples * bitrate / 8 / sample rate + padding
@@ -617,18 +619,41 @@ static bool isMpeg2Ts(const unsigned char *buffer, size_t size)
 	return true;
 }
 
+static bool checkId3V2Header(const unsigned char *buffer, size_t size, FILE *fp = nullptr)
+{
+	if (fp) {
+		size = fread((void *)buffer, sizeof(unsigned char), size, fp);
+	}
+	if ((MP3_ID3V2_HEADER_LENGTH <= size) && (memcmp("ID3", buffer, 3) == 0)) {
+		medvdbg("id3v2 tag found\n");
+		size_t id3Size = MP3_ID3V2_TAG_SIZE(buffer);
+		bool isFooterPresent = (buffer[5] & 0x10) != 0 ? true : false;
+		size_t sizeToSeek = isFooterPresent ? MP3_ID3V2_HEADER_LENGTH + id3Size + MP3_ID3V2_FOOTER_LENGTH : MP3_ID3V2_HEADER_LENGTH + id3Size;
+		if (fp) {
+			if (fseek(fp, sizeToSeek, SEEK_SET) != 0) {
+				meddbg("Error seeking data frame in mp3 file\n");
+				return false;
+			}
+		} else {
+			if (size <= sizeToSeek) {
+				meddbg("Not enough to seek data frame, ID3v2 tag size: %u\n", id3Size);
+				return false;
+			}
+			buffer += sizeToSeek;
+			size -= sizeToSeek;
+		}
+	} else {
+		medvdbg("id3v2 tag not found\n");
+	}
+	return true;
+}
+
 static bool isMp3(const unsigned char *buffer, size_t size)
 {
-	// Check ID3v2 tag
-	if ((MP3_ID3V2_HEADER_LENGTH <= size) && (memcmp("ID3", buffer, 3) == 0)) {
-		size_t id3Size = MP3_ID3V2_TAG_SIZE(buffer);
-		if (size <= MP3_ID3V2_HEADER_LENGTH + id3Size) {
-			meddbg("Not enough to seek data frame, ID3v2 tag size: %u\n", id3Size);
-			return false;
-		}
-		// Skip ID3v2 tag
-		buffer += MP3_ID3V2_HEADER_LENGTH + id3Size;
-		size -= MP3_ID3V2_HEADER_LENGTH + id3Size;
+	bool ret = checkId3V2Header(buffer, size);
+	if (!ret) {
+		meddbg("check for Id3V2 header fails\n");
+		return false;
 	}
 	// try to parse MP3 header
 	unsigned int channel;
@@ -1002,23 +1027,18 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 	unsigned char tag[2];
 	bool isHeader;
 	int ret;
+	bool res;
 
 	switch (audioType) {
 #ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3:
 		isHeader = false;
 		/* https://id3.org/d3v2.3.0 check id3v3 tag in file */
-		unsigned char id3Header[ID3_HEADER_LENGTH];
-		ret = fread(id3Header, sizeof(unsigned char), ID3_HEADER_LENGTH, fp);
-		if (strncasecmp((const char *)id3Header, "ID3", 3) == 0) {
-			medvdbg("string id3v2 tag found\n");
-			/* todo: check for extended header and parse title, artist etc details */
-			fseek(fp, 128, SEEK_SET);
-			break;
-		} else {
-			medvdbg("string id3v2 tag not found\n");
-			fseek(fp, 0, SEEK_SET);
-			break;
+		unsigned char id3Header[MP3_ID3V2_HEADER_LENGTH];
+		res = checkId3V2Header(id3Header, MP3_ID3V2_HEADER_LENGTH, fp);
+		if (!res) {
+			meddbg("check for Id3V2 header fails\n");
+			return false;
 		}
 		while (fread(tag, sizeof(unsigned char), 2, fp) == 2) {
 			/* 12 bits for MP3 Sync Word(the beginning of the frame) */
