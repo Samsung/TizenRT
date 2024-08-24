@@ -1064,5 +1064,52 @@ int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc)
 	return ret;
 }
 
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+int wifi_get_current_bw(void)
+{
+	/* RTL8730E only supports 20MHz */
+	return 20;
+}
+
+int wifi_get_key_mgmt(void)
+{
+	int ret;
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_KEY_MGMT, NULL, 0);
+	if (ret == RTW_ERROR){
+		RTW_API_INFO("Error! Could not get key mgmt, not connected to AP\n");
+	}
+	return ret;
+}
+
+unsigned int wifi_get_tx_retry(int idx)
+{
+	/* For padding */
+	ALIGNMTO(CACHE_LINE_SIZE) u8 flag[CACHE_LINE_ALIGMENT(64)];
+	ALIGNMTO(CACHE_LINE_SIZE) u32 tx_retry_cnt[16];
+	IPC_MSG_STRUCT ipc_req_msg  __attribute__((aligned(64)));
+	ipc_req_msg.msg_type = IPC_USER_POINT;
+	ipc_req_msg.msg = (u32)tx_retry_cnt;
+	ipc_req_msg.msg_len = sizeof(tx_retry_cnt);
+	ipc_req_msg.rsvd = (u32)flag;
+
+	memset(flag, 0, sizeof(flag));
+	memset(tx_retry_cnt, 0, sizeof(tx_retry_cnt));
+	/* Indicate wlan idx to get tx retry from */
+	tx_retry_cnt[0] = idx;
+	DCache_Clean((u32)tx_retry_cnt, sizeof(tx_retry_cnt));
+	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_WIFI_FW_INFO, &ipc_req_msg); 
+
+	while (1) {
+		DCache_Invalidate((u32)flag, sizeof(flag));
+		if (flag[0]) {
+			break;
+		}
+	}
+	DCache_Invalidate((u32)tx_retry_cnt, sizeof(tx_retry_cnt));
+	/* Retry count will be at index 1 */
+	return tx_retry_cnt[1];
+}
+#endif
+
 #endif	//#if CONFIG_WLAN
 
