@@ -73,6 +73,7 @@
 #ifdef CONFIG_FLASH_PARTITION
 
 struct partition_data_s {
+	uint32_t start_addr;
 	char *types;
 	char *sizes;
 	int minor;
@@ -82,6 +83,7 @@ struct partition_data_s {
 };
 
 struct partition_data_s g_flash_part_data = {
+	CONFIG_FLASH_START_ADDR,
 	CONFIG_FLASH_PART_TYPE,
 	CONFIG_FLASH_PART_SIZE,
 	CONFIG_FLASH_MINOR,
@@ -91,7 +93,12 @@ struct partition_data_s g_flash_part_data = {
 };
 
 #ifdef CONFIG_SECOND_FLASH_PARTITION
+#if defined(CONFIG_BINARY_MANAGER) && !defined(CONFIG_SECOND_FLASH_START_ADDR)
+#error "Please define a start address of second flash, CONFIG_SECOND_FLASH_START_ADDR."
+#endif
+
 struct partition_data_s g_second_flash_part_data = {
+	CONFIG_SECOND_FLASH_START_ADDR,
 	CONFIG_SECOND_FLASH_PART_TYPE,
 	CONFIG_SECOND_FLASH_PART_SIZE,
 	CONFIG_SECOND_FLASH_MINOR,
@@ -380,7 +387,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 
 #ifdef CONFIG_BINARY_MANAGER
 		if (!strncmp(types, "kernel,", 7)) {
-			binary_manager_register_kpart(g_partno, partsize, partoffset * geo.blocksize);
+			binary_manager_register_kpart(g_partno, partsize, part_data.start_addr + partoffset * geo.blocksize);
 #ifdef CONFIG_USE_BP
 		} else if (!strncmp(types, "bootparam,", 10)) {
 			binary_manager_register_bppart(g_partno, partsize);
@@ -402,12 +409,12 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 #ifdef CONFIG_BINARY_MANAGER
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		if (!strncmp(types, "bin,", 4)) {
-			binary_manager_register_upart(part_name, g_partno, partsize, partoffset * geo.blocksize);
+			binary_manager_register_upart(part_name, g_partno, partsize, part_data.start_addr + partoffset * geo.blocksize);
 		}
 #endif
 #ifdef CONFIG_RESOURCE_FS
 		if (!strncmp(types, "resource,", 9)) {
-			binary_manager_register_respart(g_partno, partsize, partoffset * geo.blocksize);
+			binary_manager_register_respart(g_partno, partsize, part_data.start_addr + partoffset * geo.blocksize);
 		}
 #endif
 #endif
