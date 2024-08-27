@@ -93,5 +93,21 @@ t_codec_init_script_entry codec_set_master_volume_script[] = {
 	{ 0x07, {0x01,}, 0, SYU645B_REG_D_2BYTE}
 };
 
+t_codec_init_script_entry codec_set_samprate_32k_script[] = {
+	{ 0x00, {0x10,}, 0, SYU645B_REG_D_2BYTE}
+};
+
+t_codec_init_script_entry codec_set_samprate_44k_script[] = {
+	{ 0x00, {0x9A,}, 0, SYU645B_REG_D_2BYTE}
+};
+
+t_codec_init_script_entry codec_set_samprate_48k_script[] = {
+	{ 0x00, {0x1A,}, 0, SYU645B_REG_D_2BYTE}
+};
+
+t_codec_init_script_entry codec_set_samprate_96k_script[] = {
+	{ 0x00, {0x15,}, 0, SYU645B_REG_D_2BYTE}
+};
+
 #endif	/* CONFIG_AUDIO_SYU645B */
 #endif	/* __DRIVERS_AUDIO_SYU645BSCRIPTS_H */

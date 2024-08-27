@@ -44,7 +44,8 @@
 #include "alc1019.h"
 #include "alc1019scripts.h"
 
-#define ALC1019_I2S_TIMEOUT_MS 200
+#define BYTE_TO_BIT_FACTOR          8
+#define SEC_TO_MSEC_FACTOR	    1000
 
 /* Default configuration values */
 
@@ -733,6 +734,7 @@ static int alc1019_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 {
 	FAR struct alc1019_dev_s *priv = (FAR struct alc1019_dev_s *)dev;
 	int ret;
+	uint32_t timeout;
 
 	if (!priv || !apb) {
 		return -EINVAL;
@@ -745,8 +747,13 @@ static int alc1019_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		alc1019_givesem(&priv->devsem);
 		return OK;
 	}
+
+	/* Converting buffer size from bytes to bits 
+	 * and then calculating the i2s transfer time 
+	 * and adding 10 ms as an offset for timeout */
+	timeout = (CONFIG_ALC1019_BUFFER_SIZE * CONFIG_ALC1019_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 	
-	ret = I2S_SEND(priv->i2s, apb, alc1019_txcallback, priv, ALC1019_I2S_TIMEOUT_MS);
+	ret = I2S_SEND(priv->i2s, apb, alc1019_txcallback, priv, timeout);
 
 	return ret;
 }
