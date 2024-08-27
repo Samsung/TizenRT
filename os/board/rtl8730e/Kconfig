@@ -65,6 +65,15 @@ config BOARD_FLASH_32M
 
 endchoice
 
+if SECOND_FLASH_PARTITION
+config SECOND_FLASH_START_ADDR
+    hex
+    default 0x0A000000
+    help
+        A start address of second flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+endif
+
 config RTL8730E_BOARD_REVISION
 	int "Select target board revision"
 	default 0

@@ -97,18 +97,18 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
 	return &kernel_info;	
 }
 
-void binary_manager_register_kpart(int part_num, int part_size, int part_offset)
+void binary_manager_register_kpart(int part_num, int part_size, uint32_t part_addr)
 {
-	if (part_num < 0 || part_size <= 0 || part_offset < 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
-		bmdbg("Invalid kernel partition : num %d, size %d, offset %d\n", part_num, part_size, part_offset);
+	if (part_num < 0 || part_size <= 0 || part_addr == 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
+		bmdbg("Invalid kernel partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
 		return;
 	}
 
 	kernel_info.part_info[kernel_info.part_count].size = part_size;
 	kernel_info.part_info[kernel_info.part_count].devnum = part_num;
-	kernel_info.part_info[kernel_info.part_count].address = CONFIG_FLASH_START_ADDR + part_offset;
+	kernel_info.part_info[kernel_info.part_count].address = part_addr;
 
-	bmvdbg("[KERNEL %d] part num %d size %d, address 0x%x\n", kernel_info.part_count, part_num, part_size, CONFIG_FLASH_START_ADDR + part_offset);
+	bmvdbg("[KERNEL %d] part num %d size %d, address 0x%x\n", kernel_info.part_count, part_num, part_size, part_addr);
 
 	kernel_info.part_count++;
 }
@@ -331,12 +331,12 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx)
  *	 This function registers a partition of user binaries.
  *
  ****************************************************************************/
-void binary_manager_register_upart(char *name, int part_num, int part_size, int part_offset)
+void binary_manager_register_upart(char *name, int part_num, int part_size, uint32_t part_addr)
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || part_offset < 0) {
-		bmdbg("Invalid user partition : num %d, size %d, offset : %d\n", part_num, part_size, part_offset);
+	if (part_num < 0 || part_size <= 0 || part_addr == 0) {
+		bmdbg("Invalid user partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
 		return;
 	}
 
@@ -346,7 +346,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 			BIN_COUNT(bin_idx)++;
 			BIN_PARTNUM(bin_idx, 1) = part_num;
 			BIN_PARTSIZE(bin_idx, 1) = part_size;
-			BIN_PARTADDR(bin_idx, 1) = CONFIG_FLASH_START_ADDR + part_offset;
+			BIN_PARTADDR(bin_idx, 1) = part_addr;
 			bmvdbg("[USER%d : 2] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1), BIN_PARTADDR(bin_idx, 1));
 			return;
 		}
@@ -373,7 +373,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, int 
 	BIN_STATE(bin_idx) = BINARY_INACTIVE;
 	BIN_PARTNUM(bin_idx, 0) = part_num;
 	BIN_PARTSIZE(bin_idx, 0) = part_size;
-	BIN_PARTADDR(bin_idx, 0) = CONFIG_FLASH_START_ADDR + part_offset;
+	BIN_PARTADDR(bin_idx, 0) = part_addr;
 	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX - 1);
 	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(bin_idx));

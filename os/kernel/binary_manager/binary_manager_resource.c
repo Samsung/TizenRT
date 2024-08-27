@@ -58,19 +58,19 @@ binmgr_resinfo_t *binary_manager_get_resdata(void)
  *	 This function registers a partition of resource.
  *
  ****************************************************************************/
-void binary_manager_register_respart(int part_num, int part_size, int part_offset)
+void binary_manager_register_respart(int part_num, int part_size, uint32_t part_addr)
 {
-	if (part_num < 0 || part_size <= 0 || part_offset < 0 || resource_info.part_count >= RESOURCE_BIN_COUNT) {
-		bmdbg("Invalid resource partition : num %d, size %d, offset %d\n", part_num, part_size, part_offset);
+	if (part_num < 0 || part_size <= 0 || part_addr == 0 || resource_info.part_count >= RESOURCE_BIN_COUNT) {
+		bmdbg("Invalid resource partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
 		return;
 	}
 
 	resource_info.is_mounted = false;
 	resource_info.part_info[resource_info.part_count].size = part_size;
 	resource_info.part_info[resource_info.part_count].devnum = part_num;
-	resource_info.part_info[resource_info.part_count].address = CONFIG_FLASH_START_ADDR + part_offset;
+	resource_info.part_info[resource_info.part_count].address = part_addr;
 
-	bmdbg("[RESOURCE %d] part num %d size %d, address 0x%x\n", resource_info.part_count, part_num, part_size, CONFIG_FLASH_START_ADDR + part_offset);
+	bmdbg("[RESOURCE %d] part num %d size %d, address 0x%x\n", resource_info.part_count, part_num, part_size, part_addr);
 
 	resource_info.part_count++;
 }
