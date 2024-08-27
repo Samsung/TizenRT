@@ -44,7 +44,8 @@
 #include "syu645b.h"
 #include "syu645bscripts.h"
 
-#define SYU645B_I2S_TIMEOUT_MS 200
+#define BYTE_TO_BIT_FACTOR           8
+#define SEC_TO_MSEC_FACTOR	     1000
 
 /* Default configuration values */
 
@@ -446,6 +447,21 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		/* Reconfigure the FLL to support the resulting number or channels,
 		 * bits per sample, and bitrate.
 		 */
+		syu645b_set_i2s_samplerate(priv);
+		syu645b_set_i2s_datawidth(priv);
+
+		if (priv->samprate == AUDIO_SAMP_RATE_32K) {
+			syu645b_exec_i2c_script(priv, codec_set_samprate_32k_script, sizeof(codec_set_samprate_32k_script) / sizeof(t_codec_init_script_entry));
+		} else if (priv->samprate == AUDIO_SAMP_RATE_44K) {
+			syu645b_exec_i2c_script(priv, codec_set_samprate_44k_script, sizeof(codec_set_samprate_44k_script) / sizeof(t_codec_init_script_entry));
+		} else if (priv->samprate == AUDIO_SAMP_RATE_48K) {
+			syu645b_exec_i2c_script(priv, codec_set_samprate_48k_script, sizeof(codec_set_samprate_48k_script) / sizeof(t_codec_init_script_entry));
+		} else if (priv->samprate == AUDIO_SAMP_RATE_96K) {
+			syu645b_exec_i2c_script(priv, codec_set_samprate_96k_script, sizeof(codec_set_samprate_96k_script) / sizeof(t_codec_init_script_entry));
+		} else {
+			auddbg("ERROR: Unsupported sample rate: %d\n", priv->samprate);
+		}
+
 		ret = OK;
 		priv->inout = false;
 		break;
@@ -724,6 +740,7 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 {
 	FAR struct syu645b_dev_s *priv = (FAR struct syu645b_dev_s *)dev;
 	int ret;
+	uint32_t timeout;
 
 	if (!priv || !apb) {
 		return -EINVAL;
@@ -736,8 +753,13 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		syu645b_givesem(&priv->devsem);
 		return OK;
 	}
-	
-	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, SYU645B_I2S_TIMEOUT_MS);
+
+	/* Converting buffer size from bytes to bits 
+	 * and then calculating the i2s transfer time 
+	 * and adding 10 ms as an offset for timeout */
+	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
+
+	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 
 	return ret;
 }
