@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 2d33ba7ba3 2024/08/24-10:31:40 ==
+1.  Fix high power issue when 5G wifi connect + BT Adv + PG sleep
+
 == version a52222ac01_2024/08/07-11:00:02 ==
 1.	Adjust layout for RTL8730EAH-VH6-CG NOR Flash 32MB + DDR2 64MB
 	- CA32_BL3_DRAM_NS address adjusted: 0x64000000 - 0x60100000; 63MB
