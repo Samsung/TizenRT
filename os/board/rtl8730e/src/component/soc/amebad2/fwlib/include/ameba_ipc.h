@@ -322,10 +322,10 @@ typedef struct _IPC_INIT_TABLE_ {
  * @{
  */
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
-//#define IPC_A2L_Channel1					  1 /* Reserved for IPC_CH_WIFI_FW_CTRL */
+//#define IPC_A2L_Channel1						1
 #define IPC_A2L_UARTBRIDGE						2
 #define IPC_A2L_DISLOGUART						3
-#define IPC_A2L_WIFI_FW_INFO					4 /*!<  AP -->  LP Get stats info from WIFI FW */
+//#define IPC_A2L_Channel4						4
 //#define IPC_A2L_Channel5						5
 //#define IPC_A2L_Channel6						6
 #define IPC_A2L_IMQ_TRX_TRAN					7	/*!<  AP -->  LP IMQ Message Exchange */

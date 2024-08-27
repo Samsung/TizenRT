@@ -799,30 +799,6 @@ void wifi_wpa_add_key(struct rtw_crypt_info *crypt);
  */
 void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops);
 
-/**
- * @brief  Get current bandwidth in current connection
- * @param[in]  void
- * @return  int: The current bandwidth value in MHz
- */
-int wifi_get_current_bw(void);
-
-/**
- * @brief  Get key_mgmt value of current connection
- * @param[in]  void
- * @return  int: The key_mgmt value of current connection
- * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
- */
-int wifi_get_key_mgmt(void);
-
-/**
- * @brief  Get the tx retry count 
- * @param[in]  idx: wlan idx to obtain from
- * for station: STA_WLAN_INDEX 
- * for SoftAP: SOFTAP_WLAN_INDEX
- * @return  unsigned int: The total tx retry value. If more than UINT_MAX, value will wrap around.
- * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
- */
-unsigned int wifi_get_tx_retry(int idx);
 
 /**
   * @}
