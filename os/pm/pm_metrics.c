@@ -267,6 +267,11 @@ int pm_metrics(int milliseconds)
 		pmdbg("PM Metrics already running\n");
 		return OK;
 	}
+	/* There is no need to do measurement if PM is not ready to state change */
+	if (!g_pmglobals.ready_to_state_change) {
+		pmdbg("Please Start PM to enable PM Metrics\n");
+		return OK;
+	}
 	/* Lock PM so that no two thread can run PM Metrics simultaneously */
 	pm_lock();
 	/* Avoid board sleep during PM Metrics initialization */

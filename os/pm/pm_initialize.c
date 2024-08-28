@@ -82,6 +82,26 @@ struct pm_global_s g_pmglobals;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: pm_start
+ *
+ * Description:
+ *   This function is called by the application thread to start the Power
+ *   Management system. This fucntion sets the ready_to_state_change flag which
+ *   enables pm to transition between low and high power states.
+ *
+ * Input parameters:
+ *   None.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+
+void pm_start(void) {
+	g_pmglobals.ready_to_state_change = true;
+}
+
+/****************************************************************************
  * Name: pm_initialize
  *
  * Description:
