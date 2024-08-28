@@ -59,7 +59,7 @@ extern void wifi_set_user_config(void);
 unsigned char ap_bssid[ETH_ALEN];
 rtk_network_link_callback_t g_link_up = NULL;
 rtk_network_link_callback_t g_link_down = NULL;
-
+static int deauth_reason = 0;
 
 typedef void (*rtk_network_link_callback_t)(rtk_reason_t *reason);
 int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network_link_callback_t link_down)
@@ -114,6 +114,20 @@ int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 	p_wifi_rom_func_map->random = rand_func;
 
 	return (0);
+}
+
+static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
+{
+	/* To avoid gcc warnings */
+	( void ) buf_len;
+	( void ) flags;
+	( void ) userdata;
+
+	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
+	if (buf != NULL) {
+		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
+		deauth_reason =*(u16*)(buf+6);
+	}
 }
 
 //----------------------------------------------------------------------------//
@@ -217,6 +231,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 				printf("RTK_API %s() send link_up\n", __func__);
 				g_link_up(&reason);
 			}
+			wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl, NULL);
 #endif
 		}
 	}
@@ -359,6 +374,13 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	( void ) userdata;
 	//USER TODO
 	rtk_reason_t reason;
+
+	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
+	if (buf != NULL) {
+		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
+		deauth_reason =*(u16*)(buf+6);
+	}
+
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
@@ -490,5 +512,34 @@ void wifi_promisc_enable(u32 enable, promisc_para_t *para)
 	}
 	inic_ipc_api_host_message_send(IPC_API_WIFI_PROMISC_INIT, buf, 3);
 }
+
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+int wifi_get_last_reason(void)
+{
+	return deauth_reason;
+}
+
+int wifi_get_lib_version(char *lib_ver)
+{
+	u32 param_buf[2];
+	int ret = 0;
+	u32 len = 64;
+	char *lib_ver_temp = (char *)rtw_zmalloc(len);
+	if (lib_ver_temp == NULL) {
+		return RTW_ERROR;
+	}
+	param_buf[0] = (u32)lib_ver_temp;
+	param_buf[1] = len;
+	DCache_CleanInvalidate((u32)lib_ver_temp, len);
+
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_LIB_VER, param_buf, 2);
+
+	DCache_Invalidate((u32)lib_ver_temp, len);
+	rtw_memcpy(lib_ver, lib_ver_temp, len);
+	rtw_mfree((u8 *)lib_ver_temp, 0);
+	return ret;
+}
+
+#endif
 
 #endif	//#if CONFIG_WLAN
