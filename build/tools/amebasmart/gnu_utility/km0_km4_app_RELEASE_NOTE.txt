@@ -1,6 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 2d33ba7ba3 2024/08/24-10:31:40 ==
+== version 2d33ba7ba3 2024/08/28-20:11:42 ==
+1.	Add support to obtain KM4 image version info
+2.	Add support to obtain key_mgnt value of current wifi connection
+3.	Add support to obtain tx retry value 
+
+== version bffc871d53 2024/08/24-10:31:40 ==
 1.  Fix high power issue when 5G wifi connect + BT Adv + PG sleep
 
 == version a52222ac01_2024/08/07-11:00:02 ==

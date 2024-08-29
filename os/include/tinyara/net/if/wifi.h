@@ -120,6 +120,11 @@ typedef enum {
 	LWNL_REQ_WIFI_STOPSOFTAP,
 	LWNL_REQ_WIFI_IOCTL,
 	LWNL_REQ_WIFI_SCAN_MULTI_APS,
+	LWNL_REQ_WIFI_SET_CHANNEL_PLAN,
+	LWNL_REQ_WIFI_GET_SIGNAL_QUALITY,
+	LWNL_REQ_WIFI_GET_DISCONNECT_REASON,
+	LWNL_REQ_WIFI_GET_DRIVER_INFO,
+	LWNL_REQ_WIFI_GET_WPA_SUPPLICANT_STATE,
 	LWNL_REQ_WIFI_UNKNOWN
 } lwnl_req_wifi;
 
@@ -246,6 +251,25 @@ typedef struct {
 	struct timeval disconn_time;    // optional: store the last time when the connection is disconnected
 	int32_t reason_code;            // optional: the reason why connection is disconnected. value is vendor specific
 } trwifi_info;
+
+typedef struct {
+	unsigned int channel;	/**<	 wifi channel			*/
+	signed char snr;		/**<	 signal to noise ratio	*/
+	unsigned long tx_drop;
+	unsigned long rx_drop;
+	unsigned int tx_retry;	/**<	 tx retry count		*/
+	int network_bw;			/**<	 network bandwidth		*/
+	unsigned int max_rate;	/**<	 max rate			*/
+} trwifi_signal_quality;
+
+typedef struct {
+	char lib_version[64];	/**<	 library version			*/
+} trwifi_driver_info;
+
+typedef struct {
+	int wpa_supplicant_state;	/**<	 wpa_supplicant state		*/
+	int wpa_supplicant_key_mgmt;	/**<	 wpa_supplicant key mgmt	*/
+} trwifi_wpa_states;
 
 typedef uint16_t trwifi_cmd;
 /*  Set/Get Power save mode */
@@ -541,6 +565,32 @@ typedef trwifi_result_e (*trwifi_get_info)(struct netdev *dev, trwifi_info *info
  */
 typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, trwifi_msg_s *msg);
 
+/**
+ * @brief   Set channel plan
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   cmd    : driver specific command
+ * @param[in]   arg    : driver specific argument for command
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Set channel plan. It's decided by a user.
+ *                 The usable channels will be decided by this channel plan.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
+typedef trwifi_result_e (*trwifi_set_channel_plan)(struct netdev *dev, uint8_t chplan);
+
+typedef trwifi_result_e (*trwifi_get_signal_quality)(struct netdev *dev, trwifi_signal_quality *signal_quality);
+
+typedef trwifi_result_e (*trwifi_get_deauth_reason)(struct netdev *dev, int *deauth_reason);
+
+typedef trwifi_result_e (*trwifi_get_driver_info)(struct netdev *dev, trwifi_driver_info *driver_info);
+
+typedef trwifi_result_e (*trwifi_get_wpa_supplicant_state)(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+
 struct trwifi_ops {
 	trwifi_init init;
 	trwifi_deinit deinit;
@@ -554,6 +604,11 @@ struct trwifi_ops {
 	trwifi_set_autoconnect set_autoconnect;
 	trwifi_drv_ioctl drv_ioctl;
 	trwifi_scan_multi_aps scan_multi_aps;
+	trwifi_set_channel_plan set_channel_plan;
+	trwifi_get_signal_quality get_signal_quality;
+	trwifi_get_deauth_reason get_deauth_reason;
+	trwifi_get_driver_info get_driver_info;
+	trwifi_get_wpa_supplicant_state get_wpa_supplicant_state;
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);

@@ -19,7 +19,6 @@
 #include <pthread.h>
 #include "wifi_conf.h"
 #include "rtk_wifi_utils.h"
-#include <wifi_manager/wifi_manager.h>
 #include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
@@ -67,6 +66,10 @@ trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t check);
 trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg);
 trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan);
+trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_signal_quality *signal_quality);
+trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason);
+trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
+trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
 void print_scan_result(rtw_scan_result_t *record);
 
 struct trwifi_ops g_trwifi_drv_ops = {
@@ -83,6 +86,10 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
 	wifi_netmgr_utils_scan_multi_ap,	/* scan_multi_ap */
 	wifi_netmgr_utils_set_chplan,		/* set_chplan */
+	wifi_netmgr_utils_get_signal_quality,		/* get_signal_quality */
+	wifi_netmgr_utils_get_disconn_reason,		/* get_deauth_reason */
+	wifi_netmgr_utils_get_driver_info,			/* get_driver_info */
+	wifi_netmgr_utils_get_wpa_supplicant_state,	/* get_wpa_supplicant_state */
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -638,6 +645,57 @@ trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg)
 	return wuret;
 }
 
+trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_signal_quality *signal_quality)
+{
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+	if (signal_quality) {
+		wuret = TRWIFI_FAIL;
+		if (g_mode != RTK_WIFI_NONE) {
+			rtw_sw_statistics_t sw_stats = {0};
+			u8 channel;
+			u32 tx_rty = 0;
+			if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+				if (wifi_get_channel(1, &channel) < 0){
+					/* Failed to get channel */
+					signal_quality->channel = 0;
+				}
+				else {
+					signal_quality->channel = channel;
+				}
+				wifi_get_sw_statistic(SOFTAP_WLAN_INDEX, &sw_stats);
+				tx_rty = wifi_get_tx_retry(SOFTAP_WLAN_INDEX);
+			} else if (g_mode == RTK_WIFI_STATION_IF) {
+				wifi_get_sw_statistic(STA_WLAN_INDEX, &sw_stats);
+				tx_rty = wifi_get_tx_retry(STA_WLAN_INDEX);
+				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
+					rtw_phy_statistics_t phy_statistics;
+					if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
+						memcpy(&signal_quality->snr, &phy_statistics.snr, sizeof(signed char));
+						signal_quality->max_rate = (unsigned int)phy_statistics.supported_max_rate;
+					}
+					if (wifi_get_channel(0, &channel) < 0){
+						/* Failed to get channel */
+						signal_quality->channel = 0;
+					}
+					else {
+						signal_quality->channel = channel;
+					}
+					signal_quality->network_bw = wifi_get_current_bw();
+				}
+			}
+			signal_quality->tx_drop = sw_stats.tx_dropped;
+			signal_quality->rx_drop = sw_stats.rx_dropped;
+			signal_quality->tx_retry = tx_rty;
+			wuret = TRWIFI_SUCCESS;
+		} else {
+			ndbg("[RTK] Failed to get signal quality, wifi not initialized \n");
+		}
+	}
+
+	return wuret;
+}
+
 trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi_info)
 {
 	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
@@ -664,6 +722,68 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 		}
 	}
 
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state)
+{
+	trwifi_result_e wuret = TRWIFI_FAIL;
+	int key_mgmt = 0;
+	rtw_join_status_t join_status;
+
+	if (g_mode == RTK_WIFI_STATION_IF){
+		join_status = wifi_get_join_status();
+
+		switch (join_status) {
+			case RTW_JOINSTATUS_UNKNOWN:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_INACTIVE;
+				break;
+			case RTW_JOINSTATUS_SCANNING:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_SCANNING;
+				break;
+			case RTW_JOINSTATUS_AUTHENTICATING:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_AUTHENTICATING;
+				break;
+			case RTW_JOINSTATUS_ASSOCIATING:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATING;
+				break;
+			case RTW_JOINSTATUS_ASSOCIATED:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATED;
+				break;
+			case RTW_JOINSTATUS_4WAY_HANDSHAKING:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_4WAY_HANDSHAKE;
+				break;
+			case RTW_JOINSTATUS_4WAY_HANDSHAKE_DONE:
+			case RTW_JOINSTATUS_SUCCESS:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_COMPLETED;
+				break;
+			case RTW_JOINSTATUS_FAIL:
+			case RTW_JOINSTATUS_DISCONNECT:
+				wpa_supplicant_state->wpa_supplicant_state = WPA_DISCONNECTED;
+				break;
+			default:
+				break;
+		}
+
+		key_mgmt = wifi_get_key_mgmt();
+		if (key_mgmt != RTW_ERROR){
+			wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
+			wuret = TRWIFI_SUCCESS;
+		}
+	}
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info)
+{
+	trwifi_result_e wuret = TRWIFI_SUCCESS;
+	char lib_ver[64];
+	if (wifi_get_lib_version(lib_ver) != RTW_ERROR){
+		memcpy(driver_info->lib_version, lib_ver, sizeof(lib_ver));
+	}
+	else {
+		wuret = TRWIFI_FAIL;
+	}
 	return wuret;
 }
 
@@ -811,6 +931,14 @@ trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan)
 	} else {
 		RTW_API_INFO("[RTK] Failed to set channel plan, invalid channel plan %x\n", chplan);
 	}
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason)
+{
+	trwifi_result_e wuret = TRWIFI_FAIL;
+	*deauth_reason = wifi_get_last_reason();
+	wuret = TRWIFI_SUCCESS;
 	return wuret;
 }
 

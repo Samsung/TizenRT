@@ -902,6 +902,21 @@ int _wifi_on_ap(void);
  * @return  RTW_ERROR: otherwise.
  */
 int _wifi_off_ap(void);
+
+/**
+ * @brief  Get the deauth reason received by driver
+ * @param[in]  void
+ * @return  Return the last deauth reason received by driver
+ */
+int wifi_get_last_reason(void);
+
+/**
+ * @brief  Get a string containing KM4 wlan lib version info
+ * @param[out]  lib_ver: Pointer where the KM4 wlan lib version will be written to
+ * @return  RTW_SUCCESS: Copied KM4 wlan lib version info into buffer.
+ * @return  RTW_ERROR: Buffer is NULL.
+ */
+int wifi_get_lib_ver(char *lib_ver);
 /**
 * @}
 */
