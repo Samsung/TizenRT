@@ -976,7 +976,6 @@ static uint8_t* hci_platform_get_btfw_patch(uint32_t *rtlbt_fw_size)
     /* Below condition is minimal requirement to meet */
 	/* Address must be starting of the external flash, size shouldn't be larger than 128KB */
     if(!((*rtlbt_fw_size > 0 && *rtlbt_fw_size < 0x20000) && (rtlbt_fw_addr == EXT_FLASH_BASE_ADDRESS))) {
-        dbg("Please check whether RTK data binary is flashed correctly!");
         ASSERT(0);
     }
     if (rtlbt_fw_hdr_ptr) {

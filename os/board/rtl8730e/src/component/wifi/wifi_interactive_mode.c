@@ -227,7 +227,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 	scanned_ap_num = wifi_scan_networks(&scan_param, 1);
 
 	if (scanned_ap_num <= 0) {
-		printf("Wifi scan failed!\n");
+		ndbg("Wifi scan failed!\n");
 		ret = 0;
 	} else {
 		_find_ap_from_scan_buf(ssid, (void *)&wifi, scanned_ap_num);

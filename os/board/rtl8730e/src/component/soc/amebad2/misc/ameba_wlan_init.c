@@ -49,6 +49,9 @@ void wlan_initialize(void)
 {
 	inic_ipc_init_host();
 	inic_ipc_api_init_host();
+#ifdef CONFIG_PM
+	bsp_pm_domain_register("WIFI", BSP_WIFI_DRV);
+#endif
 
 #ifndef CONFIG_MP_INCLUDED
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD

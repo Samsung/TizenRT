@@ -154,7 +154,7 @@ extern u32 ConfigDebug[];
 #ifdef CONFIG_DEBUG_LOG
 #define DBG_8195A(...)     do {\
     if (unlikely(ConfigDebug[LEVEL_ERROR] & BIT(MODULE_MISC))) \
-        DiagPrintf("\r" __VA_ARGS__);\
+        dbg_noarg("\r" __VA_ARGS__);\
 }while(0)
 
 #define MONITOR_LOG(...)     do {\

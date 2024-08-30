@@ -59,7 +59,7 @@ extern "C" {
 * @brief Create RTW_API_INFO
 */
 #if defined RTW_ENABLE_API_INFO || defined __DOXYGEN__
-#define RTW_API_INFO printf
+#define RTW_API_INFO dbg_noarg
 #else
 #define RTW_API_INFO(args)
 #endif
