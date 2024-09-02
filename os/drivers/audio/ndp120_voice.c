@@ -610,6 +610,16 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		ret = -EINVAL;
 #endif	/* CONFIG_AUDIO_PROCESSING_FEATURES */
 	} break;
+#ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+#ifdef CONFIG_AUDIO_KEYWORD_DETECT
+	case AUDIOIOC_GETKDBUFSIZE: {
+		*(uint32_t *)arg = priv->keyword_bytes;
+	} break;
+	case AUDIOIOC_GETKDDATA: {
+		memcpy((uint8_t *)arg, priv->keyword_buffer, priv->keyword_bytes);
+	} break;
+#endif  /* CONFIG_AUDIO_KEYWORD_DETECT */
+#endif  /* CONFIG_AUDIO_PROCESSING_FEATURES */
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;

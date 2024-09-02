@@ -74,6 +74,7 @@ struct ndp120_dev_s {
 	char *labels_per_network[MAX_NNETWORKS][MAX_LABELS];
 	uint32_t sample_size;
 	uint32_t sample_size_orig_annot;
+	uint8_t *keyword_buffer;
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */
