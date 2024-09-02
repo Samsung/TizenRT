@@ -103,14 +103,6 @@ static unsigned int s_num_labels;
 
 static struct work_s ndp120_work;
 
-static bool include_keyword = false;
-
-/* buffer to hold the keyword data */
-static uint8_t keyword_buffer[KEYWORD_BUFFER_LEN];
-
-/* variable to keep track of data left in the keyword buffer */
-static volatile uint32_t keyword_bytes_left;
-
 /* only used for debugging purposes */
 static struct ndp120_dev_s *_ndp_debug_handle = NULL;
 
@@ -1026,8 +1018,15 @@ int ndp120_init(struct ndp120_dev_s *dev)
 		goto errout_ndp120_init;
 	}
 
-	dev->keyword_bytes = KEYWORD_BUFFER_LEN;
-	dev->keyword_bytes = round_down(dev->keyword_bytes, dev->sample_size);
+	dev->keyword_bytes = round_down(KEYWORD_BUFFER_LEN, dev->sample_size);
+
+	dev->keyword_buffer = (uint8_t *)malloc(dev->keyword_bytes);
+
+	if (dev->keyword_buffer == NULL) {
+		auddbg("keyword buffer allocation failed\n");
+		s = SYNTIANT_NDP_ERROR_NOMEM;
+		return s;
+	}
 
 	s_num_labels = 16;
 	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
@@ -1101,6 +1100,10 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 				case 0:
 					serialno++;
 					auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+					/* extract keyword immediately */
+					s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+								SYNTIANT_NDP_EXTRACT_FROM_MATCH, dev->keyword_buffer,
+								&dev->keyword_bytes);
 					break;
 				case 1:
 					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
@@ -1113,7 +1116,6 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
 			if (network_id == 0 && !dev->recording) {
-				include_keyword = true;
 				msg.msgId = AUDIO_MSG_KD;
 			} else if (network_id == 1) {
 				switch (winner) {
@@ -1178,21 +1180,16 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	 * apb size
 	 */
 
-	if (keyword_bytes_left != 0) {
-		memcpy(apb->samp, &keyword_buffer[dev->keyword_bytes - keyword_bytes_left], dev->sample_size);
-		keyword_bytes_left -= dev->sample_size;
-	} else {
-		/* wait for MPF interrupt */
-		sem_wait(&dev->sample_ready_signal);
+	/* wait for MPF interrupt */
+	sem_wait(&dev->sample_ready_signal);
 
-		uint32_t sample_size = dev->sample_size;
-		s = SYNTIANT_NDP_ERROR_NONE;
-		do {
-			s = syntiant_ndp_extract_data(dev->ndp,
-				SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
-				SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &sample_size);
-		} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
-	}
+	uint32_t sample_size = dev->sample_size;
+	s = SYNTIANT_NDP_ERROR_NONE;
+	do {
+		s = syntiant_ndp_extract_data(dev->ndp,
+			SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+			SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &sample_size);
+	} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
 
 	apb->nbytes = dev->sample_size;
 
@@ -1243,29 +1240,16 @@ int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 
 	dev->recording = true;
 
-       s =  ndp120_set_sample_ready_int(dev, 1);
+	s =  ndp120_set_sample_ready_int(dev, 1);
 
-	if (include_keyword) {
-		unsigned int extract_bytes = dev->keyword_bytes;
-		s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
-								SYNTIANT_NDP_EXTRACT_FROM_MATCH, (uint8_t *)keyword_buffer,
-								&dev->keyword_bytes);
-		if (check_status("extract match", s)) {
-			return s;
-		}
-		
-		keyword_bytes_left = dev->keyword_bytes;
-
-		include_keyword = false;
-	}
-
-       return s;
+	return s;
 }
 
 int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 {
 	int s;
-       s = ndp120_set_sample_ready_int(dev, 0);
+
+	s = ndp120_set_sample_ready_int(dev, 0);
 
 	dev->recording = false;
 
