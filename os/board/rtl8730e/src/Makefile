@@ -55,6 +55,11 @@ DEPPATH = --dep-path .
 VPATH = .
 ASRCS =
 
+ROOT_DIR = $(shell cd $(TOPDIR)/.. && pwd)
+BUILD_DIR = $(ROOT_DIR)/build/tools/amebasmart/gnu_utility
+BUILD_EXT_BIN = $(shell python $(ROOT_DIR)/build/tools/amebasmart/gnu_utility/rtk_data_binary.py)
+RESOURCE_TARGET_FOLDER = $(ROOT_DIR)/resource/rtl8730e
+
 DEPPATH += --dep-path $(TOPDIR)/board/common
 VPATH += :$(TOPDIR)/board/common
 
@@ -222,6 +227,11 @@ $(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
 
 libboard$(LIBEXT): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
+ifeq ($(CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH),y)
+	$(call build_ext_bin)
+else
+	@echo "========== Current config does not support external flash! =========="
+endif
 
 .depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
@@ -229,9 +239,19 @@ libboard$(LIBEXT): $(OBJS)
 
 depend: .depend
 
+define build_ext_bin
+	$(Q) $(shell python $(BUILD_DIR)/rtk_data_binary.py)
+	@if [ -d $(RESOURCE_TARGET_FOLDER) ]; then echo "$(RESOURCE_TARGET_FOLDER) exist"; else $(MKDIR) -p $(RESOURCE_TARGET_FOLDER); fi
+	$(Q) mv -f $(BUILD_DIR)/rtk_ext_flash_data.bin $(RESOURCE_TARGET_FOLDER)/
+	@echo "========== Current config support external flash, binary created and moved to path /resource/rtl8730e/rtk_ext_flash_data.bin! =========="
+endef
+
 clean:
 	$(call DELFILE, libboard$(LIBEXT))
 	$(call CLEAN)
+ifeq ($(CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH),y)
+	$(call DELDIR, $(RESOURCE_TARGET_FOLDER))
+endif
 
 distclean: clean
 	$(call DELFILE, Make.dep)
