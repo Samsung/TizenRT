@@ -12,20 +12,13 @@
 #include "hci_dbg.h"
 #include "dlist.h"
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-#include <tinyara/spi/spi.h>
-#include "spi_api.h"
-
-/* Corresponds to LD external flash starting address */
-#if CONFIG_RTL8730E_BOARD_REVISION >= 7
-#define EXT_FLASH_BASE_ADDRESS				0x0A000000
-#else
-#define EXT_FLASH_BASE_ADDRESS				0x09000000
-#endif
-#define HCI_PATCH_ADDR_OFFSET				0x0
-#define EXTERNAL_FLASH_READ_CMD_SIZE		5
+#ifdef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH
+#include <tinyara/fs/ioctl.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 /* For getting total binary size and addr */
-#define EXTERNAL_FLASH_BINARY_HEADER_SIZE	16
+#define BT_FW_PATCH_DIR                     "/res/rtl8730e/rtk_ext_flash_data.bin"
 #endif
 
 #define HCI_PHY_EFUSE_OFFSET       0x740
@@ -60,7 +53,7 @@
 uint32_t hci_cfg_sw_val = 0xFF;    // Open BT Trace log & FW log use 0xDD
 uint8_t bt_ant_switch = ANT_S1;      // Select BT RF Patch
 
-#ifndef CONFIG_SECOND_FLASH_PARTITION 
+#ifndef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH 
 extern const unsigned char rtlbt_fw[];
 extern unsigned int rtlbt_fw_len;
 #endif
@@ -939,58 +932,49 @@ static uint32_t hci_platform_parse_patch(uint8_t *p_buf, HCI_PATCH_NODE *p_patch
 	return fw_len;
 }
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
-static void external_flash_read_stream(struct spi_dev_s *spi, char *rx_buffer, uint32_t length, uint32_t offset)
-{
-    char cmd[EXTERNAL_FLASH_READ_CMD_SIZE] = {0};
-    /* transmit read cmd */
-    cmd[0] = 0x13;
-    cmd[1] = (offset >> 24) & 0xFF;
-    cmd[2] = (offset >> 16) & 0xFF;
-    cmd[3] = (offset >> 8) & 0xFF;
-    cmd[4] = offset & 0xFF;
-
-    SPI_EXCHANGE(spi, (char *)cmd, (char *)rx_buffer, length + EXTERNAL_FLASH_READ_CMD_SIZE);
-    memmove(rx_buffer, rx_buffer + EXTERNAL_FLASH_READ_CMD_SIZE, length);
-}
-
+#ifdef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH
 static uint8_t* hci_platform_get_btfw_patch(uint32_t *rtlbt_fw_size)
 {
-    /* SPI Initialize */		
-    struct spi_dev_s *spi;
+    /* File structure initialize */
+	struct stat st;
+	int fd = 0;
+	int ret = 0;
+	int rd_length;
     uint8_t *rtlbt_fw_ptr = NULL;
-    spi = up_spiinitialize(1);
-    SPI_LOCK(spi, true);
-    SPI_SETBITS(spi, 8);
-    SPI_SETFREQUENCY(spi, 1000000);
-    uint8_t *rtlbt_fw_hdr_ptr = NULL;
-    uint32_t rtlbt_fw_addr = 0;
-
-    /* SPI Read size*/
-    rtlbt_fw_hdr_ptr = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, EXTERNAL_FLASH_BINARY_HEADER_SIZE, 64);
-    SPI_SELECT(spi, 1, true);
-    external_flash_read_stream(spi, (char *)rtlbt_fw_hdr_ptr, EXTERNAL_FLASH_BINARY_HEADER_SIZE, HCI_PATCH_ADDR_OFFSET);
-    SPI_SELECT(spi, 1, false);
-    rtlbt_fw_addr = (rtlbt_fw_hdr_ptr[12]) | (rtlbt_fw_hdr_ptr[13] << 8) | (rtlbt_fw_hdr_ptr[14] << 16) | (rtlbt_fw_hdr_ptr[15] << 24);
-    *rtlbt_fw_size = (rtlbt_fw_hdr_ptr[8]) | (rtlbt_fw_hdr_ptr[9] << 8) | (rtlbt_fw_hdr_ptr[10] << 16) | (rtlbt_fw_hdr_ptr[11] << 24);
-    /* Below condition is minimal requirement to meet */
-	/* Address must be starting of the external flash, size shouldn't be larger than 128KB */
-    if(!((*rtlbt_fw_size > 0 && *rtlbt_fw_size < 0x20000) && (rtlbt_fw_addr == EXT_FLASH_BASE_ADDRESS))) {
-        dbg("Please check whether RTK data binary is flashed correctly!");
-        ASSERT(0);
-    }
-    if (rtlbt_fw_hdr_ptr) {
-    	osif_mem_free(rtlbt_fw_hdr_ptr);
-    }
+	/* Retrieve the stat of the BT FW patch */
+	if (stat(BT_FW_PATCH_DIR, &st) < 0) {
+		ret = __LINE__;
+		goto errout;
+	}
+	/* Get BT FW patch length */
+	*rtlbt_fw_size = st.st_size;
     /* SPI Read Data back */
     rtlbt_fw_ptr = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, *rtlbt_fw_size, 64);
-    SPI_SELECT(spi, 1, true);
-    /* The binary header size is 32bytes, so we need to add back the offset */
-    external_flash_read_stream(spi, (char *)rtlbt_fw_ptr, *rtlbt_fw_size, rtlbt_fw_addr - (EXT_FLASH_BASE_ADDRESS + HCI_PATCH_ADDR_OFFSET) + 32);
-    SPI_SELECT(spi, 1, false);
-    SPI_LOCK(spi, false);
+	if (!rtlbt_fw_ptr) {
+		ret = __LINE__;
+		goto errout;
+	}
+	fd = open(BT_FW_PATCH_DIR, O_RDONLY);
+	if (fd < 0) {
+		ret = __LINE__;
+		goto errout;
+	}
+	rd_length = read(fd, rtlbt_fw_ptr, *rtlbt_fw_size);
+	if (rd_length != *rtlbt_fw_size) {
+		ret = __LINE__;
+		goto errout;
+	}
 
-    return rtlbt_fw_ptr;
+errout:
+	/* If any step failed, BT cannot be initialized */
+	if (ret) {
+		dbg("BT init failed, please check line %d!\n", ret);
+		ASSERT(0);
+	} else {
+		close(fd);
+	}
+
+	return rtlbt_fw_ptr;
 }
 #endif
 
@@ -1006,21 +990,21 @@ static uint8_t hci_platform_get_patch_info(void)
 	uint32_t fw_len;
 	uint8_t ret = HCI_SUCCESS;
 
-#ifdef CONFIG_SECOND_FLASH_PARTITION
+#ifdef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH
 	uint32_t rtlbt_fw_size;
 	uint8_t *rtlbt_fw_ptr = NULL;
 #endif
 
 	if (CHECK_CFG_SW(CFG_SW_USE_FLASH_PATCH)) {
 #if defined(CONFIG_BT_EXCLUDE_MP_FUNCTION) && CONFIG_BT_EXCLUDE_MP_FUNCTION
-#ifndef CONFIG_SECOND_FLASH_PARTITION
-		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
-		patch_info->patch_len = rtlbt_fw_len;
-#else
+#ifdef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH
 		/* Assign back to BT structure */
 		rtlbt_fw_ptr = hci_platform_get_btfw_patch(&rtlbt_fw_size);
 		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw_ptr;
 		patch_info->patch_len = rtlbt_fw_size;
+#else
+		patch_info->patch_buf = (uint8_t *)(void *)rtlbt_fw;
+		patch_info->patch_len = rtlbt_fw_len;
 #endif
 #else
 		if (hci_platform_check_mp()) {
@@ -1097,7 +1081,7 @@ static uint8_t hci_platform_get_patch_info(void)
 	}
 
 EXIT:
-#ifdef CONFIG_SECOND_FLASH_PARTITION
+#ifdef CONFIG_RTK_DATA_BINARY_TO_EXT_FLASH
     /* After patch download complete, free the fw patch space */
 	if (rtlbt_fw_ptr) {
 		osif_mem_free(rtlbt_fw_ptr);
