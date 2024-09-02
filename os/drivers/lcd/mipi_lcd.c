@@ -38,6 +38,75 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
+#if defined(CONFIG_LCD_SW_ROTATION)
+#define NUM_OF_LCD_BUFFER	2
+uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
+int lcd_buffer_index = 0;
+
+#if defined(CONFIG_LCD_LANDSCAPE)
+static void lcd_rotate_buffer(short int* src, short int* dst)
+{
+	int row;
+	int col;
+	int dst_inc = 2 * CONFIG_LCD_XRES;
+	short int val0;
+	short int val1;
+	short int val2;
+	short int val3;
+	short int *psrc;
+	short int *pdst;
+
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + CONFIG_LCD_XRES - row - 2;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val2;
+			*(pdst + 1) = val0;
+			*(pdst + CONFIG_LCD_XRES) = val3;
+			*(pdst + CONFIG_LCD_XRES + 1) = val1;
+			pdst += dst_inc;
+		}
+	}
+}
+
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+static void lcd_rotate_buffer(short int* src, short int* dst)
+{
+	int row;
+	int col;
+	int dst_inc = 2 * CONFIG_LCD_XRES;
+	short int val0;
+	short int val1;
+	short int val2;
+	short int val3;
+	short int *psrc;
+	short int *pdst;
+
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + row + (CONFIG_LCD_YRES - 1) * CONFIG_LCD_XRES;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val0;
+			*(pdst + 1) = val2;
+			*(pdst - CONFIG_LCD_XRES) = val1;
+			*(pdst - CONFIG_LCD_XRES + 1) = val3;
+			pdst -= dst_inc;
+		}
+	}
+}
+#endif
+#endif
+
 struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
 
@@ -174,7 +243,13 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
+#if defined(CONFIG_LCD_SW_ROTATION)
+	lcd_rotate_buffer((uint8_t *)buffer, lcd_buffer[lcd_buffer_index]);
+	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
+	lcd_buffer_index = (1 - lcd_buffer_index);
+#else
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
+#endif
 	return OK;
 }
 
@@ -212,9 +287,14 @@ static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s
 {
 	DEBUGASSERT(dev && vinfo);
 	//vinfo->fmt = st7785_COLORFMT; /* Color format: RGB16-565: RRRR RGGG GGGB BBBB */
+#if defined(CONFIG_LCD_ST7701SN) && (defined(CONFIG_LCD_LANDSCAPE) || defined(CONFIG_LCD_RLANDSCAPE))
+	vinfo->xres = LCD_YRES;	/* Horizontal resolution in pixel columns */
+	vinfo->yres = LCD_XRES;	/* Vertical resolution in pixel rows */
+#else
 	vinfo->xres = LCD_XRES;	/* Horizontal resolution in pixel columns */
 	vinfo->yres = LCD_YRES;	/* Vertical resolution in pixel rows */
 	vinfo->nplanes = MAX_NO_PLANES;	/* Number of color planes supported */
+#endif
 	return OK;
 }
 
@@ -349,5 +429,17 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 
+#if defined(CONFIG_LCD_SW_ROTATION)
+	for (int itr = 0; itr < NUM_OF_LCD_BUFFER; itr++) {
+		lcd_buffer[itr] = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
+		if(!lcd_buffer[itr]) {
+			lcddbg("ERROR: LCD rotate buffer memory allocation failed\n");
+			for (int itr2 = 0; itr2 < itr; itr2++) {
+				free(lcd_buffer[itr2]);
+			}
+			break;
+		}
+	}
+#endif
 	return &priv->dev;
 }

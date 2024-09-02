@@ -63,6 +63,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <stdio.h>
+#include <sched.h>
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
@@ -80,6 +81,12 @@ struct lcd_s {
 	struct lcd_planeinfo_s planeinfo[MAX_NO_PLANES];
 	sem_t sem;
 	int16_t crefs;
+
+	uint8_t *lcd_kbuffer;
+	FAR const struct lcddev_area_s *g_lcd_area;
+	sem_t flushing_sem;
+	bool empty;
+	bool g_wait;
 };
 
 /****************************************************************************
@@ -93,6 +100,7 @@ static int lcddev_close(FAR struct file *filep);
 static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static ssize_t lcddev_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 static ssize_t lcddev_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -113,7 +121,6 @@ static const struct file_operations g_lcddev_fops = {
 /************************************************************************************
  * Name: lcd_semtake
  ************************************************************************************/
-
 void lcd_semtake(sem_t *sem)
 {
 	/* Take the semaphore (perhaps waiting) */
@@ -191,7 +198,6 @@ static ssize_t lcddev_write(FAR struct file *filep, FAR const char *buffer, size
 /****************************************************************************
  * Name: lcddev_ioctl
  ****************************************************************************/
-
 static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	FAR struct lcd_s *priv;
@@ -236,16 +242,21 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	case LCDDEVIO_PUTAREA: {
-		FAR const struct lcddev_area_s *lcd_area = (FAR const struct lcddev_area_s *)arg;
-
-		size_t cols = lcd_area->col_end - lcd_area->col_start + 1;
-		size_t pixel_size = priv->planeinfo[lcd_area->planeno].bpp > 1 ? priv->planeinfo[lcd_area->planeno].bpp >> 3 : 1;
-		size_t row_size = lcd_area->stride > 0 ? lcd_area->stride : cols * pixel_size;
-
-		if (priv->planeinfo[lcd_area->planeno].putarea) {
-			ret = priv->planeinfo[lcd_area->planeno].putarea(priv->dev, lcd_area->row_start, lcd_area->row_end, lcd_area->col_start, lcd_area->col_end, lcd_area->data, row_size);
+		if (priv->empty == true) {
+			priv->g_lcd_area = (FAR const struct lcddev_area_s *)arg;
+			if (priv->planeinfo[priv->g_lcd_area->planeno].putarea) {
+				memcpy(priv->lcd_kbuffer, priv->g_lcd_area->data, CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
+				sem_post(&priv->flushing_sem);
+			}
 		} else {
-			ret = -ENOSYS;
+			priv->g_wait = true;
+			sem_wait(&priv->flushing_sem);
+			priv->g_wait = false;
+			priv->g_lcd_area = (FAR const struct lcddev_area_s *)arg;
+			if (priv->planeinfo[priv->g_lcd_area->planeno].putarea) {
+				memcpy(priv->lcd_kbuffer, priv->g_lcd_area->data, CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
+				sem_post(&priv->flushing_sem);
+			}
 		}
 	}
 	break;
@@ -319,6 +330,41 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	return ret;
 }
 
+int lcd_flushing_thread(int argc, char *argv[])
+{
+	struct lcd_s *priv = (struct lcd_s *)argv[0];
+	//bool empty = (bool)argv[0];
+
+	lldbg("Line Number: %d, priv address: %x\n", __LINE__, priv);
+	int ret;
+	lldbg("Line Number: %d\n", __LINE__);
+	while(true) {
+		ret = sem_wait(&priv->flushing_sem);
+		if (ret != 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return;
+		}
+		priv->empty = false;
+		size_t cols = priv->g_lcd_area->col_end - priv->g_lcd_area->col_start + 1;
+		size_t pixel_size = priv->planeinfo[priv->g_lcd_area->planeno].bpp > 1 ? priv->planeinfo[priv->g_lcd_area->planeno].bpp >> 3 : 1;
+		size_t row_size = priv->g_lcd_area->stride > 0 ? priv->g_lcd_area->stride : cols * pixel_size;
+		lldbg("Line Number: %d\n", __LINE__);
+		if (priv->planeinfo[priv->g_lcd_area->planeno].putarea) {
+			ret = priv->planeinfo[priv->g_lcd_area->planeno].putarea(priv->dev, priv->g_lcd_area->row_start, priv->g_lcd_area->row_end, priv->g_lcd_area->col_start, priv->g_lcd_area->col_end, priv->lcd_kbuffer, row_size);
+		} else {
+			ret = -ENOSYS;
+		}
+		priv->empty = true;
+		if (priv->g_wait == true) {
+			sem_post(&priv->flushing_sem);
+		}
+	}
+	lldbg("Line Number: %d\n", __LINE__);
+	return 0;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -349,12 +395,38 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	/* Allocate a new lcd_dev driver instance */
 	priv = (struct lcd_s *)kmm_zalloc(sizeof(struct lcd_s));
-
 	if (!priv) {
 		return -ENOMEM;
 	}
 
 	priv->dev = dev;
+	sem_init(&priv->flushing_sem, 0, 0);
+	priv->g_wait = false;
+	priv->empty = true;
+	priv->lcd_kbuffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
+/*
+	uint8_t *lcd_kbuffer;
+	FAR const struct lcddev_area_s *g_lcd_area;
+	sem_t flushing_sem;
+	bool empty;
+	bool g_wait;
+*/
+
+
+    char *argv[5] = {0,};
+	argv[0] = priv;
+	/*
+    argv[0] = &priv->empty;
+	argv[1] = &priv->flushing_sem;
+	argv[2] = &priv->g_lcd_area;
+	argv[3] = &priv->g_wait;*/
+    argv[4] = NULL;
+	lldbg("Line Number: %d, priv address: %x\n", __LINE__, priv);
+	int pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, argv);
+	if (pid < 0) {
+		lcddbg("ERROR: Failed to start LCD Frame Flusing thread\n");
+	}
+	lcdvdbg("lcd flushing thread %d created \n", pid);
 
 	sem_init(&priv->sem, 0, 1);
 	if (priv->dev->getplaneinfo) {
