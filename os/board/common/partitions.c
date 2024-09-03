@@ -109,11 +109,12 @@ struct partition_data_s g_second_flash_part_data = {
 #endif
 
 static int g_partno;
-
+static bool g_mnt_mounted;
 FAR struct mtd_dev_s *mtd_initialize(void)
 {
 	FAR struct mtd_dev_s *mtd;
 	g_partno = 0;
+	g_mnt_mounted = false;
 #ifdef CONFIG_MTD_PROGMEM
 	mtd = progmem_initialize();
 	if (!mtd) {
@@ -453,8 +454,13 @@ void automount_fs_partition(partition_info_t *partinfo)
 			char *mountpath;
 			if (partinfo->minor == 0) {
 				mountpath = USERFS_MNTPT;
+				g_mnt_mounted = true;
 			} else {
-				mountpath = USERFS_EXT_MNTPT;
+				if (g_mnt_mounted) {
+					mountpath = USERFS_EXT_MNTPT;
+				} else {
+					mountpath = USERFS_MNTPT;					
+				}
 			}
 			ret = mount(fs_devname, mountpath, "smartfs", 0, NULL);
 			if (ret != OK) {
