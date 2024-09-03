@@ -427,6 +427,10 @@ void board_initialize(void)
 
 	ipc_table_init(IPCAP_DEV);
 
+#ifdef CONFIG_AMEBASMART_USBDEVICE
+	usb_initialize();
+#endif
+
 	/* init console */
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
