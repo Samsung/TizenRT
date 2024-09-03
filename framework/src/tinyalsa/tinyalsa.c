@@ -346,7 +346,6 @@ static int pcm_set_config(struct pcm *pcm, const struct pcm_config *config)
 	pcm->config.period_count = buf_info.nbuffers;
 	pcm->buffer_size = buf_info.buffer_size;
 	pcm->buffer_cnt = buf_info.nbuffers;
-
 	return 0;
 }
 
@@ -483,6 +482,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	struct audio_msg_s msg;
 	unsigned int size;
 	int prio;
+	int ret;
 
 	if (pcm == NULL || data == NULL || frame_count == 0) {
 		return -EINVAL;
@@ -497,53 +497,61 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 	}
 
 	pending = pcm_frames_to_bytes(pcm, frame_count);
-
 	while (pending > 0) {
-		nbytes = pending > pcm_frames_to_bytes(pcm, pcm->buffer_size) ? pcm_frames_to_bytes(pcm, pcm->buffer_size) : pending;
-		if (pcm->buf_idx < pcm->buffer_cnt) {
-			/* If we have empty buffers, fill them first */
-			memcpy(pcm->pBuffers[pcm->buf_idx]->samp, (char *)data + offset, nbytes);
-			apb = pcm->pBuffers[pcm->buf_idx];
-			pcm->buf_idx++;
+		if (pcm->next_buf != NULL) {
+			apb = pcm->next_buf;
 		} else {
-			/* We dont have any empty buffers. wait for deque message from kernel */
-			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
-			if (size != sizeof(msg)) {
-				/* Interrupted by a signal? What to do? */
-				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
-			}
-			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
-				apb = (struct ap_buffer_s *)msg.u.pPtr;
-				memcpy(apb->samp, (char *)data + offset, nbytes);
-			} else if (msg.msgId == AUDIO_MSG_XRUN) {
-				/* Underrun to be handled by client */
-				return -EPIPE;
+			/* First time we will use empty pBuffer, and then wait until one of them dequeued */
+			if (pcm->buf_idx < pcm->buffer_cnt) {
+				apb = pcm->pBuffers[pcm->buf_idx];
+				pcm->buf_idx++;
 			} else {
-				return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
+				/* We dont have any empty buffers. wait for deque message from kernel */
+				size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
+				if (size != sizeof(msg)) {
+					/* Interrupted by a signal? What to do? */
+					return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
+				}
+				if (msg.msgId == AUDIO_MSG_DEQUEUE) {
+					apb = (struct ap_buffer_s *)msg.u.pPtr;
+				} else if (msg.msgId == AUDIO_MSG_XRUN) {
+					/* Underrun to be handled by client */
+					return -EPIPE;
+				} else {
+					return oops(pcm, EINTR, "Recieved unexpected msg (id = %d) while waiting for deque message from kernel\n", msg.msgId);
+				}
 			}
 		}
-
 		/* Buffer is ready. Enque it */
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-		apb->nbytes = nbytes;
-		apb->curbyte = 0;
-		apb->flags = 0;
-		bufdesc.numbytes = apb->nbytes;
-		bufdesc.u.pBuffer = apb;
-		if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
-			return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
-		}
-		/* If playback is not already started, start now! */
-		if ((!pcm->running) && (pcm_start(pcm) < 0)) {
-			return -errno;
-		} else {
-			pcm->running = 1;
-		}
-
+		nbytes = pending > pcm->buffer_size - apb->nbytes ? pcm->buffer_size - apb->nbytes : pending;	
+		memcpy(apb->samp + apb->nbytes, (char *)data + offset, nbytes);
+		medvdbg("pending : %d nbytes : %d offset : %d apb : %x\n", pending, nbytes, offset, apb);
+		apb->nbytes += nbytes;
 		offset += nbytes;
 		pending -= nbytes;
+		
+		if (apb->nbytes == pcm->buffer_size) {
+			apb->curbyte = 0;
+			apb->flags = 0;
+			bufdesc.numbytes = apb->nbytes;
+			bufdesc.u.pBuffer = apb;
+			pcm->next_buf = NULL; //We will find new buf during next loop
+			ret = ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc);
+			if (ret < 0) {
+				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
+			}
+			/* If playback is not already started, start now! */
+			if ((!pcm->running) && (pcm_start(pcm) < 0)) {
+				return -errno;
+			} else {
+				pcm->running = 1;
+			}
+		} else {
+			pcm->next_buf = apb; //will be used next time
+		}
 	}
 
 	return pcm_bytes_to_frames(pcm, nbytes);
@@ -583,7 +591,7 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 
 	pending = pcm_frames_to_bytes(pcm, frame_count);
 
-	bufdesc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
+	bufdesc.numbytes = pcm->buffer_size;
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 	bufdesc.session = pcm->session;
@@ -909,7 +917,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		buf_desc.session = pcm->session;
 #endif
-		buf_desc.numbytes = pcm_frames_to_bytes(pcm, (pcm->buffer_size));
+		buf_desc.numbytes = pcm->buffer_size;
 		buf_desc.u.ppBuffer = &pcm->pBuffers[x];
 
 		ret = ioctl(pcm->fd, AUDIOIOC_ALLOCBUFFER, (unsigned long)&buf_desc);
@@ -1067,7 +1075,7 @@ int pcm_start(struct pcm *pcm)
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 		bufdesc.session = pcm->session;
 #endif
-		bufdesc.numbytes = pcm_frames_to_bytes(pcm, pcm->buffer_size);
+		bufdesc.numbytes = pcm->buffer_size;
 		for (pcm->buf_idx = 0; pcm->buf_idx < pcm->buffer_cnt; pcm->buf_idx++) {
 			bufdesc.u.pBuffer = pcm->pBuffers[pcm->buf_idx];
 			bufdesc.u.pBuffer->nbytes = 0;
@@ -1163,16 +1171,29 @@ int pcm_drain(struct pcm *pcm)
 	if (pcm == NULL) {
 		return -EINVAL;
 	}
-
 	if (!pcm->running) {
 		return oops(pcm, EINVAL, "PCM is already stopped.\n");
 	}
 
 	if (pcm->flags & PCM_OUT) {
+		struct ap_buffer_s *apb;
 		struct audio_msg_s msg;
 		unsigned int size;
 		int prio;
-
+		/* If pending buffer exist, consume it */
+		if (pcm->next_buf != NULL) {
+			apb = pcm->next_buf;
+			if ((apb->flags & AUDIO_APB_OUTPUT_ENQUEUED) != AUDIO_APB_OUTPUT_ENQUEUED) {
+				struct audio_buf_desc_s bufdesc;
+				apb->curbyte = 0;
+				apb->flags = 0;
+				bufdesc.numbytes = apb->nbytes;
+				bufdesc.u.pBuffer = apb;
+				if (ioctl(pcm->fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc) < 0) {
+					return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
+				}
+			}
+		}
 		/* Playback case */
 		/* Wait for all enqueued buffers to get dequeued. */
 		while (pcm->buf_idx > 0) {
