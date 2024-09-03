@@ -625,9 +625,9 @@ static bool checkId3V2Header(const unsigned char *buffer, size_t size, FILE *fp 
 		size = fread((void *)buffer, sizeof(unsigned char), size, fp);
 	}
 	if ((MP3_ID3V2_HEADER_LENGTH <= size) && (memcmp("ID3", buffer, 3) == 0)) {
-		medvdbg("id3v2 tag found\n");
 		size_t id3Size = MP3_ID3V2_TAG_SIZE(buffer);
 		bool isFooterPresent = (buffer[5] & 0x10) != 0 ? true : false;
+		medvdbg("id3Size : %d isFooterPresent : %d\n", id3Size, isFooterPresent);
 		size_t sizeToSeek = isFooterPresent ? MP3_ID3V2_HEADER_LENGTH + id3Size + MP3_ID3V2_FOOTER_LENGTH : MP3_ID3V2_HEADER_LENGTH + id3Size;
 		if (fp) {
 			if (fseek(fp, sizeToSeek, SEEK_SET) != 0) {
@@ -643,7 +643,10 @@ static bool checkId3V2Header(const unsigned char *buffer, size_t size, FILE *fp 
 			size -= sizeToSeek;
 		}
 	} else {
-		medvdbg("id3v2 tag not found\n");
+		meddbg("id3v2 tag not found\n");
+		if (fseek(fp, 0, SEEK_SET) != OK) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -797,7 +800,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 		mpegVersion = 0;
 		break;
 	default:
-		medvdbg("Not Supported Format mpeg version : %u\n", bit);
+		meddbg("Not Supported Format mpeg version : %u\n", bit);
 		return false;
 	}
 
@@ -806,7 +809,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 	bit &= (unsigned char)0x03;
 	/* we need C information so Shift header[1] one time to the right, and & 0x03 */
 	if (bit != 1) {
-		medvdbg("Not Audio Layer III : %u (0-Undefined, 1-Layer III, 2-Layer II, 3-Layer I)\n", bit);
+		meddbg("Not Audio Layer III : %u (0-Undefined, 1-Layer III, 2-Layer II, 3-Layer I)\n", bit);
 		return false;
 	}
 
@@ -825,7 +828,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 		*sampleRate = AUDIO_SAMPLE_RATE_32000;
 		break;
 	default:
-		medvdbg("Not Supported Format sample rate : %u\n", sampleRate);
+		meddbg("Not Supported Format sample rate : %u\n", sampleRate);
 		return false;
 	}
 
@@ -843,7 +846,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 	/* we need E information so Shift header[2] four times to the right, and & 0x0f */
 	unsigned char bitrateIndex = (header[2] >> 4) & 0x0f;
 	if (bitrateIndex == 0 || bitrateIndex == 0x0f) {
-		medvdbg("Bitrate format is free or forbidden, %u\n", bitrateIndex);
+		meddbg("Bitrate format is free or forbidden, %u\n", bitrateIndex);
 		return false;
 	}
 
@@ -856,7 +859,7 @@ bool mp3_header_parsing(const unsigned char *header, unsigned int *channel, unsi
 			*frameLength = MPEG2_LAYER3_FRAME_SIZE(*sampleRate, bitrateV2L3[bitrateIndex - 1], padding);
 		}
 		if (*frameLength <= MP3_HEADER_LENGTH) {
-			medvdbg("Abnormal frame length, %u\n", *frameLength);
+			meddbg("Abnormal frame length, %u\n", *frameLength);
 			return false;
 		}
 	}
@@ -1082,7 +1085,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 				return false;
 			}
 		} else {
-			medvdbg("no header\n");
+			meddbg("no header\n");
 			return false;
 		}
 		break;
