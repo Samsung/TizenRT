@@ -20,13 +20,9 @@
 
 #include "usb_ch9.h"
 #include "usb_os.h"
-#include "usb_hal.h"
 
 /* Exported defines ----------------------------------------------------------*/
-
-#define USBH_MAX_PIPES_NUM					7
-#define USBH_MAX_ENDPOINTS_NUM				5
-#define USBH_MAX_INTERFACES_NUM				4
+#define USBH_DEFAULT_MAX_ALT_NUM			3
 #define USBH_MAX_CLASSES_NUM				1
 
 /* Exported types ------------------------------------------------------------*/
@@ -105,7 +101,7 @@ typedef struct {
 	u8  bInterfaceSubClass;								/* Subclass code (assigned by USB Org) */
 	u8  bInterfaceProtocol;								/* Protocol code */
 	u8  iInterface;										/* Index of string descriptor describing this interface */
-	usbh_ep_desc_t ep_desc[USBH_MAX_ENDPOINTS_NUM];		/* Endpoint descriptors */
+	usbh_ep_desc_t *ep_desc_array;							/* Endpoint descriptors */
 } usbh_if_desc_t;
 
 /* USB configuration descriptor */
@@ -118,7 +114,10 @@ typedef struct {
 	u8  iConfiguration;									/* Index of string descriptor describing this configuration */
 	u8  bmAttributes;									/* D7 Bus Powered , D6 Self Powered, D5 Remote Wakeup , D4..0 Reserved (0)*/
 	u8  bMaxPower;										/* Maximum power consumption */
-	usbh_if_desc_t if_desc[USBH_MAX_INTERFACES_NUM];	/* Interface descriptors */
+	usbh_if_desc_t **if_desc_array;						/* Interface descriptors save all interfaces infor in this struct
+							   								the interface is index by bInterfaceNumber & bAlternateSetting
+							   								:bInterfaceNumber define the main interface Id
+							   								:bAlternateSetting define the alternate setting Id.*/
 } usbh_cfg_desc_t;
 
 /* USB setup request */
@@ -134,6 +133,7 @@ typedef struct {
 	u8 dma_enable;										/* Enable USB internal DMA mode, 0-Disable, 1-Enable */
 	u8 main_task_priority;								/* USB main thread priority */
 	u8 isr_task_priority;								/* USB ISR thread priority */
+	u8 alt_max;											/* USB support max alt setting num */
 	u32 rx_fifo_size;									/* RX FIFO size */
 	u32 nptx_fifo_size;									/* Non-Periodical TX FIFO size */
 	u32 ptx_fifo_size;									/* Periodical TX FIFO size */
@@ -183,8 +183,6 @@ typedef struct _usb_host_t {
 u8 usbh_init(usbh_config_t *cfg, usbh_user_cb_t *cb);
 /* De-init */
 u8 usbh_deinit(void);
-/* USB debug init */
-void usbh_debug_init(u8 enable);
 /* Re-enumerate */
 u8 usbh_reenumerate(void);
 /* Get device connection status: 0 - Disconnected 1 - Connected */
@@ -203,7 +201,8 @@ u8  usbh_unregister_class(usbh_class_driver_t *driver);
     Config descriptor operations,
     set the config index while bNumConfigurations[device descriptor]>1
 */
-u8 usbh_set_configuration(usb_host_t *host, u8 cfg_num);
+u8 usbh_get_cfgid_from_subclass(usb_host_t *host, u8 subclass);
+u8 usbh_set_configuration(usb_host_t *host, u8 cfg_id);
 
 /* Pipe operations */
 u8 usbh_alloc_pipe(usb_host_t *host, u8 ep_addr); /* 0xFF means no available pipe */
@@ -218,9 +217,10 @@ u8 usbh_reactivate_pipe(usb_host_t *host, u8 pipe_num);
 /* Interface operations */
 u8 usbh_get_interface(usb_host_t *host, u8 class_code, u8 sub_class_code, u8 protocol); /* 0xFF means interface not found */
 u8 usbh_set_interface(usb_host_t *host, u8 if_num);
-usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num);
+usbh_if_desc_t *usbh_get_interface_descriptor(usb_host_t *host, u8 if_num, u8 alt_num);
 
-
+/* Get the interval value */
+u32 usbh_get_interval(usb_host_t *host, u8 ep_type, u8 binterval);
 /* Get raw configuration descriptor data */
 u8 *usbh_get_raw_configuration_descriptor(usb_host_t *host);
 
@@ -248,6 +248,10 @@ u8 usbh_intr_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u8 usbh_isoc_receive_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u8 usbh_isoc_send_data(usb_host_t *host, u8 *buf, u16 len, u8 pipe_num);
 u32 usbh_get_last_transfer_size(usb_host_t *host, u8 pipe);
+
+/* Usbh CTS test operations */
+u8 usbh_enter_suspend(u8 suspend);
+u8 usbh_port_test_ctrl(u8 type);
 
 #endif /* USBD_H */
 
