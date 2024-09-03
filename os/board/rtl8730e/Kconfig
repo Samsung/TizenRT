@@ -90,6 +90,19 @@ config FLASH_SIZE
         A size of flash (in bytes).
         This is fixed value, so user doesn't need to change it.
 
+config USERFS_MNTPT
+    string
+    default "/mnt" if AUTOMOUNT_USERFS && !SECOND_FLASH_PARTITION
+    default "/mnt0" if AUTOMOUNT_USERFS && SECOND_FLASH_PARTITION
+    help
+        A mount point name of first flash partition.
+
+config USERFS_EXT_MNTPT
+    string
+    default "/mnt" if AUTOMOUNT_USERFS && SECOND_FLASH_PARTITION
+    help
+        A mount point name of second flash partition.
+
 config FLASH_STATUS_BITS
 	hex
 	default 0x28
