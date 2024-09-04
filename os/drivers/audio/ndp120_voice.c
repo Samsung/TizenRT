@@ -620,6 +620,16 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 	} break;
 #endif  /* CONFIG_AUDIO_KEYWORD_DETECT */
 #endif  /* CONFIG_AUDIO_PROCESSING_FEATURES */
+	case AUDIOIOC_ENABLEDMIC: {
+		if (priv->lower && priv->lower->set_dmic) {
+			bool enable = (bool)arg;
+			priv->lower->set_dmic(enable);
+			ret = OK;
+		} else {
+			ret = -ENOSYS;
+		}
+		break;
+	}
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;

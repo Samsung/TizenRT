@@ -61,6 +61,7 @@
 struct rtl8730e_ndp120_audioinfo_s {
 	struct ndp120_lower_s lower;
 	ndp120_handler_t handler;
+	gpio_t dmic;
 	gpio_irq_t data_ready;
 };
 
@@ -117,6 +118,19 @@ static void rtl8730e_ndp120_irq_attach(ndp120_handler_t handler, FAR char *arg)
 	gpio_irq_enable(&g_ndp120info.data_ready);
 }
 
+static void rtl8730e_ndp120_set_dmic(bool enable)
+{
+	auddbg("Enable DMIC enable : %d\n", enable);
+	gpio_dir(&g_ndp120info.dmic, PIN_OUTPUT);
+	if (enable) {
+		gpio_mode(&g_ndp120info.dmic, PullUp);
+		gpio_write(&g_ndp120info.dmic, 1);
+	} else {
+		gpio_mode(&g_ndp120info.dmic, PullDown);
+		gpio_write(&g_ndp120info.dmic, 0);
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -142,16 +156,10 @@ int rtl8730e_ndp120_initialize(int minor)
 	FAR struct audio_lowerhalf_s *ndp120;
 	static bool initialized = false;
 	char devname[12];
-	int ret;
-	gpio_t gpio_dmic_en;
+	int ret = OK;
 
 	audvdbg("minor %d\n", minor);
 	DEBUGASSERT(minor >= NDP120_AVAILABLE_MINOR_MIN && minor <= NDP120_AVAILABLE_MINOR_MAX);
-
-	auddbg("Enable DMIC\n");
-	gpio_init(&gpio_dmic_en, GPIO_DMIC_EN);
-	gpio_dir(&gpio_dmic_en, PIN_OUTPUT);
-	gpio_mode(&gpio_dmic_en, PullUp);
 
 	/* Have we already initialized?  Since we never uninitialize we must prevent
 	 * multiple initializations.  This is necessary, for example, when the
@@ -163,6 +171,10 @@ int rtl8730e_ndp120_initialize(int minor)
 
 		g_ndp120info.lower.attach = rtl8730e_ndp120_irq_attach;
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
+		g_ndp120info.lower.set_dmic = rtl8730e_ndp120_set_dmic;
+		gpio_init(&g_ndp120info.dmic, GPIO_DMIC_EN);
+		
+		rtl8730e_ndp120_set_dmic(false);
 
 		/* currently spi 0 is only attached to AI SoC, so no
 		 * need to change the spi config as we are dealing with
@@ -190,3 +202,4 @@ int rtl8730e_ndp120_initialize(int minor)
 	return ret;
 }
 #endif
+
