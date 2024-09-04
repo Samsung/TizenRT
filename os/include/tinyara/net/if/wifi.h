@@ -182,6 +182,8 @@ typedef enum {
 	LWNL_EVT_SCAN_FAILED,
 	LWNL_EVT_EXIT,
 	LWNL_EVT_UNKNOWN,
+	LWNL_EVT_CONCURRENT_JOINED,
+	LWNL_EVT_CONCURRENT_LEFT,
 } lwnl_cb_wifi;
 
 typedef struct {

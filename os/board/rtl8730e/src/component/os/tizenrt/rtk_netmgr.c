@@ -86,6 +86,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 static trwifi_scan_list_s *g_scan_list;
 static int g_scan_num;
 extern struct netdev *ameba_nm_dev_wlan0;
+extern struct netdev *ameba_nm_dev_wlan1;
 rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_scan_result);
 int softap_flag = 0;
 
@@ -305,6 +306,13 @@ static int rtk_drv_callback_handler(int type)
 	case 5:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
+	//LWNL_EVT_CONCURRENT_JOINED and LWNL_EVT_CONCURRENT_LEFT as placeholder
+	case 6:
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_JOINED, NULL, 0);
+		break;
+	case 7:
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_LEFT, NULL, 0);
+		break;
 	default:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
@@ -326,6 +334,20 @@ static int rtk_drv_callback_handler(int type)
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		type = 3;
 	}
+	else {
+		if(g_mode == RTK_WIFI_AP_STA_IF){
+			if (reason->reason_code == RTK_STATUS_SUCCESS) {
+				lldbg("\nconnected\n");
+				type = 1;
+			} else {
+				lldbg("\nconnect failed\n");
+				type = 2;
+			}
+		}
+		else{
+			type = 6;
+		}
+	}
 	(void)rtk_drv_callback_handler(type);
 }
 
@@ -337,6 +359,13 @@ static int rtk_drv_callback_handler(int type)
 		type = 4;
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		type = 5;
+	}
+	else if(g_mode == RTK_WIFI_AP_STA_IF){
+		if (wifi_is_connected_to_ap()) {
+			type = 4;
+		} else {
+			type = 7;
+		}
 	}
 	(void)rtk_drv_callback_handler(type);
 }
@@ -352,29 +381,40 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 
 	int ret = RTK_STATUS_SUCCESS;
 	if (g_mode == RTK_WIFI_NONE) {
-		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-
-		if (ret != RTK_STATUS_SUCCESS) {
-			ndbg("[RTK] Link callback handles: register failed !\n");
-			return wuret;
-		} else {
-			nvdbg("[RTK] Link callback handles: registered\n");
-		}
-
-			ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
+		if (rtw_memcmp(dev->ifname,"wlan0",5)) {
+			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 
 			if (ret != RTK_STATUS_SUCCESS) {
-				ndbg("[RTK] Failed to start STA mode\n");
+				ndbg("[RTK] Link callback handles: register failed !\n");
 				return wuret;
+			} else {
+				nvdbg("[RTK] Link callback handles: registered\n");
 			}
-			g_mode = RTK_WIFI_STATION_IF;
-			/*extern const char lib_wlan_rev[];
-			RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
-			wuret = TRWIFI_SUCCESS;
-			softap_flag = 0;
 
-		rtw_mutex_init(&scanlistbusy);
+				ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
+
+				if (ret != RTK_STATUS_SUCCESS) {
+					ndbg("[RTK] Failed to start STA mode\n");
+					return wuret;
+				}
+				g_mode = RTK_WIFI_STATION_IF;
+				/*extern const char lib_wlan_rev[];
+				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
+				wuret = TRWIFI_SUCCESS;
+				softap_flag = 0;
+
+			rtw_mutex_init(&scanlistbusy);
+		}
+		
 	} else if(rtw_memcmp(dev->ifname,"wlan1",5)){
+			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+
+			if (ret != RTK_STATUS_SUCCESS) {
+				ndbg("[RTK] Link callback handles: register failed !\n");
+				return wuret;
+			} else {
+				nvdbg("[RTK] Link callback handles: registered\n");
+			}
 				ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
 				if (ret != RTK_STATUS_SUCCESS) {
 					ndbg("[RTK] Failed to start softap mode\n");

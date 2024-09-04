@@ -296,7 +296,6 @@ int wifi_on(rtw_mode_t mode)
 		init_timer_wrapper();
 		init_timer_pool();
 		rtw_psk_wpa_init(STA_WLAN_INDEX);
-		rtw_psk_wpa_init(SOFTAP_WLAN_INDEX);
 
 		if (p_wifi_do_fast_connect && (mode == RTW_MODE_STA)) {
 			p_wifi_do_fast_connect();
