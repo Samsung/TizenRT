@@ -514,6 +514,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 				}
 				if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 					apb = (struct ap_buffer_s *)msg.u.pPtr;
+					apb->flags = 0;
 				} else if (msg.msgId == AUDIO_MSG_XRUN) {
 					/* Underrun to be handled by client */
 					return -EPIPE;
@@ -535,7 +536,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 		
 		if (apb->nbytes == pcm->buffer_size) {
 			apb->curbyte = 0;
-			apb->flags = 0;
 			bufdesc.numbytes = apb->nbytes;
 			bufdesc.u.pBuffer = apb;
 			pcm->next_buf = NULL; //We will find new buf during next loop
