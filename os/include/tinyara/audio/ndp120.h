@@ -73,13 +73,16 @@ typedef CODE void (*ndp120_handler_t)(FAR void *arg);
 
 struct ndp120_lower_s {
 	/* SPI related configs */
-        struct spi_io_config spi_config;
+	struct spi_io_config spi_config;
 
 	/* callback function: attach the mi48 interrupt handler to the GPIO interrupt */
-        CODE int (*attach)(ndp120_handler_t handler, FAR char *arg);
+	CODE int (*attach)(ndp120_handler_t handler, FAR char *arg);
 
-	/* eanble/disable ndp120 interrupts hadling on rlt8730e */
+	/* eanble/disable ndp120 interrupts hadling on Host Device */
 	CODE void (*irq_enable)(bool enable);
+
+	/* Enable/Disable Internal MIC on Host Device */
+	CODE void (*set_dmic)(bool enable);
 };
 
 /****************************************************************************
