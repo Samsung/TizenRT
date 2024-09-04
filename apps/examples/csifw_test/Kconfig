@@ -1,0 +1,12 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CSIFW_TEST
+	bool "CSIFW test application"
+	default n
+	depends on CSIFW
+	---help---
+		CSIFW test application
+

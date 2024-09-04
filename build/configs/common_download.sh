@@ -55,10 +55,10 @@ else
 	PORT=${DEFAULT_PORT}
 fi
 
-if ! [ -c "/dev/$PORT" ]; then
-	echo "$PORT is not available"
-	exit
-fi
+# if ! [ -c "/dev/$PORT" ]; then
+# 	echo "$PORT is not available"
+# 	exit
+# fi
 WARNING="\n Port $PORT is selected\n\n
 	############################################\n
 	WARNINGS:\n
