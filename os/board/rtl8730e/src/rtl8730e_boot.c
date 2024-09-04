@@ -79,6 +79,10 @@
 #include "common.h"
 #endif
 
+#ifdef CONFIG_WIFI_CSI
+#include <tinyara/wifi_csi/wifi_csi.h>
+#endif
+
 #include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
@@ -479,6 +483,13 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
 #endif
+
+#ifdef CONFIG_WIFI_CSI
+	if (wifi_csi_register(0) != 0) {
+		lldbg("WIFI_CSI initialization failed\n");
+	}
+#endif	
+
 	/* Enable IPC buffered print */
 	inic_ipc_buffered_printf_set_np_enable(1);
 

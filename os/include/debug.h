@@ -324,6 +324,24 @@ int get_errno(void);
 /*        Subsystem specific debug      */
 /****************************************/
 
+#ifdef CONFIG_DEBUG_WIFICSI_ERROR
+#define csidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#else
+#define csidbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_WARN
+#define csiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#else
+#define csiwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_INFO
+#define csivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#define csivdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_AUDIO_ERROR
 #define auddbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define audlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1212,6 +1230,24 @@ int get_errno(void);
 /****************************************/
 /*        Subsystem specific debug      */
 /****************************************/
+
+#ifdef CONFIG_DEBUG_WIFICSI_ERROR
+#define csidbg      dbg
+#else
+#define csidbg      (void)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_WARN
+#define csiwdbg     wdbg
+#else
+#define csiwdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_INFO
+#define csivdbg     vdbg
+#else
+#define csivdbg     (void)
+#endif
 
 #ifdef CONFIG_DEBUG_AUDIO_ERROR
 #define auddbg      dbg

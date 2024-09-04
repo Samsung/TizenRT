@@ -45,6 +45,38 @@ config DEBUG_VERBOSE
 
 comment "Subsystem Debug Options"
 
+config DEBUG_WIFICSI
+	bool "WIFI CSI Debug Feature"
+	default n
+	depends on WIFI_CSI
+	---help---
+		Enable WIFI CSI debug feature.
+
+if DEBUG_WIFICSI
+
+config DEBUG_WIFICSI_ERROR
+	bool "WIFI CSI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable WIFI CSI error debug SYSLOG output.
+
+config DEBUG_WIFICSI_WARN
+	bool "WIFI CSI Warning Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable WIFI CSI warning debug SYSLOG output.
+
+config DEBUG_WIFICSI_INFO
+	bool "WIFI CSI Infomational Debug Output"
+	default n
+	depends on DEBUG_VERBOSE
+	---help---
+		Enable WIFI CSI informational debug SYSLOG output.
+
+endif #DEBUG_WIFICSI
+
 config DEBUG_AUDIO
 	bool "Audio Debug Feature"
 	default n

@@ -282,6 +282,20 @@ if DRIVERS_VIDEO
 source drivers/video/Kconfig
 endif # DRIVERS_VIDEO
 
+menuconfig WIFI_CSI
+	bool "CSI Support"
+	default n
+	---help---
+		Enable support for WIFI CSI driver.
+
+if WIFI_CSI
+
+config WIFI_CSI_DEVPATH
+	string "WIFI_CSI Device Path"
+	default "/dev/wificsi"
+
+endif # WIFI_CSI
+
 menu "AI SoC devices"
 source drivers/ai-soc/Kconfig
 endmenu
