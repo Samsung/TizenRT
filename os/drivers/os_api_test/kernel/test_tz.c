@@ -22,6 +22,7 @@
 
 #include <tinyara/config.h>
 #include <errno.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <tinyara/arch.h>
 #ifdef CONFIG_AMEBAD_TRUSTZONE
@@ -73,7 +74,7 @@ int test_tz(void)
 		no_rdp_result = rdp_no_protection_call(no_protection_func, i);
 
 		if (rdp_result != no_rdp_result) {
-			dbg("rdp call fail!\n");
+			dbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			dbg("rdp_result = 0x%x, no_rdp_result=0x%x\n", rdp_result, no_rdp_result);
 			break;
 		}
@@ -85,7 +86,7 @@ int test_tz(void)
 		return OK;
 	}
 
-	dbg("rdp demo call FAILED\n");
+	dbg("%s\n",clog_message_str[CMN_LOG_FAILED_OP]);
 	return -EINTR;
 #else
 	return -EPERM;

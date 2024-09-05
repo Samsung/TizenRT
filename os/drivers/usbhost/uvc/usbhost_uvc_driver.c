@@ -20,6 +20,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1015,7 +1016,7 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 	uint32_t interval = 0;
 
 	if (buflen <= 2) {
-		uvdbg("Invalid streaming interface descriptor.\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return -EINVAL;
 	}
 
@@ -1031,13 +1032,13 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		n = buflen >= size ? buffer[size - 1] : 0;
 
 		if (buflen < size + p * n) {
-			uvdbg("Input descriptor is invalid.\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			goto error;
 		}
 
 		streaming = kmm_zalloc(sizeof(*streaming));
 		if (streaming == NULL) {
-			uvdbg("Memory allocation failure!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1059,7 +1060,7 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		streaming->header.bmaControls = kmm_zalloc(n);
 		if (streaming->header.bmaControls == NULL) {
 			ret = -ENOMEM;
-			uvdbg("Memory allocation failure!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			goto error;
 		}
 
@@ -1075,12 +1076,12 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		/* Get the current stream from head and add the format to it */
 		streaming = queue_entry(dev->streams.head, struct uvc_streaming, list);
 		if (streaming == NULL) {
-			uvdbg("No valid stream found!!\n");
+			uvdbg("%s stream\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return -EINVAL;
 		}
 		format = kmm_zalloc(sizeof(*format));
 		if (format == NULL) {
-			uvdbg("Memory allocation failure!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 		INIT_QUEUE_HEAD(&format->frames);
@@ -1115,19 +1116,19 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 
 	case UVC_VS_FORMAT_MJPEG:
 		if (buflen < 11) {
-			uvdbg("Not a valid MPEG header\n");
+			uvdbg("%s MPEG header\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return -EINVAL;
 		}
 		/* Get the current stream and add the format to it */
 		streaming = queue_entry(dev->streams.head, struct uvc_streaming, list);
 		if (streaming == NULL) {
-			uvdbg("No valid stream found!!\n");
+			uvdbg("%s stream\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return -EINVAL;
 		}
 
 		format = kmm_zalloc(sizeof(*format));
 		if (format == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1157,13 +1158,13 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		/* Get the current stream and add the format to it */
 		streaming = queue_entry(dev->streams.head, struct uvc_streaming, list);
 		if (streaming == NULL) {
-			uvdbg("No valid stream found!!\n");
+			uvdbg("%s stream\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return -EINVAL;
 		}
 
 		format = queue_entry(streaming->formats.head, struct uvc_format, list);
 		if (format == NULL) {
-			uvdbg("No valid format found!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return -EINVAL;
 		}
 		/* Check frame type matches with the one in format */
@@ -1177,13 +1178,13 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 			n = n ? n : 3;
 
 			if (buflen < 26 + 4 * n) {
-				udbg("Invalid Frame Descriptor\n");
+				udbg("%s Frame Descriptor\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 				return -EINVAL;
 			}
 
 			frame = kmm_zalloc(sizeof(*frame) + sizeof(uint32_t) * n);
 			if (frame == NULL) {
-				uvdbg("Memory allocation failure!!\n");
+				uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				return -ENOMEM;
 			}
 			frame->bFrameIndex = buffer[3];
@@ -1227,19 +1228,19 @@ int uvc_parse_vs_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		break;
 	case UVC_VS_COLORFORMAT:
 		if (buflen < 6) {
-			uvdbg("Invalid color format descriptor\n");
+			uvdbg("%s descriptor\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return -EINVAL;
 		}
 		/* Get the current stream and format to it the color format */
 		streaming = queue_entry(dev->streams.head, struct uvc_streaming, list);
 		if (streaming == NULL) {
-			uvdbg("No valid stream found!!");
+			uvdbg("%s stream", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return -EINVAL;
 		}
 
 		format = queue_entry(streaming->formats.head, struct uvc_format, list);
 		if (format == NULL) {
-			uvdbg("No valid format found!!");
+			uvdbg("%s format\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return -EINVAL;
 		}
 		format->colorspace = uvc_get_colorspace(buffer[3]);
@@ -1319,7 +1320,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		/* Allocate and initialize the input terminal entity */
 		term = uvc_alloc_entity(type | UVC_TERM_INPUT, itdes->bTerminalID, 1, itdes->bControlSize);
 		if (term == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1353,7 +1354,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 
 		term = uvc_alloc_entity(type | UVC_TERM_OUTPUT, otdes->bTerminalID, 1, 0);
 		if (term == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1373,7 +1374,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 		p = seldesc->bNrInPins;
 		unit = uvc_alloc_entity(seldesc->bDescriptorType, seldesc->bUnitID, p + 1, 0);
 		if (unit == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1396,7 +1397,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 
 		unit = uvc_alloc_entity(procdesc->bDescriptorSubtype, procdesc->bUnitID, 2, n);
 		if (unit == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1423,7 +1424,7 @@ int uvc_parse_vc_descriptor(FAR uvc_state_t *dev, const unsigned char *buffer, i
 
 		unit = uvc_alloc_entity(extdesc->bDescriptorSubtype, extdesc->bUnitID, p + 1, n);
 		if (unit == NULL) {
-			udbg("Memory allocation failure!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1488,7 +1489,7 @@ static int usbhost_uvc_cfgdesc(FAR struct usbhost_uvc_state_s *priv, FAR const u
 	/* Verify that we were passed a configuration descriptor */
 	cfgdesc = (FAR struct usb_cfgdesc_s *)configdesc;
 	if (cfgdesc->type != USB_DESC_TYPE_CONFIG) {
-		udbg("Not a valid configuration descriptor!!\n");
+		udbg("%s descriptor!!\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return -EINVAL;
 	}
 
@@ -1533,7 +1534,7 @@ static int usbhost_uvc_cfgdesc(FAR struct usbhost_uvc_state_s *priv, FAR const u
 
 			intf = kmm_zalloc(sizeof(*intf));
 			if (intf == NULL) {
-				udbg("Memory allocation failure!!\n");
+				udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				return -ENOMEM;
 			}
 			memcpy(intf, ifdesc, sizeof(struct usb_ifdesc_s));
@@ -1575,7 +1576,7 @@ static int usbhost_uvc_cfgdesc(FAR struct usbhost_uvc_state_s *priv, FAR const u
 
 			ep = kmm_zalloc(sizeof(*ep));
 			if (ep == NULL) {
-				udbg("Memory allocation failure!!\n");
+				udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				return -ENOMEM;
 			}
 
@@ -1637,7 +1638,7 @@ int uvc_scan_device(FAR uvc_state_t *dev)
 
 		chain = kmm_zalloc(sizeof(*chain));
 		if (chain == NULL) {
-			udbg("Memory allocation failed!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -1657,7 +1658,7 @@ int uvc_scan_device(FAR uvc_state_t *dev)
 	}
 
 	if (queue_empty(&dev->chains)) {
-		uvdbg("No valid video chain found.\n");
+		uvdbg("%s video chain\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return -1;
 	}
 
@@ -1703,7 +1704,7 @@ static inline int usbhost_uvc_devinit(FAR struct usbhost_uvc_state_s *priv)
 	/* Set aside a transfer buffer for exclusive use by the driver */
 	ret = usbhost_alloc_buffers(priv);
 	if (ret < 0) {
-		udbg("Failed to allocate transfer buffer\n");
+		udbg("%s: usbhost_alloc_buffers\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
@@ -1715,26 +1716,26 @@ static inline int usbhost_uvc_devinit(FAR struct usbhost_uvc_state_s *priv)
 	/* Initialize controls. */
 	ret = uvc_ctrl_init_device(priv);
 	if (ret < 0) {
-		udbg("Failed to initialize controls !\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
 	/* Scan the device for video chains. */
 	ret = uvc_scan_device(priv);
 	if (ret < 0) {
-		udbg("Failed to scan and unit list !\n");
+		udbg("%s: uvc_ctrl_init_device\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
 	ret = uvc_scan_stream(priv);
 	if (ret < 0) {
-		udbg("Failed to scan and stream list !\n");
+		udbg("%s: uvc_scan_stream\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	/* Register the Camera terminal to this device */
 	ret = uvc_register_camera(priv);
 	if (ret < 0) {
-		udbg("Failed to get a camera terminal in this device !\n");
+		udbg("%s: uvc_register_camera\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
@@ -1749,7 +1750,7 @@ static inline int usbhost_uvc_devinit(FAR struct usbhost_uvc_state_s *priv)
 		g_lower_half.dev = priv;
 		priv->video_priv = video_register(devname, &g_lower_half);
 		if (priv->video_priv == NULL) {
-			udbg("Fail to register video driver!!\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			goto errout;
 		}
 	}
@@ -1825,7 +1826,7 @@ static int uvc_register_camera(FAR uvc_state_t *dev)
 
 			stream = (struct uvc_streaming *)uvc_stream_by_id(dev, term->id);
 			if (stream == NULL) {
-				uvdbg("No streaming interface found for terminal %u.\n", term->id);
+				uvdbg("%s terminal %u.\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL], term->id);
 				continue;
 			}
 
@@ -1969,7 +1970,7 @@ static int usbhost_uvc_connect(FAR struct usbhost_class_s *usbclass, FAR const u
 
 		ret = usbhost_uvc_devinit(priv);
 		if (ret < 0) {
-			uvdbg("usbhost_uvc_devinit() failed: %d\n", ret);
+			uvdbg("%s: usbhost_uvc_devinit, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout;
 		}
 	}
@@ -2085,7 +2086,7 @@ static int usbhost_uvc_ctrl_req(void *arg, uint8_t type, uint8_t req, uint16_t w
 		ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, buf);
 	}
 	if (ret < 0) {
-		udbg("Failed to send EP0 request, %d\n", ret);
+		udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 	/* On success return the length requested */
@@ -2145,7 +2146,7 @@ int usbhost_uvc_setinterface(FAR uvc_state_t *dev, uint8_t intfnum, uint8_t atli
 
 	ret = usbhost_uvc_ctrl_req(dev, type, USB_REQ_SETINTERFACE, atlintf, intfnum, NULL, 0);
 	if (ret < 0) {
-		uvdbg("Failed to set interface!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	return ret;

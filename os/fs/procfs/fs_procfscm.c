@@ -80,6 +80,7 @@
 #include<netinet/in.h>
 #include<arpa/inet.h>
 #include<sys/socket.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if defined(CONFIG_ARCH_BOARD_SIDK_S5JT200)
 #include <tinyara/wifi/slsi/slsi_wifi_api.h>
@@ -400,7 +401,7 @@ static int cm_open(FAR struct file *filep, FAR const char *relpath, int oflags, 
 	 */
 
 	if ((oflags & O_WRONLY) != 0 || (oflags & O_RDONLY) == 0) {
-		fdbg("ERROR: Only O_RDONLY supported\n");
+		fdbg("%s To write\n",clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 		return -EACCES;
 	}
 
@@ -420,7 +421,7 @@ static int cm_open(FAR struct file *filep, FAR const char *relpath, int oflags, 
 	/* Allocate a container to hold the domain selection */
 	connectivityfile = (FAR struct cm_file_s *)kmm_zalloc(sizeof(struct cm_file_s));
 	if (!connectivityfile) {
-		fdbg("ERROR: Failed to allocate file container\n");
+		fdbg("%s file container\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -524,7 +525,7 @@ static int cm_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newfile = (FAR struct cm_file_s *)kmm_malloc(sizeof(struct cm_file_s));
 	if (!newfile) {
-		fdbg("ERROR: Failed to allocate file container\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -568,7 +569,7 @@ static int cm_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 
 	connectivitydir = (FAR struct cm_dir_s *)kmm_zalloc(sizeof(struct cm_dir_s));
 	if (!connectivitydir) {
-		fdbg("ERROR: Failed to allocate the directory structure\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 

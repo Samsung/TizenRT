@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -1904,7 +1905,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 	slsi_ap_config_t *p_ap_config = kmm_zalloc(sizeof(slsi_ap_config_t));
 
 	if (p_ap_config == NULL) {
-		EPRINT("Memory allocation failed \n");
+		EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 	} else {
 		slsi_ap_config_t *tmp_ap_config = &g_recovery_data.ap_config;
 		memcpy(p_ap_config, tmp_ap_config, sizeof(slsi_ap_config_t));
@@ -1912,7 +1913,7 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 		if (tmp_ap_config->security) {
 			p_ap_config->security = kmm_zalloc(sizeof(slsi_security_config_t));
 			if (p_ap_config->security == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			} else {
 				memcpy(p_ap_config->security, tmp_ap_config->security, sizeof(slsi_security_config_t));
 			}
@@ -1920,13 +1921,13 @@ static slsi_ap_config_t *slsi_get_ap_config(void)
 		if (tmp_ap_config->vsie) {
 			p_ap_config->vsie = kmm_zalloc(sizeof(slsi_vendor_ie_t));
 			if (p_ap_config->vsie == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			} else {
 				memcpy(p_ap_config->vsie, tmp_ap_config->vsie, sizeof(slsi_vendor_ie_t));
 			}
 			p_ap_config->vsie->content = kmm_zalloc(tmp_ap_config->vsie->content_length);
 			if (p_ap_config->vsie->content == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			} else {
 				memcpy(p_ap_config->vsie->content, tmp_ap_config->vsie->content, tmp_ap_config->vsie->content_length);
 			}
@@ -1959,7 +1960,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 	if (ap_config->security) {
 		t_ap_config->security = kmm_zalloc(sizeof(slsi_security_config_t));
 		if (t_ap_config->security == NULL) {
-			EPRINT("Memory allocation failed \n");
+			EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		} else {
 			memcpy(t_ap_config->security, ap_config->security, sizeof(slsi_security_config_t));
 		}
@@ -1967,7 +1968,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 	if (ap_config->vsie) {
 		t_ap_config->vsie = kmm_zalloc(sizeof(slsi_vendor_ie_t));
 		if (t_ap_config->vsie == NULL) {
-			EPRINT("Memory allocation failed \n");
+			EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		} else {
 			memcpy(t_ap_config->vsie, ap_config->vsie, sizeof(slsi_vendor_ie_t));
 		}
@@ -1975,7 +1976,7 @@ static void slsi_save_ap_config(slsi_ap_config_t *ap_config)
 		if (ap_config->vsie->content) {
 			t_ap_config->vsie->content = kmm_zalloc(ap_config->vsie->content_length);
 			if (t_ap_config->vsie->content == NULL) {
-				EPRINT("Memory allocation failed \n");
+				EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			} else {
 				memcpy(t_ap_config->vsie->content, ap_config->vsie->content, ap_config->vsie->content_length);
 			}
@@ -2008,7 +2009,7 @@ static void slsi_save_join(uint8_t *ssid, int ssid_len, uint8_t *bssid, const sl
 		// TODO: security not saved!!!
 		g_recovery_data.security = kmm_zalloc(sizeof(slsi_security_config_t));
 		if (g_recovery_data.security == NULL) {
-			EPRINT("Memory allocation failed \n");
+			EPRINT("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		} else {
 			memcpy(g_recovery_data.security, sec_config, sizeof(slsi_security_config_t));
 			VPRINT("Saved security settings: security mode %d\n", g_recovery_data.security->secmode);

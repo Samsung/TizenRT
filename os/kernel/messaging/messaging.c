@@ -63,6 +63,7 @@
 #include <semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -115,7 +116,7 @@ static int messaging_append_receiver(pid_t pid, int prio, sq_queue_t *queue)
 	msg_recv_node_t *next_node;
 	recv_node = (msg_recv_node_t *)kmm_malloc(sizeof(msg_recv_node_t));
 	if (recv_node == NULL) {
-		msgdbg("[Messaging] fail to save receiver info : out of memory.\n");
+		msgdbg("%s\n", clog_message_str[CMN_LOG_OUT_OF_MEMORY]);
 		return ERROR;
 	}
 	recv_node->pid = pid;
@@ -212,7 +213,7 @@ int messaging_save_receiver(char *port_name, pid_t recv_pid, int recv_prio)
 	/* Create new port node which has this port name */
 	port_node = (msg_port_node_t *)kmm_malloc(sizeof(msg_port_node_t));
 	if (port_node == NULL) {
-		msgdbg("[Messaging] fail to save receiver info : out of memory.\n");
+		msgdbg("%s\n", clog_message_str[CMN_LOG_OUT_OF_MEMORY]);
 		return ERROR;
 	}
 

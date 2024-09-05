@@ -56,6 +56,7 @@
 #include <tinyara/bluetooth/iob/iob.h>
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_core.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_atomic.h"
 #include "bt_queue.h"
@@ -304,7 +305,7 @@ void bt_conn_receive(FAR struct bt_conn_s *conn, FAR struct bt_buf_s *buf, uint8
 		nvdbg("Cont, len %u rx_len %u\n", buf->len, conn->rx_len);
 
 		if (buf->len > bt_buf_tailroom(conn->rx)) {
-			ndbg("ERROR: Not enough buffer space for L2CAP data\n");
+			ndbg("%s L2CAP data\n",clog_message_str[CMN_LOG_ALLOC_FAIL],);
 			bt_conn_reset_rx_state(conn);
 			bt_buf_release(buf);
 			return;

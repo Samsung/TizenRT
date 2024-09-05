@@ -75,6 +75,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_FS_PROCFS_EXCLUDE_CPULOAD)
@@ -166,7 +167,7 @@ static int cpuload_open(FAR struct file *filep, FAR const char *relpath, int ofl
 	 */
 
 	if ((oflags & O_WRONLY) != 0 || (oflags & O_RDONLY) == 0) {
-		fdbg("ERROR: Only O_RDONLY supported\n");
+		fdbg("%s To write\n", clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 		return -EACCES;
 	}
 
@@ -181,7 +182,7 @@ static int cpuload_open(FAR struct file *filep, FAR const char *relpath, int ofl
 
 	attr = (FAR struct cpuload_file_s *)kmm_zalloc(sizeof(struct cpuload_file_s));
 	if (!attr) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -321,7 +322,7 @@ static int cpuload_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newattr = (FAR struct cpuload_file_s *)kmm_malloc(sizeof(struct cpuload_file_s));
 	if (!newattr) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 

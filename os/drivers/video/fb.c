@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/types.h>
 #include <stdbool.h>
@@ -519,7 +520,7 @@ static int fb_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #endif /* CONFIG_FB_OVERLAY */
 
 	default:
-		gdbg("ERROR: Unsupported IOCTL command: %d\n", cmd);
+		gdbg("%s IOCTL command: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 		ret = -ENOTTY;
 		break;
 	}
@@ -577,7 +578,7 @@ int fb_register(int display, int plane)
 
 	ret = up_fbinitialize(display);
 	if (ret < 0) {
-		gdbg("ERROR: up_fbinitialize() failed for display %d: %d\n", display, ret);
+		gdbg("%s of up_fbinitialize() display %d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], display, ret);
 		goto errout_with_fb;
 	}
 
@@ -586,7 +587,7 @@ int fb_register(int display, int plane)
 
 	fb->vtable = up_fbgetvplane(display, plane);
 	if (fb->vtable == NULL) {
-		gdbg("ERROR: up_fbgetvplane() failed, vplane=%d\n", plane);
+		gdbg("%s, vplane=%d\n", clog_message_str[CMN_LOG_FAILED_OP], plane);
 		goto errout_with_fb;
 	}
 
@@ -595,7 +596,7 @@ int fb_register(int display, int plane)
 	DEBUGASSERT(fb->vtable->getvideoinfo != NULL);
 	ret = fb->vtable->getvideoinfo(fb->vtable, &vinfo);
 	if (ret < 0) {
-		gdbg("ERROR: getvideoinfo() failed: %d\n", ret);
+		gdbg("%s: getvideoinfo() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_fb;
 	}
 
@@ -605,7 +606,7 @@ int fb_register(int display, int plane)
 	DEBUGASSERT(fb->vtable->getplaneinfo != NULL);
 	ret = fb->vtable->getplaneinfo(fb->vtable, plane, &pinfo);
 	if (ret < 0) {
-		gdbg("ERROR: getplaneinfo() failed: %d\n", ret);
+		gdbg("%s getplaneinfo() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_fb;
 	}
 
@@ -623,7 +624,7 @@ int fb_register(int display, int plane)
 	DEBUGASSERT(fb->vtable->getoverlayinfo != NULL);
 	ret = fb->vtable->getoverlayinfo(fb->vtable, 0, &oinfo);
 	if (ret < 0) {
-		gdbg("ERROR: getoverlayinfo() failed: %d\n", ret);
+		gdbg("%s getoverlayinfo() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_fb;
 	}
 
@@ -644,7 +645,7 @@ int fb_register(int display, int plane)
 
 	ret = register_driver(devname, &fb_fops, 0666, (FAR void *)fb);
 	if (ret < 0) {
-		gdbg("ERROR: register_driver() failed: %d\n", ret);
+		gdbg("%s: register_driver() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_fb;
 	}
 

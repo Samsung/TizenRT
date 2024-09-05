@@ -75,6 +75,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/audio_null.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -702,10 +703,10 @@ static int null_registerprocess(FAR struct audio_lowerhalf_s *dev, mqd_t mq)
 	priv->process_terminate = false;
 	ret = pthread_create(&priv->process_threadid, &tattr, null_processthread, (pthread_addr_t) priv);
 	if (ret != OK) {
-		auddbg("ERROR: pthread_create failed: %d\n", ret);
+		auddbg("%s: pthread_create(), %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	} else {
 		pthread_setname_np(priv->process_threadid, "null audio process");
-		auddbg("Created worker thread\n");
+		auddbg("%s \n", clog_message_str[CMN_LOG_PERFORMING_OP]);
 	}
 
 	audvdbg("Return %d\n", ret);
@@ -766,7 +767,7 @@ static int null_start(FAR struct audio_lowerhalf_s *dev)
 	audvdbg("Starting worker thread\n");
 	ret = pthread_create(&priv->worker_threadid, &tattr, null_workerthread, (pthread_addr_t) priv);
 	if (ret != OK) {
-		auddbg("ERROR: pthread_create failed: %d\n", ret);
+		auddbg("%s: pthread_create(), %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	} else {
 		pthread_setname_np(priv->worker_threadid, "null audio");
 		auddbg("Created worker thread\n");
@@ -961,12 +962,12 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 #endif
 		ret = null_registerprocess(dev, (mqd_t) arg);
 		if (ret != OK) {
-			auddbg("Process Start Failed ret : %d\n", ret);
+			auddbg("%s to start: %d \n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 		ret = OK;
 #else
-		auddbg("Register Process Failed - Device Doesn't support\n");
+		auddbg("%s: Register Device\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EINVAL;
 #endif
 	}
@@ -975,13 +976,13 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		ret = null_unregisterprocess(dev);
 		if (ret != OK) {
-			auddbg("Process Start Failed ret : %d\n", ret);
+			auddbg("%s to start : %d \n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 		ret = OK;
 
 #else
-		auddbg("UnRegister Process Failed - Device Doesn't support\n");
+		auddbg("UnRegister %s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EINVAL;
 #endif
 	}
@@ -995,7 +996,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 		sem_post(&priv->processing_sem);
 		ret = OK;
 #else
-		auddbg("start Process Failed - Device Doesn't support\n");
+		auddbg("%s: start device\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EINVAL;
 #endif
 	}
@@ -1008,7 +1009,7 @@ static int null_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long 
 		priv->process_terminate = true;
 		ret = OK;
 #else
-		auddbg("start Process Failed - Device Doesn't support\n");
+		auddbg("%s: start device\n:", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EINVAL;
 #endif
 	}
@@ -1112,6 +1113,6 @@ FAR struct audio_lowerhalf_s *audio_null_initialize(void)
 		return &priv->dev;
 	}
 
-	auddbg("ERROR: Failed to allocate null audio device\n");
+	auddbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	return NULL;
 }

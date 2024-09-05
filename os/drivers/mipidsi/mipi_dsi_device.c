@@ -51,6 +51,7 @@
 
 #include <tinyara/mipidsi/mipi_display.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "mipi_dsi.h"
 
@@ -927,7 +928,7 @@ FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *h
 	DEBUGASSERT(host != NULL && name != NULL);
 
 	if (channel > 3) {
-		mipidbg("invalid virtual channel: %u\n", channel);
+		mipidbg("%s channel: %u\n", clog_message_str[CMN_LOG_INVALID_VAL],channel);
 		return NULL;
 	}
 

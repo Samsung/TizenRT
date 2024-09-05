@@ -70,6 +70,8 @@
 #include "group/group.h"
 #include "task/task.h"
 
+#include <tinyara/common_logs/common_logs.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -275,7 +277,7 @@ FAR struct task_tcb_s *task_vforksetup(start_t retaddr)
 
 	child = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
 	if (!child) {
-		sdbg("ERROR: Failed to allocate TCB\n");
+		sdbg("%s TCB\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		set_errno(ENOMEM);
 		return NULL;
 	}
@@ -431,7 +433,7 @@ pid_t task_vforkstart(FAR struct task_tcb_s *child)
 #ifdef CONFIG_DEBUG
 	ret = waitpid(pid, &rc, 0);
 	if (ret < 0) {
-		sdbg("ERROR: waitpid failed: %d\n", errno);
+		sdbg("%s waitpid %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 	}
 #else
 	(void)waitpid(pid, &rc, 0);

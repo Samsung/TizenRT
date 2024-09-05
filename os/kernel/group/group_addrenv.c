@@ -59,6 +59,7 @@
 #include <debug.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -180,7 +181,7 @@ int group_addrenv(FAR struct tcb_s *tcb)
 
 		ret = up_addrenv_select(&group->tg_addrenv, NULL);
 		if (ret < 0) {
-			bdbg("ERROR: up_addrenv_select failed: %d\n", ret);
+			bdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 
 		/* Save the new, current group */

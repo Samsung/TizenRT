@@ -79,6 +79,7 @@
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/smart_procfs.h>
 #include <tinyara/fs/smart.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Definitions
@@ -1216,7 +1217,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	allocsize = dev->neraseblocks << 1;
 	dev->sMap = (FAR uint16_t *)smart_malloc(dev, totalsectors * sizeof(uint16_t) + allocsize, "Sector map");
 	if (!dev->sMap) {
-		fdbg("Error allocating SMART virtual map buffer\n");
+		fdbg("%s SMART virtual map buffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1225,7 +1226,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 #else
 	dev->sBitMap = (FAR uint8_t *)smart_malloc(dev, (totalsectors + 7) >> 3, "Sector Bitmap");
 	if (dev->sBitMap == NULL) {
-		fdbg("Error allocating SMART sector cache\n");
+		fdbg("%s SMART sector cache\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1251,7 +1252,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	}
 
 	if (!dev->sCache) {
-		fdbg("Error allocating SMART sector cache\n");
+		fdbg("%s SMART sector cache\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1280,7 +1281,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 	}
 
 	if (!dev->erasecounts) {
-		fdbg("Error allocating erase count array\n");
+		fdbg("%s erase count array\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1292,7 +1293,7 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 
 	dev->wearstatus = (FAR uint8_t *)smart_malloc(dev, dev->neraseblocks >> SMART_WEAR_BIT_DIVIDE, "Wear status");
 	if (!dev->wearstatus) {
-		fdbg("Error allocating wear level status array\n");
+		fdbg("%s wear level status array\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1305,13 +1306,13 @@ static int smart_setsectorsize(FAR struct smart_struct_s *dev, uint16_t size)
 
 	dev->rwbuffer = (FAR char *)smart_malloc(dev, size, "RW Buffer");
 	if (!dev->rwbuffer) {
-		fdbg("Error allocating SMART read/write buffer\n");
+		fdbg("%s SMART read/write buffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
 	dev->bytebuffer = (FAR uint8_t *)smart_malloc(dev, size, "Byte Buffer");
 	if (!dev->bytebuffer) {
-		fdbg("Error allocating SMART bytebuffer\n");
+		fdbg("%s SMART bytebuffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errexit;
 	}
 
@@ -1372,7 +1373,7 @@ static int smart_byte_to_block_write(FAR struct smart_struct_s *dev, size_t offs
 	nblocks = (offset - startblock * dev->geo.blocksize + nbytes + dev->geo.blocksize - 1) / dev->geo.blocksize;
 	ret = MTD_BREAD(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
 	if (ret < 0) {
-		fdbg("Error %d reading from device\n", -ret);
+		fdbg("%s: %d \n", clog_message_str[CMN_LOG_FILE_READ_ERROR], -ret);
 		return ret;
 	}
 
@@ -1382,7 +1383,7 @@ static int smart_byte_to_block_write(FAR struct smart_struct_s *dev, size_t offs
 	
 	ret = MTD_BWRITE(dev->mtd, startblock, nblocks, (FAR uint8_t *)dev->bytebuffer);
 	if (ret < 0) {
-		fdbg("Error %d writing to device\n", -ret);
+		fdbg("%s: %d \n",clog_message_str[CMN_LOG_FILE_WRITE_ERROR], -ret);
 		return ret;
 	}
 	return nbytes;
@@ -1918,7 +1919,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		/* Read the header for this sector. */
 		ret = MTD_READ(dev->mtd, readaddress, sizeof(struct smart_sect_header_s), (uint8_t *)dev->rwbuffer);
 		if (ret != sizeof(struct smart_sect_header_s)) {
-			fdbg("Error reading physical sector %d.\n", sector);
+			fdbg("%s sector %d.\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], sector);
 			goto err_out;
 		}
 		/* copy header data only, will be used below */
@@ -1977,7 +1978,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		if (logicalsector >= totalsectors) {
 			/* Error in logical sector read from the MTD device. */
 
-			fdbg("Invalid logical sector %d at physical %d.\n", logicalsector, sector);
+			fdbg("%s logical sector %d at physical %d.\n", clog_message_str[CMN_LOG_INVALID_VAL],logicalsector, sector);
 			continue;
 		}
 
@@ -1990,7 +1991,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 			ret = MTD_READ(dev->mtd, readaddress, 32, (FAR uint8_t *)dev->rwbuffer);
 			if (ret != 32) {
-				fdbg("Error reading physical sector %d at line %d.\n", sector, __LINE__);
+				fdbg("%s Sector %d at line %d.\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], sector, __LINE__);
 				goto err_out;
 			}
 
@@ -2038,7 +2039,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 
 				rootdirdev = (struct smart_multiroot_device_s *)smart_malloc(dev, sizeof(*rootdirdev), "Root Dir");
 				if (rootdirdev == NULL) {
-					fdbg("Memory alloc failed\n");
+					fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 					ret = -ENOMEM;
 					goto err_out;
 				}
@@ -2265,7 +2266,7 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 		readaddress = sector * dev->mtdBlksPerSector * dev->geo.blocksize;
 		ret = MTD_READ(dev->mtd, readaddress, SMART_WEAR_LEVEL_FORMAT_SIG + 1, (uint8_t *)dev->rwbuffer);
 		if (ret != SMART_WEAR_LEVEL_FORMAT_SIG + 1) {
-			fdbg("Error reading physical sector %d.\n", sector);
+			fdbg("%s: read physical sector %d.\n", clog_message_str[CMN_LOG_FAILED_OP], sector);
 			goto err_out;
 		}
 
@@ -2438,7 +2439,7 @@ static void smart_erase_block_if_empty(FAR struct smart_struct_s *dev, uint16_t 
 		ret = MTD_ERASE(dev->mtd, block, 1);
 #endif
 		if (ret < 0) {
-			fdbg("MTD_ERASE failed!!\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			dev->freecount[block] = 0;
 			return;
 		}
@@ -4636,7 +4637,7 @@ static int smart_allocsector(FAR struct smart_struct_s *dev, unsigned long reque
 		 * rescan and try again to "self heal" in case of a
 		 * bug in our code? */
 
-		fdbg("No free logical sector numbers!  Free sectors = %d\n", dev->freesectors);
+		fdbg("%s Free sectors = %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], dev->freesectors);
 
 		return -EIO;
 	}
@@ -5915,7 +5916,7 @@ error_with_active_sector:
 	}
 	ret = smart_journal_checkout(dev, log, address);
 	if (ret != OK) {
-		fdbg("checkout failed sector\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ret;
 	}
 	return -EINVAL;
@@ -6067,7 +6068,8 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 
 		rootdirdev = (FAR struct smart_multiroot_device_s *)smart_malloc(dev, sizeof(*rootdirdev), "Root Dir");
 		if (rootdirdev == NULL) {
-			fdbg("register_blockdriver failed: %d\n", -ret);
+			/*register_blockdriver failed:*/
+			fdbg("%s %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], -ret);
 			ret = -ENOMEM;
 			goto errout;
 		}
@@ -6091,7 +6093,7 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 #endif
 
 		if (ret < 0) {
-			fdbg("register_blockdriver failed: %d\n", -ret);
+			fdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], -ret);
 			goto errout;
 		}
 
@@ -6099,7 +6101,7 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 		/* Now ready to initialize journal here */
 		ret = smart_journal_init(dev);
 		if (ret < 0) {
-			fdbg("journal init failed ret : %d\n", ret);
+			fdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout;
 		}
 #endif

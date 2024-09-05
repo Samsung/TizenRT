@@ -63,9 +63,10 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #include "inode/inode.h"
 #include "driver/block/driver.h"
+
 
 /* At least one filesystem must be defined, or this file will not compile.
  * It may be desire-able to make filesystems dynamically registered at
@@ -258,7 +259,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 			 *  -EACCESS - The MS_RDONLY option was not set but this driver does not support write access
 			 */
 
-			fdbg("ERROR: Failed to find block driver %s\n", source);
+			fdbg("%s driver %s\n", clog_message_str[CMN_LOG_FAILED_OP],source);
 			errcode = -ret;
 			goto errout;
 		}
@@ -269,7 +270,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 		} else
 #endif							/* NONBDFS_SUPPORT */
 		{
-			fdbg("ERROR: Failed to find file system %s\n", filesystemtype);
+			fdbg("%s file system %s\n", clog_message_str[CMN_LOG_FAILED_OP],filesystemtype);
 			errcode = ENODEV;
 			goto errout;
 		}
@@ -289,7 +290,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 		 *  -ENOMEM - Failed to allocate in-memory resources for the operation
 		 */
 
-		fdbg("ERROR: Failed to reserve inode\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		errcode = -ret;
 		goto errout_with_semaphore;
 	}
@@ -302,7 +303,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 	if (!mops->bind) {
 		/* The filesystem does not support the bind operation ??? */
 
-		fdbg("ERROR: Filesystem does not support bind\n");
+		fdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		errcode = EINVAL;
 		goto errout_with_mountpt;
 	}
@@ -331,7 +332,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 		 * error.
 		 */
 
-		fdbg("ERROR: Bind method failed: %d\n", ret);
+		fdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 #ifdef BDFS_SUPPORT
 #ifdef NONBDFS_SUPPORT
 		if (blkdrvr_inode)

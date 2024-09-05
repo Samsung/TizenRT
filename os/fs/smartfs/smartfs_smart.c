@@ -75,6 +75,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/fs/smart.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "smartfs.h"
 
@@ -250,7 +251,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		if ((oflags & O_ACCMODE) != O_RDONLY) {
 			ret = smartfs_get_datalen(fs, sf->entry.firstsector, &sf->entry.datalen);
 			if (ret < 0) {
-				fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
+				fdbg("%s to get length of the file: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 				goto errout_with_buffer;
 			}
 		}
@@ -286,7 +287,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			/* First we allocate a new data sector for the file */
 			ret = smartfs_alloc_firstsector(fs, &sf->entry.firstsector, SMARTFS_DIRENT_TYPE_FILE, sf);
 			if (ret != OK) {
-				fdbg("Unable to allocate data sector for new entry, ret : %d\n", ret);
+				fdbg("%s allocate data sector, ret : %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL],ret);
 				goto errout_with_buffer;
 			}
 
@@ -294,7 +295,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			ret = smartfs_find_availableentry(fs, &sf->entry);
 			if (ret != OK) {
 				/* find_availableentry encountered a problem with lower layer operations, return error */
-				fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
+				fdbg("%s find space for writing new entry ret : %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 				goto errout_with_buffer;
 			}
 
@@ -307,7 +308,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			/* At this point, either an available entry was found or a new one has been created */
 			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode);
 			if (ret != OK) {
-				fdbg("Unable to write entry, ret : %d\n", ret);
+				fdbg("%s smartfs_writeentry() ret : %d\n", clog_message_str[CMN_LOG_FILE_WRITE_ERROR],ret);
 				goto errout_with_buffer;
 			}
 		} else {
@@ -1481,19 +1482,19 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 		/* Allocate new data sector for entry */
 		ret = smartfs_alloc_firstsector(fs, &entry.firstsector, SMARTFS_DIRENT_TYPE_DIR, NULL);
 		if (ret != OK) {
-			fdbg("Unable to allocate data sector for new entry, ret : %d\n", ret);
+			fdbg("%s: smartfs_alloc_firstsector: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 		/* Try to find empty/invalid entry available in one of he chained parent sectors */
 		ret = smartfs_find_availableentry(fs, &entry);
 		if (ret != OK) {
-			fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
+			fdbg("%s: smartfs_find_availableentry: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 		/* Now we have an entry allocated for writing, write new entry to sector */
 		ret = smartfs_writeentry(fs, entry, SMARTFS_DIRENT_TYPE_DIR, mode);
 		if (ret != OK) {
-			fdbg("Unable to write new entry, ret : %d\n", ret);
+			fdbg("%s: smartfs_writeentry: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 	}
@@ -1654,21 +1655,21 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 		/* Find an available invalid/empty entry to write the new entry */
 		ret = smartfs_find_availableentry(fs, &newentry);
 		if (ret != OK) {
-			fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
+			fdbg("%s writing new entry ret : %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 			goto errout_with_semaphore;
 		}
 
 		newentry.firstsector = oldentry.firstsector;
 		ret = smartfs_writeentry(fs, newentry, type, mode);
 		if (ret != OK) {
-			fdbg("Unable to write new entry, ret : %d\n", ret);
+			fdbg("%s to write new entry ret : %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 
 		/* Now mark the old entry as inactive */
 		ret = smartfs_invalidateentry(fs, oldentry.dsector, oldentry.doffset);
 		if (ret != OK) {
-			fdbg("Unable to invalidate old entry, ret : %d\n", ret);
+			fdbg("%s to invalidate old entry ret : %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 	} else {
@@ -1763,7 +1764,7 @@ static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat 
 	/* We need to know the data length of the file too */
 	ret = smartfs_get_datalen(fs, entry.firstsector, &entry.datalen);
 	if (ret < 0) {
-		fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 

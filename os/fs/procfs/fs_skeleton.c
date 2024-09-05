@@ -76,6 +76,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
 #include <tinyara/fs/dirent.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <arch/irq.h>
 
@@ -181,7 +182,7 @@ static int skel_open(FAR struct file *filep, FAR const char *relpath, int oflags
 	 */
 
 	if (((oflags & O_WRONLY) != 0 || (oflags & O_RDONLY) == 0) && (skel_procfsoperations.write == NULL)) {
-		fdbg("ERROR: Only O_RDONLY supported\n");
+		fdbg("%s To write\n", clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 		return -EACCES;
 	}
 
@@ -189,7 +190,7 @@ static int skel_open(FAR struct file *filep, FAR const char *relpath, int oflags
 
 	priv = (FAR struct skel_file_s *)kmm_zalloc(sizeof(struct skel_file_s));
 	if (!priv) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -274,7 +275,7 @@ static int skel_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newpriv = (FAR struct skel_file_s *)kmm_zalloc(sizeof(struct skel_file_s));
 	if (!newpriv) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -311,7 +312,7 @@ static int skel_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 			 kmm_zalloc(sizeof(struct skel_level1_s));
 
 	if (!level1) {
-		fdbg("ERROR: Failed to allocate the level1 directory structure\n");
+		fdbg("%s level1 directory structure\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 

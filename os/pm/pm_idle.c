@@ -27,6 +27,7 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include "../kernel/sched/sched.h"
+#include <tinyara/common_logs/common_logs.h>
 
 #include "pm.h"
 #ifdef CONFIG_SMP
@@ -128,7 +129,7 @@ void pm_idle(void)
 		/* Then force the global state change */
 		if (pm_changestate(newstate) < 0) {
 			/* The new state change failed */
-			pmdbg("State change failed! newstate = %d\n", newstate);
+			pmdbg("%s: newstate = %d\n", clog_message_str[CMN_LOG_FAILED_OP], newstate);
 			goto EXIT;
 		}
 		/* If current state is not good to go sleep then do core power saving*/

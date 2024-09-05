@@ -65,6 +65,7 @@
 #include <tinyara/elf.h>
 #include <tinyara/binfmt/elf.h>
 #include <tinyara/binfmt/symtab.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <tinyara/kmalloc.h>
 
 #include "libelf.h"
@@ -108,12 +109,12 @@ static inline void elf_readreltab(FAR struct elf_loadinfo_s *loadinfo, FAR const
 	loadinfo->reltab = (uintptr_t)kmm_malloc(relsec->sh_size);
 
 	if (!loadinfo->reltab) {
-		berr("ERROR: Failed to allocate space for relocation table. Size = %u\n", relsec->sh_size);
+		berr("%s relocation table. Size = %u\n",clog_message_str[CMN_LOG_ALLOC_FAIL], relsec->sh_size);
 		return;
 	}
 
 	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->reltab, relsec->sh_size, relsec->sh_offset) < 0) {
-		berr("ERROR: Failed to read relocation table into memory\n");
+		berr("%s to read relocation table\n"clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 }
 
@@ -257,7 +258,7 @@ static int elf_relocate(FAR struct elf_loadinfo_s *loadinfo, int relidx, FAR con
 
 		ret = up_relocate(prel, psym, addr);
 		if (ret < 0) {
-			berr("ERROR: Section %d reloc %d: Relocation failed: %d\n", relidx, i, ret);
+			berr("%s Section %d reloc %d: Relocation : %d\n",clog_message_str[CMN_LOG_FAILED_OP], relidx, i, ret);
 			goto ret_err;
 		}
 	}
@@ -305,7 +306,7 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 		} else {
 			ret = elf_readsym(loadinfo, i, &sym);
 			if (ret < 0) {
-				berr("Failed to read symbol[%d]: %d\n", i, ret);
+				berr("%s to read symbol[%d]: %d\n",clog_message_str[CMN_LOG_FAILED_OP], i, ret);
 				goto ret_err;
 			}
 		}
@@ -313,7 +314,7 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 		if (ELF32_ST_BIND(psym->st_info) == STB_GLOBAL || ELF32_ST_BIND(psym->st_info) == STB_WEAK) {
 			ret = elf_symname(loadinfo, psym);
 			if (ret < 0) {
-				berr("SHN_UNDEF: Failed to get symbol name: %d\n", ret);
+				berr("%s to get symbol name: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				goto ret_err;
 			}
 
@@ -324,7 +325,7 @@ static int export_library_symtab(FAR struct elf_loadinfo_s *loadinfo)
 				if (ret == -ESRCH) {
 					berr("Undefined symbol[%d] has no name: %d\n", i, ret);
 				} else {
-					berr("Failed to get value of symbol[%d]: %d\n", i, ret);
+					berr("%s to get value of symbol[%d]: %d\n",clog_message_str[CMN_LOG_FAILED_OP], i, ret);
 				}
 				goto ret_err;
 			}

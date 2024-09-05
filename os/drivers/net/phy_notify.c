@@ -76,6 +76,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/net/phy.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_ARCH_PHY_INTERRUPT
 
@@ -294,7 +295,7 @@ static int phy_handler(FAR struct phy_notify_s *client)
 		int errcode = errno;
 		DEBUGASSERT(errcode > 0);
 
-		nlldbg("ERROR: sigqueue failed: %d\n", errcode);
+		nlldbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP],errcode);
 		UNUSED(errcode);
 	}
 
@@ -387,7 +388,7 @@ int phy_notify_subscribe(FAR const char *intf, pid_t pid, int signo, FAR void *a
 
 		client = phy_find_unassigned();
 		if (!client) {
-			ndbg("ERROR: Failed to allocate a client entry\n");
+			ndbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return -ENOMEM;
 		}
 

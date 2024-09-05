@@ -73,6 +73,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "irq/irq.h"
 
@@ -175,7 +176,7 @@ static int irqs_open(FAR struct file *filep, FAR const char *relpath, int oflags
 	/* "interrupts" is the only acceptable value for the relpath */
 
 	if (strcmp(relpath, "irqs") != 0) {
-		fdbg("ERROR: relpath is '%s'\n", relpath);
+		fdbg("%s '%s'\n", clog_message_str[CMN_LOG_INVALID_VAL], relpath);
 		return -ENOENT;
 	}
 
@@ -183,7 +184,7 @@ static int irqs_open(FAR struct file *filep, FAR const char *relpath, int oflags
 
 	attr = (FAR struct irqs_file_s *)kmm_zalloc(sizeof(struct irqs_file_s));
 	if (!attr) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -299,7 +300,7 @@ static int irqs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newattr = (FAR struct irqs_file_s *)kmm_malloc(sizeof(struct irqs_file_s));
 	if (!newattr) {
-		fdbg("ERROR: Failed to allocate file attributes\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -325,7 +326,7 @@ static int irqs_stat(const char *relpath, struct stat *buf)
 	/* "interrupts" is the only acceptable value for the relpath */
 
 	if (strcmp(relpath, "interrupts") != 0) {
-		fdbg("ERROR: relpath is '%s'\n", relpath);
+		fdbg("%s '%s'\n", clog_message_str[CMN_LOG_INVALID_VAL], relpath);
 		return -ENOENT;
 	}
 

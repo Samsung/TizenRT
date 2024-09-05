@@ -20,6 +20,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <unistd.h>
 #include <time.h>
@@ -45,7 +46,7 @@
 	do {													\
 		int sl_res = sem_wait(lock);						\
 		if (sl_res < 0) {									\
-			SLDRV_LOG(SLDRV_TAG" lock fail(%d)\n", errno);	\
+			SLDRV_LOG(SLDRV_TAG" %s lock(%d)\n", clog_message_str[CMN_LOG_FAILED_OP], errno);	\
 		}													\
 	} while (0)
 
@@ -53,7 +54,7 @@
 	do {													\
 		int sl_res = sem_post(lock);						\
 		if (sl_res < 0) {									\
-			SLDRV_LOG(SLDRV_TAG" unlock fail(%d)\n", errno);	\
+			SLDRV_LOG(SLDRV_TAG" %s unlock(%d)\n", clog_message_str[CMN_LOG_FAILED_OP], errno);	\
 		}													\
 	} while (0)
 
@@ -191,7 +192,7 @@ int se_register(const char *path, struct sec_lowerhalf_s *lower)
 	hal_init_param hp = {0, 0};
 	int res = lower->ops->init(&hp);
 	if (res < 0) {
-		dbg("Register SE fail(%d)\n", res);
+		dbg("%s Register SE(%d)\n", clog_message_str[CMN_LOG_FAILED_OP], res);
 		kmm_free(upper);
 		return -1;
 	}
@@ -215,24 +216,24 @@ int se_unregister(FAR struct sec_lowerhalf_s *lower)
 	// de-initialize  upper
 	struct sec_upperhalf_s *upper = lower->parent;
 	if (!upper) {
-		dbg("upper is null\n");
+		dbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		assert(0);
 	}
 
 	if (!upper->path) {
-		dbg("upper path is null\n");
+		dbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		assert(0);
 	}
 
 	vdbg("unregister driver(%s)\n", upper->path);
 	int res = unregister_driver(upper->path);
 	if (res != 0) {
-		dbg("unregister driver path fail\n");
+		dbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	res = lower->ops->deinit();
 	if (res < 0) {
-		dbg("Unregister SE fail(%d)\n", res);
+		dbg("%s Unregister SE(%d)\n", clog_message_str[CMN_LOG_FAILED_OP], res);
 	}
 
 	kmm_free(upper->path);

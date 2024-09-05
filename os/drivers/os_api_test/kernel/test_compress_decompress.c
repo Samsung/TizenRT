@@ -31,6 +31,7 @@
 #include <tinyara/os_api_test_drv.h>
 #include <tinyara/binfmt/compression/compress_read.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #define READSIZE 2048
 
@@ -59,14 +60,14 @@ static int test_compress_decompress_function(unsigned long arg)
 
 	if (filefd < 0) {
 		int errval = get_errno();
-		berr("Failed to open file ERROR = %d\n", errval);
+		berr("%s %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR],errval);
 		return -errval;
 	}
 
 	ret = compress_init(filefd, 0, &filelen);
 
 	if (ret != OK) {
-		berr("Failed to read header for compressed binary : %d\n", ret);
+		berr("%s %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR],ret);
 		return ret;
 	}
 
@@ -74,7 +75,7 @@ static int test_compress_decompress_function(unsigned long arg)
 
 	dst_buffer = (uint8_t *)kmm_malloc(READSIZE * sizeof(uint8_t));
 	if (dst_buffer == NULL) {
-		berr("Allocation of memory failed\n");
+		berr("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		compress_uninit();
 		return ERROR;
 	}

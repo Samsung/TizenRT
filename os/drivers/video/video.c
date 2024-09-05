@@ -54,6 +54,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/ioctl.h>
 
@@ -231,7 +232,7 @@ static int video_lock(FAR sem_t *sem)
 				continue;
 			}
 
-			videodbg("sem_wait() failed:%d\n", l_errno);
+			videodbg("%s sem_wait():%d\n", clog_message_str[CMN_LOG_FAILED_OP], l_errno);
 		}
 
 		break;
@@ -1236,7 +1237,7 @@ static ssize_t video_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = video_set_ext_ctrls(priv, (FAR struct v4l2_ext_controls *)arg);
 		break;
 	default:
-		videodbg("Unrecognized cmd: %d\n", cmd);
+		videodbg("%s cmd: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 		ret = -ENOTTY;
 		break;
 	}
@@ -1300,7 +1301,7 @@ FAR void *video_register(const char *devpath, FAR struct video_lowerhalf_s *dev)
 
 	priv = (FAR video_upperhalf_t *)kmm_malloc(sizeof(video_upperhalf_t));
 	if (!priv) {
-		videodbg("Failed to allocate instance\n");
+		videodbg("%s instance\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return NULL;
 	}
 
@@ -1327,7 +1328,7 @@ FAR void *video_register(const char *devpath, FAR struct video_lowerhalf_s *dev)
 
 	ret = register_driver(priv->devpath, &g_video_fops, 0666, priv);
 	if (ret < 0) {
-		videodbg("Failed to register driver: %d\n", ret);
+		videodbg("%s register driver: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		kmm_free(priv->devpath);
 		kmm_free(priv);
 		return NULL;

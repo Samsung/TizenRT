@@ -67,6 +67,7 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binfmt.h"
 
@@ -110,7 +111,7 @@ int binfmt_exit(FAR struct binary_s *bin)
 
 	ret = unload_module(bin);
 	if (ret < 0) {
-		berr("ERROR: unload_module() failed: %d\n", ret);
+		berr("%s: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	elf_delete_bin_section_addr(bin->binary_idx);

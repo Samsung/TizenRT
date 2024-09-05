@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 #include <assert.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -95,7 +96,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	abort_mode = true;
 #endif
 
-	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
+	mfdbg("%s from %s heap.\n", clog_message_str[CMN_LOG_ALLOC_FAIL], (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mfdbg(" - caller address = 0x%08x\n", caller);

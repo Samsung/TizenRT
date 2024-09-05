@@ -66,6 +66,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/lcd/lcd.h>
 #include <tinyara/video/fb.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_LCD_FRAMEBUFFER
 
@@ -254,7 +255,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 			
 			dmabuff = (uint8_t *)kmm_malloc(height * bytespl);
 			if (dmabuff == NULL) {
-				gdbg("ERROR: out of memory \n");
+				gdbg("%s \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				return -ENOMEM;
 			}
 
@@ -284,7 +285,7 @@ static int lcdfb_update(FAR struct lcdfb_dev_s *priv,
 		}
 
 		if (ret < 0) {
-			gdbg("ERROR: LCD putdma failed: %d \n", ret);
+			gdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 
 		return ret;
@@ -335,7 +336,7 @@ static int lcdfb_getvideoinfo(FAR struct fb_vtable_s *vtable,
 		DEBUGASSERT(lcd->getvideoinfo != NULL);
 		ret = lcd->getvideoinfo(lcd, vinfo);
 		if (ret < 0) {
-			gdbg("ERROR: LCD getvideoinfo() failed: %d\n", ret);
+			gdbg("%s :%d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 
@@ -396,7 +397,7 @@ static int lcdfb_getcmap(FAR struct fb_vtable_s *vtable,
 		DEBUGASSERT(lcd->getcmap != NULL);
 		ret = lcd->getcmap(lcd, cmap);
 		if (ret < 0) {
-			gdbg("ERROR: LCD getcmap() failed: %d\n", ret);
+			gdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 
@@ -428,7 +429,7 @@ static int lcdfb_putcmap(FAR struct fb_vtable_s *vtable,
 		DEBUGASSERT(lcd->putcmap != NULL);
 		ret = lcd->putcmap(lcd, cmap);
 		if (ret < 0) {
-			gdbg("ERROR: LCD putcmap() failed: %d\n", ret);
+			gdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 
@@ -461,7 +462,7 @@ static int lcdfb_getcursor(FAR struct fb_vtable_s *vtable,
 		DEBUGASSERT(lcd->getcursor != NULL);
 		ret = lcd->getcursor(lcd, attrib);
 		if (ret < 0) {
-			gdbg("ERROR: LCD getcursor() failed: %d\n", ret);
+			gdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 
@@ -493,7 +494,7 @@ static int lcdfb_setcursor(FAR struct fb_vtable_s *vtable,
 		DEBUGASSERT(lcd->setcursor != NULL);
 		ret = lcd->setcursor(lcd, settings);
 		if (ret < 0) {
-			gdbg("ERROR: LCD setcursor() failed: %d\n", ret);
+			gdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 
@@ -529,14 +530,14 @@ int up_fbinitialize(int display)
 	struct nxgl_rect_s rect;
 	int ret;
 
-	gvdbg("display=%d\n", display);
+	gvdbg("%s %d\n", clog_message_str[CMN_LOG_VALUE_OF],display);
 	DEBUGASSERT((unsigned)display < UINT8_MAX);
 
 	/* Allocate the framebuffer state structure */
 
 	priv = (FAR struct lcdfb_dev_s *)kmm_zalloc(sizeof(struct lcdfb_dev_s));
 	if (priv == NULL) {
-		gdbg("ERROR: Failed to allocate state structure\n");
+		gdbg("%s state structure \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -560,7 +561,7 @@ int up_fbinitialize(int display)
 
 	lcd = board_graphics_setup(display);
 	if (lcd == NULL) {
-		gdbg("ERROR: board_graphics_setup failed, devno=%d\n", display);
+		gdbg("%s of board_graphics_setup, devno=%d\n", clog_message_str[CMN_LOG_FAILED_OP],display);
 		return EXIT_FAILURE;
 	}
 #else
@@ -568,7 +569,7 @@ int up_fbinitialize(int display)
 
 	ret = board_lcd_initialize();
 	if (ret < 0) {
-		gdbg("ERROR: board_lcd_initialize() failed: %d\n", ret);
+		gdbg("%s of board_lcd_initialize() :%d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		goto errout_with_state;
 	}
 
@@ -576,7 +577,7 @@ int up_fbinitialize(int display)
 
 	lcd = board_lcd_getdev(display);
 	if (lcd == NULL) {
-		gdbg("ERROR: board_lcd_getdev failed, devno=%d\n", display);
+		gdbg("%s of board_lcd_getdev :%d\n", clog_message_str[CMN_LOG_FAILED_OP],display);
 		ret = -ENODEV;
 		goto errout_with_lcd;
 	}
@@ -589,7 +590,7 @@ int up_fbinitialize(int display)
 	DEBUGASSERT(lcd->getvideoinfo != NULL);
 	ret = lcd->getvideoinfo(lcd, &vinfo);
 	if (ret < 0) {
-		gdbg("ERROR:  LCD getvideoinfo() failed: %d\n", ret);
+		gdbg("LCD getvideoinfo() %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		goto errout_with_lcd;
 	}
 
@@ -599,7 +600,7 @@ int up_fbinitialize(int display)
 	DEBUGASSERT(lcd->getplaneinfo != NULL);
 	ret = lcd->getplaneinfo(lcd, VIDEO_PLANE, &priv->pinfo);
 	if (ret < 0) {
-		gdbg("ERROR: LCD getplaneinfo() failed: %d\n", ret);
+		gdbg("LCD getplaneinfo() %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		goto errout_with_lcd;
 	}
 
@@ -610,7 +611,7 @@ int up_fbinitialize(int display)
 
 	priv->fbmem  = (FAR uint8_t *)kmm_zalloc(priv->fblen);
 	if (priv->fbmem == NULL) {
-		gdbg("ERROR: Failed to allocate frame buffer memory\n");
+		gdbg("%s frame buffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_with_lcd;
 	}
@@ -629,7 +630,7 @@ int up_fbinitialize(int display)
 
 	ret = lcdfb_update(priv, &rect);
 	if (ret < 0) {
-		gdbg("FB update failed: %d\n", ret);
+		gdbg("FB update %s %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 	}
 
 	/* Turn the LCD on at 75% power */
@@ -676,7 +677,7 @@ FAR struct fb_vtable_s *up_fbgetvplane(int display, int vplane)
 
 	priv = lcdfb_find(display);
 	if (priv == NULL) {
-		gdbg("ERROR: lcd_find(%d) failed\n", display);
+		gdbg("%s %d \n", clog_message_str[CMN_LOG_FAILED_OP],display);
 		return NULL;
 	}
 
@@ -782,7 +783,7 @@ void nx_notify_rectangle(FAR struct fb_planeinfo_s *pinfo,
 	if (priv != NULL) {
 		ret = lcdfb_update(priv, rect);
 		if (ret < 0) {
-			gdbg("FB update failed: %d\n", ret);
+			gdbg("%s %d \n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		}
 	}
 }

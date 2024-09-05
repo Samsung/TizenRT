@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <tinyara/preference.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Functions
@@ -34,7 +35,7 @@ static int preference_check_fs_key(char *path, bool *existing)
 	struct stat st;
 
 	if (path == NULL) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
@@ -61,20 +62,20 @@ int preference_check_key(int type, const char *key, bool *result)
 	char *path;
 
 	if (key == NULL || (type != PRIVATE_PREFERENCE && type != SHARED_PREFERENCE)) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n",clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
 	if (type == PRIVATE_PREFERENCE) {
 		ret = preference_get_private_keypath(key, &path);
 		if (ret < 0) {
-			prefdbg("Failed to get preference path\n");
+			prefdbg("%s get preference path \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 	} else {
 		ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_SHARED_PATH, key);
 		if (ret < 0) {
-			prefdbg("Failed to allocate path\n");
+			prefdbg("%s allocate path \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return PREFERENCE_OUT_OF_MEMORY;
 		}
 	}

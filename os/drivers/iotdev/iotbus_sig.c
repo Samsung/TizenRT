@@ -28,6 +28,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/iotbus_sig.h>
+#include <tinyara/common_logs/common_logs.h>
 
 static int iotbus_sig_open(FAR struct file *filep);
 static int iotbus_sig_close(FAR struct file *filep);
@@ -90,7 +91,7 @@ static int iotbus_sig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case IOTBUS_INTR_REGISTER: {
 		ret = sem_wait(&upper->exclsem[info->int_type]);
 		if (ret < 0) {
-			ibdbg("Fail to register interrupt callback\n");
+			ibdbg("%s register interrupt callback \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 		struct int_node_s *itr = upper->table[info->int_type];
@@ -134,7 +135,7 @@ static int iotbus_sig_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case IOTBUS_INTR_UNREGISTER: {
 		ret = sem_wait(&upper->exclsem[info->int_type]);
 		if (ret < 0) {
-			ibdbg("Fail to unregister interrupt callback\n");
+			ibdbg("%s unregister interrupt callback \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 
@@ -240,7 +241,7 @@ void iotbus_interrupt_trigger(iotbus_int_type_e int_type)
 		ret = sigqueue(pid, signal, (void *)itr->data->handle);
 #endif
 		if (ret < 0) {
-			ibdbg("Trigger Error!\n");
+			ibdbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		}
 	}
 	leave_critical_section(flags);

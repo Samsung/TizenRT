@@ -67,6 +67,7 @@
 
 #include <tinyara/mm/shm.h>
 #include <tinyara/pgalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "shm/shm.h"
 
@@ -166,7 +167,7 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 
 	ret = sem_wait(&region->sr_sem);
 	if (ret < 0) {
-		shmdbg("sem_wait failed: %d\n", ret);
+		shmdbg("%s sem_wait: %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		return ret;
 	}
 

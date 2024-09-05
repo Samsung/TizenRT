@@ -21,6 +21,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -232,7 +233,7 @@ static int ttrace_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ttdbg("Trace buffer size should be defined by menuconfig.\r\n");
 		break;
 	default:
-		ttdbg("Invalid commands, cmd: %c, arg: %d\r\n", cmd, arg);
+		ttdbg("%s cmd: %c, arg: %d\r\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd, arg);
 		break;
 	}
 

@@ -64,6 +64,7 @@
 #include <tinyara/mm/gran.h>
 #include <tinyara/pgalloc.h>
 #include <tinyara/mm/shm.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "shm/shm.h"
 
@@ -151,7 +152,7 @@ int shm_group_initialize(FAR struct task_group_s *group)
 	group->tg_shm.gs_handle = gran_initialize((FAR void *)CONFIG_ARCH_SHM_VBASE, ARCH_SHM_MAXPAGES << MM_PGSHIFT, MM_PGSHIFT, MM_PGSHIFT);
 
 	if (!group->tg_shm.gs_handle) {
-		shmdbg("gran_initialize() failed\n");
+		shmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return -ENOMEM;
 	}
 

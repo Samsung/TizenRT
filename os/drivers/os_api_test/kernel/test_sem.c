@@ -28,6 +28,7 @@
 
 #include <tinyara/sched.h>
 #include <tinyara/os_api_test_drv.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "clock/clock.h"
 
@@ -46,7 +47,7 @@ static int test_sem_tick_wait(unsigned long arg)
 
 	ret_chk = sem_init(&sem, 0, 1);
 	if (ret_chk != OK) {
-		dbg("sem_init failed.");
+		dbg("%s: sem_init\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -54,35 +55,35 @@ static int test_sem_tick_wait(unsigned long arg)
 
 	ret_chk = clock_gettime(CLOCK_REALTIME, &base_time);
 	if (ret_chk != OK) {
-		dbg("clock_gettime failed.");
+		dbg("%s: clock_gettime\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_tickwait(&sem, clock(), 2);
 	if (ret_chk != OK) {
-		dbg("sem_tickwait failed.");
+		dbg("%s: sem_tickwait\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = clock_gettime(CLOCK_REALTIME, &cur_time);
 	if (ret_chk != OK) {
-		dbg("clock_gettime failed.");
+		dbg("%s: clock_gettime \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 	if (base_time.tv_sec + 2 == cur_time.tv_sec) {
-		dbg("clock_gettime failed.");
+		dbg("%s: clock_gettime \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_post(&sem);
 	if (ret_chk != OK) {
-		dbg("sem_post failed.");
+		dbg("%s: sem_post\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_destroy(&sem);
 	if (ret_chk != OK) {
-		dbg("sem_destroy failed.");
+		dbg("%s: sem_destroy\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
@@ -90,7 +91,7 @@ static int test_sem_tick_wait(unsigned long arg)
 
 	ret_chk = sem_init(&sem, 0, 0);
 	if (ret_chk != OK) {
-		dbg("sem_init failed.");
+		dbg("%s: sem_init\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -98,25 +99,25 @@ static int test_sem_tick_wait(unsigned long arg)
 
 	ret_chk = sem_tickwait(&sem, clock() - 2, 0);
 	if (ret_chk != ERROR) {
-		dbg("sem_tickwait failed.");
+		dbg("%s: sem_tickwait\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_tickwait(&sem, clock() - 2, 1);
 	if (ret_chk != ERROR) {
-		dbg("sem_tickwait failed.");
+		dbg("%s: sem_tickwait\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_tickwait(&sem, clock() - 2, 3);
 	if (ret_chk != ERROR) {
-		dbg("sem_tickwait failed.");
+		dbg("%s: sem_tickwait\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 
 	ret_chk = sem_destroy(&sem);
 	if (ret_chk != OK) {
-		dbg("sem_destroy failed.");
+		dbg("%s: sem_destroy\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_sem_init;
 	}
 

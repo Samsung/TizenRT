@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -288,7 +289,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 	for (i = 0; i < outdesc_index; i++) {
 		ret = DRVR_EPALLOC(hport->drvr, &boutdesc[i], &priv->bulkout[i]);
 		if (ret < 0) {
-			udbg("ERROR: Failed to allocate Bulk OUT endpoint\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			for (i = 0; i < outdesc_index; i++) {
 				(void)DRVR_EPFREE(hport->drvr, priv->bulkout[i]);
 			}
@@ -300,7 +301,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_rtk_wifi_s *priv, FAR const uint8_
 	for (i = 0; i < indesc_index; i++) {
 		ret = DRVR_EPALLOC(hport->drvr, &bindesc[i], &priv->bulkin[i]);
 		if (ret < 0) {
-			udbg("ERROR: Failed to allocate Bulk IN endpoint\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			for (i = 0; i < indesc_index; i++) {
 				(void)DRVR_EPFREE(hport->drvr, priv->bulkin[i]);
 			}
@@ -355,7 +356,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 	/* Parse the configuration descriptor to get the endpoints */
 	ret = usbhost_cfgdesc(priv, configdesc, desclen);
 	if (ret < 0) {
-		udbg("usbhost_cfgdesc() failed: %d\n", ret);
+		udbg("%s: usbhost_cfgdesc(), %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	g_rtk_wifi_connect = 1;
@@ -460,13 +461,13 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	for (i = 0; i < priv->nr_inep; i++) {
 		ret = DRVR_CANCEL(priv->usbclass.hport->drvr, priv->bulkin[i]);
 		if (ret < 0)
-			udbg("usbhost_disconnect: cancel bulk in fail \n");
+			udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	for (i = 0; i < priv->nr_outep; i++) {
 		ret = DRVR_CANCEL(priv->usbclass.hport->drvr, priv->bulkout[i]);
 		if (ret < 0)
-			udbg("usbhost_disconnect: cancel bulk out fail \n");
+			udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	/* call usbhost_destroy to free resource  */
@@ -528,7 +529,7 @@ int usbhost_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, uns
 	/* alloc crtl req*/
 	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&ctrlreq, &maxlen);
 	if (ret < 0) {
-		udbg("DRVR_ALLOC failed: %d\n", ret);
+		udbg("%s %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		return ret;
 	}
 
@@ -559,7 +560,7 @@ int usbhost_ctrl_req(void *priv, unsigned char bdir_in, unsigned int wvalue, uns
 	/*submit ctrl request: imxrt_ctrlin()*/
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buf);
 	if (ret < 0) {
-		udbg("ERROR: Failed to get device descriptor, %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -690,7 +691,7 @@ int usbhost_cancel_bulk_in(void *priv)
 	for (i = 0; i < p_rtk_wifi_usb->nr_inep; i++) {
 		ret = DRVR_CANCEL(hport->drvr, p_rtk_wifi_usb->bulkin[i]);
 		if (ret < 0)
-			udbg("ERROR: Failed to cancel bulk in, %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_INVALID_VAL], ret);
 	}
 
 exit:
@@ -717,7 +718,7 @@ int usbhost_cancel_bulk_out(void *priv)
 	for (i = 0; i < p_rtk_wifi_usb->nr_outep; i++) {
 		ret = DRVR_CANCEL(hport->drvr, p_rtk_wifi_usb->bulkout[i]);
 		if (ret < 0)
-			udbg("ERROR: Failed to cancel bulk out, %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 exit:

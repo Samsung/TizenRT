@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <queue.h>
 #include <stdint.h>
@@ -99,8 +100,8 @@ binmgr_kinfo_t *binary_manager_get_kdata(void)
 
 void binary_manager_register_kpart(int part_num, int part_size, uint32_t part_addr)
 {
-	if (part_num < 0 || part_size <= 0 || part_addr == 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
-		bmdbg("Invalid kernel partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
+	if (part_num < 0 || part_size <= 0 || part_addr < 0 || kernel_info.part_count >= KERNEL_BIN_COUNT) {
+		bmdbg("%s kernel partition : num %d, size %d, offset %d\n", clog_message_str[CMN_LOG_INVALID_VAL], part_num, part_size, part_addr);
 		return;
 	}
 
@@ -187,7 +188,7 @@ int binary_manager_check_kernel_update(void)
 	if (ret == SIGNATURE_VAILD) {
 		bmvdbg("Kernel Signature Checking Success\n");
 	} else {
-		bmdbg("Invalid Kernel Signature, address : 0x%x\n", kernel_info.part_info[inactive_partidx].address);
+		bmdbg("%s Kernel Signature, address : 0x%x\n", clog_message_str[CMN_LOG_INVALID_VAL], kernel_info.part_info[inactive_partidx].address);
 		return BINMGR_NOT_FOUND;
 	}
 #endif
@@ -231,7 +232,7 @@ int binary_manager_check_update(void)
 	/* Get the latest bootparam */
 	ret = binary_manager_scan_bootparam(&bp_info);
 	if (ret < 0) {
-		bmdbg("Fail to scan BP %d\n", ret);
+		bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -255,7 +256,7 @@ int binary_manager_check_update(void)
 		/* Reboot to switch kernel binary in another partition. */
 		goto reboot;
 	} else if (ret != BINMGR_ALREADY_UPDATED && ret != BINMGR_NOT_FOUND) {
-		bmdbg("Failed to check for kernel update %d\n", ret);
+		bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -278,7 +279,7 @@ int binary_manager_check_update(void)
 			BIN_USEIDX(bin_idx) ^= 1;
 			need_update = true;
 		} else {
-			bmdbg("Fail to check user update: bin_idx %d, ret %d\n", bin_idx, ret);
+			bmdbg("%s bin_idx %d, ret %d\n", clog_message_str[CMN_LOG_FAILED_OP], bin_idx, ret);
 		}
 	}
 
@@ -335,8 +336,8 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, uint
 {
 	int bin_idx;
 
-	if (part_num < 0 || part_size <= 0 || part_addr == 0) {
-		bmdbg("Invalid user partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
+	if (part_num < 0 || part_size <= 0 || part_addr < 0) {
+		bmdbg("%s user partition : num %d, size %d, offset : %d\n", clog_message_str[CMN_LOG_INVALID_VAL], part_num, part_size, part_addr);
 		return;
 	}
 
@@ -412,7 +413,7 @@ bool binary_manager_scan_ubin_all(void)
 	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
 		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
-			bmdbg("Fail to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
+			bmdbg("%s binary %s in binary table \n", clog_message_str[CMN_LOG_FAILED_OP], bp_data->app_data[bp_app_idx].name);
 			continue;
 		}
 		BIN_BPIDX(bin_idx) = bp_app_idx;
@@ -439,7 +440,7 @@ bool binary_manager_scan_ubin_all(void)
 			/* Return true it there is at least one valid binary */
 			is_found = true;
 		} else {
-			bmdbg("Fail to find valid binary %s based on BP. \n", BIN_NAME(bin_idx));
+			bmdbg("%s binary %s based on BP. \n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx));
 		}
 	}
 #else
@@ -461,7 +462,7 @@ bool binary_manager_scan_ubin_all(void)
 			}
 			bmdbg("Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), common_header_data.version);
 		} else {
-			bmdbg("Fail to find valid binary %s in partition %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
+			bmdbg("%s binary %s in partition %d\n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
 		}
 	}
 #endif
@@ -482,7 +483,7 @@ bool binary_manager_scan_ubin_all(void)
 				}
 				bmdbg("Found binary %s in partition %d, version %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx), user_header_data.bin_ver);
 			} else {
-				bmdbg("Fail to find valid binary %s in partition %d\n", BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
+				bmdbg("%s binary %s in partition %d\n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx), BIN_PARTNUM(bin_idx, part_idx));
 			}
 		}
 	}
@@ -510,7 +511,7 @@ int binary_manager_check_user_update(int bin_idx)
 	user_binary_header_t user_header_data;
 
 	if (bin_idx < 0 || bin_idx > binary_manager_get_ucount()) {
-		bmdbg("Invalid bin idx %d\n", bin_idx);
+		bmdbg("%s bin idx %d\n", clog_message_str[CMN_LOG_INVALID_VAL], bin_idx);
 		return BINMGR_INVALID_PARAM;
 	}
  
@@ -525,7 +526,7 @@ int binary_manager_check_user_update(int bin_idx)
 	if (ret == SIGNATURE_VAILD) {
 		bmvdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 	} else {
-		bmdbg("Invalid Signature, name : %s, address : 0x%x\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+		bmdbg("%s Signature, name : %s, address : 0x%x\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 		return BINMGR_NOT_FOUND;
 	}
 #endif
@@ -594,7 +595,7 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 	int bin_idx;
 
 	if (!tcb) {
-		bmdbg("ERROR: tcb parameter is NULL\n");
+		bmdbg("%s tcb parameter\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return;
 	}
 
@@ -604,7 +605,7 @@ void binary_manager_add_binlist(FAR struct tcb_s *tcb)
 		 * the pointer. So, perform a null check here. If group is null, it is ok to not add the tcb to our
 		 * list because, task has already exited.
 		 */
-		bmdbg("Fail to add pid %d to binlist. This task has already exited and group is NULL\n", tcb->pid);
+		bmdbg("%s add pid %d to binlist. This task has already exited and group is NULL\n", clog_message_str[CMN_LOG_FAILED_OP], tcb->pid);
 		return;
 	}
 

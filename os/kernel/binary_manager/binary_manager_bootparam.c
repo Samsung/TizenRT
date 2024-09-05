@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binary_manager.h"
 
@@ -48,7 +49,7 @@ static binmgr_bpinfo_t g_bp_info;
 void binary_manager_register_bppart(int part_num, int part_size)
 {
 	if (part_num < 0 || part_size != BOOTPARAM_PARTSIZE) {
-		bmdbg("Invalid BP partition : num %d, size %d\n", part_num, part_size);
+		bmdbg("%s BP partition : num %d, size %d\n", clog_message_str[CMN_LOG_INVALID_VAL], part_num, part_size);
 		return;
 	}
 
@@ -62,15 +63,15 @@ bool is_valid_bootparam(char *bootparam)
 	binmgr_bpdata_t *bp_data = (binmgr_bpdata_t *)bootparam;
 
 	if (!bp_data) {
-		bmdbg("Boot param is NULL\n");
+		bmdbg("%s bootparam\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return false;
 	} else if (bp_data->format_ver == 0 || bp_data->active_idx >= binary_manager_get_kdata()->part_count) {
-		bmdbg("Invalid data. ver: %u, active index: %u, addresses: %x, %x\n", bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
+		bmdbg("%s ver: %u, active index: %u, addresses: %x, %x\n", clog_message_str[CMN_LOG_INVALID_VAL], bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
 		return false;
 	}
 
 	if (bp_data->crc_hash != crc32((uint8_t *)bootparam + CHECKSUM_SIZE, BOOTPARAM_SIZE - CHECKSUM_SIZE)) {
-		bmdbg("Invalid crc32 value, crc32 %u, ver: %u, active index: %u, addresses: %x, %x\n", bp_data->crc_hash, bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
+		bmdbg("%s crc32, crc32 %u, ver: %u, active index: %u, addresses: %x, %x\n", clog_message_str[CMN_LOG_INVALID_VAL], bp_data->crc_hash, bp_data->version, bp_data->active_idx, bp_data->address[0], bp_data->address[1]);
 		return false;
 	}
 
@@ -83,7 +84,7 @@ static int binary_manager_open_bootparam(void)
 	char bp_devpath[BINARY_PATH_LEN];
 
 	if (g_bp_info.part_num < 0) {
-		bmdbg("Invalid BP partition Num : %d\n", g_bp_info.part_num);
+		bmdbg("%s BP partition Num : %d\n", clog_message_str[CMN_LOG_INVALID_VAL], g_bp_info.part_num);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -91,7 +92,7 @@ static int binary_manager_open_bootparam(void)
 	snprintf(bp_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, g_bp_info.part_num);
 	fd = open(bp_devpath, O_RDWR, 0666);
 	if (fd < 0) {
-		bmdbg("Fail to get a fd for BP, errno %d\n", errno);
+		bmdbg("%s bp, errno %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], errno);
 		return BINMGR_OPERATION_FAIL;
 	}
 	return fd;
@@ -113,7 +114,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 	char *bootparam;
 
 	if (bp_info == NULL) {
-		bmdbg("Invalid input bp_info\n");
+		bmdbg("%s bpinfo\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -125,7 +126,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
 	if (!bootparam) {
 		close(fd);
-		bmdbg("Fail to malloc to read BP\n");
+		bmdbg("%s BP\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return BINMGR_OUT_OF_MEMORY;
 	}
 
@@ -133,7 +134,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		bmdbg("Checking BP%d start\n", bp_idx);
 		ret = lseek(fd, BP_SEEK_OFFSET(bp_idx), SEEK_SET);
 		if (ret < 0) {
-			bmdbg("Fail to seek to read BP, offset %d errno %d\n", BP_SEEK_OFFSET(bp_idx), errno);
+			bmdbg("%s BP, offset %d errno %d\n", clog_message_str[CMN_LOG_FILE_SEEK_ERROR], BP_SEEK_OFFSET(bp_idx), errno);
 			kmm_free(bootparam);
 			close(fd);
 			return BINMGR_OPERATION_FAIL;
@@ -142,14 +143,14 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		/* Read bootparam data */
 		ret = read(fd, (FAR uint8_t *)bootparam, BOOTPARAM_SIZE);
 		if (ret != BOOTPARAM_SIZE) {
-			bmdbg("Fail to read BP, errno %d\n", errno);
+			bmdbg("%s BP, errno %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], errno);
 			continue;
 		} else if (!is_valid_bootparam(bootparam)) {
-			bmdbg("BP%d is invalid\n", bp_idx);
+			bmdbg("%s BP%d\n", clog_message_str[CMN_LOG_INVALID_DATA], bp_idx);
 			continue;
 		}
 
-		bmdbg("BP%d is valid\n", bp_idx);
+		bmdbg("%s BP%d\n", clog_message_str[CMN_LOG_VALID_DATA], bp_idx);
 
 		/* Update the latest version and index */
 		if (latest_ver < ((binmgr_bpdata_t *)bootparam)->version) {

@@ -51,6 +51,7 @@
 
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_core.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_hcicore.h"
 #include "bt_conn.h"
@@ -207,7 +208,7 @@ static void le_conn_param_rsp(FAR struct bt_conn_s *conn, FAR struct bt_buf_s *b
 	struct bt_l2cap_conn_param_rsp_s *rsp = (void *)buf->data;
 
 	if (buf->len < sizeof(*rsp)) {
-		ndbg("ERROR: Too small LE conn param rsp\n");
+		ndbg("%s Too small LE conn param rsp\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return;
 	}
 
@@ -250,7 +251,7 @@ static void le_conn_param_update_req(FAR struct bt_conn_s *conn, uint8_t ident, 
 	uint16_t result;
 
 	if (buf->len < sizeof(*req)) {
-		ndbg("ERROR: Too small LE conn update param req\n");
+		ndbg("%s Too small LE conn update param req\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return;
 	}
 
@@ -304,12 +305,12 @@ static void le_sig(FAR struct bt_conn_s *conn, FAR struct bt_buf_s *buf, FAR voi
 	nvdbg("LE signaling code 0x%02x ident %u len %u\n", hdr->code, hdr->ident, len);
 
 	if (buf->len != len) {
-		ndbg("ERROR: L2CAP length mismatch (%u != %u)\n", buf->len, len);
+		ndbg("%s L2CAP length mismatch (%u != %u)\n", clog_message_str[CMN_LOG_FAILED_OP], buf->len, len);
 		goto drop;
 	}
 
 	if (!hdr->ident) {
-		ndbg("ERROR: Invalid ident value in L2CAP PDU\n");
+		ndbg("%s Invalid ident value in L2CAP PDU\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto drop;
 	}
 
@@ -339,7 +340,7 @@ void bt_l2cap_receive(FAR struct bt_conn_s *conn, FAR struct bt_buf_s *buf)
 	uint16_t cid;
 
 	if (buf->len < sizeof(*hdr)) {
-		ndbg("ERROR: Too small L2CAP PDU received\n");
+		ndbg("%s Too small L2CAP PDU received\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		bt_buf_release(buf);
 		return;
 	}

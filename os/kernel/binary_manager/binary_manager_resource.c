@@ -25,6 +25,7 @@
 #include <sys/mount.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binary_manager/binary_manager.h"
 
@@ -60,8 +61,8 @@ binmgr_resinfo_t *binary_manager_get_resdata(void)
  ****************************************************************************/
 void binary_manager_register_respart(int part_num, int part_size, uint32_t part_addr)
 {
-	if (part_num < 0 || part_size <= 0 || part_addr == 0 || resource_info.part_count >= RESOURCE_BIN_COUNT) {
-		bmdbg("Invalid resource partition : num %d, size %d, addr 0x%x\n", part_num, part_size, part_addr);
+	if (part_num < 0 || part_size <= 0 || part_offset < 0 || resource_info.part_count >= RESOURCE_BIN_COUNT) {
+		bmdbg("%s resource partition : num %d, size %d, offset %d\n", clog_message_str[CMN_LOG_INVALID_VAL], part_num, part_size, part_offset);
 		return;
 	}
 
@@ -123,7 +124,7 @@ bool binary_manager_scan_resource(void)
 		return true;
 	}
 #endif
-	bmdbg("Failed to find valid resource\n");
+	bmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	return false;
 }
 
@@ -170,7 +171,7 @@ int binary_manager_mount_resource(void)
 			}
 		}
 
-		bmdbg("Invalid Resource header[%d] devpath : %s\n", inuse_idx, devpath);
+		bmdbg("%s Resource header[%d] devpath : %s\n", clog_message_str[CMN_LOG_INVALID_VAL], inuse_idx, devpath);
 
 		/* Check if a binary exists in another partition. */
 		if (--bin_count > 0) {
@@ -181,7 +182,7 @@ int binary_manager_mount_resource(void)
 			bmdbg("Try to read another partition %d\n", resource_info.part_info[inuse_idx].devnum);
 			continue;
 		} else {
-			bmvdbg("No valid Resource binary\n");
+			bmvdbg("%s Resource binary\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			return ERROR;
 		}
 	} while (bin_count > 0);
@@ -198,7 +199,7 @@ int binary_manager_mount_resource(void)
 			binary_manager_set_bpdata(&update_bp_data);
 			bmvdbg("Update bootparam SUCCESS\n");
 		} else {
-			bmdbg("Fail to update bootparam to recover, %d\n", ret);
+			bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 #endif
@@ -219,7 +220,7 @@ int binary_manager_unmount_resource(void)
 	/* Unmont current resource */
 	ret = unmount(RESOURCE_MOUNTPT);
 	if (ret != OK) {
-		bmdbg("ERROR: resourcefs unmount failed, errno %d\n", get_errno());
+		bmdbg("%s errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], get_errno());
 		return ERROR;
 	}
 

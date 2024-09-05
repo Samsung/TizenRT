@@ -27,6 +27,7 @@
 #include <signal.h>
 
 #include <tinyara/os_api_test_drv.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "signal/signal.h"
 #include "timer/timer.h"
@@ -71,12 +72,12 @@ static int test_timer_initialize(unsigned long arg)
 	/* check the count for g_alloctimers and g_freetimers after create now they change */
 	ret_chk = timer_create(CLOCK_REALTIME, &st_sigevent, &timer_id);
 	if (ret_chk == ERROR) {
-		dbg("timer_create failed.");
+		dbg("%s: timer_create\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	if (timer_id == NULL) {
-		dbg("timer_create failed.");
+		dbg("%s: timer_create\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -106,27 +107,27 @@ static int test_timer_initialize(unsigned long arg)
 	ret_chk = timer_delete(timer_id);
 
 	if (ret_chk == ERROR) {
-		dbg("timer_delete failed.");
+		dbg("%s: timer_delete\n", clog_message_str[CMN_LOG_FAILED_OP] );
 		return ERROR;
 	}
 
 	if (initalloc_cnt != finalalloc_cnt) {
-		dbg("timer_initialize failed.");
+		dbg("%s: timer_initialize\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	if (initfree_cnt != finalfree_cnt) {
-		dbg("timer_initialize failed.");
+		dbg("%s: timer_initialize\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	if (createalloc_cnt == finalalloc_cnt) {
-		dbg("timer_initialize failed.");
+		dbg("%s: timer_initialize\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	if (createfree_cnt == finalfree_cnt) {
-		dbg("timer_initialize failed.");
+		dbg("%s: timer_initialize\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 

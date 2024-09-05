@@ -30,6 +30,7 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/compression/compress_read.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if CONFIG_COMPRESSION_TYPE == LZMA
 #include <tinyara/lzma/LzmaLib.h>
@@ -90,7 +91,7 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	rpos = lseek(filfd, offset, SEEK_SET);
 	if (rpos != offset) {
 		int errval = get_errno();
-		bcmpdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
+		bcmpdbg("%s offset %lu errorno %d\n", clog_message_str[CMN_LOG_FILE_SEEK_ERROR], (unsigned long)offset, errval);
 		return -errval;
 	}
 
@@ -104,7 +105,7 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	/* Allocate memory for compression header now that we know it's size */
 	compression_header = (struct s_header *)kmm_malloc(compheader_size);
 	if (!compression_header) {
-		bcmpdbg("Failed kmm_malloc for compression_header\n");
+		bcmpdbg("%s compression_header\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -169,7 +170,7 @@ static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int bl
 	rpos = lseek(filfd, block_offset, SEEK_SET);
 	if (rpos != block_offset) {
 		int errval = get_errno();
-		bcmpdbg("Failed to seek to position %lu: %d\n", (unsigned long)block_offset, errval);
+		bcmpdbg("%s %lu: %d\n", clog_message_str[CMN_LOG_FAILED_OP], (unsigned long)block_offset, errval);
 		return -errval;
 	}
 
@@ -197,7 +198,7 @@ static off_t compress_read_block(int filfd, uint16_t binary_header_size, FAR uin
 	/* Find out size of 'block_number' block in compressed file. Assign to readsize */
 	next_block_offset = compress_offset_block(filfd, binary_header_size, block_number + 1);
 	if (next_block_offset < 0) {
-		bcmpdbg("Incorrect offset for block number %d\n", block_number + 1);
+		bcmpdbg("%s block number %d\n", clog_message_str[CMN_LOG_FILE_SEEK_ERROR], block_number + 1);
 		return ERROR;
 	}
 
@@ -216,7 +217,7 @@ static off_t compress_read_block(int filfd, uint16_t binary_header_size, FAR uin
 	/* Seek to location of 'block_number' block in compressed file */
 	rpos = compress_lseek_block(filfd, binary_header_size, block_number);
 	if (rpos < 0) {
-		bcmpdbg("Failed to seek to offset of block number %d\n", block_number);
+		bcmpdbg("%s block number %d\n", clog_message_str[CMN_LOG_FAILED_OP], block_number);
 		return rpos;
 	}
 
@@ -296,7 +297,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		/* Decompress block in read_buffer to out_buffer */
 		ret = decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size);
 		if (ret == ERROR) {
-			bcmpdbg("Failed to decompress %d block of this binary\n", index);
+			bcmpdbg(" %s to decompress %d block of this binary\n", clog_message_str[CMN_LOG_FAILED_OP], index);
 			buffer_index = ret;
 			goto error_compress_read;
 		}
@@ -351,7 +352,7 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 	/* Parsing compression header for compressed file */
 	ret = compress_parse_header(filfd, offset);
 	if (ret != OK) {
-		bcmpdbg("Failed to parse compression header from file\n");
+		bcmpdbg("%s to parse compression header from file\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto error_compress_init;
 	}
 

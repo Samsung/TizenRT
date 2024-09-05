@@ -31,6 +31,7 @@
 #endif
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binary_manager.h"
 
@@ -55,7 +56,7 @@ int binary_manager_get_index_with_name(char *bin_name)
 	uint32_t bin_count;
 
 	if (bin_name == NULL) {
-		bmdbg("binary name is NULL\n");
+		bmdbg("%s binary name\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return ERROR;
 	}
 
@@ -86,7 +87,7 @@ void binary_manager_get_state_with_name(int requester_pid, char *bin_name)
 	binmgr_getstate_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid pid %d name %s\n", requester_pid, bin_name);
+		bmdbg("%s pid %d name %s\n", clog_message_str[CMN_LOG_INVALID_VAL], requester_pid, bin_name);
 		return;
 	}
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
@@ -128,7 +129,7 @@ void binary_manager_get_info_with_name(int requester_pid, char *bin_name)
 	binmgr_getinfo_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid pid %d name %s\n", requester_pid, bin_name);
+		bmdbg("%s pid %d name %s\n", clog_message_str[CMN_LOG_INVALID_VAL], requester_pid, bin_name);
 		return;
 	}
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
@@ -199,7 +200,7 @@ void binary_manager_get_info_all(int requester_pid)
 	binmgr_getinfo_all_response_t response_msg;
 
 	if (requester_pid < 0) {
-		bmdbg("Invalid requester pid %d\n", requester_pid);
+		bmdbg("%s requester pid %d\n", clog_message_str[CMN_LOG_INVALID_VAL], requester_pid);
 		return;
 	}
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
@@ -266,7 +267,7 @@ static int binary_manager_get_path(int requester_pid, char *bin_name, bool inact
 	binmgr_getpath_response_t response_msg;
 
 	if (requester_pid < 0 || bin_name == NULL) {
-		bmdbg("Invalid param : pid %d name %s \n", requester_pid, bin_name);
+		bmdbg("%s param : pid %d name %s \n", clog_message_str[CMN_LOG_INVALID_VAL], requester_pid, bin_name);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}

@@ -29,6 +29,7 @@
 #include <tinyara/os_api_test_drv.h>
 
 #include "clock/clock.h"
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Function
@@ -46,7 +47,7 @@ static int test_clock_abstime2ticks(unsigned long arg)
 
 	ret_chk = clock_gettime(CLOCK_REALTIME, &cur_time);
 	if (ret_chk != OK) {
-		dbg("clock_gettime failed. errno : %d\n", get_errno());
+		dbg("%s: clock_gettime %d\n", clog_message_str[CMN_LOG_FAILED_OP],get_errno());
 		return ERROR;
 	}
 
@@ -57,19 +58,19 @@ static int test_clock_abstime2ticks(unsigned long arg)
 	comparison_time.tv_nsec = cur_time.tv_nsec;
 	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &base_time, &base_tick);
 	if (ret_chk == ERROR) {
-		dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+		dbg("%s: clock_abstime2ticks %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret_chk);
 		return ERROR;
 	}
 
 	ret_chk = clock_abstime2ticks(CLOCK_REALTIME, &comparison_time, &comparison_tick);
 	if (ret_chk != OK) {
-		dbg("clock_abstime2ticks failed. ret : %d\n", ret_chk);
+		dbg("%s: clock_abstime2ticks %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret_chk);
 		return ERROR;
 	}
 
 	clock_ticks2time(comparison_tick - base_tick, &result_time);
 	if (result_time.tv_sec != 1) {
-		dbg("clock_abstime2ticks failed. %d.%ld sec is not 1 sec.\n", result_time.tv_sec, result_time.tv_nsec);
+		dbg("%s: clock_ticks2time %d,%ld sec is not 1 sec.\n",clog_message_str[CMN_LOG_FAILED_OP], result_time.tv_sec, result_time.tv_nsec);
 		return ERROR;
 	}
 	return OK;

@@ -30,6 +30,7 @@
 #endif
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binary_manager/binary_manager.h"
 
@@ -56,7 +57,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 		kernel_binary_header_t *header_data = (kernel_binary_header_t *)header_input;
 		if (header_data->header_size != sizeof(kernel_binary_header_t) - CHECKSUM_SIZE || header_data->binary_size == 0 \
 		|| header_data->version < KERNEL_BIN_VER_MIN || header_data->version > KERNEL_BIN_VER_MAX) {
-			bmdbg("Invalid kernel header data : headersize %u, version %u, binary size %u\n", header_data->header_size, header_data->version, header_data->binary_size);
+			bmdbg("%s headersize %u, version %u, binary size %u\n", clog_message_str[CMN_LOG_INVALID_VAL], header_data->header_size, header_data->version, header_data->binary_size);
 			return ERROR;
 		}
 		bmvdbg("Kernel binary header : %u %u %u %u \n", header_data->header_size, header_data->binary_size, header_data->version, header_data->secure_header_size);
@@ -65,7 +66,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 		if (header_data->bin_type != BIN_TYPE_ELF || header_data->bin_ver == 0 \
 		|| header_data->loading_priority == 0 || header_data->loading_priority >= BINARY_LOADPRIO_MAX \
 		|| header_data->bin_ramsize == 0 || header_data->bin_size == 0) {
-			bmdbg("Invalid user header data : headersize %u, binsize %u, ramsize %u, bintype %u\n", header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
+			bmdbg("%s headersize %u, binsize %u, ramsize %u, bintype %u\n", clog_message_str[CMN_LOG_INVALID_VAL], header_data->header_size, header_data->bin_size, header_data->bin_ramsize, header_data->bin_type);
 			return ERROR;
 		}
 		bmvdbg("User binary header : %u %u %u %u %s %u %u %u\n", header_data->header_size, header_data->bin_type, header_data->bin_size, header_data->loading_priority, header_data->bin_name, header_data->bin_ver, header_data->bin_ramsize, header_data->kernel_ver);
@@ -73,7 +74,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 		common_binary_header_t *header_data = (common_binary_header_t *)header_input;
 		if (header_data->header_size == 0 || header_data->bin_size == 0 ||\
 			header_data->version < BM_VERSION_DATE_MIN || header_data->version > BM_VERSION_DATE_MAX) {
-			bmdbg("Invalid common header data : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
+			bmdbg("%s headersize %u, binsize %u, version %u\n", clog_message_str[CMN_LOG_INVALID_VAL], header_data->header_size, header_data->bin_size, header_data->version);
 			return ERROR;
 		}
 		bmvdbg("Common binary header : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
@@ -81,7 +82,7 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 		resource_binary_header_t *header_data = (resource_binary_header_t *)header_input;
 		if (header_data->header_size == 0 || header_data->bin_size == 0 ||\
 			header_data->version < BM_VERSION_DATE_MIN || header_data->version > BM_VERSION_DATE_MAX) {
-			bmdbg("Invalid resource header data : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
+			bmdbg("%s headersize %u, binsize %u, version %u\n", clog_message_str[CMN_LOG_INVALID_VAL], header_data->header_size, header_data->bin_size, header_data->version);
 			return ERROR;
 		}
 		bmvdbg("Resource binary header : headersize %u, binsize %u, version %u\n", header_data->header_size, header_data->bin_size, header_data->version);
@@ -113,7 +114,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	int header_size = 0;
 
 	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {
-		bmdbg("Invalid parameter, type %d\n", type);
+		bmdbg("%s parameter, type %d\n", clog_message_str[CMN_LOG_INVALID_VAL], type);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -132,7 +133,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 
 	fd = open(devpath, O_RDONLY);
 	if (fd < 0) {
-		bmdbg("Fail to open %s: errno %d\n", devpath, errno);
+		bmdbg("%s %s: errno %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], devpath, errno);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -140,7 +141,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	if (type == BINARY_USERAPP || type == BINARY_COMMON) {
 		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
 		if (ret < 0) {
-			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
+			bmdbg("%s errno : %d\n", clog_message_str[CMN_LOG_FILE_SEEK_ERROR], errno);
 			ret = BINMGR_OPERATION_FAIL;
 			goto errout_with_fd;
 		}
@@ -150,7 +151,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, header_size);
 	if (ret != header_size) {
-		bmdbg("Fail to read %s, ret %d, errno %d\n", devpath, ret, errno);
+		bmdbg("%s %s, ret %d, errno %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], devpath, ret, errno);
 		ret = BINMGR_OPERATION_FAIL;
 		goto errout_with_fd;
 	}
@@ -184,7 +185,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		crc_bufsize = crc_bufsize < max_bufsize ? crc_bufsize : max_bufsize;
 		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
 		if (!crc_buffer) {
-			bmdbg("Fail to malloc buffer for checking crc, size %u\n", crc_bufsize);
+			bmdbg("%s for checking crc, size %u\n", clog_message_str[CMN_LOG_ALLOC_FAIL], crc_bufsize);
 			ret = BINMGR_OUT_OF_MEMORY;
 			goto errout_with_fd;
 		}
@@ -194,7 +195,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
 			ret = read(fd, (void *)crc_buffer, read_size);
 			if (ret != read_size) {
-				bmdbg("Fail to read header for checksum : ret %d, errno %d\n", ret, errno);
+				bmdbg("%s ret %d, errno %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], ret, errno);
 				ret = BINMGR_OPERATION_FAIL;
 				goto errout_with_fd;
 			}
@@ -203,7 +204,7 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		}
 
 		if (calculate_crc != crc_hash) {
-			bmdbg("Fail to crc check : %u != %u\n", calculate_crc, crc_hash);
+			bmdbg("%s %u != %u\n", clog_message_str[CMN_LOG_FAILED_OP], calculate_crc, crc_hash);
 			ret = BINMGR_NOT_FOUND;
 			goto errout_with_fd;
 		}

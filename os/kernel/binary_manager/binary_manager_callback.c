@@ -31,6 +31,8 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
+
 
 #include "binary_manager.h"
 
@@ -73,7 +75,7 @@ void binary_manager_unregister_statecb(int pid)
 	char q_name[BIN_PRIVMQ_LEN];
 
 	if (pid < 0) {
-		bmdbg("Invalid pid %d\n", pid);
+		bmdbg("%s pid %d\n", clog_message_str[CMN_LOG_INVALID_VAL], pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -81,7 +83,7 @@ void binary_manager_unregister_statecb(int pid)
 	tcb = sched_gettcb(pid);
 
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
-		bmdbg("Fail to get tcb of pid %d\n", pid);
+		bmdbg("%s tcb of pid %d\n", clog_message_str[CMN_LOG_INVALID_DATA], pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -127,14 +129,14 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	binmgr_statecb_response_t response_msg;
 
 	if (pid < 0 || cb_info == NULL) {
-		bmdbg("Invalid pid %d\n", pid);
+		bmdbg("%s pid %d\n", clog_message_str[CMN_LOG_INVALID_VAL], pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
 
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
-		bmdbg("Fail to get tcb of pid %d\n", pid);
+		bmdbg("%s tcb of pid %d\n", clog_message_str[CMN_LOG_INVALID_DATA], pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
 		goto send_result;
 	}
@@ -160,7 +162,7 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	/* If not, allocate new callback node and copy data */
 	cb_node = (statecb_node_t *)kmm_malloc(sizeof(statecb_node_t));
 	if (cb_node == NULL) {
-		bmdbg("Fail to malloc for cb node\n");
+		bmdbg("%s cb node\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		response_msg.result = BINMGR_OUT_OF_MEMORY;
 		goto send_result;
 	}
@@ -236,7 +238,7 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 			if (ret == OK) {
 				send_count++;
 			} else {
-				bmdbg("Fail to send signal, errno %d\n", errno);
+				bmdbg("%s send signal, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 				mq_unlink(q_name);
 				goto errout;
 			}
@@ -290,7 +292,7 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 	int send_bin_idx;
 
 	if (bin_idx <= 0 || state >= BINARY_STATE_MAX) {
-		bmdbg("Invalid parameter: bin idx %d, state %d\n", bin_idx, state);
+		bmdbg("%s bin idx %d, state %d\n", clog_message_str[CMN_LOG_INVALID_VAL], bin_idx, state);
 		return;
 	}
 
@@ -308,6 +310,6 @@ void binary_manager_notify_state_changed(int bin_idx, uint8_t state)
 	}
 
 	if (fail_count > 0) {
-		bmdbg("Fail to send callback msg to threads of binary %s, state %d, failed count %d\n", BIN_NAME(bin_idx), state, fail_count);
+		bmdbg("%s send callback msg to threads of binary %s, state %d, failed count %d\n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx), state, fail_count);
 	}
 }

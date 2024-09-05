@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 #include <tinyara/kthread.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -106,7 +107,7 @@ static int kernel_thread_stack_protection_test(int argc, FAR char *argv[])
 			*ptr = 'b';
 			ptr = ptr - 1;
 		}
-		dbg(" Test stack access in overflow - Failed !!\n");
+		dbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #elif defined(CONFIG_REG_STACK_OVERFLOW_PROTECTION)
 

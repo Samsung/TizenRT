@@ -14,6 +14,7 @@
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
 #include <tinyara/userspace.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <fcntl.h>
 
@@ -56,7 +57,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	int filfd = open(binp->filename, O_RDONLY);
         if (filfd < 0) {
                 ret = filfd;
-                berr("Failed to open binary %s: %d\n", binp->filename, ret);
+                berr("%s  %s: %d\n",clog_message_str[CMN_LOG_FILE_OPEN_ERROR], binp->filename, ret);
                 return ret;
         }
 
@@ -71,7 +72,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		rpos = lseek(filfd, offset, SEEK_SET);
 		if (rpos != offset) {
 			int errval = get_errno();
-			berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
+			berr("%s to position %lu: %d\n",clog_message_str[CMN_LOG_FILE_SEEK_ERROR], (unsigned long)offset, errval);
 			close(filfd);
 			return -errval;
 		}
@@ -83,12 +84,12 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 			/* EINTR just means that we received a signal */
 
 			if (nbytes != -EINTR) {
-				berr("Read from offset %lu failed: %d\n", (unsigned long)offset, (int)nbytes);
+				berr("%s offset %lu bytes: %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], (unsigned long)offset, (int)nbytes);
 				close(filfd);
 				return nbytes;
 			}
 		} else if (nbytes == 0) {
-			berr("Unexpected end of file\n");
+			berr("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			close(filfd);
 			return -ENODATA;
 		} else {
@@ -152,7 +153,7 @@ int xipelf_initialize(void)
 
 	ret = register_binfmt(&g_xipelfbinfmt);
 	if (ret != 0) {
-		berr("Failed to register binfmt: %d\n", ret);
+		berr("%s: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;
@@ -240,7 +241,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		binfo("   bss_addr    : %x\n", g_bin_addr_list[bin_idx].bss_addr);
 #endif
 	} else {
-		berr("ERROR : Failed to save bin section addresses\n");
+		berr("%s save bin section addresses\n",clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 }
 

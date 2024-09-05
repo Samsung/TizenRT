@@ -66,6 +66,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -436,7 +437,7 @@ FAR struct mtd_dev_s *rammtd_initialize(FAR uint8_t *start, size_t size)
 
 	priv = (FAR struct ram_dev_s *)kmm_zalloc(sizeof(struct ram_dev_s));
 	if (!priv) {
-		fdbg("Failed to allocate the RAM MTD state structure\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return NULL;
 	}
 	/* Use memset to initialize when it started, to guarantees cleaned space for sw reset */
@@ -445,7 +446,7 @@ FAR struct mtd_dev_s *rammtd_initialize(FAR uint8_t *start, size_t size)
 
 	nblocks = size / CONFIG_RAMMTD_ERASESIZE;
 	if (nblocks < 1) {
-		fdbg("Need to provide at least one full erase block\n");
+		fdbg("%s erase block\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return NULL;
 	}
 

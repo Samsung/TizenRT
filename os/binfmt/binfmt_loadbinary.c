@@ -33,6 +33,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include "libelf/libelf.h"
@@ -89,11 +90,11 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 	/* Sanity check */
 	if (!load_attr) {
-		berr("ERROR: Invalid load_attr\n");
+		berr("%s attr\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		errcode = -EINVAL;
 		goto errout;
 	} else if (load_attr->bin_size <= 0) {
-		berr("ERROR: Invalid file length!\n");
+		berr("%s file length \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		errcode = -EINVAL;
 		goto errout;
 	}
@@ -107,7 +108,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	if (bin) {
 		if (!bin->data_backup) {
 			errcode = -EINVAL;
-			berr("ERROR: Failed to find copy of data section from previous load\n");
+			berr("%s  copy of data section not same as previous load\n",clog_message_str[CMN_LOG_INVALID_DATA]);
 			goto errout_with_bin;
 		}
 
@@ -121,7 +122,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 		bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
 		if (!bin) {
-			berr("ERROR: Failed to allocate binary_s\n");
+			berr("%s binary_s\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			errcode = -ENOMEM;
 			goto errout_with_bin;
 		}
@@ -165,7 +166,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		ret = load_module(bin);
 		if (ret < 0) {
 			errcode = ret;
-			berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
+			berr("%s to load program '%s': %d\n",clog_message_str[CMN_LOG_FAILED_OP], filename, errcode);
 			goto errout_with_bin;
 		}
 
@@ -215,7 +216,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 	pid = exec_module(bin);
 	if (pid < 0) {
 		errcode = pid;
-		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
+		berr("%s to execute program '%s': %d\n", clog_message_str[CMN_LOG_FAILED_OP], filename, errcode);
 		elf_delete_bin_section_addr(bin->binary_idx);
 		goto errout_with_unload;
 	}

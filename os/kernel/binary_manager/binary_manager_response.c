@@ -26,6 +26,7 @@
 #include <mqueue.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binary_manager.h"
 
@@ -39,7 +40,7 @@ void binary_manager_send_response(char *q_name, void *response_msg, int msg_size
 	struct mq_attr attr;
 
 	if (q_name == NULL || response_msg == NULL || msg_size < 0) {
-		bmdbg("Invalid param\n");
+		bmdbg("%s param\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return;
 	}
 

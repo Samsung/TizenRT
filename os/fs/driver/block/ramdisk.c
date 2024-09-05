@@ -69,6 +69,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ramdisk.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -441,7 +442,7 @@ int romdisk_register(int minor, uint8_t *buffer, uint32_t nsectors, uint16_t sec
 
 		ret = register_blockdriver(devname, &g_bops, 0, dev);
 		if (ret < 0) {
-			fdbg("register_blockdriver failed: %d\n", -ret);
+			fdbg("%s : %d\n", clog_message_str[CMN_LOG_FAILED_OP], -ret);
 			kmm_free(dev);
 		}
 	}

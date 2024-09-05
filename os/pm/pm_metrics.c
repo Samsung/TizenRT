@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <time.h>
 #include <queue.h>
 #include <debug.h>
@@ -275,7 +276,7 @@ int pm_metrics(int milliseconds)
 	g_pm_metrics = pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
 		set_errno(ENOMEM);
-		pmdbg("Unable to initialize pm_metrics, error = %d\n", get_errno());
+		pmdbg("%s initialize pm_metrics: %d\n", clog_message_str[CMN_LOG_FAILED_OP], get_errno());
 		pm_unlock();
 		return ERROR;
 	}
@@ -297,7 +298,7 @@ int pm_metrics(int milliseconds)
 		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
 	} else {
 		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
+		pmdbg("Resume IDLE Domain %s\n",clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 	/* Suspend for given time interval */
 	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
@@ -306,7 +307,7 @@ int pm_metrics(int milliseconds)
 		pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 	} else {
 		pm_suspended = -1;
-		pmdbg("Unable to suspend IDLE Domain\n");
+		pmdbg("Suspend IDLE Domain %s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
@@ -330,7 +331,7 @@ int pm_metrics(int milliseconds)
 		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
 	} else {
 		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
+		pmdbg("Resume IDLE Domain %s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 	/* Unlock PM Metrics for other threads */
 	pm_unlock();

@@ -81,6 +81,7 @@
 #include <tinyara/net/net.h>
 #include <tinyara/net/telnet.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_NETDEV_TELNET
 
@@ -521,7 +522,7 @@ static int telnet_close(FAR struct file *filep)
 		sched_lock();
 		ret = asprintf(&devpath, TELNETD_DEVFMT, priv->td_minor);
 		if (ret < 0) {
-			nlldbg("ERROR: Failed to allocate the driver path\n");
+			nlldbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		} else {
 			/* Un-register the character driver */
 
@@ -535,7 +536,7 @@ static int telnet_close(FAR struct file *filep)
 				 */
 
 				if (ret != -EBUSY) {
-					nlldbg("Failed to unregister the driver %s: %d\n", devpath, ret);
+					nlldbg("%s %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],devpath, ret);
 				}
 			}
 
@@ -664,7 +665,7 @@ static ssize_t telnet_write(FAR struct file *filep, FAR const char *buffer, size
 
 			ret = send(priv->td_psock, priv->td_txbuffer, ncopied, 0);
 			if (ret < 0) {
-				nlldbg("psock_send failed '%s': %d\n", priv->td_txbuffer, ret);
+				nlldbg("%s of psock_send '%s': %d\n", clog_message_str[CMN_LOG_FAILED_OP],priv->td_txbuffer, ret);
 				return ret;
 			}
 
@@ -679,7 +680,7 @@ static ssize_t telnet_write(FAR struct file *filep, FAR const char *buffer, size
 	if (ncopied > 0) {
 		ret = send(priv->td_psock, priv->td_txbuffer, ncopied, 0);
 		if (ret < 0) {
-			nlldbg("psock_send failed '%s': %d\n", priv->td_txbuffer, ret);
+			nlldbg("%s: psock_send'%s': %d\n", clog_message_str[CMN_LOG_FAILED_OP],priv->td_txbuffer, ret);
 			return ret;
 		}
 	}
@@ -722,7 +723,7 @@ static int telnet_session(FAR struct telnet_session_s *session)
 
 	priv = (FAR struct telnet_dev_s *)kmm_malloc(sizeof(struct telnet_dev_s));
 	if (!priv) {
-		nlldbg("Failed to allocate the driver data structure\n");
+		nlldbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 

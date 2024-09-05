@@ -61,6 +61,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bch.h"
 
@@ -108,7 +109,7 @@ ssize_t bchlib_read(FAR void *handle, FAR char *buffer, size_t offset, size_t le
 	}
 
 	if (bch->sectsize <= 0) {
-		fdbg("ERROR: Invalid sector size bch->sectsize = %d\n", bch->sectsize);
+		fdbg("%s bch->sectsize : %d\n", clog_message_str[CMN_LOG_INVALID_VAL],bch->sectsize);
 		return -1;
 	}
 
@@ -162,7 +163,7 @@ ssize_t bchlib_read(FAR void *handle, FAR char *buffer, size_t offset, size_t le
 		ret = bch->inode->u.i_bops->read(bch->inode, (FAR uint8_t *)buffer,
 						sector, nsectors);
 		if (ret < 0) {
-			fdbg("ERROR: Read failed: %d\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_FILE_READ_ERROR]);
 			return ret;
 		}
 

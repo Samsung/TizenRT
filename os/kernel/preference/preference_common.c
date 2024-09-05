@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <tinyara/sched.h>
 #include <tinyara/preference.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #endif
@@ -40,13 +41,13 @@ int preference_get_private_keypath(const char *key, char **path)
 	/* Get path for app preference */
 	tcb = this_task();
 	if (!tcb->group) {
-		prefdbg("Failed to get group\n");
+		prefdbg("%s get group\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return PREFERENCE_OPERATION_FAIL;
 	}
 	/* Assign full path for app preference directory */
 	ret = PREFERENCE_ASPRINTF(path, "%s/%s/%s", PREF_PRIVATE_PATH, tcb->group->tg_name, key);
 	if (ret < 0) {
-		prefdbg("Failed to allocate path\n");
+		prefdbg("%s allocate path\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return PREFERENCE_OUT_OF_MEMORY;
 	}
 	prefvdbg("Preference key path = %s\n", *path);

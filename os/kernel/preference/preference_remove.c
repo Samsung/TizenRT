@@ -28,6 +28,7 @@
 #if CONFIG_TASK_NAME_SIZE > 0
 #include <sys/types.h>
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #endif
@@ -40,7 +41,7 @@ static int preference_remove_fs_key(char *path)
 	int ret;
 
 	if (path == NULL) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
@@ -52,7 +53,7 @@ static int preference_remove_fs_key(char *path)
 			prefdbg("key file is not exist : %s\n", path);
 		} else {
 			ret = PREFERENCE_IO_ERROR;
-			prefdbg("Failed to remove key file %s\n", path);
+			prefdbg("%s path :%s\n", clog_message_str[CMN_LOG_FAILED_OP], path);
 		}
 	} else {
 		ret = OK;
@@ -72,20 +73,20 @@ int preference_remove_key(int type, const char *key)
 	char *path;
 
 	if (key == NULL || (type != PRIVATE_PREFERENCE && type != SHARED_PREFERENCE)) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
 	if (type == PRIVATE_PREFERENCE) {
 		ret = preference_get_private_keypath(key, &path);
 		if (ret < 0) {
-			prefdbg("Failed to get preference path\n");
+			prefdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 	} else {
 		ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_SHARED_PATH, key);
 		if (ret < 0) {
-			prefdbg("Failed to allocate path\n");
+			prefdbg("%s allocate path\n",clog_message_str[CMN_LOG_FAILED_OP]);
 			return PREFERENCE_OUT_OF_MEMORY;
 		}
 	}
@@ -105,7 +106,7 @@ int preference_remove_all_key(int type, const char *path)
 #endif
 
 	if ((type != PRIVATE_PREFERENCE && type != SHARED_PREFERENCE) || (type == SHARED_PREFERENCE && path == NULL)) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
@@ -113,7 +114,7 @@ int preference_remove_all_key(int type, const char *path)
 #if CONFIG_TASK_NAME_SIZE > 0
 		tcb = this_task();
 		if (!tcb->group) {
-			prefdbg("Failed to get group\n");
+			prefdbg("%s \n",clog_message_str[CMN_LOG_FAILED_OP]);
 			return PREFERENCE_OPERATION_FAIL;
 		}
 
@@ -128,7 +129,7 @@ int preference_remove_all_key(int type, const char *path)
 		ret = PREFERENCE_ASPRINTF(&dir_path, "%s/%s", PREF_SHARED_PATH, path);
 	}
 	if (ret < 0) {
-		prefdbg("Failed to allocate path\n");
+		prefdbg("%s \n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return PREFERENCE_OUT_OF_MEMORY;
 	}
 
@@ -136,7 +137,7 @@ int preference_remove_all_key(int type, const char *path)
 
 	dir = (DIR *)opendir(dir_path);
 	if (!dir) {
-		prefdbg("Failed to open dir %s, %d\n", dir_path, errno);
+		prefdbg("%s %s, %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], dir_path, errno);
 		if (errno == ENOENT) {
 			ret = PREFERENCE_PATH_NOT_FOUND;
 		} else {
@@ -159,7 +160,7 @@ int preference_remove_all_key(int type, const char *path)
 		prefvdbg("Remove key file : %s\n", key_path);
 		ret = preference_remove_fs_key(key_path);
 		if (ret < 0) {
-			prefdbg("Failed to remove key file %d\n", ret);
+			prefdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			break;
 		}
 	}

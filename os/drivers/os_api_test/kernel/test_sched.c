@@ -26,6 +26,7 @@
 
 #include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Data
@@ -50,7 +51,7 @@ static int test_is_alive_thread(unsigned long arg)
 {
 	tcb = sched_gettcb((pid_t)arg);
 	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
+		dbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],get_errno());
 		return ERROR;
 	}
 	return OK;
@@ -60,7 +61,7 @@ static int test_get_tcb_adj_stack_size(unsigned long arg)
 {
 	tcb = sched_gettcb((pid_t)arg);
 	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
+		dbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],get_errno());
 		return ERROR;
 	}
 	return tcb->adj_stack_size;

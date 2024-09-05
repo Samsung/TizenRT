@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <stdint.h>
 #include <string.h>
 #include <debug.h>
@@ -77,7 +78,7 @@ static int taskmgr_task_init(pid_t pid, void *usr_pause_handler)
 
 	tcb = sched_gettcb(pid);
 	if (!tcb) {
-		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
+		tmdbg("%s [TM] tcb. pid = %d.\n", clog_message_str[CMN_LOG_INVALID_VAL], pid);
 		return ERROR;
 	}
 
@@ -104,7 +105,7 @@ static struct task_group_s *taskmgr_get_group_struct(pid_t pid)
 
 	tcb = sched_gettcb(pid);
 	if (!tcb) {
-		tmdbg("[TM] tcb is invalid. pid = %d.\n", pid);
+		tmdbg("%s [TM] tcb. pid = %d.\n", clog_message_str[CMN_LOG_INVALID_VAL], pid);
 		return NULL;
 	}
 
@@ -114,7 +115,7 @@ static struct task_group_s *taskmgr_get_group_struct(pid_t pid)
 static int taskmgr_group_bind(struct task_group_s *parent_group, struct pthread_tcb_s *child_tcb)
 {
 	if (parent_group == NULL || child_tcb == NULL) {
-		tmdbg("[TM] Invalid parameter! Group bind is failed.\n");
+		tmdbg("%s [TM] parameter! %s Group bind\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL], clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return ERROR;
 	}
 
@@ -131,18 +132,18 @@ static int taskmgr_pthread_group_join(pid_t parent_pid, pid_t child_pid)
 	parent_group = taskmgr_get_group_struct(parent_pid);
 	child_tcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
 	if (child_tcb == NULL) {
-		tmdbg("[TM] Cannot find Child TCB.\n");
+		tmdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return ERROR;
 	}
 	ret = taskmgr_group_bind(parent_group, child_tcb);
 	if (ret != OK) {
-		tmdbg("[TM] Group bind is failed.\n");
+		tmdbg("%s: taskmgr_group_bind\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	ret = group_join(child_tcb);
 	if (ret != OK) {
-		tmdbg("[TM] Group join is failed.\n");
+		tmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -156,7 +157,7 @@ static int taskmgr_pthread_ppid_change(pid_t parent_pid, pid_t child_pid)
 	ptcb = (struct pthread_tcb_s *)sched_gettcb(child_pid);
 
 	if (ptcb == NULL) {
-		tmdbg("[TM] Invalid pthread tcb. Pthread ppid change failed.\n");
+		tmdbg("%s ptcb. %s Pthread ppid change\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL], clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -193,7 +194,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	data = (tm_drv_data_t *)arg;
 	if (data == NULL) {
-		tmdbg("Invalid Argument.\n");
+		tmdbg("%s data\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return ERROR;
 	}
 
@@ -203,13 +204,13 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_START:
 		ret = taskmgr_task_init(data->pid, data->addr);
 		if (ret != OK) {
-			tmdbg("Fail to init new task\n");
+			tmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		}
 		break;
 	case TMIOC_PAUSE:
 		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
-			tmdbg("Invalid pid\n");
+			tmdbg("%s pid\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return ERROR;
 		}
 		if (tcb->task_state == TSTATE_WAIT_SIG && tcb->waitdog != NULL) {
@@ -225,7 +226,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_UNICAST:
 		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
-			tmdbg("Invalid pid\n");
+			tmdbg("%s pid\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return ERROR;
 		}
 		ret = (int)sig_is_handler_registered(tcb, SIGTM_UNICAST);
@@ -239,7 +240,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_BROADCAST:
 		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
-			tmdbg("Invalid pid\n");
+			tmdbg("%s pid\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return ERROR;
 		}
 		ret = (int)sig_is_handler_registered(tcb, SIGTM_BROADCAST);
@@ -253,7 +254,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_CHECK_ALIVE:
 		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
-			tmdbg("Invalid pid\n");
+			tmdbg("%s pid\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return ERROR;
 		}
 		ret = OK;
@@ -261,7 +262,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case TMIOC_TERMINATE:
 		tcb = sched_gettcb(data->pid);
 		if (tcb == NULL) {
-			tmdbg("Invalid pid\n");
+			tmdbg("%s pid\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return ERROR;
 		}
 		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT == TCB_FLAG_TTYPE_TASK) {
@@ -310,7 +311,7 @@ static int taskmgr_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 	default:
-		tmdbg("Unrecognized cmd: %d arg: %ld\n", cmd, arg);
+		tmdbg("%s cmd: %d arg: %ld\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd, arg);
 		break;
 	}
 	return ret;

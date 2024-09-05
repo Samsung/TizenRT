@@ -65,6 +65,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "libelf/libelf.h"
 
@@ -219,7 +220,7 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	ret = elf_init(binp->filename, &loadinfo);
 	if (ret != 0) {
 		elf_dumploadinfo(&loadinfo);
-		berr("Failed to initialize for load of ELF program: %d\n", ret);
+		berr("%s to initialize for load of ELF program: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -228,7 +229,7 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	ret = elf_load(&loadinfo);
 	elf_dumploadinfo(&loadinfo);
 	if (ret != 0) {
-		berr("Failed to load ELF program binary: %d\n", ret);
+		berr("%s: load ELF program %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_init;
 	}
 
@@ -236,7 +237,7 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 
 	ret = elf_bind(&loadinfo, binp->exports, binp->nexports);
 	if (ret != 0) {
-		berr("Failed to bind symbols program binary: %d\n", ret);
+		berr("%s: bind symbols %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_load;
 	}
 
@@ -301,7 +302,7 @@ int elf_initialize(void)
 
 	ret = register_binfmt(&g_elfbinfmt);
 	if (ret != 0) {
-		berr("Failed to register binfmt: %d\n", ret);
+		berr("%s: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;

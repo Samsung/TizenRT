@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <string.h>
 #include <errno.h>
@@ -299,7 +300,7 @@ int usbhost_devaddr_create(FAR struct usbhost_hubport_s *hport)
 	usbhost_givesem(devgen);
 
 	if (devaddr < 0) {
-		udbg("ERROR: Failed to allocate a device address\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 	}
 
 	return devaddr;

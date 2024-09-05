@@ -40,6 +40,7 @@
 #include <tinyara/math.h>
 #include <math.h>
 #include <tinyara/i2c.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "alc1019.h"
 #include "alc1019scripts.h"
@@ -99,7 +100,7 @@ static int alc1019_writereg_3byte(FAR struct alc1019_dev_s *priv, uint8_t regadd
 
         ret = i2c_write(dev, alc1019_i2c_config, (uint8_t *)reg, 3);
         if (ret < 0) {
-			auddbg("Error, cannot write reg 0x%x/0x%x/0x%x\n", regaddr_h, regaddr_l, regval);
+			auddbg("%s to write reg, 0x%x/0x%x/0x%x\n", clog_message_str[CMN_LOG_FAILED_OP] ,regaddr_h, regaddr_l, regval);
         }
         return ret;
 }
@@ -433,12 +434,12 @@ static int alc1019_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 
 		ret = -EDOM;
 		if (caps->ac_channels != ALC1019_CHANNELS) {
-			auddbg("ERROR: Unsupported number of channels: %d\n", caps->ac_channels);
+			auddbg("%s number of channels %d\n", clog_message_str[CMN_LOG_INVALID_VAL], caps->ac_channels);
 			break;
 		}
 
 		if (caps->ac_controls.b[2] != ALC1019_BPSAMP) {
-			auddbg("ERROR: Unsupported bits per sample: %d\n", caps->ac_controls.b[2]);
+			auddbg("%s bits per sample %d\n",clog_message_str[CMN_LOG_INVALID_VAL], caps->ac_controls.b[2]);
 			break;
 		}
 

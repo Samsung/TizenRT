@@ -24,6 +24,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <video/video.h>
 #include <video/video_halif.h>
@@ -935,7 +936,7 @@ static int uvc_get_range_of_frameinterval(FAR void *video_private, FAR struct v4
 	}
 
 	if (frame == NULL) {
-		uvdbg("No valid frame found !!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return -EINVAL;
 	}
 

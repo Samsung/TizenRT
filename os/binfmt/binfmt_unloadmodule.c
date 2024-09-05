@@ -64,6 +64,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binfmt.h"
 #include "binfmt_arch_apis.h"
@@ -143,7 +144,7 @@ int unload_module(FAR struct binary_s *binp)
 		if (binp->unload) {
 			ret = binp->unload(binp);
 			if (ret < 0) {
-				berr("binp->unload() failed: %d\n", ret);
+				berr("%s of binp->unload(): %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				return ret;
 			}
 		}
@@ -152,7 +153,7 @@ int unload_module(FAR struct binary_s *binp)
 
 		ret = exec_dtors(binp);
 		if (ret < 0) {
-			berr("exec_ctors() failed: %d\n", ret);
+			berr("%s of exec_ctors(): %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 #endif

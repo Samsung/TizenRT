@@ -26,6 +26,7 @@
 
 #include <tinyara/binfmt/compression/compress_read.h>
 #include <tinyara/compression.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if CONFIG_COMPRESSION_TYPE == LZMA
 #include <tinyara/lzma/LzmaLib.h>
@@ -73,13 +74,13 @@ int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsi
 	unsigned int propsSize = LZMA_PROPS_SIZE;
 	ret = LzmaCompress(&out_buffer[LZMA_PROPS_SIZE], writesize, read_buffer, size, out_buffer, &propsSize, 0, 1 << 13, -1, -1, -1, -1, 1);
 	if (ret == SZ_ERROR_FAIL) {
-		dbg("Failure to compress with LZMACompress API\n");
+		dbg("%s compress with LZMACompress API\n", clog_message_str[CMN_LOG_FAILED_OP] );
 		ret = -ret;
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 	ret = mz_compress(out_buffer, writesize, read_buffer, size);
 	if (ret != Z_OK) {
-		dbg("Failure to compress with Miniz's compress API; ret = %d\n", ret);
+		dbg("%s compress with Miniz's compress API; ret = %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		if (ret > 0)
 			ret = -ret;
 	}
@@ -107,7 +108,7 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 
 	ret = LzmaUncompress(&out_buffer[0], (unsigned int *)writesize, &read_buffer[LZMA_PROPS_SIZE], (unsigned int *)size, &read_buffer[0], LZMA_PROPS_SIZE);
 	if (ret == SZ_ERROR_FAIL) {
-		bcmpdbg("Failure to decompress with LZMAUncompress API\n");
+		bcmpdbg("%s decompress with LZMAUncompress API\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -ret;
 	}
 	else if (ret == SZ_OK && *size < read_size) {
@@ -122,7 +123,7 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 	/* Miniz specific logic for decompression */
 	ret = mz_uncompress(out_buffer, writesize, read_buffer, *size);
 	if (ret != Z_OK) {
-		bcmpdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
+		bcmpdbg("%s decompress with Miniz's uncompress API; ret = %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		if (ret > 0)
 			ret = -ret;
 		else if (ret == Z_BUF_ERROR) {

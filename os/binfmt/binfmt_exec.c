@@ -64,6 +64,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binfmt.h"
 
@@ -149,7 +150,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	start_addr = kmm_memalign(size, size);
 
 	if (!start_addr) {
-		berr("ERROR: Failed to allocate RAM partition\n");
+		berr("%s RAM Partition\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		errcode = ENOMEM;
 		goto errout;
 	}
@@ -159,7 +160,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 
 	bin = (FAR struct binary_s *)kmm_zalloc(sizeof(struct binary_s));
 	if (!bin) {
-		berr("ERROR: Failed to allocate binary_s\n");
+		berr(" %s binary_s \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		errcode = ENOMEM;
 		goto err_free_partition;
 	}
@@ -178,7 +179,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	ret = binfmt_copyargv(bin, argv);
 	if (ret < 0) {
 		errcode = -ret;
-		berr("ERROR: Failed to copy argv[]: %d\n", errcode);
+		berr("%s to copy argv[]: %d\n" ,clog_message_str[CMN_LOG_FAILED_OP], errcode);
 		goto errout_with_bin;
 	}
 
@@ -187,7 +188,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	ret = load_module(bin);
 	if (ret < 0) {
 		errcode = -ret;
-		berr("ERROR: Failed to load program '%s': %d\n", filename, errcode);
+		berr("%s to load program %s': %d\n",clog_message_str[CMN_LOG_FAILED_OP], filename, errcode);
 		goto errout_with_argv;
 	}
 
@@ -203,7 +204,7 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	pid = exec_module(bin);
 	if (pid < 0) {
 		errcode = -pid;
-		berr("ERROR: Failed to execute program '%s': %d\n", filename, errcode);
+		berr("%s to execute program'%s': %d\n",clog_message_str[CMN_LOG_FAILED_OP], filename, errcode);
 		goto errout_with_lock;
 	}
 

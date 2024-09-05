@@ -77,6 +77,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/dirent.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "fs_romfs.h"
 
@@ -184,7 +185,7 @@ static int romfs_open(FAR struct file *filep, FAR const char *relpath, int oflag
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: romfs_checkmount, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -206,7 +207,7 @@ static int romfs_open(FAR struct file *filep, FAR const char *relpath, int oflag
 
 	ret = romfs_finddirentry(rm, &dirinfo, relpath);
 	if (ret < 0) {
-		fdbg("Failed to find directory directory entry for '%s': %d\n", relpath, ret);
+		fdbg("%s to find directory directory entry for '%s': %d\n", clog_message_str[CMN_LOG_FAILED_OP],relpath, ret);
 		goto errout_with_semaphore;
 	}
 
@@ -243,8 +244,8 @@ static int romfs_open(FAR struct file *filep, FAR const char *relpath, int oflag
 
 	rf = (FAR struct romfs_file_s *)kmm_zalloc(sizeof(struct romfs_file_s));
 	if (!rf) {
-		fdbg("Failed to allocate private data\n", ret);
 		ret = -ENOMEM;
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -259,7 +260,7 @@ static int romfs_open(FAR struct file *filep, FAR const char *relpath, int oflag
 
 	ret = romfs_datastart(rm, dirinfo.rd_dir.fr_curroffset, &rf->rf_startoffset);
 	if (ret < 0) {
-		fdbg("Failed to locate start of file data: %d\n", ret);
+		fdbg("%s to locate start of file data %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -267,7 +268,7 @@ static int romfs_open(FAR struct file *filep, FAR const char *relpath, int oflag
 
 	ret = romfs_fileconfigure(rm, rf);
 	if (ret < 0) {
-		fdbg("Failed configure buffering: %d\n", ret);
+		fdbg("%s configure buffering %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -375,7 +376,7 @@ static ssize_t romfs_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: romfs_checkmount, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -420,7 +421,7 @@ static ssize_t romfs_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 			fvdbg("Read %d sectors starting with %d\n", nsectors, sector);
 			ret = romfs_hwread(rm, userbuffer, sector, nsectors);
 			if (ret < 0) {
-				fdbg("romfs_hwread failed: %d\n", ret);
+				fdbg("%s: romfs_hwread, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				goto errout_with_semaphore;
 			}
 
@@ -435,7 +436,7 @@ static ssize_t romfs_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 			fvdbg("Read sector %d\n", sector);
 			ret = romfs_filecacheread(rm, rf, sector);
 			if (ret < 0) {
-				fdbg("romfs_filecacheread failed: %d\n", ret);
+				fdbg("%s: romfs_filecacheread, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				goto errout_with_semaphore;
 			}
 
@@ -525,7 +526,7 @@ static off_t romfs_seek(FAR struct file *filep, off_t offset, int whence)
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -583,8 +584,7 @@ static int romfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		*ppv = (void *)(rm->rm_xipbase + rf->rf_startoffset);
 		return OK;
 	}
-
-	fdbg("Invalid cmd: %d \n", cmd);
+	fdbg("%s: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 	return -ENOTTY;
 }
 
@@ -617,7 +617,7 @@ static int romfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -631,7 +631,7 @@ static int romfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newrf = (FAR struct romfs_file_s *)kmm_malloc(sizeof(struct romfs_file_s));
 	if (!newrf) {
-		fdbg("Failed to allocate private data\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		ret = -ENOMEM;
 		goto errout_with_semaphore;
 	}
@@ -644,8 +644,8 @@ static int romfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 	/* Configure buffering to support access to this file */
 
 	ret = romfs_fileconfigure(rm, newrf);
-	if (ret < 0) {
-		fdbg("Failed configure buffering: %d\n", ret);
+	if (ret < 0) {	
+		fdbg("%s: configure buffering, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -747,7 +747,7 @@ static int romfs_opendir(FAR struct inode *mountpt, FAR const char *relpath, FAR
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: romfs_checkmount, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -755,7 +755,7 @@ static int romfs_opendir(FAR struct inode *mountpt, FAR const char *relpath, FAR
 
 	ret = romfs_finddirentry(rm, &dirinfo, relpath);
 	if (ret < 0) {
-		fdbg("Failed to find directory '%s': %d\n", relpath, ret);
+		fdbg("%s find directory '%s': %d\n", clog_message_str[CMN_LOG_FAILED_OP], relpath,ret);
 		goto errout_with_semaphore;
 	}
 
@@ -811,7 +811,7 @@ static int romfs_readdir(FAR struct inode *mountpt, FAR struct fs_dirent_s *dir)
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: romfs_checkmount, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -834,7 +834,7 @@ static int romfs_readdir(FAR struct inode *mountpt, FAR struct fs_dirent_s *dir)
 
 		ret = romfs_parsedirentry(rm, dir->u.romfs.fr_curroffset, &linkoffset, &next, &info, &size);
 		if (ret < 0) {
-			fdbg("romfs_parsedirentry failed: %d\n", ret);
+			fdbg("%s: romfs_parsedirentry, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 
@@ -842,7 +842,7 @@ static int romfs_readdir(FAR struct inode *mountpt, FAR struct fs_dirent_s *dir)
 
 		ret = romfs_parsefilename(rm, dir->u.romfs.fr_curroffset, dir->fd_dir.d_name);
 		if (ret < 0) {
-			fdbg("romfs_parsefilename failed: %d\n", ret);
+			fdbg("%s: romfs_parsefilename, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout_with_semaphore;
 		}
 
@@ -934,7 +934,7 @@ static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR voi
 
 	rm = (FAR struct romfs_mountpt_s *)kmm_zalloc(sizeof(struct romfs_mountpt_s));
 	if (!rm) {
-		fdbg("Failed to allocate mountpoint structure\n");
+		fdbg("%s mountpoint structure\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -950,7 +950,7 @@ static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR voi
 
 	ret = romfs_hwconfigure(rm);
 	if (ret < 0) {
-		fdbg("romfs_hwconfigure failed: %d\n", ret);
+		fdbg("%s: romfs_hwconfigure, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_sem;
 	}
 
@@ -960,7 +960,7 @@ static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR voi
 
 	ret = romfs_fsconfigure(rm);
 	if (ret < 0) {
-		fdbg("romfs_fsconfigure failed: %d\n", ret);
+		fdbg("%s, romfs_fsconfigure: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffer;
 	}
 
@@ -1074,7 +1074,7 @@ static int romfs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret < 0) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -1132,7 +1132,7 @@ static int romfs_stat_common(uint8_t type, uint32_t size, uint16_t sectorsize, F
 		}
 	} else {
 		/* Otherwise, pretend like the unsupported type does not exist */
-		fdbg("Unsupported type: %d\n", type);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_NOT_SUPPORTED], type);
 		return -ENOENT;
 	}
 
@@ -1173,7 +1173,7 @@ static int romfs_stat(FAR struct inode *mountpt, FAR const char *relpath, FAR st
 	romfs_semtake(rm);
 	ret = romfs_checkmount(rm);
 	if (ret != OK) {
-		fdbg("romfs_checkmount failed: %d\n", ret);
+		fdbg("%s: romfs_checkmount %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 
@@ -1184,7 +1184,7 @@ static int romfs_stat(FAR struct inode *mountpt, FAR const char *relpath, FAR st
 	/* If nothing was found, then we fail with EEXIST */
 
 	if (ret < 0) {
-		fvdbg("Failed to find directory: %d\n", ret);
+		fdbg("%s to find directory: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_semaphore;
 	}
 

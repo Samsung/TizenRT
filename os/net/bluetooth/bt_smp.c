@@ -51,6 +51,7 @@
 
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_core.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_atomic.h"
 #include "bt_hcicore.h"
@@ -360,7 +361,7 @@ static int le_rand(FAR void *buf, size_t len)
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 		if (err) {
-			ndbg("ERROR: HCI_LE_Random failed (%d)\n", err);
+			ndbg("HCI_LE_Random %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], err);
 			return err;
 		}
 
@@ -711,7 +712,7 @@ static uint8_t smp_pairing_random(FAR struct bt_conn_s *conn, FAR struct bt_buf_
 
 		/* Rand and EDiv are 0 for the STK */
 		if (bt_conn_le_start_encryption(conn, 0, 0, stk)) {
-			ndbg("ERROR: Failed to start encryption\n");
+			ndbg("%s To start encryption\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -722,7 +723,7 @@ static uint8_t smp_pairing_random(FAR struct bt_conn_s *conn, FAR struct bt_buf_
 
 	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->dst);
 	if (keys == NULL) {
-		ndbg("ERROR: Unable to create new keys\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -750,7 +751,7 @@ static uint8_t smp_pairing_failed(FAR struct bt_conn_s *conn, FAR struct bt_buf_
 	struct bt_smp_pairing_fail_s *req = (void *)buf->data;
 	struct bt_smp_s *smp = conn->smp;
 
-	ndbg("ERROR: reason 0x%x\n", req->reason);
+	ndbg("%s: reason 0x%x\n", clog_message_str[CMN_LOG_FAILED_OP], req->reason);
 	UNUSED(req);
 
 	bt_atomic_set(&smp->allowed_cmds, 0);
@@ -795,7 +796,7 @@ static void bt_smp_distribute_keys(FAR struct bt_conn_s *conn)
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO, sizeof(struct bt_smp_encrypt_info_s));
 		if (!buf) {
-			ndbg("ERROR: Unable to allocate Encrypt Info buffer\n");
+			ndbg("%s of Encrypt Info buffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return;
 		}
 
@@ -806,7 +807,7 @@ static void bt_smp_distribute_keys(FAR struct bt_conn_s *conn)
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT, sizeof(struct bt_smp_master_ident_s));
 		if (!buf) {
-			ndbg("ERROR: Unable to allocate Master Ident buffer\n");
+			ndbg("%s of Master Ident buffer\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return;
 		}
 
@@ -1294,7 +1295,7 @@ static int aes_test(const char *prefix, const uint8_t *key, const uint8_t *m, ui
 	if (!memcmp(out, mac, 16)) {
 		nvdbg("%s: Success\n", prefix);
 	} else {
-		ndbg("ERROR: %s: Failed\n", prefix);
+		ndbg("%s: %s\n",clog_message_str[CMN_LOG_FAILED_OP], prefix);
 		return -1;
 	}
 

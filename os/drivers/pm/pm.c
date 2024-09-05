@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
@@ -140,7 +141,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
         	break;
 #endif
 	default:
-		pmvdbg("Invalid command passed!\n");
+		pmvdbg("%s command\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		break;
 	}
 	if (ret == ERROR) {

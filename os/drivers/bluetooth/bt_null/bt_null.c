@@ -70,6 +70,7 @@
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_null.h>
 #include <tinyara/bluetooth/bt_buf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Function Prototypes
@@ -334,7 +335,7 @@ static int btnull_adv_report(void *arg)
 
 	outbuf = bt_buf_alloc(BT_EVT, NULL, 0);
 	if (outbuf == NULL) {
-		ndbg("ERROR: Failed to allocate buffer\n");
+		ndbg("%s \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -360,7 +361,7 @@ static int btnull_send(FAR const struct bt_driver_s *dev, FAR struct bt_buf_s *b
 
 		outbuf = bt_buf_alloc(BT_EVT, NULL, 0);
 		if (outbuf == NULL) {
-			ndbg("ERROR: Failed to allocate buffer\n");
+			ndbg("%s: bt_buf_alloc\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -397,11 +398,11 @@ static int btnull_send(FAR const struct bt_driver_s *dev, FAR struct bt_buf_s *b
 
 				status = pthread_attr_init(&attr);
 				if (status != 0) {
-					ndbg("pthread_attr_init() failed.\n\n");
+					ndbg("%s of pthread_attr_init()\n", clog_message_str[CMN_LOG_FAILED_OP]);
 				}
 				status = pthread_create(&tid, &attr, (pthread_startroutine_t)btnull_adv_report, NULL);
 				if (status < 0) {
-					ndbg("pthread_create() failed.\n\n");
+					ndbg("%s of pthread_create\n", clog_message_str[CMN_LOG_FAILED_OP]);
 				}
 			}
 			break;

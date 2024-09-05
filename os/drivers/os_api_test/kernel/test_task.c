@@ -31,6 +31,7 @@
 
 #include <tinyara/sched.h>
 #include <tinyara/os_api_test_drv.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #ifdef CONFIG_SCHED_HAVE_PARENT
@@ -109,7 +110,7 @@ static int test_task_init(main_t entry)
 
 	ret = task_init((struct tcb_s *)tcb, (const char *)TEST_TASK_NAME, (int)TEST_PRIORITY, stack, TEST_STACK_SIZE, entry, NULL);
 	if (ret < 0) {
-		berr("Failed: task_init %d\n", ret);
+		berr("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		ret = -get_errno();
 		goto errout_with_stack;
 	}
@@ -117,14 +118,14 @@ static int test_task_init(main_t entry)
 	/* Check the TCB values */
 
 	if ((tcb->cmn.sched_priority != TEST_PRIORITY) || (tcb->cmn.stack_alloc_ptr != stack) || (tcb->cmn.entry.main != entry)) {
-		berr("Failed: set values, %d, %x, %x %d\n", tcb->cmn.pid, tcb->cmn.stack_alloc_ptr, tcb->cmn.entry.main);
+		berr("5s: set values, %d, %x, %x %d\n", clog_message_str[CMN_LOG_FAILED_OP], tcb->cmn.pid, tcb->cmn.stack_alloc_ptr, tcb->cmn.entry.main);
 		ret = -ENXIO;
 		goto errout_with_task;
 	}
 
 	ret = task_activate((FAR struct tcb_s *)tcb);
 	if (ret < 0) {
-		berr("Failed : task_activate() %d\n", ret);
+		berr("%s: task_activate() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		ret = -get_errno();
 		goto errout_with_task;
 	}

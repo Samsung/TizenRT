@@ -30,6 +30,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/gpio.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -499,7 +500,7 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 	/* Get exclusive access to the driver structure */
 	ret = gpio_takesem(&priv->gu_exclsem);
 	if (ret < 0) {
-		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
+		lldbg("%s of gpio_takesem: %d \n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		return ret;
 	}
 
@@ -521,7 +522,7 @@ static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
 		}
 
 		if (i >= CONFIG_GPIO_NPOLLWAITERS) {
-			lldbg("ERROR: Too many poll waiters\n");
+			lldbg("%s poll waiters \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 			fds->priv = NULL;
 			ret       = -EBUSY;
 			goto errout_with_dusem;
@@ -583,7 +584,7 @@ static int gpio_close(FAR struct file *filep)
 	/* Get exclusive access to the driver structure */
 	ret = gpio_takesem(&priv->gu_exclsem);
 	if (ret < 0) {
-		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
+		lldbg("%s of gpio_takesem: %d \n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		return ret;
 	}
 
@@ -607,7 +608,7 @@ static int gpio_close(FAR struct file *filep)
 
 	DEBUGASSERT(curr);
 	if (!curr) {
-		lldbg("ERROR: Failed to find open entry\n");
+		lldbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -ENOENT;
 		goto errout_with_exclsem;
 	}
@@ -662,7 +663,7 @@ static int gpio_open(FAR struct file *filep)
 	/* Allocate a new open structure */
 	opriv = (FAR struct gpio_open_s *)kmm_zalloc(sizeof(struct gpio_open_s));
 	if (!opriv) {
-		lldbg("ERROR: Failed to allocate open structure\n");
+		lldbg("%s \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_with_sem;
 	}
@@ -706,10 +707,9 @@ int gpio_register(unsigned int minor, FAR struct gpio_lowerhalf_s *lower)
 	DEBUGASSERT(lower);
 
 	/* Allocate a new GPIO driver instance */
-	priv = (FAR struct gpio_upperhalf_s *)
-			kmm_zalloc(sizeof(struct gpio_upperhalf_s));
+	priv = (FAR struct gpio_upperhalf_s *)kmm_zalloc(sizeof(struct gpio_upperhalf_s));
 	if (!priv) {
-		lldbg("ERROR: Failed to allocate device structure\n");
+		lldbg("%s \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -730,7 +730,7 @@ int gpio_register(unsigned int minor, FAR struct gpio_lowerhalf_s *lower)
 	/* And register the GPIO driver */
 	ret = register_driver(devpath, &g_gpioops, 0666, priv);
 	if (ret < 0) {
-		lldbg("ERROR: register driver failed: %d\n", ret);
+		lldbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_priv;
 	}
 

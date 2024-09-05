@@ -30,6 +30,7 @@
 #include <tinyara/preference.h>
 #if CONFIG_TASK_NAME_SIZE > 0
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #endif
@@ -46,7 +47,7 @@ static int preference_private_setup(void)
 
 	tcb = this_task();
 	if (!tcb->group) {
-		prefdbg("Failed to get group\n");
+		prefdbg("%s \n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return PREFERENCE_OPERATION_FAIL;
 	}
 
@@ -57,7 +58,7 @@ static int preference_private_setup(void)
 	ret = mkdir(path, 0777);
 	PREFERENCE_FREE(path);
 	if (ret < 0 && errno != EEXIST) {
-		prefdbg("mkdir fail, %d\n", errno);
+		prefdbg("%s, %d\n", clog_message_str[CMN_LOG_FILE_IOCTL_ERROR], errno);
 		return PREFERENCE_IO_ERROR;
 	}
 
@@ -94,7 +95,7 @@ static int preference_shared_setup(char *key_path)
 			prefvdbg("dir path = %s\n", dir_path);
 			ret = mkdir(dir_path, 0777);
 			if (ret < 0 && errno != EEXIST) {
-				prefdbg("mkdir fail, %d\n", errno);
+				prefdbg("%s %d\n",clog_message_str[CMN_LOG_FILE_IOCTL_ERROR], errno);
 				PREFERENCE_FREE(dir_path);
 				return PREFERENCE_IO_ERROR;
 			}
@@ -114,7 +115,7 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 
 	fd = open(path, O_WRONLY | O_CREAT, 0666);
 	if (fd < 0) {
-		prefdbg("open fail %d\n", errno);
+		prefdbg("%s error: %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], errno);
 		PREFERENCE_FREE(path);
 		return PREFERENCE_IO_ERROR;
 	}
@@ -126,14 +127,14 @@ static int preference_write_fs_key(char *path, preference_data_t *data)
 	/* Write attributes of data : crc, type, len */
 	ret = write(fd, (void *)&data->attr, sizeof(value_attr_t));
 	if (ret != sizeof(value_attr_t)) {
-		prefdbg("Failed to write key value, errno %d\n", errno);
+		prefdbg("%s write key value, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 		goto errout_with_close;
 	}
 
 	/* Write value data */
 	ret = write(fd, (void *)data->value, data->attr.len);
 	if (ret != data->attr.len) {
-		prefdbg("Failed to write key value, errno %d\n", errno);
+		prefdbg("%s write key value, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 		goto errout_with_close;
 	}
 
@@ -159,7 +160,7 @@ int preference_write_key(preference_data_t *data)
 	char *path;
 
 	if (data == NULL || data->key == NULL || (data->type != PRIVATE_PREFERENCE && data->type != SHARED_PREFERENCE)) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
@@ -167,12 +168,12 @@ int preference_write_key(preference_data_t *data)
 #if CONFIG_TASK_NAME_SIZE > 0
 		ret = preference_private_setup();
 		if (ret < 0) {
-			prefdbg("Failed to set up preference\n");
+			prefdbg("%s: set up preference\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 		ret = preference_get_private_keypath(data->key, &path);
 		if (ret < 0) {
-			prefdbg("Failed to get preference path\n");
+			prefdbg("%s: get preference path\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 #else
@@ -182,12 +183,12 @@ int preference_write_key(preference_data_t *data)
 	} else {
 		ret = preference_shared_setup(data->key);
 		if (ret < 0) {
-			prefdbg("Failed to set up preference\n");
+			prefdbg("%s preference_shared_setup \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 		ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_SHARED_PATH, data->key);
 		if (ret < 0) {
-			prefdbg("Failed to allocate path\n");
+			prefdbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return PREFERENCE_OUT_OF_MEMORY;
 		}
 	}

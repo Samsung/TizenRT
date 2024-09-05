@@ -72,6 +72,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/dirent.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "fs_tmpfs.h"
 
@@ -1619,7 +1620,7 @@ static int tmpfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		return OK;
 	}
 
-	fdbg("ERROR: Invalid cmd: %d\n", cmd);
+	fdbg("%s %d\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 	return -ENOTTY;
 }
 

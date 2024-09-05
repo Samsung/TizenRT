@@ -95,6 +95,7 @@
 #endif
 
 #include "enc28j60.h"
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Definitions
@@ -1041,7 +1042,7 @@ static int enc_transmit(FAR struct enc_driver_s *priv)
 {
 	/* Drop Packet if dev->d_len  == 0 */
 	if (0 == priv->dev.d_len) {
-		nlldbg(" \n Enc28j60.c enc_transmit Dropping packet, pktlen: %d \n", priv->dev.d_len);
+		nlldbg("%s \n %d \n", clog_message_str[CMN_LOG_FAILED_OP],priv->dev.d_len);
 		return 1;
 	}
 	uint16_t txend;
@@ -1445,7 +1446,7 @@ static void enc_pktif(FAR struct enc_driver_s *priv)
 	/* Check if the packet was received OK */
 
 	if ((rxstat & RXSTAT_OK) == 0) {
-		nlldbg("ERROR: RXSTAT: %04x\n", rxstat);
+		nlldbg("%s %04x\n", clog_message_str[CMN_LOG_INVALID_VAL],rxstat);
 #ifdef CONFIG_ENC28J60_STATS
 		priv->stats.rxnotok++;
 #endif
@@ -2358,7 +2359,7 @@ static int enc_reset(FAR struct enc_driver_s *priv)
 
 	regval = enc_rdbreg(priv, ENC_EREVID);
 	if (regval == 0x00 || regval == 0xff) {
-		nlldbg("Bad Rev ID: %02x\n", regval);
+		nlldbg("%s ID=%02x\n", clog_message_str[CMN_LOG_INVALID_VAL],regval);
 		return -ENODEV;
 	}
 

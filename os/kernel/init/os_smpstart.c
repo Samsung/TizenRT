@@ -34,7 +34,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
 #include <tinyara/sched_note.h>
-
+#include  <tinyara/common_logs/common_logs.h>
 #include "group/group.h"
 #include "sched/sched.h"
 #include "init/init.h"
@@ -120,7 +120,7 @@ int os_smp_start(void)
 
 		ret = up_cpu_start(cpu);
 		if (ret < 0) {
-			sdbg("ERROR: Failed to start CPU%d: %d\n", cpu, ret);
+			sdbg("%s CPU%d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], cpu, ret);
 			return ret;
         	}
 	}

@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -218,7 +219,7 @@ int pipecommon_open(FAR struct file *filep)
 
 	ret = sem_wait(&dev->d_bfsem);
 	if (ret != OK) {
-		fdbg("sem_wait failed: %d\n", get_errno());
+		fdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], get_errno());
 		DEBUGASSERT(get_errno() > 0);
 		return -get_errno();
 	}
@@ -282,7 +283,7 @@ int pipecommon_open(FAR struct file *filep)
 			 * a signal.
 			 */
 
-			fdbg("sem_wait failed: %d\n", get_errno());
+			fdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], get_errno());
 			DEBUGASSERT(get_errno() > 0);
 			ret = -get_errno();
 

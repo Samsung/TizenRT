@@ -69,6 +69,7 @@
 #include <tinyara/kthread.h>
 #include <tinyara/userspace.h>
 #include <tinyara/net/net.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_SCHED_WORKQUEUE
 #include <tinyara/wqueue.h>
 #endif
@@ -192,7 +193,7 @@ static inline void os_pgworker(void)
 	 * resolve page faults in other threads
 	 */
 
-	svdbg("Starting paging thread\n");
+	svdbg("%s paging thread\n", clog_message_str[CMN_LOG_START]);
 
 	g_pgworker = kernel_thread("pgfill", CONFIG_PAGING_DEFPRIO, CONFIG_PAGING_STACKSIZE, (main_t)pg_worker, (FAR char *const *)NULL);
 	DEBUGASSERT(g_pgworker > 0);
@@ -317,36 +318,36 @@ static inline void os_do_appstart(void)
 #endif
 
 #ifdef CONFIG_LOG_DUMP
-	svdbg("Starting log_dump thread\n");
+	svdbg("%s log_dump thread\n", clog_message_str[CMN_LOG_START]);
 
 	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
 	if (pid < 0) {
-		sdbg("Failed to start log dump");
+		sdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
 	pid = kernel_thread("taskmonitor", CONFIG_TASK_MONITOR_PRIORITY, 1024, task_monitor, (FAR char *const *)NULL);
 	if (pid < 0) {
-		sdbg("Failed to start task monitor\n");
+		sdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 
 #if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
-	svdbg("Starting application init task\n");
+	svdbg("%s application init task\n", clog_message_str[CMN_LOG_START]);
 
 	pid = task_create("appinit", PRI_PREAPP, CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, (FAR char *const *)NULL);
 	if (pid < 0) {
-		svdbg("Failed to create application init thread\n");
+		svdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 
 #ifdef CONFIG_BINARY_MANAGER
-	svdbg("Starting binary manager thread\n");
+	svdbg("%s binary manager thread\n", clog_message_str[CMN_LOG_START]);
 
 	pid = kernel_thread(BINARY_MANAGER_NAME, BINARY_MANAGER_PRIORITY, BINARY_MANAGER_STACKSIZE, binary_manager, NULL);
 	if (pid < 0) {
-		sdbg("Failed to start binary manager");
+		sdbg("%s", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 
@@ -357,7 +358,7 @@ static inline void os_do_appstart(void)
 	 * entrypoint from the header at the beginning of the user-space blob.
 	 */
 
-	svdbg("Starting application main task\n");
+	svdbg("%s application main task\n", clog_message_str[CMN_LOG_START]);
 
 #if defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", PRI_USER_MAIN, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);

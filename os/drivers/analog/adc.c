@@ -77,6 +77,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/analog/adc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <tinyara/irq.h>
 
@@ -544,7 +545,7 @@ int adc_register(FAR const char *path, FAR struct adc_dev_s *dev)
 	DEBUGASSERT(dev->ad_ops != NULL && dev->ad_ops->ao_bind != NULL);
 	ret = dev->ad_ops->ao_bind(dev, &g_adc_callback);
 	if (ret < 0) {
-		avdbg("ERROR: Failed to bind callbacks: %d\n", ret);
+		avdbg("%s to bind callbacks: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 

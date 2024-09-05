@@ -62,6 +62,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/common_logs/common_logs.h>
 #include "libelf.h"
 #include "binfmt_arch_apis.h"
 
@@ -89,7 +90,7 @@ static int allocateregions(FAR struct elf_loadinfo_s *loadinfo)
 		}
 	}
 	if (count != 1) {
-		lldbg("ERROR: Expected to have exactly one heap region for apps, but found %d regions\n", count);
+		lldbg("%s heap regions %d\n", clog_message_str[CMN_LOG_INVALID_VAL], count);
 		ASSERT(0);
 	}
 
@@ -169,7 +170,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 	loadinfo->binp->ramsize = datamemsize;
 
 	if (allocateregions(loadinfo) < 0) {
-		berr("ERROR: failed to allocate memory\n");
+		berr("%s\n",clog_message_str[ CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -187,7 +188,7 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 	loadinfo->binp->ramstart = (uint32_t)binfmt_arch_allocate_section(loadinfo->binp->ramsize);
 
 	if (!loadinfo->binp->ramstart) {
-		berr("ERROR: Failed to allocate RAM partition\n");
+		berr("%s RAM partition \n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -203,18 +204,18 @@ int elf_addrenv_alloc(FAR struct elf_loadinfo_s *loadinfo)
 	memset(loadinfo->binp->sections[BIN_BSS], 0, loadinfo->binp->sizes[BIN_BSS]);
 
 	if (!loadinfo->binp->sections[BIN_TEXT]) {
-		berr("ERROR: Failed to allocate text section (size = %u)\n", loadinfo->binp->sizes[BIN_TEXT]);
+		berr("%s text section (size = %u)\n",clog_message_str[CMN_LOG_ALLOC_FAIL], loadinfo->binp->sizes[BIN_TEXT]);
 		return -ENOMEM;
 	}
 
 	if (!loadinfo->binp->sections[BIN_DATA]) {
-		berr("ERROR: Failed to allocate data section (size = %u)\n", loadinfo->binp->ramsize);
+		berr("%s data section (size = %u)\n",clog_message_str[CMN_LOG_ALLOC_FAIL], loadinfo->binp->ramsize);
 		return -ENOMEM;
 	}
 
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	if (!loadinfo->binp->sections[BIN_RO]) {
-		berr("ERROR: Failed to allocate ro section (size = %u)\n", loadinfo->binp->sizes[BIN_RO]);
+		berr("%s ro section (size = %u)\n"clog_message_str[CMN_LOG_ALLOC_FAIL], loadinfo->binp->sizes[BIN_RO]);
 		return -ENOMEM;
 	}
 #endif

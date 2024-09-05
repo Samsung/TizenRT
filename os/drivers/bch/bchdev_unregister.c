@@ -67,6 +67,7 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bch.h"
 
@@ -97,7 +98,7 @@ int bchdev_unregister(FAR const char *chardev)
 	/* Open the character driver associated with chardev */
 	fd = open(chardev, O_RDONLY);
 	if (fd < 0) {
-		fdbg("ERROR: Failed to open %s: %d\n", chardev, errno);
+		fdbg("%s %s %d\n", clog_message_str[CMN_LOG_FAILED_OP],chardev,errno);
 		return -errno;
 	}
 

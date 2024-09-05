@@ -48,6 +48,7 @@
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/random.h>
 #include <tinyara/bluetooth/iob/iob.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_buf.h"
 #include "bt_keys.h"
@@ -237,7 +238,7 @@ static int read_local_name(void)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_NAME, NULL, &rsp);
 	if (err) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", err);
+		ndbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], err);
 		return err;
 	}
 
@@ -300,7 +301,7 @@ static int bt_conn_init(void)
 
 	err = bt_l2cap_init();
 	if (err < 0) {
-		ndbg("ERROR:  l2cap init failed: %d\n", err);
+		ndbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], err);
 		return err;
 	}
 
@@ -315,13 +316,13 @@ static int bt_init(void)
 
 	ret = hci_initialize();
 	if (ret < 0) {
-		ndbg("ERROR:  hci_initialize failed: %d\n", ret);
+		ndbg("%s: hci_initialize, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
 	ret = bt_conn_init();
 	if (ret < 0) {
-		ndbg("ERROR:  bt_conn_init failed: %d\n", ret);
+		ndbg("%s: bt_conn_init %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -347,7 +348,7 @@ static void k_work_submit(void)
 	if (work_available(&g_lowp_work)) {
 		err = work_queue(LPWORK, &g_lowp_work, init_work, NULL, 0);
 		if (err < 0) {
-			ndbg("ERROR:  Failed to schedule HPWORK: %d\n", err);
+			ndbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], err);
 		}
 	}
 }
@@ -1389,7 +1390,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window)
 	int err;
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS, sizeof(*set_param));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1766,7 +1767,7 @@ void slave_update_conn_param(struct bt_conn_s *conn)
 	if (work_available(&g_lowp_work)) {
 		err = work_queue(LPWORK, &g_lowp_work, conn_le_update_timeout, conn, MSEC2TICK(CONN_UPDATE_TIMEOUT));
 		if (err < 0) {
-			ndbg("ERROR:  Failed to schedule HPWORK: %d\n", err);
+			ndbg("%s to schedule HPWORK: %d\n", clog_message_str[CMN_LOG_FAILED_OP], err);
 		}
 	}
 }
