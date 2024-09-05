@@ -175,13 +175,13 @@ depend: .depend
 
 ifeq ($(CONFIG_NDP120),y)
 context:
-	$(eval DEST_DIR = $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/ndp120)
+	$(eval DEST_DIR = $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/kernel/audio)
 	@if [ -e $(DEST_DIR) ]; then \
 		rm -rf $(DEST_DIR); \
 		echo "Deleted ndp120 folder from fs"; \
 	fi
 	@mkdir -p $(DEST_DIR)
-	@cp $(TOPDIR)/drivers/ai-soc/ndp120/binaries/* $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/ndp120
+	@cp $(TOPDIR)/drivers/ai-soc/ndp120/binaries/* $(DEST_DIR)
 	@echo "NPD120 f/w files copied for generating fs image"
 endif
 
