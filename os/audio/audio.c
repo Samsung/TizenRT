@@ -744,7 +744,6 @@ static inline void audio_dequeuebuffer(FAR struct audio_upperhalf_s *upper, FAR 
 		msg.session = session;
 #endif
 		apb->flags |= AUDIO_APB_DEQUEUED;
-		apb->nbytes = 0;
 		mq_send(upper->usermq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_BUFFER_DEQUEUE_PRIO);
 	}
 }

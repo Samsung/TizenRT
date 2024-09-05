@@ -504,6 +504,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			/* First time we will use empty pBuffer, and then wait until one of them dequeued */
 			if (pcm->buf_idx < pcm->buffer_cnt) {
 				apb = pcm->pBuffers[pcm->buf_idx];
+				apb->nbytes = 0;
 				pcm->buf_idx++;
 			} else {
 				/* We dont have any empty buffers. wait for deque message from kernel */
@@ -515,6 +516,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 				if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 					apb = (struct ap_buffer_s *)msg.u.pPtr;
 					apb->flags = 0;
+					apb->nbytes = 0;
 				} else if (msg.msgId == AUDIO_MSG_XRUN) {
 					/* Underrun to be handled by client */
 					return -EPIPE;
