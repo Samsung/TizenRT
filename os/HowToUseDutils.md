@@ -75,15 +75,26 @@ net.c:?
 
 ## To run TRAP tool commands,
 
-We use this to display debug symbol or crashpoint by just giving inputs instead of worrying about which scripts or commands to use 
+TRAP tool is used to obtain complete information about a crash or assert in TizenRT code.
+For more information about TRAP tool, please refer to
+[HowToUseTrap.md](../tools/trap/HowToUseTrap.md)
 
 ```
 1. copy crash logs, if any, anywhere in the TizenRT repository(Ex: os/crashlogs)
-2. Go to os/ folder of the TizenRT repository2. Go to os/ folder of the TizenRT repository
+2. Go to os/ folder of the TizenRT repository
 3. Run ./dutils.sh
 4. Press 1
 5. Select the desired option and enter the desired path
 ```
+```
+NOTE:
+After selecting TRAP debug option, we get 3 options to select. 
+Option 1-> When we get crash after building tizenrt locally and trying to debug it, we just need crashlogs to produce the desired result.
+Option 2-> If you need to debug a binary which is not built locally in your Tizenrt codebase, then use this option to provide a different path for the binary and config files.  
+Option x-> exit the dutils menu
+```
+
+
 
 ### Example
 
