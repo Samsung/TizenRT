@@ -443,8 +443,10 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 
 	// Run a loop until the entire region is mapped.
 	while (start < end) {
-		// Check if this address can be mapped to a section.
-		if (!(start & SECTION_MASK) && !(size & SECTION_MASK)) {
+		// Check if this address can be mapped to a section. Below are the conditions,
+		// 1. start should be aligned to section size
+		// 2. remaining size should be greater than or equal to section size
+		if (!(start & SECTION_MASK) && size >= SECTION_SIZE) {
 			// Yes. Update the section entry in the the L1 page table.
 			idx = start >> 20;
 			val = start & PMD_PTE_PADDR_MASK;
@@ -453,6 +455,7 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 
 			// Advance the memory region address.
 			start += SECTION_SIZE;
+			size -= SECTION_SIZE;
 		} else {				// Check if this address can be mapped to a small page.
 
 			// Check if L2 page table is not created.
@@ -483,6 +486,7 @@ void mmu_map_app_region(int app_id, uint32_t *l1_pgtbl, uint32_t start, uint32_t
 
 			// Advance the memory region address.
 			start += SMALL_PAGE_SIZE;
+			size -= SMALL_PAGE_SIZE;
 		}
 	}
 	cp15_invalidate_tlbs();
