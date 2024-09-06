@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 5f6a253359 2024/09/04-17:11:16 ==
+1. Correct tx power operation for WiFi and BT for DDR package
+
 == version 5f6a253359 2024/08/30-16:57:54 ==
 1.	Change log level of "warning report" log from warning to error to reduce print frequency
 
