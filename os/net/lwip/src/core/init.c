@@ -79,6 +79,8 @@
 #include "lwip/netif/ppp/ppp_opts.h"
 #include "lwip/netif/ppp/ppp_impl.h"
 
+#define IP_NAT 1
+
 #ifndef LWIP_SKIP_PACKING_CHECK
 
 #ifdef PACK_STRUCT_USE_INCLUDES
@@ -385,6 +387,10 @@ void lwip_init(void)
 #if PPP_SUPPORT
 //  ppp_init();                 /* PPP_INIT not implemented */
 #endif
+
+#if defined(IP_NAT) && (IP_NAT == 1)
+  ip_nat_initialize();
+#endif /* IP_NAT */
 
 #if LWIP_TIMERS
 	sys_timeouts_init();

@@ -29,3 +29,8 @@ LWIP_CSRCS += dhcp.c dhcps.c
 
 DEPPATH += --dep-path lwip/src/core/ipv4
 VPATH += :lwip/src/core/ipv4
+# Add new directory and source file
+DEPPATH += --dep-path lwip/src/core/ipv4/ip_nat
+VPATH += :lwip/src/core/ipv4/ip_nat
+
+LWIP_CSRCS += lwip_ip4nat.c
