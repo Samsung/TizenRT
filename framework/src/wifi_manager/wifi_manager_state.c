@@ -332,6 +332,7 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 	trwifi_scan_multi_configs_s uconf = {0};
 	memset(&uconf, 0, sizeof(trwifi_scan_multi_configs_s));
 	uconf.scan_ap_config_count = configs->scan_ap_config_count;
+	uconf.scan_all = configs->scan_all;
 	for (int i = 0; i < configs->scan_ap_config_count; i++) {
 		wifi_manager_scan_config_s *config = &configs->ap_configs[i];
 		if (config->ssid_length > 0) {

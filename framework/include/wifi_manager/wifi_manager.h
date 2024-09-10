@@ -244,6 +244,7 @@ typedef struct {
 typedef struct {
 	wifi_manager_scan_config_s ap_configs[WIFIMGR_SPECIFIC_SCAN_AP_CNT];    /**< The AP configurations to scan */
 	unsigned int scan_ap_config_count;                                    /**< The count of AP to scan       */
+	bool scan_all;											/**<  Flag to enable scanning specific AP + other APs responding to NULL probe req  */
 } wifi_manager_scan_multi_configs_s;
 
 /**
