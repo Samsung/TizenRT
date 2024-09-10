@@ -33,6 +33,7 @@
 
 #define LOGDUMP_SAVE_START	"1"
 #define LOGDUMP_SAVE_STOP	"2"
+#define LOGDUMP_GET_SIZE    	"3"
 
 /********************************************************************************
  * Public Types
@@ -44,5 +45,6 @@
 #define OPEN_LOGDUMP()			open("/proc/logsave", O_RDWR)
 #define START_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_START, strlen(LOGDUMP_SAVE_START) + 1)
 #define STOP_LOGDUMP_SAVE(fd)		write(fd, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1)
+#define GET_LOGDUMP_SIZE(fd)        	write(fd, LOGDUMP_GET_SIZE, strlen(LOGDUMP_GET_SIZE) + 1)
 #define READ_LOGDUMP(fd, buf, bufsize)	read(fd, buf, bufsize)
 #define CLOSE_LOGDUMP(fd)		close(fd)

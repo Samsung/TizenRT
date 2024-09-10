@@ -120,10 +120,6 @@ static int logsave_open(FAR struct file *filep, FAR const char *relpath, int ofl
 {
 	FAR struct logsave_file_s *attr = (struct logsave_file_s *)kmm_zalloc(sizeof(struct logsave_file_s));
 	filep->f_priv = (FAR void *)attr;
-	if (log_dump_read_wake() != OK) {
-		fdbg("ERROR: log dump read wake fail\n");
-		return ERROR;
-	}
 	fvdbg("Open '%s'\n", relpath);
 	return OK;
 }
