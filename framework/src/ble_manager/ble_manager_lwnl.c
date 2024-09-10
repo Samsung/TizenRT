@@ -546,11 +546,11 @@ trble_result_e ble_drv_set_device_name(uint8_t* name)
 }
 
 trble_result_e ble_drv_create_multi_adv(uint8_t adv_event_prop, uint32_t *primary_adv_interval,
-														uint8_t own_addr_type, uint8_t *own_addr_val)
+														uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg_params msg_data = { 4, {(void *)&adv_event_prop, (void *)primary_adv_interval,
-										(void *)&own_addr_type, (void *)own_addr_val} };
+										(void *)&own_addr_type, (void *)own_addr_val, (void *)adv_handle} };
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CREATE_ADV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;

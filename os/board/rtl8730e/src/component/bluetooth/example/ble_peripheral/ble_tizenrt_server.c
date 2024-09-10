@@ -709,10 +709,9 @@ trble_result_e rtw_ble_server_stop_adv(void)
 
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
-													 uint8_t own_addr_type, uint8_t *own_addr_val)
+													 uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle)
 {
 	rtk_bt_le_ext_adv_param_t adv_param;
-	uint8_t adv_handle = 0;
 	adv_param.adv_event_prop           = adv_event_prop; 
 	adv_param.primary_adv_interval_min = primary_adv_interval[0];
 	adv_param.primary_adv_interval_max = primary_adv_interval[1];
@@ -727,7 +726,7 @@ trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t 
 	adv_param.secondary_adv_max_skip   = 0;
 	adv_param.secondary_adv_phy        = 1;
 	adv_param.adv_sid                  = 0;
-	uint16_t ret = rtk_bt_le_gap_create_ext_adv(&adv_param, &adv_handle);
+	uint16_t ret = rtk_bt_le_gap_create_ext_adv(&adv_param, adv_handle);
 
 	if (RTK_BT_OK != ret) {
 		return TRBLE_FAIL;

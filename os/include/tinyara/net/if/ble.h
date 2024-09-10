@@ -394,7 +394,7 @@ typedef trble_result_e (*trble_one_shot_adv_init)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
 typedef trble_result_e (*trble_create_multi_adv)(struct bledev *dev, uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
-													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN]);
+													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle);
 typedef trble_result_e (*trble_delete_multi_adv)(struct bledev *dev, uint8_t conn_handle);
 typedef trble_result_e (*trble_set_multi_adv_data)(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
 typedef trble_result_e (*trble_set_multi_resp_data)(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
