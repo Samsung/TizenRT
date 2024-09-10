@@ -125,6 +125,12 @@ typedef enum {
 	LWNL_REQ_BLE_ONE_SHOT_ADV_INIT,
 	LWNL_REQ_BLE_ONE_SHOT_ADV_DEINIT,
 	LWNL_REQ_BLE_ONE_SHOT_ADV,
+	LWNL_REQ_BLE_CREATE_ADV,
+	LWNL_REQ_BLE_DELETE_ADV,
+	LWNL_REQ_BLE_SET_MULTI_ADV_DATA,
+	LWNL_REQ_BLE_SET_MULTI_RESP_DATA,
+	LWNL_REQ_BLE_START_MULTI_ADV,
+	LWNL_REQ_BLE_STOP_MULTI_ADV,
 	LWNL_REQ_BLE_UNKNOWN
 } lwnl_req_ble;
 
@@ -387,6 +393,13 @@ typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_init)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+typedef trble_result_e (*trble_create_multi_adv)(struct bledev *dev, uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
+													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN]);
+typedef trble_result_e (*trble_delete_multi_adv)(struct bledev *dev, uint8_t conn_handle);
+typedef trble_result_e (*trble_set_multi_adv_data)(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
+typedef trble_result_e (*trble_set_multi_resp_data)(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
+typedef trble_result_e (*trble_start_multi_adv)(struct bledev *dev, uint8_t conn_handle);
+typedef trble_result_e (*trble_stop_multi_adv)(struct bledev *dev, uint8_t conn_handle);
 
 struct trble_ops {
 	/* Common */
@@ -446,6 +459,12 @@ struct trble_ops {
 	trble_one_shot_adv_init one_shot_adv_init;
 	trble_one_shot_adv_deinit one_shot_adv_deinit;
 	trble_one_shot_adv one_shot_adv;
+	trble_create_multi_adv create_multi_adv;
+	trble_delete_multi_adv delete_multi_adv;
+	trble_set_multi_adv_data set_multi_adv_data;
+	trble_set_multi_resp_data set_multi_resp_data;
+	trble_start_multi_adv start_multi_adv;
+	trble_stop_multi_adv stop_multi_adv;
 };
 
 int trble_post_event(lwnl_cb_ble evt, void *buffer, int32_t buf_len);

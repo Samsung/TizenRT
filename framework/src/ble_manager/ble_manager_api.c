@@ -497,3 +497,57 @@ ble_result_e ble_server_set_device_name(char* name)
 
 	RETURN_RESULT(res, msg);
 }
+
+ble_result_e ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
+												uint8_t own_addr_type, uint8_t own_addr_val[BLE_BD_ADDR_MAX_LEN])
+{
+	blemgr_msg_params param = { 4, {(void *)&adv_event_prop, (void *)primary_adv_interval,
+									 (void *)&own_addr_type, (void *)own_addr_val}};
+	blemgr_msg_s msg = {BLE_CMD_CREATE_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_delete_multi_adv(uint8_t adv_handle)
+{
+	blemgr_msg_s msg = {BLE_CMD_DELETE_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&adv_handle), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_multi_adv_data(uint8_t adv_handle, uint16_t adv_data_len, uint8_t *adv_data)
+{
+	blemgr_msg_params param = { 3, {(void *)&adv_handle, (void *)&adv_data_len, (void *)adv_data}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_ADV_DATA, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_multi_resp_data(uint8_t adv_handle, uint16_t adv_data_len, uint8_t *adv_data)
+{
+	blemgr_msg_params param = { 3, {(void *)&adv_handle, (void *)&adv_data_len, (void *)adv_data}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_RESP_DATA, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_start_multi_adv(uint8_t adv_handle)
+{
+	blemgr_msg_s msg = {BLE_CMD_START_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&adv_handle), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_stop_multi_adv(uint8_t adv_handle)
+{
+	blemgr_msg_s msg = {BLE_CMD_STOP_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&adv_handle), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
