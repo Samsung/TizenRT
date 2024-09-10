@@ -555,8 +555,10 @@ trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_
 				*(channel_list + i) = (u8)config->scan_ap_config[i].channel;
 			}
 		}
-		/* Uncomment RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
-		// scan_param.options = RTW_SCAN_ALL;
+		/* If scan_all is set, set scan option to RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
+		if (config->scan_all) {
+			scan_param.options = RTW_SCAN_ALL;
+		}
 		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
 			if (channel_list) {
 				free(channel_list);
