@@ -616,6 +616,7 @@ trble_result_e rtw_ble_server_start_adv(void)
         }
     }
 
+#if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
     rtk_bt_le_gap_dev_state_t new_state;
     if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
     {
@@ -638,7 +639,8 @@ trble_result_e rtw_ble_server_start_adv(void)
 			}
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
-	
+#endif
+
 	rtk_bt_le_adv_param_t adv_param;
 	adv_param.interval_min = rtw_ble_server_adv_interval;
 	adv_param.interval_max = rtw_ble_server_adv_interval;
@@ -661,7 +663,8 @@ trble_result_e rtw_ble_server_start_adv(void)
         debug_print("start adv fail \n");
         return TRBLE_FAIL;
     }
-	
+
+#if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
     do
     {   
         debug_print("Waiting for adv start \n");
@@ -671,6 +674,7 @@ trble_result_e rtw_ble_server_start_adv(void)
 			debug_print("get dev state fail \n");
 		}
     } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
+#endif
 
     return TRBLE_SUCCESS;
 }
@@ -702,6 +706,90 @@ trble_result_e rtw_ble_server_stop_adv(void)
     }
     return TRBLE_SUCCESS;
 }
+
+#if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
+													 uint8_t own_addr_type, uint8_t *own_addr_val)
+{
+	rtk_bt_le_ext_adv_param_t adv_param;
+	uint8_t adv_handle = 0;
+	adv_param.adv_event_prop           = adv_event_prop; 
+	adv_param.primary_adv_interval_min = primary_adv_interval[0];
+	adv_param.primary_adv_interval_max = primary_adv_interval[1];
+	adv_param.primary_adv_channel_map = RTK_BT_LE_ADV_CHNL_ALL;
+	adv_param.own_addr.type            = own_addr_type;
+	memcpy(adv_param.own_addr.addr_val, own_addr_val, 6);
+	adv_param.peer_addr.type           = 0;
+	memset(adv_param.peer_addr.addr_val,0, 6);
+	adv_param.filter_policy            = 0;
+	adv_param.tx_power                 = 10;
+	adv_param.primary_adv_phy          = 1;
+	adv_param.secondary_adv_max_skip   = 0;
+	adv_param.secondary_adv_phy        = 1;
+	adv_param.adv_sid                  = 0;
+	uint16_t ret = rtk_bt_le_gap_create_ext_adv(&adv_param, &adv_handle);
+
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+
+} 
+
+trble_result_e rtw_ble_server_delete_multi_adv(uint8_t adv_handle)
+{
+	uint16_t ret = rtk_bt_le_gap_remove_ext_adv(adv_handle);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+
+trble_result_e rtw_ble_server_set_multi_adv_data(uint8_t adv_handle, uint8_t *pdata, uint16_t len)
+{
+	uint16_t ret = rtk_bt_le_gap_set_ext_adv_data(adv_handle, pdata, len);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+
+trble_result_e rtw_ble_server_set_multi_resp_data(uint8_t adv_handle, uint8_t *pdata, uint16_t len)
+{
+	uint16_t ret = rtk_bt_le_gap_set_ext_scan_rsp_data(adv_handle, pdata, len);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+
+trble_result_e rtw_ble_server_start_multi_adv(uint8_t adv_handle)
+{
+	uint16_t duration = 0; 
+	int8_t num_vents = 0; 
+
+	uint16_t ret = rtk_bt_le_gap_start_ext_adv(adv_handle, duration, num_vents);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+
+trble_result_e rtw_ble_server_stop_multi_adv(uint8_t adv_handle)
+{
+	uint16_t ret = rtk_bt_le_gap_stop_ext_adv(adv_handle);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+}
+#endif
 
 trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bonded_device_list, uint16_t* device_count)
 {
