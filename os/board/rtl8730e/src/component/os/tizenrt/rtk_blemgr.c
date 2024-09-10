@@ -107,7 +107,7 @@ trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 trble_result_e trble_netmgr_create_multi_adv(struct bledev *dev, uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
-													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN]);
+													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle);
 trble_result_e trble_netmgr_delete_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_set_multi_adv_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
 trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
@@ -500,10 +500,10 @@ trble_result_e trble_netmgr_start_adv(struct bledev *dev)
 }
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 trble_result_e trble_netmgr_create_multi_adv(struct bledev *dev, uint8_t adv_event_prop, uint32_t *primary_adv_interval,
-													uint8_t own_addr_type, uint8_t *own_addr_val)
+													uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle)
 {
 	return rtw_ble_server_create_multi_adv(adv_event_prop, primary_adv_interval,
-										 own_addr_type, own_addr_val);
+										 own_addr_type, own_addr_val, adv_handle);
 }
 
 trble_result_e trble_netmgr_delete_multi_adv(struct bledev *dev, uint8_t adv_handle)

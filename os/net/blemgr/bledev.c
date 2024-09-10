@@ -680,6 +680,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		uint8_t own_addr_type;
 		uint8_t *own_addr_val;
 		uint8_t adv_event_prop;
+		uint8_t *adv_handle;
 		uint32_t *primary_adv_interval;
 
 		lwnl_msg_params param = { 0, };
@@ -692,8 +693,9 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		primary_adv_interval	 = (uint32_t *)param.param[1];
 		own_addr_type			 = *(uint8_t *)param.param[2];
 		own_addr_val			 = (uint8_t *)param.param[3];
+		adv_handle				 = (uint8_t *)param.param[4];
 		TRBLE_DRV_CALL(ret, dev, create_multi_adv, (dev, adv_event_prop, primary_adv_interval,
-													own_addr_type, own_addr_val));
+													own_addr_type, own_addr_val, adv_handle));
 	}
 	break;
 	case LWNL_REQ_BLE_DELETE_ADV:
