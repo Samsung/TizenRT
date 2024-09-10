@@ -52,6 +52,13 @@ int log_dump_set(FAR const char *buffer, size_t buflen);
 
 /****************************************************************************
  * Description:
+ *   This is used to get the size of the compressed log dump. 
+ *
+ ****************************************************************************/
+int log_dump_get_size(void);
+
+/****************************************************************************
+ * Description:
  *   Thread used to receive log data and compress the same
  *
  ****************************************************************************/

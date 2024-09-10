@@ -100,6 +100,7 @@ static int compress_curbytes = 0;	/* number of bytes in the current chunk that w
 static int compress_rdptr = 0;		/* current pointer for compressed data read */
 static size_t log_dump_size = 0;
 static struct log_dump_chunk_s *read_node;
+static int log_dump_chunk_node_cnt;
 static unsigned char uncomp_buf[CONFIG_LOG_DUMP_NUMBUFS][CONFIG_LOG_DUMP_CHUNK_SIZE];	/* initial uncompressed log dump data */
 static bool uncomp_buf_full[CONFIG_LOG_DUMP_NUMBUFS];
 static int uncomp_idx = 0;
@@ -164,11 +165,13 @@ int log_dump_init(void)
 	comp_idx = 0;
 	compress_curbytes = 0;
 	compress_rdptr = 0;
+	log_dump_chunk_node_cnt = 0;
 	sq_addfirst((sq_entry_t *)node, &log_dump_chunks);
 	/* set the size of chunks to 1 chunk */
 	log_dump_size = LOG_CHUNK_SIZE;
 	/* Initialize to save the log by default */
 	is_started_to_save = true;
+	last_comp_block_size = 0;
 
 	return LOG_DUMP_OK;
 
@@ -231,6 +234,7 @@ int log_dump_compress_lastblock(void)
 	compress_ret = compress_block(&last_comp_block[4],&last_comp_block_size,  (unsigned char *)uncomp_buf[uncomp_idx], uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
+		last_comp_block_size = 0;
 		ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
 		return -compress_ret;
 	}
@@ -265,6 +269,7 @@ static void log_dump_mem_check(size_t max_size)
 			next_chunk = (struct log_dump_chunk_s *)sq_remfirst(&log_dump_chunks);
 			compress_rdptr = 0;	/* reset the read pointer as the head is removed */
 			log_dump_size -= LOG_CHUNK_SIZE;
+			log_dump_chunk_node_cnt -= 1;
 			kmm_free(next_chunk);
 		}
 	}
@@ -278,6 +283,14 @@ int log_dump_set(FAR const char *buffer, size_t buflen)
 		is_started_to_save = true;
 	} else if (strncmp(buffer, LOGDUMP_SAVE_STOP, strlen(LOGDUMP_SAVE_STOP) + 1) == 0) {
 		is_started_to_save = false;
+		/* Now we should compress the partially filled uncompressed buffer */
+		if (log_dump_read_wake() != OK) {
+			ldpdbg("ERROR: log dump read wake fail\n");
+			/* Should we return error from here?? because partially filled uncompressed buffer
+			 * might not be compressed but log_dump save has stopped now, so operation is success */
+		}
+	} else if (strncmp(buffer, LOGDUMP_GET_SIZE, strlen(LOGDUMP_GET_SIZE) + 1) == 0) {
+		return log_dump_get_size();
 	} else {
 		return LOG_DUMP_OPT_FAIL;
 	}
@@ -332,6 +345,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 				set_comp_head = false;
 			}
 			log_dump_size += LOG_CHUNK_SIZE;
+			log_dump_chunk_node_cnt += 1;
 
 		} else {
 			/* logs reached memory limit, reuse the head and free extra logs */
@@ -503,6 +517,18 @@ int log_dump_save(char ch)
 	}
 
 	return LOG_DUMP_OK;
+}
+
+int log_dump_get_size(void)
+{
+	/* If log_dump save is stopped, that means partially uncompressed buffer
+	 * is compressed and size should include last_comp_block_size */
+	if (is_started_to_save == false) {
+		return log_dump_chunk_node_cnt * CONFIG_LOG_DUMP_CHUNK_SIZE + compress_curbytes + last_comp_block_size;
+	} else {
+		ldpdbg("Fail to get log dump size, try after stopping log dump save\n");
+		return LOG_DUMP_FAIL;
+	}
 }
 
 size_t log_dump_read(FAR char *buffer, size_t buflen)
