@@ -64,6 +64,15 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
 	case RTK_BT_GATTS_EVT_CCCD_IND:
 		{
 			rtk_bt_gatts_cccd_ind_t *p_cccd_ind = (rtk_bt_gatts_cccd_ind_t *)p_data;
+			TIZENERT_CHA_INFO *p_cha_info = NULL; 
+			uint16_t srv_index = p_cccd_ind->app_id - TIZENRT_SRV_ID;
+
+			for(i = 0; i < TIZENRT_MAX_ATTR_NUM; i++){ 
+				if(p_cccd_ind->index == tizenrt_ble_srv_database[srv_index].chrc_info[i].index){ 
+					p_cha_info = &tizenrt_ble_srv_database[srv_index].chrc_info[i]; 
+				}
+			}
+
 			if (p_cccd_ind->value & RTK_BT_GATT_CCC_NOTIFY)
             {
                 dbg("[APP] BLE tizenrt notify cccd, notify bit enable\r\n");
@@ -81,6 +90,13 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
             {
                 dbg("[APP] BLE tizenrt indicate cccd, indicate bit disable\r\n");
             }
+
+			if (p_cha_info->cb) 
+			{
+				p_cha_info->cb(TRBLE_ATTR_CB_CCCD, p_cccd_ind->conn_handle, p_cha_info->abs_handle, p_cha_info->arg, p_cccd_ind->value, 0);
+			} else { 
+				debug_print("NULL read callback abs_handle 0x%x \n", p_cha_info->abs_handle); 
+			} 
 			break;
 		}
 	
