@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version ad3d966441 2024/09/11-18:20:44 ==
+1. Add support to obtain key_mgnt value during wifi disconnect event
+2. Remove support of obtaining key_mgnt value of current wifi connection
+
 == version c64c1d4098 2024/09/10-18:52:07 ==
 1. Added cpsid disable interrupt in LP:KM0 
 	Modify the flow to prevent KM0 and KM4 to modify SPIC clock at the same time

@@ -1080,16 +1080,6 @@ int wifi_get_current_bw(void)
 	return 20;
 }
 
-int wifi_get_key_mgmt(void)
-{
-	int ret;
-	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_GET_KEY_MGMT, NULL, 0);
-	if (ret == RTW_ERROR){
-		RTW_API_INFO("Error! Could not get key mgmt, not connected to AP\n");
-	}
-	return ret;
-}
-
 unsigned int wifi_get_tx_retry(int idx)
 {
 	/* For padding */
