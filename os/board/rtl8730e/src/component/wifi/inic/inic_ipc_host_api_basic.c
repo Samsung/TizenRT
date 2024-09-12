@@ -40,6 +40,7 @@ void (*promisc_user_callback_ptr)(void *) = NULL;
 
 extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
+rtw_join_status_t prev_join_status;
 rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback = NULL;
 rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback = NULL;
 
@@ -60,6 +61,7 @@ unsigned char ap_bssid[ETH_ALEN];
 rtk_network_link_callback_t g_link_up = NULL;
 rtk_network_link_callback_t g_link_down = NULL;
 static int deauth_reason = 0;
+static unsigned int key_mgmt = 4; // Init value as WPA_KEY_MGMT_WPA_NONE
 
 typedef void (*rtk_network_link_callback_t)(rtk_reason_t *reason);
 int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network_link_callback_t link_down)
@@ -123,10 +125,10 @@ static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 	( void ) flags;
 	( void ) userdata;
 
-	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
+	/* buf detail: mac addr + disconn_reason + key_mgmt, buf_len = ETH_ALEN+2+4*/
 	if (buf != NULL) {
-		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 		deauth_reason =*(u16*)(buf+6);
+		key_mgmt = *(u32*)(buf+8);
 	}
 }
 
@@ -538,6 +540,16 @@ int wifi_get_lib_version(char *lib_ver)
 	rtw_memcpy(lib_ver, lib_ver_temp, len);
 	rtw_mfree((u8 *)lib_ver_temp, 0);
 	return ret;
+}
+
+rtw_join_status_t wifi_get_prev_join_status(void)
+{
+	return prev_join_status;
+}
+
+unsigned int wifi_get_key_mgmt(void)
+{
+	return key_mgmt;
 }
 
 #endif
