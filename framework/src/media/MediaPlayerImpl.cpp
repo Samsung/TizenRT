@@ -250,12 +250,6 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	if (mBuffer) {
-		delete[] mBuffer;
-		mBuffer = nullptr;
-	}
-	mBufSize = 0;
-
 	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -264,6 +258,11 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 	mInputHandler.close();
 
+	if (mBuffer) {
+		delete[] mBuffer;
+		mBuffer = nullptr;
+	}
+	mBufSize = 0;
 	mCurState = PLAYER_STATE_IDLE;
 	return notifySync();
 }
