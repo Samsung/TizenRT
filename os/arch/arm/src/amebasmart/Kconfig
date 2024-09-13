@@ -71,6 +71,10 @@ config AMEBASMART_MIPI
         bool "AMEBASMART_MIPI"
         default n
 
+config AMEBASMART_USBDEVICE
+	bool "AMEBASMART_USBDEVICE"
+	default y
+
 config AMEBASMART_SPI
 	bool "AMEBASMART_SPI"
 	default n

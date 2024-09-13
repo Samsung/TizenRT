@@ -132,6 +132,9 @@ struct pm_global_s {
 	/* Timer to decrease state */
 
 	WDOG_ID wdog;
+
+	/* No. of Registered Domains */
+	uint16_t ndomains;
 };
 
 /****************************************************************************

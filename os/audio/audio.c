@@ -596,6 +596,7 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if (lower->ops->enqueuebuffer != NULL) {
 			audvdbg("AUDIOIOC_ENQUEUEBUFFER\n");
 			bufdesc = (FAR struct audio_buf_desc_s *)arg;
+			bufdesc->u.pBuffer->flags |= AUDIO_APB_OUTPUT_ENQUEUED;
 			ret = lower->ops->enqueuebuffer(lower, bufdesc->u.pBuffer);
 		} else {
 			ret = -ENOSYS;

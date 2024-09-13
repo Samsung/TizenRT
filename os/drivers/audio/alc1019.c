@@ -52,7 +52,7 @@
  * It's good to match the buffer size with i2s DMA page size
  */
 #ifndef CONFIG_ALC1019_BUFFER_SIZE
-#define CONFIG_ALC1019_BUFFER_SIZE       2048
+#define CONFIG_ALC1019_BUFFER_SIZE       16384
 #endif
 
 #ifndef CONFIG_ALC1019_NUM_BUFFERS

@@ -41,49 +41,8 @@
 
 #include <tinyara/config.h>
 
-#if defined(CONFIG_LIB_SYSCALL) && defined(__KERNEL__)
+#if defined(CONFIG_LIB_SYSCALL)
 #include <syscall.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <sys/select.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/statfs.h>
-#include <sys/prctl.h>
-#include <sys/socket.h>
-#include <sys/mount.h>
-#include <sys/boardctl.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <poll.h>
-#include <time.h>
-#include <sched.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <mqueue.h>
-#include <assert.h>
-
-/* Errno access is awkward. We need to generate get_errno() and set_errno()
- * interfaces to support the system calls, even though we don't use them
- * ourself.
- *
- * The "normal" pre-processor definitions for these functions is in errno.h
- * but we need the internal function prototypes in include/errno.h.
- */
-
-#undef get_errno
-#undef set_errno
-
-#include <tinyara/errno.h>
-#include <tinyara/clock.h>
-
 
 /****************************************************************************
  * Public Data
@@ -102,4 +61,4 @@ const char *g_funcnames[SYS_nsyscalls] =
 #  define SYSCALL_LOOKUP(f, n, p)  #f
 #  include "syscall_lookup.h"
 };
-#endif /* CONFIG_LIB_SYSCALL && __KERNEL__ */
+#endif /* CONFIG_LIB_SYSCALL */

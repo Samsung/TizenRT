@@ -25,7 +25,9 @@
 
 /* Exported types ------------------------------------------------------------*/
 
+#ifndef CONFIG_FLOADER_USBD_EN
 typedef _lock usb_spinlock_t;
+#endif
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -34,15 +36,19 @@ typedef _lock usb_spinlock_t;
 #endif
 
 #ifndef USB_DMA_ALIGNED
-#define USB_DMA_ALIGNED		ALIGNMTO(32)
+#define USB_DMA_ALIGNED		__attribute__((aligned(CACHE_LINE_SIZE)))
+#endif
+
+#ifndef USB_IS_MEM_DMA_ALIGNED
+#define USB_IS_MEM_DMA_ALIGNED(x)		((u32)((u32)(x) & ((CACHE_LINE_SIZE)-1)) == 0)
 #endif
 
 #ifndef USB_LOW_BYTE
-#define USB_LOW_BYTE(x)		((u8)(x & 0x00FFU))
+#define USB_LOW_BYTE(x)		((u8)((x) & 0x00FFU))
 #endif
 
 #ifndef USB_HIGH_BYTE
-#define USB_HIGH_BYTE(x)	((u8)((x & 0xFF00U) >> 8U))
+#define USB_HIGH_BYTE(x)	((u8)(((x) & 0xFF00U) >> 8U))
 #endif
 
 #ifndef MIN
@@ -57,9 +63,15 @@ typedef _lock usb_spinlock_t;
 
 /* Exported functions --------------------------------------------------------*/
 
-void usb_os_delay_ms(u32 ms);
+void usb_os_sleep_ms(u32 ms);
 
 void usb_os_delay_us(u32 us);
+
+#ifndef CONFIG_FLOADER_USBD_EN
+
+void *usb_os_mem_alloc(u32 size);
+
+void usb_os_mem_free(void *handle);
 
 usb_spinlock_t *usb_os_spinlock_alloc(void);
 
@@ -72,6 +84,8 @@ void usb_os_spinunlock(usb_spinlock_t *lock);
 void usb_os_spinlock_safe(usb_spinlock_t *lock);
 
 void usb_os_spinunlock_safe(usb_spinlock_t *lock);
+
+#endif
 
 #endif /* USB_OS_H */
 

@@ -807,14 +807,6 @@ void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops);
 int wifi_get_current_bw(void);
 
 /**
- * @brief  Get key_mgmt value of current connection
- * @param[in]  void
- * @return  int: The key_mgmt value of current connection
- * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
- */
-int wifi_get_key_mgmt(void);
-
-/**
  * @brief  Get the tx retry count 
  * @param[in]  idx: wlan idx to obtain from
  * for station: STA_WLAN_INDEX 

@@ -227,6 +227,7 @@ typedef struct {
 typedef struct {
 	trwifi_scan_config_s scan_ap_config[SCAN_SSID_CNT];
 	unsigned int scan_ap_config_count;                         /**<  the count of SSID to scan  */
+	bool scan_all;											/**<  Flag to enable scanning specific AP + other APs responding to NULL probe req  */
 } trwifi_scan_multi_configs_s;
 
 typedef struct {

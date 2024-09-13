@@ -307,6 +307,10 @@ static uint8_t hci_process_set_cut_ver(uint16_t opcode)
     buf[2] = (uint8_t)(1);
     buf[3] = hci_platform_get_rom_ver();
 
+    if (buf[3] == 4) {
+        buf[3] = 3;
+    }
+
     if (HCI_SUCCESS != hci_sa_send(H4_CMD, buf, 4, HCI_SYNC))
         return HCI_FAIL;
 

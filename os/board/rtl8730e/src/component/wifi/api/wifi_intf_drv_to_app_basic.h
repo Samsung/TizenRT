@@ -822,7 +822,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block);
 int wifi_disconnect(void);
 
 /**
- * @brief  get join status during wifi connectection
+ * @brief  get join status during wifi connection
  * @param  None
  * @return join status, refer to macros in wifi_conf.c
  */
@@ -917,6 +917,20 @@ int wifi_get_last_reason(void);
  * @return  RTW_ERROR: Buffer is NULL.
  */
 int wifi_get_lib_ver(char *lib_ver);
+
+/**
+ * @brief  get the previous join status during wifi connection
+ * @param  None
+ * @return join status, refer to macros in wifi_conf.c
+ */
+rtw_join_status_t wifi_get_prev_join_status(void);
+
+/**
+ * @brief  Get key_mgmt value used by the connection in the last disconnection event
+ * @param[in]  void
+ * @return  unsigned int: The key_mgmt value used by the connection in the last disconnection event
+ */
+unsigned int wifi_get_key_mgmt(void);
 /**
 * @}
 */

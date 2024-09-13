@@ -282,6 +282,10 @@ ifeq ($(CONFIG_AMEBASMART_MIPI),y)
 CHIP_CSRCS += amebasmart_mipi.c
 endif
 
+ifeq ($(CONFIG_AMEBASMART_USBDEVICE),y)
+CHIP_CSRCS += amebasmart_usb.c
+endif
+
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 #CHIP_CSRCS += amebasmart_nsc.c
 

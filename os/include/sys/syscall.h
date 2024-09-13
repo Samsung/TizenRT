@@ -99,13 +99,13 @@
 #define SYS_sched_yield                (CONFIG_SYS_RESERVED + 12)
 #define SYS_set_errno                  (CONFIG_SYS_RESERVED + 13)
 
-#ifdef CONFIG_SMP
 #define SYS_sched_getaffinity          (CONFIG_SYS_RESERVED + 14)
 #define SYS_sched_setaffinity          (CONFIG_SYS_RESERVED + 15)
+#ifdef CONFIG_SMP
 #define SYS_sched_getcpu               (CONFIG_SYS_RESERVED + 16)
 #define __SYS_sem                      (CONFIG_SYS_RESERVED + 17)
 #else
-#define __SYS_sem                      (CONFIG_SYS_RESERVED + 14)
+#define __SYS_sem                      (CONFIG_SYS_RESERVED + 16)
 #endif
 
 /* Semaphores */
@@ -407,30 +407,25 @@
 
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 #define SYS_pthread_mutex_consistent   (__SYS_pthread + 18)
-#define __SYS_pthread_setaffinity_np   (__SYS_pthread + 19)
+#define __SYS_pthread_setschedparam    (__SYS_pthread + 19)
 #else
-#define __SYS_pthread_setaffinity_np   (__SYS_pthread + 18)
+#define __SYS_pthread_setschedparam    (__SYS_pthread + 18)
 #endif
 
-#ifdef CONFIG_SMP
-#define SYS_pthread_setaffinity_np     (__SYS_pthread_setaffinity_np + 0)	
-#define SYS_pthread_getaffinity_np     (__SYS_pthread_setaffinity_np + 1)	
-#define __SYS_pthread_setschedparam    (__SYS_pthread_setaffinity_np + 2)
-#else
-#define __SYS_pthread_setschedparam    (__SYS_pthread_setaffinity_np + 0)
-#endif
+#define SYS_pthread_setaffinity_np     (__SYS_pthread_setschedparam + 0)	
+#define SYS_pthread_getaffinity_np     (__SYS_pthread_setschedparam + 1)	
 
-#define SYS_pthread_setschedparam      (__SYS_pthread_setschedparam + 0)
-#define SYS_pthread_setschedprio       (__SYS_pthread_setschedparam + 1)
-#define SYS_pthread_setspecific        (__SYS_pthread_setschedparam + 2)
+#define SYS_pthread_setschedparam      (__SYS_pthread_setschedparam + 2)
+#define SYS_pthread_setschedprio       (__SYS_pthread_setschedparam + 3)
+#define SYS_pthread_setspecific        (__SYS_pthread_setschedparam + 4)
 
 #ifndef CONFIG_DISABLE_SIGNAL
-#define SYS_pthread_cond_timedwait     (__SYS_pthread_setschedparam + 3)
-#define SYS_pthread_kill               (__SYS_pthread_setschedparam + 4)
-#define SYS_pthread_sigmask            (__SYS_pthread_setschedparam + 5)
-#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 6)
+#define SYS_pthread_cond_timedwait     (__SYS_pthread_setschedparam + 5)
+#define SYS_pthread_kill               (__SYS_pthread_setschedparam + 6)
+#define SYS_pthread_sigmask            (__SYS_pthread_setschedparam + 7)
+#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 8)
 #else
-#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 3)
+#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 5)
 #endif
 
 #else

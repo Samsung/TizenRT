@@ -555,8 +555,10 @@ trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_
 				*(channel_list + i) = (u8)config->scan_ap_config[i].channel;
 			}
 		}
-		/* Uncomment RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
-		// scan_param.options = RTW_SCAN_ALL;
+		/* If scan_all is set, set scan option to RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
+		if (config->scan_all) {
+			scan_param.options = RTW_SCAN_ALL;
+		}
 		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
 			if (channel_list) {
 				free(channel_list);
@@ -729,12 +731,13 @@ trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, t
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int key_mgmt = 0;
-	rtw_join_status_t join_status;
+	rtw_join_status_t previous_join_status;
 
 	if (g_mode == RTK_WIFI_STATION_IF){
-		join_status = wifi_get_join_status();
+		/* This API is used to check the supplicant state before disconnection, so use the join status before disconnection to check */
+		previous_join_status = wifi_get_prev_join_status();
 
-		switch (join_status) {
+		switch (previous_join_status) {
 			case RTW_JOINSTATUS_UNKNOWN:
 				wpa_supplicant_state->wpa_supplicant_state = WPA_INACTIVE;
 				break;
@@ -765,11 +768,10 @@ trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, t
 				break;
 		}
 
+		/* key_mgmt will return the value used in the last disconnected network */
 		key_mgmt = wifi_get_key_mgmt();
-		if (key_mgmt != RTW_ERROR){
-			wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
-			wuret = TRWIFI_SUCCESS;
-		}
+		wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
+		wuret = TRWIFI_SUCCESS;
 	}
 	return wuret;
 }
