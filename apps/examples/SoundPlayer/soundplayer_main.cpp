@@ -44,7 +44,8 @@ using namespace media::stream;
 #define DEFAULT_FORMAT_TYPE AUDIO_FORMAT_TYPE_S16_LE
 #define DEFAULT_CHANNEL_NUM 1 //mono
 
-int gPlaybackFinished;
+static int gPlaybackFinished;
+static int gAllTrackPlayed;
 //***************************************************************************
 // class : SoundPlayer
 //***************************************************************************/
@@ -89,20 +90,17 @@ void SoundPlayer::onPlaybackStarted(MediaPlayer &mediaPlayer)
 void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 {
 	printf("onPlaybackFinished playback index : %d\n", mPlayIndex);
-	mediaPlayer.unprepare();
 	mPlayIndex++;
 	if (mPlayIndex == mNumContents) {
-		printf("All track played!!\n");
+		gAllTrackPlayed = true;
+		auto &focusManager = FocusManager::getFocusManager();
+		focusManager.abandonFocus(mFocusRequest);
 		return;
-	} else if (mPlayIndex > mNumContents) {
-		mediaPlayer.destroy();
-		gPlaybackFinished = true;
-		return;
-	} else {
-		printf("wait 3s until play next contents\n");
-		sleep(3);
-		startPlayback();
 	}
+	printf("wait 3s until play next contents\n");
+	mediaPlayer.unprepare();
+	sleep(3);
+	startPlayback();
 }
 
 void SoundPlayer::onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error)
@@ -157,6 +155,14 @@ void SoundPlayer::onFocusChange(int focusChange)
 		}
 		break;
 	case FOCUS_LOSS:
+		mHasFocus = false;
+		if (gAllTrackPlayed) {
+			printf("All Track played, Destroy Player\n");
+			mp.unprepare();
+			mp.destroy();
+			gPlaybackFinished = true;
+			return;
+		}
 		res = mp.pause();
 		if (res != PLAYER_OK) {
 			printf("pause failed res : %d\n", res);
@@ -214,6 +220,7 @@ bool SoundPlayer::init(char *argv[])
 						.build();
 
 	mSampleRate = atoi(argv[3]);
+	gAllTrackPlayed = false;
 	return true;
 }
 
@@ -297,8 +304,9 @@ int soundplayer_main(int argc, char *argv[])
 		return -1;
 	}
 	while (!gPlaybackFinished) {
-		sleep(60);
+		sleep(1);
 	}
+	printf("terminate application\n");
 	return 0;
 }
 }
