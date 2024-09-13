@@ -59,6 +59,7 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 		auto focus = mFocusList.front();
 		mFocusList.pop_front();
 		focus->notify(FOCUS_LOSS);
+		removeFocusElement(focusRequest);
 		if (!mFocusList.empty()) {
 			mFocusList.front()->notify(FOCUS_GAIN);
 		}
@@ -121,6 +122,7 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 
 void FocusManager::removeFocusElement(std::shared_ptr<FocusRequest> focusRequest)
 {
+	medvdbg("removeFocusElement!!\n");
 	auto iterator = mFocusList.begin();
 	while (iterator != mFocusList.end()) {
 		if ((*iterator)->hasSameId(focusRequest)) {
