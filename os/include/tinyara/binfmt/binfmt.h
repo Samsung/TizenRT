@@ -80,7 +80,7 @@ enum {
 	BIN_CTOR,
 	BIN_DTOR,
 #endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_XIP_ELF)
 	BIN_RO,
 #endif
 	BIN_DATA,

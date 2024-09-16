@@ -3,6 +3,7 @@ SECTIONS
 
   .text ORIGIN(uflash) :
     {
+      _stext_app = ABSOLUTE(.);
       _stext_flash = . ;
       /* Place holder to keep the heap object at the top
        * 4 bytes is reserved at the top of the text segment,
@@ -27,20 +28,22 @@ SECTIONS
       *(.init)             /* Old ABI */
       *(.fini)             /* Old ABI */
       _etext_flash = . ;
-    } > uflash
+    } > usram AT > uflash
 
    .ARM.extab : {
         *(.ARM.extab*)
-    } > uflash
+    } > usram AT > uflash
 
     __fexidx_start = ABSOLUTE(.);
    .ARM.exidx : {
        __exidx_start = .; 
        *(.ARM.exidx*)
        __exidx_end = .;
-    } > uflash
+    } > usram AT > uflash
 
     __fexidx_end = ABSOLUTE(.);
+
+  _srodata_app = ABSOLUTE(.);
 
   .rodata :
     {
@@ -51,7 +54,7 @@ SECTIONS
       *(.gnu.linkonce.r*)
       _erodata = . ;
       _eronly = .;
-    } > uflash
+    } > usram AT > uflash
 
   /* C++ support. For each global and static local C++ object,
    * GCC creates a small subroutine to construct the object. Pointers
@@ -67,7 +70,7 @@ SECTIONS
       *(.ctors)       /* Old ABI:  Unallocated */
       *(.init_array)  /* New ABI:  Allocated */
       _ectors = . ;
-    } > uflash
+    } > usram AT > uflash
 
   .dtors :
     {
@@ -75,7 +78,7 @@ SECTIONS
       *(.dtors)       /* Old ABI:  Unallocated */
       *(.fini_array)  /* New ABI:  Allocated */
       _edtors = . ;
-    } > uflash
+    } > usram AT > uflash
 
    _sdata_app = ABSOLUTE(.);
 

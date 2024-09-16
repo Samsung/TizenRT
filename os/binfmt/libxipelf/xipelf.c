@@ -100,7 +100,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	close(filfd);
 
-	binp->sections[BIN_TEXT] = uspace.text_start;
+	binp->sections[BIN_TEXT] = uspace.text_start_in_flash;
 	binp->flash_region_start = uspace.text_start - uspace_offset + 4;
 	binp->flash_region_end = uspace.flash_end;
 	binp->ram_region_start = uspace.ram_start;
@@ -115,6 +115,16 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	binp->sections[BIN_BSS] = (uint32_t)uspace.bss_start;
 	binp->sizes[BIN_BSS] = uspace.bss_end - uspace.bss_start;
 
+	/* copy the text... */
+	uint8_t *orig_text = uspace.text_start_in_flash;
+	for (uint8_t *text = uspace.text_start_in_ram; text < (uint8_t *)uspace.text_end_in_ram; text++) {
+		*text = *orig_text;
+		orig_text++;
+	}
+	
+	binp->sections[BIN_TEXT] = (uint32_t)uspace.text_start_in_ram;
+	binp->sizes[BIN_TEXT] = uspace.text_end_in_ram - uspace.text_start_in_ram;
+
 	/* copy the data... */
 	uint8_t *orig_data = uspace.data_start_in_flash;
 	for (uint8_t *data = uspace.data_start_in_ram; data < (uint8_t *)uspace.data_end_in_ram; data++) {
@@ -125,13 +135,21 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	binp->sections[BIN_DATA] = (uint32_t)uspace.data_start_in_ram;
 	binp->sizes[BIN_DATA] = uspace.data_end_in_ram - uspace.data_start_in_ram;
 
+	/* copy the rodata... */
+	orig_data = uspace.rodata_start_in_flash;
+	for (uint8_t *data = uspace.rodata_start_in_ram; data < (uint8_t *)uspace.rodata_end_in_ram; data++) {
+		*data = *orig_data;
+		orig_data++;
+	}
+	
+	binp->sections[BIN_RO] = (uint32_t)uspace.rodata_start_in_ram;
+	binp->sizes[BIN_RO] = uspace.rodata_end_in_ram - uspace.rodata_start_in_ram;
+
 	/* all the required setup is done, lets just populate them in binp structure */
 
 	/* Allocate Heap... */
 	binp->sections[BIN_HEAP] = (uint32_t)uspace.heap_start;
 	binp->sizes[BIN_HEAP] = uspace.heap_end - uspace.heap_start - sizeof(struct mm_heap_s);
-
-	binp->sections[BIN_DATA] = (uint32_t)uspace.data_start_in_ram;
 
 	binp->entrypt = (main_t)uspace.entry;
 
