@@ -73,6 +73,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_SLEEP - to make board sleep for given time
  *   PMIOC_TIMEDSUSPEND - to suspend a pm state for given time duration
  *   PMIOC_TUNEFREQ - for changing the operating frequency of the core to save power
+ *   PMIOC_SUSPEND_COUNT - to get suspend count of pm domain
  * 
  * Arguments:
  *   filep is ioctl fd, cmd is required command, arg is required argument for
@@ -84,6 +85,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_DOMAIN_REGISTER, arg should be a pointer to pm_domain_arg_t
  *   for PMIOC_METRICS, arg should be an int type.
  *   for PMIOC_TUNEFREQ, arg should be an int type.
+ *   for PMIOC_SUSPEND_COUNT, arg should be an int type.
  *
  * Description:
  *   This api can be used to perform PM operation.
@@ -127,6 +129,9 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 				ret = OK;
 			}
 		}
+		break;
+	case PMIOC_SUSPEND_COUNT:
+		ret = pm_suspendcount((int)arg);
 		break;
 #ifdef CONFIG_PM_METRICS
 	case PMIOC_METRICS:
