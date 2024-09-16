@@ -61,6 +61,7 @@
 #include <tinyara/bluetooth/bluetooth.h>
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_hci.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_queue.h"
 #include "bt_buf.h"
@@ -301,7 +302,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, FAR struct bt_buf_s *b
 	}
 
 	if (g_btdev.sent_cmd->u.hci.opcode != opcode) {
-		ndbg("ERROR:  Unexpected completion of opcode 0x%04x\n", opcode);
+		ndbg("%s: opcode 0x%04x\n", clog_message_str[CMN_LOG_FAILED_OP], opcode);
 		return;
 	}
 
@@ -462,7 +463,7 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS, sizeof(*set_param));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -482,7 +483,7 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -493,7 +494,7 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -521,7 +522,7 @@ static int bt_hci_stop_scanning(void)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -532,7 +533,7 @@ static int bt_hci_stop_scanning(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -554,7 +555,7 @@ int hci_le_create_conn(FAR const bt_addr_le_t *addr)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1128,7 +1129,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1139,7 +1140,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1150,7 +1151,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1169,7 +1170,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1180,7 +1181,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE, NULL, &rsp);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1189,7 +1190,7 @@ int hci_initialize(void)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1213,7 +1214,7 @@ int hci_initialize(void)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE, sizeof(*hbs));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1224,13 +1225,13 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send failed: %d\n", ret);
+		ndbg("%s bt_hci_cmd_send, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1239,7 +1240,7 @@ int hci_initialize(void)
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 	if (ret < 0) {
-		ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+		ndbg("%s bt_hci_cmd_send_sync: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1251,7 +1252,7 @@ int hci_initialize(void)
 		if (!g_btdev.le_mtu) {
 			ret = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
 			if (ret < 0) {
-				ndbg("ERROR:  bt_hci_cmd_send_sync failed: %d\n", ret);
+				ndbg("%s: bt_hci_cmd_send_sync, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				return ret;
 			}
 
@@ -1261,7 +1262,7 @@ int hci_initialize(void)
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, sizeof(*cp));
 		if (buf == NULL) {
-			ndbg("ERROR:  Failed to create buffer\n");
+			ndbg("%s: bt_hci_cmd_create\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOBUFS;
 		}
 
@@ -1339,19 +1340,19 @@ int bt_initialize_internal(void)
 
 	ret = btdev->open(btdev);
 	if (ret < 0) {
-		ndbg("ERROR: HCI driver open failed (%d)\n", ret);
+		ndbg("%s To open HCI driver (%d)\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], ret);
 		return ret;
 	}
 
 	ret = hci_initialize();
 	if (ret < 0) {
-		ndbg("ERROR:  hci_initialize failed: %d\n", ret);
+		ndbg("%s: hci_initialize: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
 	ret = bt_l2cap_init();
 	if (ret < 0) {
-		ndbg("ERROR:  l2cap_initialise failed: %d\n", ret);
+		ndbg("%s: l2cap_initialise: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1468,7 +1469,7 @@ void bt_hci_receive(FAR struct bt_buf_s *buf)
 			if (work_available(&g_hp_work)) {
 				ret = work_queue(HPWORK, &g_hp_work, hci_rx_work, &g_hp_rxlist, 0);
 				if (ret < 0) {
-					ndbg("ERROR:  Failed to schedule HPWORK: %d\n", ret);
+					ndbg("%s: schedule HPWORK, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				}
 			}
 
@@ -1488,7 +1489,7 @@ void bt_hci_receive(FAR struct bt_buf_s *buf)
 	if (work_available(&g_lp_work)) {
 		ret = work_queue(LPWORK, &g_lp_work, hci_rx_work, &g_lp_rxlist, 0);
 		if (ret < 0) {
-			ndbg("ERROR:  Failed to schedule LPWORK: %d\n", ret);
+			ndbg("%s: schedule LPWORK, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 }
@@ -1537,7 +1538,7 @@ int bt_hci_cmd_send(uint16_t opcode, FAR struct bt_buf_s *buf)
 	if (buf == NULL) {
 		buf = bt_hci_cmd_create(opcode, 0);
 		if (buf == NULL) {
-			ndbg("ERROR:  Failed to create buffer\n");
+			ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOBUFS;
 		}
 	}
@@ -1556,7 +1557,7 @@ int bt_hci_cmd_send(uint16_t opcode, FAR struct bt_buf_s *buf)
 
 	ret = bt_queue_send(g_btdev.tx_queue, buf, BT_NORMAL_PRIO);
 	if (ret < 0) {
-		ndbg("ERROR: bt_queue_send() failed: %d\n", ret);
+		ndbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;
@@ -1575,7 +1576,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 	if (buf == NULL) {
 		buf = bt_hci_cmd_create(opcode, 0);
 		if (buf == NULL) {
-			ndbg("ERROR:  Failed to create buffer\n");
+			ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOBUFS;
 		}
 	}
@@ -1592,7 +1593,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, FAR struct bt_buf_s *buf, FAR struct b
 
 	ret = bt_queue_send(g_btdev.tx_queue, buf, BT_NORMAL_PRIO);
 	if (ret < 0) {
-		ndbg("ERROR: bt_queue_send() failed: %d\n", ret);
+		ndbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	} else {
 		struct timespec abstime;
 
@@ -1691,7 +1692,7 @@ int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const 
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*set_data));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1719,7 +1720,7 @@ send_scan_rsp:
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sizeof(*scan_rsp));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL],);
 		return -ENOBUFS;
 	}
 
@@ -1743,7 +1744,7 @@ send_scan_rsp:
 send_set_param:
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS, sizeof(*set_param));
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1759,7 +1760,7 @@ send_set_param:
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 
@@ -1791,7 +1792,7 @@ int bt_stop_advertising(void)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	if (buf == NULL) {
-		ndbg("ERROR:  Failed to create buffer\n");
+		ndbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOBUFS;
 	}
 

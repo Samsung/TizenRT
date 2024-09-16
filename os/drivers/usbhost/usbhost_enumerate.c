@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -258,7 +259,7 @@ static inline int usbhost_classbind(FAR struct usbhost_hubport_s *hport, const u
 				 * should then free the allocated devclass instance.
 				 */
 
-				udbg("CLASS_CONNECT failed: %d\n", ret);
+				udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				CLASS_DISCONNECTED(devclass);
 			} else {
 				*usbclass = devclass;
@@ -325,13 +326,13 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&ctrlreq, &maxlen);
 	if (ret < 0) {
-		udbg("DRVR_ALLOC failed: %d\n", ret);
+		udbg("%s: DRVR_ALLOC, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
 	ret = DRVR_ALLOC(hport->drvr, &buffer, &maxlen);
 	if (ret < 0) {
-		udbg("DRVR_ALLOC failed: %d\n", ret);
+		udbg("%s: DRVR_ALLOC, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -374,7 +375,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buffer);
 	if (ret < 0) {
-		udbg("ERROR: Failed to get device descriptor, length=%d: %d\n", descsize, ret);
+		udbg("%s: length=%d, %d\n", clog_message_str[CMN_LOG_FAILED_OP], descsize, ret);
 		goto errout;
 	}
 
@@ -398,7 +399,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 		ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buffer);
 		if (ret < 0) {
-			udbg("ERROR: Failed to get device descriptor, length=%d: %d\n", USB_SIZEOF_DEVDESC, ret);
+			udbg("%s length=%d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], USB_SIZEOF_DEVDESC, ret);
 			goto errout;
 		}
 	}
@@ -415,7 +416,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	funcaddr = usbhost_devaddr_create(hport);
 	if (funcaddr < 0) {
-		udbg("ERROR: usbhost_devaddr_create failed: %d\n", ret);
+		udbg("%s: usbhost_devaddr_create, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -429,7 +430,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, NULL);
 	if (ret < 0) {
-		udbg("ERROR: Failed to set address: %d\n");
+		udbg("%s set address: %d\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
@@ -457,7 +458,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buffer);
 	if (ret < 0) {
-		udbg("ERROR: Failed to get configuration descriptor, length=%d: %d\n", USB_SIZEOF_CFGDESC, ret);
+		udbg("%s length=%d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], USB_SIZEOF_CFGDESC, ret);
 		goto errout;
 	}
 
@@ -477,7 +478,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 		buffer = NULL;
 		ret = DRVR_IOALLOC(hport->drvr, &buffer, cfglen);
 		if (ret < 0) {
-			udbg("DRVR_IOALLOC failed: %d\n", ret);
+			udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout;
 		}
 		isiobuff = true;
@@ -495,7 +496,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, buffer);
 	if (ret < 0) {
-		udbg("ERROR: Failed to get configuration descriptor, length=%d: %d\n", cfglen, ret);
+		udbg("%s length=%d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], cfglen, ret);
 		goto errout;
 	}
 
@@ -509,7 +510,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 	ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, NULL);
 	if (ret < 0) {
-		udbg("ERROR: Failed to set configuration: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -525,7 +526,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 		ret = usbhost_configdesc(buffer, cfglen, &id);
 		if (ret < 0) {
-			udbg("ERROR: usbhost_configdesc failed: %d\n", ret);
+			udbg("%s: usbhost_configdesc(), %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout;
 		}
 	}
@@ -562,7 +563,7 @@ int usbhost_enumerate(FAR struct usbhost_hubport_s *hport, FAR struct usbhost_cl
 
 		ret = usbhost_classbind(hport, buffer, cfglen, &id, devclass);
 		if (ret < 0) {
-			udbg("ERROR: usbhost_classbind failed %d\n", ret);
+			udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 

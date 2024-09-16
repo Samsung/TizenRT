@@ -59,7 +59,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <tinyara/fs/fs.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #include "inode/inode.h"
 #include "driver.h"
 
@@ -114,7 +114,7 @@ int open_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
 
 	ret = find_blockdriver(pathname, mountflags, &inode);
 	if (ret < 0) {
-		fdbg("Failed to file %s block driver\n", pathname);
+		fdbg("%s %s\n", clog_message_str[CMN_LOG_FILE_NFOUND], pathname);
 		goto errout;
 	}
 
@@ -126,7 +126,7 @@ int open_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
 	if (inode->u.i_bops->open) {
 		ret = inode->u.i_bops->open(inode);
 		if (ret < 0) {
-			fdbg("%s driver open failed\n", pathname);
+			fdbg("%s %s\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], pathname);
 			goto errout_with_inode;
 		}
 	}

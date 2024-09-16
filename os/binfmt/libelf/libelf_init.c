@@ -66,6 +66,7 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_COMPRESSED_BINARY
 #include <tinyara/binfmt/compression/compress_read.h>
@@ -113,7 +114,7 @@ static inline int elf_filelen(FAR struct elf_loadinfo_s *loadinfo, FAR const cha
 	ret = stat(filename, &buf);
 	if (ret < 0) {
 		int errval = get_errno();
-		berr("Failed to stat file: %d\n", errval);
+		berr("%s to stat file: %d\n", clog_message_str[CMN_LOG_FAILED_OP], errval);
 		return -errval;
 	}
 
@@ -163,7 +164,7 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 
 		ret = elf_filelen(loadinfo, filename);
 		if (ret < 0) {
-			berr("elf_filelen failed: %d\n", ret);
+			berr("%s elf_filelen %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 	}
@@ -173,14 +174,14 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	loadinfo->filfd = open(filename, O_RDONLY);
 	if (loadinfo->filfd < 0) {
 		ret = loadinfo->filfd;
-		berr("Failed to open ELF binary %s: %d\n", filename, ret);
+		berr("%s ELF binary %s: %d\n",clog_message_str[CMN_LOG_FILE_OPEN_ERROR], filename, ret);
 		return ret;
 	}
 
 #ifdef CONFIG_COMPRESSED_BINARY
 	ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
 	if (ret != OK) {
-		berr("Failed to read header for compressed binary : %d\n", ret);
+		berr("%s read header for compressed binary : %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 #endif
@@ -188,7 +189,7 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 #if defined(CONFIG_ELF_CACHE_READ)
 	ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen);
 	if (ret != OK) {
-		berr("Failed to init cache support: %d\n", ret);
+		berr("%s elf_cache_init %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 #endif
@@ -196,7 +197,7 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	/* Read the ELF ehdr from offset 0 */
 	ret = elf_read(loadinfo, (FAR uint8_t *)&loadinfo->ehdr, sizeof(Elf32_Ehdr), 0);
 	if (ret < 0) {
-		berr("Failed to read ELF header: %d\n", ret);
+		berr("%s To read ELF header: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -213,7 +214,7 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 		 * is not correctly formed.
 		 */
 
-		berr("Bad ELF header: %d\n", ret);
+		berr("%s  ELF header: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], ret);
 		return ret;
 	}
 

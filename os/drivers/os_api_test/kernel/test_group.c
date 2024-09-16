@@ -29,6 +29,7 @@
 
 #include <tinyara/os_api_test_drv.h>
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_SCHED_HAVE_PARENT
 #include "group/group.h"
 #ifdef CONFIG_SCHED_CHILD_STATUS
@@ -83,13 +84,13 @@ static int test_group_exit_child(unsigned long arg)
 
 	child_pid = kernel_thread("group", SCHED_PRIORITY_DEFAULT, TASK_STACKSIZE, group_exitchild_func, (char *const *)NULL);
 	if (child_pid < 0) {
-		dbg("kernel_thread failed.");
+		dbg("%s: kernel_thread\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	child = group_findchild(group, child_pid);
 	if (child == NULL) {
-		dbg("child is null.");
+		dbg("%s \n",clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return ERROR;
 	}
 
@@ -97,13 +98,13 @@ static int test_group_exit_child(unsigned long arg)
 
 	child_returned = group_exitchild(group);
 	if (child != child_returned) {
-		dbg("group_exitchild failed.");
+		dbg("%s: group_exitchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	child_returned = group_removechild(group, child_pid);
 	if (child != child_returned) {
-		dbg("group_removechild failed.");
+		dbg("%s: group_removechild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -124,7 +125,7 @@ static int test_group_add_fined_remove(unsigned long arg)
 
 	child = group_allocchild();
 	if (child == NULL) {
-		dbg("group_allocchild failed.");
+		dbg("%s: group_allocchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -138,19 +139,19 @@ static int test_group_add_fined_remove(unsigned long arg)
 	/* cross check starts */
 	child_returned = group_findchild(group, child_pid);
 	if (child != child_returned) {
-		dbg("group_findchild failed.");
+		dbg("%s: group_findchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_addchild;
 	}
 
 	child_returned = group_removechild(group, child_pid);
 	if (child != child_returned) {
-		dbg("group_removechild failed.");
+		dbg("%s: group_removechild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_addchild;
 	}
 
 	child_returned = group_findchild(group, child_pid);
 	if (child_returned != NULL) {
-		dbg("group_removechild failed.");
+		dbg("%s: group_findchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_addchild;
 	}
 	group_freechild(child);
@@ -174,18 +175,18 @@ static int test_group_alloc_free(unsigned long arg)
 
 	child = group_allocchild();
 	if (child == NULL) {
-		dbg("group_allocchild failed.");
+		dbg("%s: group_allocchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 	if (child->flink != NULL) {
-		dbg("group_allocchild failed.");
+		dbg("%s: group_allocchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
 	child->flink = &child_dummy;
 	group_freechild(child);
 	if (child->flink == &child_dummy) {
-		dbg("group_freechild failed.");
+		dbg("%s: group_freechild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		group_freechild(child);
 		return ERROR;
 	}
@@ -205,7 +206,7 @@ static int test_group_removechildren(unsigned long arg)
 
 	child = group_allocchild();
 	if (child == NULL) {
-		dbg("group_allocchild failed.");
+		dbg("%s: group_allocchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		return ERROR;
 	}
 
@@ -219,13 +220,13 @@ static int test_group_removechildren(unsigned long arg)
 	/* cross check starts */
 	child_returned = group_findchild(group, child_pid);
 	if (child != child_returned) {
-		dbg("group_findchild failed.");
+		dbg("%s: group_findchild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_addchild;
 	}
 
 	group_removechildren(group);
 	if (group->tg_children != NULL) {
-		dbg("group_removechildren failed.");
+		dbg("%s: group_removechild\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_addchild;
 	}
 	group_freechild(child);

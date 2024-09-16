@@ -64,6 +64,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <string.h>
 #include <tinyara/binfmt/binfmt.h>
@@ -157,7 +158,7 @@ static inline int elf_sectname(FAR struct elf_loadinfo_s *loadinfo, FAR const El
 		buffer = &loadinfo->iobuffer[bytesread];
 		ret = elf_read(loadinfo, buffer, readlen, offset + bytesread);
 		if (ret < 0) {
-			berr("Failed to read section name\n");
+			berr("%s read section name\n",clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 
@@ -245,7 +246,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 #endif
 #endif
 	} else {
-		berr("ERROR : Failed to save bin section addresses\n");
+		berr("%s save bin section addresses\n",clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 }
 
@@ -308,7 +309,7 @@ int elf_loadshdrs(FAR struct elf_loadinfo_s *loadinfo)
 
 	loadinfo->shdr = (FAR FAR Elf32_Shdr *)kmm_malloc(shdrsize);
 	if (!loadinfo->shdr) {
-		berr("Failed to allocate the section header table. Size: %ld\n", (long)shdrsize);
+		berr("%s Size: %ld\n",clog_message_str[CMN_LOG_ALLOC_FAIL], (long)shdrsize);
 		return -ENOMEM;
 	}
 
@@ -316,7 +317,7 @@ int elf_loadshdrs(FAR struct elf_loadinfo_s *loadinfo)
 
 	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->shdr, shdrsize, loadinfo->ehdr.e_shoff);
 	if (ret < 0) {
-		berr("Failed to read section header table: %d\n", ret);
+		berr("%s To read section header table: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;
@@ -352,7 +353,7 @@ int elf_findsection(FAR struct elf_loadinfo_s *loadinfo, FAR const char *sectnam
 		shdr = &loadinfo->shdr[i];
 		ret = elf_sectname(loadinfo, shdr);
 		if (ret < 0) {
-			berr("elf_sectname failed: %d\n", ret);
+			berr("%s elf_sectname: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 

@@ -48,6 +48,7 @@
 #include <tinyara/mqueue.h>
 #include <tinyara/bluetooth/iob/iob.h>
 #include <tinyara/bluetooth/bt_buf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_queue.h"
 
@@ -109,7 +110,7 @@ int bt_queue_open(FAR const char *name, int oflags, int nmsgs, FAR mqd_t *mqd)
 		/* REVISIT: mq_open() modifies the errno value */
 
 		ret = -get_errno();
-		ndbg("ERROR: mq_open(%s) failed: %d\n", name, ret);
+		ndbg("%s (%s) error: %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], name, ret);
 		newmqd = NULL;
 	}
 
@@ -150,7 +151,7 @@ int bt_queue_receive(mqd_t mqd, FAR struct bt_buf_s **buf)
 	u.msg.buf = NULL;
 	msgsize = mq_receive(mqd, u.msgbuf, BT_MSGSIZE, &priority);
 	if (msgsize < 0) {
-		ndbg("ERROR: mq_receive() failed: %ld\n", (long)msgsize);
+		ndbg("%s %ld\n", clog_message_str[CMN_LOG_FAILED_OP], (long)msgsize);
 		return (int)msgsize;
 	}
 
@@ -199,7 +200,7 @@ int bt_queue_send(mqd_t mqd, FAR struct bt_buf_s *buf, int priority)
 	msg.buf = buf;
 	ret = mq_send(mqd, (FAR const char *)&msg, sizeof(struct bt_bufmsg_s), priority);
 	if (ret < 0) {
-		ndbg("ERROR: mq_send() failed: %d\n", ret);
+		ndbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;

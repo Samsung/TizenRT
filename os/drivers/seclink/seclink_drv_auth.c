@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -91,7 +92,7 @@ int hd_handle_auth_request(int cmd, unsigned long arg, void *lower)
 		SLDRV_CALL(res, req->res, remove_certificate, (info->key_idx));
 		break;
 	default:
-		SLDRV_LOG("Invalid command error\n");
+		SLDRV_LOG("%s command\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		res = -ENOSYS;
 	}
 	return res;

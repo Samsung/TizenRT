@@ -84,6 +84,7 @@
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/clock.h>
 #endif
+#include <tinyara/common_logs/common_logs.h>
 
 #include <arch/irq.h>
 
@@ -1018,12 +1019,12 @@ static int proc_open(FAR struct file *filep, FAR const char *relpath, int oflags
 	 */
 
 	if ((oflags & O_WRONLY) != 0 || (oflags & O_RDONLY) == 0) {
-		fdbg("ERROR: Only O_RDONLY supported\n");
+		fdbg("%s To write\n", clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 		return -EACCES;
 	}
 
 	/* The first segment of the relative path should be a task/thread ID */
-
+ 
 	ptr = NULL;
 	tmp = strtoul(relpath, &ptr, 10);
 
@@ -1064,7 +1065,7 @@ static int proc_open(FAR struct file *filep, FAR const char *relpath, int oflags
 
 	node = proc_findnode(ptr);
 	if (!node) {
-		fdbg("ERROR: Invalid path \"%s\"\n", relpath);
+		fdbg("%s %s\n", clog_message_str[CMN_LOG_INVALID_DATA], relpath);
 		return -ENOENT;
 	}
 
@@ -1079,7 +1080,7 @@ static int proc_open(FAR struct file *filep, FAR const char *relpath, int oflags
 
 	procfile = (FAR struct proc_file_s *)kmm_zalloc(sizeof(struct proc_file_s));
 	if (!procfile) {
-		fdbg("ERROR: Failed to allocate file container\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -1215,7 +1216,7 @@ static int proc_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 	newfile = (FAR struct proc_file_s *)kmm_malloc(sizeof(struct proc_file_s));
 	if (!newfile) {
-		fdbg("ERROR: Failed to allocate file container\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -1273,7 +1274,7 @@ static int proc_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 	 */
 
 	if (tmp >= 32768) {
-		fdbg("ERROR: Invalid PID %ld\n", tmp);
+		fdbg("%s %ld\n", clog_message_str[CMN_LOG_INVALID_DATA], tmp);
 		return -ENOENT;
 	}
 
@@ -1297,7 +1298,7 @@ static int proc_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 
 	procdir = (FAR struct proc_dir_s *)kmm_zalloc(sizeof(struct proc_dir_s));
 	if (!procdir) {
-		fdbg("ERROR: Failed to allocate the directory structure\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 

@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <semaphore.h>
 #include "sched/sched.h"
+#include <tinyara/common_logs/common_logs.h>
 
 /* Kindly update the debug_version as and when changes done in struct
  * sysdbg_struct as there will be dependency on T32 scripts and
@@ -310,7 +311,7 @@ static void sysdbg_print(void)
 	}
 
 	if (!sysdbg_struct) {
-		dbg("sysdbg_struct is NULL\n");
+		dbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return;
 	}
 
@@ -468,7 +469,7 @@ static ssize_t sysdbg_write(FAR struct file *filep, FAR const char *buffer, size
 	} else if (strncmp("help", arg1, 4) == 0) {
 		show_usage();
 	} else {
-		dbg("Invalid argument %s\n", arg1);
+		dbg("%s %s\n", clog_message_str[CMN_LOG_INVALID_VAL], arg1);
 		show_usage();
 	}
 
@@ -504,7 +505,7 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 		return;
 	}
 	if (!sysdbg_struct) {
-		lldbg("sysdbg_struct is NULL\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return;
 	}
 	saved_state = enter_critical_section();
@@ -613,7 +614,7 @@ void save_task_scheduling_status(struct tcb_s *tcb)
 		return;
 	}
 	if (!sysdbg_struct) {
-		lldbg("dbg_log is NULL\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return;
 	}
 
@@ -701,7 +702,7 @@ void save_irq_scheduling_status(uint32_t irq, void *fn)
 		return;
 	}
 	if (!sysdbg_struct) {
-		lldbg("sysdbg_struct is NULL\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return;
 	}
 
@@ -854,14 +855,14 @@ static void sysdbg_monitor_enable(void)
 		sysdbg_struct = (FAR struct sysdbg_s*)kmm_zalloc(size);
 
 		if (sysdbg_struct == NULL) {
-			lldbg("Failed to allocate memory(%d) for sysdbg_struct\n", size);
+			lldbg("%s size (%d)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], size);
 			goto fail;
 		}
 #ifdef CONFIG_TASK_SCHED_HISTORY
 		size = sizeof(sched_history_t) * max_task_count;
 		sysdbg_struct->sched = (FAR sched_history_t *)kmm_zalloc(size);
 		if (sysdbg_struct->sched == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_task_count * sizeof(sched_history_t)\n", size);
+			lldbg("%s size (%d) (max_task_count * sizeof(sched_history_t)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], size);
 			goto fail1;
 		}
 #endif
@@ -869,7 +870,7 @@ static void sysdbg_monitor_enable(void)
 		size = sizeof(irq_history_t) * max_irq_count;
 		sysdbg_struct->irq = (FAR irq_history_t *)kmm_zalloc(size);
 		if (sysdbg_struct->irq == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_irq_count * sizeof(struct irq_history_t)\n", size);
+			lldbg("%s size (%d) (max_irq_count * sizeof(struct irq_history_t)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], size);
 			goto fail2;
 		}
 #endif
@@ -877,7 +878,7 @@ static void sysdbg_monitor_enable(void)
 		size = sizeof(sem_history_t) * max_sem_count;
 		sysdbg_struct->sem_log = (FAR sem_history_t *)kmm_zalloc(size);
 		if (sysdbg_struct->sem_log == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_sem_count * sizeof(struct sem_history_t)\n", size);
+			lldbg("%s size (%d) (max_sem_count * sizeof(struct sem_history_t)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], size);
 			goto fail3;
 		}
 #endif

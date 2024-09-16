@@ -20,6 +20,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <stdio.h>
 #include <errno.h>
 #include <debug.h>
@@ -173,7 +174,7 @@ static int ppd42ns_open(FAR struct file *filep)
 		 * A signal received while waiting for the last close
 		 * operation.
 		 */
-		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		lldbg("%s: ppd42ns_takesem() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -189,7 +190,7 @@ static int ppd42ns_open(FAR struct file *filep)
 	/* enable the gpio pin interrupt */
 	ret = priv->config->enable(priv->config, 1);
 	if (ret < 0) {
-		lldbg("ERROR: failed to enable the interrupt handler. (ret=%d)\n", ret);
+		lldbg("%s (ret=%d)\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_sem;
 	}
 
@@ -226,7 +227,7 @@ static int ppd42ns_close(FAR struct file *filep)
 	/* Get exclusive access to the driver structure */
 	ret = ppd42ns_takesem(&priv->exclsem);
 	if (ret < 0) {
-		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		lldbg("%s: ppd42ns_takesem() %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -240,7 +241,7 @@ static int ppd42ns_close(FAR struct file *filep)
 	/* disable the gpio pin interrupt */
 	ret = priv->config->enable(priv->config, 0);
 	if (ret < 0) {
-		lldbg("ERROR: failed to disable the interrupt handler. (ret=%d)\n", ret);
+		lldbg("%s (ret=%d)\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_sem;
 	}
 
@@ -270,7 +271,7 @@ static ssize_t ppd42ns_read(FAR struct file *filep, FAR char *buffer, size_t len
 
 	ret = ppd42ns_takesem(&priv->datasem);
 	if (ret < 0) {
-		lldbg("ERROR: ppd42ns_takesem() failed: %d\n", ret);
+		lldbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -339,7 +340,7 @@ int ppd42ns_register(FAR const char *devname, FAR struct ppd42ns_config_s *confi
 	/* validate ppd42ns config */
 	if (config == NULL || config->read_gpio == NULL || config->attach == NULL || config->enable == NULL) {
 		ret = EINVAL;
-		lldbg("ERROR: invalid ppd42ns config\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return ret;
 	}
 
@@ -356,7 +357,7 @@ int ppd42ns_register(FAR const char *devname, FAR struct ppd42ns_config_s *confi
 	/* attach the interrupt handler */
 	ret = priv->config->attach(priv->config, ppd42ns_interrupt_handler, (FAR void *)priv);
 	if (ret < 0) {
-		lldbg("ERROR: failed to attach the interrupt handler. (ret=%d)\n", ret);
+		lldbg("%s (ret=%d)\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		sem_destroy(&priv->exclsem);
 		sem_destroy(&priv->datasem);
 		return ret;
@@ -365,7 +366,7 @@ int ppd42ns_register(FAR const char *devname, FAR struct ppd42ns_config_s *confi
 	/* register the character device driver */
 	ret = register_driver(devname, &g_ppd42ns_fops, 0666, priv);
 	if (ret < 0) {
-		lldbg("ERROR: failed to register driver %s. (ret=%d)\n", devname, ret);
+		lldbg("%s %s. (ret=%d)\n", clog_message_str[CMN_LOG_FAILED_OP], devname, ret);
 		sem_destroy(&priv->exclsem);
 		sem_destroy(&priv->datasem);
 		return ret;

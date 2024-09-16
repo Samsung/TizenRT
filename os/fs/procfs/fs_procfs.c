@@ -79,6 +79,7 @@
 #include <tinyara/regex.h>
 
 #include <arch/irq.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 
@@ -481,7 +482,7 @@ static int procfs_opendir(FAR struct inode *mountpt, FAR const char *relpath, FA
 				 kmm_zalloc(sizeof(struct procfs_level0_s));
 
 		if (!level0) {
-			fdbg("ERROR: Failed to allocate the level0 directory structure\n");
+			fdbg("%s level0 directory structure\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 
@@ -553,7 +554,7 @@ static int procfs_opendir(FAR struct inode *mountpt, FAR const char *relpath, FA
 						 kmm_zalloc(sizeof(struct procfs_level1_s));
 
 				if (!level1) {
-					fdbg("ERROR: Failed to allocate the level0 directory structure\n");
+					fdbg("%s level0 directory\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 					return -ENOMEM;
 				}
 

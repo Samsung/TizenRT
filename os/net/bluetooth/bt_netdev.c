@@ -57,6 +57,7 @@
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/bluetooth/iob/iob.h>
+#include <tinyara/common_logs/common_logs.h>
 /* #include <netinet/arp.h> */
 #include <tinyara/net/netdev.h>
 /* #include <nuttx/net/radiodev.h> */
@@ -881,7 +882,7 @@ static int btnet_req_data(FAR struct radio_driver_s *netdev, FAR const void *met
 
 		buf = bt_buf_alloc(BT_ACL_OUT, iob, BLUETOOTH_MAX_HDRLEN);
 		if (buf == NULL) {
-			ndbg("ERROR:  Failed to allocate buffer container\n");
+			ndbg("%s buffer container\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 

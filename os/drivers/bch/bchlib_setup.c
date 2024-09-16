@@ -67,6 +67,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bch.h"
 
@@ -93,14 +94,14 @@ int bchlib_setup(const char *blkdev, bool readonly, FAR void **handle)
 	/* Allocate the BCH state structure */
 	bch = (FAR struct bchlib_s *)kmm_zalloc(sizeof(struct bchlib_s));
 	if (!bch) {
-		fdbg("ERROR: Failed to allocate BCH structure\n");
+		fdbg("BCH structure %s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return -ENOMEM;
 	}
 
 	/* Open the block driver */
 	ret = open_blockdriver(blkdev, readonly ? MS_RDONLY : 0, &bch->inode);
 	if (ret < 0) {
-		fdbg("ERROR: Failed to open driver %s: %d\n", blkdev, -ret);
+		fdbg("%s to open_blockdriver of %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],blkdev,-ret);
 		goto errout_with_bch;
 	}
 
@@ -108,18 +109,18 @@ int bchlib_setup(const char *blkdev, bool readonly, FAR void **handle)
 
 	ret = bch->inode->u.i_bops->geometry(bch->inode, &geo);
 	if (ret < 0) {
-		fdbg("ERROR: geometry failed: %d\n", -ret);
+		fdbg("%s of geometry, %d\n", clog_message_str[CMN_LOG_FAILED_OP],-ret);
 		goto errout_with_bch;
 	}
 
 	if (!geo.geo_available) {
-		fdbg("ERROR: geometry failed: %d\n", -ret);
+		fdbg("%s of geometry, %d\n", clog_message_str[CMN_LOG_FAILED_OP],-ret);
 		ret = -ENODEV;
 		goto errout_with_bch;
 	}
 
 	if (!readonly && (!bch->inode->u.i_bops->write || !geo.geo_writeenabled)) {
-		fdbg("ERROR: write access not supported\n");
+		fdbg("%s to write.\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EACCES;
 		goto errout_with_bch;
 	}
@@ -134,7 +135,7 @@ int bchlib_setup(const char *blkdev, bool readonly, FAR void **handle)
 	/* Allocate the sector I/O buffer */
 	bch->buffer = (FAR uint8_t *)kmm_malloc(bch->sectsize);
 	if (!bch->buffer) {
-		fdbg("ERROR: Failed to allocate sector buffer\n");
+		fdbg("%s buffer \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_with_bch;
 	}

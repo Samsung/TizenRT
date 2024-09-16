@@ -70,6 +70,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "smartfs.h"
 
@@ -821,14 +822,14 @@ int smartfs_mount(struct smartfs_mountpt_s *fs, bool writeable)
 
 	ret = FS_IOCTL(fs, BIOC_GETFORMAT, (unsigned long)&fs->fs_llformat);
 	if (ret != OK) {
-		fdbg("Error in getting device low-level format, ret : %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FILE_IOCTL_ERROR], ret);
 		goto errout;
 	}
 
 	/* Validate the low-level format is valid */
 
 	if (!(fs->fs_llformat.flags & SMART_FMT_ISFORMATTED)) {
-		fdbg("No low-level format found\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		ret = -ENODEV;
 		goto errout;
 	}
@@ -1099,7 +1100,8 @@ int smartfs_get_datalen(struct smartfs_mountpt_s *fs, uint16_t firstsector, uint
 	}
 
 	if (ret < 0) {
-		fdbg("Unable to calculate length of file\n");
+		/*Unable to calculate length of file*/
+		fdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return ret;
 	}
 	fvdbg("Length of the file = %lu\n", (*datalen));
@@ -1387,7 +1389,7 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 
 errout:
 	if ((direntry->name != NULL) && (strlen(direntry->name) > fs->fs_llformat.namesize)) {
-		fdbg("File name too long\n");
+		fdbg("%s: name too long\n", clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 		return -ENAMETOOLONG;
 	}
 	return ret;
@@ -1506,7 +1508,7 @@ int smartfs_find_availableentry(struct smartfs_mountpt_s *fs, struct smartfs_ent
 	/* No available entry was found, so we create one */
 	ret = smartfs_createdirentry(fs, direntry);
 	if (ret != OK) {
-		fdbg("Unable to chain new sector for writing new entry, ret : %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;
@@ -1554,7 +1556,7 @@ int smartfs_writeentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s new_
 		 */
 		tmp_buf = (char *)kmm_malloc(entrysize + sizeof(struct smartfs_chain_header_s));
 		if (tmp_buf == NULL) {
-			fdbg("Unable to allocate memory\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 		memset(tmp_buf, CONFIG_SMARTFS_ERASEDSTATE, entrysize + sizeof(struct smartfs_chain_header_s));
@@ -2089,7 +2091,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 	data_len = SMARTFS_AVAIL_DATABYTES(fs);
 	buf = (char *)kmm_malloc(data_len);
 	if (!buf) {
-		fdbg("Error allocating space for buffer\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 	memset(buf, '\0', data_len);
@@ -2105,7 +2107,7 @@ int smartfs_extendfile(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_ofil
 
 		ret = smartfs_append_data(fs, sf, buf, 0,  writelen);
 		if (ret != writelen) {
-			fdbg("Unable to append data to file, ret : %d, write length : %d\n", ret, writelen);
+			fdbg("%s append data : %d, write length : %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret, writelen);
 			ret = -EIO;
 			goto error_with_buf;
 		}
@@ -2488,7 +2490,7 @@ int smartfs_scan_entry(struct smartfs_mountpt_s *fs, char *map, struct sector_re
 				/* Check next sector is valid or Not */
 				ret = FS_IOCTL(fs, BIOC_FIBMAP, (unsigned long)nextsector);
 				if (ret < 0) {
-					fdbg("Error in getting bitmap for sector : %d, ret : %d\n", nextsector, ret);
+					fdbg("%s sector : %d, ret : %d\n", clog_message_str[CMN_LOG_FILE_IOCTL_ERROR],nextsector, ret);
 					goto errout;
 				}
 				fvdbg("Nextsector : %d ret : 0x%x\n", nextsector, ret);
@@ -2578,7 +2580,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 	/* TODO Find all active Logical sectors from root sector and unmark for exist sector */
 	ret = smartfs_scan_entry(fs, map, &info);
 	if (ret != OK) {
-		fdbg("Unable to scan entries, smartfs_scan_entry failed, ret : %d\n", ret);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		goto error_with_map;
 	}
 	for (sector = SMARTFS_ROOT_DIR_SECTOR; sector < fs->fs_llformat.nsectors; sector++) {
@@ -2587,7 +2589,7 @@ int smartfs_sector_recovery(struct smartfs_mountpt_s *fs)
 			info.isolatedsector++;
 			ret = FS_IOCTL(fs, BIOC_FREESECT, sector);
 			if (ret < 0) {
-				fdbg("Error freeing sector %d, ret : %d\n", sector, ret);
+				fdbg("%s sector: %d, ret : %d\n", clog_message_str[CMN_LOG_FILE_IOCTL_ERROR],sector, ret);
 				goto error_with_map;
 			}
 		}

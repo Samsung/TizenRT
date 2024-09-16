@@ -29,6 +29,7 @@
 #include <tinyara/sched.h>
 
 #include "signal/signal.h"
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Functions
@@ -56,7 +57,7 @@ static int test_get_tcb_sigprocmask(unsigned long arg)
 	struct tcb_s *tcb;
 	tcb = sched_gettcb((pid_t)arg);
 	if (tcb == NULL) {
-		dbg("sched_gettcb failed. errno : %d\n", get_errno());
+		dbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP],get_errno());
 		return ERROR;
 	}
 	return tcb->sigprocmask;

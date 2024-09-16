@@ -62,6 +62,7 @@
 #include <debug.h>
 
 #include <tinyara/kmalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -130,7 +131,7 @@ static inline int group_addmember(FAR struct task_group_s *group, pid_t pid)
 		newmembers = (FAR pid_t *)kmm_realloc(group->tg_members, sizeof(pid_t) * newmax);
 
 		if (!newmembers) {
-			sdbg("ERROR: Failed to reallocate tg_members\n");
+			sdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			return -ENOMEM;
 		}
 

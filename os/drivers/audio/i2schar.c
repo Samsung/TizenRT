@@ -74,6 +74,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -311,7 +312,7 @@ static ssize_t i2schar_write(FAR struct file *filep, FAR const char *buffer, siz
 
 	ret = I2S_SEND(priv->i2s, apb, i2schar_txcallback, priv, CONFIG_AUDIO_I2SCHAR_TXTIMEOUT);
 	if (ret < 0) {
-		lldbg("ERROR: I2S_SEND returned: %d\n", ret);
+			lldbg("%s %d \n", clog_message_str[CMN_LOG_INVALID_VAL], ret);
 		goto errout_with_reference;
 	}
 

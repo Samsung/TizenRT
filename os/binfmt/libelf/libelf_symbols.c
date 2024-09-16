@@ -67,6 +67,7 @@
 #include <tinyara/binfmt/elf.h>
 #include <tinyara/binfmt/symtab.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "libelf.h"
 
@@ -104,13 +105,13 @@ int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
 	loadinfo->strtab = (uintptr_t)kmm_malloc(strtab->sh_size);
 
 	if (!loadinfo->strtab) {
-		berr("ERROR: Failed to allocate space for str table. Size = %u\n", strtab->sh_size);
+		berr("%s for str table. Size = %u\n",clog_message_str[CMN_LOG_ALLOC_FAIL], strtab->sh_size);
 		return -ENOMEM;
 	}
 
 	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->strtab, strtab->sh_size, strtab->sh_offset);
 	if (ret != OK) {
-		berr("ERROR: Failed to load string table into memory\n");
+		berr("%s load string table into memory\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		kmm_free((void *)loadinfo->strtab);
 		loadinfo->strtab = (uintptr_t)NULL;
 		return ret;
@@ -220,12 +221,12 @@ void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
 	loadinfo->symtab = (uintptr_t)kmm_malloc(symtab->sh_size);
 
 	if (!loadinfo->symtab) {
-		berr("ERROR: Failed to allocate space for sym table. Size = %u\n", symtab->sh_size);
+		berr("%s sym table Size = %u\n",clog_message_str[CMN_LOG_ALLOC_FAIL], symtab->sh_size);
 		return;
 	}
 
 	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
-		berr("ERROR: Failed to load symbol table into memory\n");
+		berr("%s load symbol table into memory\n",clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 }
 
@@ -322,7 +323,7 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 			 * indicate the nameless symbol.
 			 */
 
-			berr("SHN_UNDEF: Failed to get symbol name: %d\n", ret);
+			berr("%s to get symbol name: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return ret;
 		}
 

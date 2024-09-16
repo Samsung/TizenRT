@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <crc32.h>
 #include <tinyara/preference.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Private Functions
@@ -48,15 +49,15 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 	/* Read and Verify attributes of data : crc, type, len */
 	ret = read(fd, (FAR uint8_t *)&attr, sizeof(value_attr_t));
 	if (ret != sizeof(value_attr_t)) {
-		prefdbg("Failed to read attribute, errno %d\n", errno);
+		prefdbg("%s, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 		ret = PREFERENCE_IO_ERROR;
 		goto errout;
 	} else if (attr.type < 0 || attr.len < 0) {
-		prefdbg("Invalid data : type %d, len %d\n", attr.type, attr.len);
+		prefdbg("%s type %d, len %d\n", clog_message_str[CMN_LOG_INVALID_VAL], attr.type, attr.len);
 		ret = PREFERENCE_OPERATION_FAIL;
 		goto errout;
 	} else if (attr.type != data->attr.type) {
-		prefdbg("Invalid type. request type:%d, read type:%d\n", data->attr.type, attr.type);
+		prefdbg("%s request type:%d, read type:%d\n", clog_message_str[CMN_LOG_INVALID_VAL], data->attr.type, attr.type);
 		ret = PREFERENCE_INVALID_PARAMETER;
 		goto errout;
 	}
@@ -70,7 +71,7 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 	/* Read value data */
 	ret = read(fd, (void *)data->value, data->attr.len);
 	if (ret != data->attr.len) {
-		prefdbg("Failed to read key value, errno %d\n", errno);
+		prefdbg("%s, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], errno);
 		ret = PREFERENCE_IO_ERROR;
 		goto errout_with_free;
 	}
@@ -79,7 +80,7 @@ static int preference_read_fs_key(char *path, preference_data_t *data)
 	check_crc = crc32((uint8_t *)&data->attr.type, sizeof(value_attr_t) - sizeof(uint32_t));
 	check_crc = crc32part((uint8_t *)data->value, data->attr.len, check_crc);
 	if (check_crc != attr.crc) {
-		prefdbg("Invalid checksum, read crc : %u, calculated crc : %u\n", attr.crc, check_crc);
+		prefdbg("%s read crc : %u, calculated crc : %u\n", clog_message_str[CMN_LOG_INVALID_VAL], attr.crc, check_crc);
 		ret = PREFERENCE_INVALID_DATA;
 		goto errout_with_free;
 	}
@@ -105,20 +106,20 @@ int preference_read_key(preference_data_t *data)
 	char *path;
 
 	if (data == NULL || data->key == NULL || (data->type != PRIVATE_PREFERENCE && data->type != SHARED_PREFERENCE)) {
-		prefdbg("Invalid parameter\n");
+		prefdbg("%s \n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return PREFERENCE_INVALID_PARAMETER;
 	}
 
 	if (data->type == PRIVATE_PREFERENCE) {
 		ret = preference_get_private_keypath(data->key, &path);
 		if (ret < 0) {
-			prefdbg("Failed to get preference path\n");
+			prefdbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 			return ret;
 		}
 	} else {
 		ret = PREFERENCE_ASPRINTF(&path, "%s/%s", PREF_SHARED_PATH, data->key);
 		if (ret < 0) {
-			prefdbg("Failed to allocate path\n");
+			prefdbg("%s allocate path\n",clog_message_str[CMN_LOG_FAILED_OP]);
 			return PREFERENCE_OUT_OF_MEMORY;
 		}
 	}

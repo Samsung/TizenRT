@@ -65,6 +65,7 @@
 
 #include <tinyara/pgalloc.h>
 #include <tinyara/mm/shm.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "shm/shm.h"
 
@@ -211,7 +212,7 @@ static int shm_extend(int shmid, size_t size)
 
 		region->sr_pages[pgalloc] = mm_pgalloc(1);
 		if (region->sr_pages[pgalloc] == 0) {
-			shmdbg("mm_pgalloc(1) failed\n");
+			shmdbg("%s mm_pgalloc(1)\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			break;
 		}
 
@@ -270,7 +271,7 @@ static int shm_create(key_t key, size_t size, int shmflg)
 
 	ret = shm_reserve(key, shmflg);
 	if (ret < 0) {
-		shmdbg("shm_reserve failed: %d\n", ret);
+		shmdbg("%s shm_reserve : %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		return ret;
 	}
 
@@ -415,7 +416,7 @@ int shmget(key_t key, size_t size, int shmflg)
 
 				ret = shm_create(key, size, shmflg);
 				if (ret < 0) {
-					shmdbg("shm_create failed: %d\n", ret);
+					shmdbg("%s shm_create : %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 					goto errout_with_semaphore;
 				}
 
@@ -452,7 +453,7 @@ int shmget(key_t key, size_t size, int shmflg)
 
 					ret = shm_extend(shmid, size);
 					if (ret < 0) {
-						shmdbg("shm_create failed: %d\n", ret);
+						shmdbg("%s shm_create : %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 						goto errout_with_semaphore;
 					}
 				} else {

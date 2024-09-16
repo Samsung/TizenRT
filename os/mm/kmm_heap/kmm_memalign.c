@@ -60,6 +60,7 @@
 #include <stdlib.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 
@@ -97,7 +98,7 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 	ARCH_GET_RET_ADDRESS(caller_retaddr)
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
-		mdbg("kmm_memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+		mdbg("%s kmm_memalign_at, Wrong heap index (%d) of (%d)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], heap_index, HEAP_END_IDX);
 		return NULL;
 	}
 

@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -570,13 +571,13 @@ static inline int usbhost_cfgdesc(FAR struct usbhost_state_s *priv, FAR const ui
 
 	ret = DRVR_EPALLOC(hport->drvr, &boutdesc, &priv->epout);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate Bulk OUT endpoint\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return ret;
 	}
 
 	ret = DRVR_EPALLOC(hport->drvr, &bindesc, &priv->epin);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate Bulk IN endpoint\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		(void)DRVR_EPFREE(hport->drvr, priv->epout);
 		return ret;
 	}
@@ -921,13 +922,13 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 	ret = usbhost_cfgdesc(priv, configdesc, desclen);
 	if (ret < 0) {
-		udbg("usbhost_cfgdesc() failed: %d\n", ret);
+		udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	} else {
 		/* Now configure the device and register the TinyAra driver */
 
 		ret = usbhost_devinit(priv);
 		if (ret < 0) {
-			udbg("usbhost_devinit() failed: %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 

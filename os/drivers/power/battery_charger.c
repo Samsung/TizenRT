@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdbool.h>
 #include <semaphore.h>
@@ -226,7 +227,7 @@ static int bat_charger_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	break;
 
 	default:
-		pmdbg("ERROR: Unrecognized cmd: %d\n", cmd);
+		pmdbg("%s cmd: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 		ret = -ENOTTY;
 		break;
 	}
@@ -264,7 +265,7 @@ int battery_charger_register(FAR const char *devpath, FAR struct battery_charger
 
 	ret = register_driver(devpath, &g_batteryops, 0555, dev);
 	if (ret < 0) {
-		pmdbg("ERROR: Failed to register driver: %d\n", ret);
+		pmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;

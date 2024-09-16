@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <sys/types.h>
 #include <debug.h>
 #include <stdio.h>
@@ -452,7 +453,7 @@ wifi_utils_result_e wifi_utils_connect_ap(wifi_utils_ap_config_s *ap_connect_con
 
 		config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
-			ndbg("[WU] Memory allocation failed!\n");
+			ndbg("[WU] %s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			goto connect_ap_fail;
 		}
 
@@ -588,7 +589,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 
 	ap_config = (slsi_ap_config_t *)kmm_zalloc(sizeof(slsi_ap_config_t));
 	if (!ap_config) {
-		ndbg("[WU] Memory allocation failed!\n");
+		ndbg("[WU] %s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return WIFI_UTILS_FAIL;
 	}
 
@@ -616,7 +617,7 @@ wifi_utils_result_e wifi_utils_start_softap(wifi_utils_softap_config_s *softap_c
 	} else {
 		security_config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!security_config) {
-			ndbg("[WU] Memory allocation failed!\n");
+			ndbg("[WU] %s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			goto start_soft_ap_fail;
 		}
 		memcpy(security_config->passphrase, softap_config->passphrase, softap_config->passphrase_length);

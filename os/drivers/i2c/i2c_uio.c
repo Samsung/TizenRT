@@ -63,6 +63,7 @@
 #include <tinyara/fs/ioctl.h>
 
 #include <semaphore.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /******************************************************************************
  * Private Variables
@@ -257,7 +258,7 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 
 	default:
-		dbg("Unknown cmd(%x)\n", cmd);
+		dbg("%s Unknown cmd(%x)\n", clog_message_str[CMN_LOG_VALUE_OF],cmd);
 		ret = -EINVAL;
 		break;
 	}
@@ -274,6 +275,6 @@ static int i2c_uioctrl(FAR struct file *filep, int cmd, unsigned long arg)
  ****************************************************************************/
 int i2c_uioregister(FAR const char *path, FAR struct i2c_dev_s *dev)
 {
-	dbg("Registering %s\n", path);
+	dbg("%s Registering : %s \n", clog_message_str[CMN_LOG_VALUE_OF],path);
 	return register_driver(path, &g_i2cops, 0666, dev);
 }

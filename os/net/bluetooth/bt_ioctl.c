@@ -51,6 +51,7 @@
 #include <tinyara/bluetooth/bt_core.h>
 #include <tinyara/bluetooth/bt_hci.h>
 #include <tinyara/bluetooth/bt_ioctl.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_hcicore.h"
 #include "bt_conn.h"
@@ -859,7 +860,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 				}
 
 				if (ret < 0) {
-					ndbg("ERROR: Failed to start discovery: %d\n", ret);
+					ndbg("%s to start discovery: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 					btnet_discover_destroy(params);
 				}
 
@@ -927,7 +928,7 @@ int btnet_ioctl(FAR struct net_driver_s *netdev, int cmd, unsigned long arg)
 				}
 
 				if (ret < 0) {
-					ndbg("ERROR:  Read operation failed: %d\n", ret);
+					ndbg("%s %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], ret);
 				}
 
 				bt_conn_release(conn);

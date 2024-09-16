@@ -65,6 +65,7 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "group/group.h"
 
@@ -140,7 +141,7 @@ int group_setupidlefiles(FAR struct task_tcb_s *tcb)
 			sllvdbg("Open /dev/console fd: %d\n", fd);
 			(void)close(fd);
 		} else {
-			slldbg("Failed to open /dev/console: %d\n", errno);
+			slldbg("%s %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], errno);
 		}
 		return -ENFILE;
 	}

@@ -70,6 +70,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
 	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
@@ -177,7 +178,7 @@ int block_proxy(FAR const char *blkdev, int oflags)
 	/* Create a unique temporary file name for the character device */
 	chardev = unique_chardev();
 	if (chardev == NULL) {
-		fdbg("ERROR: Failed to create temporary device name\n");
+		fdbg("%s: unique_chardev()\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return -ENOMEM;
 	}
 
@@ -187,7 +188,7 @@ int block_proxy(FAR const char *blkdev, int oflags)
 	/* Wrap the block driver with an instance of the BCH driver */
 	ret = bchdev_register(blkdev, chardev, readonly);
 	if (ret < 0) {
-		fdbg("ERROR: bchdev_register(%s, %s) failed: %d\n",
+		fdbg("%s: bchdev_register(%s, %s): %d\n", clog_message_str[CMN_LOG_FAILED_OP],
 				blkdev, chardev, ret);
 
 		goto errout_with_chardev;
@@ -198,7 +199,7 @@ int block_proxy(FAR const char *blkdev, int oflags)
 	fd = open(chardev, oflags);
 	if (fd < 0) {
 		ret = -errno;
-		fdbg("ERROR: Failed to open %s: %d\n", chardev, ret);
+		fdbg("%s: %s, %d\n", clog_message_str[CMN_LOG_FAILED_OP], chardev, ret);
 		goto errout_with_bchdev;
 	}
 
@@ -210,7 +211,7 @@ int block_proxy(FAR const char *blkdev, int oflags)
 	ret = unlink(chardev);
 	if (ret < 0) {
 		ret = -errno;
-		fdbg("ERROR: Failed to unlink %s: %d\n", chardev, ret);
+		fdbg("%s to unlink %s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], chardev, ret);
 	}
 
 	/*

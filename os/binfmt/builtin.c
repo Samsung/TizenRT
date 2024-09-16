@@ -69,6 +69,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binfmt/builtin.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_BUILTIN
 
@@ -118,7 +119,7 @@ static int builtin_loadbinary(struct binary_s *binp)
 
 	fd = open(binp->filename, O_RDONLY);
 	if (fd < 0) {
-		berr("ERROR: Failed to open binary %s: %d\n", binp->filename, fd);
+		berr("%s %s: %d\n",clog_message_str[CMN_LOG_FILE_OPEN_ERROR], binp->filename, fd);
 		return fd;
 	}
 
@@ -129,7 +130,7 @@ static int builtin_loadbinary(struct binary_s *binp)
 	ret = ioctl(fd, FIOC_FILENAME, (unsigned long)((uintptr_t) & filename));
 	if (ret < 0) {
 		int errval = get_errno();
-		berr("ERROR: FIOC_FILENAME ioctl failed: %d\n", errval);
+		berr("%s %d\n",clog_message_str[CMN_LOG_FILE_IOCTL_ERROR], errval);
 		close(fd);
 		return -errval;
 	}
@@ -187,7 +188,7 @@ int builtin_initialize(void)
 
 	ret = register_binfmt(&g_builtin_binfmt);
 	if (ret != 0) {
-		berr("Failed to register binfmt: %d\n", ret);
+		berr("%s : %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;

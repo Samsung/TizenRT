@@ -39,6 +39,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -133,7 +134,7 @@ int log_dump_init(void)
 	struct log_dump_chunk_s *node = (struct log_dump_chunk_s *)kmm_malloc(LOG_CHUNK_SIZE);
 
 	if (node == NULL) {
-		ldpdbg("memory allocation failure\n");
+		ldpdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return LOG_DUMP_MEM_FAIL;
 	}
 
@@ -143,13 +144,13 @@ int log_dump_init(void)
 	 */
 	out_buf = allocate_compress_buffer(0, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (out_buf == NULL) {
-		ldpdbg("memory allocation failure\n");
+		ldpdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto exit_with_node;
 	}
 
 	last_comp_block = allocate_compress_buffer(4, CONFIG_LOG_DUMP_CHUNK_SIZE);
 	if (last_comp_block == NULL) {
-		ldpdbg("memory allocation failure\n");
+		ldpdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto exit_with_outbuf;
 	}
 
@@ -231,7 +232,7 @@ int log_dump_compress_lastblock(void)
 	compress_ret = compress_block(&last_comp_block[4],&last_comp_block_size,  (unsigned char *)uncomp_buf[uncomp_idx], uncomp_curbytes);
 
 	if (compress_ret != LOG_DUMP_OK) {
-		ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
+		ldpdbg("%s compress_ret = %d\n", clog_message_str[CMN_LOG_FAILED_OP], compress_ret);
 		return -compress_ret;
 	}
 
@@ -426,7 +427,7 @@ static int compress_full_bufs(void)
 		}
 
 		if (compress_ret < 0) {
-			ldpdbg("Fail to compress ret = %d\n", compress_ret);
+			ldpdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], compress_ret);
 			return compress_ret;
 		}
 		snprintf(comp_size, LOG_DUMP_COMPRESS_NODESZ, "%04d", writesize);
@@ -559,7 +560,7 @@ int log_dump(int argc, char *argv[])
 	}
 
 	if (log_dump_init() != LOG_DUMP_OK) {
-		ldpdbg("Fail to init log dump\n");
+		ldpdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		mq_close(mq_fd);
 		return 0;
 	}
@@ -581,7 +582,7 @@ int log_dump(int argc, char *argv[])
 			writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
 			compress_ret = compress_block(out_buf,  (long unsigned int *)&writesize,  (unsigned char *)uncomp_buf[comp_idx], CONFIG_LOG_DUMP_CHUNK_SIZE);
 			if (compress_ret != LOG_DUMP_OK) {
-				ldpdbg("Fail to compress compress_ret = %d\n", compress_ret);
+				ldpdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], compress_ret);
 			}
 			compress_full_block = false;
 		}

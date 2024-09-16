@@ -62,6 +62,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/arch.h>
 #include <tinyara/pgalloc.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "shm/shm.h"
 
@@ -167,7 +168,7 @@ FAR void *shmat(int shmid, FAR const void *shmaddr, int shmflg)
 
 	ret = sem_wait(&region->sr_sem);
 	if (ret < 0) {
-		shmdbg("sem_wait failed: %d\n", ret);
+		shmdbg("%s sem_wait: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -175,7 +176,7 @@ FAR void *shmat(int shmid, FAR const void *shmaddr, int shmflg)
 
 	vaddr = (uintptr_t)gran_alloc(group->tg_shm.gs_handle, region->sr_ds.shm_segsz);
 	if (vaddr == 0) {
-		shmdbg("gran_alloc() failed\n");
+		shmdbg("%s gran_alloc() \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_with_semaphore;
 	}
@@ -188,7 +189,7 @@ FAR void *shmat(int shmid, FAR const void *shmaddr, int shmflg)
 
 	ret = up_shmat(region->sr_pages, npages, vaddr);
 	if (ret < 0) {
-		shmdbg("up_shmat() failed\n");
+		shmdbg("%s up_shmat() \n",  clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errout_with_vaddr;
 	}
 

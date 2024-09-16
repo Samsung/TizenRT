@@ -62,6 +62,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/mm/shm.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "shm/shm.h"
 
@@ -149,7 +150,7 @@ int shmdt(FAR const void *shmaddr)
 
 	ret = sem_wait(&region->sr_sem);
 	if (ret < 0) {
-		shmdbg("sem_wait failed: %d\n", ret);
+		shmdbg("%s sem_wait : %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -167,7 +168,7 @@ int shmdt(FAR const void *shmaddr)
 
 	ret = up_shmdt((uintptr_t)shmaddr, npages);
 	if (ret < 0) {
-		shmdbg("up_shmdt() failed\n");
+		shmdbg("%s up_shmdt() \n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 	}
 
 	/* Indicate that there is no longer any mapping for this region. */

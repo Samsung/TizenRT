@@ -29,6 +29,8 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
+#include <tinyara/common_logs/common_logs.h>
+
 #include "libelf.h"
 
 #ifdef CONFIG_COMPRESSED_BINARY
@@ -110,7 +112,7 @@ static off_t elf_cache_lseek_block(int filfd, uint16_t binary_header_size, int b
 
 	if (rpos != actual_offset) {
 		int errval = get_errno();
-		berr("Failed to seek to position %lu: %d\n", (unsigned long)actual_offset, errval);
+		berr("%s  position %lu: %d\n",clog_message_str[CMN_LOG_FILE_SEEK_ERROR], (unsigned long)actual_offset, errval);
 		return -errval;
 	}
 
@@ -145,7 +147,7 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 
 
 	if (rpos < 0) {
-		berr("Failed to seek to offset of block number %d\n", block_number);
+		berr("%s  block number %d\n",clog_message_str[CMN_LOG_FILE_SEEK_ERROR], block_number);
 		return rpos;
 	}
 
@@ -168,7 +170,7 @@ static off_t elf_cache_read_block(int filfd, uint16_t binary_header_size, FAR ui
 
 	if (nbytes != readsize) {
 		int errval = get_errno();
-		berr("Read failed for size (%d) errno(%d)\n", readsize, errval);
+		berr("%s size (%d) errno(%d)\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], readsize, errval);
 		return -errval;
 	}
 
@@ -244,7 +246,7 @@ static unsigned int elf_cache_update_blockcache_list(int block_number, int filfd
 		/* Read elf 'block_number' block into respective 'out_buffer' */
 		size = elf_cache_read_block(filfd, binary_header_size, ptr->out_buffer, block_number);
 		if (size < 0) {
-			berr("Read for block %d failed\n", block_number);
+			berr("%s  block %d\n",clog_message_str[CMN_LOG_FILE_READ_ERROR], block_number);
 			return ERROR;
 		}
 
@@ -469,7 +471,7 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen)
 
 	blockcache = (block_cache_t *)kmm_malloc(number_blocks_caching * sizeof(block_cache_t));
 	if (!blockcache) {
-		berr("Failed kmm_malloc for blockcache\n");
+		berr("%s blockcache \n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		elf_cache_uninit();
 		return -ENOMEM;
 	}
@@ -479,7 +481,7 @@ int elf_cache_init(int filfd, uint16_t offset, off_t filelen)
 		blockcache[i].out_buffer = (unsigned char *)kmm_malloc(cache_blocks_size);
 
 		if (!blockcache[i].out_buffer) {
-			berr("Failed kmm_malloc for blockcache's out_buffer\n");
+			berr("%s blockcache's out_buffer\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			elf_cache_uninit();
 			return -ENOMEM;
 		}

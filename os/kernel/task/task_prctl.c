@@ -91,6 +91,8 @@
 #include <tinyara/security_level.h>
 #endif
 
+#include <tinyara/common_logs/common_logs.h>
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -149,7 +151,7 @@ int prctl(int option, ...)
 			 */
 
 			if (!tcb) {
-				sdbg("Pid does not correspond to a task: %d\n", pid);
+				sdbg("%s pid: %d\n",  clog_message_str[CMN_LOG_INVALID_VAL], pid);
 				err = ESRCH;
 				goto errout;
 			}
@@ -161,7 +163,7 @@ int prctl(int option, ...)
 		/* A pointer to the task name storage must also be provided */
 
 		if (!name) {
-			sdbg("No name provide\n");
+			sdbg("%s name\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			err = EFAULT;
 			goto errout;
 		}
@@ -185,7 +187,7 @@ int prctl(int option, ...)
 	}
 	break;
 #else
-		sdbg("Option not enabled: %d\n", option);
+		sdbg("%s option %d\n", clog_message_str[CMN_LOG_INVALID_VAL], option);
 		err = ENOSYS;
 		goto errout;
 #endif
@@ -276,7 +278,7 @@ int prctl(int option, ...)
 		struct tcb_s *tcb;
 		tcb = sched_gettcb(getpid());
 		if (tcb == NULL) {
-			sdbg("Fail to update the status in task monitor.\n");
+			sdbg("%s update task status\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			goto errout;
 		}
 		tcb->is_active = true;
@@ -413,14 +415,14 @@ int prctl(int option, ...)
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
 		FAR struct tcb_s *tcb = this_task();
 		if (!tcb) {
-			sdbg("Invalied tcb");
+			sdbg("%s tcb\n",  clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			err = ESRCH;
 			goto errout;
 		}
 		/* Get ID of the main task in the group */
 		FAR struct task_group_s *group = tcb->group;
 		if (!group) {
-			sdbg("Invalied group");
+			sdbg("%s group\n",  clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			err = ESRCH;
 			goto errout;
 		}
@@ -434,7 +436,7 @@ int prctl(int option, ...)
 		return OK;
 	}
 	default:
-		sdbg("Unrecognized option: %d\n", option);
+		sdbg("%s option2: %d\n",  clog_message_str[CMN_LOG_INVALID_VAL], option);
 		err = EINVAL;
 		goto errout;
 	}

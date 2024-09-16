@@ -55,6 +55,7 @@
 #include <tinyara/bluetooth/bt_buf.h>
 #include <tinyara/bluetooth/bt_uuid.h>
 #include <tinyara/bluetooth/bt_gatt.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bt_hcicore.h"
 #include "bt_conn.h"
@@ -645,7 +646,7 @@ int bt_gatt_discover(FAR struct bt_conn_s *conn, FAR struct bt_gatt_discover_par
 		break;
 
 	default:
-		ndbg("ERROR: Unkown UUID type %u\n", params->uuid->type);
+		ndbg("%s: UUID type=%u\n", clog_message_str[CMN_LOG_FAILED_OP], params->uuid->type);
 		bt_buf_release(buf);
 		return -EINVAL;
 	}
@@ -679,7 +680,7 @@ static void att_read_type_rsp(FAR struct bt_conn_s *conn, uint8_t err, FAR const
 		break;
 
 	default:
-		ndbg("ERROR: Invalid data len %u\n", rsp->len);
+		ndbg("%s: len=%u\n", clog_message_str[CMN_LOG_FAILED_OP], rsp->len);
 		goto done;
 	}
 

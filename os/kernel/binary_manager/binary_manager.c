@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_BOARDCTL_RESET
 #include <sys/boardctl.h>
 #endif
@@ -139,7 +140,7 @@ int binary_manager(int argc, char *argv[])
 
 #ifdef CONFIG_RESOURCE_FS
 	if (binary_manager_mount_resource() != OK) {
-		bmdbg("Fail to mount resource\n");
+		bmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_nobinary;
 	}
 #endif
@@ -164,7 +165,7 @@ int binary_manager(int argc, char *argv[])
 		bmvdbg("Launch fault msg sender thread with pid %d\n", ret);
 		binary_manager_set_faultmsg_sender(ret);
 	} else {
-		bmdbg("Fail to launch fault msg sender, EXIT!\n");
+		bmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return 0;
 	}
 #endif
@@ -183,7 +184,7 @@ int binary_manager(int argc, char *argv[])
 	/* Execute loading thread for load all binaries */
 	ret = binary_manager_execute_loader(LOADCMD_LOAD_ALL, 0);
 	if (ret != OK) {
-		bmdbg("Fail to create loading thread. EXIT!\n");
+		bmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		mq_close(g_binmgr_mq_fd);
 		mq_unlink(BINMGR_REQUEST_MQ);
 		return 0;
@@ -244,7 +245,7 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		default:
-			bmvdbg("Invalid cmd = %d\n", request_msg.cmd);
+			bmvdbg("%s cmd = %d\n", clog_message_str[CMN_LOG_INVALID_VAL], request_msg.cmd);
 			break;
 		}
 	}

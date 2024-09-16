@@ -20,6 +20,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <time.h>
 #include <stdint.h>
@@ -494,7 +495,7 @@ lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, 
 
 		config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!config) {
-			vddbg("Memory allocation failed!\n");
+			vddbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			goto connect_ap_fail;
 		}
 
@@ -633,7 +634,7 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 
 	ap_config = (slsi_ap_config_t *)kmm_zalloc(sizeof(slsi_ap_config_t));
 	if (!ap_config) {
-		vddbg("Memory allocation failed!\n");
+		vddbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return LWNL80211_FAIL;
 	}
 
@@ -661,7 +662,7 @@ lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config
 	} else {
 		security_config = (slsi_security_config_t *)kmm_zalloc(sizeof(slsi_security_config_t));
 		if (!security_config) {
-			vddbg("Memory allocation failed!\n");
+			vddbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			goto start_soft_ap_fail;
 		}
 		memcpy(security_config->passphrase, softap_config->passphrase, softap_config->passphrase_length);

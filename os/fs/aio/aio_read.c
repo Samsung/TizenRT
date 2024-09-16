@@ -64,6 +64,7 @@
 #include <debug.h>
 
 #include <tinyara/net/net.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "aio/aio.h"
 
@@ -145,7 +146,7 @@ static void aio_read_worker(FAR void *arg)
 
 	if (nread < 0) {
 		int errcode = get_errno();
-		fdbg("ERROR: pread failed: %d\n", errcode);
+		fdbg("%s : %d\n", clog_message_str[CMN_LOG_FILE_READ_ERROR], errcode);
 		DEBUGASSERT(errcode > 0);
 		aiocbp->aio_result = -errcode;
 	} else {

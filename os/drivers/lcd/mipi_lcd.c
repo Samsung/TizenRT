@@ -30,6 +30,7 @@
 #include <tinyara/mipidsi/mipi_display.h>
 #include <debug.h>
 #include <assert.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #define REGFLAG_DELAY                       0xFC
 #define REGFLAG_END_OF_TABLE                0xFD	// END OF REGISTERS MARKER
@@ -76,7 +77,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
 	priv->config->lcd_mode_switch(true);
 	if (transfer_status != OK) {
-		lcddbg("Command %x not sent \n", cmd);
+		lcddbg("%s %x\n", clog_message_str[CMN_LOG_FAILED_OP], cmd);
 	}
 	return transfer_status;
 }
@@ -282,9 +283,9 @@ static int lcd_init(FAR struct lcd_dev_s *dev)
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	priv->config->reset();
 	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
-		lcdvdbg("LCD Init sequence completed\n");
+		lcdvdg("%s \n", clog_message_str[CMN_LOG_INIT_DONE]);
 	} else {
-		lcddbg("ERROR: LCD Init sequence failed\n");
+		lcddbg("%s \n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 	priv->config->init();
 	priv->config->lcd_enable();

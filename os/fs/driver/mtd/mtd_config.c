@@ -79,6 +79,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
 #include <tinyara/configdata.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_MTD_CONFIG
 
@@ -1235,7 +1236,7 @@ int mtdconfig_register(FAR struct mtd_dev_s *mtd)
 
 		ret = MTD_IOCTL(mtd, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&geo));
 		if (ret < 0) {
-			fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
+			fdbg("%s : %d\n", clog_message_str[CMN_LOG_FILE_IOCTL_ERROR], ret);
 			kmm_free(dev);
 			goto errout;
 		}

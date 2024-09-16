@@ -59,7 +59,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <tinyara/fs/fs.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #include "inode/inode.h"
 
 /****************************************************************************
@@ -103,7 +103,7 @@ int close_blockdriver(FAR struct inode *inode)
 	/* Verify that the inode is a block driver. */
 
 	if (!INODE_IS_BLOCK(inode)) {
-		fdbg("inode is not a block driver\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		ret = -ENOTBLK;
 		goto errout;
 	}

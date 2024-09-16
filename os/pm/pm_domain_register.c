@@ -23,6 +23,7 @@
 #include <tinyara/config.h>
 #include <assert.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <errno.h>
 
 #include "pm.h"
@@ -60,7 +61,7 @@ int pm_check_domain(int domain_id)
 {
 	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
 		set_errno(EINVAL);
-		pmdbg("Invalid Domain: %d\n", domain_id);
+		pmdbg("%s id: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], domain_id);
 		return ERROR;
 	}
 	return OK;
@@ -101,7 +102,7 @@ int pm_domain_register(char *domain)
 			pm_domain_map[index] = (char *)kmm_malloc(length * sizeof(char));
 			if (!pm_domain_map[index]) {
 				set_errno(ENOMEM);
-				pmdbg("Unable to allocate memory from heap\n");
+				pmdbg("%s\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				leave_critical_section(flags);
 				return ERROR;
 			}

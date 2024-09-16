@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/mm/heap_regioninfo.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <binary_manager/binary_manager.h>
 #include <arch/chip/memory_region.h>
 #include <tinyara/binfmt/elf.h>
@@ -403,7 +404,7 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 	}
 
 	if (hash_init() != OK) {
-		printf("hash table memory alloc is failed.\n");
+		printf("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return ERROR;
 	}
 

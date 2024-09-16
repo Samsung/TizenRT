@@ -62,6 +62,7 @@
 #include <debug.h>
 
 #include "bch.h"
+#include <tinyara/common_logs/common_logs.h>
 
 #if defined(CONFIG_BCH_ENCRYPTION)
 #  include <crypto/crypto.h>
@@ -147,7 +148,7 @@ int bchlib_flushsector(FAR struct bchlib_s *bch)
 		/* Write the sector to the media */
 		ret = inode->u.i_bops->write(inode, bch->buffer, bch->sector, 1);
 		if (ret < 0) {
-			fdbg("Write failed: %d\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_FILE_WRITE_ERROR]);
 		}
 
 #if defined(CONFIG_BCH_ENCRYPTION)
@@ -188,7 +189,7 @@ int bchlib_readsector(FAR struct bchlib_s *bch, size_t sector)
 
 		ret = inode->u.i_bops->read(inode, bch->buffer, sector, 1);
 		if (ret < 0) {
-			fdbg("Read failed: %d\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_FILE_READ_ERROR]);
 		}
 		bch->sector = sector;
 #if defined(CONFIG_BCH_ENCRYPTION)

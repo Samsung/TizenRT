@@ -41,6 +41,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/kthread.h>
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #include <tinyara/binfmt/binfmt.h>
 #endif
@@ -96,7 +97,7 @@ static uint8_t binary_manager_get_loader_priority(uint8_t load_priority)
 		loader_priority = LOADER_PRIORITY_HIGH;
 		break;
 	default:
-		bmdbg("Invalid loading priority : %u\n", load_priority);
+		bmdbg("%s loading priority : %u\n", clog_message_str[CMN_LOG_INVALID_VAL], load_priority);
 		break;
 	}
 	bmvdbg("Loader priority : %u\n", loader_priority);
@@ -170,13 +171,13 @@ static int binary_manager_load(int bin_idx)
 #endif
 
 	if (bin_idx < 0) {
-		bmdbg("Invalid bin idx %d\n", bin_idx);
+		bmdbg("%s bin idx %d\n", clog_message_str[CMN_LOG_INVALID_VAL], bin_idx);
 		return ERROR;
 	}
 
 	/* Check binary state */
 	if (BIN_STATE(bin_idx) != BINARY_INACTIVE) {
-		bmdbg("Invalid binary state %d\n", BIN_STATE(bin_idx));
+		bmdbg("%s binary state %d\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_STATE(bin_idx));
 		return ERROR;
 	}
 
@@ -202,7 +203,7 @@ static int binary_manager_load(int bin_idx)
 			if (ret == SIGNATURE_VAILD) {
 				bmdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 			} else {
-				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+				bmdbg("%s Signature, name : %s, address : %p\n", clog_message_strp[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
 #ifdef CONFIG_USE_BP
@@ -211,7 +212,7 @@ static int binary_manager_load(int bin_idx)
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
-					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
+					bmdbg("%s binary %s\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -234,7 +235,7 @@ static int binary_manager_load(int bin_idx)
 			} else {
 				/* Clear version because of invalid binary */
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = 0;
-				bmdbg("Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
+				bmdbg("%s Header data, name : %s, devpath : %p\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx), devpath);
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
 #ifdef CONFIG_USE_BP
@@ -243,7 +244,7 @@ static int binary_manager_load(int bin_idx)
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
-					bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
+					bmdbg("%s binary %s\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx));
 					break;
 				}
 			}
@@ -294,7 +295,7 @@ static int binary_manager_load(int bin_idx)
 					binary_manager_set_bpdata(&update_bp_data);
 					bmvdbg("Update bootparam SUCCESS\n");
 				} else {
-					bmdbg("Fail to update bootparam to recover, %d\n", ret);
+					bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 				}
 			}
 #endif
@@ -308,7 +309,7 @@ static int binary_manager_load(int bin_idx)
 #endif
 			bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 		} else {
-			bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));
+			bmdbg("%s binary %s\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_NAME(bin_idx));
 		}
 	} while (bin_count > 0);
 
@@ -347,7 +348,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 #endif
 		ret = unload_module(g_lib_binp);
 		if (ret != OK) {
-			bmdbg("Fail to unload common binary %d\n", ret);
+			bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			return BINMGR_OPERATION_FAIL;
 		}
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
@@ -369,7 +370,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	binid = BIN_ID(bin_idx);
 	btcb = (struct tcb_s *)sched_gettcb(binid);
 	if (btcb == NULL) {
-		bmdbg("Fail to get main task of binary %d\n", binid);
+		bmdbg("%s get main task of binary %d\n", clog_message_str[CMN_LOG_FAILED_OP], binid);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -382,7 +383,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		/* Waits until some callbacks for cleanup are done if registered callbacks exist */
 		ret = binary_manager_send_statecb_msg(bin_idx, BIN_NAME(bin_idx), BINARY_READYTOUNLOAD, true);
 		if (ret != OK) {
-			bmdbg("Fail to execute callbacks for unloading %s\n", BIN_NAME(bin_idx));
+			bmdbg("%s %s\n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx));
 			/* Recover binary state on failure */
 			BIN_STATE(bin_idx) = state;
 			return ERROR;
@@ -401,7 +402,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
 			if (ret < 0) {
-				bmdbg("Fail to terminate task of binary %d\n", binid);
+				bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], binid);
 			}
 		}
 		tcb = ntcb;
@@ -416,7 +417,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
 			if (ret < 0) {
-				bmdbg("Fail to terminate task of binary %d\n", binid);
+				bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], binid);
 			}
 		}
 		tcb = ntcb;
@@ -432,7 +433,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	/* Finally, unload binary */
 	ret = task_terminate_unloaded(btcb);
 	if (ret < 0) {
-		bmdbg("Fail to unload binary %s\n", BIN_NAME(bin_idx));
+		bmdbg("%s %s\n", clog_message_str[CMN_LOG_FAILED_OP], BIN_NAME(bin_idx));
 		/* Recover binary state on failure */
 		BIN_STATE(bin_idx) = state;
 		return ERROR;
@@ -459,7 +460,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 static int loading_thread(int argc, char *argv[])
 {
 	if (argc <= 1) {
-		bmdbg("Invalid arguments for loading, argc %d\n", argc);
+		bmdbg("%s argc %d\n", clog_message_str[CMN_LOG_INVALID_VAL], argc);
 		return ERROR;
 	}
 
@@ -488,7 +489,7 @@ static int loadingall_thread(int argc, char *argv[])
 #ifdef CONFIG_RESOURCE_FS
 	ret = binary_manager_mount_resource();
 	if (ret != OK) {
-		bmdbg("ERROR: resourcefs mount failed\n");
+		bmdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 #endif
 
@@ -547,7 +548,7 @@ static int reloading_thread(int argc, char *argv[])
 	int load_cmd;
 
 	if (argc <= 1) {
-		bmdbg("Invalid arguments for reloading, argc %d\n", argc);
+		bmdbg("%s argc %d\n", clog_message_str[CMN_LOG_INVALID_VAL], argc);
 		return ERROR;
 	}
 
@@ -596,7 +597,7 @@ static int reloading_thread(int argc, char *argv[])
 	/* Create a loader to reload binary */
 	ret = binary_manager_execute_loader(load_cmd, bin_idx);
 	if (ret != OK) {
-		bmdbg("Fail to execute loader to reload binary, %d\n", ret);
+		bmdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return BINMGR_OPERATION_FAIL;
 	}
 
@@ -735,7 +736,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	char *loading_data[LOADER_ARGC + 1];
 
 	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
-		bmdbg("Invalid binary index %d\n", bin_idx);
+		bmdbg("%s binary index %d\n", clog_message_str[CMN_LOG_INVALID_VAL], bin_idx);
 		return ERROR;
 	}
 
@@ -748,7 +749,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 	case LOADCMD_LOAD:
 		loader_priority = binary_manager_get_loader_priority(BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)));
 		if (loader_priority <= 0) {
-			bmdbg("Invalid loading priority : %u\n", BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)));
+			bmdbg("%s loading priority : %u\n", clog_message_str[CMN_LOG_INVALID_VAL], BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)));
 			return ERROR;
 		}
 		loader_func = loading_thread;
@@ -765,7 +766,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		loader_func = update_thread;
 		break;
 	default:
-		bmdbg("Invalid loading cmd : %u\n", cmd);
+		bmdbg("%s loading cmd : %u\n", clog_message_str[CMN_LOG_INVALID_VAL], cmd);
 		return ERROR;
 	}
 
@@ -775,7 +776,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		bmvdbg("Execute loading thread with pid %d\n", ret);
 		ret = OK;
 	} else {
-		bmdbg("Fail to create loading thread for binary idx %d, errno %d\n", bin_idx, errno);
+		bmdbg("%s idx %d, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], bin_idx, errno);
 	}
 
 	return ret;

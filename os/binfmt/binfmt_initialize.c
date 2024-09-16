@@ -59,6 +59,7 @@
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binfmt/builtin.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #ifdef CONFIG_BINFMT_ENABLE
 
@@ -81,35 +82,35 @@ void binfmt_initialize(void)
 #ifdef CONFIG_FS_BINFS
 	ret = builtin_initialize();
 	if (ret < 0) {
-		berr("ERROR: builtin_initialize failed: %d\n", ret);
+		berr("%s of builtin_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 
 #ifdef CONFIG_ELF
 	ret = elf_initialize();
 	if (ret < 0) {
-		berr("ERROR: elf_initialize failed: %d\n", ret);
+		berr("%s of elf_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 
 #ifdef CONFIG_BINFMT_PCODE
 	ret = pcode_initialize();
 	if (ret < 0) {
-		berr("ERROR: pcode_initialize failed: %d\n", ret);
+		berr("%s of pcode_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 
 #ifdef CONFIG_NXFLAT
 	ret = nxflat_initialize();
 	if (ret < 0) {
-		berr("ERROR: nxflat_initialize failed: %d\n", ret);
+		berr("%s of nxflat_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 
 #ifdef CONFIG_XIP_ELF
 	ret = xipelf_initialize();
 	if (ret < 0) {
-		berr("ERROR: xipelf_initialize failed: %d\n", ret);
+		berr("%s of xipelf_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 

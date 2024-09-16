@@ -63,6 +63,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "libelf.h"
 
@@ -119,7 +120,7 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo)
 
 	ret = elf_allocbuffer(loadinfo);
 	if (ret < 0) {
-		berr("elf_allocbuffer failed: %d\n", ret);
+		berr("%s elf_allocbuffer(): %d\n", clog_message_str[CMN_LOG_FAILED_OP] ret);
 		return -ENOMEM;
 	}
 
@@ -178,7 +179,7 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo)
 			loadinfo->dtors = (binfmt_dtor_t *)kmm_malloc(dtorsize);
 			if (!loadinfo->dtors)
 			{
-				berr("Failed to allocate memory for .dtors\n");
+				berr("%s .dtors\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 				return -ENOMEM;
 			}
 
@@ -186,7 +187,7 @@ int elf_loaddtors(FAR struct elf_loadinfo_s *loadinfo)
 
 			ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->dtors, dtorsize, shdr->sh_offset);
 			if (ret < 0) {
-				berr("Failed to allocate .dtors: %d\n", ret);
+				berr("%s .dtors: %d\n",clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 				return ret;
 			}
 

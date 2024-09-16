@@ -70,7 +70,7 @@
 #include <tinyara/addrenv.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/binfmt/elf.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #include "libelf.h"
 
 /****************************************************************************
@@ -234,7 +234,7 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 			ret = elf_read(loadinfo, *pptr, shdr->sh_size, shdr->sh_offset);
 			if (ret < 0) {
-				berr("ERROR: Failed to read section %d: %d\n", i, ret);
+				berr("%s section %d: %d\n",clog_message_str[CMN_LOG_FILE_READ_ERROR], i, ret);
 				return ret;
 			}
 		}
@@ -284,7 +284,7 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 
 	ret = elf_loadshdrs(loadinfo);
 	if (ret < 0) {
-		berr("ERROR: elf_loadshdrs failed: %d\n", ret);
+		berr("%s elf_loadshdrs: %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffers;
 	}
 
@@ -296,7 +296,7 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 
 	ret = elf_addrenv_alloc(loadinfo);
 	if (ret < 0) {
-		berr("ERROR: elf_addrenv_alloc() failed: %d\n", ret);
+		berr("%s elf_addrenv_alloc(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffers;
 	}
 
@@ -304,7 +304,7 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 
 	ret = elf_loadfile(loadinfo);
 	if (ret < 0) {
-		berr("ERROR: elf_loadfile failed: %d\n", ret);
+		berr("%s elf_loadfile(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffers;
 	}
 
@@ -313,13 +313,13 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
 	ret = elf_loadctors(loadinfo);
 	if (ret < 0) {
-		berr("ERROR: elf_loadctors failed: %d\n", ret);
+		berr("%s elf_loadctors(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffers;
 	}
 
 	ret = elf_loaddtors(loadinfo);
 	if (ret < 0) {
-		berr("ERROR: elf_loaddtors failed: %d\n", ret);
+		berr("%s elf_loaddtors(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_buffers;
 	}
 #endif

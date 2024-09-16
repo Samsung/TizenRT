@@ -48,6 +48,7 @@
 
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /****************************************************************************
  * Public Functions
@@ -186,11 +187,11 @@ bool mipi_dsi_packet_format_is_long(uint8_t type)
 int mipi_dsi_create_packet(FAR struct mipi_dsi_packet *packet, FAR const struct mipi_dsi_msg *msg)
 {
 	if (packet == NULL) {
-		mipidbg("packet is NULL \n");
+		mipidbg("%s of packet\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return -EINVAL;
 	}
 	if (msg == NULL) {
-		mipidbg("msg is NULL \n");
+		mipidbg("%s of message\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return -EINVAL;
 	}
 

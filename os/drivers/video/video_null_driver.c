@@ -20,6 +20,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -350,7 +351,7 @@ static int video_null_set_worker_delay(FAR null_priv_t *priv)
 	}
 	default: {
 		priv->w_delay = 0;
-		videodbg("Invalid Frame Interval, please choose from current options!!!\n");
+		videodbg("%s Frame Interval, please choose from current options!!!\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return -EINVAL;
 	}
 	}
@@ -554,7 +555,7 @@ int video_null_init_transfer(FAR null_priv_t *priv)
 
 	ret = read(fd, priv->trfbuff, priv->trfsize);
 	if (ret < 0) {
-		videovdbg("No bytes read, init_transfer failed.\n");
+		videovdbg("No bytes read, %s init_transfer.\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	close(fd);
@@ -1574,7 +1575,7 @@ int video_null_initialize(const char *devpath)
 	lower = (FAR struct video_lowerhalf_s *)
 			kmm_zalloc(sizeof(struct video_lowerhalf_s));
 	if (!lower) {
-		videovdbg("ERROR: Null driver allocation failed\n");
+		videovdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -1584,7 +1585,7 @@ int video_null_initialize(const char *devpath)
 	priv = (FAR struct dummy_null_priv_s *)
 		   kmm_zalloc(sizeof(struct dummy_null_priv_s));
 	if (!lower) {
-		videovdbg("ERROR: Null driver private data allocation failed\n");
+		videovdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_with_priv_data;
 	}
@@ -1593,7 +1594,7 @@ int video_null_initialize(const char *devpath)
 	priv->ctrlcount = sizeof(ctrl_mapping) / sizeof(struct v4l2_mapping_s);
 	priv->ctrl = (FAR struct v4l2_mapping_s *)kmm_zalloc(sizeof(ctrl_mapping));
 	if (!priv->ctrl) {
-		videovdbg("ERROR: Null driver control table allocation failed\n");
+		videovdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_failure;
 	}
@@ -1603,7 +1604,7 @@ int video_null_initialize(const char *devpath)
 	priv->fmtcount = sizeof(supported_formats) / sizeof(struct v4l2_format_s);
 	priv->fmt = (FAR struct v4l2_format_s *)kmm_zalloc(sizeof(supported_formats));
 	if (!priv->fmt) {
-		videovdbg("ERROR: Null driver format table allocation failed\n");
+		videovdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		ret = -ENOMEM;
 		goto errout_failure;
 	}
@@ -1629,7 +1630,7 @@ int video_null_initialize(const char *devpath)
 
 	priv->priv_data = video_register(devpath, (struct video_lowerhalf_s *)lower);
 	if (priv->priv_data == NULL) {
-		videovdbg("Fail to register video driver!!\n");
+		videovdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		ret = -EINVAL;
 		goto errout_failure;
 	}

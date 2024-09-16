@@ -76,6 +76,7 @@
 #include <tinyara/math.h>
 #include <math.h>
 #include <tinyara/i2c.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "tas5749.h"
 #include "tas5749scripts.h"
@@ -158,7 +159,7 @@ uint8_t tas5749_readreg_1byte(FAR struct tas5749_dev_s *priv, uint8_t regaddr)
 	uint8_t reg_w[4];
 	reg_w[0] = regaddr;
 	if (i2c_writeread(dev, tas5749_i2c_config, reg_w, 1, reg, 1) < 0) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
+		auddbg("%s to read reg: %d\n", clog_message_str[CMN_LOG_FAILED_OP],regaddr);
 		return FAIL_8;
 	}
 	return reg[0];
@@ -183,12 +184,12 @@ uint32_t tas5749_readreg_4byte(FAR struct tas5749_dev_s *priv, uint8_t regaddr)
 
 	ret = i2c_write(dev, tas5749_i2c_config, reg, 1);
 	if (ret < 0) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
+		auddbg("%s to read reg: %d\n", clog_message_str[CMN_LOG_FAILED_OP],regaddr);
 		return FAIL_32;
 	}
 	ret = i2c_read(dev, tas5749_i2c_config, reg, 4);
 	if (ret < 0) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
+		auddbg("%s to read reg: %d\n", clog_message_str[CMN_LOG_FAILED_OP],regaddr);
 		return FAIL_32;
 	}
 	regval = ((reg[0] << 24) | (reg[1] << 16) | (reg[2] << 8) | (reg[3] << 24));
@@ -225,7 +226,7 @@ static int tas5749_writereg_1byte(FAR struct tas5749_dev_s *priv, uint8_t regadd
 
 	ret = i2c_write(dev, tas5749_i2c_config, (uint8_t *)reg, 2);
 	if (ret < 0) {
-		auddbg("Error, cannot write reg %x\n", regaddr);
+		auddbg("%s write reg: %d\n", clog_message_str[CMN_LOG_FAILED_OP],regaddr);
 	}
 	return ret;
 }
@@ -252,7 +253,7 @@ static int tas5749_writereg_4byte(FAR struct tas5749_dev_s *priv, uint8_t regadd
 
 	ret = i2c_write(dev, tas5749_i2c_config, (uint8_t *)reg, 5);
 	if (ret < 0) {
-		auddbg("Error, cannot write reg %x\n", regaddr);
+		auddbg("%s to write reg: %d\n", clog_message_str[CMN_LOG_FAILED_OP],regaddr);
 	}
 	return ret;
 }
@@ -991,7 +992,7 @@ static int tas5749_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		tas5749_writereg_1byte(priv, (uint8_t)0x01, 0x00);
 		regval = tas5749_readreg_1byte(priv, 0x01);
 		if (regval != 0x00) {
-			auddbg("ERROR: Amp has some error! 0x%02x \n", regval);
+			auddbg("%s 0x%02x \n", clog_message_str[CMN_LOG_INVALID_VAL],regval);
 		}
 
 		/* Resume I2S */
@@ -1237,7 +1238,7 @@ FAR struct audio_lowerhalf_s *tas5749_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	/* Verify that TAS5749 is present and available on this I2C */
 	regval = tas5749_readreg_1byte(priv, TAS5749_TI_DEVICE_ID);
 	if (regval != TAS5749_TI_DEVICE_ID_VAL) {
-		auddbg("ERROR: TAS5749 not found: ID=%04x\n", regval);
+		auddbg("%s ID=%04xn", clog_message_str[CMN_LOG_INVALID_VAL],regval);
 		goto errout_with_dev;
 	}
 

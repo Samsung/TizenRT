@@ -72,6 +72,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/spi/spi.h>
 #include <tinyara/fs/mtd.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -849,7 +850,7 @@ static void w25_pagewrite(struct w25_dev_s *priv, FAR const uint8_t *buffer, off
 		if (priv->addr_len == 4) {
 			(void)SPI_SEND(priv->spi, (address >> 24) & 0xff);
 		}
-		(void)SPI_SEND(priv->spi, (address >> 16) & 0xff);
+		(void)SPI_SEND(priv->spi, (address >> 16) & 0xff);
 		(void)SPI_SEND(priv->spi, (address >> 8) & 0xff);
 		(void)SPI_SEND(priv->spi, address & 0xff);
 
@@ -1378,8 +1379,7 @@ FAR struct mtd_dev_s *w25_initialize(FAR struct spi_dev_s *spi)
 		ret = w25_readid(priv);
 		if (ret != OK) {
 			/* Unrecognized! Discard all of that work we just did and return NULL */
-
-			fdbg("ERROR: Unrecognized\n");
+			fdbg("%s\n", clog_message_str[CMN_LOG_NOT_SUPPORTED]);
 			kmm_free(priv);
 			return NULL;
 		}
@@ -1396,7 +1396,7 @@ FAR struct mtd_dev_s *w25_initialize(FAR struct spi_dev_s *spi)
 		if (!priv->sector) {
 			/* Allocation failed! Discard all of that work we just did and return NULL */
 
-			fdbg("ERROR: Allocation failed\n");
+			fdbg("%s\n",clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			kmm_free(priv);
 			return NULL;
 		}

@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -289,7 +290,7 @@ static int usbhost_hport_activate(FAR struct usbhost_hubport_s *hport)
 
 	ret = DRVR_EPALLOC(hport->drvr, &epdesc, &hport->ep0);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate ep0: %d\n", ret);
+		udbg("%s ep0: %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 	}
 
 	return ret;
@@ -456,7 +457,7 @@ static inline int usbhost_cfgdesc(FAR struct usbhost_class_s *hubclass, FAR cons
 
 	ret = DRVR_EPALLOC(hport->drvr, &intindesc, &priv->intin);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate Interrupt IN endpoint: %d\n", ret);
+		udbg("%s Interrupt IN endpoint: %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		(void)DRVR_EPFREE(hport->drvr, priv->intin);
 		return ret;
 	}
@@ -516,7 +517,7 @@ static inline int usbhost_hubdesc(FAR struct usbhost_class_s *hubclass)
 
 	ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, (FAR uint8_t *)&hubdesc);
 	if (ret < 0) {
-		udbg("ERROR: Failed to read hub descriptor: %d\n", ret);
+		udbg("%s read hub descriptor: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -616,7 +617,7 @@ static int usbhost_hubpwr(FAR struct usbhost_hubpriv_s *priv, FAR struct usbhost
 
 		ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, NULL);
 		if (ret < 0) {
-			udbg("ERROR: Failed to power %s port %d: %d\n", on ? "UP" : "DOWN", port, ret);
+			udbg("%s power %s port %d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], on ? "UP" : "DOWN", port, ret);
 			return ret;
 		}
 	}
@@ -706,7 +707,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 		ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, (FAR uint8_t *)&portstatus);
 		if (ret < 0) {
-			udbg("ERROR: Failed to read port %d status: %d\n", port, ret);
+			udbg("%s to read port %d status: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, ret);
 			continue;
 		}
 
@@ -727,7 +728,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 				ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, NULL);
 				if (ret < 0) {
-					udbg("ERROR: Failed to clear port %d change mask %04x: %d\n", port, mask, ret);
+					udbg("%s to clear port %d change mask %04x: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, mask, ret);
 				}
 
 				change &= (~mask);
@@ -759,7 +760,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 				ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, (FAR uint8_t *)&portstatus);
 				if (ret < 0) {
-					udbg("ERROR: Failed to get port %d status: %d\n", port, ret);
+					udbg("%s to get port %d status: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, ret);
 					break;
 				}
 
@@ -792,7 +793,7 @@ static void usbhost_hub_event(FAR void *arg)
 			}
 
 			if (ret < 0 || debouncetime >= 1500) {
-				udbg("ERROR: Failed to debounce port %d: %d\n", port, ret);
+				udbg("%s to debounce port %d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, ret);
 				continue;
 			}
 
@@ -809,7 +810,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 				ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, NULL);
 				if (ret < 0) {
-					udbg("ERROR: Failed to reset port %d: %d\n", port, ret);
+					udbg("%s reset port %d: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, ret);
 					continue;
 				}
 
@@ -823,7 +824,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 				ret = DRVR_CTRLIN(hport->drvr, hport->ep0, ctrlreq, (FAR uint8_t *)&portstatus);
 				if (ret < 0) {
-					udbg("ERROR: Failed to get port %d status: %d\n", port, ret);
+					udbg("%s get port %d status: %d\n", clog_message_str[CMN_LOG_FAILED_OP], port, ret);
 					continue;
 				}
 
@@ -856,18 +857,18 @@ static void usbhost_hub_event(FAR void *arg)
 
 					ret = usbhost_hport_activate(connport);
 					if (ret < 0) {
-						udbg("ERROR: usbhost_hport_activate failed: %d\n", ret);
+						udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 					} else {
 						/* Inform waiters that a new device has been connected */
 
 						ret = DRVR_CONNECT(connport->drvr, connport, true);
 						if (ret < 0) {
-							udbg("ERROR: DRVR_CONNECT failed: %d\n", ret);
+							udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 							usbhost_hport_deactivate(connport);
 						}
 					}
 				} else {
-					udbg("ERROR: Failed to enable port %d\n", port);
+					udbg("%s: enable port, %d\n", clog_message_str[CMN_LOG_FAILED_OP], port);
 					continue;
 				}
 			} else {
@@ -915,7 +916,7 @@ static void usbhost_hub_event(FAR void *arg)
 
 		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
 		if (ret < 0) {
-			udbg("ERROR: Failed to queue interrupt endpoint: %d\n", ret);
+			udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 
@@ -1112,7 +1113,7 @@ static void usbhost_callback(FAR void *arg, ssize_t nbytes)
 		if (nbytes != -EAGAIN)
 #endif
 		{
-			ulldbg("ERROR: Transfer failed: %d\n", (int)nbytes);
+			ulldbg("%s Transfer: %d\n", clog_message_str[CMN_LOG_FAILED_OP], (int)nbytes);
 		}
 
 		/* Indicate there there is nothing to do.  So when the work is
@@ -1203,7 +1204,7 @@ static FAR struct usbhost_class_s *usbhost_create(FAR struct usbhost_hubport_s *
 
 	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&priv->ctrlreq, &maxlen);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_ALLOC failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_hub;
 	}
 
@@ -1211,7 +1212,7 @@ static FAR struct usbhost_class_s *usbhost_create(FAR struct usbhost_hubport_s *
 
 	ret = DRVR_IOALLOC(hport->drvr, &priv->buffer, INTIN_BUFSIZE);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_IOALLOC failed: %d\n", ret);
+		udbg("%s DRVR_IOALLOC: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_ctrlreq;
 	}
 
@@ -1297,7 +1298,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *hubclass, FAR const uint8
 
 	ret = usbhost_cfgdesc(hubclass, configdesc, desclen);
 	if (ret < 0) {
-		udbg("ERROR: Failed to parse config descriptor: %d\n", ret);
+		udbg("%s to parse config descriptor: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1317,7 +1318,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *hubclass, FAR const uint8
 
 	ret = usbhost_hubpwr(priv, hport, true);
 	if (ret < 0) {
-		udbg("ERROR: usbhost_hubpwr failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 
@@ -1325,7 +1326,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *hubclass, FAR const uint8
 
 	ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->buffer, INTIN_BUFSIZE, usbhost_callback, hubclass);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		(void)usbhost_hubpwr(priv, hport, false);
 	}
 

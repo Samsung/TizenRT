@@ -68,6 +68,8 @@
 #include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/common_logs/common_logs.h>
+
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
 #include <tinyara/mmu.h>
 #endif
@@ -188,7 +190,7 @@ int exec_module(FAR struct binary_s *binp)
 	binp->uheap = (struct mm_heap_s *)binp->sections[BIN_HEAP];
 	ret = mm_initialize(binp->uheap, (void *)binp->sections[BIN_HEAP] + sizeof(struct mm_heap_s), binp->sizes[BIN_HEAP]);
 	if (ret != OK) {
-		berr("ERROR: mm_initialize() failed, %d.\n", ret);
+		berr("%s of mm_initialize(): %d.\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 	mm_add_app_heap_list(binp->uheap, binp->bin_name);
@@ -213,7 +215,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	ret = up_create_stack((FAR struct tcb_s *)newtcb, binp->stacksize, TCB_FLAG_TTYPE_TASK);
 	if (ret < 0) {
-		berr("ERROR: up_create_stack() failed.\n");
+		berr("%s: up_create_stack()\n",clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout_with_appheap;
 	}
 	stack = newtcb->cmn.stack_alloc_ptr;
@@ -223,7 +225,7 @@ int exec_module(FAR struct binary_s *binp)
 	ret = task_init((FAR struct tcb_s *)newtcb, binp->filename, binp->priority, NULL, binp->stacksize, binp->entrypt, binp->argv);
 	if (ret < 0) {
 		ret = -get_errno();
-		berr("task_init() failed: %d\n", ret);
+		berr("%s of task_init: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_stack;
 	}
 
@@ -261,7 +263,7 @@ int exec_module(FAR struct binary_s *binp)
 
 	ret = shm_group_initialize(newtcb->cmn.group);
 	if (ret < 0) {
-		berr("ERROR: shm_group_initialize() failed: %d\n", ret);
+		berr("%s of shm_group_initialize(): %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_tcbinit;
 	}
 #endif
@@ -343,7 +345,7 @@ int exec_module(FAR struct binary_s *binp)
 	ret = task_activate((FAR struct tcb_s *)newtcb);
 	if (ret < 0) {
 		ret = -get_errno();
-		berr("task_activate() failed: %d\n", ret);
+		berr("%s of task_activate(): %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_tcbinit;
 	}
 

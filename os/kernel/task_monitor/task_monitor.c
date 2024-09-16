@@ -34,6 +34,8 @@
 
 #include "task_monitor_internal.h"
 
+#include <tinyara/common_logs/common_logs.h>
+
 static task_monitor_node_t g_monitored_tasks_list[CONFIG_MAX_TASKS];
 static task_monitor_node_queue_t g_que_list[TASK_MONITOR_CHECK_TIME];
 static int g_monitor_cnt;
@@ -42,7 +44,7 @@ static sem_t g_stop_sem;
 int task_monitor_register_list(int pid, int interval)
 {
 	if (interval < CONFIG_TASK_MONITOR_INTERVAL || CONFIG_TASK_MONITOR_MAX_INTERVAL < interval) {
-		dbg("Must be greater than %d and less than or equal to %d.\n", CONFIG_TASK_MONITOR_INTERVAL, CONFIG_TASK_MONITOR_MAX_INTERVAL);
+		dbg("%s : interval\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		return EINVAL;
 	}
 

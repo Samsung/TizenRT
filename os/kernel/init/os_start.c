@@ -73,6 +73,7 @@
 #include  <tinyara/init.h>
 #include  <tinyara/pm/pm.h>
 #include  <tinyara/mm/heap_regioninfo.h>
+#include  <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_DEBUG_SYSTEM
 #include  <tinyara/debug/sysdbg.h>
 #endif
@@ -560,7 +561,7 @@ void os_start(void)
 
 		up_allocate_kheap(&heap_start, &heap_size);
 		if (kmm_initialize(heap_start, heap_size) != OK) {
-			sdbg("ERROR : heap initialization is failed. heap_start : %x, heap_size : %u\n", heap_start, heap_size);
+			sdbg("%s heap_start : %x, heap_size : %u\n", clog_message_str[CMN_LOG_FAILED_OP], heap_start, heap_size);
 			PANIC();
 		}
 #endif

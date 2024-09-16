@@ -56,6 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -685,7 +686,7 @@ static int usbhost_linecoding_send(FAR struct usbhost_cdcacm_s *priv)
 
 	ret = DRVR_CTRLOUT(hport->drvr, hport->ep0, ctrlreq, priv->linecode);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_CTRLOUT failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	return ret;
@@ -761,7 +762,7 @@ static void usbhost_notification_work(FAR void *arg)
 
 		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
 		if (ret < 0) {
-			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
+			udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 }
@@ -819,7 +820,7 @@ static void usbhost_notification_callback(FAR void *arg, ssize_t nbytes)
 			if (nbytes != -EAGAIN)
 #endif
 			{
-				udbg("ERROR: Transfer failed: %d\n", nbytes);
+				udbg("%s Transfer: %d\n", clog_message_str[CMN_LOG_FAILED_OP], nbytes);
 			}
 
 			/* We don't know the nature of the failure, but we need to do all
@@ -934,7 +935,7 @@ static void usbhost_txdata_work(FAR void *arg)
 			 * the device is disconnected).
 			 */
 
-			udbg("ERROR: DRVR_TRANSFER for packet failed: %d\n", (int)nwritten);
+			udbg("%s DRVR_TRANSFER for packet: %d\n", clog_message_str[CMN_LOG_FAILED_OP], (int)nwritten);
 			break;
 		}
 	}
@@ -956,7 +957,7 @@ static void usbhost_txdata_work(FAR void *arg)
 			 * NAK'ed our packet.
 			 */
 
-			udbg("ERROR: DRVR_TRANSFER for ZLP failed: %d\n", (int)nwritten);
+			udbg("%s DRVR_TRANSFER for ZLP: %d\n", clog_message_str[CMN_LOG_FAILED_OP], (int)nwritten);
 		}
 	}
 
@@ -1062,7 +1063,7 @@ static void usbhost_rxdata_work(FAR void *arg)
 				 * device was not disconnected.
 				 */
 
-				udbg("ERROR: DRVR_TRANSFER for packet failed: %d\n", (int)nread);
+				udbg("%s DRVR_TRANSFER for packet: %d\n", clog_message_str[CMN_LOG_FAILED_OP], (int)nread);
 				break;
 			}
 
@@ -1490,13 +1491,13 @@ static int usbhost_cfgdesc(FAR struct usbhost_cdcacm_s *priv, FAR const uint8_t 
 
 	ret = DRVR_EPALLOC(hport->drvr, &boutdesc, &priv->bulkout);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate Bulk OUT endpoint\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return ret;
 	}
 
 	ret = DRVR_EPALLOC(hport->drvr, &bindesc, &priv->bulkin);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate Bulk IN endpoint\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		(void)DRVR_EPFREE(hport->drvr, priv->bulkout);
 		return ret;
 	}
@@ -1506,7 +1507,7 @@ static int usbhost_cfgdesc(FAR struct usbhost_cdcacm_s *priv, FAR const uint8_t 
 	if ((found & USBHOST_HAVE_CTRLIF) == USBHOST_HAVE_CTRLIF) {
 		ret = DRVR_EPALLOC(hport->drvr, &iindesc, &priv->intin);
 		if (ret < 0) {
-			udbg("ERROR: Failed to allocate Interrupt IN endpoint\n");
+			udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 			priv->intin = NULL;
 		}
 	}
@@ -1628,7 +1629,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 
 	ret = DRVR_ALLOC(hport->drvr, (FAR uint8_t **)&priv->ctrlreq, &maxlen);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_ALLOC of ctrlreq failed: %d\n", ret);
+		udbg("%s %d\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret);
 		goto errout;
 	}
 
@@ -1638,7 +1639,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 
 	ret = DRVR_IOALLOC(hport->drvr, &priv->linecode, sizeof(struct cdc_linecoding_s));
 	if (ret < 0) {
-		udbg("ERROR: DRVR_IOALLOC of line coding failed: %d (%d bytes)\n", ret, sizeof(struct cdc_linecoding_s));
+		udbg("%s %d (%d bytes)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret, sizeof(struct cdc_linecoding_s));
 		goto errout;
 	}
 #ifdef HAVE_INTIN_ENDPOINT
@@ -1647,7 +1648,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 	if (priv->intin) {
 		ret = DRVR_IOALLOC(hport->drvr, &priv->notification, MAX_NOTIFICATION);
 		if (ret < 0) {
-			udbg("ERROR: DRVR_IOALLOC of line status failed: %d (%d bytes)\n", ret, MAX_NOTIFICATION);
+			udbg("%s %d (%d bytes)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret, MAX_NOTIFICATION);
 			goto errout;
 		}
 	}
@@ -1661,7 +1662,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 
 	ret = DRVR_IOALLOC(hport->drvr, &priv->inbuf, priv->pktsize);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_IOALLOC of Bulk IN buffer failed: %d (%d bytes)\n", ret, priv->pktsize);
+		udbg("%s %d (%d bytes)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret, priv->pktsize);
 		goto errout;
 	}
 
@@ -1669,7 +1670,7 @@ static int usbhost_alloc_buffers(FAR struct usbhost_cdcacm_s *priv)
 
 	ret = DRVR_IOALLOC(hport->drvr, &priv->outbuf, priv->pktsize);
 	if (ret < 0) {
-		udbg("ERROR: DRVR_IOALLOC of Bulk OUT buffer failed: %d (%d bytes)\n", ret, priv->pktsize);
+		udbg("%s %d (%d bytes)\n", clog_message_str[CMN_LOG_ALLOC_FAIL], ret, priv->pktsize);
 		goto errout;
 	}
 
@@ -1889,7 +1890,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 	ret = usbhost_cfgdesc(priv, configdesc, desclen);
 	if (ret < 0) {
-		udbg("usbhost_cfgdesc() failed: %d\n", ret);
+		udbg("%s: usbhost_cfgdesc, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 
@@ -1897,7 +1898,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 	ret = usbhost_alloc_buffers(priv);
 	if (ret < 0) {
-		udbg("ERROR: Failed to allocate transfer buffer\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		goto errout;
 	}
 #ifdef HAVE_CTRL_INTERFACE
@@ -1905,7 +1906,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 	ret = usbhost_linecoding_send(priv);
 	if (ret < 0) {
-		udbg("usbhost_linecoding_send() failed: %d\n", ret);
+		udbg("%s: usbhost_linecoding_send, %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #endif
 
@@ -1917,7 +1918,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 
 	ret = uart_register(devname, &priv->uartdev);
 	if (ret < 0) {
-		udbg("uart_register() failed: %d\n", ret);
+		udbg("%s: uart_register %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 #ifdef HAVE_INTIN_ENDPOINT
@@ -1929,7 +1930,7 @@ static int usbhost_connect(FAR struct usbhost_class_s *usbclass, FAR const uint8
 		uvdbg("Start notification monitoring\n");
 		ret = DRVR_ASYNCH(hport->drvr, priv->intin, (FAR uint8_t *)priv->notification, MAX_NOTIFICATION, usbhost_notification_callback, priv);
 		if (ret < 0) {
-			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 #endif
@@ -2004,12 +2005,12 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 
 	ret = DRVR_CANCEL(hport->drvr, priv->bulkin);
 	if (ret < 0) {
-		udbg("ERROR: Bulk IN DRVR_CANCEL failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 
 	ret = DRVR_CANCEL(hport->drvr, priv->bulkout);
 	if (ret < 0) {
-		udbg("ERROR: Bulk OUT DRVR_CANCEL failed: %d\n", ret);
+		udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 	}
 #ifdef HAVE_INTIN_ENDPOINT
 	/* Cancel any pending asynchronous I/O */
@@ -2017,7 +2018,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 	if (priv->intin) {
 		int ret = DRVR_CANCEL(hport->drvr, priv->intin);
 		if (ret < 0) {
-			udbg("ERROR: Interrupt IN DRVR_CANCEL failed: %d\n", ret);
+			udbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		}
 	}
 #endif

@@ -64,6 +64,7 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bch.h"
 
@@ -95,7 +96,7 @@ ssize_t bchlib_write(FAR void *handle, FAR const char *buffer, size_t offset, si
 	}
 
 	if (bch->sectsize <= 0) {
-		fdbg("ERROR: Invalid sector size bch->sectsize = %d\n", bch->sectsize);
+		fdbg("%s %d\n", clog_message_str[CMN_LOG_INVALID_VAL],bch->sectsize);
 		return -1;
 	}
 
@@ -150,7 +151,7 @@ ssize_t bchlib_write(FAR void *handle, FAR const char *buffer, size_t offset, si
 		ret = bch->inode->u.i_bops->write(bch->inode, (FAR uint8_t *)buffer,
 				sector, nsectors);
 		if (ret < 0) {
-			fdbg("ERROR: Write failed: %d\n", ret);
+			fdbg("%s %d\n", clog_message_str[CMN_LOG_FILE_WRITE_ERROR],ret);
 			return ret;
 		}
 
@@ -183,7 +184,7 @@ ssize_t bchlib_write(FAR void *handle, FAR const char *buffer, size_t offset, si
 	/* Finally, flush any cached writes to the device as well */
 	ret = bchlib_flushsector(bch);
 	if (ret < 0) {
-		fdbg("ERROR: Flush failed: %d\n", ret);
+		fdbg("%s to Flush: %d\n", clog_message_str[CMN_LOG_FAILED_OP],ret);
 		return ret;
 	}
 

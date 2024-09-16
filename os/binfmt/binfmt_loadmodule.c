@@ -64,6 +64,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "binfmt.h"
 
@@ -97,7 +98,7 @@ static int load_default_priority(FAR struct binary_s *bin)
 
 	ret = sched_getparam(0, &param);
 	if (ret < 0) {
-		berr("ERROR: sched_getparam failed: %d\n", ret);
+		berr("%s %d\n",clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	}
 

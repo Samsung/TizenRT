@@ -61,6 +61,7 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "bch.h"
 
@@ -83,14 +84,14 @@ int bchdev_register(FAR const char *blkdev, FAR const char *chardev, bool readon
 	/* Setup the BCH lib functions */
 	ret = bchlib_setup(blkdev, readonly, &handle);
 	if (ret < 0) {
-		fdbg("ERROR: bchlib_setup failed: %d\n", -ret);
+		fdbg("%s:bchlib_setup, %d\n", clog_message_str[CMN_LOG_FAILED_OP],-ret);
 		return ret;
 	}
 
 	/* Then setup the character device */
 	ret = register_driver(chardev, &bch_fops, 0666, handle);
 	if (ret < 0) {
-		fdbg("ERROR: register_driver failed: %d\n", -ret);
+		fdbg("%s:register_driver, %d\n", clog_message_str[CMN_LOG_FAILED_OP],-ret);
 		bchlib_teardown(handle);
 		handle = NULL;
 	}

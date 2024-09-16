@@ -61,6 +61,8 @@
 #include <assert.h>
 #include <debug.h>
 
+#include <tinyara/common_logs/common_logs.h>
+
 #if CONFIG_RR_INTERVAL > 0
 #include <sched.h>
 #include <tinyara/arch.h>
@@ -560,7 +562,7 @@ static void sched_timer_start(unsigned int ticks)
 #endif
 
 		if (ret < 0) {
-			slldbg("ERROR: up_timer_start/up_alarm_start failed: %d\n");
+			slldbg("%s up_timer_start/up_alarm_start %d\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			UNUSED(ret);
 		}
 	}

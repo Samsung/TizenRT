@@ -20,6 +20,7 @@
 * Included Files
 ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -329,7 +330,7 @@ static inline int uvc_init_video_endpoint(struct uvc_streaming *stream, struct u
 		ret = DRVR_EPALLOC(hport->drvr, (struct usbhost_epdesc_s *)&indesc, &stream->bulkin);
 	}
 	if (ret < 0) {
-		uvdbg("ERROR: DRVR_ALLOC of ctrlreq failed: %d\n", ret);
+		uvdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout;
 	}
 	while (bufindex < UVC_MAX_TRF_BUF) {
@@ -339,7 +340,7 @@ static inline int uvc_init_video_endpoint(struct uvc_streaming *stream, struct u
 		/* Allocate memory for isochronous transfer */
 		ret = DRVR_IOALLOC(hport->drvr, (FAR uint8_t **) & stream->bufobj[bufindex].buffer, stream->bufsize);
 		if (ret < 0) {
-			uvdbg("ERROR: DRVR_IOALLOC of isoc failed: %d\n", ret);
+			uvdbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			goto errout;
 		}
 		uvc_circ_bbuf_push(&stream->fbuf, (struct uvc_buf_object *)&stream->bufobj[bufindex]);
@@ -390,7 +391,7 @@ static inline int uvc_set_video_ctrl(struct uvc_streaming *stream, struct uvc_st
 
 	data = kmm_zalloc(size);
 	if (data == NULL) {
-		uvdbg("Failed to allocate memory!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -455,7 +456,7 @@ int uvc_get_video_ctrl(struct uvc_streaming *stream, struct uvc_streaming_contro
 
 	data = kmm_zalloc(size);
 	if (data == NULL) {
-		uvdbg("Fail to allocate memory\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -497,7 +498,7 @@ int uvc_get_video_ctrl(struct uvc_streaming *stream, struct uvc_streaming_contro
 	format = uvc_format_by_index(stream, ctrl->bFormatIndex);
 
 	if (format == NULL) {
-		uvdbg("No format matching found!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -506,7 +507,7 @@ int uvc_get_video_ctrl(struct uvc_streaming *stream, struct uvc_streaming_contro
 	frame = uvc_frame_by_index(format, ctrl->bFrameIndex);
 
 	if (frame == NULL) {
-		uvdbg("No frame matching found!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -584,7 +585,7 @@ int uvc_video_init_transfer(struct uvc_streaming *stream)
 		}
 
 		if (bestep == NULL) {
-			uvdbg("No endpoint with bandwidth support!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 			return -EIO;
 		}
 		type = 0;
@@ -660,25 +661,25 @@ int uvc_probe_video(struct uvc_streaming *stream, struct uvc_streaming_control *
 	 */
 	ret = usbhost_uvc_setinterface(dev, stream->intfnum, 0);
 	if (ret < 0) {
-		udbg("Failed to configure interface\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	ret = uvc_set_video_ctrl(stream, probe, 1);
 	if (ret < 0) {
-		uvdbg("Fail to set probe parameters!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto done;
 	}
 
 	/* Get the minimum and maximum values for compression settings. */
 	ret = uvc_get_video_ctrl(stream, &probe_min, 1, UVC_GET_MIN);
 	if (ret < 0) {
-		uvdbg("Fail to get video min parameters!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto done;
 	}
 
 	ret = uvc_get_video_ctrl(stream, &probe_max, 1, UVC_GET_MAX);
 	if (ret < 0) {
-		uvdbg("Fail to get video max parameters!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto done;
 	}
 
@@ -688,12 +689,12 @@ int uvc_probe_video(struct uvc_streaming *stream, struct uvc_streaming_control *
 	for (i = 0; i < 2; ++i) {
 		ret = uvc_set_video_ctrl(stream, probe, 1);
 		if (ret < 0) {
-			uvdbg("Fail to set video parameters!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			goto done;
 		}
 		ret = uvc_get_video_ctrl(stream, probe, 1, UVC_GET_CUR);
 		if (ret < 0) {
-			uvdbg("Fail to get video current parameters!!\n");
+			uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 			goto done;
 		}
 
@@ -859,7 +860,7 @@ int uvc_transfer_thread(int argc, char *argv[])
 		/* Setup to receive the next data transfer data to be received */
 		ret = DRVR_ASYNCH(hport->drvr, inep, (FAR uint8_t *) bobj->buffer, bobj->bufsize, usbhost_transfer_callback, bobj);
 		if (ret < 0) {
-			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			DEBUGASSERT(!ret);
 			uvc_circ_bbuf_push(&stream->fbuf, bobj);
 		}
@@ -971,7 +972,7 @@ int uvc_video_start_streaming(struct uvc_streaming *stream)
 	}
 
 	if (inep == NULL) {
-		uvdbg("ERROR: Endpoint not allocated!!");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		ret = -EIO;
 		goto error;
 	}
@@ -984,7 +985,7 @@ int uvc_video_start_streaming(struct uvc_streaming *stream)
 		/* Setup transfer request for data to be received */
 		ret = DRVR_ASYNCH(hport->drvr, inep, (FAR uint8_t *) bobj->buffer, stream->bufsize, usbhost_transfer_callback, bobj);
 		if (ret < 0) {
-			udbg("ERROR: DRVR_ASYNCH failed: %d\n", ret);
+			udbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 			uvc_circ_bbuf_push(&stream->fbuf, bobj);
 			goto error;
 		}
@@ -1079,7 +1080,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	uvc_circ_bbuf_init(&stream->fbuf);
 
 	if (stream->nformats == 0) {
-		udbg("No supported video formats found.\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_INVALID_VAL]);
 		ret = -EINVAL;
 		goto errout;
 	}
@@ -1090,7 +1091,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	 */
 	ret = usbhost_uvc_setinterface(dev, stream->intfnum, 0);
 	if (ret < 0) {
-		udbg("Failed to configure interface\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 	}
 
 	if (uvc_get_video_ctrl(stream, probe, 1, UVC_GET_DEF) == 0) {
@@ -1099,7 +1100,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 
 	ret = uvc_get_video_ctrl(stream, probe, 1, UVC_GET_CUR);
 	if (ret < 0) {
-		uvdbg("Fail to get probe parameters!!\n");
+		uvdbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 
@@ -1107,7 +1108,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	format = uvc_format_by_index(stream, probe->bFormatIndex);
 
 	if (format == NULL) {
-		udbg("No format found !!\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		ret = -EINVAL;
 		goto errout;
 	}
@@ -1117,7 +1118,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	 */
 	frame = uvc_frame_by_index(format, probe->bFrameIndex);
 	if (frame == NULL) {
-		udbg("No frame descriptor found !!\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		ret = -EINVAL;
 		goto errout;
 	}
@@ -1143,7 +1144,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	 */
 	ret = uvc_video_init_transfer(stream);
 	if (ret < 0) {
-		udbg("Fail to initialize stream transfer settings!!\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 	/* Create a write worker thread, all transfer object will be processed from
@@ -1154,7 +1155,7 @@ int uvc_video_init(struct uvc_streaming *stream)
 	uvdbg("Starting transfer worker thread\n");
 	dev->thpid = kernel_thread("uvctrf", CONFIG_USBUVC_TRF_PRIO, CONFIG_USBUVC_TRF_STACKSIZE, uvc_transfer_thread, NULL);
 	if (dev->thpid <= 0) {
-		udbg("Fail to create transfer thread!!\n");
+		udbg("%s\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		goto errout;
 	}
 

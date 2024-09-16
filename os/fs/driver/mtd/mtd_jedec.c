@@ -68,6 +68,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/spi/spi.h>
 #include <tinyara/fs/mtd.h>
+#include <tinyara/common_logs/common_logs.h>
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -301,7 +302,7 @@ static inline int jedec_readid(struct jedec_dev_s *priv)
 	fvdbg("manufacturer: %02x memory: %02x capacity: %02x\n", manufacturer, memory, capacity);
 
 	if (jedec_set_geometry(priv, manufacturer, memory, capacity) != OK) {
-		fdbg("can't find such kind of driver\n");
+		fdbg("%s\n", clog_message_str[CMN_LOG_FILE_NFOUND]);
 		return -ENODEV;
 	}
 	
@@ -715,7 +716,7 @@ static int jedec_is_erased(FAR struct jedec_dev_s *priv, off_t block)
 	/* Because of sudden power off, some of bits still can be '0', verify here */
 	for (count = 0; count < (erasesize / 4); count++) {
 		if (buffer[count] != 0xffffffff) {
-			fdbg("written wrongly block : %d data : %08lx\n", block, buffer);
+			fdbg("%s block : %d data : %08lx\n", clog_message_str[CMN_LOG_FAILED_OP], block, buffer);
 			ret = 0;
 			break;
 		}
@@ -775,7 +776,7 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 				/* TODO we verify erased state only for sub-sector erase for now, let's think about more good idea */
 				ret = jedec_is_erased(priv, startblock);
 				if (!ret) {
-					fdbg("erase failed nblocks : %d blocksleft : %d\n", nblocks, blocksleft);
+					fdbg("%s nblocks : %d blocksleft : %d\n", clog_message_str[CMN_LOG_FAILED_OP], nblocks, blocksleft);
 					jedec_unlock(priv->dev);
 					return nblocks - blocksleft;
 				}
@@ -1091,7 +1092,7 @@ FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev)
 		ret = jedec_readid(priv);
 		if (ret != OK) {
 			/* Unrecognized! Discard all of that work we just did and return NULL */
-			fdbg("Unrecognized\n");
+			fdbg("%s \n", clog_message_str[CMN_LOG_FILE_NFOUND]);
 			kmm_free(priv);
 			return NULL;
 		}

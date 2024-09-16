@@ -65,7 +65,7 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/elf.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #ifdef CONFIG_COMPRESSED_BINARY
 #include <tinyara/binfmt/compression/compress_read.h>
 #endif
@@ -153,7 +153,7 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 			rpos = lseek(loadinfo->filfd, offset, SEEK_SET);
 			if (rpos != offset) {
 				int errval = get_errno();
-				berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
+				berr("%s position %lu: %d\n",clog_message_str[CMN_LOG_FILE_SEEK_ERROR], (unsigned long)offset, errval);
 				return -errval;
 			}
 
@@ -166,7 +166,7 @@ int elf_read(FAR struct elf_loadinfo_s *loadinfo, FAR uint8_t *buffer, size_t re
 			/* EINTR just means that we received a signal */
 
 			if (nbytes != -EINTR) {
-				berr("Read from offset %lu failed: %d\n", (unsigned long)offset, (int)nbytes);
+				berr("%s %lu: %d\n", clog_message_str[CMN_LOG_FILE_SEEK_ERROR], (unsigned long)offset, (int)nbytes);
 				return nbytes;
 			}
 		} else if (nbytes == 0) {

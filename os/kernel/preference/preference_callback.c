@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <tinyara/preference.h>
+#include <tinyara/common_logs/common_logs.h>
 
 struct key_cb_list_s {
 	struct key_cb_list_s *flink;
@@ -102,7 +103,7 @@ void preference_send_cb_msg(int type, const char *key)
 		snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, node->pid);
 		send_mq = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
 		if (send_mq == (mqd_t)ERROR) {
-			prefdbg("Failed to open mq '%s', errno %d\n", q_name, errno);
+			prefdbg("%s '%s', errno %d\n", clog_message_str[CMN_LOG_FILE_OPEN_ERROR], q_name, errno);
 			return;
 		}
 
@@ -112,11 +113,11 @@ void preference_send_cb_msg(int type, const char *key)
 		if (ret == OK) {
 			ret = kill(node->pid, SIG_PREFERENCE);
 			if (ret != OK) {
-				prefdbg("Failed to send signal, pid %d errno %d\n", node->pid, errno);
+				prefdbg("%s ,pid %d errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], node->pid, errno);
 				goto errout_with_unlink;
 			}
 		} else {
-			prefdbg("Failed to send mq %s, errno %d\n", q_name, errno);
+			prefdbg("%s to send mq %s, errno %d\n", clog_message_str[CMN_LOG_FAILED_OP], q_name, errno);
 			goto errout_with_unlink;
 		}
 		node = (key_cb_node_t *)sq_next(node);
@@ -142,7 +143,7 @@ int preference_register_callback(preference_callback_t *data)
 
 	ret = preference_check_key(data->type, data->key, &result);
 	if (ret < 0) {
-		prefdbg("Failed to check key, ret %d\n", ret);
+		prefdbg("%s check_key, ret %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	} else if (result == false) {
 		prefdbg("Key %s is not existing\n", data->key);
@@ -165,7 +166,7 @@ int preference_register_callback(preference_callback_t *data)
 
 	node = (key_cb_node_t *)PREFERENCE_ALLOC(sizeof(key_cb_node_t));
 	if (node == NULL) {
-		prefdbg("Failed to allocate cb node\n");
+		prefdbg("%s cb node\n", clog_message_str[CMN_LOG_FAILED_OP]);
 		return PREFERENCE_OUT_OF_MEMORY;
 	}
 	node->pid = getpid();
@@ -187,7 +188,7 @@ int preference_unregister_callback(const char *key, int type)
 
 	ret = preference_check_key(type, key, &result);
 	if (ret < 0) {
-		prefdbg("Failed to check key, ret %d\n", ret);
+		prefdbg("%s check_key, ret %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		return ret;
 	} else if (result == false) {
 		prefdbg("Key %s is not existing\n", key);
@@ -196,7 +197,7 @@ int preference_unregister_callback(const char *key, int type)
 
 	list = preference_get_key_cb_list(type, key);
 	if (list == NULL) {
-		prefdbg("Callback is not registered for key %s\n", key);
+		prefdbg("%s get key from cb list %s\n", clog_message_str[CMN_LOG_FAILED_OP], key);
 		return PREFERENCE_NOT_REGISTERED;
 	}
 

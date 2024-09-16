@@ -62,7 +62,7 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
-
+#include <tinyara/common_logs/common_logs.h>
 #include "inode/inode.h"
 #include "driver.h"
 
@@ -115,7 +115,7 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
 
 	inode = inode_find(pathname, NULL);
 	if (!inode) {
-		fdbg("Failed to find %s\n", pathname);
+		fdbg("%s %s\n", clog_message_str[CMN_LOG_FAILED_OP], pathname);
 		ret = -ENOENT;
 		goto errout;
 	}
@@ -123,7 +123,7 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
 	/* Verify that the inode is a block driver. */
 
 	if (!INODE_IS_BLOCK(inode)) {
-		fdbg("%s is not a block driver\n", pathname);
+		fdbg("%s %s\n", clog_message_str[CMN_LOG_INVALID_VAL], pathname);
 		ret = -ENOTBLK;
 		goto errout_with_inode;
 	}
@@ -131,7 +131,7 @@ int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode 
 	/* Make sure that the inode supports the requested access */
 
 	if (!inode->u.i_bops || !inode->u.i_bops->read || (!inode->u.i_bops->write && (mountflags & MS_RDONLY) == 0)) {
-		fdbg("%s does not support requested access\n", pathname);
+		fdbg("%s %s\n", clog_message_str[CMN_LOG_INVALID_VAL], pathname);
 		ret = -EACCES;
 		goto errout_with_inode;
 	}

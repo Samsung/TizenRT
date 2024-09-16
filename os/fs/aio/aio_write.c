@@ -64,6 +64,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "aio/aio.h"
 
@@ -183,7 +184,7 @@ static void aio_write_worker(FAR void *arg)
 
 	if (nwritten < 0) {
 		int errcode = get_errno();
-		fdbg("ERROR: write/pwrite failed: %d\n", errcode);
+		fdbg("%s: %d\n", clog_message_str[CMN_LOG_FILE_WRITE_ERROR], errcode);
 		DEBUGASSERT(errcode > 0);
 		aiocbp->aio_result = -errcode;
 	} else {

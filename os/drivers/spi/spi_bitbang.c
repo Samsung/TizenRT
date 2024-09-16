@@ -54,6 +54,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdlib.h>
 #include <semaphore.h>
@@ -537,7 +538,7 @@ FAR struct spi_dev_s *spi_create_bitbang(FAR const struct spi_bitbang_ops_s *low
 
 	priv = (FAR struct spi_bitbang_s *)kmm_zalloc(sizeof(struct spi_bitbang_s));
 	if (!priv) {
-		spidbg("Failed to allocate the device structure\n");
+		spidbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return NULL;
 	}
 

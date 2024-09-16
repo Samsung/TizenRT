@@ -55,6 +55,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
+#include <tinyara/common_logs/common_logs.h>
 #include <errno.h>
 #include "pm.h"
 
@@ -116,7 +117,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	int delay = MSEC2TICK(milliseconds);
 	if ((domain_id < 0) || (domain_id >= CONFIG_PM_NDOMAINS) || (pm_domain_map[domain_id] == NULL)) {
 		set_errno(EINVAL);
-		pmdbg("Invalid domain_id: %d\n", domain_id);
+		pmdbg("%s id: %d\n", clog_message_str[CMN_LOG_INVALID_VAL], domain_id);
 		return ret;
 	}
 	flags = enter_critical_section();
@@ -133,13 +134,13 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	if (!wdog) {
 		wdog = wd_create();
 		if (wdog == NULL) {
-			pmdbg("Unable to create WDog Timer, error = %d\n", get_errno());
+			pmdbg("%s to create WDog Timer, error = %d\n", clog_message_str[CMN_LOG_FAILED_OP], get_errno());
 			set_errno(EAGAIN);
 			goto exit;
 		}
 		/* Unable to suspend domain, so delete the timer */
 		if (pm_suspend(domain_id) != OK) {
-			pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id]);
+			pmdbg("%s to suspend domain: %s\n", clog_message_str[CMN_LOG_FAILED_OP], pm_domain_map[domain_id]);
 			(void)wd_delete(wdog);
 			goto exit;
 		}
@@ -154,7 +155,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	}
 	/* Start the timer */
 	if (wd_start(wdog, delay, (wdentry_t)timer_timeout, 1, domain_id) != OK) {
-		pmdbg("Error starting Wdog timer\n");
+		pmdbg("%s start Wdog timer \n", clog_message_str[CMN_LOG_FAILED_OP]);
 		set_errno(EAGAIN);
 		timer_timeout(NULL, domain_id);
 		goto exit;

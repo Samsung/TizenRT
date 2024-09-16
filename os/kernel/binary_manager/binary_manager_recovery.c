@@ -36,6 +36,7 @@
 #include <tinyara/board.h>
 #include <tinyara/wdog.h>
 #include <tinyara/reboot_reason.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
@@ -117,7 +118,7 @@ static int binary_manager_deactivate_binary(int bin_idx)
 	struct tcb_s *ptr;
 
 	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
-		bmdbg("Invalid binary index, %d\n", bin_idx);
+		bmdbg("%s %d\n", clog_message_str[CMN_LOG_INVALID_VAL], bin_idx);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -325,7 +326,7 @@ void binary_manager_recovery(int bin_idx)
 		/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 		ret = binary_manager_deactivate_binary(bidx);
 		if (ret != BINMGR_OK) {
-			bmlldbg("Failed to deactivate binary, bin idx %d\n", bidx);
+			bmlldbg("%s bin idx %d\n", clog_message_str[CMN_LOG_FAILED_OP], bidx);
 			goto reboot_board;
 		}
 	}
@@ -333,7 +334,7 @@ void binary_manager_recovery(int bin_idx)
 	/* Exclude its all children from scheduling if the binary is registered with the binary manager */
 	ret = binary_manager_deactivate_binary(bin_idx);
 	if (ret != BINMGR_OK) {
-		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
+		bmlldbg("%s bin idx %d\n", clog_message_str[CMN_LOG_FAILED_OP], bin_idx);
 		goto reboot_board;
 	}
 #endif

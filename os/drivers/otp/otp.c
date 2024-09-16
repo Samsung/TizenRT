@@ -20,6 +20,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/common_logs/common_logs.h>
 
 #include <stdio.h>
 #include <semaphore.h>
@@ -38,7 +39,7 @@
 	do {													\
 		int oulock_ret = sem_wait(&priv->ou_exclsem);		\
 		if (oulock_ret < 0) {								\
-			lldbg("ERROR: ou_lock failed: %d\n", oulock_ret);	\
+			lldbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], oulock_ret);	\
 			return oulock_ret;										\
 		}													\
 	} while (0)
@@ -47,7 +48,7 @@
 	do {													\
 		int oulock_ret = sem_post(&priv->ou_exclsem);		\
 		if (oulock_ret < 0) {								\
-			lldbg("ERROR: ou unlock failed: %d\n", oulock_ret);	\
+			lldbg("%s: %d\n", clog_message_str[CMN_LOG_FAILED_OP], oulock_ret);	\
 			return oulock_ret;										\
 		}													\
 	} while (0)
@@ -160,7 +161,7 @@ static ssize_t otp_read(struct file *filep, char *buffer,
 	FAR struct otp_upperhalf_s *priv = inode->i_private;
 	int res = OTP_READ(priv, 0, (uint8_t *)buffer, &buflen);
 	if (res < 0) {
-		lldbg("Fail to read\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_FILE_READ_ERROR]);
 		return ENOTTY;
 	}
 	return buflen;
@@ -229,7 +230,7 @@ int otp_register(struct otp_lowerhalf_s *lower)
 	priv = (FAR struct otp_upperhalf_s *)
 		kmm_zalloc(sizeof(struct otp_upperhalf_s));
 	if (!priv) {
-		lldbg("ERROR: Failed to allocate device structure\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_ALLOC_FAIL]);
 		return -ENOMEM;
 	}
 
@@ -242,7 +243,7 @@ int otp_register(struct otp_lowerhalf_s *lower)
 	/* And register the GPIO driver */
 	ret = register_driver(OTP_DEV_PATH, &g_otp_ops, 0444, priv);
 	if (ret < 0) {
-		lldbg("ERROR: register driver failed: %d\n", ret);
+		lldbg("%s %d\n", clog_message_str[CMN_LOG_FAILED_OP], ret);
 		goto errout_with_priv;
 	}
 	g_otp_dev = priv;
@@ -265,7 +266,7 @@ errout_with_priv:
 int otp_unregister(void)
 {
 	if (!g_otp_dev) {
-		lldbg("ERROR: no registered device\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return -1;
 	}
 
@@ -289,7 +290,7 @@ int otp_unregister(void)
 struct otp_upperhalf_s *get_otp_dev(void)
 {
 	if (!g_otp_dev) {
-		lldbg("ERROR: no registered device\n");
+		lldbg("%s\n", clog_message_str[CMN_LOG_NULL_CHECK_FAIL]);
 		return NULL;
 	}
 	return g_otp_dev;
