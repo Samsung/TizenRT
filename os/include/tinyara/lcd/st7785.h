@@ -90,7 +90,7 @@ static const lcm_setting_table_t lcd_init_cmd_g[] = {
         {0x2A, 8, {0x00, 0x00, 0x00, 0x00, 0x00, LCD_CASET1, 0x00, LCD_CASET2}},	/* Column Address Set */
         {0x2B, 8, {0x00, 0x00, 0x00, 0x00, 0x00, LCD_RASET1, 0x00, LCD_RASET2}},	/* Row Address Set */
         {0x21, 0, {0x00}},	/* Display Inversion On */
-        {0x29, 0, {0x00}},	/* Display On */
+        {0x28, 0, {0x00}},	/* Display Off */
         {REGFLAG_END_OF_TABLE, 0, {}},
 };
 
