@@ -104,6 +104,12 @@ config LCD_MAXPOWER
 		backlight setting.  Board-specific logic may place restrictions on this
 		value.
 
+config LCD_FLUSH_THREAD
+	bool "LCD Frame Flushing"
+	default y
+	---help---
+		Separate thread for LCD which will start processing next frame after previous is sent to lcd driver.
+
 comment "Graphic LCD Devices"
 
 choice
@@ -215,6 +221,16 @@ config LCD_RLANDSCAPE
 		tall (LCD_LANDSCAPE is the other).
 
 endchoice
+
+if LCD_LANDSCAPE || LCD_RLANDSCAPE
+
+config LCD_SW_ROTATION
+        bool "LCD screen rotation in lcd driver"
+        default n
+        ---help---
+                Rotate screen from portrait to landscape in driver. Support of both landscape and reverse landscape
+
+endif
 
 config LCD_ILI9341
 	bool "ILI9341 LCD Single Chip Driver"
