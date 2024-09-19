@@ -1026,7 +1026,7 @@ err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp)
 #else
   ip_addr_t *dest = (ip_addr_t *)&iphdr->dest;
 
-  if (ip_addr_cmp(dest, &(inp->ip_addr))) {
+  if (dest->u_addr.ip4.addr == (inp->ip_addr).u_addr.ip4.addr) {
     ip_nat_rx_packet(p, iphdr);
   }
 #endif

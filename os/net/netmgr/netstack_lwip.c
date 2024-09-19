@@ -660,6 +660,8 @@ static int lwip_ns_deinit(void *data)
 
 static int lwip_ns_start(void *data)
 {
+//SRI-D HomelynkPlus
+	ip_nat_initialize();
 	tcpip_init(NULL, NULL);
 	return 0;
 }
