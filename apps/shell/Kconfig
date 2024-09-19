@@ -59,18 +59,35 @@ config TASH_SCRIPT
 
 config SECURED_TASH
 	bool "Enable Secure shell"
-	depends on NET_SECURITY_TLS
+	select NET_SECURITY_TLS
+	select MBEDTLS_PKCS5_C
 	default n
 
 if SECURED_TASH
 
-config TASH_PASSWORD_SHA256
-	string "SHA256 encrypted password (32 Bytes)"
-	default "436890f31fcd6b154a0e49df9f190bd8b1dcd4b917a7a80b2d928452c22901f7"
+config TASH_PASSWORD_HASH
+	string "PBKDF2 encrypted password (32 Bytes)"
+	default "3D9740229177EBE6B11D0371342308881AE1463D1142E9FF932AB180AF4E8BD6"
 	---help---
-		Enable password to enter TASH. The password is hashed by SHA256 so that
+		Enable password to access TASH command line. The password is hashed by PBKDF2 so that
 		the length of this config should be 32 bytes (64 characters).
-		default : hash value of "TizenRT" (Password : TizenRT)
+		default : hash value of "tizenrt" (Password : tizenrt)
+
+config TASH_SALT_ENCRYPTED
+	string "AES encrypted salt (16 Bytes)"
+	default "00112233445566778899AABBCCDDEEFF"
+	---help---
+		Enable salt value for TASH password encryption. The salt is encrypted by AES128 so that
+		the length of this config should be 16 bytes (32 characters).
+		default : encrypted value of "00112233445566778899AABBCCDDEEFF"
+		Please encrypt this value with AES key and set this value.
+
+config TASH_HASH_ITERATION
+	int "Number of PBKDF2 iteration"
+	default 777
+	---help---
+		The number of hash iteration used in PBKDF2.
+
 endif
 
 endif
