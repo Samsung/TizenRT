@@ -124,7 +124,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	/* If delay is zero then cancel the timer (PM Policy) */
 	if (delay == 0) {
 		if (wdog) {
-			timer_timeout(NULL, domain_id);
+			timer_timeout(0, domain_id);
 		}
 		ret = OK;
 		goto exit;
@@ -156,7 +156,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	if (wd_start(wdog, delay, (wdentry_t)timer_timeout, 1, domain_id) != OK) {
 		pmdbg("Error starting Wdog timer\n");
 		set_errno(EAGAIN);
-		timer_timeout(NULL, domain_id);
+		timer_timeout(0, domain_id);
 		goto exit;
 	}
 	pmvdbg("Domain: %s is suspended for %d milliseconds\n", pm_domain_map[domain_id], milliseconds);

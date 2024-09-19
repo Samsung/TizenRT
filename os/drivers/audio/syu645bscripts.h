@@ -33,7 +33,7 @@ typedef enum reg_data_type{
 	SYU645B_REG_D_3BYTE = 3,
 	SYU645B_REG_D_5BYTE = 5,
 	SYU645B_REG_DATA_TYPE_MAX
-};
+} reg_data_type;
 
 /* TYPEDEFS */
 typedef struct {
