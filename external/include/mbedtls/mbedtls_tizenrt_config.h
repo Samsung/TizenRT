@@ -205,3 +205,8 @@
 #endif /* CONFIG_TLS_HW_AES_ENC */
 
 #endif /* CONFIG_SE */
+
+#if defined(CONFIG_MBEDTLS_PKCS5_C)
+/* MBEDTLS_PKCS5_C should be enabled to encrypt TASH password with PBKDF2 */
+#define MBEDTLS_PKCS5_C
+#endif /* CONFIG_MBEDTLS_PKCS5_C */
