@@ -1136,7 +1136,8 @@ static bool rtl8730e_up_txempty(struct uart_dev_s *dev)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
+
+	return (serial_tx_empty(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************
@@ -1180,7 +1181,8 @@ static uint32_t rtk_uart_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 #ifdef CONFIG_RTL8730E_UART1
-	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
+	if ((sdrv[uart_index_get(g_uart1priv.tx)] != NULL) && (g_uart1priv.baud > 115200)) {
+		/* Change to low clock speed when baudrate is higher than 115200, because clock will be power off */
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 0);
 	}
 #endif
@@ -1192,7 +1194,8 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 #ifdef CONFIG_RTL8730E_UART1
-	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
+	if ((sdrv[uart_index_get(g_uart1priv.tx)] != NULL) && (g_uart1priv.baud > 115200)) {
+		/* Change to high clock speed when baudrate is higher than 115200 */
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 1);
 	}
 #endif
