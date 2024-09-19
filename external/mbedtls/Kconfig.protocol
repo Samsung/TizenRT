@@ -22,7 +22,14 @@ config TLS_HAVE_NO_TIME_DATE
 		The time needs to be correct (not necesarily very accurate, but at least
 		* the date should be correct). This is used to verify the validity period of
 		* X.509 certificates.
-		
+
+config MBEDTLS_PKCS5_C
+	bool "PKCS#5 Support"
+	default n
+	---help---
+		Enable MBEDTLS_PKCS5_C.
+		If you need to use PKCS#5 functions(such as PBKDF2 function), please enable this config.
+
 if TLS_WITH_HW_ACCEL
 
 menu "HW Options"
