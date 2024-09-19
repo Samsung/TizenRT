@@ -281,8 +281,6 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 #ifdef CONFIG_RESOURCE_FS
 static int make_resource_mtd_partition(struct mtd_dev_s *mtd, off_t partoffset, off_t nblocks, uint16_t partno)
 {
-	int ret;
-	char fs_devname[FS_PATH_MAX];
 	FAR struct mtd_dev_s *mtd_part;
 	uint16_t resource_partno;
 

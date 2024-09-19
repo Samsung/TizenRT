@@ -105,11 +105,11 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	int fd;
 	int ret;
 	uint32_t read_size;
-	uint32_t bin_size;
+	uint32_t bin_size = 0;
 	uint32_t calculate_crc = 0;
 	uint8_t *crc_buffer;
 	uint32_t crc_hash;
-	uint32_t crc_bufsize;
+	uint32_t crc_bufsize = 0;
 	int header_size = 0;
 
 	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {

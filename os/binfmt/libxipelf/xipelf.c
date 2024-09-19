@@ -100,11 +100,11 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	close(filfd);
 
-	binp->sections[BIN_TEXT] = uspace.text_start;
-	binp->flash_region_start = uspace.text_start - uspace_offset + 4;
-	binp->flash_region_end = uspace.flash_end;
-	binp->ram_region_start = uspace.ram_start;
-	binp->ram_region_end = uspace.ram_end;
+	binp->sections[BIN_TEXT] = (uint32_t)uspace.text_start;
+	binp->flash_region_start = (uint32_t)uspace.text_start - uspace_offset + 4;
+	binp->flash_region_end = (uint32_t)uspace.flash_end;
+	binp->ram_region_start = (uint32_t)uspace.ram_start;
+	binp->ram_region_end = (uint32_t)uspace.ram_end;
 	binp->sizes[BIN_TEXT] = binp->flash_region_end - binp->flash_region_start;
 
 	/* zero out the bss... */
