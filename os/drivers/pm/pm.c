@@ -72,6 +72,8 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_RESUME - for unlocking a specific PM state
  *   PMIOC_SLEEP - to make board sleep for given time
  *   PMIOC_TIMEDSUSPEND - to suspend a pm state for given time duration
+ *   PMIOC_DOMAIN_REGISTER - to register and get pm domain ID of given domain name
+ *   PMIOC_METRICS - to get pm metrics data for given time
  *   PMIOC_TUNEFREQ - for changing the operating frequency of the core to save power
  *   PMIOC_SUSPEND_COUNT - to get suspend count of pm domain
  * 
@@ -89,6 +91,18 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *
  * Description:
  *   This api can be used to perform PM operation.
+ * 
+ * Returned Value:
+ *   Returns a non-negative number on success;  A negated errno value is
+ *   returned on any failure.
+ *   PMIOC_SUSPEND           -   return OK on success  
+ *   PMIOC_RESUME            -   return OK on success
+ *   PMIOC_SLEEP             -   return OK on success
+ *   PMIOC_TIMEDSUSPEND      -   return OK on success
+ *   PMIOC_DOMAIN_REGISTER   -   return OK on success
+ *   PMIOC_METRICS           -   return OK on success
+ *   PMIOC_TUNEFREQ          -   return OK on success
+ *   PMIOC_SUSPEND_COUNT     -   return non-negative suspend count of domain
  *
  ************************************************************************************/
 static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
