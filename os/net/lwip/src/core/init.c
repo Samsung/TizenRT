@@ -389,7 +389,7 @@ void lwip_init(void)
 #endif
 
 #if defined(IP_NAT) && (IP_NAT == 1)
-//  ip_nat_initialize();
+	ip_nat_initialize();
 #endif /* IP_NAT */
 
 #if LWIP_TIMERS
