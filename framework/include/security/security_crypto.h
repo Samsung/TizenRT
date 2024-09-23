@@ -33,6 +33,8 @@ security_error crypto_aes_encryption(security_handle hnd, security_aes_param *pa
 security_error crypto_aes_decryption(security_handle hnd, security_aes_param *param, const char *key_name, security_data *input, security_data *output);
 security_error crypto_rsa_encryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
 security_error crypto_rsa_decryption(security_handle hnd, security_rsa_param *param, const char *key_name, security_data *input, security_data *output);
+security_error crypto_gcm_encryption(security_handle hnd, security_gcm_param *param, const char *key_name, security_data *input, security_data *output);
+security_error crypto_gcm_decryption(security_handle hnd, security_gcm_param *param, const char *key_name, security_data *input, security_data *output);
 
 #ifdef __cplusplus
 }
