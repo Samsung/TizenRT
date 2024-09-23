@@ -210,6 +210,9 @@
  */
 
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~4, uart4 is configured as log uart
+#ifdef CONFIG_PM
+static bool uart_active_state = 0;
+#endif
 
 struct rtl8730e_up_dev_s {
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
@@ -893,9 +896,6 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 
-#ifdef CONFIG_PM
-	bsp_pm_domain_control(BSP_UART_DRV, 1);
-#endif
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}
@@ -904,9 +904,6 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 		uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
-#ifdef CONFIG_PM
-	bsp_pm_domain_control(BSP_UART_DRV, 0);
-#endif
 }
 static int rtl8730e_up_attach(struct uart_dev_s *dev)
 {
@@ -1103,6 +1100,12 @@ static void rtl8730e_up_txint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
+#ifdef CONFIG_PM
+	if (uart_active_state != enable) {	/* State has changed */
+		bsp_pm_domain_control(BSP_UART_DRV, enable);
+		uart_active_state = enable;
+	}
+#endif
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], TxIrq, enable);
 	if (enable)
 		UART_INTConfig(UART_DEV_TABLE[uart_index_get(priv->tx)].UARTx, RUART_BIT_ETBEI, ENABLE);
@@ -1181,8 +1184,7 @@ static uint32_t rtk_uart_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 #ifdef CONFIG_RTL8730E_UART1
-	if ((sdrv[uart_index_get(g_uart1priv.tx)] != NULL) && (g_uart1priv.baud > 115200)) {
-		/* Change to low clock speed when baudrate is higher than 115200, because clock will be power off */
+	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 0);
 	}
 #endif
@@ -1194,8 +1196,7 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 #ifdef CONFIG_RTL8730E_UART1
-	if ((sdrv[uart_index_get(g_uart1priv.tx)] != NULL) && (g_uart1priv.baud > 115200)) {
-		/* Change to high clock speed when baudrate is higher than 115200 */
+	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 1);
 	}
 #endif

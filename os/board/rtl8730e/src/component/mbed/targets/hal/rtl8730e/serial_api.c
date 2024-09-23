@@ -566,11 +566,10 @@ void serial_change_clcksrc(serial_t *obj, int baudrate, bool high_low)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 
-	if (high_low) {
-		RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
-		UART_SetBaud(puart_adapter->UARTx, baudrate);
-	}
-	else {
+	if ((high_low) && (baudrate > 115200)) {
+			RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
+			UART_SetBaud(puart_adapter->UARTx, baudrate);
+	} else {
 		RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_OSC_LP);
 		UART_LPRxBaudSet(puart_adapter->UARTx, baudrate, 2000000);
 	}
