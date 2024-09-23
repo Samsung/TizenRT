@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version d388ac9932 2024/09/25-12:22:27 ==
+1. Fix LOGUART stuck due to RX data available interrupt bit not being re-enabled in KM0
+
 == version ad3d966441 2024/09/11-18:20:44 ==
 1. Add support to obtain key_mgnt value during wifi disconnect event
 2. Remove support of obtaining key_mgnt value of current wifi connection
