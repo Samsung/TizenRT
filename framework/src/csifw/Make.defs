@@ -20,6 +20,9 @@ ifeq ($(CONFIG_CSIFW), y)
 
 CSRCS += CSIPacketReceiver.c CSIParser.c CSIService.c PingGenerator.c CSINetworkMonitor.c rb.c
 
+ifeq ($(CONFIG_CSI_DATA_DUMP_OVER_NETWORK), y)
+	CSRCS += CSILogsDumper.c
+endif
 
 DEPPATH += --dep-path src/csifw
 VPATH += :src/csifw

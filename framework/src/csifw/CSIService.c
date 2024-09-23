@@ -22,6 +22,11 @@
 #include "include/CSIParser.h"
 #include "include/CSIPacketReceiver.h"
 #include "include/CSINetworkMonitor.h"
+#ifdef CONFIG_CSI_DATA_DUMP_OVER_NETWORK
+#include "include/CSILogsDumper.h"
+#endif
+#include <errno.h>
+#include <fcntl.h>
 
 COLLECT_STATE g_service_state = CSI_STATE_UNITIALIZED;
 CONNECTION_STATE g_nw_state;
@@ -33,6 +38,57 @@ upd_parsed_data_listener g_parsed_callback;
 static void* g_ptr;
 static csi_action_param_t g_csifw_config __attribute__((aligned(64))) = {0,};
 
+#ifdef CONFIG_CSI_DATA_DUMP_OVER_NETWORK
+#define CSI_DATA_BUFFER_SIZE 1024
+
+unsigned char gCSIDataBuffer[CSI_DATA_BUFFER_SIZE];
+int gDataDumpDescriptor;
+bool gCSIDataDumpEvent = STOP_DUMP;
+
+static void csi_data_dump_listener(EVENT event) {
+	CSIFW_LOGD("csi_data_dump_listener called\n");
+	gCSIDataDumpEvent = event;
+	return;
+}
+
+static int send_message(int fd, void *buf, int buflen)
+{
+	int sent = 0;
+	while (1) {
+		int res = write(fd, (void *)buf + sent, buflen - sent);
+		if (res < 0) {
+			int err_no = errno;
+			if (err_no == EAGAIN || err_no == EINTR) {
+				continue;
+			}
+			CSIFW_LOGE("write error %d", err_no);
+			return -1;
+		}
+		sent += res;
+		if (sent == buflen) {
+			break;
+		}
+	}
+	return 0;
+}
+
+CSIFW_RES csi_logs_dumper_send_to_queue(unsigned char *csi_buf, int len)
+{
+	// Copy the length to the first two bytes and the data to the rest of the output buffer
+	uint16_t dest_len = (uint16_t)len;
+	memcpy(gCSIDataBuffer, &dest_len, 2);
+	memcpy(gCSIDataBuffer + 2, csi_buf, len);
+
+	int res = send_message(gDataDumpDescriptor, (void *)gCSIDataBuffer, len + 2);
+
+	if (res < 0) {
+		CSIFW_LOGE("Failed to send message to CSI_DUMP_DATA_QUEUE");
+		return CSIFW_ERROR;
+	}
+	return CSIFW_OK;
+}
+#endif
+
 static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned char *raw_csi_buff, int raw_csi_data_len)
 {
 	//Send raw data to UPD
@@ -42,6 +98,15 @@ static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned cha
 	}
 	if (g_raw_callback) {
 		g_raw_callback(res, raw_csi_buff_len, raw_csi_buff, g_ptr);
+		#ifdef CONFIG_CSI_DATA_DUMP_OVER_NETWORK
+		if (gCSIDataDumpEvent) {
+			CSIFW_RES ret = csi_logs_dumper_send_to_queue(raw_csi_buff, raw_csi_buff_len);
+			if (ret != CSIFW_OK) {
+				CSIFW_LOGE("Failed to send CSI data to CSI_DUMP_DATA_QUEUE");
+			}
+			CSIFW_LOGD("CSI data sent to CSI_DUMP_DATA_QUEUE");
+		}
+		#endif
 	}
 }
 
@@ -53,6 +118,28 @@ CSIFW_RES csi_manager_init(void)
 
 CSIFW_RES csi_service_init(upd_raw_data_listener raw_callback, upd_parsed_data_listener parsed_callback, unsigned int interval, void* ptr)
 {	
+	#ifdef CONFIG_CSI_DATA_DUMP_OVER_NETWORK
+	int result = mkfifo(CSI_DUMP_DATA_QUEUE_NAME, 0666);
+	if (result < 0 && result != -EEXIST) {
+		CSIFW_LOGE("create CSI_DUMP_DATA_QUEUE fail %d", errno);
+		return CSIFW_ERROR;
+	}
+	gDataDumpDescriptor = open(CSI_DUMP_DATA_QUEUE_NAME, O_WRONLY | O_NONBLOCK);
+	if (gDataDumpDescriptor < 0) {
+		CSIFW_LOGE("open CSI_DUMP_DATA_QUEUE fail %d", errno);
+		unlink(CSI_DUMP_DATA_QUEUE_NAME);
+		return CSIFW_ERROR;
+	}
+	result = csi_logs_dumper_init();
+	if (result != CSIFW_OK) {
+		CSIFW_LOGE("open csi_logs_dumper_init fail");
+		close(gDataDumpDescriptor);
+		unlink(CSI_DUMP_DATA_QUEUE_NAME);
+		return CSIFW_ERROR;
+	}
+	set_event_listener(csi_data_dump_listener);
+	#endif
+
 	g_ptr = ptr;
 	if (g_service_state != CSI_STATE_UNITIALIZED) {
 		CSIFW_LOGE("Already Initialized");
@@ -137,6 +224,11 @@ CSIFW_RES csi_service_deinit()
 	}
 	g_service_state = CSI_STATE_UNITIALIZED;
 	csi_packet_receiver_deinit();
+	#ifdef CONFIG_CSI_DATA_DUMP_OVER_NETWORK
+	csi_logs_dumper_deinit();
+	close(gDataDumpDescriptor);
+	unlink(CSI_DUMP_DATA_QUEUE_NAME);
+	#endif
 	if (g_parsed_buffptr) {
 		free(g_parsed_buffptr);
 		g_parsed_buffptr = NULL;
