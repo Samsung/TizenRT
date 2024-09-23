@@ -138,6 +138,14 @@
 		}                                                    \
 	} while (0)
 
+#define SECAPI_CONVERT_GCMPARAM(sec, hal)                    \
+	do {                                                     \
+		int c_res = secutils_convert_gcmparam_s2h(sec, hal); \
+		if (c_res < 0) {                                     \
+			SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);    \
+		}                                                    \
+	} while (0)
+
 #define SECAPI_CONVERT_KEYTYPE(sec, hal)                  \
 	do {                                                  \
 		hal = secutils_convert_key_s2h(sec);              \
@@ -224,7 +232,9 @@ hal_key_type secutils_convert_ecdsamode_to_key_s2h(security_ecdsa_mode mode);
 security_error secutils_convert_error_h2s(int herr);
 int secutils_convert_path_s2h(const char *path, uint32_t *slot);
 int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hparam);
+int secutils_convert_gcmparam_s2h(security_gcm_param *sparam, hal_gcm_param *hparam);
 int secutils_convert_rsaparam_s2h(security_rsa_param *sparam, hal_rsa_mode *hparam);
+int secutils_convert_gcmparam_s2h(security_gcm_param *sparam, hal_gcm_param *hparam);
 int secutils_convert_ecdsaparam_s2h(security_ecdsa_param *eparam, hal_ecdsa_mode *hmode);
 int secutils_convert_dhparam_s2h(security_dh_param *dparam, hal_dh_data *hdata);
 int secutils_convert_ecdhparam_s2h(security_ecdh_param *eparam, hal_ecdh_data *hdata);
