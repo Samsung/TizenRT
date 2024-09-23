@@ -158,6 +158,11 @@ typedef enum {
 } security_aes_mode;
 
 typedef enum {
+	GCM_AES,
+	GCM_UNKNOWN,
+} security_gcm_mode;
+
+typedef enum {
 	HASH_MD5,
 	HASH_SHA1,
 	HASH_SHA224,
@@ -179,6 +184,16 @@ typedef struct _security_aes_param {
 	unsigned char *iv;
 	unsigned int iv_len;
 } security_aes_param;
+
+typedef struct _security_gcm_param {
+	security_gcm_mode cipher;
+	unsigned char *iv;
+	unsigned int iv_len;
+	unsigned char *aad; 
+	unsigned int aad_len;
+	unsigned char *tag; 
+	unsigned int tag_len;
+} security_gcm_param;
 
 typedef struct _security_ecdsa_param {
 	security_ecdsa_mode curve;
