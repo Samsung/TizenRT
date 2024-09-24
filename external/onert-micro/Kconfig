@@ -1,0 +1,12 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXTERNAL_ONERT_MICRO
+bool "ONERT for Microcontroller"
+default n
+    select HAVE_CXX
+    select HAVE_CXXINITIALIZE if BUILD_FLAT
+    ---help---
+        Enables the ONERT for Microcontroller

@@ -25,6 +25,12 @@ CXXFLAGS += -I$(TOPDIR)/../external/tfmicro/third_party/gemmlowp
 CXXSRCS += TFLM.cpp
 endif
 
+ifeq ($(CONFIG_EXTERNAL_ONERT_MICRO),y)
+CXXFLAGS += -I$(TOPDIR)/../external/onert-micro
+CXXFLAGS += -I$(TOPDIR)/../external/onert-micro/onert-micro/luci-interpreter/include -I$(TOPDIR)/../external/onert-micro/onert-micro/luci-interpreter/src -I$(TOPDIR)/../external/onert-micro/externals/gen
+CXXSRCS += ONERTM.cpp
+endif
+
 CSRCS += aifw_csv_reader_utils.c aifw_csv_reader.c
 CXXSRCS += AIModel.cpp AIModelService.cpp AIDataBuffer.cpp aifw_utils.cpp AIManifestParser.cpp AIInferenceHandler.cpp aifw_timer.cpp
 
