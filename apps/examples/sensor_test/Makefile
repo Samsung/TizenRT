@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 #
 ###########################################################################
 ############################################################################
+# apps/examples/sensor_test/Makefile
 #
-#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,39 +50,109 @@
 #
 ############################################################################
 
-CSRCS += rtl8730e_boot.c
-CSRCS += rtl8730e_logtask.c
-CSRCS += rtl8730e_i2schar.c
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-ifeq ($(CONFIG_AUDIO_ALC1019),y)
-CSRCS += rtl8730e_alc1019.c
+# Hello, World! built-in application info
+
+APPNAME = sensor
+FUNCNAME = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# Hello, World! Example
+
+ASRCS =
+CSRCS =
+MAINSRC = sensor_main.c
+
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
+
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
 endif
 
-ifeq ($(CONFIG_AUDIO_SYU645B),y)
-CSRCS += rtl8730e_syu645b.c
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = $(APPDIR)\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = $(APPDIR)\\libapps$(LIBEXT)
+else
+  BIN = $(APPDIR)/libapps$(LIBEXT)
+endif
 endif
 
-ifeq ($(CONFIG_LCD_ST7789), y)
-CSRCS += rtl8730e_st7789.c
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
 endif
 
-ifeq ($(CONFIG_LCD_ST7785), y)
-CSRCS += rtl8730e_mipi_lcdc.c
+CONFIG_EXAMPLES_HELLO_PROGNAME ?= sensor$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_HELLO_PROGNAME)
+
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
+
+all: .built
+.PHONY: clean depend distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
 endif
 
-ifeq ($(CONFIG_LCD_ST7701), y)
-CSRCS += rtl8730e_mipi_lcdc.c
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_HELLO),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
+context:
+
 endif
 
-ifeq ($(CONFIG_LCD_ST7701SN), y)
-CSRCS += rtl8730e_mipi_lcdc.c
-endif
+.depend: Makefile $(SRCS)
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
 
-ifeq ($(CONFIG_AUDIO_NDP120),y)
-CSRCS += rtl8730e_ndp120.c
-endif
+depend: .depend
 
-ifeq ($(CONFIG_SENSOR),y)
-CSRCS += rtl8730e_mlx90617.c
-endif
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
 
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+.PHONY: preconfig
+preconfig:

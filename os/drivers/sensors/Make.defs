@@ -19,6 +19,8 @@
 # Include nothing if CONFIG_SENSOR is disabled
 ifeq ($(CONFIG_SENSOR),y)
 
+CSRCS += mlx90617.c
+
 ifeq ($(CONFIG_SENSOR_PPD42NS),y)
   CSRCS += ppd42ns.c
 endif

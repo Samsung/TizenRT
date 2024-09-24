@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 #
 ###########################################################################
 ############################################################################
+# apps/examples/sensor_test/Make.defs
+# Adds selected applications to apps/ build
 #
-#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,39 +51,6 @@
 #
 ############################################################################
 
-CSRCS += rtl8730e_boot.c
-CSRCS += rtl8730e_logtask.c
-CSRCS += rtl8730e_i2schar.c
-
-ifeq ($(CONFIG_AUDIO_ALC1019),y)
-CSRCS += rtl8730e_alc1019.c
+ifeq ($(CONFIG_EXAMPLES_SENSOR),y)
+CONFIGURED_APPS += examples/sensor_test
 endif
-
-ifeq ($(CONFIG_AUDIO_SYU645B),y)
-CSRCS += rtl8730e_syu645b.c
-endif
-
-ifeq ($(CONFIG_LCD_ST7789), y)
-CSRCS += rtl8730e_st7789.c
-endif
-
-ifeq ($(CONFIG_LCD_ST7785), y)
-CSRCS += rtl8730e_mipi_lcdc.c
-endif
-
-ifeq ($(CONFIG_LCD_ST7701), y)
-CSRCS += rtl8730e_mipi_lcdc.c
-endif
-
-ifeq ($(CONFIG_LCD_ST7701SN), y)
-CSRCS += rtl8730e_mipi_lcdc.c
-endif
-
-ifeq ($(CONFIG_AUDIO_NDP120),y)
-CSRCS += rtl8730e_ndp120.c
-endif
-
-ifeq ($(CONFIG_SENSOR),y)
-CSRCS += rtl8730e_mlx90617.c
-endif
-
