@@ -355,6 +355,8 @@ static void jedec_unprotect(FAR struct jedec_dev_s *priv)
 
 static void jedec_set_4byte_addr_mode(FAR struct jedec_dev_s *priv)
 {
+	jedec_lock(priv->dev);
+
 	/* Select this FLASH part */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
@@ -366,6 +368,8 @@ static void jedec_set_4byte_addr_mode(FAR struct jedec_dev_s *priv)
 	/* Deselect the FLASH */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+
+	jedec_unlock(priv->dev);
 }
 
 
@@ -929,6 +933,8 @@ static ssize_t jedec_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
 
 	fvdbg("offset: %08lx nbytes: %d\n", (long)offset, (int)nbytes);
 
+	jedec_lock(priv->dev);
+
 	/* We must test if the offset + count crosses one or more pages
 	 * and perform individual writes.  The devices can only write in
 	 * page increments.
@@ -973,6 +979,8 @@ static ssize_t jedec_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyte
 			jedec_bytewrite(priv, &buffer[index], offset, count);
 		}
 	}
+
+	jedec_unlock(priv->dev);
 
 	return nbytes;
 }
