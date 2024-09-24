@@ -139,6 +139,7 @@ struct amebasmart_usbdev_s {
 	u8 remote_wakeup_en : 1;		/* Remote wakeup enable or not, 0-disabled, 1-enabled */
 	u8 remote_wakeup : 1;			/* Remote wakeup */
 	sem_t txsem;
+	sem_t exclsem;
 };
 static struct amebasmart_usbdev_s g_usbdev;
 /* Serial driver UART operations */
@@ -333,6 +334,7 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+	int ret;
 	uint16_t nbytes = 0;
 	uint8_t *buffer = NULL;
 	buffer = (uint8_t *)rtw_zmalloc(CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
@@ -358,23 +360,37 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 		}
 		if (nbytes == CONFIG_CDC_ACM_BULK_IN_XFER_SIZE) {
 			nbytes = 0;
+			do {
+				ret = sem_wait(&g_usbdev.exclsem);
+				DEBUGASSERT(errno != EINTR);
+			} while (ret < 0);
+
 			usbd_cdc_acm_transmit(buffer, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
+
 			while (sem_wait(&g_usbdev.txsem) != 0) {
 				/* The only case that an error should occur here is if the wait was awakened
 				* by a signal.
 				*/
 				ASSERT(errno == EINTR);
 			}
+			sem_post(&g_usbdev.exclsem);
 			priv->tx_level-=CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
 		}
 	}
+	do {
+		ret = sem_wait(&g_usbdev.exclsem);
+		DEBUGASSERT(errno != EINTR);
+	} while (ret < 0);
+
 	usbd_cdc_acm_transmit(buffer, nbytes);
+
 	while (sem_wait(&g_usbdev.txsem) != 0) {
 		/* The only case that an error should occur here is if the wait was awakened
 		* by a signal.
 		*/
 		ASSERT(errno == EINTR);
 	}
+	sem_post(&g_usbdev.exclsem);
 	priv->tx_level-=nbytes;
 	rtw_mfree(buffer,0);
 	/* When all of the characters have been sent from the buffer disable the TX
@@ -754,7 +770,7 @@ int amebasmart_up_usbinitialize(struct amebasmart_usbdev_s *priv)
 		return ret;
 	}
 	sem_init(&g_usbdev.txsem, 0, 0);
-
+	sem_init(&g_usbdev.exclsem, 0, 1);
 	return ret;
 }
 
@@ -800,4 +816,53 @@ void usb_initialize(void)
 	}
 }
 
+/****************************************************************************
+ * Name: usb_up_lowputc
+ *
+ * Description:
+ *   Output one packet on the serial console
+ *
+ * Input Parameters:
+ *   *ch - chatacter buffer to output
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void usb_up_lowputc(uint8_t *ch, uint16_t len)
+{
+	uint16_t remain_data_len = len;
+	uint16_t send_data_len = 0;
+	uint8_t *buffer = NULL;
+	buffer = (uint8_t *)rtw_zmalloc(CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
+	if (buffer == NULL) {
+		udbg("malloc failed\n");
+		return;
+	}
+	while (remain_data_len > 0) {
+		if (remain_data_len >= CONFIG_CDC_ACM_BULK_IN_XFER_SIZE) {
+			send_data_len = CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
+		} else {
+			send_data_len = remain_data_len;
+		}
+		memcpy(buffer, ch, send_data_len);
+		int ret;
+		do {
+			ret = sem_wait(&g_usbdev.exclsem);
+			DEBUGASSERT(errno != EINTR);
+		} while (ret < 0);
 
+		usbd_cdc_acm_transmit(buffer, send_data_len);
+
+		while (sem_wait(&g_usbdev.txsem) != 0) {
+			/* The only case that an error should occur here is if the wait was awakened
+			* by a signal.
+			*/
+			ASSERT(errno == EINTR);
+		}
+		sem_post(&g_usbdev.exclsem);
+		remain_data_len -= send_data_len;
+		ch += send_data_len;
+	}
+	rtw_mfree(buffer,0);
+}
