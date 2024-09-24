@@ -718,8 +718,9 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 		return -1; /* Memory Allocation Fail for new command */
 	}
 
-	/* store command string - no need of explicit NULL termination */
+	/* store command string */
 	strncpy(tash_cmds_info.cmd[tash_cmds_info.count].str, str, TASH_CMD_MAXSTRLENGTH - 1);
+	tash_cmds_info.cmd[tash_cmds_info.count].str[TASH_CMD_MAXSTRLENGTH - 1] = '\0';
 	/* store callback */
 	tash_cmds_info.cmd[tash_cmds_info.count].cb = cb;
 	/* store thread_exec flags */
