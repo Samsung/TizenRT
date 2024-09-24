@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "tinyara/config.h"
 #include <memory>
 #include "aifw/aifw.h"
 
