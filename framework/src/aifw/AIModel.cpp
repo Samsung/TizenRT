@@ -19,7 +19,11 @@
 #include "tinyara/config.h"
 #include "aifw/aifw.h"
 #include "aifw/aifw_log.h"
+#ifdef CONFIG_AIFW_USE_ONERT_MICRO
+#include "include/ONERTM.h"
+#elif CONFIG_AIFW_USE_TFMICRO
 #include "include/TFLM.h"
+#endif
 #include "include/AIManifestParser.h"
 #include "aifw/AIDataBuffer.h"
 #include "aifw/AIProcessHandler.h"
@@ -31,10 +35,16 @@ AIModel::AIModel(void) :
 #ifdef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	mInvokeResult(NULL), mInputSizeList(NULL), mOutputSizeList(NULL), mInputSetCount(0), mOutputSetCount(0),
 #endif
-	mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(nullptr), mBuffer(nullptr)	
+	mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(nullptr), mBuffer(nullptr)
 {
 	memset(&mModelAttribute, '\0', sizeof(AIModelAttribute));
+#ifdef CONFIG_AIFW_USE_ONERT_MICRO
+	mAIEngine = std::make_shared<ONERTM>();
+	AIFW_LOGE("Model Engine is OneRT");
+#elif CONFIG_AIFW_USE_TFMICRO
 	mAIEngine = std::make_shared<TFLM>();
+	AIFW_LOGE("Model Engine is TFM");
+#endif
 	if (!mAIEngine) {
 		AIFW_LOGE("Model Engine memory allocation failed");
 	}
@@ -47,7 +57,13 @@ AIModel::AIModel(std::shared_ptr<AIProcessHandler> dataProcessor) :
 	mInvokeInput(NULL), mInvokeOutput(NULL), mParsedData(NULL), mPostProcessedData(NULL), mDataProcessor(dataProcessor), mBuffer(nullptr)
 {
 	memset(&mModelAttribute, '\0', sizeof(AIModelAttribute));
+#ifdef CONFIG_AIFW_USE_ONERT_MICRO
+	mAIEngine = std::make_shared<ONERTM>();
+	AIFW_LOGE("Model Engine is OneRT");
+#elif CONFIG_AIFW_USE_TFMICRO
 	mAIEngine = std::make_shared<TFLM>();
+	AIFW_LOGE("Model Engine is TFM");
+#endif
 	if (!mAIEngine) {
 		AIFW_LOGE("Model Engine memory allocation failed");
 	}
@@ -697,6 +713,11 @@ AIFW_RESULT AIModel::clearRawData(uint16_t offset, uint16_t count)
 AIFW_RESULT AIModel::resetInferenceState(void)
 {
 	return mAIEngine->resetInferenceState();
+}
+
+uint32_t AIModel::getModelCode()
+{
+	return mModelAttribute.modelCode;
 }
 
 } /* namespace aifw */

@@ -14,13 +14,14 @@ config AIFW
 if AIFW
 
 choice
-	prompt "Select runtime for the AI Framework"
-	default AIFW_USE_TFMICRO
-
+    prompt "Select runtime for the AI Framework"
+    default AIFW_USE_ONERT_MICRO
 config AIFW_USE_TFMICRO
-	bool "Use TFMICRO runtime"
-	select EXTERNAL_TFMICRO
-
+    bool "Use TFMICRO runtime"
+    select EXTERNAL_TFMICRO
+config AIFW_USE_ONERT_MICRO
+    bool "Use ONERT_MICRO runtime"
+    select EXTERNAL_ONERT_MICRO
 endchoice
 
 menu "AIFW Debug Logs"
