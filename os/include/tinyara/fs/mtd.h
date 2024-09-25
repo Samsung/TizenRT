@@ -154,6 +154,12 @@ struct mtd_dev_s {
 	 */
 
 	int (*ioctl)(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
+
+	/* Check/Mark bad block for the specified block number */
+
+	int (*isbad)(FAR struct mtd_dev_s *dev, off_t block);
+	int (*markbad)(FAR struct mtd_dev_s *dev, off_t block);
+
 #ifdef CONFIG_MTD_REGISTRATION
 	/* An assigned MTD number for procfs reporting */
 
