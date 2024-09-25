@@ -58,16 +58,7 @@
 #include "lwip/autoip.h"
 #include "lwip/stats.h"
 #include "lwip/timeouts.h"
-//SRI-D TODO Review
-//#include "lwip_ipnat.h"
 #include "lwip/lwip_ipnat.h"
-#define IPNAT_DEBUG LWIP_DBG_ON
-//#define IPNAT_DEBUG LWIP_DBG_OFF
-
-
-//SRI-D TODO Review
-//#include "osdep_service.h"
-
 #include "lwip/prot/dhcp.h"
 
 #include <string.h>
@@ -75,6 +66,8 @@
 
 #define IP_NAT 1
 #define configTICK_RATE_HZ								( 1000 )
+#define IPNAT_DEBUG LWIP_DBG_OFF
+
 typedef void *_mutex;
 
 
@@ -182,8 +175,13 @@ void ip_nat_initialize(void)
 
   rtw_mutex_init(&nat_entry_lock);
   filter_drop_threshold = (IP_NAT_MAX * 80)/100;
-  ip_nat_table = (struct nat_table*)malloc(sizeof(struct nat_table)*IP_NAT_MAX);
-  memset(ip_nat_table, 0x00, sizeof(struct nat_table)*IP_NAT_MAX);
+  int size = sizeof(struct nat_table)*IP_NAT_MAX;
+  ip_nat_table = (struct nat_table*)malloc(size);
+  if(!ip_nat_table) {
+	  LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d Memory allocation failed for size=%u Bytes\n",__FUNCTION__,__LINE__,size));
+	  return;
+  }
+  memset(ip_nat_table, 0x00, size);
   for (i = 0; i < IP_NAT_MAX - 1; i++)
           ip_nat_table[i].next = i + 1;
   ip_nat_table[i].next = NON_INDEX;
