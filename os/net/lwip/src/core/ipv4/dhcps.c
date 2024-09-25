@@ -323,7 +323,6 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 #ifdef CONFIG_LWIP_DHCPS_ADDITIONAL_DNS
 	*optptr++ = DHCP_OPTION_DNS_SERVER;
 	ip_addr_t *addr = (const ip_addr_t *) dns_getserver(0);
-	ip4_addr_t *dnsserver = ip_2_ip4((addr));
 	*optptr++ = 4;
 	if (ip_addr_isany_val(*addr)) {
 		*optptr++ = 8;
@@ -332,6 +331,7 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 		*optptr++ = 8;
 	}
 	else {
+		ip4_addr_t *dnsserver = ip_2_ip4((addr));
 		*optptr++ = ip4_addr1(dnsserver);
 		*optptr++ = ip4_addr2(dnsserver);
 		*optptr++ = ip4_addr3(dnsserver);
