@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 5f6a253359 2024/08/30-16:57:54 ==
+1.	Change log level of "warning report" log from warning to error to reduce print frequency
+
 == version 68a34c3d 2024/06/25-16:14:09 ==
 1. Redirect KM4 logs to be printed in TizenRT CA32 using ipc print to prevent mixed logs
 2. Modify IPC print implementation to use separate IPC channel from wifi
