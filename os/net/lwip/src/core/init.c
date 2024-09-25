@@ -390,7 +390,7 @@ void lwip_init(void)
 
 #if defined(IP_NAT) && (IP_NAT == 1)
 	ip_nat_initialize();
-#endif /* IP_NAT */
+#endif							/* IP_NAT */
 
 #if LWIP_TIMERS
 	sys_timeouts_init();
