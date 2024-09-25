@@ -254,7 +254,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 	    scanned_device.adv_type = scan_res_ind->adv_report.evt_type;
 	    if(TRBLE_ADV_TYPE_SCAN_RSP == scanned_device.adv_type){
 		    memcpy(scanned_device.resp_data, scan_res_ind->adv_report.data, scan_res_ind->adv_report.len);
-		    scanned_device.raw_data_length = scan_res_ind->adv_report.len;
+		    scanned_device.resp_data_length = scan_res_ind->adv_report.len;
 	    }else{
 		    memcpy(scanned_device.raw_data, scan_res_ind->adv_report.data, scan_res_ind->adv_report.len);
 		    scanned_device.raw_data_length = scan_res_ind->adv_report.len;
