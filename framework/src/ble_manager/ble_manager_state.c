@@ -151,11 +151,11 @@ static void _event_caller(int evt_pri, void *data) {
 		case BLE_EVT_SCAN_STATE: {
 			ble_scan_state_e state = *(ble_scan_state_e *)msg->param[2];
 			ble_client_scan_state_changed_cb callback = msg->param[0];
-			callback(state);
 			if (state == BLE_SCAN_STOPPED) {
 				memset(&(g_scan_ctx.filter), 0, sizeof(ble_scan_filter));
 				memset(&(g_scan_ctx.callback), 0, sizeof(ble_scan_callback_list));
 			}
+			callback(state);
 		} break;
 		default:
 			break;
