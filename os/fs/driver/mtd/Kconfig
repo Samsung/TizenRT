@@ -396,6 +396,22 @@ config MTD_NAND_EMBEDDEDECC
 	default n
 	---help---
 		Some NAND devices have internal, embedded ECC function
+
+config MTD_DHARA
+	bool "MTD Nandflash use dhara map"
+	default n
+
+if MTD_DHARA
+
+config DHARA_GC_RATIO
+	int "dhara garbage collection ratio"
+	default 4
+
+config DHARA_READ_NCACHES
+	int "dhara read cache numbers"
+	default 4
+endif
+
 endif
 
 endif # MTD
