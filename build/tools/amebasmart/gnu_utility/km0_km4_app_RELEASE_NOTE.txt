@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 457b3012a0 2024/09/19-15:52:48 ==
+1. Update wifi channel plan version
+2. Added new channel plans to meet Samsung requirements
+
 == version ad3d966441 2024/09/11-18:20:44 ==
 1. Add support to obtain key_mgnt value during wifi disconnect event
 2. Remove support of obtaining key_mgnt value of current wifi connection
