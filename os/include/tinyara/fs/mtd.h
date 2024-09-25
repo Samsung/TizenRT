@@ -81,6 +81,8 @@
 #define MTD_READ(d, s, n, b)   ((d)->read   ? (d)->read(d, s, n, b)   : (-ENOSYS))
 #define MTD_WRITE(d, s, n, b)  ((d)->write  ? (d)->write(d, s, n, b)  : (-ENOSYS))
 #define MTD_IOCTL(d, c, a)     ((d)->ioctl  ? (d)->ioctl(d, c, a)     : (-ENOSYS))
+#define MTD_ISBAD(d,b)	       ((d)->isbad   ? (d)->isbad(d,b)      : (-ENOSYS))
+#define MTD_MARKBAD(d,b)       ((d)->markbad ? (d)->markbad(d,b)    : (-ENOSYS))
 
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
 #define CONFIG_MTD_REGISTRATION   1
@@ -101,6 +103,10 @@ struct mtd_geometry_s {
 	uint32_t erasesize;		/* Size of one erase blocks -- must be a multiple
 					 * of blocksize. */
 	uint32_t neraseblocks;		/* Number of erase blocks */
+
+	/* NULL-terminated string representing the device model */
+
+	char     model[NAME_MAX + 1];
 };
 
 /* The following defines the information for writing bytes to a sector
@@ -282,6 +288,23 @@ int mtd_setpartitionname(FAR struct mtd_dev_s *mtd, FAR const char *name);
 
 #if defined(CONFIG_MTD_FTL)
 int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd);
+#endif
+
+/****************************************************************************
+ * Name: dhara_initialize
+ *
+ * Description:
+ *   Initialize to provide a block driver wrapper around an MTD interface
+ *
+ * Input Parameters:
+ *   minor - The minor device number.  The MTD block device will be
+ *           registered as as /dev/mtdblockN where N is the minor number.
+ *   mtd   - The MTD device that supports the FLASH interface.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_MTD_DHARA
+int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd);
 #endif
 
 /****************************************************************************
