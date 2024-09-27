@@ -547,7 +547,7 @@ static int get_versions_and_labels(struct syntiant_ndp_device_s *ndp,
 	return s;
 }
 
-static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift, unsigned int audio_tank_ms)
+static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift)
 {
 	const unsigned int PDM_MAX_OUT_SHIFT = 7; /* always set to max */
 	struct syntiant_ndp120_config_decimation_s decimation_config;
@@ -595,15 +595,6 @@ static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift, 
 	config_gain.mic = 1;
 	s = syntiant_ndp120_config_gain(dev->ndp, &config_gain);
 	check_status("syntiant_ndp120_config_gain", s);
-
-	/* set the audio holding tank size to accomodate the word + overhead */
-	memset(&tank_config, 0, sizeof(tank_config));
-	tank_config.set = SYNTIANT_NDP120_CONFIG_SET_TANK_SAMPLETANK_MSEC;
-	tank_config.sampletank_msec = audio_tank_ms;
-	s = syntiant_ndp120_config_dsp_tank_memory(dev->ndp, &tank_config);
-	if (check_status("config tank", s)) {
-		goto errout_configure_audio;
-	}
 
 #if defined(USE_EXTERNAL_PDM_CLOCK)
 	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
@@ -1005,13 +996,19 @@ int ndp120_init(struct ndp120_dev_s *dev)
 		goto errout_ndp120_init;
 	}
 
+	struct syntiant_ndp120_config_tank_s tank_config;
+	memset(&tank_config, 0, sizeof(tank_config));
+	tank_config.set = SYNTIANT_NDP120_CONFIG_SET_TANK_SAMPLETANK_MSEC;
+	tank_config.sampletank_msec = AUDIO_TANK_MS;
+	s = syntiant_ndp120_config_dsp_tank_memory(dev->ndp, &tank_config);
+
 	attach_algo_config_area(dev->ndp);
 	add_dsp_flow_rules(dev->ndp);
 
 #if defined(USE_EXTERNAL_PDM_CLOCK)	
-	s = configure_audio(dev, DMIC_1536KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS);
+	s = configure_audio(dev, DMIC_1536KHZ_PDM_IN_SHIFT_FF);
 #else
-	s = configure_audio(dev, DMIC_768KHZ_PDM_IN_SHIFT_FF, AUDIO_TANK_MS);
+	s = configure_audio(dev, DMIC_768KHZ_PDM_IN_SHIFT_FF);
 #endif
 	if (s) {
 		auddbg("audio configure failed\n");
