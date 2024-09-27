@@ -280,8 +280,7 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 
 #ifndef CONFIG_SMP
 	if (attr->affinity != 0) {
-		sdbg("ERROR: Non zero affinity value not allowed when CONFIG_SMP is disabled\n");
-		return EINVAL;
+		sdbg("WARNING: Non zero affinity value not allowed when CONFIG_SMP is disabled\n");
 	}
 #endif
 
