@@ -121,7 +121,7 @@ static uint8_t scan_rsp_data[] = {
 #endif
 
  static rtk_bt_le_scan_param_t scan_param = {
-     .type          = RTK_BT_LE_SCAN_TYPE_PASSIVE,
+     .type          = RTK_BT_LE_SCAN_TYPE_ACTIVE,
      .interval      = 0x60,
      .window        = 0x30,
      .own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC,
