@@ -11,6 +11,15 @@ config CSIFW
 
 if CSIFW
 
+menu "CSIFW Ring Buffer"
+config CSIFW_USE_RB
+	bool "CSIFW USE Ring Buffer"
+	default n
+	---help---
+		Enables CSIFW Ring buffering
+
+endmenu
+
 menu "CSIFW Debug Logs"
 
 config CSIFW_LOGS

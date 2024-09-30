@@ -24,10 +24,12 @@
 #include <errno.h>
 #include <pthread.h>
 
+#ifdef CONFIG_CSIFW_USE_RB
+#define RB_HDR_LEN sizeof(uint16_t) // 2 Bytes reserved at start of ring buffer to store data size
 #define HNDLR_TH_NAME "csifw_data_handler"
+#endif //CONFIG_CSIFW_USE_RB
 #define RCVR_TH_NAME "csifw_receiver"
 #define MQ_NAME "WIFI_CSI_DRIVER_Q"
-#define RB_HDR_LEN sizeof(uint16_t) // 2 Bytes reserved at start of ring buffer to store data size
 #define CSIFW_MQ_MSG_COUNT 5
 
 #define OPEN_DRIVER_OR_EXIT(_FD) \
@@ -39,12 +41,14 @@
 
 #define CLOSE_DRIVER_OR_EXIT(_FD) close(_FD);
 
-static pthread_t gCSIDataReceiver; 
+#ifdef CONFIG_CSIFW_USE_RB
 static pthread_t gCSIDataHandlerWorker; 
 static unsigned char *g_send_data_buffptr; // the buffer to send to services
-static unsigned char *g_get_data_buffptr; // the buffer to get data from driver and copy to ring buffer
 static rb_t g_raw_rb_t;	// the ring buffer object
 static rb_p g_raw_rb_p;	// the ring buffer pointer
+#endif //CONFIG_CSIFW_USE_RB
+static pthread_t gCSIDataReceiver; 
+static unsigned char *g_get_data_buffptr; // the buffer to get data from driver and copy to ring buffer
 static uint16_t gCSIRawBufLen;
 static CSIDataListener gCSIDataCallback;
 static bool g_csi_thread_stop = true;
@@ -72,6 +76,7 @@ static int readCSIData(int fd,char* buf, int size)
 	return err;
 }
 
+#ifdef CONFIG_CSIFW_USE_RB
 static void* dataHandlerThread(void *vargp) {
 	uint16_t read_len;
 	while(!g_csi_thread_stop) {
@@ -95,6 +100,7 @@ static void* dataHandlerThread(void *vargp) {
 	}
 	CSIFW_LOGD("dataHandlerThread stopping");
 }
+#endif //CONFIG_CSIFW_USE_RB
 
 static void* dataReceiverThread(void *vargp) {
 	int len;
@@ -149,7 +155,11 @@ static void* dataReceiverThread(void *vargp) {
 					continue;
 				}
 				gCSIRawBufLen = msg.data_len;
+#ifdef CONFIG_CSIFW_USE_RB
 				len = readCSIData(fd, g_get_data_buffptr + RB_HDR_LEN, gCSIRawBufLen); // first two bytes reserved for size
+#else
+				len = readCSIData(fd, g_get_data_buffptr, gCSIRawBufLen);
+#endif //CONFIG_CSIFW_USE_RB
 				if (len < 0) {
 					CSIFW_LOGE("Skipping packet: error: %d", len);
 					continue;
@@ -159,6 +169,7 @@ static void* dataReceiverThread(void *vargp) {
 					// continue; ==> Cant skip as the message queue call might not be in sync in case of error packets.
 					gCSIRawBufLen = len + CSIFW_CSI_HEADER_LEN;
 				}
+#ifdef CONFIG_CSIFW_USE_RB
 				write_len = gCSIRawBufLen + RB_HDR_LEN;
 				// Write data to ring buffer
 				// store lenght in first 2 bytes
@@ -175,6 +186,9 @@ static void* dataReceiverThread(void *vargp) {
 				if (ret != write_len) {
 					CSIFW_LOGE("Rb_write fail. packet size: %d, write size: %zu", len);
 				}
+#else
+				gCSIDataCallback(CSIFW_OK, gCSIRawBufLen, g_get_data_buffptr, len);
+#endif //CONFIG_CSIFW_USE_RB
 			break;
 
 			case CSI_MSG_ERROR:
@@ -274,14 +288,6 @@ CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info) {
 
 CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
 	CSIFW_RES res;
-		// allocate buffer for sending data to services
-	if (!g_send_data_buffptr) {
-		g_send_data_buffptr = (unsigned char *)malloc(gCSIRawBufLen);
-		if (!g_send_data_buffptr) {
-			CSIFW_LOGE("Send data buffer allocation fail.");
-			return CSIFW_ERROR;
-		}
-	}
 	// allocate buffer for receiveing data from driver
 	if (!g_get_data_buffptr) {
 		g_get_data_buffptr = (unsigned char *)malloc(gCSIRawBufLen);
@@ -290,6 +296,16 @@ CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
 			return CSIFW_ERROR;
 		}
 		CSIFW_LOGD("Get data buffer allocation done, size: %d", gCSIRawBufLen);
+	}
+	g_csi_thread_stop = false;
+#ifdef CONFIG_CSIFW_USE_RB
+		// allocate buffer for sending data to services
+	if (!g_send_data_buffptr) {
+		g_send_data_buffptr = (unsigned char *)malloc(gCSIRawBufLen);
+		if (!g_send_data_buffptr) {
+			CSIFW_LOGE("Send data buffer allocation fail.");
+			return CSIFW_ERROR;
+		}
 	}
 	// create ring buffer
 	if (!g_raw_rb_p) {
@@ -306,7 +322,6 @@ CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
 		CSIFW_LOGD("Ring buffer init success, size: %zu", rb_size);
 	}
 
-	g_csi_thread_stop = false;
 	//create collector thread
 	pthread_attr_t send_th_attr;
 	pthread_attr_init(&send_th_attr);
@@ -321,11 +336,22 @@ CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
 		CSIFW_LOGE("Error in setting collector thread name, error_no: %d", get_errno());
 	}
 	CSIFW_LOGD("CSI data send thread created");
-	
+
 	if (pthread_create(&gCSIDataReceiver, NULL, dataReceiverThread, NULL) != 0) {
 		CSIFW_LOGE("Failed to create csi data receive thread");
 		return CSIFW_ERROR;
 	}
+
+#else
+	pthread_attr_t recv_th_attr;
+	pthread_attr_init(&recv_th_attr);
+	/* ToDo: stack size of thread needs to be optimized */
+	pthread_attr_setstacksize(&recv_th_attr, (10*1024));
+	if (pthread_create(&gCSIDataReceiver, &recv_th_attr, dataReceiverThread, NULL) != 0) {
+		CSIFW_LOGE("Failed to create csi data receive thread");
+		return CSIFW_ERROR;
+	}
+#endif //CONFIG_CSIFW_USE_RB
 	if (pthread_setname_np(gCSIDataReceiver, RCVR_TH_NAME) != 0) {
 		CSIFW_LOGE("Error in setting receiver thread name, error_no: %d", get_errno());
 	}
@@ -368,18 +394,20 @@ CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason, csi_action_param
 	//join thread
 	g_csi_thread_stop = true;
 	pthread_join(gCSIDataReceiver, NULL);
+#ifdef CONFIG_CSIFW_USE_RB
 	pthread_join(gCSIDataHandlerWorker, NULL);
-	if (g_get_data_buffptr) {
-		free(g_get_data_buffptr);
-		g_get_data_buffptr = NULL;
+	if (g_raw_rb_p) {
+		rb_free(g_raw_rb_p);
+		g_raw_rb_p = NULL;
 	}
 	if (g_send_data_buffptr) {
 		free(g_send_data_buffptr);
 		g_send_data_buffptr = NULL;
 	}
-	if (g_raw_rb_p) {
-		rb_free(g_raw_rb_p);
-		g_raw_rb_p = NULL;
+#endif // CONFIG_CSIFW_USE_RB
+	if (g_get_data_buffptr) {
+		free(g_get_data_buffptr);
+		g_get_data_buffptr = NULL;
 	}
 	if (reason == CSIFW_WIFI_DISCONNECTED) {
 		CSIFW_LOGI("Disable not required as wifi disconnected");
