@@ -449,6 +449,10 @@ void board_initialize(void)
 	rtl8730e_lcdc_initialize();
 #endif
 
+#if defined(CONFIG_TOUCH_IST415)
+	rtl8730e_ist415_initialize();
+#endif
+
 #ifdef CONFIG_WATCHDOG
 	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
