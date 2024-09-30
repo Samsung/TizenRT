@@ -1,0 +1,51 @@
+menu "Touch Device Support"
+
+menuconfig TOUCH
+	bool "Touch Device Support"
+	default n
+	---help---
+		Drivers for Touch Devices. These drivers support
+		interfaces as defined in include/tinyara/input/touchscreen.h
+
+		This selection is necessary to enable support for touch drivers in
+		drivers/input
+
+if TOUCH
+choice
+	prompt "choose TOUCH device"
+	default TOUCH_IST415
+	---help---
+		IST415 with I2C
+
+config TOUCH_IST415
+	bool "IST415 Support"
+	---help---
+		Enable the Touch device IST415
+endchoice
+
+choice
+	prompt "choose TOUCH DEVICE app notification type"
+	default TOUCH_POLL
+	---help---
+		Polling based notification to application
+	
+config TOUCH_POLL
+	bool "Polling Notification"
+	---help---
+		Enable polling based notification to application
+
+config TOUCH_CALLBACK
+	bool "Callback Notification"
+	---help---
+		Enable callback based notification to application
+endchoice
+
+config TOUCH_NPOLLWAITERS
+	int "Number of Multipolling Wait"
+	default 2
+	---help---
+		Number of waiting fds to read touch data
+
+endif # TOUCH
+
+endmenu # Touch Device Support
