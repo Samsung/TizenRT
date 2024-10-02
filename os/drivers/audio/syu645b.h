@@ -52,7 +52,7 @@
 #define syu645b_givesem(s)          sem_post(s)
 
 #define SYU645B_SPK_VOL_MIN         0
-#define SYU645B_SPK_VOL_MAX         10
+#define SYU645B_SPK_VOL_MAX         15
 #define SYU645B_SPK_VOL_DEF         7
 /* TODO : Check if bass and treble present or not */
 #define SYU645B_BASS_MAX            100
@@ -127,7 +127,6 @@ struct syu645b_dev_s {
 #endif
 	bool reserved;				/* True: Device is reserved */
 	volatile int result;			/* The result of the last transfer */
-	bool inout;				/* True: IN device */
 };
 
 /****************************************************************************
