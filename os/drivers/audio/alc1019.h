@@ -51,7 +51,7 @@
 #define alc1019_givesem(s)          sem_post(s)
 
 #define ALC1019_SPK_VOL_MIN         0
-#define ALC1019_SPK_VOL_MAX         10
+#define ALC1019_SPK_VOL_MAX         15
 #define ALC1019_SPK_VOL_DEF         7
 
 /*
