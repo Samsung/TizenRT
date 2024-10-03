@@ -687,6 +687,34 @@ audio_manager_result_t get_stream_in_id(int *card_id, int *device_id);
  ****************************************************************************/
 audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
 
+/****************************************************************************
+ * Name: get_keyword_buffer_size
+ *
+ * Description:
+ *   Get the buffer size required to store keyword audio data
+ *
+ * Input parameter:
+ *   keywordBufferSize : output parameter to get buffer size 
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_keyword_buffer_size(uint32_t *keywordBufferSize);
+
+/****************************************************************************
+ * Name: get_keyword_data
+ *
+ * Description:
+ *   Stores the keyword data in the passed parameter.
+ *
+ * Input parameter:
+ *   buffer : output parameter to get keyword data
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_keyword_data(uint8_t *buffer);
+
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
  * Name: dump_audio_card_info
