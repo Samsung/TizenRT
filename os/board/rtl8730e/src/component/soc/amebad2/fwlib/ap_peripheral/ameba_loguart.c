@@ -166,8 +166,12 @@ void LOGUART_WaitTxComplete(void)
 		DelayUs(100);
 	}
 
-	/* delay at least 12 cycles of one bit time to make sure the last data is completely out of tx fifo, 4800bps is 2.5ms */
-	DelayMs(3);
+	/* delay at least 12 cycles of one bit time to make sure the last data is completely out of tx fifo, 4800bps is 2.5ms, 115200bps is 104us, 1.5Mbps is 8us */
+	if (SYSCFG_OTP_LowBaudLog()) {
+		DelayUs(105);	
+	} else {
+		DelayUs(8);
+	}
 }
 
 /**
