@@ -45,7 +45,7 @@ typedef struct {
 
 t_codec_init_script_entry codec_reset_script[] = {
 	/* 0x0F for soft reset */
-	{ 0x0F, {0x01,}, 0, SYU645B_REG_D_2BYTE}
+	{ 0x0F, {0x01,}, 30, SYU645B_REG_D_2BYTE}
 };
 t_codec_init_script_entry codec_stop_script[] = {
 	/* set volume 0x0007 to zero on stop */
@@ -54,34 +54,25 @@ t_codec_init_script_entry codec_stop_script[] = {
 
 t_codec_init_script_entry codec_initial_script[] = {
 	/* Initialize AMP sequence */
-	{ 0x0F, {0x01,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x00, {0x1A,}, 0, SYU645B_REG_D_2BYTE},
+	{ 0x0F, {0x01,}, 30, SYU645B_REG_D_2BYTE},
 	{ 0x06, {0x08,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x1B, {0xBD,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x23, {0x1a,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x05, {0x02,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x76, {0x0F,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x85, {0x00, 0x00, 0x00, 0x06,}, 0, SYU645B_REG_D_5BYTE},
 	{ 0x86, {0x00, 0x00, 0x30, 0x10,}, 0, SYU645B_REG_D_5BYTE},
 	{ 0x94, {0x00, 0x00, 0x00, 0x11,}, 0, SYU645B_REG_D_5BYTE},
 	{ 0x95, {0x10, 0x00, 0x32, 0x10,}, 0, SYU645B_REG_D_5BYTE},
 	{ 0x96, {0x10, 0x00, 0x5C, 0xAA,}, 0, SYU645B_REG_D_5BYTE},
 	{ 0xB0, {0x00, 0x00, 0x07, 0xFF,}, 0, SYU645B_REG_D_5BYTE},
-	{ 0x10, {0x77,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x11, {0x00,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x12, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x13, {0x06,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x14, {0x06,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x1E, {0x05,}, 0, SYU645B_REG_D_2BYTE},
 	/* setting to default volume */
 	{ 0x07, {SYU645B_HW_VOL_DEF,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x08, {0xBD,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x09, {0xBD,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x1F, {0x03,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x2C, {0x7F, 0xFF,}, 0, SYU645B_REG_D_3BYTE},
 	{ 0x2D, {0x7B, 0xAF,}, 0, SYU645B_REG_D_3BYTE},
 	{ 0x22, {0x00,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x06, {0x08,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x06, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 };
 
