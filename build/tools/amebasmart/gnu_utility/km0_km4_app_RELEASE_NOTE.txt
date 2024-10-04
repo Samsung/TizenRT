@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a676e7969f 2024/10/04-14:35:42 ==
+1. Reduce sleep/wakeup log into one line
+
 == version d388ac9932 2024/09/25-12:22:27 ==
 1. Fix LOGUART stuck due to RX data available interrupt bit not being re-enabled in KM0
 
