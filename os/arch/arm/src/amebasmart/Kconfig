@@ -111,11 +111,6 @@ config AMEBASMART_SPI1_CS
 endif
 endif
 
-
-config AMEBASMART_MIPI
-	bool "AMEBASMART_MIPI"
-	default n
-	
 config AMEBASMART_I2C
 	bool "AMEBASMART_I2C"
 	default n

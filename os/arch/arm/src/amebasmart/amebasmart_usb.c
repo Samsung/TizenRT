@@ -88,7 +88,7 @@ static int received_flag = 0;
  ****************************************************************************/
 
 /* The various states of a control pipe */
-/* zhenbei: refer to the usbd_core.h */
+/* Refer to the usbd_core.h */
 /*  EP0 State */
 #define USBD_EP0_IDLE                                  0x00U    /* No request in progress */
 #define USBD_EP0_SETUP                                 0x01U    /* Setup packet received, preparing for OUT transfer */
