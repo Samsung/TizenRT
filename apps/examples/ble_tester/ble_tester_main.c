@@ -129,7 +129,7 @@ static char *__client_state_str(ble_manager_client_state_e state)
 }
 
 static void ble_get_state(ble_manager_client_ctx *ctx) {
-	RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_client_get_state(ctx)));
+	RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_manager_client_get_state(ctx)));
 }
 
 static void ble_scan_state_changed_cb(ble_scan_state_e scan_state)
@@ -815,7 +815,7 @@ int ble_tester_main(int argc, char *argv[])
 
 				int i;				
 				for (i = 0; i < 10; i++) {
-					if (ble_client_get_state(g_ctx) == BLE_CLIENT_IDLE) {
+					if (ble_manager_client_get_state(g_ctx) == BLE_CLIENT_IDLE) {
 						RMC_LOG(RMC_CLIENT_TAG, "Success to disconnect\n");
 						is_ble_ready = 0;
 						break;
@@ -884,7 +884,7 @@ int ble_tester_main(int argc, char *argv[])
 
 				sleep(1);
 
-				if (ble_client_get_state(g_ctx) == BLE_CLIENT_CONNECTED) {
+				if (ble_manager_client_get_state(g_ctx) == BLE_CLIENT_CONNECTED) {
 					is_ble_ready = 1;
 					break;
 				}

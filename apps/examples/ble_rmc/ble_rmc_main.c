@@ -442,7 +442,7 @@ int ble_rmc_main(int argc, char *argv[])
 			goto ble_rmc_done;
 		}
 		int id = atoi(argv[2]);
-		RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_client_get_state(ctx_list[id])));
+		RMC_LOG(RMC_CLIENT_TAG, "Client State [ %s ]\n", __client_state_str(ble_manager_client_get_state(ctx_list[id])));
 	}
 
 	if (strncmp(argv[1], "deinit", 7) == 0) {
