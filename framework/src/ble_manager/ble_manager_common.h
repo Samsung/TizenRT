@@ -22,13 +22,13 @@
 
 typedef struct {
 	ble_conn_handle conn_handle;
-	volatile ble_client_state_e state;
-	ble_conn_info info;
+	volatile ble_manager_client_state_e state;
+	ble_manager_conn_info info;
 	bool is_bonded;
 	bool auto_connect;
 	mqd_t mqfd;
-	ble_client_callback_list callbacks;
-} ble_client_ctx_internal;
+	ble_manager_client_callback_list callbacks;
+} ble_manager_client_ctx_internal;
 
 typedef struct {
 	volatile ble_scan_state_e state;
@@ -38,9 +38,9 @@ typedef struct {
 
 typedef struct {
 	ble_conn_handle conn_handle;
-	volatile ble_server_state_e state;
+	volatile ble_manager_server_state_e state;
 	bool is_secured_connect_allowed;
-	ble_server_gatt_t *profile;
+	ble_manager_server_gatt_t *profile;
 	uint16_t profile_count;
-	ble_server_connected_t callback;
+	ble_manager_server_connected_t callback;
 } ble_server_ctx;

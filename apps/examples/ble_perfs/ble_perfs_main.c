@@ -70,24 +70,24 @@ static uint8_t g_adv_resp[] = {
 
 
 static char * attr_cb_type_str[] = {
-	"BLE_SERVER_ATTR_CB_WRITING",
-	"BLE_SERVER_ATTR_CB_READING",
-	"BLE_SERVER_ATTR_CB_WRITING_NO_RSP",
+	"BLE_MANAGER_SERVER_ATTR_CB_WRITING",
+	"BLE_MANAGER_SERVER_ATTR_CB_READING",
+	"BLE_MANAGER_SERVER_ATTR_CB_WRITING_NO_RSP",
 };
 
 static char * connection_type_str[] = {
-	"BLE_SERVER_LL_CONNECTED",  /* Link Layer connected */
-	"BLE_SERVER_SM_CONNECTED",  /* Security Manager connected */
-	"BLE_SERVER_DISCONNECTED",
+	"BLE_MANAGER_SERVER_LL_CONNECTED",  /* Link Layer connected */
+	"BLE_MANAGER_SERVER_SM_CONNECTED",  /* Security Manager connected */
+	"BLE_MANAGER_SERVER_DISCONNECTED",
 };
 
-static char * get_attr_cb_type_str(ble_server_attr_cb_type_e cb_type)
+static char * get_attr_cb_type_str(ble_manager_server_attr_cb_type_e cb_type)
 {
 	return  attr_cb_type_str[cb_type];
 };
 
 
-static char * get_conn_type_str(ble_server_connection_type_e conn_type)
+static char * get_conn_type_str(ble_manager_server_connection_type_e conn_type)
 {
 	return connection_type_str[conn_type];
 }
@@ -120,7 +120,7 @@ static void addr_type_to_string(char *address, const uint8_t *addr)
 }
 
 
-static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_charact_a_1(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
 
@@ -131,7 +131,7 @@ static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle c
 	BLE_LOGD("[CHAR_A_1][%s] type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, attr_handle);
 }
 
-static void utc_cb_desc_b_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_desc_b_1(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
 	if (arg != NULL) {
@@ -185,13 +185,13 @@ static int perfs_ble_get_result(void)
 	return 0;
 }
 
-static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg) 
+static void ble_peri_cb_charact_rmc_sync(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg) 
 {
 	uint8_t buf[256] = { 0, };
 	ble_data blue_data = { buf, sizeof(buf) };
 	struct perfs_data_t *p_data = (struct perfs_data_t *)arg;
 
-	ble_result_e ret = ble_server_attr_get_data(attr_handle, &blue_data);
+	ble_result_e ret = ble_manager_server_attr_get_data(attr_handle, &blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "[RMC_SYNC] Fail to get attr data\n");
 		return;
@@ -206,7 +206,7 @@ static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_con
 
 	p_data->packet_count ++;
 
-	if (type == BLE_SERVER_ATTR_CB_WRITING_NO_RSP || type == BLE_SERVER_ATTR_CB_WRITING) {
+	if (type == BLE_MANAGER_SERVER_ATTR_CB_WRITING_NO_RSP || type == BLE_MANAGER_SERVER_ATTR_CB_WRITING) {
 		if (blue_data.data[0] == blue_data.data[p_data->packet_size - 1]) {
 			BLE_LOGD( "[WRITE] Success [%d] : %d \n" , blue_data.length, p_data->packet_count);
 		} else {
@@ -228,39 +228,39 @@ static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_con
 	}
 }
 
-static ble_server_gatt_t gatt_profile[] = {
-	{.type = BLE_SERVER_GATT_SERVICE, .uuid = {0x12, 0xB6, 0x6E, 0x45, 0xA7, 0x68, 0x9D, 0x8D, 0x9A, 0x40, 0x17, 0x2B, 0xE9, 0xCB, 0xF2, 0x13}, .uuid_length = 16,
+static ble_manager_server_gatt_t gatt_profile[] = {
+	{.type = BLE_MANAGER_SERVER_GATT_SERVICE, .uuid = {0x12, 0xB6, 0x6E, 0x45, 0xA7, 0x68, 0x9D, 0x8D, 0x9A, 0x40, 0x17, 0x2B, 0xE9, 0xCB, 0xF2, 0x13}, .uuid_length = 16,
 		.attr_handle = BLE_APP_HANDLE_SERVICE_0,},
 
-	{.type = BLE_SERVER_GATT_CHARACT, .uuid = {0x99, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xF2}, .uuid_length = 16,
-		.property =  BLE_ATTR_PROP_RWN|BLE_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+	{.type = BLE_MANAGER_SERVER_GATT_CHARACT, .uuid = {0x99, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xF2}, .uuid_length = 16,
+		.property =  BLE_MANAGER_ATTR_PROP_RWN|BLE_MANAGER_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_MANAGER_ATTR_PERM_R_PERMIT|BLE_MANAGER_ATTR_PERM_W_PERMIT,
 		.attr_handle = BLE_STATE_MANAGER_RMC_HANDLE_KEY_COMMAND, .cb = utc_cb_charact_a_1, .arg = "char_1"},
 
-	{.type = BLE_SERVER_GATT_DESC, .uuid = {0x02, 0x29}, .uuid_length = 2,
-		.permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+	{.type = BLE_MANAGER_SERVER_GATT_DESC, .uuid = {0x02, 0x29}, .uuid_length = 2,
+		.permission = BLE_MANAGER_ATTR_PERM_R_PERMIT|BLE_MANAGER_ATTR_PERM_W_PERMIT,
 		.attr_handle = BLE_STATE_MANAGER_RMC_HANDLE_KEY_CCCD, .cb = utc_cb_desc_b_1, .arg = "desc_1"},
 
-	{.type = BLE_SERVER_GATT_SERVICE, .uuid = {0xAD, 0xB6, 0x6E, 0x45, 0xA7, 0x68, 0x9D, 0x8D, 0x9A, 0x40, 0x17, 0x2B, 0xE9, 0xCB, 0xF2, 0x13}, .uuid_length = 16,
+	{.type = BLE_MANAGER_SERVER_GATT_SERVICE, .uuid = {0xAD, 0xB6, 0x6E, 0x45, 0xA7, 0x68, 0x9D, 0x8D, 0x9A, 0x40, 0x17, 0x2B, 0xE9, 0xCB, 0xF2, 0x13}, .uuid_length = 16,
 		.attr_handle = BLE_APP_HANDLE_SERVICE_1,},
 
-	{.type = BLE_SERVER_GATT_CHARACT, .uuid = {0x04, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xF2}, .uuid_length = 16,
-		.property =  BLE_ATTR_PROP_RWN|BLE_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+	{.type = BLE_MANAGER_SERVER_GATT_CHARACT, .uuid = {0x04, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xF2}, .uuid_length = 16,
+		.property =  BLE_MANAGER_ATTR_PROP_RWN|BLE_MANAGER_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_MANAGER_ATTR_PERM_R_PERMIT|BLE_MANAGER_ATTR_PERM_W_PERMIT,
 		.attr_handle = BLE_APP_HANDLE_CHAR_RMC_KEY, .cb = utc_cb_charact_a_1, .arg = "char_2"},
 
-	{.type = BLE_SERVER_GATT_DESC, .uuid = {0x02, 0x29}, .uuid_length = 2,
-		.permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+	{.type = BLE_MANAGER_SERVER_GATT_DESC, .uuid = {0x02, 0x29}, .uuid_length = 2,
+		.permission = BLE_MANAGER_ATTR_PERM_R_PERMIT|BLE_MANAGER_ATTR_PERM_W_PERMIT,
 		.attr_handle = BLE_APP_HANDLE_DESC_RMC_KEY, .cb = utc_cb_desc_b_1, .arg = "desc_2"},
 
 
-	{.type = BLE_SERVER_GATT_SERVICE, .uuid = {0xF4, 0x7A, 0x07, 0x08, 0xFD, 0xC7, 0x9D, 0xB5, 0xFF, 0x4E, 0x85, 0xDE, 0x48, 0x80, 0xFE, 0xA2}, .uuid_length = 16,
+	{.type = BLE_MANAGER_SERVER_GATT_SERVICE, .uuid = {0xF4, 0x7A, 0x07, 0x08, 0xFD, 0xC7, 0x9D, 0xB5, 0xFF, 0x4E, 0x85, 0xDE, 0x48, 0x80, 0xFE, 0xA2}, .uuid_length = 16,
 		.attr_handle = BLE_APP_HANDLE_SERVICE_2,},
 
-	{.type = BLE_SERVER_GATT_CHARACT, .uuid = {0x06, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xBB}, .uuid_length = 16,
-		.property =  BLE_ATTR_PROP_RWN|BLE_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_ATTR_PERM_R_PERMIT|BLE_ATTR_PERM_W_PERMIT,
+	{.type = BLE_MANAGER_SERVER_GATT_CHARACT, .uuid = {0x06, 0xC7, 0xAA, 0xE7, 0xF8, 0x9A, 0xCB, 0x88, 0x43, 0x4C, 0x44, 0xCF, 0x0D, 0x5B, 0xDA, 0xBB}, .uuid_length = 16,
+		.property =  BLE_MANAGER_ATTR_PROP_RWN|BLE_MANAGER_ATTR_PROP_WRITE_NO_RSP, .permission = BLE_MANAGER_ATTR_PERM_R_PERMIT|BLE_MANAGER_ATTR_PERM_W_PERMIT,
 		.attr_handle = BLE_APP_HANDLE_CHAR_RMC_SYNC, .cb = ble_peri_cb_charact_rmc_sync, .arg = &g_perf_data},
 };
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_manager_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 {
 	char address_str[BLE_BD_ADDR_STR_LEN + 1] = {0,};
 
@@ -269,17 +269,17 @@ static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_conne
 	addr_type_to_string(address_str, mac);
 	BLE_LOGD( "device address [%s] \n", address_str);
 
-	if (conn_type == BLE_SERVER_DISCONNECTED) {
+	if (conn_type == BLE_MANAGER_SERVER_DISCONNECTED) {
 		perfs_ble_reset_data();
 	}
 
 	return;
 }
 
-static ble_server_init_config server_config = {
+static ble_manager_server_init_config server_config = {
 	ble_server_connected_cb,
 	true,
-	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
+	gatt_profile, sizeof(gatt_profile) / sizeof(ble_manager_server_gatt_t)};
 
 
 static void perfs_ble_usage(void)
@@ -337,7 +337,7 @@ static int perfs_ble_server_start(void)
 	blue_data->data = g_adv_raw;
 	blue_data->length = sizeof(g_adv_raw);
 
-	ret = ble_server_set_adv_data(blue_data);
+	ret = ble_manager_server_set_adv_data(blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to set adv raw data ret:[%d]\n", ret);
 		return -1;
@@ -347,14 +347,14 @@ static int perfs_ble_server_start(void)
 	blue_data->data = g_adv_resp;
 	blue_data->length = sizeof(g_adv_resp);
 
-	ret = ble_server_set_adv_resp(blue_data);
+	ret = ble_manager_server_set_adv_resp(blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to set adv resp data ret:[%d]\n", ret);
 		return -1;
 	}
 	BLE_LOGD( "Set adv resp data ... ok\n");
 
-	ret = ble_server_start_adv();
+	ret = ble_manager_server_start_adv();
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to start adv ret:[%d]\n", ret);
 		return -1;

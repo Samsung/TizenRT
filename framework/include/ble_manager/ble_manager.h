@@ -61,7 +61,7 @@ typedef struct _ble_bonded_device_list {
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_init(ble_server_init_config *server_config);
+ble_result_e ble_manager_init(ble_manager_server_init_config *server_config);
 
 /****************************************************************************
  * Name: ble_manager_deinit

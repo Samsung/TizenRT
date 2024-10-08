@@ -78,7 +78,7 @@ typedef struct {
 } ble_scan_whitelist;
 
 /****************************************************************************
- * Name: ble_client_start_scan
+ * Name: ble_manager_client_start_scan
  *
  * Description:
  *   Start BLE adv scanning
@@ -95,25 +95,25 @@ typedef struct {
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_start_scan(ble_scan_filter* filter, ble_scan_callback_list *callbacks);
+ble_result_e ble_manager_client_start_scan(ble_scan_filter* filter, ble_scan_callback_list *callbacks);
 
 /****************************************************************************
- * Name: ble_client_stop_scan
+ * Name: ble_manager_client_stop_scan
  *
  * Description:
  *   Stop BLE adv scanning. This should be called to stop BLE scanning after 
- *   ble_client_start_scan is called without filter.
+ *   ble_manager_client_start_scan is called without filter.
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_client_stop_scan(void);
+ble_result_e ble_manager_client_stop_scan(void);
 
 /****************************************************************************
- * Name: ble_scan_whitelist_add
- *       ble_scan_whitelist_delete
+ * Name: ble_manager_scan_whitelist_add
+ *       ble_manager_scan_whitelist_delete
  *
  * Input Parameters:
  *   addr  - BLE Address value including type.
@@ -127,11 +127,11 @@ ble_result_e ble_client_stop_scan(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_scan_whitelist_add(ble_addr *addr);
-ble_result_e ble_scan_whitelist_delete(ble_addr *addr);
+ble_result_e ble_manager_scan_whitelist_add(ble_addr *addr);
+ble_result_e ble_manager_scan_whitelist_delete(ble_addr *addr);
 
 /****************************************************************************
- * Name: ble_scan_whitelist_clear_all
+ * Name: ble_manager_scan_whitelist_clear_all
  *
  * Description:
  *   Clear data of the scan whitelist.
@@ -141,10 +141,10 @@ ble_result_e ble_scan_whitelist_delete(ble_addr *addr);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_scan_whitelist_clear_all(void);
+ble_result_e ble_manager_scan_whitelist_clear_all(void);
 
 /****************************************************************************
- * Name: ble_scan_whitelist_list
+ * Name: ble_manager_scan_whitelist_list
  *
  * Input Parameters:
  *   addr  - BLE Address Array. This must be pre-allocated.
@@ -157,4 +157,4 @@ ble_result_e ble_scan_whitelist_clear_all(void);
  *   The number of whitelist.
  *
  ****************************************************************************/
-uint16_t ble_scan_whitelist_list(ble_addr addr[], uint16_t size);
+uint16_t ble_manager_scan_whitelist_list(ble_addr addr[], uint16_t size);
