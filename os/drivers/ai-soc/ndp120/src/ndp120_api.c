@@ -1239,6 +1239,12 @@ int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 
 	s =  ndp120_set_sample_ready_int(dev, 1);
 
+	uint32_t bytes_before_match = 0;
+
+	s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+                                                                SYNTIANT_NDP_EXTRACT_FROM_MATCH, NULL,
+                                                                &bytes_before_match);
+
 	return s;
 }
 
