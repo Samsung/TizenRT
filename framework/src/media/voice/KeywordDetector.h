@@ -38,6 +38,8 @@ public:
 	virtual void detectKeyword(void) = 0;
 	virtual bool isKeywordDetectStarted(void) = 0;
 	virtual void registerKeywordResultCallback(SpeechResultListener speechResultCallback) = 0;
+	virtual bool getKeywordBufferSize(uint32_t *bufferSize) = 0;
+	virtual bool getKeywordData(uint8_t *buffer) = 0;
 };
 
 } // namespace voice

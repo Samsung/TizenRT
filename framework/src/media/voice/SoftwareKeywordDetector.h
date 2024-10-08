@@ -37,6 +37,8 @@ public:
 	void detectKeyword(void) override;
 	bool isKeywordDetectStarted(void) override;
 	void registerKeywordResultCallback(SpeechResultListener speechResultCallback) override;
+	bool getKeywordBufferSize(uint32_t *bufferSize) override;
+	bool getKeywordData(uint8_t *buffer) override;
 
 private:
 	MediaRecorder mRecorder;

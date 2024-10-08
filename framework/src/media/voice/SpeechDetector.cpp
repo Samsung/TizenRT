@@ -55,13 +55,14 @@ public:
 	void addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) override;
 	bool removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) override;
 	bool stopEndPointDetect(void) override;
+	bool getKeywordBufferSize(uint32_t *bufferSize) override;
+	bool getKeywordData(uint8_t *buffer) override;
 	static void speechResultListener(audio_device_process_unit_subtype_e event);
 
 private:
 	static speech_detect_event_type_e getSpeechDetectEvent(audio_device_process_unit_subtype_e event);
 	void resetKeywordDetectorPtr(void);
 	void resetEndPointDetectorPtr(void);
-
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
 	std::shared_ptr<EndPointDetector> mEndPointDetector;
 	/* @todo: check static keyword usage */
@@ -401,6 +402,42 @@ void SpeechDetectorImpl::resetEndPointDetectorPtr(void)
 {
 	mEndPointDetector = nullptr;
 }
+
+bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
+{
+	if (mKeywordDetector == nullptr) {
+		meddbg("keyword detector is not init\n");
+		return false;
+	}
+	if (bufferSize == NULL) {
+		meddbg("invalid parameter\n");
+		return false;
+	}
+	if (mKeywordDetector->getKeywordBufferSize(bufferSize) == false) {
+		meddbg("keyword buffer size fetch operation failed\n");
+		return false;
+	}
+	medvdbg("keyword buffer size: %d\n", *bufferSize);
+	return true;
+}
+
+bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
+{
+	if (mKeywordDetector == nullptr) {
+		meddbg("keyword detector is not init\n");
+		return false;
+	}
+	if (buffer == NULL) {
+		meddbg("invalid parameter\n");
+		return false;
+	}
+	if (mKeywordDetector->getKeywordData(buffer) == false) {
+		meddbg("keyword buffer fetch operation failed\n");
+		return false;
+	}
+	return true;
+}
+
 } // namespace voice
 } // namespace media
 

@@ -53,7 +53,7 @@ media::MediaRecorder mr;
 
 static const char *filePath = "";
 FILE *fp;
-
+uint8_t *gBuffer = NULL;
 static bool isRecording = true;
 
 static void playRecordVoice(void);
@@ -177,6 +177,14 @@ public:
 		if (event == SPEECH_DETECT_KD) {
 			printf("Event SPEECH_DETECT_KD\n");
 			printf("#### [SD] keyword detected.\n");
+			if (gBuffer) {
+				if (sd->getKeywordData(gBuffer) == true) {
+					/* consume buffer */
+					printf("KD data extraction OK\n");
+				} else {
+					printf("kd data extraction failed\n");
+				}
+			}
 			sd->stopKeywordDetect();
 			startRecord();
 		} else if (event == SPEECH_DETECT_EPD) {
@@ -258,10 +266,21 @@ int wakerec_main(int argc, char *argv[])
 
 	sd->startKeywordDetect();
 
+	uint32_t bufferSize = 0;
+	if (sd->getKeywordBufferSize(&bufferSize) == true) {
+		printf("KD buffer size %d\n", bufferSize);
+		gBuffer = new uint8_t[bufferSize];
+		if (!gBuffer) {
+			printf("memory allocation failed\n");
+		}
+	}
+
 	while (1) {
 		sleep(67);
 	}
 
+	delete[] gBuffer;
+	gBuffer = NULL;
 	return 0;
 }
 }

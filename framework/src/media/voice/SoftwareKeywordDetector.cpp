@@ -54,5 +54,15 @@ void SoftwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool getKeywordBufferSize(uint32_t *bufferSize)
+{
+	return false;
+}
+
+bool getKeywordData(uint8_t *buffer)
+{
+	return false;
+}
+
 } // namespace voice
 } // namespace media
