@@ -490,7 +490,7 @@ ble_result_e ble_manager_server_stop_adv(void)
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_manager_server_set_device_name(char* name)
+ble_result_e ble_manager_set_gap_device_name(char name[BLE_GAP_DEVICE_NAME_LEN])
 {
 	blemgr_msg_s msg = {BLE_CMD_SET_DEVICE_NAME, BLE_MANAGER_FAIL, (void *)name, NULL};
 	int res = blemgr_post_message(&msg);

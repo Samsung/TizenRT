@@ -34,6 +34,7 @@
 /* Length defines */
 #define BLE_BD_ADDR_MAX_LEN 6
 #define BLE_BD_ADDR_STR_LEN 17
+#define BLE_GAP_DEVICE_NAME_LEN (39+1)/*!< Max length of device name, if device name length exceeds it, it will be truncated. */
 #define BLE_ADV_RAW_DATA_MAX_LEN 31
 #define BLE_ADV_RESP_DATA_MAX_LEN 31
 
