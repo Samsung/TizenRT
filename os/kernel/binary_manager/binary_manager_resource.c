@@ -155,7 +155,7 @@ int binary_manager_mount_resource(void)
 	do {
 		/* Read header data and Check crc */
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
-		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &resource_header_data, true);
+		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &resource_header_data, false);
 		if (ret == BINMGR_OK) {
 			bmvdbg("Resource Header Checking Success\n");
 			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum + RESOURCE_DEVNUM_OFFSET);
