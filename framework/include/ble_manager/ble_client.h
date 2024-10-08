@@ -34,13 +34,13 @@
 #include "ble_common.h"
 
 typedef enum {
-	BLE_MANAGER_CLIENT_NONE = 0,
-	BLE_MANAGER_CLIENT_IDLE,
-	BLE_MANAGER_CLIENT_CONNECTED,
-	BLE_MANAGER_CLIENT_CONNECTING,
-	BLE_MANAGER_CLIENT_DISCONNECTING,
-	BLE_MANAGER_CLIENT_AUTOCONNECTING,
-} ble_manager_client_state_e;
+	BLE_CLIENT_NONE = 0,
+	BLE_CLIENT_IDLE,
+	BLE_CLIENT_CONNECTED,
+	BLE_CLIENT_CONNECTING,
+	BLE_CLIENT_DISCONNECTING,
+	BLE_CLIENT_AUTOCONNECTING,
+} ble_client_state_e;
 
 typedef struct {
 	ble_addr addr;
@@ -49,43 +49,43 @@ typedef struct {
 	uint16_t mtu;
 	uint16_t scan_timeout; /* ms */
 	bool is_secured_connect;
-} ble_manager_conn_info;
+} ble_conn_info;
 
 typedef struct {
-	ble_manager_conn_info conn_info;
+	ble_conn_info conn_info;
 	bool is_bonded;
 	ble_conn_handle conn_handle;
-} ble_manager_device_connected;
+} ble_device_connected;
 
 typedef struct {
 	ble_conn_handle conn_handle[BLE_MAX_CONNECTION_COUNT];
 	uint8_t connected_count;
-} ble_manager_device_connected_list;
+} ble_device_connected_list;
 
 typedef struct {
 	ble_conn_handle conn_handle;
-	volatile ble_manager_client_state_e state;
-	ble_manager_conn_info info;
+	volatile ble_client_state_e state;
+	ble_conn_info info;
 	bool is_bonded;
 	bool auto_connect;
-} ble_manager_client_ctx;
+} ble_client_ctx;
 
-typedef void(*ble_manager_client_device_disconnected_cb)(ble_manager_client_ctx *ctx);
-typedef void(*ble_manager_client_device_connected_cb)(ble_manager_client_ctx *ctx, ble_manager_device_connected* connected_device);
-typedef void(*ble_manager_client_operation_notification_cb)(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
-typedef void (*ble_manager_client_operation_indication_cb)(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+typedef void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
+typedef void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
+typedef void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+typedef void (*ble_client_operation_indication_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
 
 typedef struct {
 	/* This is a set of callback function for BLE client */
-	ble_manager_client_device_disconnected_cb disconnected_cb;
-	ble_manager_client_device_connected_cb connected_cb;
-	ble_manager_client_operation_notification_cb notification_cb;
-	ble_manager_client_operation_indication_cb indication_cb;
-} ble_manager_client_callback_list;
+	ble_client_device_disconnected_cb disconnected_cb;
+	ble_client_device_connected_cb connected_cb;
+	ble_client_operation_notification_cb notification_cb;
+	ble_client_operation_indication_cb indication_cb;
+} ble_client_callback_list;
 
-ble_manager_client_ctx *ble_manager_client_create_ctx(ble_manager_client_callback_list *callbacks);
-ble_result_e ble_manager_client_destroy_ctx(ble_manager_client_ctx *ctx);
-ble_manager_client_state_e ble_manager_client_get_state(ble_manager_client_ctx *ctx);
+ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks);
+ble_result_e ble_client_destroy_ctx(ble_client_ctx *ctx);
+ble_client_state_e ble_client_get_state(ble_client_ctx *ctx);
 
 /****************************************************************************
  * Name: ble_client_connect
@@ -102,9 +102,9 @@ ble_manager_client_state_e ble_manager_client_get_state(ble_manager_client_ctx *
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_connect(ble_manager_client_ctx *ctx, ble_manager_conn_info* conn_info);
-ble_result_e ble_manager_client_reconnect(ble_manager_client_ctx *ctx);
-ble_result_e ble_manager_client_autoconnect(ble_manager_client_ctx *ctx, bool is_auto);
+ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info* conn_info);
+ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
+ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto);
 
 /****************************************************************************
  * Name: ble_client_disconnect
@@ -120,7 +120,7 @@ ble_result_e ble_manager_client_autoconnect(ble_manager_client_ctx *ctx, bool is
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_disconnect(ble_manager_client_ctx *ctx);
+ble_result_e ble_client_disconnect(ble_client_ctx *ctx);
 
 /****************************************************************************
  * Name: ble_client_disconnect_all
@@ -133,7 +133,7 @@ ble_result_e ble_manager_client_disconnect(ble_manager_client_ctx *ctx);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_disconnect_all(void);
+ble_result_e ble_client_disconnect_all(void);
 
 /****************************************************************************
  * Name: ble_client_connected_device_list
@@ -150,7 +150,7 @@ ble_result_e ble_manager_client_disconnect_all(void);
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_connected_device_list(ble_manager_device_connected_list* out_connected_list);
+ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_connected_list);
 
 /****************************************************************************
  * Name: ble_client_connected_info
@@ -168,7 +168,7 @@ ble_result_e ble_manager_client_connected_device_list(ble_manager_device_connect
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_connected_info(ble_manager_client_ctx *ctx, ble_manager_device_connected* out_connected_device);
+ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected* out_connected_device);
 
 /****************************************************************************
  * Name: ble_client_operation_enable_notification
@@ -187,9 +187,9 @@ ble_result_e ble_manager_client_connected_info(ble_manager_client_ctx *ctx, ble_
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_operation_enable_notification(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle);
-ble_result_e ble_manager_client_operation_enable_indication(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle);
-ble_result_e ble_manager_client_operation_enable_notification_and_indication(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle);
+ble_result_e ble_client_operation_enable_notification(ble_client_ctx *ctx, ble_attr_handle attr_handle);
+ble_result_e ble_client_operation_enable_indication(ble_client_ctx *ctx, ble_attr_handle attr_handle);
+ble_result_e ble_client_operation_enable_notification_and_indication(ble_client_ctx *ctx, ble_attr_handle attr_handle);
 
 /****************************************************************************
  * Name: ble_client_operation_read
@@ -211,6 +211,6 @@ ble_result_e ble_manager_client_operation_enable_notification_and_indication(ble
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_manager_client_operation_read(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
-ble_result_e ble_manager_client_operation_write(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
-ble_result_e ble_manager_client_operation_write_no_response(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+ble_result_e ble_client_operation_read(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+ble_result_e ble_client_operation_write(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);

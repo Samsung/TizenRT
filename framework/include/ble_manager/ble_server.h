@@ -34,73 +34,73 @@
 #include "ble_common.h"
 
 typedef enum  {
-	BLE_MANAGER_SERVER_GATT_SERVICE,
-	BLE_MANAGER_SERVER_GATT_CHARACT,
-	BLE_MANAGER_SERVER_GATT_DESC,
-	BLE_MANAGER_SERVER_GATT_MAX
-} ble_manager_server_gatt_profile_type_e;
+	BLE_SERVER_GATT_SERVICE,
+	BLE_SERVER_GATT_CHARACT,
+	BLE_SERVER_GATT_DESC,
+	BLE_SERVER_GATT_MAX
+} ble_server_gatt_profile_type_e;
 
 typedef enum {
-	BLE_MANAGER_SERVER_ATTR_CB_WRITING,
-	BLE_MANAGER_SERVER_ATTR_CB_READING,
-	BLE_MANAGER_SERVER_ATTR_CB_WRITING_NO_RSP,
-	BLE_MANAGER_SERVER_ATTR_CB_CCCD,
-	BLE_MANAGER_SERVER_ATTR_CB_INDICATE,
-} ble_manager_server_attr_cb_type_e;
+	BLE_SERVER_ATTR_CB_WRITING,
+	BLE_SERVER_ATTR_CB_READING,
+	BLE_SERVER_ATTR_CB_WRITING_NO_RSP,
+	BLE_SERVER_ATTR_CB_CCCD,
+	BLE_SERVER_ATTR_CB_INDICATE,
+} ble_server_attr_cb_type_e;
 
 typedef enum {
-	BLE_MANAGER_SERVER_CCCD_DEFAULT 		= 0x0000,
-	BLE_MANAGER_SERVER_CCCD_NOTIFY  		= 0x0001,
-	BLE_MANAGER_SERVER_CCCD_INDICATE		= 0x0002,
-	BLE_MANAGER_SERVER_CCCD_NOTIFY_INDICATE	= 0x0003
-} ble_manager_server_cccd_value_e;
+	BLE_SERVER_CCCD_DEFAULT 		= 0x0000,
+	BLE_SERVER_CCCD_NOTIFY  		= 0x0001,
+	BLE_SERVER_CCCD_INDICATE		= 0x0002,
+	BLE_SERVER_CCCD_NOTIFY_INDICATE	= 0x0003
+} ble_server_cccd_value_e;
 
-typedef void (*ble_server_cb_t)(ble_manager_server_attr_cb_type_e type, ble_conn_handle con_handle, ble_attr_handle handle, void* arg);
+typedef void (*ble_server_cb_t)(ble_server_attr_cb_type_e type, ble_conn_handle con_handle, ble_attr_handle handle, void* arg);
 
 typedef enum  {
-	BLE_MANAGER_ATTR_PROP_NONE          = 0x00,
-	BLE_MANAGER_ATTR_PROP_BCAST         = 0x01,
-	BLE_MANAGER_ATTR_PROP_READ          = 0x02,
-	BLE_MANAGER_ATTR_PROP_WRITE_NO_RSP  = 0x04,
-	BLE_MANAGER_ATTR_PROP_WRITE         = 0x08,
-	BLE_MANAGER_ATTR_PROP_NOTIFY        = 0x10,
-	BLE_MANAGER_ATTR_PROP_INDICATE      = 0x20,
-	BLE_MANAGER_ATTR_PROP_AUTHEN        = 0x40,
-	BLE_MANAGER_ATTR_PROP_EXTENDED      = 0x80,
-	BLE_MANAGER_ATTR_PROP_RWN           = 0x1a,
-} ble_manager_attr_property_e;
+	BLE_ATTR_PROP_NONE          = 0x00,
+	BLE_ATTR_PROP_BCAST         = 0x01,
+	BLE_ATTR_PROP_READ          = 0x02,
+	BLE_ATTR_PROP_WRITE_NO_RSP  = 0x04,
+	BLE_ATTR_PROP_WRITE         = 0x08,
+	BLE_ATTR_PROP_NOTIFY        = 0x10,
+	BLE_ATTR_PROP_INDICATE      = 0x20,
+	BLE_ATTR_PROP_AUTHEN        = 0x40,
+	BLE_ATTR_PROP_EXTENDED      = 0x80,
+	BLE_ATTR_PROP_RWN           = 0x1a,
+} ble_attr_property_e;
 
 typedef enum {
-	BLE_MANAGER_ATTR_PERM_R_PERMIT    = 0x00,         /* Always permitted, no restrictions*/
-	BLE_MANAGER_ATTR_PERM_R_AUTHEN    = 0x01,         /* Authentication required */
-	BLE_MANAGER_ATTR_PERM_R_AUTHOR    = 0x02,         /* Authorization required */
-	BLE_MANAGER_ATTR_PERM_R_ENCRYPT   = 0x04,         /* Can only be accessed in encrypted link*/
-	BLE_MANAGER_ATTR_PERM_R_BANNED    = 0x08,         /* Operation not permitted */
+	BLE_ATTR_PERM_R_PERMIT    = 0x00,         /* Always permitted, no restrictions*/
+	BLE_ATTR_PERM_R_AUTHEN    = 0x01,         /* Authentication required */
+	BLE_ATTR_PERM_R_AUTHOR    = 0x02,         /* Authorization required */
+	BLE_ATTR_PERM_R_ENCRYPT   = 0x04,         /* Can only be accessed in encrypted link*/
+	BLE_ATTR_PERM_R_BANNED    = 0x08,         /* Operation not permitted */
 
-	BLE_MANAGER_ATTR_PERM_W_PERMIT    = 0x00,         /* Always permitted, no restrictions*/
-	BLE_MANAGER_ATTR_PERM_W_AUTHEN    = 0x10,         /* Authentication required */
-	BLE_MANAGER_ATTR_PERM_W_AUTHOR    = 0x20,         /* Authorization required */
-	BLE_MANAGER_ATTR_PERM_W_ENCRYPT   = 0x40,         /* Can only be accessed in encrypted link*/
-	BLE_MANAGER_ATTR_PERM_W_BANNED    = 0x80,         /* Operation not permitted */
-} ble_manager_attr_permission_e;
-
-typedef enum {
-	BLE_MANAGER_SERVER_LL_CONNECTED,
-	BLE_MANAGER_SERVER_SM_CONNECTED,
-	BLE_MANAGER_SERVER_DISCONNECTED,
-} ble_manager_server_connection_type_e;
+	BLE_ATTR_PERM_W_PERMIT    = 0x00,         /* Always permitted, no restrictions*/
+	BLE_ATTR_PERM_W_AUTHEN    = 0x10,         /* Authentication required */
+	BLE_ATTR_PERM_W_AUTHOR    = 0x20,         /* Authorization required */
+	BLE_ATTR_PERM_W_ENCRYPT   = 0x40,         /* Can only be accessed in encrypted link*/
+	BLE_ATTR_PERM_W_BANNED    = 0x80,         /* Operation not permitted */
+} ble_attr_permission_e;
 
 typedef enum {
-	BLE_MANAGER_SERVER_NONE = 0,
-	BLE_MANAGER_SERVER_IDLE,
-	BLE_MANAGER_SERVER_LL_CONNECT,
-	BLE_MANAGER_SERVER_SM_CONNECT,
-	BLE_MANAGER_SERVER_CONNECTING,
-	BLE_MANAGER_SERVERDISCONNECTING,
-} ble_manager_server_state_e;
+	BLE_SERVER_LL_CONNECTED,
+	BLE_SERVER_SM_CONNECTED,
+	BLE_SERVER_DISCONNECTED,
+} ble_server_connection_type_e;
+
+typedef enum {
+	BLE_SERVER_NONE = 0,
+	BLE_SERVER_IDLE,
+	BLE_SERVER_LL_CONNECT,
+	BLE_SERVER_SM_CONNECT,
+	BLE_SERVER_CONNECTING,
+	BLE_SERVER_DISCONNECTING,
+} ble_server_state_e;
 
 typedef struct {
-	ble_manager_server_gatt_profile_type_e type;
+	ble_server_gatt_profile_type_e type;
 	uint8_t uuid[16];
 	uint16_t uuid_length;
 	uint8_t property;
@@ -108,60 +108,60 @@ typedef struct {
 	ble_attr_handle attr_handle;
 	ble_server_cb_t cb;
 	void* arg;
-} ble_manager_server_gatt_t;
+} ble_server_gatt_t;
 
-typedef void (*ble_manager_server_connected_t)(ble_conn_handle con_handle, ble_manager_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
-typedef void (*ble_manager_server_disconnected_t)(ble_conn_handle con_handle, uint16_t cause);
-typedef void (*ble_manager_server_mtu_update_t)(ble_conn_handle con_handle, uint16_t mtu_size);
-typedef void (*ble_manager_server_oneshot_adv_t)(uint16_t adv_result);
+typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
+typedef void (*ble_server_disconnected_t)(ble_conn_handle con_handle, uint16_t cause);
+typedef void (*ble_server_mtu_update_t)(ble_conn_handle con_handle, uint16_t mtu_size);
+typedef void (*ble_server_oneshot_adv_t)(uint16_t adv_result);
 
 typedef struct {
-	ble_manager_server_connected_t connected_cb;
-	ble_manager_server_disconnected_t disconnected_cb;
-	ble_manager_server_mtu_update_t mtu_update_cb;
-	ble_manager_server_oneshot_adv_t oneshot_adv_cb;
+	ble_server_connected_t connected_cb;
+	ble_server_disconnected_t disconnected_cb;
+	ble_server_mtu_update_t mtu_update_cb;
+	ble_server_oneshot_adv_t oneshot_adv_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed; 
-	ble_manager_server_gatt_t *profile;
+	ble_server_gatt_t *profile;
 	uint16_t profile_count;
-} ble_manager_server_init_config;
+} ble_server_init_config;
 
-ble_result_e ble_manager_server_get_profile_count(uint16_t *count);
+ble_result_e ble_server_get_profile_count(uint16_t *count);
 
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
-ble_result_e ble_manager_server_charact_notify(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
+ble_result_e ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
 
 // API for sending a characteristic value indication to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
-ble_result_e ble_manager_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
+ble_result_e ble_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
 
 // set data of attribute value
-ble_result_e ble_manager_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
+ble_result_e ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
 
 // get data of attribute value
-ble_result_e ble_manager_server_attr_get_data(ble_attr_handle attr_handle, ble_data *data);
+ble_result_e ble_server_attr_get_data(ble_attr_handle attr_handle, ble_data *data);
 
 // reject attribute request in callback function and return error code
-ble_result_e ble_manager_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcode);
+ble_result_e ble_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcode);
 
-ble_result_e ble_manager_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
-ble_result_e ble_manager_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
+ble_result_e ble_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+ble_result_e ble_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
 
 // Set Advertisement Data 
-ble_result_e ble_manager_server_set_adv_data(ble_data *data);
+ble_result_e ble_server_set_adv_data(ble_data *data);
 
 // Set Scan Response Data 
-ble_result_e ble_manager_server_set_adv_resp(ble_data *data);
+ble_result_e ble_server_set_adv_resp(ble_data *data);
 
 // Set Adv type
-ble_result_e ble_manager_server_set_adv_type(ble_adv_type_e adv_type, ble_addr *addr);
+ble_result_e ble_server_set_adv_type(ble_adv_type_e adv_type, ble_addr *addr);
 
 /*
 You can set the fixed interval from 20ms to 10.24 seconds, in steps of 0.625ms. 
 The random delay is a pseudo-random value from 0ms to 10ms that is automatically added. 
 This randomness helps reduce the possibility of collisions between advertisements of different devices
 */
-ble_result_e ble_manager_server_set_adv_interval(unsigned int interval);
+ble_result_e ble_server_set_adv_interval(unsigned int interval);
 
 /* Set tx power for advertising
    Arguement txpower: 
@@ -169,10 +169,10 @@ ble_result_e ble_manager_server_set_adv_interval(unsigned int interval);
 			step : 0.5dBm
 			tested value: 0x06, 0x1A, 0x26
 */
-ble_result_e ble_manager_server_set_adv_tx_power(uint8_t txpower);
+ble_result_e ble_server_set_adv_tx_power(uint8_t txpower);
 
-ble_result_e ble_manager_server_start_adv(void);
-ble_result_e ble_manager_server_stop_adv(void);
+ble_result_e ble_server_start_adv(void);
+ble_result_e ble_server_stop_adv(void);
 
 // Disconnect client. The client with secured connection would be required pairing again. 
-ble_result_e ble_manager_server_disconnect(ble_conn_handle con_handle);
+ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
