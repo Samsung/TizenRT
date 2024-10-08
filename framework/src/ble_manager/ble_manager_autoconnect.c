@@ -27,7 +27,7 @@
 #include "ble_manager_autoconnect.h"
 #include "ble_manager_log.h"
 
-static ble_client_ctx_internal *g_ctx = NULL;
+static ble_manager_client_ctx_internal *g_ctx = NULL;
 
 static void ble_auto_scan_state_changed_cb(ble_scan_state_e scan_state)
 {
@@ -82,7 +82,7 @@ static void *_autocon_process(void *param)
 
 	ble_autocon_state state = BLE_AUTOCON_STATE_DISCONNECT;
 	ble_autocon_event evt;
-	ble_client_ctx_internal *ctx = (ble_client_ctx_internal *)param;
+	ble_manager_client_ctx_internal *ctx = (ble_manager_client_ctx_internal *)param;
 
 	struct mq_attr attr;
 	char mq_name[10] = { 0, };
@@ -106,7 +106,7 @@ static void *_autocon_process(void *param)
 
 	while (ctx->state == BLE_CLIENT_AUTOCONNECTING) {
 		if (state == BLE_AUTOCON_STATE_DISCONNECT) {
-			ret = ble_client_start_scan(NULL, &scan_config);
+			ret = ble_manager_client_start_scan(NULL, &scan_config);
 			if (ret != BLE_MANAGER_SUCCESS) {
 				BLE_LOG_ERROR("[BLEMGR] auto conn scan fail[%d]\n", ret);
 				goto finish_auto;
@@ -133,7 +133,7 @@ static void *_autocon_process(void *param)
 			conn_stop = 1;
 			if (state == BLE_AUTOCON_STATE_SCAN_STARTING) {
 				state = BLE_AUTOCON_STATE_SCAN_STOPPING;
-				ret = ble_client_stop_scan();
+				ret = ble_manager_client_stop_scan();
 				if (ret != BLE_MANAGER_SUCCESS) {
 					BLE_LOG_ERROR("[BLEMGR] auto conn scan stop fail[%d]\n", ret);
 					goto finish_auto;
@@ -168,7 +168,7 @@ static void *_autocon_process(void *param)
 		} else if (state == BLE_AUTOCON_STATE_SCAN_STARTING) {
 			if (evt == BLE_AUTOCON_EVT_MAC_SCANNED) {
 				state = BLE_AUTOCON_STATE_SCAN_STOPPING;
-				ret = ble_client_stop_scan();
+				ret = ble_manager_client_stop_scan();
 				if (ret != BLE_MANAGER_SUCCESS) {
 					BLE_LOG_ERROR("[BLEMGR] auto conn scan stop fail[%d]\n", ret);
 					goto finish_auto;
@@ -177,7 +177,7 @@ static void *_autocon_process(void *param)
 		} else if (state == BLE_AUTOCON_STATE_SCAN_STOPPING) {
 			if (evt == BLE_AUTOCON_EVT_SCAN_STOP) {
 				state = BLE_AUTOCON_STATE_CONNECTING;
-				ret = ble_client_reconnect((ble_client_ctx *)ctx);
+				ret = ble_manager_client_reconnect((ble_manager_client_ctx *)ctx);
 				if (ret != BLE_MANAGER_SUCCESS) {
 					BLE_LOG_ERROR("[BLEMGR] auto conn reconnect fail[%d]\n", ret);
 					goto finish_auto;
@@ -204,7 +204,7 @@ finish_auto:
 	return NULL;
 }
 
-ble_autocon_result_e ble_manager_autoconnect(ble_client_ctx_internal *ctx)
+ble_autocon_result_e ble_manager_autoconnect(ble_manager_client_ctx_internal *ctx)
 {
 	if (ctx->state != BLE_CLIENT_AUTOCONNECTING) {
 		return BLE_AUTOCON_INVALID_STATE;

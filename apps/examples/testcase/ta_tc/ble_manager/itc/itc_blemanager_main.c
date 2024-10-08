@@ -79,30 +79,30 @@ static void ble_device_scanned_cb(ble_scanned_device *scanned_device)
 	);
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_manager_client_ctx *ctx)
 {
 	printf("client disconnected callback received\n");
 	ITC_FUNC_SIGNAL;
 }
 
-static void ble_device_connected_cb(ble_client_ctx *ctx, ble_device_connected *dev)
+static void ble_manager_device_connected_cb(ble_manager_client_ctx *ctx, ble_manager_device_connected *dev)
 {
 	printf("client connected callback received\n");
 	ITC_FUNC_SIGNAL;
 }
 
-static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data *read_result)
+static void ble_operation_notification_cb(ble_manager_client_ctx *ctx, ble_attr_handle attr_handle, ble_data *read_result)
 {
 	printf("notification callback received\n");
 	ITC_FUNC_SIGNAL;
 }
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_manager_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 {
 	printf("server connect callback received");
 }
 
-static ble_server_gatt_t gatt_profile[] = {
+static ble_manager_server_gatt_t gatt_profile[] = {
 	{
 		.type = BLE_SERVER_GATT_SERVICE,
 		.uuid = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01},
@@ -142,17 +142,17 @@ static ble_scan_callback_list scan_config = {
 	ble_device_scanned_cb,
 };
 
-static ble_client_callback_list client_config = {
+static ble_manager_client_callback_list client_config = {
 	ble_device_disconnected_cb,
-	ble_device_connected_cb,
+	ble_manager_device_connected_cb,
 	ble_operation_notification_cb,
 };
 
-static ble_server_init_config server_config = {
+static ble_manager_server_init_config server_config = {
 	ble_server_connected_cb,
 	true,
 	gatt_profile,
-	sizeof(gatt_profile) / sizeof(ble_server_gatt_t)
+	sizeof(gatt_profile) / sizeof(ble_manager_server_gatt_t)
 };
 
 static void set_scan_filter(ble_scan_filter *filter, uint8_t *raw_data, uint8_t len, bool whitelist_enable, uint32_t scan_duration)
@@ -230,7 +230,7 @@ static void itc_blemanager_init_deinit_n(void)
  * @testcase         itc_blemanager_scan_p
  * @brief            check initalization, scan,and de-initalization of ble manager
  * @scenario         check initalization, scan,and de-initalization of ble manager
- * @apicovered       ble_manager_init, ble_client_start_scan, ble_client_stop_scan, ble_manager_deinit
+ * @apicovered       ble_manager_init, ble_manager_client_start_scan, ble_manager_client_stop_scan, ble_manager_deinit
  * @precondition     none
  * @postcondition    none
  */
@@ -241,20 +241,20 @@ static void itc_blemanager_scan_p(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//no filter scan
-	ret = ble_client_start_scan(NULL, &scan_config);
+	ret = ble_manager_client_start_scan(NULL, &scan_config);
 	TC_ASSERT_EQ_CLEANUP("ble_client_start_scan", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
-	ret = ble_client_stop_scan();
+	ret = ble_manager_client_stop_scan();
 	TC_ASSERT_EQ_CLEANUP("ble_client_stop_scan", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
 	//filter scan
 	ble_scan_filter filter = { 0, };
 	set_scan_filter(&filter, ble_filter, sizeof(ble_filter), false, 1000);
-	ret = ble_client_start_scan(&filter, &scan_config);
+	ret = ble_manager_client_start_scan(&filter, &scan_config);
 	TC_ASSERT_EQ_CLEANUP("ble_client_start_scan", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
-	ret = ble_client_stop_scan();
+	ret = ble_manager_client_stop_scan();
 	TC_ASSERT_EQ_CLEANUP("ble_client_stop_scan", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -278,9 +278,9 @@ static void itc_blemanager_connect_disconnect_p(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//connect
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -296,12 +296,12 @@ static void itc_blemanager_connect_disconnect_p(void)
 		conn_info.addr.mac[4],
 		conn_info.addr.mac[5]
 	);
-	ret = ble_client_connect(ctx, &conn_info);
+	ret = ble_manager_client_connect(ctx, &conn_info);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -325,9 +325,9 @@ static void itc_blemanager_connect_disconnect_n(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//connect
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -335,16 +335,16 @@ static void itc_blemanager_connect_disconnect_n(void)
 	conn_info.mtu = 240;
 	conn_info.scan_timeout = 1000;
 	conn_info.is_secured_connect = true;
-	ret = ble_client_connect(ctx, &conn_info);
+	ret = ble_manager_client_connect(ctx, &conn_info);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_INVALID_STATE, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -368,9 +368,9 @@ static void itc_blemanager_bonded_device_p(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//connect
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -386,7 +386,7 @@ static void itc_blemanager_bonded_device_p(void)
 		conn_info.addr.mac[4],
 		conn_info.addr.mac[5]
 	);
-	ret = ble_client_connect(ctx, &conn_info);
+	ret = ble_manager_client_connect(ctx, &conn_info);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -398,7 +398,7 @@ static void itc_blemanager_bonded_device_p(void)
 	TC_ASSERT_EQ_CLEANUP("ble_manager_delete_bonded", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -422,9 +422,9 @@ static void itc_blemanager_client_con_list_p(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//connect
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -440,16 +440,16 @@ static void itc_blemanager_client_con_list_p(void)
 		conn_info.addr.mac[4],
 		conn_info.addr.mac[5]
 	);
-	ret = ble_client_connect(ctx, &conn_info);
+	ret = ble_manager_client_connect(ctx, &conn_info);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
-	ble_device_connected_list connected_list;
-	ret = ble_client_connected_device_list(&connected_list);
+	ble_manager_device_connected_list connected_list;
+	ret = ble_manager_client_connected_device_list(&connected_list);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connected_device_list", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -473,9 +473,9 @@ static void itc_blemanager_connected_dev_info_p(void)
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	//connect
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -491,16 +491,16 @@ static void itc_blemanager_connected_dev_info_p(void)
 		conn_info.addr.mac[4],
 		conn_info.addr.mac[5]
 	);
-	ret = ble_client_connect(ctx, &conn_info);
+	ret = ble_manager_client_connect(ctx, &conn_info);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
-	ble_device_connected connected_dev;
-	ret = ble_client_connected_info(ctx, &connected_dev);
+	ble_manager_device_connected connected_dev;
+	ret = ble_manager_client_connected_info(ctx, &connected_dev);
 	TC_ASSERT_EQ_CLEANUP("ble_client_connected_info", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	//disconnect
-	ret = ble_client_disconnect(ctx);
+	ret = ble_manager_client_disconnect(ctx);
 	TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	ITC_FUNC_WAIT;
 
@@ -527,12 +527,12 @@ static void itc_blemanager_advertisement_p(void)
 	ble_data data[1] = { 0, };
 	data->data = g_adv_raw;
 	data->length = sizeof(g_adv_raw);
-	ret = ble_server_set_adv_data(data);
+	ret = ble_manager_server_set_adv_data(data);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_data", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv resp
 	data->data = g_adv_resp;
 	data->length = sizeof(g_adv_resp);
-	ret = ble_server_set_adv_data(data);
+	ret = ble_manager_server_set_adv_data(data);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_data", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv type
 	ble_adv_type_e type = BLE_ADV_TYPE_IND;
@@ -543,17 +543,17 @@ static void itc_blemanager_advertisement_p(void)
 			type,
 		}
 	};
-	ret = ble_server_set_adv_type(type, &addr);
+	ret = ble_manager_server_set_adv_type(type, &addr);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_type", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv interval
 	unsigned int interval = 10;
-	ret = ble_server_set_adv_interval(interval);
+	ret = ble_manager_server_set_adv_interval(interval);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_interval", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//start adv
-	ret = ble_server_start_adv();
+	ret = ble_manager_server_start_adv();
 	TC_ASSERT_EQ_CLEANUP("ble_server_start_adv", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//stop adv
-	ret = ble_server_stop_adv();
+	ret = ble_manager_server_stop_adv();
 	TC_ASSERT_EQ_CLEANUP("ble_server_stop_adv", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	ret = ble_manager_deinit();
@@ -579,12 +579,12 @@ static void itc_blemanager_readvertisement_p(void)
 	ble_data data[1] = { 0, };
 	data->data = g_adv_raw;
 	data->length = sizeof(g_adv_raw);
-	ret = ble_server_set_adv_data(data);
+	ret = ble_manager_server_set_adv_data(data);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_data", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv resp
 	data->data = g_adv_resp;
 	data->length = sizeof(g_adv_resp);
-	ret = ble_server_set_adv_data(data);
+	ret = ble_manager_server_set_adv_data(data);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_data", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv type
 	ble_adv_type_e type = BLE_ADV_TYPE_IND;
@@ -595,20 +595,20 @@ static void itc_blemanager_readvertisement_p(void)
 			type,
 		}
 	};
-	ret = ble_server_set_adv_type(type, &addr);
+	ret = ble_manager_server_set_adv_type(type, &addr);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_type", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//set adv interval
 	unsigned int interval = 10;
-	ret = ble_server_set_adv_interval(interval);
+	ret = ble_manager_server_set_adv_interval(interval);
 	TC_ASSERT_EQ_CLEANUP("ble_server_set_adv_interval", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//start adv
-	ret = ble_server_start_adv();
+	ret = ble_manager_server_start_adv();
 	TC_ASSERT_EQ_CLEANUP("ble_server_start_adv", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//start adv
-	ret = ble_server_start_adv();
+	ret = ble_manager_server_start_adv();
 	TC_ASSERT_EQ_CLEANUP("ble_server_start_adv", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 	//stop adv
-	ret = ble_server_stop_adv();
+	ret = ble_manager_server_stop_adv();
 	TC_ASSERT_EQ_CLEANUP("ble_server_stop_adv", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	ret = ble_manager_deinit();
@@ -620,7 +620,7 @@ static void itc_blemanager_readvertisement_p(void)
  * @testcase         itc_blemanager_whitelist_add_del_p
  * @brief            check initalization, whitelist add, whitelist delete,and de-initalization of ble manager
  * @scenario         check initalization, whitelist add, whitelist delete,and de-initalization of ble manager
- * @apicovered       ble_manager_init, ble_scan_whitelist_add, ble_scan_whitelist_delete, ble_manager_deinit
+ * @apicovered       ble_manager_init, ble_manager_scan_whitelist_add, ble_manager_scan_whitelist_delete, ble_manager_deinit
  * @precondition     none
  * @postcondition    none
  */
@@ -632,9 +632,9 @@ static void itc_blemanager_whitelist_add_del_p(void)
 
 	ble_addr addr;
 	memcpy(addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
-	ret = ble_scan_whitelist_add(&addr);
+	ret = ble_manager_scan_whitelist_add(&addr);
 	TC_ASSERT_EQ_CLEANUP("ble_scan_whitelist_add", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
-	ret = ble_scan_whitelist_delete(&addr);
+	ret = ble_manager_scan_whitelist_delete(&addr);
 	TC_ASSERT_EQ_CLEANUP("ble_scan_whitelist_delete", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	ret = ble_manager_deinit();
@@ -656,7 +656,7 @@ static void itc_blemanager_get_profile_count_p(void) {
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
 	uint16_t count;
-	ret = ble_server_get_profile_count(&count);
+	ret = ble_manager_server_get_profile_count(&count);
 	TC_ASSERT_EQ_CLEANUP("ble_server_get_profile_count", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 
 	ret = ble_manager_deinit();
@@ -683,9 +683,9 @@ static void itc_blemanager_average_connect_time(void)
 	ret = ble_manager_init(NULL);
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -696,13 +696,13 @@ static void itc_blemanager_average_connect_time(void)
 
 	for (i = 1; i <= LOOP_SIZE; i++) {
 		gettimeofday(&start_t, NULL);
-		ret = ble_client_connect(ctx, &conn_info);
+		ret = ble_manager_client_connect(ctx, &conn_info);
 		TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 		ITC_FUNC_WAIT;
 		gettimeofday(&end_t, NULL);
 		average += diff_time(&start_t, &end_t);
 
-		ret = ble_client_disconnect(ctx);
+		ret = ble_manager_client_disconnect(ctx);
 		TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 		ITC_FUNC_WAIT;
 		sleep(1);
@@ -733,9 +733,9 @@ static void itc_blemanager_average_disconnect_time(void)
 	ret = ble_manager_init(NULL);
 	TC_ASSERT_EQ("ble_manager_init", ret, BLE_MANAGER_SUCCESS);
 
-	ble_client_ctx *ctx;
-	ctx = ble_client_create_ctx(&client_config);
-	ble_conn_info conn_info = { 0, };
+	ble_manager_client_ctx *ctx;
+	ctx = ble_manager_client_create_ctx(&client_config);
+	ble_manager_conn_info conn_info = { 0, };
 	memcpy(conn_info.addr.mac, g_target.mac, BLE_BD_ADDR_MAX_LEN);
 	conn_info.addr.type = BLE_ADV_TYPE_IND;
 	conn_info.conn_interval = 8;
@@ -745,12 +745,12 @@ static void itc_blemanager_average_disconnect_time(void)
 	conn_info.is_secured_connect = true;
 
 	for (i = 1; i <= LOOP_SIZE; i++) {
-		ret = ble_client_connect(ctx, &conn_info);
+		ret = ble_manager_client_connect(ctx, &conn_info);
 		TC_ASSERT_EQ_CLEANUP("ble_client_connect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 		ITC_FUNC_WAIT;
 
 		gettimeofday(&start_t, NULL);
-		ret = ble_client_disconnect(ctx);
+		ret = ble_manager_client_disconnect(ctx);
 		TC_ASSERT_EQ_CLEANUP("ble_client_disconnect", ret, BLE_MANAGER_SUCCESS, ble_manager_deinit());
 		ITC_FUNC_WAIT;
 		gettimeofday(&end_t, NULL);

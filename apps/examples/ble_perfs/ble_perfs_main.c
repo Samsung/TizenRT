@@ -81,13 +81,13 @@ static char * connection_type_str[] = {
 	"BLE_SERVER_DISCONNECTED",
 };
 
-static char * get_attr_cb_type_str(ble_server_attr_cb_type_e cb_type)
+static char * get_attr_cb_type_str(ble_manager_server_attr_cb_type_e cb_type)
 {
 	return  attr_cb_type_str[cb_type];
 };
 
 
-static char * get_conn_type_str(ble_server_connection_type_e conn_type)
+static char * get_conn_type_str(ble_manager_server_connection_type_e conn_type)
 {
 	return connection_type_str[conn_type];
 }
@@ -120,7 +120,7 @@ static void addr_type_to_string(char *address, const uint8_t *addr)
 }
 
 
-static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_charact_a_1(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
 
@@ -131,7 +131,7 @@ static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle c
 	BLE_LOGD("[CHAR_A_1][%s] type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, attr_handle);
 }
 
-static void utc_cb_desc_b_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_desc_b_1(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
 	if (arg != NULL) {
@@ -185,13 +185,13 @@ static int perfs_ble_get_result(void)
 	return 0;
 }
 
-static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg) 
+static void ble_peri_cb_charact_rmc_sync(ble_manager_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg) 
 {
 	uint8_t buf[256] = { 0, };
 	ble_data blue_data = { buf, sizeof(buf) };
 	struct perfs_data_t *p_data = (struct perfs_data_t *)arg;
 
-	ble_result_e ret = ble_server_attr_get_data(attr_handle, &blue_data);
+	ble_result_e ret = ble_manager_server_attr_get_data(attr_handle, &blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "[RMC_SYNC] Fail to get attr data\n");
 		return;
@@ -228,7 +228,7 @@ static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_con
 	}
 }
 
-static ble_server_gatt_t gatt_profile[] = {
+static ble_manager_server_gatt_t gatt_profile[] = {
 	{.type = BLE_SERVER_GATT_SERVICE, .uuid = {0x12, 0xB6, 0x6E, 0x45, 0xA7, 0x68, 0x9D, 0x8D, 0x9A, 0x40, 0x17, 0x2B, 0xE9, 0xCB, 0xF2, 0x13}, .uuid_length = 16,
 		.attr_handle = BLE_APP_HANDLE_SERVICE_0,},
 
@@ -260,7 +260,7 @@ static ble_server_gatt_t gatt_profile[] = {
 		.attr_handle = BLE_APP_HANDLE_CHAR_RMC_SYNC, .cb = ble_peri_cb_charact_rmc_sync, .arg = &g_perf_data},
 };
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_manager_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 {
 	char address_str[BLE_BD_ADDR_STR_LEN + 1] = {0,};
 
@@ -276,10 +276,10 @@ static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_conne
 	return;
 }
 
-static ble_server_init_config server_config = {
+static ble_manager_server_init_config server_config = {
 	ble_server_connected_cb,
 	true,
-	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
+	gatt_profile, sizeof(gatt_profile) / sizeof(ble_manager_server_gatt_t)};
 
 
 static void perfs_ble_usage(void)
@@ -337,7 +337,7 @@ static int perfs_ble_server_start(void)
 	blue_data->data = g_adv_raw;
 	blue_data->length = sizeof(g_adv_raw);
 
-	ret = ble_server_set_adv_data(blue_data);
+	ret = ble_manager_server_set_adv_data(blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to set adv raw data ret:[%d]\n", ret);
 		return -1;
@@ -347,14 +347,14 @@ static int perfs_ble_server_start(void)
 	blue_data->data = g_adv_resp;
 	blue_data->length = sizeof(g_adv_resp);
 
-	ret = ble_server_set_adv_resp(blue_data);
+	ret = ble_manager_server_set_adv_resp(blue_data);
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to set adv resp data ret:[%d]\n", ret);
 		return -1;
 	}
 	BLE_LOGD( "Set adv resp data ... ok\n");
 
-	ret = ble_server_start_adv();
+	ret = ble_manager_server_start_adv();
 	if (ret != BLE_MANAGER_SUCCESS) {
 		BLE_LOGD( "Fail to start adv ret:[%d]\n", ret);
 		return -1;
