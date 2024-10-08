@@ -17,7 +17,7 @@ Most of the commands support *--help* option to show how to use.
 |                    | [irqinfo](#irqinfo)                             | [mv](#mv)               |
 |                    | [kill/killall](#killkillall)                    | [mount](#mount)         |
 |                    | [prodconfig](#prodconfig)                       | [umount](#umount)       |
-|                    | [ps](#s)                                        | [pwd](#pwd)             |
+|                    | [ps](#ps)                                       | [pwd](#pwd)             |
 |                    | [reboot](#reboot)                               | [rm](#rm)               |
 |                    | [stkmon](#stkmon)                               | [rmdir](#rmdir)         |
 |                    | [uptime](#uptime)                               |                         |
