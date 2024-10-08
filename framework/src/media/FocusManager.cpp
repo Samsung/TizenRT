@@ -59,7 +59,6 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 		auto focus = mFocusList.front();
 		mFocusList.pop_front();
 		focus->notify(FOCUS_LOSS);
-		removeFocusElement(focusRequest);
 		if (!mFocusList.empty()) {
 			mFocusList.front()->notify(FOCUS_GAIN);
 		}
