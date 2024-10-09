@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 9702f2b8da 2024/10/09-09:53:04 ==
+1. Enable RTC as wakeup interrupt src
+2. Add RTC wakeup reason
+
 == version a676e7969f 2024/10/04-14:35:42 ==
 1. Reduce sleep/wakeup log into one line
 
