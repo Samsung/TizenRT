@@ -262,6 +262,11 @@ endmenu
 
 endif # MTD_SMART
 
+config MTD_W25N
+        bool "SPI-based W25N NAND FLASH"
+        default n
+        select SPI
+
 config MTD_W25
 	bool "SPI-based W25 FLASH"
 	default n
