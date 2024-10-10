@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e4f809fee2 2024/10/10-19:55:35 ==
+1. Fix issue of receiving invalid CSI data length
+
 == version 9702f2b8da 2024/10/09-09:53:04 ==
 1. Enable RTC as wakeup interrupt src
 2. Add RTC wakeup reason
