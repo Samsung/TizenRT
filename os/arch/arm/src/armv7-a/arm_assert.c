@@ -553,25 +553,10 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-	/* ARCH_GET_RET_ADDRESS should always be
-	 * called at the start of the function */
-
-	size_t kernel_assert_location = 0;
-	ARCH_GET_RET_ADDRESS(kernel_assert_location)
-	struct tcb_s *fault_tcb = this_task();
-
-	/* Add new line to distinguish between normal log and assert log.*/
-	lldbg_noarg("\n");
-
-	board_autoled_on(LED_ASSERTION);
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	reboot_reason_write_user_intended();
-#endif
-
+	irqstate_t flags = enter_critical_section();
 	abort_mode = true;
 
-	uint32_t asserted_location;
+	uint32_t asserted_location = 0;
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
@@ -582,10 +567,36 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)user_assert_location;
 		user_assert_location = 0x0;
 	} else {
-		asserted_location = (uint32_t)kernel_assert_location;
+		ARCH_GET_RET_ADDRESS(asserted_location)
 	}
 
-	irqstate_t flags = irqsave();
+#ifdef CONFIG_SMP
+	if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
+		int me = sched_getcpu();
+		for (int i = 0; i < CONFIG_SMP_NCPUS; i++) {
+			if (i != me) {
+				/* Pause the CPU */
+				up_cpu_pause(i);
+				/* Wait while the pause request is pending */
+				while (up_cpu_pausereq(i)) {
+				}
+			}
+
+		}
+	}
+#endif
+
+	struct tcb_s *fault_tcb = this_task();
+	/* Add new line to distinguish between normal log and assert log.*/
+	lldbg_noarg("\n");
+
+	board_autoled_on(LED_ASSERTION);
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	reboot_reason_write_user_intended();
+#endif
+
+
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg_noarg("security level: %d\n", get_security_level());
 #endif
@@ -608,8 +619,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	lldbg_noarg("\n");
 #endif
 
-	irqrestore(flags);
-
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
@@ -620,4 +629,5 @@ void up_assert(const uint8_t *filename, int lineno)
 		/* treat kernel fault */
 		arm_assert();
 	}
+	leave_critical_section(flags);
 }
