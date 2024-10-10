@@ -63,6 +63,12 @@ int hd_handle_crypto_request(int cmd, unsigned long arg, void *lower)
 	case SECLINKIOC_RSADECRYPT:
 		SLDRV_CALL(res, req->res, rsa_decrypt, (info->input, info->rsa_mode, info->key_idx, info->output));
 		break;
+	case SECLINKIOC_GCMENCRYPT:
+		SLDRV_CALL(res, req->res, gcm_encrypt, (info->input, info->gcm_param, info->key_idx, info->output));
+		break;
+	case SECLINKIOC_GCMDECRYPT:
+		SLDRV_CALL(res, req->res, gcm_decrypt, (info->input, info->gcm_param, info->key_idx, info->output));
+		break;
 	default:
 		res = -ENOSYS;
 	}
