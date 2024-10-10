@@ -34,7 +34,7 @@
 /*  stack interface name */
 #define LWNL_INTF_NAME "None"
 
-#define LWNL_MAX_PARAM 4
+#define LWNL_MAX_PARAM 5
 
 #define LWNL_CB_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 

@@ -75,7 +75,7 @@ typedef struct {
 typedef struct {
 	bool used;
 	uint8_t adv_handle;
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	T_BLE_EXT_ADV_MGR_STATE ext_adv_state;
 #else	/* use gap_ext_adv.h */
 	T_GAP_EXT_ADV_STATE ext_adv_state;
@@ -313,7 +313,9 @@ static void bt_stack_le_gap_handle_pa_sync_state_evt(uint8_t sync_id, uint16_t s
 }
 #endif
 
-#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT && !RTK_BLE_MGR_LIB_EADV
+#if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) && \
+	(defined(F_BT_LE_5_0_AE_ADV_SUPPORT) && F_BT_LE_5_0_AE_ADV_SUPPORT) && \
+	(!defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV)
 static void bt_stack_le_gap_handle_ext_adv_state_evt(uint8_t adv_handle, T_GAP_EXT_ADV_STATE new_state, uint16_t cause)
 {
 	rtk_bt_le_ext_adv_ind_t *p_ext_adv_ind = NULL;
@@ -947,6 +949,7 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				  p_data->p_le_ext_adv_start_setting_rsp->cause, p_data->p_le_ext_adv_start_setting_rsp->flag,
 				  p_data->p_le_ext_adv_start_setting_rsp->adv_handle);
 
+		/* start_setting is called by bt_stack_le_gap_start_ext_adv */ 
 		p_cmd = bt_stack_pending_cmd_search(RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
 		if (p_cmd) {
 			bt_stack_pending_cmd_delete(p_cmd);
@@ -959,7 +962,13 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 				osif_sem_give(p_cmd->psem);
 			}
 		}
-
+		/* start_setting is called by _ext_adv_param_take_effect */
+		p_cmd = bt_stack_pending_cmd_search(type);
+		if (p_cmd) { 
+			bt_stack_pending_cmd_delete(p_cmd);
+			p_cmd->ret = p_data->p_le_ext_adv_start_setting_rsp->cause;
+			osif_sem_give(p_cmd->psem);
+		}
 		break;
 	}
 
@@ -1942,7 +1951,7 @@ static uint16_t bt_stack_le_gap_set_ext_adv_data(void *param)
 
 	API_PRINT("bt_stack_le_gap_set_ext_adv_data: handle = %d, len = %d\r\n", padv_data->adv_handle, padv_data->len);
 
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_set_adv_data(padv_data->adv_handle, padv_data->len, padv_data->pdata);
 #else
 	cause = le_ext_adv_set_adv_data(padv_data->adv_handle, padv_data->len, padv_data->pdata);
@@ -1966,8 +1975,8 @@ static uint16_t bt_stack_le_gap_set_ext_scan_rsp_data(void *param)
 	}
 
 	API_PRINT("bt_stack_le_gap_set_ext_scan_rsp_data: handle = %d, len = %d\r\n", pscan_rsp->adv_handle, pscan_rsp->len);
-
-#if RTK_BLE_MGR_LIB_EADV
+	
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_set_scan_response_data(pscan_rsp->adv_handle, pscan_rsp->len, pscan_rsp->pdata);
 #else
 	cause = le_ext_adv_set_scan_response_data(pscan_rsp->adv_handle, pscan_rsp->len, pscan_rsp->pdata);
@@ -1981,7 +1990,7 @@ static uint16_t bt_stack_le_gap_set_ext_scan_rsp_data(void *param)
 	return 0;
 }
 
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 static void bt_stack_ble_ext_adv_callback(uint8_t cb_type, void *p_cb_data)
 {
 	T_BLE_EXT_ADV_CB_DATA *p_data = (T_BLE_EXT_ADV_CB_DATA *)p_cb_data;
@@ -2059,6 +2068,30 @@ static void bt_stack_ble_ext_adv_callback(uint8_t cb_type, void *p_cb_data)
 }
 #endif
 
+#if !defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV
+/* Call this function after set EA parameters to make parametes take effect. */
+static uint16_t _ext_adv_param_take_effect(void *param)
+{
+	rtk_bt_le_ext_adv_create_t *p_create = (rtk_bt_le_ext_adv_create_t *)param;
+	rtk_bt_le_ext_adv_param_t *padv_param = p_create->p_adv_param;
+	T_GAP_CAUSE cause;
+	uint8_t flags = EXT_ADV_SET_ADV_PARAS;
+
+	if (padv_param->own_addr.type == RTK_BT_LE_ADDR_TYPE_RANDOM ||
+		padv_param->own_addr.type == RTK_BT_LE_ADDR_TYPE_RPA_RANDOM) {
+		flags |= EXT_ADV_SET_RANDOM_ADDR;
+	}
+
+	cause = le_ext_adv_start_setting(*p_create->p_adv_handle, flags);
+	if (cause) {
+		API_PRINT("le_ext_adv_start_setting cause = %x \r\n", cause);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+#endif
+
 static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 {
 	rtk_bt_le_ext_adv_create_t *p_create = (rtk_bt_le_ext_adv_create_t *)param;
@@ -2100,7 +2133,7 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 		random_address = padv_param->own_addr.addr_val;
 	}
 
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_init_adv_params_all(&adv_handle, (uint16_t)padv_param->adv_event_prop,
 			padv_param->adv_sid, (uint8_t)padv_param->tx_power,
 			padv_param->primary_adv_interval_min, padv_param->primary_adv_interval_max,
@@ -2152,19 +2185,13 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 			API_PRINT("le_ext_adv_set_random cause = %x \r\n", cause);
 			return RTK_BT_ERR_LOWER_STACK_API;
 		}
-
-		cause = le_ext_adv_start_setting(adv_handle, EXT_ADV_SET_RANDOM_ADDR);
-		if (cause) {
-			API_PRINT("le_ext_adv_start_setting cause = %x \r\n", cause);
-			return RTK_BT_ERR_LOWER_STACK_API;
-		}
 	}
 
 #endif
 
 	bt_stack_ext_adv_tbl[idx].used = true;
 	bt_stack_ext_adv_tbl[idx].adv_handle = adv_handle;
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	bt_stack_ext_adv_tbl[idx].ext_adv_state = BLE_EXT_ADV_MGR_ADV_DISABLED;
 #else
 	bt_stack_ext_adv_tbl[idx].ext_adv_state = EXT_ADV_STATE_IDLE;
@@ -2222,16 +2249,31 @@ static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 {
 	uint8_t handle = *((uint8_t *)param);
 	T_GAP_CAUSE cause;
+	int idx;
 
 	if (!bt_stack_le_gap_ext_adv_handle_valid(handle)) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-#if RTK_BLE_MGR_LIB_EADV
+	for (idx = 0; idx < GAP_MAX_EXT_ADV_SETS; idx++) {
+		if (bt_stack_ext_adv_tbl[idx].used && 
+			bt_stack_ext_adv_tbl[idx].adv_handle == handle) {
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
+			if (bt_stack_ext_adv_tbl[idx].ext_adv_state == BLE_EXT_ADV_MGR_ADV_DISABLED)
+#else 
+			if (bt_stack_ext_adv_tbl[idx].ext_adv_state == EXT_ADV_STATE_IDLE)
+#endif 
+			{
+				return RTK_BT_ERR_ALREADY_DONE;
+			}
+		}
+	}
+
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	cause = ble_ext_adv_mgr_disable(handle, 0);
-#else
+#else 
 	cause = le_ext_adv_disable(1, &handle);
-#endif
+#endif 
 	if (cause) {
 		API_PRINT("bt_stack_le_gap_stop_ext_adv: cause = %x \r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -2241,7 +2283,7 @@ static uint16_t bt_stack_le_gap_stop_ext_adv(void *param)
 
 static uint16_t bt_stack_le_gap_remove_ext_adv(void *param)
 {
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 	(void)param;
 	return RTK_BT_ERR_UNSUPPORTED;//ble_mgr.a has no remove API.
 #else
@@ -4233,10 +4275,18 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV:
 		API_PRINT("RTK_BT_LE_GAP_ACT_CREATE_EXT_ADV \r\n");
 		ret = bt_stack_le_gap_create_ext_adv(p_cmd->param);
+#if !defined(RTK_BLE_MGR_LIB_EADV) || !RTK_BLE_MGR_LIB_EADV
+		if (!ret) {
+			p_cmd->user_data = GAP_MSG_LE_EXT_ADV_START_SETTING;
+			bt_stack_pending_cmd_insert(p_cmd);
+			ret = _ext_adv_param_take_effect(p_cmd->param); /* Some of PA param, like AoA/AoD, must set after EA param takes effect. */
+			goto async_handle;
+		}
+#endif
 		break;
 	case RTK_BT_LE_GAP_ACT_START_EXT_ADV:
 		API_PRINT("RTK_BT_LE_GAP_ACT_START_EXT_ADV \r\n");
-#if RTK_BLE_MGR_LIB_EADV
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV
 		ret = bt_stack_le_gap_start_ext_adv(p_cmd->param);
 #else
 		p_cmd->user_data = (RTK_BT_LE_GAP_ACT_START_EXT_ADV << 8);
