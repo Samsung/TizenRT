@@ -57,7 +57,7 @@
 #endif
 
 #ifndef CONFIG_SYU645B_NUM_BUFFERS
-#define CONFIG_SYU645B_NUM_BUFFERS       4
+#define CONFIG_SYU645B_NUM_BUFFERS       2
 #endif
 
 /****************************************************************************
