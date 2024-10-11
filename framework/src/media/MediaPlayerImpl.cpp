@@ -42,7 +42,7 @@ player_result_t MediaPlayerImpl::create()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer create\n");
+	medvdbg("MediaPlayer create mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mpw.startWorker();
@@ -77,7 +77,7 @@ player_result_t MediaPlayerImpl::destroy()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer destroy\n");
+	medvdbg("MediaPlayer destroy mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -121,7 +121,7 @@ player_result_t MediaPlayerImpl::prepare()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer prepare\n");
+	medvdbg("MediaPlayer prepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -225,7 +225,7 @@ player_result_t MediaPlayerImpl::unprepare()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer unprepare\n");
+	medvdbg("MediaPlayer unprepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -270,7 +270,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 player_result_t MediaPlayerImpl::start()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer start\n");
+	medvdbg("MediaPlayer start mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -304,17 +304,7 @@ void MediaPlayerImpl::startPlayer()
 			return;
 		}
 	}
-
-	auto prevPlayer = mpw.getPlayer();
-	auto curPlayer = shared_from_this();
-	if (prevPlayer != curPlayer) {
-		if (prevPlayer) {
-			/** TODO Should be considered Audiofocus later **/
-			prevPlayer->pausePlayer();
-		}
-		mpw.setPlayer(curPlayer);
-	}
-
+	mpw.setPlayer(shared_from_this());
 	mCurState = PLAYER_STATE_PLAYING;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_STARTED);
 }
@@ -322,7 +312,7 @@ void MediaPlayerImpl::startPlayer()
 player_result_t MediaPlayerImpl::stop()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer stop\n");
+	medvdbg("MediaPlayer stop mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -371,7 +361,7 @@ player_result_t MediaPlayerImpl::stopPlayback()
 player_result_t MediaPlayerImpl::pause()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer pause\n");
+	medvdbg("MediaPlayer pause mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -405,9 +395,7 @@ void MediaPlayerImpl::pausePlayer()
 
 	auto prevPlayer = mpw.getPlayer();
 	auto curPlayer = shared_from_this();
-	if (prevPlayer == curPlayer) {
-		mpw.setPlayer(nullptr);
-	}
+
 	mCurState = PLAYER_STATE_PAUSED;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSED);
 }
@@ -528,7 +516,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setDataSource\n");
+	medvdbg("MediaPlayer setDataSource mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -567,7 +555,7 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setObserver\n");
+	medvdbg("MediaPlayer setObserver mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -601,7 +589,6 @@ bool MediaPlayerImpl::isPlaying()
 {
 	bool ret = false;
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer isPlaying\n");
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		return ret;
@@ -746,7 +733,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 void MediaPlayerImpl::playback()
 {
 	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
-	medvdbg("num_read : %d\n", num_read);
+	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
 		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
