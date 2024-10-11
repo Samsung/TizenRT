@@ -30,6 +30,7 @@
 //#include <tinyara/irq.h>
 #include <tinyara/gpio.h>
 #include <tinyara/irq.h>
+#include <tinyara/sensors/sensor.h>
 #include <tinyara/sensors/mlx90617.h>
 #include "objects.h"
 #include "gpio_irq_api.h"
@@ -78,44 +79,32 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-
-struct rtl8730e_mlx90617_info_s {
-	struct sensor_config s_config;
-	//touch_handler_t handler;
-	//gpio_irq_t data_ready;
+struct rtl8730e_mlx90617_s {
+	gpio_irq_t data_ready;
 };
+
+struct rtl8730e_mlx90617_s g_rtl8730e_mlx90617_priv0;
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-/*static void rtl8730e_ist415_enable_irq(bool enable);
-static void rtl8730e_ist415_irq_attach(touch_handler_t handler, FAR char *arg);
-
 /****************************************************************************
  * Private Data
- ****************************************************************************/
-static struct rtl8730e_mlx90617_info_s g_mlx90617info = {
-	.s_config = {
-		.i2c_config = {
-			.frequency = MLX90617_I2C_FREQ,
-			.address = MLX90617_I2C_ADDR,
-			.addrlen = MLX90617_I2C_ADDRLEN,
-		},
-		.spi_config = {
-                        .bpw = MLX90617_SPI_BPW,
-                        .freq = MLX90617_SPI_FREQ,
-                        .cs = MLX90617_SPI_CS,
-                        .mode = MLX90617_SPI_MODE,
-                },
+****************************************************************************/
+
+static struct mlx90617_dev_s g_mlx90617_dev0 = {
+	.i2c = NULL,
+	.i2c_config = {
+		.frequency = MLX90617_I2C_FREQ,
+		.address = MLX90617_I2C_ADDR,
+		.addrlen = MLX90617_I2C_ADDRLEN,
 	},
+	.spi = NULL,
+	.priv = &g_rtl8730e_mlx90617_priv0,
 };
 
-//to refactor
-//FAR struct i2c_dev_s *i2c;
-//struct i2c_config_s configg;
-//struct spi_io_config spi_configg;
-//FAR struct spi_dev_s *spi;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -157,14 +146,18 @@ void rtl8730e_mlx90617_initialize()
 	if (!i2c) {
 		lldbg("ERROR: Failed to initialize I2C\n");
 	}
-	struct i2c_config_s configg = g_mlx90617info.s_config.i2c_config;
 	//struct spi_io_config spi_configg;
 	SPI_SETMODE(spi, MLX90617_SPI_MODE);
 	SPI_SETFREQUENCY(spi, MLX90617_SPI_FREQ);
 	SPI_SETBITS(spi, MLX90617_SPI_BPW);
 
 	int ret = 0;
-	ret = mlx90617_register("/dev/sensor0", i2c, &(g_mlx90617info.s_config), spi);
+
+	g_mlx90617_dev0.i2c = i2c;
+	g_mlx90617_dev0.spi = spi;
+
+	ret  = mlx90617_initialize("/dev/sensor0", &g_mlx90617_dev0);
+	//ret = mlx90617_register("/dev/sensor0", i2c, &(g_mlx90617info.s_config), spi);
 	if (ret < 0) {
 		lldbg("ERROR: Sensor driver register fail\n");
 		return;

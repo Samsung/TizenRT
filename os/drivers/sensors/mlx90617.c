@@ -36,9 +36,8 @@
 
 #include <tinyara/spi/spi.h>
 #include <tinyara/i2c.h>
+#include <tinyara/sensors/sensor.h>
 #include <tinyara/sensors/mlx90617.h>
-//#include <tinyara/input/touchscreen.h>
-//#include <tinyara/input/ist415.h>
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -47,217 +46,135 @@
  * Private Types
  ****************************************************************************/
 
-/* MLX90617 Device */
-
-struct mlx90617_dev_s
-{
-	/* I2C bus and address for device. */
-	struct i2c_dev_s *i2c;
-	struct i2c_config_s config;
-	struct spi_dev_s *spi;
-	//struct lcd_touch_config *lower;
-	
-	/* Configuration for device. */
-	sem_t sem;
-	int crefs;
-};
-
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-static int mlx90617_open(FAR struct file *filep);
-static int mlx90617_close(FAR struct file *filep);
-static ssize_t mlx90617_read(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen);
-static ssize_t mlx90617_write(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen);
-static ssize_t mlx90617_ioctl(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen);
+static ssize_t mlx90617_read(struct sensor_upperhalf_s *dev, FAR char *buffer);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static FAR struct mlx90617_dev_s g_mlx90617_priv;
-
-/* File Operations exposed to NuttX Apps */
-static const struct file_operations g_mlx90617_fileops =
-{
-  mlx90617_open,   /* open */
-  mlx90617_close,  /* close */
-  mlx90617_read,   /* read */
-  mlx90617_write,           /* write */
-  NULL,           /* seek */
-  mlx90617_ioctl,          /*ioctl */
-  NULL,          
+struct sensor_ops_s g_mlx90617_ops = {
+	.sensor_read = mlx90617_read,
 };
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void mlx90617_read_i2c(struct i2c_dev_s *i2c,struct i2c_config_s config, uint8_t reg, int len, uint16_t *data)
+uint8_t Calculate_PEC(uint8_t initPEC, uint8_t newData)
 {
-	lldbg("%d %d %d\n", config.address, config.addrlen, config.frequency);
+	uint8_t data;
+	uint8_t bitCheck;
+	data = initPEC ^ newData;
+	for (int i=0; i<8; i++ ) {
+		bitCheck = data & 0x80;
+		data = data << 1;
+		if (bitCheck != 0) {data = data ^ 0x07;}
+	}
+	return data;
+}
+
+static void mlx90617_read_i2c(struct i2c_dev_s *i2c,struct i2c_config_s config, uint8_t reg[], int len, uint16_t *data)
+{
+	lldbg("\n%d %d %d\n", config.address, config.addrlen, config.frequency);
 	uint8_t buffer[3];
-    	if (i2c) {
+	buffer[0] = 0;
+	buffer[1] = 0;
+	buffer[2] = 0;
+
+	if (!i2c) {
+		lldbg("ERROR: i2c not initialized\n");
+		return;
+	}
+
 #ifdef CONFIG_I2C_WRITEREAD
-		int ret = i2c_writeread(i2c, &config, (uint8_t *)&reg, 1, buffer, len);
-                printf("ret %d\n", ret);
+		int ret = i2c_writeread(i2c, &config, reg, 1, buffer, len);
+		lldbg("ret %d\n", ret);
 #else
-		int ret = i2c_write(i2c, &config, (uint8_t *)&reg, 1);
+		int ret = i2c_write(i2c, &config, reg, 1);
 		if (ret != 1) {
-			printf("ERROR: i2c write not working\n");
+			lldbg("ERROR: i2c write not working\n");
 			return;
 		}
 		ret = i2c_read(i2c, &config, buffer, len);
 #endif
-		data[0] = (uint16_t)(buffer[0] | (buffer[1] << 8));
-		printf("value[0]: %8x | value[1]: %8x | value[2]: %8x | %8x ret: %d\n",
-		buffer[0], buffer[1], buffer[2], ret);
-	}
-}
 
-/************************************************************************************
- * Name: mlx90617_semtake
- ************************************************************************************/
-static inline int mlx90617_semtake(FAR sem_t *sem, bool errout)
-{
-	/* Take a count from the semaphore, possibly waiting */
-	if (sem_wait(sem) < 0) {
-		/* EINTR is the only error that we expect */
-		int errcode = get_errno();
-		DEBUGASSERT(errcode == EINTR);
-		if (errout) {
-			return errcode;
+	//PEC error checking
+	uint8_t pec;
+	uint8_t sa;
+	uint8_t cmd = 0;
+
+	sa = config.address << 1;
+	pec = sa;
+	cmd = reg[0];
+
+	pec = Calculate_PEC(0, pec);
+	pec = Calculate_PEC(pec, cmd);
+	pec = Calculate_PEC(pec, (sa|0x01));
+	pec = Calculate_PEC(pec, buffer[0]);
+	pec = Calculate_PEC(pec, buffer[1]);
+	lldbg("\nreg value: %d, config.address: %x, pec value: %8x, r[2]: %8x\n", reg[0], config.address, pec, buffer[2]);
+	if(pec != buffer[2]){
+		lldbg("PEC error\n");
+	} else {
+		lldbg("PEC success\n");
+	}
+
+	data[0] = (uint16_t)(buffer[0] | (buffer[1] << 8));
+	lldbg("\nvalue[0]: %8x | value[1]: %8x | value[2]: %8x ret: %d\n", buffer[0], buffer[1], buffer[2], ret);
+
+	if (reg == 0x6 || reg == 0x7) {
+		if (data[0] > 32767){
+			lldbg("Above data should be ignored\n");
 		}
 	}
-
-	return 0;
 }
 
-/****************************************************************************
- * Name: mlx90617_semgive
- ****************************************************************************/
-
-void mlx90617_semgive(sem_t *sem)
+static ssize_t mlx90617_read(struct sensor_upperhalf_s *dev, FAR char *buffer)
 {
-	sem_post(sem);
-}
-
-static int mlx90617_open(FAR struct file *filep)
-{
-	FAR struct mlx90617_dev_s *priv;
-	priv = filep->f_inode->i_private;
-
-	if (!priv) {
-		return -EINVAL;
-	}
-
-	mlx90617_semtake(&priv->sem, false);
-	priv->crefs++;
-	DEBUGASSERT(priv->crefs > 0);
-	mlx90617_semgive(&priv->sem);
-}
-
-
-static int mlx90617_close(FAR struct file *filep)
-{
-	FAR struct mlx90617_dev_s *priv;
-	priv = filep->f_inode->i_private;
-
-	if (!priv) {
-		return -EINVAL;
-	}
-
-	mlx90617_semtake(&priv->sem, false);
-	DEBUGASSERT(priv->crefs > 0);
-	priv->crefs--;
-	mlx90617_semgive(&priv->sem);
-}
-
-static ssize_t mlx90617_read(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen)
-{
-	FAR struct inode *inode;
-	FAR struct mlx90617_dev_s *priv;
-	size_t outlen;
-	irqstate_t flags;
+	FAR struct mlx90617_dev_s *priv = (struct mlx90617_dev_s *)dev->priv;
 	int ret;
-	uint8_t reg[2];
-	uint16_t data[3];
+	uint8_t reg[2] = {0, 0};
+	uint16_t data[3] = {0, 0, 0};
 	float Ta_N, To_N;
-	inode = filep->f_inode;
 
-	DEBUGASSERT(inode && inode->i_private);
-	priv = inode->i_private;
 	struct i2c_dev_s *i2c = priv->i2c;
-	struct i2c_config_s config = priv->config;
+	struct i2c_config_s config = priv->i2c_config;
 	/* Wait for semaphore to prevent concurrent reads */
 
-	mlx90617_semtake(&priv->sem, false);
-
 	config.address = 0x5A;
-	//config.address = (0xA0 >> 1);
 	reg[0] = 0x06;
-	//reg[0] = 0x23;
 	mlx90617_read_i2c(i2c, config, reg, 3, data);
 	Ta_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 Ta
-	printf("Ta_N 614%f\n", Ta_N);
+	lldbg("mlx90614 Ta_N   %f\n", Ta_N);
 	
 	reg[0] = 0x07;
-        mlx90617_read_i2c(i2c, config, reg, 3, data);
+	mlx90617_read_i2c(i2c, config, reg, 3, data);
 	To_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 To
-	printf("To_N 614%f\n", To_N);
+	lldbg("mlx90614 To_N   %f\n", To_N);
 
 	config.address = 0x5D;
 	reg[0] = 0x06;
-        mlx90617_read_i2c(i2c, config, reg, 3, data);
-        Ta_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 Ta
-        printf("Ta_N 617%f\n", Ta_N);
+	mlx90617_read_i2c(i2c, config, reg, 3, data);
+	Ta_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 Ta
+	lldbg("mlx90617 Ta_N    %f\n", Ta_N);
 
-        reg[0] = 0x07;
-        mlx90617_read_i2c(i2c, config, reg, 3, data);
-        To_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 To
-        printf("To_N 617%f\n", To_N);
+	reg[0] = 0x07;
+	mlx90617_read_i2c(i2c, config, reg, 3, data);
+	To_N = (float)(data[0]) * 0.02 - 273.15;  // MLX90614 To
+	lldbg("mlx90617 To_N    %f\n", To_N);
 
-	mlx90617_semgive(&priv->sem);
 	return 0;
 }
 
-static ssize_t mlx90617_write(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen)
+int mlx90617_initialize(FAR const char *devpath, struct mlx90617_dev_s *priv)
 {
-	return 0;
-}
-
-static ssize_t mlx90617_ioctl(FAR struct file *filep, FAR char *buffer,
-                            size_t buflen)
-{
-	return 0;
-
-}
-
-int mlx90617_register(FAR const char *devpath,
-                     FAR struct i2c_dev_s *i2c_dev,
-                     FAR struct sensor_config *config, FAR struct spi_dev_s *spi)
-{
-	struct mlx90617_dev_s *priv = &g_mlx90617_priv;;
 	int ret = 0;
 
 	/* Setup device structure. */
+	struct sensor_upperhalf_s *upper = (struct sensor_upperhalf_s *)kmm_zalloc(sizeof(struct sensor_upperhalf_s));
+	upper->ops = &g_mlx90617_ops;
+	upper->priv = priv;
+	priv->upper = upper;
 
-	//priv->lower = config;
-	priv->config = config->i2c_config;
-	priv->i2c = i2c_dev;
-	priv->spi = spi;
-	sem_init(&priv->sem, 0, 1);
-
-	ret = register_driver(devpath, &g_mlx90617_fileops, 0666, priv);
-	if (ret < 0) {
-		kmm_free(priv);
-		sem_destroy(&priv->sem);
-		printf("IR sensor Driver registration failed\n");
-		return ret;
-	}
-	return 0;
+	return sensor_register(devpath, upper);
 }

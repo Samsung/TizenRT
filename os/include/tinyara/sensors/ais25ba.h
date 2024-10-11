@@ -16,31 +16,27 @@
  *
  ****************************************************************************/
 
-#ifndef __DRIVERS_SENSOR_MLX90617_H
-#define __DRIVERS_SENSOR_MLX90617_H
+#ifndef __DRIVERS_SENSOR_AIS25BA_H
+#define __DRIVERS_SENSOR_AIS25BA_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <tinyara/i2c.h>
-#include <tinyara/spi/spi.h>
 #include <sys/types.h>
 #include <stdint.h>
 
-/* MLX90617 Device */
-
-struct mlx90617_dev_s
+struct ais25ba_dev_s
 {
         /* I2C bus and address for device. */
+	
         struct i2c_dev_s *i2c;
         struct i2c_config_s i2c_config;
-        struct spi_dev_s *spi;
-        struct sensor_upperhalf_s *upper;
+	struct i2s_dev_s *i2s;
+        /* Configuration for device. */
+	struct sensor_upperhalf_s *upper;
 	void *priv;
 };
 
-int mlx90617_initialize(FAR const char *devpath, struct mlx90617_dev_s *priv);
-
-#endif  /* __DRIVERS_SENSOR_MLX90617_H */
-
+#endif	/* __DRIVERS_SENSOR_AIS25BA_H */ 

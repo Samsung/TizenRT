@@ -445,7 +445,15 @@ void board_initialize(void)
 	board_i2s_initialize();
 
 #ifdef CONFIG_SENSOR
+
+#ifdef CONFIG_SENSOR_MLX90617
 	rtl8730e_mlx90617_initialize();
+#endif
+
+#ifdef CONFIG_SENSOR_AIS25BA
+	rtl8730e_ais25ba_initialize();
+#endif
+
 #endif
 
 #ifdef CONFIG_LCD_ST7789
