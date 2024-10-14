@@ -82,6 +82,7 @@ typedef enum {
 	LWNL_REQ_BLE_IOCTL,
 	
 	// Scanner
+	LWNL_REQ_BLE_SET_SCAN,
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
 	LWNL_REQ_BLE_WHITELIST_ADD,
@@ -173,6 +174,11 @@ typedef enum {
 	TRBLE_SCAN_STOPPED = 0,
 	TRBLE_SCAN_STARTED,	
 } trble_scan_state_e;
+
+typedef enum {
+	TRBLE_SCAN_PASSIVE = 0,
+	TRBLE_SCAN_ACTIVE,
+} trble_scan_type;
 
 typedef enum {
 	TRBLE_ADV_TYPE_IND,
@@ -347,6 +353,7 @@ typedef trble_result_e (*trble_conn_param_update)(struct bledev *dev, trble_conn
 typedef trble_result_e (*trble_drv_ioctl)(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
+typedef trble_result_e (*trble_set_scan)(struct bledev *dev, uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type);
 typedef trble_result_e (*trble_start_scan)(struct bledev *dev, trble_scan_filter *filter);
 typedef trble_result_e (*trble_stop_scan)(struct bledev *dev);
 typedef trble_result_e (*trble_scan_whitelist_add)(struct bledev *dev, trble_addr *addr);
@@ -415,6 +422,7 @@ struct trble_ops {
 	trble_drv_ioctl drv_ioctl;
 
 	/* Scanner(Observer) */
+	trble_set_scan set_scan;
 	trble_start_scan start_scan;
 	trble_stop_scan stop_scan;
 	trble_scan_whitelist_add whitelist_add;
