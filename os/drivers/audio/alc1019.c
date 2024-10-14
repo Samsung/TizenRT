@@ -57,7 +57,7 @@
 #endif
 
 #ifndef CONFIG_ALC1019_NUM_BUFFERS
-#define CONFIG_ALC1019_NUM_BUFFERS       4
+#define CONFIG_ALC1019_NUM_BUFFERS       2
 #endif
 
 /****************************************************************************
