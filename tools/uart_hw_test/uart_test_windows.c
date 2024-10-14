@@ -179,6 +179,10 @@ static void test_uart_tx(HANDLE handle, int baud)
 {
     volatile unsigned char ch;
 	double tm_diff, max_diff = 0;
+	double tm_diff_usec;
+	double min_diff_usec = __DBL_MAX__;
+	double max_diff_usec = 0;
+	double total_diff_usec = 0;
 	DWORD bytesRead = 0;
 	DWORD bytesWritten = 0;
 	LARGE_INTEGER freq, start, end;
@@ -193,7 +197,6 @@ static void test_uart_tx(HANDLE handle, int baud)
 	do {
 		ret = poll_read(handle, (void *)&ch, 1, 100) ;
 		if (ret <= 0) {
-			printf("flag 1 , %d\n", ret);
 			numfail = UART_TEST_COUNT;
 			goto result;
 		}
@@ -203,7 +206,6 @@ static void test_uart_tx(HANDLE handle, int baud)
 	do {
 		QueryPerformanceCounter(&start);
 		if (poll_read(handle, (void *)&ch, 1, UART_POLL_TIMEOUT_MS) <= 0) {
-			printf("flag 2");
 			numfail += UART_TEST_COUNT - cnt;
 			goto result;
 		}
@@ -212,8 +214,18 @@ static void test_uart_tx(HANDLE handle, int baud)
 			cnt++;
 
 			tm_diff = ((end.QuadPart - start.QuadPart) * 1000.0) / freq.QuadPart  ;
+			tm_diff_usec = tm_diff * 1000;
+
+			total_diff_usec += tm_diff_usec;
+			if (tm_diff_usec > max_diff_usec) {
+				max_diff_usec = tm_diff_usec;
+			}
+
+			if (tm_diff_usec < min_diff_usec) {
+				min_diff_usec = tm_diff_usec;
+			}
+
 			if (tm_diff > UART_MAX_DELAY_MS) {
-				printf("flag 3");
 				numfail++;
 				if (tm_diff > max_diff) {
 					max_diff = tm_diff;
@@ -226,9 +238,11 @@ result:
 	if (numfail) {
 		fail++;
 		printf("[BAUD %6d Tx] FAIL (Num out of spec = %d / %d Max delay = %fms)\n", baud, numfail, UART_TEST_COUNT, max_diff);
+		printf("[BAUD %6d Tx] tx packet gap stats(in usec):  Avg: %.2f  Min: %.2f  Max: %.2f\n", baud, total_diff_usec / cnt, min_diff_usec, max_diff_usec);
 	} else {
 		pass++;
 		printf("[BAUD %6d Tx] PASS\n", baud);
+		printf("[BAUD %6d Tx] tx packet gap stats(in usec):  Avg: %.2f  Min: %.2f  Max: %.2f\n", baud, total_diff_usec / cnt, min_diff_usec, max_diff_usec);
 	}
 
 	PurgeComm(handle, PURGE_RXCLEAR);

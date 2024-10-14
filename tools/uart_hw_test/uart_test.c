@@ -137,6 +137,10 @@ static void test_uart_tx(int fd, int baud)
 {
 	volatile u_int8_t ch;
 	double tm_diff, max_diff = 0;
+	double tm_diff_usec;
+	double min_diff_usec = __DBL_MAX__;
+	double max_diff_usec = 0;
+	double total_diff_usec = 0;
 	struct timeval  tv1, tv2;
 	int cnt = 0;
 	int numfail = 0;
@@ -160,6 +164,17 @@ static void test_uart_tx(int fd, int baud)
 			cnt++;
 
 			tm_diff = ((tv2.tv_sec - tv1.tv_sec) * 1000) + ((tv2.tv_usec - tv1.tv_usec) / 1000);
+			tm_diff_usec = ((tv2.tv_sec - tv1.tv_sec) * 1000000) + (tv2.tv_usec - tv1.tv_usec);
+
+			total_diff_usec += tm_diff_usec;
+			if (tm_diff_usec > max_diff_usec) {
+				max_diff_usec = tm_diff_usec;
+			}
+
+			if (tm_diff_usec < min_diff_usec) {
+				min_diff_usec = tm_diff_usec;
+			}
+
 			if (tm_diff > UART_MAX_DELAY_MS) {
 				numfail++;
 				if (tm_diff > max_diff) {
@@ -173,9 +188,11 @@ result:
 	if (numfail) {
 		fail++;
 		printf("[BAUD %6d Tx] FAIL (Num out of spec = %d / %d Max delay = %fms)\n", baud, numfail, UART_TEST_COUNT, max_diff);
+		printf("[BAUD %6d Tx] tx packet gap stats(in usec):  Avg: %.2f  Min: %.2f  Max: %.2f\n", baud, total_diff_usec / cnt, min_diff_usec, max_diff_usec);
 	} else {
 		pass++;
 		printf("[BAUD %6d Tx] PASS\n", baud);
+		printf("[BAUD %6d Tx] tx packet gap stats(in usec):  Avg: %.2f  Min: %.2f  Max: %.2f\n", baud, total_diff_usec / cnt, min_diff_usec, max_diff_usec);
 	}
 
 	do {
