@@ -116,6 +116,15 @@ ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn
 }
 
 /* Scanner */
+ble_result_e ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, uint8_t scan_type)
+{
+	blemgr_msg_params param = { 3, {(uint16_t *)&scan_interval, (uint16_t *)&scan_window, (uint8_t *)&scan_type} };
+	blemgr_msg_s msg = {BLE_CMD_SET_SCAN, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_client_start_scan(ble_scan_filter *filter, ble_scan_callback_list *callbacks)
 {
 	blemgr_msg_params param = {2, {(void *)filter, (void *)callbacks}};

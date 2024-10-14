@@ -11,6 +11,7 @@
 #include <tinyara/net/if/ble.h>
 #include "stddef.h"
 #include <gap_conn_le.h>
+#include <gap_scan.h>
 #include "ble_tizenrt_scatternet_app.h"
 #include "ble_tizenrt_scatternet_link_mgr.h"
 #include "ble_tizenrt_central_client_app.h"
@@ -290,6 +291,46 @@ void scan_stop_cb(void *arg)
         le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 	} while(new_state.gap_scan_state != GAP_SCAN_STATE_IDLE);
 }
+
+trble_result_e rtw_ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type)
+{
+	uint8_t ret =  0;
+	uint8_t duplicate_opt = GAP_SCAN_FILTER_DUPLICATE_DISABLE;
+	uint8_t filter_policy = GAP_SCAN_FILTER_ANY;
+	
+	if (le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(scan_type), &scan_type) != GAP_CAUSE_SUCCESS)
+	{
+		printf("rtw_ble_client_set_scan set scan type fail!! cause %d\n", ret);
+		return TRBLE_FAIL;
+	}
+
+	if (le_scan_set_param(GAP_PARAM_SCAN_INTERVAL, sizeof(scan_interval), &scan_interval) != GAP_CAUSE_SUCCESS)
+	{
+		printf("rtw_ble_client_set_scan set scan interval fail!! cause %d\n", ret);
+		return TRBLE_FAIL;
+	}
+
+	if (le_scan_set_param(GAP_PARAM_SCAN_WINDOW, sizeof(scan_window), &scan_window) != GAP_CAUSE_SUCCESS)
+	{
+		printf("rtw_ble_client_set_scan set scan window fail!! cause %d\n", ret);
+		return TRBLE_FAIL;
+	}
+
+	if (le_scan_set_param(GAP_PARAM_SCAN_FILTER_POLICY, sizeof(filter_policy), &filter_policy) != GAP_CAUSE_SUCCESS)
+	{
+		printf("rtw_ble_client_set_scan set scan filter policy fail!! cause %d\n", ret);
+		return TRBLE_FAIL;
+	}
+
+	if (le_scan_set_param(GAP_PARAM_SCAN_FILTER_DUPLICATES, sizeof(duplicate_opt), &duplicate_opt) != GAP_CAUSE_SUCCESS)
+	{
+		printf("rtw_ble_client_set_scan set scan filter duplicate fail!! cause %d\n", ret);
+		return TRBLE_FAIL;
+	}
+
+	return TRBLE_SUCCESS;
+}
+
 
 trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable)
 { 
