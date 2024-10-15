@@ -198,13 +198,13 @@ segfault:
 #include "section_config.h"
 SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
-  /* Save the saved processor context in CURRENT_REGS where it can be
-   * accessed for register dumps and possibly context switching.
-   */
-  uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
-  CURRENT_REGS = regs;
-  system_exception_location = regs[REG_R15];
-  /* Crash -- possibly showing diagnostic debug information. */
+	/* Save the saved processor context in CURRENT_REGS where it can be
+	 * accessed for register dumps and possibly context switching.
+	 */
+	uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
+	CURRENT_REGS = regs;
+	system_exception_location = regs[REG_R15];
+	/* Crash -- possibly showing diagnostic debug information. */
 	if (!IS_SECURE_STATE()) {
 		print_dataabort_detail(regs, dfar, dfsr);
 	}
@@ -212,11 +212,11 @@ SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
 #endif
-  
-  PANIC();
-  regs = (uint32_t *)CURRENT_REGS;
-  CURRENT_REGS = saved_state;
-  return regs; /* To keep the compiler happy */
+
+	PANIC();
+	regs = (uint32_t *)CURRENT_REGS;
+	CURRENT_REGS = saved_state;
+	return regs; /* To keep the compiler happy */
 }
 
 #endif							/* CONFIG_PAGING */
