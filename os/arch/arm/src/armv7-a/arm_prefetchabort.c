@@ -65,6 +65,23 @@
  ****************************************************************************/
 
 extern uint32_t system_exception_location;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: print_prefetchabort_detail
+ ****************************************************************************/
+
+static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
+{
+	_alert("#########################################################################\n");
+	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
+	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	_alert("#########################################################################\n\n\n");
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -134,7 +151,9 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
 		CURRENT_REGS = savestate;
 	} else {
-		_alert("Prefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+		if (!IS_SECURE_STATE()) {
+			print_prefetchabort_detail(regs, ifar, ifsr);
+		}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
@@ -160,7 +179,9 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
 	/* Crash -- possibly showing diagnostic debug information. */
 
-	_alert("Prefetch abort. PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	if (!IS_SECURE_STATE()) {
+		print_prefetchabort_detail(regs, ifar, ifsr);
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);

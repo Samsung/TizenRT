@@ -69,6 +69,22 @@
 uint32_t system_exception_location;
 
 /****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: print_dataabort_detail
+ ****************************************************************************/
+
+static inline void print_dataabort_detail(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
+{
+	_alert("#########################################################################\n");
+	_alert("PANIC!!! Data Abort at instruction : 0x%08x\n",  regs[REG_PC]);
+	_alert("PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
+	_alert("#########################################################################\n\n\n");
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -166,7 +182,9 @@ uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 	return regs;
 
 segfault:
-	_alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
+	if (!IS_SECURE_STATE()) {
+		print_dataabort_detail(regs, dfar, dfsr);
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
@@ -187,7 +205,9 @@ SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar
   CURRENT_REGS = regs;
   system_exception_location = regs[REG_R15];
   /* Crash -- possibly showing diagnostic debug information. */
-	_alert("Data abort. PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
+	if (!IS_SECURE_STATE()) {
+		print_dataabort_detail(regs, dfar, dfsr);
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
