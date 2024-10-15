@@ -188,7 +188,10 @@ void up_initialize(void)
 #ifdef USE_SERIALDRIVER
 	up_serialinit();
 #endif
-
+#ifdef CONFIG_AMEBASMART_USBDEVICE
+	/*if USB device enabled, we will unregister loguart and register /dev/console to usb*/
+	register_usb();
+#endif
 	/* Initialize the console device driver (if it is other than the standard
 	 * serial driver).
 	 */

@@ -83,6 +83,7 @@ static _sema cdc_acm_attach_status_changed_sema;
 extern int cdc_acm_ready_flag;
 static uint8_t receive_data;
 static int received_flag = 0;
+static int attach_status = -1;
 /****************************************************************************
  * Private Type Definitions
  ****************************************************************************/
@@ -358,22 +359,28 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 		}
 		if (nbytes == CONFIG_CDC_ACM_BULK_IN_XFER_SIZE) {
 			nbytes = 0;
-			usbd_cdc_acm_transmit(buffer, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
-			while (sem_wait(&g_usbdev.txsem) != 0) {
-				/* The only case that an error should occur here is if the wait was awakened
-				* by a signal.
-				*/
-				ASSERT(errno == EINTR);
+			/*we should only call usb TX when device is attached and ready, else abandon the data*/
+			if (attach_status == USBD_ATTACH_STATUS_ATTACHED && cdc_acm_ready_flag) { 
+				usbd_cdc_acm_transmit(buffer, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
+				while (sem_wait(&g_usbdev.txsem) != 0) {
+					/* The only case that an error should occur here is if the wait was awakened
+					* by a signal.
+					*/
+					ASSERT(errno == EINTR);
+				}
 			}
 			priv->tx_level-=CONFIG_CDC_ACM_BULK_IN_XFER_SIZE;
 		}
 	}
-	usbd_cdc_acm_transmit(buffer, nbytes);
-	while (sem_wait(&g_usbdev.txsem) != 0) {
-		/* The only case that an error should occur here is if the wait was awakened
-		* by a signal.
-		*/
-		ASSERT(errno == EINTR);
+	/*we should only call usb TX when device is attached and ready, else abandon the data*/
+	if (attach_status == USBD_ATTACH_STATUS_ATTACHED && cdc_acm_ready_flag) { 
+		usbd_cdc_acm_transmit(buffer, nbytes);
+		while (sem_wait(&g_usbdev.txsem) != 0) {
+			/* The only case that an error should occur here is if the wait was awakened
+			* by a signal.
+			*/
+			ASSERT(errno == EINTR);
+		}
 	}
 	priv->tx_level-=nbytes;
 	rtw_mfree(buffer,0);
@@ -690,7 +697,11 @@ static void amebasmart_cdc_acm_cb_status_changed(uint8_t status)
 {
 	// struct amebasmart_usbdev_s *dev = (struct amebasmart_usbdev_s *)priv;
 	// DEBUGASSERT(dev);
-
+	/*when detached, we need to clear the rdy flag*/
+	attach_status = status;
+	if (status == USBD_ATTACH_STATUS_DETACHED) {
+		cdc_acm_ready_flag = -1;
+	}
 #if CONFIG_AMEBASMART_USBD_CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
 	rtw_up_sema(&cdc_acm_attach_status_changed_sema);
@@ -758,31 +769,14 @@ int amebasmart_up_usbinitialize(struct amebasmart_usbdev_s *priv)
 	return ret;
 }
 
-/*It takes sometime for USB initialization to complete, so during boot up stage, it /dev/console will be
- register with serial first to prevent opening an empty path, then once usb is ready, re-register it to usb and
- open the fd*/
-static int register_usb(void)
+void register_usb(void)
 {
-	while(!cdc_acm_ready_flag){
-		usleep(1000);
-	}
 	USB_DEV.isconsole = true;
 	uart_register("/dev/ttyACM0", &USB_DEV);
 	/*unregister /dev/console because serial was sharing the same fd during serial initialization*/
 	unregister_driver("/dev/console");
 	uart_register("/dev/console", &USB_DEV);
-	int fd;
-	fd = open("/dev/console", O_RDWR);
-	if(fd >= 0) {
-		dup2(fd, 1);
-		dup2(fd, 2);
-		return OK;
-	} else {
-		return -1;
-	}
-
 }
-
 void usb_initialize(void)
 {
 	struct amebasmart_usbdev_s *priv = NULL;
@@ -794,10 +788,4 @@ void usb_initialize(void)
 	if (ret != 0) {
 		udbg("amebasmart usb init fail\n");
 	}
-	ret = register_usb();
-	if (ret != OK) {
-		udbg("usb register failed");
-	}
 }
-
-
