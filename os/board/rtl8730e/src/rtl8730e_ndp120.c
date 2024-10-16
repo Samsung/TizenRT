@@ -188,7 +188,7 @@ int rtl8730e_ndp120_initialize(int minor)
 		SPI_SETFREQUENCY(spi, NDP120_SPI_FREQ);
 		SPI_SETBITS(spi, NDP120_SPI_BPW);
 		
-		ndp120 = ndp120_lowerhalf_initialize(spi, &g_ndp120info.lower);
+		ndp120 = (struct audio_lowerhalf_s *)ndp120_lowerhalf_initialize(spi, &g_ndp120info.lower);
 		if (ndp120 == NULL) {
 			return ERROR;
 		}

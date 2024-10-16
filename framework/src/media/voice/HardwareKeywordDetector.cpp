@@ -159,5 +159,33 @@ void HardwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool HardwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
+{
+	if (bufferSize == NULL) {
+		meddbg("Error: parameter cannot be NULL\n");
+		return false;
+	}
+	audio_manager_result_t result = get_keyword_buffer_size(bufferSize);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: audio manager return not OK, return value: %d\n", result);
+		return false;
+	}
+	return true;
+}
+
+bool HardwareKeywordDetector::getKeywordData(uint8_t *buffer)
+{
+	if (buffer == NULL) {
+		meddbg("Error: parameter cannot be NULL\n");
+		return false;
+	}
+	audio_manager_result_t result = get_keyword_data(buffer);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: audio manager return not OK, return value: %d\n", result);
+		return false;
+	}
+	return true;
+}
+
 } // namespace voice
 } // namespace media

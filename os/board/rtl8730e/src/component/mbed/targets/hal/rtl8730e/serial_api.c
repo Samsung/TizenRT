@@ -566,11 +566,10 @@ void serial_change_clcksrc(serial_t *obj, int baudrate, bool high_low)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 
-	if (high_low) {
-		RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
-		UART_SetBaud(puart_adapter->UARTx, baudrate);
-	}
-	else {
+	if ((high_low) && (baudrate > 115200)) {
+			RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_XTAL_40M);
+			UART_SetBaud(puart_adapter->UARTx, baudrate);
+	} else {
 		RCC_PeriphClockSource_UART(puart_adapter->UARTx, UART_RX_CLK_OSC_LP);
 		UART_LPRxBaudSet(puart_adapter->UARTx, baudrate, 2000000);
 	}
@@ -781,6 +780,25 @@ int serial_writable(serial_t *obj)
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 
 	if (UART_Writable(puart_adapter->UARTx)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+/**
+  * @brief  Check if transmit fifo is empty
+  * @param  obj: uart object define in application software.
+  * @retval status value:
+  *          - 1: TRUE
+  *          - 0: FALSE
+  */
+int serial_tx_empty(serial_t *obj)
+{
+	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
+	u32 reg_lsr = UART_LineStatusGet(puart_adapter->UARTx);
+
+	if (reg_lsr & RUART_BIT_TX_EMPTY) {
 		return 1;
 	} else {
 		return 0;

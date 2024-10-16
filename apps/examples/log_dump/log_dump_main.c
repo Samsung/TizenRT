@@ -43,6 +43,7 @@ int log_dump_main(int argc, char *argv[])
 #endif
 {
 	int ret = 1;
+	int total_read = 0;
 	char buf[READ_BUFFER_SIZE];
 	int fd = OPEN_LOGDUMP();
 
@@ -78,10 +79,12 @@ int log_dump_main(int argc, char *argv[])
 
 	while (ret > 0) {
 		ret = READ_LOGDUMP(fd, buf, sizeof(buf));
+		total_read += ret;
 		for (int i = 0; i < ret; i++) {
 			printf("%c", buf[i]);
 		}
 	}
+	printf("log_dump_size = %d, and total_read = %d, Both should be equal\n", GET_LOGDUMP_SIZE(fd), total_read);
 
         printf("\n*********************   LOG DUMP END  ***********************\n");
 

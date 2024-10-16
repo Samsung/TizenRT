@@ -817,6 +817,12 @@ int get_errno(void);
 #define dmallvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_IRQ_INFO
+#define irqinfo(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#define irqinfo(...)
+#endif
+
 #ifdef CONFIG_DEBUG_PAGING_ERROR
 #define pgdbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define pglldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1633,6 +1639,12 @@ int get_errno(void);
 #else
 #define dmavdbg     (void)
 #define dmallvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_IRQ_INFO
+#define irqinfo	 vdbg
+else
+#define irqinfo  (void)
 #endif
 
 #ifdef CONFIG_DEBUG_PAGING_ERROR

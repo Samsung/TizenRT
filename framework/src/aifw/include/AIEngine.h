@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "tinyara/config.h"
 #include "aifw/aifw.h"
 //#define AIFW_PRINT_INFERENCE_TIME /* Default disabled */
 #ifdef AIFW_PRINT_INFERENCE_TIME

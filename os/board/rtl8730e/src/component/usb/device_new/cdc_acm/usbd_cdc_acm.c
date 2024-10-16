@@ -17,9 +17,6 @@
 
 #include "usbd_cdc_acm.h"
 #include "usbd.h"
-#ifdef CONFIG_USB_USE_OTP_DESC
-#include "usbd_cdc_acm_otp.h"
-#endif
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -34,10 +31,13 @@ static u8 cdc_acm_clear_config(usb_dev_t *dev, u8 config);
 static u8 cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len);
 static u8 cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
-static u8 cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status);
-static u8 cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len);
+static u8 cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static u8 cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len);
+static void acm_cdc_status_changed(usb_dev_t *dev, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
+static const char *TAG = "CDC_ACM";
 
 /* USB Standard Device Descriptor */
 static u8 usbd_cdc_acm_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
@@ -68,81 +68,6 @@ static u8 usbd_cdc_acm_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
 	USB_LOW_BYTE(CDC_ACM_LANGID_STRING),            /* wLANGID */
 	USB_HIGH_BYTE(CDC_ACM_LANGID_STRING),
 };  /* usbd_cdc_acm_lang_id_desc */
-
-/* USB Standard Manufacture String Descriptor */
-static u8 usbd_cdc_acm_mfg_string_desc[CDC_ACM_MFG_STRING_DESC_SIZE] USB_DMA_ALIGNED = {
-	CDC_ACM_MFG_STRING_DESC_SIZE,                   /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	'R', 0,                                         /* bString, UNICODE */
-	'e', 0,
-	'a', 0,
-	'l', 0,
-	't', 0,
-	'e', 0,
-	'k', 0
-};  /* usbd_cdc_acm_mfg_string_desc */
-
-/* USB Standard Product String Descriptor for high-speed mode */
-static u8 usbd_cdc_acm_hs_product_string_desc[CDC_ACM_PRODUCT_STRING_DESC_SIZE] USB_DMA_ALIGNED = {
-	CDC_ACM_PRODUCT_STRING_DESC_SIZE,               /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	'R', 0,                                         /* bString, UNICODE */
-	'e', 0,
-	'a', 0,
-	'l', 0,
-	't', 0,
-	'e', 0,
-	'k', 0,
-	' ', 0,
-	'V', 0,
-	'C', 0,
-	'P', 0,
-	' ', 0,
-	'(', 0,
-	'H', 0,
-	'S', 0,
-	')', 0,
-};  /* usbd_cdc_acm_hs_product_string_desc */
-
-/* USB Standard Product String Descriptor for high-speed mode */
-static u8 usbd_cdc_acm_fs_product_string_desc[CDC_ACM_PRODUCT_STRING_DESC_SIZE] USB_DMA_ALIGNED = {
-	CDC_ACM_PRODUCT_STRING_DESC_SIZE,               /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	'R', 0,                                         /* bString, UNICODE */
-	'e', 0,
-	'a', 0,
-	'l', 0,
-	't', 0,
-	'e', 0,
-	'k', 0,
-	' ', 0,
-	'V', 0,
-	'C', 0,
-	'P', 0,
-	' ', 0,
-	'(', 0,
-	'F', 0,
-	'S', 0,
-	')', 0,
-};  /* usbd_cdc_acm_fs_product_string_desc */
-
-/* USB Standard SN String Descriptor, ASCII only */
-static u8 usbd_cdc_acm_sn_string_desc[CDC_ACM_SN_STRING_DESC_SIZE] USB_DMA_ALIGNED = {
-	CDC_ACM_SN_STRING_DESC_SIZE,                    /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	'1', 0,                                         /* bString, UNICODE */
-	'2', 0,
-	'3', 0,
-	'4', 0,
-	'5', 0,
-	'6', 0,
-	'7', 0,
-	'8', 0,
-	'9', 0,
-	'0', 0,
-	'A', 0,
-	'B', 0
-};  /* usbd_cdc_acm_sn_string_desc */
 
 /* USB Standard Device Qualifier Descriptor */
 static u8 usbd_cdc_acm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
@@ -346,100 +271,6 @@ static u8 usbd_cdc_acm_fs_config_desc[CDC_ACM_CONFIG_DESC_SIZE] USB_DMA_ALIGNED 
 	0x00                                            /* bInterval */
 };  /* usbd_cdc_acm_fs_config_desc */
 
-/* USB CDC ACM Device Other Speed Configuration Descriptor */
-static u8 usbd_cdc_acm_other_speed_config_desc[CDC_ACM_CONFIG_DESC_SIZE] USB_DMA_ALIGNED = {
-	/* USB Standard Configuration Descriptor */
-	USB_LEN_CFG_DESC,                               /* bLength */
-	USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION,        /* bDescriptorType */
-	CDC_ACM_CONFIG_DESC_SIZE,                       /* wTotalLength */
-	0x00,
-	0x02,                                           /* bNumInterfaces */
-	0x01,                                           /* bConfigurationValue */
-	0x00,                                           /* iConfiguration */
-#if CDC_ACM_SELF_POWERED
-	0xC0,                                           /* bmAttributes: self powered */
-#else
-	0x80,                                           /* bmAttributes: bus powered */
-#endif
-	0x32,                                           /* bMaxPower */
-
-	/* CDC Communication Interface Descriptor */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	0x00,                                           /* bInterfaceNumber */
-	0x00,                                           /* bAlternateSetting */
-	0x01,                                           /* bNumEndpoints */
-	0x02,                                           /* bInterfaceClass: CDC */
-	0x02,                                           /* bInterfaceSubClass: Abstract Control Model */
-	0x01,                                           /* bInterfaceProtocol: Common AT commands */
-	0x00,                                           /* iInterface */
-
-	/* CDC Header Functional Descriptor */
-	0x05,                                           /* bLength */
-	0x24,                                           /* bDescriptorType: CS_INTERFACE */
-	0x00,                                           /* bDescriptorSubtype: Header Functional Descriptor */
-	0x10,                                           /* bcdCDC */
-	0x01,
-
-	/* CDC Call Management Functional Descriptor */
-	0x05,                                           /* bFunctionLength */
-	0x24,                                           /* bDescriptorType: CS_INTERFACE */
-	0x01,                                           /* bDescriptorSubtype: Call Management Functional Descriptor */
-	0x00,                                           /* bmCapabilities: D0+D1 */
-	0x01,                                           /* bDataInterface */
-
-	/* CDC ACM Functional Descriptor */
-	0x04,                                           /* bFunctionLength */
-	0x24,                                           /* bDescriptorType: CS_INTERFACE */
-	0x02,                                           /* bDescriptorSubtype: ACM Functional Descriptor */
-	0x02,                                           /* bmCapabilities */
-
-	/* CDC Union Functional Descriptor */
-	0x05,                                           /* bFunctionLength */
-	0x24,                                           /* bDescriptorType: CS_INTERFACE */
-	0x06,                                           /* bDescriptorSubtype: Union Functional Descriptor */
-	0x00,                                           /* bMasterInterface: Communication Class Interface */
-	0x01,                                           /* bSlaveInterface0: Data Class Interface */
-
-	/* INTR IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	CDC_ACM_INTR_IN_EP,                             /* bEndpointAddress */
-	USB_CH_EP_TYPE_INTR,                            /* bmAttributes: INTR */
-	USB_LOW_BYTE(CDC_ACM_INTR_IN_PACKET_SIZE),      /* wMaxPacketSize */
-	USB_HIGH_BYTE(CDC_ACM_INTR_IN_PACKET_SIZE),
-	CDC_ACM_FS_INTR_IN_INTERVAL,                    /* bInterval: */
-
-	/* CDC Data Interface Descriptor */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType: */
-	0x01,                                           /* bInterfaceNumber */
-	0x00,                                           /* bAlternateSetting */
-	0x02,                                           /* bNumEndpoints */
-	0x0A,                                           /* bInterfaceClass: CDC */
-	0x00,                                           /* bInterfaceSubClass */
-	0x00,                                           /* bInterfaceProtocol */
-	0x00,                                           /* iInterface */
-
-	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	CDC_ACM_BULK_OUT_EP,                            /* bEndpointAddress */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(CDC_ACM_FS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(CDC_ACM_FS_BULK_MAX_PACKET_SIZE),
-	0x00,                                           /* bInterval */
-
-	/* BULK IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	CDC_ACM_BULK_IN_EP,                             /* bEndpointAddress */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(CDC_ACM_FS_BULK_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(CDC_ACM_FS_BULK_MAX_PACKET_SIZE),
-	0x00                                            /* bInterval */
-};  /* usbd_cdc_acm_other_speed_config_desc */
-
 /* CDC ACM Class Driver */
 usbd_class_driver_t usbd_cdc_driver = {
 	.get_descriptor = cdc_acm_get_descriptor,
@@ -449,6 +280,7 @@ usbd_class_driver_t usbd_cdc_driver = {
 	.ep0_data_out = cdc_acm_handle_ep0_data_out,
 	.ep_data_in = cdc_acm_handle_ep_data_in,
 	.ep_data_out = cdc_acm_handle_ep_data_out,
+	.status_changed = acm_cdc_status_changed,
 };
 
 /* CDC ACM Device */
@@ -462,6 +294,7 @@ static usbd_cdc_acm_dev_t usbd_cdc_acm_dev;
   * @param  config: USB configuration index
   * @retval Status
   */
+int cdc_acm_ready_flag = 0;
 static u8 cdc_acm_set_config(usb_dev_t *dev, u8 config)
 {
 	u16 ep_mps;
@@ -490,8 +323,11 @@ static u8 cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	/* Prepare to receive next BULK OUT packet */
 	usbd_ep_receive(dev, CDC_ACM_BULK_OUT_EP, cdev->bulk_out_buf, cdev->bulk_out_buf_size);
 
+	cdev->is_ready = 1U;
+	cdc_acm_ready_flag = 1;
 	return ret;
 }
+
 
 /**
   * @brief  Clear CDC ACM configuration
@@ -502,8 +338,11 @@ static u8 cdc_acm_set_config(usb_dev_t *dev, u8 config)
 static u8 cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 {
 	u8 ret = 0U;
+	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
 	UNUSED(config);
+
+	cdev->is_ready = 0U;
 
 	/* DeInit BULK IN EP */
 	usbd_ep_deinit(dev, CDC_ACM_BULK_IN_EP);
@@ -528,13 +367,8 @@ static u8 cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	u8 ret = HAL_OK;
 
-	DBG_PRINTF(MODULE_USB_CLASS,
-			   LEVEL_TRACE,
-			   "cdc_acm_setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
-			   req->bmRequestType,
-			   req->bRequest,
-			   req->wLength,
-			   req->wValue);
+	RTK_LOGD(TAG, "cdc_acm_setup bmRequestType=0x%02X bRequest=0x%02X wLength=0x%04X wValue=%x\n",
+			 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
 
 	switch (req->bmRequestType & USB_REQ_TYPE_MASK) {
 	case USB_REQ_TYPE_STANDARD:
@@ -573,15 +407,16 @@ static u8 cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_CLASS:
 		if (req->wLength) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
-				cdev->cb->setup(req->bRequest, cdev->ctrl_buf, req->wLength, req->wValue);
-				usbd_ep0_transmit(dev, cdev->ctrl_buf, req->wLength);
+				ret = cdev->cb->setup(req, cdev->ctrl_buf);
+				if (ret == HAL_OK) {
+					usbd_ep0_transmit(dev, cdev->ctrl_buf, req->wLength);
+				}
 			} else {
-				cdev->ctrl_req = req->bRequest;
-				cdev->ctrl_data_len = (u8)req->wLength;
+				rtw_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				usbd_ep0_receive(dev, cdev->ctrl_buf, req->wLength);
 			}
 		} else {
-			cdev->cb->setup(req->bRequest, cdev->ctrl_buf, 0, req->wValue);
+			cdev->cb->setup(req, cdev->ctrl_buf);
 		}
 		break;
 	default:
@@ -601,7 +436,7 @@ static u8 cdc_acm_transmit_zlp(void)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usb_dev_t *dev = cdev->dev;
 
-	DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d TX ZLP\n", CDC_ACM_BULK_IN_EP & 0xFU);
+	RTK_LOGD(TAG, "EP%02X TX ZLP\n", CDC_ACM_BULK_IN_EP);
 	usbd_ep_transmit(dev, CDC_ACM_BULK_IN_EP, NULL, 0);
 
 	return HAL_OK;
@@ -610,38 +445,41 @@ static u8 cdc_acm_transmit_zlp(void)
 /**
   * @brief  Data sent on non-control IN endpoint
   * @param  dev: USB device instance
-  * @param  ep_num: endpoint number
+  * @param  ep_addr: endpoint address
   * @retval Status
   */
-static u8 cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status)
+static u8 cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
 	UNUSED(dev);
 
 	if (status == HAL_OK) {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d TX done\n", ep_num);
+		RTK_LOGD(TAG, "EP%02X TX done\n", ep_addr);
 
-		if (ep_num == (CDC_ACM_BULK_IN_EP & (~USB_REQ_DIR_MASK))) {
+		if (ep_addr == CDC_ACM_BULK_IN_EP) {
 			if (cdev->bulk_out_zlp) {
 				cdev->bulk_out_zlp = 0;
 				cdc_acm_transmit_zlp();
 			} else {
 				cdev->bulk_in_state = 0U;
+				if (cdev->cb->transmitted) {
+					cdev->cb->transmitted(status);
+				}
 			}
 		}
 #if CONFIG_CDC_ACM_NOTIFY
-		else if (ep_num == (CDC_ACM_INTR_IN_EP & (~USB_REQ_DIR_MASK))) {
+		else if (ep_addr == CDC_ACM_INTR_IN_EP) {
 			cdev->intr_in_state = 0U;
 		}
 #endif
 	} else {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "EP%d TX fail: %d\n", ep_num, status);
-		if (ep_num == (CDC_ACM_BULK_IN_EP & (~USB_REQ_DIR_MASK))) {
+		RTK_LOGW(TAG, "EP%02X TX fail: %d\n", ep_addr, status);
+		if (ep_addr == CDC_ACM_BULK_IN_EP) {
 			cdev->bulk_in_state = 0U;
 		}
 #if CONFIG_CDC_ACM_NOTIFY
-		else if (ep_num == (CDC_ACM_INTR_IN_EP & (~USB_REQ_DIR_MASK))) {
+		else if (ep_addr == CDC_ACM_INTR_IN_EP) {
 			cdev->intr_in_state = 0U;
 		}
 #endif
@@ -653,19 +491,20 @@ static u8 cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_num, u8 status)
 /**
   * @brief  Data received on non-control Out endpoint
   * @param  dev: USB device instance
-  * @param  ep_num: endpoint number
+  * @param  ep_addr: endpoint address
   * @retval Status
   */
-static u8 cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_num, u16 len)
+static u8 cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u16 len)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
 	UNUSED(dev);
 
-	if (ep_num == (CDC_ACM_BULK_OUT_EP & (~USB_REQ_DIR_MASK))) {
-		cdev->cb->receive(cdev->bulk_out_buf, len);
+	if ((ep_addr == CDC_ACM_BULK_OUT_EP) && (len > 0)) {
+		cdev->cb->received(cdev->bulk_out_buf, len);
 	}
 
+	usbd_ep_receive(cdev->dev, CDC_ACM_BULK_OUT_EP, cdev->bulk_out_buf, cdev->bulk_out_buf_size);
 	return HAL_OK;
 }
 
@@ -682,9 +521,9 @@ static u8 cdc_acm_handle_ep0_data_out(usb_dev_t *dev)
 
 	UNUSED(dev);
 
-	if (cdev->ctrl_req != 0xFFU) {
-		cdev->cb->setup(cdev->ctrl_req, cdev->ctrl_buf, cdev->ctrl_data_len, 0);
-		cdev->ctrl_req = 0xFFU;
+	if (cdev->ctrl_req.bRequest != 0xFFU) {
+		cdev->cb->setup(&cdev->ctrl_req, cdev->ctrl_buf);
+		cdev->ctrl_req.bRequest = 0xFFU;
 
 		ret = HAL_OK;
 	}
@@ -695,57 +534,21 @@ static u8 cdc_acm_handle_ep0_data_out(usb_dev_t *dev)
 static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_speed_type_t speed, u16 *len)
 {
 	u8 *buf = NULL;
-#ifdef CONFIG_USB_USE_OTP_DESC
-	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
-	usbd_otp_t *otp = &cdev->otp;
-	u8 *desc = cdev->ctrl_buf;
+	u8 *desc = usbd_cdc_acm_dev.ctrl_buf;
 
-	dev->self_powered = otp->self_powered;
-	dev->remote_wakeup_en = otp->remote_wakeup_en;
-#else
 	dev->self_powered = CDC_ACM_SELF_POWERED;
 	dev->remote_wakeup_en = CDC_ACM_REMOTE_WAKEUP_EN;
-#endif
 
 	switch ((req->wValue >> 8) & 0xFF) {
 
 	case USB_DESC_TYPE_DEVICE:
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USB_DESC_TYPE_DEVICE\n");
-#ifdef CONFIG_USB_USE_OTP_DESC
-		rtw_memcpy((void *)desc, (void *)usbd_cdc_acm_dev_desc, USB_LEN_DEV_DESC);
-		if (otp->otp_param) {
-			desc[USB_DEV_DESC_OFFSET_VID] = USB_LOW_BYTE(otp->vid);
-			desc[USB_DEV_DESC_OFFSET_VID + 1] = USB_HIGH_BYTE(otp->vid);
-			desc[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(otp->pid);
-			desc[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(otp->pid);
-		}
-		buf = desc;
-		*len = USB_LEN_DEV_DESC;
-#else
+		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE\n");
 		buf = usbd_cdc_acm_dev_desc;
 		*len = sizeof(usbd_cdc_acm_dev_desc);
-#endif
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USB_DESC_TYPE_CONFIGURATION\n");
-#ifdef CONFIG_USB_USE_OTP_DESC
-		if (speed == USB_SPEED_HIGH) {
-			*len = sizeof(usbd_cdc_acm_hs_config_desc);
-			rtw_memcpy((void *)desc, (void *)usbd_cdc_acm_hs_config_desc, *len);
-		} else {
-			*len = sizeof(usbd_cdc_acm_fs_config_desc);
-			rtw_memcpy((void *)desc, (void *)usbd_cdc_acm_fs_config_desc, *len);
-		}
-		desc[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
-		if (otp->self_powered) {
-			desc[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-		}
-		if (otp->remote_wakeup_en) {
-			desc[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-		}
-		buf = desc;
-#else
+		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_CONFIGURATION\n");
 		if (speed == USB_SPEED_HIGH) {
 			buf = usbd_cdc_acm_hs_config_desc;
 			*len = sizeof(usbd_cdc_acm_hs_config_desc);
@@ -753,99 +556,56 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 			buf = usbd_cdc_acm_fs_config_desc;
 			*len = sizeof(usbd_cdc_acm_fs_config_desc);
 		}
-#endif
 		break;
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
-		if (speed == USB_SPEED_HIGH) {
-			buf = usbd_cdc_acm_device_qualifier_desc;
-			*len = sizeof(usbd_cdc_acm_device_qualifier_desc);
-		} else {
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "Trying to get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER at full speed\n");
-		}
+		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
+		buf = usbd_cdc_acm_device_qualifier_desc;
+		*len = sizeof(usbd_cdc_acm_device_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION\n");
+		RTK_LOGD(TAG, "Get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION\n");
 		if (speed == USB_SPEED_HIGH) {
-#ifdef CONFIG_USB_USE_OTP_DESC
-			*len = sizeof(usbd_cdc_acm_other_speed_config_desc);
-			rtw_memcpy((void *)desc, (void *)usbd_cdc_acm_other_speed_config_desc, *len);
-			desc[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
-			desc[USB_CFG_DESC_OFFSET_ATTR] |= (otp->self_powered | otp->remote_wakeup_en);
-			buf = desc;
-#else
-			buf = usbd_cdc_acm_other_speed_config_desc;
-#endif
+			buf = usbd_cdc_acm_fs_config_desc;
 		} else {
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "Trying to get descriptor USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION at full speed\n");
+			buf = usbd_cdc_acm_hs_config_desc;
 		}
+		*len = CDC_ACM_CONFIG_DESC_SIZE;
 		break;
 
 	case USB_DESC_TYPE_STRING:
 		switch (req->wValue & 0xFF) {
 		case USBD_IDX_LANGID_STR:
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USBD_IDX_LANGID_STR\n");
+			RTK_LOGD(TAG, "Get descriptor USBD_IDX_LANGID_STR\n");
 			buf = usbd_cdc_acm_lang_id_desc;
 			*len = sizeof(usbd_cdc_acm_lang_id_desc);
 			break;
 		case USBD_IDX_MFC_STR:
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USBD_IDX_MFC_STR\n");
-#ifdef CONFIG_USB_USE_OTP_DESC
-			if (otp->otp_param) {
-				buf = otp->mfg_str;
-				*len = otp->mfg_str_len;
-			} else {
-				buf = usbd_cdc_acm_mfg_string_desc;
-				*len = CDC_ACM_MFG_STRING_DESC_SIZE;
-			}
-#else
-			buf = usbd_cdc_acm_mfg_string_desc;
-			*len = CDC_ACM_MFG_STRING_DESC_SIZE;
-#endif
+			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MFC_STR\n");
+			usbd_get_str_desc(CDC_ACM_MFG_STRING, desc, len);
+			buf = desc;
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USBD_IDX_PRODUCT_STR\n");
-#ifdef CONFIG_USB_USE_OTP_DESC
-			if (otp->otp_param) {
-				buf = otp->prod_str;
-				*len = otp->prod_str_len;
-			} else {
-				*len = CDC_ACM_PRODUCT_STRING_DESC_SIZE;
-				if (speed == USB_SPEED_HIGH) {
-					buf = usbd_cdc_acm_hs_product_string_desc;
-				} else {
-					buf = usbd_cdc_acm_fs_product_string_desc;
-				}
-			}
-#else
-			*len = CDC_ACM_PRODUCT_STRING_DESC_SIZE;
+			RTK_LOGD(TAG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
 			if (speed == USB_SPEED_HIGH) {
-				buf = usbd_cdc_acm_hs_product_string_desc;
+				usbd_get_str_desc(CDC_ACM_PROD_HS_STRING, desc, len);
 			} else {
-				buf = usbd_cdc_acm_fs_product_string_desc;
+				usbd_get_str_desc(CDC_ACM_PROD_FS_STRING, desc, len);
 			}
-#endif
+			buf = desc;
 			break;
 		case USBD_IDX_SERIAL_STR:
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "Get descriptor USBD_IDX_SERIAL_STR\n");
-#ifdef CONFIG_USB_USE_OTP_DESC
-			if (otp->otp_sn) {
-				buf = otp->sn_str;
-				*len = otp->sn_str_len;
-			} else {
-				buf = usbd_cdc_acm_sn_string_desc;
-				*len = CDC_ACM_SN_STRING_DESC_SIZE;
-			}
-#else
-			buf = usbd_cdc_acm_sn_string_desc;
-			*len = CDC_ACM_SN_STRING_DESC_SIZE;
-#endif
+			RTK_LOGD(TAG, "Get descriptor USBD_IDX_SERIAL_STR\n");
+			usbd_get_str_desc(CDC_ACM_SN_STRING, desc, len);
+			buf = desc;
+			break;
+		case USBD_IDX_MS_OS_STR:
+			RTK_LOGD(TAG, "Get descriptor USBD_IDX_MS_OS_STR, not supported\n");
 			break;
 		/* Add customer string here */
 		default:
-			DBG_PRINTF(MODULE_USB_CLASS, LEVEL_WARN, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
+			RTK_LOGW(TAG, "Get descriptor failed, invalid string index %d\n", req->wValue & 0xFF);
 			break;
 		}
 		break;
@@ -855,6 +615,27 @@ static u8 *cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, usb_spee
 	}
 
 	return buf;
+}
+
+/**
+  * @brief  USB attach status change
+  * @param  dev: USB device instance
+  * @param  status: USB attach status
+  * @retval void
+  */
+static void acm_cdc_status_changed(usb_dev_t *dev, u8 status)
+{
+	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
+
+	UNUSED(dev);
+
+	if (status == USBD_ATTACH_STATUS_DETACHED) {
+		cdev->is_ready = 0;
+	}
+
+	if (cdev->cb->status_changed) {
+		cdev->cb->status_changed(status);
+	}
 }
 
 #if CONFIG_CDC_ACM_NOTIFY
@@ -873,28 +654,42 @@ static u8 usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_cdc_acm_ntf_t *ntf = cdev->intr_in_buf;
 
+	if (!cdev->is_ready) {
+		RTK_LOGI(TAG, "EP%02X TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
+		return ret;
+	}
+
 	if (len > CDC_ACM_INTR_IN_DATA_SIZE) {
 		len = CDC_ACM_INTR_IN_DATA_SIZE;
 	}
 
 	if (cdev->intr_in_state == 0U) {
-		/* Tx Transfer in progress */
-		cdev->intr_in_state = 1U;
+		if (cdev->is_ready) {
+			cdev->is_intr_in_busy = 1U;
+			cdev->intr_in_state = 1U;
 
-		ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-		ntf->bNotificationType = type;
-		ntf->wValue = value;
-		ntf->wIndex = 0;
-		ntf->wLength = len;
+			ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+			ntf->bNotificationType = type;
+			ntf->wValue = value;
+			ntf->wIndex = 0;
+			ntf->wLength = len;
 
-		rtw_memcpy((void *)ntf->buf, (void *)data, len);
+			rtw_memcpy((void *)ntf->buf, (void *)data, len);
 
-		/* Transmit next packet */
-		usbd_ep_transmit(dev, CDC_ACM_INTR_IN_EP, (u8 *)ntf, CDC_ACM_INTR_IN_REQUEST_SIZE + len);
+			if (cdev->is_ready) {
+				usbd_ep_transmit(dev, CDC_ACM_INTR_IN_EP, (u8 *)ntf, CDC_ACM_INTR_IN_REQUEST_SIZE + len);
+				ret = HAL_OK;
+			} else {
+				cdev->intr_in_state = 0U;
+				RTK_LOGD(TAG, "EP%02X TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
+			}
 
-		ret = HAL_OK;
+			cdev->is_intr_in_busy = 0U;
+		} else  {
+			RTK_LOGD(TAG, "EP%02X TX %d not ready\n", CDC_ACM_INTR_IN_EP, len);
+		}
 	} else {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d TX: %d BUSY\n", CDC_ACM_INTR_IN_EP & 0xFU, len);
+		RTK_LOGD(TAG, "EP%02X TX: %d BUSY\n", CDC_ACM_INTR_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 
@@ -909,12 +704,12 @@ static u8 usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
   * @param  cb: CDC ACM user callback
   * @retval Status
   */
-u8 usbd_cdc_acm_init(usb_speed_type_t speed, usbd_cdc_acm_cb_t *cb)
+u8 usbd_cdc_acm_init(u16 bulk_out_xfer_size, u16 bulk_in_xfer_size, usbd_cdc_acm_cb_t *cb)
 {
 	u8 ret = HAL_OK;
 	usbd_cdc_acm_dev_t *cdc = &usbd_cdc_acm_dev;
 
-	cdc->ctrl_buf = rtw_zmalloc(CDC_ACM_CTRL_BUF_SIZE);
+	cdc->ctrl_buf = (u8 *)usb_os_mem_alloc(CDC_ACM_CTRL_BUF_SIZE);
 	if (cdc->ctrl_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_exit;
@@ -922,31 +717,25 @@ u8 usbd_cdc_acm_init(usb_speed_type_t speed, usbd_cdc_acm_cb_t *cb)
 
 	cdc->bulk_out_zlp = 0U;
 
-	cdc->bulk_out_buf_size = (speed == USB_SPEED_HIGH) ? CDC_ACM_HS_BULK_OUT_PACKET_SIZE : CDC_ACM_FS_BULK_OUT_PACKET_SIZE;
-	cdc->bulk_out_buf = rtw_zmalloc(cdc->bulk_out_buf_size);
+	cdc->bulk_out_buf_size = bulk_out_xfer_size;
+	cdc->bulk_out_buf = (u8 *)usb_os_mem_alloc(cdc->bulk_out_buf_size);
 	if (cdc->bulk_out_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_ctrl_buf_exit;
 	}
 
-	cdc->bulk_in_buf_size = (speed == USB_SPEED_HIGH) ? CDC_ACM_HS_BULK_IN_PACKET_SIZE : CDC_ACM_FS_BULK_IN_PACKET_SIZE;
-	cdc->bulk_in_buf = rtw_zmalloc(cdc->bulk_in_buf_size);
+	cdc->bulk_in_buf_size = bulk_in_xfer_size;
+	cdc->bulk_in_buf = (u8 *)usb_os_mem_alloc(cdc->bulk_in_buf_size);
 	if (cdc->bulk_in_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_bulk_out_buf_exit;
 	}
 
 #if CONFIG_CDC_ACM_NOTIFY
-	cdc->intr_in_buf = (usbd_cdc_acm_ntf_t *)rtw_zmalloc(sizeof(usbd_cdc_acm_ntf_t));
+	cdc->intr_in_buf = (usbd_cdc_acm_ntf_t *)usb_os_mem_alloc(sizeof(usbd_cdc_acm_ntf_t));
 	if (cdc->intr_in_buf == NULL) {
 		ret = HAL_ERR_MEM;
 		goto USBD_CDC_Init_clean_bulk_in_buf_exit;
-	}
-#endif
-
-#ifdef CONFIG_USB_USE_OTP_DESC
-	if (usbd_otp_init(&cdc->otp) != HAL_OK) {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_ERROR, "Fail to load USB OTP parameters\n");
 	}
 #endif
 
@@ -967,21 +756,21 @@ u8 usbd_cdc_acm_init(usb_speed_type_t speed, usbd_cdc_acm_cb_t *cb)
 USBD_CDC_Init_clean_cb_init_exit:
 
 #if CONFIG_CDC_ACM_NOTIFY
-	rtw_free(cdc->intr_in_buf);
+	usb_os_mem_free(cdc->intr_in_buf);
 	cdc->intr_in_buf = NULL;
 
 USBD_CDC_Init_clean_bulk_in_buf_exit:
 #endif
 
-	rtw_free(cdc->bulk_in_buf);
+	usb_os_mem_free(cdc->bulk_in_buf);
 	cdc->bulk_in_buf = NULL;
 
 USBD_CDC_Init_clean_bulk_out_buf_exit:
-	rtw_free(cdc->bulk_out_buf);
+	usb_os_mem_free(cdc->bulk_out_buf);
 	cdc->bulk_out_buf = NULL;
 
 USBD_CDC_Init_clean_ctrl_buf_exit:
-	rtw_free(cdc->ctrl_buf);
+	usb_os_mem_free(cdc->ctrl_buf);
 	cdc->ctrl_buf = NULL;
 
 USBD_CDC_Init_exit:
@@ -995,7 +784,19 @@ USBD_CDC_Init_exit:
   */
 u8 usbd_cdc_acm_deinit(void)
 {
+	u8 is_busy;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
+
+	cdev->is_ready = 0U;
+
+#if CONFIG_CDC_ACM_NOTIFY
+	is_busy = cdev->is_bulk_in_busy || cdev->is_intr_in_busy;
+#else
+	is_busy = cdev->is_bulk_in_busy;
+#endif
+	while (is_busy) {
+		usb_os_delay_us(100);
+	}
 
 	usbd_unregister_class();
 
@@ -1005,23 +806,23 @@ u8 usbd_cdc_acm_deinit(void)
 
 #if CONFIG_CDC_ACM_NOTIFY
 	if (cdev->intr_in_buf != NULL) {
-		rtw_free(cdev->intr_in_buf);
+		usb_os_mem_free(cdev->intr_in_buf);
 		cdev->intr_in_buf = NULL;
 	}
 #endif
 
 	if (cdev->bulk_in_buf != NULL) {
-		rtw_free(cdev->bulk_in_buf);
+		usb_os_mem_free(cdev->bulk_in_buf);
 		cdev->bulk_in_buf = NULL;
 	}
 
 	if (cdev->bulk_out_buf != NULL) {
-		rtw_free(cdev->bulk_out_buf);
+		usb_os_mem_free(cdev->bulk_out_buf);
 		cdev->bulk_out_buf = NULL;
 	}
 
 	if (cdev->ctrl_buf != NULL) {
-		rtw_free(cdev->ctrl_buf);
+		usb_os_mem_free(cdev->ctrl_buf);
 		cdev->ctrl_buf = NULL;
 	}
 
@@ -1034,12 +835,15 @@ u8 usbd_cdc_acm_deinit(void)
   * @param  len: data length
   * @retval Status
   */
-u8 usbd_cdc_acm_transmit(u8       *buf, u16 len)
+u8 usbd_cdc_acm_transmit(u8 *buf, u16 len)
 {
 	u8 ret = HAL_ERR_HW;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usb_dev_t *dev = cdev->dev;
-
+	if (!cdev->is_ready) {
+		RTK_LOGI(TAG, "EP%02X TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
+		return ret;
+	}
 	if (len > cdev->bulk_in_buf_size) {
 		len = cdev->bulk_in_buf_size;
 	}
@@ -1054,36 +858,32 @@ u8 usbd_cdc_acm_transmit(u8       *buf, u16 len)
 	}
 
 	if (cdev->bulk_in_state == 0U) {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d TX: %d\n", CDC_ACM_BULK_IN_EP & 0xFU, len);
+		if (cdev->is_ready) {
+			cdev->is_bulk_in_busy = 1U;
+			cdev->bulk_in_state = 1U;
 
-		/* Tx Transfer in progress */
-		cdev->bulk_in_state = 1U;
+			RTK_LOGD(TAG, "EP%02X TX: %d\n", CDC_ACM_BULK_IN_EP, len);
 
-		rtw_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
+			rtw_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
 
-		/* Transmit next packet */
-		usbd_ep_transmit(dev, CDC_ACM_BULK_IN_EP, cdev->bulk_in_buf, len);
+			if (cdev->is_ready) {
+				usbd_ep_transmit(dev, CDC_ACM_BULK_IN_EP, cdev->bulk_in_buf, len);
+				ret = HAL_OK;
+			} else {
+				cdev->bulk_in_state = 0U;
+				RTK_LOGD(TAG, "EP%02X TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
+			}
 
-		ret = HAL_OK;
+			cdev->is_bulk_in_busy = 0U;
+		} else  {
+			RTK_LOGD(TAG, "EP%02X TX %d not ready\n", CDC_ACM_BULK_IN_EP, len);
+		}
 	} else {
-		DBG_PRINTF(MODULE_USB_CLASS, LEVEL_TRACE, "EP%d TX: %d BUSY\n", CDC_ACM_BULK_IN_EP & 0xFU, len);
+		RTK_LOGD(TAG, "EP%02X TX: %d BUSY\n", CDC_ACM_BULK_IN_EP, len);
 		ret = HAL_BUSY;
 	}
 
 	return ret;
-}
-
-/**
-  * @brief  Prepare to receive BULK OUT packet
-  * @retval Status
-  */
-u8 usbd_cdc_acm_receive(void)
-{
-	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
-
-	usbd_ep_receive(cdev->dev, CDC_ACM_BULK_OUT_EP, cdev->bulk_out_buf, cdev->bulk_out_buf_size);
-
-	return HAL_OK;
 }
 
 #if CONFIG_CDC_ACM_NOTIFY
@@ -1092,7 +892,7 @@ u8 usbd_cdc_acm_notify_serial_state(u16 serial_state)
 	u8 ret = 0;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 
-	if (cdev->intr_in_buf) {
+	if (cdev->is_ready) {
 		ret = usbd_acm_cdc_notify(CDC_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 	}
 

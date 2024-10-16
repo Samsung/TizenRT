@@ -52,6 +52,10 @@ ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 CSRCS += ameba_ota.c
 endif
 
+ifeq ($(CONFIG_AMEBASMART_USBDEVICE),y)
+CSRCS += ameba_usb.c
+endif
+
 CSRCS += ameba_i2c.c \
 	ameba_rtc.c \
 	ameba_uart.c \

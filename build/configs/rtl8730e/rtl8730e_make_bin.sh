@@ -63,8 +63,6 @@ cat $BINDIR/ram_2.bin > $BINDIR/ca32_image2_all.bin
 
 python $GNUUTL/code_analyze.py
 
-ext_flash_support=$(python $GNUUTL/rtk_data_binary.py)
-
 echo "========== Image manipulating end =========="
 
 cp $GNUUTL/bl1_sram.bin $BINDIR/bl1_sram.bin
@@ -82,15 +80,6 @@ $GNUUTL/prepend_header.sh $BINDIR/xip_image2.bin  __flash_text_start__  $BINDIR/
 $GNUUTL/prepend_header.sh $BINDIR/bl1_sram.bin  __ca32_bl1_sram_start__  $BINDIR/target_img2.map
 $GNUUTL/prepend_header.sh $BINDIR/bl1.bin  __ca32_bl1_dram_start__  $BINDIR/target_img2.map
 $GNUUTL/prepend_header.sh $BINDIR/fip.bin  __ca32_fip_dram_start__  $BINDIR/target_img2.map
-
-if [ "$ext_flash_support" = "1" ];then
-	$GNUUTL/prepend_header.sh $GNUUTL/rtk_ext_flash_data.bin  __flash_ext_data_start__  $BINDIR/target_img2.map
-	cp $GNUUTL/rtk_ext_flash_data_prepend.bin $BINDIR/rtk_ext_flash_data.bin
-	rm $GNUUTL/rtk_ext_flash_data.bin
-	rm $GNUUTL/rtk_ext_flash_data_prepend.bin
-else
-	echo "========== Current config does not support external flash!=========="
-fi
 
 cat $BINDIR/xip_image2_prepend.bin $BINDIR/bl1_sram_prepend.bin $BINDIR/bl1_prepend.bin $BINDIR/fip_prepend.bin > $BINDIR/ap_image_all.bin
 

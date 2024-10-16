@@ -77,25 +77,23 @@
  * Name: pm_suspendcount
  *
  * Description:
- *   This function is called to get current stay count.
+ *   This function is called to get current suspend count of domain.
  *
  * Input Parameters:
  *   domain_id - The domain ID of the PM activity
  *
  * Returned Value:
- *   Current pm stay count
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
+ *   Non-Negative Integer: the suspend count of domain
+ *   ERROR: for invalid domain_id
  *
  ****************************************************************************/
 
-uint16_t pm_suspendcount(int domain_id)
+int pm_suspendcount(int domain_id)
 {
-	/* Get a convenience pointer to minimize all of the indexing */
-
-	DEBUGASSERT(domain_id >= 0 && domain_id < CONFIG_PM_NDOMAINS);
-
+	/* Check if domain_id is valid */
+	if (pm_check_domain(domain_id) != OK) {
+		return ERROR;
+	}
 	return g_pmglobals.suspend_count[domain_id];
 }
 

@@ -35,19 +35,18 @@
 #define USB_IRQ_PRI									INT_PRI_MIDDLE
 
 /* USB code sections */
-#if defined(CONFIG_FLOADER_USBD_EN)
-#define USB_DATA_SECTION							BOOT_RAM_DATA_SECTION
-#define USB_BSS_SECTION								BOOT_RAM_BSS_SECTION
-#define USB_TEXT_SECTION							BOOT_RAM_TEXT_SECTION
-#else
 #define USB_DATA_SECTION
 #define USB_BSS_SECTION
 #define USB_TEXT_SECTION
-#endif
 
 /* USB Core HW Configurations */
-#define USB_MAX_ENDPOINTS							7U
+#define USB_MAX_ENDPOINTS						6U
+#define USB_MAX_PIPES							8U
 #define USB_IN_TOKEN_QUEUE_DEPTH					8U
+
+/* USB_ID */
+#define USB_VID								0x0BDA
+#define USB_PID								0x8730
 
 /* USB OTG addon control register */
 #define USB_ADDON_REG_CTRL							0x30004UL

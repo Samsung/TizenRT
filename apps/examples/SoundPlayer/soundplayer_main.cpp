@@ -44,7 +44,6 @@ using namespace media::stream;
 #define DEFAULT_FORMAT_TYPE AUDIO_FORMAT_TYPE_S16_LE
 #define DEFAULT_CHANNEL_NUM 1 //mono
 
-int gPlaybackFinished;
 //***************************************************************************
 // class : SoundPlayer
 //***************************************************************************/
@@ -54,10 +53,13 @@ class SoundPlayer : public MediaPlayerObserverInterface,
 					  public enable_shared_from_this<SoundPlayer>
 {
 public:
-	SoundPlayer() : volume(0), mNumContents(0), mPlayIndex(-1), mHasFocus(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE) {};
+	SoundPlayer() : volume(0), mNumContents(0), mPlayIndex(-1), mHasFocus(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE), \
+						mPaused(false), mIsPlaying(false), mStopped(false), mTrackFinished(false) {};
 	~SoundPlayer() {};
 	bool init(char *argv[]);
-	bool startPlayback(void);
+	player_result_t startPlayback(void);
+	bool checkTrackFinished(void);
+	void handleError(player_error_t error);
 	void onPlaybackStarted(MediaPlayer &mediaPlayer) override;
 	void onPlaybackFinished(MediaPlayer &mediaPlayer) override;
 	void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error) override;
@@ -65,6 +67,7 @@ public:
 	void onStopError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPlaybackPaused(MediaPlayer &mediaPlayer) override;
+	void onPlaybackStopped(MediaPlayer &mediaPlayer) override;
 	void onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onFocusChange(int focusChange) override;
 
@@ -76,6 +79,10 @@ private:
 	unsigned int mNumContents;
 	unsigned int mPlayIndex;
 	bool mHasFocus;
+	bool mPaused;
+	bool mStopped;
+	bool mIsPlaying;
+	bool mTrackFinished;
 	unsigned int mSampleRate;
 	void loadContents(const char *path);
 };
@@ -83,51 +90,82 @@ private:
 
 void SoundPlayer::onPlaybackStarted(MediaPlayer &mediaPlayer)
 {
-	printf("onPlaybackStarted\n");
+	printf("onPlaybackStarted player : %x\n", &mp);
+	mPaused = false;
+	mStopped = false;
+	mIsPlaying = true;
 }
 
 void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 {
-	printf("onPlaybackFinished playback index : %d\n", mPlayIndex);
-	mediaPlayer.unprepare();
+	printf("onPlaybackFinished playback index : %d player : %x\n", mPlayIndex, &mp);
 	mPlayIndex++;
+	mIsPlaying = false;
 	if (mPlayIndex == mNumContents) {
-		printf("All track played!!\n");
+		mTrackFinished = true;
+		printf("All Track played, Destroy Player\n");
+		mp.unprepare();
+		mp.destroy();
+		auto &focusManager = FocusManager::getFocusManager();
+		focusManager.abandonFocus(mFocusRequest);
+		mHasFocus = false;
 		return;
-	} else if (mPlayIndex > mNumContents) {
-		mediaPlayer.destroy();
-		gPlaybackFinished = true;
-		return;
-	} else {
+	}
+	if (mHasFocus) {
 		printf("wait 3s until play next contents\n");
+		mediaPlayer.unprepare();
 		sleep(3);
 		startPlayback();
 	}
 }
 
+/* Error case, terminate playback */
 void SoundPlayer::onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error)
 {
-	printf("onPlaybackError error : %d\n", error);
+	handleError(error);
 }
 
 void SoundPlayer::onStartError(MediaPlayer &mediaPlayer, player_error_t error)
 {
-	printf("onStartError error : %d\n", error);
+	handleError(error);
 }
 
 void SoundPlayer::onPauseError(MediaPlayer &mediaPlayer, player_error_t error)
 {
-	printf("onPauseError error : %d\n", error);
+	handleError(error);
 }
 
 void SoundPlayer::onStopError(MediaPlayer &mediaPlayer, player_error_t error)
 {
-	printf("onStopError error : %d\n", error);
+	handleError(error);
+}
+
+void SoundPlayer::handleError(player_error_t error)
+{
+	printf("%s error : %d player : %x\n", __func__, error, &mp);
+	if (mHasFocus) {
+		auto &focusManager = FocusManager::getFocusManager();
+		focusManager.abandonFocus(mFocusRequest);
+	}
+	mp.unprepare();
+	mp.destroy();
+	mTrackFinished = true;
 }
 
 void SoundPlayer::onPlaybackPaused(MediaPlayer &mediaPlayer)
 {
-	printf("onPlaybackPaused\n");
+	printf("onPlaybackPaused player : %x\n", &mp);
+	mStopped = false;
+	mPaused = true;
+	mIsPlaying = false;
+}
+
+void SoundPlayer::onPlaybackStopped(MediaPlayer &mediaPlayer)
+{
+	printf("onPlaybackStopped player : %x\n", &mp);
+	mStopped = true;
+	mIsPlaying = false;
+	mPaused = false;
 }
 
 void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error)
@@ -143,23 +181,26 @@ void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error
 void SoundPlayer::onFocusChange(int focusChange)
 {
 	player_result_t res;
+	printf("onFousChange player : %x focus : %d isPlaying : %d mPaused : %d\n", &mp, focusChange, mIsPlaying, mPaused);
 	switch (focusChange) {
 	case FOCUS_GAIN:
 		mHasFocus = true;
-		res = mp.prepare();
-		if (res != PLAYER_OK) {
-			printf("prepare failed res : %d\n", res);
-			break;
-		}
-		res = mp.start();
-		if (res != PLAYER_OK) {
-			printf("start failed res : %d\n", res);
+		if (mPaused) {
+			res = mp.start();
+			if (res != PLAYER_OK) {
+				printf("start failed res : %d\n", res);
+			}
+		} else if (!mStopped) { /* Stop case app should start mediaplayer manually */
+			res = startPlayback();
+			if (res != PLAYER_OK) {
+				printf("startPlayback failed res : %d\n", res);
+			}
 		}
 		break;
 	case FOCUS_LOSS:
-		res = mp.pause();
-		if (res != PLAYER_OK) {
-			printf("pause failed res : %d\n", res);
+		mHasFocus = false;
+		if (mIsPlaying) {
+			mp.pause();
 		}
 		break;
 	default:
@@ -192,6 +233,7 @@ bool SoundPlayer::init(char *argv[])
 	for (int i = 0; i != (int)mList.size(); i++) {
 		printf("path : %s\n", mList.at(i).c_str());
 	}
+	
 	player_result_t res = mp.create();
 	if (res != PLAYER_OK) {
 		printf("MediaPlayer create failed res : %d\n", res);
@@ -214,14 +256,21 @@ bool SoundPlayer::init(char *argv[])
 						.build();
 
 	mSampleRate = atoi(argv[3]);
+	mTrackFinished = false;
+
+	auto &focusManager = FocusManager::getFocusManager();
+	printf("mp : %x request focus!!\n", &mp);
+	focusManager.requestFocus(mFocusRequest);
+
 	return true;
 }
 
-bool SoundPlayer::startPlayback(void)
+player_result_t SoundPlayer::startPlayback(void)
 {
-	player_result_t res;
+	player_result_t res = PLAYER_OK;
 	string s = mList.at(mPlayIndex);
 	printf("startPlayback... playIndex : %d path : %s\n", mPlayIndex, s.c_str());
+	usleep(200000); //add some delay to prevent playback immediately in focus gain state
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
 	source->setSampleRate(mSampleRate);
 	source->setChannels(DEFAULT_CHANNEL_NUM);
@@ -229,24 +278,21 @@ bool SoundPlayer::startPlayback(void)
 	res = mp.setDataSource(std::move(source));
 	if (res != PLAYER_OK) {
 		printf("set Data source failed. res : %d\n", res);
-		return false;
+		return res;
 	}
-	if (!mHasFocus) {
-		auto &focusManager = FocusManager::getFocusManager();
-		focusManager.requestFocus(mFocusRequest);
-	} else {
-		res = mp.prepare();
-		if (res != PLAYER_OK) {
-			printf("prepare failed res : %d\n", res);
-			return false;
-		}
-		res = mp.start();
-		if (res != PLAYER_OK) {
-			printf("start failed res : %d\n", res);
-			return false;
-		}
+
+	res = mp.prepare();
+	if (res != PLAYER_OK) {
+		printf("prepare failed res : %d\n", res);
+		return res;
 	}
-	return true;
+	res = mp.start();
+	if (res != PLAYER_OK) {
+		printf("start failed res : %d\n", res);
+		return res;
+	}
+
+	return res;
 }
 
 /* list all files in the directory */
@@ -281,24 +327,30 @@ void SoundPlayer::loadContents(const char *dirpath)
 	closedir(dirp);
 }
 
+bool SoundPlayer::checkTrackFinished(void)
+{
+	return mTrackFinished;
+}
+
 extern "C" {
 int soundplayer_main(int argc, char *argv[])
 {
 	auto player = std::shared_ptr<SoundPlayer>(new SoundPlayer());
+	printf("cur SoundPlayer : %x\n", &player);
 	if (argc != 4) {
 		printf("invalid input\n");
 		return -1;
 	}
-	gPlaybackFinished = false;
 	if (!player->init(argv)) {
 		return -1;
 	}
-	if (!player->startPlayback()) {
-		return -1;
+
+	while (!player->checkTrackFinished()) {
+		
+		sleep(1);
 	}
-	while (!gPlaybackFinished) {
-		sleep(60);
-	}
+	printf("Terminate Application : %x\n", &player);
+
 	return 0;
 }
 }

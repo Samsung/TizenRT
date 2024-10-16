@@ -1,5 +1,37 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 9270df5ead 2024/10/16-14:53:08 ==
+1. Enable LOGUART 1.5Mbps as wake up interrupt src
+2. Dynamic on/off XTAL clk according to LOGUART baudrate
+3. LOGUART 1.5M bps increase power consumption by 1.2mA
+
+== version e4f809fee2 2024/10/10-19:55:35 ==
+1. Fix issue of receiving invalid CSI data length
+
+== version 9702f2b8da 2024/10/09-09:53:04 ==
+1. Enable RTC as wakeup interrupt src
+2. Add RTC wakeup reason
+
+== version a676e7969f 2024/10/04-14:35:42 ==
+1. Reduce sleep/wakeup log into one line
+
+== version d388ac9932 2024/09/25-12:22:27 ==
+1. Fix LOGUART stuck due to RX data available interrupt bit not being re-enabled in KM0
+
+== version ad3d966441 2024/09/11-18:20:44 ==
+1. Add support to obtain key_mgnt value during wifi disconnect event
+2. Remove support of obtaining key_mgnt value of current wifi connection
+
+== version c64c1d4098 2024/09/10-18:52:07 ==
+1. Added cpsid disable interrupt in LP:KM0 
+	Modify the flow to prevent KM0 and KM4 to modify SPIC clock at the same time
+2. Change the register to store the wakeup source
+	Previous: REG_LSYS_DUMMY_090 was used for others purpose in DDR package.
+	New: REG_LSYS_DUMMY_089
+
+== version 5f6a253359 2024/09/04-17:11:16 ==
+1. Correct tx power operation for WiFi and BT for DDR package
+
 == version 5f6a253359 2024/08/30-16:57:54 ==
 1.	Change log level of "warning report" log from warning to error to reduce print frequency
 

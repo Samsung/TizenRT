@@ -350,9 +350,7 @@ struct pthread_attr_s {
 	uint8_t policy;                         /* Pthread scheduler policy */
 	uint8_t inheritsched;                   /* Inherit parent prio/policy? */
 	struct pthread_region_s region[2];      /* space for user-space region if MPU supported */
-#ifdef CONFIG_SMP
 	cpu_set_t affinity;			/* Set of permitted CPUs for the thread */
-#endif
 };
 typedef struct pthread_attr_s pthread_attr_t;
 

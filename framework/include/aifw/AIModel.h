@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "tinyara/config.h"
 #include <memory>
 #include "aifw/aifw.h"
 
@@ -118,6 +119,14 @@ public:
 	 * @return: AIFW_RESULT enum object.
 	 */
 	AIFW_RESULT resetInferenceState(void);
+
+	/**
+	 * @brief: Fetches the model code from model attribute
+	 * @param [OUT] modelCode: Model code from model attribute
+	 * @return: Model code
+	 */
+	uint32_t getModelCode(void);
+
 private:
 	/**
 	 * @brief It constructs AIDataBuffer object and initializes it.

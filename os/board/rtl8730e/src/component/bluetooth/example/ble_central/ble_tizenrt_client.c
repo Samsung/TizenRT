@@ -228,7 +228,7 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
 
 	if(whitelist_enable){
 		rtk_bt_le_scan_param_t gap_scan_param;
-		gap_scan_param.type = RTK_BT_LE_SCAN_TYPE_PASSIVE;
+		gap_scan_param.type = RTK_BT_LE_SCAN_TYPE_ACTIVE;
 		gap_scan_param.interval = 0x60;
 		gap_scan_param.window = 0x30;
 		gap_scan_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;

@@ -6,7 +6,7 @@
 config EXAMPLES_AMEBA_MIPI
 	bool "AMEBA_MIPI example"
 	default n
-	select AMEBASMART_MIPI
+	depends on AMEBASMART_MIPI
 	---help---
 		Enable AMEBA_MIPI Example
 

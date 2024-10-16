@@ -227,7 +227,7 @@ void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_co
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
-	u16 wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_090);
+	u16 wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_089);
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */

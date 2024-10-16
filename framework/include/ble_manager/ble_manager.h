@@ -176,3 +176,4 @@ ble_result_e ble_manager_get_version(uint8_t version[3]);
  ****************************************************************************/
 ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
 
+ble_result_e ble_manager_set_gap_device_name(char name[BLE_GAP_DEVICE_NAME_LEN]);

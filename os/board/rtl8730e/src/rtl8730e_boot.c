@@ -178,7 +178,7 @@ void board_i2c_initialize(void)
 #ifdef CONFIG_AMEBASMART_I2C0
 	bus = 0;
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
-	i2c = up_i2cinitialize(bus);
+	i2c = (struct i2c_dev_s *)up_i2cinitialize(bus);
 #ifdef CONFIG_I2C_USERIO
 	if (i2c != NULL) {
 		ret = i2c_uioregister(path, i2c);
@@ -427,6 +427,10 @@ void board_initialize(void)
 
 	ipc_table_init(IPCAP_DEV);
 
+#ifdef CONFIG_AMEBASMART_USBDEVICE
+	usb_initialize();
+#endif
+
 	/* init console */
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
@@ -507,6 +511,11 @@ void board_initialize(void)
 	ipc_msg_loguart.msg_len = 1;
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
+
+	/* Tizen: re-enable the LOGUART Rx event interrupt so that CA32 can use it, after KM0 LOGUART is disabled */
+	irqstate_t flags = enter_critical_section();
+	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+	leave_critical_section(flags);
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

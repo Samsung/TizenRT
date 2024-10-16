@@ -27,6 +27,7 @@ static event_list_elem_t     event_callback_list[WIFI_EVENT_MAX][WIFI_EVENT_MAX_
 extern write_fast_connect_info_ptr p_store_fast_connect_info;
 extern rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback;
 extern rtw_join_status_t rtw_join_status;
+extern rtw_join_status_t prev_join_status;
 extern internal_join_block_param_t *join_block_param;
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
@@ -181,7 +182,7 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 		rtw_mfree((u8 *)deauth_data_pre, 0);
 #endif
 	}
-
+	prev_join_status = rtw_join_status;
 	rtw_join_status = join_status;
 
 	/* step 2: execute user callback to process join_status*/

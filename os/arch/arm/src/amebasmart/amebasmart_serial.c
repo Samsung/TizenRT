@@ -210,6 +210,9 @@
  */
 
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~4, uart4 is configured as log uart
+#ifdef CONFIG_PM
+static bool uart_active_state = 0;
+#endif
 
 struct rtl8730e_up_dev_s {
 	uint8_t parity;				/* 0=none, 1=odd, 2=even */
@@ -893,9 +896,6 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 	struct uart_dev_s *dev = (struct uart_dev_s *)id;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 
-#ifdef CONFIG_PM
-	bsp_pm_domain_control(BSP_UART_DRV, 1);
-#endif
 	if (event == RxIrq) {
 		uart_recvchars(dev);
 	}
@@ -904,9 +904,6 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 		uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
-#ifdef CONFIG_PM
-	bsp_pm_domain_control(BSP_UART_DRV, 0);
-#endif
 }
 static int rtl8730e_up_attach(struct uart_dev_s *dev)
 {
@@ -1103,6 +1100,12 @@ static void rtl8730e_up_txint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
+#ifdef CONFIG_PM
+	if (uart_active_state != enable) {	/* State has changed */
+		bsp_pm_domain_control(BSP_UART_DRV, enable);
+		uart_active_state = enable;
+	}
+#endif
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], TxIrq, enable);
 	if (enable)
 		UART_INTConfig(UART_DEV_TABLE[uart_index_get(priv->tx)].UARTx, RUART_BIT_ETBEI, ENABLE);
@@ -1136,7 +1139,8 @@ static bool rtl8730e_up_txempty(struct uart_dev_s *dev)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	return (serial_writable(sdrv[uart_index_get(priv->tx)]));
+
+	return (serial_tx_empty(sdrv[uart_index_get(priv->tx)]));
 }
 
 /****************************************************************************

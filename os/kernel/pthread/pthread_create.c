@@ -278,6 +278,12 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		attr = &g_default_pthread_attr;
 	}
 
+#ifndef CONFIG_SMP
+	if (attr->affinity != 0) {
+		sdbg("WARNING: Non zero affinity value not allowed when CONFIG_SMP is disabled\n");
+	}
+#endif
+
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < attr->priority && attr->priority < BM_PRIORITY_MAX + 1) {
 		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);

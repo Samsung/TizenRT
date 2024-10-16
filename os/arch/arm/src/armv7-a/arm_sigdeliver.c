@@ -53,6 +53,7 @@
 
 #include "sched/sched.h"
 #include "up_internal.h"
+#include "arm.h"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -101,6 +102,7 @@ void arm_sigdeliver(void)
 	 */
 
 	do {
+		regs[REG_CPSR] |= PSR_MODE_SYS;
 		leave_critical_section(regs[REG_CPSR]);
 	} while (rtcb->irqcount > 0);
 #endif							/* CONFIG_SMP */

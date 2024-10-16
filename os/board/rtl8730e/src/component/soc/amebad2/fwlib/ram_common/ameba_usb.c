@@ -14,8 +14,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "ameba_soc.h"
+#include "ameba_usb.h"
 
 static const char *TAG = "USB";
 /* Private defines -----------------------------------------------------------*/

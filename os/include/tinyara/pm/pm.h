@@ -183,6 +183,7 @@ enum pm_state_e {
 								 */
 	PM_COUNT,
 };
+static const char *pm_state_name[PM_COUNT] = {"PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP"};
 
 /* This enumeration provides all power management related wakeup source code. */
 
@@ -481,20 +482,18 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds);
  * Name: pm_suspendcount
  *
  * Description:
- *   This function is called to get current stay count.
+ *   This function is called to get current suspend count of domain.
  *
  * Input Parameters:
  *   domain_id - The domain ID of the PM activity
  *
  * Returned Value:
- *   Current pm stay count
- *
- * Assumptions:
- *   This function may be called from an interrupt handler.
+ *   Non-Negative Integer: the suspend count of domain
+ *   ERROR: for invalid domain_id
  *
  ****************************************************************************/
 
-uint16_t pm_suspendcount(int domain_id);
+int pm_suspendcount(int domain_id);
 
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
@@ -561,6 +560,7 @@ int pm_metrics(int milliseconds);
 #define pm_resume(domain_id)    (0)
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
 #define pm_timedsuspend(domain_id, milliseconds)	(0)
+#define pm_suspendcount(domain_id)   (0)
 
 #endif							/* CONFIG_PM */
 
