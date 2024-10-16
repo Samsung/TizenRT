@@ -51,9 +51,11 @@ media::voice::SpeechDetector *sd;
 media::MediaPlayer mp;
 media::MediaRecorder mr;
 
-static const char *filePath = "";
+static const char *filePath = "/tmp/record.pcm";
 FILE *fp;
 uint8_t *gBuffer = NULL;
+uint32_t bufferSize = 0;
+
 static bool isRecording = true;
 
 static void playRecordVoice(void);
@@ -113,13 +115,6 @@ class BufferReceiver : public media::MediaRecorderObserverInterface, public std:
 		printf("##################################\n");
 		printf("####     onRecordStarted      ####\n");
 		printf("##################################\n");
-
-		filePath = "/tmp/record.pcm";
-		fp = fopen(filePath, "wb");
-		if (fp == NULL) {
-			printf("FILE OPEN FAILED\n");
-			return;
-		}
 	}
 	void onRecordPaused(media::MediaRecorder &mediaRecorder) override
 	{
@@ -180,6 +175,12 @@ public:
 			if (gBuffer) {
 				if (sd->getKeywordData(gBuffer) == true) {
 					/* consume buffer */
+					fp = fopen(filePath, "wb");
+					if (fp == NULL) {
+						printf("FILE OPEN FAILED\n");
+						return;
+					}
+					fwrite(gBuffer, 1, bufferSize, fp);	
 					printf("KD data extraction OK\n");
 				} else {
 					printf("kd data extraction failed\n");
@@ -244,7 +245,7 @@ void playRecordVoice(void)
 	mp.setObserver(std::make_shared<_Observer>());
 	mp.setDataSource(std::move(source));
 	mp.prepare();
-	mp.setVolume(5);
+	mp.setVolume(9);
 	mp.start();
 }
 
@@ -263,10 +264,7 @@ int wakerec_main(int argc, char *argv[])
 	printf("###################################\n");
 	printf("#### Wait for wakeup triggered ####\n");
 	printf("###################################\n");
-
-	sd->startKeywordDetect();
-
-	uint32_t bufferSize = 0;
+	
 	if (sd->getKeywordBufferSize(&bufferSize) == true) {
 		printf("KD buffer size %d\n", bufferSize);
 		gBuffer = new uint8_t[bufferSize];
@@ -274,11 +272,11 @@ int wakerec_main(int argc, char *argv[])
 			printf("memory allocation failed\n");
 		}
 	}
+	sd->startKeywordDetect();
 
 	while (1) {
 		sleep(67);
 	}
-
 	delete[] gBuffer;
 	gBuffer = NULL;
 	return 0;
