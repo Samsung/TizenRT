@@ -1,5 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 9270df5ead 2024/10/16-14:53:08 ==
+1. Enable LOGUART 1.5Mbps as wake up interrupt src
+2. Dynamic on/off XTAL clk according to LOGUART baudrate
+3. LOGUART 1.5M bps increase power consumption by 1.2mA
+
 == version e4f809fee2 2024/10/10-19:55:35 ==
 1. Fix issue of receiving invalid CSI data length
 
