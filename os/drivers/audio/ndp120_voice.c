@@ -378,9 +378,8 @@ static int ndp120_start(FAR struct audio_lowerhalf_s *dev)
 	audvdbg(" ndp120_start Entry\n");
 	ndp120_takesem(&priv->devsem);
 
-	priv->running = true;
-
 	ndp120_start_sample_ready(priv);
+	priv->running = true;
 
 	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
 	sq_entry_t *tmp = NULL;
@@ -428,6 +427,10 @@ static int ndp120_pause(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 static int ndp120_pause(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
+	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+	ndp120_takesem(&priv->devsem);
+	ndp120_stop_sample_ready(priv);
+	ndp120_givesem(&priv->devsem);
 	return 0;
 }
 
@@ -437,6 +440,10 @@ static int ndp120_resume(FAR struct audio_lowerhalf_s *dev, FAR void *session)
 static int ndp120_resume(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
+	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+	ndp120_takesem(&priv->devsem);
+	ndp120_start_sample_ready(priv);
+	ndp120_givesem(&priv->devsem);
 	return 0;
 }
 #endif
