@@ -75,6 +75,7 @@ struct ndp120_dev_s {
 	uint32_t sample_size;
 	uint32_t sample_size_orig_annot;
 	uint8_t *keyword_buffer;
+	bool extclk_inuse; /* 1 is external clock and 0 is internal clock */
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */
