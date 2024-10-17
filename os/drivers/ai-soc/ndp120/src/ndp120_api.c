@@ -1237,13 +1237,19 @@ int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 
 	dev->recording = true;
 
+	/* reset the count of semaphore used to signal sample ready */	
+	sem_init(&dev->sample_ready_signal, 1, 0);
+
 	s =  ndp120_set_sample_ready_int(dev, 1);
 
 	uint32_t bytes_before_match = 0;
 
-	s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+	if (!dev->running) {
+		/* we need not do this if this is resume case, we only need to do it if its recorder start case after keyword detection */
+		s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
                                                                 SYNTIANT_NDP_EXTRACT_FROM_MATCH, NULL,
                                                                 &bytes_before_match);
+	}
 
 	return s;
 }
