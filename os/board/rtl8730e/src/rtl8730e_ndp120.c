@@ -131,6 +131,16 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 	}
 }
 
+static void rtl8730e_ndp120_pm(bool sleep)
+{
+	/* h/w specific things to be done if required */
+	if (sleep) {
+		audvdbg("board entering sleep\n");
+	} else {
+		audvdbg("board wakeup\n");
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -176,6 +186,8 @@ int rtl8730e_ndp120_initialize(int minor)
 		
 		rtl8730e_ndp120_set_dmic(false);
 
+		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
+		
 		/* currently spi 0 is only attached to AI SoC, so no
 		 * need to change the spi config as we are dealing with
 		 * only 1 slave, if we add more slaves, parameters below

@@ -86,6 +86,13 @@
  * Private Data
  ****************************************************************************/
 
+enum ndp120_state_e {
+	IS_RECORDING = 0,
+	NOT_RECORDING = 1,
+};
+
+enum ndp120_state_e g_ndp120_state;
+
 static const unsigned int NDP_NOTIFICATION_ERRORS =
 	SYNTIANT_NDP_NOTIFICATION_ERROR
 	| SYNTIANT_NDP_NOTIFICATION_ALGO_ERROR
@@ -1031,6 +1038,12 @@ int ndp120_init(struct ndp120_dev_s *dev)
 #endif
 	ndp120_kd_stop_match_process(dev);
 	ndp120_kd_start(dev);
+	
+	g_ndp120_state = NOT_RECORDING;
+
+	dev->extclk_inuse = false;
+
+	ndp120_aec_enable(dev);
 
 errout_ndp120_init:
 	return s;
@@ -1100,6 +1113,7 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 					s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
 								SYNTIANT_NDP_EXTRACT_FROM_MATCH, dev->keyword_buffer,
 								&dev->keyword_bytes);
+					g_ndp120_state = IS_RECORDING;
 					break;
 				case 1:
 					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
@@ -1223,6 +1237,7 @@ int ndp120_kd_stop_match_process(struct ndp120_dev_s *dev) {
 }
 
 int ndp120_kd_start_match_process(struct ndp120_dev_s *dev) {
+    g_ndp120_state = NOT_RECORDING;
     int s = SYNTIANT_NDP_ERROR_NONE;
 	/* nothing here, we check priv->kd_enabled in the match callprocessing instead */
 	/* alternative solution could be to configure the posterior to ignore
@@ -1232,6 +1247,7 @@ int ndp120_kd_start_match_process(struct ndp120_dev_s *dev) {
 
 int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 {
+	g_ndp120_state = IS_RECORDING;
 	int s;
 
 	dev->recording = true;
@@ -1260,6 +1276,7 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 	s = ndp120_set_sample_ready_int(dev, 0);
 
 	dev->recording = false;
+	g_ndp120_state = NOT_RECORDING;
 
 	return s;
 }
@@ -1306,6 +1323,20 @@ void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int inter
     }
 
     syntiant_ndp120_write(dev->ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(intf), audctrl);
+}
+
+void ndp120_aec_enable(struct ndp120_dev_s *dev)
+{
+	if (g_ndp120_state == NOT_RECORDING && !dev->extclk_inuse) {
+		ndp120_test_internal_passthrough_switch(dev, 0);
+		dev->extclk_inuse = true;
+	}
+}
+
+void ndp120_aec_disable(struct ndp120_dev_s *dev)
+{
+	ndp120_test_internal_passthrough_switch(dev, 1);
+	dev->extclk_inuse = false;
 }
 
 #if 0
