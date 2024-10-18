@@ -196,6 +196,24 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	
 	// Scanner
+	case LWNL_REQ_BLE_SET_SCAN:
+	{
+		uint16_t scan_interval = 0;
+		uint16_t scan_window = 0;
+		trble_scan_type scan_type = 0;
+		
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		scan_interval = *(uint16_t *)param.param[0];
+		scan_window = *(uint16_t *)param.param[1];
+		scan_type = *(trble_scan_type *)param.param[2];
+		TRBLE_DRV_CALL(ret, dev, set_scan, (dev, scan_interval, scan_window, scan_type));
+	}
+	break;
 	case LWNL_REQ_BLE_START_SCAN:
 	{
 		/* filter can be NULL */
