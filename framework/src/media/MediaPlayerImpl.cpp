@@ -35,6 +35,7 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
 	mBufSize = 0;
+	mPlaybackFinished = false;
 }
 
 player_result_t MediaPlayerImpl::create()
@@ -62,7 +63,7 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != PLAYER_STATE_NONE) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -106,7 +107,7 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -140,7 +141,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != PLAYER_STATE_CONFIGURED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -205,7 +206,7 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState != PLAYER_STATE_CONFIGURED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INVALID_STATE);
 		return;
@@ -244,7 +245,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE || mCurState == PLAYER_STATE_CONFIGURED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
@@ -289,7 +290,7 @@ void MediaPlayerImpl::startPlayer()
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
@@ -306,6 +307,7 @@ void MediaPlayerImpl::startPlayer()
 	}
 	mpw.setPlayer(shared_from_this());
 	mCurState = PLAYER_STATE_PLAYING;
+	mPlaybackFinished = false;
 	notifyObserver(PLAYER_OBSERVER_COMMAND_STARTED);
 }
 
@@ -340,8 +342,12 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 player_result_t MediaPlayerImpl::stopPlayback()
 {
 	PlayerWorker &mpw = PlayerWorker::getWorker();
+	/* Already stopped because playback finished, so do nothing */
+	if (mPlaybackFinished && mCurState == PLAYER_STATE_READY) {
+		return PLAYER_OK;
+	}
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		return PLAYER_ERROR_INVALID_STATE;
 	}
@@ -377,10 +383,13 @@ player_result_t MediaPlayerImpl::pause()
 void MediaPlayerImpl::pausePlayer()
 {
 	LOG_STATE_INFO(mCurState);
+	if (mPlaybackFinished && mCurState == PLAYER_STATE_READY) {
+		return;
+	}
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_PLAYING) {
-		meddbg("%s Fail : invalid state\n", __func__);
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PAUSE_ERROR, PLAYER_ERROR_INVALID_STATE);
 		return;
@@ -534,7 +543,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t &ret)
 {
 	if (mCurState != PLAYER_STATE_IDLE) {
-		meddbg("MediaPlayerImpl::setDataSource : mCurState != PLAYER_STATE_IDLE\n");
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -752,6 +761,7 @@ void MediaPlayerImpl::playback()
 		}
 	} else if (num_read == 0) {
 		player_result_t errcode = stopPlayback();
+		mPlaybackFinished = true;
 		if (errcode != PLAYER_OK) {
 			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, errcode);
 		} else {

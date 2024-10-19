@@ -134,6 +134,7 @@ private:
 private:
 	MediaPlayer &mPlayer;
 	std::atomic<player_state_t> mCurState;
+	std::atomic<bool> mPlaybackFinished;
 	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;
