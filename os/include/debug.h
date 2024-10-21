@@ -1114,6 +1114,30 @@ int get_errno(void);
 #define tmrllvdbg(format, ...)
 #endif
 
+#ifdef CONFIG_DEBUG_TOUCH_ERROR
+#define touchdbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define touchlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define touchdbg(...)
+#define touchlldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_WARN
+#define touchwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define touchllwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define touchwdbg(...)
+#define touchllwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_INFO
+#define touchvdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define touchllvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define touchvdbg(...)
+#define touchllvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_TTRACE
 #define ttdbg(format, ...) dbg(format, ##__VA_ARGS__)
 #else
@@ -1841,6 +1865,30 @@ else
 #else
 #define tmrvdbg     (void)
 #define tmrllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_ERROR
+#define touchdbg      dbg
+#define touchlldbg    lldbg
+#else
+#define touchdbg      (void)
+#define touchlldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_WARN
+#define touchwdbg     wdbg
+#define touchllwdbg   llwdbg
+#else
+#define touchwdbg     (void)
+#define touchllwdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_INFO
+#define touchvdbg     vdbg
+#define touchllvdbg   llvdbg
+#else
+#define touchvdbg     (void)
+#define touchllvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_USB_ERROR
