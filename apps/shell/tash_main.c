@@ -154,16 +154,24 @@ char *tash_read_input_line(int fd)
 
 		if ((select(fd + 1, &tfd, NULL, NULL, &stimeout)) && FD_ISSET(fd, &tfd)) {
 #endif
+#ifdef CONFIG_PM
+			/* Ensure board does not go to sleep during read/write operations*/
+			tash_pm_suspend();
+			/* Ensure board wait for TASH_PM_TIMEDSUSPEND_TIME_IN_MS before going to sleep. 
+			 * This will allow user to prompt shell without board sleep.
+			 */
+			tash_pm_timedsuspend(TASH_PM_TIMEDSUSPEND_TIME_IN_MS);
+#endif
 			/* read characters */
 			nbytes = read(fd, &buffer[pos], (bufsize - pos));
 			if (nbytes < 0) {
 				shdbg("TASH: can not read uart\n");
+#ifdef CONFIG_PM
+				/* Resume the suspended TASH domain */
+				tash_pm_resume();
+#endif
 				return buffer;
 			}
-#ifdef CONFIG_PM
-			/* Ensure board does not go to sleep for TASH_PM_TIMEDSUSPEND_TIME_IN_MS*/
-			tash_pm_timedsuspend(TASH_PM_TIMEDSUSPEND_TIME_IN_MS);
-#endif
 			for (char_idx = 0; char_idx < nbytes; char_idx++) {
 
 				if ((CURR_CHAR == ASCII_BS) || (CURR_CHAR == ASCII_DEL)) {
@@ -272,6 +280,10 @@ char *tash_read_input_line(int fd)
 					if (pos >= TASH_LINEBUFLEN) {
 						printf("\nTASH: length of input character is too long, maximum length is %d\n", TASH_LINEBUFLEN);
 						buffer[0] = ASCII_NUL;
+#ifdef CONFIG_PM
+						/* Resume the suspended TASH domain */
+						tash_pm_resume();
+#endif
 						return buffer;
 					}
 					is_tab_pressed = false;
@@ -290,6 +302,10 @@ char *tash_read_input_line(int fd)
 				}
 				is_direction_pressed = false;
 			}
+#endif
+#ifdef CONFIG_PM
+		/* Resume the suspended TASH domain */
+		tash_pm_resume();
 #endif
 #if !defined(CONFIG_DISABLE_POLL)
 		}
