@@ -145,7 +145,7 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8730e/flat_dev:
+  rtl8730e/flat_dev_ddr:
     machine:
       image: default
     working_directory: ~/TizenRT
@@ -193,6 +193,6 @@ workflows:
       - rtl8730e/loadable_apps:
           requires:
             - checkout_code
-      - rtl8730e/flat_dev:
+      - rtl8730e/flat_dev_ddr:
           requires:
             - checkout_code
