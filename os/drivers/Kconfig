@@ -441,6 +441,16 @@ config TIMER
 		driver. See include/tinyara/timer.h for further timer driver
 		information.
 
+config INPUT
+	bool "Input Device Support"
+	default n
+	---help---
+		This selection enables the touch support"
+
+if INPUT
+source drivers/input/Kconfig
+endif # INPUT
+
 config MMINFO
 	bool "Memory info Driver Support"
 	default n

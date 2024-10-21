@@ -83,6 +83,7 @@ include prodconfig$(DELIM)Make.defs
 include memory$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
+include input$(DELIM)Make.defs
 include os_api_test$(DELIM)Make.defs
 include lcd$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
