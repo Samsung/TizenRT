@@ -45,7 +45,7 @@
 #define NDP120_SPI_CHANNEL_NUM	1
 
 /* currently unused */
-#define NDP120_MIC_GAIN_MAX	10
+#define NDP120_MIC_GAIN_MAX	15
 #define NDP120_MIC_GAIN_DEFAULT	7
 
 /****************************************************************************
