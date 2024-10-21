@@ -154,7 +154,7 @@ class BufferReceiver : public media::MediaRecorderObserverInterface, public std:
 		printf("###########################################\n");
 		printf("####      onRecordBufferDataReached    ####\n");
 		printf("###########################################\n");
-
+		printf("data size : %d\n", (int)size);
 		short *sdata = (short *)data.get();
 		if (fp != NULL) {
 			int sz_written = fwrite(sdata, sizeof(short), size / 2, fp);

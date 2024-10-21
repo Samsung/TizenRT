@@ -87,7 +87,7 @@ ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 		} else {
 			// No... Write original PCM data to output stream.
 			wlen += writeToStreamBuffer(buf + wlen, size - wlen);
-			medvdbg("written size : %d\n", wlen);
+			meddbg("written size : %d\n", wlen);
 			break;
 		}
 	}
@@ -147,13 +147,19 @@ bool OutputHandler::processWorker()
 	auto size = this->mBufferReader->sizeOfData();
 	if (this->mIsFlushing) {
 		if (size != 0) {
+			meddbg("flushing...size : %d\n", size);
 			this->writeToSource(size);
 		}
 		std::unique_lock<std::mutex> lock(this->mFlushMutex);
 		this->mIsFlushing = false;
 		this->mFlushCondv.notify_one();
-	} else if (size >= this->mStreamBuffer->getThreshold()) {
-		this->writeToSource(size);
+	} else {
+		auto threshold = this->mStreamBuffer->getThreshold();
+		if (size >= threshold) {
+			auto bufsize = (size / threshold) * threshold;
+			meddbg("threshold : %d, sizeofdata : %d bufsize : %d\n", threshold, size, bufsize);
+			this->writeToSource(threshold);
+		}
 	}
 
 	return true;

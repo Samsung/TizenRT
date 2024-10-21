@@ -36,6 +36,7 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mBuffer = nullptr;
 	mBufSize = 0;
 	mPlaybackFinished = false;
+	mDrainAudioBuf = true;
 }
 
 player_result_t MediaPlayerImpl::create()
@@ -43,7 +44,7 @@ player_result_t MediaPlayerImpl::create()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer create mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer create mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mpw.startWorker();
@@ -78,7 +79,7 @@ player_result_t MediaPlayerImpl::destroy()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer destroy mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer destroy mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -122,7 +123,7 @@ player_result_t MediaPlayerImpl::prepare()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer prepare mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer prepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -188,7 +189,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 player_result_t MediaPlayerImpl::prepareAsync()
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer prepareAsync\n");
+	meddbg("MediaPlayer prepareAsync\n");
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -226,7 +227,7 @@ player_result_t MediaPlayerImpl::unprepare()
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer unprepare mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer unprepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -271,7 +272,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 player_result_t MediaPlayerImpl::start()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer start mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer start mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -314,7 +315,7 @@ void MediaPlayerImpl::startPlayer()
 player_result_t MediaPlayerImpl::stop()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer stop mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer stop mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -332,7 +333,12 @@ void MediaPlayerImpl::stopPlayer(player_result_t ret)
 	LOG_STATE_INFO(mCurState);
 
 	player_result_t errcode = stopPlayback();
+	/* TODO ret is always PLAYER_OK, is ret need to be removed? */
 	if (ret == PLAYER_OK && errcode != PLAYER_OK) {
+		if (errcode == PLAYER_ERROR_PLAYBACK_FINISHED) {
+			meddbg("Playback already Finished, Ignore stop\n");
+			return;
+		}
 		notifyObserver(PLAYER_OBSERVER_COMMAND_STOP_ERROR, errcode);
 	} else {
 		notifyObserver(PLAYER_OBSERVER_COMMAND_STOPPED);
@@ -343,14 +349,41 @@ player_result_t MediaPlayerImpl::stopPlayback()
 {
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	/* Already stopped because playback finished, so do nothing */
-	if (mPlaybackFinished && mCurState == PLAYER_STATE_READY) {
-		return PLAYER_OK;
+	if (mPlaybackFinished) {
+		return PLAYER_ERROR_PLAYBACK_FINISHED;
 	}
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		return PLAYER_ERROR_INVALID_STATE;
 	}
+	size_t offset = 0;
+		while (mDrainAudioBuf) {
+			ssize_t num_read = mInputHandler.copy(mBuffer, (int)mBufSize, offset);
+			medvdbg("num_read : %d\n", num_read);
+			if (num_read > 0) {
+				int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
+				if (ret < 0) {
+					notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+					switch (ret) {
+					case AUDIO_MANAGER_XRUN_STATE:
+						meddbg("AUDIO_MANAGER_XRUN_STATE\n");
+						break;
+					default:
+						meddbg("audio manager error : %d\n", ret);
+						break;
+					}
+					mDrainAudioBuf = false;
+				}
+				offset += num_read;
+			} else if (num_read == 0) {
+				mDrainAudioBuf = false;
+			} else {
+				meddbg("InputDatasource read error\n");
+				notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+				mDrainAudioBuf = false;
+			}
+		}
 
 	mCurState = PLAYER_STATE_READY;
 	mpw.setPlayer(nullptr);
@@ -367,7 +400,7 @@ player_result_t MediaPlayerImpl::stopPlayback()
 player_result_t MediaPlayerImpl::pause()
 {
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer pause mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer pause mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -383,7 +416,8 @@ player_result_t MediaPlayerImpl::pause()
 void MediaPlayerImpl::pausePlayer()
 {
 	LOG_STATE_INFO(mCurState);
-	if (mPlaybackFinished && mCurState == PLAYER_STATE_READY) {
+	if (mPlaybackFinished) {
+		meddbg("Playback already Finished, Ignore Pause\n");
 		return;
 	}
 
@@ -525,7 +559,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setDataSource mPlayer : %x\n", &mPlayer);
+	meddbg("MediaPlayer setDataSource mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -544,6 +578,7 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 {
 	if (mCurState != PLAYER_STATE_IDLE) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
+		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
@@ -746,6 +781,7 @@ void MediaPlayerImpl::playback()
 	if (num_read > 0) {
 		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
+			mDrainAudioBuf = false;
 			notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {
@@ -760,6 +796,7 @@ void MediaPlayerImpl::playback()
 			}
 		}
 	} else if (num_read == 0) {
+		mDrainAudioBuf = false;
 		player_result_t errcode = stopPlayback();
 		mPlaybackFinished = true;
 		if (errcode != PLAYER_OK) {
@@ -769,6 +806,7 @@ void MediaPlayerImpl::playback()
 		}
 	} else {
 		meddbg("InputDatasource read error\n");
+		mDrainAudioBuf = false;
 		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		PlayerWorker &mpw = PlayerWorker::getWorker();
 		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), PLAYER_ERROR_INVALID_OPERATION);

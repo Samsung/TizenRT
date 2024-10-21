@@ -715,6 +715,18 @@ audio_manager_result_t get_keyword_buffer_size(uint32_t *keywordBufferSize);
  ****************************************************************************/
 audio_manager_result_t get_keyword_data(uint8_t *buffer);
 
+/****************************************************************************
+ * Name: prepare_focus_change
+ *
+ * Description:
+ *   Share information of next stream info
+ *
+ * Input parameter:
+ *   info : stream_info_s structure to be gain resource
+ *
+ ****************************************************************************/
+void prepare_focus_change(stream_info_t info);
+
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
  * Name: dump_audio_card_info

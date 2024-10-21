@@ -142,6 +142,7 @@ private:
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
+	bool mDrainAudioBuf;
 };
 } // namespace media
 #endif

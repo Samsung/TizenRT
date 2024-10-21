@@ -101,6 +101,8 @@ void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 	printf("onPlaybackFinished playback index : %d player : %x\n", mPlayIndex, &mp);
 	mPlayIndex++;
 	mIsPlaying = false;
+	mPaused = false;
+	mStopped = true;
 	if (mPlayIndex == mNumContents) {
 		mTrackFinished = true;
 		printf("All Track played, Destroy Player\n");
@@ -166,6 +168,7 @@ void SoundPlayer::onPlaybackStopped(MediaPlayer &mediaPlayer)
 	mStopped = true;
 	mIsPlaying = false;
 	mPaused = false;
+	mp.unprepare();
 }
 
 void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error)
@@ -182,15 +185,18 @@ void SoundPlayer::onFocusChange(int focusChange)
 {
 	player_result_t res;
 	printf("onFousChange player : %x focus : %d isPlaying : %d mPaused : %d\n", &mp, focusChange, mIsPlaying, mPaused);
+	/* TODO TRANSIENT option is not ready but will be supported soon */
 	switch (focusChange) {
 	case FOCUS_GAIN:
+	case FOCUS_GAIN_TRANSIENT:
 		mHasFocus = true;
 		if (mPaused) {
+			printf("it was paused, just start playback now\n");
 			res = mp.start();
 			if (res != PLAYER_OK) {
 				printf("start failed res : %d\n", res);
 			}
-		} else if (!mStopped) { /* Stop case app should start mediaplayer manually */
+		} else {
 			res = startPlayback();
 			if (res != PLAYER_OK) {
 				printf("startPlayback failed res : %d\n", res);
@@ -199,8 +205,12 @@ void SoundPlayer::onFocusChange(int focusChange)
 		break;
 	case FOCUS_LOSS:
 		mHasFocus = false;
+		mp.stop();
+		break;
+	case FOCUS_LOSS_TRANSIENT:
+		mHasFocus = false;
 		if (mIsPlaying) {
-			mp.pause();
+			mp.pause(); //it will be played again
 		}
 		break;
 	default:
