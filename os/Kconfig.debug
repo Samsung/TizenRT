@@ -995,6 +995,40 @@ config DEBUG_TIMER_INFO
 		Enable TIMER informational debug SYSLOG output.
 endif #DEBUG_TIMER
 
+config DEBUG_TOUCH
+        bool "TOUCH Debug Feature"
+        default n
+        depends on TOUCH
+        ---help---
+                Enable TOUCH debug Feature.
+                Support for this debug option is architecture-specific and may not
+                be available for some MCUs.
+
+if DEBUG_TOUCH
+
+config DEBUG_TOUCH_ERROR
+        bool "TOUCH Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable TOUCH error debug SYSLOG output.
+
+config DEBUG_TOUCH_WARN
+        bool "TOUCH Warning Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable TOUCH warning debug SYSLOG output.
+
+config DEBUG_TOUCH_INFO
+        bool "TOUCH Informational Debug Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable TOUCH informational debug SYSLOG output.
+
+endif #DEBUG_TOUCH
+
 config DEBUG_TTRACE
 	bool "T-trace Debug Output"
 	default n
