@@ -77,6 +77,10 @@
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
 #endif
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
+
 
 /************************************************************************************
  * Definitions
@@ -86,6 +90,10 @@
 
 #ifndef CONFIG_ARCH_LOWPUTC
 #error "Architecture must provide up_putc() for this driver"
+#endif
+
+#ifdef CONFIG_PM
+#define PM_UART_DOMAIN "UART"
 #endif
 
 #define uart_putc(ch) up_putc(ch)
@@ -113,6 +121,10 @@ static int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 /************************************************************************************
  * Private Variables
  ************************************************************************************/
+
+#ifdef CONFIG_PM
+static int pm_uart_domain_id = -1;
+#endif 
 
 static const struct file_operations g_serialops = {
 	uart_open,					/* open */
@@ -468,6 +480,11 @@ static ssize_t uart_write(FAR struct file *filep, FAR const char *buffer, size_t
 
 	oktoblock = ((filep->f_oflags & O_NONBLOCK) == 0);
 
+#ifdef CONFIG_PM
+	/* Suspend board sleep to avoid data loss during write */
+	(void)pm_suspend(pm_uart_domain_id);
+#endif
+
 	/* Loop while we still have data to copy to the transmit buffer.
 	 * we add data to the head of the buffer; uart_xmitchars takes the
 	 * data from the end of the buffer.
@@ -558,6 +575,10 @@ static ssize_t uart_write(FAR struct file *filep, FAR const char *buffer, size_t
 		uart_enabletxint(dev);
 	}
 
+#ifdef CONFIG_PM
+	/* Enable board sleep after completing write operation */
+	(void)pm_resume(pm_uart_domain_id);
+#endif
 	uart_givesem(&dev->xmit.sem);
 	return nwritten;
 }
@@ -1213,6 +1234,17 @@ static int uart_open(FAR struct file *filep)
 	FAR uart_dev_t *dev = inode->i_private;
 	uint8_t tmp;
 	int ret;
+
+#ifdef CONFIG_PM
+	/* Register PM_UART_DOMAIN to access PM APIs during UART operations. */
+	if (pm_uart_domain_id == -1) {
+		ret = pm_domain_register(PM_UART_DOMAIN);
+		if (ret < 0) {
+			return ret;
+		}
+		pm_uart_domain_id = ret;
+	}
+#endif
 
 	/* If the port is the middle of closing, wait until the close is finished.
 	 * If a signal is received while we are waiting, then return EINTR.
