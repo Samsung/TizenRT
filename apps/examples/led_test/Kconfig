@@ -1,0 +1,22 @@
+#
+#For a description of the syntax of this configuration file,
+#see kconfig-language at https:	//www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_LED
+	bool "LED example"
+	default n
+	---help---
+		Enable LED Example
+
+if EXAMPLES_LED
+config EXAMPLES_LED_PIN
+	int "LED pin number"
+	default 52
+	---help---
+		Defines LED pin number				
+endif 
+
+config USER_ENTRYPOINT
+	string
+	default "led_test" if ENTRY_LED
