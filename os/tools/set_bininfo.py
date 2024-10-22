@@ -53,7 +53,7 @@ BOARD_TYPE = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"
 
 # Set the kernel bin name as "kernel_[board]_[version].extension"
 if util.check_config_existence(cfg_file, 'CONFIG_BOARD_BUILD_DATE') == True:
-    BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n")
+    BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n").strip()
     BIN_NAME = 'kernel_' + BOARD_TYPE + '_' + BIN_VERSION
 else :
     BIN_NAME = 'kernel_' + BOARD_TYPE
@@ -68,24 +68,24 @@ else :
 
 # Set the user bin name as "app1_[board]_[version]"
 if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
-    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_VER=").rstrip("\n")
+    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_VER=").replace('"','').rstrip("\n").strip()
     USER_BIN_NAME = 'app1_' + BOARD_TYPE + '_' + APP_BIN_VER
     save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 
 # Set the user bin name as "app2_[board]_[version]"
 if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
-    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_VER=").rstrip("\n")
+    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_VER=").replace('"','').rstrip("\n").strip()
     USER_BIN_NAME = 'app2_' + BOARD_TYPE + '_' + APP_BIN_VER
     save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 
 # Set the common bin name as "common_[board]_[version]"
 if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
-    COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n')
+    COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
     COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
     save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
 
 # Set the resource bin name as "resource_[board]_[version]"
 if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
-    RESOURCE_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').rstrip('\n')
+    RESOURCE_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
     RESOURCE_BIN_NAME = 'resource_' + BOARD_TYPE + '_' + RESOURCE_BIN_VER
     save_bininfo(RESOURCE_BIN_NAME + '.' + TARGET_EXT_NAME)
