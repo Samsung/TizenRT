@@ -43,20 +43,20 @@
 #include <tinyara/arch.h>
 
 #ifdef CONFIG_XIP_ELF
-extern void * _stext_flash;
-extern void * _sbss;
-extern void * _ebss;
-extern void * _sdata;
-extern void * _edata;
-extern void * _sdata_app;
-extern void * _sapp_heap;
-extern void * _eapp_heap;
-extern void * _my_entry;
-extern void * _sctors;
-extern void * _ectors;
-extern void * _eapp_flash;
-extern void * _sapp_ram;
-extern void * _eapp_ram;
+extern uint32_t _stext_flash;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _sdata_app;
+extern uint32_t _sapp_heap;
+extern uint32_t _eapp_heap;
+extern uint32_t _my_entry;
+extern uint32_t _sctors;
+extern uint32_t _ectors;
+extern uint32_t _eapp_flash;
+extern uint32_t _sapp_ram;
+extern uint32_t _eapp_ram;
 
 extern int main(int argc, char **argv);
 #endif
