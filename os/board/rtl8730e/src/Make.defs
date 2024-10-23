@@ -76,6 +76,10 @@ ifeq ($(CONFIG_LCD_ST7701SN), y)
 CSRCS += rtl8730e_mipi_lcdc.c
 endif
 
+ifeq ($(CONFIG_TOUCH_IST415),y)
+CSRCS += rtl8730e_ist415.c
+endif
+
 ifeq ($(CONFIG_AUDIO_NDP120),y)
 CSRCS += rtl8730e_ndp120.c
 endif
