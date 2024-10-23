@@ -192,7 +192,7 @@ int i2ccmd_set(FAR struct i2ctool_s *i2ctool, int argc, FAR char **argv)
 
 		/* Display the result */
 
-		if (ret == OK) {
+		if (ret > 0) {
 			i2ctool_printf(i2ctool, "WROTE Bus: %d Addr: %02x Subaddr: %02x Value: ", i2ctool->bus, i2ctool->addr, i2ctool->regaddr);
 			if (i2ctool->width == 8) {
 				i2ctool_printf(i2ctool, "%02x\n", (int)value);
@@ -249,7 +249,7 @@ int i2ctool_set(FAR struct i2ctool_s *i2ctool, FAR struct i2c_dev_s *dev, uint8_
 
 	if (i2ctool->start) {
 		ret = I2C_TRANSFER(dev, &msg[0], 1);
-		if (ret == OK) {
+		if (ret > 0) {
 			ret = I2C_TRANSFER(dev, &msg[1], 1);
 		}
 	} else {
