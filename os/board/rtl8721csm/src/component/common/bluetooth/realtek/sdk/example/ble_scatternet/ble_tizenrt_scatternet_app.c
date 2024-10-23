@@ -486,17 +486,17 @@ int ble_tizenrt_scatternet_handle_upstream_msg(uint16_t subtype, void *pdata)
         {
             ret = le_adv_start();
             if(GAP_CAUSE_SUCCESS == ret)
-                dbg("[Upstream] Start Adv Success \n");
+                debug_print("[Upstream] Start Adv Success \n");
             else
                 dbg("[Upstream] Start Adv Fail !! 0x%x \n", ret);
         }
 			break;
 		case BLE_TIZENRT_MSG_STOP_ADV:
 			ret = le_adv_stop();
-			if(GAP_CAUSE_SUCCESS == ret)
-                           dbg("[Upstream] Stop Adv Success \n");
-                       else
-                           dbg("[Upstream] Stop Adv Fail !! 0x%x \n", ret);
+            if(GAP_CAUSE_SUCCESS == ret)
+                debug_print("[Upstream] Stop Adv Success \n");
+            else
+                dbg("[Upstream] Stop Adv Fail !! 0x%x \n", ret);
 			break;
         case BLE_TIZENRT_MSG_DISCONNECT:
         {
@@ -699,7 +699,7 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
     APP_PRINT_INFO3("ble_tizenrt_scatternet_app_handle_dev_state_evt: init state  %d, scan state %d, cause 0x%x",
                     new_state.gap_init_state,
                     new_state.gap_scan_state, cause);
-    dbg("init state  %d, scan state %d, conn_state %d, adv_state %d, cause 0x%x \n",
+    debug_print("init state  %d, scan state %d, conn_state %d, adv_state %d, cause 0x%x \n",
                     new_state.gap_init_state,
                     new_state.gap_scan_state,
                     new_state.gap_conn_state,
