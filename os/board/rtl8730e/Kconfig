@@ -91,6 +91,21 @@ config RTL8730E_BOARD_REVISION
 		Select the board revision.
 		The pins of the peripherals may differ depending on this
 
+choice
+    prompt "Board Memory Type"
+    default RAM_DDR
+
+    config RAM_DDR
+        bool "RAM_DDR"
+        help
+            Board with DDR Memory
+
+    config RAM_PSRAM
+    bool "RAM_PSRAM"
+        help
+            Board with PSRAM Memory
+endchoice
+
 config FLASH_SIZE
     int
     default 8388608 if BOARD_FLASH_8M
