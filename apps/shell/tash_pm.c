@@ -74,3 +74,21 @@ void tash_pm_timedsuspend(uint32_t milliseconds)
 		shdbg("Unable to timedsuspend the %s domain for %d ms, error = %d\n", TASH_PM_DOMAIN_NAME, milliseconds, get_errno());
 	}
 }
+
+void tash_pm_suspend(void)
+{
+	if (pmdrv_fd < 0) {
+		shdbg("First open pm driver using tash_pm_open_driver() to register %s domain\n", TASH_PM_DOMAIN_NAME);
+	} else if (ioctl(pmdrv_fd, PMIOC_SUSPEND, tash_pm_get_domain_id()) != OK) {
+		shdbg("tash_pm_suspend failed(%d)\n", get_errno());
+	}
+}
+
+void tash_pm_resume(void)
+{
+	if (pmdrv_fd < 0) {
+		shdbg("First open pm driver using tash_pm_open_driver() to register %s domain\n", TASH_PM_DOMAIN_NAME);
+	} else if (ioctl(pmdrv_fd, PMIOC_RESUME, tash_pm_get_domain_id()) != OK) {
+		shdbg("tash_pm_resume failed(%d)\n", get_errno());
+	}
+}

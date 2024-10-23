@@ -135,6 +135,7 @@ char *tash_read_input_line(int fd)
 #if !defined(CONFIG_DISABLE_POLL)
 	fd_set tfd;
 	struct timeval stimeout;
+	int ret;
 	stimeout.tv_sec = SELECT_TIMEOUT_SECS;
 	stimeout.tv_usec = SELECT_TIMEOUT_USECS;
 #endif
@@ -151,8 +152,15 @@ char *tash_read_input_line(int fd)
 #if !defined(CONFIG_DISABLE_POLL)
 		FD_ZERO(&tfd);
 		FD_SET(fd, &tfd);
-
-		if ((select(fd + 1, &tfd, NULL, NULL, &stimeout)) && FD_ISSET(fd, &tfd)) {
+		ret = select(fd + 1, &tfd, NULL, NULL, &stimeout);
+#ifdef CONFIG_PM
+		tash_pm_suspend();
+#endif
+		if ((ret > 0) && FD_ISSET(fd, &tfd)) {
+#ifdef CONFIG_PM
+			/* Ensure board does not go to sleep for TASH_PM_TIMEDSUSPEND_TIME_IN_MS*/
+			tash_pm_timedsuspend(TASH_PM_TIMEDSUSPEND_TIME_IN_MS);
+#endif
 #endif
 			/* read characters */
 			nbytes = read(fd, &buffer[pos], (bufsize - pos));
@@ -160,10 +168,6 @@ char *tash_read_input_line(int fd)
 				shdbg("TASH: can not read uart\n");
 				return buffer;
 			}
-#ifdef CONFIG_PM
-			/* Ensure board does not go to sleep for TASH_PM_TIMEDSUSPEND_TIME_IN_MS*/
-			tash_pm_timedsuspend(TASH_PM_TIMEDSUSPEND_TIME_IN_MS);
-#endif
 			for (char_idx = 0; char_idx < nbytes; char_idx++) {
 
 				if ((CURR_CHAR == ASCII_BS) || (CURR_CHAR == ASCII_DEL)) {
@@ -293,6 +297,9 @@ char *tash_read_input_line(int fd)
 #endif
 #if !defined(CONFIG_DISABLE_POLL)
 		}
+#ifdef CONFIG_PM
+		tash_pm_resume();
+#endif
 #endif
 	} while (PREV_CHAR != ASCII_LF);
 
