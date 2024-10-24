@@ -272,7 +272,7 @@ int pm_metrics(int milliseconds)
 	/* Avoid board sleep during PM Metrics initialization */
 	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 	/* Allocate memory for initializing PM Metrics measurements */
-	g_pm_metrics = pm_alloc(1, sizeof(pm_metric_t));
+	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
 		set_errno(ENOMEM);
 		pmdbg("Unable to initialize pm_metrics, error = %d\n", get_errno());
