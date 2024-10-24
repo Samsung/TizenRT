@@ -183,6 +183,25 @@ void scan_stop_cb(void *arg)
 	} while(new_state.gap_scan_state != GAP_SCAN_STATE_IDLE);
 }
 
+trble_result_e rtw_ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type)
+{
+	rtk_bt_le_scan_param_t gap_scan_param;
+	gap_scan_param.type = scan_type;
+	gap_scan_param.interval = scan_interval;
+	gap_scan_param.window = scan_window;
+	gap_scan_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
+	gap_scan_param.filter_policy = RTK_BT_LE_SCAN_FILTER_ALLOW_ALL;
+	gap_scan_param.duplicate_opt = RTK_BT_LE_SCAN_DUPLICATE_DISABLE;
+	if(RTK_BT_OK != rtk_bt_le_gap_set_scan_param(&gap_scan_param))
+	{
+		printf("rtw_ble_client_set_scan set scan fail !! \n");
+		return TRBLE_FAIL;
+	} else {
+		printf("rtw_ble_client_set_scan set scan success !! \n");
+		return TRBLE_SUCCESS;
+	}
+}
+
 trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable)
 { 
     if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || scan_parm == NULL)

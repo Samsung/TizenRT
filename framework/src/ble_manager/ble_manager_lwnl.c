@@ -147,6 +147,17 @@ trble_result_e ble_drv_ioctl(trble_msg_s *dmsg)
 }
 
 /*** Scanner(Observer) ***/
+trble_result_e ble_drv_set_scan(uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&scan_interval, (void *)&scan_window, (void *)&scan_type} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_SCAN}, sizeof(msg_data), (void *)(&msg_data), (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter)
 {
 	trble_result_e res = TRBLE_SUCCESS;

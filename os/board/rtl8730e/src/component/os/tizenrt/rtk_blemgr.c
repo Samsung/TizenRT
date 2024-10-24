@@ -65,6 +65,7 @@ trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_han
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
+trble_result_e trble_netmgr_set_scan(struct bledev *dev, uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type);
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter);
 trble_result_e trble_netmgr_stop_scan(struct bledev *dev);
 trble_result_e trble_netmgr_scan_whitelist_add(struct bledev *dev, trble_addr *addr);
@@ -129,6 +130,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_ioctl,
 
 	// Observer
+	trble_netmgr_set_scan,
 	trble_netmgr_start_scan,
 	trble_netmgr_stop_scan,
 	trble_netmgr_scan_whitelist_add,
@@ -293,6 +295,11 @@ trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
 }
 
 /*** Scanner(Observer) ***/
+trble_result_e trble_netmgr_set_scan(struct bledev *dev, uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type)
+{
+	return rtw_ble_client_set_scan(scan_interval, scan_window, scan_type);
+}
+
 trble_result_e trble_netmgr_start_scan(struct bledev *dev, trble_scan_filter *filter)
 {
 	return rtw_ble_client_start_scan_with_filter(filter, filter->whitelist_enable);
