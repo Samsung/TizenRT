@@ -183,7 +183,6 @@ enum pm_state_e {
 								 */
 	PM_COUNT,
 };
-static const char *pm_state_name[PM_COUNT] = {"PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP"};
 
 /* This enumeration provides all power management related wakeup source code. */
 
@@ -198,9 +197,6 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
-#ifdef CONFIG_PM_METRICS
-static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
-#endif
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.

@@ -51,6 +51,7 @@ typedef struct pm_metric_s pm_metric_t;
 
 static pm_metric_t *g_pm_metrics;
 static bool g_pm_metrics_running = false;
+static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
 
 static void pm_print_metrics(double total_time, int n_domains)
 {
@@ -272,7 +273,7 @@ int pm_metrics(int milliseconds)
 	/* Avoid board sleep during PM Metrics initialization */
 	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 	/* Allocate memory for initializing PM Metrics measurements */
-	g_pm_metrics = pm_alloc(1, sizeof(pm_metric_t));
+	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
 		set_errno(ENOMEM);
 		pmdbg("Unable to initialize pm_metrics, error = %d\n", get_errno());

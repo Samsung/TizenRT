@@ -148,6 +148,8 @@ static int power_stat(const char *relpath, FAR struct stat *buf);
 #define POWER_LEVEL_3   3
 #define POWER_LEVEL_4   4
 
+static const char *pm_state_name[PM_COUNT] = {"PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP"};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -230,7 +232,7 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 		}
 		return ERROR;
 	}
-	str = relpath;
+	str = (char *)relpath;
 	dir->domain_id = -1;
 	/* Check relpath has "power" mount point */
 	if (checkStart(POWER, true) == OK) {
@@ -350,7 +352,6 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	size_t totalsize;
 	int domain_id;
 	int last_read;
-	int pm_state;
 	/* Function to copy domain information into buffer */
 	void readprint(const char *format, ...) {
 		size_t copysize;
