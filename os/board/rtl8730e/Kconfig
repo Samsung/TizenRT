@@ -58,11 +58,6 @@ choice
     prompt "Board Flash Size"
     default BOARD_FLASH_32M
 
-config BOARD_FLASH_8M
-    bool "8 Mbyte"
-    help
-        Board with flash 8Mbyte size
-
 config BOARD_FLASH_16M
     bool "16 Mbyte"
     help
@@ -108,7 +103,6 @@ endchoice
 
 config FLASH_SIZE
     int
-    default 8388608 if BOARD_FLASH_8M
     default 16777216 if BOARD_FLASH_16M
     default 33554432 if BOARD_FLASH_32M
     help
@@ -130,7 +124,8 @@ config USERFS_EXT_MNTPT
 
 config FLASH_STATUS_BITS
 	hex
-	default 0x28
+	default 0x28 if BOARD_FLASH_16M
+	default 0x50 if BOARD_FLASH_32M
 	---help---
 		Setting this value according to the IC package's Flash Model.
 		To protect the lower 512KB of the flash memory.
@@ -146,7 +141,6 @@ config AMEBASMART_FLASH_BASE
 
 config AMEBASMART_FLASH_CAPACITY
     hex
-    default 0x800000 if BOARD_FLASH_8M
     default 0x1000000 if BOARD_FLASH_16M
     default 0x2000000 if BOARD_FLASH_32M
     help
