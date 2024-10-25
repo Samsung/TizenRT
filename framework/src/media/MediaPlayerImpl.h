@@ -123,7 +123,7 @@ private:
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
-	player_result_t stopPlayback();
+	player_result_t stopPlayback(bool drain);
 	void pausePlayer();
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
@@ -142,7 +142,6 @@ private:
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
-	bool mDrainAudioBuf;
 };
 } // namespace media
 #endif

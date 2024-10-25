@@ -178,7 +178,7 @@ static int oops(struct pcm *pcm, int e, const char *fmt, ...)
 	sz = strlen(pcm->error);
 
 	if (errno) {
-		snprintf(pcm->error + sz, PCM_ERROR_MAX - sz, " : %s errno : %d", strerror(e), errno);
+		snprintf(pcm->error + sz, PCM_ERROR_MAX - sz, ": %s errno : %d", strerror(e), errno);
 	}
 	return -1;
 }
@@ -778,7 +778,7 @@ int pcm_close(struct pcm *pcm)
 		}
 		free(pcm->pBuffers);
 	}
-	auddbg("pcm_closed!!!!!!!!!!!\n");
+
 	mq_unlink(pcm->mqname);
 
 	close(pcm->fd);
@@ -933,7 +933,6 @@ struct pcm *pcm_open(unsigned int card, unsigned int device, unsigned int flags,
 		pcm->pBuffers[x]->curbyte = 0;
 		pcm->pBuffers[x]->flags = 0;
 	}
-	auddbg("pcm opened!!!!!!!!!!!!!\n");
 
 	pcm->prepared = 0;
 	pcm->running = 0;

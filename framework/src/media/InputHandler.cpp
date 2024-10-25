@@ -17,6 +17,7 @@
  ******************************************************************/
 
 #include <tinyara/config.h>
+
 #include <debug.h>
 #include <pthread.h>
 #include <media/MediaUtils.h>
@@ -105,17 +106,6 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 
 	if (mBufferReader) {
 		rlen = mBufferReader->read(buf, size);
-	}
-
-	return (ssize_t)rlen;
-}
-
-ssize_t InputHandler::copy(unsigned char *buf, size_t size, size_t offset)
-{
-	size_t rlen = 0;
-
-	if (mBufferReader) {
-		rlen = mBufferReader->copy(buf, size, offset);
 	}
 
 	return (ssize_t)rlen;

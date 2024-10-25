@@ -49,7 +49,6 @@ public:
 	bool open() override;
 	bool close() override;
 	ssize_t read(unsigned char *buf, size_t size);
-	ssize_t copy(unsigned char *buf, size_t size, size_t offset);
 
 	void setBufferState(buffer_state_t state);
 

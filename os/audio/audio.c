@@ -504,7 +504,7 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case AUDIOIOC_PAUSE: {
 		if (lower->ops->pause != NULL) {
 
-			auddbg("AUDIOIOC_PAUSE started : %d\n", upper->started);
+			audvdbg("AUDIOIOC_PAUSE started : %d\n", upper->started);
 
 			if (upper->started) {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -528,7 +528,7 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case AUDIOIOC_RESUME: {
 
 		if (lower->ops->resume != NULL) {
-			auddbg("AUDIOIOC_RESUME started : %d\n", upper->started);
+			audvdbg("AUDIOIOC_RESUME started : %d\n", upper->started);
 
 			if (upper->started) {
 #ifdef CONFIG_AUDIO_MULTI_SESSION

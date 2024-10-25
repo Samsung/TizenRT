@@ -280,7 +280,7 @@ player_result_t SoundPlayer::startPlayback(void)
 	player_result_t res = PLAYER_OK;
 	string s = mList.at(mPlayIndex);
 	printf("startPlayback... playIndex : %d path : %s\n", mPlayIndex, s.c_str());
-	usleep(200000); //add some delay to prevent playback immediately in focus gain state
+	usleep(200000);
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
 	source->setSampleRate(mSampleRate);
 	source->setChannels(DEFAULT_CHANNEL_NUM);
