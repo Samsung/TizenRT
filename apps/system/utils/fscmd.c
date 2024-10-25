@@ -324,11 +324,16 @@ static int tash_cat(int argc, char **args)
 			memset(fscmd_buffer, 0, FSCMD_BUFFER_LEN);
 			read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
 			if (read_size > 0) {
+				int output_size = 0;
 				fscmd_buffer[read_size] = '\0';
-				FSCMD_OUTPUT("%s", fscmd_buffer);
+				while (output_size < read_size) {
+					FSCMD_OUTPUT("%c", fscmd_buffer[output_size++]);
+					if (output_size % 100 == 0) {
+						FSCMD_OUTPUT("\n");
+					}
+				}
 			}
 		} while (read_size > 0);
-
 		FSCMD_OUTPUT("\n");
 	} else if (argc == 4) {
 		/* Below is redirection case */
