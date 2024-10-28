@@ -240,7 +240,7 @@ audio_manager_result_t stop_audio_stream_in(void);
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_out(void);
+audio_manager_result_t stop_audio_stream_out(bool drain);
 
 /****************************************************************************
  * Name: reset_audio_stream_in
@@ -249,6 +249,9 @@ audio_manager_result_t stop_audio_stream_out(void);
  *   Close the active input audio stream.
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_in().
+ *
+ * Input parameter:
+ *   drain: If true Drain pcm data before stop, otherwise drop
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.

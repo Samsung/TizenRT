@@ -615,15 +615,11 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
-		GDMA_Cmd(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum, DISABLE);
-		/* This function will do a deinit in the gdma channe, left here for future reference
-		 * GDMA_ChnlFree(SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
-		 */
-
+		GDMA_Abort(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
 		if (is_suspend) {
-			GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
 			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 		}
 	} else {
@@ -645,7 +641,9 @@ void ameba_i2s_pause(i2s_t *obj) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 	if (obj->direction == I2S_DIR_TX) {
-		GDMA_Suspend(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
 	} else {
 		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 	}
@@ -660,7 +658,8 @@ void ameba_i2s_resume(i2s_t *obj) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 	if (obj->direction == I2S_DIR_TX) {
-		GDMA_Resume(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
 	} else {
 		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 	}

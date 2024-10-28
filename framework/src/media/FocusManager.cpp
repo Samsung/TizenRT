@@ -96,10 +96,13 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 
 	/* If the policy of request is the highest prio */
 	if (FocusRequester::compare(*focusRequester, *(*iter))) {
+		
 		mFocusList.front()->notify(FOCUS_LOSS);
+		/* TODO add usleep as a temp code. gain should not be shared until prev player stop properly */
+		usleep(100000);
 		mFocusList.push_front(focusRequester);
 		focusRequester->notify(FOCUS_GAIN);
-
+		usleep(100000);
 		return FOCUS_REQUEST_SUCCESS;
 	}
 

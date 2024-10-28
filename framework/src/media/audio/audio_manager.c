@@ -763,7 +763,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card_config = &card->config[card->device_id];
-
+	medvdbg("[%s] state : %d\n", __func__, card_config->status);
 	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
 		reset_audio_stream_out();
@@ -779,8 +779,12 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	config.channels = channel_num;
 	medvdbg("[OUT] Device samplerate: %u, User requested: %u\n", config.rate, sample_rate);
 	medvdbg("[OUT] Device channel: %u, User requested: %u\n", config.channels, channels);
-	card->pcm = pcm_open(g_actual_audio_out_card_id, card->device_id, PCM_OUT, &config);
-
+	if (pcm_is_ready(card->pcm)) {
+		meddbg("card is already in use, reuse it!!\n");
+	} else {
+		card->pcm = pcm_open(g_actual_audio_out_card_id, card->device_id, PCM_OUT, &config);
+	}
+	/* check reserve state of card again */
 	if (!pcm_is_ready(card->pcm)) {
 		meddbg("fail to pcm_is_ready() error : %s", pcm_get_error(card->pcm));
 		ret = AUDIO_MANAGER_CARD_NOT_READY;
@@ -1008,6 +1012,7 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct)
 
 	card = (direct == INPUT) ? (&g_audio_in_cards[card_id]) : (&g_audio_out_cards[card_id]);
 	status = &(card->config[card->device_id].status);
+	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
 	pthread_mutex_lock(&(card->card_mutex));
 
@@ -1056,6 +1061,7 @@ audio_manager_result_t stop_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
 	pthread_mutex_lock(&(card->card_mutex));
 
@@ -1073,7 +1079,7 @@ audio_manager_result_t stop_audio_stream_in(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t stop_audio_stream_out(void)
+audio_manager_result_t stop_audio_stream_out(bool drain)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
@@ -1086,17 +1092,18 @@ audio_manager_result_t stop_audio_stream_out(void)
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	pthread_mutex_lock(&(card->card_mutex));
-	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
-		if ((ret = pcm_drop(card->pcm)) < 0) {
-			meddbg("pcm_drop faled, ret = %d\n", ret);
-		}
-	} else {
+	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
+	if (drain) {
 		if ((ret = pcm_drain(card->pcm)) < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
 				meddbg("pcm_drain faled, ret = %d\n", ret);
 			}
+		}
+	} else {
+		if ((ret = pcm_drop(card->pcm)) < 0) {
+			meddbg("pcm_drop faled, ret = %d\n", ret);
 		}
 	}
 	card->config[card->device_id].status = AUDIO_CARD_READY;
@@ -1156,6 +1163,7 @@ audio_manager_result_t reset_audio_stream_out(void)
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
+	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
 	pcm_close(card->pcm);
 	card->pcm = NULL;

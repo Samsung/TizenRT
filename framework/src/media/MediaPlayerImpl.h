@@ -123,7 +123,7 @@ private:
 	void unpreparePlayer(player_result_t &ret);
 	void startPlayer();
 	void stopPlayer(player_result_t ret);
-	player_result_t stopPlayback();
+	player_result_t stopPlayback(bool drain);
 	void pausePlayer();
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
@@ -134,6 +134,7 @@ private:
 private:
 	MediaPlayer &mPlayer;
 	std::atomic<player_state_t> mCurState;
+	std::atomic<bool> mPlaybackFinished;
 	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;

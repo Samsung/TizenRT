@@ -796,6 +796,8 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* Take semaphore */
 		syu645b_takesem(&priv->devsem);
 
+		syu645b_setvolume(priv);
+
 		/* Pause i2s channel */
 		I2S_PAUSE(priv->i2s, I2S_TX);
 		
