@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 #ifndef __LINUX_KERNEL__
 #include <stdint.h>
@@ -645,6 +645,108 @@ int syntiant_ndp120_posterior_config(
 
     s0 = (ndp->iif.unsync)(ndp->iif.d);
     s = s ? s : s0;
+error:
+    return s;
+}
+
+static int syntiant_ndp120_custom_posterior_handler_no_sync(
+    struct syntiant_ndp_device_s *ndp,
+    struct syntiant_posterior_handler_s *cfg)
+{
+    int s = SYNTIANT_NDP_ERROR_NONE;
+    uint32_t addr = NDP120_MCU_OPEN_RAM_BGN;
+    uint32_t length =  (uint32_t)sizeof(*cfg) + cfg->length;
+    void *payload = cfg + 1;
+
+    addr += (uint32_t)sizeof(uint32_t);
+    /* write total length */
+    s = syntiant_ndp120_write_block(
+        ndp, SYNTIANT_NDP120_MCU, addr, &length, sizeof(length));
+    if (s) goto error;
+
+    addr += (uint32_t)sizeof(length);
+    /* write *cfg struct */
+    s = syntiant_ndp120_write_block(
+        ndp, SYNTIANT_NDP120_MCU, addr, cfg, sizeof(*cfg));
+    if (s) goto error;
+
+    if (cfg->op != NDP120_PH_OP_READ ||
+        cfg->op != NDP120_PH_OP_ATTACH_NN) {
+        addr += (uint32_t)sizeof(*cfg);
+        /* write payload */
+        s = syntiant_ndp120_write_block(
+            ndp, SYNTIANT_NDP120_MCU, addr, payload, cfg->length);
+        if (s) goto error;
+    }
+
+    /* send command */
+    s = syntiant_ndp120_do_mailbox_req_no_sync(ndp,
+        NDP_MBIN_REQUEST_POSTERIOR_HANDLER, NULL);
+    if (s) goto error;
+
+    memset(payload, 0, cfg->length);
+    addr = NDP120_MCU_OPEN_RAM_RESULTS;
+    /* read payload */
+    s = syntiant_ndp120_read_block(
+        ndp, SYNTIANT_NDP120_MCU, addr, payload, cfg->length);
+    if (s) goto error;
+
+error:
+    return s;
+}
+
+int syntiant_ndp120_get_posterior_type(struct syntiant_ndp_device_s *ndp,
+                                       uint32_t nn_id, uint32_t* ph_id)
+{
+    int s = SYNTIANT_NDP_ERROR_NONE;
+    syntiant_ndp120_device_t *ndp120 = &ndp->d.ndp120;
+    uint32_t fw_state_addr = ndp120->mcu_fw_state_addr;
+    uint32_t offset;
+
+    if (!fw_state_addr) {
+        s = SYNTIANT_NDP_ERROR_UNINIT;
+        goto out;
+    }
+    offset = offsetof(struct ndp120_fw_state_s, ph_types);
+    s = syntiant_ndp120_read(ndp, 1,
+        fw_state_addr + offset + (uint32_t)sizeof(uint32_t) * nn_id,
+        ph_id);
+    if (s) goto out;
+    DEBUG_PRINTF("posterior type: %d for network:%d\n", *ph_id, nn_id);
+out:
+    return s;
+}
+
+int syntiant_ndp120_custom_posterior_handler(
+    struct syntiant_ndp_device_s *ndp,
+    struct syntiant_posterior_handler_s *cfg)
+{
+    int s;
+
+    if (cfg->id >= MAX_PH_ALGOS ||
+        cfg->op > NDP120_PH_OP_ATTACH_NN ||
+        cfg->length > SYNTIANT_POSTERIOR_HANDLER_DATA_MAXLEN ||
+        cfg->nn_id >= MAX_NNETWORKS) {
+        s = SYNTIANT_NDP_ERROR_ARG;
+        goto error;
+    }
+
+    s = (ndp->iif.sync)(ndp->iif.d);
+    if (s) {
+        DEBUG_PRINTF("Error in syntiant_ndp120_posterior_config\n");
+        goto error;
+    }
+
+    s = syntiant_ndp120_custom_posterior_handler_no_sync(ndp, cfg);
+    if (s) {
+        goto error;
+    }
+
+    s = (ndp->iif.unsync)(ndp->iif.d);
+    if (s) {
+        goto error;
+    }
+
 error:
     return s;
 }
