@@ -30,6 +30,12 @@ CSRCS += syntiant_ndp_error.c
 CSRCS += syntiant_package.c
 CSRCS += syntiant_portability.c
 
+# This should be set to the host processor clock frequency value
+CPU_FREQ ?= 1200000000
+EXTRACT_WINDOW_UTILIZATION ?= 50
+CFLAGS += -DCPU_FREQUENCY=$(CPU_FREQ)
+CFLAGS += -DEXTRACT_WINDOW_UTILIZATION=$(EXTRACT_WINDOW_UTILIZATION)
+
 CFLAGS += -I $(TOPDIR)/drivers/ai-soc/ndp120/include -DEXCLUDE_SYNTIANT_CORE_1
 endif
 

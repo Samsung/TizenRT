@@ -28,9 +28,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+    ** SDK: v112.3.5-Samsung **
 */
-
 
 /*
  * NOTE:
@@ -64,6 +63,7 @@ extern "C" {
 /* mcu open ram contiguous memory space */
 #define NDP120_MCU_OPEN_RAM_BGN     (NDP120_MCU_OPEN_RAM_START + NDP120_DSP_MB_H2D_SIZE + NDP120_DSP_MB_D2H_SIZE)
 #define NDP120_MCU_OPEN_RAM_MATCH_RESULTS (0x20007794U)
+/* last 8 bytes of open ram is used to store mb state in ilib */
 #define NDP120_MCU_OPEN_RAM_MATCH_RESULTS_END (0x200077F8U)
 #define NDP120_MCU_OPEN_RAM_END     (0x20007800U)
 #define NDP120_MCU_TINY_OPEN_RAM_END (0x20007C00U)
@@ -191,6 +191,8 @@ struct ndp120_fw_state_s {
     uint32_t tank_size;
     uint32_t tank_full;
     uint32_t result_fifo_full;
+
+    uint32_t fw_wake_count;
 
     /* interrupt counters*/
     uint32_t mb_int_count;

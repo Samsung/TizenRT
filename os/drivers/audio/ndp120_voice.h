@@ -68,13 +68,21 @@ struct ndp120_dev_s {
 #endif
 	struct ndp120_lower_s *lower;
 	bool recording; /* during recording we ignore main keyword detections */
-	sem_t sample_ready_signal; /* this sem will signal us when there is data to fetch from the mic */
-	sem_t mailbox_signal; /* this sem will signal from IRQ [to mbwait] upon mailbox msg */
 	bool ndp_interrupts_enabled; /* used by mbwait to determine whether wait for sem or poll */
 	char *labels_per_network[MAX_NNETWORKS][MAX_LABELS];
 	uint32_t sample_size;
 	uint32_t sample_size_orig_annot;
 	uint8_t *keyword_buffer;
+	uint32_t extract_size;
+
+	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
+	pthread_mutex_t ndp_mutex_mbsync;
+
+	pthread_mutex_t ndp_mutex_mcu_mb_in;
+	pthread_cond_t ndp_cond_mcu_mb_in;
+
+	pthread_mutex_t ndp_mutex_notification_sample;
+	pthread_cond_t ndp_cond_notification_sample;
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */

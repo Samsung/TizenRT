@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 
 
@@ -192,8 +192,8 @@ extern struct posterior_template_s gPh[MAX_PH_ALGOS];
 
 enum ph_type_e {
     NDP120_PH_SCP = 0,
-    NDP120_PH_MCP = 1
     /*add user defined algorithm type (ph type) here*/
+    NDP120_PH_CUSTOM = 1
 };
 
 #ifndef X86_64

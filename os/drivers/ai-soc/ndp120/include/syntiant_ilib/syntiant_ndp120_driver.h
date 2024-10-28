@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 /*
  * ILib-internal NDP120 driver-specific definitions
@@ -119,6 +119,8 @@ typedef struct syntiant_ndp120_device_s {
     uint32_t dsp_pcm_audio_annotation_last_ptr;
     uint32_t dsp_function_sample_last_ptr;
     uint32_t dsp_sensor_sample_last_ptr;
+    uint32_t dsp_sampletank_mem_type;
+    uint32_t extract_percentage;
 
     unsigned int dnn_input;
     unsigned int input_clock_rate;
