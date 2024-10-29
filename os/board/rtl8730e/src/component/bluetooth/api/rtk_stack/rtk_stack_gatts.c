@@ -405,27 +405,20 @@ static void bt_stack_gatts_handle_pending_indicate(uint8_t conn_id)
 #endif
 }
 
-static rtk_bt_gatts_req_t *bt_stack_gatts_remove_sent_req(bool *notify, uint16_t conn_id, uint16_t app_id, uint16_t index)
+static rtk_bt_gatts_req_t *bt_stack_gatts_remove_sent_req(bool notify, uint16_t conn_id, uint16_t app_id, uint16_t index)
 {
 	rtk_bt_gatts_req_t *req, *next;
 	rtk_bt_gatt_queue_t *queue;
 
-	queue = &g_rtk_bt_gatts_priv->notify_queue[conn_id];
-	list_for_each_entry_safe(req, next, &queue->pending_list, list, rtk_bt_gatts_req_t) {
-		if ((req->app_id == app_id) && (req->index == index)) {
-			list_del(&req->list);
-			queue->pending_ele_num--;
-			*notify = true;
-			return req;
-		}
+	if (true == notify) {
+		queue = &g_rtk_bt_gatts_priv->notify_queue[conn_id];
+	} else {
+		queue = &g_rtk_bt_gatts_priv->indicate_queue[conn_id];
 	}
-
-	queue = &g_rtk_bt_gatts_priv->indicate_queue[conn_id];
 	list_for_each_entry_safe(req, next, &queue->pending_list, list, rtk_bt_gatts_req_t) {
 		if ((req->app_id == app_id) && (req->index == index)) {
 			list_del(&req->list);
 			queue->pending_ele_num--;
-			*notify = false;
 			return req;
 		}
 	}
@@ -515,15 +508,24 @@ static T_APP_RESULT bt_stack_gatts_evt_send_data_complete(T_SERVER_APP_CB_DATA *
 	uint16_t index = p_param->event_data.send_data_result.attrib_idx;
 	uint8_t conn_id = p_param->event_data.send_data_result.conn_id;
 	uint16_t cause = p_param->event_data.send_data_result.cause;
+	T_GATT_PDU_TYPE data_type = p_param->event_data.send_data_result.data_type;
 	struct rtk_bt_gatt_service *p_srv_node = NULL;
 	rtk_bt_gatts_req_t *req = NULL;
 	bool notify = false;
+
+	if (GATT_PDU_TYPE_NOTIFICATION == data_type) {
+		notify = true;
+	} else if (GATT_PDU_TYPE_INDICATION == data_type) {
+		notify = false;
+	} else {
+		return APP_RESULT_APP_ERR;
+	}
 
 	p_srv_node = bt_stack_gatts_find_service_node_by_server_id(server_id);
 	if(!p_srv_node)
 		return APP_RESULT_APP_ERR;
 
-	req = bt_stack_gatts_remove_sent_req(&notify, conn_id, p_srv_node->app_id, index);
+	req = bt_stack_gatts_remove_sent_req(notify, conn_id, p_srv_node->app_id, index);
 
 	if (!req || !gatts_indicate_data_send_compelete(notify, cause, req, L2C_FIXED_CID_ATT))
 		return APP_RESULT_APP_ERR;
@@ -579,6 +581,14 @@ static void bt_stack_gatts_send_data_cb(T_EXT_SEND_DATA_RESULT result)
 	uint8_t conn_id;
 	bool notify;
 
+	if (GATT_PDU_TYPE_NOTIFICATION == result.data_type) {
+		notify = true;
+	} else if (GATT_PDU_TYPE_INDICATION == result.data_type) {
+		notify = false;
+	} else {
+		return;
+	}
+
 	p_srv_node = bt_stack_gatts_find_service_node_by_server_id(result.service_id);
 	if(!p_srv_node)
 		return;
@@ -586,7 +596,7 @@ static void bt_stack_gatts_send_data_cb(T_EXT_SEND_DATA_RESULT result)
 	if (!le_get_conn_id_by_handle(result.conn_handle, &conn_id))
 		return;
 
-	req = bt_stack_gatts_remove_sent_req(&notify, conn_id, p_srv_node->app_id, result.attrib_idx);
+	req = bt_stack_gatts_remove_sent_req(notify, conn_id, p_srv_node->app_id, result.attrib_idx);
 	if (req) {
 		gatts_indicate_data_send_compelete(notify, result.cause, req, result.cid);
 	}
@@ -843,15 +853,13 @@ static uint16_t bt_stack_uuid16_attr_convert(uint16_t gatt_type, rtk_bt_gatt_att
 			p_stack_gatt_attr->type_value[1] = HI_WORD(uuid16);
 			p_stack_gatt_attr->value_len = 0;
 			p_stack_gatt_attr->p_value_context = p_bt_stack_attr_tbl;
-			p_stack_gatt_attr->permissions = GATT_PERM_READ;			
+			p_stack_gatt_attr->permissions = GATT_PERM_READ;
 			break;
 		}
 
 		case GATT_UUID_CHARACTERISTIC:
 		{
 			struct rtk_bt_gatt_chrc *char_attr_val = (struct rtk_bt_gatt_chrc *)p_app_gatt_attr->user_data;
-			if((char_attr_val->properties & 0x10) && (char_attr_val->properties & 0x20))
-				return RTK_BT_ERR_UNSUPPORTED;
 			p_stack_gatt_attr->flags = ATTRIB_FLAG_VALUE_INCL;
 			p_stack_gatt_attr->type_value[0] = LO_WORD(uuid16);
 			p_stack_gatt_attr->type_value[1] = HI_WORD(uuid16);

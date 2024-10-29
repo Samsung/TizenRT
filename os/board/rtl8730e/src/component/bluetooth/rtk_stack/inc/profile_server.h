@@ -431,6 +431,7 @@ typedef struct
     T_SERVER_ID     service_id;
     uint16_t        attrib_idx;
     uint16_t        cause;
+    T_GATT_PDU_TYPE data_type;
 } T_SEND_DATA_RESULT;
 
 /** @brief Service callback data */
