@@ -26,127 +26,162 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
+
+#include <tinyara/fs/ioctl.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define POWER_THREAD_SIZE				2048
-#define POWER_THREAD_PRIORITY				255
-#define PM_DAEMON_SLEEP_INTERVAL			5	//Seconds
-#define PM_WAKEUP_TIMER_DURATION			5000000	//Microseconds
+
+#define PM_DRVPATH "/dev/pm"
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-/* PM_UNLOCK request is always accompanied by a timer interval duration in microseconds.
- * A timer interrupt is scheduled to wake up the board after this duration.
- * Replace the timer interval duration with 0 to avoid the use of the timer interrupt.
- */
-static pthread_addr_t power_daemon()
+static int is_running;
+
+
+static int pm_sleep_test(void)
 {
-	int ret = 0;
-	int fd_lock, fd_unlock;
-
-	/* Release PM lock after bootup*/
-	fd_unlock = open(PM_UNLOCK_PATH, O_WRONLY);
-	if (fd_unlock < 0) {
-		printf("Failed to open PM_UNLOCK file, ret: %d\n", fd_unlock);
-		return NULL;
-	}
-	fd_lock = open(PM_LOCK_PATH, O_WRONLY);
-	if (fd_lock < 0) {
-		printf("Failed to open PM_LOCK file, ret: %d\n", fd_lock);
-		close(fd_unlock);
-		return NULL;
+	printf("pm sleep thread start\n");
+	int fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm sleep(errno %d)", get_errno());
+		return -1;
 	}
 
-	ret = write(fd_unlock, NULL, PM_WAKEUP_TIMER_DURATION);
-	if (ret < 0) {
-		printf("Failed to unlock PM state transition, ret: %d\n", ret);
-		goto errout_with_fd;
-	}
-	printf("Boot completed ..Unlocked PM!!\n");
-
-	do {
-		printf("Locking PM state, transition not expected during APP sleep\n");
-		/* Apply PM lock to prevent sleep*/
-		ret = write(fd_lock, NULL, 0);
-		if (ret < 0) {
-			printf("Failed to lock PM state transition, ret: %d\n", ret);
-			goto errout_with_fd;
+	while (is_running) {
+		if (ioctl(fd, PMIOC_SLEEP, 100) < 0) {
+			printf("Fail to pm sleep(errno %d)\n", get_errno());
+			close(fd);
+			return -1;
 		}
-
-		/* Trigger APP sleep, but we do not expect PM state transition */
-		sleep(PM_DAEMON_SLEEP_INTERVAL);
-		printf("1st APP sleep complete\n\n");
-
-		printf("Unlocking PM state, transition expected during APP sleep\n");
-		/* Release PM lock for sleep */
-		ret = write(fd_unlock, NULL, PM_WAKEUP_TIMER_DURATION);
-		if (ret < 0) {
-			printf("Failed to unlock PM state transition, ret: %d\n", ret);
-			goto errout_with_fd;
-		}
-
-		/* Trigger APP sleep, this time we expect PM state transition */
-		sleep(PM_DAEMON_SLEEP_INTERVAL);
-		printf("2nd APP sleep complete\n\n");
-
-		printf("##########################################################\n\n");
-	} while (1);
-
-errout_with_fd:
-	close(fd_unlock);
-	close(fd_lock);
-	return NULL;
+	}
+	close(fd);
+	return 0;
 }
 
-static pthread_t create_power_thread(void)
+static int pm_suspend_resume_test(void)
 {
-	pthread_t tid;
-	pthread_attr_t attr;
-	struct sched_param sparam;
-	int ret = OK;
-
-	ret = pthread_attr_init(&attr);
-	if (ret != 0) {
-		fprintf(stderr, "failed to set pthread init(%d)\n", ret);
-		return -ret;
+	printf("pm supend resume repeat test start\n");
+	pm_domain_arg_t domain_arg;
+	int domain_id;
+	int test_count = 0;
+	int fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm(errno %d)", get_errno());
+		return -1;
 	}
 
-	ret = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	if (ret != 0) {
-		fprintf(stderr, "failed to set policy(%d)\n", ret);
-		return -ret;
+	domain_arg.domain_name = "SUSPEND_TEST";
+	if (ioctl(fd, PMIOC_DOMAIN_REGISTER, &domain_arg) < 0) {
+		printf("Fail to register pm domain(errno %d)", get_errno());
+		close(fd);
+		return -1;
+	}
+	domain_id = domain_arg.domain_id;
+
+	int count = 0;
+	while (is_running) {
+		if (count == 0) {
+			test_count++;
+			printf("call suspend (%d)\n", test_count);
+			if(ioctl(fd, PMIOC_SUSPEND, domain_id) < 0) {
+				printf("Fail to suspend(errno %d)\n", get_errno());
+				break;
+			}
+		} else if (count == 2) {
+			printf("call resume(%d)\n", test_count);
+			if(ioctl(fd, PMIOC_RESUME, domain_id) < 0) {
+				printf("Fail to resume(errno %d)\n", get_errno());
+				break;
+			}
+		}
+		count = (count + 1) % 20;
+		sleep(1);
 	}
 
-	ret = pthread_attr_setstacksize(&attr, POWER_THREAD_SIZE);
-	if (ret != 0) {
-		fprintf(stderr, "failed to set stack size(%d)\n", ret);
-		return -ret;
+	close(fd);
+	return 0;
+}
+
+static int start_pm_test(void)
+{
+	pthread_t suspend_resume_tid;
+	int ret;
+
+#ifdef CONFIG_EXAMPLES_POWER_TIMEDWAKEUP
+	pthread_t pm_sleep_tid;
+#endif
+	printf("######################### PM LONG TERM TEST START #########################\n");
+
+	int fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm start(errno %d)", get_errno());
+		return -1;
+	}
+	if(ioctl(fd, PMIOC_RESUME, 0) < 0) {
+		printf("Fail to pm start(errno %d)\n", get_errno());
+		close(fd);
+		return -1;
 	}
 
-	sparam.sched_priority = POWER_THREAD_PRIORITY;
-	ret = pthread_attr_setschedparam(&attr, &sparam);
+	if (pthread_create(&suspend_resume_tid, NULL, (pthread_startroutine_t)pm_suspend_resume_test, NULL) < 0) {
+		printf("Failed to create suspend test pthread(%d):\n", get_errno());
+		close(fd);
+		return -1;
+	}
+	pthread_setname_np(suspend_resume_tid, "pm_suspend_test");
+
+#ifdef CONFIG_EXAMPLES_POWER_TIMEDWAKEUP
+	if (pthread_create(&pm_sleep_tid, NULL, (pthread_startroutine_t)pm_sleep_test, NULL) < 0) {
+		printf("Failed to create pm sleep pthread(%d):\n", get_errno());
+		pthread_cancel(suspend_resume_tid);
+		close(fd);
+		return -1;
+	}
+	pthread_setname_np(pm_sleep_tid, "pm_sleep_test");
+#endif
+
+	ret = pthread_join(suspend_resume_tid, NULL);
 	if (ret != 0) {
-		fprintf(stderr, "failed to set sched param(%d)\n", ret);
-		return -ret;
+		printf("Fail to join suspend_resume_tid thread(%d):\n", ret);
 	}
 
-	ret = pthread_create(&tid, &attr, power_daemon, NULL);
+#ifdef CONFIG_EXAMPLES_POWER_TIMEDWAKEUP
+	ret = pthread_join(pm_sleep_tid, NULL);
 	if (ret != 0) {
-		fprintf(stderr, "failed to create pthread(%d)\n", ret);
-		return -ret;
+		printf("Fail to join pm_sleep_tid thread(%d):\n", ret);
 	}
+#endif
 
-	pthread_setname_np(tid, "power daemon");
-	pthread_detach(tid);
+	if(ioctl(fd, PMIOC_SUSPEND, 0) < 0) {
+		printf("Fail to pm start(errno %d)\n", get_errno());
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	printf("######################### PM LONG TERM TEST END #########################\n");
 
-	return tid;
+	return 0;
+}
+
+static void help_func(void)
+{
+	printf("usage: power start/stop \n\n");
+	printf("The example power is intended for testing power management.\n");
+	printf("The basic test involves transitioning the chipset into a power-saving mode (sleep) and subsequently waking it up.\n");
+	printf("and it is testing suspending of power managemenet operation and resuming for block ender chipset sleep mode.");
+	printf("If you enable CONFIG_EXAMPLES_POWER_TIMEDWAKEUP, it will test a scheduled timer wake-up source. The board will wake up every 100 ms.\n");
+	printf("  start\t\t Start power management test\n");
+	printf("  stop\t\t stop power management test\n");
 }
 
 /****************************************************************************
@@ -158,16 +193,39 @@ int main(int argc, FAR char *argv[])
 int power_main(int argc, char *argv[])
 #endif
 {
-	pthread_t tid;
-
-	printf("Power Daemon Start!!\n");
-	/* Create Power Thread */
-	tid = create_power_thread();
-	if (tid < 0) {
-		return EXIT_FAILURE;
+	int pid;
+	if (argc != 2 || strncmp(argv[1], "help", 5) == 0) {
+		help_func();
+		return 0;
 	}
 
-	pthread_join(tid, NULL);
+	if (strncmp(argv[1], "start", 6) == 0) {
+		if (is_running) {
+			printf("power test is already running\n");
+			return 0;
+		}
+
+		is_running = true;
+
+		pid = task_create("start_pm_test", 100, 1024, start_pm_test, NULL);
+		if (pid < 0) {
+			printf("Fail to create start_pm_test task(errno %d)\n", get_errno());
+			is_running = false;
+			return -1;
+		}
+
+
+	} else if (strncmp(argv[1], "stop", 5) == 0) {
+		if (!is_running) {
+			printf("power test is not running\n");
+			return 0;
+		}
+
+		is_running = false;
+
+	} else {
+		help_func();
+	}
 
 	return EXIT_SUCCESS;
 }
