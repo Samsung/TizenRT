@@ -4,14 +4,24 @@
 #
 
 config EXAMPLES_POWER
-	bool "Power Daemon"
+	bool "Power Management Test"
 	default n
-	depends on PM
+	depends on PM && PM_TICKSUPPRESS
 	---help---
-		This application is an example program that can be
-		later used as fully capable power daemon.
-		Currently, it can control pm attributes of /proc/power/domains/0
+		This application is testing chipset enter power-saving mode and wake-up
+		and locking enter power-saving mode apis
 
 config USER_ENTRYPOINT
 	string
 	default "power_main" if ENTRY_POWER
+
+if EXAMPLES_POWER
+
+config EXAMPLES_POWER_TIMEDWAKEUP
+	bool "power management timer wakeup source test"
+	default y
+	depends on PM_TIMEDWAKEUP
+	---help---
+		The EXAMPLES_POWER_TIMEDWAKEUP test power management timer wakeup source.
+
+endif #EXAMPLES_POWER
