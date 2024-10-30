@@ -83,7 +83,7 @@
 /* Currently there is no non-cache memory region, no need to map for it */
 /* NS code is covered by PSRAM section */
 #define AMEBASMART_MMAP_DEV0_PSECTION   0x40000000  /* 0x40000000 - 0x440FFFFF  65MB NS Memory mapped device */
-#if CONFIG_RAM_DDR
+#ifdef CONFIG_RAM_DDR
 #define AMEBASMART_DRAM_PSECTION        0x60000000  /* 0x60000000 - 0x64000000  64MB Other DDR2 */
 #else
 #define AMEBASMART_DRAM_PSECTION        0x60000000  /* 0x60000000 - 0x60800000  8MB Other DRAM */
@@ -103,7 +103,7 @@
 #define AMEBASMART_FLASH_SECSIZE          0x08000000  /* 0x08000000 - 0x10000000  128MB Flash  */
 #define AMEBASMART_SRAM_SECSIZE           0x04000000  /* 0X20000000 - 0X23FFFFFF  64MB SRAM */
 #define AMEBASMART_MMAP_DEV0_SECSIZE      0x04100000  /* 0x40000000 - 0x440FFFFF  65MB NS Memory mapped device */
-#if CONFIG_RAM_DDR
+#ifdef CONFIG_RAM_DDR
 #define AMEBASMART_DRAM_SECSIZE           0x04000000  /* 0x60000000 - 0x64000000  64MB DDR */
 #else
 #define AMEBASMART_DRAM_SECSIZE           0x00800000  /* 0x60000000 - 0x60800000  8MB DRAM */
