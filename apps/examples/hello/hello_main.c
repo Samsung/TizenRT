@@ -68,5 +68,10 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+
+	for (int i= 0; i< 1000; i++) {
+		printf("#####################################################################################################\n");
+	}
+	printf("");
 	return 0;
 }
