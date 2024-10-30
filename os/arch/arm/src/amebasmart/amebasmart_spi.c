@@ -1459,7 +1459,7 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
 #ifdef CONFIG_AMEBASMART_SPI0
 	(void) up_spiinitialize(0);
 #endif
-#ifdef CONFIG_AMEBASMART_SPI0
+#ifdef CONFIG_AMEBASMART_SPI1
 	(void) up_spiinitialize(1);
 #endif
 	return 1;
