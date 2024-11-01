@@ -78,8 +78,6 @@
 /* currently the max size of tank is limited to ~580ms  */
 #define AUDIO_BEFORE_MATCH_MS	(1500)
 
-/* when defined, the let the NDP use an external PDM clock */
-#define USE_EXTERNAL_PDM_CLOCK
 #define PDM_CLOCK_PDM_RATE 1536000
 
 /* this is the higher bound of the keyword length, it will be rounded down to multiple of frame size */
@@ -92,6 +90,15 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+enum ndp120_state_e {
+	IS_RECORDING = 0,
+	NOT_RECORDING = 1,
+};
+
+enum ndp120_state_e g_ndp120_state;
+#endif
 
 static const unsigned int NDP_NOTIFICATION_ERRORS =
 	SYNTIANT_NDP_NOTIFICATION_ERROR
@@ -640,13 +647,41 @@ static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift)
 	s = syntiant_ndp120_config_gain(dev->ndp, &config_gain);
 	check_status("syntiant_ndp120_config_gain", s);
 
-#if defined(USE_EXTERNAL_PDM_CLOCK)
+ 	/* Note: this test code always sets up for internal clock and then adds intermediate test apis to either;
+		1) switch to external clock - for use when buffer is in use (also allows for switching back again)
+		or
+		2) switch to using PCLK1 input as passthrough (also allows for switching back again)
+
+		The assumption in this code is that at NDP initialization time, the buffer on i2s bclk is set to disabled (OE=0) so NDP can take control of the PDM clock
+
+		To switch the clock in the two different cases:
+		1) with "buffer approach":  Generally, this needs to be done in "break before make" fashion
+		   A) Switching from internal -> external
+		  	  I) Switch NDP to external using ndp120_test_internal_external_switch(dev, 0) API, this will stop the PDM clock from NDP without a hard reconfig of the rest of the PDM interface
+			  II) Set buffer OE=1 to allow i2s clk to DMIC
+
+			B) Switching from external -> internal, assuming buffer is on = set to NOT tri-state output
+			  I) Set buffer to OE=0, to enable the tri-state of i2s clk to DMIC
+			  II) Switch NDP to external using ndp120_test_internal_external_switch(dev, 1) API, this will start the PDM clock from NDP
+
+		2) with "PDM passthrough" approach:
+		   A) Switching from internal -> external:
+		      Call ndp120_test_internal_passthrough_switch(dev, 0) API
+		   A) Switching from external -> internal:
+		      Call ndp120_test_internal_passthrough_switch(dev, 1) API
+
+     */
+
 	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
 	memset(&pdm_config, 0, sizeof(pdm_config));
 	pdm_config.interface = 0;
 	pdm_config.clk = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_ON;
 	pdm_config.sample_rate = 16000;
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL;
+#else
 	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_EXTERNAL;
+#endif
 	pdm_config.mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_STEREO;
 	pdm_config.pdm_rate = PDM_CLOCK_PDM_RATE;
 
@@ -655,30 +690,12 @@ static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift)
 					| SYNTIANT_NDP120_CONFIG_SET_PDM_CLK_MODE
 					| SYNTIANT_NDP120_CONFIG_SET_PDM_PDM_RATE
 					| SYNTIANT_NDP120_CONFIG_SET_PDM_SAMPLE_RATE;
+
 	s = syntiant_ndp120_config_pdm(dev->ndp, &pdm_config);
 	if (check_status("config pdm clock on", s)) {
 		goto errout_configure_audio;
 	}
-	printf("NDP120 is configured for external clock\n");
-#else
-	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
-	memset(&pdm_config, 0, sizeof(pdm_config));
-	pdm_config.interface = 0;
-	pdm_config.clk = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_ON;
-	pdm_config.sample_rate = 16000;
-	pdm_config.clk_mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL;
-	pdm_config.mode = SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_STEREO;
-	pdm_config.pdm_rate = PDM_CLOCK_PDM_RATE;
-	pdm_config.set = SYNTIANT_NDP120_CONFIG_SET_PDM_CLK
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_MODE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_CLK_MODE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_PDM_RATE
-					| SYNTIANT_NDP120_CONFIG_SET_PDM_SAMPLE_RATE;
-	s = syntiant_ndp120_config_pdm(dev->ndp, &pdm_config);
-	if (check_status("config pdm clock on", s)) {
-		goto errout_configure_audio;
-	}
-#endif
+
 
 	/*
 	 * get the current audio frame size which is governed by the audio
@@ -1077,6 +1094,11 @@ int ndp120_init(struct ndp120_dev_s *dev)
 	ndp120_kd_stop_match_process(dev);
 	ndp120_kd_start(dev);
 
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	g_ndp120_state = NOT_RECORDING;
+	dev->extclk_inuse = false;
+	ndp120_aec_enable(dev);
+#endif
 	if (1) {
 		pthread_t thread;
 		int result = pthread_create(&thread, NULL, ndp120_app_device_health_check, dev);
@@ -1127,6 +1149,7 @@ static void extract_keyword(struct ndp120_dev_s *dev)
 		} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
 		extracted += extract_bytes;
 	}
+	dev->keyword_bytes_left = dev->keyword_bytes;
 	ndp120_set_sample_ready_int(dev, 0);
 	dev->ndp_interrupts_enabled = true;
 }
@@ -1232,6 +1255,9 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 					auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
 					/* extract keyword immediately */
 					extract_keyword(dev);
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+					g_ndp120_state = IS_RECORDING;
+#endif
 					break;
 				case 1:
 					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
@@ -1306,6 +1332,14 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	 * So, we can safely copy the extracted data without checking the limits on the
 	 * apb size
 	 */
+	uint32_t sample_size = dev->sample_size;
+	s = SYNTIANT_NDP_ERROR_NONE;
+	if (dev->keyword_bytes_left != 0) {
+		memcpy(apb->samp, &dev->keyword_buffer[dev->keyword_bytes - dev->keyword_bytes_left], sample_size);
+		dev->keyword_bytes_left -= sample_size;
+		apb->nbytes = dev->sample_size;
+		return SYNTIANT_NDP_ERROR_NONE;
+	}
 
 	/* wait for sample interrupt */
 
@@ -1326,8 +1360,6 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
 
-	uint32_t sample_size = dev->sample_size;
-	s = SYNTIANT_NDP_ERROR_NONE;
 	do {
 		s = syntiant_ndp_extract_data(dev->ndp,
 			SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
@@ -1370,6 +1402,9 @@ int ndp120_kd_stop_match_process(struct ndp120_dev_s *dev) {
 }
 
 int ndp120_kd_start_match_process(struct ndp120_dev_s *dev) {
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	g_ndp120_state = NOT_RECORDING;
+#endif
 	int s = SYNTIANT_NDP_ERROR_NONE;
 	/* nothing here, we check priv->kd_enabled in the match callprocessing instead */
 	/* alternative solution could be to configure the posterior to ignore
@@ -1380,6 +1415,9 @@ int ndp120_kd_start_match_process(struct ndp120_dev_s *dev) {
 int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 {
 	int s;
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	g_ndp120_state = IS_RECORDING;
+#endif
 
 	dev->recording = true;
 
@@ -1404,6 +1442,68 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 	s = ndp120_set_sample_ready_int(dev, 0);
 
 	dev->recording = false;
-
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	g_ndp120_state = NOT_RECORDING;
+#endif
 	return s;
 }
+
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+void ndp120_test_internal_external_switch(struct ndp120_dev_s *dev, int internal)
+{
+    uint32_t audctrl = 0;
+    int intf = 0;
+
+    syntiant_ndp120_read(dev->ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(intf), &audctrl);
+    if (internal) {
+		/* set to internal */
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_MASK_INSERT(audctrl, 1);
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_OE_MASK_INSERT(audctrl, 1);
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT);
+    } else {
+		/* set to external */
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_MASK_INSERT(audctrl, 0);
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_OE_MASK_INSERT(audctrl, 0);
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_IN);
+    }
+
+    syntiant_ndp120_write(dev->ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(intf), audctrl);
+}
+
+
+void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int internal)
+{
+    uint32_t audctrl = 0;
+    int intf = 0;
+
+    syntiant_ndp120_read(dev->ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(intf), &audctrl);
+    if (internal) {
+		/* set to internal */
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_MASK_INSERT(audctrl, 1);
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 5);   /* pclk0, pdat */
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT);
+    } else {
+		/* set to pass-thru */
+		audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_MASK_INSERT(audctrl, 0);
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 7);   /* pclk0, pclk1, pdat */
+        audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_THRU); /* pdm-thru */
+    }
+
+    syntiant_ndp120_write(dev->ndp, 1, NDP120_CHIP_CONFIG_AUDCTRL(intf), audctrl);
+}
+
+void ndp120_aec_enable(struct ndp120_dev_s *dev)
+{
+	if (g_ndp120_state == NOT_RECORDING && !dev->extclk_inuse) {
+		ndp120_test_internal_passthrough_switch(dev, 0);
+		dev->extclk_inuse = true;
+	}
+}
+
+void ndp120_aec_disable(struct ndp120_dev_s *dev)
+{
+	ndp120_test_internal_passthrough_switch(dev, 1);
+	dev->extclk_inuse = false;
+}
+#endif
+

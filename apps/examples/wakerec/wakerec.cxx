@@ -41,6 +41,10 @@
 #include <iostream>
 #include <memory>
 
+#include <tinyara/pm/pm.h>
+
+#define CONFIG_SUPPORT_GET_KD 0
+
 using namespace std;
 using namespace media;
 using namespace media::stream;
@@ -87,22 +91,29 @@ class _Observer : public media::MediaPlayerObserverInterface, public std::enable
 		printf("###################################\n");
 
 		sd->startKeywordDetect();
+		/* Now that we finished playback, we can go to sleep */
+		pm_resume(PM_IDLE_DOMAIN);
 	}
+
 	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
 	{
 		printf("##################################\n");
 		printf("####      onPlaybackError     ####\n");
 		printf("##################################\n");
 	}
+
 	void onStartError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
 	{
 	}
+
 	void onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
 	{
 	}
+
 	void onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
 	{
 	}
+
 	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override
 	{
 	}
@@ -170,16 +181,19 @@ public:
 	{
 		printf("#### onSpeechDetectionListener\n");
 		if (event == SPEECH_DETECT_KD) {
+			/* take wakelock as soon as possible, and we hold it until we play recorded data */
+			pm_suspend(PM_IDLE_DOMAIN);
 			printf("Event SPEECH_DETECT_KD\n");
 			printf("#### [SD] keyword detected.\n");
+			fp = fopen(filePath, "wb");
+			if (fp == NULL) {
+				printf("FILE OPEN FAILED\n");
+				return;
+			}
+
 			if (gBuffer) {
 				if (sd->getKeywordData(gBuffer) == true) {
 					/* consume buffer */
-					fp = fopen(filePath, "wb");
-					if (fp == NULL) {
-						printf("FILE OPEN FAILED\n");
-						return;
-					}
 					fwrite(gBuffer, 1, bufferSize, fp);	
 					printf("KD data extraction OK\n");
 				} else {
@@ -273,6 +287,8 @@ int wakerec_main(int argc, char *argv[])
 		}
 	}
 	sd->startKeywordDetect();
+	/* similar to wake lock, we release wake lock as we started our thread */
+	pm_resume(PM_IDLE_DOMAIN);
 
 	while (1) {
 		sleep(67);

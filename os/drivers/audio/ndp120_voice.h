@@ -64,6 +64,7 @@ struct ndp120_dev_s {
 	struct syntiant_ndp_device_s *ndp;
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 	uint32_t keyword_bytes; 
+	uint32_t keyword_bytes_left;
 	bool kd_enabled;
 #endif
 	struct ndp120_lower_s *lower;
@@ -74,6 +75,7 @@ struct ndp120_dev_s {
 	uint32_t sample_size_orig_annot;
 	uint8_t *keyword_buffer;
 	uint32_t extract_size;
+	bool extclk_inuse;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
 	pthread_mutex_t ndp_mutex_mbsync;
