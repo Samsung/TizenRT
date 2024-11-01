@@ -402,6 +402,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 							/* Start sending first page, after that the txdma callback will be called in the tx irq handler */
 		while ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) > 0) {
 			ptx_buf = i2s_get_tx_page(priv->i2s_object);
+			i2s_enable(priv->i2s_object);
 			if (ptx_buf) {
 				if ((apb->nbytes - apb->curbyte) <= tx_size) {
 					tx_size = apb->nbytes - apb->curbyte;
@@ -412,7 +413,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 				}
 				apb->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 
-				i2s_enable(priv->i2s_object);
+				
 				i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
 			} else {
 				break;
@@ -557,6 +558,8 @@ static void i2s_tx_schedule(struct amebasmart_i2s_s *priv, int result)
 
 		/* Start next transfer */
 		amebasmart_i2s_tx(priv, bfcontainer);
+	} else if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) <= 0) {
+		ameba_i2s_pause(priv->i2s_object);
 	}
 
 	/* If the worker has completed running, then reschedule the working thread.
