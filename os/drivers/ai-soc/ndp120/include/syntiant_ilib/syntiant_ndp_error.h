@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 #ifndef SYNTIANT_NDP_ERROR_H
 #define SYNTIANT_NDP_ERROR_H
@@ -65,7 +65,8 @@ enum syntiant_ndp_errors_e {
     SYNTIANT_NDP_WARN_CONFIG_EXISTS  = 21, /**< Device config area exists */
     SYNTIANT_NDP_ERROR_INCOMPATIBLE_MCU_FW = 22, /**< MCU FW tag mismatch */
     SYNTIANT_NDP_ERROR_INCOMPATIBLE_DSP_FW = 23, /**< DSP FW tag mismatch */
-    SYNTIANT_NDP_ERROR_LAST = SYNTIANT_NDP_ERROR_INCOMPATIBLE_DSP_FW
+    SYNTIANT_NDP_ERROR_EXTRACTION_LOCK_TIMEOUT = 24, /**< Extraction timeout */
+    SYNTIANT_NDP_ERROR_LAST = SYNTIANT_NDP_ERROR_EXTRACTION_LOCK_TIMEOUT
 };
 
 #define SYNTIANT_NDP_ERROR_NAMES                                               \
@@ -75,7 +76,7 @@ enum syntiant_ndp_errors_e {
             "pbi_ver", "invalid_length", "dsp_hdr_crc", "no_vad_mic",          \
             "spi_read_failure", "device_area_not_alloced",\
             "device_config_exists" , "incompatible MCU firmware",\
-            "incomapatible DSP firmware"\
+            "incomapatible DSP firmware", "extraction_lock_timeout"\
     }
 
 #define SYNTIANT_NDP_ERROR_NAME(e)                                             \

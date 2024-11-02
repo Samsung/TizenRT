@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 
 
@@ -83,6 +83,10 @@ typedef struct {
     uint32_t m2d_mb_cnt;        /* MCU    -> DSP mb             */
     uint32_t watermark_cnt;     /* DSP WM -> host               */
     uint32_t fifo_overflow_cnt; /* FW detected fifo overflow    */
+    uint32_t mem_alloc_err_cnt; /* mem alloc error count */
+    uint32_t func_debug_cnt; /* Func debug cnt */
+    uint32_t pcm_debug_cnt; /* pcm front end */
+    uint32_t dnn_run_err_cnt; /* dnn_run encountering error */
     uint32_t nn_cycle_cnt[NDP120_DNN_MAX_NUM_NETWORKS];  /* cycle count per NN */
     uint32_t nn_run_cnt[NDP120_DNN_MAX_NUM_NETWORKS];  /* DNN run count per NN */
 } ndp120_dsp_counters_t;
@@ -185,6 +189,8 @@ typedef struct {
 #define NDP120_DSP_AUD_ANNOTATION_CONS(fw_state_ptr) _NDP120_DSP_X_Y(fw_state_ptr, aud_annotation, cons)
 #define NDP120_DSP_AUD_ANNOTATION_PROD(fw_state_ptr) _NDP120_DSP_X_Y(fw_state_ptr, aud_annotation, prod)
 
+#define NDP_HOST_EXTRACTION_LOCK_SIG 0xACCEED88U
+
 enum {
   NDP120_DSP_FW_ENABLE_SOFTMAX  = 1
 };
@@ -249,6 +255,8 @@ typedef struct ndp120_dsp_fw_base_s {
 
     /* clock divisor value */
     uint32_t mcu_clk_div;
+
+    uint32_t fw_wake_count;
 
 } ndp120_dsp_fw_base_t;
 

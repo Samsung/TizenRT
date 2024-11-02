@@ -83,6 +83,10 @@ struct ndp120_lower_s {
 
 	/* Enable/Disable Internal MIC on Host Device */
 	CODE void (*set_dmic)(bool enable);
+#ifdef CONFIG_PM
+	/* PM related h/w operations */
+	CODE void (*set_pm_state)(bool sleep);
+#endif
 };
 
 /****************************************************************************

@@ -120,6 +120,10 @@ struct syu645b_lower_s {
 
 	CODE void (*control_hw_reset)(bool active);
 	CODE void (*control_powerdown)(bool enter_powerdown);
+#ifdef CONFIG_PM
+	/* PM related h/w operations */
+	CODE void (*set_pm_state)(bool sleep);
+#endif
 };
 
 /****************************************************************************

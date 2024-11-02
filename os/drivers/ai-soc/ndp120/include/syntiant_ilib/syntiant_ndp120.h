@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 #ifndef SYNTIANT_NDP120_H
 #define SYNTIANT_NDP120_H
@@ -59,6 +59,7 @@ extern "C" {
 #define SYNTIANT_NDP120_DEBUG_SECURE 0
 #define SYNTIANT_NDP120_DEBUG_NO_TOUCH  0
 #define SYNTIANT_NDP120_DEBUG_FLASH_BOOT  0
+#define SYNTIANT_NDP120_HEXDUMP 0
 
 #define PCM_AUDIO_SAMPLE_WIDTH_BITS 16
 #define PCM_AUDIO_SAMPLE_WIDTH_BYTES (PCM_AUDIO_SAMPLE_WIDTH_BITS/8)
@@ -109,6 +110,13 @@ enum syntiant_ndp120_ema_settings_e {
 enum syntiant_ndp120_spi_mcu_space_selector {
     SYNTIANT_NDP120_SPI = 0,
     SYNTIANT_NDP120_MCU = 1
+};
+
+enum syntiant_ndp120_audio_channel_cnt_e{
+    SINGLE_CHANNEL = 1,
+    TWO_CHANNELS = 2,
+    THREE_CHANNELS = 3,
+    FOUR_CHANNELS = 4
 };
 
 #define OP_SIZE(mcu)    ((mcu) ? 4 : 1)
@@ -256,6 +264,24 @@ enum {
     SYNTIANT_NDP120_CONFIG_SET_CLK_XTAL_OUT              = 0x01,
     SYNTIANT_NDP120_CONFIG_SET_CLK_XTAL_OSC              = 0x02
 
+};
+
+enum syntiant_ndp_fw_state {
+    SYNTIANT_NDP_MCU_FW_ALIVE = 1,
+    SYNTIANT_NDP_DSP_FW_ALIVE = 2,
+    SYNTIANT_NDP_BOTH_FW_ALIVE =  SYNTIANT_NDP_MCU_FW_ALIVE |
+                                  SYNTIANT_NDP_DSP_FW_ALIVE,
+    SYNTIANT_NDP_BOTH_FW_DEAD = !SYNTIANT_NDP_BOTH_FW_ALIVE
+};
+
+enum syntiant_ndp_load_state {
+    SYNTIANT_NDP_MCU_FW_LOADED = 1,
+    SYNTIANT_NDP_DSP_FW_LOADED = 2,
+    SYNTIANT_NDP_NN_LOADED = 4,
+    SYNTIANT_NDP_ALL_LOADED = SYNTIANT_NDP_MCU_FW_LOADED |
+                              SYNTIANT_NDP_DSP_FW_LOADED |
+                              SYNTIANT_NDP_NN_LOADED,
+    SYNTIANT_NDP_FW_NOT_LOADED = !SYNTIANT_NDP_ALL_LOADED
 };
 
 enum {
@@ -1079,6 +1105,22 @@ typedef struct {
     uint32_t pdm_freq;
 } ndp120_fll_preset_t;
 
+typedef struct {
+    uint32_t heap_total;
+    uint32_t heap_available;
+    uint32_t dnn_available_mem;
+} ndp120_dsp_mem_state_t;
+
+typedef struct {
+    uint32_t heap_total;
+    uint32_t heap_available;
+} ndp120_mcu_mem_state_t;
+
+typedef struct {
+    ndp120_dsp_mem_state_t dsp_state;
+    ndp120_mcu_mem_state_t mcu_state;
+} ndp120_dsp_mcu_mem_state_t;
+
 extern const unsigned ndp120_pll_presets_elements;
 extern const unsigned ndp120_fll_presets_elements;
 
@@ -1160,6 +1202,20 @@ syntiant_ndp120_write_block(struct syntiant_ndp_device_s *ndp, int mcu,
 int
 syntiant_ndp120_write(struct syntiant_ndp_device_s *ndp, int mcu,
     uint32_t address, uint32_t value);
+
+/*
+ * @brief NDP120 MCU and DSP memory states
+ *
+ * Used to get the available heap memories of MCU and DSP
+ *
+ * @param ndp NDP state object
+ * @param mcu_dsp_mem_info - gets updated with the current values of
+ * dsp and mcu firmware
+ * @return a @c SYNTIANT_NDP_ERROR_* code
+ */
+int
+syntiant_ndp120_get_memory_status(struct syntiant_ndp_device_s *ndp,
+    ndp120_dsp_mcu_mem_state_t *mcu_dsp_mem_info);
 
 /**
  * @brief NDP120 read data.
@@ -2024,6 +2080,19 @@ int syntiant_ndp120_read_dsp_tank_memory(struct syntiant_ndp_device_s *ndp,
 int syntiant_ndp120_config_dsp_tank_memory(struct syntiant_ndp_device_s *ndp,
                                        syntiant_ndp120_config_tank_t *config);
 
+/**
+ * @brief NDP120 checks the flow rules.
+ *
+ * Checks the flow rules and configure, based on the input type either SPI or PDM
+
+ * @param ndp NDP state object.
+ * @param input_type represents either SPI or PDM
+ * @return a @c SYNTIANT_NDP_ERROR_* code
+ */
+int syntiant_ndp120_config_flow_rules(struct syntiant_ndp_device_s *ndp,
+                            enum syntiant_ndp120_input_config_mode_e input_type);
+
+
 /* driver functions */
 
 /**
@@ -2559,6 +2628,18 @@ int syntiant_ndp120_set_get_dnn_run_delay(struct syntiant_ndp_device_s *ndp,
     const ndp120_dsp_data_flow_rule_t *rule, syntiant_ndp120_flow_src_type_t
     src_type, uint32_t *delay, uint32_t set);
 
+/**
+ * @brief NDP120 enable/disable barge-in.
+ *
+ * Enables/disables the barge-in by sending MB cmd to DSP.
+ *
+ * @param ndp NDP state object
+ * @param enable indicates enable/disable.
+ * @return a @c SYNTIANT_NDP_ERROR_* code
+ */
+int syntiant_ndp120_enable_disable_barge_in(struct syntiant_ndp_device_s *ndp,
+        int enable);
+
 /** @brief Get Core2 device type
  * @param ndp NDP state obkect
  */
@@ -2629,17 +2710,62 @@ int syntiant_ndp120_config_auto_clock_scaling(struct syntiant_ndp_device_s *ndp,
 /** @brief Instruct DSP to initialize sensors without
  *         initializing gpios
  *  @param ndp NDP state object
+ * @return a @c SYNTIANT_NDP_ERROR_* code
  */
 int syntiant_ndp120_init_sensors(struct syntiant_ndp_device_s *ndp);
 
 /**
  * @brief get runtime audio parameters as computed by audio algorithms
  * @param ndp NDP state object
- * @params aparms computed audio parameters
+ * @param aparms computed audio parameters
  * @return a @c SYNTIANT_NDP_ERROR_* code
  */
 int syntiant_ndp120_get_audio_params(struct syntiant_ndp_device_s *ndp,
                                   struct ndp120_dsp_audio_params_s *aparams);
+int syntiant_ndp120_get_extract_sample_size(struct syntiant_ndp_device_s *ndp,
+    int spi_speed, uint32_t sample_size, int channels, uint32_t *extract_size);
+int syntiant_ndp120_get_active_configurations(struct syntiant_ndp_device_s *ndp,
+    int *active_channels);
+int syntiant_ndp120_dsp_get_info(struct syntiant_ndp_device_s *ndp);
+
+/**
+ * @brief get a posterior handler type for a given network
+ * @param ndp NDP state object
+ * @param nn_id network id
+ * @param ph_type posterior type of a given network
+ * @return a @c SYNTIANT_NDP_ERROR_* code
+ */
+int syntiant_ndp120_get_posterior_type(struct syntiant_ndp_device_s *ndp,
+                                  uint32_t nn_id, uint32_t *ph_type);
+
+/** @brief Set get input size for func or NN
+ * @param ndp NDP state object
+ * @param rule indicates the flow rule
+ * @param src_type indicates the src type of the flow rule
+ * @param input_size size to be configured
+ * @param set : 1 for set, 0 for get
+ */
+int syntiant_ndp120_set_get_input_size(struct syntiant_ndp_device_s *ndp,
+    const ndp120_dsp_data_flow_rule_t *rule, syntiant_ndp120_flow_src_type_t
+    src_type, uint32_t *input_size, uint32_t set);
+
+/**
+ * @brief get the health status of MCU and DSP firmware
+ * @param ndp NDP state object
+ * @param state indicates the status of firmware
+ * @param wait_period indicates the waiting period between successive reads of
+ * firmware state counters
+ */
+int syntiant_ndp120_check_fw(struct syntiant_ndp_device_s *ndp,
+    enum syntiant_ndp_fw_state *state, uint32_t wait_period);
+
+/**
+ * @brief get the firmware loaded status
+ * @param ndp NDP state object
+ * @param state indicates the firmware load status
+ */
+void syntiant_ndp120_get_fw_load_status(struct syntiant_ndp_device_s *ndp,
+    enum syntiant_ndp_load_state *state);
 
 #ifdef __cplusplus
 }

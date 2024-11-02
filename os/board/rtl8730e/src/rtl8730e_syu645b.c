@@ -106,6 +106,17 @@ static void syu645b_control_powerdown(bool enter_powerdown)
 	/* currently does nothing */
 }
 
+#ifdef CONFIG_PM
+static void rtl8730e_syu645b_pm(bool sleep)
+{
+	/* h/w specific things to be done if required */
+	if (sleep) {
+		audvdbg("board entering sleep\n");
+	} else {
+		audvdbg("board wakeup\n");
+	}
+}
+#endif
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -181,7 +192,9 @@ int rtl8730e_syu645b_initialize(int minor)
 		up_mdelay(10);
 		g_syu645binfo.lower.control_hw_reset(false); /*does nothing*/
 		up_mdelay(10);
-
+#ifdef CONFIG_PM
+		g_syu645binfo.lower.set_pm_state = rtl8730e_syu645b_pm;
+#endif
 		/* Now we can use these I2C and I2S interfaces to initialize the
 		* SYU645B which will return an audio interface.
 		*/

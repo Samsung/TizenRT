@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 
 #ifndef SYNTIANT_NDP120_CONFIG_H
@@ -96,6 +96,9 @@ int syntiant_ndp120_config_misc_no_sync(struct syntiant_ndp_device_s *ndp,
 int syntiant_ndp120_init_ring_buffer_pointers_no_sync(
     struct syntiant_ndp_device_s *ndp, int reset);
 
+int syntiant_ndp120_config_notify_on_sample_ready_no_sync(
+    struct syntiant_ndp_device_s *ndp, uint32_t enable);
+
 int syntiant_ndp120_get_pdm_enable_status(struct syntiant_ndp_device_s *ndp,
                                           uint32_t *pdm_enable);
 
@@ -104,6 +107,17 @@ uint32_t ndp_get_scratch_address(struct syntiant_ndp_device_s *ndp);
 int syntiant_ndp120_scratch_get_valid(struct syntiant_ndp_device_s *ndp, uint32_t *valid);
 int syntiant_ndp120_scratch_get_valid_skip_crc(struct syntiant_ndp_device_s *ndp, uint32_t *valid);
 int syntiant_ndp120_scratch_set_valid(struct syntiant_ndp_device_s *ndp, uint32_t valid);
+
+/**
+ * @brief NDP120 MPF function
+ *
+ * Used to turn on or off the match per frame interrupt
+ *
+ * @param ndp NDP state object
+ * @param mpf indicates 0 for off and 1 for on
+ * @return a @c SYNTIANT_NDP_ERROR_* code
+ */
+int syntiant_ndp120_config_mpf(struct syntiant_ndp_device_s *ndp, int mpf);
 
 /*TODO Remove all these macros */
 #define SCRATCH_VARIABLE_ADX(x) (uint32_t)(ndp_get_scratch_address(ndp) + \

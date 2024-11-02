@@ -34,6 +34,10 @@
 #include <tinyara/audio/ndp120.h>
 #include "ndp120_voice.h"
 
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -94,6 +98,20 @@ static int ndp120_reserve(FAR struct audio_lowerhalf_s *dev);
 static int ndp120_release(FAR struct audio_lowerhalf_s *dev, FAR void *session);
 #else
 static int ndp120_release(FAR struct audio_lowerhalf_s *dev);
+#endif
+
+#ifdef CONFIG_PM
+static struct ndp120_dev_s *g_ndp120;
+static int g_ndp120_pm_id;
+
+static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
+
+static struct pm_callback_s g_pmndpcb =
+{
+	.notify  = ndp_pm_notify,
+	.prepare = ndp_pm_prepare,
+};
 #endif
 
 /****************************************************************************
@@ -242,6 +260,9 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 				AUDIO_SD_KEYWORD_DETECT |
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+				AUDIO_SD_AEC |
+#endif
 #endif
 #endif
 				AUDIO_SD_UNDEF;
@@ -592,6 +613,11 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 			}
 		} break;
 #endif
+		case AUDIO_SD_AEC: {
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+			ndp120_aec_enable(priv);
+#endif
+		} break;
 		default: {
 			/* DO Nothing for now */
 		} break;
@@ -624,6 +650,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 	} break;
 	case AUDIOIOC_GETKDDATA: {
 		memcpy((uint8_t *)arg, priv->keyword_buffer, priv->keyword_bytes);
+		priv->keyword_bytes_left = 0;
 	} break;
 #endif  /* CONFIG_AUDIO_KEYWORD_DETECT */
 #endif  /* CONFIG_AUDIO_PROCESSING_FEATURES */
@@ -706,8 +733,63 @@ static int ndp120_release(FAR struct audio_lowerhalf_s *dev)
 static void ndp120_interrupt_dispatch(int d)
 {
 	struct ndp120_dev_s *priv = (struct ndp120_dev_s *)d;
+#ifdef CONFIG_PM
+	pm_timedsuspend(g_ndp120_pm_id, 10000);
+#endif
 	ndp120_irq_handler(priv);
 }
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: ndp_pm_notify
+ *
+ * Description:
+ *   Notify the driver of new power state. This callback is called after
+ *   all drivers have had the opportunity to prepare for the new power state.
+ *
+ ****************************************************************************/
+
+static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
+{
+	/* Currently PM follows the state changes as follows,
+	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
+	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 */
+	switch (state) {
+	case(PM_SLEEP): {
+		audvdbg("entering SLEEP\n");
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+		ndp120_aec_disable(g_ndp120);
+#endif
+	}
+	break;
+	default: {
+		/* Nothing to do */
+		audvdbg("default case\n");
+	}
+	break;
+	}
+}
+
+/****************************************************************************
+ * Name: ndp_pm_prepare
+ *
+ * Description:
+ *   Request the driver to prepare for a new power state. This is a warning
+ *   that the system is about to enter into a new power state. The driver
+ *   should begin whatever operations that may be required to enter power
+ *   state. The driver may abort the state change mode by returning a
+ *   non-zero value from the callback function.
+ *
+ ****************************************************************************/
+
+static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e state)
+{
+	audvdbg("entry\n");
+	return OK;
+}
+#endif	/* End of CONFIG_PM */
 
 /****************************************************************************
  * Public Functions
@@ -758,6 +840,13 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	}
 
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
-	
+#ifdef CONFIG_PM
+	/* only used during pm callbacks */
+	g_ndp120 = priv;
+
+	g_ndp120_pm_id = pm_domain_register("NDP120");
+	ret = pm_register(&g_pmndpcb);
+	DEBUGASSERT(ret == OK);
+#endif	
 	return &priv->dev;
 }

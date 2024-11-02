@@ -8,3 +8,22 @@ config NDP120
 	depends on SPI
 	---help---
 		Select to enable support for the NDP120 AI soc
+
+if NDP120
+
+if RTL8730E_BOARD_REVISION > 7
+config NDP120_AEC_SUPPORT
+	bool "NDP120 Support AEC"
+	default y
+	---help---
+		Select to enable support AEC
+
+endif
+
+config NDP120_ALIVE_CHECK
+	bool "NDP120 alive check thread"
+	default n
+	---help---
+		Select to enable support Alive check thread
+endif
+

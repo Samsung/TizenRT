@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 #include <syntiant_ilib/syntiant_portability.h>
 #include <syntiant_ilib/ndp120_regs.h>
@@ -693,6 +693,22 @@ error:
     s0 = (ndp->iif.unsync)(ndp->iif.d);
     s = s ? s : s0;
     return s;
+}
+
+int syntiant_ndp120_config_mpf(struct syntiant_ndp_device_s *ndp,
+    int mpf)
+{
+    struct syntiant_ndp120_device_s *ndp120 = &ndp->d.ndp120;
+    uint32_t addr;
+    int s = SYNTIANT_NDP_ERROR_NONE;
+
+    addr = ndp120->mcu_fw_state_addr + (uint32_t) offsetof(
+                struct ndp120_fw_state_s, mb_state.enable_match_for_every_frame);
+    s = syntiant_ndp120_write(ndp, 1, addr, (uint32_t) mpf);
+    SYNTIANT_PRINTF("setting match-per-frame: %s\n",
+                   mpf ? "on" : "off");
+
+   return s;
 }
 
 int
