@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -723,12 +723,11 @@ syntiant_ndp120_config_clk_src_no_sync(
         /* config->refsel ? xtalin : clkin */
         data = NDP120_CHIP_CONFIG_CLKCTL1_REFSEL_MASK_INSERT(
             data, config->refsel);
-        if (chip_type != PBI_CHIP_TYPE_NDP200_A0) {
-            data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_IE_MASK_INSERT(
-                data, (uint32_t)!config->refsel);
-            data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_SMT_MASK_INSERT(
-                data, (uint32_t)!config->refsel);
-        }
+        /* make sure ie and smt is 1 regardless of refsel value */
+        data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_IE_MASK_INSERT(
+            data, 1);
+        data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_SMT_MASK_INSERT(
+            data, 1);
     }
     if (config->set & SYNTIANT_NDP120_CONFIG_SET_CLK_SRC_CLKSEL) {
         data = NDP120_CHIP_CONFIG_CLKCTL1_CLKSEL_MASK_INSERT(
@@ -1398,6 +1397,17 @@ syntiant_ndp120_config_clk_pll(
             }
             DEBUG_PRINTF("PLL locked 2\n");
         }
+        /* if crystal is used, after PLL locks, set ie and smt to 0 */
+        s = ndp_mcu_read(NDP120_CHIP_CONFIG_CLKCTL1, &data);
+        if (s) goto error;
+
+        if (NDP120_CHIP_CONFIG_CLKCTL1_REFSEL_EXTRACT(data)) {
+            data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_IE_MASK_INSERT(data, 0);
+            data = NDP120_CHIP_CONFIG_CLKCTL1_CLK_SMT_MASK_INSERT(data, 0);
+            s = ndp_mcu_write(NDP120_CHIP_CONFIG_CLKCTL1, data);
+            if (s) goto error;
+        }
+
 
         /* disable the oscillator */
         s = ndp_mcu_read(NDP120_CHIP_CONFIG_FLLCTL0, &data);
@@ -1651,13 +1661,11 @@ error:
 }
 
 int
-syntiant_ndp120_config_notify_on_sample_ready(struct syntiant_ndp_device_s *ndp, uint32_t enable)
+syntiant_ndp120_config_notify_on_sample_ready_no_sync(
+    struct syntiant_ndp_device_s *ndp, uint32_t enable)
 {
-    int s0;
     int s = SYNTIANT_NDP_ERROR_NONE;
     uint32_t fw_st_ptr;
-    s = (ndp->iif.sync)(ndp->iif.d);
-    if (s) return s;
 
     fw_st_ptr = syntiant_ndp120_get_dsp_fw_pointer(ndp);
     if (!fw_st_ptr) {
@@ -1667,15 +1675,32 @@ syntiant_ndp120_config_notify_on_sample_ready(struct syntiant_ndp_device_s *ndp,
 
     fw_st_ptr += (uint32_t) offsetof(ndp120_dsp_fw_base_t, config.notify_on_sample_ready);
 
+    s = ndp_mcu_write(fw_st_ptr, enable);
+    if (s) goto error;
+
+error:
+    return s;
+}
+
+int
+syntiant_ndp120_config_notify_on_sample_ready(struct syntiant_ndp_device_s *ndp, uint32_t enable)
+{
+    int s0;
+    int s = SYNTIANT_NDP_ERROR_NONE;
+    s = (ndp->iif.sync)(ndp->iif.d);
+    if (s) return s;
+
     /* Before turning on sample ready interrupt, we need to retrieve DSP's
-       PCM ring buffer pointers and save them to ilib */
+    PCM ring buffer pointers and save them to ilib */
     if (enable) {
         s = syntiant_ndp120_init_ring_buffer_pointers_no_sync(ndp, 0);
         if (s) goto error;
     }
 
-    s = ndp_mcu_write(fw_st_ptr, enable);
-    if (s) goto error;
+    s = syntiant_ndp120_config_notify_on_sample_ready_no_sync(ndp, enable);
+    if (s) {
+        goto error;
+    }
 
 error:
     s0 = (ndp->iif.unsync)(ndp->iif.d);
@@ -2357,8 +2382,19 @@ syntiant_ndp120_config_i2s_no_sync(
                 frphasestep = 0;
             }
 
-            data = NDP120_DSP_CONFIG_PDMCFG_A_PDMFILTSTAGE2BYPASS_MASK_INSERT(data, (uint32_t)!frphasestep);
-            s = ndp_mcu_write(NDP120_DSP_CONFIG_PDMCFG_A(config->interface), data);
+            /* disable pdmfiltstage2bypass if using default sampling rate
+               of 16000 */
+            data = NDP120_DSP_CONFIG_PDMCFG_A_PDMFILTSTAGE2BYPASS_MASK_INSERT(
+                   data, (uint32_t)!frphasestep);
+            s = ndp_mcu_write(NDP120_DSP_CONFIG_PDMCFG_A(config->interface),
+                              data);
+            if (s) goto done;
+
+            s = ndp_mcu_read(NDP120_DSP_CONFIG_FARROWCFG(config->interface), &data);
+            if (s) goto done;
+
+            data = NDP120_DSP_CONFIG_FARROWCFG_FRPHASESTEP_MASK_INSERT(data, frphasestep);
+            s = ndp_mcu_write(NDP120_DSP_CONFIG_FARROWCFG(config->interface), data);
             if (s) goto done;
         }
 

@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.2.0-Samsung **
+ 	** SDK: v112.3.5-Samsung **
 */
 #ifndef SYNTIANT_PACKAGE_H
 #define SYNTIANT_PACKAGE_H
@@ -40,6 +40,12 @@ extern "C" {
 #include <syntiant_ilib/syntiant_portability.h>
 #include <syntiant_packager/syntiant_package_consts.h>
 #include <syntiant-dsp-firmware/ndp120_dsp_fw_state.h>
+
+/* the following will prevent some OS targets from redefining offsetof */
+#ifdef __GNUC__
+#undef offsetof
+#define offsetof __builtin_offsetof
+#endif
 
 /**
  * @brief General TLV structure

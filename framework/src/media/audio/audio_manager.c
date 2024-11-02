@@ -832,6 +832,11 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 
 	card_config->status = AUDIO_CARD_READY;
+	/* TEMP CODE, Below is very rare case but need to be handled by audio manager */
+	audio_card_info_t *inputput_card;
+	inputput_card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	start_stream_in_device_process_type(inputput_card->card_id, inputput_card->device_id, AUDIO_DEVICE_SPEECH_DETECT_AEC);
+
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -1412,6 +1417,8 @@ uint8_t get_subprocess_type_audio_param_value(device_process_subtype_t type)
 		return AUDIO_SD_KEYWORD_DETECT; 
 	case AUDIO_DEVICE_SPEECH_DETECT_LOCAL:
 		return AUDIO_SD_LOCAL;
+	case AUDIO_DEVICE_SPEECH_DETECT_AEC:
+		return AUDIO_SD_AEC;
 	default:
 		return AUDIO_PU_UNDEF;
 	}
@@ -1539,8 +1546,8 @@ audio_manager_result_t request_stream_in_device_process_type(int card_id, int de
 	card = &g_audio_in_cards[card_id];
 	config = &card->config[device_id];
 
-	/* Check card register state first */
-	if (config->process_handler == NULL) {
+	/* Check card register state first, AEC can be set before KD started. */
+	if (config->process_handler == NULL && subtype != AUDIO_DEVICE_SPEECH_DETECT_AEC) {
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 

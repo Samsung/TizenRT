@@ -43,6 +43,9 @@
 
 #include "syu645b.h"
 #include "syu645bscripts.h"
+#ifdef CONFIG_PM
+#include <tinyara/pm/pm.h>
+#endif
 
 #define BYTE_TO_BIT_FACTOR           8
 #define SEC_TO_MSEC_FACTOR	     1000
@@ -86,6 +89,19 @@ static const struct audio_ops_s g_audioops = {
 	.reserve = syu645b_reserve,             /* reserve        */
 	.release = syu645b_release,             /* release        */
 };
+
+static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
+static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
+
+#ifdef CONFIG_PM
+static struct syu645b_dev_s *g_syu645b;
+static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int syu645b_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static struct pm_callback_s g_pm_syu645b_cb ={
+	.notify  = syu645b_pm_notify,
+	.prepare = syu645b_pm_prepare,
+};
+#endif
 
 /************************************************************************************
  * Name: syu645b_exec_i2c_script
@@ -149,6 +165,24 @@ static void syu645b_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
+#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
+/************************************************************************************
+ * Name: syu645b_setmute
+ *
+ * Description:
+ *   Set or unset Mute
+ *
+ ************************************************************************************/
+static void syu645b_setmute(FAR struct syu645b_dev_s *priv, bool mute)
+{
+	audvdbg("mute : %d\n", mute);
+	if (mute) {
+		syu645b_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
+	} else{
+		syu645b_exec_i2c_script(priv, codec_init_mute_off_script, sizeof(codec_init_mute_off_script) / sizeof(t_codec_init_script_entry));
+	}
+}
+
 /************************************************************************************
  * Name: syu645b_setvolume
  *
@@ -157,7 +191,6 @@ static void syu645b_takesem(sem_t *sem)
  *   volume and balance settings.
  *
  ************************************************************************************/
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 {
 	/* if no audio device object return */
@@ -165,15 +198,9 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 		auddbg("Error, Device's private data Not available\n");
 		return;
 	}
-
-	if (!priv->running) {
-		auddbg("not running[volume=%u mute=%u]\n", priv->volume, priv->mute);
-		return;
-	}
-
 	audvdbg("volume=%u mute=%u\n", priv->volume, priv->mute);
 	if (priv->mute) {
-		syu645b_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
+		syu645b_setmute(priv, true);
 		return;
 	}
 
@@ -183,6 +210,7 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 		/* Linear approximation is done to convert media volume to hardware volume */
 		codec_set_master_volume_script[0].val[0] = SYU645B_HW_VOL_MIN_BOUND + SYU645B_HW_VOL_SLOPE * priv->volume;
 	}
+	syu645b_setmute(priv, false);
 	syu645b_exec_i2c_script(priv, codec_set_master_volume_script, sizeof(codec_set_master_volume_script) / sizeof(t_codec_init_script_entry));
 }
 #endif                                                  /* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -562,7 +590,6 @@ static int syu645b_start(FAR struct audio_lowerhalf_s *dev)
 
 	/* Finally set syu645b to be running */
 	priv->running = true;
-	priv->mute = false;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 	syu645b_setvolume(priv);
 #endif
@@ -605,11 +632,10 @@ static int syu645b_stop(FAR struct audio_lowerhalf_s *dev)
 	audvdbg(" syu645b_stop Entry\n");
 	syu645b_takesem(&priv->devsem);
 	I2S_STOP(priv->i2s, I2S_TX);
-	/* Need to run the stop script here */
-	syu645b_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 
+	/* Need to run the mute script here */
+	syu645b_setmute(priv, true);
 	priv->running = false;
-	priv->mute = true;
 	syu645b_givesem(&priv->devsem);
 
 	/* Enter into a reduced power usage mode */
@@ -644,9 +670,8 @@ static int syu645b_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
-		priv->mute = true;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		syu645b_setvolume(priv);
+		syu645b_setmute(priv, true);
 #endif
 		I2S_PAUSE(priv->i2s, I2S_TX);
 	}
@@ -681,7 +706,6 @@ static int syu645b_resume(FAR struct audio_lowerhalf_s *dev)
 
 	if (priv->running && priv->paused) {
 		priv->paused = false;
-		priv->mute = false;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 		syu645b_setvolume(priv);
 #endif
@@ -753,6 +777,9 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	 * and adding 10 ms as an offset for timeout */
 	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 
+#ifdef CONFIG_PM
+	pm_timedsuspend(pm_domain_register("SYU645"), timeout);
+#endif
 	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 
 	return ret;
@@ -796,8 +823,6 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* Take semaphore */
 		syu645b_takesem(&priv->devsem);
 
-		syu645b_setvolume(priv);
-
 		/* Pause i2s channel */
 		I2S_PAUSE(priv->i2s, I2S_TX);
 		
@@ -815,7 +840,7 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		 */
 
 		audvdbg("AUDIOIOC_HWRESET:\n");
-		syu645b_hw_reset(priv);
+		syu645b_hw_reset_config(priv);
 	}
 	break;
 
@@ -991,13 +1016,88 @@ static void syu645b_hw_reset(FAR struct syu645b_dev_s *priv)
 		lower->control_hw_reset(false);
 		up_mdelay(100);
 	}
+}
+
+static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
+{
+	syu645b_hw_reset(priv);
 	syu645b_reset_config(priv);
-	syu645b_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
+	syu645b_setmute(priv, true);
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+#ifdef CONFIG_PM
+/****************************************************************************
+ * Name: syu645b_pm_notify
+ *
+ * Description:
+ *   Notify the driver of new power state. This callback is called after
+ *   all drivers have had the opportunity to prepare for the new power state.
+ *
+ ****************************************************************************/
+
+static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
+{
+	/* Currently PM follows the state changes as follows,
+	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
+	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 */
+	audvdbg("pmstate : %d\n", state);
+#if 0
+	struct syu645b_lower_s *lower = g_syu645b->lower;
+#endif
+	switch (state) {
+	case(PM_SLEEP): {
+#if 0
+		if (lower->control_hw_reset) {
+			lower->control_hw_reset(true);
+			up_mdelay(100);
+			lower->control_hw_reset(false);
+			up_mdelay(100);
+		}
+#endif
+		/* To prevent consume 12v, just mute on */
+		syu645b_setmute(g_syu645b, true);
+	}
+	break;
+	case(PM_STANDBY): {
+#if 0
+		syu645b_reset_config(g_syu645b);
+#endif
+		/* Mute off when wake up */
+		syu645b_setmute(g_syu645b, false);
+	} 
+	break;
+	default: {
+		/* Nothing to do */
+		audvdbg("default case\n");
+	}
+	break;
+	}
+}
+
+/****************************************************************************
+ * Name: syu645b_pm_prepare
+ *
+ * Description:
+ *   Request the driver to prepare for a new power state. This is a warning
+ *   that the system is about to enter into a new power state. The driver
+ *   should begin whatever operations that may be required to enter power
+ *   state. The driver may abort the state change mode by returning a
+ *   non-zero value from the callback function.
+ *
+ ****************************************************************************/
+
+static int syu645b_pm_prepare(struct pm_callback_s *cb, enum pm_state_e state)
+{
+	audvdbg("pmstate : %d\n", state);
+	return OK;
+}
+#endif	/* End of CONFIG_PM */
 
 /****************************************************************************
  * Name: syu645b_initialize
@@ -1051,8 +1151,16 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 	priv->volume = SYU645B_SPK_VOL_DEF;
-	syu645b_setvolume(priv);
+	syu645b_setmute(priv, true);
 #endif
+
+#ifdef CONFIG_PM
+	/* only used during pm callbacks */
+	g_syu645b = priv;
+
+	int ret = pm_register(&g_pm_syu645b_cb);
+	DEBUGASSERT(ret == OK);
+#endif	
 
 	return &priv->dev;
 }
