@@ -34,16 +34,6 @@ void LOGUART_PutChar(u8 c)
 	u32 CounterIndex = 0;
 	u32 CPUID = SYS_CPUID();
 
-	while (1) {
-		CounterIndex++;
-		if (CounterIndex >= LOG_UART_IDX_FLAG[CPUID].tx_timeout) {
-			break;
-		}
-
-		if (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[CPUID].not_full) {
-			break;
-		}
-	}
 	UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = c;
 
 	if (c == KB_ASCII_LF) {
@@ -89,7 +79,21 @@ u8 LOGUART_Readable(void)
 		return 0;
 	}
 }
-
+/**
+  * @brief    check if there is space in tx fifo.
+  * @retval   status value:
+  *              - 1: tx fifo has space and can put data into tx fifo
+  *              - 0: tx fifo is empty
+  */
+u8 LOGUART_Ready(void)
+{
+	/*check if tx fifo has available space to send*/
+	if (LOGUART_DEV->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].not_full) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
 /**
   * @brief    Set Loguart Baud Rate use baudrate val.
   * @param  UARTLOG: LOGUART device.
@@ -469,6 +473,13 @@ void LOGUART_Relay_RxCmd(LOGUART_TypeDef *UARTLOG, u32 NewState)
 	} else {
 		UARTLOG->LOGUART_UART_RP_RX_PATH_CTRL &= ~LOGUART_BIT_R_RST_RP_RX_N;
 	}
+}
+
+u32 LOGUART_GetIMR(void)
+{
+	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
+
+	return UARTLOG->LOGUART_UART_IER;
 }
 
 void LOGUART_SetIMR(u32 SetValue)
