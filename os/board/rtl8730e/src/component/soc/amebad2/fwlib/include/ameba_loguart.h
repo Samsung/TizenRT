@@ -791,6 +791,7 @@ _LONG_CALL_ void LOGUART_AGGPathAllCmd(LOGUART_TypeDef *UARTLOG, u32 NewState);
 _LONG_CALL_ void LOGUART_PutChar(u8 c);
 _LONG_CALL_ u8 LOGUART_GetChar(BOOL PullMode);
 _LONG_CALL_ u8 LOGUART_Readable(void);
+_LONG_CALL_ u8 LOGUART_Ready(void);
 _LONG_CALL_ u32 LOGUART_GetRxCount(void);
 _LONG_CALL_ u32 LOGUART_GetIMR(void);
 _LONG_CALL_ void LOGUART_SetIMR(u32 SetValue);

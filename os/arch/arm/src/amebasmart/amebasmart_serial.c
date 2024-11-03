@@ -562,7 +562,18 @@ static void rtl8730e_log_up_shutdown(struct uart_dev_s *dev)
 
 static int rtl8730e_log_uart_irq(void *Data)
 {
-	uart_recvchars(&CONSOLE_DEV);
+
+	u32 IrqEn = LOGUART_GetIMR();
+	u32 reg_lsr = LOGUART_GetStatus(CONSOLE);
+
+	if (reg_lsr & LOGUART_BIT_RXFIFO_INT) {
+		uart_recvchars(&CONSOLE_DEV);
+	}
+
+	u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
+	if ((txempty_en & (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
+		uart_xmitchars(&CONSOLE_DEV);
+	}
 	return 0;
 }
 
@@ -756,12 +767,13 @@ static void rtl8730e_log_up_txint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
-
-	if (enable)
-		uart_xmitchars(dev);
+	if (enable) {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
 		//LOGUART_RxCmd(LOGUART_DEV, ENABLE);
-	//else
+	} else {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, DISABLE);
 		//LOGUART_RxCmd(LOGUART_DEV, DISABLE);
+	}
 }
 
 /****************************************************************************
@@ -777,11 +789,10 @@ static bool rtl8730e_log_up_txready(struct uart_dev_s *dev)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	//LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	//return (UARTLOG->LOGUART_UART_LSR & LOG_UART_IDX_FLAG[2].not_full);
-	return 1;
+	 return (LOGUART_Ready());
 
 }
+
 
 /****************************************************************************
  * Name: up_txempty
@@ -1320,6 +1331,8 @@ int up_lowgetc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
+	/*check if there is space in fifo*/
+	while(!LOGUART_Ready());
 	/* Check for LF */
 
 	if (ch == '\n') {
@@ -1368,6 +1381,8 @@ int up_getc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
+	/*check if there is space in fifo*/
+	while(!LOGUART_Ready());
 	/* Check for LF */
 
 	if (ch == '\n') {
