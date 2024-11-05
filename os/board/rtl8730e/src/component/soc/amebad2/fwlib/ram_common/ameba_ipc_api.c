@@ -128,14 +128,7 @@ void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
 
 	IPC_INTConfig(IPCx, ChanNum, DISABLE);
 
-	if (ipc_Semaphore[ChanNum] != NULL) {
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_up_sema_from_isr(&(ipc_Semaphore[ChanNum]));
-#else
-		xSemaphoreGiveFromISR(ipc_Semaphore[ChanNum], &taskWoken);
-		portEND_SWITCHING_ISR(taskWoken);
-#endif
-	}
+	ipc_Semaphore[ChanNum] = NULL;
 }
 
 /**
@@ -157,26 +150,13 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 			}
 		}
 	} else {
-		if (ipc_Semaphore[IPC_ChNum] == NULL) {
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_init_sema(&(ipc_Semaphore[IPC_ChNum]), 0);
-			rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), 1); //test with 1ms, freertos is using 1 tick
-#else
-			vSemaphoreCreateBinary(ipc_Semaphore[IPC_ChNum]);
-			xSemaphoreTake(ipc_Semaphore[IPC_ChNum], 1 / portTICK_RATE_MS);
-#endif
-		}
-
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
-
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-		if (rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), IPC_SEMA_MAX_DELAY) != 1) {
-#else
-		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
-#endif
-			RTK_LOGE(TAG, " IPC Get Semaphore Timeout\r\n");
-			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
-			return IPC_SEMA_TIMEOUT;
+		ipc_Semaphore[IPC_ChNum] = 0x0A0A0A0A;
+		while(1) {
+			DelayUs(5);
+			if (ipc_Semaphore[IPC_ChNum] == NULL) {
+				break;
+			}
 		}
 	}
 	return 0;
