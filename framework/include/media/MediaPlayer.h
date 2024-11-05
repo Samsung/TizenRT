@@ -229,6 +229,15 @@ public:
 	 * @since TizenRT v2.1 PRE
 	 */
 	bool isPlaying();
+
+	/**
+	 * @brief Set Playback to be looping or non-looping
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous API
+	 * @return true if looping is set properly
+	 * @since TizenRT v5.0
+	 */
+	player_result_t setLooping(bool loop);
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
 	uint64_t mId;

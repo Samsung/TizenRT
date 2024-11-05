@@ -49,7 +49,7 @@ public:
 	bool open() override;
 	bool close() override;
 	ssize_t read(unsigned char *buf, size_t size);
-
+	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
 
 	virtual void onBufferOverrun() override;
@@ -84,7 +84,7 @@ private:
 	std::shared_ptr<Decoder> mDecoder;
 	std::shared_ptr<Demuxer> mDemuxer;
 	std::weak_ptr<MediaPlayerImpl> mPlayer;
-
+	std::atomic<bool> mIsLooping;
 	buffer_state_t mState;
 	size_t mTotalBytes;
 };

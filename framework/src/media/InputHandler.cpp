@@ -33,7 +33,8 @@ namespace stream {
 InputHandler::InputHandler() :
 	mDecoder(nullptr),
 	mState(BUFFER_STATE_EMPTY),
-	mTotalBytes(0)
+	mTotalBytes(0),
+	mIsLooping(false)
 {
 	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
@@ -111,6 +112,11 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 	return (ssize_t)rlen;
 }
 
+void InputHandler::setLoop(bool loop)
+{
+	mIsLooping = loop;
+}
+
 void InputHandler::resetWorker()
 {
 	mState = BUFFER_STATE_EMPTY;
@@ -130,9 +136,18 @@ bool InputHandler::processWorker()
 		ssize_t readLen = readFromSource(buf, size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
-			mBufferWriter->setEndOfStream();
-			delete[] buf;
-			return false;
+			if (!mIsLooping) {
+				mBufferWriter->setEndOfStream();
+				delete[] buf;
+				return false;
+
+			}
+			/* If it is looping mode, then seek to 0 and readFromSource again */
+			if (mInputDataSource->seekTo(0) == OK) {
+				readLen = readFromSource(buf, size);
+			} else {
+				meddbg("seek failed!!\n");
+			}
 		}
 
 		if (readLen > size) {

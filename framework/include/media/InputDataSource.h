@@ -76,6 +76,14 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	virtual ssize_t read(unsigned char *buf, size_t size) = 0;
+
+	/**
+	 * @brief Seek to offset
+	 * @details @b #include <media/InputDataSource.h>
+	 * @since TizenRT v2.0
+	 */
+	virtual int seekTo(off_t offset) { return -1; }
+
 };
 
 } // namespace stream

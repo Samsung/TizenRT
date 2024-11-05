@@ -105,6 +105,15 @@ public:
 	 */
 	ssize_t read(unsigned char *buf, size_t size) override;
 
+	/**
+	 * @brief Seek to 'offset' of file position
+	 * @details @b #include <media/FileInputDataSource.h>
+	 * param[in] offset file pointer to be moved
+	 * @return 0 for true, -1 for error
+	 * @since TizenRT v5.0
+	 */
+	int seekTo(off_t offset) override;
+
 private:
 	std::string mDataPath;
 	FILE *mFp;

@@ -622,6 +622,38 @@ bool MediaPlayerImpl::isPlaying()
 	return ret;
 }
 
+player_result_t MediaPlayerImpl::setLooping(bool loop)
+{
+	player_result_t ret = PLAYER_OK;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer setLooping mPlayer : %x loop : %d\n", &mPlayer, loop);
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::setPlayerLooping(bool loop, player_result_t &ret)
+{
+	medvdbg("setPlayerLooping\n");
+	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
+		meddbg("setLooping failed, Player not created!\n");
+		LOG_STATE_DEBUG(mCurState);
+		ret = PLAYER_ERROR_INVALID_STATE;
+	}
+	mInputHandler.setLoop(loop);
+	notifySync();
+}
+
 player_state_t MediaPlayerImpl::getState()
 {
 	medvdbg("MediaPlayer getState\n");
@@ -749,7 +781,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 void MediaPlayerImpl::playback()
 {
 	ssize_t num_read = mInputHandler.read(mBuffer, (int)mBufSize);
-	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
+	meddbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
 		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read));
 		if (ret < 0) {
