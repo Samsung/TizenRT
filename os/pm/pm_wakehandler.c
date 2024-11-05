@@ -62,7 +62,18 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 	pmllvdbg("missing_tick: %llu\n", missing_tick);
 #ifdef CONFIG_PM_TICKSUPPRESS
 	if (missing_tick > 0) {
+		/* Correcting for missed system ticks in sleep. */
 		clock_timer_nohz(missing_tick);
+
+		/* Compensate wd timer for missing ticks by pm sleep.
+		 * But to guarantee fast execution of interrupt service routine after wakeup,
+		 * expiration of wd_timer is not done here
+		 *
+		 *     WAKE HANDLER -> HW IRQ ISR -> THREAD -> TICK ISR
+		 *           |              |          |           |
+		 *           +--------------+----------+-----------+
+		 *     (corrects tick)                       (expire timer)
+		 */
 		wd_timer_nohz(missing_tick);
 	}
 #endif
