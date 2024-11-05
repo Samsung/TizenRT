@@ -102,6 +102,11 @@ bool MediaPlayer::isPlaying()
 	return mPMpImpl->isPlaying();
 }
 
+player_result_t MediaPlayer::setLooping(bool loop)
+{
+	return mPMpImpl->setLooping(loop);
+}
+
 MediaPlayer::~MediaPlayer()
 {
 }

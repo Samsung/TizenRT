@@ -159,6 +159,15 @@ ssize_t FileInputDataSource::read(unsigned char *buf, size_t size)
 	return rlen;
 }
 
+int FileInputDataSource::seekTo(off_t offset)
+{
+	if (!isPrepared()) {
+		meddbg("%s[line : %d] Fail : FileInputDataSource is not prepared\n", __func__, __LINE__);
+		return EOF;
+	}
+	return fseek(mFp, offset, SEEK_SET);
+}
+
 FileInputDataSource::~FileInputDataSource()
 {
 	if (isPrepared()) {

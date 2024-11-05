@@ -114,6 +114,7 @@ public:
 	void notifyObserver(player_observer_command_t cmd, ...);
 	void notifyAsync(player_event_t event);
 	void playback();
+	player_result_t setLooping(bool loop);
 
 private:
 	void createPlayer(player_result_t &ret);
@@ -130,6 +131,7 @@ private:
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
+	void setPlayerLooping(bool loop, player_result_t &ret);
 
 private:
 	MediaPlayer &mPlayer;
