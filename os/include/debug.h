@@ -93,12 +93,12 @@ int get_errno(void);
  * general, there are four forms of the debug macros:
  *
  * [a-z]dbg() -- Outputs messages to the console similar to printf() except
- *    that the output is not buffered.  The first character indicates the
- *    system system (e.g., n=network, f=filesystem, etc.).  If the first
- *    character is missing (i.e., dbg()), then it is common.  The common
- *    dbg() macro is enabled by CONFIG_DEBUG.  Subsystem debug requires an
- *    additional configuration setting to enable it (e.g., CONFIG_DEBUG_NET
- *    for the network, CONFIG_DEBUG_FS for the file system, etc).
+ *    that the output is not buffered for IDLE thread and thread running in ISR.
+ *    The first character indicates the system system (e.g., n=network,
+ *    f=filesystem, etc.). If the first character is missing (i.e., dbg()), then
+ *    it is common. The common dbg() macro is enabled by CONFIG_DEBUG. Subsystem
+ *    debug requires an additional configuration setting to enable it
+ *    (e.g., CONFIG_DEBUG_NET for the network, CONFIG_DEBUG_FS for the file system, etc).
  *
  *    In general, error messages and output of importance use [a-z]dbg().
  *    [a-z]dbg() is implementation dependent but usually uses file descriptors.
@@ -110,9 +110,9 @@ int get_errno(void);
  *    CONFIG_DEBUG_VERBOSE be defined.  This is intended for general debug
  *    output that you would normally want to suppress.
  *
- * [a-z]lldbg() -- Identical to [a-z]dbg() except this is uses special
- *    interfaces provided by architecture-specific logic to talk directly
- *    to the underlying console hardware.  If the architecture provides such
+ * [a-z]lldbg() -- Identical to [a-z]dbg() except that output is not buffered.
+ *    This uses special interfaces provided by architecture-specific logic to talk
+ *    directly to the underlying console hardware.  If the architecture provides such
  *    logic, it should define CONFIG_ARCH_LOWPUTC.
  *
  *    [a-z]lldbg() should not be used in normal code because the implementation
