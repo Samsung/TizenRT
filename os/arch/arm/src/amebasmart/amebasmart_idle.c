@@ -59,7 +59,6 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	/* mask sys tick interrupt*/
 	arm_arch_timer_int_mask(1);
 	up_timer_disable();
-	(void)irqsave();
 	/* Interrupt source will wake cpu up, just leave expected idle time as 0
 	Enter sleep mode for AP */
 	config_SLEEP_PROCESSING(wakeuphandler);
@@ -69,8 +68,6 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	/* Arch timer is running at 50Mhz */
 	arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
 	arm_arch_timer_int_mask(0);
-	/* Re-enable interrupts and sys tick*/
-	up_irq_enable();
 }
 #else
 #define up_pm_board_sleep(wakeuphandler)
