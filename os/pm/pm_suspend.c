@@ -105,15 +105,14 @@ int pm_suspend(int domain_id)
 	if (ret != OK) {
 		goto errout;
 	}
-	if (g_pmglobals.suspend_count[domain_id] >= UINT16_MAX) {
-		ret = ERROR;
-		set_errno(ERANGE);
-		goto errout;
+	if (g_pmglobals.suspend_count[domain_id]) {
+		pmdbg("Thread with pid (%d) tried to suspend domain (%s) again\n", getpid(), pm_domain_map[domain_id]);
+	} else {
+		g_pmglobals.suspend_count[domain_id] = true;
 	}
 #ifdef CONFIG_PM_METRICS
 	pm_metrics_update_suspend(domain_id);
 #endif
-	g_pmglobals.suspend_count[domain_id]++;
 errout:
 	leave_critical_section(flags);
 	return ret;
