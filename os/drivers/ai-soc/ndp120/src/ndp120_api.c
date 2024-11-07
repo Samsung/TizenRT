@@ -1365,9 +1365,16 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	}
 
 	do {
+		/* Incase we receive data reread error, then sample_size would be 
+		 * zero in 2nd iter. So, reinitialize sample_size to dev->sample_size
+		 * to prevent reading the entrie audio tank into the apb */
+		sample_size = dev->sample_size;
 		s = syntiant_ndp_extract_data(dev->ndp,
 			SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
 			SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &sample_size);
+		if (s == SYNTIANT_NDP_ERROR_DATA_REREAD) {
+			auddbg("DATA_REREAD error occured\n");
+		}
 	} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
 
 	apb->nbytes = dev->sample_size;
