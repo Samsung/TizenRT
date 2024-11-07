@@ -62,7 +62,7 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
 		.USER_MSG_TYPE = IPC_USER_DATA,
 		.Rxfunc = FLASH_Write_IPC_Int,
 		.RxIrqData = (VOID *) NULL,
-		.Txfunc = IPC_TXHandler,
+		.Txfunc = NULL,
 		.TxIrqData = (VOID *) NULL,
 		.IPC_Direction = IPC_AP_TO_NP,
 		.IPC_Channel = IPC_A2N_FLASHPG_REQ
@@ -111,7 +111,7 @@ retry_gating:
 	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
 	ipc_msg_temp.msg_len = 1;
 	ipc_msg_temp.rsvd = 0; /* for coverity init issue */
-	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+	while (IPC_SEND_SUCCESS != ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp));
 
 	while (1) {
 		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
