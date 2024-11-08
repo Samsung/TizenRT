@@ -141,7 +141,7 @@ u32 ap_clk_status_on(void)
 
 u32 ap_status_on(void)
 {
-	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC) & (HSYS_BIT_PSW_HP_AP_L2))) {
+	if ((HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_FEN) & (HSYS_BIT_FEN_AP))) {
 		return 1;
 	} else {
 		return 0;
