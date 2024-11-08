@@ -134,11 +134,16 @@ static void ps_print_values(char *buf, void *arg)
 		return;
 	}
 #endif
-	
-	printf("%5s | %4s | %4s | %7s | %c%c | %8s | %3s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
+
+	printf("%5s | %4s | %4s | %7s | %c%c | %8s", \
+		stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
 		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
-		utils_statenames[state], stat_info[PROC_STAT_CPU]);
+		utils_statenames[state]);
+
+#ifdef CONFIG_SMP
+	printf(" | %3s", stat_info[PROC_STAT_CPU]);
+#endif
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
@@ -218,17 +223,19 @@ int utils_ps(int argc, char **args)
 #if (CONFIG_TASK_NAME_SIZE > 0)
 #ifdef CONFIG_SMP
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
+	printf("------|------|------|---------|----|----------|-----|------\n");
 #else
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
+	printf("------|------|------|---------|----|----------|------\n");
 #endif
-	printf("------|------|------|---------|----|----------|-----|----\n");
 #else
 #ifdef CONFIG_SMP
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU \n");
+	printf("------|------|------|---------|----|----------|-----\n");
 #else
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS \n");
+	printf("------|------|------|---------|----|---------\n");
 #endif
-	printf("------|------|------|---------|----|----------|-----\n");
 #endif
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
