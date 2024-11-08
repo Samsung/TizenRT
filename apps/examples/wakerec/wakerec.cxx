@@ -376,6 +376,8 @@ int wakerec_main(int argc, char *argv[])
 		/* similar to wake lock, we release wake lock as we started our thread */
 	}
 
+	sd->startKeywordDetect(true);
+
 	while (1) {
 		sleep(67);
 	}

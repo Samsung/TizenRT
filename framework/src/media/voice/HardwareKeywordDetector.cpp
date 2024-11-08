@@ -79,6 +79,8 @@ bool HardwareKeywordDetector::init(uint32_t samprate, uint8_t channels)
 		return false;
 	}
 
+	/* KWV TODO: initialize AIInferrenceHandler and AIModelService as well as audio buffer */
+
 	medvdbg("Hardware KD intialization successful");
 	return true;
 }
@@ -99,7 +101,8 @@ void HardwareKeywordDetector::deinit()
 	medvdbg("Hardware KD deinit done");
 }
 
-bool HardwareKeywordDetector::startKeywordDetect(void)
+/* KWV TODO: need to fix bixby code to apply the interface change */
+bool HardwareKeywordDetector::startKeywordDetect(bool interruptible)
 {
 	audio_manager_result_t result;
 
@@ -113,6 +116,12 @@ bool HardwareKeywordDetector::startKeywordDetect(void)
 		return false;
 	}
 	mKeywordDetectStarted = true;
+
+	/* local command is expected to run only when bixby goes to READY state.
+	 * True: local command may be triggered (bixby in READY)
+	 * False: local command can be detected but should be blocked (bixby still in SPEAKING)
+	 */
+	mLocalCommandIsActivated = interruptible;
 	medvdbg("Hardware KD start successful");
 	return true;
 }
@@ -142,6 +151,15 @@ void HardwareKeywordDetector::detectKeyword(void)
 			medvdbg("#### KD DETECTED!! ####\n");
 			mSpeechResultCallback((audio_device_process_unit_subtype_e)msgId);
 			mKeywordDetectStarted = false;
+		} else if (mLocalCommandIsActivated/* check if bixby is READY state */
+			&& msgId >= AUDIO_DEVICE_SPEECH_DETECT_LOCAL0
+			&& msgId <= AUDIO_DEVICE_SPEECH_DETECT_LOCAL7) {
+			/* KWV TODO: process keyword verifier */
+
+			/* KWV TODO: do we need to clear the event before leaving local command processing ? 
+			 * There might be a pending AUDIO_DEVICE_SPEECH_DETECT_KD event
+			 * which should not be processed during the local command processing.
+			 */
 		}
 	} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
 		meddbg("Error: device doesn't support it!!!\n");

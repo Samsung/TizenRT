@@ -32,7 +32,7 @@ class SoftwareKeywordDetector : public KeywordDetector
 public:
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
-	bool startKeywordDetect(void) override;
+	bool startKeywordDetect(bool interruptible) override;
 	bool stopKeywordDetect(void) override;
 	void detectKeyword(void) override;
 	bool isKeywordDetectStarted(void) override;
