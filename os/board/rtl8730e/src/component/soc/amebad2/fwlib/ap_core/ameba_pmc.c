@@ -178,9 +178,6 @@ void SOCPS_SleepPG(void)
 	//save gic registers
 	SOCPS_Save_GIC();
 
-	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
-
 	cpu_suspend(0, SOCPS_PG_Enter);
 
 	//restore gic registers
@@ -215,8 +212,6 @@ void SOCPS_SleepCG(void)
 
 	sleep_param.sleep_type = SLEEP_CG;
 	debug_printf("cg-s\n");
-	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
-			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
 
 	/* for AP outstanding, make sure AP is idle before disable clk */
 	__asm volatile("isb");

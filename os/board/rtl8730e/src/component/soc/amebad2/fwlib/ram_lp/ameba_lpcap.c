@@ -276,6 +276,8 @@ u32 ap_suspend(u32 type)
 		ap_sleep_timeout = xTaskGetTickCount() + duration;
 	}
 
+	HAL_WRITE8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW,
+			   HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_AP_STATUS_SW) & (~ LSYS_BIT_AP_RUNNING));
 
 	if (type == SLEEP_CG) {
 		ap_clock_gate();

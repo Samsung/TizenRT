@@ -1,5 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 440249505f_2024/11/08-15:02:51 ==
+1. Update pmc code for sleep type
+
+== version 2941a206b7_2024/11/07-10:53:05 ==
+1. Change to polling mode when using ipc send in FLASH_Write_Lock
+
 == version c2b09705dc 2024/10/18-10:30:31 ==
 1. Update wifi channel plan version
 2. Added new channel plans to meet Samsung requirements
