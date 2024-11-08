@@ -6809,6 +6809,7 @@ int syntiant_ndp120_init(
     uint8_t auth;
     struct ndp120_dsp_state dstate = {0};
     syntiant_ndp120_device_t *ndp120 = &ndp->d.ndp120;
+    int mbout = 0;
 
     /* remember the ndp boot_from_flash flag */
     int boot_from_flash = syntiant_ndp_boot_from_flash_flag(ndp, 0);
@@ -6919,17 +6920,29 @@ int syntiant_ndp120_init(
 
     case SYNTIANT_NDP_INIT_MODE_RESET:
     case SYNTIANT_NDP_INIT_MODE_RESET_ENFORCE_COMPATIBILITY:
-        /* full POR */
-        s = ndp_spi_read(NDP120_SPI_CTL, &data);
-        if (s) goto error;
-        data = NDP120_SPI_CTL_PORSTN_MASK_INSERT(data, 0);
-        s = ndp_spi_write(NDP120_SPI_CTL, data);
-        if (s) goto error;
-        while(1) {
-            s = ndp_spi_read(NDP120_SPI_ID0, &spi_data);
+        do {
+            /* full POR */
+            s = ndp_spi_read(NDP120_SPI_CTL, &data);
             if (s) goto error;
-            if (spi_data != 0xff) break;
-        }
+            data = NDP120_SPI_CTL_PORSTN_MASK_INSERT(data, 0);
+            s = ndp_spi_write(NDP120_SPI_CTL, data);
+            if (s) goto error;
+            while(1) {
+                s = ndp_spi_read(NDP120_SPI_ID0, &spi_data);
+                if (s) goto error;
+                if (spi_data != 0xff) break;
+            }
+            int n = 100;
+            while (n--) {
+                s = ndp_spi_read(NDP120_SPI_INTSTS, &spi_data);
+                if (s) goto error;
+                if (spi_data) break;
+            }
+            mbout = 0;
+            s = ndp_spi_read(NDP120_SPI_MBOUT, &mbout);
+            if (s) goto error;
+        } while(mbout == 0);
+
         /* Drive the interrupt line output active high interrupts */
         spi_data = NDP120_SPI_CFG_INTEN(1) | NDP120_SPI_CFG_INTNEG(0);
         s = ndp_spi_write(NDP120_SPI_CFG, spi_data);
