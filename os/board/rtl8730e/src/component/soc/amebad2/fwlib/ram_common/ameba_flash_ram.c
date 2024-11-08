@@ -86,7 +86,7 @@ retry_gating:
 #endif
 	/* disable irq */
 	/* We do not need to acquire lock for this core, as the other core will enter gating */
-	PrevIrqStatus = irqsave();
+	PrevIrqStatus = enter_critical_section();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
@@ -94,7 +94,7 @@ retry_gating:
 	/*1. Close Core1 to avoid Core1 XIP */
 	if (!vPortGateOtherCore()) {
 		/* Restore irq here due to pending pause request */
-		irqrestore(PrevIrqStatus);
+		leave_critical_section(PrevIrqStatus);
 		goto retry_gating;
 	}
 #endif
@@ -147,7 +147,7 @@ void FLASH_Write_Unlock(void)
 #endif
 
 	/* restore irq */
-	irqrestore(PrevIrqStatus);
+	leave_critical_section(PrevIrqStatus);
 }
 
 /**
