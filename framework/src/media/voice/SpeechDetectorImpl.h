@@ -37,7 +37,7 @@ public:
 	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
 	bool deinitKeywordDetect() override;
 	bool deinitEndPointDetect() override;
-	bool startKeywordDetect(void) override;
+	bool startKeywordDetect(bool interruptible) override;
 	bool startEndPointDetect(int timeout) override;
 	bool startEndPointDetect(void) override;
 	bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) override;

@@ -30,7 +30,7 @@ void SoftwareKeywordDetector::deinit()
 	
 }
 
-bool SoftwareKeywordDetector::startKeywordDetect(void)
+bool SoftwareKeywordDetector::startKeywordDetect(bool interruptible)
 {
 	return true;
 }

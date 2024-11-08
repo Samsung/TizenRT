@@ -33,7 +33,7 @@ class KeywordDetector
 public:
 	virtual bool init(uint32_t samprate, uint8_t channels) = 0;
 	virtual void deinit() = 0;
-	virtual bool startKeywordDetect(void) = 0;
+	virtual bool startKeywordDetect(bool interruptible) = 0;
 	virtual bool stopKeywordDetect(void) = 0;
 	virtual void detectKeyword(void) = 0;
 	virtual bool isKeywordDetectStarted(void) = 0;

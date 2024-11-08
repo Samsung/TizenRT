@@ -185,15 +185,20 @@ bool SpeechDetectorImpl::deinitEndPointDetect()
 	}
 }
 
-bool SpeechDetectorImpl::startKeywordDetect(void)
+bool SpeechDetectorImpl::startKeywordDetect(bool interruptible)
 {
 	if (mKeywordDetector == nullptr) {
 		meddbg("KeywordDetector is not init\n");
 		return false;
 	}
 
+	// SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	// sdw.enQueue(&KeywordDetector::startKeywordDetect, mKeywordDetector);
+
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&KeywordDetector::startKeywordDetect, mKeywordDetector);
+    sdw.enQueue([this](bool interruptible){
+        mKeywordDetector->startKeywordDetect(interruptible);
+    }, interruptible);
 
 	medvdbg("Speech detector start KD done");
 	return true;
