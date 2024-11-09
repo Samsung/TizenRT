@@ -98,7 +98,7 @@ int pm_domain_register(char *domain)
 		flags = enter_critical_section();
 		/* If we have unused domain ID then use it to register given domain */
 		if (pm_domain_map[index] == NULL) {
-			pm_domain_map[index] = (char *)kmm_malloc(length * sizeof(char));
+			pm_domain_map[index] = (char *)kmm_malloc((length + 1) * sizeof(char));
 			if (!pm_domain_map[index]) {
 				set_errno(ENOMEM);
 				pmdbg("Unable to allocate memory from heap\n");
