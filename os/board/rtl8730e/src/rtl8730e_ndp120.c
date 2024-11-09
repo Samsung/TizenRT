@@ -114,7 +114,7 @@ static void rtl8730e_ndp120_irq_attach(ndp120_handler_t handler, FAR char *arg)
 {
 	g_ndp120info.handler = handler;
 	gpio_irq_init(&g_ndp120info.data_ready, PA_23, rtl8730e_ndp120_irq_handler, arg);
-	gpio_irq_set(&g_ndp120info.data_ready, IRQ_FALL_RISE, 1);
+	gpio_irq_set(&g_ndp120info.data_ready, IRQ_HIGH, 1);
 	gpio_irq_enable(&g_ndp120info.data_ready);
 }
 
