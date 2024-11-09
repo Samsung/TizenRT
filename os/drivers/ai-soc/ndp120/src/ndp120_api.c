@@ -1345,22 +1345,41 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		return SYNTIANT_NDP_ERROR_NONE;
 	}
 
-	/* wait for sample interrupt */
+	/* wait for sample interrupt for a given time */
 
 	int err = pthread_mutex_lock(&dev->ndp_mutex_notification_sample);
 	if (err) {
 		auddbg("NDP sample mutex lock err: %d\n", err);
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
-	err = pthread_cond_wait(&dev->ndp_cond_notification_sample,
-							&dev->ndp_mutex_notification_sample);
-	if (err) {
-		auddbg("NDP sample wait err: %d\n", err);
-		return SYNTIANT_NDP_ERROR_FAIL;
+
+	struct timespec abstime;
+	clock_gettime(CLOCK_REALTIME, &abstime);
+	/* Set timeout value to three sample sizes (2 should be enough). Generally the time values are in milli seconds */
+	/* 16KHz, 1 channel, 2bytes = 16000 * 1 * 2 = 32000 bytes per second, 32 bytes per millisecond, (sample size is 640 or 768) */
+	uint32_t timeout_in_msec = (3 * dev->sample_size * 1000) / (SYNTIANT_NDP120_AUDIO_SAMPLE_RATE * SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
+	abstime.tv_nsec += timeout_in_msec * 1000000;
+
+	int timedwait_err = pthread_cond_timedwait(&dev->ndp_cond_notification_sample,
+							&dev->ndp_mutex_notification_sample, &abstime);
+	if (timedwait_err) {
+		auddbg("NDP sample wait err: %d\n", timedwait_err);
+		/* Fall through to unlock the mutex */
 	}
+
 	err = pthread_mutex_unlock(&dev->ndp_mutex_notification_sample);
 	if (err) {
 		auddbg("NDP sample mutex unlock err: %d\n", err);
+		return SYNTIANT_NDP_ERROR_FAIL;
+	}
+
+	if (timedwait_err) {
+		/* Underrun need to be handled here, however, as of now we are doing
+		 * data extraction in sync. So, send back the apb with zero bytes
+		 * TODO : apply async method of extraction, then handle the underrun
+		 * case appropriately as we can add this buffer to pendq and use it
+		 */
+		apb->nbytes = 0;
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
 
@@ -1377,9 +1396,18 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		}
 	} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
 
-	apb->nbytes = dev->sample_size;
+	if (s) {
+		/* Ideally this case should never happen, however, just handle this case
+		 * by sending zero bytes as we have not extracted any bytes. This is also
+		 * underrun case and will be modified properly later, with async method
+		 */
+		auddbg("audio extraction failed, err : %d\n", s);
+		apb->nbytes = 0;
+	} else {
+		apb->nbytes = dev->sample_size;
+	}
 
-	return SYNTIANT_NDP_ERROR_NONE;
+	return s;
 }
 
 int ndp120_kd_start(struct ndp120_dev_s *dev)
