@@ -92,6 +92,7 @@ static const struct audio_ops_s g_audioops = {
 
 static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
 static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
+static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset);
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
@@ -115,26 +116,15 @@ static int syu645b_exec_i2c_script(FAR struct syu645b_dev_s *priv, t_codec_init_
 {
 	uint32_t i;
 	uint16_t ret = 0;
-	uint8_t reg[5];
+	uint8_t reg[SYU645B_REG_DATA_TYPE_MAX];
 	FAR struct i2c_dev_s *dev = priv->i2c;
 	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
 
 	for (i = 0; i < size; i++) {
 		reg[0] = script[i].addr;
-		if (script[i].type == SYU645B_REG_D_2BYTE) {
-			reg[1] = script[i].val[0];
-		} else if (script[i].type == SYU645B_REG_D_3BYTE) {
-			reg[1] = script[i].val[0];
-			reg[2] = script[i].val[1];
-		} else if (script[i].type == SYU645B_REG_D_5BYTE) {
-			reg[1] = script[i].val[0];
-			reg[2] = script[i].val[1];
-			reg[3] = script[i].val[2];
-			reg[4] = script[i].val[3];
-		} else {
-			auddbg("Error, script type is not supported\n");
+		for (int j = 1; j < script[i].type; j++) {
+			reg[j] = script[i].val[j - 1];
 		}
-
 		ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script[i].type);
 		if (ret < script[i].type) {
 			auddbg("Error, cannot write to reg addr 0x%x, ret = %d\n", script[i].addr, ret);
@@ -436,6 +426,11 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
+		case AUDIO_FU_EQUALIZER: {
+			uint8_t preset = caps->ac_controls.b[0];
+			syu645b_set_equalizer(priv, preset);
+		}
+		break;
 		default:
 			auddbg("    ERROR: Unrecognized feature unit\n");
 			ret = -ENOSYS;
@@ -977,7 +972,7 @@ static void syu645b_reset_config(FAR struct syu645b_dev_s *priv)
 	 * default state.
 	 */
 	(void)syu645b_exec_i2c_script(priv, codec_initial_script, sizeof(codec_initial_script) / sizeof(t_codec_init_script_entry));
-	
+
 	/*
 	 * TODO : once setting i2s sample rate and data width is fixed by realtek, will uncomment the code,
 	 * currently, the default config for i2s must be set to 48KHz and 16bit in amebasmart_i2s.c
@@ -1023,6 +1018,12 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 	syu645b_hw_reset(priv);
 	syu645b_reset_config(priv);
 	syu645b_setmute(priv, true);
+}
+
+static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset)
+{
+	/* Set default EQ Set */ 
+	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_1_script, sizeof(t_codec_dq_preset_1_script) / sizeof(t_codec_init_script_entry));
 }
 
 /****************************************************************************
