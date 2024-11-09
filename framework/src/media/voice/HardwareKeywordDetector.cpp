@@ -102,7 +102,7 @@ void HardwareKeywordDetector::deinit()
 }
 
 /* KWV TODO: need to fix bixby code to apply the interface change */
-bool HardwareKeywordDetector::startKeywordDetect(bool interruptible)
+bool HardwareKeywordDetector::startKeywordDetect(bool enableLocalCommand)
 {
 	audio_manager_result_t result;
 
@@ -121,7 +121,7 @@ bool HardwareKeywordDetector::startKeywordDetect(bool interruptible)
 	 * True: local command may be triggered (bixby in READY)
 	 * False: local command can be detected but should be blocked (bixby still in SPEAKING)
 	 */
-	mLocalCommandIsActivated = interruptible;
+	mIsLocalCommandEnabled = enableLocalCommand;
 	medvdbg("Hardware KD start successful");
 	return true;
 }
@@ -151,9 +151,12 @@ void HardwareKeywordDetector::detectKeyword(void)
 			medvdbg("#### KD DETECTED!! ####\n");
 			mSpeechResultCallback((audio_device_process_unit_subtype_e)msgId);
 			mKeywordDetectStarted = false;
-		} else if (mLocalCommandIsActivated/* check if bixby is READY state */
-			&& msgId >= AUDIO_DEVICE_SPEECH_DETECT_LOCAL0
-			&& msgId <= AUDIO_DEVICE_SPEECH_DETECT_LOCAL7) {
+		} else if (msgId >= AUDIO_DEVICE_SPEECH_DETECT_LOCAL0
+				&& msgId <= AUDIO_DEVICE_SPEECH_DETECT_LOCAL7) {
+			/* check if bixby is READY state */
+			if (mIsLocalCommandEnabled == false) {
+				return;
+			}
 			/* KWV TODO: process keyword verifier */
 
 			/* KWV TODO: do we need to clear the event before leaving local command processing ? 

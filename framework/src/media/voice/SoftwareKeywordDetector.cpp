@@ -30,7 +30,7 @@ void SoftwareKeywordDetector::deinit()
 	
 }
 
-bool SoftwareKeywordDetector::startKeywordDetect(bool interruptible)
+bool SoftwareKeywordDetector::startKeywordDetect(bool enableLocalCommand)
 {
 	return true;
 }
