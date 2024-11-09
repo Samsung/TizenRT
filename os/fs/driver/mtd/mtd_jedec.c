@@ -152,6 +152,7 @@ jedec_geometry_t g_jedec_device_info_list[] = {
 	{0x9D, 0x60, 0x16, "ISSI", "4MB", 16, 64, 8, 16384, 12},
 	{0x20, 0x40, 0x16, "XMC", "4MB", 16, 64, 8, 16384, 12},
 	{0x0b, 0x40, 0x19, "XTX", "32MB", 16, 512, 8, 131072, 12},
+	{0x0b, 0x65, 0x1a, "XTX", "64MB", 16, 1024, 8, 262144, 12},
 };
 
 /* This type represents the state of the MTD device.  The struct mtd_dev_s
@@ -298,7 +299,7 @@ static inline int jedec_readid(struct jedec_dev_s *priv)
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
 	jedec_unlock(priv->dev);
 
-	fvdbg("manufacturer: %02x memory: %02x capacity: %02x\n", manufacturer, memory, capacity);
+	fdbg("manufacturer: %02x memory: %02x capacity: %02x\n", manufacturer, memory, capacity);
 
 	if (jedec_set_geometry(priv, manufacturer, memory, capacity) != OK) {
 		fdbg("can't find such kind of driver\n");
