@@ -166,5 +166,33 @@ config AMEBASMART_SECURE_WORLD_ADDRESS
          Setting this value to a secure address to check whether it can be accessed from non-secure zone.
 
 endmenu
+
+menu "Realtek RTL8730E KM4 IPC Logging"
+	
+config RTL8730E_KM4_LOGTASK_PRIO
+	int "Log Task Priority"
+	default 100
+	---help---
+		Task Priority for log consume and print
+
+config RTL8730E_KM4_LOGTASK_STACK
+	int "Log Task Stack Size"
+	default 512
+	---help---
+		Task Stack Size for log consume and print
+
+config KM4_MAX_LOG_QUEUE_SIZE
+	int "Max number of log events. "
+	default 5
+	---help---
+		This controls the number of static memory buffer slots for log message to be placed inside
+
+config KM4_MAX_LOG_BUFFER_SIZE
+	int "Max size (in bytes) of 1 log message buffer"
+	default 256
+	---help---
+		This controls size of 1 buffer slot for a single log message
+
+endmenu
 endif
 
