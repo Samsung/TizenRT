@@ -108,15 +108,20 @@ static void ps_print_values(char *buf, void *arg)
 	int flags;
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
-#ifdef CONFIG_SMP
-	int cpu_idx;
-#endif
 
 	stat_info[0] = buf;
 
 	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
 		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
 	}
+
+#ifdef CONFIG_SMP
+	int cpu_idx;
+	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
+	if (cpu_idx != cpu && cpu != CONFIG_SMP_NCPUS) {
+		return;
+	}
+#endif
 
 	flags = atoi(stat_info[PROC_STAT_FLAG]);
 	if (flags <= 0) {
@@ -128,22 +133,21 @@ static void ps_print_values(char *buf, void *arg)
 		return;
 	}
 
-#ifdef CONFIG_SMP
-	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
-	if (cpu_idx != cpu && cpu != CONFIG_SMP_NCPUS) {
-		return;
-	}
-#endif
-	
-	printf("%5s | %4s | %4s | %7s | %c%c | %8s | %3s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
+	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
 		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
-		utils_statenames[state], stat_info[PROC_STAT_CPU]);
+		utils_statenames[state]);
+
+#ifdef CONFIG_SMP
+	printf(" | %3s", stat_info[PROC_STAT_CPU]);
+#else
+	printf(" | NA ");
+#endif
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
 #else
-	printf("\n");
+	printf(" | NA\n");
 #endif
 
 }
@@ -215,21 +219,8 @@ int utils_ps(int argc, char **args)
 #endif
 
 	printf("\n");
-#if (CONFIG_TASK_NAME_SIZE > 0)
-#ifdef CONFIG_SMP
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
-#else
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
-#endif
 	printf("------|------|------|---------|----|----------|-----|----\n");
-#else
-#ifdef CONFIG_SMP
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU \n");
-#else
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS \n");
-#endif
-	printf("------|------|------|---------|----|----------|-----\n");
-#endif
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
 

@@ -208,9 +208,10 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 #endif
 	}
 #if (CONFIG_TASK_NAME_SIZE > 0)
-	printf(" %s", stat_info[PROC_STAT_NAME]);
+	printf(" %s\n", stat_info[PROC_STAT_NAME]);
+#else
+	printf(" NA\n");
 #endif
-	printf("\n");
 }
 
 static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
@@ -249,7 +250,10 @@ static void cpuload_print_normal(void)
 				printf("  CPU%d |", j);
 			}
 		}
+#else
+		printf("  CPU  |");
 #endif
+		printf(" Task Name  ");
 	}
 
 	printf("\n--------------------------------------------------\n");
