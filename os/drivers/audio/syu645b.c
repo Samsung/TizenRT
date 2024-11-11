@@ -1023,7 +1023,7 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset)
 {
 	/* Set default EQ Set */ 
-	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_1_script, sizeof(t_codec_dq_preset_1_script) / sizeof(t_codec_init_script_entry));
+//	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_1_script, sizeof(t_codec_dq_preset_1_script) / sizeof(t_codec_init_script_entry));
 }
 
 /****************************************************************************
