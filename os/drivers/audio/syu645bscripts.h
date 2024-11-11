@@ -96,6 +96,8 @@ t_codec_init_script_entry codec_initial_script[] = {
 	{ 0x14, {0x06,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x17, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x18, {0x00,}, 0, SYU645B_REG_D_2BYTE},
+	/* SDATA OUT for AEC */
+	{ 0x17, {0x80,}, 0, SYU645B_REG_D_2BYTE},
 
 };
 
