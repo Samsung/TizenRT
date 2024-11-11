@@ -118,6 +118,8 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 {
 #if defined(CONFIG_SYSLOG)
 	struct lib_outstream_s stream;
+#elif CONFIG_NFILE_STREAMS > 0
+	struct lib_stdoutstream_s stream;
 #elif CONFIG_NFILE_DESCRIPTORS > 0
 	struct lib_rawoutstream_s stream;
 #elif defined(CONFIG_ARCH_LOWPUTC)
@@ -151,20 +153,8 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 
 	return lib_vsprintf((FAR struct lib_outstream_s *)&stream, fmt, ap);
 
-#elif CONFIG_NFILE_DESCRIPTORS > 0
-	/* Wrap the stdout in a stream object and let lib_vsprintf
-	 * do the work.
-	 */
-
-	lib_rawoutstream(&stream, 1);
-
-#if CONFIG_NFILE_STREAMS > 0 && (defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__))
-	if(!up_interrupt_context() && getpid() != 0){
-		lib_take_semaphore(stdout);
-	}
 #elif CONFIG_NFILE_STREAMS > 0
-	lib_take_semaphore(stdout);
-#endif
+	lib_stdoutstream(&stream, stdout);
 
 #if defined(CONFIG_SYSLOG_TIMESTAMP)
 	/* Pre-pend the message with the current time */
@@ -175,13 +165,24 @@ static inline int vsyslog_internal(FAR const char *fmt, va_list ap)
 #endif
 	ret = lib_vsprintf(&stream.public,fmt,ap);
 
-#if CONFIG_NFILE_STREAMS > 0 && (defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__))
-        if(!up_interrupt_context() && getpid() != 0){
-                lib_give_semaphore(stdout);
-        }
-#elif CONFIG_NFILE_STREAMS > 0
-	lib_give_semaphore(stdout);
+	return ret;
+
+#elif CONFIG_NFILE_DESCRIPTORS > 0
+	/* Wrap the stdout in a stream object and let lib_vsprintf
+	 * do the work.
+	 */
+
+	lib_rawoutstream(&stream, 1);
+
+#if defined(CONFIG_SYSLOG_TIMESTAMP)
+	/* Pre-pend the message with the current time */
+
+	if (ret == OK) {
+		(void)lib_sprintf((FAR struct lib_outstream_s *)&stream, "[%6d.%06d]", ts.tv_sec, ts.tv_nsec / 1000);
+	}
 #endif
+	ret = lib_vsprintf(&stream.public,fmt,ap);
+
 	return ret;
 
 #elif defined(CONFIG_ARCH_LOWPUTC)
