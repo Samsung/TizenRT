@@ -211,7 +211,8 @@
 
 static serial_t* sdrv[MAX_UART_INDEX + 1] = {NULL, NULL, NULL, NULL, NULL}; //uart 0~4, uart4 is configured as log uart
 #ifdef CONFIG_PM
-static bool uart_active_state = 0;
+static volatile bool uart_active_state = 0;
+static volatile bool log_uart_active_state = 0;
 #endif
 
 struct rtl8730e_up_dev_s {
@@ -767,6 +768,12 @@ static void rtl8730e_log_up_txint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
+#ifdef CONFIG_PM
+	if (log_uart_active_state != enable) {	/* State has changed */
+		bsp_pm_domain_control(BSP_UART_DRV, enable);
+		log_uart_active_state = enable;
+	}
+#endif
 	if (enable) {
 		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
 		//LOGUART_RxCmd(LOGUART_DEV, ENABLE);
