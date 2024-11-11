@@ -769,10 +769,12 @@ static void rtl8730e_log_up_txint(struct uart_dev_s *dev, bool enable)
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
 #ifdef CONFIG_PM
+	irqstate_t flags = enter_critical_section();
 	if (log_uart_active_state != enable) {	/* State has changed */
 		bsp_pm_domain_control(BSP_UART_DRV, enable);
 		log_uart_active_state = enable;
 	}
+	leave_critical_section(flags);
 #endif
 	if (enable) {
 		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
@@ -1119,10 +1121,12 @@ static void rtl8730e_up_txint(struct uart_dev_s *dev, bool enable)
 	DEBUGASSERT(priv);
 	priv->txint_enable = enable;
 #ifdef CONFIG_PM
+	irqstate_t flags = enter_critical_section();
 	if (uart_active_state != enable) {	/* State has changed */
 		bsp_pm_domain_control(BSP_UART_DRV, enable);
 		uart_active_state = enable;
 	}
+	leave_critical_section(flags);
 #endif
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], TxIrq, enable);
 	if (enable)
