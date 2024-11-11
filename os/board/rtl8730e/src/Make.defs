@@ -50,6 +50,7 @@
 ############################################################################
 
 CSRCS += rtl8730e_boot.c
+CSRCS += rtl8730e_logtask.c
 CSRCS += rtl8730e_i2schar.c
 
 ifeq ($(CONFIG_AUDIO_ALC1019),y)

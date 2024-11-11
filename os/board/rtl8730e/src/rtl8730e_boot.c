@@ -432,6 +432,7 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_USBDEVICE
 	usb_initialize();
 #endif
+	rtl8730e_km4_logtask_initialize();
 
 	/* init console */
 #ifndef CONFIG_PLATFORM_TIZENRT_OS

@@ -16,6 +16,9 @@
 #include "inic_ipc_cfg.h"
 #include "wifi_ind.h"
 
+#include "rtk_km4log.h"
+#include "osif.h"
+
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
@@ -23,12 +26,20 @@
 #else
 #define HOST_STACK_SIZE 1024	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
 #endif
+
 /* ---------------------------- Global Variables ---------------------------- */
 _sema  g_host_inic_api_task_wake_sema = NULL;
 _sema  g_host_inic_api_message_send_sema = NULL;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 struct task_struct inic_ipc_api_host_handler;
 #endif
+
+// handle to log queue
+extern void *g_km4_log_queue;
+
+// static buffer to hold log message
+static u8 g_inic_ipc_logging_buf[CONFIG_KM4_MAX_LOG_QUEUE_SIZE][CONFIG_KM4_MAX_LOG_BUFFER_SIZE] = { 0 };
+static u8 g_inic_ipc_logging_buf_ctr = 0;
 
 //todo:move to non-cache data section
 inic_ipc_host_request_message g_host_ipc_api_request_info __attribute__((aligned(64)));
@@ -323,15 +334,41 @@ static void inic_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
+	static km4log_msg_t message_event = { 0 };
+
+	/* receive a log message over IPC */
 	PIPC_MSG_STRUCT ipc_recv_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_NP_LOG_CHN);
 	char *tmp_buffer = (char *)ipc_recv_msg->msg;
 	DCache_Invalidate((u32)tmp_buffer, ipc_recv_msg->msg_len);
-	
-	/* Print out buffer */
-	lldbg_noarg("%s",tmp_buffer);
 
+	/* fill the buffer only if the first byte is empty, otherwise SKIP and do not increment counter */
+	if((char)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr][0] == 0) {
+		strncpy((char *)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr], tmp_buffer, ipc_recv_msg->msg_len);
+	} else {
+		DBG_8195A("WARN: KM4 logbuf full, dropped log!\n");
+		goto NOTIFY_MSG;
+	}
+	
+	/* fill message struct */
+	message_event.buffer = (void *)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr];
+	message_event.buffer_len = CONFIG_KM4_MAX_LOG_BUFFER_SIZE;
+
+	/* use mq_send via osif api directly in ISR instead of semaphore-based */
+	if (g_km4_log_queue == NULL || (!osif_msg_send(g_km4_log_queue, &message_event, 0))) {
+		/* mixlog queue handle was invalid, or sending to queue failed, clear the memory here. */
+		DBG_8195A("queue hndl is null or send failed\n");
+
+		/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
+		g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr][0] = 0;
+		goto NOTIFY_MSG;
+	}
+
+	/* increment to next buffer */
+	g_inic_ipc_logging_buf_ctr = (g_inic_ipc_logging_buf_ctr + 1) % CONFIG_KM4_MAX_LOG_QUEUE_SIZE;
+
+NOTIFY_MSG: ;
 	/* Indicate logs have been printed */
-	u8 *print_flag = (u8*)ipc_recv_msg->rsvd;
+	u8 *print_flag = (u8 *)ipc_recv_msg->rsvd;
 	print_flag[0] = 1;
 	DCache_Clean((u32)print_flag, sizeof(print_flag));
 }
