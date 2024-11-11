@@ -380,6 +380,9 @@ static int initialize_ndp(struct ndp120_dev_s *dev)
 
 	dev->ndp_interrupts_enabled = false;
 
+	int full_speed_freq = dev->lower->spi_config.freq;
+	dev->lower->spi_config.freq = NDP120_SPI_FREQ_INIT;
+
 	/*
 	 * initialize the ILib with the integration interface functions and
 	 * reset the NDP device
