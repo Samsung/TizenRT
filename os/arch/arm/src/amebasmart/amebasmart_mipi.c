@@ -306,10 +306,16 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 
 	if(msg->type == MIPI_DSI_END_OF_TRANSMISSION){
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
+#ifdef CONFIG_PM
+		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
 		return OK;
 	}
 	int ret = mipi_dsi_create_packet(&packet, msg);
 	if (ret != OK) {
+#ifdef CONFIG_PM
+		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
 		return ret;
 	}
 	send_cmd_done = 0;
