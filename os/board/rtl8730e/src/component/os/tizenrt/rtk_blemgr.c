@@ -52,6 +52,16 @@ static void _reverse_mac(uint8_t *mac, uint8_t *target)
 	}
 }
 
+static bool _check_mac_empty(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
+{
+	for (int i = 0; i < TRBLE_BD_ADDR_MAX_LEN; i++) {
+		if (mac[i] != 0){
+			return false;
+		}
+	}
+	return true;
+}
+
 /*** Common ***/
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server);
 trble_result_e trble_netmgr_deinit(struct bledev *dev);
@@ -234,7 +244,14 @@ trble_result_e trble_netmgr_deinit(struct bledev *dev)
 
 trble_result_e trble_netmgr_get_mac_addr(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 {
-	memcpy(mac, dev->hwaddr, TRBLE_BD_ADDR_MAX_LEN);
+	if (_check_mac_empty(dev->hwaddr)){
+		if (!hci_platform_get_ble_mac_address(mac))
+		{
+			return TRBLE_FAIL;
+		}
+	} else {
+		memcpy(mac, dev->hwaddr, TRBLE_BD_ADDR_MAX_LEN);
+	}
 	return TRBLE_SUCCESS;
 }
 

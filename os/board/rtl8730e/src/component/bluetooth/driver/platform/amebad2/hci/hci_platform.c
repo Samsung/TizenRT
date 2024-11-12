@@ -1186,3 +1186,18 @@ uint8_t hci_platform_get_patch_cmd_buf(uint8_t *cmd_buf, uint8_t cmd_len)
 
 	return HCI_SUCCESS;
 }
+
+uint8_t hci_platform_get_ble_mac_address(uint8_t *ble_addr){
+	uint8_t *pbuf;
+
+	/* Read Logic Efuse */
+	pbuf = osif_mem_alloc(RAM_TYPE_DATA_ON, 6);
+	if (!pbuf || _FAIL == OTP_LogicalMap_Read(pbuf, 0x1B4, 6)) {
+		HCI_ERR("BT MAC address read failed");
+		return HCI_FAIL;
+	}
+
+	memcpy(ble_addr, pbuf, 6);
+	osif_mem_free(pbuf);
+	return HCI_SUCCESS;
+}

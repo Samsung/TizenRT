@@ -249,8 +249,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	case BLE_CMD_GET_MAC: {
-		BLE_STATE_CHECK;
-
 		uint8_t *mac = (uint8_t *)msg->param;
 		if (mac == NULL) {
 			ret = TRBLE_INVALID_ARGS;
