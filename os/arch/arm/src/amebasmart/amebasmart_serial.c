@@ -69,6 +69,7 @@
 #include <tinyara/serial/serial.h>
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
+#include <tinyara/wdog.h>
 #endif
 
 #ifdef CONFIG_SERIAL_TERMIOS
@@ -512,6 +513,16 @@ static uart_dev_t g_uart4port = {
 };
 #endif
 
+#ifdef CONFIG_PM
+/* FIFO Drain buffer for UART PG wakeup */
+static ALIGNMTO(CACHE_LINE_SIZE) u8 g_uart1_buf[256] = { 0 };
+static u32 g_uart1_buf_head = &g_uart1_buf;
+static u32 g_uart1_dataleft = 0;
+
+/* keep uart active when TX/RX interrupt is still firing */
+#define UART_MONITOR_WD_MS 1
+static WDOG_ID uart_timer_wd;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -1053,9 +1064,36 @@ static int rtl8730e_up_receive(struct uart_dev_s *dev, unsigned int*status)
 	uint32_t rxd;
 
 	DEBUGASSERT(priv);
+#ifdef CONFIG_PM	
+	/* if there is still data in the FIFO drain buffer, read from there, otherwise read from peripheral */
+	if (g_uart1_dataleft > 0) {
+		rxd = *((u8 *)g_uart1_buf_head);
+		g_uart1_buf_head++;
+		g_uart1_dataleft--;
+
+		/* prevent g_uart1_buf_head from overflow */
+		if (((u32)g_uart1_buf_head - (u32)g_uart1_buf) > sizeof(g_uart1_buf)) {
+			DiagPrintf("Head pointer exceed buffer size!\n");
+			g_uart1_buf_head--;
+		}
+
+		/* prevent g_uart1_dataleft from underflow */
+		if (g_uart1_dataleft == 0xFFFFFFFF) {
+			g_uart1_dataleft = 0;
+		}
+	} else {
+		/* force reset buf head if out of sync */
+		if (g_uart1_buf_head != &g_uart1_buf) {
+			g_uart1_buf_head = &g_uart1_buf;
+		}
+		/* read from FIFO */ 
+		rxd = serial_getc(sdrv[uart_index_get(priv->tx)]);
+		*status = rxd;
+	}
+#else
 	rxd = serial_getc(sdrv[uart_index_get(priv->tx)]);
 	*status = rxd;
-
+#endif
 	return rxd & 0xff;
 }
 
@@ -1074,6 +1112,21 @@ static void rtl8730e_up_rxint(struct uart_dev_s *dev, bool enable)
 	serial_irq_set(sdrv[uart_index_get(priv->tx)], RxIrq, enable);	// 1= ENABLE
 }
 
+#ifdef CONFIG_PM
+static void uart_timer_timeout(int argc, int uart_id)
+{
+	/* for now, only handle UART1 */
+	if (uart_id != 1) {
+		return;
+	}
+	DEBUGASSERT(uart_timer_wd != NULL);
+	/* PM transition will be resume here */
+	bsp_pm_domain_control(BSP_UART_DRV, 0);
+	(void)wd_delete(uart_timer_wd);
+	uart_timer_wd = NULL;
+}
+#endif
+
 /****************************************************************************
  * Name: up_rxavailable
  *
@@ -1086,7 +1139,24 @@ static bool rtl8730e_up_rxavailable(struct uart_dev_s *dev)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+
+#ifdef CONFIG_PM
+	/* there is data available if either FIFO DRDY==1 or there is stuff in drain buffer */
+	u8 fifo_hasdata = serial_readable(sdrv[uart_index_get(priv->tx)]);
+	u8 buf_hasdata = g_uart1_dataleft > 0;
+	u8 available = (fifo_hasdata || buf_hasdata);
+
+	irqstate_t flags = enter_critical_section();
+	/* if there is a wd, it means that we are still clearing fifo in wakeup. if there is data, restart the wd */
+	if (uart_timer_wd && available) {
+		(void)wd_cancel(uart_timer_wd);
+		wd_start(uart_timer_wd, MSEC2TICK(UART_MONITOR_WD_MS), (wdentry_t)uart_timer_timeout, 1, uart_index_get(priv->tx));
+	}
+	leave_critical_section(flags);
+	return available;
+#else
 	return (serial_readable(sdrv[uart_index_get(priv->tx)]));
+#endif
 }
 
 /****************************************************************************
@@ -1204,6 +1274,39 @@ static uint32_t rtk_uart_suspend(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
+
+	ALIGNMTO(CACHE_LINE_SIZE) u8 flag[CACHE_LINE_ALIGMENT(64)] = { 0 };
+	ALIGNMTO(CACHE_LINE_SIZE) u32 uart_data[16] = { 0 };
+
+	/* clear rx fifo before going to sleep */
+	serial_clear_rx(sdrv[uart_index_get(g_uart1priv.tx)]);
+
+	IPC_MSG_STRUCT ipc_req_msg  __attribute__((aligned(64)));
+	ipc_req_msg.msg_type = IPC_USER_POINT;
+	ipc_req_msg.msg = (u32)uart_data;
+	ipc_req_msg.msg_len = sizeof(uart_data);
+	ipc_req_msg.rsvd = (u32)flag;
+
+	/* indicate CA32 is ready to rx, switch back to CA32 */
+	uart_data[0] = g_uart1priv.tx; 					//tx
+	uart_data[1] = g_uart1priv.rx;					//rx
+	uart_data[2] = uart_index_get(g_uart1priv.tx); 	//uart_idx
+	uart_data[3] = g_uart1priv.baud; 				//uart baudrate
+	uart_data[4] = g_uart1priv.parity; 				//parity
+	uart_data[5] = g_uart1priv.bits; 				//bits
+	uart_data[6] = g_uart1priv.stopbit; 			//stop bit
+	uart_data[7] = 1; 								//1 switch to KM4, 0 switch to CA32
+
+	DCache_Clean((u32)uart_data, sizeof(uart_data));
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_UART, &ipc_req_msg); 
+
+	while (1) {
+		DCache_Invalidate((u32)flag, sizeof(flag));
+		if (flag[0]) {
+			break;
+		}
+	}
+
 #ifdef CONFIG_RTL8730E_UART1
 	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 0);
@@ -1216,14 +1319,83 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
+
+	ALIGNMTO(CACHE_LINE_SIZE) u8 flag[CACHE_LINE_ALIGMENT(64)] = { 0 };
+	ALIGNMTO(CACHE_LINE_SIZE) u32 uart_data[16] = { 0 };
+
+	/* reset buffer and head pointer for FIFO drain buffer */
+	g_uart1_dataleft = 0;
+	memset(g_uart1_buf, 0, sizeof(g_uart1_buf));
+	g_uart1_buf_head = &g_uart1_buf;
+
+	IPC_MSG_STRUCT ipc_req_msg  __attribute__((aligned(64)));
+	ipc_req_msg.msg_type = IPC_USER_POINT;
+	ipc_req_msg.msg = (u32)uart_data;
+	ipc_req_msg.msg_len = sizeof(uart_data);
+	ipc_req_msg.rsvd = (u32)flag;
+
+	/* indicate CA32 is ready to rx, switch back to CA32 */
+	uart_data[2] = uart_index_get(g_uart1priv.tx);
+	uart_data[7] = 0; 								// 1 switch to KM4, 0 switch to CA32
+	uart_data[10] = 0;								// hold the length of km4 data
+	uart_data[11] = (u32)g_uart1_buf;				// buffer to hold drained FIFO data
+
+	/* prepare buffers and notify KM4 to begin resume process */
+	DCache_Clean((u32)uart_data, sizeof(uart_data));
+	DCache_Clean((u32)g_uart1_buf, sizeof(g_uart1_buf));
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_UART, &ipc_req_msg); 
+
+	/* wait for KM4 to finish the drain on its side */
+	while (1) {
+		DCache_Invalidate((u32)flag, sizeof(flag));
+		if (flag[0]) {
+			/* invalidate the cache to receive the drained FIFO data */
+			DCache_Invalidate((u32)g_uart1_buf, sizeof(g_uart1_buf));
+			DCache_Invalidate((u32)uart_data, sizeof(uart_data));
+
+			/* null terminate for safety */
+			g_uart1_buf[uart_data[10]] = 0;
+			break;
+		}
+	}
+
+	/* 
+	 * control has switched back from KM4 to CA32. 
+	 * KM4 has stopped reading the FIFO, so now we can drain it in CA32
+	 * no extra config on the peripheral should be done except detach attach irq as required
+	 */
+	u8 ch = 0;
+	g_uart1_dataleft = uart_data[10];
+	UART_TypeDef* uartx = UART_DEV_TABLE[uart_index_get(g_uart1priv.tx)].UARTx;
+	
+	/* drain the remainder FIFO from CA32 side */
+	while (UART_Readable(uartx) == 1) {
+		UART_CharGet(uartx, &ch);
+		g_uart1_buf[g_uart1_dataleft++] = ch;
+	}
+
+	/* force clear Rx status (this is normally done with API, but poll mode require manual clearing */
+	UART_INT_Clear(uartx, RUART_BIT_RLSICF);
+
 #ifdef CONFIG_RTL8730E_UART1
 	if (sdrv[uart_index_get(g_uart1priv.tx)] != NULL) {
 		serial_change_clcksrc(sdrv[uart_index_get(g_uart1priv.tx)], g_uart1priv.baud, 1);
 	}
 #endif
+
+	/* create a wd to monitor activity on UART immediately after wakeup */
+	if (!uart_timer_wd) {
+		uart_timer_wd = wd_create();
+		DEBUGASSERT(uart_timer_wd != NULL);
+		DEBUGASSERT(wd_start(uart_timer_wd, MSEC2TICK(UART_MONITOR_WD_MS), (wdentry_t)uart_timer_timeout, 1, uart_index_get(g_uart1priv.tx)) == OK);
+
+		/* hold the PM lock to prevent transition, as FIFO is still draining in wakeup */
+		bsp_pm_domain_control(BSP_UART_DRV, 1);
+	}
+
 	return 1;
 }
-#endif
+#endif							/* CONFIG_PM */
 
 /****************************************************************************
  * Public Functions
