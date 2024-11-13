@@ -83,14 +83,19 @@ unsigned long syntiant_get_ms_elapsed(syntiant_ms_time *ms_time)
 /* customer platform implementation here */
 int syntiant_get_ms_time(syntiant_ms_time *ms_time)
 {
-    (void)ms_time;
+    struct timeval  tv;
+    gettimeofday(&tv, NULL);
+
+    *ms_time = (uint32_t) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     return 0;
 }
 
 unsigned long syntiant_get_ms_elapsed(syntiant_ms_time *ms_time)
 {
-    (void)ms_time;
-    return 0;
+    syntiant_ms_time now_time;
+
+    syntiant_get_ms_time(&now_time);
+    return now_time - *ms_time;
 }
 
 #endif
