@@ -52,7 +52,7 @@
 #define NDP120_SPI_BPW			8
 #define NDP120_SPI_CS			0
 #define NDP120_SPI_MODE			SPIDEV_MODE0
-
+#define GPIO_RESET				PA_24
 #define GPIO_DMIC_EN			PA_25
 
 /****************************************************************************
@@ -132,14 +132,12 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 	}
 }
 
-static void rtl8730e_ndp120_reset()
+static void rtl8730e_ndp120_reset(void)
 {
 	gpio_dir(&g_ndp120info.reset, PIN_OUTPUT);
-	gpio_mode(&g_ndp120info.reset, PullDown);
 	gpio_write(&g_ndp120info.reset, 0);
 	up_mdelay(20);
 
-	gpio_mode(&g_ndp120info.reset, PullUp);
 	gpio_write(&g_ndp120info.reset, 1);
 	up_mdelay(20);
 }
@@ -198,7 +196,7 @@ int rtl8730e_ndp120_initialize(int minor)
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
 		g_ndp120info.lower.set_dmic = rtl8730e_ndp120_set_dmic;
 		gpio_init(&g_ndp120info.dmic, GPIO_DMIC_EN);
-		gpio_init(&g_ndp120info.reset, PA_24);
+		gpio_init(&g_ndp120info.reset, GPIO_RESET);
 		rtl8730e_ndp120_reset();
 		rtl8730e_ndp120_set_dmic(false);
 #ifdef CONFIG_PM
