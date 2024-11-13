@@ -29,6 +29,7 @@
 #ifndef __MEDIA_OUTPUTDATASOURCE_H
 #define __MEDIA_OUTPUTDATASOURCE_H
 
+#include <memory>
 #include <pthread.h>
 #include <media/DataSource.h>
 #include <media/BufferObserverInterface.h>

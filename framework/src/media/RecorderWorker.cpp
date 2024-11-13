@@ -23,6 +23,9 @@
 #ifndef CONFIG_MEDIA_RECORDER_STACKSIZE
 #define CONFIG_MEDIA_RECORDER_STACKSIZE 4096
 #endif
+#ifndef CONFIG_MEDIA_RECORDER_THREAD_PRIORITY
+#define CONFIG_MEDIA_RECORDER_THREAD_PRIORITY 100
+#endif
 
 namespace media {
 
@@ -31,6 +34,7 @@ RecorderWorker::RecorderWorker()
 	medvdbg("RecorderWorker::RecorderWorker()\n");
 	mThreadName = "RecorderWorker";
 	mStacksize = CONFIG_MEDIA_RECORDER_STACKSIZE;
+	mPriority = CONFIG_MEDIA_RECORDER_THREAD_PRIORITY;
 }
 RecorderWorker::~RecorderWorker()
 {

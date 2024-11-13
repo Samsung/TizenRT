@@ -37,7 +37,8 @@ MediaRecorderImpl::MediaRecorderImpl(MediaRecorder &recorder) :
 	mDuration(0),
 	mFileSize(0),
 	mTotalFrames(0),
-	mCapturedFrames(0)
+	mCapturedFrames(0),
+	mStreamInfo(nullptr)
 {
 	medvdbg("MediaRecorderImpl::MediaRecorderImpl()\n");
 }

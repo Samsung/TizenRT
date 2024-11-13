@@ -24,7 +24,7 @@
 #include <media/stream_info.h>
 
 static pthread_mutex_t g_stream_info_mutex;
-static uint64_t g_stream_info_id;
+static uint64_t g_stream_info_id = 0;
 
 int stream_info_init(void)
 {
@@ -46,6 +46,9 @@ static uint64_t stream_info_id_generate(void)
 {
 	uint64_t id;
 	pthread_mutex_lock(&g_stream_info_mutex);
+	/**
+	 * ToDo: Handle overflow condition of uint64_t type.
+	*/
 	id = ++g_stream_info_id;
 	pthread_mutex_unlock(&g_stream_info_mutex);
 	return id;

@@ -17,6 +17,7 @@
  ******************************************************************/
 
 #include <media/MediaPlayer.h>
+#include <media/FocusManager.h>
 #include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
 
@@ -36,6 +37,12 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mBuffer = nullptr;
 	mBufSize = 0;
 	mPlaybackFinished = false;
+	stream_info_t *info;
+	int ret = stream_info_create(STREAM_TYPE_MEDIA, &info);
+	if (ret != OK) {
+		meddbg("stream_info_create failed ret : %d\n", ret);
+	}
+	mStreamInfo = std::shared_ptr<stream_info_t>(info, [](stream_info_t *ptr) { stream_info_destroy(ptr); });
 }
 
 player_result_t MediaPlayerImpl::create()
@@ -121,6 +128,13 @@ player_result_t MediaPlayerImpl::prepare()
 {
 	player_result_t ret = PLAYER_OK;
 
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer prepare failed. ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer prepare mPlayer : %x\n", &mPlayer);
 
@@ -155,7 +169,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 
 	auto source = mInputHandler.getDataSource();
 	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
-							 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
@@ -187,6 +201,15 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::prepareAsync()
 {
+	player_result_t ret = PLAYER_OK;
+
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer prepareAsync failed. ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer prepareAsync\n");
 
@@ -251,7 +274,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	if (reset_audio_stream_out() != AUDIO_MANAGER_SUCCESS) {
+	if (reset_audio_stream_out(mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer unprepare fail : reset_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
@@ -270,6 +293,15 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::start()
 {
+	player_result_t ret = PLAYER_OK;
+
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer start failed. ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
+
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer start mPlayer : %x\n", &mPlayer);
 
@@ -299,12 +331,25 @@ void MediaPlayerImpl::startPlayer()
 	if (mCurState == PLAYER_STATE_PAUSED) {
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
-								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_audio_stream_out fail\n");
 			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 			return;
 		}
 	}
+
+	audio_manager_result_t result = set_output_stream_volume(mStreamInfo.get());
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_output_stream_volume failed ret : %d\n", result);
+		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_DEVICE_NOT_SUPPORTED);
+		} else {
+			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+		return;
+	}
+	medvdbg("MediaPlayer set output stream volume success\n");
+
 	mpw.setPlayer(shared_from_this());
 	mCurState = PLAYER_STATE_PLAYING;
 	mPlaybackFinished = false;
@@ -313,6 +358,15 @@ void MediaPlayerImpl::startPlayer()
 
 player_result_t MediaPlayerImpl::stop()
 {
+	player_result_t ret = PLAYER_OK;
+
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer stop failed!! Focus not acquired ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
+
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer stop mPlayer : %x\n", &mPlayer);
 
@@ -371,6 +425,15 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 
 player_result_t MediaPlayerImpl::pause()
 {
+	player_result_t ret = PLAYER_OK;
+
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer pause failed. ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
+
 	std::lock_guard<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer pause mPlayer : %x\n", &mPlayer);
 
@@ -443,8 +506,46 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
-	if (get_output_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("get_output_audio_volume() is failed, ret = %d\n", ret);
+	audio_manager_result_t res = get_output_audio_volume(vol);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_output_audio_volume() is failed, res = %d\n", res);
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+	}
+
+	notifySync();
+}
+
+player_result_t MediaPlayerImpl::getStreamVolume(uint8_t *vol)
+{
+	player_result_t ret = PLAYER_OK;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer getStreamVolume mPlayer : %x\n", &mPlayer);
+
+	if (vol == nullptr) {
+		meddbg("The given argument is invalid.\n");
+		return PLAYER_ERROR_INVALID_PARAMETER;
+	}
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::getPlayerStreamVolume, shared_from_this(), vol, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::getPlayerStreamVolume(uint8_t *vol, player_result_t &ret)
+{
+	audio_manager_result_t res = get_output_stream_volume(vol, mStreamInfo.get());
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_output_stream_volume() is failed, res = %d\n", res);
+		// ToDo: Lets think if some other error type is required or not.
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
 
@@ -479,8 +580,9 @@ player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : getMaxVolume\n");
-	if (get_max_audio_volume(vol) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("get_max_audio_volume() is failed, ret = %d\n", ret);
+	audio_manager_result_t res = get_max_audio_volume(vol);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("get_max_audio_volume() is failed, res = %d\n", res);
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
 
@@ -490,6 +592,13 @@ void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
 player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 {
 	player_result_t ret = PLAYER_OK;
+
+	stream_focus_state_t streamState = getStreamFocusState();
+	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+		ret = PLAYER_ERROR_FOCUS_NOT_READY;
+		meddbg("MediaPlayer setVolume failed. ret: %d, player: %x\n", ret, &mPlayer);
+		return ret;
+	}
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	medvdbg("MediaPlayer setVolume\n");
@@ -510,9 +619,9 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 {
 	medvdbg("MediaPlayer Worker : setVolume %d\n", vol);
 
-	audio_manager_result_t result = set_output_audio_volume(vol);
+	audio_manager_result_t result = set_output_audio_volume(vol, mStreamInfo.get());
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("set_input_audio_volume failed vol : %d ret : %d\n", vol, result);
+		meddbg("set_output_audio_volume failed vol : %d ret : %d\n", vol, result);
 		if (result == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
 			ret = PLAYER_ERROR_DEVICE_NOT_SUPPORTED;
 		} else {
@@ -599,6 +708,51 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 
 	mPlayerObserver = observer;
 	notifySync();
+}
+
+player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	player_result_t ret = PLAYER_OK;
+
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaPlayer setStreamInfo mPlayer : %x\n", &mPlayer);
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+	if (!mpw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
+		return PLAYER_ERROR_NOT_ALIVE;
+	}
+
+	mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret));
+	mSyncCv.wait(lock);
+
+	return ret;
+}
+
+void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret)
+{
+	LOG_STATE_INFO(mCurState);
+
+	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
+		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
+		LOG_STATE_DEBUG(mCurState);
+		ret = PLAYER_ERROR_INVALID_STATE;
+		return notifySync();
+	}
+
+	mStreamInfo = stream_info;
+	notifySync();
+}
+
+stream_focus_state_t MediaPlayerImpl::getStreamFocusState(void)
+{
+	FocusManager &fm = FocusManager::getFocusManager();
+	stream_info_t stream_info = fm.getCurrentStreamInfo();
+	if (mStreamInfo->id == stream_info.id) {
+		return STREAM_FOCUS_STATE_ACQUIRED;
+	} else {
+		return STREAM_FOCUS_STATE_RELEASED;
+	}
 }
 
 bool MediaPlayerImpl::isPlaying()
@@ -747,7 +901,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 		// Now setup audio manager and notify player observer the result.
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
-								 source->getPcmFormat()) != AUDIO_MANAGER_SUCCESS) {
+								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}

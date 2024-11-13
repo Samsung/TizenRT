@@ -40,6 +40,7 @@ namespace media {
 
 static const int FOCUS_REQUEST_SUCCESS = 0;
 static const int FOCUS_REQUEST_FAIL = -1;
+static const int FOCUS_REQUEST_DELAY = -2;
 
 /**
  * @class 
@@ -69,10 +70,26 @@ public:
 	 * @brief Request Focus
 	 * @details @b #include <media/FocusManager.h>
 	 * param[in] focusRequest FocusRequest to request
-	 * @return return FOCUS_REQUEST_SUCCESS on Success, else return FOCUS_REQUEST_FAIL
+	 * @return return FOCUS_REQUEST_SUCCESS on immediate GAIN and FOCUS_REQUEST_DELAY for GAIN later, else return FOCUS_REQUEST_FAIL
 	 * @since TizenRT v2.0
 	 */
 	int requestFocus(std::shared_ptr<FocusRequest> focusRequest);
+
+	/**
+	 * @brief Request Transient Focus
+	 * @details @b #include <media/FocusManager.h>
+	 * param[in] focusRequest FocusRequest to request
+	 * @return return FOCUS_REQUEST_SUCCESS on immediate GAIN and FOCUS_REQUEST_DELAY for GAIN later, else return FOCUS_REQUEST_FAIL
+	 * @since TizenRT v2.0
+	 */
+	int requestFocusTransient(std::shared_ptr<FocusRequest> focusRequest);
+
+	/**
+	 * @brief Get current focussed stream info
+	 * @details @b #include <media/FocusManager.h>
+	 * @return return STREAM_FOCUS_STATE_ACQUIRED if stream has focus, else return STREAM_FOCUS_STATE_RELEASED
+	 */
+	stream_info_t getCurrentStreamInfo(void);
 
 private:
 	class FocusRequester
@@ -80,6 +97,7 @@ private:
 	public:
 		FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener);
 		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
+		stream_info_t getStreamInfo(void);
 		void notify(int focusChange);
 
 		static bool compare(const FocusRequester a, const FocusRequester b);
@@ -92,6 +110,7 @@ private:
 
 	FocusManager() = default;
 	virtual ~FocusManager() = default;
+	int insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest);
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;

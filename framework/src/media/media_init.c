@@ -26,3 +26,4 @@ int media_init(void)
 	audio_manager_init();
 	return 0;
 }
+

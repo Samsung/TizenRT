@@ -24,12 +24,16 @@
 #ifndef CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE
 #define CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE 2048
 #endif
+#ifndef CONFIG_MEDIA_PLAYER_OBSERVER_THREAD_PRIORITY
+#define CONFIG_MEDIA_PLAYER_OBSERVER_THREAD_PRIORITY 199
+#endif
 
 namespace media {
 PlayerObserverWorker::PlayerObserverWorker()
 {
 	mThreadName = "PlayerObserverWorker";
 	mStacksize = CONFIG_MEDIA_PLAYER_OBSERVER_STACKSIZE;
+	mPriority = CONFIG_MEDIA_PLAYER_OBSERVER_THREAD_PRIORITY;
 }
 
 PlayerObserverWorker::~PlayerObserverWorker()

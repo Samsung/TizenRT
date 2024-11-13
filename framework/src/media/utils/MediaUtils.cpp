@@ -644,8 +644,10 @@ static bool checkId3V2Header(const unsigned char *buffer, size_t size, FILE *fp 
 		}
 	} else {
 		meddbg("id3v2 tag not found\n");
-		if (fseek(fp, 0, SEEK_SET) != OK) {
-			return false;
+		if(fp) {
+			if (fseek(fp, 0, SEEK_SET) != OK) {
+				return false;
+			}
 		}
 	}
 	return true;
@@ -1175,7 +1177,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 bool buffer_header_parsing(const unsigned char *buffer, unsigned int bufferSize, audio_type_t audioType, unsigned int *channel, unsigned int *sampleRate, audio_format_type_t *pcmFormat)
 {
 	unsigned int headPoint;
-	unsigned int headPointBak;
+	unsigned int headPointBak = 0;
 	unsigned int frameLength;
 	unsigned int counter = 0;
 	switch (audioType) {
