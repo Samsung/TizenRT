@@ -100,5 +100,3 @@ unsigned long syntiant_get_ms_elapsed(syntiant_ms_time *ms_time)
 
 #endif
 
-
-
