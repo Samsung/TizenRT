@@ -22,6 +22,9 @@
 #ifndef CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE
 #define CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE 2048
 #endif
+#ifndef CONFIG_MEDIA_RECORDER_OBSERVER_THREAD_PRIORITY
+#define CONFIG_MEDIA_RECORDER_OBSERVER_THREAD_PRIORITY 100
+#endif
 
 namespace media {
 
@@ -29,6 +32,7 @@ RecorderObserverWorker::RecorderObserverWorker()
 {
 	mThreadName = "RecorderObserverWorker";
 	mStacksize = CONFIG_MEDIA_RECORDER_OBSERVER_STACKSIZE;
+	mPriority = CONFIG_MEDIA_RECORDER_OBSERVER_THREAD_PRIORITY;
 }
 RecorderObserverWorker::~RecorderObserverWorker()
 {

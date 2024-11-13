@@ -33,6 +33,7 @@
 #include "OutputHandler.h"
 #include "MediaQueue.h"
 #include "RecorderObserverWorker.h"
+#include "media/stream_info.h"
 
 using namespace std;
 
@@ -136,6 +137,7 @@ private:
 	int mFileSize;
 	uint32_t mTotalFrames;
 	uint32_t mCapturedFrames;
+	std::shared_ptr<stream_info_t> mStreamInfo;
 };
 } // namespace media
 

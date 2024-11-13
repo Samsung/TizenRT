@@ -257,13 +257,14 @@ bool SoundPlayer::init(char *argv[])
 	printf("Current volume : %d new Volume : %d\n", cur_vol, volume);
 	mp.setVolume(volume);
 	stream_info_t *info;
-	stream_info_create(STREAM_TYPE_MEDIA, &info);
+	stream_info_create((stream_policy_t)(atoi(argv[4])), &info);
 	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
 	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
 	mFocusRequest = FocusRequest::Builder()
 						.setStreamInfo(stream_info)
 						.setFocusChangeListener(shared_from_this())
 						.build();
+	mp.setStreamInfo(stream_info);
 
 	mSampleRate = atoi(argv[3]);
 	mTrackFinished = false;
@@ -280,7 +281,6 @@ player_result_t SoundPlayer::startPlayback(void)
 	player_result_t res = PLAYER_OK;
 	string s = mList.at(mPlayIndex);
 	printf("startPlayback... playIndex : %d path : %s\n", mPlayIndex, s.c_str());
-	usleep(200000);
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
 	source->setSampleRate(mSampleRate);
 	source->setChannels(DEFAULT_CHANNEL_NUM);
@@ -343,11 +343,44 @@ bool SoundPlayer::checkTrackFinished(void)
 }
 
 extern "C" {
+/*
+ This is guide to use MediaPlayer with focus request.
+ As MediaPlayer is updated and now without focus request, MediaPlayer can't use audio device!!!
+
+ Steps to follow to play an audio data are as follows:
+
+ 1) Application to create a listener to receive onFocusChange callback. Application needs to implement FocusChangeListener interface.
+ 2) Sample source code to create a FocusRequest object and requestFocus is as follows:
+	stream_info_t *info;
+	stream_info_create(STREAM_TYPE_BIXBY, &info); //refer to stream_policy_e for various stream types
+	auto deleter = [](stream_info_t *ptr) { stream_info_destroy(ptr); };
+	auto stream_info = std::shared_ptr<stream_info_t>(info, deleter);
+	mFocusRequest = FocusRequest::Builder()
+						.setStreamInfo(stream_info)
+						.setFocusChangeListener(mFocusObserver)
+						.build();
+	mp.setStreamInfo(stream_info);
+	auto &focusManager = FocusManager::getFocusManager();
+	focusManager.requestFocus(mFocusRequest);
+3)  Application should handle onFocusChange for FOCUS_LOSS during playback. Application must pause/stop playaback when FOCUS_LOSS / FOCUS_LOSS_TRANSIENT recevied
+4)  When playback finsihes, application must call abandonFocus to release focus.
+5)  Mandatory condition, requestFocus must be done and onFocusChange with FOCUS_GAIN options received before calling mediaplayer.prepare
+6)  Sequence of MediaPlayer API calls are as follows:
+	mp.create();
+	mp.setObserver(mMediaPlayerObserverInterface);
+	mp.setStreamInfo(stream_info);
+	mp.setDataSource(source);
+	mp.prepare();
+	mp.start();
+	mp.stop();/mp.pause();
+	mp.unprepare();
+	mp.destroy();
+*/
 int soundplayer_main(int argc, char *argv[])
 {
 	auto player = std::shared_ptr<SoundPlayer>(new SoundPlayer());
 	printf("cur SoundPlayer : %x\n", &player);
-	if (argc != 4) {
+	if (argc != 5) {
 		printf("invalid input\n");
 		return -1;
 	}

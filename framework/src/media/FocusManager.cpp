@@ -17,7 +17,7 @@
  ******************************************************************/
 
 #include <media/FocusManager.h>
-
+#include <debug.h>
 namespace media {
 
 FocusManager::FocusRequester::FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener)
@@ -30,9 +30,18 @@ bool FocusManager::FocusRequester::hasSameId(std::shared_ptr<FocusRequest> focus
 	return mId == focusRequest->getStreamInfo()->id;
 }
 
+stream_info_t FocusManager::FocusRequester::getStreamInfo(void)
+{
+	return {mId, mPolicy};
+}
+
 bool FocusManager::FocusRequester::compare(const FocusManager::FocusRequester a, const FocusManager::FocusRequester b)
 {
-	return a.mPolicy >= b.mPolicy;
+	if (a.mPolicy <= STREAM_TYPE_BIXBY && b.mPolicy <= STREAM_TYPE_BIXBY) {
+		return true;
+	} else {
+		return a.mPolicy >= b.mPolicy;
+	}
 }
 
 void FocusManager::FocusRequester::notify(int focusChange)
@@ -75,12 +84,31 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		return FOCUS_REQUEST_FAIL;
 	}
 
+	return insertFocusElement(focusRequest, false);
+}
+
+int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusRequest)
+{
+	std::lock_guard<std::mutex> lock(mFocusLock);
+	if (focusRequest == nullptr) {
+		return FOCUS_REQUEST_FAIL;
+	}
+
+	return insertFocusElement(focusRequest, true);
+}
+
+int FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest)
+{
+	medvdbg("insertFocusElement!!\n");
 	/* If list is empty, request always gain focus */
 	if (mFocusList.empty()) {
 		auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
 		mFocusList.push_front(focusRequester);
-		focusRequester->notify(FOCUS_GAIN);
-
+		if (isTransientRequest) {
+			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
+		} else {
+			focusRequester->notify(FOCUS_GAIN);
+		}
 		return FOCUS_REQUEST_SUCCESS;
 	}
 
@@ -96,13 +124,18 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 
 	/* If the policy of request is the highest prio */
 	if (FocusRequester::compare(*focusRequester, *(*iter))) {
-		
-		mFocusList.front()->notify(FOCUS_LOSS);
-		/* TODO add usleep as a temp code. gain should not be shared until prev player stop properly */
-		usleep(100000);
+		if (isTransientRequest) {
+			mFocusList.front()->notify(FOCUS_LOSS_TRANSIENT);
+		} else {
+			mFocusList.front()->notify(FOCUS_LOSS);
+		}
 		mFocusList.push_front(focusRequester);
-		focusRequester->notify(FOCUS_GAIN);
-		usleep(100000);
+
+		if (isTransientRequest) {
+			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
+		} else {
+			focusRequester->notify(FOCUS_GAIN);
+		}
 		return FOCUS_REQUEST_SUCCESS;
 	}
 
@@ -118,7 +151,20 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		mFocusList.push_back(focusRequester);
 	}
 
-	return FOCUS_REQUEST_SUCCESS;
+	return FOCUS_REQUEST_DELAY;
+}
+
+stream_info_t FocusManager::getCurrentStreamInfo(void)
+{
+	medvdbg("getCurrentStreamInfo!!\n");
+	stream_info_t stream_info;
+	if (mFocusList.empty()) {
+		stream_info = {0, STREAM_TYPE_MEDIA};
+		return stream_info;
+	}
+	auto iterator = mFocusList.begin();
+	stream_info = (*iterator)->getStreamInfo();
+	return stream_info;
 }
 
 void FocusManager::removeFocusElement(std::shared_ptr<FocusRequest> focusRequest)

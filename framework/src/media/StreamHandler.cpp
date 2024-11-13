@@ -20,6 +20,10 @@
 
 #include <debug.h>
 
+#ifndef CONFIG_HANDLER_STREAM_THREAD_PRIORITY
+#define CONFIG_HANDLER_STREAM_THREAD_PRIORITY 199
+#endif
+
 namespace media {
 namespace stream {
 
@@ -106,9 +110,12 @@ void StreamHandler::createWorker()
 		mStreamBuffer->reset();
 		mIsWorkerAlive = true;
 
+		struct sched_param sparam;
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setstacksize(&attr, mWorkerStackSize);
+		sparam.sched_priority = CONFIG_HANDLER_STREAM_THREAD_PRIORITY;
+		pthread_attr_setschedparam(&attr, &sparam);
 		int ret = pthread_create(&mWorker, &attr, static_cast<pthread_startroutine_t>(StreamHandler::workerMain), this);
 		if (ret != OK) {
 			meddbg("Fail to create StreamHandler Worker thread, return value : %d\n", ret);

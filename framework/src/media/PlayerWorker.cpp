@@ -26,6 +26,10 @@
 #define CONFIG_MEDIA_PLAYER_STACKSIZE 4096
 #endif
 
+#ifndef CONFIG_MEDIA_PLAYER_THREAD_PRIORITY
+#define CONFIG_MEDIA_PLAYER_THREAD_PRIORITY 199
+#endif
+
 using namespace std;
 
 namespace media {
@@ -33,6 +37,7 @@ PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
 {
 	mThreadName = "PlayerWorker";
 	mStacksize = CONFIG_MEDIA_PLAYER_STACKSIZE;
+	mPriority = CONFIG_MEDIA_PLAYER_THREAD_PRIORITY;
 }
 
 PlayerWorker::~PlayerWorker()

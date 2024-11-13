@@ -29,6 +29,7 @@
 #include <mqueue.h>
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
+#include <json/cJSON.h>
 
 #include "audio_manager.h"
 #include "resample/samplerate.h"
@@ -97,6 +98,8 @@
 
 #define INVALID_ID -1
 
+#define VOLUME_JSON_PATH "/mnt/volume_level.json"
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -138,12 +141,14 @@ struct audio_resample_s {
 	uint8_t samprate_types;     // sample rate types supported by card
 };
 
+// ToDo: Exapnd audio card structure to handle volume level
 struct audio_card_info_s {
 	uint8_t card_id;			//current card id
 	uint8_t device_id;			//current device id
 	struct audio_device_config_s config[CONFIG_AUDIO_MAX_DEVICE_NUM];
 	struct pcm *pcm;
 	stream_policy_t policy;
+	stream_info_id_t stream_id;
 	struct audio_resample_s resample;
 	pthread_mutex_t card_mutex;
 };
@@ -175,6 +180,9 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 	{AUDIO_SAMP_RATE_TYPE_96K, AUDIO_SAMP_RATE_96K}
 };
 
+static cJSON *gJSON = NULL;
+static uint8_t gDefaultVolumeLevel = 0;
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -188,6 +196,10 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames);
 static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
+static audio_manager_result_t create_volume_level_json(void);
+static audio_manager_result_t parse_volume_level_json(void);
+static audio_manager_result_t update_volume_level_json(void);
+static const char *getJSONKey(stream_policy_t stream_policy);
 
 /****************************************************************************
  * Private Functions
@@ -584,6 +596,10 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 	}
 
 	config = &card->config[card->device_id];
+	if (volume == config->volume) {
+		medvdbg("Volume already set to %d\n", volume);
+		return AUDIO_MANAGER_SUCCESS;
+	}
 	caps_desc.caps.ac_controls.hw[0] = volume * (config->max_volume / AUDIO_DEVICE_MAX_VOLUME);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
@@ -605,6 +621,122 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 
 	pthread_mutex_unlock(card_mutex);
 	return ret;
+}
+
+audio_manager_result_t create_volume_level_json(void)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	int fd = open(VOLUME_JSON_PATH, O_WRONLY | O_CREAT, 0777);
+	if (fd == -1) {
+		meddbg("Failed to open volume level json file. errno: %d\n", errno);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	cJSON *json = cJSON_CreateObject();
+	if (!json) {
+		meddbg("Failed to create volume level json object\n");
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	char *jsonString = cJSON_Print(json);
+	if (!jsonString) {
+		meddbg("Failed to print volume level json object\n");
+		cJSON_Delete(json);
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	ssize_t bytesWritten = write(fd, jsonString, strlen(jsonString));
+	if (bytesWritten == -1) {
+		meddbg("Failed to write volume level json file. errno: %d\n", errno);
+		ret = AUDIO_MANAGER_OPERATION_FAIL;
+	} else {
+		medvdbg("To be written JSON string: %s\n, bytes written: %zd\n", jsonString, bytesWritten);
+	}
+	free(jsonString);
+	close(fd);
+	cJSON_Delete(json);
+	return ret;
+}
+
+audio_manager_result_t parse_volume_level_json(void)
+{
+	struct stat jsonFileStat;
+	if (stat(VOLUME_JSON_PATH, &jsonFileStat) != 0) {
+		meddbg("Failed to fetch volume level json file information. errno: %d\n", errno);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	char *buffer = (char *)malloc(jsonFileStat.st_size + 1);
+	if (!buffer) {
+		meddbg("Failed to allocate memory to hold volume level json file content\n");
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	int fd = open(VOLUME_JSON_PATH, O_RDONLY);
+	if (fd == -1) {
+		meddbg("Failed to open volume level json. errno: %d", errno);
+		free(buffer);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	ssize_t bytesRead = read(fd, buffer, jsonFileStat.st_size);
+	if (bytesRead == -1) {
+		meddbg("Failed to read from volume level json. errno: %d", errno);
+		close(fd);
+		free(buffer);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	medvdbg("Total bytes read from volume level json: %d\n", bytesRead);
+	gJSON = cJSON_Parse(buffer);
+	if (!gJSON) {
+		meddbg("Failed to parse volume level json file.\n");
+		close(fd);
+		free(buffer);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	close(fd);
+	free(buffer);
+	return AUDIO_MANAGER_SUCCESS;
+}
+
+audio_manager_result_t update_volume_level_json(void)
+{
+	int fd = open(VOLUME_JSON_PATH, O_WRONLY, 0777);
+	if (fd == -1) {
+		meddbg("Failed to open volume level json file. errno: %d\n", errno);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	char *jsonString = cJSON_Print(gJSON);
+	if (!jsonString) {
+		meddbg("Failed to print volume level json object\n");
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	ssize_t bytesWritten = write(fd, jsonString, strlen(jsonString));
+	if (bytesWritten == -1) {
+		meddbg("Failed to write volume level json file. errno: %d\n", errno);
+	} else {
+		medvdbg("To be written JSON string: %s\n, bytes written: %zd\n", jsonString, bytesWritten);
+	}
+	free(jsonString);
+	close(fd);
+	return AUDIO_MANAGER_SUCCESS; 
+}
+
+const char *getJSONKey(stream_policy_t stream_policy)
+{
+	switch (stream_policy) {
+	case STREAM_TYPE_MEDIA:
+		return "STREAM_TYPE_MEDIA";
+	case STREAM_TYPE_VOIP:
+		return "STREAM_TYPE_VOIP";
+	case STREAM_TYPE_NOTIFY:
+		return "STREAM_TYPE_NOTIFY";
+	case STREAM_TYPE_VOICE_RECORD:
+		return "STREAM_TYPE_VOICE_RECOGNITION";
+	case STREAM_TYPE_EMERGENCY:
+		return "STREAM_TYPE_EMERGENCY";
+	case STREAM_TYPE_BIXBY:
+		return "STREAM_TYPE_BIXBY";
+	default:
+		return "STREAM_TYPE_NA";
+	}
 }
 
 /****************************************************************************
@@ -637,6 +769,39 @@ audio_manager_result_t audio_manager_init(void)
 	}
 	if (found_card == 0) {
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	int retVal;
+	struct stat jsonFileStat;
+	retVal = stat(VOLUME_JSON_PATH, &jsonFileStat);
+	if (retVal != OK) {
+		if (errno != ENOENT) {
+			meddbg("Failed to fetch json file information. errno: %d\n", errno);
+			return AUDIO_MANAGER_OPERATION_FAIL;
+		}
+		ret = create_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to create volume level json. ret: %d", ret);
+			return ret;
+		}
+	} else if (jsonFileStat.st_size == 0) {
+		ret = create_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to create volume level json. ret: %d", ret);
+			return ret;
+		}
+	}
+
+	ret = parse_volume_level_json();
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to parse volume level json. ret: %d\n", ret);
+		return ret;
+	}
+
+	ret = get_output_audio_volume(&gDefaultVolumeLevel);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get output audio volume. ret: %d\n", ret);
+		return ret;
 	}
 
 	return AUDIO_MANAGER_SUCCESS;
@@ -739,7 +904,7 @@ error_with_pcm:
 	return ret;
 }
 
-audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format)
+audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int sample_rate, int format, stream_info_id_t stream_id)
 {
 	audio_card_info_t *card;
 	audio_config_t *card_config;
@@ -764,9 +929,14 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card_config = &card->config[card->device_id];
 	medvdbg("[%s] state : %d\n", __func__, card_config->status);
+	if (card->stream_id != stream_id) {
+		if (card_config->status != AUDIO_CARD_IDLE) {
+			reset_audio_stream_out(card->stream_id);
+		}
+	}
 	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
-		reset_audio_stream_out();
+		reset_audio_stream_out(card->stream_id);
 	}
 
 	pthread_mutex_lock(&(card->card_mutex));
@@ -837,6 +1007,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	inputput_card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	start_stream_in_device_process_type(inputput_card->card_id, inputput_card->device_id, AUDIO_DEVICE_SPEECH_DETECT_AEC);
 
+	card->stream_id = stream_id;
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -1156,7 +1327,7 @@ audio_manager_result_t reset_audio_stream_in(void)
 	return ret;
 }
 
-audio_manager_result_t reset_audio_stream_out(void)
+audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 {
 	audio_card_info_t *card;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
@@ -1167,6 +1338,10 @@ audio_manager_result_t reset_audio_stream_out(void)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	if (stream_id != card->stream_id) {
+		medvdbg("audio manager already got reset for stream_id = %d, currently being used by stream_id = %d\n", stream_id, card->stream_id);
+		return AUDIO_MANAGER_SUCCESS;
+	}
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
@@ -1384,13 +1559,74 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 	return ret;
 }
 
+audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_info_t *stream_info)
+{
+	if (!volume) {
+		meddbg("volume ptr is null\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	if (!stream_info) {
+		meddbg("stream info is null\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	const char *policyKey = getJSONKey(stream_info->policy);
+	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+	if (!policy) {
+		*volume = gDefaultVolumeLevel;
+	} else {
+		*volume = policy->valueint;
+	}
+	return AUDIO_MANAGER_SUCCESS;
+}
+
 audio_manager_result_t set_input_audio_gain(uint8_t gain)
 {
 	return set_audio_volume(INPUT, gain);
 }
 
-audio_manager_result_t set_output_audio_volume(uint8_t volume)
+audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *stream_info)
 {
+	if (!stream_info) {
+		meddbg("stream info is null\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	audio_manager_result_t ret;
+	const char *policyKey = getJSONKey(stream_info->policy);
+	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+	if (!policy) {
+		cJSON *policyVolume = cJSON_CreateNumber(volume);
+		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
+	} else {
+		if (policy->valueint != volume) {
+			cJSON *policyVolume = cJSON_CreateNumber(volume);
+			cJSON_ReplaceItemInObject(gJSON, policyKey, policyVolume);
+		}
+	}
+	ret = update_volume_level_json();
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to parse volume level json. ret: %d\n", ret);
+		return ret;
+	}
+	return set_audio_volume(OUTPUT, volume);
+}
+
+audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info)
+{
+	if (!stream_info) {
+		meddbg("stream info is null\n");
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	uint8_t volume;
+	const char *policyKey = getJSONKey(stream_info->policy);
+	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+	if (!policy) {
+		volume = gDefaultVolumeLevel;
+		cJSON *policyVolume = cJSON_CreateNumber(volume);
+		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
+		update_volume_level_json();
+	} else {
+		volume = policy->valueint;
+	}
 	return set_audio_volume(OUTPUT, volume);
 }
 

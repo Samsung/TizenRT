@@ -27,10 +27,22 @@ config MEDIA_PLAYER_STACKSIZE
 	default 4096
 	---help---
 
+config MEDIA_PLAYER_THREAD_PRIORITY
+	int "Priority of Player thread"
+	default 100
+	---help---
+		Set the priority of player thread.
+
 config MEDIA_PLAYER_OBSERVER_STACKSIZE
 	int "Media Player Observer thread stack size"
 	default 2048
 	---help---
+
+config MEDIA_PLAYER_OBSERVER_THREAD_PRIORITY
+	int "Priority of Player Observer thread"
+	default 100
+	---help---
+		Set the priority of player observer thread.
 
 config INPUT_DATASOURCE_STACKSIZE
 	int "InputDataSource thread stack size"
@@ -115,10 +127,18 @@ config MEDIA_RECORDER_STACKSIZE
 	default 12288
 	---help---
 
+config MEDIA_RECORDER_THREAD_PRIORITY
+	int "Media Recorder thread priority"
+	default 100
+
 config MEDIA_RECORDER_OBSERVER_STACKSIZE
 	int "Media Recorder Observer thread stack size"
 	default 2048
 	---help---
+
+config MEDIA_RECORDER_OBSERVER_THREAD_PRIORITY
+	int "Media Recorder thread priority"
+	default 100
 
 config OUTPUT_DATASOURCE_STACKSIZE
 	int "OutputDataSource thread stack size"
@@ -206,6 +226,10 @@ config HANDLER_STREAM_BUFFER_SIZE
 config HANDLER_STREAM_BUFFER_THRESHOLD
 	int "Stream handler stream buffer threshold"
 	default 2048
+
+config HANDLER_STREAM_THREAD_PRIORITY
+	int "Priority of Stream Handler thread"
+	default 100
 
 endif #MEDIA
 
