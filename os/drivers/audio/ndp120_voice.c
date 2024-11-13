@@ -567,7 +567,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 
-		bufinfo->buffer_size = priv->sample_size;
+		bufinfo->buffer_size = 4 * priv->sample_size;
 		bufinfo->nbuffers = CONFIG_NDP120_NUM_BUFFERS;
 		
 		audvdbg("buffer_size : %d nbuffers : %d\n",
