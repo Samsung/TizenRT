@@ -62,6 +62,7 @@ struct rtl8730e_ndp120_audioinfo_s {
 	struct ndp120_lower_s lower;
 	ndp120_handler_t handler;
 	gpio_t dmic;
+	gpio_t reset;
 	gpio_irq_t data_ready;
 };
 
@@ -131,6 +132,18 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 	}
 }
 
+static void rtl8730e_ndp120_reset()
+{
+	gpio_dir(&g_ndp120info.reset, PIN_OUTPUT);
+	gpio_mode(&g_ndp120info.reset, PullDown);
+	gpio_write(&g_ndp120info.reset, 0);
+	up_mdelay(20);
+
+	gpio_mode(&g_ndp120info.reset, PullUp);
+	gpio_write(&g_ndp120info.reset, 1);
+	up_mdelay(20);
+}
+
 #ifdef CONFIG_PM
 static void rtl8730e_ndp120_pm(bool sleep)
 {	
@@ -185,7 +198,8 @@ int rtl8730e_ndp120_initialize(int minor)
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
 		g_ndp120info.lower.set_dmic = rtl8730e_ndp120_set_dmic;
 		gpio_init(&g_ndp120info.dmic, GPIO_DMIC_EN);
-		
+		gpio_init(&g_ndp120info.reset, PA_24);
+		rtl8730e_ndp120_reset();
 		rtl8730e_ndp120_set_dmic(false);
 #ifdef CONFIG_PM
 		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
