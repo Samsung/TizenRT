@@ -1386,29 +1386,17 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
 
-	do {
-		/* Incase we receive data reread error, then sample_size would be 
-		 * zero in 2nd iter. So, reinitialize sample_size to dev->sample_size
-		 * to prevent reading the entrie audio tank into the apb */
-		sample_size = dev->sample_size;
-		s = syntiant_ndp_extract_data(dev->ndp,
-			SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
-			SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &sample_size);
-		if (s == SYNTIANT_NDP_ERROR_DATA_REREAD) {
-			auddbg("DATA_REREAD error occured\n");
-		}
-	} while (s == SYNTIANT_NDP_ERROR_DATA_REREAD);
+	/* since apb can hold 4 samples, set extraction size to 4 */
+	uint32_t extract_size = apb->nmaxbytes;
+	s = syntiant_ndp_extract_data(dev->ndp,
+		SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+		SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &extract_size);
 
 	if (s) {
-		/* Ideally this case should never happen, however, just handle this case
-		 * by sending zero bytes as we have not extracted any bytes. This is also
-		 * underrun case and will be modified properly later, with async method
-		 */
-		auddbg("audio extraction failed, err : %d\n", s);
-		apb->nbytes = 0;
-	} else {
-		apb->nbytes = dev->sample_size;
+		auddbg("error occured : %d\n", s);
 	}
+
+	apb->nbytes = extract_size;
 
 	return s;
 }
