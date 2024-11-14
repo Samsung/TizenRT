@@ -342,16 +342,17 @@ static int tash_main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#ifdef CONFIG_PM
+	/* Open PM Driver to perform pm operations inside tash_read_input_line */
+	tash_pm_open_driver();
+#endif
+
 #ifdef CONFIG_SECURED_TASH
 	tash_check_security(fd);
 #endif
 
 	tash_running = TRUE;
 
-#ifdef CONFIG_PM
-	/* Open PM Driver to perform pm operations inside tash_read_input_line */
-	tash_pm_open_driver();
-#endif
 	do {
 		nbytes = write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT));
 		if (nbytes <= 0) {
