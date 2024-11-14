@@ -309,9 +309,10 @@ static int lcd_getplaneinfo(FAR struct lcd_dev_s *dev, unsigned int planeno, FAR
  * Name:  lcd_getpower
  ****************************************************************************/
 
-static int lcd_getpower(FAR struct lcd_dev_s *dev, int color)
+static int lcd_getpower(FAR struct lcd_dev_s *dev)
 {
-	return OK;
+	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+	return priv->power;
 }
 
 /****************************************************************************
