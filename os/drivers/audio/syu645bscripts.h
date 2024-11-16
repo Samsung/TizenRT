@@ -94,10 +94,9 @@ t_codec_init_script_entry codec_initial_script[] = {
 	{ 0x12, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x13, {0x06,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x14, {0x06,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x17, {0x00,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x18, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 	/* SDATA OUT for AEC */
 	{ 0x17, {0x80,}, 0, SYU645B_REG_D_2BYTE},
+	{ 0x18, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 
 };
 
@@ -131,5 +130,9 @@ t_codec_init_script_entry codec_set_samprate_96k_script[] = {
 	{ 0x00, {0x15,}, 0, SYU645B_REG_D_2BYTE}
 };
 
+t_codec_init_script_entry t_codec_dq_preset_0_script[] = {
+	{ 0x1E, {0x01,}, 0, SYU645B_REG_D_2BYTE},
+	{ 0x07, {0xFF,}, 0, SYU645B_REG_D_2BYTE},
+};
 #endif	/* CONFIG_AUDIO_SYU645B */
 #endif	/* __DRIVERS_AUDIO_SYU645BSCRIPTS_H */
