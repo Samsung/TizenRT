@@ -76,58 +76,6 @@ void binary_manager_register_respart(int part_num, int part_size, uint32_t part_
 }
 
 /****************************************************************************
- * Name: binary_manager_scan_resource
- *
- * Description:
- *	 This function scans resource binaries and update information.
- *
- ****************************************************************************/
-bool binary_manager_scan_resource(void)
-{
-	int ret;
-	resource_binary_header_t header_data;
-	char filepath[BINARY_PATH_LEN];
-
-#ifdef CONFIG_USE_BP
-	binmgr_bpdata_t *bp_data;
-	if (binary_manager_update_bpinfo() == BINMGR_OK) {
-		bp_data = binary_manager_get_bpdata();
-		/* Verify running resource binary based on bootparam */
-		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[bp_data->resource_active_idx].devnum);
-		ret = binary_manager_read_header(BINARY_RESOURCE, filepath, &header_data, false);
-		if (ret == OK) {
-			/* Update inuse index and resource version */
-			resource_info.inuse_idx = bp_data->resource_active_idx;
-			resource_info.version = header_data.version;
-			bmvdbg("Resource version [%u] %u\n", resource_info.inuse_idx, resource_info.version);
-			return true;
-		}
-	}
-#else
-	uint32_t latest_ver = 0;
-
-	for (int part_idx = 0; part_idx < resource_info.part_count; part_idx++) {
-		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
-		ret = binary_manager_read_header(BINARY_RESOURCE, filepath, &header_data, true);
-		if (ret == OK && latest_ver < header_data.version) {
-			/* Update latest version and inuse index */
-			resource_info.version = header_data.version;
-			resource_info.inuse_idx = part_idx;
-			latest_ver = header_data.version;
-		}
-	}
-
-	/* Found valid binary */
-	if (resource_info.version != 0) {
-		bmvdbg("Resource version [%u] %u\n", resource_info.inuse_idx, resource_info.version);
-		return true;
-	}
-#endif
-	bmdbg("Failed to find valid resource\n");
-	return false;
-}
-
-/****************************************************************************
  * Name: binary_manager_mount_resource
  *
  * Description:
@@ -142,31 +90,61 @@ int binary_manager_mount_resource(void)
 	bool need_update_bp = false;
 	char devpath[BINARY_PATH_LEN];
 	char fs_devpath[BINARY_PATH_LEN];
-	resource_binary_header_t resource_header_data;
+	resource_binary_header_t header_data;
 
 	if (resource_info.is_mounted) {
 		bmvdbg("RESOURCEFS is already mounted\n");
 		return OK;
 	}
 
-	bin_count = resource_info.part_count;
-	inuse_idx = resource_info.inuse_idx;
+#ifdef CONFIG_USE_BP
+	binmgr_bpdata_t *bp_data;
+	if (binary_manager_update_bpinfo() != BINMGR_OK) {
+		bmdbg("Failed to update bpinfo %d\n", ret);
+		return ERROR;
+	}
 
+	bp_data = binary_manager_get_bpdata();
+	inuse_idx = bp_data->resource_active_idx;
+#else
+	uint32_t latest_ver = 0;
+	int latest_partidx = -1;
+
+	for (int part_idx = 0; part_idx < resource_info.part_count; part_idx++) {
+		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
+		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, true);
+		if (ret == OK && latest_ver < header_data.version) {
+			/* Update latest version and inuse index */
+			latest_partidx = part_idx;
+			latest_ver = header_data.version;
+		}
+	}
+	inuse_idx = latest_partidx;
+#endif
+	if (inuse_idx < 0 || inuse_idx >= resource_info.part_count) {
+		bmdbg("Failed to find valid resource binary. %d\n", inuse_idx);
+		return ERROR;
+	}
+
+	bin_count = resource_info.part_count;
 	do {
-		/* Read header data and Check crc */
+		/* Read and verify header data */
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
-		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &resource_header_data, false);
+		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, false);
 		if (ret == BINMGR_OK) {
-			bmvdbg("Resource Header Checking Success\n");
+			bmvdbg("Resource [%d] Header Checking Success.\n", inuse_idx);
 			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum + RESOURCE_DEVNUM_OFFSET);
 			ret = mount(fs_devpath, RESOURCE_MOUNTPT, "romfs", MS_RDONLY, NULL);
-			if (ret != OK) {
-				printf("ROMFS ERROR: resourcefs mount failed, errno %d\n", get_errno());
-			} else {
+			if (ret == OK) {
+				/* Update inuse index and resource version */
+				resource_info.inuse_idx = inuse_idx;
+				resource_info.version = header_data.version;
 				resource_info.is_mounted = true;
 				printf("%s is mounted successfully @ %s \n", fs_devpath, RESOURCE_MOUNTPT);
 				bmdbg("Mount resource success! [Version: %d] [Partition: %s] \n", resource_info.version, GET_PARTNAME(inuse_idx));
 				break;
+			} else {
+				printf("ROMFS ERROR: resourcefs %s mount failed, errno %d\n", fs_devpath, get_errno());
 			}
 		}
 
@@ -192,13 +170,14 @@ int binary_manager_mount_resource(void)
 		binmgr_bpdata_t update_bp_data;
 		memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
 		update_bp_data.version++;
-		update_bp_data.resource_active_idx ^= 1;
+		update_bp_data.resource_active_idx = inuse_idx;
 		ret = binary_manager_write_bootparam(&update_bp_data);
 		if (ret == BINMGR_OK) {
 			binary_manager_set_bpdata(&update_bp_data);
-			bmvdbg("Update bootparam SUCCESS\n");
+			bmvdbg("Update bootparam SUCCESS. Resource index to %d\n", inuse_idx);
 		} else {
-			bmdbg("Fail to update bootparam to recover, %d\n", ret);
+			bmdbg("Fail to update bootparam to recover resource. %d\n", ret);
+			return ERROR;
 		}
 	}
 #endif
