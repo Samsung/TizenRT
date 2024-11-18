@@ -301,7 +301,6 @@ void binary_manager_reset_board(int reboot_reason);
 int binary_manager_update_kernel_binary(void);
 #ifdef CONFIG_RESOURCE_FS
 binmgr_resinfo_t *binary_manager_get_resdata(void);
-bool binary_manager_scan_resource(void);
 int binary_manager_unmount_resource(void);
 int binary_manager_check_resource_update(void);
 #endif
