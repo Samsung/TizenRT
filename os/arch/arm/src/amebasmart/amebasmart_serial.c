@@ -574,9 +574,6 @@ static int rtl8730e_log_uart_irq(void *Data)
 	u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
 	if ((txempty_en == 0x4 && (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
 		uart_xmitchars(&CONSOLE_DEV);
-	} else {
-		/* Workaround: Further investigation required to identify where Tx IRQ was disabled */
-		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
 	}
 	return 0;
 }
@@ -1318,9 +1315,10 @@ int up_lowgetc(void)
 {
 	uint8_t rxd;
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
+	u32 IrqEn = LOGUART_GetIMR();
 	LOGUART_SetIMR(0);
 	rxd = LOGUART_GetChar(_FALSE);
-	LOGUART_SetIMR(1);
+	LOGUART_SetIMR(IrqEn);
 #else
 	if (CONSOLE_DEV.isconsole == false)
 		return;
