@@ -52,12 +52,20 @@
 
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd_dev.h>
+#ifdef CONFIG_TOUCH
+#include <tinyara/input/touchscreen.h>
+#endif
 #include <tinyara/rtc.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
+#ifndef CONFIG_DISABLE_POLL
+#include <poll.h>
+#endif
 
 #define LCD_DEV_PATH "/dev/lcd%d"
+
 #define RED   0xF800
 #define WHITE 0xFFFF
 #define BLACK 0x0000
@@ -210,6 +218,7 @@ static unsigned short generate_color_code(int red, int green, int blue)
 	unsigned short colorCode = (red << 11) | (green << 5) | blue;
 	return colorCode;
 }
+
 static void test_bit_map(void)
 {
 	int fd = 0;
@@ -360,6 +369,47 @@ static void test_fps(void)
 	}
 }
 
+#ifdef CONFIG_TOUCH
+static void touch_test(void)
+{
+	/* read first 10 events */
+	char c;
+	int ret;
+
+	int fd = open(TOUCH_DEV_PATH, O_RDONLY);
+	if (fd < 0) {
+		printf("Error: Failed to open /dev/input0, errno : %d\n", get_errno());
+		return;
+	}
+
+	struct pollfd fds[1];
+	fds[0].fd = fd;
+	fds[0].events = POLLIN;
+
+	struct touch_sample_s buf;
+	while (true) {
+		poll(fds, 1, -1);
+		if (fds[0].revents & POLLIN) {
+			ret = read(fd, &buf, sizeof(struct touch_sample_s));
+			if (ret != - 1) {
+				printf("Total touch points %d\n", buf.npoints);
+				for (int i = 0; i < buf.npoints; i++) {
+					printf("coordinates id: %d, x : %d y : %d touch type: %d\n", buf.point[i].id, buf.point[i].x, buf.point[i].y, buf.point[i].flags);
+					if (buf.point[i].flags == TOUCH_DOWN) {
+						printf("Touch press event \n");
+					} else if (buf.point[i].flags == TOUCH_MOVE) {
+						printf("Touch hold/move event \n");
+					} else if (buf.point[i].flags == TOUCH_UP) {
+						printf("Touch release event \n");
+					}
+				}
+			}
+		}
+	}
+	close(fd);
+}
+#endif
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -371,6 +421,13 @@ int lcd_test_main(int argc, char *argv[])
 	int fd = 0;
 	int p = 0;
 	char port[20] = { '\0' };
+#ifdef CONFIG_TOUCH
+	pid_t touch = task_create("touch", SCHED_PRIORITY_DEFAULT, 8096, touch_test, NULL);
+	if (touch < 0) {
+		printf("Error: Failed to create touch reader, error : %d\n", get_errno());
+	}
+#endif
+
 	sprintf(port, LCD_DEV_PATH, p);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
@@ -389,5 +446,8 @@ int lcd_test_main(int argc, char *argv[])
 	}
 	test_fps();
 	close(fd);
-	return 0;
+#ifdef CONFIG_TOUCH
+	task_delete(touch);
+#endif
+	return OK;
 }
