@@ -222,6 +222,11 @@ void uart_datareceived(FAR uart_dev_t *dev)
 	if (dev->recvwaiting) {
 		/* Yes... wake it up */
 
+#ifdef CONFIG_PM
+		/* Another thread is waiting for rxbuf data, we should not allow board to sleep */
+		DEBUGASSERT(pm_uart_domain_id != -1);
+		(void)pm_suspend(pm_uart_domain_id);
+#endif
 		dev->recvwaiting = false;
 		(void)sem_post(&dev->recvsem);
 	}
@@ -856,6 +861,14 @@ static ssize_t uart_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 #endif
 #endif
 
+#ifdef CONFIG_PM
+	if (rxbuf->head == rxbuf->tail) {
+		/* This thread consumed the rxbuf data, we should allow board to sleep */
+		DEBUGASSERT(pm_uart_domain_id != -1);
+		(void)pm_resume(pm_uart_domain_id);
+	}
+#endif
+
 	uart_givesem(&dev->recv.sem);
 	return recvd;
 }
@@ -1432,6 +1445,11 @@ void uart_connected(FAR uart_dev_t *dev, bool connected)
 		if (dev->recvwaiting) {
 			/* Yes... wake it up */
 
+#ifdef CONFIG_PM
+			/* Another thread is waiting for rxbuf data, we should not allow board to sleep */
+			DEBUGASSERT(pm_uart_domain_id != -1);
+			(void)pm_suspend(pm_uart_domain_id);
+#endif
 			dev->recvwaiting = false;
 			(void)sem_post(&dev->recvsem);
 		}
