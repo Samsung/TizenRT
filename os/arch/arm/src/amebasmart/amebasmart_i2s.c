@@ -72,6 +72,7 @@
 /* Assume no RX/TX support until we learn better */
 #undef I2S_HAVE_RX
 #undef I2S_HAVE_TX
+#undef I2S_HAVE_TDM
 
 #if defined(CONFIG_AMEBASMART_I2S)
 
@@ -83,6 +84,11 @@
 /* Check for I2S TX support */
 #if defined(CONFIG_AMEBASMART_I2S_TX)
 #define I2S_HAVE_TX 1
+#endif
+
+/* Check for I2S TDM support */
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+#define I2S_HAVE_TDM 1
 #endif
 
 #ifndef CONFIG_AMEBASMART_I2S_DATALEN
