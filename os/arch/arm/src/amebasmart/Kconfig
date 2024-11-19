@@ -177,6 +177,10 @@ config AMEBASMART_I2S_TX
 	bool "Enable I2S TX"
 	default n
 
+config AMEBASMART_I2S_TDM
+	bool "Enable I2S TDM Support"
+	default n
+
 if AMEBASMART_I2S_TX
 config AMEBASMART_I2S_TXCL
 	int "I2S TX Channel Length"
