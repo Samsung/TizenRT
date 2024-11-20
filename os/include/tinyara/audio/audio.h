@@ -301,7 +301,8 @@
 #define AUDIO_SD_NS                 0x0004
 #define AUDIO_SD_CLEAR              0x0008
 #define AUDIO_SD_LOCAL              0x0010
-#define AUDIO_SD_AEC                0x0020
+#define AUDIO_SD_AEC_ON             0x0020
+#define AUDIO_SD_AEC_OFF            0x0040
 
 /* Audio Operation Callback Reasons ***************************************************/
 

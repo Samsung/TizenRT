@@ -13,7 +13,7 @@
  *  Dissemination of this information or reproduction of this material is
  *  strictly forbidden unless prior written permission is obtained from
  *  Syntiant Corporation.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.6-Samsung **
 */
 #ifndef SYNTIANT_EVB_IO_H
 #define SYNTIANT_EVB_IO_H

@@ -261,7 +261,7 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 				AUDIO_SD_KEYWORD_DETECT |
 #ifdef CONFIG_NDP120_AEC_SUPPORT
-				AUDIO_SD_AEC |
+				AUDIO_SD_AEC_ON | AUDIO_SD_AEC_OFF |
 #endif
 #endif
 #endif
@@ -613,9 +613,14 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 			}
 		} break;
 #endif
-		case AUDIO_SD_AEC: {
+		case AUDIO_SD_AEC_ON: {
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 			ndp120_aec_enable(priv);
+#endif
+		} break;
+		case AUDIO_SD_AEC_OFF: {
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+			ndp120_aec_disable(priv);
 #endif
 		} break;
 		default: {
@@ -760,7 +765,7 @@ static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 	case(PM_SLEEP): {
 		audvdbg("entering SLEEP\n");
 #ifdef CONFIG_NDP120_AEC_SUPPORT
-		ndp120_aec_disable(g_ndp120);
+		ndp120_set_intclk(g_ndp120);
 #endif
 	}
 	break;

@@ -28,15 +28,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
-    ** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.6-Samsung **
 */
-
-/*
- * NOTE:
- * 1. this header file is used in the syntiant-ilib repo as an interface file
- * 2. Some compilers do not pack the structs which means they are always 32 bit
- * aligned so they are explicitly made 32 bit aligned so please follow that.
- */
 
 #ifndef NDP120_FIRMWARE_H
 #define NDP120_FIRMWARE_H
