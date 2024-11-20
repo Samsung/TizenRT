@@ -229,6 +229,9 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 
 	switch (cmd) {
+		case TSIOC_UPDATE: {
+                        priv->ops->firmware_update(priv);
+                }
 		default:
 		break;
 	}

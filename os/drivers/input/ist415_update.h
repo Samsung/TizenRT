@@ -15,25 +15,20 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/****************************************************************************
- * drivers/input/ist415.h
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The
- * ASF licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
- ****************************************************************************/
+#include <tinyara/config.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+#include <poll.h>
+#include <assert.h>
+#include <errno.h>
+#include <debug.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/i2c.h>
+#include <tinyara/irq.h>
+#include <tinyara/input/touchscreen.h>
 
 //////////////////////////////////////////////////////////////
 // Elementary Definitions & Variable
@@ -215,72 +210,147 @@
 
 #define HW_ID_REGISTER					0x30030000
 
-#define TOUCH_MAX_POINTS 	15    /* Maximum number of simultaneous touch point supported */
+/***********anjana - UPDATE *******************/
 
-// TOUCH STATUS
-#define IST415X_TOUCH_STATUS            0x20000000
-#define TOUCH_STATUS_MAGIC              0x00000075
-#define TOUCH_STATUS_MASK               0x000000FF
+#define FLASH_ADDR				0
+#define FLASH_TOTAL_SIZE		(122 * 1024)
+
+#define FLASH_PAGE_SIZE			0x200
+#define FLASH_SECTOR_SIZE		0x800
+
+#define CHIP_ID_ADDRESS			(0x1E7F8)
+
+// ISP
+#define ISP_TARGET_MAIN			0x33
+#define ISP_TARGET_INFO			0x55
+#define ISP_TARGET_DTC			0x57
+#define ISP_TARGET_RED			0x59
+#define ISP_TARGET_LDT0			0x5A
+#define ISP_TARGET_LDT1			0x5C
+#define ISP_TARGET_TESTREG		0x5F
+#define ISP_TARGET_STATUS		0x2F
+#define ISP_TARGET_CHIP_VER		0x3F
+#define ISP_TARGET_ENTER		0x27
+#define ISP_TARGET_EXIT			0x51
+
+#define ISP_CMD_PAGE_ERASE		0x1C
+#define ISP_CMD_SECTOR_ERASE	0xCC
+#define ISP_CMD_MASS_ERASE		0xFF
+#define ISP_CMD_PROG			0x00
+#define ISP_CMD_BURST_PROG		0xAA
+#define ISP_CMD_READ			0xF0
+#define ISP_CMD_RUN_CRC			0x73
+#define ISP_CMD_READ_CRC		0x55
+#define ISP_CMD_ENTER			0x27
+#define ISP_CMD_EXIT			0x51
+
+#define ISP_STATUS_BUSY			0x96
+#define ISP_STATUS_DONE			0xAD
+#define IST415X_ISP_CMD		0xAE
+/***********************************************/
+
+/*#pragma pack(push,1)
+typedef struct {
+	u8	ButtonState			:2;
+	u8	FingerID			:3;
+	u8	Reserved			:3;
+	u16 X;
+	u16 Y;
+} stEventCoordHID_t;
+
+typedef struct {
+	u16 ReportLength;
+	u8  ReportID;
+
+	stEventCoordHID_t stCoord[MAX_FINGER_NUM];
+	
+	u16 Scantime;
+	u8  ContactCount;
+	u8  Button;
+} stEventReportHID_t;
+#pragma pack(pop)
+
+typedef struct {
+	u8 EventId		:2;
+	u8 StatusType	:4;
+	u8 SFOn			:2;
+	u8 StatusId;
+	u8 aStatusData[5];
+	u8 LeftEvt		:5;
+	u8 Reserved		:3;
+	u8 Reserved0;
+	u8 Reserved1;
+	u8 Reserved2;
+	u8 Reserved3;
+	u8 Reserved4;
+	u8 Reserved5;
+	u8 Reserved6;
+	u8 Reserved7;
+} stEventStatus_t;
+
+typedef struct{
+	u32 ChipId;
+
+	u32 ReleaseVer;
+	
+	u32 LcdWidth;
+	u32 LcdHeight;
+	
+	u32 NumOfRx;
+	u32 NumOfTx;
+
+	u16 Crc;
+
+	u8 SwapInfo;
+	
+	u32 CalResult;
+	u32 SCalResult;
+}stIST415xInfo_t;
 
 struct ts_event_coordinate {
-	u8 eid:2;
-	u8 tid:4;
-	u8 tsta:2;
+        u8 eid:2;
+        u8 tid:4;
+        u8 tsta:2;
 
-	u8 x_11_4;
-	u8 y_11_4;
+        u8 x_11_4;
+        u8 y_11_4;
 
-	u8 y_3_0:4;
-	u8 x_3_0:4;
+        u8 y_3_0:4;
+        u8 x_3_0:4;
 
-	u8 major;
-	u8 minor;
+        u8 major;
+        u8 minor;
 
-	u8 z:6;
-	u8 ttype_3_2:2;
+        u8 z:6;
+        u8 ttype_3_2:2;
 
-	u8 left_e:5;
-	u8 max_e:1;
-	u8 ttype_1_0:2;
+        u8 left_e:5;
+        u8 max_e:1;
+        u8 ttype_1_0:2;
 
-	u8 noise_lv;
-	u8 max_str;
+        u8 noise_lv;
+        u8 max_str;
 
-	u8 hover_id_num:4;
-	u8 noise_sta:2;
-	u8 eom:1;
-	u8 reserved:1;
+        u8 hover_id_num:4;
+        u8 noise_sta:2;
+        u8 eom:1;
+        u8 reserved:1;
 
-	u8 reserved0;
-	u8 reserved1;
-	u8 reserved2;
-	u8 reserved3;
-	u8 reserved4;
+        u8 reserved0;
+        u8 reserved1;
+        u8 reserved2;
+        u8 reserved3;
+        u8 reserved4;
 };
 
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-struct ist415_ops_s {
-	CODE void (*irq_enable)(void);	/* Enables the irq */
-	CODE void (*irq_disable)(void);	/* Disables the irq */
-	CODE void (*reset)(void);	/* GPIO reset for TSP recovery*/
-};
+struct ts_coordinate {
+        u8 id;
+        u8 status;
+        u16 x;
+        u16 y;
+        u8 z;
+        u8 major;
+        u8 minor;
+        u8 type;
+};*/
 
-/* IST415 Device */
-struct ist415_dev_s {
-	struct i2c_dev_s *i2c;
-	struct i2c_config_s i2c_config;
-	bool int_pending;
-	/*
-	 * This is a interrupt handler for touch. The lower level code will intercept the interrupt
-	 * and provide the uppper level code with private data with interrupt attached.
-	 */
-	void (*handler)(struct ist415_dev_s *dev);
-
-	struct ist415_ops_s *ops;
-	struct touchscreen_s *upper; 
-	sem_t status_check_sem;
-	int wdog;
-	void *priv;		/* Used by the chipset-specific logic */
-};

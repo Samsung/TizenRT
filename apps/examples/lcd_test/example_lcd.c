@@ -85,6 +85,7 @@ static int yres;
 #define EXAMPLE_LCD_FPS_TEST 5000
 #endif
 
+
 static void putarea(int x1, int x2, int y1, int y2, int color)
 {
 	struct lcddev_area_s area;
@@ -370,6 +371,7 @@ static void test_fps(void)
 }
 
 #ifdef CONFIG_TOUCH
+
 static void touch_test(void)
 {
 	/* read first 10 events */
@@ -410,6 +412,21 @@ static void touch_test(void)
 }
 #endif
 
+static void check_firmware_update()
+{
+	int touch_fd = open(TOUCH_DEV_PATH, O_RDWR);
+	if (touch_fd < 0) {
+		printf("Error: Failed to open /dev/touch0, errno : %d\n", get_errno());
+		return;
+	}
+	char file_path[] = "/file.bin";
+	int ret = ioctl(touch_fd, TSIOC_UPDATE, file_path);
+	if (ret != OK) {
+		printf("ERROR: Touch firmware update failed..please check binary and try again\n");
+		return;
+	}
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -422,6 +439,8 @@ int lcd_test_main(int argc, char *argv[])
 	int p = 0;
 	char port[20] = { '\0' };
 #ifdef CONFIG_TOUCH
+	check_firmware_update();
+
 	pid_t touch = task_create("touch", SCHED_PRIORITY_DEFAULT, 8096, touch_test, NULL);
 	if (touch < 0) {
 		printf("Error: Failed to create touch reader, error : %d\n", get_errno());
