@@ -137,6 +137,25 @@ static int syu645b_exec_i2c_script(FAR struct syu645b_dev_s *priv, t_codec_init_
 	return ret;
 }
 
+static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
+{
+	FAR struct i2c_dev_s *dev = priv->i2c;
+	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
+	uint8_t reg_w[1];
+	reg_w[0] = regaddr;
+	int ret = i2c_write(dev, syu645b_i2c_config, reg_w, 1);
+	if (ret != 1) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	ret =  i2c_read(dev, syu645b_i2c_config, regval, nbytes);
+	if (ret != nbytes) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	return OK;
+}
+
 /************************************************************************************
  * Name: syu645b_takesem
  *
@@ -188,17 +207,17 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 		auddbg("Error, Device's private data Not available\n");
 		return;
 	}
-	audvdbg("volume=%u mute=%u\n", priv->volume, priv->mute);
-	if (priv->mute) {
-		syu645b_setmute(priv, true);
-		return;
-	}
+	uint8_t max = priv->max_volume - SYU645B_HW_VOL_MIN_BOUND;
+	float bound = (float)max / 100;
+	bound = (float)(bound * priv->volume);
+	uint16_t val = (int)(bound + SYU645B_HW_VOL_MIN_BOUND);
+	audvdbg("volume = %d val : %d mute=%u\n", priv->volume, val, priv->mute);
 
 	if (priv->volume == 0) {
 		codec_set_master_volume_script[0].val[0] = 0;
 	} else {
 		/* Linear approximation is done to convert media volume to hardware volume */
-		codec_set_master_volume_script[0].val[0] = SYU645B_HW_VOL_MIN_BOUND + SYU645B_HW_VOL_SLOPE * priv->volume;
+		codec_set_master_volume_script[0].val[0] = val;
 	}
 	syu645b_setmute(priv, false);
 	syu645b_exec_i2c_script(priv, codec_set_master_volume_script, sizeof(codec_set_master_volume_script) / sizeof(t_codec_init_script_entry));
@@ -351,7 +370,7 @@ static int syu645b_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			 */
 		}
 
-		caps->ac_controls.hw[0] = SYU645B_SPK_VOL_MAX;
+		caps->ac_controls.hw[0] = priv->max_volume;
 		caps->ac_controls.hw[1] = priv->volume;
 
 		break;
@@ -406,14 +425,8 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			/* Set the volume */
 			uint16_t volume = caps->ac_controls.hw[0];
 			audvdbg("    Volume: %d\n", volume);
-			if (volume < SYU645B_SPK_VOL_MIN) {
-				priv->volume = SYU645B_SPK_VOL_MIN;
-			} else if (volume >= SYU645B_SPK_VOL_MAX) {
-				priv->volume = SYU645B_SPK_VOL_MAX;
-			} else {
-				priv->volume = volume;
-			}
 			printf("set volume is called\n");
+			priv->volume = volume;
 			syu645b_setvolume(priv);
 		}
 		break;
@@ -422,7 +435,7 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			bool mute = caps->ac_controls.b[0];
 			audvdbg("mute: 0x%x\n", mute);
 			priv->mute = mute;
-			syu645b_setvolume(priv);
+			syu645b_setmute(priv, mute);
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -773,7 +786,7 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 
 #ifdef CONFIG_PM
-	pm_timedsuspend(pm_domain_register("SYU645"), timeout);
+	pm_timedsuspend(pm_domain_register("AUDIO"), timeout);
 #endif
 	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 
@@ -1023,7 +1036,8 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset)
 {
 	/* Set default EQ Set */ 
-//	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_1_script, sizeof(t_codec_dq_preset_1_script) / sizeof(t_codec_init_script_entry));
+	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_0_script, sizeof(t_codec_dq_preset_0_script) / sizeof(t_codec_init_script_entry));
+	priv->max_volume = 0xFF;
 }
 
 /****************************************************************************
@@ -1151,7 +1165,7 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	syu645b_reset_config(priv);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	priv->volume = SYU645B_SPK_VOL_DEF;
+	syu645b_set_equalizer(priv, 0);
 	syu645b_setmute(priv, true);
 #endif
 

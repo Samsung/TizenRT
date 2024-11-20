@@ -76,6 +76,8 @@
 
 #define AUDIO_DEVICE_MAX_VOLUME 15
 
+#define MAX_STREAM_POLICY_NUM 6
+
 #ifndef CONFIG_AUDIO_MAX_INPUT_CARD_NUM
 #define CONFIG_AUDIO_MAX_INPUT_CARD_NUM 2
 #endif
@@ -151,6 +153,7 @@ struct audio_card_info_s {
 	stream_info_id_t stream_id;
 	struct audio_resample_s resample;
 	pthread_mutex_t card_mutex;
+	uint8_t volume[MAX_STREAM_POLICY_NUM];
 };
 
 struct audio_samprate_map_entry_s {
@@ -178,6 +181,15 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 	{AUDIO_SAMP_RATE_TYPE_44K, AUDIO_SAMP_RATE_44K},
 	{AUDIO_SAMP_RATE_TYPE_48K, AUDIO_SAMP_RATE_48K},
 	{AUDIO_SAMP_RATE_TYPE_96K, AUDIO_SAMP_RATE_96K}
+};
+
+static const uint8_t g_audio_stream_volume_entry[6][16] = {
+	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_MEDIA
+	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_NOTIFY
+	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_BIXBY
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0, 0, 0},//STREAM_TYPE_RECORDER, not available for now 
+	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_VOIP
+	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_EMERGENCY
 };
 
 static cJSON *gJSON = NULL;
@@ -552,13 +564,22 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 
 		/* scale here */
 		medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
+#if 0
 		cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
 		if (cur_volume > AUDIO_DEVICE_MAX_VOLUME) {
 			cur_volume = AUDIO_DEVICE_MAX_VOLUME;
 		}
+#endif
+		int i;
+		for (i = 0; i <= AUDIO_DEVICE_MAX_VOLUME; i++) {
+			if (g_audio_stream_volume_entry[card->policy][i] == cur_volume) {
+				break;
+			}
+				
+		}
 		config = &card->config[card->device_id];
 		config->max_volume = max_volume;
-		config->volume = cur_volume;
+		config->volume = i;
 		medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
 	}
 
@@ -600,7 +621,8 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		medvdbg("Volume already set to %d\n", volume);
 		return AUDIO_MANAGER_SUCCESS;
 	}
-	caps_desc.caps.ac_controls.hw[0] = volume * (config->max_volume / AUDIO_DEVICE_MAX_VOLUME);
+	caps_desc.caps.ac_controls.hw[0] = g_audio_stream_volume_entry[card->policy][volume];//volume * (config->max_volume / AUDIO_DEVICE_MAX_VOLUME);
+	medvdbg("streaminfo :  %d volume : %d value : %d\n", card->policy, volume, g_audio_stream_volume_entry[card->policy][volume]);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
@@ -697,6 +719,7 @@ audio_manager_result_t parse_volume_level_json(void)
 
 audio_manager_result_t update_volume_level_json(void)
 {
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	int fd = open(VOLUME_JSON_PATH, O_WRONLY, 0777);
 	if (fd == -1) {
 		meddbg("Failed to open volume level json file. errno: %d\n", errno);
@@ -711,12 +734,13 @@ audio_manager_result_t update_volume_level_json(void)
 	ssize_t bytesWritten = write(fd, jsonString, strlen(jsonString));
 	if (bytesWritten == -1) {
 		meddbg("Failed to write volume level json file. errno: %d\n", errno);
+		ret = AUDIO_MANAGER_OPERATION_FAIL;
 	} else {
 		medvdbg("To be written JSON string: %s\n, bytes written: %zd\n", jsonString, bytesWritten);
 	}
 	free(jsonString);
 	close(fd);
-	return AUDIO_MANAGER_SUCCESS; 
+	return ret;
 }
 
 const char *getJSONKey(stream_policy_t stream_policy)
@@ -802,6 +826,17 @@ audio_manager_result_t audio_manager_init(void)
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Failed to get output audio volume. ret: %d\n", ret);
 		return ret;
+	}
+
+	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	for (uint16_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
+		const char *policyKey = getJSONKey((stream_policy_t)i);
+		cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+		if (!policy) {
+			card->volume[i] = gDefaultVolumeLevel;
+		} else {
+			card->volume[i] = policy->valueint;
+		}
 	}
 
 	return AUDIO_MANAGER_SUCCESS;
@@ -929,6 +964,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card_config = &card->config[card->device_id];
 	medvdbg("[%s] state : %d\n", __func__, card_config->status);
+	medvdbg("card->stream_id : %d stream_id : %d\n", card->stream_id, stream_id);
 	if (card->stream_id != stream_id) {
 		if (card_config->status != AUDIO_CARD_IDLE) {
 			reset_audio_stream_out(card->stream_id);
@@ -1002,12 +1038,12 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 
 	card_config->status = AUDIO_CARD_READY;
+	card->stream_id = stream_id;
 	/* TEMP CODE, Below is very rare case but need to be handled by audio manager */
 	audio_card_info_t *inputput_card;
 	inputput_card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	start_stream_in_device_process_type(inputput_card->card_id, inputput_card->device_id, AUDIO_DEVICE_SPEECH_DETECT_AEC);
 
-	card->stream_id = stream_id;
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -1569,13 +1605,10 @@ audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_info_t *
 		meddbg("stream info is null\n");
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	const char *policyKey = getJSONKey(stream_info->policy);
-	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
-	if (!policy) {
-		*volume = gDefaultVolumeLevel;
-	} else {
-		*volume = policy->valueint;
-	}
+
+	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	*volume = card->volume[stream_info->policy];
+
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -1590,7 +1623,12 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *st
 		meddbg("stream info is null\n");
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	audio_manager_result_t ret;
+	audio_manager_result_t ret = set_audio_volume(OUTPUT, volume);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_volume failed, ret: %d\n", ret);
+		return ret;
+	}
+
 	const char *policyKey = getJSONKey(stream_info->policy);
 	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
 	if (!policy) {
@@ -1600,14 +1638,20 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *st
 		if (policy->valueint != volume) {
 			cJSON *policyVolume = cJSON_CreateNumber(volume);
 			cJSON_ReplaceItemInObject(gJSON, policyKey, policyVolume);
+		} else {
+			return ret;
 		}
 	}
 	ret = update_volume_level_json();
 	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Failed to parse volume level json. ret: %d\n", ret);
+		meddbg("Failed to update volume level json. ret: %d\n", ret);
 		return ret;
 	}
-	return set_audio_volume(OUTPUT, volume);
+
+	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	card->volume[stream_info->policy] = volume;
+
+	return ret;
 }
 
 audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info)
@@ -1621,13 +1665,31 @@ audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info)
 	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
 	if (!policy) {
 		volume = gDefaultVolumeLevel;
-		cJSON *policyVolume = cJSON_CreateNumber(volume);
-		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
-		update_volume_level_json();
 	} else {
 		volume = policy->valueint;
 	}
-	return set_audio_volume(OUTPUT, volume);
+
+	audio_manager_result_t ret;
+	ret = set_audio_volume(OUTPUT, volume);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_volume failed, ret: %d\n", ret);
+		return ret;
+	}
+
+	if (!policy) {
+		cJSON *policyVolume = cJSON_CreateNumber(volume);
+		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
+		ret = update_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to update volume level json. ret: %d\n", ret);
+			return ret;
+		}
+
+		audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		card->volume[stream_info->policy] = volume;
+	}
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
 uint8_t get_process_type_audio_param_value(device_process_type_t type)
@@ -2137,11 +2199,6 @@ audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direct
 	if (card->config[card->device_id].status == AUDIO_CARD_NONE) {
 		meddbg("Failed to set stream policy, card is not available\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	if (policy < card->policy) {
-		meddbg("Failed to set stream policy : %d, previous is more high : %d\n", policy, card->policy);
-		return AUDIO_MANAGER_SET_STREAM_POLICY_NOT_ALLOWED;
 	}
 
 	/* TODO Consider that reset stream & set values(channel, buffer size) based on policy */
