@@ -72,6 +72,7 @@ struct rtl8730e_ist415_s g_rtl8730e_ist415_priv0;
 
 static void rtl8730e_ist415_enable_irq(void);
 static void rtl8730e_ist415_disable_irq(void);
+static void rtl8730e_ist415_gpio_reset(void);
 
 /****************************************************************************
  * Private Data
@@ -88,6 +89,7 @@ static struct ist415_dev_s g_ist415_dev0 = {
 	.ops = &(struct ist415_ops_s){
 		.irq_enable = rtl8730e_ist415_enable_irq,
 		.irq_disable = rtl8730e_ist415_disable_irq,
+		.reset = rtl8730e_ist415_gpio_reset,
 	},
 	.priv = &g_rtl8730e_ist415_priv0,
 };
@@ -126,6 +128,7 @@ static void rtl8730e_ist415_disable_irq(void)
 
 static void rtl8730e_ist415_gpio_reset(void)
 {
+	lldbg("gpio reset\n");
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
 	DelayMs(300);
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);

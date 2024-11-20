@@ -19,6 +19,9 @@ ifeq ($(CONFIG_TOUCH),y)
 CSRCS += touchscreen.c
 ifeq ($(CONFIG_TOUCH_IST415),y)
 CSRCS += ist415.c
+ifeq ($(CONFIG_TOUCH_FIRMWARE_UPDATE),y)
+CSRCS += ist415_update.c
+endif
 endif
 
 DEPPATH += --dep-path input

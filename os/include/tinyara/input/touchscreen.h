@@ -84,6 +84,8 @@
 #define TSIOC_SETFREQUENCY   _TSIOC(0x0003)  /* arg: Pointer to uint32_t frequency value */
 #define TSIOC_GETFREQUENCY   _TSIOC(0x0004)  /* arg: Pointer to uint32_t frequency value */
 
+#define TSIOC_UPDATE        _TSIOC(0x0008) /* TSP Firmware Update */
+
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
 
@@ -175,7 +177,7 @@ struct touchscreen_ops_s {
 	int (*touch_read)(struct touchscreen_s *priv, FAR char *buffer);	/* Read touch point */
 	void (*touch_enable)(struct touchscreen_s *dev);			/* Enable touch */
 	void (*touch_disable)(struct touchscreen_s *dev);			/* Disable touch */
-
+	int (*firmware_update)(struct touchscreen_s *dev);  
 	/* It's set to true when there is touch interrupt and set to false after data is read from device */
 	bool (*is_touchSet)(struct touchscreen_s *dev);
 };

@@ -23,6 +23,12 @@ config TOUCH_IST415
 		Enable the Touch device IST415
 endchoice
 
+config TOUCH_FIRMWARE_UPDATE
+        bool "IST415 FIRMWARE Support"
+        default n
+        ---help---
+                Enable the Touch device IST415 FIRMWARE UPDATE SUPPORT
+
 config TOUCH_NPOLLWAITERS
 	int "Number of Multipolling Wait"
 	default 2
