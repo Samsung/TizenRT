@@ -99,7 +99,8 @@ enum audio_device_process_unit_subtype_e {
 	AUDIO_DEVICE_SPEECH_DETECT_LOCAL5 = 10,
 	AUDIO_DEVICE_SPEECH_DETECT_LOCAL6 = 11,
 	AUDIO_DEVICE_SPEECH_DETECT_LOCAL7 = 12,
-	AUDIO_DEVICE_SPEECH_DETECT_AEC = 13
+	AUDIO_DEVICE_SPEECH_DETECT_AEC_ON = 13,
+	AUDIO_DEVICE_SPEECH_DETECT_AEC_OFF = 14,
 };
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
