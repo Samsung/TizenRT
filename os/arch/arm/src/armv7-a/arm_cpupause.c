@@ -102,6 +102,26 @@ bool up_cpu_pausereq(int cpu)
 }
 
 /****************************************************************************
+ * Name: up_is_cpu_paused
+ *
+ * Description:
+ *   Return true if this CPU is in paused state.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be queried
+ *
+ * Returned Value:
+ *   true   = cpu is paused.
+ *   false = cpu is not paused.
+ *
+ ****************************************************************************/
+
+bool up_is_cpu_paused(int cpu)
+{
+	return spin_is_locked(&g_cpu_resumed[cpu]);
+}
+
+/****************************************************************************
  * Name: up_cpu_paused_save
  *
  * Description:
@@ -301,6 +321,14 @@ int arm_pause_handler(int irq, void *context, void *arg)
 int up_cpu_pause(int cpu)
 {
   DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+	/* If a pause request is already pending or if the cpu is already in
+	 * paused state, then dont send the pause request again.
+	 */
+
+	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
+	        return OK;
+	}
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify of the pause event */
