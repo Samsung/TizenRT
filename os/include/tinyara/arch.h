@@ -1958,6 +1958,23 @@ int up_cpu_pause(int cpu);
 bool up_cpu_pausereq(int cpu);
 
 /****************************************************************************
+ * Name: up_is_cpu_paused
+ *
+ * Description:
+ *   Return true if this CPU is in paused state.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be queried
+ *
+ * Returned Value:
+ *   true   = cpu is paused.
+ *   false = cpu is not paused.
+ *
+ ****************************************************************************/
+
+bool up_is_cpu_paused(int cpu);
+
+/****************************************************************************
  * Name: up_cpu_paused
  *
  * Description:
