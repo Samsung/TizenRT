@@ -92,7 +92,7 @@ static const struct audio_ops_s g_audioops = {
 
 static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
 static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset);
+static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset);
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
@@ -440,7 +440,7 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 		case AUDIO_FU_EQUALIZER: {
-			uint8_t preset = caps->ac_controls.b[0];
+			uint32_t preset = caps->ac_controls.w;
 			syu645b_set_equalizer(priv, preset);
 		}
 		break;
@@ -1033,11 +1033,17 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 	syu645b_setmute(priv, true);
 }
 
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset)
+static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset)
 {
-	/* Set default EQ Set */ 
+	/* Reset First */
+	syu645b_reset_config(priv);
+
+	/* And then Set default EQ Set */
 	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_0_script, sizeof(t_codec_dq_preset_0_script) / sizeof(t_codec_init_script_entry));
 	priv->max_volume = 0xFF;
+
+	/* And then setVolume Again */
+	syu645b_setvolume(priv);
 }
 
 /****************************************************************************
@@ -1165,7 +1171,9 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	syu645b_reset_config(priv);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	syu645b_set_equalizer(priv, 0);
+	priv->max_volume = 0xFF;
+	priv->volume = 79;
+	syu645b_setvolume(priv);
 	syu645b_setmute(priv, true);
 #endif
 
