@@ -19,6 +19,7 @@
 #include <media/MediaUtils.h>
 #include <debug.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <tinyara/config.h>
 #include <cstring>
 
