@@ -1702,6 +1702,7 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	}
 
 	apb->nbytes = extract_size;
+	dev->total_size += extract_size;
 
 	return s;
 }
