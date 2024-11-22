@@ -506,6 +506,34 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *st
 audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info);
 
 /****************************************************************************
+ * Name: set_output_audio_equalizer
+ *
+ * Description:
+ *   Sets the audio equalizer preset for the active output audio device.
+ *
+ * Input parameter:
+ *   preset: The preset number to apply to the audio equalizer.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_output_audio_equalizer(uint32_t preset);
+
+/****************************************************************************
+ * Name: set_input_audio_equalizer
+ *
+ * Description:
+ *   Sets the audio equalizer preset for the active input audio device.
+ *
+ * Input parameter:
+ *   preset: The preset number to apply to the audio equalizer.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_input_audio_equalizer(uint32_t preset);
+
+/****************************************************************************
  * Name: find_stream_in_device_with_process_type
  *
  * Description:
