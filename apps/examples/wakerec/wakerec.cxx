@@ -49,7 +49,7 @@ using namespace media::voice;
 
 media::voice::SpeechDetector *sd;
 
-static const char *filePath = "/tmp/record.pcm";
+static const char *filePath = "/mnt/record.pcm";
 uint8_t *gBuffer = NULL;
 uint32_t bufferSize = 0;
 
@@ -67,6 +67,7 @@ private:
 	MediaRecorder mr;
 	shared_ptr<FocusRequest> mFocusRequest;
 	FILE *fp;
+	bool mPaused;
 
 	void onRecordStarted(media::MediaRecorder &mediaRecorder) override
 	{
@@ -124,6 +125,7 @@ private:
 		printf("##################################\n");
 		printf("####    onPlaybackStarted     ####\n");
 		printf("##################################\n");
+		mPaused = false;
 	}
 	void onPlaybackFinished(media::MediaPlayer &mediaPlayer) override
 	{
@@ -133,6 +135,7 @@ private:
 
 		mp.unprepare();
 		mp.destroy();
+		mPaused = false;
 		auto &focusManager = FocusManager::getFocusManager();
 		focusManager.abandonFocus(mFocusRequest);
 
@@ -147,7 +150,13 @@ private:
 		sd->startKeywordDetect();
 		/* Now that we finished playback, we can go to sleep */
 		sleep(3); //for test, add sleep.
+
 		pm_resume(PM_IDLE_DOMAIN);
+	}
+
+	void onPlaybackStopped(media::MediaPlayer &mediaPlayer) override
+	{
+		mPaused = false;
 	}
 
 	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
@@ -171,6 +180,7 @@ private:
 
 	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override
 	{
+		mPaused = true;
 	}
 
 	void onSpeechDetectionListener(media::voice::speech_detect_event_type_e event) override
@@ -209,18 +219,27 @@ private:
 
 	void onFocusChange(int focusChange) override
 	{
-		printf("focusChange : %d\n", focusChange);
+		player_result_t res;
+		printf("focusChange : %d mPaused : %d\n", focusChange, mPaused);
 		switch (focusChange) {
 		case FOCUS_GAIN:
 		case FOCUS_GAIN_TRANSIENT: {
-			auto source = std::move(unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(filePath)));
-			source->setSampleRate(16000);
-			source->setChannels(1);
-			source->setPcmFormat(media::AUDIO_FORMAT_TYPE_S16_LE);
-			mp.setDataSource(std::move(source));
-			mp.prepare();
-			mp.setVolume(10);
-			mp.start();
+			if (mPaused) {
+				printf("it was paused, just start playback now\n");
+				res = mp.start();
+				if (res != PLAYER_OK) {
+					printf("start failed res : %d\n", res);
+				}
+			} else {
+				auto source = std::move(unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(filePath)));
+				source->setSampleRate(16000);
+				source->setChannels(1);
+				source->setPcmFormat(media::AUDIO_FORMAT_TYPE_S16_LE);
+				mp.setDataSource(std::move(source));
+				mp.prepare();
+				mp.setVolume(10);
+				mp.start();
+			}
 		} break;
 		case FOCUS_LOSS: {
 			mp.stop();

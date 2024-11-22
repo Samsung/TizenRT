@@ -208,6 +208,7 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames);
 static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
+static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, uint32_t preset);
 static audio_manager_result_t create_volume_level_json(void);
 static audio_manager_result_t parse_volume_level_json(void);
 static audio_manager_result_t update_volume_level_json(void);
@@ -636,6 +637,48 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		medvdbg("Volume = %d (%d)\n", volume, caps_desc.caps.ac_controls.hw[0]);
 	} else {
 		meddbg("Fail to set a volume, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		}
+	}
+
+	pthread_mutex_unlock(card_mutex);
+	return ret;
+}
+
+//ToDo: In the future, driver will be changed to load the script that exists in each product app.
+static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, uint32_t preset)
+{
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	pthread_mutex_t *card_mutex;
+
+	if (direct == INPUT) {
+		caps_desc.caps.ac_format.hw = AUDIO_FU_EQUALIZER;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+	} else {
+		caps_desc.caps.ac_format.hw = AUDIO_FU_EQUALIZER;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+	}
+
+	caps_desc.caps.ac_controls.w = preset;
+	medvdbg("preset :  %d\n", preset);
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+
+	get_card_path(card_path, card->card_id, card->device_id, direct);
+
+	pthread_mutex_lock(card_mutex);
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		medvdbg("Successfully set equalizer\n");
+	} else {
+		meddbg("Fail to set equalizer, ret = %d errno : %d\n", ret, get_errno());
 		if (get_errno() == EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		}
@@ -1690,6 +1733,18 @@ audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info)
 	}
 
 	return AUDIO_MANAGER_SUCCESS;
+}
+
+//ToDo: In the future, driver will be changed to load the script that exists in each product app.
+audio_manager_result_t set_output_audio_equalizer(uint32_t preset)
+{
+	return set_audio_equalizer(OUTPUT, preset);
+}
+
+//ToDo: In the future, driver will be changed to load the script that exists in each product app.
+audio_manager_result_t set_input_audio_equalizer(uint32_t preset)
+{
+	return set_audio_equalizer(INPUT, preset);
 }
 
 uint8_t get_process_type_audio_param_value(device_process_type_t type)
