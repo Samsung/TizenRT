@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 416989d090 2024/11/22-16:38:23 ==
+1. Update wififw code and adjust rate adaptation table
+
 == version 1dce8da7ad 2024/11/22-12:29:44 ==
 1. Update wifi rate adaptation table
 
