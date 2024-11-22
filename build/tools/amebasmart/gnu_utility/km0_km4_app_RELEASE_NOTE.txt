@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 1dce8da7ad 2024/11/22-12:29:44 ==
+1. Update wifi rate adaptation table
+
 == version e17dbd5288 2024/11/13-16:17:55 ==
 1. Fix PM short press reset not working
     - Refactor the KM4 sleep type logic with replace the condition check based on the AP ON or RUNNING.
