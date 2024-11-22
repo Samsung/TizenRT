@@ -118,6 +118,13 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 
 		/* CA32:AP or KM4:NP or KM0:LP System reset */
 		else if ((boot_reason & AON_BIT_RSTF_APSYS) || (boot_reason & AON_BIT_RSTF_NPSYS) || (boot_reason & AON_BIT_RSTF_LPSYS)) {
+			if (boot_reason & AON_BIT_RSTF_APSYS) {			/* CA32 */
+				lldbg("Reboot reason: APSYS reset\n");
+			} else if (boot_reason & AON_BIT_RSTF_NPSYS) {	/* KM4 */
+				lldbg("Reboot reason: NPSYS reset\n");
+			} else {										/* (boot_reason & AON_BIT_RSTF_LPSYS) */
+				lldbg("Reboot reason: LPSYS reset\n");
+			}
 			return REBOOT_SYSTEM_SYS_RESET_CORE;
 		}
 
