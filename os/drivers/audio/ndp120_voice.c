@@ -402,6 +402,7 @@ static int ndp120_start(FAR struct audio_lowerhalf_s *dev)
 
 	ndp120_start_sample_ready(priv);
 	priv->running = true;
+	priv->total_size = 0;
 
 	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
 	sq_entry_t *tmp = NULL;
@@ -432,11 +433,11 @@ static int ndp120_stop(FAR struct audio_lowerhalf_s *dev)
 
 	audvdbg(" ndp120_i2s_stop Entry\n");
 	ndp120_takesem(&priv->devsem);
-
+	auddbg("Total record size : %lu\n", priv->total_size);
 	ndp120_stop_sample_ready(priv);
 
 	priv->running = false;
-	
+	priv->total_size = 0;
 	ndp120_givesem(&priv->devsem);
 	return 0;
 }

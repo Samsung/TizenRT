@@ -76,6 +76,7 @@ struct ndp120_dev_s {
 	uint32_t sample_size_orig_annot;
 	uint8_t *keyword_buffer;
 	uint32_t extract_size;
+	uint32_t total_size;
 	bool extclk_inuse;
 	volatile bool alive;
 	uint32_t sample_ready_cnt;
