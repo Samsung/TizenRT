@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 9b81db97cd_2024/11/22-22:36:20 ==
+1. WiFi firware supports two RA mechanism currently
+	-Switch to another one.
+
 == version 1dce8da7ad 2024/11/22-12:29:44 ==
 1. Update wifi rate adaptation table
 
