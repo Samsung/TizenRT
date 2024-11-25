@@ -32,13 +32,13 @@ const PMAP_TypeDef pmap_func[] = {
 	{_PA_1,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_2,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_3,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_4,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_5,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
+	{_PA_4,			GPIO_PuPd_DOWN,			GPIO_PuPd_KEEP},			 //
+	{_PA_5,			GPIO_PuPd_DOWN,			GPIO_PuPd_KEEP},			 //
 	{_PA_6,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_7,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_8,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
-	{_PA_9,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
-	{_PA_10,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
+	{_PA_9,			GPIO_PuPd_UP,				GPIO_PuPd_KEEP},			 //
+	{_PA_10,			GPIO_PuPd_UP,				GPIO_PuPd_KEEP},			 //
 	{_PA_11,			GPIO_PuPd_UP,				GPIO_PuPd_DOWN},			 //
 	{_PA_12,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN},			 //
 	{_PA_13,			GPIO_PuPd_UP,			GPIO_PuPd_UP},			 //
