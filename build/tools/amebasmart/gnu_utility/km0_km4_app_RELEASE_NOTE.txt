@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a6289fd40a 2024/11/26-19:09:02 ==
+1. Refined probe response frequency in wifi driver
+
 == version 33dff5bd62 2024/11/26-11:42:59 ==
 1. Optimize probe response frequency in wifi driver
 
