@@ -717,10 +717,11 @@ static void rtl8730e_log_up_rxint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->rxint_enable = enable;
-	//if (enable)
-		//LOGUART_RxCmd(LOGUART_DEV, ENABLE);
-	//else
-		//LOGUART_RxCmd(LOGUART_DEV, DISABLE);
+	if (enable) {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+	} else {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
+	}
 }
 
 /****************************************************************************
