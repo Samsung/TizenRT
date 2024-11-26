@@ -57,6 +57,7 @@ extern uint32_t _ectors;
 extern uint32_t _eapp_flash;
 extern uint32_t _sapp_ram;
 extern uint32_t _eapp_ram;
+extern uint32_t _text_start_flash;
 
 extern int main(int argc, char **argv);
 #endif
@@ -95,6 +96,7 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 	.flash_end = &_eapp_flash,
 	.ram_start = &_sapp_ram,
 	.ram_end = &_eapp_ram,
+	.text_start_in_flash = &_text_start_flash,
 #ifndef __COMMON_BINARY__
 	.entry = main,
 #endif

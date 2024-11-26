@@ -99,6 +99,7 @@ struct userspace_s {
 	void * data_start_in_ram;
 	void * data_end_in_ram;
 	void * data_start_in_flash;
+	void * text_start_in_flash;
 	void * heap_start;
 	void * heap_end;
 	void * sctors;
