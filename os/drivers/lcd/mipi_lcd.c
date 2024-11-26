@@ -28,6 +28,7 @@
 #endif
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
+#include "lcd_logo.h"
 #include <debug.h>
 #include <assert.h>
 
@@ -38,11 +39,13 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
+extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
+static uint8_t *lcd_logo_fullscreen_data = NULL; // Buffer containing full screen data with logo on specific position
+
 #if defined(CONFIG_LCD_SW_ROTATION)
 #define NUM_OF_LCD_BUFFER	2
 static uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
 static int lcd_buffer_index = 0;
-
 static void lcd_rotate_buffer(short int* src, short int* dst)
 {
 	int row;
@@ -236,6 +239,10 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
 	lcd_buffer_index = (1 - lcd_buffer_index);
 #else
+	if (lcd_logo_fullscreen_data != NULL) {
+		kmm_free(lcd_logo_fullscreen_data);
+		lcd_logo_fullscreen_data = NULL;
+	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
 	return OK;
@@ -397,6 +404,50 @@ static int lcd_getcontrast(FAR struct lcd_dev_s *dev)
 static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 {
 	return OK;
+}
+
+FAR void lcd_put_logo(FAR struct lcd_dev_s *dev)
+{
+	int logo_arr_index = 0;
+	int lcd_data_index = CONFIG_LCD_XRES * (CONFIG_LCD_YRES - LOGO_YRES) + (CONFIG_LCD_XRES - LOGO_XRES);
+	int lcd_data_col_count = 0;
+	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+
+	/* Memory optimization applied using Rotation buffer
+	 * If rotation is enabled, then we have two buffers allocated for rotation.
+	 * During bootup, rotation buffer will not be used (No putarea call from application)
+	 * Therefore, the rotation buffer can be safely used for storing logo data.
+	 * 
+	 * If rotation is disabled, then we need to allocate memory for full screen data
+	 * and it will allocate memory to lcd_logo_fullscreen_data buffer.
+	 * 
+	 * If rotation is enabled, then lcd_logo_fullscreen_data contains pointer of rotation buffer */
+#if defined(CONFIG_LCD_SW_ROTATION)
+	lcd_logo_fullscreen_data = lcd_buffer[lcd_buffer_index];
+	lcd_buffer_index = (1 - lcd_buffer_index);
+#else
+	lcd_logo_fullscreen_data = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
+	if (!lcd_logo_fullscreen_data) {
+		lcddbg("ERROR: LCD logo data memory allocation failed\n");
+		return;
+	}
+#endif
+	/* Filling buffer with black color using memset and
+	 * then filling it with logo data on specific index in while loop */
+	memset(lcd_logo_fullscreen_data, LCD_BLACK_VAL, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
+
+	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
+		lcd_logo_fullscreen_data[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
+		lcd_logo_fullscreen_data[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
+		lcd_data_index += 2;
+		lcd_data_col_count += 1;
+		if (lcd_data_col_count == LOGO_XRES) {
+			lcd_data_index += ((CONFIG_LCD_XRES - LOGO_XRES) * 2);
+			lcd_data_col_count = 0;
+		}
+	}
+
+	priv->config->lcd_put_area((u8 *)lcd_logo_fullscreen_data, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);	// 1, 1 -> Start index of the frame buffer
 }
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
