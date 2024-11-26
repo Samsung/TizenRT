@@ -519,10 +519,6 @@ void board_initialize(void)
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
 
-	/* Tizen: re-enable the LOGUART Rx event interrupt so that CA32 can use it, after KM0 LOGUART is disabled */
-	irqstate_t flags = enter_critical_section();
-	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
-	leave_critical_section(flags);
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
