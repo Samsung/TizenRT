@@ -467,6 +467,7 @@
 #define PMIOC_TUNEFREQ           _PMIOC(0x0006)
 #define PMIOC_METRICS            _PMIOC(0x0007)
 #define PMIOC_SUSPEND_COUNT      _PMIOC(0x0008)
+#define PMIOC_START              _PMIOC(0x0009)
 
 /* Cpuload driver ioctl definitions ************************/
 

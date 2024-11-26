@@ -135,6 +135,9 @@ struct pm_global_s {
 
 	/* No. of Registered Domains */
 	uint16_t ndomains;
+
+	/* Indicates Board is Ready to State Change */
+	bool is_running;
 };
 
 /****************************************************************************
