@@ -156,6 +156,20 @@ config LCD_YRES
 	---help---
 		Specifies the Y resolution of the LCD.
 
+if LCD_ST7701SN
+choice
+	prompt "LCD Bootup LOGO"
+	default LCD_LOGO_52_340
+	---help---
+		Select the bootup logo to show on the LCD.
+
+config LCD_LOGO_52_340
+	bool "Logo 52x340"
+	---help---
+		LCD logo with resolution 52x340.
+endchoice
+endif
+
 if LCD_ST7789
 config LCD_ST7789_BPP
 	int "Bit Per Pixel (12 or 16)"
