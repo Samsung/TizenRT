@@ -83,6 +83,8 @@
 #define TSIOC_GETCALIB       _TSIOC(0x0002)  /* arg: Pointer to int calibration value */
 #define TSIOC_SETFREQUENCY   _TSIOC(0x0003)  /* arg: Pointer to uint32_t frequency value */
 #define TSIOC_GETFREQUENCY   _TSIOC(0x0004)  /* arg: Pointer to uint32_t frequency value */
+#define TSIOC_DISABLE        _TSIOC(0x0005)  /* Disable touch interrupt */
+#define TSIOC_ENABLE         _TSIOC(0x0006)  /* Enable touch interrupt */
 
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
