@@ -82,6 +82,10 @@ void pm_idle(void)
 	int gated_cpu_count = 0;
 	FAR struct tcb_s *tcb;
 #endif
+	/* State change only if PM is ready to state change */
+	if (!g_pmglobals.is_running) {
+		return;
+	}
 	flags = enter_critical_section();
 	now = clock_systimer();
 	/* We need to check and change PM state transition only if one tick time has been passed,

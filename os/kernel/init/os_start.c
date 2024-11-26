@@ -838,12 +838,6 @@ void os_start(void)
 	/* Bring Up the System ****************************************************/
 	/* Create initial tasks and bring-up the system */
 
-#ifdef CONFIG_PM
-	/* We cannot enter low power state until boot complete */
-	pm_suspend(PM_IDLE_DOMAIN);
-	
-#endif
-
 #ifdef CONFIG_DEBUG_MM_WARN
 	display_memory_information();
 #endif
