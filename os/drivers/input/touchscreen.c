@@ -229,7 +229,19 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 
 	switch (cmd) {
-		default:
+		case TSIOC_DISABLE: {
+			priv->ops->touch_disable(priv);
+		}
+		break;
+
+		case TSIOC_ENABLE: {
+			priv->ops->touch_enable(priv);
+		}
+		break;
+
+		default: {
+			touchdbg("ERROR: ioctl not found, cmd: %d\n", cmd);
+		}
 		break;
 	}
 	return OK;
