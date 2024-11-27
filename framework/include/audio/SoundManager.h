@@ -58,13 +58,13 @@ bool setEqualizer(uint32_t preset);
  * @brief Mutes the mic.
  * @return true if the operation was successful, false otherwise.
  */
-bool setMute(void);
+bool setMicMute(void);
 
 /**
  * @brief Unmutes the mic.
  * @return true if the operation was successful, false otherwise.
  */
-bool unsetMute(void);
+bool setMicUnmute(void);
 
 #if defined(__cplusplus)
 }

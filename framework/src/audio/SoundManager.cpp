@@ -53,17 +53,25 @@ bool setEqualizer(uint32_t preset)
 	return true;
 }
 
-//ToDo: This API will be implemented soon
-bool setMute(void)
+bool setMicMute(void)
 {
-	medvdbg("SoundManager : setMute\n");
-	return false;
+	medvdbg("SoundManager : setMicMute\n");
+	audio_manager_result_t res = set_mic_mute();
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_mic_mute failed ret : %d\n", res);
+		return false;
+	}
+	return true;
 }
 
-//ToDo: This API will be implemented soon
-bool unsetMute(void)
+bool setMicUnmute(void)
 {
-	medvdbg("SoundManager : unsetMute\n");
-	return false;    
+	medvdbg("SoundManager : setMicUnmute\n");
+	audio_manager_result_t res = set_mic_unmute();
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_mic_unmute failed ret : %d\n", res);
+		return false;
+	}
+	return true;
 }
 

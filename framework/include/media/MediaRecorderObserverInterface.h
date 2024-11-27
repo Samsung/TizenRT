@@ -69,6 +69,11 @@ public:
 	 */
 	virtual void onRecordFinished(MediaRecorder& mediaRecorder) = 0;
 	/**
+	 * @brief informs the user of the recording error state and that recording has stopped.
+	 * @details @b #include <media/MediaRecorderObserverInterface.h>
+	 */
+	virtual void onRecordStopped(MediaRecorder& mediaRecorder, recorder_error_t errCode) {}
+	/**
 	 * @brief informs the user of the error state of recorder start operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
