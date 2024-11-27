@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2024 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 #
 ###########################################################################
 ############################################################################
+# apps/examples/csifw_test/Makefile
 #
-#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2009-2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,44 +49,116 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-CSRCS += rtl8730e_boot.c
-CSRCS += rtl8730e_logtask.c
-CSRCS += rtl8730e_i2schar.c
+CXXEXT ?= .cpp
+# C++ Test Example
 
-ifeq ($(CONFIG_AUDIO_ALC1019),y)
-CSRCS += rtl8730e_alc1019.c
+APPNAME = csifw_test
+FUNCNAME = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# C++ Test Example
+MAINSRC		= csifw_test.c
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+MAINOBJ 	= $(MAINSRC:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS		= $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+OBJS		+= $(MAINOBJ)
 endif
 
-ifeq ($(CONFIG_AUDIO_SYU645B),y)
-CSRCS += rtl8730e_syu645b.c
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+BIN		= $(APPDIR)\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN		= $(APPDIR)\\libapps$(LIBEXT)
+else
+  BIN		= $(APPDIR)/libapps$(LIBEXT)
+endif
 endif
 
-ifeq ($(CONFIG_LCD_ST7789), y)
-CSRCS += rtl8730e_st7789.c
+CONFIG_EXAMPLES_CSIFW_TEST_PROGNAME ?= csifw_test$(EXEEXT)
+PROGNAME	= $(CONFIG_EXAMPLES_CSIFW_TEST_PROGNAME)
+
+ROOTDEPPATH	= --dep-path .
+
+# Common build
+
+VPATH		=
+
+all: .built
+.PHONY:	clean depend distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
+
+ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
+$(MAINOBJ): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
+else
+$(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
 endif
 
-ifeq ($(CONFIG_LCD_ST7785), y)
-CSRCS += rtl8730e_mipi_lcdc.c
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
 endif
 
-ifeq ($(CONFIG_LCD_ST7701), y)
-CSRCS += rtl8730e_mipi_lcdc.c
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_CSIFW_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
+context:
+
 endif
 
-ifeq ($(CONFIG_LCD_ST7701SN), y)
-CSRCS += rtl8730e_mipi_lcdc.c
+.depend: Makefile $(SRCS)
+ifeq ($(filter %$(CXXEXT),$(SRCS)),)
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+else
+	@$(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
 endif
+	@touch $@
 
-ifeq ($(CONFIG_TOUCH_IST415),y)
-CSRCS += rtl8730e_ist415.c
-endif
+depend: .depend
 
-ifeq ($(CONFIG_AUDIO_NDP120),y)
-CSRCS += rtl8730e_ndp120.c
-endif
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
 
-ifeq ($(CONFIG_WIFI_CSI),y)
-CSRCS += rtl8730e_rtk_csi.c
-endif
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
 
+-include Make.dep
+.PHONY: preconfig
+preconfig:
