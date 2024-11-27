@@ -394,8 +394,13 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 	
 	Init_Params.sr = obj->sampling_rate;
 	dbg("ChLen: %d ChCnt: %d Sr: %d\n", obj->channel_length, obj->channel_num, obj->sampling_rate);
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	Init_Params.codec_multiplier_with_rate = 0;
+	Init_Params.sport_mclk_fixed_max = (uint32_t) 12288000;	//12.288MHz
+#else
 	Init_Params.codec_multiplier_with_rate = 256;
 	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
+#endif
 	Audio_Clock_Choose(PLL_CLK, &Init_Params, &Clock_Params);
 	obj->clock = Clock_Params.Clock;
 
@@ -422,7 +427,7 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
 	}
-	dbg("CLK: %d mode: %f div: %d\n", Clock_Params.Clock, clock_mode, Clock_Params.PLL_DIV);
+	dbg("CLK: %d div: %d\n", Clock_Params.Clock, Clock_Params.PLL_DIV);
 	return clock_mode;
 }
 
