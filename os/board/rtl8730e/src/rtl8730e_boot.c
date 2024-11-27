@@ -483,6 +483,13 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_WIFI
 	wlan_initialize();
 #endif
+
+#ifdef CONFIG_WIFI_CSI
+	if (rtl8730e_rtk_csi_initialize(0) != 0) {
+		lldbg("rtl8730e_rtk_csi initialization failed\n");
+	}
+#endif	
+
 	/* Enable IPC buffered print */
 	inic_ipc_buffered_printf_set_np_enable(1);
 

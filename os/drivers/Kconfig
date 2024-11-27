@@ -282,6 +282,8 @@ if DRIVERS_VIDEO
 source drivers/video/Kconfig
 endif # DRIVERS_VIDEO
 
+source drivers/wifi_csi/Kconfig
+
 menu "AI SoC devices"
 source drivers/ai-soc/Kconfig
 endmenu

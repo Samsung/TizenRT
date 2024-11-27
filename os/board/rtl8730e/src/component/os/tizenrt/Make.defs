@@ -55,5 +55,9 @@ CSRCS += lwip_intf_tizenrt.c \
 CSRCS += rtk_blemgr.c \
 	 rtk_netmgr.c \
 
+ifeq ($(CONFIG_WIFI_CSI),y)
+CSRCS += rtk_wifi_csi.c
+endif
+
 DEPPATH += --dep-path component/os/tizenrt
 VPATH += :component/os/tizenrt
