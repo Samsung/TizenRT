@@ -383,10 +383,17 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 	uint32_t clock_mode = 0;
 	AUDIO_ClockParams Clock_Params;
 	AUDIO_InitParams Init_Params;
-
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	Init_Params.chn_len = obj->channel_length;
+	Init_Params.chn_cnt = (obj->fifo_num + 1) * 2;
+#else
 	Init_Params.chn_len = SP_CL_32;
 	Init_Params.chn_cnt = obj->channel_num;
-	Init_Params.sr = obj->sampling_rate;;
+#endif
+	
+	
+	Init_Params.sr = obj->sampling_rate;
+	dbg("ChLen: %d ChCnt: %d Sr: %d\n", obj->channel_length, obj->channel_num, obj->sampling_rate);
 	Init_Params.codec_multiplier_with_rate = 256;
 	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
 	Audio_Clock_Choose(PLL_CLK, &Init_Params, &Clock_Params);
@@ -415,6 +422,7 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 		clock_mode = PLL_CLOCK_98P304M / Clock_Params.PLL_DIV;
 		break;
 	}
+	dbg("CLK: %d mode: %f div: %d\n", Clock_Params.Clock, clock_mode, Clock_Params.PLL_DIV);
 	return clock_mode;
 }
 
@@ -608,6 +616,13 @@ void i2s_recv_page(i2s_t *obj)
   */
 void i2s_enable(i2s_t *obj)
 {
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+	}
+#endif
+
 	AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
@@ -625,19 +640,39 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 {
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	SP_GDMA_STRUCT_EXT *l_SPGdmaStructExt = &SPGdmaStructExt;
+	// turn off MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	}
+#endif
+
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Abort(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
 		GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM) && defined(CONFIG_AMEBASMART_I2S_TX)
+		GDMA_ClearINT(l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_ChNum);
+		GDMA_Abort(l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_ChNum);
+		GDMA_ChnlFree(l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_ChNum);
+#endif
+
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
 		if (is_suspend) {
 			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 		}
 	} else {
-
 		GDMA_ClearINT(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Cmd(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum, DISABLE);
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM) && defined(CONFIG_AMEBASMART_I2S_RX)
+		GDMA_ClearINT(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+		GDMA_Abort(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+		GDMA_ChnlFree(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+#endif
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
@@ -661,6 +696,31 @@ void ameba_i2s_pause(i2s_t *obj) {
 	}
 }
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void ameba_i2s_tdm_pause(i2s_t *obj) {
+
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+	SP_GDMA_STRUCT_EXT *l_SPGdmaStructExt = &SPGdmaStructExt;
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	}
+#endif
+
+	if (obj->direction == I2S_DIR_TX) {
+		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ClearINT(l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpTxGdmaInitStructExt.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
+	} else {
+		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_Suspend(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+	}
+}
+#endif
+
 /**
   * @brief  Resume I2S interrupt and function.
   * @param  obj: I2S object defined in application software.
@@ -677,7 +737,29 @@ void ameba_i2s_resume(i2s_t *obj) {
 	}
 }
 
-#if defined(CONFIG_AMEBASMART_I2S_TDM)
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void ameba_i2s_tdm_resume(i2s_t *obj) {
+
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+	SP_GDMA_STRUCT_EXT *l_SPGdmaStructExt = &SPGdmaStructExt;
+
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+	}
+
+	if (obj->direction == I2S_DIR_TX) {
+		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
+	} else {
+		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_Resume(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+	}
+}
+#endif
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM) 
+#if defined(CONFIG_AMEBASMART_I2S_TX) && (CONFIG_AMEBASMART_I2S_TX == 1)
 static void i2s_tdm_tx_isr(void *sp_data)
 {
 	u32 *pbuf;
@@ -712,6 +794,36 @@ static void i2s_tdm_tx_isr_ext(void *sp_data)
 	I2SUserCB.TxCCB(I2SUserCB.TxCBId, (char*)pbuf);
 }
 
+/**
+  * @brief  Register TX interrupt handler.
+  * @param  obj: I2S object defined in application software.
+  * @param  handler: TX interrupt callback function.
+  * @param  id: TX interrupt callback parameter.
+  * @retval none
+  */
+void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
+{
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+	
+	uint8_t i2s_index = obj->i2s_idx;
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
+	SP_GDMA_STRUCT_EXT *sp_str_ext = &SPGdmaStructExt;
+	u32 *pbuf, pbuf_1;
+
+	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
+	sp_str_ext->i2s_idx = i2s_index;
+
+	I2SUserCB.TxCCB = handler;
+	I2SUserCB.TxCBId = id;
+
+	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	pbuf_1 = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_tx_isr, (u8 *)pbuf, sp_tx_info.tx_page_size);
+	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_EXT, &sp_str_ext->SpTxGdmaInitStructExt, sp_str_ext, (IRQ_FUN)i2s_tdm_tx_isr_ext, (u8 *)pbuf_1, sp_tx_info.tx_page_size);
+}
+#endif
+
+#if defined(CONFIG_AMEBASMART_I2S_RX) && (CONFIG_AMEBASMART_I2S_RX == 1)
 static void i2s_tdm_rx_isr(void *sp_data)
 {
 	SP_GDMA_STRUCT *gs = sp_data;
@@ -751,34 +863,6 @@ static void i2s_tdm_rx_isr_ext(void *sp_data)
 }
 
 /**
-  * @brief  Register TX interrupt handler.
-  * @param  obj: I2S object defined in application software.
-  * @param  handler: TX interrupt callback function.
-  * @param  id: TX interrupt callback parameter.
-  * @retval none
-  */
-void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
-{
-	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
-	
-	uint8_t i2s_index = obj->i2s_idx;
-	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
-	SP_GDMA_STRUCT_EXT *sp_str_ext = &SPGdmaStructExt;
-	u32 *pbuf, pbuf_1;
-
-	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
-	sp_str_ext->i2s_idx = i2s_index;
-
-	I2SUserCB.TxCCB = handler;
-	I2SUserCB.TxCBId = id;
-
-	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
-	pbuf_1 = (u32 *)i2s_get_ready_tx_page(i2s_index);
-	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_tx_isr, (u8 *)pbuf, sp_tx_info.tx_page_size);
-	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_EXT, &sp_str_ext->SpTxGdmaInitStructExt, sp_str_ext, (IRQ_FUN)i2s_tdm_tx_isr_ext, (u8 *)pbuf_1, sp_tx_info.tx_page_size);
-}
-
-/**
   * @brief  Register RX interrupt handler.
   * @param  obj: I2S object defined in application software.
   * @param  handler: RX interrupt callback function.
@@ -805,6 +889,8 @@ void i2s_tdm_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 	AUDIO_SP_RXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_rx_isr, (u8 *)pbuf, sp_rx_info.rx_page_size);
 	AUDIO_SP_RXGDMA_Init(i2s_index, GDMA_EXT, &sp_str_ext->SpRxGdmaInitStructExt, sp_str_ext, (IRQ_FUN)i2s_tdm_rx_isr_ext, (u8 *)pbuf_1, sp_rx_info.rx_page_size);
 }
+
+#endif
 
 /**
   * @brief  Enable I2S interrupt and function.
@@ -915,12 +1001,14 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 	SP_InitStruct.SP_SelClk = clock_mode;
 
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
+	dbg("SP_BClk: %ld Hz\n", SP_InitStruct.SP_Bclk);
+
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
 	if (obj->role == MASTER) {
-		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+		//AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
 		AUDIO_SP_SetMclkDiv(obj->i2s_idx, 0);
 	} else {
-		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+		//AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
 	}
 }
 
@@ -979,6 +1067,8 @@ void i2s_tdm_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd
 		/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
 	}
+
+	RCC_PeriphClockCmd(APBPeriph_AUDIO, APBPeriph_CLOCK_NULL, ENABLE);
 
 	Pinmux_Config(mck, pin_func);
 	Pinmux_Config(sck, pin_func);

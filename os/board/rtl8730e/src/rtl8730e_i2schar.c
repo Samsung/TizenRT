@@ -42,6 +42,10 @@
 #ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_3
 #define CONFIG_AMEBASMART_I2SCHAR_MINOR_3 3
 #endif
+
+#ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_4
+#define CONFIG_AMEBASMART_I2SCHAR_MINOR_4 4
+#endif
 /*****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -74,15 +78,22 @@ int i2schar_devinit(void)
 #if defined(CONFIG_AMEBASMART_I2S2) && !defined(CONFIG_AUDIO_ALC1019)
 		/* Call amebasmart_i2s_initialize() to get an instance of the I2S interface */
 		/* Initialise I2S2 */
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+		i2s = amebasmart_i2s_tdm_initialize(I2S_NUM_2, I2S_INIT);
+#else
 		i2s = amebasmart_i2s_initialize(I2S_NUM_2, I2S_INIT);
-
+#endif
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
 			return -ENODEV;
 		}
 
 		/* Register the I2S character driver at "/dev/i2schar2" */
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_4);
+#else
 		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_2);
+#endif
 		if (ret < 0) {
 			lldbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
