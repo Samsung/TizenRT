@@ -328,7 +328,7 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t ret)
 	if (ret == RECORDER_OK) {
 		notifyObserver(RECORDER_OBSERVER_COMMAND_FINISHIED);
 	} else {
-		notifyObserver(RECORDER_OBSERVER_COMMAND_STOP_ERROR, (recorder_error_t)ret);
+		notifyObserver(RECORDER_OBSERVER_COMMAND_STOPPED, (recorder_error_t)ret);
 	}
 }
 
@@ -703,6 +703,11 @@ void MediaRecorderImpl::capture()
 			size -= written;
 			ret += written;
 		}
+	} else if (frames == AUDIO_MANAGER_DEVICE_SUSPENDED) {
+		std::lock_guard<std::mutex> lock(mCmdMtx);
+		meddbg("Too small frames : %d, audio device suspended.\n", frames);
+		RecorderWorker& mrw = RecorderWorker::getWorker();
+		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_DEVICE_SUSPENDED);
 	} else {
 		std::lock_guard<std::mutex> lock(mCmdMtx);
 		meddbg("Too small frames : %d\n", frames);
@@ -737,6 +742,11 @@ void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 		case RECORDER_OBSERVER_COMMAND_FINISHIED: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_FINISHIED\n");
 			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, mRecorder);
+		} break;
+		case RECORDER_OBSERVER_COMMAND_STOPPED: {
+			medvdbg("RECORDER_OBSERVER_COMMAND_STOPPED\n");
+			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
+			row.enQueue(&MediaRecorderObserverInterface::onRecordStopped, mRecorderObserver, mRecorder, errCode);
 		} break;
 		case RECORDER_OBSERVER_COMMAND_START_ERROR: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_START_ERROR\n");
