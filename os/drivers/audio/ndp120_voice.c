@@ -664,6 +664,36 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		}
 		break;
 	}
+	case AUDIOIOC_MICMUTE: {
+		ndp120_takesem(&priv->devsem);
+		ret = ndp120_kd_stop(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_stop failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
+#endif
+		ndp120_givesem(&priv->devsem);
+		break;
+	}
+	case AUDIOIOC_MICUNMUTE: {
+		ndp120_takesem(&priv->devsem);
+		ret = ndp120_kd_start(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_start failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
+#endif
+		ndp120_givesem(&priv->devsem);
+		break;
+	}
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
