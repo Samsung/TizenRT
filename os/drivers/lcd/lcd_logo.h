@@ -25,6 +25,9 @@
 #ifdef CONFIG_LCD_LOGO_52_340
 #define LOGO_XRES 52
 #define LOGO_YRES 340
+#else
+#define LOGO_XRES 0
+#define LOGO_YRES 0
 #endif      /* CONFIG_LCD_LOGO_52_340 */
 
 #endif      /* __DRIVER_LCD_LOGO_H */
