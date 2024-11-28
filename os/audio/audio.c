@@ -835,7 +835,6 @@ static inline void audio_micmute(FAR struct audio_upperhalf_s *upper, FAR struct
 
 	audvdbg("Entry\n");
 
-	upper->started = false;
 	if (upper->usermq != NULL) {
 		msg.msgId = AUDIO_MSG_MICMUTE;
 		msg.u.pPtr = NULL;
@@ -866,7 +865,6 @@ static inline void audio_micunmute(FAR struct audio_upperhalf_s *upper, FAR stru
 
 	audvdbg("Entry\n");
 
-	upper->started = false;
 	if (upper->usermq != NULL) {
 		msg.msgId = AUDIO_MSG_MICUNMUTE;
 		msg.u.pPtr = NULL;
