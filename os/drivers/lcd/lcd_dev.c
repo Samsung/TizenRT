@@ -428,7 +428,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 	lcdvdbg("lcd flushing thread %d created \n", pid);
 #endif
 
-	lcd_put_logo(dev);
+	lcd_init_put_image(dev);
 	sem_init(&lcd_info->sem, 0, 1);
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
