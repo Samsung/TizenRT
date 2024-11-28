@@ -589,6 +589,7 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
 #ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_recv_page(i2s_t *obj)
 {
+	lldbg("i2s rcv page called\n");
 	uint8_t i2s_index = obj->i2s_idx;
 
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);

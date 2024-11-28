@@ -2,6 +2,17 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
+config SENSOR_MLX90617
+        bool "IR MLX90617/MLX90614 Sensor"
+        default n
+        ---help---
+                Enable driver support for the IR Sensor MLX90617/MLX90614
+
+config SENSOR_AIS25BA
+        bool "MEMS AIS25BA Sensor"
+        default n
+        ---help---
+                Enable driver support for the MEMS AIS25BA Sensor
 
 config SENSOR_PPD42NS
 	bool "Shinyei PPD42NS Dust Sensor"

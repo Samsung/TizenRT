@@ -222,11 +222,11 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 	.i2s_sclk_pin = PB_21,
 	.i2s_ws_pin = PA_16,
 	.i2s_sd_tx_pin = PB_10,
-	.i2s_sd_rx_pin = PB_19,
+	.i2s_sd_rx_pin = PB_20,
 
 	.i2s_idx = I2S_NUM_2,
-	.rxenab = 0,
-	.txenab = 1,
+	.rxenab = 1,
+	.txenab = 0,
 };
 
 static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
@@ -814,13 +814,13 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->rx.act)) {
-		i2sinfo("[RX start] RX active!\n");
+		lldbg("[RX start] RX active!\n");
 		return OK;
 	}
 
 	/* If there are no pending transfer, then bail returning success */
 	if (sq_empty(&priv->rx.pend)) {
-		i2sinfo("[RX start] RX pend empty!\n");
+		lldbg("[RX start] RX pend empty!\n");
 		return OK;
 	}
 
@@ -1050,7 +1050,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	DEBUGASSERT(bfcontainer);
 
 	i2s_exclsem_take(priv);
-	i2sinfo("RX Exclusive Enter\n");
+	printf("RX Exclusive Enter\n");
 
 	/* Add a reference to the audio buffer */
 	apb_reference(apb);
@@ -1068,12 +1068,12 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.pend);
 	leave_critical_section(flags);
-	i2sinfo("i2s_rx_start\n");
+	printf("i2s_rx_start\n");
 	/* Start transfer */
 	ret = i2s_rx_start(priv);
 
 	i2s_exclsem_give(priv);
-	i2sinfo("RX Exclusive Exit\n");
+	printf("RX Exclusive Exit\n");
 
 	return OK;
 
@@ -1092,6 +1092,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
  */
 void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 {
+	lldbg("handle irq\n");
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
 	i2s_t *obj = priv->i2s_object;
 
