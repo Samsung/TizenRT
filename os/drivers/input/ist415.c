@@ -55,6 +55,10 @@
 #include <tinyara/input/touchscreen.h>
 #include <tinyara/input/ist415.h>
 
+#if defined(CONFIG_TOUCH_CALLBACK)
+#include <tinyara/wqueue.h>
+#endif
+
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -74,6 +78,10 @@ static void ist415_enable(struct touchscreen_s *dev);
 static void ist415_disable(struct touchscreen_s *dev);
 static bool ist415_istouchSet(struct touchscreen_s *dev);
 
+#if defined(CONFIG_TOUCH_CALLBACK)
+static void get_touch_data(struct ist415_dev_s *priv);
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -83,6 +91,10 @@ struct touchscreen_ops_s g_ist415_ops = {
 	.touch_disable = ist415_disable,
 	.is_touchSet = ist415_istouchSet,
 };
+
+#if defined(CONFIG_TOUCH_CALLBACK)
+static struct work_s ist415_work;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -134,7 +146,10 @@ static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
 		return -EIO;
 	}
 	touchvdbg("touch_point %d\n", touch_point + 1);
-
+	if (data == NULL) {
+		touchdbg("ERROR: application buffer touch data is NULL\n");
+		return -EINVAL;
+	}
 	data->npoints = touch_point + 1;
 	for (int i = 0; i < (touch_point + 1); i++) {
 		eid = (touch_event + (i * EVENT_PACKET_SIZE))[0] & 0x3;
@@ -216,6 +231,7 @@ static int ist415_read(struct touchscreen_s *dev, FAR char *buffer)
  * Name: touch_interrupt
  ****************************************************************************/
 
+#if defined(CONFIG_TOUCH_POLL)
 static void touch_interrupt(struct ist415_dev_s *priv)
 {
 
@@ -227,6 +243,37 @@ static void touch_interrupt(struct ist415_dev_s *priv)
 		upper->notify_touch(upper);
 	}
 }
+
+#elif defined(CONFIG_TOUCH_CALLBACK)
+
+static void touch_interrupt(struct ist415_dev_s *priv)
+{
+	FAR struct touchscreen_s *upper = priv->upper;
+	priv->ops->irq_enable();
+	work_queue(HPWORK, &ist415_work, get_touch_data, priv, 0);
+}
+
+static void get_touch_data(struct ist415_dev_s *priv)
+{
+	FAR struct touchscreen_s *upper = priv->upper;
+
+	struct touch_sample_s touch_points;
+
+	if (!upper->app_touch_point_buffer) {
+		touchdbg("ERROR: application buffer touch data is NULL\n");
+		if (upper->is_touch_detected) {
+			upper->is_touch_detected(-EINVAL);
+			return;
+		}
+	}
+	int ret = ist415_get_touch_data(priv, upper->app_touch_point_buffer);
+
+	if (upper->is_touch_detected) {
+		upper->is_touch_detected(ret);
+	}
+}
+
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -265,7 +312,10 @@ int ist415_initialize(const char*path, struct ist415_dev_s *priv)
 	struct touchscreen_s *upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	upper->ops = &g_ist415_ops;
 	upper->priv = priv;
-
+#if defined(CONFIG_TOUCH_CALLBACK)
+	upper->is_touch_detected = NULL;		/* Callback function will be set by UI */
+	upper->app_touch_point_buffer = NULL; /* Buffer to store touch point data, set by UI */
+#endif
 	priv->upper = upper;
 	priv->handler = touch_interrupt;
 

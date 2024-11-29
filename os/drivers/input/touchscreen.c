@@ -58,7 +58,7 @@
 
 #define EVENT_PACKET_SIZE 16
 
-#ifndef CONFIG_TOUCHL_NPOLLWAITERS
+#if !defined(CONFIG_TOUCHL_NPOLLWAITERS)
 #define CONFIG_TOUCH_NPOLLWAITERS 2
 #endif
 
@@ -158,7 +158,7 @@ static int touch_close(FAR struct file *filep)
 	priv->crefs--;
 	if (priv->crefs == 0) {
 		priv->ops->touch_disable(priv);
-#ifndef CONFIG_DISABLE_POLL
+#if !defined(CONFIG_DISABLE_POLL)
 		/* Check if this file is registered in a list of waiters for polling.
 		* For example, when task A is blocked by calling poll and task B try to terminate task A,
 		* a pollfd of A remains in this list. If it is, it should be cleared.
@@ -189,7 +189,7 @@ static ssize_t touch_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 
 	priv = filep->f_inode->i_private;
 
-	if (!priv || !buffer || buflen < 1) {
+	if (!priv || buflen < 1) {
 		return -EINVAL;
 	}
 	/* Wait for semaphore to prevent concurrent reads */
@@ -228,7 +228,16 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		return -EINVAL;
 	}
 
-	switch (cmd) {
+	switch (cmd) {		
+#if defined(CONFIG_TOUCH_CALLBACK)
+		case TSIOC_SETAPPNOTIFY: {
+			struct touch_set_callback_s *touch_app = (struct touch_set_callback_s *)arg;
+			priv->app_touch_point_buffer = touch_app->touch_points;
+			priv->is_touch_detected = touch_app->is_touch_detected;
+			touchvdbg("App notification callback register is successful\n");
+		}
+		break;
+#endif
 		case TSIOC_DISABLE: {
 			priv->ops->touch_disable(priv);
 		}
@@ -247,7 +256,7 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	return OK;
 }
 
-#ifndef CONFIG_DISABLE_POLL
+#if !defined(CONFIG_DISABLE_POLL)
 
 /****************************************************************************
  * Name: touch_pollnotify
@@ -373,7 +382,7 @@ int touch_register(const char *path, struct touchscreen_s *dev)
 	sem_init(&dev->sem, 0, 1);
 	sem_init(&dev->pollsem, 0, 1);
 	dev->notify_touch = touch_notify;
-#ifndef CONFIG_DISABLE_POLL
+#if !defined(CONFIG_DISABLE_POLL)
 	(void)touch_semtake(&dev->pollsem, false);
 	for (int i = 0; i < CONFIG_TOUCH_NPOLLWAITERS; i++) {
 			dev->fds[i] = NULL;
