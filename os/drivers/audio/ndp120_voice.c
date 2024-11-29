@@ -837,7 +837,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 
-	ret = ndp120_init(priv);
+	ret = ndp120_init(priv, false);
 	if (ret != OK) {
 		auddbg("ndp120 init failed\n");
 		free(priv);

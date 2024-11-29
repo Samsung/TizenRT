@@ -204,6 +204,8 @@ int rtl8730e_ndp120_initialize(int minor)
 #ifdef CONFIG_PM
 		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
 #endif
+		g_ndp120info.lower.reset = rtl8730e_ndp120_reset;
+
 		/* currently spi 0 is only attached to AI SoC, so no
 		 * need to change the spi config as we are dealing with
 		 * only 1 slave, if we add more slaves, parameters below

@@ -87,6 +87,7 @@ struct ndp120_lower_s {
 	/* PM related h/w operations */
 	CODE void (*set_pm_state)(bool sleep);
 #endif
+	CODE void (*reset)(void);
 };
 
 /****************************************************************************
