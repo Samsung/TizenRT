@@ -190,11 +190,12 @@ struct amebasmart_i2s_s {
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	//uint8_t i2s_rx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
-	uint8_t* i2s_rx_buf;
+	uint8_t i2s_rx_buf[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+	//uint8_t* i2s_rx_buf;
 	i2s_irq_handler rx_isr_handler;
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
-	uint8_t* i2s_rx_buf_ext;
+	//uint8_t* i2s_rx_buf_ext;
+	uint8_t i2s_rx_buf_ext[(I2S_DMA_PAGE_NUM + 1) * I2S_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
 	i2s_irq_handler rx_isr_handler_ext;
 #endif
 #endif
@@ -236,7 +237,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 	.i2s_sclk_pin = PB_21,
 	.i2s_ws_pin = PA_16,
 	.i2s_sd_tx_pin = PB_10,
-	.i2s_sd_rx_pin = PB_19,
+	.i2s_sd_rx_pin = PB_20,
 
 	.i2s_idx = I2S_NUM_2,
 	.rxenab = 0,
@@ -872,13 +873,13 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->rx.act)) {
-		i2sinfo("[RX start] RX active!\n");
+		lldbg("[RX start] RX active!\n");
 		return OK;
 	}
 
 	/* If there are no pending transfer, then bail returning success */
 	if (sq_empty(&priv->rx.pend)) {
-		i2sinfo("[RX start] RX pend empty!\n");
+		lldbg("[RX start] RX pend empty!\n");
 		return OK;
 	}
 
@@ -1108,7 +1109,7 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	DEBUGASSERT(bfcontainer);
 
 	i2s_exclsem_take(priv);
-	i2sinfo("RX Exclusive Enter\n");
+	printf("RX Exclusive Enter\n");
 
 	/* Add a reference to the audio buffer */
 	apb_reference(apb);
@@ -1126,12 +1127,12 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.pend);
 	leave_critical_section(flags);
-	i2sinfo("i2s_rx_start\n");
+	printf("i2s_rx_start\n");
 	/* Start transfer */
 	ret = i2s_rx_start(priv);
 
 	i2s_exclsem_give(priv);
-	i2sinfo("RX Exclusive Exit\n");
+	printf("RX Exclusive Exit\n");
 
 	return OK;
 
@@ -1150,11 +1151,14 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
  */
 void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 {
+	/* TODO: there is currently crash here as data/pbuf is NULL! */
+	lldbg("handle irq %p %p\n", data, pbuf);
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
 	i2s_t *obj = priv->i2s_object;
-
 	/* submit a new page for receive */
 	i2s_recv_page(obj);
+
+	lldbg("rxpage\n");
 
 	i2s_rxdma_callback(priv, OK);
 }
@@ -1538,6 +1542,7 @@ static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_RX && priv->rxenab) {
+		lldbg("XX %d\n", priv->tdmenab);
 		if (priv->tdmenab) {
 			ameba_i2s_tdm_resume(priv->i2s_object);
 		} else {
@@ -1762,6 +1767,14 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)dev;
 	DEBUGASSERT(priv && rate > 0);
 
+#if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
+	lldbg("called by ioctl!\n");
+	if (priv->tdmenab) {
+		lldbg("tdm sample rate currently not changeable!\n");
+		return priv->i2s_object->sampling_rate;
+	}
+#endif
+
 	priv->i2s_object->sampling_rate = rate;
 	priv->sample_rate = rate;
 
@@ -1842,6 +1855,7 @@ static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (priv->config->tdmenab) {
 		dbg("init for tdm: %d \n", priv->config->tdmenab);
+		priv->tdmenab = priv->config->tdmenab;
 		/* TDM configuration fixed for ais25ba */
 		priv->i2s_object->mode = TDM;
 		priv->i2s_object->role = MASTER;
@@ -2097,6 +2111,11 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
 #endif
+
+#if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
+	i2s_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
+#endif
+
 
 	/* configures IRQ */
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
