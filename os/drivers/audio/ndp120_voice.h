@@ -26,6 +26,7 @@
 #include <syntiant_ilib/syntiant_ndp.h>
 #include <syntiant_ilib/syntiant_ndp120.h>
 #include <syntiant_evb_io.h>
+#include <syntiant_ilib/syntiant_ndp_error.h>
 
 #define MAX_LABELS 32
 
@@ -76,6 +77,7 @@ struct ndp120_dev_s {
 	uint8_t *keyword_buffer;
 	uint32_t extract_size;
 	bool extclk_inuse;
+	volatile bool alive;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
 	pthread_mutex_t ndp_mutex_mbsync;
