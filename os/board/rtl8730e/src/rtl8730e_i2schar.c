@@ -42,10 +42,6 @@
 #ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_3
 #define CONFIG_AMEBASMART_I2SCHAR_MINOR_3 3
 #endif
-
-#ifndef CONFIG_AMEBASMART_I2SCHAR_MINOR_4
-#define CONFIG_AMEBASMART_I2SCHAR_MINOR_4 4
-#endif
 /*****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -86,11 +82,7 @@ int i2schar_devinit(void)
 		}
 
 		/* Register the I2S character driver at "/dev/i2schar2" */
-#if defined(CONFIG_AMEBASMART_I2S_TDM)
-		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_4);
-#else
 		ret = i2schar_register(i2s, CONFIG_AMEBASMART_I2SCHAR_MINOR_2);
-#endif
 		if (ret < 0) {
 			lldbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
