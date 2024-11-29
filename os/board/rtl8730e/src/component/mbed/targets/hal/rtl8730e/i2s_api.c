@@ -602,6 +602,7 @@ void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
 #ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_recv_page(i2s_t *obj)
 {
+	lldbg("i2s rcv page called\n");
 	uint8_t i2s_index = obj->i2s_idx;
 
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
@@ -621,6 +622,7 @@ void i2s_recv_page(i2s_t *obj)
   */
 void i2s_enable(i2s_t *obj)
 {
+	lldbg("enable called!\n");
 #if defined(CONFIG_AMEBASMART_I2S_TDM)
 	// turn on MCLK if master
 	if (obj->role == MASTER) {
@@ -707,12 +709,12 @@ void ameba_i2s_tdm_pause(i2s_t *obj) {
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 	SP_GDMA_STRUCT_EXT *l_SPGdmaStructExt = &SPGdmaStructExt;
 
-#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	lldbg("in pause\n");
+
 	// turn on MCLK if master
 	if (obj->role == MASTER) {
 		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
 	}
-#endif
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -722,6 +724,8 @@ void ameba_i2s_tdm_pause(i2s_t *obj) {
 	} else {
 		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Suspend(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
 	}
 }
 #endif
@@ -747,6 +751,7 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 	SP_GDMA_STRUCT_EXT *l_SPGdmaStructExt = &SPGdmaStructExt;
+	lldbg("in resume\n");
 
 	// turn on MCLK if master
 	if (obj->role == MASTER) {
@@ -757,6 +762,8 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
 	} else {
+		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
+		AUDIO_SP_RXStart(obj->i2s_idx, ENABLE);
 		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Resume(l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStructExt->SpRxGdmaInitStructExt.GDMA_ChNum);
 	}
@@ -844,6 +851,7 @@ static void i2s_tdm_rx_isr(void *sp_data)
 	/* Read data */
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 	DCache_CleanInvalidate((uint32_t)prx_block->rx_addr, sp_rx_info.rx_page_size);
+	dbg("I2S: ISR0! %p\n", (void *)(uint32_t)prx_block->rx_addr);
 	I2SUserCB.RxCCB((uint32_t)NULL, (void *)(uint32_t)prx_block->rx_addr);
 	i2s_get_free_rx_page(i2s_index);
 }
@@ -855,6 +863,7 @@ static void i2s_tdm_rx_isr_ext(void *sp_data)
 	GDMA_InitStruct = &(gs->SpRxGdmaInitStructExt);
 
 	uint8_t i2s_index = gs->i2s_idx;
+	dbg("I2S: ISR1!\n");
 
 	/* Clear Pending ISR */
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
@@ -972,6 +981,7 @@ void i2s_tdm_disable(i2s_t *obj, bool is_suspend)
   */
 void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 {
+	lldbg("tdm_set_param\n");
 	uint32_t clock_mode = 0;
 
 	assert_param(IS_SP_CHN_NUM(obj->channel_num));
