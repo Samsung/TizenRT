@@ -1260,11 +1260,6 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 				case 0:
 					serialno++;
 					auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-					/* extract keyword immediately */
-					extract_keyword(dev);
-#ifdef CONFIG_NDP120_AEC_SUPPORT
-					g_ndp120_state = IS_RECORDING;
-#endif
 					break;
 				case 1:
 					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
@@ -1277,6 +1272,11 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
 			if (network_id == 0 && !dev->recording) {
+				/* extract keyword immediately */
+				extract_keyword(dev);
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+				g_ndp120_state = IS_RECORDING;
+#endif
 				msg.msgId = AUDIO_MSG_KD;
 			} else if (network_id == 1) {
 				switch (winner) {
@@ -1320,6 +1320,7 @@ int ndp120_set_sample_ready_int(struct ndp120_dev_s *dev, int on)
 {
 	int s;
 	s = syntiant_ndp120_config_notify_on_sample_ready(dev->ndp, on);
+	auddbg("sample ready state (%d), ret (%d)\n", on, s);
 	return s;
 }
 
