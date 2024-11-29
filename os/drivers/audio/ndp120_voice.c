@@ -505,8 +505,14 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 			break;
 		}
 	}
+
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, ret);
-	
+
+	if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
+		// notify upper layer to stop capture
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
+	}
+
 	return 0;
 }
 
@@ -862,7 +868,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 
-	ret = ndp120_init(priv);
+	ret = ndp120_init(priv, false);
 	if (ret != OK) {
 		auddbg("ndp120 init failed\n");
 		free(priv);
