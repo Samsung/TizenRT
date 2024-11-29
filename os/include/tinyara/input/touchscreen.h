@@ -68,7 +68,7 @@
 
 #include <tinyara/config.h>
 
-#ifdef CONFIG_TOUCH
+#if defined(CONFIG_TOUCH)
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/i2c.h>
 
@@ -85,7 +85,7 @@
 #define TSIOC_GETFREQUENCY   _TSIOC(0x0004)  /* arg: Pointer to uint32_t frequency value */
 #define TSIOC_DISABLE        _TSIOC(0x0005)  /* Disable touch interrupt */
 #define TSIOC_ENABLE         _TSIOC(0x0006)  /* Enable touch interrupt */
-
+#define TSIOC_SETAPPNOTIFY   _TSIOC(0x0007)  /* arg: Pointer to struct touch_set_callback_s. Support available only when CONFIG_TOUCH_CALLBACK is enabled */
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
 
@@ -170,6 +170,15 @@ struct touch_sample_s {
 	struct touch_point_s point[TOUCH_MAX_POINTS]; /* Actual dimension is npoints */
 };
 
+#if defined(CONFIG_TOUCH_CALLBACK)
+
+struct touch_set_callback_s {
+	struct touch_sample_s *touch_points;
+	void (*is_touch_detected)(int);
+};
+
+#endif /* CONFIG_TOUCH_CALLBACK */
+
 /*
  * This structure is upper level driver operations which will use lower level calls internally
  */
@@ -190,7 +199,7 @@ struct touchscreen_ops_s {
 struct touchscreen_s {
 	sem_t sem;
 	uint8_t crefs;
-#ifndef CONFIG_DISABLE_POLL
+#if !defined(CONFIG_DISABLE_POLL)
 	sem_t pollsem;
 	struct pollfd *fds[CONFIG_TOUCH_NPOLLWAITERS];
 #endif
@@ -200,6 +209,11 @@ struct touchscreen_s {
 	const struct touchscreen_ops_s *ops;	/* Arch-specific operations */
 	void *priv;		/* Used by the TSP-specific logic */
 
+#if defined(CONFIG_TOUCH_CALLBACK)
+	/* Below variables are set by UI using IOCTL during initialization */
+	struct touch_sample_s *app_touch_point_buffer;		/* Buffer to store touch point allocated by UI */
+	void (*is_touch_detected)(int);	/* Callback function to notify touch event to application */
+#endif /* CONFIG_TOUCH_CALLBACK */
 };
 
 #define SIZEOF_TOUCH_SAMPLE_S(n) (sizeof(struct touch_sample_s) + ((n) - 1) * sizeof(struct touch_point_s))

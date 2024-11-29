@@ -23,6 +23,21 @@ config TOUCH_IST415
 		Enable the Touch device IST415
 endchoice
 
+choice
+	prompt "choose TOUCH DEVICE app notification type"
+	default TOUCH_POLL
+	
+config TOUCH_POLL
+	bool "Polling Notification"
+	---help---
+		Enable polling based notification to application
+
+config TOUCH_CALLBACK
+	bool "Callback Notification"
+	---help---
+		Enable callback based notification to application
+endchoice
+
 config TOUCH_NPOLLWAITERS
 	int "Number of Multipolling Wait"
 	default 2
