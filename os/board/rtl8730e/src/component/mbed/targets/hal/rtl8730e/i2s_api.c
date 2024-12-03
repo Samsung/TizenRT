@@ -621,6 +621,13 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
 		if (is_suspend) {
 			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+
+			/* deinit the peripheral clock when suspending to avoid invalid state */
+			if (obj->i2s_idx == I2S2) {
+				RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, DISABLE);
+			} else if (obj->i2s_idx == I2S3) {
+				RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, DISABLE);
+			}
 		}
 	} else {
 
