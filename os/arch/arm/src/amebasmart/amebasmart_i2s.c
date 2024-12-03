@@ -216,7 +216,7 @@ struct amebasmart_i2s_s {
 
 /* I2S device structures */
 static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
-	.i2s_mclk_pin = PB_22,
+	.i2s_mclk_pin = NULL,
 	.i2s_sclk_pin = PB_21,
 	.i2s_ws_pin = PA_16,
 	.i2s_sd_tx_pin = PB_10,
