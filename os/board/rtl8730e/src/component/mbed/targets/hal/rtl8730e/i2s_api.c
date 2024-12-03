@@ -497,8 +497,9 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 		/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
 	}
-
-	Pinmux_Config(mck, pin_func);
+	if (mck) {
+		Pinmux_Config(mck, pin_func);
+	}
 	Pinmux_Config(sck, pin_func);
 	Pinmux_Config(ws, pin_func);
 	Pinmux_Config(sd_tx, pin_func);
