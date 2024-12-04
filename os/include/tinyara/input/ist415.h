@@ -259,6 +259,9 @@ struct ts_event_coordinate {
 struct ist415_ops_s {
 	CODE void (*irq_enable)(void);	/* Enables the irq */
 	CODE void (*irq_disable)(void);	/* Disables the irq */
+	CODE void (*reset)(void); /* Reset Touch IC */
+	CODE void (*power_on)(void); /* Power on Touch IC */
+	CODE void (*power_off)(void); /* Power off Touch IC*/
 };
 
 /* IST415 Device */

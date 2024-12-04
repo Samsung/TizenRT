@@ -170,6 +170,7 @@ static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
 static void ist415_enable(struct touchscreen_s *dev)
 {
 	struct ist415_dev_s *priv = (struct ist415_dev_s *)dev->priv;
+	priv->ops->power_on();
 	priv->ops->irq_enable();
 }
 
@@ -181,6 +182,7 @@ static void ist415_disable(struct touchscreen_s *dev)
 {
 	struct ist415_dev_s *priv = (struct ist415_dev_s *)dev->priv;
 	priv->ops->irq_disable();
+	priv->ops->power_off();
 }
 
 /****************************************************************************
