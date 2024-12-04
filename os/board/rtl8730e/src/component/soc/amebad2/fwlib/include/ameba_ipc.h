@@ -326,6 +326,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_A2L_UARTBRIDGE						2
 #define IPC_A2L_DISLOGUART						3
 #define IPC_A2L_WIFI_FW_INFO					4 /*!<  AP -->  LP Get stats info from WIFI FW */
+#define IPC_A2L_UART							5 /*! < AP -->  NP UART data receive during PG*/
 //#define IPC_A2L_Channel5						5
 //#define IPC_A2L_Channel6						6
 #define IPC_A2L_IMQ_TRX_TRAN					7	/*!<  AP -->  LP IMQ Message Exchange */
@@ -335,7 +336,8 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_A2N_FLASHPG_REQ						2	/*!<  AP -->  NP Flash Program Request*/
 #define IPC_A2N_BT_API_TRAN						3	/*!<  AP -->  NP BT API Exchange */
 #define IPC_A2N_BT_DRC_TRAN						4	/*!<  AP -->  NP BT DATA Message Exchange */
-#define IPC_A2N_802154_TRAN						5
+//#define IPC_A2N_802154_TRAN						5
+#define IPC_A2N_UART							5 /*! < AP -->  NP UART data receive during PG*/
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/

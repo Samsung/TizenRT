@@ -1,5 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version eb5103aa31 2024/11/28-16:29:52 ==
+1. Fix UART1 Data Loss when send large data to wakeup device
+	- Add IPC to handle startup of UART1 when CA32 is entering suspend
+	- UART1 interrupt to KM4 is disabled as when CA32 is fully started, ISR will be serviced by CA32's ISR instead
+	- Add WFE state check for CA32 as it suspends, as there is some instability on registers during rapid wakeup/sleep causing lockup
+
 == version 33dff5bd62 2024/11/26-11:42:59 ==
 1. Optimize probe response frequency in wifi driver
 
