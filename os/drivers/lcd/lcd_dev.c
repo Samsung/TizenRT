@@ -68,6 +68,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/pm/pm.h>
 
 #define MAX_NO_PLANES 3
 /****************************************************************************
@@ -81,7 +82,9 @@ struct lcd_s {
 	struct lcd_planeinfo_s planeinfo[MAX_NO_PLANES];
 	sem_t sem;
 	int16_t crefs;
-
+#ifdef CONFIG_PM
+	int pm_domain;
+#endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	uint8_t *lcd_kbuffer;
 	FAR const struct lcddev_area_s *lcd_area;
@@ -290,11 +293,32 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	case LCDDEVIO_SETPOWER: {
+
+#ifdef CONFIG_PM
+		if (!priv->dev->setpower || !priv->dev->getpower) {
+			ret = -ENOSYS;
+			break;
+		}
+		int new_power = (int)arg;
+		int old_power = priv->dev->getpower(priv->dev);
+
+		ret = priv->dev->setpower(priv->dev, new_power);
+		if (ret != OK) {
+			break;
+		}
+
+		if (old_power == 0 && new_power > 0) {
+			(void)pm_suspend(priv->pm_domain);
+		} else if (old_power > 0 && new_power == 0) {
+			(void)pm_resume(priv->pm_domain);
+		}
+#else
 		if (priv->dev->setpower) {
 			ret = priv->dev->setpower(priv->dev, (int)arg);
 		} else {
 			ret = -ENOSYS;
 		}
+#endif
 	}
 	break;
 	case LCDDEVIO_GETCONTRAST: {
@@ -398,6 +422,7 @@ static void lcd_flushing_thread(void)
 int lcddev_register(struct lcd_dev_s *dev)
 {
 	char devname[16] = { 0, };
+	int ret;
 
 	if (!dev) {
 		return -EINVAL;
@@ -428,7 +453,17 @@ int lcddev_register(struct lcd_dev_s *dev)
 	lcdvdbg("lcd flushing thread %d created \n", pid);
 #endif
 
+#ifdef CONFIG_PM
+	lcd_info->pm_domain = pm_domain_register("LCD");
+#endif
+
 	lcd_init_put_image(dev);
+	if (dev->setpower) {
+		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+		if (ret != OK) {
+			return ret;
+		}
+	}
 	sem_init(&lcd_info->sem, 0, 1);
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
