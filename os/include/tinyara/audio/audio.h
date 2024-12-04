@@ -323,6 +323,8 @@
 #define AUDIO_CALLBACK_MICMUTE      0x09
 #define AUDIO_CALLBACK_MICUNMUTE    0x0a
 
+#define AUDIO_CALLBACK_UNREACHABLE  0x0b
+
 /* Audio Pipeline Buffer (AP Buffer) flags **********************************/
 
 #define AUDIO_ABP_ALIGNMENT         0x000f	/* Mask to define buffer alignment */
@@ -362,6 +364,7 @@
 #define AUDIO_MSG_SPD              20
 #define AUDIO_MSG_MICMUTE          21
 #define AUDIO_MSG_MICUNMUTE        22
+#define AUDIO_MSG_UNREACHABLE      23
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */
