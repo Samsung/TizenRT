@@ -1075,6 +1075,22 @@ void wext_wlan_indicate(unsigned int cmd, union iwreq_data *wrqu, char *extra)
 				else if(!memcmp(IW_EVT_STR_SEND_ACTION_DONE, extra, strlen(IW_EVT_STR_SEND_ACTION_DONE)))
 					wifi_indication(WIFI_EVENT_SEND_ACTION_DONE, NULL, 0, wrqu->data.flags);
 #endif				
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+				else if(!memcmp(IW_EVT_STR_WLAN_DRIVER_START, extra, strlen(IW_EVT_STR_WLAN_DRIVER_START)))
+					wifi_indication(WIFI_EVENT_DRIVER_START, extra, strlen(IW_EVT_STR_WLAN_DRIVER_START), 0);
+				else if(!memcmp(IW_EVT_STR_WLAN_DRIVER_STOP, extra, strlen(IW_EVT_STR_WLAN_DRIVER_STOP)))
+					wifi_indication(WIFI_EVENT_DRIVER_STOP, extra, strlen(IW_EVT_STR_WLAN_DRIVER_STOP), 0);
+				else if(!memcmp(IW_EVT_STR_SCANNING, extra, strlen(IW_EVT_STR_SCANNING)))
+					wifi_indication(WIFI_EVENT_SCANNING, extra, strlen(IW_EVT_STR_SCANNING), 0);
+				else if(!memcmp(IW_EVT_STR_AUTHENTICATING, extra, strlen(IW_EVT_STR_AUTHENTICATING)))
+					wifi_indication(WIFI_EVENT_AUTHENTICATING, extra, strlen(IW_EVT_STR_AUTHENTICATING), 0);
+				else if(!memcmp(IW_EVT_STR_ASSOCIATING, extra, strlen(IW_EVT_STR_ASSOCIATING)))
+					wifi_indication(WIFI_EVENT_ASSOCIATING, extra, strlen(IW_EVT_STR_ASSOCIATING), 0);
+				else if(!memcmp(IW_EVT_STR_ASSOCIATION_DONE, extra, strlen(IW_EVT_STR_ASSOCIATION_DONE)))
+					wifi_indication(WIFI_EVENT_ASSOCIATION_DONE, extra, strlen(IW_EVT_STR_ASSOCIATION_DONE), 0);
+				else if(!memcmp(IW_EVT_STR_FOURWAY_HANDSHAKING, extra, strlen(IW_EVT_STR_FOURWAY_HANDSHAKING)))
+					wifi_indication(WIFI_EVENT_FOURWAY_HANDSHAKING, extra, strlen(IW_EVT_STR_FOURWAY_HANDSHAKING), 0);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 			}
 			break;
 		case SIOCGIWSCAN:
