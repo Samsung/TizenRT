@@ -1155,6 +1155,8 @@ int start_audio_stream_in(void *data, unsigned int frames)
 		} else if (ret == -ESTRPIPE) {
 			ret = AUDIO_MANAGER_DEVICE_SUSPENDED;
 			goto error_with_lock;
+		} else if (ret == -EHOSTUNREACH) {
+			ret = AUDIO_MANAGER_DEVICE_DEAD;
 		} else {
 			break;
 		}
