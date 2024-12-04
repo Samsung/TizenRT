@@ -40,6 +40,7 @@ extern "C" {
  * @brief Result types of Audio Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */
 enum audio_manager_result_e {
+	AUDIO_MANAGER_DEVICE_DEAD = -14,
 	AUDIO_MANAGER_DEVICE_SUSPENDED = -13,
 	AUDIO_MANAGER_DEVICE_ALREADY_IN_USE = -12,
 	AUDIO_MANAGER_SET_STREAM_POLICY_NOT_ALLOWED = -11,

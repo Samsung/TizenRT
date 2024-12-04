@@ -708,6 +708,11 @@ void MediaRecorderImpl::capture()
 		meddbg("Too small frames : %d, audio device suspended.\n", frames);
 		RecorderWorker& mrw = RecorderWorker::getWorker();
 		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_DEVICE_SUSPENDED);
+	} else if (frames == AUDIO_MANAGER_DEVICE_DEAD) {
+		std::lock_guard<std::mutex> lock(mCmdMtx);
+		meddbg("audio device dead.\n");
+		RecorderWorker& mrw = RecorderWorker::getWorker();
+		mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), RECORDER_ERROR_DEVICE_DEAD);
 	} else {
 		std::lock_guard<std::mutex> lock(mCmdMtx);
 		meddbg("Too small frames : %d\n", frames);
