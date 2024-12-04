@@ -49,7 +49,7 @@ using namespace media::voice;
 
 media::voice::SpeechDetector *sd;
 
-static const char *filePath = "/mnt/record.pcm";
+static const char *filePath = "/tmp/record.pcm";
 uint8_t *gBuffer = NULL;
 uint32_t bufferSize = 0;
 
