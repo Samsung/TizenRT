@@ -65,7 +65,7 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("              DOMAIN              | TOTAL PM SUSPEND TIME [3] | TOTAL SLEEP BLOCKING TIME [4] \n");
 	pmdbg("----------------------------------|---------------------------|-------------------------------\n");
 	for (index = 0; index < n_domains; index++) {
-		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
+		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index].name, TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
 			  ((double)g_pm_metrics->domain_metrics.suspend_ticks[index]) * 100.0 / total_time, g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index],
 			  ((double)g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
 	}
@@ -290,7 +290,7 @@ int pm_metrics(int milliseconds)
 	flags = enter_critical_section();
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
-	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
+	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index].name; index++) {
 		pm_metrics_update_domain(index);
 		g_pm_metrics->domain_metrics.stime[index] = start_time;
 	}
@@ -316,7 +316,7 @@ int pm_metrics(int milliseconds)
 	flags = enter_critical_section();
 	g_pm_metrics_running = false;
 	end_time = clock_systimer();
-	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
+	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index].name; index++) {
 		if (g_pmglobals.suspend_count[index]) {
 			g_pm_metrics->domain_metrics.suspend_ticks[index] += end_time - g_pm_metrics->domain_metrics.stime[index];
 		}

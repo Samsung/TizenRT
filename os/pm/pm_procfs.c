@@ -180,7 +180,7 @@ const struct procfs_operations power_procfsoperations = {
 static void power_read_domain_info(int domain_id, void (*readprint)(const char *, ...))
 {
 	readprint("%-15s : %d\n", "Domain ID", domain_id);
-	readprint("%-15s : %s\n", "Domain Name", pm_domain_map[domain_id]);
+	readprint("%-15s : %s\n", "Domain Name", pm_domain_map[domain_id].name);
 	readprint("%-15s : %d\n", "Suspend Count", g_pmglobals.suspend_count[domain_id]);
 }
 
@@ -190,7 +190,7 @@ static void power_read_domains(void (*readprint)(const char *, ...))
 	readprint(" DOMAIN ID |            DOMAIN NAME            | SUSPEND COUNTS \n");
 	readprint("-----------|-----------------------------------|----------------\n");
 	for (domain_id = 0; domain_id < g_pmglobals.ndomains; domain_id++) {
-		readprint(" %9d | %33s | %14d \n", domain_id, pm_domain_map[domain_id], g_pmglobals.suspend_count[domain_id]);
+		readprint(" %9d | %33s | %14d \n", domain_id, pm_domain_map[domain_id].name, g_pmglobals.suspend_count[domain_id]);
 	}
 }
 
@@ -252,7 +252,7 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 			}
 			/* Iterate over each domain_name till you find match */
 			for (domain_id = 0; domain_id < g_pmglobals.ndomains; domain_id++) {
-				if (checkStart(pm_domain_map[domain_id], true) == OK) {
+				if (checkStart(pm_domain_map[domain_id].name, true) == OK) {
 					dir->domain_id = domain_id;
 					if (str[0] == '\0') {
 						dir->base.level = POWER_LEVEL_3;
@@ -568,7 +568,7 @@ static int power_readdir(struct fs_dirent_s *dir)
 			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_INFO);
 		} else {
 			dir->fd_dir.d_type = DTYPE_DIRECTORY;
-			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), pm_domain_map[index]);
+			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), pm_domain_map[index].name);
 		}
 		powerdir->base.index++;
 		break;

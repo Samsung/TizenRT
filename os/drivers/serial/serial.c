@@ -1238,7 +1238,7 @@ static int uart_open(FAR struct file *filep)
 #ifdef CONFIG_PM
 	/* Register PM_UART_DOMAIN to access PM APIs during UART operations. */
 	if (pm_uart_domain_id == -1) {
-		ret = pm_domain_register(PM_UART_DOMAIN);
+		ret = pm_domain_register(PM_UART_DOMAIN, PM_BACK);
 		if (ret < 0) {
 			return ret;
 		}

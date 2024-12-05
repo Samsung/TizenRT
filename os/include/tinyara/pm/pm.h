@@ -366,7 +366,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain);
+int pm_domain_register(char *domain, enum pm_state_e state);
 
 /****************************************************************************
  * Name: pm_idle
@@ -554,7 +554,7 @@ int pm_metrics(int milliseconds);
 #define pm_initialize()
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
-#define pm_domain_register(domain)	(0)
+#define pm_domain_register(domain, state)	(0)
 #define pm_idle()
 #define pm_suspend(domain_id)   (0)
 #define pm_resume(domain_id)    (0)

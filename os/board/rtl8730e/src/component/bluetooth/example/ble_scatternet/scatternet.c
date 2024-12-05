@@ -296,7 +296,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
             /* Register PM_BLE_DOMAIN and Perform 10 minutes timedsuspend */
-            domain = pm_domain_register("BLE");
+            domain = pm_domain_register("BLE", PM_BACK);
             if (domain < 0) {
                 pmdbg("Unable to register BLE DOMAIN\n");
             } else if (pm_timedsuspend(domain, 600000) != 0) {

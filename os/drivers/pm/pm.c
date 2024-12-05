@@ -147,7 +147,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			ret = -EINVAL;
 			pmdbg("Please input correct arguments\n");
 		} else {
-			((pm_domain_arg_t *)arg)->domain_id = pm_domain_register(((pm_domain_arg_t *)arg)->domain_name);
+			((pm_domain_arg_t *)arg)->domain_id = pm_domain_register(((pm_domain_arg_t *)arg)->domain_name, PM_BACK);
 			if (((pm_domain_arg_t *)arg)->domain_id >= 0) {
 				ret = OK;
 			}

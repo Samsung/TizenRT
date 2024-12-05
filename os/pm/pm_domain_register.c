@@ -33,9 +33,9 @@
  * Public Variables
  ************************************************************************/
 
-/* This array maps the integer domain to its respective string domain */
+/* This array maps the integer domain to its respective struct pm_doamin_s domain */
 
-char *pm_domain_map[CONFIG_PM_NDOMAINS];
+struct pm_domain_s pm_domain_map[CONFIG_PM_NDOMAINS];
 
 /****************************************************************************
  * Public Functions
@@ -81,7 +81,7 @@ int pm_check_domain(int domain_id)
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain)
+int pm_domain_register(char *domain, enum pm_state_e state);
 {
 	int index;
 	irqstate_t flags;
@@ -97,15 +97,16 @@ int pm_domain_register(char *domain)
 	for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
 		flags = enter_critical_section();
 		/* If we have unused domain ID then use it to register given domain */
-		if (pm_domain_map[index] == NULL) {
-			pm_domain_map[index] = (char *)kmm_malloc((length + 1) * sizeof(char));
-			if (!pm_domain_map[index]) {
+		if (pm_domain_map[index].name == NULL) {
+			pm_domain_map[index].name = (char *)kmm_malloc((length + 1) * sizeof(char));
+			if (!pm_domain_map[index].name) {
 				set_errno(ENOMEM);
 				pmdbg("Unable to allocate memory from heap\n");
 				leave_critical_section(flags);
 				return ERROR;
 			}
-			strncpy(pm_domain_map[index], domain, length + 1);
+			strncpy(pm_domain_map[index].name, domain, length + 1);
+			pm_domain_map[index].state = state;
 			g_pmglobals.ndomains++;
 #ifdef CONFIG_PM_METRICS
 			/* For newly registered domain initialize its pm metrics*/
@@ -113,7 +114,7 @@ int pm_domain_register(char *domain)
 #endif
 			goto EXIT;
 		/* If domain is already registered then return registered domain ID */
-		} else if (strncmp(pm_domain_map[index], domain, length + 1) == 0) {
+		} else if (strncmp(pm_domain_map[index].name, domain, length + 1) == 0) {
 			goto EXIT;
 		}
 		leave_critical_section(flags);

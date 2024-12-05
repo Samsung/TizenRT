@@ -786,7 +786,7 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 
 #ifdef CONFIG_PM
-	pm_timedsuspend(pm_domain_register("AUDIO"), timeout);
+	pm_timedsuspend(pm_domain_register("AUDIO", PM_FORE), timeout);
 #endif
 	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 

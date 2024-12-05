@@ -126,7 +126,7 @@ void pm_initialize(void)
 	sem_init(&g_pmglobals.regsem, 0, 1);
 
 	/* Register Special Domains, which are specific to Kernel*/
-	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
-	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
+	DEBUGASSERT(pm_domain_register("IDLE", PM_BACK) == PM_IDLE_DOMAIN);
+	DEBUGASSERT(pm_domain_register("SCREEN", PM_FORE) == PM_LCD_DOMAIN);
 }
 #endif /* CONFIG_PM */

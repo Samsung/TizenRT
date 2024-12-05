@@ -140,6 +140,13 @@ struct pm_global_s {
 	bool is_running;
 };
 
+struct pm_domain_s {
+	char *name;
+	enum pm_state_e state;
+}
+
+typedef struct pm_domain_s pm_domain_t;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -155,7 +162,7 @@ extern "C" {
 /* All PM global data: */
 
 EXTERN struct pm_global_s g_pmglobals;
-EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
+EXTERN pm_domain_t pm_domain_map[CONFIG_PM_NDOMAINS];
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
