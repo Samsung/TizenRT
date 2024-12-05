@@ -274,6 +274,37 @@ typedef struct wowlan_pattern {
 	unsigned char mask[5];
 } wowlan_pattern_t;
 
+typedef struct rtw_fw_txrpt_stats {
+  unsigned long tx_rty_cnt;
+  int txrpt_rty_cnt_ready;
+} rtw_fw_txrpt_stats_t;
+
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+/**
+  * @brief  The structure is used to describe the phy statistics
+  */
+typedef struct {
+  signed char     rssi;          /*!<average rssi in 1 sec (for STA mode) */
+  signed char     snr;          /*!< average snr in 1 sec (not include cck rate, for STA mode)*/
+  /* todo*/
+  unsigned int    false_alarm_cck;
+  unsigned int    false_alarm_ofdm;
+  unsigned int    cca_cck;
+  unsigned int    cca_ofdm;
+  unsigned int    tx_retry;
+  unsigned int    tx_drop;
+  unsigned int    rx_drop;
+  unsigned int    supported_max_rate;
+} rtw_phy_statistics_t;
+
+/**
+  * @brief  The structure is used to describe the wpa supplicant state information
+  */
+typedef struct wpa_supplicant_state_info {
+  enum wpa_states current_wpa_supplicant_state;
+  enum wpa_states previous_wpa_supplicant_state;
+} wpa_supplicant_state_info_t;
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 
 #ifdef	__cplusplus
 }

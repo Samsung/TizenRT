@@ -584,12 +584,69 @@ typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, trwifi_msg_s *ms
  */
 typedef trwifi_result_e (*trwifi_set_channel_plan)(struct netdev *dev, uint8_t chplan);
 
+/**
+ * @brief   Get signal_quality information
+ *
+ * @param[in]   dev             : struct netdev registered by netdev_register()
+ * @param[out]  signal_quality  : signal_quality information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get the signal quality of connected AP.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_signal_quality)(struct netdev *dev, trwifi_signal_quality *signal_quality);
 
+/**
+ * @brief   Get deauth_reason
+ *
+ * @param[in]   dev           : struct netdev registered by netdev_register()
+ * @param[out]  deauth_reason : deauth_reason
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get deauth_reason for the last connection from driver.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_deauth_reason)(struct netdev *dev, int *deauth_reason);
 
+/**
+ * @brief   Get driver information
+ *
+ * @param[in]   dev         : struct netdev registered by netdev_register()
+ * @param[out]  driver_info : driver information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get the driver information from the driver.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_driver_info)(struct netdev *dev, trwifi_driver_info *driver_info);
 
+/**
+ * @brief   Get wpa_supplicant_state
+ *
+ * @param[in]   dev                  : struct netdev registered by netdev_register()
+ * @param[out]  wpa_supplicant_state : wpa_supplicant_state
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get wpa_supplicant state from driver.
+ *                 This is used to get the state just before the last disconnection.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_wpa_supplicant_state)(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
 
 struct trwifi_ops {

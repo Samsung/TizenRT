@@ -1113,6 +1113,87 @@ int wifi_set_psk_eap_interval(uint16_t psk_interval, uint16_t eap_interval);
 int wifi_set_null1_param(uint8_t check_period, uint8_t limit, uint8_t interval);
 #endif
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+/**
+ * @brief  Get the join status
+ * @param[in]  void
+ * @return  Return the join status
+ */
+uint32_t wifi_get_join_status(void);
+
+/**
+ * @brief  Get the deauth reason received by driver
+ * @param[in]  void
+ * @return  Return the last deauth reason received by driver
+ */
+int wifi_get_last_reason(void);
+
+/**
+ * @brief  Get key_mgmt value of current connection
+ * @param[in]  void
+ * @return  int: The key_mgmt value of current connection
+ * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
+ */
+int wifi_get_key_mgmt(void);
+
+/**
+ * @brief  Get previous key_mgmt value of previous connection
+ * @param[in]  void
+ * @return  int: The previous key_mgmt value
+ */
+unsigned int wifi_get_previous_key_mgmt(void);
+
+/**
+ * @brief  Get wlan library version
+ * @param[out]  char *lib_ver: The buffer to store the library version
+ * @return  RTW_SUCCESS
+ * @return  RTW_BADARG: lib_ver is NULL
+ */
+int wifi_get_lib_ver(char *lib_ver);
+
+/**
+ * @brief  Get current wifi bandwidth
+ * @param[in]  const char *ifname: wlan0 or wlan1
+ * @return  RTW_SUCCESS
+ * @return  RTW_ERROR: failed to get current bandwidth. Please connect wifi client.
+ */
+int wifi_get_current_bw(const char *ifname);
+
+/**
+ * @brief  Get tx retry statistics
+ * @param[in]  const char *ifname: wlan0 or wlan1
+ * @param[out] rtw_fw_txrpt_stats_t *txrpt_stats
+ * @return  RTW_SUCCESS
+ * @return  RTW_ERROR: failed to get tx retry stats. Please connect wifi client.
+ */
+int wifi_get_txrpt_statistic(const char *ifname, rtw_fw_txrpt_stats_t *txrpt_stats);
+
+/**
+ * @brief  Get wifi statistics, including tx retry statistics
+ * @param[in]  const char *ifname: wlan0 or wlan1
+ * @param[out] rtw_phy_statistics_t *phy_statistic
+ * @return  RTW_SUCCESS
+ * @return  RTW_ERROR: failed to get wifi statistics. Please connect wifi client.
+ */
+int wifi_fetch_phy_statistic(const char *ifname, rtw_phy_statistics_t *phy_statistic);
+
+/**
+ * @brief  Get wpa supplicant state information
+ * @param[out] enum wpa_states *current_wpa_state: current wpa state. May be NULL if not needed.
+ * @param[out] enum wpa_states *previous_wpa_state : previous wpa state. May be NULL if not needed.
+ * @return  RTW_SUCCESS
+ * @return  RTW_ERROR: failed to get wifi statistics
+ */
+int wifi_get_wpa_supplicant_state_info(enum wpa_states *current_wpa_state, enum wpa_states *previous_wpa_state);
+
+/**
+ * @brief  Set new wpa supplicant state information
+ * @param[in]  enum wpa_states new_wpa_state: new wpa state to set
+ * @return  RTW_SUCCESS
+ */
+int wifi_set_wpa_supplicant_state_info(enum wpa_states new_wpa_state);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
+
 #ifdef __cplusplus
   }
 #endif
