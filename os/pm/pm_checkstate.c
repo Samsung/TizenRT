@@ -109,15 +109,11 @@ enum pm_state_e pm_checkstate(void)
 		newstate = PM_SLEEP;
 	}
 
-	/* If there is power state lock for LCD and IDLE domain, recommended PM_FORE State */
-	if (g_pmglobals.suspend_count[PM_IDLE_DOMAIN] || g_pmglobals.suspend_count[PM_LCD_DOMAIN]) {
-		newstate = PM_FORE;
-	} else if (newstate == PM_SLEEP) {
-		/* Consider the possible power state lock here */
-		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
-			if (g_pmglobals.suspend_count[index] != 0) {
-				newstate = PM_BACK;
-				break;
+	/* Consider the possible power state lock here */
+	for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
+		if (g_pmglobals.suspend_count[index] != 0) {
+			if (pm_domain_map[index].state < newstate) {
+				newstate = pm_domain_map[index].state;
 			}
 		}
 	}

@@ -193,6 +193,7 @@ static inline void pm_prepwake(enum pm_state_e newstate)
 int pm_changestate(enum pm_state_e newstate)
 {
 	irqstate_t flags;
+	enum pm_state_e curstate;
 	int ret = OK;
 
 	/* Disable interrupts throught this operation... changing driver states
@@ -203,22 +204,33 @@ int pm_changestate(enum pm_state_e newstate)
 
 	flags = enter_critical_section();
 
+	curstate = g_pmglobals.state;
+
 	/* First, prepare the drivers for the state change.  In this phase,
 	 * drivers may refuse the state change.
 	 */
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
-		if (newstate > g_pmglobals.state) {
-			ret = pm_prepsleep(g_pmglobals.state);
-			if (ret != OK) {
-				goto EXIT;
+		if (g_pmglobals.state < newstate) {
+			while (g_pmglobals.state < newstate) {
+				ret = pm_prepsleep(g_pmglobals.state);
+				if (ret != OK) {
+					pm_changestate(curstate);
+					goto EXIT;
+				}
+#ifdef CONFIG_PM_METRICS
+				pm_metrics_update_changestate();
+#endif
+				g_pmglobals.state++;
 			}
 		} else {
-			pm_prepwake(g_pmglobals.state);
-		}
+			while (g_pmglobals.state > newstate) {
+				pm_prepwake(newstate);
 #ifdef CONFIG_PM_METRICS
-		pm_metrics_update_changestate();
+				pm_metrics_update_changestate();
 #endif
-		g_pmglobals.state = newstate;
+				g_pmglobals.state--;
+			}
+		}
 	}
 EXIT:
 	/* Restore the interrupt state */
