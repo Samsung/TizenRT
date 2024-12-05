@@ -75,13 +75,12 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_prepall
+ * Name: pm_prepsleep
  *
  * Description:
- *   Prepare every driver for the state change.
+ *   Put every driver to sleep for the state change.
  *
  * Input Parameters:
- *   domain - Identifies the domain of the new PM state
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
@@ -95,33 +94,31 @@
  *
  ****************************************************************************/
 
-static int pm_prepall(enum pm_state_e newstate)
+static int pm_prepsleep(enum pm_state_e newstate)
 {
 	FAR dq_entry_t *entry;
 	int ret = OK;
+	/* Visit each registered callback structure in normal order. */
+	for (entry = dq_peek(&g_pmglobals.registry[newstate]); entry && ret == OK; entry = dq_next(entry)) {
+		/* Is the sleep callback supported? */
 
-	if (newstate <= g_pmglobals.state) {
-		/* Visit each registered callback structure in normal order. */
-
-		for (entry = dq_peek(&g_pmglobals.registry); entry && ret == OK; entry = dq_next(entry)) {
-			/* Is the prepare callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->prepare) {
-				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, newstate);
-			}
+		FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+		if (cb->sleep) {
+			/* Yes.. sleep the driver */
+			ret = cb->sleep(cb);
 		}
-	} else {
-		/* Visit each registered callback structure in reverse order. */
+	}
 
-		for (entry = dq_tail(&g_pmglobals.registry); entry && ret == OK; entry = dq_prev(entry)) {
-			/* Is the prepare callback supported? */
+	if (ret != OK) {
+		entry = dq_prev(entry);
+		/* Visit each registered callback structure in reverse order. */
+		for (; entry; entry = dq_prev(entry)) {
+			/* Is the wake callback supported? */
 
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->prepare) {
-				/* Yes.. prepare the driver */
-				ret = cb->prepare(cb, newstate);
+			if (cb->wake) {
+				/* Yes.. wake the driver */
+				cb->wake(cb, newstate);
 			}
 		}
 	}
@@ -130,14 +127,13 @@ static int pm_prepall(enum pm_state_e newstate)
 }
 
 /****************************************************************************
- * Name: pm_changeall
+ * Name: pm_prepwake
  *
  * Description:
  *   domain - Identifies the domain of the new PM state
  *   Inform all drivers of the state change.
  *
  * Input Parameters:
- *   domain - Identifies the domain of the new PM state
  *   newstate - Identifies the new PM state
  *
  * Returned Value:
@@ -148,32 +144,17 @@ static int pm_prepall(enum pm_state_e newstate)
  *
  ****************************************************************************/
 
-static inline void pm_changeall(enum pm_state_e newstate)
+static inline void pm_prepwake(enum pm_state_e newstate)
 {
 	FAR dq_entry_t *entry;
-	if (newstate <= g_pmglobals.state) {
-		/* Visit each registered callback structure in normal order. */
+	/* Visit each registered callback structure */
+	for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
+		/* Is the wake callback supported? */
 
-		for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
-			/* Is the notification callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->notify) {
-				/* Yes.. notify the driver */
-				cb->notify(cb, newstate);
-			}
-		}
-	} else {
-		/* Visit each registered callback structure in reverse order. */
-
-		for (entry = dq_tail(&g_pmglobals.registry); entry; entry = dq_prev(entry)) {
-			/* Is the notification callback supported? */
-
-			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
-			if (cb->notify) {
-				/* Yes.. notify the driver */
-				cb->notify(cb, newstate);
-			}
+		FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
+		if (cb->wake) {
+			/* Yes.. wake the driver */
+			cb->wake(cb, newstate);
 		}
 	}
 }
@@ -226,14 +207,14 @@ int pm_changestate(enum pm_state_e newstate)
 	 * drivers may refuse the state change.
 	 */
 	if ((newstate != PM_RESTORE) && (newstate != g_pmglobals.state)) {
-		ret = pm_prepall(newstate);
-		if (ret != OK) {
-			goto EXIT;
+		if (newstate > g_pmglobals.state) {
+			ret = pm_prepsleep(g_pmglobals.state);
+			if (ret != OK) {
+				goto EXIT;
+			}
+		} else {
+			pm_prepwake(g_pmglobals.state);
 		}
-		/* All drivers have agreed to the state change (or, one or more have
-		 * disagreed and the state has been reverted).  Set the new state.
-		 */
-		pm_changeall(newstate);
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_changestate();
 #endif

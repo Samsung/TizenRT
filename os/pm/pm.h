@@ -117,7 +117,7 @@ struct pm_global_s {
 	 * must be locked by calling pm_lock() before it is accessed.
 	 */
 
-	dq_queue_t registry;
+	dq_queue_t registry[PM_COUNT];
 
 	/* The power state lock count */
 

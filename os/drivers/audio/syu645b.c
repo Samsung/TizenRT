@@ -96,11 +96,11 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
-static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
-static int syu645b_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static void syu645b_pm_sleep(struct pm_callback_s *cb);
+static int syu645b_pm_wake(struct pm_callback_s *cb);
 static struct pm_callback_s g_pm_syu645b_cb ={
-	.notify  = syu645b_pm_notify,
-	.prepare = syu645b_pm_prepare,
+	.sleep  = syu645b_pm_sleep,
+	.wake = syu645b_pm_wake,
 };
 #endif
 
@@ -1052,7 +1052,7 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 
 #ifdef CONFIG_PM
 /****************************************************************************
- * Name: syu645b_pm_notify
+ * Name: syu645b_pm_sleep
  *
  * Description:
  *   Notify the driver of new power state. This callback is called after
@@ -1060,7 +1060,7 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
  *
  ****************************************************************************/
 
-static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
+static int syu645b_pm_sleep(struct pm_callback_s *cb)
 {
 	/* Currently PM follows the state changes as follows,
 	 * On boot, we are in PM_FORE. After that we only use PM_BACK and PM_SLEEP
@@ -1071,38 +1071,21 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 #if 0
 	struct syu645b_lower_s *lower = g_syu645b->lower;
 #endif
-	switch (state) {
-	case(PM_SLEEP): {
 #if 0
-		if (lower->control_hw_reset) {
-			lower->control_hw_reset(true);
-			up_mdelay(100);
-			lower->control_hw_reset(false);
-			up_mdelay(100);
-		}
+	if (lower->control_hw_reset) {
+		lower->control_hw_reset(true);
+		up_mdelay(100);
+		lower->control_hw_reset(false);
+		up_mdelay(100);
+	}
 #endif
-		/* To prevent consume 12v, just mute on */
-		syu645b_setmute(g_syu645b, true);
-	}
-	break;
-	case(PM_BACK): {
-#if 0
-		syu645b_reset_config(g_syu645b);
-#endif
-		/* Mute off when wake up */
-		syu645b_setmute(g_syu645b, false);
-	} 
-	break;
-	default: {
-		/* Nothing to do */
-		audvdbg("default case\n");
-	}
-	break;
-	}
+	/* To prevent consume 12v, just mute on */
+	syu645b_setmute(g_syu645b, true);
+	return OK;
 }
 
 /****************************************************************************
- * Name: syu645b_pm_prepare
+ * Name: syu645b_pm_wake
  *
  * Description:
  *   Request the driver to prepare for a new power state. This is a warning
@@ -1113,10 +1096,16 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
  *
  ****************************************************************************/
 
-static int syu645b_pm_prepare(struct pm_callback_s *cb, enum pm_state_e state)
+static void syu645b_pm_wake(struct pm_callback_s *cb)
 {
-	audvdbg("pmstate : %d\n", state);
-	return OK;
+#if 0
+	struct syu645b_lower_s *lower = g_syu645b->lower;
+#endif
+#if 0
+	syu645b_reset_config(g_syu645b);
+#endif
+	/* Mute off when wake up */
+	syu645b_setmute(g_syu645b, false);
 }
 #endif	/* End of CONFIG_PM */
 
@@ -1181,7 +1170,7 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	/* only used during pm callbacks */
 	g_syu645b = priv;
 
-	int ret = pm_register(&g_pm_syu645b_cb);
+	int ret = pm_register(&g_pm_syu645b_cb, PM_FORE);
 	DEBUGASSERT(ret == OK);
 #endif	
 

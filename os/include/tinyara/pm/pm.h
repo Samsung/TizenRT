@@ -200,60 +200,49 @@ struct pm_callback_s {
 	char name[MAX_PM_CALLBACK_NAME];	/* Name of driver which register callback */
 
 	/**************************************************************************
-	 * Name: prepare
+	 * Name: sleep
 	 *
 	 * Description:
-	 *   Request the driver to prepare for a new power state. This is a
-	 *   warning that the system is about to enter into a new power state.  The
+	 *   Put the driver into low power mode (or turn OFF). This is a
+	 *   warning that the system is about to enter into PM_SLEEP state. The
 	 *   driver should begin whatever operations that may be required to enter
-	 *   power state.  The driver may abort the state change mode by returning
+	 *   PM_SLEEP state. The driver may abort the state change mode by returning
 	 *   a non-zero value from the callback function
 	 *
 	 * Input Parameters:
 	 *   cb      - Returned to the driver.  The driver version of the callback
 	 *             structure may include additional, driver-specific state
 	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
 	 *
 	 * Returned Value:
 	 *   0 (OK) means the event was successfully processed and that the driver
-	 *   is prepared for the PM state change.  Non-zero means that the driver
+	 *   is prepared for the PM_SLEEP change.  Non-zero means that the driver
 	 *   is not prepared to perform the tasks needed achieve this power setting
-	 *   and will cause the state change to be aborted.  NOTE:  The prepare
-	 *   method will also be recalled when reverting from lower back to higher
-	 *   power consumption modes (say because another driver refused a lower
-	 *   power state change).  Drivers are not permitted to return non-zero
-	 *   values when reverting back to higher power consumption modes!
+	 *   and will cause the state change to be aborted.
 	 *
 	 **************************************************************************/
 
-	int (*prepare)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
+	int (*sleep)(FAR struct pm_callback_s *cb);
 
 	/**************************************************************************
-	 * Name: notify
+	 * Name: wake
 	 *
 	 * Description:
-	 *   Notify the driver of new power state.  This callback is called after
-	 *   all drivers have had the opportunity to prepare for the new power
-	 *   state.
+	 *   Put the driver into high power mode (or turn ON). This callback is called
+	 *   after board change its state from low power to high power. All drivers
+	 *   had the opportunity to prepare for the new power state.
 	 *
 	 * Input Parameters:
-	 *   cb      - Returned to the driver.  The driver version of the callback
+	 *   cb      - Returned to the driver. The driver version of the callback
 	 *             structure may include additional, driver-specific state
 	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
 	 *
 	 * Returned Value:
-	 *   None.  The driver already agreed to transition to the low power
-	 *   consumption state when when it returned OK to the prepare() call.
-	 *   At that time it should have made all preprations necessary to enter
-	 *   the new state.  Now the driver must make the state transition.
+	 *   None.
 	 *
 	 **************************************************************************/
 
-	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
+	void (*wake)(FAR struct pm_callback_s *cb);
 };
 
 /****************************************************************************

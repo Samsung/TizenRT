@@ -77,23 +77,25 @@
  * Input parameters:
  *   callbacks - An instance of struct pm_callback_s providing the driver
  *               callback functions.
+ *   pm_state - The power state in which callback was registered.
  *
  * Returned value:
  *    Zero (OK) on success; otherwise a negated errno value is returned.
  *
  ****************************************************************************/
 
-int pm_unregister(FAR struct pm_callback_s *callbacks)
+int pm_unregister(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state)
 {
 	int ret;
 
 	DEBUGASSERT(callbacks);
+	DEBUGASSERT((pm_state >= PM_FORE) && (pm_state < PM_SLEEP));
 
 	/* Remove entry from the list of registered callbacks. */
 
 	ret = pm_lock();
 	if (ret == OK) {
-		dq_rem(&callbacks->entry, &g_pmglobals.registry);
+		dq_rem(&callbacks->entry, &g_pmglobals.registry[pm_state]);
 		pm_unlock();
 	}
 
