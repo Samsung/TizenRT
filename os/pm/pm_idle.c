@@ -75,7 +75,7 @@ void pm_idle(void)
 	enum pm_state_e newstate;
 	clock_t now;
 #ifdef CONFIG_PM_TIMEDWAKEUP
-	clock_t delay;
+	clock_t delay = 0;
 #endif
 #ifdef CONFIG_SMP
 	int cpu;
@@ -136,6 +136,16 @@ void pm_idle(void)
 			}
 		}
 #endif
+#ifdef CONFIG_PM_TIMEDWAKEUP
+		/* get wakeup timer */
+		if (newstate == PM_SLEEP) {
+			delay = wd_getwakeupdelay();
+			if ((delay > 0) && (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS))) {
+				pmvdbg("Wdog Timer Delay: %ldms is less than SLEEP_ENTRY_WAIT: %ldms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
+				goto EXIT;
+			}
+		}
+#endif
 		/* Then force the global state change */
 		if (pm_changestate(newstate) < 0) {
 			/* The new state change failed */
@@ -146,19 +156,6 @@ void pm_idle(void)
 		if (g_pmglobals.state != PM_SLEEP) {
 			goto EXIT;
 		}
-#ifdef CONFIG_PM_TIMEDWAKEUP
-		/* set wakeup timer */
-		delay = wd_getwakeupdelay();
-		if (delay > 0) {
-			if (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS)) {
-				pmvdbg("Wdog Timer Delay: %dms is less than SLEEP_ENTRY_WAIT: %dms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
-				goto EXIT;
-			} else {
-				pmvdbg("Setting timer and board will wake up after %d millisecond\n", delay);
-				up_set_pm_timer(TICK2USEC(delay));
-			}
-		}
-#endif
 #ifdef CONFIG_SMP
 		/* Send signal to shutdown other cores here */
 		for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
@@ -169,6 +166,13 @@ void pm_idle(void)
 			up_set_gating_flag_status(cpu, 0);
 			/* Check whether each of the cpu has entered hotplug */
 			while(up_get_cpu_state(cpu) != CPU_HOTPLUG);
+		}
+#endif
+#ifdef CONFIG_PM_TIMEDWAKEUP
+		/* set wakeup timer */
+		if (delay > 0) {
+			pmvdbg("Setting timer and board will wake up after %ld millisecond\n", delay);
+			up_set_pm_timer(TICK2USEC(delay));
 		}
 #endif
 		up_pm_board_sleep(pm_wakehandler);
