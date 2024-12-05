@@ -143,7 +143,7 @@ struct pm_global_s {
 struct pm_domain_s {
 	char *name;
 	enum pm_state_e state;
-}
+};
 
 typedef struct pm_domain_s pm_domain_t;
 

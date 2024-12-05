@@ -118,7 +118,7 @@ static int pm_prepsleep(enum pm_state_e newstate)
 			FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 			if (cb->wake) {
 				/* Yes.. wake the driver */
-				cb->wake(cb, newstate);
+				cb->wake(cb);
 			}
 		}
 	}
@@ -148,13 +148,13 @@ static inline void pm_prepwake(enum pm_state_e newstate)
 {
 	FAR dq_entry_t *entry;
 	/* Visit each registered callback structure */
-	for (entry = dq_peek(&g_pmglobals.registry); entry; entry = dq_next(entry)) {
+	for (entry = dq_peek(&g_pmglobals.registry[newstate]); entry; entry = dq_next(entry)) {
 		/* Is the wake callback supported? */
 
 		FAR struct pm_callback_s *cb = (FAR struct pm_callback_s *)entry;
 		if (cb->wake) {
 			/* Yes.. wake the driver */
-			cb->wake(cb, newstate);
+			cb->wake(cb);
 		}
 	}
 }

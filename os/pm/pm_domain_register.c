@@ -58,7 +58,7 @@ struct pm_domain_s pm_domain_map[CONFIG_PM_NDOMAINS];
  ****************************************************************************/
 int pm_check_domain(int domain_id)
 {
-	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id] == NULL) {
+	if (domain_id < 0 || domain_id >= CONFIG_PM_NDOMAINS || pm_domain_map[domain_id].name == NULL) {
 		set_errno(EINVAL);
 		pmdbg("Invalid Domain: %d\n", domain_id);
 		return ERROR;
@@ -81,7 +81,7 @@ int pm_check_domain(int domain_id)
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain, enum pm_state_e state);
+int pm_domain_register(char *domain, enum pm_state_e state)
 {
 	int index;
 	irqstate_t flags;

@@ -330,7 +330,7 @@ void pm_initialize(void);
  *
  ****************************************************************************/
 
-int pm_register(FAR struct pm_callback_s *callbacks);
+int pm_register(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state);
 
 /****************************************************************************
  * Name: pm_unregister
@@ -348,7 +348,7 @@ int pm_register(FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-int pm_unregister(FAR struct pm_callback_s *callbacks);
+int pm_unregister(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state);
 
 /****************************************************************************
  * Name: pm_domain_register
