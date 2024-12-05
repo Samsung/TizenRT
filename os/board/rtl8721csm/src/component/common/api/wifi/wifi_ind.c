@@ -94,6 +94,9 @@ void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int fl
 	switch(event)
 	{
 		case WIFI_EVENT_DISCONNECT:
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			wifi_set_wpa_supplicant_state_info(WPA_DISCONNECTED);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #if(WIFI_INDICATE_MSG==1)			
 			printf("\n\r %s():Disconnection indication received", __FUNCTION__);
 #endif
@@ -113,6 +116,9 @@ void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int fl
 #endif
 			break;
 		case WIFI_EVENT_FOURWAY_HANDSHAKE_DONE:
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			wifi_set_wpa_supplicant_state_info(WPA_COMPLETED);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #if(WIFI_INDICATE_MSG==1)			
 			if(buf != NULL)			
 			{
@@ -132,6 +138,9 @@ void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int fl
 #endif
 			break;
 		case WIFI_EVENT_RECONNECTION_FAIL:
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+			wifi_set_wpa_supplicant_state_info(WPA_DISCONNECTED);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #if(WIFI_INDICATE_MSG==1)			
 			if(buf != NULL){
 				if(buf_len == strlen(IW_EXT_STR_RECONNECTION_FAIL))
@@ -202,6 +211,50 @@ void wifi_indication( rtw_event_indicate_t event, char *buf, int buf_len, int fl
 			printf("\n\r%s(): WIFI_EVENT_CHALLENGE_FAIL\n", __func__);
 #endif
 			break;
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+		case WIFI_EVENT_DRIVER_START:
+			wifi_set_wpa_supplicant_state_info(WPA_INACTIVE);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_DRIVER_START\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_DRIVER_STOP:
+			wifi_set_wpa_supplicant_state_info(WPA_INTERFACE_DISABLED);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_DRIVER_STOP\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_SCANNING:
+			wifi_set_wpa_supplicant_state_info(WPA_SCANNING);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_SCANNING\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_AUTHENTICATING:
+			wifi_set_wpa_supplicant_state_info(WPA_AUTHENTICATING);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_AUTHENTICATING\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_ASSOCIATING:
+			wifi_set_wpa_supplicant_state_info(WPA_ASSOCIATING);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_ASSOCIATING\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_ASSOCIATION_DONE:
+			wifi_set_wpa_supplicant_state_info(WPA_ASSOCIATED);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_ASSOCIATION_DONE\n", __func__);
+#endif
+			break;
+		case WIFI_EVENT_FOURWAY_HANDSHAKING:
+			wifi_set_wpa_supplicant_state_info(WPA_4WAY_HANDSHAKE);
+#if(WIFI_INDICATE_MSG==1)
+			printf("\n\r%s(): WIFI_EVENT_FOURWAY_HANDSHAKING\n", __func__);
+#endif
+			break;
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 	}
 
 #if CONFIG_INIC_EN

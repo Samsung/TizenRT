@@ -75,6 +75,11 @@ static rtw_wpa_mode wifi_wpa_mode = WPA_AUTO_MODE;
 
 int error_flag = RTW_UNKNOWN;
 uint32_t rtw_join_status;
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+wpa_supplicant_state_info_t wpa_supplicant_info = {WPA_INTERFACE_DISABLED, WPA_INTERFACE_DISABLED};
+static int deauth_reason = 0;
+static unsigned int previous_key_mgmt = 4;	// Init value as WPA_KEY_MGMT_NONE, BIT(2)
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #if ATCMD_VER == ATVER_2
 extern unsigned char dhcp_mode_sta;
 #endif
@@ -398,10 +403,13 @@ static void wifi_disconn_hdl( char* buf, int buf_len, int flags, void* userdata)
 #define REASON_4WAY_HNDSHK_TIMEOUT 15
 	u16 disconn_reason = 0;
 
-	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
 	if (buf != NULL) {
-		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
-		disconn_reason =*(u16*)(buf+6);
+		/* buf detail: mac addr + disconn_reason + previousAuthKeyMgmt, buf_len = ETH_ALEN+2+4 */
+		disconn_reason = *(u16*)(buf+ETH_ALEN);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+        deauth_reason = disconn_reason;
+		previous_key_mgmt = *(u32*)(buf+ETH_ALEN+2);
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 	}
 
 	if (join_user_data != NULL) {
@@ -1691,6 +1699,10 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	if (buf != NULL) {
+		/* buf detail: mac addr + disconn_reason + previousAuthKeyMgmt, buf_len = ETH_ALEN+2+4 */
+		deauth_reason = *(u16*)(buf+ETH_ALEN);
+	}
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
 	}
@@ -2938,5 +2950,91 @@ int wifi_set_null1_param(uint8_t check_period, uint8_t limit, uint8_t interval)
 	return rltk_set_null1_param(check_period, limit, interval);
 }
 #endif
+
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+uint32_t wifi_get_join_status(void)
+{
+	return rtw_join_status;
+}
+
+int wifi_get_last_reason(void)
+{
+	return deauth_reason;
+}
+
+extern int rltk_wifi_get_key_mgmt(void);
+int wifi_get_key_mgmt(void)
+{
+	int ret;
+	ret = rltk_wifi_get_key_mgmt();
+	if (ret == RTW_ERROR) {
+		RTW_API_INFO("Error! Could not get key mgmt, not connected to AP\n");
+	}
+	return ret;
+}
+
+unsigned int wifi_get_previous_key_mgmt(void)
+{
+	return previous_key_mgmt;
+}
+
+int wifi_get_lib_version(char *lib_ver)
+{
+	if (lib_ver == NULL) {
+		return RTW_BADARG;
+	}
+
+	extern const char lib_wlan_rev[];
+	rtw_memcpy(lib_ver, (void *)lib_wlan_rev, strlen(lib_wlan_rev) + 1);
+	return RTW_SUCCESS;
+}
+
+extern int rltk_wifi_get_current_bw(const char *ifname);
+int wifi_get_current_bw(const char *ifname)
+{
+	return rltk_wifi_get_current_bw(ifname);
+}
+
+extern int rltk_wlan_txrpt_statistic(const char *ifname, rtw_fw_txrpt_stats_t *txrpt_stats);
+int wifi_get_txrpt_statistic(const char *ifname, rtw_fw_txrpt_stats_t *txrpt_stats)
+{
+	return rltk_wlan_txrpt_statistic(ifname, txrpt_stats);
+}
+
+extern int rltk_wifi_fetch_phy_statistic(const char *ifname, rtw_phy_statistics_t *phy_statistic);
+int wifi_fetch_phy_statistic(const char *ifname, rtw_phy_statistics_t *phy_statistic)
+{
+	return rltk_wifi_fetch_phy_statistic(ifname, phy_statistic);
+}
+
+int wifi_get_wpa_supplicant_state_info(enum wpa_states *current_wpa_state, enum wpa_states *previous_wpa_state) {
+	if (current_wpa_state) {
+		*current_wpa_state = wpa_supplicant_info.current_wpa_supplicant_state;
+	}
+
+	if (previous_wpa_state) {
+		*previous_wpa_state = wpa_supplicant_info.previous_wpa_supplicant_state;
+	}
+
+	return RTW_SUCCESS;
+}
+
+int wifi_set_wpa_supplicant_state_info(enum wpa_states new_wpa_state) {
+	if (new_wpa_state < WPA_DISCONNECTED || new_wpa_state > WPA_COMPLETED) {
+		RTW_API_INFO("Error! Invalid new WPA state\n");
+		return RTW_ERROR;
+	}
+
+	if (new_wpa_state == wpa_supplicant_info.current_wpa_supplicant_state) {
+		/* do not do anything if new wpa_state is still the same */
+		return RTW_SUCCESS;
+	}
+
+	wpa_supplicant_info.previous_wpa_supplicant_state = wpa_supplicant_info.current_wpa_supplicant_state;
+	wpa_supplicant_info.current_wpa_supplicant_state = new_wpa_state;
+
+	return RTW_SUCCESS;
+}
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 
 #endif	//#if CONFIG_WLAN
