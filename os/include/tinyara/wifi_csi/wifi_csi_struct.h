@@ -26,56 +26,25 @@ typedef struct {
 	char mac_addr[6];
 } csifw_mac_info;
 
-typedef enum CSI_GROUP_NUM_T{
-	CSI_GROUP_NUM_1 = 0,  /**< per tone */
-	CSI_GROUP_NUM_2,         /**< per 2tone */
-	CSI_GROUP_NUM_4,        /**< per 4tone */
-	CSI_GROUP_NUM_16,     /**< per 16tone */
-	CSI_GROUP_NUM_MAX
-} csi_group_num_t;
+typedef enum CSI_CONFIG_TYPE_T {
+	MIN_CSI_CONFIG_TYPE = -1,       /* Invalid: config type should be greater than min */
+	HT_CSI_DATA,                    /* 56 subcarriers each sub-carrier data is 2 bytes */
+	NON_HT_CSI_DATA,                /* 52 subcarriers each sub-carrier data is 2 bytes */
+	HT_CSI_DATA_ACC1,               /* 56 subcarriers each sub-carrier data is 4 bytes */
+	NON_HT_CSI_DATA_ACC1,           /* 52 subcarriers each sub-carrier data is 4 bytes */
+	MAX_CSI_CONFIG_TYPE             /* Invalid: config type should be less than max */
+} csi_config_type_t;
 
-typedef enum CSI_MODE_T{
-	CSI_MODE_NORMAL = 0,   ///<   normal mode
-	CSI_MODE_NDP,                ///<   ndp mode
-	CSI_MODE_RX_RESP,         ///<    rx rsp mode
-	CSI_MODE_MAX,                 ///<    max mode
-} csi_mode_t;
+typedef enum CSI_CONFIG_ACTION_T {
+	CSI_CONFIG_ENABLE = 0,
+	CSI_CONFIG_DISABLE = 1
+} csi_config_action_t;
 
-typedef enum CSI_ACTION_T{
-	CSI_ACT_EN,    /**< enable or disable csi func */
-	CSI_ACT_CFG,  /**< config csi parameters */
-	CSI_ACT_MAX
-} csi_action_t;
-
-typedef enum CSI_ACCURACY_T{
-	CSI_ACCU_1BYTE = 0, /**< CSI_ACCU_1BYTE: S(8,4) */
-	CSI_ACCU_2BYTES,  /**< CSI_ACCU_2BYTE: S(16,12) */
-	CSI_ACCU_MAX
-} csi_accuracy_t;
-
-typedef enum CSI_CH_OPT_T{
-	CSI_CH_LEGACY = 0, /**< legacy part(L-LTF) channel estmation result */
-	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
-	CSI_CH_MAX
-} csi_ch_opt_t;
-
-typedef enum {
-	CSI_ALG_LS = 0,
-	CSI_ALG_SMOTHING,
-	CSI_ALG_MAX
-} rtw_csi_alg_opt;
-
-typedef struct CSI_ACTION_PARAM_T{
-	csi_group_num_t group_num;
-	csi_mode_t mode;
-	csi_action_t act;
-	csi_accuracy_t accuracy;
-	rtw_csi_alg_opt alg_opt;
-	csi_ch_opt_t ch_opt;
-	unsigned char enable;
-	unsigned char trig_period;  /* unit:ms*/
-	unsigned char data_rate;
-} csi_action_param_t;
+typedef struct {
+	csi_config_action_t config_action;
+	csi_config_type_t config_type;
+	unsigned int interval;
+} csi_config_args_t;
 
 #ifdef __cplusplus /* If this is a C++ compiler, end C linkage */
 	}

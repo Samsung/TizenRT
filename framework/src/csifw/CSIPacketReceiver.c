@@ -35,23 +35,17 @@
 
 #define CLOSE_DRIVER_OR_EXIT(_FD) close(_FD);
 
-extern int g_pkt_count;
 static pthread_t gCSIDataReceiver;
 static unsigned char *g_get_data_buffptr; // the buffer to get data from driver
 static uint16_t gCSIRawBufLen;
 static CSIDataListener gCSIDataCallback;
 static bool g_csi_thread_stop = true;
 static bool g_csi_enabled; // this flag maintains wifi_csi_config enable state during wifi re-connection
-static bool g_skip_pkt;
 static mqd_t g_mq_handle;
+static csi_config_type_t g_config_type;
+static unsigned int g_interval_ms;
 
-typedef enum CSI_SET_CONFIG_CMD {
-	CSIFW_CONFIG_INIT,
-	CSIFW_CONFIG_ENABLE,
-	CSIFW_CONFIG_DISABLE
-} CSI_SET_CONFIG_CMD;
-
-CSIFW_RES csi_packet_receiver_set_csi_config(csi_action_param_t *config, CSI_SET_CONFIG_CMD config_cmd);
+CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action);
 
 static int readCSIData(int fd,char* buf, int size)
 {
@@ -103,16 +97,10 @@ static void* dataReceiverThread(void *vargp) {
 		} else {
 			switch (msg.msgId) {
 			case CSI_MSG_DATA_READY_CB:
-				if (g_skip_pkt && g_pkt_count <= 0) {
-					g_pkt_count--;
-					CSIFW_LOGD("Skipping extra packet number: [%d] size: %d", g_pkt_count, msg.data_len);
-					continue;
-				}
 				if (msg.data_len == 0 || msg.data_len > CSIFW_MAX_RAW_BUFF_LEN) {
 					CSIFW_LOGE("Skipping packet: invalid data length: %d", msg.data_len);
 					continue;
 				}
-				g_pkt_count--;
 				gCSIRawBufLen = msg.data_len;
 				len = readCSIData(fd, g_get_data_buffptr, gCSIRawBufLen);
 				if (len < 0) {
@@ -153,54 +141,52 @@ static void* dataReceiverThread(void *vargp) {
 	return NULL;
 }
 
-CSIFW_RES csi_packet_receiver_init(CSIDataListener CSIDataCallback) {
+CSIFW_RES csi_packet_receiver_init(csi_config_type_t config_type, unsigned int interval_ms, CSIDataListener CSIDataCallback) {
 	g_csi_enabled = false;
 	gCSIRawBufLen = CSIFW_MAX_RAW_BUFF_LEN;
+	g_config_type = config_type;
+	g_interval_ms = interval_ms;
 	gCSIDataCallback = CSIDataCallback;
 	return CSIFW_OK;
 }
 
-CSIFW_RES csi_packet_receiver_set_csi_config(csi_action_param_t *config, CSI_SET_CONFIG_CMD config_cmd) {
+CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action) {
 
 	int fd, ret;
+	CSIFW_RES res = CSIFW_OK;
 	OPEN_DRIVER_OR_EXIT(fd)
-	switch (config_cmd) {
-		case CSIFW_CONFIG_INIT:
-			config->act = 1;
-			config->enable = 0;
-			// memset config to 0
-			CSIFW_LOGI("Memset 0 config param before setting config");
-			ret = ioctl(fd, CSIIOC_PARAM_SETZERO, NULL);
-			if (ret < OK) {
-				CSIFW_LOGE("Fail to ioctl(%d, CSIIOC_PARAM_SETZERO ), errno : %d", fd, get_errno());
-				CLOSE_DRIVER_OR_EXIT(fd)
-				return CSIFW_ERROR;
-			}
-			CSIFW_LOGI("Set CSI config");
-			break;
-
-		case CSIFW_CONFIG_ENABLE:
-			config->act = 0;
-			config->enable = 1;
-			break;
-		case CSIFW_CONFIG_DISABLE:
-			config->act = 0;
-			config->enable = 0;
-			break;
-		default:
-			CSIFW_LOGE("Invalid command");
-			CLOSE_DRIVER_OR_EXIT(fd)
-			return CSIFW_INVALID_ARG;
-	}
-
-	ret = ioctl(fd, CSIIOC_SET_CONFIG, (unsigned long)config);
+	csi_config_args_t config_args;
+	config_args.config_action = config_action;
+	config_args.config_type = g_config_type;
+	config_args.interval = g_interval_ms;
+	ret = ioctl(fd, CSIIOC_SET_CONFIG, (unsigned long)&config_args);
 	if (ret < OK) {
 		CSIFW_LOGE("Fail to ioctl(%d, CSIIOC_SET_CONFIG ), errno : %d", fd, get_errno());
 		CLOSE_DRIVER_OR_EXIT(fd)
-		return CSIFW_ERROR;
+		res = CSIFW_ERROR;
+	} else {
+		CSIFW_LOGD("ioctl: CSIIOC_SET_CONFIG, success");
 	}
     CLOSE_DRIVER_OR_EXIT(fd)
-	return CSIFW_OK;
+	return res;
+}
+
+CSIFW_RES csi_packet_change_interval(unsigned int interval)
+{
+	CSIFW_LOGD("csi_packet_change_interval %d", interval);
+	CSIFW_RES res = CSIFW_OK;
+	g_interval_ms = interval;
+	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
+	if (res != CSIFW_OK) {
+			CSIFW_LOGE("Failed to disabled");
+			return res;
+	}
+	usleep(10000); //10ms sleep
+	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_ENABLE);
+	if (res != CSIFW_OK) {
+			CSIFW_LOGE("Failed to enabled");
+	}
+	return res;
 }
 
 CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info) {
@@ -217,7 +203,7 @@ CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info) {
 	return CSIFW_OK;
 }
 
-CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
+CSIFW_RES csi_packet_receiver_start_collect(void) {
 	CSIFW_RES res;
 	// allocate buffer for receiveing data from driver
 	if (!g_get_data_buffptr) {
@@ -243,40 +229,28 @@ CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config) {
 		CSIFW_LOGE("Error in setting receiver thread name, error_no: %d", get_errno());
 	}
 	CSIFW_LOGD("CSI data receive thread created");
-
-	// set config
-	res = csi_packet_receiver_set_csi_config(config, CSIFW_CONFIG_INIT);
-	if (res != CSIFW_OK) {
-		return res;
-	}
-
 	if (g_csi_enabled) {
 		// disable wifi csi report
 		CSIFW_LOGD("Disabling CSI config");
-		res = csi_packet_receiver_set_csi_config(config, CSIFW_CONFIG_DISABLE);
+		res = csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
 		if (res != CSIFW_OK) {
 			return res;
 		}
 		g_csi_enabled = false;
-		// set config
-		CSIFW_LOGD("[AGAIN] SET CSI config");
-		res = csi_packet_receiver_set_csi_config(config, CSIFW_CONFIG_INIT);
-		if (res != CSIFW_OK) {
-			return res;
-		}
 	}
 	// enable csi report
 	CSIFW_LOGD("Enabling CSI config");
-	res = csi_packet_receiver_set_csi_config(config, CSIFW_CONFIG_ENABLE);
+	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_ENABLE);
 	if (res != CSIFW_OK) {
 		return res;
 	}
 	g_csi_enabled = true;
-	return CSIFW_OK;
+	return res;
 }
 
-CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason, csi_action_param_t *config)
+CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason)
 {
+	CSIFW_RES res = CSIFW_OK;
 	//join thread
 	g_csi_thread_stop = true;
 	// send dummy message to close blocking mq
@@ -295,27 +269,19 @@ CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason, csi_action_param
 	if (reason == CSIFW_WIFI_DISCONNECTED) {
 		CSIFW_LOGI("Disable not required as wifi disconnected");
 		CSIFW_LOGI("csi data collect stopped");
-		return CSIFW_OK;
+		return res;
 	}
 	
-	int fd;
-	// else-if WIFI_CONNECTED disable wifi csi report
-	OPEN_DRIVER_OR_EXIT(fd)
-	config->act = 0;
-	config->enable = 0;
-	CSIFW_LOGI("Disabling CSI config");
-	int ret = ioctl(fd, CSIIOC_SET_CONFIG, (unsigned long)config);
-	if (ret < OK) {
-		CSIFW_LOGE("Fail to ioctl(%d, CSIIOC_SET_CONFIG ), errno : %d", fd, get_errno());
-		return CSIFW_ERROR;
+	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
+	if (res != CSIFW_OK) {
+		return res;
 	}
-    CLOSE_DRIVER_OR_EXIT(fd)
 	CSIFW_LOGD("csi data collect stopped");
 	g_csi_enabled = false;
 	return CSIFW_OK;
 }
 
-CSIFW_RES csi_packet_receiver_deinit()
+CSIFW_RES csi_packet_receiver_deinit(void)
 {
 	CSIFW_LOGI("csi_packet_receiver_deinit");
 	gCSIDataCallback = NULL;

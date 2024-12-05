@@ -29,8 +29,9 @@
 typedef enum _COLLECT_STATE {
 	CSI_STATE_UNITIALIZED = -1,			/* NOT INIT  */
 	CSI_COLLECT_STATE_STARTED = 0,			/* START CSI_STATE_STARTED  */
-	CSI_COLLECT_STATE_STOPPED = 1,			/* STOP CSI_STATE_STARTED  */
-	CSI_STATE_INITIALIZED = 2			/* START CSI_STATE_STARTED  */
+	CSI_COLLECT_STATE_START_WAITING_FOR_NW = 1,			/* START CSI_STATE_STARTED  */
+	CSI_COLLECT_STATE_STOPPED = 2,			/* STOP CSI_STATE_STARTED  */
+	CSI_STATE_INITIALIZED = 3			/* START CSI_STATE_STARTED  */
 } COLLECT_STATE;
 
 typedef enum CSI_DRIVER_CMD {
@@ -40,13 +41,7 @@ typedef enum CSI_DRIVER_CMD {
     REGISTER_CALLBACK = 4
 } CSI_DRIVER_CMD;
 
-typedef enum CONNECTION_STATE {
-	WIFI_CONNECTED,
-	WIFI_DISCONNECTED
-} CONNECTION_STATE;
-
 typedef void (*CSIDataListener)(CSIFW_RES res, int csi_buff_len, unsigned char *csi_buff, int csi_data_len);
-typedef void (*network_status_listener)(CONNECTION_STATE state);
 
 #endif	/* __CSIFW_H__ */
 

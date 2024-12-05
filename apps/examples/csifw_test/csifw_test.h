@@ -16,23 +16,15 @@
  *
  ****************************************************************************/
 
-/**
- * @file csifw_test.h
- * @brief Sample application to show case usage of CSI Framework basic functionality.
- */
-
 #pragma once
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @brief: It starts csifw test application.
-*/
 void csifw_test_main(int argc, char **args);
 
 #ifdef __cplusplus
 }
 #endif
-

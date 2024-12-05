@@ -39,7 +39,6 @@
 #include <tinyara/fs/fs.h>
 
 #include <tinyara/wifi_csi/wifi_csi.h>
-#include <tinyara/wifi_csi/wifi_csi_struct.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -250,7 +249,7 @@ static int wifi_csi_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			ret = lower->ops->ioctl(cmd, arg);
 			if (ret != OK) {
 				csidbg("lower driver IOCTL fail: CSIIOC_START_CSI, ret:%d\n", ret);
-				if (wifi_csi_mq_open(upper) != OK) {
+				if (wifi_csi_mq_close(upper) != OK) {
 					csidbg("MQ close failed.");
 				}
 				break;

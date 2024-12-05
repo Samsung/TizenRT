@@ -34,6 +34,12 @@
 #include <semaphore.h>
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define CSI_INTERVAL_TO_TRIG_PERIOD 320 /* Conversion factor to convert interval to trig period */
+
+/****************************************************************************
  * Private Type Definitions
  ****************************************************************************/
 
@@ -103,6 +109,80 @@ static void log_csi_config(void)
 	csidbg("enable: %d\n", g_rtk_drv->act_param.enable);
 }
 
+static int rtk_wifi_csi_set_config(unsigned long arg)
+{
+	csi_config_args_t *config_args = (csi_config_args_t *)arg; 
+	csi_config_action_t config_action = config_args->config_action;
+	csi_config_type_t config_type = config_args->config_type;
+	if (config_type <= MIN_CSI_CONFIG_TYPE || config_type >= MAX_CSI_CONFIG_TYPE) {
+		csidbg("ERROR: invalid config type");
+		return -EINVAL;
+	}
+	if (config_action == CSI_CONFIG_ENABLE) {
+		memset(&g_rtk_drv->act_param, 0, sizeof(rtw_csi_action_parm_t));
+		/* set configs */
+		unsigned int interval_ms = config_args->interval;
+		g_rtk_drv->act_param.group_num = CSI_GROUP_NUM_1;
+		switch (config_type) {
+		case HT_CSI_DATA:
+			g_rtk_drv->act_param.mode = CSI_MODE_NORMAL;
+			g_rtk_drv->act_param.ch_opt = CSI_CH_NON_LEGACY;
+			g_rtk_drv->act_param.data_rate = 0x80;
+			g_rtk_drv->act_param.accuracy = CSI_ACCU_1BYTE;
+			g_rtk_drv->act_param.trig_period = 200;
+			break;
+		
+		case HT_CSI_DATA_ACC1:
+			g_rtk_drv->act_param.mode = CSI_MODE_NORMAL;
+			g_rtk_drv->act_param.ch_opt = CSI_CH_NON_LEGACY;
+			g_rtk_drv->act_param.data_rate = 0x80;
+			g_rtk_drv->act_param.accuracy = CSI_ACCU_2BYTES;
+			g_rtk_drv->act_param.trig_period = 200;
+			break;
+		
+		case NON_HT_CSI_DATA:
+			g_rtk_drv->act_param.mode = CSI_MODE_RX_RESP;
+			g_rtk_drv->act_param.ch_opt = CSI_CH_LEGACY;
+			g_rtk_drv->act_param.data_rate = 0xC;
+			g_rtk_drv->act_param.accuracy = CSI_ACCU_1BYTE;
+			g_rtk_drv->act_param.trig_period = (interval_ms * 1000) / CSI_INTERVAL_TO_TRIG_PERIOD;
+			break;
+
+		case NON_HT_CSI_DATA_ACC1:
+			g_rtk_drv->act_param.mode = CSI_MODE_RX_RESP;
+			g_rtk_drv->act_param.ch_opt = CSI_CH_LEGACY;
+			g_rtk_drv->act_param.data_rate = 0xC;
+			g_rtk_drv->act_param.accuracy = CSI_ACCU_2BYTES;
+			g_rtk_drv->act_param.trig_period = (interval_ms * 1000) / CSI_INTERVAL_TO_TRIG_PERIOD;
+			break;
+		
+		default:
+			csidbg("ERROR: unknown config type: %d", config_type);
+			return -EINVAL;
+		}
+		/* set config */
+		g_rtk_drv->act_param.act = 1;
+		g_rtk_drv->act_param.enable = 0;
+		if (wifi_csi_config(&g_rtk_drv->act_param) != OK) {
+			csidbg("ERROR: wifi csi set config failed\n");
+			return -EIO;
+		}
+		/* changes for enable */
+		g_rtk_drv->act_param.act = 0;
+		g_rtk_drv->act_param.enable = 1;
+	} else if (config_action == CSI_CONFIG_DISABLE) {
+		/* changes for disable*/
+		g_rtk_drv->act_param.act = 0;
+		g_rtk_drv->act_param.enable = 0;
+	}
+	/* apply enable/disable */
+	if (wifi_csi_config(&g_rtk_drv->act_param) != OK) {
+		csidbg("ERROR: wifi csi set config failed\n");
+		return -EIO;
+	}
+	return OK;
+}
+
 /****************************************************************************
  * rtk semaphore functions
  ****************************************************************************/
@@ -147,14 +227,6 @@ static int rtk_wifi_csi_ioctl(int cmd, unsigned long arg)
 	/* Deal with ioctls passed from the upper-half driver */
 	int ret = 0;
 	switch (cmd) {
-	case CSIIOC_PARAM_SETZERO: {
-		csivdbg("CSIIOC_PARAM_SETZERO\n");
-		rtk_wifi_csi_takesem(&g_rtk_drv->devsem);
-		memset(&g_rtk_drv->act_param, 0, sizeof(rtw_csi_action_parm_t));
-		rtk_wifi_csi_givesem(&g_rtk_drv->devsem);
-	}
-	break;
-
 	case CSIIOC_SET_CONFIG: {
 		csivdbg("CSIIOC_SET_CONFIG\n");
 		if (!arg) {
@@ -163,26 +235,14 @@ static int rtk_wifi_csi_ioctl(int cmd, unsigned long arg)
 			return ret;
 		}
 		rtk_wifi_csi_takesem(&g_rtk_drv->devsem);
-		rtw_csi_action_parm_t *g_act_param_t = ((rtw_csi_action_parm_t*)(arg));
-		g_rtk_drv->act_param.group_num = g_act_param_t->group_num;
-		g_rtk_drv->act_param.mode = g_act_param_t->mode;
-		g_rtk_drv->act_param.accuracy = g_act_param_t->accuracy;
-		g_rtk_drv->act_param.ch_opt = g_act_param_t->ch_opt;
-		g_rtk_drv->act_param.trig_period = g_act_param_t->trig_period;
-		g_rtk_drv->act_param.data_rate = g_act_param_t->data_rate;
-		g_rtk_drv->act_param.act = g_act_param_t->act;
-		g_rtk_drv->act_param.enable = g_act_param_t->enable;		
-		ret = wifi_csi_config(&g_rtk_drv->act_param);
+		ret = rtk_wifi_csi_set_config(arg);
+		rtk_wifi_csi_givesem(&g_rtk_drv->devsem);
+		log_csi_config();
 		if (ret != OK) {
 			csidbg("ERROR: wifi csi set config failed ret: %d\n", ret);
-			ret = -EIO;
-			rtk_wifi_csi_givesem(&g_rtk_drv->devsem);
 			break;
 		}
-		rtk_wifi_csi_givesem(&g_rtk_drv->devsem);
 		csivdbg("csi config has been set\n");
-		csivdbg("logging csi config\n");
-		log_csi_config();
 	}
 	break;
 

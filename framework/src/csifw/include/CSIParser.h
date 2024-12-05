@@ -34,7 +34,7 @@ void logReceivedData(int csi_data_len, unsigned char *csi_buff, int accuracy);
  *
  * @return
  */
-void getParsedData(unsigned char *rawDatabuff, int raw_csi_buff_len, csi_action_param_t *config, float *parsedDatabuff, uint16_t *parsed_csi_buff_len);
+void getParsedData(unsigned char *rawDatabuff, int raw_csi_buff_len, csi_config_type_t config_type, float *parsedDatabuff, uint16_t *parsed_csi_buff_len);
 
 #endif /* __CSI_PARSER_H__ */
 

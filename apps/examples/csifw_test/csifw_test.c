@@ -21,54 +21,66 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 /****************************************************************************
  * csifw_test
  ****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
 
-#include <fcntl.h>
-static int gFd; /* File descriptor*/
 
-#define PRNT_LN1 printf("______________________________________________________________________________________________________\n")
-#define PRNT_LN2 printf("______________________________________________________________________________________________________\n\n")
-#define PRNT_LN3 printf("\n\n______________________________________________________________________________________________________\n")
+// csifw_test start <intrval> <config_type>  // This will print service ID, Use this Service ID for other comands.
+// csifw_test resume <s_id>
+// csifw_test stop <s_id>
+// csifw_test change_interval  <S_id> <interval>
+// csifw_test detail 
+// csifw_test exit <s_id>
 
-#define LONG_RUN_TEST 0
-#define PRINT_RAW_DATA 0
-#define LOG_PARSED_DATA 0
+#define COMMAND_START "start"
+#define COMMAND_STOP "stop"
+#define COMMAND_CHANGE_INTERVAL "change_interval"
+#define COMMAND_RESUME "resume"
+#define COMMAND_DETAIL "detail"
+#define COMMAND_EXIT "exit"
 
-typedef enum  CSI_DATA_TYPE {
-    CSI_DATA_UNKNOWN = -1,
-    RAW_CSI_DATA =0,
-    PARSED_CSI_DATA =1,
-    RAW_PARSED_CSI_DATA =2,
-}CSI_DATA_TYPE;
+// Define the mutex for protecting shared resources
+static pthread_mutex_t g_client_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define MAX_CLIENT 5
+// Function prototypes
+void process_command(int argc, char *argv[]);
+void start_service(int service_id); //start and resume service
+void stop_service(int service_id);
+void change_interval(int service_id, int interval);
+void list_services();
+void exit_services(int service_id);
+char* getStatusStr(int status);
 
-static CSI_DATA_TYPE g_csi_data_type;
-static CSI_CONFIG_TYPE g_csi_config_type;
-static int g_interval;
-static unsigned int gCounter;
-static unsigned int g_app_id[3] = {1,2,3};
-static unsigned int g_app_number = 0;
+unsigned int g_interval;
 
-static void print_buf(const unsigned char* buf, int len)
-{
-	printf("\n RAW DATA %d\n\n", len);
-	unsigned long long *buff_tmp = (u64 *)buf;
-	int buff_len = (len / 8) + 1;
-	for (int i = 0; i < buff_len; i++) 
-		printf("[%02d]0x%016llx\n", i, buff_tmp[i]);
-}
+typedef enum {
+	START = 0,
+	STOP,
+	CHANGE_INTERVAL,
+	EXIT
+} CSIFW_TEST_COMMAND;
+
+typedef struct client_info{
+    CSIFW_TEST_COMMAND command;
+    CSIFW_TEST_COMMAND status;
+    int packet_count;
+}csifw_test_client_info_t;
+
+int g_client_count = 0;
+csifw_test_client_info_t client_info[MAX_CLIENT];
 
 static void demo_upd_raw_data_listener(CSIFW_RES res, int csi_buff_len, unsigned char *csi_raw_buff, void* ptr)
 {
 	if(res == CSIFW_OK) {
-		gCounter++;
 		unsigned int app_id = *(unsigned int*)ptr;
-		printf("\n%d. Raw Data received in APP[%d] [%d]\n", gCounter, app_id, csi_buff_len);
-		#if PRINT_RAW_DATA
-		printf("\n[APP]LOGGING DATA\n");
-		print_buf(csi_raw_buff, csi_buff_len);
-		#endif
+		client_info[app_id].packet_count += 1;
+		printf("\n%d. Raw Data received in APP[%d] [%d]\n", client_info[app_id].packet_count, app_id, csi_buff_len);
 		return;
 	}
 	if(res == CSIFW_ERROR_WIFI_DIS_CONNECTED) {
@@ -80,161 +92,181 @@ static void demo_upd_raw_data_listener(CSIFW_RES res, int csi_buff_len, unsigned
 		printf("[APP] Some error\n");
 		return;
 	}
+	if(res == CSIFW_OK_WIFI_CONNECTED) {
+		printf("<URGENT CALLBACK N/W CHANGE>[APP] wifi reconnected\n");
+		printf("<URGENT CALLBACK N/W CHANGE>[APP] wifi reconnected\n");
+	}
 }
 
 static void demo_upd_parsed_data_listener(CSIFW_RES res, int csi_data_len, float *csi_parsed_buff, void* ptr)
 {
-	// print parsed data buffer
-	printf("\n%d. Parsed Data received in APP [%d]\n", gCounter, csi_data_len);
-	
-	#if LOG_PARSED_DATA
-	printf("[APP] Displaying parsed data, csi_data_len: %d\n\n", csi_data_len);
-	for(int i = 0; i < csi_data_len; i += 2) {
-		printf("sub_carrier:%d[%f,%f], ", i/2, csi_parsed_buff[i], csi_parsed_buff[i+1]);
-		}
-		printf("\n");
-	#endif
-	printf("\n\n");
+	printf("demo_upd_parsed_data_listener \n\n");
 }
 
-static int start_test(void)
-{
-	printf("\n[APP]: CSI Manager DEFAULT FLOW \n");
-	PRNT_LN1;
-	PRNT_LN2;
 
-	printf("[APP]: csi_service_init\n");
-	PRNT_LN2;
-	
-	CSIFW_RES res = csi_service_init(g_csi_config_type, demo_upd_raw_data_listener, NULL, g_interval, &g_app_id[g_app_number]); 
-	if (res != CSIFW_OK) {
-		PRNT_LN2;
-		if (res == CSIFW_ERROR_WIFI_NOT_CONNECTED) {
-			printf("\n[APP]: CSIFW-> {WIFI NOT CONNECTED}\n");
-		} else {
-			printf("\n[APP]: CSI Manager INIT FAIL\n");
-			return 0;
-		}
+
+void csifw_test_main(int argc, char **argv){
+	if (argc < 2) {
+		printf("Usage: %s [start|stop|change_interval|detail|exit|resume] [options]\n", argv[0]);
+		return;
 	}
-	g_app_number++;
-	PRNT_LN2;
-	printf("\n[APP]: CSI Manager INIT SUCCESS\n");
-	printf("[APP]: SLEEP--> 5 seconds\n");
-	PRNT_LN2;
-	// sleep(5);
-
-	PRNT_LN3;
-	printf("[APP]: 1 csi_service_start\n");
-	PRNT_LN2;
-	// sleep(2);
-	if (csi_service_start() == CSIFW_ERROR) {
-		PRNT_LN2;
-		printf("[APP]: CSI Manager START FAIL\n");
-		return 0;
-	}
-	printf("[APP]: CSI Manager START SUCCESS\n");
-	printf("[APP]: SLEEP--> 15 seconds\n");
-	PRNT_LN2;
-#if LONG_RUN_TEST
-	while (1) {
-		sleep(2);
-	}
-#else
-	sleep(15);
-	
-	PRNT_LN3;
-	printf("[APP]: csi_service_stop (CSIFW_WIFI_DISCONNECTED)\n");
-	PRNT_LN2;
-	// sleep(2);
-	CSIFW_REASON reason = CSIFW_NORMAL;
-	
-	if (csi_service_stop(CSIFW_WIFI_DISCONNECTED)== CSIFW_ERROR) {
-		printf("[APP]: CSI Manager STOP FAIL\n");
-		PRNT_LN2;
-		return 0;
-		}
-	printf("[APP]: CSI Manager STOP SUCCESS\n");
-	printf("[APP]: SLEEP--> 10 seconds\n");
-	PRNT_LN2;
-	sleep(10);
-
-	PRNT_LN3;
-	printf("[APP]: 2 csi_service_start\n");
-	PRNT_LN2;
-	// sleep(2);
-	if (csi_service_start() == CSIFW_ERROR) {
-		printf("[APP]: CSI Manager START FAIL\n");
-		PRNT_LN2;
-		return 0;
-	}
-	printf("[APP]: SLEEP--> 20 seconds\n");
-	PRNT_LN2;
-	sleep(20);
-
-	PRNT_LN3;
-	printf("[APP]: csi_service_stop (CSIFW_NORMAL)\n");
-	PRNT_LN2;
-	// sleep(2);
-	if (csi_service_stop(CSIFW_NORMAL) == CSIFW_ERROR) {
-		printf("[APP]: CSI Manager STOP FAIL\n");
-		PRNT_LN2;
-		return 0;
-	}
-	printf("[APP]: SLEEP--> 10 seconds\n");
-	PRNT_LN2;
-	sleep(10);
-
-	PRNT_LN3;
-	printf("[APP]: csi_service_deinit\n");
-	PRNT_LN2;
-	// sleep(2);
-	if (csi_service_deinit() == CSIFW_ERROR) {
-		printf("[APP]: CSI Manager DEINIT FAIL\n");
-		PRNT_LN2;
-		return 0;
-	}
-	g_app_number--;
-	printf("[APP]: SLEEP--> 20 seconds\n");
-	PRNT_LN2;
-	// sleep(20);
-	PRNT_LN2;
-	printf("[APP]: DEFAULT FLOW ENDSSS\n");
-	printf("[APP]: DEFAULT FLOW ENDSSS\n");
-#endif /* LONG_RUN_TEST */
-	return 0;
-}
-
-void csifw_test_main(int argc, char **args)
-{
-	/* default values */
-	g_csi_data_type = RAW_CSI_DATA;
-	g_csi_config_type = HT_CSI_DATA;
-	g_interval = 40;  // interval in ms
-	printf("WIFI CSI %d\n", argc);
-
-	if(argc > 1)
-	{
-		g_interval = atoi(args[1]);
-		printf("PING_INTERVAL SET: %d us\n", g_interval);
-
-		if(argc == 3)
-		{
-			g_csi_config_type = atoi(args[2]);
-			printf("CSI_CONFIG_TYPE SET: %d \n", g_csi_config_type);
-		}
-		else
-		{
-			printf("CSI_CONFIG_TYPE default : %d \n", g_csi_config_type);	
-		}
-		if (g_csi_config_type != HT_CSI_DATA && g_csi_config_type != NON_HT_CSI_DATA) {
-			printf("Invalid CSI type, try again [0: HT_CSI_DATA, 1: NON_HT_CSI_DATA]\n");
+	int my_id = -1;
+	// Process the command
+	if (strcmp(argv[1], COMMAND_START) == 0) {
+		if(argc != 4 ){
+			 printf("Invalid Input \n");
 			return;
 		}
+		if(g_client_count == MAX_CLIENT){
+			   printf("No more client Can created\n");
+			   return;
+		}
+		int interval = atoi(argv[2]);
+		int config_type = atoi(argv[3]);
+		my_id = g_client_count;
+		++g_client_count;
+		printf("\n\nNew Service ID is %d \n\n", my_id);
+		CSIFW_RES res = csi_service_init(config_type, demo_upd_raw_data_listener, NULL, interval, &my_id);
+		start_service(my_id);
+	}else {
+		process_command(argc, argv);
+		return;
 	}
-	else
+   
+	while(1)
 	{
-		printf("PING_INTERVAL default: %d us\n", g_interval);
-		printf("CSI_CONFIG_TYPE default : %d \n", g_csi_config_type);	
+		pthread_mutex_lock(&g_client_mutex);
+		if(client_info[my_id].command != -1){
+			if(client_info[my_id].command == START){
+				if (csi_service_start() == CSIFW_ERROR) {
+					printf("[Test APP %d]: CSI Manager START FAIL\n", my_id);
+				}
+				client_info[my_id].status = START;
+			}
+			else if(client_info[my_id].command == STOP){
+				if (csi_service_stop(CSIFW_NORMAL) == CSIFW_ERROR) {
+					printf("[Test APP %d]: CSI Manager STOP FAIL\n", my_id);
+				}
+				client_info[my_id].status = STOP;
+			}
+			else if(client_info[my_id].command == CHANGE_INTERVAL){
+				if (csi_service_change_interval(g_interval) == CSIFW_ERROR) {
+					printf("[Test APP %d]: CSI Manager STOP FAIL\n", my_id);
+				}
+			}
+			else if(client_info[my_id].command == EXIT){
+				client_info[my_id].status = EXIT;
+				if (csi_service_stop(CSIFW_NORMAL) == CSIFW_ERROR) {
+					printf("[Test APP %d]: CSI Manager STOP FAIL\n", my_id);
+				}
+				if (csi_service_deinit() == CSIFW_ERROR) {
+					printf("[Test APP %d]: CSI Manager DEINIT FAIL\n", my_id);
+					pthread_mutex_unlock(&g_client_mutex);
+					break;
+				}
+			}
+			client_info[my_id].command = -1;
+		}
+		pthread_mutex_unlock(&g_client_mutex);
+		sleep(1);
 	}
-	start_test();
 }
+
+int getServiceID(int argc, char *argv[])
+{
+	int service_id = -1;
+	if(argc >= 3){
+		printf("Invalid Input \n");
+		return -1;
+	}
+	service_id = atoi(argv[2]);
+	if(service_id < 0 || service_id > g_client_count){
+		printf("Invalid Service ID \n");
+		return -1;
+	}
+	if(client_info[service_id].status == EXIT){
+		printf("Service already exit \n");
+		return -1;
+	}
+	return service_id;
+}
+
+void process_command(int argc, char *argv[]) {
+	if (strcmp(argv[1], COMMAND_RESUME) == 0) {
+		int s_id = getServiceID(argc, argv);
+		if(s_id != -1){
+			start_service(s_id);
+		}
+	} else if (strcmp(argv[1], COMMAND_STOP) == 0) {
+		int s_id = getServiceID(argc, argv);
+		if(s_id != -1){
+			stop_service(s_id);
+		}
+	} else if (strcmp(argv[1], COMMAND_CHANGE_INTERVAL) == 0) {
+		int s_id = getServiceID(argc, argv);
+		if(s_id != -1){
+			change_interval(s_id, atoi(argv[3]));
+		}
+	} else if (strcmp(argv[1], COMMAND_DETAIL) == 0) {
+		list_services();
+	} else if (strcmp(argv[1], COMMAND_EXIT) == 0) {
+		int s_id = getServiceID(argc, argv);
+		if(s_id != -1){
+			exit_services(s_id);
+		}
+	} else {
+		printf("Invalid command\n");
+	}
+}
+
+char* getStatusStr(int status)
+{
+	if(status == START){
+		return "Running";
+	} else if(status == STOP){
+		return "Stopped";
+	} else if(status == EXIT){
+		return "Terminated";
+	}
+}
+
+void start_service(int service_id) {
+	if(client_info[service_id].status == STOP){
+		client_info[service_id].command = START;
+	} else {
+		printf("Current Staus of service[%d] is [%s]n", service_id, getStatusStr(client_info[service_id].status));
+	}
+}
+
+void stop_service(int service_id) {
+	if(client_info[service_id].status == START){
+		client_info[service_id].command = STOP;
+	} else {
+		printf("Current Staus of service[%d] is [%s]n", service_id, getStatusStr(client_info[service_id].status));
+	}
+	
+}
+
+void change_interval(int service_id, int interval) {
+	if(client_info[service_id].status == START){
+		g_interval = interval;
+		client_info[service_id].command = CHANGE_INTERVAL;
+	} else {
+		printf("Current Staus of service[%d] is [%s]n", service_id, getStatusStr(client_info[service_id].status));
+	}
+}
+
+void list_services() {
+	printf("Listing all services\n\n");
+	printf("CSI Data Interval %d ms \n\n", csi_service_get_current_interval());
+	for(int i = 0; i < g_client_count; ++i){
+		printf("Service ID[%d] Status[%s] Packets_count[%d] \n", i, getStatusStr(client_info[i].status), client_info[i].packet_count);
+	}
+	printf("\n");
+}
+
+void exit_services(int service_id){
+	printf("exit service %d\n", service_id);
+	client_info[service_id].command = EXIT;
+}
+

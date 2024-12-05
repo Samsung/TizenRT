@@ -25,7 +25,6 @@ extern COLLECT_STATE g_service_state;
 static unsigned int gPingInterval = 0;
 static pthread_t gPingThread;
 static g_ping_count;
-int g_pkt_count; //extern
 
 void* pingThreadFun(void *vargp);
 static CSIFW_RES ping_generator_open_socket(int *ping_socket, struct sockaddr **socketAddr, struct addrinfo **result);
@@ -99,10 +98,6 @@ static void ping_prepare_echo(struct icmp_echo_hdr *p_iecho, u16_t len)
 
 static CSIFW_RES ping_send(int ping_socket, struct icmp_echo_hdr *p_iecho, struct sockaddr *socketAddr)
 {
-	if (g_pkt_count < 0) {
-		g_pkt_count = 0;
-	}
-	g_pkt_count++; /* increment in case of error also (ping fails, but proxy packet not skipped) to ensure that packets are sent at gInterval */
 	g_ping_count++;
 	if(!(g_ping_count % 1000)) CSIFW_LOGD("ping_send(): ping sent %d times", g_ping_count);
     
@@ -170,7 +165,6 @@ CSIFW_RES ping_generator_start(void)
 		return CSIFW_OK;
 	}
 	g_ping_count = 0;
-	g_pkt_count = 0;
 	gPingThread = 0;
 	// create thread and values init
 	gStopPingThread = false;

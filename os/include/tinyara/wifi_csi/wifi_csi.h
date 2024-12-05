@@ -71,6 +71,7 @@
 #include <tinyara/config.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
+#include "wifi_csi_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,14 +94,11 @@ extern "C" {
  * interface, such as sampling rate, volume, data format, etc.
  * The Wificsi ioctl commands are listed below:
  *
- * CSIIOC_PARAM_SETZERO - Set the wifi csi config params zero.
- *
- *   ioctl argument:  None
  *
  * CSIIOC_SET_CONFIG - Set wificsi device config for the specified mode
  *
- *   ioctl argument:  Pointer to the csi_action_param_t structure which specifies
- *                    the config params.
+ *   ioctl argument:  Pointer to the csi_config_args_t structure which specifies
+ *                    the config args.
  *
  * CSIIOC_REGISTER_CALLBACK - Register callback to receive wifi csi data ready event.
  *
@@ -127,7 +125,7 @@ extern "C" {
  *   ioctl argument:  Pointer to csi_driver_buffer_args_t structure.
  */
 
-#define CSIIOC_PARAM_SETZERO         _CSIIOC(1)
+#define CSIIOC_PARAM_INIT            _CSIIOC(1)
 #define CSIIOC_SET_CONFIG            _CSIIOC(2)
 #define CSIIOC_START_CSI             _CSIIOC(3)
 #define CSIIOC_STOP_CSI              _CSIIOC(4)

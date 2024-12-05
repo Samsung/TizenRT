@@ -1,26 +1,83 @@
-# A. How to build csifw test app
+# How to build and run CSIFW
 
-1. Run command `./os/dbuild.sh menu`.
-2. Select board `rtl8730e`
-3. Select configuration `loadable_ext_psram`
-4. Modify build by selecting `Modify Current Configuration`
-5. Enable csifw_test and wm_test app from menuconfig:
+## A. Guide to build
 
-		Application Configuration-> Examples-> [*] CSIFW test application
-		
-		                                       Wifi Manager-> [*] Wi-Fi Manager Sample
+### 1. Make dir
+```
+mkdir -p product_code
+cd product_code
+```
 
-6. Turn on CSIFW logs from menuconfig:
-		
-		CSI Framework-> CSIFW Debug Logs-> [*] CSIFW Logs
-		                                   [*]   CSIFW Error Logs
-		                                   [ ]   CSIFW Information Logs
-		                                   [ ]   CSIFW Debug Logs
-		                                   [ ]   CSIFW Verbose Logs 
+
+### 2. cbuild.sh
+```
+#!/usr/bin/env bash
+
+# Set helper home path
+export CONANHELPER_HOME="/data1/1212/sahil1.gupta/product_code/myhelperpath" <-- Change this path as per your environment
+if [ -z "$CONANHELPER_HOME" ]; then
+    export CONANHELPER_HOME="/conanhelper"
+fi
+
+if [ ! -d "$CONANHELPER_HOME" ]; then
+    echo "The conanhelper does not exist."
+    mkdir $CONANHELPER_HOME
+    chmod 777 $CONANHELPER_HOME
+    git clone git@github.ecodesamsung.com:TizenRT/ssot.git $CONANHELPER_HOME
+fi
+
+$CONANHELPER_HOME/conanscript/conanscript.sh "$@"
+
+```
+
+### 3. Clone repo
+
+Clone product_TizenLite5 and CSI_Platform
+
+	git clone git@github.ecodesamsung.com:TizenRT/product_TizenLite5.git
+	git clone git@github.ecodesamsung.com:TizenRT/CSI_Platform.git
+
+
+
+### 4. (OPTIONAL) Changes to enable csifw_test app
+
+|STEPS | |
+|--- | ---|
+|1.   Disable Presence detection service | In   file *'product_conan/config_presets/modules/csi_prs.config'* Disable following flag: `CONFIG_PRESENCE_DETECTION_APP`|
+|2. Enable csifw_test app | In   file *'CSI_Platform/configs/default/defconfig'*     Enable following flag: `CONFIG_CSIFW_TEST`|
+|3. Extra step for long run | In   file *'CSI_Platform/apps/csifw_test/src/csifw_test.c'*     `#define LONG_RUN_TEST 1`|
+
+
+## 5. Build commands
+
+### 5.1 If changes in repo CSI_Platform (if step 4 performed)
+```
+./cbuild.sh repo create -p=product_conan -b=CSI_Platform
+```
+### 5.2 If no changes in CSI_Platform
+```
+./cbuild.sh repo create -p=product_conan
+```
+
+
+### 6. target board download
+```
+./cbuild.sh repo -C product_conan download ALL
+```
+<br>
 
 # B. How to run csifw test app on board
 
-1. Connect board to wifi.
+### 1. __TURN ON LOGS__:
+- First run command `setlog` on TASH, note the number for CSIFW.
+
+			TASH>> setlog
+			PRODUCT_OCF_COMMON                 : 55
+			SEC_CPM                            : 69
+			CSIFW                              : 70 // ==> num: use this number to control csifw logs
+	- `setlog num 3` (to enable info logs)
+	- `setlog num 6` (to enable all logs)
+2. Connect board to wifi.
 
 3. Run csifw_test command as shown below:
 	
@@ -36,7 +93,7 @@
 <br>
 <hr>
 
-# B. CSI Framework Guide
+# C. CSI Framework Guide
 
 
 ### Supported CSI Data Configs
@@ -48,7 +105,7 @@ CSIFW supports following configurations in STA mode:
 - `NON_HT_CSI_DATA_ACC1` (52 subcarriers each sub-carrier data is 4 bytes)
 <br>
 
-The config can be set using `CSI_CONFIG_TYPE` enum.
+The config can be set using `csi_config_type_t` enum.
 
 
 
@@ -74,7 +131,7 @@ The config can be set using `CSI_CONFIG_TYPE` enum.
 
 2. __csi_service_init__: After implementing the callbacks, client can initialize CSIFW by calling `csi_service_init`
 
-		CSIFW_RES csi_service_init(CSI_CONFIG_TYPE config_type, client_raw_data_listener raw_callback, client_parsed_data_listener parsed_callback, unsigned int interval, void* ptr);
+		CSIFW_RES csi_service_init(csi_config_type_t config_type, client_raw_data_listener raw_callback, client_parsed_data_listener parsed_callback, unsigned int interval, void* ptr);
 	- `interval` : The interval in microseconds.
 	- If raw/parsed data is not required, pass `NULL` in place of callback.
 <br>

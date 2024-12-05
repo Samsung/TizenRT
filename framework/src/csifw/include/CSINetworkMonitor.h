@@ -18,9 +18,17 @@
 
 #ifndef __CSI_NETWORK_MONITOR_H__
 #define __CSI_NETWORK_MONITOR_H__
-#include "csifw.h"
+#include "csifw/csifw_api.h"
+
+typedef enum CONNECTION_STATE {
+	WIFI_CONNECTED,
+	WIFI_DISCONNECTED
+} CONNECTION_STATE;
+
+typedef void (*network_status_listener)(CONNECTION_STATE state);
 
 CSIFW_RES network_monitor_init(network_status_listener network_status_callback);
-CSIFW_RES network_monitor_deinit();
+CSIFW_RES checkWifiConnection(void);
+CSIFW_RES network_monitor_deinit(void);
 #endif /* __CSI_NETWORK_MONITOR_H__ */
 

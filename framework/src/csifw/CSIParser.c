@@ -107,11 +107,10 @@ void logReceivedData(int csi_buff_len, unsigned char *csi_buff, int accuracy)
 #endif
 }
 
-void getParsedData(unsigned char *rawDatabuff, int raw_csi_buff_len, csi_action_param_t *config, float *parsedDatabuff, uint16_t *parsed_csi_buff_len)
+void getParsedData(unsigned char *rawDatabuff, int raw_csi_buff_len, csi_config_type_t config_type, float *parsedDatabuff, uint16_t *parsed_csi_buff_len)
 {
-	csi_accuracy_t accuracy = config->accuracy;
 	int acc = 0;
-	if (accuracy == CSI_ACCU_2BYTES) {
+	if (config_type ==  HT_CSI_DATA_ACC1 || config_type == NON_HT_CSI_DATA_ACC1) {
 		acc = 1;
 	}
 	int parsedDataIdx, sub_carrier_data_index = 43;
@@ -120,6 +119,6 @@ void getParsedData(unsigned char *rawDatabuff, int raw_csi_buff_len, csi_action_
 		parsedDatabuff[parsedDataIdx] = get_parsed_sub_carrier(rawDatabuff + sub_carrier_data_index + 1 + acc, acc);	//Imaginary
 		parsedDatabuff[parsedDataIdx + 1] = get_parsed_sub_carrier(rawDatabuff + sub_carrier_data_index, acc);	//Real
 	}
-	*parsed_csi_buff_len = (raw_csi_buff_len - CSIFW_CSI_HEADER_LEN) / (accuracy + 1);
+	*parsed_csi_buff_len = (raw_csi_buff_len - CSIFW_CSI_HEADER_LEN) / (acc + 1);
 }
 

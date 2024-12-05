@@ -21,12 +21,12 @@
 
 #include "csifw.h"
 
-CSIFW_RES csi_packet_receiver_init(CSIDataListener CSIDataCallback);
+CSIFW_RES csi_packet_receiver_init(csi_config_type_t config_type, unsigned int interval_ms, CSIDataListener CSIDataCallback);
 CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info);
-CSIFW_RES csi_packet_receiver_start_collect(csi_action_param_t *config);
-CSIFW_RES csi_packet_receiver_pause_collect(csi_action_param_t *config);
-CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason, csi_action_param_t *config);
-CSIFW_RES csi_packet_receiver_deinit();
+CSIFW_RES csi_packet_receiver_start_collect(void);
+CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason);
+CSIFW_RES csi_packet_change_interval(unsigned int interval);
+CSIFW_RES csi_packet_receiver_deinit(void);
 
 #endif /* __CSI_PACKET_RECEIVER_H__ */
 
