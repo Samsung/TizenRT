@@ -1063,9 +1063,9 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
-	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 * On boot, we are in PM_FORE. After that we only use PM_BACK and PM_SLEEP
+	 * on boot : PM_FORE -> PM_BACK -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_BACK -> PM_SLEEP -> PM_BACK........
 	 */
 	audvdbg("pmstate : %d\n", state);
 #if 0
@@ -1085,7 +1085,7 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 		syu645b_setmute(g_syu645b, true);
 	}
 	break;
-	case(PM_STANDBY): {
+	case(PM_BACK): {
 #if 0
 		syu645b_reset_config(g_syu645b);
 #endif

@@ -85,8 +85,8 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("\n");
 	pmdbg(" BOARD STATE | PM STATE |          TIME          \n");
 	pmdbg("-------------|----------|------------------------\n");
-	for (pm_state = PM_NORMAL; pm_state < PM_SLEEP; pm_state++) {
-		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
+	for (pm_state = PM_FORE; pm_state < PM_SLEEP; pm_state++) {
+		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_FORE) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
 			((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state]) * 100.0 / total_time);
 	}
 	pmdbg("-------------|----------|------------------------\n");
