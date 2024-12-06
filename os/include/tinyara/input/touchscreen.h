@@ -71,6 +71,7 @@
 #if defined(CONFIG_TOUCH)
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/i2c.h>
+#include <semaphore.h>
 
 /************************************************************************************
  * Pre-processor Definitions
