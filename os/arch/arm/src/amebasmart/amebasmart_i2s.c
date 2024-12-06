@@ -213,7 +213,7 @@ struct amebasmart_i2s_s {
 	struct amebasmart_buffer_s containers_tx[I2S_DMA_PAGE_NUM];
 #endif
 };
-
+#ifdef CONFIG_AMEBASMART_I2S2
 /* I2S device structures */
 static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 	.i2s_mclk_pin = NULL,
@@ -226,7 +226,9 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 	.rxenab = 0,
 	.txenab = 1,
 };
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2S3
 static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.i2s_mclk_pin = PA_15,
 	.i2s_sclk_pin = PA_14,
@@ -238,7 +240,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.rxenab = 1,
 	.txenab = 0,
 };
-
+#endif
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -1785,11 +1787,17 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 	int ret;
 
 	/* Assign HW configuration */
+#ifdef CONFIG_AMEBASMART_I2S2
 	if (port == I2S_NUM_2) {
 		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s2_config;
-	} else if (port == I2S_NUM_3) {
+	} else
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+	if (port == I2S_NUM_3) {
 		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s3_config;
-	} else {
+	} else 
+#endif
+	{
 		i2serr("Please select I2S2 or I2S3 bus\n");
 		return NULL;
 	}

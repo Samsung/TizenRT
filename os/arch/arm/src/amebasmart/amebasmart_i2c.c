@@ -295,7 +295,7 @@ static const struct i2c_ops_s amebasmart_i2c_ops = {
 };
 
 /* I2C device structures */
-
+#ifdef CONFIG_AMEBASMART_I2C0
 static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.base = amebasmart_I2C0_BASE,
 	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
@@ -330,7 +330,9 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c0_priv = {
 	.flags = 0,
 	.status = 0
 };
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2C1
 static const struct amebasmart_i2c_config_s amebasmart_i2c1_config = {
 	//.base = amebasmart_I2C1_BASE,
 	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
@@ -365,7 +367,9 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c1_priv = {
 	.flags = 0,
 	.status = 0
 };
+#endif
 
+#ifdef CONFIG_AMEBASMART_I2C2
 static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	//.base = amebasmart_I2C2_BASE,
 	//.busy_idle = CONFIG_I2C2_BUSYIDLE,
@@ -395,6 +399,7 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c2_priv = {
 	.flags = 0,
 	.status = 0
 };
+#endif
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
@@ -1158,13 +1163,22 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 	irqstate_t flags;
 
 	/* Get I2C private structure */
+#ifdef CONFIG_AMEBASMART_I2C0
 	if (port == 0) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c0_priv;
-	} else if (port == 1) {
+	} else
+#endif
+#ifdef CONFIG_AMEBASMART_I2C1
+	if (port == 1) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c1_priv;
-	} else if (port == 2) {
+	} else 
+#endif
+#ifdef CONFIG_AMEBASMART_I2C2
+	if (port == 2) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c2_priv;
-	} else {
+	} else
+#endif
+	{
 		printf("Please select I2CO, I2C1 or I2C2 bus\n");
 		return NULL;
 	}

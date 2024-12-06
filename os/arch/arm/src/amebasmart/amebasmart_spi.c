@@ -188,7 +188,7 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, 
 /************************************************************************************
  * Private Data
  ************************************************************************************/
-
+#ifdef CONFIG_AMEBASMART_SPI0
 static const struct spi_ops_s g_spi0ops = {
 	.lock         = amebasmart_spi_lock,
 	.select       = amebasmart_spi_select,
@@ -245,7 +245,9 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER,
 };
+#endif
 
+#ifdef CONFIG_AMEBASMART_SPI1
 static const struct spi_ops_s g_spi1ops = {
 	.lock         = amebasmart_spi_lock,
 	.select       = amebasmart_spi_select,
@@ -302,6 +304,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER
 };
+#endif
 
 /************************************************************************************
  * Private Functions
@@ -1380,7 +1383,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
 	irqstate_t flags = enter_critical_section();
-	
+#ifdef CONFIG_AMEBASMART_SPI0	
 	if (bus == 0) {
 		/* Select SPI0 */
 
@@ -1394,7 +1397,10 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 
-	} else if (bus == 1) {
+	} else
+#endif
+#ifdef CONFIG_AMEBASMART_SPI1
+	if (bus == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
@@ -1407,7 +1413,9 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 
-	} else {
+	} else 
+#endif
+	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", bus);
 		leave_critical_section(flags);
 		return NULL;
@@ -1485,7 +1493,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
 	irqstate_t flags = enter_critical_section();
-
+#ifdef CONFIG_AMEBASMART_SPI0
 	if (port == 0) {
 		/* Select SPI0 */
 
@@ -1504,7 +1512,10 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 	}
-	else if (port == 1) {
+	else 
+#endif
+#ifdef CONFIG_AMEBASMART_SPI1
+	if (port == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
@@ -1521,6 +1532,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 	} else
+#endif
 	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", port);
 		leave_critical_section(flags);
