@@ -78,6 +78,7 @@ struct ndp120_dev_s {
 	uint32_t extract_size;
 	bool extclk_inuse;
 	volatile bool alive;
+	bool keyword_correction;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
 	pthread_mutex_t ndp_mutex_mbsync;

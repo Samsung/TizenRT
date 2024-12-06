@@ -1163,6 +1163,7 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	}
 #endif
 	dev->alive = true;
+	dev->keyword_correction = false;
 
 errout_ndp120_init:
 	return s;
@@ -1344,6 +1345,7 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 				g_ndp120_state = IS_RECORDING;
 #endif
+				dev->keyword_correction = true;
 				msg.msgId = AUDIO_MSG_KD;
 			} else if (network_id == 1) {
 				switch (winner) {
@@ -1518,6 +1520,7 @@ int ndp120_kd_start_match_process(struct ndp120_dev_s *dev) {
 int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 {
 	int s;
+
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = IS_RECORDING;
 #endif
@@ -1529,10 +1532,13 @@ int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 	uint32_t bytes_before_match = 0;
 
 	if (!dev->running) {
-		/* we need not do this if this is resume case, we only need to do it if its recorder start case after keyword detection */
-		s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
+		if (dev->keyword_correction) {
+			/* we need not do this if this is resume case, we only need to do it if its recorder start case after keyword detection */
+			s = syntiant_ndp_extract_data(dev->ndp, SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
 																SYNTIANT_NDP_EXTRACT_FROM_MATCH, NULL,
 																&bytes_before_match);
+			dev->keyword_correction = false;
+		}
 	}
 
 	return s;
