@@ -446,6 +446,7 @@ static int load_synpkg(struct syntiant_ndp_device_s *ndp, const char *p)
 	int s = 0;
 	int pfd;
 	int rl;
+	int chunk_size = 1024;
 
 	/*
 	 * load synpkg file
@@ -457,7 +458,7 @@ static int load_synpkg(struct syntiant_ndp_device_s *ndp, const char *p)
 
 	package_len = st.st_size;
 
-	package = kmm_malloc(package_len);
+	package = kmm_malloc(chunk_size);
 	if (!package) {
 		auddbg("no memory for package_load\n");
 		return SYNTIANT_NDP_ERROR_FAIL;
@@ -466,17 +467,9 @@ static int load_synpkg(struct syntiant_ndp_device_s *ndp, const char *p)
 	pfd = open(p, O_RDONLY);
 	if (pfd < 0) {
 		auddbg("unable to open synpkg file\n");
-		s = SYNTIANT_NDP_ERROR_FAIL;
-		goto errorout_with_package;
+		free(package);
+		return SYNTIANT_NDP_ERROR_FAIL;
 	}
-
-	rl = read(pfd, package, package_len);
-	if (check_io("synpkg file read", package_len, rl)) {
-		s = SYNTIANT_NDP_ERROR_FAIL;
-		goto errorout_with_package;
-	}
-
-	close(pfd);
 
 	auddbg("Loading %d bytes of package data\n", package_len);
 
@@ -490,14 +483,33 @@ static int load_synpkg(struct syntiant_ndp_device_s *ndp, const char *p)
 	}
 
 	/*
-	 * load the entire synpkg object with a single call
+	 * load the synpkg object in chunks
 	 */
-	s = syntiant_ndp_load(ndp, package, package_len);
-	if (check_status("load", s)) {
-		goto errorout_with_package;
+	int data_left = package_len;
+	while (s == SYNTIANT_NDP_ERROR_MORE) {
+
+		int load_len = chunk_size < data_left ? chunk_size : data_left;
+
+		rl = read(pfd, package, load_len);
+		if (rl <= 0) {
+			s = SYNTIANT_NDP_ERROR_FAIL;
+			goto errorout_with_package;
+		}
+
+		load_len = rl;
+
+		s = syntiant_ndp_load(ndp, package, load_len);
+		if (s && s != SYNTIANT_NDP_ERROR_MORE) {
+			if (check_status("load", s)) {
+				goto errorout_with_package;
+			}
+		}
+
+		data_left -= load_len;
 	}
 
 errorout_with_package:
+	close(pfd);
 	free(package);
 	return s;
 }
