@@ -52,22 +52,66 @@ static const char *filePath = "/tmp/record.pcm";
 uint8_t *gBuffer = NULL;
 uint32_t bufferSize = 0;
 
-static bool isRecording = true;
-
-static void playRecordVoice(void);
-static void startRecord(void);
-
 class WakeRec : public media::voice::SpeechDetectorListenerInterface,public FocusChangeListener,
 				public media::MediaRecorderObserverInterface, public media::MediaPlayerObserverInterface,
 				public std::enable_shared_from_this<WakeRec>
 {
+public:
+	void initWakeRec(bool set)
+	{
+		mKDEnabled = set;
+		printf("open file path : %s\n", filePath);
+		fp = fopen(filePath, "wb");
+		if (fp == NULL) {
+			printf("FILE OPEN FAILED\n");
+			return;
+		}
+	}
+
+	void startRecord(void)
+	{
+		media::recorder_result_t mret = mr.create();
+		if (mret == media::RECORDER_OK) {
+			printf("#### [MR] create succeeded.\n");
+		} else {
+			printf("#### [MR] create failed.\n");
+			return;
+		}
+
+		mret = mr.setDataSource(std::unique_ptr<media::stream::BufferOutputDataSource>(
+			new media::stream::BufferOutputDataSource(1, 16000, media::AUDIO_FORMAT_TYPE_S16_LE)));
+		if (mret == media::RECORDER_OK) {
+			printf("#### [MR] setDataSource succeeded.\n");
+		} else {
+			printf("#### [MR] setDataSource failed.\n");
+			return;
+		}
+
+		mret = mr.setObserver(shared_from_this());
+		if (mret == media::RECORDER_OK) {
+			printf("#### [MR] setObserver succeeded.\n");
+		} else {
+			printf("#### [MR] setObserver failed.\n");
+			return;
+		}
+
+		if (mr.setDuration(7) == RECORDER_ERROR_NONE && mr.prepare() == RECORDER_ERROR_NONE) {
+			printf("#### [MR] prepare succeeded.\n");
+		} else {
+			printf("#### [MR] prepare failed.\n");
+			return;
+		}
+
+		mr.start();
+	}
+
 private:
 	MediaPlayer mp;
 	MediaRecorder mr;
 	shared_ptr<FocusRequest> mFocusRequest;
-	FILE *fp;
 	bool mPaused;
-
+	bool mKDEnabled;
+	FILE *fp;
 	void onRecordStarted(media::MediaRecorder &mediaRecorder) override
 	{
 		printf("##################################\n");
@@ -120,9 +164,6 @@ private:
 
 	void onRecordBufferDataReached(media::MediaRecorder &mediaRecorder, std::shared_ptr<unsigned char> data, size_t size) override
 	{
-		if (!isRecording) {
-			return;
-		}
 		printf("###########################################\n");
 		printf("####      onRecordBufferDataReached    ####\n");
 		printf("###########################################\n");
@@ -131,6 +172,8 @@ private:
 		if (fp != NULL) {
 			int sz_written = fwrite(sdata, sizeof(short), size / 2, fp);
 			printf("\n********Size written to file= %d *********\n", sz_written);
+		} else {
+			printf("fp is null!!\n");
 		}
 	}
 	
@@ -156,16 +199,17 @@ private:
 		printf("##################################\n");
 		printf("####   Playback done!!        ####\n");
 		printf("##################################\n");
-
-		printf("###################################\n");
-		printf("#### Wait for wakeup triggered ####\n");
-		printf("###################################\n");
-
-		sd->startKeywordDetect();
+		if (mKDEnabled) {
+			printf("###################################\n");
+			printf("#### Wait for wakeup triggered ####\n");
+			printf("###################################\n");
+			sd->startKeywordDetect();
+		}
 		/* Now that we finished playback, we can go to sleep */
 		sleep(3); //for test, add sleep.
-
-		pm_resume(PM_IDLE_DOMAIN);
+		if (mKDEnabled) {
+			pm_resume(PM_IDLE_DOMAIN);
+		}
 	}
 
 	void onPlaybackStopped(media::MediaPlayer &mediaPlayer) override
@@ -173,11 +217,13 @@ private:
 		mPaused = false;
 		mp.unprepare();
 		mp.destroy();
-		printf("###################################\n");
-		printf("#### Wait for wakeup triggered ####\n");
-		printf("###################################\n");
-		sd->startKeywordDetect();
-		pm_resume(PM_IDLE_DOMAIN);
+		if (mKDEnabled) {
+			printf("###################################\n");
+			printf("#### Wait for wakeup triggered ####\n");
+			printf("###################################\n");
+			sd->startKeywordDetect();
+			pm_resume(PM_IDLE_DOMAIN);
+		}
 	}
 
 	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
@@ -212,12 +258,6 @@ private:
 			pm_suspend(PM_IDLE_DOMAIN);
 			printf("Event SPEECH_DETECT_KD\n");
 			printf("#### [SD] keyword detected.\n");
-			fp = fopen(filePath, "wb");
-			if (fp == NULL) {
-				printf("FILE OPEN FAILED\n");
-				return;
-			}
-
 			if (gBuffer) {
 				if (sd->getKeywordData(gBuffer) == true) {
 					/* consume buffer */
@@ -282,43 +322,6 @@ private:
 		}
 	}
 
-	void startRecord(void)
-	{
-		media::recorder_result_t mret = mr.create();
-		if (mret == media::RECORDER_OK) {
-			printf("#### [MR] create succeeded.\n");
-		} else {
-			printf("#### [MR] create failed.\n");
-			return;
-		}
-
-		mret = mr.setDataSource(std::unique_ptr<media::stream::BufferOutputDataSource>(
-			new media::stream::BufferOutputDataSource(1, 16000, media::AUDIO_FORMAT_TYPE_S16_LE)));
-		if (mret == media::RECORDER_OK) {
-			printf("#### [MR] setDataSource succeeded.\n");
-		} else {
-			printf("#### [MR] setDataSource failed.\n");
-			return;
-		}
-
-		mret = mr.setObserver(shared_from_this());
-		if (mret == media::RECORDER_OK) {
-			printf("#### [MR] setObserver succeeded.\n");
-		} else {
-			printf("#### [MR] setObserver failed.\n");
-			return;
-		}
-
-		if (mr.setDuration(7) == RECORDER_ERROR_NONE && mr.prepare() == RECORDER_ERROR_NONE) {
-			printf("#### [MR] prepare succeeded.\n");
-		} else {
-			printf("#### [MR] prepare failed.\n");
-			return;
-		}
-
-		mr.start();
-	}
-
 	void playRecordVoice(void)
 	{
 		mp.create();
@@ -342,34 +345,51 @@ extern "C" {
 int wakerec_main(int argc, char *argv[])
 {
 	printf("wakerec_main Entry\n");
-	sd = media::voice::SpeechDetector::instance();
-	if (!sd->initKeywordDetect(16000, 1)) {
-		printf("#### [SD] init failed.\n");
-		return 0;
+
+	if (argc > 3) {
+		printf("invalid input\n");
+		printf("Usage : wakerec [mode]\n");
+		printf("mode is optional 0 Disable wakeup\n");
+		return -1;
 	}
-
-	sd->addListener(std::make_shared<WakeRec>());
-
-	printf("###################################\n");
-	printf("#### Wait for wakeup triggered ####\n");
-	printf("###################################\n");
-	
-	if (sd->getKeywordBufferSize(&bufferSize) == true) {
-		printf("KD buffer size %d\n", bufferSize);
-		gBuffer = new uint8_t[bufferSize];
-		if (!gBuffer) {
-			printf("memory allocation failed\n");
+	auto recorder = std::shared_ptr<WakeRec>(new WakeRec());
+	if (argc == 2 && atoi(argv[1]) == 0) {
+		printf("disable KD!!\n");
+		recorder->initWakeRec(false);
+		recorder->startRecord();
+	} else {
+		recorder->initWakeRec(true);
+		sd = media::voice::SpeechDetector::instance();
+		if (!sd->initKeywordDetect(16000, 1)) {
+			printf("#### [SD] init failed.\n");
+			return 0;
 		}
+
+		sd->addListener(recorder);
+
+		printf("###################################\n");
+		printf("#### Wait for wakeup triggered ####\n");
+		printf("###################################\n");
+
+		if (sd->getKeywordBufferSize(&bufferSize) == true) {
+			printf("KD buffer size %d\n", bufferSize);
+			gBuffer = new uint8_t[bufferSize];
+			if (!gBuffer) {
+				printf("memory allocation failed\n");
+			}
+		}
+		sd->startKeywordDetect();
+		/* similar to wake lock, we release wake lock as we started our thread */
+		pm_resume(PM_IDLE_DOMAIN);
 	}
-	sd->startKeywordDetect();
-	/* similar to wake lock, we release wake lock as we started our thread */
-	pm_resume(PM_IDLE_DOMAIN);
 
 	while (1) {
 		sleep(67);
 	}
-	delete[] gBuffer;
-	gBuffer = NULL;
+	if (gBuffer) {
+		delete[] gBuffer;
+		gBuffer = NULL;
+	}
 	return 0;
 }
 }
