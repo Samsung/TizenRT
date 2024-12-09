@@ -1,5 +1,11 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 1d94f05280_2024/12/09-12:35:36 ==
+1.	Fix PSRAM latency
+	Root Cause: There is no backup latency for PSRAM Vendor A.
+	Possible Risk: There will be an issue when lpcnp PSRAM enter sleep mode. Only lp can run normally and the psram memory will be unstable.
+	Solution: Regardless of the PSRAM vendor, the backup latency code for KM0 during sleep mode will also be implemented.
+
 == version a52222ac01_2024/08/07-10:57:21 ==
 1.	Adjust layout for RTL8730EAH-VH6-CG NOR Flash 32MB + DDR2 64MB
 	- CA32_BL3_DRAM_NS address adjusted: 0x64000000 - 0x60100000; 63MB
