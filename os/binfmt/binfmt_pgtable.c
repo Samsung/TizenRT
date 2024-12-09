@@ -104,7 +104,7 @@ void binfmt_setup_app_pgtable(struct binary_s *binp)
 #else // ELF
 
 	/* map entire flash region of app as rw */
-	mmu_map_app_region(binp->binary_idx, l1tbl, binp->flash_region_start, binp->flash_region_end - binp->flash_region_start, true, true);
+	//mmu_map_app_region(binp->binary_idx, l1tbl, binp->flash_region_start, binp->flash_region_end - binp->flash_region_start, true, true);
 	
 	/* map entire RAM region of app as rx */
 	mmu_map_app_region(binp->binary_idx, l1tbl, binp->ram_region_start, binp->ram_region_end - binp->ram_region_start, false, true);

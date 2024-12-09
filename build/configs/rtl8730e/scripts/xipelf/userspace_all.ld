@@ -1,7 +1,9 @@
 SECTIONS
 {
+  . = ORIGIN(uflash);
+  _text_start_flash = ABSOLUTE(.);
 
-  .text ORIGIN(uflash) :
+  .text :
     {
       _stext_flash = . ;
       /* Place holder to keep the heap object at the top
@@ -11,6 +13,9 @@ SECTIONS
        */
       LONG(0);
       KEEP(*(.userspace))
+      
+      . = ALIGN(32);
+
       *(.text)
       *(.text.*)
       *(.gnu.warning)
@@ -27,23 +32,17 @@ SECTIONS
       *(.init)             /* Old ABI */
       *(.fini)             /* Old ABI */
       _etext_flash = . ;
-    } > uflash
+      
+      *(.ARM.extab*)
 
-   .ARM.extab : {
-        *(.ARM.extab*)
-    } > uflash
+      . = ALIGN(32);
 
-    __fexidx_start = ABSOLUTE(.);
-   .ARM.exidx : {
-       __exidx_start = .; 
-       *(.ARM.exidx*)
-       __exidx_end = .;
-    } > uflash
+      __exidx_start = .; 
+      *(.ARM.exidx*)
+      __exidx_end = .;
 
-    __fexidx_end = ABSOLUTE(.);
+      . = ALIGN(32);
 
-  .rodata :
-    {
       _srodata = . ;
       *(.rodata)
       *(.rodata1)
@@ -51,7 +50,6 @@ SECTIONS
       *(.gnu.linkonce.r*)
       _erodata = . ;
       _eronly = .;
-    } > uflash
 
   /* C++ support. For each global and static local C++ object,
    * GCC creates a small subroutine to construct the object. Pointers
@@ -61,26 +59,30 @@ SECTIONS
    * stored in .dtors.
    */
 
-  .ctors :
-    {
+      . = ALIGN(32);	
+
       _sctors = . ;
       *(.ctors)       /* Old ABI:  Unallocated */
       *(.init_array)  /* New ABI:  Allocated */
       _ectors = . ;
-    } > uflash
 
-  .dtors :
-    {
+      . = ALIGN(32);
+
       _sdtors = . ;
       *(.dtors)       /* Old ABI:  Unallocated */
       *(.fini_array)  /* New ABI:  Allocated */
       _edtors = . ;
-    } > uflash
+    
+      _sdata_app1 = ABSOLUTE(.);
+    } > usram AT > uflash
+   
 
-   _sdata_app = ABSOLUTE(.);
+
+   _sdata_app2 = ABSOLUTE(.);    
 
    .data :
     {
+      _sdata_app = LOADADDR(.data);
       _sdata = . ;
       LONG(0);
       *(.curapp)

@@ -61,12 +61,15 @@
  * hello_main
  ****************************************************************************/
 
+__attribute__ ((__noinline__))
+void * get_pc () { return __builtin_return_address(0); }
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	printf("Hello, World!!, pc : %p\n", get_pc());
 	return 0;
 }
