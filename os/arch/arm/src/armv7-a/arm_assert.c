@@ -115,7 +115,7 @@ extern sq_queue_t g_freemsg_list;
 
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
-extern int g_irq_num;
+extern int g_irq_num[CONFIG_SMP_NCPUS];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -254,14 +254,15 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 
 static void check_assert_location(uint32_t *sp, bool *is_irq_assert)
 {
-	if (g_irq_num >= 0) {
+	int cpu = this_cpu();
+	if (g_irq_num[cpu] >= 0) {
 		/* Assert in irq */
 		*is_irq_assert = true;
 		lldbg("Code asserted in IRQ state!\n");
-		lldbg("IRQ num: %d\n", g_irq_num);
-		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num].handler);
+		lldbg("IRQ num: %d\n", g_irq_num[cpu]);
+		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num[cpu]].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO
-		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num].irq_name);
+		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num[cpu]].irq_name);
 #endif
 	} else {
 		/* Assert in user thread */

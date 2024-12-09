@@ -58,7 +58,7 @@
  * Public Functions
  ****************************************************************************/
 
-int g_irq_num = -1;				/* Array to store the last three interrupt numbers */
+int g_irq_num[CONFIG_SMP_NCPUS] = {-1, };				/* Array to store the last three interrupt numbers */
 /****************************************************************************
  * Name: arm_doirq
  *
@@ -71,7 +71,7 @@ int g_irq_num = -1;				/* Array to store the last three interrupt numbers */
 uint32_t *arm_doirq(int irq, uint32_t *regs)
 {
 	/* Store the interrupt number for reference during assert */
-	g_irq_num = irq;
+	g_irq_num[up_cpu_index()] = irq;
 
 	board_autoled_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
@@ -120,7 +120,7 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
   CURRENT_REGS = NULL;
 #endif
 	/* Reset the interrupt number values */
-	g_irq_num = -1;
+	g_irq_num[up_cpu_index()] = -1;
 
 	board_autoled_off(LED_INIRQ);
 	return regs;
