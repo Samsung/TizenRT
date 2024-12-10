@@ -102,6 +102,7 @@ static struct pm_callback_s g_pm_syu645b_cb ={
 	.sleep  = syu645b_pm_sleep,
 	.wake = syu645b_pm_wake,
 };
+static int syu645b_pm_domain_id = -1;
 #endif
 
 /************************************************************************************
@@ -786,7 +787,7 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 
 #ifdef CONFIG_PM
-	pm_timedsuspend(pm_domain_register("AUDIO", PM_FORE), timeout);
+	pm_timedsuspend(syu645b_pm_domain_id, timeout);
 #endif
 	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 
@@ -1170,8 +1171,8 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	/* only used during pm callbacks */
 	g_syu645b = priv;
 
-	int ret = pm_register(&g_pm_syu645b_cb, PM_FORE);
-	DEBUGASSERT(ret == OK);
+	syu645b_pm_domain_id = pm_domain_register("AUDIO", PM_FORE, &g_pm_syu645b_cb);
+	DEBUGASSERT(syu645b_pm_domain_id >= 0);
 #endif	
 
 	return &priv->dev;

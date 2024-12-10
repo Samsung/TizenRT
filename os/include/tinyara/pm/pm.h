@@ -315,42 +315,6 @@ void pm_start(void);
 void pm_initialize(void);
 
 /****************************************************************************
- * Name: pm_register
- *
- * Description:
- *   This function is called by a device driver in order to register to
- *   receive power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_register(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state);
-
-/****************************************************************************
- * Name: pm_unregister
- *
- * Description:
- *   This function is called by a device driver in order to unregister
- *   previously registered power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_unregister(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state);
-
-/****************************************************************************
  * Name: pm_domain_register
  *
  * Description:
@@ -366,7 +330,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks, enum pm_state_e pm_state)
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain, enum pm_state_e state);
+int pm_domain_register(char *domain, enum pm_state_e state, FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
  * Name: pm_idle
@@ -552,9 +516,7 @@ int pm_metrics(int milliseconds);
 
 #define pm_start()
 #define pm_initialize()
-#define pm_register(cb)         (0)
-#define pm_unregister(cb)       (0)
-#define pm_domain_register(domain, state)	(0)
+#define pm_domain_register(domain, state, callbacks)	(0)
 #define pm_idle()
 #define pm_suspend(domain_id)   (0)
 #define pm_resume(domain_id)    (0)

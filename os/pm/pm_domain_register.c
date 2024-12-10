@@ -81,11 +81,13 @@ int pm_check_domain(int domain_id)
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain, enum pm_state_e state)
+int pm_domain_register(char *domain, enum pm_state_e state, FAR struct pm_callback_s *callbacks)
 {
 	int index;
 	irqstate_t flags;
 	int length = strlen(domain);
+
+	DEBUGASSERT((state >= PM_FORE) && (state < PM_SLEEP));
 
 	/* If domain string length is greater than max allowed then return error */
 	if (length >= CONFIG_PM_DOMAIN_NAME_SIZE) {
@@ -107,6 +109,9 @@ int pm_domain_register(char *domain, enum pm_state_e state)
 			}
 			strncpy(pm_domain_map[index].name, domain, length + 1);
 			pm_domain_map[index].state = state;
+			if (callbacks) {
+				dq_addlast(&callbacks->entry, &g_pmglobals.registry[state]);
+			}
 			g_pmglobals.ndomains++;
 #ifdef CONFIG_PM_METRICS
 			/* For newly registered domain initialize its pm metrics*/
@@ -115,6 +120,7 @@ int pm_domain_register(char *domain, enum pm_state_e state)
 			goto EXIT;
 		/* If domain is already registered then return registered domain ID */
 		} else if (strncmp(pm_domain_map[index].name, domain, length + 1) == 0) {
+			pmvdbg("Domain: %s, is already registered\n", domain);
 			goto EXIT;
 		}
 		leave_critical_section(flags);

@@ -870,9 +870,8 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
 
-	g_ndp120_pm_id = pm_domain_register("NDP120", PM_BACK);
-	ret = pm_register(&g_pmndpcb, PM_BACK);
-	DEBUGASSERT(ret == OK);
+	g_ndp120_pm_id = pm_domain_register("NDP120", PM_BACK, &g_pmndpcb);
+	DEBUGASSERT(g_ndp120_pm_id >= 0);
 #endif	
 	return &priv->dev;
 }
