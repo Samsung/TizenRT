@@ -726,9 +726,15 @@ trble_result_e rtw_ble_server_one_shot_adv_deinit(void)
     return TRBLE_SUCCESS;
 }
 
-trble_result_e rtw_ble_server_one_shot_adv(uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
+trble_result_e rtw_ble_server_one_shot_adv_set(uint8_t *adv_id, uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
 {
-    ble_tizenrt_legacy_adv_concurrent_send_adv_id(data_adv, length_adv, data_scan_rsp, length_scan_rsp, type);
+    ble_tizenrt_legacy_adv_concurrent_data_set(adv_id, data_adv, length_adv, data_scan_rsp, length_scan_rsp, type);
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_server_one_shot_adv(uint8_t adv_id)
+{
+    ble_tizenrt_legacy_adv_concurrent_send_adv_id(adv_id);
     return TRBLE_SUCCESS;
 }
 

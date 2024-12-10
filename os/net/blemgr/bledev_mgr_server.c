@@ -83,7 +83,6 @@ static trble_server_init_config g_server_null_config = {
 	ble_server_connected_null_cb,
 	ble_server_disconnected_null_cb,
 	ble_server_mtu_update_null_cb,
-	ble_server_oneshot_adv_cb,
 	true,
 	gatt_null_profile,
 	sizeof(gatt_null_profile) / sizeof(trble_gatt_t)

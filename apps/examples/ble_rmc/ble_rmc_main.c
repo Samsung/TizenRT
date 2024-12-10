@@ -219,12 +219,6 @@ static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_si
 	return;
 }
 
-static void ble_server_oneshot_adv_cb(uint16_t adv_result)
-{
-	printf("result : %d\n", adv_result);
-	return;
-}
-
 static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
@@ -288,7 +282,6 @@ static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
-	ble_server_oneshot_adv_cb,
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
 
@@ -829,6 +822,27 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "advon", 6) == 0) {
 		ret = ble_server_one_shot_adv_init();
+		uint8_t type1 = 0;
+		uint8_t adv_id_0 = 0;
+		ble_data adv_data_1[1] = { 0x99, };
+		ble_data scan_rsp_data_1[1] = { 0x98, };
+		ble_data adv_data_2[1] = { 0x99, };
+		ble_data scan_rsp_data_2[1] = { 0x98, };
+
+		adv_data_1->data = g_adv_raw;
+		adv_data_1->length = sizeof(g_adv_raw);
+		scan_rsp_data_1->data = g_adv_resp;
+		scan_rsp_data_1->length = sizeof(g_adv_resp);
+		ret = ble_server_one_shot_adv_set(adv_id_0, adv_data_1, scan_rsp_data_1, type1);
+
+
+		uint8_t type3 = 3;
+		uint8_t adv_id_1 = 1;
+		adv_data_2->data = g_adv_raw_2;
+		adv_data_2->length = sizeof(g_adv_raw_2);
+		scan_rsp_data_2->data = g_adv_resp_2;
+		scan_rsp_data_2->length = sizeof(g_adv_resp_2);
+		ret = ble_server_one_shot_adv_set(adv_id_1, adv_data_2, scan_rsp_data_2, type3);
 	}
 
 	if (strncmp(argv[1], "advoff", 7) == 0) {
@@ -836,7 +850,8 @@ int ble_rmc_main(int argc, char *argv[])
 	}
 
 	if (strncmp(argv[1], "adv", 4) == 0) {
-		
+		uint8_t adv_id_0 = 0;
+		uint8_t adv_id_1 = 1;
 		int ret = 0xff;
 		ble_data adv_data_1[1] = { 0x99, };
 		ble_data scan_rsp_data_1[1] = { 0x98, };
@@ -849,22 +864,10 @@ int ble_rmc_main(int argc, char *argv[])
 				break;
 
 			usleep(80000);
-			adv_data_1->data = g_adv_raw;
-			adv_data_1->length = sizeof(g_adv_raw);
-
-			scan_rsp_data_1->data = g_adv_resp;
-			scan_rsp_data_1->length = sizeof(g_adv_resp);
-
-			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type1);
+			ret = ble_server_one_shot_adv(adv_id_0);
 
 			usleep(20000);
-			adv_data_1->data = g_adv_raw_2;
-			adv_data_1->length = sizeof(g_adv_raw_2);
-			
-			scan_rsp_data_1->data = g_adv_resp_2;
-			scan_rsp_data_1->length = sizeof(g_adv_resp_2);
-			
-			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type2);
+			ret = ble_server_one_shot_adv(adv_id_1);
 		}
 	}
 
