@@ -190,6 +190,7 @@ static void mq_rcvtimeout(int argc, uint32_t pid)
  *             message queue.
  *   EINTR     The call was interrupted by a signal handler.
  *   EINVAL    Invalid 'msg' or 'mqdes' or 'abstime'
+ *   EBADF     Mqdes is not present in calling task group's mq list.
  *   ETIMEDOUT The call timed out before a message could be transferred.
  *   ENOMEM    The system lacks sufficient memory resources for watchdog.
  *
@@ -208,6 +209,12 @@ ssize_t mq_timedreceive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio
 
 	/* mq_timedreceive() is not a cancellation point */
 	(void)enter_cancellation_point();
+
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		leave_cancellation_point();
+		set_errno(EBADF);
+		return ERROR;
+	}
 
 	/* Verify the input parameters and, in case of an error, set
 	 * errno appropriately.

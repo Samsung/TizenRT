@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <mqueue.h>
+#include <errno.h>
 #include <tinyara/mqueue.h>
 
 /************************************************************************
@@ -104,6 +105,11 @@
 int mq_getattr(mqd_t mqdes, struct mq_attr *mq_stat)
 {
 	int ret = ERROR;
+
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		set_errno(EBADF);
+		return ERROR;
+	}
 
 	if (mqdes && mq_stat) {
 		/* Return the attributes */
