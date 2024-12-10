@@ -47,6 +47,11 @@ recorder_result_t MediaRecorder::unprepare()
 	return mPMrImpl->unprepare();
 }
 
+recorder_result_t MediaRecorder::reset()
+{
+	return mPMrImpl->reset();
+}
+
 recorder_result_t MediaRecorder::start()
 {
 	return mPMrImpl->start();
