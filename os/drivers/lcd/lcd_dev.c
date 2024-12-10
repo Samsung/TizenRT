@@ -463,6 +463,9 @@ int lcddev_register(struct lcd_dev_s *dev)
 		if (ret != OK) {
 			return ret;
 		}
+#ifdef CONFIG_PM
+		(void)pm_suspend(lcd_info->pm_domain);
+#endif
 	}
 	sem_init(&lcd_info->sem, 0, 1);
 	if (lcd_info->dev->getplaneinfo) {
