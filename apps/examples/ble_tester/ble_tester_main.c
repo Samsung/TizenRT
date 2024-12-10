@@ -264,13 +264,6 @@ static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_si
 	return;
 }
 
-static void ble_server_oneshot_adv_cb(uint16_t adv_result)
-{
-	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
-	RMC_LOG(RMC_SERVER_TAG, "result : %d\n", adv_result);
-	return;
-}
-
 static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
@@ -395,7 +388,6 @@ static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
-	ble_server_oneshot_adv_cb,
 	true,
 	gatt_profile, 
 	sizeof(gatt_profile) / sizeof(ble_server_gatt_t)

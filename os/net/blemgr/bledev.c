@@ -660,8 +660,9 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, one_shot_adv_deinit, (dev));
 	}
 	break;
-	case LWNL_REQ_BLE_ONE_SHOT_ADV:
+	case LWNL_REQ_BLE_ONE_SHOT_ADV_SET:
 	{	
+		uint8_t *adv_id = NULL;
 		trble_data *data_adv = NULL;
 		trble_data *data_scan_rsp = NULL;
 		uint8_t *type;
@@ -673,11 +674,25 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		data_adv = (trble_data *)param.param[0];
-		data_scan_rsp = (trble_data *)param.param[1];
-		type = (uint8_t *)param.param[2];
+		adv_id = (uint8_t *)param.param[0];
+		data_adv = (trble_data *)param.param[1];
+		data_scan_rsp = (trble_data *)param.param[2];
+		type = (uint8_t *)param.param[3];
+		
+		TRBLE_DRV_CALL(ret, dev, one_shot_adv_set, (dev, adv_id, data_adv, data_scan_rsp, type));
+	}
+	break;
+	case LWNL_REQ_BLE_ONE_SHOT_ADV:
+	{
+		uint8_t adv_id = 0;
 
-		TRBLE_DRV_CALL(ret, dev, one_shot_adv, (dev, data_adv, data_scan_rsp, type));
+		if (data != NULL) {
+			adv_id = *(uint8_t *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, one_shot_adv, (dev, adv_id));
 	}
 	break;
 	case LWNL_REQ_BLE_SET_ADV_INTERVAL:

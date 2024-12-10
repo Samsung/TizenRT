@@ -106,7 +106,8 @@ trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 trble_result_e trble_netmgr_one_shot_adv_init(struct bledev *dev);
 trble_result_e trble_netmgr_one_shot_adv_deinit(struct bledev *dev);
-trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+trble_result_e trble_netmgr_one_shot_adv_set(struct bledev *dev, uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, uint8_t adv_id);
 
 struct trble_ops g_trble_drv_ops = {
 	// Common
@@ -165,6 +166,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_stop_adv,
 	trble_netmgr_one_shot_adv_init,
 	trble_netmgr_one_shot_adv_deinit,
+	trble_netmgr_one_shot_adv_set,
 	trble_netmgr_one_shot_adv,
 };
 
@@ -507,8 +509,13 @@ trble_result_e trble_netmgr_one_shot_adv_deinit(struct bledev *dev)
 	return rtw_ble_server_one_shot_adv_deinit();
 }
 
-trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type)
+trble_result_e trble_netmgr_one_shot_adv_set(struct bledev *dev, uint8_t *adv_id,trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type)
 {
-	return rtw_ble_server_one_shot_adv(data_adv->data, data_adv->length, data_scan_rsp->data, data_scan_rsp->length, type);
+	return rtw_ble_server_one_shot_adv_set(adv_id, data_adv->data, data_adv->length, data_scan_rsp->data, data_scan_rsp->length, type);
+}
+
+trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, uint8_t adv_id)
+{
+	return rtw_ble_server_one_shot_adv(adv_id);
 }
 
