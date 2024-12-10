@@ -79,6 +79,8 @@ typedef struct
 } BLE_TIZENRT_LEGACY_ADV_INFO;
 
 BLE_TIZENRT_LEGACY_ADV_INFO adv_info_0;
+BLE_TIZENRT_LEGACY_ADV_INFO adv_info_1;
+
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -86,12 +88,6 @@ BLE_TIZENRT_LEGACY_ADV_INFO adv_info_0;
 void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
 {
     switch (callback_msg.type) {
-        case BLE_TIZENRT_CALLBACK_TYPE_ONESHOT_ADV:
-        {
-            uint16_t *adv_ret = callback_msg.u.buf;
-            server_init_parm.oneshot_adv_cb(*adv_ret);
-        }
-        break;
         case BLE_TIZENRT_BONDED_MSG:
         {
             debug_print("Handle bond msg \n");
@@ -1228,35 +1224,9 @@ uint8_t ble_tizenrt_scatternet_parse_scanned_devname(T_LE_SCAN_INFO *scan_info, 
 
 void app_vendor_callback(uint8_t cb_type, void *p_cb_data)
 {
-    T_GAP_VENDOR_CB_DATA cb_data;
-    memcpy(&cb_data, p_cb_data, sizeof(T_GAP_VENDOR_CB_DATA));
-    switch (cb_type)
+    if (os_sem_give(ble_tizenrt_adv_concurrent_sem) == false)
     {
-        case GAP_MSG_VENDOR_CMD_RSP:
-        switch(cb_data.p_gap_vendor_cmd_rsp->command)
-        {
-            case HCI_LE_VENDOR_EXTENSION_FEATURE2:
-            {
-                if (cb_data.p_gap_vendor_cmd_rsp->cause != 0)
-                {
-                    printf("One shot adv resp: cause 0x%x\r\n", cb_data.p_gap_vendor_cmd_rsp->cause);
-                }
-                uint16_t *adv_result = os_mem_alloc(0, sizeof(uint16_t));
-                *adv_result = cb_data.p_gap_vendor_cmd_rsp->cause;
-                if (ble_tizenrt_adv_concurrent_sem != NULL)
-                {
-                    if (os_sem_give(ble_tizenrt_adv_concurrent_sem) == false)
-                    {
-                        printf("os_sem_give ble_tizenrt_adv_concurrent_sem fail!\r\n");
-                    }
-                }
-                if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_ONESHOT_ADV, adv_result) == false)
-                {
-                    os_mem_free(adv_result);
-                    debug_print("callback msg send fail \n");
-                }
-            }
-        }
+        printf("os_sem_give ble_tizenrt_adv_concurrent_sem fail!\r\n");
     }
     return;
 }
@@ -2068,14 +2038,8 @@ T_APP_RESULT ble_tizenrt_scatternet_app_profile_callback(T_SERVER_ID service_id,
     return app_result;
 }
 
-void ble_tizenrt_legacy_adv_concurrent_send_adv_id(uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
+void ble_tizenrt_legacy_adv_concurrent_send_adv_id(uint8_t adv_id)
 {
-    uint8_t adv_id = 0;
-    adv_info_0.adv_data_size = length_adv;
-    memcpy(adv_info_0.adv_data, data_adv, length_adv);
-    memcpy(adv_info_0.scan_rsp_data, data_scan_rsp, length_scan_rsp);
-    adv_info_0.scan_rsp_data_size = length_scan_rsp;
-    adv_info_0.adv_type = *type;
     if (ble_tizenrt_scatternet_adv_concurrent_queue_handle != NULL)
     {
         if (os_msg_send(ble_tizenrt_scatternet_adv_concurrent_queue_handle, &adv_id, 0) == false)
@@ -2092,15 +2056,27 @@ void ble_tizenrt_legacy_adv_concurrent_task(void *p_param)
 {
     uint8_t adv_id = 0;
     BLE_TIZENRT_LEGACY_ADV_INFO adv_info;
+    BLE_TIZENRT_LEGACY_ADV_INFO adv_info_previous;
+    memset(&adv_info_previous, 0, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
     while (1)
     {
         if (os_msg_recv(ble_tizenrt_scatternet_adv_concurrent_queue_handle, &adv_id, 0xFFFFFFFF) == true)
         {
+			if (adv_id == 0) {
             memcpy(&adv_info, &adv_info_0, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
+			} else if (adv_id == 1) {
+				memcpy(&adv_info, &adv_info_1, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
+			}
+            if (!memcmp(&adv_info_previous, &adv_info, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO)))
+            {
+                le_vendor_one_shot_adv();
+            } else {
+                memcpy(&adv_info_previous, &adv_info, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
             le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(uint8_t), (void *)&adv_info.adv_type);
             le_adv_set_param(GAP_PARAM_ADV_DATA, adv_info.adv_data_size, (void *)adv_info.adv_data);
             le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, adv_info.scan_rsp_data_size, (void *)adv_info.scan_rsp_data);
             le_adv_update_param();
+            }
         }
         if (os_sem_take(ble_tizenrt_adv_concurrent_sem, 0xFFFFFFFF) == false)
         {
@@ -2109,10 +2085,29 @@ void ble_tizenrt_legacy_adv_concurrent_task(void *p_param)
     }
 }
 
+
+void ble_tizenrt_legacy_adv_concurrent_data_set(uint8_t *adv_id, uint8_t* data_adv, uint16_t length_adv, uint8_t* data_scan_rsp, uint16_t length_scan_rsp, uint8_t *type)
+{
+	if (*adv_id == 0)
+	{
+	    adv_info_0.adv_data_size = length_adv;
+	    memcpy(adv_info_0.adv_data, data_adv, length_adv);
+	    memcpy(adv_info_0.scan_rsp_data, data_scan_rsp, length_scan_rsp);
+	    adv_info_0.scan_rsp_data_size = length_scan_rsp;
+	    adv_info_0.adv_type = *type;
+	} else if (*adv_id == 1) {
+	    adv_info_1.adv_data_size = length_adv;
+	    memcpy(adv_info_1.adv_data, data_adv, length_adv);
+	    memcpy(adv_info_1.scan_rsp_data, data_scan_rsp, length_scan_rsp);
+	    adv_info_1.scan_rsp_data_size = length_scan_rsp;
+	    adv_info_1.adv_type = *type;
+    }
+}
+
 void ble_tizenrt_legacy_adv_concurrent_init(void)
 {
     os_sem_create(&ble_tizenrt_adv_concurrent_sem, 0, 1);
-    os_msg_queue_create(&ble_tizenrt_scatternet_adv_concurrent_queue_handle, 0x20, sizeof(uint8_t));
+    os_msg_queue_create(&ble_tizenrt_scatternet_adv_concurrent_queue_handle, 0x20, sizeof(BLE_TIZENRT_LEGACY_ADV_INFO));
     os_task_create(&ble_tizenrt_scatternet_adv_concurrent_task_handle, "ble_tizenrt_legacy_adv_concurrent", ble_tizenrt_legacy_adv_concurrent_task,
                         0, BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_STACK_SIZE, BLE_TIZENRT_SCATTERNET_ADV_CONCURRENT_TASK_PRIORITY);
 }

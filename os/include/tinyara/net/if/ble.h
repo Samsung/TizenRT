@@ -125,6 +125,7 @@ typedef enum {
 	LWNL_REQ_BLE_STOP_ADV,
 	LWNL_REQ_BLE_ONE_SHOT_ADV_INIT,
 	LWNL_REQ_BLE_ONE_SHOT_ADV_DEINIT,
+	LWNL_REQ_BLE_ONE_SHOT_ADV_SET,
 	LWNL_REQ_BLE_ONE_SHOT_ADV,
 	LWNL_REQ_BLE_CREATE_ADV,
 	LWNL_REQ_BLE_DELETE_ADV,
@@ -323,7 +324,6 @@ typedef struct {
 	trble_server_connected_t connected_cb;
 	trble_server_disconnected_t disconnected_cb;
 	trble_server_mtu_update_t mtu_update_cb;
-	trble_server_oneshot_adv_t oneshot_adv_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed;
@@ -399,7 +399,8 @@ typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_init)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_deinit)(struct bledev *dev);
-typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+typedef trble_result_e (*trble_one_shot_adv_set)(struct bledev *dev, uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, uint8_t adv_id);
 typedef trble_result_e (*trble_create_multi_adv)(struct bledev *dev, uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
 													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle);
 typedef trble_result_e (*trble_delete_multi_adv)(struct bledev *dev, uint8_t conn_handle);
@@ -466,6 +467,7 @@ struct trble_ops {
 	trble_stop_adv stop_adv;
 	trble_one_shot_adv_init one_shot_adv_init;
 	trble_one_shot_adv_deinit one_shot_adv_deinit;
+	trble_one_shot_adv_set one_shot_adv_set;
 	trble_one_shot_adv one_shot_adv;
 	trble_create_multi_adv create_multi_adv;
 	trble_delete_multi_adv delete_multi_adv;

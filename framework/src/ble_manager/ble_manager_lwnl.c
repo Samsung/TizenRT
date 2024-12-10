@@ -535,11 +535,21 @@ trble_result_e ble_drv_one_shot_adv_deinit()
 	return res;
 }
 
-trble_result_e ble_drv_one_shot_adv(trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type)
+trble_result_e ble_drv_one_shot_adv_set(uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg_params msg_data = { 3, {(void *)data_adv, (void *)data_scan_rsp, (void *)type} };
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	lwnl_msg_params msg_data = { 4, {(void *) adv_id, (void *)data_adv, (void *)data_scan_rsp, (void *)type} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV_SET}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_one_shot_adv(uint8_t adv_id)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_ONE_SHOT_ADV}, sizeof(adv_id), (void *)&adv_id, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
