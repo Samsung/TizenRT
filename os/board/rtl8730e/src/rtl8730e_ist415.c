@@ -72,12 +72,14 @@ struct rtl8730e_ist415_s g_rtl8730e_ist415_priv0;
 
 static void rtl8730e_ist415_enable_irq(void);
 static void rtl8730e_ist415_disable_irq(void);
+static void rtl8730e_ist415_power_off(void);
+static void rtl8730e_ist415_power_on(void);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static struct ist415_dev_s g_ist415_dev0 = {
+struct ist415_dev_s g_ist415_dev0 = {
 	.i2c = NULL,
 	.i2c_config = {
 		.frequency = IST415_I2C_FREQ,
@@ -88,6 +90,8 @@ static struct ist415_dev_s g_ist415_dev0 = {
 	.ops = &(struct ist415_ops_s){
 		.irq_enable = rtl8730e_ist415_enable_irq,
 		.irq_disable = rtl8730e_ist415_disable_irq,
+		.power_off = rtl8730e_ist415_power_off,
+		.power_on = rtl8730e_ist415_power_on,
 	},
 	.priv = &g_rtl8730e_ist415_priv0,
 };
@@ -117,14 +121,34 @@ static void rtl8730e_ist415_irq_handler(uint32_t id, gpio_irq_event event)
 static void rtl8730e_ist415_enable_irq(void)
 {
 	gpio_irq_enable(&g_rtl8730e_ist415_priv0.data_ready);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
 }
 
 static void rtl8730e_ist415_disable_irq(void)
 {
 	gpio_irq_disable(&g_rtl8730e_ist415_priv0.data_ready);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
 }
 
-static void rtl8730e_ist415_gpio_reset(void)
+static void rtl8730e_ist415_power_off(void)
+{
+	up_i2cuninitialize(g_ist415_dev0.i2c);	/* Workaround: IC20 write hang issue */
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
+
+	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
+}
+
+static void rtl8730e_ist415_power_on(void)
+{
+	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
+
+	g_ist415_dev0.i2c = up_i2cinitialize(IST415_I2C_PORT);	/* Workaround: IC20 write hang issue */
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
+}
+
+static void rtl8730e_ist415_reset(void)
 {
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
 	DelayMs(300);
@@ -140,6 +164,7 @@ static void rtl8730e_ist415_gpio_init(void)
 	TouchResetPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	TouchResetPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&TouchResetPin);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
 }
 
 /****************************************************************************
@@ -166,7 +191,7 @@ void rtl8730e_ist415_initialize(void)
 	FAR struct i2c_dev_s *i2c;
 
 	rtl8730e_ist415_gpio_init();
-	rtl8730e_ist415_gpio_reset();
+	//rtl8730e_ist415_reset();
 	i2c = up_i2cinitialize(IST415_I2C_PORT);
 	if (!i2c) {
 		touchdbg("ERROR: Failed to initialize I2C\n");
@@ -174,8 +199,9 @@ void rtl8730e_ist415_initialize(void)
 	}
 	g_ist415_dev0.i2c = i2c;
 	gpio_irq_init(&g_rtl8730e_ist415_priv0.data_ready, IST415_GPIO_I2C_PIN, rtl8730e_ist415_irq_handler, (uint32_t)0);
-	gpio_irq_set(&g_rtl8730e_ist415_priv0.data_ready, IRQ_FALL_RISE, 1);
+	gpio_irq_set(&g_rtl8730e_ist415_priv0.data_ready, IRQ_FALL, 1);
 	gpio_irq_enable(&g_rtl8730e_ist415_priv0.data_ready);
+	DelayMs(1);  /* Workaround: IC20 write hang issue */
 
 	int ret= ist415_initialize(TOUCH_DEV_PATH, &g_ist415_dev0);
 

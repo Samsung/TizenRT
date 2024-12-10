@@ -383,7 +383,7 @@ static void touch_test(void)
 
 	int fd = open(TOUCH_DEV_PATH, O_RDONLY);
 	if (fd < 0) {
-		printf("Error: Failed to open /dev/input0, errno : %d\n", get_errno());
+		printf("Error: Failed to open /dev/touch0, errno : %d\n", get_errno());
 		return;
 	}
 

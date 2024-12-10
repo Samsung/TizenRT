@@ -91,6 +91,10 @@
 #include <tinyara/security_level.h>
 #endif
 
+#ifdef CONFIG_LCD
+#include <tinyara/input/ist415.h>
+#endif
+
 /************************************************************************
  * Private Functions
  ************************************************************************/
@@ -433,6 +437,25 @@ int prctl(int option, ...)
 		va_end(ap);
 		return OK;
 	}
+	case PR_LCD_TUNE:
+	{
+		int cmd = va_arg(ap, int);
+		if (cmd == LCD_CMD_AUTOCALI) {
+			ist415_autocalibration(&g_ist415_dev0);
+		} else if (cmd == LCD_CMD_RAWDATA) {
+			ist415_display_rawdata(&g_ist415_dev0);
+		} else if (cmd == LCD_CMD_CPC) {
+			ist415_display_cpc(&g_ist415_dev0);
+		} else if (cmd == LCD_CMD_INTRDBG) {
+			uint32_t addr = va_arg(ap, uint32_t);
+			int size = va_arg(ap, int);
+			ist415_set_intr_debug(&g_ist415_dev0, addr, size);
+		} else {
+			return ERROR;
+		}
+		return OK;
+	}
+	break;
 	default:
 		sdbg("Unrecognized option: %d\n", option);
 		err = EINVAL;

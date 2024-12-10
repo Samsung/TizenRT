@@ -134,7 +134,15 @@ enum prctl_type_e {
 	PR_REBOOT_REASON_CLEAR,
 	PR_SET_SECURITY_LEVEL,
 	PR_GET_SECURITY_LEVEL,
-	PR_GET_TGTASK
+	PR_GET_TGTASK,
+	PR_LCD_TUNE
+};
+
+enum LCD_TUNE_ENUM {
+	LCD_CMD_AUTOCALI = 0,
+	LCD_CMD_RAWDATA = 1,
+	LCD_CMD_CPC = 2,
+	LCD_CMD_INTRDBG = 3,
 };
 
 /****************************************************************************
