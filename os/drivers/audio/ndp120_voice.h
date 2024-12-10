@@ -80,6 +80,7 @@ struct ndp120_dev_s {
 	volatile bool alive;
 	uint32_t sample_ready_cnt;
 	bool keyword_correction;
+	int pm_id;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
 	pthread_mutex_t ndp_mutex_mbsync;

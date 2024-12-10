@@ -102,7 +102,6 @@ static int ndp120_release(FAR struct audio_lowerhalf_s *dev);
 
 #ifdef CONFIG_PM
 static struct ndp120_dev_s *g_ndp120;
-static int g_ndp120_pm_id;
 
 static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
 static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
@@ -770,7 +769,7 @@ static void ndp120_interrupt_dispatch(int d)
 {
 	struct ndp120_dev_s *priv = (struct ndp120_dev_s *)d;
 #ifdef CONFIG_PM
-	pm_timedsuspend(g_ndp120_pm_id, 10000);
+	pm_timedsuspend(priv->pm_id, 10000);
 #endif
 	ndp120_irq_handler(priv);
 }
@@ -868,6 +867,16 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 
+#ifdef CONFIG_PM
+	/* only used during pm callbacks */
+	g_ndp120 = priv;
+
+	priv->pm_id = pm_domain_register("NDP120");
+	DEBUGASSERT(priv->pm_id >= 0);
+	ret = pm_register(&g_pmndpcb);
+	DEBUGASSERT(ret == OK);
+#endif
+
 	ret = ndp120_init(priv, false);
 	if (ret != OK) {
 		auddbg("ndp120 init failed\n");
@@ -876,13 +885,5 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	}
 
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
-#ifdef CONFIG_PM
-	/* only used during pm callbacks */
-	g_ndp120 = priv;
-
-	g_ndp120_pm_id = pm_domain_register("NDP120");
-	ret = pm_register(&g_pmndpcb);
-	DEBUGASSERT(ret == OK);
-#endif	
 	return &priv->dev;
 }

@@ -86,7 +86,7 @@
 #define KEYWORD_NETWORK_ID 0
 
 /* Periodicity of NDP alivness check thread */
-#define NDP_ALIVENESS_CHECK_PERIOD (3000)
+#define NDP_ALIVENESS_CHECK_PERIOD_US (3 * 1000 * 1000)
 
 #define COMBINED_FLOW_SET_ID  0
 
@@ -1190,12 +1190,14 @@ ndp120_app_device_health_check(void)
 		SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
 
 	while (1) {
+		(void)pm_suspend(dev->pm_id);
 		s = check_firmware_aliveness(dev, wait_period_ms);
 		if (s) {
 			printf("Error: %d in check_firmware_aliveness\n", s);
 			goto out;
 		}
-		pm_sleep(NDP_ALIVENESS_CHECK_PERIOD);
+		(void)pm_resume(dev->pm_id);
+		usleep(NDP_ALIVENESS_CHECK_PERIOD_US);
 	}
 
 out:
