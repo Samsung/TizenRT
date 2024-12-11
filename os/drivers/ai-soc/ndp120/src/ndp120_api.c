@@ -1137,7 +1137,8 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 		(wait_period_ms + 1) * 1000);
 	if (s) {
 		auddbg("Error in getting the status of firmware: %d\n", s);
-		goto out;
+		/* force reload since we are unable to get the status from NDP */
+		state = SYNTIANT_NDP_BOTH_FW_DEAD;
 	}
 
 	if (state != SYNTIANT_NDP_BOTH_FW_ALIVE) {
@@ -1173,7 +1174,6 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 		}
 	}
 
-out:
 	return s;
 }
 
@@ -1193,14 +1193,13 @@ ndp120_app_device_health_check(void)
 		(void)pm_suspend(dev->pm_id);
 		s = check_firmware_aliveness(dev, wait_period_ms);
 		if (s) {
+			/* In the case of failure, try again after sometime */
 			printf("Error: %d in check_firmware_aliveness\n", s);
-			goto out;
 		}
 		(void)pm_resume(dev->pm_id);
 		usleep(NDP_ALIVENESS_CHECK_PERIOD_US);
 	}
 
-out:
 	/* normally won't reach */
 	return NULL;
 }
