@@ -866,6 +866,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 
 	priv->lower = lower;
 	priv->recording = false;
+	priv->mute = false;
 
 #ifdef CONFIG_PM
 	/* only used during pm callbacks */
