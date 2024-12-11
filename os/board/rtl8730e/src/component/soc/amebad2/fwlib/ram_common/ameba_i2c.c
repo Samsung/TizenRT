@@ -613,9 +613,11 @@ void I2C_MasterWrite(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
+	u32 InTimeoutCount = 0;	/* timeout */
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
+		InTimeoutCount = 1000;
 
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
 
@@ -627,10 +629,20 @@ u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		}
 
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
+			/* reset I2C hardware if timeout occured */
+			if (InTimeoutCount == 0) {
+				RTK_LOGW(TAG, "MasterWriteBrk timeout - resetting I2C\n");
+				I2C_Cmd(I2Cx, DISABLE);
+				I2C_Cmd(I2Cx, ENABLE);
+				return cnt;
+			}
+
 			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
 				I2C_ClearAllINT(I2Cx);
 				return cnt;
 			}
+
+			InTimeoutCount--;
 		}
 	}
 
