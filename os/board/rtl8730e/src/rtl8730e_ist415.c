@@ -129,7 +129,7 @@ static void rtl8730e_ist415_gpio_reset(void)
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
 	DelayMs(300);
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(1);  /* Workaround: IC20 write hang issue */
+	DelayMs(1);  /* Wait for stable voltage before i2c commands issued */
 }
 
 static void rtl8730e_ist415_gpio_init(void)
