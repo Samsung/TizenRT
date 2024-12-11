@@ -1334,7 +1334,13 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	dsp_flow_show(dev->ndp);
 #endif
 	ndp120_kd_stop_match_process(dev);
-	ndp120_kd_start(dev);
+
+	if (!dev->mute) {
+		/* turn on interrupts only if mic is unmute */
+		ndp120_kd_start(dev);
+	} else {
+		ndp120_kd_stop(dev);
+	}
 
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = NOT_RECORDING;
