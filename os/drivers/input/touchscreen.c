@@ -48,6 +48,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <fcntl.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/input/touchscreen.h>
@@ -55,8 +56,6 @@
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
-
-#define EVENT_PACKET_SIZE 16
 
 #if !defined(CONFIG_TOUCHL_NPOLLWAITERS)
 #define CONFIG_TOUCH_NPOLLWAITERS 2
@@ -82,13 +81,16 @@ static int touch_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup
  ****************************************************************************/
 
 static const struct file_operations g_touchdev_fileops = {
-	touch_open,		/* open */
-	touch_close,	/* close */
-	touch_read,		/* read */
-	touch_write,	/* write */
-	NULL,			/* seek */
-	touch_ioctl,	/*ioctl */
-	touch_poll,
+	touch_open,     /* open */
+	touch_close,    /* close */
+	touch_read,     /* read */
+	touch_write,    /* write */
+	NULL,           /* seek */
+	touch_ioctl,    /* ioctl */
+#if !defined(CONFIG_DISABLE_POLL)
+	touch_poll,     /* poll */
+#endif
+	NULL            /* unlink */
 };
 
 /************************************************************************************
@@ -123,8 +125,7 @@ static inline void touch_semgive(sem_t *sem)
 
 static int touch_open(FAR struct file *filep)
 {
-	FAR struct touchscreen_s *priv;
-	priv = filep->f_inode->i_private;
+	struct touchscreen_s *priv = (struct touchscreen_s *)filep->f_inode->i_private;
 
 	if (!priv) {
 		return -EINVAL;
@@ -132,7 +133,24 @@ static int touch_open(FAR struct file *filep)
 
 	touch_semtake(&priv->sem, false);
 	if (priv->crefs == 0) {
-		priv->ops->touch_enable(priv);
+
+		priv->tp_buf.head = 0;
+		priv->tp_buf.tail = 0;
+
+		priv->tp_buf.buffer = (struct touch_sample_s *)kmm_zalloc(sizeof(struct touch_sample_s) * CONFIG_TOUCH_BUFSIZE);
+		if (!priv->tp_buf.buffer) {
+			touch_semgive(&priv->sem);
+			return -ENOMEM;
+		}
+		priv->tp_buf.size = CONFIG_TOUCH_BUFSIZE;
+
+		if (priv->ops && priv->ops->touch_enable) {
+			priv->ops->touch_enable(priv);
+		} else {
+			kmm_free(priv->tp_buf.buffer);
+			touch_semgive(&priv->sem);
+			return -EINVAL;
+		}
 	}
 	priv->crefs++;
 	DEBUGASSERT(priv->crefs > 0);
@@ -146,8 +164,7 @@ static int touch_open(FAR struct file *filep)
 
 static int touch_close(FAR struct file *filep)
 {
-	FAR struct touchscreen_s *priv;
-	priv = filep->f_inode->i_private;
+	struct touchscreen_s *priv = (struct touchscreen_s *)filep->f_inode->i_private;
 
 	if (!priv) {
 		return -EINVAL;
@@ -172,6 +189,11 @@ static int touch_close(FAR struct file *filep)
 		}
 		touch_semgive(&priv->pollsem);
 #endif
+		sem_wait(&priv->tp_buf.sem);
+		kmm_free(priv->tp_buf.buffer);
+		priv->tp_buf.buffer = NULL;
+		priv->tp_buf.size = 0;
+		sem_post(&priv->tp_buf.sem);
 	}
 	touch_semgive(&priv->sem);
 	return OK;
@@ -183,23 +205,64 @@ static int touch_close(FAR struct file *filep)
 
 static ssize_t touch_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
-	FAR struct touchscreen_s *priv;
-	size_t outlen;
+	FAR struct touchscreen_s *dev;
+	struct touch_sample_buffer_s *tp_buf;
+	ssize_t recvd = 0;
+	int16_t tail;
 	int ret;
 
-	priv = filep->f_inode->i_private;
-
-	if (!priv || buflen < 1) {
+	dev = filep->f_inode->i_private;
+	if (!dev || buflen < sizeof(struct touch_sample_s)) {
 		return -EINVAL;
 	}
 	/* Wait for semaphore to prevent concurrent reads */
-	touch_semtake(&priv->sem, false);
+	touch_semtake(&dev->sem, false);
 
-	/* Read the touch data, only if screen has been touched or if we're waiting for touch up */
-	outlen = sizeof(struct touch_sample_s);
-	ret = priv->ops->touch_read(priv, buffer);
-	touch_semgive(&priv->sem);
-	return ret < 0 ? ret : outlen;
+	DEBUGASSERT(dev->tp_buf.buffer);
+
+	tp_buf = &dev->tp_buf;
+
+	/* Wait for semaphore to prevent concurrent reads */
+	touch_semtake(&tp_buf->sem, false);
+	while (recvd < buflen) {
+		tail = tp_buf->tail;
+		if (tp_buf->head != tail) {
+			memcpy(buffer, &tp_buf->buffer[tail],  sizeof(struct touch_sample_s));
+
+			if (++tail >= tp_buf->size) {
+				tail = 0;
+			}
+			tp_buf->tail = tail;
+			recvd += sizeof(struct touch_sample_s);
+			buffer += sizeof(struct touch_sample_s);
+		} else if (recvd > 0) {
+			/* Yes.. break out of the loop and return the number of bytes
+			 * received up to the wait condition.
+			 */
+
+			break;
+		} else if ((filep->f_oflags & O_NONBLOCK) != 0) {
+			/* Break out of the loop returning -EAGAIN */
+
+			recvd = -EAGAIN;
+			break;
+		} else {
+			if (tp_buf->head == tp_buf->tail) {
+				touch_semgive(&tp_buf->sem);
+				ret = touch_semtake(&dev->waitsem, true);
+				touch_semtake(&tp_buf->sem, false);
+				if (ret < 0) {
+					recvd = -EINTR;
+					break;
+				}
+			}
+		}
+	}
+
+	touch_semgive(&tp_buf->sem);
+	touch_semgive(&dev->sem);
+
+	return recvd;
 }
 
 /****************************************************************************
@@ -226,33 +289,13 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	struct touchscreen_cmd_s *args;
 	int ret = OK;
 
-	priv = filep->f_inode->i_private;
+	priv = (struct touchscreen_s *)filep->f_inode->i_private;
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	touch_semtake(&priv->sem, false);
-
 	switch (cmd) {		
-#if defined(CONFIG_TOUCH_CALLBACK)
-		case TSIOC_SETAPPNOTIFY: {
-			struct touch_set_callback_s *touch_app = (struct touch_set_callback_s *)arg;
-			priv->app_touch_point_buffer = touch_app->touch_points;
-			priv->is_touch_detected = touch_app->is_touch_detected;
-			touchvdbg("App notification callback register is successful\n");
-		}
-		break;
-#endif
-		case TSIOC_DISABLE: {
-			priv->ops->touch_disable(priv);
-		}
-		break;
-
-		case TSIOC_ENABLE: {
-			priv->ops->touch_enable(priv);
-		}
-		break;
-
 		case TSIOC_CMD:
 			args = (struct touchscreen_cmd_s *)arg;
 			if (priv->ops && priv->ops->cmd) {
@@ -300,7 +343,6 @@ int touch_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 	pollevent_t eventset;
 	int ret;
 	int i;
-	bool pending = false;
 
 	if (!priv || !fds) {
 		return -ENODEV;
@@ -337,14 +379,11 @@ int touch_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		}
 
 		eventset = 0;
-		touch_semtake(&priv->sem, false);
-		pending = priv->ops->is_touchSet(priv);
-
-		if (pending) {
+		touch_semtake(&priv->tp_buf.sem, false);
+		if (priv->tp_buf.head != priv->tp_buf.tail) {
 			eventset |= (fds->events & POLLIN);
 		}
-		touch_semgive(&priv->sem);
-
+		touch_semgive(&priv->tp_buf.sem);
 		if (eventset) {
 			touch_pollnotify(priv, POLLIN);
 		}
@@ -364,12 +403,52 @@ errout:
 #endif // CONFIG_DISABLE_POLL
 
 /****************************************************************************
- * Name: touch_notify
+ * Name: touch_report
  ****************************************************************************/
 
-void touch_notify(struct touchscreen_s *dev)
+void touch_report(struct touchscreen_s *dev, struct touch_sample_s *data)
 {
+	struct touch_sample_buffer_s *tp_buf;
+	int nexthead;
+	int semcount;
+	int ret;
+
+	DEBUGASSERT(dev);
+
+	tp_buf = &dev->tp_buf;
+
+	if (!tp_buf->buffer) {
+		/* The touch reading app is not ready, Skip buffer touch data. */
+		return;
+	}
+
+	touch_semtake(&tp_buf->sem, false);
+
+	nexthead = tp_buf->head + 1;
+	if (nexthead >= tp_buf->size) {
+		nexthead = 0;
+	}
+
+	if (nexthead == tp_buf->tail) {
+		touchdbg("buffer is full\n");
+		if (++tp_buf->tail >= tp_buf->size) {
+			tp_buf->tail = 0;
+		}
+	}
+
+	memcpy(&tp_buf->buffer[tp_buf->head], data, sizeof(struct touch_sample_s));
+	tp_buf->head = nexthead;
+
+	touch_semgive(&tp_buf->sem);
+
+	ret = sem_getvalue(&dev->waitsem, &semcount);
+	if (ret == OK && semcount < 1) {
+		sem_post(&dev->waitsem);
+	}
+#if !defined(CONFIG_DISABLE_POLL)
 	touch_pollnotify(dev, POLLIN);
+#endif
+
 }
 
 /****************************************************************************
@@ -395,7 +474,9 @@ int touch_register(const char *path, struct touchscreen_s *dev)
 {
 	sem_init(&dev->sem, 0, 1);
 	sem_init(&dev->pollsem, 0, 1);
-	dev->notify_touch = touch_notify;
+	sem_init(&dev->waitsem, 0, 0);
+	sem_init(&dev->tp_buf.sem, 0, 1);
+	dev->crefs = 0;
 #if !defined(CONFIG_DISABLE_POLL)
 	(void)touch_semtake(&dev->pollsem, false);
 	for (int i = 0; i < CONFIG_TOUCH_NPOLLWAITERS; i++) {

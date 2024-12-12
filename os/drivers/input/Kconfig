@@ -44,6 +44,28 @@ config TOUCH_NPOLLWAITERS
 	---help---
 		Number of waiting fds to read touch data
 
+config TOUCH_BUFSIZE
+	int "Touch point buffer size"
+	default 5
+	---help---
+		The touch points are buffered. One size means one
+		touched pointer.
+
+if TOUCH_IST415
+
+config IST415_WORKPRIORITY
+	int "ist415 irq process thread priority"
+	default 130
+	---help---
+		The execution priority of the ist415 touchscreen irq process thread.
+
+		When an interrupt occurs from the touchscreen IC, the thread reads
+		the data of the IC through I2C to process the event.
+		For example, it distinguishes whether it is touch data or not and
+		generates a touch point event. If it is not touch data, it performs
+		related tasks and waits next event.
+
+endif # TOUCH_IST415
 endif # TOUCH
 
 endmenu # Touch Device Support

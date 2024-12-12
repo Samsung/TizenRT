@@ -57,7 +57,7 @@ include $(APPDIR)/Make.defs
 # Power Daemon built-in application info
 APPNAME = touchscreen
 PRIORITY = 100
-STACKSIZE = 1024
+STACKSIZE = 4096
 FUNCNAME = $(APPNAME)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
