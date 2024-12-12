@@ -30,22 +30,7 @@
  * DEALINGS IN THE SOFTWARE.
  	** SDK: v112.3.7-Samsung **
 */
-/*
- * ILib-internal NDP115 driver-specific definitions
- */
-#ifndef SYNTIANT_NDP115_DRIVER_H
-#define SYNTIANT_NDP115_DRIVER_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <syntiant_ilib/syntiant_ndp120_driver.h>
-
-extern struct syntiant_ndp_driver_s syntiant_ndp115_driver;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+void uart_write_str(char *str);
+void uart_write_hex(uint32_t hex);

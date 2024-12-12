@@ -28,9 +28,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
-
 /*
  * ******* Automatically generated for ndp120_spi v2.00  DO NOT MODIFY!!!!!
  *          Generated Wed Sep 16 00:42:33 2020 UTC

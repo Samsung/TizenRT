@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
 #ifndef SYNTIANT_NDP120_H
 #define SYNTIANT_NDP120_H
@@ -324,7 +324,8 @@ enum {
     /* PDM clock mode */
     SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_EXTERNAL,
     SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL,
-    SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_DUAL_INTERNAL
+    SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_DUAL_INTERNAL,
+    SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_THROUGH
 };
 
 enum {
@@ -2629,16 +2630,16 @@ int syntiant_ndp120_set_get_dnn_run_delay(struct syntiant_ndp_device_s *ndp,
     src_type, uint32_t *delay, uint32_t set);
 
 /**
- * @brief NDP120 enable/disable barge-in.
+ * @brief NDP120 config barge-in.
  *
- * Enables/disables the barge-in by sending MB cmd to DSP.
+ * Configure the barge-in state by sending MB cmd to DSP.
  *
  * @param ndp NDP state object
- * @param enable indicates enable/disable.
+ * @param config indicates init/status.
  * @return a @c SYNTIANT_NDP_ERROR_* code
  */
-int syntiant_ndp120_enable_disable_barge_in(struct syntiant_ndp_device_s *ndp,
-        int enable);
+int syntiant_ndp120_config_barge_in(struct syntiant_ndp_device_s *ndp,
+        int config);
 
 /** @brief Get Core2 device type
  * @param ndp NDP state obkect
