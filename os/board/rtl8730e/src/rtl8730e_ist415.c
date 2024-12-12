@@ -46,10 +46,6 @@
 #define IST415_I2C_PORT		1
 #endif
 
-#define IST415_I2C_FREQ		100000
-#define IST415_I2C_ADDRLEN	7
-#define IST415_I2C_ADDR		(0xA0 >> 1) 
-
 /* pin config */
 #define IST415_GPIO_RESET_PIN	PA_5
 #if CONFIG_RTL8730E_BOARD_REVISION >= 6
@@ -63,32 +59,32 @@
  ****************************************************************************/
 struct rtl8730e_ist415_s {
 	gpio_irq_t data_ready;
+	struct i2c_dev_s *i2c; /* Workaround: IC20 write hang issue */
 };
 
-struct rtl8730e_ist415_s g_rtl8730e_ist415_priv0;
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-static void rtl8730e_ist415_enable_irq(void);
-static void rtl8730e_ist415_disable_irq(void);
+static void rtl8730e_ist415_enable_irq(struct ist415_config_s *dev);
+static void rtl8730e_ist415_disable_irq(struct ist415_config_s *dev);
+static void rtl8730e_ist415_power_off(struct ist415_config_s *dev);
+static void rtl8730e_ist415_power_on(struct ist415_config_s *dev);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+struct rtl8730e_ist415_s g_rtl8730e_ist415_priv0;
 
-static struct ist415_dev_s g_ist415_dev0 = {
-	.i2c = NULL,
-	.i2c_config = {
-		.frequency = IST415_I2C_FREQ,
-		.address = IST415_I2C_ADDR,
-		.addrlen = IST415_I2C_ADDRLEN,
-	},
-	.int_pending = false,
-	.ops = &(struct ist415_ops_s){
-		.irq_enable = rtl8730e_ist415_enable_irq,
-		.irq_disable = rtl8730e_ist415_disable_irq,
-	},
+struct ist415_ops_s g_rtl8730e_ist415_ops = {
+	.irq_enable = rtl8730e_ist415_enable_irq,
+	.irq_disable = rtl8730e_ist415_disable_irq,
+	.power_off = rtl8730e_ist415_power_off,
+	.power_on = rtl8730e_ist415_power_on,
+};
+
+struct ist415_config_s g_rtl8730e_ist415_0 = {
+	.ops = &g_rtl8730e_ist415_ops,
 	.priv = &g_rtl8730e_ist415_priv0,
 };
 
@@ -103,33 +99,41 @@ static void rtl8730e_ist415_irq_handler(uint32_t id, gpio_irq_event event)
 	 * until we finish this particular interrupt related work
 	 * in the HPWORK thread
 	 */
-	struct ist415_dev_s *dev;
+	struct ist415_config_s *dev;
 	if (id == 0) {
-		dev =  &g_ist415_dev0;
+		dev =  &g_rtl8730e_ist415_0;
 	}
-	struct rtl8730e_ist415_s *priv = dev->priv;
 
 	if (dev->handler != NULL) {
 		dev->handler(dev);
 	}
 }
 
-static void rtl8730e_ist415_enable_irq(void)
+static void rtl8730e_ist415_enable_irq(struct ist415_config_s *dev)
 {
-	gpio_irq_enable(&g_rtl8730e_ist415_priv0.data_ready);
+	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
+	gpio_irq_enable(&priv->data_ready);
 }
 
-static void rtl8730e_ist415_disable_irq(void)
+static void rtl8730e_ist415_disable_irq(struct ist415_config_s *dev)
 {
-	gpio_irq_disable(&g_rtl8730e_ist415_priv0.data_ready);
+	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
+	gpio_irq_disable(&priv->data_ready);
 }
 
-static void rtl8730e_ist415_gpio_reset(void)
+static void rtl8730e_ist415_power_off(struct ist415_config_s *dev)
 {
+	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
+	up_i2cuninitialize(priv->i2c);	/* Workaround: IC20 write hang issue */
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
-	DelayMs(300);
+}
+
+static void rtl8730e_ist415_power_on(struct ist415_config_s *dev)
+{
+	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);
 	DelayMs(1);  /* Wait for stable voltage before i2c commands issued */
+	priv->i2c = up_i2cinitialize(IST415_I2C_PORT);	/* Workaround: IC20 write hang issue */
 }
 
 static void rtl8730e_ist415_gpio_init(void)
@@ -163,25 +167,25 @@ static void rtl8730e_ist415_gpio_init(void)
  ****************************************************************************/
 void rtl8730e_ist415_initialize(void)
 {
-	FAR struct i2c_dev_s *i2c;
+	struct i2c_dev_s *i2c;
+	struct ist415_config_s *dev = &g_rtl8730e_ist415_0;
+	struct rtl8730e_ist415_s *priv = dev->priv;
 
 	rtl8730e_ist415_gpio_init();
-	rtl8730e_ist415_gpio_reset();
+	
 	i2c = up_i2cinitialize(IST415_I2C_PORT);
 	if (!i2c) {
 		touchdbg("ERROR: Failed to initialize I2C\n");
 		return;
 	}
-	g_ist415_dev0.i2c = i2c;
-	gpio_irq_init(&g_rtl8730e_ist415_priv0.data_ready, IST415_GPIO_I2C_PIN, rtl8730e_ist415_irq_handler, (uint32_t)0);
-	gpio_irq_set(&g_rtl8730e_ist415_priv0.data_ready, IRQ_FALL_RISE, 1);
-	gpio_irq_enable(&g_rtl8730e_ist415_priv0.data_ready);
+	priv->i2c = i2c; /* Workaround: IC20 write hang issue */
 
-	int ret= ist415_initialize(TOUCH_DEV_PATH, &g_ist415_dev0);
+	gpio_irq_init(&priv->data_ready, IST415_GPIO_I2C_PIN, rtl8730e_ist415_irq_handler, (uint32_t)0);
+	gpio_irq_set(&priv->data_ready, IRQ_FALL, 1);
 
-	if (ret < 0) {
+	if (ist415_initialize(TOUCH_DEV_PATH, i2c, dev) < 0) {
 		touchdbg("ERROR: Touch driver register fail\n");
-		return;
+		up_i2cuninitialize(i2c);
 	}
-	touchvdbg("Touch driver register success\n");
+	touchdbg("Touch driver register success\n");
 }
