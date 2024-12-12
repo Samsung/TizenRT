@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -2492,6 +2492,7 @@ syntiant_ndp120_config_pdm_no_sync(
     uint32_t decimation;
     uint32_t main_clk = 0;
     uint32_t main_clk_at_last_config = 0;
+    unsigned int pdm_mode;
 
     if (!config->set && !config->get) {
         DEBUG_PRINTF("not get or set, returning\n");
@@ -2741,15 +2742,22 @@ syntiant_ndp120_config_pdm_no_sync(
                 }
             break;
             case SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL:
+            case SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_THROUGH:
+                if (config->clk_mode ==
+                    SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL) {
+                    pdm_mode = NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT;
+                } else {
+                    pdm_mode = NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_THRU;
+                }
 
                 /* audctrl */
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_INSERT(audctrl, 1);
-                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT);
+                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, pdm_mode);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTDIV_MASK_INSERT(audctrl, main_clk / 2 / config->pdm_rate);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PCLK0_EN_INSERT(audctrl, 1);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PCLK1_EN_MASK_INSERT(audctrl, 0);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_OE_MASK_INSERT(audctrl, 1);
-                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 0x5);
+                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 0x7);
 
                 switch (config->mode) {
                     case SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_LEFT:
