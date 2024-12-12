@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * drivers/input/ist415.h
+ * drivers/input/ist415_misc.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -35,26 +35,53 @@
  *
  ****************************************************************************/
 
-#include <tinyara/i2c.h>
+#ifndef __DRIVERS_INPUT_IST415_MISC_H
+#define __DRIVERS_INPUT_IST415_MISC_H
 
-struct ist415_config_s;
-struct ist415_ops_s {
-	CODE void (*irq_enable)(struct ist415_config_s *dev);	/* Enables the irq */
-	CODE void (*irq_disable)(struct ist415_config_s *dev);	/* Disables the irq */
-	CODE void (*power_off)(struct ist415_config_s *dev);	/* low the reset */
-	CODE void (*power_on)(struct ist415_config_s *dev);	/* High the reset */
-};
+#include "ist415.h"
 
-/* IST415 Device */
-struct ist415_config_s {
+// Recording
+#define REC_START_SCAN              	2
+#define REC_ENABLE                  	1
+#define REC_DISABLE                 	0
 
-	void (*handler)(struct ist415_config_s *dev);
+// SelfTest
+//#define USE_SELFTEST_CS
 
-	const struct ist415_ops_s *ops;
+#define CMCS_FLAG_CM                	(1 << 0)
+#define CMCS_FLAG_JITTER            	(1 << 2)
 
-	void *upper;				/* Used by the ist415 common upper structure */
-	void *priv;					/* Used by the chipset-specific logic */
+#define CM_MSG_VALID                	0xC3
+#define JITTER_MSG_VALID            	0x71
 
-};
+#define SELFTEST_CM_MSG					(0xC3)
+#define SELFTEST_JITTER_MSG				(0x71)
 
-int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_config_s *conifg);
+#define SELFTEST_PASS					(0x10)
+#define SELFTEST_FAIL					(0x80)
+
+// RawData
+#define MTL_CDC_REGISTER				0x40000000
+#define SLF_CDC_REGISTER				0x40001768
+
+#define MTL_CPC_REGISTER				0x300505A0
+#define SLF_CPC_REGISTER				0x30040290
+
+// Calibration
+#define CALIB_MSG_MASK                  0xF0000FFF
+#define CALIB_MSG_VALID                 0x80000CAB
+#define CALIB_TO_GAP(n)                 ((n >> 16) & 0xFFF)
+#define CALIB_TO_STATUS(n)              ((n >> 12) & 0xF)
+
+
+void ist415_calibrate(struct ist415_dev_s *dev, uint8_t retry);
+int ist415_read_info(struct ist415_dev_s *dev);
+int ist415_get_info(struct ist415_dev_s *dev);
+void ist415_autocalibration(struct ist415_dev_s *dev);
+int ist415_set_intr_debug(struct ist415_dev_s *dev, int argc, char **argv);
+void ist415_run_intr_debug(struct ist415_dev_s *dev);
+void ist415_display_cpc(struct ist415_dev_s *dev);
+void ist415_display_rawdata(struct ist415_dev_s *dev);
+int ist415_selftest(struct ist415_dev_s *dev);
+
+#endif				/* __DRIVERS_INPUT_IST415_MISC_H */
