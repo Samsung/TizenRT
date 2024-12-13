@@ -325,12 +325,8 @@ static int tash_cat(int argc, char **args)
 			read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
 			if (read_size > 0) {
 				int output_size = 0;
-				fscmd_buffer[read_size] = '\0';
 				while (output_size < read_size) {
 					FSCMD_OUTPUT("%c", fscmd_buffer[output_size++]);
-					if (output_size % 100 == 0) {
-						FSCMD_OUTPUT("\n");
-					}
 				}
 			}
 		} while (read_size > 0);
