@@ -874,8 +874,6 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 
 	priv->pm_id = pm_domain_register("NDP120");
 	DEBUGASSERT(priv->pm_id >= 0);
-	ret = pm_register(&g_pmndpcb);
-	DEBUGASSERT(ret == OK);
 #endif
 
 	ret = ndp120_init(priv, false);
@@ -884,6 +882,12 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 		free(priv);
 		return NULL;
 	}
+
+#ifdef CONFIG_PM
+	/* register callbacks only if NDP init is done */
+	ret = pm_register(&g_pmndpcb);
+	DEBUGASSERT(ret == OK);
+#endif
 
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
 	return &priv->dev;
