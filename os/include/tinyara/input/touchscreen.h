@@ -87,6 +87,7 @@
 #define TSIOC_DISABLE        _TSIOC(0x0005)  /* Disable touch interrupt */
 #define TSIOC_ENABLE         _TSIOC(0x0006)  /* Enable touch interrupt */
 #define TSIOC_SETAPPNOTIFY   _TSIOC(0x0007)  /* arg: Pointer to struct touch_set_callback_s. Support available only when CONFIG_TOUCH_CALLBACK is enabled */
+#define TSIOC_CMD            _TSIOC(0x0008)  /* arg: Pointer to struct touchscreen_cmd_s */
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
 
@@ -171,6 +172,11 @@ struct touch_sample_s {
 	struct touch_point_s point[TOUCH_MAX_POINTS]; /* Actual dimension is npoints */
 };
 
+struct touchscreen_cmd_s {
+	int argc;
+	char **argv;
+};
+
 #if defined(CONFIG_TOUCH_CALLBACK)
 
 struct touch_set_callback_s {
@@ -190,6 +196,7 @@ struct touchscreen_ops_s {
 
 	/* It's set to true when there is touch interrupt and set to false after data is read from device */
 	bool (*is_touchSet)(struct touchscreen_s *dev);
+	int (*cmd)(struct touchscreen_s *upper, int argc, char **argvc);
 };
 
 /*
