@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TOUCHSCREEN
+	bool "touchscreen example"
+	default n
+	depends on TOUCH
+	---help---
+		Enable touchscreen example
+
+config USER_ENTRYPOINT
+	string
+	default "touchscreen_main" if ENTRY_TOUCHSCREEN
