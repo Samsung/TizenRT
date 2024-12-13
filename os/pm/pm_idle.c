@@ -99,6 +99,16 @@ void pm_idle(void)
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_idle();
 #endif
+#ifdef CONFIG_PM_TIMEDWAKEUP
+		/* get wakeup timer */
+		if (newstate == PM_SLEEP) {
+			delay = wd_getwakeupdelay();
+			if ((delay > 0) && (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS))) {
+				pmvdbg("Wdog Timer Delay: %ldms is less than SLEEP_ENTRY_WAIT: %ldms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
+				goto EXIT;
+			}
+		}
+#endif
 		/* Perform state-dependent logic here */
 		/* For SMP case, we need to check secondary core status
 	     * If secondary core status is not in idle thread, abort
@@ -118,12 +128,12 @@ void pm_idle(void)
 				if (!up_get_gating_flag_status(cpu)) {
 					up_set_gating_flag_status(cpu, 1);
 					up_cpu_gating(cpu);
+					gated_cpu_count = cpu;
 				}
 				while (up_get_gating_flag_status(cpu) == 1) {
 					/* If there is a pause request, we should handle it first */
 					if (up_cpu_pausereq(up_cpu_index())) {
-						pmdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
-						gated_cpu_count = cpu;
+						pmdbg("Sleep abort! CPU%d\n", cpu);
 						goto EXIT;
 					}
 				}
@@ -133,20 +143,9 @@ void pm_idle(void)
 				 * pause request on primary core 
 				 */
 				if (tcb->pid != cpu) {
-					pmdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
-					gated_cpu_count = cpu;
+					pmvdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
 					goto EXIT;
 				}
-			}
-		}
-#endif
-#ifdef CONFIG_PM_TIMEDWAKEUP
-		/* get wakeup timer */
-		if (newstate == PM_SLEEP) {
-			delay = wd_getwakeupdelay();
-			if ((delay > 0) && (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS))) {
-				pmvdbg("Wdog Timer Delay: %ldms is less than SLEEP_ENTRY_WAIT: %ldms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
-				goto EXIT;
 			}
 		}
 #endif
@@ -169,8 +168,9 @@ void pm_idle(void)
 			/* Reset core gating status flag */
 			up_set_gating_flag_status(cpu, 0);
 			/* Check whether each of the cpu has entered hotplug */
-			while(up_get_cpu_state(cpu) != CPU_HOTPLUG);
+			while (up_get_cpu_state(cpu) != CPU_HOTPLUG);
 		}
+		gated_cpu_count = 0;
 #endif
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		/* set wakeup timer */
