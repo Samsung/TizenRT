@@ -1606,8 +1606,15 @@ int ndp120_irq_handler(struct ndp120_dev_s *dev)
 int ndp120_set_sample_ready_int(struct ndp120_dev_s *dev, int on)
 {
 	int s;
-	s = syntiant_ndp120_config_notify_on_sample_ready(dev->ndp, on);
-	auddbg("sample ready state (%d), ret (%d)\n", on, s);
+	int retry_count = 3;
+	do {
+		retry_count--;
+		s = syntiant_ndp120_config_notify_on_sample_ready(dev->ndp, on);
+		auddbg("sample ready state (%d), ret (%d)\n", on, s);
+		if (retry_count == 0) {
+			break;
+		}
+	} while (s != SYNTIANT_NDP_ERROR_NONE);
 	return s;
 }
 
@@ -1746,6 +1753,9 @@ int ndp120_start_sample_ready(struct ndp120_dev_s *dev)
 	dev->recording = true;
 
 	s =  ndp120_set_sample_ready_int(dev, 1);
+	if (s) {
+		return s;
+	}
 
 	uint32_t bytes_before_match = 0;
 
