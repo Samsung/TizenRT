@@ -143,12 +143,13 @@ CSIFW_RES csi_service_init(csi_config_type_t config_type, client_raw_data_listen
 	CSIFW_RES res = CSIFW_OK;
 	g_csi_config_type = config_type;
 	g_service_interval = interval;
-	
-	if (g_csi_config_type == HT_CSI_DATA || g_csi_config_type == HT_CSI_DATA_ACC1) {
 		ping_generator_change_interval(g_service_interval);
-	} else if (g_csi_config_type == NON_HT_CSI_DATA || g_csi_config_type == NON_HT_CSI_DATA_ACC1) {
-		ping_generator_change_interval(0);
-	}
+	
+	// if (g_csi_config_type == HT_CSI_DATA || g_csi_config_type == HT_CSI_DATA_ACC1) {
+	// 	ping_generator_change_interval(g_service_interval);
+	// } else if (g_csi_config_type == NON_HT_CSI_DATA || g_csi_config_type == NON_HT_CSI_DATA_ACC1) {
+	// 	ping_generator_change_interval(0);
+	// }
 
 	gParsedDataBufferLen = CSIFW_MAX_RAW_BUFF_LEN;
 	g_parsed_buffptr = (float *)malloc(sizeof(float) * gParsedDataBufferLen);
@@ -305,12 +306,14 @@ CSIFW_RES csi_service_change_interval(unsigned int interval)
 	WAIT_SEMAPHORE(g_sema)
 	g_service_interval = interval;
 	int res = CSIFW_OK;
-	if(g_csi_config_type == HT_CSI_DATA || g_csi_config_type == HT_CSI_DATA_ACC1){
 		ping_generator_change_interval(interval);
-	}
-	else{
-		res = csi_packet_change_interval(interval);
-	}
+
+	// if(g_csi_config_type == HT_CSI_DATA || g_csi_config_type == HT_CSI_DATA_ACC1){
+	// 	ping_generator_change_interval(interval);
+	// }
+	// else{
+	// 	res = csi_packet_change_interval(interval);
+	// }
 	POST_SEMAPHORE(g_sema);
 	return res;
 }

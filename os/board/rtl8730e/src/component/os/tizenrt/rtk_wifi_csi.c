@@ -141,7 +141,7 @@ static int rtk_wifi_csi_set_config(unsigned long arg)
 			break;
 		
 		case NON_HT_CSI_DATA:
-			g_rtk_drv->act_param.mode = CSI_MODE_RX_RESP;
+			g_rtk_drv->act_param.mode = CSI_MODE_NORMAL;
 			g_rtk_drv->act_param.ch_opt = CSI_CH_LEGACY;
 			g_rtk_drv->act_param.data_rate = 0xC;
 			g_rtk_drv->act_param.accuracy = CSI_ACCU_1BYTE;
@@ -149,7 +149,7 @@ static int rtk_wifi_csi_set_config(unsigned long arg)
 			break;
 
 		case NON_HT_CSI_DATA_ACC1:
-			g_rtk_drv->act_param.mode = CSI_MODE_RX_RESP;
+			g_rtk_drv->act_param.mode = CSI_MODE_NORMAL;
 			g_rtk_drv->act_param.ch_opt = CSI_CH_LEGACY;
 			g_rtk_drv->act_param.data_rate = 0xC;
 			g_rtk_drv->act_param.accuracy = CSI_ACCU_2BYTES;
