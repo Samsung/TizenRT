@@ -451,16 +451,16 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume);
  * Name: get_output_stream_volume
  *
  * Description:
- *   Get current volume level set for the given stream info.
+ *   Get current volume level stored in active output audio card for the given stream policy.
  *
  * Input parameter:
- *   volume: the pointer to get the current volume value
- *   stream_info: pointer to structure containing stream information
+ *   volume: the pointer to get the volume level
+ *   stream_policy: policy of the stream
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_info_t *stream_info);
+audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_policy_t stream_policy);
 
 /****************************************************************************
  * Name: set_input_audio_gain
@@ -480,31 +480,34 @@ audio_manager_result_t set_input_audio_gain(uint8_t gain);
  * Name: set_output_audio_volume
  *
  * Description:
- *   Adjust the volume level of the active output audio device.
- *   Also, updates volume level in the json corresponding to input stream info.
+ *   Updates the volume level in json & in active output audio card volume array
+ *   for the given stream policy type. If card policy matches with the given policy,
+ *   it also adjusts the volume level of the active output audio device. Otherwise,
+ *   adjust later when given policy stream is played.
  *
  * Input parameter:
  *   volume: volume value to set, Min = 0, Max = get_max_audio_volume()
- * 	 stream_info: pointer to structure containing stream information
+ * 	 stream_policy: policy of the stream
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *stream_info);
+audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t stream_policy);
 
 /****************************************************************************
  * Name: set_output_stream_volume
  *
  * Description:
- *   Adjust the volume level of the active output audio device based on the stream policy type.
+ *   Adjust the volume level of the active output audio device based on the volume level
+ *   stored in json for the given stream policy type.
  *
  * Input parameter:
- *   stream_info: pointer to structure containing stream information
+ *   stream_policy: policy of the stream
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info);
+audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy);
 
 /****************************************************************************
  * Name: set_output_audio_equalizer
@@ -801,6 +804,57 @@ audio_manager_result_t set_mic_mute(void);
  *   On successfully performing mic unmute operation, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t set_mic_unmute(void);
+
+/****************************************************************************
+ * Name: set_audio_stream_mute
+ *
+ * Description:
+ *   Sets the mute state for given stream policy. Valid only for STREAM_TYPE_NOTIFY
+ *   and STREAM_TYPE_VOICE_RECORD. For other stream policies, it will return error.
+ *   First, it updates the mute state of given stream policy in json and then sets
+ *   the mute state in active i/o audio device.
+ *   In case of output stream, if card policy doesnot matches with the given stream
+ *   policy, mute state will be set later in the active output audio device when given
+ *   policy stream is played.
+ *
+ * Input parameter:
+ * 	 stream_policy: policy of the stream
+ *   mute: mute state to be set
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool mute);
+
+/****************************************************************************
+ * Name: set_audio_stream_mute_from_json
+ *
+ * Description:
+ *   It fetches the mute state of given stream policy from json and then sets it in
+ *   active i/o audio device.
+ *
+ * Input parameter:
+ * 	 stream_policy: policy of the stream
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_policy);
+
+/****************************************************************************
+ * Name: get_audio_stream_mute_state
+ *
+ * Description:
+ *   It gets the mute state of given stream policy stored in json.
+ *
+ * Input parameter:
+ * 	 stream_policy: policy of the stream
+ *   mute: pointer to store the mute state of given stream policy
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy, bool *mute);
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
