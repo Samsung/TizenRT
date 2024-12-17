@@ -184,12 +184,12 @@ static const struct audio_samprate_map_entry_s g_audio_samprate_entry[] = {
 };
 
 static const uint8_t g_audio_stream_volume_entry[6][16] = {
-	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_MEDIA
-	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_NOTIFY
-	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_BIXBY
+	{0, 54, 58, 65, 70, 73, 76, 79, 81, 84, 86, 88, 90, 92, 94, 97}, //STREAM_TYPE_MEDIA
+	{0, 66, 69, 72, 75, 78, 81, 84, 86, 88, 90, 92, 94, 96, 98, 100}, //STREAM_TYPE_NOTIFY
+	{0, 66, 69, 72, 75, 78, 81, 84, 86, 88, 90, 92, 94, 96, 98, 100}, //STREAM_TYPE_BIXBY
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ,0, 0, 0},//STREAM_TYPE_RECORDER, not available for now 
-	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_VOIP
-	{0, 50, 55, 60, 65, 70, 75, 80, 82, 83, 85, 90, 92, 93, 95, 100}, //STREAM_TYPE_EMERGENCY
+	{0, 54, 64, 69, 74, 79, 83, 88, 88, 88, 88, 88, 88, 88, 88, 88}, //STREAM_TYPE_VOIP
+	{0, 66, 69, 72, 75, 78, 81, 84, 86, 88, 90, 92, 94, 96, 98, 100}, //STREAM_TYPE_EMERGENCY
 };
 
 static cJSON *gJSON = NULL;
@@ -209,6 +209,7 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
 static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, uint32_t preset);
+static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream_policy_t stream_policy, bool mute);
 static audio_manager_result_t create_volume_level_json(void);
 static audio_manager_result_t parse_volume_level_json(void);
 static audio_manager_result_t update_volume_level_json(void);
@@ -688,6 +689,54 @@ static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, u
 	return ret;
 }
 
+static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream_policy_t stream_policy, bool mute)
+{
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+
+	if (direct == INPUT) {
+		if (g_actual_audio_in_card_id < 0) {
+			meddbg("Found no active input audio card\n");
+			return AUDIO_MANAGER_NO_AVAIL_CARD;
+		}
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	} else {
+		if (g_actual_audio_out_card_id < 0) {
+			meddbg("Found no active output audio card\n");
+			return AUDIO_MANAGER_NO_AVAIL_CARD;
+		}
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		if (stream_policy != card->policy) {
+			meddbg("Policy mismatch, given_policy: %d, card_policy: %d. Mute state for given policy will be set when it will play\n", stream_policy, card->policy);
+			return AUDIO_MANAGER_SUCCESS;
+		}
+	}
+
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_format.hw = AUDIO_FU_MUTE;
+	caps_desc.caps.ac_controls.b[0] = mute;
+
+	get_card_path(card_path, card->card_id, card->device_id, direct);
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to mute audio, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		}
+		pthread_mutex_unlock(&(card->card_mutex));
+		return ret;
+	}
+	medvdbg("Audio Mute Success\n");
+
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
 audio_manager_result_t create_volume_level_json(void)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
@@ -702,9 +751,24 @@ audio_manager_result_t create_volume_level_json(void)
 		close(fd);
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
+	cJSON *muteStatusJsonObj = cJSON_CreateObject();
+	if (!muteStatusJsonObj) {
+		meddbg("Failed to create json object for stream mute status\n");
+		cJSON_Delete(json);
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	const char *jsonKey;
+	for (uint8_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
+		jsonKey = getJSONKey((stream_policy_t)i);
+		cJSON_AddNumberToObject(json, jsonKey, gDefaultVolumeLevel);
+		cJSON_AddBoolToObject(muteStatusJsonObj, jsonKey, false);
+	}
+	cJSON_AddItemToObject(json, "STREAM_TYPE_MUTE_STATUS", muteStatusJsonObj);
 	char *jsonString = cJSON_Print(json);
 	if (!jsonString) {
 		meddbg("Failed to print volume level json object\n");
+		cJSON_Delete(muteStatusJsonObj);
 		cJSON_Delete(json);
 		close(fd);
 		return AUDIO_MANAGER_OPERATION_FAIL;
@@ -717,8 +781,9 @@ audio_manager_result_t create_volume_level_json(void)
 		medvdbg("To be written JSON string: %s\n, bytes written: %zd\n", jsonString, bytesWritten);
 	}
 	free(jsonString);
-	close(fd);
+	cJSON_Delete(muteStatusJsonObj);
 	cJSON_Delete(json);
+	close(fd);
 	return ret;
 }
 
@@ -796,7 +861,7 @@ const char *getJSONKey(stream_policy_t stream_policy)
 	case STREAM_TYPE_NOTIFY:
 		return "STREAM_TYPE_NOTIFY";
 	case STREAM_TYPE_VOICE_RECORD:
-		return "STREAM_TYPE_VOICE_RECOGNITION";
+		return "STREAM_TYPE_VOICE_RECORD";
 	case STREAM_TYPE_EMERGENCY:
 		return "STREAM_TYPE_EMERGENCY";
 	case STREAM_TYPE_BIXBY:
@@ -815,7 +880,11 @@ audio_manager_result_t audio_manager_init(void)
 	audio_manager_result_t ret;
 	static int am_initialized = 0;
 	int found_card = 0;
-	
+	int retVal;
+	struct stat jsonFileStat;
+	const char *jsonKey;
+	cJSON *jsonValue;
+
 	if (am_initialized) {
 		return AUDIO_MANAGER_SUCCESS;
 	}
@@ -838,8 +907,12 @@ audio_manager_result_t audio_manager_init(void)
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	int retVal;
-	struct stat jsonFileStat;
+	ret = get_output_audio_volume(&gDefaultVolumeLevel);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get output audio volume. ret: %d\n", ret);
+		return ret;
+	}
+
 	retVal = stat(VOLUME_JSON_PATH, &jsonFileStat);
 	if (retVal != OK) {
 		if (errno != ENOENT) {
@@ -865,24 +938,34 @@ audio_manager_result_t audio_manager_init(void)
 		return ret;
 	}
 
-	ret = get_output_audio_volume(&gDefaultVolumeLevel);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Failed to get output audio volume. ret: %d\n", ret);
-		return ret;
-	}
-
-	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	for (uint16_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
-		const char *policyKey = getJSONKey((stream_policy_t)i);
-		cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
-		if (!policy) {
-			card->volume[i] = gDefaultVolumeLevel;
-		} else {
-			card->volume[i] = policy->valueint;
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	if (!jsonValue) {
+		medvdbg("No STREAM_TYPE_MUTE_STATUS in the file, creating it.");
+		cJSON_Delete(gJSON);
+		ret = create_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to create volume level json. ret: %d", ret);
+			return ret;
+		}
+		ret = parse_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to parse volume level json. ret: %d\n", ret);
+			return ret;
 		}
 	}
+	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	for (uint16_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
+		jsonKey = getJSONKey((stream_policy_t)i);
+		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		card->volume[i] = jsonValue->valueint;
+	}
 
-	return AUDIO_MANAGER_SUCCESS;
+	ret = set_audio_stream_mute_from_json(STREAM_TYPE_VOICE_RECORD);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set mic mute status from json. ret: %d\n", ret);
+	}
+
+	return ret;
 }
 
 audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format)
@@ -1640,19 +1723,21 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 	return ret;
 }
 
-audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_info_t *stream_info)
+audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_policy_t stream_policy)
 {
+	audio_card_info_t *card;
+
 	if (!volume) {
 		meddbg("volume ptr is null\n");
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	if (!stream_info) {
-		meddbg("stream info is null\n");
-		return AUDIO_MANAGER_INVALID_PARAM;
+	if (g_actual_audio_out_card_id) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	*volume = card->volume[stream_info->policy];
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	*volume = card->volume[stream_policy];
 
 	return AUDIO_MANAGER_SUCCESS;
 }
@@ -1662,79 +1747,75 @@ audio_manager_result_t set_input_audio_gain(uint8_t gain)
 	return set_audio_volume(INPUT, gain);
 }
 
-audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_info_t *stream_info)
+audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t stream_policy)
 {
-	if (!stream_info) {
-		meddbg("stream info is null\n");
-		return AUDIO_MANAGER_INVALID_PARAM;
-	}
-	audio_manager_result_t ret = set_audio_volume(OUTPUT, volume);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("set_audio_volume failed, ret: %d\n", ret);
-		return ret;
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	audio_card_info_t *card;
+	const char *jsonKey;
+	cJSON *jsonValue;
+	cJSON *streamMuteStatus;
+
+	if (g_actual_audio_out_card_id) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	const char *policyKey = getJSONKey(stream_info->policy);
-	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
-	if (!policy) {
-		cJSON *policyVolume = cJSON_CreateNumber(volume);
-		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
-	} else {
-		if (policy->valueint != volume) {
-			cJSON *policyVolume = cJSON_CreateNumber(volume);
-			cJSON_ReplaceItemInObject(gJSON, policyKey, policyVolume);
-		} else {
-			return ret;
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	jsonKey = getJSONKey(stream_policy);
+	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	if (streamMuteStatus->type == cJSON_True) {
+		cJSON_ReplaceItemInObject(jsonValue, jsonKey, cJSON_CreateBool(false));
+		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		if (jsonValue->valueint != volume) {
+			cJSON_ReplaceItemInObject(gJSON, jsonKey, cJSON_CreateNumber(volume));
 		}
-	}
-	ret = update_volume_level_json();
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Failed to update volume level json. ret: %d\n", ret);
-		return ret;
-	}
-
-	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	card->volume[stream_info->policy] = volume;
-
-	return ret;
-}
-
-audio_manager_result_t set_output_stream_volume(stream_info_t *stream_info)
-{
-	if (!stream_info) {
-		meddbg("stream info is null\n");
-		return AUDIO_MANAGER_INVALID_PARAM;
-	}
-	uint8_t volume;
-	const char *policyKey = getJSONKey(stream_info->policy);
-	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
-	if (!policy) {
-		volume = gDefaultVolumeLevel;
-	} else {
-		volume = policy->valueint;
-	}
-
-	audio_manager_result_t ret;
-	ret = set_audio_volume(OUTPUT, volume);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		meddbg("set_audio_volume failed, ret: %d\n", ret);
-		return ret;
-	}
-
-	if (!policy) {
-		cJSON *policyVolume = cJSON_CreateNumber(volume);
-		cJSON_AddItemToObject(gJSON, policyKey, policyVolume);
 		ret = update_volume_level_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 			return ret;
 		}
-
-		audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-		card->volume[stream_info->policy] = volume;
+	} else {
+		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		if (jsonValue->valueint == volume) {
+			return ret;
+		}
+		cJSON_ReplaceItemInObject(gJSON, jsonKey, cJSON_CreateNumber(volume));
+		ret = update_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to update volume level json. ret: %d\n", ret);
+			return ret;
+		}
 	}
 
-	return AUDIO_MANAGER_SUCCESS;
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	card->volume[stream_policy] = volume;
+
+	if (stream_policy != card->policy) {
+		meddbg("Policy mismatch, given_policy: %d, card_policy: %d. Volume for given policy will be set when it will play\n", stream_policy, card->policy);
+		return ret;
+	}
+
+	ret = set_audio_volume(OUTPUT, volume);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_volume failed, ret: %d\n", ret);
+	}
+
+	return ret;
+}
+
+audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy)
+{
+	const char *policyKey = getJSONKey(stream_policy);
+	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+	uint8_t volume = policy->valueint;
+
+	audio_manager_result_t ret;
+	ret = set_audio_volume(OUTPUT, volume);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_volume failed, ret: %d\n", ret);
+	}
+
+	return ret;
 }
 
 //ToDo: In the future, driver will be changed to load the script that exists in each product app.
@@ -2358,52 +2439,166 @@ audio_manager_result_t get_keyword_data(uint8_t *buffer)
 
 audio_manager_result_t set_mic_mute(void)
 {
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
-	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	int fd;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	cJSON *jsonValue;
+	cJSON *micMuteStatus;
+
 	if (g_actual_audio_in_card_id < 0) {
-		meddbg("card id is not valid\n");
-		return AUDIO_MANAGER_INVALID_DEVICE;
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
+
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-	get_card_path(path, card->card_id, card->device_id, INPUT);
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
-		return AUDIO_MANAGER_OPERATION_FAIL;
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_format.hw = AUDIO_FU_MUTE;
+	caps_desc.caps.ac_controls.b[0] = true;
+
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to mute mic, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		}
+		return ret;
 	}
-	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	if (ioctl(fd, AUDIOIOC_MICMUTE, 0UL) < 0) {
-		meddbg("mic mute ioctl failed. errno : %d\n", errno);
-		ret = AUDIO_MANAGER_OPERATION_FAIL;
+	medvdbg("Mic Mute Success\n");
+
+	pthread_mutex_unlock(&(card->card_mutex));
+
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	micMuteStatus = cJSON_GetObjectItem(jsonValue, "STREAM_TYPE_VOICE_RECORD");
+	if (micMuteStatus->type == cJSON_False) {
+		cJSON_ReplaceItemInObject(jsonValue, "STREAM_TYPE_VOICE_RECORD", cJSON_CreateBool(true));
+		ret = update_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to update volume level json. ret: %d\n", ret);
+		}
 	}
-	close(fd);
 	return ret;
 }
 
 audio_manager_result_t set_mic_unmute(void)
 {
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
-	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
-	int fd;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	cJSON *jsonValue;
+	cJSON *micMuteStatus;
+
 	if (g_actual_audio_in_card_id < 0) {
-		meddbg("card id is not valid\n");
-		return AUDIO_MANAGER_INVALID_DEVICE;
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
+
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-	get_card_path(path, card->card_id, card->device_id, INPUT);
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
-		return AUDIO_MANAGER_OPERATION_FAIL;
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_format.hw = AUDIO_FU_MUTE;
+	caps_desc.caps.ac_controls.b[0] = false;
+
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to unmute mic, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		}
+		return ret;
 	}
-	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	if (ioctl(fd, AUDIOIOC_MICUNMUTE, 0UL) < 0) {
-		meddbg("mic unmute ioctl failed. errno : %d\n", errno);
-		ret = AUDIO_MANAGER_OPERATION_FAIL;
+	medvdbg("Mic Unmute Success\n");
+
+	pthread_mutex_unlock(&(card->card_mutex));
+
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	micMuteStatus = cJSON_GetObjectItem(jsonValue, "STREAM_TYPE_VOICE_RECORD");
+	if (micMuteStatus->type == cJSON_True) {
+		cJSON_ReplaceItemInObject(jsonValue, "STREAM_TYPE_VOICE_RECORD", cJSON_CreateBool(false));
+		ret = update_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to update volume level json. ret: %d\n", ret);
+		}
 	}
-	close(fd);
 	return ret;
+}
+
+audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool mute)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	audio_io_direction_t direct;
+	cJSON *jsonValue;
+	const char *jsonKey;
+	cJSON *streamMuteStatus;
+
+	if (stream_policy != STREAM_TYPE_VOICE_RECORD && stream_policy != STREAM_TYPE_NOTIFY) {
+		meddbg("Invalid stream policy for set stream mute. policy: %d\n", stream_policy);
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	jsonKey = getJSONKey(stream_policy);
+	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	if ((streamMuteStatus->type == cJSON_True) != mute) {
+		cJSON_ReplaceItemInObject(jsonValue, jsonKey, cJSON_CreateBool(mute));
+		ret = update_volume_level_json();
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to update volume level json. ret: %d\n", ret);
+			return ret;
+		}
+		direct = (stream_policy == STREAM_TYPE_VOICE_RECORD) ? INPUT : OUTPUT;
+		ret = set_audio_mute(direct, stream_policy, mute);
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to set audio to mute. direct: %d, stream_policy: %d, mute: %d, ret: %d\n", direct, stream_policy, mute, ret);
+		}
+	}
+
+	return ret;
+}
+
+audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_policy)
+{
+	audio_manager_result_t ret;
+	audio_io_direction_t direct;
+	cJSON *jsonValue;
+	const char *jsonKey;
+	cJSON *streamMuteStatus;
+	bool mute;
+
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	jsonKey = getJSONKey(stream_policy);
+	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	mute = (streamMuteStatus->type == cJSON_True) ? true : false;
+	direct = (stream_policy == STREAM_TYPE_VOICE_RECORD) ? INPUT : OUTPUT;
+
+	ret = set_audio_mute(direct, stream_policy, mute);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio to mute. direct: %d, stream_policy: %d, mute: %d, ret: %d\n", direct, stream_policy, mute, ret);
+	}
+
+	return ret;
+}
+
+audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy, bool *mute)
+{
+	cJSON *jsonValue;
+	const char *jsonKey;
+	cJSON *streamMuteStatus;
+
+	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	jsonKey = getJSONKey(stream_policy);
+	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	*mute = (streamMuteStatus->type == cJSON_True) ? true : false;
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
