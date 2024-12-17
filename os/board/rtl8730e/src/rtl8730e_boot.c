@@ -239,10 +239,10 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-				{PA_23, PIN_INPUT, PullNone},
+				{PA_23, PIN_INPUT, PullDown},
 				/* PB_20 is gpio pin number for LED */
 				{PB_20, PIN_OUTPUT, PullDown},
-				{PB_22, PIN_INPUT, PullNone},
+				{PB_22, PIN_INPUT, PullUp},
 		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
 		Loguart pins
 		*/
