@@ -575,6 +575,30 @@ bool rtw_ble_server_conn_is_any_active(void)
 
 trble_result_e rtw_ble_server_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
+	if (is_server_init != true)
+	{
+		return TRBLE_INVALID_STATE;
+	}
+
+	if(conn_handle == NULL || conn_param == NULL)
+	{
+		debug_print("Invalid input \n");
+		return TRBLE_INVALID_ARGS;
+	}
+
+	rtk_bt_le_update_conn_param_t param;
+
+    param.conn_handle = *conn_handle;
+	param.conn_interval_min = conn_param->min_conn_interval;
+	param.conn_interval_max = conn_param->max_conn_interval;
+	param.conn_latency = conn_param->slave_latency;
+	param.supv_timeout = conn_param->supervision_timeout;
+
+	if(RTK_BT_FAIL == rtk_bt_le_gap_update_conn_param(&param))
+	{
+		debug_print("connection parameter update fail \n");
+		return TRBLE_FAIL;
+	}
     return TRBLE_SUCCESS; 
 }
 

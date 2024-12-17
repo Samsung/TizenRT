@@ -820,6 +820,33 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
+	//connection parameter update, use this when AI-Lite is slave
+	if (strncmp(argv[1], "updates", 8) == 0) {
+		ble_conn_handle conn_handle = 24;
+		ble_conn_param conn_param;
+		conn_param.min_conn_interval = 0x0010;
+		conn_param.max_conn_interval = 0x0010;
+		conn_param.slave_latency = 2;
+		conn_param.supervision_timeout = 0x00aa;
+		conn_param.role = BLE_SLAVE_CONN_PARAM_UPDATE;
+
+		ble_manager_conn_param_update(&conn_handle, &conn_param);
+	}
+	
+	//connection parameter update, use this when TPdual is master
+	if (strncmp(argv[1], "updatem", 8) == 0) {
+		ble_conn_handle conn_handle = 16;
+		ble_conn_param conn_param;
+		conn_param.min_conn_interval = 0x0010;
+		conn_param.max_conn_interval = 0x0010;
+		conn_param.slave_latency = 2;
+		conn_param.supervision_timeout = 0x00aa;
+		conn_param.role = BLE_SLAVE_CONN_PARAM_UPDATE;
+
+		ble_manager_conn_param_update(&conn_handle, &conn_param);
+		
+	}
+
 	if (strncmp(argv[1], "advon", 6) == 0) {
 		ret = ble_server_one_shot_adv_init();
 		uint8_t type1 = 0;
