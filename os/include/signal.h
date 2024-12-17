@@ -578,6 +578,18 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
 /**
  * @}
  */
+/*
+	Following changes are work around to resolve build warnings.
+
+	TODO : The build warnings are there because function `sigaction` shadows struct `sigaction`.
+
+	The proper fix for warning issue is below:
+
+		1. Either change struct or function name
+		2. Move functions declaration into separate header file
+*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 
 /**
  * @ingroup SIGNAL_KERNEL
@@ -588,6 +600,9 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
  * @since TizenRT v1.0
  */
 int sigaction(int sig, FAR const struct sigaction *act, FAR struct sigaction *oact);
+
+#pragma GCC diagnostic pop
+
 /**
  * @ingroup SIGNAL_KERNEL
  * @brief examine and change blocked signals
