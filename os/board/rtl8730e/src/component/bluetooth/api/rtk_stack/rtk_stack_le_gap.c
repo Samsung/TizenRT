@@ -3054,6 +3054,35 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	rtk_bt_le_scan_param_t *p_gap_scan_param = (rtk_bt_le_scan_param_t *)param;
 	T_GAP_CAUSE cause;
 
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	T_GAP_LE_EXT_SCAN_PARAM extended_scan_param = {0};
+	uint8_t scan_phys = GAP_EXT_SCAN_PHYS_1M_BIT;
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_LOCAL_ADDR_TYPE, sizeof(p_gap_scan_param->own_addr_type), &p_gap_scan_param->own_addr_type);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_POLICY, sizeof(p_gap_scan_param->filter_policy), &p_gap_scan_param->filter_policy);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_DUPLICATES, sizeof(p_gap_scan_param->duplicate_opt), &p_gap_scan_param->duplicate_opt);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_PHYS, sizeof(scan_phys), &scan_phys);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	extended_scan_param.scan_type = (T_GAP_SCAN_MODE)p_gap_scan_param->type;
+	extended_scan_param.scan_interval = p_gap_scan_param->interval;
+	extended_scan_param.scan_window = p_gap_scan_param->window;
+	le_ext_scan_set_phy_param(LE_SCAN_PHY_LE_1M, &extended_scan_param);
+#else
 	cause = le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(p_gap_scan_param->type), &p_gap_scan_param->type);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -3083,7 +3112,7 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return RTK_BT_OK;
 
 }
@@ -3092,6 +3121,12 @@ static uint16_t bt_stack_le_gap_start_scan(void)
 {
 	T_GAP_CAUSE cause;
 
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_start();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3105,14 +3140,20 @@ extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return 0;
 }
 
 static uint16_t bt_stack_le_gap_stop_scan(void)
 {
 	T_GAP_CAUSE cause;
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_stop();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3126,7 +3167,7 @@ extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return 0;
 }
 
