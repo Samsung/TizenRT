@@ -184,6 +184,7 @@ struct trble_ops g_trble_drv_ops = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 	trble_netmgr_create_multi_adv,
 	trble_netmgr_delete_multi_adv,
