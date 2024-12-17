@@ -84,7 +84,6 @@ static struct ist415_dev_s g_ist415_dev0 = {
 		.address = IST415_I2C_ADDR,
 		.addrlen = IST415_I2C_ADDRLEN,
 	},
-	.int_pending = false,
 	.ops = &(struct ist415_ops_s){
 		.irq_enable = rtl8730e_ist415_enable_irq,
 		.irq_disable = rtl8730e_ist415_disable_irq,

@@ -190,13 +190,18 @@ struct touch_set_callback_s {
  * This structure is upper level driver operations which will use lower level calls internally
  */
 struct touchscreen_ops_s {
-	int (*touch_read)(struct touchscreen_s *priv, FAR char *buffer);	/* Read touch point */
 	void (*touch_enable)(struct touchscreen_s *dev);			/* Enable touch */
 	void (*touch_disable)(struct touchscreen_s *dev);			/* Disable touch */
-
-	/* It's set to true when there is touch interrupt and set to false after data is read from device */
-	bool (*is_touchSet)(struct touchscreen_s *dev);
 	int (*cmd)(struct touchscreen_s *upper, int argc, char **argvc);
+};
+
+
+struct touch_point_buffer_s {
+	sem_t sem;								/* Used to control exclusive access to the buffer */
+	volatile int16_t head;					/* Index to the head [IN] index in the buffer */
+	volatile int16_t tail;					/* Index to the tail [OUT] index in the buffer */
+	int16_t size;							/* The allocated size of the buffer */
+	struct touch_point_s *buffer;			/* Pointer to the allocated buffer memory */
 };
 
 /*
@@ -211,8 +216,8 @@ struct touchscreen_s {
 	sem_t pollsem;
 	struct pollfd *fds[CONFIG_TOUCH_NPOLLWAITERS];
 #endif
-
-	void (*notify_touch)(struct touchscreen_s *dev);
+	struct touch_point_buffer_s tp_buf;
+	sem_t waitsem;
 
 	const struct touchscreen_ops_s *ops;	/* Arch-specific operations */
 	void *priv;		/* Used by the TSP-specific logic */

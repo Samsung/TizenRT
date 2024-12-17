@@ -265,7 +265,8 @@ struct ist415_ops_s {
 struct ist415_dev_s {
 	struct i2c_dev_s *i2c;
 	struct i2c_config_s i2c_config;
-	bool int_pending;
+	sem_t wait_irq;
+	int pid;
 	/*
 	 * This is a interrupt handler for touch. The lower level code will intercept the interrupt
 	 * and provide the uppper level code with private data with interrupt attached.

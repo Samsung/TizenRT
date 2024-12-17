@@ -73,10 +73,8 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static int ist415_read(struct touchscreen_s *dev, FAR char *buffer);
 static void ist415_enable(struct touchscreen_s *dev);
 static void ist415_disable(struct touchscreen_s *dev);
-static bool ist415_istouchSet(struct touchscreen_s *dev);
 
 #if defined(CONFIG_TOUCH_CALLBACK)
 static void get_touch_data(struct ist415_dev_s *priv);
@@ -86,16 +84,13 @@ static void get_touch_data(struct ist415_dev_s *priv);
  * Private Data
  ****************************************************************************/
 struct touchscreen_ops_s g_ist415_ops = {
-	.touch_read = ist415_read,
 	.touch_enable = ist415_enable,
 	.touch_disable = ist415_disable,
-	.is_touchSet = ist415_istouchSet,
 };
 
 #if defined(CONFIG_TOUCH_CALLBACK)
 static struct work_s ist415_work;
 #endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -104,12 +99,12 @@ static struct work_s ist415_work;
  * Name: ist415_get_touch_data
  ****************************************************************************/
 
-static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
+static int ist415_process_event(struct ist415_dev_s *dev)
 {
 	struct i2c_dev_s *i2c = dev->i2c;
 	struct i2c_config_s config = dev->i2c_config;
 	struct ts_event_coordinate *p_evt_coord;
-	struct touch_sample_s *data = buf;
+	struct touch_point_s point;
 	u8 event[EVENT_PACKET_SIZE];
 	u8 touch_point;
 	u8 *touch_event;
@@ -146,33 +141,30 @@ static int ist415_get_touch_data(struct ist415_dev_s *dev, FAR void *buf)
 		return -EIO;
 	}
 	touchvdbg("touch_point %d\n", touch_point + 1);
-	if (data == NULL) {
-		touchdbg("ERROR: application buffer touch data is NULL\n");
-		return -EINVAL;
-	}
-	data->npoints = touch_point + 1;
+
 	for (int i = 0; i < (touch_point + 1); i++) {
 		eid = (touch_event + (i * EVENT_PACKET_SIZE))[0] & 0x3;
 		if (eid == EID_COORD) {
 			p_evt_coord = (struct ts_event_coordinate *)(touch_event + (i * EVENT_PACKET_SIZE));
-			data->point[i].id = p_evt_coord->tid - 1;
-			data->point[i].x  = (p_evt_coord->x_11_4 << 4) | p_evt_coord->x_3_0;
-			data->point[i].y  = (p_evt_coord->y_11_4 << 4) | p_evt_coord->y_3_0;
-			data->point[i].h = 0;
-			data->point[i].w = 0;
-			data->point[i].pressure = 0;
+			point.id = p_evt_coord->tid - 1;
+			point.x  = (p_evt_coord->x_11_4 << 4) | p_evt_coord->x_3_0;
+			point.y  = (p_evt_coord->y_11_4 << 4) | p_evt_coord->y_3_0;
+			point.h = 0;
+			point.w = 0;
+			point.pressure = 0;
 			switch (p_evt_coord->tsta) {
 			case 1:
-				data->point[i].flags = TOUCH_DOWN;
+				point.flags = TOUCH_DOWN;
 				break;
 			case 2:
-				data->point[i].flags = TOUCH_MOVE;
+				point.flags = TOUCH_MOVE;
 				break;
 			case 3:
-				data->point[i].flags = TOUCH_UP;
+				point.flags = TOUCH_UP;
 				break;
 			}
-			touchvdbg("COORDINATES: id %d status %d type %d x : %d y : %d\n", data->point[i].id, p_evt_coord->tsta, (p_evt_coord->ttype_3_2 << 2) | p_evt_coord->ttype_1_0, data->point[i].x, data->point[i].y);
+			touchvdbg("COORDINATES: id %d status %d type %d x : %d y : %d\n", point.id, p_evt_coord->tsta, (p_evt_coord->ttype_3_2 << 2) | p_evt_coord->ttype_1_0, point.x, point.y);
+			touch_report(dev->upper, point);
 		}
 	}
 	return OK;
@@ -199,81 +191,33 @@ static void ist415_disable(struct touchscreen_s *dev)
 }
 
 /****************************************************************************
- * Name: is_touchSet
- ****************************************************************************/
-
-static bool ist415_istouchSet(struct touchscreen_s *dev)
-{
-	struct ist415_dev_s *priv = (struct ist415_dev_s *)dev->priv;
-	return priv->int_pending;
-}
-
-/****************************************************************************
- * Name: ist415_read
- ****************************************************************************/
-
-static int ist415_read(struct touchscreen_s *dev, FAR char *buffer)
-{
-	irqstate_t flags;
-	struct ist415_dev_s *priv = (struct ist415_dev_s *)dev->priv;
-	if (priv->int_pending) {
-		flags = enter_critical_section();
-		priv->int_pending = false;
-		leave_critical_section(flags);
-		return ist415_get_touch_data(priv, buffer);
-	} else {
-		touchvdbg("No data to read\n");
-	}
-	return OK;
-}
-
-/****************************************************************************
  * Name: touch_interrupt
  ****************************************************************************/
 
-#if defined(CONFIG_TOUCH_POLL)
-static void touch_interrupt(struct ist415_dev_s *priv)
+static void touch_interrupt(struct ist415_dev_s *dev)
 {
-
-	FAR struct touchscreen_s *upper = priv->upper;
-	irqstate_t state = enter_critical_section();
-	priv->int_pending = true;
-	leave_critical_section(state);
-	if (upper->notify_touch) {
-		upper->notify_touch(upper);
-	}
+	sem_post(&dev->wait_irq);
 }
 
-#elif defined(CONFIG_TOUCH_CALLBACK)
 
-static void touch_interrupt(struct ist415_dev_s *priv)
+/****************************************************************************
+ * Name: ist415_irq_thread
+ ****************************************************************************/
+
+static int ist415_irq_thread(int argc, char **argv)
 {
-	FAR struct touchscreen_s *upper = priv->upper;
-	priv->ops->irq_enable();
-	work_queue(HPWORK, &ist415_work, get_touch_data, priv, 0);
-}
+	struct ist415_dev_s *dev;
 
-static void get_touch_data(struct ist415_dev_s *priv)
-{
-	FAR struct touchscreen_s *upper = priv->upper;
+	DEBUGASSERT(argc == 2);
+	dev = (struct ist415_dev_s *)strtoul(argv[1], NULL, 16);
 
-	struct touch_sample_s touch_points;
-
-	if (!upper->app_touch_point_buffer) {
-		touchdbg("ERROR: application buffer touch data is NULL\n");
-		if (upper->is_touch_detected) {
-			upper->is_touch_detected(-EINVAL);
-			return;
+	while (1) {
+		sem_wait(&dev->wait_irq);
+		if (ist415_process_event(dev) != OK) {
+			touchdbg("Fail to process event\n");
 		}
 	}
-	int ret = ist415_get_touch_data(priv, upper->app_touch_point_buffer);
-
-	if (upper->is_touch_detected) {
-		upper->is_touch_detected(ret);
-	}
 }
-
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -300,7 +244,10 @@ static void get_touch_data(struct ist415_dev_s *priv)
 int ist415_initialize(const char*path, struct ist415_dev_s *priv)
 {
 	int ret = 0;
+	char *parm[2];
+	char parm_buf[9];
 	uint8_t reg[1];
+
 	priv->ops->irq_disable();
 
 	reg[0] = 0x23;
@@ -309,6 +256,13 @@ int ist415_initialize(const char*path, struct ist415_dev_s *priv)
 		touchdbg("ERROR: i2c_write failed\n");
 		return NULL;
 	}
+
+	sem_init(&priv->wait_irq, 0, 0);
+	itoa((int)priv, parm_buf, 16);
+	parm[0] = parm_buf;
+	parm[1] = NULL;
+	priv->pid = kernel_thread("ist415_isr", CONFIG_IST415_WORKPRIORITY , 2048, (main_t)ist415_irq_thread, (FAR char *const *)parm);
+
 	struct touchscreen_s *upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	upper->ops = &g_ist415_ops;
 	upper->priv = priv;
