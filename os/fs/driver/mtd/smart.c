@@ -72,6 +72,7 @@
 #include <crc8.h>
 #include <crc16.h>
 #include <crc32.h>
+#include <tinyara/irq.h>
 #include <tinyara/math.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -4822,6 +4823,7 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR struct smart_struct_s *dev;
+	irqstate_t saved_state;
 	int ret = OK;
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	FAR struct mtd_smart_procfs_data_s *procfs_data;
@@ -4925,7 +4927,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 #endif							/* CONFIG_FS_WRITABLE */
 
 	case BIOC_BULKERASE:
+		saved_state = irqsave();
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+		irqrestore(saved_state);
 		fdbg("Format Finished\n");
 		sleep(1);
 		goto ok_out;
