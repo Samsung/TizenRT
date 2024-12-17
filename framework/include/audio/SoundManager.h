@@ -66,6 +66,22 @@ bool setMicMute(void);
  */
 bool setMicUnmute(void);
 
+/**
+ * @brief Sets mute state for the given stream.
+ * @param[in] stream_policy Policy of the stream.
+ * @param[in] mute The mute state to be set. true for mute, false for unmute.
+ * @return true if the operation was successful, false otherwise.
+ */
+bool setStreamMute(stream_policy_t stream_policy, bool mute);
+
+/**
+ * @brief Gets mute state for the given stream.
+ * @param[in] stream_policy Policy of the stream.
+ * @param[in] mute Pointer to store the mute state. true for mute, false for unmute.
+ * @return true if the operation was successful, false otherwise.
+ */
+bool getStreamMuteState(stream_policy_t stream_policy, bool *mute);
+
 #if defined(__cplusplus)
 }
 #endif

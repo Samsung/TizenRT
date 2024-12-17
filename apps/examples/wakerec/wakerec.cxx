@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2024 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@
 #include <iostream>
 #include <memory>
 #include <functional>
-
-#define CONFIG_SUPPORT_GET_KD 0
+#include <tinyara/pm/pm.h>
 
 using namespace std;
 using namespace media;
@@ -109,7 +108,7 @@ private:
 		printf("##################################\n");
 		printf("####      onRecordStopped     ####\n");
 		printf("##################################\n");
-		
+
 		if (errCode == RECORDER_ERROR_DEVICE_DEAD) {
 			printf("####      Mic is unreachable     ####\n");
 			mr.unprepare();
@@ -172,6 +171,13 @@ private:
 	void onPlaybackStopped(media::MediaPlayer &mediaPlayer) override
 	{
 		mPaused = false;
+		mp.unprepare();
+		mp.destroy();
+		printf("###################################\n");
+		printf("#### Wait for wakeup triggered ####\n");
+		printf("###################################\n");
+		sd->startKeywordDetect();
+		pm_resume(PM_IDLE_DOMAIN);
 	}
 
 	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
@@ -243,7 +249,9 @@ private:
 				printf("it was paused, just start playback now\n");
 				res = mp.start();
 				if (res != PLAYER_OK) {
-					printf("start failed res : %d\n", res);
+					printf("player start failed res : %d\n", res);
+					auto &focusManager = FocusManager::getFocusManager();
+					focusManager.abandonFocus(mFocusRequest);
 				}
 			} else {
 				auto source = std::move(unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(filePath)));
@@ -253,11 +261,18 @@ private:
 				mp.setDataSource(std::move(source));
 				mp.prepare();
 				mp.setVolume(10);
-				mp.start();
+				res = mp.start();
+				if (res != PLAYER_OK) {
+					printf("player start failed res : %d\n", res);
+					auto &focusManager = FocusManager::getFocusManager();
+					focusManager.abandonFocus(mFocusRequest);
+				}
 			}
 		} break;
 		case FOCUS_LOSS: {
 			mp.stop();
+			auto &focusManager = FocusManager::getFocusManager();
+			focusManager.abandonFocus(mFocusRequest); // call abandon focus when FOCUS_GAIN callback not required.
 		} break;
 		case FOCUS_LOSS_TRANSIENT: {
 			mp.pause(); //it will be played again

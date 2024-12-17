@@ -96,12 +96,12 @@ public:
 	player_result_t prepare();
 	player_result_t prepareAsync();
 	player_result_t unprepare();
+	player_result_t reset();
 	player_result_t start();
 	player_result_t pause();
 	player_result_t stop();
 
 	player_result_t getVolume(uint8_t *vol);
-	player_result_t getStreamVolume(uint8_t *vol);
 	player_result_t getMaxVolume(uint8_t *vol);
 	player_result_t setVolume(uint8_t vol);
 
@@ -129,7 +129,6 @@ private:
 	player_result_t stopPlayback(bool drain);
 	void pausePlayer();
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
-	void getPlayerStreamVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
