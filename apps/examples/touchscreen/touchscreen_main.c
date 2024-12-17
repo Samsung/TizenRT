@@ -42,31 +42,34 @@ static void touch_test(void)
 {
 	/* read first 10 events */
 	int ret;
-
+	int read_size;
+	struct touch_point_s buf[15];
+	struct pollfd fds[1];
 	int fd = open(TOUCH_DEV_PATH, O_RDONLY);
 	if (fd < 0) {
 		printf("Error: Failed to open /dev/input0, errno : %d\n", get_errno());
 		return;
 	}
 
-	struct pollfd fds[1];
 	fds[0].fd = fd;
 	fds[0].events = POLLIN;
 
-	struct touch_sample_s buf;
 	while (!g_terminated) {
 		poll(fds, 1, 5000);
 		if (fds[0].revents & POLLIN) {
-			ret = read(fd, &buf, sizeof(struct touch_sample_s));
-			if (ret != - 1) {
-				printf("Total touch points %d\n", buf.npoints);
-				for (int i = 0; i < buf.npoints; i++) {
-					printf("coordinates id: %d, x : %d y : %d touch type: %d\n", buf.point[i].id, buf.point[i].x, buf.point[i].y, buf.point[i].flags);
-					if (buf.point[i].flags == TOUCH_DOWN) {
+			ret = read(fd, buf, sizeof(struct touch_point_s) * 15);
+			if (ret > 0) {
+				DEBUGASSERT(ret <= sizeof(struct touch_point_s) * 15);
+
+				read_size = ret / sizeof(struct touch_point_s);
+				printf("Total touch points %d\n", read_size);
+				for (int i = 0; i < read_size; i++) {
+					printf("coordinates id: %d, x : %d y : %d touch type: %d\n", buf[i].id, buf[i].x, buf[i].y, buf[i].flags);
+					if (buf[i].flags == TOUCH_DOWN) {
 						printf("Touch press event \n");
-					} else if (buf.point[i].flags == TOUCH_MOVE) {
+					} else if (buf[i].flags == TOUCH_MOVE) {
 						printf("Touch hold/move event \n");
-					} else if (buf.point[i].flags == TOUCH_UP) {
+					} else if (buf[i].flags == TOUCH_UP) {
 						printf("Touch release event \n");
 					}
 				}
