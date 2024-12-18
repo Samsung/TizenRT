@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 77cb222768 2024/12/12-19:28:06 ==
+1. Add silent table to control frequency of sending probe response packets in noisy environment
+2. Adjust probe response retry limit
+
 == version 1adf73a23c 2024/12/02-17:40:40 ==
 1. Enable GPIO B as wakeup interrupt src
 2. Add GPIO B wakeup reason

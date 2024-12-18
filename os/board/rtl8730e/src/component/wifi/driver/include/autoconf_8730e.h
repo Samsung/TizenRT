@@ -153,6 +153,9 @@
 #endif
 #define RTL8730E_WORK_AROUND
 
+/* SoftAP silent table to reduce probe response when receiving probe request continuously */
+#define CONFIG_SOFTAP_KEEP_SILENT_TABLE
+
 //#define RA_RX_ACK_RSSI
 /*************************** Config for MP_MODE *******************************/
 //#define CONFIG_MP_INCLUDED
