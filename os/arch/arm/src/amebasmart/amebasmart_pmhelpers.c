@@ -126,7 +126,7 @@ void up_set_pm_timer(unsigned int interval_us)
 
 void bsp_pm_domain_register(char *domain_name, int bsp_drv_id)
 {
-	int domain_id = pm_domain_register(domain_name, PM_BACK, NULL);
+	int domain_id = pm_domain_register(domain_name, PM_BACKGROUND, NULL);
 	if (domain_id < 0) {
 		pmdbg("Unable to register %s DOMAIN\n", domain_name);
 	} else {

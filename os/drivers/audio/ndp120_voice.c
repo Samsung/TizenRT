@@ -788,9 +788,9 @@ static void ndp120_interrupt_dispatch(int d)
 static int ndp_pm_sleep(struct pm_callback_s *cb)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_FORE. After that we only use PM_BACK and PM_SLEEP
-	 * on boot : PM_FORE -> PM_BACK -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_BACK -> PM_SLEEP -> PM_BACK........
+	 * On boot, we are in PM_FOREGROUND. After that we only use PM_BACKGROUND and PM_SLEEP
+	 * on boot : PM_FOREGROUND -> PM_BACKGROUND -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_BACKGROUND -> PM_SLEEP -> PM_BACKGROUND........
 	 */
 	audvdbg("entering SLEEP\n");
 #ifdef CONFIG_NDP120_AEC_SUPPORT
@@ -870,7 +870,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
 
-	g_ndp120_pm_id = pm_domain_register("NDP120", PM_BACK, &g_pmndpcb);
+	g_ndp120_pm_id = pm_domain_register("NDP120", PM_BACKGROUND, &g_pmndpcb);
 	DEBUGASSERT(g_ndp120_pm_id >= 0);
 #endif	
 	return &priv->dev;

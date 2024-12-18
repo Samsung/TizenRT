@@ -1064,9 +1064,9 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 static int syu645b_pm_sleep(struct pm_callback_s *cb)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_FORE. After that we only use PM_BACK and PM_SLEEP
-	 * on boot : PM_FORE -> PM_BACK -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_BACK -> PM_SLEEP -> PM_BACK........
+	 * On boot, we are in PM_FOREGROUND. After that we only use PM_BACKGROUND and PM_SLEEP
+	 * on boot : PM_FOREGROUND -> PM_BACKGROUND -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_BACKGROUND -> PM_SLEEP -> PM_BACKGROUND........
 	 */
 	audvdbg("pmstate : %d\n", state);
 #if 0
@@ -1171,7 +1171,7 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	/* only used during pm callbacks */
 	g_syu645b = priv;
 
-	syu645b_pm_domain_id = pm_domain_register("AUDIO", PM_FORE, &g_pm_syu645b_cb);
+	syu645b_pm_domain_id = pm_domain_register("AUDIO", PM_FOREGROUND, &g_pm_syu645b_cb);
 	DEBUGASSERT(syu645b_pm_domain_id >= 0);
 #endif	
 

@@ -87,7 +87,7 @@ int pm_domain_register(char *domain, enum pm_state_e state, FAR struct pm_callba
 	irqstate_t flags;
 	int length = strlen(domain);
 
-	DEBUGASSERT((state >= PM_FORE) && (state < PM_SLEEP));
+	DEBUGASSERT((state >= PM_FOREGROUND) && (state < PM_SLEEP));
 
 	/* If domain string length is greater than max allowed then return error */
 	if (length >= CONFIG_PM_DOMAIN_NAME_SIZE) {

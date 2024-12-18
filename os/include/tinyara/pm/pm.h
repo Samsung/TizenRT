@@ -150,20 +150,20 @@ enum pm_state_e {
 								 *
 								 * PM_RESTORE is used to notify for restore from low power state.
 								 */
-	PM_FORE = 0,				/* Normal full power operating mode.  If the driver is in
+	PM_FOREGROUND = 0,				/* Normal full power operating mode.  If the driver is in
 								 * a reduced power usage mode, it should immediately re-
 								 * initialize for normal operation.
 								 *
-								 * PM_FORE may be followed by PM_BACK.
+								 * PM_FOREGROUND may be followed by PM_BACKGROUND.
 								 */
-	PM_BACK,					/* The system is entering background mode. Background is a lower
+	PM_BACKGROUND,					/* The system is entering background mode. Background is a lower
 								 * power consumption mode that may involve more extensive
 								 * power management steps such has disabling clocking or
 								 * setting the processor into reduced power consumption
 								 * modes. In this state, the system should still be able
 								 * to resume normal activity almost immediately.
 								 *
-								 * PM_BACK may be followed PM_SLEEP or by PM_FORE
+								 * PM_BACKGROUND may be followed PM_SLEEP or by PM_FOREGROUND
 								 */
 	PM_SLEEP,					/* The system is entering deep sleep mode.  The most drastic
 								 * power reduction measures possible should be taken in this
@@ -171,7 +171,7 @@ enum pm_state_e {
 								 * operation from SLEEP (some MCUs may even require going
 								 * through reset).
 								 *
-								 * PM_SLEEP may be following by PM_FORE
+								 * PM_SLEEP may be following by PM_FOREGROUND
 								 */
 	PM_COUNT,
 };
