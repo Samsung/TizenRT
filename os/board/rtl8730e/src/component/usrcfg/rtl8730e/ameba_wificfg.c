@@ -85,6 +85,12 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.cfg80211 = 0;
 #endif
 
+#ifdef CONFIG_SOFTAP_KEEP_SILENT_TABLE
+	/* SoftAP silent table to reduce probe response when receiving probe request continuously */
+	wifi_user_config.softap_keep_silent_table_enable = 1;
+	wifi_user_config.softap_keep_silent_table_interval = 500; /* ms. Once interval period is reached, remove from silent table, so can send probe response to same STA again. */
+#endif
+
 #ifdef CONFIG_AS_INIC_AP
 	DCache_Clean((u32)(&wifi_user_config), sizeof(struct wifi_user_conf));
 	param_buf[0] = (u32)(&wifi_user_config);
