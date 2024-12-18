@@ -69,6 +69,14 @@ config NET_PING_CMD_ICOUNT
 
 endif #NET_CMDS
 
+config PM_CMDS
+	bool "PM shell commands"
+	default n
+	depends on TASH && PM
+	---help---
+		Enable Power Management System command in TASH.
+		Command including pm_start, pm_suspend, pm_resume, and so on.
+
 config ENABLE_CPULOAD
 	bool "cpuload monitor"
 	default y

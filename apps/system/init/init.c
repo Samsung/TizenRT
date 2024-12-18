@@ -92,6 +92,11 @@ static void tash_register_cmds(void)
 	net_register_appcmds();
 #endif
 
+#ifdef CONFIG_PM_CMDS
+pm_register_utilcmds();
+pm_register_appcmds();
+#endif
+
 #ifdef CONFIG_BUILTIN_APPS
 	register_examples_cmds();
 #endif
