@@ -175,7 +175,7 @@ void csifw_test_main(int argc, char **argv){
 int getServiceID(int argc, char *argv[])
 {
 	int service_id = -1;
-	if(argc >= 3){
+	if(argc < 3){
 		printf("Invalid Input \n");
 		return -1;
 	}

@@ -40,7 +40,6 @@ static unsigned char *g_get_data_buffptr; // the buffer to get data from driver
 static uint16_t gCSIRawBufLen;
 static CSIDataListener gCSIDataCallback;
 static bool g_csi_thread_stop = true;
-static bool g_csi_enabled; // this flag maintains wifi_csi_config enable state during wifi re-connection
 static mqd_t g_mq_handle;
 static csi_config_type_t g_config_type;
 static unsigned int g_interval_ms;
@@ -142,7 +141,6 @@ static void* dataReceiverThread(void *vargp) {
 }
 
 CSIFW_RES csi_packet_receiver_init(csi_config_type_t config_type, unsigned int interval_ms, CSIDataListener CSIDataCallback) {
-	g_csi_enabled = false;
 	gCSIRawBufLen = CSIFW_MAX_RAW_BUFF_LEN;
 	g_config_type = config_type;
 	g_interval_ms = interval_ms;
@@ -229,22 +227,13 @@ CSIFW_RES csi_packet_receiver_start_collect(void) {
 		CSIFW_LOGE("Error in setting receiver thread name, error_no: %d", get_errno());
 	}
 	CSIFW_LOGD("CSI data receive thread created");
-	if (g_csi_enabled) {
-		// disable wifi csi report
-		CSIFW_LOGD("Disabling CSI config");
-		res = csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
-		if (res != CSIFW_OK) {
-			return res;
-		}
-		g_csi_enabled = false;
-	}
+
 	// enable csi report
 	CSIFW_LOGD("Enabling CSI config");
 	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_ENABLE);
 	if (res != CSIFW_OK) {
 		return res;
 	}
-	g_csi_enabled = true;
 	return res;
 }
 
@@ -277,7 +266,6 @@ CSIFW_RES csi_packet_receiver_stop_collect(CSIFW_REASON reason)
 		return res;
 	}
 	CSIFW_LOGD("csi data collect stopped");
-	g_csi_enabled = false;
 	return CSIFW_OK;
 }
 
