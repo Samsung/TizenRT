@@ -111,7 +111,7 @@ int pm_suspend(int domain_id)
 		goto errout;
 	}
 #ifdef CONFIG_PM_METRICS
-	pm_metrics_update_suspend(domain_id);
+	pm_metrics_update(PM_MET_SUSPEND, domain_id);
 #endif
 	g_pmglobals.suspend_count[domain_id]++;
 errout:
