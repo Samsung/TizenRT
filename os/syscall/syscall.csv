@@ -102,7 +102,7 @@
 "rmdir", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0 && !defined(CONFIG_DISABLE_MOUNTPOINT)", "int", "FAR const char*"
 "sched_getaffinity","sched.h","","int","pid_t","size_t","FAR cpu_set_t *"
 "sched_setaffinity","sched.h","","int","pid_t","size_t","FAR const cpu_set_t*"
-"sched_getcpu", "sched.h", "defined(CONFIG_SMP)", "int"
+"sched_getcpu", "sched.h", "", "int"
 "sched_getparam", "sched.h", "", "int", "pid_t", "struct sched_param*"
 "sched_getscheduler", "sched.h", "", "int", "pid_t"
 "sched_getstreams", "tinyara/sched.h", "CONFIG_NFILE_DESCRIPTORS > 0 && CONFIG_NFILE_STREAMS > 0", "FAR struct streamlist*"
