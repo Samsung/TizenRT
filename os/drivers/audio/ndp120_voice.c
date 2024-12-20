@@ -52,6 +52,8 @@
 #define NDP120_MIC_GAIN_MAX	10
 #define NDP120_MIC_GAIN_DEFAULT	7
 
+#define NDP120_INIT_RETRY_COUNT 3
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -876,9 +878,18 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	DEBUGASSERT(priv->pm_id >= 0);
 #endif
 
-	ret = ndp120_init(priv, false);
+	int retry = NDP120_INIT_RETRY_COUNT;
+	while (retry--) {
+		lower->reset();
+		ret = ndp120_init(priv, false);
+		if (ret != OK) {
+			auddbg("ndp120 init failed\n");
+		} else {
+			break;
+		}
+	}
+
 	if (ret != OK) {
-		auddbg("ndp120 init failed\n");
 		free(priv);
 		return NULL;
 	}
