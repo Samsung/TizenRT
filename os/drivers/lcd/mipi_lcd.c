@@ -39,7 +39,6 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
-extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
 static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
 #if defined(CONFIG_LCD_SW_ROTATION)
@@ -408,9 +407,6 @@ static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 
 FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 {
-	int logo_arr_index = 0;
-	int lcd_data_index = CONFIG_LCD_XRES * (CONFIG_LCD_YRES - LOGO_YRES) + (CONFIG_LCD_XRES - LOGO_XRES);
-	int lcd_data_col_count = 0;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 
 	/* Memory optimization applied using Rotation buffer
@@ -437,16 +433,7 @@ FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	memset(lcd_init_fullscreen_image, LCD_BLACK_VAL, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
 
 #if defined(CONFIG_LCD_LOGO)
-	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
-		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_init_fullscreen_image[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_data_index += 2;
-		lcd_data_col_count += 1;
-		if (lcd_data_col_count == LOGO_XRES) {
-			lcd_data_index += ((CONFIG_LCD_XRES - LOGO_XRES) * 2);
-			lcd_data_col_count = 0;
-		}
-	}
+	lcd_logo_fill_buffer(lcd_init_fullscreen_image);
 #endif
 
 	priv->config->lcd_put_area((u8 *)lcd_init_fullscreen_image, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);	// 1, 1 -> Start index of the frame buffer

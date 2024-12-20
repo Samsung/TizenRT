@@ -25,3 +25,19 @@
 // Contains desired LOGO pixels
 const uint8_t lcd_logo_raw_data[LOGO_XRES * LOGO_YRES * 2] = {LCD_BLACK_VAL, };
 
+void lcd_logo_fill_buffer(uint8_t *lcd_init_fullscreen_image)
+{
+	int logo_arr_index = 0;
+	int lcd_data_col_count = 0;
+	int lcd_data_index = CONFIG_LCD_XRES * (CONFIG_LCD_YRES - LOGO_YRES) + (CONFIG_LCD_XRES - LOGO_XRES);
+	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
+		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
+		lcd_init_fullscreen_image[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
+		lcd_data_index += 2;
+		lcd_data_col_count += 1;
+		if (lcd_data_col_count == LOGO_XRES) {
+			lcd_data_index += ((CONFIG_LCD_XRES - LOGO_XRES) * 2);
+			lcd_data_col_count = 0;
+		}
+	}
+}
