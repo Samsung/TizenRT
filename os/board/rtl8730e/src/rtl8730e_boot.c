@@ -365,6 +365,12 @@ void amebasmart_mount_partitions(void)
 	automount_fs_partition(&partinfo);
 #endif
 #endif /* end of CONFIG_SECOND_FLASH_PARTITION */
+
+#ifdef CONFIG_RESOURCE_FS
+	if (binary_manager_mount_resource() != OK) {
+		lldbg("ERROR: Failed to mount resource\n");
+	}
+#endif
 }
 
 #ifdef CONFIG_FTL_ENABLED
