@@ -28,11 +28,11 @@
  * Name: reboot_reason_trywrite
  ****************************************************************************/
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-void reboot_reason_write_user_intended(void)
+void reboot_reason_try_write_assert(void)
 {
-	/* Write REBOOT_SYSTEM_USER_INTENDED only when there is no written reason before. */
+	/* Write REBOOT_SYSTEM_ASSERT only when there is no written reason before. */
 	if (!up_reboot_reason_is_written()) {
-		up_reboot_reason_write(REBOOT_SYSTEM_USER_INTENDED);
+		up_reboot_reason_write(REBOOT_SYSTEM_ASSERT);
 	}
 }
 #endif

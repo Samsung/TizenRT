@@ -189,14 +189,6 @@ void up_reboot_reason_write(reboot_reason_code_t reason)
 }
 
 /****************************************************************************
- * Name: reboot_reason_write_user_intended
- ****************************************************************************/
-void reboot_reason_write_user_intended(void)
-{
-
-}
-
-/****************************************************************************
  * Name: up_reboot_reason_clear
  ****************************************************************************/
 void up_reboot_reason_clear(void)

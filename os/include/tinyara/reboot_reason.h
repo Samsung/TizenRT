@@ -40,6 +40,7 @@ typedef enum {
 	REBOOT_SYSTEM_USER_INTENDED        = 56, /* Reboot from user intention */
 	REBOOT_SYSTEM_BINARY_UPDATE        = 57, /* Reboot for Binary Update */
 	REBOOT_SYSTEM_BINARY_RECOVERYFAIL  = 58, /* Binary Recovery Fail */
+	REBOOT_SYSTEM_ASSERT               = 59, /* Reboot from ASSERT or PANIC */
 
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */
