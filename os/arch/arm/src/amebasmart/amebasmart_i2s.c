@@ -265,11 +265,11 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 /* currently support I2S2 */
 static const struct amebasmart_i2s_config_s amebasmart_i2s2_tdm_config = {
-	.i2s_mclk_pin = PB_22,
-	.i2s_sclk_pin = PB_21,
-	.i2s_ws_pin = PA_16,
-	.i2s_sd_tx_pin = PB_10,
-	.i2s_sd_rx_pin = PB_19,
+	.i2s_mclk_pin = PB_22,	// PU
+	.i2s_sclk_pin = PB_21,	// PU
+	.i2s_ws_pin = PA_16,	// PU
+	.i2s_sd_tx_pin = PB_10,	// PU
+	.i2s_sd_rx_pin = PB_29,	// PU (REWORK)
 
 	.i2s_idx = I2S_NUM_2,
 	.rxenab = 1,
