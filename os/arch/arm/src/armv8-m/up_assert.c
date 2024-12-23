@@ -599,7 +599,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	board_led_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	reboot_reason_write_user_intended();
+	reboot_reason_try_write_assert();
 #endif
 
 	abort_mode = true;
