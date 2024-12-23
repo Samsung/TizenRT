@@ -175,8 +175,7 @@ static void show_usage(void)
 	printf("Excute touchscreen testing or controling.\n\n");
 	printf("The touchscreen basic test command which printing coordinates and types:\n");
 	printf("    start: Start the touchscreen basic test \n");
-	printf("    stop : Stop  the touchscreen basic test\n\n ");
-	printf("The touchscreen IC specific test command: \n");
+	printf("    stop : Stop  the touchscreen basic test\n");
 }
 
 /****************************************************************************
@@ -192,7 +191,8 @@ int touchscreen_main(int argc, char *argv[])
 {
 	if (argc <= 1 || !strncmp(argv[1], "-h", 2) || !strncmp(argv[1], "--help", 6)) {
 		show_usage();
-		return ERROR;
+		touchsceen_specific_cmd(0, NULL);
+		return OK;
 	}
 
 	if (argc == 2) {
