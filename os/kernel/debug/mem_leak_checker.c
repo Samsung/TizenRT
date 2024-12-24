@@ -52,37 +52,18 @@ struct alloc_node_info_s {
 	struct alloc_node_info_s *next;
 };
 
-static struct alloc_node_info_s **g_hash_table;
-static struct alloc_node_info_s *g_node_info;
+static struct alloc_node_info_s *g_hash_table[HASH_SIZE];
+static struct alloc_node_info_s g_node_info[MAX_ALLOC_COUNT];
 
 static int hash_init(void)
 {
 	int index;
-
-	g_hash_table = (struct alloc_node_info_s **)malloc(sizeof(struct alloc_node_info_s *) * HASH_SIZE);
-	if (!g_hash_table) {
-		return ERROR;
-	}
-
-	g_node_info = (struct alloc_node_info_s*)malloc(sizeof(struct alloc_node_info_s) * MAX_ALLOC_COUNT);
-	if (!g_node_info) {
-		free(g_hash_table);
-		return ERROR;
-	}
 
 	for (index = 0; index < HASH_SIZE; ++index) {
 		g_hash_table[index] = NULL;
 	}
 
 	return OK;
-}
-
-static void hash_deinit(void)
-{
-	free(g_hash_table);
-	free(g_node_info);
-	g_hash_table = NULL;
-	g_node_info = NULL;
 }
 
 static void add_hash(int index)
@@ -397,11 +378,6 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 		return ERROR;
 	}
 
-	if (g_hash_table || g_node_info) {
-		printf("mem_leak_checker is already running.\n");
-		return ERROR;
-	}
-
 	if (hash_init() != OK) {
 		printf("hash table memory alloc is failed.\n");
 		return ERROR;
@@ -414,7 +390,6 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 
 	print_info(heap, leak_cnt, broken_cnt);
 
-	hash_deinit();
 	return OK;
 }
 
