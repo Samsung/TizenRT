@@ -93,7 +93,6 @@ struct lcd_s {
 	bool do_wait;
 #endif
 };
-static struct lcd_s *lcd_info;
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -376,10 +375,12 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-static void lcd_flushing_thread(void)
+static void lcd_flushing_thread(int argc, char **argv)
 {
 	int ret;
+	DEBUGASSERT(argc == 2);
 	FAR struct lcddev_area_s *lcd_area;
+	struct lcd_s *lcd_info = (struct lcd_s *)strtoul(argv[1], NULL, 16);
 	lcd_area = &(lcd_info->lcd_area);
 	while (true) {
 		while (sem_wait(&lcd_info->flushing_sem) != 0) {
@@ -423,6 +424,12 @@ int lcddev_register(struct lcd_dev_s *dev)
 {
 	char devname[16] = { 0, };
 	int ret;
+	struct lcd_s *lcd_info;
+#if defined(CONFIG_LCD_FLUSH_THREAD)
+	int pid;
+	char *flushing_thread_args[2];
+	char lcd_info_addr[9]; /* for storing 32 bit address */
+#endif
 
 	if (!dev) {
 		return -EINVAL;
@@ -441,12 +448,19 @@ int lcddev_register(struct lcd_dev_s *dev)
 	lcd_info->empty = true;
 	lcd_info->lcd_kbuffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
 	if (!lcd_info->lcd_kbuffer) {
+		sem_destroy(&lcd_info->flushing_sem);
+		kmm_free(lcd_info);
 		lcddbg("ERROR: Failed to allocate memory for LCD flush swap buffer\n");
 		return -ENOMEM;
 	}
-
-	int pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, NULL);
+	itoa((int)lcd_info, lcd_info_addr, 16);
+	flushing_thread_args[0] = lcd_info_addr;
+	flushing_thread_args[1] = NULL;
+	pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, (FAR char *const *)flushing_thread_args);
 	if (pid < 0) {
+		kmm_free(lcd_info->lcd_kbuffer);
+		sem_destroy(&lcd_info->flushing_sem);
+		kmm_free(lcd_info);
 		lcddbg("ERROR: Failed to start LCD Frame Flusing thread\n");
 		return -ENOMEM;
 	}
@@ -458,23 +472,34 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 
 	lcd_init_put_image(dev);
+	sem_init(&lcd_info->sem, 0, 1);
 	if (dev->setpower) {
 		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
 		if (ret != OK) {
-			return ret;
+			goto cleanup;
 		}
 #ifdef CONFIG_PM
 		(void)pm_suspend(lcd_info->pm_domain);
 #endif
 	}
-	sem_init(&lcd_info->sem, 0, 1);
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
-		return register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
-	} else {
-		sem_destroy(&lcd_info->sem);
-		kmm_free(lcd_info);
-		return -ENOSYS;
+		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
+		if (ret != OK) {
+			goto cleanup;
+		} else {
+			return ret; //successful registration of driver
+		}
 	}
+cleanup:
+	lcddbg("ERROR: Failed to register driver %s\n", devname);
+#if defined(CONFIG_LCD_FLUSH_THREAD)
+	task_delete(pid);
+	sem_destroy(&lcd_info->flushing_sem);
+	kmm_free(lcd_info->lcd_kbuffer);
+#endif
+	sem_destroy(&lcd_info->sem);
+	kmm_free(lcd_info);
+	return -ENOSYS;
 }
