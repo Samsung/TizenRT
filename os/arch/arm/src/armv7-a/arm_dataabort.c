@@ -78,6 +78,8 @@ uint32_t system_exception_location;
 
 static inline void print_dataabort_detail(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
+	/* Abort log must always start at a new line.*/
+	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Data Abort at instruction : 0x%08x\n",  regs[REG_PC]);
 	_alert("PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
