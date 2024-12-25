@@ -76,6 +76,8 @@ extern uint32_t system_exception_location;
 
 static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 {
+	/* Abort log must always start at a new line.*/
+	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
 	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
