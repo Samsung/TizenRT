@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 7642e99364 2024/12/26-12:23:49 ==
+1. Fix KM4 crash when disconnecting wifi while CSI is running
+2. Fix KM4 crash when resuming CSI after reconnection
+
 == version 77cb222768 2024/12/12-19:28:06 ==
 1. Add silent table to control frequency of sending probe response packets in noisy environment
 2. Adjust probe response retry limit
