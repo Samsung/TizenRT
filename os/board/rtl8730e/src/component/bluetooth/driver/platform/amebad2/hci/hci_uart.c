@@ -54,7 +54,7 @@ void amebad2_uart_bridge_open(bool flag)
 	if (amebad2_uart)
 		amebad2_uart->bridge_flag = flag;
 	else
-		HCI_ERR("amebad2_uart is NULL!");
+		DBG_8195A("amebad2_uart is NULL!");
 }
 
 void amebad2_uart_bridge_to_hci(uint8_t rc)
@@ -70,7 +70,7 @@ void amebad2_uart_hci_to_bridge(uint8_t rc)
 static uint8_t amebad2_uart_set_bdrate(uint32_t baudrate)
 {
 	UART_SetBaud(HCI_UART_DEV, baudrate);
-	HCI_INFO("Set baudrate to %d success!", (int)baudrate);
+	DBG_8195A("Set baudrate to %d success!", (int)baudrate);
 	return HCI_SUCCESS;
 }
 
@@ -186,7 +186,7 @@ static inline void receive_chars(void)
 		if (!amebad2_uart->rx_disabled && amebad2_uart_rx_to_write_space() < HCI_UART_RX_DISABLE_SIZE) {
 			UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, DISABLE);
 			amebad2_uart->rx_disabled = 1;
-			HCI_INFO("amebad2_uart rx disable!");
+			DBG_8195A("amebad2_uart rx disable!");
 		}
 
 		if (amebad2_uart->rx_ind) {
@@ -236,7 +236,7 @@ static uint32_t amebad2_uart_irq(void *data)
 static uint16_t amebad2_uart_send(uint8_t *buf, uint16_t len)
 {
 	if (!amebad2_uart) {
-		HCI_ERR("amebad2_uart is NULL!");
+		DBG_8195A("amebad2_uart is NULL!");
 		return 0;
 	}
 
@@ -248,7 +248,7 @@ static uint16_t amebad2_uart_send(uint8_t *buf, uint16_t len)
 
 	if (amebad2_uart->tx_done_sem) {
 		if (osif_sem_take(amebad2_uart->tx_done_sem, 0xFFFFFFFF) == false) {
-			HCI_ERR("amebad2_uart->tx_done_sem take fail!");
+			DBG_8195A("amebad2_uart->tx_done_sem take fail!");
 			return 0;
 		}
 	}
@@ -277,7 +277,7 @@ static uint16_t amebad2_uart_read(uint8_t *buf, uint16_t len)
 	if (amebad2_uart->rx_disabled && amebad2_uart_rx_to_read_space() < HCI_UART_RX_ENABLE_SIZE) {
 		UART_INTConfig(HCI_UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
 		amebad2_uart->rx_disabled = 0;
-		HCI_INFO("amebad2_uart rx enable!");
+		DBG_8195A("amebad2_uart rx enable!");
 	}
 
 	return read_len;
@@ -289,7 +289,7 @@ static uint8_t amebad2_uart_open(void)
 	if (!amebad2_uart) {
 		amebad2_uart = (struct amebad2_uart_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct amebad2_uart_t));
 		if (!amebad2_uart) {
-			HCI_ERR("amebad2_uart is NULL!");
+			DBG_8195A("amebad2_uart is NULL!");
 			return HCI_FAIL;
 		}
 		memset(amebad2_uart, 0, sizeof(struct amebad2_uart_t));
@@ -297,7 +297,7 @@ static uint8_t amebad2_uart_open(void)
 	if (!amebad2_uart->ring_buffer) {
 		amebad2_uart->ring_buffer = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, HCI_UART_RX_BUF_SIZE, 4);
 		if (!amebad2_uart->ring_buffer) {
-			HCI_ERR("amebad2_uart->ring_buffer is NULL!");
+			DBG_8195A("amebad2_uart->ring_buffer is NULL!");
 			return HCI_FAIL;
 		}
 		memset(amebad2_uart->ring_buffer, 0, sizeof(HCI_UART_RX_BUF_SIZE));
@@ -308,7 +308,7 @@ static uint8_t amebad2_uart_open(void)
 	amebad2_uart->rx_disabled = 0;
 
 	if (osif_sem_create(&amebad2_uart->tx_done_sem, 0, 1) == false) {
-		HCI_ERR("amebad2_uart->tx_done_sem create fail!");
+		DBG_8195A("amebad2_uart->tx_done_sem create fail!");
 		return HCI_FAIL;
 	}
 
@@ -350,7 +350,7 @@ static uint8_t amebad2_uart_close(void)
 {
 	if (!amebad2_uart)
 	{
-		HCI_ERR("amebad2_uart is NULL!");
+		DBG_8195A("amebad2_uart is NULL!");
 		return HCI_FAIL;
 	}
 
@@ -366,7 +366,7 @@ static uint8_t amebad2_uart_free(void)
 {
 	if (!amebad2_uart)
 	{
-		HCI_ERR("amebad2_uart is NULL!");
+		DBG_8195A("amebad2_uart is NULL!");
 		return HCI_FAIL;
 	}
 
