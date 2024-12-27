@@ -2324,6 +2324,24 @@ static uint16_t bt_stack_le_gap_remove_ext_adv(void *param)
 	return 0;
 #endif
 }
+
+static uint16_t bt_stack_le_gap_get_ext_adv_handle_by_conn_handle(void *param) 
+{ 
+#if defined(RTK_BLE_MGR_LIB_EADV) && RTK_BLE_MGR_LIB_EADV 
+	(void)param; 
+	return RTK_BT_ERR_UNSUPPORTED; 
+#else 
+	rtk_bt_le_get_eadv_by_conn_handle_param_t *get_eadv_hdl = (rtk_bt_le_get_eadv_by_conn_handle_param_t *)param;
+	uint8_t conn_id = 0; 
+
+	if (!le_get_conn_id_by_handle(get_eadv_hdl->conn_handle, &conn_id)) { 
+		return RTK_BT_ERR_NO_CONNECTION; 
+	} 
+	*(get_eadv_hdl->adv_handle) = le_ext_adv_get_adv_handle_by_conn_id(conn_id); 
+ 
+	return 0; 
+#endif 
+}
 #endif /* RTK_BLE_5_0_AE_ADV_SUPPORT && F_BT_LE_5_0_AE_ADV_SUPPORT */
 
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
@@ -4351,6 +4369,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		API_PRINT("RTK_BT_LE_GAP_ACT_REMOVE_EXT_ADV \r\n");
 		ret = bt_stack_le_gap_remove_ext_adv(p_cmd->param);
 		break;
+	case RTK_BT_LE_GAP_ACT_GET_EXT_ADV_HANDLE_BY_CONN_HANDLE: 
+		API_PRINT("RTK_BT_LE_GAP_ACT_GET_EXT_ADV_HANDLE_BY_CONN_HANDLE \r\n");
+		ret = bt_stack_le_gap_get_ext_adv_handle_by_conn_handle(p_cmd->param);
+		break; 
 #endif
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 	case RTK_BT_LE_GAP_ACT_EXT_CONN:

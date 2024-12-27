@@ -384,6 +384,19 @@ uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle)
 
 	return ret;
 }
+
+uint16_t rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(uint16_t conn_handle, uint8_t *adv_handle) 
+{ 
+	uint16_t ret = 0; 
+	rtk_bt_le_get_eadv_by_conn_handle_param_t get_adv_hdl = { 
+		.conn_handle = conn_handle, 
+		.adv_handle = adv_handle, 
+	}; 
+ 
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_GET_EXT_ADV_HANDLE_BY_CONN_HANDLE, &get_adv_hdl, sizeof(get_adv_hdl));
+	return ret; 
+}
+
 #endif /* RTK_BLE_5_0_AE_ADV_SUPPORT */
 
 #if (defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT) || (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)

@@ -222,7 +222,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 					ble_client_connect_is_running = 0;
 
 			}else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
-				server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val);
+				server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
 			}
 
         } else {
@@ -413,7 +413,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				client_init_parm->trble_device_connected_cb(&connected_dev);
 			}else if(RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role)
 			{
-				server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val);				
+				server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only				
 			}
         }
         break;

@@ -192,14 +192,16 @@ void restart_server(void) {
 	RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
 }
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN], uint8_t adv_handle)
 {
 	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
 	RMC_LOG(RMC_SERVER_TAG, "conn : %d / conn_type : %d\n", con_handle, conn_type);
 	RMC_LOG(RMC_SERVER_TAG, "conn mac : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	RMC_LOG(RMC_SERVER_TAG, "adv_handle : %d\n", adv_handle);
 	if (conn_type == BLE_SERVER_DISCONNECTED) {
 		restart_server();
 	}
+	adv_handle = 0xff;
 	return;
 }
 

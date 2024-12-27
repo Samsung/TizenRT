@@ -1890,7 +1890,12 @@ typedef struct {
 	uint16_t *p_tx_pending_num;
 } rtk_bt_le_get_tx_pending_num_param_t;
 
-
+#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+typedef struct {
+	uint16_t conn_handle;
+	uint8_t *adv_handle;
+} rtk_bt_le_get_eadv_by_conn_handle_param_t;
+#endif
 /********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_le_gap BT LE GAP APIs

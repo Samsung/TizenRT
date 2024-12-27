@@ -110,7 +110,7 @@ typedef struct {
 	void* arg;
 } ble_server_gatt_t;
 
-typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
+typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN], uint8_t adv_handle);
 typedef void (*ble_server_disconnected_t)(ble_conn_handle con_handle, uint16_t cause);
 typedef void (*ble_server_mtu_update_t)(ble_conn_handle con_handle, uint16_t mtu_size);
 

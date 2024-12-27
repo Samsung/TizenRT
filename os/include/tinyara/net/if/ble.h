@@ -315,7 +315,7 @@ typedef enum {
 	TRBLE_SERVER_DISCONNECTED,
 } trble_server_connection_type_e;
 
-typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN], uint8_t adv_handle);
 typedef void (*trble_server_disconnected_t)(trble_conn_handle con_handle, uint16_t cause);
 typedef void (*trble_server_mtu_update_t)(trble_conn_handle con_handle,  uint16_t mtu_size);
 typedef void (*trble_server_oneshot_adv_t)(uint16_t adv_ret);
