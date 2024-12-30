@@ -2028,6 +2028,33 @@ int up_cpu_paused(int cpu);
 
 int up_cpu_resume(int cpu);
 
+/****************************************************************************
+ * Name: up_cpu_pause_all
+ *
+ * Description:
+ *   pause all the CPUs other than the current cpu. Internally, it calls
+ *   up_cpu_pause() api to stop all the CPU's.
+ *
+ * Returned Value:
+ *	 None
+ *
+ ****************************************************************************/
+
+void up_cpu_pause_all(void);
+
+/****************************************************************************
+ * Name: up_cpu_resume_all
+ *
+ * Description:
+ *   Resume all the CPUs which were paused earlier.
+ *
+ * Returned Value:
+ *	 None
+ *
+ ****************************************************************************/
+
+void up_cpu_resume_all(void);
+
 #ifdef CONFIG_PM
 /****************************************************************************
  * Name: up_cpu_hotplug
