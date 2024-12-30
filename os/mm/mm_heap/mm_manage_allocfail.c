@@ -90,6 +90,13 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 {
 	irqstate_t flags = enter_critical_section();
 
+#ifdef CONFIG_SMP
+	/* If SMP is enabled then we need to pause all the other cpu's immediately.
+	 * If we don't pause the other CPUs, it might mix up the logs with other
+	 * core's printing log.
+	 */
+	up_cpu_pause_all();
+#endif
 	extern bool abort_mode;
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	abort_mode = true;
@@ -121,6 +128,13 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 	}
 #endif /* CONFIG_DEBUG_MM_HEAPINFO */
+
+#ifdef CONFIG_SMP
+	/* If SMP is enabled then we need to resume all the other cpu's
+	 * which we paused earlier.
+	 */
+	up_cpu_resume_all();
+#endif
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	PANIC();
