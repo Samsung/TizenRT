@@ -417,4 +417,48 @@ int up_cpu_resume(int cpu)
 	return OK;
 }
 
+/****************************************************************************
+ * Name: up_cpu_pause_all
+ *
+ * Description:
+ *   pause all the CPUs other than the current cpu. Internally, it calls
+ *   up_cpu_pause() api to stop all the CPU's.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void up_cpu_pause_all(void)
+{
+	int me = sched_getcpu();
+	for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (cpu != me) {
+			/* Pause the CPU */
+			up_cpu_pause(cpu);
+		}
+	}
+}
+
+/****************************************************************************
+ * Name: up_cpu_resume_all
+ *
+ * Description:
+ *   Resume all the CPUs which were paused earlier.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void up_cpu_resume_all(void)
+{
+	int me = sched_getcpu();
+	for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (cpu != me) {
+			/* Resume the CPU */
+			up_cpu_resume(cpu);
+		}
+	}
+}
 #endif							/* CONFIG_SMP */
