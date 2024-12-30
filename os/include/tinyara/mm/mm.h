@@ -373,6 +373,7 @@ extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 
 struct mm_alloc_fail_s {
 	uint32_t size;
+	uint32_t align;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller;
 #endif
@@ -690,6 +691,7 @@ void kmm_extend(FAR void *mem, size_t size, int region);
 
 struct mallinfo;				/* Forward reference */
 int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info);
+int mm_mallinfo_aligned(FAR struct mm_heap_s *heap, FAR struct mallinfo *info, size_t align);
 
 /* Functions contained in kmm_mallinfo.c ************************************/
 
@@ -784,26 +786,26 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 /* Function to manage the memory allocation failure case. */
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller);
-#define mm_manage_alloc_fail(h, b, e, s, t, c) 	do { \
-							(void)h; \
-							(void)b; \
-							(void)e; \
-							(void)t; \
-							mm_ioctl_alloc_fail(s, c); \
-						} while (0)
+void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller);
+#define mm_manage_alloc_fail(h, b, e, s, a, t, c) 	do { \
+								(void)h; \
+								(void)b; \
+								(void)e; \
+								(void)t; \
+								mm_ioctl_alloc_fail(s, a, c); \
+							} while (0)
 #else
-void mm_ioctl_alloc_fail(size_t size);
-#define mm_manage_alloc_fail(h, b, e, s, t) 	do { \
+void mm_ioctl_alloc_fail(size_t size, size_t align);
+#define mm_manage_alloc_fail(h, b, e, s, a, t) 	do { \
 							(void)h; \
 							(void)b; \
 							(void)e; \
 							(void)t; \
-							mm_ioctl_alloc_fail(s); \
+							mm_ioctl_alloc_fail(s, a); \
 						} while (0)
 #endif
 #else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		, mmaddress_t caller
 #endif

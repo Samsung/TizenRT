@@ -59,15 +59,15 @@
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller)
+void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller)
 #else
-void mm_ioctl_alloc_fail(size_t size)
+void mm_ioctl_alloc_fail(size_t size, size_t align)
 #endif
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_alloc_fail_s arg = {size, caller};
+	struct mm_alloc_fail_s arg = {size, align, caller};
 #else
-	struct mm_alloc_fail_s arg = {size};
+	struct mm_alloc_fail_s arg = {size, align};
 #endif
 	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
 	if (mmfd < 0) {
@@ -84,9 +84,9 @@ void mm_ioctl_alloc_fail(size_t size)
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type, mmaddress_t caller)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
 #else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
 #endif
 {
 	irqstate_t flags = enter_critical_section();
@@ -105,12 +105,15 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 		mfdbg("mem leak task creation failed\n");
 	} else {
 		int status;
-		int ret = waitpid(mem_leak, &status, 0);
+		(void)waitpid(mem_leak, &status, 0);
 	}
 #endif
 
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
+	if (align) {
+		mfdbg(" - requested alignment %u\n", align);
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mfdbg(" - caller address = 0x%08x\n", caller);
 #endif
@@ -120,7 +123,17 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	for (int idx = startidx; idx <= endidx; idx++) {
 		mm_mallinfo(&heap[idx], &info);
 	}
-	mfdbg(" - largest free size : %d\n", info.mxordblk);
+
+	if (align) {
+		mfdbg(" - largest un-aligned free size : %d\n", info.mxordblk);
+		memset(&info, 0, sizeof(struct mallinfo));
+		for (int idx = startidx; idx <= endidx; idx++) {
+			mm_mallinfo_aligned(&heap[idx], &info, align);
+		}
+		mfdbg(" - largest algined free size : %d\n", info.mxordblk);
+	} else {
+		mfdbg(" - largest free size : %d\n", info.mxordblk);
+	}
 	mfdbg(" - total free size   : %d\n", info.fordblks);
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL

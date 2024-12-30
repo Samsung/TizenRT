@@ -111,7 +111,7 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif
@@ -184,7 +184,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		}
 	}
 
-	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, KERNEL_HEAP
+	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, 0, KERNEL_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			, caller_retaddr
 #endif

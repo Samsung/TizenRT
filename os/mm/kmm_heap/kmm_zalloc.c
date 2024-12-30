@@ -105,7 +105,7 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, KERNEL_HEAP
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif
@@ -153,7 +153,7 @@ FAR void *kmm_zalloc(size_t size)
 			return ret;
 		}
 	}
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, KERNEL_HEAP
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, 0, KERNEL_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			, caller_retaddr
 #endif
