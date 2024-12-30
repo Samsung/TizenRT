@@ -583,14 +583,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 
 #ifdef CONFIG_SMP
-	/* If SMP is enabled and there is a crash in kernel space, then we need to
-	 * pause all the other cpu's immediately because the kernel state might be
-	 * invalid at this point. If we dont pause other cpu's then it might lead
-	 * to multiple asserts.
-	 */
-	if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		up_cpu_pause_all();
-	}
+	/* Pause all other CPUs to avoid mix up of logs while printing assert logs */
+	up_cpu_pause_all();
+
 #endif
 
 	struct tcb_s *fault_tcb = this_task();
