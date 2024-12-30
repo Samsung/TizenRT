@@ -439,7 +439,7 @@ static inline void amebasmart_i2c_sem_wait(FAR struct amebasmart_i2c_priv_s *pri
 		 */
 
 		DEBUGASSERT(ret == OK || errno == EINTR);
-	} while (errno == EINTR);
+	} while (ret != OK);
 }
 
 /************************************************************************************
