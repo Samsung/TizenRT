@@ -112,7 +112,7 @@ static int pm_suspend_resume_test(void)
 	return 0;
 }
 
-static int start_pm_test(void)
+static int start_pm_test(int argc, char *argv[])
 {
 	pthread_t suspend_resume_tid;
 	int ret;
