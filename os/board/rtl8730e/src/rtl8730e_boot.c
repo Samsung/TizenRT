@@ -408,7 +408,12 @@ static gtimer_t g_timer_np_lp;
 
 static void np_lp_status_timer_hdl(void)
 {
-	ASSERT(BKUP_Read(BKUP_REG2) != 0x1);
+	/* Added to inspect the value of BKUP_REG2 */
+	u32 boot_reason_reg2 = BKUP_Read(BKUP_REG2);
+	if (boot_reason_reg2 != 0x0) {
+		lldbg("boot_reason_reg2 0x%x \n", boot_reason_reg2);
+		ASSERT(boot_reason_reg2 == 0x0);
+	}
 }
 
 static void init_np_lp_status_timer(void)
