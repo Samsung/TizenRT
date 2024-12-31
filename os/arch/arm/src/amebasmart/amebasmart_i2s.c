@@ -269,7 +269,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_tdm_config = {
 	.i2s_mclk_pin = PB_22, // PU
 	.i2s_sclk_pin = PB_21, // PU
 	.i2s_ws_pin = PA_16,  // PU
-	.i2s_sd_tx_pin = PB_10, // PU
+	.i2s_sd_tx_pin = NC, // NC for TX!
 	.i2s_sd_rx_pin = PB_29, // PU (REWORK)
 
 	.i2s_idx = I2S_NUM_2,
