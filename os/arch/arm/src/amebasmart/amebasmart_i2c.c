@@ -376,8 +376,14 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	//.busy_idle = CONFIG_I2C2_BUSYIDLE,
 	//.filtscl = CONFIG_I2C2_FILTSCL,
 	//.filtsda = CONFIG_I2C2_FILTSDA,
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+	.scl_pin = PB_11,
+	.sda_pin = PB_10,
+#else
 	.scl_pin = PA_29,
 	.sda_pin = PA_28,
+#endif
+
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
