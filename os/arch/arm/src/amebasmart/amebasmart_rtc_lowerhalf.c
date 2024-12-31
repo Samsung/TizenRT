@@ -291,7 +291,7 @@ static int amebasmart_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const stru
 	/* Get exclusive access to the alarm */
 
 	ret = sem_wait(&rtc->devsem);
-	if (ret < 0) {
+	if (ret < OK) {
 		return ret;
 	}
 
@@ -357,7 +357,7 @@ static int amebasmart_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const s
 	/* Get exclusive access to the alarm */
 
 	ret = sem_wait(&rtc->devsem);
-	if (ret < 0) {
+	if (ret < OK) {
 		return ret;
 	}
 

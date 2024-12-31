@@ -505,7 +505,7 @@ static void spi_dmarxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->rxsem) != 0) {
+	while (sem_wait(&priv->rxsem) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -528,7 +528,7 @@ static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->txsem) != 0 ) {
+	while (sem_wait(&priv->txsem) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -742,9 +742,9 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 		 * awakened by a signal.
 		 */
 
-		while (sem_wait(&priv->exclsem) != 0) {
+		while (sem_wait(&priv->exclsem) != OK) {
 			DEBUGASSERT(errno == EINTR);
-                }
+		}
 
 	} else {
 		(void)sem_post(&priv->exclsem);
