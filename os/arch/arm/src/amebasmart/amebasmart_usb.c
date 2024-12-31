@@ -319,7 +319,7 @@ static void rtl8730e_log_usb_send(struct uart_dev_s *dev, int ch)
 	int fd;
 	
 	usbd_cdc_acm_transmit(&ch, 1);
-	while (sem_wait(&g_usbdev.txsem) != 0) {
+	while (sem_wait(&g_usbdev.txsem) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -362,7 +362,7 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 			/*we should only call usb TX when device is attached and ready, else abandon the data*/
 			if (attach_status == USBD_ATTACH_STATUS_ATTACHED && cdc_acm_ready_flag) { 
 				usbd_cdc_acm_transmit(buffer, CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
-				while (sem_wait(&g_usbdev.txsem) != 0) {
+				while (sem_wait(&g_usbdev.txsem) != OK) {
 					/* The only case that an error should occur here is if the wait was awakened
 					* by a signal.
 					*/
@@ -375,7 +375,7 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 	/*we should only call usb TX when device is attached and ready, else abandon the data*/
 	if (attach_status == USBD_ATTACH_STATUS_ATTACHED && cdc_acm_ready_flag) { 
 		usbd_cdc_acm_transmit(buffer, nbytes);
-		while (sem_wait(&g_usbdev.txsem) != 0) {
+		while (sem_wait(&g_usbdev.txsem) != OK) {
 			/* The only case that an error should occur here is if the wait was awakened
 			* by a signal.
 			*/

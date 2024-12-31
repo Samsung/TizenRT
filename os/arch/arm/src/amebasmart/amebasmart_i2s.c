@@ -1352,8 +1352,8 @@ static void i2s_bufsem_rx_take(struct amebasmart_i2s_s *priv)
 	 */
 	do {
 		ret = sem_wait(&priv->bufsem_rx);
-		DEBUGASSERT(ret == 0 || errno == EINTR);
-	} while (ret < 0);
+		DEBUGASSERT(ret == OK || errno == EINTR);
+	} while (ret != OK);
 }
 
 /****************************************************************************
@@ -1483,8 +1483,8 @@ static void i2s_bufsem_tx_take(struct amebasmart_i2s_s *priv)
 	 */
 	do {
 		ret = sem_wait(&priv->bufsem_tx);
-		DEBUGASSERT(ret == 0 || errno == EINTR);
-	} while (ret < 0);
+		DEBUGASSERT(ret == OK || errno == EINTR);
+	} while (ret != OK);
 }
 
 /****************************************************************************
@@ -1616,7 +1616,7 @@ static void i2s_exclsem_take(struct amebasmart_i2s_s *priv)
 	do {
 		ret = sem_wait(&priv->exclsem);
 		DEBUGASSERT(errno != EINTR);
-	} while (ret < 0);
+	} while (ret != OK);
 }
 
 /****************************************************************************

@@ -60,7 +60,7 @@ int rtw_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 {
 	int temp;
 	temp = sem_wait(*pmutex);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 	return temp;
@@ -118,7 +118,7 @@ void rtw_spin_lock(_lock *plock)
 {
 	int temp;
 	temp = sem_wait(*plock);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 }
