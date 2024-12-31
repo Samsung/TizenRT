@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a1a0ee7deb 2024/12/31-15:44:42 ==
+1. Read back and Display the BKUP_REG2 value in the KM4,KM0 fault handlers.
+
 == version 7642e99364 2024/12/26-12:23:49 ==
 1. Fix KM4 crash when disconnecting wifi while CSI is running
 2. Fix KM4 crash when resuming CSI after reconnection

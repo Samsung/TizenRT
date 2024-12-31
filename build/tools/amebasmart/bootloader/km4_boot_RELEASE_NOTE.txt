@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a1a0ee7deb_2024/12/31-15:44:33 ==
+1.	Read back and Display the BKUP_REG2 value in the BOOT fault handlers.
+2. 	Add display the BKUP_REG2 value in the BOOTImage1 flow.
+
 == version 1d94f05280_2024/12/09-12:35:36 ==
 1.	Fix PSRAM latency
 	Root Cause: There is no backup latency for PSRAM Vendor A.
