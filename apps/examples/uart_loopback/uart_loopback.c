@@ -94,7 +94,7 @@ static int uart_rx_loop(void)
 
 	while (is_running) {
 		rx_test_count++;
-		read_ptr = &read_buf;
+		read_ptr = (char *)&read_buf;
 		remain_size = TEST_STR_LEN;
 
 		while (0 < remain_size) {
@@ -173,6 +173,7 @@ static int uart_loopback_task(int argc, char *argv[])
 	}
 
 	printf("######################### UART loopback test END ###########################\n");
+	return ret;
 }
 
 
@@ -182,7 +183,6 @@ int main(int argc, FAR char *argv[])
 int uart_loopback_main(int argc, char **argv)
 #endif
 {
-	int ret;
 	int pid;
 
 	if (argc != 2 || strncmp(argv[1], "help", 5) == 0) {
