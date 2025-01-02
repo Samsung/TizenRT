@@ -130,6 +130,15 @@ static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 		deauth_reason =*(u16*)(buf+6);
 		key_mgmt = *(u32*)(buf+8);
 	}
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	rtk_reason_t dummy_reason;
+	memset(&dummy_reason, 0, sizeof(rtk_reason_t));
+	if (g_link_down) {
+		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
+		g_link_down(&dummy_reason);
+	}
+	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl);
+#endif
 }
 
 //----------------------------------------------------------------------------//
@@ -191,6 +200,10 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 	}
 	DCache_Clean((u32)connect_param, sizeof(rtw_network_info_t));
 	param_buf[0] = (u32)connect_param;
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	/* Register disconnect handler before starting join */
+	wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl, NULL);
+#endif
 	result = inic_ipc_api_host_message_send(IPC_API_WIFI_CONNECT, param_buf, 1);
 
 	if (result != RTW_SUCCESS) {
@@ -233,7 +246,6 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 				printf("RTK_API %s() send link_up\n", __func__);
 				g_link_up(&reason);
 			}
-			wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl, NULL);
 #endif
 		}
 	}
@@ -259,14 +271,6 @@ int wifi_disconnect(void)
 	int ret = 0;
 
 	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_DISCONNECT, NULL, 0);
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)
-	rtk_reason_t dummy_reason;
-	memset(&dummy_reason, 0, sizeof(rtk_reason_t));
-	if (g_link_down) {
-		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
-		g_link_down(&dummy_reason); //dummy_reason was not processed in _wt_sta_disconnected callback in TizenRT
-	}
-#endif
 	return ret;
 }
 
