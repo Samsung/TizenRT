@@ -1202,6 +1202,11 @@ static int i2s_tdm_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_c
 	bfcontainer->apb = apb;
 	bfcontainer->result = -EBUSY;
 
+	/* Hold PM lock, this will be cleared when the RX DMA callback is ready */
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2S_DRV, 1);
+#endif
+
 	/* Prepare DMA microcode (CHANGE THIS! THIS SHOULD SETUP DMA BUFFERS BEFORE CLOCK STARTS) */
 	i2s_rxdma_prep(priv, bfcontainer);
 
@@ -1314,6 +1319,11 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 				i2s_rxdma_callback(priv, OK);
 			}
 		}
+
+#ifdef CONFIG_PM
+		/* Release PM lock */
+		bsp_pm_domain_control(BSP_I2S_DRV, 0);
+#endif
 	}
 #else
 
@@ -2364,12 +2374,20 @@ static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+#define I2S_INITIALIZE amebasmart_i2s_tdm_initialize
+#else
+#define I2S_INITIALIZE amebasmart_i2s_initialize
+#endif
+
 	/* For PG Sleep, I2S HW will be lost power, thus a reinitialization is required here */
 #ifdef CONFIG_AMEBASMART_I2S2
-	(void)amebasmart_i2s_initialize(I2S_NUM_2, I2S_REINIT);
+	//(void)amebasmart_i2s_initialize(I2S_NUM_2, I2S_REINIT);
+	(void)I2S_INITIALIZE(I2S_NUM_2, I2S_REINIT);
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
-	(void)amebasmart_i2s_initialize(I2S_NUM_3, I2S_REINIT);
+	//(void)amebasmart_i2s_initialize(I2S_NUM_3, I2S_REINIT);
+	(void)I2S_INITIALIZE(I2S_NUM_3, I2S_REINIT);
 #endif
 
 	return 1;

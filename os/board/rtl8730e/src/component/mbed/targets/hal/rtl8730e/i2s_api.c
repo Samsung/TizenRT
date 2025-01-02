@@ -811,15 +811,16 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
-		if (is_suspend) {
-			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
-		}
 	} else {
 		GDMA_ClearINT(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Cmd(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum, DISABLE);
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
+	}
+
+	if (is_suspend) {
+		AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
 	}
 }
 
@@ -997,6 +998,8 @@ static void i2s_tdm_rx_isr(void *sp_data)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
+	i2s_release_rx_page(i2s_index);
+
 	/* set flag to inform os layer */
 	DMA_Done = 1;
 
@@ -1017,6 +1020,8 @@ static void i2s_tdm_rx_isr_ext(void *sp_data)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+
+	i2s_release_rx_page(i2s_index);
 
 	/* set flag to inform os layer */
 	DMA_Done_1 = 1;
@@ -1117,6 +1122,8 @@ void i2s_tdm_disable(i2s_t *obj, bool is_suspend)
 void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 {
 	uint32_t clock_mode = 0;
+
+	lldbg("in TDM set_param!\n");
 
 	assert_param(IS_SP_CHN_NUM(obj->channel_num));
 	assert_param(obj->channel_num == SP_CH_STEREO);
