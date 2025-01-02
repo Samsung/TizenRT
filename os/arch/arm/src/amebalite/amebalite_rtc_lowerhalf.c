@@ -289,7 +289,7 @@ static int amebalite_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struc
 	/* Get exclusive access to the alarm */
 
 	ret = sem_wait(&rtc->devsem);
-	if (ret < 0) {
+	if (ret < OK) {
 		return ret;
 	}
 
@@ -355,7 +355,7 @@ static int amebalite_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const st
 	/* Get exclusive access to the alarm */
 
 	ret = sem_wait(&rtc->devsem);
-	if (ret < 0) {
+	if (ret < OK) {
 		return ret;
 	}
 
