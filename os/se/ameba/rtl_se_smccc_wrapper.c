@@ -73,9 +73,7 @@ static unsigned long invoke_securetest(unsigned long function_id,
 									unsigned long arg2, unsigned long arg3)
 {
 	struct arm_smccc_res res;
-	FLASH_Write_Lock();
 	arm_smccc_smc(function_id, arg0, arg1, arg2, arg3, 0, 0, 0, &res);
-	FLASH_Write_Unlock();
 
 	//printf("\n ==== Output SMCCC: [function_id:%x] %x %x %x %x ==== \n", function_id, res.a0, res.a1, res.a2, res.a3);
 
@@ -88,14 +86,18 @@ static unsigned long invoke_securetest(unsigned long function_id,
 int ameba_hal_init(hal_init_param *params, factory_struc *input_data, ns_passin_struc *ns_passin)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000010, (uint32_t)params, (uint32_t)input_data, (uint32_t)ns_passin, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_deinit(void)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000011, 0, 0, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
@@ -246,14 +248,18 @@ int ameba_hal_remove_certificate(uint32_t cert_idx)
 int ameba_hal_get_factory_key(uint32_t key_idx, hal_data *key)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000025, key_idx, (uint32_t)key, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_get_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000026, cert_idx, (uint32_t)cert, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
@@ -301,42 +307,54 @@ int ameba_hal_rsa_decrypt(inout_struc *in_output, hal_rsa_mode *rsa_mode, uint32
 int ameba_hal_write_storage(uint32_t ss_idx, hal_data *data)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x8200002C, ss_idx, (uint32_t)data, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_read_storage(uint32_t ss_idx, hal_data *data)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x8200002D, ss_idx, (uint32_t)data, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_delete_storage(uint32_t ss_idx)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x8200002E, ss_idx, 0, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_write_factory_key(uint32_t key_idx, hal_data *key)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x8200002F, key_idx, (uint32_t)key, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_write_factory_cert(uint32_t cert_idx, hal_data *cert)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000030, cert_idx, (uint32_t)cert, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_hal_write_protect(uint32_t status)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000031, status, 0, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
@@ -388,21 +406,27 @@ int ameba_Secure_KeyDeriveFunc(secure_kdf_struc *KFD_info)
 int ameba_ftl_secure_init(uint32_t key_addr)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000040, key_addr, 0, 0, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_ftl_save_to_storage(uint8_t *tmp_buff, void *pdata, uint16_t offset, uint16_t size)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000041, (unsigned long)tmp_buff, (unsigned long)pdata, offset, size);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
 int ameba_ftl_load_from_storage(void *pdata, uint16_t offset, uint16_t size)
 {
 	int ret = 0;
+	FLASH_Write_Lock();
 	ret = invoke_securetest(0x82000042, (unsigned long)pdata, offset, size, 0);
+	FLASH_Write_Unlock();
 	return ret;
 }
 
