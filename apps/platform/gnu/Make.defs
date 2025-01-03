@@ -56,6 +56,11 @@ ifeq ($(CONFIG_HAVE_CXXINITIALIZE),y)
 CSRCS += gnu_cxxinitialize.c
 endif
 
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY)$(CONFIG_LIBCXX_EXCEPTION),yy)
+# We need custom find_exidx only in the case of common binary
+CSRCS += gnu_unwind_find_exidx.c
+endif
+
 # Add the gnu/ sub-directory to the build
 
 VPATH += :gnu
