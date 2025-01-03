@@ -530,15 +530,12 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
 
 #if defined(CONFIG_AMEBASMART_I2S_TDM)
+	/* TODO: modify this for configurability */
 	Init_Params.chn_len = SP_CL_16;
 	Init_Params.chn_cnt = (obj->fifo_num + 1) * 2;
 	Init_Params.codec_multiplier_with_rate = 0;
 	Init_Params.sport_mclk_fixed_max = (uint32_t) 12288000;	//12.288MHz
 #endif
-//#else
-//	Init_Params.codec_multiplier_with_rate = 256;
-//	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
-//#endif
 
 	Audio_Clock_Choose(PLL_CLK, &Init_Params, &Clock_Params);
 	obj->clock = Clock_Params.Clock;
@@ -986,7 +983,6 @@ void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 	u32 *pbuf, pbuf_1;
 
 	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
-	sp_str_ext->i2s_idx = i2s_index;
 
 	I2SUserCB.TxCCB = handler;
 	I2SUserCB.TxCBId = id;
@@ -1139,9 +1135,6 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	lldbg("in TDM set_param!\n");
 
-	assert_param(IS_SP_CHN_NUM(obj->channel_num));
-	assert_param(obj->channel_num == SP_CH_STEREO);
-
 	clock_mode = i2s_clock_select(obj);
 
 	/* Sport Deinit */
@@ -1152,22 +1145,25 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 	AUDIO_SP_Reset(obj->i2s_idx);
 	AUDIO_SP_StructInit(&SP_InitStruct);
 
-	if (obj->direction == I2S_DIR_TX) {
-		SP_InitStruct.SP_SelFIFO = SP_TX_FIFO8;
-		SP_InitStruct.SP_SelChLen = SP_TXCL_16;
-		SP_InitStruct.SP_SelWordLen = SP_TXWL_16;
+	SP_InitStruct.SP_SelFIFO = obj->fifo_num;				// AUDIO_SPORT_T/Rx_FIFO
+	SP_InitStruct.SP_SelChLen = obj->channel_length;		// AUDIO_SPORT_T/Rx_Channel_Length
+	SP_InitStruct.SP_SelWordLen = obj->word_length;			// AUDIO_SPORT_Word_Length
+	SP_InitStruct.SP_SelI2SMonoStereo = obj->channel_num;	// AUDIO_SPORT_Channel_Number
+	SP_InitStruct.SP_SR = obj->sampling_rate;				// AUDIO_SPORT_Sample_Rate
+	
+	if (obj->fifo_num == SP_TX_FIFO8 || obj->fifo_num == SP_RX_FIFO8) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_8CH;
+	} else if (obj->fifo_num == SP_TX_FIFO6 || obj->fifo_num == SP_RX_FIFO6) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_6CH;
+	} else if (obj->fifo_num == SP_TX_FIFO4 || obj->fifo_num == SP_RX_FIFO4) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_4CH;
 	} else {
-		SP_InitStruct.SP_SelFIFO = SP_RX_FIFO8;
-		SP_InitStruct.SP_SelChLen = SP_RXCL_16;
-		SP_InitStruct.SP_SelWordLen = SP_RXWL_16;
+		i2serr("Only 4/6/8 channel TDM supported!");
+		return;
 	}
 
-	/* hardcoded for now */
 	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
 	SP_InitStruct.SP_SelDataFormat = SP_DF_I2S;
-	SP_InitStruct.SP_SelI2SMonoStereo = obj->channel_num;
-	SP_InitStruct.SP_SelTDM = I2S_TDM_8CH;
-	SP_InitStruct.SP_SR = SP_16K;
 	SP_InitStruct.SP_SelClk = clock_mode;
 
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
