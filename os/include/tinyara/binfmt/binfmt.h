@@ -67,6 +67,9 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
+#ifdef CONFIG_LIBCXX_EXCEPTION
+#include <unwind.h>
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -152,6 +155,12 @@ struct binary_s {
 	FAR binfmt_dtor_t *dtors;		/* Pointer to a list of destructors */
 	uint16_t nctors;			/* Number of constructors in the list */
 	uint16_t ndtors;			/* Number of destructors in the list */
+#endif
+
+#ifdef CONFIG_LIBCXX_EXCEPTION
+	void *exidx_start;			/* Start of exidx section */
+	void *exidx_end;			/* End of exidx section */
+	int (*register_exidx)(_Unwind_Ptr start, _Unwind_Ptr end, void * text_start, void * text_end, int bin_idx); /* function to register exidx data with common binary */
 #endif
 
 	/* Start-up information that is provided by the loader, but may be modified
