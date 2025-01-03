@@ -107,6 +107,12 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	binp->ram_region_end = (uint32_t)uspace.ram_end;
 	binp->sizes[BIN_TEXT] = binp->flash_region_end - binp->flash_region_start;
 
+#ifdef CONFIG_LIBCXX_EXCEPTION
+	binp->exidx_start = uspace.exidx_start;
+	binp->exidx_end = uspace.exidx_end;
+	binp->register_exidx = uspace.register_exidx;
+#endif
+
 	/* zero out the bss... */
 	for (uint8_t *bss = uspace.bss_start; bss < (uint8_t *)uspace.bss_end; bss++) {
 		*bss = 0x00;

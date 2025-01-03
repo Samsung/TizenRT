@@ -137,6 +137,12 @@ static void exec_ctors(FAR void *arg)
 	}
 #endif
 
+#ifdef CONFIG_LIBCXX_EXCEPTION
+	if (!binp->islibrary) {
+		g_lib_binp->register_exidx(binp->exidx_start, binp->exidx_end, binp->sections[BIN_TEXT], binp->sections[BIN_TEXT] + binp->sizes[BIN_TEXT], binp->binary_idx);
+	}
+#endif
+
 	ctor = binp->ctors;
 	/* Execute each constructor */
 
