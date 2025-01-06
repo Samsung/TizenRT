@@ -242,7 +242,7 @@ int wd_start(WDOG_ID wdog, int delay, wdentry_t wdentry, int argc, ...)
 
 	/* Verify the wdog */
 
-	if (!wdog || argc > CONFIG_MAX_WDOGPARMS || delay < 0) {
+	if (!wdog || argc > CONFIG_MAX_WDOGPARMS || argc < 0 || delay < 0) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
