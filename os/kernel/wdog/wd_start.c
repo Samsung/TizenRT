@@ -161,6 +161,7 @@ static inline void wd_expiration(void)
 			up_setpicbase(wdog->picbase);
 			switch (wdog->argc) {
 			default:
+				wd_corruption_dbg(wdog);
 				DEBUGPANIC();
 				break;
 
@@ -246,6 +247,11 @@ int wd_start(WDOG_ID wdog, int delay, wdentry_t wdentry, int argc, ...)
 		set_errno(EINVAL);
 		return ERROR;
 	}
+
+#ifdef CONFIG_DEBUG
+	/* Store the pid of process to keep track which process is responsible for wdog expiration */
+	wdog->pid = getpid();
+#endif
 
 	/* Check if the watchdog has been started. If so, stop it.
 	 * NOTE:  There is a race condition here... the caller may receive
