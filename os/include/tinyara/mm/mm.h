@@ -717,7 +717,9 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 int mm_size2ndx(size_t size);
 
+void mm_dump_node(struct mm_allocnode_s *node, char *node_type);
 void mm_dump_heap_region(uint32_t start, uint32_t end);
+void mm_dump_heap_free_node_list(struct mm_heap_s *heap);
 int heap_dbg(const char *fmt, ...);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
