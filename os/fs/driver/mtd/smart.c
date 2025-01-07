@@ -4927,7 +4927,14 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 #endif							/* CONFIG_FS_WRITABLE */
 
 	case BIOC_BULKERASE:
+		fdbg("Format started\n");
 		saved_state = enter_critical_section();
+#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
+		for (int x = 0; x < dev->totalsectors; x++) {
+			/* Mark all other logical sectors as non-existent. */
+			dev->sMap[x] = -1;
+		}
+#endif
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
 		leave_critical_section(saved_state);
 		fdbg("Format Finished\n");
