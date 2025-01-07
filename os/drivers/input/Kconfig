@@ -65,6 +65,12 @@ config IST415_WORKPRIORITY
 		generates a touch point event. If it is not touch data, it performs
 		related tasks and waits next event.
 
+config IST415_BIN_PATH
+	string "ist415 firmware binary path"
+	default "/res/ist415.bin"
+	---help---
+		The path is used find firmware for auto update ist415 during booting.
+
 endif # TOUCH_IST415
 endif # TOUCH
 
