@@ -84,8 +84,8 @@
 #define TSIOC_GETCALIB       _TSIOC(0x0002)  /* arg: Pointer to int calibration value */
 #define TSIOC_SETFREQUENCY   _TSIOC(0x0003)  /* arg: Pointer to uint32_t frequency value */
 #define TSIOC_GETFREQUENCY   _TSIOC(0x0004)  /* arg: Pointer to uint32_t frequency value */
-#define TSIOC_DISABLE        _TSIOC(0x0005)  /* Disable touch interrupt */
-#define TSIOC_ENABLE         _TSIOC(0x0006)  /* Enable touch interrupt */
+#define TSIOC_SUSPEND        _TSIOC(0x0005)  /* Suspend touch interrupt */
+#define TSIOC_RESUME         _TSIOC(0x0006)  /* Resume touch interrupt */
 #define TSIOC_SETAPPNOTIFY   _TSIOC(0x0007)  /* arg: Pointer to struct touch_set_callback_s. Support available only when CONFIG_TOUCH_CALLBACK is enabled */
 #define TSIOC_CMD            _TSIOC(0x0008)  /* arg: Pointer to struct touchscreen_cmd_s */
 #define TSC_FIRST            0x0001          /* First common command */
@@ -201,6 +201,8 @@ struct touchscreen_ops_s {
 	void (*touch_enable)(struct touchscreen_s *upper);			/* Enable touch */
 	void (*touch_disable)(struct touchscreen_s *upper);			/* Disable touch */
 	int (*cmd)(struct touchscreen_s *upper, int argc, char **argv);
+	int (*suspend)(struct touchscreen_s *upper);			/* Suspend touch */
+	int (*resume)(struct touchscreen_s *upper);			/* Resume touch */
 };
 
 /*

@@ -77,6 +77,8 @@
 static void ist415_enable_touch(struct touchscreen_s *upper);
 static void ist415_disable_touch(struct touchscreen_s *upper);
 static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv);
+static int ist415_suspend_device(struct touchscreen_s *upper);
+static int ist415_resume_device(struct touchscreen_s *upper);
 static int ist415_process_event(struct ist415_dev_s *dev);
 static void ist415_timer_handler(int argc, uint32_t arg1);
 /****************************************************************************
@@ -91,7 +93,9 @@ struct i2c_config_s g_ist415_i2c_config = {
 static const struct touchscreen_ops_s g_ist415_ops = {
 	ist415_enable_touch,	/* enable */
 	ist415_disable_touch,	/* disable */
-	ist415_cmd				/* cmd */
+	ist415_cmd,             /* cmd */
+	ist415_suspend_device,  /* suspend */
+	ist415_resume_device    /* resume */
 };
 
 /****************************************************************************
@@ -298,8 +302,19 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 				if (p_evt_gesture->gid == GESTURE_DOUBLETAP_WAKEUP) {
 					uint16_t x = ((uint16_t) p_evt_gesture->gdata[1] << 8) | (uint16_t) p_evt_gesture->gdata[0];
 					uint16_t y = ((uint16_t) p_evt_gesture->gdata[3] << 8) | (uint16_t) p_evt_gesture->gdata[2];
+					struct touch_sample_s pdata;
 					ist415vdbg("Double Tap Wakeup~(%d, %d)\n", x, y);
-					// TODO: KnockKnock Event Process~
+					pdata.point[0].id = 0;
+					pdata.point[0].x = x;
+					pdata.point[0].y = y;
+					pdata.point[0].h = 0;
+					pdata.point[0].w = 0;
+					pdata.point[0].pressure = 0;
+					pdata.point[0].flags = TOUCH_DOWN;
+					pdata.npoints = 1;
+					touch_report(dev->upper, &pdata);
+					pdata.point[0].flags = TOUCH_UP;
+					touch_report(dev->upper, &pdata);
 				}
 			} else {
 				ist415wdbg("Not support gesture type:%d\n", p_evt_gesture->gtype);
@@ -489,11 +504,13 @@ static void ist415_power_off(struct ist415_dev_s *dev)
 }
 
 /****************************************************************************
- * Name: ist415_stop_device
+ * Name: ist415_suspend_device
  ****************************************************************************/
 
-static void ist415_stop_device(struct ist415_dev_s *dev)
+static int ist415_suspend_device(struct touchscreen_s *upper)
 {
+	struct ist415_dev_s *dev = upper->priv;
+
 	ist415vdbg("%s\n", __func__);
 
 	while (sem_wait(&dev->sem) != OK) {
@@ -517,14 +534,17 @@ static void ist415_stop_device(struct ist415_dev_s *dev)
 	ist415_forced_release(dev);
 
 	sem_post(&dev->sem);
+	return OK;
 }
 
 /****************************************************************************
- * Name: ist415_start_device
+ * Name: ist415_resume_device
  ****************************************************************************/
 
-static void ist415_start_device(struct ist415_dev_s *dev)
+static int ist415_resume_device(struct touchscreen_s *upper)
 {
+	struct ist415_dev_s *dev = upper->priv;
+
 	ist415vdbg("%s\n", __func__);
 
 	while (sem_wait(&dev->sem) != OK) {
@@ -545,6 +565,7 @@ static void ist415_start_device(struct ist415_dev_s *dev)
 	}
 
 	sem_post(&dev->sem);
+	return OK;
 }
 
 /****************************************************************************
@@ -1107,7 +1128,7 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 
 	dev->sys_mode = SYS_MODE_TOUCH;
 	dev->touch_type = (1 << TOUCH_TYPE_NORMAL) | (1 << TOUCH_TYPE_WET) | (1 << TOUCH_TYPE_PALMLARGE);
-	dev->knockknock = false;
+	dev->knockknock = true;
 
 	dev->irq_working = false;
 	dev->event_mode = false;
