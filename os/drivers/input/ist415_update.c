@@ -63,7 +63,6 @@
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
-#define FIRMWARE_PATH_WASHING_MACHINE	"/res/241128_AV_Display_V02060103.bin"
 
 /****************************************************************************
  * Private Types
@@ -547,7 +546,7 @@ int ist415_check_fw(struct ist415_dev_s *dev)
 	int retry = 0;
 	int ret = 0;
 
-	ret = request_firmware(&firmware, FIRMWARE_PATH_WASHING_MACHINE, &dev);
+	ret = request_firmware(&firmware, CONFIG_IST415_BIN_PATH, &dev);
 	if (ret < 0) {
 		ist415dbg("Don't request firmware\n");
 		return -ENOENT;
