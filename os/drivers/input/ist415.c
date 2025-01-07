@@ -122,7 +122,10 @@ static void ist415_forced_release(struct ist415_dev_s *dev)
 			dev->touched[i] = false;
 		}
 	}
-	touch_report(dev->upper, &data);
+
+	if (data.npoints > 0) {
+		touch_report(dev->upper, &data);
+	}
 }
 
 /****************************************************************************
