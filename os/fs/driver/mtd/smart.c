@@ -4927,9 +4927,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 #endif							/* CONFIG_FS_WRITABLE */
 
 	case BIOC_BULKERASE:
-		saved_state = irqsave();
+		saved_state = enter_critical_section();
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
-		irqrestore(saved_state);
+		leave_critical_section(saved_state);
 		fdbg("Format Finished\n");
 		sleep(1);
 		goto ok_out;
