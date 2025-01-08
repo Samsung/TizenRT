@@ -116,15 +116,9 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	bool ret = false;
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
+	sched_checkstackoverflow(rtcb);
 #endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
-#endif
+
 	/* Check if the TCB to be removed is at the head of the ready to run list.
 	 * In this case, we are removing the currently active task.
 	 */
@@ -157,15 +151,9 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	int cpu;
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
+	sched_checkstackoverflow(rtcb);
 #endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
-#endif
+
 	/* Which CPU (if any) is the task running on? Which task list holds
 	 * the TCB
 	 */
