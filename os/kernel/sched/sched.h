@@ -358,6 +358,10 @@ void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state);
 void sched_removeblocked(FAR struct tcb_s *btcb);
 int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority);
 
+#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
+void sched_checkstackoverflow(FAR struct tcb_s *rtcb);
+#endif
+
 #ifdef CONFIG_PRIORITY_INHERITANCE
 int sched_reprioritize(FAR struct tcb_s *tcb, int sched_priority);
 #else
