@@ -1995,15 +1995,9 @@ dsp_mb_processor(struct syntiant_ndp_device_s *ndp, uint32_t *notify)
             s = ndp_mcu_read(NDP120_DSP_CONFIG_BUFFILLLEVEL(4), &data);
             if (s) goto error;
             DEBUG_PRINTF("FILL LEVEL: 0x%X\n", data);
-            DEBUG_PRINTF("Sending extract ack\n");
             extract_count += 1;
             DEBUG_PRINTF("extract cnt: %d, payload: %d\n", extract_count, payload);
 #endif
-            /* writing a watermark because that's an accepted response if it was
-             * a SYNTIANT_NDP_NOTIFICATION_EXTRACT_READY the DSP would hang
-             * the actual value is ignored */
-            s = syntiant_ndp120_mbin_send(ndp, NDP120_DSP_MB_H2D_WATERMARK);
-            if (s) goto error;
         }
         break;
 
@@ -8318,6 +8312,7 @@ int syntiant_ndp120_init_ring_buffer_pointers_no_sync(struct syntiant_ndp_device
     ndp120->dsp_function_sample_last_ptr = ring_buf_ptrs.function_sample_last_ptr;
     ndp120->dsp_pcm_audio_annotation_last_ptr = ring_buf_ptrs.pcm_audio_annotation_last_ptr;
     ndp120->dsp_sensor_sample_last_ptr = ring_buf_ptrs.sensor_sample_last_ptr;
+    auddbg("0x%x 0x%x 0x%x 0x%x\n", ndp120->dsp_pcm_audio_sample_last_ptr, ndp120->dsp_function_sample_last_ptr, ndp120->dsp_pcm_audio_annotation_last_ptr, ndp120->dsp_sensor_sample_last_ptr);
 
 error:
     return s;
