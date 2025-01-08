@@ -81,11 +81,45 @@ typedef uint8_t spinlock_t;
 #  define __SP_UNLOCK_FUNCTION 1
 #endif
 
-#  define spin_is_locked(l) (*(l) == SP_LOCKED)
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: spin_is_locked
+ *
+ * Description:
+ *   check whether spinlock is locked or not.
+ *
+ * Input Parameters:
+ *   lock  - A reference to the spinlock object.
+ *
+ * Returned Value:
+ *   true  - if spin is locked
+ *   false - otherwise
+ *
+ ****************************************************************************/
+
+inline bool spin_is_locked(volatile FAR spinlock_t *lock)
+{
+	/* In multicore env, there is a possibility that up_cpu_pausereq will be 
+	 * FALSE in the CPU serving this ISR due to out-of-order memory ops in ARM.
+	 * This can happen when Store operation in up_cpu_pause on the spinlock
+	 * with spin_lock(&g_cpu_paused[cpu]) is observed AFTER the Load operation
+	 * in the below IF condition is checked, this results in an "impossible"
+	 * condition where g_cpu_paused[1] is '1' in CPU0 and g_cpu_paused[1] is 
+	 * '0' in CPU1
+	 * 
+	 * While the spinlock may be protected with DSB/DMB already, it may not be 
+	 * broadcasted to a different core such as the one serving this ISR. Thus, 
+	 * we need to ensure latest copy of the lock after Store is observed.
+	 * 
+	 * This instruction does not affect operation with only 1 CPU
+	 */
+	SP_DMB();
+	return (*(lock) == SP_LOCKED);
+}
 
 /****************************************************************************
  * Name: up_testset
