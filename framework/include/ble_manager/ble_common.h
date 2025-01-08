@@ -83,6 +83,15 @@ typedef struct {
 	ble_conn_param_role role;
 } ble_conn_param;
 
+typedef struct {
+	uint8_t io_cap;                 /*!< IO capabilities */
+	uint8_t oob_data_flag;          /*!< OOB data flag */
+	uint8_t bond_flag;              /*!< Bonding flags */
+	uint8_t mitm_flag;              /*!< MITM flag */
+	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
+	uint8_t use_fixed_key;          /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;             /*!< Fixed passkey value */
+} ble_sec_param;
 /**
  * @brief Result types of BLE Manager APIs such as FAIL, SUCCESS, or INVALID ARGS
  */

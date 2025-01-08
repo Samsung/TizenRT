@@ -84,11 +84,32 @@ trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 	return res;
 }
 
+trble_result_e ble_drv_passkey_confirm(uint8_t *conn_handle, uint8_t *confirm)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)conn_handle, (void *)confirm} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_PASSKEY_CONFIRM}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg_params msg_data = { 2, {(void *)device_list, (void *)device_count} };
 	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_GET_BONDED_DEV}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_set_sec_param(trble_sec_param *sec_param)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SEC_PARAM_SET}, sizeof(trble_sec_param), (void *)sec_param, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}

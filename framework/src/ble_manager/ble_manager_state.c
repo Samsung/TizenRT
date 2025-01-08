@@ -255,7 +255,24 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 		ret = ble_drv_get_mac_addr(mac);
 	} break;
-	
+
+	case BLE_CMD_PASSKEY_CONFIRM: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t *conn_handle = (uint8_t *)param->param[0];
+		uint8_t *confirm = (uint8_t *)param->param[1];
+
+		ret = ble_drv_passkey_confirm(conn_handle, confirm);
+	} break;
+
+	case BLE_CMD_SEC_PARAM_SET: {
+		BLE_STATE_CHECK;
+
+		trble_sec_param *sec_param = (trble_sec_param *)msg->param;
+		ret = ble_drv_set_sec_param(sec_param);
+	} break;
+
 	case BLE_CMD_GET_BONDED_DEV: {
 		BLE_STATE_CHECK;
 
