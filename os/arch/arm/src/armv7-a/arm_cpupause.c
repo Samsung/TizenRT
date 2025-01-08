@@ -187,15 +187,16 @@ int up_cpu_paused_save(void)
 
 int up_cpu_paused(int cpu)
 {
+	/* Ensure the CPU has been resumed to avoid causing a deadlock */
+
+	spin_lock(&g_cpu_resumed[cpu]);
+
 	/* Release the g_cpu_paused spinlock to synchronize with the
 	 * requesting CPU.
 	 */
 
 	spin_unlock(&g_cpu_paused[cpu]);
 
-	/* Ensure the CPU has been resumed to avoid causing a deadlock */
-
-	spin_lock(&g_cpu_resumed[cpu]);
 
 	/* Wait for the spinlock to be released.  The requesting CPU will release
 	 * the spinlock when the CPU is resumed.
