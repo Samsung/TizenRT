@@ -278,6 +278,22 @@ int arm_pause_handler(int irq, void *context, void *arg)
 	 * been processed then g_cpu_paused[cpu] will not be locked.
 	 */
 
+	/* In multicore env, there is a possibility that up_cpu_pausereq will be 
+	 * FALSE in the CPU serving this ISR due to out-of-order memory ops in ARM.
+	 * This can happen when Store operation in up_cpu_pause on the spinlock
+	 * with spin_lock(&g_cpu_paused[cpu]) is observed AFTER the Load operation
+	 * in the below IF condition is checked, this results in an "impossible"
+	 * condition where g_cpu_paused[1] is '1' in CPU0 and g_cpu_paused[1] is 
+	 * '0' in CPU1
+	 * 
+	 * While the spinlock may be protected with DSB/DMB already, it may not be 
+	 * broadcasted to a different core such as the one serving this ISR. Thus, 
+	 * we need to ensure latest copy of the lock after Store is observed.
+	 * 
+	 * This instruction does not affect operation with only 1 CPU
+	 */
+	SP_DMB();
+	
 	if (up_cpu_pausereq(cpu)) {
 		/* NOTE: The following enter_critical_section() will call
 		 * up_cpu_paused() to process a pause request to break a deadlock
