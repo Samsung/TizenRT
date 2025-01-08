@@ -219,6 +219,12 @@ static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_si
 	return;
 }
 
+static void ble_server_passkey_display_cb(uint32_t passkey, ble_conn_handle conn_handle)
+{
+	printf("[%s : %d]  passkey %ld, con_handle %d\n", __FUNCTION__, __LINE__, passkey, conn_handle);
+	return;
+}
+
 static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
@@ -282,6 +288,7 @@ static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
+	ble_server_passkey_display_cb,
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
 
@@ -898,7 +905,43 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
+	if (strncmp(argv[1], "passkeycfm", 11) == 0) { 
+		uint8_t conn_handle = 0; 
+		uint8_t confirm = 0; 
+		if (argc >= 4) {      
+			conn_handle = atoi(argv[2]);    
+			confirm = atoi(argv[3]);    
+		} 
+		ret = ble_manager_passkey_confirm(conn_handle, confirm);   
+		if (ret != BLE_MANAGER_SUCCESS) {  
+			RMC_LOG(RMC_SERVER_TAG, "Passkey confirm fail: [%d]\n", ret);  
+		} else {  
+			RMC_LOG(RMC_SERVER_TAG, "Passkey confirm OK\n");  
+		}   
+	} 
 
+	if (strncmp(argv[1], "secureparam", 12) == 0) { 
+		ble_sec_param sec_param;
+		// RTK_IO_CAP_DISPALY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
+		// RTK_IO_CAP_DISPLAY_YES_NO   = 0x01,     /*!< 0x01 DisplayYesNo */
+		// RTK_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
+		// RTK_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
+		// RTK_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
+		sec_param.io_cap = atoi(argv[2]); 
+		sec_param.oob_data_flag = atoi(argv[3]); 
+		sec_param.bond_flag = atoi(argv[4]); 
+		sec_param.mitm_flag = atoi(argv[5]); 
+		sec_param.sec_pair_flag = atoi(argv[6]); 
+		sec_param.use_fixed_key = atoi(argv[7]); 
+		sec_param.fixed_key = atoi(argv[8]); 
+
+		ret = ble_manager_set_secure_param(sec_param);   
+		if (ret != BLE_MANAGER_SUCCESS) {  
+			RMC_LOG(RMC_SERVER_TAG, "set secure param fail: [%d]\n", ret);  
+		} else {  
+			RMC_LOG(RMC_SERVER_TAG, "set secure param OK\n");  
+		}   
+	} 
 	/* Server Test */
 	if (strncmp(argv[1], "server", 7) == 0) {
 		RMC_LOG(RMC_SERVER_TAG, " [ Server Control ]\n");

@@ -4054,6 +4054,18 @@ static uint16_t bt_stack_le_sm_passkey_confirm(void *param)
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
+	if (key_cfm->confirm == 1)
+	{
+		confirm = GAP_CFM_CAUSE_ACCEPT;
+	}
+	else if (key_cfm->confirm == 0)
+	{
+		confirm = GAP_CFM_CAUSE_REJECT;
+	}
+	else{
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
 	cause = le_bond_user_confirm(conn_id, confirm);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;

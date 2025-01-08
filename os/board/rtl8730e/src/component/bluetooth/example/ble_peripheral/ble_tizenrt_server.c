@@ -97,6 +97,34 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
     return TRBLE_SUCCESS; 
 }
 
+trble_result_e rtw_ble_sm_set_security_param(trble_sec_param sec_param)
+{
+    rtk_bt_le_security_param_t sec_param_input;
+    memcpy(&sec_param_input, &sec_param, sizeof(rtk_bt_le_security_param_t));
+
+    if(RTK_BT_OK != rtk_bt_le_sm_set_security_param(&sec_param_input))
+    {
+        debug_print("secure param set fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_pairing_passkey_confirm(uint8_t *conn_handle, uint8_t *confirm)
+{
+    rtk_bt_le_auth_key_confirm_t pair_cfm_param = {0};
+
+    pair_cfm_param.conn_handle = *conn_handle;
+    pair_cfm_param.confirm = *confirm;
+
+    if(RTK_BT_OK != rtk_bt_le_sm_passkey_confirm(&pair_cfm_param))
+    {
+        debug_print("passkey confirm fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
 /* set data pointer of attribute value */
 trble_result_e rtw_ble_server_att_set_data_ptr(trble_attr_handle attr_handle, uint8_t *new_data_ptr)
 {

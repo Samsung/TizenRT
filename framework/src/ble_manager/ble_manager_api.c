@@ -56,6 +56,23 @@ ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_passkey_confirm(uint8_t conn_handle, uint8_t confirm)
+{
+	blemgr_msg_params param = {3, {(void *)&conn_handle, (void *)&confirm}};
+	blemgr_msg_s msg = {BLE_CMD_PASSKEY_CONFIRM, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_manager_set_secure_param(ble_sec_param sec_param )
+{
+	blemgr_msg_s msg = {BLE_CMD_SEC_PARAM_SET, BLE_MANAGER_FAIL, (void *)(&sec_param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list *device_list, uint16_t *device_count)
 {
 	blemgr_msg_params param = {2, {(void *)device_list, (void *)device_count}};

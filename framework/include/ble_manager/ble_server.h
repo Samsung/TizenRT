@@ -113,11 +113,13 @@ typedef struct {
 typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
 typedef void (*ble_server_disconnected_t)(ble_conn_handle con_handle, uint16_t cause);
 typedef void (*ble_server_mtu_update_t)(ble_conn_handle con_handle, uint16_t mtu_size);
+typedef void (*ble_server_passkey_display_t)(uint32_t passkey, ble_conn_handle conn_handle);
 
 typedef struct {
 	ble_server_connected_t connected_cb;
 	ble_server_disconnected_t disconnected_cb;
 	ble_server_mtu_update_t mtu_update_cb;
+	ble_server_passkey_display_t passkey_display_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed; 

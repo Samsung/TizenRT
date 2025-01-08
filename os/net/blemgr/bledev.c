@@ -120,6 +120,41 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 	}
 	break;
+	case LWNL_REQ_BLE_SEC_PARAM_SET:
+	{
+		trble_sec_param *sec_param = (trble_sec_param *)data;
+
+		if (data != NULL) {
+			memcpy(sec_param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		if (sec_param != NULL) {
+			TRBLE_DRV_CALL(ret, dev, set_sec_param, (dev, sec_param));
+		} else {
+			ret = TRBLE_INVALID_ARGS;
+		}
+	}
+	break;
+	case LWNL_REQ_BLE_PASSKEY_CONFIRM:
+	{
+		uint8_t *conn_handle = 0;
+		uint8_t *confirm = 0;
+		lwnl_msg_params param = { 0, };
+
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		conn_handle = (uint8_t *)param.param[0];
+		confirm = (uint8_t *)param.param[1];
+
+		TRBLE_DRV_CALL(ret, dev, passkey_confirm, (dev, conn_handle, confirm));
+	}
+	break;
 	case LWNL_REQ_BLE_GET_BONDED_DEV:
 	{
 		trble_bonded_device_list_s *device_list = NULL;
