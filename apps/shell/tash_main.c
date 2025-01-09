@@ -60,6 +60,7 @@ enum tash_input_state_e {
 #endif
 
 static int tash_running = FALSE;
+static int is_autocomplete_enabled = FALSE;
 
 #if TASH_MAX_STORE > 0
 static void tash_clear_line(int fd, int len)
@@ -184,8 +185,9 @@ char *tash_read_input_line(int fd)
 					is_tab_pressed = false;
 					is_esc_pressed = false;
 					prev_cmd_len = pos;
-				} else if (CURR_CHAR == ASCII_TAB) {
+				} else if (CURR_CHAR == ASCII_TAB && is_autocomplete_enabled == TRUE) {
 					/* TAB key - Auto-complete the command functionality */
+					/* Disable Auto-complete the command before TASH login (Security Requirement) */
 
 					if (pos > 0 && tash_do_autocomplete(buffer, &pos, is_tab_pressed) == true) {
 						tash_print_cmd(fd, buffer, pos);
@@ -352,6 +354,7 @@ static int tash_main(int argc, char *argv[])
 #endif
 
 	tash_running = TRUE;
+	is_autocomplete_enabled = TRUE;
 
 	do {
 		nbytes = write(fd, (const void *)TASH_PROMPT, sizeof(TASH_PROMPT));
@@ -392,6 +395,7 @@ int tash_start(void)
 void tash_stop(void)
 {
 	tash_running = FALSE;
+	is_autocomplete_enabled = FALSE;
 #ifdef CONFIG_PM
 	tash_pm_close_driver();
 #endif
