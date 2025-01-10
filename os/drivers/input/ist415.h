@@ -443,7 +443,7 @@ struct ist415_dev_s {
 	bool rec_idle;
 	int rec_type;
 	int rec_delay;
-	uint32_t recording_scancnt;
+	uint32_t rec_scancnt;
 	uint32_t rec_addr;
 	uint32_t rec_size;
 
@@ -459,6 +459,8 @@ struct ist415_dev_s {
 
 	int pid;
 	sem_t wait_irq;
+
+	sem_t sem;
 
 	WDOG_ID wdog;
 	struct work_s work;
