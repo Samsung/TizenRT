@@ -72,7 +72,9 @@
 #include <crc8.h>
 #include <crc16.h>
 #include <crc32.h>
+#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/irq.h>
+#endif
 #include <tinyara/math.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
@@ -4823,7 +4825,6 @@ static inline int smart_freesector(FAR struct smart_struct_s *dev, unsigned long
 static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR struct smart_struct_s *dev;
-	irqstate_t saved_state;
 	int ret = OK;
 #if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_SMARTFS)
 	FAR struct mtd_smart_procfs_data_s *procfs_data;
@@ -4928,7 +4929,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 	case BIOC_BULKERASE:
 		fdbg("Format started\n");
-		saved_state = enter_critical_section();
+#ifndef NXFUSE_HOST_BUILD
+		irqstate_t saved_state = enter_critical_section();
+#endif
 #ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
 		for (int x = 0; x < dev->totalsectors; x++) {
 			/* Mark all other logical sectors as non-existent. */
@@ -4936,7 +4939,9 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		}
 #endif
 		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+#ifndef NXFUSE_HOST_BUILD
 		leave_critical_section(saved_state);
+#endif
 		fdbg("Format Finished\n");
 		sleep(1);
 		goto ok_out;
