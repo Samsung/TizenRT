@@ -336,6 +336,10 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 
 	kmm_free(touch_event);
 
+	if (dev->rec_mode) {
+		ist415_recording(dev);
+	}
+
 	return OK;
 }
 
@@ -406,6 +410,8 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 		ret = ist415_set_dbg(dev, argc, argv);
 	} else if (strncmp(argv[1], "selftest", 9) == 0) {		
 		ist415_selftest(dev);
+	} else if (strncmp(argv[1], "rec", 4) == 0) {		
+		ret = ist415_rec_mode(dev, argc, argv);
 	} else {
 		ret = -EINVAL;
 	}
@@ -490,6 +496,8 @@ static void ist415_stop_device(struct ist415_dev_s *dev)
 {
 	ist415vdbg("%s\n", __func__);
 
+	sem_wait(&dev->sem);
+
 	dev->suspend = true;
 
 	if (dev->knockknock) {
@@ -503,6 +511,10 @@ static void ist415_stop_device(struct ist415_dev_s *dev)
 		ist415_disable(dev);
 		ist415_power_off(dev);
 	}
+
+	ist415_forced_release(dev);
+
+	sem_post(&dev->sem);
 }
 
 /****************************************************************************
@@ -512,6 +524,8 @@ static void ist415_stop_device(struct ist415_dev_s *dev)
 static void ist415_start_device(struct ist415_dev_s *dev)
 {
 	ist415vdbg("%s\n", __func__);
+
+	sem_wait(&dev->sem);
 
 	dev->suspend = false;
 
@@ -525,6 +539,8 @@ static void ist415_start_device(struct ist415_dev_s *dev)
 		ist415_enable(dev);
 		ist415_start(dev);
 	}
+
+	sem_post(&dev->sem);
 }
 
 /****************************************************************************
@@ -553,10 +569,10 @@ static void ist415_enable_touch(struct touchscreen_s *upper)
  * Name: ist415_lockup_work
  ****************************************************************************/
 
-static void ist415_lookup_work(struct ist415_dev_s *dev)
+static void ist415_lockup_work(struct ist415_dev_s *dev)
 {
-	u32 touch_status = 0;
-	u32 scan_count = 0;
+	uint32_t touch_status = 0;
+	uint32_t scan_count = 0;
 	int ret = 0;
 
 	if (dev->irq_working == false) {
@@ -595,6 +611,8 @@ retry_handler:
 	dev->alive_retry++;
 	ist415dbg("Retry touch status(%d)\n", dev->alive_retry);
 	if (dev->alive_retry == IST415_MAX_ALIVE_CNT) {
+		sem_wait(&dev->sem);
+
 		ist415_disable(dev);
 		ist415_forced_release(dev);
 		ist415_reset(dev, false);
@@ -615,8 +633,11 @@ retry_handler:
 			ist415_start(dev);
 			ist415_enable(dev);
 		}
+
 		dev->alive_retry = 0;
 		dev->scan_count = 0;
+
+		sem_post(&dev->sem);		
 	} else {
 		(void)wd_start(dev->wdog, MSEC2TICK(IST415_LOOKUP_RETRY_MS), (wdentry_t)ist415_timer_handler, 1, (uint32_t)dev);
 	}
@@ -630,7 +651,7 @@ static void ist415_timer_handler(int argc, uint32_t arg1)
 {
 	struct ist415_dev_s *dev = (struct ist415_dev_s *)arg1;
 
-	work_queue(HPWORK, &dev->work, (worker_t)ist415_lookup_work, dev, 0);
+	work_queue(HPWORK, &dev->work, (worker_t)ist415_lockup_work, dev, 0);
 }
 
 /****************************************************************************
@@ -672,7 +693,7 @@ static int ist415_event_thread(int argc, char **argv)
 		if (ist415_process_event(dev) != OK) {
 			ist415dbg("Fail to process event\n");
 		}
-
+		
 		dev->irq_working = false;
 		dev->lower->ops->irq_enable(dev->lower);
 	}
@@ -1076,7 +1097,7 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->enable = false;
 	dev->pre_enable = false;
 	dev->suspend = false;
-	dev->log = IST415_LOG_LEVEL_ERRO;
+	dev->log = IST415_LOG_LEVEL_INFO;
 
 	dev->sys_mode = SYS_MODE_TOUCH;
 	dev->touch_type = (1 << TOUCH_TYPE_NORMAL) | (1 << TOUCH_TYPE_WET) | (1 << TOUCH_TYPE_PALMLARGE);
@@ -1104,6 +1125,9 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	}
 
 	ist415_disable(dev);
+
+	// Semaphore reset scenario
+	sem_init(&dev->sem, 0, 1);
 
 	dev->lower->handler = touch_interrupt;
 	sem_init(&dev->wait_irq, 0, 0);

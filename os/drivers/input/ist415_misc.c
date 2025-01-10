@@ -340,9 +340,13 @@ int ist415_get_info(struct ist415_dev_s *dev)
 
 void ist415_autocalibration(struct ist415_dev_s *dev)
 {
+	sem_wait(&dev->sem);
+
 	ist415_calibrate(dev, 1);
 	ist415_start(dev);
 	ist415_enable(dev);
+
+	sem_post(&dev->sem);
 }
 
 /****************************************************************************
@@ -786,4 +790,141 @@ int ist415_selftest(struct ist415_dev_s *dev)
 	ist415_enable(dev);
 
 	return ret;
+}
+
+/****************************************************************************
+ * Name: ist415_rec_mode
+ *
+ * Description
+ *   This function is called by Uart Command.
+ ****************************************************************************/
+
+int ist415_rec_mode(struct ist415_dev_s *dev, int argc, char **argv)
+{
+	int mode;
+	uint8_t data;
+	char header[32];
+	int ret = 0;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	mode = atoi(argv[2]);
+	ist415vdbg("rec mode  : %s\n", mode ? "start" : "stop");
+
+	ret = ist415_i2c_write(dev, HCOM_SET_REC_MODE, (uint8_t *)&mode, 1);
+	if (ret) {
+		return -ENODEV;
+	}
+
+	dev->rec_mode = mode;
+	if (dev->rec_mode) {
+		dev->rec_delay = atoi(argv[3]);
+		ist415vdbg("rec delay : %d\n", dev->rec_delay);
+
+		snprintf(header, sizeof(header), "%s2 2 %d, %d, %d, %d\n", RECS_TAG, dev->slf_node_len, dev->tx_num, dev->rx_num, dev->rec_size);
+		ist415vdbg("%s", header);
+
+		msleep(100);
+
+		data = REC_START_SCAN;
+		ret = ist415_i2c_write(dev, HCOM_SET_REC_MODE, (uint8_t *)&data, 1);
+		if (ret) {
+			return -ENODEV;
+		}
+	}
+
+	return OK;
+}
+
+void ist415_recording(struct ist415_dev_s *dev)
+{
+	uint32_t *buf32 = NULL;
+	uint32_t fb = 0;
+	uint32_t scancnt = 0;
+	uint8_t data = 0;
+	int size = 0;
+	char logbuf[512] = { 0, };
+	int offset = 0;
+	int i;
+	int ret = 0;
+
+	if (dev->rec_idle && (dev->rec_mode > REC_ENABLE)) {
+		goto rec_end;
+	}
+
+	msleep(dev->rec_delay);
+
+	ret = ist415_i2c_read_da(dev, IST415_TOUCH_STATUS, (uint32_t *)&scancnt, 1);
+	if (ret) {
+		ist415dbg("Fail to read scan count\n");
+		goto rec_end;
+	}
+
+	if (dev->rec_scancnt == scancnt) {
+		ist415dbg("Same rec scan count\n");
+		goto rec_end;
+	}
+
+	dev->rec_scancnt = scancnt;
+
+	buf32 = (uint32_t *)kmm_malloc(dev->rec_size + ((dev->slf_node_len + dev->mtl_node_len) * sizeof(uint32_t)));
+	if (!buf32) {
+		ist415dbg("Fail to allocate buf32\n");
+		goto rec_end;
+	}
+
+	if (dev->rec_size > 0) {
+		ret = ist415_i2c_read_da(dev, dev->rec_addr, (uint32_t *)buf32,	dev->rec_size / sizeof(uint32_t));
+		if (ret) {
+			ist415dbg("Fail to reaqd rec data\n");
+			goto rec_end;
+		}
+	}
+	
+	ret = ist415_i2c_read_da(dev, IST415_FB_SEL, (uint32_t *)&fb, 1);
+	if (ret) {
+		ist415dbg("Fail to read fb\n");
+		goto rec_end;
+	}
+
+	size = dev->rec_size / sizeof(uint32_t);
+	ret = ist415_i2c_read_da(dev, IST415_FB_SLF_ADDR(fb), (uint32_t *)(buf32 + size),
+					dev->slf_node_len);
+	if (ret) {
+		ist415dbg("Fail to read self data\n");
+		goto rec_end;
+	}
+
+	size += dev->slf_node_len;
+	ret = ist415_i2c_read_da(dev, IST415_FB_MTL_ADDR(fb), (uint32_t *)(buf32 + size), dev->mtl_node_len);
+	if (ret) {
+		ist415dbg("Fail to read mutual data\n");
+		goto rec_end;
+	}
+
+	size += dev->mtl_node_len;
+
+	offset = snprintf(logbuf, sizeof(logbuf), "%s", RECS_TAG);
+	for (i = 1; i <= size; i++) {
+		offset += snprintf(logbuf + offset, sizeof(logbuf) - offset, "%08X ", buf32[i]);		
+		if ((i % REC_PRINT_SIZE) == 0) {
+			ist415vdbg("%s", logbuf);
+			offset = snprintf(logbuf, sizeof(logbuf), "%s", RECC_TAG);
+		}
+	}
+	snprintf(logbuf + offset, sizeof(logbuf) - offset, "\n");
+	ist415vdbg("%s", logbuf);
+
+rec_end:
+	if (buf32) {
+		kmm_free(buf32);
+	}
+
+	data = REC_START_SCAN;
+	ret = ist415_i2c_write(dev, HCOM_SET_REC_MODE, (uint8_t *)&data, 1);
+	if (ret) {
+		ist415dbg("Fail to write rec start scan\n");
+	}
 }
