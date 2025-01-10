@@ -340,7 +340,9 @@ int ist415_get_info(struct ist415_dev_s *dev)
 
 void ist415_autocalibration(struct ist415_dev_s *dev)
 {
-	sem_wait(&dev->sem);
+	while (sem_wait(&dev->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
 
 	ist415_calibrate(dev, 1);
 	ist415_start(dev);
@@ -838,6 +840,9 @@ int ist415_rec_mode(struct ist415_dev_s *dev, int argc, char **argv)
 	return OK;
 }
 
+/****************************************************************************
+ * Name: ist415_recording
+ ****************************************************************************/
 void ist415_recording(struct ist415_dev_s *dev)
 {
 	uint32_t *buf32 = NULL;

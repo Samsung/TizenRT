@@ -496,7 +496,9 @@ static void ist415_stop_device(struct ist415_dev_s *dev)
 {
 	ist415vdbg("%s\n", __func__);
 
-	sem_wait(&dev->sem);
+	while (sem_wait(&dev->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
 
 	dev->suspend = true;
 
@@ -525,7 +527,9 @@ static void ist415_start_device(struct ist415_dev_s *dev)
 {
 	ist415vdbg("%s\n", __func__);
 
-	sem_wait(&dev->sem);
+	while (sem_wait(&dev->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
 
 	dev->suspend = false;
 
@@ -611,7 +615,9 @@ retry_handler:
 	dev->alive_retry++;
 	ist415dbg("Retry touch status(%d)\n", dev->alive_retry);
 	if (dev->alive_retry == IST415_MAX_ALIVE_CNT) {
-		sem_wait(&dev->sem);
+		while (sem_wait(&dev->sem) != OK) {
+			ASSERT(get_errno() == EINTR);
+		}
 
 		ist415_disable(dev);
 		ist415_forced_release(dev);
