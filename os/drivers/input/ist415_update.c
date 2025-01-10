@@ -581,13 +581,17 @@ int ist415_check_fw(struct ist415_dev_s *dev)
 
 	ist415vdbg("Main : %08X Core: %x, Config %x, Release: %x, Test: %x\n", fw->bin.main_ver, fw->bin.core_ver, fw->bin.config_ver, fw->bin.release_ver, fw->bin.test_ver);
 
+	sem_wait(&dev->sem);
 	ret = ist415_check_auto_update(dev);
+	sem_post(&dev->sem);
 	if (ret >= 0) {
 		kmm_free(fw->buf);
 		return OK;
 	}
 
 	ist415vdbg("Update version. release(core, config, test): %x(%x, %x, %x) -> %x(%x, %x, %x)\n", fw->cur.release_ver, fw->cur.core_ver, fw->cur.config_ver, fw->cur.test_ver, fw->bin.release_ver, fw->bin.core_ver, fw->bin.config_ver, fw->bin.test_ver);
+
+	sem_wait(&dev->sem);
 
 	retry = IST415_RETRY_CNT;
 	while (retry--) {
@@ -597,6 +601,8 @@ int ist415_check_fw(struct ist415_dev_s *dev)
 			break;
 		}
 	}
+
+	sem_post(&dev->sem);
 
 	kmm_free(fw->buf);
 	return ret;
@@ -659,6 +665,8 @@ int ist415_force_update(struct ist415_dev_s *dev, int argc, char **argv)
 
 	ist415vdbg("Update version. release(core, config, test): %x(%x, %x, %x) -> %x(%x, %x, %x)\n", fw->cur.release_ver, fw->cur.core_ver, fw->cur.config_ver, fw->cur.test_ver, fw->bin.release_ver, fw->bin.core_ver, fw->bin.config_ver, fw->bin.test_ver);
 
+	sem_wait(&dev->sem);
+
 	ist415_disable(dev);
 
 	ret = ist415_fw_update(dev, fw->buf, fw->buf_size);
@@ -670,6 +678,8 @@ int ist415_force_update(struct ist415_dev_s *dev, int argc, char **argv)
 
 	ist415_start(dev);
 	ist415_enable(dev);
+
+	sem_post(&dev->sem);
 
 	kmm_free(fw->buf);
 

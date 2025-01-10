@@ -45,6 +45,15 @@
 #define REC_ENABLE                  	1
 #define REC_DISABLE                 	0
 
+#define REC_PRINT_SIZE					50
+
+#define RECS_TAG						"[RECS] "
+#define RECC_TAG						"[RECC] "
+
+#define IST415_FB_SEL					0x3002002C
+#define IST415_FB_MTL_ADDR(n)			(n ? 0x40010000 : 0x40000000)
+#define IST415_FB_SLF_ADDR(n)			(n ? 0x40011768 : 0x40001768)
+
 // SelfTest
 //#define USE_SELFTEST_CS
 
@@ -83,5 +92,7 @@ void ist415_run_intr_debug(struct ist415_dev_s *dev);
 void ist415_display_cpc(struct ist415_dev_s *dev);
 void ist415_display_rawdata(struct ist415_dev_s *dev);
 int ist415_selftest(struct ist415_dev_s *dev);
+int ist415_rec_mode(struct ist415_dev_s *dev, int argc, char **argv);
+void ist415_recording(struct ist415_dev_s *dev);
 
 #endif				/* __DRIVERS_INPUT_IST415_MISC_H */
