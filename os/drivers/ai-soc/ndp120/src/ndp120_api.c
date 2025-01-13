@@ -80,7 +80,7 @@
 
 /* this is the higher bound of the keyword length, it will be rounded down to multiple of frame size */
 #define KEYWORD_BUFFER_LEN      (SYNTIANT_NDP120_AUDIO_SAMPLE_RATE * SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD * AUDIO_BEFORE_MATCH_MS / 1000)
-#define NDP120_SPI_FREQ_HIGH    20000000
+#define NDP120_SPI_FREQ_HIGH    12000000
 #define NDP120_SPI_FREQ_INIT    1000000
 #define FF_ID NDP120_DSP_DATA_FLOW_FUNCTION_FULL_FF_49
 #define KEYWORD_NETWORK_ID 0
@@ -1692,8 +1692,13 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
 		SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &extract_size);
 
+	/* To prevent overflow */
 	if (s) {
 		auddbg("error occured : %d\n", s);
+		extract_size = 0;
+	} else if (extract_size > apb->nmaxbytes) {
+		auddbg("error, extract_size : %d\n", extract_size);
+		extract_size = 0;
 	}
 
 	apb->nbytes = extract_size;
