@@ -37,7 +37,7 @@
 static void inic_ipc_host_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 {
 	if (p_ipc_msg == NULL) {
-		DBG_8195A("Device IPC message is NULL, invalid!\n\r");
+		DBG_8195A("[CA32] %s Device IPC message is NULL, invalid!\n\r",__FUNCTION__);
 		return;
 	}
 
@@ -49,8 +49,8 @@ static void inic_ipc_host_task_hdl(inic_ipc_ex_msg_t *p_ipc_msg)
 		break;
 	/* other contrl operations */
 	default:
-		DBG_8195A("Host Unknown event(%d)!\n\r", \
-				  p_ipc_msg->event_num);
+		DBG_8195A("[CA32] %s Host Unknown event(%d)!\n\r", \
+				  __FUNCTION__, p_ipc_msg->event_num);
 		break;
 	}
 }

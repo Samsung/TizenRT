@@ -280,7 +280,7 @@ sint inic_ipc_msg_enqueue(inic_ipc_ex_msg_t *p_ipc_msg)
 #endif
 #endif
 	if (p_node == NULL) {
-		DBG_8195A("NO buffer for new nodes, waiting!\n\r");
+		DBG_8195A("[CA32] %s NO buffer for new nodes, waiting!\n\r",__FUNCTION__);
 		goto func_out;
 	}
 
@@ -365,7 +365,7 @@ void inic_ipc_ipc_send_msg(inic_ipc_ex_msg_t *p_ipc_msg)
 		DCache_Invalidate((u32)&g_inic_ipc_ex_msg, sizeof(inic_ipc_ex_msg_t));
 		cnt--;
 		if (cnt == 0) {
-			DBG_8195A("inic ipc wait timeout\n");
+			DBG_8195A("[CA32] %s inic ipc wait timeout\n",__FUNCTION__);
 			break;
 		}
 	}
