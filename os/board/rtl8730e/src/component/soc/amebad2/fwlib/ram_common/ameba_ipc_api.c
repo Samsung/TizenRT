@@ -94,7 +94,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 		/* check if channel conflict */
 		IPC_IMR = IPC_IERGet(IPCx);
 		if (IPC_IMR & BIT(IPC_ChShift)) {
-			RTK_LOGE(TAG, "Channel Conflict for Channel %d !\r\n", IPC_ChShift);
+			RTK_LOGE(TAG, "[CA32] %s Channel Conflict for Channel %d !\r\n", __FUNCTION__, IPC_ChShift);
 			continue;
 		}
 
@@ -152,7 +152,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
 			timeout--;
 			if (timeout == 0) {
-				RTK_LOGE(TAG, " IPC Request Timeout\r\n");
+				RTK_LOGE(TAG, "[CA32] %s IPC Request Timeout\r\n", __FUNCTION__);
 				return IPC_REQ_TIMEOUT;
 			}
 		}
@@ -174,7 +174,7 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 #else
 		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
 #endif
-			RTK_LOGE(TAG, " IPC Get Semaphore Timeout\r\n");
+			RTK_LOGE(TAG, "[CA32] %s IPC Get Semaphore Timeout\r\n", __FUNCTION__);
 			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
 			return IPC_SEMA_TIMEOUT;
 		}
