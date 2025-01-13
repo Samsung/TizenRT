@@ -182,6 +182,20 @@ config AMEBASMART_I2S_TXCL
 	int "I2S TX Channel Length"
 	default 32
 	range 8 32
+
+config AMEBASMART_I2S_TX_DMA_SIZE
+	int "I2S TX DMA SIZE"
+	default 4096
+	range 4 16384
+	---help---
+		4 ~ 16384, set to a factor of APB size
+
+config AMEBASMART_I2S_TX_DMA_PAGE
+	int "I2S TX DMA PAGE"
+	default 4
+	---help---
+		DMA page should be more than 2
+
 endif
 endif
 
