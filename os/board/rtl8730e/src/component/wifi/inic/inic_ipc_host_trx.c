@@ -207,7 +207,7 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
 	if (idx == -1) {
-		DBG_8195A("%s=>wlan index is wrong!\n\r", __func__);
+		DBG_8195A("[CA32] %s=>wlan index is wrong!\n\r", __func__);
 		return -1;
 	}
 
@@ -237,7 +237,7 @@ void inic_ipc_host_init_skb(void)
 	host_skb_info = (struct skb_info *)rtw_zmalloc(wifi_user_config.skb_num_ap * sizeof(struct skb_info));
 	host_skb_data = (struct skb_data *)rtw_zmalloc(wifi_user_config.skb_num_ap * sizeof(struct skb_data));
 	if (!host_skb_info || !host_skb_data) {
-		DBG_8195A("%s=>skb malloc fail!\n\r", __func__);
+		DBG_8195A("[CA32] %s=>skb malloc fail!\n\r", __func__);
 		if (host_skb_info) {
 			rtw_mfree((u8 *)host_skb_info, 0);
 			host_skb_info = NULL;

@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version d1dcc72eb9 2025/01/13-17:51:26 ==
+1. differentiate logs between KM0 and KM4 that shared the same API
+
 == version a1a0ee7deb 2024/12/31-15:44:42 ==
 1. Read back and Display the BKUP_REG2 value in the KM4,KM0 fault handlers.
 

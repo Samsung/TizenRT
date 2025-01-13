@@ -212,7 +212,7 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 	}
 	if (try_cnt == 0) {
 		/* jira: https://jira.realtek.com/browse/RSWLANQC-1036 */
-		DBG_ERR("update ip address TO, Driver busy\n");
+		DBG_ERR("[CA32] %s update ip address TO, Driver busy\n",__FUNCTION__);
 		g_host_ipc_api_request_info.API_ID = IPC_API_WIFI_MSG_TO;
 		DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 		return _FAIL;
@@ -256,7 +256,7 @@ void inic_ipc_api_host_task(void)
 		DCache_Invalidate((u32)p_ipc_msg, sizeof(inic_ipc_dev_request_message));
 
 		if (p_ipc_msg == NULL) {
-			DBG_8195A("Device IPC API message is NULL, invalid!\n\r");
+			DBG_8195A("[CA32] %s Device IPC API message is NULL, invalid!\n\r", __FUNCTION__);
 			continue;
 		}
 
@@ -296,8 +296,8 @@ void inic_ipc_api_host_task(void)
 #endif
 			break;
 		default:
-			DBG_8195A("Host API Unknown event(%d)!\n\r", \
-					  p_ipc_msg->EVENT_ID);
+			DBG_8195A("[CA32] %s Host API Unknown event(%d)!\n\r", \
+					  __FUNCTION__, p_ipc_msg->EVENT_ID);
 			break;
 		}
 		/*set EVENT_ID to 0 to notify NP that event is finished*/
