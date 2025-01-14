@@ -116,6 +116,8 @@ extern sq_queue_t g_freemsg_list;
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
 extern int g_irq_num[CONFIG_SMP_NCPUS];
+
+extern struct wdog_s *g_wdog_debug;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -264,6 +266,14 @@ static void check_assert_location(uint32_t *sp, bool *is_irq_assert)
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num[cpu]].irq_name);
 #endif
+		if (g_wdog_debug) {
+			/* Assert in wdog excuting*/
+			lldbg("Code asserted in wdog!\n");
+			lldbg_noarg("===========================================================\n");
+			lldbg_noarg("Asserted wdog details\n");
+			lldbg_noarg("===========================================================\n");
+			wd_corruption_dbg(g_wdog_debug);
+		}
 	} else {
 		/* Assert in user thread */
 		lldbg("Code asserted in normal thread!\n");

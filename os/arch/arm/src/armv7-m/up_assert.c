@@ -121,6 +121,8 @@ bool abort_mode = false;
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
 extern int g_irq_nums[3];
+
+extern struct wdog_s *g_wdog_debug;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -315,6 +317,14 @@ static void up_dumpstate(void)
 	/* Print IRQ handler details if required */
 
 	if (is_irq_assert) {
+		if (g_wdog_debug) {
+			/* Assert in wdog excuting*/
+			lldbg("Code asserted in wdog!\n");
+			lldbg_noarg("===========================================================\n");
+			lldbg_noarg("Asserted wdog details\n");
+			lldbg_noarg("===========================================================\n");
+			wd_corruption_dbg(g_wdog_debug);
+		}
 		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
 		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_nums[irq_num]].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO

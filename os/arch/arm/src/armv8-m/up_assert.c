@@ -131,6 +131,8 @@ extern sq_queue_t g_freemsg_list;
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
 extern int g_irq_nums[3];
+
+extern struct wdog_s *g_wdog_debug;
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -295,6 +297,15 @@ static void check_assert_location(uint32_t *sp, uint8_t *irq_num, bool *is_irq_a
 			 */
 			*sp = current_regs[REG_R13];
 		}
+	}
+
+	if (*is_irq_assert && g_wdog_debug) {
+		/* Assert in wdog excuting*/
+		lldbg("Code asserted in wdog!\n");
+		lldbg_noarg("===========================================================\n");
+		lldbg_noarg("Asserted wdog details\n");
+		lldbg_noarg("===========================================================\n");
+		wd_corruption_dbg(g_wdog_debug);
 	}
 }
 

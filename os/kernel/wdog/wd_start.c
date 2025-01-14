@@ -107,7 +107,9 @@ typedef void (*wdentry4_t)(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-
+#ifdef CONFIG_DEBUG
+struct wdog_s *g_wdog_debug;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -143,6 +145,13 @@ static inline void wd_expiration(void)
 			/* Remove the watchdog from the head of the list */
 
 			wdog = (FAR struct wdog_s *)sq_remfirst(&g_wdactivelist);
+
+#ifdef CONFIG_DEBUG
+			/* Save the executing wdog for debugging purposes if wdog is corrupted,
+			 * or if wdog->func excuting has abort.
+			 */
+			g_wdog_debug = wdog;
+#endif
 
 			/* If there is another watchdog behind this one, update its
 			 * its lag (this shouldn't be necessary).
@@ -190,6 +199,11 @@ static inline void wd_expiration(void)
 				break;
 #endif
 			}
+
+#ifdef CONFIG_DEBUG
+			g_wdog_debug = NULL;
+#endif
+
 		}
 	}
 }
