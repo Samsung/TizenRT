@@ -699,7 +699,7 @@ static int ist415_event_thread(int argc, char **argv)
 		if (ist415_process_event(dev) != OK) {
 			ist415dbg("Fail to process event\n");
 		}
-		
+
 		dev->irq_working = false;
 		dev->lower->ops->irq_enable(dev->lower);
 	}
@@ -1103,7 +1103,7 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->enable = false;
 	dev->pre_enable = false;
 	dev->suspend = false;
-	dev->log = IST415_LOG_LEVEL_INFO;
+	dev->log = IST415_LOG_LEVEL_ERRO;
 
 	dev->sys_mode = SYS_MODE_TOUCH;
 	dev->touch_type = (1 << TOUCH_TYPE_NORMAL) | (1 << TOUCH_TYPE_WET) | (1 << TOUCH_TYPE_PALMLARGE);
