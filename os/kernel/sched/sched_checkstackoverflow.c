@@ -68,16 +68,17 @@
 
 void sched_checkstackoverflow(FAR struct tcb_s *rtcb)
 {
-	irqstate_t flags = enter_critical_section();
-
 	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
+
+		irqstate_t flags = enter_critical_section();
+
 		lldbg_noarg("\n###############    STACK OVERFLOW at pid %d ", rtcb->pid);
 #if CONFIG_TASK_NAME_SIZE > 0
 		lldbg_noarg("(%s) ", rtcb->name);
 #endif
 		lldbg_noarg("###################\n");
 		PANIC();
-	}
 
-	leave_critical_section(flags);
+		leave_critical_section(flags);
+	}
 }
