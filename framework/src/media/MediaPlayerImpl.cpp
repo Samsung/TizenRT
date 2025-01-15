@@ -299,6 +299,28 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 	return notifySync();
 }
 
+player_result_t MediaPlayerImpl::reset()
+{
+	LOG_STATE_INFO(mCurState);
+	meddbg("MediaPlayer reset mPlayer : %x\n", &mPlayer);
+	
+	if (mCurState == PLAYER_STATE_READY || mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_PAUSED) {
+		mInputHandler.close();
+		if (reset_audio_stream_out(mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer reset fail : reset_audio_stream_out fail\n");
+		}
+
+		if (mBuffer) {
+			delete[] mBuffer;
+			mBuffer = nullptr;
+		}
+		mBufSize = 0;
+	}
+	
+	mCurState = PLAYER_STATE_IDLE;
+	return PLAYER_OK;
+}
+
 player_result_t MediaPlayerImpl::start()
 {
 	player_result_t ret = PLAYER_OK;

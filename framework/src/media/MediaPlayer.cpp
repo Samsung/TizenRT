@@ -52,6 +52,11 @@ player_result_t MediaPlayer::unprepare()
 	return mPMpImpl->unprepare();
 }
 
+player_result_t MediaPlayer::reset()
+{
+	return mPMpImpl->reset();
+}
+
 player_result_t MediaPlayer::start()
 {
 	return mPMpImpl->start();

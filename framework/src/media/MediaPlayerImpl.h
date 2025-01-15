@@ -96,6 +96,7 @@ public:
 	player_result_t prepare();
 	player_result_t prepareAsync();
 	player_result_t unprepare();
+	player_result_t reset();
 	player_result_t start();
 	player_result_t pause();
 	player_result_t stop();

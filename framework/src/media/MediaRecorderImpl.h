@@ -90,6 +90,7 @@ public:
 	recorder_result_t destroy();
 	recorder_result_t prepare();
 	recorder_result_t unprepare();
+	recorder_result_t reset();
 
 	recorder_result_t start();
 	recorder_result_t pause();
