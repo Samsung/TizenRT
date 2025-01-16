@@ -296,6 +296,10 @@ const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
     &g_readytorun,
     TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
   },
+  {                                              /* TSTATE_TASK_ASSIGNED */
+    &g_readytorun,
+    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+  },
   {                                              /* TSTATE_TASK_RUNNING */
     &g_readytorun,
     TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
