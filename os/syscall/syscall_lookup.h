@@ -78,6 +78,7 @@ SYSCALL_LOOKUP(set_errno,                 1, STUB_set_errno)
 SYSCALL_LOOKUP(sched_getaffinity,         3, STUB_sched_getaffinity)
 SYSCALL_LOOKUP(sched_setaffinity,         3, STUB_sched_setaffinity)
 SYSCALL_LOOKUP(sched_getcpu,              0, STUB_sched_getcpu)
+SYSCALL_LOOKUP(sched_getcpucount,         0, STUB_sched_getcpucount)
 
 /* Semaphores */
 

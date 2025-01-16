@@ -94,10 +94,10 @@ uintptr_t STUB_sched_setscheduler(int nbr, uintptr_t parm1, uintptr_t parm2,
 int STUB_sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask);
 int STUB_sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask);
 int STUB_sched_getcpu(void);
+int STUB_sched_getcpucount(void);
 
 uintptr_t STUB_sched_unlock(int nbr);
 uintptr_t STUB_sched_yield(int nbr);
-
 /* Semaphores */
 
 uintptr_t STUB_sem_close(int nbr, uintptr_t parm1);

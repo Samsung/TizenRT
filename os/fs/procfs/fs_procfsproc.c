@@ -412,7 +412,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #ifdef CONFIG_SMP
 	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
 #else
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
 #endif
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;

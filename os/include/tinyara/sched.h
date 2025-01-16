@@ -219,9 +219,7 @@ enum tstate_e {
 	TSTATE_TASK_INVALID = 0,	/* INVALID      - The TCB is uninitialized */
 	TSTATE_TASK_PENDING,		/* READY_TO_RUN - Pending preemption unlock */
 	TSTATE_TASK_READYTORUN,		/* READY-TO-RUN - But not running */
-#ifdef CONFIG_SMP
 	TSTATE_TASK_ASSIGNED,		/* READY-TO-RUN - Not running, but assigned to a CPU */
-#endif
 	TSTATE_TASK_RUNNING,		/* READY_TO_RUN - And running */
 
 	TSTATE_TASK_INACTIVE,		/* BLOCKED      - Initialized but not yet activated */

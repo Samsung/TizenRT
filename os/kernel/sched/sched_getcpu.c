@@ -63,3 +63,8 @@ int sched_getcpu(void)
 {
   return up_cpu_index();  /* Does not fail */
 }
+
+int sched_getcpucount(void)
+{
+  return CONFIG_SMP_NCPUS;
+}
