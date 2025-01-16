@@ -16,8 +16,8 @@
  *
  ******************************************************************/
 
-#ifndef __FOCUS_MANAGERWORKER_H
-#define __FOCUS_MANAGERWORKER_H
+#ifndef _FOCUS_MANAGERWORKER_H
+#define _FOCUS_MANAGERWORKER_H
 
 #include <memory>
 #include <media/FocusManager.h>

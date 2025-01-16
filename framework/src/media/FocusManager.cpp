@@ -67,11 +67,14 @@ FocusManager &FocusManager::getFocusManager()
 
 void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest)
 {
+	std::unique_lock<std::mutex> lock(mFocusListAccessLock);
 	if ((!mFocusList.empty()) && (mFocusList.front()->hasSameId(focusRequest))) {
 		/* Remove focus from list */
 		mFocusList.pop_front();
 		if (!mFocusList.empty()) {
+			lock.unlock();
 			mFocusList.front()->notify(FOCUS_GAIN);
+			lock.lock();
 		}
 	} else {
 		removeFocusElement(focusRequest);
@@ -104,19 +107,12 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	/* If request already gained focus, just return gained */
-	if (!mFocusList.empty() && mFocusList.front()->hasSameId(focusRequest)) {
-		return FOCUS_REQUEST_GAINED;
-	}
 	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
 	if (!fmw.isAlive()) {
 		meddbg("FocusManagerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest,false);
-	/*
-	@ToDo: to be discussed whether to return FOCUS_REQUEST_SUCCESS or FOCUS_REQUEST_DELAY.
-	*/
+	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, false);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
@@ -126,34 +122,34 @@ int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusReque
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	/* If request already gained focus, just return gained */
-	if (!mFocusList.empty() && mFocusList.front()->hasSameId(focusRequest)) {
-		return FOCUS_REQUEST_GAINED;
-	}
 	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
 	if (!fmw.isAlive()) {
 		meddbg("FocusManagerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest,true);
-	/*
-	@ToDo: to be discussed whether to return FOCUS_REQUEST_SUCCESS or FOCUS_REQUEST_DELAY.
-	*/
+	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, true);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
 void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest)
 {
+	std::unique_lock<std::mutex> lock(mFocusListAccessLock);
 	medvdbg("insertFocusElement!!\n");
+	/* If request already gained focus, just return success */
+	if (!mFocusList.empty() && mFocusList.front()->hasSameId(focusRequest)) {
+		return;
+	}
 	/* If list is empty, request always gain focus */
 	if (mFocusList.empty()) {
 		auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
 		mFocusList.push_front(focusRequester);
+		lock.unlock();
 		if (isTransientRequest) {
 			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
 		} else {
 			focusRequester->notify(FOCUS_GAIN);
 		}
+		lock.lock();
 		return;
 	}
 
@@ -164,18 +160,21 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 
 	/* If the policy of request is the highest prio */
 	if (FocusRequester::compare(*focusRequester, *(*iter))) {
+		lock.unlock();
 		if (isTransientRequest) {
 			mFocusList.front()->notify(FOCUS_LOSS_TRANSIENT);
 		} else {
 			mFocusList.front()->notify(FOCUS_LOSS);
 		}
+		lock.lock();
 		mFocusList.push_front(focusRequester);
-
+		lock.unlock();
 		if (isTransientRequest) {
 			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
 		} else {
 			focusRequester->notify(FOCUS_GAIN);
 		}
+		lock.lock();
 		return;
 	}
 
@@ -196,6 +195,7 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 
 stream_info_t FocusManager::getCurrentStreamInfo(void)
 {
+	std::lock_guard<std::mutex> lock(mFocusListAccessLock);
 	medvdbg("getCurrentStreamInfo!!\n");
 	stream_info_t stream_info;
 	if (mFocusList.empty()) {

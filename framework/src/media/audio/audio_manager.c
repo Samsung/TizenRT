@@ -76,8 +76,6 @@
 
 #define AUDIO_DEVICE_MAX_VOLUME 15
 
-#define MAX_STREAM_POLICY_NUM 6
-
 #ifndef CONFIG_AUDIO_MAX_INPUT_CARD_NUM
 #define CONFIG_AUDIO_MAX_INPUT_CARD_NUM 2
 #endif
@@ -100,7 +98,18 @@
 
 #define INVALID_ID -1
 
-#define VOLUME_JSON_PATH "/mnt/volume_level.json"
+#define AUDIO_METADATA_JSON_PATH "/mnt/audio_metadata.json"
+
+#define STREAM_TYPE_MUTE_STATUS_KEY "STREAM_TYPE_MUTE_STATUS"
+
+#define CJSON_GETOBJECTITEM(jsonValue, jsonObject, jsonKey)	\
+	{	\
+		jsonValue = cJSON_GetObjectItem(jsonObject, jsonKey);	\
+		if (!jsonValue) {	\
+			meddbg("%s: No such key %s in JSON\n", __FUNCTION__, jsonKey);	\
+			return AUDIO_MANAGER_OPERATION_FAIL;	\
+		}	\
+	}	\
 
 /****************************************************************************
  * Private Types
@@ -210,10 +219,12 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
 static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
 static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, uint32_t preset);
 static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream_policy_t stream_policy, bool mute);
-static audio_manager_result_t create_volume_level_json(void);
-static audio_manager_result_t parse_volume_level_json(void);
-static audio_manager_result_t update_volume_level_json(void);
+static audio_manager_result_t create_audio_metadata_json(void);
+static audio_manager_result_t parse_audio_metadata_json(void);
+static audio_manager_result_t update_audio_metadata_json(void);
+static audio_manager_result_t verify_audio_metadata_json(void);
 static const char *getJSONKey(stream_policy_t stream_policy);
+static inline audio_manager_result_t validate_stream_policy(stream_policy_t stream_policy);
 
 /****************************************************************************
  * Private Functions
@@ -737,10 +748,10 @@ static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream
 	return ret;
 }
 
-audio_manager_result_t create_volume_level_json(void)
+audio_manager_result_t create_audio_metadata_json(void)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	int fd = open(VOLUME_JSON_PATH, O_WRONLY | O_CREAT, 0777);
+	int fd = open(AUDIO_METADATA_JSON_PATH, O_WRONLY | O_CREAT, 0777);
 	if (fd == -1) {
 		meddbg("Failed to open volume level json file. errno: %d\n", errno);
 		return AUDIO_MANAGER_OPERATION_FAIL;
@@ -764,7 +775,7 @@ audio_manager_result_t create_volume_level_json(void)
 		cJSON_AddNumberToObject(json, jsonKey, gDefaultVolumeLevel);
 		cJSON_AddBoolToObject(muteStatusJsonObj, jsonKey, false);
 	}
-	cJSON_AddItemToObject(json, "STREAM_TYPE_MUTE_STATUS", muteStatusJsonObj);
+	cJSON_AddItemToObject(json, STREAM_TYPE_MUTE_STATUS_KEY, muteStatusJsonObj);
 	char *jsonString = cJSON_Print(json);
 	if (!jsonString) {
 		meddbg("Failed to print volume level json object\n");
@@ -787,10 +798,10 @@ audio_manager_result_t create_volume_level_json(void)
 	return ret;
 }
 
-audio_manager_result_t parse_volume_level_json(void)
+audio_manager_result_t parse_audio_metadata_json(void)
 {
 	struct stat jsonFileStat;
-	if (stat(VOLUME_JSON_PATH, &jsonFileStat) != 0) {
+	if (stat(AUDIO_METADATA_JSON_PATH, &jsonFileStat) != 0) {
 		meddbg("Failed to fetch volume level json file information. errno: %d\n", errno);
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
@@ -799,7 +810,7 @@ audio_manager_result_t parse_volume_level_json(void)
 		meddbg("Failed to allocate memory to hold volume level json file content\n");
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
-	int fd = open(VOLUME_JSON_PATH, O_RDONLY);
+	int fd = open(AUDIO_METADATA_JSON_PATH, O_RDONLY);
 	if (fd == -1) {
 		meddbg("Failed to open volume level json. errno: %d", errno);
 		free(buffer);
@@ -825,10 +836,10 @@ audio_manager_result_t parse_volume_level_json(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t update_volume_level_json(void)
+audio_manager_result_t update_audio_metadata_json(void)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
-	int fd = open(VOLUME_JSON_PATH, O_WRONLY, 0777);
+	int fd = open(AUDIO_METADATA_JSON_PATH, O_WRONLY, 0777);
 	if (fd == -1) {
 		meddbg("Failed to open volume level json file. errno: %d\n", errno);
 		return AUDIO_MANAGER_OPERATION_FAIL;
@@ -851,6 +862,47 @@ audio_manager_result_t update_volume_level_json(void)
 	return ret;
 }
 
+audio_manager_result_t verify_audio_metadata_json(void)
+{
+	audio_manager_result_t ret;
+	const char *jsonKey;
+	cJSON *jsonValue;
+	cJSON *muteStatusJsonObj;
+
+	jsonKey = STREAM_TYPE_MUTE_STATUS_KEY;
+	muteStatusJsonObj = cJSON_GetObjectItem(gJSON, jsonKey);
+	if (!muteStatusJsonObj) {
+		meddbg("%s not found in json, creating it.\n", STREAM_TYPE_MUTE_STATUS_KEY);
+		muteStatusJsonObj = cJSON_CreateObject();
+		if (!muteStatusJsonObj) {
+			meddbg("Failed to create json object for stream mute status\n");
+			return AUDIO_MANAGER_OPERATION_FAIL;
+		}
+		cJSON_AddItemToObject(gJSON, jsonKey, muteStatusJsonObj);
+	}
+
+	for (uint8_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
+		jsonKey = getJSONKey((stream_policy_t)i);
+		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		if (!jsonValue) {
+			meddbg("Volume level for policy = %d not found in json, creating it.\n", i);
+			cJSON_AddNumberToObject(gJSON, jsonKey, gDefaultVolumeLevel);
+		}
+		jsonValue = cJSON_GetObjectItem(muteStatusJsonObj, jsonKey);
+		if (!jsonValue) {
+			meddbg("Mute state for policy = %d not found in json, creating it.\n", i);
+			cJSON_AddBoolToObject(muteStatusJsonObj, jsonKey, false);
+		}
+	}	
+
+	ret = update_audio_metadata_json();
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to update volume level json. ret: %d\n", ret);
+	}
+
+	return ret;
+}
+
 const char *getJSONKey(stream_policy_t stream_policy)
 {
 	switch (stream_policy) {
@@ -869,6 +921,16 @@ const char *getJSONKey(stream_policy_t stream_policy)
 	default:
 		return "STREAM_TYPE_NA";
 	}
+}
+
+static inline audio_manager_result_t validate_stream_policy(stream_policy_t stream_policy)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	if (stream_policy < STREAM_TYPE_MEDIA || stream_policy > STREAM_TYPE_EMERGENCY) {
+		meddbg("stream policy = %d out of range\n", stream_policy);
+		ret = AUDIO_MANAGER_INVALID_PARAM;
+	}
+	return ret;
 }
 
 /****************************************************************************
@@ -913,50 +975,41 @@ audio_manager_result_t audio_manager_init(void)
 		return ret;
 	}
 
-	retVal = stat(VOLUME_JSON_PATH, &jsonFileStat);
+	retVal = stat(AUDIO_METADATA_JSON_PATH, &jsonFileStat);
 	if (retVal != OK) {
 		if (errno != ENOENT) {
 			meddbg("Failed to fetch json file information. errno: %d\n", errno);
 			return AUDIO_MANAGER_OPERATION_FAIL;
 		}
-		ret = create_volume_level_json();
+		ret = create_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to create volume level json. ret: %d", ret);
 			return ret;
 		}
 	} else if (jsonFileStat.st_size == 0) {
-		ret = create_volume_level_json();
+		ret = create_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to create volume level json. ret: %d", ret);
 			return ret;
 		}
 	}
 
-	ret = parse_volume_level_json();
+	ret = parse_audio_metadata_json();
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Failed to parse volume level json. ret: %d\n", ret);
 		return ret;
 	}
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
-	if (!jsonValue) {
-		medvdbg("No STREAM_TYPE_MUTE_STATUS in the file, creating it.");
-		cJSON_Delete(gJSON);
-		ret = create_volume_level_json();
-		if (ret != AUDIO_MANAGER_SUCCESS) {
-			meddbg("Failed to create volume level json. ret: %d", ret);
-			return ret;
-		}
-		ret = parse_volume_level_json();
-		if (ret != AUDIO_MANAGER_SUCCESS) {
-			meddbg("Failed to parse volume level json. ret: %d\n", ret);
-			return ret;
-		}
+	ret = verify_audio_metadata_json();
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to verify volume level json. ret: %d\n", ret);
+		return ret;
 	}
+
 	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	for (uint16_t i = 0; i < MAX_STREAM_POLICY_NUM; i++) {
 		jsonKey = getJSONKey((stream_policy_t)i);
-		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		CJSON_GETOBJECTITEM(jsonValue, gJSON, jsonKey)
 		card->volume[i] = jsonValue->valueint;
 	}
 
@@ -1725,11 +1778,17 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 
 audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_policy_t stream_policy)
 {
+	audio_manager_result_t ret;
 	audio_card_info_t *card;
 
 	if (!volume) {
 		meddbg("volume ptr is null\n");
 		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+	ret = validate_stream_policy(stream_policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
 	}
 	if (g_actual_audio_out_card_id) {
 		meddbg("Found no active output audio card\n");
@@ -1749,38 +1808,43 @@ audio_manager_result_t set_input_audio_gain(uint8_t gain)
 
 audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t stream_policy)
 {
-	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	audio_manager_result_t ret;
 	audio_card_info_t *card;
 	const char *jsonKey;
 	cJSON *jsonValue;
 	cJSON *streamMuteStatus;
 
+	ret = validate_stream_policy(stream_policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
+	}
 	if (g_actual_audio_out_card_id) {
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
 	jsonKey = getJSONKey(stream_policy);
-	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	CJSON_GETOBJECTITEM(streamMuteStatus, jsonValue, jsonKey)
 	if (streamMuteStatus->type == cJSON_True) {
 		cJSON_ReplaceItemInObject(jsonValue, jsonKey, cJSON_CreateBool(false));
-		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		CJSON_GETOBJECTITEM(jsonValue, gJSON, jsonKey)
 		if (jsonValue->valueint != volume) {
 			cJSON_ReplaceItemInObject(gJSON, jsonKey, cJSON_CreateNumber(volume));
 		}
-		ret = update_volume_level_json();
+		ret = update_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 			return ret;
 		}
 	} else {
-		jsonValue = cJSON_GetObjectItem(gJSON, jsonKey);
+		CJSON_GETOBJECTITEM(jsonValue, gJSON, jsonKey)
 		if (jsonValue->valueint == volume) {
 			return ret;
 		}
 		cJSON_ReplaceItemInObject(gJSON, jsonKey, cJSON_CreateNumber(volume));
-		ret = update_volume_level_json();
+		ret = update_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 			return ret;
@@ -1805,11 +1869,17 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t s
 
 audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy)
 {
+	audio_manager_result_t ret = validate_stream_policy(stream_policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
+	}
+
 	const char *policyKey = getJSONKey(stream_policy);
-	cJSON *policy = cJSON_GetObjectItem(gJSON, policyKey);
+	cJSON *policy;
+	CJSON_GETOBJECTITEM(policy, gJSON, policyKey)
 	uint8_t volume = policy->valueint;
 
-	audio_manager_result_t ret;
 	ret = set_audio_volume(OUTPUT, volume);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_volume failed, ret: %d\n", ret);
@@ -2325,7 +2395,14 @@ audio_manager_result_t change_stream_out_device(int card_id, int device_id)
 /* TODO policy should be merged logic of focus manager */
 audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direction_t direct)
 {
+	audio_manager_result_t ret;
 	audio_card_info_t *card;
+
+	ret = validate_stream_policy(policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
+	}
 
 	if (direct == INPUT) {
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
@@ -2466,17 +2543,18 @@ audio_manager_result_t set_mic_mute(void)
 		if (get_errno() == EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		}
+		pthread_mutex_unlock(&(card->card_mutex));
 		return ret;
 	}
 	medvdbg("Mic Mute Success\n");
 
 	pthread_mutex_unlock(&(card->card_mutex));
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
-	micMuteStatus = cJSON_GetObjectItem(jsonValue, "STREAM_TYPE_VOICE_RECORD");
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
+	CJSON_GETOBJECTITEM(micMuteStatus, jsonValue, "STREAM_TYPE_VOICE_RECORD")
 	if (micMuteStatus->type == cJSON_False) {
 		cJSON_ReplaceItemInObject(jsonValue, "STREAM_TYPE_VOICE_RECORD", cJSON_CreateBool(true));
-		ret = update_volume_level_json();
+		ret = update_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 		}
@@ -2513,17 +2591,18 @@ audio_manager_result_t set_mic_unmute(void)
 		if (get_errno() == EACCES) {
 			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
 		}
+		pthread_mutex_unlock(&(card->card_mutex));
 		return ret;
 	}
 	medvdbg("Mic Unmute Success\n");
 
 	pthread_mutex_unlock(&(card->card_mutex));
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
-	micMuteStatus = cJSON_GetObjectItem(jsonValue, "STREAM_TYPE_VOICE_RECORD");
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
+	CJSON_GETOBJECTITEM(micMuteStatus, jsonValue, "STREAM_TYPE_VOICE_RECORD")
 	if (micMuteStatus->type == cJSON_True) {
 		cJSON_ReplaceItemInObject(jsonValue, "STREAM_TYPE_VOICE_RECORD", cJSON_CreateBool(false));
-		ret = update_volume_level_json();
+		ret = update_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 		}
@@ -2544,12 +2623,12 @@ audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
 	jsonKey = getJSONKey(stream_policy);
-	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	CJSON_GETOBJECTITEM(streamMuteStatus, jsonValue, jsonKey)
 	if ((streamMuteStatus->type == cJSON_True) != mute) {
 		cJSON_ReplaceItemInObject(jsonValue, jsonKey, cJSON_CreateBool(mute));
-		ret = update_volume_level_json();
+		ret = update_audio_metadata_json();
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 			return ret;
@@ -2573,9 +2652,15 @@ audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_po
 	cJSON *streamMuteStatus;
 	bool mute;
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	ret = validate_stream_policy(stream_policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
+	}
+
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
 	jsonKey = getJSONKey(stream_policy);
-	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	CJSON_GETOBJECTITEM(streamMuteStatus, jsonValue, jsonKey)
 	mute = (streamMuteStatus->type == cJSON_True) ? true : false;
 	direct = (stream_policy == STREAM_TYPE_VOICE_RECORD) ? INPUT : OUTPUT;
 
@@ -2589,13 +2674,20 @@ audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_po
 
 audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy, bool *mute)
 {
+	audio_manager_result_t ret;
 	cJSON *jsonValue;
 	const char *jsonKey;
 	cJSON *streamMuteStatus;
 
-	jsonValue = cJSON_GetObjectItem(gJSON, "STREAM_TYPE_MUTE_STATUS");
+	ret = validate_stream_policy(stream_policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Invalid stream policy. ret: %d\n", ret);
+		return ret;
+	}
+
+	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
 	jsonKey = getJSONKey(stream_policy);
-	streamMuteStatus = cJSON_GetObjectItem(jsonValue, jsonKey);
+	CJSON_GETOBJECTITEM(streamMuteStatus, jsonValue, jsonKey)
 	*mute = (streamMuteStatus->type == cJSON_True) ? true : false;
 
 	return AUDIO_MANAGER_SUCCESS;

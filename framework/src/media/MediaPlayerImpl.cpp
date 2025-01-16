@@ -48,21 +48,23 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 
 player_result_t MediaPlayerImpl::create()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer create mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mpw.startWorker();
 
 	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
+	meddbg("createPlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
 	if (ret != PLAYER_OK) {
 		mpw.stopWorker();
 	}
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -83,20 +85,22 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::destroy()
 {
-	player_result_t ret = PLAYER_OK;
-
-	std::unique_lock<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer destroy mPlayer : %x\n", &mPlayer);
-
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
+	player_result_t ret = PLAYER_OK;
+{
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+
+
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
+	meddbg("destroyPlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
-
+}
 	if (ret == PLAYER_OK) {
 		if (mPlayerObserver) {
 			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
@@ -107,6 +111,7 @@ player_result_t MediaPlayerImpl::destroy()
 		mpw.stopWorker();
 	}
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -127,6 +132,7 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::prepare()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -137,7 +143,6 @@ player_result_t MediaPlayerImpl::prepare()
 	}
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer prepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -146,8 +151,10 @@ player_result_t MediaPlayerImpl::prepare()
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
+	meddbg("preparePlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -209,6 +216,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::prepareAsync()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -219,7 +227,6 @@ player_result_t MediaPlayerImpl::prepareAsync()
 	}
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer prepareAsync\n");
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -229,6 +236,7 @@ player_result_t MediaPlayerImpl::prepareAsync()
 
 	mpw.enQueue(&MediaPlayerImpl::prepareAsyncPlayer, shared_from_this());
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
@@ -254,10 +262,10 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 
 player_result_t MediaPlayerImpl::unprepare()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer unprepare mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -266,8 +274,10 @@ player_result_t MediaPlayerImpl::unprepare()
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret));
+	meddbg("unpreparePlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -301,15 +311,14 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 
 player_result_t MediaPlayerImpl::reset()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	LOG_STATE_INFO(mCurState);
-	meddbg("MediaPlayer reset mPlayer : %x\n", &mPlayer);
 
 	if (mCurState == PLAYER_STATE_READY || mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_PAUSED) {
 		mInputHandler.close();
 		if (reset_audio_stream_out(mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer reset fail : reset_audio_stream_out fail\n");
-			return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		}		
+		}
 		
 		if (mBuffer) {
 			delete[] mBuffer;
@@ -319,11 +328,14 @@ player_result_t MediaPlayerImpl::reset()
 	}
 
 	mCurState = PLAYER_STATE_IDLE;
+
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
 player_result_t MediaPlayerImpl::start()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -334,7 +346,6 @@ player_result_t MediaPlayerImpl::start()
 	}
 
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer start mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -344,6 +355,7 @@ player_result_t MediaPlayerImpl::start()
 
 	mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this());
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
@@ -396,6 +408,7 @@ void MediaPlayerImpl::startPlayer()
 
 player_result_t MediaPlayerImpl::stop()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -406,7 +419,6 @@ player_result_t MediaPlayerImpl::stop()
 	}
 
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer stop mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -416,6 +428,7 @@ player_result_t MediaPlayerImpl::stop()
 
 	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), PLAYER_OK);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
@@ -463,6 +476,7 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 
 player_result_t MediaPlayerImpl::pause()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -473,7 +487,6 @@ player_result_t MediaPlayerImpl::pause()
 	}
 
 	std::lock_guard<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer pause mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -483,6 +496,7 @@ player_result_t MediaPlayerImpl::pause()
 
 	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this());
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
@@ -518,10 +532,10 @@ void MediaPlayerImpl::pausePlayer()
 
 player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer getVolume mPlayer : %x\n", &mPlayer);
 
 	if (vol == nullptr) {
 		meddbg("The given argument is invalid.\n");
@@ -536,8 +550,10 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret));
+	meddbg("getPlayerVolume enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -556,10 +572,10 @@ void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
 
 player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer getMaxVolume\n");
 
 	if (vol == nullptr) {
 		meddbg("The given argument is invalid.\n");
@@ -574,8 +590,10 @@ player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret));
+	meddbg("getPlayerMaxVolume enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -593,6 +611,7 @@ void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
 
 player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
@@ -603,7 +622,6 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 	}
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setVolume\n");
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -612,8 +630,10 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret));
+	meddbg("setPlayerVolume enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -639,10 +659,10 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	meddbg("MediaPlayer setDataSource mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -652,14 +672,16 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 
 	std::shared_ptr<stream::InputDataSource> sharedDataSource = std::move(source);
 	mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
+	meddbg("setPlayerDataSource enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
 void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t &ret)
 {
-	if (mCurState != PLAYER_STATE_IDLE) {
+	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
@@ -681,8 +703,8 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setObserver mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -691,8 +713,10 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer);
+	meddbg("setPlayerObserver enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return PLAYER_OK;
 }
 
@@ -714,10 +738,10 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 
 player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setStreamInfo mPlayer : %x\n", &mPlayer);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -726,8 +750,10 @@ player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> st
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret));
+	meddbg("setPlayerStreamInfo enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
@@ -759,6 +785,7 @@ stream_focus_state_t MediaPlayerImpl::getStreamFocusState(void)
 
 bool MediaPlayerImpl::isPlaying()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
 	bool ret = false;
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
@@ -773,17 +800,19 @@ bool MediaPlayerImpl::isPlaying()
 		}
 		notifySync();
 	});
+	meddbg("getState() enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
 player_result_t MediaPlayerImpl::setLooping(bool loop)
 {
+	meddbg("%s loop: %d player: %x\n", __func__, loop, &mPlayer);
 	player_result_t ret = PLAYER_OK;
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
-	medvdbg("MediaPlayer setLooping mPlayer : %x loop : %d\n", &mPlayer, loop);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 
@@ -793,8 +822,10 @@ player_result_t MediaPlayerImpl::setLooping(bool loop)
 	}
 
 	mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret));
+	meddbg("setPlayerLooping enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
+	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
