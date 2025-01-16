@@ -102,7 +102,8 @@
 #define SYS_sched_getaffinity          (CONFIG_SYS_RESERVED + 14)
 #define SYS_sched_setaffinity          (CONFIG_SYS_RESERVED + 15)
 #define SYS_sched_getcpu               (CONFIG_SYS_RESERVED + 16)
-#define __SYS_sem                      (CONFIG_SYS_RESERVED + 17)
+#define SYS_sched_getcpucount          (CONFIG_SYS_RESERVED + 17)
+#define __SYS_sem                      (CONFIG_SYS_RESERVED + 18)
 
 /* Semaphores */
 
