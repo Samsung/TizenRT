@@ -71,7 +71,7 @@ protected:
 
 	pthread_t mWorker;
 	size_t mWorkerStackSize;
-	bool mIsWorkerAlive;
+	std::atomic<bool> mIsWorkerAlive;
 private:
 	void createWorker();
 	void destroyWorker();

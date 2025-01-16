@@ -89,6 +89,7 @@ bool StreamHandler::start()
 {
 	medvdbg("StreamHandler::start()\n");
 	if (mDataSource && !mDataSource->isPrepared()) {
+		meddbg("DataSource is not prepared!\n");
 		return false;
 	}
 
@@ -104,7 +105,7 @@ bool StreamHandler::stop()
 
 void StreamHandler::createWorker()
 {
-	medvdbg("StreamHandler::createWorker()\n");
+	meddbg("StreamHandler::createWorker, mIsWorkerAlive : %d\n", mIsWorkerAlive.load());
 	if (mStreamBuffer && !mIsWorkerAlive) {
 		resetWorker();
 		mStreamBuffer->reset();
@@ -128,7 +129,7 @@ void StreamHandler::createWorker()
 
 void StreamHandler::destroyWorker()
 {
-	medvdbg("StreamHandler::destoryWorker()\n");
+	meddbg("StreamHandler::destoryWorker()\n");
 	if (mIsWorkerAlive) {
 		// Setup flag,
 		mIsWorkerAlive = false;
