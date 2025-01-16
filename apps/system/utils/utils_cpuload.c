@@ -120,10 +120,10 @@ static void cpuload_stop(void)
 
 static bool has_cpuload(char *load_info)
 {
-#ifdef CONFIG_SMP
 	int len = strlen(load_info);
+	int ncpus = sched_getcpucount();
 
-	if (cpu == CONFIG_SMP_NCPUS) {
+	if (cpu == ncpus) {
 		/* This is the case when user has not specified cpu idx. 
 		 * In this case we check the avg value. If avg is zero, then
 		 * all cpu load values will be zero and hence we return false.
@@ -133,14 +133,11 @@ static bool has_cpuload(char *load_info)
 		return (strncmp(load_info, "0.0", 3) != 0);
 	} else {
 		char *str = load_info;
-		for (int i = 1; i < CONFIG_SMP_NCPUS && i <= cpu; i++) {
+		for (int i = 1; i < ncpus && i <= cpu; i++) {
 			str = strchr(str, '-') + 1;
 		}
 		return (strncmp(str, "0.0", 3) != 0);
 	}
-#else 
-	return (strncmp(load_info, "0.0", 3) != 0);
-#endif
 }
 
 static void cpuload_print_pid_value(char *buf, void *arg)
@@ -150,6 +147,7 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 	int pid_hash;
 	double load_ratio;
 	stat_data stat_info[PROC_STAT_MAX];
+	int ncpus = sched_getcpucount();
 
 	stat_info[0] = buf;
 
@@ -179,32 +177,24 @@ static void cpuload_print_pid_value(char *buf, void *arg)
 	} else {
 #ifdef CONFIG_SCHED_MULTI_CPULOAD
 		for (i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++) {
-#ifdef CONFIG_SMP
-			char * avgload[CONFIG_SMP_NCPUS + 1];
+			char * avgload[ncpus + 1];
 			avgload[0] = stat_info[i];
-			for (int j = 0; j < CONFIG_SMP_NCPUS; j++) {
+			for (int j = 0; j < ncpus; j++) {
 				avgload[j] = strtok_r(avgload[j], "-", &avgload[j + 1]);
-				if (cpu >= CONFIG_SMP_NCPUS || cpu == j) {
+				if (cpu >= ncpus || cpu == j) {
 					printf(" %5s |", avgload[j]);
 				}
 			}
-#else
-			printf(" %5s |", stat_info[i]);
-#endif
 		}
 #else
-#ifdef CONFIG_SMP
-		char * avgload[CONFIG_SMP_NCPUS + 1];
+		char * avgload[ncpus + 1];
 		avgload[0] = stat_info[PROC_STAT_CPULOAD];
-		for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		for (i = 0; i < ncpus; i++) {
 			avgload[i] = strtok_r(avgload[i], "-", &avgload[i + 1]);
-			if (cpu >= CONFIG_SMP_NCPUS || cpu == i) {
+			if (cpu >= ncpus || cpu == i) {
 				printf(" %5s |", avgload[i]);
 			}
 		}
-#else
-		printf(" %5s |", stat_info[PROC_STAT_CPULOAD]);
-#endif
 #endif
 	}
 #if (CONFIG_TASK_NAME_SIZE > 0)
@@ -232,6 +222,7 @@ static int cpuload_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 static void cpuload_print_normal(void)
 {
+	int ncpus = sched_getcpucount();
 	/* Print titles */
 	printf("\n--------------------------------------------------\n");
 	printf("Non-Zero CPU utilization trend (updated every %ds)\n", cpuload_interval);
@@ -244,15 +235,11 @@ static void cpuload_print_normal(void)
 	for (int i = PROC_STAT_CPULOAD_SHORT; i <= PROC_STAT_CPULOAD_LONG; i++)
 #endif
 	{
-#ifdef CONFIG_SMP
-		for (int j = 0; j < CONFIG_SMP_NCPUS; j++) {
-			if (cpu >= CONFIG_SMP_NCPUS || cpu == j) {
+		for (int j = 0; j < ncpus; j++) {
+			if (cpu >= ncpus || cpu == j) {
 				printf("  CPU%d |", j);
 			}
 		}
-#else
-		printf("  CPU  |");
-#endif
 		printf(" Task Name  ");
 	}
 
@@ -443,6 +430,7 @@ int utils_cpuload(int argc, char **args)
 	int opt;
 	int ret;
 	long value;
+	int ncpus = sched_getcpucount();
 
 	if (argc >= 2) {
 		if (!strncmp(args[1], "--help", strlen("--help") + 1)) {
@@ -464,7 +452,7 @@ int utils_cpuload(int argc, char **args)
 	cpuload_mode = CPULOAD_NORMAL;
 	cpuload_interval = CONFIG_CPULOADMONITOR_INTERVAL;
 	cpuload_count = CPULOADMON_RUNNING_FOREVER;
-	cpu = CONFIG_SMP_NCPUS;
+	cpu = ncpus;
 
 	if (argc > 1) {
 		/*
@@ -508,7 +496,7 @@ int utils_cpuload(int argc, char **args)
 			case 'c':
 				/* set count of iterations */
 				value = atoi(optarg);
-				if (value < 0 || value >= CONFIG_SMP_NCPUS) {
+				if (value < 0 || value >= ncpus) {
 					printf("Invalid input for -c option");
 					goto show_usage;
 				}
