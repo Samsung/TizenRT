@@ -72,9 +72,7 @@ static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
 	"READY   ",
-#ifdef CONFIG_SMP
-	"ASSIGNED",		
-#endif
+	"ASSIGNED",
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
@@ -98,9 +96,7 @@ static const char *utils_ttypenames[4] = {
 	"--?--  "
 };
 
-#ifdef CONFIG_SMP
 static uint32_t cpu;
-#endif
 
 static void ps_print_values(char *buf, void *arg)
 {
@@ -108,6 +104,7 @@ static void ps_print_values(char *buf, void *arg)
 	int flags;
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
+	int ncpus = sched_getcpucount();
 
 	stat_info[0] = buf;
 
@@ -115,13 +112,11 @@ static void ps_print_values(char *buf, void *arg)
 		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
 	}
 
-#ifdef CONFIG_SMP
 	int cpu_idx;
 	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
-	if (cpu_idx != cpu && cpu != CONFIG_SMP_NCPUS) {
+	if (cpu_idx != cpu && cpu != ncpus) {
 		return;
 	}
-#endif
 
 	flags = atoi(stat_info[PROC_STAT_FLAG]);
 	if (flags <= 0) {
@@ -138,11 +133,7 @@ static void ps_print_values(char *buf, void *arg)
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
 		utils_statenames[state]);
 
-#ifdef CONFIG_SMP
 	printf(" | %3s", stat_info[PROC_STAT_CPU]);
-#else
-	printf(" | NA ");
-#endif
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
@@ -171,6 +162,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 int utils_ps(int argc, char **args)
 {
+	int ncpus = sched_getcpucount();
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
 	bool is_mounted;
@@ -190,9 +182,8 @@ int utils_ps(int argc, char **args)
 
 #endif
 
-#ifdef CONFIG_SMP
 	int opt;
-	cpu = CONFIG_SMP_NCPUS;
+	cpu = ncpus;
         if (argc > 1) {
                 /*
                  * -c [cpu idx] : only display processes running on given cpu
@@ -204,7 +195,7 @@ int utils_ps(int argc, char **args)
                         switch (opt) {
                         case 'c':
                                 cpu = atoi(optarg);
-                                if (cpu < 0 || cpu >= CONFIG_SMP_NCPUS) {
+                                if (cpu < 0 || cpu >= ncpus) {
 					printf("Invalid input for -c option\n");
                                         goto out;
                                 }
@@ -216,7 +207,6 @@ int utils_ps(int argc, char **args)
 			}
 		}
 	}
-#endif
 
 	printf("\n");
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
@@ -224,9 +214,7 @@ int utils_ps(int argc, char **args)
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
 
-#ifdef CONFIG_SMP
 out:
-#endif
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {
 		/* Detach mounted Procfs */
