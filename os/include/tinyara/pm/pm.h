@@ -150,28 +150,20 @@ enum pm_state_e {
 								 *
 								 * PM_RESTORE is used to notify for restore from low power state.
 								 */
-	PM_NORMAL = 0,				/* Normal full power operating mode.  If the driver is in
+	PM_FOREGROUND = 0,				/* Normal full power operating mode.  If the driver is in
 								 * a reduced power usage mode, it should immediately re-
-								 * initialize for normal operatin.
+								 * initialize for normal operation.
 								 *
-								 * PM_NORMAL may be followed by PM_IDLE.
+								 * PM_FOREGROUND may be followed by PM_BACKGROUND.
 								 */
-	PM_IDLE,					/* Drivers will receive this state change if it is
-								 * appropriate to enter a simple IDLE power state.  This
-								 * would include simple things such as reducing display back-
-								 * lighting.  The driver should be ready to resume normal
-								 * activity instantly.
-								 *
-								 * PM_IDLE may be followed by PM_STANDBY or PM_NORMAL.
-								 */
-	PM_STANDBY,					/* The system is entering standby mode. Standby is a lower
+	PM_BACKGROUND,					/* The system is entering background mode. Background is a lower
 								 * power consumption mode that may involve more extensive
 								 * power management steps such has disabling clocking or
 								 * setting the processor into reduced power consumption
 								 * modes. In this state, the system should still be able
 								 * to resume normal activity almost immediately.
 								 *
-								 * PM_STANDBY may be followed PM_SLEEP or by PM_NORMAL
+								 * PM_BACKGROUND may be followed PM_SLEEP or by PM_FOREGROUND
 								 */
 	PM_SLEEP,					/* The system is entering deep sleep mode.  The most drastic
 								 * power reduction measures possible should be taken in this
@@ -179,7 +171,7 @@ enum pm_state_e {
 								 * operation from SLEEP (some MCUs may even require going
 								 * through reset).
 								 *
-								 * PM_SLEEP may be following by PM_NORMAL
+								 * PM_SLEEP may be following by PM_FOREGROUND
 								 */
 	PM_COUNT,
 };
@@ -208,60 +200,49 @@ struct pm_callback_s {
 	char name[MAX_PM_CALLBACK_NAME];	/* Name of driver which register callback */
 
 	/**************************************************************************
-	 * Name: prepare
+	 * Name: sleep
 	 *
 	 * Description:
-	 *   Request the driver to prepare for a new power state. This is a
-	 *   warning that the system is about to enter into a new power state.  The
+	 *   Put the driver into low power mode (or turn OFF). This is a
+	 *   warning that the system is about to enter into PM_SLEEP state. The
 	 *   driver should begin whatever operations that may be required to enter
-	 *   power state.  The driver may abort the state change mode by returning
+	 *   PM_SLEEP state. The driver may abort the state change mode by returning
 	 *   a non-zero value from the callback function
 	 *
 	 * Input Parameters:
 	 *   cb      - Returned to the driver.  The driver version of the callback
 	 *             structure may include additional, driver-specific state
 	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
 	 *
 	 * Returned Value:
 	 *   0 (OK) means the event was successfully processed and that the driver
-	 *   is prepared for the PM state change.  Non-zero means that the driver
+	 *   is prepared for the PM_SLEEP change.  Non-zero means that the driver
 	 *   is not prepared to perform the tasks needed achieve this power setting
-	 *   and will cause the state change to be aborted.  NOTE:  The prepare
-	 *   method will also be recalled when reverting from lower back to higher
-	 *   power consumption modes (say because another driver refused a lower
-	 *   power state change).  Drivers are not permitted to return non-zero
-	 *   values when reverting back to higher power consumption modes!
+	 *   and will cause the state change to be aborted.
 	 *
 	 **************************************************************************/
 
-	int (*prepare)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
+	int (*sleep)(FAR struct pm_callback_s *cb);
 
 	/**************************************************************************
-	 * Name: notify
+	 * Name: wake
 	 *
 	 * Description:
-	 *   Notify the driver of new power state.  This callback is called after
-	 *   all drivers have had the opportunity to prepare for the new power
-	 *   state.
+	 *   Put the driver into high power mode (or turn ON). This callback is called
+	 *   after board change its state from low power to high power. All drivers
+	 *   had the opportunity to prepare for the new power state.
 	 *
 	 * Input Parameters:
-	 *   cb      - Returned to the driver.  The driver version of the callback
+	 *   cb      - Returned to the driver. The driver version of the callback
 	 *             structure may include additional, driver-specific state
 	 *             data at the end of the structure.
-	 *   domain  - Identifies the activity domain of the state change
-	 *   pmstate - Identifies the new PM state
 	 *
 	 * Returned Value:
-	 *   None.  The driver already agreed to transition to the low power
-	 *   consumption state when when it returned OK to the prepare() call.
-	 *   At that time it should have made all preprations necessary to enter
-	 *   the new state.  Now the driver must make the state transition.
+	 *   None.
 	 *
 	 **************************************************************************/
 
-	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
+	void (*wake)(FAR struct pm_callback_s *cb);
 };
 
 /****************************************************************************
@@ -334,42 +315,6 @@ void pm_start(void);
 void pm_initialize(void);
 
 /****************************************************************************
- * Name: pm_register
- *
- * Description:
- *   This function is called by a device driver in order to register to
- *   receive power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_register(FAR struct pm_callback_s *callbacks);
-
-/****************************************************************************
- * Name: pm_unregister
- *
- * Description:
- *   This function is called by a device driver in order to unregister
- *   previously registered power management event callbacks.
- *
- * Input parameters:
- *   callbacks - An instance of struct pm_callback_s providing the driver
- *               callback functions.
- *
- * Returned value:
- *    Zero (OK) on success; otherwise a negated errno value is returned.
- *
- ****************************************************************************/
-
-int pm_unregister(FAR struct pm_callback_s *callbacks);
-
-/****************************************************************************
  * Name: pm_domain_register
  *
  * Description:
@@ -385,7 +330,7 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain);
+int pm_domain_register(char *domain, enum pm_state_e state, FAR struct pm_callback_s *callbacks);
 
 /****************************************************************************
  * Name: pm_idle
@@ -571,9 +516,7 @@ int pm_metrics(int milliseconds);
 
 #define pm_start()
 #define pm_initialize()
-#define pm_register(cb)         (0)
-#define pm_unregister(cb)       (0)
-#define pm_domain_register(domain)	(0)
+#define pm_domain_register(domain, state, callbacks)	(0)
 #define pm_idle()
 #define pm_suspend(domain_id)   (0)
 #define pm_resume(domain_id)    (0)

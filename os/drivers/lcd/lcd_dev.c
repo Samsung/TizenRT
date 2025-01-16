@@ -468,7 +468,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 
 #ifdef CONFIG_PM
-	lcd_info->pm_domain = pm_domain_register("LCD");
+	lcd_info->pm_domain = pm_domain_register("LCD", PM_FOREGROUND, NULL);
 #endif
 
 	lcd_init_put_image(dev);

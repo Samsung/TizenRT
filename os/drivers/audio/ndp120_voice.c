@@ -104,13 +104,13 @@ static int ndp120_release(FAR struct audio_lowerhalf_s *dev);
 static struct ndp120_dev_s *g_ndp120;
 static int g_ndp120_pm_id;
 
-static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
-static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
+static int ndp_pm_sleep(struct pm_callback_s *cb);
+static void ndp_pm_wake(struct pm_callback_s *cb);
 
 static struct pm_callback_s g_pmndpcb =
 {
-	.notify  = ndp_pm_notify,
-	.prepare = ndp_pm_prepare,
+	.sleep  = ndp_pm_sleep,
+	.wake = ndp_pm_wake,
 };
 #endif
 
@@ -777,7 +777,7 @@ static void ndp120_interrupt_dispatch(int d)
 
 #ifdef CONFIG_PM
 /****************************************************************************
- * Name: ndp_pm_notify
+ * Name: ndp_pm_sleep
  *
  * Description:
  *   Notify the driver of new power state. This callback is called after
@@ -785,31 +785,22 @@ static void ndp120_interrupt_dispatch(int d)
  *
  ****************************************************************************/
 
-static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
+static int ndp_pm_sleep(struct pm_callback_s *cb)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
-	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 * On boot, we are in PM_FOREGROUND. After that we only use PM_BACKGROUND and PM_SLEEP
+	 * on boot : PM_FOREGROUND -> PM_BACKGROUND -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_BACKGROUND -> PM_SLEEP -> PM_BACKGROUND........
 	 */
-	switch (state) {
-	case(PM_SLEEP): {
-		audvdbg("entering SLEEP\n");
+	audvdbg("entering SLEEP\n");
 #ifdef CONFIG_NDP120_AEC_SUPPORT
-		ndp120_aec_disable(g_ndp120);
+	ndp120_aec_disable(g_ndp120);
 #endif
-	}
-	break;
-	default: {
-		/* Nothing to do */
-		audvdbg("default case\n");
-	}
-	break;
-	}
+	return OK;
 }
 
 /****************************************************************************
- * Name: ndp_pm_prepare
+ * Name: ndp_pm_wake
  *
  * Description:
  *   Request the driver to prepare for a new power state. This is a warning
@@ -820,10 +811,9 @@ static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
  *
  ****************************************************************************/
 
-static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e state)
+static void ndp_pm_wake(struct pm_callback_s *cb)
 {
 	audvdbg("entry\n");
-	return OK;
 }
 #endif	/* End of CONFIG_PM */
 
@@ -880,9 +870,8 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
 
-	g_ndp120_pm_id = pm_domain_register("NDP120");
-	ret = pm_register(&g_pmndpcb);
-	DEBUGASSERT(ret == OK);
+	g_ndp120_pm_id = pm_domain_register("NDP120", PM_BACKGROUND, &g_pmndpcb);
+	DEBUGASSERT(g_ndp120_pm_id >= 0);
 #endif	
 	return &priv->dev;
 }

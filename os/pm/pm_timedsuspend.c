@@ -82,7 +82,7 @@ static void timer_timeout(int argc, int domain_id)
 	DEBUGASSERT(domain_timer_map[domain_id] != NULL);
 	/* PM transition will be resume here */
 	if (pm_resume(domain_id) != OK) {
-		pmlldbg("Unable to resume domain: %s\n", pm_domain_map[domain_id]);
+		pmlldbg("Unable to resume domain: %s\n", pm_domain_map[domain_id].name);
 	}
 	(void)wd_delete(domain_timer_map[domain_id]);
 	domain_timer_map[domain_id] = NULL;
@@ -114,7 +114,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	int tick_remain;
 	int ret = ERROR;
 	int delay = MSEC2TICK(milliseconds);
-	if ((domain_id < 0) || (domain_id >= CONFIG_PM_NDOMAINS) || (pm_domain_map[domain_id] == NULL)) {
+	if ((domain_id < 0) || (domain_id >= CONFIG_PM_NDOMAINS) || (pm_domain_map[domain_id].name == NULL)) {
 		set_errno(EINVAL);
 		pmdbg("Invalid domain_id: %d\n", domain_id);
 		return ret;
@@ -139,7 +139,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 		}
 		/* Unable to suspend domain, so delete the timer */
 		if (pm_suspend(domain_id) != OK) {
-			pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id]);
+			pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id].name);
 			(void)wd_delete(wdog);
 			goto exit;
 		}
@@ -148,7 +148,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 	/* New delay is less than running timer ticks left, no need to do anyting */
 	tick_remain = wd_gettime(wdog);
 	if (delay <= tick_remain) {
-		pmvdbg("Domain: %s is already suspended for %d milliseconds\n", pm_domain_map[domain_id], TICK2MSEC(tick_remain));
+		pmvdbg("Domain: %s is already suspended for %d milliseconds\n", pm_domain_map[domain_id].name, TICK2MSEC(tick_remain));
 		ret = OK;
 		goto exit;
 	}
@@ -159,7 +159,7 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 		timer_timeout(0, domain_id);
 		goto exit;
 	}
-	pmvdbg("Domain: %s is suspended for %d milliseconds\n", pm_domain_map[domain_id], milliseconds);
+	pmvdbg("Domain: %s is suspended for %d milliseconds\n", pm_domain_map[domain_id].name, milliseconds);
 	ret = OK;
 exit:
 	leave_critical_section(flags);

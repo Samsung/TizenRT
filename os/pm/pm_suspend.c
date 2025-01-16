@@ -114,6 +114,9 @@ int pm_suspend(int domain_id)
 	pm_metrics_update_suspend(domain_id);
 #endif
 	g_pmglobals.suspend_count[domain_id]++;
+	if (pm_domain_map[domain_id].state < g_pmglobals.state) {
+		pm_changestate(pm_domain_map[domain_id].state);
+	}
 errout:
 	leave_critical_section(flags);
 	return ret;
