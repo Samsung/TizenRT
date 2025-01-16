@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e50d597d68 2025/01/16-14:49:03 ==
+1. Fix issue of SoftAP not transmitting beacons when started after PM wake
+
 == version d1dcc72eb9 2025/01/13-17:51:26 ==
 1. differentiate logs between KM0 and KM4 that shared the same API
 
