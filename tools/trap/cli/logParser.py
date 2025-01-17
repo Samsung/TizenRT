@@ -497,7 +497,7 @@ class logParser:
 		stack_val = 0x00000000
 		current_line = ""
 			
-		print('\nStack_address\t Symbol_address\t Symbol_location  Symbol_name\t\tFile_name')
+		print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 
 		# Parse the contents based on tokens in log file.
 		with open(self.log_file) as searchfile:
@@ -580,7 +580,7 @@ class logParser:
 						if (self.is_kernel_text_address(hex(stack_val))):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
-								print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+								print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 								format_print = False
 							#If yes, print it's corresponding symbol
 							utils.print_symbol(stack_addr, stack_val, 0, self.bin_path, self.app_name)
@@ -589,7 +589,7 @@ class logParser:
 						if (is_app_symbol):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
-								print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+								print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 								format_print = False
 							#If yes, print it's corresponding symbol
 							if not self.xip_enabled:
