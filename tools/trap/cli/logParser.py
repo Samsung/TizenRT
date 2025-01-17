@@ -800,44 +800,20 @@ class logParser:
 		# print current running task List
 		self.print_task_list()
 
-	# Function to format logs and delete the timestamp (format-|xxxxxxxxx|) if it consists of timestamp at the start of each log line
+	# Function to format logs and delete the timestamp (supported formats-|xxxxxxxxx| and [xxxxxxxxx]) if it consists of timestamp at the start of each log line
 	def format_log_file(self):
 
 		# Delete unwanted logs (if any) and timestamp at the start of each line
 		with open(self.log_file, "r") as f:
 			data = f.readlines()
 		with open(self.log_file, "w") as f:
-			assertinlog = 0 #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
-			trunc = True # False if log line is to be retained, True otherwise
-			current_line=""
 			data = iter(data)
 			for line in data:
-				if partition_string in line:
-					f.write(line)
-					line = next(data)
-					f.write(line)
-					current_line = line
-					line = next(data)
-					f.write(line)
-					continue
-				if 'Assertion failed at file:' in line and current_line == assertion_details:
-					assertinlog = assertinlog + 1
-				if assertinlog == 2:
-					# Truncate logs after first crash dump (repeated assert case)
-					break
-				if assertinlog == 1:
-					# Truncate logs before first crash dump
-					if 'Assertion failed at file:' in line and current_line == assertion_details:
-						trunc = False
-					if trunc:
-						# Do not write line and move to the next line
-						continue
-
 				delete_idx = 0
 				# Timestamp present if line starts with '|'
-				if line[0] == '|':
+				if line[0] == '|' or line[0] == '[':
 					for idx in range(1, len(line)):
-						if '|' == line[idx]:
+						if '|' == line[idx] or ']' == line[idx]:
 							delete_idx = idx + 1
 							break
 				if line[delete_idx] == ' ':	# Check for trailing white spaces
