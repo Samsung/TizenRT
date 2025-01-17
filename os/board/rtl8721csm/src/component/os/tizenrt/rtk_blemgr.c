@@ -114,6 +114,8 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_init,
 	trble_netmgr_deinit,
 	trble_netmgr_get_mac_addr,
+	NULL,
+	NULL,
 	trble_netmgr_get_bonded_device,
 	trble_netmgr_delete_bond,
 	trble_netmgr_delete_bond_all,

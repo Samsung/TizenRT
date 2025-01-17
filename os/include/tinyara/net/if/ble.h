@@ -68,13 +68,25 @@ typedef struct {
 	trble_conn_param_role role;
 } trble_conn_param;
 
+typedef struct {
+	uint8_t io_cap;                 /*!< IO capabilities */
+	uint8_t oob_data_flag;          /*!< OOB data flag */
+	uint8_t bond_flag;              /*!< Bonding flags */
+	uint8_t mitm_flag;              /*!< MITM flag */
+	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
+	uint8_t use_fixed_key;          /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;             /*!< Fixed passkey value */
+} trble_sec_param;
+
 typedef enum {
 	// Common
 	LWNL_REQ_BLE_INIT,
 	LWNL_REQ_BLE_DEINIT,
 	LWNL_REQ_BLE_GET_MAC,
+	LWNL_REQ_BLE_SEC_PARAM_SET,
 	LWNL_REQ_BLE_GET_BONDED_DEV,
 	LWNL_REQ_BLE_DEL_BOND,
+	LWNL_REQ_BLE_PASSKEY_CONFIRM,
 	LWNL_REQ_BLE_DEL_BOND_ALL,
 	LWNL_REQ_BLE_CONN_IS_ACTIVE,
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
@@ -319,11 +331,13 @@ typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_ser
 typedef void (*trble_server_disconnected_t)(trble_conn_handle con_handle, uint16_t cause);
 typedef void (*trble_server_mtu_update_t)(trble_conn_handle con_handle,  uint16_t mtu_size);
 typedef void (*trble_server_oneshot_adv_t)(uint16_t adv_ret);
+typedef void (*trble_server_passkey_display_t)(uint32_t passkey, trble_conn_handle con_handle);
 
 typedef struct {
 	trble_server_connected_t connected_cb;
 	trble_server_disconnected_t disconnected_cb;
 	trble_server_mtu_update_t mtu_update_cb;
+	trble_server_passkey_display_t passkey_display_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed;
@@ -344,6 +358,8 @@ typedef trble_result_e (*trble_init)(struct bledev *dev, trble_client_init_confi
 typedef trble_result_e (*trble_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
+typedef trble_result_e (*trble_set_sec_param)(struct bledev *dev, trble_sec_param *sec_param);
+typedef trble_result_e (*trble_passkey_confirm)(struct bledev *dev, uint8_t *conn_handle, uint8_t *confirm);
 typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
 typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_addr *addr);
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
@@ -414,6 +430,8 @@ struct trble_ops {
 	trble_init init;
 	trble_deinit deinit;
 	trble_get_mac_addr get_mac;
+	trble_set_sec_param set_sec_param;
+	trble_passkey_confirm passkey_confirm;
 	trble_get_bonded_device get_bonded_dev;
 	trble_delete_bond del_bond;
 	trble_delete_bond_all del_bond_all;
