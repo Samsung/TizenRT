@@ -388,6 +388,7 @@ static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
+	NULL,
 	true,
 	gatt_profile, 
 	sizeof(gatt_profile) / sizeof(ble_server_gatt_t)
