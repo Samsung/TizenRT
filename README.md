@@ -16,7 +16,7 @@ Please find project details at [Wiki](https://github.com/Samsung/TizenRT/wiki) e
 
 TizenRT provides the easiest way to build with the use of [Docker](https://www.docker.com/).
 There is no need to install the required libraries and toolchains since the provided Docker container already includes everything required for TizenRT development.
-However, if your development systems are not eligible for running the Docker container, all libraries and toolchains should be manually installed.
+However, if your development systems are not eligible for running the Dock2er container, all libraries and toolchains should be manually installed.
 Please refer to [Manual Setup Build Environment](docs/HowToSetEnv.md).
 
 For more information of libraries in the TizenRT Docker Image, see https://hub.docker.com/r/tizenrt/tizenrt/.
