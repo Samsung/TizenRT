@@ -60,6 +60,10 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
 #endif
+
+#define IFSR_FS_MASK     0x0000001F
+#define FAULT_PERMISSION 0x0000000D
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -80,7 +84,7 @@ static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uin
 	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
-	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	_alert("PC: %08x LR: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], regs[REG_LR], ifar, ifsr);
 	_alert("#########################################################################\n\n\n");
 }
 
@@ -178,6 +182,10 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 	CURRENT_REGS = regs;
 
 	system_exception_location = regs[REG_R15];
+	if ((ifsr & IFSR_FS_MASK) == FAULT_PERMISSION) {
+		/* Permission Fault, Section. */
+		system_exception_location = regs[REG_R14];
+	}
 
 	/* Crash -- possibly showing diagnostic debug information. */
 
