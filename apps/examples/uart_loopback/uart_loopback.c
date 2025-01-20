@@ -47,16 +47,20 @@
 
 static bool is_running;
 
-static int uart_tx_loop(void)
+static int uart_tx_loop(pthread_addr_t *arg)
 {
-	printf("UART TX THREAD START\n");
 	int fd = 0;
 	int tx_test_count = 0;
 	char port[20] = {'\0'};
-	sprintf(port, UART_DEV_PATH, CONFIG_EXAMPLES_UART_LOOPBACK_PORT);
+	int port_num = (int)arg;
+
+	sprintf(port, UART_DEV_PATH, port_num);
+
+	printf("UART TX THREAD START [Port: %s]\n", port);
+
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
-		printf("ERROR: Failed to open Tx UART(%d):\n", get_errno());
+		printf("ERROR: Failed to open %s Tx UART(%d):\n", port, get_errno());
 		return -1;
 	}
 
@@ -73,7 +77,7 @@ static int uart_tx_loop(void)
 	return 0;
 }
 
-static int uart_rx_loop(void)
+static int uart_rx_loop(pthread_addr_t *arg)
 {
 	int fd = 0;
 	char port[20] = {'\0'};
@@ -82,13 +86,15 @@ static int uart_rx_loop(void)
 	char *read_ptr;
 	int rx_test_count = 0;
 	char read_buf[TEST_STR_LEN];
+	int port_num = (int)arg;
 
-	printf("UART RX THREAD START\n");
+	sprintf(port, UART_DEV_PATH, port_num);
 
-	sprintf(port, UART_DEV_PATH, CONFIG_EXAMPLES_UART_LOOPBACK_PORT);
+	printf("UART RX THREAD START [Port: %s]\n", port);
+
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
-		printf("ERROR: Failed to open Rx UART(%d):\n", get_errno());
+		printf("ERROR: Failed to open %s Rx UART(%d):\n", port, get_errno());
 		return -1;
 	}
 
@@ -109,7 +115,7 @@ static int uart_rx_loop(void)
 				return -1;
 			}
 			if (!(fds[0].revents & POLLIN)) {
-				printf("RESULT(%d): FAILED (Timeout)\n");
+				printf("RESULT(%d): FAILED (Timeout)\n", rx_test_count);
 				continue;
 			}
 #endif
@@ -131,12 +137,14 @@ static int uart_rx_loop(void)
 
 static void help_func(void)
 {
-	printf("usage: uart_loopback start/stop \n\n");
+	printf("usage: uart_loopback start/stop [option]\n\n");
 	printf("This test is to check if the same data is read as it was written through uart.\n");
 	printf("For this test, you need to short-circuit the UART TX PIN and the UART RX PIN.\n");
 	printf("This default uart port is /dev/ttyS2, you can change CONFIG_EXAMPLES_UART_LOOPBACK_PORT.\n\n");
 	printf("  start\t\t Start uart loopback test\n");
-	printf("  stop\t\t stop uart loopback test\n");	
+	printf("  stop\t\t stop uart loopback test\n\n");
+	printf("[option]\n");
+	printf("  -p --port\t Set uart ttyS[n] port number (default: %d)\n", CONFIG_EXAMPLES_UART_LOOPBACK_PORT);
 }
 
 /****************************************************************************
@@ -147,16 +155,21 @@ static int uart_loopback_task(int argc, char *argv[])
 	int ret;
 	pthread_t tx_tid;
 	pthread_t rx_tid;
+	int port_num = CONFIG_EXAMPLES_UART_LOOPBACK_PORT;
+
+	if (argc == 2) {
+		port_num = atoi(argv[1]);
+	}
 
 	printf("######################### UART loopback test START #########################\n");
 
-	if (pthread_create(&rx_tid, NULL, (pthread_startroutine_t)uart_rx_loop, NULL) < 0) {
+	if (pthread_create(&rx_tid, NULL, (pthread_startroutine_t)uart_rx_loop, (void *)port_num) < 0) {
 		printf("Fail to create rx pthread(%d):\n", get_errno());
 		return -1;
 	}
 	(void)pthread_setname_np(rx_tid, "uart_loopback_rx");
 
-	if (pthread_create(&tx_tid, NULL, (pthread_startroutine_t)uart_tx_loop, NULL) < 0) {
+	if (pthread_create(&tx_tid, NULL, (pthread_startroutine_t)uart_tx_loop, (void *)port_num) < 0) {
 		printf("Fail to create tx pthread(%d):\n", get_errno());
 		pthread_cancel(rx_tid);
 		return -1;
@@ -184,8 +197,9 @@ int uart_loopback_main(int argc, char **argv)
 #endif
 {
 	int pid;
+	char *parm[2] = {NULL, };
 
-	if (argc != 2 || strncmp(argv[1], "help", 5) == 0) {
+	if (argc < 2 || strncmp(argv[1], "help", 5) == 0) {
 		help_func();
 		return 0;
 	}
@@ -198,7 +212,12 @@ int uart_loopback_main(int argc, char **argv)
 
 		is_running = true;
 
-		pid = task_create("uart_loopback_task", 100, 1024, uart_loopback_task, NULL);
+		if (argc == 4 && (strncmp(argv[2], "-p", 3) == 0 || strncmp(argv[2], "--port", 7) == 0)) {
+			parm[0] = argv[3];
+			parm[1] = NULL;
+		}
+
+		pid = task_create("uart_loopback_task", 100, 1024, uart_loopback_task, (FAR char *const *)parm);
 		if (pid < 0) {
 			printf("Fail to create uart_loopback_task task(errno %d)\n", get_errno());
 			is_running = false;
