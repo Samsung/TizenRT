@@ -18,7 +18,8 @@
 
 #include "rtk_km4log.h"
 #include "osif.h"
-
+#include <netutils/netlib.h>
+#include <net/if.h>
 /* -------------------------------- Defines --------------------------------- */
 #define CONFIG_INIC_IPC_HOST_API_PRIO 3
 #if defined(CONFIG_ENABLE_WPS) && CONFIG_ENABLE_WPS
@@ -37,6 +38,8 @@ struct task_struct inic_ipc_api_host_handler;
 // handle to log queue
 extern void *g_km4_log_queue;
 
+#define RETRY_COUNT 2500
+static volatile u8 inic_ipc_old_ip_addr[4] = {0};
 // static buffer to hold log message
 static u8 g_inic_ipc_logging_buf[CONFIG_KM4_MAX_LOG_QUEUE_SIZE][CONFIG_KM4_MAX_LOG_BUFFER_SIZE] = { 0 };
 static u8 g_inic_ipc_logging_buf_ctr = 0;
@@ -183,7 +186,30 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 	/* To avoid gcc warnings */
 	(void) expected_idle_time;
 	(void) param;
-	u32 try_cnt = 2500;//wait 5ms
+	u32 try_cnt = RETRY_COUNT;//wait 5ms
+	u8 *new_addr = LwIP_GetIP(0);
+	if (new_addr == NULL) {
+		return _FAIL;
+	}
+	if (memcmp(inic_ipc_old_ip_addr, new_addr, 4) == 0) {
+		return _SUCCESS;
+	}
+	while (try_cnt) {
+		DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
+		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
+			try_cnt --;
+			DelayUs(2);
+		} else {
+			break;
+		}
+	}
+
+	if (try_cnt == 0) {
+		DBG_ERR("[CA32] %s update ip addr timeout, last inic ipc not hdl\n", __FUNCTION__);
+		return _FAIL;
+	} else {
+		try_cnt = RETRY_COUNT;
+	}
 
 	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
 
@@ -217,6 +243,8 @@ static u32 _inic_ipc_ip_addr_update_in_wowlan(u32 expected_idle_time, void *para
 		DCache_Clean((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 		return _FAIL;
 	}
+	/* only update old when success */
+	rtw_memcpy(inic_ipc_old_ip_addr, new_addr, 4);
 	return _SUCCESS;
 }
 
@@ -383,7 +411,15 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 {
 	int ret = 0;
 	rtw_down_sema(&g_host_inic_api_message_send_sema);
-
+	/*ensure previous IPC request is handled (_inic_ipc_ip_addr_update_in_wowlan)*/
+	while (1) {
+		DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
+		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
+			rtw_mdelay_os(1);
+		} else {
+			break;
+		}
+	}
 	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
 
 	g_host_ipc_api_request_info.API_ID = id;
