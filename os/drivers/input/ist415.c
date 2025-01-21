@@ -122,7 +122,9 @@ static void ist415_forced_release(struct ist415_dev_s *dev)
 			dev->touched[i] = false;
 		}
 	}
-
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+	dev->touch_pressed_num = 0;
+#endif
 	if (data.npoints > 0) {
 		touch_report(dev->upper, &data);
 	}
@@ -238,6 +240,9 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 				case TOUCH_STA_PRESS:
 					if (dev->touched[data.point[data.npoints].id] == false) {
 						dev->touched[data.point[data.npoints].id] = true;
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+						dev->touch_pressed_num++;
+#endif
 					}
 					data.point[data.npoints].flags = TOUCH_DOWN;
 					ist415vdbg("COORDDINATES: [P] Point ID=%2d, X=%4d, Y=%4d\n", data.point[data.npoints].id, data.point[data.npoints].x, data.point[data.npoints].y);
@@ -245,6 +250,9 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 				case TOUCH_STA_MOVE:
 					if (dev->touched[data.point[data.npoints].id] == false) {
 						dev->touched[data.point[data.npoints].id] = true;
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+						dev->touch_pressed_num++;
+#endif
 					}
 					data.point[data.npoints].flags = TOUCH_MOVE;
 					ist415vdbg("COORDDINATES: [M] Point ID=%2d, X=%4d, Y=%4d\n", data.point[data.npoints].id, data.point[data.npoints].x, data.point[data.npoints].y);
@@ -252,6 +260,9 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 				case TOUCH_STA_RELEASE:
 					if (dev->touched[data.point[data.npoints].id]) {
 						dev->touched[data.point[data.npoints].id] = false;
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+						dev->touch_pressed_num--;
+#endif
 					}
 					data.point[data.npoints].flags = TOUCH_UP;
 					ist415vdbg("COORDDINATES: [R] Point ID=%2d, X=%4d, Y=%4d\n", data.point[data.npoints].id, data.point[data.npoints].x, data.point[data.npoints].y);
@@ -340,6 +351,9 @@ static int ist415_process_event(struct ist415_dev_s *dev)
 			// TODO: Report PalmLarge Off Process
 			ist415vdbg("PalmLarge Off (T)\n");
 		}
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+		ist415_measure_sample_rate(dev, (bool)dev->touch_pressed_num);
+#endif
 	} else if ((eid == EID_STATUS) && is_status_palmlarge) {
 		if (dev->palm_state == 0) {
 			// TODO: Report PalmLarge Off Process
@@ -1149,6 +1163,11 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 
 	dev->intr_debug_addr = 0;
 	dev->intr_debug_size = 0;
+
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+	dev->touch_pressed_num = 0;
+	dev->sample_rate.touch_ing = false;
+#endif
 
 	for (int i = 0; i < TOUCH_MAX_POINTS; i++) {
 		dev->touched[i] = false;

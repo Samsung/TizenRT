@@ -71,6 +71,12 @@ config IST415_BIN_PATH
 	---help---
 		The path is used find firmware for auto update ist415 during booting.
 
+config IST415_SAMPLING_RATE
+	bool "Touch Sampling Rate"
+	default n
+	---help---
+		Enable measuring of touch sampling rate
+
 endif # TOUCH_IST415
 endif # TOUCH
 
