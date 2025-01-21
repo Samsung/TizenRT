@@ -270,81 +270,81 @@ struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
 
 const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
 {
-  {                                              /* TSTATE_TASK_INVALID */
-    NULL,
-    0
-  },
-  {                                              /* TSTATE_TASK_PENDING */
-    &g_pendingtasks,
-    TLIST_ATTR_PRIORITIZED
-  },
+	{                                              /* TSTATE_TASK_INVALID */
+		NULL,
+		0
+	},
+	{                                              /* TSTATE_TASK_PENDING */
+		&g_pendingtasks,
+		TLIST_ATTR_PRIORITIZED
+	},
 #ifdef CONFIG_SMP
-  {                                              /* TSTATE_TASK_READYTORUN */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_TASK_ASSIGNED */
-    g_assignedtasks,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
-  },
-  {                                              /* TSTATE_TASK_RUNNING */
-    g_assignedtasks,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
-  },
+	{                                              /* TSTATE_TASK_READYTORUN */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_TASK_ASSIGNED */
+		g_assignedtasks,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_RUNNING */
+		g_assignedtasks,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+	},
 #else
-  {                                              /* TSTATE_TASK_READYTORUN */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
-  },
-  {                                              /* TSTATE_TASK_ASSIGNED */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
-  },
-  {                                              /* TSTATE_TASK_RUNNING */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
-  },
+	{                                              /* TSTATE_TASK_READYTORUN */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_ASSIGNED */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_RUNNING */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
 #endif
-  {                                              /* TSTATE_TASK_INACTIVE */
-    &g_inactivetasks,
-    0
-  },
-  {                                              /* TSTATE_WAIT_SEM */
-    &g_waitingforsemaphore,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {						/* TSTATE_WAIT_FIN */
-	  &g_waitingforfin,    
-	  TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_WAIT_SIG */
-    &g_waitingforsignal,
-    0
-  }
+	{                                              /* TSTATE_TASK_INACTIVE */
+		&g_inactivetasks,
+		0
+	},
+	{                                              /* TSTATE_WAIT_SEM */
+		&g_waitingforsemaphore,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_WAIT_FIN */
+		&g_waitingforfin,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_WAIT_SIG */
+		&g_waitingforsignal,
+		0
+	}
 #ifndef CONFIG_DISABLE_MQUEUE
-  ,
-  {                                              /* TSTATE_WAIT_MQNOTEMPTY */
-    &g_waitingformqnotempty,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_WAIT_MQNOTFULL */
-    &g_waitingformqnotfull,
-    TLIST_ATTR_PRIORITIZED
-  }
+	,
+	{                                              /* TSTATE_WAIT_MQNOTEMPTY */
+		&g_waitingformqnotempty,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_WAIT_MQNOTFULL */
+		&g_waitingformqnotfull,
+		TLIST_ATTR_PRIORITIZED
+	}
 #endif
 #ifdef CONFIG_PAGING
-  ,
-  {                                              /* TSTATE_WAIT_PAGEFILL */
-    &g_waitingforfill,
-    TLIST_ATTR_PRIORITIZED
-  }
+	,
+	{                                              /* TSTATE_WAIT_PAGEFILL */
+		&g_waitingforfill,
+		TLIST_ATTR_PRIORITIZED
+	}
 #endif
 #ifdef CONFIG_SIG_SIGSTOP_ACTION
-  ,
-  {                                              /* TSTATE_TASK_STOPPED */
-    &g_stoppedtasks,
-    0                                            /* See tcb->prev_state */
-  },
+	,
+	{                                              /* TSTATE_TASK_STOPPED */
+		&g_stoppedtasks,
+		0                                            /* See tcb->prev_state */
+	},
 #endif
 };
 
