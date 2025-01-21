@@ -103,6 +103,12 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	abort_mode = true;
 #endif
 
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#endif
+#endif /* CONFIG_MM_ASSERT_ON_FAIL */
+
 #ifdef CONFIG_MEM_LEAK_CHECKER
 	extern int mem_leak_checker_internal(int argc, char **argv);
 	/* run mem leak checker prior to calling PANIC */
@@ -142,13 +148,6 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 		mfdbg(" - largest free size : %d\n", info.mxordblk);
 	}
 	mfdbg(" - total free size   : %d\n", info.fordblks);
-
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
-#endif
-
-#endif /* CONFIG_MM_ASSERT_ON_FAIL */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	for (int idx = startidx; idx <= endidx; idx++) {
