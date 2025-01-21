@@ -168,14 +168,49 @@ static int touchsceen_specific_cmd(int argc, char*argv[])
 	return OK;
 }
 
+static int touchsceen_suspend(void)
+{
+	int fd = open(TOUCH_DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		printf("Fail to open %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		return ERROR;
+	}
+
+	if (ioctl(fd, TSIOC_SUSPEND, NULL) != OK) {
+		printf("Fail to TSIOC_SUSPEND %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		close(fd);
+		return ERROR;
+	}
+
+	close(fd);
+	return OK;
+}
+
+static int touchsceen_resume(void)
+{
+	int fd = open(TOUCH_DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		printf("Fail to open %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		return ERROR;
+	}
+
+	if (ioctl(fd, TSIOC_RESUME, NULL) != OK) {
+		printf("Fail to TSIOC_RESUME %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+	}
+
+	close(fd);
+	return OK;
+}
 
 static void show_usage(void)
 {
 	printf("usage: touchscreen <command #>\n");
 	printf("Excute touchscreen testing or controling.\n\n");
 	printf("The touchscreen basic test command which printing coordinates and types:\n");
-	printf("    start: Start the touchscreen basic test \n");
-	printf("    stop : Stop  the touchscreen basic test\n");
+	printf("    start   : Start the touchscreen basic test \n");
+	printf("    stop    : Stop  the touchscreen basic test\n");
+	printf("    suspend : Test suspend touchscreen ic operation\n");
+	printf("    resume  : Test reusme touchscreen ic operation\n");
 }
 
 /****************************************************************************
@@ -196,10 +231,14 @@ int touchscreen_main(int argc, char *argv[])
 	}
 
 	if (argc == 2) {
-		if (!strcmp(argv[1], "start")) {
+		if (!strncmp(argv[1], "start", 6)) {
 			return touchsceen_test_start();
-		} else if (!strcmp(argv[1], "stop")) {
+		} else if (!strncmp(argv[1], "stop", 5)) {
 			return touchsceen_test_stop();
+		} else if (!strncmp(argv[1], "suspend", 8)) {
+			return touchsceen_suspend();
+		} else if (!strncmp(argv[1], "resume", 7)) {
+			return touchsceen_resume();
 		}
 	}
 
