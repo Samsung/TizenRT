@@ -38,7 +38,8 @@
 #define CONFIG_EXAMPLES_UART_LOOPBACK_PORT 2
 #endif
 
-#define UART_DEV_PATH		"/dev/ttyS%d"
+#define UART_DEV_PATH           "/dev/ttyS%d"
+#define UART_DEV_PATH_MAX_LEN   12
 
 #define UART_POLL_TIMEOUT_MS	10000
 
@@ -51,10 +52,10 @@ static int uart_tx_loop(pthread_addr_t *arg)
 {
 	int fd = 0;
 	int tx_test_count = 0;
-	char port[20] = {'\0'};
+	char port[UART_DEV_PATH_MAX_LEN] = {'\0'};
 	int port_num = (int)arg;
 
-	sprintf(port, UART_DEV_PATH, port_num);
+	snprintf(port, UART_DEV_PATH_MAX_LEN, UART_DEV_PATH, port_num);
 
 	printf("UART TX THREAD START [Port: %s]\n", port);
 
@@ -80,7 +81,7 @@ static int uart_tx_loop(pthread_addr_t *arg)
 static int uart_rx_loop(pthread_addr_t *arg)
 {
 	int fd = 0;
-	char port[20] = {'\0'};
+	char port[UART_DEV_PATH_MAX_LEN] = {'\0'};
 	ssize_t ret_size;
 	int remain_size;
 	char *read_ptr;
@@ -88,7 +89,7 @@ static int uart_rx_loop(pthread_addr_t *arg)
 	char read_buf[TEST_STR_LEN];
 	int port_num = (int)arg;
 
-	sprintf(port, UART_DEV_PATH, port_num);
+	snprintf(port, UART_DEV_PATH_MAX_LEN, UART_DEV_PATH, port_num);
 
 	printf("UART RX THREAD START [Port: %s]\n", port);
 
