@@ -47,15 +47,6 @@
 
 #define MM_PREV_NODE_SIZE(x)            ((x)->preceding & ~MM_ALLOC_BIT)
 
-#define memleakdbg(format, ...)					\
-	do {							\
-		if (abort_mode) {				\
-			lldbg_noarg(format, ##__VA_ARGS__);	\
-		} else {					\
-			printf(format, ##__VA_ARGS__);		\
-		}						\
-	} while (0)
-
 struct alloc_node_info_s {
 	volatile struct mm_allocnode_s *node;
 	struct alloc_node_info_s *next;
@@ -313,8 +304,8 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 	uint32_t owner_addr;	
 
 	if (leak_cnt > 0 || broken_cnt > 0) {
-		memleakdbg("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
-		memleakdbg("---------------------------------------------------\n");
+		printf("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
+		printf("---------------------------------------------------\n");
 
 		mm_takesemaphore(heap);
 
@@ -345,18 +336,18 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 						*/
 						pid = (-1) * pid;
 					}
-					memleakdbg("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
+					printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
 				} else if (node->reserved == MEM_BROKEN) {
-					memleakdbg("BROKEN | %p\n", node);
+					printf("BROKEN | %p\n", node);
 				}
 			}
 		}
 
 		mm_givesemaphore(heap);
 
-		memleakdbg("*** %d LEAKS, %d BROKENS.\n", leak_cnt, broken_cnt);
+		printf("*** %d LEAKS, %d BROKENS.\n", leak_cnt, broken_cnt);
 	} else {
-		memleakdbg("*** NO MEMORY LEAK.\n");
+		printf("*** NO MEMORY LEAK.\n");
 	}
 }
 
@@ -377,18 +368,18 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 #endif
 
 	if (!heap) {
-		memleakdbg("Can't found heap, bin name: %s", bin_name);
+		printf("Can't found heap, bin name: %s", bin_name);
 		return ERROR;
 	}
 
 	node_cnt = get_node_cnt(heap);
 	if (MAX_ALLOC_COUNT < node_cnt) {
-		memleakdbg("Available buffer size (%d) is small.\nPlease increase CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT value more than %d.\n", MAX_ALLOC_COUNT, node_cnt);
+		printf("Available buffer size (%d) is small.\nPlease increase CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT value more than %d.\n", MAX_ALLOC_COUNT, node_cnt);
 		return ERROR;
 	}
 
 	if (hash_init() != OK) {
-		memleakdbg("hash table memory alloc is failed.\n");
+		printf("hash table memory alloc is failed.\n");
 		return ERROR;
 	}
 
@@ -405,7 +396,7 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 int run_all_mem_leak_checker(int checker_pid)
 {
 	int ret;
-	memleakdbg("\nKernel :\n");
+	printf("\nKernel :\n");
 	ret = run_mem_leak_checker(checker_pid, "kernel");
 
 	if (ret != OK) {
@@ -413,22 +404,22 @@ int run_all_mem_leak_checker(int checker_pid)
 	}
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	memleakdbg("\nBelow are text addresses of loadable apps (and common binary if enabled) :\n");
-	memleakdbg("The pc value of the allocation can be obtained by subtracting the text start address of the appropriate binary\n\n");
+	printf("\nBelow are text addresses of loadable apps (and common binary if enabled) :\n");
+	printf("The pc value of the allocation can be obtained by subtracting the text start address of the appropriate binary\n\n");
 	bin_addr_info_t *bin_addr_info = (bin_addr_info_t *)get_bin_addr_list();
 	int bin_idx;
 	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
 		if (bin_addr_info[bin_idx].text_addr != 0) {
-			memleakdbg("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), bin_addr_info[bin_idx].text_addr, bin_addr_info[bin_idx].text_size);
+			printf("[%s] Text Addr : %p, Text Size : %u\n", BIN_NAME(bin_idx), bin_addr_info[bin_idx].text_addr, bin_addr_info[bin_idx].text_size);
 		}
 	}
-	memleakdbg("\n");
+	printf("\n");
 	/* bin_idx value zero is always reserved for common binary, so
 	 * skip checking common binary and start checking from index one
 	 */
 	for (bin_idx = 1; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
 		if (bin_addr_info[bin_idx].text_addr != 0) {
-			memleakdbg("%s :\n", BIN_NAME(bin_idx));
+			printf("%s :\n", BIN_NAME(bin_idx));
 			ret = run_mem_leak_checker(checker_pid, BIN_NAME(bin_idx));
 			if (ret != OK) {
 				return ERROR;
@@ -437,15 +428,4 @@ int run_all_mem_leak_checker(int checker_pid)
 	}
 #endif
 	return OK;
-}
-
-int mem_leak_checker_internal(int argc, char **argv)
-{
-	int ret = run_all_mem_leak_checker(getpid());
-
-	if (ret != OK) {
-		memleakdbg("Failed to execute mem leak checker\n");
-	}
-
-	return ret;
 }

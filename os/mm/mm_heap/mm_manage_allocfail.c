@@ -38,7 +38,6 @@
 #include <tinyara/reboot_reason.h>
 #endif
 #endif
-#include <sys/wait.h>
 
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
@@ -101,25 +100,6 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	extern bool abort_mode;
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	abort_mode = true;
-#endif
-
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
-#endif
-#endif /* CONFIG_MM_ASSERT_ON_FAIL */
-
-#ifdef CONFIG_MEM_LEAK_CHECKER
-	extern int mem_leak_checker_internal(int argc, char **argv);
-	/* run mem leak checker prior to calling PANIC */
-	pid_t mem_leak = kernel_thread("mem leak", 100, 2048, mem_leak_checker_internal, NULL);
-
-	if (mem_leak < 0) {
-		mfdbg("mem leak task creation failed\n");
-	} else {
-		int status;
-		(void)waitpid(mem_leak, &status, 0);
-	}
 #endif
 
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
