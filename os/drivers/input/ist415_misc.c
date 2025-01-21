@@ -331,6 +331,32 @@ int ist415_get_info(struct ist415_dev_s *dev)
 	return 0;
 }
 
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+/****************************************************************************
+ * Name: measure_sample_rate
+ ****************************************************************************/
+
+void ist415_measure_sample_rate(struct ist415_dev_s *dev, bool push)
+{
+	struct touch_sample_rate_s *sample_rate = &dev->sample_rate;
+	if (push) {
+		if (sample_rate->touch_ing == false) {
+			sample_rate->jiffies_touch = TICK2MSEC(clock_systimer());
+			sample_rate->interrupt_count = 0;
+		} else {
+			sample_rate->interrupt_count++;
+		}
+	} else {
+		if (sample_rate->touch_ing) {
+			int msecs = TICK2MSEC(clock_systimer()) - sample_rate->jiffies_touch;
+			int hz = msecs ? (1000 * sample_rate->interrupt_count / msecs) : 0;
+			ist415vdbg("tsp_sampling_rate : %d[SPS]\n", hz);
+		}
+	}
+	sample_rate->touch_ing = push;
+}
+#endif
+
 /****************************************************************************
  * Name: ist415_autocalibration
  *

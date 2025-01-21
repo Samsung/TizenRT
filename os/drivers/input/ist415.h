@@ -389,6 +389,14 @@ struct ist415_fw {
 	uint8_t *buf;
 };
 
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+struct touch_sample_rate_s {
+	unsigned long jiffies_touch;
+	bool touch_ing;
+	uint32_t interrupt_count;
+};
+#endif
+
 #define msleep(x)					usleep(x * 1000)
 
 /* IST415 Device */
@@ -452,6 +460,11 @@ struct ist415_dev_s {
 
 	uint32_t pre_palm_state;
 	uint32_t palm_state;
+
+#if defined(CONFIG_IST415_SAMPLING_RATE)
+	uint32_t touch_pressed_num;
+	struct touch_sample_rate_s sample_rate;
+#endif
 
 	/* debug variable */
 	uint32_t intr_debug_addr;
