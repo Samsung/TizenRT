@@ -81,6 +81,7 @@ struct irq {
 	u32 num;
 	u32 data;
 	u32 priority;
+	bool disable_isr;
 };
 
 LCDC_TypeDef *pLCDC = LCDC;
@@ -93,6 +94,7 @@ struct irq lcdc_irq_info = {
 	.num = LCDC_IRQ,
 	.data = (u32) LCDC,
 	.priority = INT_PRI_HIGH,
+	.disable_isr = 0,
 };
 
 extern struct irq mipi_irq_info;
@@ -161,6 +163,10 @@ static void rtl8730e_lcd_layer_enable(int layer, bool enable)
 static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end)
 {
 	irqstate_t flags;
+	/*to prevent hang due to timing issue, if lcd irq is disabled but put_area is called again*/
+	if (lcdc_irq_info.disable_isr) {
+		return;
+	}
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 1);
 #endif
@@ -206,6 +212,13 @@ static void rtl8730e_control_backlight(uint8_t level)
 	lcdvdbg("level :%d , pwm level:%f\n", level, pwm_level);
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
+	if (level == 0 && !(lcdc_irq_info.disable_isr)) {
+		InterruptDis(lcdc_irq_info.num);
+		lcdc_irq_info.disable_isr = 1;
+	} else if (level != 0 && lcdc_irq_info.disable_isr) {
+		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
+		lcdc_irq_info.disable_isr = 0;
+	}
 #endif
 }
 
@@ -266,10 +279,12 @@ u32 rtl8730e_hv_isr(void *Data)
 }
 
 static void rtl8730e_register_lcdc_isr(void){
-	InterruptDis(lcdc_irq_info.num);
-	InterruptUnRegister(lcdc_irq_info.num);
-	InterruptRegister((IRQ_FUN)rtl8730e_hv_isr, lcdc_irq_info.num, (u32)lcdc_irq_info.data, lcdc_irq_info.priority);
-	InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
+	if (!(lcdc_irq_info.disable_isr)) {
+		InterruptDis(lcdc_irq_info.num);
+		InterruptUnRegister(lcdc_irq_info.num);
+		InterruptRegister((IRQ_FUN)rtl8730e_hv_isr, lcdc_irq_info.num, (u32)lcdc_irq_info.data, lcdc_irq_info.priority);
+		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
+	}	
 }
 
 void rtl8730e_lcdc_initialize(void)
