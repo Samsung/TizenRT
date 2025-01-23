@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version d70af7fe9f 2025/01/23-16:06:03 ==
+1. Add condition to check TizenRT status before printing IPC error logs
+
 == version e50d597d68 2025/01/16-14:49:03 ==
 1. Fix issue of SoftAP not transmitting beacons when started after PM wake
 
