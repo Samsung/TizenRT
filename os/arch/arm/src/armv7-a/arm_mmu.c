@@ -339,6 +339,7 @@ uint32_t *mmu_allocate_app_l1_pgtbl(int app_id)
  ****************************************************************************/
 uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
 {
+	dbg("app_id : %d, l2idx : %d\n", app_id, l2idx);
 	/* Page table structure as follows:
 	 *
 	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... CONFIG_NUM_L2_PER_APP | App1 L2 1 ... CONFIG_NUM_L2_PER_APP | App2 L2 1 ... CONFIG_NUM_L2_PER_APP |
