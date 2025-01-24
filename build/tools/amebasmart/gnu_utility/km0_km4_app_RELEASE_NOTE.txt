@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 20ae988088 2025/01/24-15:43:04 ==
+1. Change CSI trig_period from u8 to u16 to support longer trig period
+2. Add PM support for CSI
+
 == version d70af7fe9f 2025/01/23-16:06:03 ==
 1. Add condition to check TizenRT status before printing IPC error logs
 

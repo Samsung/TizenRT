@@ -638,7 +638,7 @@ typedef struct {
 	rtw_csi_alg_opt alg_opt;
 	rtw_csi_ch_opt ch_opt;
 	unsigned char enable;
-	unsigned char trig_period;
+	unsigned short trig_period;
 	unsigned char data_rate;
 	unsigned char data_bw;
 	unsigned char mac_addr[6];
