@@ -95,8 +95,11 @@ void up_idle(void)
 
 	nxsched_process_timer();
 #else
+
+#ifdef CONFIG_PM
 	/* set core to WFE */
 	__asm("WFE");
+#endif
 
 #endif
 }
