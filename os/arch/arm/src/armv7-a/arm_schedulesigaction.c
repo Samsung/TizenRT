@@ -363,7 +363,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 
 				/* RESUME the other CPUs if they were PAUSED */
 
-				up_cpu_resume_all();
+				if (cpu != me) {
+					up_cpu_resume_all();
+				}
 			}
 		}
 
