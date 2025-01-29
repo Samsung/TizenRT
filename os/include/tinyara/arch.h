@@ -1471,6 +1471,49 @@ int up_prioritize_irq(int irq, int priority);
 #endif
 
 /****************************************************************************
+ * Name: up_set_irq_affinity
+ *
+ * Description:
+ *   set the affinity of a given irq (shared peripheral interrupts - SPI only) to given cpu set
+ *
+ * Input Parameters:
+ *   irq: irq id
+ *   cpuset: cpu set
+ *   
+ *   Example usage: 
+ *   for cpu 1    -> up_set_irq_affinity(10, 0x10)
+ *   for cpu 0    -> up_set_irq_affinity(10, 0x01)
+ *   for cpu 0, 1 -> up_set_irq_affinity(10, 0x11)
+ * 
+ *   Each bit of the register represents each core affinity.
+ *   Note: register supports 8 bits per interrupt. (So maximum 8 cpus)
+ *
+ * Returned Value:
+ *   OK : operation successful
+ *   EINVAL: irq out of range
+ *
+ ****************************************************************************/
+
+int up_set_irq_affinity(int irq, cpu_set_t cpu_set);
+
+/****************************************************************************
+ * Name: up_reset_irq_affinity
+ *
+ * Description:
+ *   reset the affinity of a given irq (shared peripheral interrupts - SPI only) to cpu 0.
+ *
+ * Input Parameters:
+ *   irq: irq id
+ *
+ * Returned Value:
+ *   OK : operation successful
+ *   EINVAL: irq out of range
+ *
+ ****************************************************************************/
+
+int up_reset_irq_affinity(int irq);
+
+/****************************************************************************
  * Tickless OS Support.
  *
  * When CONFIG_SCHED_TICKLESS is enabled, all support for timer interrupts
