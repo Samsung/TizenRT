@@ -203,10 +203,26 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 
 #ifdef CONFIG_MTD_FTL
 	if (do_ftlinit) {
+			/* External flash can be NOR or NAND */
+#ifdef CONFIG_MTD_NAND
+		if (minor > 0) {
+			/* External flash is NAND */
+			if (ftl_nand_initialize(g_partno, mtd_part)) {
+                                printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+                                return ERROR;
+			}
+		} else {
+			if (ftl_initialize(g_partno, mtd_part)) {
+				printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+				return ERROR;
+			}
+		}
+#else
 		if (ftl_initialize(g_partno, mtd_part)) {
 			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
 			return ERROR;
 		}
+#endif
 		mtd_setpartitiontagno(mtd_part, tagno);
 #ifdef CONFIG_FS_ROMFS
 		if (save_romfs_partno) {
