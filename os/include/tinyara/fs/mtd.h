@@ -291,6 +291,23 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd);
 #endif
 
 /****************************************************************************
+ * Name: ftl_nand_initialize
+ *
+ * Description:
+ *   Initialize to provide a block driver wrapper around an MTD NAND interface
+ *
+ * Input Parameters:
+ *   minor - The minor device number.  The MTD block device will be
+ *      registered as as /dev/mtdblockN where N is the minor number.
+ *   mtd - The MTD NAND device that supports the FLASH interface.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_MTD_FTL)
+int ftl_nand_initialize(int minor, FAR struct mtd_dev_s *mtd);
+#endif
+
+/****************************************************************************
  * Name: dhara_initialize
  *
  * Description:
