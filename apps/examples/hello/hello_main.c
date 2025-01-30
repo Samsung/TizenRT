@@ -57,9 +57,15 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 
+#include <fcntl.h>
+
+#include <errno.h>
+
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+
+#define EB	(128 * 1024)
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -68,5 +74,63 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	return 0;
+
+	int read_fd;
+	int write_fd;
+	int ret;
+	int total_size;
+	int copy_size;
+	int read_size;
+	uint32_t crc_hash = 0;
+	
+	char * mydata = malloc(sizeof(char) * EB);
+
+	if (mydata == NULL) {
+		printf("alloc failed\n");
+		return ERROR;
+	}	
+
+	read_fd = open("/mnt0/romfs", O_RDONLY);
+
+	if (read_fd < 0) {
+		printf("Failed to open %s: errno %d\n", "/mnt0/romfs", get_errno());
+		return ERROR;
+	}
+
+	write_fd = open("/dev/mtdblock10", O_WRONLY);
+	if (write_fd < 0) {
+		printf("Failed to open %s: errno %d\n", "mtdblock9", get_errno());
+		return ERROR;
+	}
+#if 0
+	for (int i = 0; i < 2048; i++) mydata[i] = 0xA;
+
+	ret = write(write_fd, mydata, 2048);
+	if (ret != 2048) {
+		printf("Failed to write buffer : %d\n", ret);
+		return ERROR;
+	} else {
+		printf("write is done\n");
+	}
+#endif
+
+	do {
+		ret = read(read_fd, mydata, EB);
+
+		if (ret > 0) {
+			int ret2 = write(write_fd, mydata, ret);
+			if (ret2 != ret) {
+				printf("write failed\n", ret2);
+			}
+			printf("transfered %d bytes\n", ret);
+		} else {
+			printf("read failed ret : %d\n", ret);
+		}
+
+	} while (ret > 0);
+
+	close(write_fd);
+
 	return 0;
 }
