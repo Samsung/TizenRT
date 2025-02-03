@@ -129,6 +129,20 @@ typedef struct rtw_scan_handler_result {
 #pragma pack(1)
 #endif
 
+/**
+  * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
+  */
+typedef struct rtw_wifi_setting {
+	rtw_mode_t		mode;
+	unsigned char 		ssid[33];
+	unsigned char		channel;
+	rtw_security_t		security_type;
+	unsigned char 		password[65];
+	unsigned char		key_idx;
+}rtw_wifi_setting_t;
+#if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
+#pragma pack()
+#endif
 
 /**
   * @brief  The structure is used to describe the cfg parameters used for csi report,
@@ -149,6 +163,7 @@ typedef enum {
 	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
 	CSI_CH_MAX
 } rtw_csi_ch_opt;
+
 typedef struct {
 	rtw_csi_group_num group_num;
 	rtw_csi_mode mode;
@@ -157,7 +172,7 @@ typedef struct {
 	rtw_csi_alg_opt alg_opt;
 	rtw_csi_ch_opt ch_opt;
 	unsigned char enable;
-	unsigned char trig_period;  /* unit:ms*/
+	unsigned short trig_period;
 	unsigned char data_rate;
 	unsigned char data_bw;
 	unsigned char mac_addr[6];
@@ -190,20 +205,6 @@ typedef struct {
 	unsigned char rxsc;  /**< phy_info_rpt */
 	unsigned char csi_valid;  /**< ch_rpt_hdr_info */
 } rtw_csi_header_t;
-/**
-  * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
-  */
-typedef struct rtw_wifi_setting {
-	rtw_mode_t		mode;
-	unsigned char 		ssid[33];
-	unsigned char		channel;
-	rtw_security_t		security_type;
-	unsigned char 		password[65];
-	unsigned char		key_idx;
-}rtw_wifi_setting_t;
-#if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || defined(__CC_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
-#pragma pack()
-#endif
 
 /**
   * @brief  The structure is used to describe the setting when configure the network.
