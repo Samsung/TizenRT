@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SENSOR
+	bool "Sensor Test example"
+	default n
+	---help---
+		Enable the Sensor Test example
+
+config USER_ENTRYPOINT
+        string
+        default "sensor_test" if ENTRY_SENSOR
+
