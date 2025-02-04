@@ -1289,7 +1289,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
 					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
 
-					for (u32 i = 0, j = 0; i < priv->apb_rx->nmaxbytes; i += 8, j += 4) {
+					for (u32 count = 0, i = 0, j = 0; count < priv->apb_rx->nmaxbytes; count += 16, i += 8, j += 4) {
 						dst_buf[i + 0] = rx_int[j + 0] >> 16;		// slot 1
 						dst_buf[i + 1] = rx_int[j + 1] >> 16;		// slot 2
 						dst_buf[i + 2] = rx_ext[j + 0] >> 16;		// slot 3
