@@ -1,0 +1,4 @@
+config ENTRY_EXAMPLES_TOUCH_VISUAL
+	bool "\"Touch visual test\" example"
+	depends on EXAMPLES_TOUCH_VISUAL
+
