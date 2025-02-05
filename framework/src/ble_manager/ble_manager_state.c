@@ -1167,16 +1167,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ble_client_ctx_internal *ctx = NULL;
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 
+		ble_client_ctx_internal *ctx_connecting = NULL;
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			if (g_client_table[i].state != BLE_CLIENT_NONE && g_client_table[i].conn_handle == data) {
 				ctx = &g_client_table[i];
 				break;
 			}
+
+			if (g_client_table[i].state == BLE_CLIENT_CONNECTING) {
+				ctx_connecting = &g_client_table[i];
+			}
 		}
 		free(msg->param);
 
 		if (ctx == NULL) {
-			break;
+			if (ctx_connecting == NULL) {
+				BLE_LOG_ERROR("[BLEMGR] fail to find disconnected client. (conn_handle : %u)\n", data);
+				break;
+			}
+			BLE_LOG_INFO("[BLEMGR] client disconnected due to connection failure. (conn_handle : %u)\n", data);
+			ctx = ctx_connecting;
 		}
 
 		priv_state = ctx->state;
