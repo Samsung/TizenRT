@@ -46,7 +46,7 @@
  ****************************************************************************/
 /* i2c config */
 #if CONFIG_RTL8730E_BOARD_REVISION >= 6
-#define AIS25BA_I2C_PORT		2
+#define AIS25BA_I2C_PORT		0
 #else
 #define AIS25BA_I2C_PORT		2
 #endif
@@ -72,14 +72,6 @@ struct rtl8730e_ais25ba_s {
 };
 
 /****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-//extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit);
-
-static void rtl8730e_verify_sensor(struct i2c_dev_s *i2c, struct i2c_config_s config);
-static void rtl8730e_ctrl_tdm(struct i2c_dev_s *i2c, struct i2c_config_s config);
-
-/****************************************************************************
  * Private Data
  ****************************************************************************/
 static struct rtl8730e_ais25ba_s g_rtl8730e_ais25ba_priv0 = {
@@ -95,143 +87,6 @@ static struct ais25ba_dev_s g_ais25ba_dev0 = {
         .priv = &g_rtl8730e_ais25ba_priv0,
 };
 
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-static float ais25ba_from_raw_to_mg(int16_t lsb)
-{
-	return ((float)lsb) * 0.122f;
-}
-
-static void rtl8730e_verify_sensor(struct i2c_dev_s *i2c, struct i2c_config_s config)
-{
-	int ret = 0;
-	int reg[1];
-	uint8_t data[1];
-	reg[0] = 0x0F;					//WHO_AM_I
-	lldbg("add %8x, freq %d, len%d\n", config.address, config.frequency, config.addrlen);
-	ret = i2c_write(i2c, &config, (uint8_t *)reg, 1);
-	if (ret == 1) {
-		i2c_read(i2c, &config, (uint8_t *)data, 1);
-		lldbg("data read is %8x\n", data[0]); // this should be 0x20
-	}
-}
-
-static void rtl8730e_ctrl_tdm(struct i2c_dev_s *i2c, struct i2c_config_s config)
-{
-	int ret = 0;
-	int reg[2];
-	uint8_t data[2];
-	reg[0] = 0x26;			//		CTRL_REG_1
-	reg[1] = 0x00;			//PD : normal mode - enabling device
-	ret = i2c_write(i2c, &config, (uint8_t *)reg, 2);
-	lldbg("ret ctrl reg1 %d\n", ret);
-	
-	reg[0] = 0x2F;			//		CTRL_REG_2
-	reg[1] = 0xE1;			//auto_odr : 1
-	ret = i2c_write(i2c, &config, (uint8_t *)reg, 2);
-	lldbg("ret ctrl reg2 %d\n", ret);
-	
-	reg[0] = 0x30;				//accelerometer FS(full scale) selection  CTRL_REG_FS
-	reg[1] = 0x00;				//FS = 3.85g  ---> 0.122 sensitivity
-	ret = i2c_write(i2c, &config, (uint8_t *)reg, 2);
-	lldbg("ret fs = %d\n", ret);
-	/*if (ret == 1) {
-		i2c_read(i2c, &config, (uint8_t *)data, 2);
-		lldbg("data read is %8x\n", data[0]); 
-	}*/
-	
-	reg[0] = 0x2E;			//tdm ctrl register			TDM_CTRL_REG
-	reg[1] = 0x02;			//WCLK = 16KHz , enable TDM, no delayed configuration, valid data, tdm mapping 0
-	ret = i2c_write(i2c, &config, (uint8_t *)reg, 2);
-	lldbg("ret tdm ctrl= %d\n", ret);
-	/*if (ret == 1) {
-		i2c_read(i2c, &config, (uint8_t *)data, 2);
-		lldbg("data read is %8x\n", data[0]); 
-	}*/
-}
-
-/*static void ais25ba_gpio_reset()
-{
-	GPIO_WriteBit(ais25ba_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(500);
-	GPIO_WriteBit(ais25ba_GPIO_RESET_PIN, PIN_LOW);
-	DelayMs(500);
-	GPIO_WriteBit(ais25ba_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(500);
-	return;
-}
-
-static void ais25ba_gpio_init()
-{
-	Pinmux_Config(ais25ba_GPIO_RESET_PIN, PINMUX_FUNCTION_GPIO);
-	GPIO_InitTypeDef TouchResetPin;
-	TouchResetPin.GPIO_Pin = ais25ba_GPIO_RESET_PIN;
-	TouchResetPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	TouchResetPin.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Init(&TouchResetPin);
-}*/
-
-void ais25ba_callback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result)
-{
-	lldbg("in callback..........................................\n");
-	lldbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
-
-        /* REVISIT: If you want this to actually do something other than
-         * test I2S data transfer, then this is the point where you would
-         * want to let some application know that the transfer has complete.
-         */
-
-        /* Release our reference to the audio buffer.  Hopefully it will be freed
-         * now.
-         */
-	/*uint8_t *ptr;
-	uint8_t data;
-	int j = 0;
-	for (ptr = apb->samp; j < 1; j++) {
-                 data = ptr[j];
-                        j++;
-				if(data !=NULL) {
-               lldbg("data %d\n", data);
-				}
-    }*/
-
-	/*int8_t x1 = 0;
-	int8_t x2 = 0;
-	int16_t x = x1 << 8 || x2;
-	float x_f = ais25ba_from_raw_to_mg(x);
-	for (i = 0U; i < 3U; i++)
-  {
-    data->xl.raw[i] = (int16_t) tdm_stream[i + offset];
-    data->xl.mg[i] = ais25ba_from_raw_to_mg(data->xl.raw[i]);
-  }
-        lldbg("Freeing apb=%p crefs=%d\n", apb, apb->crefs);
-        apb_free(apb);*/
-
-}
-
-static void read_i2s(struct i2s_dev_s *i2s)
-{
-	struct ap_buffer_s *apb;
-	//apb_reference(&apb);
-	struct audio_buf_desc_s desc;
-	desc.numbytes = 256;
-        desc.u.ppBuffer = &apb;
-
-        int ret = apb_alloc(&desc);
-	if (ret < 0) {
-		lldbg("alloc fail\n");
-		return;
-	}
-	ret = I2S_RECEIVE(i2s, apb, ais25ba_callback, NULL, 100);/* 100 ms timeout for read data */
-	if (ret < 0) {
-		lldbg("ERROR: I2S_RECEIVE returned: %d\n", ret);
-		kmm_free(apb);
-	//	apb_free(&apb);
-		return;
-	}
-}
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -240,7 +95,7 @@ void rtl8730e_ais25ba_initialize()
 {
 	FAR struct i2c_dev_s *i2c;
 	struct i2s_dev_s *i2s;
-	i2s = amebasmart_i2s_initialize(AIS25BA_I2S_PORT, 0);
+	i2s = amebasmart_i2s_tdm_initialize(AIS25BA_I2S_PORT, 0);
 	if (!i2s) {
 		lldbg("ERROR: Failed to initialize I2S\n");
 	}
@@ -250,13 +105,6 @@ void rtl8730e_ais25ba_initialize()
 	if (!i2c) {
 		lldbg("ERROR: Failed to initialize I2C\n");
 	}
-	/*struct i2c_config_s config;
-	config.frequency = AIS25BA_I2C_FREQ;
-	config.address = AIS25BA_I2C_ADDR;
-	config.addrlen = AIS25BA_I2C_ADDRLEN;
-	rtl8730e_verify_sensor(i2c, config);
-	rtl8730e_ctrl_tdm(i2c, config);*/
-	//read_i2s(i2s);
 	g_ais25ba_dev0.i2c = i2c;
 	g_ais25ba_dev0.i2s = i2s;
 	ret = ais25ba_initialize("/dev/sensor1", &g_ais25ba_dev0);
