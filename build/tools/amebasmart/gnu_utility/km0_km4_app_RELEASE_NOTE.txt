@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version f71f367333 2025/02/03-16:19:02 ==
+1. Modify implementation for obtaining TX Retry count
+
 == version d70af7fe9f 2025/01/23-16:06:03 ==
 1. Add condition to check TizenRT status before printing IPC error logs
 
