@@ -293,6 +293,21 @@ void AUDIO_SP_SetMclk(u32 index, u32 NewState)
 	}
 }
 
+/**
+  * @brief  Set AUDIO SPORT BCLK enable or disable.
+  * @param  index: sport index.
+  * @param  NewState: enable or disable.
+  * @retval None
+  */
+void AUDIO_SP_EnableBclk(u32 index, u32 NewState)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (NewState == ENABLE) {
+		SPORTx->SP_CTRL1 &= ~SP_BIT_BCLK_RESET;
+	} else {
+		SPORTx->SP_CTRL1 |= SP_BIT_BCLK_RESET;
+	}
+}
 
 /**
   * @brief  Set AUDIO SPORT MCLK divider factor.
