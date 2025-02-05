@@ -737,8 +737,7 @@ void i2s_send_page(void)
 #ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_recv_page(i2s_t *obj)
 {
-	lldbg("i2s rcv page called\n");
-	//uint8_t i2s_index = obj->i2s_idx;
+	i2sinfo("i2s rcv page called\n");
 
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 
@@ -752,8 +751,7 @@ void i2s_recv_page(i2s_t *obj)
 #ifdef CONFIG_AMEBASMART_I2S_TDM
 void i2s_tdm_recv_page(i2s_t *obj)
 {
-	lldbg("i2s rcv page called\n");
-	//uint8_t i2s_index = obj->i2s_idx;
+	i2sinfo("i2s rcv page called\n");
 
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 
@@ -783,12 +781,14 @@ void i2s_tdm_recv_page(i2s_t *obj)
   */
 void i2s_enable(i2s_t *obj)
 {
-	lldbg("enable called!\n");
 #if defined(CONFIG_AMEBASMART_I2S_TDM)
 	// turn on MCLK if master
 	if (obj->role == MASTER) {
 		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
 	}
+	
+	// turn on BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
 #endif
 
 	AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
@@ -813,6 +813,9 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 	if (obj->role == MASTER) {
 		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
 	}
+	
+	// turn off BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 #endif
 
 	if (obj->direction == I2S_DIR_TX) {
@@ -857,12 +860,13 @@ void ameba_i2s_tdm_pause(i2s_t *obj) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
-	lldbg("in pause\n");
-
-	// turn on MCLK if master
+	// turn off MCLK if master
 	if (obj->role == MASTER) {
 		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
 	}
+	
+	// turn off BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -904,6 +908,9 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 	if (obj->role == MASTER) {
 		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
 	}
+	
+	// turn on BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
 
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
@@ -989,7 +996,7 @@ void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 
 	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
 	pbuf_1 = (u32 *)i2s_get_ready_tx_page(i2s_index);
-	lldbg("TXGDMA pbuf: %p %p\n", pbuf, pbuf_1);
+	i2sinfo("TXGDMA pbuf: %p %p\n", pbuf, pbuf_1);
 	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_tx_isr, (u8 *)pbuf, sp_tx_info.tx_page_size);
 }
 #endif
@@ -1133,8 +1140,6 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 {
 	uint32_t clock_mode = 0;
 
-	lldbg("in TDM set_param!\n");
-
 	clock_mode = i2s_clock_select(obj);
 
 	/* Sport Deinit */
@@ -1173,6 +1178,9 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	/* stop the MCLK, it should only start when RESUME is called */
 	AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	
+	/* stop the BCLK, it should only start when RESUME is called */
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 
 	/* apply division on mclk if master only */
 	if (obj->role == MASTER) {

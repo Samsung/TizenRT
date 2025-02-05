@@ -906,13 +906,13 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->rx.act)) {
-		lldbg("[RX start] RX active!\n");
+		i2sinfo("[RX start] RX active!\n");
 		return OK;
 	}
 
 	/* If there are no pending transfer, then bail returning success */
 	if (sq_empty(&priv->rx.pend)) {
-		lldbg("[RX start] RX pend empty!\n");
+		i2sinfo("[RX start] RX pend empty!\n");
 		return OK;
 	}
 
@@ -1046,8 +1046,7 @@ static void i2s_rx_schedule(struct amebasmart_i2s_s *priv, int result)
 		/* Schedule the TX DMA done processing to occur on the worker thread. */
 		ret = work_queue(HPWORK, &priv->rx.work, i2s_rx_worker, priv, 0);
 		if (ret != 0) {
-			//i2serr("ERROR: Failed to queue RX work: %d\n", ret);
-			lldbg("ERROR: Failed to queue RX work: %d\n", ret);
+			i2serr("ERROR: Failed to queue RX work: %d\n", ret);
 		}
 	}
 }
@@ -1267,7 +1266,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
 			if (DMA_Done && DMA_Done_1) {
-				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
+				i2sinfo("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
@@ -1324,7 +1323,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			}
 		} else {
 			if (DMA_Done) {
-				lldbg("rx complete! stopping clockgen\n");
+				i2sinfo("rx complete! stopping clockgen\n");
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
 
@@ -1729,7 +1728,6 @@ static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_RX && priv->rxenab) {
-		lldbg("XX %d\n", priv->tdmenab);
 		if (priv->tdmenab) {
 			ameba_i2s_tdm_resume(priv->i2s_object);
 		} else {
@@ -1963,9 +1961,9 @@ static uint32_t i2s_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 	DEBUGASSERT(priv && rate > 0);
 
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
-	lldbg("called by ioctl!\n");
+	i2sinfo("called by ioctl!\n");
 	if (priv->tdmenab) {
-		lldbg("tdm sample rate currently not changeable!\n");
+		i2sinfo("tdm sample rate currently not changeable!\n");
 		return priv->i2s_object->sampling_rate;
 	}
 #endif
