@@ -106,6 +106,7 @@
 #define _PMBASE         (0x2b00)    	/* pm ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
+#define _CSIIOCBASE     (0x3a00)    /* Wifi CSI ioctl commands */
 
 
 
@@ -333,6 +334,12 @@
 
 #define _QEIOCVALID(c)    (_IOC_TYPE(c) == _QEIOCBASE)
 #define _QEIOC(nr)        _IOC(_QEIOCBASE, nr)
+
+/* Wifi CSI driver ioctl definitions *************************************/
+/* (see tinyara/wifi_csi/wifi_csi.h) */
+
+#define _CSIIOCVALID(c) (_IOC_TYPE(c) == _CSIIOCBASE)
+#define _CSIIOC(nr)     _IOC(_CSIIOCBASE, nr)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */

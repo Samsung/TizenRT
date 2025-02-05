@@ -651,6 +651,24 @@ int get_errno(void);
 #define sellvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_WIFICSI_ERROR
+#define csidbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#else
+#define csidbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_WARN
+#define csiwdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#else
+#define csiwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_INFO
+#define csivdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#else
+#define csivdbg(...)
+#endif
+
 /****************************************/
 /*        Framework specific debug      */
 /****************************************/
@@ -1519,6 +1537,24 @@ int get_errno(void);
 #else
 #define sevdbg     (void)
 #define sellvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_ERROR
+#define csidbg      dbg
+#else
+#define csidbg      (void)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_WARN
+#define csiwdbg     wdbg
+#else
+#define csiwdbg     (void)
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_INFO
+#define csivdbg     vdbg
+#else
+#define csivdbg     (void)
 #endif
 
 /****************************************/

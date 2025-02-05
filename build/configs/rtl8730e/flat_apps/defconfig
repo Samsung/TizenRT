@@ -494,6 +494,17 @@ CONFIG_SPI_EXCHANGE=y
 # CONFIG_DRIVERS_VIDEO is not set
 
 #
+# CSI Driver Support
+#
+CONFIG_WIFI_CSI=y
+CONFIG_WIFICSI_CUSTOM_DEV_PATH="/dev/wificsi"
+
+#
+# CSI Devices
+#
+CONFIG_WIFI_CSI_RTL8730E=y
+
+#
 # LCD Driver Support
 #
 # CONFIG_LCD is not set
@@ -1048,6 +1059,20 @@ CONFIG_MTD_SMART_JOURNALING=y
 # CONFIG_UI is not set
 
 #
+# CSI Framework
+#
+CONFIG_CSIFW=y
+
+#
+# CSIFW Debug Logs
+#
+CONFIG_CSIFW_LOGS=y
+CONFIG_CSIFW_LOGE=y
+# CONFIG_CSIFW_LOGI is not set
+# CONFIG_CSIFW_LOGD is not set
+# CONFIG_CSIFW_LOGV is not set
+
+#
 # Memory Management
 #
 CONFIG_MM_KERNEL_HEAP=y
@@ -1108,6 +1133,8 @@ CONFIG_DEBUG_BLE_ERROR=y
 # CONFIG_DEBUG_PM is not set
 # CONFIG_DEBUG_SCHED is not set
 # CONFIG_DEBUG_TASH is not set
+CONFIG_DEBUG_WIFICSI=y
+CONFIG_DEBUG_WIFICSI_ERROR=y
 
 #
 # Framework Debug Options
@@ -1318,6 +1345,7 @@ CONFIG_BUILTIN_APPS=y
 # CONFIG_EXAMPLES_BLE_PERFS is not set
 # CONFIG_EXAMPLES_BLE_RMC is not set
 # CONFIG_EXAMPLES_BLE_TESTER is not set
+# CONFIG_EXAMPLES_CSIFW_TEST is not set
 
 #
 # Board Specific Demos
