@@ -1067,6 +1067,7 @@ _LONG_CALL_ u32 AUDIO_SP_GetTXChnLen(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXChnLen(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetMclk(u32 index, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_SetMclkDiv(u32 index, u32 mck_div);
+_LONG_CALL_ void AUDIO_SP_EnableBclk(u32 index, u32 NewState);
 _LONG_CALL_ void AUDIO_SP_SetFixBclk(u32 index, SP_InitTypeDef *SP_InitStruct);
 _LONG_CALL_ void AUDIO_SP_SelFixBclk(u32 index, u32 bclk_sel);
 _LONG_CALL_ void AUDIO_SP_SetTXClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len);
