@@ -80,7 +80,7 @@ struct ap_buffer_s *g_apb;
 static void ais25ba_i2s_callback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result)
 {
         lldbg("in callback..........................................\n");
-        lldbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
+        //lldbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
 	uint16_t *o = &apb->samp[0];
 	int16_t *p = (int16_t *)&apb->samp[0];
 	float d;
@@ -113,6 +113,7 @@ static void ais25ba_start(struct sensor_upperhalf_s *upper)
 	struct ais25ba_dev_s *priv = upper->priv;
 	struct i2s_dev_s *i2s = priv->i2s;
 	I2S_RESUME(i2s, I2S_RX);
+	printf("ais25ba_start returning\n");
 }
 
 static void ais25ba_stop(struct sensor_upperhalf_s *upper)
@@ -298,7 +299,8 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR char *buffer
 	DelayMs(2000);
 	ais25ba_read_data(i2c, config);
 	DelayMs(2000);
-	ais25ba_start(dev);
+	lldbg("Calling ais25ba_start\n");
+	//ais25ba_start(dev);
 	/*ais25ba_ctrl_tdm(i2c, config);*/
 	int count = 0;
 	while (count < 2) {
@@ -306,7 +308,6 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR char *buffer
 		DelayMs(5000);
 		count++;
 	}
-	
 	return OK;
 }
 
