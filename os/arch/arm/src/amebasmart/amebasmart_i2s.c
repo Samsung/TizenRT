@@ -1266,7 +1266,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
 			if (DMA_Done && DMA_Done_1) {
-				i2sinfo("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
+				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
@@ -1282,12 +1282,10 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 						word_size = sizeof(u32);
 						break;
 				}
-
 				if (word_size == sizeof(u16)) {
 					u16 *dst_buf = (u16 *)priv->apb_rx->samp;
 					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
 					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
-
 					for (u32 count = 0, i = 0, j = 0; count < priv->apb_rx->nmaxbytes; count += 16, i += 8, j += 4) {
 						dst_buf[i + 0] = rx_int[j + 0] >> 16;		// slot 1
 						dst_buf[i + 1] = rx_int[j + 1] >> 16;		// slot 2
@@ -1323,10 +1321,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			}
 		} else {
 			if (DMA_Done) {
-				i2sinfo("rx complete! stopping clockgen\n");
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
-
 				/* copy DMA contents into buffer container ? */
 				// TODO: for single channel DMA populate the buffer
 
