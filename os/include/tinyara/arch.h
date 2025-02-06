@@ -2541,6 +2541,16 @@ int up_getc(void);
 
 void up_puts(FAR const char *str);
 
+/****************************************************************************
+ * Name: up_flush_console_on_assert
+ *
+ * Description:
+ *    This function is used to flush all characters in the console UART TX buffer
+ *    during abort situations.
+ *
+ ****************************************************************************/
+void up_flush_console_on_assert(void);
+
 #ifdef CONFIG_WATCHDOG_FOR_IRQ
 /****************************************************************************
  * Name: up_wdog_init
