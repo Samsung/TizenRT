@@ -106,7 +106,8 @@
 #define _PMBASE         (0x2b00)    	/* pm ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
-
+#define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
+#define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
 
 
 /* boardctl() commands share the same number space */
@@ -333,6 +334,25 @@
 
 #define _QEIOCVALID(c)    (_IOC_TYPE(c) == _QEIOCBASE)
 #define _QEIOC(nr)        _IOC(_QEIOCBASE, nr)
+
+/* Wifi CSI driver ioctl definitions *************************************/
+/* (see tinyara/wifi_csi/wifi_csi.h) */
+
+#define _CSIIOCVALID(c) (_IOC_TYPE(c) == _CSIIOCBASE)
+#define _CSIIOC(nr)     _IOC(_CSIIOCBASE, nr)
+
+/* Silent reboot driver ioctl definitions *************************************/
+/* (see tinyara/silent_reboot.h) */
+
+#define _SILENTRBIOCVALID(c)       (_IOC_TYPE(c) == _SILENTRBCBASE)
+#define _SILENTRBIOC(nr)           _IOC(_SILENTRBCBASE, nr)
+
+#define SILENTRBIOC_LOCK           _SILENTRBIOC(0x0001)
+#define SILENTRBIOC_UNLOCK         _SILENTRBIOC(0x0002)
+#define SILENTRBIOC_DELAY          _SILENTRBIOC(0x0003)
+#define SILENTRBIOC_CHECKMODE      _SILENTRBIOC(0x0004)
+#define SILENTRBIOC_GETSTATUS      _SILENTRBIOC(0x0005)
+#define SILENTRBIOC_FORCE_REBOOT   _SILENTRBIOC(0x0006)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */

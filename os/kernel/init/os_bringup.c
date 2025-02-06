@@ -113,6 +113,9 @@
 #ifdef CONFIG_SECURITY_LEVEL
 #include <tinyara/security_level.h>
 #endif
+#ifdef CONFIG_SILENT_REBOOT
+#include <tinyara/silent_reboot.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -263,6 +266,11 @@ static inline void os_workqueues(void)
 static inline void os_do_appstart(void)
 {
 	int pid;
+
+#ifdef CONFIG_SILENT_REBOOT
+	silent_reboot_initialize();
+#endif
+	silent_reboot_driver_register();
 
 #ifdef CONFIG_BOARD_INITIALIZE
 	/* Perform any last-minute, board-specific initialization, if so
