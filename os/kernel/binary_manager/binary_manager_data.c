@@ -168,11 +168,12 @@ bool binary_manager_scan_kbin(void)
 * Name: binary_manager_check_kernel_update
 *
 * Description:
-*   This function checks that new kernel binary exists on inactive partition
-*  and verifies the update is needed by comparing running version with new version.
+*   This function checks that new kernel binary exists on inactive partition.
+*  If check_version is true, verifies the update is needed by comparing running version with new version.
+*  Otherwise, it just checks whether the binary to update exist in their own inactive partition.
 *
 *************************************************************************************/
-int binary_manager_check_kernel_update(void)
+int binary_manager_check_kernel_update(bool check_version)
 {
 	int ret;
 	int inactive_partidx;
@@ -196,6 +197,10 @@ int binary_manager_check_kernel_update(void)
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[inactive_partidx].devnum);
 	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
 	if (ret == BINMGR_OK) {
+		if (!check_version) {
+			bmvdbg("Found valid kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
+			return BINMGR_OK;
+		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (kernel_info.version <= header_data.version) {
 #else
@@ -204,11 +209,13 @@ int binary_manager_check_kernel_update(void)
 			/* Need to update bootparam and reboot */
 			bmvdbg("Found new kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
 			return BINMGR_OK;
-		} else {
-			bmvdbg("Latest version is running, version %d\n", kernel_info.version);
-			return BINMGR_ALREADY_UPDATED;
 		}
+
+		/* Running version is the latest */
+		bmvdbg("Latest version is running, version %d\n", kernel_info.version);
+		return BINMGR_ALREADY_UPDATED;
 	}
+	bmdbg("No valid kernel binary in inactive partition\n");
 	return ret;
 }
 
@@ -250,7 +257,7 @@ int binary_manager_check_update(void)
 		goto reboot;
 	}
 #else
-	ret = binary_manager_check_kernel_update();
+	ret = binary_manager_check_kernel_update(true);
 	if (ret == BINMGR_OK) {
 		/* Reboot to switch kernel binary in another partition. */
 		goto reboot;
@@ -272,7 +279,7 @@ int binary_manager_check_update(void)
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 #endif
 		/* Scan binary files */
-		ret = binary_manager_check_user_update(bin_idx);
+		ret = binary_manager_check_user_update(bin_idx, true);
 		if (ret == BINMGR_OK) {
 			/* Update index for inactive partition */
 			BIN_USEIDX(bin_idx) ^= 1;
@@ -496,11 +503,12 @@ bool binary_manager_scan_ubin_all(void)
  * Name: binary_manager_check_user_update
  *
  * Description:
- *	 This function checks that new user binary exists on inactive partition
- *	and verifies the update is needed by comparing running version with new version.
+ *	 This function checks that new user binary exists on inactive partition.
+ *  If check_version is true, verifies the update is needed by comparing running version with new version.
+ *  Otherwise, it just checks whether the binary to update exist in their own inactive partition.
  *
  *******************************************************************************************/
-int binary_manager_check_user_update(int bin_idx)
+int binary_manager_check_user_update(int bin_idx, bool check_version)
 {
 	int ret;
 	int part_idx;
@@ -543,19 +551,23 @@ int binary_manager_check_user_update(int bin_idx)
 		if (bin_idx != BM_CMNLIB_IDX) {
 			BIN_LOAD_PRIORITY(bin_idx, part_idx) = user_header_data.loading_priority;
 		}
+		if (!check_version) {
+			bmvdbg("Found valid binary in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
+			return BINMGR_OK;
+		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (running_ver <= version) {
 #else
 		if (running_ver < version) {
 #endif
- 			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
+			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
 			return BINMGR_OK;
-		} else {
-			bmdbg("No update! Latest version is running, version %d\n", running_ver);
-			return BINMGR_ALREADY_UPDATED;
 		}
+		/* Running version is the latest */
+		bmdbg("No update! Latest version is running, version %d\n", running_ver);
+		return BINMGR_ALREADY_UPDATED;
 	}
-
+	bmdbg("No valid binary in inactive partition\n");
 	return ret;
 }
 

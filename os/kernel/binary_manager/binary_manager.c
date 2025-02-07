@@ -221,6 +221,9 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_SETBP:
 			binary_manager_update_bootparam(request_msg.requester_pid, request_msg.data.type);
 			break;
+		case BINMGR_SWAPBP:
+			binary_manager_swap_bootparam(request_msg.requester_pid);
+			break;
 #endif
 		case BINMGR_UPDATE:
 #ifdef CONFIG_APP_BINARY_SEPARATION
