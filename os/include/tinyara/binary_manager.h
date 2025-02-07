@@ -125,6 +125,9 @@ enum binmgr_request_msg_type {
 #ifdef CONFIG_BINMGR_RECOVERY
 	BINMGR_FAULT,
 #endif
+#ifdef CONFIG_USE_BP
+	BINMGR_SWAPBP,
+#endif
 };
 
 /* Result values of returned from binary manager. */
@@ -253,6 +256,11 @@ struct binmgr_request_s {
 	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_response_s {
+	binmgr_result_type_e result;
+};
+typedef struct binmgr_response_s binmgr_response_t;
 
 struct binmgr_setbp_response_s {
 	binmgr_result_type_e result;
