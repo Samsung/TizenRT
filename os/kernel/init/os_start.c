@@ -846,6 +846,10 @@ void os_start(void)
 	display_memory_information();
 #endif
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+	sched_deadtasklistinit();
+#endif
+
 	g_os_initstate = OSINIT_OSREADY;
 	DEBUGVERIFY(os_bringup());
 	g_os_initstate = OSINIT_IDLELOOP;
