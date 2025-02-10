@@ -202,6 +202,42 @@ static int touchsceen_resume(void)
 	return OK;
 }
 
+static int touchscreen_enable(void)
+{
+	int ret = OK;
+	int fd = open(TOUCH_DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		printf("Fail to open %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		return ERROR;
+	}
+
+	ret = ioctl(fd, TSIOC_ENABLE, NULL);
+	if (ret != OK) {
+		printf("Fail to TSIOC_ENABLE %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+	}
+
+	close(fd);
+	return ret;
+}
+
+static int touchscreen_disable(void)
+{
+	int ret = OK;
+	int fd = open(TOUCH_DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		printf("Fail to open %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+		return ERROR;
+	}
+
+	ret = ioctl(fd, TSIOC_DISABLE, NULL);
+	if (ret != OK) {
+		printf("Fail to TSIOC_DISABLE %s, errno:%d\n", TOUCH_DEV_PATH, get_errno());
+	}
+
+	close(fd);
+	return ret;
+}
+
 static void show_usage(void)
 {
 	printf("usage: touchscreen <command #>\n");
@@ -211,6 +247,8 @@ static void show_usage(void)
 	printf("    stop    : Stop  the touchscreen basic test\n");
 	printf("    suspend : Test suspend touchscreen ic operation\n");
 	printf("    resume  : Test reusme touchscreen ic operation\n");
+	printf("    enable  : Enable touch functionality\n");
+	printf("    disable : Disable touch functionality\n");
 }
 
 /****************************************************************************
@@ -239,6 +277,10 @@ int touchscreen_main(int argc, char *argv[])
 			return touchsceen_suspend();
 		} else if (!strncmp(argv[1], "resume", 7)) {
 			return touchsceen_resume();
+		} else if (!strncmp(argv[1], "enable", 7)) {
+			return touchscreen_enable();
+		} else if (!strncmp(argv[1], "disable", 8)) {
+			return touchscreen_disable();
 		}
 	}
 
