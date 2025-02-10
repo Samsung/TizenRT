@@ -88,6 +88,8 @@
 #define TSIOC_RESUME         _TSIOC(0x0006)  /* Resume touch interrupt */
 #define TSIOC_SETAPPNOTIFY   _TSIOC(0x0007)  /* arg: Pointer to struct touch_set_callback_s. Support available only when CONFIG_TOUCH_CALLBACK is enabled */
 #define TSIOC_CMD            _TSIOC(0x0008)  /* arg: Pointer to struct touchscreen_cmd_s */
+#define TSIOC_ENABLE         _TSIOC(0x0009)  /* Enable touch interrupt */
+#define TSIOC_DISABLE        _TSIOC(0x000A)  /* Disable touch interrupt */
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
 
