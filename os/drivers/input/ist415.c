@@ -593,7 +593,10 @@ static void ist415_disable_touch(struct touchscreen_s *upper)
 {
 	struct ist415_dev_s *dev = upper->priv;
 	ist415vdbg("%s\n", __func__);
-	ist415_disable(upper->priv);
+	ist415_suspend_device(upper);
+	if (dev->knockknock) {
+		ist415_disable(upper->priv);
+	}
 }
 
 /****************************************************************************
@@ -604,7 +607,10 @@ static void ist415_enable_touch(struct touchscreen_s *upper)
 {
 	struct ist415_dev_s *dev = upper->priv;
 	ist415vdbg("%s\n", __func__);
-	ist415_enable(upper->priv);
+	ist415_resume_device(upper);
+	if (dev->knockknock) {
+		ist415_enable(upper->priv);
+	}
 }
 
 /****************************************************************************
