@@ -41,6 +41,12 @@
 
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+extern uint32_t g_cur_app;
+extern struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1];
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -133,6 +139,34 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	for (int idx = startidx; idx <= endidx; idx++) {
 		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	if (heap_type != KERNEL_HEAP) {
+		struct mm_heap_s *kheap = kmm_get_baseheap();
+		mfdbg("*************************************************************************************\n");
+		mfdbg("                          Summary of Kernel heap memory usage                        \n");
+		mfdbg("*************************************************************************************\n\n");
+		for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+			heapinfo_parse_heap(&kheap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (CONFIG_NUM_APPS > 1) {
+			for (int index = 1; index <= CONFIG_NUM_APPS; index++) {
+				if (index != g_cur_app) {
+					mfdbg("*************************************************************************************\n");
+					mfdbg("                      Summary of App %d heap memory usage                        \n", index);
+					mfdbg("*************************************************************************************\n\n");
+					struct mm_heap_s *app_heap = g_app_heap_table[index];
+					for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+						heapinfo_parse_heap(&app_heap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+					}
+				}
+			}
+		}
+#endif
+	}
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 #endif /* CONFIG_DEBUG_MM_HEAPINFO */
 
 #ifdef CONFIG_SMP
