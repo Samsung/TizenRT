@@ -152,9 +152,7 @@ struct binmgr_uinfo_s {
 	struct tcb_s *rt_list;
 	struct tcb_s *nrt_list;
 	sq_queue_t cb_list; // list node type : statecb_node_t
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
-#endif
 };
 typedef struct binmgr_uinfo_s binmgr_uinfo_t;
 
@@ -239,9 +237,9 @@ binmgr_uinfo_t *binary_manager_get_udata(uint32_t bin_idx);
 #define BIN_OFFSET(bin_idx)                             binary_manager_get_udata(bin_idx)->load_attr.offset
 #define BIN_STACKSIZE(bin_idx)                          binary_manager_get_udata(bin_idx)->load_attr.stack_size
 #define BIN_PRIORITY(bin_idx)                           binary_manager_get_udata(bin_idx)->load_attr.priority
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 #define BIN_LOADINFO(bin_idx)                           binary_manager_get_udata(bin_idx)->binp
-#endif
+#define BIN_BINARY_HEAP_PTR(bin_idx)                    binary_manager_get_udata(bin_idx)->binp->uheap
+
 
 /****************************************************************************
  * Function Prototypes

@@ -330,9 +330,7 @@ int exec_module(FAR struct binary_s *binp)
 	BIN_ID(binary_idx) = pid;
 	BIN_STATE(binary_idx) = BINARY_LOADED;
 	BIN_LOADVER(binary_idx) = binp->bin_ver;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_LOADINFO(binary_idx) = binp;
-#endif
 #endif
 
 #ifndef CONFIG_DISABLE_SIGNALS
@@ -365,9 +363,7 @@ errout_with_tcbinit:
 		BIN_ID(binary_idx) = -1;
 		BIN_STATE(binary_idx) = BINARY_INACTIVE;
 		BIN_LOADVER(binary_idx) = 0;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		BIN_LOADINFO(binary_idx) = NULL;
-#endif
 		binary_manager_remove_binlist(&newtcb->cmn);
 #endif
 		sched_releasetcb(&newtcb->cmn, TCB_FLAG_TTYPE_TASK);
