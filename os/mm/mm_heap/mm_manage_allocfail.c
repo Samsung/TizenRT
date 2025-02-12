@@ -39,8 +39,15 @@
 #endif
 #endif
 
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) && defined(CONFIG_DEBUG_MM_HEAPINFO)
+#include "binary_manager/binary_manager.h"
+#include "sched/sched.h"
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -130,9 +137,46 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	mfdbg(" - total free size   : %d\n", info.fordblks);
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int cur_app_idx = 0;
+	if (heap_type != KERNEL_HEAP) {
+		cur_app_idx = this_task()->app_id;
+		mfdbg("*************************************************************************************\n");
+		mfdbg("             Summary of current app (app%d) heap memory usage                        \n", cur_app_idx);
+		mfdbg("*************************************************************************************\n\n");
+	} else {
+		mfdbg("*************************************************************************************\n");
+		mfdbg("                          Summary of Kernel heap memory usage                        \n");
+		mfdbg("*************************************************************************************\n\n");
+	}
+#endif
+
 	for (int idx = startidx; idx <= endidx; idx++) {
 		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	for (int index = 1; index <= CONFIG_NUM_APPS; index++) {
+		if (index != cur_app_idx) {
+			mfdbg("*************************************************************************************\n");
+			mfdbg("                      Summary of app%d heap memory usage                             \n", index);
+			mfdbg("*************************************************************************************\n\n");
+			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+				heapinfo_parse_heap(&app_heap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+			}
+		}
+	}
+	if (heap_type != KERNEL_HEAP) {
+		struct mm_heap_s *kheap = kmm_get_baseheap();
+		mfdbg("*************************************************************************************\n");
+		mfdbg("                          Summary of Kernel heap memory usage                        \n");
+		mfdbg("*************************************************************************************\n\n");
+		for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+			heapinfo_parse_heap(&kheap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+		}
+	}
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 #endif /* CONFIG_DEBUG_MM_HEAPINFO */
 
 #ifdef CONFIG_SMP

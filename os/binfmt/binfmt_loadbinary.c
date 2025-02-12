@@ -199,9 +199,7 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		/* Update binary table */
 		BIN_STATE(binary_idx) = BINARY_RUNNING;
 		BIN_LOADVER(binary_idx) = bin->bin_ver;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		BIN_LOADINFO(binary_idx) = bin;
-#endif
 		return OK;
 	}
 	/* If we support common binary, then we need to place a pointer to the app's heap object
