@@ -32,13 +32,8 @@
 /** @defgroup MBED_WDG_Exported_Types MBED_WDG Exported Types
   * @{
   */
-#if defined (ARM_CORE_CM4)
-WDG_TypeDef *WDGDev = WDG2_DEV;
-IRQn_Type WdgIrqNum = WDG2_IRQ;
-#elif defined (ARM_CORE_CA32)
-WDG_TypeDef *WDGDev = WDG4_DEV;
-IRQn_Type WdgIrqNum = WDG4_IRQ;
-#endif
+WDG_TypeDef *WDGArray[AMEBASMART_WDGMAX] = {WDG2_DEV, WDG4_DEV};
+IRQn_Type WdgIrqNum[AMEBASMART_WDGMAX] = {WDG2_IRQ, WDG4_IRQ};
 
 /**
   * @}
@@ -86,12 +81,16 @@ void WDG_Init(WDG_TypeDef *WDG, WDG_InitTypeDef *WDG_InitStruct)
 
 /**
  * @brief  Initialize the watchdog, including time and early interrupt settings.
+ * @param  WDG_id which WDT to use
  * @param  timeout_ms: Timeout value of watchdog timer in units of ms.
  * @retval none
  * @note  By default, watchdog will reset the whole system once timeout occurs.
  */
-void watchdog_init(uint32_t timeout_ms)
+int watchdog_init(int WDG_id, uint32_t timeout_ms)
 {
+	if (WDG_id < 0 || WDG_id >= AMEBASMART_WDGMAX) {
+		return -1;
+	}
 	WDG_InitTypeDef WDG_InitStruct;
 
 	WDG_StructInit(&WDG_InitStruct);
@@ -100,17 +99,18 @@ void watchdog_init(uint32_t timeout_ms)
 	WDG_InitStruct.EICNT = timeout_ms > 100 ? 100 : timeout_ms / 2;
 	WDG_InitStruct.EIMOD     = ENABLE;
 
-	WDG_Init(WDGDev, &WDG_InitStruct);
+	WDG_Init(WDGArray[WDG_id], &WDG_InitStruct);
+	return OK;
 }
 
 /**
  * @brief  Enable the watchdog and it starts to count.
- * @param  none
+ * @param  WDG_id which WDT to use
  * @retval none
  */
-void watchdog_start(void)
+void watchdog_start(int WDG_id)
 {
-	WDG_Enable(WDGDev);
+	WDG_Enable(WDGArray[WDG_id]);
 }
 
 /**
@@ -126,27 +126,28 @@ void watchdog_stop(void)
 
 /**
  * @brief  Refresh count of the watchdog in avoidance of WDT timeout.
- * @param  none
+ * @param  WDG_id which WDT to use
  * @retval none
  */
-void watchdog_refresh(void)
+void watchdog_refresh(int WDG_id)
 {
-	WDG_Refresh(WDGDev);
+	WDG_Refresh(WDGArray[WDG_id]);
 }
 
 /**
  * @brief  Enable eraly interrupt and register a watchdog timer timeout interrupt handler.
  *        The interrupt handler will be called at a programmable time prior to watchdog timeout, for users to prepare for reset
+ * @param  WDG_id which WDT to use
  * @param  handler: WDT timeout interrupt callback function.
  * @param  id: WDT timeout interrupt callback parameter.
  * @retval none
  */
-void watchdog_irq_init(wdt_irq_handler handler, uint32_t id)
+void watchdog_irq_init(int WDG_id, wdt_irq_handler handler, uint32_t id)
 {
-	WDG_ClearINT(WDGDev, WDG_BIT_EIC);
-	InterruptRegister((IRQ_FUN)handler, WdgIrqNum, (u32)id, INT_PRI_HIGH);
-	InterruptEn(WdgIrqNum, INT_PRI_HIGH);
-	WDG_INTConfig(WDGDev, WDG_BIT_EIE, ENABLE);
+	WDG_ClearINT(WDGArray[WDG_id], WDG_BIT_EIC);
+	InterruptRegister((IRQ_FUN)handler, WdgIrqNum[WDG_id], (u32)id, INT_PRI_HIGH);
+	InterruptEn(WdgIrqNum[WDG_id], INT_PRI_HIGH);
+	WDG_INTConfig(WDGArray[WDG_id], WDG_BIT_EIE, ENABLE);
 }
 /**
   * @}
