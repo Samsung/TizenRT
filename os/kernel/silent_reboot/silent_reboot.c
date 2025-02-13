@@ -82,10 +82,7 @@ static void silent_reboot_set_mode(void)
 	int reboot_reason = READ_REBOOT_REASON();
 
 	if (reboot_reason == REBOOT_SYSTEM_HW_RESET ||
-	reboot_reason == REBOOT_SYSTEM_USER_INTENDED ||
-	reboot_reason == REBOOT_CMNSERVICE_HASS ||
-	reboot_reason == REBOOT_CMNSERVICE_RM ||
-	reboot_reason == REBOOT_CMNSERVICE_FACTORYRESET) {
+	reboot_reason == REBOOT_SYSTEM_USER_INTENDED) {
 		// Normal mode (non-silent mode)
 		g_is_silent_mode = false;
 		dbg("board boot with NORMAL MODE.\n");
