@@ -36,12 +36,11 @@
 /************************************************************************
  * Definitions
  ************************************************************************/
-#define REBOOT_TIME_START_SEC  0     // 0:00 AM
-#define REBOOT_TIME_END_SEC    300   // 5:00 AM
-#define DAYS_AFTER_BOOT        7     // days after reboot.
-#define A_DAY_TO_SEC           86400 // seconds for a day (24 hours * 60 * 60)
-#define SEVEN_DAYS_TO_SEC      604800 // seconds for 7 days (DAYS_AFTER_BOOT * A_DAY_TO_SEC)
-
+#define REBOOT_TIME_START_SEC  0	// 0:00 AM
+#define REBOOT_TIME_END_SEC    300	// 5:00 AM
+#define DAYS_AFTER_BOOT        7	// days after reboot.
+#define A_DAY_TO_SEC           86400	// seconds for a day (24 hours * 60 * 60)
+#define SEVEN_DAYS_TO_SEC      604800	// seconds for 7 days (DAYS_AFTER_BOOT * A_DAY_TO_SEC)
 
 /************************************************************************
  * Private Variables
@@ -121,7 +120,7 @@ static int silent_reboot_get_time(int cmd)
 	} else if (cmd == SILENT_RESTART) {
 		/* Calculate the next 00:00 time */
 		timeout_sec = (A_DAY_TO_SEC - (curtm.tm_sec + curtm.tm_min * 60 + curtm.tm_hour * 3600));
-		/* Apply random time in (REBOOT_TIME_START_SEC, REBOOT_TIME_END_SEC)*/
+		/* Apply random time in (REBOOT_TIME_START_SEC, REBOOT_TIME_END_SEC) */
 		timeout_sec += get_random_number(REBOOT_TIME_START_SEC, REBOOT_TIME_END_SEC);
 	} else if (cmd == SILENT_END) {
 		if (curtm.tm_hour < 5) {
@@ -144,9 +143,9 @@ static void silent_reboot_enter_timezone(void)
 	g_is_silent_timezone = true;
 
 	/* Time available for silent reboot started.
-	* If reboot is not performed in this function, it means the lock state (g_silent_lock_count > 0).
-	* Then, it will be checked again in unlock function.
-	*/
+	 * If reboot is not performed in this function, it means the lock state (g_silent_lock_count > 0).
+	 * Then, it will be checked again in unlock function.
+	 */
 	if (g_silent_lock_count <= 0) {
 		silent_reboot_perform();
 	}
@@ -175,28 +174,28 @@ static bool silent_reboot_is_timezone(void)
 static void silent_timer_callback(int argc, uint32_t cmd)
 {
 	switch (cmd) {
-		case SILENT_START:
-		case SILENT_RESTART:
-			/* Check whether current time is available for reboot because time can be changed after timer starts */
-			if (silent_reboot_is_timezone()) {
-				/* Do silent reboot if no lock. If not, set timer to end timezone */
-				silent_reboot_enter_timezone();
-			} else {
-				/* Set timer for remaining time until the next start time available for reboot */
-				silent_reboot_set_timer(SILENT_RESTART);
-			}
-			break;
-		case SILENT_END:
-			/* Set a flag prevent reboot */
-			g_is_silent_timezone = false;
+	case SILENT_START:
+	case SILENT_RESTART:
+		/* Check whether current time is available for reboot because time can be changed after timer starts */
+		if (silent_reboot_is_timezone()) {
+			/* Do silent reboot if no lock. If not, set timer to end timezone */
+			silent_reboot_enter_timezone();
+		} else {
 			/* Set timer for remaining time until the next start time available for reboot */
 			silent_reboot_set_timer(SILENT_RESTART);
-			break;
-		case SILENT_DELAY:
-			silent_reboot_unlock();
-			break;
-		default:
-			break;
+		}
+		break;
+	case SILENT_END:
+		/* Set a flag prevent reboot */
+		g_is_silent_timezone = false;
+		/* Set timer for remaining time until the next start time available for reboot */
+		silent_reboot_set_timer(SILENT_RESTART);
+		break;
+	case SILENT_DELAY:
+		silent_reboot_unlock();
+		break;
+	default:
+		break;
 	}
 }
 
@@ -255,7 +254,7 @@ int silent_reboot_unlock(void)
 		if (silent_reboot_is_timezone()) {
 			if (g_silent_lock_count <= 0) {
 				silent_reboot_perform();
-			}	
+			}
 		} else {
 			/* Calibrate timer to set next silent reboot time */
 			g_is_silent_timezone = false;
@@ -295,10 +294,10 @@ int silent_reboot_delay(int delay)
 	if (SEC2TICK(delay) <= tick_remain) {
 		dbg("Already reboot delayed for %d seconds\n", TICK2SEC(tick_remain));
 		return OK;
-	} 
+	}
 
 	if (tick_remain == 0) {
-		/* If delay watchdog is stopped, lock first*/
+		/* If delay watchdog is stopped, lock first */
 		g_silent_lock_count++;
 	}
 
