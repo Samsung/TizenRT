@@ -269,8 +269,8 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_SILENT_REBOOT
 	silent_reboot_initialize();
-#endif
 	silent_reboot_driver_register();
+#endif
 
 #ifdef CONFIG_BOARD_INITIALIZE
 	/* Perform any last-minute, board-specific initialization, if so

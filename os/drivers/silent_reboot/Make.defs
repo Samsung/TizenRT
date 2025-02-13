@@ -17,9 +17,12 @@
 ##########################################################################
 # Include silent_reboot drivers
 
+ifeq ($(CONFIG_SILENT_REBOOT),y)
+
 CSRCS += silent_reboot_driver.c
 
 # Include silent_reboot driver support
 
 DEPPATH += --dep-path silent_reboot
 VPATH += :silent_reboot
+endif
