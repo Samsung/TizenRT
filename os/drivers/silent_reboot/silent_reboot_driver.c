@@ -73,8 +73,6 @@ static ssize_t silent_reboot_write(FAR struct file *filep, FAR const char *buffe
 static int silent_reboot_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret;
-	int ticks;
-	pid_t *result_addr;
 
 	ret = -EINVAL;
 
