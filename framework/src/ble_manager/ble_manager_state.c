@@ -869,6 +869,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 	} break;
 
 	// Server
+	case BLE_CMD_SET_SERVER_CONFIG: {
+		BLE_STATE_CHECK;
+		
+		trble_server_init_config *server = (trble_server_init_config *)msg->param;
+		ret = ble_drv_set_server_config(server);
+	} break;
+
 	case BLE_CMD_GET_PROFILE_COUNT: {
 		BLE_STATE_CHECK;
 

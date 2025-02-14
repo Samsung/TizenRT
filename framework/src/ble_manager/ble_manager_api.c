@@ -340,6 +340,14 @@ ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_att
 }
 
 /* Server */
+ble_result_e ble_manager_set_server_config(ble_server_init_config *server_config)
+{
+	blemgr_msg_s msg = {BLE_CMD_SET_SERVER_CONFIG, BLE_MANAGER_FAIL, (void *)(server_config), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_get_profile_count(uint16_t *count)
 {
 	blemgr_msg_s msg = {BLE_CMD_GET_PROFILE_COUNT, BLE_MANAGER_FAIL, (void *)(count), NULL};

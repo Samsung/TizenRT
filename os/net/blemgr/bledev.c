@@ -423,6 +423,19 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	
 	//Server
+	case LWNL_REQ_BLE_SET_SERVER_CONFIG:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		trble_server_init_config *t_server = (trble_server_init_config *)param.param[0];
+		
+		TRBLE_DRV_CALL(ret, dev, set_server_config, (dev, t_server));
+	}
 	case LWNL_REQ_BLE_GET_PROFILE_COUNT:
 	{
 		uint16_t *count = NULL;
