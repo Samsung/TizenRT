@@ -84,6 +84,10 @@
 #include "ameba_soc.h"
 #include "osdep_service.h"
 #include "platform_opts_bt.h"
+
+#ifdef CONFIG_AMEBASMART_BOR
+#include "ameba_bor.h"
+#endif
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -125,6 +129,18 @@ int up_check_proddownload(void)
 		return OK;
 	}
 	return ERROR;
+}
+#endif
+
+#ifdef CONFIG_AMEBASMART_BOR
+static void board_initialize_bor(void)
+{
+	BOR_ThresholdSet(CONFIG_AMEBASMART_THRESHOLD_FALL,CONFIG_AMEBASMART_THRESHOLD_RISE);
+	BOR_ModeSet(BOR_RESET);
+	BOR_Enable(ENABLE);
+	DelayUs(100);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
+	lldbg("Brownout reset enabled\n");
 }
 #endif
 
@@ -522,7 +538,10 @@ void board_initialize(void)
 		lldbg("NDP120 initialization failed\n");
 	}
  #endif
-
+ 
+ #ifdef CONFIG_AMEBASMART_BOR
+	board_initialize_bor();
+ #endif
 	IPC_MSG_STRUCT ipc_msg_loguart;
 
 	ipc_msg_loguart.msg_type = IPC_USER_POINT;
