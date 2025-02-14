@@ -104,6 +104,20 @@ static struct pm_callback_s g_pm_syu645b_cb ={
 };
 #endif
 
+static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
+{
+	FAR struct i2c_dev_s *dev = priv->i2c;
+	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
+	uint8_t reg_w[1];
+	reg_w[0] = regaddr;
+	int ret = i2c_writeread(dev, syu645b_i2c_config, reg_w, 1, regval, nbytes);
+	if (ret != nbytes) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	return ret;
+}
+
 /************************************************************************************
  * Name: syu645b_exec_i2c_script
  *
@@ -135,25 +149,6 @@ static int syu645b_exec_i2c_script(FAR struct syu645b_dev_s *priv, t_codec_init_
 		}
 	}
 	return ret;
-}
-
-static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
-{
-	FAR struct i2c_dev_s *dev = priv->i2c;
-	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
-	uint8_t reg_w[1];
-	reg_w[0] = regaddr;
-	int ret = i2c_write(dev, syu645b_i2c_config, reg_w, 1);
-	if (ret != 1) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
-		return ERROR;
-	}
-	ret =  i2c_read(dev, syu645b_i2c_config, regval, nbytes);
-	if (ret != nbytes) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
-		return ERROR;
-	}
-	return OK;
 }
 
 /************************************************************************************
