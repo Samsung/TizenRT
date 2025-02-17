@@ -99,6 +99,7 @@ trble_result_e trble_netmgr_operation_write(struct bledev *dev, trble_operation_
 trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 
 /*** Peripheral(Server) ***/
+trble_result_e trble_netmgr_add_profile(struct bledev *dev, trble_server_init_config *server);
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count);
 trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
@@ -165,6 +166,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_operation_write_no_response,
 
 	// Server
+	trble_netmgr_add_profile,
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
 	trble_netmgr_charact_indicate,
@@ -444,6 +446,17 @@ trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trbl
 
 
 /*** Peripheral(Server) ***/
+trble_result_e trble_netmgr_add_profile(struct bledev *dev, trble_server_init_config *server)
+{
+	trble_result_e ret = TRBLE_FAIL;
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
+	if (server != NULL) {
+		ret = rtw_ble_combo_add_profile(server);
+	}
+#endif
+	return ret;
+}
+
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count)
 {
 	*count = rtw_ble_server_get_profile_count();
