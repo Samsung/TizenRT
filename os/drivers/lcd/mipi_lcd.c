@@ -31,6 +31,8 @@
 #include "lcd_logo.h"
 #include <debug.h>
 #include <assert.h>
+#include <errno.h>
+#include <semaphore.h>
 
 #define REGFLAG_DELAY                       0xFC
 #define REGFLAG_END_OF_TABLE                0xFD	// END OF REGISTERS MARKER
@@ -109,6 +111,7 @@ struct mipi_lcd_dev_s {
 	//u8 *BackupLcdImgBuffer;
 	int fb_alloc_count;
 	uint8_t power;
+	sem_t sem;
 	struct mipi_lcd_config_s *config;
 };
 
@@ -229,6 +232,13 @@ static int lcd_putrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col,
 static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord_t row_end, fb_coord_t col_start, fb_coord_t col_end, FAR const uint8_t *buffer, fb_coord_t stride)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+	while (sem_wait(&priv->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
+	if (priv->power == 0) {
+		sem_post(&priv->sem);
+		return ERROR;
+	}
 	//coordinate shift from (0,0) -> (1,1) and (XRES-1,YRES-1) -> (XRES,YRES)
 	row_start += 1;
 	row_end += 1;
@@ -245,6 +255,7 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
+	sem_post(&priv->sem);
 	return OK;
 }
 
@@ -333,15 +344,29 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d", CONFIG_LCD_MAXPOWER);
 		return -1;
 	}
+	while (sem_wait(&priv->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
 	if (power == 0) {
 		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
 		send_cmd(priv, display_off_cmd);
+		/* The power off must operate only when LCD is ON */
+		if (priv->power != 0) {
+			priv->config->power_off();
+		}
 	} else {
+		/* The power on must operate only when LCD is OFF */
+		if (priv->power == 0) {
+			priv->config->power_on();
+			/* We need to send init cmd after LCD IC power on */
+			send_init_cmd(priv, lcd_init_cmd_g);
+		}
 		lcm_setting_table_t display_on_cmd = {0x29, 0, {0x00}};
 		send_cmd(priv, display_on_cmd);
 	}
 	priv->config->backlight(power);
 	priv->power = power;
+	sem_post(&priv->sem);
 	return OK;
 }
 
@@ -470,7 +495,9 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
+	priv->power = CONFIG_LCD_MAXPOWER;
 
+	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)
 	uint8_t *mem = (uint8_t *)kmm_malloc((CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1) * NUM_OF_LCD_BUFFER);	// each pixel is 8bit int
 	if (!mem) {
