@@ -32,6 +32,11 @@ int tash_usleep(int argc, char **args)
 	char *endptr;
 	long usecs;
 
+	if (argc != 2 || args[1] == NULL) {
+		shdbg("%s: argument invalid\n", args[0]);
+		return ERROR;
+	}
+
 	usecs = strtol(args[1], &endptr, 0);
 	if (!usecs || endptr == args[1] || *endptr != '\0') {
 		shdbg("%s: argument invalid\n", args[0]);
