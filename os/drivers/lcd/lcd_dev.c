@@ -288,14 +288,20 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		int new_power = (int)arg;
 		int old_power = priv->dev->getpower(priv->dev);
 
+		/* To ensure setpower operation from power saving,
+		 * pm_suspend is calling first. */
+		if (old_power == 0 && new_power > 0) {
+			(void)pm_suspend(priv->pm_domain);
+		}
+
 		ret = priv->dev->setpower(priv->dev, new_power);
 		if (ret != OK) {
 			break;
 		}
 
-		if (old_power == 0 && new_power > 0) {
-			(void)pm_suspend(priv->pm_domain);
-		} else if (old_power > 0 && new_power == 0) {
+		/* To ensure setpower operation from power saving,
+		 * pm_resume is calling after setpower. */
+		if (old_power > 0 && new_power == 0) {
 			(void)pm_resume(priv->pm_domain);
 		}
 #else

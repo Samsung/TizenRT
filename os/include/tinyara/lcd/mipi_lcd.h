@@ -56,6 +56,8 @@ struct mipi_lcd_config_s {
 	void (*lcd_layer_enable)(int layer, bool enable);
 	void (*backlight)(u8 level);
 	void (*lcd_put_area)(u8 *lcd_img_buffer, u32 x1, u32 y1, u32 x2, u32 y2);
+	void (*power_off)();
+	void (*power_on)();
 };
 
 #endif	/* __DRIVERS_LCD_MIPI_H */
