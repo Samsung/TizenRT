@@ -362,6 +362,14 @@ static uint32_t rtk_mipi_resume(uint32_t expected_idle_time, void *param)
 }
 #endif
 
+void amebasmart_mipi_dsi_host_reinitialize(void)
+{
+	FAR struct amebasmart_mipi_dsi_host_s *priv = &g_dsi_host;
+
+	/* For MIPI */
+	amebasmart_mipi_init_helper(priv);
+}
+
 struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config)
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = NULL;
