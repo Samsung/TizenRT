@@ -28,6 +28,11 @@ int tash_sleep(int argc, char **args)
 	char *endptr;
 	long secs;
 
+	if (argc != 2 || args[1] == NULL) {
+		shdbg("%s: argument invalid\n", args[0]);
+		return ERROR;
+	}
+
 	secs = strtol(args[1], &endptr, 0);
 	if (!secs || endptr == args[1] || *endptr != '\0') {
 		shdbg("%s: argument invalid\n", args[0]);
