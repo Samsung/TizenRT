@@ -93,7 +93,6 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/kmalloc.h>
 #include <stdio.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
 
@@ -937,9 +936,9 @@ static int mnemofs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
   finfo("Lock acquired.");
 
-  if (INODE_IS_MTD(drv))
+  if (true)
     {
-      ret = MTD_IOCTL(drv->u.i_mtd, cmd, arg);
+      ret = MTD_IOCTL(sb->mtd, cmd, arg);
     }
   else
     {
@@ -1225,10 +1224,11 @@ static int mnemofs_fstat(FAR const struct file *filep, FAR struct stat *buf)
   DEBUGASSERT(dirent != NULL);
 
   buf->st_mode    = dirent->mode;
-  buf->st_nlink   = 1; /* mnemofs doesn't yet support links. */
+  //buf->st_nlink   = 1;
+  // TODO MNEMOFS /* mnemofs doesn't yet support links.
   buf->st_size    = dirent->sz;
-  buf->st_atim    = dirent->st_atim;
-  buf->st_ctim    = dirent->st_ctim;
+  //buf->st_atim    = dirent->st_atim;
+  //buf->st_ctim    = dirent->st_ctim;
   buf->st_blksize = sb->pg_sz;
   buf->st_blocks  = ((dirent->sz  + (sb->pg_sz - 1)) / sb->pg_sz); /* Ceil */
 
@@ -1712,7 +1712,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
 
   if (driver && INODE_IS_MTD(driver))
     {
-      if (!driver || !driver->u.i_mtd || !driver->u.i_mtd->ioctl)
+      if (!driver || !sb->mtd || !sb->mtd->ioctl)
         {
           MFS_LOG("BIND", "Unsupported device.");
           ret = -ENODEV;
@@ -1723,7 +1723,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
           MFS_EXTRA_LOG("BIND", "Device is of MTD type.");
         }
 
-      ret = MTD_IOCTL(driver->u.i_mtd, MTDIOC_GEOMETRY,
+      ret = MTD_IOCTL(sb->mtd, MTDIOC_GEOMETRY,
                       (unsigned long) &geo);
 
       MFS_LOG("BIND", "MTD Driver Geometry read.");
@@ -2596,13 +2596,13 @@ static int mnemofs_stat(FAR struct inode *mountpt, FAR const char *relpath,
 
   MFS_EXTRA_LOG_DIRENT(dirent);
 
-  buf->st_nlink   = 1;
+  //buf->st_nlink   = 1;
   buf->st_blksize = sb->pg_sz;
   buf->st_size    = dirent->sz;
   buf->st_mode    = dirent->mode;
-  buf->st_atim    = dirent->st_atim;
-  buf->st_ctim    = dirent->st_ctim;
-  buf->st_mtim    = dirent->st_mtim;
+  //buf->st_atim    = dirent->st_atim;
+  //buf->st_ctim    = dirent->st_ctim;
+  //buf->st_mtim    = dirent->st_mtim;
   buf->st_blocks  = dirent->ctz.idx_e + 1;
 
   mfs_free_dirent(dirent);
