@@ -82,7 +82,7 @@ include smartfs/Make.defs
 include procfs/Make.defs
 include tmpfs/Make.defs
 include romfs/Make.defs
-
+include mnemofs/Make.defs
 endif
 endif
 
