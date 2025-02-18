@@ -119,6 +119,7 @@
 #define PROCFS_MAGIC          0x434f5250
 #define NXFFS_MAGIC           0x4747
 #define SMARTFS_MAGIC         0x54524D53
+#define MNEMOFS_SUPER_MAGIC   0x704b8e4d
 
 /****************************************************************************
  * Type Definitions

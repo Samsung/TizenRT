@@ -85,7 +85,7 @@
 #define MFS_JRNL(sb)               ((sb)->j_state)
 #define MFS_LOGPGSZ(sb)            (MFS_CEILDIVIDE((sb)->log_pg_sz, 8))
 #define MFS_PGINBLK(sb)            ((sb)->pg_in_blk)
-#define MFS_MTD(sb)                ((sb)->drv->u.i_mtd)
+#define MFS_MTD(sb)                ((sb)->mtd)
 #define MFS_RWBUF(sb)              ((sb)->rw_buf)
 #define MFS_BA(sb)                 ((sb)->ba_state)
 #define MFS_NBLKS(sb)              ((sb)->n_blks)
@@ -208,6 +208,7 @@ struct mfs_sb_s
   struct list_node        lru;
   struct list_node        of;            /* open files. */
   bool                    flush;
+  struct mtd_dev_s	  *mtd;
 };
 
 /* This is for *dir VFS methods. */
