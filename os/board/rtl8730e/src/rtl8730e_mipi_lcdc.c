@@ -202,7 +202,9 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 
 static void rtl8730e_gpio_init(void)
 {
+#if defined(CONFIG_LCD_ST7701)	/* It used PA_14 SWD_CLK as reset, SWD disable is needed */
 	Pinmux_Swdoff();
+#endif
 	Pinmux_Config(MIPI_GPIO_RESET_PIN, PINMUX_FUNCTION_GPIO);
 
 	GPIO_InitTypeDef ResetPin;

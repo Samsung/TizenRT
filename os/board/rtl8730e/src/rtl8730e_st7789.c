@@ -90,7 +90,6 @@ static void gpio_pins_init(void)
 	GPIO_InitTypeDef ResetPin;
 	GPIO_InitTypeDef CmdPin;
 
-	Pinmux_Swdoff();
 	Pinmux_Config(GPIO_PIN_RESET, PINMUX_FUNCTION_GPIO);
 
 	ResetPin.GPIO_Pin = GPIO_PIN_RESET;
