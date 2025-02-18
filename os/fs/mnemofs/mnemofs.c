@@ -872,13 +872,13 @@ static off_t mnemofs_seek(FAR struct file *filep, off_t offset, int whence)
         goto errout_with_lock;
     }
 
-  MFS_EXTRA_LOG("SEEK", "Proposed final position: %" PRIu32, pos);
+  MFS_EXTRA_LOG("SEEK", "Proposed final position: %d", pos);
 
   /* Check bounds of the position data type. */
 
   if (pos > f->com->off && offset < 0)
   {
-    MFS_LOG("SEEK", "Proposed final position (%" PRIu32 ") out of bounds.",
+    MFS_LOG("SEEK", "Proposed final position (%d) out of bounds.",
             pos);
     ret = -EINVAL;
     goto errout_with_lock;
@@ -887,7 +887,7 @@ static off_t mnemofs_seek(FAR struct file *filep, off_t offset, int whence)
   f->com->off = pos;
   ret         = pos;
 
-  MFS_EXTRA_LOG("SEEK", "Final position: %" PRIu32, pos);
+  MFS_EXTRA_LOG("SEEK", "Final position: %d", pos);
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
@@ -923,7 +923,7 @@ static int mnemofs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   FAR struct inode    *drv;
   FAR struct mfs_sb_s *sb;
 
-  finfo("Mnemofs ioctl with cmd %" PRIu32 "and arg %zu.", cmd, arg);
+  finfo("Mnemofs ioctl with cmd %dand arg %zu.", cmd, arg);
 
   inode = filep->f_inode;
   sb    = inode->i_private;
@@ -1314,7 +1314,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
   else
     {
       MFS_EXTRA_LOG("OPENDIR", "Path is at %p.", path);
-      MFS_EXTRA_LOG("OPENDIR", "Path is at %" PRIu32, depth);
+      MFS_EXTRA_LOG("OPENDIR", "Path is at %d", depth);
       MFS_EXTRA_LOG("OPENDIR", "Retrieved flags is %d.", flags);
     }
 
@@ -1783,14 +1783,14 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   MFS_EXTRA_LOG("BIND", "SB initialized in-memory.");
   MFS_EXTRA_LOG("BIND", "SB Details.");
   MFS_EXTRA_LOG("BIND", "\tDriver: %p", driver);
-  MFS_EXTRA_LOG("BIND", "\tPage Size: %" PRIu32, sb->pg_sz);
+  MFS_EXTRA_LOG("BIND", "\tPage Size: %d", sb->pg_sz);
   MFS_EXTRA_LOG("BIND", "\tLog Page Size: %" PRIu8, sb->log_pg_sz);
-  MFS_EXTRA_LOG("BIND", "\tBlock Size: %" PRIu32, sb->blk_sz);
+  MFS_EXTRA_LOG("BIND", "\tBlock Size: %d", sb->blk_sz);
   MFS_EXTRA_LOG("BIND", "\tLog Block Size: %" PRIu8,
                 sb->log_blk_sz);
   MFS_EXTRA_LOG("BIND", "\tPages Per Block: %" PRIu16,
                 sb->pg_in_blk);
-  MFS_EXTRA_LOG("BIND", "\tBlocks: %" PRIu32, sb->n_blks);
+  MFS_EXTRA_LOG("BIND", "\tBlocks: %d", sb->n_blks);
   MFS_EXTRA_LOG("BIND", "\tLog Blocks: %" PRIu8, sb->log_n_blks);
   MFS_EXTRA_LOG("BIND", "\tJournal Blocks: %" PRIu16,
                 MFS_JRNL(sb).n_blks);
@@ -1823,19 +1823,19 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
 
       for (i = 0; i < MFS_NBLKS(sb); i++)
         {
-          MFS_EXTRA_LOG("BIND", "Checking start of Block %" PRIu32,
+          MFS_EXTRA_LOG("BIND", "Checking start of Block %d",
                         i + 1);
           mfs_read_page(sb, buf, 8, MFS_BLK2PG(sb, i), 0);
 
           for (j = 0; j < 8; j++)
             {
-              MFS_EXTRA_LOG("BIND", "\tBlock %" PRIu32
-                            ", Offset %" PRIu32 ": %x", i, j, buf[j]);
+              MFS_EXTRA_LOG("BIND", "\tBlock %d"
+                            ", Offset %d: %x", i, j, buf[j]);
             }
 
           if (!MFS_STRLITCMP(buf, MFS_JRNL_MAGIC))
             {
-              MFS_LOG("BIND", "Found Journal at Block %" PRIu32,
+              MFS_LOG("BIND", "Found Journal at Block %d",
                       i + 1);
 
               ret = mfs_jrnl_init(sb, i);
@@ -2177,7 +2177,7 @@ static int mnemofs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
   flags = mfs_get_patharr(sb, relpath, &path, &depth);
   MFS_EXTRA_LOG("MKDIR", "Retrieved flags are 0x%x.", flags);
   MFS_EXTRA_LOG("MKDIR", "Path received is at %p.", path);
-  MFS_EXTRA_LOG("MKDIR", "Depth of path is %" PRIu32 ".", depth);
+  MFS_EXTRA_LOG("MKDIR", "Depth of path is %d.", depth);
 
   if ((flags & MFS_EXIST) != 0)
     {
@@ -2219,14 +2219,14 @@ static int mnemofs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
   mfs_pitr_init(sb, path, depth, &pitr, true);
   MFS_EXTRA_LOG("MKDIR", "The path contains the child.");
   MFS_EXTRA_LOG("MKDIR", "Parent iterator initialized.");
-  MFS_EXTRA_LOG("MKDIR", "\tDepth of parent %" PRIu32 ".",
+  MFS_EXTRA_LOG("MKDIR", "\tDepth of parent %d.",
                 pitr.depth);
-  MFS_EXTRA_LOG("MKDIR", "\tCurrent iteration offset %" PRIu32 ".",
+  MFS_EXTRA_LOG("MKDIR", "\tCurrent iteration offset %d.",
                 pitr.c_off);
-  MFS_EXTRA_LOG("MKDIR", "\tParent's offset %" PRIu32 ".",
+  MFS_EXTRA_LOG("MKDIR", "\tParent's offset %d.",
                 pitr.p.off);
-  MFS_EXTRA_LOG("MKDIR", "\tParent's size %" PRIu32 ".", pitr.p.sz);
-  MFS_EXTRA_LOG("MKDIR", "\tParent's CTZ (%" PRIu32 ", %" PRIu32 ")"
+  MFS_EXTRA_LOG("MKDIR", "\tParent's size %d.", pitr.p.sz);
+  MFS_EXTRA_LOG("MKDIR", "\tParent's CTZ (%d, %d)"
                 , pitr.p.ctz.idx_e, pitr.p.ctz.pg_e);
 
   /* The last incomplete direntry will be added by mfs_pitr_appendnew. */
@@ -2240,12 +2240,12 @@ static int mnemofs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
   else
     {
       MFS_EXTRA_LOG("MKDIR", "Direntry append successful.");
-      MFS_EXTRA_LOG("MKDIR", "\tDepth of parent %" PRIu32 ".", pitr.depth);
-      MFS_EXTRA_LOG("MKDIR", "\tCurrent iteration offset %" PRIu32 ".",
+      MFS_EXTRA_LOG("MKDIR", "\tDepth of parent %d.", pitr.depth);
+      MFS_EXTRA_LOG("MKDIR", "\tCurrent iteration offset %d.",
                     pitr.c_off);
-      MFS_EXTRA_LOG("MKDIR", "\tParent's offset %" PRIu32 ".", pitr.p.off);
-      MFS_EXTRA_LOG("MKDIR", "\tParent's size %" PRIu32 ".", pitr.p.sz);
-      MFS_EXTRA_LOG("MKDIR", "\tParent's CTZ (%" PRIu32 ", %" PRIu32 ")",
+      MFS_EXTRA_LOG("MKDIR", "\tParent's offset %d.", pitr.p.off);
+      MFS_EXTRA_LOG("MKDIR", "\tParent's size %d.", pitr.p.sz);
+      MFS_EXTRA_LOG("MKDIR", "\tParent's CTZ (%d, %d)",
                     pitr.p.ctz.idx_e, pitr.p.ctz.pg_e);
     }
 
@@ -2333,7 +2333,7 @@ static int mnemofs_rmdir(FAR struct inode *mountpt, FAR const char *relpath)
     }
   else
     {
-      MFS_EXTRA_LOG("RMDIR", "Path is at %p with depth %" PRIu32, path,
+      MFS_EXTRA_LOG("RMDIR", "Path is at %p with depth %d", path,
                     depth);
       MFS_EXTRA_LOG("RMDIR", "FS Object is a directory.");
       MFS_EXTRA_LOG("RMDIR", "Retrieved flags are 0x%x.", flags);
@@ -2559,7 +2559,7 @@ static int mnemofs_stat(FAR struct inode *mountpt, FAR const char *relpath,
   else
     {
       MFS_EXTRA_LOG("STAT", "Path is at %p.", path);
-      MFS_EXTRA_LOG("STAT", "Depth is %" PRIu32, depth);
+      MFS_EXTRA_LOG("STAT", "Depth is %d", depth);
       MFS_EXTRA_LOG("STAT", "Retrieved flags are 0x%x.", flags);
     }
 

@@ -72,7 +72,6 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/list.h>
-#include <sys/param.h>
 
 #include "mnemofs.h"
 
@@ -194,7 +193,7 @@ static void lru_nodesearch(FAR const struct mfs_sb_s * const sb,
   if (found)
     {
       finfo("Node search ended with match of node %p at depth %u"
-            " for CTZ of %" PRIu32 " size with range [%" PRIu32 ", %" PRIi32
+            " for CTZ of %d size with range [%d, %d"
             ").", n, n->depth, n->sz, n->range_min, n->range_max);
     }
   else
@@ -504,8 +503,8 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
     }
 
   finfo("Delta attached to node %p. Now there are %zu nodes and the"
-        " node has %zu deltas. Node with range [%" PRIu32 ", %"
-        PRIu32 ").", node, list_length(&MFS_LRU(sb)),
+        " node has %zu deltas. Node with range [%d, %d"
+        ").", node, list_length(&MFS_LRU(sb)),
         list_length(&node->delta), node->range_min, node->range_max);
 
   return ret;

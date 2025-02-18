@@ -80,7 +80,6 @@
 #include <tinyara/endian.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/list.h>
-#include <sys/param.h>
 
 #include "mnemofs.h"
 
