@@ -203,7 +203,18 @@ config AMEBASMART_I2S_TXCL
 	range 8 32
 endif
 endif
+config AMEBASMART_IWDG
+	bool "Enable KM0 Watchdog"
+	default y
 
+if AMEBASMART_IWDG
+config AMEBASMART_IWDG_TIMEOUT
+	int "KM0 Watchdog Timeout"
+	default 60000
+	range 2 65535
+	---help---
+		2 ~ 65535, unit is ms
+endif
 endmenu
 
 menu "Realtek RTL8730E WIFI Support"
