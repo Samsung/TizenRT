@@ -98,7 +98,6 @@
 #include <sys/statfs.h>
 
 #include "mnemofs.h"
-#include "fs_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -281,7 +280,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
       MFS_EXTRA_LOG("OPEN", "Mutex acquired.");
     }
 
-  f     = fs_heap_zalloc(sizeof(*f));
+  f     = kmm_zalloc(sizeof(*f));
   if (predict_false(f == NULL))
     {
       MFS_LOG("OPEN", "Failed to allocate file structure.");
@@ -293,7 +292,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
       MFS_EXTRA_LOG("OPEN", "Allocated file structure at %p.", f);
     }
 
-  fcom  = fs_heap_zalloc(sizeof(*fcom));
+  fcom  = kmm_zalloc(sizeof(*fcom));
   if (predict_false(fcom == NULL))
     {
       MFS_LOG("OPEN", "Failed to allocate common file structure.");
@@ -481,10 +480,10 @@ errout_with_dirent:
   mfs_free_patharr(fcom->path);
 
 errout_with_fcom:
-  fs_heap_free(fcom);
+  kmm_free(fcom);
 
 errout_with_f:
-  fs_heap_free(f);
+  kmm_free(f);
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
@@ -574,17 +573,17 @@ static int mnemofs_close(FAR struct file *filep)
           MFS_EXTRA_LOG("CLOSE", "File system flushed.");
         }
 
-      fs_heap_free(f->com->path);
+      kmm_free(f->com->path);
       MFS_EXTRA_LOG("CLOSE", "Freed file structure path.");
 
-      fs_heap_free(f->com);
+      kmm_free(f->com);
       MFS_EXTRA_LOG("CLOSE", "Freed common file structure.");
     }
 
   list_delete(&f->list);
   MFS_EXTRA_LOG("CLOSE", "Removed file structure from open files list.");
 
-  fs_heap_free(f);
+  kmm_free(f);
   MFS_EXTRA_LOG("CLOSE", "Freed file structure.");
 
   filep->f_priv = NULL;
@@ -1127,7 +1126,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
   of    = oldp->f_priv;
   DEBUGASSERT(of != NULL);
 
-  nf    = fs_heap_zalloc(sizeof(*nf));
+  nf    = kmm_zalloc(sizeof(*nf));
   if (predict_false(nf == NULL))
     {
       finfo("No memory left.");
@@ -1159,7 +1158,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
   return ret;
 
 errout_with_nf:
-  fs_heap_free(nf);
+  kmm_free(nf);
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
@@ -1330,7 +1329,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
       MFS_EXTRA_LOG("OPENDIR", "Got updated information from LRU.");
     }
 
-  pitr     = fs_heap_zalloc(sizeof(*pitr));
+  pitr     = kmm_zalloc(sizeof(*pitr));
   if (predict_false(pitr == NULL))
     {
       MFS_LOG("OPENDIR", "Could not allocate space for pitr.");
@@ -1342,7 +1341,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
       MFS_EXTRA_LOG("OPENDIR", "Space allocated for pitr at %p.", pitr);
     }
 
-  fsdirent = fs_heap_zalloc(sizeof(*fsdirent));
+  fsdirent = kmm_zalloc(sizeof(*fsdirent));
   if (predict_false(fsdirent == NULL))
     {
       MFS_LOG("OPENDIR", "Could not allocate space for FS Direntry.");
@@ -1383,10 +1382,10 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
   return ret;
 
 errout_with_fsdirent:
-  fs_heap_free(fsdirent);
+  kmm_free(fsdirent);
 
 errout_with_pitr:
-  fs_heap_free(pitr);
+  kmm_free(pitr);
 
 errout_with_path:
   mfs_free_patharr(path);
@@ -1428,8 +1427,8 @@ static int mnemofs_closedir(FAR struct inode *mountpt,
 
   mfs_free_patharr(fsdirent->path);
   mfs_pitr_free(fsdirent->pitr);
-  fs_heap_free(fsdirent->pitr);
-  fs_heap_free(fsdirent);
+  kmm_free(fsdirent->pitr);
+  kmm_free(fsdirent);
 
   MFS_LOG("CLOSEDIR", "Exit | Return: %d.", OK);
   return OK;
@@ -1697,7 +1696,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   memset(buf, 0, 8);
 
   MFS_EXTRA_LOG("BIND", "Allocating superblock in memory.");
-  sb = fs_heap_zalloc(sizeof(*sb));
+  sb = kmm_zalloc(sizeof(*sb));
   if (!sb)
     {
       MFS_LOG("BIND", "SB in-memory allocation error.");
@@ -1797,7 +1796,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
                 MFS_JRNL(sb).n_blks);
   MFS_EXTRA_LOG("BIND", "\tFlush State: %" PRIu8, MFS_FLUSH(sb));
 
-  sb->rw_buf        = fs_heap_zalloc(MFS_PGSZ(sb));
+  sb->rw_buf        = kmm_zalloc(MFS_PGSZ(sb));
   if (predict_false(sb->rw_buf == NULL))
     {
       MFS_LOG("BIND", "RW Buffer in-memory allocation error.");
@@ -1940,7 +1939,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   return ret;
 
 errout_with_rwbuf:
-  fs_heap_free(sb->rw_buf);
+  kmm_free(sb->rw_buf);
   MFS_LOG("BIND", "RW Buffer freed.");
 
 errout_with_lock:
@@ -1948,7 +1947,7 @@ errout_with_lock:
   MFS_EXTRA_LOG("BIND", "Mutex released.");
 
 errout_with_sb:
-  fs_heap_free(sb);
+  kmm_free(sb);
   MFS_LOG("BIND", "Superblock freed.");
 
 errout_with_lockinit:
@@ -1998,10 +1997,10 @@ static int mnemofs_unbind(FAR void *handle, FAR struct inode **driver,
   sem_destroy(&MFS_LOCK(sb));
   MFS_EXTRA_LOG("UNBIND", "Mutex destroyed.");
 
-  fs_heap_free(sb->rw_buf);
+  kmm_free(sb->rw_buf);
   MFS_LOG("UNBIND", "RW Buffer freed.");
 
-  fs_heap_free(sb);
+  kmm_free(sb);
   MFS_LOG("UNBIND", "Superblock freed.");
 
   MFS_LOG("UNBIND", "Exit.");

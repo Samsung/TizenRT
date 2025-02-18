@@ -59,8 +59,9 @@
 
 #include <debug.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/fs/dirent.h>
 #include <tinyara/list.h>
-#include <tinyara/mtd/mtd.h>
+#include <tinyara/fs/mtd.h>
 
 /****************************************************************************
  * Pre-processor Definitions

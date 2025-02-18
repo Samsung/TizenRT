@@ -81,7 +81,7 @@
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/kmalloc.h>
+#include <tinyara/kmalloc.h>
 #include <sys/stat.h>
 
 #include "mnemofs.h"

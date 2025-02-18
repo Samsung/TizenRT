@@ -69,7 +69,6 @@
 #include <sys/stat.h>
 
 #include "mnemofs.h"
-#include "fs_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -339,7 +338,7 @@ int pitr_traverse(FAR struct mfs_sb_s *sb, FAR struct mfs_path_s *path,
     {
       *cap = (*cap * 3) / 2; /* Don't want to double it for memory. */
 
-      path = fs_heap_realloc(path, (*cap) * sizeof(struct mfs_path_s));
+      path = kmm_realloc(path, (*cap) * sizeof(struct mfs_path_s));
       if (predict_false(path == NULL))
         {
           ret = -ENOMEM;
@@ -436,7 +435,7 @@ bool mfs_obj_isempty(FAR struct mfs_sb_s * const sb,
 
 void mfs_free_dirent(FAR struct mfs_dirent_s *dirent)
 {
-  fs_heap_free(dirent);
+  kmm_free(dirent);
 
   finfo("Dirent freed.");
 }
@@ -618,7 +617,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
   *dirent = NULL;
   memset(rd, 0, len);
 
-  d = fs_heap_zalloc(len);
+  d = kmm_zalloc(len);
   if (predict_false(d == NULL))
     {
       ret = -ENOMEM;
@@ -654,7 +653,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
     }
 
   sz  = MFS_DIRENTSZ(d);
-  tmp = fs_heap_realloc(d, sz);
+  tmp = kmm_realloc(d, sz);
   if (predict_true(tmp != NULL))
     {
       d = tmp;
@@ -670,7 +669,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
   return ret;
 
 errout_with_d:
-  fs_heap_free(d);
+  kmm_free(d);
 
   if (ret < 0)
     {
@@ -730,7 +729,7 @@ static int search_ctz_by_name(FAR const struct mfs_sb_s * const sb,
     {
       DEBUGASSERT(namelen == 0);
 
-      nd = fs_heap_zalloc(sizeof(struct mfs_dirent_s));
+      nd = kmm_zalloc(sizeof(struct mfs_dirent_s));
       if (predict_false(nd == NULL))
         {
           ret = -ENOMEM;
@@ -835,7 +834,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
   MFS_EXTRA_LOG("MFS_GET_PATHARR", "There are %" PRIu32 " objects in path.",
                 n_objs);
 
-  np     = fs_heap_zalloc(n_objs * sizeof(struct mfs_path_s));
+  np     = kmm_zalloc(n_objs * sizeof(struct mfs_path_s));
   if (predict_false(np == NULL))
     {
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "Could not allocate Path array.");
@@ -994,7 +993,7 @@ errout:
 void mfs_free_patharr(FAR struct mfs_path_s *path)
 {
   MFS_EXTRA_LOG("MFS_FREE_PATHARR", "Path array at %p freed.", path);
-  fs_heap_free(path);
+  kmm_free(path);
 }
 
 void mfs_pitr_reset(FAR struct mfs_pitr_s * const pitr)
@@ -1061,7 +1060,7 @@ int mfs_pitr_appendnew(FAR struct mfs_sb_s * const sb,
 
   DEBUGASSERT(depth > 0);
 
-  d = fs_heap_zalloc(sizeof(struct mfs_dirent_s) + len);
+  d = kmm_zalloc(sizeof(struct mfs_dirent_s) + len);
   if (predict_false(d == NULL))
     {
       ret = -ENOMEM;
@@ -1116,7 +1115,7 @@ int mfs_pitr_traversefs(FAR struct mfs_sb_s * sb, const struct mfs_ctz_s ctz,
   FAR struct mfs_path_s *path     = NULL;
 
   capacity = MFS_TRAVERSE_INITSZ;
-  path = fs_heap_zalloc(capacity * sizeof(struct mfs_path_s));
+  path = kmm_zalloc(capacity * sizeof(struct mfs_path_s));
   if (predict_false(path == NULL))
     {
       ret = -ENOMEM;
