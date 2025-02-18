@@ -124,7 +124,10 @@ struct fs_smartfsdir_s {
 
 #endif							/* CONFIG_DISABLE_MOUNTPOINT */
 
-struct fs_dirent_s {
+struct fs_dirent_s
+{
+  /* The path name of current directory for FIOC_FILEPATH */
+
 	/* This is the node that was opened by opendir.  The type of the inode
 	 * determines the way that the readdir() operations are performed. For the
 	 * pseudo root pseudo-file system, it is also used to support rewind.
@@ -134,6 +137,10 @@ struct fs_dirent_s {
 	 */
 
 	struct inode *fd_root;
+
+	/* The path name of current directory for FIOC_FILEPATH */
+
+	FAR char *fd_path;
 
 	/* At present, only mountpoints require special handling flags */
 

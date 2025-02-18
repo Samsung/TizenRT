@@ -77,13 +77,12 @@
  * Included Files
  ****************************************************************************/
 
-#include <endian.h>
+#include <tinyara/endian.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/list.h>
 #include <sys/param.h>
 
 #include "mnemofs.h"
-#include "fs_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -187,7 +186,7 @@ int mfs_jrnl_rdlog(FAR const struct mfs_sb_s *const sb,
       goto errout;
     }
 
-  buf = fs_heap_zalloc(log_sz);
+  buf = kmm_zalloc(log_sz);
   if (predict_false(buf == NULL))
     {
       ret = -ENOMEM;
@@ -217,7 +216,7 @@ int mfs_jrnl_rdlog(FAR const struct mfs_sb_s *const sb,
     }
 
 errout_with_buf:
-  fs_heap_free(buf);
+  kmm_free(buf);
 
 errout:
   return ret;
@@ -299,7 +298,7 @@ FAR static const char *deser_log(FAR const char * const in,
 
   /* Allocates path. Deallocate using mfs_jrnl_log_free. */
 
-  x->path = fs_heap_zalloc(sizeof(struct mfs_jrnl_log_s) * x->depth);
+  x->path = kmm_zalloc(sizeof(struct mfs_jrnl_log_s) * x->depth);
   if (predict_false(x->path == NULL))
     {
       return NULL;
@@ -330,7 +329,7 @@ FAR static const char *deser_log(FAR const char * const in,
 
 void mfs_jrnl_log_free(FAR const struct mfs_jrnl_log_s * const log)
 {
-  fs_heap_free(log->path);
+  kmm_free(log->path);
 }
 
 /****************************************************************************
@@ -432,7 +431,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
 
   sz = MFS_JRNL_SUFFIXSZ + ((CONFIG_MNEMOFS_JOURNAL_NBLKS + 2) * 4);
 
-  buf = fs_heap_zalloc(sz);
+  buf = kmm_zalloc(sz);
   if (predict_false(buf == NULL))
     {
       ret = -ENOMEM;
@@ -510,7 +509,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
   MFS_JRNL(sb).mblk2         = *blk2;
 
 errout_with_buf:
-  fs_heap_free(buf);
+  kmm_free(buf);
 
 errout:
   return ret;
@@ -633,7 +632,7 @@ int mfs_jrnl_wrlog(FAR struct mfs_sb_s * const sb,
   const mfs_t            log_sz   = sizeof(mfs_t) + MFS_LOGSZ(node->depth);
   struct mfs_jrnl_log_s  log;
 
-  buf = fs_heap_zalloc(log_sz); /* For size before log. */
+  buf = kmm_zalloc(log_sz); /* For size before log. */
   if (predict_false(buf == NULL))
     {
       ret = -ENOMEM;
@@ -679,7 +678,7 @@ int mfs_jrnl_wrlog(FAR struct mfs_sb_s * const sb,
   MFS_JRNL(sb).n_logs++;
 
 errout_with_buf:
-  fs_heap_free(buf);
+  kmm_free(buf);
 
 errout:
   return ret;
@@ -755,7 +754,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
       tmp_blkidx    = blkidx;
       tmp_pg_in_blk = pg_in_blk;
 
-      path = fs_heap_zalloc(log.depth * sizeof(struct mfs_path_s));
+      path = kmm_zalloc(log.depth * sizeof(struct mfs_path_s));
       if (predict_false(path == NULL))
         {
           goto errout;

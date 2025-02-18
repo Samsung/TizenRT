@@ -100,11 +100,9 @@
 #include <fcntl.h>
 #include <tinyara/kmalloc.h>
 #include <math.h>
-#include <sys/param.h>
 #include <sys/stat.h>
-
+#include <errno.h>
 #include "mnemofs.h"
-#include "fs_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -455,7 +453,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
   /* So, till cur_idx - 1, the CTZ blocks are common. */
 
-  buf = fs_heap_zalloc(MFS_PGSZ(sb));
+  buf = kmm_zalloc(MFS_PGSZ(sb));
   if (predict_false(buf == NULL))
     {
       ret = -ENOMEM;
@@ -598,7 +596,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
     }
 
 errout_with_buf:
-  fs_heap_free(buf);
+  kmm_free(buf);
 
 errout:
   return ret;
