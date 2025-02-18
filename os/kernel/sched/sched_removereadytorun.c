@@ -176,7 +176,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	 * occur.
 	 */
 
-	if (rtcb->blink == NULL) {
+	if (rtcb->blink == NULL && TLIST_ISRUNNABLE(rtcb->task_state)) {
 		FAR struct tcb_s *ntcb;
 		FAR struct tcb_s *rtrtcb = NULL;
 		int current_cpu;
