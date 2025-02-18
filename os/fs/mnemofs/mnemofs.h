@@ -62,7 +62,7 @@
 #include <tinyara/fs/dirent.h>
 #include <tinyara/list.h>
 #include <tinyara/fs/mtd.h>
-
+#include <errno.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -435,7 +435,7 @@ static inline void MFS_EXTRA_LOG_DIRENT(FAR const struct mfs_dirent_s * const
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tMode is %" PRIu16, dirent->mode);
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tName is \"%.*s\"", dirent->namelen,
                 dirent->name);
-  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tNamelen is %" PRIu32,
+  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tNamelen is %d",
                 dirent->namelen);
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tName Hash is %" PRIu16,
                 dirent->name_hash);
@@ -449,37 +449,37 @@ static inline void MFS_EXTRA_LOG_FSDIRENT(FAR const struct mfs_fsdirent_s *
                                           const fsdirent)
 {
   MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "FS Direntry details.");
-  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tDirentry depth %" PRIu32,
+  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tDirentry depth %d",
                 fsdirent->depth);
-  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tRead index %" PRIu32,
+  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tRead index %d",
                 fsdirent->idx);
   MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tPath %p.", fsdirent->path);
   MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tPitr %p.", fsdirent->pitr);
-  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tDepth %" PRIu32, fsdirent->depth);
+  MFS_EXTRA_LOG("EXTRA_LOG_FSDIRENT", "\tDepth %d", fsdirent->depth);
 }
 
 static inline void MFS_EXTRA_LOG_PITR(FAR const struct mfs_pitr_s * const
                                       pitr)
 {
   MFS_EXTRA_LOG("EXTRA_LOG_PITR", "Pitr details.");
-  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tDepth %" PRIu32, pitr->depth);
-  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tCurrent Offset %" PRIu32, pitr->c_off);
-  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent CTZ (%" PRIu32 ", %" PRIu32 ")",
+  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tDepth %d", pitr->depth);
+  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tCurrent Offset %d", pitr->c_off);
+  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent CTZ (%d, %d)",
                 pitr->p.ctz.idx_e, pitr->p.ctz.pg_e);
-  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent Size %" PRIu32, pitr->p.sz);
-  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent Offset %" PRIu32, pitr->p.off);
+  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent Size %d", pitr->p.sz);
+  MFS_EXTRA_LOG("EXTRA_LOG_PITR", "\tParent Offset %d", pitr->p.off);
 }
 
 static inline void MFS_EXTRA_LOG_MN(FAR const struct mfs_mn_s * const mn)
 {
   MFS_EXTRA_LOG("EXTRA_LOG_MN", "Master node details.");
-  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tFirst journal block is %" PRIu32,
+  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tFirst journal block is %d",
                 mn->jrnl_blk);
-  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tNext MN entry index %" PRIu32,
+  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tNext MN entry index %d",
                 mn->mblk_idx);
-  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tRoot CTZ (%" PRIu32 ", %" PRIu32 ")",
+  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tRoot CTZ (%d, %d)",
                 mn->root_ctz.idx_e, mn->root_ctz.pg_e);
-  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tRoot Size %" PRIu32, mn->root_sz);
+  MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tRoot Size %d", mn->root_sz);
   MFS_EXTRA_LOG("EXTRA_LOG_MN", "\tRoot Mode is %u.", mn->root_mode);
 
   /* TODO: Timespecs */
@@ -492,18 +492,18 @@ static inline void MFS_EXTRA_LOG_F(FAR struct mfs_ofd_s *f)
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tPrevious node %p.", f->list.prev);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tNext node %p.", f->list.next);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\tCommon structure details.");
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tDepth: %" PRIu32, f->com->depth);
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tDepth: %d", f->com->depth);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tNew Entry: %s.",
                 f->com->new_ent ? "true" : "false");
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tOffset: %" PRIu32, f->com->off);
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tOffset: %d", f->com->off);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tFlags: 0x%x.", f->com->oflags);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tReference Counter: %" PRIu8,
                 f->com->refcount);
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tFile Size: %" PRIu32, f->com->sz);
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tFile Size: %d", f->com->sz);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tPath details.");
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tOffset: %" PRIu32, f->com->path->off);
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tSize: %" PRIu32, f->com->path->sz);
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tCTZ (%" PRIu32 ", %" PRIu32 ").",
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tOffset: %d", f->com->path->off);
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tSize: %d", f->com->path->sz);
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\t\tCTZ (%d, %d).",
                 f->com->path->ctz.idx_e, f->com->path->ctz.pg_e);
 }
 

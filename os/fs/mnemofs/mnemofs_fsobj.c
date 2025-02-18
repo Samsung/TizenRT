@@ -65,7 +65,6 @@
  ****************************************************************************/
 
 #include <tinyara/kmalloc.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 
 #include "mnemofs.h"
@@ -188,7 +187,7 @@ static const char *next_child(FAR const char *path)
     {
       if (*path == '/')
         {
-          MFS_EXTRA_LOG("NEXT_CHILD", "Length is %" PRIu32, inc);
+          MFS_EXTRA_LOG("NEXT_CHILD", "Length is %d", inc);
           DEBUGASSERT(inc == path - tmp);
           return path + 1;
         }
@@ -197,7 +196,7 @@ static const char *next_child(FAR const char *path)
       inc++;
     }
 
-  MFS_EXTRA_LOG("NEXT_CHILD", "Length is %" PRIu32, inc);
+  MFS_EXTRA_LOG("NEXT_CHILD", "Length is %d", inc);
   DEBUGASSERT(inc == path - tmp);
   MFS_EXTRA_LOG("NEXT_CHILD", "Last FS Object in string.");
   return path;
@@ -592,7 +591,7 @@ void mfs_pitr_adv_tochild(FAR struct mfs_pitr_s * const pitr,
 
   MFS_EXTRA_LOG("MFS_PITR_ADV_TOCHILD", "Advance pitr to child's offset.");
   MFS_EXTRA_LOG_PITR(pitr);
-  MFS_EXTRA_LOG("MFS_PITR_ADV_TOCHILD", "New offset %" PRIu32, pitr->c_off);
+  MFS_EXTRA_LOG("MFS_PITR_ADV_TOCHILD", "New offset %d", pitr->c_off);
   pitr->c_off = path[pitr->depth].off;
 }
 
@@ -831,7 +830,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
   MFS_EXTRA_LOG("MFS_GET_PATHARR", "Path is %p.", path);
 
   n_objs = nobjs_in_path(relpath);
-  MFS_EXTRA_LOG("MFS_GET_PATHARR", "There are %" PRIu32 " objects in path.",
+  MFS_EXTRA_LOG("MFS_GET_PATHARR", "There are %d objects in path.",
                 n_objs);
 
   np     = kmm_zalloc(n_objs * sizeof(struct mfs_path_s));
@@ -861,9 +860,9 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
   name_len  = *next == 0 ? next - cur : next - cur - 1;
 
   MFS_EXTRA_LOG("MFS_GET_PATHARR", "Root Master Node.");
-  MFS_EXTRA_LOG("MFS_GET_PATHARR", "\tCTZ is (%" PRIu32 ", %" PRIu32 ")",
+  MFS_EXTRA_LOG("MFS_GET_PATHARR", "\tCTZ is (%d, %d)",
                 MFS_MN(sb).root_ctz.idx_e, MFS_MN(sb).root_ctz.pg_e);
-  MFS_EXTRA_LOG("MFS_GET_PATHARR", "\tSize is %" PRIu32, sz);
+  MFS_EXTRA_LOG("MFS_GET_PATHARR", "\tSize is %d", sz);
 
   if (predict_false(n_objs == 1))
     {
@@ -882,7 +881,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
 
   for (i = 1; i < n_objs; i++)
     {
-      MFS_EXTRA_LOG("MFS_GET_PATHARR", "Looking at depth %" PRIu32, i);
+      MFS_EXTRA_LOG("MFS_GET_PATHARR", "Looking at depth %d", i);
 
       /* np[i] is the fs object at depth i + 1. */
 
@@ -893,7 +892,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
 
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "Current String is \"%.*s\" (%p)",
                     name_len, cur, cur);
-      MFS_EXTRA_LOG("MFS_GET_PATHARR", "Name length is %" PRIu32, name_len);
+      MFS_EXTRA_LOG("MFS_GET_PATHARR", "Name length is %d", name_len);
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "Next String is \"%s\"", next);
 
       ret = search_ctz_by_name(sb, np, i, cur, name_len, &off, &dirent);
@@ -905,13 +904,13 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
       else
         {
           MFS_EXTRA_LOG("MFS_GET_PATHARR", "Found CTZ.");
-          MFS_EXTRA_LOG("MFS_GET_PATHARR", "New Offset is %" PRIu32, off);
+          MFS_EXTRA_LOG("MFS_GET_PATHARR", "New Offset is %d", off);
           MFS_EXTRA_LOG_DIRENT(dirent);
         }
 
       if (i < n_objs - 2 && !S_ISDIR(dirent->mode))
         {
-          MFS_EXTRA_LOG("MFS_GET_PATHARR", "Depth %" PRIu32 " contains file",
+          MFS_EXTRA_LOG("MFS_GET_PATHARR", "Depth %d contains file",
                         i);
           ret_flags |= MFS_FINPATH;
           goto errout_with_ret_flags;

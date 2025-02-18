@@ -485,7 +485,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
       upper    = MIN(prev + lower + ctz_blkdatasz(sb, cur_idx), rem_sz);
       upper_og = upper;
 
-      finfo("Remaining Size %" PRIu32 ". Lower %" PRIu32 ", Upper %" PRIu32
+      finfo("Remaining Size %d. Lower %d, Upper %d"
             ", Current Offset %zd.", rem_sz, lower, upper, tmp - buf);
 
       /* Retrieving original data. */
@@ -499,8 +499,8 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
       list_for_every_entry(&node->delta, delta, struct mfs_delta_s, list)
         {
-          finfo("Checking delta %p in node %p. Offset %" PRIu32 ", bytes %"
-                PRIu32, delta, node, delta->off, delta->n_b);
+          finfo("Checking delta %p in node %p. Offset %d, bytes %d",
+                delta, node, delta->off, delta->n_b);
 
           lower_upd = MAX(lower, delta->off);
           upper_upd = MIN(upper, delta->off + delta->n_b);
@@ -567,7 +567,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
           written = true;
 
-          finfo("Written data to page %" PRIu32, new_pg);
+          finfo("Written data to page %d", new_pg);
         }
       else
         {
@@ -653,8 +653,8 @@ mfs_t mfs_ctz_travel(FAR const struct mfs_sb_s * const sb,
         }
     }
 
-  finfo("Travel from index %" PRIu32 " at page %" PRIu32 " to index %" PRIu32
-        " at page %" PRIu32 ".", idx_src, pg_src, idx_dest, pg);
+  finfo("Travel from index %d at page %d to index %d"
+        " at page %d.", idx_src, pg_src, idx_dest, pg);
 
   return pg;
 }
