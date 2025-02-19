@@ -200,6 +200,13 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		mtd_setpartitiontagno(mtd_part, MTD_FS);
 	}
 #endif
+#ifdef CONFIG_FS_MNEMOFS
+	else if (!strncmp(types, "mnemofs,", 8)) {
+	/* TODO handle error case */
+		partinfo->smartfs_partno = g_partno;
+		register_mtddriver("/dev/nand", mtd_part ,0777, NULL);
+	}
+#endif
 
 #ifdef CONFIG_MTD_FTL
 	if (do_ftlinit) {
@@ -412,7 +419,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		if (!strncmp(types, "resource,", 9)) {
 			int nblocks = geo.erasesize / geo.blocksize;
 			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
-			ret = make_resource_mtd_partition(mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
+			ret = make_resource_mtd_partition(mtd, partoffset + (geo.erasesize / 1024), partsize / geo.blocksize - nblocks, g_partno);
 			if (ret != OK) {
 				printf("ERROR: fail to make resource mtd part.\n");
 			}
@@ -455,6 +462,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 #ifdef CONFIG_AUTOMOUNT_USERFS
 	/* Initialize and mount user partition (if we have) */
 	if (partinfo->smartfs_partno != -1) {
+#ifdef CONFIG_FS_SMARTFS
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
 	#ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 		ret = mksmartfs(fs_devname, 1, false);
@@ -477,7 +485,26 @@ void automount_fs_partition(partition_info_t *partinfo)
 				printf("%s is mounted successfully @ %s \n", fs_devname, mountpath);
 			}
 		}
+#endif	/* CONFIG_FS_SMARTFS */
+#ifdef CONFIG_FS_MNEMOFS
+		char *mountpath;
+		if (partinfo->minor == 0) {
+			mountpath = USERFS_MNTPT;
+		} else {
+			mountpath = USERFS_EXT_MNTPT;
+		}
+		
+		printf("mounting mnemofs~~~~~!!!\n");
+		ret = mount("/dev/nand", mountpath, "mnemofs", 0, NULL);
+		if (ret != OK) {
+			printf("ERROR: mounting mnemofs failed, errno %d\n", get_errno());
+		} else {
+			printf("%s is mounted successfully @ %s \n", fs_devname, mountpath);
+		}
+
+#endif	/* CONFIG_FS_MNEMOFS */
 	}
+	
 #endif
 
 #ifdef CONFIG_AUTOMOUNT_ROMFS

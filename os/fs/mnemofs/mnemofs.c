@@ -184,16 +184,18 @@ const struct mountpt_operations g_mnemofs_operations =
   mnemofs_write,     /* write */
   mnemofs_seek,      /* seek */
   mnemofs_ioctl,     /* ioctl */
+#if 0
   NULL,              /* mmap */
   mnemofs_truncate,  /* truncate */
   NULL,              /* poll */
   NULL,              /* readv */
   NULL,              /* writev */
-
+#endif
   mnemofs_sync,      /* sync */
   mnemofs_dup,       /* dup */
   mnemofs_fstat,     /* fstat */
-  NULL,              /* fchstat */
+//  NULL,              /* fchstat */
+  mnemofs_truncate,  /* truncate */
 
   mnemofs_opendir,   /* opendir */
   mnemofs_closedir,  /* closedir */
@@ -209,7 +211,7 @@ const struct mountpt_operations g_mnemofs_operations =
   mnemofs_rmdir,     /* rmdir */
   mnemofs_rename,    /* rename */
   mnemofs_stat,      /* stat */
-  NULL               /* chstat */
+  //NULL               /* chstat */
 };
 
 /****************************************************************************
@@ -467,7 +469,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
   sem_post(&MFS_LOCK(sb));
   MFS_EXTRA_LOG("OPEN", "Mutex released.");
 
-  fvdbg("Mnemofs open exited with %d.", ret);
+  fdbg("Mnemofs open exited with %d.", ret);
   return ret;
 
 errout_with_dirent:
@@ -922,7 +924,7 @@ static int mnemofs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   FAR struct inode    *drv;
   FAR struct mfs_sb_s *sb;
 
-  fvdbg("Mnemofs ioctl with cmd %dand arg %zu.", cmd, arg);
+  fdbg("Mnemofs ioctl with cmd %dand arg %zu.", cmd, arg);
 
   inode = filep->f_inode;
   sb    = inode->i_private;
@@ -934,7 +936,7 @@ static int mnemofs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   if (INODE_IS_MTD(drv))
     {
@@ -942,15 +944,15 @@ static int mnemofs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
     }
   else
     {
-      fvdbg("Not an MTD driver.");
+      fdbg("Not an MTD driver.");
       ret = -ENOTTY;
     }
 
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs ioctl exited with %d.", ret);
+  fdbg("Mnemofs ioctl exited with %d.", ret);
   return ret;
 }
 
@@ -984,7 +986,7 @@ static int mnemofs_truncate(FAR struct file *filep, off_t length)
   FAR struct mfs_sb_s  *sb;
   FAR struct mfs_ofd_s *f;
 
-  fvdbg("Mnemofs truncate to length %d.", length);
+  fdbg("Mnemofs truncate to length %d.", length);
 
   inode = filep->f_inode;
   DEBUGASSERT(inode != NULL);
@@ -997,7 +999,7 @@ static int mnemofs_truncate(FAR struct file *filep, off_t length)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   f     = filep->f_priv;
   DEBUGASSERT(f != NULL);
@@ -1008,17 +1010,17 @@ static int mnemofs_truncate(FAR struct file *filep, off_t length)
                         f->com->depth);
       if ((ret < 0))
         {
-          fvdbg("Error during truncate. Ret: %d.", ret);
+          fdbg("Error during truncate. Ret: %d.", ret);
           goto errout_with_lock;
         }
     }
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs truncate exited with %d.", ret);
+  fdbg("Mnemofs truncate exited with %d.", ret);
   return ret;
 }
 
@@ -1049,7 +1051,7 @@ static int mnemofs_sync(FAR struct file *filep)
   FAR struct mfs_sb_s  *sb;
   FAR struct mfs_ofd_s *f;
 
-  fvdbg("Mnemofs sync.");
+  fdbg("Mnemofs sync.");
 
   inode = filep->f_inode;
   DEBUGASSERT(inode != NULL);
@@ -1062,7 +1064,7 @@ static int mnemofs_sync(FAR struct file *filep)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   f     = filep->f_priv;
   DEBUGASSERT(f != NULL);
@@ -1070,10 +1072,10 @@ static int mnemofs_sync(FAR struct file *filep)
   ret   = mnemofs_flush(sb);
 
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs sync exited with %d.", ret);
+  fdbg("Mnemofs sync exited with %d.", ret);
   return ret;
 }
 
@@ -1107,7 +1109,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
   FAR struct mfs_ofd_s  *of;
   FAR struct mfs_ofd_s  *nf;
 
-  fvdbg("Mnemofs dup.");
+  fdbg("Mnemofs dup.");
 
   inode = oldp->f_inode;
   DEBUGASSERT(inode != NULL);
@@ -1120,7 +1122,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   of    = oldp->f_priv;
   DEBUGASSERT(of != NULL);
@@ -1128,7 +1130,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
   nf    = kmm_zalloc(sizeof(*nf));
   if ((nf == NULL))
     {
-      fvdbg("No memory left.");
+      fdbg("No memory left.");
       ret = -ENOMEM;
       goto errout_with_lock;
     }
@@ -1139,7 +1141,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
   if (nf->com->refcount == UINT8_MAX)
     {
-      fvdbg("Refcount limit reached.");
+      fdbg("Refcount limit reached.");
       ret = -EMFILE;
       goto errout_with_nf;
     }
@@ -1150,10 +1152,10 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
   list_add_tail(&MFS_OFILES(sb), &nf->list);
   newp->f_priv = nf;
-  fvdbg("New file descriptor added to the end of the list of open files.");
+  fdbg("New file descriptor added to the end of the list of open files.");
 
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
   return ret;
 
 errout_with_nf:
@@ -1161,10 +1163,10 @@ errout_with_nf:
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs dup exited with %d.", ret);
+  fdbg("Mnemofs dup exited with %d.", ret);
   return ret;
 }
 
@@ -1198,7 +1200,7 @@ static int mnemofs_fstat(FAR const struct file *filep, FAR struct stat *buf)
   FAR struct mfs_ofd_s     *f;
   FAR struct mfs_dirent_s  *dirent = NULL;
 
-  fvdbg("Mnemofs fstat.");
+  fdbg("Mnemofs fstat.");
 
   inode = filep->f_inode;
   DEBUGASSERT(inode != NULL);
@@ -1211,7 +1213,7 @@ static int mnemofs_fstat(FAR const struct file *filep, FAR struct stat *buf)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   f     = filep->f_priv;
   DEBUGASSERT(f != NULL);
@@ -1234,10 +1236,10 @@ static int mnemofs_fstat(FAR const struct file *filep, FAR struct stat *buf)
   mfs_free_dirent(dirent);
 
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs fstat exited with %d.", ret);
+  fdbg("Mnemofs fstat exited with %d.", ret);
   return ret;
 }
 
@@ -1487,7 +1489,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       MFS_EXTRA_LOG("READDIR", "Mutex acquired.");
     }
 
-  MFS_EXTRA_LOG("READDIR", "Curretn direntry index is %" PRIu8,
+  MFS_EXTRA_LOG("READDIR", "Curretn direntry index is %d",
                 fsdirent->idx);
 
   if (fsdirent->idx == 0)
@@ -1500,7 +1502,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       entry->d_type = DTYPE_DIRECTORY;
       fsdirent->idx++;
 
-      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %" PRIu8,
+      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %u",
                     fsdirent->idx);
       goto errout_with_lock;
     }
@@ -1514,7 +1516,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       entry->d_type = DTYPE_DIRECTORY;
       fsdirent->idx++;
 
-      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %" PRIu8,
+      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %u",
                     fsdirent->idx);
       goto errout_with_lock;
     }
@@ -1568,7 +1570,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
                 dirent->namelen, dirent->name);
 
   entry->d_type = (S_ISDIR(dirent->mode) ? DTYPE_DIRECTORY: DTYPE_FILE);
-  MFS_EXTRA_LOG("READDIR", "Setting entry d_type to %" PRIu8, entry->d_type);
+  MFS_EXTRA_LOG("READDIR", "Setting entry d_type to %u", entry->d_type);
 
   mfs_pitr_adv_bydirent(fsdirent->pitr, dirent);
   mfs_free_dirent(dirent);
@@ -1783,17 +1785,17 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   MFS_EXTRA_LOG("BIND", "SB Details.");
   MFS_EXTRA_LOG("BIND", "\tDriver: %p", driver);
   MFS_EXTRA_LOG("BIND", "\tPage Size: %d", sb->pg_sz);
-  MFS_EXTRA_LOG("BIND", "\tLog Page Size: %" PRIu8, sb->log_pg_sz);
+  MFS_EXTRA_LOG("BIND", "\tLog Page Size: %u", sb->log_pg_sz);
   MFS_EXTRA_LOG("BIND", "\tBlock Size: %d", sb->blk_sz);
-  MFS_EXTRA_LOG("BIND", "\tLog Block Size: %" PRIu8,
+  MFS_EXTRA_LOG("BIND", "\tLog Block Size: %u",
                 sb->log_blk_sz);
-  MFS_EXTRA_LOG("BIND", "\tPages Per Block: %" PRIu16,
+  MFS_EXTRA_LOG("BIND", "\tPages Per Block: %u",
                 sb->pg_in_blk);
   MFS_EXTRA_LOG("BIND", "\tBlocks: %d", sb->n_blks);
-  MFS_EXTRA_LOG("BIND", "\tLog Blocks: %" PRIu8, sb->log_n_blks);
-  MFS_EXTRA_LOG("BIND", "\tJournal Blocks: %" PRIu16,
+  MFS_EXTRA_LOG("BIND", "\tLog Blocks: %u", sb->log_n_blks);
+  MFS_EXTRA_LOG("BIND", "\tJournal Blocks: %u",
                 MFS_JRNL(sb).n_blks);
-  MFS_EXTRA_LOG("BIND", "\tFlush State: %" PRIu8, MFS_FLUSH(sb));
+  MFS_EXTRA_LOG("BIND", "\tFlush State: %u", MFS_FLUSH(sb));
 
   sb->rw_buf        = kmm_zalloc(MFS_PGSZ(sb));
   if ((sb->rw_buf == NULL))
@@ -2027,7 +2029,7 @@ static int mnemofs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
   int                  ret = OK;
   FAR struct mfs_sb_s *sb;
 
-  fvdbg("Mnemofs statfs.");
+  fdbg("Mnemofs statfs.");
 
   DEBUGASSERT(mountpt != NULL);
   sb  = mountpt->i_private;
@@ -2039,7 +2041,7 @@ static int mnemofs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   buf->f_type    = MNEMOFS_SUPER_MAGIC;
   buf->f_bsize   = sb->pg_sz;
@@ -2048,10 +2050,10 @@ static int mnemofs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
   buf->f_namelen = UINT8_MAX;
 
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs statfs exited with %d.", ret);
+  fdbg("Mnemofs statfs exited with %d.", ret);
   return ret;
 }
 
@@ -2086,7 +2088,7 @@ static int mnemofs_unlink(FAR struct inode *mountpt, FAR const char *relpath)
   FAR struct mfs_sb_s   *sb;
   FAR struct mfs_path_s *path;
 
-  fvdbg("Mnemofs unlink at path \"%s\".", relpath);
+  fdbg("Mnemofs unlink at path \"%s\".", relpath);
 
   DEBUGASSERT(mountpt != NULL);
   sb  = mountpt->i_private;
@@ -2098,7 +2100,7 @@ static int mnemofs_unlink(FAR struct inode *mountpt, FAR const char *relpath)
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   flags = mfs_get_patharr(sb, relpath, &path, &depth);
   if ((flags & MFS_ISFILE) == 0)
@@ -2113,10 +2115,10 @@ static int mnemofs_unlink(FAR struct inode *mountpt, FAR const char *relpath)
 
 errout_with_lock:
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs unlink exited with %d.", ret);
+  fdbg("Mnemofs unlink exited with %d.", ret);
   return ret;
 }
 
@@ -2405,7 +2407,7 @@ static int mnemofs_rename(FAR struct inode *mountpt,
   FAR struct mfs_path_s   *npath;
   FAR struct mfs_dirent_s *odirent = NULL;
 
-  fvdbg("Mnemofs rename \"%s\" to \"%s\".", oldrelpath, newrelpath);
+  fdbg("Mnemofs rename \"%s\" to \"%s\".", oldrelpath, newrelpath);
 
   DEBUGASSERT(mountpt != NULL);
   sb  = mountpt->i_private;
@@ -2417,7 +2419,7 @@ static int mnemofs_rename(FAR struct inode *mountpt,
       goto errout;
     }
 
-  fvdbg("Lock acquired.");
+  fdbg("Lock acquired.");
 
   oflags = mfs_get_patharr(sb, oldrelpath, &opath, &odepth);
   if ((oflags & MFS_EXIST) == 0)
@@ -2489,10 +2491,10 @@ errout_with_npath:
 errout_with_opath:
   mfs_free_patharr(opath);
   sem_post(&MFS_LOCK(sb));
-  fvdbg("Lock released.");
+  fdbg("Lock released.");
 
 errout:
-  fvdbg("Mnemofs rename exited with ret %d.", ret);
+  fdbg("Mnemofs rename exited with ret %d.", ret);
   return ret;
 }
 
@@ -2629,14 +2631,14 @@ int mnemofs_flush(FAR struct mfs_sb_s *sb)
 
   /* Emtpy the LRU, and maybe the journal as well. */
 
-  fvdbg("Flush operation started.");
+  fdbg("Flush operation started.");
 
   for (; ; )
     {
       change = false;
       if (!mfs_lru_isempty(sb))
         {
-          fvdbg("LRU needs to be flushed.");
+          fdbg("LRU needs to be flushed.");
 
           change = true;
           ret    = mfs_lru_flush(sb);
@@ -2649,7 +2651,7 @@ int mnemofs_flush(FAR struct mfs_sb_s *sb)
       if (!mfs_jrnl_isempty(sb) &&
           MFS_JRNL(sb).log_cblkidx >= MFS_JRNL_LIM(sb))
         {
-          fvdbg("Journal needs to be flushed.");
+          fdbg("Journal needs to be flushed.");
 
           change = true;
 
@@ -2665,7 +2667,7 @@ int mnemofs_flush(FAR struct mfs_sb_s *sb)
           break;
         }
 
-      fvdbg("Finished Iteration.");
+      fdbg("Finished Iteration.");
     }
 
 errout:
