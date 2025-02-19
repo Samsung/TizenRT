@@ -192,13 +192,13 @@ static void lru_nodesearch(FAR const struct mfs_sb_s * const sb,
 
   if (found)
     {
-      finfo("Node search ended with match of node %p at depth %u"
+      fvdbg("Node search ended with match of node %p at depth %u"
             " for CTZ of %d size with range [%d, %d"
             ").", n, n->depth, n->sz, n->range_min, n->range_max);
     }
   else
     {
-      finfo("Node search ended without match.");
+      fvdbg("Node search ended without match.");
       *node = NULL;
     }
 }
@@ -314,7 +314,7 @@ static int lru_nodeflush(FAR struct mfs_sb_s * const sb,
 
   /* Free deltas after flush. */
 
-  finfo("Removing Deltas.");
+  fvdbg("Removing Deltas.");
 
   list_for_every_entry_safe(&node->delta, delta, tmp, struct mfs_delta_s,
                             list)
@@ -325,25 +325,25 @@ static int lru_nodeflush(FAR struct mfs_sb_s * const sb,
 
   if (rm_node)
     {
-      finfo("Deleting node. Old size: %zu.", list_length(&MFS_LRU(sb)));
+      fvdbg("Deleting node. Old size: %zu.", list_length(&MFS_LRU(sb)));
       list_delete_init(&node->list);
-      finfo("Deleted node. New size: %zu.", list_length(&MFS_LRU(sb)));
+      fvdbg("Deleted node. New size: %zu.", list_length(&MFS_LRU(sb)));
     }
   else
     {
       /* Reset node stats. */
 
-      finfo("Resetting node.");
+      fvdbg("Resetting node.");
       memset(node, 0, sizeof(struct mfs_node_s));
       node->range_min = UINT32_MAX;
     }
 
-  finfo("Updating CTZ in parent.");
+  fvdbg("Updating CTZ in parent.");
   ret = mfs_lru_updatectz(sb, node->path, node->depth, loc, node->sz);
 
   if (rm_node)
     {
-      finfo("Freeing node.");
+      fvdbg("Freeing node.");
       lru_node_free(node);
     }
 
@@ -416,25 +416,25 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
       memcpy(node->path, path, depth * sizeof(struct mfs_path_s));
       found = false;
 
-      finfo("Node not found. Allocated at %p.", node);
+      fvdbg("Node not found. Allocated at %p.", node);
     }
 
   if (!found)
     {
       if (lru_islrufull(sb))
         {
-          finfo("LRU is full, need to flush a node.");
+          fvdbg("LRU is full, need to flush a node.");
           last_node = list_container_of(list_peek_tail(&MFS_LRU(sb)),
                                         struct mfs_node_s, list);
           list_delete_init(&last_node->list);
           list_add_tail(&MFS_LRU(sb), &node->list);
-          finfo("LRU flushing node complete, now only %zu nodes",
+          fvdbg("LRU flushing node complete, now only %zu nodes",
                 list_length(&MFS_LRU(sb)));
         }
       else
         {
           list_add_tail(&MFS_LRU(sb), &node->list);
-          finfo("Node inserted into LRU, and it now %zu node(s).",
+          fvdbg("Node inserted into LRU, and it now %zu node(s).",
                 list_length(&MFS_LRU(sb)));
         }
     }
@@ -454,7 +454,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
 
   /* Add delta to node. */
 
-  finfo("Adding delta to the node.");
+  fvdbg("Adding delta to the node.");
   delta = kmm_zalloc(sizeof(*delta));
   if (predict_false(delta == NULL))
     {
@@ -462,7 +462,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
       goto errout_with_node;
     }
 
-  finfo("Delta allocated.");
+  fvdbg("Delta allocated.");
 
   if (op == MFS_LRU_UPD)
     {
@@ -473,7 +473,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
           goto errout_with_delta;
         }
 
-      finfo("Delta is of the update type, has %u bytes at offset %u.",
+      fvdbg("Delta is of the update type, has %u bytes at offset %u.",
             bytes, data_off);
     }
 
@@ -502,7 +502,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
         }
     }
 
-  finfo("Delta attached to node %p. Now there are %zu nodes and the"
+  fvdbg("Delta attached to node %p. Now there are %zu nodes and the"
         " node has %zu deltas. Node with range [%d, %d"
         ").", node, list_length(&MFS_LRU(sb)),
         list_length(&node->delta), node->range_min, node->range_max);
@@ -730,7 +730,7 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
  * big), the stack depth for this will be 7.
  */
 
-  finfo("Sorting the LRU. No. of nodes: %zu", list_length(&MFS_LRU(sb)));
+  fvdbg("Sorting the LRU. No. of nodes: %zu", list_length(&MFS_LRU(sb)));
 
   lru_sort(sb, MFS_LRU(sb).next, MFS_LRU(sb).prev);
   MFS_FLUSH(sb) = true;
@@ -738,11 +738,11 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
   list_for_every_entry_safe(&MFS_LRU(sb), node, next, struct mfs_node_s,
                             list)
     {
-      finfo("Current node depth: %u.", node->depth);
+      fvdbg("Current node depth: %u.", node->depth);
 
       if (node->depth != 1)
         {
-          finfo("Checking for parent.");
+          fvdbg("Checking for parent.");
 
           /* Ensuring parent is either present, or inserted into the LRU.
            * No need of doing this before removing current node from LRU,
@@ -759,7 +759,7 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
 
           if (tmp == NULL)
             {
-              finfo("Adding parent to LRU");
+              fvdbg("Adding parent to LRU");
 
               tmp = kmm_zalloc(sizeof(struct mfs_node_s));
               if (predict_false(tmp == NULL))
@@ -807,17 +807,17 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
             }
           else
             {
-              finfo("Parent already in LRU.");
+              fvdbg("Parent already in LRU.");
             }
         }
       else
         {
-          finfo("Root node from LRU.");
+          fvdbg("Root node from LRU.");
         }
 
       /* Parent gets updated inside the LRU in the function below. */
 
-      finfo("Flushing node.");
+      fvdbg("Flushing node.");
       ret = lru_nodeflush(sb, node->path, node->depth, node, true);
       if (predict_true(ret < 0))
         {
@@ -853,7 +853,7 @@ void mfs_lru_init(FAR struct mfs_sb_s * const sb)
 {
   list_initialize(&MFS_LRU(sb));
 
-  finfo("LRU Initialized\n");
+  fvdbg("LRU Initialized\n");
 }
 
 int mfs_lru_rdfromoff(FAR const struct mfs_sb_s * const sb,
