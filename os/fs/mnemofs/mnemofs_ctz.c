@@ -159,7 +159,7 @@ static mfs_t ctz_idx_nptrs(const mfs_t idx)
   mfs_t ret;
 
   ret = (idx == 0) ? 0 : mfs_ctz(idx) + 1;
-  finfo("Number of pointers for %u index is %u.", idx, ret);
+  fvdbg("Number of pointers for %u index is %u.", idx, ret);
   return ret;
 }
 
@@ -203,7 +203,7 @@ static void ctz_off2loc(FAR const struct mfs_sb_s * const sb, mfs_t off,
               - (ctz_idx_nptrs(*idx) * wb);
     }
 
-  finfo("Offset %u. Calculated index %u and page offset %u.", off, *idx,
+  fvdbg("Offset %u. Calculated index %u and page offset %u.", off, *idx,
         *pgoff);
 }
 
@@ -228,7 +228,7 @@ static mfs_t ctz_blkdatasz(FAR const struct mfs_sb_s * const sb,
   mfs_t ret;
 
   ret = MFS_PGSZ(sb) - (ctz_idx_nptrs(idx) * MFS_LOGPGSZ(sb));
-  finfo("Block data size for index %u is %u.", idx, ret);
+  fvdbg("Block data size for index %u is %u.", idx, ret);
   return ret;
 }
 
@@ -289,7 +289,7 @@ static void ctz_copyidxptrs(FAR const struct mfs_sb_s * const sb,
 
   DEBUGASSERT(idx == ctz.idx_e + 1);
 
-  finfo("Copying %u pointers for CTZ (%u, %u) at index %u.", n_ptrs,
+  fvdbg("Copying %u pointers for CTZ (%u, %u) at index %u.", n_ptrs,
         ctz.idx_e, ctz.pg_e, idx);
 
   for (i = 0; i < n_ptrs; i++)
@@ -312,7 +312,7 @@ static void ctz_copyidxptrs(FAR const struct mfs_sb_s * const sb,
       buf -= MFS_CTZ_PTRSZ;
       mfs_ser_mfs(prev_pg, buf);
 
-      finfo("Copied %u page number to %uth pointer.", prev_pg, i);
+      fvdbg("Copied %u page number to %uth pointer.", prev_pg, i);
     }
 }
 
@@ -333,7 +333,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
   mfs_t end_pgoff;
   mfs_t pg_rd_sz;
 
-  finfo("Reading (%u, %u) CTZ from %u offset for %u bytes.", ctz.idx_e,
+  fvdbg("Reading (%u, %u) CTZ from %u offset for %u bytes.", ctz.idx_e,
         ctz.pg_e, data_off, len);
 
   if (ctz.idx_e == 0 && ctz.pg_e == 0)
@@ -359,13 +359,13 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
 
   /* O(n) read by reading in reverse. */
 
-  finfo("Started reading. Current Idx: %u, End Idx: %u.", cur_idx, end_idx);
+  fvdbg("Started reading. Current Idx: %u, End Idx: %u.", cur_idx, end_idx);
 
   if (cur_idx != end_idx)
     {
       for (i = cur_idx; i >= end_idx; i--)
         {
-          finfo("Current index %u, Current Page %u.", i, cur_pg);
+          fvdbg("Current index %u, Current Page %u.", i, cur_pg);
 
           if (predict_false(i == cur_idx))
             {
@@ -414,7 +414,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
       ret = OK;
     }
 
-  finfo("Reading finished.");
+  fvdbg("Reading finished.");
 
 errout:
   return ret;
@@ -443,7 +443,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
   struct mfs_ctz_s       ctz;
   FAR struct mfs_delta_s *delta;
 
-  finfo("Write LRU node %p at depth %u.", node, node->depth);
+  fvdbg("Write LRU node %p at depth %u.", node, node->depth);
 
   /* Traverse common CTZ blocks. */
 
@@ -464,7 +464,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
    * unmodified as well.
    */
 
-  finfo("Initial read.");
+  fvdbg("Initial read.");
   tmp = buf;
   mfs_read_page(sb, tmp, cur_pgoff, cur_pg, 0);
   tmp += cur_pgoff;
@@ -485,7 +485,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
       upper    = MIN(prev + lower + ctz_blkdatasz(sb, cur_idx), rem_sz);
       upper_og = upper;
 
-      finfo("Remaining Size %d. Lower %d, Upper %d"
+      fvdbg("Remaining Size %d. Lower %d, Upper %d"
             ", Current Offset %zd.", rem_sz, lower, upper, tmp - buf);
 
       /* Retrieving original data. */
@@ -499,7 +499,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
       list_for_every_entry(&node->delta, delta, struct mfs_delta_s, list)
         {
-          finfo("Checking delta %p in node %p. Offset %d, bytes %d",
+          fvdbg("Checking delta %p in node %p. Offset %d, bytes %d",
                 delta, node, delta->off, delta->n_b);
 
           lower_upd = MAX(lower, delta->off);
@@ -514,7 +514,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
           if (delta->upd == NULL)
             {
-              finfo("Node type: Delete");
+              fvdbg("Node type: Delete");
 
               /* Delete */
 
@@ -525,7 +525,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
             }
           else
             {
-              finfo("Node type: Update");
+              fvdbg("Node type: Update");
 
               /* Update */
 
@@ -567,7 +567,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
           written = true;
 
-          finfo("Written data to page %d", new_pg);
+          fvdbg("Written data to page %d", new_pg);
         }
       else
         {
@@ -587,7 +587,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
   /* Write log. Assumes journal has enough space due to the limit. */
 
-  finfo("Writing log.");
+  fvdbg("Writing log.");
   *new_loc = ctz;
   ret = mfs_jrnl_wrlog(sb, node, ctz, node->sz);
   if (predict_false(ret < 0))
@@ -653,7 +653,7 @@ mfs_t mfs_ctz_travel(FAR const struct mfs_sb_s * const sb,
         }
     }
 
-  finfo("Travel from index %d at page %d to index %d"
+  fvdbg("Travel from index %d at page %d to index %d"
         " at page %d.", idx_src, pg_src, idx_dest, pg);
 
   return pg;

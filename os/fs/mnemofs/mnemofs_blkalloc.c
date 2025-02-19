@@ -327,7 +327,7 @@ int mfs_ba_fmt(FAR struct mfs_sb_s * const sb)
 
   /* TODO: Do not start from journal blocks. */
 
-  finfo("mnemofs: Block Allocator initialized, starting at page %d.\n",
+  fvdbg("mnemofs: Block Allocator initialized, starting at page %d.\n",
         MFS_BLK2PG(sb, MFS_BA(sb).s_blk));
   return ret;
 
@@ -372,7 +372,7 @@ void mfs_ba_free(FAR struct mfs_sb_s * const sb)
   kmm_free(MFS_BA(sb).k_del);
   kmm_free(MFS_BA(sb).bmap_upgs);
 
-  finfo("Block Allocator Freed.");
+  fvdbg("Block Allocator Freed.");
 }
 
 mfs_t mfs_ba_getpg(FAR struct mfs_sb_s * const sb)
@@ -390,18 +390,18 @@ mfs_t mfs_ba_getpg(FAR struct mfs_sb_s * const sb)
       switch (is_pg_writeable(sb, MFS_BA(sb).c_pg, &idx, &off))
         {
           case MFS_PG_USED:
-            finfo("Used %d\n", MFS_BA(sb).c_pg);
+            fvdbg("Used %d\n", MFS_BA(sb).c_pg);
             break;
 
           case MFS_PG_FREE:
-            finfo("Free %d\n", MFS_BA(sb).c_pg);
+            fvdbg("Free %d\n", MFS_BA(sb).c_pg);
             pg = MFS_BA(sb).c_pg;
             mfs_ba_markusedpg(sb, pg);
             found = true;
             break;
 
           case MFS_BLK_BAD:
-            finfo("Bad %d\n", MFS_BA(sb).c_pg);
+            fvdbg("Bad %d\n", MFS_BA(sb).c_pg);
 
             /* Skip pages to next block. */
 
@@ -412,7 +412,7 @@ mfs_t mfs_ba_getpg(FAR struct mfs_sb_s * const sb)
             break;
 
           case MFS_BLK_ERASABLE:
-            finfo("Erasable %d\n", MFS_BA(sb).c_pg);
+            fvdbg("Erasable %d\n", MFS_BA(sb).c_pg);
             pg = MFS_BA(sb).c_pg;
             mfs_erase_blk(sb, MFS_PG2BLK(sb, MFS_BA(sb).c_pg));
             DEL_ARR_PG(sb, MFS_BA(sb).c_pg) = 0;
@@ -447,7 +447,7 @@ mfs_t mfs_ba_getpg(FAR struct mfs_sb_s * const sb)
   if (!found)
     {
       DEBUGASSERT(pg == 0);
-      finfo("No more pages found. Page: %u.", pg);
+      fvdbg("No more pages found. Page: %u.", pg);
     }
 
   return pg;
@@ -513,7 +513,7 @@ mfs_t mfs_ba_getblk(FAR struct mfs_sb_s * const sb)
       MFS_BA(sb).c_pg = MFS_BLK2PG(sb, (++blk) % MFS_NBLKS(sb));
     }
 
-  finfo("Block number: %u. Found: %d.", ret, found);
+  fvdbg("Block number: %u. Found: %d.", ret, found);
 
   return ret;
 }
