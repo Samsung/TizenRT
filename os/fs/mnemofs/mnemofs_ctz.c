@@ -294,7 +294,7 @@ static void ctz_copyidxptrs(FAR const struct mfs_sb_s * const sb,
 
   for (i = 0; i < n_ptrs; i++)
     {
-      if (predict_false(i == 0))
+      if ((i == 0))
         {
           prev_idx = ctz.idx_e;
           prev_pg  = ctz.pg_e;
@@ -352,7 +352,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
 
   cur_pg   = mfs_ctz_travel(sb, ctz.idx_e, ctz.pg_e, cur_idx);
 
-  if (predict_false(cur_pg == 0))
+  if ((cur_pg == 0))
     {
       goto errout;
     }
@@ -367,14 +367,14 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
         {
           fvdbg("Current index %u, Current Page %u.", i, cur_pg);
 
-          if (predict_false(i == cur_idx))
+          if ((i == cur_idx))
             {
               pg_rd_sz  = cur_pgoff;
               ret       = mfs_read_page(sb, buf - pg_rd_sz, pg_rd_sz, cur_pg,
                                         0);
               cur_pgoff = 0;
             }
-          else if (predict_false(i == end_idx))
+          else if ((i == end_idx))
             {
               pg_rd_sz = ctz_blkdatasz(sb, i) - end_pgoff;
               ret      = mfs_read_page(sb, buf - pg_rd_sz, pg_rd_sz, cur_pg,
@@ -387,7 +387,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
                                       0);
             }
 
-          if (predict_false(ret == 0))
+          if ((ret == 0))
             {
               ret = -EINVAL;
               goto errout;
@@ -397,7 +397,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
         }
 
       cur_pg = mfs_ctz_travel(sb, cur_idx, cur_pg, cur_idx - 1);
-      if (predict_false(cur_pg == 0))
+      if ((cur_pg == 0))
         {
           ret = -EINVAL;
           goto errout;
@@ -406,7 +406,7 @@ int mfs_ctz_rdfromoff(FAR const struct mfs_sb_s * const sb,
   else
     {
       ret = mfs_read_page(sb, buf, len, cur_pg, end_pgoff);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout;
         }
@@ -454,7 +454,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
   /* So, till cur_idx - 1, the CTZ blocks are common. */
 
   buf = kmm_zalloc(MFS_PGSZ(sb));
-  if (predict_false(buf == NULL))
+  if ((buf == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -492,7 +492,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
 
       ret = mfs_ctz_rdfromoff(sb, ctz, lower + del_bytes, upper - lower,
                               tmp);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout_with_buf;
         }
@@ -544,7 +544,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
           /* Time to write a page for new CTZ list. */
 
           new_pg = mfs_ba_getpg(sb);
-          if (predict_false(new_pg == 0))
+          if ((new_pg == 0))
             {
               ret = -ENOSPC;
               goto errout_with_buf;
@@ -553,7 +553,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
           ctz_copyidxptrs(sb, ctz, cur_idx, buf);
 
           ret = mfs_write_page(sb, buf, MFS_PGSZ(sb), new_pg, 0);
-          if (predict_false(ret == 0))
+          if ((ret == 0))
             {
               ret = -EINVAL;
               goto errout_with_buf;
@@ -590,7 +590,7 @@ int mfs_ctz_wrtnode(FAR struct mfs_sb_s * const sb,
   fvdbg("Writing log.");
   *new_loc = ctz;
   ret = mfs_jrnl_wrlog(sb, node, ctz, node->sz);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_buf;
     }

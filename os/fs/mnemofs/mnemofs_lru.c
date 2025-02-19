@@ -301,13 +301,13 @@ static int lru_nodeflush(FAR struct mfs_sb_s * const sb,
   FAR struct mfs_delta_s *delta = NULL;
   FAR struct mfs_delta_s *tmp   = NULL;
 
-  if (predict_false(node == NULL))
+  if ((node == NULL))
     {
       return -EINVAL;
     }
 
   ret = mfs_ctz_wrtnode(sb, node, &loc);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -392,7 +392,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
   if (node == NULL)
     {
       node = kmm_zalloc(sizeof(*node));
-      if (predict_false(node == NULL))
+      if ((node == NULL))
         {
           found = false;
           ret = -ENOMEM;
@@ -400,7 +400,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
         }
 
       node->path = kmm_zalloc(depth * sizeof(struct mfs_path_s));
-      if (predict_false(node->path == NULL))
+      if ((node->path == NULL))
         {
           found = false;
           ret = -ENOMEM;
@@ -446,7 +446,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
        */
 
       ret = mnemofs_flush(sb);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout_with_node;
         }
@@ -456,7 +456,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
 
   fvdbg("Adding delta to the node.");
   delta = kmm_zalloc(sizeof(*delta));
-  if (predict_false(delta == NULL))
+  if ((delta == NULL))
     {
       ret = -ENOMEM;
       goto errout_with_node;
@@ -467,7 +467,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
   if (op == MFS_LRU_UPD)
     {
       delta->upd = kmm_zalloc(bytes);
-      if (predict_false(delta->upd == NULL))
+      if ((delta->upd == NULL))
         {
           ret = -ENOMEM;
           goto errout_with_delta;
@@ -496,7 +496,7 @@ static int lru_wrtooff(FAR struct mfs_sb_s * const sb, const mfs_t data_off,
   if (old_sz != node->sz)
     {
       ret = lru_updatesz(sb, node->path, node->depth, node->sz);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout_with_delta;
         }
@@ -608,7 +608,7 @@ static int lru_updatesz(FAR struct mfs_sb_s * sb,
 
   ret = mfs_lru_wr(sb, path[depth - 2].off + offsetof(struct mfs_dirent_s,
                    sz), sizeof(mfs_t), path, depth - 1, buf);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -762,7 +762,7 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
               fvdbg("Adding parent to LRU");
 
               tmp = kmm_zalloc(sizeof(struct mfs_node_s));
-              if (predict_false(tmp == NULL))
+              if ((tmp == NULL))
                 {
                   ret = -ENOMEM;
                   goto errout;
@@ -776,7 +776,7 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
               tmp->depth = node->depth - 1;
               tmp->path  = kmm_zalloc((node->depth - 1)
                                       * sizeof(struct mfs_path_s));
-              if (predict_false(tmp->path == NULL))
+              if ((tmp->path == NULL))
                 {
                   ret = -ENOMEM;
                   goto errout_with_tmp;
@@ -819,7 +819,7 @@ int mfs_lru_flush(FAR struct mfs_sb_s * const sb)
 
       fvdbg("Flushing node.");
       ret = lru_nodeflush(sb, node->path, node->depth, node, true);
-      if (predict_true(ret < 0))
+      if ((ret < 0))
         {
           goto errout;
         }
@@ -1042,13 +1042,13 @@ int mfs_lru_updatectz(FAR struct mfs_sb_s * sb,
   mfs_ser_ctz(&new_ctz, buf);
   ret = mfs_lru_wr(sb, path[depth - 1].off + offsetof(struct mfs_dirent_s,
                    ctz), sizeof(struct mfs_ctz_s), path, depth - 1, buf);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
 
   ret = lru_updatesz(sb, path, depth, new_sz);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }

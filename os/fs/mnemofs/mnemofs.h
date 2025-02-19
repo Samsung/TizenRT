@@ -67,6 +67,14 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#ifndef MIN
+#  define MIN(a,b)      (((a) < (b)) ? (a) : (b))
+#endif  /* MIN */
+
+#ifndef MAX
+#  define MAX(a,b)      (((a) > (b)) ? (a) : (b))
+#endif  /* MAX */
+
 #define MFS_JRNL_MAGIC  "-mfs!j!-"
 #define MFS_MN_MAGIC    "-mfs!m!-"
 
@@ -339,7 +347,7 @@ static mfs_t inline mfs_blkremsz(FAR const struct mfs_sb_s * const sb,
 
 static inline mfs_t mfs_ctz(const uint32_t x)
 {
-  if (predict_false(x == 0))
+  if ((x == 0))
   {
 /* Special case, since we're using this for the CTZ skip list. The 0th
  * block has no pointers.
@@ -394,7 +402,7 @@ static inline mfs_t mfs_ctz(const uint32_t x)
 
 static inline mfs_t mfs_clz(const uint32_t x)
 {
-  if (predict_false(x == UINT32_MAX))
+  if ((x == UINT32_MAX))
   {
 /* Special case, since we're using this for the CTZ skip list. The 0th
  * block has no pointers.

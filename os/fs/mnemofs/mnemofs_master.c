@@ -256,7 +256,7 @@ int mfs_mn_init(FAR struct mfs_sb_s * const sb, const mfs_t jrnl_blk)
   while (true)
     {
       ret = mfs_jrnl_rdlog(sb, &blkidx, &pg_in_blk, &log);
-      if (predict_false(ret < 0 && ret != -ENOSPC))
+      if ((ret < 0 && ret != -ENOSPC))
         {
           goto errout;
         }
@@ -312,7 +312,7 @@ int mfs_mn_fmt(FAR struct mfs_sb_s * const sb, const mfs_t mblk1,
   memset(buf, 0, sz + 1);
 
   pg = mfs_ba_getpg(sb);
-  if (predict_false(pg == 0))
+  if ((pg == 0))
     {
       ret = -ENOSPC;
       goto errout;
@@ -337,7 +337,7 @@ int mfs_mn_fmt(FAR struct mfs_sb_s * const sb, const mfs_t mblk1,
   ser_mn(mn, buf);
 
   ret = mfs_write_page(sb, buf, sz, MFS_BLK2PG(sb, mblk1), 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -347,7 +347,7 @@ int mfs_mn_fmt(FAR struct mfs_sb_s * const sb, const mfs_t mblk1,
     }
 
   ret = mfs_write_page(sb, buf, sz, MFS_BLK2PG(sb, mblk2), 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -389,7 +389,7 @@ int mfs_mn_move(FAR struct mfs_sb_s * const sb, struct mfs_ctz_s root,
   ser_mn(mn, buf);
 
   ret = mfs_write_page(sb, buf, sz + 1, mn.pg, 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -434,13 +434,13 @@ int mfs_mn_sync(FAR struct mfs_sb_s *sb,
   ser_mn(mn, buf);
 
   ret = mfs_write_page(sb, buf, sz, MFS_BLK2PG(sb, blk1) + mn.mblk_idx, 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
 
   ret = mfs_write_page(sb, buf, sz, MFS_BLK2PG(sb, blk2) + mn.mblk_idx, 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
