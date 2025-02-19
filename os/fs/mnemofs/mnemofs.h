@@ -440,14 +440,14 @@ static inline void MFS_EXTRA_LOG_DIRENT(FAR const struct mfs_dirent_s * const
 {
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "Direntry details.");
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tDirent location %p", dirent);
-  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tMode is %" PRIu16, dirent->mode);
+  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tMode is %d", dirent->mode);
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tName is \"%.*s\"", dirent->namelen,
                 dirent->name);
   MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tNamelen is %d",
                 dirent->namelen);
-  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tName Hash is %" PRIu16,
+  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tName Hash is %u",
                 dirent->name_hash);
-  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tSize is %" PRIu16,
+  MFS_EXTRA_LOG("EXTRA_LOG_DIRENT", "\tSize is %u",
                 dirent->sz);
 
   /* TODO: Timespecs */
@@ -505,7 +505,7 @@ static inline void MFS_EXTRA_LOG_F(FAR struct mfs_ofd_s *f)
                 f->com->new_ent ? "true" : "false");
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tOffset: %d", f->com->off);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tFlags: 0x%x.", f->com->oflags);
-  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tReference Counter: %" PRIu8,
+  MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tReference Counter: %u",
                 f->com->refcount);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tFile Size: %d", f->com->sz);
   MFS_EXTRA_LOG("EXTRA_LOG_F", "\t\tPath details.");

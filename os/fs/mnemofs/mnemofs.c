@@ -1489,7 +1489,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       MFS_EXTRA_LOG("READDIR", "Mutex acquired.");
     }
 
-  MFS_EXTRA_LOG("READDIR", "Curretn direntry index is %" PRIu8,
+  MFS_EXTRA_LOG("READDIR", "Curretn direntry index is %d",
                 fsdirent->idx);
 
   if (fsdirent->idx == 0)
@@ -1502,7 +1502,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       entry->d_type = DTYPE_DIRECTORY;
       fsdirent->idx++;
 
-      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %" PRIu8,
+      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %u",
                     fsdirent->idx);
       goto errout_with_lock;
     }
@@ -1516,7 +1516,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
       entry->d_type = DTYPE_DIRECTORY;
       fsdirent->idx++;
 
-      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %" PRIu8,
+      MFS_EXTRA_LOG("READDIR", "Direntry index updated to %u",
                     fsdirent->idx);
       goto errout_with_lock;
     }
@@ -1570,7 +1570,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
                 dirent->namelen, dirent->name);
 
   entry->d_type = (S_ISDIR(dirent->mode) ? DTYPE_DIRECTORY: DTYPE_FILE);
-  MFS_EXTRA_LOG("READDIR", "Setting entry d_type to %" PRIu8, entry->d_type);
+  MFS_EXTRA_LOG("READDIR", "Setting entry d_type to %u", entry->d_type);
 
   mfs_pitr_adv_bydirent(fsdirent->pitr, dirent);
   mfs_free_dirent(dirent);
@@ -1785,17 +1785,17 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   MFS_EXTRA_LOG("BIND", "SB Details.");
   MFS_EXTRA_LOG("BIND", "\tDriver: %p", driver);
   MFS_EXTRA_LOG("BIND", "\tPage Size: %d", sb->pg_sz);
-  MFS_EXTRA_LOG("BIND", "\tLog Page Size: %" PRIu8, sb->log_pg_sz);
+  MFS_EXTRA_LOG("BIND", "\tLog Page Size: %u", sb->log_pg_sz);
   MFS_EXTRA_LOG("BIND", "\tBlock Size: %d", sb->blk_sz);
-  MFS_EXTRA_LOG("BIND", "\tLog Block Size: %" PRIu8,
+  MFS_EXTRA_LOG("BIND", "\tLog Block Size: %u",
                 sb->log_blk_sz);
-  MFS_EXTRA_LOG("BIND", "\tPages Per Block: %" PRIu16,
+  MFS_EXTRA_LOG("BIND", "\tPages Per Block: %u",
                 sb->pg_in_blk);
   MFS_EXTRA_LOG("BIND", "\tBlocks: %d", sb->n_blks);
-  MFS_EXTRA_LOG("BIND", "\tLog Blocks: %" PRIu8, sb->log_n_blks);
-  MFS_EXTRA_LOG("BIND", "\tJournal Blocks: %" PRIu16,
+  MFS_EXTRA_LOG("BIND", "\tLog Blocks: %u", sb->log_n_blks);
+  MFS_EXTRA_LOG("BIND", "\tJournal Blocks: %u",
                 MFS_JRNL(sb).n_blks);
-  MFS_EXTRA_LOG("BIND", "\tFlush State: %" PRIu8, MFS_FLUSH(sb));
+  MFS_EXTRA_LOG("BIND", "\tFlush State: %u", MFS_FLUSH(sb));
 
   sb->rw_buf        = kmm_zalloc(MFS_PGSZ(sb));
   if ((sb->rw_buf == NULL))
