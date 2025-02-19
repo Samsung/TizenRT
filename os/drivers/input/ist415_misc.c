@@ -820,6 +820,52 @@ int ist415_selftest(struct ist415_dev_s *dev)
 	return ret;
 }
 
+int ist415_cmtest(struct ist415_dev_s *dev)
+{
+	int16_t *buf16;
+	int ret = 0;
+	buf16 = (int16_t *)kmm_malloc(dev->mtl_node_len * sizeof(int16_t));
+	if (!buf16) {
+		return -ENOMEM;
+	}
+	ist415_disable(dev);
+	ist415_sensor(dev, false);
+	ret = ist415_run_selftest(dev, CMCS_FLAG_CM, (int16_t *)buf16);
+	kmm_free(buf16);
+	ist415_reset(dev, false);
+	ist415_start(dev);
+	ist415_enable(dev);
+	if (!ret && !dev->cm_result) {
+		return OK;
+	} else if (!ret && dev->cm_result) {
+		return ERROR;
+	}
+	return ret;
+}
+
+int ist415_jittertest(struct ist415_dev_s *dev)
+{
+	int16_t *buf16;
+	int ret = 0;
+	buf16 = (int16_t *)kmm_malloc(dev->mtl_node_len * sizeof(int16_t));
+	if (!buf16) {
+		return -ENOMEM;
+	}
+	ist415_disable(dev);
+	ist415_sensor(dev, false);
+	ret = ist415_run_selftest(dev, CMCS_FLAG_JITTER, (int16_t *)buf16);
+	kmm_free(buf16);
+	ist415_reset(dev, false);
+	ist415_start(dev);
+	ist415_enable(dev);
+	if (!ret && !dev->jitter_result) {
+		return OK;
+	} else if (!ret && dev->jitter_result) {
+		return ERROR;
+	}
+	return ret;
+}
+
 /****************************************************************************
  * Name: ist415_rec_mode
  *
