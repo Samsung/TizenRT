@@ -90,6 +90,8 @@
 #define TSIOC_CMD            _TSIOC(0x0008)  /* arg: Pointer to struct touchscreen_cmd_s */
 #define TSIOC_ENABLE         _TSIOC(0x0009)  /* Enable touch interrupt */
 #define TSIOC_DISABLE        _TSIOC(0x000A)  /* Disable touch interrupt */
+#define TSIOC_CMTEST         _TSIOC(0x000B)  /* CM Test */
+#define TSIOC_JITTERTEST     _TSIOC(0x000C)  /* Jitter Test */
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
 
@@ -205,6 +207,8 @@ struct touchscreen_ops_s {
 	int (*cmd)(struct touchscreen_s *upper, int argc, char **argv);
 	int (*suspend)(struct touchscreen_s *upper);			/* Suspend touch */
 	int (*resume)(struct touchscreen_s *upper);			/* Resume touch */
+	int (*touch_cmtest)(struct touchscreen_s *upper, int *arg);			/* CM test */
+	int (*touch_jittertest)(struct touchscreen_s *upper, int *arg);			/* Jitter test */
 };
 
 /*

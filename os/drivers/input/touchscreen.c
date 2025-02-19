@@ -332,6 +332,20 @@ static int touch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 				ret = -EINVAL;
 			}
 		break;
+		case TSIOC_CMTEST:
+			if (priv->ops && priv->ops->touch_cmtest) {
+				ret = priv->ops->touch_cmtest(priv, (int *)arg);
+			} else {
+				ret = -EINVAL;
+			}
+		break;
+		case TSIOC_JITTERTEST:
+			if (priv->ops && priv->ops->touch_jittertest) {
+				ret = priv->ops->touch_jittertest(priv, (int *)arg);
+			} else {
+				ret = -EINVAL;
+			}
+		break;
 		default: {
 			touchdbg("ERROR: ioctl not found, cmd: %d\n", cmd);
 		}
