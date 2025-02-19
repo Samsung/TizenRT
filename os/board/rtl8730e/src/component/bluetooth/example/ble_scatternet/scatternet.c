@@ -135,8 +135,10 @@ static rtk_bt_le_security_param_t sec_param = {
    .bond_flag = 1,
    .mitm_flag = 0,
    .sec_pair_flag = 0,
+   .sec_pair_only_flag = 0,
    .use_fixed_key = 0,
    .fixed_key = 000000,
+   .auto_sec_req = 0,
 };
 
 #if RTK_BLE_PRIVACY_SUPPORT
@@ -340,42 +342,19 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
             }
 			if(RTK_BT_LE_ROLE_MASTER == conn_ind->role)
 			{
-				if(is_secured && !ble_tizenrt_scatternet_bond_list[conn_id].is_bonded)
-				{
-					rtk_bt_le_get_active_conn_t active_conn;
-					if (RTK_BT_OK != rtk_bt_le_gap_get_active_conn(&active_conn))
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-					if (active_conn.conn_num > GAP_MAX_LINKS)
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-					if (RTK_BT_OK != rtk_bt_le_sm_start_security(conn_ind->conn_handle))
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-				} else {
-					debug_print("LL connected %d, do not need pairing \n", conn_ind->conn_handle);
-					trble_device_connected connected_dev;
-					uint16_t mtu_size = 0;
-					if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(conn_ind->conn_handle, &mtu_size)){
-						dbg("[APP] Get mtu size failed \r\n");
-					}
-					connected_dev.conn_handle = conn_ind->conn_handle;
-					connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
-					memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
-					connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
-					connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
-					connected_dev.conn_info.scan_timeout = scan_timeout;
-					connected_dev.conn_info.is_secured_connect = is_secured;
-					connected_dev.conn_info.mtu = mtu_size;
-					client_init_parm->trble_device_connected_cb(&connected_dev);
-				}
-
+				trble_device_connected connected_dev;
+				uint16_t mtu_size = 0;
+				connected_dev.conn_handle = conn_ind->conn_handle;
+				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
+				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
+				connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
+				connected_dev.conn_info.scan_timeout = scan_timeout;
+				connected_dev.conn_info.is_secured_connect = is_secured;
+				connected_dev.conn_info.mtu = mtu_size;
+				client_init_parm->trble_device_connected_cb(&connected_dev);
 				if(ble_client_connect_is_running)
 					ble_client_connect_is_running = 0;
-
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 				if (server_init_parm.connected_cb) {
 					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val);
@@ -537,10 +516,18 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
 		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind = (rtk_bt_le_auth_key_cfm_ind_t *)param;
-		if (server_init_parm.passkey_display_cb) {
-			server_init_parm.passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->conn_handle);
+		if (key_cfm_ind->conn_handle < 24) {
+			if (client_init_parm->trble_device_passkey_display_cb) {
+				client_init_parm->trble_device_passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->conn_handle);
+			} else {
+				ble_tizenrt_dummy_callback();
+			}
 		} else {
-			ble_tizenrt_dummy_callback();
+			if (server_init_parm.passkey_display_cb) {
+				server_init_parm.passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->conn_handle);
+			} else {
+				ble_tizenrt_dummy_callback();
+			}
 		}
 		APP_PROMOTE("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
 					"Please comfirm if the passkeys are equal!\r\n",

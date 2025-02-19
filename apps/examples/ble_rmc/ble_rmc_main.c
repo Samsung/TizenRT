@@ -161,6 +161,12 @@ static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle a
 	return;
 }
 
+static void ble_device_passkey_display_cb(ble_client_ctx *ctx, uint32_t passkey, ble_conn_handle conn_handle)
+{
+	printf("[######## %s : %d]passkey %ld, conn_handle %d\n", __FUNCTION__, __LINE__, passkey, conn_handle);
+	return;
+}
+
 void restart_server(void) {
 	ble_result_e ret = BLE_MANAGER_FAIL;
 	ble_data data[1] = { 0, };
@@ -282,6 +288,8 @@ static ble_client_callback_list client_config = {
 	ble_device_disconnected_cb,
 	ble_device_connected_cb,
 	ble_operation_notification_cb,
+	NULL,
+	ble_device_passkey_display_cb
 };
 
 static ble_server_init_config server_config = {
@@ -540,6 +548,12 @@ int ble_rmc_main(int argc, char *argv[])
 				RMC_LOG(RMC_CLIENT_TAG, "fail to delete bond dev[%d]\n", ret);
 			}
 		}
+		if (argc == 4) {
+			if (strncmp(argv[2], "start", 6) == 0) {
+				int conn_handle = atoi(argv[3]);
+				ret = ble_manager_start_bond(conn_handle);
+			}
+		}
 		RMC_LOG(RMC_CLIENT_TAG, "bond command done.\n");
 	}
 
@@ -746,7 +760,7 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "connect", 8) == 0) {
 		ble_client_ctx *ctx = NULL;
-		
+
 		/*
 		1. scan
 		2. delete bond
@@ -926,13 +940,14 @@ int ble_rmc_main(int argc, char *argv[])
 		// RTK_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
 		// RTK_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
 		// RTK_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
-		sec_param.io_cap = atoi(argv[2]); 
-		sec_param.oob_data_flag = atoi(argv[3]); 
-		sec_param.bond_flag = atoi(argv[4]); 
-		sec_param.mitm_flag = atoi(argv[5]); 
-		sec_param.sec_pair_flag = atoi(argv[6]); 
-		sec_param.use_fixed_key = atoi(argv[7]); 
-		sec_param.fixed_key = atoi(argv[8]); 
+		sec_param.io_cap = atoi(argv[2]);
+		sec_param.oob_data_flag = atoi(argv[3]);
+		sec_param.bond_flag = atoi(argv[4]);
+		sec_param.mitm_flag = atoi(argv[5]);
+		sec_param.sec_pair_flag = atoi(argv[6]);
+		sec_param.sec_pair_only_flag = atoi(argv[7]);
+		sec_param.use_fixed_key = atoi(argv[8]);
+		sec_param.fixed_key = atoi(argv[9]);
 		ret = ble_manager_set_secure_param(&sec_param);
 		if (ret != BLE_MANAGER_SUCCESS) {  
 			RMC_LOG(RMC_SERVER_TAG, "set secure param fail: [%d]\n", ret);  
