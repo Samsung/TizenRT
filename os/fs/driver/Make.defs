@@ -84,6 +84,7 @@ CSRCS_DRIVER += mtd/mtd_config.c
 
 ifeq ($(CONFIG_MTD_FTL),y)
 CSRCS_DRIVER += mtd/ftl.c
+CSRCS_DRIVER += mtd/ftl_nand.c
 endif
 
 ifeq ($(CONFIG_MTD_SMART),y)
@@ -120,6 +121,19 @@ endif
 
 ifeq ($(CONFIG_MTD_JEDEC),y)
 CSRCS_DRIVER += mtd/mtd_jedec.c
+endif
+
+ifeq ($(CONFIG_MTD_W25N),y)
+CSRCS_DRIVER += mtd/w25n.c
+endif
+
+ifeq ($(CONFIG_MTD_NAND), y)
+CSRCS_DRIVER += mtd/mtd_nand.c mtd/mtd_nandscheme.c
+
+ifeq ($(CONFIG_MTD_DHARA), y)
+CSRCS_DRIVER += mtd/dhara.c mtd/dhara/map.c mtd/dhara/error.c mtd/dhara/journal.c
+endif
+
 endif
 endif
 

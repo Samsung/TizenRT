@@ -109,6 +109,26 @@ extern FAR struct inode *root_inode;
 
 int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode);
 
+/****************************************************************************
+ * Name: find_mtddriver
+ *
+ * Description:
+ *   Return the inode of the named MTD driver specified by 'pathname'
+ *
+ * Input Parameters:
+ *   pathname   - the full path to the named MTD driver to be located
+ *   ppinode    - address of the location to return the inode reference
+ *
+ * Returned Value:
+ *   Returns zero on success or a negated errno on failure:
+ *
+ *   ENOENT  - No MTD driver of this name is registered
+ *   ENOTBLK - The inode associated with the pathname is not an MTD driver
+ *
+ ****************************************************************************/
+
+int find_mtddriver(FAR const char *pathname, FAR struct inode **ppinode);
+
 /* fs_blockproxy.c **********************************************************/
 /****************************************************************************
  * Name: block_proxy
