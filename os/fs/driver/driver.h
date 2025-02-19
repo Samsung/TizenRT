@@ -16,16 +16,16 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/driver/block/fs_openblockdriver.c
+ * fs/driver/block/driver.h
  *
- *   Copyright (C) 2008-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009, 2012, 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
- * Redistribution and use in pathname and binary forms, with or without
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
- * 1. Redistributions of pathname code must retain the above copyright
+ * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -50,35 +50,48 @@
  *
  ****************************************************************************/
 
+#ifndef __FS_DRIVER_BLOCK_DRIVER_H
+#define __FS_DRIVER_BLOCK_DRIVER_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
-#include <debug.h>
-#include <errno.h>
+#include <tinyara/compiler.h>
 #include <tinyara/fs/fs.h>
 
-#include "inode/inode.h"
-#include "../driver.h"
-
 /****************************************************************************
- * Private Functions
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
+* Global Variables
+****************************************************************************/
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C" {
+#else
+#define EXTERN extern
+#endif
+
+extern FAR struct inode *root_inode;
 
 /****************************************************************************
- * Name: open_blockdriver
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/* fs_findblockdriver.c *****************************************************/
+/****************************************************************************
+ * Name: find_blockdriver
  *
  * Description:
  *   Return the inode of the block driver specified by 'pathname'
  *
  * Inputs:
- *   pathname - the full path to the block driver to be opened
+ *   pathname - the full path to the block driver to be located
  *   mountflags - if MS_RDONLY is not set, then driver must support write
  *     operations (see include/sys/mount.h)
  *   ppinode - address of the location to return the inode reference
@@ -94,48 +107,63 @@
  *
  ****************************************************************************/
 
-int open_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode)
-{
-	FAR struct inode *inode;
-	int ret;
+int find_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode);
 
-	/* Minimal sanity checks */
+/****************************************************************************
+ * Name: find_mtddriver
+ *
+ * Description:
+ *   Return the inode of the named MTD driver specified by 'pathname'
+ *
+ * Input Parameters:
+ *   pathname   - the full path to the named MTD driver to be located
+ *   ppinode    - address of the location to return the inode reference
+ *
+ * Returned Value:
+ *   Returns zero on success or a negated errno on failure:
+ *
+ *   ENOENT  - No MTD driver of this name is registered
+ *   ENOTBLK - The inode associated with the pathname is not an MTD driver
+ *
+ ****************************************************************************/
 
-#ifdef CONFIG_DEBUG
-	if (!ppinode) {
-		ret = -EINVAL;
-		goto errout;
-	}
+int find_mtddriver(FAR const char *pathname, FAR struct inode **ppinode);
+
+/* fs_blockproxy.c **********************************************************/
+/****************************************************************************
+ * Name: block_proxy
+ *
+ * Description:
+ *   Create a temporary char driver using drivers/bch to mediate character
+ *   oriented accessed to the block driver.
+ *
+ * Input parameters:
+ *   blkdev - The path to the block driver
+ *   oflags - Character driver open flags
+ *
+ * Returned Value:
+ *   If positive, non-zero file descriptor is returned on success. This
+ *   is the file descriptor of the nameless character driver that mediates
+ *   accesses to the block driver.
+ *
+ *   Errors that may be returned:
+ *
+ *     ENOMEM - Failed to create a temporary path name.
+ *
+ *   Plus:
+ *
+ *     - Errors reported from bchdev_register()
+ *     - Errors reported from open() or unlink()
+ *
+ ****************************************************************************/
+#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && \
+	!defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_BCH)
+int block_proxy(FAR const char *blkdev, int oflags);
 #endif
 
-	/* Find the inode associated with this block driver name.  find_blockdriver
-	 * will perform all additional error checking.
-	 */
-
-	ret = find_blockdriver(pathname, mountflags, &inode);
-	if (ret < 0) {
-		fdbg("Failed to file %s block driver\n", pathname);
-		goto errout;
-	}
-
-	/* Open the block driver.  Note that no mutually exclusive access
-	 * to the driver is enforced here.  That must be done in the driver
-	 * if needed.
-	 */
-
-	if (inode->u.i_bops->open) {
-		ret = inode->u.i_bops->open(inode);
-		if (ret < 0) {
-			fdbg("%s driver open failed\n", pathname);
-			goto errout_with_inode;
-		}
-	}
-
-	*ppinode = inode;
-	return OK;
-
-errout_with_inode:
-	inode_release(inode);
-errout:
-	return ret;
+#undef EXTERN
+#if defined(__cplusplus)
 }
+#endif
+
+#endif							/* __FS_DRIVER_BLOCK_DRIVER_H */

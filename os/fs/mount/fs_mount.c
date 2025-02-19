@@ -65,7 +65,7 @@
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
-#include "driver/block/driver.h"
+#include "driver/driver.h"
 
 /* At least one filesystem must be defined, or this file will not compile.
  * It may be desire-able to make filesystems dynamically registered at
@@ -88,6 +88,10 @@
 
 #if defined(CONFIG_FS_SMARTFS) || defined(CONFIG_FS_ROMFS)
 #define BDFS_SUPPORT 1
+#endif
+
+#if defined(CONFIG_FS_MNEMOFS)
+#define MDFS_SUPPORT 1
 #endif
 
 #if defined(CONFIG_FS_PROCFS) || defined(CONFIG_FS_TMPFS)
@@ -140,7 +144,21 @@ static const struct fsmap_t g_bdfsmap[] = {
 #endif
 	{NULL, NULL},
 };
-#endif							/* BDFS_SUPPORT */
+#endif	/* BDFS_SUPPORT */
+
+#ifdef MDFS_SUPPORT
+#ifdef CONFIG_FS_MNEMOFS
+extern const struct mountpt_operations g_mnemofs_operations;
+#endif
+
+static const struct fsmap_t g_mdfsmap[] =
+{
+#ifdef CONFIG_FS_MNEMOFS
+    { "mnemofs", &g_mnemofs_operations },
+#endif
+    { NULL,   NULL },
+};
+#endif	/* MDFS_SUPPORT */
 
 #ifdef NONBDFS_SUPPORT
 
@@ -179,7 +197,7 @@ static const struct fsmap_t g_nonbdfsmap[] = {
  *
  ****************************************************************************/
 
-#if defined(BDFS_SUPPORT) || defined(NONBDFS_SUPPORT)
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT) || defined(NONBDFS_SUPPORT)
 static FAR const struct mountpt_operations *mount_findfs(FAR const struct fsmap_t *fstab, FAR const char *filesystemtype)
 {
 	FAR const struct fsmap_t *fsmap;
@@ -224,9 +242,9 @@ static FAR const struct mountpt_operations *mount_findfs(FAR const struct fsmap_
 
 int mount(FAR const char *source, FAR const char *target, FAR const char *filesystemtype, unsigned long mountflags, FAR const void *data)
 {
-#if defined(BDFS_SUPPORT) || defined(NONBDFS_SUPPORT)
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT) || defined(NONBDFS_SUPPORT)
 #ifdef BDFS_SUPPORT
-	FAR struct inode *blkdrvr_inode = NULL;
+	FAR struct inode *drvr_inode = NULL;
 #endif
 	FAR struct inode *mountpt_inode;
 	FAR const struct mountpt_operations *mops;
@@ -248,7 +266,7 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 
 		/* Find the block driver */
 
-		ret = find_blockdriver(source, mountflags, &blkdrvr_inode);
+		ret = find_blockdriver(source, mountflags, &drvr_inode);
 		if (ret < 0) {
 			/* find_blockdriver can fail for a couple of reasons, it may return:
 			 *
@@ -263,7 +281,25 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 			goto errout;
 		}
 	} else
-#endif							/* BDFS_SUPPORT */
+#endif	/* BDFS_SUPPORT */
+#ifdef MDFS_SUPPORT
+	if (source && (mops = mount_findfs(g_mdfsmap, filesystemtype)) != NULL) {
+		ret = find_mtddriver(source, &drvr_inode);
+		if (ret < 0) {
+			/* find_blockdriver can fail for a couple of reasons, it may return:
+			 *
+			 *  -EINVAL  - pathname or pinode is NULL
+			 *  -ENOENT  - No block driver of this name is registered
+			 *  -ENOTBLK - The inode associated with the pathname is not a block driver
+			 *  -EACCESS - The MS_RDONLY option was not set but this driver does not support write access
+			 */
+
+			fdbg("ERROR: Failed to find block driver %s\n", source);
+			errcode = -ret;
+			goto errout;
+		}
+	} else
+#endif	/* MDFS_SUPPORT */
 #ifdef NONBDFS_SUPPORT
 		if ((mops = mount_findfs(g_nonbdfsmap, filesystemtype)) != NULL) {
 		} else
@@ -309,19 +345,19 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 
 	/* Increment reference count for the reference we pass to the file system */
 
-#ifdef BDFS_SUPPORT
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NONBDFS_SUPPORT
-	if (blkdrvr_inode)
+	if (drvr_inode)
 #endif
 	{
-		blkdrvr_inode->i_crefs++;
+		drvr_inode->i_crefs++;
 	}
 #endif
 
 	/* On failure, the bind method returns -errorcode */
 
-#ifdef BDFS_SUPPORT
-	ret = mops->bind(blkdrvr_inode, data, &fshandle);
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
+	ret = mops->bind(drvr_inode, data, &fshandle);
 #else
 	ret = mops->bind(NULL, data, &fshandle);
 #endif
@@ -332,12 +368,12 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 		 */
 
 		fdbg("ERROR: Bind method failed: %d\n", ret);
-#ifdef BDFS_SUPPORT
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NONBDFS_SUPPORT
-		if (blkdrvr_inode)
+		if (drvr_inode)
 #endif
 		{
-			blkdrvr_inode->i_crefs--;
+			drvr_inode->i_crefs--;
 		}
 #endif
 		errcode = -ret;
@@ -361,12 +397,12 @@ int mount(FAR const char *source, FAR const char *target, FAR const char *filesy
 	 * that will persist until umount() is called.
 	 */
 
-#ifdef BDFS_SUPPORT
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NONBDFS_SUPPORT
-	if (blkdrvr_inode)
+	if (drvr_inode)
 #endif
 	{
-		inode_release(blkdrvr_inode);
+		inode_release(drvr_inode);
 	}
 #endif
 
@@ -378,12 +414,12 @@ errout_with_mountpt:
 	mountpt_inode->i_crefs = 0;
 	inode_remove(target);
 	inode_semgive();
-#ifdef BDFS_SUPPORT
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NONBDFS_SUPPORT
-	if (blkdrvr_inode)
+	if (drvr_inode)
 #endif
 	{
-		inode_release(blkdrvr_inode);
+		inode_release(drvr_inode);
 	}
 #endif
 
@@ -392,12 +428,12 @@ errout_with_mountpt:
 
 errout_with_semaphore:
 	inode_semgive();
-#ifdef BDFS_SUPPORT
+#if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NONBDFS_SUPPORT
-	if (blkdrvr_inode)
+	if (drvr_inode)
 #endif
 	{
-		inode_release(blkdrvr_inode);
+		inode_release(drvr_inode);
 	}
 #endif
 
