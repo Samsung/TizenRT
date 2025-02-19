@@ -87,7 +87,7 @@
 
 int mfs_isbadblk(FAR const struct mfs_sb_s * const sb, mfs_t blk)
 {
-  if (predict_false(blk > MFS_NBLKS(sb)))
+  if ((blk > MFS_NBLKS(sb)))
     {
       return -EINVAL;
     }
@@ -97,7 +97,7 @@ int mfs_isbadblk(FAR const struct mfs_sb_s * const sb, mfs_t blk)
 
 int mfs_markbadblk(FAR const struct mfs_sb_s * const sb, mfs_t blk)
 {
-  if (predict_false(blk > MFS_NBLKS(sb)))
+  if ((blk > MFS_NBLKS(sb)))
     {
       return -EINVAL;
     }
@@ -115,7 +115,7 @@ ssize_t mfs_write_page(FAR const struct mfs_sb_s * const sb,
 {
   int ret = OK;
 
-  if (predict_false(page > MFS_NPGS(sb) || pgoff >= MFS_PGSZ(sb)))
+  if ((page > MFS_NPGS(sb) || pgoff >= MFS_PGSZ(sb)))
     {
       return -EINVAL;
     }
@@ -123,7 +123,7 @@ ssize_t mfs_write_page(FAR const struct mfs_sb_s * const sb,
   memcpy(MFS_RWBUF(sb) + pgoff, data, MIN(datalen, MFS_PGSZ(sb) - pgoff));
 
   ret = MTD_BWRITE(MFS_MTD(sb), page, 1, MFS_RWBUF(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_reset;
     }
@@ -140,13 +140,13 @@ ssize_t mfs_read_page(FAR const struct mfs_sb_s * const sb,
 {
   int ret = OK;
 
-  if (predict_false(page > MFS_NPGS(sb) || pgoff >= MFS_PGSZ(sb)))
+  if ((page > MFS_NPGS(sb) || pgoff >= MFS_PGSZ(sb)))
     {
       return -EINVAL;
     }
 
   ret = MTD_BREAD(MFS_MTD(sb), page, 1, MFS_RWBUF(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_reset;
     }
@@ -161,7 +161,7 @@ errout_with_reset:
 
 int mfs_erase_blk(FAR const struct mfs_sb_s * const sb, const off_t blk)
 {
-  if (predict_false(blk > MFS_NBLKS(sb)))
+  if ((blk > MFS_NBLKS(sb)))
     {
       return -EINVAL;
     }
@@ -172,7 +172,7 @@ int mfs_erase_blk(FAR const struct mfs_sb_s * const sb, const off_t blk)
 int mfs_erase_nblks(FAR const struct mfs_sb_s * const sb, const off_t blk,
                     const size_t n)
 {
-  if (predict_false(blk + n > MFS_NBLKS(sb)))
+  if ((blk + n > MFS_NBLKS(sb)))
     {
       return -EINVAL;
     }

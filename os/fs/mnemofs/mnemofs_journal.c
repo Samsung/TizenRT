@@ -173,7 +173,7 @@ int mfs_jrnl_rdlog(FAR const struct mfs_sb_s *const sb,
   /* First 4 bytes contain the size of the entire log. */
 
   ret = mfs_read_page(sb, tmp, 4, jrnl_pg, 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -186,21 +186,21 @@ int mfs_jrnl_rdlog(FAR const struct mfs_sb_s *const sb,
     }
 
   buf = kmm_zalloc(log_sz);
-  if (predict_false(buf == NULL))
+  if ((buf == NULL))
     {
       ret = -ENOMEM;
       goto errout;
     }
 
   ret = mfs_read_page(sb, buf, log_sz, jrnl_pg, 4);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_buf;
     }
 
   ret = OK;
 
-  if (predict_false(deser_log(buf, log) == NULL))
+  if ((deser_log(buf, log) == NULL))
     {
       ret = -ENOMEM;
       goto errout_with_buf;
@@ -298,7 +298,7 @@ FAR static const char *deser_log(FAR const char * const in,
   /* Allocates path. Deallocate using mfs_jrnl_log_free. */
 
   x->path = kmm_zalloc(sizeof(struct mfs_jrnl_log_s) * x->depth);
-  if (predict_false(x->path == NULL))
+  if ((x->path == NULL))
     {
       return NULL;
     }
@@ -374,7 +374,7 @@ int mfs_jrnl_init(FAR struct mfs_sb_s * const sb, mfs_t blk)
   while (true)
     {
       ret = mfs_jrnl_rdlog(sb, &blkidx, &pg_in_blk, &log);
-      if (predict_false(ret < 0 && ret != -ENOSPC))
+      if ((ret < 0 && ret != -ENOSPC))
         {
           goto errout;
         }
@@ -431,7 +431,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
   sz = MFS_JRNL_SUFFIXSZ + ((CONFIG_MNEMOFS_JOURNAL_NBLKS + 2) * 4);
 
   buf = kmm_zalloc(sz);
-  if (predict_false(buf == NULL))
+  if ((buf == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -440,7 +440,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
   if (*blk1 == 0 && *blk2 == 0)
     {
       *blk1 = mfs_ba_getblk(sb);
-      if (predict_false(blk1 == 0))
+      if ((blk1 == 0))
         {
           ret = -ENOSPC;
           goto errout_with_buf;
@@ -449,7 +449,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
       fvdbg("Allocated Master Block 1: %d.", *blk1);
 
       *blk2 = mfs_ba_getblk(sb);
-      if (predict_false(blk2 == 0))
+      if ((blk2 == 0))
         {
           ret = -ENOSPC;
           goto errout_with_buf;
@@ -468,7 +468,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
       alloc_blk = mfs_ba_getblk(sb);
       tmp       = mfs_ser_mfs(alloc_blk, tmp);
 
-      if (predict_false(i == 0))
+      if ((i == 0))
         {
           blk                     = alloc_blk;
           *jrnl_blk               = alloc_blk;
@@ -487,7 +487,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
   ret = mfs_write_page(sb, buf, sz, pg, 0); /* Assuming array fits in a
                                              * single page.
                                              */
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_buf;
     }
@@ -551,7 +551,7 @@ mfs_t mfs_jrnl_blkidx2blk(FAR const struct mfs_sb_s * const sb,
   DEBUGASSERT(pg < (MFS_BLK2PG(sb, blk) + MFS_PGINBLK(sb)));
 
   ret = mfs_read_page(sb, buf, 4, pg, pgoff);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       return 0;
     }
@@ -585,7 +585,7 @@ int mfs_jrnl_updatedinfo(FAR const struct mfs_sb_s * const sb,
   while (blkidx < MFS_JRNL(sb).n_blks && counter < MFS_JRNL(sb).n_logs)
     {
       ret = mfs_jrnl_rdlog(sb, &blkidx, &pg_in_block, &tmplog);
-      if (predict_false(ret < 0 && ret != -ENOSPC))
+      if ((ret < 0 && ret != -ENOSPC))
         {
           goto errout;
         }
@@ -632,7 +632,7 @@ int mfs_jrnl_wrlog(FAR struct mfs_sb_s * const sb,
   struct mfs_jrnl_log_s  log;
 
   buf = kmm_zalloc(log_sz); /* For size before log. */
-  if (predict_false(buf == NULL))
+  if ((buf == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -659,7 +659,7 @@ int mfs_jrnl_wrlog(FAR struct mfs_sb_s * const sb,
   /* TODO: It assumes it takes only one page per log. */
 
   ret = mfs_write_page(sb, buf, log_sz, jrnl_pg, 0);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_buf;
     }
@@ -737,7 +737,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
   while (log_itr < MFS_JRNL(sb).n_logs)
     {
       ret = mfs_jrnl_rdlog(sb, &blkidx, &pg_in_blk, &log);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           DEBUGASSERT(ret != -ENOSPC); /* While condition is sufficient. */
           goto errout;
@@ -754,7 +754,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
       tmp_pg_in_blk = pg_in_blk;
 
       path = kmm_zalloc(log.depth * sizeof(struct mfs_path_s));
-      if (predict_false(path == NULL))
+      if ((path == NULL))
         {
           goto errout;
         }
@@ -769,7 +769,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
             {
               break;
             }
-          else if (predict_false(ret < 0))
+          else if ((ret < 0))
             {
               mfs_jrnl_log_free(&log);
               mfs_free_patharr(path);
@@ -811,7 +811,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
           ret = mfs_lru_updatectz(sb, path, log.depth,
                                   path[log.depth - 1].ctz,
                                   path[log.depth - 1].sz);
-          if (predict_false(ret < 0))
+          if ((ret < 0))
             {
               mfs_free_patharr(path);
               mfs_jrnl_log_free(&log);
@@ -844,7 +844,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
   mn_state = MFS_MN(sb);
 
   ret = mfs_jrnl_fmt(sb, &mn_blk1, &mn_blk2, &jrnl_blk);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_JRNL(sb) = j_state;
       goto errout;
@@ -853,7 +853,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
   /* Write master node entry. */
 
   ret = mfs_mn_sync(sb, &path[0], mn_blk1, mn_blk2, jrnl_blk);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_MN(sb) = mn_state;
       goto errout;
@@ -870,7 +870,7 @@ int mfs_jrnl_flush(FAR struct mfs_sb_s * const sb)
   /* Delete outdated blocks. */
 
   ret = mfs_ba_delmarked(sb);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }

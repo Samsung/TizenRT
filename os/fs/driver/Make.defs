@@ -139,6 +139,10 @@ endif
 
 CSRCS += $(notdir $(CSRCS_DRIVER))
 
+CSRCS_DRIVER += mtd/fs_findmtddriver.c
+CSRCS_DRIVER += mtd/fs_registermtddriver.c
+CSRCS_DRIVER += mtd/fs_unregistermtddriver.c
+
 # Include driver build support
 VPATH_DRIVER = driver $(patsubst %,driver/%,$(sort $(dir $(CSRCS_DRIVER))))
 DEPPATH += $(patsubst %,--dep-path %,$(subst :, ,$(VPATH_DRIVER)))

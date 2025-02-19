@@ -182,12 +182,12 @@ static int is_pg_writeable(FAR struct mfs_sb_s * const sb, mfs_t pg,
   /* Bad block check. */
 
   blkbad_status = mfs_isbadblk(sb, MFS_PG2BLK(sb, pg));
-  if (predict_false(blkbad_status == -ENOSYS))
+  if ((blkbad_status == -ENOSYS))
     {
       return blkbad_status;
     }
 
-  if (predict_false(blkbad_status < 0) || blkbad_status == 1)
+  if ((blkbad_status < 0) || blkbad_status == 1)
     {
       return MFS_BLK_BAD;
     }
@@ -247,12 +247,12 @@ static int is_blk_writeable(FAR struct mfs_sb_s * const sb, const mfs_t blk)
   /* Bad block check. */
 
   blkbad_status = mfs_isbadblk(sb, blk);
-  if (predict_false(blkbad_status == -ENOSYS))
+  if ((blkbad_status == -ENOSYS))
     {
       return blkbad_status;
     }
 
-  if (predict_false(blkbad_status < 0) || blkbad_status == 1)
+  if ((blkbad_status < 0) || blkbad_status == 1)
     {
       return MFS_BLK_BAD;
     }
@@ -310,7 +310,7 @@ int mfs_ba_fmt(FAR struct mfs_sb_s * const sb)
   /* MFS_BA(sb).k_del_elemsz = ((log + 7) & (-8)) / 8; */
 
   MFS_BA(sb).k_del = kmm_zalloc(sizeof(size_t) * MFS_NBLKS(sb));
-  if (predict_false(MFS_BA(sb).k_del == NULL))
+  if ((MFS_BA(sb).k_del == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -319,7 +319,7 @@ int mfs_ba_fmt(FAR struct mfs_sb_s * const sb)
   MFS_BA(sb).n_bmap_upgs = MFS_UPPER8(MFS_NPGS(sb));
 
   MFS_BA(sb).bmap_upgs = kmm_zalloc(MFS_BA(sb).n_bmap_upgs);
-  if (predict_false(MFS_BA(sb).bmap_upgs == NULL))
+  if ((MFS_BA(sb).bmap_upgs == NULL))
     {
       ret = -ENOMEM;
       goto errout_with_k_del;
@@ -345,7 +345,7 @@ int mfs_ba_init(FAR struct mfs_sb_s * const sb)
   int ret = OK;
 
   ret = mfs_ba_fmt(sb);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -353,7 +353,7 @@ int mfs_ba_init(FAR struct mfs_sb_s * const sb)
   /* Traverse the FS tree. */
 
   ret = mfs_pitr_traversefs(sb, MFS_MN(sb).root_ctz, MFS_ISDIR);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_ba;
     }

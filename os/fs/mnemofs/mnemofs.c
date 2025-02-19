@@ -95,7 +95,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
-
+#include "inode/inode.h"
 #include "mnemofs.h"
 
 /****************************************************************************
@@ -269,7 +269,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
   DEBUGASSERT(sb != NULL);
 
   ret   = sem_wait(&MFS_LOCK(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("OPEN", "Failed to acquire mutex.");
       goto errout;
@@ -280,7 +280,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
     }
 
   f     = kmm_zalloc(sizeof(*f));
-  if (predict_false(f == NULL))
+  if ((f == NULL))
     {
       MFS_LOG("OPEN", "Failed to allocate file structure.");
       ret = -ENOMEM;
@@ -292,7 +292,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
     }
 
   fcom  = kmm_zalloc(sizeof(*fcom));
-  if (predict_false(fcom == NULL))
+  if ((fcom == NULL))
     {
       MFS_LOG("OPEN", "Failed to allocate common file structure.");
       ret = -ENOMEM;
@@ -441,7 +441,7 @@ static int mnemofs_open(FAR struct file *filep, FAR const char *relpath,
       MFS_EXTRA_LOG("OPEN", "O_TRUNC is set.");
 
       ret = mfs_lru_del(sb, 0, f->com->sz, f->com->path, f->com->depth);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           MFS_LOG("OPEN", "Could not truncate file.");
           goto errout_with_dirent;
@@ -529,7 +529,7 @@ static int mnemofs_close(FAR struct file *filep)
   DEBUGASSERT(sb != NULL);
 
   ret   = sem_wait(&MFS_LOCK(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("CLOSE", "Failed to acquire mutex.");
       goto errout;
@@ -556,7 +556,7 @@ static int mnemofs_close(FAR struct file *filep)
       MFS_EXTRA_LOG("CLOSE", "Reference Counter is 0.");
 
       ret = mnemofs_flush(sb);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           MFS_LOG("CLOSE", "Could not flush file system.");
 
@@ -640,7 +640,7 @@ static ssize_t mnemofs_read(FAR struct file *filep, FAR char *buffer,
   DEBUGASSERT(sb != NULL);
 
   ret   = sem_wait(&MFS_LOCK(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("READ", "Failed to acquire mutex.");
       goto errout;
@@ -737,7 +737,7 @@ static ssize_t mnemofs_write(FAR struct file *filep, FAR const char *buffer,
   DEBUGASSERT(sb != NULL);
 
   ret   = sem_wait(&MFS_LOCK(sb));
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("WRITE", "Failed to acquire mutex.");
       goto errout;
@@ -765,7 +765,7 @@ static ssize_t mnemofs_write(FAR struct file *filep, FAR const char *buffer,
 
   ret = mfs_lru_wr(sb, f->com->off, buflen, f->com->path, f->com->depth,
                   buffer);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("WRITE", "Could not write to LRU.");
       goto errout_with_lock;
@@ -1006,7 +1006,7 @@ static int mnemofs_truncate(FAR struct file *filep, off_t length)
     {
       ret = mfs_lru_del(sb, length, f->com->sz - length, f->com->path,
                         f->com->depth);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           fvdbg("Error during truncate. Ret: %d.", ret);
           goto errout_with_lock;
@@ -1126,7 +1126,7 @@ static int mnemofs_dup(FAR const struct file *oldp, FAR struct file *newp)
   DEBUGASSERT(of != NULL);
 
   nf    = kmm_zalloc(sizeof(*nf));
-  if (predict_false(nf == NULL))
+  if ((nf == NULL))
     {
       fvdbg("No memory left.");
       ret = -ENOMEM;
@@ -1319,7 +1319,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
     }
 
   ret = mfs_lru_getupdatedinfo(sb, path, depth);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("OPENDIR", "Failed to get updated information from LRU.");
       goto errout_with_path;
@@ -1330,7 +1330,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
     }
 
   pitr     = kmm_zalloc(sizeof(*pitr));
-  if (predict_false(pitr == NULL))
+  if ((pitr == NULL))
     {
       MFS_LOG("OPENDIR", "Could not allocate space for pitr.");
       ret  = -ENOMEM;
@@ -1342,7 +1342,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
     }
 
   fsdirent = kmm_zalloc(sizeof(*fsdirent));
-  if (predict_false(fsdirent == NULL))
+  if ((fsdirent == NULL))
     {
       MFS_LOG("OPENDIR", "Could not allocate space for FS Direntry.");
       ret  = -ENOMEM;
@@ -1355,7 +1355,7 @@ static int mnemofs_opendir(FAR struct inode *mountpt,
     }
 
   ret = mfs_pitr_init(sb, path, depth, pitr, false);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("OPENDIR", "Failed to initialize pitr.");
       goto errout_with_fsdirent;
@@ -1531,7 +1531,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
    */
 
   ret = mfs_lru_getupdatedinfo(sb, fsdirent->path, fsdirent->depth);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("READDIR", "Failed to get updated information from LRU.");
       goto errout_with_lock;
@@ -1542,7 +1542,7 @@ static int mnemofs_readdir(FAR struct inode *mountpt,
     }
 
   ret = mfs_pitr_readdirent(sb, fsdirent->path, fsdirent->pitr, &dirent);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("READDIR", "Could not read direntry.");
       goto errout_with_lock;
@@ -1741,7 +1741,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
     }
 
   ret = sem_init(&MFS_LOCK(sb), 0, 1);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("BIND", "FS-wide Mutex failed to initialize.");
       goto errout_with_sb;
@@ -1797,7 +1797,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
   MFS_EXTRA_LOG("BIND", "\tFlush State: %" PRIu8, MFS_FLUSH(sb));
 
   sb->rw_buf        = kmm_zalloc(MFS_PGSZ(sb));
-  if (predict_false(sb->rw_buf == NULL))
+  if ((sb->rw_buf == NULL))
     {
       MFS_LOG("BIND", "RW Buffer in-memory allocation error.");
       goto errout_with_lock;
@@ -1839,7 +1839,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
                       i + 1);
 
               ret = mfs_jrnl_init(sb, i);
-              if (predict_false(ret < 0))
+              if ((ret < 0))
                 {
                   MFS_LOG("BIND", "Error initializing journal.");
                   goto errout_with_rwbuf;
@@ -1850,7 +1850,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
                 }
 
               ret = mfs_mn_init(sb, i);
-              if (predict_false(ret < 0))
+              if ((ret < 0))
                 {
                   MFS_LOG("BIND", "Error initializing masternode.");
                   goto errout_with_rwbuf;
@@ -1867,7 +1867,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
           memset(buf, 0, 8);
         }
 
-      if (predict_false(sb->mn.pg == 0))
+      if ((sb->mn.pg == 0))
         {
           MFS_LOG("BIND", "Journal not found on device.");
           MFS_LOG("BIND", "Device needs formatting.");
@@ -1905,7 +1905,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
       mnblk2 = 0;
 
       ret = mfs_jrnl_fmt(sb, &mnblk1, &mnblk2, &jrnl_blk);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           MFS_LOG("BIND", "Error formatting Journal");
           goto errout_with_rwbuf;
@@ -1916,7 +1916,7 @@ static int mnemofs_bind(FAR struct inode *driver, FAR const void *data,
         }
 
       ret = mfs_mn_fmt(sb, mnblk1, mnblk2, jrnl_blk);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           MFS_LOG("BIND", "Error formatting Master Node");
           goto errout_with_rwbuf;
@@ -2232,7 +2232,7 @@ static int mnemofs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
   /* The last incomplete direntry will be added by mfs_pitr_appendnew. */
 
   ret = mfs_pitr_appendnew(sb, path, depth, &pitr, relpath, mode);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("MKDIR", "Could not append direntry. Return %d", ret);
       goto errout_with_path;
@@ -2564,7 +2564,7 @@ static int mnemofs_stat(FAR struct inode *mountpt, FAR const char *relpath,
     }
 
   ret = mfs_lru_getupdatedinfo(sb, path, depth);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("STAT", "Could not get updated information.");
       goto errout_with_path;
@@ -2578,7 +2578,7 @@ static int mnemofs_stat(FAR struct inode *mountpt, FAR const char *relpath,
   mfs_pitr_adv_tochild(&pitr, path);
 
   ret = mfs_pitr_readdirent(sb, path, &pitr, &dirent);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       MFS_LOG("STAT", "Could not read from direntry.");
       goto errout_with_path;
@@ -2641,7 +2641,7 @@ int mnemofs_flush(FAR struct mfs_sb_s *sb)
 
           change = true;
           ret    = mfs_lru_flush(sb);
-          if (predict_false(ret < 0))
+          if ((ret < 0))
             {
               goto errout;
             }
@@ -2655,7 +2655,7 @@ int mnemofs_flush(FAR struct mfs_sb_s *sb)
           change = true;
 
           ret = mfs_jrnl_flush(sb);
-          if (predict_false(ret < 0))
+          if ((ret < 0))
             {
               goto errout;
             }

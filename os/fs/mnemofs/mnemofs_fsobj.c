@@ -338,7 +338,7 @@ int pitr_traverse(FAR struct mfs_sb_s *sb, FAR struct mfs_path_s *path,
       *cap = (*cap * 3) / 2; /* Don't want to double it for memory. */
 
       path = kmm_realloc(path, (*cap) * sizeof(struct mfs_path_s));
-      if (predict_false(path == NULL))
+      if ((path == NULL))
         {
           ret = -ENOMEM;
           goto errout;
@@ -360,7 +360,7 @@ int pitr_traverse(FAR struct mfs_sb_s *sb, FAR struct mfs_path_s *path,
           path[(depth + 1) - 1].ctz = dirent->ctz;
 
           ret = pitr_traverse(sb, path, depth + 1, cap);
-          if (predict_false(ret < 0))
+          if ((ret < 0))
             {
               mfs_free_dirent(dirent);
               goto errout;
@@ -497,7 +497,7 @@ int mfs_pitr_rm(FAR struct mfs_sb_s * const sb,
   mfs_pitr_readdirent(sb, path, &pitr, &dirent);
 
   ret = mfs_pitr_rmdirent(sb, path, depth, &pitr, dirent);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -505,7 +505,7 @@ int mfs_pitr_rm(FAR struct mfs_sb_s * const sb,
   if (rm_child)
     {
       ret = mfs_lru_del(sb, 0, path[depth - 1].sz, path, depth);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout;
         }
@@ -529,7 +529,7 @@ int mfs_pitr_init(FAR const struct mfs_sb_s * const sb,
   const int   diff    = child ? 1 : 0;
   const mfs_t p_depth = depth - diff;
 
-  if (predict_false(depth < diff))
+  if ((depth < diff))
     {
       ret = -EINVAL;
       goto errout;
@@ -538,7 +538,7 @@ int mfs_pitr_init(FAR const struct mfs_sb_s * const sb,
   pitr->c_off = 0;
   pitr->depth = p_depth;
 
-  if (predict_true(p_depth != 0))
+  if ((p_depth != 0))
     {
       pitr->p = path[p_depth - 1];
     }
@@ -617,7 +617,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
   memset(rd, 0, len);
 
   d = kmm_zalloc(len);
-  if (predict_false(d == NULL))
+  if ((d == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -643,7 +643,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
   else
     {
       ret = mfs_lru_rdfromoff(sb, pitr->c_off, path, pitr->depth, rd, len);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           goto errout_with_d;
         }
@@ -653,7 +653,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
 
   sz  = MFS_DIRENTSZ(d);
   tmp = kmm_realloc(d, sz);
-  if (predict_true(tmp != NULL))
+  if ((tmp != NULL))
     {
       d = tmp;
     }
@@ -691,7 +691,7 @@ int mfs_pitr_adv(FAR struct mfs_sb_s * const sb,
   FAR struct mfs_dirent_s *dirent;
 
   ret = mfs_pitr_readdirent(sb, path, pitr, &dirent);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -729,7 +729,7 @@ static int search_ctz_by_name(FAR const struct mfs_sb_s * const sb,
       DEBUGASSERT(namelen == 0);
 
       nd = kmm_zalloc(sizeof(struct mfs_dirent_s));
-      if (predict_false(nd == NULL))
+      if ((nd == NULL))
         {
           ret = -ENOMEM;
           goto errout;
@@ -752,13 +752,13 @@ static int search_ctz_by_name(FAR const struct mfs_sb_s * const sb,
   name_hash = mfs_hash(name, namelen);
 
   ret = mfs_lru_getupdatedinfo(sb, path, depth);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
 
   ret = mfs_pitr_init(sb, path, depth, &pitr, false);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -768,7 +768,7 @@ static int search_ctz_by_name(FAR const struct mfs_sb_s * const sb,
       /* Readdirent takes care of LRU updates. */
 
       ret = mfs_pitr_readdirent(sb, path, &pitr, &nd);
-      if (predict_false(ret < 0 || nd == NULL))
+      if ((ret < 0 || nd == NULL))
         {
           ret = -ENONET;
           goto errout;
@@ -834,7 +834,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
                 n_objs);
 
   np     = kmm_zalloc(n_objs * sizeof(struct mfs_path_s));
-  if (predict_false(np == NULL))
+  if ((np == NULL))
     {
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "Could not allocate Path array.");
       ret = -ENOMEM;
@@ -864,14 +864,14 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
                 MFS_MN(sb).root_ctz.idx_e, MFS_MN(sb).root_ctz.pg_e);
   MFS_EXTRA_LOG("MFS_GET_PATHARR", "\tSize is %d", sz);
 
-  if (predict_false(n_objs == 1))
+  if ((n_objs == 1))
     {
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "There is only one object (root).");
       ret_flags |= MFS_ISDIR | MFS_EXIST;
 
       /* This will not go into the loop. */
     }
-  else if (predict_false(n_objs == 2))
+  else if ((n_objs == 2))
     {
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "There are only 2 objects.");
       ret_flags |= MFS_P_EXIST | MFS_P_ISDIR;
@@ -896,7 +896,7 @@ int mfs_get_patharr(FAR const struct mfs_sb_s * const sb,
       MFS_EXTRA_LOG("MFS_GET_PATHARR", "Next String is \"%s\"", next);
 
       ret = search_ctz_by_name(sb, np, i, cur, name_len, &off, &dirent);
-      if (predict_false(ret < 0))
+      if ((ret < 0))
         {
           MFS_EXTRA_LOG("MFS_GET_PATHARR", "Could not find CTZ.");
           goto errout_with_ret_flags;
@@ -1034,7 +1034,7 @@ int mfs_pitr_appenddirent(FAR struct mfs_sb_s * const sb,
 
   mfs_ser_dirent(dirent, wd);
   ret = mfs_lru_wr(sb, pitr->p.sz, len, path, pitr->depth, wd);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout;
     }
@@ -1060,7 +1060,7 @@ int mfs_pitr_appendnew(FAR struct mfs_sb_s * const sb,
   DEBUGASSERT(depth > 0);
 
   d = kmm_zalloc(sizeof(struct mfs_dirent_s) + len);
-  if (predict_false(d == NULL))
+  if ((d == NULL))
     {
       ret = -ENOMEM;
       goto errout;
@@ -1085,7 +1085,7 @@ int mfs_pitr_appendnew(FAR struct mfs_sb_s * const sb,
   path[depth - 1].sz  = d->sz;
 
   ret = mfs_pitr_appenddirent(sb, path, depth, pitr, d);
-  if (predict_false(ret < 0))
+  if ((ret < 0))
     {
       goto errout_with_d;
     }
@@ -1115,7 +1115,7 @@ int mfs_pitr_traversefs(FAR struct mfs_sb_s * sb, const struct mfs_ctz_s ctz,
 
   capacity = MFS_TRAVERSE_INITSZ;
   path = kmm_zalloc(capacity * sizeof(struct mfs_path_s));
-  if (predict_false(path == NULL))
+  if ((path == NULL))
     {
       ret = -ENOMEM;
       goto errout;
