@@ -115,6 +115,7 @@ typedef enum {
 	LWNL_REQ_BLE_OP_WRITE_NO_RESP,
 
 	// Server
+	LWNL_REQ_BLE_SET_SERVER_CONFIG,
 	LWNL_REQ_BLE_GET_PROFILE_COUNT,
 	LWNL_REQ_BLE_CHARACT_NOTI,
 	LWNL_REQ_BLE_CHARACT_INDI,
@@ -390,6 +391,7 @@ typedef trble_result_e (*trble_operation_write)(struct bledev *dev, trble_operat
 typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 
 /*** Peripheral(Server) ***/
+typedef trble_result_e (*trble_set_server_config)(struct bledev *dev, trble_server_init_config *server);
 typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *count);
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 typedef trble_result_e (*trble_charact_notify)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
@@ -463,6 +465,7 @@ struct trble_ops {
 	trble_operation_write_no_response op_wrtie_no_resp;
 
 	/* Peripheral(Server) */
+	trble_set_server_config set_server_config;
 	trble_get_profile_count get_profile_count;
 	trble_charact_notify charact_noti;
 	trble_charact_indicate charact_indi;
