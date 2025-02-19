@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2025 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/driver/block/fs_openblockdriver.c
+ * fs/driver/block/fs_findmtddriver.c
  *
- *   Copyright (C) 2008-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2008 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in pathname and binary forms, with or without
@@ -56,12 +56,17 @@
 
 #include <tinyara/config.h>
 
+#include <sys/types.h>
+#include <sys/mount.h>
 #include <debug.h>
 #include <errno.h>
+
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
 #include "../driver.h"
+
+#ifdef CONFIG_MTD
 
 /****************************************************************************
  * Private Functions
@@ -72,63 +77,61 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: open_blockdriver
+ * Name: find_mtddriver
  *
  * Description:
- *   Return the inode of the block driver specified by 'pathname'
+ *   Return the inode of the named MTD driver specified by 'pathname'
  *
- * Inputs:
- *   pathname - the full path to the block driver to be opened
- *   mountflags - if MS_RDONLY is not set, then driver must support write
- *     operations (see include/sys/mount.h)
- *   ppinode - address of the location to return the inode reference
+ * Input Parameters:
+ *   pathname   - the full path to the named MTD driver to be located
+ *   ppinode    - address of the location to return the inode reference
  *
- * Return:
+ * Returned Value:
  *   Returns zero on success or a negated errno on failure:
  *
- *   EINVAL  - pathname or pinode is NULL
- *   ENOENT  - No block driver of this name is registered
- *   ENOTBLK - The inode associated with the pathname is not a block driver
- *   EACCESS - The MS_RDONLY option was not set but this driver does not
- *     support write access
+ *   ENOENT  - No MTD driver of this name is registered
+ *   ENOTBLK - The inode associated with the pathname is not an MTD driver
  *
  ****************************************************************************/
 
-int open_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode)
+int find_mtddriver(FAR const char *pathname, FAR struct inode **ppinode)
+
 {
 	FAR struct inode *inode;
-	int ret;
+	int ret = 0;				/* Assume success */
 
-	/* Minimal sanity checks */
+	/* Sanity checks */
 
 #ifdef CONFIG_DEBUG
-	if (!ppinode) {
+	if (!pathname || !ppinode) {
 		ret = -EINVAL;
 		goto errout;
 	}
 #endif
 
-	/* Find the inode associated with this block driver name.  find_blockdriver
-	 * will perform all additional error checking.
-	 */
+	/* Find the inode registered with this pathname */
 
-	ret = find_blockdriver(pathname, mountflags, &inode);
-	if (ret < 0) {
-		fdbg("Failed to file %s block driver\n", pathname);
+	inode = inode_find(pathname, NULL);
+	if (!inode) {
+		fdbg("Failed to find %s\n", pathname);
+		ret = -ENOENT;
 		goto errout;
 	}
 
-	/* Open the block driver.  Note that no mutually exclusive access
-	 * to the driver is enforced here.  That must be done in the driver
-	 * if needed.
-	 */
+	/* Verify that the inode is a block driver. */
 
-	if (inode->u.i_bops->open) {
-		ret = inode->u.i_bops->open(inode);
-		if (ret < 0) {
-			fdbg("%s driver open failed\n", pathname);
-			goto errout_with_inode;
-		}
+	if (!INODE_IS_MTD(inode)) {
+		fdbg("%s is not a block driver\n", pathname);
+		ret = -ENOTBLK;
+		goto errout_with_inode;
+	}
+
+	/* Make sure that the inode supports the requested access */
+
+	if (!inode->u.i_bops) {
+		fdbg("%s does not support requested access\n", pathname);
+		ret = -EACCES;
+		goto errout_with_inode;
 	}
 
 	*ppinode = inode;
@@ -139,3 +142,11 @@ errout_with_inode:
 errout:
 	return ret;
 }
+#else
+int find_mtddriver(FAR const char *pathname, FAR struct inode **ppinode)
+{
+	return -ENODEV;
+}
+
+#endif /* CONFIG_MTD */
+

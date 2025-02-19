@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2025 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/driver/block/fs_openblockdriver.c
+ * fs/driver/block/fs_registermtddriver.c
  *
- *   Copyright (C) 2008-2009 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
- * Redistribution and use in pathname and binary forms, with or without
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
- * 1. Redistributions of pathname code must retain the above copyright
+ * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -56,12 +56,26 @@
 
 #include <tinyara/config.h>
 
-#include <debug.h>
+#include <sys/types.h>
 #include <errno.h>
+
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
-#include "../driver.h"
+
+#if defined(CONFIG_MTD) && !defined(CONFIG_DISABLE_MOUNTPOINT)
+
+/****************************************************************************
+ * Pre-processor oDefinitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Variables
+ ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -72,70 +86,58 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: open_blockdriver
+ * Name: register_mtddriver
  *
  * Description:
- *   Return the inode of the block driver specified by 'pathname'
+ *   Register an MTD driver inode the pseudo file system. 
  *
- * Inputs:
- *   pathname - the full path to the block driver to be opened
- *   mountflags - if MS_RDONLY is not set, then driver must support write
- *     operations (see include/sys/mount.h)
- *   ppinode - address of the location to return the inode reference
+ * Input Parameters:
+ *   path - The path to the inode to create
+ *   mtd  - The MTD driver structure
+ *   mode - inode privileges (not used)
+ *   priv - Private, user data that will be associated with the inode.
  *
- * Return:
- *   Returns zero on success or a negated errno on failure:
+ * Returned Value: 
+ *   Zero on success (with the inode point in 'inode'); A negated errno
+ *   value is returned on a failure (all error values returned by
+ *   inode_reserve):
  *
- *   EINVAL  - pathname or pinode is NULL
- *   ENOENT  - No block driver of this name is registered
- *   ENOTBLK - The inode associated with the pathname is not a block driver
- *   EACCESS - The MS_RDONLY option was not set but this driver does not
- *     support write access
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
  *
  ****************************************************************************/
 
-int open_blockdriver(FAR const char *pathname, int mountflags, FAR struct inode **ppinode)
+int register_mtddriver(FAR const char *path, FAR struct mtd_dev_s *mtd, mode_t mode, FAR void *priv)
+
 {
-	FAR struct inode *inode;
+	FAR struct inode *node;
 	int ret;
 
-	/* Minimal sanity checks */
+	/* Insert an inode for the device driver -- we need to hold the inode
+	 * semaphore to prevent access to the tree while we this.  This is because
+	 * we will have a momentarily bad true until we populate the inode with
+	 * valid data.
+	 */
 
-#ifdef CONFIG_DEBUG
-	if (!ppinode) {
-		ret = -EINVAL;
-		goto errout;
-	}
+	inode_semtake();
+	ret = inode_reserve(path, &node);
+	if (ret >= 0) {
+		/* We have it, now populate it with mtd driver specific information. */
+
+		INODE_SET_MTD(node);
+
+		node->u.i_mtd = mtd;
+#ifdef CONFIG_FILE_MODE
+		node->i_mode = mode;
 #endif
-
-	/* Find the inode associated with this block driver name.  find_blockdriver
-	 * will perform all additional error checking.
-	 */
-
-	ret = find_blockdriver(pathname, mountflags, &inode);
-	if (ret < 0) {
-		fdbg("Failed to file %s block driver\n", pathname);
-		goto errout;
+		node->i_private = priv;
+		ret = OK;
 	}
 
-	/* Open the block driver.  Note that no mutually exclusive access
-	 * to the driver is enforced here.  That must be done in the driver
-	 * if needed.
-	 */
-
-	if (inode->u.i_bops->open) {
-		ret = inode->u.i_bops->open(inode);
-		if (ret < 0) {
-			fdbg("%s driver open failed\n", pathname);
-			goto errout_with_inode;
-		}
-	}
-
-	*ppinode = inode;
-	return OK;
-
-errout_with_inode:
-	inode_release(inode);
-errout:
+	inode_semgive();
 	return ret;
 }
+
+#endif /* CONFIG_MTD && !CONFIG_DISABLE_MOUNTPOINT */
+
