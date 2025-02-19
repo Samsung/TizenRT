@@ -257,10 +257,9 @@ union inode_ops_u {
 	FAR const struct file_operations
 		*i_ops;						/* Driver operations for inode */
 #ifndef CONFIG_DISABLE_MOUNTPOINT
-	FAR const struct block_operations *i_bops;	/* Block driver operations */
+	FAR const struct block_operations    *i_bops;	/* Block driver operations */
 	FAR struct mtd_dev_s                 *i_mtd;    /* MTD device driver */
-	FAR const struct mountpt_operations
-		*i_mops;					/* Operations on a mountpoint */
+	FAR const struct mountpt_operations  *i_mops;	/* Operations on a mountpoint */
 #endif
 #ifdef CONFIG_FS_NAMED_SEMAPHORES
 	FAR struct nsem_inode_s *i_nsem;	/* Named semaphore */
