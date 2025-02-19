@@ -86,6 +86,7 @@ trble_result_e trble_netmgr_scan_whitelist_clear_all(struct bledev *dev);
 
 /*** Central(Client) ***/
 trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *conn_info);
+trble_result_e trble_netmgr_client_bond(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_client_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_client_disconnect_all(struct bledev *dev);
 trble_result_e trble_netmgr_connected_device_list(struct bledev *dev, trble_connected_list *out_connected_list);
@@ -155,6 +156,7 @@ struct trble_ops g_trble_drv_ops = {
 
 	// Client
 	trble_netmgr_client_connect,
+	trble_netmgr_client_bond,
 	trble_netmgr_client_disconnect,
 	trble_netmgr_client_disconnect_all,
 	trble_netmgr_connected_device_list,
@@ -285,6 +287,7 @@ trble_result_e trble_netmgr_set_sec_param(struct bledev *dev, trble_sec_param *s
 	sec_param_input.bond_flag = sec_param->bond_flag;
 	sec_param_input.mitm_flag = sec_param->mitm_flag;
 	sec_param_input.sec_pair_flag = sec_param->sec_pair_flag;
+	sec_param_input.sec_pair_only_flag = sec_param->sec_pair_only_flag;
 	sec_param_input.use_fixed_key = sec_param->use_fixed_key;
 	sec_param_input.fixed_key = sec_param->fixed_key;
 	return rtw_ble_sm_set_security_param(sec_param_input);
@@ -393,6 +396,11 @@ trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *
 	memcpy(conn_info_copy, conn_info, sizeof(trble_conn_info));
 	_reverse_mac(conn_info_copy->addr.mac, NULL);
 	return rtw_ble_client_connect(conn_info_copy, conn_info_copy->is_secured_connect);
+}
+
+trble_result_e trble_netmgr_client_bond(struct bledev *dev, trble_conn_handle con_handle)
+{
+	return rtw_ble_client_bond(con_handle);
 }
 
 trble_result_e trble_netmgr_client_disconnect(struct bledev *dev, trble_conn_handle con_handle)
