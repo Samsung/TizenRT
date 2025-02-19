@@ -97,13 +97,22 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
     return TRBLE_SUCCESS; 
 }
 
-trble_result_e rtw_ble_sm_set_security_param(trble_sec_param sec_param)
+trble_result_e rtw_ble_sm_set_security_param(rtk_bt_le_security_param_t  sec_param)
 {
     rtk_bt_le_security_param_t sec_param_input;
     memcpy(&sec_param_input, &sec_param, sizeof(rtk_bt_le_security_param_t));
+    sec_param_input.auto_sec_req = 0;
+
+    uint8_t pairing_mode = RTK_PAIRING_MODE_PAIRABLE;
+    if(RTK_BT_OK != rtk_bt_le_sm_set_pairing_mode(pairing_mode))
+    {
+        dbg("secure param set fail \n");
+        return TRBLE_FAIL;
+    }
+
     if(RTK_BT_OK != rtk_bt_le_sm_set_security_param(&sec_param_input))
     {
-        debug_print("secure param set fail \n");
+        dbg("secure param set fail \n");
         return TRBLE_FAIL;
     }
     return TRBLE_SUCCESS;

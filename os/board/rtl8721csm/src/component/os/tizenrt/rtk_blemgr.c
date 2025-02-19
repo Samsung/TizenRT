@@ -134,6 +134,7 @@ struct trble_ops g_trble_drv_ops = {
 
 	// Client
 	trble_netmgr_client_connect,
+	NULL,
 	trble_netmgr_client_disconnect,
 	trble_netmgr_client_disconnect_all,
 	trble_netmgr_connected_device_list,
