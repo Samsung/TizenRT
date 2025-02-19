@@ -109,7 +109,7 @@
 #define MFS_JRNL_LIM(sb)           (MFS_JRNL(sb).n_blks / 2)
 #define MFS_TRAVERSE_INITSZ        8
 
-#define MFS_LOG(fn, fmt, ...)          fvdbg("[mnemofs | " fn "] " fmt, ##__VA_ARGS__)
+#define MFS_LOG(fn, fmt, ...)          fdbg("[mnemofs | " fn "] " fmt, ##__VA_ARGS__)
 #ifdef CONFIG_MNEMOFS_EXTRA_DEBUG
 #define MFS_EXTRA_LOG(fn, fmt, ...)    MFS_LOG(fn, fmt, ##__VA_ARGS__)
 #else

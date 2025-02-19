@@ -184,16 +184,18 @@ const struct mountpt_operations g_mnemofs_operations =
   mnemofs_write,     /* write */
   mnemofs_seek,      /* seek */
   mnemofs_ioctl,     /* ioctl */
+#if 0
   NULL,              /* mmap */
   mnemofs_truncate,  /* truncate */
   NULL,              /* poll */
   NULL,              /* readv */
   NULL,              /* writev */
-
+#endif
   mnemofs_sync,      /* sync */
   mnemofs_dup,       /* dup */
   mnemofs_fstat,     /* fstat */
-  NULL,              /* fchstat */
+//  NULL,              /* fchstat */
+  mnemofs_truncate,  /* truncate */
 
   mnemofs_opendir,   /* opendir */
   mnemofs_closedir,  /* closedir */
@@ -209,7 +211,7 @@ const struct mountpt_operations g_mnemofs_operations =
   mnemofs_rmdir,     /* rmdir */
   mnemofs_rename,    /* rename */
   mnemofs_stat,      /* stat */
-  NULL               /* chstat */
+  //NULL               /* chstat */
 };
 
 /****************************************************************************
