@@ -344,16 +344,18 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d", CONFIG_LCD_MAXPOWER);
 		return -1;
 	}
+	if (power == priv->power) {
+		return OK;
+	}
 	while (sem_wait(&priv->sem) != OK) {
 		ASSERT(get_errno() == EINTR);
 	}
 	if (power == 0) {
+		priv->config->backlight(power);
 		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
 		send_cmd(priv, display_off_cmd);
 		/* The power off must operate only when LCD is ON */
-		if (priv->power != 0) {
-			priv->config->power_off();
-		}
+		priv->config->power_off();
 	} else {
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
@@ -361,10 +363,8 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 			/* We need to send init cmd after LCD IC power on */
 			send_init_cmd(priv, lcd_init_cmd_g);
 		}
-		lcm_setting_table_t display_on_cmd = {0x29, 0, {0x00}};
-		send_cmd(priv, display_on_cmd);
+		priv->config->backlight(power);
 	}
-	priv->config->backlight(power);
 	priv->power = power;
 	sem_post(&priv->sem);
 	return OK;
