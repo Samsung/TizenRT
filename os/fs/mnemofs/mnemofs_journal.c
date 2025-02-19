@@ -446,7 +446,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
           goto errout_with_buf;
         }
 
-      fvdbg("Allocated Master Block 1: %d.", *blk1);
+      fdbg("Allocated Master Block 1: %d.", *blk1);
 
       *blk2 = mfs_ba_getblk(sb);
       if ((blk2 == 0))
@@ -455,8 +455,8 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
           goto errout_with_buf;
         }
 
-      fvdbg("Allocated Master Block 1: %d.", *blk2);
-      fvdbg("New locations for Master Blocks %d & %d.", *blk1, *blk2);
+      fdbg("Allocated Master Block 1: %d.", *blk2);
+      fdbg("New locations for Master Blocks %d & %d.", *blk1, *blk2);
     }
 
   tmp = buf;
@@ -475,13 +475,13 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
           MFS_JRNL(sb).jrnl_start = alloc_blk;
         }
 
-      fvdbg("Allocated Journal Block %d at Block %d.", i, alloc_blk);
+      fdbg("Allocated Journal Block %d at Block %d.", i, alloc_blk);
     }
 
   tmp = mfs_ser_mfs(*blk1, tmp);
   tmp = mfs_ser_mfs(*blk2, tmp);
 
-  fvdbg("All Journal Blocks allocated.");
+  fdbg("All Journal Blocks allocated.");
 
   pg  = MFS_BLK2PG(sb, blk);
   ret = mfs_write_page(sb, buf, sz, pg, 0); /* Assuming array fits in a
@@ -494,7 +494,7 @@ int mfs_jrnl_fmt(FAR struct mfs_sb_s * const sb, FAR mfs_t *blk1,
 
   ret = OK; /* We reach here, we OK. */
 
-  fvdbg("Written magic sequence, size and journal array into the journal.");
+  fdbg("Written magic sequence, size and journal array into the journal.");
 
   MFS_JRNL(sb).n_logs        = 0;
   MFS_JRNL(sb).n_blks        = CONFIG_MNEMOFS_JOURNAL_NBLKS;
@@ -522,7 +522,7 @@ void mfs_jrnl_free(FAR struct mfs_sb_s * const sb)
       mfs_jrnl_flush(sb);
     }
 
-  fvdbg("Journal Freed.");
+  fdbg("Journal Freed.");
 }
 
 mfs_t mfs_jrnl_blkidx2blk(FAR const struct mfs_sb_s * const sb,

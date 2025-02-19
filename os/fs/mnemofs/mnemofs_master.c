@@ -318,7 +318,7 @@ int mfs_mn_fmt(FAR struct mfs_sb_s * const sb, const mfs_t mblk1,
       goto errout;
     }
 
-  fvdbg("Root formatted to be at Page %u", pg);
+  fdbg("Root formatted to be at Page %u", pg);
 
   mn.root_ctz.idx_e = 0;
   mn.root_ctz.pg_e  = pg;
@@ -358,7 +358,7 @@ int mfs_mn_fmt(FAR struct mfs_sb_s * const sb, const mfs_t mblk1,
 
   mn.mblk_idx = 1;
   MFS_MN(sb) = mn;
-  fvdbg("Master node written. Now at page %d, timestamp %lld.%.9ld.",
+  fdbg("Master node written. Now at page %d, timestamp %lld.%.9ld.",
         MFS_MN(sb).pg, (long long)MFS_MN(sb).ts.tv_sec,
         MFS_MN(sb).ts.tv_nsec);
 

@@ -411,7 +411,7 @@ mfs_t mfs_get_fsz(FAR struct mfs_sb_s * const sb,
        * this and moving of the journal.
        */
 
-      fvdbg("File size got as %u for root.", sz);
+      fdbg("File size got as %u for root.", sz);
       return sz;
     }
 
@@ -436,7 +436,7 @@ void mfs_free_dirent(FAR struct mfs_dirent_s *dirent)
 {
   kmm_free(dirent);
 
-  fvdbg("Dirent freed.");
+  fdbg("Dirent freed.");
 }
 
 bool mfs_searchfopen(FAR const struct mfs_sb_s * const sb,
@@ -552,7 +552,7 @@ int mfs_pitr_init(FAR const struct mfs_sb_s * const sb,
       pitr->p.sz        = 1; /* For 1 traversal to get root. */
     }
 
-  fvdbg("Pitr initialized at depth %u, with CTZ (%u, %u) and size %u.",
+  fdbg("Pitr initialized at depth %u, with CTZ (%u, %u) and size %u.",
         p_depth, pitr->p.ctz.idx_e, pitr->p.ctz.pg_e, pitr->p.sz);
 
 errout:
@@ -570,7 +570,7 @@ void mfs_pitr_adv_off(FAR struct mfs_pitr_s * const pitr,
 {
   pitr->c_off += off;
 
-  fvdbg("Pitr at depth %u with CTZ (%u, %u) advanced by %u to %u offset.",
+  fdbg("Pitr at depth %u with CTZ (%u, %u) advanced by %u to %u offset.",
         pitr->depth, pitr->p.ctz.idx_e, pitr->p.ctz.pg_e, off, pitr->c_off);
 }
 
@@ -579,7 +579,7 @@ void mfs_pitr_adv_bydirent(FAR struct mfs_pitr_s * const pitr,
 {
   mfs_pitr_adv_off(pitr, MFS_DIRENTSZ(dirent));
 
-  fvdbg("Pitr at depth %u with CTZ (%u, %u) advanced by %u to %u offset.",
+  fdbg("Pitr at depth %u with CTZ (%u, %u) advanced by %u to %u offset.",
         pitr->depth, pitr->p.ctz.idx_e, pitr->p.ctz.pg_e,
         MFS_DIRENTSZ(dirent), pitr->c_off);
 }
@@ -660,7 +660,7 @@ int mfs_pitr_readdirent(FAR const struct mfs_sb_s * const sb,
 
   *dirent = d;
   DEBUGASSERT(pitr->depth == 0 || strcmp(d->name, ""));
-  fvdbg("Read direntry at %u offset, %u depth for CTZ (%u, %u). " \
+  fdbg("Read direntry at %u offset, %u depth for CTZ (%u, %u). " \
         "Direntry name: \"%.*s\" with name length %u and size %u.",
         pitr->c_off, pitr->depth, pitr->p.ctz.idx_e, pitr->p.ctz.pg_e,
         d->namelen, d->name, d->namelen, d->sz);
@@ -672,11 +672,11 @@ errout_with_d:
 
   if (ret < 0)
     {
-      fvdbg("Direntry could not be allocated.");
+      fdbg("Direntry could not be allocated.");
     }
   else if (*dirent == NULL)
     {
-      fvdbg("No direntry found.");
+      fdbg("No direntry found.");
     }
 
 errout:
@@ -699,7 +699,7 @@ int mfs_pitr_adv(FAR struct mfs_sb_s * const sb,
   mfs_pitr_adv_bydirent(pitr, dirent);
   mfs_free_dirent(dirent);
 
-  fvdbg("Pitr for CTZ (%u, %u) advanced to offset %u.",
+  fdbg("Pitr for CTZ (%u, %u) advanced to offset %u.",
         pitr->p.ctz.idx_e, pitr->p.ctz.pg_e, pitr->c_off);
 
 errout:
@@ -792,7 +792,7 @@ static int search_ctz_by_name(FAR const struct mfs_sb_s * const sb,
 errout:
   if (found)
     {
-      fvdbg("Searched \"%.*s\" direntry inside CTZ (%u, %u) at depth %u,"
+      fdbg("Searched \"%.*s\" direntry inside CTZ (%u, %u) at depth %u,"
             " size %u.", namelen, name, path[depth - 1].ctz.idx_e,
             path[depth - 1].ctz.pg_e, depth, path[depth - 1].sz);
       *dirent = nd;
@@ -800,7 +800,7 @@ errout:
   else
     {
       ret = -ENOENT;
-      fvdbg("Can not find requested direntry in parent. Ret: %d.", ret);
+      fdbg("Can not find requested direntry in parent. Ret: %d.", ret);
     }
 
   return ret;
@@ -999,7 +999,7 @@ void mfs_pitr_reset(FAR struct mfs_pitr_s * const pitr)
 {
   pitr->c_off = 0;
 
-  fvdbg("Pitr for CTZ (%u, %u) reset.",
+  fdbg("Pitr for CTZ (%u, %u) reset.",
         pitr->p.ctz.idx_e, pitr->p.ctz.pg_e);
 }
 
@@ -1090,7 +1090,7 @@ int mfs_pitr_appendnew(FAR struct mfs_sb_s * const sb,
       goto errout_with_d;
     }
 
-  fvdbg("Direntry appended to Pitr with %u depth, and CTZ (%u, %u). " \
+  fdbg("Direntry appended to Pitr with %u depth, and CTZ (%u, %u). " \
         "Direntry name: \"%.*s\" with name length %u at offset %u.",
         pitr->depth, pitr->p.ctz.idx_e, pitr->p.ctz.pg_e, d->namelen,
         d->name, d->namelen, path[depth - 1].off);
