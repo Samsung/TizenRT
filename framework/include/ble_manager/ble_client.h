@@ -74,6 +74,7 @@ typedef void(*ble_client_device_disconnected_cb)(ble_client_ctx *ctx);
 typedef void(*ble_client_device_connected_cb)(ble_client_ctx *ctx, ble_device_connected* connected_device);
 typedef void(*ble_client_operation_notification_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
 typedef void (*ble_client_operation_indication_cb)(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* read_result);
+typedef void (*ble_client_passkey_display_cb)(ble_client_ctx *ctx, uint32_t passkey_display_cb, ble_conn_handle conn_handle);
 
 typedef struct {
 	/* This is a set of callback function for BLE client */
@@ -81,6 +82,7 @@ typedef struct {
 	ble_client_device_connected_cb connected_cb;
 	ble_client_operation_notification_cb notification_cb;
 	ble_client_operation_indication_cb indication_cb;
+	ble_client_passkey_display_cb passkey_display_cb;
 } ble_client_callback_list;
 
 ble_client_ctx *ble_client_create_ctx(ble_client_callback_list *callbacks);
