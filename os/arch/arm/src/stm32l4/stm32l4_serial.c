@@ -1733,7 +1733,7 @@ static int up_interrupt(int irq, FAR void *context, FAR void *arg)
         {
           /* Transmit data register empty ... process outgoing bytes */
 
-          uart_xmitchars(&priv->dev);
+          (void)uart_xmitchars(&priv->dev);
           handled = true;
         }
     }
@@ -2581,7 +2581,7 @@ static void stm32l4serial_txint(FAR struct uart_dev_s *dev, bool enable)
        * interrupts disabled (note this may recurse).
        */
 
-      uart_xmitchars(dev);
+      (void)uart_xmitchars(dev);
 #endif
     }
   else

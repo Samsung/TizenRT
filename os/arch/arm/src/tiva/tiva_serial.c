@@ -998,7 +998,7 @@ static int up_interrupt(int irq, void *context, FAR void *arg)
 		if ((mis & UART_MIS_TXMIS) != 0) {
 			/* Tx FIFO not full ... process outgoing bytes */
 
-			uart_xmitchars(dev);
+			(void)uart_xmitchars(dev);
 			handled = true;
 		}
 	}
@@ -1147,7 +1147,7 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
 		 * the TX interrupt.
 		 */
 
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 #endif
 	} else {
 		/* Disable the TX interrupt */

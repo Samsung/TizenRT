@@ -758,7 +758,7 @@ static int esp32_interrupt(int cpuint, void *context, FAR void *arg)
 			if (nfifo < 0x7f) {
 				/* The TXFIFO is not full ... process outgoing bytes */
 
-				uart_xmitchars(dev);
+				(void)uart_xmitchars(dev);
 				handled = true;
 			}
 		}
@@ -1062,7 +1062,7 @@ static void esp32_txint(struct uart_dev_s *dev, bool enable)
 		 * interrupts disabled (note this may recurse).
 		 */
 
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 #endif
 	} else {
 		/* Disable the TX interrupt */
