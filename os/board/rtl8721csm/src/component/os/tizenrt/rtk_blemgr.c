@@ -146,6 +146,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_operation_write_no_response,
 
 	// Server
+	NULL,
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
 	trble_netmgr_charact_indicate,
