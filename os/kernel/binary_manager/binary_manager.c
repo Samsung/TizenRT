@@ -211,6 +211,9 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
+		case BINMGR_GET_INFO_INACTIVE_ALL:
+			binary_manager_get_inactive_info_all(request_msg.requester_pid);
+			break;
 		case BINMGR_GET_DOWNLOAD_PATH:
 			binary_manager_get_inactive_path(request_msg.requester_pid, request_msg.data.bin_name);
 			break;
