@@ -1,4 +1,21 @@
 /****************************************************************************
+ *
+ * Copyright 2025 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * drivers/sensors/sensor.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,6 +57,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#if !defined(CONFIG_SENSOR_NPOLLWAITERS)
+#define CONFIG_SENSOR_NPOLLWAITERS 2
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -48,20 +69,14 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static void    sensor_pollnotify(FAR struct sensor_upperhalf_s *upper,
-                                 pollevent_t eventset);
-static int     sensor_open(FAR struct file *filep);
-static int     sensor_close(FAR struct file *filep);
-static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
-                           size_t buflen);
-static ssize_t sensor_write(FAR struct file *filep, FAR const char *buffer,
-                            size_t buflen);
-static int     sensor_ioctl(FAR struct file *filep, int cmd,
-                            unsigned long arg);
-static int     sensor_poll(FAR struct file *filep, FAR struct pollfd *fds,
-                           bool setup);
-static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
-                                 size_t bytes);
+static void sensor_pollnotify(FAR struct sensor_upperhalf_s *upper, pollevent_t eventset);
+static int sensor_open(FAR struct file *filep);
+static int sensor_close(FAR struct file *filep);
+static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static ssize_t sensor_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static int sensor_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+static ssize_t sensor_push_event(FAR void *priv, FAR const void *data, size_t bytes);
 
 /****************************************************************************
  * Private Data
@@ -111,8 +126,7 @@ static inline void sensor_semgive(sem_t *sem)
 }
 
 
-static void sensor_pollnotify(FAR struct sensor_upperhalf_s *dev,
-                              pollevent_t eventset)
+static void sensor_pollnotify(FAR struct sensor_upperhalf_s *dev, pollevent_t eventset)
 {
 	int itr;
 	for (itr = 0; itr < CONFIG_SENSOR_NPOLLWAITERS; itr++) {
@@ -147,19 +161,21 @@ static int sensor_close(FAR struct file *filep)
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *priv = inode->i_private;
 	if (!priv) {
-                return -EINVAL;
-        }
+		sndbg("ERROR: sensor close failed, upper priv uninitialized/deleted\n");
+		return -EINVAL;
+	}
 
-        sensor_semtake(&priv->sem, false);
-        DEBUGASSERT(priv->crefs > 0);
+	sensor_semtake(&priv->sem, false);
+	DEBUGASSERT(priv->crefs > 0);
 	priv->crefs--;
+
 	if (priv->crefs == 0) {
 #ifndef CONFIG_DISABLE_POLL
 		/* Check if this file is registered in a list of waiters for polling.
 		* For example, when task A is blocked by calling poll and task B try to terminate task A,
 		* a pollfd of A remains in this list. If it is, it should be cleared.
 		*/
-		(void)sensor_semtake(&priv->pollsem, false);
+		sensor_semtake(&priv->pollsem, false);
 		for (int i = 0; i < CONFIG_SENSOR_NPOLLWAITERS; i++) {
 			struct pollfd *fds = priv->fds[i];
 			if (fds && (FAR struct file *)fds->filep == filep) {
@@ -169,14 +185,12 @@ static int sensor_close(FAR struct file *filep)
 		sensor_semgive(&priv->pollsem);
 #endif
 	}
-	
-	sensor_semgive(&priv->sem);
-        return OK;
 
+	sensor_semgive(&priv->sem);
+	return OK;
 }
 
-static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
-                           size_t len)
+static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *upper = inode->i_private;
@@ -184,8 +198,7 @@ static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
 	return OK;
 }
 
-static ssize_t sensor_write(FAR struct file *filep, FAR const char *buffer,
-                            size_t buflen)
+static ssize_t sensor_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *upper = inode->i_private;
@@ -196,55 +209,54 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *priv = inode->i_private;
-	printf("cmd %d arg %d, aa:%d\n", cmd, arg, SENSOR_SET_SAMPRATE);
+	snvdbg("IOCTL: cmd %d data: %d\n", cmd, arg);
 	if (!priv || !priv->ops) {
-		printf("privs is null\n");
-		return -1;
+		sndbg("ERROR: upper_half priv is NULL/ops not found\n");
+		return ERROR;
 	}
 	switch (cmd) {
 		case SENSOR_SET_MCLK: {
 			priv->ops->sensor_set_mclk(priv, arg);
+			break;
 		}
-		break;
-		
 		case SENSOR_SET_BCLK: {
-                        priv->ops->sensor_set_bclk(priv, arg);
-                }
-                break;
-
+			priv->ops->sensor_set_bclk(priv, arg);
+			break;
+		}
 		case SENSOR_SET_SAMPRATE: {
-                        priv->ops->sensor_set_samprate(priv, arg);
-                }
-                break;
-
+			priv->ops->sensor_set_samprate(priv, arg);
+			break;
+		}
 		case SENSOR_SET_CHANNEL: {
-                        priv->ops->sensor_setchannel_count(priv, arg);
-                }
-                break;
-
+			priv->ops->sensor_setchannel_count(priv, arg);
+			break;
+		}
 		case SENSOR_SET_DATABIT: {
-                        priv->ops->sensor_setbit_perchannel(priv, arg);
-                }
-                break;
-
+			priv->ops->sensor_setbit_perchannel(priv, arg);
+			break;
+		}
 		case SENSOR_START: {
-                        priv->ops->sensor_start(priv);
-                }
-		break;
+			priv->ops->sensor_start(priv);
+			break;
+		}
 
 		case SENSOR_STOP: {
 			priv->ops->sensor_stop(priv);
+			break;
 		}
-		break;
+
+		case SENSOR_VERIFY: {
+			priv->ops->sensor_verify(priv);
+			break;
+		}
 
 		default:
-		break;
+			sndbg("ERROR: IOCTL command not found: %d\n", cmd);
 	}
 	return OK;
 }
 
-static int sensor_poll(FAR struct file *filep,
-                       FAR struct pollfd *fds, bool setup)
+static int sensor_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *upper = inode->i_private;
@@ -264,13 +276,13 @@ int sensor_register(const char *path, struct sensor_upperhalf_s *dev)
 	sensor_semgive(&dev->pollsem);
 #endif
 	int ret = register_driver(path, &g_sensor_fops, 0666, dev);
-	if (ret < 0) {
+	if (ret != OK) {
 		kmm_free(dev);
 		sem_destroy(&dev->sem);
 		sem_destroy(&dev->pollsem);
-		lldbg("Sensor Driver registration failed\n");
+		sndbg("ERROR: Sensor Driver registration failed\n");
 		return ret;
 	}
-	lldbg("Sensor Driver registered Successfully\n");
+	snvdbg("Sensor Driver registered Successfully\n");
 	return OK;
 }
