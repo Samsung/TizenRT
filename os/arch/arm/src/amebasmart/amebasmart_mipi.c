@@ -379,7 +379,6 @@ struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *confi
 	mipi_dsi_host_register(&priv->dsi_host);
 #ifdef CONFIG_PM
 	bsp_pm_domain_register("MIPI", BSP_MIPI_DRV);
-	pmu_register_sleep_callback(PMU_MIPI_DEVICE, (PSM_HOOK_FUN)rtk_mipi_suspend, NULL, (PSM_HOOK_FUN)rtk_mipi_resume, NULL);
 #endif
 
 	return (struct mipi_dsi_host *)priv;
