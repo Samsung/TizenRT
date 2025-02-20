@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 8af0741d2a 2025/02/18-14:00:09 ==
+1. enable IWDG in KM0
+2. recovery mechanism for PG wakeup flow
+
 == version 2490a58117 2025/02/12-10:36:45 ==
 1. Optimize API for getting wifi tx retry count to resolve cache coherency issue
 
