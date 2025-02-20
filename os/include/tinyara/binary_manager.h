@@ -128,6 +128,7 @@ enum binmgr_request_msg_type {
 #ifdef CONFIG_USE_BP
 	BINMGR_SWAPBP,
 #endif
+	BINMGR_GET_INFO_INACTIVE_ALL,
 };
 
 /* Result values of returned from binary manager. */

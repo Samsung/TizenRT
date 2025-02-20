@@ -199,7 +199,7 @@ int binary_manager_check_kernel_update(bool check_version)
 	if (ret == BINMGR_OK) {
 		if (!check_version) {
 			bmvdbg("Found valid kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
-			return BINMGR_OK;
+			return header_data.version;
 		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (kernel_info.version <= header_data.version) {
@@ -208,7 +208,7 @@ int binary_manager_check_kernel_update(bool check_version)
 #endif
 			/* Need to update bootparam and reboot */
 			bmvdbg("Found new kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
-			return BINMGR_OK;
+			return header_data.version;
 		}
 
 		/* Running version is the latest */
@@ -258,7 +258,7 @@ int binary_manager_check_update(void)
 	}
 #else
 	ret = binary_manager_check_kernel_update(true);
-	if (ret == BINMGR_OK) {
+	if (ret > 0) {
 		/* Reboot to switch kernel binary in another partition. */
 		goto reboot;
 	} else if (ret != BINMGR_ALREADY_UPDATED && ret != BINMGR_NOT_FOUND) {
@@ -280,7 +280,7 @@ int binary_manager_check_update(void)
 #endif
 		/* Scan binary files */
 		ret = binary_manager_check_user_update(bin_idx, true);
-		if (ret == BINMGR_OK) {
+		if (ret > 0) {
 			/* Update index for inactive partition */
 			BIN_USEIDX(bin_idx) ^= 1;
 			need_update = true;
@@ -553,7 +553,7 @@ int binary_manager_check_user_update(int bin_idx, bool check_version)
 		}
 		if (!check_version) {
 			bmvdbg("Found valid binary in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
-			return BINMGR_OK;
+			return version;
 		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (running_ver <= version) {
@@ -561,7 +561,7 @@ int binary_manager_check_user_update(int bin_idx, bool check_version)
 		if (running_ver < version) {
 #endif
 			bmvdbg("Found Latest version %u in part %d\n", version, BIN_PARTNUM(bin_idx, part_idx));
-			return BINMGR_OK;
+			return version;
 		}
 		/* Running version is the latest */
 		bmdbg("No update! Latest version is running, version %d\n", running_ver);

@@ -234,7 +234,7 @@ int binary_manager_check_resource_update(bool check_version)
 	if (ret == BINMGR_OK) {
 		if (!check_version) {
 			bmvdbg("Found valid resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
-			return BINMGR_OK;
+			return header_data.version;
 		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (resource_info.version <= header_data.version) {
@@ -243,7 +243,7 @@ int binary_manager_check_resource_update(bool check_version)
 #endif
 			/* Need to update bootparam and reboot */
 			bmvdbg("Found new resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
-			return BINMGR_OK;
+			return header_data.version;
 		}
 
 		/* Running version is the latest */
