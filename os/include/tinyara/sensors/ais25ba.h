@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
+ * Copyright 2025 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __DRIVERS_SENSOR_AIS25BA_H
-#define __DRIVERS_SENSOR_AIS25BA_H
+#ifndef __INCLUDE_TINYARA_AIS25BA_H
+#define __INCLUDE_TINYARA_AIS25BA_H
 
 /****************************************************************************
  * Included Files
@@ -27,16 +27,22 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-struct ais25ba_dev_s
-{
-        /* I2C bus and address for device. */
-	
-        struct i2c_dev_s *i2c;
-        struct i2c_config_s i2c_config;
-	struct i2s_dev_s *i2s;
-        /* Configuration for device. */
-	struct sensor_upperhalf_s *upper;
-	void *priv;
+struct ais25ba_ctrl_s {
+    sem_t read_sem;
+    struct timespec sem_timeout;
+	sem_t callback_wait_sem;
 };
 
-#endif	/* __DRIVERS_SENSOR_AIS25BA_H */ 
+struct ais25ba_dev_s
+{
+	/* I2C bus and address for device. */
+	struct i2c_dev_s *i2c;
+	struct i2c_config_s i2c_config;
+	struct i2s_dev_s *i2s;
+	/* Configuration for device. */
+	struct sensor_upperhalf_s *upper;
+	void *priv;
+	struct ais25ba_ctrl_s ctrl;
+};
+
+#endif	/* __INCLUDE_TINYARA_AIS25BA_H */ 
