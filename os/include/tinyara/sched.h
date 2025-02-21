@@ -864,6 +864,67 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg);
  */
 FAR struct tcb_s *sched_gettcb(pid_t pid);
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+
+/****************************************************************************
+ * Name: sched_deadtasklistinit
+ *
+ * Description:
+ *   This function initializes dead task info list
+ *
+ * Inputs:
+ *   None
+ *
+ ****************************************************************************/
+
+void sched_deadtasklistinit();
+
+/****************************************************************************
+ * Name: sched_savedeadtaskinfo
+ *
+ * Description:
+ *   This function adds a work to work queue, that will
+ *   later add task's pid and name info to the list.
+ *   This should be called before deleting a task.
+ *
+ * Inputs:
+ *   pid: pid of the deleting task
+ *   task_name: name of the task
+ *
+ ****************************************************************************/
+
+void sched_savedeadtaskinfo(pid_t pid, const char *task_name);
+
+/****************************************************************************
+ * Name: sched_removedeadtaskinfo
+ *
+ * Description:
+ *   This api must be called at the time of creation of a new task, 
+ *   in order to make sure that we dont store any task name 
+ *   with same pid as the new task in the dead task list.
+ *
+ * Inputs:
+ *   pid: pid of task
+ *
+ ****************************************************************************/
+
+void sched_removedeadtaskinfo(pid_t pid);
+
+/****************************************************************************
+ * Name: sched_getdeadtaskname
+ *
+ * Description:
+ *   This function returns the name of a dead thread given its pid
+ *
+ * Inputs:
+ *   pid: pid of the dead task
+ *
+ ****************************************************************************/
+
+char *sched_getdeadtaskname(int pid);
+
+#endif
+
 /* File system helpers **********************************************************/
 /* These functions all extract lists from the group structure assocated with the
  * currently executing task.
