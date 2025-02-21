@@ -101,7 +101,7 @@
  ****************************************************************************/
 void dbg_save_termination_info(struct tcb_s *tcb)
 {
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+#ifdef CONFIG_DEBUG
 	stackinfo_save_terminated(tcb);
 #endif
 
