@@ -375,6 +375,24 @@ FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev);
 
 int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partname);
 
+/****************************************************************************
+ * Name: little_initialize
+ *
+ * Description:
+ *   Initialize to provide a LITTLE File System Flash block driver wrapper
+ *   around an MTD interface
+ *
+ * Input Parameters:
+ *   minor - The minor device number.  The MTD block device will be
+ *      registered as as /dev/mtdlittleN where N is the minor number.
+ *   mtd - The MTD device that supports the FLASH interface.
+ *   partname - Optional partition name to append to dev entry, NULL if
+ *              not supplied.
+ *
+ ****************************************************************************/
+
+int little_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partname);
+
 /* MTD Driver Initialization ************************************************/
 /* Create an initialized MTD device instance for a particular memory device.
  * MTD devices are not registered in the file system as are other device

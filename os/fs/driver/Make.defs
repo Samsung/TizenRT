@@ -93,6 +93,10 @@ CSRCS_DRIVER += mtd/smart.c
 endif
 endif
 
+ifeq ($(CONFIG_FS_LITTLEFS),y)
+CSRCS_DRIVER += mtd/little.c
+endif
+
 ifeq ($(CONFIG_FS_PROCFS),y)
 ifneq ($(CONFIG_FS_PROCFS_EXCLUDE_MTD),y)
 CSRCS_DRIVER += mtd/mtd_procfs.c
