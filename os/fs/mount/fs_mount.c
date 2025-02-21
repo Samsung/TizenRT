@@ -127,6 +127,9 @@ extern const struct mountpt_operations smartfs_operations;
 #ifdef CONFIG_FS_ROMFS
 extern const struct mountpt_operations romfs_operations;
 #endif
+#ifdef CONFIG_FS_LITTLEFS
+extern const struct mountpt_operations littlefs_operations;
+#endif
 static const struct fsmap_t g_bdfsmap[] = {
 	/*
 	 * For a new file system you have to add { "new_file_system", &operations }
@@ -134,6 +137,9 @@ static const struct fsmap_t g_bdfsmap[] = {
 	 */
 #ifdef CONFIG_FS_SMARTFS
 	{"smartfs", &smartfs_operations},
+#endif
+#ifdef CONFIG_FS_LITTLEFS
+	{"littlefs", &littlefs_operations },
 #endif
 #ifdef CONFIG_FS_ROMFS
 	{"romfs", &romfs_operations},
