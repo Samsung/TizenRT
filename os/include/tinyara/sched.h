@@ -69,7 +69,7 @@
 #include <mqueue.h>
 #include <time.h>
 
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+#ifdef CONFIG_DEBUG
 #include <tinyara/clock.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>

@@ -249,7 +249,7 @@ int prctl(int option, ...)
 #endif /* CONFIG_MESSAGING_IPC */
 	case PR_GET_STKLOG:
 	{
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+#ifdef CONFIG_DEBUG
 		struct stkmon_save_s *dest_buf = va_arg(ap, struct stkmon_save_s *);
 		stkmon_copy_log(dest_buf);
 #else
