@@ -205,9 +205,9 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 	else if (!strncmp(types, "littlefs,", 9)) {
 		char partref[4];
 
-		snprintf(partref, sizeof(partref), "p%d", partno);
-		little_initialize(FLASH_MINOR, mtd_part, partref);
-		partinfo->littlefs_partno = partno;
+		snprintf(partref, sizeof(partref), "p%d", g_partno);
+		little_initialize(minor, mtd_part, partref);
+		partinfo->littlefs_partno = g_partno;
 	}
 #endif
 
@@ -454,7 +454,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 
 void automount_fs_partition(partition_info_t *partinfo)
 {
-#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS)
+#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS) || defined(CONFIG_AUTOMOUNT_LITTLEFS)
 	int ret;
 	char fs_devname[FS_PATH_MAX];
 
@@ -491,9 +491,9 @@ void automount_fs_partition(partition_info_t *partinfo)
 #endif
 
 #ifdef CONFIG_AUTOMOUNT_LITTLEFS
-	snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", FLASH_MINOR, partinfo->littlefs_partno);
+	snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
 
-	ret = mount(fs_devname, "/lfs", "littlefs", 0, NULL);
+	ret = mount(fs_devname, "/lfs", "littlefs", 0, "autoformat");
 	if (ret != OK) {
 		lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 	}

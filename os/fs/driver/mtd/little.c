@@ -157,12 +157,6 @@ static int little_close(FAR struct inode *inode)
 	return OK;
 }
 
-static ssize_t little_reload(struct mtd_dev_s *mtd, FAR uint8_t *buffer, off_t startblock, size_t nblocks)
-{
-	fvdbg("Entry\n");
-	return OK;
-}
-
 static ssize_t little_reload(struct mtd_dev_s *dev, FAR uint8_t *buffer, off_t startblock, size_t nblocks)
 {
 
