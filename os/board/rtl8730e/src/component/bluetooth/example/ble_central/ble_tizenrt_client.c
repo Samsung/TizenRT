@@ -363,6 +363,12 @@ trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secure
     return TRBLE_SUCCESS;
 }
 
+trble_result_e rtw_ble_client_bond(trble_conn_handle conn_handle)
+{
+    uint16_t ret = rtk_bt_le_sm_start_security(conn_handle);
+    return ret;
+}
+
 trble_result_e rtw_ble_client_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
     rtk_bt_le_update_conn_param_t param;
