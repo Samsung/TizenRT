@@ -44,21 +44,28 @@ extern "C" {
 ///@name Ameba Common
 ///@{
 
+typedef enum {
+  AMEBASMART_WDG2,
+  AMEBASMART_WDG4,
+  AMEBASMART_WDGMAX,
+} AMEBASMART_WDG_ID;
+
 typedef u32(*wdt_irq_handler)(void *id);
 /**
  * @brief   Initializes the watch dog, include time setting, mode register
+ * @param   WDG_id which WDT to use
  * @param   timeout_ms: the watch-dog timer timeout value, in ms.
  *           default action of timeout is to reset the whole system.
- * @retval none
+ * @retval  OK if init success, -1 if failed.
  */
-void watchdog_init(uint32_t timeout_ms);
+int watchdog_init(int WDG_id, uint32_t timeout_ms);
 
 /**
  * @brief  Start the watchdog counting
- * @param  None
+ * @param  WDG_id which WDT to use
  * @retval none
  */
-void watchdog_start(void);
+void watchdog_start(int WDG_id);
 
 /**
  * @brief  Stop the watchdog counting
@@ -69,21 +76,22 @@ void watchdog_stop(void);
 
 /**
  * @brief  Refresh the watchdog counting to prevent WDT timeout
- * @param  None
+ * @param  WDG_id which WDT to use
  * @retval none
  */
-void watchdog_refresh(void);
+void watchdog_refresh(int WDG_id);
 
 /**
  * @brief   Switch the watchdog timer to interrupt mode and
  *           register a watchdog timer timeout interrupt handler.
  *           The interrupt handler will be called when the watch-dog
  *           timer is timeout.
+ * @param   WDG_id which WDT to use
  * @param   handler: the callback function for WDT timeout interrupt.
  * @param   id: the parameter for the callback function
  * @retval  none
  */
-void watchdog_irq_init(wdt_irq_handler handler, uint32_t id);
+void watchdog_irq_init(int WDG_id, wdt_irq_handler handler, uint32_t id);
 ///@}
 
 /*\@}*/
