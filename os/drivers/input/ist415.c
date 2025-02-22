@@ -81,6 +81,8 @@ static int ist415_suspend_device(struct touchscreen_s *upper);
 static int ist415_resume_device(struct touchscreen_s *upper);
 static int ist415_process_event(struct ist415_dev_s *dev);
 static void ist415_timer_handler(int argc, uint32_t arg1);
+static int ist415_cmtest(struct touchscreen_s *upper, int *arg);
+static int ist415_jittertest(struct touchscreen_s *upper, int *arg);
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -95,7 +97,9 @@ static const struct touchscreen_ops_s g_ist415_ops = {
 	ist415_disable_touch,	/* disable */
 	ist415_cmd,             /* cmd */
 	ist415_suspend_device,  /* suspend */
-	ist415_resume_device    /* resume */
+	ist415_resume_device,    /* resume */
+	ist415_cmtest,
+	ist415_jittertest
 };
 
 /****************************************************************************
@@ -454,6 +458,23 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 	return ret;
 }
 
+static int ist415_cmtest(struct touchscreen_s *upper, int *arg)
+{
+	int ret = OK;
+	struct ist415_dev_s *dev = (struct ist415_dev_s *)upper->priv;
+	ret = ist415_cmtest_internal(dev, arg);
+	return ret;
+
+}
+
+static int ist415_jittertest(struct touchscreen_s *upper, int *arg)
+{
+	int ret = OK;
+	struct ist415_dev_s *dev = (struct ist415_dev_s *)upper->priv;
+	ret = ist415_jittertest_internal(dev, arg);
+	return ret;
+
+}
 
 /****************************************************************************
  * Name: ist415_power_on
