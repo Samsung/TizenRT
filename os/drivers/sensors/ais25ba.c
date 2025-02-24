@@ -50,7 +50,7 @@
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR char *buffer);
+static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer);
 static void ais25ba_set_mclk(struct sensor_upperhalf_s *priv, int mclk);
 static void ais25ba_set_bclk(struct sensor_upperhalf_s *priv, int bclk);
 static void ais25ba_start(struct sensor_upperhalf_s *priv);
@@ -87,31 +87,9 @@ static float ais25ba_raw_to_mg(int16_t lsb)
 
 static void ais25ba_i2s_callback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result)
 {
-	lldbg("%s %d\n", __func__, __LINE__);
 	struct ais25ba_ctrl_s *ctrl = (struct ais25ba_ctrl_s *)arg;
 	sem_post(&ctrl->callback_wait_sem);
-	lldbg("%s %d\n", __func__, __LINE__);
 	sem_post(&ctrl->read_sem);
-	lldbg("%s %d\n", __func__, __LINE__);
-
-
-
-	uint16_t *o = &apb->samp[0];
-	int16_t *p = (int16_t *)&apb->samp[0];
-	float d;
-	for (int i = 0; i < apb->nbytes; i+=16) {
-		d = ais25ba_raw_to_mg(*p);
-		lldbg("data x: %32x %d %f\n \n", *o, *p, (*p)*0.122);
-		p++;o++;
-		lldbg("y: %32x %d %f\n \n", *o, *p, (*p)*0.122);
-		p++;o++;
-		lldbg("z: %32x %d %f\n \n", *o, *p, (*p)*0.122);
-        p++;o++;
-		p++;p++;p++;p++;p++;
-		o = p;
-	}
-	apb_free(g_apb);
-	lldbg("%s %d\n", __func__, __LINE__);
 }
 
 static void ais25ba_set_mclk(struct sensor_upperhalf_s *priv, int mclk)
@@ -153,12 +131,9 @@ static void ais25ba_setbit_perchannel(struct sensor_upperhalf_s *upper, int bit_
 
 static void ais25ba_set_samprate(struct sensor_upperhalf_s *upper, int samp_rate)
 {
-	lldbg("%s %d\n", __func__, __LINE__);
 	FAR struct ais25ba_dev_s *priv = upper->priv;
-	lldbg("%s %d\n", __func__, __LINE__);
 	snvdbg("i2s rx sample rate %d\n", samp_rate);
 	I2S_RXSAMPLERATE(priv->i2s, samp_rate);
-	lldbg("%s %d\n", __func__, __LINE__);
 }
 
 static int ais25ba_verify_sensor(struct sensor_upperhalf_s *upper, struct i2c_dev_s *i2c, struct i2c_config_s config)
@@ -276,7 +251,7 @@ static void ais25ba_write_data(struct i2c_dev_s *i2c, struct i2c_config_s config
 #endif
 }
 
-static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, FAR char *buffer)
+static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, FAR void *buffer)
 {
 	struct audio_buf_desc_s desc;
 	int sem_cnt;
@@ -286,34 +261,37 @@ static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, 
 
 	int ret = apb_alloc(&desc);
 	if (ret < 0) {
-			printf("alloc fail\n");
+			printf("ERROR: apb_alloc: apb buffer allocation failed\n");
 			return;
 	}
 
-	sem_timedwait(&ctrl->read_sem, &sem_timeout);
+	//sem_timedwait(&ctrl->read_sem, &ctrl->sem_timeout);				/* To prevent deadlock in I2S_RECEIVE */
+	sem_wait(&ctrl->read_sem);
 
     ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
 	if (ret != OK) {
 		sndbg("ERROR: I2S_RECEIVE FAILED\n");
 	}
 
-	sem_timedwait(&ctrl->callback_wait_sem, &sem_timeout);
+	//sem_timedwait(&ctrl->callback_wait_sem, &ctrl->sem_timeout);	/* To prevent deadlock in I2S_RECEIVE */
+	sem_wait(&ctrl->callback_wait_sem);
 
 	sensor_data_s *data = (sensor_data_s *)buffer;
 	int16_t *samp_data = (int16_t *)&g_apb->samp[0];
-	for (int i = 0; i < g_apb->nbytes; i+=16) {
-		data[i].x = ais25ba_raw_to_mg(samp_data);
+
+	for (int i = 0, j = 0; i < g_apb->nbytes; i+=16, j++) {
+		data[j].x = ais25ba_raw_to_mg(*samp_data);
 		samp_data++;
-		data[i].y = ais25ba_raw_to_mg(samp_data);
+		data[j].y = ais25ba_raw_to_mg(*samp_data);
 		samp_data++;
-		data[i].z = ais25ba_raw_to_mg(samp_data);
-		samp_data += 6;
+		data[j].z = ais25ba_raw_to_mg(*samp_data);
+		samp_data += 6;		/* Vendor specific skip bits */
 	}
 	apb_free(g_apb);
 	return ret;
 }
 
-static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR char *buffer)
+static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer)
 {
 	FAR struct ais25ba_dev_s *priv = dev->priv;
 	int ret;
@@ -345,10 +323,10 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	/* Sensor Connection Verification */
 	struct i2c_dev_s *i2c = priv->i2c;
 	struct i2c_config_s config = priv->i2c_config;
-	sem_init(&priv->ctrl.read_sem, 1, 0);
+	sem_init(&priv->ctrl.read_sem, 0, 1);
 	sem_init(&priv->ctrl.callback_wait_sem, 0, 0);
-	priv->ctrl.sem_timeout.tv_sec = 0;		// Seconds
-	priv->ctrl.sem_timeout.tv_nsec = 5 * 1000000;	// nanoseconds
+	priv->ctrl.sem_timeout.tv_sec = 10;		// Seconds
+	priv->ctrl.sem_timeout.tv_nsec = 100000000;	// nanoseconds
 	if (ais25ba_verify_sensor(upper, i2c, config) == OK) {
 		snvdbg("Sensor connection verification success\n");
 	} else{

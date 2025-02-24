@@ -72,7 +72,7 @@
 static void sensor_pollnotify(FAR struct sensor_upperhalf_s *upper, pollevent_t eventset);
 static int sensor_open(FAR struct file *filep);
 static int sensor_close(FAR struct file *filep);
-static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
+static ssize_t sensor_read(FAR struct file *filep, FAR void *buffer, size_t buflen);
 static ssize_t sensor_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int sensor_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
@@ -190,7 +190,7 @@ static int sensor_close(FAR struct file *filep)
 	return OK;
 }
 
-static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t sensor_read(FAR struct file *filep, FAR void *buffer, size_t len)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *upper = inode->i_private;

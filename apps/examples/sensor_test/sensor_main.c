@@ -59,32 +59,35 @@
 #include <stdio.h>
 #include <tinyara/sensors/sensor.h>
 #define IR_SENSOR_PATH "/dev/sensor0"
-#define MEMS_SENSOR_PATH "/dev/sensor1"
+#define MEMS_SENSOR_PATH "/dev/sensor-mems"
+
+void print_sensor_data(sensor_data_s *data)
+{
+	for (int i = 0; i < 32; i++) {
+                printf("x: %f, y: %f, z: %f\n", data[i].x, data[i].y, data[i].z);
+	}
+}
 
 static void temp_read()
 {
+        int samp = 32000;
         int fd = 0;
-	int fd1 = 0;
-        /*fd = open(IR_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+        sensor_data_s *data = (sensor_data_s *)malloc(sizeof(sensor_data_s)*64);
+
+        fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
         if (fd < 0) {
                 printf("ERROR: Failed to open sensor port error:%d\n", fd);
                 return;
-        }*/
-	fd1 = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-        if (fd1 < 0) {
-                printf("ERROR: Failed to open sensor port error:%d\n", fd1);
-                return;
         }
-        char buf[2];
-	int samp = 32000;
-	/*printf("Read from IR sensor\n");
-        read(fd, buf, 2);*/
-	ioctl(fd1, SENSOR_SET_SAMPRATE, samp);
-	printf("Read from MEMS sensor\n");
-	read(fd1, buf, 2);
+
+        ioctl(fd, SENSOR_SET_SAMPRATE, samp);
+        printf("Read from MEMS sensor\n");
+        while (true) {
+                read(fd, data, 2);
+                print_sensor_data(data);
+        }
         printf("sensor test complete \n");
-	close(fd);
-	close(fd1);
+        close(fd);
 }
 
 #ifdef CONFIG_BUILD_KERNEL

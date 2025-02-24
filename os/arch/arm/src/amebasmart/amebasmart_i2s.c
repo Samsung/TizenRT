@@ -1250,7 +1250,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
 			if (DMA_Done && DMA_Done_1) {
-				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
+				//lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
