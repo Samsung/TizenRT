@@ -844,18 +844,22 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv)
 		i2c_slave_set_for_rd_req(priv->i2c_object, 1);
 		ret = i2c_slave_write(priv->i2c_object, w_msgv->buffer, w_msgv->length);
 #else
-		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, &write_restart, 1, 0);
-		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 1);
+		/* send stop only if there is no need to read after write */
+		if ((r_msgv->flags & I2C_M_READ) != 0)
+		{
+			ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 0);
+		} else {
+			ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 1);
+		}
 #endif
         }
-	if ((r_msgv->flags & I2C_M_READ) != 0) {
+	if (ret == w_msgv->length && (r_msgv->flags & I2C_M_READ) != 0) {
 
 		i2cinfo("i2c reading");
 #ifdef CONFIG_I2C_SLAVE
 
 		ret = i2c_slave_read(priv->i2c_object, r_msgv->buffer, r_msgv->length);
 #else
-		rtk_i2c_write(priv->i2c_object, r_msgv->addr, &write_restart, 1, 0);
 		ret = rtk_i2c_read(priv->i2c_object, r_msgv->addr, r_msgv->buffer, r_msgv->length, 1);
 #endif
 	}
