@@ -56,7 +56,7 @@
 #define SENSOR_VERIFY _SNIOC(9)
 
 struct sensor_ops_s {
-	int (*sensor_read)(struct sensor_upperhalf_s *priv, FAR char *buffer);
+	int (*sensor_read)(struct sensor_upperhalf_s *priv, FAR void *buffer);
 	void (*sensor_set_mclk)(struct sensor_upperhalf_s *priv, int mclk);
 	void (*sensor_set_bclk)(struct sensor_upperhalf_s *priv, int bclk);
 	void (*sensor_start)(struct sensor_upperhalf_s *priv);
@@ -84,9 +84,9 @@ struct sensor_upperhalf_s {
 };
 
 typedef struct sensor_data_s {
-	int x;
-	int y;
-	int z;
+	float x;
+	float y;
+	float z;
 } sensor_data_s;
 
 #ifdef __cplusplus
