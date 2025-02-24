@@ -726,10 +726,10 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 //		API_PRINT("RTK_BT_LE_GP_AUDIO group \r\n");
 //		bt_stack_le_audio_act_handle(p_cmd);
 //		break;
-//	case RTK_BT_COMMON_GP_GAP:
-//		API_PRINT("RTK_BT_COMMON_GP_GAP group \r\n");
-//		bt_stack_gap_act_handle(p_cmd);
-//		break;
+	case RTK_BT_COMMON_GP_GAP:
+		API_PRINT("RTK_BT_COMMON_GP_GAP group \r\n");
+		bt_stack_gap_act_handle(p_cmd);
+		break;
 	default:
 		API_PRINT("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
 		break;

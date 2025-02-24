@@ -1075,8 +1075,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		uint8_t own_addr_type = *(uint8_t *)param->param[2];
 		uint8_t *adv_handle = (uint8_t *)param->param[4];
 		uint32_t *primary_adv_interval = (uint32_t *)param->param[1];
+
 		ret = ble_drv_create_multi_adv(adv_event_prop, primary_adv_interval,
-										own_addr_type, own_addr_val, adv_handle);
+										own_addr_type, own_addr_val,
+										adv_handle);
 	} break;
 
 	case BLE_CMD_DELETE_MULTI_ADV: {
