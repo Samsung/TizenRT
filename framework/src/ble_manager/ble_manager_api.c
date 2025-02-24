@@ -540,7 +540,8 @@ ble_result_e ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primar
 												uint8_t own_addr_type, uint8_t own_addr_val[BLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle)
 {
 	blemgr_msg_params param = { 5, {(void *)&adv_event_prop, (void *)primary_adv_interval,
-									 (void *)&own_addr_type, (void *)own_addr_val, (void *)adv_handle}};
+									 (void *)&own_addr_type, (void *)own_addr_val,
+									  (void *)adv_handle}};
 	blemgr_msg_s msg = {BLE_CMD_CREATE_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
 	int res = blemgr_post_message(&msg);
 
