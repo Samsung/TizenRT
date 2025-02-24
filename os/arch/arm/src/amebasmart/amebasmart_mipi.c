@@ -67,7 +67,7 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 static void amebasmart_register_interrupt(void);
 
 /* MIPI methods */
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list);
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u16 payload_len, const u8 *para_list);
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
@@ -172,10 +172,15 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 }
 
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u16 payload_len, const u8 *para_list)
 {
-	u32 word0, word1, addr, idx;
-	u8 cmd_addr[128];
+	u32 word0;
+	u32 word1;
+	u32 addr;
+	u32 idx;
+	u8 high_payload;
+	u8 low_payload;
+
 	if (payload_len == 0) {
 		MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_SHORT_WRITE, cmd, 0);
 		return;
@@ -184,12 +189,25 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 		return;
 	}
 
+	/* If the payload len is bigger than max buffer size supported, it might result in
+	   unexpected behaviour, thus we should assert here
+	*/
+	/* Currently hardcode the number first, need to change to use macro later */
+	DEBUGASSERT(payload_len <= 3840);
+	/* Payload buffer max size = 480 * 64 bits */
+	u8 *cmd_addr = (uint8_t *)rtw_zmalloc(payload_len);
+	if (cmd_addr == NULL) {
+		dbg("MIPI buffer malloc failed!\n");
+		return;
+	}
 	cmd_addr[0] = cmd;
 	for (idx = 0; idx < payload_len; idx++) {
 		cmd_addr[idx + 1] = para_list[idx];
 	}
 
 	payload_len = payload_len + 1;
+	high_payload = (payload_len >> 8) & 0xFF;
+	low_payload = payload_len & 0xFF;
 	/* the addr payload_len 1 ~ 8 is 0 */
 	for (addr = 0; addr < (u32)(payload_len + 7) / 8; addr++) {
 		idx = addr * 8;
@@ -197,7 +215,9 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 		word1 = (cmd_addr[idx + 7] << 24) + (cmd_addr[idx + 6] << 16) + (cmd_addr[idx + 5] << 8) + cmd_addr[idx + 4];
 		MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, FALSE);
 	}
-	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, payload_len, 0);
+
+	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, low_payload, high_payload);
+	rtw_mfree(cmd_addr, 0);
 }
 
 static void amebasmart_mipidsi_isr(void)
@@ -211,6 +231,11 @@ static void amebasmart_mipidsi_isr(void)
 	MIPI_DSI_INTS_ACPU_Clr(MIPIx, reg_val2);
 	if (reg_val & MIPI_BIT_CMD_TXDONE) {
 		reg_val &= ~MIPI_BIT_CMD_TXDONE;
+		send_cmd_done = 1;
+	}
+
+	if ((reg_val & MIPI_BIT_VID_DONE)) {
+		reg_val &= ~MIPI_BIT_VID_DONE;
 		send_cmd_done = 1;
 	}
 
@@ -271,11 +296,18 @@ static void amebasmart_register_interrupt(void)
 }
 
 void mipidsi_mode_switch(bool do_enable){
-	if(do_enable){
+	/* Video mode */
+	if (do_enable) {
+		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
 		MIPI_DSI_Mode_Switch(g_dsi_host.MIPIx, ENABLE);
-	}
-	else{
+	/* Command mode */
+	} else {
 		MIPI_DSI_Mode_Switch(g_dsi_host.MIPIx, DISABLE);
+		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, ENABLE, FALSE);
+		/* This delay is necessary (ie. Vsync signal wait time) for mode switch from Video to command mode 
+		   This delay is equivalent to one frame time, with running 60 FPS
+		*/
+		DelayUs(16700);
 	}
 }
 
