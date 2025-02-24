@@ -65,6 +65,7 @@
 #include <stdio.h>
 #include <sched.h>
 
+#include "lcd_logo.h"
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/lcd/lcd_dev.h>
@@ -92,6 +93,7 @@ struct lcd_s {
 	sem_t copy_buffer_sem;
 #endif
 };
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -246,6 +248,7 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	case LCDDEVIO_PUTAREA: {
+		lcd_logo_release_buffer();
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 		sem_wait(&priv->copy_buffer_sem);
 		priv->lcd_area = (FAR const struct lcddev_area_s *)arg;
@@ -390,6 +393,29 @@ static void lcd_flushing_thread(int argc, char **argv)
 }
 #endif
 
+void lcd_init_put_image(struct lcd_s *lcd_info)
+{
+	int xres;
+	int yres;
+	size_t cols;
+	size_t pixel_size;
+	size_t row_size;
+	uint8_t *lcd_init_fullscreen_image; // Buffer containing full screen data with logo at the center of screen
+	FAR struct fb_videoinfo_s video_info;
+	FAR struct lcddev_area_s *lcd_area;
+
+	lcd_init_fullscreen_image = lcd_logo_allocate_buffer();
+	lcd_info->dev->getvideoinfo(lcd_info->dev, &video_info);
+	xres = video_info.xres;
+	yres = video_info.yres;
+	lcd_logo_fill_buffer(xres, yres);	// Fill buffer at center of screen
+	lcd_area = &(lcd_info->lcd_area);
+	cols = lcd_area->col_end - lcd_area->col_start + 1;
+	pixel_size = lcd_info->planeinfo[lcd_area->planeno].bpp > 1 ? lcd_info->planeinfo[lcd_area->planeno].bpp >> 3 : 1;
+	row_size = lcd_area->stride > 0 ? lcd_area->stride : cols * pixel_size;
+	lcd_info->planeinfo[lcd_area->planeno].putarea(lcd_info->dev, 0, yres, 0, xres, (u8 *)lcd_init_fullscreen_image, row_size);
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -431,6 +457,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 	}
 
 	lcd_info->dev = dev;
+
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	sem_init(&lcd_info->flush_buffer_sem, 0, 0);
 	sem_init(&lcd_info->copy_buffer_sem, 0, 1);
@@ -460,20 +487,19 @@ int lcddev_register(struct lcd_dev_s *dev)
 #ifdef CONFIG_PM
 	lcd_info->pm_domain = pm_domain_register("LCD");
 #endif
-
-	lcd_init_put_image(dev);
 	sem_init(&lcd_info->sem, 0, 1);
-	if (dev->setpower) {
-		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
-		if (ret != OK) {
-			goto cleanup;
-		}
-#ifdef CONFIG_PM
-		(void)pm_suspend(lcd_info->pm_domain);
-#endif
-	}
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
+		lcd_init_put_image(lcd_info);
+		if (dev->setpower) {
+			ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+			if (ret != OK) {
+				goto cleanup;
+			}
+#ifdef CONFIG_PM
+			(void)pm_suspend(lcd_info->pm_domain);
+#endif
+		}
 		snprintf(devname, 16, "/dev/lcd0");
 		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
 		if (ret != OK) {

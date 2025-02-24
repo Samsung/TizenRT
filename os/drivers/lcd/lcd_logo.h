@@ -23,12 +23,15 @@
 
 #define LCD_BLACK_VAL 0
 #ifdef CONFIG_LCD_LOGO_52_340
-#define LOGO_XRES 52
-#define LOGO_YRES 340
+#define LOGO_XRES 340
+#define LOGO_YRES 52
 #else
 #define LOGO_XRES 0
 #define LOGO_YRES 0
 #endif      /* CONFIG_LCD_LOGO_52_340 */
 
-#endif      /* __DRIVER_LCD_LOGO_H */
+uint8_t* lcd_logo_allocate_buffer(void);
+void lcd_logo_release_buffer(void);
+void lcd_logo_fill_buffer(int xres, int yres);
 
+#endif      /* __DRIVER_LCD_LOGO_H */
