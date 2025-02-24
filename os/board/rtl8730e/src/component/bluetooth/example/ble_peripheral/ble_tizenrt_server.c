@@ -12,6 +12,7 @@
 #include <rtk_bt_def.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_bt_le_gap.h>
+#include <rtk_bt_vendor.h>
 #include <mem_types.h>
 #include <bt_utils.h>
 #include <rtk_service_config.h>
@@ -770,7 +771,7 @@ trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t 
 	adv_param.peer_addr.type           = 0;
 	memset(adv_param.peer_addr.addr_val,0, 6);
 	adv_param.filter_policy            = 0;
-	adv_param.tx_power                 = 10;
+	adv_param.tx_power                 = 0x7f;
 	adv_param.primary_adv_phy          = 1;
 	adv_param.secondary_adv_max_skip   = 0;
 	adv_param.secondary_adv_phy        = 1;
@@ -838,6 +839,22 @@ trble_result_e rtw_ble_server_stop_multi_adv(uint8_t adv_handle)
 	}
 }
 #endif
+
+trble_result_e rtw_ble_server_set_adv_txpower(uint16_t txpower)
+{
+	rtk_bt_vendor_tx_power_param_t tx_power = {0};
+	tx_power.tx_power_type = 0;
+	tx_power.adv_tx_power.type = 0;
+	tx_power.tx_gain = txpower;
+	uint16_t ret = rtk_bt_set_tx_power(&tx_power);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+
+	return TRBLE_SUCCESS;
+}
 
 trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bonded_device_list, uint16_t* device_count)
 {
