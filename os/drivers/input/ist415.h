@@ -420,6 +420,7 @@ struct ist415_dev_s {
 
 	uint8_t sys_mode;			/* System Mode (NPM or LPM) */
 	uint16_t touch_type;		/* Touch Type */
+	bool forcedoff;
 	bool knockknock;
 
 	bool touched[TOUCH_MAX_POINTS];
