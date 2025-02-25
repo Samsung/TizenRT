@@ -534,6 +534,11 @@ static int ist415_suspend_device(struct touchscreen_s *upper)
 		ASSERT(get_errno() == EINTR);
 	}
 
+	if (dev->forcedoff) {
+		sem_post(&dev->sem);
+		return EPERM;
+	}
+
 	dev->suspend = true;
 
 	if (dev->knockknock) {
@@ -568,6 +573,11 @@ static int ist415_resume_device(struct touchscreen_s *upper)
 		ASSERT(get_errno() == EINTR);
 	}
 
+	if (dev->forcedoff) {
+		sem_post(&dev->sem);
+		return ESHUTDOWN;
+	}
+
 	dev->suspend = false;
 
 	if (dev->knockknock) {
@@ -593,10 +603,18 @@ static void ist415_disable_touch(struct touchscreen_s *upper)
 {
 	struct ist415_dev_s *dev = upper->priv;
 	ist415vdbg("%s\n", __func__);
-	ist415_suspend_device(upper);
-	if (dev->knockknock) {
-		ist415_disable(upper->priv);
+
+	while (sem_wait(&dev->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
 	}
+
+	dev->forcedoff = true;
+	ist415_disable(dev);
+	ist415_power_off(dev);
+
+	ist415_forced_release(dev);
+
+	sem_post(&dev->sem);
 }
 
 /****************************************************************************
@@ -607,10 +625,18 @@ static void ist415_enable_touch(struct touchscreen_s *upper)
 {
 	struct ist415_dev_s *dev = upper->priv;
 	ist415vdbg("%s\n", __func__);
-	ist415_resume_device(upper);
-	if (dev->knockknock) {
-		ist415_enable(upper->priv);
+
+	while (sem_wait(&dev->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
 	}
+
+	dev->forcedoff = false;
+	dev->suspend = false;
+	ist415_reset(dev, false);
+	ist415_enable(dev);
+	ist415_start(dev);
+
+	sem_post(&dev->sem);
 }
 
 /****************************************************************************
@@ -666,7 +692,10 @@ retry_handler:
 		ist415_disable(dev);
 		ist415_forced_release(dev);
 		ist415_reset(dev, false);
-		if (dev->suspend) {
+
+		if (dev->forcedoff) {
+			ist415_power_off(dev);
+		} else if (dev->suspend) {
 			if (dev->knockknock) {
 				if (dev->sys_mode == SYS_MODE_LPM) {
 					ist415_power_mode(dev, dev->sys_mode);
@@ -1147,6 +1176,7 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->enable = false;
 	dev->pre_enable = false;
 	dev->suspend = false;
+	dev->forcedoff = false;
 	dev->log = IST415_LOG_LEVEL_ERRO;
 
 	dev->sys_mode = SYS_MODE_TOUCH;
