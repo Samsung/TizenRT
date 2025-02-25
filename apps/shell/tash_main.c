@@ -50,7 +50,11 @@ enum tash_input_state_e {
 #define SELECT_TIMEOUT_USECS  (0)
 #endif
 #define TASH_TASK_STACKSIZE   (4096)
+#ifdef CONFIG_TASH_TASK_PRIORITY
+#define TASH_TASK_PRIORITY    (CONFIG_TASH_TASK_PRIORITY)
+#else
 #define TASH_TASK_PRIORITY    (125)
+#endif
 
 #define TASH_PROMPT           "TASH>>"
 #endif							/* CONFIG_TASH */
