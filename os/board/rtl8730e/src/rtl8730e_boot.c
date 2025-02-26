@@ -78,7 +78,9 @@
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
-
+#ifdef CONFIG_WATCHDOG
+#include "wdt_api.h"
+#endif
 #include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
@@ -485,7 +487,12 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_WATCHDOG
-	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
+	if (amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, AMEBASMART_WDG4, 5000) != OK) {
+		lldbg("Failed to initialize watchdog4\n");
+	}
+	if (amebasmart_wdg_initialize(CONFIG_WATCHDOG2_DEVPATH, AMEBASMART_WDG2, 5000) != OK) {
+		lldbg("Failed to initialize watchdog2\n");
+	}
 #endif
 #ifdef CONFIG_TIMER
 	int i;
