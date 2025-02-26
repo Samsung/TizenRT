@@ -92,6 +92,8 @@ void ist415_run_intr_debug(struct ist415_dev_s *dev);
 void ist415_display_cpc(struct ist415_dev_s *dev);
 void ist415_display_rawdata(struct ist415_dev_s *dev);
 int ist415_selftest(struct ist415_dev_s *dev);
+int ist415_cmtest(struct ist415_dev_s *dev);
+int ist415_jittertest(struct ist415_dev_s *dev);
 int ist415_rec_mode(struct ist415_dev_s *dev, int argc, char **argv);
 void ist415_recording(struct ist415_dev_s *dev);
 

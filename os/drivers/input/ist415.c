@@ -444,6 +444,10 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 		ist415_selftest(dev);
 	} else if (strncmp(argv[1], "rec", 4) == 0) {		
 		ret = ist415_rec_mode(dev, argc, argv);
+	} else if (strncmp(argv[1], "cm_test", 8) == 0) {
+		ret = ist415_cmtest(dev);
+	} else if(strncmp(argv[1], "jitter_test", 12) == 0) {
+		ret = ist415_jittertest(dev);
 	} else {
 		ret = -EINVAL;
 	}
@@ -453,7 +457,6 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 	}
 	return ret;
 }
-
 
 /****************************************************************************
  * Name: ist415_power_on
