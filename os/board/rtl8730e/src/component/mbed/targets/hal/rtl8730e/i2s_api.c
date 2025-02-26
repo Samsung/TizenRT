@@ -20,8 +20,11 @@
 #include "ameba_audio_clock.h"
 #include "amebasmart_i2s.h"
 
+#ifdef CONFIG_AMEBASMART_I2S_TX_DMA_PAGE
+#define SP_MAX_DMA_PAGE_NUM (CONFIG_AMEBASMART_I2S_TX_DMA_PAGE + 1)
+#else
 #define SP_MAX_DMA_PAGE_NUM 8
-
+#endif
 /** @addtogroup Ameba_Mbed_API
   * @{
   */
@@ -220,8 +223,8 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 	uint32_t i, j;
 #endif
 
-	if ((page_num < 2) || (page_num > 8) || (page_size < 8)) {
-		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: PageNum(%d) valid value is 2~8; PageSize(%d must > 8)\r\n", \
+	if ((page_num < 2) || (page_num > (SP_MAX_DMA_PAGE_NUM - 1)) || (page_size < 4)) {
+		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: PageNum(%d) valid value is > 2 and less than SP_MAX_DMA_PAGE_NUM; PageSize(%d must > 4)\r\n", \
 				   __FUNCTION__, page_num, page_size);
 		return;
 	}
