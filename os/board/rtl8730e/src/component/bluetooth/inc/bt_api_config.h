@@ -46,8 +46,8 @@ extern "C"
 
 #if defined(RTK_BLE_5_0_SUPPORT) && RTK_BLE_5_0_SUPPORT
 #define RTK_BLE_5_0_SET_PHYS_SUPPORT        1
-#define RTK_BLE_5_0_AE_ADV_SUPPORT          0
-#define RTK_BLE_5_0_AE_SCAN_SUPPORT         0
+#define RTK_BLE_5_0_AE_ADV_SUPPORT          1
+#define RTK_BLE_5_0_AE_SCAN_SUPPORT         1
 #define RTK_BLE_5_0_PA_ADV_SUPPORT         (0 && RTK_BLE_5_0_AE_ADV_SUPPORT)
 #define RTK_BLE_5_0_PA_SYNC_SUPPORT        (0 && RTK_BLE_5_0_AE_SCAN_SUPPORT)
 #endif /* RTK_BLE_5_0_SUPPORT */
