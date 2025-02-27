@@ -84,13 +84,14 @@ typedef struct {
 } ble_conn_param;
 
 typedef struct {
-	uint8_t io_cap;                 /*!< IO capabilities */
-	uint8_t oob_data_flag;          /*!< OOB data flag */
-	uint8_t bond_flag;              /*!< Bonding flags */
-	uint8_t mitm_flag;              /*!< MITM flag */
-	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
-	uint8_t use_fixed_key;          /*!< Pairing use fixed passkey */
-	uint32_t fixed_key;             /*!< Fixed passkey value */
+	uint8_t io_cap;                         /*!< IO capabilities */
+	uint8_t oob_data_flag;                  /*!< OOB data flag */
+	uint8_t bond_flag;                      /*!< Bonding flags */
+	uint8_t mitm_flag;                      /*!< MITM flag */
+	uint8_t sec_pair_flag;                  /*!< Secure connection pairing support flag */
+	uint8_t sec_pair_only_flag;             /*!< Only accept secure connection pairing when local sec_pair_flag is set */
+	uint8_t use_fixed_key;                  /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;                     /*!< Fixed passkey value */
 } ble_sec_param;
 
 /**

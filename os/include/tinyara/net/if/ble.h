@@ -69,13 +69,14 @@ typedef struct {
 } trble_conn_param;
 
 typedef struct {
-	uint8_t io_cap;                 /*!< IO capabilities */
-	uint8_t oob_data_flag;          /*!< OOB data flag */
-	uint8_t bond_flag;              /*!< Bonding flags */
-	uint8_t mitm_flag;              /*!< MITM flag */
-	uint8_t sec_pair_flag;          /*!< Secure connection pairing support flag */
-	uint8_t use_fixed_key;          /*!< Pairing use fixed passkey */
-	uint32_t fixed_key;             /*!< Fixed passkey value */
+	uint8_t io_cap;                         /*!< IO capabilities */
+	uint8_t oob_data_flag;                  /*!< OOB data flag */
+	uint8_t bond_flag;                      /*!< Bonding flags */
+	uint8_t mitm_flag;                      /*!< MITM flag */
+	uint8_t sec_pair_flag;                  /*!< Secure connection pairing support flag */
+	uint8_t sec_pair_only_flag;             /*!< Only accept secure connection pairing when local sec_pair_flag is set */
+	uint8_t use_fixed_key;                  /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;                     /*!< Fixed passkey value */
 } trble_sec_param;
 
 typedef enum {
@@ -83,6 +84,7 @@ typedef enum {
 	LWNL_REQ_BLE_INIT,
 	LWNL_REQ_BLE_DEINIT,
 	LWNL_REQ_BLE_GET_MAC,
+	LWNL_REQ_BLE_START_BOND,
 	LWNL_REQ_BLE_SEC_PARAM_SET,
 	LWNL_REQ_BLE_GET_BONDED_DEV,
 	LWNL_REQ_BLE_DEL_BOND,
@@ -152,6 +154,7 @@ typedef enum {
 typedef enum {
 	LWNL_EVT_BLE_CLIENT_CONNECT,
 	LWNL_EVT_BLE_CLIENT_DISCONNECT,
+	LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY,
 	LWNL_EVT_BLE_CLIENT_NOTI,
 	LWNL_EVT_BLE_CLIENT_INDI,
 	LWNL_EVT_BLE_SCAN_STATE,
@@ -263,6 +266,7 @@ typedef struct {
 	void (*trble_device_connected_cb)(trble_device_connected *connected_device);
 	void (*trble_operation_notification_cb)(trble_operation_handle *handle, trble_data *read_result);
 	void (*trble_operation_indication_cb)(trble_operation_handle *handle, trble_data *read_result);
+	void (*trble_device_passkey_display_cb)(uint32_t passkey, trble_conn_handle handle);
 	uint16_t mtu;
 } trble_client_init_config;
 
@@ -379,6 +383,7 @@ typedef trble_result_e (*trble_scan_whitelist_clear_all)(struct bledev *dev);
 
 /*** Central(Client) ***/
 typedef trble_result_e (*trble_client_connect)(struct bledev *dev, trble_conn_info *conn_info);
+typedef trble_result_e (*trble_client_bond)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_client_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_client_disconnect_all)(struct bledev *dev);
 typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
@@ -452,6 +457,7 @@ struct trble_ops {
 	
 	/* Central(Client) */
 	trble_client_connect client_connect;
+	trble_client_bond start_bond;
 	trble_client_disconnect client_disconnect;
 	trble_client_disconnect_all client_disconnect_all;
 	trble_connected_device_list conn_dev_list;
