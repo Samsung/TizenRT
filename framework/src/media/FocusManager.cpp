@@ -55,8 +55,6 @@ void FocusManager::FocusRequester::notify(int focusChange)
 
 FocusManager ::FocusManager()
 {
-	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
-	fmw.startWorker();
 }
 
 FocusManager &FocusManager::getFocusManager()
