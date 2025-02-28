@@ -104,7 +104,7 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		/* Remove the next node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */
-
+		DEBUGASSERT_MM_FREE_NODE(heap, next);
 		REMOVE_NODE_FROM_LIST(next);
 
 		/* Create a new chunk that will hold both the next chunk and the
