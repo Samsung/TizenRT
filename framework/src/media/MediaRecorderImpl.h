@@ -36,6 +36,7 @@
 #include "MediaQueue.h"
 #include "RecorderObserverWorker.h"
 #include "media/stream_info.h"
+#include "audio/audio_manager.h"
 
 using namespace std;
 
@@ -57,7 +58,9 @@ typedef enum recorder_state_e {
 	/** MediaRecorder do recording */
 	RECORDER_STATE_RECORDING,
 	/** MediaRecorder pause to record */
-	RECORDER_STATE_PAUSED
+	RECORDER_STATE_PAUSED,
+	/** MediaRecorder paused due to mic mute*/
+	RECORDER_STATE_PAUSED_BY_MUTE,
 } recorder_state_t;
 
 const char *const recorder_state_names[] = {
@@ -67,6 +70,7 @@ const char *const recorder_state_names[] = {
 	"RECORDER_STATE_READY",
 	"RECORDER_STATE_RECORDING",
 	"RECORDER_STATE_PAUSED",
+	"RECORDER_STATE_PAUSED_BY_MUTE",
 };
 
 typedef enum recorder_observer_command_e {
@@ -97,6 +101,7 @@ public:
 	recorder_result_t getMaxVolume(uint8_t *vol);
 	recorder_result_t setVolume(uint8_t vol);
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
+	recorder_result_t setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
 	recorder_state_t getState();
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	bool isRecording();
@@ -113,6 +118,7 @@ private:
 	void unprepareRecorder(recorder_result_t& ret);
 	void startRecorder(recorder_result_t& ret);
 	void pauseRecorder(recorder_result_t& ret);
+	void onMuteListenerRecorder(recorder_result_t& ret);
 	void stopRecorder(recorder_result_t& ret);
 	void stopRecorderInternal(recorder_observer_command_e command, recorder_result_t ret);
 	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
@@ -124,6 +130,10 @@ private:
 	void setRecorderDuration(int second, recorder_result_t& ret);
 	void setRecorderFileSize(int byte, recorder_result_t& ret);
 	void dequeueAndRunObserverCallback();
+	void setRecorderStreamInfo(std::shared_ptr<stream_info_t> stream_info, recorder_result_t &ret);
+	void onFocusLossListener(void);
+	void onMuteListener(void);
+	stream_focus_state_t getStreamFocusState(void);
 
 private:
 	std::atomic<recorder_state_t> mCurState;

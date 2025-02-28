@@ -19,6 +19,7 @@
 #include <debug.h>
 #include <media/media_init.h>
 #include "audio/audio_manager.h"
+#include <audio/SoundManager.h>
 #include "PlayerWorker.h"
 #include "RecorderWorker.h"
 #include "PlayerObserverWorker.h"
@@ -28,6 +29,7 @@ using namespace media;
 
 int media_init(void)
 {
+	sound_manager_init();
 	audio_manager_init();
 
 	PlayerWorker::getWorker().startWorker();
