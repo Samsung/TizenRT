@@ -53,15 +53,10 @@ player_result_t MediaPlayerImpl::create()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
-	mpw.startWorker();
 
 	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
 	meddbg("createPlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
-
-	if (ret != PLAYER_OK) {
-		mpw.stopWorker();
-	}
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
@@ -87,9 +82,8 @@ player_result_t MediaPlayerImpl::destroy()
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	player_result_t ret = PLAYER_OK;
-{
-	std::unique_lock<std::mutex> lock(mCmdMtx);
 
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
@@ -99,15 +93,12 @@ player_result_t MediaPlayerImpl::destroy()
 	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
 	meddbg("destroyPlayer enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
-}
-	if (ret == PLAYER_OK) {
-		if (mPlayerObserver) {
-			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-			pow.stopWorker();
-			mPlayerObserver = nullptr;
-		}
 
-		mpw.stopWorker();
+	if (ret == PLAYER_OK && mPlayerObserver) {
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+		pow.stopWorker();
+		pow.startWorker();
+		mPlayerObserver = nullptr;
 	}
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
@@ -767,14 +758,12 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 }
 
 void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
-{
+{	
+	medvdbg("setPlayerObserver\n");
+	
 	PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-
 	if (mPlayerObserver) {
 		pow.stopWorker();
-	}
-
-	if (observer) {
 		pow.startWorker();
 	}
 

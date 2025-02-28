@@ -49,16 +49,11 @@ recorder_result_t MediaRecorderImpl::create()
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
-	mrw.startWorker();
 
 	recorder_result_t ret = RECORDER_OK;
 	mrw.enQueue(&MediaRecorderImpl::createRecorder, shared_from_this(), std::ref(ret));
 	meddbg("createRecorder enqueued. recorder: %x\n", &mRecorder);
 	mSyncCv.wait(lock);
-
-	if (ret != RECORDER_OK) {
-		mrw.stopWorker();
-	}
 
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
 	return ret;
@@ -84,7 +79,7 @@ recorder_result_t MediaRecorderImpl::destroy()
 	meddbg("%s recorder: %x\n", __func__, &mRecorder);
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	recorder_result_t ret = RECORDER_OK;
-{
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	if (!mrw.isAlive()) {
 		meddbg("Worker is not alive. recorder: %x\n", &mRecorder);
@@ -94,15 +89,12 @@ recorder_result_t MediaRecorderImpl::destroy()
 	mrw.enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret));
 	meddbg("destroyRecorder enqueued. recorder: %x\n", &mRecorder);
 	mSyncCv.wait(lock);
-}
-	if (ret == RECORDER_OK) {
-		if (mRecorderObserver) {
-			RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-			row.stopWorker();
-			mRecorderObserver = nullptr;
-		}
 
-		mrw.stopWorker();
+	if (ret == RECORDER_OK && mRecorderObserver) {
+		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+		row.stopWorker();
+		row.startWorker();
+		mRecorderObserver = nullptr;
 	}
 
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
@@ -618,15 +610,9 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 {
 	medvdbg("setRecorderObserver\n");
 
-	RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-
+	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
 	if (mRecorderObserver) {
-		medvdbg("stopWorker\n");
 		row.stopWorker();
-	}
-
-	if (observer) {
-		medvdbg("startWorker\n");
 		row.startWorker();
 	}
 
