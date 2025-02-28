@@ -26,10 +26,42 @@
 
 #include <media/stream_info.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <queue.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+#define AUDIO_DEVICE_STATE_MIC_MUTE 0x0001
+#define AUDIO_DEVICE_STATE_SPEAKER_MUTE 0x0010
+#define AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL 0x0100
+#define AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL 0x1000
+#define AUDIO_DEVICE_STATE_ALL 0x1111
+
+#define SOUND_MANAGER_VOLUME_MUTE -2
+#define SOUND_MANAGER_VOLUME_UNMUTE -1
+ 
+
+/**
+ * @brief: Sound Manager calls this function to notify all registered applications.
+ * This callback is called when mic status and speaker status changed.
+ * It is expected that callee will not hold this thread.
+ * @param[in] state State change of the device that application wants notification.
+ * @param[in] stream_type Stream type for which the state change has occurred.
+ * @param[in] value Value of the state change. For example, if state is MIC_MUTE, then value can be SOUND_MANAGER_VOLUME_MUTE or SOUND_MANAGER_VOLUME_UNMUTE. If state is MIC_GAIN_LEVEL, then value can be between 0 to 15. Similarly for other states.
+*/
+typedef void (*VolumeStateChangedListener)(uint16_t state, stream_policy_t stream_type, int8_t value);
+
+typedef VolumeStateChangedListener OnPlayerVolumeStateChangedListener ;
+typedef VolumeStateChangedListener OnRecorderVolumeStateChangedListener ;
+
+struct VolumeStateChangedListenerListNode {
+    FAR struct VolumeStateChangedListenerListNode *flink;
+    stream_policy_t stream_type;
+    uint16_t state;
+    VolumeStateChangedListener listener;
+};
 
 /**
  * @brief Retrieves the current volume level for a given stream.

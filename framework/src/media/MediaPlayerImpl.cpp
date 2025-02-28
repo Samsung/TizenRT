@@ -403,7 +403,17 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 		mInputHandler.start();
 	}
 
+	audio_manager_result_t res;
+
 	if (mCurState == PLAYER_STATE_PAUSED) {
+		res = set_stream_out_policy(mStreamInfo->policy);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail\n");
+			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, ret);
+			return notifySync();
+		}
+
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
@@ -412,8 +422,6 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 			return notifySync();
 		}
 	}
-
-	audio_manager_result_t res;
 
 	res = set_output_stream_volume(mStreamInfo->policy);
 	if (res != AUDIO_MANAGER_SUCCESS) {
@@ -430,6 +438,9 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	}
 
 	mpw.setPlayer(shared_from_this());
+	FocusManager &fm = FocusManager::getFocusManager();
+	FocusLossListener playerFocusLossListener = std::bind(&MediaPlayerImpl::onFocusLossListener, shared_from_this());
+	fm.registerPlayerFocusLossListener(playerFocusLossListener);
 	mCurState = PLAYER_STATE_PLAYING;
 	return notifySync();
 }
@@ -464,6 +475,10 @@ void MediaPlayerImpl::stopPlayer(player_result_t &ret)
 {
 	LOG_STATE_INFO(mCurState);
 	ret = stopPlayback(false);
+
+	FocusManager &fm = FocusManager::getFocusManager();
+	fm.unregisterPlayerFocusLossListener();
+
 	return notifySync();
 }
 
@@ -557,6 +572,8 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret)
 			return notifySync();
 		}
 		mCurState = PLAYER_STATE_PAUSED;
+		FocusManager &fm = FocusManager::getFocusManager();
+		fm.unregisterPlayerFocusLossListener();
 		return notifySync();
 	}
 
@@ -577,6 +594,14 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret)
 
 	ret = PLAYER_ERROR_INVALID_STATE;
 	return notifySync();
+}
+
+void MediaPlayerImpl::onFocusLossListener()
+{
+	if (mCurState == PLAYER_STATE_PLAYING) {
+		player_result_t ret = PLAYER_FOCUS_LOSS;
+		pausePlayer(ret);
+	}
 }
 
 player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
@@ -823,7 +848,11 @@ void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
-
+	if (stream_info->policy == STREAM_TYPE_VOICE_RECORD) {
+		meddbg("MediaPlayer setStreamInfo fail : invalid argument. Stream Type should not be VOICE_RECORD\n");
+		ret = PLAYER_ERROR_INVALID_PARAMETER;
+		return notifySync();
+	}
 	mStreamInfo = stream_info;
 	notifySync();
 }
@@ -831,7 +860,7 @@ void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_
 stream_focus_state_t MediaPlayerImpl::getStreamFocusState(void)
 {
 	FocusManager &fm = FocusManager::getFocusManager();
-	stream_info_t stream_info = fm.getCurrentStreamInfo();
+	stream_info_t stream_info = fm.getCurrentPlayerStreamInfo();
 	if (mStreamInfo->id == stream_info.id) {
 		return STREAM_FOCUS_STATE_ACQUIRED;
 	} else {

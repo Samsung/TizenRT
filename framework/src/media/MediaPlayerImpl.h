@@ -136,6 +136,7 @@ private:
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
 	stream_focus_state_t getStreamFocusState(void);
+	void onFocusLossListener(void);
 	void setPlayerLooping(bool loop, player_result_t &ret);
 	player_result_t playbackFinished(void);
 	void dequeueAndRunObserverCallback();

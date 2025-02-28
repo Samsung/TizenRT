@@ -33,8 +33,9 @@
 #include <memory>
 #include <mutex>
 #include <string>
-
+#include <functional>
 #include <media/FocusRequest.h>
+using FocusLossListener = std::function<void()>;
 
 namespace media {
 
@@ -85,11 +86,43 @@ public:
 	int requestFocusTransient(std::shared_ptr<FocusRequest> focusRequest);
 
 	/**
-	 * @brief Get current focussed stream info
+	 * @brief Get current player focussed stream info
 	 * @details @b #include <media/FocusManager.h>
 	 * @return return STREAM_FOCUS_STATE_ACQUIRED if stream has focus, else return STREAM_FOCUS_STATE_RELEASED
 	 */
-	stream_info_t getCurrentStreamInfo(void);
+	stream_info_t getCurrentPlayerStreamInfo(void);
+	/**
+	 * @brief Get current recorder focussed stream info
+	 * @details @b #include <media/FocusManager.h>
+	 * @return return STREAM_FOCUS_STATE_ACQUIRED if stream has focus, else return STREAM_FOCUS_STATE_RELEASED
+	 */
+	stream_info_t getCurrentRecorderStreamInfo(void);
+	/**
+	 * @brief Register Player Focus Loss Listener
+	 * @details @b #include <media/FocusManager.h>
+	 * param[in] playerFocusLossCallback Callback function to be called when player focus loss occurs
+	 * @return void
+	*/
+	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
+	/**
+	 * @brief DeRegister Player Focus Loss Listener
+	 * @details @b #include <media/FocusManager.h>
+	 * @return void
+	*/
+	void deRegisterPlayerFocusLossListener(void);
+	/**
+	 * @brief Register Recorder Focus Loss Listener
+	 * @details @b #include <media/FocusManager.h>
+	 * param[in] recorderFocusLossCallback Callback function to be called when recorder focus loss occurs
+	 * @return void
+	*/
+	void registerRecorderFocusLossListener(FocusLossListener recorderFocusLossCallback);
+	/**
+	 * @brief DeRegister Recorder Focus Loss Listener
+	 * @details @b #include <media/FocusManager.h>
+	 * @return void
+	*/
+	void deRegisterRecorderFocusLossListener(void);
 
 private:
 	class FocusRequester
@@ -99,7 +132,6 @@ private:
 		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		stream_info_t getStreamInfo(void);
 		void notify(int focusChange);
-
 		static bool compare(const FocusRequester a, const FocusRequester b);
 
 	private:
@@ -113,9 +145,14 @@ private:
 	void insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest);
 	void removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest);
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
-	std::list<std::shared_ptr<FocusRequester>> mFocusList;
+	void callFocusLossListener(stream_policy_t policy);
+	std::list<std::shared_ptr<FocusRequester>> mPlayerFocusList;
+	std::list<std::shared_ptr<FocusRequester>> mRecorderFocusList;
 	std::mutex mFocusLock;
-	std::mutex mFocusListAccessLock;
+	std::mutex mPlayerFocusListAccessLock;
+	std::mutex mRecorderFocusListAccessLock;
+	FocusLossListener mPlayerFocusLossListener;
+	FocusLossListener mRecorderFocusLossListener;
 };
 } // namespace media
 

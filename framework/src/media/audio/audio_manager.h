@@ -31,6 +31,11 @@
 #include <media/stream_info.h>
 
 #if defined(__cplusplus)
+#include <mutex>
+#include <condition_variable>
+#include <functional>
+/*@ToDo: Extend this listener to support multiple audio event callbacks for both recorder and player. Introduce an enum parameter to specify the type of audio event being handled. Currently, this listener is only utilized for recorder mute events.*/
+using AudioEventListener = std::function<void()>;
 extern "C" {
 #endif
 
@@ -106,6 +111,11 @@ enum audio_device_process_unit_subtype_e {
 
 typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
 
+#if defined(__cplusplus)
+void registerRecorderMuteListener(AudioEventListener listener);
+void deRegisterRecorderMuteListener();
+#endif
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
@@ -133,11 +143,12 @@ audio_manager_result_t audio_manager_init(void);
  *   channels: number of channels
  *   sample_rate: sample rate with which the stream is operated
  *   format: audio file format to be streamed in
+ *   stream_id: stream info id to be used for stream in
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: set_audio_stream_out
@@ -255,12 +266,12 @@ audio_manager_result_t stop_audio_stream_out(bool drain);
  *   calling set_audio_stream_in().
  *
  * Input parameter:
- *   drain: If true Drain pcm data before stop, otherwise drop
+ *   stream_id: stream info id to be used for stream in reset
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_in(void);
+audio_manager_result_t reset_audio_stream_in(stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: reset_audio_stream_out

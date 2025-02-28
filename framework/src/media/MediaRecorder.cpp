@@ -112,6 +112,11 @@ bool MediaRecorder::isRecording()
 	return mPMrImpl->isRecording();
 }
 
+recorder_result_t MediaRecorder::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
+{
+	return mPMrImpl->setStreamInfo(stream_info);
+}
+
 MediaRecorder::~MediaRecorder()
 {
 }

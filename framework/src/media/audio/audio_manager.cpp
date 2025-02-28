@@ -32,7 +32,8 @@
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
 #include <json/cJSON.h>
-
+#include "../RecorderWorker.h"
+#include "../PlayerWorker.h"
 #include "audio_manager.h"
 #include "resample/speex_resampler.h"
 #include "../utils/remix.h"
@@ -214,6 +215,18 @@ static const uint8_t g_audio_stream_volume_entry[7][16] = {
 static cJSON *gJSON = NULL;
 static uint8_t gDefaultVolumeLevel = 0;
 
+AudioEventListener mRecorderMuteCallback = nullptr;
+
+void registerRecorderMuteListener(AudioEventListener listener)
+{
+	mRecorderMuteCallback = listener;
+}
+
+void deRegisterRecorderMuteListener()
+{
+	mRecorderMuteCallback = nullptr;
+}
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -236,9 +249,22 @@ static audio_manager_result_t verify_audio_metadata_json(void);
 static const char *getJSONKey(stream_policy_t stream_policy);
 static inline audio_manager_result_t validate_stream_policy(stream_policy_t stream_policy);
 
+std::mutex eventMutex;
+std::condition_variable syncCv;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static void callMuteListener()
+{
+	unique_lock<std::mutex> lock(eventMutex);
+	if (mRecorderMuteCallback) {
+		mRecorderMuteCallback();
+	}
+	syncCv.notify_one();
+}
+
 static void get_card_path(char *card_path, uint8_t card_id, uint8_t device_id, audio_io_direction_t direct)
 {
 	char type_chr = (direct == INPUT) ? 'c' : 'p';
@@ -1079,7 +1105,7 @@ audio_manager_result_t audio_manager_init(void)
 	return ret;
 }
 
-audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format)
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format, stream_info_id_t stream_id)
 {
 	audio_card_info_t *card;
 	audio_config_t *card_config;
@@ -1104,10 +1130,17 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	card_config = &card->config[card->device_id];
+	medvdbg("[%s] state : %d\n", __func__, card_config->status);
+
+	if (card->stream_id != stream_id) {
+		if (card_config->status != AUDIO_CARD_IDLE) {
+			reset_audio_stream_in(card->stream_id);
+		}
+	}
 
 	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
-		reset_audio_stream_in();
+		reset_audio_stream_in(card->stream_id);
 	}
 
 	pthread_mutex_lock(&(card->card_mutex));
@@ -1187,6 +1220,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 	}
 
 	card_config->status = AUDIO_CARD_READY;
+	card->stream_id = stream_id;
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 
@@ -1603,7 +1637,7 @@ audio_manager_result_t stop_audio_stream_out(bool drain)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t reset_audio_stream_in(void)
+audio_manager_result_t reset_audio_stream_in(stream_info_id_t stream_id)
 {
 	audio_card_info_t *card;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
@@ -1614,7 +1648,10 @@ audio_manager_result_t reset_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-
+	if (stream_id != card->stream_id) {
+		medvdbg("audio manager already got reset for stream_id = %d, currently being used by stream_id = %d\n", stream_id, card->stream_id);
+		return AUDIO_MANAGER_SUCCESS;
+	}
 	pthread_mutex_lock(&(card->card_mutex));
 
 	pcm_close(card->pcm);
@@ -2790,6 +2827,16 @@ audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool
 			return ret;
 		}
 		direct = (stream_policy == STREAM_TYPE_VOICE_RECORD) ? INPUT : OUTPUT;
+		if (direct == INPUT && mute) {
+			media::RecorderWorker& mrw = media::RecorderWorker::getWorker();
+			if (!mrw.isAlive()) {
+				meddbg("Recorder worker is not alive\n");
+				return AUDIO_MANAGER_OPERATION_FAIL;
+			}
+			unique_lock<std::mutex> lock(eventMutex);
+			mrw.enQueue(&callMuteListener);
+			syncCv.wait(lock);
+		}
 		ret = set_audio_mute(direct, stream_policy, mute);
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to set audio to mute. direct: %d, stream_policy: %d, mute: %d, ret: %d\n", direct, stream_policy, mute, ret);
