@@ -550,6 +550,21 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 }
 
 /****************************************************************************
+ * Name: flush_console
+ ****************************************************************************/
+
+static inline void flush_console(void)
+{
+	if (!IS_SECURE_STATE()) {
+		lldbg_noarg("\n===========================================================\n");
+		lldbg_noarg("Flush console log\n");
+		lldbg_noarg("===========================================================\n\n");
+		up_flush_console();
+		lldbg_noarg("\n");
+	}
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -611,6 +626,8 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	/* Heap corruption check */
 	check_heap_corrupt(fault_tcb);
+
+	flush_console();
 
 	/* Closing log line */
 	lldbg_noarg("##########################################################################################################################################\n");
