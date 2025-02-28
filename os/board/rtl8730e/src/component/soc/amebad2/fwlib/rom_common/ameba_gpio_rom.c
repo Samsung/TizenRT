@@ -369,6 +369,9 @@ void GPIO_WriteBit(u32 GPIO_Pin, u32 Pin_State)
 	u8 pin_num;
 	u32 RegValue;
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = enter_critical_section();
+#endif
 	port_num = PORT_NUM(GPIO_Pin);
 	pin_num = PIN_NUM(GPIO_Pin);
 	GPIO = GPIO_PORTx[port_num];
@@ -380,6 +383,9 @@ void GPIO_WriteBit(u32 GPIO_Pin, u32 Pin_State)
 		RegValue |= BIT(pin_num);
 	}
 	GPIO->PORT[0].GPIO_DR = RegValue;
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	leave_critical_section(flags);
+#endif
 }
 
 /**
