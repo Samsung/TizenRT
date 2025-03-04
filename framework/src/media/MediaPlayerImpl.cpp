@@ -553,13 +553,13 @@ player_result_t MediaPlayerImpl::pause()
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret), true);
 	mSyncCv.wait(lock);
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::pausePlayer(player_result_t &ret)
+void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -572,8 +572,9 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret)
 			return notifySync();
 		}
 		mCurState = PLAYER_STATE_PAUSED;
+
 		FocusManager &fm = FocusManager::getFocusManager();
-		fm.unregisterPlayerFocusLossListener();
+		fm.unRegisterPlayerFocusLossListener();
 		return notifySync();
 	}
 
@@ -599,8 +600,8 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret)
 void MediaPlayerImpl::onFocusLossListener()
 {
 	if (mCurState == PLAYER_STATE_PLAYING) {
-		player_result_t ret = PLAYER_FOCUS_LOSS;
-		pausePlayer(ret);
+		player_result_t ret = PLAYER_OK;
+		pausePlayer(ret, false);
 	}
 }
 
@@ -1079,6 +1080,8 @@ player_result_t MediaPlayerImpl::playbackFinished()
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mpw.setPlayer(nullptr);
 	notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
+	FocusManager &fm = FocusManager::getFocusManager();
+	fm.unRegisterPlayerFocusLossListener();
 	return PLAYER_OK;
 }
 

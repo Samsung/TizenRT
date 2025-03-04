@@ -54,7 +54,6 @@ enum player_error_e : int {
 	PLAYER_ERROR_DEVICE_NOT_SUPPORTED,
 	/** MediaPlayer Success case */
 	PLAYER_ERROR_NONE = 0,
-	PLAYER_FOCUS_LOSS = 1,
 };
 
 typedef enum player_error_e player_error_t;

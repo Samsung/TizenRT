@@ -85,6 +85,7 @@ public:
 	 */
 	int requestFocusTransient(std::shared_ptr<FocusRequest> focusRequest);
 
+private:
 	/**
 	 * @brief Get current player focussed stream info
 	 * @details @b #include <media/FocusManager.h>
@@ -105,11 +106,11 @@ public:
 	*/
 	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
 	/**
-	 * @brief DeRegister Player Focus Loss Listener
+	 * @brief unRegister Player Focus Loss Listener
 	 * @details @b #include <media/FocusManager.h>
 	 * @return void
 	*/
-	void deRegisterPlayerFocusLossListener(void);
+	void unRegisterPlayerFocusLossListener(void);
 	/**
 	 * @brief Register Recorder Focus Loss Listener
 	 * @details @b #include <media/FocusManager.h>
@@ -118,13 +119,16 @@ public:
 	*/
 	void registerRecorderFocusLossListener(FocusLossListener recorderFocusLossCallback);
 	/**
-	 * @brief DeRegister Recorder Focus Loss Listener
+	 * @brief unRegister Recorder Focus Loss Listener
 	 * @details @b #include <media/FocusManager.h>
 	 * @return void
 	*/
-	void deRegisterRecorderFocusLossListener(void);
+	void unRegisterRecorderFocusLossListener(void);
 
-private:
+	/*@ToDo: Find an alternative of using friend keyword*/
+	friend class MediaPlayerImpl;
+	friend class MediaRecorderImpl;
+
 	class FocusRequester
 	{
 	public:

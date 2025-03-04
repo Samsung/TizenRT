@@ -127,7 +127,7 @@ private:
 	void stopPlayer(player_result_t &ret);
 	player_result_t stopPlayback(bool drain);
 	void stopPlaybackInternal(bool drain);
-	void pausePlayer(player_result_t &ret);
+	void pausePlayer(player_result_t &ret, bool notify);
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);

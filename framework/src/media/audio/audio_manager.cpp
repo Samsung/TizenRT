@@ -222,7 +222,7 @@ void registerRecorderMuteListener(AudioEventListener listener)
 	mRecorderMuteCallback = listener;
 }
 
-void deRegisterRecorderMuteListener()
+void unRegisterRecorderMuteListener()
 {
 	mRecorderMuteCallback = nullptr;
 }

@@ -60,7 +60,7 @@ void FocusManager::registerPlayerFocusLossListener(FocusLossListener playerFocus
 	mPlayerFocusLossListener = playerFocusLossCallback;
 }
 
-void FocusManager::deRegisterPlayerFocusLossListener()
+void FocusManager::unRegisterPlayerFocusLossListener()
 {
 	mPlayerFocusLossListener = nullptr;
 }
@@ -70,7 +70,7 @@ void FocusManager::registerRecorderFocusLossListener(FocusLossListener recorderF
 	mRecorderFocusLossListener = recorderFocusLossCallback;
 }
 
-void FocusManager::deRegisterRecorderFocusLossListener()
+void FocusManager::unRegisterRecorderFocusLossListener()
 {
 	mRecorderFocusLossListener = nullptr;
 }
