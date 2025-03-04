@@ -29,7 +29,7 @@ ifeq ($(CONFIG_DEBUG_MM_WARN),y)
 CSRCS += memdbg.c
 endif
 
-ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
+ifeq ($(CONFIG_DEBUG),y)
 CSRCS += stackinfo_save_terminated.c
 endif
 
