@@ -235,6 +235,7 @@ static void test_bit_map(void)
         uint8_t *lcd_data = (uint8_t *)malloc(len);
         if (lcd_data == NULL) {
                 printf("malloc failed for lcd data : %d\n", len);
+		close(fd);
                 return;
         }
 	area.planeno = 0;
@@ -255,6 +256,65 @@ static void test_bit_map(void)
 					lcd_data[pixel_y * xres + pixel_x] = (color & 0xFF00) >> 8;
 				}
 			}
+		}
+	}
+	ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area);
+	close(fd);
+	free(lcd_data);
+}
+
+static void test_quad(void)
+{
+	int fd = 0;
+	int p = 0;
+	char port[20] = {'\0'};
+	struct lcddev_area_s area;
+	size_t len;
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
+		return;
+	}
+	struct fb_videoinfo_s vinfo;
+	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+	xres = vinfo.xres;
+	yres = vinfo.yres;
+	len = xres * yres * 2 + 1;
+	uint8_t *lcd_data = (uint8_t *)malloc(len);
+	if (lcd_data == NULL) {
+		printf("malloc failed for lcd data : %d\n", len);
+		close(fd);
+		return;
+	}
+	area.planeno = 0;
+	area.row_start = 0;
+	area.row_end = yres - 1;
+	area.col_start = 0;
+	area.col_end = xres - 1;
+	area.stride = 2 * xres;
+	area.data = lcd_data;
+	int pixel_index = 0;
+	uint16_t color;
+
+	for (int y = 0; y < yres; y++) {
+		for (int x = 0; x < xres; x++) {
+			pixel_index = ((y * xres) + x) * 2;
+			if (x < xres / 2) {
+				if (y < yres / 2) {
+					color = RED;
+				} else {
+					color = BLUE;
+				}
+			} else {
+				if (y < yres / 2) {
+					color = GREEN;
+				} else {
+					color = WHITE;
+				}
+			}
+			lcd_data[pixel_index] = (color & 0xFF00) >> 8;
+			lcd_data[pixel_index + 1] = color & 0x00FF;
 		}
 	}
 	ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area);
@@ -383,6 +443,8 @@ int lcd_test_main(int argc, char *argv[])
 	}
 	while (count < 5) {
 		test_put_area_pattern();
+		test_quad();
+		sleep(3);
 		test_bit_map();
 		sleep(3);
 		ioctl(fd, LCDDEVIO_SETPOWER, 0);
