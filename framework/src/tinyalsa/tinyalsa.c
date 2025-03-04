@@ -689,8 +689,6 @@ int pcm_readi(struct pcm *pcm, void *data, unsigned int frame_count)
 						}
 					}
 				}
-			} else if (msg.msgId == AUDIO_MSG_MICMUTE) {
-				return -ESTRPIPE;
 			} else if (msg.msgId == AUDIO_MSG_UNREACHABLE) {
 				return -EHOSTUNREACH;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {

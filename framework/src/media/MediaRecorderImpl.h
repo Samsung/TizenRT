@@ -117,7 +117,7 @@ private:
 	void prepareRecorder(recorder_result_t& ret);
 	void unprepareRecorder(recorder_result_t& ret);
 	void startRecorder(recorder_result_t& ret);
-	void pauseRecorder(recorder_result_t& ret);
+	void pauseRecorder(recorder_result_t& ret, bool notify);
 	void onMuteListenerRecorder(recorder_result_t& ret);
 	void stopRecorder(recorder_result_t& ret);
 	void stopRecorderInternal(recorder_observer_command_e command, recorder_result_t ret);

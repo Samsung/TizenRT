@@ -468,9 +468,9 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t& ret)
 	RecorderWorker &mrw = RecorderWorker::getWorker();
 	mrw.setCurrentRecorder(nullptr);
 
-	unregisterRecorderMuteListener();
+	unRegisterRecorderMuteListener();
 	FocusManager& fm = FocusManager::getFocusManager();
-	fm.unregisterRecorderFocusLossListener();
+	fm.unRegisterRecorderFocusLossListener();
 
 	return notifySync();
 }
@@ -510,13 +510,13 @@ recorder_result_t MediaRecorderImpl::pause()
 	if (!mrw.isAlive()) {
 		return RECORDER_ERROR_NOT_ALIVE;
 	}
-	mrw.enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this(), std::ref(ret));
+	mrw.enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this(), std::ref(ret), true);
 	mSyncCv.wait(lock);
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
 	return ret;
 }
 
-void MediaRecorderImpl::pauseRecorder(recorder_result_t& ret)
+void MediaRecorderImpl::pauseRecorder(recorder_result_t& ret, bool notify)
 {
 	LOG_STATE_INFO(mCurState);
 	if (mCurState == RECORDER_STATE_PAUSED_BY_MUTE) {
@@ -542,9 +542,9 @@ void MediaRecorderImpl::pauseRecorder(recorder_result_t& ret)
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.setCurrentRecorder(nullptr);
 
-	unregisterRecorderMuteListener();
+	unRegisterRecorderMuteListener();
 	FocusManager& fm = FocusManager::getFocusManager();
-	fm.unregisterRecorderFocusLossListener();
+	fm.unRegisterRecorderFocusLossListener();
 
 	if (ret != RECORDER_ERROR_DEVICE_SUSPENDED) {
 		mCurState = RECORDER_STATE_PAUSED;
@@ -559,15 +559,15 @@ void MediaRecorderImpl::onMuteListener()
 {
 	if (mCurState == RECORDER_STATE_RECORDING) {
 		recorder_result_t ret = RECORDER_ERROR_DEVICE_SUSPENDED;
-		pauseRecorder(ret);
+		pauseRecorder(ret, false);
 	}
 }
 
 void MediaRecorderImpl::onFocusLossListener()
 {
 	if (mCurState == RECORDER_STATE_RECORDING) {
-		recorder_result_t ret = RECORDER_FOCUS_LOSS;
-		pauseRecorder(ret);
+		recorder_result_t ret = RECORDER_OK;
+		pauseRecorder(ret,false);
 	}
 }
 

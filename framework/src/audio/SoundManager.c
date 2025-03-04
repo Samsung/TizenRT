@@ -20,7 +20,7 @@
 #include <audio_manager.h>
 #include <debug.h>
 
-sq_queue_t gPlayerVolumeListenerList, gRecorderVolumeListenerList;// List of listeners for volume, mute changes.
+static sq_queue_t gPlayerVolumeListenerList, gRecorderVolumeListenerList;// List of listeners for volume, mute changes.
 
 void sound_manager_init(void)
 {
@@ -28,7 +28,7 @@ void sound_manager_init(void)
 	sq_init(((sq_queue_t *)&gRecorderVolumeListenerList));
 }
 
-void notifyListeners(uint16_t state, stream_policy_t stream_type, int8_t volume, sq_queue_t list)
+static void notifyListeners(uint16_t state, stream_policy_t stream_type, int8_t volume, sq_queue_t list)
 {
 	FAR struct VolumeStateChangedListenerListNode *itr;
 	for (itr = (FAR struct VolumeStateChangedListenerListNode *)sq_peek(&list); itr; itr = sq_next(itr)) {
@@ -81,7 +81,7 @@ bool setEqualizer(uint32_t preset)
 	return true;
 }
 
-static bool addVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, OnRecorderVolumeStateChangedListener listener, sq_queue_t list)
+bool addVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener)
 {
 	struct VolumeStateChangedListenerListNode *newNode = (struct VolumeStateChangedListenerListNode *)malloc(sizeof(struct VolumeStateChangedListenerListNode));
 	if (newNode == NULL) {
@@ -91,23 +91,28 @@ static bool addVolumeStateChangedListener(uint16_t state, stream_policy_t stream
 	newNode->listener = listener;
 	newNode->state = state;
 	newNode->stream_type = stream_type;
+
+	sq_queue_t list;
+	if (stream_type == STREAM_TYPE_VOICE_RECORD) {
+		list = gRecorderVolumeListenerList;
+	} else {
+		list = gPlayerVolumeListenerList;
+	}
 	sq_addfirst((FAR sq_entry_t *)newNode, (FAR sq_queue_t *)&list);
+	medvdbg("added new listener %x\n", listener);
+
 	return true;
 }
 
-bool addRecorderVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, OnRecorderVolumeStateChangedListener listener)
+bool removeVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener)
 {
-	return addVolumeStateChangedListener(state,stream_type, listener, gRecorderVolumeListenerList);
-}
+	sq_queue_t list;
+	if (stream_type == STREAM_TYPE_VOICE_RECORD) {
+		list = gRecorderVolumeListenerList;
+	} else {
+		list = gPlayerVolumeListenerList;
+	}
 
-
-bool addPlayerVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, OnPlayerVolumeStateChangedListener listener)
-{
-	return addVolumeStateChangedListener(state, stream_type, listener, gPlayerVolumeListenerList);
-}
-
-bool removeVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener, sq_queue_t list)
-{
 	FAR struct VolumeStateChangedListenerListNode *prev = NULL;
 	FAR struct VolumeStateChangedListenerListNode *curr;
 	for (curr = (FAR struct VolumeStateChangedListenerListNode *)sq_peek(&list); curr; prev = curr, curr = sq_next(curr)) {
@@ -123,16 +128,6 @@ bool removeVolumeStateChangedListener(uint16_t state, stream_policy_t stream_typ
 	}
 	meddbg("Listener not found\n");
 	return false;
-}
-
-bool removeRecorderVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, OnRecorderVolumeStateChangedListener listener)
-{
-	return removeVolumeStateChangedListener(state, stream_type, listener, gRecorderVolumeListenerList);
-}
-
-bool removePlayerVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, OnPlayerVolumeStateChangedListener listener)
-{
-	return removeVolumeStateChangedListener(state, stream_type, listener, gPlayerVolumeListenerList);
 }
 
 bool setMicMute(void)
