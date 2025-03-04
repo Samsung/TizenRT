@@ -202,12 +202,22 @@ static void test_put_area_pattern(void)
 	sleep(3);
 }
 
-static unsigned short generate_color_code(int red, int green, int blue)
+static unsigned short generate_color_code(int red, int green, int blue, bool islight)
 {
+	int R, G, B;
+	if (islight) {	// For light color
+		R = 31;
+		G = 63;
+		B = 31;
+	} else {		// For dark color
+		R = 0;
+		G = 0;
+		B = 0;
+	}
 	// Ensure that RGB values are within the valid range (0-31)
-	red = red % 31;
-	green = green % 31;
-	blue = blue % 31;
+	red = (red + R) / 2;
+	green = (green + G) / 2;
+	blue = (blue + B) / 2;
 	// Combine RGB components into a 16-bit hex color code
 	unsigned short colorCode = (red << 11) | (green << 5) | blue;
 	return colorCode;
@@ -244,15 +254,24 @@ static void test_bit_map(void)
 	area.col_end = xres - 1;
 	area.stride = 2 * xres;
 	area.data = lcd_data;
-	uint16_t color;
+	uint16_t colorl, colord;	// stores light and dark color pixel value
+	bool islight = true;
 	for (int y = 0; y < yres / SIZE * 2; y++) {
 		for (int x = 0; x < xres / SIZE; x++) {
-			color = generate_color_code(rand() % 31, rand() % 31, rand() % 31);
+			colorl = generate_color_code(rand() % 31, rand() % 31, rand() % 31, true);
+			colord = generate_color_code(rand() % 31, rand() % 31, rand() % 31, false);
 			for (int i = 0; i < SIZE; i++) {
 				for (int j = 0; j < SIZE; j++) {
 					int pixel_x = x * SIZE + i;
 					int pixel_y = y * SIZE + j;
-					lcd_data[pixel_y * xres + pixel_x] = (color & 0xFF00) >> 8;
+
+					if (islight) {
+						lcd_data[pixel_y * xres + pixel_x] = (colorl & 0xFF00) >> 8;
+						islight = false;
+					} else {
+						lcd_data[pixel_y * xres + pixel_x] = (colord & 0xFF00) >> 8;
+						islight = true;
+					}
 				}
 			}
 		}
