@@ -56,6 +56,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #define LCD_DEV_PATH "/dev/lcd%d"
@@ -400,6 +401,13 @@ int lcd_test_main(int argc, char *argv[])
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return ERROR;	
 	}
+
+	if (argc > 1 && !strncmp(argv[1], "power", 6)) {
+		ioctl(fd, LCDDEVIO_SETPOWER, atoi(argv[2]));
+		close(fd);
+		return OK;
+	}
+
 	while (count < 5) {
 		test_put_area_pattern();
 		test_bit_map();
