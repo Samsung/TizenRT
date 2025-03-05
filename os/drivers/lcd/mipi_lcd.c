@@ -249,10 +249,6 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
 	lcd_buffer_index = (1 - lcd_buffer_index);
 #else
-	if (lcd_init_fullscreen_image != NULL) {
-		kmm_free(lcd_init_fullscreen_image);
-		lcd_init_fullscreen_image = NULL;
-	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
 	sem_post(&priv->sem);
@@ -354,6 +350,13 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		priv->config->backlight(power);
 		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
 		send_cmd(priv, display_off_cmd);
+		/* Set LCD to black screen */
+#if defined(CONFIG_LCD_SW_ROTATION)
+		lcd_init_fullscreen_image = lcd_buffer[lcd_buffer_index];
+		lcd_buffer_index = (1 - lcd_buffer_index);
+#endif
+		memset(lcd_init_fullscreen_image, LCD_BLACK_VAL, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
+		priv->config->lcd_put_area((u8 *)lcd_init_fullscreen_image, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);
 		/* The power off must operate only when LCD is ON */
 		priv->config->power_off();
 	} else {
