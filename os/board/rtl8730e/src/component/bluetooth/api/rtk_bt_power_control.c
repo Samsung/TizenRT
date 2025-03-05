@@ -44,6 +44,7 @@ static uint32_t rtk_bt_suspend(uint32_t expected_idle_time, void *param)
 	(void)param;
 
 	pmvdbg("[BT_PS] Enter rtk_bt_suspend\r\n");
+	rtw_ble_combo_print_ble_status();	/* Print current BLE status */
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 #if defined(CONFIG_BT_SINGLE_CORE) && CONFIG_BT_SINGLE_CORE
@@ -83,6 +84,8 @@ static uint32_t rtk_bt_wake_host_irq_handler(void *data)
 void rtk_bt_power_save_init(void)
 {
 #ifdef CONFIG_PM	/* If PM is enable inti BT power save */
+	bsp_pm_domain_register("BLE", BSP_BLE_DRV);
+
 	/* register callback before entering ps mode and after exiting ps mode */
 	pmu_register_sleep_callback(PMU_BT_DEVICE, (PSM_HOOK_FUN)rtk_bt_suspend, NULL, (PSM_HOOK_FUN)rtk_bt_resume, NULL);
 	InterruptRegister((IRQ_FUN)rtk_bt_wake_host_irq_handler, BT_WAKE_HOST_IRQ, (int)NULL, INT_PRI_LOWEST);
