@@ -19,22 +19,24 @@
 #include <audio/SoundManager.h>
 #include <audio_manager.h>
 #include <debug.h>
+#include <audio/audio_manager.h>
+#include <PlayerObserverWorker.h>
+#include <RecorderObserverWorker.h>
+#include <list>
 
-static sq_queue_t gPlayerVolumeListenerList, gRecorderVolumeListenerList;// List of listeners for volume, mute changes.
+using namespace media;
 
-void sound_manager_init(void)
+#define DEFAULT_MIC_GAIN_VALUE 1
+
+static list<VolumeStateChangedListener> gVolumeListenerList;
+static std::mutex gVolumeListenerListAccessLock;
+
+static void notifyListeners(stream_policy_t stream_type, int8_t volume)
 {
-	sq_init(((sq_queue_t *)&gPlayerVolumeListenerList));
-	sq_init(((sq_queue_t *)&gRecorderVolumeListenerList));
-}
-
-static void notifyListeners(uint16_t state, stream_policy_t stream_type, int8_t volume, sq_queue_t list)
-{
-	FAR struct VolumeStateChangedListenerListNode *itr;
-	for (itr = (FAR struct VolumeStateChangedListenerListNode *)sq_peek(&list); itr; itr = sq_next(itr)) {
-		if ((itr->state & state) && itr->stream_type == stream_type) {
-			itr->listener(state, stream_type, volume);
-		}
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	list<VolumeStateChangedListener>::iterator itr;
+	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
+		(*itr)(stream_type, volume);
 	}
 }
 
@@ -57,16 +59,14 @@ bool setVolume(uint8_t volume, stream_info_t *stream_info)
 		meddbg("set_output_audio_volume failed volume : %d, stream_policy: %d, ret : %d\n", volume, stream_info->policy, res);
 		return false;
 	}
-	sq_queue_t list;
-	int16_t state;
-	if (stream_info->policy == STREAM_TYPE_VOICE_RECORD) {
-		state = AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL;
-		list = gRecorderVolumeListenerList;
+
+	if (stream_info->policy != STREAM_TYPE_VOICE_RECORD) {
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+		pow.enQueue(&notifyListeners, stream_info->policy, volume);
 	} else {
-		state = AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL;
-		list = gPlayerVolumeListenerList;
+		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+		row.enQueue(&notifyListeners, stream_info->policy, volume);
 	}
-	notifyListeners(state, stream_info->policy, volume, list);
 	return true;
 }
 
@@ -81,47 +81,20 @@ bool setEqualizer(uint32_t preset)
 	return true;
 }
 
-bool addVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener)
+void addVolumeStateChangedListener(VolumeStateChangedListener listener)
 {
-	struct VolumeStateChangedListenerListNode *newNode = (struct VolumeStateChangedListenerListNode *)malloc(sizeof(struct VolumeStateChangedListenerListNode));
-	if (newNode == NULL) {
-		meddbg("memory allocation for listener has failed.\n");
-		return false;
-	}
-	newNode->listener = listener;
-	newNode->state = state;
-	newNode->stream_type = stream_type;
-
-	sq_queue_t list;
-	if (stream_type == STREAM_TYPE_VOICE_RECORD) {
-		list = gRecorderVolumeListenerList;
-	} else {
-		list = gPlayerVolumeListenerList;
-	}
-	sq_addfirst((FAR sq_entry_t *)newNode, (FAR sq_queue_t *)&list);
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	gVolumeListenerList.push_back(listener);
 	medvdbg("added new listener %x\n", listener);
-
-	return true;
 }
 
-bool removeVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener)
+bool removeVolumeStateChangedListener(VolumeStateChangedListener listener)
 {
-	sq_queue_t list;
-	if (stream_type == STREAM_TYPE_VOICE_RECORD) {
-		list = gRecorderVolumeListenerList;
-	} else {
-		list = gPlayerVolumeListenerList;
-	}
-
-	FAR struct VolumeStateChangedListenerListNode *prev = NULL;
-	FAR struct VolumeStateChangedListenerListNode *curr;
-	for (curr = (FAR struct VolumeStateChangedListenerListNode *)sq_peek(&list); curr; prev = curr, curr = sq_next(curr)) {
-		if (curr->listener == listener) {
-			if (prev == NULL) {
-				sq_remfirst(&list);
-			} else {
-				sq_remafter((FAR sq_entry_t *)prev, &list);
-			}
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	list<VolumeStateChangedListener>::iterator itr;
+	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
+		if (*itr == listener) {
+			gVolumeListenerList.erase(itr);
 			medvdbg("found the listener to remove %x\n", listener);
 			return true;
 		}
@@ -138,8 +111,9 @@ bool setMicMute(void)
 		meddbg("set_audio_stream_mute failed stream_policy : %d, mute : %d, ret : %d\n", STREAM_TYPE_VOICE_RECORD, true, res);
 		return false;
 	}
-	notifyListeners(AUDIO_DEVICE_STATE_MIC_MUTE, STREAM_TYPE_VOICE_RECORD, SOUND_MANAGER_VOLUME_MUTE, gRecorderVolumeListenerList);
 
+	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, 0);
 	return true;
 }
 
@@ -151,8 +125,9 @@ bool setMicUnmute(void)
 		meddbg("set_audio_stream_mute failed stream_policy : %d, mute : %d, ret : %d\n", STREAM_TYPE_VOICE_RECORD, false, res);
 		return false;
 	}
-	notifyListeners(AUDIO_DEVICE_STATE_MIC_MUTE, STREAM_TYPE_VOICE_RECORD, SOUND_MANAGER_VOLUME_UNMUTE, gRecorderVolumeListenerList);
 
+	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, DEFAULT_MIC_GAIN_VALUE);
 	return true;
 }
 
@@ -164,17 +139,27 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 		meddbg("set_audio_stream_mute failed stream_policy : %d, mute : %d, ret : %d\n", stream_policy, mute, res);
 		return false;
 	}
-	sq_queue_t list;
-	int16_t state;
-	if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
-		state = AUDIO_DEVICE_STATE_MIC_MUTE;
-		list = gRecorderVolumeListenerList;
-	} else {
-		state = AUDIO_DEVICE_STATE_SPEAKER_MUTE;
-		list = gPlayerVolumeListenerList;
-	}
-	notifyListeners(state, stream_policy, SOUND_MANAGER_VOLUME_UNMUTE - (mute ? 1 : 0), list);
 
+	uint8_t volume = 0;
+	if (mute) {
+		volume = 0;
+	} else if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
+		volume = DEFAULT_MIC_GAIN_VALUE;
+	} else {
+		res = get_output_stream_volume(&volume, stream_policy);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("get_output_stream_volume failed stream_policy : %d, ret : %d\n", stream_policy, res);
+			return false;
+		}
+	}
+
+	if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
+		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+		row.enQueue(&notifyListeners, stream_policy, volume);
+	} else {
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+		pow.enQueue(&notifyListeners, stream_policy, volume);
+	}
 	return true;
 }
 
