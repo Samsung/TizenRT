@@ -285,7 +285,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 
 	if (BM_CHECK_GROUP(type, BINARY_KERNEL)) {
 		/* Update bootparam and Reboot if new kernel binary exists */
-		ret = binary_manager_check_kernel_update(true);
+		ret = binary_manager_check_kernel_update(true, true);
 		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.active_idx ^= 1;
@@ -302,7 +302,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 #ifdef CONFIG_RESOURCE_FS
 	if (BM_CHECK_GROUP(type, BINARY_RESOURCE)) {
 		/* Update bootparam if new resource binary exists */
-		ret = binary_manager_check_resource_update(true);
+		ret = binary_manager_check_resource_update(true, true);
 		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.resource_active_idx ^= 1;
@@ -325,7 +325,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		/* Reload binaries if new binary is scanned */
 		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 			/* Scan binary files */
-			ret = binary_manager_check_user_update(bin_idx, true);
+			ret = binary_manager_check_user_update(bin_idx, true, true);
 			if (ret > 0) {
 				/* Update index for inactive partition */
 				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
@@ -346,7 +346,7 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (BM_CHECK_GROUP(type, BINARY_COMMON)) {
-		ret = binary_manager_check_user_update(BM_CMNLIB_IDX, true);
+		ret = binary_manager_check_user_update(BM_CMNLIB_IDX, true, true);
 		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
@@ -462,7 +462,7 @@ void binary_manager_swap_bootparam(int requester_pid)
 	update_bp_data.version++;
 
 	/* Update bootparam and Reboot if valid kernel binary exists */
-	ret = binary_manager_check_kernel_update(false);
+	ret = binary_manager_check_kernel_update(false, false);
 	if (ret < 0) {
 		bmdbg("Fail to find valid kernel binary, %d\n", ret);
 		goto send_response;
@@ -471,7 +471,7 @@ void binary_manager_swap_bootparam(int requester_pid)
 
 #ifdef CONFIG_RESOURCE_FS
 	/* Update bootparam if valid resource binary exists */
-	ret = binary_manager_check_resource_update(false);
+	ret = binary_manager_check_resource_update(false, false);
 	if (ret < 0) {
 		bmdbg("Fail to find valid resource binary, %d\n", ret);
 		goto send_response;
@@ -483,7 +483,7 @@ void binary_manager_swap_bootparam(int requester_pid)
 	bin_count = binary_manager_get_ucount();
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		/* Scan binary files */
-		ret = binary_manager_check_user_update(bin_idx, false);
+		ret = binary_manager_check_user_update(bin_idx, false, false);
 		if (ret < 0) {
 			bmdbg("Fail to find valid user binary, %d\n", ret);
 			goto send_response;
@@ -492,7 +492,7 @@ void binary_manager_swap_bootparam(int requester_pid)
 	}
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-	ret = binary_manager_check_user_update(BM_CMNLIB_IDX, false);
+	ret = binary_manager_check_user_update(BM_CMNLIB_IDX, false, false);
 	if (ret < 0) {
 		bmdbg("Fail to find valid common binary, %d\n", ret);
 		goto send_response;
@@ -508,11 +508,7 @@ void binary_manager_swap_bootparam(int requester_pid)
 		bmvdbg("Update BP SUCCESS\n");
 	} else {
 		bmdbg("Fail to update BP, %d\n", ret);
-		goto send_response;
 	}
-
-	bmdbg("Reboot for binary swap\n");
-	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
 
 send_response:
 	if (bootparam) {

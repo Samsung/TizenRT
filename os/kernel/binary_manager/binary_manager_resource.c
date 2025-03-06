@@ -219,7 +219,7 @@ int binary_manager_umount_resource(void)
 *  Otherwise, it just checks whether the binary to update exist in their own inactive partition.
 *
 *************************************************************************************/
-int binary_manager_check_resource_update(bool check_version)
+int binary_manager_check_resource_update(bool check_version, bool check_crc)
 {
 	int ret;
 	int inactive_partidx;
@@ -230,7 +230,7 @@ int binary_manager_check_resource_update(bool check_version)
 
 	/* Verify resource binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inactive_partidx].devnum);
-	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, true);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, check_crc);
 	if (ret == BINMGR_OK) {
 		if (!check_version) {
 			bmvdbg("Found valid resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
