@@ -27,40 +27,24 @@
 #include <media/stream_info.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <queue.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#define AUDIO_DEVICE_STATE_MIC_MUTE		0x0001	/* for mute, unmute events of recorder device */
-#define AUDIO_DEVICE_STATE_SPEAKER_MUTE		0x0010	/* for mute, unmute events of player device */
-#define AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL	0x0100	/* for volume change events of recorder device */
-#define AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL	0x1000	/* for volume change events of player device */
-#define AUDIO_DEVICE_STATE_ALL			0x1111	/* for all events of both devices */
-
-#define SOUND_MANAGER_VOLUME_MUTE -2
-#define SOUND_MANAGER_VOLUME_UNMUTE -1
- 
-
 /**
- * @brief: Sound Manager calls this function to notify all registered applications.
- * This callback is called when mic status and speaker status changed.
- * It is expected that callee will not hold this thread.
- * @param[in] state State for which change has occured.
+ * @brief: This listener is to notify about the mic and speaker state changes.
+ * Applications should register this listener with the SoundManager, which maintains a list of such listeners.
+ * Whenever any state change occurs, soundmanager calls each registered listener in the list.
+ * It is expected that callee will not hold this listener.
  * @param[in] stream_type Stream type for which the state change has occurred.
- * @param[in] value Value of the state change.
- * For example, if state is AUDIO_DEVICE_STATE_MIC_MUTE or AUDIO_DEVICE_STATE_SPEAKER_MUTE, then value can be SOUND_MANAGER_VOLUME_MUTE or SOUND_MANAGER_VOLUME_UNMUTE. 
- * If state is AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL or AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL, then value can be between 0 to 15.
+ * STREAM_TYPE_VOICE_RECORD indicates mic, while other stream types correspond to the speaker.
+ * @param[in] volume Volume level after the state change occurs
+ * volume = 0 means mute for all stream types.
+ * volume > 0 means unmute with value representing the current volume/gain set for that stream type.
+ * Currently, gain setting for the mic is not supported, so for stream type = STREAM_TYPE_VOICE_RECORD, a default gain of 1 will be given.
 */
-typedef void (*VolumeStateChangedListener)(uint16_t state, stream_policy_t stream_type, int8_t value);
-
-struct VolumeStateChangedListenerListNode {
-    FAR struct VolumeStateChangedListenerListNode *flink;
-    stream_policy_t stream_type;
-    uint16_t state;
-    VolumeStateChangedListener listener;
-};
+typedef void (*VolumeStateChangedListener)(stream_policy_t stream_type, uint8_t volume);
 
 /**
  * @brief Retrieves the current volume level for a given stream.
@@ -79,22 +63,17 @@ bool getVolume(uint8_t *volume, stream_info_t *stream_info);
 bool setVolume(uint8_t volume, stream_info_t *stream_info);
 
 /**
- * @brief Registers a listener for volume state changes.
- * @param[in] state State change of the device that application wants notification.
- * For example, if app wants to listen to MIC_MUTE state change, then it should pass AUDIO_DEVICE_STATE_MIC_MUTE as state. 
- * For listening to multiple events, it is required to pass bitwise OR of the states for which notification is required.
- * @param[in] stream_type Stream type for which the state change has occurred.
- * @param[in] listener Callback function to be called when the state changes.
+ * @brief Adds a listener in the listener list.
+ * @param[in] listener Listener to be added in the listener list.
 */
-bool addVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener);
+void addVolumeStateChangedListener(VolumeStateChangedListener listener);
 
 /**
- * @brief UnRegisters a listener for volume state changes.
- * @param[in] state State change of the device that application wants notification.
- * @param[in] stream_type Stream type for which the state change has occurred.
- * @param[in] listener Callback function to be unregistered.
+ * @brief Removes a listener from the listener list.
+ * @param[in] listener Listener to be removed.
+ * @return true if the listener was successfully removed, false otherwise.
 */
-bool removeVolumeStateChangedListener(uint16_t state, stream_policy_t stream_type, VolumeStateChangedListener listener);
+bool removeVolumeStateChangedListener(VolumeStateChangedListener listener);
 
 /**
  * @brief Applies a predefined equalizer preset.
