@@ -730,7 +730,9 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 	u8 ValTemp = 0;
 
 	assert_param(IS_GDMA_Index(GDMA_Index));
-
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#endif
 	/* Match idle channel. */
 	ValTemp = HAL_READ8(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW + 3);
 
@@ -747,6 +749,9 @@ GDMA_ChnlAlloc(u32 GDMA_Index, IRQ_FUN IrqFun, u32 IrqData, u32 IrqPriority)
 	} else {
 		GDMA_ChNum = 0xFF;
 	}
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#endif
 	return GDMA_ChNum;
 }
 
@@ -764,7 +769,9 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 	/* Check the parameters */
 	assert_param(IS_GDMA_Index(GDMA_Index));
 	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
-
+#ifdef CONFIG_SMP
+	irqstate_t flags = enter_critical_section();
+#endif
 	if (TrustZone_IsSecure()) {
 		/* disable secure, or non-secure can not use this channel */
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
@@ -774,6 +781,9 @@ GDMA_ChnlFree(u8 GDMA_Index, u8 GDMA_ChNum)
 	GDMA_ChnlUnRegister(GDMA_Index, GDMA_ChNum);
 
 	ret = _TRUE;
+#ifdef CONFIG_SMP
+	leave_critical_section(flags);
+#endif
 	return ret;
 }
 
