@@ -365,11 +365,12 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 	kerinfo = binary_manager_get_kdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, "kernel", BIN_NAME_MAX);
 
-	ret = binary_manager_check_kernel_update(false);
+	ret = binary_manager_check_kernel_update(false, true);
 	if (ret > 0) {
 		response_msg.data.bin_info[result_idx].version = ret;
 	} else {
 		response_msg.data.bin_info[result_idx].version = -1;
+		response_msg.result = BINMGR_NOT_FOUND;
 	}
 	if (kerinfo->part_count > 1) {
 		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].size;
@@ -386,14 +387,14 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 #else
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 #endif
-		response_msg.result = BINMGR_OK;
 		response_msg.data.bin_info[result_idx].available_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 		strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-		ret = binary_manager_check_user_update(bin_idx, false);
+		ret = binary_manager_check_user_update(bin_idx, false, true);
 		if (ret > 0) {
 			response_msg.data.bin_info[result_idx].version = ret;
 		} else {
 			response_msg.data.bin_info[result_idx].version = -1;
+			response_msg.result = BINMGR_NOT_FOUND;
 		}
 		result_idx++;
 	}
@@ -403,11 +404,12 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 	resinfo = binary_manager_get_resdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, "resource", BIN_NAME_MAX);
 
-	ret = binary_manager_check_resource_update(false);
+	ret = binary_manager_check_resource_update(false, true);
 	if (ret > 0) {
 		response_msg.data.bin_info[result_idx].version = ret;
 	} else {
 		response_msg.data.bin_info[result_idx].version = -1;
+		response_msg.result = BINMGR_NOT_FOUND;
 	}
 	if (resinfo->part_count > 1) {
 		response_msg.data.bin_info[result_idx].available_size = resinfo->part_info[resinfo->inuse_idx ^ 1].size;

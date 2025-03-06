@@ -173,7 +173,7 @@ bool binary_manager_scan_kbin(void)
 *  Otherwise, it just checks whether the binary to update exist in their own inactive partition.
 *
 *************************************************************************************/
-int binary_manager_check_kernel_update(bool check_version)
+int binary_manager_check_kernel_update(bool check_version, bool check_crc)
 {
 	int ret;
 	int inactive_partidx;
@@ -195,7 +195,7 @@ int binary_manager_check_kernel_update(bool check_version)
 
 	/* Verify kernel binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[inactive_partidx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, check_crc);
 	if (ret == BINMGR_OK) {
 		if (!check_version) {
 			bmvdbg("Found valid kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
@@ -257,7 +257,7 @@ int binary_manager_check_update(void)
 		goto reboot;
 	}
 #else
-	ret = binary_manager_check_kernel_update(true);
+	ret = binary_manager_check_kernel_update(true, true);
 	if (ret > 0) {
 		/* Reboot to switch kernel binary in another partition. */
 		goto reboot;
@@ -508,7 +508,7 @@ bool binary_manager_scan_ubin_all(void)
  *  Otherwise, it just checks whether the binary to update exist in their own inactive partition.
  *
  *******************************************************************************************/
-int binary_manager_check_user_update(int bin_idx, bool check_version)
+int binary_manager_check_user_update(int bin_idx, bool check_version, bool check_crc)
 {
 	int ret;
 	int part_idx;
@@ -540,10 +540,10 @@ int binary_manager_check_user_update(int bin_idx, bool check_version)
 #endif
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 	if (bin_idx == BM_CMNLIB_IDX) {
-		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, true);
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, check_crc);
 		version = common_header_data.version;
 	} else {
-		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, true);
+		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, check_crc);
 		version = user_header_data.bin_ver;
 	}
 	if (ret == BINMGR_OK) {		
