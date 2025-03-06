@@ -232,7 +232,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	mCurState = RECORDER_STATE_READY;
 	
 	bool mute = false;
-	result = get_audio_stream_mute_state(STREAM_TYPE_VOICE_RECORD, &mute);
+	result = get_audio_stream_mute_state(mStreamInfo->policy, &mute);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Failed to get mute status. res: %d\n",result);
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -368,7 +368,7 @@ void MediaRecorderImpl::startRecorder(recorder_result_t& ret)
 	}
 
 	bool mute = false;
-	audio_manager_result_t result = get_audio_stream_mute_state(STREAM_TYPE_VOICE_RECORD, &mute);
+	audio_manager_result_t result = get_audio_stream_mute_state(mStreamInfo->policy, &mute);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Failed to get mute status. res: %d\n",result);
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -385,7 +385,7 @@ void MediaRecorderImpl::startRecorder(recorder_result_t& ret)
 	if (mCurState == RECORDER_STATE_PAUSED || mCurState == RECORDER_STATE_PAUSED_BY_MUTE) {
 		result = set_stream_in_policy(mStreamInfo->policy);
 		if (result != AUDIO_MANAGER_SUCCESS) {
-			meddbg("MediaRecorder startRecorder fail : set_stream_in_policy fail\n");
+			meddbg("MediaRecorder startRecorder fail : set_stream_in_policy fail. ret: %d\n", result);
 			ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 			notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, ret);
 			return notifySync();
@@ -468,9 +468,9 @@ void MediaRecorderImpl::stopRecorder(recorder_result_t& ret)
 	RecorderWorker &mrw = RecorderWorker::getWorker();
 	mrw.setCurrentRecorder(nullptr);
 
-	unRegisterRecorderMuteListener();
+	unregisterRecorderMuteListener();
 	FocusManager& fm = FocusManager::getFocusManager();
-	fm.unRegisterRecorderFocusLossListener();
+	fm.unregisterRecorderFocusLossListener();
 
 	return notifySync();
 }
@@ -522,37 +522,51 @@ void MediaRecorderImpl::pauseRecorder(recorder_result_t& ret, bool notify)
 	if (mCurState == RECORDER_STATE_PAUSED_BY_MUTE) {
 		medvdbg("%s recorder muted and already paused. recorder: %x\n", __func__, &mRecorder);
 		mCurState = RECORDER_STATE_PAUSED;
-		return notifySync();
+		if (notify) {
+			notifySync();
+		}
+		return;
 	}
 
 	if (mCurState != RECORDER_STATE_RECORDING) {
 		meddbg("%s Fail : invalid state. recorder: %x\n", __func__, &mRecorder);
 		LOG_STATE_DEBUG(mCurState);
 		ret = RECORDER_ERROR_INVALID_STATE;
-		return notifySync();
+		if (notify) {
+			notifySync();
+		}
+		return;
 	}
 
 	audio_manager_result_t result = pause_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 		meddbg("pause_audio_stream_in failed ret : %d. recorder: %x\n", result, &mRecorder);
-		return notifySync();
+		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
+		if (notify) {
+			notifySync();
+		}
+		return;
 	}
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
 	mrw.setCurrentRecorder(nullptr);
 
-	unRegisterRecorderMuteListener();
+	unregisterRecorderMuteListener();
 	FocusManager& fm = FocusManager::getFocusManager();
-	fm.unRegisterRecorderFocusLossListener();
+	fm.unregisterRecorderFocusLossListener();
 
 	if (ret != RECORDER_ERROR_DEVICE_SUSPENDED) {
 		mCurState = RECORDER_STATE_PAUSED;
 	} else {
 		mCurState = RECORDER_STATE_PAUSED_BY_MUTE;
 	}
+
+	if (notify) {
+		notifySync();
+	}
 	
-	return notifySync();
+	return;
 }
 
 void MediaRecorderImpl::onMuteListener()
@@ -567,7 +581,7 @@ void MediaRecorderImpl::onFocusLossListener()
 {
 	if (mCurState == RECORDER_STATE_RECORDING) {
 		recorder_result_t ret = RECORDER_OK;
-		pauseRecorder(ret,false);
+		pauseRecorder(ret, false);
 	}
 }
 

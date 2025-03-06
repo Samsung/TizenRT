@@ -60,7 +60,7 @@ void FocusManager::registerPlayerFocusLossListener(FocusLossListener playerFocus
 	mPlayerFocusLossListener = playerFocusLossCallback;
 }
 
-void FocusManager::unRegisterPlayerFocusLossListener()
+void FocusManager::unregisterPlayerFocusLossListener()
 {
 	mPlayerFocusLossListener = nullptr;
 }
@@ -70,12 +70,12 @@ void FocusManager::registerRecorderFocusLossListener(FocusLossListener recorderF
 	mRecorderFocusLossListener = recorderFocusLossCallback;
 }
 
-void FocusManager::unRegisterRecorderFocusLossListener()
+void FocusManager::unregisterRecorderFocusLossListener()
 {
 	mRecorderFocusLossListener = nullptr;
 }
 
-FocusManager ::FocusManager()
+FocusManager::FocusManager()
 {
 	mPlayerFocusLossListener = nullptr;
 	mRecorderFocusLossListener = nullptr;
@@ -163,14 +163,14 @@ int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusReque
 
 void FocusManager::callFocusLossListener(stream_policy_t policy)
 {
-	FocusLossListener callback;
+	FocusLossListener focusLossCallback;
 	if (policy == STREAM_TYPE_VOICE_RECORD) {
-		callback = mRecorderFocusLossListener;
+		focusLossCallback = mRecorderFocusLossListener;
 	} else {
-		callback = mPlayerFocusLossListener;
+		focusLossCallback = mPlayerFocusLossListener;
 	}
-	if (callback != nullptr) {
-		callback();
+	if (focusLossCallback != nullptr) {
+		focusLossCallback();
 	}
 }
 
@@ -218,7 +218,6 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 		} else {
 			focusList->front()->notify(FOCUS_LOSS);
 		}
-		
 		lock.lock();
 		focusList->push_front(focusRequester);
 		if (policy == STREAM_TYPE_VOICE_RECORD) {
@@ -229,7 +228,6 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 			worker.enQueue(&FocusManager::callFocusLossListener, this, policy);
 		}
 		lock.unlock();
-
 		if (isTransientRequest) {
 			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
 		} else {

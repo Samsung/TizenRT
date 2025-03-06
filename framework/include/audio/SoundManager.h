@@ -33,11 +33,11 @@
 extern "C" {
 #endif
 
-#define AUDIO_DEVICE_STATE_MIC_MUTE 0x0001  		    	// for mute, unmute events of recorder device
-#define AUDIO_DEVICE_STATE_SPEAKER_MUTE 0x0010			// for mute, unmute events of player device
-#define AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL 0x0100 	    	// for volume change events of recorder device
-#define AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL 0x1000 		// for volume change events of player device
-#define AUDIO_DEVICE_STATE_ALL 0x1111				// for all events of both devices
+#define AUDIO_DEVICE_STATE_MIC_MUTE		0x0001	/* for mute, unmute events of recorder device */
+#define AUDIO_DEVICE_STATE_SPEAKER_MUTE		0x0010	/* for mute, unmute events of player device */
+#define AUDIO_DEVICE_STATE_MIC_GAIN_LEVEL	0x0100	/* for volume change events of recorder device */
+#define AUDIO_DEVICE_STATE_SPEAKER_GAIN_LEVEL	0x1000	/* for volume change events of player device */
+#define AUDIO_DEVICE_STATE_ALL			0x1111	/* for all events of both devices */
 
 #define SOUND_MANAGER_VOLUME_MUTE -2
 #define SOUND_MANAGER_VOLUME_UNMUTE -1

@@ -113,7 +113,7 @@ typedef enum audio_device_process_unit_subtype_e device_process_subtype_t;
 
 #if defined(__cplusplus)
 void registerRecorderMuteListener(AudioEventListener listener);
-void unRegisterRecorderMuteListener();
+void unregisterRecorderMuteListener();
 #endif
 
 /****************************************************************************

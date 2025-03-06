@@ -408,7 +408,7 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	if (mCurState == PLAYER_STATE_PAUSED) {
 		res = set_stream_out_policy(mStreamInfo->policy);
 		if (res != AUDIO_MANAGER_SUCCESS) {
-			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail\n");
+			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. ret: %d\n", res);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, ret);
 			return notifySync();
@@ -478,7 +478,6 @@ void MediaPlayerImpl::stopPlayer(player_result_t &ret)
 
 	FocusManager &fm = FocusManager::getFocusManager();
 	fm.unregisterPlayerFocusLossListener();
-
 	return notifySync();
 }
 
@@ -563,19 +562,27 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 {
 	LOG_STATE_INFO(mCurState);
 
-	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState == PLAYER_STATE_PLAYING) {
 		audio_manager_result_t result = pause_audio_stream_out();
 		if (result != AUDIO_MANAGER_SUCCESS) {
 			meddbg("pause_audio_stream_in failed ret : %d\n", result);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-			return notifySync();
+			if (notify) {
+				notifySync();
+			}
+			return;
 		}
-		mCurState = PLAYER_STATE_PAUSED;
 
 		FocusManager &fm = FocusManager::getFocusManager();
-		fm.unRegisterPlayerFocusLossListener();
-		return notifySync();
+		fm.unregisterPlayerFocusLossListener();
+
+		mpw.setPlayer(nullptr);
+
+		mCurState = PLAYER_STATE_PAUSED;
+		if (notify) {
+			notifySync();
+		}
+		return;
 	}
 
 	if (mCurState == PLAYER_STATE_PAUSED) {
@@ -590,8 +597,6 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 
 	meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 	LOG_STATE_DEBUG(mCurState);
-
-	mpw.setPlayer(nullptr);
 
 	ret = PLAYER_ERROR_INVALID_STATE;
 	return notifySync();

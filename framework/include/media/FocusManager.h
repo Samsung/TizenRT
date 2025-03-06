@@ -79,7 +79,7 @@ public:
 	/**
 	 * @brief Request Transient Focus
 	 * @details @b #include <media/FocusManager.h>
-	 * param[in] focusRequest FocusRequest to request
+	 * @param[in] focusRequest FocusRequest to request
 	 * @return return FOCUS_REQUEST_SUCCESS on immediate GAIN and FOCUS_REQUEST_DELAY for GAIN later, else return FOCUS_REQUEST_FAIL
 	 * @since TizenRT v2.0
 	 */
@@ -87,43 +87,43 @@ public:
 
 private:
 	/**
-	 * @brief Get current player focussed stream info
+	 * @brief Get current focussed player stream info
 	 * @details @b #include <media/FocusManager.h>
-	 * @return return STREAM_FOCUS_STATE_ACQUIRED if stream has focus, else return STREAM_FOCUS_STATE_RELEASED
+	 * @return return current focused player stream_info structure. If list is empty, return {0, STREAM_TYPE_MEDIA}
 	 */
 	stream_info_t getCurrentPlayerStreamInfo(void);
 	/**
 	 * @brief Get current recorder focussed stream info
 	 * @details @b #include <media/FocusManager.h>
-	 * @return return STREAM_FOCUS_STATE_ACQUIRED if stream has focus, else return STREAM_FOCUS_STATE_RELEASED
+	 * @return return current focused recorder stream_info structure. If list is empty, return {0, STREAM_TYPE_VOICE_RECORD}
 	 */
 	stream_info_t getCurrentRecorderStreamInfo(void);
 	/**
-	 * @brief Register Player Focus Loss Listener
+	 * @brief It registers a listener which will be called when player focus is lost. This function is called whenever player is started.
 	 * @details @b #include <media/FocusManager.h>
-	 * param[in] playerFocusLossCallback Callback function to be called when player focus loss occurs
+	 * @param[in] playerFocusLossCallback Callback function to be called when player focus loss occurs
 	 * @return void
 	*/
 	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
 	/**
-	 * @brief unRegister Player Focus Loss Listener
+	 * @brief It unregisters player focus loss listener. This function is called whenever player is paused or stopped.
 	 * @details @b #include <media/FocusManager.h>
 	 * @return void
 	*/
-	void unRegisterPlayerFocusLossListener(void);
+	void unregisterPlayerFocusLossListener(void);
 	/**
-	 * @brief Register Recorder Focus Loss Listener
+	 * @brief It registers a listener which will be called when recorder focus is lost. This function is called whenever recorder is started.
 	 * @details @b #include <media/FocusManager.h>
-	 * param[in] recorderFocusLossCallback Callback function to be called when recorder focus loss occurs
+	 * @param[in] recorderFocusLossCallback Callback function to be called when recorder focus loss occurs
 	 * @return void
 	*/
 	void registerRecorderFocusLossListener(FocusLossListener recorderFocusLossCallback);
 	/**
-	 * @brief unRegister Recorder Focus Loss Listener
+	 * @brief It unregisters recorder focus loss listener. This function is called whenever recorder is paused or stopped.
 	 * @details @b #include <media/FocusManager.h>
 	 * @return void
 	*/
-	void unRegisterRecorderFocusLossListener(void);
+	void unregisterRecorderFocusLossListener(void);
 
 	/*@ToDo: Find an alternative of using friend keyword*/
 	friend class MediaPlayerImpl;
