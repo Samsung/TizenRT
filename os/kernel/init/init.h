@@ -162,4 +162,5 @@ void os_idle_trampoline(void);
 
 int os_bringup(void);
 
+void os_set_cpu_idle_task(int cpuid, tstate_t state);
 #endif							/* __SCHED_INIT_INIT_H */
