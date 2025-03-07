@@ -413,6 +413,7 @@ static void ist415_cmd_show_usage(void)
 	printf("	intrdbg : Set Intr Debug\n");
 	printf("	dbg     : Log level, 1:ERROR, 2:WARNING, 3:INFO\n");
 	printf("	selftest: Run selftest\n");
+	printf("	version : Display Version\n");
 }
 
 /****************************************************************************
@@ -446,8 +447,10 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 		ret = ist415_rec_mode(dev, argc, argv);
 	} else if (strncmp(argv[1], "cm_test", 8) == 0) {
 		ret = ist415_cmtest(dev);
-	} else if(strncmp(argv[1], "jitter_test", 12) == 0) {
+	} else if (strncmp(argv[1], "jitter_test", 12) == 0) {
 		ret = ist415_jittertest(dev);
+	} else if (strncmp(argv[1], "version", 8) == 0) {
+		ist415_display_version(dev);
 	} else {
 		ret = -EINVAL;
 	}

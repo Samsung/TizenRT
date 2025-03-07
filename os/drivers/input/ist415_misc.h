@@ -96,5 +96,6 @@ int ist415_cmtest(struct ist415_dev_s *dev);
 int ist415_jittertest(struct ist415_dev_s *dev);
 int ist415_rec_mode(struct ist415_dev_s *dev, int argc, char **argv);
 void ist415_recording(struct ist415_dev_s *dev);
+void ist415_display_version(struct ist415_dev_s *dev);
 
 #endif				/* __DRIVERS_INPUT_IST415_MISC_H */
