@@ -1005,3 +1005,16 @@ rec_end:
 		ist415dbg("Fail to write rec start scan\n");
 	}
 }
+
+/****************************************************************************
+ * Name: ist415_display_version
+ *
+ * Description
+ *   This function is called by Uart Command.
+ ****************************************************************************/
+
+void ist415_display_version(struct ist415_dev_s *dev)
+{
+	ist415vdbg("Main Ver: %X, Test Ver: %X\n", dev->fw.cur.main_ver, dev->fw.cur.test_ver);
+	ist415vdbg("Core Ver: %X, Config Ver: %X, Release Ver: %X\n", dev->fw.cur.core_ver, dev->fw.cur.config_ver, dev->fw.cur.release_ver);
+}
