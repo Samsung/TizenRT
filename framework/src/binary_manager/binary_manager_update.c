@@ -244,3 +244,66 @@ binmgr_result_type_e binary_manager_get_current_path(char *binary_name, char *do
 
 	return response_msg.result;
 }
+
+binmgr_result_type_e binary_manager_swap_partition(void)
+{
+#ifndef CONFIG_USE_BP
+	/* In the case of 3.1 bootloader, we dont have bp. So we need not
+	 * update the bp to swap partitions, it is automatically done on
+	 * reboot, so return success */
+	return BINMGR_OK;
+#else
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_setbp_response_t response_msg;
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_SWAPBP, NULL);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	return response_msg.result;
+#endif
+}
+
+binmgr_result_type_e binary_manager_get_inactive_info_all(binary_update_info_list_t *binary_info_list)
+{
+	binmgr_result_type_e ret;
+	binmgr_request_t request_msg;
+	binmgr_getinfo_all_response_t response_msg;
+
+	ret = binary_manager_set_request(&request_msg, BINMGR_GET_INFO_INACTIVE_ALL, NULL);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_send_request(&request_msg);
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_getinfo_all_response_t));
+	if (ret != BINMGR_OK) {
+		return ret;
+	}
+
+	if (response_msg.result == BINMGR_OK) {
+		/* Copy binary info list data */
+		memset(binary_info_list, 0, sizeof(binary_update_info_list_t));
+		memcpy(binary_info_list, &response_msg.data, sizeof(binary_update_info_list_t));
+	} else {
+		bmdbg("Binary manager getinfo_inactive_all FAIL %d\n", response_msg.result);
+	}
+
+	return response_msg.result;
+}

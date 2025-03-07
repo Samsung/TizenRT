@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/reboot_reason.h>
 
 #include "binary_manager.h"
 
@@ -284,8 +285,8 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 
 	if (BM_CHECK_GROUP(type, BINARY_KERNEL)) {
 		/* Update bootparam and Reboot if new kernel binary exists */
-		ret = binary_manager_check_kernel_update();
-		if (ret == BINMGR_OK) {
+		ret = binary_manager_check_kernel_update(true);
+		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.active_idx ^= 1;
 		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
@@ -301,8 +302,8 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 #ifdef CONFIG_RESOURCE_FS
 	if (BM_CHECK_GROUP(type, BINARY_RESOURCE)) {
 		/* Update bootparam if new resource binary exists */
-		ret = binary_manager_check_resource_update();
-		if (ret == BINMGR_OK) {
+		ret = binary_manager_check_resource_update(true);
+		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.resource_active_idx ^= 1;
 		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
@@ -324,8 +325,8 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 		/* Reload binaries if new binary is scanned */
 		for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 			/* Scan binary files */
-			ret = binary_manager_check_user_update(bin_idx);
-			if (ret == BINMGR_OK) {
+			ret = binary_manager_check_user_update(bin_idx, true);
+			if (ret > 0) {
 				/* Update index for inactive partition */
 				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
 				need_update = true;
@@ -345,8 +346,8 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (BM_CHECK_GROUP(type, BINARY_COMMON)) {
-		ret = binary_manager_check_user_update(BM_CMNLIB_IDX);
-		if (ret == BINMGR_OK) {
+		ret = binary_manager_check_user_update(BM_CMNLIB_IDX, true);
+		if (ret > 0) {
 			/* Update index for inactive partition */
 			update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
 		} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
@@ -376,7 +377,9 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 	}
 
 send_response:
-	kmm_free(bootparam);
+	if (bootparam) {
+		kmm_free(bootparam);
+	}
 	response_msg.result = ret;
 	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
 	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_setbp_response_t));
@@ -421,4 +424,97 @@ int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data)
 void binary_manager_set_bpidx(uint8_t index)
 {
 	g_bp_info.inuse_idx = index;
+}
+
+void binary_manager_swap_bootparam(int requester_pid)
+{
+	int ret;
+	char *bootparam;
+	bool is_all_updatable;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_bpdata_t update_bp_data;
+	binmgr_response_t response_msg;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	uint32_t bin_count;
+#endif
+
+	memset((void *)&response_msg, 0, sizeof(binmgr_response_t));
+
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %d\n", requester_pid);
+		return;
+	}
+
+	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
+	if (!bootparam) {
+		bmdbg("Fail to malloc to read BP\n");
+		ret = BINMGR_OUT_OF_MEMORY;
+		goto send_response;
+	}
+	memset(bootparam, 0xff, BOOTPARAM_SIZE);
+
+	response_msg.result = BINMGR_OK;
+	is_all_updatable = true;
+
+	/* Get current bootparam data */
+	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+	update_bp_data.version++;
+
+	/* Update bootparam and Reboot if valid kernel binary exists */
+	ret = binary_manager_check_kernel_update(false);
+	if (ret < 0) {
+		bmdbg("Fail to find valid kernel binary, %d\n", ret);
+		goto send_response;
+	}
+	update_bp_data.active_idx ^= 1;
+
+#ifdef CONFIG_RESOURCE_FS
+	/* Update bootparam if valid resource binary exists */
+	ret = binary_manager_check_resource_update(false);
+	if (ret < 0) {
+		bmdbg("Fail to find valid resource binary, %d\n", ret);
+		goto send_response;
+	}
+	update_bp_data.resource_active_idx ^= 1;
+#endif
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin_count = binary_manager_get_ucount();
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+		/* Scan binary files */
+		ret = binary_manager_check_user_update(bin_idx, false);
+		if (ret < 0) {
+			bmdbg("Fail to find valid user binary, %d\n", ret);
+			goto send_response;
+		}
+		update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+	}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	ret = binary_manager_check_user_update(BM_CMNLIB_IDX, false);
+	if (ret < 0) {
+		bmdbg("Fail to find valid common binary, %d\n", ret);
+		goto send_response;
+	}
+	update_bp_data.app_data[BIN_BPIDX(BM_CMNLIB_IDX)].useidx ^= 1;
+#endif
+#endif
+
+	/* Then, Write bootparam with updated bootparam data */
+	memcpy(bootparam, &update_bp_data, sizeof(binmgr_bpdata_t));
+	ret = binary_manager_write_bootparam(bootparam);
+	if (ret == BINMGR_OK) {
+		bmvdbg("Update BP SUCCESS\n");
+	} else {
+		bmdbg("Fail to update BP, %d\n", ret);
+	}
+
+send_response:
+	if (bootparam) {
+		kmm_free(bootparam);
+	}
+	response_msg.result = ret;
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_response_t));
 }

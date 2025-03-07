@@ -59,6 +59,8 @@ binmgr_result_type_e binary_manager_set_request(binmgr_request_t *request_msg, i
 	case BINMGR_SETBP:
 		request_msg->data.type = *(uint8_t *)arg;
 		break;
+	case BINMGR_SWAPBP:
+		break;
 #endif
 	case BINMGR_REGISTER_STATECB:
 		if (arg == NULL) {
