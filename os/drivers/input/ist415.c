@@ -413,6 +413,7 @@ static void ist415_cmd_show_usage(void)
 	printf("	intrdbg : Set Intr Debug\n");
 	printf("	dbg     : Log level, 1:ERROR, 2:WARNING, 3:INFO\n");
 	printf("	selftest: Run selftest\n");
+	printf("	version : Display Version\n");
 }
 
 /****************************************************************************
