@@ -65,6 +65,10 @@ else
 endif
 endif
 
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" "$(TOPDIR)$(DELIM)kernel"}
+endif
+
 # Sources and paths
 
 ASRCS  =
