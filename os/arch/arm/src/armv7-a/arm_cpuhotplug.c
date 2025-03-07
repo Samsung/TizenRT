@@ -87,12 +87,35 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 
 	/* Set secondary core to hotplug state */
 	int cpu = this_cpu();
-	up_set_cpu_state(cpu, CPU_HOTPLUG);
-	/* Save the tcb state */
+	
 	struct tcb_s *rtcb = this_task();
-	arm_savestate(rtcb->xcp.regs);
-	rtcb->task_state = TSTATE_TASK_ASSIGNED;
+	if (up_get_cpu_state(cpu) == CPU_HALTED) {
+		/* 
+			clear GIC APR0 as when this gets set during restore by ATF boot flow,
+			When this register is set, it cause GIC to not serve other requests as it thinks there is an
+			active ISR being served currently.
+			
+			On powerup, this register is restored by ATF from previous saved state. 
+			If hard reset, then state is re-initialized, otherwise it will save the state when psci_cpu_off
+		*/
+		putreg32(0x00000000, GIC_ICCNSAPR1);	/* clear SGI1 nonsecure APR0 */
+		putreg32(0x00000000, GIC_ICCAPR1);	/* clear SGI1 secure APR0 */
+	} else {
+		up_set_cpu_state(cpu, CPU_HOTPLUG);
+		/* Save the tcb state */
+		arm_savestate(rtcb->xcp.regs);
+	}
+
+	/* mark this cpu's idle task as inactive to prevent the scheduler from putting things on it */
+	rtcb->task_state = TSTATE_TASK_INACTIVE;
 	CURRENT_REGS = NULL;
+
+	/* 
+		manually clear SGI4 interrupt active
+		As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop 
+		this means that it will never exit back to arm_decodeirq where EOIR will be set
+	*/
+	putreg32(irq, GIC_ICCEOIR);
 
 	/* MINOR: PSCI is a general interface for controlling power of cortex-A cores 
 	   It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
@@ -101,7 +124,7 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	   booting the secondary core, thus we can ignore the return value here first
 	*/
 	/* Shut down the secondary core */
-   	(void)psci_cpu_off(); 
+   	(void)psci_cpu_off();
 	return OK;
 }
 
@@ -137,4 +160,13 @@ void up_cpu_hotplug(int cpu)
 	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));
 }
 
+void up_cpu_haltcore(int cpu)
+{
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+	up_set_cpu_state(cpu, CPU_HALTED);
+
+	/* Fire SGI for cpu to enter halt */
+	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));
+}
 #endif /* CONFIG_CPU_HOTPLUG */
