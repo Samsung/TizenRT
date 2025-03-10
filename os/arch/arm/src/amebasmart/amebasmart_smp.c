@@ -106,6 +106,57 @@ bool vPortGateOtherCore(void)
 #endif
 }
 
+void vPortSecondaryStart(void)
+{
+	int count = 10;
+	int state;
+	
+	/* turn on CPU1's power domain, require time to stabilize */
+	rtk_core1_power_on();
+	DelayMs(1);
+
+	/* renable scu and invalidate tags on all processors */
+	arm_enable_smp(0);
+
+	/* cold-boot the core */
+	lldbg("Booting secondary core... \n");
+	BaseType_t err = psci_cpu_on(SECONDARY_CORE_ID, (unsigned long)__cpu1_start);
+	DEBUGASSERT(err >= 0);
+
+	do {
+		state  = psci_affinity_info(1, 0);
+		if (state == 1) {
+			break;
+		}
+
+		DelayUs(50);
+	} while (count--);
+
+	lldbg("Secondary core booted?... %d\n", err);
+	up_set_cpu_state(SECONDARY_CORE_ID, CPU_RUNNING);
+	
+	/* fire SGI1 to kick the freshly booted CPU into TizenRT Idle Task */
+	os_smp_start();
+}
+
+void smp_full_powerdown_cpu(void)
+{
+	irqstate_t flags = enter_critical_section();
+#ifdef CONFIG_CPU_HOTPLUG
+	/* Notify secondary core to migrate task to primary core and enter wfi*/
+	up_set_cpu_state(SECONDARY_CORE_ID, CPU_HALTED);
+#endif
+
+	/* send SGI4 to make core enter halt state (not complete powerdown yet) */
+	up_cpu_haltcore(SECONDARY_CORE_ID);
+	leave_critical_section(flags);
+	while (up_get_cpu_state(SECONDARY_CORE_ID) != CPU_HALTED);
+	lldbg("Secondary core shutdown?... %d\n", up_get_cpu_state(SECONDARY_CORE_ID));
+	
+	/* turn off CPU1's power domain */
+	rtk_core1_power_off();
+}
+
 void vPortWakeOtherCore(void)
 {
 	BaseType_t ulCoreID = up_cpu_index();
