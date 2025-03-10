@@ -414,6 +414,7 @@ static void ist415_cmd_show_usage(void)
 	printf("	dbg     : Log level, 1:ERROR, 2:WARNING, 3:INFO\n");
 	printf("	selftest: Run selftest\n");
 	printf("	version : Display Version\n");
+	printf("	tmode   : test mode, 0:OFF, 1:ON\n");
 }
 
 /****************************************************************************
@@ -451,6 +452,8 @@ static int ist415_cmd(struct touchscreen_s *upper, int argc, char **argv)
 		ret = ist415_jittertest(dev);
 	} else if (strncmp(argv[1], "version", 8) == 0) {
 		ist415_display_version(dev);
+	} else if (strncmp(argv[1], "tmode", 6) == 0) {
+		ret = ist415_tmode(dev, argc, argv);
 	} else {
 		ret = -EINVAL;
 	}
