@@ -1018,3 +1018,30 @@ void ist415_display_version(struct ist415_dev_s *dev)
 	ist415vdbg("Main Ver: %X, Test Ver: %X\n", dev->fw.cur.main_ver, dev->fw.cur.test_ver);
 	ist415vdbg("Core Ver: %X, Config Ver: %X, Release Ver: %X\n", dev->fw.cur.core_ver, dev->fw.cur.config_ver, dev->fw.cur.release_ver);
 }
+
+/****************************************************************************
+ * Name: ist415_tmode
+ *
+ * Description
+ *   This function is called by Uart Command.
+ ****************************************************************************/
+
+int ist415_tmode(struct ist415_dev_s *dev, int argc, char **argv)
+{
+	int enable;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+	
+	enable = atoi(argv[2]);
+	if (enable == 0) {
+		ist415_enable(dev);
+	} else if (enable == 1) {
+		ist415_disable(dev);
+	} else {
+		return -EINVAL;
+	}
+
+	return OK;	
+}
