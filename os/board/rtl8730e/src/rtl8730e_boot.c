@@ -337,6 +337,22 @@ void board_gpio_initialize(void)
 #endif
 }
 
+#ifdef CONFIG_AMEBASMART_IWDG
+static ALIGNMTO(CACHE_LINE_SIZE) u32 IWDG_timeout[16];
+void static board_initialize_IWDG(void)
+{
+	IPC_MSG_STRUCT ipc_msg_IWDG __attribute__((aligned(64)));
+	IWDG_timeout[0] = CONFIG_AMEBASMART_IWDG_TIMEOUT;
+	DCache_Clean((u32)IWDG_timeout, sizeof(IWDG_timeout));
+	ipc_msg_IWDG.msg_type = IPC_USER_POINT;
+	ipc_msg_IWDG.msg = (u32)IWDG_timeout;
+	ipc_msg_IWDG.msg_len = sizeof(IWDG_timeout);
+	ipc_msg_IWDG.rsvd = 0; /* for coverity init issue */
+	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_ENIWDG, &ipc_msg_IWDG);
+}
+
+#endif
+
 void amebasmart_mount_partitions(void)
 {
 	int ret;
@@ -549,6 +565,9 @@ void board_initialize(void)
 	ipc_msg_loguart.msg_len = 1;
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
+#ifdef CONFIG_AMEBASMART_IWDG
+	board_initialize_IWDG();
+#endif
 
 }
 #else
