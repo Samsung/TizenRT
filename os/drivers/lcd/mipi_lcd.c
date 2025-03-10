@@ -361,7 +361,9 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		if (priv->power == 0) {
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
+			priv->config->lcd_mode_switch(false);
 			send_init_cmd(priv, lcd_init_cmd_g);
+			priv->config->lcd_mode_switch(true);
 		}
 		priv->config->backlight(power);
 	}
