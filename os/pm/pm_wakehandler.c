@@ -56,7 +56,10 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 {
 	irqstate_t flags = enter_critical_section();
 #ifdef CONFIG_PM_METRICS
-	pm_metrics_update_wakehandler(missing_tick, wakeup_src);
+	pm_metrics_wake_t wake_arg;
+	wake_arg.ticks = missing_tick;
+	wake_arg.wakeup_src = wakeup_src;
+	pm_metrics_update(PM_MET_WAKE, (unsigned long)(&wake_arg));
 #endif
 	pmllvdbg("wakeup source code = %d\n", wakeup_src);
 	pmllvdbg("missing_tick: %llu\n", missing_tick);
