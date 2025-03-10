@@ -140,7 +140,6 @@ static void rtl8730e_lcd_power_on(void)
 {
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
 	DelayMs(120);
-	amebasmart_mipi_dsi_host_reinitialize();
 }
 static void rtl8730e_gpio_reset(void)
 {
@@ -225,8 +224,7 @@ static void rtl8730e_control_backlight(uint8_t level)
 	/* Re-initiate the LCD only when it is turned on from a powered-off state. */
 	if (g_rtl8730e_config_dev_s.pwm_level == 0 && level > 0) {
 		/* TO-DO: Move LCD IC Power ON flow */
-		rtl8730e_lcd_init();
-		rtl8730e_enable_lcdc();
+		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
 	}
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
