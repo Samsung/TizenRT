@@ -31,7 +31,6 @@
 #include <tinyara/audio/ndp120.h>
 #include <tinyara/gpio.h>
 #include "gpio_irq_api.h"
-#include <tinyara/audio/ndp120.h>
 
 #include "objects.h"
 #include "PinNames.h"
@@ -123,6 +122,10 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 {
 	auddbg("Enable DMIC enable : %d\n", enable);
 	gpio_dir(&g_ndp120info.dmic, PIN_OUTPUT);
+#if BT_MIC_SUPPORT == 1
+	gpio_mode(&g_ndp120info.dmic, PullUp);
+	gpio_write(&g_ndp120info.dmic, 1);
+#else
 	if (enable) {
 		gpio_mode(&g_ndp120info.dmic, PullUp);
 		gpio_write(&g_ndp120info.dmic, 1);
@@ -130,6 +133,7 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 		gpio_mode(&g_ndp120info.dmic, PullDown);
 		gpio_write(&g_ndp120info.dmic, 0);
 	}
+#endif
 }
 
 static void rtl8730e_ndp120_reset(void)
@@ -197,7 +201,6 @@ int rtl8730e_ndp120_initialize(int minor)
 		g_ndp120info.lower.set_dmic = rtl8730e_ndp120_set_dmic;
 		gpio_init(&g_ndp120info.dmic, GPIO_DMIC_EN);
 		gpio_init(&g_ndp120info.reset, GPIO_RESET);
-		rtl8730e_ndp120_reset();
 		rtl8730e_ndp120_set_dmic(false);
 #ifdef CONFIG_PM
 		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
@@ -230,4 +233,3 @@ int rtl8730e_ndp120_initialize(int minor)
 	return ret;
 }
 #endif
-
