@@ -56,6 +56,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #define LCD_DEV_PATH "/dev/lcd%d"
@@ -202,12 +203,24 @@ static void test_put_area_pattern(void)
 	sleep(3);
 }
 
-static unsigned short generate_color_code(int red, int green, int blue)
+static unsigned short generate_color_code(int red, int green, int blue, bool islight, bool apply_filter)
 {
+	int R, G, B;
+	if (islight) {	// For light color
+		R = 31;
+		G = 63;
+		B = 31;
+	} else {		// For dark color
+		R = 0;
+		G = 0;
+		B = 0;
+	}
 	// Ensure that RGB values are within the valid range (0-31)
-	red = red % 31;
-	green = green % 31;
-	blue = blue % 31;
+	if (apply_filter) {
+		red = (red + R) / 2;
+		green = (green + G) / 2;
+		blue = (blue + B) / 2;
+	}
 	// Combine RGB components into a 16-bit hex color code
 	unsigned short colorCode = (red << 11) | (green << 5) | blue;
 	return colorCode;
@@ -244,15 +257,42 @@ static void test_bit_map(void)
 	area.col_end = xres - 1;
 	area.stride = 2 * xres;
 	area.data = lcd_data;
-	uint16_t color;
+	uint16_t colorl, colord, colornormal;	// stores light and dark color pixel value
+	bool islight = true;
 	for (int y = 0; y < yres / SIZE * 2; y++) {
 		for (int x = 0; x < xres / SIZE; x++) {
-			color = generate_color_code(rand() % 31, rand() % 31, rand() % 31);
+
+			/* Generate color without filter and save. For 2nd and 3rd quadrant */
+			colornormal = generate_color_code(rand() % 31, rand() % 31, rand() % 31, true, false);
+
+			/* Generate color with light filter and save. For 1st quadrant */
+			colorl = generate_color_code(rand() % 31, rand() % 31, rand() % 31, true, true);
+
+			/* Generate color with dark filter and save. For 4th quadrant */
+			colord = generate_color_code(rand() % 31, rand() % 31, rand() % 31, false, true);
+
 			for (int i = 0; i < SIZE; i++) {
 				for (int j = 0; j < SIZE; j++) {
 					int pixel_x = x * SIZE + i;
 					int pixel_y = y * SIZE + j;
-					lcd_data[pixel_y * xres + pixel_x] = (color & 0xFF00) >> 8;
+
+					if (y < yres/SIZE) {
+						if (islight) {
+							lcd_data[pixel_y * xres + pixel_x] = (colorl & 0xFF00) >> 8;
+							islight = false;
+						} else {
+							lcd_data[pixel_y * xres + pixel_x] = (colornormal & 0xFF00) >> 8;
+							islight = true;
+						}
+					} else {
+						if (islight) {
+							lcd_data[pixel_y * xres + pixel_x] = (colornormal & 0xFF00) >> 8;
+							islight = false;
+						} else {
+							lcd_data[pixel_y * xres + pixel_x] = (colord & 0xFF00) >> 8;
+							islight = true;
+						}
+					}
 				}
 			}
 		}
@@ -381,6 +421,13 @@ int lcd_test_main(int argc, char *argv[])
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return ERROR;	
 	}
+
+	if (argc > 1 && !strncmp(argv[1], "power", 6)) {
+		ioctl(fd, LCDDEVIO_SETPOWER, atoi(argv[2]));
+		close(fd);
+		return OK;
+	}
+
 	while (count < 5) {
 		test_put_area_pattern();
 		test_bit_map();
