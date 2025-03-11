@@ -346,9 +346,6 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 	int result_idx;
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_kinfo_t *kerinfo;
-	int inactive_partidx;
-	char filepath[BINARY_PATH_LEN];
-	kernel_binary_header_t header_data;
 	binmgr_getinfo_all_response_t response_msg;
 
 	if (requester_pid < 0) {
@@ -365,7 +362,7 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 	kerinfo = binary_manager_get_kdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, "kernel", BIN_NAME_MAX);
 
-	ret = binary_manager_check_kernel_update(false, true);
+	ret = binary_manager_check_kernel_update(false);
 	if (ret > 0) {
 		response_msg.data.bin_info[result_idx].version = ret;
 	} else {
@@ -389,7 +386,7 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 #endif
 		response_msg.data.bin_info[result_idx].available_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
 		strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
-		ret = binary_manager_check_user_update(bin_idx, false, true);
+		ret = binary_manager_check_user_update(bin_idx, false);
 		if (ret > 0) {
 			response_msg.data.bin_info[result_idx].version = ret;
 		} else {
@@ -404,7 +401,7 @@ void binary_manager_get_inactive_info_all(int requester_pid)
 	resinfo = binary_manager_get_resdata();
 	strncpy(response_msg.data.bin_info[result_idx].name, "resource", BIN_NAME_MAX);
 
-	ret = binary_manager_check_resource_update(false, true);
+	ret = binary_manager_check_resource_update(false);
 	if (ret > 0) {
 		response_msg.data.bin_info[result_idx].version = ret;
 	} else {

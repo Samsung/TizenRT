@@ -300,10 +300,10 @@ int binary_manager_update_kernel_binary(void);
 #ifdef CONFIG_RESOURCE_FS
 binmgr_resinfo_t *binary_manager_get_resdata(void);
 int binary_manager_unmount_resource(void);
-int binary_manager_check_resource_update(bool check_version, bool check_crc);
+int binary_manager_check_resource_update(bool check_updatable);
 #endif
-int binary_manager_check_kernel_update(bool check_version, bool check_crc);
-int binary_manager_check_user_update(int bin_idx, bool check_version, bool check_crc);
+int binary_manager_check_kernel_update(bool check_updatable);
+int binary_manager_check_user_update(int bin_idx, bool check_updatable);
 
 /****************************************************************************
  * Binary Manager Main Thread
