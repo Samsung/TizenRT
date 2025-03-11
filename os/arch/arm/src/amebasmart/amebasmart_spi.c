@@ -1170,6 +1170,64 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
  *   None
  *
  ************************************************************************************/
+	/*if SPI DMA is called in idle thread, semaphore will cause issues, use polling method instead*/
+	if(getpid() == 0) {
+		if (amebasmart_spi_9to16bitmode(priv)) {
+		/* 16-bit mode */
+
+			const uint16_t *src = (const uint16_t *)txbuffer;
+			uint16_t *dest = (uint16_t *)rxbuffer;
+			uint16_t word;
+
+			while (nwords-- > 0) {
+				/* Get the next word to write.  Is there a source buffer? */
+
+				if (src) {
+					word = *src++;
+				} else {
+					word = 0xffff;
+				}
+
+				/* Exchange one word */
+
+				word = amebasmart_spi_send(dev, word);
+
+				/* Is there a buffer to receive the return value? */
+
+				if (dest) {
+					*dest++ = word;
+				}
+			}
+		} else {
+			/* 8-bit mode */
+
+			const uint8_t *src = (const uint8_t *)txbuffer;
+			uint8_t *dest = (uint8_t *)rxbuffer;
+			uint8_t word;
+
+			while (nwords-- > 0) {
+				/* Get the next word to write.  Is there a source buffer? */
+
+				if (src) {
+					word = *src++;
+				} else {
+					word = 0xff;
+				}
+
+				/* Exchange one word */
+
+				word = (uint8_t)amebasmart_spi_send(dev, (uint16_t) word);
+
+				/* Is there a buffer to receive the return value? */
+
+				if (dest) {
+					*dest++ = word;
+				}
+			}
+		}
+
+		return;
+	}
 
 	int mode_16bit = 1;
 	uint32_t remain_data_len = 0;
