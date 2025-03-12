@@ -41,6 +41,13 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
+enum lcd_mode_e {
+        LCD_ON = 0,
+        LCD_OFF = 1
+};
+
+typedef enum lcd_mode_e lcd_mode_t;
+
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
 static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
@@ -111,6 +118,7 @@ struct mipi_lcd_dev_s {
 	//u8 *BackupLcdImgBuffer;
 	int fb_alloc_count;
 	uint8_t power;
+	lcd_mode_t lcdonoff;
 	sem_t sem;
 	struct mipi_lcd_config_s *config;
 };
@@ -135,9 +143,9 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	msg.tx_buf = cmd_addr;
 	msg.tx_len = payload_len;
 	msg.flags = 0;
-	priv->config->lcd_mode_switch(false);
+	priv->config->mipi_mode_switch(CMD_MODE);
 	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
-	priv->config->lcd_mode_switch(true);
+	priv->config->mipi_mode_switch(VIDEO_MODE);
 	if (transfer_status != OK) {
 		lcddbg("Command %x not sent \n", cmd);
 	}
@@ -255,6 +263,10 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
+	if (priv->lcdonoff == LCD_OFF) {
+                priv->config->mipi_mode_switch(VIDEO_MODE);
+                priv->lcdonoff = LCD_ON;
+        }
 	sem_post(&priv->sem);
 	return OK;
 }
@@ -360,10 +372,10 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
 			priv->config->power_on();
+			priv->config->mipi_mode_switch(CMD_MODE);
+			priv->lcdonoff = LCD_OFF;
 			/* We need to send init cmd after LCD IC power on */
-			priv->config->lcd_mode_switch(false);
 			send_init_cmd(priv, lcd_init_cmd_g);
-			priv->config->lcd_mode_switch(true);
 		}
 		priv->config->backlight(power);
 	}
@@ -498,6 +510,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 	priv->power = CONFIG_LCD_MAXPOWER;
+	priv->lcdonoff = LCD_ON;
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)
