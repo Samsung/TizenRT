@@ -365,14 +365,6 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 	if (g_mode == RTK_WIFI_NONE) {
 		int ret = RTK_STATUS_SUCCESS;
 
-		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-
-		if (ret != RTK_STATUS_SUCCESS) {
-			ndbg("[RTK] Link callback handles: register failed !\n");
-			return wuret;
-		} else {
-			nvdbg("[RTK] Link callback handles: registered\n");
-		}
 
 		ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 
@@ -381,8 +373,6 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 			return wuret;
 		}
 		g_mode = RTK_WIFI_STATION_IF;
-		/*extern const char lib_wlan_rev[];
-		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
 		wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
@@ -818,13 +808,6 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 
 	trwifi_result_e ret = TRWIFI_FAIL;
 
-	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-	if (ret != RTK_STATUS_SUCCESS) {
-		ndbg("[RTK] Link callback handles: register failed !\n");
-		return TRWIFI_FAIL;
-	} else {
-		nvdbg("[RTK] Link callback handles: registered\n");
-	}
 
 	for (i = 0; i < valid_ch_list_size; i++){
 		if (softap_config->channel == valid_ch_list[i]){
@@ -854,32 +837,19 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 
 trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 {
-	trwifi_result_e wuret = TRWIFI_FAIL;
-	int ret = RTK_STATUS_SUCCESS;
+	trwifi_result_e wuret = TRWIFI_SUCCESS;
 
-	if (g_mode == RTK_WIFI_STATION_IF)
+	if (g_mode == RTK_WIFI_STATION_IF) {
 		ndbg("[RTK] station is already running!\n");
-
-	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
-	if (ret != RTK_STATUS_SUCCESS) {
-		ndbg("[RTK] Link callback handles: register failed !\n");
 		return wuret;
-	} else {
-		nvdbg("[RTK] Link callback handles: registered\n");
 	}
 
-	cmd_wifi_off();
-	vTaskDelay(20);
-	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
-	if (ret == RTK_STATUS_SUCCESS) {
-		g_mode = RTK_WIFI_STATION_IF;
-		wuret = TRWIFI_SUCCESS;
+	g_mode = RTK_WIFI_STATION_IF;
+
 #ifndef CONFIG_ENABLE_HOMELYNK
-		softap_flag = 0;
+	softap_flag = 0;
 #endif //#ifndef CONFIG_ENABLE_HOMELYNK
-	} else {
-		ndbg("[RTK] Failed to start STA mode\n");
-	}
+
 	return wuret;
 }
 

@@ -422,11 +422,6 @@ int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32
 		break;
 	}
 
-	if (wifi_on(RTW_MODE_STA) < 0) {
-		ndbg("\n\rERROR: Wifi on failed!");
-		return -1;
-	}
-
 	if ((ap_channel >= 1) && (ap_channel <= 13)) {
 		pscan_config = PSCAN_FAST_SURVEY; //justin temporary take off PSCAN_ENABLE flag
 	}
@@ -480,14 +475,6 @@ int8_t cmd_wifi_connect_bssid(int argc, char **argv)
 	wifi_get_setting(WLAN0_IDX, &wlan_setting);
 	mode = wlan_setting.mode;
 
-	if (mode == RTW_MODE_MASTER) {
-		wifi_off();
-		vTaskDelay(20);
-		if (wifi_on(RTW_MODE_STA) < 0) {
-			ndbg("\n\rERROR: Wifi on failed!");
-			return -1;
-		}
-	}
 	//check ssid
 	if (memcmp(argv[1], "0", 1)) {
 		index = 1;
@@ -707,7 +694,6 @@ static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 {
-	wifi_on(RTW_MODE_STA);
 
 	rtw_wifi_setting_t setting;
 	wifi_get_setting(WLAN0_IDX, &setting);
