@@ -23,7 +23,8 @@
 #include <debug.h>
 #include <lwip/netif.h>
 
-#include "osdep_service.h"
+#include "os_wrapper.h"
+#include "platform_opts.h"
 #include "wifi_conf.h"
 #include "wifi_intf_drv_to_upper.h"
 #include "rtw_wifi_constants.h"
@@ -189,13 +190,13 @@ static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num
 	int i = 0;
 	char *scan_buf = NULL;
 
-	scan_buf = (char *)rtw_zmalloc(ap_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(ap_num * sizeof(rtw_scan_result_t));
 	if (scan_buf == NULL) {
 		return -1;
 	}
 
 	if (wifi_get_scan_records((unsigned int *)&ap_num, scan_buf) < 0) {
-		rtw_mfree((u8 *)scan_buf, 0);
+		rtos_mem_free((void *)scan_buf);
 		return -1;
 	}
 
@@ -208,7 +209,7 @@ static int _find_ap_from_scan_buf(char *target_ssid, void *user_data, int ap_num
 			pwifi->security_type = scanned_ap_info->security;
 		}
 	}
-	rtw_mfree((u8 *)scan_buf, 0);
+	rtos_mem_free((void *)scan_buf);
 	return 0;
 
 }
@@ -222,7 +223,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 
 	memset(&wifi, 0, sizeof(wifi));
 
-	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.ssid[0].ssid = ssid;
 	scanned_ap_num = wifi_scan_networks(&scan_param, 1);
 
@@ -235,7 +236,7 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 		if (strcmp((const char *)wifi.ssid, ssid) == 0) {
 			*security_mode = wifi.security_type;
 			*channel = wifi.channel;
-			ret = 1;
+			ret = wifi.security_type;
 		}
 	}
 
@@ -293,7 +294,7 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 
 	//Populate softAP values
 	rtw_AP_config.ssid.len = softap_config->ssid_length;
-	rtw_memcpy(rtw_AP_config.ssid.val, (unsigned char *)softap_config->ssid, rtw_AP_config.ssid.len);
+	memcpy(rtw_AP_config.ssid.val, (unsigned char *)softap_config->ssid, rtw_AP_config.ssid.len);
 	rtw_AP_config.security_type = security_type;
 	rtw_AP_config.password = (unsigned char*)password;
 	rtw_AP_config.password_len = softap_config->passphrase_length;
@@ -585,7 +586,7 @@ int8_t cmd_wifi_disconnect(void)
 		//TODO
 		//Delay 1 Tick
 #else
-		rtw_msleep_os(1);
+		rtos_time_delay_ms(1);
 #endif
 		timeout--;
 	}
@@ -723,9 +724,8 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 
 int8_t cmd_wifi_off(void)
 {
-	if (!wifi_off())
-		return 0;
-	return -1;
+/* 8730E doesn't support wifi_off() */
+	return 0;
 }
 
 int8_t cmd_wifi_stop_ap(void)
@@ -771,7 +771,7 @@ static void _free_scanlist(void)
 	while (g_scan_list) {
 		trwifi_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree((unsigned char *)cur, sizeof(trwifi_scan_list_s));
+		rtos_mem_free((void *)cur);
 	}
 	g_scan_num = 0;
 }
@@ -810,12 +810,12 @@ static void cmd_wifi_scan_with_ssid(int argc, char **argv)
 			ndbg("\n\rWrong ssid. Length must be less than 32.");
 			goto exit;
 		}
-		channel_list = (u8 *)pvPortMalloc(num_channel);
+		channel_list = (u8 *)rtos_mem_zmalloc(num_channel);
 		if (!channel_list) {
 			ndbg("\n\r ERROR: Can't malloc memory for channel list");
 			goto exit;
 		}
-		pscan_config = (u8 *)pvPortMalloc(num_channel);
+		pscan_config = (u8 *)rtos_mem_zmalloc(num_channel);
 		if (!pscan_config) {
 			ndbg("\n\r ERROR: Can't malloc memory for pscan_config");
 			goto exit;
@@ -842,9 +842,9 @@ static void cmd_wifi_scan_with_ssid(int argc, char **argv)
 
 exit:
 	if (argc > 2 && channel_list)
-		vPortFree(channel_list);
+		rtos_mem_free(channel_list);
 	if (argc > 2 && pscan_config)
-		vPortFree(pscan_config);
+		rtos_mem_free(pscan_config);
 }
 #endif
 
@@ -879,9 +879,9 @@ static void cmd_exit(int argc, char **argv)
 static void cmd_debug(int argc, char **argv)
 {
 	if (strncmp(argv[1], "ready_trx", strlen("ready_trx")) == 0) {
-		nvdbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
+		nvdbg("\r\n%d", wifi_is_ready_to_transceive((rtw_interface_t)atoi(argv[2])));
 	} else if (strncmp(argv[1], "is_up", strlen("is_up")) == 0) {
-		nvdbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
+		nvdbg("\r\n%d", wifi_is_up((rtw_interface_t)atoi(argv[2])));
 	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
 		nvdbg("\r\n%d", wifi_set_mac_address(argv[2]));
 	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {

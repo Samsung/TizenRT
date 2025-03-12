@@ -1,22 +1,20 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_80211spec_macro.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef	__RTW_80211SPEC_MACRO_H_
 #define __RTW_80211SPEC_MACRO_H_
 
@@ -82,39 +80,6 @@
 #define WLAN_STATUS_ASSOC_DENIED_NOSHORT 19
 #define WLAN_STATUS_ASSOC_DENIED_NOPBCC 20
 #define WLAN_STATUS_ASSOC_DENIED_NOAGILITY 21
-
-/* Reason codes */
-#define WLAN_REASON_UNSPECIFIED 1
-#define WLAN_REASON_PREV_AUTH_NOT_VALID 2
-#define WLAN_REASON_DEAUTH_LEAVING 3
-#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
-#define WLAN_REASON_DISASSOC_AP_BUSY 5
-#define WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA 6
-#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA 7
-#define WLAN_REASON_DISASSOC_STA_HAS_LEFT 8
-#define WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH 9
-#define WLAN_REASON_MIC_FAILURE 14
-#define WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT 15
-#define WLAN_REASON_ACTIVE_ROAM 65533
-#define WLAN_REASON_JOIN_WRONG_CHANNEL       65534
-#define WLAN_REASON_EXPIRATION_CHK 65535
-
-/* 802.11s */
-#define WLAN_REASON_MESH_PEER_CANCELED 52
-#define WLAN_REASON_MESH_MAX_PEERS 53
-#define WLAN_REASON_MESH_CONFIG 54
-#define WLAN_REASON_MESH_CLOSE 55
-#define WLAN_REASON_MESH_MAX_RETRIES 56
-#define WLAN_REASON_MESH_CONFIRM_TIMEOUT 57
-#define WLAN_REASON_MESH_INVALID_GTK 58
-#define WLAN_REASON_MESH_INCONSISTENT_PARAM 59
-#define WLAN_REASON_MESH_INVALID_SECURITY 60
-#define WLAN_REASON_MESH_PATH_ERROR 61
-#define WLAN_REASON_MESH_PATH_NOFORWARD  62
-#define WLAN_REASON_MESH_PATH_DEST_UNREACHABLE 63
-#define WLAN_REASON_MAC_EXISTS_IN_MBSS 64
-#define WLAN_REASON_MESH_CHAN_REGULATORY 65
-#define WLAN_REASON_MESH_CHAN 66
 
 #define IEEE80211_CCK_RATE_1MB		        0x02
 #define IEEE80211_CCK_RATE_2MB		        0x04
@@ -282,6 +247,7 @@
 #define MAX_WPS_IE_LEN (512)
 #define MAX_P2P_IE_LEN (256)
 #define MAX_WFD_IE_LEN (128)
+#define MAX_FT_IE_LEN (256)
 
 #define _WMM_IE_Length_				7  // for WMM STA
 #define _WMM_Para_Element_Length_		24
@@ -365,7 +331,7 @@
 	} while(0)
 
 #define get_tofr_ds(pframe)	((GetToDs(pframe) << 1) | GetFrDs(pframe))
-
+#define is_qos(pframe)	(get_frame_sub_type(pframe) & BIT(7))
 
 #define SetMFrag(pbuf)	\
 	do	{	\
@@ -583,6 +549,8 @@
 #define WLAN_STATUS_AUTH_TIMEOUT 16
 #define WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA 17
 #define WLAN_STATUS_ASSOC_DENIED_RATES 18
+#define WLAN_STATUS_DENIED_INSUFFICIENT_BANDWIDTH 33
+#define WLAN_STATUS_REQUEST_DECLINED 37
 /* WPA3-SAE*/
 #define WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ 		76
 #define WLAN_STATUS_UNSUPPORTED_FCC_GROUP   		77
@@ -716,38 +684,9 @@
 
 // This value is tested by WiFi 11n Test Plan 5.2.3.
 // This test verifies the WLAN NIC can update the NAV through sending the CTS with large duration.
-#define	WiFiNavUpperUs				30000	// 30 ms
+#define	WiFiNavUpperUs				32640
 
-/* Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) */
-#define WLAN_REASON_UNSPECIFIED 1
-#define WLAN_REASON_PREV_AUTH_NOT_VALID 2
-#define WLAN_REASON_DEAUTH_LEAVING 3
-#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
-#define WLAN_REASON_DISASSOC_AP_BUSY 5
-#define WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA 6
-#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA 7
-#define WLAN_REASON_DISASSOC_STA_HAS_LEFT 8
-#define WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH 9
-/* IEEE 802.11h */
-#define WLAN_REASON_PWR_CAPABILITY_NOT_VALID 10
-#define WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID 11
-/* IEEE 802.11i */
-#define WLAN_REASON_INVALID_IE 13
-#define WLAN_REASON_MICHAEL_MIC_FAILURE 14
-#define WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT 15
-#define WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT 16
-#define WLAN_REASON_IE_IN_4WAY_DIFFERS 17
-#define WLAN_REASON_GROUP_CIPHER_NOT_VALID 18
-#define WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID 19
-#define WLAN_REASON_AKMP_NOT_VALID 20
-#define WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION 21
-#define WLAN_REASON_INVALID_RSN_IE_CAPAB 22
-#define WLAN_REASON_IEEE_802_1X_AUTH_FAILED 23
-#define WLAN_REASON_CIPHER_SUITE_REJECTED 24
-
-#ifdef CONFIG_IEEE80211W
 #define _MME_IE_LENGTH_  18
-#endif /* CONFIG_IEEE80211W */
 
 #define OP_MODE_PURE                    0
 #define OP_MODE_MAY_BE_LEGACY_STAS      1
@@ -804,9 +743,6 @@
 
 #define VENDOR_HT_CAPAB_OUI_TYPE 0x33 /* 00-90-4c:0x33 */
 
-typedef unsigned char	NDIS_802_11_RATES[WLAN_RATES_MAXLEN];        // Set of 8 data rates
-typedef unsigned char	NDIS_802_11_RATES_EX[WLAN_RATES_EX_MAXLEN];  // Set of 16 data rates
-
 static inline u8 *rtw_get_capability_from_ie(u8 *ie)
 {
 	return (ie + 8 + 2);
@@ -815,6 +751,15 @@ static inline u8 *rtw_get_capability_from_ie(u8 *ie)
 static inline u8 *rtw_get_beacon_interval_from_ie(u8 *ie)
 {
 	return (ie + 8);
+}
+
+__inline static int IS_IPV6_MCAST(const u8 *da)
+{
+	if ((*da == 0x33 && *(da + 1) == 0x33)) {
+		return _TRUE;
+	} else {
+		return _FALSE;
+	}
 }
 
 //temporarily put inline here

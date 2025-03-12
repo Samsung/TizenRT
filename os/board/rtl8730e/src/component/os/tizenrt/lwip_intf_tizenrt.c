@@ -17,12 +17,14 @@
 #include <lwip_intf_tizenrt.h>
 #include <lwip/init.h>
 #include <lwip/netif.h>
-#include <osdep_service.h>
+#include <lwip/pbuf.h>
+#include <os_wrapper.h>
 #include "rtw_autoconf.h"
 //#include "rtw_adapter.h"
 
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <sys/socket.h>
+#include <ifaddrs.h>
 #include <netdev_mgr_internal.h>
 #include "rtw_wifi_constants.h"
 #include <net/if.h>
@@ -283,7 +285,6 @@ void netif_pre_sleep_processing(void)
 {
 }
 
-#ifdef CONFIG_WOWLAN
 unsigned char *rltk_wlan_get_ip(int idx)
 {
 	struct netdev *dev_tmp = NULL;
@@ -328,4 +329,45 @@ unsigned char *rltk_wlan_get_gwmask(int idx)
 	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
 	return (uint8_t *) &(ni->netmask);
 }
-#endif
+
+void *rltk_pbuf_wrapper(struct sk_buff *skb, u16_t *len)
+{
+    struct pbuf *p_buf = NULL, *temp_buf = NULL;
+	p_buf = pbuf_alloc(PBUF_RAW, skb->len, PBUF_POOL);
+	if (p_buf == NULL) {
+        return NULL;
+	}
+
+	/* copy data from skb(ipc data) to pbuf(ether net data) */
+	temp_buf = p_buf;
+	while (temp_buf) {
+		/* If tot_len > PBUF_POOL_BUFSIZE_ALIGNED, the skb will be
+		 * divided into several pbufs. Therefore, there is a while to
+		 * use to assign data to pbufs.
+		 */
+		memcpy(temp_buf->payload, skb->data, temp_buf->len);
+		skb_pull(skb, temp_buf->len);
+		temp_buf = temp_buf->next;
+	}
+    if (len != NULL){
+        *len = p_buf->len;
+    }
+    return (void*)p_buf;
+}
+
+void rltk_wlan_indicate_lwip(int idx_wlan, void *p_buf)
+{
+    /* TizenRT gets netif from netdev */
+    /* Currently TizenRT only uses idx 0, remove below line if TizenRT supports concurrent */
+    idx_wlan = 0;
+    struct netdev *dev_tmp = NULL;
+    dev_tmp = (struct netdev *)rtk_get_netdev(idx_wlan);
+    struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
+    if (netif->input((struct pbuf *)p_buf, netif) != ERR_OK) {
+        LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
+        LINK_STATS_INC(link.err);
+        pbuf_free((struct pbuf *)p_buf);
+    } else {
+        LINK_STATS_INC(link.recv);
+    }
+}
