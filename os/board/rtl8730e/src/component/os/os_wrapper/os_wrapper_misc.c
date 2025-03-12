@@ -46,18 +46,6 @@ u32 rtw_getFreeHeapSize(void)
 	return 0;
 }
 
-void rtw_acquire_wakelock(void)
-{
-}
-
-void rtw_release_wakelock(void)
-{
-}
-
-void rtw_wakelock_timeout(u32 timeoutms)
-{
-}
-
 int rtw_in_interrupt(void)
 {
 #ifdef ARM_CORE_CA32

@@ -1,17 +1,39 @@
+/**
+  ******************************************************************************
+  * @file    rom_rtw_defs.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef __ROM_RTW_DEFS_H_
 #define __ROM_RTW_DEFS_H_
+
+#define TAG_WLAN_DRV   "WLAN"
+#define TAG_WLAN_COEX  "COEX"
+#define TAG_WLAN_INIC  "INIC"
+#define TAG_WLAN_NAN   "NAN"
 
 /**
   * @brief  The enumeration lists all the network mode.
   */
 enum wlan_mode {
 	WLAN_MD_INVALID = 0,
-	WLAN_MD_11B	= BIT0,
-	WLAN_MD_11A	= BIT1,
-	WLAN_MD_11G	= BIT2,
-	WLAN_MD_11N	= BIT3,
-	WLAN_MD_11AC	= BIT4,
-	WLAN_MD_11AX	= BIT5,
+	WLAN_MD_11B	= BIT(0),
+	WLAN_MD_11A	= BIT(1),
+	WLAN_MD_11G	= BIT(2),
+	WLAN_MD_11N	= BIT(3),
+	WLAN_MD_11AC	= BIT(4),
+	WLAN_MD_11AX	= BIT(5),
 
 	/* Type for current wireless mode */
 	WLAN_MD_11BG	= (WLAN_MD_11B | WLAN_MD_11G),
@@ -38,7 +60,7 @@ enum wlan_mode {
 	WLAN_MD_MAX	= (WLAN_MD_24G_MIX | WLAN_MD_5G_MIX),
 };
 
-typedef enum _RT_CHANNEL_DOMAIN_2G {
+enum _RT_CHANNEL_DOMAIN_2G {
 	RTW_RD_2G_NULL = 0,	/* Do not support 2G*/
 	RTW_RD_2G_01 = 1,	/* Worldwide 13, Canada */
 	RTW_RD_2G_02 = 2,	/* Europe, Japan */
@@ -48,9 +70,9 @@ typedef enum _RT_CHANNEL_DOMAIN_2G {
 	RTW_RD_2G_06 = 6,	/* 2G Global, include channel 14 */
 	//===== Add new channel plan above this line===============//
 	RT_CHANNEL_DOMAIN_2G_MAX,
-} RT_CHANNEL_DOMAIN_2G, *PRT_CHANNEL_DOMAIN_2G;
+};
 
-typedef enum _RT_CHANNEL_DOMAIN_5G {
+enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_NULL = 0,		/*Do not support 5G*/
 	RTW_RD_5G_01 = 1,		/*US, Canada, Australia, New Zealand, Mexico (w/o Weather radar), (w/o Ch120~Ch128)*/
 	RTW_RD_5G_02 = 2,		/*Europe, Japan (W52, W53, W56)*/
@@ -106,32 +128,44 @@ typedef enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_52 = 52,		/*US (include Ch144)(2018 Dec 05 New standard, include ch144)Add FCC 5.9G Channel*/
 	RTW_RD_5G_53 = 53,		/*Korea*/
 	RTW_RD_5G_54 = 54,
+	RTW_RD_5G_55 = 55,      /*5G Worldwide (include Ch144 and FCC 5.9G) Band2&3 w/i DFS for AP mode. */
+	RTW_RD_5G_56 = 56,      /* Canada (w/o Weather radar) (w/o Ch120~Ch128, include Ch144) Add Canada 5.9G Channel*/
+	RTW_RD_5G_57 = 57,      /*Europe*/
+	RTW_RD_5G_58 = 58,      /*Russia*/
+	RTW_RD_5G_59 = 59,      /*Bolivia*/
+	RTW_RD_5G_60 = 60,      /*ETSI (include ch169/ch173)*/
+	RTW_RD_5G_61 = 61,      /*Malaysia(include ch169/ch173)*/
+	RTW_RD_5G_62 = 62,
 	//===== Add new channel plan above this line===============//
 	RT_CHANNEL_DOMAIN_5G_MAX
-} RT_CHANNEL_DOMAIN_5G, *PRT_CHANNEL_DOMAIN_5G;
+};
 
 // Tx Power Limit Table Size
-typedef enum _REGULATION_TXPWR_LMT {
+enum _REGULATION_TXPWR_LMT {
 	TXPWR_LMT_FCC = 0,
-	TXPWR_LMT_MKK = 1,
-	TXPWR_LMT_ETSI = 2,
-	TXPWR_LMT_IC = 3,
-	TXPWR_LMT_KCC = 4,
-	TXPWR_LMT_ACMA = 5,
-	TXPWR_LMT_CHILE = 6,
-	TXPWR_LMT_MEXICO = 7,
-	TXPWR_LMT_WW = 8, // WW13, The mininum of ETSI,MKK
-	TXPWR_LMT_GL = 9, // Global, The mininum of all
-	TXPWR_LMT_UKRAINE = 10,
-	TXPWR_LMT_CN = 11,
-	TXPWR_LMT_QATAR = 12,
-	TXPWR_LMT_UK = 13,
-	TXPWR_LMT_NCC = 14,
-	TXPWR_LMT_EXT = 15, /* Customer Customization */
-	TXPWR_LMT_NA = 16,  /* Not support, choose NA */
-} REGULATION_TXPWR_LMT;
+	TXPWR_LMT_MKK = 1,      /* Japan */
+	TXPWR_LMT_ETSI = 2,     /* CE */
+	TXPWR_LMT_IC = 3,       /* Canada */
+	TXPWR_LMT_KCC = 4,      /* South Korea */
+	TXPWR_LMT_ACMA = 5, 	/* Australia */
+	TXPWR_LMT_CHILE = 6,    /* Chile */
+	TXPWR_LMT_MEXICO = 7,   /* Mexico */
+	TXPWR_LMT_WW = 8,       /* Worldwide, The mininum of all */
+	TXPWR_LMT_GL = 9,		/* Global */
+	TXPWR_LMT_UKRAINE = 10, /* Ukraine */
+	TXPWR_LMT_CN = 11,       /* China */
+	TXPWR_LMT_QATAR = 12,   /* Qatar */
+	TXPWR_LMT_UK = 13,      /* Great Britain (United Kingdom; England) */
+	TXPWR_LMT_NCC = 14,     /* Taiwan */
+	TXPWR_LMT_EXT = 15,     /* Customer Customization */
 
-#define TXPWR_LMT_MAX_REGULATION_NUM  TXPWR_LMT_NA
+	/* ===== Add new power limit above this line. ===== */
+	TXPWR_LMT_MAX           /* Not support */
+};
+
+
+#define TXPWR_LMT_MAX_REGULATION_NUM  TXPWR_LMT_MAX
+#define COUNTRY_CODE_LEN 2
 
 //
 // Channel Plan Type.
@@ -141,7 +175,7 @@ typedef enum _REGULATION_TXPWR_LMT {
 //	If you just wnat to customize the acitions(scan period or join actions) about one of the channel plan,
 //	customize them in RT_CHANNEL_INFO in the RT_CHANNEL_LIST.
 //
-typedef enum _RT_CHANNEL_DOMAIN {
+enum _RT_CHANNEL_DOMAIN {
 	//===== new channel plan mapping, (2GDOMAIN_5GDOMAIN) =====//
 	RT_CHANNEL_DOMAIN_WORLD_NULL = 0x20,
 	RT_CHANNEL_DOMAIN_ETSI1_NULL = 0x21,
@@ -242,16 +276,16 @@ typedef enum _RT_CHANNEL_DOMAIN {
 
 	/* ===== Add new channel plan above this line. ===== */
 	RT_CHANNEL_DOMAIN_MAX
-} RT_CHANNEL_DOMAIN, *PRT_CHANNEL_DOMAIN;
+};
 
-#define BAND_CAP_2G			BIT0
-#define BAND_CAP_5G			BIT1
+#define BAND_CAP_2G			BIT(0)
+#define BAND_CAP_5G			BIT(1)
 
 // Scan type including active and passive scan.
-typedef enum _RT_SCAN_TYPE {
+enum _RT_SCAN_TYPE {
 	SCAN_PASSIVE = 1,
 	SCAN_ACTIVE,
-} RT_SCAN_TYPE, *PRT_SCAN_TYPE;
+};
 
 enum channel_width {
 	CHANNEL_WIDTH_20		= 0,
@@ -292,29 +326,17 @@ enum channel_width {
 #define WPA_KEY_MGMT_OWE BIT(22)
 #define WPA_KEY_MGMT_DPP BIT(23)
 
-typedef enum _NDIS_802_11_AUTHENTICATION_MODE {
-	Ndis802_11AuthModeOpen,
-	Ndis802_11AuthModeShared,
-	Ndis802_11AuthModeAutoSwitch,
-	Ndis802_11AuthModeWPA,
-	Ndis802_11AuthModeWPAPSK,
-	Ndis802_11AuthModeWPANone,
-	Ndis802_11AuthModeWAPI,
-	Ndis802_11AuthModeWPA2,
-	Ndis802_11AuthModeWPA2PSK,
-	Ndis802_11AuthModeWPA3,
-	Ndis802_11AuthModeWPA3PSK,
+enum _NDIS_802_11_AUTHENTICATION_MODE {
+	Ndis802_11AuthModeWPA = 3,
+	Ndis802_11AuthModeWPAPSK = 4,
+	Ndis802_11AuthModeWPA2 = 7,
+	Ndis802_11AuthModeWPA2PSK = 8,
+	Ndis802_11AuthModeWPA3 = 9,
+	Ndis802_11AuthModeWPA3PSK = 10,
 	Ndis802_11AuthModeMax               // Not a real mode, defined as upper bound
-} NDIS_802_11_AUTHENTICATION_MODE, *PNDIS_802_11_AUTHENTICATION_MODE;
+};
 
 #define MAX_IE_SZ	768 //384//
-
-enum {
-	RTW_ROAM_ON_EXPIRED = BIT(0),
-	RTW_ROAM_ON_RESUME = BIT(1),
-	RTW_ROAM_ACTIVE = BIT(2),
-	RTW_ROAM_ON_BTM = BIT(3),
-};
 
 /* Extended Capabilities: n bytes */
 #define GET_EXT_CAP_MBSSID(_pEleStart)					LE_BITS_TO_1BYTE(((u8 *)(_pEleStart) + 2), 6, 1)
@@ -332,24 +354,19 @@ enum VCS_TYPE {
 #define A_SHA_DIGEST_LEN		20
 #define INFO_ELEMENT_SIZE       128
 
-typedef enum {
-	DOT11_PortStatus_Unauthorized,
-	DOT11_PortStatus_Authorized,
-	DOT11_PortStatus_Guest
-} DOT11_PORT_STATUS;
-
-#define _NO_PRIVACY_		0x0
-#define _WEP40_				0x1
-#define _TKIP_				0x2
-#define _TKIP_WTMIC_		0x3
-#define _AES_				0x4
-#define _WEP104_			0x5
-#define _WEP_WPA_MIXED_		0x07  // WEP + WPA
-#define _SMS4_				0x06
-#define _BIP_				0x8
-#define _GCMP_ 0x07
-#define _GCMP_256_ (_GCMP_ | BIT(3))
-#define _CCMP_256_ (_AES_ | BIT(3))
+/* SECCAM sec_type define */
+#define _NO_PRIVACY_	0x0
+#define _WEP40_		0x1
+#define _TKIP_		0x2
+#define _TKIP_WTMIC_	0x3
+#define _AES_		0x4	//_CCMP_128_
+#define _WEP104_	0x5
+#define _SMS4_		0x6	//_WAPI_
+#define _GCMP_		0x7
+#define _GCMP_256_	(_GCMP_ | BIT(3))
+#define _CCMP_256_	(_AES_ | BIT(3))
+#define _GCM_WAPI_	(_SMS4_ | BIT(3))		//_GCM_WAPI_
+#define _BIP_		0x8
 
 #define BW_CAP_5M		BIT0
 #define BW_CAP_10M		BIT1
@@ -357,7 +374,7 @@ typedef enum {
 #define BW_CAP_40M		BIT3
 #define BW_CAP_80M		BIT4
 #define BW_CAP_160M		BIT5
-#define BW_CAP_80_80M	BIT6
+#define BW_CAP_80_80M		BIT6
 
 enum chan_offset {
 	CHAN_OFFSET_NO_EXT = 0,	/*SCN - no secondary channel*/
@@ -370,7 +387,7 @@ enum chan_offset {
 	CHAN_OFFSET_80M_LOWER = 7,
 };
 
-typedef enum {
+enum ENCRYP_PROTOCOL_E {
 	ENCRYP_PROTOCOL_OPENSYS,   //open system
 	ENCRYP_PROTOCOL_WEP,       //WEP
 	ENCRYP_PROTOCOL_WPA,       //WPA
@@ -378,7 +395,7 @@ typedef enum {
 	ENCRYP_PROTOCOL_WPA_WPA2,  //WPA & WPA2
 	ENCRYP_PROTOCOL_WAPI,      //WAPI: Not support in this version
 	ENCRYP_PROTOCOL_MAX
-} ENCRYP_PROTOCOL_E;
+};
 
 /**
  * enum mfp_options - Management frame protection (IEEE 802.11w) options
@@ -397,14 +414,20 @@ enum mfp_options {
 
 enum dot11AuthAlgrthmNum {
 	dot11AuthAlgrthm_Open = 0,
-	dot11AuthAlgrthm_Shared,
-	dot11AuthAlgrthm_8021X,
-	dot11AuthAlgrthm_SAE,
-	dot11AuthAlgrthm_Auto,
-	dot11AuthAlgrthm_WAPI,
-	dot11AuthAlgrthm_FT_PSK,
-	dot11AuthAlgrthm_MaxNum
+	dot11AuthAlgrthm_Shared = 1,
+	dot11AuthAlgrthm_8021X = 2,
+	dot11AuthAlgrthm_SAE = 3,
+	dot11AuthAlgrthm_MaxNum = 7
 };
+
+enum channel_group {
+	CHANNEL_GROUP_2G = 0,
+	CHANNEL_GROUP_5G_LOW,
+	CHANNEL_GROUP_5G_MID,
+	CHANNEL_GROUP_5G_HIGH,
+	CHANNEL_GROUP_NUM
+};
+
 
 #define _AUTH_ALGM_NUM_			2
 #define _AUTH_SEQ_NUM_			2
@@ -452,19 +475,6 @@ enum dot11AuthAlgrthmNum {
 #define RTW_RBUF_PKT_UNAVAIL	6
 #define RTW_SDIO_READ_PORT_FAIL	7
 
-typedef enum _RATEID_IDX_ {
-	RATEID_IDX_BGN_40M_2SS = 0,
-	RATEID_IDX_BGN_40M_1SS = 1,
-	RATEID_IDX_BGN_20M_2SS_BN = 2,
-	RATEID_IDX_BGN_20M_1SS_BN = 3,
-	RATEID_IDX_GN_N2SS = 4,
-	RATEID_IDX_GN_N1SS = 5,
-	RATEID_IDX_BG = 6,
-	RATEID_IDX_G = 7,
-	RATEID_IDX_B = 8,
-	RATEID_IDX_VHT_2SS = 9,
-	RATEID_IDX_VHT_1SS = 10,
-} RATEID_IDX, *PRATEID_IDX;
 
 enum rf_type {
 	RF_1T1R			= 0,
@@ -485,7 +495,7 @@ enum _IFACE_TYPE {
 	MAX_IFACE_PORT,
 };
 
-typedef enum _WIRELESS_MODE {
+enum _WIRELESS_MODE {
 	WIRELESS_MODE_UNKNOWN = 0x00,
 	WIRELESS_MODE_A = 0x01,
 	WIRELESS_MODE_B = 0x02,
@@ -496,10 +506,10 @@ typedef enum _WIRELESS_MODE {
 	WIRELESS_MODE_AC_5G = 0x40,
 	WIRELESS_MODE_AC_24G  = 0x80,
 	WIRELESS_MODE_AC_ONLY  = 0x100,
-} WIRELESS_MODE;
+};
 
 #define _HW_MSR_STATE_NOLINK_		0x00
-#define _HW_MSR_STATE_NAN_		0x01
+#define _HW_MSR_STATE_NAN_		0x01		//only smart valid
 #define _HW_MSR_STATE_STATION_ 		0x02
 #define _HW_MSR_STATE_AP_		0x03
 #define _HW_MSR_STATE_MONITOR_		0x04

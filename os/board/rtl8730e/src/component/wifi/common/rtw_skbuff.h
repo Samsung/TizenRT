@@ -1,23 +1,28 @@
-/******************************************************************************
- * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_skbuff.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef __SKBUFF_H__
 #define __SKBUFF_H__
 
 #include "rtw_wifi_constants.h"
-#include "osdep_service.h"
+#include "os_wrapper.h"
+#include "rtw_atomic.h"
+#include "rtw_misc.h"
+#include "dlist.h"
 
 /*skb size = HW info + wlan over head + ethernet len + safety*/
 #define MAX_SKB_BUF_SIZE	(((WLAN_HW_INFO_LEN+WLAN_MAX_PROTOCOL_OVERHEAD+WLAN_MAX_ETHFRM_LEN+8)\
@@ -35,17 +40,18 @@ struct  sk_buff_head {
 };
 
 struct skb_raw_para {
-	unsigned char enable;
-	unsigned char rate;
-	unsigned char retry_limit;
+	unsigned char rate;             /* tx rate of tx_raw packets */
+	unsigned char retry_limit;      /* the number of tx retry when tx fail for tx_raw packet */
+	unsigned char device_id;        /* index of peer device which as a rx role for receiving this pkt, and will be update when linked peer */
+	unsigned char ac_queue;         /* 0/3 for BE, 1/2 for BK, 4/5 for VI, 6/7 for VO */
+	unsigned char enable : 1;       /* indicate whether this packet is a tx_raw packet. set to 1 when tx_raw */
+	unsigned char sgi : 1;          /* 1 for enable data short */
+	unsigned char agg_en : 1;       /* aggregation of tx_raw frames. 1:enable; 0-disable */
+	unsigned char rom_rsvd[8];
 };
 
 struct sk_buff {
-	/* These two members must be first. */
-	struct sk_buff		*next;		/* Next buffer in list */
-	struct sk_buff		*prev;		/* Previous buffer in list */
-
-	struct sk_buff_head	*list;		/* List we are on */
+	struct list_head list;
 	unsigned char		*head;		/* Head of buffer */
 	unsigned char		*data;		/* Data head pointer */
 	unsigned char		*tail;		/* Tail pointer	*/
@@ -58,34 +64,22 @@ struct sk_buff {
 	unsigned char	no_free;
 
 	struct skb_raw_para	tx_raw;
-};
 
-struct skb_info {
-	struct list_head list;
-	struct sk_buff skb;
-} SKB_ALIGNMENT; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
-
-struct skb_data {
-	struct list_head list;
 	unsigned char buf[MAX_SKB_BUF_SIZE] SKB_ALIGNMENT;/* buf start address and size alignmengt for pre allocate skb*/
 	atomic_t ref;
-};
+}; /*total size should be align to max(AP_cache_size, NP_cache_size), single core no need*/
 
 struct skb_priv_t {
-	/*skb_data for store data*/
-	struct skb_data *skb_data_pool;
-	struct list_head skb_data_list;
-	int skb_data_num;
-	int skb_data_used;
-	int skb_data_max_used;
-	/*skb_info for managing skb_data*/
-	struct skb_info *skb_info_pool;
-	struct list_head skb_info_list;
-	int skb_info_num;
-	int skb_info_used;
-	int skb_info_max_used;
+	/*skb_buff for managing and store skb data*/
+	struct sk_buff *skb_buff_pool;
+	struct list_head skb_buff_list;
+	int skb_buff_num;
+	int skb_buff_used;
+	int skb_buff_max_used;
+	int skb_buf_max_size;
 	int skb_fail_tx;
 	int skb_fail_rx;
+	int rom_rsvd;
 };
 
 extern struct skb_priv_t skbpriv;
@@ -119,7 +113,7 @@ __inline static unsigned char *skb_put(struct sk_buff *skb, unsigned int len)
 	skb->tail += len;
 	skb->len += len;
 	if (skb->tail > skb->end) {
-		ASSERT(0);
+		assert_param(0);
 	}
 
 	return tmp;
@@ -136,7 +130,8 @@ void kfree_skb(struct sk_buff *skb);
 struct sk_buff *skb_clone(struct sk_buff *skb, int gfp_mask);
 struct sk_buff *skb_copy(const struct sk_buff *skb, int gfp_mask, unsigned int reserve_len);
 void dev_kfree_skb_any(struct sk_buff *skb);
-void init_skb_pool(void);
+void init_skb_pool(uint32_t skb_num_np, uint32_t skb_buf_size, unsigned char skb_cache_zise);
 void deinit_skb_pool(void);
-
+struct sk_buff *get_buf_from_poll(void);
+void release_buf_to_poll(struct sk_buff *skb);
 #endif //__SKBUFF_H__

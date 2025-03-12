@@ -57,7 +57,8 @@ void netif_rx(int idx, unsigned int len);
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 extern void ethernetif_recv(struct netif *netif, int total_len);
 #endif //CONFIG_LWIP_LAYER == 1
-
+void *rltk_pbuf_wrapper(struct sk_buff *skb, u16_t *len);
+void rltk_wlan_indicate_lwip(int idx_wlan, void *p_buf);
 #ifdef CONFIG_WOWLAN
 extern unsigned char *rltk_wlan_get_ip(int idx);
 extern unsigned char *rltk_wlan_get_gw(int idx);

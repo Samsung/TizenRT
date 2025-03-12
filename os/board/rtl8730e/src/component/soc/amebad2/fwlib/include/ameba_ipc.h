@@ -1,5 +1,11 @@
-﻿#ifndef _AMEBAD2_IPC_H_
-#define _AMEBAD2_IPC_H_
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _AMEBA_IPC_H_
+#define _AMEBA_IPC_H_
 
 /* AUTO_GEN_START */
 
@@ -9,8 +15,8 @@
 
 /** @defgroup IPC
   * @brief IPC driver modules
-* @{
-*/
+  * @{
+  */
 
 /* Registers Definitions --------------------------------------------------------*/
 
@@ -19,26 +25,26 @@
  *****************************************************************************/
 
 /** @defgroup IPC_TX_DATA
- * @brief TX Register
+ * @brief Tx Register
  * @{
  **/
 #define IPC_MASK_TX0_DATA               ((u32)0x000000FF << 8)          /*!<R/W/ES 0x0  After preparing descriptor, data and corresponding memory, 1: Writing 1 to the Tx data register (tx0_data) channel x bit, and the data will be mapped to the CPU0's RX data register (rx0_data) channel x bit. And the corresponding Rx full status bit in REG_ISR_CPU0 will be set. 0: Writing 0 has no effect. If the corresponding Rx full status bit in REG_ISR_CPU0 (eg.isr_rx0_full_status6) is cleared, the corresponding bit in tx0_data will be cleaned automatically. */
-#define IPC_TX0_DATA(x)                 ((u32)(((x) & 0x000000FF) << 8))
+#define IPC_TX0_DATA(x)                 (((u32)((x) & 0x000000FF) << 8))
 #define IPC_GET_TX0_DATA(x)             ((u32)(((x >> 8) & 0x000000FF)))
 #define IPC_MASK_TX1_DATA               ((u32)0x000000FF << 0)          /*!<R/W/ES 0x0  After preparing descriptor, data and corresponding memory, 1: Writing 1 to the Tx data register (tx1_data) channel x bit, and the data will be mapped to the CPU1's Rx data register (rx1_data) channel x bit. And the corresponding Rx full status bit in REG_ISR_CPU1 will be set. 0: Writing 0 has no effect. If the corresponding Rx full status bit in REG_ISR_CPU1 (eg.isr_rx1_full_status6) is cleared, the corresponding bit in tx_data_ln will be cleaned automatically. */
-#define IPC_TX1_DATA(x)                 ((u32)(((x) & 0x000000FF) << 0))
+#define IPC_TX1_DATA(x)                 (((u32)((x) & 0x000000FF) << 0))
 #define IPC_GET_TX1_DATA(x)             ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
 /** @defgroup IPC_RX_DATA
- * @brief RX Register
+ * @brief Rx Register
  * @{
  **/
 #define IPC_MASK_RX0_DATA               ((u32)0x000000FF << 8)          /*!<R 0x0  Rx data automatically maps data from tx0_data of CPU0 */
-#define IPC_RX0_DATA(x)                 ((u32)(((x) & 0x000000FF) << 8))
+#define IPC_RX0_DATA(x)                 (((u32)((x) & 0x000000FF) << 8))
 #define IPC_GET_RX0_DATA(x)             ((u32)(((x >> 8) & 0x000000FF)))
 #define IPC_MASK_RX1_DATA               ((u32)0x000000FF << 0)          /*!<R 0x0  Rx data automatically maps data from tx1_data of CPU1 */
-#define IPC_RX1_DATA(x)                 ((u32)(((x) & 0x000000FF) << 0))
+#define IPC_RX1_DATA(x)                 (((u32)((x) & 0x000000FF) << 0))
 #define IPC_GET_RX1_DATA(x)             ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
@@ -85,21 +91,21 @@
  * @{
  **/
 #define IPC_MASK_IMR_RX0_FULL_MASK      ((u32)0x000000FF << 24)          /*!<R/W 0x0  0: Mask Rx Channel x full interrupt of CPU3 received from CPU0 1: Unmask Rx Channel x full interrupt of CPU3 received from CPU0 */
-#define IPC_IMR_RX0_FULL_MASK(x)        ((u32)(((x) & 0x000000FF) << 24))
+#define IPC_IMR_RX0_FULL_MASK(x)        (((u32)((x) & 0x000000FF) << 24))
 #define IPC_GET_IMR_RX0_FULL_MASK(x)    ((u32)(((x >> 24) & 0x000000FF)))
 #define IPC_MASK_IMR_RX1_FULL_MASK      ((u32)0x000000FF << 16)          /*!<R/W 0x0  0: Mask Rx Channel x full interrupt of CPU3 received from CPU1 1: Unmask Rx Channel x full interrupt of CPU3 received from CPU1 */
-#define IPC_IMR_RX1_FULL_MASK(x)        ((u32)(((x) & 0x000000FF) << 16))
+#define IPC_IMR_RX1_FULL_MASK(x)        (((u32)((x) & 0x000000FF) << 16))
 #define IPC_GET_IMR_RX1_FULL_MASK(x)    ((u32)(((x >> 16) & 0x000000FF)))
 #define IPC_MASK_IMR_TX0_EMPTY_MASK     ((u32)0x000000FF << 8)          /*!<R/W 0x0  0: Mask Tx Channel x empty interrupt of CPU3 transmit to CPU0 1: Unmask Tx Channel x empty interrupt of CPU3 transmit to CPU0 */
-#define IPC_IMR_TX0_EMPTY_MASK(x)       ((u32)(((x) & 0x000000FF) << 8))
+#define IPC_IMR_TX0_EMPTY_MASK(x)       (((u32)((x) & 0x000000FF) << 8))
 #define IPC_GET_IMR_TX0_EMPTY_MASK(x)   ((u32)(((x >> 8) & 0x000000FF)))
 #define IPC_MASK_IMR_TX1_EMPTY_MASK     ((u32)0x000000FF << 0)          /*!<R/W 0x0  0: Mask Tx Channel x empty interrupt of CPU3 transmit to CPU1 1: Unmask Tx Channel x empty interrupt of CPU3 transmit to CPU1 */
-#define IPC_IMR_TX1_EMPTY_MASK(x)       ((u32)(((x) & 0x000000FF) << 0))
+#define IPC_IMR_TX1_EMPTY_MASK(x)       (((u32)((x) & 0x000000FF) << 0))
 #define IPC_GET_IMR_TX1_EMPTY_MASK(x)   ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
 /** @defgroup IPC_ICR
- * @brief Clear TX Register
+ * @brief Clear Tx Register
  * @{
  **/
 #define IPC_BIT_ICR_TX0_DATA_CLEAR7     ((u32)0x00000001 << 15)          /*!<RW1CB 0x0  0: Writing 0 has no effect. 1: Clear the Tx data register (tx0_data) channel 7 bit. */
@@ -155,7 +161,7 @@ typedef struct {
 /**
   * @brief IPC IRQ Function Definition
  */
-typedef void (*IPC_IRQ_FUN)(VOID *Data, u32 IrqStatus, u32 ChanNum);
+typedef void (*IPC_IRQ_FUN)(void *Data, u32 IrqStatus, u32 ChanNum);
 
 /**
   * @brief IPC User Message Type Definition
@@ -178,9 +184,18 @@ typedef struct _IPC_INIT_TABLE_ {
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_LP_Tx_Channel or @IPC_NP_Tx_Channel or @IPC_AP_Tx_Channel*/
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
+
 /**
-  * @}
+  * @brief IPC SEM IDX
   */
+typedef enum {
+	IPC_SEM_IMQ = 0,
+	IPC_SEM_FLASH,
+	IPC_SEM_OTP,
+	IPC_SEM_CRYPTO,
+	IPC_SEM_MAX = 16,			/* can't be this value, total 16 ipc semaphores*/
+} IPC_SEM_IDX;
+/** @} */
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Constants IPC Exported Constants
@@ -193,9 +208,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IS_IPC_ALL_PERIPH(PERIPH) (((PERIPH) == IPCLP_DEV) || \
 										((PERIPH) == IPCNP_DEV)) || \
 										((PERIPH) == IPCAP_DEV))
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_Direction_Mode
   * @{
@@ -221,9 +234,7 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IS_SEND_TO_LP(MODE)		(((MODE) == IPC_NP_TO_LP) || \
 								((MODE) == IPC_AP_TO_LP))
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_INTR_Mode
   * @{
@@ -232,9 +243,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_RX_FULL 			((u32)0x00000002)
 #define IS_IPC_INTR_MODE(MODE) (((MODE) == IPC_TX_EMPTY) || \
                                    ((MODE) == IPC_RX_FULL))
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_CHANNEL
   * @{
@@ -245,30 +254,26 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
 #define IS_IPC_RX_CHNUM(NUM) 					((NUM) >= 16)
 #define IPC_CHANNEL_NUM 						32
-
-
-
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_Valid_CHNUM
   * @{
   */
 #define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
-/**
-  * @}
-  */
+/** @} */
 
+/** @defgroup IPC_Valid_SEMID
+  * @{
+  */
+#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < 16)
+/** @} */
 
 
 /** @defgroup IPC_Valid_CPUID
   * @{
   */
 #define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2)
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_LP_Tx_Channel
  * @{
@@ -290,9 +295,7 @@ typedef struct _IPC_INIT_TABLE_ {
 //#define IPC_L2A_Channel5				5
 //#define IPC_L2A_Channel6				6
 #define IPC_L2A_IMQ_TRX_TRAN					7	/*!<  LP -->  AP IMQ Message Exchange */
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_NP_Tx_Channel
  * @{
@@ -308,24 +311,31 @@ typedef struct _IPC_INIT_TABLE_ {
 
 #define IPC_N2A_WIFI_TRX_TRAN					0	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN					1	/*!<  NP -->  AP API WIFI Message Exchange */
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 #define IPC_N2A_NP_LOG_CHN						2	/*!<  NP -->  AP Send NP log to AP */
+#else
+//#define IPC_N2A_Channel2						2	/*!<  NP -->  AP */
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #define IPC_N2A_BT_API_TRAN						3	/*!<  NP -->  AP BT API Exchange */
 #define IPC_N2A_BT_DRC_TRAN						4	/*!<  NP -->  AP BT DATA Message Exchange */
 #define IPC_N2A_802154_TRAN						5
 #define IPC_N2A_OTP_TX_TRAN						6
 #define IPC_N2A_IMQ_TRX_TRAN					7	/*!<  NP -->  AP IMQ Message Exchange */
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_AP_Tx_Channel
  * @{
  */
 #define IPC_A2L_TICKLESS_INDICATION			0	/*!<  AP -->  LP Tickless Indicate */
-//#define IPC_A2L_Channel1					  1 /* Reserved for IPC_CH_WIFI_FW_CTRL */
+//#define IPC_A2L_Channel1						1
 #define IPC_A2L_UARTBRIDGE						2
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 #define IPC_A2L_DISLOGUART						3
 #define IPC_A2L_WIFI_FW_INFO					4 /*!<  AP -->  LP Get stats info from WIFI FW */
+#else
+//#define IPC_A2L_Channel3						3
+//#define IPC_A2L_Channel4						4
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 //#define IPC_A2L_Channel5						5
 //#define IPC_A2L_Channel6						6
 #define IPC_A2L_IMQ_TRX_TRAN					7	/*!<  AP -->  LP IMQ Message Exchange */
@@ -357,13 +367,9 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_FW_KM2LP_CHNUM			25
 
 #endif
-/**
-  * @}
-  */
+/** @} */
 
-/**
-  * @}
-  */
+/** @} */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Functions IPC Exported Functions
@@ -377,12 +383,13 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
-void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData);
+void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
 IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
+u32 IPC_SEMFree(u32 SEM_Idx);
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
 
-/**
-  * @}
-  */
+/** @} */
 
 /** @} */
 
