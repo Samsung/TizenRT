@@ -20,7 +20,6 @@
 #include <lwip/pbuf.h>
 #include <os_wrapper.h>
 #include "rtw_autoconf.h"
-//#include "rtw_adapter.h"
 
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <sys/socket.h>
@@ -200,11 +199,6 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 #endif
 }
 
-int netif_is_valid_IP(int idx, unsigned char *ip_dest)
-{
-	return 1;//For net manager, always Valid
-}
-
 #ifdef CONFIG_NET_NETMGR
 int get_idx_from_dev(struct netdev *dev)
 {
@@ -216,74 +210,6 @@ int get_idx_from_dev(struct netdev *dev)
 		return -1;
 }
 #endif
-#if !defined(CONFIG_MBED_ENABLED)
-#if 0
-int netif_get_idx(struct netif *pnetif)
-{
-	return -1;
-}
-#endif
-
-int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr)
-{
-	struct netdev *dev_tmp = NULL;
-
-	dev_tmp = rtk_get_netdev(idx_wlan);
-
-	if (!dev_tmp) {
-		rtw_printf("[netif_get_hwaddr] get dev fail\n");
-		return -1;
-	}
-	if (netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN) == 0)
-		return 0;
-	else
-		return -1;
-}
-#endif
-
-#if defined(CONFIG_MBED_ENABLED)
-emac_callback emac_callback_func = NULL;
-void *emac_callback_data = NULL;
-void set_callback_func(emac_callback p, void *data)
-{
-	emac_callback_func = p;
-	emac_callback_data = data;
-}
-#endif
-//wlan driver has included this function, won't go to here
-void netif_rx(int idx, unsigned int len)
-{
-#ifdef CONFIG_INIC_EN
-#if defined(CONFIG_AS_INIC_AP)
-	inic_ipc_dev_recv(idx);
-#else
-	inic_netif_rx(idx, len);
-#endif
-#endif
-
-#if 0
-	struct sk_buff *skb;
-	skb = rltk_wlan_get_recv_skb(idx);
-
-	struct netdev *dev_tmp = NULL;
-
-	dev_tmp = rtk_get_netdev(idx);
-
-	netdev_input(dev_tmp, skb->data, skb->len);
-
-#if (CONFIG_INIC_EN == 1)
-	inic_netif_rx(idx, len);
-#endif
-#endif
-}
-
-void netif_post_sleep_processing(void)
-{
-}
-
-void netif_pre_sleep_processing(void)
-{
-}
 
 unsigned char *rltk_wlan_get_ip(int idx)
 {
