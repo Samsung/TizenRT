@@ -1,30 +1,31 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721d_ipc_api.c
-  * @author
-  * @version V1.0.0
-  * @date    2018-06-11
-  * @brief   This file contains all the API for the IPC function
-  *          library.
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
-#include "osdep_service.h"
+#include "os_wrapper.h"
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
 
+/** @defgroup IPC
+* @brief IPC driver modules
+* @{
+*/
+
+/** @defgroup IPC_Exported_Constants IPC Exported Constants
+  * @{
+  */
 static const char *TAG = "IPC";
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
-SemaphoreHandle_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
+rtos_sema_t ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 #else
 _sema ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 #endif
+
+void (*ipc_delay)(uint32_t);
 
 #if defined ( __ICCARM__ )
 #pragma section=".ipc.table.data"
@@ -32,7 +33,11 @@ _sema ipc_Semaphore[IPC_TX_CHANNEL_NUM];
 SECTION(".data") u8 *__ipc_table_start__ = 0;
 SECTION(".data") u8 *__ipc_table_end__ = 0;
 #endif
+/**@}*/
 
+/** @defgroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
 /**
   * @brief  init ipc interrupt handler table.
   * @param  where IPCx can be IPCLP_DEV for CM0, IPCNP_DEV for CM4, IPCAP_DEV for CA7.
@@ -94,7 +99,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 		/* check if channel conflict */
 		IPC_IMR = IPC_IERGet(IPCx);
 		if (IPC_IMR & BIT(IPC_ChShift)) {
-			RTK_LOGE(TAG, "[CA32] %s Channel Conflict for Channel %d !\r\n", __FUNCTION__, IPC_ChShift);
+			RTK_LOGE(TAG, "Channel Conflict for Channel %lu !\r\n", IPC_ChShift);
 			continue;
 		}
 
@@ -114,7 +119,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
   * @param  IrqStatus: Value of IPC_ISR
   * @param  ChanNum: ChanNum
   */
-void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
+void IPC_TXHandler(void *Data, u32 IrqStatus, u32 ChanNum)
 {
 	UNUSED(Data);
 	UNUSED(IrqStatus);
@@ -122,19 +127,10 @@ void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	u32 CPUID = SYS_CPUID();
 	IPC_TypeDef *IPCx = IPC_GetDevById(CPUID);
 
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	portBASE_TYPE taskWoken = pdFALSE;
-#endif
-
 	IPC_INTConfig(IPCx, ChanNum, DISABLE);
 
 	if (ipc_Semaphore[ChanNum] != NULL) {
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_up_sema_from_isr(&(ipc_Semaphore[ChanNum]));
-#else
-		xSemaphoreGiveFromISR(ipc_Semaphore[ChanNum], &taskWoken);
-		portEND_SWITCHING_ISR(taskWoken);
-#endif
+		rtos_sema_give(ipc_Semaphore[ChanNum]);
 	}
 }
 
@@ -146,35 +142,27 @@ void IPC_TXHandler(VOID *Data, u32 IrqStatus, u32 ChanNum)
   */
 u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 {
-	u32 timeout = 10000000;
+	u32 timeout;
+
+	timeout = 10000000;
 
 	if (CPU_InInterrupt() || (IPC_IrqHandler[IPC_ChNum] == NULL)) {
 		while (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
 			timeout--;
 			if (timeout == 0) {
-				RTK_LOGE(TAG, "[CA32] %s IPC Request Timeout\r\n", __FUNCTION__);
+				RTK_LOGS(TAG, " IPC Request Timeout\r\n");
 				return IPC_REQ_TIMEOUT;
 			}
 		}
 	} else {
 		if (ipc_Semaphore[IPC_ChNum] == NULL) {
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_init_sema(&(ipc_Semaphore[IPC_ChNum]), 0);
-			rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), 1); //test with 1ms, freertos is using 1 tick
-#else
-			vSemaphoreCreateBinary(ipc_Semaphore[IPC_ChNum]);
-			xSemaphoreTake(ipc_Semaphore[IPC_ChNum], 1 / portTICK_RATE_MS);
-#endif
+			rtos_sema_create_binary(&ipc_Semaphore[IPC_ChNum]);
 		}
 
 		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
 
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-		if (rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), IPC_SEMA_MAX_DELAY) != 1) {
-#else
-		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
-#endif
-			RTK_LOGE(TAG, "[CA32] %s IPC Get Semaphore Timeout\r\n", __FUNCTION__);
+		if (rtos_sema_take(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != SUCCESS) {
+			RTK_LOGS(TAG, " IPC Get Semaphore Timeout\r\n");
 			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
 			return IPC_SEMA_TIMEOUT;
 		}
@@ -238,11 +226,9 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 		break;
 	}
 
-	if (IPCx != NULL) {
-		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-			if (IPC_wait_idle(IPCx, IPC_ChNum + ipc_shift)) {
-				return IPC_SEND_TIMEOUT;
-			}
+	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
+		if (IPC_wait_idle(IPCx, IPC_ChNum + ipc_shift)) {
+			return IPC_SEND_TIMEOUT;
 		}
 	}
 
@@ -250,10 +236,7 @@ u32 ipc_send_message(u32 IPC_Dir, u8 IPC_ChNum, PIPC_MSG_STRUCT IPC_Msg)
 		memcpy(&IPC_MSG[msg_idx], IPC_Msg, sizeof(IPC_MSG_STRUCT));
 		DCache_Clean((u32)&IPC_MSG[msg_idx], sizeof(IPC_MSG_STRUCT));
 	}
-
-	if (IPCx != NULL) {
-		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
-	}
+	IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
 
 	return IPC_SEND_SUCCESS;
 }
@@ -282,4 +265,100 @@ PIPC_MSG_STRUCT ipc_get_message(u32 IPC_Dir, u8 IPC_ChNum)
 
 	return &IPC_MSG[msg_idx];
 }
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+
+/**
+  * @brief  Get core-to-core hardware semaphone.
+  * @param  SEM_Idx: 0~15.
+  * @param  timeout: timeout to wait. 0 means never wait, 0xffffffff means waiting permanently.
+  * @retval   TRUE/FALSE
+  */
+u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout)
+{
+	u32 Sema_Stat;
+	/* Check the parameters */
+	assert_param(IS_IPC_VALID_SEMID(SEM_Idx));
+
+	if ((SYSCFG_RLVersion()) >= SYSCFG_CUT_VERSION_D) {
+
+		do {
+			Sema_Stat = HAL_READ32(IPC_SEMA_BASE, SEM_Idx * 4);
+
+			if (Sema_Stat == 0) {
+				return _TRUE;
+			} else {
+				if (timeout == 0) {
+					return _FALSE;
+				}
+
+				/* yield os for high priority thread*/
+				if (ipc_delay) {
+					ipc_delay(1);
+				}
+			}
+
+			if (timeout != 0xffffffff) {
+				timeout--;
+			}
+
+		} while (timeout);
+	} else {
+
+		do {
+			Sema_Stat = HAL_READ16(IPC_IPC_SEMA_BASE, 0x0);
+			if (Sema_Stat & BIT(SEM_Idx)) {
+				if (timeout == 0) {
+					return _FALSE;
+				}
+
+				/* yield os for high priority thread*/
+				if (ipc_delay) {
+					ipc_delay(1);
+				}
+				timeout--;
+
+			} else {
+				HAL_WRITE16(IPC_IPC_SEMA_BASE, 0x0, Sema_Stat | BIT(SEM_Idx));
+				return _TRUE;
+			}
+
+		} while (timeout);
+
+	}
+
+	return _FALSE;
+}
+
+
+/**
+  * @brief  Free core-to-core hardware semaphone.
+  * @param  SEM_Idx: 0~15.
+  * @retval   TRUE/FALSE
+  */
+
+u32 IPC_SEMFree(u32 SEM_Idx)
+{
+	/* Check the parameters */
+	assert_param(IS_IPC_VALID_SEMID(SEM_Idx));
+
+	if ((SYSCFG_RLVersion()) >= SYSCFG_CUT_VERSION_D) {
+		HAL_WRITE32(IPC_SEMA_BASE, (SEM_Idx * 4), 1);
+	} else {
+		HAL_WRITE16(IPC_IPC_SEMA_BASE, 0x0, HAL_READ16(IPC_IPC_SEMA_BASE, 0x0) & (~ BIT(SEM_Idx)));
+	}
+
+	return _TRUE;
+}
+
+
+/**
+  * @brief  Set delay function for ipc sema.
+  * @param  pfunc: delay function.
+  * @retval   None
+  */
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t))
+{
+	ipc_delay = pfunc;
+}
+/**@}*/
+/**@}*/
+/**@}*/

@@ -308,6 +308,7 @@ ifeq ($(CONFIG_ARCH_FPU),y)
 EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wpa_lite.a
 EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wifi_com_sec.a
 EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wps.a
+EXTRA_LIBS += $(TOPDIR)/board/rtl8730e/src/libs/lib_wifi_inic_ap.a
 else
 #EXTRA_LIBS += $(TOPDIR)/board/
 endif

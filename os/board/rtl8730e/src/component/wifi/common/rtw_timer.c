@@ -1,103 +1,31 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
- *
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_timer.c
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #include <basic_types.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include <rtw_timer.h>
-
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-int max_timer_num = MAX_TIMER_BUF_NUM;
-struct timer_buf {
-	struct list_head list;
-	StaticTimer_t timerbuf;
-};
-
-struct timer_buf timer_pool[MAX_TIMER_BUF_NUM];
-static struct list_head wrapper_timerbuf_list;
-int timerbuf_used_num, timer_dynamic_num;
-int max_timerbuf_used_num;
-int timerpool_flag = 0;
-
-static __inline__ void *get_timer_from_poll(struct list_head *phead, int *count)
-{
-	StaticTimer_t *timer;
-	struct list_head *plist;
-
-	if (timerpool_flag == 0) {
-		return NULL;
-	}
-
-	unsigned int irq_flags = save_and_cli();
-
-	if (list_empty(phead)) {
-		restore_flags(irq_flags);
-		return NULL;
-	}
-
-	plist = phead->next;
-
-	list_del_init(plist);
-
-	timer = (StaticTimer_t *)((unsigned int)plist + sizeof(struct list_head));
-
-	*count = *count + 1;
-
-	restore_flags(irq_flags);
-
-	return (unsigned char *)timer;
-}
-
-static void release_timer_to_poll(unsigned char *buf, struct list_head *phead, int *count)
-{
-	struct list_head *plist;
-	plist = (struct list_head *)(((unsigned int)buf) - sizeof(struct list_head));
-	list_add_tail(plist, phead);
-
-	*count = *count - 1;
-}
-#endif
-
-void init_timer_pool(void)
-{
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-	int i;
-
-	memset(timer_pool, '\0', max_timer_num * sizeof(struct timer_buf));
-	INIT_LIST_HEAD(&wrapper_timerbuf_list);
-
-	for (i = 0; i < max_timer_num; i++) {
-		INIT_LIST_HEAD(&timer_pool[i].list);
-		list_add_tail(&timer_pool[i].list, &wrapper_timerbuf_list);
-	}
-
-	timerbuf_used_num = 0;
-	max_timerbuf_used_num = 0;
-	timer_dynamic_num = 0;
-
-	timerpool_flag = 1;
-#endif
-}
-
-void deinit_timer_pool(void)
-{
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-	memset(timer_pool, '\0', max_timer_num * sizeof(struct timer_buf));
-
-	timerbuf_used_num = 0;
-	max_timerbuf_used_num = 0;
-	timer_dynamic_num = 0;
-
-	timerpool_flag = 0;
-#endif
-}
-
+#include <rtw_queue.h>
+#include "log.h"
+#include "diag.h"
 _list timer_table;
 
 static int timer_used_num;
 int max_timer_used_num;
+static const char *TAG = "TIMER";
 
 void init_timer_wrapper(void)
 {
@@ -111,27 +39,37 @@ void deinit_timer_wrapper(void)
 	_list *plist;
 
 	if (timer_used_num > 0) {
-		printf("Need to delete %d timer_entry.\n", timer_used_num);
+		RTK_LOGI(TAG, "del timer entry %d\n", timer_used_num);
 	}
 
-	unsigned int irq_flags = save_and_cli();
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	irqstate_t flags = tizenrt_critical_enter();
+#else
+	rtos_critical_enter();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	while (rtw_end_of_queue_search(&timer_table, get_next(&timer_table)) == _FALSE) {
 		plist = get_next(&timer_table);
 		rtw_list_delete(plist);
 	}
 
-	restore_flags(irq_flags);
-
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	tizenrt_critical_exit(flags);
+#else
+	rtos_critical_exit();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 }
 
-
-void timer_wrapper(_timerHandle timer_hdl)
+void timer_wrapper(rtos_timer_t timer_hdl)
 {
 	_list *plist;
 	struct timer_list *timer_entry = NULL;
 
-	unsigned int irq_flags = save_and_cli();
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	irqstate_t flags = tizenrt_critical_enter();
+#else
+	rtos_critical_enter();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == _FALSE) {
@@ -142,10 +80,14 @@ void timer_wrapper(_timerHandle timer_hdl)
 		plist = get_next(plist);
 	}
 
-	restore_flags(irq_flags);
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	tizenrt_critical_exit(flags);
+#else
+	rtos_critical_exit();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	if (plist == &timer_table) {
-		printf("Fail to find the timer_entry in timer table.\n");
+		RTK_LOGE(TAG, "Fail to find the timer_entry in timer table.\n");
 	} else {
 		if (timer_entry->function) {
 			timer_entry->function((void *) timer_entry->data);
@@ -153,85 +95,60 @@ void timer_wrapper(_timerHandle timer_hdl)
 	}
 }
 
-void init_timer(struct timer_list *timer)
+void init_timer(struct timer_list *timer, const char *name)
 {
 	if (timer->function == NULL) {
 		return;
 	}
 
 	if (timer->timer_hdl == NULL) {
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-		StaticTimer_t *timerbuf;
+		rtos_timer_create_static(&timer->timer_hdl,
+								 (const char *)name,	// Just a text name, not used by the RTOS kernel.
+								 (uint32_t)NULL,	// Uniq id used to identify which timer expire..
+								 RTOS_MAX_DELAY, // Timer Period, not 0
+								 _FALSE, // Whether timer will auto-load themselves when expires
+								 timer_wrapper); // Timer callback
 
-		timerbuf = (StaticTimer_t *)get_timer_from_poll(&wrapper_timerbuf_list, &timerbuf_used_num);
-
-		if (timerbuf == NULL) {
-			if (timerpool_flag) {
-				timer_dynamic_num++;
-				//printf("static timer is not avaliable. timerbuf_used_num: %d\n", timerbuf_used_num);
-			}
-			goto exit1;
-		} else {
-			memset(timerbuf, '\0', sizeof(*timerbuf));
-			timer->timer_hdl = xTimerCreateStatic(
-								   (const char *)"Timer", 		// Just a text name, not used by the RTOS kernel.
-								   TIMER_MAX_DELAY,		// Timer Period, not 0
-								   _FALSE,		// Whether timer will auto-load themselves when expires
-								   NULL,			// Uniq id used to identify which timer expire..
-								   (TimerCallbackFunction_t)timer_wrapper,		// Timer callback
-								   timerbuf		// The buffer that will hold the software timer structure.
-							   );
-			timer->statically_alloc = 1;
-		}
-
-		if (timerbuf_used_num > max_timerbuf_used_num) {
-			max_timerbuf_used_num = timerbuf_used_num;
-		}
-
-		goto exit2;
-exit1:
-#endif
-
-		timer->timer_hdl = rtw_timerCreate(
-							   (signed const char *)"Timer", 		// Just a text name, not used by the RTOS kernel.
-							   TIMER_MAX_DELAY,		// Timer Period, not 0
-							   _FALSE,		// Whether timer will auto-load themselves when expires
-							   NULL,			// Uniq id used to identify which timer expire..
-							   timer_wrapper		// Timer callback
-						   );
-		timer->statically_alloc = 0;
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-exit2:
-#endif
 		if (timer->timer_hdl == NULL) {
-			printf("Fail to init timer.\n");
+			RTK_LOGE(TAG, "Fail to init timer.\n");
 		} else {
-			unsigned int irq_flags = save_and_cli();
+
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+			irqstate_t flags = tizenrt_critical_enter();
+#else
+			rtos_critical_enter();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+
 			rtw_list_insert_head(&timer->list, &timer_table);
-			restore_flags(irq_flags);
+
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+			tizenrt_critical_exit(flags);
+#else
+			rtos_critical_exit();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 			timer_used_num ++;
 			if (timer_used_num > max_timer_used_num) {
 				max_timer_used_num = timer_used_num;
 			}
 		}
-	} else if (rtw_timerIsTimerActive(timer->timer_hdl) == _TRUE) {
-		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
+	} else if (rtos_timer_is_timer_active(timer->timer_hdl) == TRUE) {
+		rtos_timer_stop(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 	}
 }
 
 void mod_timer(struct timer_list *timer, u32 delay_time_ms)
 {
 	if (timer->timer_hdl == NULL) {
-		printf("mod_timer: the timer is not init, need init first.\n");
-	} else if (rtw_timerIsTimerActive(timer->timer_hdl) == _TRUE) {
-		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
+		RTK_LOGS(TAG, "ModTimer: not init.\n");
+	} else if (rtos_timer_is_timer_active(timer->timer_hdl) == TRUE) {
+		rtos_timer_stop(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 	}
 
 	//Set Timer period
 	if (timer->timer_hdl != NULL)
-		if (rtw_timerChangePeriod(timer->timer_hdl, rtw_ms_to_systime(delay_time_ms), TIMER_MAX_DELAY) == _FAIL) {
-			printf("Fail to set timer period.\n");
+		if (rtos_timer_change_period(timer->timer_hdl, delay_time_ms, RTOS_TIMER_MAX_DELAY) == FAIL) {
+			RTK_LOGS(TAG, "ModTimer fail\n");
 		}
 }
 
@@ -244,7 +161,11 @@ void  cancel_timer_ex(struct timer_list *timer)
 		return;
 	}
 
-	unsigned int irq_flags = save_and_cli();
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	irqstate_t flags = tizenrt_critical_enter();
+#else
+	rtos_critical_enter();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == _FALSE) {
@@ -255,12 +176,16 @@ void  cancel_timer_ex(struct timer_list *timer)
 		plist = get_next(plist);
 	}
 
-	restore_flags(irq_flags);
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	tizenrt_critical_exit(flags);
+#else
+	rtos_critical_exit();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	if (plist == &timer_table) {
-		printf("Fail to find the timer_entry(%08x) in timer table.\n", (unsigned int)timer->timer_hdl);
+		RTK_LOGS(TAG, "CancelTimer Fail(%x)\n", (unsigned int)timer->timer_hdl);
 	} else {
-		rtw_timerStop(timer->timer_hdl, TIMER_MAX_DELAY);
+		rtos_timer_stop(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 	}
 }
 
@@ -268,18 +193,16 @@ void  del_timer_sync(struct timer_list *timer)
 {
 	_list *plist;
 	struct timer_list *timer_entry;
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-	_timerHandle timer_hdl_to_delete;
-#endif
 
 	if (timer->timer_hdl == NULL) {
 		return;
 	}
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-	timer_hdl_to_delete = timer->timer_hdl;
-#endif
 
-	unsigned int irq_flags = save_and_cli();
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	irqstate_t flags = tizenrt_critical_enter();
+#else
+	rtos_critical_enter();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	plist = get_next(&timer_table);
 	while ((rtw_end_of_queue_search(&timer_table, plist)) == _FALSE) {
@@ -291,28 +214,19 @@ void  del_timer_sync(struct timer_list *timer)
 		plist = get_next(plist);
 	}
 
-	restore_flags(irq_flags);
+#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
+	tizenrt_critical_exit(flags);
+#else
+	rtos_critical_exit();
+#endif //#if defined(CONFIG_PLATFORM_TIZENRT_OS) && defined(ARM_CORE_CA32)
 
 	if (plist == &timer_table) {
-		printf("Fail to find the timer_entry in timer table.\n");
+		RTK_LOGS(TAG, "DelTimer Fail\n");
 	} else {
-		rtw_timerDelete(timer->timer_hdl, TIMER_MAX_DELAY);
+		rtos_timer_delete_static(timer->timer_hdl, RTOS_TIMER_MAX_DELAY);
 		timer->timer_hdl = NULL;
 		timer_used_num --;
 	}
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-	if (timer->statically_alloc) {
-		while (_TRUE == rtw_timerIsTimerActive(timer_hdl_to_delete));
-		unsigned int irq_flags = save_and_cli();
-		release_timer_to_poll((unsigned char *)timer_hdl_to_delete, &wrapper_timerbuf_list, &timerbuf_used_num);
-		restore_flags(irq_flags);
-	} else {
-		if (timerpool_flag) {
-			timer_dynamic_num--;
-		}
-	}
-#endif
 }
 
 void rtw_init_timer(_timer *ptimer, void *adapter, TIMER_FUN pfunc, void *cntx, const char *name)
@@ -323,7 +237,7 @@ void rtw_init_timer(_timer *ptimer, void *adapter, TIMER_FUN pfunc, void *cntx, 
 
 	ptimer->function = pfunc;
 	ptimer->data = (u32) cntx;
-	init_timer(ptimer);
+	init_timer(ptimer, name);
 }
 
 void rtw_set_timer(_timer *ptimer, u32 delay_time_ms)

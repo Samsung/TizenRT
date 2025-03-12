@@ -19,6 +19,7 @@
 
 #include "lwip/err.h"
 #include "lwip/netif.h"
+#include <tinyara/netmgr/netdev_mgr.h>
 
 //----- ------------------------------------------------------------------
 // Ethernet Buffer
@@ -29,12 +30,7 @@ struct eth_drv_sg {
 };
 
 #define MAX_ETH_DRV_SG 32
-#define MAX_ETH_MSG 1540
 
-void ethernetif_recv(struct netif *netif, int total_len);
-err_t ethernetif_init_rtk(struct netif *netif);
-err_t ethernetif_mii_init(struct netif *netif);
-void lwip_PRE_SLEEP_PROCESSING(void);
-void lwip_POST_SLEEP_PROCESSING(void);
+err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen);
 
 #endif

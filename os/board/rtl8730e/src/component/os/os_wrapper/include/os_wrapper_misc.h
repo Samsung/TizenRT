@@ -81,22 +81,6 @@ int rtw_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output
 */
 uint32_t	rtw_getFreeHeapSize(void);
 
-/**
- * @brief  This function indicates that the WLAN needs to stay on which means cannot go into power saving mode.
- * @return  None
- * @note  Defining configUSE_WAKELOCK_PMU 1 in "FreeRTOSConfig.h" needs to be done before compiling,
- *			or this API won't be effective.
- */
-void	rtw_acquire_wakelock(void);
-
-/**
- * @brief  This function indicates that the WLAN does not need to stay on which means can go into power saving mode.
- * @return  None
- * @note  Defining configUSE_WAKELOCK_PMU 1 in "FreeRTOSConfig.h" needs to be done before compiling,
- *			or this API won't be effective.
- */
-void	rtw_release_wakelock(void);
-void rtw_wakelock_timeout(uint32_t timeout);
 int rtw_in_interrupt(void);
 
 /**
