@@ -47,7 +47,6 @@
 #include "amebasmart_config.h"
 #include "arch_timer.h"
 #include "ameba_soc.h"
-#include "osdep_service.h"
 #include "timer_api.h"
 
 static gtimer_t g_timer1;

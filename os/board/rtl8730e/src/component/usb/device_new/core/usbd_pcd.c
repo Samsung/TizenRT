@@ -1481,7 +1481,7 @@ u8 usbd_pcd_init(usb_dev_t *dev, usbd_config_t *config)
 		RTK_LOGI(TAG, "* nptx_max_err_cnt[%d]: %d\n", i, config->nptx_max_err_cnt[i]);
 	}
 
-	rtw_memcpy((void *)&pcd->config, (void *)config, sizeof(usbd_config_t));
+	memcpy((void *)&pcd->config, (void *)config, sizeof(usbd_config_t));
 
 	for (i = 0U; i < USB_MAX_ENDPOINTS; i++) {
 		if (pcd->config.nptx_max_err_cnt[i] == 0U) {

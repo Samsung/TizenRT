@@ -1,6 +1,5 @@
 #include <tinyara/net/if/ble.h>
 #include <profile_server.h>
-#include <osdep_service.h>
 
 #define TIZENRT_MAX_VAL_LEN 520
 #define TIZENRT_MAX_ATTR_NUM 8
