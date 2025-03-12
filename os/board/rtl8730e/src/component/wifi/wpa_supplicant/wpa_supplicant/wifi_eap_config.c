@@ -204,7 +204,7 @@ int connect_by_open_system(char *target_ssid)
 	int ret;
 	rtw_network_info_t connect_param = {0};
 	if (target_ssid != NULL) {
-		rtw_memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
+		memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);
 		connect_param.security_type = RTW_SECURITY_OPEN;
 		ret = wifi_connect(&connect_param, 1);

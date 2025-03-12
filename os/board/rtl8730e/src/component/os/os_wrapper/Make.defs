@@ -49,18 +49,16 @@
 #
 ############################################################################
 
-CSRCS += osdep_service_atomic.c \
-         osdep_service_critical.c \
-         osdep_service_list.c \
-         osdep_service_memory.c \
-         osdep_service_misc.c \
-         osdep_service_mutex.c \
-         osdep_service_queue.c \
-         osdep_service_sem.c \
-         osdep_service_task.c \
-         osdep_service_time.c \
-         osdep_service_timer.c \
-         device_lock.c \
+CSRCS += os_wrapper_critical.c \
+	 os_wrapper_memory.c \
+	 os_wrapper_mutex.c \
+	 os_wrapper_queue.c \
+	 os_wrapper_semaphore.c \
+	 os_wrapper_task.c \
+	 os_wrapper_time.c \
+	 os_wrapper_timer.c \
+	 os_wrapper_misc.c \
+     device_lock.c
 
-DEPPATH += --dep-path component/os_dep
-VPATH += :component/os_dep
+DEPPATH += --dep-path component/os/os_wrapper
+VPATH += :component/os/os_wrapper
