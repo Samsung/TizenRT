@@ -89,7 +89,6 @@ include component/soc/amebad2/swlib/Make.defs
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
 include component/wifi/Make.defs
-include component/wifi/inic/Make.defs
 include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
 include component/os/tizenrt/Make.defs
@@ -164,9 +163,11 @@ CFLAGS += -I$(TARGETDIR)/misc
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
 CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
+CFLAGS += -I$(COMPONENT_DIR)/wifi/common
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
+CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 

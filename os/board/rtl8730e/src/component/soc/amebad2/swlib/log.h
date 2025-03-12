@@ -18,7 +18,7 @@ typedef enum {
 } rtk_log_level_t;
 
 //3. Number of tags to be cached.
-#define LOG_TAG_CACHE_ARRAY_SIZE    3
+#define LOG_TAG_CACHE_ARRAY_SIZE    4
 #define LOG_TAG_MAX_LEN             9
 
 typedef struct {
@@ -29,36 +29,36 @@ extern rtk_log_tag_t rtk_log_tag_array[LOG_TAG_CACHE_ARRAY_SIZE];
 
 
 //4. For rom/bootloader/Image2: output logs at a specified level.
-
-#define RTK_LOG_LEVEL(level, tag, format, log_tag_letter, ...) do {                     \
-        if (level==RTK_LOG_ALWAYS )          { rtk_log_write(RTK_LOG_ALWAYS, tag, "[%s-"#log_tag_letter"] "format, tag, ##__VA_ARGS__); } \
-        else if (level==RTK_LOG_ERROR )      { rtk_log_write(RTK_LOG_ERROR,  tag, "[%s-"#log_tag_letter"] "format, tag, ##__VA_ARGS__); } \
-        else if (level==RTK_LOG_WARN )       { rtk_log_write(RTK_LOG_WARN,   tag, "[%s-"#log_tag_letter"] "format, tag, ##__VA_ARGS__); } \
-        else if (level==RTK_LOG_DEBUG )      { rtk_log_write(RTK_LOG_DEBUG,  tag, "[%s-"#log_tag_letter"] "format, tag, ##__VA_ARGS__); } \
-        else                                 { rtk_log_write(RTK_LOG_INFO,   tag, "[%s-"#log_tag_letter"] "format, tag, ##__VA_ARGS__); } \
-    } while(0)
+#define NOTAG "#" //special tag addr, please use the RTK_LOGx (NOTAG,...) if print a string without label(tag).
 
 //Compilation control, the log displayed at runtime can only be displayed between [0, COMPIL_LOG_LEVEL].
-#define RTK_LOG_ITEM(level, tag, format, ...) do {               \
-        if ( COMPIL_LOG_LEVEL >= level ) RTK_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
+#define RTK_LOG_ITEM(level, tag, format, letter, ...) do {               \
+        if ( COMPIL_LOG_LEVEL >= level ) rtk_log_write(level, tag, letter, format, ##__VA_ARGS__); \
     } while(0)
 
+#define RTK_LOG_ITEMS(level, tag, format, letter, ...) do {               \
+		UNUSED(tag);	\
+		UNUSED(letter); \
+		if ( COMPIL_LOG_LEVEL >= level ) {	\
+			DiagPrintf_minimal(format, ##__VA_ARGS__); \
+		}	\
+	} while(0)
 
-#define RTK_LOGA( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_ALWAYS,  tag, format, A, ##__VA_ARGS__)
-#define RTK_LOGE( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_ERROR,   tag, format, E, ##__VA_ARGS__)
-#define RTK_LOGW( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_WARN,    tag, format, W, ##__VA_ARGS__)
-#define RTK_LOGI( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_INFO,    tag, format, I, ##__VA_ARGS__)
-#define RTK_LOGD( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_DEBUG,   tag, format, D, ##__VA_ARGS__)
-
+#define RTK_LOGA( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_ALWAYS,  tag, format, 'A', ##__VA_ARGS__)
+#define RTK_LOGE( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_ERROR,   tag, format, 'E', ##__VA_ARGS__)
+#define RTK_LOGW( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_WARN,    tag, format, 'W', ##__VA_ARGS__)
+#define RTK_LOGI( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_INFO,    tag, format, 'I', ##__VA_ARGS__)
+#define RTK_LOGD( tag, format, ... ) RTK_LOG_ITEM(RTK_LOG_DEBUG,   tag, format, 'D', ##__VA_ARGS__)
+#define RTK_LOGS( tag, format, ... ) RTK_LOG_ITEMS(RTK_LOG_ALWAYS, tag, format, 'S', ##__VA_ARGS__)
+#define RTK_LOGS_LVL( tag, level, format, ... ) RTK_LOG_ITEMS(level, tag, format, 'S', ##__VA_ARGS__)
 
 //5. LOG set/get API
 
 extern void rtk_log_array_clear(void);
 extern rtk_log_level_t rtk_log_level_get(const char *tag);
-extern void rtk_log_level_set(const char *tag, rtk_log_level_t level);
-extern void rtk_log_write(rtk_log_level_t level, const char *tag, const char *format, ...);
-extern void rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
-
+extern int rtk_log_level_set(const char *tag, rtk_log_level_t level);
+extern int rtk_log_array_print(rtk_log_tag_t *rtk_log_tag_array);
+extern void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...);
 //6. Memory dump API
 #define DISPLAY_NUMBER 8
 #define BYTES_PER_LINE 16

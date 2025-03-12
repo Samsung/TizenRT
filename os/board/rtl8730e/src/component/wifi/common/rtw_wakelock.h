@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    rtw_wifi_constants.h
+  * @file    rtw_wakelock.h
   * @author
   * @version
   * @date
@@ -15,25 +15,24 @@
   ******************************************************************************
   */
 
-#ifndef	__RTW_WIFI_CONSTANTS_H_
-#define __RTW_WIFI_CONSTANTS_H_
 
-#include "basic_types.h"
-#include "section_config.h"
-#include "platform_stdlib.h"
-#include "ameba.h"
+#ifndef __RTW_WAKELOCK_H_
+#define __RTW_WAKELOCK_H_
 
-#include "rtw_autoconf.h"
-#include "rtw_byteorder.h"
+/**
+ * @brief  This function indicates that the WLAN needs to stay on which means cannot go into power saving mode.
+ * @return  None
+ * @note
+ */
+void	rtw_acquire_wakelock(void);
 
-#include "rtw_wifi_defs.h"
-#include "rtw_ethernet.h"
-#include "rtw_80211spec_macro.h"
-#include "rtw_80211spec_struct.h"
-#include "rtw_80211spec_enum.h"
-#include "rtw_80211spec_he.h"
-#include "rtw_80211spec_ht.h"
-#include "rtw_80211spec_twt.h"
-#include "rtw_80211spec_vht.h"
+/**
+ * @brief  This function indicates that the WLAN does not need to stay on which means can go into power saving mode.
+ * @return  None
+ * @note
+ */
+void	rtw_release_wakelock(void);
+
+void rtw_wakelock_timeout(uint32_t timeout);
 
 #endif

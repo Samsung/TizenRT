@@ -54,65 +54,63 @@ ENTRY(_vector_start)
 
 MEMORY
 {
-
-	/* KM4 ROM */
+	/* ROM */
 	KM4_IROM (rx) :                         ORIGIN = 0x00000000, LENGTH = 0x0001E000 - 0x00000000	/* KM4 IROM_S: 120k */
 	KM4_IROM_NS (rx) :                      ORIGIN = 0x0001E000, LENGTH = 0x00033000 - 0x0001E000	/* KM4 IROM_NS: 84k */
 	KM4_IROM_STDLIB_NS (rx) :               ORIGIN = 0x00033000, LENGTH = 0x00046000 - 0x00033000	/* KM4 STDLIB ROM: 76k */
 	KM4_DROM_NS (rx) :                      ORIGIN = 0x00046000, LENGTH = 0x00054000 - 0x00046000	/* KM4 DROM_NS: 56k */
 	KM4_DROM (rx) :                         ORIGIN = 0x00054000, LENGTH = 0x00058000 - 0x00054000	/* KM4 DROM_S: 16k */
 
-	/* KM4 Secure RAM, BIT(28)=1 */
+	KM0_IROM (rx) :                         ORIGIN = 0x00000000, LENGTH = 0x0000C000 - 0x00000000	/* KM0 IROM: 48k */
+	KM0_DROM (rx) :                         ORIGIN = 0x0000C000, LENGTH = 0x00010000 - 0x0000C000	/* KM0 DROM: 16k */
+
+	CA32_IROM (rx) :                        ORIGIN = 0x00000000, LENGTH = 0x00000400 - 0x00000000	/* CA32 IROM: 1k */
+
+	/* KM4 SRAM, BIT(28)=1 */
 	KM4_ROMBSS_RAM_S (rw) :                 ORIGIN = 0x30000000, LENGTH = 0x30001000 - 0x30000000	/* KM4 ROM BSS RAM S: 4k */
 	KM4_MSP_RAM_S (rw) :                    ORIGIN = 0x30001000, LENGTH = 0x30003000 - 0x30001000	/* KM4 MSP_S RAM: 8k */
-	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = 0x30003020, LENGTH = 0x30014000 - 0x30003020	/* KM4 BOOT Loader RAM: 68k */
 	KM4_FLOADER_RAM_S (rwx) :               ORIGIN = 0x30003020, LENGTH = 0x3001B000 - 0x30003020	/* KM4 ImgTool Flash Loader RAM: 95k */
-
-	/* KM4 Non-secure RAM */
-	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60017000 - 0x60000020	/* KM4 MAIN DRAM: 92KB */
-	KM4_MSP_RAM_NS (rw) :                   ORIGIN = 0x2001B000, LENGTH = 0x2001C000 - 0x2001B000	/* KM4  MSP_NS RAM: 4k */
-	KM4_ROMBSS_RAM_COM (rw) :               ORIGIN = 0x2001C000, LENGTH = 0x2001D000 - 0x2001C000	/* KM4  ROM BSS COMMON(S & NS both used) RAM: 4k */
+	KM4_BOOTLOADER_RAM_S (rwx) :            ORIGIN = 0x30003020, LENGTH = 0x30014000 - 0x30003020	/* KM4 BOOT Loader RAM: 68k */
+	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20014020, LENGTH = 0x2001B000 - 0x20014020	/* KM4 MAIN SRAM: 28k, used when XIP only */
+	KM4_MSP_RAM_NS (rw) :                   ORIGIN = 0x2001B000, LENGTH = 0x2001C000 - 0x2001B000	/* KM4 MSP_NS RAM: 4k */
+	KM4_ROMBSS_RAM_COM (rw) :               ORIGIN = 0x2001C000, LENGTH = 0x2001D000 - 0x2001C000	/* KM4 ROM BSS COMMON(S & NS both used) RAM: 4k */
 	KM4_ROMBSS_RAM_NS (rw) :                ORIGIN = 0x2001D000, LENGTH = 0x2001E000 - 0x2001D000	/* KM4 ROM BSS NS RAM: 4k */
 	KM4_STDLIB_HEAP_RAM_NS (rw) :           ORIGIN = 0x2001E000, LENGTH = 0x2001F000 - 0x2001E000	/* KM4 ROM STDLIB HEAP: 4k */
-	KM4_SRAM_HEAP_EXT (rw) :                ORIGIN = 0x20020000, LENGTH = 0x20040000 - 0x20020000	/* KM4 SRAM HEAP EXT: 128k */
-
-	/* KM4 Non-secure RAM for XIP only */
-	KM4_BD_RAM (rwx) :                      ORIGIN = 0x20014020, LENGTH = 0x2001B000 - 0x20014020	/* KM4 MAIN SRAM: 28k */
+	/* 0x3001F000 ~ 0x3001FE00 used for atf share ram when XIP only */
+	CA32_BL1_SRAM_S (rwx) :                 ORIGIN = 0x3001FE00, LENGTH = 0x30020000 - 0x3001FE00	/* CA32 BL1 SRAM: 512B */
+	KM4_SRAM_HEAP_EXT (rw) :                ORIGIN = 0x20020000, LENGTH = 0x20040000 - 0x20020000	/* KM4 AUDIO BUFFER: 128k */
 
 	/* KM4 EXTENTION SRAM */
 	EXTENTION_SRAM (rwx) :                  ORIGIN = 0x22000000, LENGTH = 0x23000000 - 0x22000000	/* KM4 EXTENTION SRAM: 16384k (Wi-Fi 40KB + Bluetooth 256KB) */
 
-	/* Retention RAM */
-	RETENTION_RAM (rwx) :                   ORIGIN = 0x23020000, LENGTH = 0x23020200 - 0x23020000	/* KM0 Retention SRAM: 512B */
-
-	/* KM0 ROM */
-	KM0_IROM (rx) :                         ORIGIN = 0x00000000, LENGTH = 0x0000C000 - 0x00000000	/* KM0 IROM: 48k */
-	KM0_DROM (rx) :                         ORIGIN = 0x0000C000, LENGTH = 0x00010000 - 0x0000C000	/* KM0 DROM: 16k */
-
-	/* KM0 RAM */
+	/* KM0 SRAM */
 	KM0_ROMBSS_RAM (rw) :                   ORIGIN = 0x23000000, LENGTH = 0x23001000 - 0x23000000	/* KM0 ROM BSS RAM: 4k */
 	KM0_MSP_RAM (rw) :                      ORIGIN = 0x23001000, LENGTH = 0x23002000 - 0x23001000	/* KM0 MSP RAM: 4k */
 	KM0_BD_RAM (rwx) :                      ORIGIN = 0x23002020, LENGTH = 0x2301FD00 - 0x23002020	/* KM0 MAIN RAM: 119k */
 	KM0_IPC_RAM (rwx) :                     ORIGIN = 0x2301FD00, LENGTH = 0x23020000 - 0x2301FD00	/* KM0 IPC RAM: 768B */
+	/* Retention RAM */
+	RETENTION_RAM (rwx) :                   ORIGIN = 0x23020000, LENGTH = 0x23020200 - 0x23020000	/* KM0 Retention SRAM: 512B */
 
 	/* Flash */
 	KM4_BOOT_XIP (rx) :                     ORIGIN = 0x0A000020, LENGTH = 0x0C000000 - 0x0A000020	/* KM4 Bootloader Virtual address: 32767k */
-	KM0_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0E000000 - 0x0C000020	/* KM0 IMG2 Virtual address: 32767k */
+	KM0_IMG2_XIP (rx) :                     ORIGIN = 0x0C000020, LENGTH = 0x0D000000 - 0x0C000020	/* KM0 IMG2 Virtual address: 32767k */
 	KM4_IMG2_XIP (rx) :                     ORIGIN = 0x0D000020, LENGTH = 0x0E000000 - 0x0D000020	/* KM4 IMG2 Virtual address: 32767k */
-	CA32_IMG2_XIP (rx) :                    ORIGIN = 0x0E000020, LENGTH = 0x10000000 - 0x0E000020	/* KM0 IMG2 Virtual address: 32767k */
+	CA32_IMG2_XIP (rx) :                    ORIGIN = 0x0E000020, LENGTH = 0x10000000 - 0x0E000020	/* CA32 IMG2 Virtual address: 32767k */
 
 	BTRACE (rx) :                           ORIGIN = 0xC8800000, LENGTH = 0xC9000000 - 0xC8800000	/* BT LOG Virtual address: 8192k */
+	CTRACE (rx) :                           ORIGIN = 0xCA000000, LENGTH = 0xCA7FFFFF - 0xCA000000	/* COEX LOG Virtual address: 8192k */
 
-	/* CA32 ROM */
-	CA32_IROM (rx) :                        ORIGIN = 0x00000000, LENGTH = 0x00000400 - 0x00000000	/* KM0 IROM: 1k */
+	/* DRAM */
+	KM4_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0x60017000 - 0x60000020	/* KM4 MAIN DRAM: 92K */
 
-	/* CA32 RAM */
-	CA32_BL1_SRAM_S (rwx) :                 ORIGIN = 0x3001FE00, LENGTH = 0x30020000 - 0x3001FE00	/* CA32 BL1 SRAM: 512B */
-	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70017020, LENGTH = 0x70037000 - 0x70017020	/* CA32 BL1 DRAM S: 127k */
-	CA32_FIP_DRAM_NS (rwx) :                ORIGIN = 0x60200000, LENGTH = 0x60400000 - 0x60200000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
+	CA32_BL1_DRAM_S (rwx) :                 ORIGIN = 0x70017020, LENGTH = 0x70037000 - 0x70017020	/* CA32 BL1 DRAM S: 128k */
 	CA32_BL3_DRAM_NS (rwx) :                ORIGIN = 0x60100000, LENGTH = 0x60800000 - 0x60100000	/* CA32 BL3 DRAM NS: 7MB */
+	/* By Default, KM4 let KM4_BD_DRAM and [0x60170000, 0x6FFFFFFF) be non-secure, ATF Will Let [CA32_BL3_DRAM_NS, 0x60400000) Non-Secure after image load done */
+	CA32_FIP_DRAM_S (rwx) :                 ORIGIN = 0x70200000, LENGTH = 0x70400000 - 0x70200000	/* CA32 FIP(BL2+BL32+BL33) IMG: 2MB */
+	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT: 0 */
+
+
 	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
-	KM4_DRAM_HEAP_EXT (rwx) :               ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM4 PSRAM HEAP EXT */
 }
 
 __rom_stdlib_text_start__ = ORIGIN(KM4_IROM_STDLIB_NS);
@@ -124,7 +122,7 @@ __ca32_flash_text_start__ = ORIGIN(CA32_IMG2_XIP);
 
 __ca32_bl1_sram_start__ = ORIGIN(CA32_BL1_SRAM_S);
 __ca32_bl1_dram_start__ = ORIGIN(CA32_BL1_DRAM_S);
-__ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_NS);
+__ca32_fip_dram_start__ = ORIGIN(CA32_FIP_DRAM_S);
 
 SECTIONS
 {
