@@ -56,7 +56,7 @@ static void rtl8730e_lcd_init(void);
 static void rtl8730e_gpio_reset(void);
 static void rtl8730e_lcd_power_off(void);
 static void rtl8730e_lcd_power_on(void);
-static void rtl8730e_lcd_mode_switch(bool flag);
+static void rtl8730e_mipi_mode_switch(mipi_mode_t mode);
 static void rtl8730e_lcd_layer_enable(int layer, bool enable);
 static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end);
 static void rtl8730e_enable_lcdc(void);
@@ -72,7 +72,7 @@ struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
 	.lcd_config = {
 		.init = rtl8730e_lcd_init,
 		.reset = rtl8730e_gpio_reset,
-		.lcd_mode_switch = rtl8730e_lcd_mode_switch,
+		.mipi_mode_switch = rtl8730e_mipi_mode_switch,
 		.lcd_enable = rtl8730e_enable_lcdc,
 		.lcd_layer_enable = rtl8730e_lcd_layer_enable,
 		.lcd_put_area = rtl8730e_lcd_put_area,
@@ -152,9 +152,9 @@ static void rtl8730e_gpio_reset(void)
 	return;
 }
 
-static void rtl8730e_lcd_mode_switch(bool flag)
+static void rtl8730e_mipi_mode_switch(mipi_mode_t mode)
 {
-	if (flag == false) {
+	if (mode == CMD_MODE) {
 		mipidsi_mode_switch(false);
 		MIPI_DSI_INT_Config(MIPI, DISABLE, ENABLE, FALSE);
 		DelayMs(20);
