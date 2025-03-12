@@ -44,6 +44,11 @@
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
 static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
+enum {
+	CMD = 0,
+	VIDEO = 1
+} mipi_mode;
+
 #if defined(CONFIG_LCD_SW_ROTATION)
 #define NUM_OF_LCD_BUFFER	2
 static uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
@@ -111,6 +116,7 @@ struct mipi_lcd_dev_s {
 	//u8 *BackupLcdImgBuffer;
 	int fb_alloc_count;
 	uint8_t power;
+	uint8_t mipimode;
 	sem_t sem;
 	struct mipi_lcd_config_s *config;
 };
@@ -244,6 +250,10 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
+	if (priv->mipimode == CMD) {
+		priv->config->lcd_mode_switch(true);
+		priv->mipimode = VIDEO;
+	}
 #if defined(CONFIG_LCD_SW_ROTATION)
 	lcd_rotate_buffer((uint8_t *)buffer, lcd_buffer[lcd_buffer_index]);
 	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
@@ -360,10 +370,10 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
 			priv->config->power_on();
-			/* We need to send init cmd after LCD IC power on */
 			priv->config->lcd_mode_switch(false);
+			priv->mipimode = CMD;
+			/* We need to send init cmd after LCD IC power on */
 			send_init_cmd(priv, lcd_init_cmd_g);
-			priv->config->lcd_mode_switch(true);
 		}
 		priv->config->backlight(power);
 	}
@@ -498,6 +508,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 	priv->power = CONFIG_LCD_MAXPOWER;
+	priv->mipimode = VIDEO;
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)
