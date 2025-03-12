@@ -126,7 +126,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	Mac_data = data + 80;
 
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
-		rtw_memcpy(Mac_data, (void *)(sg_list->buf), sg_list->len);
+		memcpy(Mac_data, (void *)(sg_list->buf), sg_list->len);
 		Mac_data += sg_list->len;
 	}
 
@@ -152,7 +152,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 
 #ifndef CONFIG_TX_ZERO_COPY
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
-		rtw_memcpy(skb->tail, (void *)(sg_list->buf), sg_list->len);
+		memcpy(skb->tail, (void *)(sg_list->buf), sg_list->len);
 		skb_put(skb, sg_list->len);
 	}
 #endif
@@ -191,7 +191,7 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
 		if (sg_list->buf != 0) {
-			rtw_memcpy((void *)(sg_list->buf), skb->data, sg_list->len);
+			memcpy((void *)(sg_list->buf), skb->data, sg_list->len);
 			skb_pull(skb, sg_list->len);
 		}
 	}

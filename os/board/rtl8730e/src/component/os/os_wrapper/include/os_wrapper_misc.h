@@ -14,8 +14,8 @@
  * limitations under the License.
  ******************************************************************************/
 
-#ifndef __OSDEP_SERVICE_MISC_H_
-#define __OSDEP_SERVICE_MISC_H_
+#ifndef __OS_WRAPPER_MISC_H_
+#define __OS_WRAPPER_MISC_H_
 
 #define RTK_HALT()   \
 	do {         \

@@ -85,7 +85,7 @@ int wifi_start_p2p_go(char *ssid, char *passphrase, u8 channel)
 	LwIP_SetIP(0, addr, netmask, gw);
 
 	// start ap
-	rtw_memcpy(softAP_config.ssid.val, ssid, strlen(ssid));
+	memcpy(softAP_config.ssid.val, ssid, strlen(ssid));
 	softAP_config.ssid.len = strlen(ssid);
 	softAP_config.password = passphrase;
 	softAP_config.password_len = strlen(passphrase);
