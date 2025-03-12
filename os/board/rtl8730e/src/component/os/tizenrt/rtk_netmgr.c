@@ -1015,7 +1015,7 @@ rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_
 	trwifi_scan_list_s *scan_list;
 
 	if (malloced_scan_result->scan_complete != TRUE) {
-		scan_list = (trwifi_scan_list_s *)rtw_zmalloc(sizeof(trwifi_scan_list_s));
+		scan_list = (trwifi_scan_list_s *)rtos_mem_zmalloc(sizeof(trwifi_scan_list_s));
 		if (scan_list == NULL) {
 			ndbg("\r\n[app_scan_result_handler]:Fail to malloc scan_list\r\n");
 			return RTW_ERROR;

@@ -27,7 +27,7 @@
 #include <errno.h>
 
 #include <tinyara/irq.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "rtk_km4log.h"
 #include "osif.h"
 
@@ -47,7 +47,7 @@
 void * g_km4_log_queue = NULL;
 
 /* --------------------------- Private Variables ---------------------------- */
-static struct task_struct km4_log_task;
+static rtos_task_t km4_log_task;
 
 static void rtl8730e_km4_logtask(void)
 {
@@ -71,7 +71,7 @@ static void rtl8730e_km4_logtask(void)
 			 * ensure no mixlog due to other task buffering prints by giving some cpu time. 
 			 * setting this too low will bootloop, 1us is unsafe
 			 */
-			rtw_usleep_os(10);										
+			usleep(10);										
 #endif
 			/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
 			((uint8_t *)event.buffer)[0] = 0;
@@ -85,7 +85,7 @@ void rtl8730e_km4_logtask_initialize(void)
 
 	if (!initialized) {
 		/* create the log consumption task */
-		if (false == rtw_create_task(&km4_log_task, (const char *)"km4_log_task", CONFIG_RTL8730E_KM4_LOGTASK_STACK, CONFIG_RTL8730E_KM4_LOGTASK_PRIO, (void *)rtl8730e_km4_logtask, NULL)) {
+		if (FAIL == rtos_task_create(&km4_log_task, (const char *)"km4_log_task", (void *)rtl8730e_km4_logtask, NULL, CONFIG_RTL8730E_KM4_LOGTASK_STACK, CONFIG_RTL8730E_KM4_LOGTASK_PRIO)) {
 			printf("Fail to create init km4/np logtask\n");
 			return;
 		}
