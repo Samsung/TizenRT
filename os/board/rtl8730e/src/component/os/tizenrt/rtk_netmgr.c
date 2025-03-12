@@ -25,7 +25,8 @@
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 // #include "freertos/wrapper.h"
-#include "osdep_service.h"
+#include "common/defs.h"
+#include "os_wrapper.h"
 /* WLAN CONFIG ---------------------------------------------------------------*/
 #define RTK_OK          0		/*!< RTK_err_t value indicating success (no error) */
 #define RTK_FAIL        -1		/*!< Generic RTK_err_t code indicating failure */
@@ -124,25 +125,25 @@ static void _scan_timer_handler(void *FunctionContext)
 {
 	vddbg("scan Timer expired : release saved scan list\r\n");
 
-	rtw_mutex_get(&scanlistbusy);
+	rtos_mutex_take(scanlistbusy, MUTEX_WAIT_TIMEOUT);
 	vddbg("scan Timer expired : sizeof(ap_scan_list_s) =%d, scan_number=%d \r\n", sizeof(ap_scan_list_s), scan_number);
 
 	if (saved_scan_list) {
-		rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+		rtos_mem_free((void *)saved_scan_list);
 		saved_scan_list = NULL;
 	}
 	scan_number = 0;
 	rtw_del_timer(&(scan_timer));
-	rtw_mutex_put(&scanlistbusy);
+	rtos_mutex_give(scanlistbusy);
 }
 
 static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 {
-	rtw_mutex_get(&scanlistbusy);
+	rtos_mutex_take(scanlistbusy, MUTEX_WAIT_TIMEOUT);
 	// If application calls scan before scan result free(before timeout), release scan list and cancel timer
 	if (scan_number) {
 		if (saved_scan_list) {
-			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+			rtos_mem_free((void *)saved_scan_list);
 			saved_scan_list = NULL;
 		}
 		rtw_cancel_timer(&(scan_timer));
@@ -154,13 +155,13 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 	rtw_set_timer(&(scan_timer), SCAN_TIMER_DURATION);
 
 	scan_number	 = 0;
-	saved_scan_list = (ap_scan_list_s *)rtw_malloc(sizeof(ap_scan_list_s) * g_scan_num);
+	saved_scan_list = (ap_scan_list_s *)rtos_mem_malloc(sizeof(ap_scan_list_s) * g_scan_num);
 	if (saved_scan_list == NULL) {
 		if (scan_timer.timer_hdl != NULL) {
 			rtw_cancel_timer(&(scan_timer));
 			rtw_del_timer(&(scan_timer));
 		}
-		rtw_mutex_put(&scanlistbusy);
+		rtos_mutex_give(scanlistbusy);
 		return RTW_NOMEM;
 	}
 
@@ -177,7 +178,7 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 
 	if (scan_number != g_scan_num)
 		vddbg("Total scan list temp = %d, g_scan = %d\n", scan_number, g_scan_num);
-	rtw_mutex_put(&scanlistbusy);
+	rtos_mutex_give(scanlistbusy);
 
 	return RTW_SUCCESS;
 }
@@ -187,7 +188,7 @@ static void _free_scanlist(void)
 	while (g_scan_list) {
 		trwifi_scan_list_s *cur = g_scan_list;
 		g_scan_list = g_scan_list->next;
-		rtw_mfree((unsigned char *)cur, sizeof(trwifi_scan_list_s));
+		rtos_mem_free((void *)cur);
 	}
 	g_scan_num = 0;
 }
@@ -207,14 +208,14 @@ rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *user_dat
 		return RTW_ERROR;
 	}
 
-	scan_buf = (char *)rtw_zmalloc(scanned_AP_num * sizeof(rtw_scan_result_t));
+	scan_buf = (char *)rtos_mem_zmalloc(scanned_AP_num * sizeof(rtw_scan_result_t));
 	if (scan_buf == NULL) {
 		TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
 		return RTW_ERROR;
 	}
 
 	if (wifi_get_scan_records(&scanned_AP_num, scan_buf) < 0) {
-		rtw_mfree((u8 *)scan_buf, 0);
+		rtos_mem_free((void *)scan_buf);
 		TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
 		return RTW_ERROR;
 	}
@@ -236,13 +237,13 @@ rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *user_dat
 			//print_scan_result(scanned_AP_info); /* Suppress Realtek's ATWS printout format
 			scan_result_report.scan_complete = FALSE;
 			scan_result_report.user_data = user_data;
-			rtw_memcpy(&scan_result_report.ap_details, scanned_AP_info, sizeof(scan_result_report.ap_details));
+			memcpy(&scan_result_report.ap_details, scanned_AP_info, sizeof(scan_result_report.ap_details));
 			app_scan_result_handler_legacy(&scan_result_report);
 	}
 	scan_result_report.scan_complete = TRUE;
 	app_scan_result_handler_legacy(&scan_result_report);
 
-	rtw_mfree((u8 *)scan_buf, 0);
+	rtos_mem_free((void *)scan_buf);
 	// Removed post_scanevent here as it is already done in the previous call to app_scan_result_handler_legacy()
 	// TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
 
@@ -292,15 +293,12 @@ int parse_scan_with_ssid_res(char*buf, int buflen, char *target_ssid, void *user
 /*
  * Callback
  */
-/* Does not seems to be used anymore */
-// extern unsigned char ap_bssid[ETH_ALEN];
 static int rtk_drv_callback_handler(int type)
 {
 	switch (type) {
 	case 1:
 	{
 		trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
-		// rtw_memcpy(msg.bssid, ap_bssid, ETH_ALEN);
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECTED, &msg, sizeof(trwifi_cbk_msg_s));
 		break;
 	}
@@ -329,7 +327,7 @@ static int rtk_drv_callback_handler(int type)
 	int type = 0;
 
 	if (g_mode == RTK_WIFI_STATION_IF) {
-		if (reason->reason_code == RTK_STATUS_SUCCESS) {
+		if (reason->reason_code == RTW_JOINSTATUS_SUCCESS) {
 			type = 1;
 		} else {
 			type = 2;
@@ -345,7 +343,11 @@ static int rtk_drv_callback_handler(int type)
 	//RTKDRV_ENTER;
 	int type = 4;
 	if (g_mode == RTK_WIFI_STATION_IF) {
-		type = 4;
+		if (reason->reason_code == RTW_JOINSTATUS_FAIL) {
+			type = 2;
+		} else if (reason->reason_code == RTW_JOINSTATUS_DISCONNECT) {
+			type = 4;
+		}
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		type = 5;
 	}
@@ -385,7 +387,7 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 #ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
 #endif //#ifndef CONFIG_ENABLE_HOMELYNK
-		rtw_mutex_init(&scanlistbusy);
+		rtos_mutex_create(&scanlistbusy);
 	} else {
 		ndbg("Already %d\n", g_mode);
 	}
@@ -400,18 +402,18 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_NONE;
 		wuret = TRWIFI_SUCCESS;
-		rtw_mutex_get(&scanlistbusy);
+		rtos_mutex_take(scanlistbusy, MUTEX_WAIT_TIMEOUT);
 		if (scan_timer.timer_hdl != NULL) {
 			rtw_cancel_timer(&(scan_timer));
 			rtw_del_timer(&(scan_timer));
 		}
 		if (saved_scan_list) {
-			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
+			rtos_mem_free((void *)saved_scan_list);
 			saved_scan_list = NULL;
 		}
 		scan_number = 0;
-		rtw_mutex_put(&scanlistbusy);
-		rtw_mutex_free(&scanlistbusy);
+		rtos_mutex_give(scanlistbusy);
+		rtos_mutex_delete(scanlistbusy);
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}
@@ -428,7 +430,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	int ch_valid = 0;
 	rtw_scan_param_t scan_param = {0};
 
-	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler; //print_ssid_scan_result
 
 	if (config) {
@@ -456,7 +458,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 
 			if (config->ssid_length == 0) {
 				/* Scan with channel Only */
-				rtw_memset(config->ssid, 0, sizeof(config->ssid));
+				memset(config->ssid, 0, sizeof(config->ssid));
 				config->ssid_length = 0;
 				printf("[ATWs]: _AT_WLAN_SCAN_WITH_CHANNEL_ [%d]\n\r", scan_param.channel_list[0]);
 			}
@@ -506,7 +508,7 @@ trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_
 	char ch_valid, scan_all_ch = 0;
 	rtw_scan_param_t scan_param = {0};
 
-	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
+	memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler;
 
 	if (config) {
@@ -618,7 +620,7 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 
 	ap_channel = 0;
 
-	rtw_mutex_get(&scanlistbusy);
+	rtos_mutex_take(scanlistbusy, MUTEX_WAIT_TIMEOUT);
 	if (scan_number) {
 		int i;
 		for (i = 0 ; i < scan_number ; i++) {
@@ -631,7 +633,7 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 			}
 		}
 	}
-	rtw_mutex_put(&scanlistbusy);
+	rtos_mutex_give(scanlistbusy);
 
 	ret = cmd_wifi_connect(ap_connect_config, arg, ap_channel);
 	if (ret != RTK_STATUS_SUCCESS) {
@@ -699,8 +701,8 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 					signal_quality->network_bw = wifi_get_current_bw();
 				}
 			}
-			signal_quality->tx_drop = sw_stats.tx_dropped;
-			signal_quality->rx_drop = sw_stats.rx_dropped;
+			signal_quality->tx_drop = sw_stats.tx_drop;
+			signal_quality->rx_drop = sw_stats.rx_drop;
 			signal_quality->tx_retry = tx_rty;
 			wuret = TRWIFI_SUCCESS;
 		} else {
@@ -782,7 +784,7 @@ trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, t
 		}
 
 		/* key_mgmt will return the value used in the last disconnected network */
-		key_mgmt = wifi_get_key_mgmt();
+		key_mgmt = wifi_get_prev_key_mgmt();
 		wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
 		wuret = TRWIFI_SUCCESS;
 	}

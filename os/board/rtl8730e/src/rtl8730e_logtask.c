@@ -39,6 +39,12 @@
 #ifndef CONFIG_RTL8730E_KM4_LOGTASK_STACK
 #define CONFIG_RTL8730E_KM4_LOGTASK_STACK 512
 #endif
+
+// static buffer to hold log message
+static u8 g_inic_ipc_logging_buf[CONFIG_KM4_MAX_LOG_QUEUE_SIZE][CONFIG_KM4_MAX_LOG_BUFFER_SIZE] = { 0 };
+static u8 g_inic_ipc_logging_buf_ctr = 0;
+// handle to log queue
+extern void *g_km4_log_queue;
 /* ------------------------------- Data Types ------------------------------- */
 
 /* -------------------------- Function declaration -------------------------- */
@@ -96,3 +102,60 @@ void rtl8730e_km4_logtask_initialize(void)
 
 	return;
 }
+
+void inic_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
+{
+	/* To avoid gcc warnings */
+	(void) Data;
+	(void) IrqStatus;
+	(void) ChanNum;
+
+	static km4log_msg_t message_event = { 0 };
+
+	/* receive a log message over IPC */
+	PIPC_MSG_STRUCT ipc_recv_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_NP_LOG_CHN);
+	char *tmp_buffer = (char *)ipc_recv_msg->msg;
+	DCache_Invalidate((u32)tmp_buffer, ipc_recv_msg->msg_len);
+
+	/* fill the buffer only if the first byte is empty, otherwise SKIP and do not increment counter */
+	if((char)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr][0] == 0) {
+		strncpy((char *)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr], tmp_buffer, ipc_recv_msg->msg_len);
+	} else {
+		DBG_8195A("WARN: KM4 logbuf full, dropped log!\n");
+		goto NOTIFY_MSG;
+	}
+	
+	/* fill message struct */
+	message_event.buffer = (void *)g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr];
+	message_event.buffer_len = CONFIG_KM4_MAX_LOG_BUFFER_SIZE;
+
+	/* use mq_send via osif api directly in ISR instead of semaphore-based */
+	if (g_km4_log_queue == NULL || (!osif_msg_send(g_km4_log_queue, &message_event, 0))) {
+		/* mixlog queue handle was invalid, or sending to queue failed, clear the memory here. */
+		DBG_8195A("queue hndl is null or send failed\n");
+
+		/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
+		g_inic_ipc_logging_buf[g_inic_ipc_logging_buf_ctr][0] = 0;
+		goto NOTIFY_MSG;
+	}
+
+	/* increment to next buffer */
+	g_inic_ipc_logging_buf_ctr = (g_inic_ipc_logging_buf_ctr + 1) % CONFIG_KM4_MAX_LOG_QUEUE_SIZE;
+
+NOTIFY_MSG: ;
+	/* Indicate logs have been printed */
+	u8 *print_flag = (u8 *)ipc_recv_msg->rsvd;
+	print_flag[0] = 1;
+	DCache_Clean((u32)print_flag, sizeof(print_flag));
+}
+
+IPC_TABLE_DATA_SECTION
+const IPC_INIT_TABLE ipc_print_table = {
+	.USER_MSG_TYPE = IPC_USER_POINT,
+	.Rxfunc = inic_ipc_print_int_hdl,
+	.RxIrqData = (void *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (void *) NULL,
+	.IPC_Direction = IPC_DIR_MSG_RX,
+	.IPC_Channel = IPC_N2A_NP_LOG_CHN
+};

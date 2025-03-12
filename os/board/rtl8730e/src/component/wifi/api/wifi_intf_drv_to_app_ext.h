@@ -1,40 +1,34 @@
-/******************************************************************************
- * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 /**
   ******************************************************************************
-  * @file    wifi_conf_ext.h
+  * @file    wifi_intf_drv_to_app_ext.h
   * @author
   * @version
-  * @brief   This file provides user interface for Wi-Fi station and AP mode configuration
-  *             base on the functionalities provided by Realtek Wi-Fi driver.
+  * @date
+  * @brief   This file provides user interface for Wi-Fi station and AP mode
+  *          configuration base on the functionalities provided by Realtek Wi-Fi driver.
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
   ******************************************************************************
   */
+
 #ifndef __WIFI_CONF_EXT_H
 #define __WIFI_CONF_EXT_H
 
-/** @defgroup WIFI
- *  @brief      WIFI module
+/** @defgroup WIFI_API
+ *  @brief      WIFI_API module
  *  @{
  */
 
 
 #include "rtw_wifi_constants.h"
 #include "rom_rtw_defs.h"
-#include <platform_stdlib.h>
+#include "platform_stdlib.h"
+#include "basic_types.h"
 #include "wifi_intf_drv_to_bt.h"
 #include "dlist.h"
 #include <rtw_skbuff.h>
@@ -71,7 +65,7 @@ int wifi_is_connected_to_ap(void);
  * @param[inout]  AP_num: input the pointer to the number of scanned ap info which
  * 	want to get, output the number of scanned ap info whicn can actually get.
  * @param[in]  scan_buf: pointer to the buf where scan result will be stored, the
- * 	scanned AP info will be stored one by one in form of struct rtw_scan_result_t.
+ * 	scanned AP info will be stored one by one in form of struct struct rtw_scan_result.
  * @return  RTW_SUCCESS or RTW_ERROR.
  * @note  For synchronized scan or asynchronized scan which do not config RTW_SCAN_REPORT_EACH,
  * 	if once called wifi_scan_networks but not use this API to get scanned AP info,
@@ -85,14 +79,16 @@ int wifi_get_scan_records(unsigned int *AP_num, char *scan_buf);
 
 /**
  * @brief  Abort onoging wifi scan
+ * @param[in]  block: set 1 for wait scan actually aborted
  * @return  RTW_SUCCESS or RTW_ERROR.
- * @note  This is an asynchronized function and will return immediately, return value
- * 	only indicates whether the scan abort cmd is successfully notified to driver or not.
+ * @note  If block set to 0, this will be an asynchronized function and will return immediately,
+ * 	return value only indicates whether the scan abort cmd is successfully notified to driver or not.
+ *	If block set to 1, this will be a synchronized function and will return when scan is actually aborted.
  * 	When scan is actually aborted, the user callback registered in wifi_scan_networks
  * 	will be executed.If there is no wifi scan in progress, this function will just return
  * 	RTW_SUCCESS and user callback won't be executed.
  */
-int wifi_scan_abort(void);
+int wifi_scan_abort(u8 block);
 
 /**
  * @brief  Enable or disable LPS. LPS is the abbreviation of Leisure Power Save mode.
@@ -105,6 +101,24 @@ int wifi_scan_abort(void);
  * @return  RTW_ERROR otherwise.
  */
 int wifi_set_lps_enable(u8 enable);
+
+/**
+ * @brief  Set the listen interval of LPS. LPS is the abbreviation of Leisure Power Save mode.
+ * 	Wi-Fi automatically turns RF off during the association to AP
+ * 	if traffic is not busy, while it also automatically turns RF on
+ * 	to listen to the beacon of the associated AP. The listen interval is used to indicate
+ *	how often the STA wakes to listen to beacons of AP.
+ * @param[in]  interval: the listen interval of LPS (unit: 102.4 ms).
+ *	If the specified interval is not a multiple of beacon interval, the actual listen interval
+ *	will be rounded to the largest multiple that <= the specified value. It will not be
+ *	rounded to 0 when the specified value < beacon interval. In this case, use 1 instead.
+ *	e.g. Given that beacon interval = 2, calling wifi_set_lps_listen_interval(5) will make actual
+ *	listen interval = 4, calling wifi_set_lps_listen_interval(1) will make actual listen interval = 1
+ * @return  RTW_SUCCESS if setting LPS listen interval successful.
+ * @return  RTW_ERROR otherwise.
+ */
+int wifi_set_lps_listen_interval(u8 interval);
+
 
 /**
  * @brief  Set reconnection mode with configuration.
@@ -127,39 +141,22 @@ int wifi_config_autoreconnect(__u8 mode);
 int wifi_get_autoreconnect(__u8 *mode);
 
 /**
- * @brief  set the timeout value for checking no beacon
- * @param  the value of timeout, in seconds.
- * @return None
- */
-void wifi_set_no_beacon_timeout(unsigned char timeout_sec);
-
-/**
- * @brief  Get reason code of latest disassociation or deauthentication.
- * @param[out]  reason_code: A pointer to the variable where the
- * 	reason code (rtw_connect_error_flag_t) will be written.
- * @return  RTW_SUCCESS or RTW ERROR.
- */
-int wifi_get_disconn_reason_code(unsigned short *reason_code);
-
-
-/**
  * @brief  Get the associated clients with SoftAP.
  * @param[out]  client_list_buffer: The location where the client
  * 	list will be stored.
  * @return  RTW_SUCCESS: The result is successfully got.
  * @return  RTW_ERROR: The result is not successfully got.
  */
-int wifi_get_associated_client_list(rtw_client_list_t	*client_list_buffer);
+int wifi_get_associated_client_list(struct _rtw_client_list_t	*client_list_buffer);
 
 /**
- * @brief  delete a STA
- * @param[in]  wlan_idx: the wlan interface index, should be SOFTAP_WLAN_INDEX.
+ * @brief  delete a STA for softap
  * @param[in]  hwaddr: the pointer to the MAC address of the STA
  * 	which will be deleted
  * @return  RTW_SUCCESS or RTW_ERROR
  * @note  this function should be used when operating as AP
  */
-int wifi_del_station(unsigned char wlan_idx, unsigned char *hwaddr);
+int wifi_del_station(unsigned char *hwaddr);
 
 /**
  * @brief  set channel
@@ -178,16 +175,11 @@ int wifi_set_channel(unsigned char wlan_idx, u8 channel);
 int wifi_get_channel(unsigned char wlan_idx, u8 *channel);
 
 /**
- * @brief  Set the current Media Access Control (MAC) address
- *	(or Ethernet hardware address) of the 802.11 device.
- * @param[in]  idx: Set STA or SoftAP mac address.
- * @param[in]  mac: Pointer to the mac address.
- * @param[in]  efuse: Set mac address to efuse or set to RAM.
+ * @brief  set country code
+ * @param[in]  cntcode: Pointer to the country code which want to be set
  * @return  RTW_SUCCESS or RTW_ERROR
- * @note  Set to Efuse(efuse = 1): effective after reboot.
- * Set to RAM(efuse = 0): reboot will lose effectiveness. (RECOMMENDED)
  */
-int wifi_set_mac_address(int idx, unsigned char *mac, u8 efuse);
+u8 wifi_set_countrycode(char *cntcode);
 
 /**
  * @brief  Retrieves the current Media Access Control (MAC) address
@@ -245,6 +237,8 @@ int wifi_set_network_mode(enum wlan_mode mode);
  * @brief  enable promisc mode and set promisc mode
  * @param[in] enable: enable or disable promisc mode
  * @param[in] para: promisc mode and callback if enable promisc mode
+ * @note:
+ *    callback return value will decide whether driver need continue process this packet.
  * @return  None
  */
 void wifi_promisc_enable(u32 enable, promisc_para_t *para);
@@ -258,51 +252,15 @@ void wifi_promisc_enable(u32 enable, promisc_para_t *para);
 u8 wifi_driver_is_mp(void);
 
 /**
- * @brief  Set Management Frame Protection Support.
- * @param[in] value:
- * 	0) NO_MGMT_FRAME_PROTECTION: not support
- * 	1) MGMT_FRAME_PROTECTION_OPTIONAL: capable
- * 	2) MGMT_FRAME_PROTECTION_REQUIRED: required
- * @return  RTW_SUCCESS if setting Management Frame Protection Support successful.
+ * @brief  get ccmp unicast key and group key
+ * @param[in]  wlan_idx: STA_WLAN_IDX or SOFTAP_WLAN_IDX
+ * @param[in]  mac_addr: client mac addr for softap mode, set to NULL for sta mdoe
+ * @param[out]  uncst_key: CCMP unicast key
+ * @param[out]  group_key: CCMP group key
+ * @return  RTW_SUCCESS if get key successfully.
  * @return  RTW_ERROR otherwise.
  */
-int wifi_set_mfp_support(unsigned char value);
-
-/**
- * @brief  Set group id of SAE.
- * @param[in] value:group id which want to be set
- * @return  RTW_SUCCESS if setting is successful.
- * @return  RTW_ERROR otherwise.
- */
-int wifi_set_group_id(unsigned char value);
-
-/**
- * @brief  for wpa supplicant indicate sae status.
- * @param[in] wlan_idx:STA_WLAN_IDX or SOFTAP_WLAN_IDX.
- * @param[in] status:sae_status which will be indicated.
- * @param[in] mac_addr:pointer of sae peer's mac_addr .
- * @return  RTW_SUCCESS if setting is successful.
- * @return  RTW_ERROR otherwise.
- */
-int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
-
-/**
- * @brief  enable or disable pmk cache.
- * @param[in] value:1 for enable, 0 for disable
- * @return  RTW_SUCCESS if setting is successful.
- * @return  RTW_ERROR otherwise.
- */
-int wifi_set_pmk_cache_enable(unsigned char value);
-
-/**
- * @brief  Set psk related info, including ssid, passphrase, psk.
- * @param[in]  psk_data: pointer to the structure that can set
- * 	psk related info in driver.{@ref struct psk_info}
- * @return  NULL.
- * @note  can be used to set psk related info to driver when fast connect
- */
-
-int wifi_get_ccmp_key(unsigned char *uncst_key, unsigned char *group_key);
+int wifi_get_ccmp_key(u8 wlan_idx, u8 *mac_addr, unsigned char *uncst_key, unsigned char *group_key);
 
 /**
  * @brief  Show the TX and RX statistic information which counted by software(wifi driver,not phy layer).
@@ -342,15 +300,14 @@ int wifi_get_txbuf_pkt_num(void);
 void wifi_set_indicate_mgnt(int enable);
 
 /**
- * @brief  Get antenna infomation.
- * @param[in]  antenna: Point to the antenna value obtained from driver,
+ * @brief  Get antdiv infomation.
+ * @param[in]  antdiv_mode: Point to the antdiv_mode value obtained from driver,
+ * @param[in]  curr_ant: Point to the antenna value obtained from driver,
  * 	0 means main antenna, 1 means aux antenna.
  * @return  0 if get successfully, otherwise return -1.
  */
 
-#if defined CONFIG_ANTENNA_DIVERSITY ||defined __DOXYGEN__
-int wifi_get_antenna_info(unsigned char *antenna);
-#endif // #ifdef CONFIG_ANTENNA_DIVERSITY
+int wifi_get_antdiv_info(unsigned char *antdiv_mode, unsigned char *curr_ant);
 
 //-------------------------------------------------------------//
 /*
@@ -361,19 +318,6 @@ int wifi_get_antenna_info(unsigned char *antenna);
  * 	2) WL_BAND_2_4G_5G_BOTH: support both 2.4G and 5G
  */
 WL_BAND_TYPE wifi_get_band_type(void);
-
-/**
- * @brief  get an auto channel
- * @param[in]  wlan_idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX.
- * @param[in]  channel_set: the pointer to the channel set
- * 	auto channel will select from this channel set
- * @param[in]  channel_num: the number of channel in channel set
- * @return  the selected auto channel
- */
-int wifi_get_auto_chl(
-	unsigned char wlan_idx,
-	unsigned char *channel_set,
-	unsigned char channel_num);
 
 /**
  * @brief	Get wifi TSF register[63:32]&[31:0].
@@ -397,46 +341,6 @@ u64 wifi_get_tsf(unsigned char port_id);
 int wifi_ap_switch_chl_and_inform(rtw_csa_parm_t *csa_param);
 
 /**
- * @brief  set the channel plan
- * @param[in]  chplan: the domain code of the channel plan to set
- * @return  RTW_SUCCESS if channel plan set is valid, RTW_ERROR if channel plan is invalid
- * @note  the channel plan can only be set if it is valid. this function should only be used while disconnected or when softAP is not running
- */
-int wifi_set_chplan(u8 chplan);
-
-/**
- * @brief  initialize mac address filter list
- * @return  RTW_SUCCESS or RTW_ERROR.
- */
-int wifi_init_mac_filter(void);
-
-/**
- * @brief  add mac address to mac filter list then this address
- * 	will be rejected during authentication
- * @param[in]  hwaddr: the mac address which will be added to
- * 	mac filter list.
- * @return  RTW_SUCCESS or RTW_ERROR.
- */
-int wifi_add_mac_filter(unsigned char *hwaddr);
-
-/**
- * @brief  delete mac address from mac filter list
- * @param[in]  hwaddr: the mac address which will be deleted
- * 	from mac filter list.
- * @return  RTW_SUCCESS or RTW_ERROR.
- */
-int wifi_del_mac_filter(unsigned char *hwaddr);
-
-/**
- * @brief  Set the wps phase
- * 	wps: Wi-Fi Protected Setup
- * @param[in]  is_trigger_wps: to trigger wps function or not
- * 	is_trigger_wps value should only be 0 or 1
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_set_wps_phase(unsigned char is_trigger_wps);
-
-/**
  * @brief  set WPS IE in Probe Request/Probe Response/Beacon/
  * 	Association Request/Association Response
  * @param[in]  wlan_idx: the wlan interface index, can be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
@@ -453,64 +357,30 @@ int wifi_set_wps_phase(unsigned char is_trigger_wps);
 int wifi_set_gen_ie(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
 
 /**
- * @brief  Set the eap phase to wifi driver
- * @param[in]  is_trigger_eap: to trigger 802.1X EAP function or not
- * @return    RTW_SUCCESS or RTW_ERROR
- */
-int wifi_set_eap_phase(unsigned char is_trigger_eap);
-
-/**
- * @brief  get the current eap phase from wifi driver
- * @param[in]  None
- * @return  1: eap_phase is equal to 1, indicate 802.1X EAP is triggered
- * @return  0: eap_phase is equal to 0, indicate 802.1X EAP is not triggered
- */
-unsigned char wifi_get_eap_phase(void);
-
-/**
- * @brief  Set the current eap authentication method to wifi driver
- * @param[in]  eap_method: the current 802.1x EAP authentication method
- * @return    RTW_SUCCESS or RTW_ERROR
- */
-int wifi_set_eap_method(unsigned char eap_method);
-
-/**
- * @brief  send 802.1X EAP frame
- * @param[in]  wlan_idx: the wlan interface index,
- * 	wlan_idx should be STA_WLAN_INDEX or SOFTAP_WLAN_INDEX
- * @param[in]  buf: the pointer to buf which store the EAP frame
- * @param[in]  buf_len: the length of buf
- * @param[in]  flags: reserved, set to 0
- * @return  RTW_ERROR or RTW SUCCESS
- */
-int wifi_if_send_eapol(unsigned char wlan_idx, char *buf, __u16 buf_len, __u16 flags);
-
-/**
- * @brief  Set ble scan duty when coex.
- * @param[in]  duty: the desired scan duty for ble
- * @return  1: if the scan duty is successfully set
- * 	-1: if the scan duty is not successfully set.
- */
-int wifi_btcoex_set_ble_scan_duty(u8 duty);
-
-/**
  * @brief  Setup custom ie list. (Information Element)
  * @warning  This API can't be executed twice before deleting
  * 	the previous custom ie list.
- * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE list.
- * @param[in]  ie_num: The number of WIFI CUSTOM IE list.
+ * @param[in]  cus_ie: a buffer stores custom IE list, format of custom ie is struct custom_ie.
+ *  u8 ie1[] = {221, 2, 2, 2};
+ *  u8 ie2[] = {221, 2, 1, 1};
+ *  struct custom_ie buf[2] = {{ie1, BEACON}, {ie2, PROBE_RSP}};
+ *  wifi_add_custom_ie(buf, 2);
+ * @param[in]  ie_num: The number of custom IEs in cus_ie.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_add_custom_ie(void *cus_ie, int ie_num);
+int wifi_add_custom_ie(struct custom_ie *cus_ie, int ie_num);
 
 /**
  * @brief  Update the item in WIFI CUSTOM IE list.
  * 	(Information Element)
  * @param[in]  cus_ie: Pointer to WIFI CUSTOM IE address.
+ *  u8 ie[] = {221, 2, 1, 3} ;
+ *  struct custom_ie buf_update = {ie, PROBE_RSP};
+ *  wifi_update_custom_ie(&buf_update, 2);
  * @param[in]  ie_index: Index of WIFI CUSTOM IE list.
  * @return  0 if success, otherwise return -1.
  */
-int wifi_update_custom_ie(void *cus_ie, int ie_index);
+int wifi_update_custom_ie(struct custom_ie *cus_ie, int ie_index);
 
 /**
  * @brief  Delete WIFI CUSTOM IE list. (Information Element)
@@ -529,20 +399,12 @@ int wifi_del_custom_ie(unsigned char wlan_idx);
 int wifi_send_raw_frame(struct raw_frame_desc_t *raw_frame_desc);
 
 /**
- * @brief  send raw frame
- * @param[in]  raw_data_desc: the pointer of raw_data_desc_t,
- * 	which describe related information, include the pointer of raw frame and so on.
- * @return  RTW_ERROR or RTW SUCCESS
- */
-int wifi_send_mgnt(raw_data_desc_t *raw_data_desc);
-
-/**
  * @brief  Control initial tx rate by different ToS value in IP header.
  * @param[in]  enable: set 1 to add control for specified tx_rate for
  * 	corresponding ToS_value, set 0 to disable initial rate control for this ToS_value.
  * @param[in]  ToS_precedence: range from 0 to 7, corresponding to IP precedence in TOS field of IP header(BIT7~5).
  * @param[in]  tx_rate: initial tx rate for packet which has the same ToS value as setted.Please
- * 	refer to enum MGN_RATE in wifi_constants.h for rate definition.
+ * 	refer to enum enum mgn_rate_type in wifi_constants.h for rate definition.
  * @return  RTW_SUCCESS or RTW_ERROR.
  * @note this function only take IP Precedence(BIT 7~5 in ToS field) into consideration.
  */
@@ -574,133 +436,6 @@ int wifi_set_TX_CCA(unsigned char enable);
  */
 int wifi_set_cts2self_duration_and_send(unsigned char wlan_idx, unsigned short duration);
 
-#if defined CONFIG_WOWLAN_TCP_KEEP_ALIVE || defined __DOXYGEN__
-/**
- * @brief  construct a tcp packet that offload to wlan. wlan would keep sending this packet to tcp server.
- *
- * @param[in]  socket_fd : tcp socket
- * @param[in]  content : tcp payload
- * @param[in]  len : tcp payload size
- * @param[in]  interval_ms : send this packeter every interval_ms milliseconds
- * @param[in]  resend_ms : if packet fails to send at interval_ms, then resend it after resemd_ms
- * @param[in]  wake_sys : if packet fails to send after resend several times, should wlan wake system
- * @return  RTW_SUCCESS
- */
-int wifi_set_tcp_keep_alive_offload(int socket_fd, uint8_t *content, size_t len, uint32_t interval_ms, uint32_t resend_ms, uint8_t wake_sys);
-#endif
-
-#if defined CONFIG_WOWLAN_DHCP_RENEW || defined __DOXYGEN__
-/**
- * @brief  construct a udp renew packet that offload to wlan. wlan would keep sending this packet to dhcp server.
- *
- * @return  RTW_SUCCESS
- */
-int wifi_set_dhcp_offload(void);
-#endif
-
-
-
-#if defined CONFIG_ARP_KEEP_ALIVE || defined __DOXYGEN__
-/**
- * @brief   use ARP response as keep alive packet instead of null frame
- *
- * @param[in]   enable : enable or disable ARP response keep alive
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_arp_rsp_keep_alive(int enable);
-#endif
-
-#if defined CONFIG_WOWLAN_DTIMTO || defined __DOXYGEN__
-/**
- * @brief   tcp keep alive fine tune
- *
- * @param[in]   dtimto_enable : enable or disable
- * @param[in]   retry_inc : change dtim to this value
- * @param[in]   ack_timeout : timeout for wait tcp ack
- * @param[in]   dtim : TBTT interval
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_dtimto(uint8_t dtimto_enable, uint8_t retry_inc, uint8_t ack_timeout, uint8_t dtim);
-#endif
-
-
-#if defined CONFIG_SMART_DTIM  || defined __DOXYGEN
-/**
- * @brief   smart dtim in wowlan keep alive
- *
- * @param[in]   check_period : check period of TBTT
- * @param[in]   threshold : threshold of beacon lose
- * @param[in]   change_dtim : change dtim
- * @param[in]   dtim : TBTT interval
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_smartdtim(uint8_t check_period, uint8_t threshold, uint8_t change_dtim, uint8_t dtim);
-#endif
-
-
-#if defined CONFIG_WOWLAN_PARAM || defined __DOXYGEN__
-/**
- * @brief   wowlan parameter setting
- *
- * @param[in]   fwdis_period : fw decision disconnect check period
- * @param[in]   fwdis_trypktnum : fw decision disconnect null packet retry
- * @param[in]   pno_enable : pno method enable
- * @param[in]   pno_timeout : timeout for wait ap enable
- * @param[in]   l2_keepalive_period : send period of l2 keep alive
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_wowlan_param(u8  fwdis_period,
-								 u8  fwdis_trypktnum,
-								 u8  pno_enable,
-								 u8  pno_timeout,
-								 u8  l2_keepalive_period);
-#endif
-
-
-#if defined CONFIG_ARP_REQUEST_KEEP_ALIVE  || defined __DOXYGEN__
-/**
- * @brief   use ARP request as keep alive packet instead of null frame
- *
- * @param[in]   powerbit : power bit setting
- * @param[in]   dtim1to : change to dtim1
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_arpreq_keepalive(u8  powerbit,
-									 u8  dtim1to);
-#endif
-
-#if defined CONFIG_WOWLAN_IO_WDT || defined __DOXYGEN__
-/**
- * @brief   set gpio pull ctrl in wowlan
- *
- * @param[in]   gpio : gpiof number
- * @param[in]   interval : pull ctrl interval
- * @return  RTW_SUCCESS
- */
-int wifi_wowlan_set_wdt(u8  gpio,
-						u8  interval);
-#endif
-
-// WoWlan related
-//-------------------------------------------------------------//
-#if defined CONFIG_WOWLAN_SD1 || defined __DOXYGEN__
-/**
- * @brief  control wowlan mode enable and disable
- * @param[in]  enable:
- * 	0 means WOWLAN_DISABLE
- * 	1 means WOWLAN_ENABLE
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_wowlan_ctrl(int enable);
-
-/**
- * @brief  set wowlan customer pattern
- * @param[in]  pattern: refer to struct wowlan_pattern_t
- * @return  RTW_SUCCESS or RTW_ERROR
- */
-int wifi_wowlan_set_pattern(wowlan_pattern_t pattern);
-#endif
-
 /**
  * @brief  set the csi parameters and enable or disable csi func(sta or softap)
  * @param[in]  act_param: A pointer to the param
@@ -721,90 +456,77 @@ int wifi_csi_config(rtw_csi_action_parm_t *act_param);
  * @note:
  *    unsigned char *csi_buf = NULL;
  *    unsigned int len;
- *    csi_buf = rtw_zmalloc(buf_len);
+ *    csi_buf = rtos_mem_zmalloc(buf_len);
  *    wifi_csi_report(buf_len,csi_buf,&len);
  * @return  RTW_SUCCESS or RTW_ERROR
  */
 int wifi_csi_report(u32 buf_len, u8 *csi_buf, u32 *len);
 
 /**
- * @brief  Set PTA type when coex.
- * @param[in]  type: the PTA type(PTA_BT/PTA_WIFI/PTA_AUTO).
- * @param[in]  role, PTA_HOST_BT / PTA_HOST_WIFI
- * @param[in]  process, CALIBRATION_START / CALIBRATION_STOP / COMMON_ACTION
- * @return  Null.
- */
-void wifi_btcoex_set_pta(pta_type_t type, u8 role, u8 process);
-
-/**
- * @brief  Set BTS0 or BTS1.
- * @param[in]  bt_ant: the BT ant(BTS0/BTS1).
- * @return  Null.
- */
-void wifi_btcoex_set_bt_ant(u8 bt_ant);
-
-/**
-  * @brief Write BT RFK  data to RFC
-  * @param  calibration data
-  * @retval  BT RFK result(1:success  0:failed)
-  */
-int wifi_btcoex_bt_rfk(struct bt_rfk_param *rfk_param);
-
-/**
-  * @brief Zigbee Call WL RFK
-  * @param  void
-  * @retval  ZBC RFK result(0:success  -1:failed)
-  */
-int wifi_zigbee_coex_zb_rfk(void);
-
-/**
- * @brief  Set global variable wifi_wpa_mode.
- * @param[in]  wpa_mode:
- 	(WPA_AUTO_MODE,WPA_ONLY_MODE, WPA2_ONLY_MODE,
-	WPA3_ONLY_MODE,WPA_WPA2_MIXED_MODE, WPA2_WPA3_MIXED_MODE).
- * @return  0:success  -1:fail.
- */
-int wifi_set_wpa_mode(rtw_wpa_mode wpa_mode);
-
-/**
- * @brief  Dynamically modify the working mode of pmf.
- * @param[in]  pmf_mode:
- 	0: none
- 	1: optional
- 	2: required
- * @return  0:success  -1:fail.
- */
-int wifi_set_pmf_mode(u8 pmf_mode);
-
-/**
- * @brief  wpa notify wifi driver that 4 way handshake is failed.
- * wifi driver will do disconnect and autoreconnect.
- * can delete this API if autoreconnect can move to up layer.
- * @param[in]  void:
+ * @brief  for wifi speaker setting
+ * @param[in]  set_type: wifi speaker setting type
+ * @param[in]  settings: A pointer to the params
+ * @note:
+ *      when set_type == SPEAKER_SET_INIT
+ *          mode: 0 for slave, 1 for master
+ *          thresh: unit 128us
+ *          relay_en: relay control
+ *      when set_type == SPEAKER_SET_LATCH_I2S_COUNT
+ *          port: 0 for select port 0's TSFT to trigger audio latch count, 1 for port 1
+ *          latch_period: 0 for trigger audio latch period is 4.096ms, 1 for 8.192ms
+ *      when set_type == SPEAKER_SET_TSF_TIMER
+ *          enable: 1 for enable twt timer, 0 for disable
+ *          tsft: absolute value for twt timer, unit ms
+ *          port: 0 for select port 0's TSFT to trigger twt timer interrupt, 1 for port 1
  * @return  null.
  */
-void wifi_wpa_sta_4way_fail_notify(void);
+void wifi_speaker_setting(enum SPEAKER_SET_TYPE set_type, union speaker_set *settings);
 
 /**
- * @brief  for wpa to set key to driver
- * @param[in]  rtw_crypt_info
- * @return  null.
+ * @brief  for user to set tx power
+ * 1. Currently will TX with the set power,  regardless of power by rate and power by limit.
+ * 2. Afterwards, it can be extended to specify rate, or power by limit needs to be considered.
+ * @param[in]  txpwr_ctrl_info: the pointer of rtw_tx_power_ctl_info_t
+ *    b_tx_pwr_force_enbale: 1 for enable, 0 for disable.
+ *    tx_pwr_force: unit 0.25dBm.
+ * @note:
+ *    For amebadplus, the power range varies for different channels or IC, the recommended power range is -2 ~ 23 dBm,
+ *    if exceeds the power range, the power may be inaccurate, and will be changed to the boundary value.
+ *    For amebasmart&amebalite, the recommended power range is -24 ~ 24 dBm.
+ *    For both, we suggest setting the power not to exceed the power by rate table.
+ * @return  RTW_SUCCESS or RTW_ERROR
  */
-void wifi_wpa_add_key(struct rtw_crypt_info *crypt);
+int wifi_set_tx_power(struct rtw_tx_power_ctl_info_t *txpwr_ctrl_info);
 
 /**
- * @brief  for wpa to set/del/flush pmksa
- * @param[in]  pmksa_ops
- * @return  null.
+ * @brief  for user to get tx power
+ * @param[in]  rate: phy rate
+ *    For the definition of phy rate, please refer to enum mgn_rate_type
+ *    CCK rate 1M,2M,5.5M,11M
+ *    OFDM rate 6M,9M,12M,18M,24M,36M,48M,54M
+ *    HT rate MCS0~MCS7
+ *    VHT rate MCS0~MCS8
+ *    HE rate MCS0~MCS9
+ * @param[out]  txpwr: the current tx power, unit 0.25dBm.
+ * @return  RTW_SUCCESS or RTW_ERROR
  */
-void wifi_wpa_pmksa_ops(struct rtw_pmksa_ops_t *pmksa_ops);
+int wifi_get_tx_power(u8 rate, s8 *txpwr);
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 /**
  * @brief  Get current bandwidth in current connection
  * @param[in]  void
  * @return  int: The current bandwidth value in MHz
  */
 int wifi_get_current_bw(void);
+
+/**
+ * @brief  Get key_mgmt value of current connection
+ * @param[in]  void
+ * @return  int: The key_mgmt value of current connection
+ * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
+ */
+int wifi_get_key_mgmt(void);
 
 /**
  * @brief  Get the tx retry count 
@@ -815,7 +537,7 @@ int wifi_get_current_bw(void);
  * @return  RTW_ERROR: Failed to get key_mgmt, not connected to AP.
  */
 unsigned int wifi_get_tx_retry(int idx);
-
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 /**
   * @}
   */
@@ -827,8 +549,6 @@ unsigned int wifi_get_tx_retry(int idx);
 /**
   * @}
   */
-
-
 
 
 #ifdef __cplusplus
