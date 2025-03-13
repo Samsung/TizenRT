@@ -481,7 +481,7 @@ void rtl8721d_uart_irq(uint32_t id, SerialIrq event)
 	}
 	if (event == TxIrq) {
 		priv->tx_level = TX_FIFO_MAX;
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
 }
