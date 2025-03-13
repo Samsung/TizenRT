@@ -496,8 +496,8 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-	priv->power = CONFIG_LCD_MAXPOWER;
+	priv->config->backlight(0);
+	priv->power = 0;
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)

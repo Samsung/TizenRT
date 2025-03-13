@@ -69,6 +69,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/lcd/lcd_dev.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/silent_reboot.h>
 
 #define MAX_NO_PLANES 3
 /****************************************************************************
@@ -464,7 +465,11 @@ int lcddev_register(struct lcd_dev_s *dev)
 	lcd_init_put_image(dev);
 	sem_init(&lcd_info->sem, 0, 1);
 	if (dev->setpower) {
-		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+		if (silent_reboot_is_silent_mode()) {
+			ret = dev->setpower(dev, 0);
+		} else {
+			ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+		}
 		if (ret != OK) {
 			goto cleanup;
 		}
