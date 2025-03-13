@@ -211,6 +211,9 @@ int binary_manager(int argc, char *argv[])
 		case BINMGR_GET_INFO_ALL:
 			binary_manager_get_info_all(request_msg.requester_pid);
 			break;
+		case BINMGR_GET_INFO_INACTIVE_ALL:
+			binary_manager_get_inactive_info_all(request_msg.requester_pid);
+			break;
 		case BINMGR_GET_DOWNLOAD_PATH:
 			binary_manager_get_inactive_path(request_msg.requester_pid, request_msg.data.bin_name);
 			break;
@@ -220,6 +223,9 @@ int binary_manager(int argc, char *argv[])
 #ifdef CONFIG_USE_BP
 		case BINMGR_SETBP:
 			binary_manager_update_bootparam(request_msg.requester_pid, request_msg.data.type);
+			break;
+		case BINMGR_SWAPBP:
+			binary_manager_swap_bootparam(request_msg.requester_pid);
 			break;
 #endif
 		case BINMGR_UPDATE:
