@@ -87,6 +87,7 @@ void pm_idle(void)
 		return;
 	}
 	flags = enter_critical_section();
+	sched_lock();
 	now = clock_systimer();
 	/* We need to check and change PM state transition only if one tick time has been passed,
 	 * because state transition only happens when CPU receive TICK INTERRUPT. So checking pm state
@@ -190,6 +191,7 @@ EXIT:
 		gated_cpu_count--;
 	}
 #endif
+	sched_unlock();
 	leave_critical_section(flags);
 }
 
