@@ -52,6 +52,7 @@
 #include "up_internal.h"
 #include "gic.h"
 #include "sched/sched.h"
+#include "smp.h"
 
 #ifdef CONFIG_SMP
 
@@ -329,6 +330,16 @@ int up_cpu_pause(int cpu)
 
 	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
 		return OK;
+	}
+
+	/* If the pause target cpu is in CPU_HOTPLUG, g_cpu_paused spi_lock is
+	 * never released. */
+	if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+		extern bool abort_mode;
+		if (abort_mode) {
+			return ERROR;
+		}
+		PANIC();
 	}
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
