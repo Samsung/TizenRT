@@ -484,21 +484,17 @@ static int _netlib_getipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 	int ret = ERROR;
 
 	if (ifname && addr) {
-		int sockfd = socket(PF_INET, NETLIB_SOCK_IOCTL, 0);
-		if (sockfd >= 0) {
-			struct ifreq req;
-			if (strlen(ifname) >= IFNAMSIZ) {
-				return ret;
-			}
-			strncpy(req.ifr_name, ifname, IFNAMSIZ);
-			req.ifr_name[IFNAMSIZ - 1] = '\0';
-			ret = netdev_ifrioctl(NULL, 1793, &req);
-			if (!ret) {
-				FAR struct sockaddr_in *req_addr;
-				req_addr = (FAR struct sockaddr_in *)&req.ifr_addr;
-				memcpy(addr, &req_addr->sin_addr, sizeof(struct in_addr));
-			}
-			close(sockfd);
+		struct ifreq req;
+		if (strlen(ifname) >= IFNAMSIZ) {
+			return ret;
+		}
+		strncpy(req.ifr_name, ifname, IFNAMSIZ);
+		req.ifr_name[IFNAMSIZ - 1] = '\0';
+		ret = netdev_ifrioctl(NULL, 1793, &req);
+		if (!ret) {
+			FAR struct sockaddr_in *req_addr;
+			req_addr = (FAR struct sockaddr_in *)&req.ifr_addr;
+			memcpy(addr, &req_addr->sin_addr, sizeof(struct in_addr));
 		}
 	}
 
