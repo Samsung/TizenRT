@@ -89,7 +89,8 @@ static int silent_reboot_ioctl(FAR struct file *filep, int cmd, unsigned long ar
 		ret = silent_reboot_delay((int)arg);
 		break;
 	case SILENTRBIOC_CHECKMODE:
-		ret = silent_reboot_is_silent_mode((bool *)arg);
+		*(bool *)arg = silent_reboot_is_silent_mode();
+		ret = OK;
 		break;
 	case SILENTRBIOC_GETSTATUS:
 		ret = silent_reboot_get_status((silent_reboot_status_t *)arg);

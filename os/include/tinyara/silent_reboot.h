@@ -42,7 +42,7 @@ int silent_reboot_lock(void);
 int silent_reboot_unlock(void);
 int silent_reboot_delay(int timeout);
 int silent_reboot_force_perform_after_timeout(int timeout);
-int silent_reboot_is_silent_mode(bool *is_silent_mode);
+bool silent_reboot_is_silent_mode(void);
 int silent_reboot_get_status(silent_reboot_status_t *status);
 void silent_reboot_initialize(void);
 #else
@@ -50,7 +50,7 @@ void silent_reboot_initialize(void);
 #define silent_reboot_unlock() (0)
 #define silent_reboot_delay(timeout) (0)
 #define silent_reboot_force_perform_after_timeout(timeout) (0)
-#define silent_reboot_is_silent_mode(is_silent_mode) (0)
+#define silent_reboot_is_silent_mode() (false)
 #define silent_reboot_get_status(status) (0)
 #define silent_reboot_initialize()
 #endif
