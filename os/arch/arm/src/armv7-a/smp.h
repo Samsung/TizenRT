@@ -146,6 +146,46 @@ void __cpu3_start(void);
 
 void arm_cpu_boot(int cpu);
 
+/****************************************************************************
+ * Name: up_set_cpu_state
+ *
+ * Description:
+ * This function sets the state of the CPU identified by CoreID to the 
+ * specified NewStatus. The actual implementation of this function will depend 
+ * on the underlying architecture and the specific requirements of the system.
+ *
+ * Input Parameters:
+ *   CoreID - The CPU index.  This is the same value that would be obtained by
+ *      calling up_cpu_index();
+ *   NewStatus - The new state to set for the specified CPU. The actual meaning 
+ *      of this value depends on how cpu_state_t is defined in the syste
+ *
+ * Returned Value:
+ *   Does not return.
+ *
+ ****************************************************************************/
+
+void up_set_cpu_state(uint32_t CoreID, cpu_state_t NewStatus);
+
+/****************************************************************************
+ * Name: up_get_cpu_state
+ *
+ * Description:
+ * This function returns the state of the CPU identified by CoreID 
+ *
+ * Input Parameters:
+ *   CoreID - The CPU index.  This is the same value that would be obtained by
+ *      calling up_cpu_index();
+ *
+ * Returned Value:
+ *	CPU_RUNNING -  CPU is in task scheduer or boot from reset
+ *	CPU_HOTPLUG -  CPU is offline
+ *	CPU_WAKE_FROM_SLEEP - CPU just wake from sleep but not in task scheduler
+ *
+ ****************************************************************************/
+
+cpu_state_t up_get_cpu_state(uint32_t CoreID);
+
 #endif							/* __ASSEMBLY__ */
 #endif							/* CONFIG_SMP */
 #endif							/* __ARCH_ARM_SRC_ARMV7_A_SMP_H */
