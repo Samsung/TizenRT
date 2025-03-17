@@ -303,7 +303,7 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #endif
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
-
+	int cnt = 5000;
 	if(msg->type == MIPI_DSI_END_OF_TRANSMISSION){
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
 #ifdef CONFIG_PM
@@ -330,6 +330,13 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	while(send_cmd_done != 1) {
 		DelayMs(1);
+		cnt--;
+		if (cnt == 0) {
+#ifdef CONFIG_PM
+			bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
+			return FAIL;
+		}
 	}
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
