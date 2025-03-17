@@ -74,6 +74,8 @@ void i2c_init(i2c_t *obj, uint32_t sda, uint32_t scl);
   * @retval none
   */
 void i2c_init(i2c_t *obj, PinName sda, PinName scl);
+
+uint32_t i2c_index_get(PinName sda);
 ///@}
 #endif //end of "#if defined(CONFIG_PLATFORM_8735B) && (CONFIG_PLATFORM_8735B == 1)"
 
