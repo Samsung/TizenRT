@@ -351,11 +351,9 @@ int silent_reboot_force_perform_after_timeout(int timeout)
  *   Check whether silent mode or not.
  *
  ****************************************************************************/
-int silent_reboot_is_silent_mode(bool *is_silent_mode)
+bool silent_reboot_is_silent_mode(void)
 {
-	*is_silent_mode = g_is_silent_mode;
-
-	return OK;
+	return g_is_silent_mode;
 }
 
 /****************************************************************************
