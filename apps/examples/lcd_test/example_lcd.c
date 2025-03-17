@@ -56,6 +56,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 
 #define LCD_DEV_PATH "/dev/lcd%d"
@@ -423,6 +425,21 @@ static void test_fps(void)
 	}
 }
 
+bool is_valid_power(char *power)
+{
+	int power_val_size = strlen(power);
+
+	if (power_val_size < 1 || power_val_size > 3) {		/* Length of Power val should be 1, 2, or 3 */
+		return false;
+	}
+	for (int i = 0; i < power_val_size; i++) {
+		if (!isdigit(power[i])) {	/* If not a digit */
+			return false;
+		}
+	}
+	return true;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -441,6 +458,21 @@ int lcd_test_main(int argc, char *argv[])
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return ERROR;	
 	}
+
+	/* LCD Power test */
+	if (argc >= 2 && !strncmp(argv[1], "power", 5)) {
+		if (argc > 2 && is_valid_power(argv[2])) {
+			ioctl(fd, LCDDEVIO_SETPOWER, atoi(argv[2]));
+		} else {
+			printf("ERROR: Value of power should be int in range [0, 100]\n");
+			printf("Usage: lcd_test power <value>\n");
+			printf("0 --> LCD Power OFF\n");
+			printf("100 --> LCD Power ON\n");
+		}
+		close(fd);
+		return OK;
+	}
+
 	while (count < 5) {
 		test_put_area_pattern();
 		test_quad();
