@@ -46,7 +46,7 @@
 #endif
 
 static u32 vo_freq;
-static u32 send_cmd_done = 0;
+static volatile u8 send_cmd_done = 0;
 
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
