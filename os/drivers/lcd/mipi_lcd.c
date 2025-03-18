@@ -48,6 +48,10 @@ enum lcd_mode_e {
 
 typedef enum lcd_mode_e lcd_mode_t;
 
+#if !defined(CONFIG_LCD_SEND_CMD_RETRY_COUNT)
+#define CONFIG_LCD_SEND_CMD_RETRY_COUNT 1
+#endif
+
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
 static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
@@ -125,6 +129,17 @@ struct mipi_lcd_dev_s {
 
 static struct mipi_lcd_dev_s g_lcdcdev;
 
+static int send_cmd_retry(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
+{
+	int transfer_status = ERROR;
+	int max_cmd_retry_count = CONFIG_LCD_SEND_CMD_RETRY_COUNT;
+	while (max_cmd_retry_count && transfer_status != OK) {
+		transfer_status = mipi_dsi_transfer(priv->dsi_dev, msg);
+		max_cmd_retry_count--;
+	}
+	return transfer_status;
+}
+
 static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 {
 	int transfer_status = OK;
@@ -145,10 +160,18 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	msg.flags = 0;
 	priv->config->mipi_mode_switch(CMD_MODE);
 	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
-	priv->config->mipi_mode_switch(VIDEO_MODE);
 	if (transfer_status != OK) {
-		lcddbg("Command %x not sent \n", cmd);
+		/* Retry command send */
+		if (CONFIG_LCD_SEND_CMD_RETRY_COUNT > 0) {
+			transfer_status = send_cmd_retry(priv, &msg);
+			if (transfer_status != OK) {
+				lcddbg("Command %x not sent after retry\n", cmd);
+			}
+		} else {
+			lcddbg("Command %x not sent\n", cmd);
+		}
 	}
+	priv->config->mipi_mode_switch(VIDEO_MODE);
 	return transfer_status;
 }
 
@@ -185,8 +208,15 @@ static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table
 			msg.flags = 0;
 			transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
 			if (transfer_status != OK) {
-				lcddbg("Command %x not sent \n", cmd);
-				return transfer_status;
+				if (CONFIG_LCD_SEND_CMD_RETRY_COUNT > 0) {
+					transfer_status = send_cmd_retry(priv, &msg);
+					if (transfer_status != OK) {
+						lcddbg("Command %x not sent after retry\n", cmd);
+						return transfer_status;
+					}
+				} else {
+					lcddbg("Command %x not sent\n", cmd);
+				}
 			}
 		}
 		send_cmd_idx_s++;
