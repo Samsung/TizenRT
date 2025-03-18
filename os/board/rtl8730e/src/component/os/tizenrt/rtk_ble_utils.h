@@ -23,7 +23,7 @@
 #ifdef CONFIG_AMEBALITE_BLE_SCATTERNET
 extern trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server);
 extern trble_result_e rtw_ble_combo_deinit(void);
-extern trble_result_e rtw_ble_combo_add_profile(trble_server_init_config* init_server);
+extern trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server);
 #elif defined(CONFIG_AMEBALITE_BLE_CENTRAL)
 extern trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm);
 extern trble_result_e rtw_ble_client_deinit(void);
