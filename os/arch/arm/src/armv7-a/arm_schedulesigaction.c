@@ -266,13 +266,13 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 
 			else {
 				/* If we signaling a task running on the other CPU, we have
-				 * to PAUSE the other CPUs.
+				 * to PAUSE the other CPU.
 				 */
 
 				if (cpu != me) {
-					/* Pause the other CPUs */
+					/* Pause the CPU */
 
-					up_cpu_pause_all();
+					up_cpu_pause(cpu);
 
 					/* Now tcb on the other CPU can be accessed safely */
 
@@ -361,10 +361,10 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 				 * because this CPU already took a critical section
 				 */
 
-				/* RESUME the other CPUs if they were PAUSED */
+				/* RESUME the other CPU if it was PAUSED */
 
 				if (cpu != me) {
-					up_cpu_resume_all();
+					up_cpu_resume(cpu);
 				}
 			}
 		}
