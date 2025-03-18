@@ -392,7 +392,8 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	stacksize = (uint32_t)fault_tcb->adj_stack_size;
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 #ifdef CONFIG_SMP
-	istackbase = (uint32_t)arm_intstack_alloc(),
+	/* Initialize istackbase based on the interrupt stack size and proper alignment value (~7) */
+	istackbase = ((uint32_t)arm_intstack_alloc() + (CONFIG_ARCH_INTERRUPTSTACK & ~7));
 #else
 	istackbase = (uint32_t)&g_intstackbase,
 #endif
@@ -520,10 +521,23 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 
 static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
 {
+	int cpu = up_cpu_index();
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Assertion details\n");
 	lldbg_noarg("===========================================================\n");
-	lldbg("Assertion failed CPU%d at file: %s line %d task: %s pid: %d\n", up_cpu_index(), filename, lineno, LOG_TASK_NAME, fault_tcb->pid);
+	lldbg_noarg("Assertion failed CPU%d at file: %s line %d", cpu, filename, lineno);
+
+	/* Check if the crash is in irq or task context and accordingly
+	 * print either the irq number or task name, pid.
+	 * If in irq context, then g_irq_num[cpu] holds the irq numner. 
+	 * Else, g_irq_num[cpu] is -1. 
+	 */
+	if (g_irq_num[cpu] >= 0) {
+		lldbg_noarg(" irq: %d\n", g_irq_num[cpu]);
+	} else {
+		lldbg_noarg(" task: %s pid: %d\n", LOG_TASK_NAME, fault_tcb->pid);
+	}
+	
 	/* Print the extra arguments (if any) from ASSERT_INFO macro */
 	if (assert_info_str[0]) {
 		lldbg("%s\n", assert_info_str);
