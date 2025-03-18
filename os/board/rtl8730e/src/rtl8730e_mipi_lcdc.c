@@ -157,7 +157,7 @@ static void rtl8730e_mipi_mode_switch(mipi_mode_t mode)
 	if (mode == CMD_MODE) {
 		mipidsi_mode_switch(false);
 		MIPI_DSI_INT_Config(MIPI, DISABLE, ENABLE, FALSE);
-		DelayMs(20);
+		DelayMs(140);
 	} else {
 		MIPI_DSI_INT_Config(MIPI, DISABLE, DISABLE, FALSE);
 		mipidsi_mode_switch(true);

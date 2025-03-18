@@ -177,6 +177,15 @@ config LCD_LOGO_52_340
 endchoice
 endif
 
+if LCD_ST7701 || LCD_ST7701SN || CONFIG_LCD_ST7785
+config LCD_SEND_CMD_RETRY_COUNT
+	int "LCD send cmd retry count"
+	default 3
+	---help---
+		If LCD send command gets fail, this config will retry send command.
+
+endif
+
 if LCD_ST7789
 config LCD_ST7789_BPP
 	int "Bit Per Pixel (12 or 16)"
