@@ -133,12 +133,28 @@ uint16_t read_mapping_table(uint16_t logical_addr);
 
 /* Flash Status Bit */
 #define FLASH_STATUS_BITS CONFIG_FLASH_STATUS_BITS
+uint32_t backup_state = 0;
 
 static void ftl_setstatusbits(uint32_t NewState)
 {
-	FLASH_Write_Lock();
-	FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Set/Clear Write protection */
-	FLASH_Write_Unlock();
+	flash_t flash;
+
+	if (!NewState) {	/* If to disable */
+		backup_state = flash_get_status(&flash);	/* Read State */
+		backup_state = backup_state & 0xFF;		/* Only compare status bits */
+		if (FLASH_STATUS_BITS == (backup_state & FLASH_STATUS_BITS)) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Clear */
+			FLASH_Write_Unlock();
+		}
+	} else {
+		if (FLASH_STATUS_BITS == (backup_state & FLASH_STATUS_BITS)) {	/* State is enable */
+			FLASH_Write_Lock();
+			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState); /* Set State */
+			FLASH_Write_Unlock();
+		}
+		backup_state = 0;	/* Clear backup state */
+	}
 }
 
 uint8_t ftl_flash_read(uint32_t start_addr, uint32_t len, uint32_t *data)
