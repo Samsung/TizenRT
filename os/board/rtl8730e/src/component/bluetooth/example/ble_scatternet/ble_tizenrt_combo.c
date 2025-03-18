@@ -45,7 +45,6 @@ extern int attr_counter;
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
 
 static void *bt_service_add_task_hdl = NULL;
-trble_server_init_config backup_init_server;
 
 trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server)
 { 
@@ -134,7 +133,7 @@ trble_result_e rtw_ble_combo_deinit(void)
     return TRBLE_SUCCESS; 
 }
 
-trble_result_e rtw_ble_combo_add_profile(trble_server_init_config* init_server)
+trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server)
 {
 	uint16_t gatt_char_num = 0;
 
