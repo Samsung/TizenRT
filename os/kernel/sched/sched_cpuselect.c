@@ -63,11 +63,11 @@
 
 int sched_select_cpu(cpu_set_t affinity)
 {
-  uint8_t minprio;
+  uint16_t minprio;
   int cpu;
   int i;
 
-  minprio = SCHED_PRIORITY_MAX;
+  minprio = SCHED_PRIORITY_MAX + 1;
   cpu     = IMPOSSIBLE_CPU;
 
   for (i = 0; i < CONFIG_SMP_NCPUS; i++)
