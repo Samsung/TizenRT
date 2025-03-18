@@ -81,7 +81,7 @@ static trble_server_init_config g_server_null_config = {
 	NULL,
 	true,
 	gatt_null_profile,
-	sizeof(gatt_null_profile) / sizeof(trble_gatt_t)
+	0,
 };
 
 trble_server_init_config *bledrv_server_get_null_config(void)

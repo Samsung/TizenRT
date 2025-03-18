@@ -357,10 +357,10 @@ trble_result_e ble_drv_operation_write_no_response(trble_operation_handle *handl
 }
 
 /*** Peripheral(Server) ***/
-trble_result_e ble_drv_set_server_config(uint16_t *server_config)
+trble_result_e ble_drv_set_server_config(trble_server_init_config *server_config)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_SERVER_CONFIG}, sizeof(uint16_t *), (void *)server_config, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_SERVER_CONFIG}, sizeof(trble_server_init_config *), (void *)server_config, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
