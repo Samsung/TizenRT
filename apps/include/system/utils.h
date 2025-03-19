@@ -32,7 +32,10 @@ void fs_register_utilcmds(void);
 void net_register_utilcmds(void);
 void net_register_appcmds(void);
 #endif
-
+#ifdef CONFIG_PM_CMDS
+void pm_register_utilcmds(void);
+void pm_register_appcmds(void);
+#endif
 #ifdef CONFIG_ENABLE_STACKMONITOR_CMD
 void stkmon_logging(struct tcb_s *);
 #endif
