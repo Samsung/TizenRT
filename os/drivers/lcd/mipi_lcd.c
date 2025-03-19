@@ -388,7 +388,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		priv->config->power_off();
 	} else {
 		/* The power on must operate only when LCD is OFF */
-		if (priv->power == 0) {
+		if (priv->power == 0 || priv->power == -1) {
 			priv->config->power_on();
 			priv->config->mipi_mode_switch(CMD_MODE);
 			priv->lcdonoff = LCD_OFF;
@@ -526,8 +526,8 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
 	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-	priv->power = CONFIG_LCD_MAXPOWER;
+	priv->config->backlight(0);
+	priv->power = -1;
 	priv->lcdonoff = LCD_ON;
 
 	sem_init(&priv->sem, 0 , 1);
