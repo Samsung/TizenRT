@@ -104,6 +104,12 @@ config LCD_MAXPOWER
 		backlight setting.  Board-specific logic may place restrictions on this
 		value.
 
+config LCD_INTERFACE_MIPI
+	bool
+	default n
+	---help---
+		LCD is connected with MIPI
+
 config LCD_FLUSH_THREAD
 	bool "LCD Frame Flushing"
 	default y
@@ -123,16 +129,19 @@ choice
 
 config LCD_ST7701
 	bool "ST7701 LCD Driver"
+	select LCD_INTERFACE_MIPI
 	---help---
 		Enable LCD Driver, ST7701 with mipi.
 
 config LCD_ST7701SN
 	bool "ST7701SN LCD Driver"
+	select LCD_INTERFACE_MIPI
 	---help---
 		Enable LCD Driver, ST7701SN with mipi.
 
 config LCD_ST7785
 	bool "ST7785 LCD Driver"
+	select LCD_INTERFACE_MIPI
 	---help---
 		Enable LCD Driver, ST7785 with mipi.
 
@@ -177,12 +186,15 @@ config LCD_LOGO_52_340
 endchoice
 endif
 
-if LCD_ST7701 || LCD_ST7701SN || CONFIG_LCD_ST7785
+if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
 	int "LCD send cmd retry count"
 	default 3
 	---help---
 		If LCD send command gets fail, this config will retry send command.
+		MIPI has two modes, command mode and video mode.
+		If send command gets fail in command mode, then this config will retry
+		send command to LCD.
 
 endif
 
