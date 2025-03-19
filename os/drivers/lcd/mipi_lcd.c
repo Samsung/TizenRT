@@ -49,7 +49,7 @@ enum lcd_mode_e {
 typedef enum lcd_mode_e lcd_mode_t;
 
 #if !defined(CONFIG_LCD_SEND_CMD_RETRY_COUNT)
-#define CONFIG_LCD_SEND_CMD_RETRY_COUNT 1
+#define CONFIG_LCD_SEND_CMD_RETRY_COUNT 0
 #endif
 
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
@@ -129,13 +129,20 @@ struct mipi_lcd_dev_s {
 
 static struct mipi_lcd_dev_s g_lcdcdev;
 
-static int send_cmd_retry(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
+static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
 {
 	int transfer_status = ERROR;
 	int max_cmd_retry_count = CONFIG_LCD_SEND_CMD_RETRY_COUNT;
+	transfer_status = mipi_dsi_transfer(priv->dsi_dev, msg);
+
+	/* Retry Case */
 	while (max_cmd_retry_count && transfer_status != OK) {
 		transfer_status = mipi_dsi_transfer(priv->dsi_dev, msg);
 		max_cmd_retry_count--;
+	}
+
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent\n", cmd);
 	}
 	return transfer_status;
 }
@@ -159,18 +166,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	msg.tx_len = payload_len;
 	msg.flags = 0;
 	priv->config->mipi_mode_switch(CMD_MODE);
-	transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
-	if (transfer_status != OK) {
-		/* Retry command send */
-		if (CONFIG_LCD_SEND_CMD_RETRY_COUNT > 0) {
-			transfer_status = send_cmd_retry(priv, &msg);
-			if (transfer_status != OK) {
-				lcddbg("Command %x not sent after retry\n", cmd);
-			}
-		} else {
-			lcddbg("Command %x not sent\n", cmd);
-		}
-	}
+	transfer_status = send_to_mipi_dsi(priv, &msg);
 	priv->config->mipi_mode_switch(VIDEO_MODE);
 	return transfer_status;
 }
@@ -191,7 +187,7 @@ static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table
 			break;
 		case REGFLAG_END_OF_TABLE:
 			msg.type = MIPI_DSI_END_OF_TRANSMISSION;
-			return mipi_dsi_transfer(priv->dsi_dev, &msg);
+			return send_to_mipi_dsi(priv, &msg);
 		default:
 			cmd_addr = table[send_cmd_idx_s].para_list;
 			payload_len = table[send_cmd_idx_s].count;
@@ -206,17 +202,9 @@ static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table
 			msg.tx_buf = cmd_addr;
 			msg.tx_len = payload_len;
 			msg.flags = 0;
-			transfer_status = mipi_dsi_transfer(priv->dsi_dev, &msg);
+			transfer_status = send_to_mipi_dsi(priv, &msg);
 			if (transfer_status != OK) {
-				if (CONFIG_LCD_SEND_CMD_RETRY_COUNT > 0) {
-					transfer_status = send_cmd_retry(priv, &msg);
-					if (transfer_status != OK) {
-						lcddbg("Command %x not sent after retry\n", cmd);
-						return transfer_status;
-					}
-				} else {
-					lcddbg("Command %x not sent\n", cmd);
-				}
+				return transfer_status;
 			}
 		}
 		send_cmd_idx_s++;
