@@ -323,8 +323,10 @@ static int init_main_file(char *path, ssize_t bufsize, file_type_t type)
 		 * completeness and correctness will be verified and recovered
 		 */
 		printf("File: %s already exists, size: %d\n", path, st.st_size);
+		printf("init_main_file: %s already exists, size: %d Blocksize: %d Block number : %d\n", path, st.st_size, st.st_blksize, st.st_blocks);
 		return OK;
 	}
+	// printf("init_main_file: %s not exists, size: %d Blocksize: %d Block number : %d\n", path, st.st_size, st.st_blksize, st.st_blocks);
 
 	ret = create_file(path, bufsize, type);
 	if (ret != OK) {
@@ -344,9 +346,12 @@ static int create_sample_text_file(void)
 	/* Check if the sample text file already exists */
 	if (stat(SAMPLE_TXT_FILE, &st) == OK) {
 		if (st.st_size == (TEST_WRITECOUNT * TEST_LARGE_BUFSIZE)) {
-			printf("Sample text file already exists\n");
+			printf("Create_sample: %s already exists, size: %d Blocksize: %d Block number : %d\n", SAMPLE_TXT_FILE, st.st_size, st.st_blksize, st.st_blocks);
 			return OK;
 		}
+		printf("Create_sample: %s size: %d Blocksize: %d Block number : %d\n", SAMPLE_TXT_FILE, st.st_size, st.st_blksize, st.st_blocks);
+		// printf("Create_sample: %s already exists, size: %d\n", SAMPLE_TXT_FILE, st.st_size);
+
 		ret = unlink(SAMPLE_TXT_FILE);
 		if (ret != OK) {
 			printf("Failed to unlink old sample file %s, ret : %d, errno : %d\n", SAMPLE_TXT_FILE, ret, errno);
@@ -426,6 +431,7 @@ static int verify_file(char *path, int bufsize, int *index, file_type_t type)
 				ret = ERROR;
 				goto error_with_fd;
 			}
+			// printf("Verify file: %s size: %d Blocksize: %d Block number : %d\n", path, st.st_size, st.st_blksize, st.st_blocks);
 			printf("Shrink works properly, filename : %s, target size : %d, current size : %d\n", path, size, st.st_size);
 		} else {
 			printf("Stat error, path : %d, errno : %d\n", path, errno);
@@ -501,6 +507,7 @@ static int recovery_file(char *src, char* backup, char* backup_dir, int bufsize,
 				ret = ERROR;
 				goto error_with_fd1;
 			}
+			// printf("recovery_file: %s size: %d Blocksize: %d Block number : %d\n", src, st.st_size, st.st_blksize, st.st_blocks);
 			printf("extendfile works properly, filename : %s, target size : %d current size : %d\n", src, filesize, st.st_size);
 		} else {
 			printf("Stat error, path : %d errno : %d\n", src, errno);
@@ -583,9 +590,13 @@ int init_test_file(void)
 		printf("stat error... errno : %d\n", errno);
 		return ERROR;
 	}
-	printf("stat block size %ld \n", st.st_blksize);
+	
+	// printf("init_test_file: %s size: %d Blocksize: %d Block number : %d\n", "/lfs", st.st_size, st.st_blksize, st.st_blocks);
+	// printf("stat block size %ld \n", st.st_blksize);
 
 	/* Small test files use buffer size same as stat.st_blksize */
+	// TEST_SMALL_BUFSIZE = st.st_blksize;
+	st.st_blksize = 4096;
 	TEST_SMALL_BUFSIZE = st.st_blksize;
 
 	/* Create the sample text file for testing */
@@ -710,6 +721,8 @@ static int do_test(char *src, char *backup, char *backupdir, int bufsize, file_t
 		printf("Failed to stat file : %s, errno : %d\n", src, errno);
 		return ERROR;
 	}
+	// printf("do_test: %s size: %d Blocksize: %d Block number : %d\n", src, st.st_size, st.st_blksize, st.st_blocks);
+
 
 	printf("Rename original file : %s size : %d to backup file : %s\n", src, st.st_size, backup);
 	ret = rename(src, backup);
