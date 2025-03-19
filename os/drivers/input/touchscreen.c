@@ -52,6 +52,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/input/touchscreen.h>
+#include <tinyara/silent_reboot.h>
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -144,13 +145,6 @@ static int touch_open(FAR struct file *filep)
 		}
 		priv->tp_buf.size = CONFIG_TOUCH_BUFSIZE;
 
-		if (priv->ops && priv->ops->touch_enable) {
-			priv->ops->touch_enable(priv);
-		} else {
-			kmm_free(priv->tp_buf.buffer);
-			touch_semgive(&priv->sem);
-			return -EINVAL;
-		}
 	}
 	priv->crefs++;
 	DEBUGASSERT(priv->crefs > 0);
@@ -174,7 +168,6 @@ static int touch_close(FAR struct file *filep)
 	DEBUGASSERT(priv->crefs > 0);
 	priv->crefs--;
 	if (priv->crefs == 0) {
-		priv->ops->touch_disable(priv);
 #if !defined(CONFIG_DISABLE_POLL)
 		/* Check if this file is registered in a list of waiters for polling.
 		* For example, when task A is blocked by calling poll and task B try to terminate task A,
@@ -500,6 +493,8 @@ void touch_report(struct touchscreen_s *dev, struct touch_sample_s *data)
 
 int touch_register(const char *path, struct touchscreen_s *dev)
 {
+	int ret;
+	bool is_silent_mode;
 	sem_init(&dev->sem, 0, 1);
 	sem_init(&dev->pollsem, 0, 1);
 	sem_init(&dev->waitsem, 0, 0);
@@ -512,7 +507,14 @@ int touch_register(const char *path, struct touchscreen_s *dev)
 	}
 	touch_semgive(&dev->pollsem);
 #endif
-	int ret = register_driver(path, &g_touchdev_fileops, 0666, dev);
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		if (dev->ops && dev->ops->touch_enable) {
+                        dev->ops->touch_enable(dev);
+                }
+	}
+
+	ret = register_driver(path, &g_touchdev_fileops, 0666, dev);
 	if (ret < 0) {
 		kmm_free(dev);
 		sem_destroy(&dev->sem);
