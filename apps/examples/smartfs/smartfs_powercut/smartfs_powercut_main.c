@@ -91,7 +91,7 @@
 #define TEST_LARGE_T_BACKUP_DIR   "/lfs/backup_large_text"
 
 /* 2 buffer sizes for testing */
-#define TEST_LARGE_BUFSIZE      8192
+#define TEST_LARGE_BUFSIZE      262144
 int TEST_SMALL_BUFSIZE;
 
 /* No. of times file is written */
@@ -596,7 +596,7 @@ int init_test_file(void)
 
 	/* Small test files use buffer size same as stat.st_blksize */
 	// TEST_SMALL_BUFSIZE = st.st_blksize;
-	st.st_blksize = 4096;
+	// st.st_blksize = 4096;
 	TEST_SMALL_BUFSIZE = st.st_blksize;
 
 	/* Create the sample text file for testing */
