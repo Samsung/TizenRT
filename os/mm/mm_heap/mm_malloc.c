@@ -209,7 +209,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
-
+		DEBUGASSERT_MM_FREE_NODE(heap, node);
 		REMOVE_NODE_FROM_LIST(node);
 
 		/* Check if we have to split the free node into one of the allocated
