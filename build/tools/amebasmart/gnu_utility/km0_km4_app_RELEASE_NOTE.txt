@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version c58cd8c3d5 2025/03/21-14:20:16 ==
+1. Add condition to check TizenRT status before doing IPC print
+
 == version 2490a58117 2025/02/12-10:36:45 ==
 1. Optimize API for getting wifi tx retry count to resolve cache coherency issue
 
