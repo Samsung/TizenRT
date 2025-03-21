@@ -51,6 +51,7 @@ struct rtl8730e_lcdc_info_s {
 	struct mipi_lcd_config_s lcd_config;
 	pwmout_t pwm_led;
 	uint8_t pwm_level;
+	bool underflow;
 };
 static void rtl8730e_lcd_init(void);
 static void rtl8730e_gpio_reset(void);
@@ -161,9 +162,11 @@ static void rtl8730e_mipi_mode_switch(mipi_mode_t mode)
 	if (mode == CMD_MODE) {
 		mipi_mode_switch_to_video(false);
 		MIPI_DSI_INT_Config(MIPI, DISABLE, ENABLE, FALSE);
+		LCDC_INTConfig(pLCDC, LCDC_BIT_DMA_UN_INTEN, DISABLE);
 		DelayMs(140);
 	} else {
 		MIPI_DSI_INT_Config(MIPI, DISABLE, DISABLE, FALSE);
+		LCDC_INTConfig(pLCDC, LCDC_BIT_DMA_UN_INTEN, ENABLE);
 		mipi_mode_switch_to_video(true);
 	}
 }
@@ -283,6 +286,8 @@ u32 rtl8730e_hv_isr(void *Data)
 			lcddbg("ERROR: LCDC DMA Underflow-----\n");
 			InterruptRegister((IRQ_FUN)rtl8730e_mipidsi_underflowreset, mipi_irq_info.num, (u32)mipi_irq_info.data, mipi_irq_info.priority);
 			InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
+			g_rtl8730e_config_dev_s.underflow = 1;
+			lcddbg("underflow happened, re-register to handle video mode interrupt\n");
 			mipidsi_acpu_reg_clear();
 			mipi_mode_switch_to_video(false);
 			MIPI_DSI_INT_Config(MIPI, ENABLE, ENABLE, ENABLE);
@@ -321,6 +326,7 @@ void rtl8730e_lcdc_initialize(void)
 	LcdcInitValues(config);
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
+	g_rtl8730e_config_dev_s.underflow = 0;
 	mipi_mode_switch_to_video(true);
 
 	if (lcddev_register(dev) < 0) {
