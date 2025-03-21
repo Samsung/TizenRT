@@ -45,7 +45,6 @@ using namespace media::stream;
 #define DEFAULT_FORMAT_TYPE AUDIO_FORMAT_TYPE_S16_LE
 #define DEFAULT_CHANNEL_NUM 1 //mono
 #define DEFAULT_VOLUME 7
-#define PLAYER_SYNC_API_CALL 1
 //#define PLAYBACK_REPEAT 1
 
 //***************************************************************************
@@ -149,7 +148,6 @@ void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error
 		res = mediaPlayer.start();
 		if (res != PLAYER_OK) {
 			printf("player start failed res : %d\n", res);
-#ifdef PLAYER_SYNC_API_CALL
 			handleError((player_error_t)res);
 		} else {
 			printf("Playback started player : %x\n", &mp);
@@ -157,7 +155,6 @@ void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error
 			mStopped = false;
 			mIsPlaying = true;
 		}
-#endif
 	} else {
 		mediaPlayer.unprepare();
 	}
@@ -177,14 +174,12 @@ void SoundPlayer::onFocusChange(int focusChange)
 			res = mp.start();
 			if (res != PLAYER_OK) {
 				printf("player start failed res : %d\n", res);
-#ifdef PLAYER_SYNC_API_CALL
 				handleError((player_error_t)res);
 			} else {
 				printf("Playback started player : %x\n", &mp);
 				mPaused = false;
 				mStopped = false;
 				mIsPlaying = true;
-#endif
 			}
 		} else {
 			res = startPlayback();
@@ -195,10 +190,12 @@ void SoundPlayer::onFocusChange(int focusChange)
 		break;
 	case FOCUS_LOSS:
 		mHasFocus = false;
+		if (!mIsPlaying) {
+			return ;
+		}
 		res = mp.stop();
 		if (res != PLAYER_OK) {
 			printf("Player stop failed res : %d\n", res);
-#ifdef PLAYER_SYNC_API_CALL
 			handleError((player_error_t)res);
 		} else {
 			printf("Playback stopped player : %x\n", &mp);
@@ -206,24 +203,22 @@ void SoundPlayer::onFocusChange(int focusChange)
 			mIsPlaying = false;
 			mPaused = false;
 			mp.unprepare();
-#endif
 		}
 		break;
 	case FOCUS_LOSS_TRANSIENT:
 		mHasFocus = false;
-		if (mIsPlaying) {
-			res = mp.pause(); //it will be played again
-			if (res != PLAYER_OK) {
-				printf("Player pause failed res : %d\n", res);
-#ifdef PLAYER_SYNC_API_CALL
-				handleError((player_error_t)res);
-			} else {
-				printf(" Playback paused player : %x\n", &mp);
-				mStopped = false;
-				mPaused = true;
-				mIsPlaying = false;
-#endif
-			}
+		if (!mIsPlaying) {
+			return ;
+		}
+		res = mp.pause(); //it will be played again
+		if (res != PLAYER_OK) {
+			printf("Player pause failed res : %d\n", res);
+			handleError((player_error_t)res);
+		} else {
+			printf(" Playback paused player : %x\n", &mp);
+			mStopped = false;
+			mPaused = true;
+			mIsPlaying = false;
 		}
 		break;
 	default:
@@ -324,7 +319,6 @@ player_result_t SoundPlayer::startPlayback(void)
 	res = mp.start();
 	if (res != PLAYER_OK) {
 		printf("start failed res : %d\n", res);
-#ifdef PLAYER_SYNC_API_CALL
 		handleError((player_error_t)res);
 		return res;
 	} else {
@@ -332,7 +326,6 @@ player_result_t SoundPlayer::startPlayback(void)
 		mPaused = false;
 		mStopped = false;
 		mIsPlaying = true;
-#endif
 	}
 
 	return res;
