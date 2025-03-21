@@ -37,10 +37,12 @@
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
 #include <arch/board/board.h>
+#include <tinyara/spinlock.h>
 
 #include "chip.h"
 #include "PinNames.h"
-
+#include "pwmout_api.h"
+#include <tinyara/lcd/mipi_lcd.h>
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
 #endif
@@ -60,6 +62,14 @@ struct irq {
 	u32 priority;
 };
 
+struct rtl8730e_lcdc_info_s {
+	struct mipi_lcd_config_s lcd_config;
+	pwmout_t pwm_led;
+	uint8_t pwm_level;
+	bool underflow;
+};
+extern struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s;
+extern volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
 /* Helpers */
 static void amebasmart_set_clock(void);
 static void amebasmart_check_freq(struct lcd_data *data);
@@ -304,8 +314,24 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
 	int cnt = 5000;
-	if(msg->type == MIPI_DSI_END_OF_TRANSMISSION){
+	/*When underflow happens, mipi's irq will be registered to rtl8730e_mipidsi_underflowreset callback to handle video mode frame done interrupt.
+	  only one type of interrupt can be enabled at any one time, either cmd mode interrupt or video mode interrupt, so we need to re-register mipi's
+	  irq cmd mode callback here
+	*/
+#ifdef CONFIG_SMP
+	spin_lock(&g_rtl8730e_config_dev_s_underflow);
+#endif
+	if (g_rtl8730e_config_dev_s.underflow) {
+		amebasmart_register_interrupt();
+		MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
+		g_rtl8730e_config_dev_s.underflow = 0;
+		mipidbg("underflow happened, re-register mipi irq to handle cmd mode interrupt\n");
+	}
+	if (msg->type == MIPI_DSI_END_OF_TRANSMISSION) {
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
+#ifdef CONFIG_SMP
+		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -313,6 +339,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	int ret = mipi_dsi_create_packet(&packet, msg);
 	if (ret != OK) {
+#ifdef CONFIG_SMP
+		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -335,9 +364,15 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_PM
 			bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
+#ifdef CONFIG_SMP
+			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 			return FAIL;
 		}
 	}
+#ifdef CONFIG_SMP
+	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
