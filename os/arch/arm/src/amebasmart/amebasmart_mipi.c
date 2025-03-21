@@ -37,6 +37,7 @@
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
 #include <arch/board/board.h>
+#include <tinyara/spinlock.h>
 
 #include "chip.h"
 #include "PinNames.h"
@@ -68,6 +69,7 @@ struct rtl8730e_lcdc_info_s {
 	bool underflow;
 };
 extern struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s;
+extern volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
 /* Helpers */
 static void amebasmart_set_clock(void);
 static void amebasmart_check_freq(struct lcd_data *data);
@@ -316,6 +318,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	  only one type of interrupt can be enabled at any one time, either cmd mode interrupt or video mode interrupt, so we need to re-register mipi's
 	  irq cmd mode callback here
 	*/
+#ifdef CONFIG_SMP
+	spin_lock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 	if (g_rtl8730e_config_dev_s.underflow) {
 		amebasmart_register_interrupt();
 		MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
@@ -324,6 +329,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	if (msg->type == MIPI_DSI_END_OF_TRANSMISSION) {
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
+#ifdef CONFIG_SMP
+		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -331,6 +339,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	int ret = mipi_dsi_create_packet(&packet, msg);
 	if (ret != OK) {
+#ifdef CONFIG_SMP
+		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -353,9 +364,15 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_PM
 			bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
+#ifdef CONFIG_SMP
+			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 			return FAIL;
 		}
 	}
+#ifdef CONFIG_SMP
+	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif

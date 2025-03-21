@@ -46,7 +46,7 @@
 #define GPIO_PIN_BACKLIGHT
 #define MIPI_GPIO_RESET_PIN 	PA_14
 #endif
-
+#include <tinyara/spinlock.h>
 struct rtl8730e_lcdc_info_s {
 	struct mipi_lcd_config_s lcd_config;
 	pwmout_t pwm_led;
@@ -102,6 +102,7 @@ struct irq lcdc_irq_info = {
 };
 
 extern struct irq mipi_irq_info;
+volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
 static void LcdcInitValues(struct lcd_data config)
 {
 	LCDC_StructInit(&lcdc_init_struct);
@@ -286,7 +287,13 @@ u32 rtl8730e_hv_isr(void *Data)
 			lcddbg("ERROR: LCDC DMA Underflow-----\n");
 			InterruptRegister((IRQ_FUN)rtl8730e_mipidsi_underflowreset, mipi_irq_info.num, (u32)mipi_irq_info.data, mipi_irq_info.priority);
 			InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
+#ifdef CONFIG_SMP
+			spin_lock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 			g_rtl8730e_config_dev_s.underflow = 1;
+#ifdef CONFIG_SMP
+			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
 			lcddbg("underflow happened, re-register to handle video mode interrupt\n");
 			mipidsi_acpu_reg_clear();
 			mipi_mode_switch_to_video(false);
