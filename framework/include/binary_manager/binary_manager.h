@@ -32,6 +32,11 @@
  * Included Files
  ***************************************************************************/
 #include <tinyara/binary_manager.h>
+#include <tinyara/config.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -69,6 +74,17 @@ binmgr_result_type_e binary_manager_get_update_info(char *binary_name, binary_up
  * @since TizenRT v3.0
  */
 binmgr_result_type_e binary_manager_get_update_info_all(binary_update_info_list_t *binary_info_list);
+
+/**
+ * @brief Get the all binaries information in inactive partition
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It requests the binary manager to get the information of all binaries in inactive partition.
+ * @param[out] binary_info_list The address value to receive the binary information list
+ * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) On success. On failure, negative value is returned.
+ * @since TizenRT v3.0
+ */
+binmgr_result_type_e binary_manager_get_inactive_info_all(binary_update_info_list_t *binary_info_list);
 #endif
 
 /**
@@ -149,6 +165,19 @@ binmgr_result_type_e binary_manager_get_state(char *binary_name, int *state);
  * @since TizenRT v3.1 PRE
  */
 binmgr_result_type_e binary_manager_set_bootparam(uint8_t type, binary_setbp_result_t *update_result);
+
+/**
+ * @brief Swap partition to inactive partition
+ * @details @b #include <binary_manager/binary_manager.h>\n
+ *  It sends a message the binary manager to update boot paramer to swap opposite partition.
+ * @return A defined value of binmgr_result_type_e in <tinyara/binary_manager.h>
+ *         0 (BINMGR_OK) on success. On failure, negative value is returned.
+ * @since TizenRT v5.0
+ */
+binmgr_result_type_e binary_manager_swap_partition(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 /**
