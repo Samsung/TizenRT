@@ -326,7 +326,6 @@ int silent_reboot_force_perform_after_timeout(int timeout)
 {
 	int ret;
 	int tick_remain;
-	WDOG_ID wdog;
 
 	tick_remain = wd_gettime(g_silent_wdog);
 	if (SEC2TICK(timeout) > tick_remain) {
