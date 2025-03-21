@@ -165,9 +165,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	msg.tx_buf = cmd_addr;
 	msg.tx_len = payload_len;
 	msg.flags = 0;
-	priv->config->mipi_mode_switch(CMD_MODE);
 	transfer_status = send_to_mipi_dsi(priv, &msg);
-	priv->config->mipi_mode_switch(VIDEO_MODE);
 	return transfer_status;
 }
 
@@ -382,6 +380,8 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	}
 	if (power == 0) {
 		priv->config->backlight(power);
+		priv->config->mipi_mode_switch(CMD_MODE);
+		priv->lcdonoff = LCD_OFF;
 		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
 		send_cmd(priv, display_off_cmd);
 		/* The power off must operate only when LCD is ON */
@@ -390,8 +390,6 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
 			priv->config->power_on();
-			priv->config->mipi_mode_switch(CMD_MODE);
-			priv->lcdonoff = LCD_OFF;
 			/* We need to send init cmd after LCD IC power on */
 			send_init_cmd(priv, lcd_init_cmd_g);
 		}
