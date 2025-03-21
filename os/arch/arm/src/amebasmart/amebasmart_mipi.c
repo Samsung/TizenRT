@@ -270,7 +270,7 @@ static void amebasmart_register_interrupt(void)
 	InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
 }
 
-void mipidsi_mode_switch(bool do_enable){
+void mipi_mode_switch_to_video(bool do_enable){
 	if(do_enable){
 		MIPI_DSI_Mode_Switch(g_dsi_host.MIPIx, ENABLE);
 	}
