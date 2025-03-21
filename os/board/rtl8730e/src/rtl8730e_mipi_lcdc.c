@@ -134,6 +134,10 @@ static void rtl8730e_lcd_init(void)
 static void rtl8730e_lcd_power_off(void)
 {
 	InterruptDis(lcdc_irq_info.num);
+	if (lcdc_nextframe == 1) {
+		lcdc_nextframe = 0;
+		sem_post(&g_next_frame_block);
+	}
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_LOW);
 }
 static void rtl8730e_lcd_power_on(void)
@@ -236,7 +240,6 @@ static void rtl8730e_enable_lcdc(void)
 {
 	LCDC_Cmd(pLCDC, ENABLE);
 	while (!LCDC_CheckLCDCReady(pLCDC)) ;
-	mipidsi_mode_switch(true);
 }
 
 void rtl8730e_mipidsi_underflowreset(void)
@@ -318,6 +321,7 @@ void rtl8730e_lcdc_initialize(void)
 	LcdcInitValues(config);
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
+	mipidsi_mode_switch(true);
 
 	if (lcddev_register(dev) < 0) {
 		lcddbg("ERROR: LCD driver register fail\n");
