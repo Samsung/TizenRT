@@ -130,6 +130,13 @@ config AMEBASMART_SPI1_CS
 endif
 endif
 
+config AMEBASMART_PERIPHERAL_STATIC_OBJECTS
+	bool "Enable Static Allocation of Peripheral objects"
+	default y
+	---help---
+		This option allocates static global variables to store peripheral state (e.g i2s_object) instead of dynamically allocated variables that are freed on PM flow
+	depends on PM
+
 config AMEBASMART_I2C
 	bool "AMEBASMART_I2C"
 	default n

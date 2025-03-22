@@ -241,6 +241,11 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.txenab = 0,
 };
 #endif
+
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+static i2s_t g_i2s_objects[I2S_NUM_MAX];
+#endif
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -1822,7 +1827,13 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 		DEBUGASSERT(priv);
 	}
 
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+	priv->i2s_object = &g_i2s_objects[port];
+	memset(priv->i2s_object, 0, sizeof(i2s_t));
+#else
 	priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
+#endif
+
 	DEBUGASSERT(priv->i2s_object);
 	/* Config values initialization */
 	priv->config = hw_config_s;	/* Get HW configuation */
@@ -1893,8 +1904,13 @@ static void amebasmart_i2s_suspend(uint16_t port)
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
 
 	i2s_disable(priv->i2s_object, 1);
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+	memset(priv->i2s_object, 0, sizeof(i2s_t));
+#else
 	kmm_free(priv->i2s_object);
+#endif
 	priv->i2s_object = NULL;
+	
 	sem_destroy(&priv->exclsem);
 	sem_destroy(&priv->bufsem_tx);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)

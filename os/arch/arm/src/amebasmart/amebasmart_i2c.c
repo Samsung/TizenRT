@@ -203,6 +203,11 @@ struct amebasmart_i2c_priv_s {
 	uint32_t status;			/* End of transfer SR2|SR1 status */
 };
 
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+#define AMEBASMART_I2C_MAX 3
+static i2c_t g_i2c_objects[AMEBASMART_I2C_MAX];
+#endif
+
 /************************************************************************************
  * Private Function Prototypes
  ************************************************************************************/
@@ -923,7 +928,12 @@ static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
 	/* Power-up and configure GPIOs */
 	DEBUGASSERT(priv);
 	DEBUGASSERT(!priv->i2c_object);
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+	priv->i2c_object = &g_i2c_objects[i2c_index_get(priv->config->sda_pin)];
+	memset(priv->i2c_object, 0, sizeof(i2c_t));
+#else
 	priv->i2c_object = (i2c_t *)kmm_malloc(sizeof(i2c_t));
+#endif
 	DEBUGASSERT(priv->i2c_object);
 	i2c_init(priv->i2c_object, priv->config->sda_pin, priv->config->scl_pin);
 
@@ -960,7 +970,11 @@ static int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv)
 	irq_detach(priv->config->irq);
 #endif
 
+#if defined(CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS) && (CONFIG_AMEBASMART_PERIPHERAL_STATIC_OBJECTS == 1)
+	memset(priv->i2c_object, 0, sizeof(i2c_t));
+#else 
 	kmm_free(priv->i2c_object);
+#endif
 	priv->i2c_object = NULL;
 
 	return OK;
