@@ -119,8 +119,17 @@
 
 #define OVER_SAMPLE_RATE (384U)
 
-#define I2S_DMA_PAGE_SIZE 4096 	/* 4 ~ 16384, set to a factor of APB size */
-#define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
+#ifdef CONFIG_AMEBASMART_I2S_TX_DMA_SIZE
+#define I2S_DMA_PAGE_SIZE CONFIG_AMEBASMART_I2S_TX_DMA_SIZE /* 4 ~ 16384, set to a factor of APB size */
+#else
+#define I2S_DMA_PAGE_SIZE 4096 /* 4 ~ 16384, set to a factor of APB size */
+#endif
+
+#ifdef CONFIG_AMEBASMART_I2S_TX_DMA_PAGE
+#define I2S_DMA_PAGE_NUM CONFIG_AMEBASMART_I2S_TX_DMA_PAGE	/* Minimum number is 2 */
+#else
+#define I2S_DMA_PAGE_NUM 4
+#endif
 
 #ifdef CONFIG_PM
 static volatile bool i2s_lock_state = 0;
