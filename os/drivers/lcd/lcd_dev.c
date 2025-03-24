@@ -69,6 +69,7 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/lcd/lcd_dev.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/silent_reboot.h>
 
 #define MAX_NO_PLANES 3
 /****************************************************************************
@@ -291,6 +292,7 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		/* To ensure setpower operation from power saving,
 		 * pm_suspend is calling first. */
 		if (old_power == 0 && new_power > 0) {
+			silent_reboot_lock();
 			(void)pm_suspend(priv->pm_domain);
 		}
 
@@ -302,6 +304,8 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		/* To ensure setpower operation from power saving,
 		 * pm_resume is calling after setpower. */
 		if (old_power > 0 && new_power == 0) {
+			silent_reboot_unlock();
+			silent_reboot_delay(3600);
 			(void)pm_resume(priv->pm_domain);
 		}
 #else
@@ -461,16 +465,20 @@ int lcddev_register(struct lcd_dev_s *dev)
 	lcd_info->pm_domain = pm_domain_register("LCD");
 #endif
 
-	lcd_init_put_image(dev);
 	sem_init(&lcd_info->sem, 0, 1);
-	if (dev->setpower) {
+	bool is_silent_mode;
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		ASSERT(dev->setpower);
 		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
 		if (ret != OK) {
 			goto cleanup;
 		}
 #ifdef CONFIG_PM
-		(void)pm_suspend(lcd_info->pm_domain);
+                (void)pm_suspend(lcd_info->pm_domain);
 #endif
+		silent_reboot_lock();
+		lcd_init_put_image(dev);
 	}
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
