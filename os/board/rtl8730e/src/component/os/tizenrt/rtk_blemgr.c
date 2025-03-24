@@ -98,6 +98,7 @@ trble_result_e trble_netmgr_operation_enable_notification_and_indication(struct 
 trble_result_e trble_netmgr_operation_read(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
 trble_result_e trble_netmgr_operation_write(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
+trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_conn_handle *handle, uint8_t *count);
 
 /*** Peripheral(Server) ***/
 trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server);
@@ -167,6 +168,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_operation_read,
 	trble_netmgr_operation_write,
 	trble_netmgr_operation_write_no_response,
+	trble_netmgr_write_read_queue_count,
 
 	// Server
 	trble_netmgr_set_server_config,
@@ -453,6 +455,10 @@ trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trbl
 	return rtw_ble_client_operation_write_no_response(handle, in_data);
 }
 
+trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_conn_handle *handle, uint8_t *count)
+{
+	return rtw_ble_client_write_read_queue_cnt(handle, count);
+}
 
 /*** Peripheral(Server) ***/
 trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server)
