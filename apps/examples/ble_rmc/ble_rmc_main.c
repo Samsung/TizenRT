@@ -1003,6 +1003,23 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
+	if (strncmp(argv[1], "wrqueue", 8) == 0) {
+
+		// if (argc > 3) {
+		// 	bt_ctx->conn_handle = atoi(argv[2]);
+		// 	attr_handle = atoi(argv[3]);
+		// }
+		uint8_t count;
+
+
+		ret = ble_client_get_write_read_pending_count(bt_ctx, &count);
+		printf("[######## %s : %d] bt_ctx->conn_handle %d count %d\n", __FUNCTION__, __LINE__, bt_ctx->conn_handle, count);
+		if (ret != BLE_MANAGER_SUCCESS) {
+			RMC_LOG(RMC_CLIENT_TAG, "Fail to write\n", ret);
+		} else {
+			RMC_LOG(RMC_CLIENT_TAG, "Success to write.\n");
+		}
+	}
 ble_rmc_done:
 	RMC_LOG(RMC_CLIENT_TAG, "done\n");
 	return 0;
