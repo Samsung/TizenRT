@@ -21,9 +21,6 @@ extern trble_client_init_config *client_init_parm;
 extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
 extern rtk_bt_le_conn_ind_t *ble_tizenrt_conn_ind;
-extern void *ble_tizenrt_read_sem;
-extern void *ble_tizenrt_write_sem;
-extern void *ble_tizenrt_write_no_rsp_sem;
 
 extern rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINKS];
 extern rtk_bt_gattc_write_ind_t g_scatternet_write_result;
@@ -209,22 +206,10 @@ void general_client_write_res_hdl(void *data)
 			g_scatternet_write_result.status = write_status;
 			g_scatternet_write_result.conn_handle = write_res->conn_handle;
 			g_scatternet_write_result.type = write_res->type;
-			if(osif_sem_give(ble_tizenrt_write_sem))
-			{
-				dbg("recieve write response \n");
-			} else {
-				dbg("fail to give write semaphore \n");
-			}
-		}else if(RTK_BT_GATT_CHAR_WRITE_NO_RSP == write_res->type){
+		} else if(RTK_BT_GATT_CHAR_WRITE_NO_RSP == write_res->type) {
 			g_scatternet_write_no_rsp_result.status = write_status;
 			g_scatternet_write_no_rsp_result.conn_handle = write_res->conn_handle;
 			g_scatternet_write_no_rsp_result.type = write_res->type;
-			if(osif_sem_give(ble_tizenrt_write_no_rsp_sem))
-			{
-				dbg("recieve write response \n");
-			} else {
-				dbg("fail to give write semaphore \n");
-			}
 		}
 	} else {
 		return;
