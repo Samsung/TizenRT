@@ -1236,9 +1236,8 @@ static int littlefs_stat(FAR struct inode *mountpt, FAR const char *relpath,
         }
 
       buf->st_size    = info.size;
-      buf->st_blksize = fs->cfg.block_size;
-      buf->st_blocks  = (buf->st_size + buf->st_blksize - 1) /
-                        buf->st_blksize;
+      buf->st_blksize = fs->cfg.prog_size;
+      buf->st_blocks = (fs->cfg.block_size / fs->cfg.prog_size) * fs->cfg.block_count;
     }
 
   return ret;

@@ -463,6 +463,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 		return;
 	}
 #ifdef CONFIG_AUTOMOUNT_USERFS
+#ifdef CONFIG_FS_SMARTFS
 	/* Initialize and mount user partition (if we have) */
 	if (partinfo->smartfs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
@@ -490,17 +491,18 @@ void automount_fs_partition(partition_info_t *partinfo)
 	}
 #endif
 
-#ifdef CONFIG_AUTOMOUNT_LITTLEFS
+#ifdef CONFIG_FS_LITTLEFS
 	if (partinfo->romfs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
-		ret = mount(fs_devname, "/lfs", "littlefs", 0, "autoformat");
+		ret = mount(fs_devname, "/mnt", "littlefs", 0, "autoformat");
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		} else {
-			printf("%s is mounted successfully @ %s \n", fs_devname, "/lfs");
+			printf("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
 		}
 	}
 #endif
+#endif	/* End of CONFIG_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_AUTOMOUNT_ROMFS
 	if (partinfo->romfs_partno != -1) {

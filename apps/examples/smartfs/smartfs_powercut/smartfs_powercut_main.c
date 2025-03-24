@@ -70,28 +70,28 @@
 
 /* File and Directory paths for testing */
 /* Proper text files */
-#define TEST_SMALL_T            "/lfs/small_text.txt"
-#define TEST_SMALL_T_BACKUP     "/lfs/backup_small_text/small_text.txt"
-#define TEST_LARGE_T            "/lfs/large_text.txt"
-#define TEST_LARGE_T_BACKUP     "/lfs/backup_large_text/large_text.txt"
+#define TEST_SMALL_T            "/mnt/small_text.txt"
+#define TEST_SMALL_T_BACKUP     "/mnt/backup_small_text/small_text.txt"
+#define TEST_LARGE_T            "/mnt/large_text.txt"
+#define TEST_LARGE_T_BACKUP     "/mnt/backup_large_text/large_text.txt"
 
 /* Random generated character files */
-#define TEST_SMALL_R            "/lfs/small_random"
-#define TEST_SMALL_R_BACKUP     "/lfs/backup_small_random/small_random"
-#define TEST_LARGE_R            "/lfs/large_random"
-#define TEST_LARGE_R_BACKUP     "/lfs/backup_large_random/large_random"
+#define TEST_SMALL_R            "/mnt/small_random"
+#define TEST_SMALL_R_BACKUP     "/mnt/backup_small_random/small_random"
+#define TEST_LARGE_R            "/mnt/large_random"
+#define TEST_LARGE_R_BACKUP     "/mnt/backup_large_random/large_random"
 
 /* Sample Text file for testing, to be flashed to the board by the user */
-#define SAMPLE_TXT_FILE         "/lfs/sample_file.txt"
+#define SAMPLE_TXT_FILE         "/mnt/sample_file.txt"
 
 /* Backup directoires for test files */
-#define TEST_SMALL_R_BACKUP_DIR   "/lfs/backup_small_random"
-#define TEST_LARGE_R_BACKUP_DIR   "/lfs/backup_large_random"
-#define TEST_SMALL_T_BACKUP_DIR   "/lfs/backup_small_text"
-#define TEST_LARGE_T_BACKUP_DIR   "/lfs/backup_large_text"
+#define TEST_SMALL_R_BACKUP_DIR   "/mnt/backup_small_random"
+#define TEST_LARGE_R_BACKUP_DIR   "/mnt/backup_large_random"
+#define TEST_SMALL_T_BACKUP_DIR   "/mnt/backup_small_text"
+#define TEST_LARGE_T_BACKUP_DIR   "/mnt/backup_large_text"
 
 /* 2 buffer sizes for testing */
-#define TEST_LARGE_BUFSIZE      262144
+#define TEST_LARGE_BUFSIZE      8192
 int TEST_SMALL_BUFSIZE;
 
 /* No. of times file is written */
@@ -585,20 +585,15 @@ int init_test_file(void)
 	struct stat st;
 	int ret;
 
-	ret = stat("/lfs", &st);
+	ret = stat("/mnt", &st);
 	if (ret != OK) {
 		printf("stat error... errno : %d\n", errno);
 		return ERROR;
 	}
-	
-	// printf("init_test_file: %s size: %d Blocksize: %d Block number : %d\n", "/lfs", st.st_size, st.st_blksize, st.st_blocks);
-	// printf("stat block size %ld \n", st.st_blksize);
 
 	/* Small test files use buffer size same as stat.st_blksize */
-	// TEST_SMALL_BUFSIZE = st.st_blksize;
-	// st.st_blksize = 4096;
 	TEST_SMALL_BUFSIZE = st.st_blksize;
-
+	printf("TEST_SMALL_BUFSIZE : %d\n", TEST_SMALL_BUFSIZE);
 	/* Create the sample text file for testing */
 	ret = create_sample_text_file();
 	if (ret != OK) {

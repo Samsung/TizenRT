@@ -4928,7 +4928,7 @@ int lfs_format(lfs_t *lfs, const struct lfs_config *cfg) {
     if (err) {
         return err;
     }
-    fvdbg("lfs_format(%p, %p {.context=%p, "
+    fdbg("lfs_format(%p, %p {.context=%p, "
                 ".read=%p, .prog=%p, .erase=%p, .sync=%p, "
                 ".read_size=%"PRIu32", .prog_size=%"PRIu32", "
                 ".block_size=%"PRIu32", .block_count=%"PRIu32", "
@@ -4936,7 +4936,7 @@ int lfs_format(lfs_t *lfs, const struct lfs_config *cfg) {
                 ".lookahead_size=%"PRIu32", .read_buffer=%p, "
                 ".prog_buffer=%p, .lookahead_buffer=%p, "
                 ".name_max=%"PRIu32", .file_max=%"PRIu32", "
-                ".attr_max=%"PRIu32"})",
+                ".attr_max=%"PRIu32"})\n",
             (void*)lfs, (void*)cfg, cfg->context,
             (void*)(uintptr_t)cfg->read, (void*)(uintptr_t)cfg->prog,
             (void*)(uintptr_t)cfg->erase, (void*)(uintptr_t)cfg->sync,
@@ -4958,7 +4958,7 @@ int lfs_mount(lfs_t *lfs, const struct lfs_config *cfg) {
     if (err) {
         return err;
     }
-    fvdbg("lfs_mount(%p, %p {.context=%p, "
+    fdbg("lfs_mount(%p, %p {.context=%p, "
                 ".read=%p, .prog=%p, .erase=%p, .sync=%p, "
                 ".read_size=%"PRIu32", .prog_size=%"PRIu32", "
                 ".block_size=%"PRIu32", .block_count=%"PRIu32", "
@@ -4966,7 +4966,7 @@ int lfs_mount(lfs_t *lfs, const struct lfs_config *cfg) {
                 ".lookahead_size=%"PRIu32", .read_buffer=%p, "
                 ".prog_buffer=%p, .lookahead_buffer=%p, "
                 ".name_max=%"PRIu32", .file_max=%"PRIu32", "
-                ".attr_max=%"PRIu32"})",
+                ".attr_max=%"PRIu32"})\n",
             (void*)lfs, (void*)cfg, cfg->context,
             (void*)(uintptr_t)cfg->read, (void*)(uintptr_t)cfg->prog,
             (void*)(uintptr_t)cfg->erase, (void*)(uintptr_t)cfg->sync,
