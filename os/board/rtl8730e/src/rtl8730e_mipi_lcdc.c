@@ -153,9 +153,6 @@ static void rtl8730e_gpio_reset(void)
 	DelayMs(10);
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_LOW);
 	DelayMs(10);
-	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(120);
-	return;
 }
 
 static void rtl8730e_mipi_mode_switch(mipi_mode_t mode)
@@ -334,7 +331,6 @@ void rtl8730e_lcdc_initialize(void)
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
 	g_rtl8730e_config_dev_s.underflow = 0;
-	mipi_mode_switch_to_video(true);
 
 	if (lcddev_register(dev) < 0) {
 		lcddbg("ERROR: LCD driver register fail\n");

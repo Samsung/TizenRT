@@ -42,8 +42,8 @@
 #endif
 
 enum lcd_mode_e {
-        LCD_ON = 0,
-        LCD_OFF = 1
+	LCD_ON = 0,
+	LCD_OFF = 1
 };
 
 typedef enum lcd_mode_e lcd_mode_t;
@@ -391,7 +391,9 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		if (priv->power == 0) {
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
-			send_init_cmd(priv, lcd_init_cmd_g);
+			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
+				lcddbg("ERROR: LCD Init sequence failed\n");
+			}
 		}
 		priv->config->backlight(power);
 	}
@@ -505,6 +507,9 @@ FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 #endif
 
 	priv->config->lcd_put_area((u8 *)lcd_init_fullscreen_image, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);	// 1, 1 -> Start index of the frame buffer
+	priv->config->mipi_mode_switch(VIDEO_MODE);
+	priv->lcdonoff = LCD_ON;
+
 }
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
@@ -519,14 +524,8 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dev.init = lcd_init;
 	priv->dsi_dev = dsi;
 	priv->config = config;
-	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
-		lcdvdbg("LCD Init sequence completed\n");
-	} else {
-		lcddbg("ERROR: LCD Init sequence failed\n");
-	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-	priv->power = CONFIG_LCD_MAXPOWER;
-	priv->lcdonoff = LCD_ON;
+	priv->power = 0;
+	priv->lcdonoff = LCD_OFF;
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)
