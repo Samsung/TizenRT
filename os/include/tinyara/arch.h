@@ -2530,6 +2530,16 @@ int up_getc(void);
 
 void up_puts(FAR const char *str);
 
+/****************************************************************************
+ * Name: up_flush_console
+ *
+ * Description:
+ *    This function is used to ensure that all characters in the UART buffer
+ *    are transmitted.
+ *
+ ****************************************************************************/
+void up_flush_console(void);
+
 #ifdef CONFIG_WATCHDOG_FOR_IRQ
 /****************************************************************************
  * Name: up_wdog_init

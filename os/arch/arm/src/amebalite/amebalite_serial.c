@@ -748,7 +748,7 @@ static void rtl8720e_log_up_txint(struct uart_dev_s *dev, bool enable)
 	priv->txint_enable = enable;
 
 	if (enable)
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 		//LOGUART_RxCmd(LOGUART_DEV, ENABLE);
 	//else
 		//LOGUART_RxCmd(LOGUART_DEV, DISABLE);
@@ -891,7 +891,7 @@ void rtl8720e_uart_irq(uint32_t id, SerialIrq event)
 	}
 	if (event == TxIrq) {
 		priv->tx_level = TX_FIFO_MAX;
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
 }
