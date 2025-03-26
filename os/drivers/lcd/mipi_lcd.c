@@ -495,8 +495,8 @@ FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 
 #if defined(CONFIG_LCD_LOGO)
 	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
-		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
 		lcd_init_fullscreen_image[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
+		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
 		lcd_data_index += 2;
 		lcd_data_col_count += 1;
 		if (lcd_data_col_count == LOGO_XRES) {
