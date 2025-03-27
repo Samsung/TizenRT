@@ -241,6 +241,9 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.txenab = 0,
 };
 #endif
+
+static u8 g_i2s_inited[I2S_NUM_MAX];
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -1822,7 +1825,14 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 		DEBUGASSERT(priv);
 	}
 
-	priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
+	if (!g_i2s_inited[port]) {
+		priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
+		g_i2s_inited[port] = true;
+	} else {
+		/* memset 0 if not required to allocate */
+		memset(priv->i2s_object, 0, sizeof(i2s_t));
+	}
+
 	DEBUGASSERT(priv->i2s_object);
 	/* Config values initialization */
 	priv->config = hw_config_s;	/* Get HW configuation */
@@ -1893,8 +1903,10 @@ static void amebasmart_i2s_suspend(uint16_t port)
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
 
 	i2s_disable(priv->i2s_object, 1);
-	kmm_free(priv->i2s_object);
-	priv->i2s_object = NULL;
+
+	/* must ensure that the priv->i2s_object do not get used, but do not set it to NULL */
+	memset(priv->i2s_object, 0, sizeof(i2s_t));
+	
 	sem_destroy(&priv->exclsem);
 	sem_destroy(&priv->bufsem_tx);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
