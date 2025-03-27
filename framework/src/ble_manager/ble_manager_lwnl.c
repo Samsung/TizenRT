@@ -356,6 +356,17 @@ trble_result_e ble_drv_operation_write_no_response(trble_operation_handle *handl
 	return res;
 }
 
+trble_result_e ble_drv_get_write_read_pending_cnt(trble_conn_handle *handle, uint8_t *count)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)handle, (void *)count} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 /*** Peripheral(Server) ***/
 trble_result_e ble_drv_set_server_config(trble_server_init_config *server_config)
 {

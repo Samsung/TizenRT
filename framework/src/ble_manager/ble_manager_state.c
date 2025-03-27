@@ -880,6 +880,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_write_no_response(handle, data);
 	} break;
 
+	case BLE_CMD_GET_WRITE_READ_PENDING_CNT: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_client_ctx *ctx = (ble_client_ctx *)param->param[0];
+		uint8_t *count = (uint8_t *)param->param[1];
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_CONNECTED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+		trble_conn_handle handle = ctx->conn_handle;
+		ret = ble_drv_get_write_read_pending_cnt(&handle, count);
+	} break;
+
 	// Server
 	case BLE_CMD_SET_SERVER_CONFIG: {
 		BLE_STATE_CHECK;

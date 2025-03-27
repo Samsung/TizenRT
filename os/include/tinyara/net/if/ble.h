@@ -115,6 +115,7 @@ typedef enum {
 	LWNL_REQ_BLE_OP_READ,
 	LWNL_REQ_BLE_OP_WRITE,
 	LWNL_REQ_BLE_OP_WRITE_NO_RESP,
+	LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT,
 
 	// Server
 	LWNL_REQ_BLE_SET_SERVER_CONFIG,
@@ -394,7 +395,7 @@ typedef trble_result_e (*trble_operation_enable_notification_and_indication)(str
 typedef trble_result_e (*trble_operation_read)(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
 typedef trble_result_e (*trble_operation_write)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
-
+typedef trble_result_e (*trble_get_write_read_queue_cnt)(struct bledev *dev, trble_conn_handle *con_handle, uint8_t *count);
 /*** Peripheral(Server) ***/
 typedef trble_result_e (*trble_set_server_config)(struct bledev *dev, trble_server_init_config *server);
 typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *count);
@@ -469,6 +470,7 @@ struct trble_ops {
 	trble_operation_read op_read;
 	trble_operation_write op_write;
 	trble_operation_write_no_response op_wrtie_no_resp;
+	trble_get_write_read_queue_cnt get_write_read_queue_cnt;
 
 	/* Peripheral(Server) */
 	trble_set_server_config set_server_config;

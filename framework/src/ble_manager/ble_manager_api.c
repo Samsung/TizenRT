@@ -346,6 +346,15 @@ ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_att
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_client_get_write_read_pending_count(ble_client_ctx *ctx, uint8_t *count)
+{
+	blemgr_msg_params param = {2, {(void *)ctx, (void *)count}};
+	blemgr_msg_s msg = {BLE_CMD_GET_WRITE_READ_PENDING_CNT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 /* Server */
 ble_result_e ble_manager_set_server_config(ble_server_init_config *server_config)
 {
