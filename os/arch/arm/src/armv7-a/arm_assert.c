@@ -78,6 +78,7 @@
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#include "binary_manager/binary_manager_internal.h"
 #include <tinyara/binfmt/elf.h>
 #endif
 #include <tinyara/security_level.h>
@@ -496,12 +497,12 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 {
 	if (!IS_SECURE_STATE()) {
 #ifdef CONFIG_APP_BINARY_SEPARATION
-		if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
+		for (int index = 1; index <= CONFIG_NUM_APPS; index++) {
 			lldbg_noarg("===========================================================\n");
-			lldbg_noarg("Checking app heap for corruption\n");
+			lldbg_noarg("Checking app %d heap for corruption \n",index);
 			lldbg_noarg("===========================================================\n");
-			mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap));
-
+			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			mm_check_heap_corruption(app_heap);
 		}
 #endif
 
