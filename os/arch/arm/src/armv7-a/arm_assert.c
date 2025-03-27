@@ -507,10 +507,9 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 			lldbg_noarg("===========================================================\n");
 			lldbg_noarg("Checking app %d heap for corruption \n",index);
 			lldbg_noarg("===========================================================\n");
-			struct mm_heap_s *uheap = (struct mm_heap_s *)(fault_tcb->uheap);
-			lldbg_noarg("mm_holder: %d\n", uheap->mm_holder);
-			mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap));
-
+			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			lldbg_noarg("mm_holder: %d\n", app_heap->mm_holder);
+			mm_check_heap_corruption(app_heap);
 		}
 #endif
 
