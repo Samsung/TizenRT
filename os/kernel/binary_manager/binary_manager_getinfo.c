@@ -325,3 +325,99 @@ int binary_manager_get_inactive_path(int requester_pid, char *bin_name)
 {
 	return binary_manager_get_path(requester_pid, bin_name, true);
 }
+
+/****************************************************************************
+ * Name: binary_manager_get_inactive_info_all
+ *
+ * Description:
+ *	 This function gets info of all registered binaries in inactive(non-running) partition.
+ *
+ ****************************************************************************/
+void binary_manager_get_inactive_info_all(int requester_pid)
+{
+	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	uint32_t bin_count;
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	binmgr_resinfo_t *resinfo;
+#endif
+	int result_idx;
+	char q_name[BIN_PRIVMQ_LEN];
+	binmgr_kinfo_t *kerinfo;
+	binmgr_getinfo_all_response_t response_msg;
+
+	if (requester_pid < 0) {
+		bmdbg("Invalid requester pid %d\n", requester_pid);
+		return;
+	}
+	snprintf(q_name, BIN_PRIVMQ_LEN, "%s%d", BINMGR_RESPONSE_MQ_PREFIX, requester_pid);
+
+	result_idx = 0;
+	memset((void *)&response_msg, 0, sizeof(binmgr_getinfo_all_response_t));
+	response_msg.result = BINMGR_OK;
+
+	/* Get kernel data */
+	kerinfo = binary_manager_get_kdata();
+	strncpy(response_msg.data.bin_info[result_idx].name, "kernel", BIN_NAME_MAX);
+
+	ret = binary_manager_check_kernel_update(false);
+	if (ret > 0) {
+		response_msg.data.bin_info[result_idx].version = ret;
+	} else {
+		response_msg.data.bin_info[result_idx].version = -1;
+		response_msg.result = BINMGR_NOT_FOUND;
+	}
+	if (kerinfo->part_count > 1) {
+		response_msg.data.bin_info[result_idx].available_size = kerinfo->part_info[kerinfo->inuse_idx ^ 1].size;
+	} else {
+		response_msg.data.bin_info[result_idx].available_size = -1;
+	}
+	result_idx++;
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* User binaries data */
+	bin_count = binary_manager_get_ucount();
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
+#else
+	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
+#endif
+		response_msg.data.bin_info[result_idx].available_size = BIN_PARTSIZE(bin_idx, (BIN_USEIDX(bin_idx) ^ 1));
+		strncpy(response_msg.data.bin_info[result_idx].name, BIN_NAME(bin_idx) , BIN_NAME_MAX);
+		ret = binary_manager_check_user_update(bin_idx, false);
+		if (ret > 0) {
+			response_msg.data.bin_info[result_idx].version = ret;
+		} else {
+			response_msg.data.bin_info[result_idx].version = -1;
+			response_msg.result = BINMGR_NOT_FOUND;
+		}
+		result_idx++;
+	}
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	/* Get resource data */
+	resinfo = binary_manager_get_resdata();
+	strncpy(response_msg.data.bin_info[result_idx].name, "resource", BIN_NAME_MAX);
+
+	ret = binary_manager_check_resource_update(false);
+	if (ret > 0) {
+		response_msg.data.bin_info[result_idx].version = ret;
+	} else {
+		response_msg.data.bin_info[result_idx].version = -1;
+		response_msg.result = BINMGR_NOT_FOUND;
+	}
+	if (resinfo->part_count > 1) {
+		response_msg.data.bin_info[result_idx].available_size = resinfo->part_info[resinfo->inuse_idx ^ 1].size;
+	} else {
+		response_msg.data.bin_info[result_idx].available_size = -1;
+	}
+	result_idx++;
+#endif
+	if (response_msg.result == BINMGR_OK) {
+		response_msg.data.bin_count = result_idx;
+	}
+
+	binary_manager_send_response(q_name, &response_msg, sizeof(binmgr_getinfo_all_response_t));
+}

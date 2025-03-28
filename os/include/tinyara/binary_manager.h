@@ -28,6 +28,10 @@
 #include <limits.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_BINARY_MANAGER
 /****************************************************************************
  * Pre-processor Definitions
@@ -125,6 +129,10 @@ enum binmgr_request_msg_type {
 #ifdef CONFIG_BINMGR_RECOVERY
 	BINMGR_FAULT,
 #endif
+#ifdef CONFIG_USE_BP
+	BINMGR_SWAPBP,
+#endif
+	BINMGR_GET_INFO_INACTIVE_ALL,
 };
 
 /* Result values of returned from binary manager. */
@@ -254,6 +262,11 @@ struct binmgr_request_s {
 };
 typedef struct binmgr_request_s binmgr_request_t;
 
+struct binmgr_response_s {
+	binmgr_result_type_e result;
+};
+typedef struct binmgr_response_s binmgr_response_t;
+
 struct binmgr_setbp_response_s {
 	binmgr_result_type_e result;
 	binary_setbp_result_t data;
@@ -300,14 +313,6 @@ void binary_manager_register_respart(int part_num, int part_size, uint32_t part_
 int binary_manager_mount_resource(void);
 void binary_manager_deinit_modules(void);
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
 #ifdef __cplusplus
 }
 #endif

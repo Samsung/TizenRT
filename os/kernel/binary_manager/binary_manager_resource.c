@@ -209,14 +209,16 @@ int binary_manager_unmount_resource(void)
 }
 
 /*************************************************************************************
-* Name: binary_manager_check_resource_update
-*
-* Description:
-*   This function checks that new resource binary exists on inactive partition
-*  and verifies the update is needed by comparing running version with new version.
-*
-*************************************************************************************/
-int binary_manager_check_resource_update(void)
+ * Name: binary_manager_check_resource_update
+ *
+ * Description:
+ *   This function checks that new user binary exists in their own inactive partition.
+ *  If check_updatable is true, validate whole binary by checking CRC
+ *  and it checks version by comparing running version with version of binary in inactive partition.
+ *  Otherwise, it just checks header data of binary.
+ *
+ *******************************************************************************************/
+int binary_manager_check_resource_update(bool check_updatable)
 {
 	int ret;
 	int inactive_partidx;
@@ -227,8 +229,12 @@ int binary_manager_check_resource_update(void)
 
 	/* Verify resource binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inactive_partidx].devnum);
-	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, true);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, check_updatable);
 	if (ret == BINMGR_OK) {
+		if (!check_updatable) {
+			bmvdbg("Found valid resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
+			return header_data.version;
+		}
 #ifdef CONFIG_BINMGR_UPDATE_SAME_VERSION
 		if (resource_info.version <= header_data.version) {
 #else
@@ -236,11 +242,13 @@ int binary_manager_check_resource_update(void)
 #endif
 			/* Need to update bootparam and reboot */
 			bmvdbg("Found new resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
-			return BINMGR_OK;
-		} else {
-			bmdbg("Latest version is running, version %d\n", resource_info.version);
-			return BINMGR_ALREADY_UPDATED;
+			return header_data.version;
 		}
+
+		/* Running version is the latest */
+		bmdbg("Latest version is running, version %d\n", resource_info.version);
+		return BINMGR_ALREADY_UPDATED;
 	}
+	bmdbg("No valid resource binary in inactive partition\n");
 	return ret;
 }
