@@ -107,9 +107,7 @@ enum loading_thread_cmd {
 	LOADCMD_LOAD = 0,
 	LOADCMD_LOAD_ALL = 1,
 	LOADCMD_UPDATE = 2,          /* Reload on update request */
-#ifdef CONFIG_BINMGR_RECOVERY
 	LOADCMD_RELOAD = 3,          /* Reload on recovery request */
-#endif
 	LOADCMD_LOAD_MAX,
 };
 
