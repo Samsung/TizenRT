@@ -185,20 +185,20 @@ int binary_manager_mount_resource(void)
 }
 
 /****************************************************************************
- * Name: binary_manager_unmount_resource
+ * Name: binary_manager_umount_resource
  *
  * Description:
  *	 This function unmounts resourcefs.
  *
  ****************************************************************************/
-int binary_manager_unmount_resource(void)
+int binary_manager_umount_resource(void)
 {
 	int ret;
 
-	/* Unmont current resource */
-	ret = unmount(RESOURCE_MOUNTPT);
+	/* Unmount resourcefs */
+	ret = umount(RESOURCE_MOUNTPT);
 	if (ret != OK) {
-		bmdbg("ERROR: resourcefs unmount failed, errno %d\n", get_errno());
+		bmdbg("ERROR: resourcefs umount failed, errno %d\n", get_errno());
 		return ERROR;
 	}
 
