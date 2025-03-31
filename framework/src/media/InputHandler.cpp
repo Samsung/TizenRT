@@ -20,6 +20,7 @@
 
 #include <debug.h>
 #include <pthread.h>
+#include <limits.h>
 #include <media/MediaUtils.h>
 
 #include "InputHandler.h"
@@ -32,9 +33,9 @@ namespace stream {
 
 InputHandler::InputHandler() :
 	mDecoder(nullptr),
+	mIsLooping(0),
 	mState(BUFFER_STATE_EMPTY),
-	mTotalBytes(0),
-	mIsLooping(false)
+	mTotalBytes(0)
 {
 	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
@@ -101,6 +102,11 @@ bool InputHandler::close()
 	return ret;
 }
 
+int InputHandler::seekTo(off_t offset)
+{
+	return mInputDataSource->seekTo(offset);
+}
+
 ssize_t InputHandler::read(unsigned char *buf, size_t size)
 {
 	size_t rlen = 0;
@@ -108,7 +114,6 @@ ssize_t InputHandler::read(unsigned char *buf, size_t size)
 	if (mBufferReader) {
 		rlen = mBufferReader->read(buf, size);
 	}
-
 	return (ssize_t)rlen;
 }
 
@@ -150,7 +155,7 @@ bool InputHandler::processWorker()
 			}
 		}
 
-		if (readLen > size) {
+		if (readLen > (ssize_t)size) {
 			meddbg("WARNING!! it read more larger than available space!! readLen : %d size : %d\n", readLen, size);
 			readLen = size;
 		}

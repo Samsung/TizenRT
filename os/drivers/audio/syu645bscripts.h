@@ -33,8 +33,8 @@ typedef enum reg_data_type{
 	SYU645B_REG_D_3BYTE = 3,
 	SYU645B_REG_D_4BYTE = 4,
 	SYU645B_REG_D_5BYTE = 5,
-	SYU645B_REG_D_20BYTE = 20,
-	SYU645B_REG_DATA_TYPE_MAX = 20,
+	SYU645B_REG_D_21BYTE = 21,
+	SYU645B_REG_DATA_TYPE_MAX = 21,
 } reg_data_type;
 
 /* TYPEDEFS */
@@ -114,6 +114,11 @@ t_codec_init_script_entry codec_set_master_volume_script[] = {
 	{ 0x07, {0x01,}, 0, SYU645B_REG_D_2BYTE}
 };
 
+t_codec_init_script_entry codec_set_left_right_volume_script[] = {
+	{ 0x08, {0x01,}, 0, SYU645B_REG_D_2BYTE},
+	{ 0x09, {0x01,}, 0, SYU645B_REG_D_2BYTE}
+};
+
 t_codec_init_script_entry codec_set_samprate_32k_script[] = {
 	{ 0x00, {0x10,}, 0, SYU645B_REG_D_2BYTE}
 };
@@ -133,6 +138,14 @@ t_codec_init_script_entry codec_set_samprate_96k_script[] = {
 t_codec_init_script_entry t_codec_dq_preset_0_script[] = {
 	{ 0x1E, {0x01,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x07, {0xFF,}, 0, SYU645B_REG_D_2BYTE},
+};
+t_codec_init_script_entry t_codec_dq_preset_default_script[] = { //default...
+	/* Set only MAX Volume here */
+	{ 0x07, {0xFF,}, 0, SYU645B_REG_D_2BYTE},
+	/* CH1 Volume = -9DB */
+	{ 0x08, {0x9F,}, 0, SYU645B_REG_D_2BYTE},
+	/* CH2 Volume = -9DB */
+	{ 0x09, {0x9F,}, 0, SYU645B_REG_D_2BYTE},
 };
 #endif	/* CONFIG_AUDIO_SYU645B */
 #endif	/* __DRIVERS_AUDIO_SYU645BSCRIPTS_H */

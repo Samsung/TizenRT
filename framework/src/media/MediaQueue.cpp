@@ -48,6 +48,7 @@ void MediaQueue::clearQueue(void)
 {
 	std::unique_lock<std::mutex> lock(mQueueMtx);
    	std::queue<std::function<void()>> empty;
+	empty.push(std::move(std::function<void()>())); //push an empty function so, that pop() in dequeue will not crash if called after clearQueue().
    	std::swap(mQueueData, empty);
 }
 } // namespace media
