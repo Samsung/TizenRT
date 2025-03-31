@@ -100,8 +100,7 @@ struct syu645b_dev_s {
 	FAR struct syu645b_lower_s *lower;	/* Pointer to the board lower functions */
 	FAR struct i2c_dev_s *i2c;		/* I2C driver to use */
 	FAR struct i2s_dev_s *i2s;		/* I2S driver to use */
-	struct sq_queue_s pendq;		/* Queue of pending buffers to be sent */
-	sem_t devsem;				/* Protection for both pendq & dev */
+	sem_t devsem;				/* Protection for both dev */
 
 #ifdef SYU645B_USE_FFLOCK_INT
 	struct work_s work;			/* Interrupt work */

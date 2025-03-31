@@ -23,7 +23,7 @@
 #ifndef CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE
 #define CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE 256
 #endif
-
+#include <memory>
 #include <functional>
 
 #include <media/MediaRecorder.h>

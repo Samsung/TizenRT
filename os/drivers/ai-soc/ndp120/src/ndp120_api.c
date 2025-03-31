@@ -723,7 +723,10 @@ static int configure_audio(struct ndp120_dev_s *dev, unsigned int pdm_in_shift)
 		goto errout_configure_audio;
 	}
 
+	/* don't enable AUD1 when using BT MIC */
+#if BT_MIC_SUPPORT == 0
 	do_ndp120_i2s_setup(dev->ndp);
+#endif
 
 	/* enable the PDM clock (for the default, pdm0 aka 'left' mic) */
 	memset(&pdm_config, 0, sizeof(pdm_config));
@@ -946,6 +949,63 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
 
 }
+
+#if BT_MIC_SUPPORT == 1
+static
+void add_dsp_flow_rules_btmic(struct syntiant_ndp_device_s *ndp)
+{
+	int s = 0;
+	ndp120_dsp_data_flow_setup_t setup;
+
+	int src_pcm = 0;
+	int src_func = 0;
+	int src_nn = 0;
+
+	memset(&setup, 0, sizeof(setup));
+
+	// ----------
+	/* PCM1->FUNC0 */
+	setup.src_pcm_audio[src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_LEFT;
+	setup.src_pcm_audio[src_pcm].dst_param = 0;
+	setup.src_pcm_audio[src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
+	setup.src_pcm_audio[src_pcm].algo_config_index = 0;
+	setup.src_pcm_audio[src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_pcm_audio[src_pcm].algo_exec_property = 0;
+	src_pcm++;
+
+	/* FUNC0->NN0 */
+	setup.src_function[src_func].src_param = 0;
+	setup.src_function[src_func].dst_param = KEYWORD_NETWORK_ID;
+	setup.src_function[src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+	setup.src_function[src_func].algo_config_index = -1;
+	setup.src_function[src_func].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_function[src_func].algo_exec_property = 0;
+	src_func++;
+
+	/* PCM1->HOST_EXT_AUDIO */
+	setup.src_pcm_audio[src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_LEFT;
+	setup.src_pcm_audio[src_pcm].dst_param = NDP120_DSP_DATA_FLOW_DST_SUBTYPE_AUDIO;
+	setup.src_pcm_audio[src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_HOST_EXTRACT;
+	setup.src_pcm_audio[src_pcm].algo_config_index = 0;
+	setup.src_pcm_audio[src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_pcm_audio[src_pcm].algo_exec_property = 0;
+	src_pcm++;
+
+	/* NN0->MCU */
+	setup.src_nn[src_nn].src_param = 0;
+	setup.src_nn[src_nn].dst_param = 0;
+	setup.src_nn[src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+	setup.src_nn[src_nn].algo_config_index = -1;
+	setup.src_nn[src_nn].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_nn[src_nn].algo_exec_property = 0;
+	src_nn++;
+
+	auddbg("Applied flow rules\n");
+	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
+	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
+
+}
+#endif
 
 static
 void attach_algo_config_area(struct syntiant_ndp_device_s *ndp, int32_t algo_id, int32_t algo_config_index)
@@ -1283,11 +1343,21 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	}
 
 	attach_algo_config_area(dev->ndp, FF_ID, 0);
+#if BT_MIC_SUPPORT == 1
+	// when using BT-mic, attach algo config to func0 as well
+	attach_algo_config_area(dev->ndp, 0, 0);
+#endif
 
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	do_audio_sync(dev->ndp, NDP120_DSP_AUDIO_CHAN_AUD1, NDP120_DSP_AUDIO_CHAN_AUD0, 0);
 #endif
+
+#if BT_MIC_SUPPORT == 1
+	// add special rules for BT-mic
+	add_dsp_flow_rules_btmic(dev->ndp);
+#else
 	add_dsp_flow_rules(dev->ndp);
+#endif
 
 	struct syntiant_ndp120_config_tank_s tank_config;
 	memset(&tank_config, 0, sizeof(tank_config));
@@ -1357,8 +1427,8 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	}
 #endif
 	dev->alive = true;
-	dev->sample_ready_cnt = 0;
 	dev->keyword_correction = false;
+	dev->sample_ready_cnt = 0;
 
 errout_ndp120_init:
 	return s;
@@ -1535,9 +1605,8 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			ret = SYNTIANT_NDP_ERROR_FAIL;
 			goto errout_with_irq;
 		}
-
+		auddbg("#################### winner : %d summary : %d network_id : %d kd enabled : %d\n", winner, summary, network_id, dev->kd_enabled);
 		if (dev->kd_enabled) {
-			auddbg("#################### winner : %d summary : %d network_id : %d\n", winner, summary, network_id);
 			/* TODO Local command also need to be handled here */
 			switch(network_id) {
 				case 0:

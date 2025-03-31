@@ -28,6 +28,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <stdarg.h>
+#include <limits.h>
 #include <tinyalsa/tinyalsa.h>
 #include <media/OutputDataSource.h>
 #include "OutputHandler.h"
@@ -114,9 +116,10 @@ private:
 	void destroyRecorder(recorder_result_t& ret);
 	void prepareRecorder(recorder_result_t& ret);
 	void unprepareRecorder(recorder_result_t& ret);
-	void startRecorder();
-	void pauseRecorder();
-	void stopRecorder(recorder_result_t ret);
+	void startRecorder(recorder_result_t& ret);
+	void pauseRecorder(recorder_result_t& ret);
+	void stopRecorder(recorder_result_t& ret);
+	void stopRecorderInternal(recorder_observer_command_e command, recorder_result_t ret);
 	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
 	void getRecorderMaxVolume(uint8_t *vol, recorder_result_t& ret);
 	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);

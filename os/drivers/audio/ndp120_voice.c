@@ -176,6 +176,43 @@ static inline int ndp120_get_semvalue(sem_t *sem)
 	return val;
 }
 
+static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
+{
+	int ret = 0;
+	audvdbg("mute : %d\n", mute);
+	if (mute) {
+		ret = ndp120_kd_stop(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_stop failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
+#endif
+	} else {
+		uint32_t notifications = 0;
+		struct syntiant_ndp_device_s *ndp = priv->ndp;
+		ret = syntiant_ndp120_poll(ndp, &notifications, 1);
+		if (ret != 0) {
+			auddbg("ndp120 poll failed ret: %d\n", ret);
+			return ret;
+		}
+		ret = ndp120_kd_start(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_start failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
+#endif
+	}
+	return ret;
+}
+
 /****************************************************************************
  * ndp120 audio operations
  ****************************************************************************/
@@ -237,7 +274,11 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 			caps->ac_controls.hw[1] = NDP120_MIC_GAIN_DEFAULT;
 #endif
 			break;
-
+		case AUDIO_FU_MUTE:
+			ndp120_takesem(&priv->devsem);
+			caps->ac_controls.b[0] = priv->mute;
+			ndp120_givesem(&priv->devsem);
+			break;
 		default:
 			break;
 		}
@@ -331,17 +372,18 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 #endif
 		} break;
 		case AUDIO_FU_MUTE: {
-#if !(defined(CONFIG_AUDIO_EXCLUDE_GAIN) && defined(CONFIG_AUDIO_EXCLUDE_VOLUME))
 			/* Mute or unmute:  true(1) or false(0) */
 			bool mute = caps->ac_controls.b[0];
 			audvdbg("mute: 0x%x\n", mute);
 			ndp120_takesem(&priv->devsem);
+			ret = ndp120_setMute(priv, mute);
+			if (ret != 0) {
+				auddbg("ndp120_setMute failed ret : %d\n", ret);
+				return ret;
+			}
 			priv->mute = mute;
 			/* No api to control gain as of now */
 			ndp120_givesem(&priv->devsem);
-#else
-			ret = -EACCESS;
-#endif
 		} break;
 		default:
 			audvdbg("ERROR: Unrecognized feature unit\n");
@@ -670,36 +712,6 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		} else {
 			ret = -ENOSYS;
 		}
-		break;
-	}
-	case AUDIOIOC_MICMUTE: {
-		ndp120_takesem(&priv->devsem);
-		ret = ndp120_kd_stop(priv);
-		if (ret != 0) {
-			auddbg("ndp120_kd_stop failed ret : %d\n", ret);
-			return ret;
-		}
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
-#else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
-#endif
-		ndp120_givesem(&priv->devsem);
-		break;
-	}
-	case AUDIOIOC_MICUNMUTE: {
-		ndp120_takesem(&priv->devsem);
-		ret = ndp120_kd_start(priv);
-		if (ret != 0) {
-			auddbg("ndp120_kd_start failed ret : %d\n", ret);
-			return ret;
-		}
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
-#else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
-#endif
-		ndp120_givesem(&priv->devsem);
 		break;
 	}
 	default:
