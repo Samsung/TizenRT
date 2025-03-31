@@ -584,7 +584,7 @@ static int reloading_thread(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_RESOURCE_FS
-	ret = binary_manager_unmount_resource();
+	ret = binary_manager_umount_resource();
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}
