@@ -39,11 +39,11 @@ stream_info_t FocusManager::FocusRequester::getStreamInfo(void)
 
 bool FocusManager::FocusRequester::compare(const FocusManager::FocusRequester a, const FocusManager::FocusRequester b)
 {
-	if (a.mPolicy <= STREAM_TYPE_BIXBY && b.mPolicy <= STREAM_TYPE_BIXBY) {
+	if ((a.mPolicy > STREAM_TYPE_BASE && a.mPolicy <= STREAM_TYPE_BIXBY) && 
+		(b.mPolicy > STREAM_TYPE_BASE && b.mPolicy <= STREAM_TYPE_BIXBY)) {
 		return true;
-	} else {
-		return a.mPolicy >= b.mPolicy;
 	}
+	return a.mPolicy >= b.mPolicy;
 }
 
 void FocusManager::FocusRequester::notify(int focusChange)

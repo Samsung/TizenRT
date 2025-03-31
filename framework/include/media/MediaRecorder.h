@@ -134,9 +134,9 @@ public:
 	/**
 	 * @brief Start recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker begin recording through the queue
-	 * @return The result of the unpreapre operation
+	 * @return The result of the start operation
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t start();
@@ -144,7 +144,7 @@ public:
 	/**
 	 * @brief Pause recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker pause recording through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -154,7 +154,7 @@ public:
 	/**
 	 * @brief Stop recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker stop recording through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0

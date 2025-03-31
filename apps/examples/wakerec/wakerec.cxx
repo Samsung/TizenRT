@@ -207,23 +207,6 @@ private:
 		}
 		/* Now that we finished playback, we can go to sleep */
 		sleep(3); //for test, add sleep.
-		if (mKDEnabled) {
-			pm_resume(PM_IDLE_DOMAIN);
-		}
-	}
-
-	void onPlaybackStopped(media::MediaPlayer &mediaPlayer) override
-	{
-		mPaused = false;
-		mp.unprepare();
-		mp.destroy();
-		if (mKDEnabled) {
-			printf("###################################\n");
-			printf("#### Wait for wakeup triggered ####\n");
-			printf("###################################\n");
-			sd->startKeywordDetect();
-			pm_resume(PM_IDLE_DOMAIN);
-		}
 	}
 
 	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
@@ -231,23 +214,6 @@ private:
 		printf("##################################\n");
 		printf("####      onPlaybackError     ####\n");
 		printf("##################################\n");
-	}
-
-	void onStartError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
-	{
-	}
-
-	void onStopError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
-	{
-	}
-
-	void onPauseError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
-	{
-	}
-
-	void onPlaybackPaused(media::MediaPlayer &mediaPlayer) override
-	{
-		mPaused = true;
 	}
 
 	void onSpeechDetectionListener(media::voice::speech_detect_event_type_e event) override

@@ -44,6 +44,8 @@ using namespace media::stream;
 #define DEFAULT_FORMAT_TYPE AUDIO_FORMAT_TYPE_S16_LE
 #define DEFAULT_CHANNEL_NUM 1 //mono
 #define DEFAULT_VOLUME 7
+#define PLAYER_SYNC_API_CALL 1
+//#define PLAYBACK_REPEAT 1
 
 //***************************************************************************
 // class : SoundPlayer
@@ -54,21 +56,16 @@ class SoundPlayer : public MediaPlayerObserverInterface,
 					  public enable_shared_from_this<SoundPlayer>
 {
 public:
-	SoundPlayer() : mNumContents(0), mPlayIndex(-1), mHasFocus(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE), \
-						mPaused(false), mIsPlaying(false), mStopped(false), mTrackFinished(false), mVolume(DEFAULT_VOLUME), mLooping(false) {};
+	SoundPlayer() : mNumContents(0), mPlayIndex(-1), mHasFocus(false), mPaused(false), mStopped(false),\
+						mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE),mVolume(DEFAULT_VOLUME), mLooping(false) {};
 	~SoundPlayer() {};
 	bool init(int argc, char *argv[]);
 	player_result_t startPlayback(void);
 	bool checkTrackFinished(void);
 	void handleError(player_error_t error);
-	void onPlaybackStarted(MediaPlayer &mediaPlayer) override;
 	void onPlaybackFinished(MediaPlayer &mediaPlayer) override;
 	void onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error) override;
-	void onStartError(MediaPlayer &mediaPlayer, player_error_t error) override;
-	void onStopError(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onPauseError(MediaPlayer &mediaPlayer, player_error_t error) override;
-	void onPlaybackPaused(MediaPlayer &mediaPlayer) override;
-	void onPlaybackStopped(MediaPlayer &mediaPlayer) override;
 	void onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error) override;
 	void onFocusChange(int focusChange) override;
 
@@ -89,13 +86,9 @@ private:
 	void loadContents(const char *path);
 };
 
-
-void SoundPlayer::onPlaybackStarted(MediaPlayer &mediaPlayer)
+void SoundPlayer::onPauseError(MediaPlayer &mediaPlayer, player_error_t error)
 {
-	printf("onPlaybackStarted player : %x\n", &mp);
-	mPaused = false;
-	mStopped = false;
-	mIsPlaying = true;
+	handleError(error);
 }
 
 void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
@@ -106,6 +99,7 @@ void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 	mPaused = false;
 	mStopped = true;
 	if (mPlayIndex == mNumContents) {
+#ifndef PLAYBACK_REPEAT
 		mTrackFinished = true;
 		printf("All Track played, Destroy Player\n");
 		mp.unprepare();
@@ -114,6 +108,9 @@ void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 		focusManager.abandonFocus(mFocusRequest);
 		mHasFocus = false;
 		return;
+#else
+		mPlayIndex = 0;
+#endif
 	}
 	if (mHasFocus) {
 		printf("wait 3s until play next contents\n");
@@ -125,21 +122,6 @@ void SoundPlayer::onPlaybackFinished(MediaPlayer &mediaPlayer)
 
 /* Error case, terminate playback */
 void SoundPlayer::onPlaybackError(MediaPlayer &mediaPlayer, player_error_t error)
-{
-	handleError(error);
-}
-
-void SoundPlayer::onStartError(MediaPlayer &mediaPlayer, player_error_t error)
-{
-	handleError(error);
-}
-
-void SoundPlayer::onPauseError(MediaPlayer &mediaPlayer, player_error_t error)
-{
-	handleError(error);
-}
-
-void SoundPlayer::onStopError(MediaPlayer &mediaPlayer, player_error_t error)
 {
 	handleError(error);
 }
@@ -157,28 +139,24 @@ void SoundPlayer::handleError(player_error_t error)
 	mTrackFinished = true;
 }
 
-void SoundPlayer::onPlaybackPaused(MediaPlayer &mediaPlayer)
-{
-	printf("onPlaybackPaused player : %x\n", &mp);
-	mStopped = false;
-	mPaused = true;
-	mIsPlaying = false;
-}
-
-void SoundPlayer::onPlaybackStopped(MediaPlayer &mediaPlayer)
-{
-	printf("onPlaybackStopped player : %x\n", &mp);
-	mStopped = true;
-	mIsPlaying = false;
-	mPaused = false;
-	mp.unprepare();
-}
-
 void SoundPlayer::onAsyncPrepared(MediaPlayer &mediaPlayer, player_error_t error)
 {
 	printf("onAsyncPrepared error : %d\n", error);
+	player_result_t res;
 	if (error == PLAYER_ERROR_NONE) {
-		mediaPlayer.start();
+
+		res = mediaPlayer.start();
+		if (res != PLAYER_OK) {
+			printf("player start failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+			handleError((player_error_t)res);
+		} else {
+			printf("Playback started player : %x\n", &mp);
+			mPaused = false;
+			mStopped = false;
+			mIsPlaying = true;
+		}
+#endif
 	} else {
 		mediaPlayer.unprepare();
 	}
@@ -198,6 +176,14 @@ void SoundPlayer::onFocusChange(int focusChange)
 			res = mp.start();
 			if (res != PLAYER_OK) {
 				printf("player start failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+				handleError((player_error_t)res);
+			} else {
+				printf("Playback started player : %x\n", &mp);
+				mPaused = false;
+				mStopped = false;
+				mIsPlaying = true;
+#endif
 			}
 		} else {
 			res = startPlayback();
@@ -208,12 +194,35 @@ void SoundPlayer::onFocusChange(int focusChange)
 		break;
 	case FOCUS_LOSS:
 		mHasFocus = false;
-		mp.stop();
+		res = mp.stop();
+		if (res != PLAYER_OK) {
+			printf("Player stop failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+			handleError((player_error_t)res);
+		} else {
+			printf("Playback stopped player : %x\n", &mp);
+			mStopped = true;
+			mIsPlaying = false;
+			mPaused = false;
+			mp.unprepare();
+#endif
+		}
 		break;
 	case FOCUS_LOSS_TRANSIENT:
 		mHasFocus = false;
 		if (mIsPlaying) {
-			mp.pause(); //it will be played again
+			res = mp.pause(); //it will be played again
+			if (res != PLAYER_OK) {
+				printf("Player pause failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+				handleError((player_error_t)res);
+			} else {
+				printf(" Playback paused player : %x\n", &mp);
+				mStopped = false;
+				mPaused = true;
+				mIsPlaying = false;
+#endif
+			}
 		}
 		break;
 	default:
@@ -314,7 +323,15 @@ player_result_t SoundPlayer::startPlayback(void)
 	res = mp.start();
 	if (res != PLAYER_OK) {
 		printf("start failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+		handleError((player_error_t)res);
 		return res;
+	} else {
+		printf("Playback started player : %x\n", &mp);
+		mPaused = false;
+		mStopped = false;
+		mIsPlaying = true;
+#endif
 	}
 
 	return res;
@@ -415,4 +432,3 @@ int soundplayer_main(int argc, char *argv[])
 	return 0;
 }
 }
-

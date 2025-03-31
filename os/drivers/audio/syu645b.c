@@ -56,7 +56,7 @@
  * It's good to match the buffer size with i2s DMA page size
  */
 #ifndef CONFIG_SYU645B_BUFFER_SIZE
-#define CONFIG_SYU645B_BUFFER_SIZE       16384
+#define CONFIG_SYU645B_BUFFER_SIZE       32768
 #endif
 
 #ifndef CONFIG_SYU645B_NUM_BUFFERS
@@ -184,7 +184,7 @@ static void syu645b_takesem(sem_t *sem)
  ************************************************************************************/
 static void syu645b_setmute(FAR struct syu645b_dev_s *priv, bool mute)
 {
-	audvdbg("mute : %d\n", mute);
+	auddbg("mute : %d\n", mute);
 	if (mute) {
 		syu645b_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
 	} else{
@@ -214,13 +214,18 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 	audvdbg("volume = %d val : %d mute=%u\n", priv->volume, val, priv->mute);
 
 	if (priv->volume == 0) {
-		codec_set_master_volume_script[0].val[0] = 0;
+		codec_set_left_right_volume_script[0].val[0] = 0;
+		codec_set_left_right_volume_script[1].val[0] = 0;
 	} else {
 		/* Linear approximation is done to convert media volume to hardware volume */
-		codec_set_master_volume_script[0].val[0] = val;
+		codec_set_left_right_volume_script[0].val[0] = val;
+		codec_set_left_right_volume_script[1].val[0] = val;
 	}
-	syu645b_setmute(priv, false);
-	syu645b_exec_i2c_script(priv, codec_set_master_volume_script, sizeof(codec_set_master_volume_script) / sizeof(t_codec_init_script_entry));
+	priv->mute = false;
+	if (priv->running) {
+		syu645b_setmute(priv, false);
+	}
+	syu645b_exec_i2c_script(priv, codec_set_left_right_volume_script, sizeof(codec_set_left_right_volume_script) / sizeof(t_codec_init_script_entry));
 }
 #endif                                                  /* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -524,12 +529,6 @@ static int syu645b_shutdown(FAR struct audio_lowerhalf_s *dev)
 
 	/* First disable interrupts */
 	syu645b_takesem(&priv->devsem);
-	sq_entry_t *tmp = NULL;
-	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
-		sq_rem(tmp, &priv->pendq);
-		audvdbg("(tasshutdown)removing tmp with addr 0x%x\n", tmp);
-	}
-	sq_init(&priv->pendq);
 
 	if (priv->running) {
 		I2S_STOP(priv->i2s, I2S_TX);
@@ -598,16 +597,15 @@ static int syu645b_start(FAR struct audio_lowerhalf_s *dev)
 
 	/* Finally set syu645b to be running */
 	priv->running = true;
+
+	/* Restore mute status */
+	syu645b_setmute(priv, priv->mute);
+
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	syu645b_setvolume(priv);
-#endif
-
-	sq_entry_t *tmp = NULL;
-	sq_queue_t *q = &priv->pendq;
-	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
-		syu645b_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
+	if (!priv->mute) {
+		syu645b_setvolume(priv);
 	}
-
+#endif
 	/* Exit reduced power modes of operation */
 	/* REVISIT */
 
@@ -715,7 +713,9 @@ static int syu645b_resume(FAR struct audio_lowerhalf_s *dev)
 	if (priv->running && priv->paused) {
 		priv->paused = false;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		syu645b_setvolume(priv);
+		if (!priv->mute) {
+			syu645b_setvolume(priv);
+		}
 #endif
 
 		I2S_RESUME(priv->i2s, I2S_TX);
@@ -741,14 +741,6 @@ static void syu645b_txcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	DEBUGASSERT(priv && apb);
 
 	syu645b_takesem(&priv->devsem);
-	sq_entry_t *tmp;
-	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
-		if (tmp == (sq_entry_t *)apb) {
-			sq_rem(tmp, &priv->pendq);
-			audvdbg("found the apb to remove 0x%x\n", tmp);
-			break;
-		}
-	}
 
 	/* Call upper callback, let it post msg to user q */
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
@@ -770,14 +762,6 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 
 	if (!priv || !apb) {
 		return -EINVAL;
-	}
-
-	if (!priv->running) {
-		/* Add the new buffer to the tail of pending audio buffers */
-		syu645b_takesem(&priv->devsem);
-		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
-		syu645b_givesem(&priv->devsem);
-		return OK;
 	}
 
 	/* Converting buffer size from bytes to bits 
@@ -1039,11 +1023,13 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 	syu645b_reset_config(priv);
 
 	/* And then Set default EQ Set */
-	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_0_script, sizeof(t_codec_dq_preset_0_script) / sizeof(t_codec_init_script_entry));
-	priv->max_volume = 0xFF;
+	syu645b_exec_i2c_script(priv, t_codec_dq_preset_default_script, sizeof(t_codec_dq_preset_default_script) / sizeof(t_codec_init_script_entry));
+	priv->max_volume = 0x9F;
 
 	/* And then setVolume Again */
-	syu645b_setvolume(priv);
+	if (!priv->mute) {
+		syu645b_setvolume(priv);
+	}
 }
 
 /****************************************************************************
@@ -1088,9 +1074,8 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 	case(PM_STANDBY): {
 #if 0
 		syu645b_reset_config(g_syu645b);
-#endif
-		/* Mute off when wake up */
-		syu645b_setmute(g_syu645b, false);
+#endif	
+		/* Do nothing */
 	} 
 	break;
 	default: {
@@ -1161,7 +1146,6 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	priv->i2s = i2s;
 
 	sem_init(&priv->devsem, 0, 1);
-	sq_init(&priv->pendq);
 
 	/* Software reset.  This puts all SYU645B registers back in their
 	 * default state.
@@ -1171,8 +1155,9 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	syu645b_reset_config(priv);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	priv->max_volume = 0xFF;
+	priv->max_volume = 0x9F;
 	priv->volume = 79;
+	syu645b_set_equalizer(priv, 0);
 	syu645b_setvolume(priv);
 	syu645b_setmute(priv, true);
 #endif

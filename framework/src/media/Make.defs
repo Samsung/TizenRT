@@ -17,14 +17,12 @@
 ###########################################################################
 ifeq ($(CONFIG_MEDIA), y)
 CSRCS += media_init.c
-CSRCS += audio_manager.c
+CXXSRCS += audio_manager.cpp
 DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio
-CSRCS += samplerate.c
-DEPPATH += --dep-path src/media/audio/resample
-VPATH += :src/media/audio/resample
 
 CFLAGS += -D__TINYARA__
+CXXFLAGS += -DOUTSIDE_SPEEX
 
 CXXSRCS += MediaQueue.cpp DataSource.cpp MediaWorker.cpp
 CXXSRCS += StreamBuffer.cpp StreamBufferReader.cpp StreamBufferWriter.cpp

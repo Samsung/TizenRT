@@ -43,9 +43,8 @@ namespace media {
  */
 enum player_error_e : int {
 	/** MediaPlayer Error case */
-	PLAYER_ERROR_NOT_ALIVE = -10,
+	PLAYER_ERROR_NOT_ALIVE = -9,
 	PLAYER_ERROR_FOCUS_NOT_READY,
-	PLAYER_ERROR_PLAYBACK_FINISHED,
 	PLAYER_ERROR_INVALID_STATE,
 	PLAYER_ERROR_INVALID_OPERATION,
 	PLAYER_ERROR_INVALID_PARAMETER,
@@ -146,9 +145,9 @@ public:
 	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker begin playback through the queue
-	 * @return The result of the unprepare operation
+	 * @return The result of the start operation
 	 * @since TizenRT v2.0
 	 */
 	player_result_t start();
@@ -156,7 +155,7 @@ public:
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -166,7 +165,7 @@ public:
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0

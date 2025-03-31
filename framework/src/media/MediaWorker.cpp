@@ -66,7 +66,7 @@ void MediaWorker::startWorker()
 		pthread_attr_setschedparam(&attr, &sparam);
 		attr.affinity = 1 << 0;
 		mIsRunning = true;
-		ret = pthread_create(&mWorkerThread, &attr, static_cast<pthread_startroutine_t>(MediaWorker::mediaLooper), this);
+		ret = pthread_create(&mWorkerThread, &attr, MediaWorker::mediaLooper, this);
 		if (ret != OK) {
 			meddbg("Fail to create worker thread, return value : %d\n", ret);
 			--mRefCnt;

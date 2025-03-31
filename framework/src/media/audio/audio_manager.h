@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <media/stream_info.h>
 
 #if defined(__cplusplus)
@@ -301,6 +302,21 @@ unsigned int get_input_frame_count(void);
 unsigned int get_card_input_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
+ * Name: get_card_input_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for input stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in input stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_card_input_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
  * Name: get_user_input_frames_to_byte
  *
  * Description:
@@ -357,6 +373,21 @@ unsigned int get_output_frame_count(void);
 unsigned int get_card_output_frames_to_byte(unsigned int frames);
 
 /****************************************************************************
+ * Name: get_card_output_bytes_to_frame
+ *
+ * Description:
+ *   Get the number of frames for the given byte size with the channel value
+ *   supported by the card for output stream.
+ *
+ * Input parameter:
+ *   bytes: the target of which frame count is returned.
+ *
+ * Return Value:
+ *   On success, the number of frames in output stream. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
  * Name: get_user_output_frames_to_byte
  *
  * Description:
@@ -385,6 +416,17 @@ unsigned int get_user_output_frames_to_byte(unsigned int frames);
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
+
+/****************************************************************************
+ * Name: get_output_sample_rate_ratio
+ *
+ * Description:
+ *   Get output samplerate ratio of resampler for player.
+ *
+ * Return Value:
+ *   Return card/source samplerate ratio in case of player.
+ ****************************************************************************/
+float get_output_sample_rate_ratio(void);
 
 /****************************************************************************
  * Name: get_output_card_buffer_size

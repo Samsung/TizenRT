@@ -50,18 +50,19 @@ typedef enum recorder_error_e recorder_error_t;
 class MediaRecorderObserverInterface
 {
 public:
+	/*@ToDo: remove unnecessary APis later*/
 	/**
 	 * @brief informs the user of the recording has begun.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onRecordStarted(MediaRecorder& mediaRecorder) = 0;
+	virtual void onRecordStarted(MediaRecorder& mediaRecorder) {}
 	/**
 	 * @brief informs the user of the recording has paused.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onRecordPaused(MediaRecorder& mediaRecorder) = 0;
+	virtual void onRecordPaused(MediaRecorder& mediaRecorder) {}
 	/**
 	 * @brief informs the user of the recording has finished.
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
@@ -78,19 +79,19 @@ public:
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onRecordStartError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
+	virtual void onRecordStartError(MediaRecorder& mediaRecorder, recorder_error_t errCode) {}
 	/**
 	 * @brief informs the user of the error state of recorder pause operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
+	virtual void onRecordPauseError(MediaRecorder& mediaRecorder, recorder_error_t errCode) {}
 	/**
 	 * @brief informs the user of the error state of recorder stop operation
 	 * @details @b #include <media/MediaRecorderObserverInterface.h>
 	 * @since TizenRT v2.0
 	 */
-	virtual void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode) = 0;
+	virtual void onRecordStopError(MediaRecorder& mediaRecorder, recorder_error_t errCode) {}
 	/**
 	 * @brief informs the user that data in the output-buffer reach the
 	 * threshold, and it's possible to fetch data now.

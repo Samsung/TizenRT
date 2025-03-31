@@ -20,6 +20,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <atomic>
 #include <pthread.h>
 #include <media/DataSource.h>
 #include <media/BufferObserverInterface.h>

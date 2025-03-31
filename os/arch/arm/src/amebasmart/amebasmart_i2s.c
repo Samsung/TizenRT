@@ -125,7 +125,7 @@
 
 #define OVER_SAMPLE_RATE (384U)
 
-#define I2S_DMA_PAGE_SIZE 4096 	/* 4 ~ 16384, set to a factor of APB size */
+#define I2S_DMA_PAGE_SIZE 8192 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
 
 #ifdef CONFIG_PM
@@ -731,7 +731,7 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 		bsp_pm_domain_control(BSP_I2S_DRV, 1);
 	}
 #endif
-	i2sinfo("[I2S TX] apb=%p nbytes=%d samp=%p arg=%p timeout=%d\n", apb, apb->nbytes - apb->curbyte, apb->samp, arg, timeout);
+	// i2sinfo("[I2S TX] apb=%p nbytes=%d samp=%p arg=%p timeout=%d\n", apb, apb->nbytes - apb->curbyte, apb->samp, arg, timeout);
 	i2s_dump_buffer("Sending", &apb->samp[apb->curbyte], apb->nbytes - apb->curbyte);
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	
@@ -1785,6 +1785,8 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (dir == I2S_TX) {
 		i2s_disable(priv->i2s_object, 0);
+		i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
+		amebasmart_i2s_isr_initialize(priv);
 		while (sq_peek(&priv->tx.pend) != NULL) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
@@ -1807,14 +1809,12 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			leave_critical_section(flags);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
-		i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
-		amebasmart_i2s_isr_initialize(priv);
 #ifdef CONFIG_PM
 	if (i2s_lock_state) {
 		i2s_lock_state = 0;
 		bsp_pm_domain_control(BSP_I2S_DRV, 0);
 	}
-#endif
+#endif		
 	}
 #endif
 
