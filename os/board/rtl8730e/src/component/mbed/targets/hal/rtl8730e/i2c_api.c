@@ -60,7 +60,7 @@ void i2c_send_restart(I2C_TypeDef *I2Cx, u8 *pBuf, u8 len, u8 restart);
   * @retval 1: I2C1 Device.
   * @retval 2: I2C2 Device.
   */
-static uint32_t i2c_index_get(PinName sda)
+uint32_t i2c_index_get(PinName sda)
 {
 	if ((sda == _PA_0) || (sda == _PA_5) || (sda == _PA_9) || (sda == _PA_30) || (sda == _PB_5) || (sda == _PB_29)) {
 		return 0;
