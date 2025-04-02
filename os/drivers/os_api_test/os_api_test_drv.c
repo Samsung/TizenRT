@@ -31,7 +31,7 @@
 #ifdef CONFIG_EXAMPLES_MEM_PROTECT_TEST
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/mem_protect_test.h>
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 /****************************************************************************

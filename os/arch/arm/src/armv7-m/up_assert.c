@@ -100,7 +100,7 @@
 
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <stdbool.h>
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 #if defined(CONFIG_DEBUG_WORKQUEUE)

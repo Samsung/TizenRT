@@ -77,7 +77,7 @@
 #include "group/group.h"
 #include "task/task.h"
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 /****************************************************************************

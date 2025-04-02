@@ -55,7 +55,7 @@
 #include "task/task.h"
 #include "semaphore/semaphore.h"
 
-#include "binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Private Definitions

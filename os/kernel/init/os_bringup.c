@@ -98,7 +98,7 @@
 #include "paging/paging.h"
 #endif
 #ifdef CONFIG_BINARY_MANAGER
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #ifdef CONFIG_TASK_MONITOR
 #include "task_monitor/task_monitor_internal.h"

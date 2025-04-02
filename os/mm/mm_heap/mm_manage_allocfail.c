@@ -40,7 +40,7 @@
 #endif
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) && defined(CONFIG_DEBUG_MM_HEAPINFO)
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #include "sched/sched.h"
 #include <tinyara/binfmt/binfmt.h>
 #endif
