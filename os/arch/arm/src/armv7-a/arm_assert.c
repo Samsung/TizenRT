@@ -94,7 +94,7 @@
 #include <queue.h>
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))

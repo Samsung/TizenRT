@@ -74,7 +74,7 @@
 
 #ifdef CONFIG_BINARY_MANAGER
 #include <string.h>
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 #include "sched/sched.h"

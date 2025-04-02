@@ -29,9 +29,10 @@
 #include <sys/types.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/mm/heap_regioninfo.h>
-#include <binary_manager/binary_manager.h>
 #include <arch/chip/memory_region.h>
 #include <tinyara/binfmt/elf.h>
+
+#include "binary_manager/binary_manager_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions

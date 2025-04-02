@@ -40,7 +40,7 @@
 #include "task/task.h"
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
-#include "binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
