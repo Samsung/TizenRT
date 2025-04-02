@@ -40,7 +40,7 @@
 
 #include "binfmt.h"
 #include "binfmt_arch_apis.h"
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 
 #ifdef CONFIG_BINFMT_ENABLE
 

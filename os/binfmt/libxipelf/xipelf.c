@@ -19,7 +19,7 @@
 
 #include <tinyara/mm/mm.h>
 
-#include <binary_manager/binary_manager.h>
+#include "binary_manager/binary_manager_internal.h"
 
 static int xipelf_loadbinary(FAR struct binary_s *binp);
 
