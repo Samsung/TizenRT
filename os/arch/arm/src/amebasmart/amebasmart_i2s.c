@@ -477,7 +477,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 			ptx_buf = i2s_get_tx_page(priv->i2s_object);
 			i2s_enable(priv->i2s_object);
 			if (ptx_buf) {
-				if ((apb->nbytes - apb->curbyte) <= tx_size) {
+				if ((apb->nbytes - apb->curbyte) < tx_size) {
 					tx_size = apb->nbytes - apb->curbyte;
 					memset(ptx_buf, 0, I2S_DMA_PAGE_SIZE); /* Clear ptx_buf to prevent sending old data since we are sending less than I2S_DMA_PAGE_SIZE */
 					memcpy((void *)ptx_buf, (void *)&apb->samp[apb->curbyte], tx_size);
@@ -487,7 +487,7 @@ static int amebasmart_i2s_tx(struct amebasmart_i2s_s *priv, struct amebasmart_bu
 				apb->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
 
 				
-				i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
+				i2s_send_page();
 			} else {
 				break;
 			}
@@ -629,7 +629,16 @@ static void i2s_tx_schedule(struct amebasmart_i2s_s *priv, int result)
 		/* Start next transfer */
 		amebasmart_i2s_tx(priv, bfcontainer);
 	} else if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) <= 0) {
-		ameba_i2s_pause(priv->i2s_object);
+		if (i2s_dma_tx_done(I2S_DMA_PAGE_NUM) == OK ){
+			/*if all dma tx done, we should pause i2s dma to mute it*/
+			ameba_i2s_pause(priv->i2s_object);
+		} else if (priv->apb_tx->nbytes < I2S_DMA_PAGE_SIZE * I2S_DMA_PAGE_NUM) {
+			/*we should wait for all dma page tx complete before call back to application 
+			to terminate i2s tx during the last container, here we assume last container data is smaller than total size
+			if it is not the last container, we can callback to application to send the next container while dma page not fully
+			tx complete to prevent delay in updating data in application that might lead to noise.*/
+			return;
+		}
 	}
 
 	/* If the worker has completed running, then reschedule the working thread.
@@ -802,7 +811,7 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 			int *ptx_buf;
 			ptx_buf = i2s_get_tx_page(priv->i2s_object);
 			if (ptx_buf) {
-				if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) <= tx_size) {
+				if ((priv->apb_tx->nbytes - priv->apb_tx->curbyte) < tx_size) {
 					tx_size = priv->apb_tx->nbytes - priv->apb_tx->curbyte;
 					memset(ptx_buf, 0, I2S_DMA_PAGE_SIZE); /* Clear ptx_buf to prevent sending old data since we are sending less than I2S_DMA_PAGE_SIZE */
 					memcpy((void *)ptx_buf, (void *)&priv->apb_tx->samp[priv->apb_tx->curbyte], tx_size);
@@ -810,7 +819,7 @@ void i2s_transfer_tx_handleirq(void *data, char *pbuf)
 					memcpy((void *)ptx_buf, (void *)&priv->apb_tx->samp[priv->apb_tx->curbyte], I2S_DMA_PAGE_SIZE);
 				}
 				priv->apb_tx->curbyte += tx_size; /* No padding, ptx_buf is big enough to fill the whole tx_size */
-				i2s_send_page(priv->i2s_object, (uint32_t *)ptx_buf);
+				i2s_send_page();
 			} else {
 				break;
 			}
