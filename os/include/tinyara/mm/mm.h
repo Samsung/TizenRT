@@ -806,12 +806,27 @@ void mm_ioctl_alloc_fail(size_t size, size_t align);
 							mm_ioctl_alloc_fail(s, a); \
 						} while (0)
 #endif
+
+void mm_ioctl_garbagecollection(void);
+#define sched_garbagecollection			mm_ioctl_garbagecollection
+
 #else
+
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		, mmaddress_t caller
 #endif
 		);
+
+/* Functions defined in sched/sched_garbage *********************************/
+
+/* Must be called periodically to clean up deallocations delayed by
+ * sched_kmm_free().  This may be done from either the IDLE thread or from a
+ * worker thread.  The IDLE thread has very low priority and could starve
+ * the system for memory in some context.
+ */
+
+void sched_garbagecollection(void);
 #endif
 
 #if CONFIG_KMM_NHEAPS > 1

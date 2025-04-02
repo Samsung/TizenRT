@@ -155,6 +155,10 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #endif
 				);
 		break;
+
+	case MMINFOIOC_GC:
+		sched_garbagecollection();
+		break;
 #endif
 	default:
 		mdbg("Not supported\n");

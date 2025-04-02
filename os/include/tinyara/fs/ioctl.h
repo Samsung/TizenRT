@@ -465,6 +465,7 @@
 #define MMINFOIOC_HEAP              _MMINFOIOC(0x0001)
 #define MMINFOIOC_PARSE             _MMINFOIOC(0x0002)
 #define MMINFOIOC_MNG_ALLOCFAIL     _MMINFOIOC(0x0003)
+#define MMINFOIOC_GC                _MMINFOIOC(0x0004)
 
 /* Compress driver ioctl definitions ************************/
 #define _COMPIOCVALID(c)    (_IOC_TYPE(c) == _COMPBASE)
