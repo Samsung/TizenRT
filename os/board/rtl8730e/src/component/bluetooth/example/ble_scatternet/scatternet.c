@@ -357,7 +357,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 					ble_client_connect_is_running = 0;
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 				if (server_init_parm.connected_cb) {
-					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val);
+					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+					_reverse_mac( conn_ind->peer_addr.addr_val, addr);
+					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, addr);
 				} else {
 					ble_tizenrt_dummy_callback();
 				}

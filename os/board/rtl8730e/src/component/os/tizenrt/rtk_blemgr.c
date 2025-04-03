@@ -34,7 +34,7 @@
 
 int wifi_is_running(unsigned char wlan_idx);
 
-static void _reverse_mac(uint8_t *mac, uint8_t *target)
+void _reverse_mac(uint8_t *mac, uint8_t *target)
 {
 	int i;
 	int j;
@@ -526,20 +526,25 @@ trble_result_e trble_netmgr_server_disconnect(struct bledev *dev, trble_conn_han
 trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN])
 {
 	trble_result_e ret = TRBLE_SUCCESS;
-	uint8_t *mac;
-	
-	mac = rtw_ble_server_get_mac_address_by_conn_handle(con_handle);
-	if (mac == NULL) {
+	uint8_t *bd_addr_reverse;
+	bd_addr_reverse = rtw_ble_server_get_mac_address_by_conn_handle(con_handle);
+
+	if (bd_addr_reverse == NULL) {
 		return TRBLE_FAIL;
 	}
-	memcpy(bd_addr, mac, TRBLE_BD_ADDR_MAX_LEN);
+	_reverse_mac(bd_addr_reverse, bd_addr);
 
 	return ret;
 }
 
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle)
 {
-	*con_handle = rtw_ble_server_get_conn_handle_by_address(bd_addr);
+	uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+	_reverse_mac(bd_addr, addr);
+	*con_handle = rtw_ble_server_get_conn_handle_by_address(addr);
+	if (*con_handle < 16 || *con_handle > 26){
+		return TRBLE_FAIL;
+	}
 	return TRBLE_SUCCESS;
 }
 
