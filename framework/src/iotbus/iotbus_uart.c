@@ -350,6 +350,72 @@ int iotbus_uart_set_flowcontrol(iotbus_uart_context_h hnd, int xonxoff, int rtsc
 }
 #endif
 
+int iotbus_uart_rxavailable(iotbus_uart_context_h hnd)
+{
+	int ret;
+	int fd;
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	fd = handle->fd;
+
+	ret = ioctl(fd, TIOCS_AVAIL, 0);
+	if (ret != true) {
+		ibdbg("ioctl failed: receive fifo is empty\n");
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+
+	return IOTBUS_ERROR_NONE;
+}
+
+int iotbus_uart_txready(iotbus_uart_context_h hnd)
+{
+	int ret;
+	int fd;
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	fd = handle->fd;
+
+	ret = ioctl(fd, TIOCS_READY, 0);
+	if (ret != true) {
+		ibdbg("ioctl failed: transmit fifo is full\n");
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+
+	return IOTBUS_ERROR_NONE;
+}
+
+int iotbus_uart_txempty(iotbus_uart_context_h hnd)
+{
+	int ret;
+	int fd;
+	struct _iotbus_uart_s *handle;
+
+	if (!hnd || !hnd->handle) {
+		return IOTBUS_ERROR_INVALID_PARAMETER;
+	}
+
+	handle = (struct _iotbus_uart_s *)hnd->handle;
+	fd = handle->fd;
+
+	ret = ioctl(fd, TIOCS_EMPTY, 0);
+	if (ret != true) {
+		ibdbg("ioctl failed: transmit fifo is not empty\n");
+		return IOTBUS_ERROR_UNKNOWN;
+	}
+
+	return IOTBUS_ERROR_NONE;
+}
+
 int iotbus_uart_read(iotbus_uart_context_h hnd, char *buf, unsigned int length)
 {
 	int fd;
