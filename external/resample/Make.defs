@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_AUDIO_CODEC),y)
+ifeq ($(CONFIG_MEDIA_RESAMPLER),y)
 CONFIGURED_EXT += resample
 endif
 
