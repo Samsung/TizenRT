@@ -432,6 +432,23 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, op_wrtie_no_resp, (dev, handle, buf));
 	}
 	break;
+	case LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT:
+	{
+		trble_operation_handle *handle = NULL;
+		uint8_t *count = NULL;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		handle = (trble_operation_handle *)param.param[0];
+		count = (uint8_t *)param.param[1];
+
+		TRBLE_DRV_CALL(ret, dev, get_write_read_queue_cnt, (dev, handle, count));
+	}
+	break;
 	
 	//Server
 	case LWNL_REQ_BLE_SET_SERVER_CONFIG:

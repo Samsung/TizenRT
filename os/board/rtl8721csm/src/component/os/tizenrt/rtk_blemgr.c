@@ -145,6 +145,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_operation_read,
 	trble_netmgr_operation_write,
 	trble_netmgr_operation_write_no_response,
+	NULL,
 
 	// Server
 	NULL,

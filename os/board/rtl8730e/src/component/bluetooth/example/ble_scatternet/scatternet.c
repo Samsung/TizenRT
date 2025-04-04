@@ -159,9 +159,6 @@ extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind;
 extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
-extern void *ble_tizenrt_read_sem;
-extern void *ble_tizenrt_write_sem;
-extern void *ble_tizenrt_write_no_rsp_sem;
 extern uint16_t scan_timeout;
 
 static app_conn_table_t conn_link[RTK_BLE_GAP_MAX_LINKS] = {0};
@@ -389,19 +386,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 
         if(ble_client_connect_is_running)
             ble_client_connect_is_running = 0;
-
-        if(ble_tizenrt_read_sem != NULL) {
-            osif_sem_give(ble_tizenrt_read_sem);
-            ble_tizenrt_read_sem = NULL;
-        }
-        if(ble_tizenrt_write_sem != NULL) {
-            osif_sem_give(ble_tizenrt_write_sem);
-            ble_tizenrt_write_sem = NULL;
-        }
-        if(ble_tizenrt_write_no_rsp_sem != NULL) {
-            osif_sem_give(ble_tizenrt_write_no_rsp_sem);
-            ble_tizenrt_write_no_rsp_sem = NULL;
-        }
 
         uint8_t conn_id;
         rtk_bt_le_gap_get_conn_id(disconn_ind->conn_handle, &conn_id);
