@@ -45,6 +45,8 @@
 #include <tinyara/binfmt/binfmt.h>
 #endif
 
+#include <tinyara/security_level.h>
+
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
 
@@ -90,13 +92,11 @@ void mm_ioctl_alloc_fail(size_t size, size_t align)
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
+void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
 #else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
+void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
 #endif
 {
-	irqstate_t flags = enter_critical_section();
-
 #ifdef CONFIG_SMP
 	/* If SMP is enabled then we need to pause all the other cpu's immediately.
 	 * If we don't pause the other CPUs, it might mix up the logs with other
@@ -108,12 +108,6 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	abort_mode = true;
 #endif
-
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
-#endif
-#endif /* CONFIG_MM_ASSERT_ON_FAIL */
 
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
@@ -191,6 +185,30 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	 */
 	up_cpu_resume_all();
 #endif
+}
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
+#else
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
+#endif
+{
+	irqstate_t flags = enter_critical_section();
+
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#endif
+#endif /* CONFIG_MM_ASSERT_ON_FAIL */
+
+	/* If secure state, do not print memory usage and address infomation */
+	if (!IS_SECURE_STATE()) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type, caller);
+#else
+		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type);
+#endif
+	}
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	PANIC();
