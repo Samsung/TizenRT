@@ -197,6 +197,8 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
+typedef void (*pm_wakehandler_t)(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -264,6 +266,25 @@ struct pm_callback_s {
 	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
 };
 
+/*
+ * struct platform_pm_ops - Callbacks for managing platform dependent PM operations.
+ *
+ * @sleep: It make the board enters the system sleep state. It also
+ *  performs the necessary operation before sleep and immediately after
+ *  wake up. This callback is mandatory.
+ *
+ * @adjust_dvfs: It adjusts the DVFS level according to the division level.
+ *  It helps by reducing the frequency of operation of the core.
+ *
+ * @set_timer: Set the wakeup timer
+ */
+
+struct platform_pm_ops {
+	void (*sleep)(pm_wakehandler_t handler);
+	void (*adjust_dvfs)(int div_lvl);
+	void (*set_timer)(unsigned int delay_us);
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -321,17 +342,18 @@ void pm_start(void);
  *   order to provide one-time initialization the power management subsystem.
  *   This function must be called *very* early in the initialization sequence
  *   *before* any other device drivers are initialized (since they may
- *   attempt to register with the power management subsystem).
+ *   attempt to register with the power management subsystem). It also fills
+ *   the PM ops with the required BSP APIs.
  *
  * Input parameters:
- *   None.
+ *   ops: pm operations to use.
  *
  * Returned value:
  *    None.
  *
  ****************************************************************************/
 
-void pm_initialize(void);
+void pm_initialize(struct platform_pm_ops *ops);
 
 /****************************************************************************
  * Name: pm_register
@@ -570,7 +592,7 @@ int pm_metrics(int milliseconds);
  */
 
 #define pm_start()
-#define pm_initialize()
+#define pm_initialize(ops)      (0)
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
 #define pm_domain_register(domain)	(0)

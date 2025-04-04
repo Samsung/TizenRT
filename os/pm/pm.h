@@ -138,6 +138,9 @@ struct pm_global_s {
 
 	/* Indicates Board is Ready to State Change */
 	bool is_running;
+
+	/* PM ops structure */
+	struct platform_pm_ops *pm_ops;
 };
 
 /****************************************************************************

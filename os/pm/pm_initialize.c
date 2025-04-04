@@ -111,19 +111,23 @@ void pm_start(void) {
  *   order to initialize the power management capabilities.  This function
  *   must be called *very* early in the initializeation sequence *before* any
  *   other device drivers are initialize (since they may attempt to register
- *   with the power management subsystem).
+ *   with the power management subsystem). It also fills the PM ops with the
+ *   required BSP APIs.
  *
  * Input parameters:
- *   None.
+ *   ops: pm operations to use.
  *
  * Returned value:
  *    None.
  *
  ****************************************************************************/
 
-void pm_initialize(void)
+void pm_initialize(struct platform_pm_ops *ops)
 {
 	sem_init(&g_pmglobals.regsem, 0, 1);
+
+	/* Register the PM ops structure */
+	g_pmglobals.pm_ops = ops;
 
 	/* Register Special Domains, which are specific to Kernel*/
 	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
