@@ -1189,6 +1189,7 @@ CONFIG_ENABLE_NGHTTP2=y
 # CONFIG_NGHTTP2_DEBUG is not set
 # CONFIG_PROTOBUF is not set
 # CONFIG_LWM2M_WAKAAMA is not set
+CONFIG_MEDIA_RESAMPLER=y
 
 #
 # Application Configuration
