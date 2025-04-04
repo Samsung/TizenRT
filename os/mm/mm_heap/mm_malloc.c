@@ -148,7 +148,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
-
+	bool gc_done = false;
 
 	/* Free the delay list first */
 	mm_free_delaylist(heap);
@@ -175,7 +175,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	/* Get the location in the node list to start the search
 	 * by converting the request size into a nodelist index.
 	 */
-
 	ndx = mm_size2ndx(size);
 
 	/* Search for a large enough chunk in the list of nodes.
@@ -184,6 +183,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	 * to accommodate the requested size, malloc() will fail due to no more space.
 	 */
 
+retry_after_gc:
 	node = heap->mm_nodelist[ndx].flink;
 	if (!(node && node->size >= size)) {
 		while (++ndx < MM_NNODES && !(node = heap->mm_nodelist[ndx].flink)) ;
@@ -256,6 +256,13 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 		heapinfo_update_total_size(heap, node->size, ((struct mm_allocnode_s *)node)->pid);
 #endif
 		ret = (void *)((char *)node + SIZEOF_MM_ALLOCNODE);
+	}
+
+	if (!ret && gc_done == false) {
+		lldbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+		sched_garbagecollection();
+		gc_done = true;
+		goto retry_after_gc;
 	}
 
 	mm_givesemaphore(heap);

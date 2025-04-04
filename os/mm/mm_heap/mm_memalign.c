@@ -118,6 +118,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	FAR struct mm_allocnode_s *alignchunk = NULL;
 	bool found_align = false;
 	size_t mask = (size_t)(alignment - 1);
+	bool gc_done = false;
 
 	/* If this requested alinement's less than or equal to the natural alignment
 	 * of malloc, then just let malloc do the work.
@@ -154,6 +155,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 	ndx = mm_size2ndx(newsize);
 
+retry_after_gc:
 	/* Search for a large enough chunk in the list of nodes.
 	 * mm_nodelist is an array of lists. The array is arranged in ascending order of size.
 	 * Each list is ordered by size in a descending order.
@@ -268,6 +270,13 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 
 		ret = (void *)alignchunk;
+	}
+
+	if (!ret && gc_done == false) {
+		lldbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+		sched_garbagecollection();
+		gc_done = true;
+		goto retry_after_gc;
 	}
 
 	mm_givesemaphore(heap);
