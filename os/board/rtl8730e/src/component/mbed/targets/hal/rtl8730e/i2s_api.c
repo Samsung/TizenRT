@@ -109,9 +109,9 @@ static void i2s_release_tx_page(uint8_t i2s_index)
 
 	if (sp_tx_info.tx_empty_flag) {
 	} else {
-		ptx_block->tx_gdma_own = 0;
 		memcpy((void *)ptx_block->tx_addr, sp_tx_info.tx_zero_block.tx_addr, sp_tx_info.tx_page_size);
 		DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
+		ptx_block->tx_gdma_own = 0;
 		sp_tx_info.tx_gdma_cnt++;
 		if (sp_tx_info.tx_gdma_cnt == sp_tx_info.tx_page_num) {
 			sp_tx_info.tx_gdma_cnt = 0;
