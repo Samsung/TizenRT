@@ -31,6 +31,9 @@
 #include <tinyara/mm/heap_regioninfo.h>
 #include <arch/chip/memory_region.h>
 #include <tinyara/binfmt/elf.h>
+#if defined(CONFIG_ARCH_BOARD_RTL8730E)
+#include <tinyara/reboot_reason.h>
+#endif
 
 #include "binary_manager/binary_manager_internal.h"
 
@@ -378,6 +381,11 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 	int broken_cnt = 0;
 	struct mm_heap_s *heap = NULL;
 
+#if defined(CONFIG_ARCH_BOARD_RTL8730E)
+	/* Set reboot reason temporaily to avoid km4 log print */
+	WRITE_REBOOT_REASON(REBOOT_TEMP_BLOCK_KM4_LOG);
+#endif
+
 	if (strncmp(bin_name, "kernel", strlen("kernel") + 1) == 0) {
 		heap = kmm_get_baseheap();
 	} 
@@ -416,6 +424,12 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 	print_info(heap, leak_cnt, broken_cnt);
 
 	hash_deinit();
+
+#if defined(CONFIG_ARCH_BOARD_RTL8730E)
+	/* Clear reboot reason to enable km4 log print again */
+	CLEAR_REBOOT_REASON();
+#endif
+
 	return OK;
 }
 
