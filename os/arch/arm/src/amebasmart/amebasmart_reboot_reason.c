@@ -102,6 +102,13 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 				return REBOOT_SYSTEM_TZWD_RESET;
 			}
 			else {
+				if (boot_reason & AON_BIT_RSTF_WDG4) {
+					lldbg("Reboot reason: WDG4 reset\n");
+				} else if (boot_reason & AON_BIT_RSTF_WDG2) {
+					lldbg("Reboot reason: WDG2 reset\n");
+				} else {
+					lldbg("Reboot reason: IWDG reset\n");
+				}
 				return REBOOT_SYSTEM_WATCHDOG;
 			}
 		}

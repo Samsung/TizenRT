@@ -83,6 +83,7 @@ struct amebasmart_wdg_lowerhalf_s {
 	uint32_t start_tick;		/* Use to calculate timeleft before timeout */
 	uint32_t on_pause_duration;	/* Record the duration of watchdog timer on pause */
 	bool int_mode;				/* True for timeout interrupt mode on */
+	int WDG_id;					/* 0: WDT2, 1:WDT4*/
 };
 
 /****************************************************************************
@@ -135,7 +136,7 @@ static int amebasmart_wdg_start(FAR struct watchdog_lowerhalf_s *lower)
 	}
 	if (priv->wdt_status == WDT_STOP) {
 		/* Start watchdog timer */
-		watchdog_start();
+		watchdog_start(priv->WDG_id);
 		priv->wdt_status = WDT_START;
 		priv->start_tick = SYSTIMER_TickGet();	// Record time right after wdt start
 		priv->on_pause_duration = 0;	// Reset on_pause_duration
@@ -199,7 +200,7 @@ static int amebasmart_wdg_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 	}
 	if (priv->wdt_status == WDT_START) {
 		/* Petting the dog */
-		watchdog_refresh();
+		watchdog_refresh(priv->WDG_id);
 
 		/* Update start time and reset on_pause_duration */
 		priv->start_tick = SYSTIMER_TickGet();
@@ -290,14 +291,14 @@ static int amebasmart_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uin
 
 	/*  Reset the watchdog timer with new timeout value */
 	priv->timeout_ms = timeout;
-	watchdog_init(priv->timeout_ms);
+	watchdog_init(priv->WDG_id, priv->timeout_ms);
 	if (priv->int_mode) {
-		watchdog_irq_init((void *)priv->handler, (uint32_t)priv);
+		watchdog_irq_init(priv->WDG_id, (void *)priv->handler, (uint32_t)priv);
 	}
 
 	/* Re-start watchdog only if the status is WDT_START */
 	if (priv->wdt_status == WDT_START) {
-		watchdog_start();
+		watchdog_start(priv->WDG_id);
 	}
 
 	return OK;
@@ -343,18 +344,18 @@ static xcpt_t amebasmart_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcp
 	if (priv->wdt_status == WDT_START) {	// Skip the timeout_left calculation if the status is WDT_PAUSE
 		priv->timeout_left = priv->timeout_ms - ((SYSTIMER_TickGet() - priv->start_tick - priv->on_pause_duration) * 31) / 1000;
 	}
-	watchdog_init(priv->timeout_left);	// Re-init watchdog with remaining timeout
+	watchdog_init(priv->WDG_id, priv->timeout_left);	// Re-init watchdog with remaining timeout
 	priv->int_mode = false;
 
 	/* Change to INT_MODE if handler exists */
 	if (handler) {
-		watchdog_irq_init((void *)priv->handler, (uint32_t)priv);	// INT_MODE enabled
+		watchdog_irq_init(priv->WDG_id, (void *)priv->handler, (uint32_t)priv);	// INT_MODE enabled
 		priv->int_mode = true;
 	}
 
 	/* Re-start watchdog only if the status is WDT_START */
 	if (priv->wdt_status == WDT_START) {
-		watchdog_start();
+		watchdog_start(priv->WDG_id);
 	}
 
 	return oldhandler;
@@ -404,11 +405,11 @@ static int amebasmart_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd,
 		if (priv->wdt_status == WDT_PAUSE) {
 			/* Resume watchdog and init watchdog with remaining timeout */
 			priv->on_pause_duration = SYSTIMER_TickGet() - priv->on_pause_duration;
-			watchdog_init(priv->timeout_left);
+			watchdog_init(priv->WDG_id, priv->timeout_left);
 			if (priv->int_mode) {
-				watchdog_irq_init((void *)priv->handler, (uint32_t)priv);
+				watchdog_irq_init(priv->WDG_id, (void *)priv->handler, (uint32_t)priv);
 			}
-			watchdog_start();
+			watchdog_start(priv->WDG_id);
 			priv->wdt_status = WDT_START;
 		}
 	}
@@ -430,11 +431,11 @@ static int amebasmart_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd,
  *   as 'devpath'.
  *
  ****************************************************************************/
-int amebasmart_wdg_initialize(const char *devpath, uint32_t timeout_ms)
+int amebasmart_wdg_initialize(const char *devpath, int WDG_id, uint32_t timeout_ms)
 {
 	struct amebasmart_wdg_lowerhalf_s *priv = NULL;
 	priv = (struct amebasmart_wdg_lowerhalf_s *)kmm_malloc(sizeof(struct amebasmart_wdg_lowerhalf_s));
-
+	int ret = -1;
 	if (!priv) {
 		llvdbg("wdg_lowerhalf_s allocation error.\n");
 		return -ENOMEM;
@@ -443,9 +444,13 @@ int amebasmart_wdg_initialize(const char *devpath, uint32_t timeout_ms)
 	/* Set the priv to default */
 	priv->ops = &g_wdgops;
 	priv->handler = NULL;
-
+	priv->WDG_id = WDG_id;
 	/* Initializes the watchdog, include time setting, mode register */
-	watchdog_init(timeout_ms);
+	ret = watchdog_init(priv->WDG_id, timeout_ms);
+	if (ret != OK) {
+		llvdbg("Invalid WDG_id used\n");
+		return ret;
+	}
 	priv->wdt_status = WDT_STOP;
 	priv->int_mode = false;
 
@@ -467,12 +472,12 @@ int amebasmart_wdg_initialize(const char *devpath, uint32_t timeout_ms)
 #ifdef CONFIG_WATCHDOG_FOR_IRQ
 void up_wdog_init(uint16_t timeout)
 {
-	watchdog_init(timeout);
+	watchdog_init(AMEBASMART_WDG4, timeout);
 }
 
 void up_wdog_keepalive(void)
 {
-	watchdog_refresh();
+	watchdog_refresh(AMEBASMART_WDG4);
 }
 #endif
 

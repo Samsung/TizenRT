@@ -412,6 +412,10 @@ config WATCHDOG_DEVPATH
 	string "Watchdog Device Path"
 	default "/dev/watchdog0"
 
+config WATCHDOG2_DEVPATH 
+	string "Watchdog2 Device Path"
+	default "/dev/watchdog1"
+
 config WATCHDOG_FOR_IRQ
 	bool "Enable watchdog for irq"
 	default n
