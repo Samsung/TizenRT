@@ -289,21 +289,26 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		int new_power = (int)arg;
 		int old_power = priv->dev->getpower(priv->dev);
 
+		lcddbg("LCD Backlight %d -> %d\n", old_power, new_power);
+
 		/* To ensure setpower operation from power saving,
 		 * pm_suspend is calling first. */
 		if (old_power == 0 && new_power > 0) {
+			lcddbg("Lock pm & silent reboot\n");
 			silent_reboot_lock();
 			(void)pm_suspend(priv->pm_domain);
 		}
 
 		ret = priv->dev->setpower(priv->dev, new_power);
 		if (ret != OK) {
+			lcddbg("ERROR: Failed to set power level %d -> %d (errno: %d)\n", old_power, new_power, ret);
 			break;
 		}
 
 		/* To ensure setpower operation from power saving,
 		 * pm_resume is calling after setpower. */
 		if (old_power > 0 && new_power == 0) {
+			lcddbg("Unlock pm & silent reboot\n");
 			silent_reboot_unlock();
 			silent_reboot_delay(3600);
 			(void)pm_resume(priv->pm_domain);
@@ -475,7 +480,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 			goto cleanup;
 		}
 #ifdef CONFIG_PM
-                (void)pm_suspend(lcd_info->pm_domain);
+		(void)pm_suspend(lcd_info->pm_domain);
 #endif
 		silent_reboot_lock();
 		lcd_init_put_image(dev);

@@ -141,9 +141,6 @@ static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* ms
 		max_cmd_retry_count--;
 	}
 
-	if (transfer_status != OK) {
-		lcddbg("Command %x not sent\n", cmd);
-	}
 	return transfer_status;
 }
 
@@ -166,6 +163,11 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	msg.tx_len = payload_len;
 	msg.flags = 0;
 	transfer_status = send_to_mipi_dsi(priv, &msg);
+
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent\n", cmd);
+	}
+
 	return transfer_status;
 }
 
@@ -369,16 +371,22 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	if (power > CONFIG_LCD_MAXPOWER) {
-		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d", CONFIG_LCD_MAXPOWER);
-		return -1;
+		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
+		return -EINVAL;
 	}
-	if (power == priv->power) {
-		return OK;
-	}
+
 	while (sem_wait(&priv->sem) != OK) {
 		ASSERT(get_errno() == EINTR);
 	}
+
+	if (power == priv->power) {
+		lcddbg("ERROR: Already in the requested power state(%d)\n", power);
+		sem_post(&priv->sem);
+		return OK;
+	}
+
 	if (power == 0) {
+		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
 		priv->config->mipi_mode_switch(CMD_MODE);
 		priv->lcdonoff = LCD_OFF;
@@ -389,6 +397,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	} else {
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
+			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
 			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
@@ -397,7 +406,9 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		}
 		priv->config->backlight(power);
 	}
+
 	priv->power = power;
+	lcddbg("Changed lcd backlight to %d\n", priv->power);
 	sem_post(&priv->sem);
 	return OK;
 }
