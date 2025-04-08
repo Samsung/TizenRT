@@ -581,10 +581,16 @@ void up_assert(const uint8_t *filename, int lineno)
 	ARCH_GET_RET_ADDRESS(kernel_assert_location);
 
 	irqstate_t flags = enter_critical_section();
-	abort_mode = true;
 
 	uint32_t asserted_location = 0;
 
+	/* Check if we are in recursive abort */
+	if (abort_mode == true) {
+		/* treat kernel fault */
+		arm_assert();
+	} else {
+		abort_mode = true;
+	}
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (system_exception_location) {
