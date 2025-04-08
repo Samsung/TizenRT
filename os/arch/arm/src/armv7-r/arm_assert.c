@@ -958,7 +958,16 @@ void up_assert(const uint8_t *filename, int lineno)
 		recursive_abort = true;
 	}
 #endif
-	abort_mode = true;
+
+	/* Check if we are in recursive abort */
+	if (abort_mode == true) {
+#if defined(CONFIG_BOARD_ASSERT_AUTORESET)
+		(void)boardctl(BOARDIOC_RESET, 0);
+#endif
+		_up_assert(EXIT_FAILURE);
+	} else {
+		abort_mode = true;
+	}
 
 	/* Add new line to distinguish between normal log and assert log.*/
 	lldbg_noarg("\n");

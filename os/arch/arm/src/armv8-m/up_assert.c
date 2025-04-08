@@ -602,9 +602,15 @@ void up_assert(const uint8_t *filename, int lineno)
 	reboot_reason_try_write_assert();
 #endif
 
-	abort_mode = true;
-
 	uint32_t asserted_location;
+
+	/* Check if we are in recursive abort */
+	if (abort_mode == true) {
+		/* treat kernel fault */
+		_up_assert(EXIT_FAILURE);
+	} else {
+		abort_mode = true;
+	}
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 
