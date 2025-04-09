@@ -134,7 +134,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 			role = conn_ind->role ? "slave" : "master";
 			dbg("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n", 
 					conn_ind->conn_handle, role, le_addr);
-			server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val);
+			server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
 		} else {
 			dbg("[APP] Connection establish failed(err: 0x%x), remote device: %s\r\n",
 					conn_ind->err, le_addr);
@@ -148,7 +148,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 		role = disconn_ind->role ? "slave" : "master";
 		dbg("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n", 
 				disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-		server_init_parm.connected_cb(disconn_ind->conn_handle, TRBLE_SERVER_DISCONNECTED, disconn_ind->peer_addr.addr_val);
+		server_init_parm.connected_cb(disconn_ind->conn_handle, TRBLE_SERVER_DISCONNECTED, disconn_ind->peer_addr.addr_val, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
 		//rtk_bt_le_gap_start_adv(&adv_param);
 		break;
 	}
@@ -281,7 +281,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_peripheral_gap_app_callback(uint8_t evt_c
 				dbg("[APP] Get conn info failed! \r\n");
 				break;
 			}
-			server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, conn_info.remote.addr_val);
+			server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, conn_info.remote.addr_val, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
 		}
 		break;
 	}
