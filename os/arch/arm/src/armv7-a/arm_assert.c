@@ -144,6 +144,9 @@ extern int g_irq_num[CONFIG_SMP_NCPUS];
 #define LOG_TASK_NAME   "N/A"
 #endif
 
+#define NORMAL_STATE 0
+#define ABORT_STATE 1
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -152,6 +155,9 @@ char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = { '\0', };
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Variable to check the recursive abort */
+static int state = NORMAL_STATE;
 
 /****************************************************************************
  * Private Functions
@@ -584,12 +590,14 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	uint32_t asserted_location = 0;
 
+	abort_mode = true;
+
 	/* Check if we are in recursive abort */
-	if (abort_mode == true) {
+	if (state == ABORT_STATE) {
 		/* treat kernel fault */
 		arm_assert();
 	} else {
-		abort_mode = true;
+		state = ABORT_STATE;
 	}
 	/* Extract the PC value of instruction which caused the abort/assert */
 
