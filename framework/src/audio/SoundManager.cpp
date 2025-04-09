@@ -30,6 +30,7 @@ using namespace media;
 
 static list<VolumeStateChangedListener> gVolumeListenerList;
 static std::mutex gVolumeListenerListAccessLock;
+static int listenerCount = 0;
 
 static void notifyListeners(stream_policy_t stream_type, int8_t volume)
 {
@@ -60,13 +61,17 @@ bool setVolume(uint8_t volume, stream_info_t *stream_info)
 		return false;
 	}
 
-	if (stream_info->policy != STREAM_TYPE_VOICE_RECORD) {
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.enQueue(&notifyListeners, stream_info->policy, volume);
-	} else {
-		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-		row.enQueue(&notifyListeners, stream_info->policy, volume);
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	if (listenerCount > 0) {
+		if (stream_info->policy != STREAM_TYPE_VOICE_RECORD) {
+			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+			pow.enQueue(&notifyListeners, stream_info->policy, volume);
+		} else {
+			RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+			row.enQueue(&notifyListeners, stream_info->policy, volume);
+		}
 	}
+
 	return true;
 }
 
@@ -85,6 +90,7 @@ void addVolumeStateChangedListener(VolumeStateChangedListener listener)
 {
 	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
 	gVolumeListenerList.push_back(listener);
+	listenerCount += 1;
 	medvdbg("added new listener %x\n", listener);
 }
 
@@ -95,6 +101,7 @@ bool removeVolumeStateChangedListener(VolumeStateChangedListener listener)
 	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
 		if (*itr == listener) {
 			gVolumeListenerList.erase(itr);
+			listenerCount -= 1;
 			medvdbg("found the listener to remove %x\n", listener);
 			return true;
 		}
@@ -113,7 +120,10 @@ bool setMicMute(void)
 	}
 
 	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, 0);
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	if (listenerCount > 0) {
+		row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, 0);
+	}
 	return true;
 }
 
@@ -127,7 +137,10 @@ bool setMicUnmute(void)
 	}
 
 	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, DEFAULT_MIC_GAIN_VALUE);
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	if (listenerCount > 0) {
+		row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, DEFAULT_MIC_GAIN_VALUE);
+	}
 	return true;
 }
 
@@ -152,13 +165,15 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 			return false;
 		}
 	}
-
-	if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
-		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-		row.enQueue(&notifyListeners, stream_policy, volume);
-	} else {
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.enQueue(&notifyListeners, stream_policy, volume);
+	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	if (listenerCount > 0) {
+		if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
+			RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+			row.enQueue(&notifyListeners, stream_policy, volume);
+		} else {
+			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+			pow.enQueue(&notifyListeners, stream_policy, volume);
+		}
 	}
 	return true;
 }

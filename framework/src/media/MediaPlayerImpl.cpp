@@ -410,7 +410,6 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 		if (res != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. ret: %d\n", res);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-			notifyObserver(PLAYER_OBSERVER_COMMAND_START_ERROR, ret);
 			return notifySync();
 		}
 
@@ -529,6 +528,10 @@ void MediaPlayerImpl::stopPlaybackInternal(bool drain)
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 	}
+  
+  	FocusManager &fm = FocusManager::getFocusManager();
+	fm.unregisterPlayerFocusLossListener();
+  
 	notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 }
 
@@ -576,6 +579,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 		FocusManager &fm = FocusManager::getFocusManager();
 		fm.unregisterPlayerFocusLossListener();
 
+		PlayerWorker &mpw = PlayerWorker::getWorker();
 		mpw.setPlayer(nullptr);
 
 		mCurState = PLAYER_STATE_PAUSED;
@@ -1086,7 +1090,7 @@ player_result_t MediaPlayerImpl::playbackFinished()
 	mpw.setPlayer(nullptr);
 	notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
 	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unRegisterPlayerFocusLossListener();
+	fm.unregisterPlayerFocusLossListener();
 	return PLAYER_OK;
 }
 
