@@ -372,13 +372,11 @@ void MediaRecorderImpl::startRecorder(recorder_result_t& ret)
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Failed to get mute status. res: %d\n",result);
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-		notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, ret);
 		return notifySync();
 	}
 
 	if (mute) {
 		ret = RECORDER_ERROR_DEVICE_SUSPENDED;
-		notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, ret);
 		return notifySync();
 	}
 
@@ -387,7 +385,6 @@ void MediaRecorderImpl::startRecorder(recorder_result_t& ret)
 		if (result != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaRecorder startRecorder fail : set_stream_in_policy fail. ret: %d\n", result);
 			ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-			notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, ret);
 			return notifySync();
 		}
 
@@ -398,7 +395,6 @@ void MediaRecorderImpl::startRecorder(recorder_result_t& ret)
 			meddbg("set_audio_stream_in failed : result : %d channel %d sample rate : %d format : %d. recorder: %x\n", result, \
 				source->getChannels(), source->getSampleRate(), (pcm_format)source->getPcmFormat(), &mRecorder);
 			ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-			notifyObserver(RECORDER_OBSERVER_COMMAND_START_ERROR, ret);
 			return notifySync();
 		}
 	}
@@ -490,6 +486,10 @@ void MediaRecorderImpl::stopRecorderInternal(recorder_observer_command_e command
 	}
 	meddbg("Total record size : %lu. recorder: %x\n", get_user_input_frames_to_byte(mCapturedFrames), &mRecorder);
 
+  	unregisterRecorderMuteListener();
+	FocusManager& fm = FocusManager::getFocusManager();
+	fm.unregisterRecorderFocusLossListener();
+  
 	notifyObserver(command, (recorder_error_t)ret);
 }
 
@@ -540,7 +540,6 @@ void MediaRecorderImpl::pauseRecorder(recorder_result_t& ret, bool notify)
 
 	audio_manager_result_t result = pause_audio_stream_in();
 	if (result != AUDIO_MANAGER_SUCCESS) {
-		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 		meddbg("pause_audio_stream_in failed ret : %d. recorder: %x\n", result, &mRecorder);
 		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
 		if (notify) {
