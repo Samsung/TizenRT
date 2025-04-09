@@ -617,24 +617,25 @@ static int reloading_thread(int argc, char *argv[])
 static int update_thread(int argc, char *argv[])
 {
 	int ret;
-#ifndef CONFIG_BINMGR_RELOAD_REBOOT 
 	int bin_idx;
 	uint32_t bin_count = binary_manager_get_ucount();
-#endif
 
-	/* Check whether there is binary for update.
+	if (argc <= 1) {
+		bmdbg("Invalid arguments, argc %d\n", argc);
+		return ERROR;
+	}
+
+	/* argv[1] is boot mode.
+	 * Check whether there is binary for update.
 	 * If kernel binary to update exists, board will be rebooted.
-	 * And if common or user biaries binary to update exist, it will be return BINMGR_OK.
+	 * And when CONFIG_BINMGR_RELOAD_REBOOT is enabled, common or user biaries binary to update exist, it will be rebooted.
+	 * Otherwise, it will be return BINMGR_OK.
 	 */
-	ret = binary_manager_check_update();
+	ret = binary_manager_check_update((int)atoi(argv[1]));
 	if (ret < 0) {
 		return ret;
 	}
 
-#ifdef CONFIG_BINMGR_RELOAD_REBOOT // Board Reset for binary reloading
-	printf("==> [REBOOT] Board will be rebooted for new binary loading");
-	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
-#else
 	/* Else, Reload all binaries */
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_STATE(bin_idx) == BINARY_LOADED || BIN_STATE(bin_idx) == BINARY_RUNNING) {
@@ -655,7 +656,7 @@ static int update_thread(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_RESOURCE_FS
-	ret = binary_manager_unmount_resource();
+	ret = binary_manager_umount_resource();
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}
@@ -674,7 +675,7 @@ static int update_thread(int argc, char *argv[])
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}
-#endif
+
 	return BINMGR_OK;
 }
 
@@ -732,26 +733,27 @@ void binary_manager_release_binary_sem(int bin_idx)
  *	 This function creates loading thread to load/unload binary.
  *
  ****************************************************************************/
-int binary_manager_execute_loader(int cmd, int bin_idx)
+int binary_manager_execute_loader(int cmd, int data)
 {
 	int ret;
+	int bin_idx;
 	uint8_t loader_priority;
 	main_t loader_func;
 	char data_str[2];
 	char *loading_data[LOADER_ARGC + 1];
 
-	if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
-		bmdbg("Invalid binary index %d\n", bin_idx);
-		return ERROR;
-	}
-
 	memset(loading_data, 0, sizeof(char *) * (LOADER_ARGC + 1));
-	loading_data[0] = itoa(bin_idx, data_str, 10);
+	loading_data[0] = itoa(data, data_str, 10);
 	loading_data[1] = NULL;
 
 	loader_priority = LOADER_PRIORITY_HIGH;
 	switch (cmd) {
 	case LOADCMD_LOAD:
+		bin_idx = data;
+		if (bin_idx < 0 || bin_idx > USER_BIN_COUNT) {
+			bmdbg("Invalid binary index %d\n", bin_idx);
+			return ERROR;
+		}
 		loader_priority = binary_manager_get_loader_priority(BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)));
 		if (loader_priority <= 0) {
 			bmdbg("Invalid loading priority : %u\n", BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)));
@@ -781,7 +783,7 @@ int binary_manager_execute_loader(int cmd, int bin_idx)
 		bmvdbg("Execute loading thread with pid %d\n", ret);
 		ret = OK;
 	} else {
-		bmdbg("Fail to create loading thread for binary idx %d, errno %d\n", bin_idx, errno);
+		bmdbg("Fail to create loading thread for cmd %d, errno %d\n", cmd, errno);
 	}
 
 	return ret;

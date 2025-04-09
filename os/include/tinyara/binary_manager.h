@@ -138,6 +138,14 @@ enum binmgr_result_type {
 };
 typedef enum binmgr_result_type binmgr_result_type_e;
 
+/* Booting mode when binary is rebooted by binary manager */
+enum binmgr_boot_mode {
+	BOOTMODE_NORMAL = 0,
+	BOOTMODE_SILENT = 1,
+	BOOTMODE_MAX,
+};
+typedef enum binmgr_boot_mode binmgr_boot_mode_e;
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
