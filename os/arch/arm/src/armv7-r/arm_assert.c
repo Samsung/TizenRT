@@ -120,6 +120,9 @@ static bool recursive_abort = false;
 
 #define FRAME_POINTER_ADDR __builtin_frame_address(0)
 
+#define NORMAL_STATE 0
+#define ABORT_STATE 1
+
 /* Flag used to detect the whether upassert called or not */
 bool g_upassert = false;
 
@@ -131,6 +134,9 @@ char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Variable to check the recursive abort */
+static int state = NORMAL_STATE;
 
 /****************************************************************************
  * Private Functions
@@ -959,14 +965,16 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 #endif
 
+	abort_mode = true;
+
 	/* Check if we are in recursive abort */
-	if (abort_mode == true) {
+	if (state == ABORT_STATE) {
 #if defined(CONFIG_BOARD_ASSERT_AUTORESET)
 		(void)boardctl(BOARDIOC_RESET, 0);
 #endif
 		_up_assert(EXIT_FAILURE);
 	} else {
-		abort_mode = true;
+		state = ABORT_STATE;
 	}
 
 	/* Add new line to distinguish between normal log and assert log.*/
