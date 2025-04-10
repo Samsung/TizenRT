@@ -778,6 +778,7 @@ static int ist415_event_thread(int argc, char **argv)
 			ASSERT(get_errno() == EINTR);
 		}
 		if (dev->enable == false) {
+			sem_post(&dev->sem);
 			continue;
 		}
 		dev->lower->ops->irq_disable(dev->lower);
