@@ -777,7 +777,7 @@ static int ist415_event_thread(int argc, char **argv)
 		while (sem_wait(&dev->sem) != OK) {
 			ASSERT(get_errno() == EINTR);
 		}
-		if (dev->forcedoff) {
+		if (dev->enable == false) {
 			continue;
 		}
 		dev->lower->ops->irq_disable(dev->lower);
