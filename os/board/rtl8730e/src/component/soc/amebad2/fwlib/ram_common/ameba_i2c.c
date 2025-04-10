@@ -50,7 +50,7 @@
   */
 
 #include "ameba_soc.h"
-
+#include <errno.h>
 static const char *TAG = "I2C";
 
 #define I2C_SPEED_FINE_TUNE 0
@@ -617,9 +617,17 @@ u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 
 	/* Write in the DR register the data to be sent */
 	for (cnt = 0; cnt < len; cnt++) {
-		InTimeoutCount = 1000;
+		InTimeoutCount = 2000; /*2s*/
 
-		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0);
+		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFNF)) == 0) {
+			DelayUs(1);
+			if (InTimeoutCount == 0) {
+				I2C_Cmd(I2Cx, DISABLE);
+				I2C_Cmd(I2Cx, ENABLE);
+				return -EAGAIN;
+			}
+			InTimeoutCount--;
+		}
 
 		if (cnt >= len - 1) {
 			/*generate stop signal*/
@@ -627,21 +635,20 @@ u32 I2C_MasterWriteBrk(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		} else {
 			I2Cx->IC_DATA_CMD = (*pBuf++);
 		}
-
+		InTimeoutCount = 2000;
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_TFE)) == 0) {
+			DelayUs(1);
 			/* reset I2C hardware if timeout occured */
 			if (InTimeoutCount == 0) {
-				RTK_LOGW(TAG, "MasterWriteBrk timeout - resetting I2C\n");
 				I2C_Cmd(I2Cx, DISABLE);
 				I2C_Cmd(I2Cx, ENABLE);
-				return cnt;
+				return -EAGAIN;
 			}
 
 			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
 				I2C_ClearAllINT(I2Cx);
-				return cnt;
+				return -EAGAIN;
 			}
-
 			InTimeoutCount--;
 		}
 	}
@@ -701,9 +708,10 @@ void I2C_MasterReadDW(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 {
 	u32 cnt = 0;
-
+	u32 timeout;
 	/* read in the DR register the data to be received */
 	for (cnt = 0; cnt < len; cnt++) {
+		timeout = 2000; /*timeout 2ms*/
 		if (cnt >= len - 1) {
 			/* generate stop singal */
 			I2Cx->IC_DATA_CMD = 0x0003 << 8;
@@ -715,8 +723,15 @@ u32 I2C_MasterRead(I2C_TypeDef *I2Cx, u8 *pBuf, u32 len)
 		while ((I2C_CheckFlagState(I2Cx, I2C_BIT_RFNE)) == 0) {
 			if (I2C_GetRawINT(I2Cx) & I2C_BIT_TX_ABRT) {
 				I2C_ClearAllINT(I2Cx);
-				return cnt;
+				return -EAGAIN;
 			}
+			DelayUs(1);
+			if (timeout == 0) {
+				I2C_Cmd(I2Cx, DISABLE);
+				I2C_Cmd(I2Cx, ENABLE);
+				return -EAGAIN;
+			}
+			timeout--;
 		}
 		*pBuf++ = (u8)I2Cx->IC_DATA_CMD;
 	}
