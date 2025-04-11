@@ -45,7 +45,7 @@ typedef enum {
 
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */
-
+	REBOOT_BOARD_SPECIFIC0             = 249, /* IWDG reboot*/
 	REBOOT_BOARD_SPECIFIC1             = 250, /* Board Specific Reboot Reason */
 	REBOOT_BOARD_SPECIFIC2             = 251,
 	REBOOT_BOARD_SPECIFIC3             = 252,
