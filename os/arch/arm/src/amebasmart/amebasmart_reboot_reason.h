@@ -22,6 +22,7 @@
 #include <tinyara/reboot_reason.h>
 
 enum {
+	REBOOT_SYSTEM_RESET_IWDG     = REBOOT_BOARD_SPECIFIC0, /*System reset by IWDG*/
 	REBOOT_SYSTEM_DSLP_RESET     = REBOOT_BOARD_SPECIFIC1, /* System wake up from deep sleep */
 	REBOOT_SYSTEM_SYS_RESET_CORE = REBOOT_BOARD_SPECIFIC2, /* System reset by Core */
 	REBOOT_SYSTEM_BOD_RESET      = REBOOT_BOARD_SPECIFIC3, /* Brownout reset */
