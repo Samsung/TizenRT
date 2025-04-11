@@ -38,7 +38,7 @@
 #define PIN_LOW 0
 #define PIN_HIGH 1
 #define LCD_LAYER 0
-
+#define LCD_ENABLE_TIMEOUT 5000 //unit is ms.
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 #define GPIO_PIN_BACKLIGHT      PB_11
 #define MIPI_GPIO_RESET_PIN 	PA_15
@@ -239,23 +239,25 @@ static void rtl8730e_control_backlight(uint8_t level)
 
 static void rtl8730e_enable_lcdc(void)
 {
+	u32 timeout = LCD_ENABLE_TIMEOUT;
 	LCDC_Cmd(pLCDC, ENABLE);
-	while (!LCDC_CheckLCDCReady(pLCDC)) ;
+	while (!LCDC_CheckLCDCReady(pLCDC)) {
+		DelayMs(1);
+		DEBUGASSERT(timeout > 0);
+		timeout--;
+	}
 }
 
 void rtl8730e_mipidsi_underflowreset(void)
 {
 	u32 reg_val2 = MIPI_DSI_INTS_ACPU_Get((MIPI_TypeDef *) mipi_irq_info.data);
-
 	if (reg_val2) {
 		UnderFlowCnt = 0;
 		MIPI_DSI_INT_Config((MIPI_TypeDef *) mipi_irq_info.data, DISABLE, DISABLE, DISABLE);
 		mipidsi_acpu_reg_clear();
-
 		/*Disable the LCDC*/
 		LCDC_Cmd(pLCDC, DISABLE);
 		lcddbg("ERROR: LCDC_CTRL 0x%x\n", pLCDC->LCDC_CTRL);
-
 		rtl8730e_enable_lcdc();
 	}
 }
@@ -345,5 +347,6 @@ void rtl8730e_lcdc_pm(void)
 {
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
+
 }
 #endif
