@@ -171,6 +171,7 @@ trble_result_e rtw_ble_client_start_scan(void)
 void *scan_filter_tmr_handle = NULL;
 void scan_stop_cb(void *arg)
 {
+	uint8_t wcount = 0;
     //dbg("scan duration exhausted \n");
     if (RTK_BT_OK != rtk_bt_le_gap_stop_scan())
     {
@@ -181,6 +182,11 @@ void scan_stop_cb(void *arg)
     do {
         osif_delay(100);
         rtk_bt_le_gap_get_dev_state(&new_state);
+		wcount++;
+		if (wcount > 30) {	/* Wait up to 3 seconds */
+			debug_print("Stop scan Wait timeout\n");
+			return;
+		}
 	} while(new_state.gap_scan_state != GAP_SCAN_STATE_IDLE);
 }
 
