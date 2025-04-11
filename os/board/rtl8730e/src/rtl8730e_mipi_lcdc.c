@@ -60,7 +60,7 @@ static void rtl8730e_lcd_power_on(void);
 static void rtl8730e_mipi_mode_switch(mipi_mode_t mode);
 static void rtl8730e_lcd_layer_enable(int layer, bool enable);
 static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end);
-static void rtl8730e_enable_lcdc(void);
+static int rtl8730e_enable_lcdc(void);
 static void rtl8730e_register_lcdc_isr(void);
 static void rtl8730e_control_backlight(u8 level);
 FAR void mipi_mode_switch_to_video(bool do_enable);
@@ -237,25 +237,31 @@ static void rtl8730e_control_backlight(uint8_t level)
 	g_rtl8730e_config_dev_s.pwm_level = level;
 }
 
-static void rtl8730e_enable_lcdc(void)
+static int rtl8730e_enable_lcdc(void)
 {
+	u32 timeout = 5000;
 	LCDC_Cmd(pLCDC, ENABLE);
-	while (!LCDC_CheckLCDCReady(pLCDC)) ;
+	while (!LCDC_CheckLCDCReady(pLCDC)) {
+		DelayMs(1);
+		if (timeout == 0) {
+			return FAIL;
+		}
+		timeout--;
+	}
+	return OK;
 }
 
 void rtl8730e_mipidsi_underflowreset(void)
 {
 	u32 reg_val2 = MIPI_DSI_INTS_ACPU_Get((MIPI_TypeDef *) mipi_irq_info.data);
-
+	int ret = -1;
 	if (reg_val2) {
 		UnderFlowCnt = 0;
 		MIPI_DSI_INT_Config((MIPI_TypeDef *) mipi_irq_info.data, DISABLE, DISABLE, DISABLE);
 		mipidsi_acpu_reg_clear();
-
 		/*Disable the LCDC*/
 		LCDC_Cmd(pLCDC, DISABLE);
 		lcddbg("ERROR: LCDC_CTRL 0x%x\n", pLCDC->LCDC_CTRL);
-
 		rtl8730e_enable_lcdc();
 	}
 }
@@ -309,6 +315,7 @@ static void rtl8730e_register_lcdc_isr(void){
 
 void rtl8730e_lcdc_initialize(void)
 {
+	int ret = -1;
 	rtl8730e_gpio_init();
 	struct lcd_data config;
 	config.XPixels = LCD_XRES;
@@ -330,7 +337,11 @@ void rtl8730e_lcdc_initialize(void)
 	struct lcd_dev_s *dev = (struct lcd_dev_s *)mipi_lcdinitialize(dsi_device, &g_rtl8730e_config_dev_s.lcd_config);
 	LcdcInitValues(config);
 	rtl8730e_lcd_init();
-	rtl8730e_enable_lcdc();
+	ret = rtl8730e_enable_lcdc();
+	if (ret != OK) {
+		lcddbg("ERROR: LCD enable failed\n");
+		return;
+	}
 	g_rtl8730e_config_dev_s.underflow = 0;
 
 	if (lcddev_register(dev) < 0) {
@@ -345,5 +356,6 @@ void rtl8730e_lcdc_pm(void)
 {
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
+
 }
 #endif
