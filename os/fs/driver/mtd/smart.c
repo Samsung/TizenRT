@@ -99,6 +99,9 @@
 #define SMART_JOURNAL_DISABLE     0x01
 #define SMART_JOURNAL_ENABLE      0x02
 
+#define SMART_FORMAT_DISABLE      0xff
+#define SMART_FORMAT_ENABLE       0x01
+
 #ifdef CONFIG_MTD_SMART_JOURNALING
 #define SMART_FMT_JOURNAL         SMART_JOURNAL_ENABLE
 #else
@@ -139,6 +142,8 @@
 #define SMART_FMT_JOURNAL_POS     (SMART_FMT_POS1 + 5)
 #define SMART_FMT_NAMESIZE_POS    (SMART_FMT_POS1 + 6)
 #define SMART_FMT_ROOTDIRS_POS    (SMART_FMT_POS1 + 7)
+#define SMART_FMT_FORMAT_POS      (SMART_FMT_POS1 + 8)
+
 #define SMARTFS_FMT_WEAR_POS      36
 #define SMART_WEAR_LEVEL_FORMAT_SIG 32
 #define SMART_PARTNAME_SIZE         4
@@ -2015,8 +2020,14 @@ static int smart_scan(FAR struct smart_struct_s *dev)
 			if (dev->rwbuffer[SMART_FMT_JOURNAL_POS] != SMART_FMT_JOURNAL) {
 				continue;
 			}
+			if (dev->rwbuffer[SMART_FMT_FORMAT_POS] == SMART_FORMAT_ENABLE) {
+				dev->formatstatus = SMART_FMT_STAT_NOFMT;
+				fdbg("format requested, Flash will be erased!!\n");
+				continue;
+			}
 
 			/* Mark the volume as formatted and set the sector size */
+			fdbg("Formatted, continue scanning!!\n");
 			dev->formatstatus = SMART_FMT_STAT_FORMATTED;
 			dev->namesize = dev->rwbuffer[SMART_FMT_NAMESIZE_POS];
 			dev->formatversion = dev->rwbuffer[SMART_FMT_VERSION_POS];
@@ -2367,7 +2378,7 @@ static inline int smart_getformat(FAR struct smart_struct_s *dev, FAR struct sma
 	 * status, then we must perform a scan of the device to search
 	 * for the format marker.
 	 */
-	if (dev->formatstatus != SMART_FMT_STAT_FORMATTED) {
+	if (dev->formatstatus == SMART_FMT_STAT_UNKNOWN) {
 		/* Perform the scan. */
 		ret = smart_scan(dev);
 
@@ -2898,6 +2909,7 @@ static inline int smart_llformat(FAR struct smart_struct_s *dev, unsigned long a
 	/* Record the number of root directory entries we have. */
 
 	dev->rwbuffer[SMART_FMT_ROOTDIRS_POS] = (uint8_t) (arg & 0xff);
+	dev->rwbuffer[SMART_FMT_FORMAT_POS] = SMART_FORMAT_DISABLE;
 
 #ifdef CONFIG_MTD_SMART_ENABLE_CRC
 #ifdef CONFIG_SMART_CRC_8
@@ -4928,22 +4940,39 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 #endif							/* CONFIG_FS_WRITABLE */
 
 	case BIOC_BULKERASE:
-		fdbg("Format started\n");
+		fdbg("Update Format Info started\n");
 #ifndef NXFUSE_HOST_BUILD
 		irqstate_t saved_state = enter_critical_section();
 #endif
-#ifndef CONFIG_MTD_SMART_MINIMIZE_RAM
-		for (int x = 0; x < dev->totalsectors; x++) {
-			/* Mark all other logical sectors as non-existent. */
-			dev->sMap[x] = -1;
+		uint16_t psector = dev->sMap[0];
+		fvdbg("psector : %d\n", psector);
+		header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
+		ret = MTD_BREAD(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+		if (ret != dev->mtdBlksPerSector) {
+			fdbg("Error reading phys sector %d\n", psector);
+			return -EIO;
 		}
+
+#ifdef CONFIG_MTD_SMART_ENABLE_CRC
+#ifdef CONFIG_SMART_CRC_8
+		header->crc8 = smart_calc_sector_crc(dev);
+#elif defined(CONFIG_SMART_CRC_16)
+		*((uint16_t *)header->crc16) = smart_calc_sector_crc(dev);
+#elif defined(CONFIG_SMART_CRC_32)
+		*((uint32_t *)header->crc32) = smart_calc_sector_crc(dev);
 #endif
-		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
+#endif
+		dev->rwbuffer[SMART_FMT_FORMAT_POS] = SMART_FORMAT_ENABLE;
+		ret = MTD_BWRITE(dev->mtd, psector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
+		if (ret == dev->mtdBlksPerSector) {
+			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+			ret = OK;
+		} else {
+			ret = -EIO;
+		}
 #ifndef NXFUSE_HOST_BUILD
 		leave_critical_section(saved_state);
 #endif
-		fdbg("Format Finished\n");
-		sleep(1);
 		goto ok_out;
 	case BIOC_CORRUPTION :
 		sector = dev->sMap[SMART_FIRST_DIR_SECTOR];
@@ -5078,7 +5107,6 @@ ok_out:
 static int smart_journal_init(FAR struct smart_struct_s *dev)
 {
 	int ret = OK;
-	dev->journal_seq = 0;
 #ifdef CONFIG_DEBUG_FS_INFO
 	ret = smart_journal_scan(dev, true);
 #else
@@ -6027,6 +6055,7 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 #endif
 #ifdef CONFIG_MTD_SMART_JOURNALING
 		dev->block_map = NULL;
+		dev->journal_seq = 0;
 #endif
 
 		dev->sectorsize = 0;
@@ -6067,6 +6096,8 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 		dev->minor = minor;
 #endif
+		/* Do a scan of the device. */
+		smart_scan(dev);
 
 		/* Create a MTD block device name. */
 
@@ -6119,8 +6150,7 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 			goto errout;
 		}
 #endif
-		/* Do a scan of the device. */
-		smart_scan(dev);
+
 	}
 
 	return OK;
