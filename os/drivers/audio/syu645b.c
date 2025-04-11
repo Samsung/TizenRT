@@ -104,6 +104,25 @@ static struct pm_callback_s g_pm_syu645b_cb ={
 };
 #endif
 
+static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
+{
+	FAR struct i2c_dev_s *dev = priv->i2c;
+	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
+	uint8_t reg_w[1];
+	reg_w[0] = regaddr;
+	int ret = i2c_write(dev, syu645b_i2c_config, reg_w, 1);
+	if (ret != 1) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	ret =  i2c_read(dev, syu645b_i2c_config, regval, nbytes);
+	if (ret != nbytes) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	return OK;
+}
+
 /************************************************************************************
  * Name: syu645b_exec_i2c_script
  *
@@ -137,25 +156,6 @@ static int syu645b_exec_i2c_script(FAR struct syu645b_dev_s *priv, t_codec_init_
 	return ret;
 }
 
-static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
-{
-	FAR struct i2c_dev_s *dev = priv->i2c;
-	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
-	uint8_t reg_w[1];
-	reg_w[0] = regaddr;
-	int ret = i2c_write(dev, syu645b_i2c_config, reg_w, 1);
-	if (ret != 1) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
-		return ERROR;
-	}
-	ret =  i2c_read(dev, syu645b_i2c_config, regval, nbytes);
-	if (ret != nbytes) {
-		auddbg("Error, cannot read reg %x\n", regaddr);
-		return ERROR;
-	}
-	return OK;
-}
-
 /************************************************************************************
  * Name: syu645b_takesem
  *
@@ -174,6 +174,23 @@ static void syu645b_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
+/************************************************************************************
+ * Name: syu645b_pwm_shutdown
+ *
+ * Description:
+ *   if shudown is true, enter all channels to shutdown. Otherwise exit from shutdown.
+ *
+ ************************************************************************************/
+static void syu645b_pwm_shutdown(FAR struct syu645b_dev_s *priv, bool shutdown)
+{
+	if (shutdown) {
+		syu645b_exec_i2c_script(priv, codec_shutdown_script, sizeof(codec_shutdown_script) / sizeof(t_codec_init_script_entry));
+	} else {
+		syu645b_exec_i2c_script(priv, codec_startup_script, sizeof(codec_startup_script) / sizeof(t_codec_init_script_entry));
+	}
+}
+
+
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 /************************************************************************************
  * Name: syu645b_setmute
@@ -184,7 +201,7 @@ static void syu645b_takesem(sem_t *sem)
  ************************************************************************************/
 static void syu645b_setmute(FAR struct syu645b_dev_s *priv, bool mute)
 {
-	auddbg("mute : %d\n", mute);
+	audvdbg("mute : %d\n", mute);
 	if (mute) {
 		syu645b_exec_i2c_script(priv, codec_init_mute_on_script, sizeof(codec_init_mute_on_script) / sizeof(t_codec_init_script_entry));
 	} else{
@@ -531,12 +548,12 @@ static int syu645b_shutdown(FAR struct audio_lowerhalf_s *dev)
 	syu645b_takesem(&priv->devsem);
 
 	if (priv->running) {
+		/* pwm shutdown and then stop i2s */
+		syu645b_exec_i2c_script(priv, codec_shutdown_script, sizeof(codec_shutdown_script) / sizeof(t_codec_init_script_entry));
 		I2S_STOP(priv->i2s, I2S_TX);
-		syu645b_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 		priv->running = false;
 	}
 	priv->paused = false;
-
 	syu645b_givesem(&priv->devsem);
 
 	/* Now issue a software reset.  This puts all SYU645B registers back in
@@ -635,12 +652,12 @@ static int syu645b_stop(FAR struct audio_lowerhalf_s *dev)
 	if (!priv) {
 		return -EINVAL;
 	}
-	audvdbg(" syu645b_stop Entry\n");
+	audvdbg("syu645b_stop Entry\n");
 	syu645b_takesem(&priv->devsem);
+	/* pwm shutdown and then stop i2s */
+	syu645b_pwm_shutdown(priv, true);
 	I2S_STOP(priv->i2s, I2S_TX);
 
-	/* Need to run the mute script here */
-	syu645b_setmute(priv, true);
 	priv->running = false;
 	syu645b_givesem(&priv->devsem);
 
@@ -676,9 +693,8 @@ static int syu645b_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		syu645b_setmute(priv, true);
-#endif
+		/* pwm shutdown and then pause i2s */
+		syu645b_pwm_shutdown(priv, true);
 		I2S_PAUSE(priv->i2s, I2S_TX);
 	}
 
@@ -717,9 +733,7 @@ static int syu645b_resume(FAR struct audio_lowerhalf_s *dev)
 			syu645b_setvolume(priv);
 		}
 #endif
-
 		I2S_RESUME(priv->i2s, I2S_TX);
-
 	}
 
 	syu645b_givesem(&priv->devsem);
@@ -821,6 +835,7 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* Resume I2S */
 		I2S_RESUME(priv->i2s, I2S_TX);
 
+		syu645b_pwm_shutdown(priv, false);
 		/* Give semaphore */
 		syu645b_givesem(&priv->devsem);
 	}
@@ -932,7 +947,6 @@ static int syu645b_release(FAR struct audio_lowerhalf_s *dev)
 	syu645b_takesem(&priv->devsem);
 	if (priv->running) {
 		I2S_STOP(priv->i2s, I2S_TX);
-		syu645b_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 		priv->running = false;
 	}
 	priv->reserved = false;
@@ -1067,15 +1081,12 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 			up_mdelay(100);
 		}
 #endif
-		/* To prevent consume 12v, just mute on */
-		syu645b_setmute(g_syu645b, true);
+		/* To prevent consume 12v, shutdown */
+		syu645b_pwm_shutdown(g_syu645b, true);
 	}
 	break;
 	case(PM_STANDBY): {
-#if 0
-		syu645b_reset_config(g_syu645b);
-#endif	
-		/* Do nothing */
+		/* Do Nothing */
 	} 
 	break;
 	default: {
@@ -1158,7 +1169,8 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	priv->max_volume = 0x9F;
 	priv->volume = 79;
 	syu645b_set_equalizer(priv, 0);
-	syu645b_setvolume(priv);
+	/* Shutdown pwm and then set mute */
+	syu645b_pwm_shutdown(priv, true);
 	syu645b_setmute(priv, true);
 #endif
 
