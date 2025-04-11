@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 4b2efa3f8d 2025/04/11-12:08:34 ==
+1. Add timeout for buffer print to break out of loop if ack not received from CA32
+
 == version c58cd8c3d5 2025/03/21-14:20:16 ==
 1. Add condition to check TizenRT status before doing IPC print
 
