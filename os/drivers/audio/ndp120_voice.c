@@ -714,6 +714,17 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		}
 		break;
 	}
+	case AUDIOIOC_CHANGEKD: {
+		if (arg > 1) {
+			return -EINVAL;
+		}
+		if (priv->running) {
+			return -EBUSY;
+		}
+		priv->kd_num = arg;
+		ndp120_change_kd(priv);
+		break;
+	}
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
@@ -882,7 +893,8 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 	priv->mute = false;
-
+	priv->kd_num = 0;
+	priv->kd_changed = false;
 #ifdef CONFIG_PM
 	/* only used during pm callbacks */
 	g_ndp120 = priv;

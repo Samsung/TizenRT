@@ -91,6 +91,9 @@ struct ndp120_dev_s {
 
 	pthread_mutex_t ndp_mutex_notification_sample;
 	pthread_cond_t ndp_cond_notification_sample;
+	uint8_t kd_num; // 0 is hi bixby, 1 is bixby
+	bool kd_changed;
+	sem_t reset_sem;
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */

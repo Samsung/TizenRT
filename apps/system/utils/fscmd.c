@@ -1360,7 +1360,7 @@ static int format_filesystem(fs_minor_t minor)
 		printf("Invalid minor number : %d", minor);
 		return ERROR;
 	}
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 32; i++) {
 		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
 		fd = open(name, O_RDWR);
 		if (fd < 0) {

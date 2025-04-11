@@ -132,6 +132,21 @@ void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int inter
 
 static void do_ndp120_i2s_setup(struct syntiant_ndp_device_s *ndp);
 
+void ndp120_semtake(struct ndp120_dev_s *dev)
+{
+	while (sem_wait(&dev->reset_sem) != 0) {
+		/* The only case that an error should occur here is if
+		 * the wait was awakened by a signal.
+		 */
+
+		ASSERT(*get_errno_ptr() == EINTR);
+	}
+}
+
+void ndp120_semgive(struct ndp120_dev_s *dev)
+{
+	sem_post(&dev->reset_sem);
+}
 
 static int check_status(char *message, int s)
 {
@@ -1250,13 +1265,18 @@ ndp120_app_device_health_check(void)
 		SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
 
 	while (1) {
+		ndp120_semtake(dev);
 		(void)pm_suspend(dev->pm_id);
-		s = check_firmware_aliveness(dev, wait_period_ms);
-		if (s) {
-			/* In the case of failure, try again after sometime */
-			printf("Error: %d in check_firmware_aliveness\n", s);
+		/* If KD Change requested, then skip checking */
+		if (!dev->kd_changed) {
+			s = check_firmware_aliveness(dev, wait_period_ms);
+			if (s) {
+				/* In the case of failure, try again after sometime */
+				printf("Error: %d in check_firmware_aliveness\n", s);
+			}
 		}
 		(void)pm_resume(dev->pm_id);
+		ndp120_semgive(dev);
 		usleep(NDP_ALIVENESS_CHECK_PERIOD_US);
 	}
 
@@ -1272,20 +1292,25 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 
 	const char *mcu_package = "/mnt/kernel/audio/mcu_fw";
 	const char *dsp_package = "/mnt/kernel/audio/dsp_fw";
-	const char *neural_package = "/mnt/kernel/audio/kd_local";
+	const char *neural_package;
+	if (dev->kd_num == 0) {
+		neural_package = "/mnt/kernel/model/kd_local";
+	} else {
+		neural_package = "/mnt/kernel/model/kd_local2";
+	}
+
 
 	const unsigned int AUDIO_TANK_MS =
 		AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
 		+ 300  /* posterior latency of <= 24 MS/frame * 12 frames == 288 MS */
 		+ 100; /* generous allowance for RTL8730E match-to-extract time */
 
-	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 6;
+	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 5;
 
 	/* save handle so we can use it from debug routine later, e.g. from other util/shell */
 	_ndp_debug_handle = dev;
 
 	if (!reinit) {
-
 		s = pthread_mutex_init(&dev->ndp_mutex_mbsync, NULL);
 		if (s) {
 			auddbg("failed to initialize mb sync mutex variable\n");
@@ -1310,7 +1335,7 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 		if (s) {
 			auddbg("failed to initialize ndp_cond_notification_sample\n");
 		}
-
+		sem_init(&dev->reset_sem, 0, 1);
 	}
 
 	/* initialize NDP */
@@ -1795,6 +1820,33 @@ int ndp120_kd_stop(struct ndp120_dev_s *dev)
 	int off = 0;
 	s = syntiant_ndp_interrupts(dev->ndp, &off);
 	dev->ndp_interrupts_enabled = false;
+	return s;
+}
+
+int ndp120_change_kd(struct ndp120_dev_s *dev)
+{
+	int s = SYNTIANT_NDP_ERROR_NONE;
+	ndp120_semtake(dev);
+	dev->kd_changed = true;
+	dev->lower->irq_enable(false);
+
+	s = syntiant_ndp_uninit(dev->ndp, false, SYNTIANT_NDP_INIT_MODE_RESET);
+	audvdbg("uninit : %d\n", s);
+
+	dev->lower->reset();
+
+	s = ndp120_init(dev, true);
+
+	if (s) {
+		/* For now do nothing, there may be some cases where init might
+		 * have failed due to no memory, so retry after some time */
+		auddbg("reinit failed!\n");
+	} else {
+		/* re enable interrupts */
+		dev->lower->irq_enable(true);
+	}
+	dev->kd_changed = false;
+	ndp120_semgive(dev);
 	return s;
 }
 
