@@ -177,10 +177,10 @@ void pm_idle(void)
 		/* set wakeup timer */
 		if (delay > 0) {
 			pmvdbg("Setting timer and board will wake up after %ld millisecond\n", delay);
-			up_set_pm_timer(TICK2USEC(delay));
+			g_pmglobals.sleep_ops->set_timer(TICK2USEC(delay));
 		}
 #endif
-		up_pm_board_sleep(pm_wakehandler);
+		g_pmglobals.sleep_ops->sleep(pm_wakehandler);
 		stime = clock_systimer();
 	}
 EXIT:

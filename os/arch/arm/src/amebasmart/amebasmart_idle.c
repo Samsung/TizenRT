@@ -40,6 +40,18 @@
 #endif
 
 #ifdef CONFIG_PM
+
+struct platform_pg_ops system_pg_ops = {
+	.sleep = up_pm_board_sleep,
+	.set_timer = up_set_pm_timer,
+};
+
+#ifdef CONFIG_PM_DVFS
+struct platform_cg_ops system_cg_ops = {
+	.adjust_dvfs = up_set_dvfs,
+};
+#endif
+
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -108,6 +120,10 @@ void up_idle(void)
 void arm_pminitialize(void)
 {
 	/* Then initialize the TinyAra power management subsystem properly */
-	pm_initialize();
+#ifdef CONFIG_PM_DVFS
+	pm_initialize(&system_pg_ops, &system_cg_ops);
+#else
+	pm_initialize(&system_pg_ops);
+#endif
 }
 #endif
