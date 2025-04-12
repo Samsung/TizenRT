@@ -531,7 +531,7 @@ static int w25n_blockerase(FAR struct nand_raw_s *raw, off_t block)
 
 	uint32_t address = block << W25N_BLOCK_SHIFT;
 
-	fvdbg("block: %08lx\n", (long)block);
+	fdbg("block: %08lx\n", (long)block);
 
 	fvdbg("24bit address sent : %02X %02X %02X\n", (address >> (16 + W25N_PAGE_SHIFT)) & 0xff, (address >> (8 + W25N_PAGE_SHIFT)) & 0xff, (address >> (W25N_PAGE_SHIFT)) & 0xff);
 
