@@ -99,16 +99,16 @@ int little_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *part
  ****************************************************************************/
 
 static const struct block_operations g_bops = {
-        little_open,                             /* open     */
-        little_close,                            /* close    */
-        little_read,                             /* read     */
+	little_open,				/* open     */
+	little_close,				/* close    */
+	little_read,				/* read     */
 #ifdef CONFIG_FS_WRITABLE
-        little_write,                            /* write    */
+	little_write,				/* write    */
 #else
-        NULL,                                    /* write    */
+	NULL,						/* write    */
 #endif
-        little_geometry,                         /* geometry */
-        little_ioctl                             /* ioctl    */
+	little_geometry,			/* geometry */
+	little_ioctl				/* ioctl    */
 };
 
 /****************************************************************************
@@ -160,31 +160,31 @@ static int little_close(FAR struct inode *inode)
 static ssize_t little_reload(struct mtd_dev_s *dev, FAR uint8_t *buffer, off_t startblock, size_t nblocks)
 {
 
-       ssize_t nread;
-       ssize_t mtdBlocks, mtdStartBlock;
-       uint16_t mtdBlksPerSector, size;
-       struct mtd_geometry_s geo;
-       int ret;
+	ssize_t nread;
+	ssize_t mtdBlocks, mtdStartBlock;
+	uint16_t mtdBlksPerSector, size;
+	struct mtd_geometry_s geo;
+	int ret;
 
-       size = 1024; // *TODO
-       ret = MTD_IOCTL(dev, MTDIOC_GEOMETRY,(unsigned long)&geo);
-       if (ret < 0) {
-               fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
-               return ret;
-        }
-       mtdBlksPerSector = size / geo.blocksize;
+	size = 1024;				// *TODO
+	ret = MTD_IOCTL(dev, MTDIOC_GEOMETRY, (unsigned long)&geo);
+	if (ret < 0) {
+		fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
+		return ret;
+	}
+	mtdBlksPerSector = size / geo.blocksize;
 
-       mtdBlocks = nblocks * mtdBlksPerSector;
+	mtdBlocks = nblocks * mtdBlksPerSector;
 
-       mtdStartBlock = startblock * mtdBlksPerSector;
+	mtdStartBlock = startblock * mtdBlksPerSector;
 
-       /* Read the full erase block into the buffer. */
+	/* Read the full erase block into the buffer. */
 
-        fvdbg("Read %d blocks starting at block %d\n", mtdBlocks, mtdStartBlock);
-        nread = MTD_BREAD(dev, mtdStartBlock, mtdBlocks, buffer);
-        if (nread != mtdBlocks) {
-                fdbg("Read %d blocks starting at block %d failed: %d\n", nblocks, startblock, nread);
-        }
+	fvdbg("Read %d blocks starting at block %d\n", mtdBlocks, mtdStartBlock);
+	nread = MTD_BREAD(dev, mtdStartBlock, mtdBlocks, buffer);
+	if (nread != mtdBlocks) {
+		fdbg("Read %d blocks starting at block %d failed: %d\n", nblocks, startblock, nread);
+	}
 
 	return nread / mtdBlksPerSector;
 }
@@ -205,45 +205,42 @@ static ssize_t little_write(FAR struct inode *inode, const unsigned char *buffer
 
 static int little_geometry(FAR struct inode *inode, struct geometry *geometry)
 {
-	fdbg("\n");
-	return OK;
-	/*FAR struct mtd_dev_s *mtd;
-        uint32_t erasesize;
-        uint16_t sectorsize;
-        struct mtd_geometry_s geo;
-        int ret;
-        fvdbg("Entry\n");
-        DEBUGASSERT(inode);
-        sectorsize = 1024; // *TODO
-        if (geometry) {
-                mtd = (FAR struct mtd_dev_s *)inode->i_private;
-                geometry->geo_available = true;
-                geometry->geo_mediachanged = false;
+	fvdbg("entry\n");
+	FAR struct mtd_dev_s *mtd;
+	uint32_t erasesize;
+	uint16_t sectorsize;
+	struct mtd_geometry_s geo;
+	int ret;
+	fvdbg("Entry\n");
+	DEBUGASSERT(inode);
+	sectorsize = 1024;			// *TODO
+	if (geometry) {
+		mtd = (FAR struct mtd_dev_s *)inode->i_private;
+		geometry->geo_available = true;
+		geometry->geo_mediachanged = false;
 #ifdef CONFIG_FS_WRITABLE
-                geometry->geo_writeenabled = true;
+		geometry->geo_writeenabled = true;
 #else
-                geometry->geo_writeenabled = false;
+		geometry->geo_writeenabled = false;
 #endif
-                ret = MTD_IOCTL(mtd, MTDIOC_GEOMETRY,(unsigned long)&geo);
-                if (ret < 0) {
-                        fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
-                        return ret;
-                }
-                erasesize = geo.erasesize;
-                geometry->geo_nsectors = geo.neraseblocks * erasesize / sectorsize;
-                geometry->geo_sectorsize = sectorsize;
+		ret = MTD_IOCTL(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo);
+		if (ret < 0) {
+			fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
+			return ret;
+		}
+		erasesize = geo.erasesize;
+		geometry->geo_nsectors = geo.neraseblocks * erasesize / sectorsize;
+		geometry->geo_sectorsize = sectorsize;
 
-                fvdbg("available: true mediachanged: false writeenabled: %s\n", geometry->geo_writeenabled ? "true" : "false");
-                fvdbg("nsectors: %d sectorsize: %d\n", geometry->geo_nsectors, geometry->geo_sectorsize);
-                return OK;
-        }
-        return -EINVAL;
-	*/
+		fvdbg("available: true mediachanged: false writeenabled: %s\n", geometry->geo_writeenabled ? "true" : "false");
+		fvdbg("nsectors: %d sectorsize: %d\n", geometry->geo_nsectors, geometry->geo_sectorsize);
+		return OK;
+	}
+	return -EINVAL;
 }
 
 static int little_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
-	fdbg("\n");
+	fvdbg("entry\n");
 	return OK;
 }
-
