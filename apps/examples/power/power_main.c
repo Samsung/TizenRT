@@ -127,7 +127,7 @@ static int start_pm_test(int argc, char *argv[])
 		printf("Fail to open pm start(errno %d)", get_errno());
 		return -1;
 	}
-	if(ioctl(fd, PMIOC_RESUME, 0) < 0) {
+	if(ioctl(fd, PMIOC_START, 0) < 0) {
 		printf("Fail to pm start(errno %d)\n", get_errno());
 		close(fd);
 		return -1;
@@ -162,11 +162,6 @@ static int start_pm_test(int argc, char *argv[])
 	}
 #endif
 
-	if(ioctl(fd, PMIOC_SUSPEND, 0) < 0) {
-		printf("Fail to pm start(errno %d)\n", get_errno());
-		close(fd);
-		return -1;
-	}
 	close(fd);
 	printf("######################### PM LONG TERM TEST END #########################\n");
 
