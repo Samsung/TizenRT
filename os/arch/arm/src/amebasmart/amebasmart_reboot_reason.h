@@ -27,6 +27,7 @@ enum {
 	REBOOT_SYSTEM_BOD_RESET      = REBOOT_BOARD_SPECIFIC3, /* Brownout reset */
 	REBOOT_SYSTEM_TZWD_RESET     = REBOOT_BOARD_SPECIFIC4, /* TrustZone Watch dog */
 	REBOOT_SYSTEM_NP_LP_FAULT    = REBOOT_BOARD_SPECIFIC5, /* Reset due to fault in KM4/KM0 */
+	REBOOT_TEMP_BLOCK_KM4_LOG    = REBOOT_BOARD_SPECIFIC6, /* Temporal reboot reason setting to disable KM4 log print */
 };
 
 #endif /* __AMEBASMART_REBOOT_REASON_H__ */
