@@ -73,6 +73,7 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mtd.h>
+#include "../../littlefs/littlefs/lfs.h"
 
 /****************************************************************************
  * Private Definitions
@@ -81,7 +82,6 @@
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
-
 static int little_open(FAR struct inode *inode);
 static int little_close(FAR struct inode *inode);
 static ssize_t little_reload(struct mtd_dev_s *mtd, FAR uint8_t *buffer, off_t startblock, size_t nblocks);
@@ -123,7 +123,7 @@ int little_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *part
 {
 	int ret = -ENOMEM;
 	char devname[18];
-
+	FAR struct little_dev_s *dev;
 #ifdef CONFIG_DEBUG
 	if (minor < 0 || minor > 255 || !mtd) {
 		return -EINVAL;
@@ -135,9 +135,13 @@ int little_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *part
 		snprintf(devname, 18, "/dev/little%d", minor);
 	}
 
-	/* Inode private data is a reference to the SMART device structure. */
+	dev = (FAR struct little_dev_s *)kmm_malloc(sizeof(struct little_dev_s));
+	if (!dev) {
+		return -ENOMEM;
+	}
 
-	ret = register_blockdriver(devname, &g_bops, 0, mtd);
+	dev->mtd = mtd;
+	ret = register_blockdriver(devname, &g_bops, 0, dev);
 	if (ret < 0) {
 		fdbg("register_blockdriver failed: %d\n", -ret);
 		return ret;
@@ -206,7 +210,8 @@ static ssize_t little_write(FAR struct inode *inode, const unsigned char *buffer
 static int little_geometry(FAR struct inode *inode, struct geometry *geometry)
 {
 	fvdbg("entry\n");
-	FAR struct mtd_dev_s *mtd;
+	struct little_dev_s *dev = (struct little_dev_s *)inode->i_private;
+
 	uint32_t erasesize;
 	uint16_t sectorsize;
 	struct mtd_geometry_s geo;
@@ -215,7 +220,6 @@ static int little_geometry(FAR struct inode *inode, struct geometry *geometry)
 	DEBUGASSERT(inode);
 	sectorsize = 1024;			// *TODO
 	if (geometry) {
-		mtd = (FAR struct mtd_dev_s *)inode->i_private;
 		geometry->geo_available = true;
 		geometry->geo_mediachanged = false;
 #ifdef CONFIG_FS_WRITABLE
@@ -223,7 +227,7 @@ static int little_geometry(FAR struct inode *inode, struct geometry *geometry)
 #else
 		geometry->geo_writeenabled = false;
 #endif
-		ret = MTD_IOCTL(mtd, MTDIOC_GEOMETRY, (unsigned long)&geo);
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_GEOMETRY, (unsigned long)&geo);
 		if (ret < 0) {
 			fdbg("MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
 			return ret;
@@ -239,8 +243,24 @@ static int little_geometry(FAR struct inode *inode, struct geometry *geometry)
 	return -EINVAL;
 }
 
+/* TODO Let's consider handle format more smoothly. move all code here to lfs.c ? */
 static int little_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	fvdbg("entry\n");
-	return OK;
+	int ret = OK;
+	struct little_dev_s *dev;
+	dev = (struct little_dev_s *)inode->i_private;
+	switch (cmd) {
+	case BIOC_BULKERASE:
+		fdbg("Update Format Info started\n");
+		ret = lfs_reserve_format(dev->lfs);
+		if (ret == OK) {
+			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+		}
+		break;
+	default:
+		ret = -ENOSYS;
+		break;
+	}
+	return ret;
 }

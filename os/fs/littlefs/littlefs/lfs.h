@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "lfs_util.h"
+#include <tinyara/fs/mtd.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -125,6 +126,7 @@ enum lfs_type {
     LFS_TYPE_CREATE         = 0x401,
     LFS_TYPE_DELETE         = 0x4ff,
     LFS_TYPE_SUPERBLOCK     = 0x0ff,
+    LFS_TYPE_FORMAT			= 0x001,
     LFS_TYPE_DIRSTRUCT      = 0x200,
     LFS_TYPE_CTZSTRUCT      = 0x202,
     LFS_TYPE_INLINESTRUCT   = 0x201,
@@ -489,6 +491,10 @@ typedef struct lfs {
 #endif
 } lfs_t;
 
+struct little_dev_s {
+	struct mtd_dev_s *mtd;
+	lfs_t *lfs;
+};
 
 /// Filesystem functions ///
 
@@ -809,6 +815,10 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg);
 #endif
 #endif
 
+/* Request format file system. flash will be erase during next mount time */
+int lfs_reserve_format(lfs_t *lfs);
+
+int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg);
 
 #ifdef __cplusplus
 } /* extern "C" */
