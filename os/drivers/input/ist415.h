@@ -477,6 +477,8 @@ struct ist415_dev_s {
 
 	sem_t sem;
 
+	int pm_domain;
+
 	WDOG_ID wdog;
 	struct work_s work;
 };
