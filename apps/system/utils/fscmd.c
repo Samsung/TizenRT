@@ -881,6 +881,7 @@ static int tash_mount(int argc, char **args)
 	const char *source;
 	char *fullsource;
 	const char *target;
+	const char *data;
 	char *fulltarget;
 	bool badarg = false;
 
@@ -928,6 +929,8 @@ static int tash_mount(int argc, char **args)
 		source = target;
 		target = args[optind];
 		optind++;
+		data = args[optind];
+		optind++;
 		if (optind < argc) {
 			FSCMD_OUTPUT(TOO_MANY_ARGS, args[0]);
 
@@ -951,7 +954,7 @@ static int tash_mount(int argc, char **args)
 
 	/* Perform the mount */
 
-	ret = mount(fullsource, fulltarget, fs, 0, NULL);
+	ret = mount(fullsource, fulltarget, fs, 0, (FAR const void *)data);
 	if (ret < 0) {
 		FSCMD_OUTPUT(CMD_FAILED, args[0], fs);
 	}
@@ -1360,11 +1363,16 @@ static int format_filesystem(fs_minor_t minor)
 		printf("Invalid minor number : %d", minor);
 		return ERROR;
 	}
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 32; i++) {
 		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
 		fd = open(name, O_RDWR);
 		if (fd < 0) {
-			continue;
+			/* Then Find littlefs */
+			snprintf(name, sizeof(name), "/dev/little%dp%d", minor, i);
+			fd = open(name, O_RDWR);
+			if (fd < 0) {
+				continue;
+			}
 		}
 		/* TODO Multi root of smartfs should be considered when it enabled */
 		ret = ioctl(fd, BIOC_BULKERASE, 0);

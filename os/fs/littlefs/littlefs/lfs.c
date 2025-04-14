@@ -157,7 +157,6 @@ static int lfs_bd_cmp(lfs_t *lfs,
         if (err) {
             return err;
         }
-
         int res = memcmp(dat, data + i, diff);
         if (res) {
             return res < 0 ? LFS_CMP_LT : LFS_CMP_GT;
@@ -1134,7 +1133,6 @@ static lfs_stag_t lfs_dir_fetchmatch(lfs_t *lfs,
             && (pair[0] >= lfs->block_count || pair[1] >= lfs->block_count)) {
         return LFS_ERR_CORRUPT;
     }
-
     // find the block with the most recent revision
     uint32_t revs[2] = {0, 0};
     int r = 0;
@@ -1369,7 +1367,7 @@ static lfs_stag_t lfs_dir_fetchmatch(lfs_t *lfs,
                 dir->erased = (fcrc_ == fcrc.crc);
             }
         }
-
+ 
         // synthetic move
         if (lfs_gstate_hasmovehere(&lfs->gdisk, dir->pair)) {
             if (lfs_tag_id(lfs->gdisk.tag) == lfs_tag_id(besttag)) {
@@ -2112,7 +2110,7 @@ relocate:
 
         // can't relocate superblock, filesystem is now frozen
         if (lfs_pair_cmp(dir->pair, (const lfs_block_t[2]){0, 1}) == 0) {
-            fdbg("Superblock 0x%"PRIx32" has become unwritable", dir->pair[1]);
+			fdbg("Superblock 0x%"PRIx32" has become unwritable", dir->pair[1]);
             return LFS_ERR_NOSPC;
         }
 
@@ -4502,9 +4500,8 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
         if (err < 0) {
             goto cleanup;
         }
-
-        // fetch next block in tail list
-        lfs_stag_t tag = lfs_dir_fetchmatch(lfs, &dir, dir.tail,
+ 
+   		lfs_stag_t tag = lfs_dir_fetchmatch(lfs, &dir, dir.tail,
                 LFS_MKTAG(0x7ff, 0x3ff, 0),
                 LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8),
                 NULL,
@@ -6525,4 +6522,93 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg) {
     return err;
 }
 #endif
+
+int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
+{
+	// scan directory blocks for superblock and any global updates
+	int err = LFS_LOCK(lfs->cfg);
+	if (err) {
+        return err;
+    }
+	err = lfs_init(lfs, cfg);
+    if (err) {
+        return err;
+    }
+	lfs_mdir_t dir = {.tail = {0, 1}};
+	struct lfs_tortoise_t tortoise = {
+		.pair = {LFS_BLOCK_NULL, LFS_BLOCK_NULL},
+		.i = 1,
+		.period = 1,
+	};
+	//parse_again:
+	while (!lfs_pair_isnull(dir.tail)) {
+		int err = lfs_tortoise_detectcycles(&dir, &tortoise);
+		if (err < 0) {
+			goto cleanup;
+		}
+		lfs_stag_t tag;
+
+		// fetch next block in tail list
+		tag = lfs_dir_fetchmatch(lfs, &dir, dir.tail,
+				LFS_MKTAG(0x7ff, 0x3ff, 0),
+				LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8),
+				NULL,
+				lfs_dir_find_match, &(struct lfs_dir_find_match){
+				lfs, "formatfs", 8});
+		if (tag > 0 && !lfs_tag_isdelete(tag)) {
+			err = lfs_format_(lfs, cfg);
+			goto cleanup;
+		}
+
+	}
+cleanup:
+	lfs_deinit(lfs);
+    LFS_UNLOCK(lfs->cfg);
+	return err;
+}
+
+int lfs_reserve_format(lfs_t *lfs)
+{
+	int err;
+	err = LFS_LOCK(lfs->cfg);
+    if (err) {
+        goto cleanup;
+    }
+
+	// create free lookahead
+	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+	lfs->lookahead.start = 0;
+	lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
+			lfs->block_count);
+	lfs->lookahead.next = 0;
+	lfs_alloc_ckpoint(lfs);
+
+	// create root dir
+	lfs_mdir_t root;
+	err = lfs_dir_alloc(lfs, &root);
+	if (err) {
+		goto cleanup;
+	}
+	// write one superblock
+	lfs_superblock_t superblock = {
+		.version	 = lfs_fs_disk_version(lfs),
+		.block_size  = lfs->cfg->block_size,
+		.block_count = lfs->block_count,
+		.name_max	 = lfs->name_max,
+		.file_max	 = lfs->file_max,
+		.attr_max	 = lfs->attr_max,
+	};
+	lfs_superblock_tole32(&superblock);
+	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "formatfs"},
+			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+				&superblock}));
+cleanup:
+	if (err) {
+	    LFS_ERROR("lfs_request_format -> %d", err);
+	}
+    LFS_UNLOCK(lfs->cfg);
+    return err;
+}
 

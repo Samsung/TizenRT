@@ -438,7 +438,7 @@ static int littlefs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	FAR struct littlefs_mountpt_s *fs;
 	FAR struct inode *inode;
 	FAR struct inode *drv;
-
+	int ret = OK;
 	/* Recover our private data from the struct file instance */
 
 	inode = filep->f_inode;
@@ -745,13 +745,14 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct mtd_geometry_s *geo = &fs->geo;
 	FAR struct inode *drv = fs->drv;
+	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
 	block = (block * c->block_size + off) / geo->blocksize;
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BREAD((struct mtd_dev_s *)drv->i_private, block, size, buffer);
+	ret = MTD_BREAD((struct mtd_dev_s *)dev->mtd, block, size, buffer);
 	if (ret >= 0) {
 		return OK;
 	}
@@ -767,13 +768,14 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct mtd_geometry_s *geo = &fs->geo;
 	FAR struct inode *drv = fs->drv;
+	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
 	block = (block * c->block_size + off) / geo->blocksize;
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BWRITE((struct mtd_dev_s *)drv->i_private, block, size, buffer);
+	ret = MTD_BWRITE((struct mtd_dev_s *)dev->mtd, block, size, buffer);
 	if (ret >= 0) {
 		return OK;
 	}
@@ -788,13 +790,14 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 {
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct inode *drv = fs->drv;
+	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
 	int ret = OK;
 
 	DEBUGASSERT(drv && drv->i_private);
 	FAR struct mtd_geometry_s *geo = &fs->geo;
 	size_t size = c->block_size / geo->erasesize;
 	block = block * c->block_size / geo->erasesize;
-	ret = MTD_ERASE((struct mtd_dev_s *)drv->i_private, block, size);
+	ret = MTD_ERASE((struct mtd_dev_s *)dev->mtd, block, size);
 
 	if (ret >= 0) {
 		return OK;
@@ -829,6 +832,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 {
 	FAR struct littlefs_mountpt_s *fs;
 	int ret;
+	struct little_dev_s *dev;
 
 	/* Open the block driver */
 
@@ -838,13 +842,12 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			return ret;
 		}
 	}
-
 	/* Create an instance of the mountpt state structure */
 
 	fs = kmm_zalloc(sizeof(*fs));
 	if (!fs) {
-		ret = -ENOMEM;
-		goto errout_with_block;
+		/* We do not close block driver to recovery by format command from app */
+		return ENOMEM;
 	}
 
 	/* Initialize the allocated mountpt state structure. The filesystem is
@@ -854,11 +857,12 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 	fs->drv = driver;			/* Save the driver reference */
 	sem_init(&fs->sem, 0, 0);	/* Initialize the access control semaphore */
+	dev = (struct little_dev_s *)fs->drv->i_private;
 
 	/* Get MTD geometry directly */
 
 	DEBUGASSERT(driver && driver->i_private);
-	ret = MTD_IOCTL((FAR struct mtd_dev_s *)driver->i_private, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
+	ret = MTD_IOCTL((FAR struct mtd_dev_s *)dev->mtd, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
 
 	if (ret < 0) {
 		goto errout_with_fs;
@@ -877,7 +881,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->cfg.block_count = fs->geo.neraseblocks;
 	fs->cfg.block_cycles = 500;
 	fs->cfg.cache_size = fs->geo.blocksize;
-	fs->cfg.lookahead_size = 0x800;	//lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
+	fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
 
 	/* Then get information about the littlefs filesystem on the devices
 	 * managed by this driver.
@@ -891,6 +895,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			goto errout_with_fs;
 		}
 	}
+	ret = lfs_check_format(&fs->lfs, &fs->cfg);
 
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
@@ -913,6 +918,8 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		}
 	}
 
+	dev->lfs = &fs->lfs;
+
 	*handle = fs;
 	littlefs_semgive(fs);
 	return OK;
@@ -920,11 +927,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 errout_with_fs:
 	sem_destroy(&fs->sem);
 	kmm_free(fs);
-errout_with_block:
-	if (INODE_IS_BLOCK(driver) && driver->u.i_bops->close) {
-		driver->u.i_bops->close(driver);
-	}
-
 	return ret;
 }
 
