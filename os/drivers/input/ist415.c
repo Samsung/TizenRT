@@ -56,6 +56,7 @@
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 
+#include <tinyara/pm/pm.h>
 #include <tinyara/input/touchscreen.h>
 #include <tinyara/input/ist415.h>
 
@@ -660,7 +661,9 @@ static void ist415_lockup_work(struct ist415_dev_s *dev)
 
 	if (dev->irq_working == false) {
 		if (dev->event_mode == true) {
+			(void)pm_suspend(dev->pm_domain);
 			ret = ist415_i2c_read_da(dev, IST415_TOUCH_STATUS, &touch_status, 1);
+			(void)pm_resume(dev->pm_domain);
 			if (ret) {
 				ist415dbg("Fail to read touch status\n");
 				goto retry_handler;
@@ -756,6 +759,8 @@ static void touch_interrupt(struct ist415_config_s *config)
 	if (ret == OK && sem_cnt < 1) {
 		sem_post(&dev->wait_irq);
 	}
+
+	(void)pm_timedsuspend(dev->pm_domain, 1000);
 }
 
 /****************************************************************************
@@ -1272,15 +1277,27 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->wdog = wd_create();
 	ist415_start(dev);
 
-	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
-	if (!upper) {
-		ist415dbg("Fail to alloc touchscreen_s\n");
+	dev->pm_domain = pm_domain_register("IST415");
+	if (dev->pm_domain < 0) {
+		ist415dbg("Fail to register pm domain\n");
+		ist415_disable(dev);
+		wd_delete(dev->wdog);
 		sem_destroy(&dev->sem);
 		sem_destroy(&dev->wait_irq);
 		task_delete(dev->pid);
-		wd_delete(dev->wdog);
 		kmm_free(dev);
+		return ERROR;
+	}
+
+	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
+	if (!upper) {
+		ist415dbg("Fail to alloc touchscreen_s\n");
 		ist415_disable(dev);
+		wd_delete(dev->wdog);
+		sem_destroy(&dev->sem);
+		sem_destroy(&dev->wait_irq);
+		task_delete(dev->pid);
+		kmm_free(dev);
 		return ERROR;
 	}
 	upper->ops = &g_ist415_ops;
