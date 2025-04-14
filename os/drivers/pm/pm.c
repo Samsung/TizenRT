@@ -120,12 +120,6 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
         	break;
         case PMIOC_RESUME:
 		ret = pm_resume((int)arg);
-		/* Note: Below code is temporary fix to support old 'system_pm_start' API.
-		 * It needs to remove for later version.
-		 */
-		if (arg == PM_IDLE_DOMAIN) {
-			pm_start();
-		}
 		pmvdbg("State unlocked!\n");
 		break;
 	case PMIOC_SLEEP:
