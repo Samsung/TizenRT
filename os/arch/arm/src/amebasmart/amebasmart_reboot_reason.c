@@ -92,7 +92,7 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		}
 
 		/* CA32:WDG4 or KM4:WDG2 or KM0:IWDG NonSecure WDG reset */
-		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG2) || (boot_reason & AON_BIT_RSTF_IWDG)) {
+		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG2)) {
 			/* CA32 Secure ATF doesn't have OS, no implementation for CA32 Secure Watchdog WDG3
 			 * When CA32 occurred Secure Fault, it will rely on CA32 NonSecure WDG4 to Reset
 			 * BKUP_REG2 is use to distinguish whether the fault originated from the CA32 S or NS */
@@ -109,6 +109,10 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		/* KM4:WDG1 Secure WDG reset */
 		else if (boot_reason & AON_BIT_RSTF_WDG1) {
 			return REBOOT_SYSTEM_TZWD_RESET;
+		}
+		/* KM0: IWDG reset*/
+		else if (boot_reason & AON_BIT_RSTF_IWDG) {
+			return REBOOT_SYSTEM_RESET_IWDG;
 		}
 
 		/* KM4 deep sleep handled by KM0 (KM4 sleep + KM0 tickless, KM4 deep sleep + KM0 deep sleep AON) */
