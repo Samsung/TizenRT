@@ -373,6 +373,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 	/* Initialize partinfo data */
 	partinfo->smartfs_partno = -1;
 	partinfo->romfs_partno = -1;
+	partinfo->littlefs_partno = -1;
 	partinfo->timezone_partno = -1;
 
 	partoffset = 0;
@@ -454,7 +455,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 
 void automount_fs_partition(partition_info_t *partinfo)
 {
-#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS) || defined(CONFIG_AUTOMOUNT_LITTLEFS)
+#if defined(CONFIG_AUTOMOUNT_USERFS) || defined(CONFIG_AUTOMOUNT_ROMFS) || defined(CONFIG_LIBC_ZONEINFO_ROMFS)
 	int ret;
 	char fs_devname[FS_PATH_MAX];
 
@@ -492,7 +493,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 #endif
 
 #ifdef CONFIG_FS_LITTLEFS
-	if (partinfo->romfs_partno != -1) {
+	if (partinfo->littlefs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
 		ret = mount(fs_devname, "/mnt", "littlefs", 0, "autoformat");
 		if (ret != OK) {
