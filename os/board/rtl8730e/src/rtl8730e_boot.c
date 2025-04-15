@@ -140,9 +140,20 @@ static void board_initialize_bor(void)
 	BOR_Enable(ENABLE);
 	DelayUs(100);
 	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
-	lldbg("Brownout reset enabled\n");
+	dbg("Brownout reset enabled\n");
 }
 #endif
+
+int up_check_iwdg(void)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN);
+
+	if ((Temp & APBPeriph_IWDG) == 0) {
+		dbg("IWDG is disabled\n");
+	} else {
+		dbg("IWDG is enabled\n");
+	}
+}
 
 void board_i2s_initialize(void)
 {
@@ -549,7 +560,8 @@ void board_initialize(void)
 	ipc_msg_loguart.msg_len = 1;
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
-
+	
+	up_check_iwdg();
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
