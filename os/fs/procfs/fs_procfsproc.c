@@ -98,6 +98,12 @@
  */
 
 #define STATUS_LINELEN 128
+#define TASH_TASK_NAME "tash"
+
+/* Modify TASH_TASK_NAME_LENGTH along with TASH_TASK_NAME
+ * whenever we change the name of tash tcb
+ */
+#define TASH_TASK_NAME_LENGTH 4
 
 /****************************************************************************
  * Private Types
@@ -374,6 +380,9 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	uint32_t total_cpuload = 0;
 	uint32_t total_active = 0;
 #endif
+	uint8_t state;
+	bool is_tash_running = false;
+	pid_t tash_pid = -1;
 
 	remaining = buflen;
 	totalsize = 0;
@@ -409,10 +418,32 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #else
 	ppid = -1;
 #endif
+
+	state = tcb->task_state;
+
+	/* If tash is currently running tcb, then show tash as waiting
+	 * for semaphore and next ready to run tcb as running.
+	 */
+#if CONFIG_TASK_NAME_SIZE > 0
+	struct tcb_s *rtcb = sched_gettcb(getpid());
+	if (!strncmp(rtcb->name, TASH_TASK_NAME, TASH_TASK_NAME_LENGTH + 1)) {
+		is_tash_running = true;
+		tash_pid = rtcb->pid;
+	}
+
+	if (is_tash_running) {
+		if (tcb->blink != NULL && tcb->blink->pid == tash_pid) {
+			state = TSTATE_TASK_RUNNING;
+		} else if (tcb->pid == tash_pid) {
+			state = TSTATE_WAIT_SEM;
+		}
+	}
+#endif
+
 #ifdef CONFIG_SMP
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
 #else
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
 #endif
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
