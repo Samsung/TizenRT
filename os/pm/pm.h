@@ -138,6 +138,14 @@ struct pm_global_s {
 
 	/* Indicates Board is Ready to State Change */
 	bool is_running;
+
+	/* Sleep ops structure */
+	struct platform_pg_ops *sleep_ops;
+
+#ifdef CONFIG_PM_DVFS
+	/* DVFS ops structure */
+	struct platform_cg_ops *dvfs_ops;
+#endif
 };
 
 /****************************************************************************
