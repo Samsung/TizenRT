@@ -29,6 +29,7 @@
 
 #include "PlayerObserverWorker.h"
 #include "InputHandler.h"
+#include "MediaQueue.h"
 
 namespace media {
 /**
@@ -130,12 +131,14 @@ private:
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
-	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
+	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret);
+	void unsetPlayerObserver();
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
 	stream_focus_state_t getStreamFocusState(void);
 	void setPlayerLooping(bool loop, player_result_t &ret);
 	player_result_t playbackFinished(void);
+	void dequeueAndRunObserverCallback();
 
 private:
 	MediaPlayer &mPlayer;
@@ -147,6 +150,7 @@ private:
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
+	MediaQueue mObserverQueue;
 };
 } // namespace media
 #endif

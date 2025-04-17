@@ -41,6 +41,7 @@ public:
 	}
 	std::function<void()> deQueue();
 	bool isAlive();
+	bool isSameThread();
 	void clearQueue(void);
 
 protected:
