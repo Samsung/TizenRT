@@ -196,15 +196,6 @@ void sched_kfree(FAR void *address);
 #define sched_kfree(a) sched_ufree(a)
 #endif
 
-/* Functions defined in sched/sched_garbage *********************************/
-
-/* Must be called periodically to clean up deallocations delayed by
- * sched_kmm_free().  This may be done from either the IDLE thread or from a
- * worker thread.  The IDLE thread has very low priority and could starve
- * the system for memory in some context.
- */
-
-void sched_garbagecollection(void);
 
 #undef KMALLOC_EXTERN
 #if defined(__cplusplus)

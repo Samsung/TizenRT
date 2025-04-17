@@ -87,6 +87,20 @@ void mm_ioctl_alloc_fail(size_t size, size_t align)
 	}
 }
 
+void mm_ioctl_garbagecollection(void)
+{
+	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
+	if (mmfd < 0) {
+		mdbg("Fail to open %s, errno %d\n", MMINFO_DRVPATH, get_errno());
+	} else {
+		int res = ioctl(mmfd, MMINFOIOC_GC, NULL);
+		if (res == ERROR) {
+			mdbg("Fail to call sched_garbagecollection, errno %d\n", get_errno());
+		}
+		close(mmfd);
+	}
+}
+
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
