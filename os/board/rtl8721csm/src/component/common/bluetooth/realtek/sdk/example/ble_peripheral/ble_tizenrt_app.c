@@ -220,7 +220,7 @@ void  ble_tizenrt_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback_msg)
                                 connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
                                 connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
                 trble_server_connected_t p_func = server_init_parm.connected_cb;
-                p_func(connected->conn_id, connected->conn_type, connected->remote_bd);
+                p_func(connected->conn_id, connected->conn_type, connected->remote_bd, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
 #if defined(CONFIG_BLE_INDICATION)
                 if(connected->conn_type == TRBLE_SERVER_DISCONNECTED){
                     if(ble_tizenrt_indicate_sem != NULL)
