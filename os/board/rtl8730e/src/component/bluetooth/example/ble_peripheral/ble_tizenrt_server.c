@@ -430,7 +430,7 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
         debug_print("get random add handle \n");
         return conn_handle;
     } 
-	
+
     return conn_handle;
 }
 
@@ -448,6 +448,7 @@ trble_result_e rtw_ble_server_set_device_name(uint8_t* name)
 
 trble_result_e rtw_ble_server_adv_into_idle(void)
 {
+	uint8_t wcount = 0;
     rtk_bt_le_gap_dev_state_t new_state;
     if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
     {
@@ -468,13 +469,18 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
         break;
     case GAP_ADV_STATE_START:
         {
-            do {   
+            do {
                 debug_print("ADV STATE : START \n");
                 osif_delay(100);
                 if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 			    {
 					debug_print("get dev state fail \n");
 			    }
+				wcount++;
+				if (wcount > 30) {	/* Wait up to 3 seconds */
+					debug_print("Wait timeout\n");
+					return TRBLE_FAIL;
+				}
             } while(new_state.gap_adv_state == GAP_ADV_STATE_START);
 
             if(new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
@@ -490,12 +496,17 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
         break;
     case GAP_ADV_STATE_STOP:
         {
-            do {   
+            do {
                 debug_print("ADV STATE : STOPPING \n");
                 osif_delay(100);
 				if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 				{
 					debug_print("get dev state fail \n");
+				}
+				wcount++;
+				if (wcount > 30) {	/* Wait up to 3 seconds */
+					debug_print("Wait timeout\n");
+					return TRBLE_FAIL;
 				}
             } while(new_state.gap_adv_state == GAP_ADV_STATE_STOP);
 
@@ -514,12 +525,18 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
         break;
     }
 
-    do {   
+	wcount = 0;
+	do {
         debug_print("Waiting for adv idle \n");
         osif_delay(100);
 		if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 		{
 			debug_print("get dev state fail \n");
+			return TRBLE_FAIL;
+		}
+		wcount++;
+		if (wcount > 30) {	/* Wait up to 3 seconds */
+			debug_print("Wait timeout\n");
 			return TRBLE_FAIL;
 		}
     } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
@@ -655,6 +672,9 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 
 trble_result_e rtw_ble_server_start_adv(void)
 {
+#if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+	uint8_t wcount = 0;
+#endif
 	rtk_bt_le_get_active_conn_t active_conn;
     if (RTK_BT_OK != rtk_bt_le_gap_get_active_conn(&active_conn))
     {
@@ -696,6 +716,11 @@ trble_result_e rtw_ble_server_start_adv(void)
 			{
 				debug_print("get dev state fail \n");
 			}
+			wcount++;
+			if (wcount > 30) {	/* Wait up to 3 seconds */
+				debug_print("Wait timeout\n");
+				return TRBLE_FAIL;
+			}
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
 #endif
@@ -725,12 +750,17 @@ trble_result_e rtw_ble_server_start_adv(void)
 
 #if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
     do
-    {   
+    {
         debug_print("Waiting for adv start \n");
         osif_delay(100);
 		if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 		{
 			debug_print("get dev state fail \n");
+		}
+		wcount++;
+		if (wcount > 30) {	/* Wait up to 3 seconds */
+			debug_print("Wait timeout\n");
+			return TRBLE_FAIL;
 		}
     } while(new_state.gap_adv_state != GAP_ADV_STATE_ADVERTISING);
 #endif
@@ -740,6 +770,7 @@ trble_result_e rtw_ble_server_start_adv(void)
 
 trble_result_e rtw_ble_server_stop_adv(void)
 {
+	uint8_t wcount = 0;
     rtk_bt_le_gap_dev_state_t new_state;
 	if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 	{
@@ -760,6 +791,11 @@ trble_result_e rtw_ble_server_stop_adv(void)
 			if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
 			{
 				debug_print("get dev state fail \n");
+			}
+			wcount++;
+			if (wcount > 30) {	/* Wait up to 3 seconds */
+				debug_print("Wait timeout\n");
+				return TRBLE_FAIL;
 			}
         } while(new_state.gap_adv_state != GAP_ADV_STATE_IDLE);
     }
