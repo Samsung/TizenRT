@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version dbb75c439b 2025/04/17-16:01:15 ==
+1. Fix issue of not receiving multicast packets after PM wake
+
 == version c58cd8c3d5 2025/03/21-14:20:16 ==
 1. Add condition to check TizenRT status before doing IPC print
 
