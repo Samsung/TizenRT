@@ -1241,6 +1241,8 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->pid = kernel_thread("ist415_isr", CONFIG_IST415_WORKPRIORITY , 2048, (main_t)ist415_event_thread, (FAR char *const *)parm);
 	if (dev->pid < 0) {
 		ist415dbg("Fail to create kernel thread\n");
+		sem_destroy(&dev->sem);
+		sem_destroy(&dev->wait_irq);
 		kmm_free(dev);
 		return ERROR;
 	}
@@ -1258,6 +1260,9 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	ret = ist415_get_info((void *)dev);
 	if (ret) {
 		ist415dbg("Fail to get info\n");
+		sem_destroy(&dev->sem);
+		sem_destroy(&dev->wait_irq);
+		task_delete(dev->pid);
 		kmm_free(dev);
 		return ret;
 	} else {
@@ -1270,6 +1275,10 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	if (!upper) {
 		ist415dbg("Fail to alloc touchscreen_s\n");
+		sem_destroy(&dev->sem);
+		sem_destroy(&dev->wait_irq);
+		task_delete(dev->pid);
+		wd_delete(dev->wdog);
 		kmm_free(dev);
 		ist415_disable(dev);
 		return ERROR;
