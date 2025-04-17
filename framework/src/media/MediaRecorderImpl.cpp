@@ -92,13 +92,24 @@ recorder_result_t MediaRecorderImpl::destroy()
 
 	if (ret == RECORDER_OK && mRecorderObserver) {
 		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
-		row.stopWorker();
-		row.startWorker();
-		mRecorderObserver = nullptr;
+		mObserverQueue.clearQueue();
+		row.enQueue(&MediaRecorderImpl::dequeueAndRunObserverCallback, shared_from_this());
+		if (row.isSameThread()) {
+			mRecorderObserver = nullptr;
+		} else {
+			row.enQueue(&MediaRecorderImpl::unsetRecorderObserver, shared_from_this());
+			mSyncCv.wait(lock);
+		}
 	}
 
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
 	return ret;
+}
+
+void MediaRecorderImpl::unsetRecorderObserver()
+{
+	mRecorderObserver = nullptr;
+	notifySync();
 }
 
 void MediaRecorderImpl::destroyRecorder(recorder_result_t& ret)
@@ -114,6 +125,16 @@ void MediaRecorderImpl::destroyRecorder(recorder_result_t& ret)
 
 	mCurState = RECORDER_STATE_NONE;
 	notifySync();
+}
+
+void MediaRecorderImpl::dequeueAndRunObserverCallback()
+{
+	if (!mObserverQueue.isEmpty()) {
+		std::function<void()> run = mObserverQueue.deQueue();
+		if (run != nullptr) {
+			run();
+		}
+	}
 }
 
 recorder_result_t MediaRecorderImpl::prepare()
@@ -590,6 +611,7 @@ recorder_state_t MediaRecorderImpl::getState()
 recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
 {
 	meddbg("%s recorder: %x\n", __func__, &mRecorder);
+	recorder_result_t ret = RECORDER_OK;
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	RecorderWorker& mrw = RecorderWorker::getWorker();
@@ -598,22 +620,21 @@ recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderOb
 		return RECORDER_ERROR_NOT_ALIVE;
 	}
 
-	mrw.enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer);
+	mrw.enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer, std::ref(ret));
 	meddbg("setRecorderObserver enqueued. recorder: %x\n", &mRecorder);
 	mSyncCv.wait(lock);
 
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
-	return RECORDER_OK;
+	return ret;
 }
 
-void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer)
+void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer, recorder_result_t& ret)
 {
 	medvdbg("setRecorderObserver\n");
 
-	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
 	if (mRecorderObserver) {
-		row.stopWorker();
-		row.startWorker();
+		meddbg("Observer already set. Invalid operation. recorder: %x\n", &mRecorder);
+		ret = RECORDER_ERROR_INVALID_OPERATION;
 	}
 
 	mRecorderObserver = observer;
@@ -809,33 +830,35 @@ void MediaRecorderImpl::notifyObserver(recorder_observer_command_t cmd, ...)
 		va_list ap;
 		va_start(ap, cmd);
 
-		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
 		switch (cmd) {
 		case RECORDER_OBSERVER_COMMAND_FINISHIED: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_FINISHIED\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, std::ref(mRecorder));
+			mObserverQueue.enQueue(&MediaRecorderObserverInterface::onRecordFinished, mRecorderObserver, std::ref(mRecorder));
 		} break;
 		case RECORDER_OBSERVER_COMMAND_STOPPED: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_STOPPED\n");
 			recorder_error_t errCode = (recorder_error_t)va_arg(ap, int);
-			row.enQueue(&MediaRecorderObserverInterface::onRecordStopped, mRecorderObserver, std::ref(mRecorder), errCode);
+			mObserverQueue.enQueue(&MediaRecorderObserverInterface::onRecordStopped, mRecorderObserver, std::ref(mRecorder), errCode);
 		} break;
 		case RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_OVERRUN\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferOverrun, mRecorderObserver, std::ref(mRecorder));
+			mObserverQueue.enQueue(&MediaRecorderObserverInterface::onRecordBufferOverrun, mRecorderObserver, std::ref(mRecorder));
 		} break;
 		case RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_UNDERRUN\n");
-			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferUnderrun, mRecorderObserver, std::ref(mRecorder));
+			mObserverQueue.enQueue(&MediaRecorderObserverInterface::onRecordBufferUnderrun, mRecorderObserver, std::ref(mRecorder));
 		} break;
 		case RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED: {
 			medvdbg("RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
 			unsigned char *data = va_arg(ap, unsigned char *);
 			size_t size = va_arg(ap, size_t);
 			std::shared_ptr<unsigned char> autodata(data, [](unsigned char *p){ delete[] p; });
-			row.enQueue(&MediaRecorderObserverInterface::onRecordBufferDataReached, mRecorderObserver, std::ref(mRecorder), autodata, size);
+			mObserverQueue.enQueue(&MediaRecorderObserverInterface::onRecordBufferDataReached, mRecorderObserver, std::ref(mRecorder), autodata, size);
 		} break;
 		}
+
+		RecorderObserverWorker& row = RecorderObserverWorker::getWorker();
+		row.enQueue(&MediaRecorderImpl::dequeueAndRunObserverCallback, shared_from_this());
 
 		va_end(ap);
 	}

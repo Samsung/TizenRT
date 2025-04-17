@@ -30,7 +30,6 @@ int media_init(void)
 {
 	audio_manager_init();
 
-	// Create worker threads
 	PlayerWorker::getWorker().startWorker();
 	RecorderWorker::getWorker().startWorker();
 	PlayerObserverWorker::getWorker().startWorker();

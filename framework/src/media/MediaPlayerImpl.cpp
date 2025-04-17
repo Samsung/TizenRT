@@ -96,13 +96,24 @@ player_result_t MediaPlayerImpl::destroy()
 
 	if (ret == PLAYER_OK && mPlayerObserver) {
 		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.stopWorker();
-		pow.startWorker();
-		mPlayerObserver = nullptr;
+		mObserverQueue.clearQueue();
+		pow.enQueue(&MediaPlayerImpl::dequeueAndRunObserverCallback, shared_from_this());
+		if (pow.isSameThread()) {
+			mPlayerObserver = nullptr;
+		} else {
+			pow.enQueue(&MediaPlayerImpl::unsetPlayerObserver, shared_from_this());
+			mSyncCv.wait(lock);
+		}
 	}
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
+}
+
+void MediaPlayerImpl::unsetPlayerObserver()
+{
+	mPlayerObserver = nullptr;
+	notifySync();
 }
 
 void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
@@ -118,6 +129,16 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 
 	mCurState = PLAYER_STATE_NONE;
 	notifySync();
+}
+
+void MediaPlayerImpl::dequeueAndRunObserverCallback()
+{
+	if (!mObserverQueue.isEmpty()) {
+		std::function<void()> run = mObserverQueue.deQueue();
+		if (run != nullptr) {
+			run();
+		}
+	}
 }
 
 player_result_t MediaPlayerImpl::prepare()
@@ -741,6 +762,7 @@ void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSourc
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
+	player_result_t ret = PLAYER_OK;
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
@@ -749,22 +771,21 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer);
+	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer, std::ref(ret));
 	meddbg("setPlayerObserver enqueued. player: %x\n", &mPlayer);
 	mSyncCv.wait(lock);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
-	return PLAYER_OK;
+	return ret;
 }
 
-void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
-{	
+void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret)
+{
 	medvdbg("setPlayerObserver\n");
 	
-	PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 	if (mPlayerObserver) {
-		pow.stopWorker();
-		pow.startWorker();
+		meddbg("Observer already set. Invalid operation. player: %x\n", &mPlayer);
+		ret = PLAYER_ERROR_INVALID_OPERATION;
 	}
 
 	mPlayerObserver = observer;
@@ -894,25 +915,24 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 	va_start(ap, cmd);
 
 	if (mPlayerObserver != nullptr) {
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
 		switch (cmd) {
 		case PLAYER_OBSERVER_COMMAND_FINISHED:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackFinished, mPlayerObserver, std::ref(mPlayer));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackFinished, mPlayerObserver, std::ref(mPlayer));
 			break;
 		case PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, std::ref(mPlayer), (player_error_t)va_arg(ap, int));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, std::ref(mPlayer), (player_error_t)va_arg(ap, int));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, std::ref(mPlayer));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, std::ref(mPlayer));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, std::ref(mPlayer));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, std::ref(mPlayer));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, std::ref(mPlayer), (size_t)va_arg(ap, size_t));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, std::ref(mPlayer), (size_t)va_arg(ap, size_t));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED:
-			pow.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, std::ref(mPlayer), (buffer_state_t)va_arg(ap, int));
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, std::ref(mPlayer), (buffer_state_t)va_arg(ap, int));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED: {
 			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
@@ -927,9 +947,12 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			if (error != PLAYER_ERROR_NONE) {
 				mCurState = PLAYER_STATE_CONFIGURED;
 			}
-			pow.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, std::ref(mPlayer), error);
+			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, std::ref(mPlayer), error);
 			break;
 		}
+
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+		pow.enQueue(&MediaPlayerImpl::dequeueAndRunObserverCallback, shared_from_this());
 	}
 
 	va_end(ap);
