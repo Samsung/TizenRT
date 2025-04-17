@@ -186,6 +186,7 @@ void rtl8730e_ist415_initialize(void)
 	if (ist415_initialize(TOUCH_DEV_PATH, i2c, dev) < 0) {
 		touchdbg("ERROR: Touch driver register fail\n");
 		up_i2cuninitialize(i2c);
+	} else {
+		touchdbg("Touch driver register success\n");
 	}
-	touchdbg("Touch driver register success\n");
 }
