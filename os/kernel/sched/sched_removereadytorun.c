@@ -114,6 +114,9 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 {
 	FAR struct tcb_s *ntcb = NULL;
 	bool ret = false;
+	FAR dq_queue_t *tasklist;
+
+	tasklist = TLIST_HEAD(rtcb->task_state);
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
 	sched_checkstackoverflow(rtcb);
@@ -123,7 +126,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	 * In this case, we are removing the currently active task.
 	 */
 
-	if (!rtcb->blink) {
+	if (!rtcb->blink && TLIST_ISRUNNABLE(rtcb->task_state)) {
 		/* There must always be at least one task in the list (the idle task) */
 
 		ntcb = (FAR struct tcb_s *)rtcb->flink;
@@ -135,7 +138,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 
 	/* Remove the TCB from the ready-to-run list */
 
-	dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
+	dq_rem((FAR dq_entry_t *)rtcb, tasklist);
 
 	/* Since the TCB is not in any list, it is now invalid */
 
