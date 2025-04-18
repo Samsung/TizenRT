@@ -200,8 +200,6 @@ struct amebasmart_i2c_priv_s {
 	struct amebasmart_trace_s trace[CONFIG_I2C_NTRACE];
 #endif
 
-	uint8_t initialized;		/* Initialization status */
-
 	uint32_t status;			/* End of transfer SR2|SR1 status */
 };
 
@@ -925,16 +923,7 @@ static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
 	/* Power-up and configure GPIOs */
 	DEBUGASSERT(priv);
 	DEBUGASSERT(!priv->i2c_object);
-
-	if (!priv->initialized) {
-		priv->i2c_object = (i2c_t *)kmm_malloc(sizeof(i2c_t));
-		DEBUGASSERT(priv->i2c_object);
-		priv->initialized = true;
-	} else {
-		/* memset 0 if not required to allocate */
-		memset(priv->i2c_object, 0, sizeof(i2c_t));
-	}
-
+	priv->i2c_object = (i2c_t *)kmm_malloc(sizeof(i2c_t));
 	DEBUGASSERT(priv->i2c_object);
 	i2c_init(priv->i2c_object, priv->config->sda_pin, priv->config->scl_pin);
 
@@ -971,8 +960,8 @@ static int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv)
 	irq_detach(priv->config->irq);
 #endif
 
-	/* must ensure that the priv->i2c_object do not get used, but do not set it to NULL */
-	memset(priv->i2c_object, 0, sizeof(i2c_t));
+	kmm_free(priv->i2c_object);
+	priv->i2c_object = NULL;
 
 	return OK;
 }
