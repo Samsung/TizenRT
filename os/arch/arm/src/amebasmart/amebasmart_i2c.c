@@ -429,6 +429,9 @@ static inline void amebasmart_i2c_sem_wait(FAR struct amebasmart_i2c_priv_s *pri
 {
 	int ret;
 
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2C_DRV, 1);
+#endif
 	do {
 		/* Take the semaphore (perhaps waiting) */
 
@@ -625,6 +628,9 @@ static inline void amebasmart_i2c_sem_waitstop(FAR struct amebasmart_i2c_priv_s 
 static inline void amebasmart_i2c_sem_post(struct amebasmart_i2c_priv_s *priv)
 {
 	sem_post(&priv->sem_excl);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_I2C_DRV, 0);
+#endif
 }
 
 /************************************************************************************
@@ -922,9 +928,9 @@ static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
 {
 	/* Power-up and configure GPIOs */
 	DEBUGASSERT(priv);
-	DEBUGASSERT(!priv->i2c_object);
-	priv->i2c_object = (i2c_t *)kmm_malloc(sizeof(i2c_t));
 	DEBUGASSERT(priv->i2c_object);
+	priv->i2c_object->i2c_idx = 0;
+	priv->i2c_object->I2Cx = NULL;
 	i2c_init(priv->i2c_object, priv->config->sda_pin, priv->config->scl_pin);
 
 #ifdef CONFIG_I2C_WRITEREAD
@@ -953,15 +959,11 @@ static int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv)
 {
 
 	DEBUGASSERT(priv);
-	DEBUGASSERT(priv->i2c_object);
 
 #ifndef CONFIG_I2C_POLLED
 	up_disable_irq(priv->config->irq);
 	irq_detach(priv->config->irq);
 #endif
-
-	kmm_free(priv->i2c_object);
-	priv->i2c_object = NULL;
 
 	return OK;
 }
@@ -1194,6 +1196,10 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 
 	if ((volatile int)priv->refs++ == 0) {
 		amebasmart_i2c_sem_init(priv);
+
+		DEBUGASSERT(!priv->i2c_object);
+		priv->i2c_object = (i2c_t *)kmm_malloc(sizeof(i2c_t));
+		DEBUGASSERT(priv->i2c_object);
 		amebasmart_i2c_init(priv);
 	}
 
@@ -1236,6 +1242,10 @@ int up_i2cuninitialize(FAR struct i2c_dev_s *dev)
 
 	amebasmart_i2c_deinit(priv);
 
+	DEBUGASSERT(priv->i2c_object);
+	kmm_free(priv->i2c_object);
+	priv->i2c_object = NULL;
+
 	/* Release unused resources */
 
 	amebasmart_i2c_sem_destroy(priv);
@@ -1277,10 +1287,10 @@ static uint32_t rtk_i2c_suspend(uint32_t expected_idle_time, void *param)
 
 	/* Need to destroy semaphore and release i2c object to prevent memory leak */
 #ifdef CONFIG_AMEBASMART_I2C1
-	up_i2cuninitialize((struct i2c_dev_s *)&amebasmart_i2c1_priv);
+	amebasmart_i2c_deinit(&amebasmart_i2c1_priv);
 #endif
 #ifdef CONFIG_AMEBASMART_I2C2
-	up_i2cuninitialize((struct i2c_dev_s *)&amebasmart_i2c2_priv);
+	amebasmart_i2c_deinit(&amebasmart_i2c2_priv);
 #endif
 	return 1;
 }
@@ -1292,10 +1302,10 @@ static uint32_t rtk_i2c_resume(uint32_t expected_idle_time, void *param)
 	/* For PG Sleep, I2C 1/2 HW will be lost power, thus a reinitialization is required here 
 	I2C0 is under SYSON block, so it will not require to be reinitialized*/
 #ifdef CONFIG_AMEBASMART_I2C1
-	(void) up_i2cinitialize(1);
+	amebasmart_i2c_init(&amebasmart_i2c1_priv);
 #endif
 #ifdef CONFIG_AMEBASMART_I2C2
-	(void) up_i2cinitialize(2);
+	amebasmart_i2c_init(&amebasmart_i2c2_priv);
 #endif
 	return 1;
 }

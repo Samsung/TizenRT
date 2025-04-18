@@ -74,7 +74,7 @@ int i2schar_devinit(void)
 #if defined(CONFIG_AMEBASMART_I2S2) && !defined(CONFIG_AUDIO_ALC1019)
 		/* Call amebasmart_i2s_initialize() to get an instance of the I2S interface */
 		/* Initialise I2S2 */
-		i2s = amebasmart_i2s_initialize(I2S_NUM_2, I2S_INIT);
+		i2s = amebasmart_i2s_initialize(I2S_NUM_2);
 
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");
@@ -91,7 +91,7 @@ int i2schar_devinit(void)
 		I2S_ERR_CB_REG(i2s, err_cb, "Error_Test_String");
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
-		i2s = amebasmart_i2s_initialize(I2S_NUM_3, I2S_INIT);
+		i2s = amebasmart_i2s_initialize(I2S_NUM_3);
 
 		if (!i2s) {
 			lldbg("ERROR: Failed to get the amebasmart I2S driver\n");

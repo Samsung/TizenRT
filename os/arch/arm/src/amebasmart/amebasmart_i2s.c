@@ -1800,7 +1800,7 @@ errout:
  *   Valid i2s device structure reference on succcess; a NULL on failure
  *
  ****************************************************************************/
-struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
+struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 {
 	struct amebasmart_i2s_config_s *hw_config_s = NULL;
 	struct amebasmart_i2s_s *priv;
@@ -1822,24 +1822,18 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 		return NULL;
 	}
 
-	if (!is_reinit) {
-		if (g_i2sdevice[port] != NULL) {
-			return &g_i2sdevice[port]->dev;
-		}
+	if (g_i2sdevice[port] != NULL) {
+		return &g_i2sdevice[port]->dev;
+	}
 
-		/* Allocate a new state structure for this chip select.  NOTE that there
-		* is no protection if the same chip select is used in two different
-		* chip select structures.
-		*/
-		priv = (struct amebasmart_i2s_s *)kmm_zalloc(sizeof(struct amebasmart_i2s_s));
-		if (!priv) {
-			i2serr("ERROR: Failed to allocate a chip select structure\n");
-			return NULL;
-		}
-	} else {
-		/* The I2S structure should exist after system wakeup */
-		priv = g_i2sdevice[port];
-		DEBUGASSERT(priv);
+	/* Allocate a new state structure for this chip select.  NOTE that there
+	 * is no protection if the same chip select is used in two different
+	 * chip select structures.
+	 */
+	priv = (struct amebasmart_i2s_s *)kmm_zalloc(sizeof(struct amebasmart_i2s_s));
+	if (!priv) {
+		i2serr("ERROR: Failed to allocate a chip select structure\n");
+		return NULL;
 	}
 
 	priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
@@ -1891,9 +1885,7 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit)
 	}
 	/* Basic settings */
 	//priv->i2s_num = priv->i2s_object->i2s_idx;
-	if (!is_reinit) {
-		g_i2sdevice[port] = priv;
-	}
+	g_i2sdevice[port] = priv;
 
 	/* Success exit */
 	return &priv->dev;
@@ -1913,23 +1905,49 @@ static void amebasmart_i2s_suspend(uint16_t port)
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
 
 	i2s_disable(priv->i2s_object, 1);
-	i2s_tx_enabled = 0;
-	kmm_free(priv->i2s_object);
-	priv->i2s_object = NULL;
-	sem_destroy(&priv->exclsem);
-	sem_destroy(&priv->bufsem_tx);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (priv->rx.dog) {
-		wd_delete(priv->rx.dog);
+		wd_cancel(priv->rx.dog);
 		priv->rx.dog = NULL;
 	}
 #endif
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (priv->tx.dog) {
-		wd_delete(priv->tx.dog);
+		wd_cancel(priv->tx.dog);
 		priv->tx.dog = NULL;
 	}
 #endif
+
+}
+
+static void amebasmart_i2s_resume(uint16_t port)
+{
+	struct amebasmart_i2s_config_s *hw_config_s;
+	struct amebasmart_i2s_s *priv;
+	int ret;
+	int count;
+	/* The I2S structure should exist after system wakeup */
+	priv = g_i2sdevice[port];
+	DEBUGASSERT(priv);
+	DEBUGASSERT(priv->i2s_object);
+	memset(priv->i2s_object, 0, sizeof(i2s_t));
+	/* Config values initialization */
+	hw_config_s = priv->config;
+	DEBUGASSERT(hw_config_s);
+
+	/* Get default configuration */
+	i2s_getdefaultconfig(priv);
+
+	/* I2s object initialization */
+	i2s_init(priv->i2s_object, hw_config_s->i2s_sclk_pin, hw_config_s->i2s_ws_pin, hw_config_s->i2s_sd_tx_pin, hw_config_s->i2s_sd_rx_pin, hw_config_s->i2s_mclk_pin);
+
+	/* Initialize buffering */
+#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
+	i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
+#endif
+
+	ret = amebasmart_i2s_isr_initialize(priv);
+	DEBUGASSERT(ret == OK)
 }
 
 static uint32_t rtk_i2s_suspend(uint32_t expected_idle_time, void *param)
@@ -1954,10 +1972,10 @@ static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
 
 	/* For PG Sleep, I2S HW will be lost power, thus a reinitialization is required here */
 #ifdef CONFIG_AMEBASMART_I2S2
-	(void)amebasmart_i2s_initialize(I2S_NUM_2, I2S_REINIT);
+	amebasmart_i2s_resume(I2S_NUM_2);
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
-	(void)amebasmart_i2s_initialize(I2S_NUM_3, I2S_REINIT);
+	amebasmart_i2s_resume(I2S_NUM_3);
 #endif
 
 	return 1;
