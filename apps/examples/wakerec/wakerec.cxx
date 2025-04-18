@@ -200,6 +200,11 @@ private:
 		printf("####   Playback done!!        ####\n");
 		printf("##################################\n");
 		if (mKDEnabled) {
+			fp = fopen(filePath, "wb");
+			if (fp == NULL) {
+				printf("FILE OPEN FAILED\n");
+				return;
+			}
 			printf("###################################\n");
 			printf("#### Wait for wakeup triggered ####\n");
 			printf("###################################\n");
