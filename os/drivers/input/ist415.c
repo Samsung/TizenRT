@@ -1241,8 +1241,7 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->pid = kernel_thread("ist415_isr", CONFIG_IST415_WORKPRIORITY , 2048, (main_t)ist415_event_thread, (FAR char *const *)parm);
 	if (dev->pid < 0) {
 		ist415dbg("Fail to create kernel thread\n");
-		kmm_free(dev);
-		return ERROR;
+		goto cleanup_sems_mem;
 	}
 
 	/* Init System Power */
@@ -1258,8 +1257,8 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	ret = ist415_get_info((void *)dev);
 	if (ret) {
 		ist415dbg("Fail to get info\n");
-		kmm_free(dev);
-		return ret;
+		task_delete(dev->pid);
+		goto cleanup_sems_mem;
 	} else {
 		ist415vdbg("Get info success\n");
 	}
@@ -1270,14 +1269,27 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	if (!upper) {
 		ist415dbg("Fail to alloc touchscreen_s\n");
-		kmm_free(dev);
 		ist415_disable(dev);
-		return ERROR;
+		goto cleanup_task_wd;
 	}
 	upper->ops = &g_ist415_ops;
 	upper->priv = dev;
 	dev->upper = upper;
+	ret = touch_register(path, upper);
+	if (ret < 0) {
+		ist415_disable(dev);
+		kmm_free(upper);
+		goto cleanup_task_wd;
+	}
+	return ret;
 
-	ist415dbg("Touch Driver registered Successfully\n");
-	return touch_register(path, upper);
+/* Error Handling Releasing all allocated resources */
+cleanup_task_wd:
+	wd_delete(dev->wdog);
+	task_delete(dev->pid);
+cleanup_sems_mem:
+	sem_destroy(&dev->sem);
+	sem_destroy(&dev->wait_irq);
+	kmm_free(dev);
+	return ERROR;
 }
