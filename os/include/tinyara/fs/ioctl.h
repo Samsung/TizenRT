@@ -475,6 +475,10 @@
 #define COMPIOC_GET_COMP_TYPE      _COMPIOC(0x0002)
 #define COMPIOC_GET_COMP_NAME      _COMPIOC(0x0003)
 #define COMPIOC_DECOMPRESS	   _COMPIOC(0x0004)
+#define COMPIOC_FCOMP_INIT         _COMPIOC(0x0005)
+#define COMPIOC_FCOMP_GET_BUFSIZE  _COMPIOC(0x0006)
+#define COMPIOC_FCOMP_DECOMPRESS   _COMPIOC(0x0007)
+#define COMPIOC_FCOMP_DEINIT       _COMPIOC(0x0008)
 
 /* Pm driver ioctl definitions *****************************/
 #define _PMIOCVALID(c)      (_IOC_TYPE(c) == _PMBASE)
