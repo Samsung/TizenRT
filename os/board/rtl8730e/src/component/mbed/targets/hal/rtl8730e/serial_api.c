@@ -724,7 +724,6 @@ int serial_getc(serial_t *obj)
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 	u8 RxByte = 0;
 
-	while (!serial_readable(obj));
 	UART_CharGet(puart_adapter->UARTx, &RxByte);
 
 	return (int)RxByte;
@@ -741,7 +740,6 @@ void serial_putc(serial_t *obj, int c)
 {
 	PMBED_UART_ADAPTER puart_adapter = &(uart_adapter[obj->uart_idx]);
 
-	while (!serial_writable(obj));
 	UART_CharPut(puart_adapter->UARTx, (c & 0xFF));
 
 	if (serial_irq_en[obj->uart_idx] & SERIAL_TX_IRQ_EN) {
