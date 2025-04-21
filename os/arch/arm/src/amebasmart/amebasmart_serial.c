@@ -1291,6 +1291,14 @@ void up_serialinit(void)
 void up_lowputc(char ch)
 {
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
+	u32 CounterIndex = 0;
+	/*check if there is space in fifo*/
+	while(!LOGUART_Ready()) {
+		CounterIndex++;
+		if (CounterIndex >= CHAR_TIMEOUT) {
+			break;
+		}
+	}
 	LOGUART_PutChar(ch);
 #else
 	if (CONSOLE_DEV.isconsole == false)
@@ -1343,14 +1351,6 @@ int up_lowgetc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
-	u32 CounterIndex = 0;
-	/*check if there is space in fifo*/
-	while(!LOGUART_Ready()) {
-		CounterIndex++;
-		if (CounterIndex >= CHAR_TIMEOUT) {
-			break;
-		}
-	};
 	/* Check for LF */
 
 	if (ch == '\n') {
@@ -1399,14 +1399,6 @@ int up_getc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
-	u32 CounterIndex = 0;
-	/*check if there is space in fifo*/
-	while(!LOGUART_Ready()) {
-		CounterIndex++;
-		if (CounterIndex >= CHAR_TIMEOUT) {
-			break;
-		}
-	};
 	/* Check for LF */
 
 	if (ch == '\n') {
