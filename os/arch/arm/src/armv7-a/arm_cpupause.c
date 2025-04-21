@@ -324,10 +324,11 @@ int up_cpu_pause(int cpu)
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 	/* If a pause request is already pending or if the cpu is already in
-	 * paused state, then dont send the pause request again.
+	 * paused state or if cpu is already gated, then dont send the pause
+	 * request again.
 	 */
 
-	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
+	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu) || up_get_gating_flag_status(cpu)) {
 		return OK;
 	}
 
@@ -393,27 +394,31 @@ int up_cpu_resume(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
-#ifdef CONFIG_SCHED_INSTRUMENTATION
-	/* Notify of the resume event */
+	/* Resume the CPU only if it has been paused earlier */
+	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
 
-	sched_note_cpu_resume(this_task(), cpu);
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+		/* Notify of the resume event */
+
+		sched_note_cpu_resume(this_task(), cpu);
 #endif
 
-	/* Release the spinlock.  Releasing the spinlock will cause the SGI2
-	 * handler on 'cpu' to continue and return from interrupt to the newly
-	 * established thread.
-	 */
+		/* Release the spinlock.  Releasing the spinlock will cause the SGI2
+		 * handler on 'cpu' to continue and return from interrupt to the newly
+		 * established thread.
+		 */
 
-	DEBUGASSERT(spin_is_locked(&g_cpu_wait[cpu]) &&
+		DEBUGASSERT(spin_is_locked(&g_cpu_wait[cpu]) &&
 		!spin_is_locked(&g_cpu_paused[cpu]));
 
-	spin_unlock(&g_cpu_wait[cpu]);
+		spin_unlock(&g_cpu_wait[cpu]);
 
-	/* Ensure the CPU has been resumed to avoid causing a deadlock */
+		/* Ensure the CPU has been resumed to avoid causing a deadlock */
 
-	spin_lock(&g_cpu_resumed[cpu]);
+		spin_lock(&g_cpu_resumed[cpu]);
 
-	spin_unlock(&g_cpu_resumed[cpu]);
+		spin_unlock(&g_cpu_resumed[cpu]);
+	}
 
 	return OK;
 }
