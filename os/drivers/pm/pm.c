@@ -111,21 +111,15 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
 static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -ENOSYS;
-    
+
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
-    	case PMIOC_SUSPEND:
-	        ret = pm_suspend((int)arg);
+	case PMIOC_SUSPEND:
+		ret = pm_suspend((int)arg);
 		pmvdbg("State locked!\n");
-        	break;
-        case PMIOC_RESUME:
+		break;
+	case PMIOC_RESUME:
 		ret = pm_resume((int)arg);
-		/* Note: Below code is temporary fix to support old 'system_pm_start' API.
-		 * It needs to remove for later version.
-		 */
-		if (arg == PM_IDLE_DOMAIN) {
-			pm_start();
-		}
 		pmvdbg("State unlocked!\n");
 		break;
 	case PMIOC_SLEEP:
@@ -166,10 +160,10 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 #endif
 #ifdef CONFIG_PM_DVFS
-        case PMIOC_TUNEFREQ:
-        	pm_dvfs(arg);
-        	ret = OK;
-        	break;
+	case PMIOC_TUNEFREQ:
+		pm_dvfs(arg);
+		ret = OK;
+		break;
 #endif
 	default:
 		pmvdbg("Invalid command passed!\n");

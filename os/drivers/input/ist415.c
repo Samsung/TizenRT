@@ -774,6 +774,13 @@ static int ist415_event_thread(int argc, char **argv)
 			ASSERT(get_errno() == EINTR);
 		}
 
+		while (sem_wait(&dev->sem) != OK) {
+			ASSERT(get_errno() == EINTR);
+		}
+		if (dev->enable == false) {
+			sem_post(&dev->sem);
+			continue;
+		}
 		dev->lower->ops->irq_disable(dev->lower);
 		dev->irq_working = true;
 
@@ -784,6 +791,7 @@ static int ist415_event_thread(int argc, char **argv)
 
 		dev->irq_working = false;
 		dev->lower->ops->irq_enable(dev->lower);
+		sem_post(&dev->sem);
 	}
 
 	return OK;
@@ -1116,7 +1124,9 @@ void ist415_start(struct ist415_dev_s *dev)
 	uint8_t mode;
 	int ret = 0;
 
-	(void)wd_start(dev->wdog, MSEC2TICK(IST415_LOOKUP_MS), (wdentry_t)ist415_timer_handler, 1, (uint32_t)dev);
+	if (wd_start(dev->wdog, MSEC2TICK(IST415_LOOKUP_MS), (wdentry_t)ist415_timer_handler, 1, (uint32_t)dev) != OK) {
+		ist415dbg("Fail to start ist415 wdog, errno : %d\n", get_errno());
+	}
 
 	if (dev->rec_mode) {
 		mode = REC_ENABLE;
@@ -1254,17 +1264,8 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 		ist415vdbg("Get info success\n");
 	}
 
-	ist415_start(dev);
-	// ist415_enable(dev);
-
 	dev->wdog = wd_create();
-	if (dev->wdog) {
-		if (wd_start(dev->wdog, MSEC2TICK(IST415_LOOKUP_MS), (wdentry_t)ist415_timer_handler, 1, (uint32_t)dev) != OK) {
-			ist415dbg("Fail to start ist415 wdog\n");
-		}
-	} else {
-		ist415dbg("Fail to alloc ist415 wdog\n");
-	}
+	ist415_start(dev);
 
 	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	if (!upper) {

@@ -579,7 +579,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 						dbg("[APP] Get adv handle failed \r\n");
                     }
 #endif
-					server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, adv_handle);
+          uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+					_reverse_mac(ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, addr);
+					server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, addr, adv_handle);
 				} else {
 					ble_tizenrt_dummy_callback();
 				}

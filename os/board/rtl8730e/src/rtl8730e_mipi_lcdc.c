@@ -324,6 +324,7 @@ void rtl8730e_lcdc_initialize(void)
 	config.mipi_lcd_limit = MIPI_LCD_LIMIT;
 	config.lcd_lane_num = MIPI_LANE_NUMBER;
 	rtl8730e_gpio_reset();
+	rtl8730e_control_backlight(0);
 	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)amebasmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);
 	struct lcd_dev_s *dev = (struct lcd_dev_s *)mipi_lcdinitialize(dsi_device, &g_rtl8730e_config_dev_s.lcd_config);

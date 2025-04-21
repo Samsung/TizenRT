@@ -282,9 +282,10 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
 	if (priv->lcdonoff == LCD_OFF) {
-                priv->config->mipi_mode_switch(VIDEO_MODE);
-                priv->lcdonoff = LCD_ON;
-        }
+		lcddbg("Switch to VIDEO mode\n");
+		priv->config->mipi_mode_switch(VIDEO_MODE);
+		priv->lcdonoff = LCD_ON;
+	}
 	sem_post(&priv->sem);
 	return OK;
 }
@@ -388,6 +389,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	if (power == 0) {
 		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
+		lcddbg("Switch to CMD mode\n");
 		priv->config->mipi_mode_switch(CMD_MODE);
 		priv->lcdonoff = LCD_OFF;
 		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};

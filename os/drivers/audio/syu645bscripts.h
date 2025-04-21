@@ -60,6 +60,16 @@ t_codec_init_script_entry codec_stop_script[] = {
 	{ 0x07, {0x00,}, 0, SYU645B_REG_D_2BYTE}
 };
 
+/* Enter all channel to shutdown */
+t_codec_init_script_entry codec_shutdown_script[] = {
+	{ 0x22, {0x30,}, 0, SYU645B_REG_D_2BYTE},
+};
+
+/* exit all channel from shutdown */
+t_codec_init_script_entry codec_startup_script[] = {
+	{ 0x22, {0x00,}, 0, SYU645B_REG_D_2BYTE},
+};
+
 t_codec_init_script_entry codec_initial_script[] = {
 	/* Initialize AMP sequence */
 	{ 0x0F, {0x01,}, 0, SYU645B_REG_D_2BYTE}, // reset & wait
@@ -71,7 +81,7 @@ t_codec_init_script_entry codec_initial_script[] = {
 
 	/* Audio FS/Format Setting */
 	{ 0x00, {0x1A,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x15, {0x10,}, 0, SYU645B_REG_D_2BYTE},
+	{ 0x15, {0x13,}, 0, SYU645B_REG_D_2BYTE}, //0x13 : 16bit
 	{ 0x06, {0x08,}, 0, SYU645B_REG_D_2BYTE},
 
 	/* Audio Protection & Performance Setting */
@@ -102,11 +112,9 @@ t_codec_init_script_entry codec_initial_script[] = {
 
 t_codec_init_script_entry codec_init_mute_on_script[] = {
 	{ 0x06, {0x08,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x22, {0x30,}, 0, SYU645B_REG_D_2BYTE},
 };
 
 t_codec_init_script_entry codec_init_mute_off_script[] = {
-	{ 0x22, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 	{ 0x06, {0x00,}, 0, SYU645B_REG_D_2BYTE},
 };
 

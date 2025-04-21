@@ -510,8 +510,8 @@ int touch_register(const char *path, struct touchscreen_s *dev)
 	is_silent_mode = silent_reboot_is_silent_mode();
 	if (!is_silent_mode) {
 		if (dev->ops && dev->ops->touch_enable) {
-                        dev->ops->touch_enable(dev);
-                }
+			dev->ops->touch_enable(dev);
+		}
 	}
 
 	ret = register_driver(path, &g_touchdev_fileops, 0666, dev);

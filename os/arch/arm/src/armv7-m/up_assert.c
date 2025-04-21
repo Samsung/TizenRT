@@ -137,6 +137,9 @@ extern int g_irq_nums[3];
 #define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
 #define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
 
+#define NORMAL_STATE 0
+#define ABORT_STATE 1
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -145,6 +148,9 @@ char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Variable to check the recursive abort */
+static int state = NORMAL_STATE;
 
 /****************************************************************************
  * Private Functions
@@ -543,12 +549,14 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	uint32_t asserted_location;
 
+	abort_mode = true;
+
 	/* Check if we are in recursive abort */
-	if (abort_mode == true) {
+	if (state == ABORT_STATE) {
 		/* treat kernel fault */
 		_up_assert(EXIT_FAILURE);
 	} else {
-		abort_mode = true;
+		state = ABORT_STATE;
 	}
 
 	/* Extract the PC value of instruction which caused the abort/assert */
