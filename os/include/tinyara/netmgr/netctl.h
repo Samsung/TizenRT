@@ -36,6 +36,7 @@ typedef enum {
 	GETNETSTATS, /*  get network statistics */
 	GETSOCKINFO, /*  get opened socket information */
 	GETDEVSTATS, /*  get NIC statistics */
+	DHCPCGETAPTYPE,
 } req_type;
 
 struct lwip_netdb_msg {
