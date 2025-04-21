@@ -14,5 +14,3 @@ config EXAMPLES_POWER
 config USER_ENTRYPOINT
 	string
 	default "power_main" if ENTRY_POWER
-
-endif #EXAMPLES_POWER
