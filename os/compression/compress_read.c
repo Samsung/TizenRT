@@ -43,6 +43,7 @@
 
 static struct s_header *compression_header;
 static struct s_buffer buffers;
+static int active_filefd = -1;
 
 /****************************************************************************
  * Private Functions
@@ -348,6 +349,11 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 {
 	int ret;
 
+	if (active_filefd != -1 && active_filefd != filfd) {
+		bcmpdbg("Another file decompression is in process\n");
+		return -EBUSY;
+	}
+	active_filefd = filfd;
 	/* Parsing compression header for compressed file */
 	ret = compress_parse_header(filfd, offset);
 	if (ret != OK) {
@@ -417,6 +423,8 @@ void compress_uninit(void)
 
 	kmm_free(compression_header);
 	compression_header = NULL;
+
+	active_filefd = -1;
 }
 
 struct s_header *get_compression_header(void)

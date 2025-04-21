@@ -37,7 +37,7 @@ endif
 
 COMPRESSION_ASRCS  =
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+ifeq ($(CONFIG_COMPRESSION),y)
 COMPRESSION_CSRCS  += compress_read.c
 endif
 

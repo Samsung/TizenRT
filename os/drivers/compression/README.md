@@ -53,3 +53,39 @@ output_size     -> three cases are possible for output size which is discussed b
         and it will print that output buffer allocated is not sufficient. 
         User need to update the output_size to a larger value and allocate memory to output_buffer 
         and call ioctl function again to get full decompressed data.
+
+=================================================================================================
+The below ioctls are not thread safe due to the limitation of underlying decompression framework.
+As a result only one thread can perform the decompression operation at a time.
+Each decompression operation consists of init -> get buffer size -> decompress -> deinit sequence.
+When one thread is performing the decompression sequence, if other thread tries to start a new
+decompression, then the INIT ioctl will return an EBUSY error.
+The calling thread will need to retry after some time duration.
+
+App shall use the ioctls as follows to perform the decompression.
+==================================================================================================
+
+## 5. COMPIOC_FCOMP_INIT cmd :
+
+For this cmd, user needs to pass the file path as arg and this compress_init function initializes the
+decompression framework in kernel. The ioctl will return OK on successful init otherwise error code.
+If error, app should goto errout which calls COMPIOC_FCOMP_DEINIT cmd otherwise continue to next step.
+
+## 6. COMPIOC_FCOMP_GET_BUFSIZE cmd :
+
+For this cmd, user can pass arg as NULL because there is no need of an argument. The ioctl returns the buffer
+size required to hold decompress data. User needs to allocate buffer of this size to get decompress data in it.
+If error or size returned is less than equal to zero, app should goto errout which calls COMPIOC_FCOMP_DEINIT cmd
+else continue to next step.
+
+## 7. COMPIOC_FCOMP_DECOMPRESS cmd :
+
+For this cmd, user needs to pass the buffer of size which got from COMPIOC_FCOMP_GET_BUFSIZE cmd and
+compress_read() decompress the compressed file and store the data in that passed buffer. It returns the success
+code when size of decompress data and actual size of data is same otherwise error code.
+If error, app should goto errout which calls COMPIOC_FCOMP_DEINIT cmd otherwise continue to next step.
+
+## 8. COMPIOC_FCOMP_DEINIT cmd :
+
+For this cmd, user can pass arg as NULL because there is no need of an argument. It cleanup the kernel decompression
+framework.
