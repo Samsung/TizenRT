@@ -194,7 +194,7 @@
 #define TTYS2_DEV               g_uart4port             /* UART4 is ttyS2 */
 #define UART4_ASSIGNED  1
 #endif
-#define CHAR_TIMEOUT 6540
+#define CHAR_TIMEOUT 3127500 /*counter based on cpu clock, ~2.6ms*/
 #define TX_FIFO_MAX 16
 
 /****************************************************************************
@@ -1343,8 +1343,14 @@ int up_lowgetc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
+	u32 CounterIndex = 0;
 	/*check if there is space in fifo*/
-	while(!LOGUART_Ready());
+	while(!LOGUART_Ready()) {
+		CounterIndex++;
+		if (CounterIndex >= CHAR_TIMEOUT) {
+			break;
+		}
+	};
 	/* Check for LF */
 
 	if (ch == '\n') {
@@ -1393,8 +1399,14 @@ int up_getc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
+	u32 CounterIndex = 0;
 	/*check if there is space in fifo*/
-	while(!LOGUART_Ready());
+	while(!LOGUART_Ready()) {
+		CounterIndex++;
+		if (CounterIndex >= CHAR_TIMEOUT) {
+			break;
+		}
+	};
 	/* Check for LF */
 
 	if (ch == '\n') {
