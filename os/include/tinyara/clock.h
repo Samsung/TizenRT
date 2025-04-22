@@ -341,6 +341,22 @@ int clock_systimespec(FAR struct timespec *ts);
  */
 
 /****************************************************************************
+ * Name: clock_getinittime
+ *
+ * Description:
+ *   This function returns initalized system time.
+ *
+ * Parameters:
+ *   tp - Location to return the time
+ *
+ * Return Value:
+ *   OK (0) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int clock_getinittime(struct timespec *tp);
+
+/****************************************************************************
  * Function:  clock_cpuload
  *
  * Description:
