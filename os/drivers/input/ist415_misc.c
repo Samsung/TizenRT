@@ -99,6 +99,7 @@ static int ist415_wait_calibrate(struct ist415_dev_s *dev)
 {
 	int wait = IST415_WAIT_TIME;
 
+	dev->calib = true;
 	dev->calib_result = 0;
 	memset(dev->calib_msg, 0, sizeof(dev->calib_msg));
 
@@ -112,14 +113,17 @@ static int ist415_wait_calibrate(struct ist415_dev_s *dev)
 		}
 
 		if (dev->calib_result == 0x10) {
+			dev->calib = false;
 			ist415vdbg("Calibration success\n");
 			return OK;
 		} else if (dev->calib_result == 0x80) {
+			dev->calib = false;
 			ist415vdbg("Calibration fail\n");
 			return -EAGAIN;
 		}
 	}
 
+	dev->calib = false;
 	ist415dbg("Calibration time out\n");
 
 	return -ETIME;
@@ -225,7 +229,7 @@ void ist415_calibrate(struct ist415_dev_s *dev, uint8_t retry)
 	int ret = 0;
 
 	ist415dbg("*** Calibrate %ds ***\n", IST415_WAIT_TIME / 10);
-
+	
 	while (retry-- > 0) {
 		ist415_disable(dev);
 		ist415_reset(dev, false);

@@ -774,13 +774,17 @@ static int ist415_event_thread(int argc, char **argv)
 			ASSERT(get_errno() == EINTR);
 		}
 
-		while (sem_wait(&dev->sem) != OK) {
-			ASSERT(get_errno() == EINTR);
+		if ((dev->ready == true) || (dev->calib == false)) {
+			while (sem_wait(&dev->sem) != OK) {
+				ASSERT(get_errno() == EINTR);
+			}
+			
+			if (dev->enable == false) {
+				sem_post(&dev->sem);
+				continue;
+			}
 		}
-		if (dev->enable == false) {
-			sem_post(&dev->sem);
-			continue;
-		}
+		
 		dev->lower->ops->irq_disable(dev->lower);
 		dev->irq_working = true;
 
@@ -1215,6 +1219,8 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 	dev->rec_addr = 0;
 	dev->rec_size = 0;
 	dev->cmcs = 0;
+	
+	dev->calib = false;
 
 	dev->intr_debug_addr = 0;
 	dev->intr_debug_size = 0;

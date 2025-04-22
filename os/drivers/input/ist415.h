@@ -456,6 +456,7 @@ struct ist415_dev_s {
 	uint32_t rec_addr;
 	uint32_t rec_size;
 
+	bool calib;
 	uint8_t calib_result;
 	uint32_t calib_msg[2];
 
