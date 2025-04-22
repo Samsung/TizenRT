@@ -124,9 +124,9 @@ int amebasmart_spi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd);
 
 #ifdef CONFIG_SPI_CALLBACK
 int amebasmart_spi0register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-			FAR void *arg);
+							FAR void *arg);
 int amebasmart_spi1register(FAR struct spi_dev_s *dev, spi_mediachange_t callback,
-			FAR void *arg);
+							FAR void *arg);
 
 #endif
 
@@ -137,4 +137,3 @@ int amebasmart_spi1register(FAR struct spi_dev_s *dev, spi_mediachange_t callbac
 
 #endif /* __ASSEMBLY__ */
 #endif /* __ARCH_ARM_SRC_AMEBASMART_SPI_H */
-

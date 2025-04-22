@@ -38,7 +38,6 @@
 
 #include <arch/board/board.h>
 
-
 #include "chip.h"
 
 #include "amebasmart_spi.h"
@@ -62,8 +61,6 @@
 #error "Interrupt driven SPI not yet supported"
 #endif
 
-
-
 /* Can't have both interrupt driven SPI and SPI DMA */
 
 #if defined(CONFIG_AMEBASMART_SPI_INTERRUPTS) && defined(CONFIG_AMEBASMART_SPI_DMA)
@@ -73,35 +70,36 @@
 #undef spierr
 #undef spiinfo
 #if defined(CONFIG_DEBUG_SPI)
-#define spiinfo(format, ...)   printf(format, ##__VA_ARGS__)
-#define spierr(format, ...)    printf(format, ##__VA_ARGS__)
+#define spiinfo(format, ...) printf(format, ##__VA_ARGS__)
+#define spierr(format, ...) printf(format, ##__VA_ARGS__)
 #else
 #define spiinfo(format, ...)
-//#define spierr(format, ...)
+// #define spierr(format, ...)
 #endif
-#define spierr(format, ...)   printf(format, ##__VA_ARGS__)
+#define spierr(format, ...) printf(format, ##__VA_ARGS__)
 
-#define AMEBASMART_SPI_MASTER	0
-#define AMEBASMART_SPI_SLAVE	1
+#define AMEBASMART_SPI_MASTER 0
+#define AMEBASMART_SPI_SLAVE 1
 #define SPI_DMA_MAX_BUFFER_SIZE 65535
 /************************************************************************************
  * Private Types
  ************************************************************************************/
 
 struct amebasmart_spidev_s {
-	struct spi_dev_s spidev;    /* Externally visible part of the SPI interface */
-//	uint32_t spibase;           /* SPIn base address */
-//#ifdef CONFIG_AMEBASMART_SPI_INTERRUPTS
-//	uint8_t spiirq;             /* SPI IRQ number */
-//#endif
-	sem_t exclsem;              /* Held while chip is selected for mutual exclusion */
-	uint32_t frequency;         /* Requested clock frequency */
-	uint32_t actual;            /* Actual clock frequency */
-	int refs;                    /* Reference count */
-
+	struct spi_dev_s spidev; /* Externally visible part of the SPI interface */
+							 //	uint32_t spibase;           /* SPIn base address */
+							 // #ifdef CONFIG_AMEBASMART_SPI_INTERRUPTS
+	//	uint8_t spiirq;             /* SPI IRQ number */
+	// #endif
+	sem_t exclsem;		/* Held while chip is selected for mutual exclusion */
+	uint32_t frequency; /* Requested clock frequency */
+	uint32_t actual;	/* Actual clock frequency */
+	int refs;			/* Reference count */
+	bool pause;			/*True: Pause mmwave */
+	sem_t pause_sem;	/* Used to wake up thread waiting for mmwave resume */
 #ifdef CONFIG_AMEBASMART_SPI_DMA
-	sem_t rxsem;				/* Wait for RX DMA to complete */
-	sem_t txsem;				/* Wait for TX DMA to complete */
+	sem_t rxsem; /* Wait for RX DMA to complete */
+	sem_t txsem; /* Wait for TX DMA to complete */
 #endif
 	spi_t spi_object;
 	uint32_t spi_idx;
@@ -109,10 +107,10 @@ struct amebasmart_spidev_s {
 	PinName spi_miso;
 	PinName spi_sclk;
 	PinName spi_cs0;
-	int8_t nbits;               /* Width of word in bits */
-	uint8_t mode;               /* Mode 0,1,2,3 */
+	int8_t nbits; /* Width of word in bits */
+	uint8_t mode; /* Mode 0,1,2,3 */
 	int role;
-	int8_t multi_cs:1;
+	int8_t multi_cs : 1;
 	gpio_t gpio_cs0;
 #ifdef CONFIG_SPI_CS
 	gpio_t gpio_cs1;
@@ -121,9 +119,9 @@ struct amebasmart_spidev_s {
 };
 
 enum amebasmart_delay_e {
-	SPI_PCS_TO_SCK = 1,       /* PCS-to-SCK delay. */
-	SPI_LAST_SCK_TO_PCS,      /* Last SCK edge to PCS delay. */
-	SPI_BETWEEN_TRANSFER      /* Delay between transfers. */
+	SPI_PCS_TO_SCK = 1,	 /* PCS-to-SCK delay. */
+	SPI_LAST_SCK_TO_PCS, /* Last SCK edge to PCS delay. */
+	SPI_BETWEEN_TRANSFER /* Delay between transfers. */
 };
 
 /************************************************************************************
@@ -133,20 +131,21 @@ enum amebasmart_delay_e {
 /* Helpers */
 
 static inline uint32_t amebasmart_spi_getreg32(FAR struct amebasmart_spidev_s *priv,
-					uint8_t offset);
+											   uint8_t offset);
 static inline void amebasmart_spi_putreg32(FAR struct amebasmart_spidev_s *priv,
-					uint8_t offset, uint32_t value);
+										   uint8_t offset, uint32_t value);
 static inline uint16_t amebasmart_spi_readword(FAR struct amebasmart_spidev_s *priv);
 static inline void amebasmart_spi_writeword(FAR struct amebasmart_spidev_s *priv,
-					uint16_t byte);
+											uint16_t byte);
 static inline bool amebasmart_spi_9to16bitmode(FAR struct amebasmart_spidev_s *priv);
 static inline void amebasmart_spi_master_set_delays(FAR struct amebasmart_spidev_s
-					*priv, uint32_t delay_ns,
-					enum amebasmart_delay_e type);
+														*priv,
+													uint32_t delay_ns,
+													enum amebasmart_delay_e type);
 static inline void amebasmart_spi_master_set_delay_scaler(FAR struct
-					amebasmart_spidev_s *priv,
-					uint32_t scaler,
-					enum amebasmart_delay_e type);
+														  amebasmart_spidev_s *priv,
+														  uint32_t scaler,
+														  enum amebasmart_delay_e type);
 
 /* DMA support*/
 #ifdef CONFIG_AMEBASMART_SPI_DMA
@@ -161,24 +160,27 @@ static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv);
 /* SPI methods */
 
 static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock);
+static void amebasmart_spi_resume(FAR struct spi_dev_s *dev);
+static bool amebasmart_spi_getstatus(FAR struct spi_dev_s *dev);
+static void amebasmart_spi_pause(FAR struct spi_dev_s *dev);
 static uint32_t amebasmart_spi_setfrequency(FAR struct spi_dev_s *dev,
-					uint32_t frequency);
+											uint32_t frequency);
 static void amebasmart_spi_setmode(FAR struct spi_dev_s *dev,
-				enum spi_mode_e mode);
+								   enum spi_mode_e mode);
 static void amebasmart_spi_setbits(FAR struct spi_dev_s *dev, int nbits);
 #ifdef CONFIG_SPI_HWFEATURES
 static int amebasmart_spi_hwfeatures(FAR struct spi_dev_s *dev,
-				amebasmart_spi_hwfeatures_t features);
+									 amebasmart_spi_hwfeatures_t features);
 #endif
 static uint16_t amebasmart_spi_send(FAR struct spi_dev_s *dev, uint16_t wd);
 static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer, FAR void *rxbuffer,
-				size_t nwords);
+									FAR const void *txbuffer, FAR void *rxbuffer,
+									size_t nwords);
 #ifndef CONFIG_SPI_EXCHANGE
 static void amebasmart_spi_sndblock(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer, size_t nwords);
+									FAR const void *txbuffer, size_t nwords);
 static void amebasmart_spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuffer,
-				size_t nwords);
+									 size_t nwords);
 #endif
 
 /* Initialization */
@@ -190,36 +192,38 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, 
  ************************************************************************************/
 #ifdef CONFIG_AMEBASMART_SPI0
 static const struct spi_ops_s g_spi0ops = {
-	.lock         = amebasmart_spi_lock,
-	.select       = amebasmart_spi_select,
+	.lock = amebasmart_spi_lock,
+	.pause = amebasmart_spi_pause,
+	.resume = amebasmart_spi_resume,
+	.getstatus = amebasmart_spi_getstatus,
+	.select = amebasmart_spi_select,
 	.setfrequency = amebasmart_spi_setfrequency,
-	.setmode      = amebasmart_spi_setmode,
-	.setbits      = amebasmart_spi_setbits,
+	.setmode = amebasmart_spi_setmode,
+	.setbits = amebasmart_spi_setbits,
 #ifdef CONFIG_SPI_HWFEATURES
-	.hwfeatures   = amebasmart_spi_hwfeatures,
+	.hwfeatures = amebasmart_spi_hwfeatures,
 #endif
-	.status       = amebasmart_spi0status,
+	.status = amebasmart_spi0status,
 #ifdef CONFIG_SPI_CMDDATA
-	.cmddata      = amebasmart_spi0cmddata,
+	.cmddata = amebasmart_spi0cmddata,
 #endif
-	.send         = amebasmart_spi_send,
+	.send = amebasmart_spi_send,
 #ifdef CONFIG_SPI_EXCHANGE
-	.exchange     = amebasmart_spi_exchange,
+	.exchange = amebasmart_spi_exchange,
 #else
-	.sndblock     = amebasmart_spi_sndblock,
-	.recvblock    = amebasmart_spi_recvblock,
+	.sndblock = amebasmart_spi_sndblock,
+	.recvblock = amebasmart_spi_recvblock,
 #endif
 #ifdef CONFIG_SPI_CALLBACK
-	.registercallback = amebasmart_spi0register,  /* Provided externally */
+	.registercallback = amebasmart_spi0register, /* Provided externally */
 #else
-	.registercallback = 0,                     /* Not implemented */
+	.registercallback = 0, /* Not implemented */
 #endif
 };
 
 static struct amebasmart_spidev_s g_spi0dev = {
-	.spidev       = {
-		&g_spi0ops
-	},
+	.spidev = {
+		&g_spi0ops},
 	/*
 	.spibase      = AMEBASMART_SPI1_BASE,
 #ifdef CONFIG_AMEBASMART_SPI_INTERRUPTS
@@ -239,7 +243,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_sclk = PB_6,
 	.spi_cs0 = PB_5,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_31,
+	.spi_cs1 = PB_11,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -249,36 +253,35 @@ static struct amebasmart_spidev_s g_spi0dev = {
 
 #ifdef CONFIG_AMEBASMART_SPI1
 static const struct spi_ops_s g_spi1ops = {
-	.lock         = amebasmart_spi_lock,
-	.select       = amebasmart_spi_select,
+	.lock = amebasmart_spi_lock,
+	.select = amebasmart_spi_select,
 	.setfrequency = amebasmart_spi_setfrequency,
-	.setmode      = amebasmart_spi_setmode,
-	.setbits      = amebasmart_spi_setbits,
+	.setmode = amebasmart_spi_setmode,
+	.setbits = amebasmart_spi_setbits,
 #ifdef CONFIG_SPI_HWFEATURES
-	.hwfeatures   = amebasmart_spi_hwfeatures,
+	.hwfeatures = amebasmart_spi_hwfeatures,
 #endif
-	.status       = amebasmart_spi1status,
+	.status = amebasmart_spi1status,
 #ifdef CONFIG_SPI_CMDDATA
-	.cmddata      = amebasmart_spi1cmddata,
+	.cmddata = amebasmart_spi1cmddata,
 #endif
-	.send         = amebasmart_spi_send,
+	.send = amebasmart_spi_send,
 #ifdef CONFIG_SPI_EXCHANGE
-	.exchange     = amebasmart_spi_exchange,
+	.exchange = amebasmart_spi_exchange,
 #else
-	.sndblock     = amebasmart_spi_sndblock,
-	.recvblock    = amebasmart_spi_recvblock,
+	.sndblock = amebasmart_spi_sndblock,
+	.recvblock = amebasmart_spi_recvblock,
 #endif
 #ifdef CONFIG_SPI_CALLBACK
-	.registercallback = amebasmart_spi1register,  /* Provided externally */
+	.registercallback = amebasmart_spi1register, /* Provided externally */
 #else
-	.registercallback = 0,                     /* Not implemented */
+	.registercallback = 0, /* Not implemented */
 #endif
 };
 
 static struct amebasmart_spidev_s g_spi1dev = {
-	.spidev       = {
-		&g_spi1ops
-	},
+	.spidev = {
+		&g_spi1ops},
 	/*
 	.spibase      = AMEBASMART_SPI1_BASE,
 #ifdef CONFIG_AMEBASMART_SPI_INTERRUPTS
@@ -302,8 +305,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
-	.role = AMEBASMART_SPI_MASTER
-};
+	.role = AMEBASMART_SPI_MASTER};
 #endif
 
 /************************************************************************************
@@ -326,7 +328,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
  ************************************************************************************/
 
 static inline uint8_t amebasmart_spi_getreg8(FAR struct amebasmart_spidev_s *priv,
-					uint8_t offset)
+											 uint8_t offset)
 {
 	return 0;
 }
@@ -345,7 +347,7 @@ static inline uint8_t amebasmart_spi_getreg8(FAR struct amebasmart_spidev_s *pri
  ************************************************************************************/
 
 static inline void amebasmart_spi_putreg8(FAR struct amebasmart_spidev_s *priv,
-				uint8_t offset, uint8_t value)
+										  uint8_t offset, uint8_t value)
 {
 	return;
 }
@@ -366,7 +368,7 @@ static inline void amebasmart_spi_putreg8(FAR struct amebasmart_spidev_s *priv,
  ************************************************************************************/
 
 static inline uint32_t amebasmart_spi_getreg32(FAR struct amebasmart_spidev_s *priv,
-					uint8_t offset)
+											   uint8_t offset)
 {
 	return 0;
 }
@@ -388,7 +390,7 @@ static inline uint32_t amebasmart_spi_getreg32(FAR struct amebasmart_spidev_s *p
  ************************************************************************************/
 
 static inline void amebasmart_spi_putreg32(FAR struct amebasmart_spidev_s *priv,
-					uint8_t offset, uint32_t value)
+										   uint8_t offset, uint32_t value)
 {
 	return;
 }
@@ -487,8 +489,10 @@ static inline void amebasmart_spi_writebyte(FAR struct amebasmart_spidev_s *priv
 
 static inline bool amebasmart_spi_9to16bitmode(FAR struct amebasmart_spidev_s *priv)
 {
-	if (priv->nbits < 9) return false;
-	else return true;
+	if (priv->nbits < 9)
+		return false;
+	else
+		return true;
 }
 
 /************************************************************************************
@@ -505,7 +509,12 @@ static void spi_dmarxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->rxsem) != OK) {
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 1;
+	ts.tv_nsec += 0;
+
+	while (sem_timedwait(&priv->rxsem, &ts) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -528,7 +537,11 @@ static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->txsem) != OK) {
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 1;
+	ts.tv_nsec += 0;
+	while (sem_timedwait(&priv->txsem, &ts) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -536,7 +549,6 @@ static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
 	}
 	/*DMA triggers irq when all data has transferred from memory to SPI fifo, it is around 0.5ms earlier than SPI transfer all data in FIFO out
 	 *compensate by adding 0.5ms delay to ensure that all data in fifo are transferred out before manually pull up CS pin by GPIO*/
-
 }
 #endif
 
@@ -583,20 +595,18 @@ static inline void spi_dmatxwakeup(FAR struct amebasmart_spidev_s *priv)
 static void spi_dmamastercallback(FAR struct amebasmart_spidev_s *priv, SpiIrq event)
 {
 
-	switch(event){
-		case SpiRxIrq:
-			spi_dmarxwakeup(priv);
-			break;
-		case SpiTxIrq:
-			spi_dmatxwakeup(priv);
-			break;
-		default:
-			DBG_8195A("unknown interrput event!\n");
+	switch (event) {
+	case SpiRxIrq:
+		spi_dmarxwakeup(priv);
+		break;
+	case SpiTxIrq:
+		spi_dmatxwakeup(priv);
+		break;
+	default:
+		DBG_8195A("unknown interrput event!\n");
 	}
 }
 #endif
-
-
 
 /************************************************************************************
  * Name: spi_hookmastercallback
@@ -609,11 +619,9 @@ static void spi_dmamastercallback(FAR struct amebasmart_spidev_s *priv, SpiIrq e
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv)
 {
-	spi_irq_hook(&priv->spi_object, (spi_irq_handler) spi_dmamastercallback, (uint32_t)priv);
+	spi_irq_hook(&priv->spi_object, (spi_irq_handler)spi_dmamastercallback, (uint32_t)priv);
 }
 #endif
-
-
 
 /************************************************************************************
  * Name: amebasmart_spi_modifyreg
@@ -633,8 +641,8 @@ static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv)
  ************************************************************************************/
 
 static void amebasmart_spi_modifyreg32(FAR struct amebasmart_spidev_s *priv,
-				uint8_t offset, uint32_t clrbits,
-				uint32_t setbits)
+									   uint8_t offset, uint32_t clrbits,
+									   uint32_t setbits)
 {
 }
 
@@ -655,8 +663,8 @@ static void amebasmart_spi_modifyreg32(FAR struct amebasmart_spidev_s *priv,
  ************************************************************************************/
 
 static inline void amebasmart_spi_master_set_delay_scaler(FAR struct amebasmart_spidev_s *priv,
-						uint32_t scaler,
-						enum amebasmart_delay_e type)
+														  uint32_t scaler,
+														  enum amebasmart_delay_e type)
 {
 	/*
 	switch (type) {
@@ -700,8 +708,8 @@ static inline void amebasmart_spi_master_set_delay_scaler(FAR struct amebasmart_
  *
  ************************************************************************************/
 static inline void amebasmart_spi_master_set_delays(FAR struct amebasmart_spidev_s *priv,
-						uint32_t delay_ns,
-						enum amebasmart_delay_e type)
+													uint32_t delay_ns,
+													enum amebasmart_delay_e type)
 {
 }
 
@@ -741,7 +749,6 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.
 		 */
-
 		while (sem_wait(&priv->exclsem) != OK) {
 			DEBUGASSERT(errno == EINTR);
 		}
@@ -754,6 +761,76 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 	}
 
 	return OK;
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_pause
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static void amebasmart_spi_pause(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	priv->pause = true;
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_resume
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static void amebasmart_spi_resume(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	priv->pause = false;
+	sem_post(&priv->pause_sem);
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_getstatus
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static bool amebasmart_spi_getstatus(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	if (priv->pause) {
+		while (sem_wait(&priv->pause_sem) != OK) {
+			DEBUGASSERT(errno == EINTR);
+		}
+		return true;
+	}
+	return false;
 }
 
 /************************************************************************************
@@ -777,25 +854,23 @@ void amebasmart_spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
 #ifdef CONFIG_SPI_CS
-	if (priv->multi_cs)
-	{
+	if (priv->multi_cs) {
 		if (selected == 1) {
-			if (devid == 0){ 
-				//Select cs0, unselect cs1
+			if (devid == 0) {
+				// Select cs0, unselect cs1
 				gpio_write(&priv->gpio_cs0, 0);
 				gpio_write(&priv->gpio_cs1, 1);
 			} else {
-				//Select cs1, unselect cs0
+				// Select cs1, unselect cs0
 				gpio_write(&priv->gpio_cs0, 1);
 				gpio_write(&priv->gpio_cs1, 0);
-
 			}
 		} else {
 			if (devid == 0) {
-				//Unselect cs0
+				// Unselect cs0
 				gpio_write(&priv->gpio_cs0, 1);
 			} else {
-				//Unselect cs1
+				// Unselect cs1
 				gpio_write(&priv->gpio_cs1, 1);
 			}
 		}
@@ -904,7 +979,7 @@ int amebasmart_spi1cmddata(FAR struct spi_dev_s *dev, uint32_t devid, bool cmd)
  ************************************************************************************/
 
 static uint32_t amebasmart_spi_setfrequency(FAR struct spi_dev_s *dev,
-					uint32_t frequency)
+											uint32_t frequency)
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
 
@@ -950,7 +1025,6 @@ static void amebasmart_spi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mo
 
 		priv->mode = mode;
 		spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
-
 	}
 }
 
@@ -987,7 +1061,6 @@ static void amebasmart_spi_setbits(FAR struct spi_dev_s *dev, int nbits)
 
 		priv->nbits = nbits;
 		spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
-
 	}
 }
 
@@ -1009,7 +1082,7 @@ static void amebasmart_spi_setbits(FAR struct spi_dev_s *dev, int nbits)
 
 #ifdef CONFIG_SPI_HWFEATURES
 static int amebasmart_spi_hwfeatures(FAR struct spi_dev_s *dev,
-				amebasmart_spi_hwfeatures_t features)
+									 amebasmart_spi_hwfeatures_t features)
 {
 #ifdef CONFIG_SPI_BITORDER
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
@@ -1083,12 +1156,9 @@ static uint16_t amebasmart_spi_send(FAR struct spi_dev_s *dev, uint16_t wd)
  *
  ************************************************************************************/
 
-
-
-
 static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer, FAR void *rxbuffer,
-				size_t nwords)
+									FAR const void *txbuffer, FAR void *rxbuffer,
+									size_t nwords)
 {
 	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
 	DEBUGASSERT(priv);
@@ -1141,7 +1211,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 
 			/* Exchange one word */
 
-			word = (uint8_t)amebasmart_spi_send(dev, (uint16_t) word);
+			word = (uint8_t)amebasmart_spi_send(dev, (uint16_t)word);
 
 			/* Is there a buffer to receive the return value? */
 
@@ -1151,25 +1221,25 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		}
 	}
 #else
-/*************************************************************************
- * Name: spi_exchange (with DMA)
- *
- * Description:
- *   Exchange a block of data on SPI using DMA
- *
- * Input Parameters:
- *   dev      - Device-specific state data
- *   txbuffer - A pointer to the buffer of data to be sent
- *   rxbuffer - A pointer to a buffer in which to receive data
- *   nwords   - the length of data to be exchanged in units of words.
- *              The wordsize is determined by the number of bits-per-word
- *              selected for the SPI interface.  If nbits <= 8, the data is
- *              packed into uint8_t's; if nbits >8, the data is packed into uint16_t's
- *
- * Returned Value:
- *   None
- *
- ************************************************************************************/
+	/*************************************************************************
+	 * Name: spi_exchange (with DMA)
+	 *
+	 * Description:
+	 *   Exchange a block of data on SPI using DMA
+	 *
+	 * Input Parameters:
+	 *   dev      - Device-specific state data
+	 *   txbuffer - A pointer to the buffer of data to be sent
+	 *   rxbuffer - A pointer to a buffer in which to receive data
+	 *   nwords   - the length of data to be exchanged in units of words.
+	 *              The wordsize is determined by the number of bits-per-word
+	 *              selected for the SPI interface.  If nbits <= 8, the data is
+	 *              packed into uint8_t's; if nbits >8, the data is packed into uint16_t's
+	 *
+	 * Returned Value:
+	 *   None
+	 *
+	 ************************************************************************************/
 
 	int mode_16bit = 1;
 	uint32_t remain_data_len = 0;
@@ -1181,15 +1251,15 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 	}
 	remain_data_len = nwords * mode_16bit;
 	uint8_t *rxbuff_aligned = NULL;
-	uint8_t *txbuff_aligned =  NULL;
+	uint8_t *txbuff_aligned = NULL;
 	rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
-	if(rxbuff_aligned == NULL) {
+	if (rxbuff_aligned == NULL) {
 		lldbg("rxbuff_aligned malloc failed\n");
 		return;
 	}
 	if (txbuffer) {
 		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
-		if(txbuff_aligned == NULL) {
+		if (txbuff_aligned == NULL) {
 			rtw_mfree(rxbuff_aligned, 0);
 			lldbg("txbuff_aligned malloc failed\n");
 			return;
@@ -1201,6 +1271,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		} else {
 			send_data_len = remain_data_len;
 		}
+
 		if (txbuffer && rxbuffer) {
 			memcpy(txbuff_aligned, txbuffer, send_data_len);
 			spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)send_data_len);
@@ -1214,7 +1285,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 			spi_dmarxwait(priv);
 		} else if (rxbuffer) {
 			spi_flush_rx_fifo(&priv->spi_object);
-			spi_master_read_stream_dma(&priv->spi_object, (char *) rxbuff_aligned, (uint32_t)send_data_len);
+			spi_master_read_stream_dma(&priv->spi_object, (char *)rxbuff_aligned, (uint32_t)send_data_len);
 			spi_dmarxwait(priv);
 			memcpy(rxbuffer, rxbuff_aligned, send_data_len);
 		}
@@ -1230,7 +1301,8 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		rtw_mfree(txbuff_aligned, 0);
 	}
 	rtw_mfree(rxbuff_aligned, 0);
-#endif							/* CONFIG_AMEBASMART_SPI_DMA */
+
+#endif /* CONFIG_AMEBASMART_SPI_DMA */
 }
 
 /****************************************************************************
@@ -1254,7 +1326,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 
 #ifndef CONFIG_SPI_EXCHANGE
 static void amebasmart_spi_sndblock(FAR struct spi_dev_s *dev,
-				FAR const void *txbuffer, size_t nwords)
+									FAR const void *txbuffer, size_t nwords)
 {
 	spiinfo("txbuffer=%p nwords=%d\n", txbuffer, nwords);
 	return amebasmart_spi_exchange(dev, txbuffer, NULL, nwords);
@@ -1282,7 +1354,7 @@ static void amebasmart_spi_sndblock(FAR struct spi_dev_s *dev,
 
 #ifndef CONFIG_SPI_EXCHANGE
 static void amebasmart_spi_recvblock(FAR struct spi_dev_s *dev, FAR void *rxbuffer,
-				size_t nwords)
+									 size_t nwords)
 {
 	spiinfo("rxbuffer=%p nwords=%d\n", rxbuffer, nwords);
 	return amebasmart_spi_exchange(dev, NULL, rxbuffer, nwords);
@@ -1337,10 +1409,12 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint
 
 	priv->spi_object.spi_idx = priv->spi_idx;
 	priv->multi_cs = multi_cs;
+	priv->pause = false;
 
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
+	sem_init(&priv->pause_sem, 0, 0);
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_init(&priv->rxsem, 0, 0);
 	sem_init(&priv->txsem, 0, 0);
@@ -1350,8 +1424,7 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint
 	gpio_mode(&priv->gpio_cs0, PullNone);
 	gpio_write(&priv->gpio_cs0, 1);
 #ifdef CONFIG_SPI_CS
-	if (priv->multi_cs)
-	{
+	if (priv->multi_cs) {
 		gpio_init(&priv->gpio_cs1, priv->spi_cs1);
 		gpio_dir(&priv->gpio_cs1, PIN_OUTPUT);
 		gpio_mode(&priv->gpio_cs1, PullNone);
@@ -1383,7 +1456,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
 	irqstate_t flags = enter_critical_section();
-#ifdef CONFIG_AMEBASMART_SPI0	
+#ifdef CONFIG_AMEBASMART_SPI0
 	if (bus == 0) {
 		/* Select SPI0 */
 
@@ -1400,7 +1473,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 	} else
 #endif
 #ifdef CONFIG_AMEBASMART_SPI1
-	if (bus == 1) {
+		if (bus == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
@@ -1413,7 +1486,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 
-	} else 
+	} else
 #endif
 	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", bus);
@@ -1465,10 +1538,10 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
 	(void)param;
 	/* For PG Sleep, SPI HW will be lost power, thus a reinitialization is required here */
 #ifdef CONFIG_AMEBASMART_SPI0
-	(void) up_spiinitialize(0);
+	(void)up_spiinitialize(0);
 #endif
 #ifdef CONFIG_AMEBASMART_SPI1
-	(void) up_spiinitialize(1);
+	(void)up_spiinitialize(1);
 #endif
 	return 1;
 }
@@ -1511,11 +1584,10 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 #else
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
-	}
-	else 
+	} else
 #endif
 #ifdef CONFIG_AMEBASMART_SPI1
-	if (port == 1) {
+		if (port == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
