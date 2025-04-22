@@ -94,5 +94,8 @@ endif
 ifeq ($(CONFIG_SENSOR_AIS25BA),y)
 CSRCS += rtl8730e_ais25ba.c
 endif
+endif
 
+ifeq ($(CONFIG_MMWAVE_SENSOR),y)
+CSRCS += rtl8730e_mmwave.c
 endif

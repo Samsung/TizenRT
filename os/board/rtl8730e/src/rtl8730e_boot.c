@@ -562,6 +562,10 @@ void board_initialize(void)
 		lldbg("NDP120 initialization failed\n");
 	}
  #endif
+
+#if defined(CONFIG_MMWAVE_SENSOR)
+	rtl8730e_mmwave_initialize();
+#endif
  
  #ifdef CONFIG_AMEBASMART_BOR
 	board_initialize_bor();

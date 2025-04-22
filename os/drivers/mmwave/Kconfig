@@ -1,0 +1,33 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "MMWave Driver Support"
+
+menuconfig MMWAVE_SENSOR
+        bool "MMWAVE Driver Support"
+        default n
+        ---help---
+                Enable support for mmWave Sensor devices. This includes
+		        drivers for SPI-based sensors like the IWRL6432.
+
+                This selection is necessary to enable support for MMWAVE drivers in
+                drivers/mmwave as well as for board-specific MMWAVE drivers in the configs subdirectories.
+
+if MMWAVE_SENSOR
+choice
+        prompt "choose MMWAVE device"
+        default SENSOR_IWRL6432
+        ---help---
+                IWRL6432 with SPI interface
+
+config SENSOR_IWRL6432
+        bool "IWRL6432 Support"
+        ---help---
+                Enable the mmWave Sensor IWRL6432 driver
+endchoice
+
+endif # MMWAVE_SENSOR
+
+endmenu # MMWAVE Driver Support

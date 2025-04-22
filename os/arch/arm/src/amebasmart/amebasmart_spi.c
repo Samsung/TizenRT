@@ -98,7 +98,8 @@ struct amebasmart_spidev_s {
 	uint32_t frequency;         /* Requested clock frequency */
 	uint32_t actual;            /* Actual clock frequency */
 	int refs;                    /* Reference count */
-
+	bool pause;			/*True: Pause mmwave */
+	sem_t pause_sem;	/* Used to wake up thread waiting for mmwave resume */
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_t rxsem;				/* Wait for RX DMA to complete */
 	sem_t txsem;				/* Wait for TX DMA to complete */
@@ -161,6 +162,9 @@ static void spi_hookmastercallback(FAR struct amebasmart_spidev_s *priv);
 /* SPI methods */
 
 static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock);
+static void amebasmart_spi_resume(FAR struct spi_dev_s *dev);
+static bool amebasmart_spi_getstatus(FAR struct spi_dev_s *dev);
+static void amebasmart_spi_pause(FAR struct spi_dev_s *dev);
 static uint32_t amebasmart_spi_setfrequency(FAR struct spi_dev_s *dev,
 					uint32_t frequency);
 static void amebasmart_spi_setmode(FAR struct spi_dev_s *dev,
@@ -191,6 +195,9 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, 
 #ifdef CONFIG_AMEBASMART_SPI0
 static const struct spi_ops_s g_spi0ops = {
 	.lock         = amebasmart_spi_lock,
+	.pause        = amebasmart_spi_pause,
+	.resume       = amebasmart_spi_resume,
+	.getstatus    = amebasmart_spi_getstatus,
 	.select       = amebasmart_spi_select,
 	.setfrequency = amebasmart_spi_setfrequency,
 	.setmode      = amebasmart_spi_setmode,
@@ -239,7 +246,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_sclk = PB_6,
 	.spi_cs0 = PB_5,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_31,
+	.spi_cs1 = PB_11,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -754,6 +761,78 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 	}
 
 	return OK;
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_pause
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static void amebasmart_spi_pause(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	priv->pause = true;
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_resume
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static void amebasmart_spi_resume(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	if (priv->pause) {
+		priv->pause = false;
+		sem_post(&priv->pause_sem);
+	}
+}
+
+/************************************************************************************
+ * Name: amebasmart_spi_getstatus
+ *
+ * Description:
+ *
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *
+ *
+ * Returned Value:
+ *   None
+ *
+ ************************************************************************************/
+
+static bool amebasmart_spi_getstatus(FAR struct spi_dev_s *dev)
+{
+	FAR struct amebasmart_spidev_s *priv = (FAR struct amebasmart_spidev_s *)dev;
+	if (priv->pause) {
+		while (sem_wait(&priv->pause_sem) != OK) {
+			DEBUGASSERT(errno == EINTR);
+		}
+		return true;
+	}
+	return false;
 }
 
 /************************************************************************************
@@ -1337,10 +1416,12 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint
 
 	priv->spi_object.spi_idx = priv->spi_idx;
 	priv->multi_cs = multi_cs;
+	priv->pause = false;
 
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
 	sem_init(&priv->exclsem, 0, 1);
+	sem_init(&priv->pause_sem, 0, 0);
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_init(&priv->rxsem, 0, 0);
 	sem_init(&priv->txsem, 0, 0);
