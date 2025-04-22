@@ -239,7 +239,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_sclk = PB_6,
 	.spi_cs0 = PB_5,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_31,
+	.spi_cs1 = PB_11,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -1142,6 +1142,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 			/* Exchange one word */
 
 			word = (uint8_t)amebasmart_spi_send(dev, (uint16_t) word);
+			
 
 			/* Is there a buffer to receive the return value? */
 
@@ -1201,6 +1202,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		} else {
 			send_data_len = remain_data_len;
 		}
+	
 		if (txbuffer && rxbuffer) {
 			memcpy(txbuff_aligned, txbuffer, send_data_len);
 			spi_master_write_read_stream_dma(&priv->spi_object, (char *)txbuff_aligned, (char *)rxbuff_aligned, (uint32_t)send_data_len);
@@ -1230,6 +1232,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		rtw_mfree(txbuff_aligned, 0);
 	}
 	rtw_mfree(rxbuff_aligned, 0);
+	
 #endif							/* CONFIG_AMEBASMART_SPI_DMA */
 }
 
