@@ -765,6 +765,7 @@ static void touch_interrupt(struct ist415_config_s *config)
 static int ist415_event_thread(int argc, char **argv)
 {
 	struct ist415_dev_s *dev;
+	bool check = false;
 
 	DEBUGASSERT(argc == 2);
 	dev = (struct ist415_dev_s *)strtoul(argv[1], NULL, 16);
@@ -774,7 +775,9 @@ static int ist415_event_thread(int argc, char **argv)
 			ASSERT(get_errno() == EINTR);
 		}
 
-		if ((dev->ready == true) && (dev->calib == false)) {
+		check = (dev->ready == true) && (dev->calib == false);
+
+		if (check) {
 			while (sem_wait(&dev->sem) != OK) {
 				ASSERT(get_errno() == EINTR);
 			}
@@ -795,7 +798,10 @@ static int ist415_event_thread(int argc, char **argv)
 
 		dev->irq_working = false;
 		dev->lower->ops->irq_enable(dev->lower);
-		sem_post(&dev->sem);
+
+		if (check) {
+			sem_post(&dev->sem);
+		}
 	}
 
 	return OK;
