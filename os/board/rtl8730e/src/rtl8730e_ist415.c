@@ -124,16 +124,18 @@ static void rtl8730e_ist415_disable_irq(struct ist415_config_s *dev)
 static void rtl8730e_ist415_power_off(struct ist415_config_s *dev)
 {
 	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
-	up_i2cuninitialize(priv->i2c);	/* Workaround: IC20 write hang issue */
+	struct amebasmart_i2c_priv_s *priv_i2c = (struct amebasmart_i2c_priv_s *)priv->i2c;
+	amebasmart_i2c_deinit(priv_i2c);
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
 }
 
 static void rtl8730e_ist415_power_on(struct ist415_config_s *dev)
 {
 	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
+	struct amebasmart_i2c_priv_s *priv_i2c = (struct amebasmart_i2c_priv_s *)priv->i2c;
 	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);
 	DelayMs(1);  /* Wait for stable voltage before i2c commands issued */
-	priv->i2c = up_i2cinitialize(IST415_I2C_PORT);	/* Workaround: IC20 write hang issue */
+	amebasmart_i2c_init(priv_i2c);
 }
 
 static void rtl8730e_ist415_gpio_init(void)

@@ -238,8 +238,8 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv);
 static int amebasmart_i2c_isr(int irq, void *context, FAR void *arg);
 #endif							/* !CONFIG_I2C_POLLED */
 
-static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv);
-static int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv);
+int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv);
+int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv);
 #ifdef CONFIG_I2C_TRANSFER
 static int amebasmart_i2c_transfer(FAR struct i2c_dev_s *dev, FAR struct i2c_msg_s *msgs, int count);
 #endif
@@ -924,7 +924,7 @@ static int amebasmart_i2c_isr(int irq, void *context, FAR void *arg)
  *
  ************************************************************************************/
 
-static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
+int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
 {
 	/* Power-up and configure GPIOs */
 	DEBUGASSERT(priv);
@@ -955,7 +955,7 @@ static int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
  *
  ************************************************************************************/
 
-static int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv)
+int amebasmart_i2c_deinit(FAR struct amebasmart_i2c_priv_s *priv)
 {
 
 	DEBUGASSERT(priv);
