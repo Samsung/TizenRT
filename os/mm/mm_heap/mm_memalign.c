@@ -111,7 +111,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size,
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 {
-	FAR struct mm_freenode_s *node;
+	FAR struct mm_freenode_s *node = NULL;
 	void *ret = NULL;
 	int ndx;
 	size_t newsize;
