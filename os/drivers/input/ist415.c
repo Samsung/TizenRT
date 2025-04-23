@@ -774,7 +774,7 @@ static int ist415_event_thread(int argc, char **argv)
 			ASSERT(get_errno() == EINTR);
 		}
 
-		if ((dev->ready == true) || (dev->calib == false)) {
+		if ((dev->ready == true) && (dev->calib == false)) {
 			while (sem_wait(&dev->sem) != OK) {
 				ASSERT(get_errno() == EINTR);
 			}
