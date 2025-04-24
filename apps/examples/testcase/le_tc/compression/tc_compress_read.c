@@ -306,6 +306,46 @@ static void tc_comp_name(void)
 }
 
 /****************************************************************************
+ * Name: tc_comp_file_decomp
+ *
+ * Description:
+ *   Testing decompression of the compressed file
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+static void tc_comp_file_decomp(void)
+{
+	int ret;
+	fd = get_compfd();
+
+	/*If FAIL : Failed to open testcase driver*/
+	TC_ASSERT_GEQ("get_compfd", fd, OK);
+
+	// Before running check compressed file should exist /mnt/dummy_comp
+	const char *file_path = "/mnt/dummy_comp.dat";
+
+	// initialising decompression framework in kernel
+	ret = ioctl(fd, COMPIOC_FCOMP_INIT, file_path);
+	TC_ASSERT_EQ("compress_init", ret, OK);
+
+	// to get buffer size require to hold decompressed data
+	ret = ioctl(fd, COMPIOC_FCOMP_GET_BUFSIZE, NULL);
+	TC_ASSERT_GT("get_compression_header", ret, OK);
+	uint8_t *dst_buffer = (uint8_t *)malloc(ret);
+
+	// Test decompression method
+	ret = ioctl(fd, COMPIOC_FCOMP_DECOMPRESS, dst_buffer);
+	TC_ASSERT_EQ_CLEANUP("compress_read", ret, OK, free(dst_buffer));
+
+	ret = ioctl(fd, COMPIOC_FCOMP_DEINIT, NULL);
+	TC_ASSERT_EQ_CLEANUP("compress_uninit", ret, OK, free(dst_buffer));
+
+	free(dst_buffer);
+	TC_SUCCESS_RESULT();
+}
+
+/****************************************************************************
  * Public Function
  ****************************************************************************/
 int tc_compress_main(void)
@@ -316,6 +356,7 @@ int tc_compress_main(void)
 	tc_comp_decomp_buffer_lesser_output_size();
 	tc_comp_decomp_buffer_greater_output_size();
 	tc_compressed_file_read();
+	tc_comp_file_decomp();
 
 	return 0;
 }
