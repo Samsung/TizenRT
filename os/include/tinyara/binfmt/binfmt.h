@@ -79,13 +79,9 @@
  ****************************************************************************/
 enum {
 	BIN_TEXT,
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
 	BIN_CTOR,
 	BIN_DTOR,
-#endif
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	BIN_RO,
-#endif
 	BIN_DATA,
 	BIN_BSS,
 	BIN_HEAP,
