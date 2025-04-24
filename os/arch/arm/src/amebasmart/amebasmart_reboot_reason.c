@@ -99,9 +99,15 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 
 			 /* CA32:WDG3 Secure WDG reset */
 			if (boot_reason_reg2 & AON_BIT_RSTF_WDG3) {
+				BKUP_Write(BKUP_REG2, 0);
 				return REBOOT_SYSTEM_TZWD_RESET;
 			}
 			else {
+				if (boot_reason & AON_BIT_RSTF_WDG4) {
+					lldbg("Reboot reason: WDG4 reset\n");
+				} else if (boot_reason & AON_BIT_RSTF_WDG2) {
+					lldbg("Reboot reason: WDG2 reset\n");
+				}
 				return REBOOT_SYSTEM_WATCHDOG;
 			}
 		}
@@ -112,6 +118,16 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		}
 		/* KM0: IWDG reset*/
 		else if (boot_reason & AON_BIT_RSTF_IWDG) {
+			/* KM0: IWDG is used in KM0 to ensure KM0 is working properly, KM4 is wakeup properly from PG, CA32 power is power-on from PG
+			* backup register will be used to record the case that triggered IWDG reboot
+			*/
+			if (boot_reason_reg2 == 0x2) {
+				BKUP_Write(BKUP_REG2, 0);
+				lldbg("Reboot reason: IWDG reset, KM4 wakeup failed\n");
+			} else if (boot_reason_reg2 == 0x3) {
+				BKUP_Write(BKUP_REG2, 0);
+				lldbg("Reboot reason: IWDG reset, CA32 wakeup failed\n");
+			}
 			return REBOOT_SYSTEM_RESET_IWDG;
 		}
 
