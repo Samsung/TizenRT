@@ -77,16 +77,10 @@ static const char *utils_statenames[] = {
 	"INACTIVE",
 	"WAITSEM ",
 	"WAITUNBLOCK",
-#ifndef CONFIG_DISABLE_SIGNALS
 	"WAITSIG ",
-#endif
-#ifndef CONFIG_DISABLE_MQUEUE
 	"MQNEMPTY",
 	"MQNFULL ",
-#endif
-#ifdef CONFIG_PAGING
 	"WAITPAGEFILL "
-#endif
 };
 
 static const char *utils_ttypenames[4] = {
