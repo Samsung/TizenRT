@@ -161,7 +161,36 @@ function TRAP_MENU()
 function TOOLCHAIN_MENU()
 {
 	FIND_DBGBINFILE
-	TL_BIN=../build/output/bin/
+	echo =============================================================================
+	echo "  \"Select binary location to debug crash with Toolchain Command\""
+	echo =============================================================================
+	echo "  \"1. Default binary from previous build at build/output/bin location\""
+	echo "  \"2. Custom binary at any location\""
+	echo "  \"x. Exit\""
+	echo =============================================================================
+	read SELECT_BIN
+	case ${SELECT_BIN,,} in
+		1|default)
+			TL_BIN=../build/output/bin/
+			if [ -z "$(ls -A $TL_BIN)" ]; then
+				echo "No output file in $TL_BIN, Build the code and run Toolchain command again."
+				return
+			fi
+			;;
+		2|manual)
+			echo "Enter the binary folder path wrt os directory: (ex: ../../build/output/bin/)"
+			read TL_BIN
+			if [ -z "$(ls -A $TL_BIN)" ]; then
+				echo "$TL_BIN Folder does not exit, try again"
+				return
+			fi
+
+			;;
+		x|exit)
+			exit 1
+			;;
+	esac
+
 	echo ======================================================
 	echo "  \"Select Binary for Toolchain Command\""
 	echo ======================================================
