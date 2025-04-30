@@ -63,7 +63,6 @@
 #include <debug.h>
 
 #include <tinyara/cancelpt.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"

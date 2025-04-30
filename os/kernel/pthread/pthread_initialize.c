@@ -61,7 +61,6 @@
 #include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
-#include <tinyara/ttrace.h>
 
 #include "pthread/pthread.h"
 /****************************************************************************
@@ -134,7 +133,6 @@ void pthread_initialize(void)
 
 int pthread_sem_take(sem_t *sem, bool intr)
 {
-	trace_begin(TTRACE_TAG_IPC, "pthread_sem_take");
 	/* Verify input parameters */
 
 	DEBUGASSERT(sem != NULL);
@@ -152,12 +150,10 @@ int pthread_sem_take(sem_t *sem, bool intr)
 				return errcode;
 			}
 		}
-		trace_end(TTRACE_TAG_IPC);
 		return OK;
 	} else {
 		/* NULL semaphore pointer! */
 
-		trace_end(TTRACE_TAG_IPC);
 		return EINVAL;
 	}
 }

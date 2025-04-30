@@ -62,7 +62,6 @@
 #include <errno.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/ttrace.h>
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
 #include <tinyara/mpu.h>
 #endif
@@ -171,8 +170,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 		return -ESRCH;
 	}
 
-	trace_begin(TTRACE_TAG_TASK, "task_terminate");
-
 	/* Make sure the task does not become ready-to-run while we are futzing with
 	 * its TCB by locking ourselves as the executing task.
 	 */
@@ -278,8 +275,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	 */
 
 	task_exithook(dtcb, EXIT_SUCCESS, nonblocking);
-
-	trace_end(TTRACE_TAG_TASK);
 
 	/* Deallocate its TCB */
 
