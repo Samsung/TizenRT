@@ -739,10 +739,6 @@ CONFIG_RTL8723D_PID=0xd723
 # CONFIG_RAMLOG is not set
 # CONFIG_SYSLOG_CONSOLE is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 CONFIG_IOTDEV=y
 
 #
