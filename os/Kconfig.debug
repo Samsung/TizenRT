@@ -1029,13 +1029,6 @@ config DEBUG_TOUCH_INFO
 
 endif #DEBUG_TOUCH
 
-config DEBUG_TTRACE
-	bool "T-trace Debug Output"
-	default n
-	depends on TTRACE
-	---help---
-		Enable T-trace debug Feature.
-
 config DEBUG_USB
         bool "USB Debug Features"
         default n

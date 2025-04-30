@@ -64,7 +64,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
-#include <tinyara/ttrace.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
@@ -136,8 +135,6 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	pid_t pid;
 	int errcode;
 	int ret;
-
-	trace_begin(TTRACE_TAG_TASK, "thread_create");
 
 	/* Check whether we are allowed to create new task ? */
 	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
@@ -234,7 +231,6 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	(void)task_activate((FAR struct tcb_s *)tcb);
 
-	trace_end(TTRACE_TAG_TASK);
 	return pid;
 
 errout_with_tcb:
@@ -242,7 +238,6 @@ errout_with_tcb:
 
 errout:
 	set_errno(errcode);
-	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 

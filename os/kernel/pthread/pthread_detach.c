@@ -62,7 +62,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -120,7 +119,6 @@ int pthread_detach(pthread_t thread)
 	FAR struct join_s *pjoin;
 	int ret;
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_detach");
 	svdbg("Thread=%d group=%p\n", thread, group);
 	DEBUGASSERT(group);
 
@@ -155,6 +153,5 @@ int pthread_detach(pthread_t thread)
 	(void)pthread_sem_give(&group->tg_joinsem);
 
 	svdbg("Returning %d\n", ret);
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }
