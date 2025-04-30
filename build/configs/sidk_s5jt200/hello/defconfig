@@ -404,10 +404,6 @@ CONFIG_UART4_2STOP=0
 #
 # CONFIG_RAMLOG is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 
 #
 # Wireless Device Options
