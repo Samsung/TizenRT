@@ -74,7 +74,6 @@
 #include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/pthread.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -262,13 +261,11 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
 #endif
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_create");
 
 	/* Check whether we are allowed to create new pthread ? */
 
 	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
 		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);
-		trace_end(TTRACE_TAG_TASK);
 		return EBUSY;
 	}
 
@@ -511,7 +508,6 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		goto errout_with_join;
 	}
 
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 
 errout_with_join:
@@ -528,6 +524,5 @@ errout_with_tcb:
 #endif
 
 	sched_releasetcb((FAR struct tcb_s *)ptcb, TCB_FLAG_TTYPE_PTHREAD);
-	trace_end(TTRACE_TAG_TASK);
 	return errcode;
 }

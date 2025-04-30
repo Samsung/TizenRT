@@ -774,10 +774,6 @@ void os_start(void)
 	sysdbg_init();
 #endif
 
-#if defined(CONFIG_TTRACE)
-	ttrace_init();
-#endif
-
 #ifdef CONFIG_MM_SHM
 	/* Initialize shared memory support */
 

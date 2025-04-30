@@ -60,7 +60,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "task/task.h"
@@ -98,7 +97,6 @@ int pthread_cancel(pthread_t thread)
 {
 	FAR struct pthread_tcb_s *tcb;
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_cancel");
 
 	/* First, make sure that the handle references a valid thread */
 
@@ -107,7 +105,6 @@ int pthread_cancel(pthread_t thread)
 		 * IDLE task.
 		 */
 
-		trace_end(TTRACE_TAG_TASK);
 		return ESRCH;
 	}
 
@@ -118,7 +115,6 @@ int pthread_cancel(pthread_t thread)
 		 * has probably already exited.
 		 */
 
-		trace_end(TTRACE_TAG_TASK);
 		return ESRCH;
 	}
 
@@ -146,7 +142,6 @@ int pthread_cancel(pthread_t thread)
 
 		tcb->cmn.flags |= TCB_FLAG_CANCEL_PENDING;
 		sched_unlock();
-		trace_end(TTRACE_TAG_TASK);
 		return OK;
 	}
 
@@ -209,6 +204,5 @@ int pthread_cancel(pthread_t thread)
 
 	/* Then let task_terminate do the real work */
 
-	trace_end(TTRACE_TAG_TASK);
 	return task_terminate((pid_t)thread, false);
 }

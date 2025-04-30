@@ -1138,12 +1138,6 @@ int get_errno(void);
 #define touchllvdbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_TTRACE
-#define ttdbg(format, ...) dbg(format, ##__VA_ARGS__)
-#else
-#define ttdbg(format, ...)
-#endif
-
 #ifdef CONFIG_DEBUG_USB_ERROR
 #define udbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define ulldbg(format, ...)  lldbg(format, ##__VA_ARGS__)

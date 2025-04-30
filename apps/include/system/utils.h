@@ -93,10 +93,6 @@ int utils_ps(int argc, char **args);
 int utils_stackmonitor(int argc, char **args);
 #endif
 
-#if defined(CONFIG_TTRACE)
-int utils_ttrace(int argc, char **args);
-#endif
-
 #if defined(CONFIG_ENABLE_TZSELECT)
 int utils_tzselect(int argc, char **args);
 #endif

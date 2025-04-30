@@ -64,9 +64,6 @@ const static tash_cmdlist_t system_cmds[] = {
 #if defined(CONFIG_ENABLE_STACKMONITOR)
 	{"stkmon",   utils_stackmonitor, TASH_EXECMD_SYNC},
 #endif
-#if defined(CONFIG_TTRACE)
-	{"ttrace",   utils_ttrace,       TASH_EXECMD_SYNC},
-#endif
 #if defined(CONFIG_ENABLE_TZSELECT)
 	{"tzselect", utils_tzselect,	TASH_EXECMD_SYNC},
 #endif

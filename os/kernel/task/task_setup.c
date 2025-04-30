@@ -64,7 +64,6 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/ttrace.h>
 #include <tinyara/irq.h>
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/clock.h>
@@ -132,8 +131,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	int hash_ndx;
 	int tries;
 
-	trace_begin(TTRACE_TAG_TASK, "task_assignpid");
-
 	/* Disable pre-emption.  This should provide sufficient protection
 	 * for the following operation.
 	 */
@@ -184,7 +181,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			g_alive_taskcount++;
 
 			leave_critical_section(flags);
-			trace_end(TTRACE_TAG_TASK);
 			return OK;
 		}
 	}
@@ -195,7 +191,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 
 	leave_critical_section(flags);
 	set_errno(EBUSY);
-	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 
@@ -417,8 +412,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		return ERROR;
 	}
 
-	trace_begin(TTRACE_TAG_TASK, "thread_schedsetup");
-
 	/* Assign a unique task ID to the task. */
 
 	ret = task_assignpid(tcb);
@@ -529,7 +522,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		sched_unlock();
 	}
 
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }
 
