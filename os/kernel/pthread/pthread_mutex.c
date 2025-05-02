@@ -113,15 +113,13 @@ static void pthread_mutex_add(FAR struct pthread_mutex_s *mutex)
  *
  * Parameters:
  *  mutex - The mutex to be locked
- *  intr  - false: ignore EINTR errors when locking; true treat EINTR as
- *          other errors by returning the errno value
  *
  * Return Value:
  *   0 on success or an errno value on failure.
  *
  ****************************************************************************/
 
-int pthread_mutex_take(FAR struct pthread_mutex_s *mutex, bool intr)
+int pthread_mutex_take(FAR struct pthread_mutex_s *mutex)
 {
 	int ret = EINVAL;
 
@@ -142,7 +140,7 @@ int pthread_mutex_take(FAR struct pthread_mutex_s *mutex, bool intr)
 			 * returns zero on success and a positive errno value on failure.
 			 */
 
-			ret = pthread_sem_take(&mutex->sem, intr);
+			ret = pthread_sem_take(&mutex->sem);
 			if (ret == OK) {
 				/* Check if the holder of the mutex has terminated without
 				 * releasing.  In that case, the state of the mutex is
@@ -176,8 +174,6 @@ int pthread_mutex_take(FAR struct pthread_mutex_s *mutex, bool intr)
  *
  * Parameters:
  *  mutex - The mutex to be locked
- *  intr  - false: ignore EINTR errors when locking; true treat EINTR as
- *          other errors by returning the errno value
  *
  * Return Value:
  *   0 on success or an errno value on failure.

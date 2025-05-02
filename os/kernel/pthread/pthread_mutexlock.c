@@ -233,7 +233,7 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 			 * default mutex.
 			 */
 
-			ret = pthread_mutex_take(mutex, true);
+			ret = pthread_mutex_take(mutex);
 
 			/* If we succussfully obtained the semaphore, then indicate
 			 * that we own it.

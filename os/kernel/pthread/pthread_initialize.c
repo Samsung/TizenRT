@@ -123,15 +123,13 @@ void pthread_initialize(void)
  *
  * Parameters:
  *  sem  - The semaphore to lock or unlock
- *  intr - false: ignore EINTR errors when locking; true tread EINTR as
- *         other errors by returning the errno value
  *
  * Return Value:
  *   0 on success or an errno value on failure.
  *
  ****************************************************************************/
 
-int pthread_sem_take(sem_t *sem, bool intr)
+int pthread_sem_take(sem_t *sem)
 {
 	/* Verify input parameters */
 
@@ -146,7 +144,7 @@ int pthread_sem_take(sem_t *sem, bool intr)
 			 * awakened by the receipt of a signal.
 			 */
 
-			if (intr || errcode != EINTR) {
+			if (errcode != EINTR) {
 				return errcode;
 			}
 		}

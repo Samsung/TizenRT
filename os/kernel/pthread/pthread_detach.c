@@ -124,7 +124,7 @@ int pthread_detach(pthread_t thread)
 
 	/* Find the entry associated with this pthread. */
 
-	(void)pthread_sem_take(&group->tg_joinsem, false);
+	(void)pthread_sem_take(&group->tg_joinsem);
 	pjoin = pthread_findjoininfo(group, (pid_t)thread);
 	if (!pjoin) {
 		sdbg("Could not find thread entry\n");
