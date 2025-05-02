@@ -550,7 +550,7 @@ class logParser:
 						if (is_app_symbol):
 							#If yes, print it's corresponding symbol
 							if not self.xip_enabled:
-								stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+								stack_val = stack_val - int(self.g_stext_app[is_app_symbol - 1])
 							utils.print_symbol(stack_addr, stack_val, is_app_symbol, self.bin_path, self.app_name)
 
 	# Function to Parse the input log file (which contains wrong stackdump during assert)
