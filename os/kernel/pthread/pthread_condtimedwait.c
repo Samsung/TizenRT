@@ -326,7 +326,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					svdbg("Re-locking...\n");
 
 					oldstate = pthread_disable_cancel();
-					status = pthread_mutex_take(mutex, false);
+					status = pthread_mutex_take(mutex);
 					pthread_enable_cancel(oldstate);
 
 					if (status == OK) {
