@@ -735,6 +735,50 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 	return 0;
 }
 
+extern void smp_full_powerdown_cpu(void);
+static int tash_cpu1_off(int argc, char *argv[])
+{
+	if (up_cpu_index() > 0) {
+		printf("can only powerdown cpu1 from cpu0!\n");
+		return 0;
+	}
+	printf("powering down cpu1!\n");
+	smp_full_powerdown_cpu();
+	printf("state: %d (0=running,1=hotplug,2=wakefromsleep,3=halt)\n", up_get_cpu_state(1));
+	return 0;
+}
+extern void vPortSecondaryStart(void);
+static int tash_cpu1_on(int argc, char *argv[])
+{
+	if (up_cpu_index() > 0) {
+		printf("can only powerup cpu1 from cpu0!\n");
+		return 0;
+	}
+
+	printf("powering up cpu1!\n");
+	vPortSecondaryStart();
+	printf("state: %d (0=running,1=hotplug,2=wakefromsleep,3=halt)\n", up_get_cpu_state(1));
+	return 0;
+}
+
+static int tash_cpu_status(int argc, char *argv[])
+{
+	for (u8 i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		printf("psci status for cpu%d: %d | cpu state %d\n", i, psci_affinity_info(i, 0), up_get_cpu_state(1));
+	}
+	return 0;
+}
+
+void pm_test_resume(int argc, char * argv[]) {
+	int fd = open("/dev/pm", O_RDONLY);
+	if (fd < 0) {
+		printf("Cannot open /dev/pm file with fd = %d\n", fd);
+	}
+	int ret = ioctl(fd, PMIOC_RESUME, atoi(argv[1]));
+	printf("Ret is %d\n", ret);
+	close(fd);
+}
+
 /** @name tash_cmdlist_install
  * @brief API to register TASH command list
  * @ingroup tash
@@ -752,6 +796,10 @@ void tash_cmdlist_install(const tash_cmdlist_t list[])
 	for (map = list; map->entry; map++) {
 		tash_cmd_install(map->name, map->entry, map->exectype);
 	}
+	tash_cmd_install("cpu1on", tash_cpu1_on, TASH_EXECMD_ASYNC);
+	tash_cmd_install("cpu1off", tash_cpu1_off, TASH_EXECMD_ASYNC);
+	tash_cmd_install("cpustatus", tash_cpu_status, TASH_EXECMD_ASYNC);
+	tash_cmd_install("pm_resume", pm_test_resume, TASH_EXECMD_ASYNC);
 }
 
 void tash_register_basic_cmds(void)
