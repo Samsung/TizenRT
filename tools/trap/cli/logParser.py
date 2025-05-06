@@ -99,6 +99,12 @@ class logParser:
 			print('\n2. Crash type               : usage fault')
 		elif 'up_hardfault' in string:
 			print('\n2. Crash type               : hard fault')
+		elif 'dataabort' in string:
+			print('\n2. Crash type               : data abort')
+		elif 'prefetchabort' in string:
+			print('\n2. Crash type               : prefetch abort')
+		elif 'undefinedinsn' in string:
+			print('\n2. Crash type               : undefined instruction abort')
 		elif 'Assertion failed' in string:
 			self.crash_type_assert = True
 			print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
