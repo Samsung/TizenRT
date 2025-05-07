@@ -1519,7 +1519,8 @@ nextname:
 
         // error on unmatched '..', trying to go above root?
         if (namelen == 2 && memcmp(name, "..", 2) == 0) {
-            return LFS_ERR_INVAL;
+			name += namelen;
+			goto nextname;
         }
 
         // skip if matched by '..' in name
