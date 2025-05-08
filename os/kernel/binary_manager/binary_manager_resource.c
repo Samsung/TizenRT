@@ -99,7 +99,8 @@ int binary_manager_mount_resource(void)
 
 #ifdef CONFIG_USE_BP
 	binmgr_bpdata_t *bp_data;
-	if (binary_manager_update_bpinfo() != BINMGR_OK) {
+	ret = binary_manager_update_bpinfo();
+	if (ret != BINMGR_OK) {
 		bmdbg("Failed to update bpinfo %d\n", ret);
 		return ERROR;
 	}
