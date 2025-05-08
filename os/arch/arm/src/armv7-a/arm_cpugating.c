@@ -38,9 +38,12 @@
 #include "gic.h"
 #include "sched/sched.h"
 #include "barriers.h"
+#include "arch_timer.h"
 
 #ifdef CONFIG_CPU_GATING
 static volatile uint32_t g_cpugating_flag[CONFIG_SMP_NCPUS];
+
+extern volatile uint32_t g_active_system_timer_cpu;
 
 /****************************************************************************
  * Public Functions
@@ -74,6 +77,11 @@ void up_do_gating(void)
 			SP_WFE();
 		}
 		irqrestore(PrevIrqStatus);
+
+		/* transfer systick control back to cpu0 if cpu0 exit gating. cpu1 do not need */
+		if (cpu == 0) {
+			g_active_system_timer_cpu = cpu;
+		}
 	}
 
 }
@@ -117,6 +125,9 @@ void up_cpu_gating(int cpu)
 
 	/* Fire SGI for cpu to enter gating */
 	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
+
+	/* after gating other CPU, this cpu is the active timer, since the other one will be gated */
+	g_active_system_timer_cpu = this_cpu();
 }
 
 #endif /* CONFIG_CPU_GATING */
