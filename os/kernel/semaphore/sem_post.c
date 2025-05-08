@@ -218,6 +218,10 @@ int sem_post(FAR sem_t *sem)
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		sem_unblock_task(sem, this_task());
 		ret = OK;
 

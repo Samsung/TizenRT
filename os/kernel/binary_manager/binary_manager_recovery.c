@@ -93,6 +93,10 @@ static void binary_manager_recover_tcb(struct tcb_s *tcb)
 		ASSERT(sem != NULL && sem->semcount < 0);
 		sem_canceled(tcb, sem);
 		sem->semcount++;
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		tcb->waitsem = NULL;
 	} else if (state == TSTATE_WAIT_MQNOTEMPTY) {
 		ASSERT(tcb->msgwaitq && tcb->msgwaitq->nwaitnotempty > 0);
