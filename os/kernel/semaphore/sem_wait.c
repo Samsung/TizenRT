@@ -155,6 +155,10 @@ int sem_wait(FAR sem_t *sem)
 	/* Make sure we were supplied with a valid semaphore */
 	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 
+		if ((sem->flags & FLAGS_SIGSEM) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		/* Check if the lock is available */
 
 		if (sem->semcount > 0) {
