@@ -158,9 +158,10 @@ static void inic_ipc_host_rx_tasklet(void)
 			g_inic_host_priv.rx_pkts++;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 			/* TizenRT gets netif from netdev */
-			/* Currently TizenRT only uses idx 0 */
-			// index = precvbuf->idx_wlan;
-
+			/* If concurrent is not enabled, TizenRT only uses idx 0 */
+#ifdef CONFIG_ENABLE_HOMELYNK
+			index = precvbuf->idx_wlan;
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 			struct netdev *dev_tmp = NULL;
 			dev_tmp = (struct netdev *)rtk_get_netdev(index);
 			struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
