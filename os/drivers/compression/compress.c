@@ -23,10 +23,12 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/compression.h>
+#include <tinyara/binfmt/compression/compress_read.h>
 
 #include <errno.h>
 #include <debug.h>
 #include <assert.h>
+#include <stdio.h>
 
 /****************************************************************************
  * Function Prototypes
@@ -50,6 +52,12 @@ static const struct file_operations compress_fops = {
 	, 0                         /* poll */
 #endif
 };
+
+static struct file_decomp_data_s {
+	int fd;
+	struct s_header *compression_header;
+};
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -87,14 +95,17 @@ static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t
 static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -ENOSYS;
+	unsigned int size;
+	off_t filelen;
 	struct compress_header *comp_info = (struct compress_header *)arg;
+	struct file_decomp_data_s *data;
 
-	if (comp_info == NULL && cmd != COMPIOC_GET_COMP_TYPE) {
-		return -EINVAL;
-	}
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
 	case COMPIOC_COMPRESS:
+		if(comp_info == NULL) {
+			return -EINVAL;
+		}
 		if (comp_info->output_size < comp_info->input_size) {
 			bcmpdbg("It is recommended to keep input size and output size equal during compression\n");
 		}
@@ -105,6 +116,9 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = CONFIG_COMPRESSION_TYPE;
 		break;
 	case COMPIOC_GET_COMP_NAME:
+		if((char *)arg == NULL) {
+			return -EINVAL;
+		}
 		switch (CONFIG_COMPRESSION_TYPE) {
 			case LZMA_TYPE:
 				memcpy((char *)arg, LZMA_NAME, COMP_NAME_SIZE);
@@ -116,10 +130,70 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
  	case COMPIOC_DECOMPRESS:
+		if(comp_info == NULL) {
+			return -EINVAL;
+		}
 		ret = decompress_block(comp_info->output_buffer, &comp_info->output_size, comp_info->input_buffer, &comp_info->input_size);
 		if (ret == ENOMEM) {
 			bcmpdbg("Output buffer allocated is not sufficient\n");
 		}
+#ifdef CONFIG_COMPRESSED_BINARY
+	case COMPIOC_FDCMP_INIT:
+		if((char *)arg == NULL) {
+			return -EINVAL;
+		}
+		data = (struct file_decomp_data_s *)malloc(sizeof(struct file_decomp_data_s));
+		data->fd = open((char *)arg, "r");
+		filep->f_priv = data;
+		if (data->fd < 0) {
+			bcmpdbg("Failed to open file = %s\n", (char *)arg);
+			free(data);
+			filep->f_priv = NULL;
+			return -EINVAL;
+		}
+		ret = compress_init(data->fd, 0, &filelen);
+		if(ret != OK) {
+			free(data);
+			filep->f_priv = NULL;
+			ret = ERROR;
+		}
+		break;
+	case COMPIOC_FDCMP_GET_BUFSIZE:
+		data = filep->f_priv;
+		data->compression_header = get_compression_header();
+		ret = data->compression_header->binary_size;
+		if(ret <= 0) {
+			bcmpdbg("Failed to get buffer size = %d\n", ret);
+			compress_uninit();
+			free(data);
+			filep->f_priv = NULL;
+			ret = ERROR;
+		}
+		break;
+	case COMPIOC_FDCMP_DECOMPRESS:
+		if((uint8_t *)arg == NULL) {
+			return -EINVAL;
+		}
+		data = filep->f_priv;
+		size = compress_read(data->fd, 0, (uint8_t *)arg, data->compression_header->binary_size, 0);
+		ret = OK;
+		if(size != data->compression_header->binary_size) {
+			compress_uninit();
+			free(data);
+			filep->f_priv = NULL;
+			ret = ERROR;
+		}
+		break;
+	case COMPIOC_FDCMP_DEINIT:
+		compress_uninit();
+		free(filep->f_priv);
+		filep->f_priv = NULL;
+		ret = OK;
+		break;
+#endif
+	default:
+		ret = -EINVAL;
+		break;
 	}
 	return ret;
 }
