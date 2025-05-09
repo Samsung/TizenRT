@@ -240,6 +240,7 @@ static void heap_check(struct mm_heap_s *heap, int checker_pid, int *leak_cnt)
 	void *exclude_bottom;
 
 	struct tcb_s *ctcb = sched_gettcb(checker_pid);
+	ASSERT(ctcb != NULL);
 	exclude_top = ctcb->adj_stack_ptr;
 	exclude_bottom = ctcb->adj_stack_ptr - ctcb->adj_stack_size;
 

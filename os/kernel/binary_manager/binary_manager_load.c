@@ -506,7 +506,7 @@ static int loadingall_thread(int argc, char *argv[])
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)) == BINARY_LOADPRIO_HIGH) {
 			ret = binary_manager_load(bin_idx);
-			if (ret > 0) {
+			if (ret == BINMGR_OK) {
 				load_cnt++;
 			}
 		}
