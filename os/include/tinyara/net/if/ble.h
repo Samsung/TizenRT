@@ -81,7 +81,7 @@ typedef struct {
 
 typedef enum {
 	// Common
-	LWNL_REQ_BLE_INIT = 0,
+	LWNL_REQ_BLE_INIT,
 	LWNL_REQ_BLE_DEINIT,
 	LWNL_REQ_BLE_GET_MAC,
 	LWNL_REQ_BLE_START_BOND,
@@ -96,7 +96,7 @@ typedef enum {
 	LWNL_REQ_BLE_IOCTL,
 	
 	// Scanner
-	LWNL_REQ_BLE_SET_SCAN = 100,
+	LWNL_REQ_BLE_SET_SCAN,
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
 	LWNL_REQ_BLE_WHITELIST_ADD,
@@ -104,7 +104,7 @@ typedef enum {
 	LWNL_REQ_BLE_WHITELIST_CLEAR_ALL,
 
 	// Client
-	LWNL_REQ_BLE_CLIENT_CONNECT = 200,
+	LWNL_REQ_BLE_CLIENT_CONNECT,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT_ALL,
 	LWNL_REQ_BLE_CONNECTED_DEV_LIST,
@@ -118,7 +118,7 @@ typedef enum {
 	LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT,
 
 	// Server
-	LWNL_REQ_BLE_SET_SERVER_CONFIG = 300,
+	LWNL_REQ_BLE_SET_SERVER_CONFIG,
 	LWNL_REQ_BLE_GET_PROFILE_COUNT,
 	LWNL_REQ_BLE_CHARACT_NOTI,
 	LWNL_REQ_BLE_CHARACT_INDI,
@@ -132,7 +132,7 @@ typedef enum {
 	LWNL_REQ_BLE_SET_DEVICE_NAME,
 
 	// Advertiser
-	LWNL_REQ_BLE_SET_ADV_DATA = 400,
+	LWNL_REQ_BLE_SET_ADV_DATA,
 	LWNL_REQ_BLE_SET_ADV_RESP,
 	LWNL_REQ_BLE_SET_ADV_TYPE,
 	LWNL_REQ_BLE_SET_ADV_INTERVAL,
@@ -333,7 +333,7 @@ typedef enum {
 	TRBLE_SERVER_DISCONNECTED,
 } trble_server_connection_type_e;
 
-typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN], uint8_t adv_handle);
 typedef void (*trble_server_disconnected_t)(trble_conn_handle con_handle, uint16_t cause);
 typedef void (*trble_server_mtu_update_t)(trble_conn_handle con_handle,  uint16_t mtu_size);
 typedef void (*trble_server_oneshot_adv_t)(uint16_t adv_ret);

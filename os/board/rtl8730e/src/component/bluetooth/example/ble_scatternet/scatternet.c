@@ -353,10 +353,16 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				if(ble_client_connect_is_running)
 					ble_client_connect_is_running = 0;
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
+				uint8_t adv_handle = 0xff;
 				if (server_init_parm.connected_cb) {
 					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
-					_reverse_mac( conn_ind->peer_addr.addr_val, addr);
-					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, addr);
+					_reverse_mac(conn_ind->peer_addr.addr_val, addr);
+#if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT 
+                    if(RTK_BT_OK != rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(conn_ind->conn_handle, &adv_handle)){
+                        dbg("[APP] Get adv handle failed \r\n");
+                    }
+#endif
+					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, addr, adv_handle);
 				} else {
 					ble_tizenrt_dummy_callback();
 				}
@@ -566,10 +572,16 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				connected_dev.conn_info.mtu = mtu_size;
 				client_init_parm->trble_device_connected_cb(&connected_dev);
 			} else if (RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role) {
+				uint8_t adv_handle = 0xff;
 				if (server_init_parm.connected_cb) {
+#if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT 
+					if(RTK_BT_OK != rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(auth_cplt_ind->conn_handle, &adv_handle)){
+						dbg("[APP] Get adv handle failed \r\n");
+                    }
+#endif
 					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
 					_reverse_mac(ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, addr);
-					server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, addr);
+					server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, adv_handle);
 				} else {
 					ble_tizenrt_dummy_callback();
 				}
