@@ -225,16 +225,10 @@ enum tstate_e {
 	TSTATE_TASK_INACTIVE,		/* BLOCKED      - Initialized but not yet activated */
 	TSTATE_WAIT_SEM,			/* BLOCKED      - Waiting for a semaphore */
 	TSTATE_WAIT_FIN,		/* BLOCKED		- Waiting to be unblocked by fin */
-#ifndef CONFIG_DISABLE_SIGNALS
 	TSTATE_WAIT_SIG,			/* BLOCKED      - Waiting for a signal */
-#endif
-#ifndef CONFIG_DISABLE_MQUEUE
 	TSTATE_WAIT_MQNOTEMPTY,		/* BLOCKED      - Waiting for a MQ to become not empty. */
 	TSTATE_WAIT_MQNOTFULL,		/* BLOCKED      - Waiting for a MQ to become not full. */
-#endif
-#ifdef CONFIG_PAGING
 	TSTATE_WAIT_PAGEFILL,		/* BLOCKED      - Waiting for page fill */
-#endif
 	NUM_TASK_STATES				/* Must be last */
 };
 typedef enum tstate_e tstate_t;
