@@ -80,3 +80,4 @@ void dhcpc_close_ipaddr(void);
 
 wifi_manager_result_e dhcpc_fetch_ipaddr(struct in_addr *ip);
 
+wifi_manager_result_e dhcpc_get_ap_type(wifi_manager_ap_type_e *aptype);
