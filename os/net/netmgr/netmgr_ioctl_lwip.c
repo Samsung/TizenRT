@@ -183,6 +183,11 @@ int _netdev_dhcpc_stop(const char *intf)
 	return OK;
 }
 
+ap_type _netdev_dhcpc_get_aptype(void)
+{
+	return dhcp_get_aptype();
+}
+
 int _netdev_dhcpc_sethostname(struct lwip_dhcp_msg *msg)
 {
 #ifdef CONFIG_LWIP_DHCP_HOSTNAME
@@ -436,6 +441,10 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			NET_LOGKE(TAG, "Set dhcp host name failed %d\n", req->req_res);
 			goto errout;
 		}
+		ret = OK;
+		break;
+	case DHCPCGETAPTYPE:
+		req->req_res = (int)_netdev_dhcpc_get_aptype();
 		ret = OK;
 		break;
 #endif

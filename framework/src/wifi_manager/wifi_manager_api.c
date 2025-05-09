@@ -49,13 +49,13 @@
 		}                                                                                                                       \
 	} while (0)
 
-#define RETURN_RESULT(res, msg)					\
-	do {										\
-		if (res < 0) {							\
-			return WIFI_MANAGER_POST_FAIL;			\
-		} else {								\
-			return msg.result;					\
-		}										\
+#define RETURN_RESULT(res, msg)            \
+	do {                                   \
+		if (res < 0) {                     \
+			return WIFI_MANAGER_POST_FAIL; \
+		} else {                           \
+			return msg.result;             \
+		}                                  \
 	} while (0)
 #define TAG "[WM]"
 
@@ -188,11 +188,22 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
+// Valid channel list is from https://www.wirelesstrainingsolutions.com/new-spectrum/ by realtek engineer
+static int valid_ch_list[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165};
+static int valid_ch_list_size = sizeof(valid_ch_list) / sizeof(valid_ch_list[0]);
+
 wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
 	if (config) {
-		if (config->channel > WIFIMGR_2G_CHANNEL_MAX) {
+		int ch_valid = 0;
+		for (int i = 0; i < valid_ch_list_size; i++) {
+			if (config->channel == valid_ch_list[i]) {
+				ch_valid = 1;
+				break;
+			}
+		}
+		if (!ch_valid) {
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
 			NET_LOGE(TAG, "invalid channel range %d\n", config->channel);
 			return WIFI_MANAGER_INVALID_ARGS;
@@ -247,10 +258,12 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 	char softap_ssid[WIFIMGR_SSID_LEN + 1];
-	wifimgr_info_msg_s winfo = {info->ssid, softap_ssid,
-								0, WIFIMGR_UNINITIALIZED};
+	wifimgr_info_msg_s winfo = {info->ssid, softap_ssid, 0, WIFIMGR_UNINITIALIZED, {
+																					   0,
+																				   }};
 	wifimgr_get_info(WIFIMGR_ALL_INFO, &winfo);
 	info->rssi = winfo.rssi;
+	memcpy(info->bssid, winfo.bssid, WIFIMGR_MACADDR_LEN);
 	_convert_state(&winfo.state, &info->status, &info->mode);
 
 	// wifi manager stores softap ssid and ap ssid connected
@@ -262,6 +275,106 @@ wifi_manager_result_e wifi_manager_get_info(wifi_manager_info_s *info)
 	return WIFI_MANAGER_SUCCESS;
 }
 
+wifi_manager_result_e wifi_manager_get_ap_type(wifi_manager_ap_type_e *aptype)
+{
+	NET_LOGI(TAG, "-->\n");
+	if (aptype == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	wifi_manager_info_s info;
+	wifi_manager_get_info(&info);
+	if (info.status == AP_DISCONNECTED) {
+		NET_LOGE(TAG, "AP disconnected, cannot get connected ap type\n");
+		return WIFI_MANAGER_FAIL;
+	}
+
+	if (dhcpc_get_ap_type(aptype) != WIFI_MANAGER_SUCCESS) {
+		return WIFI_MANAGER_FAIL;
+	}
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_set_channel_plan(uint8_t channel_plan)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+
+	if (wifimgr_set_channel_plan(channel_plan) != 0) {
+		return WIFI_MANAGER_FAIL;
+	}
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_get_signal_quality(wifi_manager_signal_quality_s *wifi_manager_signal_quality)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (wifi_manager_signal_quality == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+	wifimgr_signal_quality_s wifi_signal_quality = {
+		0,
+	};
+	wifimgr_get_signal_quality(&wifi_signal_quality);
+
+	wifi_manager_signal_quality->channel = wifi_signal_quality.channel;
+	memcpy(&(wifi_manager_signal_quality->snr), &(wifi_signal_quality.snr), sizeof(signed char));
+	wifi_manager_signal_quality->network_bw = wifi_signal_quality.network_bw;
+	wifi_manager_signal_quality->max_rate = wifi_signal_quality.max_rate;
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_get_disconnect_reason(int *disconnect_reason)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (disconnect_reason == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	wifimgr_get_disconnect_reason(disconnect_reason);
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_get_driver_info(wifi_manager_driver_info_s *wifi_manager_driver_info)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (wifi_manager_driver_info == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+	wifimgr_driver_info_s driver_info = {
+		0,
+	};
+	wifimgr_get_driver_info(&driver_info);
+
+	memcpy(wifi_manager_driver_info->lib_version, driver_info.lib_version, sizeof(driver_info.lib_version));
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_get_wpa_supplicant_state(wifi_manager_wpa_states_s *wifi_manager_wpa_state)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (wifi_manager_wpa_state == NULL) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+	wifimgr_wpa_states_s wpa_state = {
+		0,
+	};
+	wifimgr_get_wpa_supplicant_state(&wpa_state);
+
+	wifi_manager_wpa_state->wpa_supplicant_state = wpa_state.wpa_supplicant_state;
+	wifi_manager_wpa_state->wpa_supplicant_key_mgmt = wpa_state.wpa_supplicant_key_mgmt;
+
+	return WIFI_MANAGER_SUCCESS;
+}
 wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
@@ -308,6 +421,12 @@ wifi_manager_result_e wifi_manager_unregister_cb(wifi_manager_cb_s *wmcb)
 		return WIFI_MANAGER_FAIL;
 	}
 
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_set_hostname_sta(const char *hostname)
+{
+	dhcp_client_sethostname(WIFIMGR_STA_IFNAME, hostname);
 	return WIFI_MANAGER_SUCCESS;
 }
 
