@@ -132,6 +132,10 @@ int sem_trywait(FAR sem_t *sem)
 
 		saved_state = enter_critical_section();
 
+		if ((sem->flags & FLAGS_SIGSEM) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		/* If the semaphore is available, give it to the requesting task */
 
 		if (sem->semcount > 0) {

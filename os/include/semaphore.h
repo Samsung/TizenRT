@@ -83,9 +83,7 @@
 #define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
 					    * is disabled for this semaphore */
 #define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
-#ifdef SAVE_SEM_HOLDER
 #define FLAGS_SIGSEM              (1 << 2) /* Bit 2: The semaphore for signaling */
-#endif
 
 /****************************************************************************
  * Public Type Declarations
