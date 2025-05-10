@@ -40,6 +40,18 @@
 #endif
 
 #ifdef CONFIG_PM
+
+struct pm_sleep_ops rtl8730e_sleep_ops = {
+	.sleep = up_pm_board_sleep,
+	.set_timer = up_set_pm_timer,
+};
+
+#ifdef CONFIG_PM_DVFS
+struct pm_clock_ops rtl8730e_clock_ops = {
+	.adjust_dvfs = up_set_dvfs,
+};
+#endif
+
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -108,6 +120,10 @@ void up_idle(void)
 void arm_pminitialize(void)
 {
 	/* Then initialize the TinyAra power management subsystem properly */
-	pm_initialize();
+	pm_initialize(&rtl8730e_sleep_ops);
+
+#ifdef CONFIG_PM_DVFS
+	pm_clock_initialize(&rtl8730e_clock_ops);
+#endif
 }
 #endif
