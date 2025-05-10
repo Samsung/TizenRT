@@ -374,6 +374,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	uint32_t total_cpuload = 0;
 	uint32_t total_active = 0;
 #endif
+	uint8_t state;
 
 	remaining = buflen;
 	totalsize = 0;
@@ -409,10 +410,17 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 #else
 	ppid = -1;
 #endif
+	if (tcb->blink != NULL && tcb->blink->pid == getpid()) {
+		state = TSTATE_TASK_RUNNING;
+	} else if (tcb->pid == getpid()) {
+		state = TSTATE_WAIT_SEM;
+	} else {
+		state = tcb->task_state;
+	}
 #ifdef CONFIG_SMP
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
 #else
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, tcb->task_state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
 #endif
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
