@@ -141,12 +141,12 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			return -EINVAL;
 		}
 		switch (CONFIG_COMPRESSION_TYPE) {
-			case LZMA_TYPE:
-				memcpy((char *)arg, LZMA_NAME, COMP_NAME_SIZE);
-				break;
-			case MINIZ_TYPE:
-				memcpy((char *)arg, MINIZ_NAME, COMP_NAME_SIZE);
-				break;
+		case LZMA_TYPE:
+			memcpy((char *)arg, LZMA_NAME, COMP_NAME_SIZE);
+			break;
+		case MINIZ_TYPE:
+			memcpy((char *)arg, MINIZ_NAME, COMP_NAME_SIZE);
+			break;
 		}
 		ret = OK;
 		break;
