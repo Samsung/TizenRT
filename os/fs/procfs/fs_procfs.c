@@ -140,8 +140,9 @@ static const struct procfs_entry_s g_procfsentries[] = {
 	{"fs/smartfs**", &smartfs_procfsoperations},
 #endif
 
-#if defined(CONFIG_DEBUG_IRQ_INFO) && !defined(CONFIG_FS_PROCFS_EXCLUDE_IRQS)
-	{"irqs", &irqs_operations},
+#ifndef CONFIG_FS_PROCFS_EXCLUDE_IRQS
+	{"irqs**", &irqs_operations},
+	{"irqs/*", &irqs_operations},
 #endif
 
 #if defined(CONFIG_MTD) && !defined(CONFIG_FS_PROCFS_EXCLUDE_MTD)
