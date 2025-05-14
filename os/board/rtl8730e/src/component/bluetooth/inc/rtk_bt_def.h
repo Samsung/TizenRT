@@ -32,11 +32,13 @@ typedef enum {
  * @brief     Bluetooth API err group mask.
  */
 enum rtk_bt_err_group {
-	RTK_BT_ERR_COMMON_GROUP     =   0x0000,
-	RTK_BT_ERR_HCI_GROUP        =   0x0100,
-	RTK_BT_ERR_ATT_GROUP        =   0x0400,
-	RTK_BT_ERR_SM_GROUP         =   0x0500,
-	RTK_BT_ERR_GATT_GROUP       =   0x0C00,
+	RTK_BT_ERR_COMMON_GROUP     =   0x0000,  /*!< BT API common err, ref @ref rtk_bt_err_common */
+	RTK_BT_ERR_HCI_GROUP        =   0x0100,  /*!< BT HCI err, ref @ref rtk_bt_err_hci */
+	RTK_BT_ERR_L2CAP_GROUP      =   0x0200,  /*!< BT L2CAP err, different L2CAP channel mode may have different sub err,
+                                                  For example, LE credited based connect-oriented channel(coc) err may ref @ref rtk_bt_err_l2cap_le_coc  */
+	RTK_BT_ERR_ATT_GROUP        =   0x0400,  /*!< BT ATT err, ref @ref rtk_bt_err_att */
+	RTK_BT_ERR_SM_GROUP         =   0x0500,  /*!< BT SMP err, ref @ref rtk_bt_err_smp */
+	RTK_BT_ERR_GATT_GROUP       =   0x0C00,  /*!< BT GATT err, ref @ref rtk_bt_err_gatt */
 };
 
 /**
@@ -157,6 +159,21 @@ enum rtk_bt_err_hci {
 	RTK_BT_HCI_ERR_OUT_OF_SYNC                     =    0x66,
 	RTK_BT_HCI_ERR_NO_DESCRIPTOR                   =    0x67,
 	RTK_BT_HCI_ERR_NO_MEMORY                       =    0x68,
+};
+
+/**
+ * @enum      rtk_bt_err_l2cap_le_coc
+ * @brief     Bluetooth API LE credit based connection-oriented channel(coc) err code. Details ref bluetooth spec
+ */
+enum rtk_bt_err_l2cap_le_coc {
+	RTK_BT_LE_COC_ERR_PSM_NOT_SUPPORTED               = 0x02,
+	RTK_BT_LE_COC_ERR_NO_RESOURCES                    = 0x04,
+	RTK_BT_LE_COC_ERR_INSUFFICIENT_AUTHEN             = 0x05,
+	RTK_BT_LE_COC_ERR_INSUFFICIENT_AUTHOR             = 0x06,
+	RTK_BT_LE_COC_ERR_INSUFFICIENT_ENCRYP_KEY_SIZE    = 0x07,
+	RTK_BT_LE_COC_ERR_INSUFFICIENT_ENCRYP             = 0x08,
+	RTK_BT_LE_COC_ERR_INVALID_SOURCE_CID              = 0x09,
+	RTK_BT_LE_COC_ERR_SOURCE_CID_ALREADY_ALLOC        = 0x0A,
 };
 
 /**
