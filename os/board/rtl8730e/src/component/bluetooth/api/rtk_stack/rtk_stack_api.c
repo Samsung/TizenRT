@@ -209,9 +209,10 @@ static uint16_t bt_stack_init(void *app_config)
 #endif
 #endif
 
-#if (defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT) && F_BT_5_2_L2C_ECFC_SUPPORT
-	gap_config_le_l2c_chann_num(GAP_LE_MAX_ECFC_CHANN_NUM);
-	gap_config_le_sec_entry_num(GAP_MAX_ECFC_PROTOCAL_NUM);
+#if ((defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT) && (defined(F_BT_5_2_L2C_ECFC_SUPPORT) && F_BT_5_2_L2C_ECFC_SUPPORT)) || \
+    (defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT)
+	gap_config_le_l2c_chann_num(GAP_MAX_LE_L2CAP_CHANN_NUM);
+	gap_config_le_sec_entry_num(GAP_MAX_LE_SEC_ENTRY_NUM);
 #endif
 
 	//BT Stack init
