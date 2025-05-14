@@ -114,12 +114,24 @@ typedef void (*ble_server_connected_t)(ble_conn_handle con_handle, ble_server_co
 typedef void (*ble_server_disconnected_t)(ble_conn_handle con_handle, uint16_t cause);
 typedef void (*ble_server_mtu_update_t)(ble_conn_handle con_handle, uint16_t mtu_size);
 typedef void (*ble_server_passkey_display_t)(uint32_t passkey, ble_conn_handle conn_handle);
+typedef void (*ble_server_coc_reg_psm_t)(uint16_t le_psm, uint16_t err);
+typedef void (*ble_server_coc_set_sec_t)(uint16_t err);
+typedef void (*ble_server_coc_con_t)(uint16_t conn_handle, uint16_t cid, uint16_t err);
+typedef void (*ble_server_coc_discon_t)(uint16_t conn_handle, uint16_t cid, uint16_t err);
+typedef void (*ble_server_coc_send_t)(uint16_t conn_handle, uint16_t cid, uint16_t err, uint8_t credit);
+typedef void (*ble_server_coc_recv_t)(uint16_t conn_handle, uint16_t cid, ble_data *read_result);
 
 typedef struct {
 	ble_server_connected_t connected_cb;
 	ble_server_disconnected_t disconnected_cb;
 	ble_server_mtu_update_t mtu_update_cb;
 	ble_server_passkey_display_t passkey_display_cb;
+	ble_server_coc_reg_psm_t coc_reg_psm_cb;
+	ble_server_coc_set_sec_t coc_set_sec_cb;
+	ble_server_coc_con_t coc_con_cb;
+	ble_server_coc_discon_t coc_discon_cb;
+	ble_server_coc_send_t coc_send_cb;
+	ble_server_coc_recv_t coc_recv_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed; 

@@ -693,7 +693,102 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			break;
 	}
 #endif
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	case RTK_BT_LE_GAP_EVT_COC_REG_PSM_IND: {
+		rtk_bt_le_coc_reg_psm_ind_t *reg_psm_ind = (rtk_bt_le_coc_reg_psm_ind_t *)param;
+		if (!reg_psm_ind->err) {
+			dbg("[APP] LE COC register PSM success, le_psm: 0x%x, err: 0x%x\r\n",
+					reg_psm_ind->le_psm, reg_psm_ind->err);
+		} else {
+			dbg("[APP] LE COC register PSM fail, le_psm: 0x%x, err: 0x%x\r\n",
+					reg_psm_ind->le_psm, reg_psm_ind->err);
+		}
+		server_init_parm.coc_reg_psm_cb(reg_psm_ind->le_psm, reg_psm_ind->err);
+		break;
+	}
 
+	case RTK_BT_LE_GAP_EVT_COC_SET_SEC_IND: {
+		rtk_bt_le_coc_set_sec_ind_t *set_sec_ind = (rtk_bt_le_coc_set_sec_ind_t *)param;
+		if (!set_sec_ind->err) {
+			dbg("[APP] LE COC set security success, err: 0x%x\r\n",
+					set_sec_ind->err);
+		} else {
+			dbg("[APP] LE COC set security fail, err: 0x%x\r\n",
+					set_sec_ind->err);
+		}
+		server_init_parm.coc_set_sec_cb(set_sec_ind->err);
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_CONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_conn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_conn_ind->err) {
+			dbg("[APP] LE COC connected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid);
+		} else {
+			dbg("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		}
+		if (coc_conn_ind->conn_handle < 24){
+			client_init_parm->trble_device_coc_con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		} else {
+			server_init_parm.coc_con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_disconn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_disconn_ind->err) {
+			dbg("[APP] LE COC disconnected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid);
+		} else {
+			dbg("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		}
+		if (coc_disconn_ind->conn_handle < 24){
+			client_init_parm->trble_device_coc_discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		} else {
+			server_init_parm.coc_discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND: {
+		rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)param;
+		dbg("[APP] LE COC send data completed, conn_handle: %d, cid: 0x%x, credit: %d, err: 0x%x\r\n",
+				res_ind->conn_handle, res_ind->cid, res_ind->credit, res_ind->err);
+		if (res_ind->conn_handle < 24){
+			client_init_parm->trble_device_coc_send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
+		} else {
+			server_init_parm.coc_send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND: {
+		rtk_bt_le_coc_receive_data_ind_t *data_ind = (rtk_bt_le_coc_receive_data_ind_t *)param;
+		dbg("[APP] LE COC receive data, conn_handle: %d, cid: 0x%x, len: %d\r\n",
+				data_ind->conn_handle, data_ind->cid, data_ind->len);
+
+		trble_data read_result;
+		read_result.length = data_ind->len;
+		read_result.data = (uint8_t *)malloc(read_result.length);
+		if (!read_result.data)
+		{
+			dbg("fail to malloc data %s\n", __FUNCTION__);
+			break;
+		}
+		memcpy(read_result.data, data_ind->data, read_result.length);
+
+		if (data_ind->conn_handle < 24){
+			client_init_parm->trble_device_coc_recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
+		} else {
+			server_init_parm.coc_recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
+		}
+		break;
+	}
+#endif /* RTK_BLE_COC_SUPPORT */
     default:
         debug_print("[APP] Unkown gap cb evt type: %d", evt_code);
         break;
