@@ -170,6 +170,10 @@ void smp_init(void)
 			continue;
 		}
 		err = psci_cpu_on(xCoreID, (unsigned long)__cpu1_start);
+
+		/* Wait for CPU1 to boot from ATF to SGI1 WFI loop, before os_smp_start is called */
+		DelayUs(50);
+
 		/* If we failed to boot secondary core here, it will be very likely
 		issue is coming from ATF/kernel flow, and that operation is irreversible
 		(ie. There is no way we can restore the secondary core to come
