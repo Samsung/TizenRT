@@ -60,10 +60,6 @@
 #  error SYSTICK_RELOAD exceeds the range of the RELOAD register
 #endif
 
-#if defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1
-volatile uint32_t g_active_system_timer_cpu;
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -79,15 +75,6 @@ volatile uint32_t g_active_system_timer_cpu;
 
 int up_timerisr(int irq, uint32_t *regs)
 {
-#if defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1
-    /* Process timer interrupt, only if the active timer is set to this cpu's PPI */
-    if (g_active_system_timer_cpu == up_cpu_index()) {
-      sched_process_timer();
-    }
-#else
-    sched_process_timer();
-#endif
-
     /* Clear interrupt */
     uint32_t delta_ticks;
     uint64_t last_cycle;
@@ -103,6 +90,13 @@ int up_timerisr(int irq, uint32_t *regs)
 #else
 	  delta_ticks = 1;
 #endif
+
+    u32 ticks_to_process = delta_ticks;
+    while (ticks_to_process > 0) {
+      /* process missing ticks */
+      sched_process_timer();
+      ticks_to_process--;
+    }
 
     arm_arch_timer_set_compare(last_cycle + delta_ticks * SYSTICK_RELOAD);
     return 0;

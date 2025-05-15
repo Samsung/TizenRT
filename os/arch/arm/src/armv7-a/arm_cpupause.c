@@ -56,8 +56,6 @@
 
 #ifdef CONFIG_SMP
 
-extern volatile uint32_t g_active_system_timer_cpu;
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -366,8 +364,13 @@ int up_cpu_pause(int cpu)
 	spin_lock(&g_cpu_paused[cpu]);
 	spin_unlock(&g_cpu_paused[cpu]);
 
-	/* after taking the spinlocks, this cpu is the active timer, since the other one will be paused */
-	g_active_system_timer_cpu = this_cpu();
+	/* Check if we are pausing cpu0.
+	* In this case, after pause request is being handled by cpu0,
+	* we need to enable timer irq on current cpu
+	*/
+	if (cpu == 0) {
+		up_timer_enable();
+	}
 
 	/* On successful return g_cpu_wait will be locked, the other CPU will be
 	 * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
@@ -427,7 +430,7 @@ int up_cpu_resume(int cpu)
 
 		/* transfer systick control back to cpu0 if cpu0 is being resumed */
 		if (cpu == 0) {
-			g_active_system_timer_cpu = cpu;
+			up_timer_disable();
 		}
 	}
 

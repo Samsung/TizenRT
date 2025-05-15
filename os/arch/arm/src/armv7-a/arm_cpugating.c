@@ -43,8 +43,6 @@
 #ifdef CONFIG_CPU_GATING
 static volatile uint32_t g_cpugating_flag[CONFIG_SMP_NCPUS];
 
-extern volatile uint32_t g_active_system_timer_cpu;
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -55,6 +53,9 @@ void up_set_gating_flag_status(uint32_t CoreID, uint32_t val)
 	ARM_DSB();
 	/* Flag already reach 0 */
 	if (!g_cpugating_flag[CoreID]) {
+		if (this_cpu() != 0) {
+			up_timer_disable();
+		}
 		SP_SEV();
 	}
 }
@@ -77,11 +78,6 @@ void up_do_gating(void)
 			SP_WFE();
 		}
 		irqrestore(PrevIrqStatus);
-
-		/* transfer systick control back to cpu0 if cpu0 exit gating. cpu1 do not need */
-		if (cpu == 0) {
-			g_active_system_timer_cpu = cpu;
-		}
 	}
 
 }
@@ -154,7 +150,9 @@ void up_cpu_gating(int cpu)
 	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
 
 	/* after gating other CPU, this cpu is the active timer, since the other one will be gated */
-	g_active_system_timer_cpu = this_cpu();
+	if (cpu == 0 && g_cpugating_flag[cpu] != 0) {
+		up_timer_enable();
+	}
 }
 
 #endif /* CONFIG_CPU_GATING */
