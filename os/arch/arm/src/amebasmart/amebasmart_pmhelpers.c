@@ -150,6 +150,16 @@ void bsp_pm_domain_control(int bsp_drv_id, bool is_suspend)
 	}
 }
 
+void bsp_pm_domain_timesuspend(int bsp_drv_id, unsigned int milliseconds)
+{
+	/* Retrive the domain id from the bsp driver id */
+	int domain_id = g_bsp_domain_id[bsp_drv_id];
+
+	if (pm_timedsuspend(domain_id, milliseconds) != 0) {
+		pmdbg("Unable to suspend bsp_drv_id: %d for %d ms\n", bsp_drv_id, milliseconds);
+	}
+}
+
 /* Interrupt callback from wifi-keepalive, which LP received designated packet*/
 void SOCPS_LPWAP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {

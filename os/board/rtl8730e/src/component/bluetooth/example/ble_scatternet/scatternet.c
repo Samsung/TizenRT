@@ -30,6 +30,7 @@
 #include <debug.h>
 #include <tinyara/config.h>
 #ifdef CONFIG_PM
+#include "ameba_soc.h"
 #include <tinyara/pm/pm.h>
 #endif
 
@@ -176,24 +177,24 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 {
     char le_addr[30] = {0};
     char *role;
-#ifdef CONFIG_PM
-    int domain;
-#endif
+
     switch (evt_code) {
     case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
         rtk_bt_le_adv_start_ind_t *adv_start_ind = (rtk_bt_le_adv_start_ind_t *)param;
-        if(!adv_start_ind->err)
+        if(!adv_start_ind->err) {
             dbg("[APP] ADV started: adv_type %d  \r\n", adv_start_ind->adv_type);
-        else
+            rtw_ble_combo_update_advstatus(0, 1);	/* Update Adv status */
+        } else
             dbg("[APP] ADV start failed, err 0x%x \r\n", adv_start_ind->err);
         break;
     }
 
     case RTK_BT_LE_GAP_EVT_ADV_STOP_IND: {
         rtk_bt_le_adv_stop_ind_t *adv_stop_ind = (rtk_bt_le_adv_stop_ind_t *)param;
-        if(!adv_stop_ind->err)
+        if(!adv_stop_ind->err) {
             dbg("[APP] ADV stopped: reason 0x%x \r\n",adv_stop_ind->stop_reason);
-        else
+            rtw_ble_combo_update_advstatus(0, 0);	/* Update Adv status */
+        } else
             dbg("[APP] ADV stop failed, err 0x%x \r\n", adv_stop_ind->err);
         break;
     }
@@ -206,6 +207,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				dbg("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
 			else
 				dbg("[APP] Ext ADV(%d) stopped: reason 0x%x \r\n", ext_adv_ind->adv_handle, ext_adv_ind->stop_reason);
+			rtw_ble_combo_update_advstatus(ext_adv_ind->adv_handle, ext_adv_ind->is_start);	/* Update Adv status */
 		} else {
 			if(ext_adv_ind->is_start)
 				dbg("[APP] Ext ADV(%d) started failed, err 0x%x\r\n", ext_adv_ind->adv_handle, ext_adv_ind->err);
@@ -315,13 +317,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_addr_to_str(&(conn_ind->peer_addr), le_addr, sizeof(le_addr));
         if (!conn_ind->err) {
 #ifdef CONFIG_PM
-            /* Register PM_BLE_DOMAIN and Perform 10 minutes timedsuspend */
-            domain = pm_domain_register("BLE");
-            if (domain < 0) {
-                pmdbg("Unable to register BLE DOMAIN\n");
-            } else if (pm_timedsuspend(domain, 600000) != 0) {
-                pmdbg("Unable to perform PM suspend for 10 minutes for ble domain\n");
-            }
+            /* Perform 10 minutes timedsuspend */
+            bsp_pm_domain_timesuspend(BSP_BLE_DRV, 600000);
 #endif
             role = conn_ind->role ? "slave" : "master";
             dbg("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n", 
@@ -353,6 +350,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				if(ble_client_connect_is_running)
 					ble_client_connect_is_running = 0;
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
+				rtw_ble_combo_update_connnectstatus(conn_ind->conn_handle, 1, conn_ind->conn_interval); /* Update connection information */
 				if (server_init_parm.connected_cb) {
 					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
 					_reverse_mac( conn_ind->peer_addr.addr_val, addr);
@@ -396,6 +394,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if (RTK_BT_LE_ROLE_MASTER == disconn_ind->role) {
             client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
         } else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
+            rtw_ble_combo_update_connnectstatus(disconn_ind->conn_handle, 0, 0); /* Update connection information */
             if (server_init_parm.disconnected_cb) {
                 server_init_parm.disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
             } else {
@@ -419,6 +418,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                         conn_update_ind->conn_latency, 
                         conn_update_ind->supv_timeout);
         }
+        rtw_ble_combo_update_connnectstatus(conn_update_ind->conn_handle, 1, conn_update_ind->conn_interval); /* Update connection information */
         break;
     }
 
