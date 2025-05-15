@@ -723,6 +723,10 @@ trble_result_e rtw_ble_server_start_adv(void)
         return TRBLE_FAIL;
     }
 
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
+    rtw_ble_combo_add_advstatus(0, rtw_ble_server_adv_interval);
+#endif
+
 #if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
     do
     {   
@@ -786,6 +790,10 @@ trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t 
 	adv_param.secondary_adv_phy        = 1;
 	adv_param.adv_sid                  = 0;
 	uint16_t ret = rtk_bt_le_gap_create_ext_adv(&adv_param, adv_handle);
+
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
+	rtw_ble_combo_add_advstatus(*adv_handle, primary_adv_interval[0]);
+#endif
 
 	if (RTK_BT_OK != ret) {
 		return TRBLE_FAIL;
