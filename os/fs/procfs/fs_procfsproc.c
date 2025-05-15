@@ -313,13 +313,9 @@ static const char *g_statenames[] = {
 	"Inactive",
 	"Semaphore wait",
 	"To be unblocked wait"
-#ifndef CONFIG_DISABLE_MQUEUE
 	"Signal wait",
-#endif
-#ifndef CONFIG_DISABLE_MQUEUE
 	"MQ not empty wait",
 	"MQ no full wait"
-#endif
 };
 
 static const char *g_ttypenames[4] = {
