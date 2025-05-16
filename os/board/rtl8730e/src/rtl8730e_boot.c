@@ -488,11 +488,15 @@ void board_initialize(void)
 #endif
 
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701) || defined(CONFIG_LCD_ST7701SN)
-	rtl8730e_lcdc_initialize();
+	//rtl8730e_lcdc_initialize();
 #endif
 
 #if defined(CONFIG_TOUCH_IST415)
 	rtl8730e_ist415_initialize();
+#endif
+
+#if defined(CONFIG_MMWAVE_SENSOR)
+	rtl8730e_mmwave_initialize();
 #endif
 
 #ifdef CONFIG_WATCHDOG

@@ -64,8 +64,8 @@
 
 #include <tinyara/fs/ioctl.h>
 
-#define SPIIOC_SET_CONFIG          _SPIIOC(0x0001)	/* Set SPI configurations */
-#define SPIIOC_EXCHANGE            _SPIIOC(0x0002)	/* Exchange Data */
+#define SPIIOC_SET_CONFIG _SPIIOC(0x0001) /* Set SPI configurations */
+#define SPIIOC_EXCHANGE _SPIIOC(0x0002)	  /* Exchange Data */
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -131,6 +131,9 @@
  ****************************************************************************/
 
 #define SPI_SELECT(d, id, s) ((d)->ops->select(d, id, s))
+#define SPI_PAUSE(d) ((d)->ops->pause(d))
+#define SPI_RESUME(d) ((d)->ops->resume(d))
+#define SPI_GETSTATUS(d) ((d)->ops->getstatus(d))
 
 /****************************************************************************
  * Name: SPI_SETFREQUENCY
@@ -164,8 +167,11 @@
  *
  ****************************************************************************/
 
-#define SPI_SETMODE(d, m) \
-	do { if ((d)->ops->setmode) (d)->ops->setmode(d, m); } while (0)
+#define SPI_SETMODE(d, m)            \
+	do {                             \
+		if ((d)->ops->setmode)       \
+			(d)->ops->setmode(d, m); \
+	} while (0)
 
 /****************************************************************************
  * Name: SPI_SETBITS
@@ -184,8 +190,11 @@
  *
  ****************************************************************************/
 
-#define SPI_SETBITS(d, b) \
-	do { if ((d)->ops->setbits) (d)->ops->setbits(d, b); } while (0)
+#define SPI_SETBITS(d, b)            \
+	do {                             \
+		if ((d)->ops->setbits)       \
+			(d)->ops->setbits(d, b); \
+	} while (0)
 
 /****************************************************************************
  * Name: SPI_STATUS
@@ -209,8 +218,8 @@
  * relationship to SPI other than needed by the SPI MMC/SD interface
  */
 
-#define SPI_STATUS_PRESENT     0x01	/* Bit 0=1: MMC/SD card present */
-#define SPI_STATUS_WRPROTECTED 0x02	/* Bit 1=1: MMC/SD card write protected */
+#define SPI_STATUS_PRESENT 0x01		/* Bit 0=1: MMC/SD card present */
+#define SPI_STATUS_WRPROTECTED 0x02 /* Bit 1=1: MMC/SD card write protected */
 
 /****************************************************************************
  * Name: SPI_CMDDATA
@@ -369,29 +378,29 @@ typedef void (*spi_mediachange_t)(FAR void *arg);
  */
 
 enum spi_dev_e {
-	SPIDEV_NONE = 0,			/* Not a valid value */
-	SPIDEV_MMCSD,				/* Select SPI MMC/SD device */
-	SPIDEV_FLASH,				/* Select SPI FLASH device */
-	SPIDEV_ETHERNET,			/* Select SPI ethernet device */
-	SPIDEV_DISPLAY,				/* Select SPI LCD/OLED display device */
-	SPIDEV_CAMERA,				/* Select SPI imaging device */
-	SPIDEV_WIRELESS,			/* Select SPI Wireless device */
-	SPIDEV_TOUCHSCREEN,			/* Select SPI touchscreen device */
-	SPIDEV_EXPANDER,			/* Select SPI I/O expander device */
-	SPIDEV_MUX,					/* Select SPI multiplexer device */
-	SPIDEV_AUDIO_DATA,			/* Select SPI audio codec device data port */
-	SPIDEV_AUDIO_CTRL,			/* Select SPI audio codec device control port */
-	SPIDEV_EEPROM,				/* Select SPI EEPROM device */
-	SPIDEV_GSENSOR				/* Select SPI Accelerometer device */
+	SPIDEV_NONE = 0,	/* Not a valid value */
+	SPIDEV_MMCSD,		/* Select SPI MMC/SD device */
+	SPIDEV_FLASH,		/* Select SPI FLASH device */
+	SPIDEV_ETHERNET,	/* Select SPI ethernet device */
+	SPIDEV_DISPLAY,		/* Select SPI LCD/OLED display device */
+	SPIDEV_CAMERA,		/* Select SPI imaging device */
+	SPIDEV_WIRELESS,	/* Select SPI Wireless device */
+	SPIDEV_TOUCHSCREEN, /* Select SPI touchscreen device */
+	SPIDEV_EXPANDER,	/* Select SPI I/O expander device */
+	SPIDEV_MUX,			/* Select SPI multiplexer device */
+	SPIDEV_AUDIO_DATA,	/* Select SPI audio codec device data port */
+	SPIDEV_AUDIO_CTRL,	/* Select SPI audio codec device control port */
+	SPIDEV_EEPROM,		/* Select SPI EEPROM device */
+	SPIDEV_GSENSOR		/* Select SPI Accelerometer device */
 };
 
 /* Certain SPI devices may required differnt clocking modes */
 
 enum spi_mode_e {
-	SPIDEV_MODE0 = 0,			/* CPOL=0 CHPHA=0 */
-	SPIDEV_MODE1,				/* CPOL=0 CHPHA=1 */
-	SPIDEV_MODE2,				/* CPOL=1 CHPHA=0 */
-	SPIDEV_MODE3				/* CPOL=1 CHPHA=1 */
+	SPIDEV_MODE0 = 0, /* CPOL=0 CHPHA=0 */
+	SPIDEV_MODE1,	  /* CPOL=0 CHPHA=1 */
+	SPIDEV_MODE2,	  /* CPOL=1 CHPHA=0 */
+	SPIDEV_MODE3	  /* CPOL=1 CHPHA=1 */
 };
 
 /*
@@ -417,6 +426,9 @@ struct spi_ops_s {
 #ifndef CONFIG_SPI_OWNBUS
 	int (*lock)(FAR struct spi_dev_s *dev, bool lock);
 #endif
+	void (*pause)(FAR struct spi_dev_s *dev);
+	void (*resume)(FAR struct spi_dev_s *dev);
+	bool (*getstatus)(FAR struct spi_dev_s *dev);
 	void (*select)(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
 	uint32_t (*setfrequency)(FAR struct spi_dev_s *dev, uint32_t frequency);
 	void (*setmode)(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
@@ -439,7 +451,6 @@ struct spi_ops_s {
  * structure visible to the SPI client.  The specific implementation may
  * add additional, device specific fields
  */
-
 
 struct spi_dev_s {
 	FAR const struct spi_ops_s *ops;
@@ -501,4 +512,4 @@ FAR int spi_uioregister(FAR int bus, FAR struct spi_dev_s *dev);
 #if defined(__cplusplus)
 }
 #endif
-#endif					/* __INCLUDE_TINYARA_SPI_SPI_H */
+#endif /* __INCLUDE_TINYARA_SPI_SPI_H */
