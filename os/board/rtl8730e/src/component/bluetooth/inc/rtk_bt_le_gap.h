@@ -1864,10 +1864,58 @@ typedef enum {
 	RTK_BT_LE_TX_SOF        = 0x01, /*!< Start of frame. */
 	RTK_BT_LE_TX_EOF        = 0x02, /*!< End of frame. */
 } rtk_bt_le_sof_eof_ind_t;
-
 #endif
-/****************** Data structure for API func param pack and unpack ******************/
 
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+typedef enum {
+	RTK_BT_LE_COC_SEC_NONE,
+	RTK_BT_LE_COC_SEC_UNAUTHEN_ENCRYPT,
+	RTK_BT_LE_COC_SEC_AUTHEN_ENCRYPT,
+	RTK_BT_LE_COC_SEC_UNAUTHEN_DATA_SIGN,
+	RTK_BT_LE_COC_SEC_AUTHEN_DATA_SIGN,
+	RTK_BT_LE_COC_SEC_AUTHOR,
+} rtk_bt_le_coc_security_mode_t;
+
+typedef enum {
+	RTK_BT_LE_COC_PARAM_CREDITS_THRESHOLD  = 0x0,
+	RTK_BT_LE_COC_PARAM_LOCAL_MTU          = 0x1,
+} rtk_bt_le_coc_param_type_t;
+
+typedef enum {
+	RTK_BT_LE_COC_CHAN_PARAM_CUR_CREDITS   = 0x0,
+	RTK_BT_LE_COC_CHAN_PARAM_MAX_CREDITS   = 0x1,
+	RTK_BT_LE_COC_CHAN_PARAM_MTU           = 0x2,
+} rtk_bt_le_coc_chan_param_type_t;
+
+typedef struct {
+	uint16_t le_psm;                          /*!< LE PSM value*/
+	uint16_t err;                           /*!< Error code of registraion of LE PSM value */
+} rtk_bt_le_coc_reg_psm_ind_t;
+
+typedef struct {
+	uint16_t err;                           /*!< Error code of setting LE COC security */
+} rtk_bt_le_coc_set_sec_ind_t;
+
+typedef struct {
+	uint16_t conn_handle;                     /*!< Connection handle */
+	uint16_t cid;                             /*!< Local l2cap channel ID assgined by bt stack */
+	uint16_t err;                             /*!< Error code of l2cap channel connect or disconnect */
+} rtk_bt_le_coc_conn_state_ind_t;
+
+typedef struct {
+	uint16_t conn_handle;                     /*!< Connection handle */
+	uint16_t cid;                             /*!< Local l2cap channel ID */
+	uint16_t err;                             /*!< Error code of l2cap channel send data */
+	uint8_t credit;                           /*!< Remain credits number after send data */
+} rtk_bt_le_coc_send_data_res_ind_t;
+
+typedef struct {
+	uint16_t conn_handle;                     /*!< Connection handle */
+	uint16_t cid;                             /*!< Local l2cap channel ID */
+	uint16_t len;                             /*!< Length of received data */
+	uint8_t *data;                            /*!< Received data from remote */
+} rtk_bt_le_coc_receive_data_ind_t;
+#endif /* RTK_BLE_COC_SUPPORT */
 
 /****************** Data structure for API func param pack and unpack ******************/
 typedef struct {
@@ -1901,6 +1949,41 @@ typedef struct {
 	uint16_t *p_tx_pending_num;
 } rtk_bt_le_get_tx_pending_num_param_t;
 
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+typedef struct {
+	uint8_t is_register;
+	uint16_t le_psm;
+} rtk_bt_le_coc_psm_reg_param_t;
+
+typedef struct {
+	uint16_t le_psm;
+	uint8_t active;
+	rtk_bt_le_coc_security_mode_t sec_mode;
+	uint8_t key_size;
+} rtk_bt_le_coc_set_psm_sec_param_t;
+
+typedef struct {
+	rtk_bt_le_coc_param_type_t param_type;
+	uint16_t value;
+} rtk_bt_le_coc_param_set_t;
+
+typedef struct {
+	rtk_bt_le_coc_chan_param_type_t param_type;
+	uint16_t cid;
+	uint16_t *value;
+} rtk_bt_le_coc_chan_param_get_t;
+
+typedef struct {
+	uint16_t conn_handle;
+	uint16_t le_psm;
+} rtk_bt_le_coc_connect_param_t;
+
+typedef struct {
+	uint16_t cid;
+	uint16_t len;
+	uint8_t *data;
+} rtk_bt_le_coc_send_data_param_t;
+#endif /* RTK_BLE_COC_SUPPORT */
 
 /********************************* Functions Declaration *******************************/
 /**
@@ -2663,6 +2746,95 @@ uint16_t rtk_bt_le_gap_read_remote_tx_power(uint16_t conn_handle, rtk_bt_le_txpo
  */
 uint16_t rtk_bt_le_gap_tx_power_report_set(uint16_t conn_handle, bool local_enable, bool remote_enable);
 #endif
+
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_register_psm(uint8_t is_register, uint16_t le_psm)
+ * @brief     Register or unregister le psm for le credit based connection-oriented channel(coc).
+ * @param[in] is_register: 1 for register, 0 for unregister
+ * @param[in] le_psm: LE PSM value
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_register_psm(uint8_t is_register, uint16_t le_psm);
+
+/**
+ * @fn        rtk_bt_le_gap_coc_set_psm_security(uint16_t le_psm, uint8_t active,
+                                            rtk_bt_le_coc_security_mode_t sec_mode,
+                                            uint8_t key_size)
+ * @brief     Set security permission for le psm
+ * @param[in] le_psm: LE PSM value
+ * @param[in] active: 1 for set security, 0 for clear the set for this LE PSM
+ * @param[in] sec_mode: COC security mode to set
+ * @param[in] key_size: Security key size, usually set as 16(common encryption key size)
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_set_psm_security(uint16_t le_psm, uint8_t active,
+											rtk_bt_le_coc_security_mode_t sec_mode,
+											uint8_t key_size);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint16_t value)
+ * @brief     Set le coc parameter
+ * @param[in] param_type: Parameter type
+ * @param[in] value: Parameter value
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint16_t value);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_type,
+                                          uint16_t cid, uint16_t *value)
+ * @brief     Get le coc channel parameter
+ * @param[in] param_type: Parameter type
+ * @param[in] cid: COC channel ID
+ * @param[out] value: Pointer of parameter value to get
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_type,
+										  uint16_t cid, uint16_t *value);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm)
+ * @brief     COC connection request, will cause event @ref RTK_BT_LE_GAP_EVT_COC_CONNECT_IND
+ * @param[in] conn_handle: Connection handle
+ * @param[in] le_psm: LE PSM value
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid)
+ * @brief     COC disconnection request, will cause event @ref RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND
+ * @param[in] cid: COC channel ID
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid);
+
+/**
+ * @fn        uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
+ * @brief     COC send data, will cause event @ref RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND
+ * @param[in] cid: COC channel ID
+ * @param[in] len: Length of data
+ * @param[in] data: Pointer of data
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
+#endif /* RTK_BLE_COC_SUPPORT */
+
 /**
  * @}
  */
