@@ -149,6 +149,10 @@ void sem_waitirq(FAR struct tcb_s *wtcb, int errcode)
 
 		sem->semcount++;
 
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		/* Indicate that the semaphore wait is over. */
 
 		wtcb->waitsem = NULL;
