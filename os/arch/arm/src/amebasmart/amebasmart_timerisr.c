@@ -75,9 +75,6 @@
 
 int up_timerisr(int irq, uint32_t *regs)
 {
-    /* Process timer interrupt */
-    sched_process_timer();
-
     /* Clear interrupt */
     uint32_t delta_ticks;
     uint64_t last_cycle;
@@ -93,6 +90,13 @@ int up_timerisr(int irq, uint32_t *regs)
 #else
 	  delta_ticks = 1;
 #endif
+
+    u32 ticks_to_process = delta_ticks;
+    while (ticks_to_process > 0) {
+      /* process missing ticks */
+      sched_process_timer();
+      ticks_to_process--;
+    }
 
     arm_arch_timer_set_compare(last_cycle + delta_ticks * SYSTICK_RELOAD);
     return 0;
