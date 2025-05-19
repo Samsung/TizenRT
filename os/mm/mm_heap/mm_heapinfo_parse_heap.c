@@ -107,13 +107,16 @@ static inline int check_watchdog_state(int wd_fd, bool *is_watchdog_running)
  ****************************************************************************/
 void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 {
+	irqstate_t flags;
 	struct mm_allocnode_s *node;
+	void *address;
 	size_t mxordblk = 0;
 	int    ordblks  = 0;		/* Number of non-inuse chunks */
 	size_t fordblks = 0;		/* Total non-inuse space */
 	size_t heap_resource;
 	size_t stack_resource;
 	size_t nonsched_resource;
+	size_t delayfree_resource;
 	int nonsched_idx;
 	struct sched_param sched_data;
 	size_t heap_size;
@@ -209,6 +212,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 					nonsched_list[PIDHASH(node->pid)] = node->pid;
 					nonsched_size[PIDHASH(node->pid)] += node->size;
 					nonsched_resource += node->size;
+					heap_dbg("%08x %d %d\n", node, node->size, node->pid);
 				} else {
 					heap_resource += node->size;
 				}
@@ -252,6 +256,40 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		}
 		mm_givesemaphore(heap);
 	}
+
+	delayfree_resource = 0;
+	flags = enter_critical_section();
+	for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		address = heap->mm_delaylist[cpu];
+		while (address) {
+
+			node = (FAR struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
+			delayfree_resource += node->size;
+
+			address = ((struct mm_delaynode_s *)address)->flink;
+		}
+	}
+	leave_critical_section(flags);
+
+	extern volatile sq_queue_t g_delayed_kufree;
+	address = sq_peek(&g_delayed_kufree);
+	while (address) {
+		if (mm_get_heap(address) == heap) {
+			node = (FAR struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
+			delayfree_resource += node->size;
+		}
+		address = (void *)sq_next((sq_entry_t *)address);
+	}
+
+	extern volatile sq_queue_t g_delayed_kfree;
+	address = sq_peek(&g_delayed_kfree);
+	while (address) {
+		if (mm_get_heap(address) == heap) {
+			node = (FAR struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
+			delayfree_resource += node->size;
+		}
+		address = (void *)sq_next((sq_entry_t *)address);
+	}
 #undef region
 
 	heap_dbg("\n****************************************************************\n");
@@ -279,6 +317,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	heap_dbg("        - Sum of \"STACK\"(**) (2)      : %u\n", stack_resource);
 	heap_dbg("        - Sum of \"CURR_HEAP\" (3)      : %u\n", heap_resource - SIZEOF_MM_ALLOCNODE);	// Because of above for loop (node < heap->mm_heapend[region];),
 													// one of SIZEOF_MM_ALLOCNODE is subtracted.
+	heap_dbg("  - Pending free node sizes           : %d\n", delayfree_resource);
 	heap_dbg("** NOTE **\n");
 	heap_dbg("(*)  Alive allocation by dead threads might be used by others or might be a leakage.\n");
 	heap_dbg("(**) Only Idle task has a separate stack region,\n");
