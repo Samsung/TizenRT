@@ -100,6 +100,8 @@ bool vPortGateOtherCore(void)
 		/* If there is a pause request, we should handle it first */
 		if (up_cpu_pausereq(up_cpu_index())) {
 			return false;
+		} else if (up_is_cpu_paused(ulCoreID)) {
+			break;
 		}
 	}
 	return true;

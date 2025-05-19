@@ -115,6 +115,33 @@ void up_cpu_gating(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
+	/* If this cpu has already been paused, then we 
+	 * will not perform gating. However, we will set
+	 * the gating flag as if gating is performed. This
+	 * is because, the main intention of both gating and 
+	 * pausing the cpu is to prevent the cpu from running.
+	 * Since this is already handled and cpu is in pause state,
+	 * we can perform critical operation assuming gating is done.
+	 * At a future point of time, the cpu will get resumed
+	 * by the code which had initially paused it
+	 */
+
+	/* NOTE: This only works for 2 cpu case, in case of more cpus, 
+	 * we need to redesign the pause and gating logic such that only
+	 * the cpu or the task which called pause is allowed to call resume.
+	 */
+
+	if (up_is_cpu_paused(cpu)) {
+		g_cpugating_flag[cpu] = 2;
+		return;
+	} else if (up_cpu_pausereq(cpu)) {
+		/* On the other hand, if a pause request is pending, it 
+		 * has to be handled first and then the caller must retry
+		 * gating request
+		 */
+		return;
+	}
+
 	/* Fire SGI for cpu to enter gating */
 	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
 }
