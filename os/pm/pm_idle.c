@@ -137,6 +137,9 @@ void pm_idle(void)
 						pmdbg("Sleep abort! CPU%d\n", cpu);
 						goto EXIT;
 					}
+
+					/* If the target cpu is already paused it will not be in idle thread, so PM should abort */
+					ASSERT(!up_is_cpu_paused(cpu));
 				}
 
 				tcb = current_task(cpu);
