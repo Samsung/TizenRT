@@ -232,7 +232,7 @@ static void initialize_system_time(void)
  * Name: clock_getinittime
  *
  * Description:
- *   This function returns initalized system time.
+ *   This function returns initialized system time.
  *
  * Parameters:
  *   tp - Location to return the time
