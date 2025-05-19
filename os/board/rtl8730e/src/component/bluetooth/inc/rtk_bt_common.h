@@ -292,6 +292,13 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_TX_POWER_REPORT_SET,
 	RTK_BT_LE_GAP_ACT_GET_CONN_ID,
 	RTK_BT_LE_GAP_ACT_ADV_STATE,
+	RTK_BT_LE_GAP_ACT_COC_REG_PSM,
+	RTK_BT_LE_GAP_ACT_COC_SET_PSM_SECURITY,
+	RTK_BT_LE_GAP_ACT_COC_SET_PARAM,
+	RTK_BT_LE_GAP_ACT_COC_GET_CHAN_PARAM,
+	RTK_BT_LE_GAP_ACT_COC_CONN,
+	RTK_BT_LE_GAP_ACT_COC_DISCONN,
+	RTK_BT_LE_GAP_ACT_COC_SEND_DATA,
 	RTK_BT_LE_GAP_ACT_MAX,
 } rtk_bt_le_gap_act_t;
 
@@ -331,6 +338,12 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_MODIFY_IND,       /*!< Indicate LE resolving list modified, with msg @ref rtk_bt_le_modify_resolv_list_ind_t */
 	RTK_BT_LE_GAP_EVT_RESOLV_LIST_PENDING_IND,      /*!< Indicate LE resolving list modification is pending, with msg @ref rtk_bt_le_resolv_list_pending_ind_t */
 	RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND,	        /*!< Indicate LE Tx power report, with msg @ref rtk_bt_le_txpower_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_REG_PSM_IND,              /*!< Indicate LE l2cap credit based connection-oriented channel(coc) register PSM complete @ref rtk_bt_le_coc_reg_psm_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_SET_SEC_IND,              /*!< Indicate LE l2cap credit based connection-oriented channel(coc) set security complete @ref rtk_bt_le_coc_set_sec_ind_ts*/
+	RTK_BT_LE_GAP_EVT_COC_CONNECT_IND,              /*!< Indicate LE l2cap credit based connection-oriented channel(coc) connect complete, with msg @ref rtk_bt_le_coc_conn_state_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND,           /*!< Indicate LE coc chan disconnect complete, with msg @ref rtk_bt_le_coc_conn_state_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND,     /*!< Indicate LE coc send data result, with msg @ref rtk_bt_le_coc_send_data_res_ind_t */
+	RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND,         /*!< Indicate LE coc receive data from remote, with msg @ref rtk_bt_le_coc_receive_data_ind_t */
 	RTK_BT_LE_GAP_EVT_MAX,
 } rtk_bt_le_gap_evt_t;
 
