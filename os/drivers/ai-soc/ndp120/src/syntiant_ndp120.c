@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.7-Samsung **
+ 	** SDK: v112.3.8-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -2090,6 +2090,12 @@ dsp_mb_processor(struct syntiant_ndp_device_s *ndp, uint32_t *notify)
         *notify |= SYNTIANT_NDP_NOTIFICATION_DELAY_ERROR |
             SYNTIANT_NDP_NOTIFICATION_ERROR;
         DEBUG_PRINTF("Extract delay error\n");
+        break;
+
+    case NDP120_DSP_MB_D2H_ERROR_INVALID_ADDR:
+        *notify |= SYNTIANT_NDP_NOTIFICATION_INVALID_DSP_ADDR |
+            SYNTIANT_NDP_NOTIFICATION_ERROR;
+        DEBUG_PRINTF("Error: Invalid addr in DSP\n");
         break;
 
     case NDP120_DSP_MB_D2H_EXT:
@@ -8312,7 +8318,6 @@ int syntiant_ndp120_init_ring_buffer_pointers_no_sync(struct syntiant_ndp_device
     ndp120->dsp_function_sample_last_ptr = ring_buf_ptrs.function_sample_last_ptr;
     ndp120->dsp_pcm_audio_annotation_last_ptr = ring_buf_ptrs.pcm_audio_annotation_last_ptr;
     ndp120->dsp_sensor_sample_last_ptr = ring_buf_ptrs.sensor_sample_last_ptr;
-    auddbg("0x%x 0x%x 0x%x 0x%x\n", ndp120->dsp_pcm_audio_sample_last_ptr, ndp120->dsp_function_sample_last_ptr, ndp120->dsp_pcm_audio_annotation_last_ptr, ndp120->dsp_sensor_sample_last_ptr);
 
 error:
     return s;
