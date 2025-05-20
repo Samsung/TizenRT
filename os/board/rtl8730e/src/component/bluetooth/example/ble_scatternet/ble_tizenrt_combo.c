@@ -17,6 +17,21 @@
 #include <bt_utils.h>
 #include <ble_tizenrt_service.h>
 
+#define RTK_BT_CONN_OFFSET			24		/* Connection Offset (Server) */
+#define RTK_BT_MAX_TIZENRT_ADV		5		/* Maximum number of Adv */
+#define RTK_BT_MAX_TIZENRT_CONN		3		/* Maximum number of Connection */
+
+typedef struct {
+	uint8_t adv_started;					/*!< Adv started */
+	uint32_t pre_adv_interval;				/*!< Adv interval */
+	uint32_t adv_interval;					/*!< Adv interval */
+} rtk_bt_adv_status_param_t;
+
+typedef struct {
+	uint8_t connected;						/*!< Conencted */
+	uint16_t conn_interval;					/*!< Connection interval */
+} rtk_bt_conn_status_param_t;
+
 extern rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[GAP_MAX_LINKS];
 extern rtk_bt_gattc_write_ind_t g_scatternet_write_result;
 extern rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result;
@@ -38,6 +53,8 @@ extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern int attr_counter;
 
+rtk_bt_adv_status_param_t ble_adv_status_param[RTK_BT_MAX_TIZENRT_ADV];
+rtk_bt_conn_status_param_t ble_conn_status_param[RTK_BT_MAX_TIZENRT_CONN];
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
 
 static void *bt_service_add_task_hdl = NULL;
@@ -117,6 +134,7 @@ trble_result_e rtw_ble_combo_deinit(void)
     is_server_init = false;
 
 	tizenrt_remove_service();
+	rtw_ble_combo_clear_status();
 
     attr_counter = 0;
     return TRBLE_SUCCESS; 
@@ -148,6 +166,68 @@ trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_se
 
 		ble_tizenrt_srv_add();	/* Add service */
 	}
+}
+
+void rtw_ble_combo_add_advstatus(uint8_t adv_handle, uint32_t adv_interval)
+{
+	if (adv_handle < RTK_BT_MAX_TIZENRT_ADV) {
+		ble_adv_status_param[adv_handle].pre_adv_interval = adv_interval;
+	} else {
+		dbg("[APP] Exceeded Number of Adv\r\n");
+	}
+	debug_print("[APP] adv_handle: %d, adv_interval: %x\r\n", adv_handle, adv_interval);
+}
+
+void rtw_ble_combo_update_advstatus(uint8_t adv_handle, uint8_t adv_start)
+{
+	if (adv_handle < RTK_BT_MAX_TIZENRT_CONN) {
+		ble_adv_status_param[adv_handle].adv_started = adv_start;
+		ble_adv_status_param[adv_handle].adv_interval = ble_adv_status_param[adv_handle].pre_adv_interval;
+	} else {
+		dbg("[APP] Exceeded Number of Adv\r\n");
+	}
+	debug_print("[APP] adv_handle: %d, adv_start: %d\r\n", adv_handle, adv_start);
+}
+
+void rtw_ble_combo_update_connnectstatus(uint8_t conn_handle, uint8_t connected, uint16_t conn_interval)
+{
+	uint8_t l_conn_handle = 0;
+
+	if (conn_handle < RTK_BT_CONN_OFFSET) {
+		dbg("[APP] Only record Server Connection\r\n");
+		return;
+	}
+
+	l_conn_handle = conn_handle - RTK_BT_CONN_OFFSET;
+	if (l_conn_handle < RTK_BT_MAX_TIZENRT_CONN) {
+		ble_conn_status_param[l_conn_handle].connected = connected;
+		ble_conn_status_param[l_conn_handle].conn_interval = conn_interval;
+	} else {
+		dbg("[APP] Exceeded Number of Connection\r\n");
+	}
+	debug_print("[APP] l_conn_handle: %d, connected: %d, conn_interval: %x\r\n", l_conn_handle, connected, conn_interval);
+}
+
+void rtw_ble_combo_print_ble_status(void)
+{
+	uint8_t l_handle = 0;
+
+	for (l_handle = 0; l_handle < RTK_BT_MAX_TIZENRT_ADV; l_handle++) {
+		if (ble_adv_status_param[l_handle].adv_started) {
+			pmvdbg("[BT_PS] Adv: %d, adv_interval: %.2f ms\r\n", l_handle, (ble_adv_status_param[l_handle].adv_interval * 0.625));
+		}
+	}
+	for (l_handle = 0; l_handle < RTK_BT_MAX_TIZENRT_CONN; l_handle++) {
+		if (ble_conn_status_param[l_handle].connected) {
+			pmvdbg("[BT_PS] Connection: %d, conn_interval: %.2f ms\r\n", l_handle + RTK_BT_CONN_OFFSET, (ble_conn_status_param[l_handle].conn_interval * 1.25));
+		}
+	}
+}
+
+void rtw_ble_combo_clear_status(void)
+{
+	memset(ble_adv_status_param, 0, sizeof(ble_adv_status_param));
+	memset(ble_conn_status_param, 0, sizeof(ble_conn_status_param));
 }
 
 #endif /* TRBLE_COMBO_C_ */

@@ -20,14 +20,19 @@
 #include <tinyara/config.h>
 #include <tinyara/net/if/ble.h>
 
-#ifdef CONFIG_AMEBALITE_BLE_SCATTERNET
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
 extern trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server);
 extern trble_result_e rtw_ble_combo_deinit(void);
 extern trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server);
-#elif defined(CONFIG_AMEBALITE_BLE_CENTRAL)
+extern void rtw_ble_combo_add_advstatus(uint8_t adv_handle, uint16_t adv_interval);
+extern void rtw_ble_combo_update_advstatus(uint8_t adv_handle, uint8_t adv_start);
+extern void rtw_ble_combo_update_connnectstatus(uint8_t conn_handle, uint8_t connected, uint16_t conn_interval);
+extern void rtw_ble_combo_print_ble_status(void);
+extern void rtw_ble_combo_clear_status(void);
+#elif defined(CONFIG_AMEBASMART_BLE_CENTRAL)
 extern trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm);
 extern trble_result_e rtw_ble_client_deinit(void);
-#elif defined(CONFIG_AMEBALITE_BLE_PERIPHERAL)
+#elif defined(CONFIG_AMEBASMART_BLE_PERIPHERAL)
 extern trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm);
 extern trble_result_e rtw_ble_server_deinit(void);
 #endif
