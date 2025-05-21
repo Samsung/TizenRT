@@ -167,6 +167,8 @@ bool InputHandler::processWorker()
 			mBufferWriter->setEndOfStream();
 			return false;
 		}
+	} else {
+		mBufferWriter->setEndOfStream();
 	}
 
 	return true;
