@@ -514,7 +514,11 @@ static uint8_t hci_platform_parse_config(void)
 						p[i] = bt_manual_gain_index_le;
 					}
 				} else if (hci_lgc_efuse[LEFUSE(0x1c8 + i)] != 0xff) {
-					p[i] = hci_lgc_efuse[LEFUSE(0x1c8 + i)];
+					if ((0x1c8 + i) == 0x1cb){
+						p[i] = 0x52;
+					} else {
+						p[i] = hci_lgc_efuse[LEFUSE(0x1c8 + i)];
+					}
 				}
 			}
 			break;

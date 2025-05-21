@@ -25,7 +25,6 @@
 #include <sys/types.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/ttrace.h>
 #ifdef CONFIG_TASK_SCHED_HISTORY
 #include <tinyara/debug/sysdbg.h>
 #endif
@@ -129,8 +128,6 @@ void up_schedyield(void)
 			 * of the g_readytorun task list.
 			 */
 
-			trace_sched(NULL, ntcb);
-
 			/* Restore ntcb data for context switching */
 
 			up_restoretask(ntcb);
@@ -152,8 +149,6 @@ void up_schedyield(void)
 			/* Restore the exception context of the (new) changed rtcb from the head
 			 * of the g_readytorun task list.
 			 */
-
-			trace_sched(NULL, ntcb);
 
 	#ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */

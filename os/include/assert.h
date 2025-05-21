@@ -113,11 +113,16 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 
 #ifdef CONFIG_DEBUG
 
+#define DEBUGPANIC_INFO(fmt, ...) \
+	do { \
+			snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
+			up_assert((const uint8_t *)__FILE__, (int)__LINE__); \
+	} while(0); \
+
 #define DEBUGASSERT_INFO(f, fmt, ...) \
 	{ \
 		if (!(f)) { \
-			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__); \
-			  up_assert((const uint8_t *)__FILE__, (int)__LINE__); \
+			  DEBUGPANIC_INFO(fmt, ...); \
 		} \
 	}
 
@@ -132,6 +137,7 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 
 #else
 
+#define DEBUGPANIC_INFO(fmt, ...)
 #define DEBUGASSERT_INFO(f, fmt, ...)
 #define DEBUGASSERT(f)
 #define DEBUGVERIFY(f) ((void)(f))

@@ -98,7 +98,11 @@
 #ifndef CONFIG_SMP
 void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 {
+	irqstate_t saved_state;
+
 	svdbg("tcb=%p sigdeliver=%p\n", tcb, sigdeliver);
+
+	saved_state = enter_critical_section();
 
 	/* Refuse to handle nested signal actions */
 
@@ -210,6 +214,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #endif
 		}
 	}
+
+	leave_critical_section(saved_state);
+
 }
 #endif							/* !CONFIG_SMP */
 
@@ -218,8 +225,11 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 {
 	int cpu;
 	int me;
+	irqstate_t saved_state;
 
 	svdbg("tcb=%p sigdeliver=%p\n", tcb, sigdeliver);
+
+	saved_state = enter_critical_section();
 
 	/* Refuse to handle nested signal actions */
 
@@ -263,11 +273,6 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 					/* Pause the CPU */
 
 					up_cpu_pause(cpu);
-
-					/* Wait while the pause request is pending */
-
-					while (up_cpu_pausereq(cpu)) {
-					}
 
 					/* Now tcb on the other CPU can be accessed safely */
 
@@ -410,6 +415,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #endif
 		}
 	}
+
+	leave_critical_section(saved_state);
+
 }
 #endif							/* CONFIG_SMP */
 

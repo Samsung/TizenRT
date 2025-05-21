@@ -325,12 +325,8 @@ static int tash_cat(int argc, char **args)
 			read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
 			if (read_size > 0) {
 				int output_size = 0;
-				fscmd_buffer[read_size] = '\0';
 				while (output_size < read_size) {
 					FSCMD_OUTPUT("%c", fscmd_buffer[output_size++]);
-					if (output_size % 100 == 0) {
-						FSCMD_OUTPUT("\n");
-					}
 				}
 			}
 		} while (read_size > 0);
@@ -1364,7 +1360,7 @@ static int format_filesystem(fs_minor_t minor)
 		printf("Invalid minor number : %d", minor);
 		return ERROR;
 	}
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 32; i++) {
 		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
 		fd = open(name, O_RDWR);
 		if (fd < 0) {

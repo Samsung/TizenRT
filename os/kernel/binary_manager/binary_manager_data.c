@@ -44,7 +44,7 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "sched/sched.h"
 #endif
-#include "binary_manager/binary_manager.h"
+#include "binary_manager_internal.h"
 
 #ifdef CONFIG_BINARY_SIGNING
 #include <tinyara/signature.h>

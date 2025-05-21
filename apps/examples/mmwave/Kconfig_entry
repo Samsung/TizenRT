@@ -1,0 +1,3 @@
+config ENTRY_MMWAVE
+	bool "MMWAVE example"
+	depends on EXAMPLES_MMWAVE

@@ -55,7 +55,7 @@
 #include "task/task.h"
 #include "semaphore/semaphore.h"
 
-#include "binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Private Definitions
@@ -506,7 +506,7 @@ static int loadingall_thread(int argc, char *argv[])
 	for (bin_idx = 1; bin_idx <= bin_count; bin_idx++) {
 		if (BIN_LOAD_PRIORITY(bin_idx, BIN_USEIDX(bin_idx)) == BINARY_LOADPRIO_HIGH) {
 			ret = binary_manager_load(bin_idx);
-			if (ret > 0) {
+			if (ret == BINMGR_OK) {
 				load_cnt++;
 			}
 		}
@@ -584,7 +584,7 @@ static int reloading_thread(int argc, char *argv[])
 #endif
 
 #ifdef CONFIG_RESOURCE_FS
-	ret = binary_manager_unmount_resource();
+	ret = binary_manager_umount_resource();
 	if (ret != OK) {
 		return BINMGR_OPERATION_FAIL;
 	}

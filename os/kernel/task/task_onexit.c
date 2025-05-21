@@ -63,7 +63,6 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "task/task.h"
@@ -136,7 +135,6 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 	FAR struct onexit_s *ponexit;
 	int ret = ERROR;
 
-	trace_begin(TTRACE_TAG_TASK, "on_exit");
 	DEBUGASSERT(group);
 
 	/* The following must be atomic */
@@ -159,7 +157,6 @@ int on_exit(CODE void (*func)(int, FAR void *), FAR void *arg)
 		sched_unlock();
 
 	}
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }
 

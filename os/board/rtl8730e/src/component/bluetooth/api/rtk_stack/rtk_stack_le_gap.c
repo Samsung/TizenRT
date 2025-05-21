@@ -3054,6 +3054,35 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	rtk_bt_le_scan_param_t *p_gap_scan_param = (rtk_bt_le_scan_param_t *)param;
 	T_GAP_CAUSE cause;
 
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	T_GAP_LE_EXT_SCAN_PARAM extended_scan_param = {0};
+	uint8_t scan_phys = GAP_EXT_SCAN_PHYS_1M_BIT;
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_LOCAL_ADDR_TYPE, sizeof(p_gap_scan_param->own_addr_type), &p_gap_scan_param->own_addr_type);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_POLICY, sizeof(p_gap_scan_param->filter_policy), &p_gap_scan_param->filter_policy);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_FILTER_DUPLICATES, sizeof(p_gap_scan_param->duplicate_opt), &p_gap_scan_param->duplicate_opt);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = le_ext_scan_set_param(GAP_PARAM_EXT_SCAN_PHYS, sizeof(scan_phys), &scan_phys);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	extended_scan_param.scan_type = (T_GAP_SCAN_MODE)p_gap_scan_param->type;
+	extended_scan_param.scan_interval = p_gap_scan_param->interval;
+	extended_scan_param.scan_window = p_gap_scan_param->window;
+	le_ext_scan_set_phy_param(LE_SCAN_PHY_LE_1M, &extended_scan_param);
+#else
 	cause = le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(p_gap_scan_param->type), &p_gap_scan_param->type);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
@@ -3083,7 +3112,7 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return RTK_BT_OK;
 
 }
@@ -3092,6 +3121,12 @@ static uint16_t bt_stack_le_gap_start_scan(void)
 {
 	T_GAP_CAUSE cause;
 
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_start();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3105,14 +3140,20 @@ extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return 0;
 }
 
 static uint16_t bt_stack_le_gap_stop_scan(void)
 {
 	T_GAP_CAUSE cause;
+#if (defined(RTK_BLE_5_0_AE_SCAN_SUPPORT) && RTK_BLE_5_0_AE_SCAN_SUPPORT)
+	cause = le_ext_scan_stop();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 
+#else
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (rtk_bt_mesh_is_enable()) {
@@ -3126,7 +3167,7 @@ extern uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
-
+#endif
 	return 0;
 }
 
@@ -3878,27 +3919,36 @@ static uint16_t bt_stack_le_privacy_init(void *param)
 }
 #endif
 
+static uint16_t bt_stack_le_sm_set_pairing_mode(void *param)
+{
+	T_GAP_CAUSE cause;
+	rtk_bt_le_pairing_mode_t pairing_mode = *(rtk_bt_le_pairing_mode_t *)param;
+
+	cause = gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(uint8_t), &pairing_mode);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	cause = gap_set_pairable_mode();
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+	return 0;
+}
+
 static uint16_t bt_stack_le_sm_set_security_param(void *param)
 {
 	T_GAP_CAUSE cause;
 	rtk_bt_le_security_param_t *p_sec_param = (rtk_bt_le_security_param_t *)param;
 	uint16_t auth_flags = 0;
-	uint8_t auth_pair_mode = 1;
 	uint16_t auth_sec_req_flags = 0;
-
-	cause = gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(uint8_t),
-						  &auth_pair_mode);
-	if (cause) {
-		return RTK_BT_ERR_LOWER_STACK_API;
-	}
-
 	cause = gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(uint8_t),
 						  &p_sec_param->io_cap);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-#if defined(F_BT_LE_SMP_OOB_SUPPORT) &&F_BT_LE_SMP_OOB_SUPPORT
+#if defined(F_BT_LE_SMP_OOB_SUPPORT) && F_BT_LE_SMP_OOB_SUPPORT
 	cause = gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(uint8_t),
 						  &p_sec_param->oob_data_flag);
 	if (cause) {
@@ -3906,14 +3956,19 @@ static uint16_t bt_stack_le_sm_set_security_param(void *param)
 	}
 #endif
 
-	auth_flags = p_sec_param->bond_flag | p_sec_param->mitm_flag << 2 |
-				 p_sec_param->sec_pair_flag << 3;
+	auth_flags = (!!p_sec_param->bond_flag) | (!!p_sec_param->mitm_flag) << 2 |
+				 (!!p_sec_param->sec_pair_flag) << 3 | (!!p_sec_param->sec_pair_only_flag) << 9;
 	cause = gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(uint16_t),
 						  &auth_flags);
 	if (cause) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
+	cause = le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(uint8_t),
+							  &p_sec_param->auto_sec_req);
+	if (cause) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
 	auth_sec_req_flags = auth_flags;
 	cause = le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_REQUIREMENT, sizeof(uint16_t),
 							  &auth_sec_req_flags);
@@ -4010,6 +4065,18 @@ static uint16_t bt_stack_le_sm_passkey_confirm(void *param)
 	uint8_t conn_id;
 
 	if (!le_get_conn_id_by_handle(key_cfm->conn_handle, &conn_id)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (key_cfm->confirm == 1)
+	{
+		confirm = GAP_CFM_CAUSE_ACCEPT;
+	}
+	else if (key_cfm->confirm == 0)
+	{
+		confirm = GAP_CFM_CAUSE_REJECT;
+	}
+	else{
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -4492,6 +4559,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_le_privacy_init(p_cmd->param);
 		break;
 #endif
+
+	case RTK_BT_LE_GAP_ACT_SET_PAIRING_MODE:
+		ret = bt_stack_le_sm_set_pairing_mode(p_cmd->param);
+		break;
 
 	case RTK_BT_LE_GAP_ACT_SET_SEC_PARAM:
 		ret = bt_stack_le_sm_set_security_param(p_cmd->param);

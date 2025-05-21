@@ -63,7 +63,6 @@
 #include <debug.h>
 
 #include <tinyara/cancelpt.h>
-#include <tinyara/ttrace.h>
 
 #include "pthread/pthread.h"
 
@@ -124,8 +123,6 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 {
 	int ret;
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_join");
-
 	/* pthread_join() is a cancellation point */
 
 	(void)enter_cancellation_point();
@@ -136,6 +133,5 @@ int pthread_join(pthread_t thread, FAR pthread_addr_t *pexit_value)
 
 	svdbg("Returning %d\n", ret);
 	leave_cancellation_point();
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

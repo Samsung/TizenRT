@@ -227,11 +227,7 @@ static void alc1019_set_i2s_datawidth(FAR struct alc1019_dev_s *priv)
                 return;
         }
 
-        if (priv->inout) {
-                I2S_RXDATAWIDTH(priv->i2s, priv->bpsamp);
-        } else {
-                I2S_TXDATAWIDTH(priv->i2s, priv->bpsamp);
-        }
+        I2S_TXDATAWIDTH(priv->i2s, priv->bpsamp);
 }
 
 /****************************************************************************
@@ -248,11 +244,7 @@ static void alc1019_set_i2s_samplerate(FAR struct alc1019_dev_s *priv)
                 return;
         }
 
-        if (priv->inout) {
-                I2S_RXSAMPLERATE(priv->i2s, priv->samprate);
-        } else {
-                I2S_TXSAMPLERATE(priv->i2s, priv->samprate);
-        }
+        I2S_TXSAMPLERATE(priv->i2s, priv->samprate);
 }
 
 /****************************************************************************
@@ -457,7 +449,6 @@ static int alc1019_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		 * bits per sample, and bitrate.
 		 */
 		ret = OK;
-		priv->inout = false;
 		break;
 
 	case AUDIO_TYPE_PROCESSING:
@@ -554,7 +545,7 @@ static int alc1019_start(FAR struct audio_lowerhalf_s *dev)
 	audvdbg(" alc1019_start Entry\n");
 	alc1019_takesem(&priv->devsem);
 	if (priv->running) {
-		goto ub_start_withsem;
+		goto alc_start_err_withsem;
 	}
 
 	/* Register cb for io error */
@@ -576,7 +567,7 @@ static int alc1019_start(FAR struct audio_lowerhalf_s *dev)
 	/* Exit reduced power modes of operation */
 	/* REVISIT */
 
-ub_start_withsem:
+alc_start_err_withsem:
 
 	alc1019_givesem(&priv->devsem);
 	return OK;
@@ -940,7 +931,6 @@ static int alc1019_release(FAR struct audio_lowerhalf_s *dev)
  ****************************************************************************/
 static void alc1019_reset_config(FAR struct alc1019_dev_s *priv)
 {
-	priv->inout = false;
 	/* Put audio output back to its initial configuration */
 	priv->samprate = ALC1019_DEFAULT_SAMPRATE;
 	priv->nchannels = ALC1019_DEFAULT_NCHANNELS;
@@ -961,8 +951,6 @@ static void alc1019_reset_config(FAR struct alc1019_dev_s *priv)
 	 *alc1019_set_i2s_samplerate(priv);
 	 *alc1019_set_i2s_datawidth(priv);
 	 */
-
-	return;
 }
 
 /****************************************************************************

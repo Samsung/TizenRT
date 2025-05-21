@@ -73,7 +73,7 @@ void inic_ipc_api_dev_task(void)
 
 		DCache_Invalidate((u32)p_ipc_msg, sizeof(inic_ipc_host_request_message));
 		if (p_ipc_msg == NULL) {
-			DBG_8195A("Device IPC message is NULL, invalid!\n\r");
+			DBG_8195A("[CA32] %s Device IPC message is NULL, invalid!\n\r", __FUNCTION__);
 			continue;
 		}
 
@@ -690,7 +690,7 @@ void inic_ipc_api_dev_task(void)
 #endif
 		/* jira: https://jira.realtek.com/browse/RSWLANQC-1036 */
 		case IPC_API_WIFI_MSG_TO: {
-			DBG_8195A("MSG TO, No need\n\r");
+			DBG_8195A("[CA32] %s MSG TO, No need\n\r", __FUNCTION__);
 			break;
 		}
 		case IPC_API_WIFI_PROMISC_INIT: {
@@ -703,8 +703,8 @@ void inic_ipc_api_dev_task(void)
 			break;
 		}
 		default:
-			DBG_8195A("Host Unknown API(%d)!\n\r", \
-					  p_ipc_msg->API_ID);
+			DBG_8195A("[CA32] %s Host Unknown API(%d)!\n\r", \
+					  __FUNCTION__, p_ipc_msg->API_ID);
 			break;
 		}
 

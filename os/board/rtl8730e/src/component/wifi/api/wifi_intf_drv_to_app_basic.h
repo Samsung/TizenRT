@@ -462,6 +462,12 @@ struct  wifi_user_conf {
 
 	unsigned char rx_ampdu_num;
 	unsigned char cfg80211;
+
+#ifdef CONFIG_SOFTAP_KEEP_SILENT_TABLE
+	/* SoftAP silent table to reduce probe response when receiving probe request continuously */
+	int softap_keep_silent_table_enable;
+	int softap_keep_silent_table_interval;
+#endif
 };
 
 extern  struct wifi_user_conf wifi_user_config;

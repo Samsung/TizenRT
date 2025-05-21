@@ -56,8 +56,10 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 
 #define LCD_DEV_PATH "/dev/lcd%d"
+
 #define RED   0xF800
 #define WHITE 0xFFFF
 #define BLACK 0x0000
@@ -210,6 +212,7 @@ static unsigned short generate_color_code(int red, int green, int blue)
 	unsigned short colorCode = (red << 11) | (green << 5) | blue;
 	return colorCode;
 }
+
 static void test_bit_map(void)
 {
 	int fd = 0;
@@ -371,11 +374,12 @@ int lcd_test_main(int argc, char *argv[])
 	int fd = 0;
 	int p = 0;
 	char port[20] = { '\0' };
+
 	sprintf(port, LCD_DEV_PATH, p);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return;
+		return ERROR;	
 	}
 	while (count < 5) {
 		test_put_area_pattern();
@@ -389,5 +393,6 @@ int lcd_test_main(int argc, char *argv[])
 	}
 	test_fps();
 	close(fd);
-	return 0;
+
+	return OK;
 }

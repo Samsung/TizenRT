@@ -225,6 +225,31 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 		TRWIFI_CALL(res, dev, scan_multi_aps, (dev, (trwifi_scan_multi_configs_s *)data));
 	}
 	break;
+	case LWNL_REQ_WIFI_SET_CHANNEL_PLAN:
+	{
+		TRWIFI_CALL(res, dev, set_channel_plan, (dev, *((uint8_t *)data)));
+	}
+	break;
+	case LWNL_REQ_WIFI_GET_SIGNAL_QUALITY:
+	{
+		TRWIFI_CALL(res, dev, get_signal_quality, (dev, (trwifi_signal_quality *)data));
+	}
+	break;
+	case LWNL_REQ_WIFI_GET_DISCONNECT_REASON:
+	{
+		TRWIFI_CALL(res, dev, get_deauth_reason, (dev, (int *)data));
+	}
+	break;
+	case LWNL_REQ_WIFI_GET_DRIVER_INFO:
+	{
+		TRWIFI_CALL(res, dev, get_driver_info, (dev, (trwifi_driver_info *)data));
+	}
+	break;
+	case LWNL_REQ_WIFI_GET_WPA_SUPPLICANT_STATE:
+	{
+		TRWIFI_CALL(res, dev, get_wpa_supplicant_state, (dev, (trwifi_wpa_states *)data));
+	}
+	break;
 	default:
 		break;
 	}

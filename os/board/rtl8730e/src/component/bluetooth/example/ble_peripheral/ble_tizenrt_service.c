@@ -688,12 +688,13 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
 
 uint16_t ble_tizenrt_srv_add(void)
 {
-    parse_service_table(server_init_parm.profile, server_init_parm.profile_count);
-	ble_tizenrt_srv_array_ptr = (struct rtk_bt_gatt_service *)osif_mem_alloc(0, tizenrt_ble_srv_count * sizeof(struct rtk_bt_gatt_service));
-    for (int i = 0; i < tizenrt_ble_srv_count ; i++)
-    {
-        tizenrt_add_service(i, TIZENRT_SRV_ID + i);
-    }
-    return RTK_BT_OK;
+	if (0 != server_profile_count) {
+		parse_service_table(server_init_parm.profile, server_init_parm.profile_count);
+		ble_tizenrt_srv_array_ptr = (struct rtk_bt_gatt_service *)osif_mem_alloc(0, tizenrt_ble_srv_count * sizeof(struct rtk_bt_gatt_service));
+		for (int i = 0; i < tizenrt_ble_srv_count; i++) {
+			tizenrt_add_service(i, TIZENRT_SRV_ID + i);
+		}
+	}
+	return RTK_BT_OK;
 }
 

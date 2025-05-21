@@ -1137,3 +1137,11 @@ config LOG_DUMP_HANG_CHECK_SEC
 	an assert occurs due to a device hang.
 endif # LOG_DUMP_DEBUG_DETECT_HANG
 endif # LOG_DUMP
+
+config SILENT_REBOOT
+	bool "Enable Silent Reboot"
+	default y
+	depends on SYSTEM_REBOOT_REASON
+	depends on BOARDCTL_RESET
+	---help---
+		Enables Silent Reboot.

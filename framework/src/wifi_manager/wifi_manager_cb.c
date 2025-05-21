@@ -31,7 +31,7 @@
 #include "wifi_manager_error.h"
 #include "wifi_manager_stats.h"
 
-#define WIFIMGR_NUM_CALLBACKS 3
+#define WIFIMGR_NUM_CALLBACKS 10
 #define LOCK_WIFICB pthread_mutex_lock(&g_cb_handler.lock)
 #define UNLOCK_WIFICB pthread_mutex_unlock(&g_cb_handler.lock)
 #define TAG "[WM]"
@@ -217,7 +217,15 @@ int wifimgr_register_cb(wifi_manager_cb_s *wmcb)
 		return -1;
 	}
 
-	g_cb_handler.cb[g_cb_handler.idx] = wmcb;
+	for (int i = 1; i < WIFIMGR_NUM_CALLBACKS; i++) {
+		if (g_cb_handler.cb[i] == NULL) {
+			g_cb_handler.cb[i] = wmcb;
+			g_cb_handler.idx++;
+			NET_LOGI(TAG, "wifimgr cb is registered(%d)\n", i);
+			UNLOCK_WIFICB;
+			return 0;
+		}
+	}
 	UNLOCK_WIFICB;
 
 	return 0;
@@ -229,6 +237,7 @@ int wifimgr_unregister_cb(wifi_manager_cb_s *wmcb)
 	for (int i = 1; i < WIFIMGR_NUM_CALLBACKS; i++) {
 		if (g_cb_handler.cb[i] == wmcb) {
 			g_cb_handler.cb[i] = NULL;
+			g_cb_handler.idx--;
 			UNLOCK_WIFICB;
 			return 0;
 		}

@@ -26,7 +26,6 @@
 
 #include <sched.h>
 
-#ifdef CONFIG_SMP
 
 /****************************************************************************
  * Public Functions
@@ -62,5 +61,3 @@ int sched_cpucount(FAR const cpu_set_t *set)
 
   return count;
 }
-
-#endif /* CONFIG_SMP */

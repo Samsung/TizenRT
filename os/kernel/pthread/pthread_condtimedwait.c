@@ -69,7 +69,6 @@
 
 #include <tinyara/cancelpt.h>
 #include <tinyara/wdog.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -204,7 +203,6 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 	int ret = OK;
 	int status;
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_cond_timedwait");
 	svdbg("cond=0x%p mutex=0x%p abstime=0x%p\n", cond, mutex, abstime);
 
 	DEBUGASSERT(rtcb->waitdog == NULL);
@@ -328,7 +326,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					svdbg("Re-locking...\n");
 
 					oldstate = pthread_disable_cancel();
-					status = pthread_mutex_take(mutex, false);
+					status = pthread_mutex_take(mutex);
 					pthread_enable_cancel(oldstate);
 
 					if (status == OK) {
@@ -354,6 +352,5 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 	svdbg("Returning %d\n", ret);
 	leave_cancellation_point();
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

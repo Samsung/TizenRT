@@ -12,6 +12,7 @@
 #include <rtk_bt_def.h>
 #include <rtk_bt_gatts.h>
 #include <rtk_bt_le_gap.h>
+#include <rtk_bt_vendor.h>
 #include <mem_types.h>
 #include <bt_utils.h>
 #include <rtk_service_config.h>
@@ -95,6 +96,40 @@ trble_result_e rtw_ble_server_get_mac_address(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]
 
 	memcpy(mac, &rtk_bd_addr.addr_val, TRBLE_BD_ADDR_MAX_LEN);
     return TRBLE_SUCCESS; 
+}
+
+trble_result_e rtw_ble_sm_set_security_param(rtk_bt_le_security_param_t  sec_param)
+{
+    rtk_bt_le_security_param_t sec_param_input;
+    memcpy(&sec_param_input, &sec_param, sizeof(rtk_bt_le_security_param_t));
+    sec_param_input.auto_sec_req = 0;
+
+    uint8_t pairing_mode = RTK_PAIRING_MODE_PAIRABLE;
+    if(RTK_BT_OK != rtk_bt_le_sm_set_pairing_mode(pairing_mode))
+    {
+        dbg("secure param set fail \n");
+        return TRBLE_FAIL;
+    }
+
+    if(RTK_BT_OK != rtk_bt_le_sm_set_security_param(&sec_param_input))
+    {
+        dbg("secure param set fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
+}
+
+trble_result_e rtw_ble_pairing_passkey_confirm(uint8_t *conn_handle, uint8_t *confirm)
+{
+    rtk_bt_le_auth_key_confirm_t pair_cfm_param = {0};
+    pair_cfm_param.conn_handle = *conn_handle;
+    pair_cfm_param.confirm = *confirm;
+    if(RTK_BT_OK != rtk_bt_le_sm_passkey_confirm(&pair_cfm_param))
+    {
+        debug_print("passkey confirm fail \n");
+        return TRBLE_FAIL;
+    }
+    return TRBLE_SUCCESS;
 }
 
 /* set data pointer of attribute value */
@@ -575,6 +610,30 @@ bool rtw_ble_server_conn_is_any_active(void)
 
 trble_result_e rtw_ble_server_conn_param_update(trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
+	if (is_server_init != true)
+	{
+		return TRBLE_INVALID_STATE;
+	}
+
+	if(conn_handle == NULL || conn_param == NULL)
+	{
+		debug_print("Invalid input \n");
+		return TRBLE_INVALID_ARGS;
+	}
+
+	rtk_bt_le_update_conn_param_t param;
+
+    param.conn_handle = *conn_handle;
+	param.conn_interval_min = conn_param->min_conn_interval;
+	param.conn_interval_max = conn_param->max_conn_interval;
+	param.conn_latency = conn_param->slave_latency;
+	param.supv_timeout = conn_param->supervision_timeout;
+
+	if(RTK_BT_FAIL == rtk_bt_le_gap_update_conn_param(&param))
+	{
+		debug_print("connection parameter update fail \n");
+		return TRBLE_FAIL;
+	}
     return TRBLE_SUCCESS; 
 }
 
@@ -721,7 +780,7 @@ trble_result_e rtw_ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t 
 	adv_param.peer_addr.type           = 0;
 	memset(adv_param.peer_addr.addr_val,0, 6);
 	adv_param.filter_policy            = 0;
-	adv_param.tx_power                 = 10;
+	adv_param.tx_power                 = 0x7f;
 	adv_param.primary_adv_phy          = 1;
 	adv_param.secondary_adv_max_skip   = 0;
 	adv_param.secondary_adv_phy        = 1;
@@ -789,6 +848,22 @@ trble_result_e rtw_ble_server_stop_multi_adv(uint8_t adv_handle)
 	}
 }
 #endif
+
+trble_result_e rtw_ble_server_set_adv_txpower(uint16_t txpower)
+{
+	rtk_bt_vendor_tx_power_param_t tx_power = {0};
+	tx_power.tx_power_type = 0;
+	tx_power.adv_tx_power.type = 0;
+	tx_power.tx_gain = txpower;
+	uint16_t ret = rtk_bt_set_tx_power(&tx_power);
+	if (RTK_BT_OK != ret) {
+		return TRBLE_FAIL;
+	} else {
+		return TRBLE_SUCCESS;
+	}
+
+	return TRBLE_SUCCESS;
+}
 
 trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bonded_device_list, uint16_t* device_count)
 {

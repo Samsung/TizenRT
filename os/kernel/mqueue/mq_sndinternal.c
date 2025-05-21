@@ -69,7 +69,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/cancelpt.h>
-#include <tinyara/ttrace.h>
 #include "sched/sched.h"
 #ifndef CONFIG_DISABLE_SIGNALS
 #include "signal/signal.h"
@@ -361,8 +360,6 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	FAR struct mqueue_msg_s *prev;
 	irqstate_t saved_state;
 
-	trace_begin(TTRACE_TAG_IPC, "mq_dosend");
-
 	/* Get a pointer to the message queue */
 
 	sched_lock();
@@ -456,6 +453,5 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 
 	leave_critical_section(saved_state);
 	sched_unlock();
-	trace_end(TTRACE_TAG_IPC);
 	return OK;
 }

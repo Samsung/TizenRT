@@ -779,14 +779,12 @@ int pthread_attr_setstacksize(FAR pthread_attr_t *attr, long stacksize);
  */
 int pthread_attr_getstacksize(FAR const pthread_attr_t *attr, long *stackaddr);
 
-#ifdef CONFIG_SMP
 /* Set or obtain thread affinity attributes */
 
 int pthread_attr_setaffinity_np(FAR pthread_attr_t *attr, \
                 size_t cpusetsize, FAR const cpu_set_t *cpuset);
 int pthread_attr_getaffinity_np(FAR const pthread_attr_t *attr, \
                 size_t cpusetsize, cpu_set_t *cpuset);
-#endif
 
 /* Create, operate on, and destroy mutex attributes. */
 /**

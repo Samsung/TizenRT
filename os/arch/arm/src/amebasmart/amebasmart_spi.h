@@ -136,5 +136,5 @@ int amebasmart_spi1register(FAR struct spi_dev_s *dev, spi_mediachange_t callbac
 #endif
 
 #endif /* __ASSEMBLY__ */
-#endif /* __ARCH_ARM_SRC_AMEBASMART_SPI_H */
 
+#endif /* __ARCH_ARM_SRC_AMEBASMART_SPI_H */

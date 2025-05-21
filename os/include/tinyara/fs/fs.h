@@ -95,7 +95,11 @@
 
 #ifdef CONFIG_FS_TMPFS
 #define TMPFS_FSTYPE "tmpfs"
+#ifdef CONFIG_FS_TMPFS_MOUNT_POINT
+#define TMPFS_MOUNT_POINT CONFIG_FS_TMPFS_MOUNT_POINT
+#else
 #define TMPFS_MOUNT_POINT "/tmp"
+#endif
 #endif
 #ifdef NXFUSE_HOST_BUILD
 #define  O_WROK    1

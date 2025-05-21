@@ -509,6 +509,75 @@ int up_prioritize_irq(int irq, int priority)
 }
 
 /****************************************************************************
+ * Name: up_set_irq_affinity
+ *
+ * Description:
+ *   set the affinity of a given irq (shared peripheral interrupts - SPI only) to given cpu set
+ *
+ * Input Parameters:
+ *   irq: irq id
+ *   cpuset: cpu set
+ *   
+ *   Example usage: 
+ *   for cpu 1    -> up_set_irq_affinity(10, 0x10)
+ *   for cpu 0    -> up_set_irq_affinity(10, 0x01)
+ *   for cpu 0, 1 -> up_set_irq_affinity(10, 0x11)
+ * 
+ *   Each bit of the register represents each core affinity.
+ *   Note: register supports 8 bits per interrupt. (So maximum 8 cpus)
+ *
+ * Returned Value:
+ *   OK : operation successful
+ *   EINVAL: irq out of range
+ *
+ ****************************************************************************/
+
+int up_set_irq_affinity(int irq, cpu_set_t cpu_set)
+{
+	/* Ignore invalid interrupt IDs */
+
+	if (irq >= GIC_IRQ_SPI && irq < NR_IRQS) {
+
+		/* read the current cpu affinity register */
+		uint32_t reg_value = getreg32(GIC_ICDIPTR(irq));
+
+		/* clear the bits for the current irq */
+		reg_value &= ~GIC_ICDIPTR_ID_MASK(irq);
+
+		/* write the target core set for the irq */
+		reg_value |= GIC_ICDIPTR_ID(irq, cpu_set);
+
+		/* write the updated value back to the register */
+		putreg32(reg_value, GIC_ICDIPTR(irq));	
+
+		return OK;
+	}
+
+	return -EINVAL;
+}
+
+/****************************************************************************
+ * Name: up_reset_irq_affinity
+ *
+ * Description:
+ *   reset the affinity of a given irq (shared peripheral interrupts - SPI only) to cpu 0.
+ *
+ * Input Parameters:
+ *   irq: irq id
+ *
+ * Returned Value:
+ *   OK : operation successful
+ *   EINVAL: irq out of range
+ *
+ ****************************************************************************/
+
+int up_reset_irq_affinity(int irq)
+{
+	/* reset affinity of the irq to core 0 */
+	return up_set_irq_affinity(irq, 0x01);
+}
+
+/****************************************************************************
  * Name: arm_gic_irq_trigger
  *
  * Description:

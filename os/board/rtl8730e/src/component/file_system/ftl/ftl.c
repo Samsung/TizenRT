@@ -142,13 +142,13 @@ static void ftl_setstatusbits(uint32_t NewState)
 	if (!NewState) {	/* If to disable */
 		backup_state = flash_get_status(&flash);	/* Read State */
 		backup_state = backup_state & 0xFF;		/* Only compare status bits */
-		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+		if (FLASH_STATUS_BITS == (backup_state & FLASH_STATUS_BITS)) {	/* State is enable */
 			FLASH_Write_Lock();
 			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState);	/* Clear */
 			FLASH_Write_Unlock();
 		}
 	} else {
-		if (FLASH_STATUS_BITS == backup_state) {	/* State is enable */
+		if (FLASH_STATUS_BITS == (backup_state & FLASH_STATUS_BITS)) {	/* State is enable */
 			FLASH_Write_Lock();
 			FLASH_SetStatusBits(FLASH_STATUS_BITS, NewState); /* Set State */
 			FLASH_Write_Unlock();

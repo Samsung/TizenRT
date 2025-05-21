@@ -396,7 +396,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		if (!strncmp(types, "resource,", 9)) {
 			int nblocks = geo.erasesize / geo.blocksize;
 			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
-			ret = make_resource_mtd_partition(mtd, partoffset + (geo.erasesize / 1024), partsize / geo.blocksize - nblocks, g_partno);
+			ret = make_resource_mtd_partition(mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
 			if (ret != OK) {
 				printf("ERROR: fail to make resource mtd part.\n");
 			}

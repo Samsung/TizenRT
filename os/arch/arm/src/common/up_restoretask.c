@@ -83,7 +83,7 @@ void up_restoretask(struct tcb_s *tcb)
 #endif
 
 #ifdef CONFIG_ARCH_USE_MMU
-		if (tcb->app_id && tcb->pgtbl != mmu_l1_pgtable()) {
+		if (tcb->app_id && tcb->pgtbl && tcb->pgtbl != mmu_l1_pgtable()) {
 			cp15_wrttb((uint32_t) tcb->pgtbl | TTBR0_RGN_WBWA | TTBR0_IRGN0);
 			cp15_invalidate_tlbs();
 		}

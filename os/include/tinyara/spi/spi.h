@@ -131,6 +131,9 @@
  ****************************************************************************/
 
 #define SPI_SELECT(d, id, s) ((d)->ops->select(d, id, s))
+#define SPI_PAUSE(d) ((d)->ops->pause(d))
+#define SPI_RESUME(d) ((d)->ops->resume(d))
+#define SPI_GETSTATUS(d) ((d)->ops->getstatus(d))
 
 /****************************************************************************
  * Name: SPI_SETFREQUENCY
@@ -417,6 +420,9 @@ struct spi_ops_s {
 #ifndef CONFIG_SPI_OWNBUS
 	int (*lock)(FAR struct spi_dev_s *dev, bool lock);
 #endif
+    void (*pause)(FAR struct spi_dev_s *dev);
+	void (*resume)(FAR struct spi_dev_s *dev);
+	bool (*getstatus)(FAR struct spi_dev_s *dev);
 	void (*select)(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
 	uint32_t (*setfrequency)(FAR struct spi_dev_s *dev, uint32_t frequency);
 	void (*setmode)(FAR struct spi_dev_s *dev, enum spi_mode_e mode);

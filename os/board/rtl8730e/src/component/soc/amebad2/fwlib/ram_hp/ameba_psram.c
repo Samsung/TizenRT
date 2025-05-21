@@ -111,10 +111,10 @@ void PSRAM_INFO_Update(void)
 			PsramInfo.Psram_Latency_Set = 10;
 			PsramInfo.Psram_CSHI = Psram_WB_CSHI166;
 		}
-		/* backup latency code for KM0 for sleep */
-		RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	}
 
+	/* backup latency code for KM0 for sleep */
+	RRAM->PSRAM_LATENCY = PsramInfo.Psram_Latency_Set;
 	RTK_LOGI(TAG, "PSRAM Ctrl CLK: %d Hz \n", PsramClk);
 }
 

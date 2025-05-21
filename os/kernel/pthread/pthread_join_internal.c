@@ -63,7 +63,6 @@
 #include <debug.h>
 
 #include <tinyara/cancelpt.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -148,7 +147,7 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 	 * because it will also attempt to get this semaphore.
 	 */
 
-	(void)pthread_sem_take(&group->tg_joinsem, false);
+	(void)pthread_sem_take(&group->tg_joinsem);
 
 	/* Find the join information associated with this thread.
 	 * This can fail for one of three reasons:  (1) There is no
@@ -231,7 +230,7 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 				 * pthread to exit.
 				 */
 
-				(void)pthread_sem_take(&pjoin->exit_sem, false);
+				(void)pthread_sem_take(&pjoin->exit_sem);
 
 				/* The thread has exited! Get the thread exit value */
 
@@ -250,7 +249,7 @@ int pthread_join_internal(pthread_t thread, FAR pthread_addr_t *pexit_value, boo
 				 * pthread_destroyjoin is called.
 				 */
 
-				(void)pthread_sem_take(&group->tg_joinsem, false);
+				(void)pthread_sem_take(&group->tg_joinsem);
 			} else {
 				sdbg("fail to get exit value\n");
 

@@ -28,6 +28,7 @@ APP_NUM=0
 LAST_IMAGE=0
 LAST_OFFSET=0
 USB_DOWNLOAD=0
+HAS_RESOURCE=0
 
 function pre_download()
 {
@@ -67,6 +68,7 @@ function pre_download()
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${BIN_PATH}/${RESOURCE_BIN_NAME}"; then
+		HAS_RESOURCE=1
 		cp -p ${BIN_PATH}/${RESOURCE_BIN_NAME} ${IMG_TOOL_PATH}/${RESOURCE_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
@@ -100,8 +102,10 @@ function pre_download()
 		if test -f "${BIN_PATH}/${EXTERNAL}.bin"; then
 			cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
 		fi
-		LAST_IMAGE=${RESOURCE_BIN_NAME}
 
+		if [ "$HAS_RESOURCE" -eq "1" ]; then
+			LAST_IMAGE=${RESOURCE_BIN_NAME}
+		fi
 	fi
 	if [ "$USB_DOWNLOAD" -eq "1" ]; then
 		touch "${IMG_TOOL_PATH}/USB_download_setting.txt"

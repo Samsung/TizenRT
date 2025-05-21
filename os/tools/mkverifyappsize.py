@@ -59,7 +59,8 @@ bsssize = int(size["bss"])
 if util.check_config_existence(cfg_path, 'CONFIG_XIP_ELF') == True :
     l2_text = math.ceil(float(textsize) / (1024*1024))
     l2_other = math.ceil(float(datasize + bsssize + dynamic_ram_size) / (1024*1024))
-    l2_pg_need = int(l2_text + l2_other)
+    # for each app, we will need at max of 4 l2 pagetables, 2 for ro and 2 for rw
+    l2_pg_need = min(4, int(l2_text + l2_other))
 else :
     l2_pg_need = int(math.ceil(float(textsize + datasize + bsssize + dynamic_ram_size) / (1024*1024)))
 if l2_pg_per_app < l2_pg_need :

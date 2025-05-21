@@ -36,9 +36,6 @@ void LOGUART_PutChar(u8 c)
 
 	UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = c;
 
-	if (c == KB_ASCII_LF) {
-		UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = KB_ASCII_CR;
-	}
 }
 
 /**

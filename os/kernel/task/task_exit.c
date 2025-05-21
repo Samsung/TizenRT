@@ -67,7 +67,6 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
-#include <tinyara/ttrace.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -195,8 +194,6 @@ int task_exit(void)
 	dtcb = this_task();
 #endif
 
-	trace_begin(TTRACE_TAG_TASK, "task_exit");
-
 	/* Check that exit is ready or not before execution */
 	prepare_exit(dtcb);
 
@@ -290,6 +287,5 @@ int task_exit(void)
 				&g_cpu_schedlock);
 	}
 #endif
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

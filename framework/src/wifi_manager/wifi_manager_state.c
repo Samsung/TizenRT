@@ -54,30 +54,48 @@ static inline void WIFIMGR_SET_SOFTAP_SSID(char *s)
 }
 
 /*  Copy MACRO */
-#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)							\
-	do {																\
-		(dest).channel = (src)->channel;								\
-		strncpy((dest).ssid, (src)->ssid, WIFIMGR_SSID_LEN);			\
-		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';							\
+#define WIFIMGR_COPY_SOFTAP_CONFIG(dest, src)                                  \
+	do {                                                                       \
+		(dest).channel = (src)->channel;                                       \
+		strncpy((dest).ssid, (src)->ssid, WIFIMGR_SSID_LEN);                   \
+		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';                                  \
 		strncpy((dest).passphrase, (src)->passphrase, WIFIMGR_PASSPHRASE_LEN); \
-		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';				\
+		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';                      \
 	} while (0)
 
-#define WIFIMGR_COPY_AP_INFO(dest, src)									\
-	do {																\
-		(dest).ssid_length = (src).ssid_length;							\
-		(dest).passphrase_length = (src).passphrase_length;				\
-		strncpy((dest).ssid, (src).ssid, WIFIMGR_SSID_LEN);				\
-		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';							\
+#define WIFIMGR_COPY_AP_INFO(dest, src)                                       \
+	do {                                                                      \
+		(dest).ssid_length = (src).ssid_length;                               \
+		(dest).passphrase_length = (src).passphrase_length;                   \
+		strncpy((dest).ssid, (src).ssid, WIFIMGR_SSID_LEN);                   \
+		(dest).ssid[WIFIMGR_SSID_LEN] = '\0';                                 \
 		strncpy((dest).passphrase, (src).passphrase, WIFIMGR_PASSPHRASE_LEN); \
-		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';				\
-		(dest).ap_auth_type = (src).ap_auth_type;						\
-		(dest).ap_crypto_type = (src).ap_crypto_type;					\
+		(dest).passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';                     \
+		(dest).ap_auth_type = (src).ap_auth_type;                             \
+		(dest).ap_crypto_type = (src).ap_crypto_type;                         \
 	} while (0)
 
 /*  Initialize MACRO */
-#define WM_APINFO_INITIALIZER {{0,}, 0, {0,}, 0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN}
-#define WIFIMGR_SOTFAP_CONFIG {{0,}, {0,}, 1}
+#define WM_APINFO_INITIALIZER                                         \
+	{                                                                 \
+		{                                                             \
+			0,                                                        \
+		},                                                            \
+			0, {                                                      \
+				   0,                                                 \
+			   },                                                     \
+			0, WIFI_MANAGER_AUTH_UNKNOWN, WIFI_MANAGER_CRYPTO_UNKNOWN \
+	}
+#define WIFIMGR_SOTFAP_CONFIG \
+	{                         \
+		{                     \
+			0,                \
+		},                    \
+			{                 \
+				0,            \
+			},                \
+			1                 \
+	}
 
 struct _wifimgr_state_handle {
 	wifimgr_state_e state;
@@ -110,7 +128,7 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 
 /* functions managing a state machine*/
 #undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(state, handler, str)				\
+#define WIFIMGR_STATE_TABLE(state, handler, str) \
 	static wifi_manager_result_e handler(wifimgr_msg_s *msg);
 #include "wifi_manager_state_table.h"
 typedef wifi_manager_result_e (*wifimgr_handler)(wifimgr_msg_s *msg);
@@ -142,7 +160,7 @@ static char *wifimgr_state_str[] = {
 		g_manager_info.prev_state = WIFIMGR_NONE;         \
 		wifimgr_info_msg_s twmsg;                         \
 		twmsg.state = g_manager_info.state;               \
-		wifimgr_set_info(WIFIMGR_STATE, &twmsg);         \
+		wifimgr_set_info(WIFIMGR_STATE, &twmsg);          \
 	} while (0)
 
 #define TAG "[WM]"
@@ -306,7 +324,10 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config)
 		return WIFI_MANAGER_SUCCESS;
 	}
 
-	trwifi_scan_config_s uconf = {0, {0,}, 0};
+	trwifi_scan_config_s uconf = {0, {
+										 0,
+									 },
+								  0};
 	memset(&uconf, 0, sizeof(trwifi_scan_config_s));
 	if (config->ssid_length > 0) {
 		strncpy(uconf.ssid, config->ssid, config->ssid_length + 1);
@@ -402,6 +423,9 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
+		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
+		_free_scan_list((trwifi_scan_list_s *)msg->param);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -416,10 +440,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		return WIFI_MANAGER_SUCCESS;
 	}
 
-	if (msg->event != WIFIMGR_EVT_STA_DISCONNECTED
-		&& msg->event != WIFIMGR_EVT_STA_CONNECTED
-		&& msg->event != WIFIMGR_EVT_STA_CONNECT_FAILED
-		&& msg->event != WIFIMGR_EVT_SCAN_DONE) {
+	if (msg->event != WIFIMGR_EVT_STA_DISCONNECTED && msg->event != WIFIMGR_EVT_STA_CONNECTED && msg->event != WIFIMGR_EVT_STA_CONNECT_FAILED && msg->event != WIFIMGR_EVT_SCAN_DONE) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		NET_LOGE(TAG, "invalid param\n");
 		return WIFI_MANAGER_BUSY;
@@ -478,6 +499,8 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 #endif
 		wifimgr_call_cb(CB_STA_CONNECTED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+		trwifi_info info_utils;
+		wifi_utils_get_info(&info_utils);
 	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, msg->param);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
@@ -587,6 +610,11 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
+		dhcpc_close_ipaddr();
+		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);

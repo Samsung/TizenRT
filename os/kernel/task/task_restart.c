@@ -64,7 +64,6 @@
 #include <errno.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -130,8 +129,6 @@ int task_restart(pid_t pid)
 	int cpu;
 #endif
 	int ret = OK;
-
-	trace_begin(TTRACE_TAG_TASK, "task_restart");
 
 	/* Make sure this task does not become ready-to-run while
 	 * we are futzing with its TCB
@@ -274,6 +271,5 @@ int task_restart(pid_t pid)
 ret_with_lock:
 	leave_critical_section(flags);
 	sched_unlock();
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

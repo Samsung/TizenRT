@@ -403,14 +403,14 @@ static int compress_full_bufs(void)
 			continue;
 		}
 
-		irqstate_t flags = irqsave();
+		irqstate_t flags = enter_critical_section();
 		/* If kernel heap is locked we cannot allocate new buffers.
 		 * Also, we cannot perform compress operation, since the compression
 		 * code internally tries to allocate memory. So, we will just ignore
 		 * the log data until the kernel heap lock is released.
 		 */
 		if (IS_KMM_LOCKED()) {
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return LOG_DUMP_MEM_FAIL;
 		}
 
@@ -422,7 +422,7 @@ static int compress_full_bufs(void)
 		comp_idx = i;
 
 		mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* wait for completion of the current full block compression */
 #ifdef CONFIG_LOG_DUMP_DEBUG_DETECT_HANG

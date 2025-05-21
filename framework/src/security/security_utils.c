@@ -199,6 +199,17 @@ hal_aes_algo secutils_convert_aesmode_s2h(security_aes_mode mode)
 	return HAL_AES_UNKNOWN;
 }
 
+hal_gcm_type secutils_convert_gcmmode_s2h(security_gcm_mode mode)
+{
+	switch (mode) {
+	case GCM_AES:
+		return HAL_GCM_AES;
+	case GCM_UNKNOWN:
+		return HAL_GCM_UNKNOWN;
+	}
+	return HAL_GCM_UNKNOWN;
+}
+
 hal_rsa_algo secutils_convert_rsamode_s2h(security_rsa_mode mode)
 {
 	switch (mode) {
@@ -282,6 +293,26 @@ int secutils_convert_aesparam_s2h(security_aes_param *sparam, hal_aes_param *hpa
 	}
 	hparam->iv = sparam->iv;
 	hparam->iv_len = sparam->iv_len;
+
+	return 0;
+}
+
+int secutils_convert_gcmparam_s2h(security_gcm_param *sparam, hal_gcm_param *hparam)
+{
+	if (!hparam || !sparam) {
+		return -1;
+	}
+
+	hparam->cipher = secutils_convert_gcmmode_s2h(sparam->cipher);
+	if (hparam->cipher == HAL_GCM_UNKNOWN) {
+		return -1;
+	}
+	hparam->iv = sparam->iv;
+	hparam->iv_len = sparam->iv_len;
+	hparam->aad = sparam->aad;
+	hparam->aad_len = sparam->aad_len;
+	hparam->tag = sparam->tag;
+	hparam->tag_len = sparam->tag_len;
 
 	return 0;
 }

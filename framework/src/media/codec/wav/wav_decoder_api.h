@@ -89,7 +89,7 @@ typedef struct wav_dec_external_s *wav_dec_external_p;
 int wav_init(audio_decoder_p decoder, void *dec_ext);
 bool wav_check_type(rbstream_p rbsp);
 bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer, uint32_t *size);
-int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem, src_handle_t *resampler);
+int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem);
 
 #ifdef __cplusplus
 } // extern "C"

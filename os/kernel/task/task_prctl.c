@@ -63,7 +63,6 @@
 #include <debug.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/ttrace.h>
 
 #ifdef CONFIG_PREFERENCE
 #include <tinyara/preference.h>
@@ -124,7 +123,6 @@ int prctl(int option, ...)
 	va_list ap;
 	int err;
 
-	trace_begin(TTRACE_TAG_TASK, "prctl");
 	va_start(ap, option);
 	switch (option) {
 	case PR_SET_NAME:
@@ -440,12 +438,10 @@ int prctl(int option, ...)
 	}
 
 	va_end(ap);
-	trace_end(TTRACE_TAG_TASK);
 	return OK;
 
 errout:
 	va_end(ap);
 	set_errno(err);
-	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }

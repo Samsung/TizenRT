@@ -61,6 +61,23 @@ uint32_t up_get_gating_flag_status(uint32_t CoreID)
 	return g_cpugating_flag[CoreID];
 }
 
+
+void up_do_gating(void)
+{
+	int cpu = this_cpu();
+	if (g_cpugating_flag[cpu] == 1) {
+		uint32_t PrevIrqStatus = irqsave();
+		g_cpugating_flag[cpu]++;
+		ARM_DSB();
+		ARM_ISB();
+		while (g_cpugating_flag[cpu]) {
+			SP_WFE();
+		}
+		irqrestore(PrevIrqStatus);
+	}
+
+}
+
 /****************************************************************************
  * Name: arm_gating_handler
  *
@@ -77,16 +94,7 @@ uint32_t up_get_gating_flag_status(uint32_t CoreID)
  ****************************************************************************/
 int arm_gating_handler(int irq, void *context, void *arg)
 {
-	int cpu = this_cpu();
-	uint32_t PrevIrqStatus = irqsave();
-	g_cpugating_flag[cpu]++;
-	ARM_DSB();
-	ARM_ISB();
-	while (g_cpugating_flag[cpu]) {
-		SP_WFE();
-	}
-	irqrestore(PrevIrqStatus);
-
+	up_do_gating();
 	return OK;
 }
 

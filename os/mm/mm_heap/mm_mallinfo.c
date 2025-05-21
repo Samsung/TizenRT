@@ -73,19 +73,21 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
- * Name: mm_mallinfo
+ * Name: mm_mallinfo_aligned
  *
  * Description:
  *   mallinfo returns a copy of updated current heap information.
+ *   In this case, the maxordblk will contain the size of largest heap node with
+ *   the requested align value.
  *
  ****************************************************************************/
 
-int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
+int mm_mallinfo_aligned(FAR struct mm_heap_s *heap, FAR struct mallinfo *info, size_t align)
 {
 	struct mm_allocnode_s *node;
 	size_t mxordblk = 0;
@@ -123,8 +125,22 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 			} else {
 				ordblks++;
 				fordblks += node->size;
-				if (node->size > mxordblk) {
-					mxordblk = node->size;
+				if (align) {
+					/* If non zero value is passed for align, then, 
+					 * - First, align the node to the align value
+					 * - Check the remain size and update the maxordblk
+					 * - In this case, mxordblk will give the largest free node aligned to the given align value
+					 */
+					size_t mask = align - 1;
+					struct mm_allocnode_s *alignednode = (FAR struct mm_allocnode_s *)(((size_t)node + SIZEOF_MM_ALLOCNODE + mask) & ~mask);
+					int remsize = node->size - ((uint32_t)alignednode - (uint32_t)node);
+					if (remsize > 0 && remsize > mxordblk) {
+						mxordblk = remsize;
+					}
+				} else {
+					if (node->size > mxordblk) {
+						mxordblk = node->size;
+					}
 				}
 			}
 		}
@@ -153,4 +169,17 @@ int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
 	info->fordblks = fordblks;
 #endif
 	return OK;
+}
+
+/****************************************************************************
+ * Name: mm_mallinfo
+ *
+ * Description:
+ *   mallinfo returns a copy of updated current heap information.
+ *
+ ****************************************************************************/
+
+int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info)
+{
+	return mm_mallinfo_aligned(heap, info, 0);
 }

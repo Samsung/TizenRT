@@ -236,7 +236,7 @@ CLEANDIRS += audio
 
 # Add Compression Module
 
-ifeq ($(CONFIG_COMPRESSED_BINARY),y)
+ifeq ($(CONFIG_COMPRESSION),y)
 KERNDEPDIRS += compression
 endif
 CLEANDIRS += compression tools/compression

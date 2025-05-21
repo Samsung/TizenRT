@@ -96,7 +96,9 @@ static trwifi_scan_list_s *g_scan_list;
 static int g_scan_num;
 extern struct netdev *ameba_nm_dev_wlan0;
 rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_scan_result);
+#ifndef CONFIG_ENABLE_HOMELYNK
 int softap_flag = 0;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 
 
 #define SCAN_TIMER_DURATION 180000
@@ -380,7 +382,9 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 		/*extern const char lib_wlan_rev[];
 		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
 		wuret = TRWIFI_SUCCESS;
+#ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 		rtw_mutex_init(&scanlistbusy);
 	} else {
 		ndbg("Already %d\n", g_mode);
@@ -506,58 +510,67 @@ trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_
 	scan_param.scan_user_callback = app_scan_result_handler;
 
 	if (config) {
-		if (config->scan_ap_config_count > SSID_SCAN_NUM) {
-			RTW_API_INFO("ERROR: SSID count exceeded, maximum allowed:%d given:%d\n\r",SSID_SCAN_NUM,config->scan_ap_config_count);
-			TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
-			return TRWIFI_INVALID_ARGS;
-		}
-		for (i = 0; i < config->scan_ap_config_count; i++) {
-			/* Scan all channels if any channel in scan config is set to 0 */
-			if (config->scan_ap_config[i].channel == 0) {
-				scan_all_ch = 1;
-				/* Skip checking of channel validity if scanning all channels */
-				break;
-			}
-			ch_valid = 0;
-			/* Check that channels provided for each AP are valid */
-			for (j = 0; j < valid_ch_list_size; j++) {
-				if (config->scan_ap_config[i].channel == valid_ch_list[j]) {
-					ch_valid = 1;
-					break;
-				}
-			}
-			if (!ch_valid) {
-				RTW_API_INFO("ERROR: Invalid channel for AP %s, given channel %d\n\r",(char *)config->scan_ap_config[i].ssid, config->scan_ap_config[i].channel);
+		if (config->scan_ap_config_count) {
+			if (config->scan_ap_config_count > SSID_SCAN_NUM) {
+				RTW_API_INFO("ERROR: SSID count exceeded, maximum allowed:%d given:%d\n\r",SSID_SCAN_NUM,config->scan_ap_config_count);
 				TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
 				return TRWIFI_INVALID_ARGS;
 			}
+			for (i = 0; i < config->scan_ap_config_count; i++) {
+				/* Scan all channels if any channel in scan config is set to 0 */
+				if (config->scan_ap_config[i].channel == 0) {
+					scan_all_ch = 1;
+					/* Skip checking of channel validity if scanning all channels */
+					break;
+				}
+				ch_valid = 0;
+				/* Check that channels provided for each AP are valid */
+				for (j = 0; j < valid_ch_list_size; j++) {
+					if (config->scan_ap_config[i].channel == valid_ch_list[j]) {
+						ch_valid = 1;
+						break;
+					}
+				}
+				if (!ch_valid) {
+					RTW_API_INFO("ERROR: Invalid channel for AP %s, given channel %d\n\r",(char *)config->scan_ap_config[i].ssid, config->scan_ap_config[i].channel);
+					TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+					return TRWIFI_INVALID_ARGS;
+				}
+			}
+
+			if (scan_all_ch) {
+				scan_param.channel_list_num = 0;
+			} else {
+				channel_list = (char *)malloc(config->scan_ap_config_count);
+				if (!channel_list) {
+					RTW_API_INFO("ERROR: Can't malloc memory for channel list\n\r");
+					TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+					return TRWIFI_FAIL;
+				}
+				scan_param.channel_list = (unsigned char *)channel_list;
+				scan_param.channel_list_num = config->scan_ap_config_count;
+			}
+
+			/* Prepare scan param */
+			for (i = 0; i < config->scan_ap_config_count; i++) {
+				scan_param.ssid[i].ssid = (char *)config->scan_ap_config[i].ssid;
+				/* Prepare list of channels to scan if not scanning all channels */
+				if (!scan_all_ch) {
+					*(channel_list + i) = (u8)config->scan_ap_config[i].channel;
+				}
+			}
 		}
 
-		if (scan_all_ch) {
-			scan_param.channel_list_num = 0;
-		}
-		else {
-			channel_list = (char *)malloc(config->scan_ap_config_count);
-			if (!channel_list) {
-				RTW_API_INFO("ERROR: Can't malloc memory for channel list\n\r");
-				TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
-				return TRWIFI_FAIL;
-			}
-			scan_param.channel_list = (unsigned char *)channel_list;
-			scan_param.channel_list_num = config->scan_ap_config_count;
-		}
-
-		/* Prepare scan param */
-		for (i = 0; i < config->scan_ap_config_count; i++) {
-			scan_param.ssid[i].ssid = (char *)config->scan_ap_config[i].ssid;
-			/* Prepare list of channels to scan if not scanning all channels */
-			if (!scan_all_ch) {
-				*(channel_list + i) = (u8)config->scan_ap_config[i].channel;
-			}
-		}
 		/* If scan_all is set, set scan option to RTW_SCAN_ALL to scan for specific AP + other APs responding to NULL probe req */
 		if (config->scan_all) {
 			scan_param.options = RTW_SCAN_ALL;
+		} else {
+			if (config->scan_ap_config_count == 0) {
+				/* do not scan if scan_all is false and scan_ap_config_count is 0 */
+				RTW_API_INFO("[RTK][WARN] scan_ap_config_count is 0. Do not scan. \n\r");
+				TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+				return TRWIFI_INVALID_ARGS;
+			}
 		}
 		if (wifi_scan_networks(&scan_param, 0) != RTW_SUCCESS) {
 			if (channel_list) {
@@ -829,7 +842,9 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 	}
 	g_mode = RTK_WIFI_SOFT_AP_IF;
 	nvdbg("[RTK] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
+#ifndef CONFIG_ENABLE_HOMELYNK
 	softap_flag = 1;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 	ret = TRWIFI_SUCCESS;
 
 	return ret;
@@ -857,7 +872,9 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	if (ret == RTK_STATUS_SUCCESS) {
 		g_mode = RTK_WIFI_STATION_IF;
 		wuret = TRWIFI_SUCCESS;
+#ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
@@ -873,7 +890,9 @@ trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev)
 		if (ret == RTK_STATUS_SUCCESS) {
 			g_mode = RTK_WIFI_NONE;
 			wuret = TRWIFI_SUCCESS;
+#ifndef CONFIG_ENABLE_HOMELYNK
 			softap_flag = 0;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 			nvdbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			ndbg("[RTK] Stop AP mode fail\n");

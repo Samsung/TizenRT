@@ -67,7 +67,7 @@
 #include "group/group.h"
 #include "timer/timer.h"
 #ifdef CONFIG_BINARY_MANAGER
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>

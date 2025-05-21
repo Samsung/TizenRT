@@ -76,7 +76,7 @@
 /****************************************************************************
  * Type Definitions
  ****************************************************************************/
-
+struct lcd_dev_s;
 /* This structure describes one color plane.  Some YUV formats may support
  * up to 4 planes (although they probably wouldn't be used on LCD hardware).
  * The framebuffer driver provides the video memory address in its

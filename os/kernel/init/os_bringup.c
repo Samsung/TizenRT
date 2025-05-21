@@ -98,7 +98,7 @@
 #include "paging/paging.h"
 #endif
 #ifdef CONFIG_BINARY_MANAGER
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #ifdef CONFIG_TASK_MONITOR
 #include "task_monitor/task_monitor_internal.h"
@@ -112,6 +112,9 @@
 #endif
 #ifdef CONFIG_SECURITY_LEVEL
 #include <tinyara/security_level.h>
+#endif
+#ifdef CONFIG_SILENT_REBOOT
+#include <tinyara/silent_reboot.h>
 #endif
 
 /****************************************************************************
@@ -263,6 +266,11 @@ static inline void os_workqueues(void)
 static inline void os_do_appstart(void)
 {
 	int pid;
+
+#ifdef CONFIG_SILENT_REBOOT
+	silent_reboot_initialize();
+	silent_reboot_driver_register();
+#endif
 
 #ifdef CONFIG_BOARD_INITIALIZE
 	/* Perform any last-minute, board-specific initialization, if so
