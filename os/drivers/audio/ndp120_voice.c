@@ -479,6 +479,7 @@ static int ndp120_stop(FAR struct audio_lowerhalf_s *dev)
 	ndp120_stop_sample_ready(priv);
 
 	priv->running = false;
+	SPI_RESUME(priv->spi);
 	priv->total_size = 0;
 	ndp120_givesem(&priv->devsem);
 	return 0;
