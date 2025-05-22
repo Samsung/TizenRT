@@ -1,0 +1,14 @@
+#
+#For a description of the syntax of this configuration file,
+#see kconfig-language at https:	//www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MMWAVE
+	bool "MMWAVE example"
+	default n
+	---help---
+		Enable MMWAVE Example
+
+config USER_ENTRYPOINT
+	string
+	default "mmwave_test" if ENTRY_MMWAVE

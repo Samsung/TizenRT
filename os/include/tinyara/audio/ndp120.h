@@ -90,6 +90,8 @@ struct ndp120_lower_s {
 	CODE void (*set_pm_state)(bool sleep);
 #endif
 	CODE void (*reset)(void);
+
+	CODE void (*set_record_state)(bool record);
 };
 
 /****************************************************************************
