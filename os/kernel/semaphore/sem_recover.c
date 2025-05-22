@@ -155,6 +155,10 @@ void sem_recover(FAR struct tcb_s *tcb)
 
 		sem->semcount++;
 
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		/* Clear the semaphore to assure that it is not reused.  But leave the
 		 * state as TSTATE_WAIT_SEM.  This is necessary because this is a
 		 * necessary indication that the TCB still resides in the waiting-for-
