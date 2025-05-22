@@ -1294,9 +1294,9 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *dsp_package = "/mnt/kernel/audio/dsp_fw";
 	const char *neural_package;
 	if (dev->kd_num == 0) {
-		neural_package = "/mnt/kernel/model/kd_local";
+		neural_package = "/mnt/kernel/audio/kd_local";
 	} else {
-		neural_package = "/mnt/kernel/model/kd_local2";
+		neural_package = "/mnt/kernel/audio/kd_local2";
 	}
 
 
@@ -1649,6 +1649,8 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
 			if (network_id == 0 && !dev->recording) {
+				/* Share kd event with bsp layer */
+				dev->lower->set_record_state(true);
 				/* extract keyword immediately */
 				extract_keyword(dev);
 #ifdef CONFIG_NDP120_AEC_SUPPORT
@@ -1909,6 +1911,8 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = NOT_RECORDING;
 #endif
+	dev->lower->set_record_state(false);
+
 	return s;
 }
 
