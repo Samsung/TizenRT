@@ -139,5 +139,6 @@ void up_timer_disable(void)
 
 void up_timer_enable(void)
 {
+  arm_arch_timer_set_compare(arm_arch_timer_count() + SYSTICK_RELOAD);
   arm_arch_timer_enable(1);
 }
