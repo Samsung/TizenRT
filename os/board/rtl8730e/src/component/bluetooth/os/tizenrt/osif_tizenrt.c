@@ -10,6 +10,12 @@
 #define OSIF_ALIGN 64
 #define OSIF_ALIGN_MASK 0x003f
 
+#define OSIF_MUTEX_LOCK
+
+#ifdef OSIF_MUTEX_LOCK
+sem_t *osif_lock_sem = NULL;
+#endif
+
 /****************************************************************************/
 /* Check if in task context (true), or isr context (false)                  */
 /****************************************************************************/
@@ -299,7 +305,21 @@ uint32_t osif_lock(void)
 	uint32_t flags = 0U;
 	if (osif_task_context_check() == true)
 	{
+#ifdef OSIF_MUTEX_LOCK
+		if (osif_lock_sem == NULL) {
+			osif_lock_sem = osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(sem_t));
+			if (sem_init(osif_lock_sem, 0, 1) != OK) {
+				assert(0);	/* Assert if sem_init not success */
+			}
+		}
+		if (sem_wait(osif_lock_sem) != OK) {
+			dbg("[osif_lock] Sema wait fail: %d\n", get_errno());
+		} else {
+			flags = _SUCCESS;
+		}
+#else
 		flags = tizenrt_critical_enter();
+#endif
 	}
 	return flags;
 }
@@ -311,7 +331,20 @@ void osif_unlock(uint32_t flags)
 {
 	if (osif_task_context_check() == true)
 	{
+#ifdef OSIF_MUTEX_LOCK
+		if (_FAIL == flags){	/* It's not lock */
+			return;
+		}
+		if (osif_lock_sem == NULL) {
+			assert(0);	/* Assert if sem_init not success */
+		}
+		if (sem_post(osif_lock_sem) != OK) {
+			dbg("[osif_unlock] Sema post fail: %d\n", get_errno());
+			assert(0);	/* Assert if Sema post fail */
+		}
+#else
 		tizenrt_critical_exit(flags);
+#endif
 	}
 }
 
