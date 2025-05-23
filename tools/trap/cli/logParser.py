@@ -230,7 +230,7 @@ class logParser:
 		# Check for lr & pc values in application text address range
 		if (pc_value != 00000000):
 			for app_idx in range(self.g_app_idx):
-				os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
+				# os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
 				if (address1 >= hex(self.g_stext_app[app_idx]) and address1 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = lr_value
@@ -282,7 +282,7 @@ class logParser:
 		else:
 			address1 = hex(self.g_assertpc)
 			for app_idx in range(self.g_app_idx):
-				os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
+				# os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
 				if (address1 >= hex(self.g_stext_app[app_idx]) and address1 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = self.g_assertpc
@@ -622,7 +622,7 @@ class logParser:
 						elif "Syscall" in line:
 							app_idx = self.is_app_text_address(data)
 							if app_idx:
-								os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx - 1] + "_dbg > " + self.bin_path + self.app_name[app_idx - 1] + ".map")
+								# os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx - 1] + "_dbg > " + self.bin_path + self.app_name[app_idx - 1] + ".map")
 								if self.xip_enabled:
 									addr = data
 								else:
