@@ -66,8 +66,6 @@
 
 #include "inode/inode.h"
 
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -120,6 +118,7 @@
 
 int sem_close(FAR sem_t *sem)
 {
+#ifdef CONFIG_FS_NAMED_SEMAPHORES
 	FAR struct nsem_inode_s *nsem;
 	struct inode *inode;
 
@@ -159,6 +158,8 @@ int sem_close(FAR sem_t *sem)
 
 	inode_semgive();
 	return OK;
+#else						
+	set_errno(ENOTSUP);
+	return ERROR;
+#endif
 }
-
-#endif							/* CONFIG_FS_NAMED_SEMAPHORES */

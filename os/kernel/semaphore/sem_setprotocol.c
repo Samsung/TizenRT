@@ -63,7 +63,6 @@
 
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
 
 /****************************************************************************
  * Public Functions
@@ -107,8 +106,8 @@
 
 int sem_setprotocol(FAR sem_t *sem, int protocol)
 {
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	int errcode = EINVAL;
-
 	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		switch (protocol) {
 		case SEM_PRIO_NONE:
@@ -143,7 +142,10 @@ int sem_setprotocol(FAR sem_t *sem, int protocol)
 	}
 
 	set_errno(errcode);
-	return ERROR;
-}
+	return ERROR;	
 
-#endif /* CONFIG_PRIORITY_INHERITANCE */
+#else 
+	set_errno(ENOTSUP);
+	return ERROR;
+#endif
+}

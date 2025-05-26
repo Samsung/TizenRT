@@ -112,24 +112,11 @@
 #define SYS_sem_timedwait              (__SYS_sem + 2)
 #define SYS_sem_trywait                (__SYS_sem + 3)
 #define SYS_sem_wait                   (__SYS_sem + 4)
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
 #define SYS_sem_setprotocol            (__SYS_sem + 5)
-#define __SYS_named_sem                (__SYS_sem + 6)
-#else
-#define __SYS_named_sem                (__SYS_sem + 5)
-#endif
-
-/* Named semaphores */
-
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
-#define SYS_sem_open                   __SYS_named_sem
-#define SYS_sem_close                  (__SYS_named_sem + 1)
-#define SYS_sem_unlink                 (__SYS_named_sem + 2)
-#define __SYS_task_create              (__SYS_named_sem + 3)
-#else
-#define __SYS_task_create              (__SYS_named_sem)
-#endif
+#define SYS_sem_open                   (__SYS_sem + 6)
+#define SYS_sem_close                  (__SYS_sem + 7)
+#define SYS_sem_unlink                 (__SYS_sem + 8)
+#define __SYS_task_create              (__SYS_sem + 9)
 
 /* Task creation APIs based on global entry points cannot be use with
  * address environments.
@@ -161,7 +148,6 @@
 #define SYS_up_assert                  (__SYS_task_delete + 3)
 #define __SYS_vfork                    (__SYS_task_delete + 4)
 #endif
-
 
 /* The following can be individually enabled */
 

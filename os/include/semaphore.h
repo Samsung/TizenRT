@@ -253,7 +253,6 @@ int sem_getvalue(FAR sem_t *sem, FAR int *sval);
 
 void sem_timeout(int argc, uint32_t pid);
 
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
 /**
  * @cond
  * @internal
@@ -270,7 +269,6 @@ int sem_unlink(FAR const char *name);
 /**
  * @endcond
  */
-#endif
 
 #undef EXTERN
 #ifdef __cplusplus
