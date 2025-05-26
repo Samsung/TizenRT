@@ -110,7 +110,7 @@
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+void up_pm_board_sleep()
 {
 	irqstate_t flags;
 	flags = irqsave();
@@ -119,7 +119,7 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	irqrestore(flags);
 }
 #else
-#define up_pm_board_sleep(wakeuphandler)
+#define up_pm_board_sleep()
 #endif
 
 /****************************************************************************

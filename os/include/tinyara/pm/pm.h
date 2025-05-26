@@ -277,8 +277,9 @@ struct pm_callback_s {
  */
 
 struct pm_sleep_ops {
-	void (*sleep)(pm_wakehandler_t handler);
+	void (*sleep)(void);
 	void (*set_timer)(unsigned int delay_us);
+	void (*wakehandler)(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 };
 
 /*

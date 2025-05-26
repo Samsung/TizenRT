@@ -196,7 +196,7 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+void tizenrt_sleep_processing(clock_t *missing_tick_data, pm_wakeup_reason_code_t *wakeup_src_data)
 {
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
@@ -226,17 +226,13 @@ void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_co
 
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
+	*missing_tick_data = (clock_t)ms_passed;
 
 	u16 wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_089);
+	*wakeup_src_data = (pm_wakeup_reason_code_t)wakeup_reason;
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
-#else
-#ifdef CONFIG_PM_TICKSUPPRESS
-	if (wakeuphandler) {
-		wakeuphandler((clock_t)ms_passed, (pm_wakeup_reason_code_t)wakeup_reason); /*  update kernel tick */
-	}
-#endif
 #endif
 }
 

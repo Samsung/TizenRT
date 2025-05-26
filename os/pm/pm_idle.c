@@ -180,7 +180,7 @@ void pm_idle(void)
 			g_pmglobals.sleep_ops->set_timer(TICK2USEC(delay));
 		}
 #endif
-		g_pmglobals.sleep_ops->sleep(pm_wakehandler);
+		g_pmglobals.sleep_ops->sleep();
 		stime = clock_systimer();
 	}
 EXIT:
