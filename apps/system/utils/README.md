@@ -766,17 +766,21 @@ This command shows information about a selection of the active threads.
 ```
 TASH>>ps
 
-  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME
-------|------|------|---------|----|----------|----------
-    0 |    0 | FIFO | KTHREAD |    | READY    | Idle Task
-    1 |  224 | RR   | KTHREAD |    | WAITSIG  | hpwork
-    3 |  125 | RR   | TASK    |    | RUNNING  | tash
+  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | IRQCOUNT | NAME
+------|------|------|---------|----|----------|----------------------
+    0 |    0 | FIFO | KTHREAD | N  | RUNNING  |   0 |        0 | Idle Task
+    1 |  201 | RR   | KTHREAD |    | WAITSIG  |   0 |        2 | hpwork
+    2 |   50 | RR   | KTHREAD |    | WAITSIG  |   0 |        2 | lpwork
 ```
 
 #### Term
 - FLAG : The policy of scheduling for each task/thread.  
 - TYPE : The type of task/thread. It can be KTHREAD(kernel thread), PTHREAD(user pthread) and TASK.  
 - NP : The flag of cancelable.  
+- STATUS : Current state of the task/thread. It can be PENDING, READYTORUN, RUNNING, etc.
+- CPU : It represents the CPU core where the task is currently running, but if the task is not running, it holds the last CPU where it was executed.
+- IRQCOUNT : It helps us to track how many nested critical section, particular thread has entered and not left when it was running.
+- NAME :  Name of the task/thread.
 
 ### How to Enable
 Enable *CONFIG_ENABLE_PS* to use this command on menuconfig as shown below:
