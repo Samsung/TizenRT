@@ -4319,6 +4319,8 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg)
 		.i = 1,
 		.period = 1,
 	};
+
+	int is_valid_tag = 1;
 	while (!lfs_pair_isnull(dir.tail)) {
 		err = lfs_tortoise_detectcycles(&dir, &tortoise);
 		if (err < 0) {
@@ -4331,11 +4333,6 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg)
 		lfs_dir_find_match, &(struct lfs_dir_find_match) {
 			lfs, "littlefs", 8
 		});
-
-		if (tag == 0) {
-			return LFS_ERR_SIG;
-		}
-
 		if (tag < 0) {
 			err = tag;
 			goto cleanup;
@@ -4423,6 +4420,7 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg)
 				err = LFS_ERR_INVAL;
 				goto cleanup;
 			}
+			is_valid_tag = 0;
 		}
 		// has gstate?
 		err = lfs_dir_getgstate(lfs, &dir, &lfs->gstate);
@@ -4442,8 +4440,7 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg)
 	// boots, we start the allocator at a random location
 	lfs->lookahead.start = lfs->seed % lfs->block_count;
 	lfs_alloc_drop(lfs);
-
-	return 0;
+	return is_valid_tag;
 
 cleanup:
 	lfs_unmount_(lfs);

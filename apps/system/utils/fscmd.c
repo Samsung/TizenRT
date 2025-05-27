@@ -1388,48 +1388,6 @@ static int format_filesystem(fs_minor_t minor)
 	}
 	return ret;
 }
-#endif
-#endif
-
-#ifndef CONFIG_DISABLE_ENVIRON
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
-	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
-
-/****************************************************************************
- * Name: tash_format
- *
- * Description:
- *   format filesystem
- *
- * Usage:
- *   format [internal / external]
- ****************************************************************************/
-static int tash_format(int argc, char **args)
-{
-	int ret = OK;
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
-	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
-
-	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
-		ret = format_filesystem(FS_BLOCK_MINOR_PRIMARY);
-	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
-		ret = format_filesystem(FS_BLOCK_MINOR_SECONDARY);
-	} else {
-		printf("Usage: format [internal | external] \n");
-		ret = ERROR;
-	}
-#else
-	printf("BCH should be enabled to format file system\n");
-	ret = ERROR;
-#endif
-	return ret;
-}
-#endif
-#endif
-
-#ifndef CONFIG_DISABLE_ENVIRON
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
-	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
 
 static int corrupt_filesystem(fs_minor_t minor)
 {
@@ -1469,10 +1427,35 @@ static int corrupt_filesystem(fs_minor_t minor)
 	return ret;
 }
 #endif
-
-#ifndef CONFIG_DISABLE_ENVIRON
+/****************************************************************************
+ * Name: tash_format
+ *
+ * Description:
+ *   format filesystem
+ *
+ * Usage:
+ *   format [internal / external]
+ ****************************************************************************/
+static int tash_format(int argc, char **args)
+{
+	int ret = OK;
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
 	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
+
+	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
+		ret = format_filesystem(FS_BLOCK_MINOR_PRIMARY);
+	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
+		ret = format_filesystem(FS_BLOCK_MINOR_SECONDARY);
+	} else {
+		printf("Usage: format [internal | external] \n");
+		ret = ERROR;
+	}
+#else
+	printf("BCH should be enabled to format file system\n");
+	ret = ERROR;
+#endif
+	return ret;
+}
 
 /****************************************************************************
  * Name: tash_corrupt
@@ -1503,7 +1486,6 @@ static int tash_corrupt(int argc, char **args)
 #endif
 	return ret;
 }
-#endif
 #endif
 
 const static tash_cmdlist_t fs_utilcmds[] = {
@@ -1573,4 +1555,3 @@ void fs_register_utilcmds(void)
 	tash_cmdlist_install(fs_utilcmds);
 }
 #endif							/* END OF CONFIG_NFILE_DESCRIPTORS */
-#endif

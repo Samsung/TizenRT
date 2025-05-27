@@ -259,10 +259,10 @@ static int little_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 		}
 		break;
 	case BIOC_CORRUPTION:
-		fdbg("Update Corrupt Info started\n");
+		fdbg("Corrupt super block started\n");
 		ret = lfs_reserve_corrupt(dev->lfs);
 		if (ret == OK) {
-			fdbg("Update Corrupt Info Finished. after reboot, fs will be formatted\n");
+			fdbg("Update Corrupt Info Finished. after reboot, bmount will be failed\n");
 		}
 		break;
 	default:
