@@ -1206,6 +1206,20 @@ CONFIG_JEDEC_SPI_FREQUENCY=48000000
 # CONFIG_UI is not set
 
 #
+# CSI Framework
+#
+CONFIG_CSIFW=y
+
+#
+# CSIFW Debug Logs
+#
+CONFIG_CSIFW_LOGS=y
+CONFIG_CSIFW_LOGE=y
+# CONFIG_CSIFW_LOGI is not set
+# CONFIG_CSIFW_LOGD is not set
+# CONFIG_CSIFW_LOGV is not set
+
+#
 # Memory Management
 #
 CONFIG_MM_KERNEL_HEAP=y
@@ -1542,6 +1556,7 @@ CONFIG_BUILTIN_APPS=y
 # CONFIG_EXAMPLES_BLE_PERFS is not set
 # CONFIG_EXAMPLES_BLE_RMC is not set
 # CONFIG_EXAMPLES_BLE_TESTER is not set
+# CONFIG_EXAMPLES_CSIFW_TEST is not set
 
 #
 # Board Specific Demos
