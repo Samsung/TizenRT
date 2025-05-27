@@ -745,7 +745,7 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct mtd_geometry_s *geo = &fs->geo;
 	FAR struct inode *drv = fs->drv;
-	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
+	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
 	block = (block * c->block_size + off) / geo->blocksize;
@@ -768,7 +768,7 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct mtd_geometry_s *geo = &fs->geo;
 	FAR struct inode *drv = fs->drv;
-	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
+	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
 	block = (block * c->block_size + off) / geo->blocksize;
@@ -790,7 +790,7 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 {
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct inode *drv = fs->drv;
-	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
+	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
 	int ret = OK;
 
 	DEBUGASSERT(drv && drv->i_private);
@@ -868,6 +868,8 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		goto errout_with_fs;
 	}
 
+	dev->lfs = &fs->lfs;
+
 	/* Initialize lfs_config structure */
 
 	fs->cfg.context = fs;
@@ -901,6 +903,10 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	if (ret < 0) {
 		/* Auto format the device if -o autoformat */
 
+		if (ret == LFS_ERR_SIG) {
+			return LFS_ERR_SIG;
+		}
+
 		if (ret != LFS_ERR_CORRUPT || !data || strcmp(data, "autoformat")) {
 			goto errout_with_fs;
 		}
@@ -917,8 +923,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			goto errout_with_fs;
 		}
 	}
-
-	dev->lfs = &fs->lfs;
 
 	*handle = fs;
 	littlefs_semgive(fs);

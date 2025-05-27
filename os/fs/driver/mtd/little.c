@@ -258,6 +258,13 @@ static int little_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
 		}
 		break;
+	case BIOC_CORRUPTION:
+		fdbg("Update Corrupt Info started\n");
+		ret = lfs_reserve_corrupt(dev->lfs);
+		if (ret == OK) {
+			fdbg("Update Corrupt Info Finished. after reboot, fs will be formatted\n");
+		}
+		break;
 	default:
 		ret = -ENOSYS;
 		break;
