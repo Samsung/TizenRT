@@ -1433,6 +1433,12 @@ int start_audio_stream_out(void *data, unsigned int frames)
 		// Redirect `data` to resampling buffer and update `frames`
 		data = card->resample.buffer;
 		frames = card->resample.frames;
+		uint32_t resampled_bytes = get_card_output_frames_to_byte(frames);
+		if (resampled_bytes < card->resample.buffer_size) {
+			uint32_t remaining_bytes = card->resample.buffer_size - resampled_bytes;
+			memset(((char *)card->resample.buffer) + resampled_bytes, 0x00, remaining_bytes);
+			frames += get_card_output_bytes_to_frame(remaining_bytes);
+		}
 	}
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
