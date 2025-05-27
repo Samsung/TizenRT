@@ -60,6 +60,22 @@
 #  error SYSTICK_RELOAD exceeds the range of the RELOAD register
 #endif
 
+#ifdef CONFIG_SMP
+static volatile u8 timer_hotplug_status[CONFIG_SMP_NCPUS];
+
+void up_timer_set_hotplug_status(u8 cpu, u8 status)
+{
+  timer_hotplug_status[cpu] = status;
+}
+
+u8 up_timer_get_hotplug_status(u8 cpu)
+{
+  return timer_hotplug_status[cpu];
+}
+#endif
+
+void up_timer_disable(void);
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -91,6 +107,24 @@ int up_timerisr(int irq, uint32_t *regs)
 	  delta_ticks = 1;
 #endif
 
+
+#ifdef CONFIG_SMP
+    /* 
+       If this CPU is about to be hotplugged and a tick ISR is still triggering, prevent it from entering any critical sections.
+       
+       A deadlock condition may otherwise occur when pm_idle is processing and has entered critical section on CPU0
+       but when CPU1 tick ISR fires during this time, the scheduler processing loop (sched_process_timer())
+       tries to acquire a spinlock and fails
+
+       This behavior is easily reproducible when performing many HW TIMER sleeps in sequence (e.g LCD) and may be
+       classified as a race condition, since there are often several sleep-wakeup successful iterations before deadlock happens
+    */
+    if (up_timer_get_hotplug_status(up_cpu_index())) {
+      up_timer_disable();
+      goto skip_sched;
+    }
+#endif
+
     u32 ticks_to_process = delta_ticks;
     while (ticks_to_process > 0) {
       /* process missing ticks */
@@ -98,6 +132,7 @@ int up_timerisr(int irq, uint32_t *regs)
       ticks_to_process--;
     }
 
+skip_sched:
     arm_arch_timer_set_compare(last_cycle + delta_ticks * SYSTICK_RELOAD);
     return 0;
 }
@@ -123,9 +158,16 @@ void up_timer_initialize(void)
   /* Attach the timer interrupt vector */
   irq_attach(ARM_ARCH_TIMER_IRQ, (xcpt_t)up_timerisr, NULL);
 
-  //arm_arch_timer_count
-	arm_arch_timer_set_compare(arm_arch_timer_count() + SYSTICK_RELOAD);
-	arm_arch_timer_enable(1);
+#ifdef CONFIG_SMP
+  /* reset the hotplug status bit on startup */
+  up_timer_set_hotplug_status(up_cpu_index(), 0);
+#endif
+
+  /* Only enable the timer for CPU0 on startup, CPU1's will be enabled when pause/gating takes place  */
+  if (up_cpu_index() == 0) {
+    arm_arch_timer_set_compare(arm_arch_timer_count() + SYSTICK_RELOAD);
+    arm_arch_timer_enable(1);
+  }
 
   /* And enable the timer interrupt at the GIC */
   up_prioritize_irq(ARM_ARCH_TIMER_IRQ, 224);
