@@ -465,7 +465,7 @@ function DOWNLOAD()
 {
 	# Currently supports ALL only, later this will have a menu
 	pushd ${OSDIR} > /dev/null
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
+	docker run --rm -it ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
 	popd > /dev/null
 
 }

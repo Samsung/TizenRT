@@ -38,12 +38,6 @@ source ${BOARD_SPECIFIC_SCRIPT}
 source ${BOARD_CONFIG}
 source ${OS_PATH}/.bininfo
 
-if [ -c "/dev/$DEFAULT_PORT" ]; then
-	DEFAULT_PORT=$DEFAULT_PORT
-elif [ -c "/dev/$DEFAULT_PORT2" ]; then
-	DEFAULT_PORT=$DEFAULT_PORT2
-fi
-
 USBRULE_PATH=${TOP_PATH}/build/configs/usbrule.sh
 
 ## For manual port selection set any argument to port={port required}, eg. make download port=ttyUSB2 ALL or make download all port=ttyUSB3
@@ -52,7 +46,39 @@ if [ "$1" == "port" ]; then
 	PORT="$2"
 	shift 2
 else
-	PORT=${DEFAULT_PORT}
+	echo ==================================================
+	echo "  \"Port Selected:\""
+	echo ==================================================
+	devices=()
+	count=1
+	for dev in /dev/ttyACM* /dev/ttyUSB*; do
+		if [ -e "$dev" ]; then
+			dev_name=$(basename "$dev")
+			devices+=("$dev_name")
+			echo "  \"$count. $dev_name\""
+			count=$((count + 1))
+		fi
+	done
+
+	if [ ${#devices[@]} -eq 0 ]; then
+		echo "No devices found"
+		exit 0
+	else
+		echo "  \"x. Exit\""
+	fi
+	echo ==================================================
+
+	read -r INPUT
+	INPUT=$(echo "$INPUT" | xargs)
+
+	if [ "$INPUT" = "x" ]; then
+		exit
+	fi
+	if ! [[ "$INPUT" =~ ^[0-9]+$ ]] || [ "$INPUT" -lt 1 ] || [ "$INPUT" -gt $((count-1)) ]; then
+		echo "Invalid input"
+		exit 1
+	fi
+	PORT="${devices[$INPUT-1]}"
 fi
 
 if ! [ -c "/dev/$PORT" ]; then
