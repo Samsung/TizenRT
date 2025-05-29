@@ -6623,10 +6623,9 @@ int lfs_reserve_corrupt(lfs_t *lfs)
 {
 	int err;
 	err = LFS_LOCK(lfs->cfg);
-    if (err) {
+	if (err) {
 		goto cleanup;
-    }
-
+	}
 
 	// create free lookahead
 	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
@@ -6659,8 +6658,8 @@ int lfs_reserve_corrupt(lfs_t *lfs)
 				&superblock}));
 cleanup:
 	if (err) {
-	    LFS_ERROR("lfs_request_currupt -> %d", err);
+		LFS_ERROR("lfs_request_currupt -> %d", err);
 	}
-    LFS_UNLOCK(lfs->cfg);
-    return err;
+	LFS_UNLOCK(lfs->cfg);
+	return err;
 }
