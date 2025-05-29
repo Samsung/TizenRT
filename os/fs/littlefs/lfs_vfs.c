@@ -925,6 +925,11 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 	*handle = fs;
 	littlefs_semgive(fs);
+
+	if (ret == LFS_ERR_CORRUPT) {
+		fdbg("ERROR: mount failed: %d\n", ret);
+		return -ENODEV;
+	}
 	return ret;
 
 errout_with_fs:
