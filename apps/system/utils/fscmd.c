@@ -881,7 +881,7 @@ static int tash_mount(int argc, char **args)
 	const char *source;
 	char *fullsource;
 	const char *target;
-	const char *data;
+	const char *data = NULL;
 	char *fulltarget;
 	bool badarg = false;
 
