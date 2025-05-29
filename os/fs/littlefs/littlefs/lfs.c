@@ -4490,7 +4490,7 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
     }
 
     // find valid signiture
-    int is_valid_sig = 1;
+    int is_valid_sig = 0;
     // scan directory blocks for superblock and any global updates
     lfs_mdir_t dir = {.tail = {0, 1}};
     struct lfs_tortoise_t tortoise = {
@@ -4619,7 +4619,7 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
                 goto cleanup;
             }
             // if signiture is valid
-            is_valid_sig = 0;
+            is_valid_sig = 1;
         }
 
         // has gstate?
@@ -4643,7 +4643,10 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
     // boots, we start the allocator at a random location
     lfs->lookahead.start = lfs->seed % lfs->block_count;
     lfs_alloc_drop(lfs);
-    return is_valid_sig;
+    if (is_valid_sig){
+        return LFS_ERR_OK;
+    }
+    return LFS_ERR_CORRUPT;
 
 cleanup:
     lfs_unmount_(lfs);
@@ -6621,7 +6624,7 @@ int lfs_reserve_corrupt(lfs_t *lfs)
 	int err;
 	err = LFS_LOCK(lfs->cfg);
     if (err) {
-        goto cleanup;
+		goto cleanup;
     }
 
 

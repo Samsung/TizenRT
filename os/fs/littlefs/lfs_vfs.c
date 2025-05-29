@@ -898,15 +898,15 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		}
 	}
 	ret = lfs_check_format(&fs->lfs, &fs->cfg);
-	if (!ret) {
-		LFS_ERROR("fail lfs_check_format");
+	if (ret == LFS_ERR_OK) {
+		fdbg("Check formatfs successfully!\n");
 	}
 
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
-	if (ret < 0) {
+	if (ret < 0 && ret != LFS_ERR_CORRUPT) {
 		/* Auto format the device if -o autoformat */
 
-		if (ret != LFS_ERR_CORRUPT || !data || strcmp(data, "autoformat")) {
+		if (!data || strcmp(data, "autoformat")) {
 			goto errout_with_fs;
 		}
 

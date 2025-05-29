@@ -820,6 +820,9 @@ int lfs_reserve_format(lfs_t *lfs);
 
 int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg);
 
+/* Request Curropt file system. mount will be failed during next mount time */
+int lfs_reserve_corrupt(lfs_t *lfs);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
