@@ -868,6 +868,8 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		goto errout_with_fs;
 	}
 
+	dev->lfs = &fs->lfs;
+
 	/* Initialize lfs_config structure */
 
 	fs->cfg.context = fs;
@@ -896,6 +898,9 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		}
 	}
 	ret = lfs_check_format(&fs->lfs, &fs->cfg);
+	if (!ret) {
+		LFS_ERROR("fail lfs_check_format");
+	}
 
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
@@ -918,11 +923,9 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		}
 	}
 
-	dev->lfs = &fs->lfs;
-
 	*handle = fs;
 	littlefs_semgive(fs);
-	return OK;
+	return ret;
 
 errout_with_fs:
 	sem_destroy(&fs->sem);

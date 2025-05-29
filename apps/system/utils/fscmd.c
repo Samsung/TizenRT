@@ -1388,6 +1388,44 @@ static int format_filesystem(fs_minor_t minor)
 	}
 	return ret;
 }
+
+static int corrupt_filesystem(fs_minor_t minor)
+{
+	char name[CONFIG_PATH_MAX];
+	int fd;
+	int ret = ERROR;
+
+	if ((minor < FS_BLOCK_MINOR_PRIMARY) || (minor > FS_BLOCK_MINOR_SECONDARY)) {
+		printf("Invalid minor number : %d", minor);
+		return ERROR;
+	}
+
+	for (int i = 0; i < 32; i++) {
+		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
+		fd = open(name, O_RDWR);
+		if (fd < 0) {
+			/* Then Find littlefs */
+			snprintf(name, sizeof(name), "/dev/little%dp%d", minor, i);
+			fd = open(name, O_RDWR);
+			if (fd < 0) {
+				continue;
+			}
+		}
+		/* TODO Multi root of smartfs should be considered when it enabled */
+		ret = ioctl(fd, BIOC_CORRUPTION, 0);
+
+		close(fd);
+		if (ret != OK) {
+			printf("Low level corrupt failed ret : %d errno : %d", ret, errno);
+			return ret;
+		}
+		break;
+	}
+	if (ret == OK) {
+		printf("Low level corrupt finished, Please reboot device\n");
+	}
+	return ret;
+}
 #endif
 /****************************************************************************
  * Name: tash_format
@@ -1418,6 +1456,36 @@ static int tash_format(int argc, char **args)
 #endif
 	return ret;
 }
+
+/****************************************************************************
+ * Name: tash_corrupt
+ *
+ * Description:
+ *   corrupt filesystem
+ *
+ * Usage:
+ *   corrupt [internal / external]
+ ****************************************************************************/
+static int tash_corrupt(int argc, char **args)
+{
+	int ret = OK;
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
+
+	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
+		ret = corrupt_filesystem(FS_BLOCK_MINOR_PRIMARY);
+	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
+		ret = corrupt_filesystem(FS_BLOCK_MINOR_SECONDARY);
+	} else {
+		printf("Usage: corrupt [internal | external] \n");
+		ret = ERROR;
+	}
+#else
+	printf("BCH should be enabled to format file system\n");
+	ret = ERROR;
+#endif
+	return ret;
+}
 #endif
 
 const static tash_cmdlist_t fs_utilcmds[] = {
@@ -1439,6 +1507,10 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"format",     tash_format,     TASH_EXECMD_SYNC},
+#endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"corrupt", tash_corrupt, TASH_EXECMD_SYNC},
 #endif
 
 #ifndef CONFIG_DISABLE_ENVIRON

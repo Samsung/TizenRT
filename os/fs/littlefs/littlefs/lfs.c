@@ -4489,6 +4489,8 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
         return err;
     }
 
+    // find valid signiture
+    int is_valid_sig = 1;
     // scan directory blocks for superblock and any global updates
     lfs_mdir_t dir = {.tail = {0, 1}};
     struct lfs_tortoise_t tortoise = {
@@ -4616,6 +4618,8 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
                 err = LFS_ERR_INVAL;
                 goto cleanup;
             }
+            // if signiture is valid
+            is_valid_sig = 0;
         }
 
         // has gstate?
@@ -4639,8 +4643,7 @@ static int lfs_mount_(lfs_t *lfs, const struct lfs_config *cfg) {
     // boots, we start the allocator at a random location
     lfs->lookahead.start = lfs->seed % lfs->block_count;
     lfs_alloc_drop(lfs);
-
-    return 0;
+    return is_valid_sig;
 
 cleanup:
     lfs_unmount_(lfs);
@@ -6613,3 +6616,48 @@ cleanup:
     return err;
 }
 
+int lfs_reserve_corrupt(lfs_t *lfs)
+{
+	int err;
+	err = LFS_LOCK(lfs->cfg);
+    if (err) {
+        goto cleanup;
+    }
+
+
+	// create free lookahead
+	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+	lfs->lookahead.start = 0;
+	lfs->lookahead.size = lfs_min(8 * lfs->cfg->lookahead_size, lfs->block_count);
+	lfs->lookahead.next = 0;
+	lfs_alloc_ckpoint(lfs);
+
+	// create root dir
+	lfs_mdir_t root;
+	err = lfs_dir_alloc(lfs, &root);
+	if (err) {
+		goto cleanup;
+	}
+
+	// write one superblock
+	lfs_superblock_t superblock = {
+		.version = lfs_fs_disk_version(lfs),
+		.block_size = lfs->cfg->block_size,
+		.block_count = lfs->block_count,
+		.name_max = lfs->name_max,
+		.file_max = lfs->file_max,
+		.attr_max = lfs->attr_max,
+	};
+	lfs_superblock_tole32(&superblock);
+	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "crpt__fs"},
+			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+				&superblock}));
+cleanup:
+	if (err) {
+	    LFS_ERROR("lfs_request_currupt -> %d", err);
+	}
+    LFS_UNLOCK(lfs->cfg);
+    return err;
+}
