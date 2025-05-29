@@ -333,7 +333,7 @@ int hello_main(int argc, char *argv[])
 #define MAX_CMD_LEN 128
 #define MAX_ARG_LEN 64
 
-void show_help() {
+void show_help(void) {
     printf("\n LittleFS Shell - Available Commands:\n");
     printf("========================================\n");
     printf("  Directory Operations:\n");
