@@ -45,6 +45,7 @@
 #define IWRL6432_MSG_STOP_FORCELY       1
 #define IWRL6432_MSG_UNDERRUN           2
 #define IWRL6432_MSG_READY_TO_USE       3
+#define IWRL6432_MSG_TIMEOUT            4
 
 /****************************************************************************
  * Public Data
@@ -54,7 +55,7 @@
  * Public Types
  ****************************************************************************/
 
-typedef void (*iwrl6432_handler_t)(void* arg);
+typedef void (*iwrl6432_handler_t)(void* arg, int state);
 
 struct iwrl6432_config_s {
 

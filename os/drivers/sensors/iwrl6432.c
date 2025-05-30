@@ -42,7 +42,9 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <poll.h>
 #include <assert.h>
@@ -69,6 +71,7 @@
 	FAR struct spi_dev_s *spi;
  	sem_t exclsem;
 	sem_t datasem;
+	sem_t acksem;
 	int crefs;
 	mqd_t mq;
 	bool enable;
@@ -90,6 +93,8 @@ static ssize_t iwrl6432_read(FAR struct file *filep, FAR char *buffer, size_t bu
 static ssize_t iwrl6432_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
 static int iwrl6432_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int iwrl6432_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
+static int iwrl6432_stop(FAR struct iwrl6432_dev_s *priv);
+static int irwl6432_init(FAR struct iwrl6432_dev_s *priv);
 
 /****************************************************************************
  * Private Data
@@ -201,8 +206,36 @@ static int iwrl6432_send_result(FAR struct iwrl6432_dev_s *priv)
 
 static void iwrl6432_request_cube(FAR struct iwrl6432_dev_s *priv)
 {
+	struct timespec abstime;
+	int ret;
+	(void)clock_gettime(CLOCK_REALTIME, &abstime);
+	abstime.tv_sec += 5;
+	abstime.tv_nsec += 0;
+	ret = sem_timedwait(&priv->acksem, &abstime);
+	if (ret < 0) {
+		int err = get_errno();
+		if (err == ETIMEDOUT) {
+			lldbg("========================================Timeout while waiting to send==================================================\n");
+			struct iwrl6432_msg_s msg;
+			msg.msgId = IWRL6432_MSG_TIMEOUT;
+			if (mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO) != OK) {
+				lldbg("mq_send failed!!\n");
+			}
+			if (iwrl6432_stop(priv) != OK) {
+				lldbg("try to stop forcely but failed!!\n");
+			}
+			if (irwl6432_init(priv) == OK) {
+				msg.msgId = IWRL6432_MSG_READY_TO_USE;
+				if (mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO) != OK) {
+					lldbg("mq_send failed!!\n");
+				}
+			} else {
+				lldbg("irwl6432 init failed!!\n");
+			}
+			return;
+		}
+	}
 	uint8_t ack_tx_buf[ACK_TX_SIZE];
-	lldbg("req_num : %d\n", priv->req_num);
 	make_ack(priv->req_num, ack_tx_buf);
 	SPI_LOCK(priv->spi, true);
 	SPI_SELECT(priv->spi, priv->config->spi_config.cs, true);
@@ -220,6 +253,7 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 	size_t size;
 	if (sq_empty(&priv->pendq)) {
 		lldbg("Error!!! queue is empty\n");
+		return;
 	}
 	rxbuf = (struct iwrl6432_buf_s *)sq_remfirst(&priv->pendq);
 	if (priv->req_num != 1) {
@@ -236,35 +270,45 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 	SPI_LOCK(priv->spi, false);
 	clock_gettime(CLOCK_MONOTONIC, &ts_end);
 	elapsed_time = (int)(ts_end.tv_sec - ts_start.tv_sec) * 1000 + (int)(ts_end.tv_nsec - ts_start.tv_nsec) / 1000000;
-	lldbg("elapsed time : %d\n", elapsed_time);
-
+	//lldbg("elapsed time : %d\n", elapsed_time);
+	if (priv->req_num == 1) {
+		lldbg("Receiving Frame No : %d\n", (rxbuf->data[12] | rxbuf->data[13] << 8));
+	}
 	/* TODO Should we handle Header & checksum here?? */
 	time_stamp = (uint16_t)ts_end.tv_sec * 1000 + (uint16_t)(ts_end.tv_nsec) / 1000000;
-	lldbg("priv->timestamp :%d cur time_stamp : %d\n", priv->timestamp, time_stamp);
+	//lldbg("priv->timestamp :%d cur time_stamp : %d\n", priv->timestamp, time_stamp);
+	uint32_t length = (rxbuf->data[2]) | (rxbuf->data[3] << 8) | (rxbuf->data[4] << 16) | (rxbuf->data[5] << 24);
+	uint8_t checksum = rxbuf->data[length + 5];
+	uint8_t cksm = checksum_cal(rxbuf->data, 1, length + 5);
+	if (checksum != cksm) {
+		lldbg("############################ Checksum Error ###########################\n");
+	}
 
 	if (priv->mq == NULL) {
 		lldbg("mq is not registered!!!\n");
 		return;
 	}
-
+	iwrl6432_semtake(&priv->exclsem, false);
 	if (time_stamp > INT_MAX) { // TODO this is temp value!
 		rxbuf->msgId = IWRL6432_MSG_UNDERRUN;
 	} else if (priv->enable == false) {
 		rxbuf->msgId = IWRL6432_MSG_STOP_FORCELY;
+		if (iwrl6432_stop(priv) != OK) {
+			lldbg("try to stop forcely but failed!!\n");
+		}
 	} else {
 		rxbuf->msgId = IWRL6432_MSG_DEQUEUE;
 	}
-	/* add last to doneq & sempost. then increase req_num */
+	/* add last to doneq then increase req_num */
 	sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->doneq);
-	sem_post(&priv->datasem);
 	priv->req_num++;
 	if (priv->req_num > IWRL6432_BUF_NUM) {
 		priv->req_num = 1;
 	}
 	if (priv->running) {
-		priv->config->irq_enable(true);
 		iwrl6432_request_cube(priv);
 	}
+	iwrl6432_semgive(&priv->exclsem);
 }
 
 static void iwrl6432_work_handler(void *arg)
@@ -278,15 +322,25 @@ static void iwrl6432_work_handler(void *arg)
  * description:
  *  Handle iwrl6432's DataReady interrupt
  ****************************************************************************/
-static void iwrl6432_interrupt_handler(void *arg)
+static void iwrl6432_interrupt_handler(void *arg, int state)
 {
+	int ret;
 	struct iwrl6432_dev_s *priv = (struct iwrl6432_dev_s *)arg;
-	/* If it's not running, then handle reset routine here */
-	if (!priv->running) {
-		lldbg("Interrupt handler!! but it's not running so ignore\n");
-		return;
+	if (state == 0) {
+		int sem_cnt;
+		ret = sem_getvalue(&priv->datasem, &sem_cnt);
+		if (ret == OK && sem_cnt < 1) {
+			iwrl6432_semgive(&priv->datasem);
+		}
+		
+	} else if (state == 1) {
+		int sem_cnt;
+		ret = sem_getvalue(&priv->acksem, &sem_cnt);
+		if (ret == OK && sem_cnt < 1) {
+			iwrl6432_semgive(&priv->acksem);
+		}
 	}
-	iwrl6432_semgive(&priv->datasem);
+	
 }
 
 /****************************************************************************
@@ -362,7 +416,7 @@ static int iwrl6432_flush(FAR struct iwrl6432_dev_s *priv)
 
 static int iwrl6432_enqueue_data(FAR struct iwrl6432_dev_s *priv, struct iwrl6432_buf_s *buf)
 {
-	lldbg("buf : %x\n", buf);
+	//lldbg("buf : %x\n", buf);
 	sq_addlast((sq_entry_t *)&buf->entry, &priv->pendq);
 	return OK;
 }
@@ -385,11 +439,10 @@ static int iwrl6432_stop(FAR struct iwrl6432_dev_s *priv)
 	int ret = OK;
 	priv->config->irq_enable(false);
 	priv->running = 0;
-
 	sq_entry_t *tmp;
 	/* Remove data from pendq  */
 	while ((tmp = sq_remfirst(&priv->pendq)) != NULL) {
-		lldbg("removed buffer : %x\n", tmp);
+		//lldbg("removed buffer : %x\n", tmp);
 	}
 	ret = iwrl6432_flush(priv);
 	if (ret != OK) {
@@ -493,30 +546,21 @@ void irwl6432_set_state(bool enable)
 	struct iwrl6432_dev_s *priv = &g_iwrl6432_priv;
 	int ret = OK;
 	struct iwrl6432_msg_s msg;
-
 	iwrl6432_semtake(&priv->exclsem, false);
 	auddbg("set Record enable : %d\n", enable);
 	if (priv->enable == enable) {
 		iwrl6432_semgive(&priv->exclsem);
 		return;
 	}
-
 	priv->enable = enable;
-	priv->config->irq_enable(enable);
 	if (priv->running) {
 		priv->running = false;
-		ret = iwrl6432_stop(priv);
-		if (ret != OK) {
-			lldbg("try to stop forcely but failed!!\n");
-		}
-		msg.msgId = IWRL6432_MSG_STOP_FORCELY;
 	} else {
 		msg.msgId = IWRL6432_MSG_READY_TO_USE;
-	}
-	
-	ret = mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO);
-	if (ret != OK) {
-		lldbg("mq_send failed!!\n");
+		ret = mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO);
+		if (ret != OK) {
+			lldbg("mq_send failed!!\n");
+		}
 	}
 	iwrl6432_semgive(&priv->exclsem);
 }
@@ -527,13 +571,35 @@ void irwl6432_set_state(bool enable)
  ****************************************************************************/
 static int irwl6432_init(FAR struct iwrl6432_dev_s *priv)
 {
+	int ret;
+	int fd;
+	char *param_path = "/mnt/kernel/audio/param_data.txt";
+	struct stat file_stat;
+	if (stat(param_path, &file_stat) != 0) {
+		lldbg("Failed to stat file: %d\n", get_errno());
+		return ERROR;
+	}
+	size_t size = file_stat.st_size;
+	char param_data[size + 1];
+	fd = open(param_path, O_RDONLY);
+	if (fd < 0) {
+		lldbg("Failed to open file: %d\n", get_errno());
+		return ERROR;
+	}
+	size_t bytes_read = read(fd, param_data, size);
+	if (bytes_read != size) {
+		lldbg("Failed to read file: %d\n", get_errno());
+		close(fd);
+		return ERROR;
+	}
+	param_data[size] = '\0';
+	close(fd);
+	ret = OK;
 	priv->config->reset();
-	const char *commandParams = {"sensorStop 0\nchannelCfg 7 3 0\nchirpComnCfg 15 5 0 128 1 34 3\nchirpTimingCfg 6 26 1 47.95 60\nframeCfg 2 0 600 64 200 0\nantGeometryCfg 0 0 1 1 0 2 0 1 1 2 0 3 2.418 2.418\nguionitor 0 0 0 0 0 0 0 0 0 0 0\nsigProcChainCfg 32 2 1 0 64 1 0 0.3\ncfarCfg 2 8 4 3 0 7.0 0 0.5 0 1 1 1\naoaFovCfg -70 70 -40 40\nrangeSelCfg 1.2 10.0\nclutterRemoval 0\ncompRangeBiasAndRxChanPhase 0.0 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000\nadcDataSource 0 adc_data_0001_CtestAdc6Ant.bin\nadcLogging 2\nlowPowerCfg 0\nfactoryCalibCfg 1 0 36 3 0x1ff000\nsensorStart 0 0 0 0\n"};
+	priv->config->irq_enable(true);
 	uint8_t spiData[PARAMETER_TX_SIZE];
 	int parameter_packet_length = 1025;
-	for (int i = 0; i < PARAMETER_TX_SIZE; i++) {
-		spiData[i] = 0;
-	}
+	memset(spiData, 0, sizeof(spiData));
 	spiData[0] = PAYLOAD_HEADER;
 	spiData[1] = PAYLOAD_SOF;
 	spiData[2] = parameter_packet_length & 0xFF;
@@ -541,7 +607,7 @@ static int irwl6432_init(FAR struct iwrl6432_dev_s *priv)
 	spiData[4] = (parameter_packet_length >> 16) & 0xFF;
 	spiData[5] = (parameter_packet_length >> 24) & 0xFF;
 	spiData[6] = 0;
-	memcpy(spiData + 7, commandParams, strlen(commandParams));
+	memcpy(spiData + 7, param_data, strlen(param_data));
 	spiData[PARAMETER_TX_SIZE - 2] = checksum_cal(spiData, 1, PARAMETER_TX_SIZE - 2);
 	spiData[PARAMETER_TX_SIZE - 1] = PAYLOAD_TAIL;
 
@@ -550,10 +616,10 @@ static int irwl6432_init(FAR struct iwrl6432_dev_s *priv)
 	SPI_SNDBLOCK(priv->spi, spiData, PARAMETER_TX_SIZE);
 	SPI_SELECT(priv->spi, priv->config->spi_config.cs, false);
 	SPI_LOCK(priv->spi, false);
-
+	sem_init(&priv->datasem, 0, 0);
+	sem_init(&priv->acksem, 0, 0);
 	uint8_t param_ack[41];
-	up_mdelay(100);
-
+	iwrl6432_semtake(&priv->datasem, false);
 	SPI_LOCK(priv->spi, true);
 	SPI_SELECT(priv->spi, priv->config->spi_config.cs, true);
 	SPI_RECVBLOCK(priv->spi, param_ack, 41);
@@ -563,14 +629,17 @@ static int irwl6432_init(FAR struct iwrl6432_dev_s *priv)
 	char *ack_str = (char *)kmm_malloc(33);
 	if (!ack_str) {
 		lldbg("Failed to allocate memory for ack string\n");
+		ret = ERROR;
 	}
 	memcpy(ack_str, param_ack + 7, 32);
 	ack_str[32] = '\0';
 	lldbg("irwl6432 init %s\n", ack_str);
+	if (!strncmp(ack_str, "Done", 5)) {
+		ret = ERROR;
+	}
 	kmm_free(ack_str);
-	/* set req_num as 2 */
 	priv->req_num = 1;
-	return OK;
+	return ret;
 }
 
 static int iwrl6432_mq_thread(int argc, char **agrv)
@@ -579,12 +648,44 @@ static int iwrl6432_mq_thread(int argc, char **agrv)
 	struct iwrl6432_msg_s msg;
 	size_t size;
 	struct iwrl6432_buf_s *buf;
+	struct timespec abstime;
 	int ret;
+	usleep(1000000);
+	priv->config->irq_enable(false);
+
 	while (1) {
-		iwrl6432_semtake(&priv->datasem, false);
-		if (!priv->running) {
+		if(!priv->running) {
+			usleep(10);
 			continue;
 		}
+		(void)clock_gettime(CLOCK_REALTIME, &abstime);
+		abstime.tv_sec += 5;
+		abstime.tv_nsec += 0;
+		ret = sem_timedwait(&priv->datasem, &abstime);
+		if (ret < 0) {
+			int err = get_errno();
+			if (err == ETIMEDOUT) {
+				lldbg("=========================================Timeout while waiting to receive========================================\n");
+				struct iwrl6432_msg_s msg;
+				msg.msgId = IWRL6432_MSG_TIMEOUT;
+				if (mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO) != OK) {
+					lldbg("mq_send failed!!\n");
+				}
+				if (iwrl6432_stop(priv) != OK) {
+					lldbg("try to stop forcely but failed!!\n");
+				}
+				if (irwl6432_init(priv) == OK) {
+					msg.msgId = IWRL6432_MSG_READY_TO_USE;
+					if (mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO) != OK) {
+						lldbg("mq_send failed!!\n");
+					}
+				} else {
+					lldbg("irwl6432 init failed!!\n");
+				}
+				continue;
+			}
+		}
+		
 		iwrl6432_request_cube_data(priv);
 		/* Data is ready, here it will collect data from iwrl6432 through the SPI */
 		if (work_available(&priv->work)) {
@@ -594,8 +695,7 @@ static int iwrl6432_mq_thread(int argc, char **agrv)
 				lldbg("Error, failed to queue work queue ret : %d errno : %d\n", ret, errno);
 			}
 		}
-
-		usleep(10);
+		
 	}
 	return OK;
 }
@@ -612,7 +712,6 @@ int irwl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 
 	/* init semaphore */
 	sem_init(&priv->exclsem, 0, 1);
-	sem_init(&priv->datasem, 0, 1);
 	ret = priv->config->attach(iwrl6432_interrupt_handler, (FAR void *)priv);
 	if (ret < 0) {
 		sem_destroy(&priv->exclsem);
@@ -623,7 +722,14 @@ int irwl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 	sq_init(&priv->pendq);
 	sq_init(&priv->doneq);
 
-	irwl6432_init(priv);
+	ret = irwl6432_init(priv);
+	if (ret != OK) {
+		sem_destroy(&priv->exclsem);
+		sem_destroy(&priv->datasem);
+		sem_destroy(&priv->acksem);
+		lldbg("irwl6432 init failed\n");
+		return ret;
+	}
 
 	pid_t pid = kernel_thread("iwrl6432_mq_thread", 130, 4096, (main_t)iwrl6432_mq_thread, NULL);
 	if (pid < 0) {
@@ -634,6 +740,8 @@ int irwl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 	ret = register_driver(devname, &g_iwrl6432_fileops, 0666, priv);
 	if (ret < 0) {
 		sem_destroy(&priv->exclsem);
+		sem_destroy(&priv->datasem);
+		sem_destroy(&priv->acksem);
 		lldbg("irwl6432 Driver registration failed\n");
 		return ret;
 	}

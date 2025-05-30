@@ -169,7 +169,7 @@ static int mmwave_start()
 		}
 
 		if (msg.msgId == IWRL6432_MSG_DEQUEUE) {
-			printf("Received value buffer : %x\n", msg.pData);
+			//printf("Received value buffer : %x\n", msg.pData);
 			struct iwrl6432_buf_s *buf = (struct iwrl6432_buf_s *)msg.pData;
 			/* TODO memcpy data here to inference */
 
@@ -192,6 +192,8 @@ static int mmwave_start()
 				printf("start failed. errno : %d\n", errno);
 				return -1;
 			}
+		} else if (msg.msgId == IWRL6432_MSG_TIMEOUT) {
+			printf("############# Timeout!!!!!!############\n");
 		}
 	}
 	/* Stop Collect */
