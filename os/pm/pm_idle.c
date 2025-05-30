@@ -79,7 +79,6 @@ void pm_idle(void)
 #endif
 #ifdef CONFIG_SMP
 	int cpu;
-	int gated_cpu_count = 0;
 	FAR struct tcb_s *tcb;
 #endif
 	/* State change only if PM is ready to state change */
@@ -125,24 +124,8 @@ void pm_idle(void)
 					continue;
 				}
 
-				/* Gate the cpu first, before checking which task it is handling */
-				if (!up_get_gating_flag_status(cpu)) {
-					up_set_gating_flag_status(cpu, 1);
-					up_cpu_gating(cpu);
-					gated_cpu_count = cpu;
-				}
-				while (up_get_gating_flag_status(cpu) == 1) {
-					/* If there is a pause request, we should handle it first */
-					if (up_cpu_pausereq(up_cpu_index())) {
-						pmdbg("Sleep abort! CPU%d\n", cpu);
-						goto EXIT;
-					}
-				}
-
 				tcb = current_task(cpu);
-				/* Check if current cpu is in idle thread, and whether there is pending
-				 * pause request on primary core 
-				 */
+				/* Check if current cpu is in idle thread */
 				if (tcb->pid != cpu) {
 					pmvdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
 					goto EXIT;
@@ -166,12 +149,9 @@ void pm_idle(void)
 			if (up_get_cpu_state(cpu) == CPU_RUNNING) {
 				up_cpu_hotplug(cpu);
 			}
-			/* Reset core gating status flag */
-			up_set_gating_flag_status(cpu, 0);
 			/* Check whether each of the cpu has entered hotplug */
 			while (up_get_cpu_state(cpu) != CPU_HOTPLUG);
 		}
-		gated_cpu_count = 0;
 #endif
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		/* set wakeup timer */
@@ -184,13 +164,6 @@ void pm_idle(void)
 		stime = clock_systimer();
 	}
 EXIT:
-#ifdef CONFIG_SMP
-	/* Check if any core is gated, resume it */
-	while (gated_cpu_count) {
-		up_set_gating_flag_status(gated_cpu_count, 0);
-		gated_cpu_count--;
-	}
-#endif
 	sched_unlock();
 	leave_critical_section(flags);
 }
