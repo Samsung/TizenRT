@@ -135,7 +135,9 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
+#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	int section_idx;
+#endif
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
