@@ -24,15 +24,12 @@ IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 OS_PATH=${TOP_PATH}/os
 CONFIG=${OS_PATH}/.config
 source ${CONFIG}
-APP_NUM=0
-LAST_IMAGE=0
-LAST_OFFSET=0
-USB_DOWNLOAD=0
-HAS_RESOURCE=0
 
 VID_FOUND=0
+USB_DOWNLOAD=0
 RETRY_COUNT=0
 MAX_RETRIES=10
+
 function pre_download()
 {
 	while [ $VID_FOUND -ne 1 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -51,12 +48,6 @@ function pre_download()
 	if [ $VID_FOUND -ne 1 ]; then
 		echo "Port name $TTYDEV not valid"
 		exit 1
-	fi
-
-	if [[ $VENDOR_ID == "0bda" ]]; then
-		USB_DOWNLOAD=1
-	else
-		USB_DOWNLOAD=0
 	fi
 
 	source ${TOP_PATH}/os/.bininfo
@@ -87,7 +78,6 @@ function pre_download()
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${BIN_PATH}/${RESOURCE_BIN_NAME}"; then
-		HAS_RESOURCE=1
 		cp -p ${BIN_PATH}/${RESOURCE_BIN_NAME} ${IMG_TOOL_PATH}/${RESOURCE_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
@@ -112,9 +102,7 @@ function pre_download()
 		if [[ "${parts[$partidx]}" == "ss" ]];then
 			continue
 		fi
-		LAST_OFFSET=${offsets[$partidx]}
 	done
-	LAST_IMAGE=${BOOTPARAM}.bin
 
 	if [[ -n ${CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH} ]];then
 		source ${TOP_PATH}/build/configs/${CONFIG_ARCH_BOARD}/board_metadata.txt
@@ -122,14 +110,46 @@ function pre_download()
 			cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
 		fi
 
-		if [ "$HAS_RESOURCE" -eq "1" ]; then
-			LAST_IMAGE=${RESOURCE_BIN_NAME}
+	fi
+
+}
+
+function is_batch_supported()
+{
+	if [[ $VENDOR_ID == "0bda" ]]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
+
+function board_download_batch()
+{
+	TTYDEV=$1
+	shift
+
+	touch "${IMG_TOOL_PATH}/USB_download_setting.txt"
+	
+	cd ${IMG_TOOL_PATH}
+
+	while test $# -gt 0
+	do
+		if [ ! -f ${IMG_TOOL_PATH}/$2 ];then
+			echo "$2 not present"
+			shift 4
+			continue
 		fi
-	fi
-	if [ "$USB_DOWNLOAD" -eq "1" ]; then
-		touch "${IMG_TOOL_PATH}/USB_download_setting.txt"
-		touch "${IMG_TOOL_PATH}/USB_erase_setting.txt"
-	fi
+		echo "$2" >> USB_download_setting.txt
+		echo "$1" >> USB_download_setting.txt
+		shift 4
+	done
+
+
+	./upload_image_tool_linux "download" $TTYDEV "ALL"
+
+	rm "${IMG_TOOL_PATH}/USB_download_setting.txt"
+
+	echo "Complete USB download"
 }
 
 function board_download()
@@ -138,75 +158,37 @@ function board_download()
 	if [ ! -f ${IMG_TOOL_PATH}/$3 ];then
 		echo "$3 not present"
 	else
-		if [ "$USB_DOWNLOAD" -eq "0" ]; then
-			#echo "UART download"
-			./upload_image_tool_linux "download" $1 1 $2 $3
-		fi
-		if [ "$USB_DOWNLOAD" -eq "1" ]; then
-			#echo "USB download"
-			#echo "Save info to USB_download_setting.txt"
-			echo "$3" >> USB_download_setting.txt
-			echo "$2" >> USB_download_setting.txt
-			if [ "$6" == "ALL" ] && [ "$3" == "$LAST_IMAGE" ]; then
-				echo ""
-				echo "==================================="
-				echo "Start USB full download in Flash"
-				echo "==================================="
-				./upload_image_tool_linux "download" $1 "ALL"
-				echo "Complete USB download"
-			elif [ "$6" == "KERNEL" ]; then
-				return;
-			elif [ "$6" == "bootparam" ]; then
-				echo ""
-				echo "========================================="
-				echo "Start USB download to kernel partition"
-				echo "========================================="
-				./upload_image_tool_linux "download" $1 "ALL"
-				echo "Complete USB download"
-			elif [ "$6" != "ALL" ]; then
-				echo ""
-				echo "========================================="
-				echo "Start USB download to $5 partition"
-				echo "========================================="
-				./upload_image_tool_linux "download" $1 $2 $3
-				echo "Complete USB download"
-			else
-				return;
-			fi
-		fi
+		#echo "UART download"
+		./upload_image_tool_linux "download" $1 1 $2 $3
 	fi
+}
+
+function board_erase_batch()
+{
+	TTYDEV=$1
+	shift
+
+	touch "${IMG_TOOL_PATH}/USB_erase_setting.txt"
+
+	cd ${IMG_TOOL_PATH}
+
+	while test $# -gt 0
+	do
+		echo "$1" >> USB_erase_setting.txt
+		echo "$2" >> USB_erase_setting.txt
+		shift 3
+	done
+	./upload_image_tool_linux "erase" $TTYDEV "ALL"
+
+	rm "${IMG_TOOL_PATH}/USB_erase_setting.txt"
+
+	echo "Complete USB erase"
 }
 
 function board_erase()
 {
 	cd ${IMG_TOOL_PATH}
-	if [ "$USB_DOWNLOAD" -eq "0" ]; then
-		#echo "UART erase"
-		./upload_image_tool_linux "erase" $1 1 $2 $3
-	fi
-	if [ "$USB_DOWNLOAD" -eq "1" ]; then
-		#echo "USB erase"
-		#echo "Save info to USB_erase_setting.txt"
-		echo "$2" >> USB_erase_setting.txt
-		echo "$3" >> USB_erase_setting.txt
-		if [ "$5" == "ALL" ] && [ "$2" == "$LAST_OFFSET" ]; then
-			echo ""
-			echo "==================================="
-			echo "Start USB full erase in Flash"
-			echo "==================================="
-			./upload_image_tool_linux "erase" $1 "ALL"
-			echo "Complete USB erase"
-		elif [ "$5" != "ALL" ]; then
-			echo ""
-			echo "==================================="
-			echo "Start USB $4 erase in Flash"
-			echo "==================================="
-			./upload_image_tool_linux "erase" $1 $2 $3
-			echo "Complete USB download"
-		else
-			return;
-		fi
-	fi
+	./upload_image_tool_linux "erase" $1 1 $2 $3
 }
 
 function post_download()
@@ -240,10 +222,7 @@ function post_download()
 	if test -f "${EXTERNAL}.bin"; then
 		[ -e ${EXTERNAL}.bin ] && rm ${EXTERNAL}.bin
 	fi
-	if [ "$USB_DOWNLOAD" -eq "1" ]; then
-		rm "${IMG_TOOL_PATH}/USB_download_setting.txt"
-		rm "${IMG_TOOL_PATH}/USB_erase_setting.txt"
-	fi
+
 }
 
 
