@@ -46,9 +46,15 @@ if [ "$1" == "port" ]; then
 	PORT="$2"
 	shift 2
 else
+	if [ -f "${OS_PATH}/.download" ]; then
+		source "${OS_PATH}/.download"
+	fi
+
 	echo ==================================================
-	echo "  \"Port Selected:\""
+	echo "  \"Port Selected: [$PREV_PORT]\""
 	echo ==================================================
+	echo "  *If you keep this port, please just enter"
+	echo ""
 	devices=()
 	count=1
 	for dev in /dev/ttyACM* /dev/ttyUSB*; do
@@ -71,14 +77,19 @@ else
 	read -r INPUT
 	INPUT=$(echo "$INPUT" | xargs)
 
-	if [ "$INPUT" = "x" ]; then
-		exit
+	if [ -z "$INPUT" ] && [ -n "$PREV_PORT" ]; then
+		PORT="$PREV_PORT"
+	else
+		if [ "$INPUT" = "x" ]; then
+			exit
+		fi
+		if ! [[ "$INPUT" =~ ^[0-9]+$ ]] || [ "$INPUT" -lt 1 ] || [ "$INPUT" -gt $((count-1)) ]; then
+			echo "Invalid input"
+			exit 1
+		fi
+		PORT="${devices[$INPUT-1]}"
+		echo "PREV_PORT=$PORT" > $OS_PATH/.download
 	fi
-	if ! [[ "$INPUT" =~ ^[0-9]+$ ]] || [ "$INPUT" -lt 1 ] || [ "$INPUT" -gt $((count-1)) ]; then
-		echo "Invalid input"
-		exit 1
-	fi
-	PORT="${devices[$INPUT-1]}"
 fi
 
 if ! [ -c "/dev/$PORT" ]; then
