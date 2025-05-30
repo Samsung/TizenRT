@@ -286,41 +286,73 @@ function get_partition_second_sizes()
 	echo $sizes_str
 }
 
-download_specific_partition()
+download_specific_partitions()
 {
-	TARGET=$1
-	if [[ ${TARGET} == "ota" || ${TARGET} == "OTA" ]];then
-		TARGET="kernel"
-		flash_ota=true
-	fi
-	partidx=$(get_partition_index ${TARGET})
-	if [[ "${partidx}" < 0 ]];then
-		echo "partition ${TARGET} is not supported"
-		dwld_help
-		exit 1
+	local args=("$@")
+	local i=0
+	while [[ $i -lt ${#args[@]} ]]; do
+		TARGET=${args[$i]}
+		((i++))
+
+		if [[ ${TARGET,,} == "ota" ]];then
+			TARGET="kernel"
+			flash_ota=true
+		fi
+
+		if [[ ${TARGET,,} == "kernel" ]]; then
+			if [[ -n "${BOOTPARAM}" ]]; then
+				args=($@ "bootparam")
+			fi
+		fi
+
+		partidx=$(get_partition_index ${TARGET})
+		if [[ "${partidx}" < 0 ]];then
+			echo "partition ${TARGET} is not supported"
+			dwld_help
+			exit 1
+		fi
+
+		# Get a filename and Download a file
+
+		exe_name=$(get_executable_name ${parts[$partidx]})
+		if [[ "No Binary Match" = "${exe_name}" ]];then
+			echo "No corresponding binary for the partition ${parts[$partidx]}"
+			echo "Download $exe_name FAILED!"
+			exit
+		fi
+
+		if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 ]]; then
+			batch_args+=(
+				"${offsets[$partidx]}"
+				"${exe_name}"
+				"${sizes[$partidx]}"
+				"${parts[$partidx]}"
+			)
+		else
+			echo ""
+			echo "============================="
+			if [[ $1 == "ota" || $1 == "OTA" ]];then
+				echo "Downloading Kernel OTA binary"
+			else
+				echo "Downloading ${parts[$partidx]} binary"
+			fi
+			echo "============================="
+			board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} $TARGET
+			echo ""
+			echo "Download $exe_name COMPLETE!"
+		fi
+
+	done
+	if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 ]]; then
+		echo ""
+		echo "==================================="
+		echo "Start download in Flash (batch)"
+		echo "==================================="
+		board_download_batch $TTYDEV "${batch_args[@]}"
 	fi
 
-	# Get a filename and Download a file
-	if [[ $TTYDEV == *"USB"* ]]; then
-		echo ""
-		echo "============================="
-		if [[ $1 == "ota" || $1 == "OTA" ]];then
-			echo "Downloading Kernel OTA binary"
-		else
-			echo "Downloading ${parts[$partidx]} binary"
-		fi
-		echo "============================="
-	fi
-	
-	exe_name=$(get_executable_name ${parts[$partidx]})
-	if [[ "No Binary Match" = "${exe_name}" ]];then
-		echo "No corresponding binary for the partition ${parts[$partidx]}"
-		echo "Download $exe_name FAILED!"
-	else
-		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} $TARGET
-		echo ""
-		echo "Download $exe_name COMPLETE!"
-	fi
+	echo ""
+	echo "Download COMPLETE!"
 }
 
 download_all()
@@ -331,7 +363,7 @@ download_all()
 	found_app2=false
 	found_common=false
 	found_resource=false
-	
+
 	for partidx in ${!parts[@]}; do
 
 		if [[ "${CONFIG_APP_BINARY_SEPARATION}" != "y" ]];then
@@ -385,14 +417,32 @@ download_all()
 		if [[ "No Binary Match" = "${exe_name}" ]];then
 			continue
 		fi
-		if [[ $TTYDEV == *"USB"* ]]; then
+
+		if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 ]]; then
+			batch_args+=(
+				"${offsets[$partidx]}"
+				"${exe_name}"
+				"${sizes[$partidx]}"
+				"${parts[$partidx]}"
+        	)
+		else
 			echo ""
 			echo "=========================="
 			echo "Downloading ${parts[$partidx]} binary"
 			echo "=========================="
+
+			board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} "ALL"
 		fi
-		board_download $TTYDEV ${offsets[$partidx]} ${exe_name} ${sizes[partidx]} ${parts[$partidx]} "ALL"
 	done
+
+	if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 && ${#batch_args[@]} -gt 0 ]]; then
+		echo ""
+		echo "==================================="
+		echo "Start download in Flash (batch)"
+		echo "==================================="
+		board_download_batch $TTYDEV "${batch_args[@]}"
+	fi
+
 	echo ""
 	echo "Download COMPLETE!"
 }
@@ -401,24 +451,33 @@ erase()
 {
 	echo "Starting Erase..."
 	if [[ $2 == "all" || $2 == "ALL" ]];then
-		echo ""
-		echo "=========================="
-		echo "      Erasing All"
-		echo "=========================="
 		for partidx in ${!parts[@]}; do
 			if [[ "${parts[$partidx]}" == "ss" ]];then
 				continue
 			else
-				if [[ $TTYDEV == *"USB"* ]]; then
+				if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 ]]; then
+					batch_args+=(
+						"${offsets[$partidx]}"
+						"${sizes[$partidx]}"
+						"${parts[$partidx]}"
+					)
+				else
 					echo ""
 					echo "=========================="
 					echo "Erasing ${parts[$partidx]} partition"
 					echo "=========================="
+					board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 				fi
 			fi
-
-			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 		done
+
+		if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 && ${#batch_args[@]} -gt 0 ]]; then
+			echo ""
+			echo "=========================="
+			echo "Erasing All (batch)"
+			echo "=========================="
+			board_erase_batch $TTYDEV "${batch_args[@]}"
+		fi
 	else
 		found_kernel=false
 		for partidx in ${!parts[@]}; do
@@ -455,14 +514,28 @@ erase()
 				break
 			fi
 
-			if [[ $TTYDEV == *"USB"* ]]; then
+			if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 ]]; then
+				batch_args+=(
+					"${offsets[$partidx]}"
+					"${sizes[$partidx]}"
+					"${parts[$partidx]}"
+				)
+			else
 				echo ""
 				echo "=========================="
 				echo "Erasing ${parts[$partidx]} partition"
 				echo "=========================="
+				board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 			fi
-			board_erase $TTYDEV ${offsets[$partidx]} ${sizes[partidx]} ${parts[$partidx]} $2
 		done
+
+		if [[ "${IS_BOARD_SUPPORTED_BATCH}" -eq 1 && ${#batch_args[@]} -gt 0 ]]; then
+			echo ""
+			echo "=========================="
+			echo "Erasing (batch)"
+			echo "=========================="
+			board_erase_batch $TTYDEV "${batch_args[@]}"
+		fi
 	fi
 	echo ""
 	echo "Erase COMPLETE!"
@@ -566,6 +639,13 @@ done
 # Must be defined in each board specific download file.
 pre_download;
 
+# Check if board supports batch download (optional HAL function)
+if declare -f is_batch_supported > /dev/null; then
+	IS_BOARD_SUPPORTED_BATCH=$(is_batch_supported)
+else
+	IS_BOARD_SUPPORTED_BATCH=0
+fi
+
 case $1 in
 	all|ALL)
 		download_all
@@ -573,19 +653,8 @@ case $1 in
 	erase|ERASE)
 		erase $1 $2
 		;;
-	kernel|KERNEL)
-		download_specific_partition $1
-		if [[ -n "${BOOTPARAM}" ]];then
-			download_specific_partition "bootparam"
-		fi
-		;;
 	*)
-		while test $# -gt 0
-		do
-			download_specific_partition $1
-			shift
-		done
-		;;
+		download_specific_partitions $@
 esac
 
 # Must be defined in each board specific download file.
