@@ -436,10 +436,14 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	}
 #endif
 
+#ifdef CONFIG_IRQCOUNT
 #ifdef CONFIG_SMP
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu, tcb->irqcount);
 #else
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0, tcb->irqcount);
+#endif
+#else
+	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d %s", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0, "NA");
 #endif
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
