@@ -24,3 +24,18 @@ config SENSOR_PPD42NS_DEBUG
 		enable PPD42ns dust sensor driver's debug message
 
 endif # SENSOR_PPD42NS
+
+config SENSOR_IWRL6432
+        bool "IWRL6432 MMWAVE Driver Support"
+        default n
+        ---help---
+        Enable support for IWRL6432.
+        This includes drivers for SPI-based sensors like the IWRL6432.
+        This selection is necessary to enable support for IWRL6432 drivers
+if SENSOR_IWRL6432
+config IWRL6432_SEGNUM
+	int "Segment Number of buffer"
+	default 6
+	---help---
+		the buffer segment number of IWRL6432
+endif #SENSOR_IWRL6432
