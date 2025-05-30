@@ -282,6 +282,8 @@ CXXSRCS += $(ONERTMICRO_SRC_DIR)/import/kernels/L2Pool2D.cpp
 CXXSRCS += $(ONERTMICRO_SRC_DIR)/execute/kernels/L2Pool2D.cpp
 CXXSRCS += $(ONERTMICRO_SRC_DIR)/import/kernels/SelectV2.cpp
 CXXSRCS += $(ONERTMICRO_SRC_DIR)/execute/kernels/SelectV2.cpp
+CXXSRCS += $(ONERTMICRO_SRC_DIR)/import/kernels/BatchMatMul.cpp
+CXXSRCS += $(ONERTMICRO_SRC_DIR)/execute/kernels/BatchMatMul.cpp
 
 # Import Kernels
 #/*CXXSRCS += $(ONERTMICRO_SRC_DIR)/import/kernels/Abs.cpp*/
