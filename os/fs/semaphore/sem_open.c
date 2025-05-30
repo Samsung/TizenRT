@@ -72,8 +72,6 @@
 #include "inode/inode.h"
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -138,6 +136,7 @@
 
 FAR sem_t *sem_open(FAR const char *name, int oflags, ...)
 {
+#ifdef CONFIG_FS_NAMED_SEMAPHORES
 	FAR struct inode *inode;
 	FAR const char *relpath = NULL;
 	mode_t mode;
@@ -274,6 +273,8 @@ errout_with_lock:
 	set_errno(errcode);
 	sched_unlock();
 	return (FAR sem_t *)ERROR;
+#else							
+	set_errno(ENOTSUP);
+	return (FAR sem_t *)ERROR;
+#endif
 }
-
-#endif							/* CONFIG_FS_NAMED_SEMAPHORES */

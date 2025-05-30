@@ -115,6 +115,7 @@
 
 int sem_unlink(FAR const char *name)
 {
+#ifdef CONFIG_FS_NAMED_SEMAPHORES
 	FAR struct inode *inode;
 	FAR const char *relpath = NULL;
 	char fullpath[MAX_SEMPATH];
@@ -188,4 +189,8 @@ errout:
 	set_errno(errcode);
 	sched_unlock();
 	return ERROR;
+#else
+	set_errno(ENOTSUP);
+	return ERROR;
+#endif
 }

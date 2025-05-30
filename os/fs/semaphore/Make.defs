@@ -52,12 +52,9 @@
 
 # Include named semaphore support
 
-ifeq ($(CONFIG_FS_NAMED_SEMAPHORES),y)
-
 CSRCS += sem_open.c sem_close.c sem_unlink.c
 
 # Include named semaphore build support
 
 DEPPATH += --dep-path semaphore
 VPATH += :semaphore
-endif
