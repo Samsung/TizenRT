@@ -72,6 +72,7 @@ int g_buf_num; //segment number of iwrl6432
 static int mmwave_start();
 static int mmwave_stop();
 static int mmwave_prepare();
+static void mmwave_teardown();
 
 static int mmwave_init()
 {
@@ -99,13 +100,13 @@ static int mmwave_init()
 	}
 
 	/* Alloc array of pointers to gBuffers */
-	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * 2 * sizeof(FAR void *));
+	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * sizeof(FAR void *));
 	if (gBuffer == NULL) {
 		printf("Alloc gBuffer failed\n");
 		goto error_with_fd;
 	}
 
-	for (i = 0; i < g_buf_num * 2; i++) {
+	for (i = 0; i < g_buf_num; i++) {
 		gBuffer[i] = (FAR struct iwrl6432_buf_s *)malloc(sizeof(FAR struct iwrl6432_buf_s));
 		if (gBuffer[i] == NULL) {
 			goto error_with_fd;
@@ -120,13 +121,13 @@ static int mmwave_init()
 	g_mmwave_mq = mq_open(MQ_PATH, O_RDWR | O_CREAT, 0644, &attr);
 	if (g_mmwave_mq == NULL) {
 		printf("mq_open failed!!\n");
-		return -1;
+		goto error_with_fd;
 	}
 
 	ret = ioctl(mFd, SNIOC_REGISTERMQ, (unsigned long)g_mmwave_mq);
 	if (ret < 0) {
 		printf("register mq failed. errno : %d\n", errno);
-		return -1;
+		goto error_with_mq;
 	}
 	return OK;
 error_with_mq:
@@ -136,13 +137,32 @@ error_with_fd:
 	for (int j = 0; j < i; j++) {
 		if (gBuffer[j]) {
 			free(gBuffer[j]);
+			gBuffer[j] = NULL;
 		}
 	}
 	if (gBuffer) {
 		free(gBuffer);
-		gBuffer == NULL;
+		gBuffer = NULL;
 	}
 	return -1;
+}
+
+static void mmwave_teardown()
+{
+	close(mFd);
+
+	mq_close(g_mmwave_mq);
+	
+	for (int i = 0; i < g_buf_num; i++) {
+		if (gBuffer[i]) {
+			free(gBuffer[i]);
+			gBuffer[i] = NULL;
+		}
+	}
+	if (gBuffer) {
+		free(gBuffer);
+		gBuffer = NULL;
+	}
 }
 
 static int mmwave_start()
@@ -156,6 +176,7 @@ static int mmwave_start()
 	ret = ioctl(mFd, SNIOC_START, NULL);
 	if (ret < 0) {
 		printf("start failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
 
@@ -169,7 +190,7 @@ static int mmwave_start()
 		}
 
 		if (msg.msgId == IWRL6432_MSG_DEQUEUE) {
-			printf("Received value buffer : %x\n", msg.pData);
+			//printf("Received value buffer : %x\n", msg.pData);
 			struct iwrl6432_buf_s *buf = (struct iwrl6432_buf_s *)msg.pData;
 			/* TODO memcpy data here to inference */
 
@@ -177,6 +198,7 @@ static int mmwave_start()
 			ret = ioctl(mFd, SNIOC_SENDBUFFER, (unsigned long)buf);
 			if (ret < 0) {
 				printf("get Buffer failed. errno : %d\n", errno);
+				mmwave_teardown();
 				return -1;
 			}
 			
@@ -186,32 +208,29 @@ static int mmwave_start()
 			/* TODO Cancel AI Model here?? */
 		} else if (msg.msgId == IWRL6432_MSG_READY_TO_USE) {
 			printf("############# We can use it again !!! ##############\n");
-			mmwave_prepare();
+			ret = mmwave_prepare();
+			if (ret < 0) {
+				printf("prepare failed. errno : %d\n", errno);
+				return -1;
+			}
 			ret = ioctl(mFd, SNIOC_START, NULL);
 			if (ret < 0) {
 				printf("start failed. errno : %d\n", errno);
+				mmwave_teardown();
 				return -1;
 			}
+		} else if (msg.msgId == IWRL6432_MSG_TIMEOUT) {
+			printf("############# Timeout!!!!!!############\n");
 		}
 	}
 	/* Stop Collect */
 	ret = ioctl(mFd, SNIOC_STOP, NULL);
 	if (ret < 0) {
 		printf("stop failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
-	close(mFd);
-
-	mq_close(g_mmwave_mq);
-	
-	for (int i = 0; i < g_buf_num * 2; i++) {
-		if (gBuffer[i]) {
-			free(gBuffer[i]);
-		}
-	}
-	if (gBuffer) {
-		free(gBuffer);
-	}
+	mmwave_teardown();
 	return OK;
 }
 
@@ -232,10 +251,11 @@ static int mmwave_prepare()
 {
 	int ret;
 	/* Share Buffer with Driver */
-	for (int i = 0; i < g_buf_num * 2; i++) {
+	for (int i = 0; i < g_buf_num; i++) {
 		ret = ioctl(mFd, SNIOC_SENDBUFFER, (unsigned long)gBuffer[i]);
 		if (ret < 0) {
 			printf("get Buffer failed. errno : %d\n", errno);
+			mmwave_teardown();
 			return -1;
 		}
 	}
@@ -244,6 +264,7 @@ static int mmwave_prepare()
 	ret = ioctl(mFd, SNIOC_PREPARE, NULL);
 	if (ret < 0) {
 		printf("prepare failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
 	return OK;
