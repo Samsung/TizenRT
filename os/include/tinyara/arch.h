@@ -2295,7 +2295,7 @@ int up_rtc_settime(FAR const struct timespec *tp);
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
+void up_pm_board_sleep();
 
 /****************************************************************************
  * Name: up_set_dvfs
