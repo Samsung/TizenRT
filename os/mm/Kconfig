@@ -162,3 +162,22 @@ config MM_DUMP_CORRPUTED_HEAP
 		When we find a heap corruption, we can dump the entire heap, so that
 		it can be manually analyzed to find more information about the corruption.
 
+config CONFIG_MM_DELAYED_FREE_WORKER
+	bool "Enable background worker for delayed free"
+	default n
+	---help---
+		If selected, a background worker thread will be created to periodically
+		free the delayed deallocation list. This can help in scenarios where
+		memory is not frequently allocated/deallocated, ensuring that the
+		delayed list doesn't grow indefinitely.
+
+if CONFIG_MM_DELAYED_FREE_WORKER
+
+config CONFIG_MM_DELAYED_FREE_INTERVAL
+	int "Delayed free worker interval (seconds)"
+	default 60
+	---help---
+		The interval in seconds at which the delayed free worker thread will
+		run to process the delayed deallocation list.
+
+endif # CONFIG_MM_DELAYED_FREE_WORKER
