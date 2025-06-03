@@ -81,7 +81,7 @@ OMStatus execute_kernel_CircleBatchMatMul(const OMExecuteArgs &execute_args)
     options = runtime_kernel.first_operator->builtin_options_as_BatchMatMulOptions();
   }
 
-  OMStatus status;
+  OMStatus status = Ok;
 
   core::OMRuntimeShape input1_shape(input1);
   core::OMRuntimeShape input2_shape(input2);
