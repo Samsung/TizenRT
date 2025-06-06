@@ -134,7 +134,6 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		_stext_flash = ABSOLUTE(.);
-		_stext_ram = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
 		EXCLUDE_FILE (*arm_mmu.o arm_cpugating.o)*(.text*)      /* .text* sections (code) */
@@ -166,6 +165,7 @@ SECTIONS
 
 	.code :
 	{
+		_stext_ram = ABSOLUTE(.);
 		. = ALIGN(4096);
 		__dram_text_start__ = .;
 		. = ALIGN(0x4);
