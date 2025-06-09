@@ -65,13 +65,15 @@ static bool g_terminate;
 static mqd_t g_mmwave_mq;
 static int mFd;
 static struct iwrl6432_buf_s **gBuffer;
-int buf_size; //size of segment buffer
-int g_buf_num; //segment number of iwrl6432
-
+int buf_size;  // size of segment buffer
+int g_buf_num; // segment number of iwrl6432
+static int cnt = 0;
 
 static int mmwave_start();
+static int mmwave_show();
 static int mmwave_stop();
 static int mmwave_prepare();
+static void mmwave_teardown();
 
 static int mmwave_init()
 {
@@ -99,13 +101,13 @@ static int mmwave_init()
 	}
 
 	/* Alloc array of pointers to gBuffers */
-	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * 2 * sizeof(FAR void *));
+	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * sizeof(FAR void *));
 	if (gBuffer == NULL) {
 		printf("Alloc gBuffer failed\n");
 		goto error_with_fd;
 	}
 
-	for (i = 0; i < g_buf_num * 2; i++) {
+	for (i = 0; i < g_buf_num; i++) {
 		gBuffer[i] = (FAR struct iwrl6432_buf_s *)malloc(sizeof(FAR struct iwrl6432_buf_s));
 		if (gBuffer[i] == NULL) {
 			goto error_with_fd;
@@ -120,13 +122,13 @@ static int mmwave_init()
 	g_mmwave_mq = mq_open(MQ_PATH, O_RDWR | O_CREAT, 0644, &attr);
 	if (g_mmwave_mq == NULL) {
 		printf("mq_open failed!!\n");
-		return -1;
+		goto error_with_fd;
 	}
 
 	ret = ioctl(mFd, SNIOC_REGISTERMQ, (unsigned long)g_mmwave_mq);
 	if (ret < 0) {
 		printf("register mq failed. errno : %d\n", errno);
-		return -1;
+		goto error_with_mq;
 	}
 	return OK;
 error_with_mq:
@@ -136,13 +138,59 @@ error_with_fd:
 	for (int j = 0; j < i; j++) {
 		if (gBuffer[j]) {
 			free(gBuffer[j]);
+			gBuffer[j] = NULL;
 		}
 	}
 	if (gBuffer) {
 		free(gBuffer);
-		gBuffer == NULL;
+		gBuffer = NULL;
 	}
 	return -1;
+}
+
+static void mmwave_teardown()
+{
+	close(mFd);
+
+	mq_close(g_mmwave_mq);
+
+	for (int i = 0; i < g_buf_num; i++) {
+		if (gBuffer[i]) {
+			free(gBuffer[i]);
+			gBuffer[i] = NULL;
+		}
+	}
+	if (gBuffer) {
+		free(gBuffer);
+		gBuffer = NULL;
+	}
+}
+
+static int mmwave_show()
+{
+	int ret;
+	FAR uint16_t *buffer = (FAR uint16_t *)malloc(4 * sizeof(uint16_t));
+	ret = ioctl(mFd, SNIOC_SHOW, (unsigned long)buffer);
+	if (ret < 0) {
+		printf("show failed. errno : %d\n", errno);
+		if (buffer) {
+			free(buffer);
+			buffer = NULL;
+		}
+		mmwave_teardown();
+		return -1;
+	}
+	printf("=================================\n");
+	printf("Last Succeed Frame Id: %d\n", buffer[0]);
+	printf("Total Checksum error count: %d\n", buffer[1]);
+	printf("Total timeout count: %d\n", buffer[2]);
+	printf("Total Frame mismatch count: %d\n", buffer[3]);
+	printf("=================================\n");
+	if (buffer) {
+		free(buffer);
+		buffer = NULL;
+	}
+	return OK;
 }
 
 static int mmwave_start()
@@ -156,11 +204,11 @@ static int mmwave_start()
 	ret = ioctl(mFd, SNIOC_START, NULL);
 	if (ret < 0) {
 		printf("start failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
 
-	while (!g_terminate)
-	{
+	while (!g_terminate) {
 
 		size = mq_receive(g_mmwave_mq, (FAR char *)&msg, sizeof(msg), &prio);
 		if (size != sizeof(msg)) {
@@ -169,49 +217,56 @@ static int mmwave_start()
 		}
 
 		if (msg.msgId == IWRL6432_MSG_DEQUEUE) {
-			printf("Received value buffer : %x\n", msg.pData);
+			// printf("Received value buffer : %x\n", msg.pData);
 			struct iwrl6432_buf_s *buf = (struct iwrl6432_buf_s *)msg.pData;
 			/* TODO memcpy data here to inference */
-
+			if (buf->data[6] == 0x01) {
+				printf("Received cloud point. Frame_id : %d\n", (buf->data[12] | buf->data[13] << 8));
+			} else if (buf->data[6] == 0x02) {
+				printf("Received cube no: %d. Frame_id: %d\n", buf->data[21] + 1, (buf->data[12] | buf->data[13] << 8));
+			} else if (buf->data[6] == 0x03) {
+				printf("Received Track data. Frame_id: %d\n",(buf->data[12] | buf->data[13] << 8));
+			}
+			// for (int i = 21;i < 1301; i += 13) {
+			// printf("X Coordinate :%d Y Coordinate :%d Z Coordinate :%d Radial Velocity:%d\n", (buf->data[i] | buf->data[i+1] << 8), (buf->data[i+2] | buf->data[i+3] << 8), (buf->data[i+4] | buf->data[i+5] << 8), (buf->data[i+6] | buf->data[i+7] << 8));
+			// }
 			/* And then send buffer to driver again to enqueue buffer to queue */
 			ret = ioctl(mFd, SNIOC_SENDBUFFER, (unsigned long)buf);
 			if (ret < 0) {
 				printf("get Buffer failed. errno : %d\n", errno);
+				mmwave_teardown();
 				return -1;
 			}
-			
+
 		} else if (msg.msgId == IWRL6432_MSG_STOP_FORCELY) {
 			printf("############# stop by forcely!!!!!!############\n");
 		} else if (msg.msgId == IWRL6432_MSG_UNDERRUN) {
 			/* TODO Cancel AI Model here?? */
 		} else if (msg.msgId == IWRL6432_MSG_READY_TO_USE) {
 			printf("############# We can use it again !!! ##############\n");
-			mmwave_prepare();
+			ret = mmwave_prepare();
+			if (ret < 0) {
+				printf("prepare failed. errno : %d\n", errno);
+				return -1;
+			}
 			ret = ioctl(mFd, SNIOC_START, NULL);
 			if (ret < 0) {
 				printf("start failed. errno : %d\n", errno);
+				mmwave_teardown();
 				return -1;
 			}
+		} else if (msg.msgId == IWRL6432_MSG_TIMEOUT) {
+			printf("############# Timeout!!!!!!############\n");
 		}
 	}
 	/* Stop Collect */
 	ret = ioctl(mFd, SNIOC_STOP, NULL);
 	if (ret < 0) {
 		printf("stop failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
-	close(mFd);
-
-	mq_close(g_mmwave_mq);
-	
-	for (int i = 0; i < g_buf_num * 2; i++) {
-		if (gBuffer[i]) {
-			free(gBuffer[i]);
-		}
-	}
-	if (gBuffer) {
-		free(gBuffer);
-	}
+	mmwave_teardown();
 	return OK;
 }
 
@@ -221,21 +276,22 @@ static int mmwave_stop()
 	return OK;
 }
 
-/** TODO below must be implemented 
-  * 1. App should alloc buffer based on result of ioctl(SNIOC_GET_BUFSIZE, SNIOC_GET_BUFNUM)
-  * 2. App should share point of these buffers with driver. App can share more size than SNIOC_GET_BUFSIZE
-  * 3. pBuffer in struct iwrl6432_dev_s should points these buffers.
-  *    Because buffer in kernel can't be accessed by app, so driver should not have its own buffer.
-  * 4. so some kind of SNIOC_ENQUEUE_BUFFER is required.
-  */
+/** TODO below must be implemented
+ * 1. App should alloc buffer based on result of ioctl(SNIOC_GET_BUFSIZE, SNIOC_GET_BUFNUM)
+ * 2. App should share point of these buffers with driver. App can share more size than SNIOC_GET_BUFSIZE
+ * 3. pBuffer in struct iwrl6432_dev_s should points these buffers.
+ *    Because buffer in kernel can't be accessed by app, so driver should not have its own buffer.
+ * 4. so some kind of SNIOC_ENQUEUE_BUFFER is required.
+ */
 static int mmwave_prepare()
 {
 	int ret;
 	/* Share Buffer with Driver */
-	for (int i = 0; i < g_buf_num * 2; i++) {
+	for (int i = 0; i < g_buf_num; i++) {
 		ret = ioctl(mFd, SNIOC_SENDBUFFER, (unsigned long)gBuffer[i]);
 		if (ret < 0) {
 			printf("get Buffer failed. errno : %d\n", errno);
+			mmwave_teardown();
 			return -1;
 		}
 	}
@@ -244,6 +300,7 @@ static int mmwave_prepare()
 	ret = ioctl(mFd, SNIOC_PREPARE, NULL);
 	if (ret < 0) {
 		printf("prepare failed. errno : %d\n", errno);
+		mmwave_teardown();
 		return -1;
 	}
 	return OK;
@@ -281,6 +338,8 @@ int mmwave_main(int argc, char *argv[])
 			return mmwave_start();
 		} else if (!strncmp(argv[1], "stop", 5)) {
 			return mmwave_stop();
+		} else if (!strncmp(argv[1], "show", 5)) {
+			return mmwave_show();
 		} else {
 			show_usage();
 		}

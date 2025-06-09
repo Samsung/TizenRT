@@ -43,23 +43,23 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define NDP120_AVAILABLE_MINOR_MIN	0
-#define NDP120_AVAILABLE_MINOR_MAX	25
+#define NDP120_AVAILABLE_MINOR_MIN 0
+#define NDP120_AVAILABLE_MINOR_MAX 25
 
 /* spi config */
-#define NDP120_IWRL6432_SPI_PORT			0
-#define NDP120_IWRL6432_SPI_FREQ			12000000
-#define NDP120_IWRL6432_SPI_BPW				8
-#define NDP120_SPI_CS						0
-#define IWRL6432_SPI_CS						1
-#define NDP120_IWRL6432_SPI_MODE			SPIDEV_MODE0
+#define NDP120_IWRL6432_SPI_PORT 0
+#define NDP120_IWRL6432_SPI_FREQ 12000000
+#define NDP120_IWRL6432_SPI_BPW 8
+#define NDP120_SPI_CS 0
+#define IWRL6432_SPI_CS 1
+#define NDP120_IWRL6432_SPI_MODE SPIDEV_MODE0
 
-#define NDP120_GPIO_PIN			PA_23
-#define NDP120_GPIO_RESET		PA_24
-#define NDP120_GPIO_DMIC_EN		PA_25
+#define NDP120_GPIO_PIN PA_23
+#define NDP120_GPIO_RESET PA_24
+#define NDP120_GPIO_DMIC_EN PA_25
 
 #define GPIO_IWRL6432_PIN_RESET PA_4
-#define GPIO_IWRL6432_PIN_BUSY  PA_15
+#define GPIO_IWRL6432_PIN_BUSY PA_15
 
 /****************************************************************************
  * Private Types
@@ -74,22 +74,23 @@ struct rtl8730e_ndp120_audioinfo_s {
 
 struct rtl8730e_iwrl6432_info_s {
 	struct iwrl6432_config_s config;
-	ndp120_handler_t handler;
+	iwrl6432_handler_t handler;
 	gpio_t reset;
 	gpio_irq_t data_ready;
 };
 
+GPIO_InitTypeDef BusyPin;
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 static struct rtl8730e_ndp120_audioinfo_s g_ndp120info = {
 	.lower = {
 		.spi_config = {
-                        .bpw = NDP120_IWRL6432_SPI_BPW,
-                        .freq = NDP120_IWRL6432_SPI_FREQ,
-                        .cs = NDP120_SPI_CS,
-                        .mode = NDP120_IWRL6432_SPI_MODE,
-                },
+			.bpw = NDP120_IWRL6432_SPI_BPW,
+			.freq = NDP120_IWRL6432_SPI_FREQ,
+			.cs = NDP120_SPI_CS,
+			.mode = NDP120_IWRL6432_SPI_MODE,
+		},
 	},
 	.handler = NULL,
 };
@@ -97,11 +98,11 @@ static struct rtl8730e_ndp120_audioinfo_s g_ndp120info = {
 static struct rtl8730e_iwrl6432_info_s g_iwrl6432info = {
 	.config = {
 		.spi_config = {
-						.bpw = NDP120_IWRL6432_SPI_BPW,
-						.freq = NDP120_IWRL6432_SPI_FREQ,
-						.cs = IWRL6432_SPI_CS,
-						.mode = NDP120_IWRL6432_SPI_MODE,
-				},
+			.bpw = NDP120_IWRL6432_SPI_BPW,
+			.freq = NDP120_IWRL6432_SPI_FREQ,
+			.cs = IWRL6432_SPI_CS,
+			.mode = NDP120_IWRL6432_SPI_MODE,
+		},
 	},
 	.handler = NULL,
 };
@@ -168,13 +169,13 @@ static void rtl8730e_ndp120_reset(void)
 
 static void rtl8730e_ndp120_set_record_state(bool enable)
 {
-	/* If ndp120's state changed to record after KD, irwl6432 should disable interrupt */ 
-	irwl6432_set_state(!enable);
+	/* If ndp120's state changed to record after KD, iwrl6432 should disable interrupt */
+	iwrl6432_set_state(!enable);
 }
 
 #ifdef CONFIG_PM
 static void rtl8730e_ndp120_pm(bool sleep)
-{	
+{
 	/* h/w specific things to be done if required */
 	if (sleep) {
 		audvdbg("board entering sleep\n");
@@ -191,10 +192,30 @@ static void rtl8730e_iwrl6432_irq_handler(uint32_t id, gpio_irq_event event)
 	 * until we finish this particular interrupt related work
 	 * in the HPWORK thread
 	 */
-	gpio_irq_disable(&g_iwrl6432info.data_ready);
+
+	// gpio_irq_disable(&g_iwrl6432info.data_ready);
+	bool state;
+	UNUSED(event);
+	volatile u32 pol = BusyPin.GPIO_ITPolarity;
+	// lldbg("Polarity : %d\n", pol);
+	if (pol == GPIO_INT_POLARITY_ACTIVE_LOW) {
+		// lldbg("falling edge event------------------\r\n");
+		state = false;
+
+		BusyPin.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
+		GPIO_INTMode(GPIO_IWRL6432_PIN_BUSY, ENABLE, GPIO_INT_Trigger_EDGE, BusyPin.GPIO_ITPolarity, GPIO_INT_DEBOUNCE_ENABLE);
+		// PAD_PullCtrl(BusyPin.GPIO_Pin, GPIO_PuPd_DOWN);
+	} else if (pol == GPIO_INT_POLARITY_ACTIVE_HIGH) {
+		// lldbg("rising edge event---------------------\r\n");
+		state = true;
+
+		BusyPin.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW;
+		GPIO_INTMode(GPIO_IWRL6432_PIN_BUSY, ENABLE, GPIO_INT_Trigger_EDGE, BusyPin.GPIO_ITPolarity, GPIO_INT_DEBOUNCE_ENABLE);
+		PAD_PullCtrl(BusyPin.GPIO_Pin, GPIO_PuPd_UP);
+	}
 
 	if (g_iwrl6432info.handler != NULL) {
-		g_iwrl6432info.handler(id);
+		g_iwrl6432info.handler(id, state);
 	} else {
 		gpio_irq_enable(&g_iwrl6432info.data_ready);
 	}
@@ -209,26 +230,43 @@ static void rtl8730e_iwrl6432_enable_irq(bool enable)
 	}
 }
 
-static void rtl8730e_iwrl6432_irq_attach(ndp120_handler_t handler, FAR char *arg)
+static void rtl8730e_iwrl6432_irq_attach(iwrl6432_handler_t handler, FAR char *arg)
 {
 	g_iwrl6432info.handler = handler;
 	gpio_irq_init(&g_iwrl6432info.data_ready, GPIO_IWRL6432_PIN_BUSY, rtl8730e_iwrl6432_irq_handler, arg);
-	gpio_irq_set(&g_iwrl6432info.data_ready, IRQ_LOW, 1);
+	gpio_irq_set(&g_iwrl6432info.data_ready, IRQ_FALL_RISE, 1);
 	gpio_irq_enable(&g_iwrl6432info.data_ready);
 }
-
 
 static void rtl8730e_iwrl6432_reset(void)
 {
 	gpio_dir(&g_iwrl6432info.reset, PIN_OUTPUT);
+
 	gpio_write(&g_iwrl6432info.reset, 1);
 	up_mdelay(10);
 
 	gpio_write(&g_iwrl6432info.reset, 0);
-	up_mdelay(10);
+	up_mdelay(55);
 
 	gpio_write(&g_iwrl6432info.reset, 1);
-	up_mdelay(50);
+	up_mdelay(705);
+}
+
+static int rtl8730e_iwrl6432_gpio_busy_status(void)
+{
+	return GPIO_ReadDataBit(GPIO_IWRL6432_PIN_BUSY);
+}
+
+static void gpio_busy_init(void)
+{
+	BusyPin.GPIO_Pin = GPIO_IWRL6432_PIN_BUSY;
+	BusyPin.GPIO_Mode = GPIO_Mode_INT;
+	BusyPin.GPIO_PuPd = GPIO_PuPd_UP;
+	BusyPin.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
+	BusyPin.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW;
+	BusyPin.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_ENABLE;
+
+	GPIO_Init(&BusyPin);
 }
 
 /****************************************************************************
@@ -256,7 +294,7 @@ int rtl8730e_ndp120_iwrl6432_initialize(int minor)
 	FAR struct audio_lowerhalf_s *ndp120;
 	static bool initialized = false;
 	char ndp120_devname[12];
-	const char *iwrl6432d_devname  = "/dev/mmWave";
+	const char *iwrl6432d_devname = "/dev/mmWave";
 	int ret = OK;
 
 	audvdbg("minor %d\n", minor);
@@ -292,11 +330,11 @@ int rtl8730e_ndp120_iwrl6432_initialize(int minor)
 	 * passed to lower level using spi_config in ndp120_lower_s.
 	 */
 	FAR struct spi_dev_s *spi = up_spiinitialize(NDP120_IWRL6432_SPI_PORT);
-	
+
 	SPI_SETMODE(spi, NDP120_IWRL6432_SPI_MODE);
 	SPI_SETFREQUENCY(spi, NDP120_IWRL6432_SPI_FREQ);
 	SPI_SETBITS(spi, NDP120_IWRL6432_SPI_BPW);
-	
+
 	ndp120 = (struct audio_lowerhalf_s *)ndp120_lowerhalf_initialize(spi, &g_ndp120info.lower);
 	if (ndp120 == NULL) {
 		return ERROR;
@@ -311,8 +349,10 @@ int rtl8730e_ndp120_iwrl6432_initialize(int minor)
 	g_iwrl6432info.config.attach = rtl8730e_iwrl6432_irq_attach;
 	g_iwrl6432info.config.irq_enable = rtl8730e_iwrl6432_enable_irq;
 	gpio_init(&g_iwrl6432info.reset, GPIO_IWRL6432_PIN_RESET);
+	gpio_busy_init();
 	g_iwrl6432info.config.reset = rtl8730e_iwrl6432_reset;
-	ret = irwl6432_register((FAR const char *)iwrl6432d_devname, &g_iwrl6432info.config, spi);
+	g_iwrl6432info.config.ready_pin_status = rtl8730e_iwrl6432_gpio_busy_status;
+	ret = iwrl6432_register((FAR const char *)iwrl6432d_devname, &g_iwrl6432info.config, spi);
 	if (ret != OK) {
 		return ERROR;
 	}
@@ -322,4 +362,3 @@ int rtl8730e_ndp120_iwrl6432_initialize(int minor)
 	return ret;
 }
 #endif
-
