@@ -995,6 +995,30 @@ int get_errno(void);
 #define lcdllvdbg(...)
 #endif
 
+#ifdef CONFIG_DEBUG_MMWAVE_ERROR
+#define mmwavedbg(format, ...)    dbg(format, ##__VA_ARGS__)
+#define mmwavelldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
+#else
+#define mmwavedbg(...)
+#define mmwavelldbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MMWAVE_WARN
+#define mmwavewdbg(format, ...)    wdbg(format, ##__VA_ARGS__)
+#define mmwavellwdbg(format, ...)  llwdbg(format, ##__VA_ARGS__)
+#else
+#define mmwavewdbg(...)
+#define mmwavellwdbg(...)
+#endif
+
+#ifdef CONFIG_DEBUG_MMWAVE_INFO
+#define mmwavevdbg(format, ...)   vdbg(format, ##__VA_ARGS__)
+#define mmwavellvdbg(format, ...) llvdbg(format, ##__VA_ARGS__)
+#else
+#define mmwavevdbg(...)
+#define mmwavellvdbg(...)
+#endif
+
 #ifdef CONFIG_DEBUG_MIPI_ERROR
 #define mipidbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define mipilldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1787,6 +1811,30 @@ else
 #else
 #define lcdvdbg     (void)
 #define lcdllvdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MMWAVE_ERROR
+#define mmwavedbg      dbg
+#define mmwavelldbg    lldbg
+#else
+#define mmwavedbg      (void)
+#define mmwavelldbg    (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MMWAVE_WARN
+#define mmwavewdbg     wdbg
+#define mmwavellwdbg   llwdbg
+#else
+#define mmwavewdbg     (void)
+#define mmwavellwdbg   (void)
+#endif
+
+#ifdef CONFIG_DEBUG_MMWAVE_INFO
+#define mmwavevdbg     vdbg
+#define mmwavellvdbg   llvdbg
+#else
+#define mmwavevdbg     (void)
+#define mmwavellvdbg   (void)
 #endif
 
 #ifdef CONFIG_DEBUG_LWNL80211_ERROR
