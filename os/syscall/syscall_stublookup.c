@@ -58,6 +58,7 @@
 
 #include <sys/types.h>
 #include <syscall.h>
+#include "syscall_not_support.h"
 
 /* The content of this file is only meaningful during the kernel phase of
  * a kernel build.

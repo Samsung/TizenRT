@@ -396,15 +396,17 @@ static void generate_stub(int nparms)
 	fprintf(stream, "/* Auto-generated %s stub file -- do not edit */\n\n", get_parm(0));
 	fprintf(stream, "#include <tinyara/config.h>\n");
 	fprintf(stream, "#include <stdint.h>\n");
+	cond_parm = get_parm(COND_INDEX);
+	if (cond_parm[0] != '\0'){
+	fprintf(stream, "#include <errno.h>\n");
+	}
 
 	if (get_parm(HEADER_INDEX) && strlen(get_parm(HEADER_INDEX)) > 0)
 		fprintf(stream, "#include <%s>\n", get_parm(HEADER_INDEX));
 
 	putc('\n', stream);
 
-	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
-		fprintf(stream, "#if %s\n\n", cond_parm);
+	if (cond_parm[0] == '\0'){
 
 	/* Generate the function definition that matches standard function prototype */
 
@@ -487,11 +489,99 @@ static void generate_stub(int nparms)
 		fprintf(stream, ");\n  return 0;\n}\n\n");
 	else
 		fprintf(stream, ");\n}\n\n");
-
-	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
-		fprintf(stream, "#endif /* %s */\n", cond_parm);
 	stub_close(stream);
+}
+	else{
+		
+	/* Generate the function definition that matches standard function prototype */
+
+	if (g_inline)
+		fprintf(stream, "static inline ");
+
+	fprintf(stream, "uintptr_t STUB_%s(int nbr", get_parm(NAME_INDEX));
+
+	/* Generate the formal parameter list */
+
+	for (i = 0; i < nparms; i++) {
+		/* Check for a variable number of arguments */
+
+		if (is_vararg(get_parm(PARM1_INDEX + i), i, nparms)) {
+			/* Always receive six arguments in this case */
+
+			for (j = i + 1; j <= 6; j++)
+				fprintf(stream, ", uintptr_t parm%d", j);
+		} else
+			fprintf(stream, ", uintptr_t parm%d", i + 1);
+	}
+
+		fprintf(stream, ")\n{\n");
+		fprintf(stream, "#if %s\n", cond_parm);
+		/* Then call the proxied function.  Functions that have no return value are
+	 * a special case.
+	 */
+
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
+		fprintf(stream, "  %s(", get_parm(NAME_INDEX));
+	else
+		fprintf(stream, "  return (uintptr_t)%s(", get_parm(NAME_INDEX));
+
+	/* The pass all of the system call parameters, casting to the correct type
+	 * as necessary.
+	 */
+
+	for (i = 0; i < nparms; i++) {
+		/* Get the formal type of the parameter, and get the type that we
+		 * actually have to cast to.  For example for a formal type like 'int parm[]'
+		 * we have to cast the actual parameter to 'int*'.  The worst is a union
+		 * type like 'union sigval' where we have to cast to (union sigval)((FAR void *)parm)
+		 * -- Yech.
+		 */
+
+		get_formalparmtype(get_parm(PARM1_INDEX + i), formal);
+		get_actualparmtype(get_parm(PARM1_INDEX + i), actual);
+
+		/* Treat the first argument in the list differently from the others..
+		 * It does not need a comma before it.
+		 */
+
+		if (i > 0) {
+			/* Check for a variable number of arguments */
+
+			if (is_vararg(actual, i, nparms)) {
+				/* Always pass six arguments */
+
+				for (j = i + 1; j <= 6; j++)
+					fprintf(stream, ", parm%d", j);
+			} else {
+				if (is_union(formal))
+					fprintf(stream, ", (%s)((%s)parm%d)", formal, actual, i + 1);
+				else
+					fprintf(stream, ", (%s)parm%d", actual, i + 1);
+			}
+		} else {
+			if (is_union(formal))
+				fprintf(stream, "(%s)((%s)parm%d)", formal, actual, i + 1);
+			else
+				fprintf(stream, "(%s)parm%d", actual, i + 1);
+		}
+	}
+
+	/* Tail end of the function.  If the proxied function has no return
+	 * value, just return zero (OK).
+	 */
+
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
+		fprintf(stream, ");\n  return 0;\n");
+	else
+		fprintf(stream, ");\n");
+	
+	fprintf(stream, "#else\n");
+    fprintf(stream, "  set_errno(ENOSYS);\n");
+    fprintf(stream, "  return -1;\n");
+	fprintf(stream, "#endif\n");
+	fprintf(stream, "}\n\n");
+	stub_close(stream);
+	}
 }
 
 static void show_usage(const char *progname)

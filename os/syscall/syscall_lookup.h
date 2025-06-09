@@ -90,6 +90,8 @@ SYSCALL_LOOKUP(sem_wait,                  1, STUB_sem_wait)
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_sem_setprotocol)
+#else
+SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_notsupport_int)
 #endif
 
 /* Named semaphores */
@@ -98,6 +100,10 @@ SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_sem_setprotocol)
 SYSCALL_LOOKUP(sem_open,                  6, STUB_sem_open)
 SYSCALL_LOOKUP(sem_close,                 1, STUB_sem_close)
 SYSCALL_LOOKUP(sem_unlink,                1, STUB_sem_unlink)
+#else
+SYSCALL_LOOKUP(sem_open,                  6, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(sem_close,                 1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sem_unlink,                1, STUB_notsupport_int)
 #endif
 
 #ifndef CONFIG_BUILD_KERNEL
@@ -110,6 +116,9 @@ SYSCALL_LOOKUP(task_restart,              1, STUB_task_restart)
 #ifdef CONFIG_CANCELLATION_POINTS
 SYSCALL_LOOKUP(task_testcancel,           0, STUB_task_testcancel)
 SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_task_setcanceltype)
+#else
+SYSCALL_LOOKUP(task_testcancel,           0, STUB_notsupport_void)
+SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_notsupport_int)
 #endif
 SYSCALL_LOOKUP(task_setcancelstate,       2, STUB_task_setcancelstate)
 SYSCALL_LOOKUP(up_assert,                 2, STUB_up_assert)
@@ -118,14 +127,20 @@ SYSCALL_LOOKUP(up_assert,                 2, STUB_up_assert)
 
 #if defined(CONFIG_ARCH_HAVE_VFORK) && defined(CONFIG_SCHED_WAITPID)
 SYSCALL_LOOKUP(vfork,                   0, STUB_vfork)
+#else
+SYSCALL_LOOKUP(vfork,                   0, STUB_notsupport_int)
 #endif
 
 #ifdef CONFIG_SCHED_ATEXIT
 SYSCALL_LOOKUP(atexit,                  1, STUB_atexit)
+#else
+SYSCALL_LOOKUP(atexit,                  1, STUB_notsupport_int)
 #endif
 
 #ifdef CONFIG_SCHED_ONEXIT
 SYSCALL_LOOKUP(on_exit,                 2, STUB_on_exit)
+#else
+SYSCALL_LOOKUP(on_exit,                 2, STUB_notsupport_int)
 #endif
 
 #ifdef CONFIG_SCHED_WAITPID
@@ -133,7 +148,12 @@ SYSCALL_LOOKUP(waitpid,                 3, STUB_waitpid)
 #  ifdef CONFIG_SCHED_HAVE_PARENT
 SYSCALL_LOOKUP(wait,                    1, STUB_wait)
 SYSCALL_LOOKUP(waitid,                  4, STUB_waitid)
+#else
+SYSCALL_LOOKUP(wait,                    1, STUB_notsupport_int)
+SYSCALL_LOOKUP(waitid,                  4, STUB_notsupport_int)
 #  endif
+#else
+SYSCALL_LOOKUP(waitpid,                 3, STUB_notsupport_int)
 #endif
 
 /* The following can only be defined if we are configured to execute
@@ -143,9 +163,13 @@ SYSCALL_LOOKUP(waitid,                  4, STUB_waitid)
 #ifdef CONFIG_BINFMT_ENABLE
 #ifndef CONFIG_BUILD_KERNEL
 SYSCALL_LOOKUP(exec,                     4, STUB_exec)
+#else
+SYSCALL_LOOKUP(exec,                     4, STUB_notsupport_int)
 #endif
 #ifdef CONFIG_LIBC_EXECFUNCS
 SYSCALL_LOOKUP(execv,                    2, STUB_execv)
+#else
+SYSCALL_LOOKUP(execv,                    2, STUB_notsupport_int)
 #endif
 #endif
 
@@ -163,6 +187,16 @@ SYSCALL_LOOKUP(sigsuspend,              1, STUB_sigsuspend)
 SYSCALL_LOOKUP(sigtimedwait,            3, STUB_sigtimedwait)
 SYSCALL_LOOKUP(sigwaitinfo,             2, STUB_sigwaitinfo)
 SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
+#else
+SYSCALL_LOOKUP(kill,                    2, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigaction,               3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigpending,              1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigprocmask,             3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigqueue,                3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigsuspend,              1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigtimedwait,            3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigwaitinfo,             2, STUB_notsupport_int)
+SYSCALL_LOOKUP(nanosleep,               2, STUB_notsupport_int)
 #endif
 
 /* The following are only defined if the system clock is enabled in the
@@ -183,6 +217,12 @@ SYSCALL_LOOKUP(timer_delete,            1, STUB_timer_delete)
 SYSCALL_LOOKUP(timer_getoverrun,        1, STUB_timer_getoverrun)
 SYSCALL_LOOKUP(timer_gettime,           2, STUB_timer_gettime)
 SYSCALL_LOOKUP(timer_settime,           4, STUB_timer_settime)
+#else
+SYSCALL_LOOKUP(timer_create,            3, STUB_notsupport_int)
+SYSCALL_LOOKUP(timer_delete,            1, STUB_notsupport_int)
+SYSCALL_LOOKUP(timer_getoverrun,        1, STUB_notsupport_int)
+SYSCALL_LOOKUP(timer_gettime,           2, STUB_notsupport_int)
+SYSCALL_LOOKUP(timer_settime,           4, STUB_notsupport_int)
 #endif
 
 /* The following are defined if either file or socket descriptor are
@@ -205,16 +245,33 @@ SYSCALL_LOOKUP(aio_read,                1, SYS_aio_read)
 SYSCALL_LOOKUP(aio_write,               1, SYS_aio_write)
 SYSCALL_LOOKUP(aio_fsync,               2, SYS_aio_fsync)
 SYSCALL_LOOKUP(aio_cancel,              2, SYS_aio_cancel)
+#else
+SYSCALL_LOOKUP(aio_read,                1, STUB_notsupport_int)
+SYSCALL_LOOKUP(aio_write,               1, STUB_notsupport_int)
+SYSCALL_LOOKUP(aio_fsync,               2, STUB_notsupport_int)
+SYSCALL_LOOKUP(aio_cancel,              2, STUB_notsupport_int)
 #  endif
+
 #  ifndef CONFIG_DISABLE_POLL
 SYSCALL_LOOKUP(poll,                    3, STUB_poll)
 SYSCALL_LOOKUP(select,                  5, STUB_select)
+#else
+SYSCALL_LOOKUP(poll,                    3, STUB_notsupport_int)
+SYSCALL_LOOKUP(select,                  5, STUB_notsupport_int)
 #  endif
+#else
+SYSCALL_LOOKUP(close,                   1, STUB_notsupport_int)
+SYSCALL_LOOKUP(read,                    3, STUB_notsupport_int)
+SYSCALL_LOOKUP(write,                   3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pread,                   4, STUB_notsupport_int)
+SYSCALL_LOOKUP(pwrite,                  4, STUB_notsupport_int)
 #endif
 
 /* Board support */
 #ifdef CONFIG_LIB_BOARDCTL
 SYSCALL_LOOKUP(boardctl,                2, STUB_boardctl)
+#else
+SYSCALL_LOOKUP(boardctl,                2, STUB_notsupport_int)
 #endif
 
 /* The following are defined if file descriptors are enabled */
@@ -229,12 +286,16 @@ SYSCALL_LOOKUP(fstatfs,                 2, STUB_fstatfs)
 SYSCALL_LOOKUP(lseek,                   3, STUB_lseek)
 #if defined(CONFIG_PIPES)
 SYSCALL_LOOKUP(mkfifo,                  2, STUB_mkfifo)
+#else
+SYSCALL_LOOKUP(mkfifo,                  2, STUB_notsupport_int)
 #endif
 SYSCALL_LOOKUP(mmap,                    6, NULL)
 SYSCALL_LOOKUP(open,                    6, STUB_open)
 SYSCALL_LOOKUP(opendir,                 1, STUB_opendir)
 #if defined(CONFIG_PIPES)
 SYSCALL_LOOKUP(pipe,                    1, STUB_pipe)
+#else
+SYSCALL_LOOKUP(pipe,                    1, STUB_notsupport_int)
 #endif
 SYSCALL_LOOKUP(readdir,                 1, STUB_readdir)
 SYSCALL_LOOKUP(rewinddir,               1, STUB_rewinddir)
@@ -245,6 +306,9 @@ SYSCALL_LOOKUP(statfs,                  2, STUB_statfs)
 #  if CONFIG_NFILE_STREAMS > 0
 SYSCALL_LOOKUP(fs_fdopen,               3, STUB_fs_fdopen)
 SYSCALL_LOOKUP(sched_getstreams,        0, STUB_sched_getstreams)
+#else
+SYSCALL_LOOKUP(fs_fdopen,               3, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(sched_getstreams,        0, STUB_notsupport_ptr)
 #  endif
 
 
@@ -257,7 +321,32 @@ SYSCALL_LOOKUP(rmdir,                   1, STUB_rmdir)
 SYSCALL_LOOKUP(umount,                  1, STUB_umount)
 SYSCALL_LOOKUP(unlink,                  1, STUB_unlink)
 SYSCALL_LOOKUP(ftruncate,               2, STUB_ftruncate)
+#else
+SYSCALL_LOOKUP(fsync,                   1, STUB_notsupport_int)
+SYSCALL_LOOKUP(mkdir,                   2, STUB_notsupport_int)
+SYSCALL_LOOKUP(mount,                   5, STUB_notsupport_int)
+SYSCALL_LOOKUP(rename,                  2, STUB_notsupport_int)
+SYSCALL_LOOKUP(rmdir,                   1, STUB_notsupport_int)
+SYSCALL_LOOKUP(umount,                  1, STUB_notsupport_int)
+SYSCALL_LOOKUP(unlink,                  1, STUB_notsupport_int)
+SYSCALL_LOOKUP(ftruncate,               2, STUB_notsupport_int)
 #  endif
+#else
+SYSCALL_LOOKUP(closedir,                1, STUB_notsupport_int)
+SYSCALL_LOOKUP(dup,                     1, STUB_notsupport_int)
+SYSCALL_LOOKUP(dup2,                    2, STUB_notsupport_int)
+SYSCALL_LOOKUP(fcntl,                   6, STUB_notsupport_int)
+SYSCALL_LOOKUP(fstat,                   2, STUB_notsupport_int)
+SYSCALL_LOOKUP(fstatfs,                 2, STUB_notsupport_int)
+SYSCALL_LOOKUP(lseek,                   3, STUB_notsupport_int)
+SYSCALL_LOOKUP(mmap,                    6, NULL)
+SYSCALL_LOOKUP(open,                    6, STUB_notsupport_int)
+SYSCALL_LOOKUP(opendir,                 1, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(readdir,                 1, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(rewinddir,               1, STUB_notsupport_void)
+SYSCALL_LOOKUP(seekdir,                 2, STUB_notsupport_void)
+SYSCALL_LOOKUP(stat,                    2, STUB_notsupport_int)
+SYSCALL_LOOKUP(statfs,                  2, STUB_notsupport_int)
 #endif
 
 /* Shared memory interfaces */
@@ -267,6 +356,11 @@ SYSCALL_LOOKUP(shmget,                  3, STUB_shmget)
 SYSCALL_LOOKUP(shmat,                   3, STUB_shmat)
 SYSCALL_LOOKUP(shmctl,                  3, STUB_shmctl)
 SYSCALL_LOOKUP(shmdt,                   1, STUB_shmdt)
+#else
+SYSCALL_LOOKUP(shmget,                  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(shmat,                   3, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(shmctl,                  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(shmdt,                   1, STUB_notsupport_int)
 #endif
 
 /* The following are defined if pthreads are enabled */
@@ -292,6 +386,8 @@ SYSCALL_LOOKUP(pthread_mutex_trylock,   1, STUB_pthread_mutex_trylock)
 SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_pthread_mutex_unlock)
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_pthread_mutex_consistent)
+#else
+SYSCALL_LOOKUP(pthread_mutex_consistent, 1, STUB_notsupport_int)
 #endif
 SYSCALL_LOOKUP(pthread_setaffinity_np,  3, STUB_pthread_setaffinity_np)
 SYSCALL_LOOKUP(pthread_getaffinity_np,  3, STUB_pthread_getaffinity_np)
@@ -302,7 +398,35 @@ SYSCALL_LOOKUP(pthread_setspecific,     2, STUB_pthread_setspecific)
 SYSCALL_LOOKUP(pthread_cond_timedwait,  3, STUB_pthread_cond_timedwait)
 SYSCALL_LOOKUP(pthread_kill,            2, STUB_pthread_kill)
 SYSCALL_LOOKUP(pthread_sigmask,         3, STUB_pthread_sigmask)
+#else
+SYSCALL_LOOKUP(pthread_cond_timedwait,  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_kill,            2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_sigmask,         3, STUB_notsupport_int)
 #  endif
+#else
+SYSCALL_LOOKUP(pthread_cancel,          1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_cond_broadcast,  1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_cond_signal,     1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_cond_wait,       2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_create,          4, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_detach,          1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_exit,            1, STUB_notsupport_void)
+SYSCALL_LOOKUP(pthread_getschedparam,   3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_getspecific,     1, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(pthread_join,            2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_tryjoin_np,      2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_key_create,      2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_key_delete,      1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_mutex_destroy,   1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_mutex_init,      2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_mutex_lock,      1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_mutex_trylock,   1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_mutex_unlock,    1, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_setaffinity_np,  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_getaffinity_np,  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_setschedparam,   3, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_setschedprio,    2, STUB_notsupport_int)
+SYSCALL_LOOKUP(pthread_setspecific,     2, STUB_notsupport_int)
 #endif
 
 /* The following are defined only if message queues are enabled */
@@ -318,6 +442,17 @@ SYSCALL_LOOKUP(mq_setattr,              3, STUB_mq_setattr)
 SYSCALL_LOOKUP(mq_timedreceive,         5, STUB_mq_timedreceive)
 SYSCALL_LOOKUP(mq_timedsend,            5, STUB_mq_timedsend)
 SYSCALL_LOOKUP(mq_unlink,               1, STUB_mq_unlink)
+#else
+SYSCALL_LOOKUP(mq_close,                1, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_getattr,              2, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_notify,               2, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_open,                 6, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_receive,              4, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_send,                 4, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_setattr,              3, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_timedreceive,         5, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_timedsend,            5, STUB_notsupport_int)
+SYSCALL_LOOKUP(mq_unlink,               1, STUB_notsupport_int)
 #endif
 
 /* The following are defined only if environment variables are supported */
@@ -329,6 +464,13 @@ SYSCALL_LOOKUP(putenv,                  1, STUB_putenv)
 SYSCALL_LOOKUP(setenv,                  3, STUB_setenv)
 SYSCALL_LOOKUP(unsetenv,                1, STUB_unsetenv)
 SYSCALL_LOOKUP(get_environ_ptr,         1, STUB_get_environ_ptr)
+#else
+SYSCALL_LOOKUP(clearenv,                0, STUB_notsupport_int)
+SYSCALL_LOOKUP(getenv,                  1, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(putenv,                  1, STUB_notsupport_int)
+SYSCALL_LOOKUP(setenv,                  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(unsetenv,                1, STUB_notsupport_int)
+SYSCALL_LOOKUP(get_environ_ptr,         1, STUB_notsupport_ptr)
 #endif
 
 /* The following are defined only if networking AND sockets are supported */
@@ -350,12 +492,31 @@ SYSCALL_LOOKUP(sendto,                  6, STUB_sendto)
 SYSCALL_LOOKUP(setsockopt,              5, STUB_setsockopt)
 SYSCALL_LOOKUP(shutdown,                2, STUB_shutdown)
 SYSCALL_LOOKUP(socket,                  3, STUB_socket)
+#else
+SYSCALL_LOOKUP(accept,                  3, STUB_notsupport_int)
+SYSCALL_LOOKUP(bind,                    3, STUB_notsupport_int)
+SYSCALL_LOOKUP(connect,                 3, STUB_notsupport_int)
+SYSCALL_LOOKUP(getpeername,             3, STUB_notsupport_int)
+SYSCALL_LOOKUP(getsockname,             3, STUB_notsupport_int)
+SYSCALL_LOOKUP(getsockopt,              5, STUB_notsupport_int)
+SYSCALL_LOOKUP(listen,                  2, STUB_notsupport_int)
+SYSCALL_LOOKUP(recv,                    4, STUB_notsupport_int)
+SYSCALL_LOOKUP(recvfrom,                6, STUB_notsupport_int)
+SYSCALL_LOOKUP(recvmsg,                 3, STUB_notsupport_int)
+SYSCALL_LOOKUP(send,                    4, STUB_notsupport_int)
+SYSCALL_LOOKUP(sendmsg,                 3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sendto,                  6, STUB_notsupport_int)
+SYSCALL_LOOKUP(setsockopt,              5, STUB_notsupport_int)
+SYSCALL_LOOKUP(shutdown,                2, STUB_notsupport_int)
+SYSCALL_LOOKUP(socket,                  3, STUB_notsupport_int)
 #endif
 
 /* The following is defined only if CONFIG_TASK_NAME_SIZE > 0 */
 
 #if CONFIG_TASK_NAME_SIZE > 0
 SYSCALL_LOOKUP(prctl,                   5, STUB_prctl)
+#else
+SYSCALL_LOOKUP(prctl,                   5, STUB_notsupport_int)
 #endif
 
 SYSCALL_LOOKUP(fin_wait,		0, STUB_fin_wait)
