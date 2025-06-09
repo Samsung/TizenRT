@@ -58,6 +58,7 @@
 
 #include <sys/types.h>
 #include <syscall.h>
+#include <syscall_not_support.c>
 
 /* The content of this file is only meaningful during the kernel phase of
  * a kernel build.
@@ -77,6 +78,8 @@
  * configuration
  */
 
+int STUB_notsupport_int(void);
+FAR sem_t *STUB_notsupport_ptr(void);
 uintptr_t STUB__exit(int nbr, uintptr_t parm1);
 uintptr_t STUB_exit(int nbr, uintptr_t parm1);
 uintptr_t STUB_get_errno(int nbr);

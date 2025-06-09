@@ -70,6 +70,8 @@ endif
 endif
 STUB_SRCS += syscall_funclookup.c syscall_stublookup.c syscall_nparms.c
 
+CSRCS += syscall_not_support.c
+
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 
