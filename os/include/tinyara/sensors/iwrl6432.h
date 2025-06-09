@@ -28,23 +28,28 @@
  ****************************************************************************/
 #define PAYLOAD_HEADER 0x32
 #define PAYLOAD_TAIL 0x34
-#define PAYLOAD_SOF 0xFF
+#define PAYLOAD_SOF 0x02
 #define PARAMETER_TX_SIZE 1032
+#define PARAMETER_PACKET_LENGTH 1025
 #define ACK_TX_SIZE 16
-#define CLOUD_TX_SIZE 1320
+#define CLOUD_TX_SIZE 1520
+#define TRACK_DATA_SIZE 88
 #define IWRL6432_DATA_HEADER_SIZE 24
 #ifndef CONFIG_IWRL6432_SEGNUM
 #define CONFIG_IWRL6432_SEGNUM 6
 #endif
-#define IWRL6432_BUF_NUM CONFIG_IWRL6432_SEGNUM + 1 // +1 for CLOUD
-#define IWRL6432_DATA_SIZE (CONFIG_IWRL6432_SEGNUM == 6 ? \
-	(16384 + IWRL6432_DATA_HEADER_SIZE) : (12228 + IWRL6432_DATA_HEADER_SIZE))
+#define IWRL6432_BUF_NUM CONFIG_IWRL6432_SEGNUM + 2 // +2 for Cloud and Track data
+#define IWRL6432_CUBE_DATA_SIZE (CONFIG_IWRL6432_SEGNUM == 6 ? (16384 + IWRL6432_DATA_HEADER_SIZE) : (12228 + IWRL6432_DATA_HEADER_SIZE))
 
 /* iwrl6432 Message ID */
-#define IWRL6432_MSG_DEQUEUE            0
-#define IWRL6432_MSG_STOP_FORCELY       1
-#define IWRL6432_MSG_UNDERRUN           2
-#define IWRL6432_MSG_READY_TO_USE       3
+#define IWRL6432_MSG_DEQUEUE 0
+#define IWRL6432_MSG_STOP_FORCELY 1
+#define IWRL6432_MSG_UNDERRUN 2
+#define IWRL6432_MSG_READY_TO_USE 3
+#define IWRL6432_MSG_TIMEOUT 4
+#define IWRL6432_ACK 0
+#define IWRL6432_NACK 1
+#define IWRL6432_MAX_INIT_RETRY_COUNT 3
 
 /****************************************************************************
  * Public Data
@@ -54,7 +59,7 @@
  * Public Types
  ****************************************************************************/
 
-typedef void (*iwrl6432_handler_t)(void* arg);
+typedef void (*iwrl6432_handler_t)(void *arg, bool state);
 
 struct iwrl6432_config_s {
 
@@ -66,22 +71,24 @@ struct iwrl6432_config_s {
 
 	/* callback function: enable or disable gpio pin interrupt */
 	CODE int (*irq_enable)(bool enable);
-	
+
+	CODE int (*ready_pin_status)(void);
+
 	/* callback function: reset iwrl6432 */
 	CODE int (*reset)(void);
 };
 
 struct iwrl6432_buf_s {
-	struct dq_entry_s entry;		 	/* double linked queue entry */
-	uint16_t maxbyte;            		/* Total byte of buffer */
-	uint16_t curbyte;                   /* Currently used */
-	uint8_t data[IWRL6432_DATA_SIZE];   /* Actual Buffer include Header */
-	uint16_t msgId;                     /* msgId to be shared */
+	struct dq_entry_s entry;		  /* double linked queue entry */
+	uint16_t maxbyte;				  /* Total byte of buffer */
+	uint16_t curbyte;				  /* Currently used */
+	uint8_t data[IWRL6432_CUBE_DATA_SIZE]; /* Actual Buffer include Header */
+	uint16_t msgId;					  /* msgId to be shared */
 };
 
 struct iwrl6432_msg_s {
-	uint16_t msgId;		/* msgID, see above Message ID */
-	FAR void *pData;    /* Buffer data being dequeued */
+	uint16_t msgId;	 /* msgID, see above Message ID */
+	FAR void *pData; /* Buffer data being dequeued */
 };
 
 /****************************************************************************
@@ -108,7 +115,7 @@ struct iwrl6432_msg_s {
 int iwrl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *config, FAR struct spi_dev_s *spi);
 
 /****************************************************************************
- * Name: irwl6432_set_state
+ * Name: iwrl6432_set_state
  *
  * Description:
  *  This function will enable/disable ISR of iwrl6432 by condition of device by outside(e.g endp120)
@@ -119,5 +126,4 @@ int iwrl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
  * Returned Value:
  *
  ****************************************************************************/
-void irwl6432_set_state(bool enable);
-
+void iwrl6432_set_state(bool enable);

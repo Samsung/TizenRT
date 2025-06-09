@@ -314,7 +314,7 @@
 #define SNIOC_START       _SNIOC(0x0005) /* start data ready */
 #define SNIOC_STOP        _SNIOC(0x0006) /* start data ready */
 #define SNIOC_SENDBUFFER  _SNIOC(0x0007) /* Enqueue data from app again */
-
+#define SNIOC_SHOW        _SNIOC(0x0008) /* Show statistics */
 /* TinyAra Analog (DAC/ADC_ ioctl commands ************************************/
 
 #define _ANIOCVALID(c)    (_IOC_TYPE(c) == _ANIOCBASE)
