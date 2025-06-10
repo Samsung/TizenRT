@@ -938,6 +938,30 @@ exit:
 	WT_TEST_FUNC_SIGNAL;
 }
 
+int _wt_parse_bridge(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc < 3) {
+		return -1;
+	}
+	/* wpa2 aes is a default security mode. */
+	opt->enable_bridge = atoi(argv[2]);
+
+	return 0;
+}
+
+void _wt_enable_bridge(void *arg)
+{
+	WT_ENTER;
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+	struct wt_options *opt = (struct wt_options *)arg;
+
+	res = wifi_manager_control_bridge(opt->enable_bridge);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "wifi_manager_control_bridge fail");
+	}
+	WT_LEAVE;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else

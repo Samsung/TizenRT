@@ -321,12 +321,31 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 	*optptr++ = ip4_addr3(&ipaddr);
 	*optptr++ = 255;
 #ifdef CONFIG_LWIP_DHCPS_ADDITIONAL_DNS
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	*optptr++ = DHCP_OPTION_DNS_SERVER;
+	ip_addr_t *addr = (const ip_addr_t *) dns_getserver(0);
+	*optptr++ = 4;
+	if (ip_addr_isany_val(*addr)) {
+		*optptr++ = 8;
+		*optptr++ = 8;
+		*optptr++ = 8;
+		*optptr++ = 8;
+	}
+	else {
+		ip4_addr_t *dnsserver = ip_2_ip4((addr));
+		*optptr++ = ip4_addr1(dnsserver);
+		*optptr++ = ip4_addr2(dnsserver);
+		*optptr++ = ip4_addr3(dnsserver);
+		*optptr++ = ip4_addr4(dnsserver);
+	}
+#else
 	*optptr++ = DHCP_OPTION_DNS_SERVER;
 	*optptr++ = 4;
 	*optptr++ = 8;
 	*optptr++ = 8;
 	*optptr++ = 8;
 	*optptr++ = 8;
+#endif /* CONFIG_ENABLE_HOMELYNK */
 #endif
 	return optptr;
 }

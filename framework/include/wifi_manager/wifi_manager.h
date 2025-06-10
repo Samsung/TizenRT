@@ -591,6 +591,18 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
  * @since TizenRT v3.1
  */
 wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
+
+/**
+ * @brief Start Wi-Fi Manager bridge mode.
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in]  enable : 1, disable :0
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @API_type: synchronous
+ * @callback: none
+ * @since TizenRT v1.1
+ */
+wifi_manager_result_e wifi_manager_control_bridge(uint8_t enable);
+
 #ifdef __cplusplus
 }
 #endif

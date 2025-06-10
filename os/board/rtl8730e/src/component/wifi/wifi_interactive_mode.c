@@ -248,6 +248,32 @@ void dhcpd_event(void)
 	return;
 }
 extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
+static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
+{
+	int ret = ERROR;
+	if (ifname && macaddr) {
+		/* Get a socket (only so that we get access to the INET subsystem) */
+
+		int sockfd = socket(2, NETLIB_SOCK_IOCTL, 0);
+		if (sockfd >= 0) {
+			struct ifreq req;
+
+			/* Put the driver name into the request */
+			strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
+			req.ifr_name[IFNAMSIZ - 1] = '\0';
+
+			/* Put the new MAC address into the request */
+			req.ifr_hwaddr.sa_family = 2;
+			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
+
+			/* Perform the ioctl to set the MAC address */
+			ret = netdev_ifrioctl(NULL, 1813, &req);
+			close(sockfd);
+		}
+	}
+	return ret;
+}
+
 int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 {
 	int ret = 0;
@@ -315,6 +341,11 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	}
 
 	nvdbg("\r\nap start");
+#if CONFIG_LWIP_LAYER
+		uint8_t *mac = (uint8_t *)LwIP_GetMAC(1);
+		nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+		_netlib_setmacaddr(CONFIG_WIFIMGR_SOFTAP_IFNAME, mac);
+#endif
 
 #if CONFIG_LWIP_LAYER
 	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
@@ -678,34 +709,16 @@ void cmd_wifi_info(int argc, char **argv)
 }
 
 extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
-static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
-{
-	int ret = ERROR;
-	if (ifname && macaddr) {
-		/* Get a socket (only so that we get access to the INET subsystem) */
-
-		int sockfd = socket(2, NETLIB_SOCK_IOCTL, 0);
-		if (sockfd >= 0) {
-			struct ifreq req;
-
-			/* Put the driver name into the request */
-			strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
-			req.ifr_name[IFNAMSIZ - 1] = '\0';
-
-			/* Put the new MAC address into the request */
-			req.ifr_hwaddr.sa_family = 2;
-			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
-
-			/* Perform the ioctl to set the MAC address */
-			ret = netdev_ifrioctl(NULL, 1813, &req);
-			close(sockfd);
-		}
-	}
-	return ret;
-}
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
-{
+{	if (interface_id>1){
+		lldbg("start concurrent");
+		wifi_on(3);
+		nvdbg("\r\n===============>>Finish wifi_on for concurrent!!\r\n");
+	return RTK_STATUS_SUCCESS;
+	}
+
+	lldbg("start sta");
 	wifi_on(RTW_MODE_STA);
 
 	rtw_wifi_setting_t setting;

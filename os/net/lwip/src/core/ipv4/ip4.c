@@ -128,9 +128,18 @@
 /** The IP header ID of the next outgoing IP packet */
 static u16_t ip_id;
 
+/* to know the status of bridge mode on/off*/
+static int g_bridge_enable;
+
 #if LWIP_MULTICAST_TX_OPTIONS
 /** The default netif used for multicast */
 static struct netif *ip4_default_multicast_netif;
+
+void lwip_set_bridge_mode(int isenable)
+{
+	LWIP_DEBUGF(IP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("g_bridge_enable =%d now isenable = %d\n",g_bridge_enable, isenable));
+	g_bridge_enable = isenable;
+}
 
 /**
  * @ingroup ip4
@@ -332,6 +341,11 @@ static void ip4_forward(struct pbuf *p, struct ip_hdr *iphdr, struct netif *inp)
 		return;
 	}
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	if(g_bridge_enable && ip_nat_transfer(p, inp, netif) != ERR_OK) {
+		return;
+	}
+#endif
 	/* Incrementally update the IP checksum. */
 	if (IPH_CHKSUM(iphdr) >= PP_HTONS(0xffffU - 0x100)) {
 		IPH_CHKSUM_SET(iphdr, IPH_CHKSUM(iphdr) + PP_HTONS(0x100) + 1);
@@ -462,6 +476,15 @@ err_t ip4_input(struct pbuf *p, struct netif *inp)
 	}
 #endif
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	if(g_bridge_enable && ip_nat_enqueue(p, inp) != ERR_OK) {
+		pbuf_free(p);
+		IP_STATS_INC(ip.chkerr);
+		IP_STATS_INC(ip.drop);
+		MIB2_STATS_INC(mib2.ipinhdrerrors);
+		return ERR_OK;
+	}
+#endif
 	/* copy IP addresses to aligned ip_addr_t */
 	ip_addr_copy_from_ip4(ip_data.current_iphdr_dest, iphdr->dest);
 	ip_addr_copy_from_ip4(ip_data.current_iphdr_src, iphdr->src);

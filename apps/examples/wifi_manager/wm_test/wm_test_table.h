@@ -26,3 +26,4 @@ WT_MEMBER_POOL(WT_TEST_DISPLAY_AP, _wt_interop_display_ap, _wt_parse_interop, "d
 WT_MEMBER_POOL(WT_TYPE_EVT_TC, _wt_run_evt_tc, _wt_parse_evt_tc, "tc_evt")
 WT_MEMBER_POOL(WT_TYPE_DNS, _wt_dns_test, _wt_parse_dns, "dns")
 WT_MEMBER_POOL(WT_TYPE_CONNECTBYRSSI, _wt_connectbyrssi_test, _wt_parse_connectbyrssi, "connect_by_rssi")
+WT_MEMBER_POOL(WT_TYPE_ENABLE_BRIDGE, _wt_enable_bridge, _wt_parse_bridge, "bridge")

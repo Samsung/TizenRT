@@ -34,3 +34,4 @@ trwifi_result_e wifi_utils_get_signal_quality(trwifi_signal_quality *signal_qual
 trwifi_result_e wifi_utils_get_disconnect_reason(int *disconnect_reason);
 trwifi_result_e wifi_utils_get_driver_info(trwifi_driver_info *driver_info);
 trwifi_result_e wifi_utils_get_wpa_supplicant_state(trwifi_wpa_states *wpa_state);
+trwifi_result_e wifi_utils_control_bridge(uint enable);

@@ -24,3 +24,4 @@ WIFIMGR_STATE_TABLE(WIFIMGR_STA_CONNECTING, _handler_on_connecting_state, "STA_C
 WIFIMGR_STATE_TABLE(WIFIMGR_STA_CONNECTED, _handler_on_connected_state, "STA_CONNECTED")
 WIFIMGR_STATE_TABLE(WIFIMGR_SOFTAP, _handler_on_softap_state, "SOFTAP")
 WIFIMGR_STATE_TABLE(WIFIMGR_SCANNING, _handler_on_scanning_state, "SCANNING")
+WIFIMGR_STATE_TABLE(WIFIMGR_BRIDGE, _handler_on_bridge_state, "BRIDGE")

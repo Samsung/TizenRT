@@ -70,6 +70,7 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason);
 trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
 trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+trwifi_result_e wifi_netmgr_utils_set_bridge(struct netdev *dev, uint8_t control);
 void print_scan_result(rtw_scan_result_t *record);
 
 struct trwifi_ops g_trwifi_drv_ops = {
@@ -90,11 +91,13 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_get_disconn_reason,		/* get_deauth_reason */
 	wifi_netmgr_utils_get_driver_info,			/* get_driver_info */
 	wifi_netmgr_utils_get_wpa_supplicant_state,	/* get_wpa_supplicant_state */
+	wifi_netmgr_utils_set_bridge,		/* set_bridge */
 };
 
 static trwifi_scan_list_s *g_scan_list;
 static int g_scan_num;
 extern struct netdev *ameba_nm_dev_wlan0;
+extern struct netdev *ameba_nm_dev_wlan1;
 rtw_result_t app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_scan_result);
 #ifndef CONFIG_ENABLE_HOMELYNK
 int softap_flag = 0;
@@ -316,6 +319,13 @@ static int rtk_drv_callback_handler(int type)
 	case 5:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
 		break;
+	//LWNL_EVT_CONCURRENT_JOINED and LWNL_EVT_CONCURRENT_LEFT as placeholder
+	case 6:
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_JOINED, NULL, 0);
+		break;
+	case 7:
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_LEFT, NULL, 0);
+		break;
 	default:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
 		break;
@@ -337,6 +347,20 @@ static int rtk_drv_callback_handler(int type)
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		type = 3;
 	}
+	else {
+		if(g_mode == RTK_WIFI_AP_STA_IF){
+			if (reason->reason_code == RTK_STATUS_SUCCESS) {
+				lldbg("\nconnected\n");
+				type = 1;
+			} else {
+				lldbg("\nconnect failed\n");
+				type = 2;
+			}
+		}
+		else{
+			type = 6;
+		}
+	}
 	(void)rtk_drv_callback_handler(type);
 }
 
@@ -349,6 +373,13 @@ static int rtk_drv_callback_handler(int type)
 	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
 		type = 5;
 	}
+	else if(g_mode == RTK_WIFI_AP_STA_IF){
+		if (wifi_is_connected_to_ap()) {
+			type = 4;
+		} else {
+			type = 7;
+		}
+	}
 	(void)rtk_drv_callback_handler(type);
 }
 
@@ -359,34 +390,61 @@ static int rtk_drv_callback_handler(int type)
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
+	ndbg("\n[RTK] Init netmgr with dev %s\n",dev->ifname);
 
+	int ret = RTK_STATUS_SUCCESS;
 	if (g_mode == RTK_WIFI_NONE) {
-		int ret = RTK_STATUS_SUCCESS;
+		if (rtw_memcmp(dev->ifname,"wlan0",5)) {
+			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 
-		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+			if (ret != RTK_STATUS_SUCCESS) {
+				ndbg("[RTK] Link callback handles: register failed !\n");
+				return wuret;
+			} else {
+				nvdbg("[RTK] Link callback handles: registered\n");
+			}
 
-		if (ret != RTK_STATUS_SUCCESS) {
-			ndbg("[RTK] Link callback handles: register failed !\n");
-			return wuret;
-		} else {
-			nvdbg("[RTK] Link callback handles: registered\n");
-		}
+				ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 
-		ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
-
-		if (ret != RTK_STATUS_SUCCESS) {
-			ndbg("[RTK] Failed to start STA mode\n");
-			return wuret;
-		}
-		g_mode = RTK_WIFI_STATION_IF;
-		/*extern const char lib_wlan_rev[];
-		RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
-		wuret = TRWIFI_SUCCESS;
+				if (ret != RTK_STATUS_SUCCESS) {
+					ndbg("[RTK] Failed to start STA mode\n");
+					return wuret;
+				}
+				g_mode = RTK_WIFI_STATION_IF;
+				/*extern const char lib_wlan_rev[];
+				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
+				wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
-		softap_flag = 0;
-#endif //#ifndef CONFIG_ENABLE_HOMELYNK
-		rtw_mutex_init(&scanlistbusy);
-	} else {
+				softap_flag = 0;
+#endif
+			rtw_mutex_init(&scanlistbusy);
+		}
+		
+	} else if(rtw_memcmp(dev->ifname,"wlan1",5)){
+			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+
+			if (ret != RTK_STATUS_SUCCESS) {
+				ndbg("[RTK] Link callback handles: register failed !\n");
+				return wuret;
+			} else {
+				nvdbg("[RTK] Link callback handles: registered\n");
+			}
+				ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
+				if (ret != RTK_STATUS_SUCCESS) {
+					ndbg("[RTK] Failed to start softap mode\n");
+					return wuret;
+				}
+				g_mode = RTK_WIFI_AP_STA_IF;
+				/*extern const char lib_wlan_rev[];
+				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
+				wuret = TRWIFI_SUCCESS;
+				
+#ifndef CONFIG_ENABLE_HOMELYNK
+				softap_flag = 1;
+#endif
+			}
+	
+	else{
 		ndbg("Already %d\n", g_mode);
 	}
 	return wuret;
@@ -878,6 +936,8 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	} else {
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
+
+	ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
 	return wuret;
 }
 
@@ -913,6 +973,20 @@ trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t ch
 		nvdbg("[RTK] External Autoconnect set to %d\n", check);
 	} else {
 		ndbg("[RTK] External Autoconnect failed to set %d", check);
+	}
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_set_bridge(struct netdev *dev, uint8_t control)
+{
+	trwifi_result_e wuret = TRWIFI_SUCCESS;
+	int ret = RTK_STATUS_SUCCESS;
+//	ret = DO_SOMETHING(control);
+	if (ret == RTK_STATUS_SUCCESS) {
+		wuret = TRWIFI_SUCCESS;
+		nvdbg("[RTK] External Bridge mode set to %d\n", control);
+	} else {
+		ndbg("[RTK] External Bridge mode failed to set %d", control);
 	}
 	return wuret;
 }

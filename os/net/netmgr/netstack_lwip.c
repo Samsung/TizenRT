@@ -669,6 +669,12 @@ static int lwip_ns_stop(void *data)
 	return 0;
 }
 
+static int lwip_ns_bridge(int isenable)
+{
+	lwip_set_bridge_mode(isenable);
+	return 0;
+}
+
 #ifdef CONFIG_NET_ROUTE
 static int lwip_ns_addroute(struct rtentry *entry)
 {
