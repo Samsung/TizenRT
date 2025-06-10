@@ -65,8 +65,9 @@ bool setVolume(uint8_t volume, stream_info_t *stream_info);
 /**
  * @brief Adds a listener in the listener list.
  * @param[in] listener Listener to be added in the listener list.
+ * @return true if the listener was successfully added, false otherwise.
 */
-void addVolumeStateChangedListener(VolumeStateChangedListener listener);
+bool addVolumeStateChangedListener(VolumeStateChangedListener listener);
 
 /**
  * @brief Removes a listener from the listener list.
