@@ -86,16 +86,27 @@ bool setEqualizer(uint32_t preset)
 	return true;
 }
 
-void addVolumeStateChangedListener(VolumeStateChangedListener listener)
+bool addVolumeStateChangedListener(VolumeStateChangedListener listener)
 {
+	if (listener == nullptr) {
+		meddbg("addVolumeStateChangedListener : invalid argument.\n");
+		return false;
+	}
+
 	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
 	gVolumeListenerList.push_back(listener);
 	listenerCount += 1;
 	medvdbg("added new listener %x\n", listener);
+	return true;
 }
 
 bool removeVolumeStateChangedListener(VolumeStateChangedListener listener)
 {
+	if (listener == nullptr) {
+		meddbg("removeVolumeStateChangedListener : invalid argument.\n");
+		return false;
+	}
+
 	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
 	list<VolumeStateChangedListener>::iterator itr;
 	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
