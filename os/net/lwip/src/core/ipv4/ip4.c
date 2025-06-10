@@ -128,18 +128,22 @@
 /** The IP header ID of the next outgoing IP packet */
 static u16_t ip_id;
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 /* to know the status of bridge mode on/off*/
 static int g_bridge_enable;
+#endif
 
 #if LWIP_MULTICAST_TX_OPTIONS
 /** The default netif used for multicast */
 static struct netif *ip4_default_multicast_netif;
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 void lwip_set_bridge_mode(int isenable)
 {
 	LWIP_DEBUGF(IP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("g_bridge_enable =%d now isenable = %d\n",g_bridge_enable, isenable));
 	g_bridge_enable = isenable;
 }
+#endif
 
 /**
  * @ingroup ip4

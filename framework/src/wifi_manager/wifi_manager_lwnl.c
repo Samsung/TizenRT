@@ -271,6 +271,7 @@ trwifi_result_e wifi_utils_get_wpa_supplicant_state(trwifi_wpa_states *wpa_state
 	return res;
 }
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 trwifi_result_e wifi_utils_control_bridge(uint8_t enable)
 {
 	trwifi_result_e res = TRWIFI_SUCCESS;
@@ -282,3 +283,4 @@ trwifi_result_e wifi_utils_control_bridge(uint8_t enable)
 	}
 	return res;
 }
+#endif

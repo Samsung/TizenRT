@@ -938,6 +938,7 @@ exit:
 	WT_TEST_FUNC_SIGNAL;
 }
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 int _wt_parse_bridge(struct wt_options *opt, int argc, char *argv[])
 {
 	if (argc < 3) {
@@ -961,6 +962,7 @@ void _wt_enable_bridge(void *arg)
 	}
 	WT_LEAVE;
 }
+#endif
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])

@@ -38,7 +38,6 @@
 #include "wifi_manager_info.h"
 #include "wifi_manager_lwnl.h"
 
-
 /*  Setting MACRO */
 static inline void WIFIMGR_SET_SSID(char *s)
 {
@@ -371,11 +370,14 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 	return WIFI_MANAGER_SUCCESS;
 }
 
+
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 wifi_manager_result_e _wifimgr_control_bridge(uint8_t isenable)
 {
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_control_bridge(isenable), TAG, "Starting STA failed.");
 	return WIFI_MANAGER_SUCCESS;
 }
+#endif
 
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {

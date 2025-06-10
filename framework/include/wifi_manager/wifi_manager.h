@@ -592,6 +592,7 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
  */
 wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 /**
  * @brief Start Wi-Fi Manager bridge mode.
  * @details @b #include <wifi_manager/wifi_manager.h>
@@ -602,6 +603,7 @@ wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
  * @since TizenRT v1.1
  */
 wifi_manager_result_e wifi_manager_control_bridge(uint8_t enable);
+#endif
 
 #ifdef __cplusplus
 }

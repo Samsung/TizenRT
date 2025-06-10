@@ -430,12 +430,14 @@ wifi_manager_result_e wifi_manager_set_hostname_sta(const char *hostname)
 	return WIFI_MANAGER_SUCCESS;
 }
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 wifi_manager_result_e wifi_manager_control_bridge(uint8_t enable)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
 	wifimgr_msg_s msg = {WIFIMGR_CMD_SET_BRIDGE, WIFI_MANAGER_FAIL, (void *)&enable, 0};
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
+#endif
 
 /**
  * Wi-Fi Profile

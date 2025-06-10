@@ -126,7 +126,9 @@ typedef enum {
 	LWNL_REQ_WIFI_GET_DRIVER_INFO,
 	LWNL_REQ_WIFI_GET_WPA_SUPPLICANT_STATE,
 	LWNL_REQ_WIFI_UNKNOWN,
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 	LWNL_REQ_WIFI_SETBRIDGE,
+#endif
 } lwnl_req_wifi;
 
 /**
@@ -536,8 +538,9 @@ typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
  */
 typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t chk);
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 /**
- * @brief   Set auto-connection to wi-fi library
+ * @brief   Set bridge-mode to wi-fi library
  *
  * @param[in]   dev    : struct netdev registered by netdev_register()
  * @param[in]   control  : 0: disable
@@ -552,7 +555,7 @@ typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t ch
  * @return TRWIFI_INVALID_ARGS : arguments are invalid
  */
 typedef trwifi_result_e (*trwifi_set_bridge)(struct netdev *dev, uint8_t control);
-
+#endif
 
 /**
  * @brief   Get wi-fi information
@@ -691,7 +694,9 @@ struct trwifi_ops {
 	trwifi_get_deauth_reason get_deauth_reason;
 	trwifi_get_driver_info get_driver_info;
 	trwifi_get_wpa_supplicant_state get_wpa_supplicant_state;
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 	trwifi_set_bridge set_bridge;
+#endif
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
