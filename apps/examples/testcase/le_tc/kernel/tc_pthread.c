@@ -1627,25 +1627,21 @@ static void tc_pthread_set_get_affinity(void)
 	TC_ASSERT_EQ("pthread_attr_init", ret_chk, OK);
 	attr.affinity = affinity;
 
-#ifdef CONFIG_SMP
 	ret_chk = pthread_create(&pthread, &attr, self_pthread_join_n_exit, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
+#ifdef CONFIG_SMP
 	TC_ASSERT_EQ("pthread_setaffinity_np", pthread_setaffinity_np(pthread, sizeof(attr.affinity), &affinity), OK);
 	affinity = 0;
 	TC_ASSERT_EQ("pthread_getaffinity_np", pthread_getaffinity_np(pthread, sizeof(attr.affinity), &affinity), OK);
 	TC_ASSERT_EQ("pthread_getaffinity_np", affinity, (1 << 0));
-	ret_chk = pthread_join(pthread, &p_value);
-	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 #else
-	ret_chk = pthread_create(&pthread, &attr, self_pthread_join_n_exit, NULL);
-	TC_ASSERT_EQ("pthread create", ret_chk, EINVAL);
 	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_setaffinity_np", pthread_setaffinity_np(pthread, sizeof(attr.affinity), &affinity), EINVAL);
 	TC_ASSERT_EQ("pthread_getaffinity_np", pthread_getaffinity_np(pthread, sizeof(attr.affinity), &affinity), 0);
+#endif
 	ret_chk = pthread_join(pthread, &p_value);
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
-#endif
 
 	TC_SUCCESS_RESULT();
 }

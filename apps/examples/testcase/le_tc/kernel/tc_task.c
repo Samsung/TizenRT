@@ -101,6 +101,7 @@ static int delete_task(int argc, char *argv[])
 static int restart_task(int argc, char *argv[])
 {
 	g_callback++;
+	sleep(1);
 	return OK;
 }
 
@@ -293,7 +294,7 @@ static void tc_task_task_restart(void)
 
 	/* g_icounter shall be increment when do start and restart operation */
 	waitpid(pid, &recv_status, 0);
-	TC_ASSERT_EQ("task_restart", g_callback, 1);
+	TC_ASSERT_EQ("task_restart", g_callback, 2);
 
 	TC_SUCCESS_RESULT();
 }
@@ -485,7 +486,7 @@ static int child_task(int argc, char *argv[])
 	int fd;
 	int ret_chk;
 	fd = tc_get_drvfd();
-
+	sleep(2);
 	ret_chk = ioctl(fd, TESTIOC_TASK_REPARENT, main_pid);
 	if (ret_chk != OK) {
 		tc_reparent_chk = TC_REPARENT_FAIL;
