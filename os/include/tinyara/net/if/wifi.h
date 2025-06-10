@@ -105,6 +105,9 @@ typedef enum {
 	TRWIFI_DISCONNECTED,			/**<  wifi is disconnected	*/
 	TRWIFI_CONNECTED,			/**<  connected				*/
 	TRWIFI_SOFTAP_MODE,			/**<  soft ap mode			*/
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	TRWIFI_BRIDGE_MODE,			/**<  bridge mode			*/
+#endif
 } trwifi_status_e;
 
 typedef enum {
