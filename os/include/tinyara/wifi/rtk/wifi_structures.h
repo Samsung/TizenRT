@@ -131,66 +131,6 @@ typedef struct rtw_scan_handler_result {
 
 
 /**
-  * @brief  The structure is used to describe the cfg parameters used for csi report,
-  * @note  The mac_addr if not specified, the default value must be 0.
-  */
-#if CONFIG_ARCH_CHIP_RTL8720E || CONFIG_ARCH_CHIP_RTL8730E
-typedef enum {
-	CSI_ALG_LS = 0,
-	CSI_ALG_SMOTHING,
-	CSI_ALG_MAX
-} rtw_csi_alg_opt;
-
-/**
-  * @brief csi ch_opt.
-  */
-typedef enum {
-	CSI_CH_LEGACY = 0, /**< legacy part(L-LTF) channel estmation result */
-	CSI_CH_NON_LEGACY,  /**< non-legacy(HT-LTF) part */
-	CSI_CH_MAX
-} rtw_csi_ch_opt;
-typedef struct {
-	rtw_csi_group_num group_num;
-	rtw_csi_mode mode;
-	rtw_csi_action act;
-	rtw_csi_accuracy accuracy;
-	rtw_csi_alg_opt alg_opt;
-	rtw_csi_ch_opt ch_opt;
-	unsigned char enable;
-	unsigned char trig_period;  /* unit:ms*/
-	unsigned char data_rate;
-	unsigned char data_bw;
-	unsigned char mac_addr[6];
-	unsigned char multi_type;
-} rtw_csi_action_parm_t;
-/**
-  * @brief csi alg_opt.
-  */
-
-#endif
-/**
-  * @brief  The structure is used to describe the extra info of csi report
-  */
-typedef struct {
-	unsigned char mac_addr[6];  /**< may be sta addr, driver define */
-	unsigned char trig_addr[6];  /**< add new,tx addr for trig chan_info */
-	unsigned int hw_assigned_timestamp;  /**< rxdesc: u32 r_rx_tsfl */
-	unsigned char channel;  /**< driver define */
-	unsigned char bandwidth; /**< rxdesc: u8 bw */
-	unsigned char rx_data_rate;  /**< rxdesc: u16 rx_rate <ack> */
-	unsigned char protocol_mode; /**< add new,ofdm(0)/ht(1)/vht(2)/he(3) */
-	unsigned char nc;  /**< ch_rpt_hdr_info */
-	unsigned char nr;  /**< ch_rpt_hdr_info */
-	unsigned short num_sub_carrier;  /**< cfg param, driver define */
-	unsigned char num_bit_per_tone;  /**< cfg param, driver define per I/Q */
-	unsigned char avg_idle_noise_pwr;  /**< ch_rpt_hdr_info */
-	unsigned char evm[2];  /**< ch_rpt_hdr_info + phy_info_rpt */
-	unsigned char rssi[2];  /**< phy_info_rpt */
-	unsigned int csi_data_length;  /**< ch_rpt_hdr_info */
-	unsigned char rxsc;  /**< phy_info_rpt */
-	unsigned char csi_valid;  /**< ch_rpt_hdr_info */
-} rtw_csi_header_t;
-/**
   * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
   */
 typedef struct rtw_wifi_setting {
