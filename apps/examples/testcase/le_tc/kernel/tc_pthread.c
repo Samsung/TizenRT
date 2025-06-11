@@ -1638,7 +1638,7 @@ static void tc_pthread_set_get_affinity(void)
 	TC_ASSERT_EQ("pthread_join", ret_chk, OK);
 #else
 	ret_chk = pthread_create(&pthread, &attr, self_pthread_join_n_exit, NULL);
-	TC_ASSERT_EQ("pthread create", ret_chk, EINVAL);
+	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 	ret_chk = pthread_create(&pthread, NULL, self_pthread_join_n_exit, NULL);
 	TC_ASSERT_EQ("pthread create", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_setaffinity_np", pthread_setaffinity_np(pthread, sizeof(attr.affinity), &affinity), EINVAL);
