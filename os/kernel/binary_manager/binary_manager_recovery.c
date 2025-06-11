@@ -165,6 +165,7 @@ static int binary_manager_deactivate_binary(int bin_idx)
 static void binary_manager_unblock_fault_message_sender(int bin_idx)
 {
 	struct faultmsg_s *msg;
+	irqstate_t flags = enter_critical_section();
 
 	/* Check there are a fault message sender and available fault message */
 	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
@@ -175,8 +176,10 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
 			up_unblock_task_without_savereg(g_faultmsg_sender);
 		}
+		leave_critical_section(flags);
 		return;
 	}
+	leave_critical_section(flags);
 
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
@@ -276,6 +279,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 	int ret;
 	faultmsg_t *msg;
 	binmgr_request_t request_msg;
+	irqstate_t flags = enter_critical_section();
 
 	/* Initialize pre-allocated fault messages */
 
@@ -296,6 +300,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 			sq_addlast((FAR sq_entry_t *)msg, (FAR sq_queue_t *)&g_freemsg_list);
 		}
 	}
+	leave_critical_section(flags);
 
 	return 0;
 }

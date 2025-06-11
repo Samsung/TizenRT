@@ -197,10 +197,12 @@ int unload_module(FAR struct binary_s *binp)
 			}
 		}
 #else
+#ifndef CONFIG_XIP_ELF
 		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
 		binfo("Freeing : %p\n", binp->sections[0]);
 		kmm_free((FAR void *)binp->sections[0]);
 		binp->sections[0] = 0;
+#endif
 #endif
 
 		binfmt_arch_deinit_mem_protect(binp);
