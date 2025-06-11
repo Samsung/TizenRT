@@ -941,7 +941,7 @@ exit:
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 int _wt_parse_bridge(struct wt_options *opt, int argc, char *argv[])
 {
-	if (argc < 3) {
+	if (argc < 4) {
 		return -1;
 	}
 	/* wpa2 aes is a default security mode. */
