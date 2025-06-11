@@ -385,6 +385,7 @@ static void i2s_txdma_timeout(int argc, uint32_t arg)
 	/* Then schedule completion of the transfer to occur on the worker thread.
 	 * Set the result with -ETIMEDOUT.
 	 */
+	i2serr("txdma timeout\n");
 	i2s_tx_schedule(priv, -ETIMEDOUT);
 }
 
