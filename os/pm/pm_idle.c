@@ -164,6 +164,8 @@ void pm_idle(void)
 		/* Send signal to shutdown other cores here */
 		for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 			if (up_get_cpu_state(cpu) == CPU_RUNNING) {
+				/* Ensure that secondary CPU systick PPI stops firing to prevent deadlock condition */
+				up_timer_set_hotplug_status(cpu, 1);
 				up_cpu_hotplug(cpu);
 			}
 			/* Reset core gating status flag */
