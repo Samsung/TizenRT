@@ -66,14 +66,20 @@ struct pm_clock_ops rtl8730e_clock_ops = {
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+void up_pm_board_sleep()
 {
 	/* mask sys tick interrupt*/
 	arm_arch_timer_int_mask(1);
 	up_timer_disable();
+
+	clock_t missing_tick;
+	pm_wakeup_reason_code_t wakeup_src;
 	/* Interrupt source will wake cpu up, just leave expected idle time as 0
 	Enter sleep mode for AP */
-	config_SLEEP_PROCESSING(wakeuphandler);
+	config_SLEEP_PROCESSING(&missing_tick, &wakeup_src);
+
+	rtl8730e_sleep_ops.wakehandler(missing_tick, wakeup_src);
+	
 	/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
 	trigger an timer interrupt */
 	up_timer_enable();
@@ -82,7 +88,7 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	arm_arch_timer_int_mask(0);
 }
 #else
-#define up_pm_board_sleep(wakeuphandler)
+#define up_pm_board_sleep()
 #endif
 
 /****************************************************************************

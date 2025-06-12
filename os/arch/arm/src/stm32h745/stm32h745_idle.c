@@ -91,12 +91,12 @@
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+void up_pm_board_sleep()
 {
 
 }
 #else
-#define up_pm_board_sleep(wakeuphandler)
+#define up_pm_board_sleep()
 #endif
 
 /****************************************************************************

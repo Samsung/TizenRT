@@ -127,6 +127,7 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
 
 	/* Register the PM ops structures */
 	g_pmglobals.sleep_ops = sleep_ops;
+	g_pmglobals.sleep_ops->wakehandler = pm_wakehandler;
 
 	/* Register Special Domains, which are specific to Kernel*/
 	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
