@@ -85,6 +85,10 @@ public:
 	 */
 	int requestFocusTransient(std::shared_ptr<FocusRequest> focusRequest);
 
+	int requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus_state_t focusState);
+
+	stream_focus_state_t getStreamFocusState(stream_info_id_t streamId);
+
 private:
 	/**
 	 * @brief Get current focussed player stream info
@@ -110,9 +114,10 @@ private:
 	class FocusRequester
 	{
 	public:
-		FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener);
+		FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener, focus_state_t focusState);
 		bool hasSameId(std::shared_ptr<FocusRequest> focusRequest);
 		stream_info_t getStreamInfo(void);
+		focus_state_t getFocusState(void);
 		void notify(int focusChange);
 		static bool compare(const FocusRequester a, const FocusRequester b);
 
@@ -120,11 +125,12 @@ private:
 		stream_info_id_t mId;
 		stream_policy_t mPolicy;
 		std::shared_ptr<FocusChangeListener> mListener;
+		focus_state_t mFocusState;
 	};
 
 	FocusManager();
 	virtual ~FocusManager() = default;
-	void insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest);
+	void insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, focus_state_t focusState);
 	void removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest);
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	void callFocusLossListener(stream_policy_t policy);
@@ -132,6 +138,7 @@ private:
 	std::mutex mFocusLock;
 	std::mutex mPlayerFocusListAccessLock;
 	FocusLossListener mPlayerFocusLossListener;
+	std::shared_ptr<FocusRequester> mDuckedFocusRequester;
 };
 } // namespace media
 
