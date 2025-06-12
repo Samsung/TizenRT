@@ -30,13 +30,6 @@
 #define __MEDIA_FOCUSCHANGELISTENER_H
 
 namespace media {
-/* TODO Transient need to be implemented */
-static const int FOCUS_NONE = 0;
-static const int FOCUS_GAIN = 1;
-static const int FOCUS_GAIN_TRANSIENT = 2;
-static const int FOCUS_LOSS = 3;
-static const int FOCUS_LOSS_TRANSIENT = 4;
-
 /**
  * @class 
  * @brief This class is callback interface of FocusRequest

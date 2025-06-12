@@ -44,6 +44,7 @@ typedef struct stream_info_s stream_info_t;
 enum stream_focus_state_e {
 	STREAM_FOCUS_STATE_RELEASED, /**< Focus state for release */
 	STREAM_FOCUS_STATE_ACQUIRED, /**< Focus state for acquisition */
+	STREAM_FOCUS_STATE_DUCKED	/**< Focus state for ducking*/
 };
 
 typedef enum stream_focus_state_e stream_focus_state_t;
@@ -63,8 +64,29 @@ enum stream_policy_e {
 	MAX_STREAM_POLICY_NUM = 7
 };
 
+/**
+ * @brief Used to indicate change in audio focus state, or a request of audio focus.
+*/
+enum focus_state_e {
+	/* Used to indicate a temporary loss of audio focus, anticipated to last a short amount of time, and where it is acceptable to keep playing in duck mode */
+	FOCUS_LOSS_TRANSIENT_CAN_DUCK = -3,
+	/* Used to indicate a temporary loss of audio focus, anticipated to last a short amount of time */
+	FOCUS_LOSS_TRANSIENT = -2,
+	/* Used to indicate a loss of audio focus of unknown duration */
+	FOCUS_LOSS = -1,
+	/* Used to indicate no audio focus change */
+	FOCUS_NONE = 0,
+	/* Used to indicate a gain of audio focus, or a request of audio focus, of unknown duration. E.g. music playback */
+	FOCUS_GAIN = 1,
+	/* Used to indicate a temporary gain or request of audio focus, anticipated to last a short amount of time. E.g. event notification playback */
+	FOCUS_GAIN_TRANSIENT = 2,
+	/* Used to indicate a temporary gain or request of audio focus, anticipated to last a short amount of time, and where it is acceptable for other audio applications to keep playing in duck mode i.e. lowered volume. E.g. UI tap sounds */
+	FOCUS_GAIN_TRANSIENT_MAY_DUCK = 3
+};
+
 typedef enum stream_policy_e stream_policy_t;
 typedef size_t stream_info_id_t;
+typedef enum focus_state_e focus_state_t;
 
 struct stream_info_s {
 	stream_info_id_t id;

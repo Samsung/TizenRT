@@ -23,8 +23,8 @@
 
 namespace media {
 
-FocusManager::FocusRequester::FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener)
-	: mId(stream_info->id), mPolicy(stream_info->policy), mListener(listener)
+FocusManager::FocusRequester::FocusRequester(std::shared_ptr<stream_info_t> stream_info, std::shared_ptr<FocusChangeListener> listener, focus_state_t focusState)
+	: mId(stream_info->id), mPolicy(stream_info->policy), mListener(listener), mFocusState(focusState)
 {
 }
 
@@ -36,6 +36,11 @@ bool FocusManager::FocusRequester::hasSameId(std::shared_ptr<FocusRequest> focus
 stream_info_t FocusManager::FocusRequester::getStreamInfo(void)
 {
 	return {mId, mPolicy};
+}
+
+focus_state_t FocusManager::FocusRequester::getFocusState(void)
+{
+	return mFocusState;
 }
 
 bool FocusManager::FocusRequester::compare(const FocusManager::FocusRequester a, const FocusManager::FocusRequester b)
@@ -67,6 +72,7 @@ void FocusManager::unregisterPlayerFocusLossListener()
 FocusManager::FocusManager()
 {
 	mPlayerFocusLossListener = nullptr;
+	mDuckedFocusRequester = nullptr;
 }
 
 FocusManager &FocusManager::getFocusManager()
@@ -84,12 +90,37 @@ void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusReque
 		/* Remove focus from list */
 		focusList->pop_front();
 		if (!focusList->empty()) {
+			focus_state_t frontFocusState = focusList->front()->getFocusState();
+			if (!mDuckedFocusRequester) { // Non ducking case
+				lock.unlock();
+				focusList->front()->notify(frontFocusState);
+				lock.lock();
+				return;
+			}
+
+			 // Ducked focus request is now the front item in list
+			if (focusList->front()->getStreamInfo().id == mDuckedFocusRequester->getStreamInfo().id) {
+				lock.unlock();
+				focusList->front()->notify(frontFocusState);
+				lock.lock();
+				mDuckedFocusRequester = nullptr;
+				return;
+			}
+
 			lock.unlock();
-			focusList->front()->notify(FOCUS_GAIN);
+			if (frontFocusState != FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
+				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				mDuckedFocusRequester = nullptr;				
+			}
+			focusList->front()->notify(frontFocusState);
 			lock.lock();
 		}
-	} else {
-		removeFocusElement(focusRequest);
+		return;
+	}
+
+	removeFocusElement(focusRequest);
+	if (mDuckedFocusRequester && mDuckedFocusRequester->hasSameId(focusRequest)) {
+		mDuckedFocusRequester = nullptr;
 	}
 }
 
@@ -124,7 +155,7 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 		meddbg("FocusManagerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, false);
+	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
@@ -139,7 +170,26 @@ int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusReque
 		meddbg("FocusManagerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, true);
+	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN_TRANSIENT);
+	return FOCUS_REQUEST_SUCCESS;
+}
+
+int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus_state_t focusState)
+{
+	std::lock_guard<std::mutex> lock(mFocusLock);
+	if (focusRequest == nullptr) {
+		return FOCUS_REQUEST_FAIL;
+	}
+	if (focusState <= FOCUS_NONE) {
+		meddbg("Invalid focus state : %d\n", focusState);
+		return FOCUS_REQUEST_FAIL;
+	}
+	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
+	if (!fmw.isAlive()) {
+		meddbg("FocusManagerWorker is not alive\n");
+		return FOCUS_REQUEST_FAIL;
+	}
+	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, focusState);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
@@ -150,54 +200,69 @@ void FocusManager::callFocusLossListener(stream_policy_t policy)
 	}
 }
 
-void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest)
+void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, focus_state_t focusState)
 {
 	std::unique_lock<std::mutex> lock(mPlayerFocusListAccessLock);
 	std::list<std::shared_ptr<FocusRequester>> *focusList = &mPlayerFocusList;
 	medvdbg("insertFocusElement!!\n");
+
 	/* If request already gained focus, just return success */
 	if (!focusList->empty() && focusList->front()->hasSameId(focusRequest)) {
 		return;
 	}
 	/* If list is empty, request always gain focus */
 	if (focusList->empty()) {
-		auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
+		auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener(), focusState);
 		focusList->push_front(focusRequester);
 		lock.unlock();
-		if (isTransientRequest) {
-			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
-		} else {
-			focusRequester->notify(FOCUS_GAIN);
-		}
+		focusRequester->notify(focusState);
 		lock.lock();
 		return;
 	}
 
 	removeFocusElement(focusRequest);
+	if (mDuckedFocusRequester && mDuckedFocusRequester->hasSameId(focusRequest)) {
+		mDuckedFocusRequester = nullptr;	
+	}
 
-	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener());
+	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener(), focusState);
 	auto iter = focusList->begin();
 
 	/* If the policy of request is the highest prio */
 	if (FocusRequester::compare(*focusRequester, *(*iter))) {
-		lock.unlock();
-		if (isTransientRequest) {
-			focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
-		} else {
-			focusList->front()->notify(FOCUS_LOSS);
+		if (!mDuckedFocusRequester) { // Non ducking case
+			lock.unlock();
+			if (focusState == FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
+				focusList->front()->notify(FOCUS_LOSS_TRANSIENT_CAN_DUCK);
+				mDuckedFocusRequester = focusList->front();
+			} else if (focusState == FOCUS_GAIN_TRANSIENT) {
+				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
+			} else {
+				focusList->front()->notify(FOCUS_LOSS);
+			}
+			lock.lock();
+		} else { // Ducking case
+			lock.unlock();
+			if (focusState == FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
+				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
+			} else if (focusState == FOCUS_GAIN_TRANSIENT) {
+				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
+				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				mDuckedFocusRequester = nullptr;
+			} else {
+				focusList->front()->notify(FOCUS_LOSS);
+				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				mDuckedFocusRequester = nullptr;
+			}
+			lock.lock();
 		}
-		lock.lock();
 		focusList->push_front(focusRequester);
 
-		PlayerWorker& worker = PlayerWorker::getWorker();
-		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+		// 	PlayerWorker& worker = PlayerWorker::getWorker();
+		// 	worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
 
 		lock.unlock();
-		if (isTransientRequest) {
-			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
-		} else {
-			focusRequester->notify(FOCUS_GAIN);
-		}
+		focusRequester->notify(focusState);
 		lock.lock();
 		return;
 	}
@@ -229,6 +294,21 @@ stream_info_t FocusManager::getCurrentPlayerStreamInfo(void)
 	auto iterator = mPlayerFocusList.begin();
 	stream_info = (*iterator)->getStreamInfo();
 	return stream_info;
+}
+
+stream_focus_state_t FocusManager::getStreamFocusState(stream_info_id_t streamId)
+{
+	std::lock_guard<std::mutex> lock(mPlayerFocusListAccessLock);
+	if (mPlayerFocusList.empty()) {
+		return STREAM_FOCUS_STATE_RELEASED;
+	}
+	if (streamId == mPlayerFocusList.front()->getStreamInfo().id) {
+		return STREAM_FOCUS_STATE_ACQUIRED;
+	}
+	if (mDuckedFocusRequester && streamId == mDuckedFocusRequester->getStreamInfo().id) {
+		return STREAM_FOCUS_STATE_DUCKED;
+	}
+	return STREAM_FOCUS_STATE_RELEASED;
 }
 
 void FocusManager::removeFocusElement(std::shared_ptr<FocusRequest> focusRequest)
