@@ -28,6 +28,7 @@
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
 #include <media/MediaUtils.h>
+#include <audio/SoundManager.h>
 #include <string.h>
 #include <debug.h>
 #include <fcntl.h>
