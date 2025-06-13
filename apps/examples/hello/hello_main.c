@@ -67,6 +67,14 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	if (argc != 3) {
+		char *preset = argv[1];
+		char *endptr;
+    	long result;
+
+    	result = strtol(preset, &endptr, 16);
+		printf("[TEST] Input %s / %d \n", preset, result);
+		setEqualizer(result);
+	}
 	return 0;
 }
