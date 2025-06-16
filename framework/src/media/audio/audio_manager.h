@@ -142,12 +142,11 @@ audio_manager_result_t audio_manager_init(void);
  *   channels: number of channels
  *   sample_rate: sample rate with which the stream is operated
  *   format: audio file format to be streamed in
- *   stream_id: stream info id to be used for stream in
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise a negative value.
  ****************************************************************************/
-audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format, stream_info_id_t stream_id);
+audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int sample_rate, int format);
 
 /****************************************************************************
  * Name: set_audio_stream_out
@@ -264,13 +263,10 @@ audio_manager_result_t stop_audio_stream_out(bool drain);
  *   After the reset, the stream should be restarted from the beginning with
  *   calling set_audio_stream_in().
  *
- * Input parameter:
- *   stream_id: stream info id to be used for stream in reset
- *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t reset_audio_stream_in(stream_info_id_t stream_id);
+audio_manager_result_t reset_audio_stream_in(void);
 
 /****************************************************************************
  * Name: reset_audio_stream_out

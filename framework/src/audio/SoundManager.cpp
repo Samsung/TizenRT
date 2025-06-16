@@ -26,7 +26,7 @@
 
 using namespace media;
 
-#define MIC_MUTE_VALUE -1
+#define DEVICE_MUTE_VALUE -1
 
 static list<VolumeStateChangedListener> gVolumeListenerList;
 static std::mutex gVolumeListenerListAccessLock;
@@ -138,7 +138,7 @@ bool setMicMute(void)
 		return true;
 	}
 
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, 0);
+	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, DEVICE_MUTE_VALUE);
 	return true;
 }
 
@@ -174,7 +174,7 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 
 	uint8_t volume = 0;
 	if (mute) {
-		volume = MIC_MUTE_VALUE;
+		volume = DEVICE_MUTE_VALUE;
 	} else if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
 		get_input_audio_gain(&volume);
 	} else {

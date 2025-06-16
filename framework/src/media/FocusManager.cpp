@@ -20,7 +20,6 @@
 #include <debug.h>
 #include "FocusManagerWorker.h"
 #include "PlayerWorker.h"
-#include "RecorderWorker.h"
 
 namespace media {
 
@@ -65,20 +64,9 @@ void FocusManager::unregisterPlayerFocusLossListener()
 	mPlayerFocusLossListener = nullptr;
 }
 
-void FocusManager::registerRecorderFocusLossListener(FocusLossListener recorderFocusLossCallback)
-{
-	mRecorderFocusLossListener = recorderFocusLossCallback;
-}
-
-void FocusManager::unregisterRecorderFocusLossListener()
-{
-	mRecorderFocusLossListener = nullptr;
-}
-
 FocusManager::FocusManager()
 {
 	mPlayerFocusLossListener = nullptr;
-	mRecorderFocusLossListener = nullptr;
 }
 
 FocusManager &FocusManager::getFocusManager()
@@ -89,15 +77,9 @@ FocusManager &FocusManager::getFocusManager()
 
 void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest)
 {
-	std::list<std::shared_ptr<FocusRequester>> *focusList;
-	std::unique_lock<std::mutex> lock;
-	if (focusRequest->getStreamInfo()->policy == STREAM_TYPE_VOICE_RECORD) {
-		lock = std::unique_lock<std::mutex>(mRecorderFocusListAccessLock);
-		focusList = &mRecorderFocusList;
-	} else {
-		lock = std::unique_lock<std::mutex>(mPlayerFocusListAccessLock);
-		focusList = &mPlayerFocusList;
-	}
+	std::unique_lock<std::mutex> lock(mPlayerFocusListAccessLock);
+	std::list<std::shared_ptr<FocusRequester>> *focusList = &mPlayerFocusList;
+
 	if ((!focusList->empty()) && (focusList->front()->hasSameId(focusRequest))) {
 		/* Remove focus from list */
 		focusList->pop_front();
@@ -163,29 +145,15 @@ int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusReque
 
 void FocusManager::callFocusLossListener(stream_policy_t policy)
 {
-	FocusLossListener focusLossCallback;
-	if (policy == STREAM_TYPE_VOICE_RECORD) {
-		focusLossCallback = mRecorderFocusLossListener;
-	} else {
-		focusLossCallback = mPlayerFocusLossListener;
-	}
-	if (focusLossCallback != nullptr) {
-		focusLossCallback();
+	if (mPlayerFocusLossListener != nullptr) {
+		mPlayerFocusLossListener();
 	}
 }
 
 void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest)
 {
-	std::list<std::shared_ptr<FocusRequester>> *focusList;
-	std::unique_lock<std::mutex> lock;
-	stream_policy_t policy = focusRequest->getStreamInfo()->policy;
-	if (policy == STREAM_TYPE_VOICE_RECORD) {
-		lock = std::unique_lock<std::mutex>(mRecorderFocusListAccessLock);
-		focusList = &mRecorderFocusList;
-	} else {
-		lock = std::unique_lock<std::mutex>(mPlayerFocusListAccessLock);
-		focusList = &mPlayerFocusList;
-	}
+	std::unique_lock<std::mutex> lock(mPlayerFocusListAccessLock);
+	std::list<std::shared_ptr<FocusRequester>> *focusList = &mPlayerFocusList;
 	medvdbg("insertFocusElement!!\n");
 	/* If request already gained focus, just return success */
 	if (!focusList->empty() && focusList->front()->hasSameId(focusRequest)) {
@@ -220,13 +188,10 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 		}
 		lock.lock();
 		focusList->push_front(focusRequester);
-		if (policy == STREAM_TYPE_VOICE_RECORD) {
-			RecorderWorker& worker = RecorderWorker::getWorker();
-			worker.enQueue(&FocusManager::callFocusLossListener, this, policy);
-		} else {
-			PlayerWorker& worker = PlayerWorker::getWorker();
-			worker.enQueue(&FocusManager::callFocusLossListener, this, policy);
-		}
+
+		PlayerWorker& worker = PlayerWorker::getWorker();
+		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+
 		lock.unlock();
 		if (isTransientRequest) {
 			focusRequester->notify(FOCUS_GAIN_TRANSIENT);
@@ -266,28 +231,9 @@ stream_info_t FocusManager::getCurrentPlayerStreamInfo(void)
 	return stream_info;
 }
 
-stream_info_t FocusManager::getCurrentRecorderStreamInfo(void)
-{
-	std::lock_guard<std::mutex> lock(mRecorderFocusListAccessLock);
-	medvdbg("getCurrentRecorderStreamInfo!!\n");
-	stream_info_t stream_info;
-	if (mRecorderFocusList.empty()) {
-		stream_info = {0, STREAM_TYPE_VOICE_RECORD};
-		return stream_info;
-	}
-	auto iterator = mRecorderFocusList.begin();
-	stream_info = (*iterator)->getStreamInfo();
-	return stream_info;
-}
-
 void FocusManager::removeFocusElement(std::shared_ptr<FocusRequest> focusRequest)
 {
-	std::list<std::shared_ptr<FocusRequester>> *focusList;
-	if (focusRequest->getStreamInfo()->policy == STREAM_TYPE_VOICE_RECORD) {
-		focusList = &mRecorderFocusList;
-	} else {
-		focusList = &mPlayerFocusList;
-	}
+	std::list<std::shared_ptr<FocusRequester>> *focusList = &mPlayerFocusList;
 	medvdbg("removeFocusElement!!\n");
 	auto iterator = focusList->begin();
 	while (iterator != focusList->end()) {

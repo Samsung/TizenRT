@@ -31,7 +31,6 @@
 #define __MEDIA_MEDIARECORDER_H
 
 #include <memory>
-#include <media/stream_info.h>
 #include <media/OutputDataSource.h>
 #include <media/MediaRecorderObserverInterface.h>
 
@@ -46,7 +45,6 @@ class MediaRecorderImpl;
  */
 enum recorder_error_e : int {
 	/** MediaRecorder Error case */
-	RECORDER_ERROR_FOCUS_NOT_READY = -11,
 	RECORDER_ERROR_DEVICE_SUSPENDED = -10,
 	RECORDER_ERROR_NOT_ALIVE,
 	RECORDER_ERROR_INVALID_STATE,
@@ -255,15 +253,6 @@ public:
 	 * @since TizenRT v2.1 PRE
 	 */
 	bool isRecording();
-
-	/**
-	 * @brief set stream_info of MediaRecorder
-	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a synchronous API
-	 * param[in] stream_info shared_ptr of stream_info_t
-	 * @return The result of the setStreamInfo operation
-	 */
-	recorder_result_t setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
 
 private:
 	std::shared_ptr<MediaRecorderImpl> mPMrImpl;

@@ -97,13 +97,6 @@ private:
 	 * @details @b #include <media/FocusManager.h>
 	 * @return return current focused recorder stream_info structure. If list is empty, return {0, STREAM_TYPE_VOICE_RECORD}
 	 */
-	stream_info_t getCurrentRecorderStreamInfo(void);
-	/**
-	 * @brief It registers a listener which will be called when player focus is lost. This function is called whenever player is started.
-	 * @details @b #include <media/FocusManager.h>
-	 * @param[in] playerFocusLossCallback Callback function to be called when player focus loss occurs
-	 * @return void
-	*/
 	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
 	/**
 	 * @brief It unregisters player focus loss listener. This function is called whenever player is paused or stopped.
@@ -111,23 +104,9 @@ private:
 	 * @return void
 	*/
 	void unregisterPlayerFocusLossListener(void);
-	/**
-	 * @brief It registers a listener which will be called when recorder focus is lost. This function is called whenever recorder is started.
-	 * @details @b #include <media/FocusManager.h>
-	 * @param[in] recorderFocusLossCallback Callback function to be called when recorder focus loss occurs
-	 * @return void
-	*/
-	void registerRecorderFocusLossListener(FocusLossListener recorderFocusLossCallback);
-	/**
-	 * @brief It unregisters recorder focus loss listener. This function is called whenever recorder is paused or stopped.
-	 * @details @b #include <media/FocusManager.h>
-	 * @return void
-	*/
-	void unregisterRecorderFocusLossListener(void);
 
 	/*@ToDo: Find an alternative of using friend keyword*/
 	friend class MediaPlayerImpl;
-	friend class MediaRecorderImpl;
 
 	class FocusRequester
 	{
@@ -151,12 +130,9 @@ private:
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	void callFocusLossListener(stream_policy_t policy);
 	std::list<std::shared_ptr<FocusRequester>> mPlayerFocusList;
-	std::list<std::shared_ptr<FocusRequester>> mRecorderFocusList;
 	std::mutex mFocusLock;
 	std::mutex mPlayerFocusListAccessLock;
-	std::mutex mRecorderFocusListAccessLock;
 	FocusLossListener mPlayerFocusLossListener;
-	FocusLossListener mRecorderFocusLossListener;
 };
 } // namespace media
 
