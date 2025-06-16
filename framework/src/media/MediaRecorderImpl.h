@@ -101,7 +101,6 @@ public:
 	recorder_result_t getMaxVolume(uint8_t *vol);
 	recorder_result_t setVolume(uint8_t vol);
 	recorder_result_t setDataSource(std::unique_ptr<stream::OutputDataSource> dataSource);
-	recorder_result_t setStreamInfo(std::shared_ptr<stream_info_t> stream_info);
 	recorder_state_t getState();
 	recorder_result_t setObserver(std::shared_ptr<MediaRecorderObserverInterface> observer);
 	bool isRecording();
@@ -129,10 +128,7 @@ private:
 	void setRecorderDuration(int second, recorder_result_t& ret);
 	void setRecorderFileSize(int byte, recorder_result_t& ret);
 	void dequeueAndRunObserverCallback();
-	void setRecorderStreamInfo(std::shared_ptr<stream_info_t> stream_info, recorder_result_t &ret);
-	void onFocusLossListener(void);
 	void onMuteListener(void);
-	stream_focus_state_t getStreamFocusState(void);
 
 private:
 	std::atomic<recorder_state_t> mCurState;
