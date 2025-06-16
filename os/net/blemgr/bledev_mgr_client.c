@@ -143,112 +143,6 @@ static void bledrv_operation_display_passkey_cb(uint32_t passkey, trble_conn_han
 	return;
 }
 
-static void bledrv_device_coc_reg_psm_cb(uint16_t le_psm, uint16_t err)
-{
-	return;
-}
-
-static void bledrv_device_coc_set_sec_cb(uint16_t err)
-{
-	return;
-}
-
-static void bledrv_device_coc_con_cb(uint16_t conn_handle, uint16_t cid, uint16_t err)
-{
-	int32_t size = sizeof(uint16_t) * 3;
-	uint8_t *data = (uint8_t *)kmm_malloc(size);
-	if (data == NULL) {
-		BLE_LOGE(BLE_DRV_TAG, "out of memory\n");
-		return;
-	}
-
-	uint8_t *ptr = data;
-	// Copy connection handle
-	memcpy(ptr, &conn_handle, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy cid
-	memcpy(ptr, &cid, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy err
-	memcpy(ptr, &err, sizeof(uint16_t));
-
-	trble_post_event(LWNL_EVT_BLE_CLIENT_COC_CONNECT, data, size);
-	return;
-}
-
-static void bledrv_device_coc_discon_cb(uint16_t conn_handle, uint16_t cid, uint16_t err)
-{
-	int32_t size = sizeof(uint16_t) * 3;
-	uint8_t *data = (uint8_t *)kmm_malloc(size);
-	if (data == NULL) {
-		BLE_LOGE(BLE_DRV_TAG, "out of memory\n");
-		return;
-	}
-	uint8_t *ptr = data;
-	// Copy connection handle
-	memcpy(ptr, &conn_handle, sizeof(conn_handle));
-	ptr += sizeof(uint16_t);
-	// Copy cid
-	memcpy(ptr, &cid, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy err
-	memcpy(ptr, &err, sizeof(uint16_t));
-
-	trble_post_event(LWNL_EVT_BLE_CLIENT_COC_DISCONNECT, data, size);
-	return;
-}
-
-static void bledrv_device_coc_send_cb(uint16_t conn_handle, uint16_t cid, uint16_t err, uint8_t credit)
-{
-	int32_t size = sizeof(uint16_t) * 3 + sizeof(uint8_t);
-	uint8_t *data = (uint8_t *)kmm_malloc(size);
-	if (data == NULL) {
-		BLE_LOGE(BLE_DRV_TAG, "out of memory\n");
-		return;
-	}
-	uint8_t *ptr = data;
-	// Copy connection handle
-	memcpy(ptr, &conn_handle, sizeof(conn_handle));
-	ptr += sizeof(uint16_t);
-	// Copy cid
-	memcpy(ptr, &cid, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy err
-	memcpy(ptr, &err, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy credit
-	memcpy(ptr, &credit, sizeof(uint16_t));
-
-	trble_post_event(LWNL_EVT_BLE_CLIENT_COC_SEND, data, size);
-	return;
-}
-
-static void bledrv_device_coc_recv_cb(uint16_t conn_handle, uint16_t cid, trble_data *read_result)
-{
-	int32_t size = sizeof(uint16_t) + sizeof(uint16_t) + sizeof(read_result->length) + read_result->length;
-	uint8_t *data = (uint8_t *)kmm_malloc(size);
-	if (data == NULL) {
-		BLE_LOGE(BLE_DRV_TAG, "out of memory\n");
-		return;
-	}
-
-	uint8_t *ptr = data;
-	// Copy connection handle
-	memcpy(ptr, &conn_handle, sizeof(conn_handle));
-	ptr += sizeof(uint16_t);
-	// Copy cid
-	memcpy(ptr, &cid, sizeof(uint16_t));
-	ptr += sizeof(uint16_t);
-	// Copy len
-	memcpy(ptr, &(read_result->length), sizeof(read_result->length));
-	ptr += sizeof(read_result->length);
-	// Copy read_result data
-	memcpy(ptr, read_result->data, read_result->length);
-
-	trble_post_event(LWNL_EVT_BLE_CLIENT_COC_RECV, data, size);
-	return;
-}
-
 static trble_client_init_config g_client_fake_config = {
 	bledrv_scan_state_changed_cb,
 	bledrv_device_scanned_cb,
@@ -257,12 +151,6 @@ static trble_client_init_config g_client_fake_config = {
 	bledrv_operation_notification_cb,
 	bledrv_operation_indication_cb,
 	bledrv_operation_display_passkey_cb,
-	bledrv_device_coc_reg_psm_cb,
-	bledrv_device_coc_set_sec_cb,
-	bledrv_device_coc_con_cb,
-	bledrv_device_coc_discon_cb,
-	bledrv_device_coc_send_cb,
-	bledrv_device_coc_recv_cb,
 	247
 };
 

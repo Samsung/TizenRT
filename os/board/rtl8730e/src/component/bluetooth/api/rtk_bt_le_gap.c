@@ -1543,7 +1543,7 @@ uint16_t rtk_bt_le_gap_coc_set_psm_security(uint16_t le_psm, uint8_t active,
 {
 	uint16_t ret = 0;
 
-	if (sec_mode > RTK_BT_LE_COC_SEC_AUTHOR) {
+	if (sec_mode > RTK_BT_LE_COC_SEC_SECURE_CONN_AUTHEN) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 

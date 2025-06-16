@@ -15,7 +15,6 @@
 #define hci_platform_DOWNLOAD_PATCH
 #define hci_platform_MP_RESET_BAUDRATE
 #define hci_platform_WRITE_PHY_EFUSE
-// #define hci_platform_SET_CUT_VER
 
 #ifdef hci_platform_WRITE_PHY_EFUSE
 #define HCI_WRITE_PHY_EFUSE_LEN    0x6D

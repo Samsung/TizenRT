@@ -160,7 +160,7 @@ extern rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind;
 extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
 extern uint16_t scan_timeout;
-
+extern trble_le_coc_init_config le_coc_init_parm;  
 static app_conn_table_t conn_link[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
@@ -703,7 +703,11 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			dbg("[APP] LE COC register PSM fail, le_psm: 0x%x, err: 0x%x\r\n",
 					reg_psm_ind->le_psm, reg_psm_ind->err);
 		}
-		server_init_parm.coc_reg_psm_cb(reg_psm_ind->le_psm, reg_psm_ind->err);
+		if (le_coc_init_parm.reg_psm_cb) {
+			le_coc_init_parm.reg_psm_cb(reg_psm_ind->le_psm, reg_psm_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
 		break;
 	}
 
@@ -716,7 +720,11 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			dbg("[APP] LE COC set security fail, err: 0x%x\r\n",
 					set_sec_ind->err);
 		}
-		server_init_parm.coc_set_sec_cb(set_sec_ind->err);
+		if (le_coc_init_parm.set_sec_cb) {
+			le_coc_init_parm.set_sec_cb(set_sec_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
 		break;
 	}
 
@@ -729,10 +737,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			dbg("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
 		}
-		if (coc_conn_ind->conn_handle < 24){
-			client_init_parm->trble_device_coc_con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		if (le_coc_init_parm.con_cb) {
+			le_coc_init_parm.con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
 		} else {
-			server_init_parm.coc_con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+			ble_tizenrt_dummy_callback();
 		}
 		break;
 	}
@@ -746,10 +754,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			dbg("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
 					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
 		}
-		if (coc_disconn_ind->conn_handle < 24){
-			client_init_parm->trble_device_coc_discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		if (le_coc_init_parm.discon_cb) {
+			le_coc_init_parm.discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
 		} else {
-			server_init_parm.coc_discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+			ble_tizenrt_dummy_callback();
 		}
 		break;
 	}
@@ -758,10 +766,10 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 		rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)param;
 		dbg("[APP] LE COC send data completed, conn_handle: %d, cid: 0x%x, credit: %d, err: 0x%x\r\n",
 				res_ind->conn_handle, res_ind->cid, res_ind->credit, res_ind->err);
-		if (res_ind->conn_handle < 24){
-			client_init_parm->trble_device_coc_send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
+		if (le_coc_init_parm.send_cb) {
+			le_coc_init_parm.send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
 		} else {
-			server_init_parm.coc_send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
+			ble_tizenrt_dummy_callback();
 		}
 		break;
 	}
@@ -773,18 +781,17 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 
 		trble_data read_result;
 		read_result.length = data_ind->len;
-		read_result.data = (uint8_t *)malloc(read_result.length);
+		read_result.data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, read_result.length);
 		if (!read_result.data)
 		{
 			dbg("fail to malloc data %s\n", __FUNCTION__);
 			break;
 		}
 		memcpy(read_result.data, data_ind->data, read_result.length);
-
-		if (data_ind->conn_handle < 24){
-			client_init_parm->trble_device_coc_recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
+		if (le_coc_init_parm.recv_cb) {
+			le_coc_init_parm.recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
 		} else {
-			server_init_parm.coc_recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
+			ble_tizenrt_dummy_callback();
 		}
 		break;
 	}

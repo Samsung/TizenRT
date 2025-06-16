@@ -131,6 +131,7 @@ trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_
 trble_result_e trble_netmgr_start_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handle);
 #endif
+trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_config *le_coc);
 trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm);
 trble_result_e trble_netmgr_coc_set_psm_security(struct bledev *dev, uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
 trble_result_e trble_netmgr_coc_set_param(struct bledev *dev, uint16_t value);
@@ -213,6 +214,7 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_start_multi_adv,
 	trble_netmgr_stop_multi_adv,
 #endif
+	trble_netmgr_coc_init,
 	trble_netmgr_coc_register_psm,
 	trble_netmgr_coc_set_psm_security,
 	trble_netmgr_coc_set_param,
@@ -645,6 +647,12 @@ trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handl
 	return retn;
 }
 #endif
+
+trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_config *le_coc)
+{
+	return rtw_ble_le_coc_init(le_coc);
+}
+
 
 trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm)
 {

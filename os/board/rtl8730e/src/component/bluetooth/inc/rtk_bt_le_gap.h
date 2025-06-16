@@ -1868,12 +1868,14 @@ typedef enum {
 
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 typedef enum {
-	RTK_BT_LE_COC_SEC_NONE,
-	RTK_BT_LE_COC_SEC_UNAUTHEN_ENCRYPT,
-	RTK_BT_LE_COC_SEC_AUTHEN_ENCRYPT,
-	RTK_BT_LE_COC_SEC_UNAUTHEN_DATA_SIGN,
-	RTK_BT_LE_COC_SEC_AUTHEN_DATA_SIGN,
-	RTK_BT_LE_COC_SEC_AUTHOR,
+	RTK_BT_LE_COC_SEC_NONE,                 /**< Security None */ 
+	RTK_BT_LE_COC_SEC_UNAUTHEN_ENCRYPT,     /**< Security unauthenticated encryption */
+	RTK_BT_LE_COC_SEC_AUTHEN_ENCRYPT,       /**< Security authenticated encryption */
+	RTK_BT_LE_COC_SEC_UNAUTHEN_DATA_SIGN,   /**< Security unauthenticated data signed */
+	RTK_BT_LE_COC_SEC_AUTHEN_DATA_SIGN,     /**< Security authenticated data signed */
+	RTK_BT_LE_COC_SEC_AUTHOR,               /**< Security authorized */
+	RTK_BT_LE_COC_SEC_SECURE_CONN_UNAUTHEN, /**< Security unauthenticated LE secure connection */
+	RTK_BT_LE_COC_SEC_SECURE_CONN_AUTHEN,   /**< Security LE secure connection */
 } rtk_bt_le_coc_security_mode_t;
 
 typedef enum {

@@ -38,6 +38,7 @@ extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern int attr_counter;
 
+trble_le_coc_init_config le_coc_init_parm;
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
 
 static void *bt_service_add_task_hdl = NULL;
@@ -74,12 +75,6 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     client_init_parm->trble_operation_notification_cb = init_client->trble_operation_notification_cb;
     client_init_parm->trble_operation_indication_cb = init_client->trble_operation_indication_cb;
     client_init_parm->trble_device_passkey_display_cb = init_client->trble_device_passkey_display_cb;
-    client_init_parm->trble_device_coc_reg_psm_cb = init_client->trble_device_coc_reg_psm_cb;
-    client_init_parm->trble_device_coc_set_sec_cb = init_client->trble_device_coc_set_sec_cb;
-    client_init_parm->trble_device_coc_con_cb = init_client->trble_device_coc_con_cb;
-    client_init_parm->trble_device_coc_discon_cb = init_client->trble_device_coc_discon_cb;
-    client_init_parm->trble_device_coc_send_cb = init_client->trble_device_coc_send_cb;
-    client_init_parm->trble_device_coc_recv_cb = init_client->trble_device_coc_recv_cb;
     client_init_parm->mtu = init_client->mtu;
 
     //init server
@@ -98,12 +93,6 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
         server_init_parm.disconnected_cb = init_server->disconnected_cb;
         server_init_parm.mtu_update_cb = init_server->mtu_update_cb;
         server_init_parm.passkey_display_cb = init_server->passkey_display_cb;
-        server_init_parm.coc_reg_psm_cb = init_server->coc_reg_psm_cb;
-        server_init_parm.coc_set_sec_cb = init_server->coc_set_sec_cb;
-        server_init_parm.coc_con_cb = init_server->coc_con_cb;
-        server_init_parm.coc_discon_cb = init_server->coc_discon_cb;
-        server_init_parm.coc_send_cb = init_server->coc_send_cb;
-        server_init_parm.coc_recv_cb = init_server->coc_recv_cb;
         server_init_parm.is_secured_connect_allowed = init_server->is_secured_connect_allowed;
     }
 
@@ -163,3 +152,13 @@ trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_se
 }
 
 #endif /* TRBLE_COMBO_C_ */
+
+trble_result_e rtw_ble_le_coc_init(trble_le_coc_init_config *init_parm){
+    le_coc_init_parm.reg_psm_cb = init_parm->reg_psm_cb;
+    le_coc_init_parm.con_cb = init_parm->con_cb;
+    le_coc_init_parm.discon_cb = init_parm->discon_cb;
+    le_coc_init_parm.recv_cb = init_parm->recv_cb;
+    le_coc_init_parm.send_cb = init_parm->send_cb;
+    le_coc_init_parm.set_sec_cb = init_parm->set_sec_cb;
+    return TRBLE_SUCCESS; 
+}
