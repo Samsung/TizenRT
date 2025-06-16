@@ -684,6 +684,16 @@ trble_result_e ble_drv_stop_multi_adv(uint8_t adv_handle)
 	return res;
 }
 
+trble_result_e ble_drv_le_coc_init(trble_le_coc_init_config *le_coc)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_INIT}, sizeof(trble_le_coc_init_config), (void *)le_coc, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_coc_register_psm(uint8_t is_reg, uint16_t psm)
 {
 	trble_result_e res = TRBLE_SUCCESS;

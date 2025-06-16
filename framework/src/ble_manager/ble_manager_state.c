@@ -154,42 +154,6 @@ static void _event_caller(int evt_pri, void *data) {
 			
 			callback(msg->param[1], attr_handle, read_result);
 		} break;
-		case BLE_EVT_CLIENT_COC_CONNECT: {
-			ble_client_coc_con_cb callback = msg->param[0];
-			ble_conn_handle conn_handle = *(ble_conn_handle *)(msg->param[2]);
-			uint16_t cid = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle));
-			uint16_t err = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t));
-
-			callback(msg->param[1], conn_handle, cid, err);
-		} break;
-		case BLE_EVT_CLIENT_COC_DISCONNECT: {
-			ble_client_coc_discon_cb callback = msg->param[0];
-			ble_conn_handle conn_handle = *(ble_conn_handle *)(msg->param[2]);
-			uint16_t cid = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle));
-			uint16_t err = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t));
-
-			callback(msg->param[1], conn_handle, cid, err);
-		} break;
-		case BLE_EVT_CLIENT_COC_SEND: {
-			ble_client_coc_send_cb callback = msg->param[0];
-			ble_conn_handle conn_handle = *(ble_conn_handle *)(msg->param[2]);
-			uint16_t cid = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle));
-			uint16_t err = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t));
-			uint8_t credit = *(uint8_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t) + sizeof(uint16_t));
-
-			callback(msg->param[1], conn_handle, cid, err, credit);
-		} break;
-		case BLE_EVT_CLIENT_COC_RECV: {
-			ble_client_coc_recv_cb callback = msg->param[0];
-			ble_conn_handle conn_handle = *(ble_conn_handle *)(msg->param[2]);
-			uint16_t cid = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle));
-
-			ble_data coc_recv_result;
-			coc_recv_result.length = *(uint16_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t));
-			coc_recv_result.data = (uint8_t *)(msg->param[2] + sizeof(ble_conn_handle) + sizeof(uint16_t) + sizeof(coc_recv_result.length));
-
-			callback(msg->param[1], conn_handle, cid, &coc_recv_result);
-		} break;
 		case BLE_EVT_SCAN_STATE: {
 			ble_scan_state_e state = *(ble_scan_state_e *)msg->param[2];
 			ble_client_scan_state_changed_cb callback = msg->param[0];
@@ -1185,11 +1149,17 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_stop_multi_adv(adv_handle);
 	} break;
 
+	case BLE_CMD_COC_INIT: {
+		BLE_STATE_CHECK;
+		trble_le_coc_init_config *le_coc = (trble_le_coc_init_config *)msg->param;
+		ret = ble_drv_le_coc_init(le_coc);
+	} break;
+
 	case BLE_CMD_COC_REG_PSM: {
 		BLE_STATE_CHECK;
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
 		uint8_t is_reg = *(uint8_t *)param->param[0];
-		uint8_t psm = *(uint8_t *)param->param[1];
+		uint16_t psm = *(uint16_t *)param->param[1];
 		ret = ble_drv_coc_register_psm(is_reg, psm);
 	} break;
 
@@ -1403,90 +1373,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		if (ctx && ctx->callbacks.indication_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.indication_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
-			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
-		}
-	} break;
-
-	case BLE_EVT_CLIENT_COC_CONNECT: {
-		if (msg->param == NULL) {
-			break;
-		}
-		int i;
-		ble_client_ctx_internal *ctx = NULL;
-		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
-
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			if (g_client_table[i].conn_handle == conn_handle) {
-				ctx = &g_client_table[i];
-				break;
-			}
-		}
-
-		if (ctx && ctx->callbacks.coc_con_cb) {
-			memcpy(queue_msg.param, (void*[]){ctx->callbacks.coc_con_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
-			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
-		}
-	} break;
-
-	case BLE_EVT_CLIENT_COC_DISCONNECT: {
-		if (msg->param == NULL) {
-			break;
-		}
-		int i;
-		ble_client_ctx_internal *ctx = NULL;
-		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
-
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			if (g_client_table[i].conn_handle == conn_handle) {
-				ctx = &g_client_table[i];
-				break;
-			}
-		}
-
-		if (ctx && ctx->callbacks.coc_discon_cb) {
-			memcpy(queue_msg.param, (void*[]){ctx->callbacks.coc_discon_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
-			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
-		}
-	} break;
-
-	case BLE_EVT_CLIENT_COC_SEND: {
-		if (msg->param == NULL) {
-			break;
-		}
-		int i;
-		ble_client_ctx_internal *ctx = NULL;
-		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
-
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			if (g_client_table[i].conn_handle == conn_handle) {
-				ctx = &g_client_table[i];
-				break;
-			}
-		}
-
-		if (ctx && ctx->callbacks.coc_send_cb) {
-			memcpy(queue_msg.param, (void*[]){ctx->callbacks.coc_send_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
-			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
-		}
-	} break;
-
-	case BLE_EVT_CLIENT_COC_RECV: {
-		if (msg->param == NULL) {
-			break;
-		}
-		int i;
-		ble_client_ctx_internal *ctx = NULL;
-		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
-
-		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
-			if (g_client_table[i].conn_handle == conn_handle) {
-				ctx = &g_client_table[i];
-				break;
-			}
-		}
-
-		if (ctx && ctx->callbacks.coc_recv_cb) {
-			memcpy(queue_msg.param, (void*[]){ctx->callbacks.coc_recv_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;

@@ -606,6 +606,14 @@ ble_result_e ble_server_stop_multi_adv(uint8_t adv_handle)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_le_coc_init(ble_le_coc_callback_list *le_coc_config)
+{
+	blemgr_msg_s msg = {BLE_CMD_COC_INIT, BLE_MANAGER_FAIL, (void *)(le_coc_config), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_coc_register_psm(uint8_t is_reg, uint16_t psm)
 {
 	blemgr_msg_params param = { 2, {(void *)&is_reg, (void *)&psm}};
