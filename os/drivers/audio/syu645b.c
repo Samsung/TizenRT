@@ -456,7 +456,6 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			/* Set the volume */
 			uint16_t volume = caps->ac_controls.hw[0];
 			audvdbg("    Volume: %d\n", volume);
-			printf("set volume is called\n");
 			priv->volume = volume;
 			syu645b_setvolume(priv);
 		}
@@ -1070,7 +1069,6 @@ static int parse_equalizer_metadata_json(void){
 	}
 	
 	gJSON = cJSON_Parse(buffer);
-	
 	if (!gJSON) {
 		meddbg("Failed to parse equalizer json file.\n");
 		ret = -EIO;
@@ -1080,11 +1078,11 @@ static int parse_equalizer_metadata_json(void){
 err_with_fd:
 	close(fd);
 err_with_buffer:
-	close(buffer);
+	free(buffer);
 	return ret;
 }
 
-static int dec_to_hex_string(uint32_t decimal, char *hexadecimal){	
+static int dec_to_hex_string(uint32_t decimal, char *hexadecimal) {	
 	int pos = 9;
 	hexadecimal[0] = '0';
 	hexadecimal[1] = 'x';
@@ -1103,7 +1101,7 @@ static int dec_to_hex_string(uint32_t decimal, char *hexadecimal){
 		if (decimal == 0) {
 			if (pos > 1) {
 				for (int i = 2; i <= pos; i++) {
-					hexadecimal[pos] = '0';
+					hexadecimal[i] = '0';
 				}
 			}
 			break;
@@ -1192,7 +1190,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 	cJSON *key;
 	t_codec_init_script_entry script;
 	
-	cJSON_ArrayForEach(key, search){
+	cJSON_ArrayForEach(key, search) {
 		if (strcmp(key->string, "_comment") == 0) {
 			continue;
 		}
