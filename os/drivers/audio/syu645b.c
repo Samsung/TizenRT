@@ -1067,7 +1067,6 @@ static int parse_equalizer_metadata_json(void){
 		ret = -EIO;
 		goto err_with_fd;
 	}
-	
 	gJSON = cJSON_Parse(buffer);
 	if (!gJSON) {
 		meddbg("Failed to parse equalizer json file.\n");
@@ -1091,8 +1090,7 @@ static int dec_to_hex_string(uint32_t decimal, char *hexadecimal) {
 		int mod = decimal % 16;
 		if (mod < 10) {
 			hexadecimal[pos] = 48 + mod;
-		}
-		else {
+		} else {
 			hexadecimal[pos] = 65 + (mod - 10);
 		}
 		decimal = decimal / 16;
@@ -1122,8 +1120,7 @@ static int string_to_script(char *string, t_codec_init_script_entry *script) {
 			if (ptr != end_ptr) {
 				if (cnt == 0) {
 					script->addr = val;
-				}
-				else {
+				} else {
 					script->val[cnt-1] = val;	
 				}
 				ptr = end_ptr;
@@ -1183,6 +1180,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 
 	/* Not find proper key, execute default script*/
 	if (!search){
+		cJSON_Delete(gJSON);
 		return -EINVAL;
 	}
 
@@ -1216,6 +1214,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 	if (!priv->mute) {
 		syu645b_setvolume(priv);
 	}
+	cJSON_Delete(gJSON);
 }
 
 /****************************************************************************
