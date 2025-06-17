@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 7a233472 2025/06/20-18:49:26 ==
+1.	Sync to updated wifi driver
+
 == version 2d0f1be032 2024/04/29-09:50:27 ==
 1.	Change optimization flags from "-O2" to "-Os"
 2.	Change instruction set build "-marm" to "-mthumb"
