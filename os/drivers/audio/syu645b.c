@@ -54,7 +54,6 @@
 #define SEC_TO_MSEC_FACTOR	     1000
 
 #define PROD_EQUALIZE_ENCODE_JSON_PATH "/mnt/script.json"
-#define SYU645B_REG_DATA_TYPE_MAX 21
 #define EQUALIZER_PRESET_LEN 11
 #define EQUALIZER_PRESET_MAX 0xffffffff
 
@@ -102,7 +101,7 @@ static cJSON *gJSON = NULL;
 
 static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
 static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset);
+static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset);
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
@@ -1045,28 +1044,28 @@ static int parse_equalizer_metadata_json(void){
 	int ret = OK;
 
 	struct stat st;
-	if (stat(PROD_EQUALIZE_ENCODE_JSON_PATH, &st) != 0) {
-		auddbg("Failed to fetch json file : %d\n", errno);
-		ret = ERROR;
+	ret = stat(PROD_EQUALIZE_ENCODE_JSON_PATH, &st);
+	if (ret != OK) {
 		return ret;
 	}
+		
 
 	// Todo: If the script file is large, you can use a lot of memory when you read it at once, so should set a static size so that only a certain part of it can be read and used.
 	char *buffer = (char *)malloc(st.st_size + 1);
 	if (!buffer) {
-		meddbg("Failed to allocate memory to hold equalizer json file content.\n");
-		return ERROR;
+		meddbg("Failed to alloc.\n");
+		return -ENOMEM;
 	}
 	int fd = open(PROD_EQUALIZE_ENCODE_JSON_PATH, O_RDONLY);
 	if (fd == -1) {
 		meddbg("Failed to open equalizer json.\n");
-		ret = ERROR;
+		ret = -EBADF;
 		goto err_with_buffer;
 	}
 	ssize_t bytesRead = read(fd, buffer, st.st_size);
 	if (bytesRead == -1 || bytesRead != st.st_size) {
 		meddbg("Failed to read from equalizer json.\n");
-		ret = ERROR;
+		ret = -EIO;
 		goto err_with_fd;
 	}
 	
@@ -1074,7 +1073,7 @@ static int parse_equalizer_metadata_json(void){
 	
 	if (!gJSON) {
 		meddbg("Failed to parse equalizer json file.\n");
-		ret = ERROR;
+		ret = -EIO;
 		goto err_with_fd;
 	}
 
@@ -1085,12 +1084,7 @@ err_with_buffer:
 	return ret;
 }
 
-static int dec_to_hex_string(uint32_t decimal, char *hexadecimal){
-	if (decimal > EQUALIZER_PRESET_MAX) {
-		meddbg("Input invalid preset.\n");
-		return ERROR;
-	}
-	
+static int dec_to_hex_string(uint32_t decimal, char *hexadecimal){	
 	int pos = 9;
 	hexadecimal[0] = '0';
 	hexadecimal[1] = 'x';
@@ -1108,18 +1102,17 @@ static int dec_to_hex_string(uint32_t decimal, char *hexadecimal){
 
 		if (decimal == 0) {
 			if (pos > 1) {
-				for(int i=2; i<=pos; i++) {
-				hexadecimal[pos] = '0';
+				for (int i = 2; i <= pos; i++) {
+					hexadecimal[pos] = '0';
 				}
 			}
 			break;
 		}
 	}
-
 	return OK;
 }
 
-static int string_to_script(char *string, t_codec_init_script_entry *script){
+static int string_to_script(char *string, t_codec_init_script_entry *script) {
 	int cnt = 0;
 
 	const char *ptr = string;
@@ -1149,18 +1142,19 @@ static int string_to_script(char *string, t_codec_init_script_entry *script){
 	return OK;
 }
 
-static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv){
-	syu645b_exec_i2c_script(priv, t_codec_dq_preset_default_script, sizeof(t_codec_dq_preset_default_script) / sizeof(t_codec_init_script_entry));
-	priv->max_volume = 0x9F;
-
+static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv, bool set_volume) {
+	int ret = syu645b_exec_i2c_script(priv, t_codec_dq_preset_default_script, sizeof(t_codec_dq_preset_default_script) / sizeof(t_codec_init_script_entry));
+	if (set_volume) {
+		priv->max_volume = 0x9F;
+	}
+	
 	/* And then setVolume Again */
 	if (!priv->mute) {
 		syu645b_setvolume(priv);
 	}
 }
 
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset)
-{
+static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset) {
 	/* Reset First */
 	syu645b_reset_config(priv);
 
@@ -1169,17 +1163,21 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 	FAR struct i2c_dev_s *dev = priv->i2c;
 	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
 	
-	int ret = 0;
+	if (!preset) {
+		syu645b_set_basic_equalizer(priv, true);
+	}
+
+	int ret = OK;
 	char c_preset[EQUALIZER_PRESET_LEN];
 
 	/* Convert preset hex to string for key & Parse equlizer json to gJSON */
-	if (dec_to_hex_string(preset, c_preset) == ERROR) {
-		syu645b_set_basic_equalizer(priv);
-		return;
+	ret = dec_to_hex_string(preset, c_preset);
+	if (ret != OK) {
+		return -EINVAL;
 	}
-	if (parse_equalizer_metadata_json() == ERROR) {
-		syu645b_set_basic_equalizer(priv);
-		return;
+	ret = parse_equalizer_metadata_json();
+	if (ret != OK) {
+		return ret;
 	}
 
 	/* Executes given script through i2c to configure SYU645B device. */
@@ -1187,8 +1185,7 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 
 	/* Not find proper key, execute default script*/
 	if (!search){
-		syu645b_set_basic_equalizer(priv);
-		return;
+		return -EINVAL;
 	}
 
 	/* Find proper key */
@@ -1200,24 +1197,19 @@ static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t prese
 			continue;
 		}
 
-		ret = string_to_script(key->valuestring, &script);
-		if (ret) {
-			syu645b_set_basic_equalizer(priv);
-			return;
-		}
+		string_to_script(key->valuestring, &script);
 
 		if (script.addr == 0x08 && script.type == SYU645B_REG_D_2BYTE) {
 			priv->max_volume = script.val[0];
 		}
 
 		reg[0] = script.addr;
-		for (int i = 0; i < script.type-1; i++) {
+		for (int i = 0; i < script.type - 1; i++) {
 			reg[i+1] = script.val[i];
 		}
 
 		ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
-		if (ret < script.type) {
-			auddbg("Error, cannot write to reg addr 0x%x, ret = %d\n", script.addr, ret);
+		if (ret != script.type) {
 			break;
 		}
 	}
