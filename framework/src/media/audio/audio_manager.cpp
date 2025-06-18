@@ -1900,6 +1900,11 @@ audio_manager_result_t get_input_audio_gain(uint8_t *gain)
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 
+	if (card->config[card->device_id].volume > AUDIO_DEVICE_MAX_VOLUME) {
+		meddbg("input audio gain not supported\n");
+		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+	}
+
 	*gain = card->config[card->device_id].volume;
 	medvdbg("Max volume: %d, Gain : %d card id : %d device id : %d\n", card->config[card->device_id].max_volume, *gain, g_actual_audio_in_card_id, card->device_id);
 

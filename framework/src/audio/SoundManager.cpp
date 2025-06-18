@@ -26,8 +26,6 @@
 
 using namespace media;
 
-#define DEVICE_MUTE_VALUE -1
-
 static list<VolumeStateChangedListener> gVolumeListenerList;
 static std::mutex gVolumeListenerListAccessLock;
 static int listenerCount = 0;
@@ -138,7 +136,7 @@ bool setMicMute(void)
 		return true;
 	}
 
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, DEVICE_MUTE_VALUE);
+	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, AUDIO_DEVICE_MUTE_VALUE);
 	return true;
 }
 
@@ -156,8 +154,11 @@ bool setMicUnmute(void)
 		return true;
 	}
 
-	uint8_t volume = 0;
-	get_input_audio_gain(&volume);
+	int8_t volume = 0;
+	res = get_input_audio_gain(&volume);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		volume = AUDIO_DEVICE_UNMUTE_VALUE;
+	}
 	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
 	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, volume);
 	return true;
@@ -172,11 +173,14 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 		return false;
 	}
 
-	uint8_t volume = 0;
+	int8_t volume = 0;
 	if (mute) {
-		volume = DEVICE_MUTE_VALUE;
+		volume = AUDIO_DEVICE_MUTE_VALUE;
 	} else if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
-		get_input_audio_gain(&volume);
+		res = get_input_audio_gain(&volume);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			volume = AUDIO_DEVICE_UNMUTE_VALUE;
+		}
 	} else {
 		res = get_output_stream_volume(&volume, stream_policy);
 		if (res != AUDIO_MANAGER_SUCCESS) {
