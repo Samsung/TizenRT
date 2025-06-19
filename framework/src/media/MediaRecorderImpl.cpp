@@ -177,8 +177,7 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	audio_manager_result_t result = AUDIO_MANAGER_SUCCESS;
 
 	auto source = mOutputHandler.getDataSource();
-	result = set_audio_stream_in(source->getChannels(), source->getSampleRate(),
-		(pcm_format)source->getPcmFormat());
+	result = set_audio_stream_in(source->getChannels(), source->getSampleRate(), (pcm_format)source->getPcmFormat());
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_stream_in failed : result : %d channel %d sample rate : %d format : %d. recorder: %x\n", result, \
 			source->getChannels(), source->getSampleRate(), (pcm_format)source->getPcmFormat(), &mRecorder);

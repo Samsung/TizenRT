@@ -43,8 +43,9 @@ extern "C" {
  * @param[in] stream_type Stream type for which the state change has occurred.
  * STREAM_TYPE_VOICE_RECORD indicates mic, while other stream types correspond to the speaker.
  * @param[in] volume Volume level after the state change occurs
- * volume = -1 means mute for all stream types.
- * volume = -2 means umute for STREAM_TYPE_VOICE_RECORD if input gain is not supported. If gain is supported, volume >= 0 will be shared.
+ * volume = AUDIO_DEVICE_MUTE_VALUE(-1) means mute for all stream types.
+ * volume = AUDIO_DEVICE_UNMUTE_VALUE(-2) means umute for STREAM_TYPE_VOICE_RECORD, if input gain is not supported. 
+ * If gain is supported, volume >= 0 will be shared. Currently, input gain is  not supported, so AUDIO_DEVICE_UNMUTE_VALUE will be given.
  * volume >= 0 means unmute with value representing the current volume/gain set for that stream type.
 */
 typedef void (*VolumeStateChangedListener)(stream_policy_t stream_type, int8_t volume);

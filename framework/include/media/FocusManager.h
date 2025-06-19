@@ -93,9 +93,8 @@ private:
 	 */
 	stream_info_t getCurrentPlayerStreamInfo(void);
 	/**
-	 * @brief Get current recorder focussed stream info
+	 * @brief  It registers player focus loss listener. This function is called whenever player is started.
 	 * @details @b #include <media/FocusManager.h>
-	 * @return return current focused recorder stream_info structure. If list is empty, return {0, STREAM_TYPE_VOICE_RECORD}
 	 */
 	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
 	/**
