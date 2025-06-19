@@ -113,23 +113,11 @@
 #define SYS_sem_trywait                (__SYS_sem + 3)
 #define SYS_sem_wait                   (__SYS_sem + 4)
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
 #define SYS_sem_setprotocol            (__SYS_sem + 5)
-#define __SYS_named_sem                (__SYS_sem + 6)
-#else
-#define __SYS_named_sem                (__SYS_sem + 5)
-#endif
-
-/* Named semaphores */
-
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
-#define SYS_sem_open                   __SYS_named_sem
-#define SYS_sem_close                  (__SYS_named_sem + 1)
-#define SYS_sem_unlink                 (__SYS_named_sem + 2)
-#define __SYS_task_create              (__SYS_named_sem + 3)
-#else
-#define __SYS_task_create              (__SYS_named_sem)
-#endif
+#define SYS_sem_open                   (__SYS_sem + 6)
+#define SYS_sem_close                  (__SYS_sem + 7)
+#define SYS_sem_unlink                 (__SYS_sem + 8)
+#define __SYS_task_create              (__SYS_sem + 9)
 
 /* Task creation APIs based on global entry points cannot be use with
  * address environments.
@@ -150,18 +138,11 @@
 
 #define SYS_task_delete                __SYS_task_delete
 #define SYS_task_restart               (__SYS_task_delete + 1)
-#ifdef CONFIG_CANCELLATION_POINTS
 #define SYS_task_testcancel            (__SYS_task_delete + 2)
 #define SYS_task_setcanceltype         (__SYS_task_delete + 3)
 #define SYS_task_setcancelstate        (__SYS_task_delete + 4)
 #define SYS_up_assert                  (__SYS_task_delete + 5)
 #define __SYS_vfork                    (__SYS_task_delete + 6)
-#else
-#define SYS_task_setcancelstate        (__SYS_task_delete + 2)
-#define SYS_up_assert                  (__SYS_task_delete + 3)
-#define __SYS_vfork                    (__SYS_task_delete + 4)
-#endif
-
 
 /* The following can be individually enabled */
 
@@ -204,18 +185,10 @@
  */
 
 #ifdef CONFIG_BINFMT_ENABLE
-#ifndef CONFIG_BUILD_KERNEL
 #define SYS_exec                       __SYS_exec
 #define __SYS_execv                    (__SYS_exec + 1)
-#else
-#define __SYS_execv                    __SYS_exec
-#endif
-#ifdef CONFIG_LIBC_EXECFUNCS
 #define SYS_execv                      __SYS_execv
 #define __SYS_signals                  (__SYS_execv + 1)
-#else
-#define __SYS_signals                  __SYS_execv
-#endif
 #else
 #define __SYS_signals                  __SYS_exec
 #endif
@@ -224,7 +197,6 @@
  * configuration.
  */
 
-#ifndef CONFIG_DISABLE_SIGNALS
 #define SYS_kill                       (__SYS_signals + 0)
 #define SYS_sigaction                  (__SYS_signals + 1)
 #define SYS_sigpending                 (__SYS_signals + 2)
@@ -235,9 +207,6 @@
 #define SYS_sigwaitinfo                (__SYS_signals + 7)
 #define SYS_nanosleep                  (__SYS_signals + 8)
 #define __SYS_clock                    (__SYS_signals + 9)
-#else
-#define __SYS_clock                    __SYS_signals
-#endif
 
 /* The following are only defined if the system clock is enabled in the
  * TinyAra configuration.

@@ -90,6 +90,8 @@ SYSCALL_LOOKUP(sem_wait,                  1, STUB_sem_wait)
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_sem_setprotocol)
+#else
+SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_notsupport_int)
 #endif
 
 /* Named semaphores */
@@ -98,6 +100,10 @@ SYSCALL_LOOKUP(sem_setprotocol,           2, STUB_sem_setprotocol)
 SYSCALL_LOOKUP(sem_open,                  6, STUB_sem_open)
 SYSCALL_LOOKUP(sem_close,                 1, STUB_sem_close)
 SYSCALL_LOOKUP(sem_unlink,                1, STUB_sem_unlink)
+#else
+SYSCALL_LOOKUP(sem_open,                  6, STUB_notsupport_ptr)
+SYSCALL_LOOKUP(sem_close,                 1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sem_unlink,                1, STUB_notsupport_int)
 #endif
 
 #ifndef CONFIG_BUILD_KERNEL
@@ -110,6 +116,9 @@ SYSCALL_LOOKUP(task_restart,              1, STUB_task_restart)
 #ifdef CONFIG_CANCELLATION_POINTS
 SYSCALL_LOOKUP(task_testcancel,           0, STUB_task_testcancel)
 SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_task_setcanceltype)
+#else
+SYSCALL_LOOKUP(task_testcancel,           0, STUB_notsupport_void)
+SYSCALL_LOOKUP(task_setcanceltype,        2, STUB_notsupport_int)
 #endif
 SYSCALL_LOOKUP(task_setcancelstate,       2, STUB_task_setcancelstate)
 SYSCALL_LOOKUP(up_assert,                 2, STUB_up_assert)
@@ -143,9 +152,13 @@ SYSCALL_LOOKUP(waitid,                  4, STUB_waitid)
 #ifdef CONFIG_BINFMT_ENABLE
 #ifndef CONFIG_BUILD_KERNEL
 SYSCALL_LOOKUP(exec,                     4, STUB_exec)
+#else
+SYSCALL_LOOKUP(exec,                     4, STUB_notsupport_int)
 #endif
 #ifdef CONFIG_LIBC_EXECFUNCS
 SYSCALL_LOOKUP(execv,                    2, STUB_execv)
+#else
+SYSCALL_LOOKUP(execv,                    2, STUB_notsupport_int)
 #endif
 #endif
 
@@ -163,6 +176,16 @@ SYSCALL_LOOKUP(sigsuspend,              1, STUB_sigsuspend)
 SYSCALL_LOOKUP(sigtimedwait,            3, STUB_sigtimedwait)
 SYSCALL_LOOKUP(sigwaitinfo,             2, STUB_sigwaitinfo)
 SYSCALL_LOOKUP(nanosleep,               2, STUB_nanosleep)
+#else
+SYSCALL_LOOKUP(kill,                    2, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigaction,               3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigpending,              1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigprocmask,             3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigqueue,                3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigsuspend,              1, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigtimedwait,            3, STUB_notsupport_int)
+SYSCALL_LOOKUP(sigwaitinfo,             2, STUB_notsupport_int)
+SYSCALL_LOOKUP(nanosleep,               2, STUB_notsupport_int)
 #endif
 
 /* The following are only defined if the system clock is enabled in the
