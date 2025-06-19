@@ -258,6 +258,20 @@ void sched_process_timer(void)
 	{
 		clock_timer();
 	}
+
+#if defined(CONFIG_IDLE_PANIC_TIMER)
+	static int last_pid = -1;
+	static int timer_count = 0;
+	int pid = getpid();
+	
+	if (last_pid != pid) {
+		last_pid = pid;
+		timer_count = 0;
+	} else if (++timer_count >= CONFIG_IDLE_PANIC_TIMER * 1000) {
+		PANIC();
+	}
+#endif
+
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_SCHED_CPULOAD_EXTCLK)
 	/* Perform CPU load measurements (before any timer-initiated context
 	 * switches can occur)
