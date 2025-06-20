@@ -94,6 +94,13 @@ bool addVolumeStateChangedListener(VolumeStateChangedListener listener)
 	}
 
 	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
+	list<VolumeStateChangedListener>::iterator itr;
+	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
+		if (*itr == listener) {
+			medvdbg("Listener already registered, ignore operation!!\n");
+			return true;
+		}
+	}
 	gVolumeListenerList.push_back(listener);
 	listenerCount += 1;
 	medvdbg("added new listener %x\n", listener);
