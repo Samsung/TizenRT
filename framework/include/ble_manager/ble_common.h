@@ -115,3 +115,19 @@ typedef enum {
 
 typedef uint16_t ble_conn_handle;
 typedef uint16_t ble_attr_handle;
+
+typedef void (*ble_le_coc_reg_psm_cb)(uint16_t le_psm, uint16_t err);
+typedef void (*ble_le_coc_set_sec_cb)(uint16_t err);
+typedef void (*ble_le_coc_con_cb)(uint16_t conn_handle, uint16_t cid, uint16_t err);
+typedef void (*ble_le_coc_discon_cb)(uint16_t conn_handle, uint16_t cid, uint16_t err);
+typedef void (*ble_le_coc_send_cb)(uint16_t conn_handle, uint16_t cid, uint16_t err, uint8_t credit);
+typedef void (*ble_le_coc_recv_cb)(uint16_t conn_handle, uint16_t cid, ble_data *read_result);
+
+typedef struct {
+	ble_le_coc_reg_psm_cb reg_psm_cb;
+	ble_le_coc_set_sec_cb set_sec_cb;
+	ble_le_coc_con_cb con_cb;
+	ble_le_coc_discon_cb discon_cb;
+	ble_le_coc_send_cb send_cb;
+	ble_le_coc_recv_cb recv_cb;
+} ble_le_coc_callback_list;
