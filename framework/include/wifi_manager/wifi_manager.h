@@ -44,6 +44,7 @@ extern "C" {
 #define WIFIMGR_SSID_LEN 32
 #define WIFIMGR_2G_CHANNEL_MAX 14
 #define WIFIMGR_PASSPHRASE_LEN 64
+#define WIFIMGR_PASSPHRASE_LEN_MIN 8
 #define WIFIMGR_SPECIFIC_SCAN_AP_CNT 6
 /**
  * @brief <b> wifi MAC/PHY standard types
@@ -104,6 +105,7 @@ typedef enum {
 	WIFI_NONE = -1,
 	STA_MODE,
 	SOFTAP_MODE,
+	BRIDGE_MODE,
 	WIFI_MODE_CHANGING,
 	WIFI_INITIALIZING,
 	WIFI_DEINITIALIZING,
@@ -309,6 +311,17 @@ typedef enum {
 	WIFI_MANAGER_POWERMODE_DISABLE,
 	WIFI_MANAGER_POWERMODE_ENABLE,
 } wifi_manager_powermode_e;
+
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+/**
+ * @brief Specify information of bridge mode on/off and soft access point (softAP)
+ */
+
+typedef struct {
+	bool enable;
+	wifi_manager_softap_config_s softap_config;
+} wifi_manager_bridge_config_s;
+#endif
 
 /**
  * @brief Initialize Wi-Fi Manager including starting Wi-Fi interface.
@@ -591,6 +604,20 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats);
  * @since TizenRT v3.1
  */
 wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
+
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+/**
+ * @brief Start Wi-Fi Manager bridge mode.
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in]  enable : true, disable : false
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @API_type: synchronous
+ * @callback: none
+ * @since TizenRT v1.1
+ */
+wifi_manager_result_e wifi_manager_control_bridge(bool enable, wifi_manager_softap_config_s *softap_config);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

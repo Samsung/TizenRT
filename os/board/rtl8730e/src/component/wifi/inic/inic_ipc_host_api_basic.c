@@ -131,11 +131,12 @@ static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 		key_mgmt = *(u32*)(buf+8);
 	}
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
-	rtk_reason_t dummy_reason;
-	memset(&dummy_reason, 0, sizeof(rtk_reason_t));
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_STATION_IF;
 	if (g_link_down) {
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
-		g_link_down(&dummy_reason);
+		g_link_down(&reason);
 	}
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl);
 #endif
@@ -237,6 +238,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 			memset(&reason, 0, sizeof(rtk_reason_t));
+			reason.if_id = RTK_WIFI_STATION_IF;
 			reason.reason_code = RTK_STATUS_SUCCESS;
 
 			if (g_link_up) {
@@ -362,6 +364,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	//USER TODO
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
 	}
@@ -388,6 +391,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	}
 
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
 	}
