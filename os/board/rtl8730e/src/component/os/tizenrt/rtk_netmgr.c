@@ -24,7 +24,6 @@
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/netmgr/netdev_mgr.h>
-// #include "freertos/wrapper.h"
 #include "osdep_service.h"
 /* WLAN CONFIG ---------------------------------------------------------------*/
 #define RTK_OK          0		/*!< RTK_err_t value indicating success (no error) */
@@ -50,8 +49,8 @@
 /* Private define ------------------------------------------------------------*/
 
 //typedef unsigned char    bool;
-
-static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
+static BOOL g_bridge_on = FALSE;
+static BOOL g_netmgr_init = FALSE;
 #include <tinyara/net/if/wifi.h>
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev);
@@ -311,20 +310,21 @@ static int rtk_drv_callback_handler(int type)
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
 		break;
 	case 3:
+#ifndef CONFIG_ENABLE_HOMELYNK
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#else
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 		break;
 	case 4:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
 		break;
 	case 5:
+#ifndef CONFIG_ENABLE_HOMELYNK
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
-		break;
-	//LWNL_EVT_CONCURRENT_JOINED and LWNL_EVT_CONCURRENT_LEFT as placeholder
-	case 6:
-		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_JOINED, NULL, 0);
-		break;
-	case 7:
-		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_CONCURRENT_LEFT, NULL, 0);
+#else
+		trwifi_post_event(ameba_nm_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 		break;
 	default:
 		trwifi_post_event(ameba_nm_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
@@ -337,29 +337,15 @@ static int rtk_drv_callback_handler(int type)
 {
 	//RTKDRV_ENTER;
 	int type = 0;
-
-	if (g_mode == RTK_WIFI_STATION_IF) {
+	/* Check interface ID callback is called from to know which state it is in */
+	if (reason->if_id == RTK_WIFI_STATION_IF) {
 		if (reason->reason_code == RTK_STATUS_SUCCESS) {
-			type = 1;
+			type = 1; // STA connected
 		} else {
-			type = 2;
+			type = 2; // STA failed to connect
 		}
-	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		type = 3;
-	}
-	else {
-		if(g_mode == RTK_WIFI_AP_STA_IF){
-			if (reason->reason_code == RTK_STATUS_SUCCESS) {
-				lldbg("\nconnected\n");
-				type = 1;
-			} else {
-				lldbg("\nconnect failed\n");
-				type = 2;
-			}
-		}
-		else{
-			type = 6;
-		}
+	} else if (reason->if_id == RTK_WIFI_SOFT_AP_IF) {
+		type = 3; // STA joined SoftAP
 	}
 	(void)rtk_drv_callback_handler(type);
 }
@@ -368,17 +354,10 @@ static int rtk_drv_callback_handler(int type)
 {
 	//RTKDRV_ENTER;
 	int type = 4;
-	if (g_mode == RTK_WIFI_STATION_IF) {
-		type = 4;
-	} else if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		type = 5;
-	}
-	else if(g_mode == RTK_WIFI_AP_STA_IF){
-		if (wifi_is_connected_to_ap()) {
-			type = 4;
-		} else {
-			type = 7;
-		}
+	if (reason->if_id == RTK_WIFI_STATION_IF) {
+		type = 4; // STA disconnected
+	} else if (reason->if_id == RTK_WIFI_SOFT_AP_IF) {
+		type = 5; // STA left SoftAP
 	}
 	(void)rtk_drv_callback_handler(type);
 }
@@ -393,62 +372,38 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 	ndbg("\n[RTK] Init netmgr with dev %s\n",dev->ifname);
 
 	int ret = RTK_STATUS_SUCCESS;
-	if (g_mode == RTK_WIFI_NONE) {
-		if (rtw_memcmp(dev->ifname,"wlan0",5)) {
-			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	/* At this stage, no action needs to be done by RTK driver for wlan1 */
+	if (rtw_memcmp(dev->ifname,"wlan0",5)) {
+		/* Register link callback to handle wifi events */
+		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 
-			if (ret != RTK_STATUS_SUCCESS) {
-				ndbg("[RTK] Link callback handles: register failed !\n");
-				return wuret;
-			} else {
-				nvdbg("[RTK] Link callback handles: registered\n");
-			}
-
-				ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
-
-				if (ret != RTK_STATUS_SUCCESS) {
-					ndbg("[RTK] Failed to start STA mode\n");
-					return wuret;
-				}
-				g_mode = RTK_WIFI_STATION_IF;
-				/*extern const char lib_wlan_rev[];
-				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
-				wuret = TRWIFI_SUCCESS;
-#ifndef CONFIG_ENABLE_HOMELYNK
-				softap_flag = 0;
-#endif
-			rtw_mutex_init(&scanlistbusy);
+		if (ret != RTK_STATUS_SUCCESS) {
+			ndbg("[RTK] Link callback handles: register failed !\n");
+			return wuret;
+		} else {
+			nvdbg("[RTK] Link callback handles: registered\n");
 		}
-		
-	} else if(rtw_memcmp(dev->ifname,"wlan1",5)){
-			ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 
-			if (ret != RTK_STATUS_SUCCESS) {
-				ndbg("[RTK] Link callback handles: register failed !\n");
-				return wuret;
-			} else {
-				nvdbg("[RTK] Link callback handles: registered\n");
-			}
-				ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
-				if (ret != RTK_STATUS_SUCCESS) {
-					ndbg("[RTK] Failed to start softap mode\n");
-					return wuret;
-				}
-				g_mode = RTK_WIFI_AP_STA_IF;
-				/*extern const char lib_wlan_rev[];
-				RTW_API_INFO("\n\rwlan_version %s\n", lib_wlan_rev);*/
-				wuret = TRWIFI_SUCCESS;
-				
+	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
+
+		if (ret != RTK_STATUS_SUCCESS) {
+			ndbg("[RTK] Failed to start STA mode\n");
+			return wuret;
+		}
+		wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
-				softap_flag = 1;
-#endif
-			}
-	
-	else{
-		ndbg("Already %d\n", g_mode);
+		softap_flag = 0;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
+	rtw_mutex_init(&scanlistbusy);
 	}
+	else if(!(rtw_memcmp(dev->ifname,"wlan1",5))){
+		ndbg("Invalid interface %s\n",dev->ifname);
+		return wuret;
+	}
+	
+	g_netmgr_init = TRUE;
+	wuret = TRWIFI_SUCCESS;
 	return wuret;
-	//return TRWIFI_FAIL;
 }
 
 trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
@@ -456,7 +411,6 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = cmd_wifi_off();
 	if (ret == RTK_STATUS_SUCCESS) {
-		g_mode = RTK_WIFI_NONE;
 		wuret = TRWIFI_SUCCESS;
 		rtw_mutex_get(&scanlistbusy);
 		if (scan_timer.timer_hdl != NULL) {
@@ -470,6 +424,7 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 		scan_number = 0;
 		rtw_mutex_put(&scanlistbusy);
 		rtw_mutex_free(&scanlistbusy);
+		g_netmgr_init = FALSE;
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}
@@ -661,19 +616,6 @@ trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_confi
 	int ret;
 	uint32_t ap_channel;
 	wuret = TRWIFI_FAIL;
-
-	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
-		if (wifi_netmgr_utils_deinit(dev)) {
-			ndbg("[RTK] Failed to stop AP mode\n");
-			return TRWIFI_FAIL;
-		}
-		vTaskDelay(20);
-		if (wifi_netmgr_utils_init(dev) < 0) {
-			ndbg("\n\rERROR: Wifi on failed!");
-			return TRWIFI_FAIL;
-		}
-	}
-
 	ap_channel = 0;
 
 	rtw_mutex_get(&scanlistbusy);
@@ -724,11 +666,12 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 
 	if (signal_quality) {
 		wuret = TRWIFI_FAIL;
-		if (g_mode != RTK_WIFI_NONE) {
+		if (g_netmgr_init) {
 			rtw_sw_statistics_t sw_stats = {0};
 			u8 channel;
 			u32 tx_rty = 0;
-			if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+#ifndef CONFIG_ENABLE_HOMELYNK
+			if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 				if (wifi_get_channel(1, &channel) < 0){
 					/* Failed to get channel */
 					signal_quality->channel = 0;
@@ -738,7 +681,9 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 				}
 				wifi_get_sw_statistic(SOFTAP_WLAN_INDEX, &sw_stats);
 				tx_rty = wifi_get_tx_retry(SOFTAP_WLAN_INDEX);
-			} else if (g_mode == RTK_WIFI_STATION_IF) {
+			} else
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
+			{
 				wifi_get_sw_statistic(STA_WLAN_INDEX, &sw_stats);
 				tx_rty = wifi_get_tx_retry(STA_WLAN_INDEX);
 				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
@@ -762,7 +707,7 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 			signal_quality->tx_retry = tx_rty;
 			wuret = TRWIFI_SUCCESS;
 		} else {
-			ndbg("[RTK] Failed to get signal quality, wifi not initialized \n");
+			ndbg("[RTK] Failed to get signal quality, netmgr not initialized \n");
 		}
 	}
 
@@ -774,27 +719,33 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
 	if (wifi_info) {
 		wuret = TRWIFI_FAIL;
-		if (g_mode != RTK_WIFI_NONE) {
+		if (g_netmgr_init) {
 			wifi_info->rssi = (int)0;
-			if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+			/* Used by TizenRT */
+			wifi_info->wifi_status = TRWIFI_DISCONNECTED;
+			if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
+				/* Used by TizenRT */
 				wifi_info->wifi_status = TRWIFI_SOFTAP_MODE;
-			} else if (g_mode == RTK_WIFI_STATION_IF) {
-				if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
-					wifi_info->wifi_status = TRWIFI_CONNECTED;
-					rtw_phy_statistics_t phy_statistics;
-					if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
-						wifi_info->rssi = (int)phy_statistics.rssi;
-					}
-				} else {
-					wifi_info->wifi_status = TRWIFI_DISCONNECTED;
+			}
+			/* STA is always on so we can always get stats if we are connected */
+			if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
+				/* Used by TizenRT */
+				wifi_info->wifi_status = TRWIFI_CONNECTED;
+				rtw_phy_statistics_t phy_statistics;
+				if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
+					wifi_info->rssi = (int)phy_statistics.rssi;
 				}
 			}
+#ifdef CONFIG_ENABLE_HOMELYNK
+			if (g_bridge_on) {
+				wifi_info->wifi_status = TRWIFI_BRIDGE_MODE;
+			}
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 			wuret = TRWIFI_SUCCESS;
 		} else {
-			ndbg("[RTK] need to init... get info fail\n");
+			ndbg("[RTK] need to init netmgr... get info fail\n");
 		}
 	}
-
 	return wuret;
 }
 
@@ -804,9 +755,8 @@ trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, t
 	int key_mgmt = 0;
 	rtw_join_status_t previous_join_status;
 
-	if (g_mode == RTK_WIFI_STATION_IF){
-		/* This API is used to check the supplicant state before disconnection, so use the join status before disconnection to check */
-		previous_join_status = wifi_get_prev_join_status();
+	/* This API is used to check the supplicant state before disconnection, so use the join status before disconnection to check */
+	previous_join_status = wifi_get_prev_join_status();
 
 		switch (previous_join_status) {
 			case RTW_JOINSTATUS_UNKNOWN:
@@ -839,11 +789,10 @@ trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, t
 				break;
 		}
 
-		/* key_mgmt will return the value used in the last disconnected network */
-		key_mgmt = wifi_get_key_mgmt();
-		wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
-		wuret = TRWIFI_SUCCESS;
-	}
+	/* key_mgmt will return the value used in the last disconnected network */
+	key_mgmt = wifi_get_key_mgmt();
+	wpa_supplicant_state->wpa_supplicant_key_mgmt = key_mgmt;
+	wuret = TRWIFI_SUCCESS;
 	return wuret;
 }
 
@@ -869,9 +818,10 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 		return TRWIFI_INVALID_ARGS;
 	}
 
-	if (g_mode == RTK_WIFI_SOFT_AP_IF)
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		ndbg("[RTK] softap is already running!\n");
-
+		return TRWIFI_FAIL;
+	}
 	trwifi_result_e ret = TRWIFI_FAIL;
 
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
@@ -898,7 +848,6 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 		ndbg("[RTK] Failed to start AP mode(%d)\n", ret);
 		return ret;
 	}
-	g_mode = RTK_WIFI_SOFT_AP_IF;
 	nvdbg("[RTK] SoftAP with SSID: %s has successfully started!\n", softap_config->ssid);
 #ifndef CONFIG_ENABLE_HOMELYNK
 	softap_flag = 1;
@@ -913,9 +862,6 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret = RTK_STATUS_SUCCESS;
 
-	if (g_mode == RTK_WIFI_STATION_IF)
-		ndbg("[RTK] station is already running!\n");
-
 	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
 	if (ret != RTK_STATUS_SUCCESS) {
 		ndbg("[RTK] Link callback handles: register failed !\n");
@@ -928,7 +874,6 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 	vTaskDelay(20);
 	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 	if (ret == RTK_STATUS_SUCCESS) {
-		g_mode = RTK_WIFI_STATION_IF;
 		wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
@@ -937,7 +882,6 @@ trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 		ndbg("[RTK] Failed to start STA mode\n");
 	}
 
-	ret = cmd_wifi_on(RTK_WIFI_AP_STA_IF);
 	return wuret;
 }
 
@@ -945,20 +889,19 @@ trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
 	int ret;
-	if (g_mode == RTK_WIFI_SOFT_AP_IF) {
+	if (wifi_is_running(SOFTAP_WLAN_INDEX)) {
 		ret = cmd_wifi_stop_ap();
 		if (ret == RTK_STATUS_SUCCESS) {
-			g_mode = RTK_WIFI_NONE;
-			wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
 			softap_flag = 0;
 #endif //#ifndef CONFIG_ENABLE_HOMELYNK
+			wuret = TRWIFI_SUCCESS;
 			nvdbg("[RTK] Stop AP mode successfully\n");
 		} else {
 			ndbg("[RTK] Stop AP mode fail\n");
 		}
 	} else {
-		ndbg("[RTK] Mode is not AP mode\n");
+		ndbg("[RTK] AP mode is not running\n");
 	}
 	return wuret;
 }
@@ -980,14 +923,12 @@ trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t ch
 trwifi_result_e wifi_netmgr_utils_set_bridge(struct netdev *dev, uint8_t control)
 {
 	trwifi_result_e wuret = TRWIFI_SUCCESS;
-	int ret = RTK_STATUS_SUCCESS;
-//	ret = DO_SOMETHING(control);
-	if (ret == RTK_STATUS_SUCCESS) {
-		wuret = TRWIFI_SUCCESS;
-		nvdbg("[RTK] External Bridge mode set to %d\n", control);
+	if (control) {
+		g_bridge_on = TRUE;
 	} else {
-		ndbg("[RTK] External Bridge mode failed to set %d", control);
+		g_bridge_on = FALSE;
 	}
+	nvdbg("[RTK] External Bridge mode set to %d\n", control);
 	return wuret;
 }
 
@@ -1014,7 +955,7 @@ trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
-	if ((wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) || (g_mode == RTK_WIFI_SOFT_AP_IF)){
+	if ((wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) || (wifi_is_running(SOFTAP_WLAN_INDEX))){
 		RTW_API_INFO("[RTK] Failed to set channel plan, disconnect from AP or stop SoftAP before setting\n");
 		return wuret;
 	}

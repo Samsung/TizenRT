@@ -711,14 +711,7 @@ void cmd_wifi_info(int argc, char **argv)
 extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
 
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
-{	if (interface_id>1){
-		lldbg("start concurrent");
-		wifi_on(3);
-		nvdbg("\r\n===============>>Finish wifi_on for concurrent!!\r\n");
-	return RTK_STATUS_SUCCESS;
-	}
-
-	lldbg("start sta");
+{
 	wifi_on(RTW_MODE_STA);
 
 	rtw_wifi_setting_t setting;

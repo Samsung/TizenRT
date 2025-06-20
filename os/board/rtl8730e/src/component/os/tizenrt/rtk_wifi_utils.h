@@ -64,7 +64,6 @@ typedef enum WiFi_InterFace_ID {
 	RTK_WIFI_STATION_IF,			// Station mode (turns on wpa_supplicant)
 	RTK_WIFI_SOFT_AP_IF,			// Soft AP mode (turns on hostapd)
 	RTK_WIFI_P2P_IF,					// P2P mode (turns on wpa_supplicant)
-  RTK_WIFI_AP_STA_IF
 } WiFi_InterFace_ID_t;
 
 typedef struct rtk_reason {
@@ -73,6 +72,7 @@ typedef struct rtk_reason {
 	int8_t ssid_len;					// length of ssid - # of valid octets
 	uint8_t ssid[33];	// 802.11 spec defined up to 32 octets of data
 	char bssid[17];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	WiFi_InterFace_ID_t if_id; // In which interface the reason was set
 } rtk_reason_t;
 
 /**
