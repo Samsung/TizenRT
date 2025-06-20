@@ -103,6 +103,10 @@ ifeq ($(CONFIG_NETUTILS_TFTPC),y)
 CSRCS += netcmd_tftpc.c
 endif
 
+ifeq ($(CONFIG_PM_CMDS),y)
+CSRCS += pmcmd.c
+endif
+
 ifeq ($(CONFIG_ENABLE_CPULOAD),y)
 CSRCS += utils_cpuload.c
 endif
