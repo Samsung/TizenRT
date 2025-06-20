@@ -17,12 +17,13 @@
 #include <lwip_intf_tizenrt.h>
 #include <lwip/init.h>
 #include <lwip/netif.h>
-#include <osdep_service.h>
+#include <lwip/pbuf.h>
+#include <os_wrapper.h>
 #include "rtw_autoconf.h"
-//#include "rtw_adapter.h"
 
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <sys/socket.h>
+#include <ifaddrs.h>
 #include <netdev_mgr_internal.h>
 #include "rtw_wifi_constants.h"
 #include <net/if.h>
@@ -126,7 +127,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 	Mac_data = data + 80;
 
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
-		rtw_memcpy(Mac_data, (void *)(sg_list->buf), sg_list->len);
+		memcpy(Mac_data, (void *)(sg_list->buf), sg_list->len);
 		Mac_data += sg_list->len;
 	}
 
@@ -152,7 +153,7 @@ int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_le
 
 #ifndef CONFIG_TX_ZERO_COPY
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
-		rtw_memcpy(skb->tail, (void *)(sg_list->buf), sg_list->len);
+		memcpy(skb->tail, (void *)(sg_list->buf), sg_list->len);
 		skb_put(skb, sg_list->len);
 	}
 #endif
@@ -191,16 +192,11 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len)
 
 	for (last_sg = &sg_list[sg_len]; sg_list < last_sg; ++sg_list) {
 		if (sg_list->buf != 0) {
-			rtw_memcpy((void *)(sg_list->buf), skb->data, sg_list->len);
+			memcpy((void *)(sg_list->buf), skb->data, sg_list->len);
 			skb_pull(skb, sg_list->len);
 		}
 	}
 #endif
-}
-
-int netif_is_valid_IP(int idx, unsigned char *ip_dest)
-{
-	return 1;//For net manager, always Valid
 }
 
 #ifdef CONFIG_NET_NETMGR
@@ -214,76 +210,7 @@ int get_idx_from_dev(struct netdev *dev)
 		return -1;
 }
 #endif
-#if !defined(CONFIG_MBED_ENABLED)
-#if 0
-int netif_get_idx(struct netif *pnetif)
-{
-	return -1;
-}
-#endif
 
-int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr)
-{
-	struct netdev *dev_tmp = NULL;
-
-	dev_tmp = rtk_get_netdev(idx_wlan);
-
-	if (!dev_tmp) {
-		rtw_printf("[netif_get_hwaddr] get dev fail\n");
-		return -1;
-	}
-	if (netdev_get_hwaddr(dev_tmp, dev_addr, (unsigned char*)IFHWADDRLEN) == 0)
-		return 0;
-	else
-		return -1;
-}
-#endif
-
-#if defined(CONFIG_MBED_ENABLED)
-emac_callback emac_callback_func = NULL;
-void *emac_callback_data = NULL;
-void set_callback_func(emac_callback p, void *data)
-{
-	emac_callback_func = p;
-	emac_callback_data = data;
-}
-#endif
-//wlan driver has included this function, won't go to here
-void netif_rx(int idx, unsigned int len)
-{
-#ifdef CONFIG_INIC_EN
-#if defined(CONFIG_AS_INIC_AP)
-	inic_ipc_dev_recv(idx);
-#else
-	inic_netif_rx(idx, len);
-#endif
-#endif
-
-#if 0
-	struct sk_buff *skb;
-	skb = rltk_wlan_get_recv_skb(idx);
-
-	struct netdev *dev_tmp = NULL;
-
-	dev_tmp = rtk_get_netdev(idx);
-
-	netdev_input(dev_tmp, skb->data, skb->len);
-
-#if (CONFIG_INIC_EN == 1)
-	inic_netif_rx(idx, len);
-#endif
-#endif
-}
-
-void netif_post_sleep_processing(void)
-{
-}
-
-void netif_pre_sleep_processing(void)
-{
-}
-
-#ifdef CONFIG_WOWLAN
 unsigned char *rltk_wlan_get_ip(int idx)
 {
 	struct netdev *dev_tmp = NULL;
@@ -328,4 +255,45 @@ unsigned char *rltk_wlan_get_gwmask(int idx)
 	struct netif *ni = (struct netif *)(((struct netdev_ops *)(dev_tmp)->ops)->nic);
 	return (uint8_t *) &(ni->netmask);
 }
-#endif
+
+void *rltk_pbuf_wrapper(struct sk_buff *skb, u16_t *len)
+{
+    struct pbuf *p_buf = NULL, *temp_buf = NULL;
+	p_buf = pbuf_alloc(PBUF_RAW, skb->len, PBUF_POOL);
+	if (p_buf == NULL) {
+        return NULL;
+	}
+
+	/* copy data from skb(ipc data) to pbuf(ether net data) */
+	temp_buf = p_buf;
+	while (temp_buf) {
+		/* If tot_len > PBUF_POOL_BUFSIZE_ALIGNED, the skb will be
+		 * divided into several pbufs. Therefore, there is a while to
+		 * use to assign data to pbufs.
+		 */
+		memcpy(temp_buf->payload, skb->data, temp_buf->len);
+		skb_pull(skb, temp_buf->len);
+		temp_buf = temp_buf->next;
+	}
+    if (len != NULL){
+        *len = p_buf->len;
+    }
+    return (void*)p_buf;
+}
+
+void rltk_wlan_indicate_lwip(int idx_wlan, void *p_buf)
+{
+    /* TizenRT gets netif from netdev */
+    /* Currently TizenRT only uses idx 0, remove below line if TizenRT supports concurrent */
+    idx_wlan = 0;
+    struct netdev *dev_tmp = NULL;
+    dev_tmp = (struct netdev *)rtk_get_netdev(idx_wlan);
+    struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
+    if (netif->input((struct pbuf *)p_buf, netif) != ERR_OK) {
+        LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
+        LINK_STATS_INC(link.err);
+        pbuf_free((struct pbuf *)p_buf);
+    } else {
+        LINK_STATS_INC(link.recv);
+    }
+}

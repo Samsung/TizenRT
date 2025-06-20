@@ -551,46 +551,6 @@ enum {
 typedef unsigned long rtw_tx_pwr_percentage_t;
 
 
-
-/**
-  * @brief The enumeration lists the BIT 7 HT Rate.
-  */
-typedef enum {
-	CSI_ACT_EN,    /**< enable or disable csi func */
-	CSI_ACT_CFG,  /**< config csi parameters */
-	CSI_ACT_MAX
-} rtw_csi_action;
-
-/**
-  * @brief csi group num
-  */
-typedef enum {
-	CSI_GROUP_NUM_1 = 0,  /**< per tone */
-	CSI_GROUP_NUM_2,         /**< per 2tone */
-	CSI_GROUP_NUM_4,        /**< per 4tone */
-	CSI_GROUP_NUM_16,     /**< per 16tone */
-	CSI_GROUP_NUM_MAX
-} rtw_csi_group_num;
-
-/**
-  * @brief csi mode
-  */
-typedef enum {
-	CSI_MODE_NORMAL = 0,   ///<   normal mode
-	CSI_MODE_NDP,                ///<   ndp mode
-	CSI_MODE_RX_RESP,         ///<    rx rsp mode
-	CSI_MODE_MAX,                 ///<    max mode
-} rtw_csi_mode;
-
-/**
-  * @brief The enumeration lists the BIT 7 HT Rate.
-  */
-typedef enum {
-	CSI_ACCU_1BYTE = 0, /**< CSI_ACCU_1BYTE: S(8,4) */
-	CSI_ACCU_2BYTES,  /**< CSI_ACCU_2BYTE: S(16,12) */
-	CSI_ACCU_MAX
-} rtw_csi_accuracy;
-
 /**
   * @brief The enumeration lists the join status.
   */
@@ -633,12 +593,6 @@ enum _WIFI_EVENT_INDICATE{
 	WIFI_EVENT_IP_CHANGED = 16,
 	WIFI_EVENT_ICV_ERROR = 17,
 	WIFI_EVENT_CHALLENGE_FAIL = 18,
-
-
-	/* csi rx done event */
-	WIFI_EVENT_CSI_DONE = 19,
-
-
 	WIFI_EVENT_MAX,
 };
 typedef unsigned long rtw_event_indicate_t;

@@ -1,25 +1,29 @@
-/**
-  ******************************************************************************
-  * @file    ameba_ipc_ram.c
-  * @author
-  * @version V1.0.0
-  * @date    2017-11-06
-  * @brief   This file contains all the functions prototypes for the Internal Processor Communication(IPC)
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
 
+/** @defgroup IPC
+* @brief IPC driver modules
+* @{
+*/
+
+/** @defgroup IPC_Exported_Constants IPC Exported Constants
+  * @{
+  */
 IPC_IRQ_FUN IPC_IrqHandler[IPC_CHANNEL_NUM];
 void *IPC_IrqData[IPC_CHANNEL_NUM];
+/**@}*/
 
+/** @defgroup IPC_Exported_Functions IPC Exported Functions
+  * @{
+  */
 /**
   * @brief  Enables or disables the specified IPC Channel interrupts.
   * @param  where IPCx can be IPCLP_DEV for CM0, IPCNP_DEV for CM4, IPCAP_DEV for CA7.
@@ -87,11 +91,15 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum)
 		break;
 	}
 
-	if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
-		return 0;
+	if (IPCx != NULL) {
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum + ipc_shift))) {
+			return 0;
+		} else {
+			IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
+			return 1;
+		}
 	} else {
-		IPCx->IPC_TX_DATA = (BIT(IPC_ChNum + ipc_shift));
-		return 1;
+		return 0;
 	}
 }
 
@@ -113,7 +121,7 @@ u32 IPC_INTGet(IPC_TypeDef *IPCx)
   */
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit)
 {
-	IPCx->IPC_ISR |= BIT(IPC_Shiftbit);
+	IPCx->IPC_ISR = BIT(IPC_Shiftbit);
 }
 
 /**
@@ -150,7 +158,7 @@ u32 IPC_INTHandler(void *Data)
   * @param  IrqData: The pointer will be pass the the IRQ handler
   * @retval None
   */
-void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData)
+void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData)
 {
 	/* Check the parameters */
 	if (IrqHandler == NULL) {
@@ -179,13 +187,14 @@ IPC_TypeDef *IPC_GetDevById(u32 cpu_id)
 	assert_param(IS_IPC_Valid_CPUID(cpu_id));
 
 	if (cpu_id == 1) {
-		return IPCAP_DEV;
-	} else if (cpu_id == 2) {
 		return IPCNP_DEV;
+	} else if (cpu_id == 2) {
+		return IPCAP_DEV;
 	} else {
 		return IPCLP_DEV;
 
 	}
 }
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+/**@}*/
+/**@}*/
+/**@}*/
