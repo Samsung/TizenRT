@@ -44,6 +44,7 @@ extern "C" {
 #define WIFIMGR_SSID_LEN 32
 #define WIFIMGR_2G_CHANNEL_MAX 14
 #define WIFIMGR_PASSPHRASE_LEN 64
+#define WIFIMGR_PASSPHRASE_LEN_MIN 8
 #define WIFIMGR_SPECIFIC_SCAN_AP_CNT 6
 /**
  * @brief <b> wifi MAC/PHY standard types

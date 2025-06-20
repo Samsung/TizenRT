@@ -591,7 +591,7 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 #endif
 		trwifi_info info_utils;
-		trwifi_result_e wres = wifi_utils_get_info(&info_utils);
+		wifi_utils_get_info(&info_utils);
 	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, msg->param);
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
