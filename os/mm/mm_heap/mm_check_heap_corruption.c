@@ -80,41 +80,6 @@
  * Private Functions
  ****************************************************************************/
 
-static void dump_node(struct mm_allocnode_s *node, char *node_type)
-{
-#if defined(CONFIG_DEBUG_MM_HEAPINFO)  && (CONFIG_TASK_NAME_SIZE > 0)
-	char myname[CONFIG_TASK_NAME_SIZE + 1];
-	char is_stack[9] = "'s stack";
-#endif
-
-	if (!node) {
-		mfdbg("Unable to dump NULL node\n");
-		return;
-	}
-
-	mfdbg("%s: addr = 0x%08x, type = %c, size = %u, preceding size = %u\n", node_type, node, IS_ALLOCATED_NODE(node) ? 'A' : 'F', node->size, MM_PREV_NODE_SIZE(node));
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	pid_t pid = node->pid;
-	if (pid < 0) {
-		/* For stack allocated node, pid is negative value.
-		 * To use the pid, change it to original positive value.
-		 */
-		pid = (-1) * pid;
-	} else {
-		is_stack[0] = '\0';
-	}
-#if CONFIG_TASK_NAME_SIZE > 0
-	if (prctl(PR_GET_NAME_BYPID, myname, pid) == OK) {
-		mfdbg("%s owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, myname, is_stack, node->alloc_call_addr);
-	} else {
-		mfdbg("%s owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
-	}
-#else
-	mfdbg("%s owner pid = %d%s, allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
-#endif
-#endif
-}
 
 /****************************************************************************
  * Public Functions
@@ -166,7 +131,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			mfdbg("ERROR: Heap corruption detected in mm_heapstart node.\n");
 			mfdbg("ERROR: Check for overflow during backward traversal of heap\n");
 			mfdbg("=========================================================================================\n");
-			dump_node(heap->mm_heapstart[region], "HEAP START NODE");
+			mm_dump_node(heap->mm_heapstart[region], "HEAP START NODE");
 			iscorrupt_f = true;
 			start_corrupt = (uint32_t)(heap->mm_heapstart[region]);
 			mfdbg("=========================================================================================\n");
@@ -180,8 +145,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 					mfdbg("ERROR: Heap corruption detected. Check below nodes for possible corruption.\n");
 					mfdbg("ERROR: Forward traversal of heap\n");
 					mfdbg("=========================================================================================\n");
-					dump_node(prev, "PREV NODE");
-					dump_node(node, "CORRUPT NODE");
+					mm_dump_node(prev, "PREV NODE");
+					mm_dump_node(node, "CORRUPT NODE");
 					iscorrupt_f = true;
 					if (prev->size <= MM_LAST_CORRUPT_SIZE) {
 						start_corrupt = (uint32_t)prev;
@@ -198,8 +163,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 				mfdbg("ERROR: Heap corruption detected. Check below nodes for possible corruption.\n");
 				mfdbg("ERROR: Forward traversal of heap without reaching heapend\n");
 				mfdbg("=========================================================================================\n");
-				dump_node((struct mm_allocnode_s *)((char *)prev - MM_PREV_NODE_SIZE(prev)), "PREV NODE");
-				dump_node(prev, "CORRUPT NODE");
+				mm_dump_node((struct mm_allocnode_s *)((char *)prev - MM_PREV_NODE_SIZE(prev)), "PREV NODE");
+				mm_dump_node(prev, "CORRUPT NODE");
 				iscorrupt_f = true;
 				start_corrupt = (uint32_t)prev - (MM_PREV_NODE_SIZE(prev) <= MM_LAST_CORRUPT_SIZE ? MM_PREV_NODE_SIZE(prev) : MM_LAST_CORRUPT_SIZE);
 				mfdbg("=========================================================================================\n");
@@ -210,7 +175,7 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			mfdbg("ERROR: Heap corruption detected in mm_heapend node.\n");
 			mfdbg("ERROR: Check for overflow from PREV node in forward traversal of heap\n");
 			mfdbg("=========================================================================================\n");
-			dump_node(heap->mm_heapend[region], "HEAP END NODE");
+			mm_dump_node(heap->mm_heapend[region], "HEAP END NODE");
 			iscorrupt_r = true;
 			end_corrupt = (uint32_t)(heap->mm_heapend[region]) + SIZEOF_MM_ALLOCNODE;
 			mfdbg("#########################################################################################\n");
@@ -223,8 +188,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 						((MM_PREV_NODE_SIZE(node) < SIZEOF_MM_ALLOCNODE) &&(node != heap->mm_heapstart[region]))) {
 					mfdbg("ERROR: Backward traversal of heap\n");
 					mfdbg("=========================================================================================\n");
-					dump_node(node, "CORRUPT NODE");
-					dump_node(prev, "PREV NODE");
+					mm_dump_node(node, "CORRUPT NODE");
+					mm_dump_node(prev, "PREV NODE");
 					iscorrupt_r = true;
 					end_corrupt = (uint32_t)prev + (prev->size <= MM_LAST_CORRUPT_SIZE ? prev->size : MM_LAST_CORRUPT_SIZE);
 					mfdbg("#########################################################################################\n");
@@ -235,8 +200,8 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			if (!iscorrupt_r && prev != heap->mm_heapstart[region]) {
 				mfdbg("ERROR: Backward traversal of heap without reaching heapstart\n");
 				mfdbg("=========================================================================================\n");
-				dump_node(prev, "CORRUPT NODE");
-				dump_node((struct mm_allocnode_s *)((char *)prev + prev->size), "PREV NODE");
+				mm_dump_node(prev, "CORRUPT NODE");
+				mm_dump_node((struct mm_allocnode_s *)((char *)prev + prev->size), "PREV NODE");
 				iscorrupt_r = true;
 				node = (struct mm_allocnode_s *)((char *)prev + prev->size);
 				end_corrupt = (uint32_t)node + (node->size <= MM_LAST_CORRUPT_SIZE ? node->size : MM_LAST_CORRUPT_SIZE);
