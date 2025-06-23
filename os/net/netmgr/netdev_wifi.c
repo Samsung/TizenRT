@@ -250,6 +250,14 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 		TRWIFI_CALL(res, dev, get_wpa_supplicant_state, (dev, (trwifi_wpa_states *)data));
 	}
 	break;
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	case LWNL_REQ_WIFI_SETBRIDGE:
+	{
+		lwip_set_bridge_mode(*((uint8_t *)data));
+		TRWIFI_CALL(res, dev, set_bridge, (dev, *((uint8_t *)data)));
+	}
+	break;
+#endif
 	default:
 		break;
 	}
