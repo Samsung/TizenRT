@@ -359,7 +359,12 @@ static audio_manager_result_t control_audio_stream_device(const char *path, int 
 	int ret = ioctl(fd, cmd, arg);
 	if (ret < 0) {
 		meddbg("Fail to ioctl(%d, %d, %lu), errno : %d\n", fd, cmd, arg, get_errno());
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		if (errno == ENOSYS) {
+			/* Some of h/w doesn't support volume/gain control */
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		} else {
+			ret = AUDIO_MANAGER_DEVICE_FAIL;
+		}
 	} else {
 		ret = AUDIO_MANAGER_SUCCESS;
 	}
@@ -1899,11 +1904,6 @@ audio_manager_result_t get_input_audio_gain(uint8_t *gain)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-
-	if (card->config[card->device_id].volume > AUDIO_DEVICE_MAX_VOLUME) {
-		meddbg("input audio gain not supported\n");
-		return AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
-	}
 
 	*gain = card->config[card->device_id].volume;
 	medvdbg("Max volume: %d, Gain : %d card id : %d device id : %d\n", card->config[card->device_id].max_volume, *gain, g_actual_audio_in_card_id, card->device_id);
