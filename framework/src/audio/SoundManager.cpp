@@ -32,10 +32,21 @@ static int listenerCount = 0;
 
 static void notifyListeners(stream_policy_t stream_type, int8_t volume)
 {
-	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
 	list<VolumeStateChangedListener>::iterator itr;
-	for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
-		(*itr)(stream_type, volume);
+	if (stream_type != STREAM_TYPE_VOICE_RECORD) {
+		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+		for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
+			pow.enQueue([itr, stream_type, volume]() {
+				(*itr)(stream_type, volume);
+			});
+		}
+	} else {
+		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
+		for (itr = gVolumeListenerList.begin(); itr != gVolumeListenerList.end(); itr++) {
+			row.enQueue([itr, stream_type, volume]() {
+				(*itr)(stream_type, volume);
+			});
+		}
 	}
 }
 
@@ -64,13 +75,7 @@ bool setVolume(uint8_t volume, stream_info_t *stream_info)
 		return true;
 	}
 
-	if (stream_info->policy != STREAM_TYPE_VOICE_RECORD) {
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.enQueue(&notifyListeners, stream_info->policy, volume);
-	} else {
-		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-		row.enQueue(&notifyListeners, stream_info->policy, volume);
-	}
+	notifyListeners(stream_info->policy, volume);
 
 	return true;
 }
@@ -137,13 +142,12 @@ bool setMicMute(void)
 		return false;
 	}
 
-	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
 	lock_guard<mutex> lock(gVolumeListenerListAccessLock);
 	if (listenerCount == 0) {
 		return true;
 	}
 
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, AUDIO_DEVICE_MUTE_VALUE);
+	notifyListeners(STREAM_TYPE_VOICE_RECORD, AUDIO_DEVICE_MUTE_VALUE);
 	return true;
 }
 
@@ -166,8 +170,7 @@ bool setMicUnmute(void)
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		volume = AUDIO_DEVICE_UNMUTE_VALUE;
 	}
-	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, volume);
+	notifyListeners(STREAM_TYPE_VOICE_RECORD, volume);
 	return true;
 }
 
@@ -200,13 +203,7 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 		return true;
 	}
 
-	if (stream_policy != STREAM_TYPE_VOICE_RECORD) {
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.enQueue(&notifyListeners, stream_policy, volume);
-	} else {
-		RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
-		row.enQueue(&notifyListeners, stream_policy, volume);
-	}
+	notifyListeners(stream_policy, volume);
 	return true;
 }
 
