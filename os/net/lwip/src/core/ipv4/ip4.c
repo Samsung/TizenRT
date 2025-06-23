@@ -130,7 +130,7 @@ static u16_t ip_id;
 
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 /* to know the status of bridge mode on/off*/
-static int g_bridge_enable;
+int g_bridge_enable;
 #endif
 
 #if LWIP_MULTICAST_TX_OPTIONS

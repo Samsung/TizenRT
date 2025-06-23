@@ -338,6 +338,17 @@ static uint8_t *dhcps_add_offer_options(uint8_t *optptr)
 		*optptr++ = ip4_addr3(dnsserver);
 		*optptr++ = ip4_addr4(dnsserver);
 	}
+
+ 	if (g_bridge_enable) {
+		const char *vendor_string = "SAMSUNG_HOTSPOT";
+		size_t vendor_len = strlen(vendor_string);
+
+		*optptr++ = DHCP_OPTION_VSI;
+		*optptr++ = (uint8_t)vendor_len;
+		for (size_t i = 0; i < vendor_len; ++i) {
+			*optptr++ = vendor_string[i];
+		}
+	}
 #else
 	*optptr++ = DHCP_OPTION_DNS_SERVER;
 	*optptr++ = 4;
