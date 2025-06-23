@@ -143,8 +143,10 @@ struct ip_globals {
 };
 extern struct ip_globals ip_data;
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 /* to know the status of bridge mode on/off*/
 extern int g_bridge_enable;
+#endif
 
 /** Get the interface that accepted the current packet.
  * This may or may not be the receiving netif, depending on your netif/network setup.

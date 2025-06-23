@@ -807,13 +807,13 @@ wifi_manager_result_e _handler_on_bridge_state(wifimgr_msg_s *msg)
 		}
 		dhcps_inc_num();
 #endif
-		wifimgr_call_cb(CB_STA_JOINED, msg->param); // TODO : Multiple clients case
+		wifimgr_call_cb(CB_STA_JOINED, msg->param);
 	} else if (msg->event == WIFIMGR_EVT_LEFT) {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 		dhcps_del_node();
 		dhcps_dec_num();
 #endif
-		wifimgr_call_cb(CB_STA_LEFT, msg->param); // TODO : Multiple clients case
+		wifimgr_call_cb(CB_STA_LEFT, msg->param);
 	} else if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
 		_free_scan_list((trwifi_scan_list_s *)msg->param);
