@@ -211,18 +211,6 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret)
 	}
 
 	mCurState = RECORDER_STATE_READY;
-	
-	bool mute = false;
-	result = get_audio_stream_mute_state(STREAM_TYPE_VOICE_RECORD, &mute);
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Failed to get mute status. res: %d\n",result);
-		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
-	if (mute) {
-		ret = RECORDER_OK_MUTED_STATE;
-	}
 
 	notifySync();
 }
