@@ -531,11 +531,6 @@ void dump_all_stack(void)
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-	/* ARCH_GET_RET_ADDRESS should always be
-	 * called at the start of the function */
-
-	size_t kernel_assert_location = 0;
-	ARCH_GET_RET_ADDRESS(kernel_assert_location)
 
 	irqstate_t flags = irqsave();
 
@@ -568,7 +563,7 @@ void up_assert(const uint8_t *filename, int lineno)
 		asserted_location = (uint32_t)user_assert_location;
 		user_assert_location = 0x0;
 	} else {
-		asserted_location = (uint32_t)kernel_assert_location;
+		asserted_location = (uint32_t)GET_RETURN_ADDRESS();
 	}
 
 	lldbg("==============================================\n");
