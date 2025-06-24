@@ -56,8 +56,7 @@ enum recorder_error_e : int {
 	RECORDER_ERROR_DEVICE_NOT_SUPPORTED,
 	RECORDER_ERROR_DEVICE_DEAD,
 	/** MediaRecorder Success case */
-	RECORDER_ERROR_NONE = 0,
-	RECORDER_OK_MUTED_STATE = 1, // for mute state
+	RECORDER_ERROR_NONE = 0
 };
 
 typedef enum recorder_error_e recorder_error_t;
