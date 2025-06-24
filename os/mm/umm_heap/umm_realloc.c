@@ -83,15 +83,13 @@
  *   The address of the allocated memory (NULL on failure to allocate)
  *
  ************************************************************************/
-
 #if CONFIG_KMM_NHEAPS > 1
 void *realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller_retaddr = 0;
-
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 #endif
 
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
@@ -143,8 +141,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller_retaddr = 0;
-
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
