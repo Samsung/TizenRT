@@ -43,8 +43,7 @@ void *calloc_user_at(struct mm_heap_s *heap, size_t n, size_t elem_size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)	
+	mmaddress_t caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 	return mm_calloc(heap, n, elem_size, caller_retaddr);
 #else
 	return mm_calloc(heap, n, elem_size);
@@ -66,8 +65,7 @@ void *memalign_user_at(struct mm_heap_s *heap, size_t alignment, size_t size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)	
+	mmaddress_t caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 	return mm_memalign(heap, alignment, size, caller_retaddr);
 #else
 	return mm_memalign(heap, alignment, size);
@@ -96,8 +94,7 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)	
+	mmaddress_t caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 	return mm_malloc(heap, size, caller_retaddr);
 #else
 	return mm_malloc(heap, size);
@@ -116,13 +113,13 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
 void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize)
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	mmaddress_t caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 #endif
 	if (newsize == 0) {
 		free_user_at(heap, oldmem);
 		return NULL;
 	}
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	return mm_realloc(heap, oldmem, newsize, caller_retaddr);
 #else
@@ -145,10 +142,10 @@ void *zalloc_user_at(struct mm_heap_s *heap, size_t size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)	
+	mmaddress_t caller_retaddr = (mmaddress_t)__builtin_return_address(0);
 	return mm_zalloc(heap, size, caller_retaddr);
 #else
 	return mm_zalloc(heap, size);
 #endif
+
 }
