@@ -303,7 +303,7 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.filtsda = CONFIG_I2C0_FILTSDA,
 #if CONFIG_RTL8730E_BOARD_REVISION >= 5
 #ifdef CONFIG_AMEBASMART_I2S_TDM
-	.scl_pin = PB_30,
+	.scl_pin = PA_31,
 	.sda_pin = PA_30,
 #else
 	.scl_pin = PB_30,

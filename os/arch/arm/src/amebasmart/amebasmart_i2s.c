@@ -254,7 +254,6 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 };
 #endif
 
-#ifdef CONFIG_AMEBASMART_I2S3
 static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.i2s_mclk_pin = PA_15,
 	.i2s_sclk_pin = PA_14,
@@ -269,6 +268,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.tdmenab = 0,
 #endif
 };
+#endif
 
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 /* currently support I2S2 */
@@ -1266,7 +1266,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
 			if (DMA_Done && DMA_Done_1) {
-				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
+				//lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
@@ -2141,6 +2141,7 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 	struct amebasmart_i2s_s *priv;
 	int ret;
 
+	lldbg("%d\n", __LINE__);
 	/* Assign HW configuration */
 #ifdef CONFIG_AMEBASMART_I2S2
 	if (port == I2S_NUM_2) {
@@ -2239,6 +2240,7 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 	struct amebasmart_i2s_s *priv;
 	int ret;
 
+	lldbg("%d\n", __LINE__);
 	/* Assign HW configuration */
 	if (port == I2S_NUM_2) {
 		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s2_tdm_config;	// TDM config on I2S2
@@ -2247,6 +2249,7 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 		return NULL;
 	}
 
+	lldbg("%d\n", __LINE__);
 	if (!is_reinit) {
 		if (g_i2sdevice[port] != NULL) {
 			return &g_i2sdevice[port]->dev;
@@ -2267,6 +2270,7 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 		DEBUGASSERT(priv);
 	}
 
+	lldbg("%d\n", __LINE__);
 	priv->i2s_object = (i2s_t *)kmm_zalloc(sizeof(i2s_t));
 	DEBUGASSERT(priv->i2s_object);
 	/* Config values initialization */
@@ -2276,33 +2280,41 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 	i2s_getdefaultconfig(priv);
 
 	/* Initialize buffering */
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	i2s_buf_rx_initialize(priv);
 #endif
 
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_buf_tx_initialize(priv);
 #endif
 
+	lldbg("%d\n", __LINE__);
 	//Init_Params.chn_cnt = (sp_obj.tdmmode + 1) * 2;
 	/* I2s object initialization */
 	i2s_tdm_init(priv->i2s_object, hw_config_s->i2s_sclk_pin, hw_config_s->i2s_ws_pin, hw_config_s->i2s_sd_tx_pin, hw_config_s->i2s_sd_rx_pin, hw_config_s->i2s_mclk_pin);
 
 	/* Initialize buffering */
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	i2s_tdm_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_INT); /* Allocate DMA Buffer for TX */
 #endif
 
 	/* configures IRQ */
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
+	lldbg("%d\n", __LINE__);
 	priv->rx_isr_handler = (i2s_irq_handler)&i2s_transfer_rx_handleirq;
 
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
+	lldbg("%d\n", __LINE__);
 	priv->rx_isr_handler_ext = (i2s_irq_handler)&i2s_transfer_rx_handleirq;
 #endif
 
 #endif
 
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	priv->tx_isr_handler = (i2s_irq_handler)&i2s_transfer_tx_handleirq;
 
@@ -2312,26 +2324,31 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 
 #endif
 
+	lldbg("%d\n", __LINE__);
 	//ret = amebasmart_i2s_isr_initialize(priv);	
 	ret = amebasmart_i2s_tdm_isr_initialize(priv); // TDM
 	if (ret != OK) {
 		i2serr("I2S initialize (TDM): isr fails\n");
 		goto errout_with_alloc;
 	}
+	lldbg("%d\n", __LINE__);
 	/* Initialize the I2S priv device structure  */
 	sem_init(&priv->exclsem, 0, 1);
 	priv->dev.ops = &g_i2stdm_ops;		// TDM
 
+	lldbg("%d\n", __LINE__);
 	ret = i2s_allocate_wd(priv);
 	if (ret != OK) {
 		goto errout_with_alloc;
 	}
+	lldbg("%d\n", __LINE__);
 	/* Basic settings */
 	//priv->i2s_num = priv->i2s_object->i2s_idx;
 	if (!is_reinit) {
 		g_i2sdevice[port] = priv;
 	}
 
+	lldbg("%d\n", __LINE__);
 	/* Success exit */
 	return &priv->dev;
 
@@ -2344,7 +2361,6 @@ errout_with_alloc:
 #endif
 
 #endif /* I2S_HAVE_RX || I2S_HAVE_TX */
-#endif /* CONFIG_AUDIO */
 
 #ifdef CONFIG_PM
 static void amebasmart_i2s_suspend(uint16_t port)
