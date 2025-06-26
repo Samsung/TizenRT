@@ -1405,6 +1405,10 @@ int start_audio_stream_in(void *data, unsigned int frames)
 				ret = AUDIO_MANAGER_XRUN_STATE;
 				goto error_with_lock;
 			}
+		} else if (ret == -ESTRPIPE) {
+				meddbg("Mic is muted\n");
+				ret = AUDIO_MANAGER_DEVICE_SUSPENDED;
+				goto error_with_lock;
 		} else if (ret == -EINVAL) {
 			ret = AUDIO_MANAGER_INVALID_PARAM;
 			goto error_with_lock;
