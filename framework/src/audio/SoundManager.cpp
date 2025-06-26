@@ -161,10 +161,10 @@ bool setMicUnmute(void)
 		return true;
 	}
 
-	int8_t volume = 0;
+	int8_t volume = AUDIO_DEVICE_UNMUTE_VALUE;
 	res = get_input_audio_gain(&volume);
-	if (res != AUDIO_MANAGER_SUCCESS) {
-		volume = AUDIO_DEVICE_UNMUTE_VALUE;
+	if (res != AUDIO_MANAGER_SUCCESS && res != AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+		return false;
 	}
 	RecorderObserverWorker &row = RecorderObserverWorker::getWorker();
 	row.enQueue(&notifyListeners, STREAM_TYPE_VOICE_RECORD, volume);
@@ -184,9 +184,10 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 	if (mute) {
 		volume = AUDIO_DEVICE_MUTE_VALUE;
 	} else if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
+		volume = AUDIO_DEVICE_UNMUTE_VALUE;
 		res = get_input_audio_gain(&volume);
-		if (res != AUDIO_MANAGER_SUCCESS) {
-			volume = AUDIO_DEVICE_UNMUTE_VALUE;
+		if (res != AUDIO_MANAGER_SUCCESS && res != AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
+			return false;
 		}
 	} else {
 		res = get_output_stream_volume(&volume, stream_policy);
