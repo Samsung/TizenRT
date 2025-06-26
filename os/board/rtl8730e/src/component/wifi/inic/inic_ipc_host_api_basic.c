@@ -41,6 +41,7 @@ void (*promisc_user_callback_ptr)(void *) = NULL;
 extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
 rtw_join_status_t prev_join_status;
+rtw_join_status_t last_join_status;
 rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback = NULL;
 rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback = NULL;
 
@@ -56,6 +57,7 @@ extern void wifi_set_user_config(void);
 
 #if CONFIG_WLAN
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
+#include "wifi_intf_drv_to_upper.h"
 #include "rtk_wifi_utils.h"
 unsigned char ap_bssid[ETH_ALEN];
 rtk_network_link_callback_t g_link_up = NULL;
@@ -131,6 +133,37 @@ static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 		key_mgmt = *(u32*)(buf+8);
 	}
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	rtw_connect_error_flag_t error_flag = RTW_NO_ERROR;
+	rtw_join_status_t join_status = wifi_get_join_status();
+
+	if (join_status == RTW_JOINSTATUS_FAIL) {
+		if (last_join_status == RTW_JOINSTATUS_SCANNING) {
+			error_flag = RTW_NONE_NETWORK;
+		} else if (last_join_status == RTW_JOINSTATUS_AUTHENTICATING) {
+			if (deauth_reason == WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA) {
+				error_flag = RTW_MAX_STA;
+			} else {
+				error_flag = RTW_AUTH_FAIL;
+			}
+		} else if (last_join_status == RTW_JOINSTATUS_AUTHENTICATED || last_join_status == RTW_JOINSTATUS_ASSOCIATING) {
+			error_flag = RTW_ASSOC_FAIL;
+		} else if (last_join_status == RTW_JOINSTATUS_ASSOCIATED || last_join_status == RTW_JOINSTATUS_4WAY_HANDSHAKING) {
+			if (deauth_reason == WLAN_REASON_DISASSOC_AP_BUSY) {
+				error_flag = RTW_AP_BUSY;
+			} else {
+				error_flag = RTW_4WAY_HANDSHAKE_TIMEOUT;
+			}
+		}
+		printf("Connection failed, deauth_reason=%d\n", deauth_reason);
+	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+		if (deauth_reason == WLAN_REASON_EXPIRATION_CHK) {
+			error_flag = RTW_BCN_LOST;
+		} else {
+			error_flag = RTW_DISCONNECT;
+		}
+		printf("Disconnected, deauth_reason=%d\n", deauth_reason);
+	}
+
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	reason.if_id = RTK_WIFI_STATION_IF;
