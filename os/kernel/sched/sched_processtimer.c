@@ -216,6 +216,41 @@ static inline void sched_process_scheduler(void)
 #endif
 
 /************************************************************************
+ * Name:	idle_panic_timer
+ *
+ * Description:
+ *  This function check if the system is idle for a long time. It
+ *  will panic the system if so. If a thread holds the CPU for a long time,
+ * 	it might indicate that the thread is stuck or deadlocked. This function
+ *  will help to detect such cases.
+ * 
+ * Limitation:
+ * 	This function can detect only those cases where a high-priority thread 
+ *  continuously holds the CPU. SMP case is not considered
+ *
+ * Inputs:
+ *   None
+ *
+ * Return Value:
+ *   None
+ *
+ ************************************************************************/
+void idle_panic_timer(void)
+{
+	static int last_pid = -1;
+	static int timer_count = 0;
+	int pid = getpid();
+	
+	if (last_pid != pid) {
+		last_pid = pid;
+		timer_count = 0;
+	} else if (pid != up_cpu_index() && ++timer_count >= CONFIG_HANG_DETECT_WAIT_SECS * TICK_PER_SEC) {
+		lldbg("PANIC called because device hang detection kicked in after %d secs\n", CONFIG_HANG_DETECT_WAIT_SECS);
+		DEBUG_PANIC_INFO();
+	}
+}
+
+/************************************************************************
  * Public Functions
  ************************************************************************/
 
@@ -258,6 +293,11 @@ void sched_process_timer(void)
 	{
 		clock_timer();
 	}
+
+#if defined(CONFIG_DEBUG) && defined(CONFIG_HANG_DETECT_WAIT_SECS)
+	idle_panic_timer();
+#endif
+
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_SCHED_CPULOAD_EXTCLK)
 	/* Perform CPU load measurements (before any timer-initiated context
 	 * switches can occur)
