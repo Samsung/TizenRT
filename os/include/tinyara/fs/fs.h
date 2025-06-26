@@ -75,6 +75,8 @@
 #include <tinyara/mqueue.h>
 #endif
 
+#include <limits.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -151,6 +153,8 @@ struct geometry {
 	bool geo_writeenabled;		/* true: It is okay to write to this device */
 	size_t geo_nsectors;		/* Number of sectors on the device */
 	size_t geo_sectorsize;		/* Size of one sector */
+
+	char      geo_model[NAME_MAX + 1];
 };
 
 /* This structure is provided by block devices when they register with the

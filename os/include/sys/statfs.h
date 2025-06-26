@@ -112,6 +112,7 @@
 #define XENIX_SUPER_MAGIC     0x012ff7b4
 #define XFS_SUPER_MAGIC       0x58465342
 #define _XIAFS_SUPER_MAGIC    0x012fd16d
+#define LITTLEFS_SUPER_MAGIC  0x0a732923
 
 /* TinyAra specific file-systems */
 

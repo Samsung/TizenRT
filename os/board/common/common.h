@@ -31,6 +31,7 @@ struct partition_info_s {
 	int romfs_partno;
 	int timezone_partno;
 	int minor;
+	int littlefs_partno;
 };
 typedef struct partition_info_s partition_info_t;
 

@@ -23,7 +23,7 @@
 #include <tinyara/config.h>
 #include <sys/boardctl.h>
 #include <tinyara/reboot_reason.h>
-
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
