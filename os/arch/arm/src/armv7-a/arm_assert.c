@@ -580,11 +580,8 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-	/* ARCH_GET_RET_ADDRESS should always be
-	 * called at the start of the function */
 
-	size_t kernel_assert_location = 0;
-	ARCH_GET_RET_ADDRESS(kernel_assert_location);
+	size_t kernel_assert_location = (size_t)__builtin_return_address(0);
 
 	irqstate_t flags = enter_critical_section();
 
