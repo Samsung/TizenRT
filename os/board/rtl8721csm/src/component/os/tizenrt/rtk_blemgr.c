@@ -173,6 +173,20 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_one_shot_adv_deinit,
 	trble_netmgr_one_shot_adv_set,
 	trble_netmgr_one_shot_adv,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 };
 
 extern int rltk_coex_set_ble_scan_duty(uint8_t duty);
