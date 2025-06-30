@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
  * Copyright 2017 Google Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

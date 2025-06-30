@@ -27,7 +27,7 @@ endif
 
 ifeq ($(CONFIG_EXTERNAL_ONERT_MICRO),y)
 CXXFLAGS += -I$(TOPDIR)/../external/onert-micro
-CXXFLAGS += -I$(TOPDIR)/../external/onert-micro/onert-micro/luci-interpreter/include -I$(TOPDIR)/../external/onert-micro/onert-micro/luci-interpreter/src -I$(TOPDIR)/../external/onert-micro/externals/gen
+CXXFLAGS += -I$(TOPDIR)/../external/onert-micro/onert-micro/onert-micro/include -I$(TOPDIR)/../external/onert-micro/onert-micro/onert-micro/src -I$(TOPDIR)/../external/onert-micro/externals/gen
 CXXSRCS += ONERTM.cpp
 endif
 
