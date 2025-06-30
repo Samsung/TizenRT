@@ -130,6 +130,9 @@ void up_cpu_hotplug(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
+	/* Ensure that hotplug target CPU's systick PPI stops firing to prevent deadlock condition */
+	up_systimer_pause(cpu);
+
 	/* Fire SGI for cpu to enter hotplug */
 	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));
 }
