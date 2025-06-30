@@ -483,6 +483,18 @@ void board_initialize(void)
 	board_spi_initialize();
 	board_i2s_initialize();
 
+#ifdef CONFIG_SENSOR
+
+#ifdef CONFIG_SENSOR_MLX90617
+	rtl8730e_mlx90617_initialize();
+#endif
+
+#ifdef CONFIG_SENSOR_AIS25BA
+	rtl8730e_ais25ba_initialize();
+#endif
+
+#endif
+
 #ifdef CONFIG_LCD_ST7789
 	rtl8730_st7789_initialize();
 #endif
@@ -498,6 +510,7 @@ void board_initialize(void)
 #ifdef CONFIG_WATCHDOG
 	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
+
 #ifdef CONFIG_TIMER
 	int i;
 	char path[CONFIG_PATH_MAX];
