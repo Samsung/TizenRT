@@ -40,14 +40,15 @@
 
 struct TemplateConstructor
 {
-    template<typename T>
+    template <typename T>
     TemplateConstructor (const T&) {}
 };
 
-static bool operator==(const TemplateConstructor&, const TemplateConstructor&) { return false; }
+static bool operator == (const TemplateConstructor&, const TemplateConstructor&) { return false; }
 struct Hash {
-  std::size_t operator()(const TemplateConstructor&) const { return 0; }
+  std::size_t operator () (const TemplateConstructor&) const { return 0; }
 };
+
 int tc_libcxx_containers_unord_map_modifiers_erase_const_iter(void)
 {
     {
