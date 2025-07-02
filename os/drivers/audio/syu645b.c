@@ -33,7 +33,7 @@
 #include <fixedmath.h>
 #include <debug.h>
 #include <sys/stat.h>
-#include <json/cJSON.h>
+#include <cJSON.h>
 #include <fcntl.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
