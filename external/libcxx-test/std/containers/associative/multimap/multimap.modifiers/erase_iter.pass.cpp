@@ -35,6 +35,14 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
+struct TemplateConstructor
+{
+    template<typename T>
+    TemplateConstructor (const T&) {}
+};
+
+static bool operator<(const TemplateConstructor&, const TemplateConstructor&) { return false; }
+
 int tc_libcxx_containers_multimap_modifiers_erase_iter(void)
 {
     {
