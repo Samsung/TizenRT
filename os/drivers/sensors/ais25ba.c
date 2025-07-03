@@ -59,6 +59,9 @@ static void ais25ba_setchannel_count(struct sensor_upperhalf_s *priv, int channe
 static void ais25ba_setbit_perchannel(struct sensor_upperhalf_s *priv, int bit_per_channel);
 static void ais25ba_set_samprate(struct sensor_upperhalf_s *priv, int samp_rate);
 static int ais25ba_verify_sensor(struct sensor_upperhalf_s *upper, struct i2c_dev_s *i2c, struct i2c_config_s config);
+static void ais25ba_alivecheck_work(struct ais25ba_dev_s *dev);
+static void ais25ba_set_config_i2c(struct i2c_dev_s *i2c, struct i2c_config_s config);
+static void ais25ba_timer_handler(int argc, uint32_t arg1);
 
 /****************************************************************************
  * Private Data
@@ -138,7 +141,6 @@ static void ais25ba_set_samprate(struct sensor_upperhalf_s *upper, int samp_rate
 
 static int ais25ba_verify_sensor(struct sensor_upperhalf_s *upper, struct i2c_dev_s *i2c, struct i2c_config_s config)
 {
-	FAR struct ais25ba_dev_s *priv = upper->priv;
 	int reg[2];
 	uint8_t data[2];
 	reg[0] = AIS25BA_WHOAMI_REGISTER;                                  //WHO_AM_I
@@ -148,20 +150,21 @@ static int ais25ba_verify_sensor(struct sensor_upperhalf_s *upper, struct i2c_de
 		return ERROR;
 	}
 #else
-	if (i2c_write(i2c, &config, (uint8_t *)reg, 1) == OK) {
+	if (i2c_write(i2c, &config, (uint8_t *)reg, 1) == 1) {
 		i2c_read(i2c, &config, (uint8_t *)data, 1);
 	} else {
 		return ERROR;
 	}
 #endif
 
+	snvdbg("Sensor Verification return data : %8x\n", data[0]);
 	if (data[0] == AIS25BA_WHOAMI_VALUE) {
 		return OK;
 	}
 	return ERROR;
 }
 
-static void ais25ba_read_data(struct i2c_dev_s *i2c, struct i2c_config_s config)
+static void ais25ba_i2c_read_data(struct i2c_dev_s *i2c, struct i2c_config_s config)
 {
 	int ret = 0;
 	uint8_t reg[2];
@@ -225,7 +228,7 @@ static void ais25ba_read_data(struct i2c_dev_s *i2c, struct i2c_config_s config)
 #endif
 }
 
-static void ais25ba_write_data(struct i2c_dev_s *i2c, struct i2c_config_s config)
+static void ais25ba_i2c_write_data(struct i2c_dev_s *i2c, struct i2c_config_s config)
 {
 	int ret = 0;
 	uint8_t reg[2];
@@ -249,6 +252,16 @@ static void ais25ba_write_data(struct i2c_dev_s *i2c, struct i2c_config_s config
 	reg[1] = 0x62;
 	ret = i2c_write(i2c, &config, (uint8_t *)reg, 2);
 #endif
+}
+
+static void ais25ba_set_config_i2c(struct i2c_dev_s *i2c, struct i2c_config_s config)
+{
+	ais25ba_i2c_read_data(i2c, config);
+	DelayMs(2000);
+	ais25ba_i2c_write_data(i2c, config);
+	DelayMs(2000);
+	ais25ba_i2c_read_data(i2c, config);
+	DelayMs(2000);
 }
 
 static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, FAR void *buffer)
@@ -300,12 +313,49 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	struct i2s_dev_s *i2s = priv->i2s;
 	struct i2c_config_s config = priv->i2c_config;
 
-	ais25ba_write_data(i2c, config);
-	DelayMs(2000);
 	ret = ais25ba_read_i2s(i2s, &priv->ctrl, buffer);
 	DelayMs(5000);
 
 	return ret;
+}
+
+static void ais25ba_alivecheck_work(struct ais25ba_dev_s *dev)
+{
+	int sensor_status;
+	int retry_count = AIS25BA_ALIVECHECK_RETRY_COUNT;
+	sensor_status = ais25ba_verify_sensor(dev->upper, dev->i2c, dev->i2c_config);
+
+	if (sensor_status != OK) {
+		// Retry Sensor Verification
+		lldbg("Sensor verification failed, applying retry and recover\n");
+		goto retry_sensor_verification;
+	}
+	(void)wd_start(dev->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)dev);
+	return;
+
+retry_sensor_verification:
+	sensor_status = OK;
+	while (retry_count > 0 && sensor_status == OK) {
+		sensor_status = ais25ba_verify_sensor(dev->upper, dev->i2c, dev->i2c_config);
+		retry_count--;
+		DelayMs(1000);
+	}
+
+	if (sensor_status != OK) {
+		// Initialize sensor again;
+		struct ais25ba_ctrl_s *ctrl = &(dev->ctrl);
+		sem_wait(&ctrl->read_sem);
+		ais25ba_set_config_i2c(dev->i2c, dev->i2c_config);
+		sndbg("Sensor reinitialized");
+		(void)wd_start(dev->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)dev);
+		sem_post(&ctrl->read_sem);
+	}
+}
+
+static void ais25ba_timer_handler(int argc, uint32_t arg1)
+{
+	struct ais25ba_dev_s *priv = (struct ais25ba_dev_s *)arg1;
+	work_queue(HPWORK, &priv->work, (worker_t)ais25ba_alivecheck_work, priv, 0);
 }
 
 int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
@@ -327,10 +377,19 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	sem_init(&priv->ctrl.callback_wait_sem, 0, 0);
 	priv->ctrl.sem_timeout.tv_sec = 10;		// Seconds
 	priv->ctrl.sem_timeout.tv_nsec = 100000000;	// nanoseconds
+	
 	if (ais25ba_verify_sensor(upper, i2c, config) == OK) {
 		snvdbg("Sensor connection verification success\n");
 	} else{
 		sndbg("ERROR: Sensor verification failed, sensor not found/not responding\n");
+	}
+
+	//I2C config set. Read data is to check if write register is successful or not
+	ais25ba_set_config_i2c(i2c, config);
+
+	priv->wdog = wd_create();
+	if (wd_start(priv->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)priv) != OK) {
+		lldbg("Fail to start AIS25BA alive-check wdog, errno : %d\n", get_errno());
 	}
 
 	return sensor_register(devpath, upper);

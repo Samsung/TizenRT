@@ -36,12 +36,14 @@
 #include <tinyara/sensors/sensor.h>
 #include <tinyara/sensors/ais25ba.h>
 
-#define AIS25BA_WHOAMI_REGISTER 0xFF
+#define AIS25BA_WHOAMI_REGISTER 0x0F
 #define AIS25BA_WHOAMI_VALUE 0x20
 #define AIS25BA_TEST_REG 0x0B          /* Enable Self Test mode */
 #define AIS25BA_TDM_CTRL_REG 0X2E      /* Control register */
 #define AIS25BA_CTRL_REG_1 0x26        /* Control register, 0: Normal mode, 1: Disabled mode */      
 #define AIS25BA_CTRL_REG_2 0X2F        /* Control register */
 #define AIS25BA_CTRL_REG_FS 0x30       /* Accelerometer full-scale selection */
+#define AIS25BA_ALIVECHECK_TIME 5000
+#define AIS25BA_ALIVECHECK_RETRY_COUNT 3 /* Number of retry when verification fail before reinitialize sensor */
 #endif /* __DRIVERS_SENSOR_AIS25BA_H */
 
