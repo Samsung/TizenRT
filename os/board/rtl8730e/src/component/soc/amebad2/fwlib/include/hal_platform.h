@@ -1,19 +1,9 @@
-/**
-  ******************************************************************************
-  * @file    hal_platform.h
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file contains all the definations of platform.
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _HAL_PLATFORM_
 #define _HAL_PLATFORM_
 
@@ -262,7 +252,11 @@
 #define HP_SRAM_EXT_BASE         0x22000000        /* ID:HSLV-5, Inter. Type:AXI, Top Address:0x22FFFFFF, Size(KB):16M, Clk Domain:HS_APB_CLK */
 #define SPI_FLASH_CTRL_BASE      0x44000000        /* ID:HSLV-7, Inter. Type:AXI, Top Address:0x440FFFFF, Size(KB):1M, Clk Domain:SPIC_CLK */
 #define SPI_FLASH_BASE           0x08000000        /* ID:HSLV-11, Inter. Type:AXI, Top Address:0x0FFFFFFF, Size(KB):128M, Clk Domain:SPIC_CLK */
+#if defined(ARM_CORE_CM0) && ARM_CORE_CM0
+#define WIFI_REG_BASE            0x43000000
+#else
 #define WIFI_REG_BASE            0x40000000        /* ID:HSLV8-0, Inter. Type:AHB, Top Address:0x4007FFFF, Size(KB):512K, Clk Domain:HS_AHB_CLK */
+#endif
 #define WIFI_RF_REG_BASE         0x40003C00        /* ID:HSLV8-0, Inter. Type:AHB, Top Address:0x4007FFFF, Size(KB):512K, Clk Domain:HS_AHB_CLK */
 #define USB_OTG_REG_BASE         0x40080000        /* ID:HSLV8-1, Inter. Type:AHB, Top Address:0x400BFFFF, Size(KB):256K, Clk Domain:HS_AHB_CLK */
 #define AES_REG_BASE             0x400C0000        /* ID:HSLV8-2, Inter. Type:APB4, Top Address:0x400C7FFF, Size(KB):32K, Clk Domain:HS_AHB_CLK */
@@ -415,6 +409,11 @@
 #define TIMER7_REG_BASE_S          0x5200BE00
 #define OTPC_REG_BASE_S            0x52000000
 #define PMC_BASE                   0x42008300
+#define IPC_SEMA_BASE              0x420083c0
+#define IPC_IPC_SEMA_BASE          0x420082F4
+
+
+
 
 /**************************************************************************//**
  * @defgroup AmebaD_Peripheral_Registers_Structures  AmebaD Peripheral_Registers_Structures
@@ -426,9 +425,13 @@
  * @{
  * @brief AMEBAD_PINMUX Register Declaration
  *****************************************************************************/
+#ifndef __ASSEMBLER__
+
 typedef struct {
 	__IO uint32_t PADCTR[72];			/*!< Pad control register */
 } PINMUX_TypeDef;
+
+
 /** @} */
 
 /** @} End of group AmebaD_Peripheral_Registers_Structures */
@@ -576,8 +579,18 @@ typedef struct {
 
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00FFFFFF)
+#endif
 
+/* margin 512 for lite and 1024 for CA32 */
+#if defined(RSICV_CORE_KR4)
+#define CONTEXT_SAVE_SIZE	(320)	/* portCONTEXT_SIZE:66*4 = 288 roundup to 64B aligned */
+#elif defined(ARM_CORE_CA32)
+#define CONTEXT_SAVE_SIZE	(320 + 1024) /* 15*4 + 32*8: general reg and floating reg */
+#elif defined(ARM_CORE_CM4)
+#define CONTEXT_SAVE_SIZE	192 /* 15*4 + 16*8: s16~s31 if use float */
+#elif defined(ARM_CORE_CM0)
+#define CONTEXT_SAVE_SIZE	64	/* not support hw float, 15*4 */
+#endif
 
 /** @} End of group AmebaD_Outline */
 #endif //_HAL_PLATFORM_
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

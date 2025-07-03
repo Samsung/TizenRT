@@ -1,0 +1,6 @@
+/* == "version" + "Realtek git version" + "compile date" + "compile time" == */
+
+== version bcc4e498 2025/07/01-16:12:48 ==
+1.	Sync to updated wifi driver
+2.	Change optimization flags from "-O2" to "-Os"
+3.	Change instruction set build "-marm" to "-mthumb"
