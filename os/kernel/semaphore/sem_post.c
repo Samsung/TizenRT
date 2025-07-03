@@ -200,9 +200,7 @@ int sem_post(FAR sem_t *sem)
 {
 	irqstate_t saved_state;
 	int ret = ERROR;
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr);
-
+	
 	/* Make sure we were supplied with a valid semaphore. */
 
 	if (sem && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
@@ -214,7 +212,7 @@ int sem_post(FAR sem_t *sem)
 		saved_state = enter_critical_section();
 
 		/* Perform the semaphore unlock operation. */
-		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
+		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem,__builtin_return_address(0));
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 
