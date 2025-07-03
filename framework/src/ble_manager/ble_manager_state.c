@@ -1149,6 +1149,62 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_stop_multi_adv(adv_handle);
 	} break;
 
+	case BLE_CMD_COC_INIT: {
+		BLE_STATE_CHECK;
+		trble_le_coc_init_config *le_coc = (trble_le_coc_init_config *)msg->param;
+		ret = ble_drv_le_coc_init(le_coc);
+	} break;
+
+	case BLE_CMD_COC_REG_PSM: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t is_reg = *(uint8_t *)param->param[0];
+		uint16_t psm = *(uint16_t *)param->param[1];
+		ret = ble_drv_coc_register_psm(is_reg, psm);
+	} break;
+
+	case BLE_CMD_COC_SET_PSM_SEC: {
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint16_t le_psm = *(uint16_t *)param->param[0];
+		uint8_t active = *(uint8_t *)param->param[1];
+		uint8_t sec_mode = *(uint8_t *)param->param[2];
+		uint8_t key_size = *(uint8_t *)param->param[3];
+		ret = ble_drv_coc_set_psm_security(le_psm, active, sec_mode, key_size);
+	} break;
+
+	case BLE_CMD_COC_SET_PARAM: {
+		uint16_t value = *(uint16_t *)msg->param;
+		ret = ble_drv_coc_set_param(value);
+	} break;
+
+	case BLE_CMD_COC_GET_PARAM: {
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t param_type = *(uint8_t *)param->param[0];
+		uint16_t cid = *(uint16_t *)param->param[1];
+		uint16_t *value = (uint16_t *)param->param[2];
+		ret = ble_drv_coc_get_param(param_type, cid, value);
+	} break;
+
+	case BLE_CMD_COC_CONNECT: {
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint16_t conn_handle = *(uint16_t *)param->param[0];
+		uint16_t le_psm = *(uint16_t *)param->param[1];
+		ret = ble_drv_coc_connect(conn_handle, le_psm);
+	} break;
+
+	case BLE_CMD_COC_DISCONNECT: {
+		uint16_t cid = *(uint16_t *)msg->param;
+		ret = ble_drv_coc_disconnect(cid);
+	} break;
+
+	case BLE_CMD_COC_SEND: {
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint16_t cid = *(uint16_t *)param->param[0];
+		uint16_t len = *(uint16_t *)param->param[1];
+		uint8_t *data = (uint8_t *)param->param[2];
+		ret = ble_drv_coc_send(cid, len, data);
+	} break;
+
 	// Event Handling
 	case BLE_EVT_CLIENT_CONNECT: {
 		if (msg->param == NULL) {

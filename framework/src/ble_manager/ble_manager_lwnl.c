@@ -683,3 +683,88 @@ trble_result_e ble_drv_stop_multi_adv(uint8_t adv_handle)
 	}
 	return res;
 }
+
+trble_result_e ble_drv_le_coc_init(trble_le_coc_init_config *le_coc)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_INIT}, sizeof(trble_le_coc_init_config), (void *)le_coc, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_register_psm(uint8_t is_reg, uint16_t psm)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)&is_reg,(void *)&psm}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_REG_PSM}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 4, {(void *)&le_psm, (void *)&active, (void *)&sec_mode, (void *)&key_size}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_SET_PSM_SEC}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_set_param(uint16_t value)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_SET_PARAM}, sizeof(uint16_t), (void *)&value, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&param_type, (void *)&cid, (void *)value}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_GET_PARAM}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_connect(uint16_t conn_handle, uint16_t le_psm)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)&conn_handle, (void *)&le_psm}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_CONNECT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_disconnect(uint16_t cid)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_DISCONNECT}, sizeof(uint16_t), (void *)&cid, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_coc_send(uint16_t is_reg, uint16_t len, uint8_t *data)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&is_reg, (void *)&len, (void *)data}};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_SEND}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
