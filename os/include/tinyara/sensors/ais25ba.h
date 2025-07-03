@@ -26,6 +26,8 @@
 #include <tinyara/i2c.h>
 #include <sys/types.h>
 #include <stdint.h>
+#include <tinyara/wqueue.h>
+#include <tinyara/wdog.h>
 
 struct ais25ba_ctrl_s {
     sem_t read_sem;
@@ -43,6 +45,9 @@ struct ais25ba_dev_s
 	struct sensor_upperhalf_s *upper;
 	void *priv;
 	struct ais25ba_ctrl_s ctrl;
+
+	WDOG_ID wdog;
+	struct work_s work;
 };
 
 #endif	/* __INCLUDE_TINYARA_AIS25BA_H */ 
