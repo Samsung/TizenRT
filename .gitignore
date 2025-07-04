@@ -1,3 +1,4 @@
+os/app_size_file
 .depend
 Make.dep
 .built
@@ -30,3 +31,4 @@ tags
 *.tmp.*
 *.log
 *.log.old
+os/app_size_file
