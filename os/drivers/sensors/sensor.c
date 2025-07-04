@@ -192,9 +192,12 @@ static int sensor_close(FAR struct file *filep)
 
 static ssize_t sensor_read(FAR struct file *filep, FAR void *buffer, size_t len)
 {
+	lldbg("%d\n", __LINE__);
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct sensor_upperhalf_s *upper = inode->i_private;
+	lldbg("%d\n", __LINE__);
 	upper->ops->sensor_read(upper, buffer);
+	lldbg("%d\n", __LINE__);
 	return OK;
 }
 

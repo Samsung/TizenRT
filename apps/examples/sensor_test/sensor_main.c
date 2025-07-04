@@ -74,18 +74,24 @@ static void temp_read()
         int fd = 0;
         sensor_data_s *data = (sensor_data_s *)malloc(sizeof(sensor_data_s)*64);
 
+	lldbg("%d\n", __LINE__);
         fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
         if (fd < 0) {
                 printf("ERROR: Failed to open sensor port error:%d\n", fd);
                 return;
         }
 
+	lldbg("%d\n", __LINE__);
         ioctl(fd, SENSOR_SET_SAMPRATE, samp);
         printf("Read from MEMS sensor\n");
         while (true) {
+		lldbg("%d\n", __LINE__);
                 read(fd, data, 2);
+		lldbg("%d\n", __LINE__);
                 print_sensor_data(data);
+		lldbg("%d\n", __LINE__);
         }
+	lldbg("%d\n", __LINE__);
         printf("sensor test complete \n");
         close(fd);
 }

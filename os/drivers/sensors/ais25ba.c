@@ -90,9 +90,13 @@ static float ais25ba_raw_to_mg(int16_t lsb)
 
 static void ais25ba_i2s_callback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s *apb, FAR void *arg, int result)
 {
+	lldbg("%d\n", __LINE__);
 	struct ais25ba_ctrl_s *ctrl = (struct ais25ba_ctrl_s *)arg;
+	lldbg("%d\n", __LINE__);
 	sem_post(&ctrl->callback_wait_sem);
+	lldbg("%d\n", __LINE__);
 	sem_post(&ctrl->read_sem);
+	lldbg("%d\n", __LINE__);
 }
 
 static void ais25ba_set_mclk(struct sensor_upperhalf_s *priv, int mclk)
@@ -277,6 +281,7 @@ static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, 
 	desc.numbytes = 512;
 	desc.u.ppBuffer = &g_apb;
 
+	lldbg("%d\n", __LINE__);
 	int ret = apb_alloc(&desc);
 	if (ret < 0) {
 			printf("ERROR: apb_alloc: apb buffer allocation failed\n");
@@ -284,19 +289,22 @@ static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, 
 	}
 
 	//sem_timedwait(&ctrl->read_sem, &ctrl->sem_timeout);				/* To prevent deadlock in I2S_RECEIVE */
+	lldbg("%d\n", __LINE__);
 	sem_wait(&ctrl->read_sem);
-
-    ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
+	lldbg("%d\n", __LINE__);
+	//ret = I2S_RECEIVE(i2s, g_apb, NULL, ctrl, 100);
+	ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
 	if (ret != OK) {
 		sndbg("ERROR: I2S_RECEIVE FAILED\n");
 	}
-
+	lldbg("%d\n", __LINE__);
 	//sem_timedwait(&ctrl->callback_wait_sem, &ctrl->sem_timeout);	/* To prevent deadlock in I2S_RECEIVE */
 	sem_wait(&ctrl->callback_wait_sem);
-
+	lldbg("%d\n", __LINE__);
 	sensor_data_s *data = (sensor_data_s *)buffer;
 	int16_t *samp_data = (int16_t *)&g_apb->samp[0];
 
+	lldbg("%d\n", __LINE__);
 	for (int i = 0, j = 0; i < g_apb->nbytes; i+=16, j++) {
 		data[j].x = ais25ba_raw_to_mg(*samp_data);
 		samp_data++;
@@ -305,7 +313,9 @@ static int ais25ba_read_i2s(struct i2s_dev_s *i2s, struct ais25ba_ctrl_s *ctrl, 
 		data[j].z = ais25ba_raw_to_mg(*samp_data);
 		samp_data += 6;		/* Vendor specific skip bits */
 	}
+	lldbg("%d\n", __LINE__);
 	apb_free(g_apb);
+	lldbg("%d\n", __LINE__);
 	return ret;
 }
 
@@ -318,8 +328,10 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	struct i2s_dev_s *i2s = priv->i2s;
 	struct i2c_config_s config = priv->i2c_config;
 
+	lldbg("%d\n", __LINE__);
 	ret = ais25ba_read_i2s(i2s, &priv->ctrl, buffer);
 	DelayMs(5000);
+	lldbg("%d\n", __LINE__);
 
 	return ret;
 }

@@ -1261,16 +1261,18 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 	struct amebasmart_i2s_s *priv = (struct amebasmart_i2s_s *)data;
 	i2s_t *obj = priv->i2s_object;
 
+	lldbg("%d\n", __LINE__);
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (priv->tdmenab) {
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
 			if (DMA_Done && DMA_Done_1) {
-				//lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
+				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
 				/* stop clockgen */
 				ameba_i2s_tdm_pause(obj);
 
+				lldbg("%d\n", __LINE__);
 				/* INTERNAL channel will have SLOT 1,2 followed by 5,6 */
 				/* EXTERNAL channel will have SLOT 3,4 followed by 7,8 */
 				u16 word_size;
@@ -1282,7 +1284,9 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 						word_size = sizeof(u32);
 						break;
 				}
+				lldbg("%d\n", __LINE__);
 				if (word_size == sizeof(u16)) {
+					lldbg("%d\n", __LINE__);
 					u16 *dst_buf = (u16 *)priv->apb_rx->samp;
 					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
 					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
@@ -1298,6 +1302,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 						dst_buf[i + 7] = rx_ext[j + 1] & 0xFFFF;	// slot 8
 					}
 				} else {
+					lldbg("%d\n", __LINE__);
 					u32 *dst_buf = (u32 *)priv->apb_rx->samp;
 					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
 					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
@@ -1317,30 +1322,40 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 				}
 
 				/* call upper layer callback */
+				lldbg("%d\n", __LINE__);
 				i2s_rxdma_callback(priv, OK);
+				lldbg("%d\n", __LINE__);
 			}
 		} else {
 			if (DMA_Done) {
+				lldbg("%d\n", __LINE__);
 				/* stop clockgen */
+				lldbg("%d\n", __LINE__);
 				ameba_i2s_tdm_pause(obj);
+				lldbg("%d\n", __LINE__);
 				/* copy DMA contents into buffer container ? */
 				// TODO: for single channel DMA populate the buffer
 
 				/* call upper layer callback */
+				lldbg("%d\n", __LINE__);
 				i2s_rxdma_callback(priv, OK);
+				lldbg("%d\n", __LINE__);
 			}
 		}
 
 #ifdef CONFIG_PM
 		/* Release PM lock */
-		bsp_pm_domain_control(BSP_I2S_DRV, 0);
+		//bsp_pm_domain_control(BSP_I2S_DRV, 0);
 #endif
 	}
 #else
 
 	/* submit a new page for receive */
+	lldbg("%d\n", __LINE__);
 	i2s_recv_page(obj);
+	lldbg("%d\n", __LINE__);
 	i2s_rxdma_callback(priv, OK);
+	lldbg("%d\n", __LINE__);
 #endif
 }
 

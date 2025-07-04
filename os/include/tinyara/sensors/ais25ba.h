@@ -30,8 +30,8 @@
 #include <tinyara/wdog.h>
 
 struct ais25ba_ctrl_s {
-    sem_t read_sem;
-    struct timespec sem_timeout;
+	sem_t read_sem;
+	struct timespec sem_timeout;
 	sem_t callback_wait_sem;
 };
 
