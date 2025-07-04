@@ -34,7 +34,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 /* i2c config */
-#define AIS25BA_I2C_PORT		2
+#define AIS25BA_I2C_PORT		0
 #define AIS25BA_I2C_FREQ		100000
 #define AIS25BA_I2C_ADDRLEN		7
 #define AIS25BA_I2C_ADDR		0x19
@@ -70,11 +70,14 @@ void rtl8730e_ais25ba_initialize()
 	FAR struct i2c_dev_s *i2c;
 	struct i2s_dev_s *i2s;
 	int ret = 0;
+
+	lldbg("%d\n", __LINE__);
 	i2s = amebasmart_i2s_tdm_initialize(AIS25BA_I2S_PORT, 0);
 	if (!i2s) {
 		sndbg("ERROR: Failed to initialize I2S\n");
 	}
 
+	lldbg("%d\n", __LINE__);
 	i2c = up_i2cinitialize(AIS25BA_I2C_PORT);
 	if (!i2c) {
 		sndbg("ERROR: Failed to initialize I2C\n");
@@ -82,10 +85,12 @@ void rtl8730e_ais25ba_initialize()
 
 	g_ais25ba_dev.i2c = i2c;
 	g_ais25ba_dev.i2s = i2s;
+	lldbg("%d\n", __LINE__);
 	ret = ais25ba_initialize("/dev/sensor-mems", &g_ais25ba_dev);
 	if (ret != OK) {
 		sndbg("ERROR: MEMS ais25ba driver register fail\n");
 		return;
 	}
+	lldbg("%d\n", __LINE__);
 	snvdbg("MEMS ais25ba driver register success\n");
 }

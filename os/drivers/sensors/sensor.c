@@ -275,6 +275,7 @@ int sensor_register(const char *path, struct sensor_upperhalf_s *dev)
 	}
 	sensor_semgive(&dev->pollsem);
 #endif
+	lldbg("%d\n", __LINE__);
 	int ret = register_driver(path, &g_sensor_fops, 0666, dev);
 	if (ret != OK) {
 		kmm_free(dev);
@@ -283,6 +284,7 @@ int sensor_register(const char *path, struct sensor_upperhalf_s *dev)
 		sndbg("ERROR: Sensor Driver registration failed\n");
 		return ret;
 	}
+	lldbg("%d\n", __LINE__);
 	snvdbg("Sensor Driver registered Successfully\n");
 	return OK;
 }

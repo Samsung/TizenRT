@@ -146,18 +146,23 @@ static int ais25ba_verify_sensor(struct sensor_upperhalf_s *upper, struct i2c_de
 	reg[0] = AIS25BA_WHOAMI_REGISTER;                                  //WHO_AM_I
 
 #ifdef CONFIG_I2C_WRITEREAD
-	if (OK != i2c_writeread(i2c, &config, (uint8_t *)reg, 1, data, 1)){
+	if (OK != i2c_writeread(i2c, &config, (uint8_t *)reg, 1, data, 1)) {
 		return ERROR;
 	}
 #else
+	i2c_write(i2c, &config, (uint8_t *)reg, 1);
+	i2c_read(i2c, &config, (uint8_t *)data, 1);
+	/*
 	if (i2c_write(i2c, &config, (uint8_t *)reg, 1) == 1) {
 		i2c_read(i2c, &config, (uint8_t *)data, 1);
 	} else {
+		lldbg("%d\n", __LINE__);
 		return ERROR;
 	}
+	*/
 #endif
 
-	snvdbg("Sensor Verification return data : %8x\n", data[0]);
+	snvdbg("Alive check return data : %8x\n", data[0]);
 	if (data[0] == AIS25BA_WHOAMI_VALUE) {
 		return OK;
 	}
@@ -366,10 +371,12 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	if (!upper) {
 		sndbg("ERROR: upperhalf memory allocation failed\n");
 	}
+	lldbg("%d\n", __LINE__);
 	upper->ops = &g_ais25ba_ops;
 	upper->priv = priv;
 	priv->upper = upper;
 
+	lldbg("%d\n", __LINE__);
 	/* Sensor Connection Verification */
 	struct i2c_dev_s *i2c = priv->i2c;
 	struct i2c_config_s config = priv->i2c_config;
@@ -377,20 +384,24 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	sem_init(&priv->ctrl.callback_wait_sem, 0, 0);
 	priv->ctrl.sem_timeout.tv_sec = 10;		// Seconds
 	priv->ctrl.sem_timeout.tv_nsec = 100000000;	// nanoseconds
-	
+
+	lldbg("%d\n", __LINE__);
 	if (ais25ba_verify_sensor(upper, i2c, config) == OK) {
 		snvdbg("Sensor connection verification success\n");
 	} else{
 		sndbg("ERROR: Sensor verification failed, sensor not found/not responding\n");
 	}
 
+	lldbg("%d\n", __LINE__);
 	//I2C config set. Read data is to check if write register is successful or not
 	ais25ba_set_config_i2c(i2c, config);
 
+	lldbg("%d\n", __LINE__);
 	priv->wdog = wd_create();
 	if (wd_start(priv->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)priv) != OK) {
 		lldbg("Fail to start AIS25BA alive-check wdog, errno : %d\n", get_errno());
 	}
 
+	lldbg("%d\n", __LINE__);
 	return sensor_register(devpath, upper);
 }
