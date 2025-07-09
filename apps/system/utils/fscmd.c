@@ -1247,6 +1247,12 @@ static const char *get_fstype(FAR struct statfs *statbuf)
 		break;
 #endif
 
+#ifdef CONFIG_FS_LITTLEFS
+	case LITTLEFS_SUPER_MAGIC:
+		fstype = "littlefs";
+		break;
+#endif
+
 #ifdef CONFIG_FS_PROCFS
 	case PROCFS_MAGIC:
 		fstype = "procfs";
