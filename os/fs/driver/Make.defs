@@ -84,7 +84,9 @@ CSRCS_DRIVER += mtd/mtd_config.c
 
 ifeq ($(CONFIG_MTD_FTL),y)
 CSRCS_DRIVER += mtd/ftl.c
+ifeq ($(CONFIG_MTD_NAND), y)
 CSRCS_DRIVER += mtd/ftl_nand.c
+endif
 endif
 
 ifeq ($(CONFIG_MTD_SMART),y)

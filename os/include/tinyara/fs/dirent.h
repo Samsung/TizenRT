@@ -172,7 +172,7 @@ struct fs_dirent_s {
 		struct fs_smartfsdir_s smartfs;
 #endif
 #ifdef CONFIG_FS_LITTLEFS
-               FAR void *littlefs;
+		FAR void *littlefs;
 #endif
 #endif							/* !CONFIG_DISABLE_MOUNTPOINT */
 	} u;
