@@ -79,7 +79,7 @@ extern "C"
 // Logging functions
 
 #define LFS_TRACE_(fmt, ...) \
-    fdbg("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
+    fvdbg("%s:%d:trace: " fmt "%s\n", __FILE__, __LINE__, __VA_ARGS__)
 #define LFS_TRACE(...) LFS_TRACE_(__VA_ARGS__, "")
 
 #define LFS_DEBUG_(fmt, ...) \
