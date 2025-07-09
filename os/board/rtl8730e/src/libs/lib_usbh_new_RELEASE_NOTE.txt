@@ -1,6 +1,0 @@
-/* == "version" + "Realtek git version" + "compile date" + "compile time" == */
-
-== version 2d0f1be032 2024/04/29-09:50:17 ==
-1.	1st commit lib_usbh_new.a
-1.	Change optimization flags from "-O2" to "-Os"
-2.	Change instruction set build "-marm" to "-mthumb"

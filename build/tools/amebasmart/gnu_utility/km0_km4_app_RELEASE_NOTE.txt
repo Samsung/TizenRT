@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version bcc4e498 2025/07/01-16:12:48 ==
+1. Update wifi driver to support multi-sta CSI
+
 == version 3c37d0cb58 2025/04/24-11:10:27 ==
 1. Implement recovery mechanism for PG wakeup flow
 

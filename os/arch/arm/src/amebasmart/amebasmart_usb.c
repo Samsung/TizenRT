@@ -68,12 +68,12 @@
 static u8 cdc_acm_async_xfer_buf[CONFIG_CDC_ACM_ASYNC_BUF_SIZE] __attribute_((aligned(CACHE_LINE_SIZE)));
 static u16 cdc_acm_async_xfer_buf_pos = 0;
 static volatile int cdc_acm_async_xfer_busy = 0;
-static _sema cdc_acm_async_xfer_sema;
+static rtos_sema_t cdc_acm_async_xfer_sema;
 #endif
 
 #if CONFIG_AMEBASMART_USBD_CDC_ACM_HOTPLUG
 static u8 cdc_acm_attach_status;
-static _sema cdc_acm_attach_status_changed_sema;
+static rtos_sema_t cdc_acm_attach_status_changed_sema;
 #endif
 
 #define CONFIG_TEST_TRANSMIT				0
@@ -336,7 +336,7 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 	DEBUGASSERT(priv);
 	uint16_t nbytes = 0;
 	uint8_t *buffer = NULL;
-	buffer = (uint8_t *)rtw_zmalloc(CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
+	buffer = (uint8_t *)rtos_mem_zmalloc(CONFIG_CDC_ACM_BULK_IN_XFER_SIZE);
 	if (buffer == NULL) {
 		udbg("malloc failed\n");
 	}
@@ -383,7 +383,7 @@ static void usb_xmitchars(FAR uart_dev_t *dev)
 		}
 	}
 	priv->tx_level-=nbytes;
-	rtw_mfree(buffer,0);
+	rtos_mem_free(buffer);
 	/* When all of the characters have been sent from the buffer disable the TX
 	 * interrupt.
 	 *
@@ -588,11 +588,11 @@ static int amebasmart_cdc_acm_cb_received(u8 *buf, u16 len)
 			len = CONFIG_CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
 		}
 
-		rtw_memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), buf, len);
+		memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), buf, len);
 		cdc_acm_async_xfer_buf_pos += len;
 		if (cdc_acm_async_xfer_buf_pos >= CONFIG_CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;
-			rtw_up_sema(&cdc_acm_async_xfer_sema);
+			rtos_sema_give(cdc_acm_async_xfer_sema);
 		}
 	} else {
 		printf("\n[CDC] Busy, discarded %d bytes\n", len);
@@ -704,7 +704,7 @@ static void amebasmart_cdc_acm_cb_status_changed(uint8_t status)
 	}
 #if CONFIG_AMEBASMART_USBD_CDC_ACM_HOTPLUG
 	cdc_acm_attach_status = status;
-	rtw_up_sema(&cdc_acm_attach_status_changed_sema);
+	rtos_sema_give(cdc_acm_attach_status_changed_sema);
 #endif
 }
 

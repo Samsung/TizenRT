@@ -422,7 +422,7 @@ static int wps_connect_to_AP_by_open_system(char *target_ssid, u8 channel)
 	rtw_network_info_t connect_param = {0};
 
 	if (target_ssid != NULL) {
-		rtw_memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
+		memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 		connect_param.ssid.len = strlen(target_ssid);
 		connect_param.security_type = RTW_SECURITY_OPEN;
 		if (channel) {
@@ -460,9 +460,9 @@ static int wps_connect_to_AP_by_open_system_with_bssid(char *target_ssid, unsign
 	if ((target_ssid != NULL) && (target_bssid != NULL)) {
 		rtw_msleep_os(500);	//wait scan complete.
 		while (1) {
-			rtw_memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
+			memcpy(connect_param.ssid.val, target_ssid, strlen(target_ssid));
 			connect_param.ssid.len = strlen(target_ssid);
-			rtw_memcpy(connect_param.bssid.octet, target_bssid, ETH_ALEN);
+			memcpy(connect_param.bssid.octet, target_bssid, ETH_ALEN);
 			connect_param.security_type = RTW_SECURITY_OPEN;
 
 			ret = wifi_connect(&connect_param, 1);
@@ -928,7 +928,7 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid)
 			return -2;
 		}
 	} else {
-		rtw_memcpy(target_ssid, ssid, strlen(ssid));
+		memcpy(target_ssid, ssid, strlen(ssid));
 	}
 
 	if (queue_for_credential != NULL) {
