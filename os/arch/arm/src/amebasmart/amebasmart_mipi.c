@@ -49,7 +49,9 @@
 
 static u32 vo_freq;
 static volatile u8 send_cmd_done = 0;
-
+static volatile u8 receive_cmd_done = 1;
+static volatile bool rx_data_rdy = FALSE;
+static uint8_t rx_data_buff[5]; /*long response have 5 bytes in payload, short response have 1 or 2 bytes in payload */
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
 	MIPI_TypeDef *MIPIx;
@@ -77,7 +79,7 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 static void amebasmart_register_interrupt(void);
 
 /* MIPI methods */
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list);
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type);
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
@@ -182,15 +184,18 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 }
 
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type)
 {
 	u32 word0, word1, addr, idx;
 	u8 cmd_addr[128];
+	if (MIPI_LPTX_IS_READ(cmd_type)) {
+		receive_cmd_done = 0;
+	}
 	if (payload_len == 0) {
-		MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_SHORT_WRITE, cmd, 0);
+		MIPI_DSI_CMD_Send(MIPIx, cmd_type, cmd, 0);
 		return;
 	} else if (payload_len == 1) {
-		MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_SHORT_WRITE_PARAM, cmd, para_list[0]);
+		MIPI_DSI_CMD_Send(MIPIx, cmd_type, cmd, para_list[0]);
 		return;
 	}
 
@@ -207,9 +212,50 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 		word1 = (cmd_addr[idx + 7] << 24) + (cmd_addr[idx + 6] << 16) + (cmd_addr[idx + 5] << 8) + cmd_addr[idx + 4];
 		MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, FALSE);
 	}
-	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, payload_len, 0);
+	MIPI_DSI_CMD_Send(MIPIx, cmd_type, payload_len, 0);
 }
+static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
+{
+	u32 rcmd_val, payload_len, addr, word0, word1;
+	u8 data_id, byte0, byte1, rx_offset;
+	rcmd_val = MIPI_DSI_CMD_Rxcv_CMD(MIPIx, rcmd_idx);
+	if (rcmd_val & (MIPI_BIT_RCMDx_CRC_CHK_ERR | MIPI_BIT_RCMDx_ECC_CHK_ERR | MIPI_BIT_RCMDx_ECC_ERR_FIX)) {
+		mipidbg("RCMD[%d] Error\n", rcmd_idx + 1);
+	}
+	if (rcmd_val & MIPI_BIT_RCMDx_ECC_NO_ERR) {
+		data_id = MIPI_GET_RCMDx_DATAID(rcmd_val);
+		byte0 = MIPI_GET_RCMDx_BYTE0(rcmd_val);
+		byte1 = MIPI_GET_RCMDx_BYTE1(rcmd_val);
+		/*For short read, it is normally returns only two bytes, byte0: payload, byte1: checksum (if present)*/
+		rx_data_buff[0] = byte0;
+		rx_data_buff[1] = byte1;
 
+		/* Peripheral to Processor Transactions Long Packet is 0x1A or 0x1C, byte0 and byte1 will then be the length of payload */
+		if (MIPI_LPRX_IS_LONGRead(data_id)) {
+			payload_len = (byte1 << 8) + byte0;
+		} else {
+			payload_len = 0;
+		}
+		rx_offset = 0;
+		/* the addr payload_len 1 ~ 8 is 0 */
+		for (addr = 0; addr < (payload_len + 7) / 8; addr++) {
+			MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, TRUE);
+			/*unpack word0*/
+			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
+				rx_data_buff[rx_offset] = (word0 >> (i * 8)) & 0xFF;
+				rx_offset++;
+			}
+			/*unpack word1*/
+			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
+				rx_data_buff[rx_offset] = (word1 >> (i * 8)) & 0xFF;
+				rx_offset++;
+			}
+		}
+		rx_data_rdy = TRUE;
+	}
+
+	receive_cmd_done = 1;
+}
 static void amebasmart_mipidsi_isr(void)
 {
 	MIPI_TypeDef *MIPIx = g_dsi_host.MIPIx;
@@ -223,17 +269,32 @@ static void amebasmart_mipidsi_isr(void)
 		reg_val &= ~MIPI_BIT_CMD_TXDONE;
 		send_cmd_done = 1;
 	}
-
+	if (reg_val & MIPI_BIT_RCMD1) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 0);
+	}
+	if (reg_val & MIPI_BIT_RCMD2) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 1);
+	}
+	if (reg_val & MIPI_BIT_RCMD3) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 2);
+	}
 	if (reg_val & MIPI_BIT_ERROR) {
+		/* Read and log DPHY error */
 		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
+		mipidbg("LPTX Error: DPHY_ERR = 0x%x\n", reg_dphy_err);
+
 		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
-			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
 
-			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
-		}
+		MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
+		MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+		/*if error report in register DPHY_ERR, it is likely that the driver is in a invalid state, so we reset LRRX and LPTX here.*/
+		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(1);
+		DelayUs(1);
+		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(0);
 
+		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
+		DelayUs(1);
+		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~(MIPI_BIT_DSI_MODE | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST));
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
 			mipidbg("LPTX Still Error\n");
 			MIPI_DSI_INT_Config(MIPIx, ENABLE, DISABLE, FALSE);
@@ -348,16 +409,17 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 		return ret;
 	}
 	send_cmd_done = 0;
+	rx_data_rdy = FALSE;
 	if (mipi_dsi_packet_format_is_short(msg->type)) {
 		if (packet.header[1] == 0) {
-			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL, msg->type);
 		} else {
-			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1, msg->type);
 		}
 	} else {
-		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload);
+		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload, msg->type);
 	}
-	while(send_cmd_done != 1) {
+	while(send_cmd_done != 1 || receive_cmd_done != 1) {
 		DelayMs(1);
 		cnt--;
 		if (cnt == 0) {
@@ -376,6 +438,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
+	if (rx_data_rdy) {
+		memcpy(msg->rx_buf, rx_data_buff, msg->rx_len);
+	}
 	return OK;
 }
 
