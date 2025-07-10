@@ -57,7 +57,7 @@ class SoundPlayer : public MediaPlayerObserverInterface,
 {
 public:
 	SoundPlayer() : mNumContents(0), mPlayIndex(-1), mHasFocus(false), mPaused(false), mStopped(false),\
-						mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE),mVolume(DEFAULT_VOLUME), mLooping(false) {};
+						mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE),mVolume(DEFAULT_VOLUME), mLooping(false), mFocusState(FOCUS_NONE) {};
 	~SoundPlayer() {};
 	bool init(int argc, char *argv[]);
 	player_result_t startPlayback(void);
@@ -83,6 +83,7 @@ private:
 	unsigned int mSampleRate;
 	uint8_t mVolume;
 	bool mLooping;
+	focus_state_t mFocusState;
 	void loadContents(const char *path);
 };
 
@@ -168,6 +169,7 @@ void SoundPlayer::onFocusChange(int focusChange)
 	switch (focusChange) {
 	case FOCUS_GAIN:
 	case FOCUS_GAIN_TRANSIENT:
+	case FOCUS_GAIN_TRANSIENT_MAY_DUCK:
 		mHasFocus = true;
 		if (mPaused) {
 			printf("it was paused, just start playback now\n");
@@ -273,13 +275,19 @@ bool SoundPlayer::init(int argc, char *argv[])
 	mSampleRate = atoi(argv[3]);
 	mTrackFinished = false;
 
-	if (argc > 5 && strcmp(argv[5], "1") == 0) {
+	mFocusState = (focus_state_t)atoi(argv[5]);
+
+	if (argc > 6 && strcmp(argv[6], "1") == 0) {
 		mLooping = true;
 	}
 
 	auto &focusManager = FocusManager::getFocusManager();
 	printf("mp : %x request focus!!\n", &mp);
-	focusManager.requestFocus(mFocusRequest);
+	ret = focusManager.requestFocus(mFocusRequest, mFocusState);
+	if (ret != FOCUS_REQUEST_SUCCESS) {
+		printf("Focus request failed. ret: %d\n", ret);
+		return false;
+	};
 
 	return true;
 }
@@ -407,9 +415,9 @@ int soundplayer_main(int argc, char *argv[])
 	auto player = std::shared_ptr<SoundPlayer>(new SoundPlayer());
 	printf("cur SoundPlayer : %x\n", &player);
 
-	if (argc != 6 && argc != 5) {
+	if (argc != 7 && argc != 6) {
 		printf("invalid input\n");
-		printf("Usage : soundplayer [contents path] [volume] [sample rate] [stream policy] [looping]\n");
+		printf("Usage : soundplayer [contents path] [volume] [sample rate] [stream policy] [focus state] [looping]\n");
 		printf("looping argument is optional\n");
 		return -1;
 	}
