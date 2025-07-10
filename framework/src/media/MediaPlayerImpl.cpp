@@ -147,7 +147,7 @@ player_result_t MediaPlayerImpl::prepare()
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer prepare failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -186,17 +186,17 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy);
-	if (res != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
 	auto source = mInputHandler.getDataSource();
 	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		return notifySync();
+	}
+
+	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		return notifySync();
 	}
@@ -231,7 +231,7 @@ player_result_t MediaPlayerImpl::prepareAsync()
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer prepareAsync failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -307,6 +307,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 player_result_t MediaPlayerImpl::unpreparePlayback(void)
 {
 	player_result_t ret = PLAYER_OK;
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState == PLAYER_STATE_NONE || mCurState == PLAYER_STATE_IDLE || mCurState == PLAYER_STATE_CONFIGURED) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
@@ -326,6 +327,7 @@ player_result_t MediaPlayerImpl::unpreparePlayback(void)
 	}
 	mBufSize = 0;
 	mCurState = PLAYER_STATE_IDLE;
+	mpw.removePlayer(shared_from_this());
 	return ret;
 }
 
@@ -359,7 +361,7 @@ player_result_t MediaPlayerImpl::start()
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer start failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -406,7 +408,7 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	audio_manager_result_t res;
 
 	if (mCurState == PLAYER_STATE_PAUSED) {
-		res = set_stream_out_policy(mStreamInfo->policy);
+		res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
 		if (res != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. ret: %d\n", res);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
@@ -436,7 +438,7 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 		return notifySync();
 	}
 
-	mpw.setPlayer(shared_from_this());
+	mpw.addPlayer(shared_from_this());
 	FocusManager &fm = FocusManager::getFocusManager();
 	FocusLossListener playerFocusLossListener = std::bind(&MediaPlayerImpl::onFocusLossListener, shared_from_this());
 	fm.registerPlayerFocusLossListener(playerFocusLossListener);
@@ -450,7 +452,7 @@ player_result_t MediaPlayerImpl::stop()
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer stop failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -501,14 +503,14 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 		return PLAYER_OK;
 	}
 
-	audio_manager_result_t result = stop_audio_stream_out(drain);
+	audio_manager_result_t result = stop_audio_stream_out(mStreamInfo->id, drain);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 		return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
 
 	mCurState = PLAYER_STATE_READY;
-	mpw.setPlayer(nullptr);
+	mpw.removePlayer(shared_from_this());
 
 	return PLAYER_OK;
 }
@@ -522,9 +524,9 @@ void MediaPlayerImpl::stopPlaybackInternal(bool drain)
 	mCurState = PLAYER_STATE_READY;
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
-	mpw.setPlayer(nullptr);
+	mpw.removePlayer(shared_from_this());
 
-	audio_manager_result_t result = stop_audio_stream_out(drain);
+	audio_manager_result_t result = stop_audio_stream_out(mStreamInfo->id, drain);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 	}
@@ -541,7 +543,7 @@ player_result_t MediaPlayerImpl::pause()
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer pause failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -566,7 +568,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 	LOG_STATE_INFO(mCurState);
 
 	if (mCurState == PLAYER_STATE_PLAYING) {
-		audio_manager_result_t result = pause_audio_stream_out();
+		audio_manager_result_t result = pause_audio_stream_out(mStreamInfo->id);
 		if (result != AUDIO_MANAGER_SUCCESS) {
 			meddbg("pause_audio_stream_in failed ret : %d\n", result);
 		} else {
@@ -587,7 +589,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 		fm.unregisterPlayerFocusLossListener();
 
 		PlayerWorker &mpw = PlayerWorker::getWorker();
-		mpw.setPlayer(nullptr);
+		mpw.removePlayer(shared_from_this());
 
 		mCurState = PLAYER_STATE_PAUSED;
 		if (notify) {
@@ -706,7 +708,7 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 	player_result_t ret = PLAYER_OK;
 
 	stream_focus_state_t streamState = getStreamFocusState();
-	if (streamState != STREAM_FOCUS_STATE_ACQUIRED) {
+	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer setVolume failed. ret: %d, player: %x\n", ret, &mPlayer);
 		return ret;
@@ -877,12 +879,7 @@ void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_
 stream_focus_state_t MediaPlayerImpl::getStreamFocusState(void)
 {
 	FocusManager &fm = FocusManager::getFocusManager();
-	stream_info_t stream_info = fm.getCurrentPlayerStreamInfo();
-	if (mStreamInfo->id == stream_info.id) {
-		return STREAM_FOCUS_STATE_ACQUIRED;
-	} else {
-		return STREAM_FOCUS_STATE_RELEASED;
-	}
+	return fm.getStreamFocusState(mStreamInfo->id);
 }
 
 bool MediaPlayerImpl::isPlaying()
@@ -1025,7 +1022,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
-		mBufSize = get_user_output_frames_to_byte(get_output_frame_count());
+		mBufSize = get_user_output_frames_to_byte(get_output_frame_count(mStreamInfo->id), mStreamInfo->id);
 		if (mBufSize < 0) {
 			meddbg("MediaPlayer prepare fail : get_user_output_frames_to_byte fail\n");
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
@@ -1051,17 +1048,18 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 	}
 }
 
-void MediaPlayerImpl::playback()
+void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, bool mixing, uint8_t playback_idx)
 {
-	float outputSampleRateRatio = get_output_sample_rate_ratio();
+	medvdbg("timeout: %lld, mixing: %d, playback_idx: %d\n", timeout, mixing, playback_idx);
+	float outputSampleRateRatio = get_output_sample_rate_ratio(mStreamInfo->id);
 	outputSampleRateRatio = (outputSampleRateRatio >= 1.0f ? outputSampleRateRatio : 1);
 	unsigned int framesToRead = get_card_output_bytes_to_frame(mBufSize) / outputSampleRateRatio;
-	unsigned int bufferSize = get_user_output_frames_to_byte(framesToRead);
+	unsigned int bufferSize = get_user_output_frames_to_byte(framesToRead, mStreamInfo->id);
 
-	ssize_t num_read = mInputHandler.read(mBuffer, (int)bufferSize);
+	ssize_t num_read = mInputHandler.read(mBuffer, (int)bufferSize, timeout);
 	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)bufferSize));
+		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read, mStreamInfo->id), mixing, playback_idx, mStreamInfo->id);
 		if (ret < 0) {
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {
@@ -1076,7 +1074,8 @@ void MediaPlayerImpl::playback()
 			}
 		}
 	} else if (num_read == 0) {
-		playbackFinished();
+		PlayerWorker &mpw = PlayerWorker::getWorker();
+		mpw.enQueue(&MediaPlayerImpl::playbackFinished, shared_from_this());
 	} else {
 		/*@ToDo: It is not possible for num_read to be negative according to code in InputHandler read() API.*/
 		meddbg("InputDatasource read error\n");
@@ -1087,14 +1086,18 @@ void MediaPlayerImpl::playback()
 
 player_result_t MediaPlayerImpl::playbackFinished()
 {
+	if (mCurState != PLAYER_STATE_PLAYING) {
+		return PLAYER_OK;
+	}
+
+	PlayerWorker &mpw = PlayerWorker::getWorker();
 	mCurState = PLAYER_STATE_COMPLETED;
-	audio_manager_result_t result = stop_audio_stream_out(true);
+	mpw.removePlayer(shared_from_this());
+	audio_manager_result_t result = stop_audio_stream_out(mStreamInfo->id, true);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("stop_audio_stream_out failed ret : %d\n", result);
 		return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
-	PlayerWorker &mpw = PlayerWorker::getWorker();
-	mpw.setPlayer(nullptr);
 	notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
 	FocusManager &fm = FocusManager::getFocusManager();
 	fm.unregisterPlayerFocusLossListener();
