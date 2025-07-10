@@ -42,12 +42,13 @@ size_t StreamBufferReader::copy(unsigned char *buf, size_t size, size_t offset)
 	return len;
 }
 
-size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync)
+size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync, std::chrono::milliseconds timeout)
 {
 	medvdbg("size %lu sync %c\n", size, sync ? 'Y' : 'N');
 	std::unique_lock<std::mutex> lock(mStream->getMutex());
 
 	size_t rlen = 0;
+	auto t_deadline = std::chrono::steady_clock::now() + timeout;
 
 	if (sync) {
 		while (rlen < size) {
@@ -69,7 +70,11 @@ size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync)
 				// Writer may be waiting for more spaces, so it's necessary to notify after reading.
 				mStream->getCondv().notify_one();
 				// Then wait notification from writer.
-				mStream->getCondv().wait(lock);
+				if (timeout == std::chrono::microseconds(0)) {
+					mStream->getCondv().wait(lock);
+				} else {
+					mStream->getCondv().wait_for(lock, t_deadline - std::chrono::steady_clock::now());
+				}
 			}
 		}
 

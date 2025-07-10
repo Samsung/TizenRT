@@ -28,6 +28,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#if defined(__cplusplus)
+#include <chrono>
+#endif
 #include <media/stream_info.h>
 
 #if defined(__cplusplus)
@@ -206,7 +209,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Return Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, unsigned int frames);
+int start_audio_stream_out(void *data, unsigned int frames, bool mixing, uint8_t playback_idx, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -232,7 +235,7 @@ audio_manager_result_t pause_audio_stream_in(void);
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t pause_audio_stream_out(void);
+audio_manager_result_t pause_audio_stream_out(stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: stop_audio_stream_in
@@ -260,7 +263,7 @@ audio_manager_result_t stop_audio_stream_in(void);
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t stop_audio_stream_out(bool drain);
+audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool drain);
 
 /****************************************************************************
  * Name: reset_audio_stream_in
@@ -368,7 +371,7 @@ unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
  * Return Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_frame_count(void);
+unsigned int get_output_frame_count(stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_card_output_frames_to_byte
@@ -413,7 +416,7 @@ unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
  * Return Value:
  *   On success, the byte size of the frame in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_user_output_frames_to_byte(unsigned int frames);
+unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_user_output_bytes_to_frame
@@ -428,7 +431,7 @@ unsigned int get_user_output_frames_to_byte(unsigned int frames);
  * Return Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
+unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_output_sample_rate_ratio
@@ -439,7 +442,7 @@ unsigned int get_user_output_bytes_to_frame(unsigned int bytes);
  * Return Value:
  *   Return card/source samplerate ratio in case of player.
  ****************************************************************************/
-float get_output_sample_rate_ratio(void);
+float get_output_sample_rate_ratio(stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_output_card_buffer_size
@@ -738,7 +741,7 @@ audio_manager_result_t set_stream_in_policy(stream_policy_t policy);
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t set_stream_out_policy(stream_policy_t policy);
+audio_manager_result_t set_stream_out_policy(stream_policy_t policy, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_stream_in_policy
@@ -924,6 +927,10 @@ audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_po
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
 audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy, bool *mute);
+
+#if defined(__cplusplus)
+std::chrono::milliseconds get_output_read_timeout(void);
+#endif
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************

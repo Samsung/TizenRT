@@ -32,7 +32,7 @@ public:
 
 public:
 	virtual size_t copy(unsigned char *buf, size_t size, size_t offset = 0);
-	virtual size_t read(unsigned char *buf, size_t size, bool sync = true);
+	virtual size_t read(unsigned char *buf, size_t size, bool sync = true, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	virtual size_t sizeOfData();
 
 public:

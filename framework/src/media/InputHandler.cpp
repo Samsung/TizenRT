@@ -107,12 +107,12 @@ int InputHandler::seekTo(off_t offset)
 	return mInputDataSource->seekTo(offset);
 }
 
-ssize_t InputHandler::read(unsigned char *buf, size_t size)
+ssize_t InputHandler::read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout)
 {
 	size_t rlen = 0;
 
 	if (mBufferReader) {
-		rlen = mBufferReader->read(buf, size);
+		rlen = mBufferReader->read(buf, size, true, timeout);
 	}
 	return (ssize_t)rlen;
 }
