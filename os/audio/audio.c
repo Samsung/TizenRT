@@ -816,6 +816,96 @@ static inline void audio_complete(FAR struct audio_upperhalf_s *upper, FAR struc
 }
 
 /****************************************************************************
+ * Name: audio_micmute
+ *
+ * Description:
+ *   Send an AUDIO_MSG_MICMUTE message to the client to indicate that the
+ *   mic has been muted. The lower-half driver initiates this
+ *   call via its callback pointer to our upper-half driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+static inline void audio_micmute(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status, FAR void *session)
+#else
+static inline void audio_micmute(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status)
+#endif
+{
+	struct audio_msg_s msg;
+
+	audvdbg("Entry\n");
+
+	if (upper->usermq != NULL) {
+		msg.msgId = AUDIO_MSG_MICMUTE;
+		msg.u.pPtr = NULL;
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		msg.session = session;
+#endif
+		mq_send(upper->usermq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_BUFFER_DEQUEUE_PRIO);
+	}
+}
+
+/****************************************************************************
+ * Name: audio_micunmute
+ *
+ * Description:
+ *   Send an AUDIO_MSG_MICUNMUTE message to the client to indicate that the
+ *   mic has been unmuted. The lower-half driver initiates this
+ *   call via its callback pointer to our upper-half driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+static inline void audio_micunmute(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status, FAR void *session)
+#else
+static inline void audio_micunmute(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status)
+#endif
+{
+	struct audio_msg_s msg;
+
+	audvdbg("Entry\n");
+
+	if (upper->usermq != NULL) {
+		msg.msgId = AUDIO_MSG_MICUNMUTE;
+		msg.u.pPtr = NULL;
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		msg.session = session;
+#endif
+		mq_send(upper->usermq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_BUFFER_DEQUEUE_PRIO);
+	}
+}
+
+/****************************************************************************
+ * Name: audio_unreachable
+ *
+ * Description:
+ *   Send an AUDIO_MSG_UNREACHABLE message to the client to indicate that the
+ *   we cant record anymore. The lower-half driver initiates this
+ *   call via its callback pointer to our upper-half driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+static inline void audio_unreachable(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status, FAR void *session)
+#else
+static inline void audio_unreachable(FAR struct audio_upperhalf_s *upper, FAR struct ap_buffer_s *apb, uint16_t status)
+#endif
+{
+	struct audio_msg_s msg;
+
+	audvdbg("Entry\n");
+
+	if (upper->usermq != NULL) {
+		msg.msgId = AUDIO_MSG_UNREACHABLE;
+		msg.u.pPtr = NULL;
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		msg.session = session;
+#endif
+		mq_send(upper->usermq, (FAR const char *)&msg, sizeof(msg), CONFIG_AUDIO_BUFFER_DEQUEUE_PRIO);
+	}
+}
+
+/****************************************************************************
  * Name: audio_callback
  *
  * Description:
@@ -883,6 +973,33 @@ static void audio_callback(FAR void *handle, uint16_t reason, FAR struct ap_buff
 #endif
 	}
 	break;
+
+	case AUDIO_CALLBACK_MICMUTE: {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		audio_micmute(upper, apb, status, session);
+#else
+		audio_micmute(upper, apb, status);
+#endif
+		break;
+	}
+
+	case AUDIO_CALLBACK_MICUNMUTE: {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		audio_micunmute(upper, apb, status, session);
+#else
+		audio_micunmute(upper, apb, status);
+#endif
+		break;
+	}
+	
+	case AUDIO_CALLBACK_UNREACHABLE: {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		audio_unreachable(upper, apb, status, session);
+#else
+		audio_unreachable(upper, apb, status);
+#endif
+		break;
+	}
 
 	default: {
 		auddbg("ERROR: Unknown callback reason code %d\n", reason);

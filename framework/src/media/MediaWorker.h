@@ -57,6 +57,8 @@ private:
 	int mRefCnt;
 	pthread_t mWorkerThread;
 	std::mutex mRefMtx;
+	std::atomic<bool> mInsideThreadFunc;
+	unsigned short mMAX_START_THREAD_WAIT_COUNT;
 };
 } // namespace media
 #endif

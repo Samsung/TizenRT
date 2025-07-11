@@ -55,6 +55,7 @@ static bool g_pm_metrics_running = false;
 static void pm_print_metrics(double total_time, int n_domains)
 {
 	int index;
+	enum pm_state_e pm_state;
 	pmdbg("\n");
 	pmdbg("TOTAL METRICS TIME [1] = %dms\n", TICK2MSEC((int)total_time));
 	pmdbg("TOTAL SLEEP TRY TIME [2] = %dms\n", TICK2MSEC(g_pm_metrics->total_try_ticks));
@@ -84,14 +85,12 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("\n");
 	pmdbg(" BOARD STATE | PM STATE |          TIME          \n");
 	pmdbg("-------------|----------|------------------------\n");
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "WAKEUP", "NORMAL", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[0]),
-		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[0]) * 100.0 / total_time);
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "IDLE", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[1]),
-		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[1]) * 100.0 / total_time);
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "", "STANDBY", TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[2]),
-		  ((double)g_pm_metrics->state_metrics.state_accum_ticks[2]) * 100.0 / total_time);
+	for (pm_state = PM_NORMAL; pm_state < PM_SLEEP; pm_state++) {
+		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
+			((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state]) * 100.0 / total_time);
+	}
 	pmdbg("-------------|----------|------------------------\n");
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", "SLEEP", TICK2MSEC(g_pm_metrics->board_sleep_ticks),
+	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", pm_state_name[PM_SLEEP], TICK2MSEC(g_pm_metrics->board_sleep_ticks),
 		  ((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
 }
 /************************************************************************************
@@ -267,12 +266,17 @@ int pm_metrics(int milliseconds)
 		pmdbg("PM Metrics already running\n");
 		return OK;
 	}
+	/* There is no need to do measurement if PM is not ready to state change */
+	if (!g_pmglobals.is_running) {
+		pmdbg("Please Start PM to enable PM Metrics\n");
+		return OK;
+	}
 	/* Lock PM so that no two thread can run PM Metrics simultaneously */
 	pm_lock();
 	/* Avoid board sleep during PM Metrics initialization */
 	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 	/* Allocate memory for initializing PM Metrics measurements */
-	g_pm_metrics = pm_alloc(1, sizeof(pm_metric_t));
+	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
 		set_errno(ENOMEM);
 		pmdbg("Unable to initialize pm_metrics, error = %d\n", get_errno());

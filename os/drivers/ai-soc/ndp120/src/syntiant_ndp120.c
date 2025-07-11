@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -1995,15 +1995,9 @@ dsp_mb_processor(struct syntiant_ndp_device_s *ndp, uint32_t *notify)
             s = ndp_mcu_read(NDP120_DSP_CONFIG_BUFFILLLEVEL(4), &data);
             if (s) goto error;
             DEBUG_PRINTF("FILL LEVEL: 0x%X\n", data);
-            DEBUG_PRINTF("Sending extract ack\n");
             extract_count += 1;
             DEBUG_PRINTF("extract cnt: %d, payload: %d\n", extract_count, payload);
 #endif
-            /* writing a watermark because that's an accepted response if it was
-             * a SYNTIANT_NDP_NOTIFICATION_EXTRACT_READY the DSP would hang
-             * the actual value is ignored */
-            s = syntiant_ndp120_mbin_send(ndp, NDP120_DSP_MB_H2D_WATERMARK);
-            if (s) goto error;
         }
         break;
 
@@ -6932,7 +6926,7 @@ int syntiant_ndp120_init(
                 if (s) goto error;
                 if (spi_data != 0xff) break;
             }
-            int n = 100;
+                        int n = 100;
             while (n--) {
                 s = ndp_spi_read(NDP120_SPI_INTSTS, &spi_data);
                 if (s) goto error;
@@ -8318,6 +8312,7 @@ int syntiant_ndp120_init_ring_buffer_pointers_no_sync(struct syntiant_ndp_device
     ndp120->dsp_function_sample_last_ptr = ring_buf_ptrs.function_sample_last_ptr;
     ndp120->dsp_pcm_audio_annotation_last_ptr = ring_buf_ptrs.pcm_audio_annotation_last_ptr;
     ndp120->dsp_sensor_sample_last_ptr = ring_buf_ptrs.sensor_sample_last_ptr;
+    auddbg("0x%x 0x%x 0x%x 0x%x\n", ndp120->dsp_pcm_audio_sample_last_ptr, ndp120->dsp_function_sample_last_ptr, ndp120->dsp_pcm_audio_annotation_last_ptr, ndp120->dsp_sensor_sample_last_ptr);
 
 error:
     return s;
@@ -9971,8 +9966,8 @@ out:
     return s;
 }
 
-static int syntiant_ndp120_enable_disable_barge_in_no_sync(struct syntiant_ndp_device_s *ndp,
-        int enable)
+static int syntiant_ndp120_config_barge_in_no_sync(struct syntiant_ndp_device_s
+                                                   *ndp, int config)
 {
     int s = SYNTIANT_NDP_ERROR_NONE;
     uint32_t adx;
@@ -9980,7 +9975,7 @@ static int syntiant_ndp120_enable_disable_barge_in_no_sync(struct syntiant_ndp_d
 
     adx = NDP120_DSP_MB_H2D_ADDR;
     payload_in_MSB[0] = NDP120_H2D_MB_SET_PAYLOAD(payload_in_MSB[0],
-            (uint32_t)enable);
+            (uint32_t) (config ? BARGE_IN_INIT : BARGE_IN_STATUS));
     s = syntiant_ndp120_write_block(ndp, SYNTIANT_NDP120_MCU, adx,
 		payload_in_MSB, sizeof(payload_in_MSB));
     if (s) {
@@ -9996,8 +9991,8 @@ error:
     return s;
 }
 
-int syntiant_ndp120_enable_disable_barge_in(struct syntiant_ndp_device_s *ndp,
-        int enable)
+int syntiant_ndp120_config_barge_in(struct syntiant_ndp_device_s *ndp,
+        int config)
 {
     int s0, s;
     s = (ndp->iif.sync)(ndp->iif.d);
@@ -10005,7 +10000,7 @@ int syntiant_ndp120_enable_disable_barge_in(struct syntiant_ndp_device_s *ndp,
         DEBUG_PRINTF("Error in syntiant_ndp120_enable_disable_barge_in \n");
         goto out;
     }
-    s = syntiant_ndp120_enable_disable_barge_in_no_sync(ndp, enable);
+    s = syntiant_ndp120_config_barge_in_no_sync(ndp, config);
     s0 = (ndp->iif.unsync)(ndp->iif.d);
     s = s ? s : s0;
 out:

@@ -72,23 +72,15 @@ static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
 	"READY   ",
-#ifdef CONFIG_SMP
-	"ASSIGNED",		
-#endif
+	"ASSIGNED",
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
 	"WAITUNBLOCK",
-#ifndef CONFIG_DISABLE_SIGNALS
 	"WAITSIG ",
-#endif
-#ifndef CONFIG_DISABLE_MQUEUE
 	"MQNEMPTY",
 	"MQNFULL ",
-#endif
-#ifdef CONFIG_PAGING
 	"WAITPAGEFILL "
-#endif
 };
 
 static const char *utils_ttypenames[4] = {
@@ -98,9 +90,7 @@ static const char *utils_ttypenames[4] = {
 	"--?--  "
 };
 
-#ifdef CONFIG_SMP
 static uint32_t cpu;
-#endif
 
 static void ps_print_values(char *buf, void *arg)
 {
@@ -108,14 +98,18 @@ static void ps_print_values(char *buf, void *arg)
 	int flags;
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
-#ifdef CONFIG_SMP
-	int cpu_idx;
-#endif
+	int ncpus = sched_getcpucount();
 
 	stat_info[0] = buf;
 
 	for (i = 0; i < PROC_STAT_MAX - 1; i++) {
 		stat_info[i] = strtok_r(stat_info[i], " ", &stat_info[i + 1]);
+	}
+
+	int cpu_idx;
+	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
+	if (cpu_idx != cpu && cpu != ncpus) {
+		return;
 	}
 
 	flags = atoi(stat_info[PROC_STAT_FLAG]);
@@ -128,22 +122,17 @@ static void ps_print_values(char *buf, void *arg)
 		return;
 	}
 
-#ifdef CONFIG_SMP
-	cpu_idx = atoi(stat_info[PROC_STAT_CPU]);
-	if (cpu_idx != cpu && cpu != CONFIG_SMP_NCPUS) {
-		return;
-	}
-#endif
-	
-	printf("%5s | %4s | %4s | %7s | %c%c | %8s | %3s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
+	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
 		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
-		utils_statenames[state], stat_info[PROC_STAT_CPU]);
+		utils_statenames[state]);
+
+	printf(" | %3s", stat_info[PROC_STAT_CPU]);
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
 #else
-	printf("\n");
+	printf(" | NA\n");
 #endif
 
 }
@@ -167,6 +156,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 int utils_ps(int argc, char **args)
 {
+	int ncpus = sched_getcpucount();
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
 	bool is_mounted;
@@ -186,9 +176,8 @@ int utils_ps(int argc, char **args)
 
 #endif
 
-#ifdef CONFIG_SMP
 	int opt;
-	cpu = CONFIG_SMP_NCPUS;
+	cpu = ncpus;
         if (argc > 1) {
                 /*
                  * -c [cpu idx] : only display processes running on given cpu
@@ -200,7 +189,7 @@ int utils_ps(int argc, char **args)
                         switch (opt) {
                         case 'c':
                                 cpu = atoi(optarg);
-                                if (cpu < 0 || cpu >= CONFIG_SMP_NCPUS) {
+                                if (cpu < 0 || cpu >= ncpus) {
 					printf("Invalid input for -c option\n");
                                         goto out;
                                 }
@@ -212,30 +201,14 @@ int utils_ps(int argc, char **args)
 			}
 		}
 	}
-#endif
 
 	printf("\n");
-#if (CONFIG_TASK_NAME_SIZE > 0)
-#ifdef CONFIG_SMP
 	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
-#else
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | NAME\n");
-#endif
 	printf("------|------|------|---------|----|----------|-----|----\n");
-#else
-#ifdef CONFIG_SMP
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU \n");
-#else
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS \n");
-#endif
-	printf("------|------|------|---------|----|----------|-----\n");
-#endif
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
 
-#ifdef CONFIG_SMP
 out:
-#endif
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	if (!is_mounted) {
 		/* Detach mounted Procfs */

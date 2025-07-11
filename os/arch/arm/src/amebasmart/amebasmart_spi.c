@@ -188,7 +188,7 @@ static void amebasmart_spi_bus_initialize(FAR struct amebasmart_spidev_s *priv, 
 /************************************************************************************
  * Private Data
  ************************************************************************************/
-
+#ifdef CONFIG_AMEBASMART_SPI0
 static const struct spi_ops_s g_spi0ops = {
 	.lock         = amebasmart_spi_lock,
 	.select       = amebasmart_spi_select,
@@ -245,7 +245,9 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER,
 };
+#endif
 
+#ifdef CONFIG_AMEBASMART_SPI1
 static const struct spi_ops_s g_spi1ops = {
 	.lock         = amebasmart_spi_lock,
 	.select       = amebasmart_spi_select,
@@ -302,6 +304,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER
 };
+#endif
 
 /************************************************************************************
  * Private Functions
@@ -502,7 +505,7 @@ static void spi_dmarxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->rxsem) != 0) {
+	while (sem_wait(&priv->rxsem) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -525,7 +528,7 @@ static void spi_dmatxwait(FAR struct amebasmart_spidev_s *priv)
 	/* Take the semaphore (perhaps waiting).  If the result is zero, then the DMA
 	 * must not really have completed???
 	 */
-	while (sem_wait(&priv->txsem) != 0 ) {
+	while (sem_wait(&priv->txsem) != OK) {
 		/* The only case that an error should occur here is if the wait was awakened
 		 * by a signal.
 		 */
@@ -739,9 +742,9 @@ static int amebasmart_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 		 * awakened by a signal.
 		 */
 
-		while (sem_wait(&priv->exclsem) != 0) {
+		while (sem_wait(&priv->exclsem) != OK) {
 			DEBUGASSERT(errno == EINTR);
-                }
+		}
 
 	} else {
 		(void)sem_post(&priv->exclsem);
@@ -1167,6 +1170,64 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
  *   None
  *
  ************************************************************************************/
+	/*if SPI DMA is called in idle thread, semaphore will cause issues, use polling method instead*/
+	if(getpid() == 0) {
+		if (amebasmart_spi_9to16bitmode(priv)) {
+		/* 16-bit mode */
+
+			const uint16_t *src = (const uint16_t *)txbuffer;
+			uint16_t *dest = (uint16_t *)rxbuffer;
+			uint16_t word;
+
+			while (nwords-- > 0) {
+				/* Get the next word to write.  Is there a source buffer? */
+
+				if (src) {
+					word = *src++;
+				} else {
+					word = 0xffff;
+				}
+
+				/* Exchange one word */
+
+				word = amebasmart_spi_send(dev, word);
+
+				/* Is there a buffer to receive the return value? */
+
+				if (dest) {
+					*dest++ = word;
+				}
+			}
+		} else {
+			/* 8-bit mode */
+
+			const uint8_t *src = (const uint8_t *)txbuffer;
+			uint8_t *dest = (uint8_t *)rxbuffer;
+			uint8_t word;
+
+			while (nwords-- > 0) {
+				/* Get the next word to write.  Is there a source buffer? */
+
+				if (src) {
+					word = *src++;
+				} else {
+					word = 0xff;
+				}
+
+				/* Exchange one word */
+
+				word = (uint8_t)amebasmart_spi_send(dev, (uint16_t) word);
+
+				/* Is there a buffer to receive the return value? */
+
+				if (dest) {
+					*dest++ = word;
+				}
+			}
+		}
+
+		return;
+	}
 
 	int mode_16bit = 1;
 	uint32_t remain_data_len = 0;
@@ -1380,7 +1441,7 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
 	irqstate_t flags = enter_critical_section();
-	
+#ifdef CONFIG_AMEBASMART_SPI0	
 	if (bus == 0) {
 		/* Select SPI0 */
 
@@ -1394,7 +1455,10 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 
-	} else if (bus == 1) {
+	} else
+#endif
+#ifdef CONFIG_AMEBASMART_SPI1
+	if (bus == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
@@ -1407,7 +1471,9 @@ FAR struct spi_dev_s *amebasmart_spibus_initialize(int bus)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 
-	} else {
+	} else 
+#endif
+	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", bus);
 		leave_critical_section(flags);
 		return NULL;
@@ -1485,7 +1551,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 	FAR struct amebasmart_spidev_s *priv = NULL;
 
 	irqstate_t flags = enter_critical_section();
-
+#ifdef CONFIG_AMEBASMART_SPI0
 	if (port == 0) {
 		/* Select SPI0 */
 
@@ -1504,7 +1570,10 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 	}
-	else if (port == 1) {
+	else 
+#endif
+#ifdef CONFIG_AMEBASMART_SPI1
+	if (port == 1) {
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
@@ -1521,6 +1590,7 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		amebasmart_spi_bus_initialize(priv, 0);
 #endif
 	} else
+#endif
 	{
 		spierr("ERROR: Unsupported SPI bus: %d\n", port);
 		leave_critical_section(flags);

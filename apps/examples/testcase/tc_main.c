@@ -78,9 +78,6 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC)
 #define TC_TASK_MANAGER_STACK  2048
 #endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
-#define TC_TTRACE_STACK  2048
-#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
 #define TC_WIFI_MANAGER_STACK  4096
 #endif
@@ -103,7 +100,6 @@ extern int tc_drivers_main(int argc, char *argv[]);
 extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
 extern int tc_network_main(int argc, char *argv[]);
-extern int tc_ttrace_main(int argc, char *argv[]);
 extern int tc_tcp_tls_main(int agrc, char *agrv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
@@ -206,9 +202,6 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC
 	{"taskmgr_itc", itc_taskmanager_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
-	{"ttrace_tc", tc_ttrace_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
 	{"wifimgr_utc", utc_wifimanager_main, TASH_EXECMD_ASYNC},
@@ -416,12 +409,6 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("taskmgrutc", SCHED_PRIORITY_DEFAULT, TC_TASK_MANAGER_STACK, utc_taskmanager_main, argv);
 	if (pid < 0) {
 		printf("Task Manager utc is not started, err = %d\n", pid);
-	}
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TTRACE
-	pid = task_create("ttracetc", SCHED_PRIORITY_DEFAULT, TC_TTRACE_STACK, tc_ttrace_main, argv);
-	if (pid < 0) {
-		printf("T-trace tc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC

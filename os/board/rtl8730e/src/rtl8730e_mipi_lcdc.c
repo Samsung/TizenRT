@@ -38,7 +38,7 @@
 #define PIN_LOW 0
 #define PIN_HIGH 1
 #define LCD_LAYER 0
-
+#define LCD_ENABLE_TIMEOUT 5000 //unit is ms.
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 #define GPIO_PIN_BACKLIGHT      PB_11
 #define MIPI_GPIO_RESET_PIN 	PA_15
@@ -46,20 +46,24 @@
 #define GPIO_PIN_BACKLIGHT
 #define MIPI_GPIO_RESET_PIN 	PA_14
 #endif
-
+#include <tinyara/spinlock.h>
 struct rtl8730e_lcdc_info_s {
 	struct mipi_lcd_config_s lcd_config;
 	pwmout_t pwm_led;
+	uint8_t pwm_level;
+	bool underflow;
 };
 static void rtl8730e_lcd_init(void);
 static void rtl8730e_gpio_reset(void);
-static void rtl8730e_lcd_mode_switch(bool flag);
+static void rtl8730e_lcd_power_off(void);
+static void rtl8730e_lcd_power_on(void);
+static void rtl8730e_mipi_mode_switch(mipi_mode_t mode);
 static void rtl8730e_lcd_layer_enable(int layer, bool enable);
 static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, u32 x_end, u32 y_end);
 static void rtl8730e_enable_lcdc(void);
 static void rtl8730e_register_lcdc_isr(void);
 static void rtl8730e_control_backlight(u8 level);
-FAR void mipidsi_mode_switch(bool do_enable);
+FAR void mipi_mode_switch_to_video(bool do_enable);
 FAR void mipidsi_acpu_reg_clear(void);
 FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config);
 FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *host, FAR const char *name, int channel);
@@ -69,11 +73,13 @@ struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
 	.lcd_config = {
 		.init = rtl8730e_lcd_init,
 		.reset = rtl8730e_gpio_reset,
-		.lcd_mode_switch = rtl8730e_lcd_mode_switch,
+		.mipi_mode_switch = rtl8730e_mipi_mode_switch,
 		.lcd_enable = rtl8730e_enable_lcdc,
 		.lcd_layer_enable = rtl8730e_lcd_layer_enable,
 		.lcd_put_area = rtl8730e_lcd_put_area,
 		.backlight = rtl8730e_control_backlight,
+		.power_off = rtl8730e_lcd_power_off,
+		.power_on = rtl8730e_lcd_power_on
 	},
 };
 
@@ -96,6 +102,7 @@ struct irq lcdc_irq_info = {
 };
 
 extern struct irq mipi_irq_info;
+volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
 static void LcdcInitValues(struct lcd_data config)
 {
 	LCDC_StructInit(&lcdc_init_struct);
@@ -126,26 +133,39 @@ static void rtl8730e_lcd_init(void)
 	sem_init(&g_next_frame_block, 0, 1);
 }
 
+static void rtl8730e_lcd_power_off(void)
+{
+	InterruptDis(lcdc_irq_info.num);
+	if (lcdc_nextframe == 1) {
+		lcdc_nextframe = 0;
+		sem_post(&g_next_frame_block);
+	}
+	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_LOW);
+}
+static void rtl8730e_lcd_power_on(void)
+{
+	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
+	DelayMs(120);
+}
 static void rtl8730e_gpio_reset(void)
 {
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
 	DelayMs(10);
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_LOW);
 	DelayMs(10);
-	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(120);
-	return;
 }
 
-static void rtl8730e_lcd_mode_switch(bool flag)
+static void rtl8730e_mipi_mode_switch(mipi_mode_t mode)
 {
-	if (flag == false) {
-		mipidsi_mode_switch(false);
+	if (mode == CMD_MODE) {
+		mipi_mode_switch_to_video(false);
 		MIPI_DSI_INT_Config(MIPI, DISABLE, ENABLE, FALSE);
-		DelayMs(20);
+		LCDC_INTConfig(pLCDC, LCDC_BIT_DMA_UN_INTEN, DISABLE);
+		DelayMs(140);
 	} else {
 		MIPI_DSI_INT_Config(MIPI, DISABLE, DISABLE, FALSE);
-		mipidsi_mode_switch(true);
+		LCDC_INTConfig(pLCDC, LCDC_BIT_DMA_UN_INTEN, ENABLE);
+		mipi_mode_switch_to_video(true);
 	}
 }
 
@@ -186,7 +206,9 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 
 static void rtl8730e_gpio_init(void)
 {
+#if defined(CONFIG_LCD_ST7701)	/* It used PA_14 SWD_CLK as reset, SWD disable is needed */
 	Pinmux_Swdoff();
+#endif
 	Pinmux_Config(MIPI_GPIO_RESET_PIN, PINMUX_FUNCTION_GPIO);
 
 	GPIO_InitTypeDef ResetPin;
@@ -204,31 +226,38 @@ static void rtl8730e_control_backlight(uint8_t level)
 {
 	float pwm_level = level/100.0;
 	lcdvdbg("level :%d , pwm level:%f\n", level, pwm_level);
+	/* Re-initiate the LCD only when it is turned on from a powered-off state. */
+	if (g_rtl8730e_config_dev_s.pwm_level == 0 && level > 0) {
+		/* TO-DO: Move LCD IC Power ON flow */
+		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
+	}
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
 #endif
+	g_rtl8730e_config_dev_s.pwm_level = level;
 }
 
 static void rtl8730e_enable_lcdc(void)
 {
+	u32 timeout = LCD_ENABLE_TIMEOUT;
 	LCDC_Cmd(pLCDC, ENABLE);
-	while (!LCDC_CheckLCDCReady(pLCDC)) ;
-	mipidsi_mode_switch(true);
+	while (!LCDC_CheckLCDCReady(pLCDC)) {
+		DelayMs(1);
+		DEBUGASSERT(timeout > 0);
+		timeout--;
+	}
 }
 
 void rtl8730e_mipidsi_underflowreset(void)
 {
 	u32 reg_val2 = MIPI_DSI_INTS_ACPU_Get((MIPI_TypeDef *) mipi_irq_info.data);
-
 	if (reg_val2) {
 		UnderFlowCnt = 0;
 		MIPI_DSI_INT_Config((MIPI_TypeDef *) mipi_irq_info.data, DISABLE, DISABLE, DISABLE);
 		mipidsi_acpu_reg_clear();
-
 		/*Disable the LCDC*/
 		LCDC_Cmd(pLCDC, DISABLE);
 		lcddbg("ERROR: LCDC_CTRL 0x%x\n", pLCDC->LCDC_CTRL);
-
 		rtl8730e_enable_lcdc();
 	}
 }
@@ -257,8 +286,16 @@ u32 rtl8730e_hv_isr(void *Data)
 			lcddbg("ERROR: LCDC DMA Underflow-----\n");
 			InterruptRegister((IRQ_FUN)rtl8730e_mipidsi_underflowreset, mipi_irq_info.num, (u32)mipi_irq_info.data, mipi_irq_info.priority);
 			InterruptEn(mipi_irq_info.num, mipi_irq_info.priority);
+#ifdef CONFIG_SMP
+			spin_lock(&g_rtl8730e_config_dev_s_underflow);
+#endif
+			g_rtl8730e_config_dev_s.underflow = 1;
+#ifdef CONFIG_SMP
+			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
+			lcddbg("underflow happened, re-register to handle video mode interrupt\n");
 			mipidsi_acpu_reg_clear();
-			mipidsi_mode_switch(false);
+			mipi_mode_switch_to_video(false);
 			MIPI_DSI_INT_Config(MIPI, ENABLE, ENABLE, ENABLE);
 		}
 	}
@@ -289,12 +326,14 @@ void rtl8730e_lcdc_initialize(void)
 	config.mipi_lcd_limit = MIPI_LCD_LIMIT;
 	config.lcd_lane_num = MIPI_LANE_NUMBER;
 	rtl8730e_gpio_reset();
+	rtl8730e_control_backlight(0);
 	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)amebasmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);
 	struct lcd_dev_s *dev = (struct lcd_dev_s *)mipi_lcdinitialize(dsi_device, &g_rtl8730e_config_dev_s.lcd_config);
 	LcdcInitValues(config);
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
+	g_rtl8730e_config_dev_s.underflow = 0;
 
 	if (lcddev_register(dev) < 0) {
 		lcddbg("ERROR: LCD driver register fail\n");
@@ -308,6 +347,6 @@ void rtl8730e_lcdc_pm(void)
 {
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
-	rtl8730e_control_backlight(CONFIG_LCD_MAXPOWER);
+
 }
 #endif

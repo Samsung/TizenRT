@@ -76,3 +76,68 @@ void mm_dump_heap_region(uint32_t start, uint32_t end)
 	heap_dbg("#########################################################################################\n");
 }
 
+/************************************************************************
+ * Name: mm_dump_heap_free_node_list
+ *
+ * Description: Print the hex value contents of heap free nodes.
+ ************************************************************************/
+void mm_dump_heap_free_node_list(struct mm_heap_s *heap)
+{
+	struct mm_freenode_s *node;
+	heap_dbg("#########################################################################################\n");
+	heap_dbg("Dump heap free node list\n");
+	heap_dbg("[ndx], [HEAD]: [FREE NODES(SIZE)]\n");
+	heap_dbg("#########################################################################################\n");
+	for (uint8_t ndx = 0; ndx < MM_NNODES; ndx++) {
+		heap_dbg("%3d, %08x:", ndx, &heap->mm_nodelist[ndx]);
+		for (node = heap->mm_nodelist[ndx].flink; node; node = node->flink) {
+			heap_dbg(" %08x(%d)", node, node->size);
+		}
+		heap_dbg("\n");
+		if (heap->mm_nodelist[ndx].size != 0) {
+			mfdbg("    Corrupted HEAD of free node link %08x\n", &heap->mm_nodelist[ndx]);
+		}
+	}
+	heap_dbg("#########################################################################################\n");
+}
+
+/************************************************************************
+ * Name: mm_dump_node
+ *
+ * Description: Print the information of heap node.
+ ************************************************************************/
+void mm_dump_node(struct mm_allocnode_s *node, char *node_type)
+{
+#if defined(CONFIG_DEBUG_MM_HEAPINFO)  && (CONFIG_TASK_NAME_SIZE > 0)
+	char myname[CONFIG_TASK_NAME_SIZE + 1];
+	char is_stack[9] = "'s stack";
+#endif
+
+	if (!node) {
+		mfdbg("Unable to dump NULL node\n");
+		return;
+	}
+
+	mfdbg("%s: addr = 0x%08x, type = %c, size = %u, preceding size = %u\n", node_type, node, node->preceding & MM_ALLOC_BIT ? 'A' : 'F', node->size, node->preceding & ~MM_ALLOC_BIT);
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	pid_t pid = node->pid;
+	if (pid < 0) {
+		/* For stack allocated node, pid is negative value.
+		 * To use the pid, change it to original positive value.
+		 */
+		pid = (-1) * pid;
+	} else {
+		is_stack[0] = '\0';
+	}
+#if CONFIG_TASK_NAME_SIZE > 0
+	if (prctl(PR_GET_NAME_BYPID, myname, pid) == OK) {
+		mfdbg("%s owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, myname, is_stack, node->alloc_call_addr);
+	} else {
+		mfdbg("%s owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
+	}
+#else
+	mfdbg("%s owner pid = %d%s, allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
+#endif
+#endif
+}

@@ -98,7 +98,7 @@
 #include "paging/paging.h"
 #endif
 #ifdef CONFIG_BINARY_MANAGER
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #ifdef CONFIG_TASK_MONITOR
 #include "task_monitor/task_monitor_internal.h"
@@ -112,6 +112,9 @@
 #endif
 #ifdef CONFIG_SECURITY_LEVEL
 #include <tinyara/security_level.h>
+#endif
+#ifdef CONFIG_SILENT_REBOOT
+#include <tinyara/silent_reboot.h>
 #endif
 
 /****************************************************************************
@@ -146,6 +149,11 @@
 #error CONFIG_USER_ENTRYPOINT must be defined
 #endif
 #endif
+#endif
+
+#if defined(CONFIG_SMP) && !defined(CONFIG_AMP)
+#define CPU_ZERO(s) do { *(s) = 0; } while (0)
+#define CPU_SET(c,s) do { *(s) |= (1 << (c)); } while (0)
 #endif
 
 /****************************************************************************
@@ -264,6 +272,11 @@ static inline void os_do_appstart(void)
 {
 	int pid;
 
+#ifdef CONFIG_SILENT_REBOOT
+	silent_reboot_initialize();
+	silent_reboot_driver_register();
+#endif
+
 #ifdef CONFIG_BOARD_INITIALIZE
 	/* Perform any last-minute, board-specific initialization, if so
 	 * configured.
@@ -348,6 +361,16 @@ static inline void os_do_appstart(void)
 	if (pid < 0) {
 		sdbg("Failed to start binary manager");
 	}
+
+	/* Set the affininty of binary manager to run on only CPU0, because while application
+	 * recovery, binary_manager's child thread should execute sequentially (not parallely)
+	 */
+#ifdef CONFIG_SMP
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(0, &cpu_set);
+	sched_setaffinity(pid, sizeof(cpu_set_t), &cpu_set);
+#endif
 #endif
 
 #if !defined(CONFIG_APP_BINARY_SEPARATION)

@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config  EXAMPLES_TOUCH_VISUAL
+	bool "Touch Visual Test"
+	default n
+	depends on TOUCH && TOUCH_POLL
+	---help---
+		Enable Touch visual test
+
+config USER_ENTRYPOINT
+	string
+	default "touch_visual_test_main" if ENTRY_EXAMPLES_TOUCH_VISUAL
+
+config TOUCH_HOLD_EVENT_SKIP
+	int "Skip touch hold event"
+	default 10
+	depends on TOUCH && EXAMPLES_TOUCH_VISUAL
+	---help---
+		Skip continuous touch hold event for visual test. Default is 10 events.
+

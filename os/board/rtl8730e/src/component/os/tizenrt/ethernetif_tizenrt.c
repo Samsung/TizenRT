@@ -97,8 +97,10 @@
 #define IF2NAME1 '2'
 #endif
 
+#ifndef CONFIG_ENABLE_HOMELYNK
 /* Check if current mode is softap */
 extern int softap_flag;
+#endif //#ifndef CONFIG_ENABLE_HOMELYNK
 
 static void arp_timer(void *arg);
 
@@ -174,10 +176,15 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 	if (sg_len) {
 #if CONFIG_WLAN
 #if defined(CONFIG_AS_INIC_AP)
-		/* Currently TizenRT only uses idx 0 on application layer, but KR4 splits STA and SOFTAP into idx 0 and idx 1, need to check which idx to send to */
+#ifdef CONFIG_ENABLE_HOMELYNK
+		/* If concurrent is enabled, get idx based on the two netif */
+		idx = get_idx_from_dev(dev);
+#else
+		/* If concurrent is disabled, TizenRT only uses idx 0 on application layer, but driver splits STA and SOFTAP into idx 0 and idx 1, need to check which idx to send to */
 		if (softap_flag == 1) {
 			idx = 1;
 		}
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 		ret = inic_ipc_host_send(idx, sg_list, sg_len, dlen, NULL);
 		if (ret == ERR_IF) {
 			return ret;

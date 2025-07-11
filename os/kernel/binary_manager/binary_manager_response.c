@@ -27,7 +27,7 @@
 
 #include <tinyara/binary_manager.h>
 
-#include "binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Public Functions

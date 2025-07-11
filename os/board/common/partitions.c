@@ -201,12 +201,38 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 	}
 #endif
 
+#if defined(CONFIG_FS_LITTLEFS)
+	else if (!strncmp(types, "littlefs,", 9)) {
+		char partref[4];
+
+		snprintf(partref, sizeof(partref), "p%d", g_partno);
+		little_initialize(minor, mtd_part, partref);
+		partinfo->littlefs_partno = g_partno;
+	}
+#endif
+
 #ifdef CONFIG_MTD_FTL
 	if (do_ftlinit) {
+			/* External flash can be NOR or NAND */
+#ifdef CONFIG_MTD_NAND
+		if (minor > 0) {
+			/* External flash is NAND */
+			if (ftl_nand_initialize(g_partno, mtd_part)) {
+                                printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+                                return ERROR;
+			}
+		} else {
+			if (ftl_initialize(g_partno, mtd_part)) {
+				printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+				return ERROR;
+			}
+		}
+#else
 		if (ftl_initialize(g_partno, mtd_part)) {
 			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
 			return ERROR;
 		}
+#endif
 		mtd_setpartitiontagno(mtd_part, tagno);
 #ifdef CONFIG_FS_ROMFS
 		if (save_romfs_partno) {
@@ -347,6 +373,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 	/* Initialize partinfo data */
 	partinfo->smartfs_partno = -1;
 	partinfo->romfs_partno = -1;
+	partinfo->littlefs_partno = -1;
 	partinfo->timezone_partno = -1;
 
 	partoffset = 0;
@@ -396,7 +423,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		if (!strncmp(types, "resource,", 9)) {
 			int nblocks = geo.erasesize / geo.blocksize;
 			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
-			ret = make_resource_mtd_partition(mtd, partoffset + (geo.erasesize / 1024), partsize / geo.blocksize - nblocks, g_partno);
+			ret = make_resource_mtd_partition(mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
 			if (ret != OK) {
 				printf("ERROR: fail to make resource mtd part.\n");
 			}
@@ -437,6 +464,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 		return;
 	}
 #ifdef CONFIG_AUTOMOUNT_USERFS
+#ifdef CONFIG_FS_SMARTFS
 	/* Initialize and mount user partition (if we have) */
 	if (partinfo->smartfs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/smart%dp%d", partinfo->minor, partinfo->smartfs_partno);
@@ -463,6 +491,19 @@ void automount_fs_partition(partition_info_t *partinfo)
 		}
 	}
 #endif
+
+#ifdef CONFIG_FS_LITTLEFS
+	if (partinfo->littlefs_partno != -1) {
+		snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
+		ret = mount(fs_devname, "/mnt", "littlefs", 0, "autoformat");
+		if (ret != OK) {
+			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
+		} else {
+			printf("%s is mounted successfully @ %s \n", fs_devname, "/mnt");
+		}
+	}
+#endif
+#endif	/* End of CONFIG_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_AUTOMOUNT_ROMFS
 	if (partinfo->romfs_partno != -1) {

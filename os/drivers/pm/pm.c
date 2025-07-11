@@ -76,6 +76,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_METRICS - to get pm metrics data for given time
  *   PMIOC_TUNEFREQ - for changing the operating frequency of the core to save power
  *   PMIOC_SUSPEND_COUNT - to get suspend count of pm domain
+ *   PMIOC_START - to start PM functionality to make board sleep
  * 
  * Arguments:
  *   filep is ioctl fd, cmd is required command, arg is required argument for
@@ -88,6 +89,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_METRICS, arg should be an int type.
  *   for PMIOC_TUNEFREQ, arg should be an int type.
  *   for PMIOC_SUSPEND_COUNT, arg should be an int type.
+ *   for PMIOC_START, arg should be NULL
  *
  * Description:
  *   This api can be used to perform PM operation.
@@ -103,19 +105,20 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_METRICS           -   return OK on success
  *   PMIOC_TUNEFREQ          -   return OK on success
  *   PMIOC_SUSPEND_COUNT     -   return non-negative suspend count of domain
+ *   PMIOC_START             -   return OK
  *
  ************************************************************************************/
 static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	int ret = -ENOSYS;
-    
+
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
-    	case PMIOC_SUSPEND:
-	        ret = pm_suspend((int)arg);
+	case PMIOC_SUSPEND:
+		ret = pm_suspend((int)arg);
 		pmvdbg("State locked!\n");
-        	break;
-        case PMIOC_RESUME:
+		break;
+	case PMIOC_RESUME:
 		ret = pm_resume((int)arg);
 		pmvdbg("State unlocked!\n");
 		break;
@@ -144,6 +147,10 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 		}
 		break;
+	case PMIOC_START:
+		pm_start();
+		ret = OK;
+		break;
 	case PMIOC_SUSPEND_COUNT:
 		ret = pm_suspendcount((int)arg);
 		break;
@@ -153,10 +160,10 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		break;
 #endif
 #ifdef CONFIG_PM_DVFS
-        case PMIOC_TUNEFREQ:
-        	pm_dvfs(arg);
-        	ret = OK;
-        	break;
+	case PMIOC_TUNEFREQ:
+		pm_dvfs(arg);
+		ret = OK;
+		break;
 #endif
 	default:
 		pmvdbg("Invalid command passed!\n");

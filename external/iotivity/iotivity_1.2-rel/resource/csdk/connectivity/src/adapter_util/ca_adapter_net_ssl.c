@@ -281,18 +281,15 @@ if (0 != ret) {                                                                 
 
 typedef enum
 {
-    SSL_RSA_WITH_AES_256_CBC_SHA256,
     SSL_RSA_WITH_AES_128_GCM_SHA256,
     SSL_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
     SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
     SSL_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     SSL_ECDHE_ECDSA_WITH_AES_128_CCM_8,
     SSL_ECDHE_ECDSA_WITH_AES_128_CCM,
-    SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     SSL_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     SSL_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
-    SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
     SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256,
     SSL_CIPHER_MAX
 } SslCipher_t;
@@ -305,18 +302,15 @@ typedef enum
 
 static const int tlsCipher[SSL_CIPHER_MAX][2] =
 {
-    {MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256, 0},
     {MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0},
-    {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, 0},
-    {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0},
     {MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256, 0}
 };
 
@@ -2441,10 +2435,6 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
 {
     switch(cipher)
     {
-        case MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256:
-        {
-            return SSL_RSA_WITH_AES_256_CBC_SHA256;
-        }
         case MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256:
         {
             return SSL_RSA_WITH_AES_128_GCM_SHA256;
@@ -2469,10 +2459,6 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
         {
             return SSL_ECDHE_ECDSA_WITH_AES_128_CCM;
         }
-        case MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:
-        {
-            return SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256;
-        }
         case MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384:
         {
             return SSL_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384;
@@ -2484,10 +2470,6 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
         case MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256:
         {
             return SSL_ECDHE_PSK_WITH_AES_128_CBC_SHA256;
-        }
-        case MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256:
-        {
-            return SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256;
         }
         case MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256:
         {
@@ -2678,9 +2660,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
     int keySize = 0;
     int keyBlockLen = 0;
     if (MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
-        MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
-        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
-        MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher)
+        MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher)
     {
         // 2 * ( 32 + 0 + 16 ) = 96
         macKeyLen = SHA256_MAC_KEY_LENGTH;
@@ -2701,13 +2681,6 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
         macKeyLen = SHA256_MAC_KEY_LENGTH;
         ivSize = GCM_IV_LENGTH;
         keySize = AES128_KEY_LENGTH;
-    }
-    else if (MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256 == g_caSslContext->selectedCipher)
-    {
-        // 2 * ( 32 + 0 + 32 ) = 128
-        macKeyLen = SHA256_MAC_KEY_LENGTH;
-        ivSize = CBC_IV_LENGTH;
-        keySize = AES256_KEY_LENGTH;
     }
     else if (MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 == g_caSslContext->selectedCipher)
     {

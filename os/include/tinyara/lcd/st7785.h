@@ -42,30 +42,19 @@
 #define MIPI_FRAME_RATE         60
 #define MIPI_LANE_NUMBER        1
 
-#if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
 #define LCD_XRES CONFIG_LCD_XRES
 #define LCD_YRES CONFIG_LCD_YRES
 #define LCD_CASET1 0x00		/* MV = 0, Column = 0x00EF = (240 - 1), Row = 0x013F = (320 - 1) */
 #define LCD_CASET2 0xEF
 #define LCD_RASET1 0x01
 #define LCD_RASET2 0x3F
-#else
-#define LCD_XRES CONFIG_LCD_YRES
-#define LCD_YRES CONFIG_LCD_XRES
-#define LCD_CASET1 0x01		/* MV = 1, Column = 0x013F = (320 - 1), Row = 0x00EF = (240 - 1) */
-#define LCD_CASET2 0x3F
-#define LCD_RASET1 0x00
-#define LCD_RASET2 0xEF
-#endif
 
-#if defined(CONFIG_LCD_PORTRAIT)
+#if defined(CONFIG_LCD_SW_ROTATION) || defined(CONFIG_LCD_PORTRAIT)
 #define LCD_ORIENTATION 0x00
 #elif defined(CONFIG_LCD_RPORTRAIT)
-#define LCD_ORIENTATION 0xc0
-#elif defined(CONFIG_LCD_RLANDSCAPE)
-#define LCD_ORIENTATION 0xa0
+#define LCD_ORIENTATION 0xD0
 #else
-#define LCD_ORIENTATION 0xb0
+#error Not support
 #endif
 
 #define LCDC_IMG_BUF_SIZE               LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)

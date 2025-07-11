@@ -60,8 +60,6 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/ttrace.h>
-
 #include "pthread/pthread.h"
 
 /****************************************************************************
@@ -123,14 +121,11 @@ int pthread_tryjoin_np(pthread_t thread, FAR pthread_addr_t *pexit_value)
 {
 	int ret;
 
-	trace_begin(TTRACE_TAG_TASK, "pthread_tryjoin_np");
-
 	/* Execute internal function with non-blocking */
 
 	ret = pthread_join_internal(thread, pexit_value, false);
 
 	svdbg("Returning %d\n", ret);
 
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }

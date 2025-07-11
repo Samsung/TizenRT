@@ -158,9 +158,10 @@ static void inic_ipc_host_rx_tasklet(void)
 			g_inic_host_priv.rx_pkts++;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 			/* TizenRT gets netif from netdev */
-			/* Currently TizenRT only uses idx 0 */
-			// index = precvbuf->idx_wlan;
-
+			/* If concurrent is not enabled, TizenRT only uses idx 0 */
+#ifdef CONFIG_ENABLE_HOMELYNK
+			index = precvbuf->idx_wlan;
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 			struct netdev *dev_tmp = NULL;
 			dev_tmp = (struct netdev *)rtk_get_netdev(index);
 			struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
@@ -207,7 +208,7 @@ static int inic_ipc_host_send_skb(int idx, struct sk_buff *skb)
 	inic_ipc_ex_msg_t ipc_msg = {0};
 
 	if (idx == -1) {
-		DBG_8195A("%s=>wlan index is wrong!\n\r", __func__);
+		DBG_8195A("[CA32] %s=>wlan index is wrong!\n\r", __func__);
 		return -1;
 	}
 
@@ -237,7 +238,7 @@ void inic_ipc_host_init_skb(void)
 	host_skb_info = (struct skb_info *)rtw_zmalloc(wifi_user_config.skb_num_ap * sizeof(struct skb_info));
 	host_skb_data = (struct skb_data *)rtw_zmalloc(wifi_user_config.skb_num_ap * sizeof(struct skb_data));
 	if (!host_skb_info || !host_skb_data) {
-		DBG_8195A("%s=>skb malloc fail!\n\r", __func__);
+		DBG_8195A("[CA32] %s=>skb malloc fail!\n\r", __func__);
 		if (host_skb_info) {
 			rtw_mfree((u8 *)host_skb_info, 0);
 			host_skb_info = NULL;

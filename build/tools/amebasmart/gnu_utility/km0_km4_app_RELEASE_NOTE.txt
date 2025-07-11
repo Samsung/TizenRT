@@ -1,5 +1,60 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a310eb29e8 2025/06/27-15:37:18 ==
+1. Fix issue of CSI amplitude spike in non-HT CSI
+
+== version 3c37d0cb58 2025/04/24-11:10:27 ==
+1. Implement recovery mechanism for PG wakeup flow
+
+== version dbb75c439b 2025/04/17-16:01:15 ==
+1. Fix issue of not receiving multicast packets after PM wake
+
+== version c58cd8c3d5 2025/03/21-14:20:16 ==
+1. Add condition to check TizenRT status before doing IPC print
+
+== version 2490a58117 2025/02/12-10:36:45 ==
+1. Optimize API for getting wifi tx retry count to resolve cache coherency issue
+
+== version f71f367333 2025/02/03-16:19:02 ==
+1. Modify implementation for obtaining TX Retry count
+
+== version d70af7fe9f 2025/01/23-16:06:03 ==
+1. Add condition to check TizenRT status before printing IPC error logs
+
+== version e50d597d68 2025/01/16-14:49:03 ==
+1. Fix issue of SoftAP not transmitting beacons when started after PM wake
+
+== version d1dcc72eb9 2025/01/13-17:51:26 ==
+1. differentiate logs between KM0 and KM4 that shared the same API
+
+== version a1a0ee7deb 2024/12/31-15:44:42 ==
+1. Read back and Display the BKUP_REG2 value in the KM4,KM0 fault handlers.
+
+== version 7642e99364 2024/12/26-12:23:49 ==
+1. Fix KM4 crash when disconnecting wifi while CSI is running
+2. Fix KM4 crash when resuming CSI after reconnection
+
+== version 77cb222768 2024/12/12-19:28:06 ==
+1. Add silent table to control frequency of sending probe response packets in noisy environment
+2. Adjust probe response retry limit
+
+== version 1adf73a23c 2024/12/02-17:40:40 ==
+1. Enable GPIO B as wakeup interrupt src
+2. Add GPIO B wakeup reason
+
+== version 33dff5bd62 2024/11/26-11:42:59 ==
+1. Optimize probe response frequency in wifi driver
+
+== version 74011d7a50 2024/11/25-12:27:56 ==
+1. fix broken log issue during sleep/wakeup for loguart bps 115200
+
+== version 9b81db97cd 2024/11/22-22:36:20 ==
+1. WiFi firware supports two RA mechanism currently
+	-Switch to another one.
+
+== version 1dce8da7ad 2024/11/22-12:29:44 ==
+1. Update wifi rate adaptation table
+
 == version e17dbd5288 2024/11/13-16:17:55 ==
 1. Fix PM short press reset not working
     - Refactor the KM4 sleep type logic with replace the condition check based on the AP ON or RUNNING.

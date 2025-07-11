@@ -166,3 +166,38 @@ int dhcp_client_sethostname(const char *intf, const char *hostname)
 
 	return ret;
 }
+
+/****************************************************************************
+ * Name: dhcp_client_get_aptype
+ ****************************************************************************/
+int dhcp_client_get_aptype(int *aptype)
+{
+	int ret = -1;
+	struct req_lwip_data req;
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd < 0)
+	{
+		ndbg("socket() failed with errno: %d\n", errno);
+		return ret;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.type = DHCPCGETAPTYPE;
+
+	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
+	if (ret == ERROR)
+	{
+		ndbg("ioctl() failed with errno: %d\n", errno);
+		close(sockfd);
+		return ret;
+	}
+
+	*aptype = (int)(req.req_res);
+	if (*aptype == -1)
+	{
+		ndbg("Unknown AP type connected: %d\n", *aptype);
+	}
+	close(sockfd);
+	return ret;
+}

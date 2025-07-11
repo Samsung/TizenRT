@@ -133,6 +133,8 @@
 #define LWIP_DHCP_PROVIDE_DNS_SERVERS 0
 #endif
 
+#define DHCP_OPTION_VSI_MAX 16
+
 /** Option handling: options are parsed in dhcp_parse_reply
  * and saved in an array where other functions can load them from.
  * This might be moved into the struct dhcp (not necessarily since
@@ -169,7 +171,8 @@ u8_t dhcp_rx_options_given[DHCP_OPTION_IDX_MAX];
 static u8_t dhcp_discover_request_options[] = {
 	DHCP_OPTION_SUBNET_MASK,
 	DHCP_OPTION_ROUTER,
-	DHCP_OPTION_BROADCAST
+	DHCP_OPTION_BROADCAST,
+	DHCP_OPTION_VSI
 #if LWIP_DHCP_PROVIDE_DNS_SERVERS
 	,
 	DHCP_OPTION_DNS_SERVER
@@ -195,6 +198,9 @@ static u8_t xid_initialised;
 #if LWIP_NETIF_HOSTNAME
 #define DHCP_HOSTNAME_DEFAULT "TizenRT"
 #endif
+
+/* vendor-specific information */
+static ap_type connected_ap_type = 0;
 
 static struct udp_pcb *dhcp_pcb;
 static u8_t dhcp_pcb_refcount;
@@ -1482,6 +1488,7 @@ static err_t dhcp_parse_reply(struct dhcp *dhcp, struct pbuf *p)
 	struct pbuf *q;
 	int parse_file_as_options = 0;
 	int parse_sname_as_options = 0;
+	connected_ap_type = 0;
 
 	/* clear received options */
 	dhcp_clear_all_options(dhcp);
@@ -1591,6 +1598,20 @@ again:
 		case (DHCP_OPTION_T2):
 			LWIP_ERROR("len == 4", len == 4, return ERR_VAL;);
 			decode_idx = DHCP_OPTION_IDX_T2;
+			break;
+		/* vendor-specific information */
+		case (DHCP_OPTION_VSI):
+			decode_len = 0;
+			LWIP_ERROR("len >= decode_len", len >= decode_len, return ERR_VAL;);
+			char dhcp_option_vsi[DHCP_OPTION_VSI_MAX];
+			pbuf_copy_partial(q, dhcp_option_vsi, DHCP_OPTION_VSI_MAX, val_offset);
+			if (strncmp(dhcp_option_vsi, "ANDROID_METERED", strlen("ANDROID_METERED")) == 0) {
+				connected_ap_type = AP_ANDROID_MOBILE_HOTSPOT;
+			} else if (strncmp(dhcp_option_vsi, "SAMSUNG_HOTSPOT", strlen("SAMSUNG_HOTSPOT")) == 0) {
+				connected_ap_type = AP_HOMELYNK;
+			} else {
+				connected_ap_type = AP_NORMAL;
+			}
 			break;
 		default:
 			decode_len = 0;
@@ -1955,6 +1976,11 @@ err_t dhcp_address_valid(struct netif *netif)
 		return ERR_VAL;
 	}
 	return ERR_OK;
+}
+
+ap_type dhcp_get_aptype(void)
+{
+	return connected_ap_type;
 }
 
 #endif /* LWIP_IPV4 && LWIP_DHCP */

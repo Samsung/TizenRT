@@ -60,6 +60,7 @@ int wifimgr_get_info(int flag, wifimgr_info_msg_s *info)
 			return -1;
 		}
 		info->rssi = info_utils.rssi;
+		memcpy(info->bssid, info_utils.bssid, WIFIMGR_MACADDR_LEN);
 	}
 
 	if ((flag & WIFIMGR_STATE) != 0) {
@@ -93,5 +94,70 @@ int wifimgr_set_info(int flag, wifimgr_info_msg_s *info)
 		g_wifi_info.prev_state = g_wifi_info.state;
 		g_wifi_info.state = info->state;
 	}
+	return 0;
+}
+
+int wifimgr_set_channel_plan(uint8_t channel_plan)
+{
+	trwifi_result_e wres = wifi_utils_set_channel_plan(channel_plan);
+	if (wres == TRWIFI_FAIL) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int wifimgr_get_signal_quality(wifimgr_signal_quality_s *signal_quality)
+{
+	trwifi_signal_quality signal_quality_utils;
+
+	trwifi_result_e wres = wifi_utils_get_signal_quality(&signal_quality_utils);
+	if (wres == TRWIFI_FAIL) {
+		return -1;
+	}
+
+	signal_quality->channel = signal_quality_utils.channel;
+	memcpy(&(signal_quality->snr), &(signal_quality_utils.snr), sizeof(signed char));
+	signal_quality->network_bw = signal_quality_utils.network_bw;
+	signal_quality->max_rate = signal_quality_utils.max_rate;
+
+	return 0;
+}
+
+int wifimgr_get_disconnect_reason(int *disconnect_reason)
+{
+	trwifi_result_e wres = wifi_utils_get_disconnect_reason(disconnect_reason);
+	if (wres == TRWIFI_FAIL) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int wifimgr_get_driver_info(wifimgr_driver_info_s *driver_info)
+{
+	trwifi_driver_info driver_info_utils;
+	trwifi_result_e wres = wifi_utils_get_driver_info(&driver_info_utils);
+	if (wres == TRWIFI_FAIL) {
+		return -1;
+	}
+	memcpy(driver_info->lib_version, driver_info_utils.lib_version, sizeof(driver_info_utils.lib_version));
+
+	return 0;
+}
+
+int wifimgr_get_wpa_supplicant_state(wifimgr_wpa_states_s *wpa_state)
+{
+	trwifi_wpa_states wpa_state_utils;
+
+	trwifi_result_e wres = wifi_utils_get_wpa_supplicant_state(&wpa_state_utils);
+
+	wpa_state->wpa_supplicant_state = wpa_state_utils.wpa_supplicant_state;
+	if (wres == TRWIFI_FAIL) {
+		return -1;
+	}
+
+	wpa_state->wpa_supplicant_key_mgmt = wpa_state_utils.wpa_supplicant_key_mgmt;
+
 	return 0;
 }

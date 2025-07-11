@@ -190,21 +190,13 @@ void group_free(FAR struct task_group_s *group, FAR void *mem);
 
 void sched_ufree(FAR void *address);
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && defined(__KERNEL__)
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP) && defined(__KERNEL__)
 void sched_kfree(FAR void *address);
 #else
 #define sched_kfree(a) sched_ufree(a)
 #endif
 
-/* Functions defined in sched/sched_garbage *********************************/
-
-/* Must be called periodically to clean up deallocations delayed by
- * sched_kmm_free().  This may be done from either the IDLE thread or from a
- * worker thread.  The IDLE thread has very low priority and could starve
- * the system for memory in some context.
- */
-
-void sched_garbagecollection(void);
 
 #undef KMALLOC_EXTERN
 #if defined(__cplusplus)

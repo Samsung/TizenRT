@@ -23,7 +23,7 @@
 #ifndef CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE
 #define CONFIG_VOICE_SOFTWARE_EPD_FRAMESIZE 256
 #endif
-
+#include <memory>
 #include <functional>
 
 #include <media/MediaRecorder.h>
@@ -55,6 +55,7 @@ private:
 	std::shared_ptr<aifw::AIModelService> mAIModelService;
 	std::shared_ptr<media::stream::StreamBuffer> mAudioDataBuffer;
 	unsigned char *mPCMData;
+	std::mutex mCmdMtx;
 	/**
 	 * @brief Size of mAudioBuffer in bytes. Size is calculated based on the number of bytes required for inference &
 	 * the number of bytes coming from the recorder in detectEndPoint() API.

@@ -41,6 +41,13 @@
 #define INIT_CMD_SIZE 28
 #endif
 
+enum mipi_mode_e {
+        CMD_MODE = 0,
+        VIDEO_MODE = 1
+};
+
+typedef enum mipi_mode_e mipi_mode_t;
+
 typedef struct lcm_setting_table {
         u8 cmd;
         u16 count;
@@ -51,11 +58,13 @@ struct mipi_lcd_config_s {
 
 	void (*init)();
 	void (*reset)();
-	void (*lcd_mode_switch)(bool mode);			//false is command mode, true is video mode
+	void (*mipi_mode_switch)(mipi_mode_t mode);
 	void (*lcd_enable)();
 	void (*lcd_layer_enable)(int layer, bool enable);
 	void (*backlight)(u8 level);
 	void (*lcd_put_area)(u8 *lcd_img_buffer, u32 x1, u32 y1, u32 x2, u32 y2);
+	void (*power_off)();
+	void (*power_on)();
 };
 
 #endif	/* __DRIVERS_LCD_MIPI_H */

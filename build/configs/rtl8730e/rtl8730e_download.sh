@@ -28,17 +28,37 @@ APP_NUM=0
 LAST_IMAGE=0
 LAST_OFFSET=0
 USB_DOWNLOAD=0
+HAS_RESOURCE=0
 
+VID_FOUND=0
+RETRY_COUNT=0
+MAX_RETRIES=10
 function pre_download()
 {
-	if [[ $TTYDEV == *"USB"* ]]; then
-		USB_DOWNLOAD=0
-	elif [[ $TTYDEV == *"ACM"* ]]; then
-		USB_DOWNLOAD=1
-	else
+	while [ $VID_FOUND -ne 1 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+		VENDOR_ID=$(udevadm info -a -n "$TTYDEV" | grep -m1 'ATTRS{idVendor}' | sed -nE 's/.*"([0-9a-fA-F]+)".*/\1/p')
+
+		if [ -n "$VENDOR_ID" ]; then
+			VID_FOUND=1
+			echo "Found VID: $VENDOR_ID"
+			break
+		else
+			echo "VID not found, retrying..."
+			((RETRY_COUNT++))
+			sleep 1
+		fi
+	done
+	if [ $VID_FOUND -ne 1 ]; then
 		echo "Port name $TTYDEV not valid"
 		exit 1
 	fi
+
+	if [[ $VENDOR_ID == "0bda" ]]; then
+		USB_DOWNLOAD=1
+	else
+		USB_DOWNLOAD=0
+	fi
+
 	source ${TOP_PATH}/os/.bininfo
 	if [ -f ${IMG_TOOL_PATH}/USB_download_setting.txt ]; then
 		rm -rf ${IMG_TOOL_PATH}/USB_download_setting.txt
@@ -67,6 +87,7 @@ function pre_download()
 		cp -p ${BIN_PATH}/${COMMON_BIN_NAME} ${IMG_TOOL_PATH}/${COMMON_BIN_NAME}
 	fi
 	if test -f "${BIN_PATH}/${RESOURCE_BIN_NAME}"; then
+		HAS_RESOURCE=1
 		cp -p ${BIN_PATH}/${RESOURCE_BIN_NAME} ${IMG_TOOL_PATH}/${RESOURCE_BIN_NAME}
 	fi
 	if test -f "${SMARTFS_BIN_PATH}"; then
@@ -100,8 +121,10 @@ function pre_download()
 		if test -f "${BIN_PATH}/${EXTERNAL}.bin"; then
 			cp -p ${BIN_PATH}/${EXTERNAL}.bin ${IMG_TOOL_PATH}/${EXTERNAL}.bin
 		fi
-		LAST_IMAGE=${RESOURCE_BIN_NAME}
 
+		if [ "$HAS_RESOURCE" -eq "1" ]; then
+			LAST_IMAGE=${RESOURCE_BIN_NAME}
+		fi
 	fi
 	if [ "$USB_DOWNLOAD" -eq "1" ]; then
 		touch "${IMG_TOOL_PATH}/USB_download_setting.txt"

@@ -161,6 +161,12 @@ static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle a
 	return;
 }
 
+static void ble_device_passkey_display_cb(ble_client_ctx *ctx, uint32_t passkey, ble_conn_handle conn_handle)
+{
+	printf("[######## %s : %d]passkey %ld, conn_handle %d\n", __FUNCTION__, __LINE__, passkey, conn_handle);
+	return;
+}
+
 void restart_server(void) {
 	ble_result_e ret = BLE_MANAGER_FAIL;
 	ble_data data[1] = { 0, };
@@ -192,14 +198,16 @@ void restart_server(void) {
 	RMC_LOG(RMC_SERVER_TAG, "Start adv ... ok\n");
 }
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN], uint8_t adv_handle)
 {
 	RMC_LOG(RMC_SERVER_TAG, "'%s' is called\n", __FUNCTION__);
 	RMC_LOG(RMC_SERVER_TAG, "conn : %d / conn_type : %d\n", con_handle, conn_type);
 	RMC_LOG(RMC_SERVER_TAG, "conn mac : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	RMC_LOG(RMC_SERVER_TAG, "adv_handle : %d\n", adv_handle);
 	if (conn_type == BLE_SERVER_DISCONNECTED) {
 		restart_server();
 	}
+	adv_handle = 0xff;
 	return;
 }
 
@@ -219,9 +227,9 @@ static void ble_server_mtu_update_cb(ble_conn_handle con_handle, uint16_t mtu_si
 	return;
 }
 
-static void ble_server_oneshot_adv_cb(uint16_t adv_result)
+static void ble_server_passkey_display_cb(uint32_t passkey, ble_conn_handle conn_handle)
 {
-	printf("result : %d\n", adv_result);
+	printf("[%s : %d]  passkey %ld, con_handle %d\n", __FUNCTION__, __LINE__, passkey, conn_handle);
 	return;
 }
 
@@ -282,13 +290,15 @@ static ble_client_callback_list client_config = {
 	ble_device_disconnected_cb,
 	ble_device_connected_cb,
 	ble_operation_notification_cb,
+	NULL,
+	ble_device_passkey_display_cb
 };
 
 static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
-	ble_server_oneshot_adv_cb,
+	ble_server_passkey_display_cb,
 	true,
 	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
 
@@ -540,6 +550,12 @@ int ble_rmc_main(int argc, char *argv[])
 				RMC_LOG(RMC_CLIENT_TAG, "fail to delete bond dev[%d]\n", ret);
 			}
 		}
+		if (argc == 4) {
+			if (strncmp(argv[2], "start", 6) == 0) {
+				int conn_handle = atoi(argv[3]);
+				ret = ble_manager_start_bond(conn_handle);
+			}
+		}
 		RMC_LOG(RMC_CLIENT_TAG, "bond command done.\n");
 	}
 
@@ -746,7 +762,7 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "connect", 8) == 0) {
 		ble_client_ctx *ctx = NULL;
-		
+
 		/*
 		1. scan
 		2. delete bond
@@ -827,8 +843,56 @@ int ble_rmc_main(int argc, char *argv[])
 		}
 	}
 
+	//connection parameter update, use this when AI-Lite is slave
+	if (strncmp(argv[1], "updates", 8) == 0) {
+		ble_conn_handle conn_handle = 24;
+		ble_conn_param conn_param;
+		conn_param.min_conn_interval = 0x0010;
+		conn_param.max_conn_interval = 0x0010;
+		conn_param.slave_latency = 2;
+		conn_param.supervision_timeout = 0x00aa;
+		conn_param.role = BLE_SLAVE_CONN_PARAM_UPDATE;
+
+		ble_manager_conn_param_update(&conn_handle, &conn_param);
+	}
+	
+	//connection parameter update, use this when TPdual is master
+	if (strncmp(argv[1], "updatem", 8) == 0) {
+		ble_conn_handle conn_handle = 16;
+		ble_conn_param conn_param;
+		conn_param.min_conn_interval = 0x0010;
+		conn_param.max_conn_interval = 0x0010;
+		conn_param.slave_latency = 2;
+		conn_param.supervision_timeout = 0x00aa;
+		conn_param.role = BLE_SLAVE_CONN_PARAM_UPDATE;
+
+		ble_manager_conn_param_update(&conn_handle, &conn_param);
+		
+	}
+
 	if (strncmp(argv[1], "advon", 6) == 0) {
 		ret = ble_server_one_shot_adv_init();
+		uint8_t type1 = 0;
+		uint8_t adv_id_0 = 0;
+		ble_data adv_data_1[1] = { 0x99, };
+		ble_data scan_rsp_data_1[1] = { 0x98, };
+		ble_data adv_data_2[1] = { 0x99, };
+		ble_data scan_rsp_data_2[1] = { 0x98, };
+
+		adv_data_1->data = g_adv_raw;
+		adv_data_1->length = sizeof(g_adv_raw);
+		scan_rsp_data_1->data = g_adv_resp;
+		scan_rsp_data_1->length = sizeof(g_adv_resp);
+		ret = ble_server_one_shot_adv_set(adv_id_0, adv_data_1, scan_rsp_data_1, type1);
+
+
+		uint8_t type3 = 3;
+		uint8_t adv_id_1 = 1;
+		adv_data_2->data = g_adv_raw_2;
+		adv_data_2->length = sizeof(g_adv_raw_2);
+		scan_rsp_data_2->data = g_adv_resp_2;
+		scan_rsp_data_2->length = sizeof(g_adv_resp_2);
+		ret = ble_server_one_shot_adv_set(adv_id_1, adv_data_2, scan_rsp_data_2, type3);
 	}
 
 	if (strncmp(argv[1], "advoff", 7) == 0) {
@@ -836,7 +900,8 @@ int ble_rmc_main(int argc, char *argv[])
 	}
 
 	if (strncmp(argv[1], "adv", 4) == 0) {
-		
+		uint8_t adv_id_0 = 0;
+		uint8_t adv_id_1 = 1;
 		int ret = 0xff;
 		ble_data adv_data_1[1] = { 0x99, };
 		ble_data scan_rsp_data_1[1] = { 0x98, };
@@ -849,25 +914,49 @@ int ble_rmc_main(int argc, char *argv[])
 				break;
 
 			usleep(80000);
-			adv_data_1->data = g_adv_raw;
-			adv_data_1->length = sizeof(g_adv_raw);
-
-			scan_rsp_data_1->data = g_adv_resp;
-			scan_rsp_data_1->length = sizeof(g_adv_resp);
-
-			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type1);
+			ret = ble_server_one_shot_adv(adv_id_0);
 
 			usleep(20000);
-			adv_data_1->data = g_adv_raw_2;
-			adv_data_1->length = sizeof(g_adv_raw_2);
-			
-			scan_rsp_data_1->data = g_adv_resp_2;
-			scan_rsp_data_1->length = sizeof(g_adv_resp_2);
-			
-			ret = ble_server_one_shot_adv(adv_data_1, scan_rsp_data_1, type2);
+			ret = ble_server_one_shot_adv(adv_id_1);
 		}
 	}
 
+	if (strncmp(argv[1], "passkeycfm", 11) == 0) { 
+		uint8_t conn_handle = 0; 
+		uint8_t confirm = 0; 
+		if (argc >= 4) {      
+			conn_handle = atoi(argv[2]);    
+			confirm = atoi(argv[3]);    
+		} 
+		ret = ble_manager_passkey_confirm(conn_handle, confirm);   
+		if (ret != BLE_MANAGER_SUCCESS) {  
+			RMC_LOG(RMC_SERVER_TAG, "Passkey confirm fail: [%d]\n", ret);  
+		} else {  
+			RMC_LOG(RMC_SERVER_TAG, "Passkey confirm OK\n");  
+		}   
+	} 
+	if (strncmp(argv[1], "secureparam", 12) == 0) { 
+		ble_sec_param sec_param;
+		// RTK_IO_CAP_DISPALY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
+		// RTK_IO_CAP_DISPLAY_YES_NO   = 0x01,     /*!< 0x01 DisplayYesNo */
+		// RTK_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
+		// RTK_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
+		// RTK_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
+		sec_param.io_cap = atoi(argv[2]);
+		sec_param.oob_data_flag = atoi(argv[3]);
+		sec_param.bond_flag = atoi(argv[4]);
+		sec_param.mitm_flag = atoi(argv[5]);
+		sec_param.sec_pair_flag = atoi(argv[6]);
+		sec_param.sec_pair_only_flag = atoi(argv[7]);
+		sec_param.use_fixed_key = atoi(argv[8]);
+		sec_param.fixed_key = atoi(argv[9]);
+		ret = ble_manager_set_secure_param(&sec_param);
+		if (ret != BLE_MANAGER_SUCCESS) {  
+			RMC_LOG(RMC_SERVER_TAG, "set secure param fail: [%d]\n", ret);  
+		} else {  
+			RMC_LOG(RMC_SERVER_TAG, "set secure param OK\n");  
+		}   
+	} 
 
 	/* Server Test */
 	if (strncmp(argv[1], "server", 7) == 0) {

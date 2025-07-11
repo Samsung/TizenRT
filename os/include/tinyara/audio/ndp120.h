@@ -49,6 +49,8 @@
 #define CONFIG_NDP120_WORKER_STACKSIZE  1024
 #endif
 
+#define BT_MIC_SUPPORT 0
+
 /* Helper macros ************************************************************/
 
 /****************************************************************************
@@ -87,6 +89,7 @@ struct ndp120_lower_s {
 	/* PM related h/w operations */
 	CODE void (*set_pm_state)(bool sleep);
 #endif
+	CODE void (*reset)(void);
 };
 
 /****************************************************************************

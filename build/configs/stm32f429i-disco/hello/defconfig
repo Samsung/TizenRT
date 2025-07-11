@@ -663,10 +663,6 @@ CONFIG_CDCACM_PRODUCTSTR="CDC/ACM Serial"
 #
 # CONFIG_RAMLOG is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 
 #
 # Wireless Device Options

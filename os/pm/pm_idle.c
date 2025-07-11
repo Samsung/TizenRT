@@ -75,14 +75,19 @@ void pm_idle(void)
 	enum pm_state_e newstate;
 	clock_t now;
 #ifdef CONFIG_PM_TIMEDWAKEUP
-	clock_t delay;
+	clock_t delay = 0;
 #endif
 #ifdef CONFIG_SMP
 	int cpu;
 	int gated_cpu_count = 0;
 	FAR struct tcb_s *tcb;
 #endif
+	/* State change only if PM is ready to state change */
+	if (!g_pmglobals.is_running) {
+		return;
+	}
 	flags = enter_critical_section();
+	sched_lock();
 	now = clock_systimer();
 	/* We need to check and change PM state transition only if one tick time has been passed,
 	 * because state transition only happens when CPU receive TICK INTERRUPT. So checking pm state
@@ -95,6 +100,16 @@ void pm_idle(void)
 #ifdef CONFIG_PM_METRICS
 		pm_metrics_update_idle();
 #endif
+#ifdef CONFIG_PM_TIMEDWAKEUP
+		/* get wakeup timer */
+		if (newstate == PM_SLEEP) {
+			delay = wd_getwakeupdelay();
+			if ((delay > 0) && (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS))) {
+				pmvdbg("Wdog Timer Delay: %ldms is less than SLEEP_ENTRY_WAIT: %ldms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
+				goto EXIT;
+			}
+		}
+#endif
 		/* Perform state-dependent logic here */
 		/* For SMP case, we need to check secondary core status
 	     * If secondary core status is not in idle thread, abort
@@ -106,20 +121,30 @@ void pm_idle(void)
 				/* If the CPU is just back from sleep, abort the sleep */
 				if (up_get_cpu_state(cpu) == CPU_WAKE_FROM_SLEEP) {
 					goto EXIT;
+				} else if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+					continue;
 				}
+
 				/* Gate the cpu first, before checking which task it is handling */
-				up_cpu_gating(cpu);
-				/* Polling the status of the target CPU, 
-				* The flag should be > 0 if it is already gated
-				*/
-				while (!up_get_gating_flag_status(cpu));
+				if (!up_get_gating_flag_status(cpu)) {
+					up_set_gating_flag_status(cpu, 1);
+					up_cpu_gating(cpu);
+					gated_cpu_count = cpu;
+				}
+				while (up_get_gating_flag_status(cpu) == 1) {
+					/* If there is a pause request, we should handle it first */
+					if (up_cpu_pausereq(up_cpu_index())) {
+						pmdbg("Sleep abort! CPU%d\n", cpu);
+						goto EXIT;
+					}
+				}
+
 				tcb = current_task(cpu);
 				/* Check if current cpu is in idle thread, and whether there is pending
 				 * pause request on primary core 
 				 */
 				if (tcb->pid != cpu) {
-					pmdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
-					gated_cpu_count = cpu;
+					pmvdbg("Sleep abort! CPU%d task: %s!\n", cpu, tcb->name);
 					goto EXIT;
 				}
 			}
@@ -138,27 +163,24 @@ void pm_idle(void)
 #ifdef CONFIG_SMP
 		/* Send signal to shutdown other cores here */
 		for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-			up_cpu_hotplug(cpu);
+			if (up_get_cpu_state(cpu) == CPU_RUNNING) {
+				up_cpu_hotplug(cpu);
+			}
 			/* Reset core gating status flag */
 			up_set_gating_flag_status(cpu, 0);
 			/* Check whether each of the cpu has entered hotplug */
-			while(up_get_cpu_state(cpu) != CPU_HOTPLUG);
+			while (up_get_cpu_state(cpu) != CPU_HOTPLUG);
 		}
+		gated_cpu_count = 0;
 #endif
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		/* set wakeup timer */
-		delay = wd_getwakeupdelay();
 		if (delay > 0) {
-			if (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS)) {
-				pmvdbg("Wdog Timer Delay: %dms is less than SLEEP_ENTRY_WAIT: %dms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
-				goto EXIT;
-			} else {
-				pmvdbg("Setting timer and board will wake up after %d millisecond\n", delay);
-				up_set_pm_timer(TICK2USEC(delay));
-			}
+			pmvdbg("Setting timer and board will wake up after %ld millisecond\n", delay);
+			g_pmglobals.sleep_ops->set_timer(TICK2USEC(delay));
 		}
 #endif
-		up_pm_board_sleep(pm_wakehandler);
+		g_pmglobals.sleep_ops->sleep(pm_wakehandler);
 		stime = clock_systimer();
 	}
 EXIT:
@@ -169,6 +191,7 @@ EXIT:
 		gated_cpu_count--;
 	}
 #endif
+	sched_unlock();
 	leave_critical_section(flags);
 }
 

@@ -129,15 +129,17 @@ static uint8_t scan_rsp_data[] = {
      .duplicate_opt = 0,
  };
 
-//static rtk_bt_le_security_param_t sec_param = {
-//    .io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
-//    .oob_data_flag = 0,
-//    .bond_flag = 1,
-//    .mitm_flag = 0,
-//    .sec_pair_flag = 0,
-//    .use_fixed_key = 0,
-//    .fixed_key = 000000,
-//};
+static rtk_bt_le_security_param_t sec_param = {
+   .io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+   .oob_data_flag = 0,
+   .bond_flag = 1,
+   .mitm_flag = 0,
+   .sec_pair_flag = 0,
+   .sec_pair_only_flag = 0,
+   .use_fixed_key = 0,
+   .fixed_key = 000000,
+   .auto_sec_req = 0,
+};
 
 #if RTK_BLE_PRIVACY_SUPPORT
 static bool privacy_enable = false;
@@ -157,9 +159,6 @@ extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind;
 extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
-extern void *ble_tizenrt_read_sem;
-extern void *ble_tizenrt_write_sem;
-extern void *ble_tizenrt_write_no_rsp_sem;
 extern uint16_t scan_timeout;
 
 static app_conn_table_t conn_link[RTK_BLE_GAP_MAX_LINKS] = {0};
@@ -167,6 +166,11 @@ rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINK
 rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result = {0};
 trble_device_connected ble_tizenrt_scatternet_bond_list[RTK_BLE_GAP_MAX_LINKS] = {0};
+
+static void ble_tizenrt_dummy_callback(void)
+{
+	dbg("[APP] Application Dummy Callback API\r\n");
+}
 
 static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_code, void* param, uint32_t len)
 {
@@ -267,15 +271,31 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     }
 
 #if RTK_BLE_5_0_AE_SCAN_SUPPORT
-		case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
-			rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
-			rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-			printf("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n", 
-					le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
-					(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
-					scan_res_ind->tx_power, scan_res_ind->len);
-			break;
-		}
+    case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
+        rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
+        rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
+        // printf("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n", 
+        // 		le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
+        // 		(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
+        // 		scan_res_ind->tx_power, scan_res_ind->len);
+        trble_scanned_device scanned_device = {0,};      
+        if(scan_res_ind->len > 31){
+            scan_res_ind->len = 31;
+        }
+        scanned_device.adv_type = scan_res_ind->evt_type;
+        if(scanned_device.adv_type == 0x1b){
+            memcpy(scanned_device.resp_data, scan_res_ind->data, scan_res_ind->len);
+            scanned_device.resp_data_length = scan_res_ind->len;
+        } else {
+            memcpy(scanned_device.raw_data, scan_res_ind->data, scan_res_ind->len);
+            scanned_device.raw_data_length = scan_res_ind->len;
+        }
+        memcpy(scanned_device.addr.mac, scan_res_ind->addr.addr_val, RTK_BD_ADDR_LEN);
+        scanned_device.addr.type = scan_res_ind->addr.type;
+        scanned_device.rssi = scan_res_ind->rssi;
+        client_init_parm->trble_device_scanned_cb(&scanned_device);
+        break;
+    }
 #endif
 
     case RTK_BT_LE_GAP_EVT_SCAN_STOP_IND: {
@@ -319,44 +339,33 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
             }
 			if(RTK_BT_LE_ROLE_MASTER == conn_ind->role)
 			{
-				if(is_secured && !ble_tizenrt_scatternet_bond_list[conn_id].is_bonded)
-				{
-					rtk_bt_le_get_active_conn_t active_conn;
-					if (RTK_BT_OK != rtk_bt_le_gap_get_active_conn(&active_conn))
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-					if (active_conn.conn_num > GAP_MAX_LINKS)
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-					if (RTK_BT_OK != rtk_bt_le_sm_start_security(conn_ind->conn_handle))
-					{
-						dbg("[APP] Start security flow failed!");
-					}
-				} else {
-					debug_print("LL connected %d, do not need pairing \n", conn_ind->conn_handle);
-					trble_device_connected connected_dev;
-					uint16_t mtu_size = 0;
-					if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(conn_ind->conn_handle, &mtu_size)){
-						dbg("[APP] Get mtu size failed \r\n");
-					}
-					connected_dev.conn_handle = conn_ind->conn_handle;
-					connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
-					memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
-					connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
-					connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
-					connected_dev.conn_info.scan_timeout = scan_timeout;
-					connected_dev.conn_info.is_secured_connect = is_secured;
-					connected_dev.conn_info.mtu = mtu_size;
-					client_init_parm->trble_device_connected_cb(&connected_dev);
-				}
-
+				trble_device_connected connected_dev;
+				uint16_t mtu_size = 0;
+				connected_dev.conn_handle = conn_ind->conn_handle;
+				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
+				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
+				connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
+				connected_dev.conn_info.scan_timeout = scan_timeout;
+				connected_dev.conn_info.is_secured_connect = is_secured;
+				connected_dev.conn_info.mtu = mtu_size;
+				client_init_parm->trble_device_connected_cb(&connected_dev);
 				if(ble_client_connect_is_running)
 					ble_client_connect_is_running = 0;
-
-			}else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
-				server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, conn_ind->peer_addr.addr_val);
+			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
+				uint8_t adv_handle = 0xff;
+				if (server_init_parm.connected_cb) {
+					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+					_reverse_mac(conn_ind->peer_addr.addr_val, addr);
+#if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT 
+                    if(RTK_BT_OK != rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(conn_ind->conn_handle, &adv_handle)){
+                        dbg("[APP] Get adv handle failed \r\n");
+                    }
+#endif
+					server_init_parm.connected_cb(conn_ind->conn_handle, TRBLE_SERVER_LL_CONNECTED, addr, adv_handle);
+				} else {
+					ble_tizenrt_dummy_callback();
+				}
 			}
 
         } else {
@@ -364,6 +373,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                     conn_ind->err, le_addr);
 			if(ble_client_connect_is_running)
 				ble_client_connect_is_running = 0;
+
+			if (RTK_BT_LE_ROLE_MASTER == conn_ind->role) {
+				client_init_parm->trble_device_disconnected_cb(conn_ind->conn_handle);
+			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
+				server_init_parm.disconnected_cb(conn_ind->conn_handle, conn_ind->err);
+			}
         }
         break;
     }
@@ -378,29 +393,20 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if(ble_client_connect_is_running)
             ble_client_connect_is_running = 0;
 
-        if(ble_tizenrt_read_sem != NULL) {
-            osif_sem_give(ble_tizenrt_read_sem);
-            ble_tizenrt_read_sem = NULL;
-        }
-        if(ble_tizenrt_write_sem != NULL) {
-            osif_sem_give(ble_tizenrt_write_sem);
-            ble_tizenrt_write_sem = NULL;
-        }
-        if(ble_tizenrt_write_no_rsp_sem != NULL) {
-            osif_sem_give(ble_tizenrt_write_no_rsp_sem);
-            ble_tizenrt_write_no_rsp_sem = NULL;
-        }
-
         uint8_t conn_id;
         rtk_bt_le_gap_get_conn_id(disconn_ind->conn_handle, &conn_id);
         memset(&conn_link[conn_id], 0, sizeof(app_conn_table_t));
         /* gattc action */
         general_client_detach_conn(disconn_ind->conn_handle);
         /* gap action */
-        if(RTK_BT_LE_ROLE_MASTER == disconn_ind->role){
+        if (RTK_BT_LE_ROLE_MASTER == disconn_ind->role) {
             client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
-        }else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
-            server_init_parm.disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
+        } else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
+            if (server_init_parm.disconnected_cb) {
+                server_init_parm.disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
+            } else {
+                ble_tizenrt_dummy_callback();
+            }
         }
         break;
     }
@@ -501,14 +507,26 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 	}
 
 	case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
-		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind = 
-										(rtk_bt_le_auth_key_cfm_ind_t *)param;
+		rtk_bt_le_auth_key_cfm_ind_t *key_cfm_ind = (rtk_bt_le_auth_key_cfm_ind_t *)param;
+		if (key_cfm_ind->conn_handle < 24) {
+			if (client_init_parm->trble_device_passkey_display_cb) {
+				client_init_parm->trble_device_passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->conn_handle);
+			} else {
+				ble_tizenrt_dummy_callback();
+			}
+		} else {
+			if (server_init_parm.passkey_display_cb) {
+				server_init_parm.passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->conn_handle);
+			} else {
+				ble_tizenrt_dummy_callback();
+			}
+		}
 		APP_PROMOTE("[APP] Auth passkey confirm: %ld, conn_handle: %d. "  \
 					"Please comfirm if the passkeys are equal!\r\n",
 												key_cfm_ind->passkey,
 												key_cfm_ind->conn_handle);
 		break;
-    }
+	}
 
     case RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND:{
         rtk_bt_le_auth_oob_input_ind_t *oob_input_ind = 
@@ -524,6 +542,13 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if (auth_cplt_ind->err) {
             dbg("[APP] Pairing failed(err: 0x%x), conn_handle: %d\r\n", 
                     auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+
+            if (RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role) {
+                dbg("[APP] Disconnect, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
+                if (RTK_BT_OK != rtk_bt_le_gap_disconnect(auth_cplt_ind->conn_handle)) {
+                    dbg("[APP] Disconnect failed!\r\n");
+                }
+            }
         } else {
             dbg("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
 			if(RTK_BT_LE_ROLE_MASTER == ble_tizenrt_scatternet_conn_ind->role)
@@ -546,9 +571,20 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				connected_dev.conn_info.is_secured_connect = is_secured;
 				connected_dev.conn_info.mtu = mtu_size;
 				client_init_parm->trble_device_connected_cb(&connected_dev);
-			}else if(RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role)
-			{
-				server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val);				
+			} else if (RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role) {
+				uint8_t adv_handle = 0xff;
+				if (server_init_parm.connected_cb) {
+#if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT 
+					if(RTK_BT_OK != rtk_bt_le_gap_get_ext_adv_handle_by_conn_handle(auth_cplt_ind->conn_handle, &adv_handle)){
+						dbg("[APP] Get adv handle failed \r\n");
+                    }
+#endif
+					uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+					_reverse_mac(ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, addr);
+					server_init_parm.connected_cb(auth_cplt_ind->conn_handle, TRBLE_SERVER_SM_CONNECTED, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, adv_handle);
+				} else {
+					ble_tizenrt_dummy_callback();
+				}
 			}
         }
         break;
@@ -713,8 +749,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t eve
         if(p_gatt_mtu_ind->result == RTK_BT_OK){
             dbg("[APP] GATTS mtu exchange successfully, mtu_size: %d, conn_handle: %d \r\n",
                         p_gatt_mtu_ind->mtu_size, p_gatt_mtu_ind->conn_handle);
-            if(RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role){
-                server_init_parm.mtu_update_cb( p_gatt_mtu_ind->conn_handle, p_gatt_mtu_ind->mtu_size);
+            if (RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role) {
+                if (server_init_parm.mtu_update_cb) {
+                    server_init_parm.mtu_update_cb( p_gatt_mtu_ind->conn_handle, p_gatt_mtu_ind->mtu_size);
+                } else {
+                    ble_tizenrt_dummy_callback();
+                }
             }
         }else{
             dbg("[APP] GATTS mtu exchange fail \r\n");
@@ -861,6 +901,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
         memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const char *)RTK_BT_DEV_NAME));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name)); 
         BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
+        BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 #if (RTK_BLE_5_0_AE_ADV_SUPPORT==0)
         BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data,sizeof(adv_data)));
         BT_APP_PROCESS(rtk_bt_le_gap_set_scan_rsp_data(scan_rsp_data,sizeof(scan_rsp_data)));
@@ -906,4 +947,3 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 
     return 0;
 }
-

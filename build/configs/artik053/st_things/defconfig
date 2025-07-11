@@ -599,10 +599,6 @@ CONFIG_FOTA_DRIVER=y
 # CONFIG_RAMLOG is not set
 # CONFIG_SYSLOG_CONSOLE is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 # CONFIG_IOTDEV is not set
 
 #

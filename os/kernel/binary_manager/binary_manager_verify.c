@@ -31,7 +31,7 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 
-#include "binary_manager/binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Private Definitions

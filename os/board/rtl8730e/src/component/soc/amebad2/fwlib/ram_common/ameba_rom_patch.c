@@ -1288,4 +1288,28 @@ int SBOOT_Validate_Algorithm(u8 *AuthAlg, u8 *HashAlg, u8 ManiAuth, u8 ManiHash)
 	}
 }
 #endif
+
+int TRNG_get_random_bytes(void *dst, u32 size)
+{
+	unsigned int ranbuf;
+	unsigned int *lp;
+	int i, count;
+	count = size / sizeof(unsigned int);
+	lp = (unsigned int *) dst;
+	for (i = 0; i < count; i ++) {
+		lp[i] = _rand();
+		size -= sizeof(unsigned int);
+	}
+	if (size > 0) {
+		ranbuf = _rand();
+		_memcpy(&lp[i], &ranbuf, size);
+	}
+	return 0;
+}
+
+int TRNG_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output_size)
+{
+	UNUSED(p_rng);
+	return TRNG_get_random_bytes(output, output_size);
+}
 /******************* (C) COPYRIGHT 2022 Realtek Semiconductor *****END OF FILE****/

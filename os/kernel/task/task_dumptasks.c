@@ -88,6 +88,9 @@
 
 void task_show_tcbinfo(struct tcb_s *tcb)
 {
+#ifdef CONFIG_LIB_SYSCALL
+	int nsyscall = tcb->xcp.nsyscalls;
+#endif
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Asserted task's TCB info \n");
 	lldbg_noarg("===========================================================\n");
@@ -106,8 +109,10 @@ void task_show_tcbinfo(struct tcb_s *tcb)
 	lldbg("Sigdeliver  : %p\n", tcb->xcp.sigdeliver);
 #endif
 #ifdef CONFIG_LIB_SYSCALL
-	lldbg("Nsyscalls   : %u\n", tcb->xcp.nsyscalls);
-	lldbg("Syscall     : %p\n", tcb->xcp.syscall);
+	lldbg("Nsyscalls   : %u\n", nsyscall);
+	for (int i = 0; i < nsyscall; i++) {
+		lldbg("Syscall %d   : %p\n", i, tcb->xcp.syscall[i].sysreturn);
+	}
 #endif
 }
 

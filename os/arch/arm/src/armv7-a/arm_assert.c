@@ -78,6 +78,7 @@
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
+#include "binary_manager/binary_manager_internal.h"
 #include <tinyara/binfmt/elf.h>
 #endif
 #include <tinyara/security_level.h>
@@ -94,7 +95,7 @@
 #include <queue.h>
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
@@ -115,7 +116,7 @@ extern sq_queue_t g_freemsg_list;
 
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
-extern int g_irq_num;
+extern int g_irq_num[CONFIG_SMP_NCPUS];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -143,6 +144,9 @@ extern int g_irq_num;
 #define LOG_TASK_NAME   "N/A"
 #endif
 
+#define NORMAL_STATE 0
+#define ABORT_STATE 1
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -151,6 +155,9 @@ char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = { '\0', };
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Variable to check the recursive abort */
+static int state = NORMAL_STATE;
 
 /****************************************************************************
  * Private Functions
@@ -254,14 +261,15 @@ static int assert_tracecallback(FAR struct usbtrace_s *trace, FAR void *arg)
 
 static void check_assert_location(uint32_t *sp, bool *is_irq_assert)
 {
-	if (g_irq_num >= 0) {
+	int cpu = this_cpu();
+	if (g_irq_num[cpu] >= 0) {
 		/* Assert in irq */
 		*is_irq_assert = true;
 		lldbg("Code asserted in IRQ state!\n");
-		lldbg("IRQ num: %d\n", g_irq_num);
-		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num].handler);
+		lldbg("IRQ num: %d\n", g_irq_num[cpu]);
+		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num[cpu]].handler);
 #ifdef CONFIG_DEBUG_IRQ_INFO
-		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num].irq_name);
+		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num[cpu]].irq_name);
 #endif
 	} else {
 		/* Assert in user thread */
@@ -391,7 +399,8 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	stacksize = (uint32_t)fault_tcb->adj_stack_size;
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 #ifdef CONFIG_SMP
-	istackbase = (uint32_t)arm_intstack_alloc(),
+	/* Initialize istackbase based on the interrupt stack size and proper alignment value (~7) */
+	istackbase = ((uint32_t)arm_intstack_alloc() + (CONFIG_ARCH_INTERRUPTSTACK & ~7));
 #else
 	istackbase = (uint32_t)&g_intstackbase,
 #endif
@@ -494,12 +503,12 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 {
 	if (!IS_SECURE_STATE()) {
 #ifdef CONFIG_APP_BINARY_SEPARATION
-		if (IS_FAULT_IN_USER_THREAD(fault_tcb)) {
+		for (int index = 1; index <= CONFIG_NUM_APPS; index++) {
 			lldbg_noarg("===========================================================\n");
-			lldbg_noarg("Checking app heap for corruption\n");
+			lldbg_noarg("Checking app %d heap for corruption \n",index);
 			lldbg_noarg("===========================================================\n");
-			mm_check_heap_corruption((struct mm_heap_s *)(fault_tcb->uheap));
-
+			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			mm_check_heap_corruption(app_heap);
 		}
 #endif
 
@@ -519,10 +528,23 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 
 static inline void print_assert_detail(const uint8_t *filename, int lineno, struct tcb_s *fault_tcb, uint32_t asserted_location)
 {
+	int cpu = up_cpu_index();
 	lldbg_noarg("===========================================================\n");
 	lldbg_noarg("Assertion details\n");
 	lldbg_noarg("===========================================================\n");
-	lldbg("Assertion failed CPU%d at file: %s line %d task: %s pid: %d\n", up_cpu_index(), filename, lineno, LOG_TASK_NAME, fault_tcb->pid);
+	lldbg_noarg("Assertion failed CPU%d at file: %s line %d", cpu, filename, lineno);
+
+	/* Check if the crash is in irq or task context and accordingly
+	 * print either the irq number or task name, pid.
+	 * If in irq context, then g_irq_num[cpu] holds the irq numner. 
+	 * Else, g_irq_num[cpu] is -1. 
+	 */
+	if (g_irq_num[cpu] >= 0) {
+		lldbg_noarg(" irq: %d\n", g_irq_num[cpu]);
+	} else {
+		lldbg_noarg(" task: %s pid: %d\n", LOG_TASK_NAME, fault_tcb->pid);
+	}
+	
 	/* Print the extra arguments (if any) from ASSERT_INFO macro */
 	if (assert_info_str[0]) {
 		lldbg("%s\n", assert_info_str);
@@ -565,10 +587,18 @@ void up_assert(const uint8_t *filename, int lineno)
 	ARCH_GET_RET_ADDRESS(kernel_assert_location);
 
 	irqstate_t flags = enter_critical_section();
-	abort_mode = true;
 
 	uint32_t asserted_location = 0;
 
+	abort_mode = true;
+
+	/* Check if we are in recursive abort */
+	if (state == ABORT_STATE) {
+		/* treat kernel fault */
+		arm_assert();
+	} else {
+		state = ABORT_STATE;
+	}
 	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (system_exception_location) {
@@ -582,24 +612,9 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 
 #ifdef CONFIG_SMP
-	/* If SMP is enabled and there is a crash in kernel space, then we need to
-	 * pause all the other cpu's immediately because the kernel state might be
-	 * invalid at this point. If we dont pause other cpu's then it might lead
-	 * to multiple asserts.
-	 */
-	if (!IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		int me = sched_getcpu();
-		for (int cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
-			if (cpu != me) {
-				/* Pause the CPU */
-				up_cpu_pause(cpu);
-				/* Wait while the pause request is pending */
-				while (up_cpu_pausereq(cpu)) {
-				}
-			}
+	/* Pause all other CPUs to avoid mix up of logs while printing assert logs */
+	up_cpu_pause_all();
 
-		}
-	}
 #endif
 
 	struct tcb_s *fault_tcb = this_task();
@@ -609,7 +624,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	board_autoled_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	reboot_reason_write_user_intended();
+	reboot_reason_try_write_assert();
 #endif
 
 

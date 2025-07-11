@@ -111,13 +111,14 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size,
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 #endif
 {
-	FAR struct mm_freenode_s *node;
+	FAR struct mm_freenode_s *node = NULL;
 	void *ret = NULL;
 	int ndx;
 	size_t newsize;
 	FAR struct mm_allocnode_s *alignchunk = NULL;
 	bool found_align = false;
 	size_t mask = (size_t)(alignment - 1);
+	bool gc_done = false;
 
 	/* If this requested alinement's less than or equal to the natural alignment
 	 * of malloc, then just let malloc do the work.
@@ -144,6 +145,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 
 	newsize = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
 
+retry_after_gc:
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
 	DEBUGASSERT(mm_takesemaphore(heap));
@@ -209,6 +211,8 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	}
 
 	if (found_align) {
+		DEBUGASSERT(node);
+
 		FAR struct mm_allocnode_s *newnode = (FAR struct mm_allocnode_s *)((size_t)alignchunk - SIZEOF_MM_ALLOCNODE);
 		/* Get the next node after the allocation. */
 		FAR struct mm_allocnode_s *next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
@@ -271,6 +275,13 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	}
 
 	mm_givesemaphore(heap);
+
+	if (!ret && gc_done == false) {
+		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+		sched_garbagecollection();
+		gc_done = true;
+		goto retry_after_gc;
+	}
 
 	/* If CONFIG_DEBUG_MM is defined, then output the result of the allocation
 	 * to the SYSLOG.

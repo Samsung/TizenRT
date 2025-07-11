@@ -120,6 +120,47 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 	}
 	break;
+	case LWNL_REQ_BLE_SEC_PARAM_SET:
+	{
+		trble_sec_param *sec_param = (trble_sec_param *)data;
+		if (data != NULL) {
+			memcpy(sec_param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		if (sec_param != NULL) {
+			TRBLE_DRV_CALL(ret, dev, set_sec_param, (dev, sec_param));
+		} else {
+			ret = TRBLE_INVALID_ARGS;
+		}
+	}
+	break;
+	case LWNL_REQ_BLE_PASSKEY_CONFIRM:
+	{
+		uint8_t *conn_handle = 0;
+		uint8_t *confirm = 0;
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		conn_handle = (uint8_t *)param.param[0];
+		confirm = (uint8_t *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, passkey_confirm, (dev, conn_handle, confirm));
+	}
+	break;
+	case LWNL_REQ_BLE_START_BOND:
+	{
+		trble_conn_handle con_handle = 0;
+		if (data != NULL) {
+			con_handle = *(trble_conn_handle *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		TRBLE_DRV_CALL(ret, dev, start_bond, (dev, con_handle));
+	}
+	break;
 	case LWNL_REQ_BLE_GET_BONDED_DEV:
 	{
 		trble_bonded_device_list_s *device_list = NULL;
@@ -391,8 +432,35 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, op_wrtie_no_resp, (dev, handle, buf));
 	}
 	break;
+	case LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT:
+	{
+		trble_operation_handle *handle = NULL;
+		uint8_t *count = NULL;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		handle = (trble_operation_handle *)param.param[0];
+		count = (uint8_t *)param.param[1];
+
+		TRBLE_DRV_CALL(ret, dev, get_write_read_queue_cnt, (dev, handle, count));
+	}
+	break;
 	
 	//Server
+	case LWNL_REQ_BLE_SET_SERVER_CONFIG:
+	{
+		trble_server_init_config *t_server = NULL;
+		if (data != NULL) {
+			t_server = (trble_server_init_config *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		TRBLE_DRV_CALL(ret, dev, set_server_config, (dev, t_server));
+	}
 	case LWNL_REQ_BLE_GET_PROFILE_COUNT:
 	{
 		uint16_t *count = NULL;
@@ -660,8 +728,9 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, one_shot_adv_deinit, (dev));
 	}
 	break;
-	case LWNL_REQ_BLE_ONE_SHOT_ADV:
+	case LWNL_REQ_BLE_ONE_SHOT_ADV_SET:
 	{	
+		uint8_t *adv_id = NULL;
 		trble_data *data_adv = NULL;
 		trble_data *data_scan_rsp = NULL;
 		uint8_t *type;
@@ -673,11 +742,25 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		data_adv = (trble_data *)param.param[0];
-		data_scan_rsp = (trble_data *)param.param[1];
-		type = (uint8_t *)param.param[2];
+		adv_id = (uint8_t *)param.param[0];
+		data_adv = (trble_data *)param.param[1];
+		data_scan_rsp = (trble_data *)param.param[2];
+		type = (uint8_t *)param.param[3];
+		
+		TRBLE_DRV_CALL(ret, dev, one_shot_adv_set, (dev, adv_id, data_adv, data_scan_rsp, type));
+	}
+	break;
+	case LWNL_REQ_BLE_ONE_SHOT_ADV:
+	{
+		uint8_t adv_id = 0;
 
-		TRBLE_DRV_CALL(ret, dev, one_shot_adv, (dev, data_adv, data_scan_rsp, type));
+		if (data != NULL) {
+			adv_id = *(uint8_t *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, one_shot_adv, (dev, adv_id));
 	}
 	break;
 	case LWNL_REQ_BLE_SET_ADV_INTERVAL:

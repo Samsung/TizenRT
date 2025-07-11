@@ -7,7 +7,8 @@
 
 #include <platform_stdlib.h>
 #include "osdep_service.h"
-
+#include <netutils/netlib.h>
+#include <net/if.h>
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP
 #include "wifi_fast_connect.h"
 #endif
@@ -120,7 +121,7 @@ struct netif xnetif[NET_IF_NUM]; /* network interface structure */
   */
 
 int lwip_init_done = 0;
-
+static volatile u8 ip_addr[4] = {0};
 void LwIP_Init(void)
 {
 	struct ip_addr ipaddr;
@@ -478,10 +479,39 @@ uint8_t *LwIP_GetMAC(uint8_t idx)
 	return (uint8_t *)(pnetif->hwaddr);
 }
 
+static int _netlib_getipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
+{
+	int ret = ERROR;
+
+	if (ifname && addr) {
+		struct ifreq req;
+		if (strlen(ifname) >= IFNAMSIZ) {
+			return ret;
+		}
+		strncpy(req.ifr_name, ifname, IFNAMSIZ);
+		req.ifr_name[IFNAMSIZ - 1] = '\0';
+		ret = netdev_ifrioctl(NULL, 1793, &req);
+		if (!ret) {
+			FAR struct sockaddr_in *req_addr;
+			req_addr = (FAR struct sockaddr_in *)&req.ifr_addr;
+			memcpy(addr, &req_addr->sin_addr, sizeof(struct in_addr));
+		}
+	}
+
+	return ret;
+}
+
+
 uint8_t *LwIP_GetIP(uint8_t idx)
 {
-	struct netif *pnetif = &xnetif[idx];
-	return (uint8_t *) & (pnetif->ip_addr);
+	int ret = ERROR;
+	if (idx == 0) {
+		ret = _netlib_getipv4addr("wlan0", ip_addr);
+		if (ret == OK){
+			return ip_addr;
+		}
+	}
+	return NULL;
 }
 
 uint8_t *LwIP_GetGW(uint8_t idx)

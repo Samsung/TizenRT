@@ -28,6 +28,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <stdarg.h>
+#include <limits.h>
 #include <tinyalsa/tinyalsa.h>
 #include <media/OutputDataSource.h>
 #include "OutputHandler.h"
@@ -71,6 +73,7 @@ typedef enum recorder_observer_command_e {
 	RECORDER_OBSERVER_COMMAND_STARTED,
 	RECORDER_OBSERVER_COMMAND_PAUSED,
 	RECORDER_OBSERVER_COMMAND_FINISHIED,
+	RECORDER_OBSERVER_COMMAND_STOPPED,
 	RECORDER_OBSERVER_COMMAND_START_ERROR,
 	RECORDER_OBSERVER_COMMAND_PAUSE_ERROR,
 	RECORDER_OBSERVER_COMMAND_STOP_ERROR,
@@ -89,6 +92,7 @@ public:
 	recorder_result_t destroy();
 	recorder_result_t prepare();
 	recorder_result_t unprepare();
+	recorder_result_t reset();
 
 	recorder_result_t start();
 	recorder_result_t pause();
@@ -112,9 +116,10 @@ private:
 	void destroyRecorder(recorder_result_t& ret);
 	void prepareRecorder(recorder_result_t& ret);
 	void unprepareRecorder(recorder_result_t& ret);
-	void startRecorder();
-	void pauseRecorder();
-	void stopRecorder(recorder_result_t ret);
+	void startRecorder(recorder_result_t& ret);
+	void pauseRecorder(recorder_result_t& ret);
+	void stopRecorder(recorder_result_t& ret);
+	void stopRecorderInternal(recorder_observer_command_e command, recorder_result_t ret);
 	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
 	void getRecorderMaxVolume(uint8_t *vol, recorder_result_t& ret);
 	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);

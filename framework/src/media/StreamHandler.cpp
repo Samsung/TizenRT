@@ -89,6 +89,7 @@ bool StreamHandler::start()
 {
 	medvdbg("StreamHandler::start()\n");
 	if (mDataSource && !mDataSource->isPrepared()) {
+		meddbg("DataSource is not prepared!\n");
 		return false;
 	}
 
@@ -104,7 +105,7 @@ bool StreamHandler::stop()
 
 void StreamHandler::createWorker()
 {
-	medvdbg("StreamHandler::createWorker()\n");
+	meddbg("StreamHandler::createWorker, mIsWorkerAlive : %d\n", mIsWorkerAlive.load());
 	if (mStreamBuffer && !mIsWorkerAlive) {
 		resetWorker();
 		mStreamBuffer->reset();
@@ -116,7 +117,7 @@ void StreamHandler::createWorker()
 		pthread_attr_setstacksize(&attr, mWorkerStackSize);
 		sparam.sched_priority = CONFIG_HANDLER_STREAM_THREAD_PRIORITY;
 		pthread_attr_setschedparam(&attr, &sparam);
-		int ret = pthread_create(&mWorker, &attr, static_cast<pthread_startroutine_t>(StreamHandler::workerMain), this);
+		int ret = pthread_create(&mWorker, &attr, StreamHandler::workerMain, this);
 		if (ret != OK) {
 			meddbg("Fail to create StreamHandler Worker thread, return value : %d\n", ret);
 			mIsWorkerAlive = false;
@@ -128,7 +129,7 @@ void StreamHandler::createWorker()
 
 void StreamHandler::destroyWorker()
 {
-	medvdbg("StreamHandler::destoryWorker()\n");
+	meddbg("StreamHandler::destoryWorker()\n");
 	if (mIsWorkerAlive) {
 		// Setup flag,
 		mIsWorkerAlive = false;

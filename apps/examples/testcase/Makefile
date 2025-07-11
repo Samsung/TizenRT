@@ -208,9 +208,6 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC),y)
 	$(Q) $(call REGISTER,tm_itc,tm_itc_main,TASH_EXECMD_ASYNC,101,2048)
 	$(Q) $(call REGISTER,start_itc_sampl,taskmanager_start_sample_main,TASH_EXECMD_ASYNC,101,2048)
 endif
-ifeq ($(CONFIG_EXAMPLES_TESTCASE_TTRACE),y)
-	$(Q) $(call REGISTER,ttrace_tc,tc_ttrace_main,TASH_EXECMD_ASYNC,100,2048)
-endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC),y)
 	$(Q) $(call REGISTER,wifimgr_utc,utc_wifimanager_main,TASH_EXECMD_ASYNC,100,4096)
 endif

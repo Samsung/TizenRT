@@ -172,7 +172,9 @@ volatile dq_queue_t g_readytorun;
  * always the CPU's IDLE task.
  */
 
+#ifdef CONFIG_SMP
 volatile dq_queue_t g_assignedtasks[CONFIG_SMP_NCPUS];
+#endif
 
 /* g_running_tasks[] holds a references to the running task for each cpu.
  * It is valid only when up_interrupt_context() returns true.
@@ -238,7 +240,10 @@ volatile dq_queue_t g_inactivetasks;
 
 volatile sq_queue_t g_delayed_kufree;
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP)
 volatile sq_queue_t g_delayed_kfree;
+#endif
 
 /* This gives number of alive tasks at any point of time in the system.
  * If the system is already running CONFIG_MAX_TASKS, Creating new
@@ -270,77 +275,93 @@ struct pidhash_s g_pidhash[CONFIG_MAX_TASKS];
 
 const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
 {
-  {                                              /* TSTATE_TASK_INVALID */
-    NULL,
-    0
-  },
-  {                                              /* TSTATE_TASK_PENDING */
-    &g_pendingtasks,
-    TLIST_ATTR_PRIORITIZED
-  },
+	{                                              /* TSTATE_TASK_INVALID */
+		NULL,
+		0
+	},
+	{                                              /* TSTATE_TASK_PENDING */
+		&g_pendingtasks,
+		TLIST_ATTR_PRIORITIZED
+	},
 #ifdef CONFIG_SMP
-  {                                              /* TSTATE_TASK_READYTORUN */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_TASK_ASSIGNED */
-    g_assignedtasks,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
-  },
-  {                                              /* TSTATE_TASK_RUNNING */
-    g_assignedtasks,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
-  },
+	{                                              /* TSTATE_TASK_READYTORUN */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_TASK_ASSIGNED */
+		g_assignedtasks,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_RUNNING */
+		g_assignedtasks,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_INDEXED | TLIST_ATTR_RUNNABLE
+	},
 #else
-  {                                              /* TSTATE_TASK_READYTORUN */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
-  },
-  {                                              /* TSTATE_TASK_RUNNING */
-    &g_readytorun,
-    TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
-  },
+	{                                              /* TSTATE_TASK_READYTORUN */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_ASSIGNED */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
+	{                                              /* TSTATE_TASK_RUNNING */
+		&g_readytorun,
+		TLIST_ATTR_PRIORITIZED | TLIST_ATTR_RUNNABLE
+	},
 #endif
-  {                                              /* TSTATE_TASK_INACTIVE */
-    &g_inactivetasks,
-    0
-  },
-  {                                              /* TSTATE_WAIT_SEM */
-    &g_waitingforsemaphore,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {						/* TSTATE_WAIT_FIN */
-	  &g_waitingforfin,    
-	  TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_WAIT_SIG */
-    &g_waitingforsignal,
-    0
-  }
+	{                                              /* TSTATE_TASK_INACTIVE */
+		&g_inactivetasks,
+		0
+	},
+	{                                              /* TSTATE_WAIT_SEM */
+		&g_waitingforsemaphore,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_WAIT_FIN */
+		&g_waitingforfin,
+		TLIST_ATTR_PRIORITIZED
+	},
+#ifndef CONFIG_DISABLE_SIGNALS
+	{                                              /* TSTATE_WAIT_SIG */
+		&g_waitingforsignal,
+		0
+	},
+#else
+	{                                             
+		NULL,
+		0
+	},
+#endif
 #ifndef CONFIG_DISABLE_MQUEUE
-  ,
-  {                                              /* TSTATE_WAIT_MQNOTEMPTY */
-    &g_waitingformqnotempty,
-    TLIST_ATTR_PRIORITIZED
-  },
-  {                                              /* TSTATE_WAIT_MQNOTFULL */
-    &g_waitingformqnotfull,
-    TLIST_ATTR_PRIORITIZED
-  }
+	{                                              /* TSTATE_WAIT_MQNOTEMPTY */
+		&g_waitingformqnotempty,
+		TLIST_ATTR_PRIORITIZED
+	},
+	{                                              /* TSTATE_WAIT_MQNOTFULL */
+		&g_waitingformqnotfull,
+		TLIST_ATTR_PRIORITIZED
+	},
+#else
+	{                                             
+		NULL,
+		0
+	},
+	{                                             
+		NULL,
+		0
+	},
 #endif
 #ifdef CONFIG_PAGING
-  ,
-  {                                              /* TSTATE_WAIT_PAGEFILL */
-    &g_waitingforfill,
-    TLIST_ATTR_PRIORITIZED
-  }
-#endif
-#ifdef CONFIG_SIG_SIGSTOP_ACTION
-  ,
-  {                                              /* TSTATE_TASK_STOPPED */
-    &g_stoppedtasks,
-    0                                            /* See tcb->prev_state */
-  },
+	{                                              /* TSTATE_WAIT_PAGEFILL */
+		&g_waitingforfill,
+		TLIST_ATTR_PRIORITIZED
+	},
+#else
+	{                                             
+		NULL,
+		0
+	},
 #endif
 };
 
@@ -770,10 +791,6 @@ void os_start(void)
 	sysdbg_init();
 #endif
 
-#if defined(CONFIG_TTRACE)
-	ttrace_init();
-#endif
-
 #ifdef CONFIG_MM_SHM
 	/* Initialize shared memory support */
 
@@ -837,12 +854,6 @@ void os_start(void)
 #endif
 	/* Bring Up the System ****************************************************/
 	/* Create initial tasks and bring-up the system */
-
-#ifdef CONFIG_PM
-	/* We cannot enter low power state until boot complete */
-	pm_suspend(PM_IDLE_DOMAIN);
-	
-#endif
 
 #ifdef CONFIG_DEBUG_MM_WARN
 	display_memory_information();

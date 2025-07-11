@@ -50,6 +50,8 @@ arm-none-eabi-size -A --radix=16 $BINDIR/target_img2.axf
 arm-none-eabi-size -t --radix=16 $BINDIR/target_img2.axf
 echo "========== Image Info HEX =========="
 
+arm-none-eabi-objcopy -j .bluetooth_trace.text -Obinary $BINDIR/target_pure_img2.axf $BINDIR/APP.trace
+
 echo "========== Image Info DEC =========="
 arm-none-eabi-size -A --radix=10 $BINDIR/target_img2.axf
 arm-none-eabi-size -t --radix=10 $BINDIR/target_img2.axf
