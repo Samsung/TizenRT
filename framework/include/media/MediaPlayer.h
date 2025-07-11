@@ -43,9 +43,8 @@ namespace media {
  */
 enum player_error_e : int {
 	/** MediaPlayer Error case */
-	PLAYER_ERROR_NOT_ALIVE = -10,
+	PLAYER_ERROR_NOT_ALIVE = -9,
 	PLAYER_ERROR_FOCUS_NOT_READY,
-	PLAYER_ERROR_PLAYBACK_FINISHED,
 	PLAYER_ERROR_INVALID_STATE,
 	PLAYER_ERROR_INVALID_OPERATION,
 	PLAYER_ERROR_INVALID_PARAMETER,
@@ -135,11 +134,20 @@ public:
 	player_result_t unprepare();
 
 	/**
+	 * @brief Reset allocated resources related to the player, after the API, player is in state PLAYER_STATE_IDLE.
+	 * @details @b #include <media/MediaPlayer.h>
+	 * This function is a synchronous API
+	 * @return The result of the reset operation
+	 * @since TizenLite v5.0
+	 */
+	player_result_t reset();
+
+	/**
 	 * @brief Start playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker begin playback through the queue
-	 * @return The result of the unprepare operation
+	 * @return The result of the start operation
 	 * @since TizenRT v2.0
 	 */
 	player_result_t start();
@@ -147,7 +155,7 @@ public:
 	/**
 	 * @brief Pause playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker pause playback through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -157,7 +165,7 @@ public:
 	/**
 	 * @brief Stop playback.
 	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaPlayerWorker stop playback through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0
@@ -252,14 +260,6 @@ public:
 private:
 	std::shared_ptr<MediaPlayerImpl> mPMpImpl;
 	uint64_t mId;
-
-	/**
-	 * @brief Get the current set volume of player stream type
-	 * @details @b #include <media/MediaPlayer.h>
-	 * This function is a synchronous API
-	 * @return The current set volume of player stream type
-	 */
-	player_result_t getStreamVolume(uint8_t *volume);
 };
 } // namespace media
 #endif

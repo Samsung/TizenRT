@@ -183,7 +183,6 @@ enum pm_state_e {
 								 */
 	PM_COUNT,
 };
-static const char *pm_state_name[PM_COUNT] = {"PM_NORMAL", "PM_IDLE", "PM_STANDBY", "PM_SLEEP"};
 
 /* This enumeration provides all power management related wakeup source code. */
 
@@ -198,9 +197,8 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
-#ifdef CONFIG_PM_METRICS
-static const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
-#endif
+typedef void (*pm_wakehandler_t)(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -268,6 +266,34 @@ struct pm_callback_s {
 	void (*notify)(FAR struct pm_callback_s *cb, enum pm_state_e pmstate);
 };
 
+/*
+ * struct pm_sleep_ops - Callbacks for managing platform dependent PM power gating operations.
+ *
+ * @sleep: It makes the board enter the system sleep state. It also
+ *  performs the necessary operation before sleep and immediately after
+ *  wake up. This callback is mandatory.
+ *
+ * @set_timer: Set the wakeup timer
+ */
+
+struct pm_sleep_ops {
+	void (*sleep)(pm_wakehandler_t handler);
+	void (*set_timer)(unsigned int delay_us);
+};
+
+/*
+ * struct pm_clock_ops - Callbacks for managing platform dependent PM clock gating operations.
+ *
+ * @adjust_dvfs: It adjusts the DVFS level according to the division level.
+ *  It helps by reducing the frequency of operation of the core.
+ */
+
+#ifdef CONFIG_PM_DVFS
+struct pm_clock_ops {
+	void (*adjust_dvfs)(int div_lvl);
+};
+#endif
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -280,6 +306,9 @@ extern "C" {
 #else
 #define EXTERN extern
 #endif
+
+EXTERN const char *pm_state_name[PM_COUNT];
+EXTERN const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT];
 
 /****************************************************************************
  * Public Function Prototypes
@@ -295,15 +324,14 @@ extern "C" {
 void pm_driver_register(void);
 
 #ifdef CONFIG_PM
+
 /****************************************************************************
- * Name: pm_initialize
+ * Name: pm_start
  *
  * Description:
- *   This function is called by MCU-specific logic at power-on reset in
- *   order to provide one-time initialization the power management subsystem.
- *   This function must be called *very* early in the initialization sequence
- *   *before* any other device drivers are initialized (since they may
- *   attempt to register with the power management subsystem).
+ *   This function is called by the application thread to start the Power
+ *   Management system. This fucntion sets the is_running flag which
+ *   enables pm to transition between low and high power states.
  *
  * Input parameters:
  *   None.
@@ -313,7 +341,49 @@ void pm_driver_register(void);
  *
  ****************************************************************************/
 
-void pm_initialize(void);
+void pm_start(void);
+
+/****************************************************************************
+ * Name: pm_initialize
+ *
+ * Description:
+ *   This function is called by MCU-specific logic at power-on reset in
+ *   order to provide one-time initialization the power management subsystem.
+ *   This function must be called *very* early in the initialization sequence
+ *   *before* any other device drivers are initialized (since they may
+ *   attempt to register with the power management subsystem). It also fills
+ *   the PM ops with the required BSP APIs.
+ *
+ * Input parameters:
+ *   sleep_ops: pm power gating operations to use.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+void pm_initialize(struct pm_sleep_ops *sleep_ops);
+
+/****************************************************************************
+ * Name: pm_clock_initialize
+ *
+ * Description:
+ *   This function is called by MCU-specific one-time at power on reset in
+ *   order to initialize the pm clock capabilityes.  This function
+ *   must be called *very* early in the initializeation sequence *before* any
+ *   other device drivers are initialize (since they may attempt to register
+ *   with the power management subsystem). It also fills the PM ops with the
+ *   required BSP APIs.
+ *
+ * Input parameters:
+ *   dvfs_ops: pm power gating operations to use.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_PM_DVFS
+void pm_clock_initialize(struct pm_clock_ops *dvfs_ops);
+#endif
 
 /****************************************************************************
  * Name: pm_register
@@ -551,7 +621,8 @@ int pm_metrics(int milliseconds);
  * avoid so much conditional compilation in driver code when PM is disabled:
  */
 
-#define pm_initialize()
+#define pm_start()
+#define pm_initialize(sleep_ops)      (0)
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
 #define pm_domain_register(domain)	(0)

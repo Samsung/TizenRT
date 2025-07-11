@@ -212,18 +212,57 @@ static void clock_inittime(void)
  ****************************************************************************/
 
 #ifdef CONFIG_INIT_SYSTEM_TIME
+static void initialize_system_time(void)
+{
+	struct timespec ts;
+
+	DEBUGASSERT(clock_getinittime(&ts) == OK);
+
+	/* Set system init time for rtc */
+
+	(void)up_rtc_settime(&ts);
+}
+#endif
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: clock_getinittime
+ *
+ * Description:
+ *   This function returns initialized system time.
+ *
+ * Parameters:
+ *   tp - Location to return the time
+ *
+ * Return Value:
+ *   OK (0) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_INIT_SYSTEM_TIME
 #ifdef CONFIG_INIT_SYSTEM_TIME_WITH_MIDNIGHT
 #define SYSTIME_INIT_TIME_FORMAT "%Y-%m-%d"
 #else
 #define SYSTIME_INIT_TIME_FORMAT "%Y-%m-%d %T"
 #endif
+#endif
 
-static void initialize_system_time(void)
+int clock_getinittime(struct timespec *tp)
 {
+#ifdef CONFIG_RTC
+#ifdef CONFIG_INIT_SYSTEM_TIME
 	struct tm init_time;
-	struct timespec ts;
 	char *ret;
 
+#endif
+#endif
+	if (!tp) {
+		return -EINVAL;
+	}
+#ifdef CONFIG_RTC
+#ifdef CONFIG_INIT_SYSTEM_TIME
 	/* Initialize the members not used in strptime */
 
 #ifdef CONFIG_INIT_SYSTEM_TIME_WITH_MIDNIGHT
@@ -239,29 +278,30 @@ static void initialize_system_time(void)
 
 	ret = strptime(CONFIG_VERSION_BUILD_TIME, SYSTIME_INIT_TIME_FORMAT, &init_time);
 	if (ret == NULL) {
-		return;
+		return ERROR;
 	}
 
 	/* Convert struct tm to struct timespec */
-
-	ts.tv_sec = mktime(&init_time);
-	ts.tv_nsec = 0;
-
-	/* Set system init time for rtc */
-
-	(void)up_rtc_settime(&ts);
-}
+	tp->tv_sec = mktime(&init_time);
+	tp->tv_nsec = 0;
+#else
+	tp->tv_sec = 0;
+	tp->tv_nsec = 0;
 #endif
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
+#else
+	clock_basetime(tp);
+#endif
+	return OK;
+}
 
 /****************************************************************************
  * Name: clock_initialize
  *
  * Description:
  *   Perform one-time initialization of the timing facilities.
+ *
+ * Parameters:
+ *   ts - Location to return the time
  *
  ****************************************************************************/
 

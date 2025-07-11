@@ -54,12 +54,12 @@ void SoftwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
-bool getKeywordBufferSize(uint32_t *bufferSize)
+bool SoftwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	return false;
 }
 
-bool getKeywordData(uint8_t *buffer)
+bool SoftwareKeywordDetector::getKeywordData(uint8_t *buffer)
 {
 	return false;
 }

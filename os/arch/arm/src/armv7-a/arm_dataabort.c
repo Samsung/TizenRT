@@ -78,6 +78,8 @@ uint32_t system_exception_location;
 
 static inline void print_dataabort_detail(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
 {
+	/* Abort log must always start at a new line.*/
+	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Data Abort at instruction : 0x%08x\n",  regs[REG_PC]);
 	_alert("PC: %08x DFAR: %08x DFSR: %08x\n", regs[REG_PC], dfar, dfsr);
@@ -204,14 +206,14 @@ SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar
 	uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
 	CURRENT_REGS = regs;
 	system_exception_location = regs[REG_R15];
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+#endif
+
 	/* Crash -- possibly showing diagnostic debug information. */
 	if (!IS_SECURE_STATE()) {
 		print_dataabort_detail(regs, dfar, dfsr);
 	}
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
-#endif
 
 	PANIC();
 	regs = (uint32_t *)CURRENT_REGS;

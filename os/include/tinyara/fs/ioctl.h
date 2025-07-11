@@ -106,7 +106,8 @@
 #define _PMBASE         (0x2b00)    	/* pm ioctl commands */
 #define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
-
+#define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
+#define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
 
 
 /* boardctl() commands share the same number space */
@@ -272,19 +273,24 @@
 #define _MTDIOCVALID(c)   (_IOC_TYPE(c) == _MTDIOCBASE)
 #define _MTDIOC(nr)       _IOC(_MTDIOCBASE, nr)
 
-#define MTDIOC_GEOMETRY   _MTDIOC(0x0001)	/* IN:  Pointer to write-able struct
+#define MTDIOC_GEOMETRY		_MTDIOC(0x0001)	/* IN:  Pointer to write-able struct
 											 *      mtd_geometry_s in which to receive
 											 *      receive geometry data (see mtd.h)
 											 * OUT: Geometry structure is populated
 											 *      with data for the MTD */
-#define MTDIOC_XIPBASE    _MTDIOC(0x0002)	/* IN:  Pointer to pointer to void in
+#define MTDIOC_XIPBASE		_MTDIOC(0x0002)	/* IN:  Pointer to pointer to void in
 											 *      which to received the XIP base.
 											 * OUT: If media is directly accessible,
 											 *      return (void*) base address
 											 *      of device memory */
-#define MTDIOC_BULKERASE  _MTDIOC(0x0003)	/* IN:  None
+#define MTDIOC_BULKERASE	_MTDIOC(0x0003)	/* IN:  None
 											 * OUT: None */
-#define MTDIOC_SETSPEED   _MTDIOC(0x0004)	/* IN:  New bus speed in Hz
+#define MTDIOC_SETSPEED		_MTDIOC(0x0004)	/* IN:  New bus speed in Hz
+											 * OUT: None */
+#define MTDIOC_ERASESTATE	_MTDIOC(0x0005)	/* IN:  Pointer to uint8_t
+											 * OUT: Byte value that represents the
+											 *      erased state of the MTD cell */
+#define MTDIOC_ERASESECTORS	_MTDIOC(0x0006)	/* IN: Pointer to mtd_erase_s structure
 											 * OUT: None */
 
 /* TinyAra ARP driver ioctl definitions (see include/netinet/arp.h) *******************/
@@ -333,6 +339,25 @@
 
 #define _QEIOCVALID(c)    (_IOC_TYPE(c) == _QEIOCBASE)
 #define _QEIOC(nr)        _IOC(_QEIOCBASE, nr)
+
+/* Wifi CSI driver ioctl definitions *************************************/
+/* (see tinyara/wifi_csi/wifi_csi.h) */
+
+#define _CSIIOCVALID(c) (_IOC_TYPE(c) == _CSIIOCBASE)
+#define _CSIIOC(nr)     _IOC(_CSIIOCBASE, nr)
+
+/* Silent reboot driver ioctl definitions *************************************/
+/* (see tinyara/silent_reboot.h) */
+
+#define _SILENTRBIOCVALID(c)       (_IOC_TYPE(c) == _SILENTRBCBASE)
+#define _SILENTRBIOC(nr)           _IOC(_SILENTRBCBASE, nr)
+
+#define SILENTRBIOC_LOCK           _SILENTRBIOC(0x0001)
+#define SILENTRBIOC_UNLOCK         _SILENTRBIOC(0x0002)
+#define SILENTRBIOC_DELAY          _SILENTRBIOC(0x0003)
+#define SILENTRBIOC_CHECKMODE      _SILENTRBIOC(0x0004)
+#define SILENTRBIOC_GETSTATUS      _SILENTRBIOC(0x0005)
+#define SILENTRBIOC_FORCE_REBOOT   _SILENTRBIOC(0x0006)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */
@@ -445,6 +470,7 @@
 #define MMINFOIOC_HEAP              _MMINFOIOC(0x0001)
 #define MMINFOIOC_PARSE             _MMINFOIOC(0x0002)
 #define MMINFOIOC_MNG_ALLOCFAIL     _MMINFOIOC(0x0003)
+#define MMINFOIOC_GC                _MMINFOIOC(0x0004)
 
 /* Compress driver ioctl definitions ************************/
 #define _COMPIOCVALID(c)    (_IOC_TYPE(c) == _COMPBASE)
@@ -454,6 +480,10 @@
 #define COMPIOC_GET_COMP_TYPE      _COMPIOC(0x0002)
 #define COMPIOC_GET_COMP_NAME      _COMPIOC(0x0003)
 #define COMPIOC_DECOMPRESS	   _COMPIOC(0x0004)
+#define COMPIOC_FCOMP_INIT         _COMPIOC(0x0005)
+#define COMPIOC_FCOMP_GET_BUFSIZE  _COMPIOC(0x0006)
+#define COMPIOC_FCOMP_DECOMPRESS   _COMPIOC(0x0007)
+#define COMPIOC_FCOMP_DEINIT       _COMPIOC(0x0008)
 
 /* Pm driver ioctl definitions *****************************/
 #define _PMIOCVALID(c)      (_IOC_TYPE(c) == _PMBASE)
@@ -467,6 +497,7 @@
 #define PMIOC_TUNEFREQ           _PMIOC(0x0006)
 #define PMIOC_METRICS            _PMIOC(0x0007)
 #define PMIOC_SUSPEND_COUNT      _PMIOC(0x0008)
+#define PMIOC_START              _PMIOC(0x0009)
 
 /* Cpuload driver ioctl definitions ************************/
 

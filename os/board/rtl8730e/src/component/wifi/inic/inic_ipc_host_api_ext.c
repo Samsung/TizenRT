@@ -1080,31 +1080,36 @@ int wifi_get_current_bw(void)
 	return 20;
 }
 
+/* For wifi_get_tx_retry() */
+static ALIGNMTO(CACHE_LINE_SIZE) u32 tx_retry_cnt[16];
+
 unsigned int wifi_get_tx_retry(int idx)
 {
-	/* For padding */
-	ALIGNMTO(CACHE_LINE_SIZE) u8 flag[CACHE_LINE_ALIGMENT(64)];
-	ALIGNMTO(CACHE_LINE_SIZE) u32 tx_retry_cnt[16];
 	IPC_MSG_STRUCT ipc_req_msg  __attribute__((aligned(64)));
+	u32 try_cnt = 50000;//wait 100ms
 	ipc_req_msg.msg_type = IPC_USER_POINT;
 	ipc_req_msg.msg = (u32)tx_retry_cnt;
 	ipc_req_msg.msg_len = sizeof(tx_retry_cnt);
-	ipc_req_msg.rsvd = (u32)flag;
-
-	memset(flag, 0, sizeof(flag));
+	ipc_req_msg.rsvd = 0;
 	memset(tx_retry_cnt, 0, sizeof(tx_retry_cnt));
 	/* Indicate wlan idx to get tx retry from */
 	tx_retry_cnt[0] = idx;
 	DCache_Clean((u32)tx_retry_cnt, sizeof(tx_retry_cnt));
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_WIFI_FW_INFO, &ipc_req_msg); 
 
-	while (1) {
-		DCache_Invalidate((u32)flag, sizeof(flag));
-		if (flag[0]) {
+	while (try_cnt) {
+		DCache_Invalidate((u32)tx_retry_cnt, sizeof(tx_retry_cnt));
+		/* Index 2 is used to indicate if retry count has been obtained */
+		if (tx_retry_cnt[2]) {
 			break;
 		}
+		try_cnt --;
+		DelayUs(2);
 	}
-	DCache_Invalidate((u32)tx_retry_cnt, sizeof(tx_retry_cnt));
+	if (try_cnt == 0) {
+		RTW_API_INFO("Cannot get TX retry\n");
+		return 0;
+	}
 	/* Retry count will be at index 1 */
 	return tx_retry_cnt[1];
 }

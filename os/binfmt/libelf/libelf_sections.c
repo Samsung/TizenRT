@@ -67,7 +67,7 @@
 
 #include <string.h>
 #include <tinyara/binfmt/binfmt.h>
-#include <binary_manager/binary_manager.h>
+#include "binary_manager/binary_manager_internal.h"
 
 #include "libelf.h"
 

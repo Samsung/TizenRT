@@ -168,3 +168,82 @@ security_error crypto_rsa_decryption(security_handle hnd,
 	SECAPI_DATA_DCOPY(dec, output);
 	SECAPI_RETURN(SECURITY_OK);
 }
+
+security_error crypto_gcm_encryption(security_handle hnd,
+									 security_gcm_param *param,
+									 const char *key_name,
+									 security_data *input,
+									 security_data *output)
+{
+	SECAPI_ENTER;
+	SECAPI_ISHANDLE_VALID(hnd);
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
+
+	HAL_INIT_GCM_PARAM(hparam);
+	SECAPI_CONVERT_GCMPARAM(param, &hparam);
+
+	// convert path
+	uint32_t key_idx = 0;
+	SECAPI_CONVERT_PATH(key_name, &key_idx);
+
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	hal_data dec = {input->data, input->length, NULL, 0};
+	hal_data enc = {ctx->data1, ctx->dlen1, NULL, 0};
+
+	SECAPI_CALL(sl_gcm_encrypt(ctx->sl_hnd, &dec, &hparam, key_idx, &enc));
+
+	param->tag = (unsigned char *)malloc(hparam.tag_len);
+	if (!param->tag) {
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+	
+	output->data = (unsigned char *)malloc(enc.data_len);
+	if (!output->data) {
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+	
+	memcpy(param->tag, hparam.tag, hparam.tag_len);
+	param->tag_len = hparam.tag_len;
+	SECAPI_DATA_DCOPY(enc, output);
+	SECAPI_RETURN(SECURITY_OK);
+}
+
+security_error crypto_gcm_decryption(security_handle hnd,
+									 security_gcm_param *param,
+									 const char *key_name,
+									 security_data *input,
+									 security_data *output)
+{
+	SECAPI_ENTER;
+	SECAPI_ISHANDLE_VALID(hnd);
+	struct security_ctx *ctx = (struct security_ctx *)hnd;
+
+	HAL_INIT_GCM_PARAM(hparam);
+	SECAPI_CONVERT_GCMPARAM(param, &hparam);
+
+	// convert path
+	uint32_t key_idx = 0;
+	SECAPI_CONVERT_PATH(key_name, &key_idx);
+
+	if (!input || !input->data) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	if (!output) {
+		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
+	}
+	hal_data enc = {input->data, input->length, NULL, 0};
+	hal_data dec = {ctx->data1, ctx->dlen1, NULL, 0};
+
+	SECAPI_CALL(sl_gcm_decrypt(ctx->sl_hnd, &enc, &hparam, key_idx, &dec));
+	output->data = (unsigned char *)malloc(dec.data_len);
+	if (!output->data) {
+		SECAPI_RETURN(SECURITY_ALLOC_ERROR);
+	}
+	SECAPI_DATA_DCOPY(dec, output);
+	SECAPI_RETURN(SECURITY_OK);
+}

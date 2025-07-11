@@ -73,3 +73,16 @@ void dhcpc_close_ipaddr(void)
 	NET_LOGV(TAG, "release IP address\n");
 	return;
 }
+
+wifi_manager_result_e dhcpc_get_ap_type(wifi_manager_ap_type_e *aptype)
+{
+	int wifi_type = (int) *aptype;
+	if (dhcp_client_get_aptype(&wifi_type) != OK) {
+		NET_LOGE(TAG, "[DHCPC] get ap type fail\n");
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
+		return WIFI_MANAGER_FAIL;
+	}
+
+	*aptype = (wifi_manager_ap_type_e)wifi_type;
+	return WIFI_MANAGER_SUCCESS;
+}

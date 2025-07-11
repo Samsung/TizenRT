@@ -828,7 +828,6 @@ INPUT                  = . \
                          ../../../os/include/sys/ioctl.h \
                          ../../../os/include/sys/select.h \
                          ../../../os/include/tinyara/regex.h \
-                         ../../../os/include/tinyara/ttrace.h \
                          ../../../os/include/tinyara/streams.h \
                          ../../../os/include/net/lwip/netif.h \
                          ../../../os/include/fixedmath.h \

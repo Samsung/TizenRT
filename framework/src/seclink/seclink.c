@@ -507,7 +507,7 @@ int sl_aes_encrypt(sl_ctx hnd, hal_data *dec_data,
 			 hnd, key_idx, aes_param->mode, aes_param->iv_len);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
-	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, aes_param, NULL};
+	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, aes_param, NULL, NULL};
 	struct seclink_req req = {.req_type.crypto = &info, 0};
 
 	SL_CALL(sl, SECLINKIOC_AESENCRYPT, req);
@@ -523,7 +523,7 @@ int sl_aes_decrypt(sl_ctx hnd, hal_data *enc_data,
 	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) aes mode(%d) iv len(%d)\n",
 			 hnd, key_idx, aes_param->mode, aes_param->iv_len);
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
-	struct seclink_crypto_info info = {key_idx, enc_data, dec_data, aes_param, NULL};
+	struct seclink_crypto_info info = {key_idx, enc_data, dec_data, aes_param, NULL, NULL};
 	struct seclink_req req = {.req_type.crypto = &info, 0};
 
 	SL_CALL(sl, SECLINKIOC_AESDECRYPT, req);
@@ -539,7 +539,7 @@ int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data,
 	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) RSA mode(%d) hash(%d) mgf(%d) salt len(%d)\n",
 			 hnd, key_idx, rsa_mode->rsa_a, rsa_mode->hash_t, rsa_mode->mgf, rsa_mode->salt_byte_len);
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
-	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, NULL, rsa_mode};
+	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, NULL, rsa_mode, NULL};
 	struct seclink_req req = {.req_type.crypto = &info, 0};
 
 	SL_CALL(sl, SECLINKIOC_RSAENCRYPT, req);
@@ -557,10 +557,44 @@ int sl_rsa_decrypt(sl_ctx hnd,
 			 hnd, key_idx, rsa_mode->rsa_a, rsa_mode->hash_t, rsa_mode->mgf, rsa_mode->salt_byte_len);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
-	struct seclink_crypto_info info = {key_idx, enc_data, dec_data, NULL, rsa_mode};
+	struct seclink_crypto_info info = {key_idx, enc_data, dec_data, NULL, rsa_mode, NULL};
 	struct seclink_req req = {.req_type.crypto = &info, 0};
 
 	SL_CALL(sl, SECLINKIOC_RSADECRYPT, req);
+	return _sl_convert_res(req.res);
+}
+
+int sl_gcm_encrypt(sl_ctx hnd, hal_data *dec_data,
+				   hal_gcm_param *gcm_param,
+				   uint32_t key_idx,
+				   _OUT_ hal_data *enc_data)
+{
+	SL_CHECK_VALID(hnd);
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) gcm cipher(%d) iv_len(%d) aad_len(%d) tag_len(%d)\n",
+			 hnd, key_idx, gcm_param->cipher, gcm_param->iv_len, gcm_param->aad_len, gcm_param->tag_len);
+
+	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+	struct seclink_crypto_info info = {key_idx, dec_data, enc_data, NULL, NULL, gcm_param};
+	struct seclink_req req = {.req_type.crypto = &info, 0};
+
+	SL_CALL(sl, SECLINKIOC_GCMENCRYPT, req);
+	return _sl_convert_res(req.res);
+}
+
+int sl_gcm_decrypt(sl_ctx hnd, hal_data *enc_data,
+				   hal_gcm_param *gcm_param,
+				   uint32_t key_idx,
+				   _OUT_ hal_data *dec_data)
+{
+	SL_CHECK_VALID(hnd);
+	SLC_LOGI(TAG, "--> hnd(%p) idx(%d) gcm cipher(%d) iv_len(%d) aad_len(%d) tag_len(%d)\n",
+			 hnd, key_idx, gcm_param->cipher, gcm_param->iv_len, gcm_param->aad_len, gcm_param->tag_len);
+
+	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
+	struct seclink_crypto_info info = {key_idx, enc_data, dec_data, NULL, NULL, gcm_param};
+	struct seclink_req req = {.req_type.crypto = &info, 0};
+
+	SL_CALL(sl, SECLINKIOC_GCMDECRYPT, req);
 	return _sl_convert_res(req.res);
 }
 

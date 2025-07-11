@@ -18,7 +18,11 @@ _WEAK void wifi_set_user_config(void)
 	rtw_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
 	/* below items for user config */
-	wifi_user_config.concurrent_enabled = (u8)_FALSE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
+#ifdef CONFIG_ENABLE_HOMELYNK
+	wifi_user_config.concurrent_enabled = (u8)_TRUE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
+#else
+	wifi_user_config.concurrent_enabled = (u8)_FALSE;
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 	wifi_user_config.auto_reconnect_count = 8;
 	wifi_user_config.auto_reconnect_interval = 5; /* in sec*/
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
@@ -83,6 +87,12 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.cfg80211 = 1;
 #else
 	wifi_user_config.cfg80211 = 0;
+#endif
+
+#ifdef CONFIG_SOFTAP_KEEP_SILENT_TABLE
+	/* SoftAP silent table to reduce probe response when receiving probe request continuously */
+	wifi_user_config.softap_keep_silent_table_enable = 1;
+	wifi_user_config.softap_keep_silent_table_interval = 500; /* ms. Once interval period is reached, remove from silent table, so can send probe response to same STA again. */
 #endif
 
 #ifdef CONFIG_AS_INIC_AP

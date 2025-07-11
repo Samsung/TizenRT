@@ -29,7 +29,11 @@
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
+ #ifdef CONFIG_RAM_DDR
+#  define AMEBASMART_DRAM_SIZE   (0x3F00000)   /* Size of the DDR for BL33 (63MB, 63*1024*1024 = 66060288) */
+#else
 #  define AMEBASMART_DRAM_SIZE   (0x700000)   /* Size of the PSRAM for BL33 (7MB, 7*1024*1024 = 7340032) */
+#endif
 #  define AMEBASMART_NXCPUS       2            /* Two CPUs */
 /* L2 page table yet to be verified in TizenRT */
 // #  define AMEBASMART_L2CACHE_SIZE (256*1024)  /* 256Kb L2 Cache */

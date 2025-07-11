@@ -29,3 +29,11 @@ trwifi_result_e wifi_utils_stop_softap(void);
 trwifi_result_e wifi_utils_set_autoconnect(uint8_t check);
 trwifi_result_e wifi_utils_ioctl(trwifi_msg_s *dmsg);
 trwifi_result_e wifi_utils_scan_multi_aps(void *arg);
+trwifi_result_e wifi_utils_set_channel_plan(uint8_t channel_plan);
+trwifi_result_e wifi_utils_get_signal_quality(trwifi_signal_quality *signal_quality);
+trwifi_result_e wifi_utils_get_disconnect_reason(int *disconnect_reason);
+trwifi_result_e wifi_utils_get_driver_info(trwifi_driver_info *driver_info);
+trwifi_result_e wifi_utils_get_wpa_supplicant_state(trwifi_wpa_states *wpa_state);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+trwifi_result_e wifi_utils_control_bridge(uint8_t enable);
+#endif

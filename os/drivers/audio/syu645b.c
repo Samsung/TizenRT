@@ -32,6 +32,9 @@
 #include <errno.h>
 #include <fixedmath.h>
 #include <debug.h>
+#include <sys/stat.h>
+#include <json/cJSON.h>
+#include <fcntl.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/audio/i2s.h>
@@ -50,13 +53,17 @@
 #define BYTE_TO_BIT_FACTOR           8
 #define SEC_TO_MSEC_FACTOR	     1000
 
+#define PROD_EQUALIZE_ENCODE_JSON_PATH "/mnt/script.json"
+#define EQUALIZER_PRESET_LEN 11
+#define EQUALIZER_PRESET_MAX 0xffffffff
+
 /* Default configuration values */
 
 /*
  * It's good to match the buffer size with i2s DMA page size
  */
 #ifndef CONFIG_SYU645B_BUFFER_SIZE
-#define CONFIG_SYU645B_BUFFER_SIZE       16384
+#define CONFIG_SYU645B_BUFFER_SIZE       32768
 #endif
 
 #ifndef CONFIG_SYU645B_NUM_BUFFERS
@@ -90,9 +97,11 @@ static const struct audio_ops_s g_audioops = {
 	.release = syu645b_release,             /* release        */
 };
 
+static cJSON *gJSON = NULL;
+
 static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
 static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset);
+static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset);
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
@@ -103,6 +112,25 @@ static struct pm_callback_s g_pm_syu645b_cb ={
 	.prepare = syu645b_pm_prepare,
 };
 #endif
+
+static int syu645b_readreg_nbyte(FAR struct syu645b_dev_s *priv, uint8_t regaddr, uint8_t *regval, int nbytes)
+{
+	FAR struct i2c_dev_s *dev = priv->i2c;
+	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
+	uint8_t reg_w[1];
+	reg_w[0] = regaddr;
+	int ret = i2c_write(dev, syu645b_i2c_config, reg_w, 1);
+	if (ret != 1) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	ret =  i2c_read(dev, syu645b_i2c_config, regval, nbytes);
+	if (ret != nbytes) {
+		auddbg("Error, cannot read reg %x\n", regaddr);
+		return ERROR;
+	}
+	return OK;
+}
 
 /************************************************************************************
  * Name: syu645b_exec_i2c_script
@@ -155,6 +183,23 @@ static void syu645b_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
+/************************************************************************************
+ * Name: syu645b_pwm_shutdown
+ *
+ * Description:
+ *   if shudown is true, enter all channels to shutdown. Otherwise exit from shutdown.
+ *
+ ************************************************************************************/
+static void syu645b_pwm_shutdown(FAR struct syu645b_dev_s *priv, bool shutdown)
+{
+	if (shutdown) {
+		syu645b_exec_i2c_script(priv, codec_shutdown_script, sizeof(codec_shutdown_script) / sizeof(t_codec_init_script_entry));
+	} else {
+		syu645b_exec_i2c_script(priv, codec_startup_script, sizeof(codec_startup_script) / sizeof(t_codec_init_script_entry));
+	}
+}
+
+
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 /************************************************************************************
  * Name: syu645b_setmute
@@ -188,20 +233,25 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 		auddbg("Error, Device's private data Not available\n");
 		return;
 	}
-	audvdbg("volume=%u mute=%u\n", priv->volume, priv->mute);
-	if (priv->mute) {
-		syu645b_setmute(priv, true);
-		return;
-	}
+	uint8_t max = priv->max_volume - SYU645B_HW_VOL_MIN_BOUND;
+	float bound = (float)max / 100;
+	bound = (float)(bound * priv->volume);
+	uint16_t val = (int)(bound + SYU645B_HW_VOL_MIN_BOUND);
+	audvdbg("volume = %d val : %d mute=%u\n", priv->volume, val, priv->mute);
 
 	if (priv->volume == 0) {
-		codec_set_master_volume_script[0].val[0] = 0;
+		codec_set_left_right_volume_script[0].val[0] = 0;
+		codec_set_left_right_volume_script[1].val[0] = 0;
 	} else {
 		/* Linear approximation is done to convert media volume to hardware volume */
-		codec_set_master_volume_script[0].val[0] = SYU645B_HW_VOL_MIN_BOUND + SYU645B_HW_VOL_SLOPE * priv->volume;
+		codec_set_left_right_volume_script[0].val[0] = val;
+		codec_set_left_right_volume_script[1].val[0] = val;
 	}
-	syu645b_setmute(priv, false);
-	syu645b_exec_i2c_script(priv, codec_set_master_volume_script, sizeof(codec_set_master_volume_script) / sizeof(t_codec_init_script_entry));
+	priv->mute = false;
+	if (priv->running) {
+		syu645b_setmute(priv, false);
+	}
+	syu645b_exec_i2c_script(priv, codec_set_left_right_volume_script, sizeof(codec_set_left_right_volume_script) / sizeof(t_codec_init_script_entry));
 }
 #endif                                                  /* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -351,7 +401,7 @@ static int syu645b_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 			 */
 		}
 
-		caps->ac_controls.hw[0] = SYU645B_SPK_VOL_MAX;
+		caps->ac_controls.hw[0] = priv->max_volume;
 		caps->ac_controls.hw[1] = priv->volume;
 
 		break;
@@ -406,14 +456,7 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			/* Set the volume */
 			uint16_t volume = caps->ac_controls.hw[0];
 			audvdbg("    Volume: %d\n", volume);
-			if (volume < SYU645B_SPK_VOL_MIN) {
-				priv->volume = SYU645B_SPK_VOL_MIN;
-			} else if (volume >= SYU645B_SPK_VOL_MAX) {
-				priv->volume = SYU645B_SPK_VOL_MAX;
-			} else {
-				priv->volume = volume;
-			}
-			printf("set volume is called\n");
+			priv->volume = volume;
 			syu645b_setvolume(priv);
 		}
 		break;
@@ -422,12 +465,12 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			bool mute = caps->ac_controls.b[0];
 			audvdbg("mute: 0x%x\n", mute);
 			priv->mute = mute;
-			syu645b_setvolume(priv);
+			syu645b_setmute(priv, mute);
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 		case AUDIO_FU_EQUALIZER: {
-			uint8_t preset = caps->ac_controls.b[0];
+			uint32_t preset = caps->ac_controls.w;
 			syu645b_set_equalizer(priv, preset);
 		}
 		break;
@@ -511,20 +554,14 @@ static int syu645b_shutdown(FAR struct audio_lowerhalf_s *dev)
 
 	/* First disable interrupts */
 	syu645b_takesem(&priv->devsem);
-	sq_entry_t *tmp = NULL;
-	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
-		sq_rem(tmp, &priv->pendq);
-		audvdbg("(tasshutdown)removing tmp with addr 0x%x\n", tmp);
-	}
-	sq_init(&priv->pendq);
 
 	if (priv->running) {
+		/* pwm shutdown and then stop i2s */
+		syu645b_exec_i2c_script(priv, codec_shutdown_script, sizeof(codec_shutdown_script) / sizeof(t_codec_init_script_entry));
 		I2S_STOP(priv->i2s, I2S_TX);
-		syu645b_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 		priv->running = false;
 	}
 	priv->paused = false;
-
 	syu645b_givesem(&priv->devsem);
 
 	/* Now issue a software reset.  This puts all SYU645B registers back in
@@ -585,16 +622,15 @@ static int syu645b_start(FAR struct audio_lowerhalf_s *dev)
 
 	/* Finally set syu645b to be running */
 	priv->running = true;
+
+	/* Restore mute status */
+	syu645b_setmute(priv, priv->mute);
+
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	syu645b_setvolume(priv);
-#endif
-
-	sq_entry_t *tmp = NULL;
-	sq_queue_t *q = &priv->pendq;
-	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
-		syu645b_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
+	if (!priv->mute) {
+		syu645b_setvolume(priv);
 	}
-
+#endif
 	/* Exit reduced power modes of operation */
 	/* REVISIT */
 
@@ -624,12 +660,12 @@ static int syu645b_stop(FAR struct audio_lowerhalf_s *dev)
 	if (!priv) {
 		return -EINVAL;
 	}
-	audvdbg(" syu645b_stop Entry\n");
+	audvdbg("syu645b_stop Entry\n");
 	syu645b_takesem(&priv->devsem);
+	/* pwm shutdown and then stop i2s */
+	syu645b_pwm_shutdown(priv, true);
 	I2S_STOP(priv->i2s, I2S_TX);
 
-	/* Need to run the mute script here */
-	syu645b_setmute(priv, true);
 	priv->running = false;
 	syu645b_givesem(&priv->devsem);
 
@@ -665,9 +701,8 @@ static int syu645b_pause(FAR struct audio_lowerhalf_s *dev)
 		/* Disable interrupts to prevent us from suppling any more data */
 
 		priv->paused = true;
-#ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		syu645b_setmute(priv, true);
-#endif
+		/* pwm shutdown and then pause i2s */
+		syu645b_pwm_shutdown(priv, true);
 		I2S_PAUSE(priv->i2s, I2S_TX);
 	}
 
@@ -702,11 +737,11 @@ static int syu645b_resume(FAR struct audio_lowerhalf_s *dev)
 	if (priv->running && priv->paused) {
 		priv->paused = false;
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-		syu645b_setvolume(priv);
+		if (!priv->mute) {
+			syu645b_setvolume(priv);
+		}
 #endif
-
 		I2S_RESUME(priv->i2s, I2S_TX);
-
 	}
 
 	syu645b_givesem(&priv->devsem);
@@ -728,14 +763,6 @@ static void syu645b_txcallback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer_s
 	DEBUGASSERT(priv && apb);
 
 	syu645b_takesem(&priv->devsem);
-	sq_entry_t *tmp;
-	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
-		if (tmp == (sq_entry_t *)apb) {
-			sq_rem(tmp, &priv->pendq);
-			audvdbg("found the apb to remove 0x%x\n", tmp);
-			break;
-		}
-	}
 
 	/* Call upper callback, let it post msg to user q */
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
@@ -759,21 +786,13 @@ static int syu645b_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		return -EINVAL;
 	}
 
-	if (!priv->running) {
-		/* Add the new buffer to the tail of pending audio buffers */
-		syu645b_takesem(&priv->devsem);
-		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
-		syu645b_givesem(&priv->devsem);
-		return OK;
-	}
-
 	/* Converting buffer size from bytes to bits 
 	 * and then calculating the i2s transfer time 
 	 * and adding 10 ms as an offset for timeout */
 	timeout = (CONFIG_SYU645B_BUFFER_SIZE * CONFIG_SYU645B_NUM_BUFFERS * BYTE_TO_BIT_FACTOR * SEC_TO_MSEC_FACTOR) / (priv->samprate * priv->nchannels * priv->bpsamp) + I2S_TIMEOUT_OFFSET_MS;
 
 #ifdef CONFIG_PM
-	pm_timedsuspend(pm_domain_register("SYU645"), timeout);
+	pm_timedsuspend(pm_domain_register("AUDIO"), timeout);
 #endif
 	ret = I2S_SEND(priv->i2s, apb, syu645b_txcallback, priv, timeout);
 
@@ -824,6 +843,7 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* Resume I2S */
 		I2S_RESUME(priv->i2s, I2S_TX);
 
+		syu645b_pwm_shutdown(priv, false);
 		/* Give semaphore */
 		syu645b_givesem(&priv->devsem);
 	}
@@ -935,7 +955,6 @@ static int syu645b_release(FAR struct audio_lowerhalf_s *dev)
 	syu645b_takesem(&priv->devsem);
 	if (priv->running) {
 		I2S_STOP(priv->i2s, I2S_TX);
-		syu645b_exec_i2c_script(priv, codec_stop_script, sizeof(codec_stop_script) / sizeof(t_codec_init_script_entry));
 		priv->running = false;
 	}
 	priv->reserved = false;
@@ -1020,10 +1039,182 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 	syu645b_setmute(priv, true);
 }
 
-static void syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint8_t preset)
-{
-	/* Set default EQ Set */ 
-//	(void)syu645b_exec_i2c_script(priv, t_codec_dq_preset_1_script, sizeof(t_codec_dq_preset_1_script) / sizeof(t_codec_init_script_entry));
+static int parse_equalizer_metadata_json(void){
+	int ret = OK;
+
+	struct stat st;
+	ret = stat(PROD_EQUALIZE_ENCODE_JSON_PATH, &st);
+	if (ret != OK) {
+		return ret;
+	}
+		
+
+	// Todo: If the script file is large, you can use a lot of memory when you read it at once, so should set a static size so that only a certain part of it can be read and used.
+	char *buffer = (char *)malloc(st.st_size + 1);
+	if (!buffer) {
+		meddbg("Failed to alloc.\n");
+		return -ENOMEM;
+	}
+	int fd = open(PROD_EQUALIZE_ENCODE_JSON_PATH, O_RDONLY);
+	if (fd == -1) {
+		meddbg("Failed to open equalizer json.\n");
+		ret = -EBADF;
+		goto err_with_buffer;
+	}
+	ssize_t bytesRead = read(fd, buffer, st.st_size);
+	if (bytesRead == -1 || bytesRead != st.st_size) {
+		meddbg("Failed to read from equalizer json.\n");
+		ret = -EIO;
+		goto err_with_fd;
+	}
+	gJSON = cJSON_Parse(buffer);
+	if (!gJSON) {
+		meddbg("Failed to parse equalizer json file.\n");
+		ret = -EIO;
+		goto err_with_fd;
+	}
+
+err_with_fd:
+	close(fd);
+err_with_buffer:
+	free(buffer);
+	return ret;
+}
+
+static int dec_to_hex_string(uint32_t decimal, char *hexadecimal) {	
+	int pos = 9;
+	hexadecimal[0] = '0';
+	hexadecimal[1] = 'x';
+	hexadecimal[10] = '\0';
+	while (1) {
+		int mod = decimal % 16;
+		if (mod < 10) {
+			hexadecimal[pos] = 48 + mod;
+		} else {
+			hexadecimal[pos] = 65 + (mod - 10);
+		}
+		decimal = decimal / 16;
+		pos--;
+
+		if (decimal == 0) {
+			if (pos > 1) {
+				for (int i = 2; i <= pos; i++) {
+					hexadecimal[i] = '0';
+				}
+			}
+			break;
+		}
+	}
+	return OK;
+}
+
+static int string_to_script(char *string, t_codec_init_script_entry *script) {
+	int cnt = 0;
+
+	const char *ptr = string;
+	while (*ptr && cnt < SYU645B_REG_DATA_TYPE_MAX) {
+		if (*ptr == '0' && (*(ptr + 1) == 'x' || *(ptr + 1) == 'X')) {
+			char *end_ptr;
+			uint8_t val = strtol(ptr, &end_ptr, 16);
+
+			if (ptr != end_ptr) {
+				if (cnt == 0) {
+					script->addr = val;
+				} else {
+					script->val[cnt-1] = val;	
+				}
+				ptr = end_ptr;
+				cnt++;
+				continue;
+			}
+		}
+		ptr++;
+	}
+
+	script->delay = 0;
+	script->type = cnt;
+
+	return OK;
+}
+
+static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv, bool set_volume) {
+	int ret = syu645b_exec_i2c_script(priv, t_codec_dq_preset_default_script, sizeof(t_codec_dq_preset_default_script) / sizeof(t_codec_init_script_entry));
+	if (set_volume) {
+		priv->max_volume = 0x9F;
+	}
+	
+	/* And then setVolume Again */
+	if (!priv->mute) {
+		syu645b_setvolume(priv);
+	}
+}
+
+static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset) {
+	/* Reset First */
+	syu645b_reset_config(priv);
+
+	/* Initialize for i2c write */
+	uint8_t reg[SYU645B_REG_DATA_TYPE_MAX];
+	FAR struct i2c_dev_s *dev = priv->i2c;
+	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
+	
+	if (!preset) {
+		syu645b_set_basic_equalizer(priv, true);
+	}
+
+	int ret = OK;
+	char c_preset[EQUALIZER_PRESET_LEN];
+
+	/* Convert preset hex to string for key & Parse equlizer json to gJSON */
+	ret = dec_to_hex_string(preset, c_preset);
+	if (ret != OK) {
+		return -EINVAL;
+	}
+	ret = parse_equalizer_metadata_json();
+	if (ret != OK) {
+		return ret;
+	}
+
+	/* Executes given script through i2c to configure SYU645B device. */
+	cJSON *search = cJSON_GetObjectItemCaseSensitive(gJSON, c_preset);
+
+	/* Not find proper key, execute default script*/
+	if (!search){
+		cJSON_Delete(gJSON);
+		return -EINVAL;
+	}
+
+	/* Find proper key */
+	cJSON *key;
+	t_codec_init_script_entry script;
+	
+	cJSON_ArrayForEach(key, search) {
+		if (strcmp(key->string, "_comment") == 0) {
+			continue;
+		}
+
+		string_to_script(key->valuestring, &script);
+
+		if (script.addr == 0x08 && script.type == SYU645B_REG_D_2BYTE) {
+			priv->max_volume = script.val[0];
+		}
+
+		reg[0] = script.addr;
+		for (int i = 0; i < script.type - 1; i++) {
+			reg[i+1] = script.val[i];
+		}
+
+		ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
+		if (ret != script.type) {
+			break;
+		}
+	}
+	
+	/* And then setVolume Again */
+	if (!priv->mute) {
+		syu645b_setvolume(priv);
+	}
+	cJSON_Delete(gJSON);
 }
 
 /****************************************************************************
@@ -1061,16 +1252,12 @@ static void syu645b_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 			up_mdelay(100);
 		}
 #endif
-		/* To prevent consume 12v, just mute on */
-		syu645b_setmute(g_syu645b, true);
+		/* To prevent consume 12v, shutdown */
+		syu645b_pwm_shutdown(g_syu645b, true);
 	}
 	break;
 	case(PM_STANDBY): {
-#if 0
-		syu645b_reset_config(g_syu645b);
-#endif
-		/* Mute off when wake up */
-		syu645b_setmute(g_syu645b, false);
+		/* Do Nothing */
 	} 
 	break;
 	default: {
@@ -1141,7 +1328,6 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	priv->i2s = i2s;
 
 	sem_init(&priv->devsem, 0, 1);
-	sq_init(&priv->pendq);
 
 	/* Software reset.  This puts all SYU645B registers back in their
 	 * default state.
@@ -1151,7 +1337,11 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 	syu645b_reset_config(priv);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
-	priv->volume = SYU645B_SPK_VOL_DEF;
+	priv->max_volume = 0x9F;
+	priv->volume = 79;
+	syu645b_set_equalizer(priv, 0);
+	/* Shutdown pwm and then set mute */
+	syu645b_pwm_shutdown(priv, true);
 	syu645b_setmute(priv, true);
 #endif
 

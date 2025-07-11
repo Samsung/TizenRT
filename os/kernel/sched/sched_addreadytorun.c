@@ -124,14 +124,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	bool ret;
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
-#endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
+	sched_checkstackoverflow(rtcb);
 #endif
 	/* Check if pre-emption is disabled for the current running task and if
 	 * the new ready-to-run task would cause the current running task to be
@@ -182,14 +175,7 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	int cpu;
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
-#endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
+	sched_checkstackoverflow(rtcb);
 #endif
 	/* Check if the blocked TCB is locked to this CPU */
 

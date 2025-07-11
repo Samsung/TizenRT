@@ -66,7 +66,7 @@
 
 /* SYU645B_HW_VOL_DEF = SYU645B_HW_VOL_MIN_BOUND +  SYU645B_HW_VOL_SLOPE * SYU645B_SPK_VOL_DEF */
 #define SYU645B_HW_VOL_DEF	    214
-#define SYU645B_HW_VOL_MIN_BOUND    130       /* refers to the minimum hardware volume audible */
+#define SYU645B_HW_VOL_MIN_BOUND    0       /* refers to the minimum hardware volume audible */
 #define SYU645B_HW_VOL_SLOPE        (SYU645B_HW_VOL_MAX - SYU645B_HW_VOL_MIN_BOUND) / SYU645B_SPK_VOL_MAX
 
 /* Commonly defined and redefined macros */
@@ -100,8 +100,7 @@ struct syu645b_dev_s {
 	FAR struct syu645b_lower_s *lower;	/* Pointer to the board lower functions */
 	FAR struct i2c_dev_s *i2c;		/* I2C driver to use */
 	FAR struct i2s_dev_s *i2s;		/* I2S driver to use */
-	struct sq_queue_s pendq;		/* Queue of pending buffers to be sent */
-	sem_t devsem;				/* Protection for both pendq & dev */
+	sem_t devsem;				/* Protection for both dev */
 
 #ifdef SYU645B_USE_FFLOCK_INT
 	struct work_s work;			/* Interrupt work */
@@ -112,6 +111,7 @@ struct syu645b_dev_s {
 	uint16_t balance;			/* Current balance level (b16) */
 #endif							/* CONFIG_AUDIO_EXCLUDE_BALANCE */
 	uint8_t volume;				/* Current volume level {0..63} */
+	uint8_t max_volume;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */

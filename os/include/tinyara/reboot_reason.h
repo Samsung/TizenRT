@@ -28,8 +28,8 @@ typedef enum {
 	 * System : 50 ~ 79
 	 * Network : 80 ~ 109,
 	 * Common Service : 110 ~ 139,
-	 * App : 140 ~ 249
-	 * Board Specific : 250 ~ 254
+	 * App : 140 ~ 246
+	 * Board Specific : 247 ~ 254
 	 */
 	REBOOT_REASON_INITIALIZED          = 50,
 	REBOOT_SYSTEM_DATAABORT            = 51, /* Data abort */
@@ -40,11 +40,17 @@ typedef enum {
 	REBOOT_SYSTEM_USER_INTENDED        = 56, /* Reboot from user intention */
 	REBOOT_SYSTEM_BINARY_UPDATE        = 57, /* Reboot for Binary Update */
 	REBOOT_SYSTEM_BINARY_RECOVERYFAIL  = 58, /* Binary Recovery Fail */
+	REBOOT_SYSTEM_PERIODIC_REBOOT      = 59, /* Periodic reboot */
+	REBOOT_SYSTEM_ASSERT               = 60, /* Reboot from ASSERT or PANIC */
 
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */
 
-	REBOOT_BOARD_SPECIFIC1             = 250, /* Board Specific Reboot Reason */
+	REBOOT_BOARD_SPECIFIC6             = 246, /* Board Specific Reboot Reason */
+	REBOOT_BOARD_SPECIFIC7             = 247,
+	REBOOT_BOARD_SPECIFIC8             = 248,
+	REBOOT_BOARD_SPECIFIC9             = 249,
+	REBOOT_BOARD_SPECIFIC1             = 250, 
 	REBOOT_BOARD_SPECIFIC2             = 251,
 	REBOOT_BOARD_SPECIFIC3             = 252,
 	REBOOT_BOARD_SPECIFIC4             = 253,

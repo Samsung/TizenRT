@@ -1028,6 +1028,7 @@ static uint16_t bt_stack_gatts_register_service(void  *p_gatts_srv)
 	uint16_t ret = 0;
 	uint32_t i = 0;
 
+	p_gatts_app_srv->alloc_ind = 0;
 #if UPPER_STACK_VERSION == VERSION_2019
 	if (GATT_SERVICE_OVER_BLE != p_gatts_app_srv->type)
 		return RTK_BT_ERR_PARAM_INVALID;

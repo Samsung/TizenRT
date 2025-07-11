@@ -40,6 +40,18 @@
 #endif
 
 #ifdef CONFIG_PM
+
+struct pm_sleep_ops rtl8730e_sleep_ops = {
+	.sleep = up_pm_board_sleep,
+	.set_timer = up_set_pm_timer,
+};
+
+#ifdef CONFIG_PM_DVFS
+struct pm_clock_ops rtl8730e_clock_ops = {
+	.adjust_dvfs = up_set_dvfs,
+};
+#endif
+
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -59,7 +71,6 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	/* mask sys tick interrupt*/
 	arm_arch_timer_int_mask(1);
 	up_timer_disable();
-	(void)irqsave();
 	/* Interrupt source will wake cpu up, just leave expected idle time as 0
 	Enter sleep mode for AP */
 	config_SLEEP_PROCESSING(wakeuphandler);
@@ -69,8 +80,6 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 	/* Arch timer is running at 50Mhz */
 	arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
 	arm_arch_timer_int_mask(0);
-	/* Re-enable interrupts and sys tick*/
-	up_irq_enable();
 }
 #else
 #define up_pm_board_sleep(wakeuphandler)
@@ -98,8 +107,11 @@ void up_idle(void)
 
 	nxsched_process_timer();
 #else
+
+#ifdef CONFIG_PM
 	/* set core to WFE */
 	__asm("WFE");
+#endif
 
 #endif
 }
@@ -108,6 +120,10 @@ void up_idle(void)
 void arm_pminitialize(void)
 {
 	/* Then initialize the TinyAra power management subsystem properly */
-	pm_initialize();
+	pm_initialize(&rtl8730e_sleep_ops);
+
+#ifdef CONFIG_PM_DVFS
+	pm_clock_initialize(&rtl8730e_clock_ops);
+#endif
 }
 #endif

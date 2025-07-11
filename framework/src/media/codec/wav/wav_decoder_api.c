@@ -24,9 +24,9 @@
 #include <debug.h>
 #include "../../utils/internal_defs.h"
 #include "../../utils/rbs.h"
-#include "../../audio/resample/samplerate.h"
 #include "../audio_decoder.h"
 #include "wav_decoder_api.h"
+#include "../../utils/remix.h"
 
 
 /****************************************************************************
@@ -249,7 +249,7 @@ bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer,
 	return true;
 }
 
-int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem, src_handle_t *resampler)
+int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem)
 {
 	wave_format_extensible_p wav_ext = (wave_format_extensible_p)dec_mem;
 	wave_format_ex_p wav_fmt_ex = &wav_ext->tFormat;
@@ -260,33 +260,15 @@ int wav_decode_frame(wav_dec_external_p dec_ext, void *dec_mem, src_handle_t *re
 	// if user specified a different channel number
 	if (wav_fmt_ex->nChannels != dec_ext->desiredChannels) {
 		// then process rechanneling
-		if (*resampler == NULL) {
-			*resampler = src_init(CONFIG_AUDIO_RESAMPLER_BUFSIZE);
-			if (*resampler == NULL) {
-				meddbg("resampler init failed!\n");
-				return AUDIO_DECODER_ERROR;
-			}
-		}
-
-		src_data_t srcData = { 0, };
-		srcData.origin_channel_num = wav_fmt_ex->nChannels;
-		srcData.desired_channel_num = dec_ext->desiredChannels;
-		srcData.origin_sample_rate = wav_fmt_ex->nSamplesPerSec;
-		srcData.desired_sample_rate = wav_fmt_ex->nSamplesPerSec;
-		srcData.origin_sample_width = SAMPLE_WIDTH_16BITS;
-		srcData.desired_sample_width = SAMPLE_WIDTH_16BITS;
-		srcData.data_in = dec_ext->pInputBuffer;
-		srcData.input_frames = nFrames;
-		srcData.data_out = dec_ext->pOutputBuffer;
-		srcData.out_buf_length = dec_ext->outputBufferMaxLength;
-
-		int ret = src_simple(*resampler, &srcData);
-		if (ret != SRC_ERR_NO_ERROR) {
-			meddbg("Fail to rechannel %d -> %d, err %d\n", wav_fmt_ex->nChannels, dec_ext->desiredChannels, ret);
+		int out_buffer_frames = dec_ext->outputBufferMaxLength / (BYTES_PER_SAMPLE * dec_ext->desiredChannels);
+		unsigned int rechanneled_frames = rechannel(ch2layout(wav_fmt_ex->nChannels), ch2layout(dec_ext->desiredChannels),
+								(const int16_t *)dec_ext->pInputBuffer, nFrames,
+								(int16_t *)dec_ext->pOutputBuffer, out_buffer_frames);
+		if (rechanneled_frames == -1) {
+			meddbg("Fail to rechannel %d -> %d\n", wav_fmt_ex->nChannels, dec_ext->desiredChannels);
 			return AUDIO_DECODER_ERROR;
 		}
-
-		if (srcData.output_frames_gen != srcData.input_frames) {
+		if (rechanneled_frames != nFrames) {
 			meddbg("need to reconfig: inputBufferMaxLength <= outputBufferMaxLength\n");
 			return AUDIO_DECODER_ERROR;
 		}

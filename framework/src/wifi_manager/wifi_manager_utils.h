@@ -82,7 +82,8 @@ int net_task_create(FAR const char *name, int priority, int stack_size,
 			}                         \
 			assert(0);                \
 		}                             \
-	} while (0)
+		break;                        \
+	} while (1)
 
 /*  Network Interface Card name definition */
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME

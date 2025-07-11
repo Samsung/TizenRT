@@ -152,7 +152,7 @@ void rtw_mutex_get(_mutex *pmutex)
 {
 	int temp;
 	temp = sem_wait(*pmutex);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 }

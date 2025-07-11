@@ -4,6 +4,12 @@
 #
 
 menu "Shell"
+config TASH_TASK_PRIORITY
+	int "TASH task priority"
+	default 125
+	---help---
+		The number of TASH task priority.
+
 config TASH
 	bool "Enable shell"
 	default y

@@ -209,6 +209,44 @@ START_TEST_F(aes_ctr)
 }
 END_TEST_F
 
+START_TEST_F(gcm_aes)
+{
+	hal_data aes_key = HAL_DATA_INITIALIZER;
+	hal_data enc = HAL_DATA_INITIALIZER;
+	hal_data dec = HAL_DATA_INITIALIZER;
+	HAL_INIT_GCM_PARAM(param);
+	unsigned char aad[16] = {0,};
+	unsigned char tag[16] = {0,};
+	aes_key.data = g_key_128;
+	aes_key.data_len = 16;
+	param.cipher = HAL_GCM_AES;
+	param.iv = (unsigned char *)g_iv;
+	param.iv_len = 16;
+	param.aad = aad;
+	param.aad_len = 16;
+	param.tag = tag;
+	param.tag_len = 16;
+
+	enc.data = g_plaintext;
+	enc.data_len = 64;
+	dec.data = g_ciphertext;
+	dec.data_len = 64;
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_set_key(g_hnd, HAL_KEY_AES_128, ST_AES_ENC_KEY_IDX, &aes_key, NULL));
+	ST_EXPECT_EQ(SECLINK_OK, sl_gcm_encrypt(g_hnd, &dec, &param, ST_AES_ENC_KEY_IDX, &enc));
+	sl_test_print_buffer(enc.data, enc.data_len, "GCM-AES plaintext");
+	sl_test_print_buffer(dec.data, dec.data_len, "GCM-AES ciphertext");
+	sl_test_print_buffer((char *)g_iv, 16, "IV");
+	sl_test_print_buffer((char *)aad, 16, "AAD");
+	sl_test_print_buffer((char *)param.tag, 16, "TAG");
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_gcm_decrypt(g_hnd, &dec, &param, ST_AES_ENC_KEY_IDX, &enc));
+	sl_test_print_buffer(enc.data, enc.data_len, "GCM-AES plaintext (decrypted text)");
+
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_AES_128, ST_AES_ENC_KEY_IDX));
+}
+END_TEST_F
+
 void sl_handle_crypto_aes_ecb(sl_options *opt)
 {
 	ST_SET_SMOKE1(sl_crypto, opt->count, 0, "aes test", aes_ecb);
@@ -227,6 +265,11 @@ void sl_handle_crypto_aes_cfb128(sl_options *opt)
 void sl_handle_crypto_aes_ctr(sl_options *opt)
 {
 	ST_SET_SMOKE1(sl_crypto, opt->count, 0, "aes test", aes_ctr);
+}
+
+void sl_handle_crypto_gcm_aes(sl_options *opt)
+{
+	ST_SET_SMOKE1(sl_crypto, opt->count, 0, "gcm test", gcm_aes);
 }
 
 void sl_handle_crypto(sl_options *opt)

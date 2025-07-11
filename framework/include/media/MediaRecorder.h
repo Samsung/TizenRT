@@ -45,7 +45,8 @@ class MediaRecorderImpl;
  */
 enum recorder_error_e : int {
 	/** MediaRecorder Error case */
-	RECORDER_ERROR_NOT_ALIVE = -8,
+	RECORDER_ERROR_DEVICE_SUSPENDED = -10,
+	RECORDER_ERROR_NOT_ALIVE,
 	RECORDER_ERROR_INVALID_STATE,
 	RECORDER_ERROR_INVALID_OPERATION,
 	RECORDER_ERROR_INVALID_PARAM,
@@ -53,6 +54,7 @@ enum recorder_error_e : int {
 	RECORDER_ERROR_FILE_OPEN_FAILED,
 	RECORDER_ERROR_OUT_OF_MEMORY,
 	RECORDER_ERROR_DEVICE_NOT_SUPPORTED,
+	RECORDER_ERROR_DEVICE_DEAD,
 	/** MediaRecorder Success case */
 	RECORDER_ERROR_NONE = 0
 };
@@ -119,13 +121,22 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t unprepare();
+
+	/**
+	 * @brief Reset allocated resources related to the recorder, after the API, recorder is in state RECORDER_STATE_IDLE.
+	 * @details @b #include <media/MediaRecorder.h>
+	 * This function is a synchronous API
+	 * @return The result of the reset operation
+	 * @since TizenLite v5.0
+	 */
+	recorder_result_t reset();
 	
 	/**
 	 * @brief Start recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker begin recording through the queue
-	 * @return The result of the unpreapre operation
+	 * @return The result of the start operation
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t start();
@@ -133,7 +144,7 @@ public:
 	/**
 	 * @brief Pause recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker pause recording through the queue
 	 * @return The result of the pause operation
 	 * @since TizenRT v2.0
@@ -143,7 +154,7 @@ public:
 	/**
 	 * @brief Stop recording.
 	 * @details @b #include <media/MediaRecorder.h>
-	 * This function is a asynchronous API
+	 * This function is a synchronous API
 	 * Order to MediaRecordWorker stop recording through the queue
 	 * @return The result of the stop operation
 	 * @since TizenRT v2.0

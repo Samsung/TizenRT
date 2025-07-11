@@ -39,8 +39,15 @@
 #endif
 #endif
 
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__) && defined(CONFIG_DEBUG_MM_HEAPINFO)
+#include "binary_manager/binary_manager_internal.h"
+#include "sched/sched.h"
+#include <tinyara/binfmt/binfmt.h>
+#endif
+
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -58,15 +65,15 @@
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller)
+void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller)
 #else
-void mm_ioctl_alloc_fail(size_t size)
+void mm_ioctl_alloc_fail(size_t size, size_t align)
 #endif
 {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	struct mm_alloc_fail_s arg = {size, caller};
+	struct mm_alloc_fail_s arg = {size, align, caller};
 #else
-	struct mm_alloc_fail_s arg = {size};
+	struct mm_alloc_fail_s arg = {size, align};
 #endif
 	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
 	if (mmfd < 0) {
@@ -80,23 +87,53 @@ void mm_ioctl_alloc_fail(size_t size)
 	}
 }
 
+void mm_ioctl_garbagecollection(void)
+{
+	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
+	if (mmfd < 0) {
+		mdbg("Fail to open %s, errno %d\n", MMINFO_DRVPATH, get_errno());
+	} else {
+		int res = ioctl(mmfd, MMINFOIOC_GC, NULL);
+		if (res == ERROR) {
+			mdbg("Fail to call sched_garbagecollection, errno %d\n", get_errno());
+		}
+		close(mmfd);
+	}
+}
+
 #else
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type, mmaddress_t caller)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
 #else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type)
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
 #endif
 {
 	irqstate_t flags = enter_critical_section();
 
+#ifdef CONFIG_SMP
+	/* If SMP is enabled then we need to pause all the other cpu's immediately.
+	 * If we don't pause the other CPUs, it might mix up the logs with other
+	 * core's printing log.
+	 */
+	up_cpu_pause_all();
+#endif
 	extern bool abort_mode;
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	abort_mode = true;
 #endif
 
+#ifdef CONFIG_MM_ASSERT_ON_FAIL
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#endif
+#endif /* CONFIG_MM_ASSERT_ON_FAIL */
+
 	mfdbg("Allocation failed from %s heap.\n", (heap_type == KERNEL_HEAP) ? KERNEL_STR : USER_STR);
 	mfdbg(" - requested size %u\n", size);
+	if (align) {
+		mfdbg(" - requested alignment %u\n", align);
+	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mfdbg(" - caller address = 0x%08x\n", caller);
 #endif
@@ -106,21 +143,68 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 	for (int idx = startidx; idx <= endidx; idx++) {
 		mm_mallinfo(&heap[idx], &info);
 	}
-	mfdbg(" - largest free size : %d\n", info.mxordblk);
+
+	if (align) {
+		mfdbg(" - largest un-aligned free size : %d\n", info.mxordblk);
+		memset(&info, 0, sizeof(struct mallinfo));
+		for (int idx = startidx; idx <= endidx; idx++) {
+			mm_mallinfo_aligned(&heap[idx], &info, align);
+		}
+		mfdbg(" - largest algined free size : %d\n", info.mxordblk);
+	} else {
+		mfdbg(" - largest free size : %d\n", info.mxordblk);
+	}
 	mfdbg(" - total free size   : %d\n", info.fordblks);
 
-#ifdef CONFIG_MM_ASSERT_ON_FAIL
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int cur_app_idx = 0;
+	if (heap_type != KERNEL_HEAP) {
+		cur_app_idx = this_task()->app_id;
+		mfdbg("*************************************************************************************\n");
+		mfdbg("             Summary of current app (app%d) heap memory usage                        \n", cur_app_idx);
+		mfdbg("*************************************************************************************\n\n");
+	} else {
+		mfdbg("*************************************************************************************\n");
+		mfdbg("                          Summary of Kernel heap memory usage                        \n");
+		mfdbg("*************************************************************************************\n\n");
+	}
 #endif
 
-#endif /* CONFIG_MM_ASSERT_ON_FAIL */
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	for (int idx = startidx; idx <= endidx; idx++) {
 		heapinfo_parse_heap(&heap[idx], HEAPINFO_DETAIL_ALL, HEAPINFO_PID_ALL);
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	for (int index = 1; index <= CONFIG_NUM_APPS; index++) {
+		if (index != cur_app_idx) {
+			mfdbg("*************************************************************************************\n");
+			mfdbg("                      Summary of app%d heap memory usage                             \n", index);
+			mfdbg("*************************************************************************************\n\n");
+			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+				heapinfo_parse_heap(&app_heap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+			}
+		}
+	}
+	if (heap_type != KERNEL_HEAP) {
+		struct mm_heap_s *kheap = kmm_get_baseheap();
+		mfdbg("*************************************************************************************\n");
+		mfdbg("                          Summary of Kernel heap memory usage                        \n");
+		mfdbg("*************************************************************************************\n\n");
+		for (int idx = HEAP_START_IDX; idx <= HEAP_END_IDX; idx++) {
+			heapinfo_parse_heap(&kheap[idx], HEAPINFO_SIMPLE, HEAPINFO_PID_ALL);
+		}
+	}
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 #endif /* CONFIG_DEBUG_MM_HEAPINFO */
+
+#ifdef CONFIG_SMP
+	/* If SMP is enabled then we need to resume all the other cpu's
+	 * which we paused earlier.
+	 */
+	up_cpu_resume_all();
+#endif
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	PANIC();

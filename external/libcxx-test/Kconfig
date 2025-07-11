@@ -7,7 +7,7 @@ config LIBCXX_UTC
 	bool "Unit Test for LLVM Libc++"
 	default n
 	depends on LIBCXX
-	depends on HAVE_CXXINITIALIZE
+	depends on HAVE_CXXINITIALIZE || BINFMT_CONSTRUCTORS
 	---help---
 		Enables unit test for LLVM Libc++.
 

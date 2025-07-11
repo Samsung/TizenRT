@@ -148,7 +148,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
 	int ndx;
-
+	bool gc_done = false;
 
 	/* Free the delay list first */
 	mm_free_delaylist(heap);
@@ -168,6 +168,7 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 
 	size = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
 
+retry_after_gc:
 	/* We need to hold the MM semaphore while we muck with the nodelist. */
 
 	mm_takesemaphore(heap);
@@ -175,7 +176,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	/* Get the location in the node list to start the search
 	 * by converting the request size into a nodelist index.
 	 */
-
 	ndx = mm_size2ndx(size);
 
 	/* Search for a large enough chunk in the list of nodes.
@@ -259,6 +259,13 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 	}
 
 	mm_givesemaphore(heap);
+
+	if (!ret && gc_done == false) {
+		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+		sched_garbagecollection();
+		gc_done = true;
+		goto retry_after_gc;
+	}
 
 	/* If CONFIG_DEBUG_MM is defined, then output the result of the allocation
 	 * to the SYSLOG.

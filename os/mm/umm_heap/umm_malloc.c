@@ -123,7 +123,7 @@ void *malloc_at(int heap_index, size_t size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, USER_HEAP
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif
@@ -169,7 +169,7 @@ static void *heap_malloc(size_t size, int s, int e)
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, s, e, size, USER_HEAP
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			, caller_retaddr
 #endif
@@ -242,7 +242,7 @@ FAR void *malloc(size_t size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, USER_HEAP
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif

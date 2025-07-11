@@ -128,6 +128,12 @@ static void _event_caller(int evt_pri, void *data) {
 			ble_client_device_disconnected_cb callback = msg->param[0];
 			callback(msg->param[1]);
 		} break;
+		case BLE_EVT_CLIENT_DISPLAY_PASSKEY: {
+			ble_client_passkey_display_cb callback = msg->param[0];
+			trble_conn_handle conn = *(trble_conn_handle *)(msg->param[2]);
+			uint32_t passkey = *(uint32_t *)(msg->param[2] + sizeof(trble_conn_handle));
+			callback(msg->param[1], passkey, conn);
+		} break;
 		case BLE_EVT_CLIENT_NOTI: {
 			ble_client_operation_notification_cb callback = msg->param[0];
 			ble_attr_handle attr_handle = *(ble_attr_handle *)(msg->param[2] + sizeof(ble_conn_handle));
@@ -256,6 +262,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_get_mac_addr(mac);
 	} break;
 	
+	case BLE_CMD_PASSKEY_CONFIRM: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t *conn_handle = (uint8_t *)param->param[0];
+		uint8_t *confirm = (uint8_t *)param->param[1];
+		ret = ble_drv_passkey_confirm(conn_handle, confirm);
+	} break;
+	
+	case BLE_CMD_SEC_PARAM_SET: {
+		BLE_STATE_CHECK;
+		trble_sec_param *sec_param = (trble_sec_param *)msg->param;
+		ret = ble_drv_set_sec_param(sec_param);
+	} break;
+
+	case BLE_CMD_STA_BOND: {
+		BLE_STATE_CHECK;
+		trble_conn_handle *con_handle = (trble_conn_handle *)msg->param;
+		ret = ble_drv_start_bond(con_handle);
+	} break;
+
 	case BLE_CMD_GET_BONDED_DEV: {
 		BLE_STATE_CHECK;
 
@@ -854,7 +880,34 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_operation_write_no_response(handle, data);
 	} break;
 
+	case BLE_CMD_GET_WRITE_READ_PENDING_CNT: {
+		BLE_STATE_CHECK;
+
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		ble_client_ctx *ctx = (ble_client_ctx *)param->param[0];
+		uint8_t *count = (uint8_t *)param->param[1];
+
+		if (ctx == NULL) {
+			ret = TRBLE_INVALID_ARGS;
+			break;
+		}
+
+		if (ctx->state != BLE_CLIENT_CONNECTED) {
+			ret = TRBLE_INVALID_STATE;
+			break;
+		}
+		trble_conn_handle handle = ctx->conn_handle;
+		ret = ble_drv_get_write_read_pending_cnt(&handle, count);
+	} break;
+
 	// Server
+	case BLE_CMD_SET_SERVER_CONFIG: {
+		BLE_STATE_CHECK;
+		
+		trble_server_init_config *server = (trble_server_init_config *)msg->param;
+		ret = ble_drv_set_server_config(server);
+	} break;
+
 	case BLE_CMD_GET_PROFILE_COUNT: {
 		BLE_STATE_CHECK;
 
@@ -1016,14 +1069,22 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ret = ble_drv_one_shot_adv_deinit();
 	} break;
 
-	case BLE_CMD_ONE_SHOT_ADV: {
+	case BLE_CMD_ONE_SHOT_ADV_SET: {
 		BLE_STATE_CHECK;
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
-		trble_data *data_adv = (trble_data *)param->param[0];
-		trble_data *data_scan_rsp = (trble_data *)param->param[1];
-		uint8_t *type = (uint8_t *)param->param[2];
+		uint8_t *adv_id = (uint8_t *)param->param[0];
+		trble_data *data_adv = (trble_data *)param->param[1];
+		trble_data *data_scan_rsp = (trble_data *)param->param[2];
+		uint8_t *type = (uint8_t *)param->param[3];
 
-		ret = ble_drv_one_shot_adv(data_adv, data_scan_rsp, type);
+		ret = ble_drv_one_shot_adv_set(adv_id, data_adv, data_scan_rsp, type);
+	} break;
+
+	case BLE_CMD_ONE_SHOT_ADV: {
+		BLE_STATE_CHECK;
+		uint8_t adv_id = *(uint8_t *)msg->param;
+
+		ret = ble_drv_one_shot_adv(adv_id);
 	} break;
 
 	case BLE_CMD_STOP_ADV: {
@@ -1046,8 +1107,10 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		uint8_t own_addr_type = *(uint8_t *)param->param[2];
 		uint8_t *adv_handle = (uint8_t *)param->param[4];
 		uint32_t *primary_adv_interval = (uint32_t *)param->param[1];
+
 		ret = ble_drv_create_multi_adv(adv_event_prop, primary_adv_interval,
-										own_addr_type, own_addr_val, adv_handle);
+										own_addr_type, own_addr_val,
+										adv_handle);
 	} break;
 
 	case BLE_CMD_DELETE_MULTI_ADV: {
@@ -1098,7 +1161,9 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			if (memcmp(g_client_table[i].info.addr.mac, data->conn_info.addr.mac, BLE_BD_ADDR_MAX_LEN) == 0) {
-				if (g_client_table[i].state == BLE_CLIENT_CONNECTING || g_client_table[i].state == BLE_CLIENT_AUTOCONNECTING) {
+				if (g_client_table[i].state == BLE_CLIENT_CONNECTING ||
+					g_client_table[i].state == BLE_CLIENT_AUTOCONNECTING ||
+					(g_client_table[i].state == BLE_CLIENT_CONNECTED && data->is_bonded)) {
 					priv_state = g_client_table[i].state;
 					g_client_table[i].state = BLE_CLIENT_CONNECTED;
 					g_client_table[i].conn_handle = data->conn_handle;
@@ -1145,16 +1210,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		ble_client_ctx_internal *ctx = NULL;
 		ble_client_state_e priv_state = BLE_CLIENT_NONE;
 
+		ble_client_ctx_internal *ctx_connecting = NULL;
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			if (g_client_table[i].state != BLE_CLIENT_NONE && g_client_table[i].conn_handle == data) {
 				ctx = &g_client_table[i];
 				break;
 			}
+
+			if (g_client_table[i].state == BLE_CLIENT_CONNECTING) {
+				ctx_connecting = &g_client_table[i];
+			}
 		}
 		free(msg->param);
 
 		if (ctx == NULL) {
-			break;
+			if (ctx_connecting == NULL) {
+				BLE_LOG_ERROR("[BLEMGR] fail to find disconnected client. (conn_handle : %u)\n", data);
+				break;
+			}
+			BLE_LOG_INFO("[BLEMGR] client disconnected due to connection failure. (conn_handle : %u)\n", data);
+			ctx = ctx_connecting;
 		}
 
 		priv_state = ctx->state;
@@ -1180,6 +1255,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		if (priv_state != BLE_CLIENT_AUTOCONNECTING && ctx->callbacks.disconnected_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.disconnected_cb, ctx, NULL}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
+		}
+	} break;
+
+	case BLE_EVT_CLIENT_DISPLAY_PASSKEY: {
+		if (msg->param == NULL) {
+			break;
+		}
+		int i;
+		ble_client_ctx_internal *ctx = NULL;
+		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
+
+		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+			if (g_client_table[i].conn_handle == conn_handle) {
+				ctx = &g_client_table[i];
+				break;
+			}
+		}
+		if (ctx && ctx->callbacks.passkey_display_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.passkey_display_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;

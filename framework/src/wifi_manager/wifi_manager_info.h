@@ -30,10 +30,35 @@ struct wifimgr_info_msg {
 	char *softap_ssid;
 	int rssi;
 	wifimgr_state_e state;
+	char bssid[WIFIMGR_MACADDR_LEN]; /**< bssid is a mac address of AP */
 };
 typedef struct wifimgr_info_msg wifimgr_info_msg_s;
 
+struct wifimgr_signal_quality {
+	unsigned int channel;
+	signed char snr;
+	int network_bw;
+	unsigned int max_rate;
+};
+typedef struct wifimgr_signal_quality wifimgr_signal_quality_s;
+
+struct wifimgr_wpa_states {
+	int wpa_supplicant_state;
+	int wpa_supplicant_key_mgmt;
+};
+typedef struct wifimgr_wpa_states wifimgr_wpa_states_s;
+
+struct wifimgr_driver_info {
+	char lib_version[64];
+};
+typedef struct wifimgr_driver_info wifimgr_driver_info_s;
+
 int wifimgr_get_info(int flag, wifimgr_info_msg_s *info);
 int wifimgr_set_info(int flag, wifimgr_info_msg_s *info);
+int wifimgr_set_channel_plan(uint8_t channel_plan);
+int wifimgr_get_signal_quality(wifimgr_signal_quality_s *signal_quality);
+int wifimgr_get_disconnect_reason(int *disconnect_reason);
+int wifimgr_get_driver_info(wifimgr_driver_info_s *driver_info);
+int wifimgr_get_wpa_supplicant_state(wifimgr_wpa_states_s *wpa_state);
 
 #endif // _WIFI_MANAGER_INFO_H__

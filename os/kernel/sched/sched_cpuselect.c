@@ -63,46 +63,40 @@
 
 int sched_select_cpu(cpu_set_t affinity)
 {
-  uint8_t minprio;
-  int cpu;
-  int i;
+	uint16_t minprio;
+	int cpu;
+	int i;
 
-  minprio = SCHED_PRIORITY_MAX;
-  cpu     = IMPOSSIBLE_CPU;
+	minprio = SCHED_PRIORITY_MAX + 1;
+	cpu = IMPOSSIBLE_CPU;
 
-  for (i = 0; i < CONFIG_SMP_NCPUS; i++)
-    {
-      /* Is the thread permitted to run on this CPU? */
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		/* Is the thread permitted to run on this CPU? */
 
-      if ((affinity & (1 << i)) != 0)
-        {
-          FAR struct tcb_s *rtcb = (FAR struct tcb_s *)
-                                   g_assignedtasks[i].head;
+		if ((affinity & (1 << i)) != 0) {
+			FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_assignedtasks[i].head;
 
-          /* If this CPU is executing its IDLE task, then use it.  The
-           * IDLE task is always the last task in the assigned task list.
-           */
+			/* If this CPU is executing its IDLE task, then use it.  The
+			 * IDLE task is always the last task in the assigned task list.
+			 */
 
-          if (rtcb->flink == NULL)
-            {
-              /* The IDLE task should always be assigned to this CPU and have
-               * a priority of zero.
-               */
+			if (rtcb->flink == NULL) {
+				/* The IDLE task should always be assigned to this CPU and have
+				 * a priority of zero.
+				 */
 
-              DEBUGASSERT(rtcb->sched_priority == 0);
-              return i;
-            }
-          else if (rtcb->sched_priority < minprio)
-            {
-              DEBUGASSERT(rtcb->sched_priority > 0);
-              minprio = rtcb->sched_priority;
-              cpu = i;
-            }
-        }
-    }
+				DEBUGASSERT(rtcb->sched_priority == 0);
+				return i;
+			} else if (rtcb->sched_priority < minprio) {
+				DEBUGASSERT(rtcb->sched_priority > 0);
+				minprio = rtcb->sched_priority;
+				cpu = i;
+			}
+		}
+	}
 
-  DEBUGASSERT(cpu != IMPOSSIBLE_CPU);
-  return cpu;
+	DEBUGASSERT(cpu != IMPOSSIBLE_CPU);
+	return cpu;
 }
 
 #endif /* CONFIG_SMP */

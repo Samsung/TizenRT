@@ -938,6 +938,38 @@ exit:
 	WT_TEST_FUNC_SIGNAL;
 }
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+int _wt_parse_bridge(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc < 4) {
+		return -1;
+	}
+	/* wpa2 aes is a default security mode. */
+	opt->enable_bridge = atoi(argv[2]);
+	opt->ssid = argv[3];
+
+	return 0;
+}
+
+void _wt_enable_bridge(void *arg)
+{
+	WT_ENTER;
+	wifi_manager_result_e res = WIFI_MANAGER_SUCCESS;
+	struct wt_options *opt = (struct wt_options *)arg;
+
+	wifi_manager_softap_config_s ap_config;
+	snprintf(ap_config.ssid, sizeof(ap_config.ssid), "%s", opt->ssid);
+	snprintf(ap_config.passphrase, sizeof(ap_config.passphrase), "1111122222");
+	ap_config.channel = 1;
+
+	res = wifi_manager_control_bridge(opt->enable_bridge, &ap_config);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "wifi_manager_control_bridge fail");
+	}
+	WT_LEAVE;
+}
+#endif
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else

@@ -87,6 +87,7 @@ CSRCS += lib_lround.c lib_lroundf.c lib_lroundl.c
 CSRCS += lib_llround.c lib_llroundf.c lib_llroundl.c
 CSRCS += lib_nan.c lib_nanf.c lib_nanl.c
 CSRCS += __cos.c __sin.c lib_gamma.c lib_lgamma.c
+CSRCS += lib_nearbyint.c lib_nearbyintf.c lib_nearbyintl.c
 
 CSRCS += lib_libexpi.c lib_libsqrtapprox.c
 

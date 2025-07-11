@@ -267,7 +267,10 @@ extern volatile uint8_t g_alive_taskcount;
 
 extern volatile sq_queue_t g_delayed_kufree;
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP)
 extern volatile sq_queue_t g_delayed_kfree;
+#endif
 
 /* This is the value of the last process ID assigned to a task */
 
@@ -357,6 +360,10 @@ bool sched_mergepending(void);
 void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state);
 void sched_removeblocked(FAR struct tcb_s *btcb);
 int sched_setpriority(FAR struct tcb_s *tcb, int sched_priority);
+
+#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
+void sched_checkstackoverflow(FAR struct tcb_s *rtcb);
+#endif
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 int sched_reprioritize(FAR struct tcb_s *tcb, int sched_priority);

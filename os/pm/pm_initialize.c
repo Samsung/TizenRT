@@ -76,20 +76,20 @@
  */
 
 struct pm_global_s g_pmglobals;
+const char *pm_state_name[PM_COUNT] = {"NORMAL", "IDLE", "STANDBY", "SLEEP"};
+const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_initialize
+ * Name: pm_start
  *
  * Description:
- *   This function is called by MCU-specific one-time at power on reset in
- *   order to initialize the power management capabilities.  This function
- *   must be called *very* early in the initializeation sequence *before* any
- *   other device drivers are initialize (since they may attempt to register
- *   with the power management subsystem).
+ *   This function is called by the application thread to start the Power
+ *   Management system. This fucntion sets the is_running flag which
+ *   enables pm to transition between low and high power states.
  *
  * Input parameters:
  *   None.
@@ -99,12 +99,63 @@ struct pm_global_s g_pmglobals;
  *
  ****************************************************************************/
 
-void pm_initialize(void)
+void pm_start(void) {
+	g_pmglobals.is_running = true;
+}
+
+/****************************************************************************
+ * Name: pm_initialize
+ *
+ * Description:
+ *   This function is called by MCU-specific one-time at power on reset in
+ *   order to initialize the power management capabilities.  This function
+ *   must be called *very* early in the initializeation sequence *before* any
+ *   other device drivers are initialize (since they may attempt to register
+ *   with the power management subsystem). It also fills the PM ops with the
+ *   required BSP APIs.
+ *
+ * Input parameters:
+ *   sleep_ops: pm power gating operations to use.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+void pm_initialize(struct pm_sleep_ops *sleep_ops)
 {
 	sem_init(&g_pmglobals.regsem, 0, 1);
+
+	/* Register the PM ops structures */
+	g_pmglobals.sleep_ops = sleep_ops;
 
 	/* Register Special Domains, which are specific to Kernel*/
 	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
 	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
 }
+
+/****************************************************************************
+ * Name: pm_clock_initialize
+ *
+ * Description:
+ *   This function is called by MCU-specific one-time at power on reset in
+ *   order to initialize the pm clock capabilityes.  This function
+ *   must be called *very* early in the initializeation sequence *before* any
+ *   other device drivers are initialize (since they may attempt to register
+ *   with the power management subsystem). It also fills the PM ops with the
+ *   required BSP APIs.
+ *
+ * Input parameters:
+ *   dvfs_ops: pm power gating operations to use.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_PM_DVFS
+void pm_clock_initialize(struct pm_clock_ops *dvfs_ops)
+{
+	g_pmglobals.dvfs_ops = dvfs_ops;
+}
+#endif
+
 #endif /* CONFIG_PM */

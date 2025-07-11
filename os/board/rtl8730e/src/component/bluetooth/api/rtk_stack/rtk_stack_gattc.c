@@ -575,7 +575,7 @@ static void bt_stack_gattc_cccd_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TY
 #define RTK_BT_GATTC_INDICATE 		BIT1
 #define RTK_BT_GATTC_NOTIFY 		BIT0
 
-static rtk_bt_gattc_app_priv_t *gattc_priv = NULL;
+rtk_bt_gattc_app_priv_t *gattc_priv = NULL;
 static T_CLIENT_ID gattc_common_id = CLIENT_PROFILE_GENERAL_ID;
 static T_CLIENT_ID gattc_cccd_id = CLIENT_PROFILE_GENERAL_ID;
 

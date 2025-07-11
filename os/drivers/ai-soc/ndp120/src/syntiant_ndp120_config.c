@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -957,32 +957,32 @@ wait_for_pll_lock(struct syntiant_ndp_device_s *ndp, long int timeout_ms)
     syntiant_ms_time timeout;
     syntiant_get_ms_time(&timeout);
 
-    DEBUG_PRINTF("->> wait_for_pll_lock:\n");
+    auddbg("->> wait_for_pll_lock:\n");
     do {
         /* write to data_strobe */
         s = ndp_mcu_read(NDP120_PLL_CONFIG_PLLCTL15, &data);
         if (s) {
-            DEBUG_PRINTF("wait_for_pll_lock: read PLLCTL15 failed s=%d\n", s);
+            auddbg("wait_for_pll_lock: read PLLCTL15 failed s=%d\n", s);
             goto error;
         }
         data = NDP120_PLL_CONFIG_PLLCTL15_SAMPLE_STROBE_MASK_INSERT(data, 1);
         s = ndp_mcu_write(NDP120_PLL_CONFIG_PLLCTL15, data);
         if (s) {
-            DEBUG_PRINTF("wait_for_pll_lock: write PLLCTL15 failed s=%d\n", s);
+            auddbg("wait_for_pll_lock: write PLLCTL15 failed s=%d\n", s);
             goto error;
         }
         s = ndp_mcu_read(NDP120_PLL_CONFIG_PLLSTS7, &data);
         if (s) {
-            DEBUG_PRINTF("wait_for_pll_lock: read PLLSTS7 failed s=%d\n", s);
+            auddbg("wait_for_pll_lock: read PLLSTS7 failed s=%d\n", s);
             goto error;
         }
         if (NDP120_PLL_CONFIG_PLLSTS7_LOCK_DETECT_EXTRACT(data)) {
-            DEBUG_PRINTF("wait_for_pll_lock: PLL locked! (PLLSTS7=%#x)\n", data);
+            auddbg("wait_for_pll_lock: PLL locked! (PLLSTS7=%#x)\n", data);
             locked = 1;
             goto error;
         }
     } while (syntiant_get_ms_elapsed(&timeout) < (unsigned long)timeout_ms);
-    DEBUG_PRINTF("wait_for_pll_lock: timeout (PLLSTS7=%#x)\n", data);
+    auddbg("wait_for_pll_lock: timeout (PLLSTS7=%#x)\n", data);
 error:
     return locked;
 }
@@ -1291,7 +1291,7 @@ syntiant_ndp120_config_clk_pll(
         s = ndp_mcu_read(NDP120_PLL_CONFIG_PLLSTS7, &data);
         if (s) goto error;
         config_out.locked = NDP120_PLL_CONFIG_PLLSTS7_LOCK_DETECT_EXTRACT(data);
-        DEBUG_PRINTF("PLL config_out.locked=%d\n", config_out.locked);
+        auddbg("PLL config_out.locked=%d\n", config_out.locked);
     }
 
     if (config->set & SYNTIANT_NDP120_CONFIG_SET_CLK_PLL_PRESET) {
@@ -1305,7 +1305,7 @@ syntiant_ndp120_config_clk_pll(
         s = inspect_frequency_voltage_combination(preset->operating_voltage,
             preset->output_freq);
         if (s) {
-            DEBUG_PRINTF("Invalid clk freq and voltage combination\n");
+            auddbg("Invalid clk freq and voltage combination\n");
             goto error;
         }
 
@@ -1381,9 +1381,9 @@ syntiant_ndp120_config_clk_pll(
         if (s) goto error;
 
         if (!wait_for_pll_lock(ndp, PLL_LOCK_WAIT_IN_MSEC)) {
-            DEBUG_PRINTF("PLL unlocked...\n");
+            auddbg("PLL unlocked...\n");
         } else {
-            DEBUG_PRINTF("PLL locked\n");
+            auddbg("PLL locked\n");
         }
         if (!config->no_switch) {
             select_fll_pll(ndp, 1);
@@ -1392,10 +1392,10 @@ syntiant_ndp120_config_clk_pll(
              */
             if (!wait_for_pll_lock(ndp, PLL_LOCK_WAIT_IN_MSEC)) {
                 s = SYNTIANT_NDP_ERROR_FAIL;
-                DEBUG_PRINTF("PLL still unlocked\n");
+                auddbg("PLL still unlocked\n");
                 goto error;
             }
-            DEBUG_PRINTF("PLL locked 2\n");
+            auddbg("PLL locked 2\n");
         }
         /* if crystal is used, after PLL locks, set ie and smt to 0 */
         s = ndp_mcu_read(NDP120_CHIP_CONFIG_CLKCTL1, &data);
@@ -2492,6 +2492,7 @@ syntiant_ndp120_config_pdm_no_sync(
     uint32_t decimation;
     uint32_t main_clk = 0;
     uint32_t main_clk_at_last_config = 0;
+    unsigned int pdm_mode;
 
     if (!config->set && !config->get) {
         DEBUG_PRINTF("not get or set, returning\n");
@@ -2741,15 +2742,22 @@ syntiant_ndp120_config_pdm_no_sync(
                 }
             break;
             case SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL:
+            case SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_THROUGH:
+                if (config->clk_mode ==
+                    SYNTIANT_NDP120_CONFIG_VALUE_PDM_CLK_MODE_INTERNAL) {
+                    pdm_mode = NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT;
+                } else {
+                    pdm_mode = NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_THRU;
+                }
 
                 /* audctrl */
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTNEEDED_INSERT(audctrl, 1);
-                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, NDP120_CHIP_CONFIG_AUDCTRL_MODE_PDM_OUT);
+                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_MODE_MASK_INSERT(audctrl, pdm_mode);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PDMCLKOUTDIV_MASK_INSERT(audctrl, main_clk / 2 / config->pdm_rate);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PCLK0_EN_INSERT(audctrl, 1);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_PCLK1_EN_MASK_INSERT(audctrl, 0);
                 audctrl = NDP120_CHIP_CONFIG_AUDCTRL_OE_MASK_INSERT(audctrl, 1);
-                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 0x5);
+                audctrl = NDP120_CHIP_CONFIG_AUDCTRL_IE_MASK_INSERT(audctrl, 0x7);
 
                 switch (config->mode) {
                     case SYNTIANT_NDP120_CONFIG_VALUE_PDM_MODE_LEFT:

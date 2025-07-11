@@ -27,7 +27,7 @@
 #include "HardwareEndPointDetector.h"
 #include "SpeechDetectorListenerWorker.h"
 #include "SpeechDetectorWorker.h"
-
+#include "SpeechDetectorImpl.h"
 #include "../audio/audio_manager.h"
 
 #include <media/voice/SpeechDetector.h>
@@ -36,39 +36,6 @@
 
 namespace media {
 namespace voice {
-
-class SpeechDetectorImpl : public SpeechDetector
-{
-public:
-	SpeechDetectorImpl();
-	bool initKeywordDetect(uint32_t samprate, uint8_t channels) override;
-	bool initEndPointDetect(uint32_t samprate, uint8_t channels) override;
-	bool deinitKeywordDetect() override;
-	bool deinitEndPointDetect() override;
-	bool startKeywordDetect(void) override;
-	bool startEndPointDetect(int timeout) override;
-	bool startEndPointDetect(void) override;
-	bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) override;
-	bool detectEndPoint(void) override;
-	bool waitEndPoint(int timeout) override;
-	bool stopKeywordDetect(void) override;
-	void addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) override;
-	bool removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener) override;
-	bool stopEndPointDetect(void) override;
-	bool getKeywordBufferSize(uint32_t *bufferSize) override;
-	bool getKeywordData(uint8_t *buffer) override;
-	static void speechResultListener(audio_device_process_unit_subtype_e event);
-
-private:
-	static speech_detect_event_type_e getSpeechDetectEvent(audio_device_process_unit_subtype_e event);
-	void resetKeywordDetectorPtr(void);
-	void resetEndPointDetectorPtr(void);
-
-	std::shared_ptr<KeywordDetector> mKeywordDetector;
-	std::shared_ptr<EndPointDetector> mEndPointDetector;
-	/* @todo: check static keyword usage */
-	static vector<shared_ptr<SpeechDetectorListenerInterface>> mSpeechDetectorListenerList;
-};
 
 vector<shared_ptr<SpeechDetectorListenerInterface>> SpeechDetectorImpl::mSpeechDetectorListenerList;
 
@@ -80,7 +47,14 @@ SpeechDetector *SpeechDetector::instance()
 
 SpeechDetectorImpl::SpeechDetectorImpl()
 {
+}
 
+SpeechDetectorImpl::~SpeechDetectorImpl()
+{
+	SpeechDetectorWorker& sdw = SpeechDetectorWorker::getWorker();
+	sdw.stopWorker();
+	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
+	sdlw.stopWorker();
 }
 
 bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)

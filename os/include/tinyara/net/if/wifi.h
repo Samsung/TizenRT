@@ -105,6 +105,9 @@ typedef enum {
 	TRWIFI_DISCONNECTED,			/**<  wifi is disconnected	*/
 	TRWIFI_CONNECTED,			/**<  connected				*/
 	TRWIFI_SOFTAP_MODE,			/**<  soft ap mode			*/
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	TRWIFI_BRIDGE_MODE,			/**<  bridge mode			*/
+#endif
 } trwifi_status_e;
 
 typedef enum {
@@ -125,7 +128,10 @@ typedef enum {
 	LWNL_REQ_WIFI_GET_DISCONNECT_REASON,
 	LWNL_REQ_WIFI_GET_DRIVER_INFO,
 	LWNL_REQ_WIFI_GET_WPA_SUPPLICANT_STATE,
-	LWNL_REQ_WIFI_UNKNOWN
+	LWNL_REQ_WIFI_UNKNOWN,
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	LWNL_REQ_WIFI_SETBRIDGE,
+#endif
 } lwnl_req_wifi;
 
 /**
@@ -251,6 +257,7 @@ typedef struct {
 	trwifi_status_e wifi_status;    /**<  @ref trwifi_status                     */
 	struct timeval disconn_time;    // optional: store the last time when the connection is disconnected
 	int32_t reason_code;            // optional: the reason why connection is disconnected. value is vendor specific
+	char bssid[TRWIFI_MACADDR_LEN]; /**< bssid is a mac address of AP */
 } trwifi_info;
 
 typedef struct {
@@ -530,6 +537,25 @@ typedef trwifi_result_e (*trwifi_stop_softap)(struct netdev *dev);
  */
 typedef trwifi_result_e (*trwifi_set_autoconnect)(struct netdev *dev, uint8_t chk);
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+/**
+ * @brief   Set bridge-mode to wi-fi library
+ *
+ * @param[in]   dev    : struct netdev registered by netdev_register()
+ * @param[in]   control  : 0: disable
+ *                         1: enable
+ *
+ * @function_type  synchronous call
+ *
+ * @description    enable bridge mode features in Wi-Fi library.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
+typedef trwifi_result_e (*trwifi_set_bridge)(struct netdev *dev, uint8_t control);
+#endif
+
 /**
  * @brief   Get wi-fi information
  *
@@ -584,12 +610,69 @@ typedef trwifi_result_e (*trwifi_drv_ioctl)(struct netdev *dev, trwifi_msg_s *ms
  */
 typedef trwifi_result_e (*trwifi_set_channel_plan)(struct netdev *dev, uint8_t chplan);
 
+/**
+ * @brief   Get signal_quality information
+ *
+ * @param[in]   dev             : struct netdev registered by netdev_register()
+ * @param[out]  signal_quality  : signal_quality information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get the signal quality of connected AP.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_signal_quality)(struct netdev *dev, trwifi_signal_quality *signal_quality);
 
+/**
+ * @brief   Get deauth_reason
+ *
+ * @param[in]   dev           : struct netdev registered by netdev_register()
+ * @param[out]  deauth_reason : deauth_reason
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get deauth_reason for the last connection from driver.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_deauth_reason)(struct netdev *dev, int *deauth_reason);
 
+/**
+ * @brief   Get driver information
+ *
+ * @param[in]   dev         : struct netdev registered by netdev_register()
+ * @param[out]  driver_info : driver information
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get the driver information from the driver.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_driver_info)(struct netdev *dev, trwifi_driver_info *driver_info);
 
+/**
+ * @brief   Get wpa_supplicant_state
+ *
+ * @param[in]   dev                  : struct netdev registered by netdev_register()
+ * @param[out]  wpa_supplicant_state : wpa_supplicant_state
+ *
+ * @function_type  synchronous call
+ *
+ * @description    Get wpa_supplicant state from driver.
+ *                 This is used to get the state just before the last disconnection.
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ * @return TRWIFI_INVALID_ARGS : arguments are invalid
+ */
 typedef trwifi_result_e (*trwifi_get_wpa_supplicant_state)(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
 
 struct trwifi_ops {
@@ -610,6 +693,9 @@ struct trwifi_ops {
 	trwifi_get_deauth_reason get_deauth_reason;
 	trwifi_get_driver_info get_driver_info;
 	trwifi_get_wpa_supplicant_state get_wpa_supplicant_state;
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	trwifi_set_bridge set_bridge;
+#endif
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);

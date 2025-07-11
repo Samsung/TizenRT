@@ -109,6 +109,23 @@ extern uint16_t g_wdnfree;
  ************************************************************************/
 
 /************************************************************************
+ * Name: wd_is_prealloc
+ *
+ * Description:
+ * This function checks if the wdog is pre- allocated or not
+ *
+ * Parameters:
+ *   wdog - the address of wdog (WDOG_ID)
+ *
+ * Return Value:
+ *   true  - if wdog is preallocated
+ *   false - otherwise
+ *
+ ************************************************************************/
+
+bool wd_is_prealloc(WDOG_ID wdog);
+
+/************************************************************************
  * Name: wd_initialize
  *
  * Description:
@@ -161,6 +178,11 @@ void wd_timer(void);
 #endif
 #ifdef CONFIG_SCHED_TICKSUPPRESS
 void wd_timer_nohz(clock_t ticks);
+#endif
+#ifdef CONFIG_DEBUG
+void wd_corruption_dbg(struct wdog_s *wdog);
+#else
+#define wd_corruption_dbg(wdog) (0)
 #endif
 /****************************************************************************
  * Name: wd_recover

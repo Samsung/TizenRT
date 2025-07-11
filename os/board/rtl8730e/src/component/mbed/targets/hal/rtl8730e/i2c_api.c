@@ -273,7 +273,8 @@ int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 {
 	/* To avoid gcc warnings */
 	(void) stop;
-
+	int data_read = 0;
+	int cnt = 10;
 	if (i2c_target_addr[obj->i2c_idx] != address) {
 		i2c_prepare(obj, address);
 	}
@@ -281,15 +282,21 @@ int rtk_i2c_read(i2c_t *obj, int address, char *data, int length, int stop)
 	if (!master_addr_retry) {
 		I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length);
 	} else {
-		while (0 == I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) {
+		while ((data_read = I2C_MasterRead(obj->I2Cx, (unsigned char *)data, length)) == 0) {
 			/* Wait for i2c enter trap state from trap_stop state*/
 			DelayUs(100);
 
 			i2c_prepare(obj, address);
+			/* we will re-try 10 times, if it still failed to read any data, we will break it to prevent infinite loop*/
+			if (cnt == 0) {
+				break;
+			}
+			cnt--;
+
 		}
 	}
 
-	return length;
+	return data_read;
 }
 
 /**

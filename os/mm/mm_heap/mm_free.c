@@ -58,6 +58,7 @@
 
 #include <assert.h>
 #include <debug.h>
+#include <unistd.h>
 
 #include <tinyara/mm/mm.h>
 
@@ -121,7 +122,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * It can be a logical bug in sw to make an attempt of double free!
 		 * free(ptr); ptr = NULL; free(ptr);
 		 */
-		mdbg("Attempt to release a null pointer\n");
+		mdbg("Attempt to release a null pointer by pid %d at address 0x%08x\n", getpid(), __builtin_return_address(0));
 		return;
 	}
 
@@ -153,7 +154,7 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * 2nd scenario: int *ptr = (int*)0x02069f50; free(ptr);
 		 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
 		 */
-		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer\n");
+		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer by pid %d at address 0x%08x\n", getpid(), __builtin_return_address(0));
 		mm_givesemaphore(heap);
 		return;
 	}

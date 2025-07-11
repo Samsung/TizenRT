@@ -75,6 +75,7 @@
 #include <tinyara/spi/spi.h>
 #include <mqueue.h>
 #include <semaphore.h>
+#include <queue.h>
 
 #ifdef CONFIG_AUDIO
 
@@ -152,6 +153,7 @@
 #define AUDIOIOC_GETKDBUFSIZE       _AUDIOIOC(25)
 #define AUDIOIOC_GETKDDATA          _AUDIOIOC(26)
 #define AUDIOIOC_ENABLEDMIC         _AUDIOIOC(27)
+#define AUDIOIOC_CHANGEKD           _AUDIOIOC(28)
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for
@@ -318,6 +320,11 @@
 #define AUDIO_CALLBACK_LOCAL        0x07
 #define AUDIO_CALLBACK_SPD          0x08 /* SPD always work with EPD, so we do not define it in PU controls */
 
+#define AUDIO_CALLBACK_MICMUTE      0x09
+#define AUDIO_CALLBACK_MICUNMUTE    0x0a
+
+#define AUDIO_CALLBACK_UNREACHABLE  0x0b
+
 /* Audio Pipeline Buffer (AP Buffer) flags **********************************/
 
 #define AUDIO_ABP_ALIGNMENT         0x000f	/* Mask to define buffer alignment */
@@ -355,6 +362,9 @@
 #define AUDIO_MSG_LOCAL6           18
 #define AUDIO_MSG_LOCAL7           19
 #define AUDIO_MSG_SPD              20
+#define AUDIO_MSG_MICMUTE          21
+#define AUDIO_MSG_MICUNMUTE        22
+#define AUDIO_MSG_UNREACHABLE      23
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */

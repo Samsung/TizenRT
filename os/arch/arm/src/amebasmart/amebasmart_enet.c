@@ -68,8 +68,6 @@
 #include "rtw_wifi_constants.h"
 #include "wifi_intf_drv_to_app_basic.h"
 
-//for concurrent mode, not supported now
-//#define RTK_CONCURRENT_MODE
 #ifdef CONFIG_AMEBASMART_WIFI
 
 struct netdev *ameba_nm_dev_wlan0 = NULL;
@@ -213,12 +211,12 @@ void arm_netinitialize(void)
 	if (ameba_nm_dev_wlan0 == NULL) {
 		rtw_printf("Failed to register amebasmart netdev\n");
 	}
-#ifdef RTK_CONCURRENT_MODE
+#ifdef CONFIG_ENABLE_HOMELYNK
 	ameba_nm_dev_wlan1 = amebasmart_register_dev(alloc_size);
 	if (ameba_nm_dev_wlan1 == NULL) {
 		rtw_printf("Failed to register amebasmart netdev\n");
 	}
-#endif
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 #endif
 #if defined(CONFIG_AMEBASMART_BLE) && defined(CONFIG_DRIVERS_BLE)
 	ameba_bm_dev_ble0 = bledev_register(&g_trble_drv_ops);

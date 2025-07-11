@@ -25,10 +25,6 @@ extern rtk_bt_gattc_read_ind_t *ble_read_results;
 extern rtk_bt_gattc_write_ind_t *ble_write_request_result;
 extern rtk_bt_gattc_write_ind_t *ble_write_no_rsp_result;
 
-extern void *ble_tizenrt_read_sem;
-extern void *ble_tizenrt_write_sem;
-extern void *ble_tizenrt_write_no_rsp_sem;
-
 extern trble_client_init_config *client_init_parm;
 extern rtk_bt_gattc_write_ind_t *ble_write_request_result;
 extern rtk_bt_gattc_write_ind_t *ble_write_no_rsp_result;
@@ -44,13 +40,13 @@ extern int attr_counter;
 
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
 
+static void *bt_service_add_task_hdl = NULL;
+
 trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server)
 { 
-    if (init_client == NULL || init_server == NULL || init_server->profile == NULL \
-                            || init_server->profile_count == 0)
-    {
+    if (init_client == NULL) {
         return TRBLE_FAIL;
-    } else if(is_server_init != false || client_init_parm != NULL) {
+    } else if (is_server_init != false || client_init_parm != NULL) {
         return TRBLE_INVALID_STATE;
     }
 
@@ -77,23 +73,27 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
     client_init_parm->trble_device_disconnected_cb = init_client->trble_device_disconnected_cb;
     client_init_parm->trble_operation_notification_cb = init_client->trble_operation_notification_cb;
     client_init_parm->trble_operation_indication_cb = init_client->trble_operation_indication_cb;
+    client_init_parm->trble_device_passkey_display_cb = init_client->trble_device_passkey_display_cb;
     client_init_parm->mtu = init_client->mtu;
 
     //init server
-    server_profile_count = init_server->profile_count;
-    uint16_t gatt_char_num = 0;
-    for (int i = 0; i < init_server->profile_count; i++)
-    {
-        if(init_server->profile[i].type == TRBLE_GATT_CHARACT){
-            gatt_char_num++;
-        	}
+	server_profile_count = 0;
+    if (init_server != NULL && init_server->profile != NULL && init_server->profile_count != 0) {	/* There is valid profile*/
+        uint16_t gatt_char_num = 0;
+        server_profile_count = init_server->profile_count;
+        for (int i = 0; i < init_server->profile_count; i++) {
+            if(init_server->profile[i].type == TRBLE_GATT_CHARACT) {
+                gatt_char_num++;
+            }
+        }
+        server_init_parm.profile_count = init_server->profile_count + gatt_char_num;
+        server_init_parm.profile = init_server->profile;
+        server_init_parm.connected_cb = init_server->connected_cb;
+        server_init_parm.disconnected_cb = init_server->disconnected_cb;
+        server_init_parm.mtu_update_cb = init_server->mtu_update_cb;
+        server_init_parm.passkey_display_cb = init_server->passkey_display_cb;
+        server_init_parm.is_secured_connect_allowed = init_server->is_secured_connect_allowed;
     }
-    server_init_parm.profile_count = init_server->profile_count + gatt_char_num;
-    server_init_parm.profile = init_server->profile;
-    server_init_parm.connected_cb = init_server->connected_cb;
-    server_init_parm.disconnected_cb = init_server->disconnected_cb;
-    server_init_parm.mtu_update_cb = init_server->mtu_update_cb;
-    server_init_parm.is_secured_connect_allowed = init_server->is_secured_connect_allowed;
 
     ble_tizenrt_scatternet_main(1);
     is_server_init = true;
@@ -107,18 +107,12 @@ trble_result_e rtw_ble_combo_deinit(void)
     osif_mem_free(client_init_parm);
     client_init_parm = NULL;
 
-    osif_sem_delete(ble_tizenrt_read_sem);
-    ble_tizenrt_read_sem = NULL;
-    osif_sem_delete(ble_tizenrt_write_sem);
-    ble_tizenrt_write_sem = NULL;
-    osif_sem_delete(ble_tizenrt_write_no_rsp_sem);
-    ble_tizenrt_write_no_rsp_sem = NULL;
-
     osif_mem_free(ble_tizenrt_scatternet_conn_ind);
     ble_tizenrt_scatternet_conn_ind = NULL;
 
 	osif_mem_free(tizenrt_ble_service_tbl);
 	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
+	memset(&server_init_parm, 0, sizeof(server_init_parm));
 	tizenrt_ble_srv_count = 0;
     is_server_init = false;
 
@@ -126,6 +120,34 @@ trble_result_e rtw_ble_combo_deinit(void)
 
     attr_counter = 0;
     return TRBLE_SUCCESS; 
+}
+
+trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server)
+{
+	uint16_t gatt_char_num = 0;
+
+	if (false == is_server_init) {
+		dbg("[APP] Server is not init\r\n");
+		return TRBLE_FAIL;
+	}
+
+	if (init_server != NULL || init_server->profile != NULL || init_server->profile_count != 0) {	/* There is valid profile*/
+		server_profile_count = init_server->profile_count;
+		for (int i = 0; i < init_server->profile_count; i++) {
+			if (init_server->profile[i].type == TRBLE_GATT_CHARACT) {
+				gatt_char_num++;
+			}
+		}
+		server_init_parm.profile_count = init_server->profile_count + gatt_char_num;
+		server_init_parm.profile = init_server->profile;
+		server_init_parm.connected_cb = init_server->connected_cb;
+		server_init_parm.disconnected_cb = init_server->disconnected_cb;
+		server_init_parm.mtu_update_cb = init_server->mtu_update_cb;
+		server_init_parm.passkey_display_cb = init_server->passkey_display_cb;
+		server_init_parm.is_secured_connect_allowed = init_server->is_secured_connect_allowed;
+
+		ble_tizenrt_srv_add();	/* Add service */
+	}
 }
 
 #endif /* TRBLE_COMBO_C_ */

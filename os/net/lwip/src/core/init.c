@@ -386,6 +386,11 @@ void lwip_init(void)
 //  ppp_init();                 /* PPP_INIT not implemented */
 #endif
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+/* TODO: Based on APPs use case this call may move to other place */
+	ip_nat_initialize();
+#endif							/* CONFIG_ENABLE_HOMELYNK */
+
 #if LWIP_TIMERS
 	sys_timeouts_init();
 #endif							/* LWIP_TIMERS */

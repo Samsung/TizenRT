@@ -69,13 +69,13 @@ extern uint32_t system_exception_location;
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
   _alert("Undefined instruction at 0x%x\n", regs[REG_PC]);
   uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
   CURRENT_REGS = regs;
 
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
-#endif
   system_exception_location = regs[REG_R15];
   PANIC();
   regs = (uint32_t *)CURRENT_REGS;

@@ -61,7 +61,6 @@
 #include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
-#include <tinyara/ttrace.h>
 
 #include "pthread/pthread.h"
 /****************************************************************************
@@ -124,17 +123,14 @@ void pthread_initialize(void)
  *
  * Parameters:
  *  sem  - The semaphore to lock or unlock
- *  intr - false: ignore EINTR errors when locking; true tread EINTR as
- *         other errors by returning the errno value
  *
  * Return Value:
  *   0 on success or an errno value on failure.
  *
  ****************************************************************************/
 
-int pthread_sem_take(sem_t *sem, bool intr)
+int pthread_sem_take(sem_t *sem)
 {
-	trace_begin(TTRACE_TAG_IPC, "pthread_sem_take");
 	/* Verify input parameters */
 
 	DEBUGASSERT(sem != NULL);
@@ -148,16 +144,14 @@ int pthread_sem_take(sem_t *sem, bool intr)
 			 * awakened by the receipt of a signal.
 			 */
 
-			if (intr || errcode != EINTR) {
+			if (errcode != EINTR) {
 				return errcode;
 			}
 		}
-		trace_end(TTRACE_TAG_IPC);
 		return OK;
 	} else {
 		/* NULL semaphore pointer! */
 
-		trace_end(TTRACE_TAG_IPC);
 		return EINVAL;
 	}
 }

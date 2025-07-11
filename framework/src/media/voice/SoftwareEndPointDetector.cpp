@@ -94,6 +94,7 @@ void SoftwareEndPointDetector::deinit()
 
 bool SoftwareEndPointDetector::startEndPointDetect(void)
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	if (mEPDState != EPD_STATE_IDLE && mEPDState != EPD_STATE_STOP) {
 		medwdbg("Software EPD already in progress");
 		return false;
@@ -110,6 +111,7 @@ bool SoftwareEndPointDetector::startEndPointDetect(void)
 
 bool SoftwareEndPointDetector::stopEndPointDetect(void)
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	if (mEPDState != EPD_STATE_IN_PROGRESS) {
 		medwdbg("Software EPD state not in progress");
 		return false;
@@ -134,6 +136,7 @@ bool SoftwareEndPointDetector::waitEndPoint(int timeout)
 /* @todo add state checking code */
 bool SoftwareEndPointDetector::detectEndPoint(std::shared_ptr<unsigned char> sample, int size)
 {
+	std::unique_lock<std::mutex> lock(mCmdMtx);
 	if (mEPDState != EPD_STATE_IN_PROGRESS) {
 		medwdbg("Software EPD state not in progress");
 		return false;

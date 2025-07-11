@@ -137,7 +137,8 @@ void sched_ufree(FAR void *address)
 	}
 }
 
-#ifdef CONFIG_MM_KERNEL_HEAP
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP)
 void sched_kfree(FAR void *address)
 {
 	irqstate_t flags;

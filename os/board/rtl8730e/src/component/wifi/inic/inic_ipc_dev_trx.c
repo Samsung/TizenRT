@@ -126,8 +126,8 @@ static void inic_xmit_tasklet_handler(struct ipc_dev_tx_buf *p_xmit_buf)
 		wifi_if_send_skb(p_ipc_msg->wlan_idx, skb);
 		break;
 	default:
-		DBG_8195A("Device Unknown Event(%d)!\n", \
-				  p_ipc_msg->event_num);
+		DBG_8195A("[CA32] %s Device Unknown Event(%d)!\n", \
+				  __FUNCTION__, p_ipc_msg->event_num);
 		break;
 	}
 }
@@ -220,7 +220,7 @@ void inic_ipc_dev_tx_handler(inic_ipc_ex_msg_t *p_ipc_msg)
 	/* allocate xmit buf and associate to the skb */
 	p_xmit_buf = (struct ipc_dev_tx_buf *)rtw_zmalloc(sizeof(struct ipc_dev_tx_buf));
 	if (p_xmit_buf == NULL) {
-		DBG_8195A("Alloc xmit buffer Err!!\n\r");
+		DBG_8195A("[CA32] %s Alloc xmit buffer Err!!\n\r", __FUNCTION__);
 		//todo: may need send ipc to inform xmit fail other than ximt done
 		goto END;
 	}

@@ -203,7 +203,7 @@ int sched_unlock(void)
 				}
 #ifdef CONFIG_SCHED_TICKLESS
 				else {
-					sched_reassess_timer();
+					sched_timer_reassess();
 				}
 #endif
 			}

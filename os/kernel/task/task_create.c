@@ -64,7 +64,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
-#include <tinyara/ttrace.h>
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #include <tinyara/mm/mm.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
@@ -77,7 +76,7 @@
 #include "group/group.h"
 #include "task/task.h"
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 /****************************************************************************
@@ -136,8 +135,6 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	pid_t pid;
 	int errcode;
 	int ret;
-
-	trace_begin(TTRACE_TAG_TASK, "thread_create");
 
 	/* Check whether we are allowed to create new task ? */
 	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
@@ -234,7 +231,6 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 
 	(void)task_activate((FAR struct tcb_s *)tcb);
 
-	trace_end(TTRACE_TAG_TASK);
 	return pid;
 
 errout_with_tcb:
@@ -242,7 +238,6 @@ errout_with_tcb:
 
 errout:
 	set_errno(errcode);
-	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 
@@ -296,7 +291,8 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
 	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
 		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
-		return EPERM;
+		set_errno(EPERM);
+		return ERROR;
 	}
 #endif
 	return thread_create(name, TCB_FLAG_TTYPE_TASK, priority, stack_size, entry, argv);

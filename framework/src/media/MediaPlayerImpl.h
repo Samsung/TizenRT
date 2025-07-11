@@ -50,7 +50,9 @@ typedef enum player_state_e {
 	/** MediaPlayer do playing */
 	PLAYER_STATE_PLAYING,
 	/** MediaPlayer pause to play */
-	PLAYER_STATE_PAUSED
+	PLAYER_STATE_PAUSED,
+	/** MediaPlayer completed play */
+	PLAYER_STATE_COMPLETED
 } player_state_t;
 
 const char *const player_state_names[] = {
@@ -61,12 +63,13 @@ const char *const player_state_names[] = {
 	"PLAYER_STATE_READY",
 	"PLAYER_STATE_PLAYING",
 	"PLAYER_STATE_PAUSED",
+	"PLAYER_STATE_COMPLETED"
 };
 
 typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED,
 	PLAYER_OBSERVER_COMMAND_STARTED,
-	PLAYER_OBSERVER_COMMAND_FINISHIED,
+	PLAYER_OBSERVER_COMMAND_FINISHED,
 	PLAYER_OBSERVER_COMMAND_START_ERROR,
 	PLAYER_OBSERVER_COMMAND_PAUSE_ERROR,
 	PLAYER_OBSERVER_COMMAND_STOP_ERROR,
@@ -96,12 +99,12 @@ public:
 	player_result_t prepare();
 	player_result_t prepareAsync();
 	player_result_t unprepare();
+	player_result_t reset();
 	player_result_t start();
 	player_result_t pause();
 	player_result_t stop();
 
 	player_result_t getVolume(uint8_t *vol);
-	player_result_t getStreamVolume(uint8_t *vol);
 	player_result_t getMaxVolume(uint8_t *vol);
 	player_result_t setVolume(uint8_t vol);
 
@@ -124,12 +127,13 @@ private:
 	void preparePlayer(player_result_t &ret);
 	void prepareAsyncPlayer();
 	void unpreparePlayer(player_result_t &ret);
-	void startPlayer();
-	void stopPlayer(player_result_t ret);
+	player_result_t unpreparePlayback(void);
+	void startPlayer(player_result_t &ret);
+	void stopPlayer(player_result_t &ret);
 	player_result_t stopPlayback(bool drain);
-	void pausePlayer();
+	void stopPlaybackInternal(bool drain);
+	void pausePlayer(player_result_t &ret);
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
-	void getPlayerStreamVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
 	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
@@ -137,11 +141,11 @@ private:
 	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
 	stream_focus_state_t getStreamFocusState(void);
 	void setPlayerLooping(bool loop, player_result_t &ret);
+	player_result_t playbackFinished(void);
 
 private:
 	MediaPlayer &mPlayer;
 	std::atomic<player_state_t> mCurState;
-	std::atomic<bool> mPlaybackFinished;
 	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;
