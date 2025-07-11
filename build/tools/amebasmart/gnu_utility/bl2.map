@@ -31,7 +31,7 @@ Discarded input sections
  .rodata.build_message
                 0x0000000000000000       0x1e ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
  .rodata.version_string
-                0x0000000000000000       0x12 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
+                0x0000000000000000       0x13 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
  .debug_info    0x0000000000000000       0x7b ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
  .debug_abbrev  0x0000000000000000       0x45 ../../../../project/realtek_amebaD2_va0_example/GCC-RELEASE/project_ap/asdk/build/atf/bl2/build_message.o
  .debug_aranges
