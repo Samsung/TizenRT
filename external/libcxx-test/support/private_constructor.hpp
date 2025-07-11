@@ -39,4 +39,12 @@ private:
     };
 
 
+//declare as inline function to prevent linking error (multiple definition error)
+inline bool operator < ( const PrivateConstructor &lhs, const PrivateConstructor &rhs ) { return lhs.get() < rhs.get(); }
+
+inline bool operator < ( const PrivateConstructor &lhs, int rhs ) { return lhs.get() < rhs; }
+inline bool operator < ( int lhs, const PrivateConstructor &rhs ) { return lhs < rhs.get(); }
+
+inline std::ostream & operator << ( std::ostream &os, const PrivateConstructor &foo ) { return os << foo.get (); }
+
 #endif
