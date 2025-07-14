@@ -170,7 +170,50 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 
 	return transfer_status;
 }
+/* rx_len is the maximum return packet size*/
+static int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
+{
+	int transfer_status = OK;
+	struct mipi_dsi_msg msg;
+	msg.channel = rx_len;
+	msg.type = MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE;
+	msg.tx_len = 0;
+	msg.flags = 0;
+	transfer_status = send_to_mipi_dsi(priv, &msg);
 
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent\n", rx_len);
+	}
+	return transfer_status;
+}
+
+static int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command, u8 *rxbuf, u8 rx_len)
+{
+	int transfer_status = OK;
+	u8 cmd = command.cmd;
+	u8 *cmd_addr = command.para_list;
+	u32 payload_len = command.count;
+	struct mipi_dsi_msg msg;
+	msg.channel = cmd;
+	if (payload_len == 0) {
+		msg.type = MIPI_DSI_GENERIC_READ_0_PARAM;
+	} else if (payload_len == 1) {
+		msg.type = MIPI_DSI_GENERIC_READ_1_PARAM;
+	} else if (payload_len == 2) {
+		msg.type = MIPI_DSI_GENERIC_READ_2_PARAM;
+	}
+	msg.tx_buf = cmd_addr;
+	msg.tx_len = payload_len;
+	msg.flags = 0;
+	msg.rx_buf = rxbuf;
+	msg.rx_len = rx_len;
+	transfer_status = send_to_mipi_dsi(priv, &msg);
+
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent\n", cmd);
+	}
+	return transfer_status;
+}
 static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 {
 	u8 send_cmd_idx_s = 0;
@@ -401,6 +444,12 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		if (priv->power == 0) {
 			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
+			lcm_setting_table_t read_display_cmd = {0xDA, 0, {0x00}};
+			uint8_t rxbuf[2];
+			read_response(priv, read_display_cmd, rxbuf, 2);
+			for(int i = 0; i < 2; i++) {
+				lcddbg("%2x\n", rxbuf[i]);
+			}
 			/* We need to send init cmd after LCD IC power on */
 			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
 				lcddbg("ERROR: LCD Init sequence failed\n");
