@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_AFT
+	bool "Audio File Transfer application"
+	default n
+	---help---
+		Enable the Audio File Transfer application
+
+config USER_ENTRYPOINT
+	string
+	default "aft_main" if ENTRY_AFT
+
