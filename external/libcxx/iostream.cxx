@@ -58,7 +58,11 @@ static mbstate_t mb_wcerr;
 _ALIGNAS_TYPE (ostream)  _LIBCPP_FUNC_VIS char clog[sizeof(ostream)];
 _ALIGNAS_TYPE (wostream) _LIBCPP_FUNC_VIS char wclog[sizeof(wostream)];
 
+#ifdef CONFIG_BINFMT_CONSTRUCTORS
+ios_base::Init __start_std_streams;
+#else
 ios_base::Init __start_std_streams __attribute__ ((init_priority (500)));
+#endif
 
 ios_base::Init::Init()
 {
