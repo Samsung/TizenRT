@@ -269,6 +269,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.tdmenab = 0,
 #endif
 };
+#endif
 
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 /* currently support I2S2 */

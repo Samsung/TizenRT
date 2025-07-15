@@ -50,6 +50,12 @@ extern "C" {
 * @brief I2S Peripheral, 0 & 1.
 *
 */
+
+#undef I2S_INIT
+#undef I2S_REINIT
+#define I2S_INIT   0
+#define I2S_REINIT 1
+
 typedef enum {
 	I2S_NUM_2 = 0x2,			/*!< I2S 2 */
 	I2S_NUM_3 = 0x3,			/*!< I2S 3 */
