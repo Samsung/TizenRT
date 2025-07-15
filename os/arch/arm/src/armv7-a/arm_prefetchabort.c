@@ -76,6 +76,8 @@ extern uint32_t system_exception_location;
 
 static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 {
+	/* Abort log must always start at a new line.*/
+	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
 	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
@@ -151,13 +153,13 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
 		CURRENT_REGS = savestate;
 	} else {
-		if (!IS_SECURE_STATE()) {
-			print_prefetchabort_detail(regs, ifar, ifsr);
-		}
-
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif
+
+		if (!IS_SECURE_STATE()) {
+			print_prefetchabort_detail(regs, ifar, ifsr);
+		}
 
 		PANIC();
 	}
@@ -177,15 +179,15 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 
 	system_exception_location = regs[REG_R15];
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+#endif
+
 	/* Crash -- possibly showing diagnostic debug information. */
 
 	if (!IS_SECURE_STATE()) {
 		print_prefetchabort_detail(regs, ifar, ifsr);
 	}
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
-#endif
 
 	PANIC();
 	regs = (uint32_t *)CURRENT_REGS;

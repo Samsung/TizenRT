@@ -121,7 +121,7 @@ static void rtl8730e_syu645b_pm(bool sleep)
  * Public Functions
  ****************************************************************************/
 
-extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit);
+extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port);
 
 /****************************************************************************
  * Name: rtl8730e_syu645b_initialize
@@ -171,7 +171,7 @@ int rtl8730e_syu645b_initialize(int minor)
 		auddbg("i2c init done\n");
 		auddbg("calling init i2s\n");
 		/* Get an instance of the I2S interface for the SYU645B data channel */
-		i2s = amebasmart_i2s_initialize(SYU645B_I2S_PORT, I2S_INIT);
+		i2s = amebasmart_i2s_initialize(SYU645B_I2S_PORT);
 		if (!i2s) {
 			auddbg("ERROR: Failed to initialize I2S\n");
 			ret = -ENODEV;

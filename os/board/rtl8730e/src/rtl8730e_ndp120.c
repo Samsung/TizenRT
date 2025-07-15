@@ -62,6 +62,7 @@ struct rtl8730e_ndp120_audioinfo_s {
 	struct ndp120_lower_s lower;
 	ndp120_handler_t handler;
 	gpio_t dmic;
+	gpio_t reset;
 	gpio_irq_t data_ready;
 };
 
@@ -114,7 +115,7 @@ static void rtl8730e_ndp120_irq_attach(ndp120_handler_t handler, FAR char *arg)
 {
 	g_ndp120info.handler = handler;
 	gpio_irq_init(&g_ndp120info.data_ready, PA_23, rtl8730e_ndp120_irq_handler, arg);
-	gpio_irq_set(&g_ndp120info.data_ready, IRQ_FALL_RISE, 1);
+	gpio_irq_set(&g_ndp120info.data_ready, IRQ_HIGH, 1);
 	gpio_irq_enable(&g_ndp120info.data_ready);
 }
 
@@ -129,6 +130,18 @@ static void rtl8730e_ndp120_set_dmic(bool enable)
 		gpio_mode(&g_ndp120info.dmic, PullDown);
 		gpio_write(&g_ndp120info.dmic, 0);
 	}
+}
+
+static void rtl8730e_ndp120_reset()
+{
+	gpio_dir(&g_ndp120info.reset, PIN_OUTPUT);
+	gpio_mode(&g_ndp120info.reset, PullDown);
+	gpio_write(&g_ndp120info.reset, 0);
+	up_mdelay(20);
+
+	gpio_mode(&g_ndp120info.reset, PullUp);
+	gpio_write(&g_ndp120info.reset, 1);
+	up_mdelay(20);
 }
 
 #ifdef CONFIG_PM
@@ -185,11 +198,14 @@ int rtl8730e_ndp120_initialize(int minor)
 		g_ndp120info.lower.irq_enable = rtl8730e_ndp120_enable_irq;
 		g_ndp120info.lower.set_dmic = rtl8730e_ndp120_set_dmic;
 		gpio_init(&g_ndp120info.dmic, GPIO_DMIC_EN);
-		
+		gpio_init(&g_ndp120info.reset, PA_24);
+		rtl8730e_ndp120_reset();
 		rtl8730e_ndp120_set_dmic(false);
 #ifdef CONFIG_PM
 		g_ndp120info.lower.set_pm_state = rtl8730e_ndp120_pm;
 #endif
+		g_ndp120info.lower.reset = rtl8730e_ndp120_reset;
+
 		/* currently spi 0 is only attached to AI SoC, so no
 		 * need to change the spi config as we are dealing with
 		 * only 1 slave, if we add more slaves, parameters below

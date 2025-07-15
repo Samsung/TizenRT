@@ -83,9 +83,8 @@
 #define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
 					    * is disabled for this semaphore */
 #define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
-#ifdef SAVE_SEM_HOLDER
 #define FLAGS_SIGSEM              (1 << 2) /* Bit 2: The semaphore for signaling */
-#endif
+#define FLAGS_SEM_MUTEX		  (1 << 3) /* Bit 3: The semaphore is used to implement mutex */
 
 /****************************************************************************
  * Public Type Declarations
@@ -154,18 +153,23 @@ typedef struct sem_s sem_t;
 #ifdef CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
+#define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* flink, semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
+#define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #endif
 #else // CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
+#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #endif
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
+#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX} /* semcount, flags */
 #endif
 
 /****************************************************************************

@@ -102,7 +102,7 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, n * elem_size, USER_HEAP
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, n * elem_size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif
@@ -148,7 +148,7 @@ static void *heap_calloc(size_t n, size_t elem_size, int s, int e)
 			return ret;
 		}
 	}
-	mm_manage_alloc_fail(BASE_HEAP, s, e, n * elem_size, USER_HEAP
+	mm_manage_alloc_fail(BASE_HEAP, s, e, n * elem_size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			, caller_retaddr
 #endif
@@ -186,7 +186,7 @@ FAR void *calloc(size_t n, size_t elem_size)
 #endif
 			);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, USER_HEAP
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 				, caller_retaddr
 #endif

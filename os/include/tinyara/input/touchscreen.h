@@ -67,9 +67,11 @@
  ************************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/fs/ioctl.h>
 
-#ifdef CONFIG_INPUT
+#if defined(CONFIG_TOUCH)
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/i2c.h>
+#include <semaphore.h>
 
 /************************************************************************************
  * Pre-processor Definitions
@@ -82,9 +84,16 @@
 #define TSIOC_GETCALIB       _TSIOC(0x0002)  /* arg: Pointer to int calibration value */
 #define TSIOC_SETFREQUENCY   _TSIOC(0x0003)  /* arg: Pointer to uint32_t frequency value */
 #define TSIOC_GETFREQUENCY   _TSIOC(0x0004)  /* arg: Pointer to uint32_t frequency value */
-
+#define TSIOC_SUSPEND        _TSIOC(0x0005)  /* Suspend touch interrupt */
+#define TSIOC_RESUME         _TSIOC(0x0006)  /* Resume touch interrupt */
+#define TSIOC_SETAPPNOTIFY   _TSIOC(0x0007)  /* arg: Pointer to struct touch_set_callback_s. Support available only when CONFIG_TOUCH_CALLBACK is enabled */
+#define TSIOC_CMD            _TSIOC(0x0008)  /* arg: Pointer to struct touchscreen_cmd_s */
+#define TSIOC_ENABLE         _TSIOC(0x0009)  /* Enable touch interrupt */
+#define TSIOC_DISABLE        _TSIOC(0x000A)  /* Disable touch interrupt */
 #define TSC_FIRST            0x0001          /* First common command */
 #define TSC_NCMDS            4               /* Four common commands */
+
+#define TOUCH_DEV_PATH "/dev/touch0"	// Touch driver node path
 
 /* User defined ioctl commands are also supported.  However, the TSC driver must
  * reserve a block of commands as follows in order prevent IOCTL command numbers
@@ -122,6 +131,9 @@
 #define TOUCH_PRESSURE_VALID (1 << 5) /* Hardware provided a valid pressure */
 #define TOUCH_SIZE_VALID     (1 << 6) /* Hardware provided a valid H/W contact size */
 
+#if defined(CONFIG_TOUCH_IST415)
+#define TOUCH_MAX_POINTS 	15    /* Maximum number of simultaneous touch point supported */
+#endif
 /************************************************************************************
  * Public Types
  ************************************************************************************/
@@ -154,15 +166,80 @@ struct touch_point_s {
  * a touch from first contact until the end of the contact.
  */
 
+/*
+ * This structure contains the array that have information about each simultaneous touch point.
+ */
 struct touch_sample_s {
 	int npoints;                   /* The number of touch points in point[] */
-	struct touch_point_s point[1]; /* Actual dimension is npoints */
+	struct touch_point_s point[TOUCH_MAX_POINTS]; /* Actual dimension is npoints */
 };
+
+struct touchscreen_cmd_s {
+	int argc;
+	char **argv;
+};
+
+#if defined(CONFIG_TOUCH_CALLBACK)
+
+struct touch_set_callback_s {
+	struct touch_sample_s *touch_points;
+	void (*is_touch_detected)(int);
+};
+
+#endif /* CONFIG_TOUCH_CALLBACK */
+
+struct touch_sample_buffer_s {
+	sem_t sem;								/* Used to control exclusive access to the buffer */
+	volatile int16_t head;					/* Index to the head [IN] index in the buffer */
+	volatile int16_t tail;					/* Index to the tail [OUT] index in the buffer */
+	int16_t size;							/* The allocated size of the buffer */
+	struct touch_sample_s *buffer;			/* Pointer to the allocated buffer memory */
+};
+
+/*
+ * This structure is upper level driver operations which will use lower level calls internally
+ */
+struct touchscreen_ops_s {
+	void (*touch_enable)(struct touchscreen_s *upper);			/* Enable touch */
+	void (*touch_disable)(struct touchscreen_s *upper);			/* Disable touch */
+	int (*cmd)(struct touchscreen_s *upper, int argc, char **argv);
+	int (*suspend)(struct touchscreen_s *upper);			/* Suspend touch */
+	int (*resume)(struct touchscreen_s *upper);			/* Resume touch */
+};
+
+/*
+ * This structure is upper level driver. This provides information about
+ * Memory is provided by caller. It is not copied by the driver and is presumed to persist
+ * while the driver is active.
+ */
+struct touchscreen_s {
+	sem_t sem;
+	uint8_t crefs;
+#if !defined(CONFIG_DISABLE_POLL)
+	sem_t pollsem;
+	struct pollfd *fds[CONFIG_TOUCH_NPOLLWAITERS];
+#endif
+
+	struct touch_sample_buffer_s tp_buf;
+	sem_t waitsem;
+
+	const struct touchscreen_ops_s *ops;	/* Arch-specific operations */
+	void *priv;		/* Used by the TSP-specific logic */
+
+#if defined(CONFIG_TOUCH_CALLBACK)
+	/* Below variables are set by UI using IOCTL during initialization */
+	struct touch_sample_s *app_touch_point_buffer;		/* Buffer to store touch point allocated by UI */
+	void (*is_touch_detected)(int);	/* Callback function to notify touch event to application */
+#endif /* CONFIG_TOUCH_CALLBACK */
+};
+
 #define SIZEOF_TOUCH_SAMPLE_S(n) (sizeof(struct touch_sample_s) + ((n) - 1) * sizeof(struct touch_point_s))
 
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
+
+void touch_report(struct touchscreen_s *dev, struct touch_sample_s *data);
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
@@ -176,6 +253,6 @@ extern "C" {
 }
 #endif
 
-#endif /* CONFIG_INPUT */
+#endif /* CONFIG_TOUCH */
 #endif /* __INCLUDE_TINYARA_INPUT_TOUCHSCREEN_H */
 

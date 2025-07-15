@@ -28,7 +28,6 @@
 #include <media/MediaTypes.h>
 #include "audio_decoder.h"
 #include "../utils/internal_defs.h"
-#include "../audio/resample/samplerate.h"
 
 using namespace media;
 
@@ -145,7 +144,6 @@ struct priv_data_s {
 	ssize_t mCurrentPos;        /* read position when decoding */
 	uint32_t mFixedHeader;      /* mp3 frame header */
 	pcm_data_t pcm;             /* a recorder of pcm data info */
-	src_handle_t mResampler;    /* resampler handle */
 };
 
 typedef struct priv_data_s priv_data_t;
@@ -918,9 +916,8 @@ int _frame_decoder(audio_decoder_p decoder, pcm_data_p pcm)
 	}
 #endif
 	case AUDIO_TYPE_WAVE: {
-		priv_data_p priv = (priv_data_p)decoder->priv_data;
 		wav_dec_external_p wav_ext = (wav_dec_external_p)decoder->dec_ext;
-		int err = wav_decode_frame(wav_ext, decoder->dec_mem, &priv->mResampler);
+		int err = wav_decode_frame(wav_ext, decoder->dec_mem);
 		RETURN_VAL_IF_FAIL((err == AUDIO_DECODER_OK), AUDIO_DECODER_ERROR);
 
 		pcm->channels = wav_ext->desiredChannels;
@@ -1108,7 +1105,6 @@ int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 	priv->mCurrentPos = 0;
 	priv->mFixedHeader = 0;
 	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
-	priv->mResampler = NULL;
 
 	// init decoder data
 	decoder->dec_ext = NULL;
@@ -1152,11 +1148,6 @@ int audio_decoder_finish(audio_decoder_p decoder)
 
 	// free private data buffer
 	if (decoder->priv_data != NULL) {
-		priv_data_p priv = (priv_data_p)decoder->priv_data;
-		if (priv->mResampler != NULL) {
-			src_destroy(priv->mResampler);
-			priv->mResampler = NULL;
-		}
 		free(decoder->priv_data);
 		decoder->priv_data = NULL;
 	}

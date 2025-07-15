@@ -28,12 +28,8 @@ extern write_fast_connect_info_ptr p_store_fast_connect_info;
 extern rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback;
 extern rtw_join_status_t rtw_join_status;
 extern rtw_join_status_t prev_join_status;
+extern rtw_join_status_t last_join_status;
 extern internal_join_block_param_t *join_block_param;
-
-#ifdef CONFIG_PLATFORM_TIZENRT_OS
-extern rtk_network_link_callback_t g_link_up;
-extern rtk_network_link_callback_t g_link_down;
-#endif
 
 //----------------------------------------------------------------------------//
 rtw_result_t rtw_indicate_event_handle(int event_cmd, char *buf, int buf_len, int flags)
@@ -162,15 +158,6 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 		LwIP_netif_set_link_down(0);
 #endif
 #endif
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)
-		rtk_reason_t reason;
-		memset(&reason, 0, sizeof(rtk_reason_t));
-
-		if (g_link_down) {
-			nvdbg("RTK_API %s send link_down\n",__func__);
-			g_link_down(&reason);
-		}
-#endif
 #ifndef CONFIG_AS_INIC_NP
 		deauth_data_pre = (struct deauth_info *)rtw_zmalloc(sizeof(struct deauth_info));
 		rtw_psk_deauth_info_flash((char *)deauth_data_pre, sizeof(struct deauth_info), FLASH_READ, NULL);
@@ -182,7 +169,12 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 		rtw_mfree((u8 *)deauth_data_pre, 0);
 #endif
 	}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	if (join_status != RTW_JOINSTATUS_FAIL && join_status != RTW_JOINSTATUS_DISCONNECT) {
+		last_join_status = join_status;
+	}
 	prev_join_status = rtw_join_status;
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	rtw_join_status = join_status;
 
 	/* step 2: execute user callback to process join_status*/

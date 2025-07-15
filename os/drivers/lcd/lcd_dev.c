@@ -68,6 +68,8 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/lcd/lcd_dev.h>
+#include <tinyara/pm/pm.h>
+#include <tinyara/silent_reboot.h>
 
 #define MAX_NO_PLANES 3
 /****************************************************************************
@@ -81,16 +83,16 @@ struct lcd_s {
 	struct lcd_planeinfo_s planeinfo[MAX_NO_PLANES];
 	sem_t sem;
 	int16_t crefs;
-
+#ifdef CONFIG_PM
+	int pm_domain;
+#endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	uint8_t *lcd_kbuffer;
 	FAR const struct lcddev_area_s *lcd_area;
-	sem_t flushing_sem;
-	bool empty;
-	bool do_wait;
+	sem_t flush_buffer_sem;
+	sem_t copy_buffer_sem;
 #endif
 };
-static struct lcd_s *lcd_info;
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -246,25 +248,13 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	break;
 	case LCDDEVIO_PUTAREA: {
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-		if (priv->empty == true) {
-			priv->lcd_area = (FAR const struct lcddev_area_s *)arg;
-			if (priv->planeinfo[priv->lcd_area->planeno].putarea) {
-				memcpy(priv->lcd_kbuffer, priv->lcd_area->data, CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
-				sem_post(&priv->flushing_sem);
-			} else {
-				ret = -ENOSYS;
-			}
+		sem_wait(&priv->copy_buffer_sem);
+		priv->lcd_area = (FAR const struct lcddev_area_s *)arg;
+		if (priv->planeinfo[priv->lcd_area->planeno].putarea) {
+			memcpy(priv->lcd_kbuffer, priv->lcd_area->data, CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
+			sem_post(&priv->flush_buffer_sem);
 		} else {
-			priv->do_wait = true;
-			sem_wait(&priv->flushing_sem);
-			priv->do_wait = false;
-			priv->lcd_area = (FAR const struct lcddev_area_s *)arg;
-			if (priv->planeinfo[priv->lcd_area->planeno].putarea) {
-				memcpy(priv->lcd_kbuffer, priv->lcd_area->data, CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
-				sem_post(&priv->flushing_sem);
-			} else {
-				ret = -ENOSYS;
-			}
+			ret = -ENOSYS;
 		}
 #else
 		// No flush thread condition. Will always wait for previous frame return before processing next frame
@@ -290,11 +280,46 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	case LCDDEVIO_SETPOWER: {
+
+#ifdef CONFIG_PM
+		if (!priv->dev->setpower || !priv->dev->getpower) {
+			ret = -ENOSYS;
+			break;
+		}
+		int new_power = (int)arg;
+		int old_power = priv->dev->getpower(priv->dev);
+
+		lcddbg("LCD Backlight %d -> %d\n", old_power, new_power);
+
+		/* To ensure setpower operation from power saving,
+		 * pm_suspend is calling first. */
+		if (old_power == 0 && new_power > 0) {
+			lcddbg("Lock pm & silent reboot\n");
+			silent_reboot_lock();
+			(void)pm_suspend(priv->pm_domain);
+		}
+
+		ret = priv->dev->setpower(priv->dev, new_power);
+		if (ret != OK) {
+			lcddbg("ERROR: Failed to set power level %d -> %d (errno: %d)\n", old_power, new_power, ret);
+			break;
+		}
+
+		/* To ensure setpower operation from power saving,
+		 * pm_resume is calling after setpower. */
+		if (old_power > 0 && new_power == 0) {
+			lcddbg("Unlock pm & silent reboot\n");
+			silent_reboot_unlock();
+			silent_reboot_delay(3600);
+			(void)pm_resume(priv->pm_domain);
+		}
+#else
 		if (priv->dev->setpower) {
 			ret = priv->dev->setpower(priv->dev, (int)arg);
 		} else {
 			ret = -ENOSYS;
 		}
+#endif
 	}
 	break;
 	case LCDDEVIO_GETCONTRAST: {
@@ -352,25 +377,23 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-static void lcd_flushing_thread(void)
+static void lcd_flushing_thread(int argc, char **argv)
 {
 	int ret;
+	DEBUGASSERT(argc == 2);
 	FAR struct lcddev_area_s *lcd_area;
+	struct lcd_s *lcd_info = (struct lcd_s *)strtoul(argv[1], NULL, 16);
 	lcd_area = &(lcd_info->lcd_area);
 	while (true) {
-		while (sem_wait(&lcd_info->flushing_sem) != 0) {
+		while (sem_wait(&lcd_info->flush_buffer_sem) != 0) {
 			ASSERT(errno == EINTR);
 		}
-		lcd_info->empty = false;
 		size_t cols = lcd_area->col_end - lcd_area->col_start + 1;
 		size_t pixel_size = lcd_info->planeinfo[lcd_area->planeno].bpp > 1 ? lcd_info->planeinfo[lcd_area->planeno].bpp >> 3 : 1;
 		size_t row_size = lcd_area->stride > 0 ? lcd_area->stride : cols * pixel_size;
 		// NULL check of putarea has been added in ioctl, Not required here
 		lcd_info->planeinfo[lcd_area->planeno].putarea(lcd_info->dev, lcd_area->row_start, lcd_area->row_end, lcd_area->col_start, lcd_area->col_end, lcd_info->lcd_kbuffer, row_size);
-		lcd_info->empty = true;
-		if (lcd_info->do_wait == true) {
-			sem_post(&lcd_info->flushing_sem);
-		}
+		sem_post(&lcd_info->copy_buffer_sem);
 	}
 	return;
 }
@@ -398,6 +421,13 @@ static void lcd_flushing_thread(void)
 int lcddev_register(struct lcd_dev_s *dev)
 {
 	char devname[16] = { 0, };
+	int ret;
+	struct lcd_s *lcd_info;
+#if defined(CONFIG_LCD_FLUSH_THREAD)
+	int pid;
+	char *flushing_thread_args[2];
+	char lcd_info_addr[9]; /* for storing 32 bit address */
+#endif
 
 	if (!dev) {
 		return -EINVAL;
@@ -411,30 +441,69 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	lcd_info->dev = dev;
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-	sem_init(&lcd_info->flushing_sem, 0, 0);
-	lcd_info->do_wait = false;
-	lcd_info->empty = true;
+	sem_init(&lcd_info->flush_buffer_sem, 0, 0);
+	sem_init(&lcd_info->copy_buffer_sem, 0, 1);
 	lcd_info->lcd_kbuffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
 	if (!lcd_info->lcd_kbuffer) {
+		sem_destroy(&lcd_info->flush_buffer_sem);
+		sem_destroy(&lcd_info->copy_buffer_sem);
+		kmm_free(lcd_info);
 		lcddbg("ERROR: Failed to allocate memory for LCD flush swap buffer\n");
 		return -ENOMEM;
 	}
-
-	int pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, NULL);
+	itoa((int)lcd_info, lcd_info_addr, 16);
+	flushing_thread_args[0] = lcd_info_addr;
+	flushing_thread_args[1] = NULL;
+	pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, (FAR char *const *)flushing_thread_args);
 	if (pid < 0) {
+		kmm_free(lcd_info->lcd_kbuffer);
+		sem_destroy(&lcd_info->flush_buffer_sem);
+		sem_destroy(&lcd_info->copy_buffer_sem);
+		kmm_free(lcd_info);
 		lcddbg("ERROR: Failed to start LCD Frame Flusing thread\n");
 		return -ENOMEM;
 	}
 	lcdvdbg("lcd flushing thread %d created \n", pid);
 #endif
+
+#ifdef CONFIG_PM
+	lcd_info->pm_domain = pm_domain_register("LCD");
+#endif
+
 	sem_init(&lcd_info->sem, 0, 1);
+	bool is_silent_mode;
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		ASSERT(dev->setpower);
+		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+		if (ret != OK) {
+			goto cleanup;
+		}
+#ifdef CONFIG_PM
+		(void)pm_suspend(lcd_info->pm_domain);
+#endif
+		silent_reboot_lock();
+		lcd_init_put_image(dev);
+	}
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
-		return register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
-	} else {
-		sem_destroy(&lcd_info->sem);
-		kmm_free(lcd_info);
-		return -ENOSYS;
+		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
+		if (ret != OK) {
+			goto cleanup;
+		} else {
+			return ret; //successful registration of driver
+		}
 	}
+cleanup:
+	lcddbg("ERROR: Failed to register driver %s\n", devname);
+#if defined(CONFIG_LCD_FLUSH_THREAD)
+	task_delete(pid);
+	sem_destroy(&lcd_info->flush_buffer_sem);
+	sem_destroy(&lcd_info->copy_buffer_sem);
+	kmm_free(lcd_info->lcd_kbuffer);
+#endif
+	sem_destroy(&lcd_info->sem);
+	kmm_free(lcd_info);
+	return -ENOSYS;
 }

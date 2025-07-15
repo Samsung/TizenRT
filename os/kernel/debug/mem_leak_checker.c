@@ -29,9 +29,10 @@
 #include <sys/types.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/mm/heap_regioninfo.h>
-#include <binary_manager/binary_manager.h>
 #include <arch/chip/memory_region.h>
 #include <tinyara/binfmt/elf.h>
+
+#include "binary_manager/binary_manager_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -239,6 +240,7 @@ static void heap_check(struct mm_heap_s *heap, int checker_pid, int *leak_cnt)
 	void *exclude_bottom;
 
 	struct tcb_s *ctcb = sched_gettcb(checker_pid);
+	ASSERT(ctcb != NULL);
 	exclude_top = ctcb->adj_stack_ptr;
 	exclude_bottom = ctcb->adj_stack_ptr - ctcb->adj_stack_size;
 

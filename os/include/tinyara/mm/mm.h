@@ -373,6 +373,7 @@ extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 
 struct mm_alloc_fail_s {
 	uint32_t size;
+	uint32_t align;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller;
 #endif
@@ -690,6 +691,7 @@ void kmm_extend(FAR void *mem, size_t size, int region);
 
 struct mallinfo;				/* Forward reference */
 int mm_mallinfo(FAR struct mm_heap_s *heap, FAR struct mallinfo *info);
+int mm_mallinfo_aligned(FAR struct mm_heap_s *heap, FAR struct mallinfo *info, size_t align);
 
 /* Functions contained in kmm_mallinfo.c ************************************/
 
@@ -717,7 +719,9 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 
 int mm_size2ndx(size_t size);
 
+void mm_dump_node(struct mm_allocnode_s *node, char *node_type);
 void mm_dump_heap_region(uint32_t start, uint32_t end);
+void mm_dump_heap_free_node_list(struct mm_heap_s *heap);
 int heap_dbg(const char *fmt, ...);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
@@ -784,30 +788,45 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 /* Function to manage the memory allocation failure case. */
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-void mm_ioctl_alloc_fail(size_t size, mmaddress_t caller);
-#define mm_manage_alloc_fail(h, b, e, s, t, c) 	do { \
-							(void)h; \
-							(void)b; \
-							(void)e; \
-							(void)t; \
-							mm_ioctl_alloc_fail(s, c); \
-						} while (0)
+void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller);
+#define mm_manage_alloc_fail(h, b, e, s, a, t, c) 	do { \
+								(void)h; \
+								(void)b; \
+								(void)e; \
+								(void)t; \
+								mm_ioctl_alloc_fail(s, a, c); \
+							} while (0)
 #else
-void mm_ioctl_alloc_fail(size_t size);
-#define mm_manage_alloc_fail(h, b, e, s, t) 	do { \
+void mm_ioctl_alloc_fail(size_t size, size_t align);
+#define mm_manage_alloc_fail(h, b, e, s, a, t) 	do { \
 							(void)h; \
 							(void)b; \
 							(void)e; \
 							(void)t; \
-							mm_ioctl_alloc_fail(s); \
+							mm_ioctl_alloc_fail(s, a); \
 						} while (0)
 #endif
+
+void mm_ioctl_garbagecollection(void);
+#define sched_garbagecollection			mm_ioctl_garbagecollection
+
 #else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, int heap_type
+
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		, mmaddress_t caller
 #endif
 		);
+
+/* Functions defined in sched/sched_garbage *********************************/
+
+/* Must be called periodically to clean up deallocations delayed by
+ * sched_kmm_free().  This may be done from either the IDLE thread or from a
+ * worker thread.  The IDLE thread has very low priority and could starve
+ * the system for memory in some context.
+ */
+
+void sched_garbagecollection(void);
 #endif
 
 #if CONFIG_KMM_NHEAPS > 1

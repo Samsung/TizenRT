@@ -1220,4 +1220,14 @@ struct iw_event
 #define IW_EVT_STR_NO_NETWORK "No Assoc Network After Scan Done"
 #define IW_EVT_STR_ICV_ERROR "ICV Eror"
 #define IW_EVT_STR_CHALLENGE_FAIL "Auth Challenge Fail"
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define IW_EVT_STR_STA_FOURWAY_DONE "STA handshake done"
+#define IW_EVT_STR_WLAN_DRIVER_START "WLAN driver start"
+#define IW_EVT_STR_WLAN_DRIVER_STOP "WLAN driver stop"
+#define IW_EVT_STR_SCANNING "scanning"
+#define IW_EVT_STR_AUTHENTICATING "authenticating"
+#define IW_EVT_STR_ASSOCIATING "associating"
+#define IW_EVT_STR_ASSOCIATION_DONE "association done"
+#define IW_EVT_STR_FOURWAY_HANDSHAKING "handshaking"
+#endif //CONFIG_PLATFORM_TIZENRT_OS
 #endif	/* _LINUX_WIRELESS_H */

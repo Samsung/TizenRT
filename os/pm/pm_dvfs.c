@@ -103,7 +103,7 @@ void pm_dvfs(int div_lvl)
 	 * 3 -> 300Mhz
 	 */
 	/* Placed in os/arch/arm/src/amebasmart/amebasmart_pmc.c, can be invoked directly */
-	up_set_dvfs(div_lvl);
+	g_pmglobals.dvfs_ops->adjust_dvfs(div_lvl);
 	return;
 }
 

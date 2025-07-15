@@ -153,6 +153,9 @@ struct wdog_s {
 #ifdef CONFIG_PIC
 	FAR void *picbase;			/* PIC base address */
 #endif
+#ifdef CONFIG_DEBUG
+	int pid;					/* The pid of process which creates wdog timer */
+#endif
 	int lag;					/* Timer associated with the delay */
 	uint8_t flags;				/* See WDOGF_* definitions above */
 	uint8_t argc;				/* The number of parameters to pass */

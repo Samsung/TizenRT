@@ -325,12 +325,8 @@ static int tash_cat(int argc, char **args)
 			read_size = read(fd, fscmd_buffer, FSCMD_BUFFER_LEN - 1);
 			if (read_size > 0) {
 				int output_size = 0;
-				fscmd_buffer[read_size] = '\0';
 				while (output_size < read_size) {
 					FSCMD_OUTPUT("%c", fscmd_buffer[output_size++]);
-					if (output_size % 100 == 0) {
-						FSCMD_OUTPUT("\n");
-					}
 				}
 			}
 		} while (read_size > 0);
@@ -842,7 +838,7 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 			return ERROR;
 		}
 
-		if ((buf.f_type == SMARTFS_MAGIC) || (buf.f_type == ROMFS_MAGIC) || (buf.f_type == PROCFS_MAGIC) || (buf.f_type == TMPFS_MAGIC)) {
+		if ((buf.f_type == SMARTFS_MAGIC) || (buf.f_type == ROMFS_MAGIC) || (buf.f_type == PROCFS_MAGIC) || (buf.f_type == TMPFS_MAGIC) || (buf.f_type == LITTLEFS_SUPER_MAGIC)) {
 			ret = handler(fullpath, &buf, NULL);
 			if (ret != OK) {
 				FSCMD_OUTPUT("handler is failed at %s\n", fullpath);
@@ -885,6 +881,7 @@ static int tash_mount(int argc, char **args)
 	const char *source;
 	char *fullsource;
 	const char *target;
+	const char *data = NULL;
 	char *fulltarget;
 	bool badarg = false;
 
@@ -932,6 +929,8 @@ static int tash_mount(int argc, char **args)
 		source = target;
 		target = args[optind];
 		optind++;
+		data = args[optind];
+		optind++;
 		if (optind < argc) {
 			FSCMD_OUTPUT(TOO_MANY_ARGS, args[0]);
 
@@ -955,7 +954,7 @@ static int tash_mount(int argc, char **args)
 
 	/* Perform the mount */
 
-	ret = mount(fullsource, fulltarget, fs, 0, NULL);
+	ret = mount(fullsource, fulltarget, fs, 0, (FAR const void *)data);
 	if (ret < 0) {
 		FSCMD_OUTPUT(CMD_FAILED, args[0], fs);
 	}
@@ -1248,6 +1247,12 @@ static const char *get_fstype(FAR struct statfs *statbuf)
 		break;
 #endif
 
+#ifdef CONFIG_FS_LITTLEFS
+	case LITTLEFS_SUPER_MAGIC:
+		fstype = "littlefs";
+		break;
+#endif
+
 #ifdef CONFIG_FS_PROCFS
 	case PROCFS_MAGIC:
 		fstype = "procfs";
@@ -1364,11 +1369,16 @@ static int format_filesystem(fs_minor_t minor)
 		printf("Invalid minor number : %d", minor);
 		return ERROR;
 	}
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 32; i++) {
 		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
 		fd = open(name, O_RDWR);
 		if (fd < 0) {
-			continue;
+			/* Then Find littlefs */
+			snprintf(name, sizeof(name), "/dev/little%dp%d", minor, i);
+			fd = open(name, O_RDWR);
+			if (fd < 0) {
+				continue;
+			}
 		}
 		/* TODO Multi root of smartfs should be considered when it enabled */
 		ret = ioctl(fd, BIOC_BULKERASE, 0);
@@ -1381,6 +1391,44 @@ static int format_filesystem(fs_minor_t minor)
 	}
 	if (ret == OK) {
 		printf("Low level format finished, Please reboot device\n");
+	}
+	return ret;
+}
+
+static int corrupt_filesystem(fs_minor_t minor)
+{
+	char name[CONFIG_PATH_MAX];
+	int fd;
+	int ret = ERROR;
+
+	if ((minor < FS_BLOCK_MINOR_PRIMARY) || (minor > FS_BLOCK_MINOR_SECONDARY)) {
+		printf("Invalid minor number : %d", minor);
+		return ERROR;
+	}
+
+	for (int i = 0; i < 32; i++) {
+		snprintf(name, sizeof(name), "/dev/smart%dp%d", minor, i);
+		fd = open(name, O_RDWR);
+		if (fd < 0) {
+			/* Then Find littlefs */
+			snprintf(name, sizeof(name), "/dev/little%dp%d", minor, i);
+			fd = open(name, O_RDWR);
+			if (fd < 0) {
+				continue;
+			}
+		}
+		/* TODO Multi root of smartfs should be considered when it enabled */
+		ret = ioctl(fd, BIOC_CORRUPTION, 0);
+
+		close(fd);
+		if (ret != OK) {
+			printf("Low level corrupt failed ret : %d errno : %d", ret, errno);
+			return ret;
+		}
+		break;
+	}
+	if (ret == OK) {
+		printf("Low level corrupt finished, Please reboot device\n");
 	}
 	return ret;
 }
@@ -1414,6 +1462,36 @@ static int tash_format(int argc, char **args)
 #endif
 	return ret;
 }
+
+/****************************************************************************
+ * Name: tash_corrupt
+ *
+ * Description:
+ *   corrupt filesystem
+ *
+ * Usage:
+ *   corrupt [internal / external]
+ ****************************************************************************/
+static int tash_corrupt(int argc, char **args)
+{
+	int ret = OK;
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
+
+	if (argc >= 2 && strncmp(args[1], "internal", strlen(args[1]) + 1) == 0) {
+		ret = corrupt_filesystem(FS_BLOCK_MINOR_PRIMARY);
+	} else if (argc >= 2 && strncmp(args[1], "external", strlen(args[1]) + 1) == 0) {
+		ret = corrupt_filesystem(FS_BLOCK_MINOR_SECONDARY);
+	} else {
+		printf("Usage: corrupt [internal | external] \n");
+		ret = ERROR;
+	}
+#else
+	printf("BCH should be enabled to format file system\n");
+	ret = ERROR;
+#endif
+	return ret;
+}
 #endif
 
 const static tash_cmdlist_t fs_utilcmds[] = {
@@ -1435,6 +1513,10 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"format",     tash_format,     TASH_EXECMD_SYNC},
+#endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"corrupt", tash_corrupt, TASH_EXECMD_SYNC},
 #endif
 
 #ifndef CONFIG_DISABLE_ENVIRON

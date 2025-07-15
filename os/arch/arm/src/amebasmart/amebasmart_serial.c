@@ -194,7 +194,7 @@
 #define TTYS2_DEV               g_uart4port             /* UART4 is ttyS2 */
 #define UART4_ASSIGNED  1
 #endif
-#define CHAR_TIMEOUT 6540
+#define CHAR_TIMEOUT 3127500 /*counter based on cpu clock, ~2.6ms*/
 #define TX_FIFO_MAX 16
 
 /****************************************************************************
@@ -574,9 +574,6 @@ static int rtl8730e_log_uart_irq(void *Data)
 	u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
 	if ((txempty_en == 0x4 && (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
 		uart_xmitchars(&CONSOLE_DEV);
-	} else {
-		/* Workaround: Further investigation required to identify where Tx IRQ was disabled */
-		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
 	}
 	return 0;
 }
@@ -720,10 +717,11 @@ static void rtl8730e_log_up_rxint(struct uart_dev_s *dev, bool enable)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 	priv->rxint_enable = enable;
-	//if (enable)
-		//LOGUART_RxCmd(LOGUART_DEV, ENABLE);
-	//else
-		//LOGUART_RxCmd(LOGUART_DEV, DISABLE);
+	if (enable) {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
+	} else {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, DISABLE);
+	}
 }
 
 /****************************************************************************
@@ -1293,6 +1291,14 @@ void up_serialinit(void)
 void up_lowputc(char ch)
 {
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
+	u32 CounterIndex = 0;
+	/*check if there is space in fifo*/
+	while(!LOGUART_Ready()) {
+		CounterIndex++;
+		if (CounterIndex >= CHAR_TIMEOUT) {
+			break;
+		}
+	}
 	LOGUART_PutChar(ch);
 #else
 	if (CONSOLE_DEV.isconsole == false)
@@ -1318,9 +1324,10 @@ int up_lowgetc(void)
 {
 	uint8_t rxd;
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
+	u32 IrqEn = LOGUART_GetIMR();
 	LOGUART_SetIMR(0);
 	rxd = LOGUART_GetChar(_FALSE);
-	LOGUART_SetIMR(1);
+	LOGUART_SetIMR(IrqEn);
 #else
 	if (CONSOLE_DEV.isconsole == false)
 		return;
@@ -1344,8 +1351,6 @@ int up_lowgetc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
-	/*check if there is space in fifo*/
-	while(!LOGUART_Ready());
 	/* Check for LF */
 
 	if (ch == '\n') {
@@ -1394,8 +1399,6 @@ int up_getc(void)
  ****************************************************************************/
 int up_putc(int ch)
 {
-	/*check if there is space in fifo*/
-	while(!LOGUART_Ready());
 	/* Check for LF */
 
 	if (ch == '\n') {

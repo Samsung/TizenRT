@@ -34,8 +34,27 @@ assertion_details = "Assertion details\n"
 stack_details = "Asserted task's stack details\n"
 register_dump = "Asserted task's register dump\n"
 BIN_ADDR_FXN = "Loading location information\n"
+tcb_info = "Asserted task's TCB info"
 
 partition_string = "==========================================================="
+
+TCB_FLAG_TTYPE_SHIFT      = (0)	                         # Bits 0-1: thread type 
+TCB_FLAG_TTYPE_MASK       = (3 << TCB_FLAG_TTYPE_SHIFT)
+TCB_FLAG_TTYPE_TASK       = (0 << TCB_FLAG_TTYPE_SHIFT)	 # Normal user task 
+TCB_FLAG_TTYPE_PTHREAD    = (1 << TCB_FLAG_TTYPE_SHIFT)	 # User pthread 
+TCB_FLAG_TTYPE_KERNEL     = (2 << TCB_FLAG_TTYPE_SHIFT)	 # Kernel thread 
+TCB_FLAG_NONCANCELABLE    = (1 << 2)                     # Bit 2: Pthread is non-cancelable 
+TCB_FLAG_CANCEL_DEFERRED  = (1 << 3)                     # Bit 3: Deferred (vs asynch) cancellation type 
+TCB_FLAG_CANCEL_PENDING   = (1 << 4)                     # Bit 4: Pthread cancel is pending 
+TCB_FLAG_POLICY_SHIFT     = (5)                          # Bit 5-6: Scheduling policy 
+TCB_FLAG_POLICY_MASK      = (3 << TCB_FLAG_POLICY_SHIFT)
+TCB_FLAG_SCHED_FIFO       = (0 << TCB_FLAG_POLICY_SHIFT) # FIFO scheding policy 
+TCB_FLAG_ROUND_ROBIN      = (1 << TCB_FLAG_POLICY_SHIFT) # Round robin scheding policy 
+TCB_FLAG_SCHED_SPORADIC   = (2 << TCB_FLAG_POLICY_SHIFT) # Sporadic scheding policy 
+TCB_FLAG_SCHED_OTHER      = (3 << TCB_FLAG_POLICY_SHIFT) # Other scheding policy 
+TCB_FLAG_CPU_LOCKED       = (1 << 7)                     # Bit 7: Locked to this CPU 
+TCB_FLAG_EXIT_PROCESSING  = (1 << 8)                     # Bit 8: Exitting 
+TCB_FLAG_SYSCALL          = (1 << 10)                    # Bit 9: In a system call 
 
 class logParser:
 
@@ -50,6 +69,7 @@ class logParser:
 		self.g_etext_app = [0] * 10
 		self.app_name = []
 		self.crash_type_assert = False
+		self.task_state = dict()
 
 		# Kernel text start & end addresses in FLASH & RAM regions
 		self.g_stext_flash = 0
@@ -61,6 +81,8 @@ class logParser:
 		self.config_path = config_path
 		self.xip_enabled = xip_enabled
 		self.have_ram_kernel_text = have_ram_kernel_text
+
+		self.convert_stateno_statemsg()
 
 	def format_output(self,res , string):
 		r = res.split('\n')
@@ -77,6 +99,12 @@ class logParser:
 			print('\n2. Crash type               : usage fault')
 		elif 'up_hardfault' in string:
 			print('\n2. Crash type               : hard fault')
+		elif 'dataabort' in string:
+			print('\n2. Crash type               : data abort')
+		elif 'prefetchabort' in string:
+			print('\n2. Crash type               : prefetch abort')
+		elif 'undefinedinsn' in string:
+			print('\n2. Crash type               : undefined instruction abort')
 		elif 'Assertion failed' in string:
 			self.crash_type_assert = True
 			print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
@@ -202,7 +230,6 @@ class logParser:
 		# Check for lr & pc values in application text address range
 		if (pc_value != 00000000):
 			for app_idx in range(self.g_app_idx):
-				os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
 				if (address1 >= hex(self.g_stext_app[app_idx]) and address1 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = lr_value
@@ -254,7 +281,6 @@ class logParser:
 		else:
 			address1 = hex(self.g_assertpc)
 			for app_idx in range(self.g_app_idx):
-				os.system("nm --defined-only -l --numeric-sort " + self.bin_path + self.app_name[app_idx] + "_dbg > " + self.bin_path + self.app_name[app_idx] + ".map")
 				if (address1 >= hex(self.g_stext_app[app_idx]) and address1 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = self.g_assertpc
@@ -475,7 +501,7 @@ class logParser:
 		stack_val = 0x00000000
 		current_line = ""
 			
-		print('\nStack_address\t Symbol_address\t Symbol_location  Symbol_name\t\tFile_name')
+		print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 
 		# Parse the contents based on tokens in log file.
 		with open(self.log_file) as searchfile:
@@ -528,7 +554,7 @@ class logParser:
 						if (is_app_symbol):
 							#If yes, print it's corresponding symbol
 							if not self.xip_enabled:
-								stack_val = stack_val - int(g_stext_app[is_app_symbol - 1])
+								stack_val = stack_val - int(self.g_stext_app[is_app_symbol - 1])
 							utils.print_symbol(stack_addr, stack_val, is_app_symbol, self.bin_path, self.app_name)
 
 	# Function to Parse the input log file (which contains wrong stackdump during assert)
@@ -558,7 +584,7 @@ class logParser:
 						if (self.is_kernel_text_address(hex(stack_val))):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
-								print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+								print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 								format_print = False
 							#If yes, print it's corresponding symbol
 							utils.print_symbol(stack_addr, stack_val, 0, self.bin_path, self.app_name)
@@ -567,12 +593,77 @@ class logParser:
 						if (is_app_symbol):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
-								print('Stack_address\t Symbol_address\t Symbol location  Symbol_name\t\tFile_name')
+								print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
 								format_print = False
 							#If yes, print it's corresponding symbol
 							if not self.xip_enabled:
 								stack_val = stack_val - int(self.g_stext_app[is_app_symbol - 1])
 							utils.print_symbol(stack_addr, stack_val, is_app_symbol, self.bin_path, self.app_name)
+
+	# API to parse asserted tcb information
+	def parse_tcb_info(self):
+		current_line = ""
+		print("\nt. Asserted TCB info:\n")
+		with open(self.log_file) as searchfile:
+			for line in searchfile:
+				if partition_string in line:
+					line = next(searchfile)
+					current_line = line
+					line = next(searchfile)
+					continue
+				if tcb_info in current_line:
+					while '==================' not in line:
+						data = line.replace("|", " ").replace("/", " ").replace("\n", " ").split(":")[2]
+						data = str(list(filter(None, data.split(" ")))[0])
+						if "State" in line:
+							line = line.replace(" " + data, self.task_state[data.split()[0]])
+						elif "Syscall" in line:
+							app_idx = self.is_app_text_address(data)
+							if app_idx:
+								if self.xip_enabled:
+									addr = data
+								else:
+									addr = data - int(hex(self.g_stext_app[app_idx - 1]), 16)
+								f = os.popen('arm-none-eabi-addr2line -f -e ' + self.bin_path + self.app_name[app_idx - 1] + '_dbg ' + hex(int(addr, 16)))
+								result = f.read()
+								if '??' not in result and '$d' not in result:
+									line = line.replace(data, result.replace("\n"," ").split()[0])
+							elif self.is_kernel_text_address(data):
+								f = os.popen('arm-none-eabi-addr2line -f -e ' + self.elf + ' ' + hex(int(data, 16)))
+								result = f.read()
+								if '??' not in result and '$d' not in result:
+									line = line.replace(data, result.replace("\n"," ").split()[0])
+						elif "Flags" in line:
+							flag = int(data)
+							line = line.replace("\n","")
+							if (TCB_FLAG_TTYPE_TASK & flag):
+								line += "\t - User Task"
+							elif TCB_FLAG_TTYPE_PTHREAD & flag:
+								line += "\t - User Pthread"
+							elif TCB_FLAG_TTYPE_KERNEL & flag:
+								line += "\t - Kernel Thread"
+							if TCB_FLAG_NONCANCELABLE & flag:
+								line += "\t - Non-cancellable Pthread"
+							if TCB_FLAG_CANCEL_DEFERRED & flag:
+								line += "\t - Cancel Deffered"
+							if TCB_FLAG_CANCEL_PENDING & flag:
+								line += "\t - Cancel Pending"
+							if TCB_FLAG_ROUND_ROBIN & flag:
+								line += "\t - Round Robin"
+							elif TCB_FLAG_SCHED_FIFO & flag:
+								line += "\t - FIFO"
+							elif TCB_FLAG_SCHED_SPORADIC & flag:
+								line += "\t - Sporadic"
+							if TCB_FLAG_CPU_LOCKED & flag:
+								line += "\t - CPU Locked"
+							if TCB_FLAG_EXIT_PROCESSING & flag:
+								line += "\t - Exiting"
+							if TCB_FLAG_SYSCALL & flag:
+								line += "\t - In a System Call"
+							line += "\n"
+						print(' '.join(line.split(":", 1)[1:]), end = "")
+						line = next(searchfile)
+					break
 
 	# API to parse heap region information and check heap corruption details
 	def parse_heap_info(self):
@@ -608,8 +699,8 @@ class logParser:
 					if heapNode.parseCorruptHeapInfo(line, self.g_app_idx, self.g_stext_app, self.g_etext_app,self.app_name, self.elf, self.bin_path, self.xip_enabled, searchfile) == False:
 						print("No app heap corruption detected.\n")
 
-	# API to print all the runnning TCB in the system
-	def print_task_list(self):
+	# API to parse TCB state to corresponding TCB state msg
+	def convert_stateno_statemsg(self):
 		# Convert task state number to corresponding task state message
 		config_smp = False
 		config_disable_signals = False
@@ -626,36 +717,37 @@ class logParser:
 				elif "CONFIG_PAGING=y" in line:
 					config_paging = True
 		state_no = 0
-		task_state = dict()
-		task_state[str(state_no)] = " Invalid"
+		self.task_state[str(state_no)] = " Invalid"
 		state_no+=1
-		task_state[str(state_no)] = " Pending preemption unlock"
+		self.task_state[str(state_no)] = " Pending preemption unlock"
 		state_no+=1
-		task_state[str(state_no)] = " Wait to scheduling (Ready)"
+		self.task_state[str(state_no)] = " Wait to scheduling (Ready)"
 		state_no+=1
 		if config_smp:
-			task_state[str(state_no)] = " Assigned to CPU (Ready)"
+			self.task_state[str(state_no)] = " Assigned to CPU (Ready)"
 			state_no+=1
-		task_state[str(state_no)] = " Running"
+		self.task_state[str(state_no)] = " Running"
 		state_no+=1
-		task_state[str(state_no)] = " Inactive"
+		self.task_state[str(state_no)] = " Inactive"
 		state_no+=1
-		task_state[str(state_no)] = " Wait Semaphore"
+		self.task_state[str(state_no)] = " Wait Semaphore"
 		state_no+=1
-		task_state[str(state_no)] = " Wait FIN"
+		self.task_state[str(state_no)] = " Wait FIN"
 		state_no+=1
 		if not config_disable_signals:
-			task_state[str(state_no)] = " Wait Signal"
+			self.task_state[str(state_no)] = " Wait Signal"
 			state_no+=1
 		if not config_disable_mqueue:
-			task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
+			self.task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
 			state_no+=1
-			task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
+			self.task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
 			state_no+=1
 		if config_paging:
-			task_state[str(state_no)] = " Wait Page Fill"
+			self.task_state[str(state_no)] = " Wait Page Fill"
 			state_no+=1
 
+	# API to print all the runnning TCB in the system
+	def print_task_list(self):
 		#Parse content of file for displaying tasks
 		with open(self.log_file) as searchfile:
 			for line in searchfile:
@@ -675,7 +767,7 @@ class logParser:
 						current_line = line.replace("|", " ").replace("/", " ").replace("\n", " ").split(" ")
 						current_line = list(filter(None, current_line))
 						state = current_line[len(current_line) - 1]
-						line = line.replace("         " + state, task_state[state])
+						line = line.replace("         " + state, self.task_state[state])
 						print(line[0:], end = "")
 						line = next(searchfile, "No more lines")
 
@@ -700,6 +792,8 @@ class logParser:
 		# Parse heap region information
 		self.parse_heap_info()
 
+		# Parse asserted tcb information
+		self.parse_tcb_info()
 
 		print('\nx. Miscellaneous information:')
 
@@ -709,44 +803,20 @@ class logParser:
 		# print current running task List
 		self.print_task_list()
 
-	# Function to format logs and delete the timestamp (format-|xxxxxxxxx|) if it consists of timestamp at the start of each log line
+	# Function to format logs and delete the timestamp (supported formats-|xxxxxxxxx| and [xxxxxxxxx]) if it consists of timestamp at the start of each log line
 	def format_log_file(self):
 
 		# Delete unwanted logs (if any) and timestamp at the start of each line
 		with open(self.log_file, "r") as f:
 			data = f.readlines()
 		with open(self.log_file, "w") as f:
-			assertinlog = 0 #Truncate logs only if assert has occured. For other type of crashes, no need to truncate
-			trunc = True # False if log line is to be retained, True otherwise
-			current_line=""
 			data = iter(data)
 			for line in data:
-				if partition_string in line:
-					f.write(line)
-					line = next(data)
-					f.write(line)
-					current_line = line
-					line = next(data)
-					f.write(line)
-					continue
-				if 'Assertion failed at file:' in line and current_line == assertion_details:
-					assertinlog = assertinlog + 1
-				if assertinlog == 2:
-					# Truncate logs after first crash dump (repeated assert case)
-					break
-				if assertinlog == 1:
-					# Truncate logs before first crash dump
-					if 'Assertion failed at file:' in line and current_line == assertion_details:
-						trunc = False
-					if trunc:
-						# Do not write line and move to the next line
-						continue
-
 				delete_idx = 0
 				# Timestamp present if line starts with '|'
-				if line[0] == '|':
+				if line[0] == '|' or line[0] == '[':
 					for idx in range(1, len(line)):
-						if '|' == line[idx]:
+						if '|' == line[idx] or ']' == line[idx]:
 							delete_idx = idx + 1
 							break
 				if line[delete_idx] == ' ':	# Check for trailing white spaces

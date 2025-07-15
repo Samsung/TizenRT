@@ -95,10 +95,10 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	CURRENT_REGS = NULL;
 
 	/* MINOR: PSCI is a general interface for controlling power of cortex-A cores 
-	It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
-	Currently, the definitions are provided by chip specific arch layer
-	/* If the cpu off operation failed, we should face a problem during wakeup
-	booting the secondary core, thus we can ignore the return value here first
+	   It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
+	   Currently, the definitions are provided by chip specific arch layer
+	   If the cpu off operation failed, we should face a problem during wakeup
+	   booting the secondary core, thus we can ignore the return value here first
 	*/
 	/* Shut down the secondary core */
    	(void)psci_cpu_off(); 
@@ -129,6 +129,9 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 void up_cpu_hotplug(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+	/* Ensure that hotplug target CPU's systick PPI stops firing to prevent deadlock condition */
+	up_systimer_pause(cpu);
 
 	/* Fire SGI for cpu to enter hotplug */
 	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));

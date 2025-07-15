@@ -105,7 +105,7 @@
 #include <queue.h>
 #include <tinyara/wdog.h>
 #include "semaphore/semaphore.h"
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #if defined(CONFIG_DEBUG_WORKQUEUE)
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
@@ -147,6 +147,9 @@ extern int g_irq_nums[3];
 #define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
 #define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
 
+#define NORMAL_STATE 0
+#define ABORT_STATE 1
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -155,6 +158,9 @@ char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = {'\0', };
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Variable to check the recursive abort */
+static int state = NORMAL_STATE;
 
 /****************************************************************************
  * Private Functions
@@ -599,12 +605,20 @@ void up_assert(const uint8_t *filename, int lineno)
 	board_led_on(LED_ASSERTION);
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	reboot_reason_write_user_intended();
+	reboot_reason_try_write_assert();
 #endif
+
+	uint32_t asserted_location;
 
 	abort_mode = true;
 
-	uint32_t asserted_location;
+	/* Check if we are in recursive abort */
+	if (state == ABORT_STATE) {
+		/* treat kernel fault */
+		_up_assert(EXIT_FAILURE);
+	} else {
+		state = ABORT_STATE;
+	}
 
 	/* Extract the PC value of instruction which caused the abort/assert */
 

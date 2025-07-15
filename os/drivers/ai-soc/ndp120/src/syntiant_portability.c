@@ -28,7 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.5-Samsung **
+ 	** SDK: v112.3.7-Samsung **
 */
 
 #include <syntiant_ilib/syntiant_portability.h>
@@ -99,6 +99,4 @@ unsigned long syntiant_get_ms_elapsed(syntiant_ms_time *ms_time)
 }
 
 #endif
-
-
 

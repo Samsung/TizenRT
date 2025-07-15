@@ -38,6 +38,7 @@
 #include "gic.h"
 #include "sched/sched.h"
 #include "barriers.h"
+#include "arch_timer.h"
 
 #ifdef CONFIG_CPU_GATING
 static volatile uint32_t g_cpugating_flag[CONFIG_SMP_NCPUS];
@@ -52,6 +53,9 @@ void up_set_gating_flag_status(uint32_t CoreID, uint32_t val)
 	ARM_DSB();
 	/* Flag already reach 0 */
 	if (!g_cpugating_flag[CoreID]) {
+		if (this_cpu() != 0) {
+			up_timer_disable();
+		}
 		SP_SEV();
 	}
 }
@@ -59,6 +63,23 @@ void up_set_gating_flag_status(uint32_t CoreID, uint32_t val)
 uint32_t up_get_gating_flag_status(uint32_t CoreID)
 {
 	return g_cpugating_flag[CoreID];
+}
+
+
+void up_do_gating(void)
+{
+	int cpu = this_cpu();
+	if (g_cpugating_flag[cpu] == 1) {
+		uint32_t PrevIrqStatus = irqsave();
+		g_cpugating_flag[cpu]++;
+		ARM_DSB();
+		ARM_ISB();
+		while (g_cpugating_flag[cpu]) {
+			SP_WFE();
+		}
+		irqrestore(PrevIrqStatus);
+	}
+
 }
 
 /****************************************************************************
@@ -77,16 +98,7 @@ uint32_t up_get_gating_flag_status(uint32_t CoreID)
  ****************************************************************************/
 int arm_gating_handler(int irq, void *context, void *arg)
 {
-	int cpu = this_cpu();
-	uint32_t PrevIrqStatus = irqsave();
-	g_cpugating_flag[cpu]++;
-	ARM_DSB();
-	ARM_ISB();
-	while (g_cpugating_flag[cpu]) {
-		SP_WFE();
-	}
-	irqrestore(PrevIrqStatus);
-
+	up_do_gating();
 	return OK;
 }
 
@@ -107,8 +119,40 @@ void up_cpu_gating(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
+	/* If this cpu has already been paused, then we 
+	 * will not perform gating. However, we will set
+	 * the gating flag as if gating is performed. This
+	 * is because, the main intention of both gating and 
+	 * pausing the cpu is to prevent the cpu from running.
+	 * Since this is already handled and cpu is in pause state,
+	 * we can perform critical operation assuming gating is done.
+	 * At a future point of time, the cpu will get resumed
+	 * by the code which had initially paused it
+	 */
+
+	/* NOTE: This only works for 2 cpu case, in case of more cpus, 
+	 * we need to redesign the pause and gating logic such that only
+	 * the cpu or the task which called pause is allowed to call resume.
+	 */
+
+	if (up_is_cpu_paused(cpu)) {
+		g_cpugating_flag[cpu] = 2;
+		return;
+	} else if (up_cpu_pausereq(cpu)) {
+		/* On the other hand, if a pause request is pending, it 
+		 * has to be handled first and then the caller must retry
+		 * gating request
+		 */
+		return;
+	}
+
 	/* Fire SGI for cpu to enter gating */
 	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
+
+	/* after gating other CPU, this cpu is the active timer, since the other one will be gated */
+	if (cpu == 0 && g_cpugating_flag[cpu] != 0) {
+		up_timer_enable();
+	}
 }
 
 #endif /* CONFIG_CPU_GATING */

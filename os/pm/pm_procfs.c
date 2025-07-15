@@ -212,7 +212,7 @@ static void power_read_state(void (*readprint)(const char *, ...))
 
 static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *dir)
 {
-	char *str;
+	const char *str;
 	int domain_id;
 	/* Function to check path is starting with given name */
 	int checkStart(char *name, bool isDirectory) {
@@ -350,7 +350,6 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	size_t totalsize;
 	int domain_id;
 	int last_read;
-	int pm_state;
 	/* Function to copy domain information into buffer */
 	void readprint(const char *format, ...) {
 		size_t copysize;

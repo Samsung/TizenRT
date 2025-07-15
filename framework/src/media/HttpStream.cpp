@@ -19,7 +19,7 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <debug.h>
-
+#include <memory>
 #include "HttpStream.h"
 
 namespace media {

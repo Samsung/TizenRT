@@ -75,6 +75,8 @@
 #include <tinyara/mqueue.h>
 #endif
 
+#include <limits.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -95,7 +97,11 @@
 
 #ifdef CONFIG_FS_TMPFS
 #define TMPFS_FSTYPE "tmpfs"
+#ifdef CONFIG_FS_TMPFS_MOUNT_POINT
+#define TMPFS_MOUNT_POINT CONFIG_FS_TMPFS_MOUNT_POINT
+#else
 #define TMPFS_MOUNT_POINT "/tmp"
+#endif
 #endif
 #ifdef NXFUSE_HOST_BUILD
 #define  O_WROK    1
@@ -147,6 +153,7 @@ struct geometry {
 	bool geo_writeenabled;		/* true: It is okay to write to this device */
 	size_t geo_nsectors;		/* Number of sectors on the device */
 	size_t geo_sectorsize;		/* Size of one sector */
+	char geo_model[NAME_MAX + 1];
 };
 
 /* This structure is provided by block devices when they register with the

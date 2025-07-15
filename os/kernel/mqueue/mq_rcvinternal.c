@@ -67,7 +67,6 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
-#include <tinyara/ttrace.h>
 
 #include "sched/sched.h"
 #include "mqueue/mqueue.h"
@@ -276,8 +275,6 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 	FAR struct mqueue_inode_s *msgq;
 	ssize_t rcvmsglen;
 
-	trace_begin(TTRACE_TAG_IPC, "mq_doreceive");
-
 	/* Get the length of the message (also the return value) */
 
 	rcvmsglen = mqmsg->msglen;
@@ -322,8 +319,6 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 
 		leave_critical_section(saved_state);
 	}
-
-	trace_end(TTRACE_TAG_IPC);
 
 	/* Return the length of the message transferred to the user buffer */
 

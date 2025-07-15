@@ -73,7 +73,26 @@ config AMEBASMART_MIPI
 
 config AMEBASMART_USBDEVICE
 	bool "AMEBASMART_USBDEVICE"
+	default n
+
+config AMEBASMART_BOR
+	bool "AMEBASMART_BOR"
 	default y
+
+if AMEBASMART_BOR
+config AMEBASMART_THRESHOLD_FALL
+	int "BOR falling threshold"
+	default 14
+	range 10 16
+	---help---
+		10: 2.90V, 11: 2.86V, 12: 2.81V, 13: 2.76V, 14: 2.72V, 15: 2.67V, 16: 2.63V
+config AMEBASMART_THRESHOLD_RISE
+	int "BOR rising threshold"
+	default 11
+	range 8 14
+	---help---
+		8: 2.98V, 9: 2.92V, 10: 2.87V, 11: 2.83V, 12: 2.78V, 13: 2.74V, 14: 2.69V
+endif
 
 config AMEBASMART_SPI
 	bool "AMEBASMART_SPI"

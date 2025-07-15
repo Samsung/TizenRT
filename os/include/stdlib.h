@@ -592,6 +592,19 @@ void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, co
  */
 FAR void *bsearch(FAR const void *key, FAR const void *base, size_t nel, size_t width, CODE int (*compar)(FAR const void *, FAR const void *));
 
+/*
+	Following changes are work around to resolve build warnings.
+
+	TODO : The build warnings are there because function `mallinfo` shadows struct `mallinfo`.
+
+	The proper fix for warning issue is below:
+
+		1. Either change struct or function name
+		2. Move functions declaration into separate header file
+*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+
 #ifdef CONFIG_CAN_PASS_STRUCTS
 /**
  * @ingroup STDLIB_LIBC
@@ -612,6 +625,8 @@ struct mallinfo mallinfo(void);
  */
 int mallinfo(struct mallinfo *info);
 #endif
+
+#pragma GCC diagnostic pop
 
 #undef EXTERN
 #if defined(__cplusplus)

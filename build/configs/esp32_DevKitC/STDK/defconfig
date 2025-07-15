@@ -459,10 +459,6 @@ CONFIG_UART1_2STOP=0
 # CONFIG_RAMLOG is not set
 # CONFIG_SYSLOG_CONSOLE is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 
 #
 # Wireless Device Options

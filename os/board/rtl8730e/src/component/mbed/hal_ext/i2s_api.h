@@ -356,7 +356,7 @@ int *i2s_get_tx_page(i2s_t *obj);
   * @param  pbuf: tx buffer adderss.
   * @retval none
   */
-void i2s_send_page(i2s_t *obj, uint32_t *pbuf);
+void i2s_send_page(void);
 
 /**
   * @brief  Sets current rx page own by i2s.

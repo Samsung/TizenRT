@@ -58,6 +58,7 @@ static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config_s *config);
+//NOT IMPLEMENTED: trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_multi_configs_s *config);
 trwifi_result_e wifi_netmgr_utils_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg);
 trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg);
 trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi_info);
@@ -66,6 +67,12 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 trwifi_result_e wifi_netmgr_utils_stop_softap(struct netdev *dev);
 trwifi_result_e wifi_netmgr_utils_set_autoconnect(struct netdev *dev, uint8_t check);
 trwifi_result_e wifi_netmgr_utils_ioctl(struct netdev *dev, trwifi_msg_s *msg);
+//trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan);
+trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_signal_quality *signal_quality);
+trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason);
+trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
+trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+
 struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_init,			/* init */
 	wifi_netmgr_utils_deinit,			/* deinit */
@@ -79,6 +86,11 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_set_autoconnect, /* set_autoconnect */
 	wifi_netmgr_utils_ioctl,					/* drv_ioctl */
 	NULL,	/* scan_multi_ap */
+	NULL,		/* set_chplan */
+	wifi_netmgr_utils_get_signal_quality,           /* get_signal_quality */
+	wifi_netmgr_utils_get_disconn_reason,           /* get_deauth_reason */
+	wifi_netmgr_utils_get_driver_info,                      /* get_driver_info */
+	wifi_netmgr_utils_get_wpa_supplicant_state,     /* get_wpa_supplicant_state */
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -621,6 +633,157 @@ trwifi_result_e wifi_netmgr_utils_disconnect_ap(struct netdev *dev, void *arg)
 	} else {
 		ndbg("[RTK] WiFiNetworkLeave fail because of %d\n", ret);
 	}
+
+	return wuret;
+}
+
+/* Not tested yet */
+// trwifi_result_e wifi_netmgr_utils_set_chplan(struct netdev *dev, uint8_t chplan)
+// {
+// 	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+// 	if (!dev) {
+// 		ndbg("[RTK] invalid dev argument \n");
+// 		return wuret;
+// 	}
+
+// 	if (!chplan) {
+// 		ndbg("[RTK] invalid chplan argument \n");
+// 		return wuret;
+// 	}
+
+// 	wuret = TRWIFI_FAIL;
+
+// 	if ((wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) || (g_mode == RTK_WIFI_SOFT_AP_IF)) {
+// 		RTW_API_INFO("[RTK] Failed to set channel plan, disconnect from AP or stop SoftAP before setting\n");
+// 		return wuret;
+// 	}
+
+// 	int ret = wext_set_channel(dev->ifname, chplan);
+// 	if (ret == RTK_STATUS_SUCCESS) {
+// 		wuret = TRWIFI_SUCCESS;
+// 		RTW_API_INFO("[RTK] Successfully set channel plan to %x\n", chplan);
+// 	} else {
+// 		RTW_API_INFO("[RTK] Failed to set channel plan, invalid channel plan %x\n", chplan);
+// 	}
+
+// 	return wuret;
+// }
+
+trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_signal_quality *signal_quality)
+{
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+	if (!dev) {
+		ndbg("[RTK] invalid dev argument \n");
+		return wuret;
+	}
+
+	if (!signal_quality) {
+		ndbg("[RTK] invalid signal_quality argument \n");
+		return wuret;
+	}
+
+	rtw_memset(signal_quality, 0, sizeof(trwifi_signal_quality));
+	wuret = TRWIFI_FAIL;
+
+	if (g_mode == RTK_WIFI_NONE) {
+		ndbg("[RTK] Failed to get signal quality, wifi not initialized \n");
+		return wuret;
+	}
+
+	u8 channel;
+	if (wext_get_channel(dev->ifname, &channel) < 0) {
+		ndbg("[RTK] Failed to get wifi channel \n");
+		return wuret;
+	}
+	signal_quality->channel = channel;
+
+	int bw = wifi_get_current_bw(dev->ifname);
+	if (bw < 0) {
+		ndbg("[RTK] Failed to get wifi current bandwidth. Please connect wifi client. \n");
+		return wuret;
+	}
+	signal_quality->network_bw = bw;
+
+	rtw_phy_statistics_t phy_statistics = {0};
+	if (wifi_fetch_phy_statistic(dev->ifname, &phy_statistics) != RTK_STATUS_SUCCESS) {
+		ndbg("[RTK] Failed to get wifi phy_statistics. Please connect wifi client. \n");
+		return wuret;
+	}
+	if ((g_mode == RTK_WIFI_STATION_IF) && (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS)) {
+		memcpy(&signal_quality->snr, &phy_statistics.snr, sizeof(signed char));
+	}
+	signal_quality->tx_drop = phy_statistics.tx_drop;
+	signal_quality->rx_drop = phy_statistics.rx_drop;
+	signal_quality->tx_retry = phy_statistics.tx_retry;
+	signal_quality->max_rate = phy_statistics.supported_max_rate;
+
+	wuret = TRWIFI_SUCCESS;
+
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason)
+{
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+	if (!deauth_reason) {
+		ndbg("[RTK] invalid deauth_reason argument \n");
+		return wuret;
+	}
+
+	*deauth_reason = wifi_get_last_reason();
+	wuret = TRWIFI_SUCCESS;
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state)
+{
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+	if (!wpa_supplicant_state) {
+		ndbg("[RTK] invalid wpa_supplicant_state argument \n");
+		return wuret;
+	}
+
+	wuret = TRWIFI_FAIL;
+	enum wpa_states current_wpa_state = WPA_INTERFACE_DISABLED;
+	enum wpa_states previous_wpa_state = WPA_INTERFACE_DISABLED;
+	int prev_key_mgmt = 0;
+
+	if (g_mode == RTK_WIFI_STATION_IF) {
+		/* This API is used to check the supplicant state before disconnection */
+		wifi_get_wpa_supplicant_state_info(&current_wpa_state, &previous_wpa_state);
+		wpa_supplicant_state->wpa_supplicant_state = previous_wpa_state;
+
+		/* wifi_get_previous_key_mgmt will return the value used in the last disconnected network */
+		prev_key_mgmt = wifi_get_previous_key_mgmt();
+		wpa_supplicant_state->wpa_supplicant_key_mgmt = prev_key_mgmt;
+		wuret = TRWIFI_SUCCESS;
+	}
+
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info)
+{
+	trwifi_result_e wuret = TRWIFI_INVALID_ARGS;
+
+	if (!driver_info) {
+		ndbg("[RTK] invalid driver_info argument \n");
+		return wuret;
+	}
+
+	wuret = TRWIFI_FAIL;
+
+	char lib_ver[64];
+	if (wifi_get_lib_version(lib_ver) != RTW_SUCCESS) {
+		return wuret;
+	}
+	strcpy(driver_info->lib_version, lib_ver);
+
+	wuret = TRWIFI_SUCCESS;
 
 	return wuret;
 }
