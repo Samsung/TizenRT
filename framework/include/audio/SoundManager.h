@@ -82,6 +82,13 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute);
  */
 bool getStreamMuteState(stream_policy_t stream_policy, bool *mute);
 
+/**
+ * @brief Enable dmic or keep internal mic
+ * @param[in] enable dmic or not
+ * @return true if the operation was successful, false otherwise.
+ */
+bool enableDMIC(bool enable);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -97,3 +97,14 @@ bool getStreamMuteState(stream_policy_t stream_policy, bool *mute)
 	return true;
 }
 
+bool enableDMIC(bool enable)
+{
+	medvdbg("SoundManager : enableDMIC. enable : %d\n", enable);
+	audio_manager_result_t res = set_dmic(enable);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("senableDMIC failed enable : %d, ret : %d\n", enable, res);
+		return false;
+	}
+	return true;
+}
+
