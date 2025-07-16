@@ -65,6 +65,11 @@ else
 endif
 endif
 
+# include kernel header files to use kernel api during memory allocation failure
+ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
+CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" "$(TOPDIR)$(DELIM)kernel"}
+endif
+
 # Sources and paths
 
 ASRCS  =

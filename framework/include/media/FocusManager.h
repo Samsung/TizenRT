@@ -108,12 +108,14 @@ private:
 		std::shared_ptr<FocusChangeListener> mListener;
 	};
 
-	FocusManager() = default;
+	FocusManager();
 	virtual ~FocusManager() = default;
-	int insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest);
+	void insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, bool isTransientRequest);
+	void removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest);
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
 	std::list<std::shared_ptr<FocusRequester>> mFocusList;
 	std::mutex mFocusLock;
+	std::mutex mFocusListAccessLock;
 };
 } // namespace media
 

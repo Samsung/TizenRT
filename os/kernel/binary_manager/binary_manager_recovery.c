@@ -40,7 +40,7 @@
 #include "task/task.h"
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
-#include "binary_manager.h"
+#include "binary_manager_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -93,6 +93,10 @@ static void binary_manager_recover_tcb(struct tcb_s *tcb)
 		ASSERT(sem != NULL && sem->semcount < 0);
 		sem_canceled(tcb, sem);
 		sem->semcount++;
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
+
 		tcb->waitsem = NULL;
 	} else if (state == TSTATE_WAIT_MQNOTEMPTY) {
 		ASSERT(tcb->msgwaitq && tcb->msgwaitq->nwaitnotempty > 0);
@@ -161,6 +165,7 @@ static int binary_manager_deactivate_binary(int bin_idx)
 static void binary_manager_unblock_fault_message_sender(int bin_idx)
 {
 	struct faultmsg_s *msg;
+	irqstate_t flags = enter_critical_section();
 
 	/* Check there are a fault message sender and available fault message */
 	if (g_faultmsg_sender && (msg = (faultmsg_t *)sq_remfirst(&g_freemsg_list))) {
@@ -171,8 +176,10 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
 		if (g_faultmsg_sender->task_state == TSTATE_WAIT_FIN) {
 			up_unblock_task_without_savereg(g_faultmsg_sender);
 		}
+		leave_critical_section(flags);
 		return;
 	}
+	leave_critical_section(flags);
 
 	/* Board reset on failure of recovery */
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
@@ -272,6 +279,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 	int ret;
 	faultmsg_t *msg;
 	binmgr_request_t request_msg;
+	irqstate_t flags = enter_critical_section();
 
 	/* Initialize pre-allocated fault messages */
 
@@ -292,6 +300,7 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 			sq_addlast((FAR sq_entry_t *)msg, (FAR sq_queue_t *)&g_freemsg_list);
 		}
 	}
+	leave_critical_section(flags);
 
 	return 0;
 }

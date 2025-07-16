@@ -367,7 +367,7 @@ static inline void amebad_i2c_sem_wait(FAR struct amebad_i2c_priv_s *priv)
 		 */
 
 		DEBUGASSERT(ret == OK || errno == EINTR);
-	} while (errno == EINTR);
+	} while (ret != OK);
 }
 
 /************************************************************************************

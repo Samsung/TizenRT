@@ -122,7 +122,6 @@ struct alc1019_dev_s {
 #endif
 	bool reserved;				/* True: Device is reserved */
 	volatile int result;			/* The result of the last transfer */
-	bool inout;				/* True: IN device */
 };
 
 /****************************************************************************

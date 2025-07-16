@@ -83,6 +83,7 @@ include prodconfig$(DELIM)Make.defs
 include memory$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs
 include iotdev$(DELIM)Make.defs
+include input$(DELIM)Make.defs
 include os_api_test$(DELIM)Make.defs
 include lcd$(DELIM)Make.defs
 include lwnl${DELIM}Make.defs
@@ -95,10 +96,10 @@ include power$(DELIM)Make.defs
 include seclink$(DELIM)Make.defs
 include sensors$(DELIM)Make.defs
 include serial$(DELIM)Make.defs
+include silent_reboot$(DELIM)Make.defs
 include spi$(DELIM)Make.defs
 include syslog$(DELIM)Make.defs
 include task_manager$(DELIM)Make.defs
-include ttrace$(DELIM)Make.defs
 include usbdev$(DELIM)Make.defs
 include usbhost$(DELIM)Make.defs
 include video$(DELIM)Make.defs

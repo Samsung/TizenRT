@@ -62,7 +62,6 @@
 #include <errno.h>
 
 #include <tinyara/sched.h>
-#include <tinyara/ttrace.h>
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
 #include <tinyara/mpu.h>
 #endif
@@ -171,8 +170,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 		return -ESRCH;
 	}
 
-	trace_begin(TTRACE_TAG_TASK, "task_terminate");
-
 	/* Make sure the task does not become ready-to-run while we are futzing with
 	 * its TCB by locking ourselves as the executing task.
 	 */
@@ -198,6 +195,8 @@ int task_terminate(pid_t pid, bool nonblocking)
 	/* Get the task list associated with the thread's state and CPU */
 
 	tasklist = TLIST_HEAD(dtcb->task_state, cpu);
+
+
 #else
 	/* In the non-SMP case, we can be assured that the task to be terminated
 	 * is not running.  get the task list associated with the task state.
@@ -210,9 +209,22 @@ int task_terminate(pid_t pid, bool nonblocking)
 
 	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
 
+	/* If the task was terminated by another task, it may be in an unknown
+	 * state.  Make some feeble effort to recover the state.
+	 * We need to perform this operation before we remove
+	 * the task from the tasklist. This is done to make sure that the tcb 
+	 * state is consistent with the task lists.
+	 */
+
+	task_recover(dtcb);
+	
+	/* Set the task state */
+	dtcb->task_state = TSTATE_TASK_INVALID;
+
 	/* At this point, the TCB should no longer be accessible to the system */
 
 #ifdef CONFIG_SMP
+
 	/* Resume the paused CPU (if any) */
 
 	if (cpu >= 0) {
@@ -263,15 +275,6 @@ int task_terminate(pid_t pid, bool nonblocking)
 	 */
 
 	task_exithook(dtcb, EXIT_SUCCESS, nonblocking);
-
-	/* Clean up in the above exithook function is dependent upon the task
-	 * state during the exit (task can be blocked on mq and a differnt task
-	 * could have killed it). As a result, we need to retain the task_state
-	 * in tcb until exithook is done
-	 */
-	dtcb->task_state = TSTATE_TASK_INVALID;
-
-	trace_end(TTRACE_TAG_TASK);
 
 	/* Deallocate its TCB */
 

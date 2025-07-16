@@ -153,10 +153,6 @@ ifeq ($(CONFIG_ENABLE_STACKMONITOR),y)
 CSRCS += utils_stackmonitor.c
 endif
 
-ifeq ($(CONFIG_TTRACE),y)
-CSRCS += utils_ttrace.c
-endif
-
 ifeq ($(CONFIG_ENABLE_UPTIME),y)
 CSRCS += utils_uptime.c
 endif

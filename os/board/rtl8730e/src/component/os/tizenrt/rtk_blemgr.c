@@ -34,7 +34,7 @@
 
 int wifi_is_running(unsigned char wlan_idx);
 
-static void _reverse_mac(uint8_t *mac, uint8_t *target)
+void _reverse_mac(uint8_t *mac, uint8_t *target)
 {
 	int i;
 	int j;
@@ -66,7 +66,9 @@ static bool _check_mac_empty(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server);
 trble_result_e trble_netmgr_deinit(struct bledev *dev);
 trble_result_e trble_netmgr_get_mac_addr(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+trble_result_e trble_netmgr_set_sec_param(struct bledev *dev, trble_sec_param *sec_param);
 trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
+trble_result_e trble_netmgr_passkey_confirm(struct bledev *dev, uint8_t *conn_handle, uint8_t *confirm); 
 trble_result_e trble_netmgr_delete_bond(struct bledev *dev, trble_addr *addr);
 trble_result_e trble_netmgr_delete_bond_all(struct bledev *dev);
 trble_result_e trble_netmgr_conn_is_active(struct bledev *dev, trble_conn_handle con_handle, bool *is_active);
@@ -84,6 +86,7 @@ trble_result_e trble_netmgr_scan_whitelist_clear_all(struct bledev *dev);
 
 /*** Central(Client) ***/
 trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *conn_info);
+trble_result_e trble_netmgr_client_bond(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_client_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_client_disconnect_all(struct bledev *dev);
 trble_result_e trble_netmgr_connected_device_list(struct bledev *dev, trble_connected_list *out_connected_list);
@@ -95,8 +98,10 @@ trble_result_e trble_netmgr_operation_enable_notification_and_indication(struct 
 trble_result_e trble_netmgr_operation_read(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
 trble_result_e trble_netmgr_operation_write(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
+trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_conn_handle *handle, uint8_t *count);
 
 /*** Peripheral(Server) ***/
+trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server);
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count);
 trble_result_e trble_netmgr_charact_notify(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e trble_netmgr_charact_indicate(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
@@ -114,6 +119,7 @@ trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_resp(struct bledev *dev, trble_data *data);
 trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e adv_type, trble_addr *addr);
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval);
+trble_result_e trble_netmgr_set_adv_txpower(struct bledev *dev, uint16_t tx_power);
 trble_result_e trble_netmgr_start_adv(struct bledev *dev);
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
@@ -131,6 +137,8 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_init,
 	trble_netmgr_deinit,
 	trble_netmgr_get_mac_addr,
+	trble_netmgr_set_sec_param,
+	trble_netmgr_passkey_confirm, 
 	trble_netmgr_get_bonded_device,
 	trble_netmgr_delete_bond,
 	trble_netmgr_delete_bond_all,
@@ -149,6 +157,7 @@ struct trble_ops g_trble_drv_ops = {
 
 	// Client
 	trble_netmgr_client_connect,
+	trble_netmgr_client_bond,
 	trble_netmgr_client_disconnect,
 	trble_netmgr_client_disconnect_all,
 	trble_netmgr_connected_device_list,
@@ -159,8 +168,10 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_operation_read,
 	trble_netmgr_operation_write,
 	trble_netmgr_operation_write_no_response,
+	trble_netmgr_write_read_queue_count,
 
 	// Server
+	trble_netmgr_set_server_config,
 	trble_netmgr_get_profile_count,
 	trble_netmgr_charact_notify,
 	trble_netmgr_charact_indicate,
@@ -178,9 +189,10 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_set_adv_resp,
 	trble_netmgr_set_adv_type,
 	trble_netmgr_set_adv_interval,
-	NULL,
+	trble_netmgr_set_adv_txpower,
 	trble_netmgr_start_adv,
 	trble_netmgr_stop_adv,
+	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -269,6 +281,25 @@ trble_result_e trble_netmgr_get_bonded_device(struct bledev *dev, trble_bonded_d
 	return ret;
 }
 
+trble_result_e trble_netmgr_set_sec_param(struct bledev *dev, trble_sec_param *sec_param)
+{
+	trble_sec_param sec_param_input;
+	sec_param_input.io_cap = sec_param->io_cap;
+	sec_param_input.oob_data_flag = sec_param->oob_data_flag;
+	sec_param_input.bond_flag = sec_param->bond_flag;
+	sec_param_input.mitm_flag = sec_param->mitm_flag;
+	sec_param_input.sec_pair_flag = sec_param->sec_pair_flag;
+	sec_param_input.sec_pair_only_flag = sec_param->sec_pair_only_flag;
+	sec_param_input.use_fixed_key = sec_param->use_fixed_key;
+	sec_param_input.fixed_key = sec_param->fixed_key;
+	return rtw_ble_sm_set_security_param(sec_param_input);
+} 
+
+trble_result_e trble_netmgr_passkey_confirm(struct bledev *dev, uint8_t *conn_handle, uint8_t *confirm)
+{ 
+	return rtw_ble_pairing_passkey_confirm(conn_handle, confirm);
+} 
+
 trble_result_e trble_netmgr_delete_bond(struct bledev *dev, trble_addr *addr)
 {
 	trble_addr t_addr[1] = { 0, };
@@ -296,6 +327,18 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 
 trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
+	if (conn_param->role == TRBLE_SLAVE_CONN_PARAM_UPDATE)
+	{
+		return rtw_ble_server_conn_param_update(conn_handle, conn_param);
+	}
+	else if (conn_param->role == TRBLE_MASTER_CONN_PARAM_UPDATE)
+	{
+		return rtw_ble_client_conn_param_update(conn_handle, conn_param);
+	}
+	else
+	{
+		return TRBLE_FAIL;
+	}
 	return TRBLE_SUCCESS;
 }
 
@@ -357,6 +400,11 @@ trble_result_e trble_netmgr_client_connect(struct bledev *dev, trble_conn_info *
 	return rtw_ble_client_connect(conn_info_copy, conn_info_copy->is_secured_connect);
 }
 
+trble_result_e trble_netmgr_client_bond(struct bledev *dev, trble_conn_handle con_handle)
+{
+	return rtw_ble_client_bond(con_handle);
+}
+
 trble_result_e trble_netmgr_client_disconnect(struct bledev *dev, trble_conn_handle con_handle)
 {
 	return rtw_ble_client_disconnect(con_handle);
@@ -407,8 +455,23 @@ trble_result_e trble_netmgr_operation_write_no_response(struct bledev *dev, trbl
 	return rtw_ble_client_operation_write_no_response(handle, in_data);
 }
 
+trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_conn_handle *handle, uint8_t *count)
+{
+	return rtw_ble_client_write_read_queue_cnt(handle, count);
+}
 
 /*** Peripheral(Server) ***/
+trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server)
+{
+	trble_result_e ret = TRBLE_FAIL;
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
+	if (server != NULL) {
+		ret = rtw_ble_combo_set_server_config(server);
+	}
+#endif
+	return ret;
+}
+
 trble_result_e trble_netmgr_get_profile_count(struct bledev *dev, uint16_t *count)
 {
 	*count = rtw_ble_server_get_profile_count();
@@ -469,20 +532,25 @@ trble_result_e trble_netmgr_server_disconnect(struct bledev *dev, trble_conn_han
 trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN])
 {
 	trble_result_e ret = TRBLE_SUCCESS;
-	uint8_t *mac;
-	
-	mac = rtw_ble_server_get_mac_address_by_conn_handle(con_handle);
-	if (mac == NULL) {
+	uint8_t *bd_addr_reverse;
+	bd_addr_reverse = rtw_ble_server_get_mac_address_by_conn_handle(con_handle);
+
+	if (bd_addr_reverse == NULL) {
 		return TRBLE_FAIL;
 	}
-	memcpy(bd_addr, mac, TRBLE_BD_ADDR_MAX_LEN);
+	_reverse_mac(bd_addr_reverse, bd_addr);
 
 	return ret;
 }
 
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle)
 {
-	*con_handle = rtw_ble_server_get_conn_handle_by_address(bd_addr);
+	uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
+	_reverse_mac(bd_addr, addr);
+	*con_handle = rtw_ble_server_get_conn_handle_by_address(addr);
+	if (*con_handle < 16 || *con_handle > 26){
+		return TRBLE_FAIL;
+	}
 	return TRBLE_SUCCESS;
 }
 
@@ -511,6 +579,11 @@ trble_result_e trble_netmgr_set_adv_type(struct bledev *dev, trble_adv_type_e ad
 trble_result_e trble_netmgr_set_adv_interval(struct bledev *dev, uint16_t interval)
 {
 	return rtw_ble_server_set_adv_interval(interval);
+}
+
+trble_result_e trble_netmgr_set_adv_txpower(struct bledev *dev, uint16_t tx_power)
+{
+	return rtw_ble_server_set_adv_txpower(tx_power);
 }
 
 trble_result_e trble_netmgr_stop_adv(struct bledev *dev)

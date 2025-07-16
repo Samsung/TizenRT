@@ -274,17 +274,17 @@ typedef pthread_startroutine_t pthread_func_t;
 #endif
 
 #if defined(CONFIG_PTHREAD_MUTEX_TYPES) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
-#define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1, \
+#define PTHREAD_MUTEX_INITIALIZER {NULL, MUTEX_SEM_INITIALIZER(1), -1, \
 				   __PTHREAD_MUTEX_DEFAULT_FLAGS, \
 				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif defined(CONFIG_PTHREAD_MUTEX_TYPES)
-#define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1, \
+#define PTHREAD_MUTEX_INITIALIZER {MUTEX_SEM_INITIALIZER(1), -1, \
 				   PTHREAD_MUTEX_DEFAULT, 0}
 #elif !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
-#define PTHREAD_MUTEX_INITIALIZER {NULL, SEM_INITIALIZER(1), -1,\
+#define PTHREAD_MUTEX_INITIALIZER {NULL, MUTEX_SEM_INITIALIZER(1), -1,\
 				   __PTHREAD_MUTEX_DEFAULT_FLAGS}
 #else
-#define PTHREAD_MUTEX_INITIALIZER {SEM_INITIALIZER(1), -1}
+#define PTHREAD_MUTEX_INITIALIZER {MUTEX_SEM_INITIALIZER(1), -1}
 #endif
 
 #ifdef CONFIG_PTHREAD_CLEANUP
@@ -779,14 +779,12 @@ int pthread_attr_setstacksize(FAR pthread_attr_t *attr, long stacksize);
  */
 int pthread_attr_getstacksize(FAR const pthread_attr_t *attr, long *stackaddr);
 
-#ifdef CONFIG_SMP
 /* Set or obtain thread affinity attributes */
 
 int pthread_attr_setaffinity_np(FAR pthread_attr_t *attr, \
                 size_t cpusetsize, FAR const cpu_set_t *cpuset);
 int pthread_attr_getaffinity_np(FAR const pthread_attr_t *attr, \
                 size_t cpusetsize, cpu_set_t *cpuset);
-#endif
 
 /* Create, operate on, and destroy mutex attributes. */
 /**

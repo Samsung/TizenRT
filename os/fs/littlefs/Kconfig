@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_LITTLEFS
+	bool "LITTLEFS File System"
+	default n
+	depends on !DISABLE_MOUNTPOINT
+	---help---
+		Build the LITTLEFS file system. https://github.com/ARMmbed/littlefs.

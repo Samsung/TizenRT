@@ -339,7 +339,7 @@ static void _tizenrt_mutex_get(_mutex *plock)
 #else
 	int temp;
 	temp = sem_wait(*plock);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 #endif
@@ -386,7 +386,7 @@ static int _tizenrt_enter_critical_mutex(_mutex *pmutex, _irqL *pirqL)
 {
 	int temp;
 	temp = sem_wait(*pmutex);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 	return temp;
@@ -461,7 +461,7 @@ static void _tizenrt_spinlock(_lock *plock)
 {
 	int temp;
 	temp = sem_wait(*plock);
-	if (temp != 0) {
+	if (temp != OK) {
 		DBG_ERR("Failed!\n");
 	}
 }

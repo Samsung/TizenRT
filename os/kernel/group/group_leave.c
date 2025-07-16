@@ -74,7 +74,7 @@
 
 #ifdef CONFIG_BINFMT_LOADABLE
 #ifdef CONFIG_BINARY_MANAGER
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 #include <tinyara/binfmt/binfmt.h>
 #endif

@@ -588,10 +588,6 @@ CONFIG_USBHOST_HUB_POLLMSEC=400
 # CONFIG_RAMLOG is not set
 # CONFIG_SYSLOG_CONSOLE is not set
 
-#
-# T-trace
-#
-# CONFIG_TTRACE is not set
 # CONFIG_IOTDEV is not set
 
 #

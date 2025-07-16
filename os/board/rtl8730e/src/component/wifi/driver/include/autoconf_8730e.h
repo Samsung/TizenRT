@@ -32,7 +32,11 @@
 
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define AP_STA_NUM	3
+#else
 #define AP_STA_NUM	12
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 /************************* Default Values of User Configure End***************************/
 
 /* Upper limit of multiple SSID scan */
@@ -152,6 +156,9 @@
 #define PHYSTS_WORK_AROUND
 #endif
 #define RTL8730E_WORK_AROUND
+
+/* SoftAP silent table to reduce probe response when receiving probe request continuously */
+#define CONFIG_SOFTAP_KEEP_SILENT_TABLE
 
 //#define RA_RX_ACK_RSSI
 /*************************** Config for MP_MODE *******************************/

@@ -68,13 +68,27 @@ typedef struct {
 	trble_conn_param_role role;
 } trble_conn_param;
 
+typedef struct {
+	uint8_t io_cap;                         /*!< IO capabilities */
+	uint8_t oob_data_flag;                  /*!< OOB data flag */
+	uint8_t bond_flag;                      /*!< Bonding flags */
+	uint8_t mitm_flag;                      /*!< MITM flag */
+	uint8_t sec_pair_flag;                  /*!< Secure connection pairing support flag */
+	uint8_t sec_pair_only_flag;             /*!< Only accept secure connection pairing when local sec_pair_flag is set */
+	uint8_t use_fixed_key;                  /*!< Pairing use fixed passkey */
+	uint32_t fixed_key;                     /*!< Fixed passkey value */
+} trble_sec_param;
+
 typedef enum {
 	// Common
-	LWNL_REQ_BLE_INIT,
+	LWNL_REQ_BLE_INIT = 0,
 	LWNL_REQ_BLE_DEINIT,
 	LWNL_REQ_BLE_GET_MAC,
+	LWNL_REQ_BLE_START_BOND,
+	LWNL_REQ_BLE_SEC_PARAM_SET,
 	LWNL_REQ_BLE_GET_BONDED_DEV,
 	LWNL_REQ_BLE_DEL_BOND,
+	LWNL_REQ_BLE_PASSKEY_CONFIRM,
 	LWNL_REQ_BLE_DEL_BOND_ALL,
 	LWNL_REQ_BLE_CONN_IS_ACTIVE,
 	LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE,
@@ -82,7 +96,7 @@ typedef enum {
 	LWNL_REQ_BLE_IOCTL,
 	
 	// Scanner
-	LWNL_REQ_BLE_SET_SCAN,
+	LWNL_REQ_BLE_SET_SCAN = 100,
 	LWNL_REQ_BLE_START_SCAN,
 	LWNL_REQ_BLE_STOP_SCAN,
 	LWNL_REQ_BLE_WHITELIST_ADD,
@@ -90,7 +104,7 @@ typedef enum {
 	LWNL_REQ_BLE_WHITELIST_CLEAR_ALL,
 
 	// Client
-	LWNL_REQ_BLE_CLIENT_CONNECT,
+	LWNL_REQ_BLE_CLIENT_CONNECT = 200,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT,
 	LWNL_REQ_BLE_CLIENT_DISCONNECT_ALL,
 	LWNL_REQ_BLE_CONNECTED_DEV_LIST,
@@ -101,8 +115,10 @@ typedef enum {
 	LWNL_REQ_BLE_OP_READ,
 	LWNL_REQ_BLE_OP_WRITE,
 	LWNL_REQ_BLE_OP_WRITE_NO_RESP,
+	LWNL_REQ_BLE_GET_READ_WRITE_PENDING_CNT,
 
 	// Server
+	LWNL_REQ_BLE_SET_SERVER_CONFIG = 300,
 	LWNL_REQ_BLE_GET_PROFILE_COUNT,
 	LWNL_REQ_BLE_CHARACT_NOTI,
 	LWNL_REQ_BLE_CHARACT_INDI,
@@ -116,7 +132,7 @@ typedef enum {
 	LWNL_REQ_BLE_SET_DEVICE_NAME,
 
 	// Advertiser
-	LWNL_REQ_BLE_SET_ADV_DATA,
+	LWNL_REQ_BLE_SET_ADV_DATA = 400,
 	LWNL_REQ_BLE_SET_ADV_RESP,
 	LWNL_REQ_BLE_SET_ADV_TYPE,
 	LWNL_REQ_BLE_SET_ADV_INTERVAL,
@@ -125,6 +141,7 @@ typedef enum {
 	LWNL_REQ_BLE_STOP_ADV,
 	LWNL_REQ_BLE_ONE_SHOT_ADV_INIT,
 	LWNL_REQ_BLE_ONE_SHOT_ADV_DEINIT,
+	LWNL_REQ_BLE_ONE_SHOT_ADV_SET,
 	LWNL_REQ_BLE_ONE_SHOT_ADV,
 	LWNL_REQ_BLE_CREATE_ADV,
 	LWNL_REQ_BLE_DELETE_ADV,
@@ -138,6 +155,7 @@ typedef enum {
 typedef enum {
 	LWNL_EVT_BLE_CLIENT_CONNECT,
 	LWNL_EVT_BLE_CLIENT_DISCONNECT,
+	LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY,
 	LWNL_EVT_BLE_CLIENT_NOTI,
 	LWNL_EVT_BLE_CLIENT_INDI,
 	LWNL_EVT_BLE_SCAN_STATE,
@@ -249,6 +267,7 @@ typedef struct {
 	void (*trble_device_connected_cb)(trble_device_connected *connected_device);
 	void (*trble_operation_notification_cb)(trble_operation_handle *handle, trble_data *read_result);
 	void (*trble_operation_indication_cb)(trble_operation_handle *handle, trble_data *read_result);
+	void (*trble_device_passkey_display_cb)(uint32_t passkey, trble_conn_handle handle);
 	uint16_t mtu;
 } trble_client_init_config;
 
@@ -314,16 +333,17 @@ typedef enum {
 	TRBLE_SERVER_DISCONNECTED,
 } trble_server_connection_type_e;
 
-typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+typedef void (*trble_server_connected_t)(trble_conn_handle con_handle, trble_server_connection_type_e conn_type, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN], uint8_t adv_handle);
 typedef void (*trble_server_disconnected_t)(trble_conn_handle con_handle, uint16_t cause);
 typedef void (*trble_server_mtu_update_t)(trble_conn_handle con_handle,  uint16_t mtu_size);
 typedef void (*trble_server_oneshot_adv_t)(uint16_t adv_ret);
+typedef void (*trble_server_passkey_display_t)(uint32_t passkey, trble_conn_handle con_handle);
 
 typedef struct {
 	trble_server_connected_t connected_cb;
 	trble_server_disconnected_t disconnected_cb;
 	trble_server_mtu_update_t mtu_update_cb;
-	trble_server_oneshot_adv_t oneshot_adv_cb;
+	trble_server_passkey_display_t passkey_display_cb;
 	// true : Secure Manager is enabled. Bondable.
 	// false : Secure Manager is disabled. Requesting Pairing will be rejected. Non-Bondable.
 	bool is_secured_connect_allowed;
@@ -344,6 +364,8 @@ typedef trble_result_e (*trble_init)(struct bledev *dev, trble_client_init_confi
 typedef trble_result_e (*trble_deinit)(struct bledev *dev);
 typedef trble_result_e (*trble_get_mac_addr)(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
 // trble_disconnect can be used in both of server & client.
+typedef trble_result_e (*trble_set_sec_param)(struct bledev *dev, trble_sec_param *sec_param);
+typedef trble_result_e (*trble_passkey_confirm)(struct bledev *dev, uint8_t *conn_handle, uint8_t *confirm);
 typedef trble_result_e (*trble_get_bonded_device)(struct bledev *dev, trble_bonded_device_list_s *device_list, uint16_t *device_count);
 typedef trble_result_e (*trble_delete_bond)(struct bledev *dev, trble_addr *addr);
 typedef trble_result_e (*trble_delete_bond_all)(struct bledev *dev);
@@ -362,6 +384,7 @@ typedef trble_result_e (*trble_scan_whitelist_clear_all)(struct bledev *dev);
 
 /*** Central(Client) ***/
 typedef trble_result_e (*trble_client_connect)(struct bledev *dev, trble_conn_info *conn_info);
+typedef trble_result_e (*trble_client_bond)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_client_disconnect)(struct bledev *dev, trble_conn_handle con_handle);
 typedef trble_result_e (*trble_client_disconnect_all)(struct bledev *dev);
 typedef trble_result_e (*trble_connected_device_list)(struct bledev *dev, trble_connected_list *out_connected_list);
@@ -372,8 +395,9 @@ typedef trble_result_e (*trble_operation_enable_notification_and_indication)(str
 typedef trble_result_e (*trble_operation_read)(struct bledev *dev, trble_operation_handle *handle, trble_data *out_data);
 typedef trble_result_e (*trble_operation_write)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
 typedef trble_result_e (*trble_operation_write_no_response)(struct bledev *dev, trble_operation_handle *handle, trble_data *in_data);
-
+typedef trble_result_e (*trble_get_write_read_queue_cnt)(struct bledev *dev, trble_conn_handle *con_handle, uint8_t *count);
 /*** Peripheral(Server) ***/
+typedef trble_result_e (*trble_set_server_config)(struct bledev *dev, trble_server_init_config *server);
 typedef trble_result_e (*trble_get_profile_count)(struct bledev *dev, uint16_t *count);
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 typedef trble_result_e (*trble_charact_notify)(struct bledev *dev, trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
@@ -399,7 +423,8 @@ typedef trble_result_e (*trble_start_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_stop_adv)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_init)(struct bledev *dev);
 typedef trble_result_e (*trble_one_shot_adv_deinit)(struct bledev *dev);
-typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+typedef trble_result_e (*trble_one_shot_adv_set)(struct bledev *dev, uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+typedef trble_result_e (*trble_one_shot_adv)(struct bledev *dev, uint8_t adv_id);
 typedef trble_result_e (*trble_create_multi_adv)(struct bledev *dev, uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
 													 uint8_t own_addr_type, uint8_t own_addr_val[TRBLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle);
 typedef trble_result_e (*trble_delete_multi_adv)(struct bledev *dev, uint8_t conn_handle);
@@ -413,6 +438,8 @@ struct trble_ops {
 	trble_init init;
 	trble_deinit deinit;
 	trble_get_mac_addr get_mac;
+	trble_set_sec_param set_sec_param;
+	trble_passkey_confirm passkey_confirm;
 	trble_get_bonded_device get_bonded_dev;
 	trble_delete_bond del_bond;
 	trble_delete_bond_all del_bond_all;
@@ -431,6 +458,7 @@ struct trble_ops {
 	
 	/* Central(Client) */
 	trble_client_connect client_connect;
+	trble_client_bond start_bond;
 	trble_client_disconnect client_disconnect;
 	trble_client_disconnect_all client_disconnect_all;
 	trble_connected_device_list conn_dev_list;
@@ -442,8 +470,10 @@ struct trble_ops {
 	trble_operation_read op_read;
 	trble_operation_write op_write;
 	trble_operation_write_no_response op_wrtie_no_resp;
+	trble_get_write_read_queue_cnt get_write_read_queue_cnt;
 
 	/* Peripheral(Server) */
+	trble_set_server_config set_server_config;
 	trble_get_profile_count get_profile_count;
 	trble_charact_notify charact_noti;
 	trble_charact_indicate charact_indi;
@@ -466,6 +496,7 @@ struct trble_ops {
 	trble_stop_adv stop_adv;
 	trble_one_shot_adv_init one_shot_adv_init;
 	trble_one_shot_adv_deinit one_shot_adv_deinit;
+	trble_one_shot_adv_set one_shot_adv_set;
 	trble_one_shot_adv one_shot_adv;
 	trble_create_multi_adv create_multi_adv;
 	trble_delete_multi_adv delete_multi_adv;

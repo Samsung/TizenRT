@@ -84,6 +84,10 @@
 #include "ameba_soc.h"
 #include "osdep_service.h"
 #include "platform_opts_bt.h"
+
+#ifdef CONFIG_AMEBASMART_BOR
+#include "ameba_bor.h"
+#endif
 /************************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -127,6 +131,29 @@ int up_check_proddownload(void)
 	return ERROR;
 }
 #endif
+
+#ifdef CONFIG_AMEBASMART_BOR
+static void board_initialize_bor(void)
+{
+	BOR_ThresholdSet(CONFIG_AMEBASMART_THRESHOLD_FALL,CONFIG_AMEBASMART_THRESHOLD_RISE);
+	BOR_ModeSet(BOR_RESET);
+	BOR_Enable(ENABLE);
+	DelayUs(100);
+	RCC_PeriphClockCmd(APBPeriph_BOR, APBPeriph_CLOCK_NULL, ENABLE);
+	dbg("Brownout reset enabled\n");
+}
+#endif
+
+int up_check_iwdg(void)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN);
+
+	if ((Temp & APBPeriph_IWDG) == 0) {
+		dbg("IWDG is disabled\n");
+	} else {
+		dbg("IWDG is enabled\n");
+	}
+}
 
 void board_i2s_initialize(void)
 {
@@ -239,9 +266,10 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-				{PA_23, PIN_INPUT, PullNone},
+				{PA_23, PIN_INPUT, PullDown},
 				/* PB_20 is gpio pin number for LED */
 				{PB_20, PIN_OUTPUT, PullDown},
+				{PB_22, PIN_INPUT, PullUp},
 		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
 		Loguart pins
 		*/
@@ -354,6 +382,14 @@ void amebasmart_mount_partitions(void)
 		lldbg("w25 Init failed\n");
 		return;
 	}
+#elif defined(CONFIG_MTD_W25N)
+	mtd = w25n_initialize(spi);
+	if (mtd == NULL) {
+		lldbg("w25n Init failed\n");
+		return;
+	} else {
+		lldbg("w25n initialized\n");
+	}
 #endif
 	ret = configure_mtd_partitions(mtd, 1, &partinfo);
 	if (ret != OK) {
@@ -364,6 +400,12 @@ void amebasmart_mount_partitions(void)
 	automount_fs_partition(&partinfo);
 #endif
 #endif /* end of CONFIG_SECOND_FLASH_PARTITION */
+
+#ifdef CONFIG_RESOURCE_FS
+	if (binary_manager_mount_resource() != OK) {
+		lldbg("ERROR: Failed to mount resource\n");
+	}
+#endif
 }
 
 #ifdef CONFIG_FTL_ENABLED
@@ -407,7 +449,12 @@ static gtimer_t g_timer_np_lp;
 
 static void np_lp_status_timer_hdl(void)
 {
-	ASSERT(BKUP_Read(BKUP_REG2) != 0x1);
+	/* Added to inspect the value of BKUP_REG2 */
+	u32 boot_reason_reg2 = BKUP_Read(BKUP_REG2);
+	if (boot_reason_reg2 != 0x0) {
+		lldbg("boot_reason_reg2 0x%x \n", boot_reason_reg2);
+		ASSERT(boot_reason_reg2 == 0x0);
+	}
 }
 
 static void init_np_lp_status_timer(void)
@@ -462,6 +509,10 @@ void board_initialize(void)
 
 #if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701) || defined(CONFIG_LCD_ST7701SN)
 	rtl8730e_lcdc_initialize();
+#endif
+
+#if defined(CONFIG_TOUCH_IST415)
+	rtl8730e_ist415_initialize();
 #endif
 
 #ifdef CONFIG_WATCHDOG
@@ -519,7 +570,10 @@ void board_initialize(void)
 		lldbg("NDP120 initialization failed\n");
 	}
  #endif
-
+ 
+ #ifdef CONFIG_AMEBASMART_BOR
+	board_initialize_bor();
+ #endif
 	IPC_MSG_STRUCT ipc_msg_loguart;
 
 	ipc_msg_loguart.msg_type = IPC_USER_POINT;
@@ -527,11 +581,8 @@ void board_initialize(void)
 	ipc_msg_loguart.msg_len = 1;
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
-
-	/* Tizen: re-enable the LOGUART Rx event interrupt so that CA32 can use it, after KM0 LOGUART is disabled */
-	irqstate_t flags = enter_critical_section();
-	LOGUART_INTConfig(LOGUART_DEV, LOGUART_BIT_ERBI, ENABLE);
-	leave_critical_section(flags);
+	
+	up_check_iwdg();
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

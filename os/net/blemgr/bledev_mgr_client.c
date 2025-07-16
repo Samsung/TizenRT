@@ -124,6 +124,25 @@ static void bledrv_operation_indication_cb(trble_operation_handle *handle, trble
 	return;
 }
 
+static void bledrv_operation_display_passkey_cb(uint32_t passkey, trble_conn_handle handle)
+{
+	int32_t size = sizeof(uint32_t) + sizeof(trble_conn_handle);
+	uint8_t *data = (uint8_t *)kmm_malloc(size);
+	if (data == NULL) {
+		BLE_LOGE(BLE_DRV_TAG, "out of memroy\n");
+		return;
+	}
+	uint8_t *ptr = data;
+	// Copy connection handle
+	memcpy(ptr, &handle, sizeof(trble_conn_handle));
+	ptr += sizeof(trble_conn_handle);
+	// Copy passkey
+	memcpy(ptr, &passkey, sizeof(uint32_t));
+	
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY, data, size);
+	return;
+}
+
 static trble_client_init_config g_client_fake_config = {
 	bledrv_scan_state_changed_cb,
 	bledrv_device_scanned_cb,
@@ -131,6 +150,7 @@ static trble_client_init_config g_client_fake_config = {
 	bledrv_device_connected_cb,
 	bledrv_operation_notification_cb,
 	bledrv_operation_indication_cb,
+	bledrv_operation_display_passkey_cb,
 	247
 };
 

@@ -344,9 +344,10 @@ static int create_sample_text_file(void)
 	/* Check if the sample text file already exists */
 	if (stat(SAMPLE_TXT_FILE, &st) == OK) {
 		if (st.st_size == (TEST_WRITECOUNT * TEST_LARGE_BUFSIZE)) {
-			printf("Sample text file already exists\n");
+			printf("Create_sample: %s already exists, size: %d\n", SAMPLE_TXT_FILE, st.st_size);
 			return OK;
 		}
+
 		ret = unlink(SAMPLE_TXT_FILE);
 		if (ret != OK) {
 			printf("Failed to unlink old sample file %s, ret : %d, errno : %d\n", SAMPLE_TXT_FILE, ret, errno);

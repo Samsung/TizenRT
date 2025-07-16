@@ -64,7 +64,6 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/ttrace.h>
 #include <tinyara/irq.h>
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/clock.h>
@@ -132,8 +131,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 	int hash_ndx;
 	int tries;
 
-	trace_begin(TTRACE_TAG_TASK, "task_assignpid");
-
 	/* Disable pre-emption.  This should provide sufficient protection
 	 * for the following operation.
 	 */
@@ -184,7 +181,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 			g_alive_taskcount++;
 
 			leave_critical_section(flags);
-			trace_end(TTRACE_TAG_TASK);
 			return OK;
 		}
 	}
@@ -195,7 +191,6 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 
 	leave_critical_section(flags);
 	set_errno(EBUSY);
-	trace_end(TTRACE_TAG_TASK);
 	return ERROR;
 }
 
@@ -417,8 +412,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		return ERROR;
 	}
 
-	trace_begin(TTRACE_TAG_TASK, "thread_schedsetup");
-
 	/* Assign a unique task ID to the task. */
 
 	ret = task_assignpid(tcb);
@@ -497,28 +490,36 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		up_initial_state(tcb);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
-		/* Copy the parent task ram details to this task */
+		/* Copy some attributes from parent task to this task */
 		rtcb = this_task();
-		tcb->uspace = rtcb->uspace;
-		tcb->uheap = rtcb->uheap;
 		tcb->app_id = rtcb->app_id;
+
+		/* If a kernel thread is getting created due to some
+		 * call from a user task or pthread, then the kernel thread
+		 * will not inherit the some attributes related to heap, uspace,
+		 * memory protection, etc..
+		 */
+		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+			tcb->uspace = rtcb->uspace;
+			tcb->uheap = rtcb->uheap;
 #ifdef CONFIG_ARCH_USE_MMU
-		tcb->pgtbl = rtcb->pgtbl;
+			tcb->pgtbl = rtcb->pgtbl;
 #endif
-		/* Copy the MPU register values from parent to child task */
+			/* Copy the MPU register values from parent to child task */
 #ifdef CONFIG_ARM_MPU
-		int i = 0;
+			int i = 0;
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		for (; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER)
+			for (; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER)
 #endif
-		{
-			tcb->mpu_regs[i + MPU_REG_RNR] = rtcb->mpu_regs[i + MPU_REG_RNR];
-			tcb->mpu_regs[i + MPU_REG_RBAR] = rtcb->mpu_regs[i + MPU_REG_RBAR];
-			tcb->mpu_regs[i + MPU_REG_RASR] = rtcb->mpu_regs[i + MPU_REG_RASR];
+			{
+				tcb->mpu_regs[i + MPU_REG_RNR] = rtcb->mpu_regs[i + MPU_REG_RNR];
+				tcb->mpu_regs[i + MPU_REG_RBAR] = rtcb->mpu_regs[i + MPU_REG_RBAR];
+				tcb->mpu_regs[i + MPU_REG_RASR] = rtcb->mpu_regs[i + MPU_REG_RASR];
+			}
+#endif
 		}
 #endif
 
-#endif
 		tcb->fin_data = NO_FIN_DATA;
 
 		/* Add the task to the inactive task list */
@@ -529,7 +530,6 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		sched_unlock();
 	}
 
-	trace_end(TTRACE_TAG_TASK);
 	return ret;
 }
 

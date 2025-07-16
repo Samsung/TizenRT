@@ -52,23 +52,25 @@ typedef enum stream_focus_state_e stream_focus_state_t;
  * @brief Stream Policy, high value means higher priority
  */
 enum stream_policy_e {
-	STREAM_TYPE_MEDIA = 0, /* Default value, music play */
-	STREAM_TYPE_NOTIFY = 1, /* For notification */
-	STREAM_TYPE_BIXBY = 2,
-	STREAM_TYPE_VOICE_RECORD = 3, /* Record */
-	STREAM_TYPE_VOIP = 4, /* Call */
-	STREAM_TYPE_EMERGENCY = 5
+	STREAM_TYPE_INVALID = -1,
+	STREAM_TYPE_BASE = 0,
+	STREAM_TYPE_MEDIA = 1, /* Default value, music play */
+	STREAM_TYPE_NOTIFY = 2, /* For notification */
+	STREAM_TYPE_BIXBY = 3,
+	STREAM_TYPE_VOICE_RECORD = 4, /* Record */
+	STREAM_TYPE_VOIP = 5, /* Call */
+	STREAM_TYPE_EMERGENCY = 6,
+	MAX_STREAM_POLICY_NUM = 7
 };
 
 typedef enum stream_policy_e stream_policy_t;
-typedef uint64_t stream_info_id_t;
+typedef size_t stream_info_id_t;
 
 struct stream_info_s {
 	stream_info_id_t id;
 	stream_policy_t policy;
 };
 
-int stream_info_init(void);
 int stream_info_create(stream_policy_t stream_policy, stream_info_t **stream_info);
 int stream_info_destroy(stream_info_t *stream_info);
 

@@ -37,7 +37,7 @@
 #include "PinNames.h"
 #include "gpio_api.h"
 
-extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit);
+extern FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port);
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -166,7 +166,7 @@ int rtl8730e_alc1019_initialize(int minor)
 		auddbg("i2c init done\n");
 		auddbg("calling init i2s\n");
 		/* Get an instance of the I2S interface for the ALC1019 data channel */
-		i2s = amebasmart_i2s_initialize(ALC1019_I2S_PORT, I2S_INIT);
+		i2s = amebasmart_i2s_initialize(ALC1019_I2S_PORT);
 		if (!i2s) {
 			auddbg("ERROR: Failed to initialize I2S\n");
 			ret = -ENODEV;

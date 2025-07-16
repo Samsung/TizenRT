@@ -114,22 +114,19 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 {
 	FAR struct tcb_s *ntcb = NULL;
 	bool ret = false;
+	FAR dq_queue_t *tasklist;
+
+	tasklist = TLIST_HEAD(rtcb->task_state);
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
+	sched_checkstackoverflow(rtcb);
 #endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
-#endif
+
 	/* Check if the TCB to be removed is at the head of the ready to run list.
 	 * In this case, we are removing the currently active task.
 	 */
 
-	if (!rtcb->blink) {
+	if (!rtcb->blink && TLIST_ISRUNNABLE(rtcb->task_state)) {
 		/* There must always be at least one task in the list (the idle task) */
 
 		ntcb = (FAR struct tcb_s *)rtcb->flink;
@@ -141,7 +138,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 
 	/* Remove the TCB from the ready-to-run list */
 
-	dq_rem((FAR dq_entry_t *)rtcb, (FAR dq_queue_t *)&g_readytorun);
+	dq_rem((FAR dq_entry_t *)rtcb, tasklist);
 
 	/* Since the TCB is not in any list, it is now invalid */
 
@@ -157,15 +154,9 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	int cpu;
 
 #ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
-		dbg_noarg("###############    STACK OVERFLOW at pid %d ", rtcb->pid);
-#if CONFIG_TASK_NAME_SIZE > 0
-		dbg_noarg("(%s) ", rtcb->name);
+	sched_checkstackoverflow(rtcb);
 #endif
-		dbg_noarg("###################\n");
-		PANIC();
-	}
-#endif
+
 	/* Which CPU (if any) is the task running on? Which task list holds
 	 * the TCB
 	 */
@@ -188,7 +179,7 @@ bool sched_removereadytorun(FAR struct tcb_s *rtcb)
 	 * occur.
 	 */
 
-	if (rtcb->blink == NULL) {
+	if (rtcb->blink == NULL && TLIST_ISRUNNABLE(rtcb->task_state)) {
 		FAR struct tcb_s *ntcb;
 		FAR struct tcb_s *rtrtcb = NULL;
 		int current_cpu;

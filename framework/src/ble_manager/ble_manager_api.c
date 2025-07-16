@@ -56,6 +56,27 @@ ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_passkey_confirm(uint8_t conn_handle, uint8_t confirm)
+{
+	blemgr_msg_params param = {3, {(void *)&conn_handle, (void *)&confirm}};
+	blemgr_msg_s msg = {BLE_CMD_PASSKEY_CONFIRM, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+	RETURN_RESULT(res, msg);
+}
+ble_result_e ble_manager_set_secure_param(ble_sec_param *sec_param )
+{
+	blemgr_msg_s msg = {BLE_CMD_SEC_PARAM_SET, BLE_MANAGER_FAIL, (void *)(sec_param), NULL};
+	int res = blemgr_post_message(&msg);
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_manager_start_bond(ble_conn_handle conn_handle)
+{
+	blemgr_msg_s msg = {BLE_CMD_STA_BOND, BLE_MANAGER_FAIL, (void *)&conn_handle, NULL};
+	int res = blemgr_post_message(&msg);
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list *device_list, uint16_t *device_count)
 {
 	blemgr_msg_params param = {2, {(void *)device_list, (void *)device_count}};
@@ -325,7 +346,24 @@ ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_att
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_client_get_write_read_pending_count(ble_client_ctx *ctx, uint8_t *count)
+{
+	blemgr_msg_params param = {2, {(void *)ctx, (void *)count}};
+	blemgr_msg_s msg = {BLE_CMD_GET_WRITE_READ_PENDING_CNT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 /* Server */
+ble_result_e ble_manager_set_server_config(ble_server_init_config *server_config)
+{
+	blemgr_msg_s msg = {BLE_CMD_SET_SERVER_CONFIG, BLE_MANAGER_FAIL, (void *)(server_config), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_get_profile_count(uint16_t *count)
 {
 	blemgr_msg_s msg = {BLE_CMD_GET_PROFILE_COUNT, BLE_MANAGER_FAIL, (void *)(count), NULL};
@@ -481,10 +519,18 @@ ble_result_e ble_server_one_shot_adv_deinit(void)
 	RETURN_RESULT(res, msg);
 }
 
-ble_result_e ble_server_one_shot_adv(ble_data *data_adv, ble_data *data_scan_rsp, uint8_t type)
+ble_result_e ble_server_one_shot_adv_set(uint8_t adv_id, ble_data *data_adv, ble_data *data_scan_rsp, uint8_t type)
 {
-	blemgr_msg_params param = {3, {(void *)data_adv, (void *)data_scan_rsp, (void *)&type}};
-	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	blemgr_msg_params param = {4, {(void *)&adv_id, (void *)data_adv, (void *)data_scan_rsp, (void *)&type}};
+	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV_SET, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_one_shot_adv(uint8_t adv_id)
+{
+	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV, BLE_MANAGER_FAIL, (void *)(&adv_id), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -510,7 +556,8 @@ ble_result_e ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primar
 												uint8_t own_addr_type, uint8_t own_addr_val[BLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle)
 {
 	blemgr_msg_params param = { 5, {(void *)&adv_event_prop, (void *)primary_adv_interval,
-									 (void *)&own_addr_type, (void *)own_addr_val, (void *)adv_handle}};
+									 (void *)&own_addr_type, (void *)own_addr_val,
+									  (void *)adv_handle}};
 	blemgr_msg_s msg = {BLE_CMD_CREATE_MULTI_ADV, BLE_MANAGER_FAIL, (void *)(&param), NULL};
 	int res = blemgr_post_message(&msg);
 

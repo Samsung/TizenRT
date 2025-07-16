@@ -125,6 +125,8 @@ static void i2s_release_tx_page(uint8_t i2s_index)
 
 	if (sp_tx_info.tx_empty_flag) {
 	} else {
+		memcpy((void *)ptx_block->tx_addr, sp_tx_info.tx_zero_block.tx_addr, sp_tx_info.tx_page_size);
+		DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
 		ptx_block->tx_gdma_own = 0;
 		sp_tx_info.tx_gdma_cnt++;
 		if (sp_tx_info.tx_gdma_cnt == sp_tx_info.tx_page_num) {
@@ -133,6 +135,18 @@ static void i2s_release_tx_page(uint8_t i2s_index)
 	}
 }
 
+int i2s_dma_tx_done(uint8_t page_num)
+{
+	(void)page_num;
+	int cnt = 0;
+	for (int i = 0; i < sp_tx_info.tx_page_num; i++) {
+		pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[i]);
+		if (ptx_block->tx_gdma_own) {
+			return -1;
+		}
+	}
+	return OK;
+}
 static uint32_t *i2s_get_ready_tx_page(uint8_t i2s_index)
 {
 	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_gdma_cnt]);
@@ -643,8 +657,9 @@ void i2s_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx,
 		/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
 		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
 	}
-
-	Pinmux_Config(mck, pin_func);
+	if (mck) {
+		Pinmux_Config(mck, pin_func);
+	}
 	Pinmux_Config(sck, pin_func);
 	Pinmux_Config(ws, pin_func);
 	Pinmux_Config(sd_tx, pin_func);
@@ -701,11 +716,10 @@ int *i2s_get_tx_page(i2s_t *obj)
   * @param  pbuf: Tx buffer adderss.
   * @retval none
   */
-void i2s_send_page(i2s_t *obj, uint32_t *pbuf)
+void i2s_send_page(void)
 {
 	pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_usr_cnt]);
 
-	memcpy((void *)ptx_block->tx_addr, pbuf, sp_tx_info.tx_page_size);
 	DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
 	ptx_block->tx_gdma_own = 1;
 	sp_tx_info.tx_usr_cnt++;

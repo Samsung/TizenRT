@@ -52,6 +52,11 @@ player_result_t MediaPlayer::unprepare()
 	return mPMpImpl->unprepare();
 }
 
+player_result_t MediaPlayer::reset()
+{
+	return mPMpImpl->reset();
+}
+
 player_result_t MediaPlayer::start()
 {
 	return mPMpImpl->start();
@@ -70,11 +75,6 @@ player_result_t MediaPlayer::pause()
 player_result_t MediaPlayer::getVolume(uint8_t *vol)
 {
 	return mPMpImpl->getVolume(vol);
-}
-
-player_result_t MediaPlayer::getStreamVolume(uint8_t *vol)
-{
-	return mPMpImpl->getStreamVolume(vol);
 }
 
 player_result_t MediaPlayer::getMaxVolume(uint8_t *vol)

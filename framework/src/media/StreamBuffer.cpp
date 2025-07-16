@@ -31,7 +31,7 @@
 #include "utils/rb.h"
 
 #ifndef CONFIG_STREAM_BUFFER_SIZE_DEFAULT
-#define CONFIG_STREAM_BUFFER_SIZE_DEFAULT 4096
+#define CONFIG_STREAM_BUFFER_SIZE_DEFAULT 32768
 #endif
 
 #ifndef CONFIG_STREAM_BUFFER_THRESHOLD_DEFAULT
@@ -64,7 +64,7 @@ StreamBuffer::~StreamBuffer()
 bool StreamBuffer::init(size_t size)
 {
 	if (mRingBuf.buf != nullptr) {
-		mdbg("mRingBuf is already initialized.");
+		mdbg("mRingBuf is already initialized.\n");
 		return false;
 	}
 

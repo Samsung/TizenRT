@@ -62,6 +62,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include <tinyara/board.h>
 #include <tinyara/arch.h>
@@ -150,7 +151,9 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 		sched_lock();
 		/* Add 100ms delay for flushing another logs like printf. */
 		up_mdelay(100);
-		lldbg("Board will Reboot now.\n");
+		lldbg("Board will Reboot now. pid: %d\n", getpid());
+		/* Add 100ms delay for flushing UART FIFO. */
+		up_mdelay(100);
 		ret = board_reset((int)arg);
 		break;
 #endif

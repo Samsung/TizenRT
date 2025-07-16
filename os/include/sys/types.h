@@ -265,7 +265,7 @@ typedef int64_t fpos64_t;
 
 /* blksize_t is a signed integer value used for file block sizes */
 
-typedef int16_t blksize_t;
+typedef int32_t blksize_t;
 
 /* Network related */
 

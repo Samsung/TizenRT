@@ -58,7 +58,6 @@
 
 #include <sched.h>
 #include <debug.h>
-#include <tinyara/ttrace.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 
@@ -139,8 +138,6 @@ void up_unblock_task(struct tcb_s *tcb)
 
 			rtcb = this_task();
 
-			trace_sched(NULL, rtcb);
-
 			/* Restore rtcb data for context switching */
 
 			up_restoretask(rtcb);
@@ -164,7 +161,6 @@ void up_unblock_task(struct tcb_s *tcb)
 			 */
 
 			rtcb = this_task();
-			trace_sched(NULL, rtcb);
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
 			/* Save the task name which will be scheduled */

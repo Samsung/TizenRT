@@ -1,3 +1,0 @@
-config ENTRY_TTRACE
-	bool "T-trace example"
-	depends on EXAMPLES_TTRACE

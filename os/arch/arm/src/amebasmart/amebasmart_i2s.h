@@ -85,7 +85,7 @@ typedef enum {
  *
  ****************************************************************************/
 
-FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port, bool is_reinit);
+FAR struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port);
 
 #undef EXTERN
 #if defined(__cplusplus)

@@ -54,6 +54,16 @@ static security_aes_mode g_aes_mode_table[] = {
 	AES_CTR,
 };
 
+static security_key_type g_aes_key_type_table[] = {
+	KEY_AES_128,
+	KEY_AES_192,
+	KEY_AES_256,
+};
+
+static security_gcm_mode g_gcm_mode_table[] = {
+	GCM_AES,
+};
+
 static security_handle g_hnd = NULL;
 
 /**
@@ -757,6 +767,478 @@ static void utc_crypto_rsa_decryption_output_n(void)
 	TC_SUCCESS_RESULT();
 }
 
+/**
+ * @testcase         utc_crypto_gcm_encryption_p
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_p(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(g_gcm_mode_table); gcm_mode++) {
+		/* Generate AES key for GCM encryption / decryption */
+		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(g_aes_key_type_table); i++) {
+			/* Check whether hang occurs during repeated encrypt function */
+			for (int iter = 0; iter < ITER_COUNT; iter++) {
+				security_error res = keymgr_generate_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
+
+				security_gcm_mode cipher = g_aes_mode_table[gcm_mode];
+				security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+				res = crypto_gcm_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
+				TC_ASSERT_EQ("utc_crypto_gcm_encryption_p", res, SECURITY_OK);
+				TC_SUCCESS_RESULT();
+
+				res = keymgr_remove_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
+			}
+		}
+	}
+}
+
+/**
+ * @testcase         utc_crypto_gcm_encryption_hnd_n
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES (without handler)
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_hnd_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_encryption(NULL, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
+	TC_ASSERT_EQ("utc_crypto_gcm_encryption_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_encryption_param_n
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES (without param)
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_param_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_param param = { GCM_UNKNOWN, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
+	TC_ASSERT_EQ("utc_crypto_gcm_encryption_param_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_encryption_key_n
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES (without key)
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_key_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	security_error res = crypto_gcm_encryption(g_hnd, &param, NULL, &plain, &enc);
+
+	TC_ASSERT_EQ("utc_crypto_gcm_encryption_key_n", res, SECURITY_INVALID_KEY_INDEX);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_crypto_gcm_encryption_input_n
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES (without input)
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_input_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, NULL, &enc);
+	TC_ASSERT_EQ("utc_crypto_gcm_encryption_input_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_encryption_output_n
+ * @brief            encrypt GCM with AES
+ * @scenario         encrypt GCM with AES (without output)
+ * @apicovered       crypto_gcm_encryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_encryption_output_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char plain_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0, };
+
+	security_data plain = { plain_text, sizeof(plain_text) };
+	security_data enc = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, NULL);
+	TC_ASSERT_EQ("utc_crypto_gcm_encryption_output_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_p
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_p(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(g_gcm_mode_table); gcm_mode++) {
+		/* Set AES key for GCM encryption / decryption */
+		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(g_aes_key_type_table); i++) {
+			/* Check whether hang occurs during repeated encrypt function */
+			for (int iter = 0; iter < ITER_COUNT; iter++) {
+				security_error res = keymgr_generate_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
+				security_gcm_mode cipher = g_aes_mode_table[gcm_mode];
+				security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+				res = crypto_gcm_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
+				TC_ASSERT_EQ("utc_crypto_gcm_decryption_p", res, SECURITY_OK);
+				TC_SUCCESS_RESULT();
+
+				res = keymgr_remove_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
+			}
+		}
+	}
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_hnd_n
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES (without handler)
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_hnd_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_decryption(NULL, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
+	TC_ASSERT_EQ("utc_crypto_gcm_decryption_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_param_n
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES (without param)
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_param_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_param param = { GCM_UNKNOWN, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
+	TC_ASSERT_EQ("utc_crypto_gcm_decryption_param_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_key_n
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES (without key)
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_key_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	security_error res = crypto_gcm_decryption(g_hnd, &param, NULL, &enc, &dec);
+
+	TC_ASSERT_EQ("utc_crypto_gcm_decryption_key_n", res, SECURITY_INVALID_KEY_INDEX);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_input_n
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES (without input)
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_input_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, NULL, &dec);
+	TC_ASSERT_EQ("utc_crypto_gcm_decryption_input_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
+
+/**
+ * @testcase         utc_crypto_gcm_decryption_output_n
+ * @brief            decrypt GCM with AES
+ * @scenario         decrypt GCM with AES (without output)
+ * @apicovered       crypto_gcm_decryption
+ * @precondition     key should be set by keymgr_set_key() or keymgr_generate_key with AES type. Only AES key type is supported on GCM mode.
+ * @postcondition    none
+ */
+static void utc_crypto_gcm_decryption_output_n(void)
+{
+	/* Recommanded IV length : 12 bytes */
+	unsigned char iv[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b };
+
+	unsigned char enc_text[] = { 0x4d, 0x79, 0x20, 0x42, 0x79, 0x74, 0x65, 0x20, 
+									0x50, 0x72, 0x69, 0x6e, 0x74, 0x00, 0x00, 0x00 };
+
+	unsigned char aad[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	unsigned char tag[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+								0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+	security_data enc = { enc_text, sizeof(enc_text) };
+	security_data dec = { NULL, 0 };
+
+	/* Generate AES key for GCM encryption / decryption */
+	security_error res = keymgr_generate_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+
+	security_gcm_mode cipher = GCM_AES;
+	security_gcm_param param = { cipher, iv, sizeof(iv), aad, sizeof(aad), tag, sizeof(tag) };
+
+	res = crypto_gcm_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, NULL);
+	TC_ASSERT_EQ("utc_crypto_gcm_decryption_output_n", res, SECURITY_INVALID_INPUT_PARAMS);
+	TC_SUCCESS_RESULT();
+
+	/* Remove AES key for GCM encryption / decryption */
+	res = keymgr_remove_key(g_hnd, KEY_AES_128, UTC_CRYPTO_USER_KEY_NAME);
+}
 
 void utc_crypto_main(void)
 {
@@ -780,7 +1262,7 @@ void utc_crypto_main(void)
 	utc_crypto_aes_decryption_key_n();
 	utc_crypto_aes_decryption_input_n();
 	utc_crypto_aes_decryption_output_n();
-	/*  RSA */
+	// /*  RSA */
 	utc_crypto_rsa_encryption_p();
 	utc_crypto_rsa_encryption_hnd_n();
 	utc_crypto_rsa_encryption_param_n();
@@ -795,6 +1277,19 @@ void utc_crypto_main(void)
 	utc_crypto_rsa_decryption_param3_n();
 	utc_crypto_rsa_decryption_input_n();
 	utc_crypto_rsa_decryption_output_n();
+	/* GCM */
+	utc_crypto_gcm_encryption_p();
+	utc_crypto_gcm_encryption_hnd_n();
+	utc_crypto_gcm_encryption_param_n();
+	utc_crypto_gcm_encryption_key_n();
+	utc_crypto_gcm_encryption_input_n();
+	utc_crypto_gcm_encryption_output_n();
+	utc_crypto_gcm_decryption_p();
+	utc_crypto_gcm_decryption_hnd_n();
+	utc_crypto_gcm_decryption_param_n();
+	utc_crypto_gcm_decryption_key_n();
+	utc_crypto_gcm_decryption_input_n();
+	utc_crypto_gcm_decryption_output_n();
 
 	res = security_deinit(g_hnd);
 	if (res != SECURITY_OK) {

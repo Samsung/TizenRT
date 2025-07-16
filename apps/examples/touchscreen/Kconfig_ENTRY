@@ -1,0 +1,3 @@
+config ENTRY_TOUCHSCREEN
+	bool "\"Touchscreen\" example"
+	depends on EXAMPLES_TOUCHSCREEN

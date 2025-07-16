@@ -52,6 +52,8 @@
 #define NDP120_MIC_GAIN_MAX	10
 #define NDP120_MIC_GAIN_DEFAULT	7
 
+#define NDP120_INIT_RETRY_COUNT 3
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -102,7 +104,6 @@ static int ndp120_release(FAR struct audio_lowerhalf_s *dev);
 
 #ifdef CONFIG_PM
 static struct ndp120_dev_s *g_ndp120;
-static int g_ndp120_pm_id;
 
 static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
 static int ndp_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
@@ -175,6 +176,43 @@ static inline int ndp120_get_semvalue(sem_t *sem)
 	return val;
 }
 
+static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
+{
+	int ret = 0;
+	audvdbg("mute : %d\n", mute);
+	if (mute) {
+		ret = ndp120_kd_stop(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_stop failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
+#endif
+	} else {
+		uint32_t notifications = 0;
+		struct syntiant_ndp_device_s *ndp = priv->ndp;
+		ret = syntiant_ndp120_poll(ndp, &notifications, 1);
+		if (ret != 0) {
+			auddbg("ndp120 poll failed ret: %d\n", ret);
+			return ret;
+		}
+		ret = ndp120_kd_start(priv);
+		if (ret != 0) {
+			auddbg("ndp120_kd_start failed ret : %d\n", ret);
+			return ret;
+		}
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
+#endif
+	}
+	return ret;
+}
+
 /****************************************************************************
  * ndp120 audio operations
  ****************************************************************************/
@@ -236,7 +274,11 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 			caps->ac_controls.hw[1] = NDP120_MIC_GAIN_DEFAULT;
 #endif
 			break;
-
+		case AUDIO_FU_MUTE:
+			ndp120_takesem(&priv->devsem);
+			caps->ac_controls.b[0] = priv->mute;
+			ndp120_givesem(&priv->devsem);
+			break;
 		default:
 			break;
 		}
@@ -330,17 +372,18 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 #endif
 		} break;
 		case AUDIO_FU_MUTE: {
-#if !(defined(CONFIG_AUDIO_EXCLUDE_GAIN) && defined(CONFIG_AUDIO_EXCLUDE_VOLUME))
 			/* Mute or unmute:  true(1) or false(0) */
 			bool mute = caps->ac_controls.b[0];
 			audvdbg("mute: 0x%x\n", mute);
 			ndp120_takesem(&priv->devsem);
+			ret = ndp120_setMute(priv, mute);
+			if (ret != 0) {
+				auddbg("ndp120_setMute failed ret : %d\n", ret);
+				return ret;
+			}
 			priv->mute = mute;
 			/* No api to control gain as of now */
 			ndp120_givesem(&priv->devsem);
-#else
-			ret = -EACCESS;
-#endif
 		} break;
 		default:
 			audvdbg("ERROR: Unrecognized feature unit\n");
@@ -401,6 +444,7 @@ static int ndp120_start(FAR struct audio_lowerhalf_s *dev)
 
 	ndp120_start_sample_ready(priv);
 	priv->running = true;
+	priv->total_size = 0;
 
 	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
 	sq_entry_t *tmp = NULL;
@@ -431,11 +475,11 @@ static int ndp120_stop(FAR struct audio_lowerhalf_s *dev)
 
 	audvdbg(" ndp120_i2s_stop Entry\n");
 	ndp120_takesem(&priv->devsem);
-
+	auddbg("Total record size : %lu\n", priv->total_size);
 	ndp120_stop_sample_ready(priv);
 
 	priv->running = false;
-	
+	priv->total_size = 0;
 	ndp120_givesem(&priv->devsem);
 	return 0;
 }
@@ -505,8 +549,14 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 			break;
 		}
 	}
+
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, ret);
-	
+
+	if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
+		// notify upper layer to stop capture
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
+	}
+
 	return 0;
 }
 
@@ -567,7 +617,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 		bufinfo = (FAR struct ap_buffer_info_s *)arg;
 
-		bufinfo->buffer_size = priv->sample_size;
+		bufinfo->buffer_size = 4 * priv->sample_size;
 		bufinfo->nbuffers = CONFIG_NDP120_NUM_BUFFERS;
 		
 		audvdbg("buffer_size : %d nbuffers : %d\n",
@@ -664,6 +714,17 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		}
 		break;
 	}
+	case AUDIOIOC_CHANGEKD: {
+		if (arg > 1) {
+			return -EINVAL;
+		}
+		if (priv->running) {
+			return -EBUSY;
+		}
+		priv->kd_num = arg;
+		ndp120_change_kd(priv);
+		break;
+	}
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
@@ -734,7 +795,7 @@ static void ndp120_interrupt_dispatch(int d)
 {
 	struct ndp120_dev_s *priv = (struct ndp120_dev_s *)d;
 #ifdef CONFIG_PM
-	pm_timedsuspend(g_ndp120_pm_id, 10000);
+	pm_timedsuspend(priv->pm_id, 10000);
 #endif
 	ndp120_irq_handler(priv);
 }
@@ -831,22 +892,39 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 
 	priv->lower = lower;
 	priv->recording = false;
-
-	ret = ndp120_init(priv);
-	if (ret != OK) {
-		auddbg("ndp120 init failed\n");
-		free(priv);
-		return NULL;
-	}
-
-	priv->lower->attach(ndp120_interrupt_dispatch, priv);
+	priv->mute = false;
+	priv->kd_num = 0;
+	priv->kd_changed = false;
 #ifdef CONFIG_PM
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
 
-	g_ndp120_pm_id = pm_domain_register("NDP120");
+	priv->pm_id = pm_domain_register("NDP120");
+	DEBUGASSERT(priv->pm_id >= 0);
+#endif
+
+	int retry = NDP120_INIT_RETRY_COUNT;
+	while (retry--) {
+		lower->reset();
+		ret = ndp120_init(priv, false);
+		if (ret != OK) {
+			auddbg("ndp120 init failed\n");
+		} else {
+			break;
+		}
+	}
+
+	if (ret != OK) {
+		free(priv);
+		return NULL;
+	}
+
+#ifdef CONFIG_PM
+	/* register callbacks only if NDP init is done */
 	ret = pm_register(&g_pmndpcb);
 	DEBUGASSERT(ret == OK);
-#endif	
+#endif
+
+	priv->lower->attach(ndp120_interrupt_dispatch, priv);
 	return &priv->dev;
 }

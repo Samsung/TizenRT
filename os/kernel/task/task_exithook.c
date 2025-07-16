@@ -71,7 +71,7 @@
 #include "task/task.h"
 #include "debug/debug.h"
 #if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager.h"
+#include "binary_manager/binary_manager_internal.h"
 #endif
 
 #ifdef CONFIG_TASK_MANAGER

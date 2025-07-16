@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <condition_variable>
 #include <sys/types.h>
 
@@ -48,6 +49,7 @@ public:
 	bool doStandBy();
 	bool open() override;
 	bool close() override;
+	int seekTo(off_t offset);
 	ssize_t read(unsigned char *buf, size_t size);
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);

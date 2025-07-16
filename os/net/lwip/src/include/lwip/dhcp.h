@@ -59,6 +59,12 @@ typedef enum {
 	DHCP_AUTOIP_COOP_STATE_ON = 1
 } dhcp_autoip_coop_state_enum_t;
 
+typedef enum {
+	AP_NORMAL = 0,
+	AP_ANDROID_MOBILE_HOTSPOT = 3,
+	AP_HOMELYNK = 9,
+} ap_type;
+
 struct dhcp {
 	/** transaction identifier of last sent request */
 	u32_t xid;
@@ -219,6 +225,16 @@ err_t dhcps_start(struct netif *netif);
  * @return none
 */
 void dhcps_stop(struct netif *netif);
+
+/**
+ * @brief dhcp_get_aptype() get the AP type.
+ *
+ * @internal
+ * @param[in] none
+ * @note normal type : 0, android mobile hotspot : 3, homelynk : 9,
+ * @return the AP type
+ */
+ap_type dhcp_get_aptype(void);
 /// @endcond
 
 #ifdef __cplusplus

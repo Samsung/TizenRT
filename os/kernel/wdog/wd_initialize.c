@@ -111,6 +111,36 @@ static struct wdog_s g_wdpool[CONFIG_PREALLOC_WDOGS];
  ************************************************************************/
 
 /************************************************************************
+ * Name: wd_is_prealloc
+ *
+ * Description:
+ * This function checks if the wdog is pre- allocated or not
+ *
+ * Parameters:
+ *   wdog - the address of wdog (WDOG_ID)
+ *
+ * Return Value:
+ *   true  - if wdog is preallocated
+ *   false - otherwise
+ *
+ ************************************************************************/
+
+bool wd_is_prealloc(WDOG_ID wdog)
+{
+	uintptr_t wdog_ptr = (uintptr_t)wdog;
+	uintptr_t start = (uintptr_t)(&g_wdpool[0]);
+	uintptr_t end = (uintptr_t)(&g_wdpool[CONFIG_PREALLOC_WDOGS - 1]);
+	
+	if (end < start) {
+		start = start ^ end;
+		end = start ^ end;
+		start = start ^ end;
+	}
+
+	return (wdog_ptr >= start) && (wdog_ptr <= end) && (((wdog_ptr - start) % sizeof(struct wdog_s)) == 0);
+}
+
+/************************************************************************
  * Name: wd_initialize
  *
  * Description:

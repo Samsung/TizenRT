@@ -48,6 +48,12 @@ typedef enum {
 	RTW_CONNECT_FAIL,  /**< connect fail*/
 	RTW_DHCP_FAIL,        /**< dhcp fail*/
 	RTW_UNKNOWN,         /**< unknown*/
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	RTW_BCN_LOST,         /**< No beacon for a long time*/
+	RTW_DISCONNECT,         /**< Received deauth packet*/
+	RTW_MAX_STA,            /**< maximum number of station reached */
+	RTW_AP_BUSY,            /**< AP busy */
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 } rtw_connect_error_flag_t;
 
 enum WIFI_INDICATE_MODE {

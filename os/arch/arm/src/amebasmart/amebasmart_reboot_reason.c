@@ -92,16 +92,22 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		}
 
 		/* CA32:WDG4 or KM4:WDG2 or KM0:IWDG NonSecure WDG reset */
-		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG2) || (boot_reason & AON_BIT_RSTF_IWDG)) {
+		else if ((boot_reason & AON_BIT_RSTF_WDG4) || (boot_reason & AON_BIT_RSTF_WDG2)) {
 			/* CA32 Secure ATF doesn't have OS, no implementation for CA32 Secure Watchdog WDG3
 			 * When CA32 occurred Secure Fault, it will rely on CA32 NonSecure WDG4 to Reset
 			 * BKUP_REG2 is use to distinguish whether the fault originated from the CA32 S or NS */
 
 			 /* CA32:WDG3 Secure WDG reset */
 			if (boot_reason_reg2 & AON_BIT_RSTF_WDG3) {
+				BKUP_Write(BKUP_REG2, 0);
 				return REBOOT_SYSTEM_TZWD_RESET;
 			}
 			else {
+				if (boot_reason & AON_BIT_RSTF_WDG4) {
+					lldbg("Reboot reason: WDG4 reset\n");
+				} else if (boot_reason & AON_BIT_RSTF_WDG2) {
+					lldbg("Reboot reason: WDG2 reset\n");
+				}
 				return REBOOT_SYSTEM_WATCHDOG;
 			}
 		}
@@ -109,6 +115,20 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		/* KM4:WDG1 Secure WDG reset */
 		else if (boot_reason & AON_BIT_RSTF_WDG1) {
 			return REBOOT_SYSTEM_TZWD_RESET;
+		}
+		/* KM0: IWDG reset*/
+		else if (boot_reason & AON_BIT_RSTF_IWDG) {
+			/* KM0: IWDG is used in KM0 to ensure KM0 is working properly, KM4 is wakeup properly from PG, CA32 power is power-on from PG
+			* backup register will be used to record the case that triggered IWDG reboot
+			*/
+			if (boot_reason_reg2 == 0x2) {
+				BKUP_Write(BKUP_REG2, 0);
+				lldbg("Reboot reason: IWDG reset, KM4 wakeup failed\n");
+			} else if (boot_reason_reg2 == 0x3) {
+				BKUP_Write(BKUP_REG2, 0);
+				lldbg("Reboot reason: IWDG reset, CA32 wakeup failed\n");
+			}
+			return REBOOT_SYSTEM_RESET_IWDG;
 		}
 
 		/* KM4 deep sleep handled by KM0 (KM4 sleep + KM0 tickless, KM4 deep sleep + KM0 deep sleep AON) */
@@ -118,6 +138,13 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 
 		/* CA32:AP or KM4:NP or KM0:LP System reset */
 		else if ((boot_reason & AON_BIT_RSTF_APSYS) || (boot_reason & AON_BIT_RSTF_NPSYS) || (boot_reason & AON_BIT_RSTF_LPSYS)) {
+			if (boot_reason & AON_BIT_RSTF_APSYS) {			/* CA32 */
+				lldbg("Reboot reason: APSYS reset\n");
+			} else if (boot_reason & AON_BIT_RSTF_NPSYS) {	/* KM4 */
+				lldbg("Reboot reason: NPSYS reset\n");
+			} else {										/* (boot_reason & AON_BIT_RSTF_LPSYS) */
+				lldbg("Reboot reason: LPSYS reset\n");
+			}
 			return REBOOT_SYSTEM_SYS_RESET_CORE;
 		}
 

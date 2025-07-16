@@ -46,6 +46,8 @@ static inline void binfmt_set_mpu(struct binary_s *binp)
 		nregion = mpu_get_nregion_info(MPU_REGION_APP_BIN);
 	}
 
+	DEBUGASSERT(regs);
+
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	/* Configure text section as RO and executable region */
 	mpu_get_register_config_value(&regs[0], nregion - 3, (uintptr_t)binp->sections[BIN_TEXT], binp->sizes[BIN_TEXT], true, true);
