@@ -552,6 +552,20 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t s
 audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy);
 
 /****************************************************************************
+ * Name: set_dmic
+ *
+ * Description:
+ *   Enable external digital mic or not
+ *
+ * Input parameter:
+ *   enable: To determine enable dmic or not
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_dmic(bool enable);
+
+/****************************************************************************
  * Name: set_output_audio_equalizer
  *
  * Description:
