@@ -58,6 +58,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <tinyara/sensors/sensor.h>
+
+#ifdef CONFIG_SENSOR_AIS25BA
 #define IR_SENSOR_PATH "/dev/sensor0"
 #define MEMS_SENSOR_PATH "/dev/sensor1"
 
@@ -86,6 +88,7 @@ static void temp_read()
 	close(fd);
 	close(fd1);
 }
+#endif
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -94,6 +97,8 @@ int sensor_main(int argc, char *argv[])
 #endif
 {
 	printf("Sensor test!!\n");
+#ifdef CONFIG_SENSOR_AIS25BA
 	temp_read();
+#endif
 	return 0;
 }
