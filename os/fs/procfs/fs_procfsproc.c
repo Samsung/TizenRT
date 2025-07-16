@@ -98,6 +98,28 @@
  */
 
 #define STATUS_LINELEN 128
+
+#define PROC_STAT_FMT_BASE "%d %d %d %d %d %d %d %d %d %d"
+#ifdef CONFIG_IRQCOUNT
+#define PROC_STAT_FMT_IRQ  " %d"
+#else
+#define PROC_STAT_FMT_IRQ  " %s"
+#endif
+#define PROC_STAT_FMT PROC_STAT_FMT_BASE PROC_STAT_FMT_IRQ
+
+#define PROC_STAT_DATA_BASE tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap,
+#ifdef CONFIG_SMP
+#define PROC_STAT_DATA_CPU  tcb->cpu,
+#else
+#define PROC_STAT_DATA_CPU  0,
+#endif
+#ifdef CONFIG_IRQCOUNT
+#define PROC_STAT_DATA_IRQ  tcb->irqcount
+#else
+#define PROC_STAT_DATA_IRQ  "NA"
+#endif
+#define PROC_STAT_DATA PROC_STAT_DATA_BASE PROC_STAT_DATA_CPU PROC_STAT_DATA_IRQ
+
 #define TASH_TASK_NAME "tash"
 
 /* Modify TASH_TASK_NAME_LENGTH along with TASH_TASK_NAME
@@ -436,11 +458,7 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	}
 #endif
 
-#ifdef CONFIG_SMP
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, tcb->cpu);
-#else
-	linesize = snprintf(procfile->line, STATUS_LINELEN, "%d %d %d %d %d %d %d %d %d %d", tcb->pid, ppid, tcb->sched_priority, tcb->flags, state, tcb->adj_stack_size, peak_stack, curr_heap, peak_heap, 0);
-#endif
+	linesize = snprintf(procfile->line, STATUS_LINELEN, PROC_STAT_FMT, PROC_STAT_DATA);
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
