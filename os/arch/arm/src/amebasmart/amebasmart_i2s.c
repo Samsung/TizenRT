@@ -2427,14 +2427,22 @@ static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
 #define I2S_INITIALIZE amebasmart_i2s_initialize
 #endif
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
 	/* For PG Sleep, I2S HW will be lost power, thus a reinitialization is required here */
 #ifdef CONFIG_AMEBASMART_I2S2
-	//(void)amebasmart_i2s_initialize(I2S_NUM_2, I2S_REINIT);
 	(void)I2S_INITIALIZE(I2S_NUM_2, I2S_REINIT);
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
-	//(void)amebasmart_i2s_initialize(I2S_NUM_3, I2S_REINIT);
 	(void)I2S_INITIALIZE(I2S_NUM_3, I2S_REINIT);
+#endif
+#else
+	/* For PG Sleep, I2S HW will be lost power, thus a reinitialization is required here */
+#ifdef CONFIG_AMEBASMART_I2S2
+        (void)I2S_INITIALIZE(I2S_NUM_2);
+#endif
+#ifdef CONFIG_AMEBASMART_I2S3
+        (void)I2S_INITIALIZE(I2S_NUM_3);
+#endif
 #endif
 
 	return 1;

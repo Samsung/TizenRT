@@ -1,3 +1,3 @@
-config ENTRY_HELLO
+config ENTRY_SENSOR
 	bool "\"Hello, World!\" example"
-	depends on EXAMPLES_HELLO
+	depends on EXAMPLES_SENSOR
