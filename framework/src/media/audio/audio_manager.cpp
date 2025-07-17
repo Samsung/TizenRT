@@ -2033,10 +2033,14 @@ audio_manager_result_t set_dmic(bool enable)
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	get_card_path(card_path, card->card_id, card->device_id, INPUT);
 
+	pthread_mutex_lock(&(card->card_mutex));
+
 	ret = control_audio_stream_device(card_path, AUDIOIOC_ENABLEDMIC, (unsigned long)enable);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_dmic failed ret : %d errno : %d\n", ret, get_errno());
 	}
+
+	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 }
 
