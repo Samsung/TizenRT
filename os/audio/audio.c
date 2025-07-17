@@ -143,6 +143,28 @@ static const struct file_operations g_audioops = {
  * Private Functions
  ****************************************************************************/
 
+void audio_semtake(FAR struct audio_upperhalf_s *upper)
+{
+	/* Take the semaphore (perhaps waiting) */
+
+	while (sem_wait(&upper->exclsem) != 0) {
+		/* The only case that an error should occur here is if
+		 * the wait was awakened by a signal.
+		 */
+
+		ASSERT(*get_errno_ptr() == EINTR);
+	}
+}
+
+/****************************************************************************
+ * Name: smartfs_semgive
+ ****************************************************************************/
+
+void audio_semgive(FAR struct audio_upperhalf_s *upper)
+{
+	sem_post(&upper->exclsem);
+}
+
 /************************************************************************************
  * Name: audio_open
  *
@@ -162,12 +184,8 @@ static int audio_open(FAR struct file *filep)
 
 	/* Get exclusive access to the device structures */
 
-	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
-		ret = -errno;
-		goto errout;
-	}
-
+	audio_semtake(upper);
+	
 	/* Increment the count of references to the device.  If this the first
 	 * time that the driver has been opened for this device, then initialize
 	 * the device.
@@ -194,7 +212,7 @@ static int audio_open(FAR struct file *filep)
 	ret = OK;
 
 errout_with_sem:
-	sem_post(&upper->exclsem);
+	audio_semgive(upper);
 
 errout:
 	return ret;
@@ -218,12 +236,8 @@ static int audio_close(FAR struct file *filep)
 
 	/* Get exclusive access to the device structures */
 
-	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
-		ret = -errno;
-		goto errout;
-	}
-
+	audio_semtake(upper);
+	
 	/* Decrement the references to the driver.  If the reference count will
 	 * decrement to 0, then uninitialize the driver.
 	 */
@@ -246,7 +260,7 @@ static int audio_close(FAR struct file *filep)
 	}
 
 //errout_with_sem:
-	sem_post(&upper->exclsem);
+	audio_semgive(upper);
 
 errout:
 	return ret;
@@ -376,11 +390,8 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	/* Get exclusive access to the device structures */
 
-	ret = sem_wait(&upper->exclsem);
-	if (ret < 0) {
-		return ret;
-	}
-
+	audio_semtake(upper);
+	
 	/* Handle built-in ioctl commands */
 
 	switch (cmd) {
@@ -689,7 +700,7 @@ static int audio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	break;
 	}
 
-	sem_post(&upper->exclsem);
+	audio_semgive(upper);
 	return ret;
 }
 
