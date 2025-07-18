@@ -200,8 +200,12 @@ int sem_post(FAR sem_t *sem)
 {
 	irqstate_t saved_state;
 	int ret = ERROR;
-	size_t caller_retaddr = 0;
+	size_t caller_retaddr=0;
+#ifndef GET_RETURN_ADDRESS
 	ARCH_GET_RET_ADDRESS(caller_retaddr);
+#else
+	caller_retaddr = (size_t)GET_RETURN_ADDRESS
+#endif
 
 	/* Make sure we were supplied with a valid semaphore. */
 

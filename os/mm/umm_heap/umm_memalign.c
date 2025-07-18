@@ -89,8 +89,12 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 {
 	void *ret;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	mmaddress_t caller_retaddr =0;
+	#ifndef GET_RETURN_ADDRESS
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+	#else
+		caller_retaddr = GET_RETURN_ADDRESS
+	#endif
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -133,16 +137,18 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 FAR void *memalign(size_t alignment, size_t size)
 {
 	void *ret;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-#endif
 
 	if (size == 0) {
 		return NULL;
 	}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	mmaddress_t caller_retaddr =0;
+	#ifndef GET_RETURN_ADDRESS
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+	#else
+		caller_retaddr = GET_RETURN_ADDRESS
+	#endif
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User supports a single heap on app separation */

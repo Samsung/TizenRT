@@ -63,6 +63,12 @@
 /* GCC-specific definitions *************************************************/
 
 #ifdef __GNUC__
+#define GET_RETURN_ADDRESS   (mmaddress_t)__builtin_return_address(0);
+#else
+#undef GET_RETURN_ADDRESS
+#endif
+
+#ifdef __GNUC__
 
 /* Pre-processor */
 

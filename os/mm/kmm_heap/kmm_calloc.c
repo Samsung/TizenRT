@@ -118,8 +118,12 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 	void *ret;
 	struct mm_heap_s *kheap;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	mmaddress_t caller_retaddr =0;
+	#ifndef GET_RETURN_ADDRESS
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+	#else
+		caller_retaddr = GET_RETURN_ADDRESS
+	#endif
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -161,8 +165,12 @@ FAR void *kmm_calloc(size_t n, size_t elem_size)
 		return NULL;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr)
+	mmaddress_t caller_retaddr =0;
+	#ifndef GET_RETURN_ADDRESS
+		ARCH_GET_RET_ADDRESS(caller_retaddr)
+	#else
+		caller_retaddr = GET_RETURN_ADDRESS
+	#endif
 #endif
 	return kheap_calloc(n, elem_size
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
