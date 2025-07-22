@@ -47,6 +47,10 @@
 #define MIPI_GPIO_RESET_PIN 	PA_14
 #endif
 #include <tinyara/spinlock.h>
+
+#define LCD_XRES CONFIG_LCD_XRES
+#define LCD_YRES CONFIG_LCD_YRES
+
 struct rtl8730e_lcdc_info_s {
 	struct mipi_lcd_config_s lcd_config;
 	pwmout_t pwm_led;

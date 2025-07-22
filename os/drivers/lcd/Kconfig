@@ -145,6 +145,18 @@ config LCD_ST7785
 	---help---
 		Enable LCD Driver, ST7785 with mipi.
 
+if LCD_ST7785
+config LCD_ST7785_TYPEA
+	bool "ST7785 Type A LCD Driver"
+	---help---
+		Enable LCD Driver, ST7785 with mipi.
+
+config LCD_ST7785_TYPEB
+	bool "ST7785 Type B LCD Driver"
+	---help---
+		Enable LCD Driver, ST7785 with mipi.
+endif
+
 config LCD_ST7789
 	bool "ST7789 LCD Driver"
 	---help---

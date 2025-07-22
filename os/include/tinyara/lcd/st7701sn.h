@@ -41,8 +41,6 @@
 #define MIPI_FRAME_RATE         60
 #define MIPI_LANE_NUMBER        2
 /* Support for screen rotation is not present in hardware. LCD will work in portrait mode only. */
-#define LCD_XRES CONFIG_LCD_XRES
-#define LCD_YRES CONFIG_LCD_YRES
 #define LCDC_IMG_BUF_SIZE	LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 
 static const lcm_setting_table_t lcd_init_cmd_g[] = {

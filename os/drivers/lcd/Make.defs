@@ -105,14 +105,17 @@ endif
 
 ifeq ($(CONFIG_LCD_ST7785),y)
   CSRCS += mipi_lcd.c
+  CSRCS += st7785.c
 endif
 
 ifeq ($(CONFIG_LCD_ST7701),y)
   CSRCS += mipi_lcd.c
+  CSRCS += st7701.c
 endif
 
 ifeq ($(CONFIG_LCD_ST7701SN),y)
   CSRCS += mipi_lcd.c
+  CSRCS += st7701sn.c
 endif
 
 ifeq ($(CONFIG_LCD_LOGO_52_340),y)

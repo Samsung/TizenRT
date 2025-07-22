@@ -19,13 +19,7 @@
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd.h>
 #include <tinyara/lcd/lcd_dev.h>
-#if defined(CONFIG_LCD_ST7785)
-#include <tinyara/lcd/st7785.h>
-#elif defined(CONFIG_LCD_ST7701)
-#include <tinyara/lcd/st7701.h>
-#elif defined(CONFIG_LCD_ST7701SN)
-#include <tinyara/lcd/st7701sn.h>
-#endif
+#include <tinyara/lcd/mipi_lcd.h>
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
 #include "lcd_logo.h"
@@ -33,6 +27,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <semaphore.h>
+
+#define LCD_XRES CONFIG_LCD_XRES
+#define LCD_YRES CONFIG_LCD_YRES
 
 #define REGFLAG_DELAY                       0xFC
 #define REGFLAG_END_OF_TABLE                0xFD	// END OF REGISTERS MARKER
@@ -129,6 +126,8 @@ struct mipi_lcd_dev_s {
 
 static struct mipi_lcd_dev_s g_lcdcdev;
 
+extern int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv);
+
 static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
 {
 	int transfer_status = ERROR;
@@ -171,7 +170,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	return transfer_status;
 }
 /* rx_len is the maximum return packet size*/
-static int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
+int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
 {
 	int transfer_status = OK;
 	struct mipi_dsi_msg msg;
@@ -187,7 +186,7 @@ static int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
 	return transfer_status;
 }
 
-static int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command, u8 *rxbuf, u8 rx_len)
+int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command, u8 *rxbuf, u8 rx_len)
 {
 	int transfer_status = OK;
 	u8 cmd = command.cmd;
@@ -214,7 +213,7 @@ static int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t comman
 	}
 	return transfer_status;
 }
-static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
+int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 {
 	u8 send_cmd_idx_s = 0;
 	u32 payload_len;
@@ -445,7 +444,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
-			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
+			if (check_lcd_vendor_send_init_cmd(priv) != OK) {
 				lcddbg("ERROR: LCD Init sequence failed\n");
 			}
 		}
@@ -470,7 +469,7 @@ static int lcd_init(FAR struct lcd_dev_s *dev)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	priv->config->reset();
-	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
+	if (check_lcd_vendor_send_init_cmd(priv) == OK) {
 		lcdvdbg("LCD Init sequence completed\n");
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
