@@ -268,6 +268,13 @@ config PREALLOC_TIMERS
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.
 
+config HANG_DETECT_WAIT_SECS
+	int "Hang detect wait timer(sec)"
+	default 120
+	---help---
+		If a task is running for more than HANG_DETECT_WAIT_SECS without a context switch, 
+		then we assume that the device has hanged and we try to print the debug logs and restart the device.
+		
 endmenu # Clocks and Timers
 
 menu "Tasks and Scheduling"
