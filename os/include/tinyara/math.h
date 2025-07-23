@@ -123,7 +123,7 @@
 
 #define isnan(x)    ((x) != (x))
 #define isinf(x)    (((x) == INFINITY) || ((x) == -INFINITY))
-#define isfinite(x) (!(isinf(x)) && (x != NAN))
+#define isfinite(x) (!(isinf(x)) && !(isnan(x)))
 
 static __inline unsigned __FLOAT_BITS(float __f)
 {
