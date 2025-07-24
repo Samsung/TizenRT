@@ -515,6 +515,21 @@ int log_dump_save(char ch)
 			return compress_full_bufs();
 		}
 	}
+	else {
+		// This else statement is entered only when enitre uncompressed buffer is full.
+		// If compression is available, reset the cursor and compress the entire uncompressed buffer.
+		// Otherwise, discard the character.
+		if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount()) {
+			return LOG_DUMP_OK;
+		}
+
+		uncomp_curbytes = 0;	/* reset cursor */
+		int temp = uncomp_idx++;
+		if (uncomp_idx == CONFIG_LOG_DUMP_NUMBUFS) {
+			uncomp_idx = 0;
+		}
+		return compress_full_bufs();
+	}
 
 	return LOG_DUMP_OK;
 }
