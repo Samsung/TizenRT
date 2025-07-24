@@ -131,5 +131,5 @@ static void tash_security_level(int argc, char **args)
  ****************************************************************************/
 void security_level_register_utilcmds(void)
 {
-	tash_cmd_install("sec_level", tash_security_level, TASH_EXECMD_SYNC);
+	tash_cmd_install("sec_level", (TASH_CMD_CALLBACK) tash_security_level, TASH_EXECMD_SYNC);
 }
