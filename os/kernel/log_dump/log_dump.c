@@ -70,6 +70,9 @@
 #define LOG_DUMP_COMP_CHECK_RETRY_CNT 		(CONFIG_LOG_DUMP_HANG_CHECK_SEC * USEC_PER_SEC / LOG_DUMP_COMP_CHECK_RETRY_USEC)
 #endif
 
+ #define ASSERT_LOG_BUF_SIZE 8192 /* Buffer size for logs printed during an assert */
+
+
 static bool is_started_to_save;
 
 /****************************************************************************
@@ -118,6 +121,17 @@ static unsigned char *last_comp_block;
 static size_t last_comp_block_size;
 static int last_comp_block_ptr;
 static bool compress_last_block;
+
+/* Structures used to save compressed log data*/
+static unsigned char compressed_buf[ASSERT_LOG_BUF_SIZE]; 
+static unsigned int compressed_buf_size;
+static char assert_log[ASSERT_LOG_BUF_SIZE];
+static int assert_situation=0;
+static int assert_log_index=0;
+static int log_len=0;
+
+/* Structures used to decompress and print compressed log data*/
+static char tm[ASSERT_LOG_BUF_SIZE];
 
 /****************************************************************************
  * Private Functions
@@ -569,6 +583,14 @@ size_t log_dump_read(FAR char *buffer, size_t buflen)
 	return ret;
 }
 
+
+
+
+
+
+
+
+
 int log_dump(int argc, char *argv[])
 {
 	struct mq_attr attr;
@@ -612,4 +634,135 @@ int log_dump(int argc, char *argv[])
 			compress_full_block = false;
 		}
 	}
+}
+
+
+void assert_log_init(){
+	assert_situation=0;
+	assert_log_index=0;
+}
+int assert_log_save(char ch){
+	if(assert_log_index<ASSERT_LOG_BUF_SIZE) assert_log[assert_log_index++]=ch;
+}
+int get_assert_log_save_size(){
+	return log_len;
+}
+int set_assert_situation(){
+	lldbg("\n\n\n===============================FROM THIS, lldbg LOG WILL BE SAVED!!================================\n\n\n\n");
+	assert_situation=1;
+}
+int set_notassert_situation(){
+	lldbg("\n\n\n=============================================TO THIS===============================================\n\n\n");
+	
+	assert_situation=0;
+}
+int get_assert_log(char *buf,int size){
+	int i;
+	for(i=0;i<get_assert_log_save_size;i++){
+		if(i>=size) break;
+		buf[i]=assert_log[i];
+	}
+	return i;
+}
+void append_assert_log(const char *fmt, va_list ap){
+	if (log_len>=ASSERT_LOG_BUF_SIZE - 1){
+		return ;
+	}
+	size_t remain=ASSERT_LOG_BUF_SIZE - log_len-1;
+	int written = vsnprintf(assert_log + log_len, remain+1,fmt,ap);
+	if(written<0) return;
+	if((size_t)written > remain){
+		log_len = ASSERT_LOG_BUF_SIZE -1 ;
+	}
+	else{
+		log_len +=(size_t)written;
+	}
+	assert_log[log_len]='\0';
+}
+void assert_log_to_buffer(FAR const char *fmt, va_list ap){
+	if(assert_situation){
+		va_list ap2;
+		va_copy(ap2,ap);
+		append_assert_log(fmt,ap2);
+		va_end(ap2);
+	}
+}
+
+
+
+int assert_log_to_file(){
+	lldbg("\n\n\n===============assert log file saving start==================\n\n\n");
+	lldbg("\nlog_save_size is %d\n",get_assert_log_save_size());
+	int fd=open("/mnt/assert_logsave.txt",O_WRONLY|O_CREAT|O_TRUNC);
+	if(fd<0){
+		lldbg("file open failed\n");
+		return -1;
+	}
+	lldbg("file open success\n");
+	int log_size=write(fd,assert_log,strlen(assert_log));
+	close(fd);
+	if(log_size<0){
+		lldbg("file write failed\n");
+		return -1;
+	}
+	lldbg("file write success, count:%d\n",log_size);
+	lldbg("\n\n\n===============assert log file saving end=====================\n\n\n");
+	return log_size;
+}
+void assert_log_compress(){
+
+	lldbg("\n\n================compress start==============\n\n");
+	compressed_buf_size=ASSERT_LOG_BUF_SIZE;
+	compress_block(compressed_buf,&compressed_buf_size,assert_log,ASSERT_LOG_BUF_SIZE);
+	lldbg("compressed buf size: %d\n",compressed_buf_size);
+	lldbg("\n====================compress end =====================\n");
+		
+}
+int compressed_assert_log_to_file(){
+	lldbg("\n\n================compress file write start==============\n\n");
+	int fd=open("/mnt/ssert_logsave_zip",O_WRONLY|O_CREAT|O_TRUNC);
+	if(fd<0){
+		lldbg("file open failed\n");
+		return -1;
+	}
+	lldbg("file open success\n");
+	int ret=write(fd,compressed_buf,compressed_buf_size);
+	if(ret<0){
+		lldbg("file write failed\n");
+		return -1;
+	}
+	close(fd);
+	lldbg("write count: %d\n",ret);
+	lldbg("\n\n=====================compress file write end ===================\n\n");
+	return ret;
+}
+int compressed_assert_log_read(){
+	lldbg("\n========================== compressed_assert_log_read start======================\n");
+	for(int i=0;i<ASSERT_LOG_BUF_SIZE;i++)compressed_buf[i]=0;
+	int fd=open("/mnt/assert_logsave_zip",O_RDONLY);
+		if(fd<0){
+			lldbg("file open failed\n");
+			return -1;
+		}
+		lldbg("file open success\n");
+	int ret=read(fd,compressed_buf,sizeof(compressed_buf));
+	if(ret<0){
+		lldbg("file read failed\n");
+		return -1;
+	}
+	lldbg("file read successed, count:%d\n",ret);
+	close(fd);
+	lldbg("\n========================== compressed_assert_log_read end========================\n");
+	compressed_buf_size=ret;
+	return ret;
+
+}
+int decompress_and_print(){
+		lldbg("\n========================== compressed data decompress and print start======================\n");
+		int tm_size=ASSERT_LOG_BUF_SIZE;
+		decompress_block(tm,&tm_size,compressed_buf,&compressed_buf_size);
+		lldbg("decompressed size: %d\n",tm_size);
+		tm[ASSERT_LOG_BUF_SIZE-1]='\0';
+		lldbg("\n%s\n",tm);
+		lldbg("\n========================== compressed data decompress and print end======================\n");
 }

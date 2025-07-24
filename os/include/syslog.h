@@ -262,6 +262,8 @@ int lowsyslog(int priority, FAR const char *format, ...);
  */
 int lowvsyslog(int priority, FAR const char *format, va_list ap);
 
+
+
 #else
 
 #ifdef CONFIG_CPP_HAVE_VARARGS

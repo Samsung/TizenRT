@@ -346,6 +346,13 @@ void binary_manager_recovery(int bin_idx)
 		goto reboot_board;
 	}
 #endif
+	//for now, these must be executed in this exact order
+	set_notassert_situation();
+	assert_log_to_file();
+	assert_log_compress();
+	compressed_assert_log_to_file();
+	compressed_assert_log_read();
+	decompress_and_print();
 	/* Create loader to reload binary */
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);
 	if (ret == OK) {
