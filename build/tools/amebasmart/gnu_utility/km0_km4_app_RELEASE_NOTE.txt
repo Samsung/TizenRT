@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version a9b629e748 2025/07/24-11:23:58 ==
+1. Fix hardfault when turn on bridge mode with CSI
+
 == version a310eb29e8 2025/06/27-15:37:18 ==
 1. Fix issue of CSI amplitude spike in non-HT CSI
 
