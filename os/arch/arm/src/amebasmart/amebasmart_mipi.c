@@ -260,6 +260,7 @@ static void amebasmart_mipidsi_isr(void)
 {
 	MIPI_TypeDef *MIPIx = g_dsi_host.MIPIx;
 	u32 reg_val, reg_val2, reg_dphy_err;
+	u32 count = 0;
 	reg_val = MIPI_DSI_INTS_Get(MIPIx);
 	MIPI_DSI_INTS_Clr(MIPIx, reg_val);
 
@@ -278,16 +279,21 @@ static void amebasmart_mipidsi_isr(void)
 	if (reg_val & MIPI_BIT_RCMD3) {
 		amebasmart_mipidsi_rcmd_decode(MIPIx, 2);
 	}
-	if (reg_val & MIPI_BIT_ERROR) {
-		/* Read and log DPHY error */
-		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
-		mipidbg("LPTX Error: DPHY_ERR = 0x%x\n", reg_dphy_err);
 
-		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-
-		MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
-		MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
-		/*if error report in register DPHY_ERR, it is likely that the driver is in a invalid state, so we reset LRRX and LPTX here.*/
+	if (reg_val & (MIPI_BIT_LPRX_TIMEOUT | MIPI_BIT_LPTX_TIMEOUT)) {
+		if (reg_val & MIPI_BIT_LPRX_TIMEOUT) {
+			mipidbg("LPRX TimeOut\n");
+			while (MIPIx->MIPI_DPHY_STATUS0 & MIPI_BIT_DIRECTION) {
+				DelayUs(1);
+				if (count > 100000) {	/* If wait time more than 100ms */
+					mipidbg("MIPI DPHY STATUS0 Wait Timeout\n");
+					break;
+				}
+				count++;
+			}
+		} else {
+			mipidbg("LPTX TimeOut\n");
+		}
 		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(1);
 		DelayUs(1);
 		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(0);
@@ -295,11 +301,25 @@ static void amebasmart_mipidsi_isr(void)
 		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
 		DelayUs(1);
 		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~(MIPI_BIT_DSI_MODE | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST));
+	}
+
+	if (reg_val & MIPI_BIT_ERROR) {
+		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
+		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
+		mipidbg("LPTX Error: 0x%x, DPHY Error: 0x%x\n", reg_val, reg_dphy_err);
+
+		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
+			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
+
+			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
+			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+			mipidbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+		}
+
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
 			mipidbg("LPTX Still Error\n");
 			MIPI_DSI_INT_Config(MIPIx, ENABLE, DISABLE, FALSE);
 		}
-		reg_val &= ~MIPI_BIT_ERROR;
 	}
 
 	if (reg_val) {
