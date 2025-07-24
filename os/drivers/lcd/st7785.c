@@ -26,6 +26,7 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 	lcm_setting_table_t read_display_cmd = {0x04, 0, {0x00}};
 	uint8_t rxbuf[3] = {0xFF, 0xFF, 0xFF};
 	uint8_t length = sizeof(rxbuf) / sizeof(rxbuf[0]);
+	uint32_t combined_id;
 	int status;
 	status = set_return_packet_len(priv, length);
 	if (status != OK) {
@@ -35,12 +36,12 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 	if (status != OK) {
 		return status;
 	}
-	for (int i = 0; i < length; i++) {		/* LCD info */
-		lcdvdbg("%2x\n", rxbuf[i]);
-	}
+	combined_id = (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
+
+	lcddbg("LCD ID: %6x\n", combined_id);
 
 	for (int i = 0; i < NUM_LCD_VENDORS; i++) {
-		if (rxbuf[0] == g_lcd_vendors[i].id[0] && rxbuf[1] == g_lcd_vendors[i].id[1] && rxbuf[2] == g_lcd_vendors[i].id[2]) {
+		if (combined_id == g_lcd_vendors[i].id) {
 			return send_init_cmd(priv, g_lcd_vendors[i].init_cmd);
 		}
 	}
