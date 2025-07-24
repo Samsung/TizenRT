@@ -68,7 +68,7 @@ else
 WRAP_SRCS += syscall_names.c
 endif
 endif
-STUB_SRCS += syscall_funclookup.c syscall_stublookup.c syscall_nparms.c
+STUB_SRCS += syscall_funclookup.c syscall_stublookup.c syscall_nparms.c syscall_not_support.c
 
 ASRCS =
 AOBJS = $(ASRCS:.S=$(OBJEXT))
