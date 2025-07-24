@@ -59,8 +59,6 @@
 #define LCDC_IMG_BUF_SIZE               LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 
 #if defined(CONFIG_LCD_ST7785_TYPEB)
-#define LCD_AVD 0x01
-#define LCD_HOLITECH 0x02
 #define ST7785_COMMON_INIT         {0x3A, 2, {0x00, 0x55}},        /* Interface Pixel format 0x55 for RGB565 */ \
 	{0xB0, 2, {0x00, 0x10}},	/* RAM control */                     \
         {0xB2, 10, {0x00, 0x0C, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x33, 0x00, 0x33}}, /* Porch Setting */ \
@@ -126,17 +124,17 @@ static const lcm_setting_table_t lcd_init_cmd_g[] = {
 
 // Vendor mapping table
 typedef struct {
-        uint8_t id[LCD_ID_LENGTH];
+        uint32_t id;
         lcm_setting_table_t *init_cmd;
 } lcd_vendor_map_t;
 
 static const lcd_vendor_map_t g_lcd_vendors[] = {
 #if defined(CONFIG_LCD_ST7785_TYPEA)
-        {{0x8A, 0x8A, 0x85}, lcd_init_cmd_g},                // AVD A
+        {0x8A8A85, lcd_init_cmd_g},                // AVD A
 #endif
 #if defined(CONFIG_LCD_ST7785_TYPEB)
-        {{0x8A, 0x8A, LCD_AVD}, lcd_init_cmd_g_avd},            // AVD B
-        {{LCD_HOLITECH, 0x8A, 0x85}, lcd_init_cmd_g_holitech},  // Holitech
+        {0x8A8A01, lcd_init_cmd_g_avd},            // AVD B
+        {0x028A85, lcd_init_cmd_g_holitech},  // Holitech
 #endif /* CONFIG_LCD_ST7785_TYPEB */
 };
 
