@@ -133,8 +133,11 @@ static const lcd_vendor_map_t g_lcd_vendors[] = {
         {0x8A8A85, lcd_init_cmd_g},                // AVD A
 #endif
 #if defined(CONFIG_LCD_ST7785_TYPEB)
-        {0x8A8A01, lcd_init_cmd_g_avd},            // AVD B
-        {0x028A85, lcd_init_cmd_g_holitech},  // Holitech
+        {0x8A8A85, lcd_init_cmd_g_avd},            // AVD B
+        {0x010000, lcd_init_cmd_g_avd},            // AVD B
+        {0x030000, lcd_init_cmd_g_avd},            // AVD B
+        {0x484c54, lcd_init_cmd_g_holitech},  // Holitech
+        {0x020000, lcd_init_cmd_g_holitech},  // Holitech
 #endif /* CONFIG_LCD_ST7785_TYPEB */
 };
 
