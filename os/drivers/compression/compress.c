@@ -159,6 +159,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			bcmpdbg("Output buffer allocated is not sufficient\n");
 			return ret;
 		}
+		break;
 	case COMPIOC_FCOMP_INIT:
 		if ((char *)arg == NULL) {
 			return -EINVAL;
