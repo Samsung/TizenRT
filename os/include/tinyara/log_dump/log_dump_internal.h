@@ -64,4 +64,59 @@ int log_dump_get_size(void);
  ****************************************************************************/
 int log_dump(int argc, char *argv[]);
 
+/****************************************************************************
+ * Description:
+ *   This is used to store logs that are output via lldbg() during a user crash situation into a buffer.
+ *
+ ****************************************************************************/
+void assert_log_to_buffer(FAR const char *fmt, va_list ap);
+
+
+/****************************************************************************
+ * Description:
+ *   This is used to enable assert handling.
+ *
+ ****************************************************************************/
+int set_assert_situation();
+
+/****************************************************************************
+ * Description:
+ *   This is used to unable assert handling.
+ *
+ ****************************************************************************/
+int set_notassert_situation();
+
+/****************************************************************************
+ * Description:
+ *   This is used to save not compressed assert log to file.
+    file name fixed: /mnt/assert_logsave.txt -> needs to be modified.
+ ****************************************************************************/
+int assert_log_to_file();
+
+/****************************************************************************
+ * Description:
+ *   This is used to compress assert log.
+    it's stored in the data section, but it needs to be changed to be stored in the heap section.
+ ****************************************************************************/
+void assert_log_compress();
+
+/****************************************************************************
+ * Description:
+ *   This is used to save compressed assert log to file.
+    file name fixed: /mnt/assert_logsave_zip -> needs to be modified.
+ ****************************************************************************/
+int compressed_assert_log_to_file();
+
+/****************************************************************************
+ * Description:
+ *   This is used to read compressed assert log from file to buf.
+ ****************************************************************************/
+int compressed_assert_log_read();
+
+/****************************************************************************
+ * Description:
+ *   This is used to decompress buf and print decompressed log.
+ ****************************************************************************/
+int decompress_and_print();
+
 #endif							/* __LOG_DUMP_INTERNAL_H */
