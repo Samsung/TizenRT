@@ -444,6 +444,12 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 		if (priv->power == 0) {
 			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
+			lcm_setting_table_t read_display_cmd = {0xDA, 0, {0x00}};
+			uint8_t rxbuf[2];
+			read_response(priv, read_display_cmd, rxbuf, 2);
+			for(int i = 0; i < 2; i++) {
+				lcddbg("%2x\n", rxbuf[i]);
+			}
 			/* We need to send init cmd after LCD IC power on */
 			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
 				lcddbg("ERROR: LCD Init sequence failed\n");
