@@ -60,21 +60,12 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include "math.h"
 #include <type_traits>
 
 //***************************************************************************
 // Namespace
 //***************************************************************************
-
-//These functions should be defined in `std` namespace as functions, not a macros.
-//To prevent leaking C99 macros into the C++ codes, they should be undefined.
-#undef isfinite
-#undef isinf
-#undef isnan
-
-// C++ linkage is required here to support overloaded functions (e.g., isinf, isnan).
-extern "C++" {
 
 namespace std
 {
@@ -104,21 +95,9 @@ namespace std
   using ::sqrtf;
   using ::tanf;
   using ::tanhf;
-
-  bool isinf(float __x)
-  {
-    return (((__x) == INFINITY) || ((__x) == -INFINITY));
-  }
-
-  bool isfinite(float __x)
-  { 
-    return (!(isinf(__x)) && (__x != NAN));
-  }
-
-  bool isnan(float __x)
-  { 
-    return ((__x) != (__x));
-  }
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
 
 #ifdef CONFIG_HAVE_DOUBLE
@@ -149,21 +128,9 @@ namespace std
   using ::tanh;
   using ::gamma;
   using ::lgamma;
-
-  bool isinf(double __x)
-  {
-    return (((__x) == INFINITY) || ((__x) == -INFINITY));
-  }
-
-  bool isfinite(double __x)
-  { 
-    return (!(isinf(__x)) && (__x != NAN));
-  }
-
-  bool isnan(double __x)
-  { 
-    return ((__x) != (__x));
-  }
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -192,44 +159,10 @@ namespace std
   using ::sqrtl;
   using ::tanl;
   using ::tanhl;
-
-  bool isinf(long double __x)
-  {
-    return (((__x) == INFINITY) || ((__x) == -INFINITY));
-  }
-
-  bool isfinite(long double __x)
-  { 
-    return (!(isinf(__x)) && (__x != NAN));
-  }
-
-  bool isnan(long double __x)
-  { 
-    return ((__x) != (__x));
-  }
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
-
-  // For integral types
-  template<typename T>  
-  typename std::enable_if<std::is_integral<T>::value, bool>::type  
-  isinf(T __x) { return false; }
-
-  template<typename T>  
-  typename std::enable_if<std::is_integral<T>::value, bool>::type  
-  isfinite(T __x) { return true; }
-
-  template<typename T>  
-  typename std::enable_if<std::is_integral<T>::value, bool>::type  
-  isnan(T __x) { return false; }
-
-}
-
-//There are some codes using these functions in global namespace.
-//This is non-standard.
-using std::isinf;
-using std::isfinite;
-using std::isnan;
-
 }
 
 #endif // __INCLUDE_CXX_CMATH
