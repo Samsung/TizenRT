@@ -126,18 +126,19 @@ static const lcm_setting_table_t lcd_init_cmd_g[] = {
 typedef struct {
         uint32_t id;
         lcm_setting_table_t *init_cmd;
+        bool is_power_invert;
 } lcd_vendor_map_t;
 
 static const lcd_vendor_map_t g_lcd_vendors[] = {
 #if defined(CONFIG_LCD_ST7785_TYPEA)
-        {0x8A8A85, lcd_init_cmd_g},                // AVD A
+        {0x8A8A85, lcd_init_cmd_g, true},                // AVD A
 #endif
 #if defined(CONFIG_LCD_ST7785_TYPEB)
-        {0x8A8A85, lcd_init_cmd_g_avd},            // AVD B
-        {0x010000, lcd_init_cmd_g_avd},            // AVD B
-        {0x030000, lcd_init_cmd_g_avd},            // AVD B
-        {0x484c54, lcd_init_cmd_g_holitech},  // Holitech
-        {0x020000, lcd_init_cmd_g_holitech},  // Holitech
+        {0x8A8A85, lcd_init_cmd_g_avd, false},            // AVD B
+        {0x010000, lcd_init_cmd_g_avd, false},            // AVD B
+        {0x030000, lcd_init_cmd_g_avd, false},            // AVD B
+        {0x484c54, lcd_init_cmd_g_holitech, false},  // Holitech
+        {0x020000, lcd_init_cmd_g_holitech, false},  // Holitech
 #endif /* CONFIG_LCD_ST7785_TYPEB */
 };
 
