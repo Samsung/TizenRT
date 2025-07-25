@@ -110,14 +110,14 @@ namespace std
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
+  inline bool isfinite(float __x)
+  { 
+    return (!(isinf(__x)) && (__x != NAN));
+  }
+
   inline bool isnan(float __x)
   { 
     return ((__x) != (__x));
-  }
-
-  inline bool isfinite(float __x)
-  { 
-    return (!(isinf(__x)) && !(isnan(__x)));
   }
 #endif
 
@@ -155,14 +155,14 @@ namespace std
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
+  inline bool isfinite(double __x)
+  { 
+    return (!(isinf(__x)) && (__x != NAN));
+  }
+
   inline bool isnan(double __x)
   { 
     return ((__x) != (__x));
-  }
-
-  inline bool isfinite(double __x)
-  { 
-    return (!(isinf(__x)) && !(isnan(__x)));
   }
 #endif
 
@@ -198,14 +198,14 @@ namespace std
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
+  inline bool isfinite(long double __x)
+  { 
+    return (!(isinf(__x)) && (__x != NAN));
+  }
+
   inline bool isnan(long double __x)
   { 
     return ((__x) != (__x));
-  }
-
-  inline bool isfinite(long double __x)
-  { 
-    return (!(isinf(__x)) && !(isnan(__x)));
   }
 #endif
 
