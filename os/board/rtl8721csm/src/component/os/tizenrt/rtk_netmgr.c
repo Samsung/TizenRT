@@ -804,6 +804,9 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 					if (wifi_get_rssi(&rssi) == RTK_STATUS_SUCCESS) {
 						wifi_info->rssi = (int)rssi;
 					}
+					if (wifi_get_ap_bssid((unsigned char *)wifi_info->bssid) != RTW_SUCCESS) {
+						ndbg("[RTK] Fail to get bssid\n");
+					}
 				} else {
 					wifi_info->wifi_status = TRWIFI_DISCONNECTED;
 				}

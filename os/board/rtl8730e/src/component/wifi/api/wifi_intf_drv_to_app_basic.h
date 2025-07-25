@@ -937,6 +937,14 @@ rtw_join_status_t wifi_get_prev_join_status(void);
  * @return  unsigned int: The key_mgmt value used by the connection in the last disconnection event
  */
 unsigned int wifi_get_key_mgmt(void);
+
+/**
+ * @brief Get connected AP's BSSID
+ * @param[out] bssid : The location where the AP BSSID will be stored
+ * @return RTW_SUCCESS : Result if BSSID was successfully obtained
+ * @return RTW_ERROR : Result if failed to get BSSID
+ */
+int wifi_get_ap_bssid(unsigned char *bssid);
 /**
 * @}
 */

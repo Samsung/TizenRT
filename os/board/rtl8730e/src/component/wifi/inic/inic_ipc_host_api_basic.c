@@ -59,7 +59,7 @@ extern void wifi_set_user_config(void);
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 #include "wifi_intf_drv_to_upper.h"
 #include "rtk_wifi_utils.h"
-unsigned char ap_bssid[ETH_ALEN];
+static unsigned char ap_bssid[ETH_ALEN];
 rtk_network_link_callback_t g_link_up = NULL;
 rtk_network_link_callback_t g_link_down = NULL;
 static int deauth_reason = 0;
@@ -118,6 +118,17 @@ int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 	p_wifi_rom_func_map->random = rand_func;
 
 	return (0);
+}
+
+static void wifi_connected_hdl(char *buf, int buf_len, int flags, void *userdata)
+{
+	/* To avoid gcc warnings */
+	( void ) flags;
+	( void ) userdata;
+
+	if (buf) {
+		memcpy(ap_bssid, buf, ETH_ALEN);
+	}
 }
 
 static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
@@ -184,6 +195,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 		rtk_reason_t reason;
+		memset(ap_bssid, 0, ETH_ALEN);
 #endif
 
 	/* check if SoftAP is running */
@@ -235,6 +247,8 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 	DCache_Clean((u32)connect_param, sizeof(rtw_network_info_t));
 	param_buf[0] = (u32)connect_param;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	/* Register connect handler before starting join */
+	wifi_reg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl, NULL);
 	/* Register disconnect handler before starting join */
 	wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl, NULL);
 #endif
@@ -295,6 +309,9 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL) {
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+		wifi_unreg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl);
+#endif
 		wifi_join_status_indicate(RTW_JOINSTATUS_FAIL);
 	}
 
@@ -591,6 +608,15 @@ rtw_join_status_t wifi_get_prev_join_status(void)
 unsigned int wifi_get_key_mgmt(void)
 {
 	return key_mgmt;
+}
+
+int wifi_get_ap_bssid(unsigned char *bssid)
+{
+	if (RTW_SUCCESS == wifi_is_connected_to_ap()){
+		memcpy(bssid, ap_bssid, ETH_ALEN);
+		return RTW_SUCCESS;
+	}
+	return RTW_ERROR;
 }
 
 #endif

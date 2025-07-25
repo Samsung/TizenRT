@@ -321,9 +321,9 @@ int wifi_get_associated_client_list(void * client_list_buffer, unsigned short bu
 
 /**
  * @brief Get connected AP's BSSID
- * @param[out] bssid : the location where the AP BSSID will be stored
- * @return RTW_SUCCESS : if result was successfully get
- * @return RTW_ERROR : if result was not successfully get
+ * @param[out] bssid : The location where the AP BSSID will be stored
+ * @return RTW_SUCCESS : Result if BSSID was successfully obtained
+ * @return RTW_ERROR : Result if failed to get BSSID
  */
 int wifi_get_ap_bssid(unsigned char *bssid);
 
