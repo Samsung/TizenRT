@@ -44,6 +44,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <poll.h>
@@ -73,10 +74,12 @@ struct iwrl6432_dev_s {
 	sem_t exclsem;
 	sem_t datasem;
 	sem_t acksem;
+	sem_t fwsem;
 	int crefs;
 	mqd_t mq;
 	bool enable;
 	bool running;
+	bool fw_update_in_progress;
 	struct sq_queue_s pendq;
 	struct sq_queue_s doneq;
 	struct work_s work;
@@ -99,6 +102,10 @@ static void iwrl6432_show(FAR struct iwrl6432_dev_s *priv, FAR uint16_t *buf);
 static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv);
 static void iwrl6432_spi_transfer(FAR struct iwrl6432_dev_s *priv, FAR char *txbuf, FAR char *rxbuf, size_t len);
 static void make_param_packet(uint8_t *spiData);
+static void iwrl6432_make_fw_update_packet(FAR struct iwrl6432_dev_s *priv, uint8_t *spiData, uint8_t *fw_data, uint32_t start_index, uint32_t fw_size);
+static void iwrl6432_make_fw_command_packet(FAR struct iwrl6432_dev_s *priv, uint8_t *spiData, uint8_t *fw_data, uint32_t fw_size);
+static int iwrl6432_send_fw_command(FAR struct iwrl6432_dev_s *priv, uint8_t *fw_data, uint32_t fw_size);
+static int iwrl6432_update_fw(FAR struct iwrl6432_dev_s *priv, const char *firmware_path);
 
 /****************************************************************************
  * Private Data
@@ -119,6 +126,8 @@ static uint8_t total_checksum_error;
 static uint8_t total_timeout_count;
 static uint16_t last_succeed_fid;
 static uint8_t total_frame_mismatch_count;
+static uint32_t crc32_table[256];
+char firmware_version[56];
 
 /****************************************************************************
  * Private Function
@@ -148,6 +157,32 @@ static inline void iwrl6432_semgive(sem_t *sem)
 	sem_post(sem);
 }
 
+static void iwrl6432_init_crc32_table()
+{
+	for (uint32_t i = 0; i < 256; i++) {
+		uint32_t crc = i;
+		for (uint32_t j = 0; j < 8; j++) {
+			if (crc & 1)
+				crc = (crc >> 1) ^ 0xEDB88320;
+			else
+				crc >>= 1;
+		}
+		crc32_table[i] = crc;
+	}
+}
+
+uint32_t iwrl6432_calculate_crc32(const uint8_t *data, size_t length)
+{
+	uint32_t crc = 0xFFFFFFFF;
+
+	for (size_t i = 0; i < length; i++) {
+		uint8_t index = (crc ^ data[i]) & 0xFF;
+		crc = (crc >> 8) ^ crc32_table[index];
+	}
+
+	return crc ^ 0xFFFFFFFF;
+}
+
 /****************************************************************************
  * Name:  checksum_cal
  *
@@ -161,6 +196,65 @@ static uint8_t checksum_cal(uint8_t *input_buf, int start_index, int end_index)
 	return (uint8_t)(sum & 0xFF);
 }
 
+static void iwrl6432_make_fw_update_packet(FAR struct iwrl6432_dev_s *priv, uint8_t *spiData, uint8_t *fw_data, uint32_t start_index, uint32_t fw_size)
+{
+	int ret;
+	int packet_length = 1032;
+	uint32_t elements_to_copy;
+	uint32_t byte_count;
+	int i;
+	elements_to_copy = (start_index + 1024 >= fw_size) ? (fw_size - start_index) : 1024;
+	spiData[0] = PAYLOAD_HEADER;
+	spiData[1] = PAYLOAD_SOF;
+	spiData[2] = packet_length & 0xFF;
+	spiData[3] = (packet_length >> 8) & 0xFF;
+	spiData[4] = (packet_length >> 16) & 0xFF;
+	spiData[5] = (packet_length >> 24) & 0xFF;
+	spiData[6] = 0x05;
+	spiData[7] = 0x26;
+	spiData[8] = 1025 & 0xFF;
+	spiData[9] = (1025 >> 8) & 0xFF;
+	spiData[10] = (1025 >> 16) & 0xFF;
+	spiData[11] = (1025 >> 24) & 0xFF;
+	
+	if (start_index + 1024 >= fw_size) {
+		spiData[12] = 1; // Last FW packet
+	}
+	memcpy(spiData + 13, fw_data + start_index, elements_to_copy); // Copying data from firmware file to SPI buffer
+	spiData[packet_length + 5] = checksum_cal(spiData, 1, packet_length + 5);
+	spiData[packet_length + 6] = PAYLOAD_TAIL;
+}
+
+static void iwrl6432_make_fw_command_packet(FAR struct iwrl6432_dev_s *priv, uint8_t *spiData, uint8_t *fw_data, uint32_t fw_size)
+{
+	int ret;
+	uint32_t packet_length = 15;
+	iwrl6432_init_crc32_table();
+	uint32_t crc = iwrl6432_calculate_crc32(fw_data, fw_size);
+	spiData[0] = PAYLOAD_HEADER;
+	spiData[1] = PAYLOAD_SOF;
+	spiData[2] = packet_length & 0xFF;
+	spiData[3] = (packet_length >> 8) & 0xFF;
+	spiData[4] = (packet_length >> 16) & 0xFF;
+	spiData[5] = (packet_length >> 24) & 0xFF;
+	spiData[6] = 0x04;
+	spiData[7] = 0x25;
+	spiData[8] = 0x08;
+	spiData[9] = 0x00;
+	spiData[10] = 0x00;
+	spiData[11] = 0x00;
+	spiData[12] = fw_size & 0xFF;
+	spiData[13] = (fw_size >> 8) & 0xFF;
+	spiData[14] = (fw_size >> 16) & 0xFF;
+	spiData[15] = (fw_size >> 24) & 0xFF;
+	spiData[16] = crc & 0xFF;
+	spiData[17] = (crc >> 8) & 0xFF;
+	spiData[18] = (crc >> 16) & 0xFF;
+	spiData[19] = (crc >> 24) & 0xFF;
+	spiData[packet_length + 5] = checksum_cal(spiData, 1, packet_length + 5);
+	spiData[packet_length + 6] = PAYLOAD_TAIL;
+}
+
 /****************************************************************************
  * Name:  make_param_packet
  *
@@ -171,7 +265,8 @@ static void make_param_packet(uint8_t *spiData)
 	int fd = -1; // Initialize to invalid descriptor
 	char *param_path = "/mnt/kernel/sensors/param_data.txt";
 	struct stat file_stat;
-	const char *default_command = {"sensorStop 0\nchannelCfg 7 3 0\nchirpComnCfg 15 5 0 128 1 34 3\nchirpTimingCfg 6 26 1 47.95 60\nframeCfg 2 0 600 64 200 0\nantGeometryCfg 0 0 1 1 0 2 0 1 1 2 0 3 2.418 2.418\nguiMonitor 0 0 0 0 0 0 0 0 0 0 0\nsigProcChainCfg 32 2 1 0 64 1 0 0.3\ncfarCfg 2 8 4 3 0 7.0 0 0.5 0 1 1 1\naoaFovCfg -70 70 -40 40\nrangeSelCfg 1.2 10.0\nclutterRemoval 0\ncompRangeBiasAndRxChanPhase 0.0 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000\nadcDataSource 0 adc_data_0001_CtestAdc6Ant.bin\nadcLogging 2\nlowPowerCfg 0\nfactoryCalibCfg 1 0 36 3 0x1ff000\nsensorStart 0 0 0 0\n"};
+	const char *default_command = {"sensorStop 0\nchannelCfg 7 3 0\nchirpComnCfg 15 5 0 128 1 34 3\nchirpTimingCfg 6 26 1 47.95 60\nframeCfg 2 0 600 64 200 0\nantGeometryCfg 0 0 1 1 0 2 0 1 1 2 0 3 2.418 2.418\nguiMonitor 0 0 0 0 0 0 0 0 0 0 0\nsigProcChainCfg 32 2 1 0 64 1 0 0.3\ncfarCfg 2 8 4 3 0 7.0 0 0.5 0 1 1 1\naoaFovCfg -70 70 -40 40\nrangeSelCfg 1.2 10.0\nclutterRemoval 0\nspiVerificationCfg 0\ncompRangeBiasAndRxChanPhase 0.0 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000 1.00000 0.00000 -1.00000 0.00000\nadcDataSource 0 adc_data_0001_CtestAdc6Ant.bin\nadcLogging 2\nlowPowerCfg 0\nfactoryCalibCfg 1 0 36 3 0x1ff000\nsensorStart 0 0 0 0\n"};
+	// goto use_default;
 	if (stat(param_path, &file_stat) != 0) {
 		mmwavedbg("File not found/accessible: %s, Error: %d\n", param_path, get_errno());
 		goto use_default;
@@ -242,7 +337,7 @@ cleanup:
  *
  ****************************************************************************/
 
-static void make_ack(uint8_t request_number, uint8_t *ack_tx_buf, int ack_bit)
+static void make_ack(uint8_t request_number, uint8_t *ack_tx_buf, bool ack_bit)
 {
 	// Initialize packet header
 	ack_tx_buf[0] = PAYLOAD_HEADER;
@@ -291,6 +386,142 @@ static void iwrl6432_spi_transfer(FAR struct iwrl6432_dev_s *priv, FAR char *txb
 	SPI_LOCK(priv->spi, false);
 }
 
+static int iwrl6432_send_fw_command(FAR struct iwrl6432_dev_s *priv, uint8_t *fw_data, uint32_t fw_size)
+{
+	int ret;
+	priv->config->reset();
+	up_mdelay(200);
+	uint8_t fw_command_packet[FIRMWARE_COMMAND_PACKET_LENGTH] = {0};
+	iwrl6432_make_fw_command_packet(priv, fw_command_packet, fw_data, fw_size);
+	sem_init(&priv->acksem, 0, 0);
+	sem_init(&priv->datasem, 0, 0);
+	iwrl6432_spi_transfer(priv, fw_command_packet, NULL, FIRMWARE_COMMAND_PACKET_LENGTH);
+	ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(5 * 1000));
+	if (ret < 0) {
+		int err = get_errno();
+		if (err == ETIMEDOUT) {
+			mmwavedbg("#############Timeout during firmware update(SPI_Ready stuck high) ##############\n");
+		} else {
+			mmwavedbg("Error in waiting for data semaphore\n");
+		}
+		return ERROR;
+	}
+	uint8_t fw_ack[12];
+	iwrl6432_spi_transfer(priv, NULL, fw_ack, FIRMWARE_ACK_PACKET_LENGTH);
+	ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(1000));
+	if (ret < 0) {
+		int err = get_errno();
+		if (err == ETIMEDOUT) {
+			mmwavedbg("#############Timeout during firmware update(SPI_Ready stuck low) ##############\n");
+		} else {
+			mmwavedbg("Error in waiting for ack semaphore\n");
+		}
+		return ERROR;
+	}
+	if (fw_ack[7] == 0) {
+		snprintf(firmware_version, sizeof(firmware_version), "error");
+		return OK;
+	}
+	return ERROR;
+}
+
+static int iwrl6432_update_fw(FAR struct iwrl6432_dev_s *priv, const char *firmware_path)
+{
+	int ret;
+	uint8_t spiData[FIRMWARE_DATA_PACKET_LENGTH];
+	uint8_t fw_ack[FIRMWARE_ACK_PACKET_LENGTH];
+	uint32_t fw_data_index;
+	uint32_t fw_size;
+	uint8_t *fw_data;
+	struct stat file_stat;
+	bool last_packet;
+	int fd;
+	ret = OK;
+	fw_data_index = 0;
+	if (stat(firmware_path, &file_stat) != 0) {
+		mmwavedbg("Failed to stat file: %d\n", get_errno());
+		return ERROR;
+	}
+	fw_size = file_stat.st_size;
+	fd = open(firmware_path, O_RDONLY);
+	if (fd < 0) {
+		mmwavedbg("Failed to open file: %d\n", get_errno());
+		return ERROR;
+	}
+	fw_data = (uint8_t *)kmm_malloc(fw_size);
+	if (fw_data == NULL) {
+		mmwavedbg("malloc failed!\n");
+		close(fd);
+		return ERROR;
+	}
+	ret = read(fd, fw_data, fw_size);
+	if (ret != fw_size) {
+		mmwavedbg("Failed to read file: %d\n", get_errno());
+		kmm_free(fw_data);
+		close(fd);
+		return ERROR;
+	}
+	close(fd);
+	iwrl6432_semtake(&priv->fwsem, false);
+	priv->fw_update_in_progress = true;
+	if (iwrl6432_send_fw_command(priv, fw_data, fw_size) != OK) {
+		mmwavedbg("Error in sending firmware update command\n");
+		ret = ERROR;
+		goto errout;
+	}
+	memset(spiData, 0, sizeof(spiData));
+	while (1) {
+		iwrl6432_make_fw_update_packet(priv, spiData, fw_data, fw_data_index, fw_size);
+		last_packet = spiData[12];
+		iwrl6432_spi_transfer(priv, spiData, NULL, FIRMWARE_DATA_PACKET_LENGTH);
+		ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(1000));
+		if (ret < 0) {
+			int err = get_errno();
+			if (err == ETIMEDOUT) {
+				mmwavedbg("#############Timeout during firmware update(SPI_Ready stuck high) ##############\n");
+			} else {
+				mmwavedbg("Error in waiting for data semaphore\n");
+			}
+			ret = ERROR;
+			goto errout;
+		}
+		iwrl6432_spi_transfer(priv, NULL, fw_ack, FIRMWARE_ACK_PACKET_LENGTH);
+		ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(1000));
+		if (ret < 0) {
+			int err = get_errno();
+			if (err == ETIMEDOUT) {
+				mmwavedbg("#############Timeout during firmware update(SPI_Ready stuck low) ##############\n");
+			} else {
+				mmwavedbg("Error in waiting for ack semaphore\n");
+			}
+			ret = ERROR;
+			goto errout;
+		}
+		if (fw_ack[7] != 0) {
+			mmwavedbg("Ack error during firmware update\n");
+			ret = ERROR;
+			goto errout;
+		}
+		if (last_packet) {
+			break;
+		}
+		fw_data_index += 1024;
+		memset(spiData, 0, sizeof(spiData));
+	}
+errout:
+	kmm_free(fw_data);
+	sem_destroy(&priv->acksem);
+	sem_destroy(&priv->datasem);
+	up_mdelay(105);
+	if (iwrl6432_init(priv) != OK) {
+		mmwavedbg("Init failed after firmware update\n");
+		iwrl6432_semgive(&priv->fwsem);
+		return ERROR;
+	}
+	iwrl6432_semgive(&priv->fwsem);
+	return ret;
+}
+
 static int iwrl6432_send_result(FAR struct iwrl6432_dev_s *priv)
 {
 	struct iwrl6432_msg_s msg;
@@ -308,16 +539,13 @@ static int iwrl6432_send_result(FAR struct iwrl6432_dev_s *priv)
 	return ret;
 }
 
-static void iwrl6432_request_cube(FAR struct iwrl6432_dev_s *priv, int ack_bit, bool purge)
+static void iwrl6432_request_cube(FAR struct iwrl6432_dev_s *priv, bool ack_bit)
 {
-	if (ack_bit == IWRL6432_ACK && !purge) {
+	if (ack_bit == IWRL6432_ACK) {
 		priv->req_num++;
 		if (priv->req_num > IWRL6432_BUF_NUM) {
 			priv->req_num = 1;
 		}
-	}
-	if (purge) { // if purge is true, reset req_num to 0
-		priv->req_num = 0;
 	}
 	uint8_t ack_tx_buf[ACK_TX_SIZE];
 	make_ack(priv->req_num, ack_tx_buf, ack_bit);
@@ -332,12 +560,15 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 	struct timespec ts_start, ts_end;
 	int elapsed_time;
 	int ret;
+	bool purge = false;
+	bool ack_bit = IWRL6432_ACK;
+
 	if (sq_empty(&priv->pendq)) {
 		mmwavedbg("Error!!! queue is empty\n");
 		return;
 	}
 	if (priv->config->ready_pin_status() == 1) { // if ready pin is high, do not send request
-		ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(8000));
+		ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(55));
 		if (ret < 0) {
 			int err = get_errno();
 			if (err == ETIMEDOUT) {
@@ -348,7 +579,7 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 			mmwavedbg("Error in waiting for ack semaphore\n");
 			return;
 		}
-		iwrl6432_request_cube(priv, IWRL6432_NACK, false);
+		iwrl6432_request_cube(priv, IWRL6432_NACK);
 		return;
 	}
 	rxbuf = (struct iwrl6432_buf_s *)sq_remfirst(&priv->pendq);
@@ -371,12 +602,9 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 	if (ret < 0) {
 		int err = get_errno();
 		if (err == ETIMEDOUT) {
-			iwrl6432_semtake(&priv->exclsem, false);
 			if (!priv->running) {
-				iwrl6432_semgive(&priv->exclsem);
 				return;
 			}
-			iwrl6432_semgive(&priv->exclsem);
 			total_timeout_count++;
 			mmwavedbg("#####################Timeout while waiting to send req_num:%d###################\n", priv->req_num + 1);
 			struct iwrl6432_msg_s msg;
@@ -398,9 +626,10 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 				mmwavedbg("iwrl6432 init failed!!\n");
 			}
 			return;
+		} else {
+			mmwavedbg("Error in waiting for ack semaphore\n");
+			return;
 		}
-		mmwavedbg("Error in waiting for ack semaphore\n");
-		return;
 	}
 	uint32_t length = (rxbuf->data[2]) | (rxbuf->data[3] << 8) | (rxbuf->data[4] << 16) | (rxbuf->data[5] << 24);
 	uint8_t checksum = rxbuf->data[length + 5];
@@ -408,33 +637,29 @@ static void iwrl6432_request_cube_data(FAR struct iwrl6432_dev_s *priv)
 	if (checksum != cksm) {
 		mmwavedbg("############################ Checksum Error ###########################\n");
 		total_checksum_error++; // Increase checksum error count
-		sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->pendq);
-		iwrl6432_request_cube(priv, IWRL6432_NACK, false); // Send NACK
-		return;
+		ack_bit = IWRL6432_NACK;
+		purge = true;
 	}
 	if (cloud_frame_id != (rxbuf->data[12] | rxbuf->data[13] << 8)) {
 		mmwavedbg("Error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! frame id mismatch expected:%d received:%d\n", cloud_frame_id, (rxbuf->data[12] | rxbuf->data[13] << 8));
 		total_frame_mismatch_count++;
 		sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->pendq);
-		iwrl6432_request_cube(priv, IWRL6432_ACK, true); // Purge request
-		up_mdelay(1);
-		iwrl6432_request_cube(priv, IWRL6432_ACK, false); // Send ACK for cloud point
-		return;
+		priv->req_num = 0;
+		purge = true;
 	}
 	if (elapsed_time > INT_MAX) { // TODO this is temp value!
 		rxbuf->msgId = IWRL6432_MSG_UNDERRUN;
 	} else {
 		rxbuf->msgId = IWRL6432_MSG_DEQUEUE;
 	}
-	/* add last to doneq then increase req_num */
-	sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->doneq);
-
-	iwrl6432_semtake(&priv->exclsem, false);
-	if (priv->running) { // if running is false, no need to send next request
-		iwrl6432_semgive(&priv->exclsem);
-		iwrl6432_request_cube(priv, IWRL6432_ACK, false);
+	if (purge) { /* Frame mismatched or checksum error, No need to add last to doneq*/
+		sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->pendq);
 	} else {
-		iwrl6432_semgive(&priv->exclsem);
+		sq_addlast((sq_entry_t *)&rxbuf->entry, &priv->doneq);
+	}
+
+	if (priv->running) { // if running is false, no need to send next request
+		iwrl6432_request_cube(priv, ack_bit);
 	}
 }
 
@@ -444,22 +669,15 @@ static void iwrl6432_work_handler(void *arg)
 	int sem_cnt;
 	sem_t *sem = (sem_t *)arg;
 	struct iwrl6432_dev_s *priv = &g_iwrl6432_priv;
-	iwrl6432_semtake(&priv->exclsem, false);
 	if (!priv->enable) { // if forcefully paused, ignore interrupt
-		iwrl6432_semgive(&priv->exclsem);
 		return;
 	}
-	iwrl6432_semgive(&priv->exclsem);
 	ret = sem_getvalue(sem, &sem_cnt);
 	if (ret == OK && sem_cnt < 1) {
 		sem_post(sem);
 	}
 }
-/****************************************************************************
- * Name: iwrl6432_semgive
- * description:
- *  Handle iwrl6432's DataReady interrupt
- ****************************************************************************/
+
 static void iwrl6432_interrupt_handler(void *arg, bool state)
 {
 	struct iwrl6432_dev_s *priv = (struct iwrl6432_dev_s *)arg;
@@ -564,9 +782,13 @@ static int iwrl6432_start(FAR struct iwrl6432_dev_s *priv)
 		mmwavedbg("mq is null...\n");
 		return -ENOTTY;
 	}
+	if (sq_empty(&priv->pendq)) {
+		mmwavedbg("pendq queue is empty....\n");
+		return -ENOTTY;
+	}
 	priv->running = true;
 	priv->req_num = 0;
-	iwrl6432_request_cube(priv, IWRL6432_ACK, false);
+	iwrl6432_request_cube(priv, IWRL6432_ACK);
 	return OK;
 }
 
@@ -643,6 +865,11 @@ static int iwrl6432_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			mmwavedbg("Error : iwrl6432 disabled now!!\n");
 			goto error_with_sem;
 		}
+		if (priv->running) {
+			ret = EPERM;
+			mmwavedbg("Error : iwrl6432 is already running!!\n");
+			goto error_with_sem;
+		}
 		ret = iwrl6432_start(priv);
 	} break;
 	case SNIOC_STOP: {
@@ -665,6 +892,15 @@ static int iwrl6432_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case SNIOC_SHOW: {
 		FAR uint16_t *buffer = (FAR uint16_t *)arg;
 		iwrl6432_show(priv, buffer);
+	} break;
+	case SNIOC_VERSION: {
+		FAR char *buffer = (FAR char *)arg;
+		memcpy(buffer, firmware_version, sizeof(firmware_version));
+
+	} break;
+	case SNIOC_UPDATE: {
+		FAR const char *path = (FAR const char *)arg;
+		ret = iwrl6432_update_fw(priv, path);
 	} break;
 	default: {
 		mmwavedbg("invalid value : %d\n", cmd);
@@ -689,7 +925,6 @@ void iwrl6432_set_state(bool enable)
 	}
 	priv->enable = enable;
 	if (!priv->enable) {
-		priv->running = false;
 		iwrl6432_stop(priv);
 		msg.msgId = IWRL6432_MSG_STOP_FORCELY;
 		ret = mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_IWRL6432_SG_DEQUEUE_PRIO);
@@ -716,21 +951,20 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 	uint8_t spiData[PARAMETER_TX_SIZE] = {0};
 	make_param_packet(spiData);
 
-	char *ack_str = (char *)kmm_malloc(33);
+	char *ack_str = (char *)kmm_malloc(65);
 	if (!ack_str) {
 		mmwavedbg("Failed to allocate memory for ack string\n");
 		return ERROR;
 	}
-
 	for (int i = 0; i < IWRL6432_MAX_INIT_RETRY_COUNT; i++) { // retry init up to IWRL6432_MAX_INIT_RETRY_COUNT times until it succeeds.
 
 		priv->config->reset();
-		priv->enable = true;
+		up_mdelay(705);
 		sem_init(&priv->acksem, 0, 0);
 		sem_init(&priv->datasem, 0, 0);
 		iwrl6432_spi_transfer(priv, spiData, NULL, PARAMETER_TX_SIZE);
 
-		uint8_t param_ack[41];
+		uint8_t param_ack[73];
 		ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(1000));
 		if (ret < 0) {
 			int err = get_errno();
@@ -739,7 +973,7 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 				continue;
 			}
 		}
-		iwrl6432_spi_transfer(priv, NULL, param_ack, 41);
+		iwrl6432_spi_transfer(priv, NULL, param_ack, 73);
 		ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(1000)); // wait for ack from sensor
 		if (ret < 0) {
 			int err = get_errno();
@@ -748,8 +982,10 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 				continue;
 			}
 		}
-		memcpy(ack_str, param_ack + 7, 32);
-		ack_str[32] = '\0';
+		memcpy(ack_str, param_ack + 7, 64);
+		memcpy(firmware_version, param_ack + 16, 55);
+		ack_str[64] = '\0';
+		firmware_version[55] = '\0';
 		mmwavevdbg("iwrl6432 init %s\n", ack_str);
 		if (strncmp(ack_str, "Done", 4)) {
 			continue;
@@ -765,6 +1001,7 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 		kmm_free(ack_str);
 		ack_str = NULL;
 	}
+	snprintf(firmware_version, sizeof(firmware_version), "error");
 	return ERROR;
 }
 
@@ -776,6 +1013,7 @@ static int iwrl6432_mq_thread(int argc, char **agrv)
 	struct iwrl6432_buf_s *buf;
 	int ret;
 	bool enable;
+	priv->enable = true;
 	ret = iwrl6432_init(priv);
 	if (ret != OK) {
 		sem_destroy(&priv->datasem);
@@ -783,18 +1021,20 @@ static int iwrl6432_mq_thread(int argc, char **agrv)
 		mmwavedbg("iwrl6432 init failed\n");
 		return ret;
 	}
-
 	while (1) {
-		ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(400));
+		iwrl6432_semtake(&priv->fwsem, false);
+		if (priv->fw_update_in_progress) {
+			priv->fw_update_in_progress = false;
+			iwrl6432_start(priv);
+		}
+		ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(405));
 		if (ret < 0) {
 			int err = get_errno();
 			if (err == ETIMEDOUT) {
-				iwrl6432_semtake(&priv->exclsem, false);
 				if (!priv->running) {
-					iwrl6432_semgive(&priv->exclsem);
+					iwrl6432_semgive(&priv->fwsem);
 					continue;
 				}
-				iwrl6432_semgive(&priv->exclsem);
 				total_timeout_count++;
 				mmwavedbg("##############Timeout while waiting to receive req_num:%d##################\n", priv->req_num);
 				struct iwrl6432_msg_s msg;
@@ -814,15 +1054,20 @@ static int iwrl6432_mq_thread(int argc, char **agrv)
 					}
 				} else {
 					mmwavedbg("iwrl6432 init failed!!\n");
+					iwrl6432_semgive(&priv->fwsem);
 					return ERROR;
 				}
+				iwrl6432_semgive(&priv->fwsem);
 				continue;
+			} else {
+				mmwavedbg("Error in waiting for ack semaphore\n");
+				iwrl6432_semgive(&priv->fwsem);
+				return;
 			}
-			mmwavedbg("Error in waiting for data semaphore\n");
-			continue;
 		}
 
 		iwrl6432_request_cube_data(priv);
+		iwrl6432_semgive(&priv->fwsem);
 		/* Data is ready, here it will collect data from iwrl6432 through the SPI */
 		if (work_available(&priv->work)) {
 			/* TODO many module using HPWORK now, let's consider custom thread */
@@ -844,6 +1089,7 @@ int iwrl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 	priv->crefs = 0;
 	priv->enable = false;
 	priv->running = false;
+	priv->fw_update_in_progress = false;
 	last_succeed_fid = 0;
 	total_checksum_error = 0;
 	total_timeout_count = 0;
@@ -851,6 +1097,7 @@ int iwrl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 
 	/* init semaphore */
 	sem_init(&priv->exclsem, 0, 1);
+	sem_init(&priv->fwsem, 0, 1);
 	ret = priv->config->attach(iwrl6432_interrupt_handler, (FAR void *)priv);
 	if (ret < 0) {
 		sem_destroy(&priv->exclsem);
@@ -860,7 +1107,6 @@ int iwrl6432_register(FAR const char *devname, FAR struct iwrl6432_config_s *con
 
 	sq_init(&priv->pendq);
 	sq_init(&priv->doneq);
-
 	pid_t pid = kernel_thread("iwrl6432_mq_thread", 130, 5120, (main_t)iwrl6432_mq_thread, NULL);
 	if (pid < 0) {
 		mmwavedbg("iwrl6432_mq_thread thread creation failed\n");

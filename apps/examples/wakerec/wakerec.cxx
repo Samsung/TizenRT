@@ -221,7 +221,7 @@ private:
 		printf("#### onSpeechDetectionListener\n");
 		if (event == SPEECH_DETECT_KD) {
 			/* take wakelock as soon as possible, and we hold it until we play recorded data */
-			pm_suspend(PM_IDLE_DOMAIN);
+			//pm_suspend(PM_IDLE_DOMAIN);
 			printf("Event SPEECH_DETECT_KD\n");
 			printf("#### [SD] keyword detected.\n");
 			if (gBuffer) {
@@ -346,7 +346,7 @@ int wakerec_main(int argc, char *argv[])
 		}
 		sd->startKeywordDetect();
 		/* similar to wake lock, we release wake lock as we started our thread */
-		pm_resume(PM_IDLE_DOMAIN);
+		//pm_resume(PM_IDLE_DOMAIN);
 	}
 
 	while (1) {
