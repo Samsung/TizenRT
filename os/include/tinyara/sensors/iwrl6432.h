@@ -35,6 +35,9 @@
 #define CLOUD_TX_SIZE 1520
 #define TRACK_DATA_SIZE 88
 #define IWRL6432_DATA_HEADER_SIZE 24
+#define FIRMWARE_COMMAND_PACKET_LENGTH 24
+#define FIRMWARE_ACK_PACKET_LENGTH 12
+#define FIRMWARE_DATA_PACKET_LENGTH 1040
 #ifndef CONFIG_IWRL6432_SEGNUM
 #define CONFIG_IWRL6432_SEGNUM 6
 #endif
@@ -79,11 +82,11 @@ struct iwrl6432_config_s {
 };
 
 struct iwrl6432_buf_s {
-	struct dq_entry_s entry;		  /* double linked queue entry */
-	uint16_t maxbyte;				  /* Total byte of buffer */
-	uint16_t curbyte;				  /* Currently used */
+	struct dq_entry_s entry;			   /* double linked queue entry */
+	uint16_t maxbyte;					   /* Total byte of buffer */
+	uint16_t curbyte;					   /* Currently used */
 	uint8_t data[IWRL6432_CUBE_DATA_SIZE]; /* Actual Buffer include Header */
-	uint16_t msgId;					  /* msgId to be shared */
+	uint16_t msgId;						   /* msgId to be shared */
 };
 
 struct iwrl6432_msg_s {

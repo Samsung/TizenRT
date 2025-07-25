@@ -64,7 +64,7 @@
 static bool g_terminate;
 static mqd_t g_mmwave_mq;
 static int mFd;
-static struct iwrl6432_buf_s **gBuffer;
+static struct iwrl6432_buf_s **gBuffer = NULL;
 int buf_size;  // size of segment buffer
 int g_buf_num; // segment number of iwrl6432
 static int cnt = 0;
@@ -74,6 +74,27 @@ static int mmwave_show();
 static int mmwave_stop();
 static int mmwave_prepare();
 static void mmwave_teardown();
+static int mmwave_alloc_buffer();
+static int mmwave_fw_version();
+static int mmwave_update_fw(const char *path);
+
+static int mmwave_alloc_buffer()
+{
+	uint8_t i;
+	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * sizeof(FAR void *));
+	if (gBuffer == NULL) {
+		printf("Alloc gBuffer failed\n");
+		return -1;
+	}
+
+	for (i = 0; i < g_buf_num; i++) {
+		gBuffer[i] = (FAR struct iwrl6432_buf_s *)malloc(sizeof(FAR struct iwrl6432_buf_s));
+		if (gBuffer[i] == NULL) {
+			return -1;
+		}
+	}
+	return OK;
+}
 
 static int mmwave_init()
 {
@@ -100,20 +121,6 @@ static int mmwave_init()
 		goto error_with_fd;
 	}
 
-	/* Alloc array of pointers to gBuffers */
-	gBuffer = (FAR struct iwrl6432_buf_s **)malloc(g_buf_num * sizeof(FAR void *));
-	if (gBuffer == NULL) {
-		printf("Alloc gBuffer failed\n");
-		goto error_with_fd;
-	}
-
-	for (i = 0; i < g_buf_num; i++) {
-		gBuffer[i] = (FAR struct iwrl6432_buf_s *)malloc(sizeof(FAR struct iwrl6432_buf_s));
-		if (gBuffer[i] == NULL) {
-			goto error_with_fd;
-		}
-	}
-
 	/* Register mq between app & driver */
 	attr.mq_maxmsg = 16;
 	attr.mq_msgsize = sizeof(struct iwrl6432_msg_s);
@@ -135,16 +142,6 @@ error_with_mq:
 	mq_close(MQ_PATH);
 error_with_fd:
 	close(mFd);
-	for (int j = 0; j < i; j++) {
-		if (gBuffer[j]) {
-			free(gBuffer[j]);
-			gBuffer[j] = NULL;
-		}
-	}
-	if (gBuffer) {
-		free(gBuffer);
-		gBuffer = NULL;
-	}
 	return -1;
 }
 
@@ -195,11 +192,15 @@ static int mmwave_show()
 
 static int mmwave_start()
 {
+	if (gBuffer == NULL) {
+		printf("Prepare First\n");
+		return OK;
+	}
 	int ret;
 	struct iwrl6432_msg_s msg;
 	int prio;
 	size_t size;
-
+	g_terminate = false;
 	/* Start Collect */
 	ret = ioctl(mFd, SNIOC_START, NULL);
 	if (ret < 0) {
@@ -276,6 +277,31 @@ static int mmwave_stop()
 	return OK;
 }
 
+static int mmwave_fw_version()
+{
+	int ret;
+	char str[56];
+	ret = ioctl(mFd, SNIOC_VERSION, (unsigned long)str);
+	if (ret < 0) {
+		printf("get version failed. errno : %d\n", errno);
+		return -1;
+	}
+	printf("Firmware version: %s",str);
+	return OK;
+}
+
+static int mmwave_update_fw(const char *path)
+{
+	int ret;
+	ret = ioctl(mFd, SNIOC_UPDATE, (unsigned long)path);
+	if (ret < 0) {
+		printf("Firmware Update failed. errno : %d\n", errno);
+		return ret;
+	}
+	printf("Firmware update success\n");
+	return ret;
+}
+
 /** TODO below must be implemented
  * 1. App should alloc buffer based on result of ioctl(SNIOC_GET_BUFSIZE, SNIOC_GET_BUFNUM)
  * 2. App should share point of these buffers with driver. App can share more size than SNIOC_GET_BUFSIZE
@@ -286,6 +312,11 @@ static int mmwave_stop()
 static int mmwave_prepare()
 {
 	int ret;
+	ret = mmwave_alloc_buffer(); // Alloc Buffer
+	if (ret < 0) {
+		mmwave_teardown();
+		return -1;
+	}
 	/* Share Buffer with Driver */
 	for (int i = 0; i < g_buf_num; i++) {
 		ret = ioctl(mFd, SNIOC_SENDBUFFER, (unsigned long)gBuffer[i]);
@@ -313,6 +344,9 @@ static void show_usage(void)
 	printf("    prepare : Prepare the mmwave operation \n");
 	printf("    start   : Start reading mmwave data\n");
 	printf("    stop    : Stop Reading mmwave data\n");
+	printf("    show    : Show status of mmwave\n");
+	printf("    version : Show firmware version\n");
+	printf("    update /mnt/kernel/sensors/iwrl6432_firmware.appimage : Update firmware\n");
 }
 
 /****************************************************************************
@@ -329,9 +363,10 @@ int mmwave_main(int argc, char *argv[])
 		show_usage();
 		return OK;
 	}
-	mmwave_init();
-	g_terminate = false;
-	if (argc == 2) {
+	if (mmwave_init() != OK) {
+		return -1;
+	}
+	if (argc >= 2) {
 		if (!strncmp(argv[1], "prepare", 8)) {
 			return mmwave_prepare();
 		} else if (!strncmp(argv[1], "start", 6)) {
@@ -340,6 +375,10 @@ int mmwave_main(int argc, char *argv[])
 			return mmwave_stop();
 		} else if (!strncmp(argv[1], "show", 5)) {
 			return mmwave_show();
+		} else if (!strncmp(argv[1] , "version", 8)) {
+			return mmwave_fw_version();
+		} else if (!strncmp(argv[1] , "update", 7)) {
+			return mmwave_update_fw(argv[2]);
 		} else {
 			show_usage();
 		}

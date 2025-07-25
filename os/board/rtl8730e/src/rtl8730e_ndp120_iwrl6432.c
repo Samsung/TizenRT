@@ -58,8 +58,8 @@
 #define NDP120_GPIO_RESET PA_24
 #define NDP120_GPIO_DMIC_EN PA_25
 
-#define GPIO_IWRL6432_PIN_RESET PA_4
-#define GPIO_IWRL6432_PIN_BUSY PA_15
+#define GPIO_IWRL6432_PIN_RESET PA_2
+#define GPIO_IWRL6432_PIN_BUSY PA_3
 
 /****************************************************************************
  * Private Types
@@ -249,7 +249,6 @@ static void rtl8730e_iwrl6432_reset(void)
 	up_mdelay(55);
 
 	gpio_write(&g_iwrl6432info.reset, 1);
-	up_mdelay(705);
 }
 
 static int rtl8730e_iwrl6432_gpio_busy_status(void)
