@@ -58,8 +58,8 @@
 #define NDP120_GPIO_RESET PA_24
 #define NDP120_GPIO_DMIC_EN PA_25
 
-#define GPIO_IWRL6432_PIN_RESET PA_4
-#define GPIO_IWRL6432_PIN_BUSY PA_15
+#define GPIO_IWRL6432_PIN_RESET PA_2
+#define GPIO_IWRL6432_PIN_BUSY PA_3
 
 /****************************************************************************
  * Private Types

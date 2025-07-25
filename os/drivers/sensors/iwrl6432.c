@@ -716,7 +716,7 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 	uint8_t spiData[PARAMETER_TX_SIZE] = {0};
 	make_param_packet(spiData);
 
-	char *ack_str = (char *)kmm_malloc(33);
+	char *ack_str = (char *)kmm_malloc(65);
 	if (!ack_str) {
 		mmwavedbg("Failed to allocate memory for ack string\n");
 		return ERROR;
@@ -730,7 +730,7 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 		sem_init(&priv->datasem, 0, 0);
 		iwrl6432_spi_transfer(priv, spiData, NULL, PARAMETER_TX_SIZE);
 
-		uint8_t param_ack[41];
+		uint8_t param_ack[73];
 		ret = sem_tickwait(&priv->datasem, clock_systimer(), MSEC2TICK(1000));
 		if (ret < 0) {
 			int err = get_errno();
@@ -739,7 +739,7 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 				continue;
 			}
 		}
-		iwrl6432_spi_transfer(priv, NULL, param_ack, 41);
+		iwrl6432_spi_transfer(priv, NULL, param_ack, 73);
 		ret = sem_tickwait(&priv->acksem, clock_systimer(), MSEC2TICK(1000)); // wait for ack from sensor
 		if (ret < 0) {
 			int err = get_errno();
@@ -748,8 +748,8 @@ static int iwrl6432_init(FAR struct iwrl6432_dev_s *priv)
 				continue;
 			}
 		}
-		memcpy(ack_str, param_ack + 7, 32);
-		ack_str[32] = '\0';
+		memcpy(ack_str, param_ack + 7, 64);
+		ack_str[64] = '\0';
 		mmwavevdbg("iwrl6432 init %s\n", ack_str);
 		if (strncmp(ack_str, "Done", 4)) {
 			continue;

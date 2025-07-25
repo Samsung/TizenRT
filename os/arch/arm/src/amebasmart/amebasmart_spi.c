@@ -239,7 +239,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_sclk = PB_6,
 	.spi_cs0 = PB_5,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_11,
+	.spi_cs1 = PA_4,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
