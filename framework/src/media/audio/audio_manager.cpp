@@ -33,6 +33,8 @@
 #include <tinyalsa/tinyalsa.h>
 #include <json/cJSON.h>
 #include "../RecorderWorker.h"
+#include <atomic>
+
 #include "audio_manager.h"
 #include "resample/speex_resampler.h"
 #include "../utils/remix.h"
@@ -119,6 +121,7 @@
 #define RESAMPLING_QUALITY 5 // Resampling quality between 0 and 10, where 0 has poor quality and 10 has very high quality.
 #define MAX_RESAMPLING_QUALITY 10
 
+// ToDo: Number of ducking streams should be decided from h/w capability. Update it when new h/w supports more than 2 channels
 #define AUDIO_MAX_DUCKED_STREAMS 2
 
 #define INVALID_STREAM_ID -1
@@ -150,8 +153,10 @@ typedef enum stream_status_e {
 
 struct audio_device_config_s {
 	enum audio_card_status_e status;
-	uint8_t volume;
-	uint8_t max_volume;
+	uint8_t volume;				// for input device
+	uint8_t l_volume;			// for output device
+	uint8_t r_volume;			// for output device
+	uint8_t max_volume;			// for input device
 	audio_device_type_t device_type;
 	device_process_type_t device_process_type;
 	mqd_t process_handler;
@@ -187,7 +192,7 @@ struct audio_card_info_s {
 	pthread_mutex_t card_mutex;
 	uint8_t volume[MAX_STREAM_POLICY_NUM];
 	stream_status_t stream_status[AUDIO_MAX_DUCKED_STREAMS];
-	int8_t mixing:1;
+	std::atomic<bool> mixing;
 	int8_t main_stream_idx;
 };
 
@@ -271,6 +276,7 @@ static void mix_audio_stream_out(void *dataL, void *dataR, unsigned int frames);
 static unsigned int get_output_frame_count(uint8_t idx);
 static unsigned int get_user_output_frames_to_byte(unsigned int frames, uint8_t idx);
 static unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t idx);
+static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy);
 
 std::mutex eventMutex;
 std::condition_variable syncCv;
@@ -727,8 +733,6 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct, stre
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	struct audio_caps_desc_s caps_desc;
-	uint8_t max_volume;
-	uint8_t cur_volume;
 	pthread_mutex_t *card_mutex;
 	audio_card_info_t *card;
 	audio_config_t *config;
@@ -741,10 +745,12 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct, stre
 		caps_desc.caps.ac_subtype = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		config = &card->config[card->device_id];
 	} else {
 		caps_desc.caps.ac_subtype = AUDIO_FU_VOLUME;
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		config = &card->config[card->device_id];
 	}
 	get_card_path(card_path, card->card_id, card->device_id, direct);
 
@@ -752,28 +758,25 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct, stre
 
 	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
 	if (ret == AUDIO_MANAGER_SUCCESS) {
-		max_volume = caps_desc.caps.ac_controls.hw[0];
-		cur_volume = caps_desc.caps.ac_controls.hw[1];
+		if (direct == INPUT) {
+			uint8_t cur_lvolume = caps_desc.caps.ac_controls.hw[0];
+			uint8_t cur_rvolume = caps_desc.caps.ac_controls.hw[1];
+			medvdbg("Device l_volume = %d,  r_volume = %d\n", cur_lvolume, cur_rvolume);
 
-		/* scale here */
-		medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
-#if 0
-		cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
-		if (cur_volume > AUDIO_DEVICE_MAX_VOLUME) {
-			cur_volume = AUDIO_DEVICE_MAX_VOLUME;
+			/* scale here */
+			config->l_volume = find_volume_index(cur_lvolume, stream_policy);
+			config->r_volume = find_volume_index(cur_rvolume, stream_policy);
+			medvdbg("l_volume = %d,  r_volume = %d\n", config->l_volume, config->r_volume);
+		} else {
+			uint8_t max_volume = caps_desc.caps.ac_controls.hw[0];
+			uint8_t cur_volume = caps_desc.caps.ac_controls.hw[1];
+			medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
+
+			/* scale here */
+			config->max_volume = max_volume;
+			config->volume = find_volume_index(cur_volume, stream_policy);
+			medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);			
 		}
-#endif
-		int i;
-		for (i = 0; i <= AUDIO_DEVICE_MAX_VOLUME; i++) {
-			if (g_audio_stream_volume_entry[stream_policy][i] == cur_volume) {
-				break;
-			}
-				
-		}
-		config = &card->config[card->device_id];
-		config->max_volume = max_volume;
-		config->volume = i;
-		medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
 	}
 
 	pthread_mutex_unlock(card_mutex);
@@ -793,28 +796,31 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		volume = AUDIO_DEVICE_MAX_VOLUME;
 	}
 
-	/* get system volume before set */
-	ret = get_audio_volume(direct, stream_policy);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		return ret;
-	}
-
 	if (direct == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		config = &card->config[card->device_id];
+		config->volume = volume;
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		config = &card->config[card->device_id];
+		uint16_t channel = AUDIO_CHANNEL_BOTH;
+		if (card->mixing && card->policy[0] != card->policy[1]) {
+			channel = (stream_policy == card->policy[card->main_stream_idx]) ? AUDIO_CHANNEL_LEFT : AUDIO_CHANNEL_RIGHT;
+		}
+		if (channel == AUDIO_CHANNEL_BOTH || channel == AUDIO_CHANNEL_LEFT) {
+			config->l_volume = volume;
+		}
+		if (channel == AUDIO_CHANNEL_BOTH || channel == AUDIO_CHANNEL_RIGHT) {
+			config->r_volume = volume;
+		}
+		caps_desc.caps.ac_controls.hw[1] = channel;
 	}
 
-	config = &card->config[card->device_id];
-	if (volume == config->volume) {
-		medvdbg("Volume already set to %d\n", volume);
-		return AUDIO_MANAGER_SUCCESS;
-	}
-	caps_desc.caps.ac_controls.hw[0] = g_audio_stream_volume_entry[stream_policy][volume];//volume * (config->max_volume / AUDIO_DEVICE_MAX_VOLUME);
+	caps_desc.caps.ac_controls.hw[0] = g_audio_stream_volume_entry[stream_policy][volume];
 	medvdbg("stream_policy :  %d volume : %d value : %d\n", stream_policy, volume, g_audio_stream_volume_entry[stream_policy][volume]);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
@@ -825,7 +831,6 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 
 	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
 	if (ret == AUDIO_MANAGER_SUCCESS) {
-		config->volume = volume;
 		medvdbg("Volume = %d (%d)\n", volume, caps_desc.caps.ac_controls.hw[0]);
 	} else {
 		meddbg("Fail to set a volume, ret = %d errno : %d\n", ret, get_errno());
@@ -899,9 +904,14 @@ static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream
 			return AUDIO_MANAGER_NO_AVAIL_CARD;
 		}
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
-		if (stream_policy != card->policy[0] && stream_policy != card->policy[1]) {
-			meddbg("Policy mismatch, given_policy: %d, card_policy: %d. Mute state for given policy will be set when it will play\n", stream_policy, card->policy);
+		if ((stream_policy != card->policy[0] || card->stream_status[0] != RUNNING) &&
+			(stream_policy != card->policy[1] || card->stream_status[1] != RUNNING)) {
+			meddbg("Mute status for policy %d is stored, it will be set when it plays\n", stream_policy);
 			return AUDIO_MANAGER_SUCCESS;
+		}
+		caps_desc.caps.ac_controls.b[1] = AUDIO_CHANNEL_BOTH;
+		if (card->mixing && card->policy[0] != card->policy[1]) {
+			caps_desc.caps.ac_controls.b[1] = (stream_policy == card->policy[card->main_stream_idx]) ? AUDIO_CHANNEL_LEFT : AUDIO_CHANNEL_RIGHT;
 		}
 	}
 
@@ -1139,6 +1149,17 @@ static void mix_audio_stream_out(void *dataL, void *dataR, unsigned int frames)
 	}
 }
 
+static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy)
+{
+	uint8_t i;
+	for (i = 0; i <= AUDIO_DEVICE_MAX_VOLUME; i++) {
+		if (g_audio_stream_volume_entry[stream_policy][i] == volume) {
+			break;
+		}
+	}
+	return i;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1231,7 +1252,7 @@ audio_manager_result_t audio_manager_init(void)
 		card->policy[i] = STREAM_TYPE_INVALID;
 	}
 
-	card->mixing = 0;
+	card->mixing = false;
 
 	return ret;
 }
@@ -1464,7 +1485,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 	medvdbg("resampling buffer 0x%x, buffer_size %u\n", card->resample[idx].buffer, card->resample[idx].buffer_size);
 
-	if(card_config->status == AUDIO_CARD_IDLE) {
+	if (card_config->status == AUDIO_CARD_IDLE) {
 		card_config->status = AUDIO_CARD_READY;
 	}
 	card->stream_id[idx] = stream_id;
@@ -1571,7 +1592,7 @@ error_with_lock:
 	return ret;
 }
 
-int start_audio_stream_out(void *data, unsigned int frames, bool mixing, uint8_t playback_idx, stream_info_id_t stream_id)
+int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx, stream_info_id_t stream_id)
 {
 	int ret = 0;
 	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
@@ -1616,7 +1637,7 @@ int start_audio_stream_out(void *data, unsigned int frames, bool mixing, uint8_t
 
 	card->stream_status[idx] = RUNNING;
 
-	if (mixing) {
+	if (card->mixing) {
 		medvdbg("Mixing is enabled, rechannel stereo audio stream to mono\n");
 		// ToDo: Initialize a separate instance of speex resampler for mono resampling
 		unsigned int rechanneled_frames = rechannel(ch2layout(AUDIO_STREAM_CHANNEL_STEREO), ch2layout(AUDIO_STREAM_CHANNEL_MONO),
@@ -1648,11 +1669,6 @@ int start_audio_stream_out(void *data, unsigned int frames, bool mixing, uint8_t
 	}
 
 	card->config[card->device_id].status = AUDIO_CARD_RUNNING;
-
-	if (card->mixing != mixing) {
-		// Set/reset the mixer register value in driver
-		card->mixing = mixing;
-	}
 
 	do {
 		ret = pcm_writei(card->pcm, data, frames);
@@ -1712,6 +1728,8 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct, st
 		card->stream_status[idx] = PAUSE;
 
 		if (card->stream_status[1 - idx] == RUNNING) {
+			card->mixing = false;
+			// reset the mixer register value in driver
 			pthread_mutex_unlock(&(card->card_mutex));
 			return AUDIO_MANAGER_SUCCESS;
 		}
@@ -1797,6 +1815,8 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 	card->stream_status[idx] = READY;
 
 	if (card->stream_status[1 - idx] == RUNNING) {
+		card->mixing = false;
+		// Reset the mixer register value in driver
 		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_SUCCESS;
 	}
@@ -1906,8 +1926,13 @@ audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 	}
 
 	card->stream_id[idx] = INVALID_STREAM_ID;
-	card->policy[idx] = STREAM_TYPE_MEDIA;
+	card->policy[idx] = STREAM_TYPE_INVALID;
 	card->stream_status[idx] = IDLE;
+
+	if (card->mixing) {
+		card->mixing = false;
+		// Reset the mixer register value in driver
+	}
 
 	if (card->stream_status[1 - idx] == IDLE) {
 		pcm_close(card->pcm);
@@ -2184,8 +2209,8 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 		return ret;
 	}
 
-	*volume = card->config[card->device_id].volume;
-	medvdbg("Max volume: %d, Volume : %d card id : %d device id : %d\n", card->config[card->device_id].max_volume, *volume, g_actual_audio_out_card_id, card->device_id);
+	*volume = card->config[card->device_id].l_volume;
+	medvdbg("l_volume: %d, r_volume : %d card id : %d device id : %d\n", card->config[card->device_id].l_volume, card->config[card->device_id].r_volume, g_actual_audio_out_card_id, card->device_id);
 
 	return ret;
 }
@@ -2268,8 +2293,9 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t s
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card->volume[stream_policy] = volume;
 
-	if (stream_policy != card->policy[0] && stream_policy != card->policy[1]) {
-		meddbg("Policy mismatch, given_policy: %d, card_policy: %d, %d. Volume for given policy will be set when it will play\n", stream_policy, card->policy[0], card->policy[1]);
+	if ((stream_policy != card->policy[0] || card->stream_status[0] != RUNNING) &&
+		(stream_policy != card->policy[1] || card->stream_status[1] != RUNNING)) {
+		meddbg("Volume level for policy %d is stored, it will be set when it plays\n", stream_policy);
 		return ret;
 	}
 
@@ -3217,6 +3243,22 @@ std::chrono::milliseconds get_output_read_timeout(void)
 
 	pthread_mutex_unlock(&(card->card_mutex));
 	return timeout;
+}
+
+audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
+{
+	audio_card_info_t *card;
+	int8_t idx;
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	if (card->stream_status[1 - idx] == RUNNING) {
+		card->mixing = true;
+		// Set the mixer register value in driver
+	}
+
+	return AUDIO_MANAGER_SUCCESS;
 }
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO

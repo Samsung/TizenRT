@@ -209,7 +209,7 @@ int start_audio_stream_in(void *data, unsigned int frames);
  * Return Value:
  *   On success, the number of frames written. Otherwise, a negative value.
  ****************************************************************************/
-int start_audio_stream_out(void *data, unsigned int frames, bool mixing, uint8_t playback_idx, stream_info_id_t stream_id);
+int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: pause_audio_stream_in
@@ -931,6 +931,8 @@ audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy
 #if defined(__cplusplus)
 std::chrono::milliseconds get_output_read_timeout(void);
 #endif
+
+audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id);
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************

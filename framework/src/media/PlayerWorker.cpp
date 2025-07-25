@@ -63,13 +63,12 @@ bool PlayerWorker::processLoop()
 	auto t_deadline = std::chrono::steady_clock::now() + mTimeout;
 	auto itr = mPlayerList.begin();
 	uint8_t idx = 0;
-	bool mixing = mPlayerList.size() > 1 ? true : false;
 
 	while (itr != mPlayerList.end()) {
 		auto player = *itr;
 		if (player && player->getState() == PLAYER_STATE_PLAYING) {
 			/* ToDo: Adjust this timeout in a better way */
-			player->playback(std::chrono::duration_cast<std::chrono::milliseconds>((t_deadline - std::chrono::steady_clock::now())) / (mPlayerList.size() - idx), mixing, idx);
+			player->playback(std::chrono::duration_cast<std::chrono::milliseconds>((t_deadline - std::chrono::steady_clock::now())) / (mPlayerList.size() - idx), idx);
 			ret = true;
 		}
 		itr++;
