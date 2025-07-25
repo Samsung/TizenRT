@@ -424,6 +424,13 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 		}
 	}
 
+	res = set_output_audio_mixer(mStreamInfo->id);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_output_audio_mixer fail. ret: %d\n", res);
+		ret = (res == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) ? PLAYER_ERROR_DEVICE_NOT_SUPPORTED : PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		return notifySync();
+	}
+
 	res = set_output_stream_volume(mStreamInfo->policy);
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_output_stream_volume fail. ret: %d\n", res);
@@ -1048,18 +1055,19 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 	}
 }
 
-void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, bool mixing, uint8_t playback_idx)
+void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playback_idx)
 {
-	medvdbg("timeout: %lld, mixing: %d, playback_idx: %d\n", timeout, mixing, playback_idx);
+	medvdbg("timeout: %lld, playback_idx: %d\n", timeout, playback_idx);
 	float outputSampleRateRatio = get_output_sample_rate_ratio(mStreamInfo->id);
 	outputSampleRateRatio = (outputSampleRateRatio >= 1.0f ? outputSampleRateRatio : 1);
 	unsigned int framesToRead = get_card_output_bytes_to_frame(mBufSize) / outputSampleRateRatio;
 	unsigned int bufferSize = get_user_output_frames_to_byte(framesToRead, mStreamInfo->id);
 
+	// ToDo: Handle underrun properly in future when we support streaming player
 	ssize_t num_read = mInputHandler.read(mBuffer, (int)bufferSize, timeout);
 	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read, mStreamInfo->id), mixing, playback_idx, mStreamInfo->id);
+		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read, mStreamInfo->id), playback_idx, mStreamInfo->id);
 		if (ret < 0) {
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {

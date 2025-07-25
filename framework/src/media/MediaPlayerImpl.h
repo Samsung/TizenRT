@@ -113,7 +113,7 @@ public:
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd, ...);
 	void notifyAsync(player_event_t event);
-	void playback(std::chrono::milliseconds timeout, bool mixing, uint8_t playback_idx);
+	void playback(std::chrono::milliseconds timeout, uint8_t playback_idx);
 	player_result_t setLooping(bool loop);
 
 private:
