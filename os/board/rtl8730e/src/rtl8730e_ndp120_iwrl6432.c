@@ -58,8 +58,8 @@
 #define NDP120_GPIO_RESET PA_24
 #define NDP120_GPIO_DMIC_EN PA_25
 
-#define GPIO_IWRL6432_PIN_RESET PA_4
-#define GPIO_IWRL6432_PIN_BUSY PA_15
+#define GPIO_IWRL6432_PIN_RESET PA_2
+#define GPIO_IWRL6432_PIN_BUSY PA_3
 
 /****************************************************************************
  * Private Types
@@ -193,22 +193,16 @@ static void rtl8730e_iwrl6432_irq_handler(uint32_t id, gpio_irq_event event)
 	 * in the HPWORK thread
 	 */
 
-	// gpio_irq_disable(&g_iwrl6432info.data_ready);
 	bool state;
 	UNUSED(event);
 	volatile u32 pol = BusyPin.GPIO_ITPolarity;
-	// lldbg("Polarity : %d\n", pol);
 	if (pol == GPIO_INT_POLARITY_ACTIVE_LOW) {
-		// lldbg("falling edge event------------------\r\n");
 		state = false;
-
 		BusyPin.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
 		GPIO_INTMode(GPIO_IWRL6432_PIN_BUSY, ENABLE, GPIO_INT_Trigger_EDGE, BusyPin.GPIO_ITPolarity, GPIO_INT_DEBOUNCE_ENABLE);
 		// PAD_PullCtrl(BusyPin.GPIO_Pin, GPIO_PuPd_DOWN);
 	} else if (pol == GPIO_INT_POLARITY_ACTIVE_HIGH) {
-		// lldbg("rising edge event---------------------\r\n");
 		state = true;
-
 		BusyPin.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_LOW;
 		GPIO_INTMode(GPIO_IWRL6432_PIN_BUSY, ENABLE, GPIO_INT_Trigger_EDGE, BusyPin.GPIO_ITPolarity, GPIO_INT_DEBOUNCE_ENABLE);
 		PAD_PullCtrl(BusyPin.GPIO_Pin, GPIO_PuPd_UP);
@@ -249,7 +243,6 @@ static void rtl8730e_iwrl6432_reset(void)
 	up_mdelay(55);
 
 	gpio_write(&g_iwrl6432info.reset, 1);
-	up_mdelay(705);
 }
 
 static int rtl8730e_iwrl6432_gpio_busy_status(void)

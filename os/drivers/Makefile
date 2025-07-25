@@ -193,6 +193,7 @@ ifeq ($(CONFIG_SENSOR_IWRL6432),y)
 	fi
 	@mkdir -p $(DEST_DIR_IWRL6432)
 	@cp $(TOPDIR)/drivers/sensors/param_data.txt $(DEST_DIR_IWRL6432)
+	@cp $(TOPDIR)/drivers/sensors/iwrl6432_firmware.appimage $(DEST_DIR_IWRL6432)
 	@echo "IWRL6432 f/w files copied for generating fs image"
 endif
 
