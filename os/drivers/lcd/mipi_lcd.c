@@ -122,6 +122,7 @@ struct mipi_lcd_dev_s {
 	lcd_mode_t lcdonoff;
 	sem_t sem;
 	struct mipi_lcd_config_s *config;
+	bool backlight_power_inversion;
 };
 
 static struct mipi_lcd_dev_s g_lcdcdev;
@@ -253,6 +254,19 @@ int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 	}
 }
 
+void set_power_inversion(struct mipi_lcd_dev_s *priv, bool is_power_invert)
+{
+	priv->backlight_power_inversion = is_power_invert;
+}
+
+void set_lcd_backlight(struct mipi_lcd_dev_s *priv, int power)
+{
+	if (priv->backlight_power_inversion) {
+		priv->config->backlight(100 - power);
+	} else {
+		priv->config->backlight(power);
+	}
+}
 /* LCD Data Transfer Methods */
 
 /* LCD Specific Controls */
@@ -430,7 +444,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 
 	if (power == 0) {
 		lcddbg("Powering down the LCD\n");
-		priv->config->backlight(power);
+		set_lcd_backlight(priv, power);
 		lcddbg("Switch to CMD mode\n");
 		priv->config->mipi_mode_switch(CMD_MODE);
 		priv->lcdonoff = LCD_OFF;
@@ -448,7 +462,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 				lcddbg("ERROR: LCD Init sequence failed\n");
 			}
 		}
-		priv->config->backlight(power);
+		set_lcd_backlight(priv, power);
 	}
 
 	priv->power = power;
@@ -581,6 +595,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->config = config;
 	priv->power = 0;
 	priv->lcdonoff = LCD_OFF;
+	priv->backlight_power_inversion = true;	/* Will be updated during init cmd send to LCD */
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)

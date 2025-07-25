@@ -43,6 +43,8 @@
 /* Support for screen rotation is not present in hardware. LCD will work in portrait mode only. */
 #define LCDC_IMG_BUF_SIZE	LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 
+#define LCD_POWER_INVERSION_ON     true
+
 static const lcm_setting_table_t lcd_init_cmd_g[] = {
 	{0x11, 0, {0x00}},				/* Sleep out */
 	{REGFLAG_DELAY, 120, {}},			/* Delayms (120) */

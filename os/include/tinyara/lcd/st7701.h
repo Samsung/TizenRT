@@ -41,6 +41,8 @@
 
 #define LCDC_IMG_BUF_SIZE               LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 
+#define LCD_POWER_INVERSION_ON     true
+
 static const lcm_setting_table_t lcd_init_cmd_g[] = {   /* DCS Write Long */
         /* ST7701S Reset Sequence */
         /* LCD_Nreset (1); Delayms (1); */

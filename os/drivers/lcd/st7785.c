@@ -42,6 +42,7 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 
 	for (int i = 0; i < NUM_LCD_VENDORS; i++) {
 		if (combined_id == g_lcd_vendors[i].id) {
+			set_power_inversion(priv, g_lcd_vendors[i].is_power_invert);
 			return send_init_cmd(priv, g_lcd_vendors[i].init_cmd);
 		}
 	}
