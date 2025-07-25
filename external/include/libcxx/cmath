@@ -105,17 +105,17 @@ namespace std
   using ::tanf;
   using ::tanhf;
 
-  inline bool isinf(float __x)
+  bool isinf(float __x)
   {
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
-  inline bool isfinite(float __x)
+  bool isfinite(float __x)
   { 
     return (!(isinf(__x)) && (__x != NAN));
   }
 
-  inline bool isnan(float __x)
+  bool isnan(float __x)
   { 
     return ((__x) != (__x));
   }
@@ -150,17 +150,17 @@ namespace std
   using ::gamma;
   using ::lgamma;
 
-  inline bool isinf(double __x)
+  bool isinf(double __x)
   {
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
-  inline bool isfinite(double __x)
+  bool isfinite(double __x)
   { 
     return (!(isinf(__x)) && (__x != NAN));
   }
 
-  inline bool isnan(double __x)
+  bool isnan(double __x)
   { 
     return ((__x) != (__x));
   }
@@ -193,32 +193,32 @@ namespace std
   using ::tanl;
   using ::tanhl;
 
-  inline bool isinf(long double __x)
+  bool isinf(long double __x)
   {
     return (((__x) == INFINITY) || ((__x) == -INFINITY));
   }
 
-  inline bool isfinite(long double __x)
+  bool isfinite(long double __x)
   { 
     return (!(isinf(__x)) && (__x != NAN));
   }
 
-  inline bool isnan(long double __x)
+  bool isnan(long double __x)
   { 
     return ((__x) != (__x));
   }
 #endif
 
   // For integral types
-  template<typename T> inline
+  template<typename T>  
   typename std::enable_if<std::is_integral<T>::value, bool>::type  
   isinf(T __x) { return false; }
 
-  template<typename T> inline
+  template<typename T>  
   typename std::enable_if<std::is_integral<T>::value, bool>::type  
   isfinite(T __x) { return true; }
 
-  template<typename T> inline
+  template<typename T>  
   typename std::enable_if<std::is_integral<T>::value, bool>::type  
   isnan(T __x) { return false; }
 
