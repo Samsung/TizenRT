@@ -2450,6 +2450,21 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
 		case AUDIO_MSG_LOCAL7:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL7;
 			break;
+		case AUDIO_MSG_SNORING:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_SNORING;
+			break;
+		case AUDIO_MSG_BABYCRY:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_BABYCRY;
+			break;
+		case AUDIO_MSG_DOG:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_DOG;
+			break;
+		case AUDIO_MSG_COUGH:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_COUGH;
+			break;
+		case AUDIO_MSG_CLAP:
+			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_CLAP;
+			break;
 		default:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_NONE;
 			break;
