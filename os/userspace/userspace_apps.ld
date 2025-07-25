@@ -115,7 +115,9 @@ SECTIONS
   .ctors :
     {
       _sctors = . ;
+      *(SORT(.ctors.*))
       *(.ctors)       /* Old ABI:  Unallocated */
+      *(SORT(.init_array.*))
       *(.init_array)  /* New ABI:  Allocated */
       _ectors = . ;
     }
@@ -123,7 +125,9 @@ SECTIONS
   .dtors :
     {
       _sdtors = . ;
+      *(SORT(.dtors.*))
       *(.dtors)       /* Old ABI:  Unallocated */
+      *(SORT(.fini_array.*))
       *(.fini_array)  /* New ABI:  Allocated */
       _edtors = . ;
     }
