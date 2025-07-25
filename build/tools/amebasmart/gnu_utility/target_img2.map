@@ -2497,7 +2497,7 @@
 0d05539c T lib_cmsis_dsp_git_rev
 0d0553ce T lib_user_git_rev
 0d0553fb T km4_application_git_rev
-0d05542f T __git_ver_table_end__
+0d05542e T __git_ver_table_end__
 0d055430 t __frame_dummy_init_array_entry
 0d055430 T __init_array_start
 0d055430 T __preinit_array_end
