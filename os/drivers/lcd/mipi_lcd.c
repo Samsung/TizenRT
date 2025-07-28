@@ -127,6 +127,7 @@ struct mipi_lcd_dev_s {
 static struct mipi_lcd_dev_s g_lcdcdev;
 
 extern int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv);
+extern void get_lcdinfo(FAR struct lcd_info_s *lcdinfo);
 
 static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
 {
@@ -378,6 +379,21 @@ static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s
 }
 
 /****************************************************************************
+ * Name:  lcd_getlcdinfo
+ *
+ * Description:
+ *   Get information about the Lcd such as size, height, width, etc.
+ *
+ ****************************************************************************/
+
+static int lcd_getlcdinfo(FAR struct lcd_dev_s *dev, FAR struct lcd_info_s *lcdinfo)
+{
+	DEBUGASSERT(dev && lcdinfo);
+	get_lcdinfo(lcdinfo);	// Fill lcdinfo with vendor specific values
+	return OK;
+}
+
+/****************************************************************************
  * Name:  lcd_getplaneinfo
  *
  * Description:
@@ -572,6 +588,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
 	priv->dev.getplaneinfo = lcd_getplaneinfo;
 	priv->dev.getvideoinfo = lcd_getvideoinfo;
+	priv->dev.getlcdinfo = lcd_getlcdinfo;
 	priv->dev.getpower = (struct mipi_lcd_dev_s *)lcd_getpower;
 	priv->dev.setpower = lcd_setpower;
 	priv->dev.getcontrast = lcd_getcontrast;
