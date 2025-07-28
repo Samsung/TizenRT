@@ -1421,6 +1421,18 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
 	return ret;
 }
 
+void mergeChannel(void *dataL, void *dataR, unsigned int frames)
+{
+	int16_t *main = (int16_t *)dataL;
+	int16_t *sub = (int16_t *)dataR;
+
+	for(int32_t i = frames - 1; i >= 0; i--)
+	{
+		main[2 * i] = main[i];
+		main[2 * i + 1] = sub[i];
+	}
+}
+
 float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)
 {
 	const int NOISE_MIN = 30;

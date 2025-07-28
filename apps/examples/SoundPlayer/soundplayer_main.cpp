@@ -171,6 +171,9 @@ void SoundPlayer::onFocusChange(int focusChange)
 	case FOCUS_GAIN_TRANSIENT:
 	case FOCUS_GAIN_TRANSIENT_MAY_DUCK:
 		mHasFocus = true;
+		if (mIsPlaying) {
+			return;
+		}
 		if (mPaused) {
 			printf("it was paused, just start playback now\n");
 			res = mp.start();
