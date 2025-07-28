@@ -735,6 +735,9 @@ trwifi_result_e wifi_netmgr_utils_get_info(struct netdev *dev, trwifi_info *wifi
 				if (wifi_fetch_phy_statistic(&phy_statistics) == RTK_STATUS_SUCCESS){
 					wifi_info->rssi = (int)phy_statistics.rssi;
 				}
+				if (wifi_get_ap_bssid((unsigned char *)wifi_info->bssid) != RTW_SUCCESS) {
+					ndbg("[RTK] Fail to get bssid\n");
+				}
 			}
 #ifdef CONFIG_ENABLE_HOMELYNK
 			if (g_bridge_on) {
