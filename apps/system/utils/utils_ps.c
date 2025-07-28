@@ -127,7 +127,7 @@ static void ps_print_values(char *buf, void *arg)
 		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
 		utils_statenames[state]);
 
-	printf(" | %3s", stat_info[PROC_STAT_CPU]);
+	printf(" | %3s | %8s", stat_info[PROC_STAT_CPU], stat_info[PROC_STAT_IRQCOUNT]);
 
 #if (CONFIG_TASK_NAME_SIZE > 0)
 	printf(" | %s\n", stat_info[PROC_STAT_NAME]);
@@ -203,8 +203,8 @@ int utils_ps(int argc, char **args)
 	}
 
 	printf("\n");
-	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | NAME\n");
-	printf("------|------|------|---------|----|----------|-----|----\n");
+	printf("  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | IRQCOUNT | NAME\n");
+	printf("------|------|------|---------|----|----------|-----|----------|-----\n");
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
 
