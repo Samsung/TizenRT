@@ -18,6 +18,7 @@
 
 #include <tinyara/lcd/st7785.h>
 #include <mipi_lcd.h>
+#include <tinyara/lcd/lcd_dev.h>
 #include <debug.h>
 
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
@@ -47,4 +48,11 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 	}
 	lcddbg("LCD ST7785 not recognized\n");
 	return ERROR;
+}
+
+int get_lcdinfo(FAR struct lcd_info_s *lcdinfo)
+{
+	lcdinfo->lcd_height_mm = (uint8_t)(LCD_HEIGHT_MM + 0.5f);
+	lcdinfo->lcd_width_mm = (uint8_t)(LCD_WIDTH_MM + 0.5f);
+	return OK;
 }

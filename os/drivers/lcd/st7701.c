@@ -18,8 +18,15 @@
 
 #include <tinyara/lcd/st7701.h>
 #include <mipi_lcd.h>
+#include <tinyara/lcd/lcd_dev.h>
 
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 {
 	return send_init_cmd(priv, lcd_init_cmd_g);
+}
+
+int get_lcdinfo(FAR struct lcd_info_s *lcdinfo)
+{
+	lcddbg("LCD info not defined for LCD st7701\n");
+	return -ENOSYS;
 }
