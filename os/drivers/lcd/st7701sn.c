@@ -18,8 +18,16 @@
 
 #include <tinyara/lcd/st7701sn.h>
 #include <mipi_lcd.h>
+#include <tinyara/lcd/lcd_dev.h>
 
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 {
 	return send_init_cmd(priv, lcd_init_cmd_g);
+}
+
+int get_lcdinfo(FAR struct lcd_info_s *lcdinfo)
+{
+	lcdinfo->lcd_height_mm = (uint8_t)(LCD_HEIGHT_MM + 0.5f);
+	lcdinfo->lcd_width_mm = (uint8_t)(LCD_WIDTH_MM + 0.5f);
+	return OK;
 }

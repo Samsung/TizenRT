@@ -40,6 +40,8 @@
 #define MIPI_LCD_LIMIT		500
 #define MIPI_FRAME_RATE         60
 #define MIPI_LANE_NUMBER        2
+#define LCD_HEIGHT_MM           93.6
+#define LCD_WIDTH_MM            56.16
 /* Support for screen rotation is not present in hardware. LCD will work in portrait mode only. */
 #define LCDC_IMG_BUF_SIZE	LCDC_IMG_BUF_ALIGNED64B(LCD_XRES * LCD_YRES * 2)
 

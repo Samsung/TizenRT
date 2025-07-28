@@ -47,6 +47,8 @@
 #define LCD_RASET1 0x01
 #define LCD_RASET2 0x3F
 #define LCD_ID_LENGTH 3
+#define LCD_HEIGHT_MM 57.6
+#define LCD_WIDTH_MM 43.2
 
 #if defined(CONFIG_LCD_SW_ROTATION) || defined(CONFIG_LCD_PORTRAIT)
 #define LCD_ORIENTATION 0x00
