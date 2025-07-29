@@ -73,11 +73,20 @@ typedef struct {
 	uint8_t rx_page_num;
 	uint16_t rx_page_size;
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+	uint16_t rx_request_length;	/* length of operation to receive */
+	uint32_t *rx_user_buffer;	/* buffer that will receive final merged contents */
+#endif
+
 } SP_RX_INFO, *pSP_RX_INFO;
 
 typedef struct {
 	GDMA_InitTypeDef       SpTxGdmaInitStruct;	/* Pointer to GDMA_InitTypeDef */
 	GDMA_InitTypeDef       SpRxGdmaInitStruct;	/* Pointer to GDMA_InitTypeDef */
+
+	GDMA_InitTypeDef       SpTxGdmaInitStructExt;	/* Pointer to GDMA_InitTypeDef */
+	GDMA_InitTypeDef       SpRxGdmaInitStructExt;	/* Pointer to GDMA_InitTypeDef */
+
 	uint8_t                i2s_idx;
 } SP_GDMA_STRUCT;
 
@@ -94,7 +103,14 @@ static struct GDMA_CH_LLI LliRx[SP_MAX_DMA_PAGE_NUM];
 #ifdef CONFIG_AMEBASMART_I2S
 static I2S_USER_CB I2SUserCB; /* Pointer to I2S User Callback */
 #endif
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+static SP_RX_INFO sp_rx_info_ext;
 
+volatile uint8_t DMA_Done, DMA_Done_1; /* Flag to indicate when DMA transfer is complete */
+#endif
+
+static void i2s_tdm_rx_isr(void *sp_data);
+static void i2s_tdm_rx_isr_ext(void *sp_data);
 /**
   * @}
   */
@@ -172,6 +188,37 @@ static uint32_t *i2s_get_free_rx_page(uint8_t i2s_index)
 		return (uint32_t *)sp_rx_info.rx_full_block.rx_addr;	//for audio buffer full case
 	}
 }
+
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+static uint32_t *i2s_tdm_get_free_rx_page(uint8_t i2s_index, uint32_t gdma_channel)
+{
+	pRX_BLOCK prx_block; 
+	
+	if (gdma_channel == GDMA_INT) {
+		prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_gdma_cnt]);
+
+		if (prx_block->rx_gdma_own) {
+			sp_rx_info.rx_full_flag = 0;
+			return (uint32_t *)prx_block->rx_addr;
+		} else {
+			sp_rx_info.rx_full_flag = 1;
+			return (uint32_t *)sp_rx_info.rx_full_block.rx_addr;	//for audio buffer full case
+		}
+
+	} else {
+		prx_block = &(sp_rx_info_ext.rx_block[sp_rx_info_ext.rx_gdma_cnt]);
+
+		if (prx_block->rx_gdma_own) {
+			sp_rx_info_ext.rx_full_flag = 0;
+			return (uint32_t *)prx_block->rx_addr;
+		} else {
+			sp_rx_info_ext.rx_full_flag = 1;
+			return (uint32_t *)sp_rx_info_ext.rx_full_block.rx_addr;	//for audio buffer full case
+		}
+	}
+}
+#endif
+
 #endif
 
 #ifdef CONFIG_AMEBASMART_I2S_TX
@@ -309,6 +356,97 @@ void i2s_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 #endif
 }
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void i2s_tdm_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
+						uint32_t page_num, uint32_t page_size, uint8_t gdma_channel, uint16_t request_length)
+{
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+
+#if defined(CONFIG_AMEBASMART_I2S_TX) || defined(CONFIG_AMEBASMART_I2S_RX)
+	uint32_t i, j;
+#endif
+
+	if ((page_num < 2) || (page_num > 8) || (page_size < 8)) {
+		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: PageNum(%d) valid value is 2~8; PageSize(%d must > 8)\r\n", \
+				   __FUNCTION__, page_num, page_size);
+		return;
+	}
+
+	if (request_length == 0) {
+		DBG_PRINTF(MODULE_I2S, LEVEL_INFO, "%s: Request length needs to be nonzero\n", __FUNCTION__);
+	}
+#ifdef CONFIG_AMEBASMART_I2S_TX
+	if (obj->direction == I2S_DIR_TX) {
+
+		sp_tx_info.tx_gdma_cnt = 0;
+		sp_tx_info.tx_usr_cnt = 0;
+		sp_tx_info.tx_empty_flag = 0;
+
+		for (i = 0; i < page_num; i++) {
+			sp_tx_info.tx_block[i].tx_gdma_own = 0;
+			sp_tx_info.tx_block[i].tx_addr = (uint32_t)tx_buf + i * page_size;
+		}
+
+		sp_tx_info.tx_zero_block.tx_addr = (uint32_t)tx_buf + page_num * page_size;
+
+		for (i = 0; i < page_size; i++) {
+			((uint8_t *)(sp_tx_info.tx_zero_block.tx_addr))[i] = 0;
+		}
+
+		sp_tx_info.tx_page_size = page_size;
+		sp_tx_info.tx_page_num = page_num;
+		/* static buffer has no LL setup*/
+	}
+#endif
+#ifdef CONFIG_AMEBASMART_I2S_RX
+	else {
+		/* Setup GDMA INT channel parameters */
+		if (gdma_channel == GDMA_INT) {
+			sp_rx_info.rx_gdma_cnt = 0;
+			sp_rx_info.rx_usr_cnt = 0;
+			sp_rx_info.rx_full_flag = 0;
+			sp_rx_info.rx_request_length = request_length;
+
+			for (i = 0; i < page_num; i++) {
+				sp_rx_info.rx_block[i].rx_gdma_own = 1;
+				sp_rx_info.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
+			}
+
+			sp_rx_info.rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
+
+			for (i = 0; i < page_size; i++) {
+				((uint8_t *)(sp_rx_info.rx_full_block.rx_addr))[i] = 0;
+			}
+
+			sp_rx_info.rx_page_size = page_size;
+			sp_rx_info.rx_page_num = page_num;
+			/* static buffer has no LL setup*/
+		} else {
+			/* Setup GDMA EXT channel parameters */
+			sp_rx_info_ext.rx_gdma_cnt = 0;
+			sp_rx_info_ext.rx_usr_cnt = 0;
+			sp_rx_info_ext.rx_full_flag = 0;
+			sp_rx_info_ext.rx_request_length = request_length;
+
+			for (i = 0; i < page_num; i++) {
+				sp_rx_info_ext.rx_block[i].rx_gdma_own = 1;
+				sp_rx_info_ext.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
+			}
+
+			sp_rx_info_ext.rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
+
+			for (i = 0; i < page_size; i++) {
+				((uint8_t *)(sp_rx_info_ext.rx_full_block.rx_addr))[i] = 0;
+			}
+
+			sp_rx_info_ext.rx_page_size = page_size;
+			sp_rx_info_ext.rx_page_num = page_num;
+			/* static buffer has no LL setup*/
+		}
+	}
+#endif
+}
+#endif
 
 /**
   * @brief  Register TX interrupt handler.
@@ -391,6 +529,15 @@ static uint32_t i2s_clock_select(i2s_t *obj)
 	Init_Params.sr = obj->sampling_rate;;
 	Init_Params.codec_multiplier_with_rate = 256;
 	Init_Params.sport_mclk_fixed_max = (uint32_t) NULL;
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	/* TODO: modify this for configurability */
+	Init_Params.chn_len = SP_CL_16;
+	Init_Params.chn_cnt = (obj->fifo_num + 1) * 2;
+	Init_Params.codec_multiplier_with_rate = 0;
+	Init_Params.sport_mclk_fixed_max = (uint32_t) 12288000;	//12.288MHz
+#endif
+
 	Audio_Clock_Choose(PLL_CLK, &Init_Params, &Clock_Params);
 	obj->clock = Clock_Params.Clock;
 
@@ -591,7 +738,7 @@ void i2s_send_page(void)
 #ifdef CONFIG_AMEBASMART_I2S_RX
 void i2s_recv_page(i2s_t *obj)
 {
-	uint8_t i2s_index = obj->i2s_idx;
+	i2sinfo("i2s rcv page called\n");
 
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 
@@ -601,6 +748,31 @@ void i2s_recv_page(i2s_t *obj)
 		sp_rx_info.rx_usr_cnt = 0;
 	}
 }
+
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void i2s_tdm_recv_page(i2s_t *obj)
+{
+	i2sinfo("i2s rcv page called\n");
+
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
+
+	prx_block->rx_gdma_own = 1;
+	sp_rx_info.rx_usr_cnt++;
+	if (sp_rx_info.rx_usr_cnt == sp_rx_info.rx_page_num) {
+		sp_rx_info.rx_usr_cnt = 0;
+	}
+
+	/* if FIFO 8CH is used */
+	if (obj->fifo_num >= SP_RX_FIFO8) {
+		prx_block = &(sp_rx_info_ext.rx_block[sp_rx_info_ext.rx_usr_cnt]);
+		sp_rx_info_ext.rx_usr_cnt++;
+		if (sp_rx_info_ext.rx_usr_cnt == sp_rx_info_ext.rx_page_num) {
+			sp_rx_info_ext.rx_usr_cnt = 0;
+		}
+	}
+}
+#endif
+
 #endif
 
 /**
@@ -610,6 +782,16 @@ void i2s_recv_page(i2s_t *obj)
   */
 void i2s_enable(i2s_t *obj)
 {
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+	}
+	
+	// turn on BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
+#endif
+
 	AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
@@ -626,6 +808,16 @@ void i2s_enable(i2s_t *obj)
 void i2s_disable(i2s_t *obj, bool is_suspend)
 {
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM)
+	// turn off MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	}
+	
+	// turn off BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
+#endif
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -651,6 +843,10 @@ void i2s_disable(i2s_t *obj, bool is_suspend)
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
 		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
 	}
+
+	if (is_suspend) {
+		AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+	}
 }
 
 /**
@@ -670,6 +866,32 @@ void ameba_i2s_pause(i2s_t *obj) {
 	}
 }
 
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void ameba_i2s_tdm_pause(i2s_t *obj) {
+
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+
+	// turn off MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	}
+	
+	// turn off BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
+
+	if (obj->direction == I2S_DIR_TX) {
+		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
+	} else {
+		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_ChNum);
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
+	}
+}
+#endif
+
 /**
   * @brief  Resume I2S interrupt and function.
   * @param  obj: I2S object defined in application software.
@@ -685,4 +907,356 @@ void ameba_i2s_resume(i2s_t *obj) {
 		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 	}
 }
+
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+void ameba_i2s_tdm_resume(i2s_t *obj) {
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
+
+	u32 *pbuf_int, pbuf_ext;
+	u8 res0, res1;
+
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+	}
+	
+	// turn on BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
+
+	if (obj->direction == I2S_DIR_TX) {
+		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
+	} else {
+		pbuf_int = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_INT);
+		
+		/* Setup the RX Length to be equal to what the OS layer wants to obtain, even though we allocate a big page size up to 4K */
+		res0 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_rx_isr, (u8 *)pbuf_int, sp_rx_info.rx_request_length);
+		/* reset gdma flags */
+		DMA_Done = 0;
+
+		if (obj->fifo_num >= SP_RX_FIFO8) {
+			pbuf_ext = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_EXT);
+			res1 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)i2s_tdm_rx_isr_ext, (u8 *)pbuf_ext, sp_rx_info_ext.rx_request_length);
+			/* reset gdma flags */
+			DMA_Done_1 = 0;
+		}
+
+		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
+
+		/* Enable GDMA and SPORT handshake*/
+		AUDIO_SP_RXStart(obj->i2s_idx, ENABLE);
+	}
+}
+#endif
+
+#if defined(CONFIG_AMEBASMART_I2S_TDM) 
+#if defined(CONFIG_AMEBASMART_I2S_TX) && (CONFIG_AMEBASMART_I2S_TX == 1)
+static void i2s_tdm_tx_isr(void *sp_data)
+{
+	u32 *pbuf;
+	SP_GDMA_STRUCT *gs = sp_data;
+	PGDMA_InitTypeDef GDMA_InitStruct;
+	GDMA_InitStruct = &(gs->SpTxGdmaInitStruct);
+
+	uint8_t i2s_index = gs->i2s_idx;
+
+	/* Clear Pending ISR */
+	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+
+	i2s_release_tx_page(i2s_index);
+	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	I2SUserCB.TxCCB(I2SUserCB.TxCBId, (char*)pbuf);
+}
+
+static void i2s_tdm_tx_isr_ext(void *sp_data)
+{
+	u32 *pbuf;
+	SP_GDMA_STRUCT *gs = sp_data;
+	PGDMA_InitTypeDef GDMA_InitStruct;
+	GDMA_InitStruct = &(gs->SpTxGdmaInitStructExt);
+
+	uint8_t i2s_index = gs->i2s_idx;
+
+	/* Clear Pending ISR */
+	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+
+	i2s_release_tx_page(i2s_index);
+	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	I2SUserCB.TxCCB(I2SUserCB.TxCBId, (char*)pbuf);
+}
+
+/**
+  * @brief  Register TX interrupt handler.
+  * @param  obj: I2S object defined in application software.
+  * @param  handler: TX interrupt callback function.
+  * @param  id: TX interrupt callback parameter.
+  * @retval none
+  */
+void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
+{
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+	
+	uint8_t i2s_index = obj->i2s_idx;
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
+	u32 *pbuf, pbuf_1;
+
+	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
+
+	I2SUserCB.TxCCB = handler;
+	I2SUserCB.TxCBId = id;
+
+	pbuf = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	pbuf_1 = (u32 *)i2s_get_ready_tx_page(i2s_index);
+	i2sinfo("TXGDMA pbuf: %p %p\n", pbuf, pbuf_1);
+	AUDIO_SP_TXGDMA_Init(i2s_index, GDMA_INT, &sp_str->SpTxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_tx_isr, (u8 *)pbuf, sp_tx_info.tx_page_size);
+}
+#endif
+
+#if defined(CONFIG_AMEBASMART_I2S_RX) && (CONFIG_AMEBASMART_I2S_RX == 1)
+static void i2s_tdm_rx_isr(void *sp_data)
+{
+	SP_GDMA_STRUCT *gs = sp_data;
+	PGDMA_InitTypeDef GDMA_InitStruct;
+	GDMA_InitStruct = &(gs->SpRxGdmaInitStruct);
+
+	uint8_t i2s_index = gs->i2s_idx;
+
+	/* Clear Pending ISR*/
+	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+
+	i2s_release_rx_page(i2s_index);
+
+	/* set flag to inform os layer */
+	DMA_Done = 1;
+
+	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
+	uint16_t* p = (uint16_t*)prx_block->rx_addr;
+	DCache_Invalidate((uint32_t)p, sp_rx_info.rx_request_length);
+	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
+}
+
+static void i2s_tdm_rx_isr_ext(void *sp_data)
+{
+	SP_GDMA_STRUCT *gs = sp_data;
+	PGDMA_InitTypeDef GDMA_InitStruct;
+	GDMA_InitStruct = &(gs->SpRxGdmaInitStructExt);
+
+	uint8_t i2s_index = gs->i2s_idx;
+	/* Clear Pending ISR*/
+	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
+	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+
+	i2s_release_rx_page(i2s_index);
+
+	/* set flag to inform os layer */
+	DMA_Done_1 = 1;
+	
+	pRX_BLOCK prx_block = &(sp_rx_info_ext.rx_block[sp_rx_info_ext.rx_usr_cnt]);
+	uint16_t* p = (uint16_t*)prx_block->rx_addr;
+	DCache_Invalidate((uint32_t)p, sp_rx_info_ext.rx_request_length);
+	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
+}
+
+/**
+  * @brief  Register RX interrupt handler.
+  * @param  obj: I2S object defined in application software.
+  * @param  handler: RX interrupt callback function.
+  * @param  id: RX interrupt callback parameter.
+  * @retval none
+  */
+void i2s_tdm_rx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
+{
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+
+	uint8_t i2s_index = obj->i2s_idx;
+	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
+
+	sp_str->i2s_idx = i2s_index;	/* Store I2S index */
+
+	I2SUserCB.RxCCB = handler;
+	I2SUserCB.RxCBId = id;
+}
+
+#endif
+
+/**
+  * @brief  Enable I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void i2s_tdm_enable(i2s_t *obj)
+{
+	i2s_enable(obj);
+}
+
+/**
+  * @brief  Disable I2S interrupt and function.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void i2s_tdm_disable(i2s_t *obj, bool is_suspend)
+{
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+
+	if (obj->direction == I2S_DIR_TX) {
+		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_Abort(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+		
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_TXStart(obj->i2s_idx, DISABLE);
+		if (is_suspend) {
+			AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+		}
+	} else {
+		GDMA_ClearINT(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
+		GDMA_Cmd(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum, DISABLE);
+
+		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
+		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
+	}
+}
+/**
+  * @brief  Set I2S channel number, sample rate and word length.
+  * @param  obj: I2S object defined in application software.
+  * @param  channel_num: This parameter can be one of the following values:
+  * @arg CH_STEREO: Stereo channel.
+  * @arg CH_MONO: Mono channel.
+  * @param  rate: This parameter can be one of the following values:
+  * @arg SR_8KHZ: Sample rate is 8kHz.
+  * @arg SR_12KHZ: Sample rate is 12kHz.
+  * @arg SR_16KHZ: Sample rate is 16kHz.
+  * @arg SR_24KHZ: Sample rate is 24kHz.
+  * @arg SR_32KHZ: Sample rate is 32kHz.
+  * @arg SR_48KHZ: Sample rate is 48kHz.
+  * @arg SR_64KHZ: Sample rate is 64kHz.
+  * @arg SR_96KHZ: Sample rate is 96kHz.
+  * @arg SR_192KHZ: Sample rate is 192kHz.
+  * @arg SR_384KHZ: Sample rate is 384kHz.
+  * @arg SR_11p025KHZ: Sample rate is 11.025kHz.
+  * @arg SR_22p05KHZ: Sample rate is 22.05kHz.
+  * @arg SR_44p1KHZ: Sample rate is 44.1kHz.
+  * @arg SR_88p2KHZ: Sample rate is 88.2kHz.
+  * @arg SR_176p4KHZ: Sample rate is 176.4kHz.
+  * @param  word_len: This parameter can be one of the following values:
+  * @arg WL_16b: Sample bit is 16 bit.
+  * @arg WL_24b: Sample bit is 24 bit.
+  * @arg WL_32b: Sample bit is 32 bit.
+  * @retval none
+  */
+void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
+{
+	uint32_t clock_mode = 0;
+
+	clock_mode = i2s_clock_select(obj);
+
+	/* Sport Deinit */
+	AUDIO_SP_Unregister(obj->i2s_idx, obj->direction);
+	AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+
+	/* Sport Init */
+	AUDIO_SP_Reset(obj->i2s_idx);
+	AUDIO_SP_StructInit(&SP_InitStruct);
+
+	SP_InitStruct.SP_SelFIFO = obj->fifo_num;				// AUDIO_SPORT_T/Rx_FIFO
+	SP_InitStruct.SP_SelChLen = obj->channel_length;		// AUDIO_SPORT_T/Rx_Channel_Length
+	SP_InitStruct.SP_SelWordLen = obj->word_length;			// AUDIO_SPORT_Word_Length
+	SP_InitStruct.SP_SelI2SMonoStereo = obj->channel_num;	// AUDIO_SPORT_Channel_Number
+	SP_InitStruct.SP_SR = obj->sampling_rate;				// AUDIO_SPORT_Sample_Rate
+	
+	if (obj->fifo_num == SP_TX_FIFO8 || obj->fifo_num == SP_RX_FIFO8) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_8CH;
+	} else if (obj->fifo_num == SP_TX_FIFO6 || obj->fifo_num == SP_RX_FIFO6) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_6CH;
+	} else if (obj->fifo_num == SP_TX_FIFO4 || obj->fifo_num == SP_RX_FIFO4) {
+		SP_InitStruct.SP_SelTDM = I2S_TDM_4CH;
+	} else {
+		i2serr("Only 4/6/8 channel TDM supported!");
+		return;
+	}
+
+	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
+	SP_InitStruct.SP_SelDataFormat = SP_DF_I2S;
+	SP_InitStruct.SP_SelClk = clock_mode;
+
+	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
+
+	/* setup the role of the SPORT */
+	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
+
+	/* stop the MCLK, it should only start when RESUME is called */
+	AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	
+	/* stop the BCLK, it should only start when RESUME is called */
+	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
+
+	/* apply division on mclk if master only */
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclkDiv(obj->i2s_idx, 0);
+	}
+}
+
+/**
+  * @brief  Deinitialize the I2S device, including function, interrupt and I2S registers.
+  * @param  obj: I2S object defined in application software.
+  * @retval none
+  */
+void i2s_tdm_deinit(i2s_t *obj)
+{
+	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
+
+	if (obj->i2s_idx == I2S2) {
+		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, DISABLE);
+	} else {
+		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, DISABLE);
+	}
+
+	GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+	GDMA_Cmd(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum, DISABLE);
+	GDMA_ChnlFree(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
+
+	AUDIO_SP_Unregister(obj->i2s_idx, obj->direction);
+	AUDIO_SP_Deinit(obj->i2s_idx, obj->direction);
+}
+
+/**
+  * @brief  Initialize the I2S device for TDM, including clock, function, interrupt and I2S registers.
+  * @param  obj: I2S object defined in application software.
+  * @param  sck: Serial clock PinName according to pinmux spec.
+  * @param  ws: Word select PinName according to pinmux spec.
+  * @param  sd_tx: Tx PinName according to pinmux spec.
+  * @param  sd_rx: Rx PinName according to pinmux spec.
+  * @param  mck: Master clock PinName according to pinmux spec.
+  * @retval none
+  */
+void i2s_tdm_init(i2s_t *obj, PinName sck, PinName ws, PinName sd_tx, PinName sd_rx, PinName mck)
+{
+	uint32_t pin_func;
+
+	assert_param(IS_SP_SEL_I2S(obj->i2s_idx));
+
+	if (obj->i2s_idx == I2S_NUM_2) {
+		pin_func = PINMUX_FUNCTION_I2S2;
+
+		/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
+		RCC_PeriphClockCmd(APBPeriph_SPORT2, APBPeriph_SPORT2_CLOCK, ENABLE);
+	} else {
+		pin_func = PINMUX_FUNCTION_I2S3;
+
+		/*Enable SPORT/AUDIO CODEC CLOCK and Function*/
+		RCC_PeriphClockCmd(APBPeriph_SPORT3, APBPeriph_SPORT3_CLOCK, ENABLE);
+	}
+
+	Pinmux_Config(mck, pin_func);
+	Pinmux_Config(sck, pin_func);
+	Pinmux_Config(ws, pin_func);
+	Pinmux_Config(sd_tx, pin_func);
+	Pinmux_Config(sd_rx, pin_func);
+
+	i2s_tdm_set_param(obj, obj->channel_num, obj->sampling_rate, obj->word_length);
+}
+#endif
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
