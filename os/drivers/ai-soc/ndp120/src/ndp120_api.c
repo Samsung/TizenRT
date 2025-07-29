@@ -122,8 +122,6 @@ static struct work_s ndp120_work;
 /* only used for debugging purposes */
 static struct ndp120_dev_s *_ndp_debug_handle = NULL;
 
-<<<<<<< HEAD
-=======
 typedef enum {
 	DSP_FLOW_BIXBY = 0,
 	DSP_FLOW_AOD = 1,
@@ -150,7 +148,6 @@ static const dsp_flow_t g_flow_types[] = {
 	{"other", DSP_FLOW_SED},
 };
 
->>>>>>> a3e7310fe (os: handle sed events)
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
@@ -1404,11 +1401,15 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *mcu_package = "/res/kernel/audio/mcu_fw";
 	const char *dsp_package = "/res/kernel/audio/dsp_fw";
 	const char *neural_package;
+<<<<<<< HEAD
 	if (dev->kd_num == 0) {
 		neural_package = "/res/kernel/audio/kd_local";
 	} else {
 		neural_package = "/res/kernel/audio/kd_local2";
 	}
+=======
+			neural_package = "/res/shared/model/kd_local";
+>>>>>>> 22f0c6ded (os, resource: add sed handling, replace kd_local)
 
 
 	const unsigned int AUDIO_TANK_MS =
@@ -1744,32 +1745,25 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 		auddbg("#################### winner : %d summary : %d network_id : %d kd enabled : %d\n", winner, summary, network_id, dev->kd_enabled);
 		if (dev->kd_enabled) {
 			/* TODO Local command also need to be handled here */
-			switch(network_id) {
-				case 0:
-					serialno++;
-					auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-					break;
-				case 1:
-					auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-					break;
-				default:
-					break;
-			}
-
 			struct audio_msg_s msg;
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
-			if (network_id == 0 && !dev->recording) {
-				/* extract keyword immediately */
-				extract_keyword(dev);
-#ifdef CONFIG_NDP120_AEC_SUPPORT
-				g_ndp120_state = IS_RECORDING;
-#endif
-				dev->keyword_correction = true;
-				msg.msgId = AUDIO_MSG_KD;
-			} else {
 				switch (idToFlow[network_id]) {
+					case DSP_FLOW_BIXBY:
+						serialno++;
+						auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+						if (!dev->recording) {
+							/* extract keyword immediately */
+						extract_keyword(dev);
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+						g_ndp120_state = IS_RECORDING;
+#endif
+						dev->keyword_correction = true;
+						msg.msgId = AUDIO_MSG_KD;
+						}
+						break;
 					case DSP_FLOW_AOD:
+						auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
 						extract_keyword(dev);
 						switch (winner) {
 							case 0:
@@ -1790,12 +1784,13 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 						}
 						break;
 					case DSP_FLOW_SED:
+						auddbg("[#%d SED] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
 						switch (winner) {
 							case 0:
 								msg.msgId = AUDIO_MSG_SNORING;
 								break;
 							case 1:
-								msg.msgId = AUDIO_MSG_BABYCRY;
+								msg.msgId = AUDIO_MSG_CLAP;
 								break;
 							case 2:
 								msg.msgId = AUDIO_MSG_DOG;
@@ -1804,7 +1799,7 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 								msg.msgId = AUDIO_MSG_COUGH;
 								break;
 							case 4:
-								msg.msgId = AUDIO_MSG_CLAP;
+								msg.msgId = AUDIO_MSG_BABYCRY;
 								break;
 							case 5:
 								msg.msgId = AUDIO_MSG_LOCAL4;
@@ -1818,7 +1813,6 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 							ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
 							goto errout_with_irq;
 				}
-			}
 			audvdbg("msgId = %d\n", msg.msgId);
 			if (msg.msgId != AUDIO_MSG_NONE) {
 				mq_send(dev->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
