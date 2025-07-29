@@ -155,9 +155,9 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			return -EINVAL;
 		}
 		ret = decompress_block(comp_info->output_buffer, &comp_info->output_size, comp_info->input_buffer, &comp_info->input_size);
-		if (ret == ENOMEM) {
+		if (ret == -ENOMEM) {
 			bcmpdbg("Output buffer allocated is not sufficient\n");
-			return -ENOMEM;
+			return ret;
 		}
 	case COMPIOC_FCOMP_INIT:
 		if ((char *)arg == NULL) {
