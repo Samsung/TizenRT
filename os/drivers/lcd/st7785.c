@@ -30,10 +30,17 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 	int status;
 	status = set_return_packet_len(priv, length);
 	if (status != OK) {
-		return status;
+		lcddbg("Fail set return pkt len!\n");
+
+		/* 
+		allow this error case to drop down to next, allowing the MIPI DPHY to read ANY response length
+		because it is possible that some other response may be received outside of expected length 
+		as long as LCD responds with anything, we can properly reset it back to a working state
+		*/
 	}
 	status = read_response(priv, read_display_cmd, rxbuf, length);
 	if (status != OK) {
+		lcddbg("Fail read resp!\n");
 		return status;
 	}
 	combined_id = (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];

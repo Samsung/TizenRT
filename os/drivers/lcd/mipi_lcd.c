@@ -49,6 +49,10 @@ typedef enum lcd_mode_e lcd_mode_t;
 #define CONFIG_LCD_SEND_CMD_RETRY_COUNT 0
 #endif
 
+#if !defined(CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT)
+#define CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT 3
+#endif
+
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
 static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
@@ -164,7 +168,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	transfer_status = send_to_mipi_dsi(priv, &msg);
 
 	if (transfer_status != OK) {
-		lcddbg("Command %x not sent\n", cmd);
+		lcddbg("Command 0x%x not sent\n", cmd);
 	}
 
 	return transfer_status;
@@ -181,7 +185,7 @@ int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
 	transfer_status = send_to_mipi_dsi(priv, &msg);
 
 	if (transfer_status != OK) {
-		lcddbg("Command %x not sent\n", rx_len);
+		lcddbg("Rxlen 0x%x not sent\n", rx_len);
 	}
 	return transfer_status;
 }
@@ -412,6 +416,8 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
 
 static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 {
+	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	if (power > CONFIG_LCD_MAXPOWER) {
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
@@ -444,7 +450,20 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
-			if (check_lcd_vendor_send_init_cmd(priv) != OK) {
+			while (retries) {
+				if (check_lcd_vendor_send_init_cmd(priv) != OK) {
+					/* attempt a full reset of lcd + driver stack */
+					priv->config->reset();
+					priv->config->power_on();
+					priv->config->mipi_drv_reset();
+				} else {
+					/* panel accepted the command, normal operation */
+					break;
+				}
+				retries--;
+			}
+
+			if (retries <= 0) {
 				lcddbg("ERROR: LCD Init sequence failed\n");
 			}
 		}
