@@ -157,6 +157,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = decompress_block(comp_info->output_buffer, &comp_info->output_size, comp_info->input_buffer, &comp_info->input_size);
 		if (ret == ENOMEM) {
 			bcmpdbg("Output buffer allocated is not sufficient\n");
+			return -ENOMEM;
 		}
 	case COMPIOC_FCOMP_INIT:
 		if ((char *)arg == NULL) {
@@ -179,9 +180,8 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 				bcmpdbg("Another file decompression is in process\n");
 				close(data->fd);
 				free(data);
-				return ret;
 			}
-			ret = ERROR;
+			return ret;
 		}
 		DEBUGASSERT(filep);
 		filep->f_priv = data;
@@ -193,7 +193,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = data->compression_header->binary_size;
 		if (ret <= 0) {
 			bcmpdbg("Failed to get buffer size = %d\n", ret);
-			ret = ERROR;
+			return -EBADF;
 		}
 		break;
 	case COMPIOC_FCOMP_DECOMPRESS:
@@ -205,7 +205,8 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		size = compress_read(data->fd, 0, (uint8_t *)arg, data->compression_header->binary_size, 0);
 		ret = OK;
 		if (size != data->compression_header->binary_size) {
-			ret = ERROR;
+			bcmpdbg("Compress header size mismatch");
+			return -EINVAL;
 		}
 		break;
 	case COMPIOC_FCOMP_DEINIT:
