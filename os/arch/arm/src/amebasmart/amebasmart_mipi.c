@@ -269,6 +269,20 @@ static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
 		sem_post(&g_read_cmd_done);
 	}
 }
+
+static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
+{
+	MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(1);
+	DelayUs(1);
+	MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(0);
+
+	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
+	DelayUs(1);
+	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
+
+	memset(rx_data_buff, 0, 5);
+}
+
 static void amebasmart_mipidsi_isr(void)
 {
 	MIPI_TypeDef *MIPIx = g_dsi_host.MIPIx;
@@ -296,6 +310,11 @@ static void amebasmart_mipidsi_isr(void)
 		amebasmart_mipidsi_rcmd_decode(MIPIx, 2);
 	}
 
+	if (reg_val & (MIPI_BIT_RCMD1 | MIPI_BIT_RCMD2 | MIPI_BIT_RCMD3)){
+		mipillvdbg("RCMD: %x %x %x %x %x\n", rx_data_buff[0], rx_data_buff[1], rx_data_buff[2], rx_data_buff[3], rx_data_buff[4]);
+	}
+
+	/* A timeout was encountered on the DPHY */
 	if (reg_val & (MIPI_BIT_LPRX_TIMEOUT | MIPI_BIT_LPTX_TIMEOUT)) {
 		if (reg_val & MIPI_BIT_LPRX_TIMEOUT) {
 			mipidbg("LPRX TimeOut\n");
@@ -310,40 +329,49 @@ static void amebasmart_mipidsi_isr(void)
 		} else {
 			mipidbg("LPTX TimeOut\n");
 		}
-		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(1);
-		DelayUs(1);
-		MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(0);
 
-		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
-		DelayUs(1);
-		MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~(MIPI_BIT_DSI_MODE | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST));
+		/* Restart TRX after errors handled */
+		amebasmart_mipi_reset_trx_helper(MIPIx);
 	}
 
+	/* An error has occured on the DPHY */
 	if (reg_val & MIPI_BIT_ERROR) {
 		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
 		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-		mipidbg("LPTX Error: 0x%x, DPHY Error: 0x%x\n", reg_val, reg_dphy_err);
+		mipilldbg("LPTX Error: 0x%x, DPHY Error: 0x%x\n", reg_val, reg_dphy_err);
 
+		/* If contention is detected during LP signalling on the data lines */
+		if (reg_dphy_err & (MIPI_BIT_ERRCONTECNTIAL_LP0_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH1 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH1)) {
 		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
 			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
 
 			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
 			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
-			mipidbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+			mipilldbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
 		}
+		}
+
+		/* Control error was detected */
+		if (reg_dphy_err & MIPI_BIT_ERRCONTROL) {
+			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+			MIPIx->MIPI_DPHY_ERR = MIPIx->MIPI_DPHY_ERR & ~MIPI_BIT_ERRCONTROL;
+			mipilldbg("Handle ERRCONTROL: LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+		}
+
+		/* A sync error has occured */
+		if (reg_dphy_err & MIPI_BIT_ERRSYNCESC) {
+			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+			MIPIx->MIPI_DPHY_ERR = MIPIx->MIPI_DPHY_ERR & ~MIPI_BIT_ERRSYNCESC;
+			mipilldbg("Handle ERRSYNC: LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+		}
+
+		/* Restart TRX after errors handled */
+		amebasmart_mipi_reset_trx_helper(MIPIx);
 
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
 			mipidbg("LPTX Still Error\n");
 			MIPI_DSI_INT_Config(MIPIx, ENABLE, DISABLE, FALSE);
 		}
-	}
-
-	if (reg_val) {
-		mipidbg("LPTX Error Occur: 0x%x\n", reg_val);
-	}
-
-	if (reg_val2) {
-		mipidbg("error occured #\n");
 	}
 }
 
