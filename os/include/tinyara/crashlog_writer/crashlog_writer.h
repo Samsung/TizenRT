@@ -43,6 +43,15 @@ void set_store_to_buffer_flag(int flag);
  *   If the flag is 1, the log is saved in compressed form; if it is 0, it is saved uncompressed.
  *
  ****************************************************************************/
-void save_crash_log(int flag);
+char* save_crash_log(int flag);
+
+/*************************************************************************************
+* Name: read_crash_log
+*
+* Description: 
+* 	Reads a log from a file and stores it in a buffer. If the log is compresed, it is
+*	decompressed before being stored.
+*************************************************************************************/
+int read_crash_log(char *filename, char *buf, int buf_size);
 
 #endif
