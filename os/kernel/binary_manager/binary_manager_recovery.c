@@ -42,6 +42,10 @@
 #include "semaphore/semaphore.h"
 #include "binary_manager_internal.h"
 
+#ifdef CONFIG_CRASH_LOG_SAVE
+#include <tinyara/crashlog_writer/crashlog_writer.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -345,6 +349,17 @@ void binary_manager_recovery(int bin_idx)
 		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
 		goto reboot_board;
 	}
+#endif
+#ifdef CONFIG_CRASH_LOG_SAVE
+	set_store_to_buffer_flag(0); //stop saving log to buf
+#ifdef CONFIG_COMPRESSION_FLAG
+	save_crash_log(1);
+#else
+	save_crash_log(0);
+#endif
+#ifdef CONFIG_REBOOT_AFTER_LOG_SAVE
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+#endif
 #endif
 	/* Create loader to reload binary */
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);

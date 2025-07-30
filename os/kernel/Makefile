@@ -79,6 +79,7 @@ include debug/Make.defs
 include preference/Make.defs
 include task_monitor/Make.defs
 include log_dump/Make.defs
+include crashlog_writer/Make.defs
 include silent_reboot/Make.defs
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

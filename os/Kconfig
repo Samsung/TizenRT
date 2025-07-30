@@ -625,6 +625,10 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
+menu "Crash log saving"
+source kernel/crashlog_writer/Kconfig
+endmenu
+
 menu "Task Monitor"
 source kernel/task_monitor/Kconfig
 endmenu
