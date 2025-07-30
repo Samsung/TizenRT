@@ -140,12 +140,7 @@ static const dsp_flow_t g_flow_types[] = {
 	{"hi-bixby", DSP_FLOW_BIXBY},
 	{"bixby", DSP_FLOW_BIXBY},
 	{"aod", DSP_FLOW_AOD},
-	{"snoring", DSP_FLOW_SED},
-	{"baby_cry", DSP_FLOW_SED},
-	{"dog", DSP_FLOW_SED},
-	{"cough", DSP_FLOW_SED},
-	{"clap", DSP_FLOW_SED},
-	{"other", DSP_FLOW_SED},
+	{"openset_sed", DSP_FLOW_SED},
 };
 
 /****************************************************************************
@@ -956,7 +951,7 @@ dsp_flow_e get_dsp_flow_type(struct ndp120_dev_s *dev, int index)
 	return DSP_FLOW_MAX;
 }
 
-void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn)
+void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
 	// ----------
 	// COMBINED NORMAL + AEC FLOW
@@ -974,7 +969,7 @@ void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_
 
 	/* FUNCx->NN0 */
 	setup->src_function[*src_func].src_param = FF_ID;
-	setup->src_function[*src_func].dst_param = KEYWORD_NETWORK_ID;
+	setup->src_function[*src_func].dst_param = network_id;
 	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
 	setup->src_function[*src_func].algo_config_index = -1;
 	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
@@ -991,7 +986,7 @@ void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_
 	(*src_func)++;
 
 	/* NN0->MCU */
-	setup->src_nn[*src_nn].src_param = 0;
+	setup->src_nn[*src_nn].src_param = network_id;
 	setup->src_nn[*src_nn].dst_param = 0;
 	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
 	setup->src_nn[*src_nn].algo_config_index = -1;
@@ -1000,7 +995,7 @@ void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_
 	(*src_nn)++;
 }
 
-void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn)
+void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
 	/* FUNCx->FUNC227 */
 	setup->src_function[*src_func].src_param = FF_ID;
@@ -1013,7 +1008,7 @@ void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_fu
 
 	/* FUNC227->NN1 */
 	setup->src_function[*src_func].src_param = SR_FE_POOLING_ID;
-	setup->src_function[*src_func].dst_param =  AOD_NETWORK_ID;
+	setup->src_function[*src_func].dst_param =  network_id;
 	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
 	setup->src_function[*src_func].algo_config_index = -1;
 	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
@@ -1021,7 +1016,7 @@ void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_fu
 	(*src_func)++;
 
 	/* NN1->MCU */
-	setup->src_nn[*src_nn].src_param =  AOD_NETWORK_ID;
+	setup->src_nn[*src_nn].src_param =  network_id;
 	setup->src_nn[*src_nn].dst_param = 0;
 	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
 	setup->src_nn[*src_nn].algo_config_index = -1;
@@ -1030,10 +1025,25 @@ void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_fu
 	(*src_nn)++;
 }
 
-void add_sed_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn)
+void add_sed_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
-	add_bixby_flow(setup, src_pcm, src_func, src_nn);
-	/*Will be changed later*/
+	/* FUNCx->NN1 */
+	setup->src_function[*src_func].src_param = FF_ID;
+	setup->src_function[*src_func].dst_param = network_id;
+	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+	setup->src_function[*src_func].algo_config_index = -1;
+	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_function[*src_func].algo_exec_property = 0;
+	(*src_func)++;
+
+	/* NN1->MCU */
+	setup->src_nn[*src_nn].src_param = network_id;
+	setup->src_nn[*src_nn].dst_param = 0;
+	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+	setup->src_nn[*src_nn].algo_config_index = -1;
+	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_nn[*src_nn].algo_exec_property = 0;
+	(*src_nn)++;
 }
 
 static
@@ -1051,20 +1061,23 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 	dsp_flow_e flow;
 	for (int i = 0;	i < MAX_NNETWORKS; i++) {
 		flow = get_dsp_flow_type(dev, i);
+
 		switch(flow){
-			case DSP_FLOW_BIXBY:
-				add_bixby_flow(&setup, &src_pcm, &src_func, &src_nn);
-				break;
-			case DSP_FLOW_AOD:
-				add_aod_flow(&setup, &src_pcm, &src_func, &src_nn);
-				break;
-			case DSP_FLOW_SED:
-				add_sed_flow(&setup, &src_pcm, &src_func, &src_nn);
-				break;
-			case DSP_FLOW_MAX:
-				auddbg("Wrong value : %d\n", flow);
-				break;
-				/*Do nothing*/
+		case DSP_FLOW_BIXBY:
+			add_bixby_flow(&setup, &src_pcm, &src_func, &src_nn, i);
+			break;
+		case DSP_FLOW_AOD:
+			add_aod_flow(&setup, &src_pcm, &src_func, &src_nn, i);
+			break;
+		case DSP_FLOW_SED:
+			add_sed_flow(&setup, &src_pcm, &src_func, &src_nn, i);
+			break;
+		case DSP_FLOW_MAX:
+			auddbg("Wrong value : %d\n", flow);
+			break;
+		}
+		if (flow == DSP_FLOW_MAX) {
+			break;
 		}
 		idToFlow[i] = flow;
 	}
@@ -1401,7 +1414,19 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *mcu_package = "/res/kernel/audio/mcu_fw";
 	const char *dsp_package = "/res/kernel/audio/dsp_fw";
 	const char *neural_package;
+	if ((dev->kd_num & AUDIO_NN_MODEL_MASK) == AUDIO_NN_MODEL_BIXBY) {
+		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
+			neural_package = "/res/shared/model/kd_local2_en";
+		} else {
+			neural_package = "/res/shared/model/kd_local2";
+		}
+	} else {
+		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
+			neural_package = "/res/shared/model/kd_local_en";
+		} else {
 			neural_package = "/res/shared/model/kd_local";
+		}
+	}
 
 	const unsigned int AUDIO_TANK_MS =
 		AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
@@ -1739,71 +1764,68 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			struct audio_msg_s msg;
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
-				switch (idToFlow[network_id]) {
-					case DSP_FLOW_BIXBY:
-						serialno++;
-						auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-						if (!dev->recording) {
-							/* extract keyword immediately */
-						extract_keyword(dev);
+			switch (idToFlow[network_id]) {
+			case DSP_FLOW_BIXBY:
+				serialno++;
+				auddbg("[#%d Hi-Bixby] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+				if (!dev->recording) {
+					/* extract keyword immediately */
+					extract_keyword(dev);
 #ifdef CONFIG_NDP120_AEC_SUPPORT
-						g_ndp120_state = IS_RECORDING;
+					g_ndp120_state = IS_RECORDING;
 #endif
-						dev->keyword_correction = true;
-						msg.msgId = AUDIO_MSG_KD;
-						}
-						break;
-					case DSP_FLOW_AOD:
-						auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-						extract_keyword(dev);
-						switch (winner) {
-							case 0:
-								msg.msgId = AUDIO_MSG_LOCAL0;
-								break;
-							case 1:
-								msg.msgId = AUDIO_MSG_LOCAL1;
-								break;
-							case 2:
-								msg.msgId = AUDIO_MSG_LOCAL2;
-								break;
-							case 3:
-								msg.msgId = AUDIO_MSG_LOCAL3;
-								break;
-							default:
-								ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
-								goto errout_with_irq;
-						}
-						break;
-					case DSP_FLOW_SED:
-						auddbg("[#%d SED] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
-						switch (winner) {
-							case 0:
-								msg.msgId = AUDIO_MSG_SNORING;
-								break;
-							case 1:
-								msg.msgId = AUDIO_MSG_CLAP;
-								break;
-							case 2:
-								msg.msgId = AUDIO_MSG_DOG;
-								break;
-							case 3:
-								msg.msgId = AUDIO_MSG_COUGH;
-								break;
-							case 4:
-								msg.msgId = AUDIO_MSG_BABYCRY;
-								break;
-							case 5:
-								msg.msgId = AUDIO_MSG_LOCAL4;
-								break;
-							default:
-								ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
-								goto errout_with_irq;
-						}
-						break;
-					default:
-							ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
-							goto errout_with_irq;
+					dev->keyword_correction = true;
+					msg.msgId = AUDIO_MSG_KD;
 				}
+				break;
+			case DSP_FLOW_AOD:
+				auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+				extract_keyword(dev);
+				switch (winner) {
+				case 0:
+					msg.msgId = AUDIO_MSG_LOCAL0;
+					break;
+				case 1:
+					msg.msgId = AUDIO_MSG_LOCAL1;
+					break;
+				case 2:
+					msg.msgId = AUDIO_MSG_LOCAL2;
+					break;
+				case 3:
+					msg.msgId = AUDIO_MSG_LOCAL3;
+					break;
+				default:
+					ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
+					goto errout_with_irq;
+				}
+				break;
+			case DSP_FLOW_SED:
+				auddbg("[#%d SED] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+				switch (winner) {
+				case 0:
+					msg.msgId = AUDIO_MSG_LOCAL8;
+					break;
+				case 1:
+					msg.msgId = AUDIO_MSG_LOCAL9;
+					break;
+				case 2:
+					msg.msgId = AUDIO_MSG_LOCAL10;
+					break;
+				case 3:
+					msg.msgId = AUDIO_MSG_LOCAL11;
+					break;
+				case 4:
+					msg.msgId = AUDIO_MSG_LOCAL12;
+					break;
+				default:
+					ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
+					goto errout_with_irq;
+				}
+				break;
+			default:
+				ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
+				goto errout_with_irq;
+			}
 			audvdbg("msgId = %d\n", msg.msgId);
 			if (msg.msgId != AUDIO_MSG_NONE) {
 				mq_send(dev->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
