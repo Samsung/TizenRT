@@ -272,11 +272,9 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 			return ret;
 		}
-		DEBUGASSERT(filep);
 		filep->f_priv = data;
 		break;
 	case COMPIOC_FCOMP_GET_BUFSIZE:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		data->compression_header = get_compression_header();
 		ret = data->compression_header->binary_size;
@@ -289,7 +287,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((uint8_t *)arg == NULL) {
 			return -EINVAL;
 		}
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		size = compress_read(data->fd, 0, (uint8_t *)arg, data->compression_header->binary_size, 0);
 		ret = OK;
@@ -299,7 +296,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case COMPIOC_FCOMP_DEINIT:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		if (data) {
 			if (data->compression_header) {
