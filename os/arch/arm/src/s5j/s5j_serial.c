@@ -281,7 +281,7 @@ static int up_interrupt(int irq, void *context, void *arg)
 	uint32_t uintp = uart_getreg32(dev->priv, S5J_UART_UINTP_OFFSET);
 
 	if (uintp & UART_UINTP_TXD) {
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 	}
 
 	if (uintp & UART_UINTP_RXD) {
