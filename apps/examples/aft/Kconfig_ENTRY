@@ -1,0 +1,3 @@
+config ENTRY_AFT
+	bool "\"Audio File Transfer!\" example"
+	depends on EXAMPLES_AFT
