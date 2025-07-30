@@ -320,7 +320,9 @@ static inline void os_do_appstart(void)
 #endif
 
 #ifdef CONFIG_COMPRESSION
-	compress_register();
+	if (compress_register() != OK) {
+		sdbg("Failed to register compression driver\n");
+	}
 #endif
 
 	pm_driver_register();

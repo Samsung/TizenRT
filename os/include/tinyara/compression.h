@@ -74,10 +74,12 @@ struct compress_header {
  * Name: compress_register
  *
  * Description:
- *   Register compress driver path, MMINFO_DRVPATH
+ *   Register compress driver path, COMP_DRVPATH
  *
+ * Return Value:
+ *   OK on success, negative error code on failure
  ****************************************************************************/
-void compress_register(void);
+int compress_register(void);
 
 /****************************************************************************
  * Name: compress_block
