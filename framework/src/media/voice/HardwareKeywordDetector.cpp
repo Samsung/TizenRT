@@ -163,10 +163,13 @@ void HardwareKeywordDetector::detectKeyword(void)
 			 * There might be a pending AUDIO_DEVICE_SPEECH_DETECT_KD event
 			 * which should not be processed during the local command processing.
 			 */
+		} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
+			meddbg("Error: device doesn't support it!!!\n");
+			mKeywordDetectStarted = false;
+		} else {
+			medvdbg("msg : %d\n", msgId);
+			mSpeechResultCallback((audio_device_process_unit_subtype_e)msgId);
 		}
-	} else if (result == AUDIO_MANAGER_INVALID_DEVICE) {
-		meddbg("Error: device doesn't support it!!!\n");
-		mKeywordDetectStarted = false;
 	}
 }
 
