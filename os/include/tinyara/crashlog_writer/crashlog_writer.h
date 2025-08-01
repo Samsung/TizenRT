@@ -27,7 +27,7 @@
  *   This is used to store logs that are output via lldbg() during a user crash situation into a buffer.
  *
  ****************************************************************************/
-void crash_log_to_buffer(char ch);
+void crashlog_writer_crashlog_to_buffer(char ch);
 
 /****************************************************************************
  * Description:
@@ -35,7 +35,7 @@ void crash_log_to_buffer(char ch);
  * it is set to 0, the storage stops.
  *
  ****************************************************************************/
-void set_store_to_buffer_flag(int flag); 
+void crashlog_writer_set_store_to_buffer_flag(int flag); 
 
 /****************************************************************************
  * Description: 
@@ -43,15 +43,23 @@ void set_store_to_buffer_flag(int flag);
  *   If the flag is 1, the log is saved in compressed form; if it is 0, it is saved uncompressed.
  *
  ****************************************************************************/
-char* save_crash_log(int flag);
+char* crashlog_writer_save_crashlog(int flag);
 
 /*************************************************************************************
-* Name: read_crash_log
+* Name: crashlog_writer_read
 *
 * Description: 
 * 	Reads a log from a file and stores it in a buffer. If the log is compresed, it is
 *	decompressed before being stored.
 *************************************************************************************/
-int read_crash_log(char *filename, char *buf, int buf_size);
+int crashlog_writer_read_crashlog(char *filename, char *buf, int buf_size);
 
+/*************************************************************************************
+* Name: crashlog_writer_read_recent
+*
+* Description: 
+* 	Reads the most recent log from a file and stores it in a buffer. If the log is compresed, it is
+*	decompressed before being stored.
+*************************************************************************************/
+int crashlog_writer_read_recent_crashlog(char *buf, int buf_size);
 #endif

@@ -16,7 +16,7 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_CRASH_LOG_SAVE),y)
+ifeq ($(CONFIG_CRASHLOG_WRITER),y)
 
 CSRCS += crashlog_writer.c
 

@@ -42,7 +42,7 @@
 #include "semaphore/semaphore.h"
 #include "binary_manager_internal.h"
 
-#ifdef CONFIG_CRASH_LOG_SAVE
+#ifdef CONFIG_CRASHLOG_WRITER
 #include <tinyara/crashlog_writer/crashlog_writer.h>
 #endif
 
@@ -350,14 +350,14 @@ void binary_manager_recovery(int bin_idx)
 		goto reboot_board;
 	}
 #endif
-#ifdef CONFIG_CRASH_LOG_SAVE
-	set_store_to_buffer_flag(0); //stop saving log to buf
-#ifdef CONFIG_COMPRESSION_FLAG
-	save_crash_log(1);
+#ifdef CONFIG_CRASHLOG_WRITER
+	crashlog_writer_set_store_to_buffer_flag(0); //stop saving log to buf
+#ifdef CONFIG_CLWR_COMPRESS
+	crashlog_writer_save_crashlog(1);
 #else
-	save_crash_log(0);
+	crashlog_writer_save_crashlog(0);
 #endif
-#ifdef CONFIG_REBOOT_AFTER_LOG_SAVE
+#ifdef CONFIG_CLWR_REBOOT
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 #endif
 #endif

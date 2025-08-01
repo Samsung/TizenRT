@@ -105,7 +105,7 @@
 #include "irq/irq.h"
 #include "task/task.h"
 #include "up_internal.h"
-#ifdef CONFIG_CRASH_LOG_SAVE
+#ifdef CONFIG_CRASHLOG_WRITER
 #include <tinyara/crashlog_writer/crashlog_writer.h>>
 #endif
 
@@ -614,11 +614,11 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		asserted_location = kernel_assert_location;
 	}
-#ifdef CONFIG_CRASH_LOG_SAVE
+#ifdef CONFIG_CRASHLOG_WRITER
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* start assert log saving */
-		set_store_to_buffer_flag(1);
+		crashlog_writer_set_store_to_buffer_flag(1);
 	}
 #endif
 #endif

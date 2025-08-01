@@ -625,7 +625,7 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
-menu "Crash log saving"
+menu "Crashlog writer"
 source kernel/crashlog_writer/Kconfig
 endmenu
 

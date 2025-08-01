@@ -56,45 +56,44 @@ typedef struct {
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-static unsigned char g_crash_log[CONFIG_CRASH_LOG_BUF_SIZE];
+static unsigned char g_crashlog[CONFIG_CLWR_BUF_SIZE];
 static int g_start_to_save = 0;
-static int g_crash_log_index = 0;
+static int g_crashlog_index = 0;
 static char g_filename[MAX_FILENAME_LEN];
 #ifndef REBOOT_AFTER_LOG_SAVE
 static int g_retry_count = 0;
 #endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 /*************************************************************************************
-* Name: is_valid_filename
+* Name: crashlog_writer_init
 *
 * Description:
 *   init global variables.
 *
 *************************************************************************************/
-static void init_crashlog_writer()
+static void crashlog_writer_init()
 {
 	int i;
-	for (i = 0; i < CONFIG_CRASH_LOG_BUF_SIZE; i++) {
-		g_crash_log[i] ='\0';
+	for (i = 0; i < CONFIG_CLWR_BUF_SIZE; i++) {
+		g_crashlog[i] ='\0';
 	}
 	for (i = 0; i < MAX_FILENAME_LEN; i++) { 
 		g_filename[i] = '\0';
 	}
 	g_start_to_save = 0;
-	g_crash_log_index = 0;
+	g_crashlog_index = 0;
 }
 
 /*************************************************************************************
-* Name: is_valid_filename
+* Name: crashlog_writer_is_valid_filename
 *
 * Description:
 *   This function checks whether a file in mnt/crashlog/ is a log save file based on its filename.
 *
 *************************************************************************************/
-static int is_valid_filename(const char *name, int *out_number) 
+static int crashlog_writer_is_valid_filename(const char *name, int *out_number) 
 {
     char expected_prefix[16];
     snprintf(expected_prefix, sizeof(expected_prefix), "crashlog_");
@@ -105,24 +104,20 @@ static int is_valid_filename(const char *name, int *out_number)
 	if (name[prefix_length] != 'c' && name[prefix_length] != 'u') {
 		return 0;
     }
-    const char *number_str = name + prefix_length + 1;
-    if ((int)strlen(number_str) != CONFIG_MAX_DIGITS) {
-        return 0;
-	}
-    for (int i = 0; i < CONFIG_MAX_DIGITS; i++) {
-        if (!isdigit(number_str[i])) {
+    for (int i = prefix_length + 1; i < strlen(name); i++) {
+        if (!isdigit(name[i])) {
             return 0;
 		}
     }
 
     if (out_number) {
-        *out_number = atoi(number_str);
+        *out_number = atoi(name + prefix_length + 1);
 	}
     return 1;
 }
 
 /*************************************************************************************
-* Name: get_next_filename
+* Name: crashlog_writer_get_next_filename
 *
 * Description:
 *   This function generates the filename for a crash log file
@@ -130,7 +125,7 @@ static int is_valid_filename(const char *name, int *out_number)
 *   if compression is enabled -> crashlog_c001
 *   if compression is disabled -> crashlog_u002
 *************************************************************************************/
-static int get_next_filename(char *new_filename, int compressed) 
+static int crashlog_writer_get_next_filename(char *new_filename, int compressed) 
 {
     DIR *dir = opendir(DIR_PATH);
     if (!dir) {
@@ -150,29 +145,32 @@ static int get_next_filename(char *new_filename, int compressed)
 		lldbg("opendir failed\n");
 		return -1;
     }
-    FileEntry entries[CONFIG_MAX_FILES + 1];
+    FileEntry entries[CONFIG_CLWR_MAX_FILES];
     int count = 0;
-    int total_matching = 0;
     int max_number = -1;
-    int min_number = 99999999;
+	int min_number = 999999999;
     char prefix = compressed ? 'c' : 'u';
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         int num;
-        if (is_valid_filename(entry->d_name, &num)) {
-            if (count < CONFIG_MAX_FILES + 1) {
-                strncpy(entries[count].name, entry->d_name, sizeof(entries[count].name));
-                entries[count].number = num;
-                count++;
+        if (crashlog_writer_is_valid_filename(entry->d_name, &num)) {
+            strncpy(entries[count].name, entry->d_name, sizeof(entries[count].name));
+            entries[count].number = num;
+            count++;
+            if (num > max_number) {
+				max_number = num;
+			}
+			if (num < min_number) {
+				min_number = num;
+			}
+            if (count >= CONFIG_CLWR_MAX_FILES) {
+				break;
             }
-            if (num > max_number) max_number = num;
-            if (num < min_number) min_number = num;
-            total_matching++;
         }
     }
     closedir(dir);
-    // If there are more than CONFIG_CONFIG_MAX_FILES files, delete the file with the smallest index.
-    if (total_matching >= CONFIG_MAX_FILES) {
+    // If there are more than CONFIG_CLWR_MAX_FILES files, delete the file with the smallest index.
+    if (count >= CONFIG_CLWR_MAX_FILES) {
         for (int i = 0; i < count; i++) {
             if (entries[i].number == min_number) {
                 char fullpath[512];
@@ -182,46 +180,37 @@ static int get_next_filename(char *new_filename, int compressed)
             }
         }
     }
-    // Wraparound
-    int limit = 1;
-    for (int i = 0; i < CONFIG_MAX_DIGITS; i++) {
-        limit *= 10;
-    }
-    int next_number  =  (max_number + 1) % limit;
-    // Create format string like "%05d"
 	char pre_part[20];
-    char fmt[8];
-    snprintf(fmt, sizeof(fmt), "%%0%dd", CONFIG_MAX_DIGITS);  // → "%0xd"
 	snprintf(new_filename, MAX_FILENAME_LEN, "%s/", DIR_PATH);
 	int path_len = strlen(new_filename);
 	snprintf(pre_part, MAX_FILENAME_LEN - path_len - 1, "crashlog_%c", prefix);
 	strncat(new_filename, pre_part, MAX_FILENAME_LEN - path_len - 1);
     char number_part[16];
-    snprintf(number_part, sizeof(number_part), fmt, next_number);
+    snprintf(number_part, sizeof(number_part), "%d", max_number + 1);
     strncat(new_filename, number_part, MAX_FILENAME_LEN - strlen(new_filename) - 1);
     return 1;
 }
 
 /*************************************************************************************
-* Name: get_crash_log_save_size
+* Name: crashlog_writer_get_crashlog_size
 *
 * Description: 
 *   Gets the size (in bytes) of the log currently stored in the buffer.
 *
 *************************************************************************************/
-static int get_crash_log_save_size()
+static int crashlog_writer_get_crashlog_size()
 {
-	return g_crash_log_index;
+	return g_crashlog_index;
 }
 
 /*************************************************************************************
-* Name: make_big_logs
+* Name: crashlog_writer_make_big_logs
 *
 * Description:
 *   Prints a large random log for testing purposes.
 *	random 100*rows bytes be printed.
 *************************************************************************************/
-static void make_big_logs(int rows)
+static void crashlog_writer_make_big_logs(int rows)
 {
 	srand((unsigned int)time(NULL));
 	char temp[100];
@@ -236,16 +225,16 @@ static void make_big_logs(int rows)
 }
 
 /*************************************************************************************
-* Name: crash_log_to_file
+* Name: crashlog_writer_crashlog_to_file
 *
 * Description:
 *   Saves the log stored in the buffer to a file.
 *************************************************************************************/
-static int crash_log_to_file()
+static int crashlog_writer_crashlog_to_file()
 {
 	lldbg("\n\n\n===================================crash log file saving start==========================================\n\n\n");
-	lldbg("\nlog_save_size is %d\n", get_crash_log_save_size());
-	int ret = get_next_filename(g_filename, 0);
+	lldbg("\nlog_save_size is %d\n", crashlog_writer_get_crashlog_size());
+	int ret = crashlog_writer_get_next_filename(g_filename, 0);
 	lldbg("filename is %s\n", g_filename);
 	if (ret < 0) {
 		lldbg("get_next_filename() failed\n");
@@ -257,7 +246,7 @@ static int crash_log_to_file()
 		return -1;
 	}
 	lldbg("file open success\n");
-	int log_size = write(fd,g_crash_log, g_crash_log_index);
+	int log_size = write(fd,g_crashlog, g_crashlog_index);
 	close(fd);
 	if (log_size < 0){
 		lldbg("file write failed\n");
@@ -269,18 +258,18 @@ static int crash_log_to_file()
 }
 
 /*************************************************************************************
-* Name: compressed_crash_log_to_file
+* Name: crashlog_writer_compressed_crashlog_to_file
 *
 * Description: 
 *   Saves the compressed log from the buffer to a file.
 *************************************************************************************/
-static int compressed_crash_log_to_file(unsigned char *compressed_buf,unsigned int compressed_buf_size)
+static int crashlog_writer_compressed_crashlog_to_file(unsigned char *compressed_buf,unsigned int compressed_buf_size)
 {
 	lldbg("\n\n================================================================compress file write start===========================================================\n\n");
 	if (compressed_buf == NULL) {
 		return -1;
 	}
-	int ret = get_next_filename(g_filename, 1);
+	int ret = crashlog_writer_get_next_filename(g_filename, 1);
 	lldbg("filename is %s\n", g_filename);
 	if (ret < 0) {
 		lldbg("get_next_filename() failed\n");
@@ -304,27 +293,27 @@ static int compressed_crash_log_to_file(unsigned char *compressed_buf,unsigned i
 }
 
 /*************************************************************************************
-* Name: crash_log_compress
+* Name: crashlog_writer_compress_crashlog_and_save
 *
 * Description: 
-*   Compresses the log stored in the buffer.
+*   Compresses the log stored in the buffer and save to file.
 *************************************************************************************/
-static int crash_log_compress()
+static int crashlog_writer_compress_crashlog_and_save()
 {
 	lldbg("\n\n=====================================================compress start=====================================================\n\n");
-    int malloc_size = get_crash_log_save_size() / 3;
+    int malloc_size = crashlog_writer_get_crashlog_size() / 3;
 	unsigned char *compressed_buf = (unsigned char *)kmm_malloc(malloc_size);
 	if (compressed_buf == NULL) {
 		lldbg("kmm_malloc() failed\n");
 		return -1;
 	}
     unsigned int compressed_buf_size = malloc_size;
-	compress_block(compressed_buf, &compressed_buf_size, g_crash_log, CONFIG_CRASH_LOG_BUF_SIZE);
+	compress_block(compressed_buf, &compressed_buf_size, g_crashlog, CONFIG_CLWR_BUF_SIZE);
 	lldbg("compressed buf size: %d\n", compressed_buf_size);
 
 	lldbg("\n==============================================================compress end===============================================================\n");
     
-	compressed_crash_log_to_file(compressed_buf, compressed_buf_size);
+	crashlog_writer_compressed_crashlog_to_file(compressed_buf, compressed_buf_size);
 	free(compressed_buf);
 	compressed_buf = NULL;
 	return compressed_buf_size;
@@ -335,40 +324,40 @@ static int crash_log_compress()
  * Public Functions
  ****************************************************************************/
 /*************************************************************************************
-* Name: crash_log_to_buffer
+* Name: crashlog_writer_crashlog_to_buffer
 *
 * Description: 
 *   Stores the crash log into the buffer.
 *   This is used to store logs that are output via lldbg() during a user crash situation into a buffer.
 *************************************************************************************/
-void crash_log_to_buffer(char ch)
+void crashlog_writer_crashlog_to_buffer(char ch)
 {
-	if (g_start_to_save && g_crash_log_index < CONFIG_CRASH_LOG_BUF_SIZE) {
-		g_crash_log[g_crash_log_index++] = ch;
+	if (g_start_to_save && g_crashlog_index < CONFIG_CLWR_BUF_SIZE) {
+		g_crashlog[g_crashlog_index++] = ch;
 	}
 }
 
 /*************************************************************************************
-* Name: set_store_to_buffer_flag
+* Name: crashlog_writer_set_store_to_buffer_flag
 *
 * Description: 
 *   Sets the flag to determine whether to store crash logs in the buffer. 
 *   If the flag is 1, the log is saved; if it is 0, it is not saved.
 *************************************************************************************/
-void set_store_to_buffer_flag(int flag)
+void crashlog_writer_set_store_to_buffer_flag(int flag)
 {
-#ifdef CONFIG_CRASH_LOG_RETRY_COUNT
-	if (g_retry_count >= CONFIG_CRASH_LOG_RETRY_COUNT) {
+#ifdef CONFIG_CLWR_RETRY_COUNT
+	if (g_retry_count >= CONFIG_CLWR_RETRY_COUNT) {
 		return -1;
 	}
 #endif
 	if (flag) {
-		if (!g_crash_log_index) {
-			init_crashlog_writer();
+		if (!g_crashlog_index) {
+			crashlog_writer_init();
 		}
 		lldbg("\n\n\n==========================================================FROM THIS, lldbg LOG WILL BE SAVED!!==========================================================\n\n\n\n");
 		g_start_to_save = flag;
-		make_big_logs(200);
+		//make_big_logs(200);
 	}
 	else {
 		lldbg("\n\n\n==========================================================TO THIS==========================================================\n\n\n\n");
@@ -377,32 +366,32 @@ void set_store_to_buffer_flag(int flag)
 }
 
 /*************************************************************************************
-* Name: save_crash_log
+* Name: crashlog_writer_save_crashlog
 *
 * Description: 
 *   Saves the crash log to a file. 
 *   If the flag is 1, the log is saved in compressed form; if it is 0, it is saved uncompressed.
 *************************************************************************************/
-char *save_crash_log(int flag)
+char *crashlog_writer_save_crashlog(int flag)
 {
-#ifdef CONFIG_CRASH_LOG_TIME_TEST
+#ifdef CONFIG_CLWR_RECORD_TIME
     clock_t start = clock();
-	int log_size = get_crash_log_save_size();
+	int log_size = crashlog_writer_get_crashlog_size();
 #endif
-#ifdef CONFIG_CRASH_LOG_SAVE_RETRY_COUNT
-	if (g_retry_count >= CONFIG_CRASH_LOG_SAVE_RETRY_COUNT) {
+#ifdef CONFIG_CLWR_RETRY_COUNT
+	if (g_retry_count >= CONFIG_CLWR_RETRY_COUNT) {
 		return NULL;
 	}
 	g_retry_count++;;
 #endif
 	int ret;
 	if (flag) {
-		ret = crash_log_compress();
+		ret = crashlog_writer_compress_crashlog_and_save();
 	}
 	else{
-		ret = crash_log_to_file();
+		ret = crashlog_writer_crashlog_to_file();
 	}
-#ifdef CONFIG_CRASH_LOG_TIME_TEST
+#ifdef CONFIG_CLWR_RECORD_TIME
 	if (ret > 0) {
 		clock_t end = clock();
 		double elapsed_time = (double)(end - start) / CLOCKS_PER_SEC;
@@ -412,7 +401,7 @@ char *save_crash_log(int flag)
 			return g_filename;
 		}
 		char buf[100];
-#ifdef CONFIG_COMPRESSION_FLAG
+#ifdef CONFIG_CLWR_COMPRESS
 		snprintf(buf, sizeof(buf), "C: %d -> %d ", log_size, ret);
 		write(fd, buf, strlen(buf));
 #else
@@ -425,8 +414,8 @@ char *save_crash_log(int flag)
 		snprintf(buf, sizeof(buf), " (%s)\n", g_filename);
 		write(fd, buf, strlen(buf));
 		close(fd);
-#ifndef CONFIG_REBOOT_AFTER_LOG_SAVE
-		init_crashlog_writer();
+#ifndef CONFIG_CLWR_REBOOT_AFTER_LOG_SAVE
+		crashlog_writer_init();
 #endif
 	}
 #endif
@@ -434,13 +423,13 @@ char *save_crash_log(int flag)
 }
 
 /*************************************************************************************
-* Name: read_crash_log
+* Name: crashlog_writer_read_crashlog
 *
 * Description: 
 * 	Reads a log from a file and stores it in a buffer. If the log is compresed, it is
 *	decompressed before being stored.
 *************************************************************************************/
-int read_crash_log(char *filename, char *buf, int buf_size) 
+int crashlog_writer_read_crashlog(char *filename, char *buf, int buf_size) 
 {
 	lldbg("filename : %s\n",filename);
 	int fd = open(filename, O_RDONLY);
@@ -460,7 +449,7 @@ int read_crash_log(char *filename, char *buf, int buf_size)
 	}
 	else if (filename[strlen(DIR_PATH) + 10] == 'c') { //simple check
 		lldbg("compressed file read start\n");
-		unsigned int malloc_size = CONFIG_CRASH_LOG_BUF_SIZE;
+		unsigned int malloc_size = CONFIG_CLWR_BUF_SIZE;
 		unsigned char *compressed_buf = (unsigned char *)kmm_malloc(malloc_size);
 		if (compressed_buf == NULL) {
 			lldbg("kmm_malloc() failed\n");
@@ -479,4 +468,45 @@ int read_crash_log(char *filename, char *buf, int buf_size)
 		return tmp_buf_size;
 	}
 	close(fd);
+}
+
+/*************************************************************************************
+* Name: crashlog_writer_read_recent_crashlog
+*
+* Description: 
+* 	Reads the most recent log from a file and stores it in a buffer. If the log is compresed, it is
+*	decompressed before being stored.
+*************************************************************************************/
+int crashlog_writer_read_recent_crashlog(char *buf, int buf_size) 
+{
+	char most_recent_file_name[MAX_FILENAME_LEN];
+	DIR *dir = opendir(DIR_PATH);
+    if (!dir) {
+		lldbg("opendir failed\n");
+		return -1;
+    }
+	char temp_name[MAX_FILENAME_LEN];
+    int count = 0;
+    int max_number = -1;
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        int num;
+        if (crashlog_writer_is_valid_filename(entry->d_name, &num)) {
+            count++;
+            if (num > max_number) {
+				max_number = num;
+            	strncpy(temp_name, entry->d_name, sizeof(temp_name));
+			}
+            if (count >= CONFIG_CLWR_MAX_FILES) {
+				break;
+            }
+        }
+    }
+    closedir(dir);
+
+
+	snprintf(most_recent_file_name, MAX_FILENAME_LEN, "%s/%s", DIR_PATH,temp_name);
+	lldbg("most_recent_file_name is %s\n",most_recent_file_name);
+	crashlog_writer_read_crashlog(most_recent_file_name, buf, buf_size);
+    return 1;
 }

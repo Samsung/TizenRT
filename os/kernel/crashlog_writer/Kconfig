@@ -4,61 +4,54 @@
 #
 
 
-config CRASH_LOG_SAVE
-	bool "enable crash log saving"
+config CRASHLOG_WRITER
+	bool "enable crashlog writer"
 	default n
     depends on BINMGR_RECOVERY
 	---help---
         This saves the crash log.
 
-if CRASH_LOG_SAVE
+if CRASHLOG_WRITER
 
-config COMPRESSION_FLAG
-    bool "COMPRESSION_FLAG"
+config CLWR_COMPRESS
+    bool "CRASHLOG_COMPRESS"
     default y
     ---help---
         Controls whether compression is applied.
         if the value is 0 compression is not performed.
 
 
-config CRASH_LOG_BUF_SIZE
-    int "CRASH_LOG_BUF_SIZE"
+config CLWR_BUF_SIZE
+    int "CRASHLOG_BUF_SIZE"
     default 8192
     ---help---
         Determines the size of the buffer where crash logs will be stored.
         The crash log is stored in the data section.
         
-config REBOOT_AFTER_LOG_SAVE
+config CLWR_REBOOT
     bool "REBOOT_AFTER_SAVING_LOG"
     default n
     ---help---
         Determines whether to reboot after saving the crash log.
 
-config MAX_DIGITS
-    int "MAX_DIGITS"
-    default 5
-    range 1 8
-    ---help---
-        Specify the number of digits to use in the file name suffix.
-
-config MAX_FILES
+config CLWR_MAX_FILES
     int "MAX_FILES"
     default 5
     ---help---
         Determine the maximum number of crash log files to be stored.
 
-config CRASH_LOG_SAVE_RETRY_COUNT
-    int "CRASH_LOG_SAVE_RETRY_COUNT"
+config CLWR_RETRY_COUNT
+    int "CRASHLOG_RETRY_COUNT"
     default 5
     depends on !REBOOT_AFTER_LOG_SAVE
     ---help---
         Limit the number of crash log saves in user mode during consecutive crashes to preserve flash memory lifespan.
 
-config CRASH_LOG_TIME_TEST
-    bool "CRASH_LOG_TIME_TEST"
+config CLWR_RECORD_TIME
+    bool "CRASHLOG_RECORD_TIME"
     default n
     ---help---
         Measure and record the time it takes to save the crash log to a file.
 
-endif # CRASH_LOG_SAVE
+endif # CRASHLOG_SAVE
 
