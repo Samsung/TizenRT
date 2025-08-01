@@ -29,11 +29,17 @@
 #include <debug.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <semaphore.h>
+
+#define COMP_CREF_MAX UINT8_MAX
 
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
 
+static int comp_open(FAR struct file *filep);
+static int comp_close(FAR struct file *filep);
 static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static ssize_t comp_read(FAR struct file *filep, FAR char *buffer, size_t len);
 static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t len);
@@ -42,15 +48,20 @@ static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t
  * Data
  ****************************************************************************/
 static const struct file_operations compress_fops = {
-	0,                          /* open */
-	0,                          /* close */
+	comp_open,                  /* open */
+	comp_close,                 /* close */
 	comp_read,                  /* read */
 	comp_write,                 /* write */
 	0,                          /* seek */
-	comp_ioctl              /* ioctl */
+	comp_ioctl                  /* ioctl */
 #ifndef CONFIG_DISABLE_POLL
 	, 0                         /* poll */
 #endif
+};
+
+struct comp_dev_s {
+	sem_t sem;
+	uint8_t crefs;
 };
 
 static struct file_decomp_data_s {
@@ -71,6 +82,84 @@ static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t
 	return 0;
 }
 
+/****************************************************************************
+ * Name: comp_semtake
+ ****************************************************************************/
+static void comp_semtake(sem_t *sem)
+{
+	/* Take the semaphore (perhaps waiting) */
+
+	while (sem_wait(sem) != 0) {
+		/* The only case that an error should occur here is if
+		 * the wait was awakened by a signal.
+		 */
+
+		ASSERT(*get_errno_ptr() == EINTR);
+	}
+}
+
+/****************************************************************************
+ * Name: comp_semgive
+ ****************************************************************************/
+static void comp_semgive(sem_t *sem)
+{
+	sem_post(sem);
+}
+
+/****************************************************************************
+ * Name: comp_open
+ *
+ * Description:
+ *   Open compression device driver
+ *
+ * Parameters:
+ *   filep - Pointer to file structure
+ *
+ * Return Value:
+ *   OK on success, negative error code on failure
+ ****************************************************************************/
+static int comp_open(FAR struct file *filep)
+{
+	struct comp_dev_s *dev = filep->f_inode->i_private;
+
+	DEBUGASSERT(dev != NULL);
+
+	comp_semtake(&dev->sem);
+	if (dev->crefs == COMP_CREF_MAX) {
+		return -EBUSY;
+	}
+	dev->crefs++;
+	DEBUGASSERT(dev->crefs > 0);
+	comp_semgive(&dev->sem);
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: comp_close
+ *
+ * Description:
+ *   Close compression device driver
+ *
+ * Parameters:
+ *   filep - Pointer to file structure
+ *
+ * Return Value:
+ *   OK on success, negative error code on failure
+ ****************************************************************************/
+static int comp_close(FAR struct file *filep)
+{
+	struct comp_dev_s *dev = filep->f_inode->i_private;
+
+	DEBUGASSERT(dev != NULL);
+
+	comp_semtake(&dev->sem);
+	DEBUGASSERT(dev->crefs > 0);
+	dev->crefs--;
+	comp_semgive(&dev->sem);
+
+	return OK;
+}
 
 /************************************************************************************
  * Name: comp_ioctl
@@ -184,11 +273,9 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 			return ret;
 		}
-		DEBUGASSERT(filep);
 		filep->f_priv = data;
 		break;
 	case COMPIOC_FCOMP_GET_BUFSIZE:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		data->compression_header = get_compression_header();
 		ret = data->compression_header->binary_size;
@@ -201,7 +288,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((uint8_t *)arg == NULL) {
 			return -EINVAL;
 		}
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		size = compress_read(data->fd, 0, (uint8_t *)arg, data->compression_header->binary_size, 0);
 		ret = OK;
@@ -211,7 +297,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case COMPIOC_FCOMP_DEINIT:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		if (data) {
 			if (data->compression_header) {
@@ -231,13 +316,32 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
  * Name: compress_register
  *
  * Description:
  *   Register compress driver path, COMP_DRVPATH
  *
+ * Return Value:
+ *   OK on success, negative error code on failure
  ****************************************************************************/
-void compress_register(void)
+int compress_register(void)
 {
-	(void)register_driver(COMP_DRVPATH, &compress_fops, 0666, NULL);
+	int ret;
+	struct comp_dev_s *dev = (struct comp_dev_s *)kmm_malloc(sizeof(struct comp_dev_s));
+	if (!dev) {
+		return -ENOMEM;
+	}
+
+	sem_init(&dev->sem, 0, 1);
+	ret = register_driver(COMP_DRVPATH, &compress_fops, 0666, dev);
+	if (ret < 0) {
+		sem_destroy(&dev->sem);
+		kmm_free(dev);
+	}
+	
+	return ret;
 }
