@@ -889,6 +889,92 @@ uint16_t read_mapping_table(uint16_t logical_addr)
 
     return phy_addr;
 }
+uint32_t ftl_write_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+    uint8_t *pdata8 = (uint8_t *)pdata_tmp;
+
+    if (g_pPage == NULL)
+    {
+        return FTL_WRITE_ERROR_NOT_INIT;
+    }
+
+    if ((offset & 0x3) || (size <= 0) || (size & 0x3))
+    {
+        return FTL_WRITE_ERROR_INVALID_PARAMETER;
+    }
+
+#if defined(SAVE_TO_STORAGE_RECONFIRM_EN) && (SAVE_TO_STORAGE_RECONFIRM_EN == 1)
+    uint16_t bak_offset = offset;
+    uint16_t bak_size = size;
+#endif
+
+
+    uint32_t ret = 0;
+
+    while (size > 0)
+    {
+        uint32_t data32 = (uint32_t)(pdata8[0] |
+                                     (pdata8[1] << 8) |
+                                     (pdata8[2] << 16) |
+                                     (pdata8[3] << 24));
+
+        ret = ftl_write(offset, data32);
+        FTL_ASSERT(result == 0);
+
+        if (ret)
+        {
+            break;
+        }
+
+        offset += 4;
+        size -= 4;
+        pdata8 += 4;
+    }
+
+
+#if defined(SAVE_TO_STORAGE_RECONFIRM_EN) && (SAVE_TO_STORAGE_RECONFIRM_EN == 1)
+
+
+    if (ret == 0)
+    {
+        pdata8 = (uint8_t *)pdata_tmp;
+        offset = bak_offset;
+        size = bak_size;
+
+        while (size > 0)
+        {
+            uint32_t data32 = (uint32_t)(pdata8[0] |
+                                         (pdata8[1] << 8) |
+                                         (pdata8[2] << 16) |
+                                         (pdata8[3] << 24));
+            uint32_t read_data32, error;
+            error = ftl_read(offset, &read_data32);
+            FTL_ASSERT(error == 0);
+            FTL_ASSERT(read_data32 == data32);
+            if (error)
+            {
+                ret = FTL_WRITE_ERROR_READ_BACK;
+                break;
+            }
+
+            if (read_data32 != data32)
+            {
+                ret = FTL_WRITE_ERROR_VERIFY;
+                break;
+            }
+
+            offset += 4;
+            size -= 4;
+            pdata8 += 4;
+        }
+
+
+    }
+
+#endif
+
+    return ret;
+}
 
 void write_mapping_table(uint16_t logical_addr, uint8_t pageID, uint16_t cell_index)
 {
@@ -1073,11 +1159,12 @@ uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 	}
 
 	up_allocate_secure_context(FTL_SECURE_CONTEXT_SIZE);
-	ret = ameba_ftl_save_to_storage(tmp_buff, pdata_tmp, offset, size);
+	ret = ameba_ftl_save_to_storage(tmp_buff, pdata_tmp, offset, size); /*  encrypt data in secure */
 	up_free_secure_context();
 	if (ret != FTL_WRITE_SUCCESS) {
 		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_save_to_storage ret: %x \n", ret);
 	}
+	ret = ftl_write_to_storage(tmp_buff, offset, size);            /* write encrypted data to flash */
 
 	rtw_mfree(tmp_buff, size);
 	return ret;
@@ -1102,89 +1189,8 @@ uint32_t ftl_secure_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t
 // return !0 fail
 uint32_t ftl_non_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
 {
-    uint8_t *pdata8 = (uint8_t *)pdata_tmp;
-
-    if (g_pPage == NULL)
-    {
-        return FTL_WRITE_ERROR_NOT_INIT;
-    }
-
-    if ((offset & 0x3) || (size <= 0) || (size & 0x3))
-    {
-        return FTL_WRITE_ERROR_INVALID_PARAMETER;
-    }
-
-#if defined(SAVE_TO_STORAGE_RECONFIRM_EN) && (SAVE_TO_STORAGE_RECONFIRM_EN == 1)
-    uint16_t bak_offset = offset;
-    uint16_t bak_size = size;
-#endif
-
-
-    uint32_t ret = 0;
-
-    while (size > 0)
-    {
-        uint32_t data32 = (uint32_t)(pdata8[0] |
-                                     (pdata8[1] << 8) |
-                                     (pdata8[2] << 16) |
-                                     (pdata8[3] << 24));
-
-        ret = ftl_write(offset, data32);
-        FTL_ASSERT(result == 0);
-
-        if (ret)
-        {
-            break;
-        }
-
-        offset += 4;
-        size -= 4;
-        pdata8 += 4;
-    }
-
-
-#if defined(SAVE_TO_STORAGE_RECONFIRM_EN) && (SAVE_TO_STORAGE_RECONFIRM_EN == 1)
-
-
-    if (ret == 0)
-    {
-        pdata8 = (uint8_t *)pdata_tmp;
-        offset = bak_offset;
-        size = bak_size;
-
-        while (size > 0)
-        {
-            uint32_t data32 = (uint32_t)(pdata8[0] |
-                                         (pdata8[1] << 8) |
-                                         (pdata8[2] << 16) |
-                                         (pdata8[3] << 24));
-            uint32_t read_data32, error;
-            error = ftl_read(offset, &read_data32);
-            FTL_ASSERT(error == 0);
-            FTL_ASSERT(read_data32 == data32);
-            if (error)
-            {
-                ret = FTL_WRITE_ERROR_READ_BACK;
-                break;
-            }
-
-            if (read_data32 != data32)
-            {
-                ret = FTL_WRITE_ERROR_VERIFY;
-                break;
-            }
-
-            offset += 4;
-            size -= 4;
-            pdata8 += 4;
-        }
-
-
-    }
-
-#endif
-
-    return ret;
+	uint32_t ret = 0;
+	return ret;
 }
 
 uint32_t ftl_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
