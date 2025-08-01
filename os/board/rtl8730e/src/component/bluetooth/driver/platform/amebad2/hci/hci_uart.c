@@ -132,7 +132,7 @@ static inline void transmit_chars(void)
 {
 	uint16_t max_count = HCI_UART_TX_FIFO_SIZE;
 
-	if (1) {
+	if (!HCI_BT_KEEP_WAKE) {
 		/* acquire host wake up bt */
 		uint32_t data;
 
@@ -152,7 +152,7 @@ static inline void transmit_chars(void)
 		amebad2_uart->tx_len--;
 	}
 
-	if (1) {
+	if (!HCI_BT_KEEP_WAKE) {
 		/* release host wake up bt */
 		set_reg_value(0x42008250, BIT13 | BIT14, 0); // disable HOST_WAKE_BT No GPIO | HOST_WAKE_BT
 	}

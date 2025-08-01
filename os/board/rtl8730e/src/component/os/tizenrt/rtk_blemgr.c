@@ -131,6 +131,16 @@ trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_
 trble_result_e trble_netmgr_start_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handle);
 #endif
+trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_config *le_coc);
+trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm);
+trble_result_e trble_netmgr_coc_set_psm_security(struct bledev *dev, uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
+trble_result_e trble_netmgr_coc_set_param(struct bledev *dev, uint16_t value);
+trble_result_e trble_netmgr_coc_get_param(struct bledev *dev, uint8_t param_type, uint16_t cid, uint16_t *value);
+trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle, uint16_t le_psm);
+trble_result_e trble_netmgr_coc_disconnect(struct bledev *dev, uint16_t cid);
+trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint16_t len, uint8_t *data);
+
+
 
 struct trble_ops g_trble_drv_ops = {
 	// Common
@@ -204,6 +214,14 @@ struct trble_ops g_trble_drv_ops = {
 	trble_netmgr_start_multi_adv,
 	trble_netmgr_stop_multi_adv,
 #endif
+	trble_netmgr_coc_init,
+	trble_netmgr_coc_register_psm,
+	trble_netmgr_coc_set_psm_security,
+	trble_netmgr_coc_set_param,
+	trble_netmgr_coc_get_param,
+	trble_netmgr_coc_connect,
+	trble_netmgr_coc_disconnect,
+	trble_netmgr_coc_send_data,
 };
 
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
@@ -629,3 +647,48 @@ trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handl
 	return retn;
 }
 #endif
+
+trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_config *le_coc)
+{
+	return rtw_ble_le_coc_init(le_coc);
+}
+
+
+trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm)
+{
+	return rtk_bt_le_gap_coc_register_psm(is_reg, psm);
+}
+
+trble_result_e trble_netmgr_coc_set_psm_security(struct bledev *dev, uint16_t le_psm, uint8_t active,
+											uint8_t sec_mode,
+											uint8_t key_size)
+{
+	return rtk_bt_le_gap_coc_set_psm_security(le_psm, active, sec_mode, key_size);
+}
+
+trble_result_e trble_netmgr_coc_set_param(struct bledev *dev, uint16_t value)
+{
+	uint8_t param_type = 1;
+	return rtk_bt_le_gap_coc_set_param(param_type, value);
+}
+
+trble_result_e trble_netmgr_coc_get_param(struct bledev *dev, uint8_t param_type, uint16_t cid, uint16_t *value)
+{
+	uint8_t ret = rtk_bt_le_gap_coc_get_chan_param(param_type, cid, value);
+	return ret;
+}
+
+trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle, uint16_t le_psm)
+{
+	return rtk_bt_le_gap_coc_connect(conn_handle, le_psm);
+}
+
+trble_result_e trble_netmgr_coc_disconnect(struct bledev *dev, uint16_t cid)
+{
+	return rtk_bt_le_gap_coc_disconnect(cid);
+}
+
+trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint16_t len, uint8_t *data)
+{
+	return rtk_bt_le_gap_coc_send_data(cid, len, data);
+}
