@@ -147,8 +147,6 @@ static void test_orientation(void)
 	}
 	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
 
-	test_put_run();
-
 	sleep(1);
 	/* resolution should be swapped now as orientation is changed */
 #if defined(CONFIG_LCD_PORTRAIT) || defined(CONFIG_LCD_RPORTRAIT)
@@ -222,7 +220,6 @@ static void test_bit_map(void)
 	char port[20] = { '\0' };
 	struct lcddev_area_s area;
 	size_t len;
-	int idx = 0;
 	sprintf(port, LCD_DEV_PATH, p);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
