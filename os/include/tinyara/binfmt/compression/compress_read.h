@@ -38,6 +38,15 @@ struct s_buffer {
 	unsigned char *out_buffer;
 };
 
+struct comp_ctx {
+	struct comp_ctx *flink;
+	struct comp_ctx *blink;
+	struct s_header *compression_header;
+	struct s_buffer buffers;
+	int fd;
+	bool from_binfmt;
+};
+
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
@@ -48,10 +57,14 @@ struct s_buffer {
  * Description:
  *   Release buffers initialized during compress_init
  *
+ * Arguments:
+ *   filfd is file descriptor of the compressed file. 
+ *   This should be the same file descriptor that was used with compress_init.
+ *
  * Returned Value:
  *   None
  ****************************************************************************/
-void compress_uninit(void);
+void compress_uninit(int filfd);
 
 /****************************************************************************
  * Name: compress_init
@@ -83,9 +96,13 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 /****************************************************************************
  * Name: get_compression_header
  *
+ * Arguments:
+ *   filfd is file descriptor of the compressed file. 
+ *   This should be the same file descriptor that was used with compress_init.
+ *
  * Returned Value:
  *   Address of the compression_header
  ****************************************************************************/
-struct s_header *get_compression_header(void);
+struct s_header *get_compression_header(int filfd);
 
 #endif							/* __INCLUDE_COMPRESS_READ_H */

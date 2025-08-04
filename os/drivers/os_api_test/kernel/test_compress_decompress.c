@@ -70,12 +70,12 @@ static int test_compress_decompress_function(unsigned long arg)
 		return ret;
 	}
 
-	compression_header = get_compression_header();
+	compression_header = get_compression_header(filefd);
 
 	dst_buffer = (uint8_t *)kmm_malloc(READSIZE * sizeof(uint8_t));
 	if (dst_buffer == NULL) {
 		berr("Allocation of memory failed\n");
-		compress_uninit();
+		compress_uninit(filefd);
 		return ERROR;
 	}
 
@@ -84,13 +84,13 @@ static int test_compress_decompress_function(unsigned long arg)
 		size = compress_read(filefd, 0, dst_buffer, readsize, i * READSIZE);
 		if (size != READSIZE) {
 			berr("Read for compressed block %d failed\n", i);
-			compress_uninit();
+			compress_uninit(filefd);
 			kmm_free(dst_buffer);
 			return ERROR;
 		}
 	}
 
-	compress_uninit();
+	compress_uninit(filefd);
 	kmm_free(dst_buffer);
 
 	return OK;
