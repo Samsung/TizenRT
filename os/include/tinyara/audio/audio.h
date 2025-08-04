@@ -365,7 +365,11 @@
 #define AUDIO_MSG_MICMUTE          21
 #define AUDIO_MSG_MICUNMUTE        22
 #define AUDIO_MSG_UNREACHABLE      23
-#define AUDIO_MSG_SED              24
+#define AUDIO_MSG_SNORING          24
+#define AUDIO_MSG_BABYCRY          25
+#define AUDIO_MSG_DOG              26
+#define AUDIO_MSG_COUGH            27
+#define AUDIO_MSG_CLAP             28
 #define AUDIO_MSG_USER             64
 
 /* Audio Pipeline Buffer flags */
