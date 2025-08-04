@@ -6533,7 +6533,7 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg) {
 int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 {
 	// scan directory blocks for superblock and any global updates
-	int err = LFS_LOCK(lfs->cfg);
+	int err = LFS_LOCK(cfg);
 	if (err) {
         return err;
     }
@@ -6570,7 +6570,7 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 	}
 cleanup:
 	lfs_deinit(lfs);
-    LFS_UNLOCK(lfs->cfg);
+    LFS_UNLOCK(cfg);
 	return err;
 }
 

@@ -74,6 +74,7 @@ struct littlefs_file_s {
 
 struct littlefs_mountpt_s {
 	sem_t sem;
+	sem_t sem_ops;
 	FAR struct inode *drv;
 	struct mtd_geometry_s geo;
 	struct lfs_config cfg;
@@ -824,6 +825,27 @@ static int littlefs_sync_block(FAR const struct lfs_config *c)
 	return ret;
 }
 
+static int littlefs_lock(FAR const struct lfs_config *c)
+{
+	FAR struct littlefs_mountpt_s *fs = (FAR struct littlefs_mountpt_s *)c->context;
+	while (sem_wait(&fs->sem_ops) != 0) {
+		/* The only case that an error should occur here is if
+		 * the wait was awakened by a signal.
+		 */
+
+		ASSERT(*get_errno_ptr() == EINTR);
+	}
+
+	return OK;
+}
+
+static int littlefs_unlock(const struct lfs_config *c)
+{
+	FAR struct littlefs_mountpt_s *fs = (FAR struct littlefs_mountpt_s *)c->context;
+	sem_post(&fs->sem_ops);
+	return OK;
+}
+
 /****************************************************************************
  * Name: littlefs_bind
  ****************************************************************************/
@@ -857,6 +879,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 	fs->drv = driver;			/* Save the driver reference */
 	sem_init(&fs->sem, 0, 0);	/* Initialize the access control semaphore */
+	sem_init(&fs->sem_ops, 0, 1);
 	dev = (struct little_dev_s *)fs->drv->i_private;
 
 	/* Get MTD geometry directly */
@@ -877,6 +900,10 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->cfg.prog = littlefs_write_block;
 	fs->cfg.erase = littlefs_erase_block;
 	fs->cfg.sync = littlefs_sync_block;
+#ifdef LFS_THREADSAFE
+	fs->cfg.lock = littlefs_lock;
+	fs->cfg.unlock = littlefs_unlock;
+#endif
 	fs->cfg.read_size = fs->geo.blocksize;
 	fs->cfg.prog_size = fs->geo.blocksize;
 	fs->cfg.block_size = fs->geo.erasesize;
@@ -897,15 +924,18 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			goto errout_with_fs;
 		}
 	}
+
 	ret = lfs_check_format(&fs->lfs, &fs->cfg);
-	if (ret == LFS_ERR_OK) {
-		fdbg("Check formatfs successfully!\n");
+	if (ret != LFS_ERR_OK) {
+		fdbg("Check formatfs failed ret : %d\n", ret);
+		goto errout_with_fs;
 	}
+	fdbg("Check formatfs successfully!\n");
 
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0 && ret != LFS_ERR_CORRUPT) {
 		/* Auto format the device if -o autoformat */
-
+		fdbg("mount failed ret : %d\n", ret);
 		if (!data || strcmp(data, "autoformat")) {
 			goto errout_with_fs;
 		}
@@ -925,7 +955,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 	*handle = fs;
 	littlefs_semgive(fs);
-
 	if (ret == LFS_ERR_CORRUPT) {
 		fdbg("ERROR: mount failed: %d\n", ret);
 		return -ENODEV;
