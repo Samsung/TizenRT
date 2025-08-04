@@ -36,6 +36,7 @@ extern "C"
 {
 #endif
 
+#define LFS_THREADSAFE
 
 /// Version info ///
 
