@@ -1294,9 +1294,9 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *dsp_package = "/mnt/kernel/audio/dsp_fw";
 	const char *neural_package;
 	if (dev->kd_num == 0) {
-		neural_package = "/mnt/kernel/model/kd_local";
+		neural_package = "/mnt/kernel/audio/kd_local";
 	} else {
-		neural_package = "/mnt/kernel/model/kd_local2";
+		neural_package = "/mnt/kernel/audio/kd_local2";
 	}
 
 
