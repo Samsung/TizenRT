@@ -51,7 +51,8 @@ static u32 vo_freq;
 static volatile u8 send_cmd_done = 0;
 static volatile u8 receive_cmd_done = 1;
 static volatile bool rx_data_rdy = FALSE;
-static uint8_t rx_data_buff[5]; /*long response have 5 bytes in payload, short response have 1 or 2 bytes in payload */
+static uint8_t *rx_data_ptr = NULL;
+static uint32_t rx_data_len = 0;
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
 	MIPI_TypeDef *MIPIx;
@@ -227,14 +228,17 @@ static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
 		byte0 = MIPI_GET_RCMDx_BYTE0(rcmd_val);
 		byte1 = MIPI_GET_RCMDx_BYTE1(rcmd_val);
 		/*For short read, it is normally returns only two bytes, byte0: payload, byte1: checksum (if present)*/
-		rx_data_buff[0] = byte0;
-		rx_data_buff[1] = byte1;
-
 		/* Peripheral to Processor Transactions Long Packet is 0x1A or 0x1C, byte0 and byte1 will then be the length of payload */
 		if (MIPI_LPRX_IS_LONGRead(data_id)) {
 			payload_len = (byte1 << 8) + byte0;
 		} else {
 			payload_len = 0;
+			if (rx_data_ptr) {
+				rx_data_ptr[0] = byte0;
+				if (rx_data_len >= 2) {
+					rx_data_ptr[1] = byte1; /*checksum*/
+				}
+			}
 		}
 		rx_offset = 0;
 		/* the addr payload_len 1 ~ 8 is 0 */
@@ -242,12 +246,16 @@ static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
 			MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, TRUE);
 			/*unpack word0*/
 			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
-				rx_data_buff[rx_offset] = (word0 >> (i * 8)) & 0xFF;
+				if (rx_data_ptr && rx_offset < rx_data_len) {
+					rx_data_ptr[rx_offset] = (word0 >> (i * 8)) & 0xFF;
+				}
 				rx_offset++;
 			}
 			/*unpack word1*/
 			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
-				rx_data_buff[rx_offset] = (word1 >> (i * 8)) & 0xFF;
+				if (rx_data_ptr && rx_offset < rx_data_len) {
+					rx_data_ptr[rx_offset] = (word1 >> (i * 8)) & 0xFF;
+				}
 				rx_offset++;
 			}
 		}
@@ -430,6 +438,10 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	send_cmd_done = 0;
 	rx_data_rdy = FALSE;
+	if (msg->rx_buf) {
+		rx_data_ptr = msg->rx_buf;
+		rx_data_len = msg->rx_len;
+	}
 	if (mipi_dsi_packet_format_is_short(msg->type)) {
 		if (packet.header[1] == 0) {
 			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL, msg->type);
@@ -449,6 +461,9 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_SMP
 			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
 #endif
+			if (msg->rx_buf && msg->rx_len > 0) {
+				memset(msg->rx_buf, 0, msg->rx_len);
+			}
 			return FAIL;
 		}
 	}
@@ -459,7 +474,8 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
 	if (rx_data_rdy) {
-		memcpy(msg->rx_buf, rx_data_buff, msg->rx_len);
+		rx_data_ptr = NULL;
+		rx_data_len = 0;
 	}
 	return OK;
 }
