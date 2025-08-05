@@ -355,9 +355,9 @@ CONFIG_ARCH_BOARD_HAVE_FLASH=y
 #
 CONFIG_FLASH_PARTITION=y
 CONFIG_FLASH_MINOR=0
-CONFIG_FLASH_PART_SIZE="60,40,12,400,1844,8476,4780,1844,8476,4780,2048,8,"
-CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,bin,bin,kernel,bin,bin,smartfs,bootparam,"
-CONFIG_FLASH_PART_NAME="bl1,reserved,ftl,ss,kernel,common,app1,kernel,common,app1,userfs,bootparam,"
+CONFIG_FLASH_PART_SIZE="60,40,12,400,2868,8476,4780,2868,8476,4780,8,"
+CONFIG_FLASH_PART_TYPE="none,none,none,none,kernel,bin,bin,kernel,bin,bin,bootparam,"
+CONFIG_FLASH_PART_NAME="bl1,reserved,ftl,ss,kernel,common,app1,kernel,common,app1,bootparam,"
 CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH=y
 
 #
@@ -365,9 +365,9 @@ CONFIG_ARCH_BOARD_HAVE_SECOND_FLASH=y
 #
 CONFIG_SECOND_FLASH_PARTITION=y
 CONFIG_SECOND_FLASH_MINOR=1
-CONFIG_SECOND_FLASH_PART_SIZE="32128,32128,1280,"
-CONFIG_SECOND_FLASH_PART_TYPE="resource,resource,ftl,"
-CONFIG_SECOND_FLASH_PART_NAME="resource,resource,reserved,"
+CONFIG_SECOND_FLASH_PART_SIZE="31104,31104,2048,1280,"
+CONFIG_SECOND_FLASH_PART_TYPE="resource,resource,smartfs,ftl,"
+CONFIG_SECOND_FLASH_PART_NAME="resource,resource,userfs,reserved,"
 CONFIG_AUTOMOUNT=y
 CONFIG_AUTOMOUNT_USERFS=y
 # CONFIG_AUTOMOUNT_ROMFS is not set
