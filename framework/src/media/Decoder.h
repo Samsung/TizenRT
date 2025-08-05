@@ -57,6 +57,10 @@ private:
 	unsigned short mChannels;
 	/* Sample rate of the input audio data. */
 	unsigned int mSampleRate;
+	std::unique_ptr<uint8_t[]> mInputBuffer;
+	std::unique_ptr<int16_t[]> mOutputBuffer;
+	size_t mInputBufferSize;
+	size_t mOutputBufferSize;
 #endif
 };
 } // namespace media
