@@ -105,8 +105,8 @@
 #include "irq/irq.h"
 #include "task/task.h"
 #include "up_internal.h"
-#ifdef CONFIG_CRASHLOG_WRITER
-#include <tinyara/crashlog_writer/crashlog_writer.h>>
+#ifdef CONFIG_LOWLOG_DUMP
+#include <tinyara/log_dump/lowlog_dump.h>
 #endif
 
 bool abort_mode = false;
@@ -583,7 +583,9 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-
+#ifdef CONFIG_CRASHLOG_WRITER
+	lowlog_dump_set_flag(1);
+#endif
 	/* ARCH_GET_RET_ADDRESS should always be
 	 * called at the start of the function */
 
@@ -614,14 +616,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		asserted_location = kernel_assert_location;
 	}
-#ifdef CONFIG_CRASHLOG_WRITER
-#ifdef CONFIG_BINMGR_RECOVERY
-	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		/* start assert log saving */
-		crashlog_writer_set_store_to_buffer_flag(1);
-	}
-#endif
-#endif
 #ifdef CONFIG_SMP
 	/* Pause all other CPUs to avoid mix up of logs while printing assert logs */
 	up_cpu_pause_all();

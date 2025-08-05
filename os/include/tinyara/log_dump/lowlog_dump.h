@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2025 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
  *
  ****************************************************************************/
 
-#ifndef __CRASH_LOG_H
-#define __CRASH_LOG_H
+#ifndef __LOWLOG_DUMP_H__
+#define __LOWLOG_DUMP_H__
 
 /****************************************************************************
  * Included Files
@@ -27,7 +27,7 @@
  *   This is used to store logs that are output via lldbg() during a user crash situation into a buffer.
  *
  ****************************************************************************/
-void crashlog_writer_crashlog_to_buffer(char ch);
+void lowlog_dump_save_ch(char ch);
 
 /****************************************************************************
  * Description:
@@ -35,31 +35,26 @@ void crashlog_writer_crashlog_to_buffer(char ch);
  * it is set to 0, the storage stops.
  *
  ****************************************************************************/
-void crashlog_writer_set_store_to_buffer_flag(int flag); 
+void lowlog_dump_set_flag(int flag); 
 
 /****************************************************************************
  * Description: 
  *   Saves the crash log to a file. 
- *   If the flag is 1, the log is saved in compressed form; if it is 0, it is saved uncompressed.
  *
  ****************************************************************************/
-char* crashlog_writer_save_crashlog(int flag);
+int lowlog_dump_save();
 
 /*************************************************************************************
-* Name: crashlog_writer_read
-*
 * Description: 
 * 	Reads a log from a file and stores it in a buffer. If the log is compresed, it is
 *	decompressed before being stored.
 *************************************************************************************/
-int crashlog_writer_read_crashlog(char *filename, char *buf, int buf_size);
+int lowlog_dump_read(char *filename, char *buf, int buf_size);
 
 /*************************************************************************************
-* Name: crashlog_writer_read_recent
-*
 * Description: 
 * 	Reads the most recent log from a file and stores it in a buffer. If the log is compresed, it is
 *	decompressed before being stored.
 *************************************************************************************/
-int crashlog_writer_read_recent_crashlog(char *buf, int buf_size);
+int lowlog_dump_read_recent(char *buf, int buf_size);
 #endif

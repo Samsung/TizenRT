@@ -625,8 +625,8 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
-menu "Crashlog writer"
-source kernel/crashlog_writer/Kconfig
+menu "Lowlog dump"
+source kernel/log_dump/Kconfig
 endmenu
 
 menu "Task Monitor"

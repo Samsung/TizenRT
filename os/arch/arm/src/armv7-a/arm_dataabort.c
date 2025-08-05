@@ -62,6 +62,9 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
 #endif
+#ifdef CONFIG_LOWLOG_DUMP
+#include <tinyara/log_dump/lowlog_dump.h>
+#endif
 
 /****************************************************************************
  * Public Variables
@@ -114,7 +117,10 @@ static inline void print_dataabort_detail(uint32_t *regs, uint32_t dfar, uint32_
 
 #ifdef CONFIG_PAGING
 uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
-{
+{	
+#ifdef CONFIG_LOWLOG_DUMP
+	lowlog_dump_set_store_flag(1);
+#endif
 	struct tcb_s *tcb = this_task();
 	uint32_t *savestate;
 
@@ -199,7 +205,10 @@ segfault:
 
 #include "section_config.h"
 SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar, uint32_t dfsr)
-{
+{	
+#ifdef CONFIG_LOWLOG_DUMP
+	lowlog_dump_set_store_flag(1);
+#endif
 	/* Save the saved processor context in CURRENT_REGS where it can be
 	 * accessed for register dumps and possibly context switching.
 	 */

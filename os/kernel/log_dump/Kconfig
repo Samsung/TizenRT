@@ -4,54 +4,54 @@
 #
 
 
-config CRASHLOG_WRITER
-	bool "enable crashlog writer"
+config LOWLOG_DUMP
+	bool "enable lowlog dump"
 	default n
     depends on BINMGR_RECOVERY
 	---help---
-        This saves the crash log.
+        This saves the lowlog.
 
-if CRASHLOG_WRITER
+if LOWLOG_DUMP
 
-config CLWR_COMPRESS
-    bool "CRASHLOG_COMPRESS"
+config LOWLOG_DUMP_COMPRESS
+    bool "LOWLOG_DUMP_COMPRESS"
     default y
     ---help---
         Controls whether compression is applied.
-        if the value is 0 compression is not performed.
+        if the value is n compression is not performed.
 
 
-config CLWR_BUF_SIZE
-    int "CRASHLOG_BUF_SIZE"
+config LOWLOG_DUMP_BUF_SIZE
+    int "LOWLOG_DUMP_BUF_SIZE"
     default 8192
     ---help---
         Determines the size of the buffer where crash logs will be stored.
-        The crash log is stored in the data section.
+        The low log is stored in the data section.
         
-config CLWR_REBOOT
+config LOWLOG_DUMP_REBOOT
     bool "REBOOT_AFTER_SAVING_LOG"
     default n
     ---help---
-        Determines whether to reboot after saving the crash log.
+        Determines whether to reboot after saving the low log.
 
-config CLWR_MAX_FILES
-    int "MAX_FILES"
+config LOWLOG_DUMP_MAX_FILES
+    int "LOWLOG_DUMP_MAX_FILES"
     default 5
     ---help---
-        Determine the maximum number of crash log files to be stored.
+        Determine the maximum number of low log files to be stored.
 
-config CLWR_RETRY_COUNT
-    int "CRASHLOG_RETRY_COUNT"
+config LOWLOG_DUMP_RETRY_COUNT
+    int "LOWLOG_DUMP_RETRY_COUNT"
     default 5
-    depends on !REBOOT_AFTER_LOG_SAVE
+    depends on !LOWLOG_DUMP_REBOOT
     ---help---
         Limit the number of crash log saves in user mode during consecutive crashes to preserve flash memory lifespan.
 
-config CLWR_RECORD_TIME
-    bool "CRASHLOG_RECORD_TIME"
+config LOWLOG_DUMP_RECORD_TIME
+    bool "LOWLOG_DUMP_RECORD_TIME"
     default n
     ---help---
         Measure and record the time it takes to save the crash log to a file.
 
-endif # CRASHLOG_SAVE
+endif # LOWLOG_DUMP
 

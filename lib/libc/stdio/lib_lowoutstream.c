@@ -65,8 +65,8 @@
 
 #include "lib_internal.h"
 
-#ifdef CONFIG_CRASHLOG_WRITER
-#include <tinyara/crashlog_writer/crashlog_writer.h>>
+#ifdef CONFIG_LOWLOG_DUMP
+#include <tinyara/log_dump/lowlog_dump.h>
 #endif
 /****************************************************************************
  * Private Functions
@@ -80,8 +80,8 @@ static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
 {
 	DEBUGASSERT(this);
 #ifdef __KERNEL__
-#ifdef CONFIG_CRASHLOG_WRITER
-	crashlog_writer_crashlog_to_buffer(ch);
+#ifdef CONFIG_LOWLOG_DUMP
+	lowlog_dump_save_ch(ch);
 #endif
 #endif
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
