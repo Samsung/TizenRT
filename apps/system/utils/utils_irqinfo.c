@@ -50,7 +50,7 @@ int utils_irqinfo(int argc, char **args)
 	}
 #endif
 
-	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs");
+	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs/list");
 	ret = utils_readfile(filepath, buf, IRQ_BUFLEN, NULL, NULL);
 	free(filepath);
 

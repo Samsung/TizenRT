@@ -771,12 +771,17 @@ TASH>>ps
     0 |    0 | FIFO | KTHREAD |    | READY    | Idle Task
     1 |  224 | RR   | KTHREAD |    | WAITSIG  | hpwork
     3 |  125 | RR   | TASK    |    | RUNNING  | tash
+
+IRQLOCK STATUS:
+CPU0 - DISABLED
+CPU1 - DISABLED
 ```
 
 #### Term
 - FLAG : The policy of scheduling for each task/thread.  
 - TYPE : The type of task/thread. It can be KTHREAD(kernel thread), PTHREAD(user pthread) and TASK.  
 - NP : The flag of cancelable.  
+- IRQLOCK STATUS: It represent the status of IRQ lock for all the cores.
 
 ### How to Enable
 Enable *CONFIG_ENABLE_PS* to use this command on menuconfig as shown below:
