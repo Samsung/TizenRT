@@ -81,6 +81,8 @@ endif
 
 ifeq ($(CONFIG_MTD),y)
 CSRCS_DRIVER += mtd/mtd_config.c
+CSRCS_DRIVER += mtd/fs_registermtddriver.c mtd/fs_unregistermtddriver.c
+
 
 ifeq ($(CONFIG_MTD_FTL),y)
 CSRCS_DRIVER += mtd/ftl.c
