@@ -59,7 +59,6 @@ typedef struct {
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
-int lowlog_dump_get_retry_count(void);
 void lowlog_dump_init(void);
 void lowlog_dump_init_flag(void);
 void lowlog_dump_init_buf(void);

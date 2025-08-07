@@ -610,6 +610,7 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		asserted_location = kernel_assert_location;
 	}
+
 #ifdef CONFIG_SMP
 	/* Pause all other CPUs to avoid mix up of logs while printing assert logs */
 	up_cpu_pause_all();
@@ -653,7 +654,6 @@ void up_assert(const uint8_t *filename, int lineno)
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
 		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
-		state = NORMAL_STATE; 
 	} else
 #endif
 	{
