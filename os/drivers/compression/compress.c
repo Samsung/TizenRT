@@ -34,6 +34,8 @@
  * Function Prototypes
  ****************************************************************************/
 
+static int comp_open(FAR struct file *filep);
+static int comp_close(FAR struct file *filep);
 static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static ssize_t comp_read(FAR struct file *filep, FAR char *buffer, size_t len);
 static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t len);
@@ -42,20 +44,15 @@ static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t
  * Data
  ****************************************************************************/
 static const struct file_operations compress_fops = {
-	0,                          /* open */
-	0,                          /* close */
+	comp_open,					/* open */
+	comp_close,					/* close */
 	comp_read,                  /* read */
 	comp_write,                 /* write */
 	0,                          /* seek */
-	comp_ioctl              /* ioctl */
+	comp_ioctl              	/* ioctl */
 #ifndef CONFIG_DISABLE_POLL
 	, 0                         /* poll */
 #endif
-};
-
-static struct file_decomp_data_s {
-	int fd;
-	struct s_header *compression_header;
 };
 
 /****************************************************************************
@@ -71,6 +68,39 @@ static ssize_t comp_write(FAR struct file *filep, FAR const char *buffer, size_t
 	return 0;
 }
 
+/****************************************************************************
+ * Name: comp_open
+ *
+ * Description:
+ *   Open compression device driver
+ *
+ * Parameters:
+ *   filep - Pointer to file structure
+ *
+ * Return Value:
+ *   OK on success, negative error code on failure
+ ****************************************************************************/
+static int comp_open(FAR struct file *filep)
+{
+	return OK;
+}
+
+/****************************************************************************
+ * Name: comp_close
+ *
+ * Description:
+ *   Close compression device driver
+ *
+ * Parameters:
+ *   filep - Pointer to file structure
+ *
+ * Return Value:
+ *   OK on success, negative error code on failure
+ ****************************************************************************/
+static int comp_close(FAR struct file *filep)
+{
+	return OK;
+}
 
 /************************************************************************************
  * Name: comp_ioctl
@@ -119,7 +149,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	unsigned int size;
 	off_t filelen;
 	struct compress_header *comp_info = (struct compress_header *)arg;
-	struct file_decomp_data_s *data;
+	struct comp_ctx *data;
 
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
@@ -150,7 +180,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		ret = OK;
 		break;
- 	case COMPIOC_DECOMPRESS:
+	case COMPIOC_DECOMPRESS:
 		if (comp_info == NULL) {
 			return -EINVAL;
 		}
@@ -164,7 +194,7 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((char *)arg == NULL) {
 			return -EINVAL;
 		}
-		data = (struct file_decomp_data_s *)kmm_zalloc(sizeof(struct file_decomp_data_s));
+		data = (struct comp_ctx *)kmm_zalloc(sizeof(struct comp_ctx));
 		if (!data) {
 			bcmpdbg("Memory allocation fail for data storing\n");
 			return -ENOMEM;
@@ -184,13 +214,11 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			}
 			return ret;
 		}
-		DEBUGASSERT(filep);
 		filep->f_priv = data;
 		break;
 	case COMPIOC_FCOMP_GET_BUFSIZE:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
-		data->compression_header = get_compression_header();
+		data->compression_header = get_compression_header(data->fd);
 		ret = data->compression_header->binary_size;
 		if (ret <= 0) {
 			bcmpdbg("Failed to get buffer size = %d\n", ret);
@@ -201,7 +229,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if ((uint8_t *)arg == NULL) {
 			return -EINVAL;
 		}
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		size = compress_read(data->fd, 0, (uint8_t *)arg, data->compression_header->binary_size, 0);
 		ret = OK;
@@ -211,11 +238,10 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 		break;
 	case COMPIOC_FCOMP_DEINIT:
-		DEBUGASSERT(filep);
 		data = filep->f_priv;
 		if (data) {
 			if (data->compression_header) {
-				compress_uninit();
+				compress_uninit(data->fd);
 			}
 			close(data->fd);
 			free(data);
@@ -231,6 +257,10 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
  * Name: compress_register
  *
  * Description:
@@ -239,5 +269,6 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  ****************************************************************************/
 void compress_register(void)
 {
+	initialize_comp_ctx_list();
 	(void)register_driver(COMP_DRVPATH, &compress_fops, 0666, NULL);
 }
