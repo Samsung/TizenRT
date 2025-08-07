@@ -16,16 +16,11 @@
  *
  ****************************************************************************/
 
-#ifndef __SCHED_LOWLOG_DUMP_H
-#define __SCHED_LOWLOG_DUMP_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
 #include <tinyara/config.h>
-
-#ifdef CONFIG_LOWLOG_DUMP
+#include <tinyara/compression.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,38 +30,24 @@
 #include <debug.h>
 
 #include <tinyara/clock.h>
-#include <tinyara/log_dump/lowlog_dump.h>
+#include "lowlog_dump.h"
 #include <dirent.h>
 #include <ctype.h>
 #include <fcntl.h>
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Functions
  ****************************************************************************/
-#define DIR_PATH "/mnt/lowlog_dump"
-#define MAX_FILENAME_LEN 64
-#define PRE_FILENAME_UNCOMP "lowlog_dump"
-#define PRE_FILENAME_COMP "lowlog_dump_comp"
-#define REQUIRED_HEAP_FOR_COMPRESS 400000
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-typedef struct {
-    int number;
-    char name[MAX_FILENAME_LEN];
-} FileEntry;
 
-/****************************************************************************
- * Function Prototypes
- ****************************************************************************/
-int lowlog_dump_get_retry_count(void);
-void lowlog_dump_init(void);
-void lowlog_dump_init_flag(void);
-void lowlog_dump_init_buf(void);
-char *lowlog_dump_get_buf(void);
-int lowlog_dump_is_valid_filename(const char *name, int *out_number);
-int lowlog_dump_get_size(void);
-int lowlog_dump_set_store_flag(int flag);
+/*************************************************************************************
+* Name: lowlog_dump_resume
+*
+* Description: 
+*   restart saving lldbg to buf.
+*************************************************************************************/
+void lowlog_dump_resume(void)
+{
+	lowlog_dump_set_store_flag(1);
+	lldbg("\n\n\n==========================================================FROM THIS, lldbg LOG WILL BE SAVED AGAIN!!==========================================================\n\n\n\n");
 
-#endif							/* CONFIG_LOWLOG_DUMP */
-#endif							/* __SCHED_LOWLOG_DUMP_H */
+}

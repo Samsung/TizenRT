@@ -42,24 +42,11 @@
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-#ifndef LOWLOG_DUMP_REBOOT
-static int g_retry_count = 0;
-#endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 /*************************************************************************************
-* Name: lowlog_dump_get_retry_count
-*
-* Description:
-*   return g_retry_count.
-*
-*************************************************************************************/
-int lowlog_dump_get_retry_count(void)
-{
-	return g_retry_count;
-}
 
 /*************************************************************************************
 * Name: lowlog_dump_is_valid_filename
@@ -105,8 +92,8 @@ int lowlog_dump_is_valid_filename(const char *name, int *out_number)
 *************************************************************************************/
 static int lowlog_dump_get_next_filename(char *new_filename) 
 {
-    DIR *dir = opendir(DIR_PATH);
-    if (!dir) {
+	DIR *dir = opendir(DIR_PATH);
+	if (!dir) {
 		if (errno == ENOENT) {
 			if (mkdir(DIR_PATH, 0755) != 0) {
 				lldbg("mkdir failed\n");
@@ -146,17 +133,10 @@ static int lowlog_dump_get_next_filename(char *new_filename)
         }
     }
     closedir(dir);
-    // If there are more than CONFIG_CLWR_MAX_FILES files, delete the file with the smallest index.
-    if (count >= CONFIG_LOWLOG_DUMP_MAX_FILES) {
-        for (int i = 0; i < count; i++) {
-            if (entries[i].number == min_number) {
-                char fullpath[512];
-                snprintf(fullpath, sizeof(fullpath), "%s/%s", DIR_PATH, entries[i].name);
-                unlink(fullpath);
-                break;
-            }
-        }
-    }
+    // If there are more than CONFIG_LOWLOG_DUMP_MAX_FILES files, not add a new file.
+    if (max_number + 1 >= CONFIG_LOWLOG_DUMP_MAX_FILES) {
+		return ERROR;
+	}
 	char tmp[64];
 	snprintf(new_filename, MAX_FILENAME_LEN, "%s/", DIR_PATH);
 
@@ -210,7 +190,7 @@ static int lowlog_dump_save_uncomp(char *filenm)
 *************************************************************************************/
 static int lowlog_dump_save_comp(char *filenm, unsigned char *compressed_buf, unsigned int compressed_buf_size)
 {
-	lldbg("\n\n================================================================compress file write start===========================================================\n\n");
+	ldpllvdbg("\n\n================================================================compress file write start===========================================================\n\n");
 	char new_filename[MAX_FILENAME_LEN];
 	if (compressed_buf == NULL) {
 		return ERROR;
@@ -284,17 +264,12 @@ static int lowlog_dump_compress_and_save(char *filenm)
 *************************************************************************************/
 int lowlog_dump_save(void)
 {
+	lowlog_dump_pause();
 	char filenm[MAX_FILENAME_LEN];
 	int log_size = lowlog_dump_get_size();
 	if (log_size == 0) {
 		return ERROR;
 	}
-#ifdef CONFIG_LOWLOG_DUMP_RETRY_COUNT
-	if (g_retry_count >= CONFIG_LOWLOG_DUMP_RETRY_COUNT) {
-		return ERROR;
-	}
-	g_retry_count++;
-#endif
 #ifdef CONFIG_LOWLOG_DUMP_RECORD_TIME
     clock_t start = clock();
 #endif
@@ -329,9 +304,6 @@ int lowlog_dump_save(void)
 	snprintf(buf, sizeof(buf), " (%s)\n", filenm);
 	write(fd, buf, strlen(buf));
 	close(fd);
-#ifndef CONFIG_LOWLOG_DUMP_REBOOT
-	lowlog_dump_init();
-#endif
 #endif
 	return OK;
 }

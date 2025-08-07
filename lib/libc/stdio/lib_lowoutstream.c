@@ -79,10 +79,8 @@
 static void lowoutstream_putc(FAR struct lib_outstream_s *this, int ch)
 {
 	DEBUGASSERT(this);
-#ifdef __KERNEL__
-#ifdef CONFIG_LOWLOG_DUMP
+#if defined(__KERNEL__) && defined(CONFIG_LOWLOG_DUMP)
 	lowlog_dump_save_ch(ch);
-#endif
 #endif
 #if defined(CONFIG_BUILD_FLAT) || (defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__))
 	if (up_putc(ch) != EOF) {

@@ -351,7 +351,6 @@ void binary_manager_recovery(int bin_idx)
 	}
 #endif
 #ifdef CONFIG_LOWLOG_DUMP
-	lowlog_dump_set_store_flag(0); //stop saving log to buf
 	lowlog_dump_save();
 #ifdef CONFIG_LOWLOG_DUMP_REBOOT
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);

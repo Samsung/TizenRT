@@ -105,9 +105,6 @@
 #include "irq/irq.h"
 #include "task/task.h"
 #include "up_internal.h"
-#ifdef CONFIG_LOWLOG_DUMP
-#include <tinyara/log_dump/lowlog_dump.h>
-#endif
 
 bool abort_mode = false;
 
@@ -583,9 +580,6 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 void up_assert(const uint8_t *filename, int lineno)
 {
-#ifdef CONFIG_CRASHLOG_WRITER
-	lowlog_dump_set_flag(1);
-#endif
 	/* ARCH_GET_RET_ADDRESS should always be
 	 * called at the start of the function */
 

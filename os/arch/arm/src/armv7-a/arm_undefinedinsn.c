@@ -54,9 +54,6 @@
 
 #include "up_internal.h"
 
-#ifdef CONFIG_LOWLOG_DUMP
-#include <tinyara/log_dump/lowlog_dump.h>>
-#endif
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -72,9 +69,6 @@ extern uint32_t system_exception_location;
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
-#ifdef CONFIG_LOWLOG_DUMP
-	lowlog_dump_set_store_flag(1);
-#endif
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif

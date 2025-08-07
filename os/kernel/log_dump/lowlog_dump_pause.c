@@ -42,7 +42,7 @@
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-static int g_start_to_save = 0;
+static int g_start_to_save = 1;
 
 /****************************************************************************
  * Private Functions
@@ -69,7 +69,7 @@ void lowlog_dump_init()
 *************************************************************************************/
 void lowlog_dump_init_flag()
 {
-	g_start_to_save = 0;
+	g_start_to_save = 1;
 }
 
 /*************************************************************************************
@@ -84,26 +84,28 @@ int lowlog_dump_get_store_flag(void)
 }
 
 /*************************************************************************************
-* Name: lowlog_dump_set_store_to_buffer_flag
+* Name: lowlog_dump_set_store_flag
 *
 * Description: 
-*   Sets the flag to determine whether to store crash logs in the buffer. 
-*   If the flag is 1, the log is saved; if it is 0, it is not saved.
+* set store flag.
 *************************************************************************************/
-void lowlog_dump_set_store_flag(int flag)
+int lowlog_dump_set_store_flag(int flag)
 {
-	if (lowlog_dump_get_retry_count() >= CONFIG_LOWLOG_DUMP_RETRY_COUNT) {
-		return;
-	}
-	if (flag) {
-		if (!lowlog_dump_get_size()) {
-			lowlog_dump_init();
-		}
-		lldbg("\n\n\n==========================================================FROM THIS, lldbg LOG WILL BE SAVED!!==========================================================\n\n\n\n");
-		g_start_to_save = flag;
-	}
-	else {
-		lldbg("\n\n\n==========================================================TO THIS==========================================================\n\n\n\n");
-	}
 	g_start_to_save = flag;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/*************************************************************************************
+* Name: lowlog_dump_pause
+*
+* Description: 
+*   pause saving lldbg to buf.
+*************************************************************************************/
+void lowlog_dump_pause(void)
+{
+	lldbg("\n\n\n==========================================================TO THIS!!==========================================================\n\n\n\n");
+	lowlog_dump_set_store_flag(0);
 }

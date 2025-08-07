@@ -30,7 +30,7 @@ config LOWLOG_DUMP_BUF_SIZE
         
 config LOWLOG_DUMP_REBOOT
     bool "REBOOT_AFTER_SAVING_LOG"
-    default n
+    default y
     ---help---
         Determines whether to reboot after saving the low log.
 
@@ -39,13 +39,6 @@ config LOWLOG_DUMP_MAX_FILES
     default 5
     ---help---
         Determine the maximum number of low log files to be stored.
-
-config LOWLOG_DUMP_RETRY_COUNT
-    int "LOWLOG_DUMP_RETRY_COUNT"
-    default 5
-    depends on !LOWLOG_DUMP_REBOOT
-    ---help---
-        Limit the number of crash log saves in user mode during consecutive crashes to preserve flash memory lifespan.
 
 config LOWLOG_DUMP_RECORD_TIME
     bool "LOWLOG_DUMP_RECORD_TIME"
