@@ -74,6 +74,7 @@
 #define NOPIXELS 200
 static int xres;
 static int yres;
+static bool g_terminate;
 
 #ifdef CONFIG_EXAMPLE_LCD_FPS_TEST
 #define EXAMPLE_LCD_FPS_TEST CONFIG_EXAMPLE_LCD_FPS_TEST
@@ -321,66 +322,73 @@ static void test_quad(void)
 	free(lcd_data);
 }
 
+static void release_frame_buffer(struct lcddev_area_s *area)
+{
+	free(area->data);
+}
+
+static int prepare_frame_buffer(struct lcddev_area_s *area, uint16_t color)
+{
+	size_t len;
+	len = xres * yres * 2 + 1;
+	uint8_t *lcd_data = (uint8_t *)malloc(len);
+	if (lcd_data == NULL) {
+		printf("malloc failed for lcd data red : %d\n", len);
+		return ERROR;
+	}
+
+	for (int i = 0; i < len - 1; i += 2) {
+		lcd_data[i] = (color & 0xFF00) >> 8;
+		lcd_data[i + 1] = color & 0x00FF;
+	}
+
+	area->planeno = 0;
+	area->row_start = 0;
+	area->row_end = yres - 1;
+	area->col_start = 0;
+	area->col_end = xres - 1;
+	area->stride = 2 * xres;
+	area->data = lcd_data;
+
+	return OK;
+}
+
 static void test_fps(void)
 {
 	int fd_rtc = 0;
 	int fd_lcd = 0;
 	int p = 0;
+	int ret;
 	char port[20] = { '\0' };
-	size_t len;
-
+	struct lcddev_area_s area_red;
+	struct lcddev_area_s area_blue;
 	fd_rtc = open("/dev/rtc0", O_RDWR);
 	if (fd_rtc < 0) {
 		printf("ERROR: LCD FPS test, Fail to open rtc.\n");
 		return;
 	}
 
-	len = xres * yres * 2 + 1;
-	uint8_t *lcd_data_red = (uint8_t *)malloc(len);
-	if (lcd_data_red == NULL) {
-		printf("FPS TEST, malloc failed for lcd data red : %d\n", len);
-		close(fd_rtc);
-		return;
-	}
-
-	uint8_t *lcd_data_blue = (uint8_t *)malloc(len);
-	if (lcd_data_blue == NULL) {
-		printf("FPS TEST, malloc failed for lcd data blue: %d\n", len);
-		free(lcd_data_red);
-		close(fd_rtc);
-		return;
-	}
-	for (int i = 0; i < len - 1; i += 2) {
-		lcd_data_red[i] = (RED & 0xFF00) >> 8;
-		lcd_data_red[i + 1] = RED & 0x00FF;
-		lcd_data_blue[i] = (BLUE & 0xFF00) >> 8;
-		lcd_data_blue[i + 1] = BLUE & 0x00FF;
-	}
-
-	struct lcddev_area_s area_red;
-	struct lcddev_area_s area_blue;
-	area_red.planeno = 0;
-	area_red.row_start = 0;
-	area_red.row_end = yres - 1;
-	area_red.col_start = 0;
-	area_red.col_end = xres - 1;
-	area_red.stride = 2 * xres;
-	area_red.data = lcd_data_red;
-	area_blue.planeno = 0;
-	area_blue.row_start = 0;
-	area_blue.row_end = yres - 1;
-	area_blue.col_start = 0;
-	area_blue.col_end = xres - 1;
-	area_blue.stride = 2 * xres;
-	area_blue.data = lcd_data_blue;
-
 	sprintf(port, LCD_DEV_PATH, p);
 	fd_lcd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd_lcd < 0) {
 		printf("ERROR: FPS TEST, Failed to open lcd port : %s error:%d\n", port, fd_lcd);
-		free(lcd_data_red);
-		free(lcd_data_blue);
 		close(fd_rtc);
+		return;
+	}
+
+	ret = prepare_frame_buffer(&area_red, RED);
+	if (ret != OK) {
+		printf("ERROR: prepare_frame_buffer failed\n");
+		close(fd_rtc);
+		close(fd_lcd);
+		return;
+	}
+	ret = prepare_frame_buffer(&area_blue, BLUE);
+	if (ret != OK) {
+		printf("ERROR: prepare_frame_buffer failed\n");
+		release_frame_buffer(&area_red);
+		close(fd_rtc);
+		close(fd_lcd);
 		return;
 	}
 
@@ -402,10 +410,10 @@ static void test_fps(void)
 	ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&end_time);
 	//End test
 	
+	release_frame_buffer(&area_red);
+	release_frame_buffer(&area_blue);
 	close(fd_rtc);
 	close(fd_lcd);
-	free(lcd_data_red);
-	free(lcd_data_blue);
 
 	time_t start;
 	time_t end;
@@ -437,6 +445,104 @@ bool is_valid_power(char *power)
 	return true;
 }
 
+static void power_cycle_test()
+{
+	int fd = 0;
+	char port[20] = { '\0' };
+	int p = 0;
+	int power = 0;
+	sprintf(port, LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
+		return;
+	}
+	while (!g_terminate) {
+		ioctl(fd, LCDDEVIO_SETPOWER, power);
+		if (power == 100) {
+			power = 0;
+		} else {
+			power = 100;
+		}
+		usleep(10000); /*Sleep for 100 ms*/
+	}
+	close(fd);
+}
+
+static void frame_change_test()
+{
+	int fd = 0;
+	int p = 0;
+	int ret;
+	char port[20] = { '\0' };
+	struct lcddev_area_s area_red;
+	struct lcddev_area_s area_blue;
+
+	sprintf(port, LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: STRESS TEST, Failed to open lcd port : %s error:%d\n", port, fd);
+		return;
+	}
+
+	ret = prepare_frame_buffer(&area_red, RED);
+	if (ret != OK) {
+		printf("ERROR: prepare_frame_buffer failed\n");
+		close(fd);
+		return;
+	}
+	ret = prepare_frame_buffer(&area_blue, BLUE);
+	if (ret != OK) {
+		printf("ERROR: prepare_frame_buffer failed\n");
+		release_frame_buffer(&area_red);
+		close(fd);
+		return;
+	}
+
+	bool is_red = true;
+	while (!g_terminate) {
+		if (is_red) {
+			if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_red) != OK) {
+				printf("ERROR: PUTAREA ioctl failed, errno: %d\n", get_errno());
+			}
+			is_red = false;
+		} else {
+			if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_blue) != OK) {
+				printf("ERROR: PUTAREA ioctl failed, errno: %d\n", get_errno());
+			}
+			is_red = true;
+		}
+		usleep(100000);	/* Sleep for 100ms */
+	}
+	release_frame_buffer(&area_red);
+	release_frame_buffer(&area_blue);
+	close(fd);
+}
+
+
+static void stress_test(int num)
+{
+	switch (num) {
+		case 0: {
+			task_create("lcd_power_on_off_test", SCHED_PRIORITY_DEFAULT, 4096, power_cycle_test, NULL);	/* Create task for stress test */
+		}
+		break;
+		case 1: {
+			task_create("lcd_frame_repeat_test", SCHED_PRIORITY_DEFAULT, 4096, frame_change_test, NULL);	/* Create task for stress test */
+		}
+		break;
+		case 2: {
+			task_create("lcd_power_on_off_test", SCHED_PRIORITY_DEFAULT, 4096, power_cycle_test, NULL);	/* Create task for stress test */
+			task_create("lcd_frame_repeat_test", SCHED_PRIORITY_DEFAULT, 4096, frame_change_test, NULL);	/* Create task for stress test */
+		}
+		break;
+		default: {
+			printf("ERROR: Invalid argument for stress test\n");
+		}
+		break;
+	}
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -466,6 +572,31 @@ int lcd_test_main(int argc, char *argv[])
 			printf("0 --> LCD Power OFF\n");
 			printf("100 --> LCD Power ON\n");
 		}
+		close(fd);
+		return OK;
+	}
+
+	/* Stress test*/
+	if (argc >= 2 && !strncmp(argv[1], "stress_test", 12)) {
+		if (argc > 2) {
+			if (!strncmp(argv[2], "start", 6)) {
+				if (argc > 3) {
+					struct fb_videoinfo_s vinfo;
+					ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+					xres = vinfo.xres;
+					yres = vinfo.yres;
+					g_terminate = false;
+					stress_test(atoi(argv[3]));
+					goto end;
+				}
+			} else if (!strncmp(argv[2], "stop", 5)) {
+				g_terminate = true;
+				goto end;
+			}
+		}
+		printf("ERROR, Usage: lcd_test stress_test <start> <mode> | <stop>\n");
+		printf("<mode>: 0 = power cycle stress test only, 1 = frame change stress test only, 2 = both stress test simultaneously\n");
+	end:
 		close(fd);
 		return OK;
 	}
