@@ -48,6 +48,6 @@
 void lowlog_dump_resume(void)
 {
 	lowlog_dump_set_store_flag(1);
-	lldbg("\n\n\n==========================================================FROM THIS, lldbg LOG WILL BE SAVED AGAIN!!==========================================================\n\n\n\n");
+	ldpllvdbg("\n\n\n==========================================================FROM THIS, lldbg LOG WILL BE SAVED AGAIN!!==========================================================\n\n\n\n");
 
 }

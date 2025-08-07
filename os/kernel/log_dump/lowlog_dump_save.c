@@ -92,22 +92,23 @@ int lowlog_dump_is_valid_filename(const char *name, int *out_number)
 *************************************************************************************/
 static int lowlog_dump_get_next_filename(char *new_filename) 
 {
+	//TODO : Directory is not being created when it does not exist.
 	DIR *dir = opendir(DIR_PATH);
 	if (!dir) {
 		if (errno == ENOENT) {
 			if (mkdir(DIR_PATH, 0755) != 0) {
-				lldbg("mkdir failed\n");
+				ldpllvdbg("mkdir failed\n");
 				return ERROR;
 			}
 			else {
 				dir = opendir(DIR_PATH);
 				if (!dir) {
-					lldbg("opendir failed\n");
+					ldpllvdbg("opendir failed\n");
 					return ERROR;
 				}
 			}
 		}
-		lldbg("opendir failed\n");
+		ldpllvdbg("opendir failed\n");
 		return ERROR;
     }
     FileEntry entries[CONFIG_LOWLOG_DUMP_MAX_FILES];
@@ -158,27 +159,27 @@ static int lowlog_dump_get_next_filename(char *new_filename)
 *************************************************************************************/
 static int lowlog_dump_save_uncomp(char *filenm)
 {
-	lldbg("\n\n\n===================================crash log file saving start==========================================\n\n\n");
+	ldpllvdbg("\n\n\n===================================crash log file saving start==========================================\n\n\n");
 	char new_filename[MAX_FILENAME_LEN];
 	int ret = lowlog_dump_get_next_filename(new_filename);
 	if (ret < 0) {
-		lldbg("get_next_filename() failed\n");
+		ldpllvdbg("get_next_filename() failed\n");
 		return ERROR;
 	}
 	int fd = open(new_filename, O_WRONLY | O_CREAT | O_TRUNC);
 	if (fd < 0) {
-		lldbg("file open failed\n");
+		ldpllvdbg("file open failed\n");
 		return ERROR;
 	}
 	int log_size = write(fd, lowlog_dump_get_buf(), lowlog_dump_get_size());
 	close(fd);
 	if (log_size < 0) {
-		lldbg("file write failed\n");
+		ldpllvdbg("file write failed\n");
 		return ERROR;
 	}
 	snprintf(filenm, MAX_FILENAME_LEN, "%s", new_filename);
-	lldbg("file write success, count:%d\n", log_size);
-	lldbg("\n\n\n===========================================crash log file saving end=====================================================\n\n\n");
+	ldpllvdbg("file write success, count:%d\n", log_size);
+	ldpllvdbg("\n\n\n===========================================crash log file saving end=====================================================\n\n\n");
 	return log_size;
 }
 
@@ -196,26 +197,26 @@ static int lowlog_dump_save_comp(char *filenm, unsigned char *compressed_buf, un
 		return ERROR;
 	}
 	int ret = lowlog_dump_get_next_filename(new_filename);
-	lldbg("filename is %s\n", new_filename);
+	ldpllvdbg("filename is %s\n", new_filename);
 	if (ret < 0) {
-		lldbg("get_next_filename() failed\n");
+		ldpllvdbg("get_next_filename() failed\n");
 		return ERROR;
 	}
 	int fd = open(new_filename, O_WRONLY | O_CREAT | O_TRUNC);
 	if (fd < 0) {
-		lldbg("file open failed\n");
+		ldpllvdbg("file open failed\n");
 		return ERROR;
 	}
 	ret = write(fd, compressed_buf, compressed_buf_size);
 	if (ret < 0) {
-		lldbg("file write failed\n");
+		ldpllvdbg("file write failed\n");
 		close(fd);
 		return ERROR;
 	}
 	close(fd);
 	snprintf(filenm, MAX_FILENAME_LEN, "%s", new_filename);
-	lldbg("write count: %d\n", ret);
-	lldbg("\n\n==========================================================compress file write end===========================================================\n\n");
+	ldpllvdbg("write count: %d\n", ret);
+	ldpllvdbg("\n\n==========================================================compress file write end===========================================================\n\n");
 	return ret;
 }
 
@@ -227,24 +228,27 @@ static int lowlog_dump_save_comp(char *filenm, unsigned char *compressed_buf, un
 *************************************************************************************/
 static int lowlog_dump_compress_and_save(char *filenm)
 {
-	lldbg("\n\n=====================================================compress start=====================================================\n\n");
+	ldpllvdbg("\n\n=====================================================compress start=====================================================\n\n");
     int malloc_size = lowlog_dump_get_size() / 3;
 	if (kmm_get_largest_freenode_size() < malloc_size) {
 		return ERROR;
 	}
 	unsigned char *compressed_buf = (unsigned char *)kmm_malloc(malloc_size);
 	if (compressed_buf == NULL) {
-		lldbg("kmm_malloc() failed\n");
+		ldpllvdbg("kmm_malloc() failed\n");
 		return ERROR;
 	}
 	if (kmm_get_largest_freenode_size() < REQUIRED_HEAP_FOR_COMPRESS) {
 		return ERROR;
+		/*TODO : A configuration option should be added, and when this option is enabled, 
+		the system should save logs without compression
+		if there is insufficient heap memory available for compression */
 	}
     unsigned int compressed_buf_size = malloc_size;
 	compress_block(compressed_buf, &compressed_buf_size, lowlog_dump_get_buf(), lowlog_dump_get_size());
-	lldbg("compressed buf size: %d\n", compressed_buf_size);
+	ldpllvdbg("compressed buf size: %d\n", compressed_buf_size);
 
-	lldbg("\n==============================================================compress end===============================================================\n");
+	ldpllvdbg("\n==============================================================compress end===============================================================\n");
     
 	lowlog_dump_save_comp(filenm, compressed_buf, compressed_buf_size);
 	free(compressed_buf);
@@ -285,12 +289,14 @@ int lowlog_dump_save(void)
 #ifdef CONFIG_LOWLOG_DUMP_RECORD_TIME
 	clock_t end = clock();
 	double elapsed_time = (double)(end - start) / CLOCKS_PER_SEC;
-	lldbg("\n\nElapsed time: %.6f seconds\n\n", elapsed_time);
+	ldpllvdbg("\n\nElapsed time: %.6f seconds\n\n", elapsed_time);
 	int fd = open("/mnt/lowlog_dump/result", O_CREAT | O_WRONLY | O_APPEND);
 	if (fd < 0) {
 		return ERROR;
 	}
 	char buf[100];
+//TODO : The number of snprintf and write calls should be reduced.
+//TODO : add result checking and error handling about snprintf and write.
 #ifdef CONFIG_LOWLOG_DUMP_COMPRESS
 	snprintf(buf, sizeof(buf), "C: %d -> %d ", log_size, ret);
 	write(fd, buf, strlen(buf));
@@ -298,7 +304,7 @@ int lowlog_dump_save(void)
 	snprintf(buf, sizeof(buf), "U: %d ", ret);
 	write(fd, buf, strlen(buf));
 #endif
-	lldbg("filenm is %s\n", filenm);
+	ldpllvdbg("filenm is %s\n", filenm);
 	snprintf(buf, sizeof(buf), "in %.6fs", elapsed_time);
 	write(fd, buf, strlen(buf));
 	snprintf(buf, sizeof(buf), " (%s)\n", filenm);

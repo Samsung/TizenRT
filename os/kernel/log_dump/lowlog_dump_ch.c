@@ -64,6 +64,7 @@ int lowlog_dump_get_size()
 *   init global buf
 *
 *************************************************************************************/
+//TODO : It may be necessary to remove this function.
 void lowlog_dump_init_buf()
 {
 	for (int i = 0; i < CONFIG_LOWLOG_DUMP_BUF_SIZE; i++) {

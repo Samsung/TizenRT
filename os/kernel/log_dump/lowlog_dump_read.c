@@ -58,22 +58,24 @@ int lowlog_dump_read(char *filename, char *buf, int buf_size)
 	int fd = open(filename, O_RDONLY);
 	int ret;
 	if (fd < 0) {
-		lldbg("file open failed\n");
+		ldpllvdbg("file open failed\n");
 		return ERROR;
 	}
+	/* After reading the logs from the file, all files in DIRPATH should
+	be deleted. Using lowlog_dump_is_valid_filename() will make this easier*/
 	int dir_len = strlen(DIR_PATH);
 	if (strlen(filename) - dir_len - 1 > strlen(PRE_FILENAME_COMP) && !strncmp(filename + dir_len + 1, PRE_FILENAME_COMP, strlen(PRE_FILENAME_COMP))) { //simple check
 		unsigned int malloc_size = CONFIG_LOWLOG_DUMP_BUF_SIZE;
 		unsigned char *compressed_buf = (unsigned char *)kmm_malloc(malloc_size);
 		if (compressed_buf == NULL) {
-			lldbg("kmm_malloc() failed\n");
+			ldpllvdbg("kmm_malloc() failed\n");
             close(fd);
 			return ERROR;
 		}
   		unsigned int compressed_buf_size = malloc_size;
 		ret = read(fd, compressed_buf, compressed_buf_size);
 		if (ret < 0) {
-			lldbg("read failed\n");
+			ldpllvdbg("read failed\n");
 			free(compressed_buf);
             close(fd);
 			return ERROR;
@@ -85,10 +87,10 @@ int lowlog_dump_read(char *filename, char *buf, int buf_size)
 		return tmp_buf_size;
 	}
 	else if (strlen(filename) - dir_len - 1 > strlen(PRE_FILENAME_UNCOMP) && !strncmp(filename + dir_len + 1, PRE_FILENAME_UNCOMP, strlen(PRE_FILENAME_UNCOMP))) { //simple check
-		lldbg("uncompressed file read start\n");
+		ldpllvdbg("uncompressed file read start\n");
 		ret = read(fd, buf, buf_size); //no add null
 		if (ret < 0) {
-			lldbg("read failed\n");
+			ldpllvdbg("read failed\n");
             close(fd);
 			return ERROR;
 		}
@@ -110,7 +112,7 @@ int lowlog_dump_read_recent(char *buf, int buf_size)
 	char most_recent_file_name[MAX_FILENAME_LEN];
 	DIR *dir = opendir(DIR_PATH);
     if (!dir) {
-		lldbg("opendir failed\n");
+		ldpllvdbg("opendir failed\n");
 		return ERROR;
     }
 	char temp_name[MAX_FILENAME_LEN];
@@ -134,7 +136,7 @@ int lowlog_dump_read_recent(char *buf, int buf_size)
     closedir(dir);
 
 	snprintf(most_recent_file_name, MAX_FILENAME_LEN, "%s/%s", DIR_PATH, temp_name);
-	lldbg("most_recent_file_name is %s\n",most_recent_file_name);
+	ldpllvdbg("most_recent_file_name is %s\n",most_recent_file_name);
 	lowlog_dump_read(most_recent_file_name, buf, buf_size);
     return OK;
 }
