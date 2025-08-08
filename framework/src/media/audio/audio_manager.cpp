@@ -866,7 +866,6 @@ audio_manager_result_t create_audio_metadata_json(void)
 	char *jsonString = cJSON_Print(json);
 	if (!jsonString) {
 		meddbg("Failed to print volume level json object\n");
-		cJSON_Delete(muteStatusJsonObj);
 		cJSON_Delete(json);
 		close(fd);
 		return AUDIO_MANAGER_OPERATION_FAIL;
@@ -879,7 +878,6 @@ audio_manager_result_t create_audio_metadata_json(void)
 		medvdbg("To be written JSON string: %s\n, bytes written: %zd\n", jsonString, bytesWritten);
 	}
 	free(jsonString);
-	cJSON_Delete(muteStatusJsonObj);
 	cJSON_Delete(json);
 	close(fd);
 	return ret;
