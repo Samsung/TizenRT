@@ -238,7 +238,7 @@ int sched_lock(void)
 
 		/* Move any tasks in the ready-to-run list to the pending task list
 		 * where they will not be available to run until the scheduler is
-		 * unlocked and nxsched_merge_pending() is called.
+		 * unlocked and sched_mergepending() is called.
 		 */
 
 		sched_merge_prioritized((FAR dq_queue_t *)&g_readytorun, \
