@@ -92,7 +92,6 @@ int lowlog_dump_is_valid_filename(const char *name, int *out_number)
 *************************************************************************************/
 static int lowlog_dump_get_next_filename(char *new_filename) 
 {
-	//TODO : Directory is not being created when it does not exist.
 	DIR *dir = opendir(DIR_PATH);
 	if (!dir) {
 		if (errno == ENOENT) {
@@ -108,8 +107,10 @@ static int lowlog_dump_get_next_filename(char *new_filename)
 				}
 			}
 		}
-		ldpllvdbg("opendir failed\n");
-		return ERROR;
+		else {
+			ldpllvdbg("opendir failed\n");
+			return ERROR;
+		}
     }
     FileEntry entries[CONFIG_LOWLOG_DUMP_MAX_FILES];
     int count = 0;
@@ -289,14 +290,17 @@ int lowlog_dump_save(void)
 #ifdef CONFIG_LOWLOG_DUMP_RECORD_TIME
 	clock_t end = clock();
 	double elapsed_time = (double)(end - start) / CLOCKS_PER_SEC;
-	ldpllvdbg("\n\nElapsed time: %.6f seconds\n\n", elapsed_time);
-	int fd = open("/mnt/lowlog_dump/result", O_CREAT | O_WRONLY | O_APPEND);
+	lldbg("\n\nElapsed time: %.6f seconds\n\n", elapsed_time);
+	char buf[MAX_FILENAME_LEN];
+	snprintf(buf, sizeof(buf), "%s/result", DIR_PATH);
+	
+	int fd = open(buf, O_CREAT | O_WRONLY | O_APPEND);
 	if (fd < 0) {
 		return ERROR;
 	}
-	char buf[100];
 //TODO : The number of snprintf and write calls should be reduced.
 //TODO : add result checking and error handling about snprintf and write.
+//TODO : result size should be limited.
 #ifdef CONFIG_LOWLOG_DUMP_COMPRESS
 	snprintf(buf, sizeof(buf), "C: %d -> %d ", log_size, ret);
 	write(fd, buf, strlen(buf));
@@ -304,7 +308,6 @@ int lowlog_dump_save(void)
 	snprintf(buf, sizeof(buf), "U: %d ", ret);
 	write(fd, buf, strlen(buf));
 #endif
-	ldpllvdbg("filenm is %s\n", filenm);
 	snprintf(buf, sizeof(buf), "in %.6fs", elapsed_time);
 	write(fd, buf, strlen(buf));
 	snprintf(buf, sizeof(buf), " (%s)\n", filenm);

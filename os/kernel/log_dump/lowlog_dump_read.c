@@ -43,6 +43,37 @@
  * Private Functions
  ****************************************************************************/
 
+/*************************************************************************************
+* Name: lowlog_dump_delete
+*
+* Description: 
+* 	delete all lowlog_dump files.
+*************************************************************************************/
+int lowlog_dump_delete(void)
+{
+	DIR *dir = opendir(DIR_PATH);
+	if (!dir) {
+		return ERROR;
+    }
+	FileEntry entries[CONFIG_LOWLOG_DUMP_MAX_FILES];
+    struct dirent *entry;
+	char full_filename[MAX_FILENAME_LEN];
+    while ((entry = readdir(dir)) != NULL) { //remove all lowlog dump files.
+        int num;
+        if (lowlog_dump_is_valid_filename(entry->d_name, &num) == 0K) {
+			snprintf(full_filename, MAX_FILENAME_LEN, "%s/", DIR_PATH);
+			strncat(full_filename, entry->d_name, MAX_FILENAME_LEN - strlen(full_filename) - 1);
+			if (unlink(full_filename)) {
+				lldbg("unlink failed\n");
+				closedir(dir);
+				return ERROR;
+			}
+        }
+	}
+	closedir(dir);
+	return OK;
+
+}
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -84,6 +115,7 @@ int lowlog_dump_read(char *filename, char *buf, int buf_size)
 		decompress_block(buf, &tmp_buf_size, compressed_buf, &compressed_buf_size);
 		free(compressed_buf);
         close(fd);
+		lowlog_dump_delete();
 		return tmp_buf_size;
 	}
 	else if (strlen(filename) - dir_len - 1 > strlen(PRE_FILENAME_UNCOMP) && !strncmp(filename + dir_len + 1, PRE_FILENAME_UNCOMP, strlen(PRE_FILENAME_UNCOMP))) { //simple check
@@ -95,6 +127,7 @@ int lowlog_dump_read(char *filename, char *buf, int buf_size)
 			return ERROR;
 		}
         close(fd);
+		lowlog_dump_delete();
 		return ret;
 	}
 	return ERROR;
