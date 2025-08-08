@@ -61,6 +61,7 @@
 #include <errno.h>
 
 #define LCD_DEV_PATH "/dev/lcd%d"
+#define LCD_DEV_PORT 0
 
 #define RED   0xF800
 #define WHITE 0xFFFF
@@ -86,7 +87,6 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 	struct lcddev_area_s area;
 	char port[20] = { '\0' };
 	int fd = 0;
-	int p = 0;
 	size_t len;
 	len = xres * yres * 2 + 1;
 	uint8_t *lcd_data = (uint8_t *)malloc(len);
@@ -94,7 +94,7 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 		printf("malloc failed for lcd data : %d\n", len);
 		return;
 	}
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
@@ -113,7 +113,9 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 	}
 
 	area.data = lcd_data;
-	ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area);
+	if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area) < 0) {
+		 printf("Fail to call LCD PUTAREA(errno %d)", get_errno());
+	}
 	close(fd);
 	free(lcd_data);
 }
@@ -122,30 +124,33 @@ static void test_init(void)
 {
 	int ret;
 	int fd = 0;
-	int p = 0;
 	char port[20] = { '\0' };
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
-	ioctl(fd, LCDDEVIO_INIT, &ret);
+	if (ioctl(fd, LCDDEVIO_INIT, &ret) < 0) {
+		printf("Fail to call LCD INIT(errno %d)", get_errno());
+	}
 	close(fd);
 }
 
 static void test_orientation(void)
 {
 	int fd = 0;
-	int p = 0;
 	char port[20] = { '\0' };
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 
 	sleep(1);
 	/* resolution should be swapped now as orientation is changed */
@@ -160,32 +165,52 @@ static void test_orientation(void)
 	sleep(1);
 	/* resetting original orientation - the one defined in config */
 #if defined(CONFIG_LCD_PORTRAIT)
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_PORTRAIT);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_PORTRAIT) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 #elif defined(CONFIG_LCD_LANDSCAPE)
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 #elif defined(CONFIG_LCD_RLANDSCAPE)
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RLANDSCAPE) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 #elif defined(CONFIG_LCD_RPORTRAIT)
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RPORTRAIT);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_RPORTRAIT) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 #else
-	ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE);
+	if (ioctl(fd, LCDDEVIO_SETORIENTATION, LCD_LANDSCAPE) < 0) {
+		printf("Fail to call LCD SETORIENTATION(errno %d)", get_errno());
+		goto cleanup;
+	}
 #endif
+
+cleanup:
 	close(fd);
 }
 
 static void test_put_area_pattern(void)
 {
 	int fd = 0;
-	int p = 0;
 	char port[20] = { '\0' };
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
 	struct fb_videoinfo_s vinfo;
-	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+	if (ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo) < 0) {
+		printf("Fail to call LCD GETVIDEOINFO(errno %d)", get_errno());
+		close(fd);
+		return;
+	}
 	xres = vinfo.xres;
 	yres = vinfo.yres;
 	printf("xres : %d, yres:%d\n", xres, yres);
@@ -216,18 +241,21 @@ static unsigned short generate_color_code(int red, int green, int blue)
 static void test_bit_map(void)
 {
 	int fd = 0;
-	int p = 0;
 	char port[20] = { '\0' };
 	struct lcddev_area_s area;
 	size_t len;
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
 	struct fb_videoinfo_s vinfo;
-	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+	if (ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo) < 0) {
+		printf("Fail to call LCD GETVIDEOINFO(errno %d)", get_errno());
+		close(fd);
+		return;
+	}
 	xres = vinfo.xres;
 	yres = vinfo.yres;
 	len = xres * yres * 2 + 1;
@@ -257,7 +285,9 @@ static void test_bit_map(void)
 			}
 		}
 	}
-	ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area);
+	if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area) < 0) {
+		printf("Fail to call LCD PUTAREA(errno %d)", get_errno());
+	}
 	close(fd);
 	free(lcd_data);
 }
@@ -265,18 +295,21 @@ static void test_bit_map(void)
 static void test_quad(void)
 {
 	int fd = 0;
-	int p = 0;
 	char port[20] = {'\0'};
 	struct lcddev_area_s area;
 	size_t len;
-	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
 		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
 		return;
 	}
 	struct fb_videoinfo_s vinfo;
-	ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo);
+	if (ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo) < 0) {
+		printf("Fail to call LCD GETVIDEOINFO(errno %d)", get_errno());
+		close(fd);
+		return;
+	}
 	xres = vinfo.xres;
 	yres = vinfo.yres;
 	len = xres * yres * 2 + 1;
@@ -316,7 +349,9 @@ static void test_quad(void)
 			lcd_data[pixel_index + 1] = color & 0x00FF;
 		}
 	}
-	ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area);
+	if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area) < 0) {
+		printf("Fail to call LCD PUTAREA(errno %d)", get_errno());
+	}
 	close(fd);
 	free(lcd_data);
 }
@@ -325,7 +360,6 @@ static void test_fps(void)
 {
 	int fd_rtc = 0;
 	int fd_lcd = 0;
-	int p = 0;
 	char port[20] = { '\0' };
 	size_t len;
 
@@ -374,7 +408,7 @@ static void test_fps(void)
 	area_blue.stride = 2 * xres;
 	area_blue.data = lcd_data_blue;
 
-	sprintf(port, LCD_DEV_PATH, p);
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd_lcd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd_lcd < 0) {
 		printf("ERROR: FPS TEST, Failed to open lcd port : %s error:%d\n", port, fd_lcd);
@@ -389,24 +423,31 @@ static void test_fps(void)
 
 	bool is_red = true;
 	//Start Test
-	ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&start_time);
+	if (ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&start_time) < 0) {
+		printf("Fail to call RTC READ TIME(errno %d)", get_errno());
+		goto cleanup;
+	}
 	for (int itr = 0; itr < EXAMPLE_LCD_FPS_TEST; itr++) {
 		if (is_red) {
-			ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_red);
+			if (ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_red) < 0) {
+				printf("Fail to call LCD PUTAREA(errno %d)", get_errno());
+				goto cleanup;
+			}
 			is_red = false;
 		} else {
-			ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_blue);
+			if (ioctl(fd_lcd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area_blue) < 0) {
+				printf("Fail to call LCD PUTAREA(errno %d)", get_errno());
+				goto cleanup;
+			}
 			is_red = true;
 		}
 	}
-	ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&end_time);
+	if (ioctl(fd_rtc, RTC_RD_TIME, (unsigned long)&end_time) < 0) {
+		printf("Fail to call RTC READ TIME(errno %d)", get_errno());
+		goto cleanup;
+	}
 	//End test
 	
-	close(fd_rtc);
-	close(fd_lcd);
-	free(lcd_data_red);
-	free(lcd_data_blue);
-
 	time_t start;
 	time_t end;
 	start = mktime((FAR struct tm *)&start_time);
@@ -420,6 +461,12 @@ static void test_fps(void)
 	} else {
 		printf("FPS calculation failed! Please increase the number of frames execution using CONFIG_EXAMPLE_LCD_FPS_TEST!\n");
 	}
+
+cleanup:
+	close(fd_rtc);
+	close(fd_lcd);
+	free(lcd_data_red);
+	free(lcd_data_blue);
 }
 
 bool is_valid_power(char *power)
@@ -437,37 +484,71 @@ bool is_valid_power(char *power)
 	return true;
 }
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int lcd_test_main(int argc, char *argv[])
-#endif
+static int lcd_get_info(void)
 {
-	printf("=== LCD demo ===\n");
-	int count = 0;
+	int ret = OK;
 	int fd = 0;
-	int p = 0;
-	char port[20] = { '\0' };
-
-	sprintf(port, LCD_DEV_PATH, p);
+	char port[20] = {'\0'};
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
-		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return ERROR;	
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
 	}
 
-	/* LCD Power test */
-	if (argc >= 2 && !strncmp(argv[1], "power", 5)) {
-		if (argc > 2 && is_valid_power(argv[2])) {
-			ioctl(fd, LCDDEVIO_SETPOWER, atoi(argv[2]));
-		} else {
-			printf("ERROR: Value of power should be int in range [0, 100]\n");
-			printf("Usage: lcd_test power <value>\n");
-			printf("0 --> LCD Power OFF\n");
-			printf("100 --> LCD Power ON\n");
-		}
+	struct lcd_info_s lcdinfo;
+	ret = ioctl(fd, LCDDEVIO_GETLCDINFO, (unsigned long)(uintptr_t)&lcdinfo);
+	if (ret != OK) {
+		printf("Fail to LCDDEVIO_GETLCDINFO %s, errno:%d\n", port, get_errno());
 		close(fd);
-		return OK;
+		return ERROR;
+	}
+
+	printf("LCD HEIGHT MM: %d\n", lcdinfo.lcd_height_mm);
+	printf("LCD WIDTH MM: %d\n", lcdinfo.lcd_width_mm);
+	printf("LCD SIZE INCH: %2f\n", lcdinfo.lcd_size_inch);
+	printf("LCD DPI: %2f\n", lcdinfo.lcd_dpi);
+
+	close(fd);
+	return ret;
+}
+
+static void show_usage(void)
+{
+	printf("usage: lcd_test <command args(optional)>\n");
+	printf("    basic             : Execute basic lcd_test\n");
+	printf("    lcdinfo           : Print LCD basic info like width, height, DPI \n");
+	printf("    power <value>     : Sets the brightness to given value\n");
+}
+
+static int power_test(int power)
+{
+	int count = 0;
+	int fd = 0;
+	char port[20] = { '\0' };
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
+	}
+	if (ioctl(fd, LCDDEVIO_SETPOWER, power) < 0) {
+		printf("Fail to call LCD SETPOWER(errno %d)", get_errno());
+	}
+	close(fd);
+	return OK;
+}
+
+static int lcd_basic_test(void)
+{
+	int count = 0;
+	int fd = 0;
+	char port[20] = { '\0' };
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
 	}
 
 	while (count < 5) {
@@ -476,14 +557,43 @@ int lcd_test_main(int argc, char *argv[])
 		sleep(3);
 		test_bit_map();
 		sleep(3);
-		ioctl(fd, LCDDEVIO_SETPOWER, 0);
+		power_test(0);
 		sleep(15);
-		ioctl(fd, LCDDEVIO_SETPOWER, 100);
+		power_test(100);
 		count++;
 		printf("count :%d\n", count);
 	}
 	test_fps();
 	close(fd);
+	return OK;
+}
 
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int lcd_test_main(int argc, char *argv[])
+#endif
+{
+
+	/* LCD Power test */
+	if (argc == 3 && !strncmp(argv[1], "power", 6)) {
+		if (is_valid_power(argv[2])) {
+			return power_test(atoi(argv[2]));
+		} else {
+			printf("ERROR: Value of power should be int in range [0, 100]\n");
+			printf("Usage: lcd_test power <value>\n");
+			printf("0 --> LCD Power OFF\n");
+			printf("100 --> LCD Power ON\n");
+			return ERROR;
+		}
+	}
+	if (argc == 2) {
+		if (!strncmp(argv[1], "lcdinfo", 8)) {
+			return lcd_get_info();
+		} else if (!strncmp(argv[1], "basic", 6)) {
+			return lcd_basic_test();
+		}
+	}
+	show_usage();
 	return OK;
 }
