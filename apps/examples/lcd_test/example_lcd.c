@@ -437,6 +437,36 @@ bool is_valid_power(char *power)
 	return true;
 }
 
+static int lcd_get_info(void)
+{
+	int ret = OK;
+	int fd = 0;
+	int p = 0;
+	char port[20] = {'\0'};
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
+		return ERROR;
+	}
+
+	struct lcd_info_s lcdinfo;
+	ret = ioctl(fd, LCDDEVIO_GETLCDINFO, (unsigned long)(uintptr_t)&lcdinfo);
+	if (ret != OK) {
+		printf("Fail to LCDDEVIO_GETLCDINFO %s, errno:%d\n", port, get_errno());
+		close(fd);
+		return ERROR;
+	}
+
+	printf("LCD HEIGHT MM: %d\n", lcdinfo.lcd_height_mm);
+	printf("LCD WIDTH MM: %d\n", lcdinfo.lcd_width_mm);
+	printf("LCD SIZE INCH: %2f\n", lcdinfo.lcd_size_inch);
+	printf("LCD DPI: %2f\n", lcdinfo.lcd_dpi);
+
+	close(fd);
+	return ret;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -469,7 +499,10 @@ int lcd_test_main(int argc, char *argv[])
 		close(fd);
 		return OK;
 	}
-
+	/* LCD get Info */
+	if (argc == 2 && !strncmp(argv[1], "lcdinfo", 5)) {
+		return lcd_get_info();
+	}
 	while (count < 5) {
 		test_put_area_pattern();
 		test_quad();
