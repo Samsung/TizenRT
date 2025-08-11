@@ -687,7 +687,7 @@ static int imx_interrupt(int irq, void *context, void *arg)
       if (usr1 & UART_USR1_TRDY &&
           (imx_serialin(priv, UART_UCR1_OFFSET) & UART_UCR1_TXEMPTYEN) != 0)
         {
-          uart_xmitchars(dev);
+          (void)uart_xmitchars(dev);
         }
 
       /* Keep track of how many times we do this in case there
