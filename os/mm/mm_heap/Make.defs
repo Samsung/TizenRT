@@ -69,6 +69,10 @@ CSRCS += mm_heapinfo_group.c
 endif
 endif
 
+ifeq ($(CONFIG_MM_DELAYED_FREE_WORKER),y)
+CSRCS += mm_delayed_free.c
+endif
+
 # Add the core heap directory to the build
 
 DEPPATH += --dep-path mm_heap
