@@ -73,48 +73,6 @@ void rtk_core1_power_off(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, val);
 }
 
-bool vPortGateOtherCore(void)
-{
-#if ( defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1 )
-	BaseType_t ulCoreID = up_cpu_index();
-	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
-	CA32_TypeDef *ca32 = CA32_BASE;
-	/* Gating Flag should be checked here, it should only exists under 3 states:
-	0: No flash operation / Just completed a flash operation
-	1: A gating request has been sent out to another core, further checking shall be done at the while condition below
-	2: The target core is already in gating state, proceed for flash operation
-	*/
-	if (!up_get_gating_flag_status(ulCoreID)) {
-		up_set_gating_flag_status(ulCoreID, 1);
-
-		up_cpu_gating(ulCoreID);
-	}
-  /* We already initiated a gating request previously, skip sending duplicated request */
-  /* Before gating the other CPU, we have to check for pending pause request, as the target core
-   * might have entered spinlock to wait for current core to pause itself. And currently
-   * we are in a interrupt disabled status here, thus we should exit and handle
-   * pause request first, before we proceed to gate another cpu for executing
-   * flash operation
-   */
-	while ((up_get_gating_flag_status(ulCoreID) == 1) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID)) {
-		/* If there is a pause request, we should handle it first */
-		if (up_cpu_pausereq(up_cpu_index())) {
-			return false;
-		} else if (up_is_cpu_paused(ulCoreID)) {
-			break;
-		}
-	}
-	return true;
-#endif
-}
-
-void vPortWakeOtherCore(void)
-{
-	BaseType_t ulCoreID = up_cpu_index();
-	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
-	up_set_gating_flag_status(ulCoreID, 0);
-}
-
 void vPortSecondaryOff(void)
 {
 	int state;
