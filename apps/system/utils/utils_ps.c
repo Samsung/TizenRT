@@ -68,6 +68,9 @@
 #define STATENAMES_ARRAY_SIZE (sizeof(utils_statenames) / sizeof(utils_statenames[0]))
 #define PS_BUFLEN 128
 
+#define IRQ_BUFLEN 64
+
+
 static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
@@ -157,8 +160,11 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 int utils_ps(int argc, char **args)
 {
 	int ncpus = sched_getcpucount();
-#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
+	char *filepath;
+	char buf[IRQ_BUFLEN];
+
+#if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	bool is_mounted;
 
 	is_mounted = false;
@@ -207,6 +213,17 @@ int utils_ps(int argc, char **args)
 	printf("------|------|------|---------|----|----------|-----|----\n");
 	/* Print information for each task/thread */
 	utils_proc_pid_foreach(ps_read_proc, NULL);
+
+	printf("\n");
+	asprintf(&filepath, "%s/%s", PROCFS_MOUNT_POINT, "irqs/status");
+	ret = utils_readfile(filepath, buf, IRQ_BUFLEN, NULL, NULL);
+	free(filepath);
+
+	if (ret < 0) {
+		printf("Failed to read %s\n", filepath);
+		return ERROR;
+	}
+	printf("\n");
 
 out:
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
