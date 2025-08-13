@@ -29,6 +29,7 @@
 #include <media/FileInputDataSource.h>
 #include <media/MediaUtils.h>
 #include <audio/SoundManager.h>
+#include "../PlayerController/PlayerController.h"
 #include <string.h>
 #include <debug.h>
 #include <fcntl.h>
@@ -71,6 +72,7 @@ public:
 
 private:
 	MediaPlayer mp;
+	int mPlayerId;
 	shared_ptr<FocusRequest> mFocusRequest;
 	vector<string> mList;
 	unsigned int mNumContents;
@@ -262,6 +264,8 @@ bool SoundPlayer::init(int argc, char *argv[])
 		printf("MediaPlayer create failed res : %d\n", res);
 		return false;
 	}
+	mPlayerId = PlayerController::getInstance().registerPlayer(&mp, (stream_policy_t)(atoi(argv[4])));
+	printf("Registered player with ID: %d\n", mPlayerId);
 	mp.setObserver(shared_from_this());
 
 	mVolume = atoi(argv[2]);
