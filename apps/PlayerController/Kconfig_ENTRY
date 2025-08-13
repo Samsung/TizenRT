@@ -1,0 +1,3 @@
+config ENTRY_PLAYERCONTROLLER
+	bool "Player Controller Application"
+	depends on EXAMPLES_PLAYERCONTROLLER
