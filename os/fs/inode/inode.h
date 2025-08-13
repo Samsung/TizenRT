@@ -79,6 +79,7 @@
 #define   FSNODEFLAG_TYPE_NAMEDSEM 0x00000004	/*   Named semaphore          */
 #define   FSNODEFLAG_TYPE_MQUEUE   0x00000005	/*   Message Queue            */
 #define   FSNODEFLAG_TYPE_SHM      0x00000006	/*   Shared memory region     */
+#define   FSNODEFLAG_TYPE_MTD      0x00000007	/*   Named MTD driver         */
 #define FSNODEFLAG_DELETED         0x00000008	/* Unlinked                   */
 
 #define INODE_IS_TYPE(i, t) \
@@ -92,6 +93,7 @@
 #define INODE_IS_NAMEDSEM(i)  INODE_IS_TYPE(i, FSNODEFLAG_TYPE_NAMEDSEM)
 #define INODE_IS_MQUEUE(i)    INODE_IS_TYPE(i, FSNODEFLAG_TYPE_MQUEUE)
 #define INODE_IS_SHM(i)       INODE_IS_TYPE(i, FSNODEFLAG_TYPE_SHM)
+#define INODE_IS_MTD(i)       INODE_IS_TYPE(i, FSNODEFLAG_TYPE_MTD)
 
 #define INODE_GET_TYPE(i)     ((i)->i_flags & FSNODEFLAG_TYPE_MASK)
 #define INODE_SET_TYPE(i, t) \
@@ -105,6 +107,7 @@
 #define INODE_SET_NAMEDSEM(i) INODE_SET_TYPE(i, FSNODEFLAG_TYPE_NAMEDSEM)
 #define INODE_SET_MQUEUE(i)   INODE_SET_TYPE(i, FSNODEFLAG_TYPE_MQUEUE)
 #define INODE_SET_SHM(i)      INODE_SET_TYPE(i, FSNODEFLAG_TYPE_SHM)
+#define INODE_SET_MTD(i)      INODE_SET_TYPE(i, FSNODEFLAG_TYPE_MTD)
 
 /* Mountpoint fd_flags values */
 
