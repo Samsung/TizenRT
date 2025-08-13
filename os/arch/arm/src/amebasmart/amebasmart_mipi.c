@@ -280,7 +280,9 @@ static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
 	DelayUs(1);
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
 
-	memset(rx_data_buff, 0, 5);
+	if (rx_data_ptr) {
+		memset(rx_data_ptr, 0, rx_data_len);
+	}
 }
 
 static void amebasmart_mipidsi_isr(void)
@@ -310,9 +312,15 @@ static void amebasmart_mipidsi_isr(void)
 		amebasmart_mipidsi_rcmd_decode(MIPIx, 2);
 	}
 
-	if (reg_val & (MIPI_BIT_RCMD1 | MIPI_BIT_RCMD2 | MIPI_BIT_RCMD3)){
-		mipillvdbg("RCMD: %x %x %x %x %x\n", rx_data_buff[0], rx_data_buff[1], rx_data_buff[2], rx_data_buff[3], rx_data_buff[4]);
-	}
+ 	if (reg_val & (MIPI_BIT_RCMD1 | MIPI_BIT_RCMD2 | MIPI_BIT_RCMD3)){
+		if (rx_data_ptr) {
+			mipillvdbg("RCMD ");
+			for (int i = 0; i < rx_data_len; i ++) {
+				mipillvdbg("%x ", rx_data_ptr[i]);
+			}
+			mipillvdbg("\n" );
+		}
+ 	}
 
 	/* A timeout was encountered on the DPHY */
 	if (reg_val & (MIPI_BIT_LPRX_TIMEOUT | MIPI_BIT_LPTX_TIMEOUT)) {
