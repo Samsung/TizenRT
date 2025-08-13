@@ -231,29 +231,6 @@ typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
 #endif
 
-#if defined(CONFIG_ARCH_MIPS)
-/* Macro gets return address of malloc API. */
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("sw $ra, %0" : "=m" (caller_retaddr)); \
-	} while (0);
-#elif defined(CONFIG_ARCH_ARM)
-/* This macro should be placed at the first of the function.
- * If no, it is better to use "__builtin_return_address(0)" instead.
- */
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("mov %0,lr\n" : "=r" (caller_retaddr));\
-	} while (0);
-#elif defined(CONFIG_ARCH_XTENSA)
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("mov %0,a0\n" : "=&r" (caller_retaddr));\
-	} while (0);
-#else
-#error Unknown CONFIG_ARCH option, malloc debug feature wont work.
-#endif
-
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* This macro updates a caller return address in the 'mem' node.
  * This will show the real owner of the 'mem' even it's allocated through wrapping APIs of malloc.
