@@ -437,13 +437,46 @@ bool is_valid_power(char *power)
 	return true;
 }
 
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int lcd_test_main(int argc, char *argv[])
-#endif
+static int lcd_get_info(void)
 {
-	printf("=== LCD demo ===\n");
+	int ret = OK;
+	int fd = 0;
+	int p = 0;
+	char port[20] = {'\0'};
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
+	}
+
+	struct lcd_info_s lcdinfo;
+	ret = ioctl(fd, LCDDEVIO_GETLCDINFO, (unsigned long)(uintptr_t)&lcdinfo);
+	if (ret != OK) {
+		printf("Fail to LCDDEVIO_GETLCDINFO %s, errno:%d\n", port, get_errno());
+		close(fd);
+		return ERROR;
+	}
+
+	printf("LCD HEIGHT MM: %d\n", lcdinfo.lcd_height_mm);
+	printf("LCD WIDTH MM: %d\n", lcdinfo.lcd_width_mm);
+	printf("LCD SIZE INCH: %2f\n", lcdinfo.lcd_size_inch);
+	printf("LCD DPI: %2f\n", lcdinfo.lcd_dpi);
+
+	close(fd);
+	return ret;
+}
+
+static void show_usage(void)
+{
+	printf("usage: lcd_test <command args(optional)>\n");
+	printf("    basic             : Execute basic lcd_test\n");
+	printf("    lcdinfo           : Print LCD basic info like width, height, DPI \n");
+	printf("    power <value>     : Sets the brightness to given value\n");
+}
+
+static int lcd_basic_test(void)
+{
 	int count = 0;
 	int fd = 0;
 	int p = 0;
@@ -452,22 +485,8 @@ int lcd_test_main(int argc, char *argv[])
 	sprintf(port, LCD_DEV_PATH, p);
 	fd = open(port, O_RDWR | O_SYNC, 0666);
 	if (fd < 0) {
-		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, fd);
-		return ERROR;	
-	}
-
-	/* LCD Power test */
-	if (argc >= 2 && !strncmp(argv[1], "power", 5)) {
-		if (argc > 2 && is_valid_power(argv[2])) {
-			ioctl(fd, LCDDEVIO_SETPOWER, atoi(argv[2]));
-		} else {
-			printf("ERROR: Value of power should be int in range [0, 100]\n");
-			printf("Usage: lcd_test power <value>\n");
-			printf("0 --> LCD Power OFF\n");
-			printf("100 --> LCD Power ON\n");
-		}
-		close(fd);
-		return OK;
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
 	}
 
 	while (count < 5) {
@@ -484,6 +503,56 @@ int lcd_test_main(int argc, char *argv[])
 	}
 	test_fps();
 	close(fd);
+	return OK;
+}
+
+static int power_test(int power)
+{
+	int count = 0;
+	int fd = 0;
+	int p = 0;
+	char port[20] = { '\0' };
+	sprintf(port, LCD_DEV_PATH, p);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
+	}
+	ioctl(fd, LCDDEVIO_SETPOWER, power);
+	close(fd);
+	return OK;
+}
+
+#ifdef CONFIG_BUILD_KERNEL
+int main(int argc, FAR char *argv[])
+#else
+int lcd_test_main(int argc, char *argv[])
+#endif
+{
+
+	if (argc <= 1 || !strncmp(argv[1], "-h", 2) || !strncmp(argv[1], "--help", 6)) {
+		show_usage();
+		return OK;
+	}
+
+	/* LCD Power test */
+	if (argc >= 2 && !strncmp(argv[1], "power", 5)) {
+		if (argc > 2 && is_valid_power(argv[2])) {
+			return power_test(atoi(argv[2]));
+		} else {
+			printf("ERROR: Value of power should be int in range [0, 100]\n");
+			printf("Usage: lcd_test power <value>\n");
+			printf("0 --> LCD Power OFF\n");
+			printf("100 --> LCD Power ON\n");
+		}
+	}
+	if (argc == 2) {
+		if (!strncmp(argv[1], "lcdinfo", 7)) {
+			return lcd_get_info();
+		} else if (!strncmp(argv[1], "basic", 5)) {
+			return lcd_basic_test();
+		}
+	}
 
 	return OK;
 }
