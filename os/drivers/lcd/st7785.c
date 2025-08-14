@@ -20,6 +20,19 @@
 #include <mipi_lcd.h>
 #include <tinyara/lcd/lcd_dev.h>
 #include <debug.h>
+#include <stdbool.h>
+
+static bool check_static_init_code(void) {
+	#if defined(CONFIG_LCD_STATIC_INIT_AVD_2701) && !defined(CONFIG_LCD_STATIC_INIT_AVD_NB01) && !defined(CONFIG_LCD_STATIC_INIT_HLT_A196) && !defined(CONFIG_LCD_STATIC_INIT_TEC_181A) \
+	|| !defined(CONFIG_LCD_STATIC_INIT_AVD_2701) && defined(CONFIG_LCD_STATIC_INIT_AVD_NB01) && !defined(CONFIG_LCD_STATIC_INIT_HLT_A196) && !defined(CONFIG_LCD_STATIC_INIT_TEC_181A) \
+	|| !defined(CONFIG_LCD_STATIC_INIT_AVD_2701) && !defined(CONFIG_LCD_STATIC_INIT_AVD_NB01) && defined(CONFIG_LCD_STATIC_INIT_HLT_A196) && !defined(CONFIG_LCD_STATIC_INIT_TEC_181A) \
+	|| !defined(CONFIG_LCD_STATIC_INIT_AVD_2701) && !defined(CONFIG_LCD_STATIC_INIT_AVD_NB01) && !defined(CONFIG_LCD_STATIC_INIT_HLT_A196) && defined(CONFIG_LCD_STATIC_INIT_TEC_181A)
+	return true;
+	#elif !defined(CONFIG_LCD_STATIC_INIT_AVD_2701) && !defined(CONFIG_LCD_STATIC_INIT_AVD_NB01) && !defined(CONFIG_LCD_STATIC_INIT_HLT_A196) && !defined(CONFIG_LCD_STATIC_INIT_TEC_181A)
+	#error "At least one LCD init code config should be set in the build configuration.\n"
+	#endif
+	return false;
+}
 
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 {
@@ -29,6 +42,20 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 	uint8_t length = sizeof(rxbuf) / sizeof(rxbuf[0]);
 	uint32_t combined_id;
 	int status;
+
+	/* Only one config is set in the build configuration. If it's true, use that init code. Otherwise, check vendor id. */
+	if (check_static_init_code() == true) {
+	#if defined(CONFIG_LCD_STATIC_INIT_AVD_2701)
+		return send_init_cmd(priv, lcd_init_cmd_g_avd_2701);
+	#elif defined(CONFIG_LCD_STATIC_INIT_AVD_NB01)
+		return send_init_cmd(priv, lcd_init_cmd_g_avd_nb01);
+	#elif defined(CONFIG_LCD_STATIC_INIT_HLT_A196)
+		return send_init_cmd(priv, lcd_init_cmd_g_hlt_a196);
+	#elif defined(CONFIG_LCD_STATIC_INIT_TEC_181A)
+		return send_init_cmd(priv, lcd_init_cmd_g_tec_181a);
+	#endif
+	}
+
 	status = set_return_packet_len(priv, length);
 	if (status != OK) {
 		lcddbg("Fail set return pkt len!\n");
