@@ -92,6 +92,11 @@ FAR char *get_environ_ptr(size_t *envsize)
 	FAR struct task_group_s *group;
 	char *ret;
 
+	if (!envsize) {
+		set_errno(EINVAL);
+		return NULL;
+	}
+
 	group = ptcb->group;
 	if (group && group->tg_envp) {
 		*envsize = group->tg_envsize;
