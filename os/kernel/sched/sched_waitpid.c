@@ -208,7 +208,6 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	DEBUGASSERT(stat_loc);
 
-
 	/* None of the options are supported */
 
 	if (options != 0) {
@@ -316,6 +315,10 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	int ret;
 
 	DEBUGASSERT(stat_loc);
+	if (!stat_loc) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* None of the options are supported */
 
