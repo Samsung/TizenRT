@@ -578,13 +578,16 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 		audio_manager_result_t result = pause_audio_stream_out(mStreamInfo->id);
 		if (result != AUDIO_MANAGER_SUCCESS) {
 			meddbg("pause_audio_stream_in failed ret : %d\n", result);
-		} else {
-			result = reset_audio_stream_out(mStreamInfo->id);
-			if (result != AUDIO_MANAGER_SUCCESS) {
-				meddbg("reset_audio_stream_out failed, stream_id: %lu, ret : %d\n", mStreamInfo->id, result);
+			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+			if (notify) {
+				notifySync();
 			}
+			return;
 		}
+
+		result = reset_audio_stream_out(mStreamInfo->id);
 		if (result != AUDIO_MANAGER_SUCCESS) {
+			meddbg("reset_audio_stream_out failed, stream_id: %lu, ret : %d\n", mStreamInfo->id, result);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 			if (notify) {
 				notifySync();
