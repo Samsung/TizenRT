@@ -408,17 +408,16 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	audio_manager_result_t res;
 
 	if (mCurState == PLAYER_STATE_PAUSED) {
-		res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
-		if (res != AUDIO_MANAGER_SUCCESS) {
-			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. ret: %d\n", res);
-			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-			return notifySync();
-		}
-
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_audio_stream_out fail\n");
+			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+			return notifySync();
+		}
+		res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. res: %d\n", res);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 			return notifySync();
 		}
