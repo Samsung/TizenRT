@@ -446,7 +446,17 @@ static int littlefs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	fs = inode->i_private;
 	drv = fs->drv;
 	DEBUGASSERT(drv && drv->i_private);
-	return MTD_IOCTL((FAR struct mtd_dev_s *)drv->i_private, cmd, arg);
+
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_IOCTL(drv->u.i_mtd, cmd, arg);
+	} else {
+		if (drv->u.i_bops->ioctl != NULL) {
+			ret = drv->u.i_bops->ioctl(drv, cmd, arg);
+		} else {
+			ret = -ENOTTY;
+		}
+	}
+return ret;
 }
 
 /****************************************************************************
@@ -753,11 +763,14 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BREAD((struct mtd_dev_s *)dev->mtd, block, size, buffer);
-	if (ret >= 0) {
-		return OK;
+
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_BREAD(drv->u.i_mtd, block, size, buffer);
+	} else {
+		ret = drv->u.i_bops->read(drv, buffer, block, size);
 	}
-	return ret;
+
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -776,11 +789,14 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BWRITE((struct mtd_dev_s *)dev->mtd, block, size, buffer);
-	if (ret >= 0) {
-		return OK;
+
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_BREAD(drv->u.i_mtd, block, size, buffer);
+	} else {
+		ret = drv->u.i_bops->read(drv, buffer, block, size);
 	}
-	return ret;
+
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -791,19 +807,19 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 {
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct inode *drv = fs->drv;
-	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
 	int ret = OK;
 
 	DEBUGASSERT(drv && drv->i_private);
-	FAR struct mtd_geometry_s *geo = &fs->geo;
-	size_t size = c->block_size / geo->erasesize;
-	block = block * c->block_size / geo->erasesize;
-	ret = MTD_ERASE((struct mtd_dev_s *)dev->mtd, block, size);
 
-	if (ret >= 0) {
-		return OK;
+	if (INODE_IS_MTD(drv)) {
+		FAR struct mtd_geometry_s *geo = &fs->geo;
+		size_t size = c->block_size / geo->erasesize;
+
+		block = block * c->block_size / geo->erasesize;
+		ret = MTD_ERASE(drv->u.i_mtd, block, size);
 	}
-	return ret;
+
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -817,12 +833,20 @@ static int littlefs_sync_block(FAR const struct lfs_config *c)
 	int ret;
 
 	DEBUGASSERT(drv && drv->i_private);
-	//ret = MTD_IOCTL((struct mtd_dev_s *)drv->i_private, BIOC_FLUSH, 0);
+	/* BIOC_FLUSH is currently not supported, after adding support enable this
 
-	if (ret == -ENOTTY) {
-		return OK;
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_IOCTL(drv->u.i_mtd, BIOC_FLUSH, 0);
+	} else {
+		if (drv->u.i_bops->ioctl != NULL) {
+			ret = drv->u.i_bops->ioctl(drv, BIOC_FLUSH, 0);
+		} else {
+			ret = -ENOTTY;
+		}
 	}
-	return ret;
+	*/
+
+	return ret == -ENOTTY ? OK : ret;
 }
 
 static int littlefs_lock(FAR const struct lfs_config *c)
@@ -885,7 +909,35 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	/* Get MTD geometry directly */
 
 	DEBUGASSERT(driver && driver->i_private);
-	ret = MTD_IOCTL((FAR struct mtd_dev_s *)dev->mtd, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
+
+	if (INODE_IS_MTD(driver)) {
+		/* Get MTD geometry directly */
+
+		ret = MTD_IOCTL(driver->u.i_mtd, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
+	} else {
+		/* Try to get FLT MTD geometry first */
+
+		if (driver->u.i_bops->ioctl != NULL) {
+			ret = driver->u.i_bops->ioctl(driver, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
+		} else {
+			ret = -ENOTTY;
+		}
+
+		if (ret < 0) {
+			struct geometry geometry;
+
+			/* Not FLT MTD device, get normal block geometry */
+
+			ret = driver->u.i_bops->geometry(driver, &geometry);
+			if (ret >= 0) {
+				/* And convert to MTD geometry */
+
+				fs->geo.blocksize = geometry.geo_sectorsize;
+				fs->geo.erasesize = geometry.geo_sectorsize;
+				fs->geo.neraseblocks = geometry.geo_nsectors;
+			}
+		}
+	}
 
 	if (ret < 0) {
 		goto errout_with_fs;
