@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/pm/pm.h>
+#include <tinyara/sched.h>
 #include <time.h>
 #include <queue.h>
 #include <debug.h>
@@ -39,12 +40,22 @@ struct pm_metric_state_s {
 
 typedef struct pm_metric_state_s pm_metric_state_t;
 
+struct pm_metric_thread_s {
+	pm_wakeup_reason_code_t wakeup_src;                          /* The wakeup source */
+	uint32_t wakeup_counts[CONFIG_MAX_TASKS];                    /* Wakeup timer counts for each thread */
+	uint32_t min_sleep_ticks[CONFIG_MAX_TASKS];                  /* Minimum actual sleep time allowed by each thread */
+	uint32_t delay;                                              /* Wakeup timer delay (in ticks) */
+};
+
+typedef struct pm_metric_thread_s pm_metric_thread_t;
+
 struct pm_metric_s {
-	pm_metric_domain_t domain_metrics;				 /* The domain metrics */
-	pm_metric_state_t state_metrics;				 /* The power management state metrics */
-	uint32_t board_sleep_ticks;						 /* The amount of time (in ticks) board was in sleep */
-	uint32_t wakeup_src_counts[PM_WAKEUP_SRC_COUNT]; /* It counts the frequency of wakeup sources */
-	uint32_t total_try_ticks;						 /* Total duration of time pm tries to make board sleep */
+	pm_metric_domain_t domain_metrics;                          /* The domain metrics */
+	pm_metric_state_t state_metrics;                            /* The power management state metrics */
+	pm_metric_thread_t thread_metrics;                          /* The power management thread metrics */
+	uint32_t board_sleep_ticks;                                 /* The amount of time (in ticks) board was in sleep */
+	uint32_t wakeup_src_counts[PM_WAKEUP_SRC_COUNT];            /* It counts the frequency of wakeup sources */
+	uint32_t total_try_ticks;                                   /* Total duration of time pm tries to make board sleep */
 };
 
 typedef struct pm_metric_s pm_metric_t;
@@ -56,41 +67,52 @@ static void pm_print_metrics(double total_time, int n_domains)
 {
 	int index;
 	enum pm_state_e pm_state;
-	pmdbg("\n");
-	pmdbg("TOTAL METRICS TIME [1] = %dms\n", TICK2MSEC((int)total_time));
-	pmdbg("TOTAL SLEEP TRY TIME [2] = %dms\n", TICK2MSEC(g_pm_metrics->total_try_ticks));
-	pmdbg("*[2] = represents total duration of time, PM tries to make board sleep.\n");
-	pmdbg("\n");
-	pmdbg("\n");
-	pmdbg("              DOMAIN              | TOTAL PM SUSPEND TIME [3] | TOTAL SLEEP BLOCKING TIME [4] \n");
-	pmdbg("----------------------------------|---------------------------|-------------------------------\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg("TOTAL METRICS TIME [1] = %dms\n", TICK2MSEC((int)total_time));
+	pmdbg_noarg("TOTAL SLEEP TRY TIME [2] = %dms\n", TICK2MSEC(g_pm_metrics->total_try_ticks));
+	pmdbg_noarg("*[2] = represents total duration of time, PM tries to make board sleep.\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg("              DOMAIN              | TOTAL PM SUSPEND TIME [3] | TOTAL SLEEP BLOCKING TIME [4] \n");
+	pmdbg_noarg("----------------------------------|---------------------------|-------------------------------\n");
 	for (index = 0; index < n_domains; index++) {
-		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
+		pmdbg_noarg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
 			  ((double)g_pm_metrics->domain_metrics.suspend_ticks[index]) * 100.0 / total_time, g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index],
 			  ((double)g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
 	}
-	pmdbg("\n");
-	pmdbg("*[3] = total time pm domain was suspended.\n");
-	pmdbg("*[4] = represents the time board was not able to sleep due to suspended domain.\n");
-	pmdbg("*[3] (%) = [3] / [1] * 100\n");
-	pmdbg("*[4] (%) = [4] / [2] * 100\n");
-	pmdbg("\n");
-	pmdbg("\n");
-	pmdbg(" WAKEUP SOURCES | COUNTS \n");
-	pmdbg("----------------|--------\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg("*[3] = total time pm domain was suspended.\n");
+	pmdbg_noarg("*[4] = represents the time board was not able to sleep due to suspended domain.\n");
+	pmdbg_noarg("*[3] (%) = [3] / [1] * 100\n");
+	pmdbg_noarg("*[4] (%) = [4] / [2] * 100\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg(" WAKEUP SOURCES | COUNTS \n");
+	pmdbg_noarg("----------------|--------\n");
 	for (index = 0; index < PM_WAKEUP_SRC_COUNT; index++) {
-		pmdbg(" %14s | %6d \n", wakeup_src_name[index], g_pm_metrics->wakeup_src_counts[index]);
+		pmdbg_noarg(" %14s | %6d \n", wakeup_src_name[index], g_pm_metrics->wakeup_src_counts[index]);
 	}
-	pmdbg("\n");
-	pmdbg("\n");
-	pmdbg(" BOARD STATE | PM STATE |          TIME          \n");
-	pmdbg("-------------|----------|------------------------\n");
+	if (g_pm_metrics->wakeup_src_counts[PM_WAKEUP_HW_TIMER]) {
+		pmdbg_noarg("\n");
+		pmdbg_noarg("\n");
+		pmdbg_noarg(" PROCESS NAME | WAKEUP COUNTS | MIN SLEEP TIME \n");
+		pmdbg_noarg("--------------|---------------|----------------\n");
+		for (index = 0; index < CONFIG_MAX_TASKS; index++) {
+			if (g_pm_metrics->thread_metrics.wakeup_counts[index]) {
+				pmdbg_noarg(" %12s | %13d | %12dms \n", sched_gettcb(index)->name, g_pm_metrics->thread_metrics.wakeup_counts[index], TICK2MSEC(g_pm_metrics->thread_metrics.min_sleep_ticks[index]));
+			}
+		}
+	}
+	pmdbg_noarg("\n");
+	pmdbg_noarg("\n");
+	pmdbg_noarg(" BOARD STATE | PM STATE |          TIME          \n");
+	pmdbg_noarg("-------------|----------|------------------------\n");
 	for (pm_state = PM_NORMAL; pm_state < PM_SLEEP; pm_state++) {
-		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
+		pmdbg_noarg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
 			((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state]) * 100.0 / total_time);
 	}
-	pmdbg("-------------|----------|------------------------\n");
-	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", pm_state_name[PM_SLEEP], TICK2MSEC(g_pm_metrics->board_sleep_ticks),
+	pmdbg_noarg("-------------|----------|------------------------\n");
+	pmdbg_noarg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", pm_state_name[PM_SLEEP], TICK2MSEC(g_pm_metrics->board_sleep_ticks),
 		  ((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
 }
 /************************************************************************************
@@ -116,7 +138,6 @@ void pm_metrics_update_domain(int domain_id)
 {
 	if (g_pm_metrics_running) {
 		g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
-		g_pm_metrics->domain_metrics.suspend_ticks[domain_id] = 0;
 	}
 }
 
@@ -229,11 +250,65 @@ void pm_metrics_update_changestate(void)
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
+void pm_metrics_update_wakehandler(uint32_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 {
 	if (g_pm_metrics_running) {
+		g_pm_metrics->thread_metrics.wakeup_src = wakeup_src;
+		g_pm_metrics->thread_metrics.delay = missing_tick;
 		g_pm_metrics->wakeup_src_counts[wakeup_src]++;
 		g_pm_metrics->board_sleep_ticks += missing_tick;
+	}
+}
+
+/****************************************************************************
+ * Name: pm_metrics_update_sleep
+ *
+ * Description:
+ *   This function is called inside pm_sleep's callback. It counts the frequency of
+ *   thread which wakeup the board. It also checks the minimum amount of time board
+ *   was in sleep because of given thread.
+ * 
+ * Input parameters:
+ *   pid - the ID of thread
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_sleep(pid_t pid)
+{
+	int hash_pid;
+	if (g_pm_metrics_running && (g_pm_metrics->thread_metrics.wakeup_src == PM_WAKEUP_HW_TIMER)) {
+		hash_pid = PIDHASH(pid);
+		if (g_pm_metrics->thread_metrics.delay < g_pm_metrics->thread_metrics.min_sleep_ticks[hash_pid]) {
+			g_pm_metrics->thread_metrics.min_sleep_ticks[hash_pid] = g_pm_metrics->thread_metrics.delay;
+		}
+		g_pm_metrics->thread_metrics.wakeup_counts[hash_pid]++;
+		g_pm_metrics->thread_metrics.wakeup_src = PM_WAKEUP_UNKNOWN;
+	}
+}
+
+/****************************************************************************
+ * Name: pm_metrics_update_recover
+ *
+ * Description:
+ *   This function is called inside pm_recover. It resets the wakeup_counts and 
+ *   sleep_ticks of given thread for consistent PM Metrics result.
+ * 
+ * Input parameters:
+ *   pid - the ID of thread
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_recover(pid_t pid)
+{
+	int hash_pid;
+	if (g_pm_metrics_running) {
+		hash_pid = PIDHASH(pid);
+		g_pm_metrics->thread_metrics.min_sleep_ticks[hash_pid] = UINT32_MAX;
+		g_pm_metrics->thread_metrics.wakeup_counts[hash_pid] = 0;
 	}
 }
 
@@ -284,15 +359,14 @@ int pm_metrics(int milliseconds)
 		return ERROR;
 	}
 	/* PM Metrics Initialization */
-	for (index = 0; index < PM_COUNT; index++) {
-		g_pm_metrics->state_metrics.state_accum_ticks[index] = 0;
-	}
 	flags = enter_critical_section();
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
 	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
-		pm_metrics_update_domain(index);
 		g_pm_metrics->domain_metrics.stime[index] = start_time;
+	}
+	for (index = 0; index < CONFIG_MAX_TASKS; index++) {
+		g_pm_metrics->thread_metrics.min_sleep_ticks[index] = UINT32_MAX;
 	}
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
