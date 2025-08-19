@@ -109,7 +109,7 @@ int pm_domain_register(char *domain)
 			g_pmglobals.ndomains++;
 #ifdef CONFIG_PM_METRICS
 			/* For newly registered domain initialize its pm metrics*/
-			pm_metrics_update_domain(index);
+			pm_metrics_update(PM_MET_DOMAIN, index);
 #endif
 			goto EXIT;
 		/* If domain is already registered then return registered domain ID */

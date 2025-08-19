@@ -97,143 +97,64 @@ static void pm_print_metrics(double total_time, int n_domains)
  * Public Functions
  ************************************************************************************/
 
-/****************************************************************************
- * Name: pm_metrics_update_domain
- *
- * Description:
- *   This function is called when new domain got registered during pm_monitoring
- *   or during pm_metrics initialization. It initialize the PM Metrics for given
- *   domain.
- *
- * Input parameters:
- *   domain_id - the ID of domain registered with PM.
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_domain(int domain_id)
+void pm_metrics_update(pm_metrics_update_e cmd, unsigned long arg)
 {
-	if (g_pm_metrics_running) {
-		g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
-		g_pm_metrics->domain_metrics.suspend_ticks[domain_id] = 0;
-	}
-}
-
-/****************************************************************************
- * Name: pm_metrics_update_suspend
- *
- * Description:
- *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
- *   suspended domain.
- *
- * Input parameters:
- *   domain_id - the ID of domain registered with PM.
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_suspend(int domain_id)
-{
-	if (g_pm_metrics_running && (g_pmglobals.suspend_count[domain_id] == 0)) {
-		g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
-	}
-}
-
-/****************************************************************************
- * Name: pm_metrics_update_resume
- *
- * Description:
- *   This function is called inside pm_resume. Before resuming domain, it counts
- *   amount of time (in ticks) the given domain was suspended.
- *
- * Input parameters:
- *   domain_id - the ID of domain registered with PM.
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_resume(int domain_id)
-{
-	if (g_pm_metrics_running && (g_pmglobals.suspend_count[domain_id] == 1)) {
-		g_pm_metrics->domain_metrics.suspend_ticks[domain_id] += clock_systimer() - g_pm_metrics->domain_metrics.stime[domain_id];
-	}
-}
-
-/****************************************************************************
- * Name: pm_metrics_update_idle
- *
- * Description:
- *   This function is called inside pm_idle. It counts the frequency of domain, which
- *   make board unable to go into sleep during idle cpu time.
- *
- * Input parameters:
- *   None
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_idle(void)
-{
+	clock_t tick;
+	pm_wakeup_reason_code_t wakeup_src;
+	int domain_id;
 	int index;
-	if (g_pm_metrics_running) {
-		g_pm_metrics->total_try_ticks++;
-		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
-			if (g_pmglobals.suspend_count[index] != 0) {
-				g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]++;
+
+	if (!g_pm_metrics_running) {
+		return;
+	}
+
+	switch (cmd) {
+
+		case PM_MET_DOMAIN:
+			domain_id = (int)arg;
+			g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
+			g_pm_metrics->domain_metrics.suspend_ticks[domain_id] = 0;
+			break;
+
+		case PM_MET_SUSPEND:
+			domain_id = (int)arg;
+			if (g_pmglobals.suspend_count[domain_id] == 0) {
+				g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
 			}
-		}
-	}
-}
+			break;
 
-/****************************************************************************
- * Name: pm_metrics_update_changestate
- *
- * Description:
- *   This function is called inside pm_changestate. Before changing state, it counts
- *   amount of time (in ticks) was in that state.
- *
- * Input parameters:
- *   None
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_changestate(void)
-{
-	clock_t now;
-	if (g_pm_metrics_running) {
-		now = clock_systimer();
-		g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += now - g_pm_metrics->state_metrics.stime;
-		g_pm_metrics->state_metrics.stime = now;
-	}
-}
+		case PM_MET_RESUME:
+			domain_id = (int)arg;
+			if (g_pmglobals.suspend_count[domain_id] == 1) {
+				g_pm_metrics->domain_metrics.suspend_ticks[domain_id] += clock_systimer() - g_pm_metrics->domain_metrics.stime[domain_id];
+			}
+			break;
 
-/****************************************************************************
- * Name: pm_metrics_update_wakehandler
- *
- * Description:
- *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
- *   sources, which are waking up the board. It also checks the amount of time board
- *   was in sleep.
- *
- * Input parameters:
- *   missing_tick - the amount of time the board was in sleep.
- *   wakeup_src   - the wakeup reason code.
- *
- * Returned value:
- *   None
- *
- ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
-{
-	if (g_pm_metrics_running) {
-		g_pm_metrics->wakeup_src_counts[wakeup_src]++;
-		g_pm_metrics->board_sleep_ticks += missing_tick;
+		case PM_MET_IDLE:
+			g_pm_metrics->total_try_ticks++;
+			for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
+				if (g_pmglobals.suspend_count[index] != 0) {
+					g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]++;
+				}
+			}
+			break;
+
+		case PM_MET_CHANGESTATE:
+			tick = clock_systimer();
+			g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += tick - g_pm_metrics->state_metrics.stime;
+			g_pm_metrics->state_metrics.stime = tick;
+			break;
+
+		case PM_MET_WAKE:
+			tick = ((pm_metrics_wake_t *)arg)->ticks;
+			wakeup_src = ((pm_metrics_wake_t *)arg)->wakeup_src;
+			g_pm_metrics->wakeup_src_counts[wakeup_src]++;
+			g_pm_metrics->board_sleep_ticks += tick;
+			break;
+
+		default:
+			pmdbg("Unknown CMD: %d\n", (int)cmd);
+			break;
 	}
 }
 
@@ -259,8 +180,6 @@ int pm_metrics(int milliseconds)
 	irqstate_t flags;
 	int index;
 	int n_domains;
-	int pm_suspended = -1;
-	int pm_resumed = -1;
 	/* If PM Metrics already running then notify other thread */
 	if (g_pm_metrics) {
 		pmdbg("PM Metrics already running\n");
@@ -273,8 +192,6 @@ int pm_metrics(int milliseconds)
 	}
 	/* Lock PM so that no two thread can run PM Metrics simultaneously */
 	pm_lock();
-	/* Avoid board sleep during PM Metrics initialization */
-	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 	/* Allocate memory for initializing PM Metrics measurements */
 	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
@@ -284,34 +201,16 @@ int pm_metrics(int milliseconds)
 		return ERROR;
 	}
 	/* PM Metrics Initialization */
-	for (index = 0; index < PM_COUNT; index++) {
-		g_pm_metrics->state_metrics.state_accum_ticks[index] = 0;
-	}
 	flags = enter_critical_section();
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
 	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
-		pm_metrics_update_domain(index);
 		g_pm_metrics->domain_metrics.stime[index] = start_time;
 	}
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
-	/* Resume Board Sleep */
-	if (pm_suspended == OK) {
-		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
-	} else {
-		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
-	}
 	/* Suspend for given time interval */
 	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
-	/* Avoid board sleep during PM Metrics post processing */
-	if (pm_resumed == OK) {
-		pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
-	} else {
-		pm_suspended = -1;
-		pmdbg("Unable to suspend IDLE Domain\n");
-	}
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
 	g_pm_metrics_running = false;
@@ -329,13 +228,6 @@ int pm_metrics(int milliseconds)
 	/* Free allocated memory */
 	free(g_pm_metrics);
 	g_pm_metrics = NULL;
-	/* Resume Board Sleep */
-	if (pm_suspended == OK) {
-		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
-	} else {
-		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
-	}
 	/* Unlock PM Metrics for other threads */
 	pm_unlock();
 	return OK;

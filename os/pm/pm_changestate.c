@@ -235,7 +235,7 @@ int pm_changestate(enum pm_state_e newstate)
 		 */
 		pm_changeall(newstate);
 #ifdef CONFIG_PM_METRICS
-		pm_metrics_update_changestate();
+		pm_metrics_update(PM_MET_CHANGESTATE, 0);
 #endif
 		g_pmglobals.state = newstate;
 	}
