@@ -858,6 +858,21 @@ void sched_foreach(sched_foreach_t handler, FAR void *arg);
  */
 FAR struct tcb_s *sched_gettcb(pid_t pid);
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+/****************************************************************************
+ * Name: sched_getdeadtaskname
+ *
+ * Description:
+ *   This function returns the name of a dead thread given its pid
+ *
+ * Inputs:
+ *   pid: pid of the dead task
+ *
+ ****************************************************************************/
+
+char *sched_getdeadtaskname(int pid);
+#endif
+
 /* File system helpers **********************************************************/
 /* These functions all extract lists from the group structure assocated with the
  * currently executing task.
