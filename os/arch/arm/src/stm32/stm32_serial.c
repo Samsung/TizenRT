@@ -1761,7 +1761,7 @@ static int up_interrupt_common(struct up_dev_s *priv)
 		if ((priv->sr & USART_SR_TXE) != 0 && (priv->ie & USART_CR1_TXEIE) != 0) {
 			/* Transmit data register empty ... process outgoing bytes */
 
-			uart_xmitchars(&priv->dev);
+			(void)uart_xmitchars(&priv->dev);
 			handled = true;
 		}
 	}
@@ -2260,7 +2260,7 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
 		 * interrupts disabled (note this may recurse).
 		 */
 
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 #endif
 	} else {
 		/* Disable the TX interrupt */

@@ -100,7 +100,7 @@
  *
  ************************************************************************************/
 
-void uart_xmitchars(FAR uart_dev_t *dev)
+uint16_t uart_xmitchars(FAR uart_dev_t *dev)
 {
 	uint16_t nbytes = 0;
 
@@ -146,6 +146,8 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 #ifdef CONFIG_SMP
 	leave_critical_section(flags);
 #endif
+
+	return nbytes;
 }
 
 /************************************************************************************
